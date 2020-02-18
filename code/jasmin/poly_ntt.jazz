@@ -51,8 +51,6 @@ fn barrett_reduce(reg u16 a) -> reg u16
   return r;
 }
 
-param int len = 128;
-
 export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp) 
 {
   reg u64 len;  
@@ -67,9 +65,9 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
   reg u16 m;
 
   len = 128;
-  start = 0;
-//  while (len >= 2)
-//  {
+  while (len >= 2)
+  {
+    start = 0;
     while (start < 256)
     {
       zetasp += 2;
@@ -91,8 +89,8 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
       }
       start = j + len;
     }
-//    len >>= 1;
-//  }
+    len >>= 1;
+  }
 
   j = 0;
   while (j < 256) 

@@ -19,6 +19,7 @@ int main(void)
 
   poly_setrandom(&r0);
 
+
   for(int i=0;i<KYBER_N;i++)
     r1.coeffs[i] = r0.coeffs[i];
  

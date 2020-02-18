@@ -90,6 +90,7 @@ void ntt(int16_t r[256]) {
   int16_t t, zeta;
 
   k = 1;
+  len = 128;
   for(len = 128; len >= 2; len >>= 1) {
     for(start = 0; start < 256; start = j + len) {
       zeta = zetas[k++];
