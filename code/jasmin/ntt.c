@@ -113,8 +113,7 @@ int nttl0(int16_t r[256], unsigned int k)
     for(j = start; j < start + len; ++j) {
       t = fqmul(zeta, r[j + len]);
       r[j + len] = r[j] - t;
-      //r[j] = r[j] + t;
-      r[j] = t;
+      r[j] = r[j] + t;
     }
   }
   return k;

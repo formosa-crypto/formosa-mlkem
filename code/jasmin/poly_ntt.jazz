@@ -66,15 +66,6 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
   reg u16 s;
   reg u16 m;
 
-/*
-  zetasp += 2;
-  zeta = (u16)[zetasp];
-
-  t = (u16)[rp + 2*offset];
-  t = fqmul(t, zeta);
-  (u16)[rp + 2*offset] = t;
-  */
-
   len = 128;
   start = 0;
 //  while (len >= 2)
@@ -94,7 +85,7 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
         m = s;
         m -= t;
         (u16)[rp + 2*offset] = m;
-        //t += s;
+        t += s;
         (u16)[rp + 2*j] = t;
         j += 1;
       }
