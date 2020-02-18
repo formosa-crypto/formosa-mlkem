@@ -1,0 +1,57 @@
+
+export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp) 
+{
+  reg u64 len;  
+  reg u64 start;
+  reg u64 j;
+  reg u64 cmp;
+  reg u64 offset;
+  
+  reg u16 zeta;
+  reg u16 t;
+  reg u16 s;
+  reg u16 m;
+  stack u64 szetasp;
+
+  szetasp = zetasp;
+
+  len = 2;
+  while (len <= 128)
+  {
+    start = 0;
+    while (start < 256)
+    {
+      zeta = (u16)[zetasp];
+      zetasp += 2;
+      j = start;
+      cmp = start + len;
+      while (j < cmp)
+      {
+        offset = j + len;
+        s = (u16)[rp + 2*offset];
+        t = (u16)[rp + 2*j];
+        m = s + t;
+        m = barrett_reduce(m);
+        (u16)[rp + 2*j] = m;
+        t -= s;
+        t = fqmul(t, zeta);
+        (u16)[rp + 2*offset] = t;
+        j += 1;
+      }
+      start = j + len;
+    }
+    len <<= 1;
+  }
+
+  zetasp = szetasp;
+  zeta = (u16)[zetasp + 254];
+
+  j = 0;
+  while (j < KYBER_N) 
+  {
+    t = (u16)[rp + j*2];
+    t = fqmul(t, zeta);
+    (u16)[rp + j*2] = t;
+    j += 1;
+  }
+}

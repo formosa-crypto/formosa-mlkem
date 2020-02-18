@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 extern int16_t zetas[128];
-extern int16_t zetasinv[128];
+extern int16_t zetas_inv[128];
 
 void ntt(int16_t *poly);
 void splitntt(int16_t *poly);

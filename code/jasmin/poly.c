@@ -191,7 +191,6 @@ void poly_getnoise(poly *r, const unsigned char *seed, unsigned char nonce)
 **************************************************/
 void poly_ntt(poly *r)
 {
-  //splitntt(r->coeffs);
   ntt(r->coeffs);
   poly_reduce(r);
 }

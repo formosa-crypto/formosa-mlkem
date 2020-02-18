@@ -6,6 +6,7 @@ JFLAGS=-lea -pasm
 test: test/test_poly_add \
  			test/test_poly_sub \
  			test/test_poly_ntt \
+ 			test/test_poly_invntt \
  			test/test_poly_frommont \
  			test/test_poly_basemul \
 
@@ -15,6 +16,7 @@ SOURCES = poly.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
 					poly_add.s \
 					poly_sub.s \
 					poly_ntt.s \
+					poly_invntt.s \
 					poly_frommont.s \
 					poly_basemul.s
 

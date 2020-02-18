@@ -90,7 +90,6 @@ void ntt(int16_t r[256]) {
   int16_t t, zeta;
 
   k = 1;
-  len = 128;
   for(len = 128; len >= 2; len >>= 1) {
     for(start = 0; start < 256; start = j + len) {
       zeta = zetas[k++];
@@ -101,47 +100,6 @@ void ntt(int16_t r[256]) {
       }
     }
   }
-}
-
-
-int nttl0(int16_t r[256], unsigned int k)
-{
-  unsigned int len=128, start, j;
-  int16_t t, zeta;
-
-  for(start = 0; start < 256; start = j + len) {
-    zeta = zetas[k++];
-    for(j = start; j < start + len; ++j) {
-      t = fqmul(zeta, r[j + len]);
-      r[j + len] = r[j] - t;
-      r[j] = r[j] + t;
-    }
-  }
-  return k;
-}
-
-
-void splitntt(int16_t r[256]) {
-  /*
-  unsigned int len, start, j, k;
-  int16_t t, zeta;
-  */
-
-  nttl0(r,1);
-
-  /*
-  k = nttl0(r,1);
-  for(len = 64; len >= 2; len >>= 1) {
-    for(start = 0; start < 256; start = j + len) {
-      zeta = zetas[k++];
-      for(j = start; j < start + len; ++j) {
-        t = fqmul(zeta, r[j + len]);
-        r[j + len] = r[j] - t;
-        r[j] = r[j] + t;
-      }
-    }
-  }
-  */
 }
 
 /*************************************************
