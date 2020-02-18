@@ -1,0 +1,17 @@
+
+export fn poly_frommont_jazz(reg u64 rp)
+{
+  inline int i;
+  reg u16 r;
+  reg u16 dmont;
+
+  dmont = DMONT;
+  
+  for i = 0 to KYBER_N 
+  {
+    r = (u16)[rp + 2*i];
+    r = fqmul(r, dmont);
+    (u16)[rp + 2*i] = r;
+  }
+ 
+}

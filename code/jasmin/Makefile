@@ -6,18 +6,24 @@ JFLAGS=-lea -pasm
 test: test/test_poly_add \
  			test/test_poly_sub \
  			test/test_poly_ntt \
+ 			test/test_poly_frommont \
 
 
 HEADERS = params.h poly.h
 SOURCES = poly.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
 					poly_add.s \
 					poly_sub.s \
-					poly_ntt.s
+					poly_ntt.s \
+					poly_frommont.s
 
 test/%: test/%.c $(HEADERS) $(SOURCES)
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) $<
 
-%.s: %.jazz
+
+%.japp: %.jazz macros.jazz
+	cat macros.jazz $< > $@
+
+%.s: %.japp
 	$(JASMIN) $(JFLAGS) $^ > $@
 
 
