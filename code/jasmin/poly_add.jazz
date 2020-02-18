@@ -1,0 +1,18 @@
+param int KYBER_N = 256;
+param int KYBER_Q = 3329;
+
+
+export fn poly_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
+{
+  reg u16 a;
+  reg u16 b;
+  reg u16 r;
+  inline int i;
+
+  for i = 0 to KYBER_N {
+    a = (u16)[ap + 2*i];
+    b = (u16)[bp + 2*i];
+    r = a + b;
+    (u16)[rp + 2*i] = r;
+  }
+}

@@ -1,0 +1,32 @@
+CC=/usr/bin/gcc
+CFLAGS=-Wall -Wextra -g
+JASMIN=~/svn/jasmin/compiler/jasminc
+JFLAGS=-lea -pasm
+
+test: test/test_poly_add \
+ 			test/test_poly_sub \
+ 			test/test_poly_ntt \
+
+
+HEADERS = params.h poly.h
+SOURCES = poly.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
+					poly_add.s \
+					poly_sub.s \
+					poly_ntt.s
+
+test/%: test/%.c $(HEADERS) $(SOURCES)
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $<
+
+%.s: %.jazz
+	$(JASMIN) $(JFLAGS) $^ > $@
+
+
+.PHONY: clean
+
+clean:
+	-rm *.s
+	-rm test/test_poly_add
+	-rm test/test_poly_sub
+	-rm test/test_poly_ntt
+
+

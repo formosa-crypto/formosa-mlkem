@@ -1,0 +1,118 @@
+param int KYBER_N = 256;
+param int KYBER_Q = 3329;
+param int QINV = 62209;
+param int MONT = 2285;
+param int BARR = 20159;
+
+/*
+void poly_ntt_jazz(poly *r, int16_t *zetas)
+{
+  ntt(r->coeffs);
+  poly_reduce(r);
+}
+*/
+
+
+fn fqmul(reg u16 a, reg u16 b) -> reg u16
+{
+  reg u32 ad;
+  reg u32 bd;
+  reg u32 c;
+  reg u32 t;
+  reg u16 r;
+  reg u32 u;
+
+  ad = (32s)a;
+  bd = (32s)b;
+
+  c = ad * bd;
+
+  u = c * QINV;
+  u <<= 16;
+  u = #SAR_32(u, 16);
+  t = u * KYBER_Q;
+  t = c - t;
+  t = #SAR_32(t, 16);
+  r = t;
+  return r;
+}
+
+fn barrett_reduce(reg u16 a) -> reg u16
+{
+  reg u32 t;
+  reg u16 r;
+  t = (32u)a;
+  t = t * BARR;
+  t >>= 26;
+  t *= KYBER_Q;
+  r = t;
+  r = a;
+  r -= t;
+  return r;
+}
+
+param int len = 128;
+
+export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp) 
+{
+  reg u64 len;  
+  reg u64 start;
+  reg u64 j;
+  reg u64 cmp;
+  reg u64 offset;
+  
+  reg u16 zeta;
+  reg u16 t;
+  reg u16 s;
+  reg u16 m;
+
+/*
+  zetasp += 2;
+  zeta = (u16)[zetasp];
+
+  t = (u16)[rp + 2*offset];
+  t = fqmul(t, zeta);
+  (u16)[rp + 2*offset] = t;
+  */
+
+  len = 128;
+  start = 0;
+//  while (len >= 2)
+//  {
+    while (start < 256)
+    {
+      zetasp += 2;
+      zeta = (u16)[zetasp];
+      j = start;
+      cmp = start + len;
+      while (j < cmp)
+      {
+        offset = j + len;
+        t = (u16)[rp + 2*offset];
+        t = fqmul(t, zeta);
+        s = (u16)[rp + 2*j];
+        m = s;
+        m -= t;
+        (u16)[rp + 2*offset] = m;
+        //t += s;
+        (u16)[rp + 2*j] = t;
+        j += 1;
+      }
+      start = j + len;
+    }
+//    len >>= 1;
+//  }
+
+/*
+  j = 0;
+  while (j < 256) 
+  {
+    t = (u16)[rp + j*2];
+    t = barrett_reduce(t);
+    (u16)[rp + j*2] = t;
+    j += 1;
+  }
+  */
+}
+
+

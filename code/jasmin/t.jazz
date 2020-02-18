@@ -1,0 +1,12 @@
+
+export fn test(reg u64 in) -> reg u64
+{
+  reg u32 u;
+  reg u64 r;
+
+  u = in;
+  //u >>s= 16;
+  u = #SAR_32(u,16);
+  r = (64s)u;
+  return r;
+}
