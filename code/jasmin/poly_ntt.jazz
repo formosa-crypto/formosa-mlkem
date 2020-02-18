@@ -39,14 +39,15 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
     len >>= 1;
   }
 
+  /*
   j = 0;
-  while (j < 256) 
+  while (j < KYBER_N) 
   {
     t = (u16)[rp + j*2];
     t = barrett_reduce(t);
     (u16)[rp + j*2] = t;
     j += 1;
   }
+  */
+  poly_reduce(rp);
 }
-
-

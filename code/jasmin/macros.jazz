@@ -44,4 +44,46 @@ fn barrett_reduce(reg u16 a) -> reg u16
   return r;
 }
 
+fn poly_reduce(reg u64 rp)
+{
+  reg u64 j; 
+  reg u16 t;
+  j = 0;
+  while (j < KYBER_N) 
+  {
+    t = (u16)[rp + j*2];
+    t = barrett_reduce(t);
+    (u16)[rp + j*2] = t;
+    j += 1;
+  }
+}
 
+fn basemul(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 offset, reg u16 zeta)
+{
+  reg u16 r0;
+  reg u16 r1;
+  reg u16 a0;
+  reg u16 a1;
+  reg u16 b0;
+  reg u16 b1;
+  reg u16 t;
+
+  a0 = (u16)[ap+offset];
+  b0 = (u16)[bp+offset];
+  offset += 2;
+  a1 = (u16)[ap+offset];
+  b1 = (u16)[bp+offset];
+
+  r0 = fqmul(a1, b1);
+  r0 = fqmul(r0, zeta);
+  t  = fqmul(a0, b0);
+  r0 += t;
+
+  r1 = fqmul(a0, b1);
+  t  = fqmul(a1, b0);
+  r1 += t;
+
+  (u16)[rp+offset] = r1;
+  offset -= 2;
+  (u16)[rp+offset] = r0;
+}

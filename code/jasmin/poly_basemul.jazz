@@ -1,0 +1,21 @@
+
+export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas)
+{
+  reg u64 i;
+  reg u64 offset;
+  reg u16 zeta;
+  i = 0; 
+
+  zetas += 128;
+
+  while (i < 64)
+  {
+    offset  =  8*i;
+    zeta = (u16)[zetas + 2*i];
+    basemul(rp, ap, bp, offset, zeta);
+    zeta = -zeta;
+    offset += 4;
+    basemul(rp, ap, bp, offset, zeta);
+    i += 1;
+  }
+}

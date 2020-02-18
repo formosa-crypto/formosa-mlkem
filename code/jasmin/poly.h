@@ -36,6 +36,9 @@ void poly_sub(poly *r, const poly *a, const poly *b);
 
 
 
+
+
+
 void poly_compress_jazz(unsigned char *r, poly *a);
 void poly_decompress_jazz(poly *r, const unsigned char *a);
 
@@ -47,13 +50,13 @@ void poly_tomsg_jazz(unsigned char msg[KYBER_SYMBYTES], poly *r);
 
 void poly_getnoise_jazz(poly *r,const unsigned char *seed, unsigned char nonce);
 
-void poly_ntt_jazz(poly *r, int16_t *zetas);
+void poly_ntt_jazz(poly *r, const int16_t *zetas);
 void poly_invntt_jazz(poly *r);
-void poly_basemul_jazz(poly *r, const poly *a, const poly *b);
+void poly_basemul_jazz(poly *r, const poly *a, const poly *b, const int16_t *zetas);
 void poly_frommont_jazz(poly *r);
 
-void poly_reduce_jazz(poly *r);
-void poly_csubq_jazz(poly *r);
+//void poly_reduce_jazz(poly *r);
+//void poly_csubq_jazz(poly *r);
 
 void poly_add_jazz(poly *r, const poly *a, const poly *b);
 void poly_sub_jazz(poly *r, const poly *a, const poly *b);
