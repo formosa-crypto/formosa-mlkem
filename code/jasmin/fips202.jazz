@@ -1,0 +1,6 @@
+#include "fips202.jahh"
+
+export fn shake256_jazz(reg u64 outp outlen inp inlen) {
+  shake256(outp, outlen, inp, inlen);
+}
+
