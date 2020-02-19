@@ -26,7 +26,8 @@ JHEADERS = params.jahh \
 				   fips202.jahh \
 
 SOURCES = poly.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
-					kyber.s \
+					poly.s \
+					fips202.s \
 
 
 test/%: test/%.c $(HEADERS) $(SOURCES)

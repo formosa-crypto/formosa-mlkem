@@ -1,0 +1,126 @@
+#include "params.jahh"
+#include "poly_basemul.jahh"
+#include "poly_frommont.jahh"
+#include "poly_add.jahh"
+#include "poly_sub.jahh"
+#include "poly_ntt.jahh"
+#include "poly_invntt.jahh"
+
+/* These exported functions are just for unit testing */
+
+export fn poly_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] a;
+  stack u16[KYBER_N] b;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+    t = (u16)[bp + 2*i];
+    b[i] = t;
+  }
+
+  r = poly_add(a, b);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] a;
+  stack u16[KYBER_N] b;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+    t = (u16)[bp + 2*i];
+    b[i] = t;
+  }
+
+  r = poly_sub(a, b);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r = poly_ntt(r, zetasp);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r = poly_invntt(r, zetasp);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas) {
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] a;
+  stack u16[KYBER_N] b;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+    t = (u16)[bp + 2*i];
+    b[i] = t;
+  }
+
+  r = poly_basemul(a, b, zetas);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn poly_frommont_jazz(reg u64 rp) {
+  poly_frommont(rp);
+}
+
+/*
+export fn poly_getnoise_jazz(reg u64 rp) {
+  poly_getnoise(rp);
+}
+*/
+

@@ -3,19 +3,21 @@
 
 #include "params.jahh"
 
-fn poly_add(reg u64 rp, reg u64 ap, reg u64 bp)
+fn poly_add(stack u16[KYBER_N] ap bp) -> stack u16[KYBER_N]
 {
   reg u16 a;
   reg u16 b;
   reg u16 r;
+  stack u16[KYBER_N] rp;
   inline int i;
 
   for i = 0 to KYBER_N {
-    a = (u16)[ap + 2*i];
-    b = (u16)[bp + 2*i];
+    a = ap[i];
+    b = bp[i];
     r = a + b;
-    (u16)[rp + 2*i] = r;
+    rp[i] = r;
   }
+  return rp;
 }
 
 #endif

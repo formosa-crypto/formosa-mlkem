@@ -4,7 +4,7 @@
 #include "params.jahh"
 #include "reduce.jahh"
 
-fn poly_ntt(reg u64 rp, reg u64 zetasp) 
+fn poly_ntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
 {
   reg u64 len;  
   reg u64 start;
@@ -30,14 +30,14 @@ fn poly_ntt(reg u64 rp, reg u64 zetasp)
       while (j < cmp)
       {
         offset = j + len;
-        t = (u16)[rp + 2*offset];
+        t = rp[(int)offset];
         t = fqmul(t, zeta);
-        s = (u16)[rp + 2*j];
+        s = rp[(int)j];
         m = s;
         m -= t;
-        (u16)[rp + 2*offset] = m;
+        rp[(int)offset] = m;
         t += s;
-        (u16)[rp + 2*j] = t;
+        rp[(int)j] = t;
         j += 1;
       }
       start = j + len;
@@ -45,17 +45,9 @@ fn poly_ntt(reg u64 rp, reg u64 zetasp)
     len >>= 1;
   }
 
-  /*
-  j = 0;
-  while (j < KYBER_N) 
-  {
-    t = (u16)[rp + j*2];
-    t = barrett_reduce(t);
-    (u16)[rp + j*2] = t;
-    j += 1;
-  }
-  */
-  poly_reduce(rp);
+  rp = poly_reduce(rp);
+
+  return rp;
 }
 
 #endif

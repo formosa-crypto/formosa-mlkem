@@ -1,6 +1,8 @@
 #ifndef REDUCE_HH
 #define REDUCE_HH
 
+#include "params.jahh"
+
 param int QINV    = 62209;     /* q^(-1) mod 2^16 */
 param int MONT    = 2285;      /* 2^16 % Q */
 param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
@@ -44,18 +46,19 @@ fn barrett_reduce(reg u16 a) -> reg u16
   return r;
 }
 
-fn poly_reduce(reg u64 rp)
+fn poly_reduce(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
 {
   reg u64 j; 
   reg u16 t;
   j = 0;
   while (j < KYBER_N) 
   {
-    t = (u16)[rp + j*2];
+    t = rp[(int)j];
     t = barrett_reduce(t);
-    (u16)[rp + j*2] = t;
+    rp[(int)j] = t;
     j += 1;
   }
+  return rp;
 }
 
 #endif
