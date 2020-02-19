@@ -5,7 +5,7 @@
 
 param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
 
-fn poly_frommont(reg u64 rp)
+fn poly_frommont(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
 {
   inline int i;
   reg u16 r;
@@ -15,11 +15,11 @@ fn poly_frommont(reg u64 rp)
   
   for i = 0 to KYBER_N 
   {
-    r = (u16)[rp + 2*i];
+    r = rp[i];
     r = fqmul(r, dmont);
-    (u16)[rp + 2*i] = r;
+    rp[i] = r;
   }
- 
+  return rp; 
 }
 
 #endif

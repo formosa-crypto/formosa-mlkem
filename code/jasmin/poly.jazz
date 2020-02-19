@@ -92,7 +92,8 @@ export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp)
   }
 }
 
-export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas) {
+export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas) 
+{
   inline int i;
   reg u16 t;
   stack u16[KYBER_N] a;
@@ -114,9 +115,26 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas) {
   }
 }
 
-export fn poly_frommont_jazz(reg u64 rp) {
-  poly_frommont(rp);
+export fn poly_frommont_jazz(reg u64 rp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r = poly_frommont(r);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
 }
+
+
 
 /*
 export fn poly_getnoise_jazz(reg u64 rp) {
