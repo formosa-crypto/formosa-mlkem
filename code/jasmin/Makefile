@@ -9,23 +9,32 @@ test: test/test_poly_add \
  			test/test_poly_invntt \
  			test/test_poly_frommont \
  			test/test_poly_basemul \
+ 			test/test_shake256 \
 
 
-HEADERS = params.h poly.h
+HEADERS = params.h poly.h \
+
+
+JHEADERS = params.jahh \
+				   reduce.jahh \
+				   poly_add.jahh \
+				   poly_sub.jahh \
+				   poly_frommont.jahh \
+				   poly_ntt.jahh \
+				   poly_invntt.jahh \
+				   poly_basemul.jahh \
+				   fips202.jahh \
+
 SOURCES = poly.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
-					poly_add.s \
-					poly_sub.s \
-					poly_ntt.s \
-					poly_invntt.s \
-					poly_frommont.s \
-					poly_basemul.s
+					kyber.s \
+
 
 test/%: test/%.c $(HEADERS) $(SOURCES)
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) $<
 
 
-%.japp: %.jazz macros.jazz
-	cat macros.jazz $< > $@
+%.japp: %.jazz $(JHEADERS)
+	cat $< | $(CC) -E - | grep -v ^# > $@
 
 %.s: %.japp
 	$(JASMIN) $(JFLAGS) $^ > $@
@@ -39,5 +48,8 @@ clean:
 	-rm test/test_poly_add
 	-rm test/test_poly_sub
 	-rm test/test_poly_ntt
-
-
+	-rm test/test_poly_invntt
+	-rm test/test_poly_basemul
+	-rm test/test_poly_frommont
+	-rm test/test_poly_shake256
+	-rm test/test_shake256

@@ -1,5 +1,11 @@
+#ifndef POLY_FROMMONT_HH
+#define POLY_FROMMONT_HH
 
-export fn poly_frommont_jazz(reg u64 rp)
+#include "params.jahh"
+
+param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
+
+fn poly_frommont(reg u64 rp)
 {
   inline int i;
   reg u16 r;
@@ -15,3 +21,5 @@ export fn poly_frommont_jazz(reg u64 rp)
   }
  
 }
+
+#endif

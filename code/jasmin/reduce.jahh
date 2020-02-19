@@ -1,9 +1,9 @@
-param int KYBER_N = 256;
-param int KYBER_Q = 3329;
+#ifndef REDUCE_HH
+#define REDUCE_HH
+
 param int QINV    = 62209;     /* q^(-1) mod 2^16 */
 param int MONT    = 2285;      /* 2^16 % Q */
 param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
-param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
 
 
 fn fqmul(reg u16 a, reg u16 b) -> reg u16
@@ -58,32 +58,4 @@ fn poly_reduce(reg u64 rp)
   }
 }
 
-fn basemul(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 offset, reg u16 zeta)
-{
-  reg u16 r0;
-  reg u16 r1;
-  reg u16 a0;
-  reg u16 a1;
-  reg u16 b0;
-  reg u16 b1;
-  reg u16 t;
-
-  a0 = (u16)[ap+offset];
-  b0 = (u16)[bp+offset];
-  offset += 2;
-  a1 = (u16)[ap+offset];
-  b1 = (u16)[bp+offset];
-
-  r0 = fqmul(a1, b1);
-  r0 = fqmul(r0, zeta);
-  t  = fqmul(a0, b0);
-  r0 += t;
-
-  r1 = fqmul(a0, b1);
-  t  = fqmul(a1, b0);
-  r1 += t;
-
-  (u16)[rp+offset] = r1;
-  offset -= 2;
-  (u16)[rp+offset] = r0;
-}
+#endif

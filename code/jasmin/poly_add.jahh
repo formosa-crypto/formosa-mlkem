@@ -1,4 +1,9 @@
-export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
+#ifndef POLY_ADD_HH
+#define POLY_ADD_HH
+
+#include "params.jahh"
+
+fn poly_add(reg u64 rp, reg u64 ap, reg u64 bp)
 {
   reg u16 a;
   reg u16 b;
@@ -8,7 +13,9 @@ export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
   for i = 0 to KYBER_N {
     a = (u16)[ap + 2*i];
     b = (u16)[bp + 2*i];
-    r = a - b;
+    r = a + b;
     (u16)[rp + 2*i] = r;
   }
 }
+
+#endif

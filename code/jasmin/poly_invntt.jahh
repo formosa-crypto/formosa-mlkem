@@ -1,5 +1,10 @@
+#ifndef POLY_INVNTT_HH
+#define POLY_INVNTT_HH
 
-export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp) 
+#include "params.jahh"
+#include "reduce.jahh"
+
+fn poly_invntt(reg u64 rp, reg u64 zetasp) 
 {
   reg u64 len;  
   reg u64 start;
@@ -55,3 +60,5 @@ export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp)
     j += 1;
   }
 }
+
+#endif

@@ -1,0 +1,7 @@
+#ifndef PARAMS_HH
+#define PARAMS_HH
+
+param int KYBER_N = 256;
+param int KYBER_Q = 3329;
+
+#endif

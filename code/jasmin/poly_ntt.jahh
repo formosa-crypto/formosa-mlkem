@@ -1,4 +1,10 @@
-export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp) 
+#ifndef POLY_NTT_HH
+#define POLY_NTT_HH
+
+#include "params.jahh"
+#include "reduce.jahh"
+
+fn poly_ntt(reg u64 rp, reg u64 zetasp) 
 {
   reg u64 len;  
   reg u64 start;
@@ -51,3 +57,5 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
   */
   poly_reduce(rp);
 }
+
+#endif

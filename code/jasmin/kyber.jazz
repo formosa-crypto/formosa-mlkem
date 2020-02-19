@@ -1,0 +1,37 @@
+#include "params.jahh"
+#include "poly_basemul.jahh"
+#include "poly_frommont.jahh"
+#include "poly_add.jahh"
+#include "poly_sub.jahh"
+#include "poly_ntt.jahh"
+#include "poly_invntt.jahh"
+#include "fips202.jahh"
+
+export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp) {
+  poly_sub(rp, ap, bp);
+}
+
+export fn poly_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp) {
+  poly_add(rp, ap, bp);
+}
+
+export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp) {
+  poly_ntt(rp, zetasp);
+}
+
+export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp) {
+  poly_invntt(rp, zetasp);
+}
+
+export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas) {
+  poly_basemul(rp, ap, bp, zetas);
+}
+
+export fn poly_frommont_jazz(reg u64 rp) {
+  poly_frommont(rp);
+}
+
+
+export fn shake256_jazz(reg u64 outp outlen inp inlen) {
+  shake256(outp, outlen, inp, inlen);
+}
