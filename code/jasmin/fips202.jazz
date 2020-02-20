@@ -1,6 +1,22 @@
 #include "fips202.jahh"
 
-export fn shake256_jazz(reg u64 outp outlen inp inlen) {
-  shake256(outp, outlen, inp, inlen);
+export fn shake256_128_33_jazz(reg u64 outp inp) 
+{
+  stack u8[33] in;
+  stack u8[128] out;
+  reg u8 c;
+  inline int i;
+
+  for i = 0 to 33 {
+    c = (u8)[inp + i];
+    in[i] = c;
+  }
+   
+  out = shake256_128_33(in);
+
+  for i = 0 to 128 {
+    c = out[i];
+    (u8)[outp + i] = c;
+  }
 }
 

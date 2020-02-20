@@ -46,19 +46,4 @@ fn barrett_reduce(reg u16 a) -> reg u16
   return r;
 }
 
-fn poly_reduce(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
-{
-  reg u64 j; 
-  reg u16 t;
-  j = 0;
-  while (j < KYBER_N) 
-  {
-    t = rp[(int)j];
-    t = barrett_reduce(t);
-    rp[(int)j] = t;
-    j += 1;
-  }
-  return rp;
-}
-
 #endif

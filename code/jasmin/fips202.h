@@ -18,6 +18,6 @@ void sha3_512(unsigned char *output, const unsigned char *input,  unsigned long 
 
 
 
-void shake256_jazz(unsigned char *output, unsigned long long outlen, const unsigned char *input,  unsigned long long inlen);
+void shake256_128_33_jazz(unsigned char *output, const unsigned char *input);
 
 #endif
