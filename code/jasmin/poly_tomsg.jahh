@@ -1,0 +1,105 @@
+#ifndef POLY_TOMSG_HH
+#define POLY_TOMSG_HH
+
+#include "params.jahh"
+#include "poly_csubq.jahh"
+
+fn poly_tomsg(stack u16[KYBER_N] a) -> stack u8[32]
+{
+  stack u8[32] rp;
+  reg u16 t;
+  reg u8 r;
+  reg u32 d;
+  inline int i;
+
+  a = poly_csubq(a); 
+
+  for i = 0 to 32
+  {
+    r = 0;
+
+    t = a[8*i]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+    r <<= 1;
+
+    t = a[8*i+1]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+    r <<= 1;
+
+    t = a[8*i+2]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+    r <<= 1;
+
+    t = a[8*i+3]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+    r <<= 1;
+
+    t = a[8*i+4]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+    r <<= 1;
+
+    t = a[8*i+5]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+    r <<= 1;
+
+    t = a[8*i+6]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+    r <<= 1;
+
+    t = a[8*i+7]; 
+    d = (32u)t; 
+    d <<= 1;
+    d += 1665;
+    d *= 80635;
+    d >>= 28;
+    d &= 1;
+    r  |= d;
+
+    rp[i] = r;
+  }
+  return rp;
+}
+
+#endif
