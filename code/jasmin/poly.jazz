@@ -135,8 +135,6 @@ export fn poly_frommont_jazz(reg u64 rp)
   }
 }
 
-
-
 export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce) 
 {
   reg u8 d;
@@ -158,3 +156,21 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
   }
 }
 
+export fn poly_reduce_jazz(reg u64 rp)
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r = poly_reduce(r);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}

@@ -2,7 +2,7 @@
 #define POLY_NTT_HH
 
 #include "params.jahh"
-#include "reduce.jahh"
+#include "poly_reduce.jahh"
 
 fn poly_ntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
 {
