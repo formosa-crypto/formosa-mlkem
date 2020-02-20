@@ -5,6 +5,7 @@ JFLAGS=-lea -pasm
 
 test: test/test_poly_compress \
  		  test/test_poly_decompress \
+			test/test_poly_tobytes \
 			test/test_poly_add \
  			test/test_poly_sub \
  			test/test_poly_ntt \

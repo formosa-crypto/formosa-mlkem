@@ -4,57 +4,30 @@
 #include "params.jahh"
 #include "poly_csubq.jahh"
 
-/*
-void poly_compress(unsigned char *r, poly *a)
+
+fn poly_tobytes(stack u16[KYBER_N] a) -> stack u8[384]
 {
-  uint8_t t[8];
-  int i,j,k=0;
-
-  poly_csubq(a);
-
-  for(i=0;i<KYBER_N;i+=8)
-  {
-    for(j=0;j<8;j++)
-      t[j] = ((((uint32_t)a->coeffs[i+j] << 4) + KYBER_Q/2) / KYBER_Q) & 15;
-
-    r[k]   = t[0] | (t[1] << 4);
-    r[k+1] = t[2] | (t[3] << 4);
-    r[k+2] = t[4] | (t[5] << 4);
-    r[k+3] = t[6] | (t[7] << 4);
-    k += 4;
-  }
-}
-*/
-
-fn poly_compress(stack u16[KYBER_N] a) -> stack u8[128]
-{
-  stack u8[128] rp;
-//  stack u16[KYBER_N] b;
-  reg u16 t;
-  reg u32 d0, d1;
+  stack u8[384] rp;
+  reg u16 t0, t1, d;
   inline int i;
 
   a = poly_csubq(a);
 
   for i = 0 to 128
   {
-    t  = a[2*i];
-    d0 = (32u)t;
-    d0 <<= 4;
-    d0 += 1665;
-    d0 *= 80635;
-    d0 >>= 28;
-    d0 &= 0xf;
-    t  = a[2*i+1];
-    d1 = (32u)t;
-    d1 <<= 4;
-    d1 += 1665;
-    d1 *= 80635;
-    d1 >>= 28;
-    d1 &= 0xf;
-    d1 <<= 4;
-    d0 |= d1;
-    rp[i] = d0;
+    t0 = a[2*i]; 
+    t1 = a[2*i]; 
+    d  = t0;
+    d  &= 0xff;
+    rp[3*i] = d;
+    t0 >>= 8;
+    d = t1;
+    d &= 0xf
+    d <<= 4
+    d | t0;
+    rp[3*i+1] = d;
+    t1 >>= 4;
+    rp[3*i+2] = t1;
   }
   return rp;
 }
