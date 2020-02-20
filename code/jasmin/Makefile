@@ -4,6 +4,7 @@ JASMIN=~/svn/jasmin/compiler/jasminc
 JFLAGS=-lea -pasm
 
 test: test/test_poly_compress \
+ 		  test/test_poly_decompress \
 			test/test_poly_add \
  			test/test_poly_sub \
  			test/test_poly_ntt \
@@ -22,6 +23,7 @@ HEADERS = params.h poly.h fips202.h \
 JHEADERS = params.jahh \
 				   reduce.jahh \
 				   poly_compress.jahh \
+				   poly_decompress.jahh \
 				   poly_add.jahh \
 				   poly_sub.jahh \
 				   poly_ntt.jahh \
@@ -55,6 +57,7 @@ clean:
 	-rm *.s
 	-rm *.japp
 	-rm test/test_poly_compress
+	-rm test/test_poly_decompress
 	-rm test/test_poly_add
 	-rm test/test_poly_sub
 	-rm test/test_poly_ntt

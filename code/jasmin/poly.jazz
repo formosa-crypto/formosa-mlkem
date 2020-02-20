@@ -1,5 +1,6 @@
 #include "params.jahh"
 #include "poly_compress.jahh"
+#include "poly_decompress.jahh"
 #include "poly_add.jahh"
 #include "poly_sub.jahh"
 #include "poly_ntt.jahh"
@@ -33,6 +34,26 @@ export fn poly_compress_jazz(reg u64 rp, reg u64 ap)
   }
 }
 
+export fn poly_decompress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_N] r;
+  stack u8[128] a;
+
+  for i = 0 to 128 {
+    c = (u8)[ap + i];
+    a[i] = c;
+  }
+
+  r = poly_decompress(a);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
 
 export fn poly_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
