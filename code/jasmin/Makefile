@@ -3,14 +3,15 @@ CFLAGS=-Wall -Wextra -g
 JASMIN=~/svn/jasmin/compiler/jasminc
 JFLAGS=-lea -pasm
 
-test: test/test_poly_add \
+test: test/test_poly_compress \
+			test/test_poly_add \
  			test/test_poly_sub \
  			test/test_poly_ntt \
  			test/test_poly_invntt \
+ 			test/test_poly_basemul \
  			test/test_poly_frommont \
  			test/test_poly_reduce \
  			test/test_poly_csubq \
- 			test/test_poly_basemul \
  			test/test_poly_getnoise \
  			test/test_shake256 \
 
@@ -20,14 +21,15 @@ HEADERS = params.h poly.h fips202.h \
 
 JHEADERS = params.jahh \
 				   reduce.jahh \
+				   poly_compress.jahh \
 				   poly_add.jahh \
 				   poly_sub.jahh \
-				   poly_frommont.jahh \
-				   poly_reduce.jahh \
-				   poly_csubq.jahh \
 				   poly_ntt.jahh \
 				   poly_invntt.jahh \
 				   poly_basemul.jahh \
+				   poly_frommont.jahh \
+				   poly_reduce.jahh \
+				   poly_csubq.jahh \
 				   poly_getnoise.jahh \
 				   fips202.jahh \
 
@@ -52,6 +54,7 @@ test/%: test/%.c $(HEADERS) $(SOURCES)
 clean:
 	-rm *.s
 	-rm *.japp
+	-rm test/test_poly_compress
 	-rm test/test_poly_add
 	-rm test/test_poly_sub
 	-rm test/test_poly_ntt
@@ -60,6 +63,5 @@ clean:
 	-rm test/test_poly_frommont
 	-rm test/test_poly_reduce
 	-rm test/test_poly_csubq
-	-rm test/test_poly_shake256
 	-rm test/test_poly_getnoise
 	-rm test/test_shake256

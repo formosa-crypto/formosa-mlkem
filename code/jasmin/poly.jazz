@@ -1,15 +1,38 @@
 #include "params.jahh"
-#include "poly_basemul.jahh"
-#include "poly_frommont.jahh"
-#include "poly_reduce.jahh"
-#include "poly_csubq.jahh"
+#include "poly_compress.jahh"
 #include "poly_add.jahh"
 #include "poly_sub.jahh"
 #include "poly_ntt.jahh"
 #include "poly_invntt.jahh"
+#include "poly_basemul.jahh"
+#include "poly_frommont.jahh"
+#include "poly_reduce.jahh"
+#include "poly_csubq.jahh"
 #include "poly_getnoise.jahh"
 
 /* These exported functions are just for unit testing */
+
+export fn poly_compress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_N] a;
+  stack u8[128] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+  }
+
+  r = poly_compress(a);
+
+  for i = 0 to 128 {
+    c = r[i];
+    (u8)[rp + i] = c;
+  }
+}
+
 
 export fn poly_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
