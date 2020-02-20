@@ -7,6 +7,7 @@ test: test/test_poly_compress \
  		  test/test_poly_decompress \
 			test/test_poly_tobytes \
 			test/test_poly_frombytes \
+			test/test_poly_tomsg \
 			test/test_poly_frommsg \
 			test/test_poly_add \
  			test/test_poly_sub \
@@ -29,6 +30,7 @@ JHEADERS = params.jahh \
 				   poly_decompress.jahh \
 				   poly_tobytes.jahh \
 				   poly_frombytes.jahh \
+				   poly_tomsg.jahh \
 				   poly_frommsg.jahh \
 				   poly_add.jahh \
 				   poly_sub.jahh \
@@ -66,6 +68,7 @@ clean:
 	-rm test/test_poly_decompress
 	-rm test/test_poly_tobytes
 	-rm test/test_poly_frombytes
+	-rm test/test_poly_tomsg
 	-rm test/test_poly_frommsg
 	-rm test/test_poly_add
 	-rm test/test_poly_sub
