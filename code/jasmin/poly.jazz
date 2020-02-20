@@ -1,6 +1,8 @@
 #include "params.jahh"
 #include "poly_basemul.jahh"
 #include "poly_frommont.jahh"
+#include "poly_reduce.jahh"
+#include "poly_csubq.jahh"
 #include "poly_add.jahh"
 #include "poly_sub.jahh"
 #include "poly_ntt.jahh"
@@ -168,6 +170,25 @@ export fn poly_reduce_jazz(reg u64 rp)
   }
 
   r = poly_reduce(r);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn poly_csubq_jazz(reg u64 rp)
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r = poly_csubq(r);
 
   for i = 0 to KYBER_N {
     t = r[i];

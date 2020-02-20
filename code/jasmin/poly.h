@@ -57,7 +57,7 @@ void poly_basemul_jazz(poly *r, const poly *a, const poly *b, const int16_t *zet
 void poly_frommont_jazz(poly *r);
 
 void poly_reduce_jazz(poly *r);
-//void poly_csubq_jazz(poly *r);
+void poly_csubq_jazz(poly *r);
 
 void poly_add_jazz(poly *r, const poly *a, const poly *b);
 void poly_sub_jazz(poly *r, const poly *a, const poly *b);
