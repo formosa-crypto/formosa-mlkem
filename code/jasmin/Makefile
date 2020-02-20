@@ -25,6 +25,7 @@ JHEADERS = params.jahh \
 				   reduce.jahh \
 				   poly_compress.jahh \
 				   poly_decompress.jahh \
+				   poly_tobytes.jahh \
 				   poly_add.jahh \
 				   poly_sub.jahh \
 				   poly_ntt.jahh \
