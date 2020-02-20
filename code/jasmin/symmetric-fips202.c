@@ -59,6 +59,6 @@ void shake256_prf(unsigned char *output, unsigned long long outlen, const unsign
   for(i=0;i<KYBER_SYMBYTES;i++)
     extkey[i] = key[i];
   extkey[i] = nonce;
-
+  
   shake256(output, outlen, extkey, KYBER_SYMBYTES+1);
 }

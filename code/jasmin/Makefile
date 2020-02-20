@@ -9,10 +9,11 @@ test: test/test_poly_add \
  			test/test_poly_invntt \
  			test/test_poly_frommont \
  			test/test_poly_basemul \
+ 			test/test_poly_getnoise \
  			test/test_shake256 \
 
 
-HEADERS = params.h poly.h \
+HEADERS = params.h poly.h fips202.h \
 
 
 JHEADERS = params.jahh \
@@ -23,6 +24,7 @@ JHEADERS = params.jahh \
 				   poly_ntt.jahh \
 				   poly_invntt.jahh \
 				   poly_basemul.jahh \
+				   poly_getnoise.jahh \
 				   fips202.jahh \
 
 SOURCES = poly.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
@@ -53,4 +55,5 @@ clean:
 	-rm test/test_poly_basemul
 	-rm test/test_poly_frommont
 	-rm test/test_poly_shake256
+	-rm test/test_poly_getnoise
 	-rm test/test_shake256

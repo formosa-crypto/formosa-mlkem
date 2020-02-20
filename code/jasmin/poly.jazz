@@ -5,6 +5,7 @@
 #include "poly_sub.jahh"
 #include "poly_ntt.jahh"
 #include "poly_invntt.jahh"
+#include "poly_getnoise.jahh"
 
 /* These exported functions are just for unit testing */
 
@@ -136,9 +137,24 @@ export fn poly_frommont_jazz(reg u64 rp)
 
 
 
-/*
-export fn poly_getnoise_jazz(reg u64 rp) {
-  poly_getnoise(rp);
+export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce) 
+{
+  reg u8 d;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+  stack u8[KYBER_SYMBYTES] seed;
+  inline int i;
+
+  for i = 0 to KYBER_SYMBYTES {
+    d       = (u8)[seedp + i];
+    seed[i] = d;
+  }
+
+  r = poly_getnoise(seed, nonce);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
 }
-*/
 
