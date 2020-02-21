@@ -1,0 +1,28 @@
+#include "params.jahh"
+#include "polyvec_add.jahh"
+
+/* These exported functions are just for unit testing */
+
+export fn polyvec_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_VECN] a;
+  stack u16[KYBER_VECN] b;
+  stack u16[KYBER_VECN] r;
+
+  for i = 0 to KYBER_VECN {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+    t = (u16)[bp + 2*i];
+    b[i] = t;
+  }
+
+  r = polyvec_add(a, b);
+
+  for i = 0 to KYBER_VECN {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
