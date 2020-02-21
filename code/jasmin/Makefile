@@ -18,6 +18,7 @@ test: test/test_poly_compress \
  			test/test_poly_reduce \
  			test/test_poly_csubq \
  			test/test_poly_getnoise \
+			test/test_polyvec_frombytes \
 			test/test_polyvec_add \
 			test/test_polyvec_ntt \
 			test/test_polyvec_invntt \
@@ -47,6 +48,7 @@ JHEADERS = params.jahh \
 				   poly_reduce.jahh \
 				   poly_csubq.jahh \
 				   poly_getnoise.jahh \
+				   polyvec_frombytes.jahh \
 				   polyvec_add.jahh \
 				   polyvec_ntt.jahh \
 				   polyvec_pointwise_acc.jahh \
@@ -91,6 +93,7 @@ clean:
 	-rm test/test_poly_reduce
 	-rm test/test_poly_csubq
 	-rm test/test_poly_getnoise
+	-rm test/test_polyvec_frombytes
 	-rm test/test_polyvec_add
 	-rm test/test_polyvec_ntt
 	-rm test/test_polyvec_invntt

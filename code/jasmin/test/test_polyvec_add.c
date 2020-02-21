@@ -25,7 +25,7 @@ int main(void)
   for(int i=0;i<KYBER_K;i++)
     for(int j=0;j<KYBER_N;j++)
       if(r0.vec[i].coeffs[j] != r1.vec[i].coeffs[j])
-        printf("error %d,%d: %d, %d\n", i, j, r0.vec[i].coeffs[j], r1.vec[i].coeffs[j]);
+        printf("error polyvec_add %d,%d: %d, %d\n", i, j, r0.vec[i].coeffs[j], r1.vec[i].coeffs[j]);
 
   return 0;
 }

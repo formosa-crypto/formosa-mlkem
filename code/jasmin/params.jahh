@@ -8,5 +8,7 @@ param int KYBER_VECN = 768; /* KYBER_K * KYBER_N */
 
 param int KYBER_SYMBYTES = 32;
 param int KYBER_ETA = 2;
+param int KYBER_POLYBYTES = 384;
+param int KYBER_POLYVECBYTES = (KYBER_K * KYBER_POLYBYTES);
 
 #endif

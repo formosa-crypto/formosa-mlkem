@@ -5,9 +5,9 @@
 #include "poly_csubq.jahh"
 
 
-fn poly_tobytes(stack u16[KYBER_N] a) -> stack u8[384]
+fn poly_tobytes(stack u16[KYBER_N] a) -> stack u8[KYBER_POLYBYTES]
 {
-  stack u8[384] rp;
+  stack u8[KYBER_POLYBYTES] rp;
   reg u16 t0, t1, d;
   inline int i;
 
