@@ -21,6 +21,7 @@ test: test/test_poly_compress \
 			test/test_polyvec_add \
 			test/test_polyvec_ntt \
 			test/test_polyvec_invntt \
+			test/test_polyvec_csubq \
  			test/test_shake256 \
 
 
@@ -47,6 +48,7 @@ JHEADERS = params.jahh \
 				   polyvec_add.jahh \
 				   polyvec_ntt.jahh \
 				   polyvec_invntt.jahh \
+				   polyvec_csubq.jahh \
 				   fips202.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
@@ -89,4 +91,5 @@ clean:
 	-rm test/test_polyvec_add
 	-rm test/test_polyvec_ntt
 	-rm test/test_polyvec_invntt
+	-rm test/test_polyvec_csubq
 	-rm test/test_shake256
