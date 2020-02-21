@@ -2,6 +2,7 @@
 #include "polyvec_add.jahh"
 #include "polyvec_ntt.jahh"
 #include "polyvec_invntt.jahh"
+#include "polyvec_pointwise_acc.jahh"
 #include "polyvec_csubq.jahh"
 #include "polyvec_reduce.jahh"
 
@@ -25,6 +26,29 @@ export fn polyvec_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
   r = polyvec_add(a, b);
 
   for i = 0 to KYBER_VECN {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetasp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_VECN] a;
+  stack u16[KYBER_VECN] b;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_VECN {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+    t = (u16)[bp + 2*i];
+    b[i] = t;
+  }
+
+  r = polyvec_pointwise_acc(a, b, zetasp);
+
+  for i = 0 to KYBER_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
