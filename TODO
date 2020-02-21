@@ -19,4 +19,4 @@
 
   then pass p[1] as argument to a function expecting a stack u16[256]
 
-
+- Integer templates for functions to support different stack-array sizes as input and output
