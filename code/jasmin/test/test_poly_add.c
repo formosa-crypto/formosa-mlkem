@@ -17,11 +17,6 @@ int main(void)
   poly_setrandom(&a);
   poly_setrandom(&b);
   
-  for(int i = 0;i<KYBER_N;i++)
-  {
-    a.coeffs[i] = b.coeffs[i];
-  }
-
   poly_add(&r0, &a, &b);
   
   poly_add_jazz(&r1, &a, &b);

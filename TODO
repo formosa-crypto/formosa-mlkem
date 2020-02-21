@@ -1,0 +1,22 @@
+===== jasmin wish list =====
+
+- actual function calls (call/retq), ABI to be discussed
+
+- fix ">>s" (should be SAR, is SHL)
+
+- support addressing in nested for loops, e.g.,
+
+  inline int i j;
+  for i = 0 to 32
+  {
+    for j = 0 to 8
+    {
+      a[8*i + j] = x; /* this currently doesn't work */
+    }
+  }
+
+- Support arrays of stack arrays, e.g., "stack u16[3][256] p"
+
+  then pass p[1] as argument to a function expecting a stack u16[256]
+
+
