@@ -1,4 +1,5 @@
 #include "params.jahh"
+#include "polyvec_tobytes.jahh"
 #include "polyvec_frombytes.jahh"
 #include "polyvec_add.jahh"
 #include "polyvec_ntt.jahh"
@@ -8,6 +9,21 @@
 #include "polyvec_reduce.jahh"
 
 /* These exported functions are just for unit testing */
+
+export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_VECN] a;
+
+  for i = 0 to KYBER_VECN {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+  }
+
+  polyvec_tobytes(rp, a);
+}
 
 
 export fn polyvec_frombytes_jazz(reg u64 rp, reg u64 ap) 
