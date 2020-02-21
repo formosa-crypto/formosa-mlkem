@@ -1,0 +1,42 @@
+#ifndef POLYVEC_REDUCE_HH
+#define POLYVEC_REDUCE_HH
+
+#include "params.jahh"
+#include "poly_reduce.jahh"
+
+fn polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_N] rt;
+  reg u16 t;
+  inline int i;
+  reg u64 j;
+  reg u64 k;
+
+
+  for i = 0 to KYBER_K
+  {
+    j = i*KYBER_N;
+    k = 0;
+    while (j < (i+1)*KYBER_N)
+    {
+      t = r[(int) j];
+      rt[(int) k] = t;
+      j += 1;
+      k += 1;
+    }
+    rt = poly_reduce(rt);
+    j = i*KYBER_N;
+    k = 0;
+    while (j < (i+1)*KYBER_N)
+    {
+      t = rt[(int) k];
+      r[(int) j] = t;
+      j += 1;
+      k += 1;
+    }
+  }
+
+  return r;
+}
+
+#endif

@@ -3,6 +3,7 @@
 #include "polyvec_ntt.jahh"
 #include "polyvec_invntt.jahh"
 #include "polyvec_csubq.jahh"
+#include "polyvec_reduce.jahh"
 
 /* These exported functions are just for unit testing */
 
@@ -79,6 +80,25 @@ export fn polyvec_csubq_jazz(reg u64 rp)
   }
 
   r = polyvec_csubq(r);
+
+  for i = 0 to KYBER_VECN {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+export fn polyvec_reduce_jazz(reg u64 rp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_VECN] r;
+
+  for i = 0 to KYBER_VECN {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r = polyvec_reduce(r);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
