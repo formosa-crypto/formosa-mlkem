@@ -15,15 +15,9 @@ export fn polyvec_frombytes_jazz(reg u64 rp, reg u64 ap)
   inline int i;
   reg u16 t;
   reg u8 c;
-  stack u8[KYBER_POLYVECBYTES] a;
   stack u16[KYBER_VECN] r;
 
-  for i = 0 to KYBER_POLYVECBYTES{
-    c = (u8)[ap + i];
-    a[i] = c;
-  }
-
-  r = polyvec_frombytes(a);
+  r = polyvec_frombytes(ap);
 
   for i = 0 to KYBER_VECN {
     t = r[i];

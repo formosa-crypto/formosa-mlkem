@@ -86,14 +86,8 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
   reg u16 t;
   reg u8 c;
   stack u16[KYBER_N] r;
-  stack u8[KYBER_POLYBYTES] a;
 
-  for i = 0 to KYBER_POLYBYTES {
-    c = (u8)[ap + i];
-    a[i] = c;
-  }
-
-  r = poly_frombytes(a);
+  r = poly_frombytes(ap);
 
   for i = 0 to KYBER_N {
     t = r[i];

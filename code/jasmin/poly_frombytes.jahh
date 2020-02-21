@@ -3,7 +3,7 @@
 
 #include "params.jahh"
 
-fn poly_frombytes(stack u8[KYBER_POLYBYTES] a) -> stack u16[KYBER_N]
+fn poly_frombytes(reg u64 ap) -> stack u16[KYBER_N]
 {
   stack u16[KYBER_N] rp;
   reg u8 c0, c1, c2;
@@ -12,9 +12,9 @@ fn poly_frombytes(stack u8[KYBER_POLYBYTES] a) -> stack u16[KYBER_N]
 
   for i = 0 to KYBER_N/2
   {
-    c0 = a[3*i];
-    c1 = a[3*i+1];
-    c2 = a[3*i+2];
+    c0 = (u8)[ap+3*i];
+    c1 = (u8)[ap+3*i+1];
+    c2 = (u8)[ap+3*i+2];
     d0 = (16u)c0;
     t  = (16u)c1;
     t &= 0xf;
