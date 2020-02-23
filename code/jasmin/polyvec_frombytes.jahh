@@ -1,0 +1,40 @@
+#ifndef POLYVEC_FROMBYTES_HH
+#define POLYVEC_FROMBYTES_HH
+
+#include "params.jahh"
+#include "poly_frombytes.jahh"
+
+fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_VECN] r;
+  stack u16[KYBER_N] rt;
+  stack u8[KYBER_POLYBYTES] at;
+  reg u8 c;
+  reg u16 t;
+  reg u64 pp;
+  inline int i;
+  reg u64 j;
+  reg u64 k;
+
+
+  pp = ap;
+  for i = 0 to KYBER_K
+  {
+    rt = poly_frombytes(pp);
+    pp += KYBER_POLYBYTES;
+
+    j = i*KYBER_N;
+    k = 0;
+    while (k < KYBER_N)
+    {
+      t = rt[(int) k];
+      r[(int) j] = t;
+      j += 1;
+      k += 1;
+    }
+  }
+
+  return r;
+}
+
+#endif

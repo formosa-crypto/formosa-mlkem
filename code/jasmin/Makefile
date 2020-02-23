@@ -18,6 +18,14 @@ test: test/test_poly_compress \
  			test/test_poly_reduce \
  			test/test_poly_csubq \
  			test/test_poly_getnoise \
+			test/test_polyvec_tobytes \
+			test/test_polyvec_frombytes \
+			test/test_polyvec_add \
+			test/test_polyvec_ntt \
+			test/test_polyvec_invntt \
+			test/test_polyvec_pointwise_acc \
+			test/test_polyvec_reduce\
+			test/test_polyvec_csubq \
  			test/test_shake256 \
 
 
@@ -41,10 +49,18 @@ JHEADERS = params.jahh \
 				   poly_reduce.jahh \
 				   poly_csubq.jahh \
 				   poly_getnoise.jahh \
+				   polyvec_tobytes.jahh \
+				   polyvec_frombytes.jahh \
+				   polyvec_add.jahh \
+				   polyvec_ntt.jahh \
+				   polyvec_pointwise_acc.jahh \
+				   polyvec_reduce.jahh \
+				   polyvec_csubq.jahh \
 				   fips202.jahh \
 
-SOURCES = poly.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
 					poly.s \
+					polyvec.s \
 					fips202.s \
 
 
@@ -79,4 +95,12 @@ clean:
 	-rm test/test_poly_reduce
 	-rm test/test_poly_csubq
 	-rm test/test_poly_getnoise
+	-rm test/test_polyvec_tobytes
+	-rm test/test_polyvec_frombytes
+	-rm test/test_polyvec_add
+	-rm test/test_polyvec_ntt
+	-rm test/test_polyvec_invntt
+	-rm test/test_polyvec_pointwise_acc
+	-rm test/test_polyvecr_reduce
+	-rm test/test_polyvec_csubq
 	-rm test/test_shake256

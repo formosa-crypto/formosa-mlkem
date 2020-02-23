@@ -1,0 +1,45 @@
+#ifndef POLYVEC_ADD_HH
+#define POLYVEC_ADD_HH
+
+#include "params.jahh"
+#include "poly_add.jahh"
+
+fn polyvec_add(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_N] at;
+  stack u16[KYBER_N] bt;
+  stack u16[KYBER_N] rt;
+  reg u16 t;
+  stack u16[KYBER_VECN] r;
+  inline int i;
+  reg u64 j;
+  reg u64 k;
+
+  for i = 0 to KYBER_K
+  {
+    j = i*KYBER_N;
+    k = 0;
+    while (j < (i+1)*KYBER_N)
+    {
+      t = a[(int) j];
+      at[(int) k] = t;
+      t = b[(int) j];
+      bt[(int) k] = t;
+      j += 1;
+      k += 1;
+    }
+    rt = poly_add(at, bt);
+    j = i*KYBER_N;
+    k = 0;
+    while (j < (i+1)*KYBER_N)
+    {
+      t = rt[(int) k];
+      r[(int) j] = t;
+      j += 1;
+      k += 1;
+    }
+  }
+  return r;
+}
+
+#endif
