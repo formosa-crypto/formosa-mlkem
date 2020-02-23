@@ -190,9 +190,11 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
 * Arguments:   - unsigned char *pk: pointer to output public key (of length KYBER_INDCPA_PUBLICKEYBYTES bytes)
 *              - unsigned char *sk: pointer to output private key (of length KYBER_INDCPA_SECRETKEYBYTES bytes)
 **************************************************/
-void indcpa_keypair(unsigned char *pk, 
+void indcpa_keypair_jazz(unsigned char *pk, 
                     unsigned char *sk,
-                    const unsigned char *randomness)
+                    const unsigned char *randomness,
+                    const int16_t *zetas,
+                    const int16_t *zetas_inv)
 {
   polyvec a[KYBER_K], e, pkpv, skpv;
   unsigned char buf[2*KYBER_SYMBYTES];
@@ -209,106 +211,31 @@ void indcpa_keypair(unsigned char *pk,
 
   gen_a(a, publicseed);
 
-  for(i=0;i<KYBER_K;i++)
-    poly_getnoise(skpv.vec+i, noiseseed, nonce++);
-  for(i=0;i<KYBER_K;i++)
-    poly_getnoise(e.vec+i, noiseseed, nonce++);
+  poly_getnoise_jazz(&skpv.vec[0], noiseseed, 0);
+  poly_getnoise_jazz(&skpv.vec[1], noiseseed, 1);
+  poly_getnoise_jazz(&skpv.vec[2], noiseseed, 2);
 
-  polyvec_ntt(&skpv);
-  polyvec_ntt(&e);
+  poly_getnoise_jazz(&e.vec[0], noiseseed, 3);
+  poly_getnoise_jazz(&e.vec[1], noiseseed, 4);
+  poly_getnoise_jazz(&e.vec[2], noiseseed, 5);
 
-  // matrix-vector multiplication
-  for(i=0;i<KYBER_K;i++) {
-    polyvec_pointwise_acc(&pkpv.vec[i], &a[i], &skpv);
-    poly_frommont(&pkpv.vec[i]);
-  }
-
-  polyvec_add(&pkpv, &pkpv, &e);
-  polyvec_reduce(&pkpv);
-
-  pack_sk(sk, &skpv);
-  pack_pk(pk, &pkpv, publicseed);
-}
-
-/*************************************************
-* Name:        indcpa_enc
-*
-* Description: Encryption function of the CPA-secure
-*              public-key encryption scheme underlying Kyber.
-*
-* Arguments:   - unsigned char *c:          pointer to output ciphertext (of length KYBER_INDCPA_BYTES bytes)
-*              - const unsigned char *m:    pointer to input message (of length KYBER_INDCPA_MSGBYTES bytes)
-*              - const unsigned char *pk:   pointer to input public key (of length KYBER_INDCPA_PUBLICKEYBYTES bytes)
-*              - const unsigned char *coin: pointer to input random coins used as seed (of length KYBER_SYMBYTES bytes)
-*                                           to deterministically generate all randomness
-**************************************************/
-void indcpa_enc(unsigned char *c,
-                const unsigned char *m,
-                const unsigned char *pk,
-                const unsigned char *coins)
-{
-  polyvec sp, pkpv, ep, at[KYBER_K], bp;
-  poly v, k, epp;
-  unsigned char seed[KYBER_SYMBYTES];
-  int i;
-  unsigned char nonce=0;
-
-  unpack_pk(&pkpv, seed, pk);
-  poly_frommsg(&k, m);
-  gen_at(at, seed);
-
-  for(i=0;i<KYBER_K;i++)
-    poly_getnoise(sp.vec+i, coins, nonce++);
-  for(i=0;i<KYBER_K;i++)
-    poly_getnoise(ep.vec+i, coins, nonce++);
-  poly_getnoise(&epp, coins, nonce++);
-
-  polyvec_ntt(&sp);
+  polyvec_ntt_jazz(&skpv, zetas);
+  polyvec_ntt_jazz(&e, zetas);
 
   // matrix-vector multiplication
-  for(i=0;i<KYBER_K;i++)
-    polyvec_pointwise_acc(&bp.vec[i], &at[i], &sp);
+  polyvec_pointwise_acc_jazz(&pkpv.vec[0], &a[0], &skpv, zetas);
+  polyvec_pointwise_acc_jazz(&pkpv.vec[1], &a[1], &skpv, zetas);
+  polyvec_pointwise_acc_jazz(&pkpv.vec[2], &a[2], &skpv, zetas);
+  poly_frommont_jazz(&pkpv.vec[0]);
+  poly_frommont_jazz(&pkpv.vec[1]);
+  poly_frommont_jazz(&pkpv.vec[2]);
 
-  polyvec_pointwise_acc(&v, &pkpv, &sp);
+  polyvec_add_jazz(&pkpv, &pkpv, &e);
+  polyvec_reduce_jazz(&pkpv);
 
-  polyvec_invntt(&bp);
-  poly_invntt(&v);
-
-  polyvec_add(&bp, &bp, &ep);
-  poly_add(&v, &v, &epp);
-  poly_add(&v, &v, &k);
-  polyvec_reduce(&bp);
-  poly_reduce(&v);
-
-  pack_ciphertext(c, &bp, &v);
+  polyvec_tobytes_jazz(sk, &skpv);
+  polyvec_tobytes_jazz(pk, &pkpv);
+  for(i=0;i<KYBER_SYMBYTES;i++)
+    pk[KYBER_POLYVECBYTES+i] = publicseed[i];
 }
 
-/*************************************************
-* Name:        indcpa_dec
-*
-* Description: Decryption function of the CPA-secure
-*              public-key encryption scheme underlying Kyber.
-*
-* Arguments:   - unsigned char *m:        pointer to output decrypted message (of length KYBER_INDCPA_MSGBYTES)
-*              - const unsigned char *c:  pointer to input ciphertext (of length KYBER_INDCPA_BYTES)
-*              - const unsigned char *sk: pointer to input secret key (of length KYBER_INDCPA_SECRETKEYBYTES)
-**************************************************/
-void indcpa_dec(unsigned char *m,
-                const unsigned char *c,
-                const unsigned char *sk)
-{
-  polyvec bp, skpv;
-  poly v, mp;
-
-  unpack_ciphertext(&bp, &v, c);
-  unpack_sk(&skpv, sk);
-
-  polyvec_ntt(&bp);
-  polyvec_pointwise_acc(&mp, &skpv, &bp);
-  poly_invntt(&mp);
-
-  poly_sub(&mp, &v, &mp);
-  poly_reduce(&mp);
-
-  poly_tomsg(m, &mp);
-}
