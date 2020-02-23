@@ -5,102 +5,6 @@
 #include "ntt.h"
 #include "symmetric.h"
 
-/*************************************************
-* Name:        pack_pk
-*
-* Description: Serialize the public key as concatenation of the
-*              serialized vector of polynomials pk
-*              and the public seed used to generate the matrix A.
-*
-* Arguments:   unsigned char *r:          pointer to the output serialized public key
-*              const poly *pk:            pointer to the input public-key polynomial
-*              const unsigned char *seed: pointer to the input public seed
-**************************************************/
-static void pack_pk(unsigned char *r, polyvec *pk, const unsigned char *seed)
-{
-  int i;
-  polyvec_tobytes(r, pk);
-  for(i=0;i<KYBER_SYMBYTES;i++)
-    r[i+KYBER_POLYVECBYTES] = seed[i];
-}
-
-/*************************************************
-* Name:        unpack_pk
-*
-* Description: De-serialize public key from a byte array;
-*              approximate inverse of pack_pk
-*
-* Arguments:   - polyvec *pk:                   pointer to output public-key vector of polynomials
-*              - unsigned char *seed:           pointer to output seed to generate matrix A
-*              - const unsigned char *packedpk: pointer to input serialized public key
-**************************************************/
-static void unpack_pk(polyvec *pk, unsigned char *seed, const unsigned char *packedpk)
-{
-  int i;
-  polyvec_frombytes(pk, packedpk);
-  for(i=0;i<KYBER_SYMBYTES;i++)
-    seed[i] = packedpk[i+KYBER_POLYVECBYTES];
-}
-
-/*************************************************
-* Name:        pack_sk
-*
-* Description: Serialize the secret key
-*
-* Arguments:   - unsigned char *r:  pointer to output serialized secret key
-*              - const polyvec *sk: pointer to input vector of polynomials (secret key)
-**************************************************/
-static void pack_sk(unsigned char *r, polyvec *sk)
-{
-  polyvec_tobytes(r, sk);
-}
-
-/*************************************************
-* Name:        unpack_sk
-*
-* Description: De-serialize the secret key;
-*              inverse of pack_sk
-*
-* Arguments:   - polyvec *sk:                   pointer to output vector of polynomials (secret key)
-*              - const unsigned char *packedsk: pointer to input serialized secret key
-**************************************************/
-static void unpack_sk(polyvec *sk, const unsigned char *packedsk)
-{
-  polyvec_frombytes(sk, packedsk);
-}
-
-/*************************************************
-* Name:        pack_ciphertext
-*
-* Description: Serialize the ciphertext as concatenation of the
-*              compressed and serialized vector of polynomials b
-*              and the compressed and serialized polynomial v
-*
-* Arguments:   unsigned char *r:          pointer to the output serialized ciphertext
-*              const poly *pk:            pointer to the input vector of polynomials b
-*              const unsigned char *seed: pointer to the input polynomial v
-**************************************************/
-static void pack_ciphertext(unsigned char *r, polyvec *b, poly *v)
-{
-  polyvec_compress(r, b);
-  poly_compress(r+KYBER_POLYVECCOMPRESSEDBYTES, v);
-}
-
-/*************************************************
-* Name:        unpack_ciphertext
-*
-* Description: De-serialize and decompress ciphertext from a byte array;
-*              approximate inverse of pack_ciphertext
-*
-* Arguments:   - polyvec *b:             pointer to the output vector of polynomials b
-*              - poly *v:                pointer to the output polynomial v
-*              - const unsigned char *c: pointer to the input serialized ciphertext
-**************************************************/
-static void unpack_ciphertext(polyvec *b, poly *v, const unsigned char *c)
-{
-  polyvec_decompress(b, c);
-  poly_decompress(v, c+KYBER_POLYVECCOMPRESSEDBYTES);
-}
 
 /*************************************************
 * Name:        rej_uniform
@@ -154,8 +58,7 @@ static unsigned int rej_uniform(int16_t *r, unsigned int len, const unsigned cha
 static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) // Not static for benchmarking
 {
   unsigned int ctr, i, j;
-  const unsigned int maxnblocks=(530+XOF_BLOCKBYTES)/XOF_BLOCKBYTES; /* 530 is expected number of required bytes */
-  unsigned char buf[XOF_BLOCKBYTES*maxnblocks+1];
+  unsigned char buf[XOF_BLOCKBYTES];
   xof_state state;
 
   for(i=0;i<KYBER_K;i++)
@@ -169,8 +72,8 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
         xof_absorb(&state, seed, j, i);
       }
 
-      xof_squeezeblocks(buf, maxnblocks, &state);
-      ctr = rej_uniform(a[i].vec[j].coeffs, KYBER_N, buf, maxnblocks*XOF_BLOCKBYTES);
+      xof_squeezeblocks(buf, 1, &state);
+      ctr = rej_uniform(a[i].vec[j].coeffs, KYBER_N, buf, XOF_BLOCKBYTES);
 
       while(ctr < KYBER_N)
       {
