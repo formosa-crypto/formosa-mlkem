@@ -91,7 +91,7 @@ lemma REDC_corr T:
  0 <= REDC T < N  /\  REDC T %% N = T * Rinv %% N.
 proof.
 move=> *; rewrite /REDC /=; split.
- move: (REDC'_bnds T 0 _) => //=.
+ move: (REDC'_bnds T 0 _) => />.
  rewrite pow1 pow0 H /= /#.
 rewrite -(REDC'_congr T).
 case: (N <= REDC' T) => // ?.
@@ -135,11 +135,10 @@ elim/natind: r T => /= /> *.
 rewrite REDCkS 1:/#. 
 move: H3; case: (n=0) => E.
  rewrite E !REDCk0 //= => ?.
- move: (REDC'_bnds T 0 _ _) => //=; rewrite pow0 /= => ?. 
+ move: (REDC'_bnds T 0 _ _) => //=; rewrite pow0 => ?. 
  split.
   split => *; smt().
- rewrite pow1.
- by apply REDC'_congr.
+ by rewrite pow1; apply REDC'_congr.
 move=> *.
 move: (H0 (REDC' T) _ _). smt().
  by move: (REDC'_bnds T n _ _) => //=. 
@@ -173,3 +172,27 @@ op R2 = R*R %% N.
 op to_mont x = REDC(x * R2).
 op from_mont y = REDC(y).
 *)
+
+theory FQMUL_CORRECT.
+
+clone import Montgomery with
+    op Montgomery'.k <- 16,
+    op Montgomery'.N <- 2^16*13+1,
+    op Montgomery'.Rinv <- 62209,
+    op Montgomery'.N' <- 3329.
+
+require import List Int IntExtra IntDiv CoreMap.
+from Jasmin require import JModel.
+
+require import Fqmul.
+
+lemma fqmul_corr _a _b :
+  hoare [ M.fqmul : 
+     a = _a /\ b = _b ==> W16.to_sint res = REDC (W16.to_sint _a * W16.to_sint _b) ].
+proof.
+proc.
+auto => />.
+move => &hr.
+rewrite /REDC /REDC' => />.
+smt.
+qed.
