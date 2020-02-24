@@ -65,6 +65,7 @@ SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c in
 					polyvec.s \
 					fips202.s \
 					gen_matrix.s \
+					indcpa_keypair.s \
 					indcpa_keypair.c \
 
 

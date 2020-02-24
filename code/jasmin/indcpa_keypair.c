@@ -7,71 +7,10 @@
 #include "ntt.h"
 #include "symmetric.h"
 
-
-#define gen_a(A,B)  gen_matrix(A,B,0)
-#define gen_at(A,B) gen_matrix(A,B,1)
-
-/*************************************************
-* Name:        gen_matrix
-*
-* Description: Deterministically generate matrix A (or the transpose of A)
-*              from a seed. Entries of the matrix are polynomials that look
-*              uniformly random. Performs rejection sampling on output of
-*              a XOF
-*
-* Arguments:   - polyvec *a:                pointer to ouptput matrix A
-*              - const unsigned char *seed: pointer to input seed
-*              - int transposed:            boolean deciding whether A or A^T is generated
-**************************************************/
 extern void gen_matrix_jazz(polyvec *a, const unsigned char *seed, long transposed);
 
-/*
-static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed)
-{
-  unsigned int ctr, i, j;
-  unsigned char buf[XOF_BLOCKBYTES];
-  uint64_t state[25];
-  unsigned char extseed[KYBER_SYMBYTES+2];
 
-  for(i=0;i<KYBER_SYMBYTES;i++)
-    extseed[i] = seed[i];
-
-  for(i=0;i<KYBER_K;i++)
-  {
-    for(j=0;j<KYBER_K;j++)
-    {
-      if(transposed) {
-        extseed[KYBER_SYMBYTES] = i;
-        extseed[KYBER_SYMBYTES+1] = j;
-      }
-      else {
-        extseed[KYBER_SYMBYTES] = j;
-        extseed[KYBER_SYMBYTES+1] = i;
-      }
-        
-      shake128_absorb34_jazz(&state, extseed);
-
-      ctr = 0;
-      while(ctr < KYBER_N)
-      {
-        shake128_squeezeblock_jazz(buf, &state);
-        ctr = rej_uniform_jazz(a[i].vec[j].coeffs, ctr, buf);
-      }
-    }
-  }
-}
-*/
-
-/*************************************************
-* Name:        indcpa_keypair
-*
-* Description: Generates public and private key for the CPA-secure
-*              public-key encryption scheme underlying Kyber
-*
-* Arguments:   - unsigned char *pk: pointer to output public key (of length KYBER_INDCPA_PUBLICKEYBYTES bytes)
-*              - unsigned char *sk: pointer to output private key (of length KYBER_INDCPA_SECRETKEYBYTES bytes)
-**************************************************/
-void indcpa_keypair_jazz(unsigned char *pk, 
+void indcpa_keypair_c(unsigned char *pk, 
                     unsigned char *sk,
                     const unsigned char *randomness,
                     const int16_t *zetas)
