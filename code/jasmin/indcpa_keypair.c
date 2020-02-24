@@ -66,24 +66,33 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
   unsigned int ctr, i, j;
   unsigned char buf[XOF_BLOCKBYTES];
   xof_state state;
+  unsigned char extseed[KYBER_SYMBYTES+2];
+
+  for(i=0;i<KYBER_SYMBYTES;i++)
+    extseed[i] = seed[i];
+
 
   for(i=0;i<KYBER_K;i++)
   {
     for(j=0;j<KYBER_K;j++)
     {
       if(transposed) {
-        xof_absorb(&state, seed, i, j);
+        extseed[KYBER_SYMBYTES] = i;
+        extseed[KYBER_SYMBYTES+1] = j;
       }
       else {
-        xof_absorb(&state, seed, j, i);
+        extseed[KYBER_SYMBYTES] = j;
+        extseed[KYBER_SYMBYTES+1] = i;
       }
+        
+      shake128_absorb34_jazz(&state, extseed);
 
-      xof_squeezeblocks(buf, 1, &state);
+      shake128_squeezeblock_jazz(buf, &state);
       ctr = rej_uniform_jazz(a[i].vec[j].coeffs, 0, buf);
 
       while(ctr < KYBER_N)
       {
-        xof_squeezeblocks(buf, 1, &state);
+        shake128_squeezeblock_jazz(buf, &state);
         ctr = rej_uniform_jazz(a[i].vec[j].coeffs, ctr, buf);
       }
     }
