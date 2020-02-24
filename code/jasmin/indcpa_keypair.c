@@ -19,13 +19,14 @@
 *
 * Returns number of sampled 16-bit integers (at most len)
 **************************************************/
-static unsigned int rej_uniform(int16_t *r, unsigned int len, const unsigned char *buf, unsigned int buflen)
+static unsigned int rej_uniform(int16_t *r, unsigned int offset, const unsigned char *buf, unsigned int buflen)
 {
   unsigned int ctr, pos;
   uint16_t val;
 
-  ctr = pos = 0;
-  while(ctr < len && pos + 2 <= buflen)
+  ctr = offset;
+  pos = 0;
+  while(ctr < KYBER_N && pos + 2 <= buflen)
   {
     val = buf[pos] | ((uint16_t)buf[pos+1] << 8);
     pos += 2;
@@ -73,12 +74,12 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
       }
 
       xof_squeezeblocks(buf, 1, &state);
-      ctr = rej_uniform(a[i].vec[j].coeffs, KYBER_N, buf, XOF_BLOCKBYTES);
+      ctr = rej_uniform(a[i].vec[j].coeffs, 0, buf, XOF_BLOCKBYTES);
 
       while(ctr < KYBER_N)
       {
         xof_squeezeblocks(buf, 1, &state);
-        ctr += rej_uniform(a[i].vec[j].coeffs + ctr, KYBER_N - ctr, buf, XOF_BLOCKBYTES);
+        ctr = rej_uniform(a[i].vec[j].coeffs, ctr, buf, XOF_BLOCKBYTES);
       }
     }
   }
@@ -110,7 +111,8 @@ void indcpa_keypair_jazz(unsigned char *pk,
   for(i=0;i<KYBER_SYMBYTES;i++)
     buf[i] = randomness[i];
 
-  hash_g(buf, buf, KYBER_SYMBYTES);
+  //hash_g(buf, buf, KYBER_SYMBYTES);
+  sha3512_32_jazz(buf, buf);
 
   gen_a(a, publicseed);
 
