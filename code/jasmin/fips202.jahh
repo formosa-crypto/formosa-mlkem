@@ -460,5 +460,38 @@ fn sha3512_32(stack u8[32] in) -> stack u8[64]
 }
 
 
+fn shake128_absorb34(stack u8[34] in) -> stack u64[25]
+{
+  stack u64[25] state;
+  reg u8 c;
+  inline int i;
+
+  state = st0();
+
+  for i = 0 to 34 {
+    c = in[i];
+    state[u8 i] ^= c;
+  }
+  state[u8 34] ^= 0x1f;
+  state[u8 SHAKE128_RATE-1] ^= 0x80;
+
+  return state;
+}
+
+
+fn shake128_squeezeblock(stack u64[25] state) -> stack u64[25], stack u8[SHAKE128_RATE]
+{
+  stack u8[SHAKE128_RATE] out;
+  reg u8 c;
+  inline int i;
+
+  state = __keccakf1600_ref(state);
+
+  for i = 0 to SHAKE128_RATE {
+    c = state[u8 (int) i];
+    out[i] = c;
+  }
+  return state, out;
+}
 
 #endif

@@ -20,12 +20,10 @@ int main(void)
   indcpa_keypair(pk0, sk0, randomness);
   indcpa_keypair_jazz(pk1, sk1, randomness, zetas, zetas_inv);
 
-  //for(int i=0;i<KYBER_INDCPA_SECRETKEYBYTES;i++)
-  for(int i=0;i<32;i++)
+  for(int i=0;i<KYBER_INDCPA_SECRETKEYBYTES;i++)
     if(sk0[i] != sk1[i]) printf("error indcpa_keypair sk: %d\n", i);
 
-  //for(int i=0;i<KYBER_INDCPA_PUBLICKEYBYTES;i++)
-  for(int i=0;i<32;i++)
+  for(int i=0;i<KYBER_INDCPA_PUBLICKEYBYTES;i++)
     if(pk0[i] != pk1[i]) printf("error indcpa_keypair pk: %d\n", i);
 
   return 0;
