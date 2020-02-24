@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <stdint.h>
+
 #include "indcpa.h"
 #include "poly.h"
 #include "polyvec.h"
@@ -19,6 +21,7 @@
 *
 * Returns number of sampled 16-bit integers (at most len)
 **************************************************/
+extern unsigned long rej_uniform_jazz(int16_t *r, unsigned int offset, const unsigned char *buf);
 static unsigned int rej_uniform(int16_t *r, unsigned int offset, const unsigned char *buf, unsigned int buflen)
 {
   unsigned int ctr, pos;
@@ -74,7 +77,17 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
       }
 
       xof_squeezeblocks(buf, 1, &state);
+      ctr = rej_uniform_jazz(a[i].vec[j].coeffs, 0, buf);
+      /*
+      for(int k = 0;k<20;k++)
+        printf("%d ", a[i].vec[j].coeffs[k]);
+      printf("\n");
       ctr = rej_uniform(a[i].vec[j].coeffs, 0, buf, XOF_BLOCKBYTES);
+      for(int k = 0;k<20;k++)
+        printf("%d ", a[i].vec[j].coeffs[k]);
+      printf("\n");
+      printf("====================================\n");
+      */
 
       while(ctr < KYBER_N)
       {

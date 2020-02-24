@@ -1,6 +1,7 @@
 #ifndef FIPS202_HH
 #define FIPS202_HH
 
+param int SHAKE128_RATE = 168;
 param int SHAKE256_RATE = 136;
 param int SHA3512_RATE = 72;
 

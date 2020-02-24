@@ -57,12 +57,14 @@ JHEADERS = params.jahh \
 				   polyvec_pointwise_acc.jahh \
 				   polyvec_reduce.jahh \
 				   polyvec_csubq.jahh \
+					 rej_uniform.jahh \
 				   fips202.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 					poly.s \
 					polyvec.s \
 					fips202.s \
+					rej_uniform.s \
 					indcpa_keypair.c \
 
 
