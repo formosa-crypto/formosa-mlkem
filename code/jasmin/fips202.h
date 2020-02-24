@@ -19,5 +19,6 @@ void sha3_512(unsigned char *output, const unsigned char *input,  unsigned long 
 
 
 void shake256_128_33_jazz(unsigned char *output, const unsigned char *input);
+void sha3512_32_jazz(unsigned char *output, const unsigned char *input);
 
 #endif

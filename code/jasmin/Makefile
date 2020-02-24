@@ -26,7 +26,7 @@ test: test/test_poly_compress \
 			test/test_polyvec_pointwise_acc \
 			test/test_polyvec_reduce\
 			test/test_polyvec_csubq \
- 			test/test_shake256 \
+ 			test/test_fips202 \
  			test/test_indcpa \
 
 
@@ -105,5 +105,5 @@ clean:
 	-rm test/test_polyvec_pointwise_acc
 	-rm test/test_polyvecr_reduce
 	-rm test/test_polyvec_csubq
-	-rm test/test_shake256
+	-rm test/test_fips202
 	-rm test/test_indcpa
