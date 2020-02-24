@@ -8,44 +8,6 @@
 #include "symmetric.h"
 
 
-/*************************************************
-* Name:        rej_uniform
-*
-* Description: Run rejection sampling on uniform random bytes to generate
-*              uniform random integers mod q
-*
-* Arguments:   - int16_t *r:               pointer to output buffer
-*              - unsigned int len:         requested number of 16-bit integers (uniform mod q)
-*              - const unsigned char *buf: pointer to input buffer (assumed to be uniform random bytes)
-*              - unsigned int buflen:      length of input buffer in bytes
-*
-* Returns number of sampled 16-bit integers (at most len)
-**************************************************/
-extern unsigned long rej_uniform_jazz(int16_t *r, unsigned int offset, const unsigned char *buf);
-/*
-static unsigned int rej_uniform(int16_t *r, unsigned int offset, const unsigned char *buf, unsigned int buflen)
-{
-  unsigned int ctr, pos;
-  uint16_t val;
-
-  ctr = offset;
-  pos = 0;
-  while(ctr < KYBER_N && pos + 2 <= buflen)
-  {
-    val = buf[pos] | ((uint16_t)buf[pos+1] << 8);
-    pos += 2;
-
-    if(val < 19*KYBER_Q)
-    {
-      val -= (val >> 12) * KYBER_Q; // Barrett reduction
-      r[ctr++] = (int16_t)val;
-    }
-  } 
-
-  return ctr;
-}
-*/
-
 #define gen_a(A,B)  gen_matrix(A,B,0)
 #define gen_at(A,B) gen_matrix(A,B,1)
 
@@ -61,16 +23,18 @@ static unsigned int rej_uniform(int16_t *r, unsigned int offset, const unsigned 
 *              - const unsigned char *seed: pointer to input seed
 *              - int transposed:            boolean deciding whether A or A^T is generated
 **************************************************/
-static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) // Not static for benchmarking
+extern void gen_matrix_jazz(polyvec *a, const unsigned char *seed, long transposed);
+
+/*
+static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed)
 {
   unsigned int ctr, i, j;
   unsigned char buf[XOF_BLOCKBYTES];
-  xof_state state;
+  uint64_t state[25];
   unsigned char extseed[KYBER_SYMBYTES+2];
 
   for(i=0;i<KYBER_SYMBYTES;i++)
     extseed[i] = seed[i];
-
 
   for(i=0;i<KYBER_K;i++)
   {
@@ -87,9 +51,7 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
         
       shake128_absorb34_jazz(&state, extseed);
 
-      shake128_squeezeblock_jazz(buf, &state);
-      ctr = rej_uniform_jazz(a[i].vec[j].coeffs, 0, buf);
-
+      ctr = 0;
       while(ctr < KYBER_N)
       {
         shake128_squeezeblock_jazz(buf, &state);
@@ -98,6 +60,7 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
     }
   }
 }
+*/
 
 /*************************************************
 * Name:        indcpa_keypair
@@ -111,14 +74,13 @@ static void gen_matrix(polyvec *a, const unsigned char *seed, int transposed) //
 void indcpa_keypair_jazz(unsigned char *pk, 
                     unsigned char *sk,
                     const unsigned char *randomness,
-                    const int16_t *zetas,
-                    const int16_t *zetas_inv)
+                    const int16_t *zetas)
 {
   polyvec a[KYBER_K], e, pkpv, skpv;
   unsigned char buf[2*KYBER_SYMBYTES];
   unsigned char *publicseed = buf;
   unsigned char *noiseseed = buf+KYBER_SYMBYTES;
-  int i;
+  int i,j,k;
 
   //randombytes(buf, KYBER_SYMBYTES);
   for(i=0;i<KYBER_SYMBYTES;i++)
@@ -127,7 +89,7 @@ void indcpa_keypair_jazz(unsigned char *pk,
   //hash_g(buf, buf, KYBER_SYMBYTES);
   sha3512_32_jazz(buf, buf);
 
-  gen_a(a, publicseed);
+  gen_matrix_jazz(a, publicseed, 0);
 
   poly_getnoise_jazz(&skpv.vec[0], noiseseed, 0);
   poly_getnoise_jazz(&skpv.vec[1], noiseseed, 1);

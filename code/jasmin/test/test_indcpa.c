@@ -17,8 +17,8 @@ int main(void)
   fread(randomness, KYBER_SYMBYTES, 1, urandom);
   fclose(urandom);
 
+  indcpa_keypair_jazz(pk1, sk1, randomness, zetas);
   indcpa_keypair(pk0, sk0, randomness);
-  indcpa_keypair_jazz(pk1, sk1, randomness, zetas, zetas_inv);
 
   for(int i=0;i<KYBER_INDCPA_SECRETKEYBYTES;i++)
     if(sk0[i] != sk1[i]) printf("error indcpa_keypair sk: %d\n", i);
