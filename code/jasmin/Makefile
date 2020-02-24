@@ -27,6 +27,7 @@ test: test/test_poly_compress \
 			test/test_polyvec_reduce\
 			test/test_polyvec_csubq \
  			test/test_shake256 \
+ 			test/test_indcpa \
 
 
 HEADERS = params.h poly.h fips202.h \
@@ -58,10 +59,11 @@ JHEADERS = params.jahh \
 				   polyvec_csubq.jahh \
 				   fips202.jahh \
 
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c \
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 					poly.s \
 					polyvec.s \
 					fips202.s \
+					indcpa_keypair.c \
 
 
 test/%: test/%.c $(HEADERS) $(SOURCES)
@@ -104,3 +106,4 @@ clean:
 	-rm test/test_polyvecr_reduce
 	-rm test/test_polyvec_csubq
 	-rm test/test_shake256
+	-rm test/test_indcpa
