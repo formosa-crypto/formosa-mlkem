@@ -181,5 +181,6 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp, reg
     c = publicseed[(int)i];
     (u8)[pkp] = c;
     pkp += 1;
+    i += 1;
   }
 }

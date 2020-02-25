@@ -61,12 +61,11 @@ JHEADERS = params.jahh \
 				   fips202.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
-					poly.s \
-					polyvec.s \
-					fips202.s \
+					jpoly.s \
+					jpolyvec.s \
+					jfips202.s \
 					gen_matrix.s \
 					indcpa_keypair.s \
-					indcpa_keypair.c \
 
 
 test/%: test/%.c $(HEADERS) $(SOURCES)
