@@ -23,6 +23,7 @@ test: test/test_poly_compress \
  			test/test_poly_csubq \
  			test/test_poly_getnoise \
 			test/test_polyvec_compress\
+			test/test_polyvec_decompress\
 			test/test_polyvec_tobytes \
 			test/test_polyvec_frombytes \
 			test/test_polyvec_add \
@@ -60,6 +61,7 @@ POLYHEADERS = poly_compress.jahh \
 
 
 POLYVECHEADERS = polyvec_compress.jahh \
+                 polyvec_decompress.jahh \
                  polyvec_tobytes.jahh \
                  polyvec_frombytes.jahh \
                  polyvec_add.jahh \
@@ -112,6 +114,7 @@ clean:
 	-rm test/test_poly_csubq
 	-rm test/test_poly_getnoise
 	-rm test/test_polyvec_compress
+	-rm test/test_polyvec_decompress
 	-rm test/test_polyvec_tobytes
 	-rm test/test_polyvec_frombytes
 	-rm test/test_polyvec_add
