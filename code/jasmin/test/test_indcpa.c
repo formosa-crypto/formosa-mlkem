@@ -39,7 +39,7 @@ int main(void)
   indcpa_enc_jazz(ct1, message, pk1, randomness1, zetas, zetas_inv);
 
   for(int i=0;i<KYBER_INDCPA_BYTES;i++)
-    if(sk0[i] != sk1[i]) printf("error indcpa_enc: %d\n", i);
+    if(ct0[i] != ct1[i]) printf("error indcpa_enc: %d\n", i);
 
   return 0;
 }
