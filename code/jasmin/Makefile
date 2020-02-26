@@ -5,7 +5,7 @@ JFLAGS=-lea -pasm
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s indcpa_keypair.s
 
-default: test kybertest
+default: test
 
 test: test/test_poly_compress \
  		  test/test_poly_decompress \
@@ -40,8 +40,9 @@ kybertest: test/test_indcpa \
 HEADERS = params.h poly.h fips202.h \
 
 
-JHEADERS =  params.jahh \
+JHEADERS = params.jahh \
 				   reduce.jahh \
+           fips202.jahh \
 
 POLYHEADERS = poly_compress.jahh \
 				   poly_decompress.jahh \
@@ -70,7 +71,6 @@ POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_reduce.jahh \
                  polyvec_csubq.jahh \
                  gen_matrix.jahh \
-                 fips202.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 
@@ -79,6 +79,9 @@ test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) indcpa_keypair.s indc
 
 test/%: test/%.c $(HEADERS) $(SOURCES) jpoly.s jpolyvec.s jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s jpolyvec.s jfips202.s $<
+
+jfips202.japp: jfips202.jazz fips202.jahh
+	cat $< | $(CC) -E - | grep -v ^# > $@
 
 jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
@@ -124,7 +127,7 @@ clean:
 	-rm test/test_polyvec_ntt
 	-rm test/test_polyvec_invntt
 	-rm test/test_polyvec_pointwise_acc
-	-rm test/test_polyvecr_reduce
+	-rm test/test_polyvec_reduce
 	-rm test/test_polyvec_csubq
 	-rm test/test_fips202
 	-rm test/test_indcpa
