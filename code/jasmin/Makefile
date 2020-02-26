@@ -3,6 +3,10 @@ CFLAGS=-Wall -Wextra -g
 JASMIN=~/svn/jasmin/compiler/jasminc
 JFLAGS=-lea -pasm
 
+.SECONDARY: jpoly.s jpolyvec.s jfips202.s indcpa_keypair.s
+
+default: test
+
 test: test/test_poly_compress \
  		  test/test_poly_decompress \
 			test/test_poly_tobytes \
@@ -18,6 +22,7 @@ test: test/test_poly_compress \
  			test/test_poly_reduce \
  			test/test_poly_csubq \
  			test/test_poly_getnoise \
+			test/test_polyvec_compress\
 			test/test_polyvec_tobytes \
 			test/test_polyvec_frombytes \
 			test/test_polyvec_add \
@@ -27,15 +32,17 @@ test: test/test_poly_compress \
 			test/test_polyvec_reduce\
 			test/test_polyvec_csubq \
  			test/test_fips202 \
- 			test/test_indcpa \
+
+kybertest: test/test_indcpa \
 
 
 HEADERS = params.h poly.h fips202.h \
 
 
-JHEADERS = params.jahh \
+JHEADERS =  params.jahh \
 				   reduce.jahh \
-				   poly_compress.jahh \
+
+POLYHEADERS = poly_compress.jahh \
 				   poly_decompress.jahh \
 				   poly_tobytes.jahh \
 				   poly_frombytes.jahh \
@@ -50,29 +57,34 @@ JHEADERS = params.jahh \
 				   poly_reduce.jahh \
 				   poly_csubq.jahh \
 				   poly_getnoise.jahh \
-				   polyvec_tobytes.jahh \
-				   polyvec_frombytes.jahh \
-				   polyvec_add.jahh \
-				   polyvec_ntt.jahh \
-				   polyvec_pointwise_acc.jahh \
-				   polyvec_reduce.jahh \
-				   polyvec_csubq.jahh \
-					 gen_matrix.jahh \
-				   fips202.jahh \
+
+
+POLYVECHEADERS = polyvec_compress.jahh \
+                 polyvec_tobytes.jahh \
+                 polyvec_frombytes.jahh \
+                 polyvec_add.jahh \
+                 polyvec_ntt.jahh \
+                 polyvec_pointwise_acc.jahh \
+                 polyvec_reduce.jahh \
+                 polyvec_csubq.jahh \
+                 gen_matrix.jahh \
+                 fips202.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
-					jpoly.s \
-					jpolyvec.s \
-					jfips202.s \
-					gen_matrix.s \
-					indcpa_keypair.s \
 
+test/test_indcpa_keypair: test/test_indcpa_keypair.c $(HEADERS) $(SOURCES) indcpa_keypair.s
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) indcpa_keypair.s $<
 
-test/%: test/%.c $(HEADERS) $(SOURCES)
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) $<
+test/%: test/%.c $(HEADERS) $(SOURCES) jpoly.s jpolyvec.s jfips202.s
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s jpolyvec.s jfips202.s $<
 
+jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
+	cat $< | $(CC) -E - | grep -v ^# > $@
 
-%.japp: %.jazz $(JHEADERS)
+jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
+	cat $< | $(CC) -E - | grep -v ^# > $@
+
+indcpa_keypair.japp: indcpa_keypair.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 %.s: %.japp
@@ -99,6 +111,7 @@ clean:
 	-rm test/test_poly_reduce
 	-rm test/test_poly_csubq
 	-rm test/test_poly_getnoise
+	-rm test/test_polyvec_compress
 	-rm test/test_polyvec_tobytes
 	-rm test/test_polyvec_frombytes
 	-rm test/test_polyvec_add
