@@ -3,7 +3,7 @@
 
 #include "params.jahh"
 
-fn poly_frommsg(stack u8[32] a) -> stack u16[KYBER_N]
+fn poly_frommsg(reg u64 ap) -> stack u16[KYBER_N]
 {
   stack u16[KYBER_N] rp;
   reg u8 c;
@@ -13,7 +13,7 @@ fn poly_frommsg(stack u8[32] a) -> stack u16[KYBER_N]
 
   for i = 0 to 32
   {
-    c = a[i];
+    c = (u8)[ap + i];
 
     t = (16u)c; 
     t &= 1;

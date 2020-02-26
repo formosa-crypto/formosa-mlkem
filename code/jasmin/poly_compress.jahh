@@ -4,32 +4,8 @@
 #include "params.jahh"
 #include "poly_csubq.jahh"
 
-/*
-void poly_compress(unsigned char *r, poly *a)
+fn poly_compress(reg u64 rp, stack u16[KYBER_N] a)
 {
-  uint8_t t[8];
-  int i,j,k=0;
-
-  poly_csubq(a);
-
-  for(i=0;i<KYBER_N;i+=8)
-  {
-    for(j=0;j<8;j++)
-      t[j] = ((((uint32_t)a->coeffs[i+j] << 4) + KYBER_Q/2) / KYBER_Q) & 15;
-
-    r[k]   = t[0] | (t[1] << 4);
-    r[k+1] = t[2] | (t[3] << 4);
-    r[k+2] = t[4] | (t[5] << 4);
-    r[k+3] = t[6] | (t[7] << 4);
-    k += 4;
-  }
-}
-*/
-
-fn poly_compress(stack u16[KYBER_N] a) -> stack u8[128]
-{
-  stack u8[128] rp;
-//  stack u16[KYBER_N] b;
   reg u16 t;
   reg u32 d0, d1;
   inline int i;
@@ -54,9 +30,8 @@ fn poly_compress(stack u16[KYBER_N] a) -> stack u8[128]
     d1 &= 0xf;
     d1 <<= 4;
     d0 |= d1;
-    rp[i] = d0;
+    (u8)[rp+i] = d0;
   }
-  return rp;
 }
 
 #endif

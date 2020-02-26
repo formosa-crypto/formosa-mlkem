@@ -5,7 +5,7 @@ JFLAGS=-lea -pasm
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s indcpa_keypair.s
 
-default: test
+default: test kybertest
 
 test: test/test_poly_compress \
  		  test/test_poly_decompress \
@@ -74,8 +74,8 @@ POLYVECHEADERS = polyvec_compress.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 
-test/test_indcpa_keypair: test/test_indcpa_keypair.c $(HEADERS) $(SOURCES) indcpa_keypair.s
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) indcpa_keypair.s $<
+test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) indcpa_keypair.s indcpa_encrypt.s
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) indcpa_keypair.s indcpa_encrypt.s $<
 
 test/%: test/%.c $(HEADERS) $(SOURCES) jpoly.s jpolyvec.s jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s jpolyvec.s jfips202.s $<
@@ -87,6 +87,9 @@ jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 indcpa_keypair.japp: indcpa_keypair.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
+	cat $< | $(CC) -E - | grep -v ^# > $@
+
+indcpa_encrypt.japp: indcpa_encrypt.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 %.s: %.japp
