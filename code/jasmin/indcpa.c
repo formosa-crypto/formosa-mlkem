@@ -303,12 +303,14 @@ void indcpa_dec(unsigned char *m,
   unpack_ciphertext(&bp, &v, c);
   unpack_sk(&skpv, sk);
 
+
   polyvec_ntt(&bp);
   polyvec_pointwise_acc(&mp, &skpv, &bp);
   poly_invntt(&mp);
 
   poly_sub(&mp, &v, &mp);
   poly_reduce(&mp);
-
+  
+//  poly_tobytes(m, &mp);
   poly_tomsg(m, &mp);
 }

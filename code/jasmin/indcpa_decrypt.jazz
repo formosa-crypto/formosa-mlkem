@@ -6,6 +6,7 @@
 #include "poly_tomsg.jahh"
 #include "poly_frommsg.jahh"
 #include "poly_add.jahh"
+#include "poly_sub.jahh"
 #include "poly_ntt.jahh"
 #include "poly_invntt.jahh"
 #include "poly_basemul.jahh"
@@ -13,7 +14,8 @@
 #include "poly_reduce.jahh"
 #include "poly_csubq.jahh"
 #include "poly_getnoise.jahh"
-#include "polyvec_compress.jahh"
+#include "polyvec_decompress.jahh"
+#include "polyvec_tobytes.jahh"
 #include "polyvec_frombytes.jahh"
 #include "polyvec_add.jahh"
 #include "polyvec_pointwise_acc.jahh"
@@ -26,7 +28,7 @@
 
 export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp, reg u64 zetasp, reg u64 zetasinvp)
 {
-  stack u16[KYBER_N] poly0 poly1 poly2 v mp;
+  stack u16[KYBER_N] v mp;
   stack u16[KYBER_VECN] bp skpv;
 
   bp = polyvec_decompress(ctp);
@@ -34,30 +36,15 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp, reg u64 zetasp
   v = poly_decompress(ctp);
 
   skpv = polyvec_frombytes(skp);
-
-  bp = polyvec_ntt(bp);
-  mp = polyvec_pointwise_acc(skpv, bp);
-  mp = poly_invntt(mp);
+  
+  bp = polyvec_ntt(bp, zetasp);
+  mp = polyvec_pointwise_acc(skpv, bp, zetasp);
+  mp = poly_invntt(mp, zetasinvp);
 
   mp = poly_sub(v, mp);
   mp = poly_reduce(mp);
-
+  
+//  poly_tobytes(msgp, mp);
   poly_tomsg(msgp, mp);
 
-/*
-  polyvec bp, skpv;
-  poly v, mp;
-
-  unpack_ciphertext(&bp, &v, c);
-  unpack_sk(&skpv, sk);
-
-  polyvec_ntt(&bp);
-  polyvec_pointwise_acc(&mp, &skpv, &bp);
-  poly_invntt(&mp);
-
-  poly_sub(&mp, &v, &mp);
-  poly_reduce(&mp);
-
-  poly_tomsg(m, &mp);
-*/
 }

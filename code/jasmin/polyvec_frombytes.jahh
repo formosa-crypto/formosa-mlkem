@@ -3,6 +3,7 @@
 
 #include "params.jahh"
 #include "poly_frombytes.jahh"
+#include "polyvec_frompolys.jahh"
 
 fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
 {
