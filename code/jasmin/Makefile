@@ -5,7 +5,7 @@ JFLAGS=-lea -pasm
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s indcpa_keypair.s indcpa_encrypt.s
 
-default: test kybertest
+default: test
 
 test: test/test_poly_compress \
  		  test/test_poly_decompress \
@@ -70,6 +70,8 @@ POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_pointwise_acc.jahh \
                  polyvec_reduce.jahh \
                  polyvec_csubq.jahh \
+								 polyvec_topolys.jahh \
+								 polyvec_frompolys.jahh \
                  gen_matrix.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
