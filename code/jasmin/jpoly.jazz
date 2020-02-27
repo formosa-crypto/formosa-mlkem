@@ -97,12 +97,7 @@ export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  r = poly_tomsg(a);
-
-  for i = 0 to 32 {
-    c = r[i];
-    (u8)[rp + i] = c;
-  }
+  poly_tomsg(rp, a);
 }
 
 export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 

@@ -4,9 +4,8 @@
 #include "params.jahh"
 #include "poly_csubq.jahh"
 
-fn poly_tomsg(stack u16[KYBER_N] a) -> stack u8[32]
+fn poly_tomsg(reg u64 rp, stack u16[KYBER_N] a)
 {
-  stack u8[32] rp;
   reg u16 t;
   reg u8 r;
   reg u32 d;
@@ -97,9 +96,8 @@ fn poly_tomsg(stack u16[KYBER_N] a) -> stack u8[32]
     d &= 1;
     r  |= d;
 
-    rp[i] = r;
+    (u8)[rp+i] = r;
   }
-  return rp;
 }
 
 #endif

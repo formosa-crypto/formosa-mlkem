@@ -15,7 +15,10 @@ int main(void)
 
   unsigned char randomness0[KYBER_SYMBYTES];
   unsigned char randomness1[KYBER_SYMBYTES];
-  unsigned char message[KYBER_SYMBYTES];
+  unsigned char message[KYBER_INDCPA_MSGBYTES];
+  
+  unsigned char outmsg0[KYBER_INDCPA_MSGBYTES];
+  unsigned char outmsg1[KYBER_INDCPA_MSGBYTES];
 
   FILE *urandom = fopen("/dev/urandom", "r");
   fread(randomness0, KYBER_SYMBYTES, 1, urandom);
@@ -40,6 +43,16 @@ int main(void)
 
   for(int i=0;i<KYBER_INDCPA_BYTES;i++)
     if(ct0[i] != ct1[i]) printf("error indcpa_enc: %d\n", i);
+
+  /* TEST DECRYPTION */
+  indcpa_dec(outmsg0, ct0, sk0);
+  indcpa_dec_jazz(outmsg0, ct0, sk0, zetas, zetas_inv);
+
+  for(int i=0;i<KYBER_INDCPA_MSGBYTES;i++)
+  {
+    if(outmsg0[i] != outmsg1[i]) printf("error indcpa_dec: %d\n", i);
+    if(outmsg0[i] != message[i]) printf("decryption error: %d\n", i);
+  }
 
   return 0;
 }
