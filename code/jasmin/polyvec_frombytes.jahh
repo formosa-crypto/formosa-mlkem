@@ -7,32 +7,17 @@
 fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_VECN] r;
-  stack u16[KYBER_N] rt;
-  stack u8[KYBER_POLYBYTES] at;
-  reg u8 c;
-  reg u16 t;
+  stack u16[KYBER_N] r0, r1, r2;
   reg u64 pp;
-  inline int i;
-  reg u64 j;
-  reg u64 k;
-
 
   pp = ap;
-  for i = 0 to KYBER_K
-  {
-    rt = poly_frombytes(pp);
-    pp += KYBER_POLYBYTES;
+  r0 = poly_frombytes(pp);
+  pp += KYBER_POLYBYTES;
+  r1 = poly_frombytes(pp);
+  pp += KYBER_POLYBYTES;
+  r2 = poly_frombytes(pp);
 
-    j = i*KYBER_N;
-    k = 0;
-    while (k < KYBER_N)
-    {
-      t = rt[(int) k];
-      r[(int) j] = t;
-      j += 1;
-      k += 1;
-    }
-  }
+  r = polyvec_frompolys(r0, r1, r2);
 
   return r;
 }
