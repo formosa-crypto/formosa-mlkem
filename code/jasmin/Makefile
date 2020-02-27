@@ -5,7 +5,7 @@ JFLAGS=-lea -pasm
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s indcpa_keypair.s indcpa_encrypt.s
 
-default: test
+default: test kybertest
 
 test: test/test_poly_compress \
  		  test/test_poly_decompress \

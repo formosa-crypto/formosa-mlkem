@@ -19,17 +19,18 @@
 #include "polyvec_ntt.jahh"
 #include "polyvec_csubq.jahh"
 #include "polyvec_reduce.jahh"
+#include "polyvec_frompolys.jahh"
+#include "polyvec_topolys.jahh"
 #include "gen_matrix.jahh"
 
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp, reg u64 zetasp)
 {
   stack u16[KYBER_VECN] a0 a1 a2 e pkpv skpv;
-  stack u16[KYBER_N] poly;
+  stack u16[KYBER_N] poly0 poly1 poly2;
   stack u8[64] buf;
   stack u8[KYBER_SYMBYTES] publicseed noiseseed;
   stack u8[32] inbuf;
-  reg u16 t;
   reg u8 c;
   reg u64 zero;
   reg u8 nonce;
@@ -62,111 +63,31 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp, reg
   a0, a1, a2 = gen_matrix(publicseed, zero);
 
   nonce = 0;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    skpv[(int)i] = t;
-    i += 1;
-  }
+  poly0 = poly_getnoise(noiseseed, nonce);
+  nonce += 1;
+  poly1 = poly_getnoise(noiseseed, nonce);
+  nonce += 1;
+  poly2 = poly_getnoise(noiseseed, nonce);
+  skpv = polyvec_frompolys(poly0, poly1, poly2);
 
   nonce += 1;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    skpv[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
+  poly0 = poly_getnoise(noiseseed, nonce);
   nonce += 1;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = 2*KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    skpv[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
+  poly1 = poly_getnoise(noiseseed, nonce);
   nonce += 1;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    e[(int)i] = t;
-    i += 1;
-  }
-
-  nonce += 1;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    e[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
-  nonce += 1;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = 2*KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    e[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
+  poly2 = poly_getnoise(noiseseed, nonce);
+  e = polyvec_frompolys(poly0, poly1, poly2);
 
   skpv = polyvec_ntt(skpv, zetasp);
-  e = polyvec_ntt(e, zetasp);
+  e    = polyvec_ntt(e, zetasp);
 
-  poly = polyvec_pointwise_acc(a0, skpv, zetasp);
-  poly = poly_frommont(poly);
-  i = 0;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    pkpv[(int)i] = t;
-    i += 1;
-  }
-
-  poly = polyvec_pointwise_acc(a1, skpv, zetasp);
-  poly = poly_frommont(poly);
-  i = 0;
-  j = KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    pkpv[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
-  poly = polyvec_pointwise_acc(a2, skpv, zetasp);
-  poly = poly_frommont(poly);
-  i = 0;
-  j = 2*KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    pkpv[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
+  poly0 = polyvec_pointwise_acc(a0, skpv, zetasp);
+  poly0 = poly_frommont(poly0);
+  poly1 = polyvec_pointwise_acc(a1, skpv, zetasp);
+  poly1 = poly_frommont(poly1);
+  poly2 = polyvec_pointwise_acc(a2, skpv, zetasp);
+  poly2 = poly_frommont(poly2);
+  pkpv = polyvec_frompolys(poly0, poly1, poly2);
 
   pkpv = polyvec_add(pkpv, e);
   pkpv = polyvec_reduce(pkpv);
