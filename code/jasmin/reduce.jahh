@@ -24,10 +24,12 @@ fn fqmul(reg u16 a, reg u16 b) -> reg u16
 
   u = c * QINV;
   u <<= 16;
-  u = #SAR_32(u, 16);
+  //u = #SAR_32(u, 16);
+  u >>s= 16;
   t = u * KYBER_Q;
   t = c - t;
-  t = #SAR_32(t, 16);
+  //t = #SAR_32(t, 16);
+  t >>s= 16;
   r = t;
   return r;
 }
@@ -38,7 +40,8 @@ fn barrett_reduce(reg u16 a) -> reg u16
   reg u16 r;
   t = (32s)a;
   t = t * BARR;
-  t = #SAR_32(t, 26);
+  //t = #SAR_32(t, 26);
+  t >>s= 26;
   t *= KYBER_Q;
   r = t;
   r = a;

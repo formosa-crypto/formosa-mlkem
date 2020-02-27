@@ -208,7 +208,7 @@ void indcpa_keypair(unsigned char *pk,
   hash_g(buf, buf, KYBER_SYMBYTES);
 
   gen_a(a, publicseed);
-
+  
   for(i=0;i<KYBER_K;i++)
     poly_getnoise(skpv.vec+i, noiseseed, nonce++);
   for(i=0;i<KYBER_K;i++)

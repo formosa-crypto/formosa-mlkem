@@ -1,4 +1,6 @@
 #include "params.jahh"
+#include "polyvec_compress.jahh"
+#include "polyvec_decompress.jahh"
 #include "polyvec_tobytes.jahh"
 #include "polyvec_frombytes.jahh"
 #include "polyvec_add.jahh"
@@ -23,6 +25,38 @@ export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap)
   }
 
   polyvec_tobytes(rp, a);
+}
+
+
+export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_VECN] r;
+
+  r = polyvec_decompress(ap);
+
+  for i = 0 to KYBER_VECN {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+
+export fn polyvec_compress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_VECN] a;
+
+  for i = 0 to KYBER_VECN {
+    t = (u16)[ap + 2*i];
+    a[i] = t;
+  }
+
+  polyvec_compress(rp, a);
 }
 
 

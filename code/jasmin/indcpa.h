@@ -22,8 +22,7 @@ void indcpa_dec(unsigned char *m,
 void indcpa_keypair_jazz(unsigned char *pk,
                          unsigned char *sk,
                          const unsigned char *randomness,
-                         const int16_t *zetas,
-                         const int16_t *zetas_inv);
+                         const int16_t *zetas);
 
 void indcpa_enc_jazz(unsigned char *c,
                      const unsigned char *m,

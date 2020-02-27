@@ -3,38 +3,20 @@
 
 #include "params.jahh"
 #include "poly_csubq.jahh"
+#include "polyvec_topolys.jahh"
+#include "polyvec_frompolys.jahh"
 
 fn polyvec_csubq(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-  stack u16[KYBER_N] rt;
-  reg u16 t;
-  inline int i;
-  reg u64 j;
-  reg u64 k;
+  stack u16[KYBER_N] r0 r1 r2;
 
+  r0, r1, r2 = polyvec_topolys(r);
 
-  for i = 0 to KYBER_K
-  {
-    j = i*KYBER_N;
-    k = 0;
-    while (j < (i+1)*KYBER_N)
-    {
-      t = r[(int) j];
-      rt[(int) k] = t;
-      j += 1;
-      k += 1;
-    }
-    rt = poly_csubq(rt);
-    j = i*KYBER_N;
-    k = 0;
-    while (j < (i+1)*KYBER_N)
-    {
-      t = rt[(int) k];
-      r[(int) j] = t;
-      j += 1;
-      k += 1;
-    }
-  }
+  r0 = poly_csubq(r0);
+  r1 = poly_csubq(r1);
+  r2 = poly_csubq(r2);
+
+  r = polyvec_frompolys(r0, r1, r2);
 
   return r;
 }

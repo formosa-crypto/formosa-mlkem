@@ -3,55 +3,22 @@
 
 #include "params.jahh"
 #include "poly_tobytes.jahh"
+#include "polyvec_topolys.jahh"
+#include "polyvec_frompolys.jahh"
 
 fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
 {
-  stack u16[KYBER_N] at0;
-  stack u16[KYBER_N] at1;
-  stack u16[KYBER_N] at2;
-  reg u8 c;
-  reg u16 t;
+  stack u16[KYBER_N] a0 a1 a2;
   reg u64 pp;
-  inline int i;
-  reg u64 j;
-  reg u64 k;
 
+  a0, a1, a2 = polyvec_topolys(a);
+  
   pp = rp;
-  j = 0;
-
-
-  k = 0;
-  while (k < KYBER_N)
-  {
-    t = a[(int) j];
-    at0[(int) k] = t;
-    j += 1;
-    k += 1;
-  }
-  poly_tobytes(pp, at0);
+  poly_tobytes(pp, a0);
   pp += KYBER_POLYBYTES;
-
-  k = 0;
-  while (k < KYBER_N)
-  {
-    t = a[(int) j];
-    at1[(int) k] = t;
-    j += 1;
-    k += 1;
-  }
-  poly_tobytes(pp, at1);
+  poly_tobytes(pp, a1);
   pp += KYBER_POLYBYTES;
-
-  k = 0;
-  while (k < KYBER_N)
-  {
-    t = a[(int) j];
-    at2[(int) k] = t;
-    j += 1;
-    k += 1;
-  }
-  poly_tobytes(pp, at2);
-  pp += KYBER_POLYBYTES;
+  poly_tobytes(pp, a2);
 }
 
 #endif

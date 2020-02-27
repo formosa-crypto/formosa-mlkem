@@ -3,40 +3,25 @@
 
 #include "params.jahh"
 #include "poly_ntt.jahh"
+#include "polyvec_topolys.jahh"
+#include "polyvec_frompolys.jahh"
 
 fn polyvec_ntt(stack u16[KYBER_VECN] r, reg u64 zetasp) -> stack u16[KYBER_VECN]
 {
-  stack u16[KYBER_N] rt;
-  reg u16 t;
-  inline int i;
+
+  stack u16[KYBER_N] r0 r1 r2;
   reg u64 zetaspt;
-  reg u64 j;
-  reg u64 k;
 
+  r0, r1, r2 = polyvec_topolys(r);
 
-  for i = 0 to KYBER_K
-  {
-    j = i*KYBER_N;
-    k = 0;
-    while (j < (i+1)*KYBER_N)
-    {
-      t = r[(int) j];
-      rt[(int) k] = t;
-      j += 1;
-      k += 1;
-    }
-    zetaspt = zetasp;
-    rt = poly_ntt(rt, zetaspt);
-    j = i*KYBER_N;
-    k = 0;
-    while (j < (i+1)*KYBER_N)
-    {
-      t = rt[(int) k];
-      r[(int) j] = t;
-      j += 1;
-      k += 1;
-    }
-  }
+  zetaspt = zetasp;
+  r0 = poly_ntt(r0, zetaspt);
+  zetaspt = zetasp;
+  r1 = poly_ntt(r1, zetaspt);
+  zetaspt = zetasp;
+  r2 = poly_ntt(r2, zetaspt);
+
+  r = polyvec_frompolys(r0, r1, r2);
 
   return r;
 }
