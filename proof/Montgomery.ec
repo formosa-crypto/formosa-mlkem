@@ -3,7 +3,7 @@ require import Int IntDiv IntExtra StdOrder.
 
 abstract theory Montgomery'.
 
-(* [`R] is a poweer of 2 *)
+(* [`R] is a power of 2 *)
 op k: int.
 axiom k_pos: 0 < k.
 
@@ -164,35 +164,156 @@ qed.
 
 end MontgomeryLimbs.
 
+theory SignedMontgomery.
+(* [`R] is a power of 2 *)
+op k: int.
+axiom k_pos: 0 < k.
 
-(*
-op R2 = R*R %% N.
+op R = 2^k.
+lemma Reven : 2 %| R by smt.
 
+lemma R_gt0: 0 < R by smt(powPos).
 
-op to_mont x = REDC(x * R2).
-op from_mont y = REDC(y).
-*)
+(* [q] is the modulus *)
+op q: int.
+axiom q_bnd: 0 < q /\ q < R %/2.
+axiom q_odd1: 2 %| (q + 1).
+axiom q_odd2: 2 %| (q - 1). 
 
-theory FQMUL_CORRECT.
+op qinv : int.
+axiom qqinv: (q * qinv) %% R = 1 %% R.
+axiom qinv_bnd: 0 <= qinv < R.
 
-clone import Montgomery with
-    op Montgomery'.k <- 16,
-    op Montgomery'.N <- 2^16*13+1,
-    op Montgomery'.Rinv <- 62209,
-    op Montgomery'.N' <- 3329.
+op Rinv : int.
+axiom RRinv: (R * Rinv) %% q = 1 %% q.
+
+(* EasyCrypt defines division for negative numbers
+   as needed: remainder is always positive. 
+   We need a special mod to get the balanced 
+   representative. *)
+
+op bal_mod(a b : int) =
+   let rem = a %% b in
+       if (b %/ 2 <= rem) then rem - b else rem.
+
+lemma bal_mod_bnd a b :
+   0< b =>  2 %| b =>
+  - b %/ 2 <=  bal_mod a b < b %/ 2 by smt().
+
+op SREDC (a: int) : int =
+ let a1 = a %/ R in
+ let a0 = a %% R in
+ let  m = bal_mod (a0 * qinv) R in
+ let t1 = (m * q) %/ R in 
+     a1 - t1.
+
+lemma nosmt SREDC_corr a:
+ 0 < q < R %/2 =>
+ -R %/ 2 * q <= a < R %/2 * q =>
+ -q <= SREDC a <= q /\ (* Paper claims -q < SREDC a < q *)
+ SREDC a %% q = (a * Rinv) %% q.
+proof.
+move => *.
+pose a1 := a %/ R.
+pose a0 := a %% R.
+pose m  := bal_mod (a0 * qinv) R.
+pose t1 := (m * q) %/ R.
+pose t0 := (m * q) %% R.
+have a0bounds : 0 <= a0 < R; first by smt().
+have a1bounds : -R %/4 <= - (q+1) %/2 <= a1 <= (q-1) %/2 < R %/4.
+move : H0 => [#] alb aup.
+split; last by smt().
+split; last first.
+move => *. 
+rewrite /a1.
+smt(@IntDiv q_odd1 Reven).
+split; first by smt().
+move => *. 
+rewrite /a1.
+smt(@IntDiv q_odd1 Reven).
+
+have t1bounds : -R %/4 <= -(q+1) %/2 <= t1 <= (q-1) %/2 < R %/4.
+move : H0 => [#] alb aup.
+split; last by smt().
+split; last first.
+rewrite /t1 /m /a0 /=.
+move : (bal_mod_bnd (a %% R * qinv) R R_gt0 _); first by smt.
+pose x := bal_mod (a %% R * qinv) R.
+move => *.
+have ? : ( R%/2 * q %/R = q %/2).  
+rewrite (_: R %/ 2 * q %/ R = R * q %/2 %/ R ); first by smt(Reven dvdz_mull dvdz_mulr).
+rewrite (_: R * q  %/ 2 %/ R = q * R  %/ 2 %/ R); first by smt().
+rewrite (_: q * R  %/ 2 %/ R = q %/ 2 * R %/ R); first by smt(). smt.
+rewrite -(_: q %/2 = (q-1) %/ 2).  smt(q_odd2). smt.
+split; first by smt().
+move => *.
+rewrite /t1 /m /a0 /=.
+move : (bal_mod_bnd (a %% R * qinv) R R_gt0 _); first by smt.
+pose x := bal_mod (a %% R * qinv) R.
+move => *.
+rewrite (_: -(q+1) %/ 2 = (-R%/2) * (q+1) %/R). 
+rewrite (_: (-R %/ 2) * (q+1) %/ R = (-R * (q+1) %/2) %/ R ); first by smt(Reven dvdz_mull dvdz_mulr). 
+rewrite (_: (- R * (q + 1) %/ 2) = (- (q + 1) * R %/ 2)); first by smt(). 
+rewrite (_: (- (q + 1) * R %/ 2) = (- (q + 1) %/ 2 * R)); first by smt(q_odd1). 
+rewrite -(_: -q %/2 - 1 = - (q + 1) %/ 2).  smt(q_odd1). smt. smt.
+have nooverflow: -q <= a1 - t1 <= q; first by smt().
+split; first by rewrite /SREDC -/a1 -/a0 /= -/m -/t1; apply nooverflow.
+rewrite /SREDC  -/a0 -/a1 /= -/m -/t1. 
+pose t := m*q.
+have subeq : (a-t = (a1 - t1)*R + (a0 - t0)). smt.
+have a0t0cancel : (a0 = t0). 
+rewrite /a0 /t0 /m /bal_mod /a0 //=.
+case (R %/ 2 <= a %% R * qinv %% R); last first.
+progress.  
+rewrite (_: a %% R * qinv %% R * q %% R = a %% R * (qinv * q %% R)).  admit. smt(qqinv).
+progress.
+admit.
+move : subeq; rewrite (_: a0 - t0 = 0) => />; first by smt().
+move => *.
+have stronger : ((a1 - t1) %% q * R = a * Rinv %% q * R); last first.
+smt.
+have stronger : ((a1 - t1) %% q * R %%q = a * Rinv %% q * R %%q); last first.
+admit.
+rewrite (_: (a1 - t1) %% q * R %% q = (a-t) %% q). admit.
+rewrite (_: a * Rinv %% q * R %% q = a%% q). admit.
+by rewrite /t (_: a - m * q = a + (-m) * q); [ by smt()| by apply (modzMDr (-m) a q)].
+qed.
+
+end SignedMontgomery.
+
+theory FQMUL_correct.
+
+clone import SignedMontgomery with
+    op k <- 16,
+    op q <- 2^8*13+1,
+    op qinv <- 62209,
+    op Rinv <- 169.
 
 require import List Int IntExtra IntDiv CoreMap.
 from Jasmin require import JModel.
 
 require import Fqmul.
 
+print M.
+
 lemma fqmul_corr _a _b :
   hoare [ M.fqmul : 
-     a = _a /\ b = _b ==> W16.to_sint res = REDC (W16.to_sint _a * W16.to_sint _b) ].
+     -R %/ 2 <= _a < R %/2 /\
+     0 <= _b < 2^8*13+1 /\
+     W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
+        W16.to_sint res = SREDC (_a * _b) ].
 proof.
 proc.
 auto => />.
-move => &hr.
-rewrite /REDC /REDC' => />.
-smt.
+move => &hr albnd aubnd blbnd bubnd.
+rewrite /SREDC !SAR_32_sem /bal_mod => />. 
+rewrite (_: (to_sint
+                   (sigextu32 a{hr} * sigextu32 b{hr} * (of_int 62209)%W32 `<<`
+                    (of_int 16)%W8)) = to_sint b{hr} * 62209 * R). 
+admit.
+
+search W32.to_sint.
+admit.
 qed.
+
+end FQMUL_correct.
