@@ -67,6 +67,7 @@ POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_frombytes.jahh \
                  polyvec_add.jahh \
                  polyvec_ntt.jahh \
+                 polyvec_invntt.jahh \
                  polyvec_pointwise_acc.jahh \
                  polyvec_reduce.jahh \
                  polyvec_csubq.jahh \
