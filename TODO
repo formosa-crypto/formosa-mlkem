@@ -4,6 +4,12 @@
 
 - fix ">>s" (should be SAR, is SHL)
 
+- Support global const arrays
+
+- support const (?)
+
+- Don't allow duplicate variable declarations (?)
+
 - support addressing in nested for loops, e.g.,
 
   inline int i j;
