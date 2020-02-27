@@ -181,7 +181,7 @@ axiom q_odd1: 2 %| (q + 1).
 axiom q_odd2: 2 %| (q - 1). 
 
 op qinv : int.
-axiom qqinv: (q * qinv) %% R = 1 %% R.
+axiom qqinv: (qinv * q) %% R = 1 %% R.
 axiom qinv_bnd: 0 <= qinv < R.
 
 op Rinv : int.
@@ -265,20 +265,21 @@ have a0t0cancel : (a0 = t0).
 rewrite /a0 /t0 /m /bal_mod /a0 //=.
 case (R %/ 2 <= a %% R * qinv %% R); last first.
 progress.  
-rewrite (_: a %% R * qinv %% R * q %% R = a %% R * (qinv * q %% R)).  admit. smt(qqinv).
+rewrite (_: a %% R * qinv %% R * q %% R = a %% R * (qinv * q) %% R). 
+rewrite modzMml. smt().  rewrite modzMml -modzMml -modzMm. smt.
 progress.
-admit.
+rewrite (_: (a %% R * qinv %% R -R) * q %% R = a %% R * (qinv * q) %% R). 
+admit. rewrite modzMml -modzMml -modzMm. smt.
 move : subeq; rewrite (_: a0 - t0 = 0) => />; first by smt().
 move => *.
-have stronger : ((a1 - t1) %% q * R = a * Rinv %% q * R); last first.
-smt.
-have stronger : ((a1 - t1) %% q * R %%q = a * Rinv %% q * R %%q); last first.
-admit.
-rewrite (_: (a1 - t1) %% q * R %% q = (a-t) %% q). admit.
-rewrite (_: a * Rinv %% q * R %% q = a%% q). admit.
-by rewrite /t (_: a - m * q = a + (-m) * q); [ by smt()| by apply (modzMDr (-m) a q)].
+rewrite (_: (a1 - t1) %% q = (a1 - t1) * (R * Rinv) %% q). 
+rewrite -modzMm. smt. rewrite Ring.IntID.mulrA -H1 /t. 
+search ( +).
+rewrite Ring.IntID.mulrDl.
+rewrite (_:(-m * q) * Rinv = (-m*Rinv)*q). smt.
+rewrite Ring.IntID.addrC -modzDm modzMl => />. 
+by rewrite modz_mod.
 qed.
-
 end SignedMontgomery.
 
 theory FQMUL_correct.
