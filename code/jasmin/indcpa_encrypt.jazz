@@ -27,7 +27,7 @@
 export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp, reg u64 zetasp, reg u64 zetasinvp)
 {
   stack u16[KYBER_VECN] pkpv at0 at1 at2 sp ep bp;
-  stack u16[KYBER_N] k poly epp v;
+  stack u16[KYBER_N] k poly epp v poly0 poly1 poly2;
   stack u8[KYBER_SYMBYTES] publicseed;
   stack u8[KYBER_SYMBYTES] noiseseed;
   reg u64 i j one;
@@ -61,73 +61,20 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
 
 
   nonce = 0;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    sp[(int)i] = t;
-    i += 1;
-  }
-
+  poly0 = poly_getnoise(noiseseed, nonce);
   nonce = 1;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    sp[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
+  poly1 = poly_getnoise(noiseseed, nonce);
   nonce = 2;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = 2*KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    sp[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
+  poly2 = poly_getnoise(noiseseed, nonce);
+  sp = polyvec_frompolys(poly0, poly1, poly2);
 
   nonce = 3;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    ep[(int)i] = t;
-    i += 1;
-  }
-
+  poly0 = poly_getnoise(noiseseed, nonce);
   nonce = 4;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    ep[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-
+  poly1 = poly_getnoise(noiseseed, nonce);
   nonce = 5;
-  poly = poly_getnoise(noiseseed, nonce);
-  i = 0;
-  j = 2*KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    ep[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
+  poly2 = poly_getnoise(noiseseed, nonce);
+  ep = polyvec_frompolys(poly0, poly1, poly2);
 
   nonce = 6;
   epp = poly_getnoise(noiseseed, nonce);
@@ -135,34 +82,10 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   sp = polyvec_ntt(sp, zetasp);
     
     
-  poly = polyvec_pointwise_acc(at0, sp, zetasp);
-  i = 0;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    bp[(int)i] = t;
-    i += 1;
-  }
-  poly = polyvec_pointwise_acc(at1, sp, zetasp);
-  i = 0;
-  j = KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    bp[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-  poly = polyvec_pointwise_acc(at2, sp, zetasp);
-  i = 0;
-  j = 2*KYBER_N;
-  while (i < KYBER_N)
-  {
-    t = poly[(int)i];
-    bp[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
+  poly0 = polyvec_pointwise_acc(at0, sp, zetasp);
+  poly1 = polyvec_pointwise_acc(at1, sp, zetasp);
+  poly2 = polyvec_pointwise_acc(at2, sp, zetasp);
+  bp = polyvec_frompolys(poly0, poly1, poly2);
   
   v = polyvec_pointwise_acc(pkpv, sp, zetasp);
 
