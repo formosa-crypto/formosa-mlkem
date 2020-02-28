@@ -25,7 +25,7 @@ fn poly_tomsg(reg u64 rp, stack u16[KYBER_N] a)
       d *= 80635;
       d >>= 28;
       d &= 1;
-      c <<= j;
+      d <<= j;
       r  |= d;
     }
 
