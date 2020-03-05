@@ -184,53 +184,25 @@ op BREDC(a bits : int) =
 
 lemma barrett_overZ a kk:
       1 < kk =>
-      R < 2^kk =>
+      q < 2^kk =>
       2^kk %/ q * q < 2^kk =>
       0 <= a - a*(2^kk %/ q + 1) %/ 2^kk * q < 2*q.      
 admitted.
 
 lemma sign_comp  a b :
- - R %/2 <= a < R %/ 2 =>
- - R %/2 <= b < R %/ 2 =>
  (a %% R + b %% R) %%+- R = (a + b) %%+- R.
-move => *.
-rewrite bal_modE.
-case (0 <= a).
-move => *.
-rewrite (inrange a); first by smt.
-case (0 <= b). 
-move => *.
-rewrite (inrange b); first by smt.
-have sumbnd : (0 <= a + b < R); first by smt.
-rewrite bal_modE.
-rewrite (_: (a + b) %% R = a + b); first by smt.
-done.
-move => *.
-rewrite (outrange b); first by smt.
-have sumbnd : (-R %/ 2 <= a + b < R %/ 2); first by smt.
-rewrite bal_mod_small; smt.
-move => *.
-rewrite (outrange a); first by smt.
-case (0 <= b). 
-move => *.
-rewrite (inrange b); first by smt.
-have sumbnd : (-R %/ 2 <= a + b < R %/ 2); first by smt.
-rewrite bal_mod_small;  smt.
-move => *.
-rewrite (outrange b); first by smt.
-have sumbnd : (-R <= a + b < 0); first by smt.
-rewrite bal_modE.
-rewrite (_: (a + b) %% R = R +a + b); first by smt.
-smt.
+proof.
+rewrite bal_modE modzDm. smt.
 qed.
 
+
 lemma nosmt BREDCp_corr a bits:
- 0 < 2*q < R %/2 => (* if integer bound is q then q *)
+ 0 < 2 * q < R %/2 => 
  R < 2^bits =>
  2 ^ bits %/ q * q < 2 ^ bits =>
  2^bits %/ q + 1 < R =>
  -R %/ 2 < a < R %/2 =>
-  0  <= BREDC a bits < 2 * q /\  (* if integer bound is q then q *)
+  0  <= BREDC a bits < 2 * q /\ 
  BREDC a bits %% q = a %% q.
 proof.
 move => [#] ?? ??? [#] ??.
@@ -243,25 +215,8 @@ have tlbnd : (- R %/2 * R<= a * (2^bits %/ q + 1)). smt.
 rewrite (bal_mod_small (a * (2 ^ bits %/ q + 1))). smt.
 rewrite (_: R^2 = R*R). smt. smt.
 
-have smallish : (0 <=   `|a * (2 ^ bits %/ q + 1) %/ 2 ^ bits| * q <= `|a|). 
-split. smt.  
-case (0 <= a). 
-move => *.
-rewrite (_: `|a * (2 ^ bits %/ q + 1) %/ 2 ^ bits| = a * (2 ^ bits %/ q + 1) %/ 2 ^ bits). 
-apply ger0_norm. smt. smt.
-move => *.
-rewrite !ltr0_norm. smt. smt.
-
-have ? : (((- a * (2 ^ bits %/ q + 1) - 1) %/ 2^bits + 1) * q <= -a); last first.
-    move : H8. pose d := 2^bits. pose m := - a * (d %/ q + 1). 
-     move : (divNz m d _ _). smt. smt. smt.
-pose tt := (- a * (2 ^ bits %/ q + 1)).
-admit. (* doesn't work *)
 (*******)
-rewrite sign_comp. smt. 
-case (a = `|a|).
-move => *; split; smt.
-move => *; split; smt. 
+rewrite sign_comp.  
 
 move : (barrett_overZ a bits _ _ _). smt. smt. smt.
 move => *.
