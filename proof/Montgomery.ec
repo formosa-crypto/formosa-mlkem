@@ -133,6 +133,13 @@ rewrite pow_add; first 2 by smt(k_pos).
 smt.
 qed.
 
+lemma b3 : R = R  %/2 + R  %/2.
+rewrite /R !pow_div1; first 2 by smt(k_pos). 
+rewrite (_: 2 ^ (k - 1) + 2 ^ (k - 1) = 2^1 * (2^(k - 1) )); first by smt(pow1 k_pos).
+rewrite pow_add; first 2 by smt(k_pos).
+smt.
+qed.
+
 lemma bal_mod_div x :
    x * R %%+- (R ^ 2) %/R = x  %%+- R.
 proof.
@@ -161,32 +168,110 @@ exists (- x %/ y).
 rewrite modzE. smt. 
 qed.
 
+lemma inrange a :
+  0 <= a < R %/ 2 => a %% R = a by smt.
+
+
+lemma outrange a :
+  - R%/2 <= a < 0 => a %% R = R + a by smt.
+
+
 (* Signed Barrett reduction as used in Kyber 2.0 *)
     
 op BREDC(a bits : int) = 
    let t = a * (2^bits %/ q + 1) %%+- R^2 %/ 2^bits * q in
       (a %% R + (-t) %% R) %%+- R.
 
+lemma barrett_overZ a kk:
+      1 < kk =>
+      R < 2^kk =>
+      2^kk %/ q * q < 2^kk =>
+      0 <= a - a*(2^kk %/ q + 1) %/ 2^kk * q < 2*q.      
+admitted.
+
 lemma sign_comp  a b :
  - R %/2 <= a < R %/ 2 =>
  - R %/2 <= b < R %/ 2 =>
- (a %% R + b %% R) %%+- R = a + b.
-admitted.
+ (a %% R + b %% R) %%+- R = (a + b) %%+- R.
+move => *.
+rewrite bal_modE.
+case (0 <= a).
+move => *.
+rewrite (inrange a); first by smt.
+case (0 <= b). 
+move => *.
+rewrite (inrange b); first by smt.
+have sumbnd : (0 <= a + b < R); first by smt.
+rewrite bal_modE.
+rewrite (_: (a + b) %% R = a + b); first by smt.
+done.
+move => *.
+rewrite (outrange b); first by smt.
+have sumbnd : (-R %/ 2 <= a + b < R %/ 2); first by smt.
+rewrite bal_mod_small; smt.
+move => *.
+rewrite (outrange a); first by smt.
+case (0 <= b). 
+move => *.
+rewrite (inrange b); first by smt.
+have sumbnd : (-R %/ 2 <= a + b < R %/ 2); first by smt.
+rewrite bal_mod_small;  smt.
+move => *.
+rewrite (outrange b); first by smt.
+have sumbnd : (-R <= a + b < 0); first by smt.
+rewrite bal_modE.
+rewrite (_: (a + b) %% R = R +a + b); first by smt.
+smt.
+qed.
 
 lemma nosmt BREDCp_corr a bits:
- 0 < q < R %/2 => 
-2^bits %/ q + 1 < R =>
- -R %/ 2 <= a < R %/2 =>
-  0  <= BREDC a bits < q /\
+ 0 < 2*q < R %/2 => (* if integer bound is q then q *)
+ R < 2^bits =>
+ 2 ^ bits %/ q * q < 2 ^ bits =>
+ 2^bits %/ q + 1 < R =>
+ -R %/ 2 < a < R %/2 =>
+  0  <= BREDC a bits < 2 * q /\  (* if integer bound is q then q *)
  BREDC a bits %% q = a %% q.
 proof.
-move => [#] ?? ? [#] ??.
+move => [#] ?? ??? [#] ??.
+
 rewrite /BREDC /=.
-have tubnd : (a * (2^bits %/ q + 1) < R*R %/2). admit.
-have tlbnd : (- R * R %/2 <= a * (2^bits %/ q + 1)). admit.
-rewrite (bal_mod_small (a * (2 ^ bits %/ q + 1))). smt. admit.
-rewrite sign_comp. smt. admit.
-split. admit.
+
+have extra : (0 <= 2^bits %/ q + 1); first by smt.
+have tubnd : (a * (2^bits %/ q + 1) < R %/2 * R). smt. 
+have tlbnd : (- R %/2 * R<= a * (2^bits %/ q + 1)). smt.
+rewrite (bal_mod_small (a * (2 ^ bits %/ q + 1))). smt.
+rewrite (_: R^2 = R*R). smt. smt.
+
+have smallish : (0 <=   `|a * (2 ^ bits %/ q + 1) %/ 2 ^ bits| * q <= `|a|). 
+split. smt.  
+case (0 <= a). 
+move => *.
+rewrite (_: `|a * (2 ^ bits %/ q + 1) %/ 2 ^ bits| = a * (2 ^ bits %/ q + 1) %/ 2 ^ bits). 
+apply ger0_norm. smt. smt.
+move => *.
+rewrite !ltr0_norm. smt. smt.
+
+have ? : (((- a * (2 ^ bits %/ q + 1) - 1) %/ 2^bits + 1) * q <= -a); last first.
+    move : H8. pose d := 2^bits. pose m := - a * (d %/ q + 1). 
+     move : (divNz m d _ _). smt. smt. smt.
+pose tt := (- a * (2 ^ bits %/ q + 1)).
+admit. (* doesn't work *)
+(*******)
+rewrite sign_comp. smt. 
+case (a = `|a|).
+move => *; split; smt.
+move => *; split; smt. 
+
+move : (barrett_overZ a bits _ _ _). smt. smt. smt.
+move => *.
+rewrite bal_mod_small. smt. smt.
+
+split.
+(* Bound proof *)
+smt.
+
+(* Congruence proof *)
 rewrite (_: - a * (2 ^ bits %/ q + 1) %/ 2 ^ bits * q = (- a * (2 ^ bits %/ q + 1) %/ 2 ^ bits) * q). smt.
 by rewrite modzMDr.
 qed.
