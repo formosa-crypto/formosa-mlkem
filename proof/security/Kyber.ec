@@ -53,6 +53,8 @@ theory MLWE_PKE.
     }
   }.
 
+(* Hop 1 *)
+
 module MLWE_PKE1 = {
 
     proc kg() : pkey * skey = {
@@ -65,26 +67,6 @@ module MLWE_PKE1 = {
   include MLWE_PKE [-kg]
 
 }.
-
-module MLWE_PKE2 = {
-
-    proc enc(pk : pkey, m : plaintext) : ciphertext = {
-         var u, v;
-         u <$duni;
-         v <$duni_elem;
-         return (c_encode (u,v + m_encode m));
-    }
-
-  include MLWE_PKE1 [-enc]
-
-
-}.
-
-section.
-
-declare module A : Adversary.
-
-(* FIRST HOP *)
 
  module B1(A : Adversary) : Adv_T = {
     proc kg(sd : seed, t : c_vector) : pkey * skey = {
@@ -109,7 +91,12 @@ declare module A : Adversary.
     }
 }.
 
-local lemma hop1_left &m: 
+section.
+
+declare module A : Adversary.
+
+
+lemma hop1_left &m: 
   Pr[CPA(MLWE_PKE,A).main() @ &m : res] =
   Pr[H_MLWE(B1(A)).main(false,false) @ &m : res].
 proof.
@@ -128,7 +115,7 @@ done.
 done.
 qed.
 
-local lemma hop1_right &m: 
+lemma hop1_right &m: 
   Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] = 
   Pr[CPA(MLWE_PKE1,A).main() @ &m : res].
 proof.
@@ -144,7 +131,25 @@ done.
 done.
 qed.
 
-(* SECOND HOP *)
+end section.
+
+(* Hop 2 *)
+
+
+module MLWE_PKE2 = {
+
+    proc enc(pk : pkey, m : plaintext) : ciphertext = {
+         var u, v;
+         u <$duni;
+         v <$duni_elem;
+         return (c_encode (u,v + m_encode m));
+    }
+
+  include MLWE_PKE1 [-enc]
+
+
+}.
+
 
  module B2(A : Adversary) : Adv_T = {
     proc kg(sd : seed, t : c_vector) : pkey * skey = {
@@ -173,7 +178,11 @@ qed.
     }
 }.
 
-local lemma hop2_left &m: 
+section.
+
+declare module A : Adversary.
+
+lemma hop2_left &m: 
   Pr[CPA(MLWE_PKE1,A).main() @ &m : res] =
   Pr[H_MLWE(B2(A)).main(true,false) @ &m : res].
 proof.
@@ -193,7 +202,7 @@ done.
 done.
 qed.
 
-local lemma hop2_right &m: 
+lemma hop2_right &m: 
   Pr[H_MLWE(B2(A)).main(true,true) @ &m : res] = 
   Pr[CPA(MLWE_PKE2,A).main() @ &m : res].
 proof.
@@ -212,5 +221,93 @@ done.
 done.
 qed.
 
+end section.
+
+(* Final game analysis *)
+
+module Game2(A : Adversary) = {
+  proc main() = {
+    var sd, t, m0, m1, u, v, b, b';
+    sd <$ dseed;
+    t <$ duni;
+    (m0, m1) <@ A.choose((sd,t));
+    u <$duni;
+    v <$duni_elem;
+    b' <@ A.guess(c_encode (u,v));
+    b <$ {0,1};
+    return b = b';
+  }
+}.
+
+section.
+
+declare module A : Adversary.
+axiom A_guess_ll : islossless A.guess.
+axiom A_choose_ll : islossless A.choose.
+
+lemma game2_equiv &m : 
+     Pr[CPA(MLWE_PKE2,A).main() @ &m : res] = 
+     Pr[Game2(A).main() @ &m : res].
+proof.
+byequiv.
+proc.
+inline *.
+swap {2} 7 -3.
+call(_: true); wp.
+rnd (fun z, z + m_encode (if b then m1 else m0){2})
+    (fun z, z - m_encode (if b then m1 else m0){2}).
+auto; call (_:true).
+auto; progress. 
+apply add_cancel1.  
+apply add_cancel2.
+smt().
+done.
+done.
+qed.
+
+lemma game2_prob &m :
+     Pr[Game2(A).main() @ &m : res] = 1%r / 2%r.
+proof. 
+byphoare. 
+proc.
+rnd  (pred1 b')=> //=.
+conseq (: _ ==> true).
++ by move=> /> b; smt. 
+call (_: true ==> true).
+apply A_guess_ll.
+inline *.
+auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll).  
+call (_: true ==> true).
+apply A_choose_ll.
+by auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).  
+done.
+done.
+qed.
+
+end section.
+
+section.
+
+declare module A : Adversary.
+axiom A_guess_ll : islossless A.guess.
+axiom A_choose_ll : islossless A.choose.
+
+lemma main_theorem &m :
+  Pr[CPA(MLWE_PKE,A).main() @ &m : res] -  1%r / 2%r =
+  Pr[H_MLWE(B1(A)).main(false,false) @ &m : res] -
+  Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] + 
+  Pr[H_MLWE(B2(A)).main(true,false) @ &m : res] -
+  Pr[H_MLWE(B2(A)).main(true,true) @ &m : res].
+proof.
+rewrite (hop1_left A &m).
+rewrite (hop1_right A &m).
+rewrite (hop2_left A &m).
+rewrite (hop2_right A &m).
+rewrite (game2_equiv A A_guess_ll A_choose_ll &m).
+rewrite (game2_prob A A_guess_ll A_choose_ll &m).
+by ring.
+qed.
+
+end section.
 
 end MLWE_PKE.
