@@ -4,13 +4,24 @@ import Ring.IntID IntOrder.
 
 theory SignedReductions.
 (* [`R] is a power of 2 *)
-op k: int.
-axiom k_pos: 2 < k.
+op k : { int | 2 < k } as gt2_k.
 
 op R = 2^k.
-lemma Reven : 2 %| R by smt.
 
-lemma R_gt0: 0 < R by smt(powPos).
+lemma dvd4R : 4 %| R.
+proof.
+rewrite /R (_ : k = (k - 2) + 2) // -pow_add // 1:[smt(gt2_k)].
+by rewrite dvdz_mull (powS 1) // pow1 dvdzz.
+qed.
+
+hint exact : dvd4R.
+
+lemma dvd2R : 2 %| R.
+proof. by apply: (dvdz_trans 4). qed.
+
+hint exact : dvd2R.
+
+lemma gt0_R: 0 < R by apply: powPos.
 
 (* [q] is the modulus *)
 op q: int.
@@ -61,41 +72,24 @@ apply (dvdz_mulr _). smt.
 apply (modz_dvd _). apply H. done.
 qed.
 
-
 lemma wd_bnd x :
    0 <= x  %% (R*R) %/ R < `| R | by rewrite (_: `| R| = R);smt.
 
-lemma pow_div1 b k :
-    0 < k => 0 < b => 
-    b^k %/ b = b^(k - 1).
-proof.
-progress.
-have stronger : (b^k %/ b * b = b^(k - 1) * b); last by smt.
-rewrite divzE.
-rewrite (_: b ^ k %% b = 0). 
-   rewrite -dvdzE -{1}(pow1 b). 
-   apply dvdz_exp2l => /#.
-by rewrite -Ring.IntID.mulrC -powS => /#.
+lemma div_pow x n m : 0 <= m <= n => 0 < x => x^n %/ x^m = x^(n - m).
+proof. (* FIXME: move *)
+move=> le_0mn gt0_x; rewrite eq_sym eqz_div.
++ by apply/gtr_eqF/powPos.
++ by apply/dvdzP; exists (x^(n - m)); rewrite pow_add /#.
++ by rewrite pow_add /#.
 qed.
 
+lemma pow_div1 b k :
+  0 < k => 0 < b => b^k %/ b = b^(k - 1).
+proof. by move=> *; rewrite -div_pow ?pow1 //#. qed.
+
 lemma pow_div2 b k :
-    1 < k => 0 < b => 
-    b^k %/ b^2 = b^(k - 2).
-proof.
-progress.
-have stronger : ((b^k %/ b^2) * b^2 = b^(k - 2) * b^2).
-rewrite divzE.
-rewrite (_: b ^ k %% b^2 = 0). 
-   rewrite -dvdzE -{1}(pow1 b) pow_mul; first 2 by smt(). 
-   apply dvdz_exp2l => /#.
-rewrite -Ring.IntID.mulrC pow_add; first 2 by smt()=> /#. smt.
-move : stronger.
-pose x := b ^ k %/ b ^ 2. 
-pose y := b ^ (k- 2). 
-pose z := b ^2. 
-have zn0 : z <> 0. smt.
-smt(). 
-qed.
+  1 < k => 0 < b => b^k %/ b^2 = b^(k - 2).
+proof. by move=> *; rewrite -div_pow //#. qed.
 
 lemma bal_mod_small x y:
    1 < y =>
@@ -107,38 +101,48 @@ rewrite bal_modE.
 case (0 <= x < y %/ 2); smt(@IntDiv).
 qed.
 
-lemma b0 :  R * R %/ 2 = R*(R %/ 2).
-proof. 
-rewrite /R pow_add; first 2 by smt(k_pos). 
-rewrite !pow_div1; first 4 by smt(k_pos). 
-by rewrite pow_add; smt(k_pos). 
+lemma div_mulr p q m : m %| q => (p * q) %/ m = p * (q %/ m).
+proof. (* FIXME: move *)
+case: (m = 0) => [->>//|nz_m /dvdzE z_mq].
+by rewrite {1}(divz_eq q m) z_mq /= mulrCA mulrA mulzK // mulrC.
 qed.
+
+lemma div_mull p q m : m %| p => (p * q) %/ m = (p %/ m) * q.
+proof. (* FIXME: move *)
+by move=> dvd_mp; rewrite mulrC div_mulr // mulrC.
+qed.
+
+lemma dvdNz m n : ((-m) %| n) = (m %| n).
+proof. (* FIXME: move *) by rewrite !dvdzE modzN. qed.
+
+lemma div_mul p m n : 0 <= m => m %| p => p %/ (m * n) = p %/ m %/ n.
+proof. (* FIXME: move *)
+rewrite ler_eqVlt => -[<-//|gt0_m /dvdzE z_pm].
+by rewrite {1}(divz_eq p m) z_pm /= (mulrC m n) divzMpr.
+qed.
+
+lemma divM_mul p q m n :
+  0 <= m => m %| p => n %| q => (p * q) %/ (m * n) = (p %/ m) * (q %/ n).
+proof. (* FIXME: move *)
+move=> ge0_m dvd_mp dvd_nq; rewrite div_mul // 1:dvdz_mulr //.
+by rewrite div_mull // div_mulr.
+qed.
+
+lemma b0 :  R*R %/ 2 = R * (R %/ 2).
+proof. by rewrite div_mulr. qed.
 
 lemma b1 : R*R %/4 = R %/2 * R %/2.
-rewrite pow_add; first 2 by smt(k_pos).
-rewrite /R !pow_div1; first 2 by smt(k_pos). 
-rewrite pow_add; first 2 by smt(k_pos).
-rewrite pow_div1;first 2 by smt(k_pos).
-rewrite (_: k-1+k-1 = 2*k - 2); first by ring.
-smt.
+proof. by rewrite (divM_mul _ _ 2 2) // div_mulr. qed.
+
+lemma b2 : R*R %/ 2 = R*R %/ 4 + R*R %/ 4.
+proof.
+rewrite -{1}(divzK 2 ((R * R) %/ 2)).
++ by rewrite b0 dvdz_mulr.
++ by rewrite -div_mul // 1:dvdz_mulr //#.
 qed.
 
-lemma b2 : R * R %/2 = R * R %/4 + R * R %/4.
-rewrite pow_add; first 2 by smt(k_pos).
-rewrite /R !pow_div1; first 2 by smt(k_pos). 
-rewrite (_: 2 ^ (k + k) %/ 4 + 2 ^ (k + k) %/ 4 = 2^1 * (2^(k + k) %/ 4)); first by smt(pow1 k_pos).
-rewrite (_: 4 = 2^2); first by smt.
-rewrite pow_div2;first 2 by smt(k_pos).
-rewrite pow_add; first 2 by smt(k_pos).
-smt.
-qed.
-
-lemma b3 : R = R  %/2 + R  %/2.
-rewrite /R !pow_div1; first 2 by smt(k_pos). 
-rewrite (_: 2 ^ (k - 1) + 2 ^ (k - 1) = 2^1 * (2^(k - 1) )); first by smt(pow1 k_pos).
-rewrite pow_add; first 2 by smt(k_pos).
-smt.
-qed.
+lemma b3 : R = R %/ 2 + R %/ 2.
+proof. by rewrite -{1}(divzK 2 R) 1:dvd2R /#. qed.
 
 lemma bal_mod_div x :
    x * R %%+- (R ^ 2) %/R = x  %%+- R.
@@ -186,8 +190,8 @@ lemma barrett_overZ a kk:
       1 < kk =>
       q < 2^kk =>
       2^kk %/ q * q < 2^kk =>
-      0 <= a - a*(2^kk %/ q + 1) %/ 2^kk * q < 2*q.      
-admitted.
+      0 <= a - a*(2^kk %/ q + 1) %/ 2^kk * q < 2*q.  
+proof. admitted.
 
 lemma sign_comp  a b :
  (a %% R + b %% R) %%+- R = (a + b) %%+- R.
@@ -332,11 +336,11 @@ split; last by smt().
 split; last first.
 move => *. 
 rewrite /a1.
-smt(@IntDiv q_odd1 Reven).
+smt(@IntDiv q_odd1 dvd2R).
 split; first by smt().
 move => *. 
 rewrite /a1.
-smt(@IntDiv q_odd1 Reven).
+smt(@IntDiv q_odd1 dvd2R).
 
 have t1bounds : -R %/4 <= -(q+1) %/2 <= t1 <= (q-1) %/2 < R %/4.
 move : H0 => [#] alb aup.
@@ -347,7 +351,7 @@ move : (bal_mod_bnd (a %% R * qinv) R R_gt0 _); first by smt.
 pose x := (a %% R * qinv) %%+- R.
 move => *.
 have ? : ( R%/2 * q %/R = q %/2).  
-rewrite (_: R %/ 2 * q %/ R = R * q %/2 %/ R ); first by smt(Reven dvdz_mull dvdz_mulr).
+rewrite (_: R %/ 2 * q %/ R = R * q %/2 %/ R ); first by smt(dvd2R dvdz_mull dvdz_mulr).
 rewrite (_: R * q  %/ 2 %/ R = q * R  %/ 2 %/ R); first by smt().
 rewrite (_: q * R  %/ 2 %/ R = q %/ 2 * R %/ R); first by smt(). smt.
 rewrite -(_: q %/2 = (q-1) %/ 2).  smt(q_odd2). smt.
@@ -358,7 +362,7 @@ move : (bal_mod_bnd (a %% R * qinv) R R_gt0 _); first by smt.
 pose x := (a %% R * qinv) %%+- R.
 move => *.
 rewrite (_: -(q+1) %/ 2 = (-R%/2) * (q+1) %/R). 
-rewrite (_: (-R %/ 2) * (q+1) %/ R = (-R * (q+1) %/2) %/ R ); first by smt(Reven dvdz_mull dvdz_mulr). 
+rewrite (_: (-R %/ 2) * (q+1) %/ R = (-R * (q+1) %/2) %/ R ); first by smt(dvd2R dvdz_mull dvdz_mulr). 
 rewrite (_: (- R * (q + 1) %/ 2) = (- (q + 1) * R %/ 2)); first by smt(). 
 rewrite (_: (- (q + 1) * R %/ 2) = (- (q + 1) %/ 2 * R)); first by smt(q_odd1). 
 rewrite -(_: -q %/2 - 1 = - (q + 1) %/ 2).  smt(q_odd1). smt. smt.
