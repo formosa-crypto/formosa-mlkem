@@ -1,18 +1,29 @@
 require import List Int IntExtra IntDiv CoreMap.
+require (****) ZModP.
 from Jasmin require  import JModel.
 require import Montgomery.
 
 theory Fq.
 
+op q : int = 3329 axiomatized by qE.
+
+clone import ZModP with op p <- q proof le2_p by smt(qE).
+
 clone import SignedReductions with
     op k <- 16,
-    op q <- 2^8*13+1,
+    op q <- q,
     op qinv <- 62209,
-    op Rinv <- 169.
-
+    op Rinv <- 169
+    proof k_pos by smt()
+    proof q_bnd by smt
+    proof q_odd1 by smt(qE)
+    proof q_odd2 by smt(qE)
+    proof qqinv by smt
+    proof Rinv_gt0 by smt()
+    proof RRinv by smt
+    proof qinv_bnd by smt.
 
 require import Fqmul.
-
 print M.
 
 lemma balmod_W16 a:
@@ -42,7 +53,7 @@ rewrite W16.of_sintK.
 rewrite  H H0 -/_c.
 rewrite shlMP; first by smt().  
 rewrite W32.to_sintE W32.of_uintK W32.of_uintK. 
-by rewrite W32.of_sintK /=. 
+by rewrite W32.of_sintK /=; smt(qE). 
 qed.
 
 require import Barrett_reduce.
@@ -86,7 +97,7 @@ smt.
 rewrite (_: R = W16.modulus). smt. 
 smt(@W16).
 rewrite (_: W16.to_uint (W16.of_int (-x)) = (-x) %% R). case (0<= -x < W16.modulus); smt(@W16).
-smt(@W16).
+smt(@W16 qE).
 qed.
 
 
