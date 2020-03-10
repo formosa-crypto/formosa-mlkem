@@ -19,7 +19,7 @@ clone include PolyQPrincipalIdeal
          op Poly.Elem.( * )  <- Fq.ZModP.( * ),
          op Poly.Elem.invr   <- Fq.ZModP.inv  ,
        pred Poly.Elem.unit   <- Fq.ZModP.unit ,
-         op P                = Poly.of_list [ Fq.ZModP.([-]) Fq.ZModP.one; 
+         op P                = Poly.of_list [ Fq.ZModP.([-]) (Fq.ZModP.inzmod e); 
                                               Fq.ZModP.zero; 
                                               Fq.ZModP.one].
 
@@ -30,6 +30,13 @@ op proj_i(a : qt) : Fq.ZModP.zmod = (val a).[1].
 
 (* We should somehow have that we can deal
 with degree one polynomials as representatives *)
+abbrev ezqt = inj (of_list [Fq.ZModP.inzmod e]).
+abbrev X2 = inj (of_list [ Fq.ZModP.zero; 
+                           Fq.ZModP.zero; 
+                           Fq.ZModP.one]).
+
+axiom complex_e : ezqt = X2.
+
 lemma complex_rep (a : qt):
    val a = of_list [proj_r a; proj_i a].
 admitted.
@@ -42,13 +49,6 @@ lemma complex_inji (ar ai : Fq.ZModP.zmod) :
    proj_i (inj (of_list [ar; ai])) = ai.
 admitted.
 
-abbrev ezqt = inj (of_list [Fq.ZModP.inzmod e]).
-abbrev X2 = inj (of_list [ Fq.ZModP.([-]) Fq.ZModP.zero; 
-                                          Fq.ZModP.zero; 
-                                          Fq.ZModP.one]).
-
-lemma complex_e : ezqt = X2.
-admitted.
 
 lemma explicit_inj (a : poly):
    exists r, inP (a - r).
