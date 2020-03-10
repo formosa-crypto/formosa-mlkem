@@ -1,7 +1,5 @@
 require import AllCore SmtMap Distr.
 
-theory H_MLWE.
-
 type seed.
 type matrix.
 type c_vector.
@@ -70,5 +68,3 @@ module H_MLWE(Adv : Adv_T) = {
       return b';
    }
 }.
-
-end H_MLWE.

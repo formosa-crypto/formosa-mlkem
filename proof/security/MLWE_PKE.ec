@@ -1,6 +1,5 @@
 require import AllCore.
-require import H_MLWE .
-require (****) PKE.
+require (****) PKE H_MLWE.
 
 theory MLWE_PKE.
 
@@ -23,7 +22,7 @@ theory MLWE_PKE.
   op c_encode : raw_ciphertext -> ciphertext.
   op c_decode : ciphertext -> raw_ciphertext.
 
-  module MLWE_PKE = {
+  module MLWE_PKE : Scheme = {
     proc kg() : pkey * skey = {
          var sd,s,e,_A,t;
          sd <$ dseed;
@@ -100,26 +99,24 @@ lemma hop1_left &m:
   Pr[CPA(MLWE_PKE,A).main() @ &m : res] =
   Pr[H_MLWE(B1(A)).main(false,false) @ &m : res].
 proof.
-byequiv.
+byequiv => //. 
 proc.
 inline *. 
 seq 3 3 : (#pre /\ ={sd,s,e}); first by auto => />.
 seq 2 2 : (#pre /\ ={_A} /\ t{1} = u0{2}); first by auto => />.
-seq 0 5 : (#pre); 
-   first by rnd{2};wp;rnd{2};rnd{2};rnd{2}; auto => />;
+seq 0 5 : (#pre);
+  first by rnd{2};wp;rnd{2};rnd{2};rnd{2}; auto => />;
      smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll). 
-seq 1 6 : (#pre /\ ={pk}); first by auto => />.
-wp; call(_: true); auto => />; first by move => &1 &2 *; smt().
+seq 1 6 : (#pre /\ ={pk}); first by auto => />. wp.
+wp; call(_: true); auto => />; first by smt().
 by call(_: true); auto => />.
-done.
-done.
 qed.
 
 lemma hop1_right &m: 
   Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] = 
   Pr[CPA(MLWE_PKE1,A).main() @ &m : res].
 proof.
-byequiv.
+byequiv => //.
 proc.
 inline *. 
 seq 16 3 : (#pre /\ ={sd,pk} /\ t{2} = u1{1}); first by
@@ -127,8 +124,6 @@ seq 16 3 : (#pre /\ ={sd,pk} /\ t{2} = u1{1}); first by
   auto => />;smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll). 
 wp; call(_: true); auto => />; first by move => &1 &2 *; smt().
 by call(_: true); auto => />.
-done.
-done.
 qed.
 
 end section.
@@ -186,7 +181,7 @@ lemma hop2_left &m:
   Pr[CPA(MLWE_PKE1,A).main() @ &m : res] =
   Pr[H_MLWE(B2(A)).main(true,false) @ &m : res].
 proof.
-byequiv.
+byequiv => //.
 proc.
 inline *. 
 swap {2} 7 -5.
@@ -198,15 +193,13 @@ swap {2} [11..13] -9.
 by wp; call(_: true); wp; rnd{2}; wp; rnd; rnd{2}; wp; 
    rnd; rnd; wp; rnd; call(_: true); auto => />; 
         smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll).  
-done.
-done.
 qed.
 
 lemma hop2_right &m: 
   Pr[H_MLWE(B2(A)).main(true,true) @ &m : res] = 
   Pr[CPA(MLWE_PKE2,A).main() @ &m : res].
 proof.
-byequiv.
+byequiv => //.
 proc.
 inline *. 
 swap {1} 7 -5.
@@ -217,8 +210,6 @@ seq 7 3 : (#pre /\ ={sd,t,pk} /\ pk{2}.`1 = sd{2} /\ pk{2}.`2 = t{2});
 swap {1} [11..13] -9.
 by wp; call(_: true);wp;rnd;wp;rnd{1};rnd;wp;rnd{1};rnd{1};wp;rnd; 
    call(_: true); auto => />;smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll).  
-done.
-done.
 qed.
 
 end section.
@@ -249,7 +240,7 @@ lemma game2_equiv &m :
      Pr[CPA(MLWE_PKE2,A).main() @ &m : res] = 
      Pr[Game2(A).main() @ &m : res].
 proof.
-byequiv.
+byequiv => //.
 proc.
 inline *.
 swap {2} 7 -3.
@@ -257,31 +248,21 @@ call(_: true); wp.
 rnd (fun z, z + m_encode (if b then m1 else m0){2})
     (fun z, z - m_encode (if b then m1 else m0){2}).
 auto; call (_:true).
-auto; progress. 
-apply add_cancel1.  
-apply add_cancel2.
-smt().
-done.
-done.
+auto; progress; smt(add_cancel1 add_cancel2).
 qed.
 
 lemma game2_prob &m :
      Pr[Game2(A).main() @ &m : res] = 1%r / 2%r.
 proof. 
-byphoare. 
+byphoare => //. 
 proc.
 rnd  (pred1 b')=> //=.
 conseq (: _ ==> true).
 + by move=> /> b; smt. 
-call (_: true ==> true).
-apply A_guess_ll.
-inline *.
+call (_: true ==> true); first by apply A_guess_ll.
 auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll).  
-call (_: true ==> true).
-apply A_choose_ll.
+call (_: true ==> true); first by apply A_choose_ll.
 by auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).  
-done.
-done.
 qed.
 
 end section.
@@ -294,10 +275,10 @@ axiom A_choose_ll : islossless A.choose.
 
 lemma main_theorem &m :
   Pr[CPA(MLWE_PKE,A).main() @ &m : res] -  1%r / 2%r =
-  Pr[H_MLWE(B1(A)).main(false,false) @ &m : res] -
-  Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] + 
-  Pr[H_MLWE(B2(A)).main(true,false) @ &m : res] -
-  Pr[H_MLWE(B2(A)).main(true,true) @ &m : res].
+    Pr[H_MLWE(B1(A)).main(false,false) @ &m : res] -
+       Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] + 
+    Pr[H_MLWE(B2(A)).main(true,false) @ &m : res] -
+       Pr[H_MLWE(B2(A)).main(true,true) @ &m : res].
 proof.
 rewrite (hop1_left A &m).
 rewrite (hop1_right A &m).
