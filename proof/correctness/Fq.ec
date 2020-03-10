@@ -14,7 +14,6 @@ clone import SignedReductions with
     op q <- q,
     op qinv <- 62209,
     op Rinv <- 169
-    proof k_pos by smt()
     proof q_bnd by smt
     proof q_odd1 by smt(qE)
     proof q_odd2 by smt(qE)

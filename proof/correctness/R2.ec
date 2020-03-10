@@ -19,7 +19,7 @@ clone include PolyQPrincipalIdeal
          op Poly.Elem.( * )  <- Fq.ZModP.( * ),
          op Poly.Elem.invr   <- Fq.ZModP.inv  ,
        pred Poly.Elem.unit   <- Fq.ZModP.unit ,
-         op P                = Poly.of_list [ Fq.ZModP.([-]) (Fq.ZModP.inzmod e); 
+         op P                = Poly.of_list [ Fq.ZModP.([-]) Fq.ZModP.one; 
                                               Fq.ZModP.zero; 
                                               Fq.ZModP.one].
 
@@ -48,14 +48,7 @@ abbrev X2 = inj (of_list [ Fq.ZModP.([-]) Fq.ZModP.zero;
                                           Fq.ZModP.one]).
 
 lemma complex_e : ezqt = X2.
-proof. 
-have ?: (X2 - ezqt = zero); last by smt.
-have ?: inj (X*X - (Poly.intmul Poly.one e)) = inj P; first by smt.
-rewrite (_: X2 - ezqt = inj (X * X - intmul Poly.one e)).
-
- first by smt(sub_inj).
-by rewrite -zero_inj. 
-qed.
+admitted.
 
 lemma explicit_inj (a : poly):
    exists r, inP (a - r).

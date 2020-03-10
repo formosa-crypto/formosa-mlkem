@@ -3,6 +3,8 @@ require (****) PKE H_MLWE.
 
 theory MLWE_PKE.
 
+print PKE.
+
   clone import H_MLWE.
 
   type plaintext.
@@ -21,6 +23,10 @@ theory MLWE_PKE.
  
   op c_encode : raw_ciphertext -> ciphertext.
   op c_decode : ciphertext -> raw_ciphertext.
+
+(******************************************************************)
+(*                    The Encryption Scheme                       *)
+(******************************************************************)
 
   module MLWE_PKE : Scheme = {
     proc kg() : pkey * skey = {
@@ -51,6 +57,10 @@ theory MLWE_PKE.
          return Some (m_decode (v - (v_transpose sk) * u));
     }
   }.
+
+(******************************************************************)
+(*                    Game Hopping Security                       *)
+(******************************************************************)
 
 (* Hop 1 *)
 

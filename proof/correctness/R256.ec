@@ -1,28 +1,28 @@
+require import List Int IntExtra IntDiv CoreMap.
+from Jasmin require  import JModel.
 
+require import Poly.
+require import Fq.
 
-theory Z_3329_X__X_256.
+theory R256.
 
 op n : int =  256 axiomatized by nE.
 op e : int = 17 axiomatized by eE.
 
-clone import Fq with op p <- q proof le2_p by smt(qE).
-
 clone include PolyQPrincipalIdeal
-  with type elem <- ZModP.zmod,
-         op Poly.Elem.zeror  <- ZModP.zero ,
-         op Poly.Elem.oner   <- ZModP.one  ,
-         op Poly.Elem.( + )  <- ZModP.( + ),
-         op Poly.Elem.([-])  <- ZModP.([-]),
-         op Poly.Elem.( * )  <- ZModP.( * ),
-         op Poly.Elem.invr   <- ZModP.inv  ,
-       pred Poly.Elem.unit   <- ZModP.unit ,
+  with type elem <- Fq.ZModP.zmod,
+         op Poly.Elem.zeror  <- Fq.ZModP.zero ,
+         op Poly.Elem.oner   <- Fq.ZModP.one  ,
+         op Poly.Elem.( + )  <- Fq.ZModP.( + ),
+         op Poly.Elem.([-])  <- Fq.ZModP.([-]),
+         op Poly.Elem.( * )  <- Fq.ZModP.( * ),
+         op Poly.Elem.invr   <- Fq.ZModP.inv  ,
+       pred Poly.Elem.unit   <- Fq.ZModP.unit ,
          op P                <- Poly.( + ) (Poly.exp Poly.X n)  Poly.one.
 
-export Poly.
-end Z_3329_X__X_256.
+end R256.
 
-export Z_3329_X__X_256.
-
+(*
 theory KyberPoly.
 
 clone import Z_3329_X__X_256.
@@ -93,3 +93,5 @@ admit.
 qed.
 
 
+
+*)
