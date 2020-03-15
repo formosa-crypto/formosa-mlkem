@@ -25,7 +25,12 @@ axiom zero_coeffs p k:
 op of_list : elem list -> poly.
 op to_list : poly -> elem list.
 
-axiom of_list_deg l :
+axiom zero_rep : to_list zero = [ Elem.zeror].
+axiom one_rep : to_list one = [ Elem.oner].
+axiom x_rep : to_list X = [ Elem.zeror; Elem.oner].
+
+axiom of_list_degn0 l :
+  l <> [] => 
   deg (of_list l) = (size l) - 1.
 
 axiom to_list_size a :
@@ -36,16 +41,25 @@ axiom of_list_coef l i :
 
 lemma of_list_coef0 l i :
   !(0 <= i < size l) =>
-  (of_list l).[i] = Elem.zeror  by smt.
+  (of_list l).[i] = Elem.zeror  
+by smt(@List zero_coeffs of_list_coef).
 
 axiom to_list_coef a i :
   nth (Elem.zeror) (to_list a) i = a.[i].
 
-lemma to_listK : cancel of_list to_list.
-admitted.
+lemma to_listK l : l <> [] => to_list (of_list l) = l.
+proof.
+rewrite /cancel => lnempty. 
+apply (eq_from_nth Elem.zeror).
+ smt(to_list_size of_list_degn0). 
+smt(of_list_coef to_list_coef).
+qed.
 
-lemma of_listK : cancel to_list of_list.
-admitted.
+lemma of_listK : cancel to_list of_list. 
+rewrite /cancel => x.
+rewrite ext_eq => i. 
+smt(of_list_coef to_list_coef).
+qed.
 
 op eval    : poly -> elem -> elem.
 abbrev root (p : poly) x = eval p x = zeror.
@@ -58,6 +72,11 @@ op add : poly -> poly -> poly.
 
 axiom add_sem a b i:
     (add a b).[i] = a.[i] + b.[i].    
+
+op inv : poly -> poly.
+
+axiom inv_sem a i:
+    (inv a).[i] = -a.[i].    
 
 op mul : poly -> poly -> poly.
 
@@ -73,11 +92,12 @@ proof.
 rewrite mul_sem.
 move => bound.
 elim (iota_ 0 k).
-smt.
-progress.
+smt().
+auto => /> *.
 rewrite H.
-rewrite (_: a.[k - x] * b.[x] = zeror). smt.
-smt.
+rewrite (_: a.[k - x] * b.[x] = zeror). 
+ smt(@Elem zero_coeffs).
+smt(@Elem).
 qed.
 
 clone include Ring.IDomain with
@@ -85,11 +105,9 @@ clone include Ring.IDomain with
   op zeror <- zero, 
   op oner <- one, 
   op ( + ) = add, 
-  op ( * ) = mul.
+  op ( * ) = mul,
+  op [-] = inv.
 
-lemma sub_sem (a b : poly) i:
-    (a - b).[i] = a.[i] - b.[i].    
-admitted.
 
 end Poly.
 

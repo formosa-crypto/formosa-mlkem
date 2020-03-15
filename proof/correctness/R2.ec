@@ -35,6 +35,7 @@ abbrev X2 = inj (of_list [ Fq.ZModP.zero;
                            Fq.ZModP.zero; 
                            Fq.ZModP.one]).
 
+(* Make this a lemma? *)
 axiom complex_e : ezqt = X2.
 
 lemma complex_rep (a : qt):

@@ -1,4 +1,4 @@
-require import AllCore SmtMap Distr.
+require import AllCore Ring SmtMap Distr.
 
 type seed.
 type matrix.
@@ -6,16 +6,34 @@ type c_vector.
 type r_vector.
 type elem.
 
+clone import IDomain as Elem with type t <- elem.
+
+instance ring with elem
+  op rzero = Elem.zeror
+  op rone  = Elem.oner
+  op add   = Elem.( + )
+  op mul   = Elem.( * )
+  op opp   = Elem.([-])
+
+  proof oner_neq0 by apply/Elem.oner_neq0
+  proof addr0     by apply/Elem.addr0
+  proof addrA     by apply/Elem.addrA
+  proof addrC     by apply/Elem.addrC
+  proof addrN     by apply/Elem.addrN
+  proof mulr1     by apply/Elem.mulr1
+  proof mulrA     by apply/Elem.mulrA
+  proof mulrC     by apply/Elem.mulrC
+  proof mulrDl    by apply/Elem.mulrDl.
+
 op H : seed -> matrix.
 
 op m_transpose : matrix -> matrix.
 op v_transpose : c_vector -> r_vector.
 
-op ( +)  : elem -> elem -> elem.
-op ( -)  : elem -> elem -> elem.
-op ( *)  : r_vector -> c_vector -> elem.
+op (`|*|`)  : r_vector -> c_vector -> elem.
 op (`|+|`) : c_vector -> c_vector -> c_vector.
-op (`|*|`) : matrix -> c_vector -> c_vector.
+op (`*|`) : matrix -> c_vector -> c_vector.
+op (`|*`) : r_vector -> matrix -> r_vector.
 
 op dseed : seed distr.
 op dshort : c_vector distr.
@@ -37,12 +55,6 @@ proof. by move=> ??;rewrite !duni_elemE. qed.
 
 hint exact random : duni_elem_fu duni_elem_ll duni_elem_uni.
 
-axiom add_cancel1 a b :
-  a = a - b + b.
-
-axiom add_cancel2 a b :
-  a = a + b - b.
-
 module type Adv_T = {
    proc guess(sd : seed, t : c_vector, uv : c_vector * elem) : bool
 }.
@@ -56,12 +68,12 @@ module H_MLWE(Adv : Adv_T) = {
       s <$ dshort;
       e <$ dshort;
       _A <- if tr then m_transpose (H sd) else H sd;
-      u0 <- _A `|*|` s `|+|` e;
+      u0 <- _A `*|` s `|+|` e;
       u1 <$ duni;
 
       t <$ duni;
       e' <$ dshort_elem;
-      v0 <- v_transpose t * s + e';
+      v0 <- v_transpose t `|*|` s + e';
       v1 <$ duni_elem;
       
       b' <@ Adv.guess(sd, t, if b then (u1,v1) else (u0,v0));
