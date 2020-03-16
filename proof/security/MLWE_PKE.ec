@@ -1,12 +1,11 @@
-require import AllCore Real.
+require import AllCore Real Distr SmtMap.
 require (****) PKE H_MLWE.
 
 theory MLWE_PKE.
 
-print PKE.
-
   clone import H_MLWE.
   import Elem.
+  import H_MLWE_ROM.
 
   type plaintext.
   type ciphertext.
@@ -28,13 +27,18 @@ print PKE.
 (******************************************************************)
 (*                    The Encryption Scheme                       *)
 
-  module MLWE_PKE : Scheme = {
+  module ConcreteH : Oracle = {
+     proc init() = {}
+     proc o(sd : seed) = { return H sd;}
+  }.
+
+  module MLWE_PKE(H: ARO) : Scheme = {
     proc kg() : pkey * skey = {
          var sd,s,e,_A,t;
          sd <$ dseed;
           s <$ dshort;
           e <$ dshort;
-          _A <- H(sd);
+          _A <@ H.o(sd);
           t <- _A `*|` s `|+|` e;
           return ((sd,t),s);
     }
@@ -45,7 +49,7 @@ print PKE.
          r <$ dshort;
          e1 <$ dshort;
          e2 <$ dshort_elem;
-         _A <- H(sd);
+         _A <@ H.o(sd);
          u <- m_transpose _A `*|` r `|+|` e1;
          v <-  (v_transpose t) `|*|` r + e2 + (m_encode m);
          return (c_encode (u,v));
@@ -57,6 +61,8 @@ print PKE.
          return Some (m_decode (v - ((v_transpose sk) `|*|` u)));
     }
   }.
+
+  module MLWE_PKE_H = MLWE_PKE(ConcreteH).
 
 (******************************************************************)
 (*                    Game Hopping Security                       *)
@@ -74,7 +80,7 @@ module MLWE_PKE1 = {
           return ((sd,t),s);
     }
 
-  include MLWE_PKE [-kg]
+  include MLWE_PKE_H [-kg]
 
 }.
 
@@ -95,7 +101,7 @@ module MLWE_PKE1 = {
       (pk,sk) <@ kg(sd,uv.`1);
       (m0, m1) <@ A.choose(pk);
       b <$ {0,1};
-      c <@ MLWE_PKE.enc(pk, if b then m1 else m0);
+      c <@ MLWE_PKE_H.enc(pk, if b then m1 else m0);
       b' <@ A.guess(c);
       return b' = b;
     }
@@ -107,14 +113,14 @@ declare module A : Adversary.
 
 
 lemma hop1_left &m: 
-  Pr[CPA(MLWE_PKE,A).main() @ &m : res] =
+  Pr[CPA(MLWE_PKE_H,A).main() @ &m : res] =
   Pr[H_MLWE(B1(A)).main(false,false) @ &m : res].
 proof.
 byequiv => //. 
 proc.
 inline *. 
 seq 3 3 : (#pre /\ ={sd,s,e}); first by auto => />.
-seq 2 2 : (#pre /\ ={_A} /\ t{1} = u0{2}); first by auto => />.
+seq 3 2 : (#pre /\ ={_A} /\ t{1} = u0{2}); first by auto => />.
 seq 0 5 : (#pre);
   first by rnd{2};wp;rnd{2};rnd{2};rnd{2}; auto => />;
      smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll). 
@@ -286,7 +292,7 @@ axiom A_guess_ll : islossless A.guess.
 axiom A_choose_ll : islossless A.choose.
 
 lemma main_theorem &m :
-  Pr[CPA(MLWE_PKE,A).main() @ &m : res] -  1%r / 2%r =
+  Pr[CPA(MLWE_PKE_H,A).main() @ &m : res] -  1%r / 2%r =
     Pr[H_MLWE(B1(A)).main(false,false) @ &m : res] -
        Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] + 
     Pr[H_MLWE(B2(A)).main(true,false) @ &m : res] -
@@ -310,15 +316,21 @@ end section.
 (* choose the message where correctness is checked after seeing   *)
 (* the public-key. This setting seems to be the one in which      *)
 (* failure probability is considered in the FO construction.      *)
+(* We need to model H as a random oracle as we will assume A is   *)
+(* uniform random.                                                *)
 (******************************************************************)
 
 
 
-module type CAdversary = {
+module type CAdversary(H : ARO) = {
    proc find(pk: pkey) : plaintext
 }.
 
-module AdvCorrectness(S : Scheme, A : CAdversary) = {
+module type SchemeRO(H : ARO) = {
+   include Scheme
+}.
+
+module AdvCorrectness(S : SchemeRO, A : CAdversary, O : Oracle) = {
   proc main() : bool = {
     var pk : pkey;
     var sk : skey;
@@ -326,10 +338,11 @@ module AdvCorrectness(S : Scheme, A : CAdversary) = {
     var m : plaintext;
     var m' : plaintext option;
     
-    (pk,sk) <@ S.kg();
-    m <@ A.find(pk);
-    c <@ S.enc(pk, m);
-    m' <@ S.dec(sk,c);
+    O.init();
+    (pk,sk) <@ S(O).kg();
+    m <@ A(O).find(pk);
+    c <@ S(O).enc(pk, m);
+    m' <@ S(O).dec(sk,c);
 
     return m' = Some m;
   }
@@ -369,12 +382,11 @@ lemma noise_exp_val _A s e r e1 e2 m :
     let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
     let cu = noise_u u in
     let cv = noise_v v in
-          ((v_transpose e) `|*|` r) + e2 + cv - 
-             ((v_transpose s) `|*|` e1) - ((v_transpose s) `|*|` cu).
-proof.
-rewrite /noise_exp //= encode_noise //= matrix_props1 matrix_props2 //=. 
-by ring. 
-qed.
+          (((v_transpose e) `|*|` r) -
+           ((v_transpose s) `|*|` e1) -
+           ((v_transpose s) `|*|` cu) + e2
+          ) + cv
+     by rewrite /noise_exp //= encode_noise //= matrix_props1 matrix_props2 //=; ring. 
 
 op bad_noise : elem -> bool.
 
@@ -382,14 +394,15 @@ axiom good_decode m n :
     !bad_noise n =>
       m_decode (m_encode m + n) = m.
 
-module AdvCorrectnessNoise(A : CAdversary) = {
+module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
    proc main() = {
          var sd,s,e,_A,r,e1,e2,m,n;
+         O.init();
          sd <$ dseed;
          s <$ dshort;
          e <$ dshort;
-         _A <- H(sd);
-         m <@ A.find(sd,_A `*|` s `|+|` e);
+         _A <@ O.o(sd);
+         m <@ A(O).find(sd,_A `*|` s `|+|` e);
          r <$ dshort;
          e1 <$ dshort;
          e2 <$ dshort_elem;
@@ -400,46 +413,86 @@ module AdvCorrectnessNoise(A : CAdversary) = {
 
 section.
 
-declare module A : CAdversary.
-axiom All : islossless A.find.
+declare module A : CAdversary {RO}.
+axiom All (O <: ARO{A}):
+     islossless O.o =>
+     islossless A(O).find.
 
 lemma correctness &m :
-  Pr[ AdvCorrectness(MLWE_PKE,A).main() @ &m : res]  >=
-  1%r - Pr[ AdvCorrectnessNoise(A).main() @ &m : res].
+  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
+  1%r - Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res].
 proof.
-rewrite (_: 1%r - Pr[ AdvCorrectnessNoise(A).main() @ &m : res] =
-   Pr[ AdvCorrectnessNoise(A).main() @ &m : !res]).
+rewrite (_: 1%r - Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res] =
+   Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : !res]).
 rewrite Pr[mu_not]; congr => //. 
 + byphoare => //.
 proc. 
 auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
-call (_: true); first by apply All.
+call (_: true); [ by move => H; apply (All H) | by  apply RO_o_ll; first by smt(duni_matrix_ll) | ].
+auto => />.
+call(_:true); first by auto => />;  smt(duni_matrix_ll). 
 auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
+call (_: true);first by  auto => />. 
+by auto => />; smt(dseed_ll dshort_ll dshort_elem_ll). 
 + byequiv => //.
-proc. inline *.
-auto => />; first by smt().
-call(_: true). 
-auto => />. 
-move =>  ?????????????.
-pose _AL := H sdL.
-pose mL := result_R.
+proc. 
+inline MLWE_PKE(RO).dec MLWE_PKE(RO).enc MLWE_PKE(RO).kg; wp.
+seq 9 14 : ( 
+           ={RO.m,e2,e1,r,s,e,sd} /\
+           sd0{2} = sd{2} /\
+           m0{2} = m{1} /\ 
+           m0{2} = m{2} /\ 
+           pk0.`1{2} = sd{2} /\
+           pk0.`2{2} = t{2} /\
+           sk{2} = s{2} /\
+           t{2} = _A{2} `*|` s{2} `|+|` e{2} /\
+           t0{2} = t{2} /\
+           pk0{2}.`1 \in RO.m{2} /\
+           _A{2} = _A{1} /\
+           oget RO.m{2}.[pk0.`1{2}] = _A{2}); last first.
+inline *. auto => />.  move => &2 -> ?. 
+split; first by smt(duni_matrix_ll). 
+move => ???.
 move => noise_expH.
-rewrite  encode_noise  => />. 
-rewrite (_: (v_transpose (_AL `*|` sL `|+|` eL) `|*|` rL + e2L + m_encode mL +
-   noise_v (v_transpose (_AL `*|` sL `|+|` eL) `|*|` rL + e2L + m_encode mL) -
-   (v_transpose sL `|*|`
-    (m_transpose _AL `*|` rL `|+|` e1L `|+|`
-     noise_u (m_transpose _AL `*|` rL `|+|` e1L)))) = 
-m_encode mL + noise_exp _AL sL eL rL e1L e2L mL); last by apply good_decode.
-by rewrite  noise_exp_val //= matrix_props1 matrix_props2; ring.
+rewrite  encode_noise  => />.
+rewrite (_: 
+   (v_transpose (oget RO.m{2}.[pk0{2}.`1] `*|` s{2} `|+|` e{2}) `|*|` r{2} +
+   e2{2} + m_encode m{2} +
+   noise_v
+     (v_transpose (oget RO.m{2}.[pk0{2}.`1] `*|` s{2} `|+|` e{2}) `|*|` r{2} +
+      e2{2} + m_encode m{2}) -
+   (v_transpose s{2} `|*|`
+    (m_transpose (oget RO.m{2}.[pk0{2}.`1]) `*|` r{2} `|+|` e1{2} `|+|`
+     noise_u (m_transpose (oget RO.m{2}.[pk0{2}.`1]) `*|` r{2} `|+|` e1{2})))) = 
+m_encode m{2} + noise_exp (oget RO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
+                   e2{2} m{2}); last by apply good_decode.
+by rewrite  noise_exp_val //= matrix_props1 matrix_props2; ring. 
+auto => />;first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
+seq 5 7 : ( #pre /\
+           ={RO.m,s,e,sd,_A} /\
+           pk.`1{2} = sd{2} /\
+           pk.`2{2} = t{2} /\
+           sk{2} = s{2} /\
+           t{2} = _A{2} `*|` s{2} `|+|` e{2} /\
+           pk{2}.`1 \in RO.m{2} /\
+           oget RO.m{2}.[sd{2}] = _A{2}); last first.
+exists* _A{2}, pk{2}.`1.
+elim* => _A sd.
+call(_: ={glob RO} /\ oget RO.m{2}.[sd] = _A /\ sd \in RO.m{2} ).
+proc.
+auto => />; smt(@SmtMap).
+auto => /> /#.
+inline *.
+auto => />;  smt(@SmtMap).
 qed.
+
+end section.
 
 (* We can define the distributions of all noise components except cv
 exactly, as this is the only component of the noise that really depends
 on the attacker. Probability of bad noise can therefore be approximated
 by assuming that attacker can always choose cv to get closer to the bound,
-which is the same as tightening the bound based on max |cv|. *). 
+which is the same as tightening the bound based on max |cv|. *)
 
-end section.
 
 end MLWE_PKE.

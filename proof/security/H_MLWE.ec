@@ -1,4 +1,5 @@
 require import AllCore Ring SmtMap Distr.
+require (****) ROM.
 
 type seed.
 type matrix.
@@ -47,9 +48,9 @@ axiom dshort_ll : is_lossless dshort.
 axiom dshort_elem_ll : is_lossless dshort_elem.
 axiom duni_elem_ll : is_lossless duni_elem.
 
-op p : real.
+op pe : real.
 axiom duni_elem_fu: is_full duni_elem.
-axiom duni_elemE: forall (s: elem), mu1 duni_elem s = p.
+axiom duni_elemE: forall (s: elem), mu1 duni_elem s = pe.
 lemma duni_elem_uni: is_funiform duni_elem.
 proof. by move=> ??;rewrite !duni_elemE. qed.
 
@@ -80,3 +81,21 @@ module H_MLWE(Adv : Adv_T) = {
       return b';
    }
 }.
+
+(* We'll need these definitions to model H as a ROM *)
+
+op duni_matrix : matrix distr.
+
+axiom duni_matrix_ll : is_lossless duni_matrix. 
+op pm : real.
+axiom duni_matrix_fu: is_full duni_matrix.
+axiom duni_matrixE: forall (m: matrix), mu1 duni_matrix m = pm.
+lemma duni_matrix_uni: is_funiform duni_matrix.
+proof. by move=> ??;rewrite !duni_matrixE. qed.
+
+op dsample(sd : seed) = duni_matrix.
+
+clone import ROM.Lazy as H_MLWE_ROM with
+    type from <- seed,
+    type to <- matrix,
+    op   dsample <- dsample.
