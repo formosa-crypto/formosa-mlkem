@@ -536,10 +536,9 @@ lemma noise_exp_part_val _A s e r e1 e2 m :
           rnd_err_v v by rewrite noise_exp_val /noise_exp_part.
 
 
-module AdvCorrectnessNoiseAprox = {
+module CorrectnessNoiseAprox = {
    proc main() = {
-         var sd,s,e,_A,r,e1,e2,n;
-         sd <$ dseed;
+         var s,e,_A,r,e1,e2,n;
          s <$ dshort;
          e <$ dshort;
          _A <$ duni_matrix;
@@ -560,11 +559,11 @@ axiom All (O <: ARO{A}):
 
 lemma correctness_slack &m :
   Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res]<=
-  Pr[ AdvCorrectnessNoiseAprox.main() @ &m : res].
+  Pr[ CorrectnessNoiseAprox.main() @ &m : res].
 proof.
 byequiv => //.
 proc.
-seq 8 7 : (#pre /\ ={sd,s,r,_A,r,e1,e2,e} /\
+seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
             s{2} \in dshort /\
             e{2} \in dshort /\
            _A{2} \in duni_matrix /\
@@ -577,13 +576,59 @@ skip;auto => />.
 move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; smt(noise_commutes cv_bound_valid).
 qed.
 
-lemma correctness_final &m :
+lemma correctness_aprox &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
-  1%r - Pr[ AdvCorrectnessNoiseAprox.main() @ &m : res].
+  1%r - Pr[ CorrectnessNoiseAprox.main() @ &m : res].
 proof.
 move : (correctness A All &m).
 move : (correctness_slack &m).
 smt().
+qed.
+
+(* Finally we just need to compute a concrete probability *)
+
+type rtuple =  (((((c_vector * c_vector) * matrix) * c_vector) * c_vector) * elem).
+op rdistr : rtuple distr = 
+     (((((dshort `*` dshort) `*` duni_matrix) `*` dshort) `*` dshort) `*` dshort_elem).
+
+op noise_exp_final (t : rtuple) : elem = 
+         noise_exp_part 
+              t.`1.`1.`1.`2 
+              t.`1.`1.`1.`1.`1  
+              t.`1.`1.`1.`1.`2  
+              t.`1.`1.`2 
+              t.`1.`2 
+              t.`2.
+
+op comp_distr : elem distr = 
+      dmap
+      rdistr
+      noise_exp_final.
+
+module CorrectnessBound = {
+   proc main() = {
+         var n;
+         n <$ comp_distr;
+         return (!good_noise (noise_bound - cv_bound) (noise_val n));
+    }
+}.
+
+op fail_prob : real.
+
+axiom fail_prob &m : 
+   Pr[ CorrectnessBound.main() @ &m : res] = fail_prob.
+  
+lemma correctness_bound &m :
+  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
+  1%r - fail_prob.
+proof.
+rewrite -(fail_prob &m).
+rewrite (_:
+   Pr[CorrectnessBound.main() @ &m : res] =
+   Pr[CorrectnessNoiseAprox.main() @ &m : res]); last by apply (correctness_aprox &m).
+byequiv => //.
+proc.
+by admit. (* 6-product composition of distributions *)
 qed.
 
 end section.
