@@ -1,6 +1,8 @@
 require import AllCore Ring SmtMap Distr.
 require (****) ROM.
 
+(** NOTE: WHEN CLONING THIS THEORY ALL AXIOMS MUST BE PROVED *)
+
 type seed.
 type matrix.
 type c_vector.

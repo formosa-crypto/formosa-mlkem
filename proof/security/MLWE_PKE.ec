@@ -1,6 +1,8 @@
 require import AllCore Real Distr SmtMap.
 require (****) PKE H_MLWE.
 
+(** NOTE: WHEN CLONING THIS THEORY ALL AXIOMS MUST BE PROVED *)
+
 theory MLWE_PKE.
 
   clone import H_MLWE.
@@ -352,12 +354,24 @@ module AdvCorrectness(S : SchemeRO, A : CAdversary, O : Oracle) = {
    for Kyber. We will do so generically by first showing at this
    level that it all comes down to the noise distribution. *)
 
-op noise_v : elem -> elem.
-op noise_u : c_vector -> c_vector.
+(* We express rounding errors as additive noise *)
+
+op noise_exp _A s e r e1 e2 m = 
+    let t = _A `*|` s `|+|` e in
+    let u = m_transpose _A `*|` r `|+|` e1 in
+    let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+    let (u',v') = c_decode (c_encode (u,v)) in
+        v' - ((v_transpose s) `|*|` u') - (m_encode m).
+
+(* We can derive the noise expression by introducing
+   operators that compute the rounding error *)
+
+op rnd_err_v : elem -> elem.
+op rnd_err_u : c_vector -> c_vector.
 
 axiom encode_noise u v :
    c_decode (c_encode (u,v)) = 
-      (u `|+|` noise_u u, v + noise_v v).
+      (u `|+|` rnd_err_u u, v + rnd_err_v v).
 
 axiom matrix_props1 _A s e r :
 v_transpose (_A `*|` s `|+|` e) `|*|` r = 
@@ -368,31 +382,48 @@ axiom matrix_props2 s _A r e1 cu :
   ((v_transpose s) `|*` (m_transpose _A) `|*|` r)+ 
     (v_transpose s `|*|` e1) + (v_transpose s `|*|` cu).
 
-op noise_exp _A s e r e1 e2 m = 
-    let t = _A `*|` s `|+|` e in
-    let u = m_transpose _A `*|` r `|+|` e1 in
-    let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
-    let (u',v') = c_decode (c_encode (u,v)) in
-        v' - ((v_transpose s) `|*|` u') - (m_encode m).
-
 lemma noise_exp_val _A s e r e1 e2 m :
     noise_exp _A s e r e1 e2 m = 
     let t = _A `*|` s `|+|` e in
     let u = m_transpose _A `*|` r `|+|` e1 in
     let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
-    let cu = noise_u u in
-    let cv = noise_v v in
+    let cu = rnd_err_u u in
+    let cv = rnd_err_v v in
           (((v_transpose e) `|*|` r) -
            ((v_transpose s) `|*|` e1) -
            ((v_transpose s) `|*|` cu) + e2
           ) + cv
      by rewrite /noise_exp //= encode_noise //= matrix_props1 matrix_props2 //=; ring. 
 
-op bad_noise : elem -> bool.
+(* The above noise expression is computed over the abstract
+   rings that define the scheme. Noise bounds are checked and
+   computed over the integers. *)
+
+op noise_val : elem -> int.
+op noise_bound : int.
+op good_noise (n b : int) = -b < n < b.
 
 axiom good_decode m n :
-    !bad_noise n =>
+    good_noise noise_bound (noise_val n) =>
       m_decode (m_encode m + n) = m.
+
+op cv_bound : int.
+axiom cv_bound_valid _A s e r e2 m :
+      s \in dshort =>
+      e \in dshort =>
+      _A \in duni_matrix =>
+      r \in dshort =>
+      e2 \in dshort_elem =>
+      let t = _A `*|` s `|+|` e in
+      let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+          -cv_bound < noise_val (rnd_err_v v) < cv_bound.
+
+axiom noise_commutes n n' (b : int) : 
+    -b < noise_val n' < b =>
+    good_noise (noise_bound - b) (noise_val n) =>
+       good_noise noise_bound (noise_val (n + n')).
+
+(* We now rewrite the correctness game in terms of noise *)
 
 module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
    proc main() = {
@@ -402,12 +433,12 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
          s <$ dshort;
          e <$ dshort;
          _A <@ O.o(sd);
-         m <@ A(O).find(sd,_A `*|` s `|+|` e);
          r <$ dshort;
          e1 <$ dshort;
          e2 <$ dshort_elem;
+         m <@ A(O).find(sd,_A `*|` s `|+|` e);
          n <- noise_exp _A s e r e1 e2 m;
-         return (bad_noise n);
+         return (!good_noise (noise_bound) (noise_val n));
     }
 }.
 
@@ -427,16 +458,14 @@ rewrite (_: 1%r - Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res] =
 rewrite Pr[mu_not]; congr => //. 
 + byphoare => //.
 proc. 
-auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
-call (_: true); [ by move => H; apply (All H) | by  apply RO_o_ll; first by smt(duni_matrix_ll) | ].
+inline *.
 auto => />.
-call(_:true); first by auto => />;  smt(duni_matrix_ll). 
-auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
-call (_: true);first by  auto => />. 
-by auto => />; smt(dseed_ll dshort_ll dshort_elem_ll). 
+call (_: true); [ by move => H; apply (All H) | by  apply RO_o_ll; first by smt(duni_matrix_ll) | ].
+auto => />; first by smt(duni_matrix_ll duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
 + byequiv => //.
 proc. 
 inline MLWE_PKE(RO).dec MLWE_PKE(RO).enc MLWE_PKE(RO).kg; wp.
+swap {1} 9 -3.
 seq 9 14 : ( 
            ={RO.m,e2,e1,r,s,e,sd} /\
            sd0{2} = sd{2} /\
@@ -453,17 +482,17 @@ seq 9 14 : (
 inline *. auto => />.  move => &2 -> ?. 
 split; first by smt(duni_matrix_ll). 
 move => ???.
-move => noise_expH.
-rewrite  encode_noise  => />.
+move => noise_expL noise_expH.
+rewrite  encode_noise  => //.
 rewrite (_: 
    (v_transpose (oget RO.m{2}.[pk0{2}.`1] `*|` s{2} `|+|` e{2}) `|*|` r{2} +
    e2{2} + m_encode m{2} +
-   noise_v
+   rnd_err_v
      (v_transpose (oget RO.m{2}.[pk0{2}.`1] `*|` s{2} `|+|` e{2}) `|*|` r{2} +
       e2{2} + m_encode m{2}) -
    (v_transpose s{2} `|*|`
     (m_transpose (oget RO.m{2}.[pk0{2}.`1]) `*|` r{2} `|+|` e1{2} `|+|`
-     noise_u (m_transpose (oget RO.m{2}.[pk0{2}.`1]) `*|` r{2} `|+|` e1{2})))) = 
+     rnd_err_u (m_transpose (oget RO.m{2}.[pk0{2}.`1]) `*|` r{2} `|+|` e1{2})))) = 
 m_encode m{2} + noise_exp (oget RO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
                    e2{2} m{2}); last by apply good_decode.
 by rewrite  noise_exp_val //= matrix_props1 matrix_props2; ring. 
@@ -488,11 +517,75 @@ qed.
 
 end section.
 
-(* We can define the distributions of all noise components except cv
-exactly, as this is the only component of the noise that really depends
-on the attacker. Probability of bad noise can therefore be approximated
-by assuming that attacker can always choose cv to get closer to the bound,
-which is the same as tightening the bound based on max |cv|. *)
+(* Now we shift things to make the upper bound computable *)
 
+op noise_exp_part _A s e r e1 e2 = 
+    let t = _A `*|` s `|+|` e in
+    let u = m_transpose _A `*|` r `|+|` e1 in
+    let cu = rnd_err_u u in
+          (((v_transpose e) `|*|` r) -
+           ((v_transpose s) `|*|` e1) -
+           ((v_transpose s) `|*|` cu) + e2
+          ).
+
+lemma noise_exp_part_val _A s e r e1 e2 m :
+   noise_exp _A s e r e1 e2 m = 
+       (noise_exp_part _A s e r e1 e2) + 
+    let t = _A `*|` s `|+|` e in
+    let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+          rnd_err_v v by rewrite noise_exp_val /noise_exp_part.
+
+
+module AdvCorrectnessNoiseAprox = {
+   proc main() = {
+         var sd,s,e,_A,r,e1,e2,n;
+         sd <$ dseed;
+         s <$ dshort;
+         e <$ dshort;
+         _A <$ duni_matrix;
+         r <$ dshort;
+         e1 <$ dshort;
+         e2 <$ dshort_elem;
+         n <- noise_exp_part _A s e r e1 e2;
+         return (!good_noise (noise_bound - cv_bound) (noise_val n));
+    }
+}.
+
+section.
+
+declare module A : CAdversary {RO}.
+axiom All (O <: ARO{A}):
+     islossless O.o =>
+     islossless A(O).find.
+
+lemma correctness_slack &m :
+  Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res]<=
+  Pr[ AdvCorrectnessNoiseAprox.main() @ &m : res].
+proof.
+byequiv => //.
+proc.
+seq 8 7 : (#pre /\ ={sd,s,r,_A,r,e1,e2,e} /\
+            s{2} \in dshort /\
+            e{2} \in dshort /\
+           _A{2} \in duni_matrix /\
+           r{2} \in dshort /\
+           e2{2} \in dshort_elem
+).
+inline *; auto => />; first by smt(@SmtMap duni_ll duni_matrix_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
+wp;call {1} (_: true ==> true).  by apply (All RO); smt(RO_o_ll duni_matrix_ll).
+skip;auto => />.
+move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; smt(noise_commutes cv_bound_valid).
+qed.
+
+lemma correctness_final &m :
+  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
+  1%r - Pr[ AdvCorrectnessNoiseAprox.main() @ &m : res].
+proof.
+move : (correctness A All &m).
+move : (correctness_slack &m).
+smt().
+qed.
+
+end section.
 
 end MLWE_PKE.
