@@ -325,7 +325,7 @@ end section.
 
 
 module type CAdversary(H : ARO) = {
-   proc find(pk: pkey) : plaintext
+   proc find(pk: pkey, sk : skey) : plaintext
 }.
 
 module type SchemeRO(H : ARO) = {
@@ -342,7 +342,7 @@ module AdvCorrectness(S : SchemeRO, A : CAdversary, O : Oracle) = {
     
     O.init();
     (pk,sk) <@ S(O).kg();
-    m <@ A(O).find(pk);
+    m <@ A(O).find(pk,sk);
     c <@ S(O).enc(pk, m);
     m' <@ S(O).dec(sk,c);
 
@@ -407,22 +407,6 @@ axiom good_decode m n :
     good_noise noise_bound (noise_val n) =>
       m_decode (m_encode m + n) = m.
 
-op cv_bound : int.
-axiom cv_bound_valid _A s e r e2 m :
-      s \in dshort =>
-      e \in dshort =>
-      _A \in duni_matrix =>
-      r \in dshort =>
-      e2 \in dshort_elem =>
-      let t = _A `*|` s `|+|` e in
-      let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
-          -cv_bound < noise_val (rnd_err_v v) < cv_bound.
-
-axiom noise_commutes n n' (b : int) : 
-    -b < noise_val n' < b =>
-    good_noise (noise_bound - b) (noise_val n) =>
-       good_noise noise_bound (noise_val (n + n')).
-
 (* We now rewrite the correctness game in terms of noise *)
 
 module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
@@ -436,7 +420,7 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
          r <$ dshort;
          e1 <$ dshort;
          e2 <$ dshort_elem;
-         m <@ A(O).find(sd,_A `*|` s `|+|` e);
+         m <@ A(O).find((sd,_A `*|` s `|+|` e),s);
          n <- noise_exp _A s e r e1 e2 m;
          return (!good_noise (noise_bound) (noise_val n));
     }
@@ -517,7 +501,25 @@ qed.
 
 end section.
 
-(* Now we shift things to make the upper bound computable *)
+(* Now we shift things to make the upper bound computable as 
+   based on a max over all messages. *)
+
+op cv_bound : int.
+axiom cv_bound_valid _A s e r e2 m :
+      s \in dshort =>
+      e \in dshort =>
+      _A \in duni_matrix =>
+      r \in dshort =>
+      e2 \in dshort_elem =>
+      let t = _A `*|` s `|+|` e in
+      let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+          -cv_bound < noise_val (rnd_err_v v) < cv_bound.
+
+axiom noise_commutes n n' (b : int) : 
+    -b < noise_val n' < b =>
+    good_noise (noise_bound - b) (noise_val n) =>
+       good_noise noise_bound (noise_val (n + n')).
+
 
 op noise_exp_part _A s e r e1 e2 = 
     let t = _A `*|` s `|+|` e in
