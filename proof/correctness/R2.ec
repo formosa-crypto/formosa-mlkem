@@ -25,6 +25,7 @@ clone include PolyQPrincipalIdeal
 
 export Poly.
 
+(*
 op proj_r(a : qt) : Fq.ZModP.zmod = (val a).[0].
 op proj_i(a : qt) : Fq.ZModP.zmod = (val a).[1].
 
@@ -65,6 +66,6 @@ lemma zero_inj  :
    R2.zero = inj P. 
 proof.
 admitted.
-
+*)
 
 end R2.
