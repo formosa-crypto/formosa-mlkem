@@ -45,6 +45,7 @@ module NTT = {
        zeta_ <- zetas_inv.[k]; k <- k + 1;
        j <- start;
        while (j < start + len) {
+        t <- r.[j];
         r.[j]       <- t + r.[j + len];
         r.[j + len] <- t + (-r.[j + len]);
         r.[j + len] <- zeta_ * r.[j + len];
