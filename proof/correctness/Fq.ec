@@ -55,15 +55,15 @@ rewrite W32.to_sintE W32.of_uintK W32.of_uintK.
 by rewrite W32.of_sintK /=; smt(qE). 
 qed.
 
-require import Barrett_reduce.
+require import Poly_ntt.
 
 print M.
 
 
 lemma barret_reduct_corr _a :
-  hoare [ M.barrett_reduce : 
+  phoare [ M.barrett_reduce : 
      W16.to_sint a = _a  ==> 
-         W16.to_sint res = BREDC _a 26].
+         W16.to_sint res = BREDC _a 26] = 1%r.
 proof.
 proc.
 wp; skip  => &hr [#] //= ?.

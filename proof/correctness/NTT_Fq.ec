@@ -1,15 +1,12 @@
 require import AllCore IntDiv Array256.
 require (****) ZModP.
 
-theory NTT.
+theory NTT_Fq.
 
 clone import ZModP.
 
-op zetas : zmod Array256.t.
-op zetas_inv : zmod Array256.t.
-
 module NTT = {
- proc ntt(r : zmod Array256.t) : zmod Array256.t = {
+ proc ntt(r : zmod Array256.t,  zetas : zmod Array256.t) : zmod Array256.t = {
    var len, start, j, k;
    var  t, zeta_;
 
@@ -33,7 +30,7 @@ module NTT = {
    return r;
  }
 
- proc invntt(r : zmod Array256.t) : zmod Array256.t = {
+ proc invntt(r : zmod Array256.t, zetas_inv : zmod Array256.t) : zmod Array256.t = {
    var len, start, j, k;
    var  t, zeta_;
 
@@ -60,3 +57,5 @@ module NTT = {
 
  
 }.
+
+end NTT_Fq.
