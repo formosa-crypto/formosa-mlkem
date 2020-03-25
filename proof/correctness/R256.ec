@@ -254,7 +254,8 @@ while (#{/~k1=k{1}}
        2*k1*len{1}= 256 /\
        start{1} = to_uint start{2} /\
        0 <= start{1} <= 256 /\
-       start{1} = 2*(k{1} - k1)*len{1}); last by
+       start{1} = 2*(k{1} - k1)*len{1} /\
+       2* (k{1} - k1) * to_uint len{2} <= 256); last by
  auto => />; move => *;rewrite uleE !shr_div; by smt(@W64).
 
 wp.
@@ -264,7 +265,7 @@ while (#{/~start{1} = 2*(k{1} - k1) * len{1}}pre /\
        W64.to_uint cmp{2} = start{1} + len{1} /\ 
        j{1} = to_uint j{2} /\
        start{1} <= j{1} <= start{1} + len{1});last first. auto => />. 
-move => &1 &2 ??????????????.
+move => &1 &2 ???????????????.
 split.
 split; last by rewrite ultE to_uintD_small; by smt(@W64).
 split. 
@@ -314,7 +315,7 @@ call {2} (_:
   to_sint res = SREDC (to_sint t2 * to_sint zeta_02)
 ). apply (fqmul_corr (to_sint t2) (to_sint zeta_02)).
 skip => />.
-move => &1 &2 [#] ?? ?? ?? ?? ?? ?? ?????????.
+move => &1 &2 [#] ?? ?? ?? ?? ?? ?? ??????????.
 split; last by smt(@W64).
 split; last by smt(@W64).
 apply (Array256.ext_eq 
@@ -333,8 +334,8 @@ apply (Array256.ext_eq
 move => x xb => />.
 rewrite !to_uintD_small; first by smt(@W64).
 rewrite /lift_array !mapiE => />. split; first by smt(). 
-move : H13; rewrite H12.
-move :H17; rewrite ultE. move => *.
+move : H14; rewrite H13.
+move :H18; rewrite ultE. move => *.
 have ? : 2 * (k{1} - 1 - k1) * to_uint len{2} + to_uint len{2} <= 256; last by smt(). smt(@W64). smt(@W64).
 
 
@@ -347,9 +348,9 @@ rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_neqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite to_sintB_small. admit.
-rewrite H18.
+rewrite H19.
 move : (SREDCp_corr ((to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2})) _ _). smt(@Fq). admit.
-rewrite -H18. 
+rewrite -H19. 
 rewrite !inzmodB.
 move => *.
 rewrite (_: inzmod (to_sint result) = 
@@ -363,19 +364,18 @@ move => *.
 rewrite (_: x = to_uint j{2}); first by smt().
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_neqiE.
-move : H13; rewrite H12.
-move :H17; rewrite ultE. move => *.
+move : H14; rewrite H13.
+move :H18; rewrite ultE. move => *.
 have ? : 2 * (k{1} - 1 - k1) * to_uint len{2} + to_uint len{2} + to_uint len{2} <= 256; last by smt().
-have ? : (2* (k{1} - k1) * to_uint len{2} <= 256). admit.
  smt(@W64).
  smt(@W64).
 
 
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite to_sintD_small. admit.
-rewrite H18 => />.
+rewrite H19 => />.
 move : (SREDCp_corr ((to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2})) _ _). smt(@Fq). admit.
-rewrite -H18. 
+rewrite -H19. 
 rewrite !inzmodD.
 move => *.
 rewrite (_: inzmod (to_sint result) = 
