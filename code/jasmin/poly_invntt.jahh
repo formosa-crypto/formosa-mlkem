@@ -3,8 +3,9 @@
 
 #include "params.jahh"
 #include "reduce.jahh"
+#include "zetas.jahh"
 
-fn poly_invntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
+fn poly_invntt(stack u16[KYBER_N] rp, reg u64 unused) -> stack u16[KYBER_N]
 {
   reg u64 len;  
   reg u64 start;
@@ -16,9 +17,12 @@ fn poly_invntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
   reg u16 t;
   reg u16 s;
   reg u16 m;
-  stack u64 szetasp;
 
-  szetasp = zetasp;
+  reg ptr u16[128] zetasp;
+  reg u64 zetasctr;
+
+  zetasp = jzetas_inv;
+  zetasctr = 0;
 
   len = 2;
   while (len <= 128)
@@ -26,8 +30,9 @@ fn poly_invntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
     start = 0;
     while (start < 256)
     {
-      zeta = (u16)[zetasp];
-      zetasp += 2;
+      zeta = zetasp[(int)zetasctr];
+      zetasctr += 1;
+
       j = start;
       cmp = start + len;
       while (j < cmp)
@@ -48,9 +53,7 @@ fn poly_invntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
     len <<= 1;
   }
 
-  zetasp = szetasp;
-  zeta = (u16)[zetasp + 254];
-
+  zeta = zetasp[127];
   j = 0;
   while (j < KYBER_N) 
   {
