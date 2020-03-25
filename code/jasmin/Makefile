@@ -59,6 +59,7 @@ POLYHEADERS = poly_compress.jahh \
               poly_reduce.jahh \
               poly_csubq.jahh \
               poly_getnoise.jahh \
+							zetas.jahh \
 
 POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_decompress.jahh \
