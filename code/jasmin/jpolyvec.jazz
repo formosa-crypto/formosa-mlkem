@@ -98,7 +98,7 @@ export fn polyvec_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
   }
 }
 
-export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetasp) 
+export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
   inline int i;
   reg u16 t;
@@ -113,7 +113,7 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64
     b[i] = t;
   }
 
-  r = polyvec_pointwise_acc(a, b, zetasp);
+  r = polyvec_pointwise_acc(a, b);
 
   for i = 0 to KYBER_N {
     t = r[i];

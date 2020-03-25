@@ -196,7 +196,7 @@ export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp)
   }
 }
 
-export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas) 
+export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
   inline int i;
   reg u16 t;
@@ -211,7 +211,7 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 zetas)
     b[i] = t;
   }
 
-  r = poly_basemul(a, b, zetas);
+  r = poly_basemul(a, b);
 
   for i = 0 to KYBER_N {
     t = r[i];

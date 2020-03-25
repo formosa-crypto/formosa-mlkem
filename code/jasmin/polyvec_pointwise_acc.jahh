@@ -7,7 +7,7 @@
 #include "polyvec_topolys.jahh"
 #include "polyvec_frompolys.jahh"
 
-fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b, reg u64 zetasp) -> stack u16[KYBER_N]
+fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_N]
 {
   stack u16[KYBER_N] a0 a1 a2;
   stack u16[KYBER_N] b0 b1 b2;
@@ -17,50 +17,15 @@ fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b, reg u
   a0, a1, a2 = polyvec_topolys(a);
   b0, b1, b2 = polyvec_topolys(b);
 
-  r = poly_basemul(a0, b0, zetasp);
-  t = poly_basemul(a1, b1, zetasp);
+  r = poly_basemul(a0, b0);
+  t = poly_basemul(a1, b1);
   r = poly_add(r, t);
-  t = poly_basemul(a2, b2, zetasp);
+  t = poly_basemul(a2, b2);
   r = poly_add(r, t);
 
   r = poly_reduce(r);
 
   return r;
-  /*
-  
-  reg u16 t;
-  inline int i;
-  reg u64 j;
-  reg u64 k;
-
-  j = 0;
-  while (j < KYBER_N)
-  {
-    rt[(int)j] = 0;
-    j += 1;
-  }
-
-  for i = 0 to KYBER_K
-  {
-    j = i*KYBER_N;
-    k = 0;
-    while (j < (i+1)*KYBER_N)
-    {
-      t = a[(int) j];
-      at[(int) k] = t;
-      t = b[(int) j];
-      bt[(int) k] = t;
-      j += 1;
-      k += 1;
-    }
-    lt = poly_basemul(at, bt, zetasp);
-    rt = poly_add(rt, lt);
-  }
-
-  rt = poly_reduce(rt);
-
-  return rt;
-  */
 }
 
 #endif
