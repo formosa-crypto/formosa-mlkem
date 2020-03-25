@@ -176,12 +176,23 @@ fn keccakRoundConstants() -> stack u64[24] {
 }
 
 
+u64[24] roundconstants = {0x0000000000000001, 0x0000000000008082, 0x800000000000808a, 0x8000000080008000, 
+                          0x000000000000808b, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009, 
+                          0x000000000000008a, 0x0000000000000088, 0x0000000080008009, 0x000000008000000a, 
+                          0x000000008000808b, 0x800000000000008b, 0x8000000000008089, 0x8000000000008003, 
+                          0x8000000000008002, 0x8000000000000080, 0x000000000000800a, 0x800000008000000a, 
+                          0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
+
 fn __keccakf1600_ref(stack u64[25] state) -> stack u64[25] {
   inline int round;
-  stack u64[24] constants;
-  constants = keccakRoundConstants();
+  //stack u64[24] constants;
+  //constants = keccakRoundConstants();
+  reg ptr u64[24] constptr;
+
+  constptr = roundconstants;
+
   for round = 0 to 24 {
-    state = keccakP1600_round(state, constants[round]);
+    state = keccakP1600_round(state, constptr[round]);
   }
   return state;
 }
