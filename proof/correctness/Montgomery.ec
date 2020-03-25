@@ -205,7 +205,7 @@ lemma nosmt BREDCp_corr a bits:
  R < 2^bits =>
  2 ^ bits %/ q * q < 2 ^ bits =>
  2^bits %/ q + 1 < R =>
- -R %/ 2 < a < R %/2 =>
+ -R %/ 2 <= a < R %/2 =>
   0  <= BREDC a bits < 2 * q /\ 
  BREDC a bits %% q = a %% q.
 proof.

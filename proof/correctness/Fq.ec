@@ -22,7 +22,8 @@ clone import SignedReductions with
     proof RRinv by smt
     proof qinv_bnd by smt.
 
-require import Fqmul.
+require import Poly_ntt.
+
 print M.
 
 lemma balmod_W16 a:
@@ -35,9 +36,9 @@ lemma balmod_W32 a:
 
 
 lemma fqmul_corr _a _b :
-  hoare [ M.fqmul : 
+  phoare [ M.fqmul : 
      W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
-         W16.to_sint res = SREDC (_a * _b)].
+         W16.to_sint res = SREDC (_a * _b)] = 1%r.
 proof.
 proc.
 wp; skip  => &hr [#] //= ??.
@@ -55,9 +56,6 @@ rewrite W32.to_sintE W32.of_uintK W32.of_uintK.
 by rewrite W32.of_sintK /=; smt(qE). 
 qed.
 
-require import Poly_ntt.
-
-print M.
 
 
 lemma barret_reduct_corr _a :
