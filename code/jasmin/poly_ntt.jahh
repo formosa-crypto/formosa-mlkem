@@ -3,8 +3,9 @@
 
 #include "params.jahh"
 #include "poly_reduce.jahh"
+#include "zetas.jahh"
 
-fn poly_ntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
+fn poly_ntt(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
 {
   reg u64 len;  
   reg u64 start;
@@ -17,14 +18,19 @@ fn poly_ntt(stack u16[KYBER_N] rp, reg u64 zetasp) -> stack u16[KYBER_N]
   reg u16 s;
   reg u16 m;
 
+  reg ptr u16[128] zetasp;
+  reg u64 zetasctr;
+
+  zetasp = jzetas;
+  zetasctr = 0;
   len = 128;
   while (len >= 2)
   {
     start = 0;
     while (start < 256)
     {
-      zetasp += 2;
-      zeta = (u16)[zetasp];
+      zetasctr += 1;
+      zeta = zetasp[(int)zetasctr];
       j = start;
       cmp = start + len;
       while (j < cmp)

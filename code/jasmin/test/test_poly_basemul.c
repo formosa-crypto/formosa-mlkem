@@ -20,7 +20,7 @@ int main(void)
 
   poly_basemul(&r0, &a, &b);
   
-  poly_basemul_jazz(&r1, &a, &b, zetas);
+  poly_basemul_jazz(&r1, &a, &b);
 
   for(int i=0;i<KYBER_N;i++)
     if(r0.coeffs[i] != r1.coeffs[i])

@@ -25,7 +25,7 @@ int main(void)
       r1.vec[i].coeffs[j] = r0.vec[i].coeffs[j];
 
   polyvec_invntt(&r0);
-  polyvec_invntt_jazz(&r1, zetas_inv);
+  polyvec_invntt_jazz(&r1);
 
   for(int i=0;i<KYBER_K;i++)
     for(int j=0;j<KYBER_N;j++)

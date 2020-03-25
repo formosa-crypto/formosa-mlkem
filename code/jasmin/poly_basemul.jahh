@@ -4,39 +4,7 @@
 #include "params.jahh"
 #include "reduce.jahh"
 
-/*
-fn basemul(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 offset, reg u16 zeta)
-{
-  reg u16 r0;
-  reg u16 r1;
-  reg u16 a0;
-  reg u16 a1;
-  reg u16 b0;
-  reg u16 b1;
-  reg u16 t;
-
-  a0 = (u16)[ap+offset];
-  b0 = (u16)[bp+offset];
-  offset += 2;
-  a1 = (u16)[ap+offset];
-  b1 = (u16)[bp+offset];
-
-  r0 = fqmul(a1, b1);
-  r0 = fqmul(r0, zeta);
-  t  = fqmul(a0, b0);
-  r0 += t;
-
-  r1 = fqmul(a0, b1);
-  t  = fqmul(a1, b0);
-  r1 += t;
-
-  (u16)[rp+offset] = r1;
-  offset -= 2;
-  (u16)[rp+offset] = r0;
-}
-*/
-
-fn poly_basemul(stack u16[KYBER_N] ap bp, reg u64 zetas) -> stack u16[KYBER_N]
+fn poly_basemul(stack u16[KYBER_N] ap bp) -> stack u16[KYBER_N]
 {
   reg u64 offset;
   reg u16 zeta;
@@ -49,12 +17,16 @@ fn poly_basemul(stack u16[KYBER_N] ap bp, reg u64 zetas) -> stack u16[KYBER_N]
   reg u16 t;
   stack u16[KYBER_N] rp;
   inline int i;
+  reg ptr u16[128] zetasp;
+  reg u64 zetasctr;
 
-  zetas += 128;
+  zetasp = jzetas;
+  zetasctr = 64;
 
   for i = 0 to KYBER_N/4
   {
-    zeta = (u16)[zetas + 2*i];
+    zeta = zetasp[(int)zetasctr];
+    zetasctr += 1;
     
     a0 = ap[4*i];
     b0 = bp[4*i];

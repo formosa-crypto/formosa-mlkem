@@ -6,20 +6,15 @@
 #include "polyvec_topolys.jahh"
 #include "polyvec_frompolys.jahh"
 
-fn polyvec_ntt(stack u16[KYBER_VECN] r, reg u64 zetasp) -> stack u16[KYBER_VECN]
+fn polyvec_ntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-
   stack u16[KYBER_N] r0 r1 r2;
-  reg u64 zetaspt;
 
   r0, r1, r2 = polyvec_topolys(r);
 
-  zetaspt = zetasp;
-  r0 = poly_ntt(r0, zetaspt);
-  zetaspt = zetasp;
-  r1 = poly_ntt(r1, zetaspt);
-  zetaspt = zetasp;
-  r2 = poly_ntt(r2, zetaspt);
+  r0 = poly_ntt(r0);
+  r1 = poly_ntt(r1);
+  r2 = poly_ntt(r2);
 
   r = polyvec_frompolys(r0, r1, r2);
 

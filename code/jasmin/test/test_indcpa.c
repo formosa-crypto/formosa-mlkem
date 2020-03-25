@@ -31,7 +31,7 @@ int main(void)
   fclose(urandom);
 
   /* TEST KEYPAIR */
-  indcpa_keypair_jazz(pk1, sk1, randomness0, zetas);
+  indcpa_keypair_jazz(pk1, sk1, randomness0);
   indcpa_keypair(pk0, sk0, randomness0);
 
   for(int i=0;i<KYBER_INDCPA_SECRETKEYBYTES;i++)
@@ -43,14 +43,14 @@ int main(void)
 
   /* TEST ENCRYPTION */
   indcpa_enc(ct0, message, pk0, randomness1);
-  indcpa_enc_jazz(ct1, message, pk1, randomness1, zetas, zetas_inv);
+  indcpa_enc_jazz(ct1, message, pk1, randomness1);
 
   for(int i=0;i<KYBER_INDCPA_BYTES;i++)
     if(ct0[i] != ct1[i]) printf("error indcpa_enc: %d\n", i);
 
   /* TEST DECRYPTION */
   indcpa_dec(outmsg0, ct0, sk0);
-  indcpa_dec_jazz(outmsg1, ct0, sk0, zetas, zetas_inv);
+  indcpa_dec_jazz(outmsg1, ct0, sk0);
 
   for(int i=0;i<KYBER_INDCPA_MSGBYTES;i++)
   {

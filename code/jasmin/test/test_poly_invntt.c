@@ -24,16 +24,12 @@ int main(void)
     r1.coeffs[i] = r0.coeffs[i];
  
   poly_invntt(&r0);
-  poly_invntt_jazz(&r1, zetas_inv);
+  poly_invntt_jazz(&r1);
 
   for(int i=0;i<KYBER_N;i++)
   {
     if(r0.coeffs[i] != r1.coeffs[i])
       printf("error %d, %d, %d\n", i, r0.coeffs[i], r1.coeffs[i]);
-    /*
-    else
-      printf("success %d, %d, %d\n", i, r0.coeffs[i], r1.coeffs[i]);
-      */
   }
 
   return 0;
