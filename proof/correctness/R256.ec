@@ -173,8 +173,25 @@ axiom load_array_from_memE mem ptr i :
    0 <= i < 256 =>
      loadW16 mem (W64.to_uint ptr + 2* i) = (load_array_from_mem mem ptr).[i].
 
-print NTT_Fq.NTT.
-print lift_array_from_mem.
+lemma to_sintD_small : (forall (a b : W16.t), 
+    -W16.modulus %/2 <= to_sint a + to_sint b < W16.modulus %/2 =>
+    to_sint (a + b) = to_sint a + to_sint b).
+  move => a b.
+  rewrite !W16.to_sintE !_smodE => />.  admit. qed.
+
+lemma to_sintB_small : (forall (a b : W16.t), 
+    -W16.modulus %/2 <= to_sint a - to_sint b < W16.modulus %/2 =>
+    to_sint (a - b) = to_sint a - to_sint b).
+  move => a b.
+  rewrite !W16.to_sintE !_smodE => />.  admit. qed.
+
+lemma to_sintM_small : (forall (a b : W16.t), 
+    -W16.modulus %/2 <= to_sint a * to_sint b < W16.modulus %/2 =>
+    to_sint (a * b) = to_sint a * to_sint b).
+  move => a b.
+  rewrite !W16.to_sintE !_smodE => />.  admit. qed.
+
+
 equiv ntt_correct &m :
   NTT_Fq.NTT.ntt ~ M.poly_ntt : 
         to_uint zetasp{2}  < W64.modulus - 514 /\
@@ -255,7 +272,18 @@ split; first by rewrite !to_uintD_small of_uintK => />;smt(@IntExtra @W64).
 split; first by smt(@W64).
 split; last by rewrite to_uintD_small; by smt(@W64). 
 by smt(@W64).
-split. admit.
+split. 
+rewrite /lift_array_mont => />.
+rewrite to_uintD_small => />; first by smt(@W64). 
+print load_array_from_memE.
+rewrite H4 => />.
+rewrite (_: 
+   (to_uint zetasp2 + (k{1} - 1) * 2 + 2) = 
+   (to_uint zetasp2 + 2 * k{1} )). by ring. 
+rewrite (load_array_from_memE (Glob.mem{2}) ( zetasp2) (k{1})) => />.
+smt(@Array256 @ZModP).
+rewrite mapiE. smt().
+by smt(@ZModP).
 split; first by rewrite to_uintD_small; by smt(@W64). 
 by smt(@W64).
 
@@ -302,27 +330,13 @@ apply (Array256.ext_eq
   rp{2}.[to_uint (j{2} + len{2}) <- rp{2}.[to_uint j{2}] - result].[to_uint j{2} <- result + rp{2}.[to_uint j{2}]])
 ).
 
-have to_sintD_small : (forall (a b : W16.t), 
-    -W16.modulus %/2 <= to_sint a + to_sint b < W16.modulus %/2 =>
-    to_sint (a + b) = to_sint a + to_sint b).
-  move => a b.
-  rewrite !W16.to_sintE !_smodE => />.  admit.
-
-have to_sintB_small : (forall (a b : W16.t), 
-    -W16.modulus %/2 <= to_sint a - to_sint b < W16.modulus %/2 =>
-    to_sint (a - b) = to_sint a - to_sint b).
-  move => a b.
-  rewrite !W16.to_sintE !_smodE => />.  admit.
-
-have to_sintM_small : (forall (a b : W16.t), 
-    -W16.modulus %/2 <= to_sint a * to_sint b < W16.modulus %/2 =>
-    to_sint (a * b) = to_sint a * to_sint b).
-  move => a b.
-  rewrite !W16.to_sintE !_smodE => />.  admit.
-
 move => x xb => />.
 rewrite !to_uintD_small; first by smt(@W64).
-rewrite /lift_array !mapiE => />.   admit. admit.
+rewrite /lift_array !mapiE => />. split; first by smt(). 
+move : H13; rewrite H12.
+move :H17; rewrite ultE. move => *.
+have ? : 2 * (k{1} - 1 - k1) * to_uint len{2} + to_uint len{2} <= 256; last by smt(). smt(@W64). smt(@W64).
+
 
 case (x <> to_uint j{2}). 
 case (x <> to_uint j{2} + to_uint len{2}); first by smt(@Array256).
@@ -348,7 +362,15 @@ case (x <> to_uint j{2} + to_uint len{2}); last by smt(@Array256).
 move => *.
 rewrite (_: x = to_uint j{2}); first by smt().
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
-rewrite Array256.set_neqiE. admit. smt(@W64).
+rewrite Array256.set_neqiE.
+move : H13; rewrite H12.
+move :H17; rewrite ultE. move => *.
+have ? : 2 * (k{1} - 1 - k1) * to_uint len{2} + to_uint len{2} + to_uint len{2} <= 256; last by smt().
+have ? : (2* (k{1} - k1) * to_uint len{2} <= 256). admit.
+ smt(@W64).
+ smt(@W64).
+
+
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite to_sintD_small. admit.
 rewrite H18 => />.
