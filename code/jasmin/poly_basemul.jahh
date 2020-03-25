@@ -36,7 +36,7 @@ fn basemul(reg u64 rp, reg u64 ap, reg u64 bp, reg u64 offset, reg u16 zeta)
 }
 */
 
-fn poly_basemul(stack u16[KYBER_N] ap bp, reg u64 zetas) -> stack u16[KYBER_N]
+fn poly_basemul(stack u16[KYBER_N] ap bp, reg u64 unused) -> stack u16[KYBER_N]
 {
   reg u64 offset;
   reg u16 zeta;
@@ -49,12 +49,18 @@ fn poly_basemul(stack u16[KYBER_N] ap bp, reg u64 zetas) -> stack u16[KYBER_N]
   reg u16 t;
   stack u16[KYBER_N] rp;
   inline int i;
+  reg ptr u16[128] zetasp;
+  reg u64 zetasctr;
 
-  zetas += 128;
+    zetasp = jzetas;
+//  zetas += 128;
+  zetasctr = 64;
 
   for i = 0 to KYBER_N/4
   {
-    zeta = (u16)[zetas + 2*i];
+    // (u16)[zetas + 2*i];
+    zeta = zetasp[(int)zetasctr];
+    zetasctr += 1;
     
     a0 = ap[4*i];
     b0 = bp[4*i];
