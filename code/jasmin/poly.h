@@ -51,8 +51,8 @@ void poly_tomsg_jazz(unsigned char msg[KYBER_SYMBYTES], poly *r);
 
 void poly_getnoise_jazz(poly *r,const unsigned char *seed, unsigned char nonce);
 
-void poly_ntt_jazz(poly *r, const int16_t *zetas);
-void poly_invntt_jazz(poly *r, const int16_t *zetas_inv);
+void poly_ntt_jazz(poly *r);
+void poly_invntt_jazz(poly *r);
 void poly_basemul_jazz(poly *r, const poly *a, const poly *b);
 void poly_frommont_jazz(poly *r);
 

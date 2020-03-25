@@ -22,7 +22,7 @@ int main(void)
   polyvec_setrandom(&b);
   
   polyvec_pointwise_acc(&r0, &a, &b);
-  polyvec_pointwise_acc_jazz(&r1, &a, &b, zetas);
+  polyvec_pointwise_acc_jazz(&r1, &a, &b);
 
     for(int j=0;j<KYBER_N;j++)
       if(r0.coeffs[j] != r1.coeffs[j])

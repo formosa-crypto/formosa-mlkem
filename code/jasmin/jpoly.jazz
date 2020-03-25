@@ -158,7 +158,7 @@ export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
   }
 }
 
-export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp) 
+export fn poly_ntt_jazz(reg u64 rp) 
 {
   inline int i;
   reg u16 t;
@@ -169,7 +169,7 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
     r[i] = t;
   }
 
-  r = poly_ntt(r, zetasp);
+  r = poly_ntt(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -177,7 +177,7 @@ export fn poly_ntt_jazz(reg u64 rp, reg u64 zetasp)
   }
 }
 
-export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp) 
+export fn poly_invntt_jazz(reg u64 rp) 
 {
   inline int i;
   reg u16 t;
@@ -188,7 +188,7 @@ export fn poly_invntt_jazz(reg u64 rp, reg u64 zetasp)
     r[i] = t;
   }
 
-  r = poly_invntt(r, zetasp);
+  r = poly_invntt(r);
 
   for i = 0 to KYBER_N {
     t = r[i];

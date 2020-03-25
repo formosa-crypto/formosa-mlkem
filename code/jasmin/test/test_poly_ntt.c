@@ -23,7 +23,7 @@ int main(void)
     r1.coeffs[i] = r0.coeffs[i];
  
   poly_ntt(&r0);
-  poly_ntt_jazz(&r1, zetas);
+  poly_ntt_jazz(&r1);
 
   for(int i=0;i<KYBER_N;i++)
   {

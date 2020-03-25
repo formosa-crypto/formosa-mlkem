@@ -121,7 +121,7 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
   }
 }
 
-export fn polyvec_ntt_jazz(reg u64 rp, reg u64 zetasp) 
+export fn polyvec_ntt_jazz(reg u64 rp) 
 {
   inline int i;
   reg u16 t;
@@ -132,7 +132,7 @@ export fn polyvec_ntt_jazz(reg u64 rp, reg u64 zetasp)
     r[i] = t;
   }
 
-  r = polyvec_ntt(r, zetasp);
+  r = polyvec_ntt(r);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -140,7 +140,7 @@ export fn polyvec_ntt_jazz(reg u64 rp, reg u64 zetasp)
   }
 }
 
-export fn polyvec_invntt_jazz(reg u64 rp, reg u64 zetasp) 
+export fn polyvec_invntt_jazz(reg u64 rp) 
 {
   inline int i;
   reg u16 t;
@@ -151,7 +151,7 @@ export fn polyvec_invntt_jazz(reg u64 rp, reg u64 zetasp)
     r[i] = t;
   }
 
-  r = polyvec_invntt(r, zetasp);
+  r = polyvec_invntt(r);
 
   for i = 0 to KYBER_VECN {
     t = r[i];

@@ -33,10 +33,10 @@ void polyvec_decompress_jazz(polyvec *r, const unsigned char *a);
 void polyvec_tobytes_jazz(unsigned char *r, polyvec *a);
 void polyvec_frombytes_jazz(polyvec *r, const unsigned char *a);
 
-void polyvec_ntt_jazz(polyvec *r, const int16_t *zetas);
-void polyvec_invntt_jazz(polyvec *r, const int16_t *zetas_inv);
+void polyvec_ntt_jazz(polyvec *r);
+void polyvec_invntt_jazz(polyvec *r);
 
-void polyvec_pointwise_acc_jazz(poly *r, const polyvec *a, const polyvec *b, const int16_t *zetas);
+void polyvec_pointwise_acc_jazz(poly *r, const polyvec *a, const polyvec *b);
 
 void polyvec_reduce_jazz(polyvec *r);
 void polyvec_csubq_jazz(polyvec *r);
