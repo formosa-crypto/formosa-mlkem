@@ -194,8 +194,32 @@ lemma to_sintM_small : (forall (a b : W16.t),
 op ntt_bound_zetas(zetas : W16.t Array256.t) : bool =
    forall k, 0 <= k < 256 => 0 <= to_sint zetas.[k] < Fq.q-1.
 
-op ntt_bound_coefs(coefs : W16.t Array256.t) : bool =
-   forall k, 0 <= k < 256 => -2*Fq.q <= to_sint coefs.[k] <= 2*Fq.q %/2.
+op log2(n : int) : int.
+
+axiom log2E n l :
+   n = 2^l => log2 n = l.
+
+axiom log2pos n :
+   0 <= log2 n.
+
+lemma logs :
+   log2 128 = 7 /\
+   log2 64  = 6 /\
+   log2 32  = 5 /\
+   log2 16  = 4 /\
+   log2 8   = 3 /\
+   log2 4   = 2 /\
+   log2 2   = 1 /\
+   log2 1   = 0
+  by smt(pow0 pow1 pow2_2 pow2_3 pow2_4 pow2_5 pow2_6 pow2_7 log2E).
+
+lemma logdiv2 n l :
+  1 < n =>
+  n = 2^l =>
+  log2 (n %/2) = log2 n -1 by smt(@IntExtra log2E).
+
+op ntt_bound_coefs(coefs : W16.t Array256.t, c : int) : bool =
+   forall k, 0 <= k < 256 => -c*Fq.q <= to_sint coefs.[k] <= c*Fq.q.
 
 equiv ntt_correct &m :
   NTT_Fq.NTT.ntt ~ M.poly_ntt : 
@@ -204,7 +228,7 @@ equiv ntt_correct &m :
         array_mont zetas{1} = 
            lift_array (load_array_from_mem Glob.mem{2} zetasp{2}) /\
         ntt_bound_zetas (load_array_from_mem Glob.mem{2} zetasp{2}) /\
-        ntt_bound_coefs rp{2}
+        ntt_bound_coefs rp{2} 2
           ==> 
             res{1} = lift_array res{2} /\
             all (fun x => 0<= W16.to_sint x < 2*Fq.q) res{2}.
@@ -256,27 +280,60 @@ while (
    to_uint zetasp{2} = to_uint zetasp2 + (k{1}-1)*2 /\
    2*k{1}*len{1} = 256 /\
    ntt_bound_zetas (load_array_from_mem Glob.mem{2} zetasp2) /\ 
-   ntt_bound_coefs rp{2}); last by  auto => />; smt(@W64).
+   ntt_bound_coefs rp{2} (9 - log2 len{1})); last by  auto => />; smt(@W64 logs).
 wp.
 exists* k{1}.
 elim* => k1.
 while (#{/~k1=k{1}}
-        {~2*k{1}*len{1} = 256}pre /\ 
+        {~2*k{1}*len{1} = 256}
+        {~ntt_bound_coefs rp{2} (256 %/ len{1})}pre /\ 
        2*k1*len{1}= 256 /\
        start{1} = to_uint start{2} /\
        0 <= start{1} <= 256 /\
        start{1} = 2*(k{1} - k1)*len{1} /\
-       2* (k{1} - k1) * to_uint len{2} <= 256); last by
- auto => />; move => *;rewrite uleE !shr_div; by smt(@W64).
+       2* (k{1} - k1) * to_uint len{2} <= 256 /\
+       (* Nasty carry inv *)
+       ntt_bound_coefs rp{2} (9 - log2 len{1} + 1) /\
+       forall k st,
+          0 <= k < 256 =>
+          st <= start{1} < 256 =>
+          st <= k < st+2*len{1} =>
+            ntt_bound_coefs rp{2} (9 - log2 len{1})
+       ); last first.
+ auto => />; move => *.
+split; first by smt(@W16 @Array256 @Fq).
+move => *.
+rewrite uleE !shr_div.
+split; last  by smt(@W64).
+split; first  by smt(@W64).
+split; first  by smt(@W64).
+split; first  by smt(@W64).
+rewrite (logdiv2 (to_uint len{2}) (log2 (to_uint len{2}))). smt. smt. (* how can it prove this? *)
+by smt(@W16 @Array256 @Fq).
 
 wp.
-while (#{/~start{1} = 2*(k{1} - k1) * len{1}}pre /\
+while (#{/~start{1} = 2*(k{1} - k1) * len{1}}
+        {~forall k st,
+          0 <= k < 256 =>
+          st <= start{1} < 256 =>
+          st <= k < st+2*len{1} =>
+            ntt_bound_coefs rp{2} (256 %/ (len{1}))} pre /\
        zeta_{1}  *  (inzmod R) = inzmod (to_sint zeta_0{2}) /\  
        start{1} = 2*((k{1}-1) - k1) * len{1} /\
        W64.to_uint cmp{2} = start{1} + len{1} /\ 
        j{1} = to_uint j{2} /\
-       start{1} <= j{1} <= start{1} + len{1});last first. auto => />. 
-move => &1 &2 ??????????????????.
+       start{1} <= j{1} <= start{1} + len{1} /\
+       (forall k st,
+          0 <= k < 256 =>
+          st < start{1} < 256 =>
+          st <= k < st+2*len{1} =>
+            ntt_bound_coefs rp{2} (9 - log2 len{1} + 1)) /\
+       (forall k,
+          0 <= k < 256 =>
+          ((start{1} + j{1} <= k < start{1} + len{1}) \/
+           (start{1} + len{1} +  j{1} <= k < start{1} + len{1} +2*len{1})) =>
+            ntt_bound_coefs rp{2} (9 - log2 len{1})));last first. auto => />. 
+move => &1 &2 ???????????????????.
 split.
 split; last by rewrite ultE to_uintD_small; by smt(@W64).
 split. 
@@ -324,9 +381,12 @@ call {2} (_:
   to_sint res = SREDC (to_sint t2 * to_sint zeta_02)
 ). apply (fqmul_corr (to_sint t2) (to_sint zeta_02)).
 skip => />.
-move => &1 &2 [#] ?? ?? ?? ?? ?? ?? ??????????????.
+move => &1 &2 [#] ?? ?? ?? ?? ?? ?? ???????????????.
 split; last by smt(@W64).
-split; last by smt(@W64).
+split; last first.
+split; first by smt(@W64).
+split; first by smt(@W64).
+admit.
 split; last by admit.
 apply (Array256.ext_eq 
    ((lift_array rp{2}).[to_uint j{2} + to_uint len{2} <-
@@ -342,8 +402,8 @@ apply (Array256.ext_eq
 move => x xb => />.
 rewrite !to_uintD_small; first by smt(@W64).
 rewrite /lift_array !mapiE => />. split; first by smt(). 
-move : H18; rewrite H17.
-move :H22; rewrite ultE. move => *.
+move : H19; rewrite H18.
+move :H23; rewrite ultE. move => *.
 have ? : 2 * (k{1} - 1 - k1) * to_uint len{2} + to_uint len{2} <= 256; last by smt(). smt(@W64). smt(@W64).
 
 
@@ -356,15 +416,15 @@ rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_neqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite to_sintB_small. admit.
-rewrite H23.
-move : (SREDCp_corr ((to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2})) _ _). smt(@Fq). admit.
-rewrite -H23. 
+rewrite H24.
+move : (SREDCp_corr ((to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2})) _ _). smt(@Fq).  admit.
+rewrite -H24. 
 rewrite !inzmodB.
 move => *.
 rewrite (_: inzmod (to_sint result) = 
    inzmod (to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2} * 169)). smt(@ZModP).
 rewrite !to_uintD_small; first by smt(@W64).
-rewrite !inzmodM -H16. 
+rewrite !inzmodM -H17. 
 rewrite (_: inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * (zeta_{1} * inzmod R) * inzmod 169 = 
      inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * ((zeta_{1} * inzmod R) * inzmod 169)). by ring.
 rewrite (_: (zeta_{1} * inzmod R) * inzmod 169 = zeta_{1}). 
@@ -377,8 +437,8 @@ move => *.
 rewrite (_: x = to_uint j{2}); first by smt().
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_neqiE.
-move : H18; rewrite H17.
-move :H22; rewrite ultE. move => *.
+move : H19; rewrite H18.
+move :H23; rewrite ultE. move => *.
 have ? : 2 * (k{1} - 1 - k1) * to_uint len{2} + to_uint len{2} + to_uint len{2} <= 256; last by smt().
  smt(@W64).
  smt(@W64).
@@ -386,15 +446,15 @@ have ? : 2 * (k{1} - 1 - k1) * to_uint len{2} + to_uint len{2} + to_uint len{2} 
 
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite to_sintD_small. admit.
-rewrite H23 => />.
+rewrite H24 => />.
 move : (SREDCp_corr ((to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2})) _ _). smt(@Fq). admit.
-rewrite -H23. 
+rewrite -H24. 
 rewrite !inzmodD.
 move => *.
 rewrite (_: inzmod (to_sint result) = 
    inzmod ((to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2} * 169))). smt(@ZModP).
 rewrite !to_uintD_small; first by smt(@W64).
-rewrite !inzmodM -H16. 
+rewrite !inzmodM -H17. 
 rewrite (_: inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * (zeta_{1} * inzmod R) * inzmod 169 = 
      inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * ((zeta_{1} * inzmod R) * inzmod 169)). by ring.
 rewrite (_: (zeta_{1} * inzmod R) * inzmod 169 = zeta_{1}). 
@@ -404,3 +464,4 @@ smt(@ZModP @Array256).
 qed.
 
 end KyberPoly.
+
