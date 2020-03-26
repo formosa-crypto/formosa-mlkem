@@ -194,8 +194,8 @@ lemma to_sintM_small : (forall (a b : W16.t),
 op ntt_bound_zetas(zetas : W16.t Array256.t) : bool =
    forall k, 0 <= k < 256 => 0 <= to_sint zetas.[k] < Fq.q-1.
 
-op ntt_bound_coefs(coefs : W16.t Array256.t, c : int) : bool =
-   forall k, 0 <= k < 256 => -c*Fq.q <= to_sint coefs.[k] <= c*Fq.q.
+op ntt_bound_coefs(coefs : W16.t Array256.t) : bool =
+   forall k, 0 <= k < 256 => -2*Fq.q <= to_sint coefs.[k] <= 2*Fq.q %/2.
 
 equiv ntt_correct &m :
   NTT_Fq.NTT.ntt ~ M.poly_ntt : 
@@ -204,7 +204,7 @@ equiv ntt_correct &m :
         array_mont zetas{1} = 
            lift_array (load_array_from_mem Glob.mem{2} zetasp{2}) /\
         ntt_bound_zetas (load_array_from_mem Glob.mem{2} zetasp{2}) /\
-        ntt_bound_coefs rp{2} 2
+        ntt_bound_coefs rp{2}
           ==> 
             res{1} = lift_array res{2} /\
             all (fun x => 0<= W16.to_sint x < 2*Fq.q) res{2}.
@@ -256,21 +256,17 @@ while (
    to_uint zetasp{2} = to_uint zetasp2 + (k{1}-1)*2 /\
    2*k{1}*len{1} = 256 /\
    ntt_bound_zetas (load_array_from_mem Glob.mem{2} zetasp2) /\ 
-   ntt_bound_coefs rp{2} (256 %/ len{1})); last by  auto => />; smt(@W64).
+   ntt_bound_coefs rp{2}); last by  auto => />; smt(@W64).
 wp.
 exists* k{1}.
 elim* => k1.
 while (#{/~k1=k{1}}
-        {~2*k{1}*len{1} = 256}
-        {~ntt_bound_coefs rp{2} (256 %/ len{1})}pre /\ 
+        {~2*k{1}*len{1} = 256}pre /\ 
        2*k1*len{1}= 256 /\
        start{1} = to_uint start{2} /\
        0 <= start{1} <= 256 /\
        start{1} = 2*(k{1} - k1)*len{1} /\
-       2* (k{1} - k1) * to_uint len{2} <= 256 /\
-       (* Nasty carry bound *)
-       ()
-       ); last by
+       2* (k{1} - k1) * to_uint len{2} <= 256); last by
  auto => />; move => *;rewrite uleE !shr_div; by smt(@W64).
 
 wp.
