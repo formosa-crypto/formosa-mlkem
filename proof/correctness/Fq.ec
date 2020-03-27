@@ -28,11 +28,11 @@ print M.
 
 lemma balmod_W16 a:
   a %%+- W16.modulus = W16.smod (a %% W16.modulus)
-  by rewrite bal_modE W16._smodE //=.
+  by rewrite bal_modE /W16.smod //=.
 
 lemma balmod_W32 a:
   a %%+- W32.modulus = W32.smod (a %% W32.modulus)
-  by rewrite bal_modE W32._smodE //=.
+  by rewrite bal_modE /W32.smod //=.
 
 
 lemma fqmul_corr _a _b :
@@ -75,7 +75,7 @@ rewrite to_uintD //=.
 rewrite (_:to_uint (- (of_int (x %% 4294967296))%W16) = to_uint (W16.of_int (-x))).
   rewrite of_uintK.
   rewrite of_intN'.
-  rewrite W16.of_uintK //=.
+  rewrite W16.of_uintK. simplify.
   rewrite (_:  4294967296 = 65536 * 65536); first by smt().
   case (x %% (65536 * 65536) = 0). smt. smt.
  
@@ -84,7 +84,7 @@ rewrite !balmod_W32  => /=.
 rewrite !balmod_W16.
 rewrite -H -/x.
 rewrite (_: to_sint a{hr} %% R = to_uint a{hr}). 
-rewrite to_sintE _smodE. 
+rewrite to_sintE /smod. 
 case (2 ^ (16 - 1) <= to_uint a{hr}).
 rewrite (_: R = W16.modulus). smt. 
 rewrite (_: to_uint a{hr} - W16.modulus = to_uint a{hr} + (-1) * W16.modulus); first by smt().
