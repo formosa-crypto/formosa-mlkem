@@ -51,12 +51,18 @@ move => ?? ?? [#?] ?? [#?] ??.
 
 have bounds_asz : 0 < 2^asz <= 16384; first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle asz 14 _) => /# ].
 have bounds_bsz : 0 < 2^bsz <= 16384; first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle bsz 14 _) => /#].
-have bounds_a : (0 <= to_uint a < 32768) \/ (65536 - 32768 <= to_uint a < 65536); first by smt.
-have bounds_as1 : (0 <= to_uint a < 32768 => 0 <= to_uint a < 2^asz). smt.
-have bounds_as2 : (65536 - 32768 <= to_uint a < 65536 => 65536 -2^asz <= to_uint a < 65536). smt.
-have bounds_b : (0 <= to_uint b < 32768) \/ (65536 - 32768 <= to_uint b < 65536); first by smt.
-have bounds_bs1 : (0 <= to_uint b < 32768 => 0 <= to_uint b < 2^bsz). smt.
-have bounds_bs2 : (65536 - 32768 <= to_uint b < 65536 => 65536 -2^bsz <= to_uint b < 65536). smt.
+have bounds_a : (0 <= to_uint a < 32768) \/ (65536 - 32768 <= to_uint a < 65536).
+by  move : (W16.to_uint_cmp a) => />; smt().
+have bounds_as1 : (0 <= to_uint a < 32768 => 0 <= to_uint a < 2^asz). 
+by  move : (W16.to_uint_cmp a) => />; smt().
+have bounds_as2 : (65536 - 32768 <= to_uint a < 65536 => 65536 -2^asz <= to_uint a < 65536).
+by  move : (W16.to_uint_cmp a) => />; smt().
+have bounds_b : (0 <= to_uint b < 32768) \/ (65536 - 32768 <= to_uint b < 65536).
+by  move : (W16.to_uint_cmp b) => />; smt().
+have bounds_bs1 : (0 <= to_uint b < 32768 => 0 <= to_uint b < 2^bsz).
+by  move : (W16.to_uint_cmp a) => />; smt().
+have bounds_bs2 : (65536 - 32768 <= to_uint b < 65536 => 65536 -2^bsz <= to_uint b < 65536).
+by  move : (W16.to_uint_cmp a) => />; smt().
 
 split.
 case(to_uint a + to_uint b < W16.modulus) => /= *.
@@ -64,17 +70,26 @@ rewrite to_uintD_small; first by smt(@W16).
 smt(@ZModP @W16).
 
 rewrite (_: to_uint (a + b) = to_uint a + to_uint b - W16.modulus).
-   have ? : (to_uint a + to_uint b < 2 * W16.modulus). smt.  
-   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus); smt.
-simplify => />. smt(@ZModP @W16).
+   have ? : (to_uint a + to_uint b < 2 * W16.modulus). 
+by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+
+   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus).
+by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+
+simplify => />. 
+rewrite to_uintD => />. smt(@IntDiv).
+smt(@ZModP @W16).
 
 split. 
 smt(@IntExtra @W16).
 
 have bound : ((max asz bsz + 1) <= 15); first by  smt().
-have boundd : (2^(max asz bsz + 1) <= 32768); first by smt.  
-have bounddd : (2^asz < 2^(max asz bsz + 1)); first by  admit.
-have boundddd : (2^bsz < 2^(max asz bsz + 1)); first by  admit.
+have boundd : (2^(max asz bsz + 1) <= 32768).
+case(max asz bsz = asz); smt(@IntExtra).
+have bounddd : (2^asz < 2^(max asz bsz + 1)). 
+case (max asz bsz = asz); smt(@IntExtra).
+have boundddd : (2^bsz < 2^(max asz bsz + 1)).
+case (max asz bsz = asz); smt(@IntExtra).
 move : bound boundd bounddd boundddd; pose x := 2 ^ (max asz bsz + 1).
 move => *.
 
@@ -85,8 +100,13 @@ rewrite to_uintD_small;  by smt(@IntExtra @W16).
 case(to_uint a + to_uint b < W16.modulus) => /= *.
 rewrite to_uintD_small;  by smt(@W16).
 rewrite (_: to_uint (a + b) = to_uint a + to_uint b - W16.modulus).
-   have ? : (to_uint a + to_uint b < 2 * W16.modulus). smt.  
-   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus); smt.
+   have ? : (to_uint a + to_uint b < 2 * W16.modulus). 
+by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+ 
+   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus).
+by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+simplify => />. 
+rewrite to_uintD => />. smt(@IntDiv).
 smt(@IntExtra @W16).
 
 elim bounds_b.
@@ -94,18 +114,25 @@ move => *.
 case(to_uint a + to_uint b < W16.modulus) => /= *.
 rewrite to_uintD_small;  by smt(@W16).
 rewrite (_: to_uint (a + b) = to_uint a + to_uint b - W16.modulus).
-   have ? : (to_uint a + to_uint b < 2 * W16.modulus). smt.  
-   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus); smt.
+   have ? : (to_uint a + to_uint b < 2 * W16.modulus). 
+by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+
+   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus).
+by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+rewrite to_uintD => />. smt(@IntDiv).
+
 smt(@IntExtra @W16).
 
 move => *.
 case(to_uint a + to_uint b < W16.modulus) => /= *.
 rewrite to_uintD_small;  by smt(@W16).
 rewrite (_: to_uint (a + b) = to_uint a + to_uint b - W16.modulus).
-   have ? : (to_uint a + to_uint b < 2 * W16.modulus). smt.  
-   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus); smt.
+   have ? : (to_uint a + to_uint b < 2 * W16.modulus). 
+ by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+   have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus).
+by  move : (W16.to_uint_cmp a) (W16.to_uint_cmp b) => />; smt().
+rewrite to_uintD => />. smt(@IntDiv).
 smt(@IntExtra @W16).
-
 qed.
 
 
@@ -204,19 +231,60 @@ qed.
 lemma to_sintB_small : (forall (a b : W16.t), 
     -W16.modulus %/2 <= to_sint a - to_sint b < W16.modulus %/2 =>
     to_sint (a - b) = to_sint a - to_sint b).
-admitted.
+proof.
+move => a b.
+  rewrite !W16.to_sintE !/smod => />.
+  move : (W16.to_uint_cmp a). 
+  move : (W16.to_uint_cmp b). 
+  case (to_uint b <= to_uint a).
+  move => /> *.  
+  case(32768 <= to_uint a).
+  rewrite (_:  to_uint (a - b)= (to_uint a -  to_uint b)); smt(@W16 @IntDiv).
+  rewrite (_:  to_uint (a - b)= (to_uint a -  to_uint b)); smt(@W16 @IntDiv).
+  move => /> *.  
+  case(32768 <= to_uint a).
+  case(32768 <= to_uint b).
+  move => /> *.  
+  rewrite (_:  to_uint (a - b)= (to_uint a -  to_uint b) + 65536).
+  rewrite to_uintD to_uintN => />;  smt(@W16 @IntDiv). smt(@W16 @IntDiv).
+  move => /> *.  
+  rewrite (_:  to_uint (a - b)= (to_uint a -  to_uint b) + 65536).
+  rewrite to_uintD to_uintN => />;  smt(@W16 @IntDiv). smt(@W16 @IntDiv).
+  move => /> *.  
+  rewrite (_:  to_uint (a - b)= (to_uint a -  to_uint b) + 65536).
+  rewrite to_uintD to_uintN => />;  smt(@W16 @IntDiv). smt(@W16 @IntDiv).
+qed.
 
 lemma to_sintM_small : (forall (a b : W16.t), 
     -W16.modulus %/2 <= to_sint a * to_sint b < W16.modulus %/2 =>
     to_sint (a * b) = to_sint a * to_sint b).
-admitted.
+proof.
+move => a b.
+  rewrite !W16.to_sintE !/smod => />.
+  move : (W16.to_uint_cmp a). 
+  move : (W16.to_uint_cmp b). 
+  case(32768 <= to_uint a).
+  case(32768 <= to_uint b).
+  move => /> *; smt(@W16).
+  move => *.
+  case (65536  <= to_uint a * to_uint b).
+  rewrite to_uintM  => />;  smt(@W16 @IntDiv). 
+  smt(@W16 @IntDiv).
+  move => *.
+  case(32768 <= to_uint b).
+  case (65536  <= to_uint a * to_uint b).
+  move => *.
+  rewrite to_uintM  => />;  smt(@W16 @IntDiv). 
+  smt(@W16 @IntDiv).
+  rewrite to_uintM  => />;  smt(@W16 @IntDiv). 
+qed.
 
 op ntt_bound_zetas(zetas : W16.t Array256.t) : bool =
    forall k, 0 <= k < 256 => 0 <= to_sint zetas.[k] < Fq.q-1.
 
 op log2(n : int) : int.
 
-
+(* TODO: use easycrypt's native log to base *)
 axiom log2E n l :
    n = 2^l => log2 n = l.
 
@@ -233,13 +301,13 @@ lemma logs :
    log2 4   = 2 /\
    log2 2   = 1 /\
    log2 1   = 0
-  by smt.
+  by smt(pow0 pow2_1 pow2_2 pow2_3 pow2_4 pow2_5 pow2_6 pow2_7  log2E log2pos).
 
 lemma logdiv2 n l :
   1 < n =>
   n = 2^l =>
   log2 (n %/2) = log2 n -1
-   by smt(@JModel @IntDiv @IntExtra log2E). 
+   by smt(@IntExtra log2E). 
 
 
 op ntt_bound_coefs(coefs : W16.t Array256.t, c : int) : bool =
@@ -280,7 +348,7 @@ have bnds : (
       0 <= k < 256 =>
       -32768 <= to_sint rp{2}.[k] < 32768
 ). move => k kb. rewrite to_sintE /smod => />. 
-   case(32768 <= to_uint rp{2}.[k]); smt.
+     move : (W16.to_uint_cmp ( rp{2}.[k]));smt().
 split.
 + rewrite (Array256.ext_eq r{1} (lift_array result)) //=.
    move => x xb;rewrite /lift_array  mapiE //=  (H3 x xb) mapiE => />.
@@ -334,7 +402,7 @@ split; first  by smt(@W64).
 split; first  by smt(@W64).
 split; first  by smt(@W64). 
 rewrite (logdiv2 (to_uint len{2}) (log2 (to_uint len{2}))). smt(@W16). 
- smt.
+ smt. (* mistery *)
 by smt(@W16 @Array256 @Fq).
 
 wp.
@@ -385,7 +453,7 @@ split.
 split; first by rewrite !to_uintD_small => />;  by smt(@W64).
 split; last first. 
 rewrite (_:to_uint j_R = to_uint start{2} + to_uint len{2}).
-smt. ring. rewrite H13. by ring.
+smt(). ring. rewrite H13. by ring.
 split; first   by smt(@W64).
 move => *. 
 rewrite (_:to_uint j_R = to_uint start{2} + to_uint len{2}).
@@ -411,9 +479,9 @@ move => &1 &2 [#] ?? ?? ?? ?? ?? ?? ???????????????.
 split; last by smt(@W64).
 split; last first.
 split; first by smt(@W64).
-split; first by smt(@W64).
+split; first by smt().
 admit.
-split; last by admit. 
+split; last by   admit. 
 apply (Array256.ext_eq 
    ((lift_array rp{2}).[to_uint j{2} + to_uint len{2} <-
   ((lift_array rp{2}).[to_uint j{2}] + - zeta_{1} * (lift_array rp{2}).[to_uint j{2} + to_uint len{2}])%ZModP.ZModpRing].[
@@ -441,7 +509,7 @@ rewrite Array256.set_neqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_neqiE. smt(@W64). smt(@W64).
 rewrite Array256.set_eqiE. smt(@W64). smt(@W64).
-rewrite to_sintB_small. admit.
+rewrite to_sintB_small.  admit.
 rewrite H24.
 move : (SREDCp_corr ((to_sint rp{2}.[to_uint (j{2} + len{2})] * to_sint zeta_0{2})) _ _). smt(@Fq).  admit.
 rewrite -H24. 
