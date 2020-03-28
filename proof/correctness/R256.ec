@@ -45,8 +45,6 @@ lemma add_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int):
    bw16 b bsz =>
      inzmod (W16.to_sint (add a b)) = a' + b' /\
            bw16 (add a b) (max asz bsz + 1).
-admitted.
-(* Needs fixing
 proof.
 rewrite /bw16 /add !to_sintE /smod => />.
 move => ?? ?? [#?] ?? [#?] ??.
@@ -68,8 +66,7 @@ smt(@ZModP @W16).
 rewrite (_: to_uint (a + b) = to_uint a + to_uint b - W16.modulus).
    have ? : (to_uint a + to_uint b < 2 * W16.modulus). smt.  
    have ? : (to_uint a + to_uint b = (to_uint a + to_uint b) %% W16.modulus + W16.modulus); smt.
-simplify => />.
-admit.
+simplify => />. smt(@ZModP @W16).
 
 split. 
 smt(@IntExtra @W16).
@@ -110,7 +107,7 @@ rewrite (_: to_uint (a + b) = to_uint a + to_uint b - W16.modulus).
 smt(@IntExtra @W16).
 
 qed.
-*)
+
 
 require import NTT_Fq.
 
@@ -242,7 +239,7 @@ lemma logdiv2 n l :
   1 < n =>
   n = 2^l =>
   log2 (n %/2) = log2 n -1
-   by admit. 
+   by smt(@JModel @IntDiv @IntExtra log2E). 
 
 
 op ntt_bound_coefs(coefs : W16.t Array256.t, c : int) : bool =
@@ -335,9 +332,9 @@ rewrite uleE !shr_div.
 split; last  by smt(@W64).
 split; first  by smt(@W64).
 split; first  by smt(@W64).
-split; first  by admit.
+split; first  by smt(@W64). 
 rewrite (logdiv2 (to_uint len{2}) (log2 (to_uint len{2}))). smt(@W16). 
- admit.
+ smt.
 by smt(@W16 @Array256 @Fq).
 
 wp.
@@ -379,7 +376,7 @@ rewrite (_:
 rewrite (load_array_from_memE (Glob.mem{2}) ( zetasp2) (k{1})) => />.
 smt(@Array256 @ZModP).
 move : H0; rewrite /array_mont.
-admit. (*by smt(@ZModP @Array256).*)
+by smt(@ZModP @Array256).
 split; first by rewrite to_uintD_small; by smt(@W64). 
 by smt(@W64).
 
@@ -416,7 +413,7 @@ split; last first.
 split; first by smt(@W64).
 split; first by smt(@W64).
 admit.
-split; last by admit.
+split; last by admit. 
 apply (Array256.ext_eq 
    ((lift_array rp{2}).[to_uint j{2} + to_uint len{2} <-
   ((lift_array rp{2}).[to_uint j{2}] + - zeta_{1} * (lift_array rp{2}).[to_uint j{2} + to_uint len{2}])%ZModP.ZModpRing].[
