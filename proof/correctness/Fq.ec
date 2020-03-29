@@ -82,7 +82,7 @@ rewrite (_:to_uint (- (of_int (x %% 4294967296))%W16) = to_uint (W16.of_int (-x)
 rewrite /BREDC.
 rewrite !balmod_W32  => /=.
 rewrite !balmod_W16.
-rewrite -H -/x.
+rewrite -H.
 rewrite (_: to_sint a{hr} %% R = to_uint a{hr}). 
 rewrite to_sintE /smod. 
 case (2 ^ (16 - 1) <= to_uint a{hr}).
@@ -96,6 +96,8 @@ smt(@W16).
 rewrite (_: W16.to_uint (W16.of_int (-x)) = (-x) %% R). case (0<= -x < W16.modulus); smt(@W16).
 smt(@W16 qE).
 qed.
+
+
 
 
 end Fq.
