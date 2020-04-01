@@ -51,10 +51,15 @@ module NTT = {
        start <- j + len;
      }
      len <- len * 2;
-   }     
+   }
+   j <- 0;
+   while (j < 256) {
+     r.[j] <- r.[j] * zetas_inv.[127]; 
+     j <- j + 1;
+   }    
    return r;
  }
-
+  
  
 }.
 
