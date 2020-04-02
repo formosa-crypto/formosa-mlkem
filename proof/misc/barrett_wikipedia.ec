@@ -30,7 +30,7 @@ lemma gt0_n : 0 < n by smt(gt1_n).
 hint exact : gt0_p gt0_n.
 
 lemma ge0_p : 0 <= p by apply ltrW.
-      
+
 lemma ge0_n : 0 <= n by apply ltrW.
 
 hint exact : ge0_p ge0_n.
@@ -41,7 +41,8 @@ lemma foo : a <= p => r < 2 * n.
 proof.
 move=> le_ap;rewrite /r /q.
 rewrite &(ltr_pmul2r p) // mulrBl mulrAC divzE.
-rewrite mulrBl opprB addrA; pose c := m * a * n.
+rewrite mulrBl opprB addrA.
+pose c := m * a * n.
 have ->: c = p * a - a * (p %% n).
 + by rewrite /c /m mulrAC divzE mulrBl; congr; rewrite mulrC.
 rewrite opprD opprK addrA (addrAC (a * p)) (mulrC p a) subrr /=.
