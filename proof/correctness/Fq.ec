@@ -22,7 +22,7 @@ clone import SignedReductions with
     proof RRinv by smt
     proof qinv_bnd by smt.
 
-require import Poly_ntt.
+require import Jasmin_poly.
 
 print M.
 

@@ -7,8 +7,6 @@ require import WArray512.
 require import Poly_ntt.
 
 module M = {
-  include Poly_ntt.M
-(*
   proc fqmul (a:W16.t, b:W16.t) : W16.t = {
     
     var r:W16.t;
@@ -45,7 +43,7 @@ module M = {
     r <- (r - (truncateu16 t));
     return (r);
   }
-*)
+
   proc poly_invntt (rp:W16.t Array256.t, zetasp:W64.t) : W16.t Array256.t = {
     
     var szetasp:W64.t;
