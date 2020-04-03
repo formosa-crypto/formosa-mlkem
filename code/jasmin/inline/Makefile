@@ -1,9 +1,9 @@
 CC=/usr/bin/gcc
 CFLAGS=-Wall -Wextra -g
 JASMIN=~/svn/jasmin/compiler/jasminc
-JFLAGS=-lea -pasm
+JFLAGS=-lea -pasm ${JADDFLAGS}
 
-.SECONDARY: jpoly.s jpolyvec.s jfips202.s indcpa.s
+.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s
 
 default: test
 
@@ -77,8 +77,8 @@ POLYVECHEADERS = polyvec_compress.jahh \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 
-test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) indcpa.s
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) indcpa.s $<
+test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.s
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.s $<
 
 test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jfips202.s $<
@@ -100,7 +100,7 @@ jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
 jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
-indcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
+jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 %.s: %.japp

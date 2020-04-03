@@ -8,7 +8,7 @@ void poly_setrandom(poly *r)
   fread(r->coeffs, sizeof(int16_t), KYBER_N, urandom);
   for(int i=0;i<KYBER_N;i++)
   {
-    r->coeffs[i] %= KYBER_Q;
+    r->coeffs[i] %= 2*KYBER_Q;
   }
   fclose(urandom);
 }
@@ -19,11 +19,12 @@ int main(void)
 
   poly_setrandom(&r0);
 
+
   for(int i=0;i<KYBER_N;i++)
     r1.coeffs[i] = r0.coeffs[i];
  
-  poly_ntt(&r0);
-  poly_ntt_jazz(&r1);
+  poly_invntt(&r0);
+  poly_invntt_jazz(&r1);
 
   for(int i=0;i<KYBER_N;i++)
   {
