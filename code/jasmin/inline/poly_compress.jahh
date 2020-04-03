@@ -4,6 +4,7 @@
 #include "params.jahh"
 #include "poly_csubq.jahh"
 
+inline
 fn poly_compress(reg u64 rp, stack u16[KYBER_N] a)
 {
   reg u16 t;

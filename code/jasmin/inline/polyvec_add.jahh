@@ -6,6 +6,7 @@
 #include "polyvec_frompolys.jahh"
 #include "poly_add.jahh"
 
+inline
 fn polyvec_add(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_N] a0 a1 a2;

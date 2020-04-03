@@ -5,6 +5,7 @@
 #include "poly_reduce.jahh"
 #include "zetas.jahh"
 
+inline
 fn poly_ntt(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
 {
   reg u64 len;  

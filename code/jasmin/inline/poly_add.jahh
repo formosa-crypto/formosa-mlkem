@@ -3,6 +3,7 @@
 
 #include "params.jahh"
 
+inline
 fn poly_add(stack u16[KYBER_N] ap bp) -> stack u16[KYBER_N]
 {
   reg u16 a;

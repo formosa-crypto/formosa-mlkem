@@ -4,6 +4,7 @@
 #include "params.jahh"
 #include "reduce.jahh"
 
+inline
 fn poly_reduce(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
 {
   reg u64 j; 

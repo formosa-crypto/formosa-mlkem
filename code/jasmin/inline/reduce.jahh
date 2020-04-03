@@ -8,6 +8,7 @@ param int MONT    = 2285;      /* 2^16 % Q */
 param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
 
 
+inline
 fn fqmul(reg u16 a, reg u16 b) -> reg u16
 {
   reg u32 ad;
@@ -34,6 +35,7 @@ fn fqmul(reg u16 a, reg u16 b) -> reg u16
   return r;
 }
 
+inline
 fn barrett_reduce(reg u16 a) -> reg u16
 {
   reg u32 t;

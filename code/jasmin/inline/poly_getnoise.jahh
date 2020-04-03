@@ -4,6 +4,7 @@
 #include "params.jahh"
 #include "fips202.jahh"
 
+inline
 fn poly_getnoise(stack u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> stack u16[KYBER_N]
 {
   stack u8[33] extseed;   /* 33 = KYBER_SYMBYTES +1 */

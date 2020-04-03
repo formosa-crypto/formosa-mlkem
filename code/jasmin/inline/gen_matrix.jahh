@@ -6,6 +6,7 @@
 
 param int _19KYBER_Q = 63251;
 
+inline
 fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[KYBER_N]
 {
   reg u16 val;
@@ -51,6 +52,7 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
   return ctr, rp;
 }
 
+inline
 fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KYBER_VECN], stack u16[KYBER_VECN], stack u16[KYBER_VECN]
 {
   stack u8[34] extseed;

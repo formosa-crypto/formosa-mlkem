@@ -3,6 +3,7 @@
 
 #include "params.jahh"
 
+inline
 fn polyvec_decompress(reg u64 ap) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_VECN] r;

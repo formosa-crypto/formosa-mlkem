@@ -3,6 +3,7 @@
 
 #include "params.jahh"
 
+inline
 fn poly_frommsg(reg u64 ap) -> stack u16[KYBER_N]
 {
   stack u16[KYBER_N] rp;

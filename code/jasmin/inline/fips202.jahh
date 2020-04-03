@@ -20,7 +20,7 @@ fn ROL64(reg u64 x, inline int c) -> reg u64 {
   return y;
 }
 
-
+inline
 fn theta(stack u64[25] a) -> stack u64[25] {
   inline int x, y;
   reg u64[5] c, d;
@@ -75,6 +75,7 @@ fn keccakRhoOffsets(inline int i) -> inline int {
 }
 
 
+inline
 fn rho(stack u64[25] a) -> stack u64[25] {
   inline int x, y, i, z;
 
@@ -90,6 +91,7 @@ fn rho(stack u64[25] a) -> stack u64[25] {
 }
 
 
+inline
 fn pi(stack u64[25] a) -> stack u64[25] {
   stack u64[25] b;
   reg u64 t;
@@ -107,6 +109,7 @@ fn pi(stack u64[25] a) -> stack u64[25] {
 }
 
 
+inline
 fn chi(stack u64[25] a) -> stack u64[25] {
   inline int x, y, i;
   reg u64[5] c;
@@ -128,12 +131,14 @@ fn chi(stack u64[25] a) -> stack u64[25] {
 }
 
 
+inline
 fn iota(stack u64[25] a, reg u64 c) -> stack u64[25] {
   a[0] ^= c;
   return a;
 }
 
 
+inline
 fn keccakP1600_round(stack u64[25] state, reg u64 c) -> stack u64[25] {
   state = theta(state);
   state = rho(state);
@@ -183,6 +188,7 @@ u64[24] roundconstants = {0x0000000000000001, 0x0000000000008082, 0x800000000000
                           0x8000000000008002, 0x8000000000000080, 0x000000000000800a, 0x800000008000000a, 
                           0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
 
+inline
 fn __keccakf1600_ref(stack u64[25] state) -> stack u64[25] {
   inline int round;
   //stack u64[24] constants;
@@ -197,6 +203,7 @@ fn __keccakf1600_ref(stack u64[25] state) -> stack u64[25] {
   return state;
 }
 
+inline
 fn st0() -> stack u64[25]
 {
   stack u64[25] state;
@@ -210,6 +217,7 @@ fn st0() -> stack u64[25]
 }
 
 
+inline
 fn add_full_block(
   stack u64[25] state,
   reg u64 in,
@@ -236,6 +244,7 @@ fn add_full_block(
 }
 
 
+inline
 fn add_final_block(
   stack u64[25] state,
   reg u64 in,
@@ -275,6 +284,7 @@ fn add_final_block(
 }
 
 
+inline
 fn xtr_full_block(
   stack u64[25] state,
   reg u64 out,
@@ -301,6 +311,7 @@ fn xtr_full_block(
 }
 
 
+inline
 fn xtr_bytes(
   stack u64[25] state,
   reg u64 out,
@@ -330,6 +341,7 @@ fn xtr_bytes(
 }
 
 
+inline
 fn __keccak1600_ref(
   stack u64 s_out s_outlen,
   reg   u64 in inlen,
@@ -389,6 +401,7 @@ fn __keccak1600_ref(
 }
 
 
+inline
 fn keccak1600_ref(reg u64 out outlen in inlen, stack u64[2] config)
 {
   stack u64 s_trail_byte;
@@ -407,6 +420,7 @@ fn keccak1600_ref(reg u64 out outlen in inlen, stack u64[2] config)
   __keccak1600_ref(s_out, s_outlen, in, inlen, s_trail_byte, rate);
 }
 
+inline
 fn shake256(reg u64 out outlen in inlen)
 {
   reg u64 ds;
@@ -420,6 +434,7 @@ fn shake256(reg u64 out outlen in inlen)
 }
 
 
+inline
 fn shake256_128_33(stack u8[33] in) -> stack u8[128]
 {
   stack u64[25] state;
@@ -445,6 +460,7 @@ fn shake256_128_33(stack u8[33] in) -> stack u8[128]
   return out;
 }
 
+inline
 fn sha3512_32(stack u8[32] in) -> stack u8[64]
 {
   stack u64[25] state;
@@ -471,6 +487,7 @@ fn sha3512_32(stack u8[32] in) -> stack u8[64]
 }
 
 
+inline
 fn shake128_absorb34(stack u8[34] in) -> stack u64[25]
 {
   stack u64[25] state;
@@ -490,6 +507,7 @@ fn shake128_absorb34(stack u8[34] in) -> stack u64[25]
 }
 
 
+inline
 fn shake128_squeezeblock(stack u64[25] state) -> stack u64[25], stack u8[SHAKE128_RATE]
 {
   stack u8[SHAKE128_RATE] out;

@@ -6,6 +6,7 @@
 #include "polyvec_topolys.jahh"
 #include "polyvec_frompolys.jahh"
 
+inline
 fn polyvec_ntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_N] r0 r1 r2;

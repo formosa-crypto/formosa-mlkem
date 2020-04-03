@@ -5,6 +5,7 @@
 
 param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
 
+inline
 fn poly_frommont(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
 {
   inline int i;

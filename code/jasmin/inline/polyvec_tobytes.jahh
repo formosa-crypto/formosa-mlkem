@@ -6,6 +6,7 @@
 #include "polyvec_topolys.jahh"
 #include "polyvec_frompolys.jahh"
 
+inline
 fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
 {
   stack u16[KYBER_N] a0 a1 a2;

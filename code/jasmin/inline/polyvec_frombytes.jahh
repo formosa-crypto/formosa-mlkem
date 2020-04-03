@@ -5,6 +5,7 @@
 #include "poly_frombytes.jahh"
 #include "polyvec_frompolys.jahh"
 
+inline
 fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_VECN] r;
