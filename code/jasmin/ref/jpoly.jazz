@@ -245,6 +245,9 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
   stack u16[KYBER_N] r;
   stack u8[KYBER_SYMBYTES] seed;
   inline int i;
+  stack u64 srp;
+
+  srp = rp;
 
   for i = 0 to KYBER_SYMBYTES {
     d       = (u8)[seedp + i];
@@ -253,6 +256,7 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 
   r = poly_getnoise(seed, nonce);
 
+  rp = srp;
   for i = 0 to KYBER_N {
     t = r[i];
     (u16)[rp + 2*i] = t;

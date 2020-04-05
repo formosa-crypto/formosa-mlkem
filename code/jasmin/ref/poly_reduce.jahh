@@ -5,7 +5,7 @@
 #include "reduce.jahh"
 
 inline
-fn poly_reduce(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
+fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   reg u64 j; 
   reg u16 t;
