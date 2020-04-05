@@ -93,7 +93,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
       extseed[KYBER_SYMBYTES+1] = j;
     }
 
-    state = shake128_absorb34(extseed, state);
+    state = shake128_absorb34(extseed);
 
     ctr = 0;
     while (ctr < KYBER_N)
@@ -130,7 +130,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
       extseed[KYBER_SYMBYTES+1] = j;
     }
 
-    state = shake128_absorb34(extseed, state);
+    state = shake128_absorb34(extseed);
 
     ctr = 0;
     while (ctr < KYBER_N)
@@ -167,7 +167,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
       extseed[KYBER_SYMBYTES+1] = j;
     }
 
-    state = shake128_absorb34(extseed, state);
+    state = shake128_absorb34(extseed);
 
     ctr = 0;
     while (ctr < KYBER_N)
