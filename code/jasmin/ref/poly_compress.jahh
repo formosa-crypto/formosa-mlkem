@@ -1,0 +1,38 @@
+#ifndef POLY_COMPRESS_HH
+#define POLY_COMPRESS_HH
+
+#include "params.jahh"
+#include "poly_csubq.jahh"
+
+inline
+fn poly_compress(reg u64 rp, stack u16[KYBER_N] a)
+{
+  reg u16 t;
+  reg u32 d0, d1;
+  inline int i;
+
+  a = poly_csubq(a);
+
+  for i = 0 to 128
+  {
+    t  = a[2*i];
+    d0 = (32u)t;
+    d0 <<= 4;
+    d0 += 1665;
+    d0 *= 80635;
+    d0 >>= 28;
+    d0 &= 0xf;
+    t  = a[2*i+1];
+    d1 = (32u)t;
+    d1 <<= 4;
+    d1 += 1665;
+    d1 *= 80635;
+    d1 >>= 28;
+    d1 &= 0xf;
+    d1 <<= 4;
+    d0 |= d1;
+    (u8)[rp+i] = d0;
+  }
+}
+
+#endif

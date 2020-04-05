@@ -1,0 +1,27 @@
+#ifndef POLY_CSUBQ_HH
+#define POLY_CSUBQ_HH
+
+#include "params.jahh"
+
+inline
+fn poly_csubq(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
+{
+  inline int i;
+  reg u16 t;
+  reg u16 b;
+
+  for i = 0 to KYBER_N
+  {
+    t = rp[i];
+    t -= KYBER_Q;
+    b = t;
+    //b = #SAR_16(b, 15);
+    b >>s= 15;
+    b &= KYBER_Q;
+    t += b;
+    rp[i] = t;
+  }
+  return rp;
+}
+
+#endif

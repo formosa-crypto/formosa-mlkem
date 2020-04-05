@@ -1,0 +1,35 @@
+#ifndef POLY_FROMBYTES_HH
+#define POLY_FROMBYTES_HH
+
+#include "params.jahh"
+
+inline
+fn poly_frombytes(reg u64 ap) -> stack u16[KYBER_N]
+{
+  stack u16[KYBER_N] rp;
+  reg u8 c0, c1, c2;
+  reg u16 d0, d1, t;
+  inline int i;
+
+  for i = 0 to KYBER_N/2
+  {
+    c0 = (u8)[ap+3*i];
+    c1 = (u8)[ap+3*i+1];
+    c2 = (u8)[ap+3*i+2];
+    d0 = (16u)c0;
+    t  = (16u)c1;
+    t &= 0xf;
+    t <<= 8;
+    d0 |= t;
+    d1 = (16u)c2;
+    d1 <<= 4;
+    t  = (16u)c1;
+    t >>= 4;
+    d1 |= t;
+    rp[2*i]   = d0;
+    rp[2*i+1] = d1;
+  }
+  return rp;
+}
+
+#endif
