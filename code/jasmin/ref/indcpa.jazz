@@ -55,7 +55,7 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
     i += 1;
   }
 
-  buf = sha3512_32(inbuf);
+  buf = sha3512_32(buf, inbuf);
 
   i = 0;
   j = KYBER_SYMBYTES;
@@ -74,17 +74,17 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 
   nonce = 0;
   poly0 = poly_getnoise(noiseseed, nonce);
-  nonce += 1;
+  nonce = 1;
   poly1 = poly_getnoise(noiseseed, nonce);
-  nonce += 1;
+  nonce = 2;
   poly2 = poly_getnoise(noiseseed, nonce);
   skpv = polyvec_frompolys(poly0, poly1, poly2);
 
-  nonce += 1;
+  nonce = 3;
   poly0 = poly_getnoise(noiseseed, nonce);
-  nonce += 1;
+  nonce = 4;
   poly1 = poly_getnoise(noiseseed, nonce);
-  nonce += 1;
+  nonce = 5;
   poly2 = poly_getnoise(noiseseed, nonce);
   e = polyvec_frompolys(poly0, poly1, poly2);
 

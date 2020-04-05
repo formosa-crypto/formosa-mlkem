@@ -1,6 +1,6 @@
 CC=/usr/bin/gcc
 CFLAGS=-Wall -Wextra -g
-JASMIN=jasminc
+JASMIN=~/svn/jasmin/compiler/jasminc
 JFLAGS=-lea -pasm ${JADDFLAGS}
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s

@@ -399,11 +399,9 @@ fn shake256(reg u64 out outlen in inlen)
 }
 
 
-inline
-fn shake256_128_33(stack u8[33] in) -> stack u8[128]
+fn shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 {
   stack u64[25] state;
-  stack u8[128] out;
   reg u8 c;
   inline int i;
 
@@ -425,11 +423,9 @@ fn shake256_128_33(stack u8[33] in) -> stack u8[128]
   return out;
 }
 
-inline
-fn sha3512_32(stack u8[32] in) -> stack u8[64]
+fn sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 {
   stack u64[25] state;
-  stack u8[64] out;
   reg u8 c;
   inline int i;
 

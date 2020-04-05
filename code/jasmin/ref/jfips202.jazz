@@ -12,7 +12,7 @@ export fn shake256_128_33_jazz(reg u64 outp inp)
     in[i] = c;
   }
    
-  out = shake256_128_33(in);
+  out = shake256_128_33(out, in);
 
   for i = 0 to 128 {
     c = out[i];
@@ -32,7 +32,7 @@ export fn sha3512_32_jazz(reg u64 outp inp)
     in[i] = c;
   }
    
-  out = sha3512_32(in);
+  out = sha3512_32(out, in);
 
   for i = 0 to 64 {
     c = out[i];
