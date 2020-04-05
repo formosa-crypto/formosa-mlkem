@@ -54,7 +54,7 @@ export fn shake128_absorb34_jazz(reg u64 statep, reg u64 inp)
     in[i] = c;
   }
 
-  state = shake128_absorb34(in);
+  state = shake128_absorb34(state, in);
   
   for i = 0 to 25 {
     t = state[i];

@@ -452,11 +452,8 @@ fn sha3512_32(stack u8[32] in) -> stack u8[64]
 }
 
 
-//fn shake128_absorb34(reg ptr u8[34] in, reg ptr u64[25] state) -> reg ptr u64[25]
-inline
-fn shake128_absorb34(stack u8[34] in) -> stack u64[25]
+fn shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
 {
-  stack u64[25] state;
   reg u8 c;
   inline int i;
 
