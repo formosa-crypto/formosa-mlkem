@@ -200,7 +200,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   ctp = sctp;
   polyvec_compress(ctp, bp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  poly_compress(ctp, v);
+  v = poly_compress(ctp, v);
 }
 
 
@@ -212,7 +212,7 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
 
   bp = polyvec_decompress(ctp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  v = poly_decompress(ctp);
+  v = poly_decompress(v, ctp);
 
   skpv = polyvec_frombytes(skp);
   

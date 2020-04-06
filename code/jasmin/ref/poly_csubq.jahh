@@ -3,8 +3,7 @@
 
 #include "params.jahh"
 
-inline
-fn poly_csubq(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
+fn poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   inline int i;
   reg u16 t;
@@ -15,7 +14,6 @@ fn poly_csubq(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
     t = rp[i];
     t -= KYBER_Q;
     b = t;
-    //b = #SAR_16(b, 15);
     b >>s= 15;
     b &= KYBER_Q;
     t += b;

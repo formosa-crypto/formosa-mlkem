@@ -5,7 +5,7 @@ JFLAGS=-lea ${JADDFLAGS}
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s
 
-default: test
+default: test kybertest
 
 test: test/test_poly_compress \
  		  test/test_poly_decompress \
