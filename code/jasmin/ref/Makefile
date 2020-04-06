@@ -1,6 +1,6 @@
 CC=/usr/bin/gcc
 CFLAGS=-Wall -Wextra -g
-JASMIN=~/svn/jasmin/compiler/jasminc
+JASMIN=jasminc
 JFLAGS=-lea -pasm ${JADDFLAGS}
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s
@@ -104,7 +104,7 @@ jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 %.s: %.japp
-	$(JASMIN) $(JFLAGS) $^ > $@
+	$(JASMIN) -o $@ $(JFLAGS) $^ 
 
 
 .PHONY: clean

@@ -4,6 +4,7 @@ export fn shake256_128_33_jazz(reg u64 outp inp)
 {
   stack u8[33] in;
   stack u8[128] out;
+  stack u64 soutp;
   reg u8 c;
   inline int i;
 
@@ -11,8 +12,10 @@ export fn shake256_128_33_jazz(reg u64 outp inp)
     c = (u8)[inp + i];
     in[i] = c;
   }
-   
+  
+  soutp = outp;
   out = shake256_128_33(out, in);
+  outp = soutp;
 
   for i = 0 to 128 {
     c = out[i];
@@ -24,6 +27,7 @@ export fn sha3512_32_jazz(reg u64 outp inp)
 {
   stack u8[32] in;
   stack u8[64] out;
+  stack u64 soutp;
   reg u8 c;
   inline int i;
 
@@ -32,8 +36,9 @@ export fn sha3512_32_jazz(reg u64 outp inp)
     in[i] = c;
   }
    
+  soutp = outp;
   out = sha3512_32(out, in);
-
+  outp = soutp;
   for i = 0 to 64 {
     c = out[i];
     (u8)[outp + i] = c;
