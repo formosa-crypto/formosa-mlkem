@@ -9,10 +9,13 @@ fn poly_decompress(reg u64 ap) -> stack u16[KYBER_N]
   stack u16[KYBER_N] rp;
   reg u8 t;
   reg u16 d0, d1;
-  inline int i;
+//  inline int i;
+  reg u64 i j;
 
-  for i = 0 to 128
-  {
+  i = 0;
+  j = 0;
+
+  while (i < 128) {
     t  = (u8)[ap+i];
     d0 = (16u)t;
     d1 = (16u)t;
@@ -24,8 +27,11 @@ fn poly_decompress(reg u64 ap) -> stack u16[KYBER_N]
     d1 += 8;
     d0 >>= 4;
     d1 >>= 4;
-    rp[2*i]   = d0;
-    rp[2*i+1] = d1;
+    rp[(int)j] = d0;
+    j += 1;
+    rp[(int)j] = d1;
+    j += 1;
+    i += 1;
   }
   return rp;
 }

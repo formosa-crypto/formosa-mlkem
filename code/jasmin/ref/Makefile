@@ -1,5 +1,5 @@
 CC=/usr/bin/gcc
-CFLAGS=-Wall -Wextra -g
+CFLAGS=-Wall -Wextra -g -O3
 JASMIN=jasminc
 JFLAGS=-lea -pasm ${JADDFLAGS}
 
