@@ -102,7 +102,7 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_N] r;
 
-  r = poly_frommsg(ap);
+  r = poly_frommsg(r, ap);
 
   for i = 0 to KYBER_N {
     t = r[i];
