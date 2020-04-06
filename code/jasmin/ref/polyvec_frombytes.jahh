@@ -13,11 +13,11 @@ fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
   reg u64 pp;
 
   pp = ap;
-  r0 = poly_frombytes(pp);
+  r0 = poly_frombytes(r0, pp);
   pp += KYBER_POLYBYTES;
-  r1 = poly_frombytes(pp);
+  r1 = poly_frombytes(r1, pp);
   pp += KYBER_POLYBYTES;
-  r2 = poly_frombytes(pp);
+  r2 = poly_frombytes(r2, pp);
 
   r = polyvec_frompolys(r0, r1, r2);
 

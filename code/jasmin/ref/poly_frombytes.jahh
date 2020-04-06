@@ -3,10 +3,8 @@
 
 #include "params.jahh"
 
-inline
-fn poly_frombytes(reg u64 ap) -> stack u16[KYBER_N]
+fn poly_frombytes(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
-  stack u16[KYBER_N] rp;
   reg u8 c0, c1, c2;
   reg u16 d0, d1, t;
   inline int i;
