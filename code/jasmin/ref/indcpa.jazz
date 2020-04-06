@@ -5,7 +5,7 @@
 #include "poly_frombytes.jahh"
 #include "poly_tomsg.jahh"
 #include "poly_frommsg.jahh"
-#include "poly_add.jahh"
+#include "poly_add2.jahh"
 #include "poly_sub.jahh"
 #include "poly_ntt.jahh"
 #include "poly_invntt.jahh"
@@ -18,7 +18,7 @@
 #include "polyvec_frombytes.jahh"
 #include "polyvec_compress.jahh"
 #include "polyvec_decompress.jahh"
-#include "polyvec_add.jahh"
+#include "polyvec_add2.jahh"
 #include "polyvec_pointwise_acc.jahh"
 #include "polyvec_ntt.jahh"
 #include "polyvec_invntt.jahh"
@@ -99,7 +99,7 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   poly2 = poly_frommont(poly2);
   pkpv = polyvec_frompolys(poly0, poly1, poly2);
 
-  pkpv = polyvec_add(pkpv, e);
+  pkpv = polyvec_add2(pkpv, e);
   pkpv = polyvec_reduce(pkpv);
 
   pkp = spkp;
@@ -191,9 +191,9 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   bp = polyvec_invntt(bp);
   v = poly_invntt(v);
 
-  bp = polyvec_add(bp, ep);
-  v = poly_add(v, epp);
-  v = poly_add(v, k);
+  bp = polyvec_add2(bp, ep);
+  v = poly_add2(v, epp);
+  v = poly_add2(v, k);
   bp = polyvec_reduce(bp);
   v  = poly_reduce(v);
 

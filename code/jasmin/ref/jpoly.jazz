@@ -210,7 +210,7 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     b[i] = t;
   }
 
-  r = poly_basemul(a, b);
+  r = poly_basemul(r, a, b);
 
   for i = 0 to KYBER_N {
     t = r[i];
