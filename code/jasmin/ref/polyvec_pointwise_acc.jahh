@@ -3,7 +3,7 @@
 
 #include "params.jahh"
 #include "poly_basemul.jahh"
-#include "poly_add.jahh"
+#include "poly_add2.jahh"
 #include "polyvec_topolys.jahh"
 #include "polyvec_frompolys.jahh"
 
@@ -20,9 +20,9 @@ fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> st
 
   r = poly_basemul(a0, b0);
   t = poly_basemul(a1, b1);
-  r = poly_add(r, t);
+  r = poly_add2(r, t);
   t = poly_basemul(a2, b2);
-  r = poly_add(r, t);
+  r = poly_add2(r, t);
 
   r = poly_reduce(r);
 

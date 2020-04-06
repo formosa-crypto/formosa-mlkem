@@ -5,7 +5,7 @@
 #include "poly_frombytes.jahh"
 #include "poly_tomsg.jahh"
 #include "poly_frommsg.jahh"
-#include "poly_add.jahh"
+#include "poly_add2.jahh"
 #include "poly_sub.jahh"
 #include "poly_ntt.jahh"
 #include "poly_invntt.jahh"
@@ -112,22 +112,21 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
 
 
 
-export fn poly_add_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
+export fn poly_add2_jazz(reg u64 rp,  reg u64 bp) 
 {
   inline int i;
   reg u16 t;
-  stack u16[KYBER_N] a;
-  stack u16[KYBER_N] b;
   stack u16[KYBER_N] r;
+  stack u16[KYBER_N] b;
 
   for i = 0 to KYBER_N {
-    t = (u16)[ap + 2*i];
-    a[i] = t;
+    t = (u16)[rp + 2*i];
+    r[i] = t;
     t = (u16)[bp + 2*i];
     b[i] = t;
   }
 
-  r = poly_add(a, b);
+  r = poly_add2(r, b);
 
   for i = 0 to KYBER_N {
     t = r[i];

@@ -59,7 +59,7 @@ void poly_frommont_jazz(poly *r);
 void poly_reduce_jazz(poly *r);
 void poly_csubq_jazz(poly *r);
 
-void poly_add_jazz(poly *r, const poly *a, const poly *b);
+void poly_add2_jazz(poly *r, const poly *b);
 void poly_sub_jazz(poly *r, const poly *a, const poly *b);
 
 

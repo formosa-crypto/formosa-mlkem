@@ -41,7 +41,7 @@ void polyvec_pointwise_acc_jazz(poly *r, const polyvec *a, const polyvec *b);
 void polyvec_reduce_jazz(polyvec *r);
 void polyvec_csubq_jazz(polyvec *r);
 
-void polyvec_add_jazz(polyvec *r, const polyvec *a, const polyvec *b);
+void polyvec_add2_jazz(polyvec *r, const polyvec *b);
 
 
 #endif

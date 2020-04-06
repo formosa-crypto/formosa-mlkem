@@ -13,7 +13,7 @@ test: test/test_poly_compress \
 			test/test_poly_frombytes \
 			test/test_poly_tomsg \
 			test/test_poly_frommsg \
-			test/test_poly_add \
+			test/test_poly_add2 \
  			test/test_poly_sub \
  			test/test_poly_ntt \
  			test/test_poly_invntt \
@@ -26,7 +26,7 @@ test: test/test_poly_compress \
 			test/test_polyvec_decompress\
 			test/test_polyvec_tobytes \
 			test/test_polyvec_frombytes \
-			test/test_polyvec_add \
+			test/test_polyvec_add2 \
 			test/test_polyvec_ntt \
 			test/test_polyvec_invntt \
 			test/test_polyvec_pointwise_acc \
@@ -50,7 +50,7 @@ POLYHEADERS = poly_compress.jahh \
               poly_frombytes.jahh \
               poly_tomsg.jahh \
               poly_frommsg.jahh \
-              poly_add.jahh \
+              poly_add2.jahh \
               poly_sub.jahh \
               poly_ntt.jahh \
               poly_invntt.jahh \
@@ -65,7 +65,7 @@ POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_decompress.jahh \
                  polyvec_tobytes.jahh \
                  polyvec_frombytes.jahh \
-                 polyvec_add.jahh \
+                 polyvec_add2.jahh \
                  polyvec_ntt.jahh \
                  polyvec_invntt.jahh \
                  polyvec_pointwise_acc.jahh \
