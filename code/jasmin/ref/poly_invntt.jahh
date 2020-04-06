@@ -5,8 +5,8 @@
 #include "reduce.jahh"
 #include "zetas.jahh"
 
-inline
-fn poly_invntt(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
+// fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+inline fn poly_invntt(stack u16[KYBER_N] rp) -> stack u16[KYBER_N]
 {
   reg u64 len;  
   reg u64 start;
