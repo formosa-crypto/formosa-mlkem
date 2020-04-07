@@ -8,13 +8,15 @@ fn poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
   reg u16 a;
   reg u16 b;
   reg u16 r;
-  inline int i;
+  reg u64 i;
 
-  for i = 0 to KYBER_N {
-    a = ap[i];
-    b = bp[i];
+  i = 0;
+  while (i < KYBER_N) {
+    a = ap[(int)i];
+    b = bp[(int)i];
     r = a - b;
-    rp[i] = r;
+    rp[(int)i] = r;
+    i += 1;
   }
   return rp;
 }
