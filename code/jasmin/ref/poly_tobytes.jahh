@@ -1,0 +1,41 @@
+#ifndef POLY_TOBYTES_HH
+#define POLY_TOBYTES_HH
+
+#include "params.jahh"
+#include "poly_csubq.jahh"
+
+
+fn poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
+{
+  reg u16 t0, t1, d;
+  reg u64 i j;
+
+  a = poly_csubq(a);
+
+  i = 0;
+  j = 0;
+  while (i < KYBER_N)
+  {
+    t0 = a[(int)i]; 
+    i += 1;
+    t1 = a[(int)i]; 
+    i += 1;
+    d  = t0;
+    d  &= 0xff;
+    (u8)[rp+j] = d;
+    j += 1;
+    t0 >>= 8;
+    d = t1;
+    d &= 0xf;
+    d <<= 4;
+    d |= t0;
+    (u8)[rp+j] = d;
+    j += 1;
+    t1 >>= 4;
+    (u8)[rp+j] = t1;
+    j += 1;
+  }
+  return a;
+}
+
+#endif

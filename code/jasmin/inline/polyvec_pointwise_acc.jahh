@@ -1,0 +1,32 @@
+#ifndef POLYVEC_POINTWISE_ACC_HH
+#define POLYVEC_POINTWISE_ACC_HH
+
+#include "params.jahh"
+#include "poly_basemul.jahh"
+#include "poly_add.jahh"
+#include "polyvec_topolys.jahh"
+#include "polyvec_frompolys.jahh"
+
+inline
+fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_N]
+{
+  stack u16[KYBER_N] a0 a1 a2;
+  stack u16[KYBER_N] b0 b1 b2;
+  stack u16[KYBER_N] t;
+  stack u16[KYBER_N] r;
+
+  a0, a1, a2 = polyvec_topolys(a);
+  b0, b1, b2 = polyvec_topolys(b);
+
+  r = poly_basemul(a0, b0);
+  t = poly_basemul(a1, b1);
+  r = poly_add(r, t);
+  t = poly_basemul(a2, b2);
+  r = poly_add(r, t);
+
+  r = poly_reduce(r);
+
+  return r;
+}
+
+#endif

@@ -1,0 +1,33 @@
+#ifndef POLY_DECOMPRESS_HH
+#define POLY_DECOMPRESS_HH
+
+#include "params.jahh"
+
+inline
+fn poly_decompress(reg u64 ap) -> stack u16[KYBER_N]
+{
+  stack u16[KYBER_N] rp;
+  reg u8 t;
+  reg u16 d0, d1;
+  inline int i;
+
+  for i = 0 to 128
+  {
+    t  = (u8)[ap+i];
+    d0 = (16u)t;
+    d1 = (16u)t;
+    d0 &= 0xf;
+    d1 >>= 4;
+    d0 *= KYBER_Q;
+    d1 *= KYBER_Q;
+    d0 += 8;
+    d1 += 8;
+    d0 >>= 4;
+    d1 >>= 4;
+    rp[2*i]   = d0;
+    rp[2*i+1] = d1;
+  }
+  return rp;
+}
+
+#endif
