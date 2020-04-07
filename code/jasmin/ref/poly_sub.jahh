@@ -3,13 +3,11 @@
 
 #include "params.jahh"
 
-inline
-fn poly_sub(stack u16[KYBER_N] ap bp) -> stack u16[KYBER_N]
+fn poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
 {
   reg u16 a;
   reg u16 b;
   reg u16 r;
-  stack u16[KYBER_N] rp;
   inline int i;
 
   for i = 0 to KYBER_N {

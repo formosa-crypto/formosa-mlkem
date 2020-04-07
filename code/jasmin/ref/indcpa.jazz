@@ -207,7 +207,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
 
 export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
 {
-  stack u16[KYBER_N] v mp;
+  stack u16[KYBER_N] t v mp;
   stack u16[KYBER_VECN] bp skpv;
 
   bp = polyvec_decompress(ctp);
@@ -217,10 +217,10 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
   skpv = polyvec_frombytes(skp);
   
   bp = polyvec_ntt(bp);
-  mp = polyvec_pointwise_acc(skpv, bp);
-  mp = poly_invntt(mp);
+  t = polyvec_pointwise_acc(skpv, bp);
+  t = poly_invntt(t );
 
-  mp = poly_sub(v, mp);
+  mp = poly_sub(mp, v, t);
   mp = poly_reduce(mp);
   
   poly_tomsg(msgp, mp);

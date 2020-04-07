@@ -149,7 +149,7 @@ export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     b[i] = t;
   }
 
-  r = poly_sub(a, b);
+  r = poly_sub(r, a, b);
 
   for i = 0 to KYBER_N {
     t = r[i];
