@@ -5,19 +5,21 @@
 
 fn poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
-  inline int i;
+  reg u64 i;
   reg u16 t;
   reg u16 b;
 
-  for i = 0 to KYBER_N
+  i = 0;
+  while (i < KYBER_N)
   {
-    t = rp[i];
+    t = rp[(int)i];
     t -= KYBER_Q;
     b = t;
     b >>s= 15;
     b &= KYBER_Q;
     t += b;
-    rp[i] = t;
+    rp[(int)i] = t;
+    i += 1;
   }
   return rp;
 }
