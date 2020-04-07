@@ -27,7 +27,7 @@ fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u
   for i = 0 to 128 {
     buf[i] = 0;
   }
-//  buf = shake256_128_33(buf, extseed);
+  buf = shake256_128_33(buf, extseed);
 
   rp = srp;
 
