@@ -1,11 +1,11 @@
 CC=/usr/bin/gcc
-CFLAGS=-Wall -Wextra -g -O3
+CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
 JASMIN=jasminc
 JFLAGS=-lea ${JADDFLAGS}
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o
 
-default: test kybertest
+default: test speed
 
 test: test/test_poly_compress \
  		  test/test_poly_decompress \
@@ -33,9 +33,9 @@ test: test/test_poly_compress \
 			test/test_polyvec_reduce\
 			test/test_polyvec_csubq \
  			test/test_fips202 \
+ 			test/test_indcpa \
 
-kybertest: test/test_indcpa \
-
+speed: test/speed_indcpa
 
 HEADERS = params.h poly.h fips202.h \
 
@@ -78,6 +78,9 @@ POLYVECHEADERS = polyvec_compress.jahh \
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
+
+test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
 test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
