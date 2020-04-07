@@ -8,20 +8,23 @@ fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
   reg u16 t;
   reg u32 d0, d1;
-  inline int i;
+  reg u64 i j;
 
   a = poly_csubq(a);
 
-  for i = 0 to 128
+  i = 0;
+  j = 0;
+  while(i < 128)
   {
-    t  = a[2*i];
+    t  = a[(int)j];
     d0 = (32u)t;
     d0 <<= 4;
     d0 += 1665;
     d0 *= 80635;
     d0 >>= 28;
     d0 &= 0xf;
-    t  = a[2*i+1];
+    j += 1;
+    t  = a[(int)j];
     d1 = (32u)t;
     d1 <<= 4;
     d1 += 1665;
@@ -31,6 +34,8 @@ fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
     d1 <<= 4;
     d0 |= d1;
     (u8)[rp+i] = d0;
+    i += 1;
+    j += 1;
   }
   return a;
 }
