@@ -7,17 +7,19 @@ param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
 
 fn poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
-  inline int i;
+  reg u64 i;
   reg u16 r;
   reg u16 dmont;
 
   dmont = DMONT;
   
-  for i = 0 to KYBER_N 
+  i = 0;
+  while (i < KYBER_N)
   {
-    r = rp[i];
+    r = rp[(int)i];
     r = fqmul(r, dmont);
-    rp[i] = r;
+    rp[(int)i] = r;
+    i += 1;
   }
   return rp; 
 }
