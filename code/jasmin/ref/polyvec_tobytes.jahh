@@ -15,11 +15,11 @@ fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
   a0, a1, a2 = polyvec_topolys(a);
   
   pp = rp;
-  poly_tobytes(pp, a0);
+  a0 = poly_tobytes(pp, a0);
   pp += KYBER_POLYBYTES;
-  poly_tobytes(pp, a1);
+  a1 = poly_tobytes(pp, a1);
   pp += KYBER_POLYBYTES;
-  poly_tobytes(pp, a2);
+  a2 = poly_tobytes(pp, a2);
 }
 
 #endif

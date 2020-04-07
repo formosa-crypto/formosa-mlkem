@@ -4,8 +4,7 @@
 #include "params.jahh"
 #include "poly_csubq.jahh"
 
-inline
-fn poly_tomsg(reg u64 rp, stack u16[KYBER_N] a)
+fn poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
   reg u16 t;
   reg u8 r;
@@ -32,6 +31,7 @@ fn poly_tomsg(reg u64 rp, stack u16[KYBER_N] a)
 
     (u8)[rp+i] = r;
   }
+  return a;
 }
 
 #endif

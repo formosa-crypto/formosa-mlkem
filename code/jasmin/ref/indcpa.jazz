@@ -223,6 +223,5 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
   mp = poly_sub(mp, v, t);
   mp = poly_reduce(mp);
   
-  poly_tomsg(msgp, mp);
-
+  mp = poly_tomsg(msgp, mp);
 }

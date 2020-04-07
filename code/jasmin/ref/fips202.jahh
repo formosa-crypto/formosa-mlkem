@@ -149,6 +149,8 @@ fn __keccakf1600_ref(reg ptr u64[25] state) -> reg ptr u64[25] {
   inline int round;
   reg ptr u64[24] constptr;
 
+
+  /*
   for round = 0 to 24 {
     state = theta(state);
     state = rho(state);
@@ -157,6 +159,23 @@ fn __keccakf1600_ref(reg ptr u64[25] state) -> reg ptr u64[25] {
     constptr = roundconstants;
     state = iota(state, roundconstants[round]);
   }
+  */
+
+  reg u64 rctr;
+  
+  constptr = roundconstants;
+  rctr = 0;
+
+  while (rctr < 192) {
+    state = theta(state);
+    state = rho(state);
+    state = pi(state);
+    state = chi(state);
+    constptr = roundconstants;
+    state = iota(state, constptr.[(int)rctr]);
+    rctr += 8;
+  }
+
   return state;
 }
 
