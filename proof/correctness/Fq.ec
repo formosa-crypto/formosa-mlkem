@@ -2,6 +2,7 @@ require import List Int IntExtra IntDiv CoreMap.
 require (****) ZModP.
 from Jasmin require  import JModel.
 require import Montgomery.
+require import W16extra.
 
 theory Fq.
 
@@ -33,7 +34,6 @@ lemma balmod_W16 a:
 lemma balmod_W32 a:
   a %%+- W32.modulus = W32.smod (a %% W32.modulus)
   by rewrite bal_modE /W32.smod //=.
-
 
 lemma fqmul_corr _a _b :
   phoare [ M.fqmul : 
@@ -97,7 +97,34 @@ rewrite (_: W16.to_uint (W16.of_int (-x)) = (-x) %% R). case (0<= -x < W16.modul
 smt(@W16 qE).
 qed.
 
+op add (a b : W16.t) = (a + b).
 
+lemma add_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
+   0 <= asz < 15 => 0 <= bsz < 15 =>
+   a' = inzmod (W16.to_sint a) =>
+   b' = inzmod (W16.to_sint b) =>
+   bw16 a asz => 
+   bw16 b bsz =>
+     inzmod (W16.to_sint (add a b)) = a' + b' /\
+           bw16 (add a b) (max asz bsz + 1).
+proof.
+rewrite /add  => />.
+pose aszb := 2^asz.
+pose bszb := 2^bsz.
+move => ?? ?? ?? ??.
+have bounds_asz : 0 < aszb <= 16384;
+  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle asz 14 _) => /#].
+have bounds_bsz : 0 < bszb <= 16384; 
+  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle bsz 14 _) => /#].
+rewrite !to_sintD_small => />; first by  by smt().
 
+split; first by smt(@ZModP).
+
+case (max asz bsz = asz).
++ move => maxx; rewrite maxx;
+  rewrite (_: 2^(asz + 1) = aszb * 2); smt(@W16 @IntExtra). 
++ move => maxx; rewrite (_: max asz bsz = bsz); 
+    [by smt() | by rewrite (_: 2^(bsz + 1) = bszb * 2); smt(@W16 @IntExtra)]. 
+qed.
 
 end Fq.
