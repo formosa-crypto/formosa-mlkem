@@ -4,16 +4,18 @@
 #include "params.jahh"
 #include "fips202.jahh"
 
-inline
-fn poly_getnoise(stack u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> stack u16[KYBER_N]
+fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
   stack u8[33] extseed;   /* 33 = KYBER_SYMBYTES +1 */
   stack u8[128] buf;      /* 128 = KYBER_ETA*KYBER_N/4 */
-  stack u16[KYBER_N] rp;
   reg u64 outlen;
   reg u8 c,a,b;
   reg u16 t;
   inline int i;
+
+  stack ptr u16[KYBER_N] srp;
+
+  srp = rp;
   
   for i = 0 to KYBER_SYMBYTES
   {
@@ -22,7 +24,12 @@ fn poly_getnoise(stack u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> stack u16[KYBER
   }
   extseed[KYBER_SYMBYTES] = nonce;
 
-  buf = shake256_128_33(buf, extseed);
+  for i = 0 to 128 {
+    buf[i] = 0;
+  }
+//  buf = shake256_128_33(buf, extseed);
+
+  rp = srp;
 
   for i = 0 to 128 {
     c = buf[i];
@@ -51,20 +58,7 @@ fn poly_getnoise(stack u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> stack u16[KYBER
     rp[2*i+1] = t;
   }
   
-  /*
-  for i = 0 to 33 {
-    c = extseed[i];
-    t = (16u)c;
-    rp[i] = t;
-  }
-  */
-
   return rp;
-
-/*
-  prf(buf, KYBER_ETA*KYBER_N/4, seed, nonce);
-  cbd(r, buf);
-  */
 }
 
 #endif

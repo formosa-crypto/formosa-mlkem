@@ -73,19 +73,19 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   a0, a1, a2 = gen_matrix(publicseed, zero);
 
   nonce = 0;
-  poly0 = poly_getnoise(noiseseed, nonce);
+  poly0 = poly_getnoise(poly0, noiseseed, nonce);
   nonce = 1;
-  poly1 = poly_getnoise(noiseseed, nonce);
+  poly1 = poly_getnoise(poly1, noiseseed, nonce);
   nonce = 2;
-  poly2 = poly_getnoise(noiseseed, nonce);
+  poly2 = poly_getnoise(poly2, noiseseed, nonce);
   skpv = polyvec_frompolys(poly0, poly1, poly2);
 
   nonce = 3;
-  poly0 = poly_getnoise(noiseseed, nonce);
+  poly0 = poly_getnoise(poly0, noiseseed, nonce);
   nonce = 4;
-  poly1 = poly_getnoise(noiseseed, nonce);
+  poly1 = poly_getnoise(poly1, noiseseed, nonce);
   nonce = 5;
-  poly2 = poly_getnoise(noiseseed, nonce);
+  poly2 = poly_getnoise(poly2, noiseseed, nonce);
   e = polyvec_frompolys(poly0, poly1, poly2);
 
   skpv = polyvec_ntt(skpv);
@@ -160,23 +160,23 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
 
 
   nonce = 0;
-  poly0 = poly_getnoise(noiseseed, nonce);
+  poly0 = poly_getnoise(poly0, noiseseed, nonce);
   nonce = 1;
-  poly1 = poly_getnoise(noiseseed, nonce);
+  poly1 = poly_getnoise(poly1, noiseseed, nonce);
   nonce = 2;
-  poly2 = poly_getnoise(noiseseed, nonce);
+  poly2 = poly_getnoise(poly2, noiseseed, nonce);
   sp = polyvec_frompolys(poly0, poly1, poly2);
 
   nonce = 3;
-  poly0 = poly_getnoise(noiseseed, nonce);
+  poly0 = poly_getnoise(poly0, noiseseed, nonce);
   nonce = 4;
-  poly1 = poly_getnoise(noiseseed, nonce);
+  poly1 = poly_getnoise(poly1, noiseseed, nonce);
   nonce = 5;
-  poly2 = poly_getnoise(noiseseed, nonce);
+  poly2 = poly_getnoise(poly2, noiseseed, nonce);
   ep = polyvec_frompolys(poly0, poly1, poly2);
 
   nonce = 6;
-  epp = poly_getnoise(noiseseed, nonce);
+  epp = poly_getnoise(epp, noiseseed, nonce);
 
   sp = polyvec_ntt(sp);
     

@@ -254,7 +254,7 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
     seed[i] = d;
   }
 
-  r = poly_getnoise(seed, nonce);
+  r = poly_getnoise(r, seed, nonce);
 
   rp = srp;
   for i = 0 to KYBER_N {

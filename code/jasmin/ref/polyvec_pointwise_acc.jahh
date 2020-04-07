@@ -18,7 +18,6 @@ fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> st
   a0, a1, a2 = polyvec_topolys(a);
   b0, b1, b2 = polyvec_topolys(b);
 
-  r[0] = 0; //XXX: workaround, remove after compiler fix
   r = poly_basemul(r, a0, b0);
   t = poly_basemul(t, a1, b1);
   r = poly_add2(r, t);
