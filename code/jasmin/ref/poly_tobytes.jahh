@@ -8,25 +8,32 @@
 fn poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
   reg u16 t0, t1, d;
-  inline int i;
+  reg u64 i j;
 
   a = poly_csubq(a);
 
-  for i = 0 to 128
+  i = 0;
+  j = 0;
+  while (i < KYBER_N)
   {
-    t0 = a[2*i]; 
-    t1 = a[2*i+1]; 
+    t0 = a[(int)i]; 
+    i += 1;
+    t1 = a[(int)i]; 
+    i += 1;
     d  = t0;
     d  &= 0xff;
-    (u8)[rp+3*i] = d;
+    (u8)[rp+j] = d;
+    j += 1;
     t0 >>= 8;
     d = t1;
     d &= 0xf;
     d <<= 4;
     d |= t0;
-    (u8)[rp+3*i+1] = d;
+    (u8)[rp+j] = d;
+    j += 1;
     t1 >>= 4;
-    (u8)[rp+3*i+2] = t1;
+    (u8)[rp+j] = t1;
+    j += 1;
   }
   return a;
 }
