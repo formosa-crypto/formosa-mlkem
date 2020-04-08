@@ -1,0 +1,59 @@
+#ifndef POLY_NTT_HH
+#define POLY_NTT_HH
+
+#include "params.jahh"
+#include "poly_reduce.jahh"
+#include "zetas.jahh"
+
+fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u64 len;  
+  reg u64 start;
+  reg u64 j;
+  reg u64 cmp;
+  reg u64 offset;
+  
+  reg u16 zeta;
+  reg u16 t;
+  reg u16 s;
+  reg u16 m;
+
+  reg ptr u16[128] zetasp;
+  reg u64 zetasctr;
+
+  zetasp = jzetas;
+  zetasctr = 0;
+  len = 128;
+  while (len >= 2)
+  {
+    start = 0;
+    while (start < 256)
+    {
+      zetasctr += 1;
+      zeta = zetasp[(int)zetasctr];
+      j = start;
+      cmp = start + len;
+      while (j < cmp)
+      {
+        offset = j + len;
+        t = rp[(int)offset];
+        t = fqmul(t, zeta);
+        s = rp[(int)j];
+        m = s;
+        m -= t;
+        rp[(int)offset] = m;
+        t += s;
+        rp[(int)j] = t;
+        j += 1;
+      }
+      start = j + len;
+    }
+    len >>= 1;
+  }
+
+  rp = poly_reduce(rp);
+
+  return rp;
+}
+
+#endif

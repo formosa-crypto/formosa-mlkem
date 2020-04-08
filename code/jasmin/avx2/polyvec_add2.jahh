@@ -1,0 +1,27 @@
+#ifndef POLYVEC_ADD_HH
+#define POLYVEC_ADD_HH
+
+#include "params.jahh"
+#include "polyvec_topolys.jahh"
+#include "polyvec_frompolys.jahh"
+#include "poly_add2.jahh"
+
+inline
+fn polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_N] r0 r1 r2;
+  stack u16[KYBER_N] b0 b1 b2;
+
+  r0, r1, r2 = polyvec_topolys(r);
+  b0, b1, b2 = polyvec_topolys(b);
+
+  r0 = poly_add2(r0, b0);
+  r1 = poly_add2(r1, b1);
+  r2 = poly_add2(r2, b2);
+
+  r = polyvec_frompolys(r0, r1, r2);
+
+  return r;
+}
+
+#endif

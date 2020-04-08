@@ -1,0 +1,24 @@
+#ifndef POLY_SUB_HH
+#define POLY_SUB_HH
+
+#include "params.jahh"
+
+fn poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
+{
+  reg u16 a;
+  reg u16 b;
+  reg u16 r;
+  reg u64 i;
+
+  i = 0;
+  while (i < KYBER_N) {
+    a = ap[(int)i];
+    b = bp[(int)i];
+    r = a - b;
+    rp[(int)i] = r;
+    i += 1;
+  }
+  return rp;
+}
+
+#endif

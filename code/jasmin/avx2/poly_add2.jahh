@@ -1,0 +1,38 @@
+#ifndef POLY_ADD_HH
+#define POLY_ADD_HH
+
+#include "params.jahh"
+
+fn poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
+{
+  inline int i;
+
+/*
+  reg u16 a;
+  reg u16 b;
+  reg u16 r;
+
+  for i = 0 to 256 {
+    a = rp[i];
+    b = bp[i];
+    r = a + b;
+    rp[i] = r;
+  }
+  */
+
+
+  reg u256 a;
+  reg u256 b;
+  reg u256 r;
+
+  for i = 0 to 16 {
+    a = rp.[u256 32*i];
+    b = bp.[u256 32*i];
+    r = #VPADD_16u16(a, b);
+    rp.[u256 32*i] = r;
+  }
+
+  return rp;
+}
+
+#endif

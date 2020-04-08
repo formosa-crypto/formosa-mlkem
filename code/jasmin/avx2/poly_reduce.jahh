@@ -1,0 +1,23 @@
+#ifndef POLY_REDUCE_HH
+#define POLY_REDUCE_HH
+
+#include "params.jahh"
+#include "reduce.jahh"
+
+inline
+fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u64 j; 
+  reg u16 t;
+  j = 0;
+  while (j < KYBER_N) 
+  {
+    t = rp[(int)j];
+    t = barrett_reduce(t);
+    rp[(int)j] = t;
+    j += 1;
+  }
+  return rp;
+}
+
+#endif
