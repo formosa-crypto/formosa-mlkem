@@ -15,13 +15,13 @@ clone import SignedReductions with
     op q <- q,
     op qinv <- 62209,
     op Rinv <- 169
-    proof q_bnd by smt
+    proof q_bnd by (auto => />; smt)
     proof q_odd1 by smt(qE)
     proof q_odd2 by smt(qE)
-    proof qqinv by smt
+    proof qqinv by (auto => />; smt)
     proof Rinv_gt0 by smt()
-    proof RRinv by smt
-    proof qinv_bnd by smt.
+    proof RRinv by (auto => />; smt)
+    proof qinv_bnd by (auto => />; smt).
 
 require import Jasmin_poly.
 
@@ -35,18 +35,17 @@ lemma balmod_W32 a:
   a %%+- W32.modulus = W32.smod (a %% W32.modulus)
   by rewrite bal_modE /W32.smod //=.
 
-lemma fqmul_corr _a _b :
-  phoare [ M.fqmul : 
-     W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
-         W16.to_sint res = SREDC (_a * _b)] = 1%r.
+lemma fqmul_corr_h _a _b: 
+   hoare[ M.fqmul : to_sint a = _a /\ to_sint b = _b ==> 
+   to_sint res = SREDC (_a * _b)].
 proof.
 proc.
 wp; skip  => &hr [#] //= ??.
 pose _c := _a * _b.
 rewrite /SREDC.
-rewrite SAR_32_sem SAR_32_sem /=. 
-rewrite (_: R*R = W32.modulus); first by smt.
-rewrite (_: R = W16.modulus); first by smt.
+rewrite SAR_sem SAR_sem /=. 
+rewrite (_: R*R = W32.modulus); first by auto => />.
+rewrite (_: R = W16.modulus); first by auto => />.
 rewrite balmod_W32 balmod_W32 balmod_W16.
 rewrite /(`<<`) /sigextu32 /truncateu16 /=. 
 rewrite W16.of_sintK. 
@@ -56,17 +55,24 @@ rewrite W32.to_sintE W32.of_uintK W32.of_uintK.
 by rewrite W32.of_sintK /=; smt(qE). 
 qed.
 
+lemma fqmul_ll :
+  islossless M.fqmul by proc; islossless.
 
+lemma fqmul_corr _a _b :
+  phoare [ M.fqmul : 
+     W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
+         W16.to_sint res = SREDC (_a * _b)] = 1%r.
+proof. by conseq fqmul_ll (fqmul_corr_h _a _b). qed.
 
-lemma barret_reduct_corr _a :
-  phoare [ M.barrett_reduce : 
+lemma barrett_reduce_corr_h _a :
+  hoare [ M.barrett_reduce : 
      W16.to_sint a = _a  ==> 
-         W16.to_sint res = BREDC _a 26] = 1%r.
+         W16.to_sint res = BREDC _a 26].
 proof.
 proc.
 wp; skip  => &hr [#] //= ?.
 rewrite /sigextu32 /truncateu16 //=. 
-rewrite SAR_32_sem  /=. 
+rewrite SAR_sem  /=. 
 rewrite !W32.of_sintK. 
 rewrite !W32.of_uintK //=.
 pose x := (smod (to_sint a{hr} * 20159 %% 4294967296))%W32 %/ 67108864 * 3329.
@@ -96,6 +102,16 @@ smt(@W16).
 rewrite (_: W16.to_uint (W16.of_int (-x)) = (-x) %% R). case (0<= -x < W16.modulus); smt(@W16).
 smt(@W16 qE).
 qed.
+
+lemma barrett_reduce_ll :
+  islossless M.barrett_reduce by proc; islossless.
+
+lemma barrett_reduce_corr _a :
+  phoare [ M.barrett_reduce : 
+     W16.to_sint a = _a  ==> 
+         W16.to_sint res = BREDC _a 26] = 1%r.
+proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.
+
 
 op add (a b : W16.t) = (a + b).
 
