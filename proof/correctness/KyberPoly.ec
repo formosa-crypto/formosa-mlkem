@@ -186,14 +186,7 @@ lemma poly_reduce_corr (_a : zmod Array256.t):
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
 
-(*******DIRECT *******)
-lemma of_listW (p : W16.t -> bool) (xs : W16.t list) :
-      List.all p xs
-   => 128 <= size xs
-   => forall (i : int), 0 <= i < 128 => p ((Array128.of_list witness xs).[i]).
-proof.
-move=> pxs ge128_sz_xs i rg_i; rewrite get_of_list //. smt.
-qed.
+(*******DIRECT NTT *******)
 
 lemma zeta_bound :
    minimum_residues jzetas.
@@ -217,9 +210,9 @@ proc.
 (* Dealing with final barret reduction *)
 seq 3 5 :  (r{1} = lift_array256 rp{2}); last first.
 ecall{2} (poly_reduce_corr (lift_array256 rp{2})).
-skip; move => &1 &2 [#] ?? [#] ??.
+skip; move => &1 &2 [#] ?? [#] ? bres.
 split; first by smt (@Array256).
-by apply H1.
+by apply bres.
 
 (***********************************)
 
@@ -479,10 +472,11 @@ while (j{1} = to_uint j{2} /\
   split; first by smt().
   split; first by smt().
   split.
-  move : zvals; rewrite /lift_array128 /array_mont => H.
+  move : zvals; rewrite /lift_array128 /array_mont => zvals.
 have HH : (forall x, 0 <= x < 128 =>
-  (map (transpose Fq.ZModP.( * ) (inzmod R)) zetas_inv{1}).[x] = (map (fun (x0 : W16.t) => inzmod (to_sint x0)) jzetas_inv).[x]). 
-by rewrite H. 
+  (map (transpose Fq.ZModP.( * ) (inzmod R)) zetas_inv{1}).[x] = 
+   (map (fun (x0 : W16.t) => inzmod (to_sint x0)) jzetas_inv).[x]). 
+by rewrite zvals. 
 move : (HH (127)_); first by smt().
 rewrite mapiE => />.  
 split; first by  rewrite /zeta_0_R zp.
@@ -553,9 +547,9 @@ while (
    zetasctr{1} = to_uint zetasctr{2} /\
    zetasctr{1} * len{1} = 128 * (len{1} - 2) /\
    signed_bound_cxq rp{2} 0 256 4); last first.
-auto => />. move => &1 &2 ??.
+auto => />. move => &1 &2 ?cbnd.
 split; first by exists (1);  smt(logs).
-move : H0; rewrite /signed_bound_cxq;smt(@Array256 @Fq).
+move : cbnd; rewrite /signed_bound_cxq;smt(@Array256 @Fq).
 
 wp; exists* zetasctr{1}; elim* => zetasctr1 l.
 
