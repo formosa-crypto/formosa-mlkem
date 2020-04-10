@@ -12,7 +12,7 @@
 (* Requirements           *)
 (**************************)
 
-require import AllCore List Ring StdRing.
+require import AllCore List Ring StdRing Binomial.
 require (*--*) Bigalg.
 
 clone include Ring.ComRing.
@@ -69,43 +69,27 @@ instance ring with t
   proof exprS     by apply/exprS.
 
 (* -------------------------------------------------------------------- *)
-hint simplify expr0, expr1.
-
-(* There is a Binomial.ec file in the std library that seems incomplete *)
-op c : int -> int -> int.
-
-lemma cn0 n : c n 0 = 1 by admit.
-lemma cnn n : c n n = 1 by admit.
-
-lemma ge0_c n m : 0 <= c n m by admit.
-
-lemma PascalTriangle n k :
-  0 <= n => 0 <= k < n => c n k + c n (k+1) = c (n+1) (k+1).
-proof. admitted.
-
-lemma mulrDz (x : t) (n m : int) : intmul x (n + m) = intmul x n + intmul x m.
-proof. admitted.
-
-lemma binomial x y n : 0 <= n => exp (x + y) n =
-  BAdd.bigi predT (fun i => intmul (exp x i * exp y (n - i)) (c n i)) 0 (n + 1).
+lemma binomial (x y : t) n : 0 <= n => exp (x + y) n =
+  BAdd.bigi predT (fun i => intmul (exp x i * exp y (n - i)) (bin n i)) 0 (n + 1).
 proof.
 elim: n => [|i ge0_i ih].
-+ by rewrite BAdd.big_int1 /= mul1r cn0 mulr1z.
++ by rewrite BAdd.big_int1 /= !expr0 mul1r bin0 // mulr1z.
 rewrite exprS // ih /= mulrDl 2!BAdd.mulr_sumr.
 rewrite (BAdd.big_addn 1 _ (-1)) /= (BAdd.big_int_recr (i+1)) 1:/# /=.
-pose s1 := BAdd.bigi _ _ _ _; rewrite cnn mulr1z mulr1 -exprS // addrAC.
-apply: eq_sym; rewrite (BAdd.big_int_recr (i+1)) 1:/# /= cnn mulr1z mulr1.
-congr; apply: eq_sym; rewrite (BAdd.big_int_recl _ 0) //=.
-rewrite cn0 mulr1z mul1r -exprS // addrCA addrC; apply: eq_sym.
-rewrite (BAdd.big_int_recl _ 0) //= cn0 mulr1z mul1r addrC.
+pose s1 := BAdd.bigi _ _ _ _; rewrite binn // mulr1z.
+rewrite !expr0 mulr1 -exprS // addrAC.
+apply: eq_sym; rewrite (BAdd.big_int_recr (i+1)) 1:/# /=.
+rewrite binn 1:/# mulr1z !expr0 mulr1; congr.
+apply: eq_sym; rewrite (BAdd.big_int_recl _ 0) //=.
+rewrite bin0 // mulr1z !expr0 mul1r -exprS // addrCA addrC; apply: eq_sym.
+rewrite (BAdd.big_int_recl _ 0) //= bin0 1:/# mulr1z !expr0 mul1r addrC.
 congr; apply: eq_sym; rewrite /s1 => {s1}.
 rewrite !(BAdd.big_addn 1 _ (-1)) /= -BAdd.big_split /=.
 rewrite !BAdd.big_seq &(BAdd.eq_bigr) => /= j /mem_range rg_j.
-rewrite mulrnAr ?ge0_c mulrA -exprS 1:/# /= addrC.
-rewrite mulrnAr ?ge0_c mulrCA -exprS 1:/#.
+rewrite mulrnAr ?ge0_bin mulrA -exprS 1:/# /= addrC.
+rewrite mulrnAr ?ge0_bin mulrCA -exprS 1:/#.
 rewrite IntID.addrAC IntID.opprB IntID.addrA.
-rewrite -mulrDz; congr; rewrite IntID.addrC.
-by rewrite (PascalTriangle i (j-1)) 1,2:/#.
+by rewrite -mulrDz; congr; rewrite (binSn i (j-1)) 1,2:/#.
 qed.
 
 (**************************)
