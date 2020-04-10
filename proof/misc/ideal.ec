@@ -12,18 +12,52 @@
 (* Requirements           *)
 (**************************)
 
+<<<<<<< HEAD
 (*There is already a clone import Ring.ComRing in BAdd, and they are conflicting*)
 
 require import AllCore List Ring StdOrder Bigalg.
 import StdOrder.IntOrder.
+=======
+require import AllCore List Ring StdRing Binomial.
+require (*--*) Bigalg.
+>>>>>>> 8f77b64b170334a2e52044b6d86c39f3efb2ae4e
 
 clone include Ring.ComRing.
 
-clone import Bigalg.BigComRing with type t <- t.
+clone import Bigalg.BigComRing with
+  type t <- t,
+  pred CR.unit   <- Top.unit,
+    op CR.zeror  <- Top.zeror,
+    op CR.oner   <- Top.oner,
+    op CR.( + )  <- Top.( + ),
+    op CR.([-])  <- Top.([-]),
+    op CR.( * )  <- Top.( * ),
+    op CR.invr   <- Top.invr,
+    op CR.intmul <- Top.intmul,
+    op CR.ofint  <- Top.ofint,
+    op CR.exp    <- Top.exp
+
+    proof CR.*
+
+    remove abbrev CR.(-)
+    remove abbrev CR.(/).
+
+realize CR.addrA      by apply Top.addrA    .
+realize CR.addrC      by apply Top.addrC    .  
+realize CR.add0r      by apply Top.add0r    . 
+realize CR.addNr      by apply Top.addNr    . 
+realize CR.oner_neq0  by apply Top.oner_neq0. 
+realize CR.mulrA      by apply Top.mulrA    . 
+realize CR.mulrC      by apply Top.mulrC    . 
+realize CR.mul1r      by apply Top.mul1r    . 
+realize CR.mulrDl     by apply Top.mulrDl   . 
+realize CR.mulVr      by apply Top.mulVr    . 
+realize CR.unitP      by apply Top.unitP    . 
+realize CR.unitout    by apply Top.unitout  . 
 
 instance ring with t
-  op rzero = zeror
-  op rone  = oner
+  op rzero = Top.zeror
+  op rone  = Top.oner
   op add   = Top.( + )
   op opp   = Top.([-])
   op mul   = Top.( * )
@@ -41,7 +75,29 @@ instance ring with t
   proof expr0     by apply/expr0
   proof exprS     by apply/exprS.
 
-
+(* -------------------------------------------------------------------- *)
+lemma binomial (x y : t) n : 0 <= n => exp (x + y) n =
+  BAdd.bigi predT (fun i => intmul (exp x i * exp y (n - i)) (bin n i)) 0 (n + 1).
+proof.
+elim: n => [|i ge0_i ih].
++ by rewrite BAdd.big_int1 /= !expr0 mul1r bin0 // mulr1z.
+rewrite exprS // ih /= mulrDl 2!BAdd.mulr_sumr.
+rewrite (BAdd.big_addn 1 _ (-1)) /= (BAdd.big_int_recr (i+1)) 1:/# /=.
+pose s1 := BAdd.bigi _ _ _ _; rewrite binn // mulr1z.
+rewrite !expr0 mulr1 -exprS // addrAC.
+apply: eq_sym; rewrite (BAdd.big_int_recr (i+1)) 1:/# /=.
+rewrite binn 1:/# mulr1z !expr0 mulr1; congr.
+apply: eq_sym; rewrite (BAdd.big_int_recl _ 0) //=.
+rewrite bin0 // mulr1z !expr0 mul1r -exprS // addrCA addrC; apply: eq_sym.
+rewrite (BAdd.big_int_recl _ 0) //= bin0 1:/# mulr1z !expr0 mul1r addrC.
+congr; apply: eq_sym; rewrite /s1 => {s1}.
+rewrite !(BAdd.big_addn 1 _ (-1)) /= -BAdd.big_split /=.
+rewrite !BAdd.big_seq &(BAdd.eq_bigr) => /= j /mem_range rg_j.
+rewrite mulrnAr ?ge0_bin mulrA -exprS 1:/# /= addrC.
+rewrite mulrnAr ?ge0_bin mulrCA -exprS 1:/#.
+rewrite IntID.addrAC IntID.opprB IntID.addrA.
+by rewrite -mulrDz; congr; rewrite (binSn i (j-1)) 1,2:/#.
+qed.
 
 (**************************)
 (* Operators              *)
