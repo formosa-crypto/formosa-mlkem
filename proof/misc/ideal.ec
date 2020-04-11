@@ -279,14 +279,19 @@ apply : idealP.
   exists (lx ++ ly).
   split => //.
   move => z zInlxCatly.
-  (*Excluded-middle issue here, must plan ahead to circumvent*)
-  by admit.
+  case : (mem_cat z lx ly) => zInlxOrly _.
+  apply zInlxOrly in zInlxCatly.
+  case : zInlxCatly.
+  - by apply unzip1Inilx.
+  - by apply unzip1Inily.
 + move => x y [lx [xEqSumlx unzip1Inilx]].
   rewrite xEqSumlx.
   rewrite mulr_suml => //=.
   have eqfun : (fun (z : t * t) => z.`1 * z.`2 * y) = (fun (z : t * t) => z.`1 * z.`2) \o (fun (z : t * t) => (z.`1,z.`2 * y)) ; rewrite //=.
-  - (*Can't seem to simplify this*)
-    by admit.
+  - apply fun_ext.
+    move => [z1 z2].
+    rewrite /(\o) /=. (*FIXME*)
+    by rewrite mulrA.
   - rewrite eqfun.
     rewrite /big. (*FIXME*)
     rewrite map_comp filter_predT.
@@ -330,51 +335,23 @@ qed.
 lemma exprM : forall x y n , 0 <= n => exp (x * y) n = (exp x n) * (exp y n). admitted.
 
 (*The radical of an ideal is an ideal*)
-(*
 lemma radIdIsId : forall i , ideal i => ideal (radId i).
 move => i idi.
-have radIdN : forall x , (radId i x) => (radId i (-x)).
-move => x [n [ge0n expIni]].
-exists n.
-split => //.
-rewrite - mulrN1.
-rewrite exprM //.
-by rewrite multStabId.
 apply : idealP.
-+ case : (existsxInId i idi).
-  move => x ix.
-  exists x 1.
-  split.
-  - by trivial.
-  - by rewrite expr1.
-+ move => x y radx rady.
-  case : radx.
-  move => nx [posnx inx].
-  case : rady.
-  move => ny [posny iny].
-  wlog : x y nx ny posnx inx posny iny / (nx <= ny).
-  move => wl.
-  case : (nx <= ny).
-  by apply wl.
-  rewrite lerNgt /=.
-  move/ltrW.
-  move => ineqn.
-  apply radIdN.
-  by apply (wl _ _ ny nx).
-  move => ineqn.
-  exists ny.
++ case : (existsxInId i idi) => x ix.
+  exists x 1 => /=.
+  by rewrite expr1.
++ move => x y [nx [le0nx iexnx]] [ny [le0ny ieyny]].
+  exists (nx+ny).
+  split ; [ apply addz_ge0 | rewrite binomial] => //.
+  - by apply addz_ge0.
+  - by admit.
++ move => x y [n [le0n iexn]].
+  exists n.
   split => //.
-  by admit.
-+ move => x y radx.
-  case : radx.
-  move => nx [posnx inx].
-  exists nx.
-  split.
-  - by exact posnx.
-  - (*I would like to use something like expfM, but it seems to be only defined for fields*)
-    by admit.
+  rewrite exprM => //.
+  by apply multStabId.
 qed.
-*)
 
 (*A principal ideal is an ideal*)
 lemma principalIdIsId : forall i , principal i => ideal i.
