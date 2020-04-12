@@ -1,17 +1,8 @@
-(**************************)
-(**************************)
-(**        Ideals        **)
-(**************************)
-(**************************)
+(* -------------------------------------------------------------------- *)
+(* Ideals                                                               *)
+(* -------------------------------------------------------------------- *)
 
-
-
-
-
-(**************************)
-(* Requirements           *)
-(**************************)
-
+(* -------------------------------------------------------------------- *)
 require import AllCore List Ring StdRing Binomial.
 require (*--*) Bigalg.
 
@@ -71,6 +62,11 @@ instance ring with t
   proof exprS     by apply/exprS.
 
 (* -------------------------------------------------------------------- *)
+(*These should be somewhere near the Prelude*)
+op pairify ( f : 'a -> 'b -> 'c ) : ('a * 'b) -> 'c =
+fun z => f (fst z) (snd z).
+op appsnd ( f : 'b -> 'c ) ( p : 'a * 'b ) : ('a * 'c) = (fst p, f (snd p)).
+(* -------------------------------------------------------------------- *)
 lemma binomial (x y : t) n : 0 <= n => exp (x + y) n =
   BAdd.bigi predT (fun i => intmul (exp x i * exp y (n - i)) (bin n i)) 0 (n + 1).
 proof.
@@ -94,9 +90,7 @@ rewrite IntID.addrAC IntID.opprB IntID.addrA.
 by rewrite -mulrDz; congr; rewrite (binSn i (j-1)) 1,2:/#.
 qed.
 
-(**************************)
-(* Operators              *)
-(**************************)
+(* -------------------------------------------------------------------- *)
 
 (*Ideal*)
 op ideal (i : t -> bool) : bool =
@@ -121,10 +115,10 @@ lemma idealW (P : (t -> bool) -> bool) :
 proof. by move=> ih i [? [??]]; apply: ih. qed.
 
 (*The zero ideal*)
-op zeroId : t -> bool = pred1 zeror.
+op id0 : t -> bool = pred1 zeror.
 
 (*The whole ring ideal*)
-op ringId : t -> bool = predT.
+op idT : t -> bool = predT.
 
 (*Intersection of two ideals*)
 op interId ( i j : t -> bool ) : t -> bool =
@@ -142,7 +136,7 @@ op quoId ( i j : t -> bool ) : t -> bool =
 op genId ( i : t -> bool ) : t -> bool =
   fun (x : t) =>
     exists l : (t * t) list ,
-         ( x = BAdd.big predT (fun (z : t * t) => z.`1 * z.`2) l )
+         ( x = big predT (pairify ( * )) l )
       /\ ( forall z , mem l z => i z.`1).
 
 (*Product of two ideals*)
@@ -173,10 +167,39 @@ op finitelyGenerated ( i : t -> bool ) : bool =
 lemma existsxInId : forall i , ideal i => exists x , i x by elim / idealW => i [x ix] _ _; exists x.
 
 (*Ideals are stable by addition*)
-lemma addStabId : forall i , ideal i => forall x y  , i x => i y => i (x+y) by elim / idealW.
+lemma addi : forall i , ideal i => forall x y  , i x => i y => i (x+y) by elim / idealW.
 
-(*Ideals are stable by multiplication by an element of the ring*)
-lemma multStabId : forall i , ideal i => forall x y  , i x => i (x * y) by elim / idealW.
+(*Ideals are stable by opposite*)
+lemma oppi : forall i , ideal i => forall x , i x => i (-x).
+proof.
+elim / idealW => i _ _ mulStab x ix.
+rewrite - (mulr1 x) - mulrN.
+by apply mulStab.
+qed.
+
+(*Ideals are stable by substraction*)
+lemma subi : forall i , ideal i => forall x y , i x => i y => i (x-y).
+move => i idi x y ix iy.
+apply addi => //.
+by apply oppi.
+qed.
+
+(*Ideals are stable by right multiplication by an element of the ring*)
+lemma mulir : forall i , ideal i => forall x y  , i x => i (x * y) by elim / idealW.
+
+(*Ideals are stable by left multiplication by an element of the ring*)
+lemma mulri : forall i , ideal i => forall x y  , i y => i (x * y).
+move => i idi x y iy.
+rewrite mulrC.
+by apply mulir.
+qed.
+
+(*Ideals are stable by integer multilplication*)
+lemma muliz : forall i , ideal i => forall x n , i x => i (intmul x n).
+move => i idi x n ix.
+rewrite - mulr1 - mulrzAr.
+by apply mulir.
+qed.
 
 (*zeror is in any ideal*)
 lemma zeroInId : forall i , ideal i => i zeror.
@@ -185,38 +208,42 @@ rewrite - (mulr0 x).
 by apply mulStab.
 qed.
 
+(*A sum of elements of an ideal is in the ideal*)
+lemma addi_big : forall i , ideal i => forall l , (forall x , mem l x => i x) => i (big predT idfun l).
+move => i idi l il.
+rewrite big_seq.
+apply big_rec => /=.
++ by apply zeroInId.
++ move => x y ix iy.
+  apply addi => //.
+  by apply il.
+qed.
+
 (*A sum of x_i*y_i where x_i is in the ideal is in the ideal*)
-lemma bigSumStabId : forall i , ideal i => forall l , ( forall (z : t * t) , mem l z => i z.`1) => i (BAdd.big predT (fun (z : t * t) => z.`1 * z.`2) l).
+(*Should be simplified once the proof that the radical is an ideal is simplified, using the previous lemma*)
+lemma add_mulir_big : forall i , ideal i => forall l , ( forall (z : t * t) , mem l z => i z.`1) => i (big predT (pairify ( * )) l).
 move => i idi l leftlIni.
 rewrite big_seq.
 apply big_rec.
 + by apply zeroInId.
 + move => [z1 z2] x zl ix.
   rewrite //=.
-  apply addStabId => //.
-  apply multStabId => //.
+  apply addi => //.
+  apply mulir => //.
   by apply (leftlIni (z1,z2)).
 qed.
 
-(*Ideals are stable by opposite*)
-lemma oppStabId : forall i , ideal i => forall x , i x => i (-x).
-proof.
-elim / idealW => i _ _ mulStab x ix.
-rewrite - (mulr1 x) - mulrN.
-by apply mulStab.
-qed.
-
 (*The zero ideal is an ideal*)
-lemma zeroIdIsId : ideal zeroId.
+lemma id0IsId : ideal id0.
 proof.
 apply : idealP.
 + by exists zeror.
-+ by move => x y @/zeroId -> -> ; rewrite addr0.
-+ by move => x y @/zeroId -> ; rewrite mul0r.
++ by move => x y @/id0 -> -> ; rewrite addr0.
++ by move => x y @/id0 -> ; rewrite mul0r.
 qed.
 
 (*The whole ring ideal is an ideal*)
-lemma ringIdIsId : ideal ringId by done.
+lemma idTIsId : ideal idT by done.
 
 (*The intersection of two ideals is an ideal*)
 lemma interIdIsId : forall i j , ideal i => ideal j => ideal (interId i j).
@@ -225,9 +252,9 @@ apply : idealP.
 + exists zeror.
   by split ; apply zeroInId.
 + move => x y [ix jx] [iy jy].
-  by split ; apply addStabId.
+  by split ; apply addi.
 + move => x y [ix jx].
-  by split ; apply multStabId.
+  by split ; apply mulir.
 qed.
 
 (*The sum of two ideals is an ideal*)
@@ -243,11 +270,11 @@ apply : idealP.
   exists (xi + yi) (xj + yj).
   split.
   - by ring.
-  - by split ; apply addStabId.
+  - by split ; apply addi.
 + move => x y [xi xj [eqx [ixi jxj]]].
   rewrite eqx mulrDl.
   exists (xi * y) (xj * y).
-  by split => // ; split ; apply multStabId.
+  by split => // ; split ; apply mulir.
 qed.
 
 (*The quotient of two ideals is an ideal*)
@@ -260,12 +287,12 @@ apply : idealP.
   by apply zeroInId.
 + move => x y quox quoy z jz.
   rewrite mulrDl.
-  by apply addStabId => // ; [apply quox | apply quoy].
+  by apply addi => // ; [apply quox | apply quoy].
 + move => x y quox z jz.
   rewrite - mulrA.
   apply quox.
   rewrite mulrC.
-  by apply multStabId.
+  by apply mulir.
 qed.
 
 (*The ideal generated by a subset of a ring is an ideal*)
@@ -286,23 +313,23 @@ apply : idealP.
   - by apply unzip1Inily.
 + move => x y [lx [xEqSumlx unzip1Inilx]].
   rewrite xEqSumlx.
-  rewrite mulr_suml => //=.
-  have eqfun : (fun (z : t * t) => z.`1 * z.`2 * y) = (fun (z : t * t) => z.`1 * z.`2) \o (fun (z : t * t) => (z.`1,z.`2 * y)) ; rewrite //=.
+  rewrite mulr_suml.
+  have eqfun : (fun (z : t * t) => z.`1 * z.`2 * y) = (pairify ( * )) \o (appsnd (transpose ( * ) y)) ; rewrite //=.
   - apply fun_ext.
     move => [z1 z2].
-    rewrite /(\o) /=. (*FIXME*)
+    rewrite /(\o) /pairify /appsnd /transpose /=. (*FIXME*)
     by rewrite mulrA.
   - rewrite eqfun.
     rewrite /big. (*FIXME*)
     rewrite map_comp filter_predT.
-    rewrite - (filter_predT (map (fun (z : t * t) => (z.`1, z.`2 * y)) lx)).
-    exists (map (fun (z : t * t) => (z.`1, z.`2 * y)) lx).
+    rewrite - (filter_predT (map (appsnd (transpose ( * ) y)) lx)).
+    exists (map (appsnd (transpose ( * ) y)) lx).
     split => //=.
     move => z zInMap.
-    case : (mapP (fun (z : t * t) => (z.`1, z.`2 * y)) lx z) => zP _.
+    case : (mapP (appsnd (transpose ( * ) y)) lx z) => zP _.
     apply zP in zInMap.
     case zInMap => z' [z'Inlx eqz].
-    rewrite eqz => /=.
+    rewrite eqz /appsnd /transpose /=. (*FIXME*)
     by apply unzip1Inilx.
 qed.
 
@@ -311,7 +338,7 @@ lemma genIdContainsSet : forall i , forall x , i x => genId i x.
 move => i x ix.
 exists [(x,oner)].
 split => //.
-rewrite big_cons big_nil /predT => //=.
+rewrite big_cons big_nil /predT /pairify=> //=. (*FIXME*)
 by ring.
 qed.
 
@@ -319,7 +346,7 @@ qed.
 lemma genIdSmallestIdContainingSet : forall i j , ideal j => (forall x , i x => j x) => (forall x , genId i x => j x).
 move => i j idj iIncj x [lx [eqx unzip1Inilx]].
 rewrite eqx.
-apply bigSumStabId => //.
+apply add_mulir_big => //.
 move => z zInlx.
 apply iIncj.
 by apply unzip1Inilx.
@@ -345,12 +372,30 @@ apply : idealP.
   exists (nx+ny).
   split ; [ apply addz_ge0 | rewrite binomial] => //.
   - by apply addz_ge0.
-  - by admit.
+    (*This should be simpler*)
+  - have eqf: (\o) idfun (fun (i0 : int) => intmul (exp x i0 * exp y (nx + ny - i0)) (bin (nx + ny) i0)) = (fun (i0 : int) => intmul (exp x i0 * exp y (nx + ny - i0)) (bin (nx + ny) i0)).
+    rewrite /(\o) //=. (*FIXME*)
+    rewrite - eqf.
+    rewrite - big_mapT.
+    apply addi_big => //.
+    move => z zInl.
+    case : (mapP (fun (i0 : int) => intmul (exp x i0 * exp y (nx + ny - i0)) (bin (nx + ny) i0)) (range 0 (nx + ny + 1)) z) => mapex _.
+    apply mapex in zInl.
+    case : zInl => r [_ eqz].
+    rewrite eqz /=.
+    apply muliz => //.
+    case : (lez_total r nx) => ineqr.
+    * apply mulri => //.
+      rewrite - addzAC.
+      by rewrite (exprD y (nx-r) ny)  // ; [rewrite subz_ge0 | apply mulri].
+    * apply mulir => //.
+      rewrite - (addzK (-nx) r) oppzK.
+      by rewrite exprD // ; [rewrite subz_ge0 | apply mulri].
 + move => x y [n [le0n iexn]].
   exists n.
   split => //.
   rewrite exprM => //.
-  by apply multStabId.
+  by apply mulir.
 qed.
 
 (*A principal ideal is an ideal*)
