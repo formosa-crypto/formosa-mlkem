@@ -44,3 +44,19 @@ rewrite /kk /q /n /e.
 rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
 by rewrite pow0 //=.
 qed.
+
+(*What we think smod is*)
+op smod (a m : int) = if m%/2 <= a %% m then a %% m - m%/2 else a %% m.
+
+lemma barrett_overZ_smod a:
+      - 2^15 <= a =>
+      a < 2 ^ 15 =>
+      0 <= smod (a - a*(2^kk %/ q + 1) %/ 2^kk * q) (2^16) < 2*q.
+admitted.
+
+lemma dubious_smod : false.
+have := (barrett_overZ_smod 29492).
+rewrite /kk /q /n /e.
+rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
+by rewrite pow0 //=.
+qed.
