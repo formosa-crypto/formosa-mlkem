@@ -176,7 +176,6 @@ export fn poly_ntt_jazz(reg u64 rp)
   }
 }
 
-/*
 export fn poly_nttl0_jazz(reg u64 rp) 
 {
   inline int i;
@@ -195,8 +194,6 @@ export fn poly_nttl0_jazz(reg u64 rp)
     (u16)[rp + 2*i] = t;
   }
 }
-*/
-
 
 export fn poly_invntt_jazz(reg u64 rp) 
 {

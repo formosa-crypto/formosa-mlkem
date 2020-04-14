@@ -3,7 +3,7 @@
 
 #include "params.jahh"
 #include "reduce.jahh"
-#include "zetas.jahh"
+#include "consts.jahh"
 
 fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {

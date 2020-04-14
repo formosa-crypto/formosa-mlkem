@@ -59,7 +59,7 @@ POLYHEADERS = poly_compress.jahh \
               poly_reduce.jahh \
               poly_csubq.jahh \
               poly_getnoise.jahh \
-							zetas.jahh \
+							consts.jahh \
 
 POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_decompress.jahh \
@@ -84,8 +84,8 @@ test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
-test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jfips202.s $<
+test/test_fips202: test/test_fips202.c $(HEADERS) fips202.c jfips202.s
+	$(CC) $(CFLAGS) -o $@ fips202.c jfips202.s $<
  
 test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) $(INCS) jpoly.s 
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s $<
