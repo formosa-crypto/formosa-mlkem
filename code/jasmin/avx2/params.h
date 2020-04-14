@@ -5,6 +5,8 @@
 #define KYBER_K 3 /* Change this for different security strengths */
 #endif
 
+#define KYBER_NAMESPACE(s) s
+
 /* Don't change parameters below this line */
 
 #define KYBER_N 256

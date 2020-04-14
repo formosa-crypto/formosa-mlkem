@@ -37,7 +37,7 @@ test: test/test_poly_compress \
 
 speed: test/speed_indcpa
 
-HEADERS = params.h poly.h fips202.h \
+HEADERS = params.h poly.h fips202.h ntt.h \
 
 
 JHEADERS = params.jahh \
@@ -75,21 +75,22 @@ POLYVECHEADERS = polyvec_compress.jahh \
 								 polyvec_frompolys.jahh \
                  gen_matrix.jahh \
 
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
+INCS    = fq.inc shuffle.inc
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c consts.c ntt.S shuffle.S fq.S\
 
-test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
+test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
-test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
+test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
 test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jfips202.s $<
  
-test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) jpoly.s
+test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) $(INCS) jpoly.s 
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s $<
 			
-test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
+test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
 
@@ -113,8 +114,13 @@ jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 .PHONY: clean
 
 clean:
-	-rm *.s
 	-rm *.japp
+	-rm *.o
+	-rm gen_matrix.s
+	-rm indcpa.s
+	-rm jfips202.s
+	-rm jpoly.s
+	-rm jpolyvec.s
 	-rm test/test_poly_compress
 	-rm test/test_poly_decompress
 	-rm test/test_poly_tobytes
