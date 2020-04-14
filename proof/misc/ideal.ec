@@ -4,7 +4,7 @@
 
 (* -------------------------------------------------------------------- *)
 require import AllCore List Ring StdRing Binomial.
-require (*--*) Bigalg.
+require (*--*) Bigalg Quotient.
 
 clone include Ring.ComRing.
 
@@ -60,6 +60,9 @@ instance ring with t
   proof mulrDl    by apply/mulrDl
   proof expr0     by apply/expr0
   proof exprS     by apply/exprS.
+
+(*Not working + should depend o the ideal used*)
+(*clone import Quotient.Equiv .*)
 
 (* -------------------------------------------------------------------- *)
 (*These should be somewhere near the Prelude*)
@@ -154,6 +157,10 @@ op principal ( i : t -> bool ) : bool =
 (*Finitely generated ideal*)
 op finitelyGenerated ( i : t -> bool ) : bool =
   exists lx : t list , i = genId (mem lx).
+
+(*Equivalence relation associated to an ideal*)
+op eqvId ( i : t-> bool ) =
+fun x y => exists z , i z /\ x = y + z.
 
 
 
@@ -417,4 +424,33 @@ lemma principalIsFinitelyGenerated : forall i , principal i => finitelyGenerated
 move => i [x eqi].
 exists [x].
 by rewrite eqi.
+qed.
+
+(*The relation associated to an ideal is reflexive*)
+lemma eqvId_refl : forall i , ideal i => forall x , eqvId i x x.
+move => i idi x.
+exists zeror.
+split.
++ by apply zeroInId.
++ by rewrite addr0.
+qed.
+
+(*The relation associated to an ideal is symmetric*)
+lemma eqvId_sym : forall i , ideal i => forall x y, eqvId i x y => eqvId i y x.
+move => i idi x y [z [iz eqxyz]].
+exists (-z).
+split.
++ by apply oppi.
++ rewrite eqxyz.
+  by ring.
+qed.
+
+(*The relation associated to an ideal is transitive*)
+lemma eqvId_trans : forall i , ideal i => forall y x z, eqvId i x y => eqvId i y z => eqvId i x z.
+move => i idi y x z [a [ia eqxya]] [b [ib eqyzb]].
+exists (a+b).
+split.
+- by apply addi.
+- rewrite eqxya eqyzb.
+  by ring.
 qed.

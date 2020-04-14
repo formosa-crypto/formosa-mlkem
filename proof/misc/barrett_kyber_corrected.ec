@@ -14,6 +14,7 @@ axiom q_bnd: 0 < q /\ q < R %/2.
 lemma q_odd1: 2 %| (q + 1) by rewrite /=.
 lemma q_odd2: 2 %| (q - 1) by rewrite /=.
 
+(*Only one thing is missing: what is smod*)
 lemma barrett_overZ a:
       - 2^15 <= a =>
       a < 2 ^ 15 =>
