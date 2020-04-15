@@ -28,6 +28,28 @@
 #include "polyvec_topolys.jahh"
 #include "gen_matrix.jahh"
 
+/* Only temporary here */
+#include "poly_ntt.jahh"
+export fn poly_nttl0_jazz(reg u64 rp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r = level0(r);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
+
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
@@ -73,12 +95,11 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   a0, a1, a2 = gen_matrix(publicseed, zero);
 
   nonce = 0;
-  poly0 = poly_getnoise(poly0, noiseseed, nonce);
+  skpv[0:KYBER_N] = poly_getnoise(skpv[0:KYBER_N], noiseseed, nonce);
   nonce = 1;
-  poly1 = poly_getnoise(poly1, noiseseed, nonce);
+  skpv[KYBER_N:KYBER_N] = poly_getnoise(skpv[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 2;
-  poly2 = poly_getnoise(poly2, noiseseed, nonce);
-  skpv = polyvec_frompolys(poly0, poly1, poly2);
+  skpv[2*KYBER_N:KYBER_N] = poly_getnoise(skpv[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
   nonce = 3;
   poly0 = poly_getnoise(poly0, noiseseed, nonce);
@@ -91,13 +112,21 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   skpv = polyvec_ntt(skpv);
   e    = polyvec_ntt(e);
 
-  poly0 = polyvec_pointwise_acc(a0, skpv);
+/*
+  poly0 = polyvec_pointwise_acc_new(poly0, a0, skpv);
   poly0 = poly_frommont(poly0);
-  poly1 = polyvec_pointwise_acc(a1, skpv);
+  poly1 = polyvec_pointwise_acc_new(poly1, a1, skpv);
   poly1 = poly_frommont(poly1);
-  poly2 = polyvec_pointwise_acc(a2, skpv);
+  poly2 = polyvec_pointwise_acc_new(poly2, a2, skpv);
   poly2 = poly_frommont(poly2);
   pkpv = polyvec_frompolys(poly0, poly1, poly2);
+*/
+  pkpv[0:KYBER_N] = polyvec_pointwise_acc_new(pkpv[0:KYBER_N], a0, skpv);
+  pkpv[0:KYBER_N] = poly_frommont(pkpv[0:KYBER_N]);
+  pkpv[KYBER_N:KYBER_N] = polyvec_pointwise_acc_new(pkpv[KYBER_N:KYBER_N], a1, skpv);
+  pkpv[KYBER_N:KYBER_N] = poly_frommont(pkpv[KYBER_N:KYBER_N]);
+  pkpv[2*KYBER_N:KYBER_N] = polyvec_pointwise_acc_new(pkpv[2*KYBER_N:KYBER_N], a2, skpv);
+  pkpv[2*KYBER_N:KYBER_N] = poly_frommont(pkpv[2*KYBER_N:KYBER_N]);
 
   pkpv = polyvec_add2(pkpv, e);
   pkpv = polyvec_reduce(pkpv);

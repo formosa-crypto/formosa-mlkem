@@ -5,60 +5,74 @@ op k : { int | 2 < k } as gt2_k.
 
 op R = 2^k.
 
-op q: int.
-axiom q_bnd: 0 < q /\ q < R %/2.
-axiom q_odd1: 2 %| (q + 1).
-axiom q_odd2: 2 %| (q - 1).
+op kk = 16.
+op n = 256.
+op e = 13.
+op q = n*e+1.
 
-(*I also had to add that a must be smaller than 2 ^ kk.*)
-lemma barrett_overZ a kk:
-      0 <= a =>
-      a <= 2 ^ kk =>
-      1 < kk =>
-      q < 2^kk =>
-      2^kk %/ q * q < 2^kk =>
-      0 <= a - a*(2^kk %/ q) %/ 2^kk * q < 2*q.
+axiom q_bnd: 0 < q /\ q < R %/2.
+lemma q_odd1: 2 %| (q + 1) by rewrite /=.
+lemma q_odd2: 2 %| (q - 1) by rewrite /=.
+
+(*Only one thing is missing: what is smod*)
+lemma barrett_overZ a:
+      - 2^15 <= a =>
+      a < 2 ^ 15 =>
+      0 <= a - a*(2^kk %/ q + 1) %/ 2^kk * q < 2*q.
 proof.
-move => ineq0a ineqap ineqkk ineqq ineq.
+rewrite /kk /q /n /e /(^) /(%/) //=. (*FIXME*) (*This should also compute the results of powers and divisions*)
+move => genpa gtap.
+have eq1 : (2 ^ 16 %/ 3329 + 1) = 20.
+by admit.
+rewrite eq1.
+have eq2 : 2 ^ 16 = 65536.
+by admit.
+rewrite eq2.
+have eq3 : a * 20 %/ 65536 = a * 5 %/ 16384.
+by admit.
+rewrite eq3.
 split.
-rewrite subr_ge0.
-rewrite - (ler_pmul2r (2 ^ kk)).
-by apply (powPos 2 kk).
-rewrite mulrAC.
-apply (ler_trans (a * (2 ^ kk %/ q) * q)).
-apply ler_wpmul2r => //.
-by case: q_bnd => /ltrW.
-rewrite lez_floor.
-rewrite neq_ltz.
-right.
-by apply (powPos 2 kk).
-rewrite mulzA.
-apply ler_wpmul2l => //.
-rewrite lez_floor.
-rewrite neq_ltz.
-right.
-by case: q_bnd.
-move => ineq0.
-rewrite &(ltr_pmul2r (2 ^ kk)) //.
-by apply (powPos 2 kk).
-rewrite mulrBl mulrAC divzE.
-rewrite mulrBl opprB addrA.
-rewrite (mulzC a (2 ^ kk %/ q)).
-pose c := ((2 ^ kk) %/ q) * a * q.
-have ->: c = (2 ^ kk) * a - a * ((2 ^ kk) %% q).
-by rewrite /c mulrAC divzE mulrBl ; congr; rewrite mulrC.
-rewrite opprD opprK addrA (addrAC (a * (2 ^ kk))) (mulrC (2 ^ kk) a) subrr /=.
-have mul2r: 2 * q = q + q.
-by ring.
-rewrite mul2r mulrDl ltr_le_add.
-rewrite (mulrC q _) ltr_pmul2r //.
-by case q_bnd ; trivial.
-rewrite ltz_pmod.
-by apply (powPos 2 kk).
-rewrite (mulrC q) &(ler_pmul) //.
-rewrite modz_ge0 gtr_eqF.
-by case q_bnd ; trivial.
-by trivial.
-apply/ltrW/ltz_pmod.
-by case: q_bnd ; trivial.
++ rewrite subz_ge0.
+  by admit.
++ move => ge0t.
+  by admit.
+qed.
+
+lemma dubious : false.
+have := (barrett_overZ 29492).
+rewrite /kk /q /n /e.
+rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
+by rewrite pow0 //=.
+qed.
+
+(*What we think smod is*)
+op smod (a m : int) = if m%/2 <= a %% m then a %% m - m%/2 else a %% m.
+
+lemma barrett_overZ_smod a:
+      - 2^15 <= a =>
+      a < 2 ^ 15 =>
+      0 <= smod (a - a*(2^kk %/ q + 1) %/ 2^kk * q) (2^16) < 2*q.
+admitted.
+
+lemma dubious_smod : false.
+have := (barrett_overZ_smod 29492).
+rewrite /kk /q /n /e.
+rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
+by rewrite pow0 //=.
+qed.
+
+op ( %%+- ) (a b : int) =
+    if (b %/ 2 <= a %% b) then a %% b - b else a %% b axiomatized by bal_modE.
+
+lemma barrett_overZ_other_smod a:
+      - 2^15 <= a =>
+      a < 2 ^ 15 =>
+      0 <= smod (a - a*(2^kk %/ q + 1) %/ 2^kk * q) (2^16) < 2*q.
+admitted.
+
+lemma dubious_other_smod : false.
+have := (barrett_overZ_other_smod 29492).
+rewrite /kk /q /n /e.
+rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
+by rewrite pow0 //=.
 qed.

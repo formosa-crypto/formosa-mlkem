@@ -3,7 +3,118 @@
 
 #include "params.jahh"
 #include "poly_reduce.jahh"
-#include "zetas.jahh"
+#include "consts.jahh"
+
+inline
+fn butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 zh1 qx16) 
+    -> reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256
+{
+  reg u256 t0 t1 t2 t3 t4 t5 t6 t7;
+
+  t0 = #VPMULL_16u16(zl0, rh0);
+  t1 = #VPMULH_16u16(zh0, rh0);
+  t2 = #VPMULL_16u16(zl0, rh1);
+  t3 = #VPMULH_16u16(zh0, rh1);
+  t4 = #VPMULL_16u16(zl1, rh2);
+  t5 = #VPMULH_16u16(zh1, rh2);
+  t6 = #VPMULL_16u16(zl1, rh3);
+  t7 = #VPMULH_16u16(zh1, rh3);
+
+  t0 = #VPMULH_16u16(t0, qx16);
+  t2 = #VPMULH_16u16(t2, qx16);
+  t4 = #VPMULH_16u16(t4, qx16);
+  t6 = #VPMULH_16u16(t6, qx16);
+
+  //rh1 = #VPSUB_16u16(t3, rl1);
+  rh1 = #VPSUB_16u16(rl1, t3);
+  rl1 = #VPADD_16u16(t3, rl1);
+  //rh0 = #VPSUB_16u16(t1, rl0);
+  rh0 = #VPSUB_16u16(rl0, t1);
+  rl0 = #VPADD_16u16(t1, rl0);
+  //rh3 = #VPSUB_16u16(t7, rl3);
+  rh3 = #VPSUB_16u16(rl3, t7);
+  rl3 = #VPADD_16u16(t7, rl3);
+  //rh2 = #VPSUB_16u16(t5, rl2);
+  rh2 = #VPSUB_16u16(rl2, t5);
+  rl2 = #VPADD_16u16(t5, rl2);
+
+  rh0 = #VPADD_16u16(t0, rh0);
+  //rl0 = #VPSUB_16u16(t0, rl0);
+  rl0 = #VPSUB_16u16(rl0, t0);
+  rh1 = #VPADD_16u16(t2, rh1);
+  //rl1 = #VPSUB_16u16(t2, rl1);
+  rl1 = #VPSUB_16u16(rl1, t2);
+  rh2 = #VPADD_16u16(t4, rh2);
+  //rl2 = #VPSUB_16u16(t4, rl2);
+  rl2 = #VPSUB_16u16(rl2, t4);
+  rh3 = #VPADD_16u16(t6, rh3);
+  //rl3 = #VPSUB_16u16(t6, rl3);
+  rl3 = #VPSUB_16u16(rl3, t6);
+
+  return rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
+}
+
+
+inline fn level0(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u256 zeta0 zeta1 r0 r1 r2 r3 r4 r5 r6 r7 qx16;
+  reg u32 t;
+  reg u16 w;
+  reg ptr u16[400] zetasp;
+  reg ptr u16[16] qx16p;
+
+  zetasp = jzetas_exp;
+  qx16p = jqx16;
+
+//  w = KYBER_Q;
+  qx16 = jqx16[u256 0];
+
+  zeta0 = #VPBROADCAST_8u32(zetasp[u32 0]);
+  zeta1 = #VPBROADCAST_8u32(zetasp[u32 1]);
+
+  r0 = rp.[u256 32*0];
+  r1 = rp.[u256 32*1];
+  r2 = rp.[u256 32*2];
+  r3 = rp.[u256 32*3];
+  r4 = rp.[u256 32*8];
+  r5 = rp.[u256 32*9];
+  r6 = rp.[u256 32*10];
+  r7 = rp.[u256 32*11];
+
+  r0, r1, r2, r3, r4, r5, r6, r7 = butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+  rp.[u256 32*0] = r0;
+  rp.[u256 32*1] = r1;
+  rp.[u256 32*2] = r2;
+  rp.[u256 32*3] = r3;
+  rp.[u256 32*8] = r4;
+  rp.[u256 32*9] = r5;
+  rp.[u256 32*10] = r6;
+  rp.[u256 32*11] = r7;
+
+  r0 = rp.[u256 32*4];
+  r1 = rp.[u256 32*5];
+  r2 = rp.[u256 32*6];
+  r3 = rp.[u256 32*7];
+  r4 = rp.[u256 32*12];
+  r5 = rp.[u256 32*13];
+  r6 = rp.[u256 32*14];
+  r7 = rp.[u256 32*15];
+
+  r0, r1, r2, r3, r4, r5, r6, r7 = butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+  rp.[u256 32*4] = r0;
+  rp.[u256 32*5] = r1;
+  rp.[u256 32*6] = r2;
+  rp.[u256 32*7] = r3;
+  rp.[u256 32*12] = r4;
+  rp.[u256 32*13] = r5;
+  rp.[u256 32*14] = r6;
+  rp.[u256 32*15] = r7;
+
+  return rp;
+}
+
 
 fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
