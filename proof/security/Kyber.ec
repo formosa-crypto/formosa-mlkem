@@ -53,11 +53,13 @@ op m_decode(mp : poly) : message =
    map (fun c => - q%/4 <= Fq.asint c < q%/ 4) mp.
 
 op roundc(c : elem) : elem = 
-    Fq.inzmod (((Fq.asint c * 2^3 + (q %/ 2)) %/q) %% 2^3) axiomatized by roundcE.
+    Fq.inzmod (((Fq.asint c * 2^3 + (q %/ 2)) %/q) %% 2^3) 
+      axiomatized by roundcE.
 
 op roundc_err(c: elem) : elem = Fq.(+) (roundc c) (Fq.([-]) c).
 
-lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c by rewrite /roundc_err; ring.
+lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c 
+      by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
    map roundc p.
@@ -104,20 +106,20 @@ op (`|+|`)  = Vector.(+).
 
 type polyvec2 = matrix.
 
-print Matrix.
-
-op (`*|`) (pv2 : polyvec2, p : polyvec) : polyvec. (* TO DO *)
+op (`*|`) = ( *^).
 
 op transpose(pv2 : polyvec2) : polyvec2 = trmx pv2.
 
-op (`|*`) (p : polyvec, pv2 : polyvec2) : polyvec. (* TO DO *)
+op (`|*`) = ( ^*).
 
 op roundc(c : elem) : elem = 
-    Fq.inzmod (((Fq.asint c * 2^11 + (q %/ 2)) %/q) %% 2^11) axiomatized by roundcE.
+    Fq.inzmod (((Fq.asint c * 2^11 + (q %/ 2)) %/q) %% 2^11) 
+     axiomatized by roundcE.
 
 op roundc_err(c: elem) : elem = Fq.(+) (roundc c) (Fq.([-]) c).
 
-lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c by rewrite /roundc_err; ring.
+lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c 
+    by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
    map roundc p.
@@ -131,27 +133,23 @@ rewrite /round_poly_err /round_poly /Poly.(+); apply ext_eq => /> x xl xh.
 by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
 qed.
 
-op round_polyvec(pv : polyvec) : polyvec
-   (* TO DO  =  mx_map round_poly pv *).
+op round_polyvec(pv : polyvec) : polyvec = 
+   offunv (fun i => (round_poly ((tofunv pv) i))).
 
-op round_polyvec_err(pv : polyvec) : polyvec
-   (*  = mx_map round_poly_err pv*).
+op round_polyvec_err(pv : polyvec) : polyvec =
+   offunv (fun i => (round_poly_err ((tofunv pv) i))).
 
-lemma round_polyvec_errE p : p `|+|` (round_polyvec_err p) = round_polyvec p.
-admitted.
-(* 
+lemma round_polyvec_errE p : p `|+|` (round_polyvec_err p) = 
+      round_polyvec p.
 proof. 
-rewrite /round_polyvec_err /round_polyvec /(`|+|`).
-admit.
+rewrite /round_polyvec_err /round_polyvec.
+apply eq_vectorP => /> i il ih.
+rewrite offunvE //= offunvE //=  (offunvE _ _ _) => />.
+by apply round_poly_errE.
 qed.
-*)
 
-op dshort : polyvec distr (* = 
-   dmap  Poly.dshort (fun p => oget (Supp.insub (mkprematrix kvec 1 (fun _ => p)))) *).
-
-
-op duni : polyvec distr (* = 
-   dmap  Poly.duni (fun p => oget (Supp.insub (mkprematrix kvec 1 (fun _ => p)))) *).
+op dshort : polyvec distr = dvector Poly.dshort.
+op duni : polyvec distr = dvector Poly.duni.
 
 end PolyVec.
 
@@ -159,10 +157,12 @@ export PolyVec.
 
 theory Kyber.
 
-op noise_val (p : poly) = foldr 
-                           (fun c cc => max (Fq.asint c) cc) 
-                                      (Fq.asint (head witness p)) 
-                                      (behead p).
+import PolyVec.
+op noise_val (p : poly) =
+      foldr (fun c cc => max (Fq.asint c) cc) 
+                  (Fq.asint (head witness (to_list p))) 
+                                   (behead (to_list p)).
+
 op cv_bound : int = 104. (* computed in sec estimates, must be
                             proved *)
 op fail_prob : real. (* Need to compute exact value or replace
@@ -174,24 +174,15 @@ lemma encode_noise (u : polyvec) (v : poly):
          ( u `|+|` (round_polyvec_err u), v + Poly.round_poly_err v) 
      by smt (round_polyvec_errE Poly.round_poly_errE).
 
-
-axiom m_to_pv2K :
-  cancel  m_to_pv2 pv2_to_m.
-
-axiom m_to_pv2_size (m : matrix):
-  is_polyvec2 (m_to_pv2 m).
-
-lemma matrix_props1 (_A : matrix) (s e r : polyvec):
+lemma matrix_props1 (_A : polyvec2) (s e r : polyvec):
     _A `*|` s `|+|` e `|*|` r = 
          (s `|*` transpose _A `|*|` r) + (e `|*|` r).
 proof.
-rewrite /(`|*`).
-rewrite transposeK. admit.
 admit.
 qed.
 
 clone import MLWE_PKE with
-   type H_MLWE.matrix <- PolyVec.matrix,
+   type H_MLWE.matrix <- PolyVec.polyvec2,
    type H_MLWE.c_vector <- PolyVec.polyvec,
    type H_MLWE.r_vector <- PolyVec.polyvec,
    type H_MLWE.elem <- Poly.poly,
@@ -202,7 +193,7 @@ clone import MLWE_PKE with
    (* ENCODINGS TO AND FROM BYTES WILL BE ADDED ONLY AS
       MAPPINGS BETWEEN THIS SPECIFICATION SEMANTICS AND 
       THE IMPLEMENTATIONS *)
-   (* BYTE STRING SEEDS ARE KEPT AS ABSTRACT TYPES, AS
+   (* BYTE STRING SEEDS ARE KEPT AS ABSTRACT TYPES FOR NOW, AS
       ARE ALL HASHING-RELATED FUNCTIONS *)
    op H_MLWE.m_transpose <- PolyVec.transpose,
    op H_MLWE.v_transpose <- idfun,
@@ -215,7 +206,7 @@ clone import MLWE_PKE with
    op H_MLWE.duni_elem <- Poly.duni,
    op H_MLWE.dshort_elem <- Poly.dshort,
    op H_MLWE.pe <- Poly.pe,
-   type plaintext <- bool list,
+   type plaintext <- bool t,
    type ciphertext <- PolyVec.polyvec * Poly.poly,
    op m_encode <- Poly.m_encode,
    op m_decode <- Poly.m_decode,
