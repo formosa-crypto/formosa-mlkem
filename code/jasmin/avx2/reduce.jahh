@@ -7,6 +7,15 @@ param int QINV    = 62209;     /* q^(-1) mod 2^16 */
 param int MONT    = 2285;      /* 2^16 % Q */
 param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
 
+inline fn red16x(reg u256 r qx16 vx16) -> reg u256
+{
+//  reg u256 x;
+//  x = #VPMULH_16u16(r, vx16);
+//  x = #VPSRA_16u16(x, 10);
+//  x = #VPMULL_16u16(x, qx16);
+//  r = #VPSUB_16u16(r, x);
+  return r;
+}
 
 inline
 fn fqmul(reg u16 a, reg u16 b) -> reg u16

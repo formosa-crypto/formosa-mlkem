@@ -43,6 +43,7 @@ HEADERS = params.h poly.h fips202.h ntt.h \
 JHEADERS = params.jahh \
 				   reduce.jahh \
            fips202.jahh \
+					 consts.jahh 
 
 POLYHEADERS = poly_compress.jahh \
               poly_decompress.jahh \
