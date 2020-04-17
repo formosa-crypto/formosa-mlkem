@@ -319,7 +319,8 @@ end section.
 (* the public-key. This setting seems to be the one in which      *)
 (* failure probability is considered in the FO construction.      *)
 (* We need to model H as a random oracle as we will assume A is   *)
-(* uniform random.                                                *)
+(* uniform random. Strictly speaking we should probably model it  *)
+(* as a QROM (to discuss)                                         *)
 (******************************************************************)
 
 

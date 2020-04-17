@@ -43,6 +43,7 @@ HEADERS = params.h poly.h fips202.h ntt.h \
 JHEADERS = params.jahh \
 				   reduce.jahh \
            fips202.jahh \
+					 consts.jahh 
 
 POLYHEADERS = poly_compress.jahh \
               poly_decompress.jahh \
@@ -148,3 +149,4 @@ clean:
 	-rm test/test_polyvec_csubq
 	-rm test/test_fips202
 	-rm test/test_indcpa
+	-rm test/speed_indcpa
