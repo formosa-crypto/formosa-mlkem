@@ -39,7 +39,7 @@ split.
 qed.
 
 lemma dubious : false.
-have := (barrett_overZ 29492).
+have := (barrett_overZ 3277).
 rewrite /kk /q /n /e.
 rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
 by rewrite pow0 //=.
@@ -55,7 +55,7 @@ lemma barrett_overZ_smod a:
 admitted.
 
 lemma dubious_smod : false.
-have := (barrett_overZ_smod 29492).
+have := (barrett_overZ_smod 3277).
 rewrite /kk /q /n /e.
 rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
 by rewrite pow0 //=.
@@ -71,7 +71,7 @@ lemma barrett_overZ_other_smod a:
 admitted.
 
 lemma dubious_other_smod : false.
-have := (barrett_overZ_other_smod 29492).
+have := (barrett_overZ_other_smod 3277).
 rewrite /kk /q /n /e.
 rewrite (powS 15) // (powS 14) // (powS 13) // (powS 12) // (powS 11) // (powS 10) // (powS 9) // (powS 8) // (powS 7) // (powS 6) // (powS 5) // (powS 4) // (powS 3) // (powS 2) // (powS 1) // (powS 0)  //=.
 by rewrite pow0 //=.
