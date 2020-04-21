@@ -1,65 +1,96 @@
 require import AllCore Ring SmtMap Distr.
-require (****) ROM.
+require (****) ROM Matrix.
 
 (** NOTE: WHEN CLONING THIS THEORY ALL AXIOMS MUST BE PROVED *)
 
 type seed.
-type matrix.
-type c_vector.
-type r_vector.
-type elem.
 
-clone import IDomain as Elem with type t <- elem.
+clone import Matrix as M.
 
-instance ring with elem
-  op rzero = Elem.zeror
-  op rone  = Elem.oner
-  op add   = Elem.( + )
-  op mul   = Elem.( * )
-  op opp   = Elem.([-])
+abbrev (+&) = ZR.(+).
+op (-&) = ZR.(-).
+op (`<*>`) a b = dotp a b axiomatized by dotpEE.
 
-  proof oner_neq0 by apply/Elem.oner_neq0
-  proof addr0     by apply/Elem.addr0
-  proof addrA     by apply/Elem.addrA
-  proof addrC     by apply/Elem.addrC
-  proof addrN     by apply/Elem.addrN
-  proof mulr1     by apply/Elem.mulr1
-  proof mulrA     by apply/Elem.mulrA
-  proof mulrC     by apply/Elem.mulrC
-  proof mulrDl    by apply/Elem.mulrDl.
+(* To remove *)
+print ZR.
+
+instance ring with R
+  op rzero = ZR.zeror
+  op rone  = ZR.oner
+  op add   = ZR.( + )
+  op opp   = ZR.([-])
+  op mul   = ZR.( * )
+  op expr  = ZR.exp
+  op sub   = (-&)
+  op ofint = ZR.ofint
+
+  proof oner_neq0 by admit
+  proof addr0     by admit
+  proof addrA     by admit
+  proof addrC     by admit
+  proof addrN     by admit
+  proof mulr1     by admit
+  proof mulrA     by admit
+  proof mulrC     by admit
+  proof mulrDl    by admit
+  proof expr0     by admit
+  proof exprS     by admit
+  proof subrE     by admit
+  proof ofint0    by admit
+  proof ofint1    by admit
+  proof ofintS    by admit
+  proof ofintN    by admit.
+
+(*************)
+
+
+hint simplify dotpEE.
 
 op H : seed -> matrix.
 
-op m_transpose : matrix -> matrix.
-op v_transpose : c_vector -> r_vector.
-
-op (`|*|`)  : r_vector -> c_vector -> elem.
-op (`|+|`) : c_vector -> c_vector -> c_vector.
-op (`*|`) : matrix -> c_vector -> c_vector.
-op (`|*`) : r_vector -> matrix -> r_vector.
+abbrev m_transpose = trmx.
 
 op dseed : seed distr.
-op dshort : c_vector distr.
-op duni   : c_vector distr.
-op duni_elem  : elem distr.
-op dshort_elem  : elem distr.
+op duni_R  : R distr.
+op dshort_R  : R distr.
+op dshort = dvector dshort_R.
+op duni = dvector duni_R.
 
 axiom dseed_ll : is_lossless dseed.
-axiom duni_ll : is_lossless duni.
-axiom dshort_ll : is_lossless dshort.
-axiom dshort_elem_ll : is_lossless dshort_elem.
-axiom duni_elem_ll : is_lossless duni_elem.
+axiom dshort_R_ll : is_lossless dshort_R.
+axiom duni_R_ll : is_lossless duni_R.
 
 op pe : real.
-axiom duni_elem_fu: is_full duni_elem.
-axiom duni_elemE: forall (s: elem), mu1 duni_elem s = pe.
-lemma duni_elem_uni: is_funiform duni_elem.
-proof. by move=> ??;rewrite !duni_elemE. qed.
 
-hint exact random : duni_elem_fu duni_elem_ll duni_elem_uni.
+axiom duni_R_fu: is_full duni_R.
+axiom duni_RE: forall (s: R), mu1 duni_R s = pe.
+lemma duni_R_uni: is_funiform duni_R.
+proof. by move=> ??;rewrite !duni_RE. qed.
+
+hint exact random : duni_R_fu duni_R_ll duni_R_uni.
+
+lemma duni_ll : is_lossless duni by admit.
+lemma dshort_ll : is_lossless dshort by admit.
+
+op duni_matrix = dmatrix duni_R.
+
+lemma duni_matrix_ll : is_lossless duni_matrix by admit.
+
+op pm : real.
+lemma duni_matrix_fu: is_full duni_matrix by admit.
+axiom duni_matrixE: forall (m: matrix), mu1 duni_matrix m = pm.
+lemma duni_matrix_uni: is_funiform duni_matrix.
+proof. by move=> ??;rewrite !duni_matrixE. qed.
+
+op dsample(sd : seed) = duni_matrix.
+
+clone import ROM.Lazy as H_MLWE_ROM with
+    type from <- seed,
+    type to <- matrix,
+    op   dsample <- dsample.
 
 module type Adv_T = {
-   proc guess(sd : seed, t : c_vector, uv : c_vector * elem) : bool
+   proc guess(sd : seed, t : vector, uv : vector * R) : bool
 }.
 
 module H_MLWE(Adv : Adv_T) = {
@@ -71,33 +102,16 @@ module H_MLWE(Adv : Adv_T) = {
       s <$ dshort;
       e <$ dshort;
       _A <- if tr then m_transpose (H sd) else H sd;
-      u0 <- _A `*|` s `|+|` e;
+      u0 <- _A *^ s + e;
       u1 <$ duni;
 
       t <$ duni;
-      e' <$ dshort_elem;
-      v0 <- v_transpose t `|*|` s + e';
-      v1 <$ duni_elem;
+      e' <$ dshort_R;
+      v0 <- (t `<*>` s) +& e';
+      v1 <$ duni_R;
       
       b' <@ Adv.guess(sd, t, if b then (u1,v1) else (u0,v0));
       return b';
    }
 }.
 
-(* We'll need these definitions to model H as a ROM *)
-
-op duni_matrix : matrix distr.
-
-axiom duni_matrix_ll : is_lossless duni_matrix. 
-op pm : real.
-axiom duni_matrix_fu: is_full duni_matrix.
-axiom duni_matrixE: forall (m: matrix), mu1 duni_matrix m = pm.
-lemma duni_matrix_uni: is_funiform duni_matrix.
-proof. by move=> ??;rewrite !duni_matrixE. qed.
-
-op dsample(sd : seed) = duni_matrix.
-
-clone import ROM.Lazy as H_MLWE_ROM with
-    type from <- seed,
-    type to <- matrix,
-    op   dsample <- dsample.

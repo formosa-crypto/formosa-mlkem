@@ -6,22 +6,22 @@ require (****) PKE H_MLWE.
 theory MLWE_PKE.
 
   clone import H_MLWE.
-  import Elem.
+  import M.
   import H_MLWE_ROM.
 
   type plaintext.
   type ciphertext.
 
   clone import PKE with 
-    type pkey = (seed * c_vector),
-    type skey = c_vector,
+    type pkey = (seed * vector),
+    type skey = vector,
     type plaintext <- plaintext,
     type ciphertext <- ciphertext.
 
-  type raw_ciphertext = c_vector * elem.
+  type raw_ciphertext = vector * R.
 
-  op m_encode : plaintext -> elem. 
-  op m_decode : elem -> plaintext.
+  op m_encode : plaintext -> R. 
+  op m_decode : R -> plaintext.
  
   op c_encode : raw_ciphertext -> ciphertext.
   op c_decode : ciphertext -> raw_ciphertext.
@@ -41,7 +41,7 @@ theory MLWE_PKE.
           s <$ dshort;
           e <$ dshort;
           _A <@ H.o(sd);
-          t <- _A `*|` s `|+|` e;
+          t <- _A *^ s + e;
           return ((sd,t),s);
     }
     
@@ -50,17 +50,17 @@ theory MLWE_PKE.
          (sd,t) <- pk;
          r <$ dshort;
          e1 <$ dshort;
-         e2 <$ dshort_elem;
+         e2 <$ dshort_R;
          _A <@ H.o(sd);
-         u <- m_transpose _A `*|` r `|+|` e1;
-         v <-  (v_transpose t) `|*|` r + e2 + (m_encode m);
+         u <- m_transpose _A *^ r + e1;
+         v <-  (t `<*>` r) +& e2 +& (m_encode m);
          return (c_encode (u,v));
     }
     
     proc dec(sk : skey, c : ciphertext) : plaintext option = {
          var u,v;
          (u,v) <- c_decode c;
-         return Some (m_decode (v - ((v_transpose sk) `|*|` u)));
+         return Some (m_decode (v -& (sk `<*>` u)));
     }
   }.
 
@@ -87,11 +87,11 @@ module MLWE_PKE1 = {
 }.
 
  module B1(A : Adversary) : Adv_T = {
-    proc kg(sd : seed, t : c_vector) : pkey * skey = {
+    proc kg(sd : seed, t : vector) : pkey * skey = {
          return ((sd,t),witness);
     }
 
-    proc guess(sd : seed, t : c_vector, uv : c_vector * elem) : bool = {
+    proc guess(sd : seed, t : vector, uv : vector * R) : bool = {
       var pk : pkey;
       var sk : skey;
       var m0 : plaintext;
@@ -125,7 +125,7 @@ seq 3 3 : (#pre /\ ={sd,s,e}); first by auto => />.
 seq 3 2 : (#pre /\ ={_A} /\ t{1} = u0{2}); first by auto => />.
 seq 0 5 : (#pre);
   first by rnd{2};wp;rnd{2};rnd{2};rnd{2}; auto => />;
-     smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll). 
+     smt(duni_ll dshort_ll dshort_R_ll duni_R_ll). 
 seq 1 6 : (#pre /\ ={pk}); first by auto => />. wp.
 wp; call(_: true); auto => />; first by smt().
 by call(_: true); auto => />.
@@ -140,7 +140,7 @@ proc.
 inline *. 
 seq 16 4 : (#pre /\ ={sd,pk} /\ t{2} = u1{1}); first by
    wp;rnd{1};wp;rnd{1};rnd{1};rnd;wp;rnd{1};rnd;rnd;   
-  auto => />;smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll). 
+  auto => />;smt(duni_ll dshort_ll dshort_R_ll duni_R_ll). 
 wp; call(_: true); auto => />; first by move => &1 &2 *; smt().
 by call(_: true); auto => />.
 qed.
@@ -155,8 +155,8 @@ module MLWE_PKE2 = {
     proc enc(pk : pkey, m : plaintext) : ciphertext = {
          var u, v;
          u <$duni;
-         v <$duni_elem;
-         return (c_encode (u,v + m_encode m));
+         v <$duni_R;
+         return (c_encode (u,v +& m_encode m));
     }
 
   include MLWE_PKE1 [-enc]
@@ -166,15 +166,15 @@ module MLWE_PKE2 = {
 
 
  module B2(A : Adversary) : Adv_T = {
-    proc kg(sd : seed, t : c_vector) : pkey * skey = {
+    proc kg(sd : seed, t : vector) : pkey * skey = {
          return ((sd,t),witness);
     }
 
-    proc enc(pk : pkey, m : plaintext, uv : c_vector * elem) : ciphertext = {
-         return (c_encode (uv.`1, uv.`2 + m_encode m));
+    proc enc(pk : pkey, m : plaintext, uv : vector * R) : ciphertext = {
+         return (c_encode (uv.`1, uv.`2 +& m_encode m));
     }
 
-    proc guess(sd : seed, t : c_vector, uv : c_vector * elem) : bool = {
+    proc guess(sd : seed, t : vector, uv : vector * R) : bool = {
       var pk : pkey;
       var sk : skey;
       var m0 : plaintext;
@@ -211,7 +211,7 @@ seq 4 7 : (#pre /\ ={sd,t,pk} /\ pk{2}.`1 = sd{2} /\ pk{2}.`2 = t{2});
 swap {2} [11..13] -9.
 by wp; call(_: true); wp; rnd{2}; wp; rnd; rnd{2}; wp; 
    rnd; rnd; wp; rnd; call(_: true); auto => />; 
-        smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll).  
+        smt(duni_ll dshort_ll dshort_R_ll duni_R_ll).  
 qed.
 
 lemma hop2_right &m: 
@@ -228,7 +228,7 @@ seq 7 4 : (#pre /\ ={sd,t,pk} /\ pk{2}.`1 = sd{2} /\ pk{2}.`2 = t{2});
    first by wp;rnd;  rnd{2}; rnd; auto => />; smt(dshort_ll).
 swap {1} [11..13] -9.
 by wp; call(_: true);wp;rnd;wp;rnd{1};rnd;wp;rnd{1};rnd{1};wp;rnd; 
-   call(_: true); auto => />;smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll).  
+   call(_: true); auto => />;smt(duni_ll dshort_ll dshort_R_ll duni_R_ll).  
 qed.
 
 end section.
@@ -243,7 +243,7 @@ module Game2(A : Adversary) = {
     t <$ duni;
     (m0, m1) <@ A.choose((sd,t));
     u <$duni;
-    v <$duni_elem;
+    v <$duni_R;
     b' <@ A.guess(c_encode (u,v));
     b <$ {0,1};
     return b = b';
@@ -265,10 +265,12 @@ proc.
 inline *.
 swap {2} 8 -3.
 call(_: true); wp.
-rnd (fun z, z + m_encode (if b then m1 else m0){2})
-    (fun z, z - m_encode (if b then m1 else m0){2}).
+rnd (fun z, z +& m_encode (if b then m1 else m0){2})
+    (fun z, z -& m_encode (if b then m1 else m0){2}).
 auto; call (_:true).
-auto; progress; smt(@Elem).
+auto => />; progress; case bL; move => *; ring.
+by smt().
+by smt().
 qed.
 
 lemma game2_prob &m :
@@ -280,9 +282,9 @@ rnd  (pred1 b')=> //=.
 conseq (: _ ==> true).
 + by move=> /> b; smt. 
 call (_: true ==> true); first by apply A_guess_ll.
-auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll).  
+auto => />; first by smt(duni_ll dshort_ll dshort_R_ll duni_R_ll).  
 call (_: true ==> true); first by apply A_choose_ll.
-by auto => />; first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).  
+by auto => />; first by smt(duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).  
 qed.
 
 end section.
@@ -358,55 +360,55 @@ module AdvCorrectness(S : SchemeRO, A : CAdversary, O : Oracle) = {
 (* We express rounding errors as additive noise *)
 
 op noise_exp _A s e r e1 e2 m = 
-    let t = _A `*|` s `|+|` e in
-    let u = m_transpose _A `*|` r `|+|` e1 in
-    let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+    let t = _A *^ s + e in
+    let u = m_transpose _A *^ r + e1 in
+    let v = (t `<*>` r) +& e2 +& (m_encode m) in
     let (u',v') = c_decode (c_encode (u,v)) in
-        v' - ((v_transpose s) `|*|` u') - (m_encode m).
+        v' -& (s `<*>` u') -& (m_encode m).
 
 (* We can derive the noise expression by introducing
    operators that compute the rounding error *)
 
-op rnd_err_v : elem -> elem.
-op rnd_err_u : c_vector -> c_vector.
+op rnd_err_v : R -> R.
+op rnd_err_u : vector -> vector.
 
 axiom encode_noise u v :
    c_decode (c_encode (u,v)) = 
-      (u `|+|` rnd_err_u u, v + rnd_err_v v).
+      (u + rnd_err_u u, v +& rnd_err_v v).
 
 axiom matrix_props1 _A s e r :
-v_transpose (_A `*|` s `|+|` e) `|*|` r = 
-((v_transpose s) `|*` (m_transpose _A) `|*|` r) + ((v_transpose e) `|*|` r).
+(_A *^ s + e) `<*>` r = 
+(s ^* m_transpose _A `<*>` r) +& (e `<*>` r).
 
 axiom matrix_props2 s _A r e1 cu :
-(v_transpose s `|*|` (m_transpose _A `*|` r `|+|` e1 `|+|` cu)) = 
-  ((v_transpose s) `|*` (m_transpose _A) `|*|` r)+ 
-    (v_transpose s `|*|` e1) + (v_transpose s `|*|` cu).
+s `<*>` (m_transpose _A *^ r + e1 + cu) = 
+  (s ^* m_transpose _A `<*>` r) +& 
+    (s `<*>` e1) +& (s `<*>` cu).
 
 lemma noise_exp_val _A s e r e1 e2 m :
     noise_exp _A s e r e1 e2 m = 
-    let t = _A `*|` s `|+|` e in
-    let u = m_transpose _A `*|` r `|+|` e1 in
-    let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+    let t = _A *^ s + e in
+    let u = m_transpose _A *^ r + e1 in
+    let v = (t `<*>` r) +& e2 +& (m_encode m) in
     let cu = rnd_err_u u in
     let cv = rnd_err_v v in
-          (((v_transpose e) `|*|` r) -
-           ((v_transpose s) `|*|` e1) -
-           ((v_transpose s) `|*|` cu) + e2
-          ) + cv
+          ((e `<*>` r) -&
+           (s `<*>` e1) -&
+           (s `<*>` cu) +& e2
+          ) +& cv
      by rewrite /noise_exp //= encode_noise //= matrix_props1 matrix_props2 //=; ring. 
 
 (* The above noise expression is computed over the abstract
    rings that define the scheme. Noise bounds are checked and
    computed over the integers. *)
 
-op noise_val : elem -> int.
+op noise_val : R -> int.
 op noise_bound : int.
 op good_noise (n b : int) = -b < n < b.
 
 axiom good_decode m n :
     good_noise noise_bound (noise_val n) =>
-      m_decode (m_encode m + n) = m.
+      m_decode (m_encode m +& n) = m.
 
 (* We now rewrite the correctness game in terms of noise *)
 
@@ -420,8 +422,8 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
          _A <@ O.o(sd);
          r <$ dshort;
          e1 <$ dshort;
-         e2 <$ dshort_elem;
-         m <@ A(O).find((sd,_A `*|` s `|+|` e),s);
+         e2 <$ dshort_R;
+         m <@ A(O).find((sd,_A *^ s + e),s);
          n <- noise_exp _A s e r e1 e2 m;
          return (!good_noise (noise_bound) (noise_val n));
     }
@@ -446,7 +448,7 @@ proc.
 inline *.
 auto => />.
 call (_: true); [ by move => H; apply (All H) | by  apply RO_o_ll; first by smt(duni_matrix_ll) | ].
-auto => />; first by smt(duni_matrix_ll duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
+auto => />; first by smt(duni_matrix_ll duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
 + byequiv => //.
 proc. 
 inline MLWE_PKE(RO).dec MLWE_PKE(RO).enc MLWE_PKE(RO).kg; wp.
@@ -459,7 +461,7 @@ seq 9 14 : (
            pk0.`1{2} = sd{2} /\
            pk0.`2{2} = t{2} /\
            sk{2} = s{2} /\
-           t{2} = _A{2} `*|` s{2} `|+|` e{2} /\
+           t{2} = _A{2} *^ s{2} + e{2} /\
            t0{2} = t{2} /\
            pk0{2}.`1 \in RO.m{2} /\
            _A{2} = _A{1} /\
@@ -470,24 +472,24 @@ move => ???.
 move => noise_expL noise_expH.
 rewrite  encode_noise  => //.
 rewrite (_: 
-   (v_transpose (oget RO.m{2}.[pk0{2}.`1] `*|` s{2} `|+|` e{2}) `|*|` r{2} +
-   e2{2} + m_encode m{2} +
+   (((oget RO.m{2}.[pk0{2}.`1] *^ s{2} + e{2}) `<*>` r{2}) +&
+   e2{2} +& m_encode m{2} +&
    rnd_err_v
-     (v_transpose (oget RO.m{2}.[pk0{2}.`1] `*|` s{2} `|+|` e{2}) `|*|` r{2} +
-      e2{2} + m_encode m{2}) -
-   (v_transpose s{2} `|*|`
-    (m_transpose (oget RO.m{2}.[pk0{2}.`1]) `*|` r{2} `|+|` e1{2} `|+|`
-     rnd_err_u (m_transpose (oget RO.m{2}.[pk0{2}.`1]) `*|` r{2} `|+|` e1{2})))) = 
-m_encode m{2} + noise_exp (oget RO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
+     (((oget RO.m{2}.[pk0{2}.`1] *^ s{2} + e{2}) `<*>` r{2}) +&
+      e2{2} +& m_encode m{2}) -&
+   (s{2} `<*>`
+    (m_transpose (oget RO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2} +
+     rnd_err_u (m_transpose (oget RO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2})))) = 
+m_encode m{2} +& noise_exp (oget RO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
                    e2{2} m{2}); last by apply good_decode.
-by rewrite  noise_exp_val //= matrix_props1 matrix_props2; ring. 
-auto => />;first by smt(duni_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
+by rewrite  noise_exp_val //= matrix_props1 matrix_props2 => />; ring.
+auto => />;first by smt(duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
 seq 5 7 : ( #pre /\
            ={RO.m,s,e,sd,_A} /\
            pk.`1{2} = sd{2} /\
            pk.`2{2} = t{2} /\
            sk{2} = s{2} /\
-           t{2} = _A{2} `*|` s{2} `|+|` e{2} /\
+           t{2} = _A{2} *^ s{2} + e{2} /\
            pk{2}.`1 \in RO.m{2} /\
            oget RO.m{2}.[sd{2}] = _A{2}); last first.
 exists* _A{2}, pk{2}.`1.
@@ -511,33 +513,32 @@ axiom cv_bound_valid _A s e r e2 m :
       e \in dshort =>
       _A \in duni_matrix =>
       r \in dshort =>
-      e2 \in dshort_elem =>
-      let t = _A `*|` s `|+|` e in
-      let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+      e2 \in dshort_R =>
+      let t = _A *^ s + e in
+      let v = (t `<*>` r) +& e2 +& (m_encode m) in
           -cv_bound < noise_val (rnd_err_v v) < cv_bound.
 
 axiom noise_commutes n n' (b : int) : 
     -b < noise_val n' < b =>
     good_noise (noise_bound - b) (noise_val n) =>
-       good_noise noise_bound (noise_val (n + n')).
+       good_noise noise_bound (noise_val (n +& n')).
 
 
 op noise_exp_part _A s e r e1 e2 = 
-    let t = _A `*|` s `|+|` e in
-    let u = m_transpose _A `*|` r `|+|` e1 in
+    let t = _A *^ s + e in
+    let u = m_transpose _A *^ r + e1 in
     let cu = rnd_err_u u in
-          (((v_transpose e) `|*|` r) -
-           ((v_transpose s) `|*|` e1) -
-           ((v_transpose s) `|*|` cu) + e2
+          ((e `<*>` r) -&
+           (s `<*>` e1) -&
+           (s `<*>` cu) +& e2
           ).
 
 lemma noise_exp_part_val _A s e r e1 e2 m :
    noise_exp _A s e r e1 e2 m = 
-       (noise_exp_part _A s e r e1 e2) + 
-    let t = _A `*|` s `|+|` e in
-    let v = (v_transpose t) `|*|` r + e2 + (m_encode m) in
+       (noise_exp_part _A s e r e1 e2) +& 
+    let t = _A *^ s + e in
+    let v = (t `<*>` r) +& e2 +& (m_encode m) in
           rnd_err_v v by rewrite noise_exp_val /noise_exp_part.
-
 
 module CorrectnessNoiseAprox = {
    proc main() = {
@@ -547,7 +548,7 @@ module CorrectnessNoiseAprox = {
          _A <$ duni_matrix;
          r <$ dshort;
          e1 <$ dshort;
-         e2 <$ dshort_elem;
+         e2 <$ dshort_R;
          n <- noise_exp_part _A s e r e1 e2;
          return (!good_noise (noise_bound - cv_bound) (noise_val n));
     }
@@ -571,12 +572,12 @@ seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
             e{2} \in dshort /\
            _A{2} \in duni_matrix /\
            r{2} \in dshort /\
-           e2{2} \in dshort_elem
+           e2{2} \in dshort_R
 ).
-inline *; auto => />; first by smt(@SmtMap duni_ll duni_matrix_ll dshort_ll dshort_elem_ll duni_elem_ll dseed_ll).
+inline *; auto => />; first by smt(@SmtMap duni_ll duni_matrix_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
 wp;call {1} (_: true ==> true).  by apply (All RO); smt(RO_o_ll duni_matrix_ll).
 skip;auto => />.
-move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; smt(noise_commutes cv_bound_valid).
+move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; move : noise_commutes cv_bound_valid => />; smt().
 qed.
 
 lemma correctness_aprox &m :
@@ -590,11 +591,11 @@ qed.
 
 (* Finally we just need to compute a concrete probability *)
 
-type rtuple =  (((((c_vector * c_vector) * matrix) * c_vector) * c_vector) * elem).
+type rtuple =  (((((vector * vector) * matrix) * vector) * vector) * R).
 op rdistr : rtuple distr = 
-     (((((dshort `*` dshort) `*` duni_matrix) `*` dshort) `*` dshort) `*` dshort_elem).
+     (((((dshort `*` dshort) `*` duni_matrix) `*` dshort) `*` dshort) `*` dshort_R).
 
-op noise_exp_final (t : rtuple) : elem = 
+op noise_exp_final (t : rtuple) : R = 
          noise_exp_part 
               t.`1.`1.`1.`2 
               t.`1.`1.`1.`1.`1  
@@ -603,7 +604,7 @@ op noise_exp_final (t : rtuple) : elem =
               t.`1.`2 
               t.`2.
 
-op comp_distr : elem distr = 
+op comp_distr : R distr = 
       dmap
       rdistr
       noise_exp_final.
