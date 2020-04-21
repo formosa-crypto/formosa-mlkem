@@ -437,6 +437,8 @@ qed.
 op i : t -> bool.
 
 axiom idi : ideal i.
+(*Had to add this axiom to prove that the quotient is a ring*)
+axiom iNT : i <> predT.
 
 clone import Quotient.EquivQuotient with
   type T <- t,
@@ -448,14 +450,48 @@ realize eqv_refl by apply eqv_ideal_refl ; apply idi.
 realize eqv_sym by apply eqv_ideal_sym ; apply idi.
 realize eqv_trans by apply eqv_ideal_trans ; apply idi.
 
+lemma eqv_idealDr : forall z x y , eqv_ideal i x y => eqv_ideal i (x+z) (y+z).
+move => z x y eqvxy.
+by rewrite /eqv_ideal subr_add2r. (*FIXME*)
+qed.
 
+lemma eqv_idealDl : forall x y z , eqv_ideal i y z => eqv_ideal i (x+y) (x+z).
+move => x y z eqvyz.
+rewrite (addrC x) (addrC x).
+by apply eqv_idealDr.
+qed.
 
+lemma eqv_idealD : forall x y z t , eqv_ideal i x z => eqv_ideal i y t => eqv_ideal i (x+y) (z+t).
+move => x y z t eqvxz eqvyt.
+rewrite /eqv_ideal opprD addrA - (addrA x) (addrC y) addrA - (addrA (x-z)).
+apply mem_idealD => //.
+by apply idi.
+qed.
 
+lemma eqv_idealN : forall x y , eqv_ideal i x y <=> eqv_ideal i (-x) (-y).
+move => x y.
+rewrite /eqv_ideal - opprD. (*FIXME*)
+split.
++ apply mem_idealN.
+  by apply idi.
++ move => iyNx.
+  rewrite - (opprK (x-y)).
+  apply mem_idealN => //.
+  by apply idi.
+qed.
 
+lemma eqv_idealMl : forall z x y , eqv_ideal i x y => eqv_ideal i (z*x) (z*y).
+move => z x y eqvxy.
+rewrite /eqv_ideal - mulrN - mulrDr. (*FIXME*)
+apply mem_idealMl => //.
+by apply idi.
+qed.
 
-
-
-
+lemma eqv_idealMr : forall z x y , eqv_ideal i x y => eqv_ideal i (x*z) (y*z).
+move => z x y eqvxy.
+rewrite (mulrC x) (mulrC y).
+by apply eqv_idealMl.
+qed.
 
 clone import ComRing with
   type t <- qT,
@@ -464,22 +500,21 @@ clone import ComRing with
   op [ - ] <- fun x => pi (-(repr x)),
   op oner <- pi oner,
   op ( * ) <- fun x y => pi ((repr x) * (repr y)),
-  op invr <- fun x => pi (invr (repr x))
+  op invr <- fun x => choiceb (fun y => (pi((repr x) * (repr y)) = pi(oner))) x,
+  pred unit <- fun x => exists y , (pi((repr x) * (repr y)) = pi(oner))
 
   proof *.
 
 realize addrA.
 move => x y z.
-(*elim/quotW => x ; elim/quotW => y ; elim/quotW => z.*)
-rewrite /pi.
-congr.
-apply eqv_canon_eq.
-(*Do better*)
-have eqv1 : eqv_ideal i (repr x + repr (pi (repr y + repr z))) (repr x + repr y + repr z).
-rewrite /eqv_ideal opprD opprD addrACA addrA addrA subrr sub0r. (*FIXME*)
-rewrite addrC addrA addrC - opprD (addrC (repr z) (repr y)).
-rewrite /repr /pi.
-(*There is something wrong, the %Subtype should not appear*)
+apply eqv_pi.
+apply (eqv_trans (repr x + repr y + repr z)).
++ rewrite - addrA.
+  apply eqv_idealDl.
+  apply eqv_sym.
+  by apply eqvP.
++ apply eqv_idealDr.
+  by apply eqvP.
 qed.
 
 realize addrC.
@@ -489,19 +524,47 @@ qed.
 
 realize add0r.
 move => x.
-admitted.
+rewrite - reprK.
+apply eqv_pi.
+rewrite reprK /eqv_ideal - addrA subrr addr0 - (subr0 (repr (pi zeror))). (*FIXME*)
+apply eqv_sym.
+by apply eqvP.
+qed.
 
 realize addNr.
 move => x.
-admitted.
+apply eqv_pi.
+rewrite /eqv_ideal subr0. (*FIXME*)
+rewrite - (opprK (repr x)).
+apply eqv_sym.
+rewrite opprK.
+by apply eqvP.
+qed.
 
-(*Big issue here: we need to not quotient by the whole ring*)
 realize oner_neq0.
-admitted.
+apply negP. (*FIXME*)
+move/eqv_pi => eq10.
+rewrite /eqv_ideal in eq10.
+apply iNT.
+apply fun_ext.
+move => x.
+rewrite /predT - mulr1.
+rewrite mem_idealMl //.
++ by apply idi.
++ by rewrite - subr0.
+qed.
 
 realize mulrA.
 move => x y z.
-admitted.
+apply eqv_pi.
+apply (eqv_trans (repr x * repr y * repr z)).
++ rewrite - mulrA.
+  apply eqv_idealMl.
+  apply eqv_sym.
+  by apply eqvP.
++ apply eqv_idealMr.
+  by apply eqvP.
+qed.
 
 realize mulrC.
 move => x y.
@@ -510,20 +573,44 @@ qed.
 
 realize mul1r.
 move => x.
-admitted.
+rewrite - reprK.
+apply eqv_pi.
+rewrite reprK /eqv_ideal - (mul1r (- (repr x))) mulrN. (*FIXME*)
+apply eqv_idealMr.
+apply eqv_sym.
+by apply eqvP.
+qed.
 
 realize mulrDl.
 move => x y z.
-admitted.
+apply eqv_pi.
+apply (eqv_trans ((repr x + repr y) * repr z)).
++ apply eqv_idealMr.
+  apply eqv_sym.
+  by apply eqvP.
++ rewrite mulrDl.
+  by apply eqv_idealD ; apply eqvP.
+qed.
 
 realize mulVr.
 move => x ux.
-admitted.
+rewrite mulrC.
+case ux => y eqpi.
+apply (choicebP (fun y => (pi((repr x) * (repr y)) = pi(oner)))).
+by exists y => /=.
+qed.
 
 realize unitP.
 move => x y eq.
-admitted.
+exists y.
+by rewrite mulrC.
+qed.
 
 realize unitout.
 move => x nux.
-admitted.
+apply choiceb_dfl => /=.
+move => y.
+apply : contra nux.
+move => eqpi.
+by exists y.
+qed.
