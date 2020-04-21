@@ -53,8 +53,6 @@ abbrev m_transpose = trmx.
 op dseed : seed distr.
 op duni_R  : R distr.
 op dshort_R  : R distr.
-op dshort = dvector dshort_R.
-op duni = dvector duni_R.
 
 axiom dseed_ll : is_lossless dseed.
 axiom dshort_R_ll : is_lossless dshort_R.
@@ -69,15 +67,18 @@ proof. by move=> ??;rewrite !duni_RE. qed.
 
 hint exact random : duni_R_fu duni_R_ll duni_R_uni.
 
+op dshort = dvector dshort_R.
+op duni = dvector duni_R.
+
 lemma duni_ll : is_lossless duni by admit.
 lemma dshort_ll : is_lossless dshort by admit.
 
 op duni_matrix = dmatrix duni_R.
 
 lemma duni_matrix_ll : is_lossless duni_matrix by admit.
+lemma duni_matrix_fu: is_full duni_matrix by admit.
 
 op pm : real.
-lemma duni_matrix_fu: is_full duni_matrix by admit.
 axiom duni_matrixE: forall (m: matrix), mu1 duni_matrix m = pm.
 lemma duni_matrix_uni: is_funiform duni_matrix.
 proof. by move=> ??;rewrite !duni_matrixE. qed.

@@ -10,10 +10,12 @@ type elem = Fq.zmod.
 op trueval = q %/ 2. (* Is this it? *)
 op falseval = 0. (* Is this it? *)
 
-op dshort : elem distr.
-op duni : elem distr.
+op dshort_elem : elem distr.
+op duni_elem : elem distr.
 op pe = 1%r /q%r.
 
+axiom dshort_elem_ll : is_lossless dshort_elem.
+axiom duni_elem_ll : is_lossless duni_elem.
 
 theory Poly.
 
@@ -73,13 +75,19 @@ rewrite /round_poly_err /round_poly /Poly.(+); apply ext_eq => /> x xl xh.
 by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
 qed.
 
-op dshort : poly distr = 
-   dmap (dlist dshort 256) (of_list witness).
+op dshort_R : poly distr = 
+   dmap (dlist dshort_elem 256) (of_list witness).
 
-op duni : poly distr = 
-   dmap (dlist duni 256) (of_list witness).
+lemma dshort_R_ll : is_lossless dshort_R
+ by rewrite /dshort_R; apply dmap_ll; apply dlist_ll; apply dshort_elem_ll.
 
-op pe = pe^256.
+op duni_R : poly distr = 
+   dmap (dlist duni_elem 256) (of_list witness).
+
+lemma duni_R_ll : is_lossless duni_R
+ by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
+
+op pe_R = pe^256.
 
 end Poly.
 
@@ -128,6 +136,10 @@ end PolyVec.
 theory Kyber.
 
 op kvec : int. 
+axiom kvec_ge3 : 3 <= kvec.
+
+op pm = pe_R^(kvec^2).
+
 op noise_val (p : poly) =
       foldr (fun c cc => max (Fq.asint c) cc) 
                   (Fq.asint (head witness (to_list p))) 
@@ -160,39 +172,67 @@ clone import MLWE_PKE as MLWEPKE with
   op H_MLWE.M.ZR.oner <- Poly.one, 
   op H_MLWE.M.ZR.( * ) <- Poly.( *),
   op H_MLWE.M.size <- kvec,
-  op H_MLWE.dshort_R <- Poly.dshort,
-  op H_MLWE.duni_R <- Poly.duni,
-  op H_MLWE.pe <- Poly.pe,
+  op H_MLWE.dshort_R <- dshort_R,
+  op H_MLWE.duni_R <- duni_R,
+  op H_MLWE.pe <- pe_R,
+  op H_MLWE.pm <- pm,
   type plaintext <- bool t,
-  type ciphertext <- H_MLWE.M.vector * Poly.poly,
-  op m_encode <- Poly.m_encode,
-  op m_decode <- Poly.m_decode,
-  op c_encode <- fun (c : H_MLWE.M.vector * Poly.poly) => 
+  type ciphertext <- H_MLWE.M.vector * poly,
+  op m_encode <- m_encode,
+  op m_decode <- m_decode,
+  op c_encode <- fun (c : H_MLWE.M.vector * poly) => 
           (H_MLWE.M.Vector.offunv 
              (fun i => (PolyVec.round_poly ((H_MLWE.M.Vector.tofunv c.`1) i))), 
                  Poly.round_poly c.`2),
   op c_decode <- idfun,
   op rnd_err_v <- Poly.round_poly_err,
-  op rnd_err_u <- fun u => H_MLWE.M.Vector.offunv (fun i => (round_poly_err ((H_MLWE.M.Vector.tofunv u) i))),
+  op rnd_err_u <- fun u => H_MLWE.M.Vector.offunv 
+          (fun i => (round_poly_err ((H_MLWE.M.Vector.tofunv u) i))),
   op noise_val <- noise_val,
   op noise_bound <- q %/ 4,
   op cv_bound <- cv_bound,
   op fail_prob <- fail_prob
-  proof H_MLWE.M.ge0_size by admit
-  proof H_MLWE.dshort_R_ll  by admit
-  proof H_MLWE.duni_R_ll by admit
-  proof H_MLWE.duni_R_fu by admit
-  proof H_MLWE.duni_RE by admit
-  proof H_MLWE.duni_matrixE by admit
-  proof encode_noise by admit
-  proof matrix_props1 by admit
-  proof matrix_props2 by admit
-  proof good_decode by admit
-  proof cv_bound_valid by admit
-  proof noise_commutes by admit.
+  proof H_MLWE.M.ge0_size by smt(kvec_ge3)
+  proof H_MLWE.dshort_R_ll  by apply dshort_R_ll
+  proof H_MLWE.duni_R_ll by apply duni_R_ll
+  proof H_MLWE.duni_R_fu
+  proof H_MLWE.duni_RE
+  proof H_MLWE.duni_matrixE
+  proof encode_noise
+  proof matrix_props1
+  proof matrix_props2
+  proof good_decode
+  proof cv_bound_valid
+  proof noise_commutes.
 
-  (* We get security but we need to prove the correctness bound to 
-     obtain the final theorem. *)
+realize H_MLWE.duni_R_fu.
+admitted.
+
+realize H_MLWE.duni_RE.
+admitted.
+
+realize H_MLWE.duni_matrixE.
+admitted.
+
+realize encode_noise.
+move => *.
+admitted.
+
+realize matrix_props1.
+admitted.
+
+realize matrix_props2.
+admitted.
+
+realize good_decode.
+admitted.
+
+realize cv_bound_valid.
+admitted.
+
+realize noise_commutes.
+admitted. 
+
 section.
 
 import H_MLWE.H_MLWE_ROM.
