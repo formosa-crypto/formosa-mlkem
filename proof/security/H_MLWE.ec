@@ -11,7 +11,7 @@ abbrev (+&) = ZR.(+).
 op (-&) = ZR.(-).
 op (`<*>`) a b = dotp a b axiomatized by dotpEE.
 
-(* To remove *)
+(* To remove? *)
 print ZR.
 
 instance ring with R
@@ -24,23 +24,23 @@ instance ring with R
   op sub   = (-&)
   op ofint = ZR.ofint
 
-  proof oner_neq0 by admit
-  proof addr0     by admit
-  proof addrA     by admit
-  proof addrC     by admit
-  proof addrN     by admit
-  proof mulr1     by admit
-  proof mulrA     by admit
-  proof mulrC     by admit
-  proof mulrDl    by admit
-  proof expr0     by admit
+  proof oner_neq0 by apply ZR.oner_neq0
+  proof addrA     by apply ZR.addrA
+  proof addrC     by apply ZR.addrC
+  proof addr0     by (move => *;rewrite ZR.addrC; apply ZR.add0r)
+  proof addrN     by (move => *;rewrite ZR.addrC; apply ZR.addNr)
+  proof mulr1     by (move => *;rewrite ZR.mulrC; apply ZR.mul1r)
+  proof mulrA     by apply ZR.mulrA
+  proof mulrC     by apply ZR.mulrC
+  proof mulrDl    by apply ZR.mulrDl
+  proof expr0     by smt
+  proof subrE     by smt
+  proof ofint0    by smt
+  proof ofint1    by smt
   proof exprS     by admit
-  proof subrE     by admit
-  proof ofint0    by admit
-  proof ofint1    by admit
   proof ofintS    by admit
   proof ofintN    by admit.
-
+ 
 (*************)
 
 
@@ -70,13 +70,13 @@ hint exact random : duni_R_fu duni_R_ll duni_R_uni.
 op dshort = dvector dshort_R.
 op duni = dvector duni_R.
 
-lemma duni_ll : is_lossless duni by admit.
-lemma dshort_ll : is_lossless dshort by admit.
+lemma duni_ll : is_lossless duni by rewrite /duni /dvector => />; smt.
+lemma dshort_ll : is_lossless dshort by rewrite /dshort /dvector => />;smt.
 
 op duni_matrix = dmatrix duni_R.
 
-lemma duni_matrix_ll : is_lossless duni_matrix by admit.
-lemma duni_matrix_fu: is_full duni_matrix by admit.
+lemma duni_matrix_ll : is_lossless duni_matrix by 
+     by rewrite /duni_matrix /dmatrix => />; smt.
 
 op pm : real.
 axiom duni_matrixE: forall (m: matrix), mu1 duni_matrix m = pm.

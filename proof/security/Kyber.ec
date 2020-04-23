@@ -1,10 +1,10 @@
 require import AllCore Array256 IntDiv IntExtra Distr List DList.
-require (****) ZModP.
+require import ZModP.
 require import MLWE_PKE.
 
 op q : int = 3329 axiomatized by qE.
 
-clone ZModP as Fq with op p <- q proof le2_p by smt(qE).
+clone ZModRing as Fq with op p <- q proof ge2_p by smt(qE).
 
 type elem = Fq.zmod.
 op trueval = q %/ 2. (* Is this it? *)
@@ -115,22 +115,7 @@ proof.
 rewrite /round_poly_err /round_poly /Poly.(+); apply ext_eq => /> x xl xh.
 by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
 qed.
-(*
-op round_polyvec(pv : polyvec) : polyvec = 
-   offunv (fun i => (round_poly ((tofunv pv) i))).
 
-op round_polyvec_err(pv : polyvec) : polyvec =
-   offunv (fun i => (round_poly_err ((tofunv pv) i))).
-
-lemma round_polyvec_errE p : p `|+|` (round_polyvec_err p) = 
-      round_polyvec p.
-proof. 
-rewrite /round_polyvec_err /round_polyvec.
-apply eq_vectorP => /> i il ih.
-rewrite offunvE //= offunvE //=  (offunvE _ _ _) => />.
-by apply round_poly_errE.
-qed.
-*)
 end PolyVec.
 
 theory Kyber.
@@ -148,20 +133,7 @@ op noise_val (p : poly) =
 op cv_bound : int = 104. (* computed in sec estimates, must be
                             proved *)
 op fail_prob : real. (* Need to compute exact value or replace
-      with suitable bound *)
-
-(*
-lemma encode_noise (u : polyvec) (v : poly):
-       (round_polyvec (u, v).`1, Poly.round_poly (u, v).`2) =
-         ( u `|+|` (round_polyvec_err u), v + Poly.round_poly_err v) 
-     by smt (round_polyvec_errE Poly.round_poly_errE).
-
-lemma matrix_props1 (_A : polyvec2) (s e r : polyvec):
-    _A `*|` s `|+|` e `|*|` r = 
-         (s `|*` transpose _A `|*|` r) + (e `|*|` r).
-proof.
-admit.
-qed.*)
+                        with suitable bound *)
 
 (* Should the ring structure for R come from here? *)
 clone import MLWE_PKE as MLWEPKE with
@@ -198,11 +170,11 @@ clone import MLWE_PKE as MLWEPKE with
   proof H_MLWE.duni_R_fu
   proof H_MLWE.duni_RE
   proof H_MLWE.duni_matrixE
-  proof encode_noise
-  proof matrix_props1
+  proof encode_noise 
+  proof matrix_props1 by smt
   proof matrix_props2
-  proof good_decode
-  proof cv_bound_valid
+  proof good_decode 
+  proof cv_bound_valid 
   proof noise_commutes.
 
 realize H_MLWE.duni_R_fu.
@@ -218,10 +190,8 @@ realize encode_noise.
 move => *.
 admitted.
 
-realize matrix_props1.
-admitted.
-
 realize matrix_props2.
+move => *.
 admitted.
 
 realize good_decode.
