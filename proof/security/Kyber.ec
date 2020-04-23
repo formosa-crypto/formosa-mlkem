@@ -52,7 +52,7 @@ op m_encode(m : message) : poly =
                  else Fq.inzmod falseval) m.
 
 op m_decode(mp : poly) : message =
-   map (fun c => - q%/4 <= Fq.asint c < q%/ 4) mp.
+   map (fun c => ! (- q%/4 <= Fq.asint c < q%/ 4)) mp.
 
 op roundc(c : elem) : elem = 
     Fq.inzmod (((Fq.asint c * 2^3 + (q %/ 2)) %/q) %% 2^3) 
@@ -135,6 +135,10 @@ op cv_bound : int = 104. (* computed in sec estimates, must be
 op fail_prob : real. (* Need to compute exact value or replace
                         with suitable bound *)
 
+import H_MLWE.M.Matrix.
+import H_MLWE.M.Vector.
+
+
 (* Should the ring structure for R come from here? *)
 clone import MLWE_PKE as MLWEPKE with
   type H_MLWE.M.R <- poly,
@@ -159,7 +163,7 @@ clone import MLWE_PKE as MLWEPKE with
   op c_decode <- idfun,
   op rnd_err_v <- Poly.round_poly_err,
   op rnd_err_u <- fun u => H_MLWE.M.Vector.offunv 
-          (fun i => (round_poly_err ((H_MLWE.M.Vector.tofunv u) i))),
+          (fun i => (PolyVec.round_poly_err ((H_MLWE.M.Vector.tofunv u) i))),
   op noise_val <- noise_val,
   op noise_bound <- q %/ 4,
   op cv_bound <- cv_bound,
@@ -187,15 +191,43 @@ realize H_MLWE.duni_matrixE.
 admitted.
 
 realize encode_noise.
-move => *.
-admitted.
+move => /> *.
+split; last by smt.
+rewrite /round_poly /round_poly_err /roundc_err  => />.
+apply H_MLWE.M.Vector.eq_vectorP => /> *.
+rewrite H_MLWE.M.Vector.offunvE; first by smt().
+rewrite H_MLWE.M.Vector.offunvE; first by smt().
+auto=> />. 
+apply Array256.ext_eq => /> *.
+rewrite mapiE; first by smt().
+rewrite map2iE; first by smt().
+rewrite mapiE; first by smt().
+auto => />.
+rewrite PolyVec.roundc_errE.  
+by congr.
+qed.
 
 realize matrix_props2.
-move => *.
-admitted.
+move => /> *.
+search H_MLWE.M.Matrix.trmx.
+rewrite -H_MLWE.M.Matrix.mulmxTv H_MLWE.M.Matrix.trmxK.
+rewrite !H_MLWE.M.Vector.dotpDr.
+ring. 
+admit.
+qed.
 
 realize good_decode.
-admitted.
+rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval qE  => /> *.
+apply ext_eq => /> *.
+rewrite mapiE; first by smt().
+auto => />.
+rewrite /Poly.(+) map2E => />. 
+rewrite initiE; first by smt().
+rewrite Fq.addE  qE => />.
+rewrite mapiE; first by smt().
+have nb : (-832 < Fq.asint n.[x] < 832). admit.
+smt.
+qed. 
 
 realize cv_bound_valid.
 admitted.

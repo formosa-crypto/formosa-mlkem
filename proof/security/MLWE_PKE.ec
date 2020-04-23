@@ -404,7 +404,7 @@ lemma noise_exp_val _A s e r e1 e2 m :
 
 op noise_val : R -> int.
 op noise_bound : int.
-op good_noise (n b : int) = -b < n < b.
+op good_noise (b n : int) = -b < n < b.
 
 axiom good_decode m n :
     good_noise noise_bound (noise_val n) =>
