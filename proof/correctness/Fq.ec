@@ -8,7 +8,7 @@ theory Fq.
 
 op q : int = 3329 axiomatized by qE.
 
-clone import ZModP with op p <- q proof le2_p by smt(qE).
+clone import ZModP.ZModRing with op p <- q proof ge2_p by smt(qE).
 
 clone import SignedReductions with
     op k <- 16,
@@ -23,7 +23,7 @@ clone import SignedReductions with
     proof RRinv by (auto => />; smt)
     proof qinv_bnd by (auto => />; smt).
 
-require import Jasmin_poly.
+require import Indcpa.
 
 print M.
 
@@ -134,7 +134,7 @@ have bounds_bsz : 0 < bszb <= 16384;
   first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle bsz 14 _) => /#].
 rewrite !to_sintD_small => />; first by  by smt().
 
-split; first by smt(@ZModP).
+split; first by smt(@ZModRing).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;
