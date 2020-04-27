@@ -95,11 +95,20 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   a0, a1, a2 = gen_matrix(publicseed, zero);
 
   nonce = 0;
+  poly0 = poly_getnoise(poly0, noiseseed, nonce);
+  nonce = 1;
+  poly1 = poly_getnoise(poly1, noiseseed, nonce);
+  nonce = 2;
+  poly2 = poly_getnoise(poly2, noiseseed, nonce);
+  skpv  = polyvec_frompolys(poly0, poly1, poly2);
+/*
+  nonce = 0;
   skpv[0:KYBER_N] = poly_getnoise(skpv[0:KYBER_N], noiseseed, nonce);
   nonce = 1;
   skpv[KYBER_N:KYBER_N] = poly_getnoise(skpv[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 2;
   skpv[2*KYBER_N:KYBER_N] = poly_getnoise(skpv[2*KYBER_N:KYBER_N], noiseseed, nonce);
+*/
 
   nonce = 3;
   poly0 = poly_getnoise(poly0, noiseseed, nonce);

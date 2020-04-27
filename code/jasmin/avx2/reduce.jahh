@@ -9,11 +9,11 @@ param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
 
 inline fn red16x(reg u256 r qx16 vx16) -> reg u256
 {
-//  reg u256 x;
-//  x = #VPMULH_16u16(r, vx16);
-//  x = #VPSRA_16u16(x, 10);
-//  x = #VPMULL_16u16(x, qx16);
-//  r = #VPSUB_16u16(r, x);
+  reg u256 x;
+  x = #VPMULH_16u16(r, vx16);
+  x = #VPSRA_16u16(x, 10);
+  x = #VPMULL_16u16(x, qx16);
+  r = #VPSUB_16u16(r, x);
   return r;
 }
 
