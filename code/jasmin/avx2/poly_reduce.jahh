@@ -2,11 +2,13 @@
 #define POLY_REDUCE_HH
 
 #include "params.jahh"
+#include "consts.jahh"
 #include "reduce.jahh"
 
 inline
 fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
+  /*
   reg u64 j; 
   reg u16 t;
   j = 0;
@@ -16,6 +18,21 @@ fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
     t = barrett_reduce(t);
     rp[(int)j] = t;
     j += 1;
+  }
+  return rp;
+  */
+
+  inline int i;
+  reg u256 r qx16 vx16;
+  
+  qx16 = jqx16[u256 0];
+  vx16 = jvx16[u256 0];
+
+  for i=0 to 16 
+  {
+    r = rp.[u256 32*i];
+    r = red16x(r, qx16, vx16);
+    rp.[u256 32*i] = r;
   }
   return rp;
 }
