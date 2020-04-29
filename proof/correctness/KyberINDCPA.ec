@@ -14,6 +14,7 @@ require import Indcpa.
 import MLWE_PKE.
 import MLWE_PKE.
 
+print M.
 (* WE DEFINE ALTERNATIVE VERSIONS OF THE EXTRACTED CODE TO
    MODULARIZE RANDOMNESS SAMPLINGS *)
 
@@ -23,8 +24,7 @@ module Mderand = {
   include M [-indcpa_keypair_jazz, indcpa_enc_jazz, indcpa_dec_jazz]
 
   proc indcpa_keypair_expandseed(randomnessp:W64.t) : 
-    W8.t Array32.t * W16.t Array768.t * W16.t Array768.t * W16.t Array768.t *
-    W16.t Array768.t * W16.t Array768.t = {
+    W8.t Array32.t *  W16.t Array768.t * W16.t Array768.t = {
     var i:W64.t;
     var c:W8.t;
     var inbuf:W8.t Array32.t;
@@ -32,16 +32,16 @@ module Mderand = {
     var j:W64.t;
     var publicseed:W8.t Array32.t;
     var noiseseed:W8.t Array32.t;
-    var zero:W64.t;
-    var a0:W16.t Array768.t;
-    var a1:W16.t Array768.t;
-    var a2:W16.t Array768.t;
     var nonce:W8.t;
     var poly0:W16.t Array256.t;
     var poly1:W16.t Array256.t;
     var poly2:W16.t Array256.t;
     var skpv:W16.t Array768.t;
     var e:W16.t Array768.t;
+
+    inbuf <- witness;
+    noiseseed <- witness;
+    publicseed <- witness;
 
     i <- (W64.of_int 0);
     
@@ -62,8 +62,6 @@ module Mderand = {
       i <- (i + (W64.of_int 1));
       j <- (j + (W64.of_int 1));
     }
-    zero <- (W64.of_int 0);
-    (a0, a1, a2) <@ gen_matrix (publicseed, zero);
     nonce <- (W8.of_int 0);
     poly0 <@ poly_getnoise (noiseseed, nonce);
     nonce <- (nonce + (W8.of_int 1));
@@ -78,16 +76,22 @@ module Mderand = {
     nonce <- (nonce + (W8.of_int 1));
     poly2 <@ poly_getnoise (noiseseed, nonce);
     e <@ polyvec_frompolys (poly0, poly1, poly2);
-    return (publicseed,a0,a1,a2,e,skpv);
+    return (publicseed,e,skpv);
   }
 
-  proc indcpa_keypair_compute(a0 a1 a2 e skpv : W16.t Array768.t) : 
+  proc indcpa_keypair_compute(publicseed : W8.t Array32.t, e skpv : W16.t Array768.t) : 
       W16.t Array768.t *  W16.t Array768.t = {
     var poly0:W16.t Array256.t;
     var poly1:W16.t Array256.t;
     var poly2:W16.t Array256.t;
     var pkpv:W16.t Array768.t;
+    var zero:W64.t;
+    var a0:W16.t Array768.t;
+    var a1:W16.t Array768.t;
+    var a2:W16.t Array768.t;
 
+    zero <- (W64.of_int 0);
+    (a0, a1, a2) <@ gen_matrix (publicseed, zero);
     skpv <@ polyvec_ntt (skpv);
     e <@ polyvec_ntt (e);
     poly0 <@ polyvec_pointwise_acc (a0, skpv);
@@ -114,8 +118,8 @@ module Mderand = {
     var skpv:W16.t Array768.t;
     var pkpv:W16.t Array768.t;
 
-    (publicseed, a0, a1, a2, e, skpv) <@ indcpa_keypair_expandseed(randomnessp);
-    (skpv, pkpv) <@ indcpa_keypair_compute(a0, a1, a2, e, skpv);
+    (publicseed, e, skpv) <@ indcpa_keypair_expandseed(randomnessp);
+    (skpv, pkpv) <@ indcpa_keypair_compute(publicseed, e, skpv);
 
     polyvec_tobytes (skp, skpv);
     polyvec_tobytes (pkp, pkpv);
@@ -143,62 +147,28 @@ module Mderand = {
     indcpa_keypair_jazz(pkp, skp, randomnessp);
   }
   
-  proc indcpa_enc_jazz (ctp:W64.t, msgp:W64.t, pkp:W64.t, coinsp:W64.t) : unit = {
-    
+  proc indcpa_enc_expand_seed(coinsp:W64.t) :
+    W16.t Array768.t * W16.t Array768.t * W16.t Array256.t  = {
     var i:W64.t;
     var c:W8.t;
     var noiseseed:W8.t Array32.t;
-    var pkpv:W16.t Array768.t;
-    var publicseed:W8.t Array32.t;
-    var k:W16.t Array256.t;
-    var one:W64.t;
-    var at0:W16.t Array768.t;
-    var at1:W16.t Array768.t;
-    var at2:W16.t Array768.t;
-    var nonce:W8.t;
     var poly0:W16.t Array256.t;
     var poly1:W16.t Array256.t;
     var poly2:W16.t Array256.t;
     var sp_0:W16.t Array768.t;
     var ep:W16.t Array768.t;
     var epp:W16.t Array256.t;
-    var bp:W16.t Array768.t;
-    var v:W16.t Array256.t;
-    at0 <- witness;
-    at1 <- witness;
-    at2 <- witness;
-    bp <- witness;
-    ep <- witness;
-    epp <- witness;
-    k <- witness;
+    var nonce:W8.t;
+
     noiseseed <- witness;
-    pkpv <- witness;
-    poly0 <- witness;
-    poly1 <- witness;
-    poly2 <- witness;
-    publicseed <- witness;
-    sp_0 <- witness;
-    v <- witness;
+
     i <- (W64.of_int 0);
-    
+
     while ((i \ult (W64.of_int 32))) {
       c <- (loadW8 Glob.mem (W64.to_uint (coinsp + i)));
       noiseseed.[(W64.to_uint i)] <- c;
       i <- (i + (W64.of_int 1));
     }
-    pkpv <@ polyvec_frombytes (pkp);
-    i <- (W64.of_int 0);
-    pkp <- (pkp + (W64.of_int (3 * 384)));
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- (loadW8 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
-      publicseed.[(W64.to_uint i)] <- c;
-      pkp <- (pkp + (W64.of_int 1));
-      i <- (i + (W64.of_int 1));
-    }
-    k <@ poly_frommsg (msgp);
-    one <- (W64.of_int 1);
-    (at0, at1, at2) <@ gen_matrix (publicseed, one);
     nonce <- (W8.of_int 0);
     poly0 <@ poly_getnoise (noiseseed, nonce);
     nonce <- (W8.of_int 1);
@@ -215,6 +185,24 @@ module Mderand = {
     ep <@ polyvec_frompolys (poly0, poly1, poly2);
     nonce <- (W8.of_int 6);
     epp <@ poly_getnoise (noiseseed, nonce);
+    return (sp_0,ep,epp);
+  }
+
+  proc indcpa_enc_compute(ctp:W64.t, msgp:W64.t,publicseed:W8.t Array32.t, pkpv:W16.t Array768.t, sp_0 ep:W16.t Array768.t, epp:W16.t Array256.t) = {
+    var k:W16.t Array256.t;
+    var one:W64.t;
+    var at0:W16.t Array768.t;
+    var at1:W16.t Array768.t;
+    var at2:W16.t Array768.t;
+    var bp:W16.t Array768.t;
+    var v:W16.t Array256.t;
+    var poly0:W16.t Array256.t;
+    var poly1:W16.t Array256.t;
+    var poly2:W16.t Array256.t;
+    
+    k <@ poly_frommsg (msgp);
+    one <- (W64.of_int 1);
+    (at0, at1, at2) <@ gen_matrix (publicseed, one);
     sp_0 <@ polyvec_ntt (sp_0);
     poly0 <@ polyvec_pointwise_acc (at0, sp_0);
     poly1 <@ polyvec_pointwise_acc (at1, sp_0);
@@ -233,21 +221,52 @@ module Mderand = {
     poly_compress (ctp, v);
     return ();
   }
-  
-  proc indcpa_dec_jazz (msgp:W64.t, ctp:W64.t, skp:W64.t) : unit = {
+
+  proc indcpa_enc_jazz (ctp:W64.t, msgp:W64.t, pkp:W64.t, coinsp:W64.t) : unit = {
     
+    var i:W64.t;
+    var c:W8.t;
+    var publicseed:W8.t Array32.t;
+    var sp_0:W16.t Array768.t;
+    var ep:W16.t Array768.t;
+    var epp:W16.t Array256.t;
+    var pkpv:W16.t Array768.t;
+
+    publicseed <- witness;
+    pkpv <@ polyvec_frombytes (pkp);
+    i <- (W64.of_int 0);
+    pkp <- (pkp + (W64.of_int (3 * 384)));
+    
+    while ((i \ult (W64.of_int 32))) {
+      c <- (loadW8 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
+      publicseed.[(W64.to_uint i)] <- c;
+      pkp <- (pkp + (W64.of_int 1));
+      i <- (i + (W64.of_int 1));
+    }
+    (sp_0,ep,epp) <@ indcpa_enc_expand_seed(coinsp);
+    indcpa_enc_compute(ctp,msgp,publicseed,pkpv,sp_0,ep,epp);
+    return ();
+  }
+  
+  proc enc(ctp:W64.t, msgp:W64.t, pkp:W64.t, coinsp:W64.t) : unit = {
+    var coins, i;
+    coins <$ scoins;
+    i <- 0;  
+    while (i < 32) {
+      Glob.mem <- storeW8 Glob.mem (W64.to_uint (coinsp + (W64.of_int i))) coins.[i];
+      i <- i + 1;
+    }
+    indcpa_enc_jazz(ctp, msgp, pkp, coinsp);
+  }
+
+  proc indcpa_dec_compute(msgp:W64.t, ctp:W64.t,skpv:W16.t Array768.t) : unit = {
     var bp:W16.t Array768.t;
     var v:W16.t Array256.t;
-    var skpv:W16.t Array768.t;
     var mp:W16.t Array256.t;
-    bp <- witness;
-    mp <- witness;
-    skpv <- witness;
-    v <- witness;
+
     bp <@ polyvec_decompress (ctp);
     ctp <- (ctp + (W64.of_int (3 * 320)));
     v <@ poly_decompress (ctp);
-    skpv <@ polyvec_frombytes (skp);
     bp <@ polyvec_ntt (bp);
     mp <@ polyvec_pointwise_acc (skpv, bp);
     mp <@ poly_invntt (mp);
@@ -257,13 +276,63 @@ module Mderand = {
     return ();
   }
 
+  proc indcpa_dec_jazz (msgp:W64.t, ctp:W64.t, skp:W64.t) : unit = {
+    
+    var skpv:W16.t Array768.t;
+
+    skpv <@ polyvec_frombytes (skp);
+    indcpa_dec_compute(msgp,ctp,skpv);
+    return ();
+  }
+
 }.
+
+equiv keypair_same :  M.indcpa_keypair_jazz ~ Mderand.indcpa_keypair_jazz :
+  ={arg,Glob.mem} ==> ={res,Glob.mem}.
+proc.
+inline Mderand.indcpa_keypair_expandseed Mderand.indcpa_keypair_compute. 
+by swap {1} [20..21] 14; sim.
+qed.
+
+equiv enc_same : M.indcpa_enc_jazz ~ Mderand.indcpa_enc_jazz :
+  ={arg,Glob.mem} ==> ={res,Glob.mem}.
+proc.
+inline Mderand.indcpa_enc_expand_seed Mderand.indcpa_enc_compute.
+swap {1} 9 -8.
+swap {1} 18 -16.
+swap {2} [6..9] -3.
+swap {1} [22..24] 16. 
+sim; auto => />; call (_: ={Glob.mem}).
+by sim.
+by auto => />.
+qed.
+
+equiv dec_same :  M.indcpa_dec_jazz ~ Mderand.indcpa_dec_jazz :
+  ={arg,Glob.mem} ==> ={res,Glob.mem}.
+proc.
+inline Mderand.indcpa_dec_compute.
+swap {2} 1 2.
+swap {2} [3..4] 3.
+by sim.
+qed.
+
+(***************************************************)
+(* Now we can prove that the deterministic 
+   computations are correct assuming that H maps
+   to gen_matrix.
+*)
+
+
+(***************************************************)
+(* Finally, under some assumptions on sampling 
+   we should get full equivalences.
+*)
 
 section.
 
 declare module H : H_MLWE.H_MLWE_ROM.Types.ARO.
 
-lemma kg_corr &m : 
+lemma kg_corr : 
   equiv [ MLWE_PKE(H).kg ~ Mderand.kg :
      true ==> true ].
 proc.
@@ -285,3 +354,5 @@ lemma dec_corr &m :
      true ==> true ].
 proc.
 admitted.
+
+end section.
