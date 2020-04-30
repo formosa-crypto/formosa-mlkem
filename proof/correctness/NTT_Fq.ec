@@ -3,7 +3,7 @@ require (****) ZModP.
 
 theory NTT_Fq.
 
-clone import ZModP.
+clone import ZModP.ZModRing.
 
 module NTT = {
  proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {

@@ -33,6 +33,7 @@ def p2_cyclotomic_final_error_distribution(ps):
 def p2_cyclotomic_error_probability(ps):
     (D,DwithoutR2) = p2_cyclotomic_final_error_distribution(ps)
     e = worst_mod_switching_error(ps.q,ps.rq2)
+    print ("Worst case v error: "+ str(e))
     proba = tail_probability(D, ps.q/4)
     probaWithoutR2 = tail_probability(DwithoutR2, ps.q/4 - e)
     return D, ps.n*proba, DwithoutR2, ps.n*probaWithoutR2

@@ -1,19 +1,21 @@
 require import AllCore Array256 IntDiv IntExtra Distr List DList.
-require (****) Bigop ZModP Matrix.
+require import ZModP.
 require import MLWE_PKE.
 
 op q : int = 3329 axiomatized by qE.
 
-clone ZModP as Fq with op p <- q proof le2_p by smt(qE).
+clone ZModRing as Fq with op p <- q proof ge2_p by smt(qE).
 
 type elem = Fq.zmod.
 op trueval = q %/ 2. (* Is this it? *)
 op falseval = 0. (* Is this it? *)
 
-op dshort : elem distr.
-op duni : elem distr.
+op dshort_elem : elem distr.
+op duni_elem : elem distr.
 op pe = 1%r /q%r.
 
+axiom dshort_elem_ll : is_lossless dshort_elem.
+axiom duni_elem_ll : is_lossless duni_elem.
 
 theory Poly.
 
@@ -50,14 +52,16 @@ op m_encode(m : message) : poly =
                  else Fq.inzmod falseval) m.
 
 op m_decode(mp : poly) : message =
-   map (fun c => - q%/4 <= Fq.asint c < q%/ 4) mp.
+   map (fun c => ! (- q%/4 <= Fq.asint c < q%/ 4)) mp.
 
 op roundc(c : elem) : elem = 
-    Fq.inzmod (((Fq.asint c * 2^3 + (q %/ 2)) %/q) %% 2^3) axiomatized by roundcE.
+    Fq.inzmod (((Fq.asint c * 2^3 + (q %/ 2)) %/q) %% 2^3) 
+      axiomatized by roundcE.
 
 op roundc_err(c: elem) : elem = Fq.(+) (roundc c) (Fq.([-]) c).
 
-lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c by rewrite /roundc_err; ring.
+lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c 
+      by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
    map roundc p.
@@ -71,53 +75,34 @@ rewrite /round_poly_err /round_poly /Poly.(+); apply ext_eq => /> x xl xh.
 by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
 qed.
 
-op dshort : poly distr = 
-   dmap (dlist dshort 256) (of_list witness).
+op dshort_R : poly distr = 
+   dmap (dlist dshort_elem 256) (of_list witness).
 
-op duni : poly distr = 
-   dmap (dlist duni 256) (of_list witness).
+lemma dshort_R_ll : is_lossless dshort_R
+ by rewrite /dshort_R; apply dmap_ll; apply dlist_ll; apply dshort_elem_ll.
 
-op pe = pe^256.
+op duni_R : poly distr = 
+   dmap (dlist duni_elem 256) (of_list witness).
+
+lemma duni_R_ll : is_lossless duni_R
+ by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
+
+op pe_R = pe^256.
 
 end Poly.
 
 export Poly.
 
-op kvec : int.
-
-clone import Matrix as M with
-  type R <- poly,
-  op ZR.zeror <- Poly.zero,
-  op ZR.(+) <- Poly.(+),
-  op ZR.([-]) <- Poly.([-]),
-  op ZR.oner <- Poly.one, 
-  op ZR.( * ) <- Poly.( *),
-  op size <- kvec.
-
 theory PolyVec.
 
-(* column vectors *)
-type polyvec = vector.
-print Vector.
-op (`|*|`) = dotp.
-op (`|+|`)  = Vector.(+).
-
-type polyvec2 = matrix.
-
-print Matrix.
-
-op (`*|`) (pv2 : polyvec2, p : polyvec) : polyvec. (* TO DO *)
-
-op transpose(pv2 : polyvec2) : polyvec2 = trmx pv2.
-
-op (`|*`) (p : polyvec, pv2 : polyvec2) : polyvec. (* TO DO *)
-
 op roundc(c : elem) : elem = 
-    Fq.inzmod (((Fq.asint c * 2^11 + (q %/ 2)) %/q) %% 2^11) axiomatized by roundcE.
+    Fq.inzmod (((Fq.asint c * 2^11 + (q %/ 2)) %/q) %% 2^11) 
+     axiomatized by roundcE.
 
 op roundc_err(c: elem) : elem = Fq.(+) (roundc c) (Fq.([-]) c).
 
-lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c by rewrite /roundc_err; ring.
+lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c 
+    by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
    map roundc p.
@@ -131,109 +116,142 @@ rewrite /round_poly_err /round_poly /Poly.(+); apply ext_eq => /> x xl xh.
 by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
 qed.
 
-op round_polyvec(pv : polyvec) : polyvec
-   (* TO DO  =  mx_map round_poly pv *).
-
-op round_polyvec_err(pv : polyvec) : polyvec
-   (*  = mx_map round_poly_err pv*).
-
-lemma round_polyvec_errE p : p `|+|` (round_polyvec_err p) = round_polyvec p.
-admitted.
-(* 
-proof. 
-rewrite /round_polyvec_err /round_polyvec /(`|+|`).
-admit.
-qed.
-*)
-
-op dshort : polyvec distr (* = 
-   dmap  Poly.dshort (fun p => oget (Supp.insub (mkprematrix kvec 1 (fun _ => p)))) *).
-
-
-op duni : polyvec distr (* = 
-   dmap  Poly.duni (fun p => oget (Supp.insub (mkprematrix kvec 1 (fun _ => p)))) *).
-
 end PolyVec.
-
-export PolyVec.
 
 theory Kyber.
 
-op noise_val (p : poly) = foldr 
-                           (fun c cc => max (Fq.asint c) cc) 
-                                      (Fq.asint (head witness p)) 
-                                      (behead p).
+op kvec : int. 
+axiom kvec_ge3 : 3 <= kvec.
+
+op pm = pe_R^(kvec^2).
+
+op noise_val (p : poly) =
+      foldr (fun c cc => max (Fq.asint c) cc) 
+                  (Fq.asint (head witness (to_list p))) 
+                                   (behead (to_list p)).
+
 op cv_bound : int = 104. (* computed in sec estimates, must be
                             proved *)
 op fail_prob : real. (* Need to compute exact value or replace
-      with suitable bound *)
+                        with suitable bound *)
+
+import H_MLWE.M.Matrix.
+import H_MLWE.M.Vector.
 
 
-lemma encode_noise (u : polyvec) (v : poly):
-       (round_polyvec (u, v).`1, Poly.round_poly (u, v).`2) =
-         ( u `|+|` (round_polyvec_err u), v + Poly.round_poly_err v) 
-     by smt (round_polyvec_errE Poly.round_poly_errE).
+(* Should the ring structure for R come from here? *)
+clone import MLWE_PKE as MLWEPKE with
+  type H_MLWE.M.R <- poly,
+  op H_MLWE.M.ZR.zeror <- Poly.zero,
+  op H_MLWE.M.ZR.(+) <- Poly.(+),
+  op H_MLWE.M.ZR.([-]) <- Poly.([-]),
+  op H_MLWE.M.ZR.oner <- Poly.one, 
+  op H_MLWE.M.ZR.( * ) <- Poly.( *),
+  op H_MLWE.M.size <- kvec,
+  op H_MLWE.dshort_R <- dshort_R,
+  op H_MLWE.duni_R <- duni_R,
+  op H_MLWE.pe <- pe_R,
+  op H_MLWE.pm <- pm,
+  type plaintext <- bool t,
+  type ciphertext <- H_MLWE.M.vector * poly,
+  op m_encode <- m_encode,
+  op m_decode <- m_decode,
+  op c_encode <- fun (c : H_MLWE.M.vector * poly) => 
+          (H_MLWE.M.Vector.offunv 
+             (fun i => (PolyVec.round_poly ((H_MLWE.M.Vector.tofunv c.`1) i))), 
+                 Poly.round_poly c.`2),
+  op c_decode <- idfun,
+  op rnd_err_v <- Poly.round_poly_err,
+  op rnd_err_u <- fun u => H_MLWE.M.Vector.offunv 
+          (fun i => (PolyVec.round_poly_err ((H_MLWE.M.Vector.tofunv u) i))),
+  op noise_val <- noise_val,
+  op noise_bound <- q %/ 4,
+  op cv_bound <- cv_bound,
+  op fail_prob <- fail_prob
+  proof H_MLWE.M.ge0_size by smt(kvec_ge3)
+  proof H_MLWE.dshort_R_ll  by apply dshort_R_ll
+  proof H_MLWE.duni_R_ll by apply duni_R_ll
+  proof H_MLWE.duni_R_fu
+  proof H_MLWE.duni_RE
+  proof H_MLWE.duni_matrixE
+  proof encode_noise 
+  proof matrix_props1 by smt
+  proof matrix_props2
+  proof good_decode 
+  proof cv_bound_valid 
+  proof noise_commutes.
 
+realize H_MLWE.duni_R_fu.
+admitted.
 
-axiom m_to_pv2K :
-  cancel  m_to_pv2 pv2_to_m.
+realize H_MLWE.duni_RE.
+admitted.
 
-axiom m_to_pv2_size (m : matrix):
-  is_polyvec2 (m_to_pv2 m).
+realize H_MLWE.duni_matrixE.
+admitted.
 
-lemma matrix_props1 (_A : matrix) (s e r : polyvec):
-    _A `*|` s `|+|` e `|*|` r = 
-         (s `|*` transpose _A `|*|` r) + (e `|*|` r).
-proof.
-rewrite /(`|*`).
-rewrite transposeK. admit.
+realize encode_noise.
+move => /> *.
+split; last by smt.
+rewrite /round_poly /round_poly_err /roundc_err  => />.
+apply H_MLWE.M.Vector.eq_vectorP => /> *.
+rewrite H_MLWE.M.Vector.offunvE; first by smt().
+rewrite H_MLWE.M.Vector.offunvE; first by smt().
+auto=> />. 
+apply Array256.ext_eq => /> *.
+rewrite mapiE; first by smt().
+rewrite map2iE; first by smt().
+rewrite mapiE; first by smt().
+auto => />.
+rewrite PolyVec.roundc_errE.  
+by congr.
+qed.
+
+realize matrix_props2.
+move => /> *.
+search H_MLWE.M.Matrix.trmx.
+rewrite -H_MLWE.M.Matrix.mulmxTv H_MLWE.M.Matrix.trmxK.
+rewrite !H_MLWE.M.Vector.dotpDr.
+ring. 
 admit.
 qed.
 
-clone import MLWE_PKE with
-   type H_MLWE.matrix <- PolyVec.matrix,
-   type H_MLWE.c_vector <- PolyVec.polyvec,
-   type H_MLWE.r_vector <- PolyVec.polyvec,
-   type H_MLWE.elem <- Poly.poly,
-   op H_MLWE.Elem.zeror <- Poly.zero,
-   op H_MLWE.Elem.(+) <- Poly.(+),
-   op H_MLWE.Elem.([-]) <- Poly.([-]),
-   (* MULTIPLICATION IS ABSTRACT AS ALL IS HIDDEN BY NTT AND BASEMUL *)
-   (* ENCODINGS TO AND FROM BYTES WILL BE ADDED ONLY AS
-      MAPPINGS BETWEEN THIS SPECIFICATION SEMANTICS AND 
-      THE IMPLEMENTATIONS *)
-   (* BYTE STRING SEEDS ARE KEPT AS ABSTRACT TYPES, AS
-      ARE ALL HASHING-RELATED FUNCTIONS *)
-   op H_MLWE.m_transpose <- PolyVec.transpose,
-   op H_MLWE.v_transpose <- idfun,
-   op H_MLWE.(`|*|`)  <- PolyVec.(`|*|`),
-   op H_MLWE.(`|+|`)  <- PolyVec.(`|+|`),
-   op H_MLWE.( `*|`)  <- PolyVec.( `*|`),
-   op H_MLWE.(`|*` )  <- PolyVec.(`|*` ),
-   op H_MLWE.dshort <- PolyVec.dshort,
-   op H_MLWE.duni <- PolyVec.duni,
-   op H_MLWE.duni_elem <- Poly.duni,
-   op H_MLWE.dshort_elem <- Poly.dshort,
-   op H_MLWE.pe <- Poly.pe,
-   type plaintext <- bool list,
-   type ciphertext <- PolyVec.polyvec * Poly.poly,
-   op m_encode <- Poly.m_encode,
-   op m_decode <- Poly.m_decode,
-   op c_encode <- fun (c : PolyVec.polyvec * Poly.poly) => 
-            (PolyVec.round_polyvec c.`1, Poly.round_poly c.`2),
-   op c_decode <- idfun,
-   op rnd_err_v <- Poly.round_poly_err,
-   op rnd_err_u <- PolyVec.round_polyvec_err,
-   op noise_val <- noise_val,
-   op noise_bound <- q %/ 4,
-   op cv_bound <- cv_bound
-   proof encode_noise by apply encode_noise
-   proof matrix_props1 by apply matrix_props1
-   proof matrix_props2 by admit
-   proof good_decode by admit
-   proof cv_bound_valid by admit
-   proof noise_commutes by admit
-   (* proof fail_prob this is the proof goal for correctness *).
+realize good_decode.
+rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval qE  => /> *.
+apply ext_eq => /> *.
+rewrite mapiE; first by smt().
+auto => />.
+rewrite /Poly.(+) map2E => />. 
+rewrite initiE; first by smt().
+rewrite Fq.addE  qE => />.
+rewrite mapiE; first by smt().
+have nb : (-832 < Fq.asint n.[x] < 832). admit.
+smt.
+qed. 
 
+realize cv_bound_valid.
+admitted.
+
+realize noise_commutes.
+admitted. 
+
+section.
+
+import H_MLWE.H_MLWE_ROM.
+declare module A : CAdversary {RO}.
+axiom All (O <: ARO{A}):
+     islossless O.o =>
+     islossless A(O).find.
+
+lemma fail_prob &m : 
+   Pr[ CorrectnessBound.main() @ &m : res] = fail_prob.
+admitted.
+
+print correctness_bound.
+lemma kyber_correctness &m : 
+  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
+  1%r - fail_prob by
+   apply (correctness_bound A All fail_prob &m).
+end section.
 
 end Kyber.

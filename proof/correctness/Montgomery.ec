@@ -1,7 +1,6 @@
 require import Core Int IntDiv IntExtra Ring StdOrder.
 import Ring.IntID IntOrder.
 
-
 theory SignedReductions.
 (* [`R] is a power of 2 *)
 op k : { int | 2 < k } as gt2_k.
@@ -41,7 +40,6 @@ axiom RRinv: (R * Rinv) %% q = 1 %% q.
    as needed: remainder is always positive.
    We need a special mod to get the balanced
    representative. *)
-
 op ( %%+- ) (a b : int) =
     if (b %/ 2 <= a %% b) then a %% b - b else a %% b axiomatized by bal_modE.
 
