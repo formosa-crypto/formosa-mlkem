@@ -7,8 +7,9 @@ require import WArray20 WArray32 WArray33 WArray34 WArray40 WArray64
                WArray128 WArray168 WArray192 WArray200 WArray256 WArray512
                WArray1536.
 
-
-require import Kyber.
+require (****) Kyber.  
+clone import Kyber as Kyber_ with
+   type Kyber.MLWEPKE.H_MLWE.seed = W8.t Array32.t.
 require import Indcpa.
 
 import MLWE_PKE.
@@ -321,6 +322,26 @@ qed.
    computations are correct assuming that H maps
    to gen_matrix.
 *)
+
+op lift_matrix : (W16.t Array768.t * W16.t Array768.t * W16.t Array768.t) -> 
+      Kyber.MLWEPKE.H_MLWE.M.Matrix.matrix.
+
+axiom gen_matrix &m s :
+  hoare [ M.gen_matrix  :
+    s = seed /\ transposed = W64.zero ==>
+      Kyber.MLWEPKE.H_MLWE.H(s) = lift_matrix res
+  ].
+
+axiom gen_matrix_t &m s :
+  hoare [ M.gen_matrix  :
+    s = seed /\ transposed = W64.one ==>
+      Kyber.MLWEPKE.H_MLWE.H(s) = Kyber.MLWEPKE.H_MLWE.M.Matrix.trmx (lift_matrix res)
+  ].
+
+print Mderand.
+hoare kg_correct @m : 
+  [  Mderand.indcpa_keypair_compute() @m :
+       true ==> 
 
 
 (***************************************************)
