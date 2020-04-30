@@ -316,10 +316,9 @@ lemma barrett_fun_seq_constant pp q ppqe :
   0 < ppqe =>
   ppqe <= pp =>
   pp - ppqe * q = 0 =>
-  a <= b =>
   barrett_fun (barrett_seq pp ppqe a) pp q ppqe = barrett_fun (barrett_seq pp ppqe b) pp q ppqe.
 proof.
-  move => a b ltz0pp ltz0ppqe lezppqepp lezc lezab.
+  move => a b ltz0pp ltz0ppqe lezppqepp lezc.
   by rewrite barrett_fun_seq // barrett_fun_seq // /ceil lezc.
 qed.
 
@@ -365,10 +364,9 @@ lemma barrett_fun_seq_decr_constant pp q ppqe :
   0 < ppqe =>
   ppqe <= pp =>
   pp - ppqe * q = 0 =>
-  a <= b =>
   barrett_fun ((barrett_seq pp ppqe (a+1)) - 1) pp q ppqe = barrett_fun ((barrett_seq pp ppqe (b+1)) - 1) pp q ppqe.
 proof.
-  move => a b ltz0pp ltz0ppqe lezppqepp lezc lezab.
+  move => a b ltz0pp ltz0ppqe lezppqepp lezc.
   by rewrite barrett_fun_seq_decr // barrett_fun_seq_decr // /ceil lezc.
 qed.
 
@@ -432,21 +430,27 @@ proof.
     by apply barrett_seq_label_min_min.
 qed.
 
-lemma barrett_seq_pred_low_increasing (amin pp q ppqe : int) :
+lemma barrett_seq_pred_low_increasing (amin amax pp q ppqe : int) :
   0 < pp =>
   0 < ppqe =>
   ppqe <= pp =>
   0 < pp - ppqe * q =>
-  (forall a , amin <= a => barrett_pred_low a pp q ppqe) <=> (barrett_pred_low amin pp q ppqe) /\ (barrett_pred_low (barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe)) pp q ppqe).
+  amin < amax =>
+  (forall a , amin <= a < amax => barrett_pred_low a pp q ppqe) <=>
+  (barrett_pred_low amin pp q ppqe) /\
+  (if (barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe) < amax)
+   then (barrett_pred_low (barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe)) pp q ppqe)
+   else true).
 proof.
-  move => ltz0pp ltz0ppqe lezppqepp lezc.
+  move => ltz0pp ltz0ppqe lezppqepp lezc ltzaminmax.
   split.
   + move => forall_pred.
     split.
     - by apply forall_pred.
-    - apply forall_pred.
-      by apply barrett_seq_label_min_min.
-  + move => [pred_amin pred_labelmin] a lezamina.
+    - case : (barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe) < amax) => ltzamax //.
+      apply forall_pred.
+      by split ; [apply barrett_seq_label_min_min|].
+  + move => [pred_amin pred_labelmin] a [lezamina ltzaamax].
     case : ( a < barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe)) => ltza.
     - rewrite /barrett_pred_low. (*FIXME*)
       apply (lez_trans (barrett_fun amin pp q ppqe)) => //.
@@ -465,90 +469,356 @@ proof.
     - case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
       apply (barrett_pred_low_reduction pp q ppqe m ltz0pp ltz0ppqe) => //.
       apply (lez_trans (barrett_fun (barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe)) pp q ppqe)) => //.
-      apply barrett_fun_seq_increasing => //.
-      rewrite - (lez_add2l 1) lez_add1r addzC.
-      apply ltzNge.
-      apply negbT.
-      apply eqboolP.
-      split => //.
-      move => lezmadd1.
-      apply ltza.
-      rewrite - lez_add1r.
-      apply (lez_trans (barrett_seq pp ppqe (m+1))).
-      * by rewrite lez_add1r.
-      * by apply barrett_seq_increasing.
+      * apply pred_labelmin.
+        rewrite - lez_add1r.
+        by apply (lez_trans (1+a)) ; [rewrite lez_add2l ; apply lezNgt | rewrite lez_add1r].
+      * apply barrett_fun_seq_increasing => //.
+        rewrite - (lez_add2l 1) lez_add1r addzC.
+        apply ltzNge.
+        apply negbT.
+        apply eqboolP.
+        split => //.
+        move => lezmadd1.
+        apply ltza.
+        rewrite - lez_add1r.
+        by apply (lez_trans (barrett_seq pp ppqe (m+1))) ; [rewrite lez_add1r|apply barrett_seq_increasing].
 qed.
 
-lemma barrett_seq_pred_low_decreasing (amax pp q ppqe : int) :
+lemma barrett_seq_pred_low_decreasing (amin amax pp q ppqe : int) :
   0 < pp =>
   0 < ppqe =>
   ppqe <= pp =>
   pp - ppqe * q < 0 =>
-  (forall a , a < amax => barrett_pred_low a pp q ppqe) <=> (barrett_pred_low (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe) - 1)) pp q ppqe).
+  amin < amax =>
+  (forall a , amin <= a < amax => barrett_pred_low a pp q ppqe) <=>
+  (if (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1))
+   then (barrett_pred_low (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe) - 1)) pp q ppqe)
+   else (barrett_pred_low amin pp q ppqe)).
 proof.
-  move => ltz0pp ltz0ppqe lezppqepp lezc.
+  move => ltz0pp ltz0ppqe lezppqepp lezc ltzaminmax.
   split.
   + move => forall_pred.
-    apply forall_pred.
-    apply barrett_seq_label_max_max => //.
-    by rewrite addzC - lez_add1r addzA /=.
-  + move => pred_labelmax a lezamina.
-    case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
-    apply (barrett_pred_low_reduction pp q ppqe m ltz0pp ltz0ppqe) => //.
-    apply (lez_trans (barrett_fun (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe)-1)) pp q ppqe)) => //.
-    apply barrett_fun_seq_decreasing => //.
-    rewrite - (lez_add2l 1) lez_add1r addzC - addzA /=.
-    apply barrett_seq_label_max_max => //.
-    rewrite - lez_add1r.
-    apply (lez_trans (1+a)).
-    * by rewrite lez_add2l.
-    * by rewrite lez_add1r.
+    case : (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1)) => lezamin.
+    - apply forall_pred.
+      split => //.
+      move => _.
+      apply barrett_seq_label_max_max => //.
+      by rewrite addzC - lez_add1r addzA /=.
+    - apply forall_pred.
+      by split.
+  + move => pred_labelmax a [lezamina ltzaamax].
+    case pred_labelmax => [lezamin pred_labelmax|nlezamin pred_amin].
+    - case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
+      apply (barrett_pred_low_reduction pp q ppqe m ltz0pp ltz0ppqe) => //.
+      apply (lez_trans (barrett_fun (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe) - 1)) pp q ppqe)) => //.
+      apply barrett_fun_seq_decreasing => //.
+      rewrite - (lez_add2l 1) lez_add1r addzC - addzA /=.
+      apply barrett_seq_label_max_max => //.
+      rewrite - lez_add1r.
+      apply (lez_trans (1+a)).
+      * by rewrite lez_add2l.
+      * by rewrite lez_add1r.
+    - apply (lez_trans (barrett_fun amin pp q ppqe)) => //.
+      apply (barrett_fun_increasing pp q ppqe (barrett_seq_label_max amax pp ppqe - 1) amin a) => //.
+      split ; [split|].
+      * apply lez_eqVlt.
+        right.
+        by apply ltzNge.
+      * by move => _.
+      * move => _ => /=.
+        rewrite - lez_add1r.
+        apply (lez_trans amax) ; [by rewrite lez_add1r|].
+        by apply barrett_seq_label_min_min.
 qed.
 
-lemma barrett_seq_pred_high_increasing (amax pp q ppqe : int) :
+lemma barrett_seq_pred_low_constant (amin amax pp q ppqe : int) :
+  0 < pp =>
+  0 < ppqe =>
+  ppqe <= pp =>
+  0 = pp - ppqe * q =>
+  amin < amax =>
+  (forall a , amin <= a < amax => barrett_pred_low a pp q ppqe) <=>
+  (if (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1))
+   then (barrett_pred_low (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe) - 1)) pp q ppqe)
+   else (barrett_pred_low amin pp q ppqe)).
+proof.
+  move => ltz0pp ltz0ppqe lezppqepp lezc ltzaminmax.
+  split.
+  + move => forall_pred.
+    case : (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1)) => lezamin.
+    - apply forall_pred.
+      split => //.
+      move => _.
+      apply barrett_seq_label_max_max => //.
+      by rewrite addzC - lez_add1r addzA /=.
+    - apply forall_pred.
+      by split.
+  + move => pred_labelmax a [lezamina ltzaamax].
+    case pred_labelmax => [lezamin pred_labelmax|nlezamin pred_amin].
+    - case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
+      apply (barrett_pred_low_reduction pp q ppqe m ltz0pp ltz0ppqe) => //.
+      apply (lez_trans (barrett_fun (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe)-1)) pp q ppqe)) => //.
+      apply lez_eqVlt.
+      left.
+      apply barrett_fun_seq_constant => //.
+      by rewrite lezc.
+    - apply (lez_trans (barrett_fun amin pp q ppqe)) => //.
+      apply (barrett_fun_increasing pp q ppqe (barrett_seq_label_max amax pp ppqe - 1) amin a) => //.
+      split ; [split|].
+      * apply lez_eqVlt.
+        right.
+        by apply ltzNge.
+      * by move => _.
+      * move => _ => /=.
+        rewrite - lez_add1r.
+        apply (lez_trans amax) ; [by rewrite lez_add1r|].
+        by apply barrett_seq_label_min_min.
+qed.
+
+lemma barrett_seq_pred_high_increasing (amin amax pp q ppqe : int) :
   0 < pp =>
   0 < ppqe =>
   ppqe <= pp =>
   0 < pp - ppqe * q =>
-  (forall a , a < amax => barrett_pred_high a pp q ppqe) <=> (barrett_pred_high (barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe) - 1) pp q ppqe).
+  amin < amax =>
+  (forall a , amin <= a < amax => barrett_pred_high a pp q ppqe) <=>
+  (barrett_pred_high (amax-1) pp q ppqe) /\
+  (if (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1) - 1)
+   then (barrett_pred_high (barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1) - 1) pp q ppqe)
+   else true).
 proof.
-  move => ltz0pp ltz0ppqe lezppqepp lezc.
+  move => ltz0pp ltz0ppqe lezppqepp lezc ltzaminmax.
   split.
   + move => forall_pred.
-    apply forall_pred.
-    rewrite addzC - (ltz_add2l 1) addzA /=.
-    apply barrett_seq_label_max_max => //.
-    rewrite addzC - lez_add1r addzA /=.
-
-  + move => pred_labelmax a lezamina.
-    case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
-    apply (barrett_pred_high_reduction pp q ppqe m ltz0pp ltz0ppqe) => //.
-    apply (lez_trans (barrett_fun (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe)-1)) pp q ppqe)) => //.
-    apply barrett_fun_seq_decr_increasing => //.
-    rewrite - (lez_add2l 1) lez_add1r addzC - addzA /=.
-    apply barrett_seq_label_max_max => //.
-    rewrite - lez_add1r.
-    apply (lez_trans (1+a)).
-    * by rewrite lez_add2l.
-    * by rewrite lez_add1r.
+    split.
+    - apply forall_pred.
+      split.
+      * by rewrite - (lez_add2l 1) lez_add1r addzC - addzA.
+      * move => _.
+        by rewrite - lez_add1r addzC - addzA.
+    - case : (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1) - 1) => lezamin //.
+      apply forall_pred.
+      split => //.
+      move => _.
+      apply (ltz_trans (barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1))).
+      * by rewrite - lez_add1r addzC - addzA.
+      * apply barrett_seq_label_max_max => //.
+        by rewrite - lez_add1r addzC - addzA.
+  + move => [pred_amin pred_labelmin] a [lezamina ltzaamax].
+    case : (barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1) <= a) => leza.
+    - apply (lez_trans (barrett_fun (amax-1) pp q ppqe)) => //.
+      apply (barrett_fun_increasing pp q ppqe (barrett_seq_label_max amax pp ppqe - 1)) => //.
+      split ; [split|] => //.
+      * move => _.
+        by rewrite addzC - (lez_add2l 1) lez_add1r addzA.
+      * move => _.
+        rewrite /= - lez_add1r addzC - addzA /=.
+        by apply barrett_seq_label_min_min.
+    - case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
+      apply (barrett_pred_high_reduction pp q ppqe m) => //.
+      rewrite /barrett_pred_high.
+      apply (lez_trans (barrett_fun (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe - 1) - 1 + 1) - 1) pp q ppqe)).
+      * apply barrett_fun_seq_decr_increasing => //.
+        rewrite - (lez_add2r 1) - (lez_add2l 1) lez_add1r (addzC 1) /=.
+        apply barrett_seq_label_max_max => //.
+        apply ltzNge.
+        apply negbT.
+        apply eqboolP.
+        split => //.
+        move => lezamax.
+        apply leza.
+        apply (lez_trans (barrett_seq pp ppqe m)) => //.
+        apply barrett_seq_increasing => //.
+        rewrite - (lez_add2r 1) - addzA /=.
+        by apply barrett_seq_label_min_min.
+      * rewrite /=.
+        apply pred_labelmin.
+        rewrite - (lez_add2r 1) /= (addzC _ 1).
+        by apply (lez_trans (1+a)) ; [rewrite lez_add2l|rewrite lez_add1r ; apply ltzNge].
 qed.
 
-lemma barrett_seq_pred_high_decreasing (amax pp q ppqe : int) :
+lemma barrett_seq_pred_high_decreasing (amin amax pp q ppqe : int) :
   0 < pp =>
   0 < ppqe =>
   ppqe <= pp =>
   pp - ppqe * q < 0 =>
-  (forall a , a < amax => barrett_pred_low a pp q ppqe) <=> (barrett_pred_low (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe) - 1)) pp q ppqe).
+  amin < amax =>
+  (forall a , amin <= a < amax => barrett_pred_high a pp q ppqe) <=>
+  (if (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1 < amax)
+   then (barrett_pred_high (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1) pp q ppqe)
+   else (barrett_pred_high (amax-1) pp q ppqe)).
 proof.
-
+  move => ltz0pp ltz0ppqe lezppqepp lezc ltzaminmax.
+  split.
+  + move => forall_pred.
+    case : (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1 < amax) => [ltzamax|nltzamax].
+    - apply forall_pred.
+      split => //.
+      rewrite - (lez_add2r 1) /=.
+      by apply barrett_seq_label_min_min.
+    - apply forall_pred.
+      split.
+      * by rewrite - (lez_add2r 1) /= addzC lez_add1r.
+      * move => _.
+        by rewrite - (ltz_add2r 1) /= - lez_add1r addzC.
+  + move => [ltzamax pred_labelmin|nltzamax pred_amax] a [lezamina ltzaamax].
+    - case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
+      apply (barrett_pred_high_reduction pp q ppqe m ltz0pp ltz0ppqe) => //.
+      apply (lez_trans (barrett_fun (barrett_seq pp ppqe (barrett_seq_label_min (amin + 1) pp ppqe - 1 + 1) - 1) pp q ppqe)) => //.
+      apply barrett_fun_seq_decr_decreasing => //.
+      rewrite - (lez_add2r 1) /=.
+      apply barrett_seq_label_min_min => //.
+      rewrite (addzC amin 1).
+      apply (lez_trans (1+a)).
+      * by rewrite lez_add2l.
+      * by rewrite lez_add1r.
+    - apply (lez_trans (barrett_fun (amax-1) pp q ppqe)) => //.
+      apply (barrett_fun_increasing pp q ppqe (barrett_seq_label_min (amin + 1) pp ppqe - 1)) => //.
+      split ; [split|].
+      * rewrite - (lez_add2l 1) lez_add1r.
+        apply barrett_seq_label_max_max => //.
+        rewrite - lez_add1r addzC /=.
+        apply barrett_seq_label_min_increasing => //.
+        by rewrite addzC lez_add2l.
+      * move => _.
+        by rewrite - (lez_add2l 1) lez_add1r addzC.
+      * move => _.
+        rewrite /= - lez_add1r /=.
+        apply lez_eqVlt.
+        right.
+        rewrite - lez_add1r - (lez_add2r (-1)) /=.
+        by apply lezNgt.
 qed.
 
-(*pp is 2 ^ kk and e is 1 in our case*)
-(*Why do Ihave to specify that amin and amax are integers here?*)
-lemma barrett_overZ_generalized (amin amax a pp q ppqe : int) :
-  amin <= a < amax =>
+lemma barrett_seq_pred_high_constant (amin amax pp q ppqe : int) :
   0 < pp =>
   0 < ppqe =>
-  barrett_pred a pp q ppqe.
+  ppqe <= pp =>
+  0 = pp - ppqe * q =>
+  amin < amax =>
+  (forall a , amin <= a < amax => barrett_pred_high a pp q ppqe) <=>
+  (if (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1 < amax)
+   then (barrett_pred_high (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1) pp q ppqe)
+   else (barrett_pred_high (amax-1) pp q ppqe)).
 proof.
-admitted.
+  move => ltz0pp ltz0ppqe lezppqepp lezc ltzaminmax.
+  split.
+  + move => forall_pred.
+    case : (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1 < amax) => [ltzamax|nltzamax].
+    - apply forall_pred.
+      split => //.
+      rewrite - (lez_add2r 1) /=.
+      by apply barrett_seq_label_min_min.
+    - apply forall_pred.
+      split.
+      * by rewrite - (lez_add2r 1) /= addzC lez_add1r.
+      * move => _.
+        by rewrite - (ltz_add2r 1) /= - lez_add1r addzC.
+  + move => [ltzamax pred_labelmin|nltzamax pred_amax] a [lezamina ltzaamax].
+    - case (barrett_seq_archimedian pp q ppqe ltz0pp ltz0ppqe a) => m [ltem ltzm].
+      apply (barrett_pred_high_reduction pp q ppqe m ltz0pp ltz0ppqe) => //.
+      apply (lez_trans (barrett_fun (barrett_seq pp ppqe (barrett_seq_label_min (amin + 1) pp ppqe - 1 + 1) - 1) pp q ppqe)) => //.
+      apply lez_eqVlt.
+      left.
+      apply barrett_fun_seq_decr_constant => //.
+      by rewrite lezc.
+    - apply (lez_trans (barrett_fun (amax-1) pp q ppqe)) => //.
+      apply (barrett_fun_increasing pp q ppqe (barrett_seq_label_min (amin + 1) pp ppqe - 1)) => //.
+      split ; [split|].
+      * rewrite - (lez_add2l 1) lez_add1r.
+        apply barrett_seq_label_max_max => //.
+        rewrite - lez_add1r addzC /=.
+        apply barrett_seq_label_min_increasing => //.
+        by rewrite addzC lez_add2l.
+      * move => _.
+        by rewrite - (lez_add2l 1) lez_add1r addzC.
+      * move => _.
+        rewrite /= - lez_add1r /=.
+        apply lez_eqVlt.
+        right.
+        rewrite - lez_add1r - (lez_add2r (-1)) /=.
+        by apply lezNgt.
+qed.
+
+lemma barrett_overZ_generalized (amin amax pp q ppqe : int) :
+  0 < pp =>
+  0 < ppqe =>
+  ppqe <= pp =>
+  (forall a , amin <= a < amax => barrett_pred a pp q ppqe) <=>
+  (if (amin < amax)
+   then (
+     (if (0 < pp - ppqe * q)
+      then    (   (barrett_pred_low amin pp q ppqe)
+               /\ (if (barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe) < amax)
+                   then (barrett_pred_low (barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe)) pp q ppqe)
+                   else true)
+              )
+           /\ (   (barrett_pred_high (amax-1) pp q ppqe)
+               /\ (if (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1) - 1)
+                   then (barrett_pred_high (barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1) - 1) pp q ppqe)
+                   else true)
+              )
+      else    (if (amin <= barrett_seq pp ppqe (barrett_seq_label_max amax pp ppqe - 1))
+               then (barrett_pred_low (barrett_seq pp ppqe ((barrett_seq_label_max amax pp ppqe) - 1)) pp q ppqe)
+               else (barrett_pred_low amin pp q ppqe))
+           /\ (if (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1 < amax)
+               then (barrett_pred_high (barrett_seq pp ppqe (barrett_seq_label_min (amin+1) pp ppqe) - 1) pp q ppqe)
+               else (barrett_pred_high (amax-1) pp q ppqe))
+     )
+   )
+   else true).
+proof.
+  move => ltz0pp ltz0ppqe lezppqepp.
+  case (amin < amax) => ltzaminamax.
+  + case (0 < pp - ppqe * q) => [ltz0c|lezc0] ; [|case (pp - ppqe * q < 0) => [ltzc0|lez0c]] ;
+    split => [forall_pred|[predlow predhigh] a ineqs|forall_pred|[predlow predhigh] a ineqs|forall_pred|[predlow predhigh] a ineqs] ; split.
+    - apply (barrett_seq_pred_low_increasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltz0c ltzaminamax).
+      move => a ineqs.
+      by case (forall_pred a ineqs).
+    - apply (barrett_seq_pred_high_increasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltz0c ltzaminamax).
+      move => a ineqs.
+      by case (forall_pred a ineqs).
+    - by apply (barrett_seq_pred_low_increasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltz0c ltzaminamax).
+    - by apply (barrett_seq_pred_high_increasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltz0c ltzaminamax).
+    - apply (barrett_seq_pred_low_decreasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltzc0 ltzaminamax).
+      move => a ineqs.
+      by case (forall_pred a ineqs).
+    - apply (barrett_seq_pred_high_decreasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltzc0 ltzaminamax).
+      move => a ineqs.
+      by case (forall_pred a ineqs).
+    - by apply (barrett_seq_pred_low_decreasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltzc0 ltzaminamax).
+    - by apply (barrett_seq_pred_high_decreasing amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp ltzc0 ltzaminamax).
+    - apply (barrett_seq_pred_low_constant amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp) => //.
+      * by apply lez_anti ; split => [|_]; apply lezNgt.
+      * move => a ineqs.
+        by case (forall_pred a ineqs).
+    - apply (barrett_seq_pred_high_constant amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp) => //.
+      * by apply lez_anti ; split => [|_]; apply lezNgt.
+      * move => a ineqs.
+        by case (forall_pred a ineqs).
+    - apply (barrett_seq_pred_low_constant amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp) => //.
+      by apply lez_anti ; split => [|_]; apply lezNgt.
+    - apply (barrett_seq_pred_high_constant amin amax pp q ppqe ltz0pp ltz0ppqe lezppqepp) => //.
+      by apply lez_anti ; split => [|_]; apply lezNgt.
+  + split => //.
+    move => _ a [lezamin ltzamax].
+    (*Should be simpler*)
+    have f : false.
+    - apply ltzaminamax.
+      rewrite - lez_add1r.
+      apply (lez_trans (1+a)).
+      * by rewrite lez_add2l.
+      * by rewrite lez_add1r.
+    - by trivial.
+qed.
+
+op pp = 67108864.
+op q = 3329.
+op ppqe = 20159.
+op arange = 32768.
+
+lemma barrett_overZ :
+  forall a , - arange <= a < arange => barrett_pred a pp q ppqe.
+proof.
+  by apply barrett_overZ_generalized.
+qed.
