@@ -184,30 +184,21 @@ op BREDC(a bits : int) =
    let t = a * (2^bits %/ q + 1) %%+- R^2 %/ 2^bits * q in
       (a %% R + (-t) %% R) %%+- R.
 
-lemma barrett_overZ a kk:
-      1 < kk =>
-      q < 2^kk =>
-      2^kk %/ q * q < 2^kk =>
-      0 <= a - a*(2^kk %/ q + 1) %/ 2^kk * q < 2*q.
-proof. admitted.
-
-lemma sign_comp  a b :
- (a %% R + b %% R) %%+- R = (a + b) %%+- R.
-proof.
-rewrite bal_modE modzDm. smt.
-qed.
-
+require import Barrett_kyber_general.
 
 lemma nosmt BREDCp_corr a bits:
+
  0 < 2 * q < R %/2 =>
  R < 2^bits =>
  2 ^ bits %/ q * q < 2 ^ bits =>
  2^bits %/ q + 1 < R =>
  -R %/ 2 <= a < R %/2 =>
+ (forall (a0 : int),
+   - R %/ 2 <= a0 < R %/ 2 => barrett_pred a0 (2 ^ bits) SignedReductions.q (2 ^ bits %/ SignedReductions.q + 1)) =>
   0  <= BREDC a bits < 2 * q /\
  BREDC a bits %% q = a %% q.
 proof.
-move => [#] ?? ??? [#] ??.
+move => [#] ?? ??? [#] ???.
 
 rewrite /BREDC /=.
 
@@ -218,15 +209,17 @@ rewrite (bal_mod_small (a * (2 ^ bits %/ q + 1))). smt.
 rewrite (_: R^2 = R*R). smt. smt.
 
 (*******)
-rewrite sign_comp.
-
-move : (barrett_overZ a bits _ _ _). smt. smt. smt.
-move => *.
-rewrite bal_mod_small. smt. smt.
+have sign_comp : forall a b, (a %%R + b %% R) %%+- R = (a + b) %%+- R.
+move => *. rewrite !bal_modE.
+by rewrite modzDm.
+rewrite sign_comp. 
+rewrite bal_mod_small. smt(). 
+move : (H6 a _); rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux => /> *. smt.
 
 split.
+
 (* Bound proof *)
-smt.
+move : (H6 a _); rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux => /> *. smt.
 
 (* Congruence proof *)
 rewrite (_: - a * (2 ^ bits %/ q + 1) %/ 2 ^ bits * q = (- a * (2 ^ bits %/ q + 1) %/ 2 ^ bits) * q). smt.
