@@ -1,9 +1,10 @@
 require import AllCore IntDiv Array256 Array128.
-require (****) ZModP.
+require import Fq.
 
+import Fq.
 theory NTT_Fq.
 
-clone import ZModP.ZModRing.
+import Kyber_.ZModRing.
 
 module NTT = {
  proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
@@ -64,5 +65,15 @@ module NTT = {
   
  
 }.
+
+axiom ntt_spec _r :
+   hoare[ NTT.ntt :
+     _r = r /\ Kyber_.Poly.zetas = zetas ==>
+       res = Kyber_.Poly.ntt _r ].
+
+axiom invntt_spec _r  :
+   hoare[ NTT.invntt :
+     _r = r /\ Kyber_.Poly.zetas_inv = zetas_inv ==>
+       res = Kyber_.Poly.invntt _r ].
 
 end NTT_Fq.

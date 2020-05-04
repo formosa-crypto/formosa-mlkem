@@ -1,12 +1,15 @@
-require import AllCore Array256 IntDiv IntExtra Distr List DList.
+require import AllCore Array128 Array256 Array768 IntDiv IntExtra Distr List DList.
 require import ZModP.
 require import MLWE_PKE.
 
+
+theory Kyber.
+
 op q : int = 3329 axiomatized by qE.
 
-clone ZModRing as Fq with op p <- q proof ge2_p by smt(qE).
+clone import ZModRing with op p <- q proof ge2_p by smt(qE).
 
-type elem = Fq.zmod.
+type elem = zmod.
 op trueval = q %/ 2. (* Is this it? *)
 op falseval = 0. (* Is this it? *)
 
@@ -19,14 +22,16 @@ axiom duni_elem_ll : is_lossless duni_elem.
 
 theory Poly.
 
-type poly = elem t.
+type poly = elem Array256.t.
 
-op zero : poly = create Fq.zero.
-op one : poly = zero.[0<-Fq.one].
+op zero : poly = Array256.create ZModRing.zero.
+op one : poly = zero.[0<-ZModRing.one].
 
 (* These are specified by the NTT_Fq 
    algorithm specifications lifted to
    lists. *)
+op zetas : elem Array128.t.
+op zetas_inv : elem Array128.t.
 op ntt : poly -> poly.
 op invntt : poly -> poly.
 
@@ -37,30 +42,29 @@ op basemul : poly -> poly -> poly.
 op ( *) (pa pb : poly) = 
   invntt (basemul (ntt pa) (ntt pb)).
 
-print Array256.
 op ( +) (pa pb : poly) : poly = 
-  map2 (fun a b : elem  => Fq.(+) a b) pa pb.
+  map2 (fun a b : elem  => ZModRing.(+) a b) pa pb.
 
 op ([-]) (p : poly) : poly = 
-  map Fq.([-]) p.
+  map ZModRing.([-]) p.
 
-type message = bool t.
+type message = bool Array256.t.
 
 op m_encode(m : message) : poly =
    map (fun b => if b 
-                 then Fq.inzmod trueval 
-                 else Fq.inzmod falseval) m.
+                 then ZModRing.inzmod trueval 
+                 else ZModRing.inzmod falseval) m.
 
 op m_decode(mp : poly) : message =
-   map (fun c => ! (- q%/4 <= Fq.asint c < q%/ 4)) mp.
+   map (fun c => ! (- q%/4 <= ZModRing.asint c < q%/ 4)) mp.
 
 op roundc(c : elem) : elem = 
-    Fq.inzmod (((Fq.asint c * 2^3 + (q %/ 2)) %/q) %% 2^3) 
+    ZModRing.inzmod (((ZModRing.asint c * 2^4 + (q %/ 2)) %/q) %% 2^4) 
       axiomatized by roundcE.
 
-op roundc_err(c: elem) : elem = Fq.(+) (roundc c) (Fq.([-]) c).
+op roundc_err(c: elem) : elem = ZModRing.(+) (roundc c) (ZModRing.([-]) c).
 
-lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c 
+lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = roundc c 
       by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
@@ -71,18 +75,18 @@ op round_poly_err(p : poly) : poly =
 
 lemma round_poly_errE p : p + (round_poly_err p) = (round_poly p).
 proof. 
-rewrite /round_poly_err /round_poly /Poly.(+); apply ext_eq => /> x xl xh.
+rewrite /round_poly_err /round_poly /Poly.(+); apply Array256.ext_eq => /> x xl xh.
 by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
 qed.
 
 op dshort_R : poly distr = 
-   dmap (dlist dshort_elem 256) (of_list witness).
+   dmap (dlist dshort_elem 256) (Array256.of_list witness).
 
 lemma dshort_R_ll : is_lossless dshort_R
  by rewrite /dshort_R; apply dmap_ll; apply dlist_ll; apply dshort_elem_ll.
 
 op duni_R : poly distr = 
-   dmap (dlist duni_elem 256) (of_list witness).
+   dmap (dlist duni_elem 256) (Array256.of_list witness).
 
 lemma duni_R_ll : is_lossless duni_R
  by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
@@ -96,12 +100,12 @@ export Poly.
 theory PolyVec.
 
 op roundc(c : elem) : elem = 
-    Fq.inzmod (((Fq.asint c * 2^11 + (q %/ 2)) %/q) %% 2^11) 
+    ZModRing.inzmod (((ZModRing.asint c * 2^10 + (q %/ 2)) %/q) %% 2^10) 
      axiomatized by roundcE.
 
-op roundc_err(c: elem) : elem = Fq.(+) (roundc c) (Fq.([-]) c).
+op roundc_err(c: elem) : elem = ZModRing.(+) (roundc c) (ZModRing.([-]) c).
 
-lemma roundc_errE c: Fq.(+) c (roundc_err c) = roundc c 
+lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = roundc c 
     by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
@@ -112,32 +116,28 @@ op round_poly_err(p : poly) : poly =
 
 lemma round_poly_errE p: p + (round_poly_err p) = round_poly p.
 proof. 
-rewrite /round_poly_err /round_poly /Poly.(+); apply ext_eq => /> x xl xh.
+rewrite /round_poly_err /round_poly /Poly.(+); apply Array256.ext_eq => /> x xl xh.
 by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
 qed.
 
-end PolyVec.
 
-theory Kyber.
+end PolyVec.
 
 op kvec : int. 
 axiom kvec_ge3 : 3 <= kvec.
 
+
 op pm = pe_R^(kvec^2).
 
 op noise_val (p : poly) =
-      foldr (fun c cc => max (Fq.asint c) cc) 
-                  (Fq.asint (head witness (to_list p))) 
+      foldr (fun c cc => max (ZModRing.asint c) cc) 
+                  (ZModRing.asint (head witness (to_list p))) 
                                    (behead (to_list p)).
 
 op cv_bound : int = 104. (* computed in sec estimates, must be
                             proved *)
 op fail_prob : real. (* Need to compute exact value or replace
                         with suitable bound *)
-
-import H_MLWE.M.Matrix.
-import H_MLWE.M.Vector.
-
 
 (* Should the ring structure for R come from here? *)
 clone import MLWE_PKE as MLWEPKE with
@@ -152,7 +152,7 @@ clone import MLWE_PKE as MLWEPKE with
   op H_MLWE.duni_R <- duni_R,
   op H_MLWE.pe <- pe_R,
   op H_MLWE.pm <- pm,
-  type plaintext <- bool t,
+  type plaintext <- message,
   type ciphertext <- H_MLWE.M.vector * poly,
   op m_encode <- m_encode,
   op m_decode <- m_decode,
@@ -218,14 +218,14 @@ qed.
 
 realize good_decode.
 rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval qE  => /> *.
-apply ext_eq => /> *.
+apply Array256.ext_eq => /> *.
 rewrite mapiE; first by smt().
 auto => />.
 rewrite /Poly.(+) map2E => />. 
 rewrite initiE; first by smt().
-rewrite Fq.addE  qE => />.
+rewrite ZModRing.addE  qE => />.
 rewrite mapiE; first by smt().
-have nb : (-832 < Fq.asint n.[x] < 832). admit.
+have nb : (-832 < ZModRing.asint n.[x] < 832). admit.
 smt.
 qed. 
 
@@ -253,5 +253,12 @@ lemma kyber_correctness &m :
   1%r - fail_prob by
    apply (correctness_bound A All fail_prob &m).
 end section.
+
+(* At this point we can write down some intermediate results that
+   we will need to connect this theory with the implementation *)
+
+op polyvec_ntt(v : H_MLWE.M.vector) : H_MLWE.M.vector =
+   H_MLWE.M.Vector.offunv 
+             (fun i => (ntt ((H_MLWE.M.Vector.tofunv v) i))).
 
 end Kyber.

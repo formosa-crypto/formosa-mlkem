@@ -3,12 +3,15 @@ require (****) ZModP.
 from Jasmin require  import JModel.
 require import Montgomery.
 require import W16extra.
+require import Array32.
 
 theory Fq.
 
-op q : int = 3329 axiomatized by qE.
+require import Kyber.  
+clone import Kyber as Kyber_ with
+   op kvec <- 3,
+   type MLWEPKE.H_MLWE.seed = W8.t Array32.t.
 
-clone import ZModP.ZModRing with op p <- q proof ge2_p by smt(qE).
 
 clone import SignedReductions with
     op k <- 16,
@@ -23,9 +26,9 @@ clone import SignedReductions with
     proof RRinv by (auto => />; smt)
     proof qinv_bnd by (auto => />; smt).
 
-require import Indcpa.
+require import IndcpaDerand.
 
-print M.
+print Mderand.
 
 lemma balmod_W16 a:
   a %%+- W16.modulus = W16.smod (a %% W16.modulus)
@@ -36,7 +39,7 @@ lemma balmod_W32 a:
   by rewrite bal_modE /W32.smod //=.
 
 lemma fqmul_corr_h _a _b: 
-   hoare[ M.fqmul : to_sint a = _a /\ to_sint b = _b ==> 
+   hoare[ Mderand.fqmul : to_sint a = _a /\ to_sint b = _b ==> 
    to_sint res = SREDC (_a * _b)].
 proof.
 proc.
@@ -56,16 +59,16 @@ by rewrite W32.of_sintK /=; smt(qE).
 qed.
 
 lemma fqmul_ll :
-  islossless M.fqmul by proc; islossless.
+  islossless Mderand.fqmul by proc; islossless.
 
 lemma fqmul_corr _a _b :
-  phoare [ M.fqmul : 
+  phoare [ Mderand.fqmul : 
      W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
          W16.to_sint res = SREDC (_a * _b)] = 1%r.
 proof. by conseq fqmul_ll (fqmul_corr_h _a _b). qed.
 
 lemma barrett_reduce_corr_h _a :
-  hoare [ M.barrett_reduce : 
+  hoare [ Mderand.barrett_reduce : 
      W16.to_sint a = _a  ==> 
          W16.to_sint res = BREDC _a 26].
 proof.
@@ -104,10 +107,10 @@ smt(@W16 qE).
 qed.
 
 lemma barrett_reduce_ll :
-  islossless M.barrett_reduce by proc; islossless.
+  islossless Mderand.barrett_reduce by proc; islossless.
 
 lemma barrett_reduce_corr _a :
-  phoare [ M.barrett_reduce : 
+  phoare [ Mderand.barrett_reduce : 
      W16.to_sint a = _a  ==> 
          W16.to_sint res = BREDC _a 26] = 1%r.
 proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.
@@ -115,6 +118,7 @@ proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.
 
 op add (a b : W16.t) = (a + b).
 
+import ZModRing.
 lemma add_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
    0 <= asz < 15 => 0 <= bsz < 15 =>
    a' = inzmod (W16.to_sint a) =>
