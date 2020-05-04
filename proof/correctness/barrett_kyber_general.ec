@@ -802,14 +802,17 @@ proof.
       by apply lez_anti ; split => [|_]; apply lezNgt.
   + split => //.
     move => _ a [lezamin ltzamax].
+    rewrite - lezNgt in ltzaminamax.
     (*Should be simpler*)
-    have f : false.
+    by have  : false by smt().
+(*
     - apply ltzaminamax.
       rewrite - lez_add1r.
       apply (lez_trans (1+a)).
       * by rewrite lez_add2l.
       * by rewrite lez_add1r.
     - by trivial.
+*)
 qed.
 
 op pp = 67108864.
