@@ -657,6 +657,32 @@ seq 3 3 : (#[/1:7,8:17,18:24,25:]pre /\ ={pv,j0} /\ W64.to_uint j0{1} = 512 /\
         first by move : H1; rewrite ultE of_uintK pmod_small // /#.
     by done.
 
+seq 3 3 : (#[/1:7,8:16,17:26,29:]pre /\ ={pv,j0} /\ W64.to_uint j0{1} = 768 /\ 
+          to_uint i3{1} = 256 /\ i3{1} = i6{2} /\ (forall j, 0 <= j < 256 => r20{1}.[j] = r22{2}.[j])).
+  while (#[/1:27]post /\ 0 <= to_uint i3{1} <= 256 /\ to_uint j0{1} - to_uint i3{1} = 512 /\
+          i3{1} = i6{2} /\ ={pv,j0} /\
+          forall (j : int), 0 <= j < to_uint i3{1} => r20{1}.[j] = r22{2}.[j]).
+    wp; skip => /> *.
+    split. split.
+      + by rewrite to_uintD_small 1,2:/#.
+      + by move : H5; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
+    split.
+      + by rewrite !to_uintD_small 1,2:/# to_uint1; smt().
+    move => j *.
+    rewrite !get_setE; first 2 by
+      by move : H5; rewrite ultE of_uintK pmod_small //. 
+      case (j = to_uint i6{2}) => ? //=.
+        + by rewrite H4; move : H7; rewrite to_uintD_small 1,2:/#.
+  wp; skip => /> *; split.
+    + have ?: to_uint i6_R = 256 by move : H3; rewrite ultE of_uintK pmod_small // /#.
+    + by smt().
+  split.
+    + by move : H3; rewrite ultE of_uintK pmod_small // /#.
+    move => j *; rewrite H8.
+      by rewrite (_: to_uint i6_R = 256);
+        first by move : H3; rewrite ultE of_uintK pmod_small // /#.
+    by done.
+
 admit.
 qed.
 
