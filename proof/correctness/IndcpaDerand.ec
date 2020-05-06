@@ -573,6 +573,30 @@ inline Mderand.indcpa_keypair_expandseed Mderand.indcpa_keypair_compute.
 by swap {1} [20..21] 14; sim.
 qed.
 
+module Test = {
+proc main() : int = {
+  var i, x;
+  x <- 3;
+  i <- 0;
+  while (i < 3) {x <- x + 1; i <- i + 1;}
+  return x;
+}
+}.
+
+hoare test : Test.main : true ==> res = 6.
+proof.
+proc.
+
+while (0 <= i <= 3 /\ x-i = 3).
+wp; skip => /> *.
+split.
+smt().
+smt().
+wp; skip => /> *.
+have ?: i = 3. smt().
+smt().
+qed.
+
 equiv enc_same : M.indcpa_enc_jazz ~ Mderand.indcpa_enc_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
 proc.
@@ -585,7 +609,55 @@ seq 53 48 : (={Glob.mem,bp,v,ctp}).
 sim; auto => />; call (_: ={Glob.mem}).
 by sim.
 by auto => />.
-inline *; auto => />. admit.
+inline *; auto => />. 
+sp; seq 1 1 : (#[2:5,6:9,11,12,14,16:20,21:24,26,27,29:]pre /\ ={pv} /\ 
+          to_uint i3{1} = 256 /\ i3{1} = i6{2} /\ (forall j, 0 <= j < 256 => r00{1}.[j] = r01{2}.[j])).
+  while (#[/1:23]post /\ 0 <= to_uint i3{1} <= 256 /\
+          i3{1} = i6{2} /\ ={pv} /\
+          forall (j : int), 0 <= j < to_uint i3{1} => r00{1}.[j] = r01{2}.[j]).
+    wp; skip => /> *.
+    split. split.
+      + by rewrite to_uintD_small 1,2:/#.
+      + by move : H2; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
+    move => j *.
+    rewrite !get_setE; first 2 by
+      by move : H2; rewrite ultE of_uintK pmod_small //. 
+      case (j = to_uint i6{2}) => ? //=.
+        + by rewrite H1; move : H4; rewrite to_uintD_small 1,2:/#.
+  skip => /> *; split.
+    + by move : H; rewrite ultE of_uintK pmod_small // /#.
+    move => j *; rewrite H3.
+      by rewrite (_: to_uint i6_R = 256);
+        first by move : H; rewrite ultE of_uintK pmod_small // /#.
+    by done.
+
+seq 3 3 : (#[/1:7,8:17,18:24,25:]pre /\ ={pv,j0} /\ W64.to_uint j0{1} = 512 /\ 
+          to_uint i3{1} = 256 /\ i3{1} = i6{2} /\ (forall j, 0 <= j < 256 => r10{1}.[j] = r12{2}.[j])).
+  while (#[/1:26]post /\ 0 <= to_uint i3{1} <= 256 /\ to_uint j0{1} - to_uint i3{1} = 256 /\
+          i3{1} = i6{2} /\ ={pv,j0} /\
+          forall (j : int), 0 <= j < to_uint i3{1} => r10{1}.[j] = r12{2}.[j]).
+    wp; skip => /> *.
+    split. split.
+      + by rewrite to_uintD_small 1,2:/#.
+      + by move : H4; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
+    split.
+      + by rewrite !to_uintD_small 1,2:/# to_uint1; smt().
+    move => j *.
+    rewrite !get_setE; first 2 by
+      by move : H4; rewrite ultE of_uintK pmod_small //. 
+      case (j = to_uint i6{2}) => ? //=.
+        + by rewrite H3; move : H6; rewrite to_uintD_small 1,2:/#.
+  wp; skip => /> *; split.
+    + have ?: to_uint i6_R = 256 by move : H1; rewrite ultE of_uintK pmod_small // /#.
+    + by smt().
+  split.
+    + by move : H1; rewrite ultE of_uintK pmod_small // /#.
+    move => j *; rewrite H6.
+      by rewrite (_: to_uint i6_R = 256);
+        first by move : H1; rewrite ultE of_uintK pmod_small // /#.
+    by done.
+
+admit.
 qed.
 
 equiv dec_same :  M.indcpa_dec_jazz ~ Mderand.indcpa_dec_jazz :
