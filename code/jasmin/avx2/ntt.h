@@ -40,5 +40,6 @@ void ntttobytes_avx(uint8_t *r, const int16_t *a, const uint16_t *qdata);
 void nttfrombytes_avx(int16_t *r, const uint8_t *a, const uint16_t *qdata);
 
 void poly_nttl0_jazz(int16_t *r);
+void poly_nttl1t6half_jazz(int16_t *r);
 
 #endif

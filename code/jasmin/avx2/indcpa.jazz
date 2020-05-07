@@ -28,7 +28,9 @@
 #include "polyvec_topolys.jahh"
 #include "gen_matrix.jahh"
 
-/* Only temporary here */
+/*****************************************************/
+/***************  Only temporary here ****************/
+/*****************************************************/
 #include "poly_ntt.jahh"
 export fn poly_nttl0_jazz(reg u64 rp) 
 {
@@ -48,6 +50,29 @@ export fn poly_nttl0_jazz(reg u64 rp)
     (u16)[rp + 2*i] = t;
   }
 }
+
+/*****************************************************/
+/***************  Only temporary here ****************/
+/*****************************************************/
+export fn poly_nttl1t6half_jazz(reg u64 rp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  for i = 0 to KYBER_N {
+    t = (u16)[rp + 2*i];
+    r[i] = t;
+  }
+
+  r[0:KYBER_N/2] = level1t6half(r[0:KYBER_N/2]);
+
+  for i = 0 to KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
 
 
 

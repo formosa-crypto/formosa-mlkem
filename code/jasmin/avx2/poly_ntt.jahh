@@ -4,13 +4,14 @@
 #include "params.jahh"
 #include "poly_reduce.jahh"
 #include "consts.jahh"
+#include "reduce.jahh"
 
 inline 
 fn shuffle8(reg u256 a b) -> reg u256, reg u256
 {
   reg u256 r0 r1; 
-  r0 = #VPERM2I128(b,a,0x20);
-  r1 = #VPERM2I128(b,a,0x31);
+  r0 = #VPERM2I128(a,b,0x20);
+  r1 = #VPERM2I128(a,b,0x31);
   return r0, r1;
 }
 
@@ -18,32 +19,32 @@ inline
 fn shuffle4(reg u256 a b) -> reg u256, reg u256
 {
   reg u256 r0 r1; 
-  r0 = #VPUNPCKL_4u64(b,a);
-  r1 = #VPUNPCKH_4u64(b,a);
+  r0 = #VPUNPCKL_4u64(a,b);
+  r1 = #VPUNPCKH_4u64(a,b);
   return r0, r1;
 }
 
-/*
 inline 
 fn shuffle2(reg u256 a b) -> reg u256, reg u256
 {
   reg u256 r0 r1 t0 t1; 
-  t0 = #VPSLL_u64(32,b);
-  t1 = #VPSRL_u64(32,a);
-  r0 = #VPBLENDD(t0,a);
-  r1 = #VPBLENDD(t1,b,0xAA);
+  t0 = #VPSLL_4u64(b,32);
+  t1 = #VPSRL_4u64(a,32);
+  r0 = #VPBLEND_8u32(a,t0,0xAA);
+  r1 = #VPBLEND_8u32(t1,b,0xAA);
   return r0, r1;
 }
 
 inline 
 fn shuffle1(reg u256 a b) -> reg u256, reg u256
 {
-  reg u256 r0 r1; 
-  r0 = #VPUNPCKL_4u64(b,a);
-  r1 = #VPUNPCKH_4u64(b,a);
+  reg u256 r0 r1 t0 t1; 
+  t0 = #VPSLL_8u32(b,16);
+  t1 = #VPSRL_8u32(a,16);
+  r0 = #VPBLEND_16u16(a,t0,0xAA);
+  r1 = #VPBLEND_16u16(t1,b,0xAA);
   return r0, r1;
 }
-*/
 
 
 
@@ -158,10 +159,9 @@ inline fn level0(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
-/*
-inline fn level1t6half(reg ptr u16[KYBER_N/2] rp, reg u64 zetaoffset) -> reg ptr u16[KYBER_N/2]
+inline fn level1t6half(reg ptr u16[KYBER_N/2] rp) -> reg ptr u16[KYBER_N/2]
 {
-  reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16;
+  reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16 vx16;
   reg u32 t;
   reg u16 w;
   reg ptr u16[400] zetasp;
@@ -216,7 +216,7 @@ inline fn level1t6half(reg ptr u16[KYBER_N/2] rp, reg u64 zetaoffset) -> reg ptr
   r0, r1 = shuffle2(r0, r1);
   r2, r3 = shuffle2(r2, r3);
   r4, r5 = shuffle2(r4, r5);
-  r6, r7 = shuffle2(r5, r7);
+  r6, r7 = shuffle2(r6, r7);
   
   r0, r1, r2, r3, r4, r5, r6, r7 = butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
@@ -238,28 +238,29 @@ inline fn level1t6half(reg ptr u16[KYBER_N/2] rp, reg u64 zetaoffset) -> reg ptr
   zeta3 = zetasp.[u256 368];
 
   r0, r4, r2, r6, r1, r5, r3, r7 = butterfly64x(r0, r4, r2, r6, r1, r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
+  
+  vx16 = jvx16[u256 0];
 
-  r0 = redx16(r0, qx16);
-  r4 = redx16(r4, qx16);
-  r2 = redx16(r2, qx16);
-  r6 = redx16(r6, qx16);
-  r1 = redx16(r1, qx16);
-  r5 = redx16(r5, qx16);
-  r3 = redx16(r3, qx16);
-  r7 = redx16(r7, qx16);
+  r0 = red16x(r0, qx16, vx16);
+  r4 = red16x(r4, qx16, vx16);
+  r2 = red16x(r2, qx16, vx16);
+  r6 = red16x(r6, qx16, vx16);
+  r1 = red16x(r1, qx16, vx16);
+  r5 = red16x(r5, qx16, vx16);
+  r3 = red16x(r3, qx16, vx16);
+  r7 = red16x(r7, qx16, vx16);
 
   rp.[u256 32*0] = r0;
   rp.[u256 32*1] = r4;
-  rp.[u256 32*2] = r2;
-  rp.[u256 32*3] = r6;
-  rp.[u256 32*4] = r1;
-  rp.[u256 32*5] = r5;
+  rp.[u256 32*2] = r1;
+  rp.[u256 32*3] = r5;
+  rp.[u256 32*4] = r2;
+  rp.[u256 32*5] = r6;
   rp.[u256 32*6] = r3;
   rp.[u256 32*7] = r7;
 
   return rp;
 }
-*/
 
 
 fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]

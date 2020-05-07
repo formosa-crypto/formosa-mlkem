@@ -194,4 +194,5 @@ call		ntt_levels1t6_avx
 add		$256,%rdi
 add		$392,%rsi
 call		ntt_levels1t6_avx
+
 ret
