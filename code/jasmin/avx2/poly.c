@@ -198,7 +198,7 @@ void poly_ntt(poly *r)
   
   poly_ntt2_jazz(r->coeffs);
 
-  nttpack_avx(r->coeffs, qdata);
+//  nttpack_avx(r->coeffs, qdata);
 }
 
 /*************************************************

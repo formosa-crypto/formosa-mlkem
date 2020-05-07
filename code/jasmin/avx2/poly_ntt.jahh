@@ -46,7 +46,32 @@ fn shuffle1(reg u256 a b) -> reg u256, reg u256
   return r0, r1;
 }
 
+inline 
+fn nttpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
+    -> reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256
+{
+  r0, r1 = shuffle1(r0, r1);
+  r2, r3 = shuffle1(r2, r3);
+  r4, r5 = shuffle1(r4, r5);
+  r6, r7 = shuffle1(r6, r7);
 
+  r0, r2 = shuffle2(r0, r2);
+  r4, r6 = shuffle2(r4, r6);
+  r1, r3 = shuffle2(r1, r3);
+  r5, r7 = shuffle2(r5, r7);
+
+  r0, r4 = shuffle4(r0, r4);
+  r1, r5 = shuffle4(r1, r5);
+  r2, r6 = shuffle4(r2, r6);
+  r3, r7 = shuffle4(r3, r7);
+
+  r0, r1 = shuffle8(r0, r1);
+  r2, r3 = shuffle8(r2, r3);
+  r4, r5 = shuffle8(r4, r5);
+  r6, r7 = shuffle8(r6, r7);
+
+  return r0, r2, r4, r6, r1, r3, r5, r7;
+}
 
 
 inline
@@ -110,7 +135,6 @@ inline fn level0(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   zetasp = jzetas_exp;
   qx16p = jqx16;
 
-//  w = KYBER_Q;
   qx16 = jqx16[u256 0];
 
   zeta0 = #VPBROADCAST_8u32(zetasp[u32 0]);
@@ -252,6 +276,8 @@ inline fn level1t6(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
     r5 = red16x(r5, qx16, vx16);
     r3 = red16x(r3, qx16, vx16);
     r7 = red16x(r7, qx16, vx16);
+
+    r0, r4, r1, r5, r2, r6, r3, r7 = nttpack128(r0, r4, r1, r5, r2, r6, r3, r7);
 
     rp.[u256 32*0+256*i] = r0;
     rp.[u256 32*1+256*i] = r4;
