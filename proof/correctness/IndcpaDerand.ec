@@ -609,7 +609,8 @@ seq 53 48 : (={Glob.mem,bp,v,ctp}).
 sim; auto => />; call (_: ={Glob.mem}).
 by sim.
 by auto => />.
-inline *; auto => />. 
+inline *; auto => />.
+
 sp; seq 1 1 : (#[2:5,6:9,11,12,14,16:20,21:24,26,27,29:]pre /\ ={pv} /\ 
           to_uint i3{1} = 256 /\ i3{1} = i6{2} /\ r00{1} = r01{2}).
   while (#[/1:23]post /\ 0 <= to_uint i3{1} <= 256 /\
@@ -687,6 +688,95 @@ seq 4 4 : (#[/1:16,17,18,21,22,24:31,32,33,35,36]pre /\ r0{1} = rp2{1} /\
   while (#[/1:34]post /\ 0 <= i5{1} <= 256 /\ ={rp3}).
     by wp; skip => /> * /#.
   by wp; skip => /> * /#.
+
+seq 4 4 : (#[/1:27,28,30:]pre /\ r1{1} = rp3{1} /\ 
+            r11{2} = rp3{2} /\ i6{1} = i9{2} /\ i6{1} = 256 /\ ={rp4}).
+  while (#[/1:37]post /\ 0 <= i6{1} <= 256 /\ ={rp4}).
+    by wp; skip => /> * /#.
+  by wp; skip => /> * /#.
+
+seq 7 7 : (#[/1:27,29:]pre /\ i7{1} = i10{2} /\ r2{1} = rp4{1} /\
+            r21{2} = rp4{2} /\ ={p0,p1,p2} /\ p0{1} = r0{1} /\ p0{2} = r00{2} /\
+            p1{1} = r1{1} /\ p1{2} = r11{2} /\ p2{1} = r2{1} /\ p2{2} = r21{2} /\ 
+            to_uint i7{1} = 256 /\ (forall j, 0 <= j < 256 => r3{1}.[j] = r6{2}.[j])).
+  while (#[/1:49]post /\ 0 <= to_uint i7{1} <= 256 /\
+          forall j, 0 <= j < to_uint i7{1} => r3{1}.[j] = r6{2}.[j]).
+    wp; skip => /> *.
+    split. split.
+      + by rewrite to_uintD_small 1,2:/#.
+      + by move : H4; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
+    move => j *.
+    rewrite !get_setE; first 2 by
+      move : H4; rewrite ultE of_uintK pmod_small // /#.
+    case (j = to_uint i10{2}) => ? //=.
+        + by rewrite H3; move : H6; rewrite to_uintD_small 1,2:/#.
+  wp; skip => /> *; split.
+    + by move : H1; rewrite ultE of_uintK pmod_small // /#.
+    + by move : H1; rewrite ultE of_uintK pmod_small // /#.
+
+seq 3 3 : (#[/1,2,4:7,9:14,15:18,20:24,26:29,31:34,36,38:49,50]pre /\
+            (forall j, 0 <= j < 512 => r3{1}.[j] = r6{2}.[j])).
+  while (#[/1:37]post /\ i7{1} = i10{2} /\ 0 <= to_uint i7{1} <= 256 /\ ={j1} /\
+          to_uint j1{1} - to_uint i7{1} = 256 /\
+          (forall j, 0 <= j < 256 => r3{1}.[j] = r6{2}.[j]) /\
+          forall j, 256 <= j < to_uint j1{1} => r3{1}.[j] = r6{2}.[j]).
+    wp; skip => /> *.
+    split. 
+      move => j *.
+        rewrite !get_setE; first 2
+          by move : H4; rewrite ultE of_uintK pmod_small // /#. 
+          + cut ->: j = to_uint j1{2} <=> false by smt().
+          + by simplify => /#. 
+    split. split.
+      + by rewrite to_uintD_small 1,2:/#.
+      + by move : H4; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
+    split.
+      + by rewrite !to_uintD_small 1,2:/# to_uint1; smt().
+    split => j *.
+      rewrite !get_setE; first 2
+          by move : H4; rewrite ultE of_uintK pmod_small // /#. 
+          + cut ->: j = to_uint j1{2} <=> false by smt().
+          + by simplify => /#. 
+    rewrite !get_setE; first 2 by
+      by move : H4; rewrite ultE of_uintK pmod_small // /#. 
+      case (j = to_uint j1{2}) => ? //=.
+        + by rewrite H3; move : H6; rewrite to_uintD_small 1,2:/#.
+  wp; skip => /> *; split; first by smt().
+  move => *.
+    + by move : H3; rewrite ultE of_uintK pmod_small // /#.
+
+seq 3 3 : (#[/1:36]pre /\ r3{1} = r6{2}).
+  while (#[/1:36]post /\ i7{1} = i10{2} /\ 0 <= to_uint i7{1} <= 256 /\ ={j1} /\
+          to_uint j1{1} - to_uint i7{1} = 512 /\
+          (forall j, 0 <= j < 256 => r3{1}.[j] = r6{2}.[j]) /\
+          (forall j, 256 <= j < 512 => r3{1}.[j] = r6{2}.[j]) /\
+          forall j, 512 <= j < to_uint j1{1} => r3{1}.[j] = r6{2}.[j]).
+    wp; skip => /> *.
+    split. split.
+      + by rewrite to_uintD_small 1,2:/#.
+      + by move : H5; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
+    split.
+      + by rewrite !to_uintD_small 1,2,3:/#.
+    split.
+      move => j *.
+        rewrite !get_setE; first 2
+          by move : H5; rewrite ultE of_uintK pmod_small // /#. 
+          + cut ->: j = to_uint j1{2} <=> false by smt().
+          + by simplify => /#. 
+    split.
+      move => j *.
+        rewrite !get_setE; first 2
+          by move : H5; rewrite ultE of_uintK pmod_small // /#. 
+          + cut ->: j = to_uint j1{2} <=> false by smt().
+          + by simplify => /#. 
+    move => j *. 
+      rewrite !get_setE; first 2 by
+        by move : H5; rewrite ultE of_uintK pmod_small // /#. 
+        case (j = to_uint j1{2}) => ? //=.
+          + by rewrite H4; move : H7; rewrite to_uintD_small 1,2:/#.
+  wp; skip => /> *; split; first by smt().
+  move => *.
+    + by rewrite tP; move : H1; rewrite ultE of_uintK pmod_small // /#.
 
 admit.
 qed.
