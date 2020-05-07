@@ -10,25 +10,6 @@
 #include "polyvec_csubq.jahh"
 #include "polyvec_reduce.jahh"
 
-export fn poly_ntt2_jazz(reg u64 rp) 
-{
-  inline int i;
-  reg u16 t;
-  stack u16[KYBER_N] r;
-
-  for i = 0 to KYBER_N {
-    t = (u16)[rp + 2*i];
-    r[i] = t;
-  }
-
-  r = poly_ntt2(r);
-
-  for i = 0 to KYBER_N {
-    t = r[i];
-    (u16)[rp + 2*i] = t;
-  }
-}
-
 /* These exported functions are just for unit testing */
 
 export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap) 

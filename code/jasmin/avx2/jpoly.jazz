@@ -176,66 +176,6 @@ export fn poly_ntt_jazz(reg u64 rp)
   }
 }
 
-/*
-export fn poly_nttl0_jazz(reg u64 rp) 
-{
-  inline int i;
-  reg u16 t;
-  stack u16[KYBER_N] r;
-
-  for i = 0 to KYBER_N {
-    t = (u16)[rp + 2*i];
-    r[i] = t;
-  }
-
-  r = level0(r);
-
-  for i = 0 to KYBER_N {
-    t = r[i];
-    (u16)[rp + 2*i] = t;
-  }
-}
-
-export fn poly_nttl1t6_jazz(reg u64 rp) 
-{
-  inline int i;
-  reg u16 t;
-  stack u16[KYBER_N] r;
-
-  for i = 0 to KYBER_N {
-    t = (u16)[rp + 2*i];
-    r[i] = t;
-  }
-
-  r = level1t6(r);
-
-  for i = 0 to KYBER_N {
-    t = r[i];
-    (u16)[rp + 2*i] = t;
-  }
-}
-*/
-
-export fn poly_ntt2_jazz(reg u64 rp) 
-{
-  inline int i;
-  reg u16 t;
-  stack u16[KYBER_N] r;
-
-  for i = 0 to KYBER_N {
-    t = (u16)[rp + 2*i];
-    r[i] = t;
-  }
-
-  r = poly_ntt2(r);
-
-  for i = 0 to KYBER_N {
-    t = r[i];
-    (u16)[rp + 2*i] = t;
-  }
-}
-
-
 export fn poly_invntt_jazz(reg u64 rp) 
 {
   inline int i;

@@ -191,14 +191,8 @@ void poly_getnoise(poly *r, const unsigned char *seed, unsigned char nonce)
 **************************************************/
 void poly_ntt(poly *r)
 {
-  /*
-  poly_nttl0_jazz(r->coeffs);
-  poly_nttl1t6_jazz(r->coeffs);
-  */
-  
-  poly_ntt2_jazz(r->coeffs);
-
-//  nttpack_avx(r->coeffs, qdata);
+  ntt(r->coeffs);
+  poly_reduce(r);
 }
 
 /*************************************************

@@ -28,27 +28,6 @@
 #include "polyvec_topolys.jahh"
 #include "gen_matrix.jahh"
 
-export fn poly_ntt2_jazz(reg u64 rp) 
-{
-  inline int i;
-  reg u16 t;
-  stack u16[KYBER_N] r;
-
-  for i = 0 to KYBER_N {
-    t = (u16)[rp + 2*i];
-    r[i] = t;
-  }
-
-  r = poly_ntt2(r);
-
-  for i = 0 to KYBER_N {
-    t = r[i];
-    (u16)[rp + 2*i] = t;
-  }
-}
-
-
-
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
