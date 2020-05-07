@@ -34,7 +34,6 @@ test: test/test_poly_compress \
 			test/test_polyvec_csubq \
  			test/test_fips202 \
  			test/test_indcpa \
- 			test/test_poly_tmp \
 
 speed: test/speed_indcpa
 

@@ -39,7 +39,6 @@ void ntttobytes_avx(uint8_t *r, const int16_t *a, const uint16_t *qdata);
 #define nttfrombytes_avx KYBER_NAMESPACE(nttfrombytes_avx)
 void nttfrombytes_avx(int16_t *r, const uint8_t *a, const uint16_t *qdata);
 
-void poly_nttl0_jazz(int16_t *r);
-void poly_nttl1t6_jazz(int16_t *r);
+void poly_ntt2_jazz(int16_t *r);
 
 #endif
