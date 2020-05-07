@@ -158,9 +158,9 @@ inline fn level0(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
+/*
 inline fn level1t6half(reg ptr u16[KYBER_N/2] rp, reg u64 zetaoffset) -> reg ptr u16[KYBER_N/2]
 {
-/*
   reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16;
   reg u32 t;
   reg u16 w;
@@ -256,10 +256,10 @@ inline fn level1t6half(reg ptr u16[KYBER_N/2] rp, reg u64 zetaoffset) -> reg ptr
   rp.[u256 32*5] = r5;
   rp.[u256 32*6] = r3;
   rp.[u256 32*7] = r7;
-*/
 
   return rp;
 }
+*/
 
 
 fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]

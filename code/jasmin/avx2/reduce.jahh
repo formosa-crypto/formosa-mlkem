@@ -7,6 +7,16 @@ param int QINV    = 62209;     /* q^(-1) mod 2^16 */
 param int MONT    = 2285;      /* 2^16 % Q */
 param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
 
+inline fn csubq(reg u256 r qx16) -> reg u256
+{
+  reg u256 t;
+  r = #VPSUB_16u16(r, qx16);
+  t = #VPSRA_16u16(r, 15);
+  t = #VPAND_256(t, qx16);
+  r = #VPADD_16u16(t, r);
+  return r;
+}
+
 inline fn red16x(reg u256 r qx16 vx16) -> reg u256
 {
   reg u256 x;
