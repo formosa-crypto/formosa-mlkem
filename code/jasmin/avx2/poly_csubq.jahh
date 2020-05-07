@@ -2,25 +2,23 @@
 #define POLY_CSUBQ_HH
 
 #include "params.jahh"
+#include "reduce.jahh"
+#include "consts.jahh"
+
 
 fn poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
-  reg u64 i;
-  reg u16 t;
-  reg u16 b;
+  reg u256 r qx16;
+  inline int i;
+  
+  qx16 = jqx16[u256 0];
 
-  i = 0;
-  while (i < KYBER_N)
-  {
-    t = rp[(int)i];
-    t -= KYBER_Q;
-    b = t;
-    b >>s= 15;
-    b &= KYBER_Q;
-    t += b;
-    rp[(int)i] = t;
-    i += 1;
+  for i=0 to 16 {
+    r = rp.[u256 32*i];
+    r = csubq(r, qx16);
+    rp.[u256 32*i] = r;
   }
+
   return rp;
 }
 
