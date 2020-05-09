@@ -40,4 +40,55 @@ fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   return a;
 }
 
+
+/*
+  reg u256 x y t0 t1 r qx16 shuf;
+
+  qx16 = jqx16[u256 0];
+  shuf = jshuf[u256 0];
+
+  for i = 0 to 16 {
+    x  = a.[u256 32*i];
+
+    x  = csubq(x, qx16);
+
+    y  = #VPXOR_256(y, y);
+    t0 = #VPUNPCKL_8u32(y, x);
+    t1 = #VPUNPCKHW_8u32(y, x);
+
+    // TODO
+
+    t0 = #VPACKUS
+  }
+
+
+  .global unpck
+unpck:
+
+vmovdqu 0(%rsi), %ymm0
+vmovdqu 0(%rdx), %ymm8
+vpxor   %ymm1, %ymm1, %ymm1
+vpunpcklwd %ymm1, %ymm0, %ymm2
+vpunpckhwd %ymm1, %ymm0, %ymm3
+
+// TODO:  do actual work
+vpsrad $12,%ymm2,%ymm2
+vpsrad $12,%ymm3,%ymm3
+
+
+
+vpackusdw %ymm2, %ymm3, %ymm2
+vpsrad $12, %ymm2, %ymm4
+vpxor %ymm2, %ymm4, %ymm2
+
+vpshufb %ymm8, %ymm2, %ymm2
+vperm2f128 $21, %ymm2, %ymm2, %ymm3
+vpxor %ymm2, %ymm3, %ymm2
+
+vpextrq $0, %xmm2, 0(%rdi)
+
+ret
+*/
+
+
 #endif
