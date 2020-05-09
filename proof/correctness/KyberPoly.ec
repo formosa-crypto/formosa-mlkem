@@ -220,7 +220,7 @@ progress; by smt(@W16 @Fq).
 qed. 
 *)
 
-equiv ntt_correct &m :
+equiv ntt_correct_aux :
   NTT_Fq.NTT.ntt ~ Mderand.poly_ntt : 
         r{1} = lift_array256 rp{2} /\ 
         array_mont zetas{1} = 
@@ -448,6 +448,7 @@ case (x <> to_uint j{2}).
    rewrite (_: (zeta_{1} * inzmod R) * inzmod 169 = zeta_{1}); first by smt(@ZModRing RRinv).
    by ring; smt(@ZModRing @Array256). 
 qed.
+
 
 (*******INVERSE *******)
 

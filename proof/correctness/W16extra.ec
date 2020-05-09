@@ -1,9 +1,6 @@
 require import List Int IntExtra IntDiv CoreMap IntDiv.
 from Jasmin require  import JModel JMemory.
 
-(*
-MOVE ELSEWHERE
-*)
 op b16 (a : W16.t) (b : int) = 
      -b <= to_sint a < b axiomatized by b16E.
 
@@ -74,7 +71,3 @@ proof.
     rewrite (_: (- to_uint a) %% 65536 = 65536 - to_uint a);
            smt(@IntDiv @W16 @IntExtra).
 qed.
-
-(*
-END MOVE ELSEWHERE
-*)

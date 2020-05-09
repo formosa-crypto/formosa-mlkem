@@ -67,13 +67,13 @@ module NTT = {
 }.
 
 axiom ntt_spec _r :
-   hoare[ NTT.ntt :
+   phoare[ NTT.ntt :
      _r = r /\ Kyber_.Poly.zetas = zetas ==>
-       res = Kyber_.Poly.ntt _r ].
+       res = Kyber_.Poly.ntt _r ] = 1%r.
 
 axiom invntt_spec _r  :
-   hoare[ NTT.invntt :
+   phoare[ NTT.invntt :
      _r = r /\ Kyber_.Poly.zetas_inv = zetas_inv ==>
-       res = Kyber_.Poly.invntt _r ].
+       res = Kyber_.Poly.invntt _r ] = 1%r.
 
 end NTT_Fq.
