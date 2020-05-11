@@ -7,7 +7,8 @@ param int QINV    = 62209;     /* q^(-1) mod 2^16 */
 param int MONT    = 2285;      /* 2^16 % Q */
 param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
 
-inline fn csubq(reg u256 r qx16) -> reg u256
+inline 
+fn csubq(reg u256 r qx16) -> reg u256
 {
   reg u256 t;
   r = #VPSUB_16u16(r, qx16);
@@ -17,7 +18,8 @@ inline fn csubq(reg u256 r qx16) -> reg u256
   return r;
 }
 
-inline fn red16x(reg u256 r qx16 vx16) -> reg u256
+inline 
+fn red16x(reg u256 r qx16 vx16) -> reg u256
 {
   reg u256 x;
   x = #VPMULH_16u16(r, vx16);
@@ -25,6 +27,17 @@ inline fn red16x(reg u256 r qx16 vx16) -> reg u256
   x = #VPMULL_16u16(x, qx16);
   r = #VPSUB_16u16(r, x);
   return r;
+}
+
+inline 
+fn fqmulprecomp16x(reg u256 b al ah qx16) -> reg u256
+{
+  reg u256 x;
+  x = #VPMULL_16u16(al, b);
+  b = #VPMULH_16u16(ah, b);
+  x = #VPMULH_16u16(x, qx16);
+  b = #VPSUB_16u16(b, x);
+  return b;
 }
 
 inline
