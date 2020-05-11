@@ -188,7 +188,7 @@ export fn poly_invntt_jazz(reg u64 rp)
   }
 
   //r = poly_invntt(r);
-  r = invntt_level6(r);
+  r = invntt_levels0t5(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
