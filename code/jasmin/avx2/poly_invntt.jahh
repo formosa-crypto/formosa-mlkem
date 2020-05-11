@@ -59,91 +59,94 @@ inline fn invntt_levels0t5(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   zetasp = jzetas_inv_exp;
   qx16 = jqx16[u256 0];
 
-  // level 0:
-  zeta0 = zetasp.[u256 0];
-  zeta1 = zetasp.[u256 64];
-  zeta2 = zetasp.[u256 32];
-  zeta3 = zetasp.[u256 96];
+  for i=0 to 2 
+  {
+    // level 0:
+    zeta0 = zetasp.[u256 0+392*i];
+    zeta1 = zetasp.[u256 64+392*i];
+    zeta2 = zetasp.[u256 32+392*i];
+    zeta3 = zetasp.[u256 96+392*i];
 
-  r0 = rp.[u256 32*0];
-  r1 = rp.[u256 32*1];
-  r2 = rp.[u256 32*2];
-  r3 = rp.[u256 32*3];
-  r4 = rp.[u256 32*4];
-  r5 = rp.[u256 32*5];
-  r6 = rp.[u256 32*6];
-  r7 = rp.[u256 32*7];
+    r0 = rp.[u256 32*0+256*i];
+    r1 = rp.[u256 32*1+256*i];
+    r2 = rp.[u256 32*2+256*i];
+    r3 = rp.[u256 32*3+256*i];
+    r4 = rp.[u256 32*4+256*i];
+    r5 = rp.[u256 32*5+256*i];
+    r6 = rp.[u256 32*6+256*i];
+    r7 = rp.[u256 32*7+256*i];
 
-  r0, r1, r4, r5, r2, r3, r6, r7 = invntt_butterfly64x(r0, r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
+    r0, r1, r4, r5, r2, r3, r6, r7 = invntt_butterfly64x(r0, r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
 
-  // level 1:
-  zeta0 = zetasp.[u256 128];
-  zeta1 = zetasp.[u256 160];
-  
-  r0, r1, r2, r3, r4, r5, r6, r7 = invntt_butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+    // level 1:
+    zeta0 = zetasp.[u256 128+392*i];
+    zeta1 = zetasp.[u256 160+392*i];
 
-  r0, r1 = shuffle1(r0, r1);
-  r2, r3 = shuffle1(r2, r3);
-  r4, r5 = shuffle1(r4, r5);
-  r6, r7 = shuffle1(r6, r7);
+    r0, r1, r2, r3, r4, r5, r6, r7 = invntt_butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
-  // level 2:
-  zeta0 = zetasp.[u256 192];
-  zeta1 = zetasp.[u256 224];
-    
-  vx16 = jvx16[u256 0];
-  
-  r0, r2, r4, r6, r1, r3, r5, r7 = invntt_butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-    
-  r0 = red16x(r0, qx16, vx16);
+    r0, r1 = shuffle1(r0, r1);
+    r2, r3 = shuffle1(r2, r3);
+    r4, r5 = shuffle1(r4, r5);
+    r6, r7 = shuffle1(r6, r7);
 
-  r0, r2 = shuffle2(r0, r2);
-  r4, r6 = shuffle2(r4, r6);
-  r1, r3 = shuffle2(r1, r3);
-  r5, r7 = shuffle2(r5, r7);
+    // level 2:
+    zeta0 = zetasp.[u256 192+392*i];
+    zeta1 = zetasp.[u256 224+392*i];
 
-  // level 3:
-  zeta0 = zetasp.[u256 256];
-  zeta1 = zetasp.[u256 288];
-  
-  r0, r4, r1, r5, r2, r6, r3, r7 = invntt_butterfly64x(r0, r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-  
-  r0 = red16x(r0, qx16, vx16);
-   
-  r0, r4 = shuffle4(r0, r4);
-  r1, r5 = shuffle4(r1, r5);
-  r2, r6 = shuffle4(r2, r6);
-  r3, r7 = shuffle4(r3, r7);
- 
-  // level 4:
-  zeta0 = zetasp.[u256 320];
-  zeta1 = zetasp.[u256 352];
-  
-  r0, r1, r2, r3, r4, r5, r6, r7 = invntt_butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-  
-  r0 = red16x(r0, qx16, vx16);
-   
-  r0, r1 = shuffle8(r0, r1);
-  r2, r3 = shuffle8(r2, r3);
-  r4, r5 = shuffle8(r4, r5);
-  r6, r7 = shuffle8(r6, r7);
- 
-  // level 5:
-  zeta0 = #VPBROADCAST_8u32(zetasp.[u32 384]);
-  zeta1 = #VPBROADCAST_8u32(zetasp.[u32 388]);
+    vx16 = jvx16[u256 0];
 
-  r0, r2, r4, r6, r1, r3, r5, r7 = invntt_butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-  
-  r0 = red16x(r0, qx16, vx16);
- 
-  rp.[u256 32*0] = r0;
-  rp.[u256 32*1] = r2;
-  rp.[u256 32*2] = r4;
-  rp.[u256 32*3] = r6;
-  rp.[u256 32*4] = r1;
-  rp.[u256 32*5] = r3;
-  rp.[u256 32*6] = r5;
-  rp.[u256 32*7] = r7;
+    r0, r2, r4, r6, r1, r3, r5, r7 = invntt_butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    r0, r2 = shuffle2(r0, r2);
+    r4, r6 = shuffle2(r4, r6);
+    r1, r3 = shuffle2(r1, r3);
+    r5, r7 = shuffle2(r5, r7);
+
+    // level 3:
+    zeta0 = zetasp.[u256 256+392*i];
+    zeta1 = zetasp.[u256 288+392*i];
+
+    r0, r4, r1, r5, r2, r6, r3, r7 = invntt_butterfly64x(r0, r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    r0, r4 = shuffle4(r0, r4);
+    r1, r5 = shuffle4(r1, r5);
+    r2, r6 = shuffle4(r2, r6);
+    r3, r7 = shuffle4(r3, r7);
+
+    // level 4:
+    zeta0 = zetasp.[u256 320+392*i];
+    zeta1 = zetasp.[u256 352+392*i];
+
+    r0, r1, r2, r3, r4, r5, r6, r7 = invntt_butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    r0, r1 = shuffle8(r0, r1);
+    r2, r3 = shuffle8(r2, r3);
+    r4, r5 = shuffle8(r4, r5);
+    r6, r7 = shuffle8(r6, r7);
+
+    // level 5:
+    zeta0 = #VPBROADCAST_8u32(zetasp.[u32 384+392*i]);
+    zeta1 = #VPBROADCAST_8u32(zetasp.[u32 388+392*i]);
+
+    r0, r2, r4, r6, r1, r3, r5, r7 = invntt_butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    rp.[u256 32*0+256*i] = r0;
+    rp.[u256 32*1+256*i] = r2;
+    rp.[u256 32*2+256*i] = r4;
+    rp.[u256 32*3+256*i] = r6;
+    rp.[u256 32*4+256*i] = r1;
+    rp.[u256 32*5+256*i] = r3;
+    rp.[u256 32*6+256*i] = r5;
+    rp.[u256 32*7+256*i] = r7;
+  }
 
   return rp;
 }
