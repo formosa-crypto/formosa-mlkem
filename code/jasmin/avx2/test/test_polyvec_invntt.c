@@ -29,7 +29,7 @@ int main(void)
 
   for(int i=0;i<KYBER_K;i++)
     for(int j=0;j<KYBER_N;j++)
-      if(r0.vec[i].coeffs[j] != r1.vec[i].coeffs[j])
+      if((r0.vec[i].coeffs[j] - r1.vec[i].coeffs[j]) % KYBER_Q)
         printf("error polyvec_invntt %d,%d: %d, %d\n", i, j, r0.vec[i].coeffs[j], r1.vec[i].coeffs[j]);
 
   return 0;

@@ -12,9 +12,9 @@ void invntt(int16_t *poly);
 void basemul(int16_t r[2], const int16_t a[2], const int16_t b[2], int16_t zeta);
 
 #define ntt_avx KYBER_NAMESPACE(ntt_avx)
-void ntt_avx(int16_t *r, const uint16_t *qdata);
-void nttl0_avx(int16_t *r, const uint16_t *qdata);
-void nttl1t6_avx(int16_t *r, const uint16_t *qdata);
+//void ntt_avx(int16_t *r, const uint16_t *qdata);
+//void nttl0_avx(int16_t *r, const uint16_t *qdata);
+//void nttl1t6_avx(int16_t *r, const uint16_t *qdata);
 #define invntt_avx KYBER_NAMESPACE(invntt_avx)
 void invntt_avx(int16_t *r, const uint16_t *qdata);
 

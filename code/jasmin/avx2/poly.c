@@ -206,7 +206,11 @@ void poly_ntt(poly *r)
 **************************************************/
 void poly_invntt(poly *r)
 {
+  /*
   invntt(r->coeffs);
+  */
+  nttunpack_avx(r->coeffs, qdata);
+  invntt_avx(r->coeffs, qdata);
 }
 
 /*************************************************
