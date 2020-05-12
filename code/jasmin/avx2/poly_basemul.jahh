@@ -97,10 +97,10 @@ fn basemul32x(reg ptr u16[64] rp ap bp, reg u256 zeta qx16 qinvx16) -> reg ptr u
   rp.[u256 32*0] = x0;
   rp.[u256 32*1] = x1;
 
-//  x0, x1, y0, y1 = schoolbook(ap[32:32], bp[32:32], zeta, qx16, qinvx16, 1);
-//  x0, x1 = basemul_red(x0, x1, y0, y1, qx16, qinvx16);
-//  rp.[u256 32*2] = x0;
-//  rp.[u256 32*3] = x1;
+  x0, x1, y0, y1 = schoolbook(ap[32:32], bp[32:32], zeta, qx16, qinvx16, 1);
+  x0, x1 = basemul_red(x0, x1, y0, y1, qx16, qinvx16);
+  rp.[u256 32*2] = x0;
+  rp.[u256 32*3] = x1;
 
   return rp;
 }
@@ -116,11 +116,11 @@ fn poly_basemul2(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
   zeta = jzetas_exp.[u256 304];
   rp[0:64]   = basemul32x(rp[0:64],   ap[0:64],   bp[0:64], zeta, qx16, qinvx16);
   zeta = jzetas_exp.[u256 368];
-//  rp[64:64]  = basemul32x(rp[64:64],  ap[64:64],  bp[64:64], zeta, qx16, qinvx16);
+  rp[64:64]  = basemul32x(rp[64:64],  ap[64:64],  bp[64:64], zeta, qx16, qinvx16);
   zeta = jzetas_exp.[u256 696];
-//  rp[128:64] = basemul32x(rp[128:64], ap[128:64], bp[128:64], zeta, qx16, qinvx16);
+  rp[128:64] = basemul32x(rp[128:64], ap[128:64], bp[128:64], zeta, qx16, qinvx16);
   zeta = jzetas_exp.[u256 760];
-//  rp[192:64] = basemul32x(rp[192:64], ap[192:64], bp[192:64], zeta, qx16, qinvx16);
+  rp[192:64] = basemul32x(rp[192:64], ap[192:64], bp[192:64], zeta, qx16, qinvx16);
   
   return rp;
 }
