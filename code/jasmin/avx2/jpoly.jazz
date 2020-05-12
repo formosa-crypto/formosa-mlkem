@@ -187,8 +187,7 @@ export fn poly_invntt_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  //r = poly_invntt(r);
-  r = invntt_levels0t5(r);
+  r = poly_invntt(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -209,10 +208,14 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     a[i] = t;
     t = (u16)[bp + 2*i];
     b[i] = t;
+    t = (u16)[rp + 2*i];
+    r[i] = t;
   }
 
-  r[0] = 0;
-  r = poly_basemul(r, a, b);
+//  a = nttunpack(a);
+//  b = nttunpack(b);
+  r = poly_basemul2(r, a, b);
+//  r = nttpack(r);
 
   for i = 0 to KYBER_N {
     t = r[i];

@@ -42,6 +42,8 @@ fn shuffle1(reg u256 a b) -> reg u256, reg u256
   return r0, r1;
 }
 
+
+// Transform from AVX order to bitreversed order
 inline 
 fn nttpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
     -> reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256
@@ -69,5 +71,129 @@ fn nttpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
   return r0, r2, r4, r6, r1, r3, r5, r7;
 }
 
+
+// Transform from bitreversed order to AVX order
+inline 
+fn nttunpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
+    -> reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256
+{
+  r0, r4 = shuffle8(r0, r4);
+  r1, r5 = shuffle8(r1, r5);
+  r2, r6 = shuffle8(r2, r6);
+  r3, r7 = shuffle8(r3, r7);
+
+  r0, r2 = shuffle4(r0, r2);
+  r4, r6 = shuffle4(r4, r6);
+  r1, r3 = shuffle4(r1, r3);
+  r5, r7 = shuffle4(r5, r7);
+
+  r0, r1 = shuffle2(r0, r1);
+  r2, r3 = shuffle2(r2, r3);
+  r4, r5 = shuffle2(r4, r5);
+  r6, r7 = shuffle2(r6, r7);
+
+  r0, r4 = shuffle1(r0, r4);
+  r1, r5 = shuffle1(r1, r5);
+  r2, r6 = shuffle1(r2, r6);
+  r3, r7 = shuffle1(r3, r7);
+
+  return r0, r4, r1, r5, r2, r6, r3, r7;
+}
+
+
+
+fn nttpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u256 r0 r1 r2 r3 r4 r5 r6 r7;
+
+  r0 = rp.[u256 32*0];
+  r1 = rp.[u256 32*1];
+  r2 = rp.[u256 32*2];
+  r3 = rp.[u256 32*3];
+  r4 = rp.[u256 32*4];
+  r5 = rp.[u256 32*5];
+  r6 = rp.[u256 32*6];
+  r7 = rp.[u256 32*7];
+
+  r0, r1, r2, r3, r4, r5, r6, r7 = nttpack128(r0, r1, r2, r3, r4, r5, r6, r7);
+
+  rp.[u256 32*0] = r0;
+  rp.[u256 32*1] = r1;
+  rp.[u256 32*2] = r2;
+  rp.[u256 32*3] = r3;
+  rp.[u256 32*4] = r4;
+  rp.[u256 32*5] = r5;
+  rp.[u256 32*6] = r6;
+  rp.[u256 32*7] = r7;
+
+  r0 = rp.[u256 32*8];
+  r1 = rp.[u256 32*9];
+  r2 = rp.[u256 32*10];
+  r3 = rp.[u256 32*11];
+  r4 = rp.[u256 32*12];
+  r5 = rp.[u256 32*13];
+  r6 = rp.[u256 32*14];
+  r7 = rp.[u256 32*15];
+
+  r0, r1, r2, r3, r4, r5, r6, r7 = nttpack128(r0, r1, r2, r3, r4, r5, r6, r7);
+
+  rp.[u256 32*8] = r0;
+  rp.[u256 32*9] = r1;
+  rp.[u256 32*10] = r2;
+  rp.[u256 32*11] = r3;
+  rp.[u256 32*12] = r4;
+  rp.[u256 32*13] = r5;
+  rp.[u256 32*14] = r6;
+  rp.[u256 32*15] = r7;
+
+  return rp;
+}
+
+fn nttunpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u256 r0 r1 r2 r3 r4 r5 r6 r7;
+
+  r0 = rp.[u256 32*0];
+  r1 = rp.[u256 32*1];
+  r2 = rp.[u256 32*2];
+  r3 = rp.[u256 32*3];
+  r4 = rp.[u256 32*4];
+  r5 = rp.[u256 32*5];
+  r6 = rp.[u256 32*6];
+  r7 = rp.[u256 32*7];
+
+  r0, r1, r2, r3, r4, r5, r6, r7 = nttunpack128(r0, r1, r2, r3, r4, r5, r6, r7);
+
+  rp.[u256 32*0] = r0;
+  rp.[u256 32*1] = r1;
+  rp.[u256 32*2] = r2;
+  rp.[u256 32*3] = r3;
+  rp.[u256 32*4] = r4;
+  rp.[u256 32*5] = r5;
+  rp.[u256 32*6] = r6;
+  rp.[u256 32*7] = r7;
+
+  r0 = rp.[u256 32*8];
+  r1 = rp.[u256 32*9];
+  r2 = rp.[u256 32*10];
+  r3 = rp.[u256 32*11];
+  r4 = rp.[u256 32*12];
+  r5 = rp.[u256 32*13];
+  r6 = rp.[u256 32*14];
+  r7 = rp.[u256 32*15];
+
+  r0, r1, r2, r3, r4, r5, r6, r7 = nttunpack128(r0, r1, r2, r3, r4, r5, r6, r7);
+
+  rp.[u256 32*8] = r0;
+  rp.[u256 32*9] = r1;
+  rp.[u256 32*10] = r2;
+  rp.[u256 32*11] = r3;
+  rp.[u256 32*12] = r4;
+  rp.[u256 32*13] = r5;
+  rp.[u256 32*14] = r6;
+  rp.[u256 32*15] = r7;
+
+  return rp;
+}
 
 #endif
