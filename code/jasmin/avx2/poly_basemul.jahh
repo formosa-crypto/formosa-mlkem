@@ -106,13 +106,13 @@ fn basemul32x(reg ptr u16[64] rp ap bp, reg u256 zeta qx16 qinvx16) -> reg ptr u
 }
 
 
-fn poly_basemul2(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
+fn poly_basemul(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
 {
   reg u256 zeta qx16 qinvx16;
   
   qx16    = jqx16.[u256 0];
   qinvx16 = jqinvx16.[u256 0];
-
+  
   zeta = jzetas_exp.[u256 304];
   rp[0:64]   = basemul32x(rp[0:64],   ap[0:64],   bp[0:64], zeta, qx16, qinvx16);
   zeta = jzetas_exp.[u256 368];
@@ -125,86 +125,5 @@ fn poly_basemul2(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
-
-fn poly_basemul(reg ptr u16[KYBER_N] rp, reg const ptr u16[KYBER_N] ap bp) -> reg ptr u16[KYBER_N]
-{
-  reg u64 offset;
-  reg u16 zeta;
-  reg u16 r0;
-  reg u16 r1;
-  reg u16 a0;
-  reg u16 a1;
-  reg u16 b0;
-  reg u16 b1;
-  reg u16 t;
-  reg ptr u16[128] zetasp;
-  reg u64 zetasctr;
-  reg u64 i;
-
-  stack ptr u16[KYBER_N] srp;
-
-  srp = rp;
-
-  zetasctr = 64;
-  i = 0;
-
-  while(i < KYBER_N)
-  {
-    zetasp = jzetas;
-    zeta = zetasp[(int)zetasctr];
-    zetasctr += 1;
-    
-    a0 = ap[(int)i];
-    b0 = bp[(int)i];
-    i += 1;
-    a1 = ap[(int)i];
-    b1 = bp[(int)i];
-    i -= 1;
-
-    r0 = fqmul(a1, b1);
-    r0 = fqmul(r0, zeta);
-    t  = fqmul(a0, b0);
-    r0 += t;
-
-    r1 = fqmul(a0, b1);
-    t  = fqmul(a1, b0);
-    r1 += t;
-
-    rp = srp;
-    rp[(int)i]   = r0;
-    i += 1;
-    rp[(int)i] = r1;
-    srp = rp;
-
-
-    zeta = -zeta;
-
-    i += 1;
-    a0 = ap[(int)i];
-    b0 = bp[(int)i];
-    i += 1;
-    a1 = ap[(int)i];
-    b1 = bp[(int)i];
-    i -= 1;
-
-    r0 = fqmul(a1, b1);
-    r0 = fqmul(r0, zeta);
-    t  = fqmul(a0, b0);
-    r0 += t;
-
-    r1 = fqmul(a0, b1);
-    t  = fqmul(a1, b0);
-    r1 += t;
-
-    rp = srp;
-    rp[(int)i]   = r0;
-    i += 1;
-    rp[(int)i] = r1;
-    srp = rp;
-    
-    i += 1;
-  }
-  return rp;
-}
 
 #endif

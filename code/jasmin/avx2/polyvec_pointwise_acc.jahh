@@ -2,6 +2,7 @@
 #define POLYVEC_POINTWISE_ACC_HH
 
 #include "params.jahh"
+#include "shuffle.jahh"
 #include "poly_basemul.jahh"
 #include "poly_add2.jahh"
 #include "polyvec_topolys.jahh"
@@ -18,6 +19,13 @@ fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> st
   a0, a1, a2 = polyvec_topolys(a);
   b0, b1, b2 = polyvec_topolys(b);
 
+  a0 = nttunpack(a0);
+  a1 = nttunpack(a1);
+  a2 = nttunpack(a2);
+  b0 = nttunpack(b0);
+  b1 = nttunpack(b1);
+  b2 = nttunpack(b2);
+
   r = poly_basemul(r, a0, b0);
   t = poly_basemul(t, a1, b1);
   r = poly_add2(r, t);
@@ -25,6 +33,8 @@ fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> st
   r = poly_add2(r, t);
 
   r = poly_reduce(r);
+
+  r = nttpack(r);
 
   return r;
 }
@@ -39,6 +49,13 @@ fn polyvec_pointwise_acc_new(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) ->
   a0, a1, a2 = polyvec_topolys(a);
   b0, b1, b2 = polyvec_topolys(b);
 
+  a0 = nttunpack(a0);
+  a1 = nttunpack(a1);
+  a2 = nttunpack(a2);
+  b0 = nttunpack(b0);
+  b1 = nttunpack(b1);
+  b2 = nttunpack(b2);
+
   r = poly_basemul(r, a0, b0);
   t = poly_basemul(t, a1, b1);
   r = poly_add2(r, t);
@@ -46,6 +63,8 @@ fn polyvec_pointwise_acc_new(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) ->
   r = poly_add2(r, t);
 
   r = poly_reduce(r);
+  
+  r = nttpack(r);
 
   return r;
 }

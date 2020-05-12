@@ -212,10 +212,10 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     r[i] = t;
   }
 
-//  a = nttunpack(a);
-//  b = nttunpack(b);
-  r = poly_basemul2(r, a, b);
-//  r = nttpack(r);
+  a = nttunpack(a);
+  b = nttunpack(b);
+  r = poly_basemul(r, a, b);
+  r = nttpack(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
