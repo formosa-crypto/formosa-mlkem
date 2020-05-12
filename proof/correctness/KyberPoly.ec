@@ -59,7 +59,77 @@ op minimum_residues(zetas : W16.t Array128.t) : bool =
    forall k, 0 <= k < 128 => bpos16  zetas.[k] Kyber_.q.
 
 require import IndcpaDerand.
-print Mderand.
+print Indcpa.M.
+
+(*
+  proc poly_tomsg(rp : W64.t, a : W16.t Array256.t) : unit = Indcpa.M.poly_tomsg
+  
+  proc poly_frommsg(ap : W64.t) : W16.t Array256.t = Indcpa.M.poly_frommsg  
+
+  proc poly_frommont(rp : W16.t Array256.t) : W16.t Array256.t = Indcpa.M.poly_frommont
+*)
+
+lemma poly_sub_corr _a _b ab bb :
+    0 <= ab <= 4 => 0 <= bb <= 4 =>  
+      hoare[ Mderand.poly_sub :
+           _a = lift_array256 ap /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           forall k, 0 <= k < 256 =>
+              inzmod (to_sint res.[k]) = _a.[k] - _b.[k]]. 
+move => *.
+proc. 
+while (
+           0 <= i <= 256 /\
+           _a = lift_array256 ap /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb /\
+           signed_bound_cxq rp 0 i (ab + bb) /\ 
+           forall k, 0 <= k < i =>
+              inzmod (to_sint rp.[k]) = _a.[k] - _b.[k]
+); last by auto => />; smt(@Array256 @Fq). 
+
+wp; skip.
+move => &hr [#] *.
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+
+split; last first. 
+move => *.
+
+case (k < i{hr}); first by move => *; smt(@Array256). 
+
+move => *; rewrite (_: k =i{hr}) => />; first by smt().
+rewrite set_eqiE; first 2 by smt().
+
+move : (sub_corr ap{hr}.[i{hr}] bp{hr}.[i{hr}] _a.[i{hr}] _b.[i{hr}] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256 @Fq). 
+move : H5; rewrite /signed_bound_cxq =>  *.
+move : (H5 k _); by smt(@Fq b16E).
+move : H6; rewrite /signed_bound_cxq =>  *.
+move : (H6 k _);  by smt(@Fq).
+
+rewrite /signed_bound_cxq.
+move => *.
+case (k < i{hr}); first by move => *; move : H7; rewrite /signed_bound_cxq;smt(@Array256). 
+
+move => *; rewrite (_: k =i{hr}) => />; first by smt().
+
+move : H5; rewrite /signed_bound_cxq =>  *.
+move : (H5 i{hr} _); first by smt().
+move : H6; rewrite /signed_bound_cxq =>  *.
+move : (H6 i{hr} _); first  by smt().
+move => *.
+rewrite /rp0.
+rewrite set_eqiE; first 2 by smt().
+rewrite !to_sintB_small => />; by smt(@W16 @Fq b16E). 
+qed.
 
 lemma poly_add_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
@@ -365,17 +435,147 @@ rewrite /smod => />. smt.
 by auto => /> /#. 
 qed.
 
+hint simplify range_ltn, range_geq.
+
+lemma formula x :
+  0 <= x < 3329 =>
+   (x * 16 + 1664) * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16.
+proof.
+  have ? :
+   (all
+     (fun x => (x * 16 + 1664) * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16)
+     (range 0 3329)).
+by [] => />.
+by smt().
+qed.
+
+lemma roundcimpl (a : W16.t) :
+  bpos16 a q =>
+  inzmod
+  (to_sint (truncateu16
+         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`
+           (of_int 28)%W8) `&`
+          (of_int 15)%W32))) = roundc (inzmod (to_sint a)).
+proof.
+rewrite /zeroextu32 /truncateu16 roundcE Fq.Kyber_.qE => /> *.
+rewrite (_: W32.of_int 15 = W32.masklsb 4); first by smt(@W32).
+rewrite W32.and_mod => />. 
+rewrite W32.of_uintK to_sintE.
+rewrite /(`<<`) /(`>>`).
+rewrite W32.shlMP; first by smt().
+rewrite W32.to_uint_shr; first by smt().
+rewrite W16.of_uintK.
+congr.
+rewrite inzmodK.
+rewrite to_sintE.
+rewrite Fq.Kyber_.qE.
+auto => />.
+rewrite IntDiv.pmod_small. smt(@W32).
+rewrite IntDiv.pmod_small. smt(@W32).
+rewrite (IntDiv.pmod_small _ 3329). smt(@W16).
+rewrite (_: (smod (to_uint a))%W16 = to_uint a). smt(@W16).
+pose xx := (to_uint a * 16 + 1664).
+rewrite W32.of_uintK => />.
+pose yy := xx * 80636 %% 4294967296 %/ 268435456 %%16.
+have ? : (0 <= yy < 2^16). smt(@W16).
+rewrite (_: W16.smod yy =  yy). smt(@W16).
+rewrite /yy.
+rewrite (_: 80636 = 268435456 %/ 3329 + 1). smt().
+rewrite (_: xx * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 
+  = xx %/ 3329 %% 16); last by smt().
+   have ? : 0 <= to_uint a < 3329. smt (@W16). 
+rewrite /xx.
+move : (formula (to_uint a)).
+smt().
+qed.
+
+lemma roundcimpl_rng (a : W16.t) :
+  bpos16 a q =>
+  0 <= to_sint (truncateu16
+         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`
+           (of_int 28)%W8) `&`
+          (of_int 15)%W32)) < 16.
+proof.
+rewrite to_sintE; move => /> *.
+rewrite (_: W32.of_int 15 = W32.masklsb 4); first by smt(@W32).
+rewrite W32.and_mod => />. 
+pose xx := (W32.of_int
+             (to_uint
+                (((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) %%
+              16)).
+have ? : 0<= to_uint  xx < 16; first by smt(@W32).
+have ? : 0<= to_uint  (truncateu16 xx) < 16.
+  rewrite /truncateu16; smt(@W16 @W32).
+  by rewrite /smod;  smt(@W16).
+qed.
+
 lemma poly_compress_round_corr ap :
       hoare[ Mderand.poly_compress_round :
            ap = lift_array256 a /\
-           pos_bound256_cxq a 0 256 1 
+           pos_bound256_cxq a 0 256 2 
            ==>
            Array256.map Poly.roundc ap = lift_array256 res /\
-           pos_bound256_cxq res 0 256 1 ] 
-. 
+           forall k,
+            0<= k < 256  => 0<= to_sint res.[k] < 16 ].
 move => *.
 proc.
-admitted.
+seq 1 : (ap = lift_array256 a /\
+           pos_bound256_cxq a 0 256 1).
+call (poly_csubq_corr ap) => />; first by auto => />.
+while (ap = lift_array256 a /\
+       pos_bound256_cxq a 0 256 1 /\
+       (forall k,
+          0 <= k < 2*i =>
+           inzmod (W16.to_sint r.[k]) = roundc ap.[k]) /\
+       (forall k,
+            0<= k < 2*i  => 0<= to_sint r.[k] < 16) /\
+       0 <= i <= 128); last first.
+auto => />  *.
+split. smt().
+move => *. 
+split; last  by smt().
+move : H1; rewrite /lift_array256 => *.
+apply Array256.ext_eq => /> *.
+move : (H1 x _) => />; first by smt().
+by rewrite !mapiE => /> ->.
+auto => />.
+move => *.
+split.
+move => *.
+case (k <2*i{hr}) => /> *.
+rewrite set_neqiE; first 2 by smt().
+rewrite set_neqiE; first 2 by smt().
+by apply (H0 k _) => />.
+case (k = 2*i{hr}) => /> *.
+rewrite set_neqiE; first 2 by smt().
+rewrite set_eqiE; first 2 by smt().
+rewrite /lift_array256 mapiE => />; first by smt().
+apply (roundcimpl a{hr}.[2 * i{hr}]).
+  move : H; rewrite /pos_bound256_cxq => /> *.
+  by move : (H (2*i{hr}) _); smt().
+rewrite (_: k = 2*i{hr} + 1); first by smt().
+rewrite set_eqiE; first 2 by smt().
+rewrite /lift_array256 mapiE => />; first by smt().
+apply (roundcimpl a{hr}.[2 * i{hr} + 1]).
+  move : H; rewrite /pos_bound256_cxq => /> *.
+  by move : (H (2*i{hr} + 1) _); smt().
+
+split; last by smt().
+
+move : H H1; rewrite /pos_bound256_cxq => /> *.
+case (k <2*i{hr}) => /> *.
+rewrite set_neqiE; first 2 by smt().
+rewrite set_neqiE; first 2 by smt().
+by smt().
+case (k = 2*i{hr}) => /> *.
+rewrite set_neqiE; first 2 by smt().
+rewrite set_eqiE; first 2 by smt().
+by move : (roundcimpl_rng a{hr}.[2*i{hr}]); smt().
+rewrite (_: k = 2*i{hr} + 1); first by smt().
+rewrite set_eqiE; first 2 by smt().
+by move : (roundcimpl_rng a{hr}.[2*i{hr} + 1]); smt().
+qed.
+
 
 (*******DIRECT NTT *******)
 

@@ -16,7 +16,150 @@ print M.
 op scoins : W8.t Array32.t distr.
 
 module Mderand = {
-  include M [-indcpa_keypair_jazz, indcpa_enc_jazz, indcpa_dec_jazz, poly_compress, poly_decompress, polyvec_compress, polyvec_decompress]
+  include M [-indcpa_keypair_jazz, indcpa_enc_jazz, indcpa_dec_jazz, poly_compress, poly_decompress, poly_tomsg, poly_frommsg, polyvec_compress, polyvec_decompress]
+ 
+  proc poly_tomsg_decode (a:W16.t Array256.t) : W32.t Array256.t = {
+    var aux: int;
+    
+    var r:W8.t;
+    var j:int;
+    var i:int;
+    var t:W16.t;
+    var d:W32.t;
+    var rp:W32.t Array256.t;
+    
+    a <@ poly_csubq (a);
+    i <- 0;
+    r <- witness;
+    while (i < 32) {
+      r <- (W8.of_int 0);
+      j <- 0;
+      while (j < 8) {
+        t <- a.[((8 * i) + j)];
+        d <- (zeroextu32 t);
+        d <- (d `<<` (W8.of_int 1));
+        d <- (d + (W32.of_int 1664));
+        d <- (d * (W32.of_int 80636));
+        d <- (d `>>` (W8.of_int 28));
+        d <- (d `&` (W32.of_int 1));
+        rp.[8*i+j] <- d;
+        j <- j + 1;
+      }
+      i <- i + 1;
+    }
+    return rp;
+  }
+  
+  proc poly_tomsg_store (rp:W64.t, a: W32.t Array256.t) : unit = {
+    var aux: int;
+    
+    var r:W8.t;
+    var j:int;
+    var i:int;
+    var t:W16.t;
+    var d:W32.t;
+    
+    i <- 0;
+    while (i < 32) {
+      r <- (W8.of_int 0);
+      j <- 0;
+      while (j < 8) {
+        d <- a.[((8 * i) + j)];
+        d <- (d `<<` (W8.of_int j));
+        r <- (r `|` (truncateu8 d));
+        j <- j + 1;
+      }
+      Glob.mem <- storeW8 Glob.mem (W64.to_uint (rp + (W64.of_int i))) r;
+      i <- i + 1;
+    }
+    return ();
+  }
+
+  proc poly_frommsg_load (ap:W64.t) : W16.t Array256.t = {
+    var aux: int;
+    
+    var rp:W16.t Array256.t;
+    var i:int;
+    var c:W8.t;
+    var t:W16.t;
+    rp <- witness;
+    i <- 0;
+    while (i < 32) {
+      c <- (loadW8 Glob.mem (W64.to_uint (ap + (W64.of_int i))));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[(8 * i)] <- t;
+      c <- (c `>>` (W8.of_int 1));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[((8 * i) + 1)] <- t;
+      c <- (c `>>` (W8.of_int 1));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[((8 * i) + 2)] <- t;
+      c <- (c `>>` (W8.of_int 1));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[((8 * i) + 3)] <- t;
+      c <- (c `>>` (W8.of_int 1));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[((8 * i) + 4)] <- t;
+      c <- (c `>>` (W8.of_int 1));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[((8 * i) + 5)] <- t;
+      c <- (c `>>` (W8.of_int 1));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[((8 * i) + 6)] <- t;
+      c <- (c `>>` (W8.of_int 1));
+      t <- (zeroextu16 c);
+      t <- (t `&` (W16.of_int 1));
+      rp.[((8 * i) + 7)] <- t;
+      i <- i + 1;
+    }
+    return (rp);
+  }
+
+  proc poly_frommsg_encode (r : W16.t Array256.t ) : W16.t Array256.t = {
+    var aux: int;
+    
+    var rp:W16.t Array256.t;
+    var i:int;
+    var c:W8.t;
+    var t:W16.t;
+    rp <- witness;
+    i <- 0;
+    while (i < 32) {
+      t <- r.[8*i+0];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[(8 * i)] <- t;
+      t <- r.[8*i+1];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[((8 * i) + 1)] <- t;
+      t <- r.[8*i+2];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[((8 * i) + 2)] <- t;
+      t <- r.[8*i+3];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[((8 * i) + 3)] <- t;
+      t <- r.[8*i+4];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[((8 * i) + 4)] <- t;
+      t <- r.[8*i+5];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[((8 * i) + 5)] <- t;
+      t <- r.[8*i+6];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[((8 * i) + 6)] <- t;
+      t <- r.[8*i+7];
+      t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
+      rp.[((8 * i) + 7)] <- t;
+      i <- i + 1;
+    }
+    return (rp);
+  }
 
  proc poly_compress_round(a : W16.t Array256.t) : W16.t Array256.t = {
     var aux : int;
@@ -34,15 +177,15 @@ module Mderand = {
       t <- a.[2 * i];
       d0 <- zeroextu32 t;
       d0 <- d0 `<<` (of_int 4)%W8;
-      d0 <- d0 + (of_int 1665)%W32;
-      d0 <- d0 * (of_int 80635)%W32;
+      d0 <- d0 + (of_int 1664)%W32;
+      d0 <- d0 * (of_int 80636)%W32;
       d0 <- d0 `>>` (of_int 28)%W8;
       d0 <- d0 `&` (of_int 15)%W32;
       t <- a.[2 * i + 1];
       d1 <- zeroextu32 t;
       d1 <- d1 `<<` (of_int 4)%W8;
-      d1 <- d1 + (of_int 1665)%W32;
-      d1 <- d1 * (of_int 80635)%W32;
+      d1 <- d1 + (of_int 1664)%W32;
+      d1 <- d1 * (of_int 80636)%W32;
       d1 <- d1 `>>` (of_int 28)%W8;
       d1 <- d1 `&` (of_int 15)%W32;
       r.[2*i] <- truncateu16 d0;
@@ -140,8 +283,8 @@ module Mderand = {
         t.[k] <- zeroextu64 aa.[to_uint i];
         i <- i + W64.one;
         t.[k] <- t.[k] `<<` (of_int 10)%W8;
-        t.[k] <- t.[k] + (of_int 1665)%W64;
-        t.[k] <- t.[k] * (of_int 1290167)%W64;
+        t.[k] <- t.[k] + (of_int 1664)%W64;
+        t.[k] <- t.[k] * (of_int 1290168)%W64;
         t.[k] <- t.[k] `>>` (of_int 32)%W8;
         t.[k] <- t.[k] `&` (of_int 1023)%W64;
         k <- k + 1;
@@ -455,7 +598,7 @@ module Mderand = {
     return (sp_0,ep,epp);
   }
 
-  proc indcpa_enc_compute(msgp:W64.t,publicseed:W8.t Array32.t, pkpv:W16.t Array768.t, sp_0 ep:W16.t Array768.t, epp:W16.t Array256.t) : W16.t Array768.t * W16.t Array256.t = {
+  proc indcpa_enc_compute(msgp:W16.t Array256.t,publicseed:W8.t Array32.t, pkpv:W16.t Array768.t, sp_0 ep:W16.t Array768.t, epp:W16.t Array256.t) : W16.t Array768.t * W16.t Array256.t = {
     var k:W16.t Array256.t;
     var one:W64.t;
     var at0:W16.t Array768.t;
@@ -470,7 +613,7 @@ module Mderand = {
     var r2:W16.t Array256.t;
 
     
-    k <@ poly_frommsg (msgp);
+    k <@ poly_frommsg_encode (msgp);
     one <- (W64.of_int 1);
     (at0, at1, at2) <@ gen_matrix (publicseed, one);
     sp_0 <@ polyvec_ntt (sp_0);
@@ -502,6 +645,7 @@ module Mderand = {
     var pkpv:W16.t Array768.t;
     var r1:W16.t Array768.t;
     var r2:W16.t Array256.t;
+    var msg:W16.t Array256.t;
 
     publicseed <- witness;
     pkpv <@ polyvec_frombytes (pkp);
@@ -515,7 +659,8 @@ module Mderand = {
       i <- (i + (W64.of_int 1));
     }
     (sp_0,ep,epp) <@ indcpa_enc_expand_seed(coinsp);
-    (r1,r2) <@ indcpa_enc_compute(msgp,publicseed,pkpv,sp_0,ep,epp);
+    msg <@ poly_frommsg_load(msgp);
+    (r1,r2) <@ indcpa_enc_compute(msg,publicseed,pkpv,sp_0,ep,epp);
     polyvec_compress_store(ctp,r1);
     ctp <- (ctp + (W64.of_int (3 * 320)));
     poly_compress_store(ctp,r2);
@@ -533,10 +678,11 @@ module Mderand = {
     indcpa_enc_jazz(ctp, msgp, pkp, coinsp);
   }
 
-  proc indcpa_dec_compute(msgp:W64.t, r1 : W32.t Array768.t, r2 : W16.t Array256.t,skpv:W16.t Array768.t) : unit = {
+  proc indcpa_dec_compute(r1 : W32.t Array768.t, r2 : W16.t Array256.t,skpv:W16.t Array768.t) : W32.t Array256.t = {
     var bp:W16.t Array768.t;
     var v:W16.t Array256.t;
     var mp:W16.t Array256.t;
+    var msg :W32.t  Array256.t;
 
     bp <@ polyvec_decompress_restore (r1);
     v <@ poly_decompress_restore (r2);
@@ -545,8 +691,8 @@ module Mderand = {
     mp <@ poly_invntt (mp);
     mp <@ poly_sub (v, mp);
     mp <@ poly_reduce (mp);
-    poly_tomsg (msgp, mp);
-    return ();
+    msg <@ poly_tomsg_decode (mp);
+    return msg;
   }
 
   proc indcpa_dec_jazz (msgp:W64.t, ctp:W64.t, skp:W64.t) : unit = {
@@ -554,13 +700,15 @@ module Mderand = {
     var skpv:W16.t Array768.t;
     var r1 : W32.t Array768.t;
     var r2 : W16.t Array256.t;
+    var msg :W32.t  Array256.t;
 
     skpv <@ polyvec_frombytes (skp);
     r1 <@ polyvec_decompress_load(ctp);
     ctp <- (ctp + (W64.of_int (3 * 320)));
     r2 <@ poly_decompress_load(ctp);
 
-    indcpa_dec_compute(msgp,r1,r2,skpv);
+    msg <@ indcpa_dec_compute(r1,r2,skpv);
+    poly_tomsg_store(msgp,msg);
     return ();
   }
 

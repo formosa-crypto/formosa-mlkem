@@ -28,7 +28,7 @@ int main(void)
 
   for(int i=0;i<KYBER_N;i++)
   {
-    if(r0.coeffs[i] != r1.coeffs[i])
+    if((r0.coeffs[i] - r1.coeffs[i]) % KYBER_Q)
       printf("error %d, %d, %d\n", i, r0.coeffs[i], r1.coeffs[i]);
   }
 

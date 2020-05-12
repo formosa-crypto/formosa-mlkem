@@ -350,6 +350,7 @@ proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.
 
 
 op add (a b : W16.t) = (a + b).
+op sub (a b : W16.t) = (a - b).
 
 import ZModRing.
 lemma add_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
@@ -370,6 +371,34 @@ have bounds_asz : 0 < aszb <= 16384;
 have bounds_bsz : 0 < bszb <= 16384; 
   first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle bsz 14 _) => /#].
 rewrite !to_sintD_small => />; first by  by smt().
+
+split; first by smt(@ZModRing).
+
+case (max asz bsz = asz).
++ move => maxx; rewrite maxx;
+  rewrite (_: 2^(asz + 1) = aszb * 2); smt(@W16 @IntExtra). 
++ move => maxx; rewrite (_: max asz bsz = bsz); 
+    [by smt() | by rewrite (_: 2^(bsz + 1) = bszb * 2); smt(@W16 @IntExtra)]. 
+qed.
+
+lemma sub_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
+   0 <= asz < 15 => 0 <= bsz < 15 =>
+   a' = inzmod (W16.to_sint a) =>
+   b' = inzmod (W16.to_sint b) =>
+   bw16 a asz => 
+   bw16 b bsz =>
+     inzmod (W16.to_sint (sub a b)) = a' - b' /\
+           bw16 (sub a b) (max asz bsz + 1).
+proof.
+rewrite /sub  => />.
+pose aszb := 2^asz.
+pose bszb := 2^bsz.
+move => ?? ?? ?? ??.
+have bounds_asz : 0 < aszb <= 16384;
+  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle asz 14 _) => /#].
+have bounds_bsz : 0 < bszb <= 16384; 
+  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle bsz 14 _) => /#].
+rewrite !to_sintB_small => />; first by  by smt().
 
 split; first by smt(@ZModRing).
 

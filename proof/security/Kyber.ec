@@ -10,8 +10,8 @@ op q : int = 3329 axiomatized by qE.
 clone import ZModRing with op p <- q proof ge2_p by smt(qE).
 
 type elem = zmod.
-op trueval = q %/ 2. (* Is this it? *)
-op falseval = 0. (* Is this it? *)
+op trueval = (q+1) %/ 2.
+op falseval = 0.
 
 op dshort_elem : elem distr.
 op duni_elem : elem distr.
