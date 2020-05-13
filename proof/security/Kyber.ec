@@ -1,7 +1,7 @@
 require import AllCore Array128 Array256 Array768 IntDiv IntExtra Distr List DList.
 require import ZModP.
 require import MLWE_PKE.
-
+require import W16extra.
 
 theory Kyber.
 
@@ -56,7 +56,7 @@ op m_encode(m : message) : poly =
                  else ZModRing.inzmod falseval) m.
 
 op m_decode(mp : poly) : message =
-   map (fun c => ! (- q%/4 < ZModRing.asint c < q%/ 4)) mp.
+   map (fun c => ! (- (q%/4+ 1) < (if q %/ 2 < (ZModRing.asint c) then ((ZModRing.asint c) - q) else (ZModRing.asint c)) < q%/ 4 + 1)) mp.
 
 op roundc(c : elem) : elem = 
     ZModRing.inzmod (((ZModRing.asint c * 2^4 + (q %/ 2)) %/q) %% 2^4) 
@@ -129,9 +129,13 @@ axiom kvec_ge3 : 3 <= kvec.
 
 op pm = pe_R^(kvec^2).
 
+op balasint c = if q %/ 2 < (ZModRing.asint c) 
+                     then ((ZModRing.asint c) - q) 
+                     else (ZModRing.asint c).
 op noise_val (p : poly) : int =
-      foldr (fun c cc => max (`| ZModRing.asint c|) cc ) 
-                  (`|ZModRing.asint (head witness (to_list p))|) 
+       foldr (fun c (cc : int) => if `|cc| < `| balasint c|
+                          then balasint c else cc) 
+                              (balasint (head witness (to_list p))) 
                                    (behead (to_list p)).
 
 op cv_bound : int = 104. (* computed in sec estimates, must be
@@ -217,7 +221,7 @@ admit.
 qed.
 
 realize good_decode.
-rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval qE  => /> *.
+rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval /balasint qE  => /> *.
 apply Array256.ext_eq => /> *.
 rewrite mapiE; first by smt().
 auto => />.
@@ -227,7 +231,17 @@ rewrite ZModRing.addE  qE => />.
 rewrite mapiE; first by smt().
 have ? : (to_list n <> []). smt(@Array256).
 auto => />.
-have nb : (-832 < ZModRing.asint n.[x] < 832); last by case (m.[x]); smt. 
+have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first.
+case (m.[x]). move => * />. rewrite inzmodK qE => />. 
+move : H4.
+case (1664 < asint n.[x]); smt().  
+move => *. 
+case (1664 < asint n.[x]); smt(@ZModRing). 
+have ? : (all (fun c => -832 < (if 1664 < asint c then asint c - 3329 else asint n.[x]) < 832) (to_list n)); last by smt (@List @Array256).
+move : H H0 H3.
+elim (to_list n).
+smt (@List @Array256).
+move => /> *. 
 admit.
 qed. 
 
@@ -246,7 +260,14 @@ axiom All (O <: ARO{A}):
      islossless A(O).find.
 
 lemma fail_prob &m : 
-   Pr[ CorrectnessBound.main() @ &m : res] = fail_prob.
+   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
+byphoare.
+proc.
+rnd.
+skip.
+auto => />.
+rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
+rewrite /good_noise /cv_bound /noise_val.
 admitted.
 
 print correctness_bound.

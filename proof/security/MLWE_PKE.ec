@@ -620,19 +620,21 @@ module CorrectnessBound = {
 op fail_prob : real.
 
 axiom fail_prob &m : 
-   Pr[ CorrectnessBound.main() @ &m : res] = fail_prob.
+   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
   
 lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
   1%r - fail_prob.
 proof.
-rewrite -(fail_prob &m).
+have  := (fail_prob &m).
 rewrite (_:
    Pr[CorrectnessBound.main() @ &m : res] =
-   Pr[CorrectnessNoiseAprox.main() @ &m : res]); last by apply (correctness_aprox &m).
+   Pr[CorrectnessNoiseAprox.main() @ &m : res]). 
 byequiv => //.
 proc.
 by admit. (* 6-product composition of distributions *)
+move : (correctness_aprox &m).
+smt().
 qed.
 
 end section.
