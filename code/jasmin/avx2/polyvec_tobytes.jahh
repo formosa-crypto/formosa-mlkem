@@ -2,12 +2,17 @@
 #define POLYVEC_TOBYTES_HH
 
 #include "params.jahh"
+#include "shuffle.jahh"
 #include "poly_tobytes.jahh"
 
 inline
 fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
 {
   reg u64 pp;
+
+  a[0:KYBER_N] = nttpack(a[0:KYBER_N]);
+  a[KYBER_N:KYBER_N] = nttpack(a[KYBER_N:KYBER_N]);
+  a[2*KYBER_N:KYBER_N] = nttpack(a[2*KYBER_N:KYBER_N]);
 
   pp = rp;
   a[0:KYBER_N] = poly_tobytes(pp, a[0:KYBER_N]);

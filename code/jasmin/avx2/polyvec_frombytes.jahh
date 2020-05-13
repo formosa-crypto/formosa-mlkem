@@ -2,6 +2,7 @@
 #define POLYVEC_FROMBYTES_HH
 
 #include "params.jahh"
+#include "shuffle.jahh"
 #include "poly_frombytes.jahh"
 
 inline
@@ -9,13 +10,17 @@ fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_VECN] r;
   reg u64 pp;
-
+  
   pp = ap;
   r[0:KYBER_N] = poly_frombytes(r[0:KYBER_N], pp);
   pp += KYBER_POLYBYTES;
   r[KYBER_N:KYBER_N] = poly_frombytes(r[KYBER_N:KYBER_N], pp);
   pp += KYBER_POLYBYTES;
   r[2*KYBER_N:KYBER_N] = poly_frombytes(r[2*KYBER_N:KYBER_N], pp);
+
+  r[0:KYBER_N] = nttunpack(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = nttunpack(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = nttunpack(r[2*KYBER_N:KYBER_N]);
 
   return r;
 }

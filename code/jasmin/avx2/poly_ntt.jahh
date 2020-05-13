@@ -231,7 +231,8 @@ fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   rp = ntt_level0(rp);
   rp = ntt_level1t6(rp);
-  rp = nttpack(rp);
+
+//  rp = nttpack(rp);
 
   return rp;
 }

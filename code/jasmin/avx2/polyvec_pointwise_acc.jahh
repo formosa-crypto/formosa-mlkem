@@ -18,12 +18,14 @@ fn polyvec_pointwise_acc(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> sta
   a0, a1, a2 = polyvec_topolys(a);
   b0, b1, b2 = polyvec_topolys(b);
 
+/*
   a0 = nttunpack(a0);
   a1 = nttunpack(a1);
   a2 = nttunpack(a2);
   b0 = nttunpack(b0);
   b1 = nttunpack(b1);
   b2 = nttunpack(b2);
+  */
 
   r = poly_basemul(r, a0, b0);
   t = poly_basemul(t, a1, b1);
@@ -33,7 +35,7 @@ fn polyvec_pointwise_acc(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> sta
 
   r = poly_reduce(r);
   
-  r = nttpack(r);
+//  r = nttpack(r);
 
   return r;
 }

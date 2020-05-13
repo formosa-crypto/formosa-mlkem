@@ -207,7 +207,7 @@ inline fn invntt_level6(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 
 fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
-  rp = nttunpack(rp);
+//  rp = nttunpack(rp);
   rp = invntt_levels0t5(rp);
   rp = invntt_level6(rp);
   return rp;
