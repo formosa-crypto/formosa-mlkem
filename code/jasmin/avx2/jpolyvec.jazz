@@ -24,6 +24,10 @@ export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
+  a[0:KYBER_N] = nttunpack(a[0:KYBER_N]);
+  a[KYBER_N:KYBER_N] = nttunpack(a[KYBER_N:KYBER_N]);
+  a[2*KYBER_N:KYBER_N] = nttunpack(a[2*KYBER_N:KYBER_N]);
+
   polyvec_tobytes(rp, a);
 }
 
@@ -68,6 +72,10 @@ export fn polyvec_frombytes_jazz(reg u64 rp, reg u64 ap)
   stack u16[KYBER_VECN] r;
 
   r = polyvec_frombytes(ap);
+
+  r[0:KYBER_N] = nttpack(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = nttpack(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = nttpack(r[2*KYBER_N:KYBER_N]);
 
   for i = 0 to KYBER_VECN {
     t = r[i];

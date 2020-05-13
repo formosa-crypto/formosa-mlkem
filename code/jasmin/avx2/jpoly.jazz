@@ -60,7 +60,8 @@ export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap)
     t = (u16)[ap + 2*i];
     a[i] = t;
   }
-
+  
+  a = nttunpack(a);
   a = poly_tobytes(rp, a);
 }
 
@@ -72,6 +73,8 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
   stack u16[KYBER_N] r;
 
   r = poly_frombytes(r, ap);
+
+  r = nttpack(r);
 
   for i = 0 to KYBER_N {
     t = r[i];

@@ -27,7 +27,7 @@ int main(void)
   for(int i=0;i<KYBER_POLYVECBYTES;i++)
   {
     if(out0[i] != out1[i])
-      printf("error poly_tobytes %d, %d, %d\n", i, out0[i], out1[i]);
+      printf("error polyvec_tobytes %d, %d, %d\n", i, out0[i], out1[i]);
   }
 
   return 0;
