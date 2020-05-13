@@ -2,7 +2,6 @@
 #define POLYVEC_ADD_HH
 
 #include "params.jahh"
-#include "polyvec_topolys.jahh"
 #include "poly_add2.jahh"
 
 inline

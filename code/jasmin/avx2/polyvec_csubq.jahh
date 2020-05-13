@@ -3,7 +3,6 @@
 
 #include "params.jahh"
 #include "poly_csubq.jahh"
-#include "polyvec_topolys.jahh"
 
 inline
 fn polyvec_csubq(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]

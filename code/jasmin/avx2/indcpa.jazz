@@ -24,7 +24,6 @@
 #include "polyvec_invntt.jahh"
 #include "polyvec_csubq.jahh"
 #include "polyvec_reduce.jahh"
-#include "polyvec_topolys.jahh"
 #include "gen_matrix.jahh"
 
 

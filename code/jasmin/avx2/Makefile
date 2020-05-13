@@ -73,8 +73,6 @@ POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_pointwise_acc.jahh \
                  polyvec_reduce.jahh \
                  polyvec_csubq.jahh \
-								 polyvec_topolys.jahh \
-								 polyvec_frompolys.jahh \
                  gen_matrix.jahh \
 
 INCS    = fq.inc shuffle.inc
