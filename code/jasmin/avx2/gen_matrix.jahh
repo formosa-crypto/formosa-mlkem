@@ -76,7 +76,6 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
     extseed[j] = c;
   }
 
-  // Compute rr
   for i = 0 to KYBER_K
   {
     for j = 0 to KYBER_K
@@ -101,9 +100,12 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
         sctr = ctr;
         state, buf = shake128_squeezeblock(state, buf);
         ctr = sctr;
-        ctr, poly  = rej_uniform(poly, ctr, buf);
+        //ctr, poly  = rej_uniform(poly, ctr, buf);
+
+        ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN*j*KYBER_N:KYBER_N], ctr, buf);
       }
 
+      /*
       k = 0;
       l = j * KYBER_N;
       l += i * KYBER_VECN;
@@ -114,86 +116,9 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
         k += 1;
         l += 1;
       }
+      */
     }
   }
-
-/*
-  // Compute r1
-  for j = 0 to KYBER_K
-  {
-    transposed = stransposed;
-    if(transposed == 0)
-    {
-      extseed[KYBER_SYMBYTES] = j;
-      extseed[KYBER_SYMBYTES+1] = 1;
-    }
-    else
-    {
-      extseed[KYBER_SYMBYTES] = 1;
-      extseed[KYBER_SYMBYTES+1] = j;
-    }
-
-    state = shake128_absorb34(state, extseed);
-
-    ctr = 0;
-    while (ctr < KYBER_N)
-    {
-      sctr = ctr;
-      state, buf = shake128_squeezeblock(state, buf);
-      ctr = sctr;
-      ctr, poly  = rej_uniform(poly, ctr, buf);
-    }
-
-    k = 0;
-    l = j * KYBER_N;
-    l += KYBER_VECN;
-    while (k < KYBER_N)
-    {
-      t = poly[(int) k];
-      rr[(int) l] = t;
-      k += 1;
-      l += 1;
-    }
-  }
-
-  // Compute r2
-  for j = 0 to KYBER_K
-  {
-    transposed = stransposed;
-    if(transposed == 0)
-    {
-      extseed[KYBER_SYMBYTES] = j;
-      extseed[KYBER_SYMBYTES+1] = 2;
-    }
-    else
-    {
-      extseed[KYBER_SYMBYTES] = 2;
-      extseed[KYBER_SYMBYTES+1] = j;
-    }
-
-    state = shake128_absorb34(state, extseed);
-
-    ctr = 0;
-    while (ctr < KYBER_N)
-    {
-      sctr = ctr;
-      state, buf = shake128_squeezeblock(state, buf);
-      ctr = sctr;
-      ctr, poly  = rej_uniform(poly, ctr, buf);
-    }
-
-    k = 0;
-    l = j * KYBER_N;
-    l += 2*KYBER_VECN;
-    while (k < KYBER_N)
-    {
-      t = poly[(int) k];
-      rr[(int) l] = t;
-      k += 1;
-      l += 1;
-    }
-  }
-  */
 
   return rr;
 }
