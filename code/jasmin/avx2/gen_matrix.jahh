@@ -102,21 +102,10 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
         ctr = sctr;
         //ctr, poly  = rej_uniform(poly, ctr, buf);
 
-        ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN*j*KYBER_N:KYBER_N], ctr, buf);
-      }
+        ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], ctr, buf);
 
-      /*
-      k = 0;
-      l = j * KYBER_N;
-      l += i * KYBER_VECN;
-      while (k < KYBER_N)
-      {
-        t = poly[(int) k];
-        rr[(int) l] = t;
-        k += 1;
-        l += 1;
+//        rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = nttunpack(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N]);
       }
-      */
     }
   }
 
