@@ -8,7 +8,7 @@ void poly_setrandom(poly *r)
   fread(r->coeffs, sizeof(int16_t), KYBER_N, urandom);
   for(int i=0;i<KYBER_N;i++)
   {
-    r->coeffs[i] %= 2*KYBER_Q;
+    r->coeffs[i] %= KYBER_Q;
   }
   fclose(urandom);
 }

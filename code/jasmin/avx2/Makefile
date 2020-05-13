@@ -43,7 +43,8 @@ HEADERS = params.h poly.h fips202.h ntt.h \
 JHEADERS = params.jahh \
 				   reduce.jahh \
            fips202.jahh \
-					 consts.jahh 
+					 consts.jahh \
+					 shuffle.jahh
 
 POLYHEADERS = poly_compress.jahh \
               poly_decompress.jahh \
@@ -72,12 +73,10 @@ POLYVECHEADERS = polyvec_compress.jahh \
                  polyvec_pointwise_acc.jahh \
                  polyvec_reduce.jahh \
                  polyvec_csubq.jahh \
-								 polyvec_topolys.jahh \
-								 polyvec_frompolys.jahh \
                  gen_matrix.jahh \
 
 INCS    = fq.inc shuffle.inc
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c consts.c invntt.S ntt.S shuffle.S fq.S\
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c consts.c shuffle.S fq.S\
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<

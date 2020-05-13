@@ -4,85 +4,126 @@
 #include "params.jahh"
 #include "reduce.jahh"
 
-fn poly_basemul(reg ptr u16[KYBER_N] rp, reg const ptr u16[KYBER_N] ap bp) -> reg ptr u16[KYBER_N]
+inline 
+fn schoolbook(reg ptr u16[32] ap bp, reg u256 zeta qx16 qinvx16, inline int sign) -> reg u256, reg u256, reg u256, reg u256
 {
-  reg u64 offset;
-  reg u16 zeta;
-  reg u16 r0;
-  reg u16 r1;
-  reg u16 a0;
-  reg u16 a1;
-  reg u16 b0;
-  reg u16 b1;
-  reg u16 t;
-  reg ptr u16[128] zetasp;
-  reg u64 zetasctr;
-  reg u64 i;
+  reg u256 a b c d x0 x1 y0 y1;
+  reg u256 bdlo bdhi bclo bchi adlo adhi aclo achi bd;
+  reg u256 rbdlo rbdhi bc0 bc1 ad0 ad1 ac0 ac1 rbd0 rbd1;
 
-  stack ptr u16[KYBER_N] srp;
+  b = ap.[u256 32*1];
+  d = bp.[u256 32*1];
+  a = ap.[u256 32*0];
+  c = bp.[u256 32*0];
 
-  srp = rp;
+  bdlo = #VPMULL_16u16(b, d);
+  bdhi = #VPMULH_16u16(b, d);
+  bclo = #VPMULL_16u16(b, c);
+  bchi = #VPMULH_16u16(b, c);
+  adlo = #VPMULL_16u16(a, d);
+  adhi = #VPMULH_16u16(a, d);
+  aclo = #VPMULL_16u16(a, c);
+  achi = #VPMULH_16u16(a, c);
 
-  zetasctr = 64;
-  i = 0;
+  bdlo = #VPMULL_16u16(bdlo, qinvx16);
+  bdlo = #VPMULH_16u16(bdlo, qx16);
+  bd   = #VPSUB_16u16(bdhi, bdlo);
 
-  while(i < KYBER_N)
+  rbdlo = #VPMULL_16u16(zeta, bd);
+  rbdhi = #VPMULH_16u16(zeta, bd);
+
+  bc0  = #VPUNPCKL_16u16(bclo,  bchi);
+  bc1  = #VPUNPCKH_16u16(bclo,  bchi);
+  ad0  = #VPUNPCKL_16u16(adlo,  adhi);
+  ad1  = #VPUNPCKH_16u16(adlo,  adhi);
+  ac0  = #VPUNPCKL_16u16(aclo,  achi);
+  ac1  = #VPUNPCKH_16u16(aclo,  achi);
+  rbd0 = #VPUNPCKL_16u16(rbdlo, rbdhi);
+  rbd1 = #VPUNPCKH_16u16(rbdlo, rbdhi);
+
+  if (sign == 0)
   {
-    zetasp = jzetas;
-    zeta = zetasp[(int)zetasctr];
-    zetasctr += 1;
-    
-    a0 = ap[(int)i];
-    b0 = bp[(int)i];
-    i += 1;
-    a1 = ap[(int)i];
-    b1 = bp[(int)i];
-    i -= 1;
-
-    r0 = fqmul(a1, b1);
-    r0 = fqmul(r0, zeta);
-    t  = fqmul(a0, b0);
-    r0 += t;
-
-    r1 = fqmul(a0, b1);
-    t  = fqmul(a1, b0);
-    r1 += t;
-
-    rp = srp;
-    rp[(int)i]   = r0;
-    i += 1;
-    rp[(int)i] = r1;
-    srp = rp;
-
-
-    zeta = -zeta;
-
-    i += 1;
-    a0 = ap[(int)i];
-    b0 = bp[(int)i];
-    i += 1;
-    a1 = ap[(int)i];
-    b1 = bp[(int)i];
-    i -= 1;
-
-    r0 = fqmul(a1, b1);
-    r0 = fqmul(r0, zeta);
-    t  = fqmul(a0, b0);
-    r0 += t;
-
-    r1 = fqmul(a0, b1);
-    t  = fqmul(a1, b0);
-    r1 += t;
-
-    rp = srp;
-    rp[(int)i]   = r0;
-    i += 1;
-    rp[(int)i] = r1;
-    srp = rp;
-    
-    i += 1;
+    x0 = #VPADD_8u32(ac0, rbd0);
+    x1 = #VPADD_8u32(ac1, rbd1);
   }
+  else
+  {
+    x0 = #VPSUB_8u32(ac0, rbd0);
+    x1 = #VPSUB_8u32(ac1, rbd1);
+  }
+  y0 = #VPADD_8u32(bc0, ad0);
+  y1 = #VPADD_8u32(bc1, ad1);
+
+  return x0, x1, y0, y1;
+}
+
+inline 
+fn basemul_red(reg u256 a0 a1 b0 b1 qx16 qinvx16) -> reg u256, reg u256
+{
+  reg u256 zero x y z;
+
+  zero = #set0_256();
+  y = #VPBLEND_16u16(a0,zero,0xAA);
+  z = #VPBLEND_16u16(a1,zero,0xAA);
+  a0 = #VPSRL_8u32(a0,16);
+  a1 = #VPSRL_8u32(a1,16);
+  z = #VPACKUS_8u32(y, z);
+  a0 = #VPACKUS_8u32(a0, a1);
+
+  y = #VPBLEND_16u16(b0,zero,0xAA);
+  x = #VPBLEND_16u16(b1,zero,0xAA);
+  b0 = #VPSRL_8u32(b0,16);
+  b1 = #VPSRL_8u32(b1,16);
+  y = #VPACKUS_8u32(y, x);
+  b0 = #VPACKUS_8u32(b0, b1);
+
+  z  = #VPMULL_16u16(z, qinvx16);
+  y  = #VPMULL_16u16(y, qinvx16);
+  z  = #VPMULH_16u16(z, qx16);
+  y  = #VPMULH_16u16(y, qx16);
+  a0 = #VPSUB_16u16(a0, z);
+  b0 = #VPSUB_16u16(b0, y);
+
+  return a0, b0;
+}
+
+inline
+fn basemul32x(reg ptr u16[64] rp ap bp, reg u256 zeta qx16 qinvx16) -> reg ptr u16[64]
+{
+  reg u256 x0 y0 x1 y1;
+
+  x0, x1, y0, y1 = schoolbook(ap[0:32], bp[0:32], zeta, qx16, qinvx16, 0);
+  x0, x1 = basemul_red(x0, x1, y0, y1, qx16, qinvx16);
+  rp.[u256 32*0] = x0;
+  rp.[u256 32*1] = x1;
+
+  x0, x1, y0, y1 = schoolbook(ap[32:32], bp[32:32], zeta, qx16, qinvx16, 1);
+  x0, x1 = basemul_red(x0, x1, y0, y1, qx16, qinvx16);
+  rp.[u256 32*2] = x0;
+  rp.[u256 32*3] = x1;
+
   return rp;
 }
+
+
+fn poly_basemul(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
+{
+  reg u256 zeta qx16 qinvx16;
+  
+  qx16    = jqx16.[u256 0];
+  qinvx16 = jqinvx16.[u256 0];
+  
+  zeta = jzetas_exp.[u256 304];
+  rp[0:64]   = basemul32x(rp[0:64],   ap[0:64],   bp[0:64], zeta, qx16, qinvx16);
+  zeta = jzetas_exp.[u256 368];
+  rp[64:64]  = basemul32x(rp[64:64],  ap[64:64],  bp[64:64], zeta, qx16, qinvx16);
+  zeta = jzetas_exp.[u256 696];
+  rp[128:64] = basemul32x(rp[128:64], ap[128:64], bp[128:64], zeta, qx16, qinvx16);
+  zeta = jzetas_exp.[u256 760];
+  rp[192:64] = basemul32x(rp[192:64], ap[192:64], bp[192:64], zeta, qx16, qinvx16);
+  
+  return rp;
+}
+
 
 #endif

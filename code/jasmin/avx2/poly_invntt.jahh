@@ -47,10 +47,9 @@ fn invntt_butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 zh1 
   return rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
 }
 
-
-inline fn invntt_level6(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+inline fn invntt_levels0t5(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
-  reg u256 zeta0 zeta1 r0 r1 r2 r3 r4 r5 r6 r7 qx16 flox16 fhix16;
+  reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16 vx16;
   reg u32 t;
   reg u16 w;
   reg ptr u16[400] zetasp;
@@ -58,7 +57,112 @@ inline fn invntt_level6(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   inline int i;
 
   zetasp = jzetas_inv_exp;
-  qx16p = jqx16;
+  qx16 = jqx16[u256 0];
+
+  for i=0 to 2 
+  {
+    // level 0:
+    zeta0 = zetasp.[u256 0+392*i];
+    zeta1 = zetasp.[u256 64+392*i];
+    zeta2 = zetasp.[u256 32+392*i];
+    zeta3 = zetasp.[u256 96+392*i];
+
+    r0 = rp.[u256 32*0+256*i];
+    r1 = rp.[u256 32*1+256*i];
+    r2 = rp.[u256 32*2+256*i];
+    r3 = rp.[u256 32*3+256*i];
+    r4 = rp.[u256 32*4+256*i];
+    r5 = rp.[u256 32*5+256*i];
+    r6 = rp.[u256 32*6+256*i];
+    r7 = rp.[u256 32*7+256*i];
+
+//    r0, r1, r2, r3, r4, r5, r6, r7 = nttunpack128(r0, r1, r2, r3, r4, r5, r6, r7);
+
+    r0, r1, r4, r5, r2, r3, r6, r7 = invntt_butterfly64x(r0, r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
+
+    // level 1:
+    zeta0 = zetasp.[u256 128+392*i];
+    zeta1 = zetasp.[u256 160+392*i];
+
+    r0, r1, r2, r3, r4, r5, r6, r7 = invntt_butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+    
+    r0, r1 = shuffle1(r0, r1);
+    r2, r3 = shuffle1(r2, r3);
+    r4, r5 = shuffle1(r4, r5);
+    r6, r7 = shuffle1(r6, r7);
+
+    // level 2:
+    zeta0 = zetasp.[u256 192+392*i];
+    zeta1 = zetasp.[u256 224+392*i];
+
+    vx16 = jvx16[u256 0];
+
+    r0, r2, r4, r6, r1, r3, r5, r7 = invntt_butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    r0, r2 = shuffle2(r0, r2);
+    r4, r6 = shuffle2(r4, r6);
+    r1, r3 = shuffle2(r1, r3);
+    r5, r7 = shuffle2(r5, r7);
+
+    // level 3:
+    zeta0 = zetasp.[u256 256+392*i];
+    zeta1 = zetasp.[u256 288+392*i];
+
+    r0, r4, r1, r5, r2, r6, r3, r7 = invntt_butterfly64x(r0, r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    r0, r4 = shuffle4(r0, r4);
+    r1, r5 = shuffle4(r1, r5);
+    r2, r6 = shuffle4(r2, r6);
+    r3, r7 = shuffle4(r3, r7);
+
+    // level 4:
+    zeta0 = zetasp.[u256 320+392*i];
+    zeta1 = zetasp.[u256 352+392*i];
+
+    r0, r1, r2, r3, r4, r5, r6, r7 = invntt_butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    r0, r1 = shuffle8(r0, r1);
+    r2, r3 = shuffle8(r2, r3);
+    r4, r5 = shuffle8(r4, r5);
+    r6, r7 = shuffle8(r6, r7);
+
+    // level 5:
+    zeta0 = #VPBROADCAST_8u32(zetasp.[u32 384+392*i]);
+    zeta1 = #VPBROADCAST_8u32(zetasp.[u32 388+392*i]);
+
+    r0, r2, r4, r6, r1, r3, r5, r7 = invntt_butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+
+    r0 = red16x(r0, qx16, vx16);
+
+    rp.[u256 32*0+256*i] = r0;
+    rp.[u256 32*1+256*i] = r2;
+    rp.[u256 32*2+256*i] = r4;
+    rp.[u256 32*3+256*i] = r6;
+    rp.[u256 32*4+256*i] = r1;
+    rp.[u256 32*5+256*i] = r3;
+    rp.[u256 32*6+256*i] = r5;
+    rp.[u256 32*7+256*i] = r7;
+  }
+
+  return rp;
+}
+
+
+inline fn invntt_level6(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u256 zeta0 zeta1 r0 r1 r2 r3 r4 r5 r6 r7 qx16 flox16 fhix16;
+  reg u32 t;
+  reg u16 w;
+  reg ptr u16[400] zetasp;
+  inline int i;
+
+  zetasp = jzetas_inv_exp;
 
   qx16 = jqx16[u256 0];
 
@@ -101,64 +205,11 @@ inline fn invntt_level6(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 }
 
 
-
 fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
-  reg u64 len;  
-  reg u64 start;
-  reg u64 j;
-  reg u64 cmp;
-  reg u64 offset;
-  
-  reg u16 zeta;
-  reg u16 t;
-  reg u16 s;
-  reg u16 m;
-
-  reg ptr u16[128] zetasp;
-  reg u64 zetasctr;
-
-  zetasp = jzetas_inv;
-  zetasctr = 0;
-
-  len = 2;
-  while (len <= 128)
-  {
-    start = 0;
-    while (start < 256)
-    {
-      zeta = zetasp[(int)zetasctr];
-      zetasctr += 1;
-
-      j = start;
-      cmp = start + len;
-      while (j < cmp)
-      {
-        offset = j + len;
-        s = rp[(int)offset];
-        t = rp[(int)j];
-        m = s + t;
-        m = barrett_reduce(m);
-        rp[(int)j] = m;
-        t -= s;
-        t = fqmul(t, zeta);
-        rp[(int)offset] = t;
-        j += 1;
-      }
-      start = j + len;
-    }
-    len <<= 1;
-  }
-
-  zeta = zetasp[127];
-  j = 0;
-  while (j < KYBER_N) 
-  {
-    t = rp[(int)j];
-    t = fqmul(t, zeta);
-    rp[(int)j] = t;
-    j += 1;
-  }
+//  rp = nttunpack(rp);
+  rp = invntt_levels0t5(rp);
+  rp = invntt_level6(rp);
   return rp;
 }
 

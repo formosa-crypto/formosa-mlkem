@@ -2,51 +2,23 @@
 #define POLYVEC_POINTWISE_ACC_HH
 
 #include "params.jahh"
+#include "shuffle.jahh"
 #include "poly_basemul.jahh"
 #include "poly_add2.jahh"
-#include "polyvec_topolys.jahh"
-#include "polyvec_frompolys.jahh"
 
 inline
-fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_N]
+fn polyvec_pointwise_acc(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> stack u16[KYBER_N]
 {
-  stack u16[KYBER_N] a0 a1 a2;
-  stack u16[KYBER_N] b0 b1 b2;
   stack u16[KYBER_N] t;
-  stack u16[KYBER_N] r;
 
-  a0, a1, a2 = polyvec_topolys(a);
-  b0, b1, b2 = polyvec_topolys(b);
-
-  r = poly_basemul(r, a0, b0);
-  t = poly_basemul(t, a1, b1);
+  r = poly_basemul(r, a[0:KYBER_N], b[0:KYBER_N]);
+  t = poly_basemul(t, a[KYBER_N:KYBER_N], b[KYBER_N:KYBER_N]);
   r = poly_add2(r, t);
-  t = poly_basemul(t, a2, b2);
+  t = poly_basemul(t, a[2*KYBER_N:KYBER_N], b[2*KYBER_N:KYBER_N]);
   r = poly_add2(r, t);
 
   r = poly_reduce(r);
-
-  return r;
-}
-
-inline
-fn polyvec_pointwise_acc_new(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> stack u16[KYBER_N]
-{
-  stack u16[KYBER_N] a0 a1 a2;
-  stack u16[KYBER_N] b0 b1 b2;
-  stack u16[KYBER_N] t;
-
-  a0, a1, a2 = polyvec_topolys(a);
-  b0, b1, b2 = polyvec_topolys(b);
-
-  r = poly_basemul(r, a0, b0);
-  t = poly_basemul(t, a1, b1);
-  r = poly_add2(r, t);
-  t = poly_basemul(t, a2, b2);
-  r = poly_add2(r, t);
-
-  r = poly_reduce(r);
-
+  
   return r;
 }
 

@@ -212,7 +212,7 @@ inline fn ntt_level1t6(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
     r3 = red16x(r3, qx16, vx16);
     r7 = red16x(r7, qx16, vx16);
 
-    r0, r4, r1, r5, r2, r6, r3, r7 = nttpack128(r0, r4, r1, r5, r2, r6, r3, r7);
+    // r0, r4, r1, r5, r2, r6, r3, r7 = nttpack128(r0, r4, r1, r5, r2, r6, r3, r7);
 
     rp.[u256 32*0+256*i] = r0;
     rp.[u256 32*1+256*i] = r4;
@@ -231,6 +231,9 @@ fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   rp = ntt_level0(rp);
   rp = ntt_level1t6(rp);
+
+//  rp = nttpack(rp);
+
   return rp;
 }
 

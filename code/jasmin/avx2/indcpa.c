@@ -311,6 +311,5 @@ void indcpa_dec(unsigned char *m,
   poly_sub(&mp, &v, &mp);
   poly_reduce(&mp);
   
-//  poly_tobytes(m, &mp);
   poly_tomsg(m, &mp);
 }

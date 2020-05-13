@@ -16,7 +16,7 @@ void basemul(int16_t r[2], const int16_t a[2], const int16_t b[2], int16_t zeta)
 //void nttl0_avx(int16_t *r, const uint16_t *qdata);
 //void nttl1t6_avx(int16_t *r, const uint16_t *qdata);
 #define invntt_avx KYBER_NAMESPACE(invntt_avx)
-void invntt_avx(int16_t *r, const uint16_t *qdata);
+//void invntt_avx(int16_t *r, const uint16_t *qdata);
 
 #define nttpack_avx KYBER_NAMESPACE(nttpack_avx)
 void nttpack_avx(int16_t *r, const uint16_t *qdata);

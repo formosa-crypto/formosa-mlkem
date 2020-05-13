@@ -10,7 +10,7 @@ void polyvec_setrandom(polyvec *r)
     fread(r->vec[i].coeffs, sizeof(int16_t), KYBER_N, urandom);
   for(int i=0;i<KYBER_K;i++)
     for(int j=0;j<KYBER_N;j++)
-      r->vec[i].coeffs[j] %= 2*KYBER_Q;
+      r->vec[i].coeffs[j] %= KYBER_Q;
   fclose(urandom);
 }
 

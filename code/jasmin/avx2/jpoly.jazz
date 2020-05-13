@@ -60,7 +60,8 @@ export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap)
     t = (u16)[ap + 2*i];
     a[i] = t;
   }
-
+  
+  a = nttunpack(a);
   a = poly_tobytes(rp, a);
 }
 
@@ -72,6 +73,8 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
   stack u16[KYBER_N] r;
 
   r = poly_frombytes(r, ap);
+
+  r = nttpack(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -170,6 +173,8 @@ export fn poly_ntt_jazz(reg u64 rp)
 
   r = poly_ntt(r);
 
+  r = nttpack(r);
+
   for i = 0 to KYBER_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
@@ -186,9 +191,10 @@ export fn poly_invntt_jazz(reg u64 rp)
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
+  
+  r = nttunpack(r);
 
-  //r = poly_invntt(r);
-  r = invntt_level6(r);
+  r = poly_invntt(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -209,10 +215,14 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     a[i] = t;
     t = (u16)[bp + 2*i];
     b[i] = t;
+    t = (u16)[rp + 2*i];
+    r[i] = t;
   }
 
-  r[0] = 0;
+  a = nttunpack(a);
+  b = nttunpack(b);
   r = poly_basemul(r, a, b);
+  r = nttpack(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
