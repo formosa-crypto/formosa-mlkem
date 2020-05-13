@@ -82,31 +82,25 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   skpv[2*KYBER_N:KYBER_N] = poly_getnoise(skpv[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
   nonce = 3;
-  poly0 = poly_getnoise(poly0, noiseseed, nonce);
+  e[0:KYBER_N] = poly_getnoise(e[0:KYBER_N], noiseseed, nonce);
   nonce = 4;
-  poly1 = poly_getnoise(poly1, noiseseed, nonce);
+  e[KYBER_N:KYBER_N] = poly_getnoise(e[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 5;
-  poly2 = poly_getnoise(poly2, noiseseed, nonce);
-  e = polyvec_frompolys(poly0, poly1, poly2);
+  e[2*KYBER_N:KYBER_N] = poly_getnoise(e[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
   skpv = polyvec_ntt(skpv);
   e    = polyvec_ntt(e);
 
-  poly0 = polyvec_pointwise_acc_new(poly0, aa[0:KYBER_VECN], skpv);
-  poly0 = poly_frommont(poly0);
-  poly1 = polyvec_pointwise_acc_new(poly1, aa[KYBER_VECN:KYBER_VECN], skpv);
-  poly1 = poly_frommont(poly1);
-  poly2 = polyvec_pointwise_acc_new(poly2, aa[2*KYBER_VECN:KYBER_VECN], skpv);
-  poly2 = poly_frommont(poly2);
-  pkpv = polyvec_frompolys(poly0, poly1, poly2);
-/*
-  pkpv[0:KYBER_N] = polyvec_pointwise_acc_new(pkpv[0:KYBER_N], a0, skpv);
+  pkpv[0:KYBER_N] = polyvec_pointwise_acc_new(pkpv[0:KYBER_N], aa[0:KYBER_VECN], skpv);
   pkpv[0:KYBER_N] = poly_frommont(pkpv[0:KYBER_N]);
-  pkpv[KYBER_N:KYBER_N] = polyvec_pointwise_acc_new(pkpv[KYBER_N:KYBER_N], a1, skpv);
+  pkpv[KYBER_N:KYBER_N] = polyvec_pointwise_acc_new(pkpv[KYBER_N:KYBER_N], aa[KYBER_VECN:KYBER_VECN], skpv);
   pkpv[KYBER_N:KYBER_N] = poly_frommont(pkpv[KYBER_N:KYBER_N]);
-  pkpv[2*KYBER_N:KYBER_N] = polyvec_pointwise_acc_new(pkpv[2*KYBER_N:KYBER_N], a2, skpv);
+  pkpv[2*KYBER_N:KYBER_N] = polyvec_pointwise_acc_new(pkpv[2*KYBER_N:KYBER_N], aa[2*KYBER_VECN:KYBER_VECN], skpv);
   pkpv[2*KYBER_N:KYBER_N] = poly_frommont(pkpv[2*KYBER_N:KYBER_N]);
-*/
+
+//  pkpv = polyvec_frompolys(poly0, poly1, poly2);
+
+
 
   pkpv = polyvec_add2(pkpv, e);
   pkpv = polyvec_reduce(pkpv);
