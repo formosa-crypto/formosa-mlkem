@@ -9,38 +9,7 @@
 #include "polyvec_frompolys.jahh"
 
 inline
-fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_N]
-{
-  stack u16[KYBER_N] a0 a1 a2;
-  stack u16[KYBER_N] b0 b1 b2;
-  stack u16[KYBER_N] t;
-  stack u16[KYBER_N] r;
-
-  a0, a1, a2 = polyvec_topolys(a);
-  b0, b1, b2 = polyvec_topolys(b);
-
-  a0 = nttunpack(a0);
-  a1 = nttunpack(a1);
-  a2 = nttunpack(a2);
-  b0 = nttunpack(b0);
-  b1 = nttunpack(b1);
-  b2 = nttunpack(b2);
-
-  r = poly_basemul(r, a0, b0);
-  t = poly_basemul(t, a1, b1);
-  r = poly_add2(r, t);
-  t = poly_basemul(t, a2, b2);
-  r = poly_add2(r, t);
-
-  r = poly_reduce(r);
-
-  r = nttpack(r);
-
-  return r;
-}
-
-inline
-fn polyvec_pointwise_acc_new(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> stack u16[KYBER_N]
+fn polyvec_pointwise_acc(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> stack u16[KYBER_N]
 {
   stack u16[KYBER_N] a0 a1 a2;
   stack u16[KYBER_N] b0 b1 b2;
