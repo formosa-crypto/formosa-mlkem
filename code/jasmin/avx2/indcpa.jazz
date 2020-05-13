@@ -31,6 +31,7 @@
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
+  stack u16[KYBER_K*KYBER_VECN] aa;
   stack u16[KYBER_VECN] a0 a1 a2 e pkpv skpv;
   stack u16[KYBER_N] poly0 poly1 poly2;
   stack u8[64] buf;
@@ -70,7 +71,8 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   }
 
   zero = 0; 
-  a0, a1, a2 = gen_matrix(publicseed, zero);
+
+  aa = gen_matrix(publicseed, zero);
 
   nonce = 0;
   poly0 = poly_getnoise(poly0, noiseseed, nonce);
@@ -99,11 +101,11 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   skpv = polyvec_ntt(skpv);
   e    = polyvec_ntt(e);
 
-  poly0 = polyvec_pointwise_acc_new(poly0, a0, skpv);
+  poly0 = polyvec_pointwise_acc_new(poly0, aa[0:KYBER_VECN], skpv);
   poly0 = poly_frommont(poly0);
-  poly1 = polyvec_pointwise_acc_new(poly1, a1, skpv);
+  poly1 = polyvec_pointwise_acc_new(poly1, aa[KYBER_VECN:KYBER_VECN], skpv);
   poly1 = poly_frommont(poly1);
-  poly2 = polyvec_pointwise_acc_new(poly2, a2, skpv);
+  poly2 = polyvec_pointwise_acc_new(poly2, aa[2*KYBER_VECN:KYBER_VECN], skpv);
   poly2 = poly_frommont(poly2);
   pkpv = polyvec_frompolys(poly0, poly1, poly2);
 /*
@@ -138,7 +140,8 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 
 export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp)
 {
-  stack u16[KYBER_VECN] pkpv at0 at1 at2 sp ep bp;
+  stack u16[KYBER_VECN] pkpv sp ep bp;
+  stack u16[KYBER_K*KYBER_VECN] aat;
   stack u16[KYBER_N] k poly epp v poly0 poly1 poly2;
   stack u8[KYBER_SYMBYTES] publicseed;
   stack u8[KYBER_SYMBYTES] noiseseed;
@@ -172,7 +175,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   k = poly_frommsg(k, msgp);
 
   one = 1;
-  at0, at1, at2 = gen_matrix(publicseed, one);
+  aat = gen_matrix(publicseed, one);
 
 
   nonce = 0;
@@ -197,9 +200,9 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   sp = polyvec_ntt(sp);
     
     
-  poly0 = polyvec_pointwise_acc(at0, sp);
-  poly1 = polyvec_pointwise_acc(at1, sp);
-  poly2 = polyvec_pointwise_acc(at2, sp);
+  poly0 = polyvec_pointwise_acc(aat[0:KYBER_VECN], sp);
+  poly1 = polyvec_pointwise_acc(aat[KYBER_VECN:KYBER_VECN], sp);
+  poly2 = polyvec_pointwise_acc(aat[2*KYBER_VECN:KYBER_VECN], sp);
   bp = polyvec_frompolys(poly0, poly1, poly2);
   
   v = polyvec_pointwise_acc(pkpv, sp);

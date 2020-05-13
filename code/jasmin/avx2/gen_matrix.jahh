@@ -53,15 +53,13 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
 }
 
 inline
-fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KYBER_VECN], stack u16[KYBER_VECN], stack u16[KYBER_VECN]
+fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KYBER_K*KYBER_VECN]
 {
   stack u8[34] extseed;
   stack u8[SHAKE128_RATE] buf;
   stack u64[25] state;
   stack u16[KYBER_N] poly;
-  stack u16[KYBER_VECN] r0;
-  stack u16[KYBER_VECN] r1;
-  stack u16[KYBER_VECN] r2;
+  stack u16[KYBER_K*KYBER_VECN] rr;
 
   reg u8 c;
   reg u16 t;
@@ -109,7 +107,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
     while (k < KYBER_N)
     {
       t = poly[(int) k];
-      r0[(int) l] = t;
+      rr[(int) l] = t;
       k += 1;
       l += 1;
     }
@@ -143,10 +141,11 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
 
     k = 0;
     l = j * KYBER_N;
+    l += KYBER_VECN;
     while (k < KYBER_N)
     {
       t = poly[(int) k];
-      r1[(int) l] = t;
+      rr[(int) l] = t;
       k += 1;
       l += 1;
     }
@@ -180,16 +179,17 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
 
     k = 0;
     l = j * KYBER_N;
+    l += 2*KYBER_VECN;
     while (k < KYBER_N)
     {
       t = poly[(int) k];
-      r2[(int) l] = t;
+      rr[(int) l] = t;
       k += 1;
       l += 1;
     }
   }
 
-  return r0, r1, r2;
+  return rr;
 }
 
 
