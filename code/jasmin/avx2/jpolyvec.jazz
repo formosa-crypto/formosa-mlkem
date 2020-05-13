@@ -113,7 +113,17 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     b[i] = t;
   }
 
+  a[0:KYBER_N] = nttunpack(a[0:KYBER_N]);
+  a[KYBER_N:KYBER_N] = nttunpack(a[KYBER_N:KYBER_N]);
+  a[2*KYBER_N:KYBER_N] = nttunpack(a[2*KYBER_N:KYBER_N]);
+
+  b[0:KYBER_N] = nttunpack(b[0:KYBER_N]);
+  b[KYBER_N:KYBER_N] = nttunpack(b[KYBER_N:KYBER_N]);
+  b[2*KYBER_N:KYBER_N] = nttunpack(b[2*KYBER_N:KYBER_N]);
+
   r = polyvec_pointwise_acc(r, a, b);
+
+  r = nttpack(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -134,6 +144,10 @@ export fn polyvec_ntt_jazz(reg u64 rp)
 
   r = polyvec_ntt(r);
 
+  r[0:KYBER_N] = nttpack(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = nttpack(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = nttpack(r[2*KYBER_N:KYBER_N]);
+
   for i = 0 to KYBER_VECN {
     t = r[i];
     (u16)[rp + 2*i] = t;
@@ -150,6 +164,10 @@ export fn polyvec_invntt_jazz(reg u64 rp)
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
+
+  r[0:KYBER_N] = nttunpack(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = nttunpack(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = nttunpack(r[2*KYBER_N:KYBER_N]);
 
   r = polyvec_invntt(r);
 

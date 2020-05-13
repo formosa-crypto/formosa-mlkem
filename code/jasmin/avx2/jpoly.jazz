@@ -170,6 +170,8 @@ export fn poly_ntt_jazz(reg u64 rp)
 
   r = poly_ntt(r);
 
+  r = nttpack(r);
+
   for i = 0 to KYBER_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
@@ -186,6 +188,8 @@ export fn poly_invntt_jazz(reg u64 rp)
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
+  
+  r = nttunpack(r);
 
   r = poly_invntt(r);
 

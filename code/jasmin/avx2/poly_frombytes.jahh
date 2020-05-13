@@ -2,6 +2,7 @@
 #define POLY_FROMBYTES_HH
 
 #include "params.jahh"
+#include "shuffle.jahh"
 
 fn poly_frombytes(reg ptr u16[KYBER_N] rp, reg u64 ap) -> reg ptr u16[KYBER_N]
 {
@@ -27,6 +28,9 @@ fn poly_frombytes(reg ptr u16[KYBER_N] rp, reg u64 ap) -> reg ptr u16[KYBER_N]
     rp[2*i]   = d0;
     rp[2*i+1] = d1;
   }
+  
+//  rp = nttunpack(rp);
+
   return rp;
 }
 

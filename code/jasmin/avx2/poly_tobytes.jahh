@@ -2,6 +2,7 @@
 #define POLY_TOBYTES_HH
 
 #include "params.jahh"
+#include "shuffle.jahh"
 #include "poly_csubq.jahh"
 
 
@@ -11,6 +12,8 @@ fn poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   reg u64 i j;
 
   a = poly_csubq(a);
+
+  a = nttpack(a);
 
   i = 0;
   j = 0;

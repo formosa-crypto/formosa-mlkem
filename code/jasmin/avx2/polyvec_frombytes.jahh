@@ -18,10 +18,6 @@ fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
   pp += KYBER_POLYBYTES;
   r[2*KYBER_N:KYBER_N] = poly_frombytes(r[2*KYBER_N:KYBER_N], pp);
 
-  r[0:KYBER_N] = nttunpack(r[0:KYBER_N]);
-  r[KYBER_N:KYBER_N] = nttunpack(r[KYBER_N:KYBER_N]);
-  r[2*KYBER_N:KYBER_N] = nttunpack(r[2*KYBER_N:KYBER_N]);
-
   return r;
 }
 
