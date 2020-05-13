@@ -3,8 +3,6 @@
 
 #include "params.jahh"
 #include "poly_reduce.jahh"
-#include "polyvec_topolys.jahh"
-#include "polyvec_frompolys.jahh"
 
 inline
 fn polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
