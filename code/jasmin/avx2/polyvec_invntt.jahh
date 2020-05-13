@@ -3,22 +3,13 @@
 
 #include "params.jahh"
 #include "poly_invntt.jahh"
-#include "polyvec_topolys.jahh"
-#include "polyvec_frompolys.jahh"
 
 inline
 fn polyvec_invntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-
-  stack u16[KYBER_N] r0 r1 r2;
-
-  r0, r1, r2 = polyvec_topolys(r);
-
-  r0 = poly_invntt(r0);
-  r1 = poly_invntt(r1);
-  r2 = poly_invntt(r2);
-
-  r = polyvec_frompolys(r0, r1, r2);
+  r[0:KYBER_N] = poly_invntt(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = poly_invntt(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = poly_invntt(r[2*KYBER_N:KYBER_N]);
 
   return r;
 }

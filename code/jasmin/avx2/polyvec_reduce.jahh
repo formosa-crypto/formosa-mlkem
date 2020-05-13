@@ -9,15 +9,9 @@
 inline
 fn polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-  stack u16[KYBER_N] r0 r1 r2;
-
-  r0, r1, r2 = polyvec_topolys(r);
-
-  r0 = poly_reduce(r0);
-  r1 = poly_reduce(r1);
-  r2 = poly_reduce(r2);
-
-  r = polyvec_frompolys(r0, r1, r2);
+  r[0:KYBER_N] = poly_reduce(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = poly_reduce(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = poly_reduce(r[2*KYBER_N:KYBER_N]);
 
   return r;
 }
