@@ -56,7 +56,7 @@ op m_encode(m : message) : poly =
                  else ZModRing.inzmod falseval) m.
 
 op m_decode(mp : poly) : message =
-   map (fun c => ! (- q%/4 <= ZModRing.asint c < q%/ 4)) mp.
+   map (fun c => ! (- q%/4 < ZModRing.asint c < q%/ 4)) mp.
 
 op roundc(c : elem) : elem = 
     ZModRing.inzmod (((ZModRing.asint c * 2^4 + (q %/ 2)) %/q) %% 2^4) 
@@ -129,9 +129,9 @@ axiom kvec_ge3 : 3 <= kvec.
 
 op pm = pe_R^(kvec^2).
 
-op noise_val (p : poly) =
-      foldr (fun c cc => max (ZModRing.asint c) cc) 
-                  (ZModRing.asint (head witness (to_list p))) 
+op noise_val (p : poly) : int =
+      foldr (fun c cc => max (`| ZModRing.asint c|) cc ) 
+                  (`|ZModRing.asint (head witness (to_list p))|) 
                                    (behead (to_list p)).
 
 op cv_bound : int = 104. (* computed in sec estimates, must be
@@ -225,8 +225,10 @@ rewrite /Poly.(+) map2E => />.
 rewrite initiE; first by smt().
 rewrite ZModRing.addE  qE => />.
 rewrite mapiE; first by smt().
-have nb : (-832 < ZModRing.asint n.[x] < 832). admit.
-smt.
+have ? : (to_list n <> []). smt(@Array256).
+auto => />.
+have nb : (-832 < ZModRing.asint n.[x] < 832); last by case (m.[x]); smt. 
+admit.
 qed. 
 
 realize cv_bound_valid.

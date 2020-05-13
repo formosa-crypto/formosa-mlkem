@@ -58,16 +58,94 @@ op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
 op minimum_residues(zetas : W16.t Array128.t) : bool =
    forall k, 0 <= k < 128 => bpos16  zetas.[k] Kyber_.q.
 
+op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
+
+
 require import IndcpaDerand.
-print Indcpa.M.
 
 (*
   proc poly_tomsg(rp : W64.t, a : W16.t Array256.t) : unit = Indcpa.M.poly_tomsg
   
   proc poly_frommsg(ap : W64.t) : W16.t Array256.t = Indcpa.M.poly_frommsg  
-
-  proc poly_frommont(rp : W16.t Array256.t) : W16.t Array256.t = Indcpa.M.poly_frommont
 *)
+
+print pos_bound256_cxq.
+
+print Mderand.
+
+lemma poly_tomsg_corr _a : 
+    hoare[ Mderand.poly_tomsg_decode :
+             pos_bound256_cxq a 0 256 2 /\
+             lift_array256 a = _a ==>
+             map (fun x => x `&` (W32.of_int 1) = W32.one) res = m_decode _a].
+proof.
+admitted.
+
+print m_encode.
+lemma poly_frommsg_corr _a : 
+    hoare[ Mderand.poly_frommsg_encode :
+             r = Array256.map (fun x => if x then W16.one else W16.zero) _a
+              ==>
+             pos_bound256_cxq res 0 256 1 /\
+             lift_array256 res = m_encode _a].
+proof.
+proc.
+unroll for 3.
+auto => />.
+split. 
+rewrite /pos_bound256_cxq.
+move => /> *.
+split. 
+admit.
+admit.
+rewrite /m_encode /lift_array256.
+admit.
+qed.
+
+
+lemma poly_frommont_corr _a : 
+    hoare[ Mderand.poly_frommont :
+             map W16.to_sint rp = _a ==>
+             map W16.to_sint res = map (fun x => SREDC (x * ((R^2) %% q))) _a].
+proc.
+while (0 <= i <= 256 /\ dmont = W16.of_int 1353 /\
+       (forall k, 0 <= k < i =>
+          W16.to_sint rp.[k] =  SREDC (_a.[k] * ((R^2) %% q))) /\
+       (forall k, i <= k < 256 =>
+          W16.to_sint rp.[k] = _a.[k])); last first.
+auto => /> *. 
+split; first by smt(@Array256).
+move => *. 
+move : H2; rewrite (_: i0 = 256); first by smt().
+move =>*.
+apply Array256.ext_eq.
+move => *. 
+rewrite mapiE; first by smt().
+rewrite mapiE; first by smt().
+by rewrite (H2 x H4) => />. 
+sp. wp.
+ecall (fqmul_corr_h (to_sint r) (to_sint dmont)).
+auto => /> *.
+split.
+smt().
+split.
+move => *.
+case (k < i{hr}).
+move => *.
+rewrite set_neqiE; first 2 by smt().
+apply (H1 k _); first by smt().
+move => *.
+rewrite (_: k = i{hr}). smt().
+rewrite set_eqiE; first 2 by smt().
+rewrite H4. 
+rewrite (H2 i{hr} _); first by smt().
+rewrite /R qE => />. 
+congr. rewrite of_sintK => />. 
+move => *.
+rewrite -(H2 k _); first by smt().
+by rewrite set_neqiE; first 2 by smt().
+qed.
 
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
@@ -248,8 +326,6 @@ lemma poly_reduce_corr (_a : zmod Array256.t):
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*Kyber_.q)] = 1%r.
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
-op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
-  forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
 
 lemma m1true x :
   0 <= x < 16 =>
