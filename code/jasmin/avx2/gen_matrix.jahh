@@ -7,8 +7,24 @@
 
 param int _19KYBER_Q = 63251;
 
+param int GENMATRIX_NBLOCKS = 2;
+
+
 inline
-fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[KYBER_N]
+fn shake128_squeezenblocks(stack u64[25] state, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] out) 
+      -> stack u64[25], stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE]
+{
+  inline int i;
+
+  for i = 0 to GENMATRIX_NBLOCKS 
+  {
+      state, out[i*SHAKE128_RATE:SHAKE128_RATE] = shake128_squeezeblock(state, out[i*SHAKE128_RATE:SHAKE128_RATE]);
+  }
+  return state, out;
+}
+
+inline
+fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf, inline int buflen) ->  reg u64, stack u16[KYBER_N]
 {
   reg u16 val;
   reg u16 t;
@@ -43,7 +59,7 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
     cnd0  = KYBER_N;
     cnd0 -= ctr;
     cnd0 -= 1;
-    cnd1  = SHAKE128_RATE;
+    cnd1  = buflen;
     cnd1 -= pos;
     cnd1 -= 2;
     exit  = cnd0 | cnd1;
@@ -57,7 +73,7 @@ inline
 fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KYBER_K*KYBER_VECN]
 {
   stack u8[34] extseed;
-  stack u8[SHAKE128_RATE] buf;
+  stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf;
   stack u64[25] state;
   stack u16[KYBER_K*KYBER_VECN] rr;
 
@@ -66,7 +82,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
   reg u64 ctr k l;
   stack u64 sctr;
   stack u64 stransposed;
-  inline int i, j;
+  inline int i, j, k;
 
   stransposed = transposed;
 
@@ -95,14 +111,13 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
       state = shake128_absorb34(state, extseed);
 
       ctr = 0;
+      state, buf = shake128_squeezenblocks(state, buf);
+      ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], ctr, buf, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+      
       while (ctr < KYBER_N)
       {
-        sctr = ctr;
-        state, buf = shake128_squeezeblock(state, buf);
-        ctr = sctr;
-
-        ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], ctr, buf);
-
+        state, buf[0:SHAKE128_RATE] = shake128_squeezeblock(state, buf[0:SHAKE128_RATE]);
+        ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], ctr, buf, SHAKE128_RATE);
       }
       rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = nttunpack(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N]);
     }

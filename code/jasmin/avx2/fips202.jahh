@@ -497,4 +497,5 @@ fn shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -
   return state, out;
 }
 
+
 #endif
