@@ -85,7 +85,7 @@ inline fn invntt_levels0t5(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
     zeta1 = zetasp.[u256 160+392*i];
 
     r0, r1, r2, r3, r4, r5, r6, r7 = invntt_butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-
+    
     r0, r1 = shuffle1(r0, r1);
     r2, r3 = shuffle1(r2, r3);
     r4, r5 = shuffle1(r4, r5);
