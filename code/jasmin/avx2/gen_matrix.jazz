@@ -1,5 +1,33 @@
 #include "gen_matrix.jahh"
 
+export fn gen_matrix_old_jazz(reg u64 ap, reg u64 seedp)
+{
+  stack u16[KYBER_K*KYBER_VECN] aa;
+  stack u8[KYBER_SYMBYTES] seed;
+  reg u8 c;
+  reg u16 t;
+  inline int i;
+  stack u64 sap;
+
+  sap = ap;
+
+  for i = 0 to KYBER_SYMBYTES
+  {
+    c = (u8)[seedp + i];
+    seed[i] = c;
+  }
+
+  aa = gen_matrix_old(seed, 1);
+  
+  ap = sap;
+
+  for i = 0 to KYBER_K*KYBER_VECN
+  {
+    t = aa[i];
+    (u16)[ap + 2*i] = t;
+  }
+}
+
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
 {
   stack u16[KYBER_K*KYBER_VECN] aa;
@@ -17,7 +45,7 @@ export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
     seed[i] = c;
   }
 
-  aa = gen_matrix(seed, 0);
+  aa = gen_matrix(seed, 1);
   
   ap = sap;
 
