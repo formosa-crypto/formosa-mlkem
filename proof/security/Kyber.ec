@@ -221,8 +221,8 @@ admit.
 qed.
 
 realize good_decode.
-rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval  qE  => *.
-apply Array256.ext_eq => /> *.
+rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval  qE  => m n hgood.
+apply Array256.ext_eq => /> x h0x hx256.
 rewrite mapiE; first by smt().
 auto => />.
 rewrite /Poly.(+) map2E => />. 
@@ -232,21 +232,20 @@ rewrite ZModRing.addE  qE => />.
 rewrite mapiE; first by smt().
 auto => />.
 have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first. 
-case (m.[x]). move => * />. rewrite inzmodK qE => />. 
-move : H.
-case (1664 < asint n.[x]); smt().  
-move => *. 
-case (1664 < asint n.[x]); smt(@ZModRing). 
-rewrite (_: n.[x] = nth witness (to_list n) x). smt(@Array256).
-have?: (to_list n <> []); first by smt(@Array256).
-have?: (0 <= x < size (to_list n)); first by smt(@Array256).
-
-move :H H2 H3.
-elim (to_list n).
-by auto => />.
-move => *.
-admit.
-qed. 
++ case (m.[x]). move => * />. rewrite inzmodK qE => />. 
+  move : H.
+  case (1664 < asint n.[x]); smt().  
+  by move => *; case (1664 < asint n.[x]); smt(@ZModRing). 
+pose F := fun (cc : int) (c : zmod) => if `|cc| < `|balasint c| then balasint c else cc.
+have hgen: 
+  forall c0, `|foldl F c0 (to_list n)| < 832 => `|c0| < 832 /\ forall x, x \in (to_list n) => `|balasint x| < 832.
++ move=> {x h0x hx256 hgood}.
+  elim: (to_list n) => [ | c tl ih] //= c0 /ih /#.  
+have [_ h]:= hgen 0 _; 1: smt().
+have := h n.[x] _.
++ by rewrite -Array256.get_to_list; apply: mem_nth; rewrite Array256.size_to_list.
+rewrite /balasint qE /= /#.
+qed.
 
 realize cv_bound_valid.
 admitted.
