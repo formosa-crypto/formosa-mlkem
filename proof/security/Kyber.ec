@@ -1,7 +1,6 @@
 require import AllCore Array128 Array256 Array768 IntDiv IntExtra Distr List DList.
 require import ZModP.
 require import MLWE_PKE.
-require import W16extra.
 
 theory Kyber.
 
@@ -55,8 +54,13 @@ op m_encode(m : message) : poly =
                  then ZModRing.inzmod trueval 
                  else ZModRing.inzmod falseval) m.
 
+op balasint c = if q %/ 2 < (ZModRing.asint c) 
+                     then ((ZModRing.asint c) - q) 
+                     else (ZModRing.asint c).
+
+
 op m_decode(mp : poly) : message =
-   map (fun c => ! (- (q%/4+ 1) < (if q %/ 2 < (ZModRing.asint c) then ((ZModRing.asint c) - q) else (ZModRing.asint c)) < q%/ 4 + 1)) mp.
+   map (fun c => ! (`| balasint c | < q%/ 4 + 1)) mp.
 
 op roundc(c : elem) : elem = 
     ZModRing.inzmod (((ZModRing.asint c * 2^4 + (q %/ 2)) %/q) %% 2^4) 
@@ -129,14 +133,10 @@ axiom kvec_ge3 : 3 <= kvec.
 
 op pm = pe_R^(kvec^2).
 
-op balasint c = if q %/ 2 < (ZModRing.asint c) 
-                     then ((ZModRing.asint c) - q) 
-                     else (ZModRing.asint c).
 op noise_val (p : poly) : int =
-       foldr (fun c (cc : int) => if `|cc| < `| balasint c|
+       foldl (fun (cc : int) c => if `|cc| < `| balasint c|
                           then balasint c else cc) 
-                              (balasint (head witness (to_list p))) 
-                                   (behead (to_list p)).
+                              0 (to_list p).
 
 op cv_bound : int = 104. (* computed in sec estimates, must be
                             proved *)
@@ -221,27 +221,30 @@ admit.
 qed.
 
 realize good_decode.
-rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval /balasint qE  => /> *.
+rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval  qE  => *.
 apply Array256.ext_eq => /> *.
 rewrite mapiE; first by smt().
 auto => />.
 rewrite /Poly.(+) map2E => />. 
 rewrite initiE; first by smt().
+rewrite /balasint qE=> />.
 rewrite ZModRing.addE  qE => />.
 rewrite mapiE; first by smt().
-have ? : (to_list n <> []). smt(@Array256).
 auto => />.
-have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first.
+have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first. 
 case (m.[x]). move => * />. rewrite inzmodK qE => />. 
-move : H4.
+move : H.
 case (1664 < asint n.[x]); smt().  
 move => *. 
 case (1664 < asint n.[x]); smt(@ZModRing). 
-have ? : (all (fun c => -832 < (if 1664 < asint c then asint c - 3329 else asint n.[x]) < 832) (to_list n)); last by smt (@List @Array256).
-move : H H0 H3.
+rewrite (_: n.[x] = nth witness (to_list n) x). smt(@Array256).
+have?: (to_list n <> []); first by smt(@Array256).
+have?: (0 <= x < size (to_list n)); first by smt(@Array256).
+
+move :H H2 H3.
 elim (to_list n).
-smt (@List @Array256).
-move => /> *. 
+by auto => />.
+move => *.
 admit.
 qed. 
 
