@@ -7,7 +7,7 @@ theory MLWE_PKE.
 
   clone import H_MLWE.
   import M.
-  import H_MLWE_ROM.
+  import H_MLWE_ROM Lazy.
 
   type plaintext.
   type ciphertext.
@@ -34,7 +34,7 @@ theory MLWE_PKE.
      proc o(sd : seed) = { return H sd;}
   }.
 
-  module MLWE_PKE(H: ARO) : Scheme = {
+  module MLWE_PKE(H: POracle) : Scheme = {
     proc kg() : pkey * skey = {
          var sd,s,e,_A,t;
          sd <$ dseed;
@@ -327,11 +327,11 @@ end section.
 
 
 
-module type CAdversary(H : ARO) = {
+module type CAdversary(H : POracle) = {
    proc find(pk: pkey, sk : skey) : plaintext
 }.
 
-module type SchemeRO(H : ARO) = {
+module type SchemeRO(H : POracle) = {
    include Scheme
 }.
 
@@ -431,30 +431,30 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
 
 section.
 
-declare module A : CAdversary {RO}.
-axiom All (O <: ARO{A}):
+declare module A : CAdversary {LRO}.
+axiom All (O <: POracle{A}):
      islossless O.o =>
      islossless A(O).find.
 
 lemma correctness &m :
-  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
-  1%r - Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res].
+  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
+  1%r - Pr[ AdvCorrectnessNoise(A,LRO).main() @ &m : res].
 proof.
-rewrite (_: 1%r - Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res] =
-   Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : !res]).
+rewrite (_: 1%r - Pr[ AdvCorrectnessNoise(A,LRO).main() @ &m : res] =
+   Pr[ AdvCorrectnessNoise(A,LRO).main() @ &m : !res]).
 rewrite Pr[mu_not]; congr => //. 
 + byphoare => //.
 proc. 
 inline *.
 auto => />.
-call (_: true); [ by move => H; apply (All H) | by  apply RO_o_ll; first by smt(duni_matrix_ll) | ].
+call (_: true); [ by move => H; apply (All H) | by  apply LRO_o_ll; first by smt(duni_matrix_ll) | ].
 auto => />; first by smt(duni_matrix_ll duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
 + byequiv => //.
 proc. 
-inline MLWE_PKE(RO).dec MLWE_PKE(RO).enc MLWE_PKE(RO).kg; wp.
+inline MLWE_PKE(LRO).dec MLWE_PKE(LRO).enc MLWE_PKE(LRO).kg; wp.
 swap {1} 9 -3.
 seq 9 14 : ( 
-           ={RO.m,e2,e1,r,s,e,sd} /\
+           ={LRO.m,e2,e1,r,s,e,sd} /\
            sd0{2} = sd{2} /\
            m0{2} = m{1} /\ 
            m0{2} = m{2} /\ 
@@ -463,38 +463,38 @@ seq 9 14 : (
            sk{2} = s{2} /\
            t{2} = _A{2} *^ s{2} + e{2} /\
            t0{2} = t{2} /\
-           pk0{2}.`1 \in RO.m{2} /\
+           pk0{2}.`1 \in LRO.m{2} /\
            _A{2} = _A{1} /\
-           oget RO.m{2}.[pk0.`1{2}] = _A{2}); last first.
+           oget LRO.m{2}.[pk0.`1{2}] = _A{2}); last first.
 inline *. auto => />.  move => &2 -> ?. 
 split; first by smt(duni_matrix_ll). 
 move => ???.
 move => noise_expL noise_expH.
 rewrite  encode_noise  => //.
 rewrite (_: 
-   (((oget RO.m{2}.[pk0{2}.`1] *^ s{2} + e{2}) `<*>` r{2}) +&
+   (((oget LRO.m{2}.[pk0{2}.`1] *^ s{2} + e{2}) `<*>` r{2}) +&
    e2{2} +& m_encode m{2} +&
    rnd_err_v
-     (((oget RO.m{2}.[pk0{2}.`1] *^ s{2} + e{2}) `<*>` r{2}) +&
+     (((oget LRO.m{2}.[pk0{2}.`1] *^ s{2} + e{2}) `<*>` r{2}) +&
       e2{2} +& m_encode m{2}) -&
    (s{2} `<*>`
-    (m_transpose (oget RO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2} +
-     rnd_err_u (m_transpose (oget RO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2})))) = 
-m_encode m{2} +& noise_exp (oget RO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
+    (m_transpose (oget LRO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2} +
+     rnd_err_u (m_transpose (oget LRO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2})))) = 
+m_encode m{2} +& noise_exp (oget LRO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
                    e2{2} m{2}); last by apply good_decode.
 by rewrite  noise_exp_val //= matrix_props1 matrix_props2 => />; ring.
 auto => />;first by smt(duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
 seq 5 7 : ( #pre /\
-           ={RO.m,s,e,sd,_A} /\
+           ={LRO.m,s,e,sd,_A} /\
            pk.`1{2} = sd{2} /\
            pk.`2{2} = t{2} /\
            sk{2} = s{2} /\
            t{2} = _A{2} *^ s{2} + e{2} /\
-           pk{2}.`1 \in RO.m{2} /\
-           oget RO.m{2}.[sd{2}] = _A{2}); last first.
+           pk{2}.`1 \in LRO.m{2} /\
+           oget LRO.m{2}.[sd{2}] = _A{2}); last first.
 exists* _A{2}, pk{2}.`1.
 elim* => _A sd.
-call(_: ={glob RO} /\ oget RO.m{2}.[sd] = _A /\ sd \in RO.m{2} ).
+call(_: ={glob LRO} /\ oget LRO.m{2}.[sd] = _A /\ sd \in LRO.m{2} ).
 proc.
 auto => />; smt(@SmtMap).
 auto => /> /#.
@@ -556,13 +556,13 @@ module CorrectnessNoiseAprox = {
 
 section.
 
-declare module A : CAdversary {RO}.
-axiom All (O <: ARO{A}):
+declare module A : CAdversary {LRO}.
+axiom All (O <: POracle{A}):
      islossless O.o =>
      islossless A(O).find.
 
 lemma correctness_slack &m :
-  Pr[ AdvCorrectnessNoise(A,RO).main() @ &m : res]<=
+  Pr[ AdvCorrectnessNoise(A,LRO).main() @ &m : res]<=
   Pr[ CorrectnessNoiseAprox.main() @ &m : res].
 proof.
 byequiv => //.
@@ -575,13 +575,13 @@ seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
            e2{2} \in dshort_R
 ).
 inline *; auto => />; first by smt(@SmtMap duni_ll duni_matrix_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
-wp;call {1} (_: true ==> true).  by apply (All RO); smt(RO_o_ll duni_matrix_ll).
+wp;call {1} (_: true ==> true).  by apply (All LRO); smt(LRO_o_ll duni_matrix_ll).
 skip;auto => />.
 move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; move : noise_commutes cv_bound_valid => />; smt().
 qed.
 
 lemma correctness_aprox &m :
-  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
+  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - Pr[ CorrectnessNoiseAprox.main() @ &m : res].
 proof.
 move : (correctness A All &m).
@@ -623,7 +623,7 @@ axiom fail_prob &m :
    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
   
 lemma correctness_bound &m :
-  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
+  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - fail_prob.
 proof.
 have  := (fail_prob &m).

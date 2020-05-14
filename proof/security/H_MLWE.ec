@@ -85,10 +85,18 @@ proof. by move=> ??;rewrite !duni_matrixE. qed.
 
 op dsample(sd : seed) = duni_matrix.
 
+clone import ROM as H_MLWE_ROM with
+  type in_t  <- seed,
+  type out_t <- matrix,
+  op dout    <- dsample,
+  type d_in_t <- unit,
+  type d_out_t <- bool.
+import Lazy.
+(*
 clone import ROM.Lazy as H_MLWE_ROM with
     type from <- seed,
     type to <- matrix,
-    op   dsample <- dsample.
+    op   dsample <- dsample. *)
 
 module type Adv_T = {
    proc guess(sd : seed, t : vector, uv : vector * R) : bool

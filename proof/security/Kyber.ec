@@ -256,9 +256,9 @@ admitted.
 
 section.
 
-import H_MLWE.H_MLWE_ROM.
-declare module A : CAdversary {RO}.
-axiom All (O <: ARO{A}):
+import H_MLWE.H_MLWE_ROM Lazy.
+declare module A : CAdversary {LRO}.
+axiom All (O <: POracle{A}):
      islossless O.o =>
      islossless A(O).find.
 
@@ -275,7 +275,7 @@ admitted.
 
 print correctness_bound.
 lemma kyber_correctness &m : 
-  Pr[ AdvCorrectness(MLWE_PKE,A,RO).main() @ &m : res]  >=
+  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - fail_prob by
    apply (correctness_bound A All fail_prob &m).
 end section.
