@@ -33,6 +33,7 @@ test: test/test_poly_compress \
 			test/test_polyvec_reduce\
 			test/test_polyvec_csubq \
  			test/test_fips202 \
+ 			test/test_gen_matrix \
  			test/test_indcpa \
 
 speed: test/speed_indcpa
@@ -87,6 +88,9 @@ test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 test/test_fips202: test/test_fips202.c $(HEADERS) fips202.c jfips202.s
 	$(CC) $(CFLAGS) -o $@ fips202.c jfips202.s $<
  
+test/test_gen_matrix: test/test_gen_matrix.c $(HEADERS) gen_matrix.s
+	$(CC) $(CFLAGS) -o $@ gen_matrix.s $<
+ 
 test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) $(INCS) jpoly.s 
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s $<
 			
@@ -94,8 +98,10 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyve
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
 
-
 jfips202.japp: jfips202.jazz fips202.jahh
+	cat $< | $(CC) -E - | grep -v ^# > $@
+
+gen_matrix.japp: gen_matrix.jazz gen_matrix.jahh
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
