@@ -7,7 +7,7 @@
 
 param int _19KYBER_Q = 63251;
 
-param int GENMATRIX_NBLOCKS = 2;
+param int GENMATRIX_NBLOCKS = 4;
 
 
 inline
@@ -70,9 +70,12 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[GENMATRIX_NBLOCKS
 }
 
 inline
-fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KYBER_K*KYBER_VECN]
+fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16[KYBER_K*KYBER_VECN]
 {
   stack u8[34] extseed;
+  stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf;
+  stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf;
+  stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf;
   stack u64[25] state;
   stack u16[KYBER_K*KYBER_VECN] rr;
@@ -81,10 +84,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
   reg u16 t;
   reg u64 ctr k l;
   stack u64 sctr;
-  stack u64 stransposed;
   inline int i, j, k;
-
-  stransposed = transposed;
 
   for j = 0 to KYBER_SYMBYTES
   {
@@ -96,7 +96,6 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
   {
     for j = 0 to KYBER_K
     {
-      transposed = stransposed;
       if(transposed == 0)
       {
         extseed[KYBER_SYMBYTES] = j;
