@@ -132,7 +132,7 @@ rewrite get_to_uint => />.
 smt.
 qed.
 
-lemma poly_csubq_corr ap :
+lemma poly_csubq_corr_h ap :
       hoare[ Mderand.poly_csubq :
            ap = lift_array256 rp /\
            pos_bound256_cxq rp 0 256 2 
@@ -260,6 +260,18 @@ rewrite /smod => />. smt.
 by auto => /> /#. 
 qed.
 
+lemma poly_csubq_ll : islossless Mderand.poly_csubq
+  by proc; while (0 <= i <= 256) (256 -i); auto => /> /#. 
+
+lemma poly_csubq_corr ap :
+      phoare[ Mderand.poly_csubq :
+           ap = lift_array256 rp /\
+           pos_bound256_cxq rp 0 256 2 
+           ==>
+           ap = lift_array256 res /\
+           pos_bound256_cxq res 0 256 1 ] = 1%r
+  by conseq poly_csubq_ll (poly_csubq_corr_h ap). 
+
 lemma formula2 x :
   0 <= x < 3329 =>
    (x * 2 + 1664) * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 = (x * 2 +1664) %/ 3329 %% 16.
@@ -287,7 +299,7 @@ smt(@W32).
 qed.
 
 
-lemma poly_tomsg_corr _a : 
+lemma poly_tomsg_corr_h _a : 
     hoare[ Mderand.poly_tomsg_decode :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a ==>
@@ -329,7 +341,7 @@ unroll for 14.
 unroll for 10.
 unroll for 6.
 seq 1: (pos_bound256_cxq a 0 256 1 /\ lift_array256 a = _a).
-ecall (poly_csubq_corr _a) => />. smt(). auto => />. smt().
+ecall (poly_csubq_corr_h _a) => />. smt(). auto => />. smt().
 auto => />.
 move => *.
 rewrite (_:
@@ -598,7 +610,7 @@ rewrite /m_decode.
 apply Array256.ext_eq => /> *.
 rewrite !mapiE => />.
 rewrite initiE => />.
-rewrite /zeroextu32 inzmodK qE /(`<<`) /(`>>`) to_sintE /smod => />.
+rewrite /zeroextu32  qE /(`<<`) /(`>>`) to_sintE /smod => />.
 have ? : (0 <= to_uint a{hr}.[x] < 3329). 
 move : H; rewrite /pos_bound256_cxq qE => /> *.
 move : (H x _);  first by smt().
@@ -612,6 +624,8 @@ rewrite W32.to_uint_shr; first by smt().
 rewrite !W32.of_uintK.
 pose xx := (to_uint a{hr}.[x] * 2 + 1664) * 80636 %% W32.modulus %/ 2 ^ 28.
 rewrite (_: xx %% 2 %% W32.modulus %% 2 = xx%%2). smt(@W32).
+rewrite /balasint.
+rewrite inzmodK qE.
 rewrite (_: to_uint a{hr}.[x] %% 3329 = to_uint a{hr}.[x]). smt().
 rewrite /xx => />.
 pose xxx := (to_uint a{hr}.[x] * 2 + 1664).
@@ -626,10 +640,28 @@ rewrite formula2 => />.
 rewrite /xxx.
 rewrite (_: (to_uint a{hr}.[x] * 2 + 1664) %/ 3329 %% 16 %% 2 = 
    (to_uint a{hr}.[x] * 2 + 1664) %/ 3329 %% 2); first by smt().
-rewrite formula3 => />.
+rewrite formula3 => />. smt().
 qed.
 
-lemma poly_frommsg_corr _a : 
+lemma poly_tomsg_ll : islossless  Mderand.poly_tomsg_decode.
+proc.
+while (0 <= i <= 32) (32-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
+move => *.
+wp.
+while (0 <= j <= 8) (8-j); last by auto =>  /> /#.
+move => *.
+by auto => /> /#.
+qed.
+
+lemma poly_tomsg_corr _a : 
+    phoare[ Mderand.poly_tomsg_decode :
+             pos_bound256_cxq a 0 256 2 /\
+             lift_array256 a = _a ==>
+             map (fun x => x `&` (W32.of_int 1) = W32.one) res = m_decode _a] = 1%r
+  by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
+
+
+lemma poly_frommsg_corr_h _a : 
     hoare[ Mderand.poly_frommsg_encode :
              r = Array256.map (fun x => if x then W16.one else W16.zero) _a
               ==>
@@ -912,7 +944,19 @@ rewrite initiE => />.
 by case (_a.[x]); rewrite to_sintE /smod => />. 
 qed.
 
-lemma poly_frommont_corr _a : 
+
+lemma poly_frommsg_ll : islossless  Mderand.poly_frommsg_encode
+ by proc; while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
+
+lemma poly_frommsg_corr _a : 
+    phoare[ Mderand.poly_frommsg_encode :
+             r = Array256.map (fun x => if x then W16.one else W16.zero) _a
+              ==>
+             pos_bound256_cxq res 0 256 1 /\
+             lift_array256 res = m_encode _a] = 1%r
+   by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
+
+lemma poly_frommont_corr_h _a : 
     hoare[ Mderand.poly_frommont :
              map W16.to_sint rp = _a ==>
              map W16.to_sint res = map (fun x => SREDC (x * ((R^2) %% q))) _a].
@@ -1208,7 +1252,7 @@ have ? : 0<= to_uint  (truncateu16 xx) < 16.
   by rewrite /smod;  smt(@W16).
 qed.
 
-lemma poly_compress_round_corr ap :
+lemma poly_compress_round_corr_h ap :
       hoare[ Mderand.poly_compress_round :
            ap = lift_array256 a /\
            pos_bound256_cxq a 0 256 2 
@@ -1220,7 +1264,7 @@ move => *.
 proc.
 seq 1 : (ap = lift_array256 a /\
            pos_bound256_cxq a 0 256 1).
-call (poly_csubq_corr ap) => />; first by auto => />.
+call (poly_csubq_corr_h ap) => />; first by auto => />.
 while (ap = lift_array256 a /\
        pos_bound256_cxq a 0 256 1 /\
        (forall k,
@@ -1275,20 +1319,40 @@ rewrite set_eqiE; first 2 by smt().
 by move : (roundcimpl_rng a{hr}.[2*i{hr} + 1]); smt().
 qed.
 
+lemma poly_compress_ll : islossless Mderand.poly_compress_round.
+proc.
+while (0 <= i <= 128) (128-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
+by move => *;  auto => /> /#.
+qed.
+
+lemma poly_compress_round_corr ap :
+      phoare[ Mderand.poly_compress_round :
+           ap = lift_array256 a /\
+           pos_bound256_cxq a 0 256 2 
+           ==>
+           Array256.map Poly.roundc ap = lift_array256 res /\
+           forall k,
+            0<= k < 256  => 0<= to_sint res.[k] < 16 ] = 1%r
+  by conseq poly_compress_ll (poly_compress_round_corr_h ap).
+
 
 (*******DIRECT NTT *******)
 
 import Indcpa.
 lemma zeta_bound :
    minimum_residues jzetas.
-admitted.
-(* proof.
-rewrite /minimum_residues.
-apply/(allP jzetas (fun x => bpos16 x q)).
+ proof.
+rewrite /minimum_residues qE.
+apply/(allP jzetas (fun x => bpos16 x 3329)).
+simplify.
+rewrite (_: 
+  (fun (x : W16.t) => 0 <= to_sint x < 3329) = 
+  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x then to_uint x - 65536 else to_uint x) < 3329)).
+apply/fun_ext => x *.
+rewrite to_sintE /smod => />.
 auto => />.
-progress; by smt(@W16 @Fq).
+done.
 qed. 
-*)
 
 equiv ntt_correct_aux :
   NTT_Fq.NTT.ntt ~ Mderand.poly_ntt : 
@@ -1526,15 +1590,18 @@ print Mderand.
 
 lemma zetainv_bound :
    minimum_residues jzetas_inv.
-admitted.
-(*
 proof.
-rewrite /minimum_residues.
-apply/(allP jzetas_inv (fun x => bpos16 x q)).
+rewrite /minimum_residues qE.
+apply/(allP jzetas_inv (fun x => bpos16 x 3329)).
+simplify.
+rewrite (_: 
+  (fun (x : W16.t) => 0 <= to_sint x < 3329) = 
+  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x then to_uint x - 65536 else to_uint x) < 3329)).
+apply/fun_ext => x *.
+rewrite to_sintE /smod => />.
 auto => />.
-rewrite !qE. rewrite !of_sintK => />.
+done.
 qed. 
-*)
 
 equiv invntt_correct &m :
   NTT_Fq.NTT.invntt ~ Mderand.poly_invntt : 

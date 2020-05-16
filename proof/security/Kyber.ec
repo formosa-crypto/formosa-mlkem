@@ -143,6 +143,11 @@ op cv_bound : int = 104. (* computed in sec estimates, must be
 op fail_prob : real. (* Need to compute exact value or replace
                         with suitable bound *)
 
+import H_MLWE.
+import M.
+import Matrix.
+import Vector.
+
 (* Should the ring structure for R come from here? *)
 clone import MLWE_PKE as MLWEPKE with
   type H_MLWE.M.R <- poly,
@@ -152,8 +157,8 @@ clone import MLWE_PKE as MLWEPKE with
   op H_MLWE.M.ZR.oner <- Poly.one, 
   op H_MLWE.M.ZR.( * ) <- Poly.( *),
   op H_MLWE.M.size <- kvec,
-  op H_MLWE.dshort_R <- dshort_R,
-  op H_MLWE.duni_R <- duni_R,
+  op H_MLWE.dshort_R <- Kyber.Poly.dshort_R,
+  op H_MLWE.duni_R <- Kyber.Poly.duni_R,
   op H_MLWE.pe <- pe_R,
   op H_MLWE.pm <- pm,
   type plaintext <- message,
@@ -173,8 +178,8 @@ clone import MLWE_PKE as MLWEPKE with
   op cv_bound <- cv_bound,
   op fail_prob <- fail_prob
   proof H_MLWE.M.ge0_size by smt(kvec_ge3)
-  proof H_MLWE.dshort_R_ll  by apply dshort_R_ll
-  proof H_MLWE.duni_R_ll by apply duni_R_ll
+  proof H_MLWE.dshort_R_ll  by apply Kyber.Poly.dshort_R_ll
+  proof H_MLWE.duni_R_ll by apply Kyber.Poly.duni_R_ll
   proof H_MLWE.duni_R_fu
   proof H_MLWE.duni_RE
   proof H_MLWE.duni_matrixE
@@ -217,6 +222,9 @@ search H_MLWE.M.Matrix.trmx.
 rewrite -H_MLWE.M.Matrix.mulmxTv H_MLWE.M.Matrix.trmxK.
 rewrite !H_MLWE.M.Vector.dotpDr.
 ring. 
+rewrite (H_MLWE.M.Matrix.mulmxTv _A r).
+rewrite (H_MLWE.M.Vector.dotpC s _).
+rewrite (H_MLWE.M.Vector.dotpC _ r).
 admit.
 qed.
 
@@ -251,7 +259,15 @@ realize cv_bound_valid.
 admitted.
 
 realize noise_commutes.
-admitted. 
+move => n n' b.
+move => *.
+have ?  : `| noise_val (Poly.(+) n n')%H_MLWE | <=
+           `| (noise_val n)| + `|(noise_val n')|; 
+  last by move : H H0; rewrite /good_noise qE => /#.
+rewrite /noise_val.
+rewrite /Poly.(+).
+admit.
+qed.
 
 section.
 
