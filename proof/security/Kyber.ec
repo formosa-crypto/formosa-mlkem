@@ -225,7 +225,7 @@ ring.
 rewrite (H_MLWE.M.Matrix.mulmxTv _A r).
 rewrite (H_MLWE.M.Vector.dotpC s _).
 rewrite (H_MLWE.M.Vector.dotpC _ r).
-admit.
+rewrite (H_MLWE.M.Vector.dotpC _ s) - H_MLWE.M.Matrix.dotp_mulmxv ( H_MLWE.M.Vector.dotpC r). by ring.
 qed.
 
 realize good_decode.
@@ -259,13 +259,26 @@ realize cv_bound_valid.
 admitted.
 
 realize noise_commutes.
-move => n n' b.
-move => *.
-have ?  : `| noise_val (Poly.(+) n n')%H_MLWE | <=
-           `| (noise_val n)| + `|(noise_val n')|; 
-  last by move : H H0; rewrite /good_noise qE => /#.
-rewrite /noise_val.
+move => n n' b *.
+move : H H0; rewrite /noise_val /good_noise.
+pose F := fun (cc : int) (c : zmod) => if `|cc| < `|balasint c| then balasint c else cc.
+move  => *.
+(* one *)
+have hgenn: 
+  forall c0, `|foldl F c0 (to_list n)| < q %/ 4 - b => `|c0| < q %/ 4 - b /\ forall x, x \in (to_list n) => `|balasint x| < q %/ 4 - b.
+  elim: (to_list n) => [ | c tl ih] //= c0 /ih /#.  
+(* another *)
+have hgenn': 
+  forall c0, `|foldl F c0 (to_list n')| < b => `|c0| < b /\ forall x, x \in (to_list n') => `|balasint x| < b.
+  elim: (to_list n') => [ | c tl ih] //= c0 /ih /#.  
+(* both *)
+move : (hgenn 0 _); first by smt(). move => [#] *.
+move : (hgenn' 0 _); first by smt(). move => [#] *.
+have ? : `|foldl F 0 (to_list (Poly.(+) n n'))| < q%/4; last by smt().
+have ?:  forall x, x \in (to_list (Poly.(+) n n')) => `|balasint x| < q %/4; last first.
 rewrite /Poly.(+).
+rewrite map2E => />.
+admit.
 admit.
 qed.
 
