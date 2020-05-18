@@ -1,4 +1,4 @@
-require import List Int IntExtra IntDiv CoreMap IntDiv.
+require import List Int IntExtra IntDiv CoreMap IntDiv Real.
 from Jasmin require  import JModel JMemory.
 require import W16extra Array256 Array128.
 require import Fq.
@@ -66,15 +66,7 @@ op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
 
 require import IndcpaDerand.
 
-(*
-  proc poly_tomsg(rp : W64.t, a : W16.t Array256.t) : unit = Indcpa.M.poly_tomsg
-  
-  proc poly_frommsg(ap : W64.t) : W16.t Array256.t = Indcpa.M.poly_frommsg  
-*)
 
-print pos_bound256_cxq.
-
-print Mderand.
 
 lemma m1true x :
   0 <= x < 16 =>
@@ -1342,6 +1334,8 @@ import Indcpa.
 lemma zeta_bound :
    minimum_residues jzetas.
  proof.
+admit. (* too slow *)
+(*
 rewrite /minimum_residues qE.
 apply/(allP jzetas (fun x => bpos16 x 3329)).
 simplify.
@@ -1351,7 +1345,7 @@ rewrite (_:
 apply/fun_ext => x *.
 rewrite to_sintE /smod => />.
 auto => />.
-done.
+done.*)
 qed. 
 
 equiv ntt_correct_aux :
@@ -1583,7 +1577,6 @@ case (x <> to_uint j{2}).
    by ring; smt(@ZModRing @Array256). 
 qed.
 
-
 (*******INVERSE *******)
 
 print Mderand.
@@ -1591,6 +1584,8 @@ print Mderand.
 lemma zetainv_bound :
    minimum_residues jzetas_inv.
 proof.
+admit. (* too slow *)
+(*
 rewrite /minimum_residues qE.
 apply/(allP jzetas_inv (fun x => bpos16 x 3329)).
 simplify.
@@ -1600,10 +1595,33 @@ rewrite (_:
 apply/fun_ext => x *.
 rewrite to_sintE /smod => />.
 auto => />.
-done.
+done.*)
 qed. 
 
-equiv invntt_correct &m :
+lemma ntt_correct _r :
+   phoare[ Mderand.poly_ntt :
+        _r = lift_array256 rp /\ 
+        array_mont Kyber_.Poly.zetas = 
+           lift_array128  jzetas /\
+        signed_bound_cxq rp 0 256 2
+          ==> 
+            Kyber_.Poly.ntt _r = lift_array256 res /\
+            forall k, 0<=k<256 => bpos16 res.[k] (2*Kyber_.q)] = 1%r.
+proof.
+bypr.
+move => &m [#] *.
+apply (eq_trans _ (Pr[NTT_Fq.NTT.ntt(_r,zetas) @ &m :
+   ntt _r = res])).
+have ? : (
+Pr[NTT_Fq.NTT.ntt(_r, zetas) @ &m : ntt _r = res] = 
+Pr[Mderand.poly_ntt(rp{m}) @ &m :
+   ntt _r = lift_array256 res /\ forall (k : int), 0 <= k < 256 => bpos16 res.[k] (2 * q)]); last by rewrite H2.
+byequiv ntt_correct_aux.
+smt(). smt().
+byphoare (NTT_Fq.ntt_spec _r). smt(). smt().
+qed.
+
+equiv invntt_correct_aux :
   NTT_Fq.NTT.invntt ~ Mderand.poly_invntt : 
         r{1} = lift_array256 rp{2} /\ 
         array_mont zetas_inv{1} = 
@@ -1898,9 +1916,33 @@ case (x <> to_uint j{2} + to_uint len{2}).
    by rewrite -inzmodB !inzmodM; ring.
 qed.
 
+
+lemma invntt_correct _r :
+   phoare[ Mderand.poly_invntt :
+        _r = lift_array256 rp /\ 
+        array_mont Kyber_.Poly.zetas_inv = 
+           lift_array128  jzetas_inv /\
+        signed_bound_cxq rp 0 256 2
+          ==> 
+            Kyber_.Poly.invntt _r = lift_array256 res /\
+            forall k, 0<=k<256 => b16 res.[k] (Kyber_.q+1)] = 1%r.
+proof.
+bypr.
+move => &m [#] *.
+apply (eq_trans _ (Pr[NTT_Fq.NTT.invntt(_r,zetas_inv) @ &m :
+   invntt _r = res])).
+have ? : (
+Pr[NTT_Fq.NTT.invntt(_r, zetas_inv) @ &m : invntt _r = res] = 
+Pr[Mderand.poly_invntt(rp{m}) @ &m :
+  invntt _r = lift_array256 res /\ forall (k : int), 0 <= k < 256 => b16 res.[k] (q+1)]); last by rewrite H2.
+byequiv invntt_correct_aux.
+smt(). smt().
+byphoare (NTT_Fq.invntt_spec _r). smt(). smt().
+qed.
+
+
 (* COMPLEX MULTIPLICATION *)
 
-print Mderand.
 
 op complex_mul (a :zmod * zmod, b : zmod * zmod, zzeta : zmod) =
      (a.`2 * b.`2 * zzeta * (inzmod 169) + a.`1*b.`1  * (inzmod 169), 
@@ -1916,7 +1958,6 @@ op base_mul(ap bp : zmod Array256.t, zetas : zmod Array128.t, rs : zmod Array256
          (double_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
                     (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas.[k+64])).
 
-print Mderand.
 
 lemma poly_basemul_corr _ap _bp _zetas:
       hoare[ Mderand.poly_basemul :
@@ -2340,6 +2381,59 @@ split. split.
 rewrite !mapiE; first 6 by smt() => />. 
 rewrite !mapiE; first 6 by smt() => />. 
 rewrite !mapiE; first 6 by smt() => />. 
+smt().
+qed.
+
+
+lemma basemul_scales ap bp rs :
+ base_mul ap bp  zetas rs 64=>
+  rs = scale (basemul ap bp) (inzmod 169). 
+rewrite /base_mul /double_mul /basemul /scale /complex_mul => /> *.
+apply Array256.ext_eq => /> *.
+move : (H (x %/4) _) => /> *; first by smt().
+rewrite mapiE; first by smt().
+move : (basemul_sem ap bp ((basemul ap bp))); rewrite /dcmplx_mul /cmplx_mul => /> *.
+case (x %%4 = 0).
+move => *.
+move : (H6 (x %/ 4) _); first by smt().
+move => [#] *.
+rewrite (_: (basemul ap bp).[x] = 
+  ap.[4 * (x %/4) + 1] * bp.[4 * (x %/4) + 1] * zetas.[(x %/4) + 64] + ap.[4 * (x %/4)] * bp.[4 * (x %/4)]). smt().
+rewrite (_: x = 4 * (x %/ 4)); first by smt().
+rewrite H2. 
+rewrite (_: 4 * (x %/ 4) %/ 4 = (x %/ 4)); first by smt(). 
+by ring.
+case (x %%4 = 1).
+move => *.
+move : (H6 (x %/ 4) _); first by smt().
+move => [#] *.
+rewrite (_: (basemul ap bp).[x] = 
+  ap.[4 * (x %/ 4)] * bp.[4 * (x %/ 4) + 1] + ap.[4 * (x %/ 4) + 1] * bp.[4 * (x %/ 4)]). smt().
+rewrite (_: x = 4 * (x %/ 4) + 1); first by smt().
+rewrite H3. 
+rewrite (_: (4 * (x %/ 4) + 1) %/ 4 = (x %/ 4)); first by smt(). 
+by ring.
+case (x %%4 = 2).
+move => *.
+move : (H6 (x %/ 4) _); first by smt().
+move => [#] *.
+rewrite (_: (basemul ap bp).[x] = 
+  ap.[4 * (x %/ 4) + 3] * bp.[4 * (x %/ 4) + 3] * - zetas.[x %/ 4 + 64] +
+     ap.[4 * (x %/ 4) + 2] * bp.[4 * (x %/ 4) + 2]). smt().
+rewrite (_: x = 4 * (x %/ 4) + 2); first by smt().
+rewrite H4. 
+rewrite (_: (4 * (x %/ 4) + 2) %/ 4 = (x %/ 4)); first by smt(). 
+by ring.
+case (x %%4 = 3).
+move => *.
+move : (H6 (x %/ 4) _); first by smt().
+move => [#] *.
+rewrite (_: (basemul ap bp).[x] = 
+  ap.[4 * (x %/ 4) + 2] * bp.[4 * (x %/ 4) + 3] + ap.[4 * (x %/ 4) + 3] * bp.[4 * (x %/ 4) + 2]). smt().
+rewrite (_: x = 4 * (x %/ 4) + 3); first by smt().
+rewrite H5. 
+rewrite (_: (4 * (x %/ 4) + 3) %/ 4 = (x %/ 4)); first by smt(). 
+by ring.
 smt().
 qed.
 

@@ -66,14 +66,139 @@ module NTT = {
  
 }.
 
-axiom ntt_spec _r :
+axiom ntt_spec_h _r :
+   hoare[ NTT.ntt :
+     _r = r /\ Kyber_.Poly.zetas = zetas ==>
+       res = Kyber_.Poly.ntt _r ].
+
+axiom invntt_spec_h _r  :
+   hoare[ NTT.invntt :
+     _r = r /\ Kyber_.Poly.zetas_inv = zetas_inv ==>
+       res = Kyber_.Poly.invntt _r ].
+
+lemma ntt_spec_ll : islossless NTT.ntt.
+proc.
+sp.
+while (1 <= len /\ len <= 128 /\ exists l, len = 2^l /\   0 <= zetasctr <= 127 /\
+   2*(zetasctr+1)*len = 256) (len); last by
+ auto => />;split; [ by exists 7 | by smt()].
+move => *.
+wp. sp.
+move => *.
+exists *zetasctr.
+elim* => zetasctr1 l.
+while (1 <= len /\ len <= 128 /\ len = 2 ^ l /\ 
+        0 <= zetasctr1 <= 127 /\ 
+        0 <= zetasctr <= 127 /\ 
+        2 * (zetasctr1+ 1) * len = 256 /\ 
+        2 <= len /\ 
+       2* (zetasctr - zetasctr1 ) * len <= 256 /\
+       0 <= start <= 256 /\
+       start = 2*(zetasctr - zetasctr1)*len) (256 -start); last first.
+wp;skip => [#] *. 
+split; first by smt().
+move => [#] *.
+split; first by smt().
+move => [#] *.
+split; last by smt().
+split; first by smt().
+split; first by smt().
+exists (l-1). smt(@IntExtra @IntDiv).
+move => *.
+wp.
+while (0 <= start <= 256 /\ 
+       1 <= len /\ len <= 128  /\ start <= j <= start + len /\ 
+        0 <= zetasctr <= 127 /\ 
+2 * (zetasctr1 + 1) * len = 256 /\ 
+       start = 2*(zetasctr -1 - zetasctr1) * len /\ 
+       2* (zetasctr - zetasctr1 ) * len <= 256) (start + len - j); last first. 
+wp;skip => *.
+split;  first by smt().
+move => *.
+split; first by smt().
+move => *.
+split; last by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; last by smt().
+smt().
+move => *.
+auto => />.
+move => *. smt().
+qed.
+
+
+lemma invntt_spec_ll : islossless NTT.invntt.
+proc.
+sp.
+while(0<=j<=256) (256-j); first by move => *; auto => /> /#.
+wp.
+while (2 <= len /\ len <= 256 /\ exists l, len = 2^l /\   0 <= zetasctr <= 128 /\
+   zetasctr * len = 128 * (len - 2)) (256-len); last by
+ auto => />; split; [ by exists 1 | by smt()].
+move => *.
+wp. sp.
+move => *.
+exists *zetasctr.
+elim* => zetasctr1 l.
+while (1 <= len /\ len <= 128 /\ len = 2 ^ l /\ 
+        0 <= zetasctr1 <= 128 /\ 
+        0 <= zetasctr <= 128 /\ 
+        zetasctr1 * len = 128 * (len - 2) /\ 
+       2* (zetasctr - zetasctr1 ) * len <= 256 /\
+       0 <= start <= 256 /\
+       start = 2*(zetasctr - zetasctr1)*len) (256 -start); last first.
+wp;skip => [#] *. 
+split; first by smt().
+move => [#] *.
+split; first by smt().
+move => [#] *.
+split; last by smt().
+split; first by smt().
+split; first by smt().
+exists (l+1). smt(@IntExtra @IntDiv).
+move => *.
+wp.
+while (0 <= start <= 256 /\ 
+       1 <= len /\ len <= 128  /\ start <= j <= start + len /\ 
+        0 <= zetasctr <= 128 /\ 
+        zetasctr1 * len = 128 * (len - 2) /\ 
+       start = 2*(zetasctr -1 - zetasctr1) * len /\ 
+       2* (zetasctr - zetasctr1 ) * len <= 256) (start + len - j); last first. 
+wp;skip => *.
+split; first by smt().
+move => *.
+split; first by smt().
+move => *.
+split; last by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; first by smt().
+split; last by smt().
+smt().
+move => *.
+auto => />.
+move => *. smt().
+qed.
+
+lemma ntt_spec _r :
    phoare[ NTT.ntt :
      _r = r /\ Kyber_.Poly.zetas = zetas ==>
-       res = Kyber_.Poly.ntt _r ] = 1%r.
+       res = Kyber_.Poly.ntt _r ] = 1%r
+  by conseq ntt_spec_ll (ntt_spec_h _r); done.
 
-axiom invntt_spec _r  :
+
+lemma invntt_spec _r :
    phoare[ NTT.invntt :
      _r = r /\ Kyber_.Poly.zetas_inv = zetas_inv ==>
-       res = Kyber_.Poly.invntt _r ] = 1%r.
+       res = Kyber_.Poly.invntt _r ] = 1%r
+  by conseq invntt_spec_ll (invntt_spec_h _r); done.
 
 end NTT_Fq.

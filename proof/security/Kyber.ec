@@ -34,12 +34,35 @@ op zetas_inv : elem Array128.t.
 op ntt : poly -> poly.
 op invntt : poly -> poly.
 
-(* This will specified similarly to 
-   what is in KyberPoly. *)
+(* This is specified similarly to 
+   what is in KyberPoly, but should come
+   from polynomial theory somehow *)
+
+op cmplx_mul (a :zmod * zmod, b : zmod * zmod, zzeta : zmod) =
+     (a.`2 * b.`2 * zzeta + a.`1*b.`1, 
+      a.`1 * b.`2 + a.`2 * b.`1).
+
+op dcmplx_mul(a1 : zmod * zmod, b1 : zmod * zmod, 
+              a2 : zmod * zmod, b2 : zmod * zmod, zzeta : zmod) = 
+     (cmplx_mul a1 b1 zzeta, cmplx_mul a2 b2 (-zzeta)).
+
 op basemul : poly -> poly -> poly.
 
-op ( *) (pa pb : poly) = 
-  invntt (basemul (ntt pa) (ntt pb)).
+axiom basemul_sem (ap bp rs: poly) :
+   rs = basemul ap bp <=> 
+   forall k, 0 <= k < 64 =>
+     ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
+         (dcmplx_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
+                    (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas.[k+64])).
+
+op ( *) (pa pb : poly) : poly.
+
+op scale(p : poly, c : elem) : poly = 
+  Array256.map (fun x => x * c) p.
+
+axiom mul_sem (pa pb : poly) (c : elem) : 
+  invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
+   scale (pa * pb) c.
 
 op ( +) (pa pb : poly) : poly = 
   map2 (fun a b : elem  => ZModRing.(+) a b) pa pb.
