@@ -16,6 +16,9 @@ op dshort_elem : elem distr.
 op duni_elem : elem distr.
 op pe = 1%r /q%r.
 
+axiom supp_duni_elem x : 0 <= asint x < q => x \in duni_elem.
+axiom duni_elem1E x : mu1 duni_elem x = pe.
+
 axiom dshort_elem_ll : is_lossless dshort_elem.
 axiom duni_elem_ll : is_lossless duni_elem.
 
@@ -171,6 +174,18 @@ import M.
 import Matrix.
 import Vector.
 
+(* auxiliary lemma *)
+lemma foldr_eq_size (f : 'b -> 'b -> 'b) (s s' : 'a list) c z :
+  size s = size s' =>
+  foldr (fun (x : 'a) (y : 'b) => f c y) z s = foldr (fun (x : 'a) (y : 'b) => f c y) z s'.
+proof.
+  elim: s s' => /= s. 
+    by rewrite (_ : 0 = size s <=> size s = 0) 1:/#; rewrite size_eq0 => -> /=.
+  move => /> hind s'.
+  elim s' => /=; first by smt(size_ge0).
+  by move => s' hind' hsize /#.
+qed.
+
 (* Should the ring structure for R come from here? *)
 clone import MLWE_PKE as MLWEPKE with
   type H_MLWE.M.R <- poly,
@@ -214,13 +229,59 @@ clone import MLWE_PKE as MLWEPKE with
   proof noise_commutes.
 
 realize H_MLWE.duni_R_fu.
-admitted.
+proof.
+  rewrite /is_full /Poly.duni_R => p.
+  rewrite supp_dmap; exists (Array256.to_list p).
+  split.
+    rewrite supp_dlist //; split; first by rewrite size_to_list.
+    rewrite allP => *.
+    by rewrite supp_duni_elem 1:smt(@ZModRing).
+    by rewrite Array256.to_listK.
+qed.
 
 realize H_MLWE.duni_RE.
-admitted.
+proof.
+  rewrite /Poly.duni_R /pe_R  /Kyber.pe => p.
+  rewrite (dmap1E_can _ _ (Array256.to_list) _); first by by rewrite Array256.to_listK.
+    by move => a; rewrite supp_dlist // => /> *; rewrite of_listK.
+  rewrite dlist1E //.
+  cut ->: 256 = size (to_list p) by rewrite size_to_list.
+  rewrite /StdBigop.Bigreal.BRM.big filter_predT /=.
+  elim (to_list p) => /=; first by rewrite powr0 1:/#.
+  move => x l hind /=.
+    by rewrite hind duni_elem1E /pe addzC powrS; first by smt(size_ge0).
+qed.
 
 realize H_MLWE.duni_matrixE.
-admitted.
+proof.
+  rewrite /H_MLWE.duni_matrix => m.
+  rewrite M.Matrix.dmatrix1E /StdBigop.Bigreal.BRM.big /StdBigop.Bigreal.BRM.big filter_predT !foldr_map /=.
+  cut ->: (fun (x : int) (z : real) => foldr Real.( * ) 1%r 
+            (map (fun (j : int) => mu1 Poly.duni_R (M.Matrix."_.[_]" m (x, j))) (range 0 kvec)) * z) =
+          (fun (x : int) => Real.( * ) (foldr (fun (x0 : int) (z : real) => (1%r / q%r)^256 * z) 
+            1%r (range 0 kvec))).
+    rewrite fun_ext /(==) => x.
+    rewrite foldr_map => /=.
+    congr. congr.
+    rewrite fun_ext /(==) => y.
+    by rewrite H_MLWE.duni_RE /pe_R /pe.
+  rewrite /pm /pe_R /pe /=.
+  have aux : forall (x : real) (y : int), 0 <= y => 
+              (foldr (fun (_ : int) (z : real) => x * z) 1%r (range 0 y)) = x ^ y.
+    move => x y; elim y.
+    by rewrite range_geq //= ; rewrite powr0 /#.
+    move => j *; rewrite range_ltn 1:/# /= powrS // -H0.
+    have mulrC : forall (x y : real), x * y = y * x by smt(). (* how to use lemma?? *)
+    rewrite mulrC; congr.
+    by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);
+      first by rewrite !size_range.
+  cut ->: (foldr (fun (_ : int) (z : real) => inv q%r ^ 256 * z) 1%r (range 0 kvec)) = inv q%r ^ 256 ^ kvec
+    by rewrite aux; first by smt(kvec_ge3).
+  cut ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
+            foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
+  rewrite aux; first by smt(kvec_ge3).
+  admit. (* how to use lemmas of instances?? *)
+qed.
 
 realize encode_noise.
 move => /> *.
