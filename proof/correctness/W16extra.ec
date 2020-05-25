@@ -14,6 +14,15 @@ hint simplify b16E.
 hint simplify bpos16E.
 hint simplify bw16E.
 
+lemma to_sint_unsigned : forall (x : W16.t), 
+    0 <= to_sint x =>
+    to_sint x = to_uint x.
+proof.
+  move => x; rewrite W16.to_sintE /smod.
+  move : (W16.to_uint_cmp x) => /> ? ?.
+  by case (32768 <= to_uint x) => ? // /#. 
+qed.
+
 lemma to_sintD_small : (forall (a b : W16.t), 
     -W16.modulus %/2 <= to_sint a + to_sint b < W16.modulus %/2 =>
     to_sint (a + b) = to_sint a + to_sint b).
@@ -44,6 +53,37 @@ proof.
 + case(32768 <= to_uint a);  by 
     move => /> *; rewrite (_:  to_uint (a - b)= (to_uint a -  to_uint b) + 65536);
       [rewrite to_uintD to_uintN => />;  smt(@W16 @IntDiv)| smt(@W16 @IntDiv)].
+qed.
+
+lemma to_sintb_lt0 : forall (x y : W16.t), 
+    0 <= to_sint x =>
+    0 <= to_sint y =>
+    to_sint (x - y) < 0 => to_sint x < to_sint y.
+proof.
+  move => x y ? ?. 
+  have : 0 <= to_sint y by done. 
+  have : 0 <= to_sint x by done.
+rewrite W16.to_sintE /smod.
+  move : (W16.to_uint_cmp x) => /> ? ?.
+  case (32768 <= to_uint x) => ? // *. 
+smt().
+  move : H5. rewrite W16.to_sintE /smod.
+  move : (W16.to_uint_cmp y) => /> ? ?.
+  case (32768 <= to_uint y) => ? // *. 
+smt().
+
+move : H6.
+rewrite to_sintB_small.
+rewrite !to_sintE.
+rewrite /smod.
+simplify.
+rewrite H3 H8.
+simplify.
+smt().
+move => *.
+rewrite -to_sint_unsigned. done.
+rewrite -to_sint_unsigned. done.
+smt().
 qed.
 
 lemma to_sintM_small : (forall (a b : W16.t), 
