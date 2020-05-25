@@ -12,15 +12,17 @@ type elem = zmod.
 op trueval = (q+1) %/ 2.
 op falseval = 0.
 
-op dshort_elem : elem distr.
+op dshort_elem : elem distr. (* To make concrete *)
 op duni_elem : elem distr.
 op pe = 1%r /q%r.
 
+(* Do these go away when things are concrete ? *)
 axiom supp_duni_elem x : 0 <= asint x < q => x \in duni_elem.
 axiom duni_elem1E x : mu1 duni_elem x = pe.
 
 axiom dshort_elem_ll : is_lossless dshort_elem.
 axiom duni_elem_ll : is_lossless duni_elem.
+(***********************************************)
 
 theory Poly.
 
@@ -280,7 +282,7 @@ proof.
   cut ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
             foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
   rewrite aux; first by smt(kvec_ge3).
-  admit. (* how to use lemmas of instances?? *)
+  admit. (* FIXME: missing over the reals? *)
 qed.
 
 realize encode_noise.
@@ -340,7 +342,7 @@ rewrite /balasint qE /= /#.
 qed.
 
 realize cv_bound_valid.
-admitted.
+admitted. (* We need concrete distriburtions *)
 
 realize noise_commutes.
 move => n n' b *.
@@ -383,7 +385,7 @@ skip.
 auto => />.
 rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
 rewrite /good_noise /cv_bound /noise_val.
-admitted.
+admitted. (* We need concrete distributions *)
 
 print correctness_bound.
 lemma kyber_correctness &m : 
