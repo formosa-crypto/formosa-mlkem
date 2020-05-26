@@ -189,6 +189,23 @@ proof.
   by rewrite H4 1:/# H1 1:/#.
 qed.
 
+lemma pos_bound256_pos_bound768 (a : W16.t t) (b c d : W16.t Array256.t) x :
+  pos_bound256_cxq b 0 256 x =>
+  pos_bound256_cxq c 0 256 x =>
+  pos_bound256_cxq d 0 256 x =>
+  (forall k, 0 <= k < 256 => a.[k] = b.[k]) =>
+  (forall k, 256 <= k < 512 => a.[k] = c.[k-256]) =>
+  (forall k, 512 <= k < 768 => a.[k] = d.[k-512]) =>
+  pos_bound768_cxq a 0 768 x.
+proof.
+  rewrite /pos_bound768_cxq /pos_bound256_cxq => *.
+  case (k < 256) => hb.
+    by rewrite H2 1:/# H 1:/#.
+  case (k < 512) => hc.
+    by rewrite H3 1:/# H0 1:/#.
+  by rewrite H4 1:/# H1 1:/#.
+qed.
+
 lemma polyvec_frompolys_corr a1p a2p a3p ab :
       hoare[ Mderand.polyvec_frompolys :
            a1p = lift_array256 p0 /\
@@ -254,6 +271,76 @@ proof.
     have ?: to_uint i2 = 256 by move : H12; rewrite ultE of_uintK pmod_small // /#.
     do split.
       by rewrite (signed_bound256_signed_bound r2 p0{hr} p1{hr} p2{hr} ab) // /#.
+      by move => *; rewrite H13 // lift_array256_inzmod 1:/#.
+      by move => *; rewrite H14 // lift_array256_inzmod 1:/#.
+      by move => *; rewrite H15 1:/# lift_array256_inzmod 1:/#.
+qed.
+
+lemma pos_polyvec_frompolys_corr a1p a2p a3p ab :
+      hoare[ Mderand.polyvec_frompolys :
+           a1p = lift_array256 p0 /\
+           pos_bound256_cxq p0 0 256 ab /\
+           a2p = lift_array256 p1 /\
+           pos_bound256_cxq p1 0 256 ab /\
+           a3p = lift_array256 p2 /\
+           pos_bound256_cxq p2 0 256 ab 
+           ==>
+           pos_bound768_cxq res 0 768 ab /\ 
+           (forall k, 0 <= k < 256 =>
+              inzmod (to_sint res.[k]) = a1p.[k]) /\ 
+           (forall k, 0 <= k < 256 =>
+              inzmod (to_sint res.[k+256]) = a2p.[k]) /\ 
+           (forall k, 0 <= k < 256 =>
+              inzmod (to_sint res.[k+512]) = a3p.[k])].
+proof.
+  proc; while ((forall k, 0 <= k < 256 => r.[k] = p0.[k]) /\ 
+                (forall k, 0 <= k < 256 => r.[k+256] = p1.[k]) /\ 
+                (forall k, 0 <= k < to_uint i => r.[k+512] = p2.[k]) /\ 
+                0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 512).
+    wp; skip => /> *; do split.
+      move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
+      cut ->: k = to_uint j{hr} <=> false by smt().
+      by rewrite H //.
+      move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
+      cut ->: k + 256 = to_uint j{hr} <=> false by smt().
+      by rewrite H0 //.
+      move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
+      case (k + 512 = to_uint j{hr}) => ?; first by smt().
+        by rewrite H1; move : H7; rewrite to_uintD_small 1,2:/#.
+      by move : H5; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+      by move : H5; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+      by rewrite !to_uintD_small 1,2:/# /#.
+  wp; while ((forall k, 0 <= k < 256 => r.[k] = p0.[k]) /\ 
+                (forall k, 0 <= k < to_uint i => r.[k+256] = p1.[k]) /\ 
+                0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 256).
+    wp; skip => /> *; do split.
+      move => *; rewrite get_setE; first by move : H4; rewrite ultE of_uintK pmod_small // /#. 
+      cut ->: k = to_uint j{hr} <=> false by smt().
+      by rewrite H //.
+      move => *; rewrite get_setE; first by move : H4; rewrite ultE of_uintK pmod_small // /#. 
+      case (k + 256 = to_uint j{hr}) => ?; first by smt().
+        by rewrite H0; move : H6; rewrite to_uintD_small 1,2:/#.
+      by move : H4; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+      by move : H4; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+      by rewrite !to_uintD_small 1,2:/# /#.
+  wp; while ((forall k, 0 <= k < to_uint i => r.[k] = p0.[k]) /\ 0 <= to_uint i <= 256).
+    wp; skip => /> *; do split.
+      move => *; rewrite get_setE; first by move : H2; rewrite ultE of_uintK pmod_small // /#. 
+      case (k = to_uint i{hr}) => ?; first by smt().
+        by rewrite H; move : H4; rewrite to_uintD_small 1,2:/#.
+      by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+      by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+  wp; skip => /> *; split; first by smt().
+    move => *; do split.
+      by move => *; rewrite H3; move : H2; rewrite ultE of_uintK pmod_small // /#.
+      by smt().
+    move => *; do split.
+      by move => *; rewrite H8; move : H6; rewrite ultE of_uintK pmod_small // /#.
+      by smt().
+    move => *.
+    have ?: to_uint i2 = 256 by move : H12; rewrite ultE of_uintK pmod_small // /#.
+    do split.
+      by rewrite (pos_bound256_pos_bound768 r2 p0{hr} p1{hr} p2{hr} ab) // /#.
       by move => *; rewrite H13 // lift_array256_inzmod 1:/#.
       by move => *; rewrite H14 // lift_array256_inzmod 1:/#.
       by move => *; rewrite H15 1:/# lift_array256_inzmod 1:/#.
@@ -431,7 +518,20 @@ smt().
 (***)
 
 rewrite qE to_sintN of_sintK => />.
-rewrite /smod => />. smt.
+rewrite /smod => />. 
+
+(***)
+move : H10.
+rewrite sltE.
+cut ->: to_sint W16.zero = 0.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+smt().
+move => *.
+smt.
+(***)
+
 split; last by smt().
 move => *.
 case (0 <= k < i{hr}).
@@ -562,6 +662,78 @@ proof.
   by move => *; rewrite b16E /#.
 qed.
 
+lemma lift_array768E (x : W16.t t) k :
+  0 <= k < 768 =>
+  (lift_array768 x).[k] = inzmod (to_sint x.[k]).
+proof.  by move => ?; rewrite /lift_array768 mapiE //. qed.
+
+lemma lift_array768_eq (x y : W16.t t) :
+  (forall k, 0 <= k < 256 =>
+    inzmod (to_sint x.[k]) = (Array256.of_list witness (sub (lift_array768 y) 0 256)).[k]) =>
+  (forall k, 0 <= k < 256 =>
+    inzmod (to_sint x.[k+256]) = (Array256.of_list witness (sub (lift_array768 y) 256 256)).[k]) =>
+  (forall k, 0 <= k < 256 =>
+    inzmod (to_sint x.[k+512]) = (Array256.of_list witness (sub (lift_array768 y) 512 256)).[k]) =>
+  lift_array768 x = lift_array768 y.
+proof.
+  move => *; rewrite tP => k *.
+  rewrite lift_array768E //.
+  case (k < 256) => ?.
+    by rewrite H 1:/# get_of_list 1:/# nth_sub 1:/#.
+  case (k < 512) => ?.
+    move : (H0 (k-256)).
+    cut ->: 0 <= k - 256 < 256 by smt().
+    by simplify => *; rewrite H5 /= get_of_list 1:/# nth_sub 1,2:/#.
+  move : (H1 (k-512)).
+  cut ->: 0 <= k - 512 < 256 by smt().
+  simplify => *.
+  by rewrite H5 get_of_list 1:/# nth_sub 1,2:/#.
+qed.
+
+lemma lift_array768P (x y : W16.t t) :
+  lift_array768 x = lift_array768 y <=>
+  (forall k, 0 <= k < 768 => inzmod (to_sint x.[k]) = inzmod (to_sint y.[k])).
+proof. 
+  split; first by rewrite tP => *; rewrite -!lift_array768E // H //. 
+  by rewrite tP => *; rewrite !lift_array768E // H //. 
+qed.
+
+lemma pos_bound768_signed_bound768 a i j x :
+  pos_bound768_cxq a i j x => signed_bound768_cxq a i j x.
+proof.
+  rewrite /pos_bound768_cxq /signed_bound768_cxq.
+  cut ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
+          (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < (x * q)) by done.
+  by move => *; rewrite b16E /#.
+qed.
+
+lemma pos_bound256_cxqD a i j x :
+  1 < x => pos_bound256_cxq a i j (x-1) => pos_bound256_cxq a i j x.
+proof.
+  move => ?; rewrite /pos_bound256_cxq. 
+  cut ->: (forall (k : int), i <= k < j => bpos16 a.[k] ((x - 1) * q)) =
+          (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < ((x - 1) * q)) by done.
+  move => *; rewrite bpos16E.
+  move : (H0 k); rewrite H1 /= => /> *; smt. (* why?? *)
+qed.
+
+lemma pos_bound256_signed_bound a i j x :
+  pos_bound256_cxq a i j x => signed_bound_cxq a i j x.
+proof.
+  rewrite /pos_bound256_cxq /signed_bound_cxq.
+  cut ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
+          (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < (x * q)) by done.
+  by move => *; rewrite b16E /#.
+qed.
+
+lemma pos_bound256_cxqP a i j x :
+  pos_bound256_cxq a i j x <=> (forall k, i <= k < j => 0 <= to_sint a.[k] < x * q).
+proof. by split; rewrite /pos_bound256_cxq. qed.
+
+lemma pos_bound768_cxqP a i j x :
+  pos_bound768_cxq a i j x <=> (forall k, i <= k < j => 0 <= to_sint a.[k] < x * q).
+proof. by split; rewrite /pos_bound768_cxq. qed.
+
 lemma polyvec_csubq_corr ap ab :
     1 < ab<9 =>
       hoare[ Mderand.polyvec_csubq :
@@ -571,15 +743,10 @@ lemma polyvec_csubq_corr ap ab :
            ap = lift_array768 res /\
            pos_bound768_cxq res 0 768 (ab-1) ] . 
 proof.
-move => *; proc.
-  sp. 
-
-exists* r; elim* => r'.
-
-seq 1 : (r = r' /\ pos_bound768_cxq r 0 768 ab /\ signed_bound768_cxq r 0 768 ab /\ ap = lift_array768 r /\
-          pos_bound256_cxq r0 0 256 ab /\
-          pos_bound256_cxq r1 0 256 ab /\
-          pos_bound256_cxq r2 0 256 ab /\
+  move => *; proc; sp. 
+  exists* r; elim* => r'.
+  seq 1 : (r = r' /\ pos_bound768_cxq r 0 768 ab /\ signed_bound768_cxq r 0 768 ab /\ ap = lift_array768 r /\
+          pos_bound256_cxq r0 0 256 ab /\ pos_bound256_cxq r1 0 256 ab /\ pos_bound256_cxq r2 0 256 ab /\
           (forall k, 0 <= k < 256 => r0.[k] = r.[k]) /\
           (forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = ap.[k]) /\ 
           (forall k, 0 <= k < 256 => r1.[k] = r.[k+256]) /\
@@ -589,217 +756,39 @@ seq 1 : (r = r' /\ pos_bound768_cxq r 0 768 ab /\ signed_bound768_cxq r 0 768 ab
           lift_array256 r0 = Array256.of_list witness (sub (lift_array768 r) 0 256) /\
           lift_array256 r1 = Array256.of_list witness (sub ap 256 256) /\
           lift_array256 r2 = Array256.of_list witness (sub ap 512 256)).
-
-  call (polyvec_topolys_corr ap ab r').
-    skip => />. move => &hr *. split. 
-
-move : H0. rewrite /pos_bound768_cxq. rewrite /signed_bound768_cxq.
-
-cut ->: (forall (k : int), 0 <= k < 768 => bpos16 r{hr}.[k] (ab * q)) =
-        (forall (k : int), 0 <= k < 768 => 0 <= to_sint r{hr}.[k] < (ab * q)).
-done.
-move => *.
-rewrite b16E.
-smt().
-
-move => *.
-split.
-rewrite (pos_bound768_pos_bound r{hr} result.`1 0 0 768 256 ab) //.
-split.
-rewrite (pos_bound768_pos_bound r{hr} result.`2 0 256 768 256 ab) //.
-rewrite (pos_bound768_pos_bound r{hr} result.`3 0 512 768 256 ab) //.
-
-do split => //.
-rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 0).
-done.
-done.
-smt().
-smt().
-done.
-
-rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 256).
-done.
-done.
-smt().
-smt().
-done.
-
-rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 512).
-done.
-done.
-smt().
-smt().
-done.
-
-seq 1 : (#[/1,2,3,4,5,6,7,10:]pre /\ pos_bound256_cxq r0 0 256 (ab-1)).
-exists* r0; elim* => r0'.
-call (poly_csubq_corr (Array256.of_list witness (sub ap 0 256)) ab).
-smt(). skip => /> *.
-split.
-rewrite H11 //.
-move => ? *.
-split.
-move : H16.
-rewrite /pos_bound256_cxq.
-smt().
-smt().
-
-seq 1 : (#[/1,2,3,4,5,6,7,10:]pre /\ pos_bound256_cxq r1 0 256 (ab-1)).
-exists* r1; elim* => r1'.
-print poly_csubq_corr.
-call (poly_csubq_corr (Array256.of_list witness (sub (lift_array768 r') 256 256)) ab).
-smt(). skip => /> *.
-split.
-rewrite H10 //.
-move => ? *.
-split.
-move : H15.
-rewrite /pos_bound256_cxq.
-smt().
-smt().
-
-seq 1 : (#[/1,2,3,4,5,6,7,10:]pre /\ pos_bound256_cxq r2 0 256 (ab-1)).
-exists* r2; elim* => r2'.
-print poly_csubq_corr.
-call (poly_csubq_corr (Array256.of_list witness (sub (lift_array768 r') 512 256)) ab).
-smt(). skip => /> *.
-split.
-rewrite H9 //.
-move => ? *.
-split.
-move : H14.
-rewrite /pos_bound256_cxq.
-smt().
-smt().
-
-call (polyvec_frompolys_corr (Array256.of_list witness (sub ap 0 256)) (Array256.of_list witness (sub ap 256 256)) (Array256.of_list witness (sub ap 512 256)) (ab - 1)).
-
-skip => /> *.
-split. split.
-rewrite H5 //.
-split.
-move : H8.
-rewrite /pos_bound256_cxq /signed_bound_cxq.
-cut ->: (forall (k : int), 0 <= k < 256 => bpos16 r0{hr}.[k] ((ab - 1) * q)) =
-        (forall (k : int), 0 <= k < 256 => 0 <= to_sint r0{hr}.[k] < ((ab - 1) * q)).
-done.
-move => *.
-rewrite b16E.
-smt().
-
-split.
-rewrite H6 //.
-split.
-move : H9.
-rewrite /pos_bound256_cxq /signed_bound_cxq.
-cut ->: (forall (k : int), 0 <= k < 256 => bpos16 r1{hr}.[k] ((ab - 1) * q)) =
-        (forall (k : int), 0 <= k < 256 => 0 <= to_sint r1{hr}.[k] < ((ab - 1) * q)).
-done.
-move => *.
-rewrite b16E.
-smt().
-
-split.
-rewrite H7 //.
-move : H10.
-rewrite /pos_bound256_cxq /signed_bound_cxq.
-cut ->: (forall (k : int), 0 <= k < 256 => bpos16 r2{hr}.[k] ((ab - 1) * q)) =
-        (forall (k : int), 0 <= k < 256 => 0 <= to_sint r2{hr}.[k] < ((ab - 1) * q)).
-done.
-move => *.
-rewrite b16E.
-smt().
-
-move => *.
-split.
-
-move : H18 H19 H20.
-rewrite !H11 H13 H15.
-move => *.
-rewrite /lift_array768.
-rewrite tP => *.
-rewrite !mapE.
-rewrite !initE.
-rewrite H21.
-simplify.
-
-case (i < 256) => ?.
-rewrite H18.
-smt().
-move : H5.
-rewrite /lift_array256.
-rewrite tP.
-progress.
-rewrite H5.
-smt().
-rewrite /of_list.
-rewrite initE.
-cut ->: 0 <= i < 256. smt().
-simplify.
-rewrite nth_sub.
-smt().
-rewrite /lift_array768.
-rewrite mapE.
-rewrite initE.
-cut ->: 0 <= 0 + i < 768.
-smt().
-simplify.
-done.
-
-case (i < 512) => ?.
-have ?: forall (k : int), 256 <= k < 512 => inzmod (to_sint result.[k]) = (lift_array256 r1{hr}).[k-256].
-smt().
-rewrite H24.
-smt().
-move : H6.
-rewrite /lift_array256.
-rewrite tP.
-progress.
-rewrite H6.
-smt().
-rewrite /of_list.
-rewrite initE.
-cut ->: 0 <= i - 256 < 256. smt().
-simplify.
-rewrite nth_sub.
-smt().
-rewrite /lift_array768.
-rewrite mapiE.
-smt().
-simplify.
-done.
-
-have ?: forall (k : int), 512 <= k < 768 => inzmod (to_sint result.[k]) = (lift_array256 r2{hr}).[k-512].
-smt().
-rewrite H24.
-smt().
-move : H7.
-rewrite /lift_array256.
-rewrite tP.
-progress.
-rewrite H7.
-smt().
-rewrite /of_list.
-rewrite initE.
-cut ->: 0 <= i - 512 < 256. smt().
-simplify.
-rewrite nth_sub.
-smt().
-rewrite /lift_array768.
-rewrite mapiE.
-smt().
-simplify.
-done.
-
-move : H17.
-rewrite /signed_bound768_cxq /pos_bound768_cxq.
-cut ->: (forall (k : int), 0 <= k < 768 => b16 result.[k] ((ab - 1) * q)) =
-        (forall (k : int), 0 <= k < 768 => - ((ab - 1) * q) <= to_sint result.[k] < ((ab - 1) * q)).
-done.
-move => *.
-rewrite bpos16E.
-admitted.
-
+    call (polyvec_topolys_corr ap ab r').
+      skip => /> *; split; first by apply pos_bound768_signed_bound768.
+      move => *; do split.
+        by rewrite (pos_bound768_pos_bound r{hr} result.`1 0 0 768 256 ab) //.
+        by rewrite (pos_bound768_pos_bound r{hr} result.`2 0 256 768 256 ab) //.
+        by rewrite (pos_bound768_pos_bound r{hr} result.`3 0 512 768 256 ab) //.
+        by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 0) //.
+        by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 256) // /#.
+        rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 512) // /#.
+  seq 1 : (#[/1:8,10:]pre /\ pos_bound256_cxq r0 0 256 (ab-1)).
+    exists* r0; elim* => r0'; call (poly_csubq_corr (Array256.of_list witness (sub ap 0 256)) ab); [smt() | ].
+    skip => /> *; split; first by rewrite H11 //.
+    move => ? *; do split.
+      by rewrite pos_bound256_cxqD /#.
+      by rewrite /pos_bound256_cxq /#.
+  seq 1 : (#[/1:8,10:]pre /\ pos_bound256_cxq r1 0 256 (ab-1)).
+    exists* r1; elim* => r1'; call (poly_csubq_corr (Array256.of_list witness (sub ap 256 256)) ab); [smt() | ].
+    skip => /> *; split; first by rewrite H10 //.
+    move => ? *; do split.
+      by rewrite pos_bound256_cxqD /#.
+      by rewrite /pos_bound256_cxq /#.
+  seq 1 : (#[/1:8,10:]pre /\ pos_bound256_cxq r2 0 256 (ab-1)).
+    exists* r2; elim* => r2'; call (poly_csubq_corr (Array256.of_list witness (sub ap 512 256)) ab); [smt() | ].
+    skip => /> *; split; first by rewrite H9 //.
+    move => ? *; do split.
+      by rewrite pos_bound256_cxqD /#.
+      by rewrite /pos_bound256_cxq /#.
+  call (pos_polyvec_frompolys_corr (Array256.of_list witness (sub ap 0 256)) 
+                               (Array256.of_list witness (sub ap 256 256)) 
+                               (Array256.of_list witness (sub ap 512 256)) (ab - 1)).
+  skip => /> *; do split; [by rewrite H5 // | by rewrite H6 // | by rewrite H7 // |].
+  by move => *; rewrite -(lift_array768_eq result r{hr}) //.
+qed.
 
 lemma polyvec_compress_round_corr ap :
       hoare[ Mderand.polyvec_compress_round :
