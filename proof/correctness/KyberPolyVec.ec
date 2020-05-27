@@ -580,7 +580,7 @@ rewrite /smod. simplify.
 done.
 done.
 
-smt().
+smt(@W16).
 (***)
 
 move => *.
@@ -790,6 +790,319 @@ proof.
   by move => *; rewrite -(lift_array768_eq result r{hr}) //.
 qed.
 
+(***********************************************************)
+lemma poly_csubq_corr_ab ap ab :
+      hoare[ Mderand.poly_csubq :
+           ap = lift_array256 rp /\
+           pos_bound256_cxq rp 0 256 ab 
+           ==>
+           ap = lift_array256 res /\
+           pos_bound256_cxq res 0 256 ab ] . 
+proof.
+move => *.
+proc.
+while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 ab /\ 0 <= i<=256).
+seq 2 : (#pre /\ t = rp.[i] - W16.of_int 3329); first by auto => />.
+seq 3 : (#pre /\ 
+        (t \slt W16.zero => b = W16.of_int q) /\ 
+        (W16.zero \sle t => b = W16.of_int 0)).
+seq 2 : (#pre /\ 
+        (t \slt W16.zero => b = W16.of_int (W16.modulus -1)) /\ 
+        (W16.zero \sle t => b = W16.of_int 0)).
+auto => /> *.
+pose x := rp{hr}.[i{hr}] - (of_int 3329)%W16.
+smt (getsign @W16).
+auto => />.
+move =>  *.
+split. 
+move => asp.
+rewrite (H3 asp) qE  => />. 
+apply W16.ext_eq => /> *.
+rewrite m1true => />.
+move => asp.
+by rewrite (H4 asp)=> />. 
+auto => />.
+move => * />.
+split. 
+case (rp{hr}.[i{hr}] - (of_int 3329)%W16 \slt W16.zero).
+move => asp.
+rewrite (H3 asp) qE => />. 
+rewrite /lift_array256 => />.
+apply Array256.ext_eq => /> *.
+rewrite mapiE => />.
+rewrite mapiE => />.
+case (x = i{hr}); last by smt(@Array256).
+move => ->.
+rewrite set_eqiE => />.
+by rewrite (_: rp{hr}.[i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 = rp{hr}.[i{hr}]);  ring.
+
+move => *.
+have asp : (W16.zero \sle rp{hr}.[i{hr}] - (of_int 3329)%W16); first by smt(@W16).
+rewrite (H4 asp) => />. 
+apply Array256.ext_eq => /> *.
+rewrite mapiE => />.
+rewrite mapiE => />.
+case (x = i{hr}); last by smt(@Array256).
+move => ->.
+rewrite set_eqiE => />.
+rewrite to_sintD_small => />.
+move : H; rewrite /pos_bound256_cxq => bnd.
+move : (bnd i{hr} _); first by smt().
+auto => />.
+rewrite qE => /> *.
+split. 
+rewrite !to_sintE.
+rewrite /smod.
+case (2 ^ (16 - 1) <= to_uint rp{hr}.[i{hr}]) => ?.
+cut ->: 2 ^ (16 - 1) <= to_uint (- (W16.of_int 3329)).
+smt(@W16).
+simplify.
+smt(@W16).
+smt(@W16).
+move => *.
+rewrite (_: to_sint (- (of_int 3329)%W16) = -3329). 
+   by rewrite to_sintE /smod to_uintN => />. 
+
+(***)
+rewrite !to_sintE.
+rewrite /smod.
+case (2 ^ (16 - 1) <= to_uint rp{hr}.[i{hr}]) => ?.
+smt(@W16).
+have ?: to_uint rp{hr}.[i{hr}] < 32768.
+move : H10.
+simplify.
+smt().
+smt().
+(***)
+
+rewrite inzmodD. ring. 
+rewrite to_sintE /smod to_uintN => />. 
+
+(***)
+have ?: 3329 %% q = 0.
+rewrite qE.
+smt().
+rewrite inzmodN.
+rewrite /zero.
+cut ->: - - inzmod 3329 = inzmod 3329. smt(@ZModRing).
+rewrite -eq_inzmod.
+smt().
+(***)
+
+move : H; rewrite /pos_bound256_cxq => /> *.
+split.
+move => k.
+case (i{hr} = k); last first.
+move => *.
+rewrite set_neqiE => />; first by smt().
+by move : (H k); rewrite /bpos16 => /#.
+move => *.
+rewrite set_eqiE => />; first by smt().
+case (rp{hr}.[i{hr}] - (of_int 3329)%W16 \slt W16.zero).
+move => asp.
+rewrite (H3 asp) qE => />.
+rewrite (_: rp{hr}.[i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 =
+              (rp{hr}.[i{hr}])); first by ring.
+split. 
+
+(***)
+move : (H k).
+smt().
+move => ?.
+move : (H k).
+rewrite qE.
+smt().
+(***)
+
+move => *.
+rewrite (H4 _); first by smt(@W16).
+auto => />.
+split.
+
+(***)
+move : H8.
+rewrite sltE.
+cut ->: to_sint W16.zero = 0.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+smt().
+smt().
+(***)
+
+move => *.
+rewrite to_sintD_small => />.
+rewrite to_sintN => />. 
+rewrite of_sintK => />.
+rewrite of_sintK => />.
+rewrite /smod => />.
+split; first by smt(@W16).
+move => *.
+
+(***)
+rewrite !to_sintE.
+rewrite /smod.
+case (2 ^ (16 - 1) <= to_uint rp{hr}.[i{hr}]) => ?.
+smt(@W16).
+have ?: to_uint rp{hr}.[i{hr}] < 32768.
+move : H11.
+simplify.
+smt().
+smt().
+(***)
+
+rewrite qE to_sintN of_sintK => />.
+rewrite /smod => />. 
+
+(***)
+move : H8.
+rewrite sltE.
+cut ->: to_sint W16.zero = 0.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+smt().
+move => *.
+smt.
+(***)
+
+smt().
+
+by auto => /> /#. 
+qed.
+
+lemma polyvec_csubq_corr_ab ap ab :
+      hoare[ Mderand.polyvec_csubq :
+           ap = lift_array768 r /\
+           pos_bound768_cxq r 0 768 ab 
+           ==>
+           ap = lift_array768 res /\
+           pos_bound768_cxq res 0 768 ab ] . 
+proof.
+  move => *; proc; sp. 
+  exists* r; elim* => r'.
+  seq 1 : (r = r' /\ pos_bound768_cxq r 0 768 ab /\ signed_bound768_cxq r 0 768 ab /\ ap = lift_array768 r /\
+          pos_bound256_cxq r0 0 256 ab /\ pos_bound256_cxq r1 0 256 ab /\ pos_bound256_cxq r2 0 256 ab /\
+          (forall k, 0 <= k < 256 => r0.[k] = r.[k]) /\
+          (forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = ap.[k]) /\ 
+          (forall k, 0 <= k < 256 => r1.[k] = r.[k+256]) /\
+          (forall k, 0 <= k < 256 => inzmod (to_sint r1.[k]) = ap.[256+k]) /\ 
+          (forall k, 0 <= k < 256 => r2.[k] = r.[k+512]) /\
+          (forall k, 0 <= k < 256 => inzmod (to_sint r2.[k]) = ap.[512+k]) /\
+          lift_array256 r0 = Array256.of_list witness (sub (lift_array768 r) 0 256) /\
+          lift_array256 r1 = Array256.of_list witness (sub ap 256 256) /\
+          lift_array256 r2 = Array256.of_list witness (sub ap 512 256)).
+    call (polyvec_topolys_corr ap ab r').
+      skip => /> *; split; first by apply pos_bound768_signed_bound768.
+      move => *; do split.
+        by rewrite (pos_bound768_pos_bound r{hr} result.`1 0 0 768 256 ab) //.
+        by rewrite (pos_bound768_pos_bound r{hr} result.`2 0 256 768 256 ab) //.
+        by rewrite (pos_bound768_pos_bound r{hr} result.`3 0 512 768 256 ab) //.
+        by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 0) //.
+        by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 256) // /#.
+        rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 512) // /#.
+  seq 1 : (#[/1:8,10:]pre).
+    exists* r0; elim* => r0'; call (poly_csubq_corr_ab (Array256.of_list witness (sub ap 0 256)) ab).
+    skip => /> *; split; first by rewrite H10 //.
+    by move => ? *; rewrite H14.
+  seq 1 : (#[/1:8,10:]pre).
+    exists* r1; elim* => r1'; call (poly_csubq_corr_ab (Array256.of_list witness (sub ap 256 256)) ab).
+    skip => /> *; split; first by rewrite H9 //.
+    by move => ? *; rewrite H12.
+  seq 1 : (#[/1:8,10:]pre).
+    exists* r2; elim* => r2'; call (poly_csubq_corr_ab (Array256.of_list witness (sub ap 512 256)) ab).
+    skip => /> *; split; first by rewrite H8 //.
+    by move => ? *; rewrite H10.
+  call (pos_polyvec_frompolys_corr (Array256.of_list witness (sub ap 0 256)) 
+                               (Array256.of_list witness (sub ap 256 256)) 
+                               (Array256.of_list witness (sub ap 512 256)) ab).
+  skip => /> *; do split; [by rewrite H4 // | by rewrite H5 // | by rewrite H6 // |].
+  by move => *; rewrite -(lift_array768_eq result r{hr}) //.
+qed.
+
+lemma formula_polyvec x : 
+  0 <= x < 3329 =>
+  (x * 1024 + 1664) * (4294967296 %/ 3329 + 1) %% 18446744073709551616 %/ 4294967296 %% 1024 =
+  (x * 1024 + 1664) %/ 3329 %% 1024.
+proof.  
+have ? :  
+   (all
+     (fun x => (x * 1024 + 1664) * (4294967296 %/ 3329 + 1) %% 18446744073709551616 %/ 4294967296 %% 1024 =
+(x * 1024 + 1664) %/ 3329 %% 1024)
+     (range 0 3329)).
+by [] => />.
+smt tmo=30. (* This should be very easy to prove. It should be discarded by smt() but it does not and takes forever to use allP *)
+qed.
+
+lemma roundcimpl64 (a : W16.t) :
+  bpos16 a q =>
+  inzmod
+  (to_sint (truncateu16
+         ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1664)%W64) * (of_int 1290168)%W64 `>>`
+           (of_int 32)%W8) `&`
+          (of_int 1023)%W64))) = PolyVec.roundc (inzmod (to_sint a)).
+proof.
+rewrite /zeroextu64 /truncateu16 PolyVec.roundcE qE => /> *.
+rewrite (_: W64.of_int 1023 = W64.masklsb 10); first by smt(@W64).
+rewrite W64.and_mod => />. 
+rewrite W64.of_uintK to_sintE.
+rewrite /(`<<`) /(`>>`).
+rewrite W64.shlMP; first by smt().
+rewrite W64.to_uint_shr; first by smt().
+rewrite W16.of_uintK.
+congr.
+rewrite inzmodK.
+rewrite to_sintE.
+rewrite qE.
+simplify.
+rewrite IntDiv.pmod_small. smt(@W64).
+rewrite IntDiv.pmod_small. smt(@W64).
+rewrite (IntDiv.pmod_small _ 3329). smt(@W16).
+rewrite (_: (smod (to_uint a))%W16 = to_uint a). smt(@W16).
+pose xx := (to_uint a * 1024 + 1664).
+rewrite W64.of_uintK => />.
+pose yy := xx * 1290168 %% 18446744073709551616 %/ 4294967296 %% 1024.
+have ? : (0 <= yy < 2^16). smt(@W16).
+rewrite (_: W16.smod yy =  yy). 
+rewrite /smod.
+simplify.
+case (32768 <= yy) => ?. smt().
+done.
+rewrite /yy.
+rewrite (_: 1290168 = 4294967296 %/ 3329 + 1). smt().
+
+rewrite /xx.
+pose x := to_uint a.
+rewrite formula_polyvec.
+rewrite /x. 
+have to_sint_geq0 : to_sint a = to_uint a.
+smt(@W16).
+rewrite -to_sint_geq0.
+done.
+done.
+qed.
+
+lemma roundcimpl_rng (a : W16.t) :
+  bpos16 a q =>
+  0 <= to_sint (truncateu16
+         ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1664)%W64) * (of_int 1290168)%W64 `>>`
+           (of_int 32)%W8) `&`
+          (of_int 1023)%W64)) < 1024.
+proof.
+rewrite to_sintE; move => /> *.
+rewrite (_: W64.of_int 1023 = W64.masklsb 10); first by smt(@W64).
+rewrite W64.and_mod => />. 
+pose xx := (W64.of_int
+             (to_uint
+                (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1664)%W64) * (of_int 1290168)%W64 `>>` (of_int 32)%W8) %%
+              1024)).
+have ? : 0<= to_uint  xx < 1024; first by smt(@W64).
+have ? : 0<= to_uint  (truncateu16 xx) < 1024.
+
+  rewrite /truncateu16; smt(@W16 @W64).
+  by rewrite /smod;  smt(@W16).
+qed.
+
 lemma polyvec_compress_round_corr ap :
       hoare[ Mderand.polyvec_compress_round :
            ap = lift_array768 a /\
@@ -798,9 +1111,208 @@ lemma polyvec_compress_round_corr ap :
            Array768.map PolyVec.roundc ap = lift_array768 res /\
            signed_bound768_cxq res 0 768 1 ] . 
 proof.
+  move => *; proc.
+
+while (#pre /\ 0 <= to_uint i <= 768 + 3 /\ to_uint i %% 4 = 0 /\ 
+        ap = lift_array768 aa /\ pos_bound768_cxq aa 0 768 1 /\
+        (forall k,
+          0 <= k < to_uint i =>
+           inzmod (W16.to_sint r.[k]) = PolyVec.roundc ap.[k]) /\ 
+        (forall k,
+            0<= k < to_uint i => 0 <= to_sint r.[k] < 1024)).
+      unroll 2; unroll 3; unroll 4; unroll 5.
+      (rcondt 2; first by wp; skip); (rcondt 10; first by wp; skip); (rcondt 18; first by wp; skip);
+        (rcondt 26; first by wp; skip); (rcondf 34; first by wp; skip).
+      wp; skip => /> *.
+        split. split.
+          + by rewrite to_uintD_small 1,2:/#.
+          + by rewrite to_uintD_small // 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#. 
+        split.
+          + by rewrite !to_uintD_small 1,2:/#.
+      split; move => k ?.
+        + rewrite !to_uintD_small 1..4:/#.
+        + rewrite !of_uintK !pmod_small 1..4:/# /=.
+        move => *.
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 3) => ?. 
+rewrite roundcimpl64.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+rewrite H10 H3.
+rewrite lift_array768E.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+done.
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 2) => ?. 
+rewrite roundcimpl64.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+rewrite H11 H3.
+rewrite lift_array768E.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+done.
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 1) => ?. 
+rewrite roundcimpl64.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+rewrite H12 H3.
+rewrite lift_array768E.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+done.
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr}) => ?. 
+rewrite roundcimpl64.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+rewrite H13 H3.
+rewrite lift_array768E.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+done.
+
+rewrite H5.
+smt().
+done.
+
+        + rewrite !to_uintD_small 1..4:/#.
+        + rewrite !of_uintK !pmod_small 1..4:/# /=.
+        move => *.
+split.
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 3) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 3])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 2) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 2])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 1) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 1])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr}) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr}])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr}] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+smt().
+
+move => ?.
+clear H10.
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 3) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 3])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 2) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 2])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr} + 1) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 1])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
+case (k = to_uint i{hr}) => ?.
+move : (roundcimpl_rng (aa{hr}.[to_uint i{hr}])).
+cut ->: bpos16 aa{hr}.[to_uint i{hr}] q.
+move : H4.
+rewrite /pos_bound768_cxq /= => *.
+rewrite H4.
+move : H7; rewrite ultE of_uintK pmod_small // /#. 
+simplify.
+smt().
+
+smt().
+
+call (polyvec_csubq_corr_ab ap 1).
+wp; skip => /> *.
+
+split.
+smt().
+
+move => k r.
+rewrite ultE of_uintK pmod_small.
+done.
 move => *.
-proc.
-admitted.
+have ?: to_uint k = 768.
+smt().
+
+split.
+rewrite tP => j *.
+rewrite mapiE //.
+rewrite -H6.
+smt().
+rewrite lift_array768E //.
+
+rewrite /signed_bound768_cxq => j *.
+rewrite b16E.
+split.
+have ?: 0 <= to_sint r.[j]. smt().
+smt.
+move => *.
+have ?: to_sint r.[j] < 1024. smt().
+rewrite qE /=.
+smt().
+qed.
 
 (*
   proc polyvec_add(a : W16.t t, b : W16.t t) : W16.t t = Indcpa.M.polyvec_add
