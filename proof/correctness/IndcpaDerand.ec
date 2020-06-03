@@ -721,6 +721,17 @@ inline Mderand.indcpa_keypair_expandseed Mderand.indcpa_keypair_compute.
 by swap {1} [20..21] 14; sim.
 qed.
 
+lemma iteri_fold (f : int -> 'b -> 'b) (z : 'b) (r : int) :
+  0 <= r =>
+  iteri r f z = foldl (fun acc i => f i acc) z (range 0 r).
+proof.
+  elim r; first by rewrite iteri0 // /range // /=.
+  move => n *.
+    rewrite iteriS // /= /range /= iotaSr //. 
+    cut ->: rcons (iota_ 0 n) n = iota_ 0 n ++ [n] by smt.
+  by rewrite foldl_cat /= H0 /range /=.
+qed.
+
 equiv enc_same : M.indcpa_enc_jazz ~ Mderand.indcpa_enc_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
 proc.
@@ -728,182 +739,324 @@ inline Mderand.indcpa_enc_expand_seed Mderand.indcpa_enc_compute.
 swap {1} 9 -8.
 swap {1} 18 -16.
 swap {2} [6..9] -3.
-swap {1} [22..24] 16. 
-seq 53 48 : (={Glob.mem,bp,v,ctp}).
-sim; auto => />; call (_: ={Glob.mem}).
-by sim.
-by auto => />.
+swap {1} [22..24] 16.
+
+seq 53 49 : (={Glob.mem,bp,v,ctp}).
+admit.
 inline *; auto => />.
 
-sp. seq 1 1 : (#[1:10,11,12,14:25,26,27,29:]pre /\ ={pv} /\ r00{1} = r01{2}).
-  while (#[/1:30]post /\ 0 <= to_uint i3{1} <= 256 /\
-          i3{1} = i6{2} /\ forall (j : int), 0 <= j < to_uint i3{1} => r00{1}.[j] = r01{2}.[j]).
-    wp; skip => /> *.
-    split. split.
-      + by rewrite to_uintD_small 1,2:/#.
-      + by move : H2; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
-    move => j *.
-    rewrite !get_setE; first 2 by
-      by move : H2; rewrite ultE of_uintK pmod_small //. 
-      case (j = to_uint i6{2}) => ? //=.
-        + by rewrite H1; move : H4; rewrite to_uintD_small 1,2:/#.
-  skip => /> *.
-    + by rewrite tP; move : H; rewrite ultE of_uintK pmod_small // /#.
+seq 14 12 : (#pre /\ ={a,t,pv} /\ rp{1} = ctp{1} /\ aa{1} = witness /\ i0{1} = i1{2} /\ r{2} = witness /\
+              i0{1} = W64.zero /\ j{1} = W64.zero /\ r{1} = r5{2} /\ r0{1} = r00{2} /\ r1{1} = r11{2} /\
+              r2{1} = r21{2} /\ r00{1} = r01{2} /\ r10{1} = r12{2} /\ r20{1} = r22{2}); first by wp; skip.
 
-seq 3 3 : (#[/1:10,11:23,24:]pre /\ ={j0} /\ W64.to_uint j0{1} = 512 /\ r10{1} = r12{2}).
-  while (#[/1:29]post /\ 0 <= to_uint i3{1} <= 256 /\ to_uint j0{1} - to_uint i3{1} = 256 /\
-          i3{1} = i6{2} /\ ={pv,j0} /\
-          forall (j : int), 0 <= j < to_uint i3{1} => r10{1}.[j] = r12{2}.[j]).
-    wp; skip => /> *.
-    split. split.
-      + by rewrite to_uintD_small 1,2:/#.
-      + by move : H3; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
-    split.
-      + by rewrite !to_uintD_small 1,2:/# to_uint1; smt().
-    move => j *.
-    rewrite !get_setE; first 2 by
-      by move : H3; rewrite ultE of_uintK pmod_small //. 
-      case (j = to_uint i6{2}) => ? //=.
-        + by rewrite H2; move : H5; rewrite to_uintD_small 1,2:/#.
+seq 2 2  : (#pre).
+  while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2}).
+    by wp; skip => /> *; split; [
+      by rewrite to_uintD_small 1,2:/# |
+      by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
+  by wp; skip. 
+
+seq 3 3 : (#pre).
+  while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2} /\ j0{1} = j0{2}).
+    by wp; skip => /> *; split; [
+      by rewrite to_uintD_small 1,2:/# |
+      by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
+  by wp; skip.
+
+seq 3 3 : (#pre).
+  while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2} /\ j0{1} = j0{2}).
+    by wp; skip => /> *; split; [
+      by rewrite to_uintD_small 1,2:/# |
+      by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
+  by wp; skip. 
+
+seq 4 4 : (#pre /\ ={rp2}).
+  while (#post /\ 0 <= i4{1} <= 256 /\ i4{1} = i7{2}); first by wp; skip => /> * /#.
+  by wp; skip.
+
+seq 4 4 : (#pre /\ ={rp2, rp3}).
+  while (#post /\ 0 <= i5{1} <= 256 /\ i5{1} = i8{2}); first by wp; skip => /> * /#.
+  by wp; skip.
+
+seq 4 4 : (#pre /\ ={rp2, rp3, rp4}).
+  while (#post /\ 0 <= i6{1} <= 256 /\ i6{1} = i9{2}); first by wp; skip => /> * /#.
+  by wp; skip.
+
+seq 5 5 : (#pre /\ ={p0,p1,p2} /\ r3{1} = r6{2}).
+  by wp; skip.
+
+seq 2 2 : (#pre).
+  while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2}).
+    by wp; skip => /> *; split; [
+      by rewrite to_uintD_small 1,2:/# | 
+      by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
+  by wp; skip.
+
+seq 3 3 : (#pre).
+  while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2} /\ ={j1}).
+    by wp; skip => /> *; split; [
+      by rewrite to_uintD_small 1,2:/# | 
+      by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
+  by wp; skip.
+
+seq 3 3 : (#pre).
+  while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2} /\ ={j1}).
+    by wp; skip => /> *; split; [
+      by rewrite to_uintD_small 1,2:/# | 
+      by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
+  by wp; skip.
+
+exists* (Glob.mem{1}); elim* => mem1.
+seq 3 3 : (#[/3:7,8:10,15:]pre /\ ={aa} /\
+            Glob.mem{1} = iteri 768 
+              (fun k mem => if k %% 4 = 0 then 
+                              storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                (truncateu8 (r{2}.[k] `&` W16.of_int 255))
+                            else if k %% 4 = 1 then
+                              storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                (truncateu8 ((r{2}.[k] `<<` W8.of_int 2) `|` (r{2}.[k - 1] `>>` W8.of_int 8)))
+                            else if k %% 4 = 2 then
+                              storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                (truncateu8 ((r{2}.[k] `<<` W8.of_int 4) `|` (r{2}.[k - 1] `>>` W8.of_int 6)))
+                            else
+                              storeW8 (storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                (truncateu8 ((r{2}.[k] `<<` W8.of_int 6) `|` (r{2}.[k - 1] `>>` W8.of_int 4)))) 
+                                (to_uint (rp{1} + W64.of_int ((k + k %/ 4) + 1))) 
+                                (truncateu8 ((((((zeroextu64 aa{2}.[k] `<<` W8.of_int 10) + W64.of_int 1664) * W64.of_int 1290168) `>>` W8.of_int 32) `&` W64.of_int 1023) `>>` W8.of_int 2))) mem1).
+  while (#[/1:25]post /\ i0{1} = i1{2} /\ 0 <= to_uint i1{2} <= 768 + 3 /\ to_uint i1{2} %% 4 = 0 /\
+          0 <= to_uint j{1} <= 964 /\ (to_uint j{1} %% 5 = 0) /\ 
+          (to_uint j{1} - to_uint i1{2} = to_uint i1{2} %/ 4) /\ 
+          Glob.mem{1} = iteri (to_uint i0{1}) 
+            (fun k mem => if k %% 4 = 0 then 
+                            storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                              (truncateu8 (r{2}.[k] `&` W16.of_int 255))
+                          else if k %% 4 = 1 then
+                            storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                              (truncateu8 ((r{2}.[k] `<<` W8.of_int 2) `|` (r{2}.[k - 1] `>>` W8.of_int 8)))
+                          else if k %% 4 = 2 then
+                            storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                              (truncateu8 ((r{2}.[k] `<<` W8.of_int 4) `|` (r{2}.[k - 1] `>>` W8.of_int 6)))
+                          else
+                            storeW8 (storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                              (truncateu8 ((r{2}.[k] `<<` W8.of_int 6) `|` (r{2}.[k - 1] `>>` W8.of_int 4)))) 
+                              (to_uint (rp{1} + W64.of_int ((k + k %/ 4) + 1))) 
+                              (truncateu8 ((((((zeroextu64 aa{2}.[k] `<<` W8.of_int 10) + W64.of_int 1664) * W64.of_int 1290168) `>>` W8.of_int 32) `&` W64.of_int 1023) `>>` W8.of_int 2))) mem1).
+  exists* i0{1}; elim* => i0'.
+  seq 2 2 : (#[/2:33]pre /\ ={t,k0} /\ i0{1} = i0' + W64.of_int 4 /\ k0{2} = 4 /\
+              0 <= to_uint j{1} <= 964 /\ (to_uint j{1} %% 5 = 0) /\ 
+              to_uint j{1} - to_uint i0' = to_uint i0' %/ 4 /\
+              (i0{1} \ult (W64.of_int 768) <=> i1{2} \ult (W64.of_int 768)) /\
+              (forall k, 0 <= k < k0 => t.[k] = 
+                ((((zeroextu64 aa{2}.[to_uint i0' + k] `<<` W8.of_int 10) + W64.of_int 1664) * 
+                  W64.of_int 1290168) `>>` W8.of_int 32) `&` W64.of_int 1023){2} /\
+              Glob.mem{1} = iteri (to_uint i0') 
+                (fun k mem => if k %% 4 = 0 then 
+                                storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                  (truncateu8 (r{2}.[k] `&` W16.of_int 255))
+                              else if k %% 4 = 1 then
+                                storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                  (truncateu8 ((r{2}.[k] `<<` W8.of_int 2) `|` (r{2}.[k - 1] `>>` W8.of_int 8)))
+                              else if k %% 4 = 2 then
+                                storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                  (truncateu8 ((r{2}.[k] `<<` W8.of_int 4) `|` (r{2}.[k - 1] `>>` W8.of_int 6)))
+                              else
+                                storeW8 (storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
+                                  (truncateu8 ((r{2}.[k] `<<` W8.of_int 6) `|` (r{2}.[k - 1] `>>` W8.of_int 4)))) 
+                                  (to_uint (rp{1} + W64.of_int ((k + k %/ 4) + 1))) 
+                                  (truncateu8 ((((((zeroextu64 aa{2}.[k] `<<` W8.of_int 10) + W64.of_int 1664) * W64.of_int 1290168) `>>` W8.of_int 32) `&` W64.of_int 1023) `>>` W8.of_int 2))) mem1).
+    unroll{2} 2; unroll{2} 3; unroll{2} 4; unroll{2} 5.
+      (rcondt{2} 2; first by move => &m; wp; skip); (rcondt{2} 10; first by move => &m; wp; skip); 
+        (rcondt{2} 18; first by move => &m; wp; skip); (rcondt{2} 26; first by move => &m; wp; skip); 
+          (rcondf{2} 34; first by move => &m; wp; skip).
+    unroll{1} 2; unroll{1} 3; unroll{1} 4; unroll{1} 5.
+      (rcondt{1} 2; first by move => &m; wp; skip); (rcondt{1} 10; first by move => &m; wp; skip); 
+        (rcondt{1} 18; first by move => &m; wp; skip); (rcondt{1} 26; first by move => &m; wp; skip); 
+          (rcondf{1} 34; first by move => &m; wp; skip).
+      wp; skip => /> *; do split.
+        by rewrite to_uintD_small 1,2:/#.
+        by rewrite to_uintD_small // 1:/#; move : H6; rewrite ultE of_uintK pmod_small // /#. 
+        by rewrite !to_uintD_small 1,2:/#.
+        rewrite tP => j *.
+          rewrite get_setE //; case (j = 3) => ?; subst; rewrite get_setE //.
+          rewrite get_setE //; case (j = 2) => ?; subst; rewrite get_setE //.
+          rewrite get_setE //; case (j = 1) => ?; subst; rewrite get_setE //.
+          rewrite get_setE //; case (j = 0) => ?; subst; rewrite get_setE //.
+          by smt().
+        move => k *.
+          rewrite get_setE //; case (k = 3) => ?; subst; first by
+            (cut ->: to_uint (i1{2} + (of_int 3)%W64) = to_uint i1{2} + 3 by rewrite !to_uintD_small 1,2:/#); smt().          rewrite get_setE //; case (k = 2) => ?; subst; first by
+            (cut ->: to_uint (i1{2} + (of_int 2)%W64) = to_uint i1{2} + 2 by rewrite !to_uintD_small 1,2:/#); smt().          rewrite get_setE //; case (k = 1) => ?; subst; first by
+            (cut ->: to_uint (i1{2} + (of_int 1)%W64) = to_uint i1{2} + 1 by rewrite !to_uintD_small 1,2:/#); smt().
+          rewrite get_setE //; case (k = 0) => ?; subst => //. 
+          by smt().
+    wp; skip => /> *; do split.
+      by rewrite to_uintD_small 1,2:/#.
+      by move : H0 H1; rewrite !to_uintD_small 1,2:/# !of_uintK pmod_small // /#.
+      by rewrite !to_uintD_small 1,2:/#.
+      by rewrite !to_uintD_small 1,2:/# !of_uintK !pmod_small // /#.
+    cut ->: to_uint (i0' + (of_int 4)%W64) = to_uint i0' + 3 + 1 by rewrite to_uintD_small of_uintK pmod_small /#.
+    rewrite iteriS 1:/# /=.
+    cut ->: (to_uint i0' + 3) %% 4 = 0 <=> false by smt().
+    simplify; cut ->: (to_uint i0' + 3) %% 4 = 1 <=> false by smt().
+    simplify; cut ->: (to_uint i0' + 3) %% 4 = 2 <=> false by smt().
+    simplify; cut ->: to_uint i0' + 3 = to_uint i0' + 2 + 1 by done.
+    rewrite iteriS 1:/# /=.
+    simplify; cut ->: (to_uint i0' + 2) %% 4 = 0 <=> false by smt().
+    simplify; cut ->: (to_uint i0' + 2) %% 4 = 1 <=> false by smt().
+    simplify; cut ->: (to_uint i0' + 2) %% 4 = 2 by smt().
+    simplify; cut ->: to_uint i0' + 2 = to_uint i0' + 1 + 1 by done.
+    rewrite iteriS 1:/# /=.
+    simplify; cut ->: (to_uint i0' + 1) %% 4 = 0 <=> false by smt().
+    simplify; cut ->: (to_uint i0' + 1) %% 4 = 1 by smt().
+    simplify; rewrite iteriS 1:/# /=.
+    simplify; cut ->: (to_uint i0') %% 4 = 0 by smt().
+    simplify; cut ->: to_uint i0' + to_uint i0' %/ 4 = to_uint j{1} by smt().
+    cut ->: to_uint i0' + 1 + (to_uint i0' + 1) %/ 4 = to_uint j{1} + 1 by smt().
+    cut ->: to_uint i0' + 2 + (to_uint i0' + 2) %/ 4 = to_uint j{1} + 2 by smt().
+    cut ->: to_uint i0' + 3 + (to_uint i0' + 3) %/ 4 = to_uint j{1} + 3 by smt().
+    cut ->: r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
+            to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].[
+            to_uint i0' + 3] = truncateu16 t{2}.[3] by rewrite get_setE; first by smt(@W64).
+    cut ->: r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
+            to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].[
+            to_uint i0' + 2] = truncateu16 t{2}.[2]. 
+      rewrite get_setE; first by smt(@W64).
+      cut ->: to_uint i0' + 2 = to_uint i0' + 3 <=> false by smt().
+      simplify; rewrite get_setE; first by smt(@W64).
+      by simplify.
+    cut ->: r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
+            to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].[
+            to_uint i0' + 1] = truncateu16 t{2}.[1].
+      rewrite get_setE; first by smt(@W64).
+      cut ->: to_uint i0' + 1 = to_uint i0' + 3 <=> false by smt().
+      simplify; rewrite get_setE; first by smt(@W64).
+      cut ->: to_uint i0' + 1 = to_uint i0' + 2 <=> false by smt().
+      simplify; rewrite get_setE; first by smt(@W64).
+      by simplify.
+    cut ->: r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
+            to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].[
+            to_uint i0'] = truncateu16 t{2}.[0].
+      rewrite get_setE; first by smt(@W64).
+      cut ->: to_uint i0' = to_uint i0' + 3 <=> false by smt().
+      simplify; rewrite get_setE; first by smt(@W64).
+      cut ->: to_uint i0' = to_uint i0' + 2 <=> false by smt().
+      simplify; rewrite get_setE; first by smt(@W64).
+      cut ->: to_uint i0' = to_uint i0' + 1 <=> false by smt().
+      simplify; rewrite get_setE; first by smt(@W64).
+      by simplify.
+    congr; last by rewrite H6 //. 
+    congr; last by rewrite of_intD to_uintK.
+    congr; last by rewrite of_intD to_uintK.
+    congr; last by rewrite of_intD to_uintK. 
+    congr; last first.
+      pose f := (fun (k : int) (mem : global_mem_t) =>
+                  if k %% 4 = 0 then
+                    storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64)) 
+                      (truncateu8 (r{2}.[k] `&` (of_int 255)%W16))
+                   else if k %% 4 = 1 then
+                     storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64))
+                       (truncateu8 ((r{2}.[k] `<<` (of_int 2)%W8) `|` (r{2}.[k - 1] `>>` (of_int 8)%W8)))
+                   else if k %% 4 = 2 then
+                     storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64))
+                       (truncateu8 ((r{2}.[k] `<<` (of_int 4)%W8) `|` (r{2}.[k - 1] `>>` (of_int 6)%W8)))
+                   else
+                     storeW8 (storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64))
+                       (truncateu8 ((r{2}.[k] `<<` (of_int 6)%W8) `|` (r{2}.[k - 1] `>>` (of_int 4)%W8))))
+                         (to_uint (ctp{2} + (of_int (k + k %/ 4 + 1))%W64))
+                         (truncateu8
+                            ((((zeroextu64 aa{2}.[k] `<<` (of_int 10)%W8) + (of_int 1664)%W64) * 
+                              (of_int 1290168)%W64 `>>`(of_int 32)%W8) `&` (of_int 1023)%W64 `>>` (of_int 2)%W8))).
+      pose r := r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
+                to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].
+      pose g := (fun (k : int) (mem : global_mem_t) =>
+                  if k %% 4 = 0 then
+                    storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64)) 
+                      (truncateu8 (r.[k] `&` (of_int 255)%W16))
+                  else if k %% 4 = 1 then
+                    storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64))
+                      (truncateu8 ((r.[k] `<<` (of_int 2)%W8) `|` (r.[k - 1] `>>` (of_int 8)%W8)))
+                  else if k %% 4 = 2 then
+                    storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64))
+                      (truncateu8 ((r.[k] `<<` (of_int 4)%W8) `|` (r.[k - 1] `>>` (of_int 6)%W8)))
+                  else
+                    storeW8 (storeW8 mem (to_uint (ctp{2} + (of_int (k + k %/ 4))%W64))
+                      (truncateu8 ((r.[k] `<<` (of_int 6)%W8) `|` (r.[k - 1] `>>` (of_int 4)%W8))))
+                      (to_uint (ctp{2} + (of_int (k + k %/ 4 + 1))%W64))
+                      (truncateu8 ((((zeroextu64 aa{2}.[k] `<<` (of_int 10)%W8) + (of_int 1664)%W64) * 
+                        (of_int 1290168)%W64 `>>` (of_int 32)%W8) `&` (of_int 1023)%W64 `>>` (of_int 2)%W8))).
+      rewrite (eq_iteri f g _ _).
+        move => k mem ? /=; rewrite /f /g /r.
+        case (k %% 4 = 0) => ?.
+          rewrite get_setE; first by smt(@W64).
+          cut ->: k = to_uint i0' + 3 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k = to_uint i0' + 2 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' + 1 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' <=> false by smt().
+          by simplify.
+        case (k %% 4 = 1) => ?.
+          rewrite get_setE; first by smt(@W64).
+          cut ->: k = to_uint i0' + 3 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k = to_uint i0' + 2 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' + 1 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 3 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 2 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 1 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' <=> false by smt().
+          by simplify.
+        case (k %% 4 = 2) => ?.
+          rewrite get_setE; first by smt(@W64).
+          cut ->: k = to_uint i0' + 3 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k = to_uint i0' + 2 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' + 1 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 3 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 2 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 1 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' <=> false by smt().
+          by simplify.
+        case (k %% 4 = 3) => ?.
+          rewrite get_setE; first by smt(@W64).
+          cut ->: k = to_uint i0' + 3 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k = to_uint i0' + 2 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' + 1 <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64).
+          cut ->: k = to_uint i0' <=> false by smt().
+          simplify; rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 3 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 2 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' + 1 <=> false by smt().
+          rewrite get_setE /=; first by smt(@W64). 
+          cut ->: k - 1 = to_uint i0' <=> false by smt().
+          by simplify.
+        by smt().
+      by done.
+    by smt(@W64).
   wp; skip => /> *; split.
-    + have ?: to_uint i6_R = 256 by move : H; rewrite ultE of_uintK pmod_small // /#.
-    + by smt().
-  (*split.
-    + by move : H1; rewrite ultE of_uintK pmod_small // /#.*)
-    + by rewrite tP; move : H0; rewrite ultE of_uintK pmod_small // /#.
-
-seq 3 3 : (#[/1:10,11:22,23:29,31]pre /\ r20{1} = r22{2}).
-  while (#[/1:28]post /\ 0 <= to_uint i3{1} <= 256 /\ to_uint j0{1} - to_uint i3{1} = 512 /\
-          i3{1} = i6{2} /\ ={j0} /\
-          forall (j : int), 0 <= j < to_uint i3{1} => r20{1}.[j] = r22{2}.[j]).
-    wp; skip => /> *.
-    split. split.
-      + by rewrite to_uintD_small 1,2:/#.
-      + by move : H3; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
-    split.
-      + by rewrite !to_uintD_small 1,2:/# to_uint1; smt().
-    move => j *.
-    rewrite !get_setE; first 2 by
-      by move : H3; rewrite ultE of_uintK pmod_small //. 
-      case (j = to_uint i6{2}) => ? //=.
-        + by rewrite H2; move : H5; rewrite to_uintD_small 1,2:/#.
-  wp; skip => /> *. 
-    + by rewrite tP; move : H1; rewrite ultE of_uintK pmod_small // /#.
-
-seq 4 4 : (#[/1:5,9:17,20:]pre /\ r0{1} = r00{2} /\ r1{1} = r11{2} /\ r2{1} = r21{2} /\ 
-           ={rp2} /\ r0{1} = r00{1} /\ r1{1} = r10{1} /\ r2{1} = r20{1} /\
-            r00{2} = r01{2} /\ r11{2} = r12{2} /\ r21{2} = r22{2}).
-  while (#post /\ i4{1} = i7{2} /\ 0 <= i4{1} <= 256).
-    by wp; skip => /> * /#.
-  by wp; skip => /> * /#.
-
-seq 4 4 : (#[/1:26,27,28,30:]pre /\ r0{1} = rp2{1} /\ r00{2} = rp2{2} /\ ={rp3}).
-  while (#post /\ i5{1} = i8{2} /\ 0 <= i5{1} <= 256).
-    by wp; skip => /> * /#.
-  by wp; skip => /> * /#.
-
-seq 4 4 : (#[/1:26,27,29:]pre /\ r1{1} = rp3{1} /\ r11{2} = rp3{2} /\ ={rp4}).
-  while (#post /\ i6{1} = i9{2} /\ 0 <= i6{1} <= 256).
-    by wp; skip => /> * /#.
-  by wp; skip => /> * /#.
-
-seq 7 7 : (#[/1:26,28:]pre /\ r2{1} = rp4{1} /\ r21{2} = rp4{2} /\ ={p0,p1,p2} /\ 
-            p0{1} = r0{1} /\ p0{2} = r00{2} /\ p1{1} = r1{1} /\ p1{2} = r11{2} /\ 
-            p2{1} = r2{1} /\ p2{2} = r21{2} /\ 
-            (forall j, 0 <= j < 256 => r3{1}.[j] = r6{2}.[j])).
-  while (#[/1:43]post /\ i7{1} = i10{2} /\ 0 <= to_uint i7{1} <= 256 /\
-          forall j, 0 <= j < to_uint i7{1} => r3{1}.[j] = r6{2}.[j]).
-    wp; skip => /> *.
-    split. split.
-      + by rewrite to_uintD_small 1,2:/#.
-      + by move : H2; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
-    move => j *.
-    rewrite !get_setE; first 2 by
-      move : H2; rewrite ultE of_uintK pmod_small // /#.
-    case (j = to_uint i10{2}) => ? //=.
-        + by rewrite H1; move : H4; rewrite to_uintD_small 1,2:/#.
-  wp; skip => /> *. 
-    + by move : H; rewrite ultE of_uintK pmod_small // /#.
-
-seq 3 3 : (#[/1:43]pre /\ (forall j, 0 <= j < 512 => r3{1}.[j] = r6{2}.[j])).
-  while (#[/1:43]post /\ i7{1} = i10{2} /\ 0 <= to_uint i7{1} <= 256 /\ ={j1} /\
-          to_uint j1{1} - to_uint i7{1} = 256 /\
-          (forall j, 0 <= j < to_uint j1{1} => r3{1}.[j] = r6{2}.[j])).
-    wp; skip => /> *.
-    split. split.
-      + by rewrite to_uintD_small 1,2:/#.
-      + by move : H3; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
-    split.
-      + by rewrite !to_uintD_small 1,2:/# to_uint1; smt().
-    move => j *.
-      rewrite !get_setE; first 2
-        by move : H3; rewrite ultE of_uintK pmod_small // /#. 
-      case (j = to_uint j1{2}) => ? //=.
-        + by rewrite H2; move : H5; rewrite to_uintD_small 1,2:/#.
-  wp; skip => /> *. 
-    + by rewrite H5; move : H0; rewrite ultE of_uintK pmod_small // /#.
-
-seq 3 3 : (#[/1:43]pre /\ r3{1} = r6{2}).
-  while (#[/1:43]post /\ i7{1} = i10{2} /\ 0 <= to_uint i7{1} <= 256 /\ ={j1} /\
-          to_uint j1{1} - to_uint i7{1} = 512 /\
-          (forall j, 0 <= j < to_uint j1{1} => r3{1}.[j] = r6{2}.[j])).
-    wp; skip => /> *.
-    split. split.
-      + by rewrite to_uintD_small 1,2:/#.
-      + by move : H3; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#.
-    split.
-      + by rewrite !to_uintD_small 1,2,3:/#.
-    move => j *.
-      rewrite !get_setE; first 2
-        by move : H3; rewrite ultE of_uintK pmod_small // /#.
-        case (j = to_uint j1{2}) => ? //=.
-          + by rewrite H2; move : H5; rewrite to_uintD_small 1,2:/#.
-  wp; skip => /> *.
-    + by rewrite tP; move : H1; rewrite ultE of_uintK pmod_small // /#.
-
-swap{1} [6..9]-5; swap{2} [5..8]-4.
-seq 4 4 : (#pre /\ a0{1} = v{1} /\ a0{2} = v{2} /\ ={rp1}).
-  while (#post /\ i2{1} = i5{2} /\ 0 <= i2{1} <= 256).
-    by wp; skip => /> * /#.
-  by wp; skip => /> * /#.
-
-seq 0 3 : (#[/1,6:]pre /\ r5{2} = r6{2} /\ aa{2} = r5{2} /\
-            (forall k, 0 <= k < 768 => r.[k] = truncateu16 (((((zeroextu64 aa{2}.[k] `<<` W8.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) `>>` W8.of_int 32) `&` W64.of_int 1023)){2}).
-
-  while{2} (#[/1:45]post /\ 0 <= to_uint i1{2} <= 768 + 3 /\ to_uint i1{2} %% 4 = 0 /\
-            (forall k, 0 <= k < to_uint i1{2} => r.[k] = truncateu16 (((((zeroextu64 aa{2}.[k] `<<` W8.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) `>>` W8.of_int 32) `&` W64.of_int 1023)){2}) (768 - to_uint i1{2}).
-    move => &m z.
-      unroll 2; unroll 3; unroll 4; unroll 5.
-      (rcondt 2; first by wp; skip); (rcondt 10; first by wp; skip); (rcondt 18; first by wp; skip);
-        (rcondt 26; first by wp; skip); (rcondf 34; first by wp; skip).
-      wp; skip => /> *.
-        split. split. split.
-          + by rewrite to_uintD_small 1,2:/#.
-          + by rewrite to_uintD_small // 1:/#; move : H3; rewrite ultE of_uintK pmod_small // /#. 
-        split.
-          + by rewrite !to_uintD_small 1,2:/#.
-      move => k ?.
-        + rewrite !to_uintD_small 1..4:/#.
-        + rewrite !of_uintK !pmod_small 1..4:/# /=.
-        move => *.
-          + rewrite get_setE; first by move : H3; rewrite ultE of_uintK pmod_small // /#. 
-          + case (k = to_uint i1{hr} + 3) => ?; first by rewrite -H6.
-          + rewrite get_setE; first by move : H3; rewrite ultE of_uintK pmod_small // /#. 
-          + case (k = to_uint i1{hr} + 2) => ?; first by rewrite -H7.
-          + rewrite get_setE; first by move : H3; rewrite ultE of_uintK pmod_small // /#. 
-          + case (k = to_uint i1{hr} + 1) => ?; first by rewrite -H8.
-          + rewrite get_setE; first by move : H3; rewrite ultE of_uintK pmod_small // /#. 
-          + case (k = to_uint i1{hr}) => ?; first by rewrite -H9.
-          + by move : H3; rewrite ultE of_uintK pmod_small // => /#. 
-        + by move : H3; rewrite ultE of_uintK pmod_small //; first by rewrite to_uintD_small /#. 
-  wp; skip => />.
-    move => &2; split.
-      + by smt().
-    move => *; split. 
-      + by move => *; rewrite ultE of_uintK pmod_small // /#.
+    by rewrite iteri0.
     move => *.
-      + by move : H; rewrite ultE of_uintK pmod_small // /#.
-
+    by congr; move : H; rewrite ultE of_uintK pmod_small // /#. 
 
 admit.
 qed.
