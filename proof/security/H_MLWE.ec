@@ -11,8 +11,33 @@ abbrev (+&) = ZR.(+).
 op (-&) = ZR.(-).
 op (`<*>`) a b = dotp a b axiomatized by dotpEE.
 
-(* To remove? *)
-print ZR.
+import ZR.
+lemma exprS: forall (x : R) (n : int), 0 <= n => exp x (n + 1) = x * exp x n.
+move => *; rewrite /exp => />. 
+rewrite (_: n+1 < 0 = false) /= /iterop /=; first  by smt(). 
+rewrite (_: n < 0 = false) /=; first by smt().
+rewrite iteriS => />.
+case (n = 0); last by smt.
+move => />.
+rewrite iteri0 => />. 
+by rewrite mulrC mul1r.
+qed.
+
+lemma ofintS: forall (n : int), 0 <= n => ofint (n + 1) = oner +& (ofint n). 
+move => *.
+rewrite /ofint /intmul => />.
+rewrite (_: n+1 < 0 = false) /= /iterop /=; first  by smt(). 
+rewrite (_: n < 0 = false) /=; first by smt().
+rewrite iteriS => />.
+case (n = 0); last by smt.
+move => />.
+rewrite iteri0 => />. 
+by rewrite addrC add0r.
+qed.
+
+lemma ofintN: forall (n : int), ofint (-n) = (- ofint n).
+admitted.
+
 
 instance ring with R
   op rzero = ZR.zeror
@@ -37,9 +62,9 @@ instance ring with R
   proof subrE     by smt
   proof ofint0    by smt
   proof ofint1    by smt
-  proof exprS     by admit
-  proof ofintS    by admit
-  proof ofintN    by admit.
+  proof exprS     by apply exprS
+  proof ofintS    by apply ofintS
+  proof ofintN    by apply ofintN.
  
 (*************)
 
