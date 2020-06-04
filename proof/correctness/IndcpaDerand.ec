@@ -732,6 +732,8 @@ proof.
   by rewrite foldl_cat /= H0 /range /=.
 qed.
 
+require import IndcpaDerandAux.
+
 equiv enc_same : M.indcpa_enc_jazz ~ Mderand.indcpa_enc_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
 proc.
@@ -749,62 +751,62 @@ seq 14 12 : (#pre /\ ={a,t,pv} /\ rp{1} = ctp{1} /\ aa{1} = witness /\ i0{1} = i
               i0{1} = W64.zero /\ j{1} = W64.zero /\ r{1} = r5{2} /\ r0{1} = r00{2} /\ r1{1} = r11{2} /\
               r2{1} = r21{2} /\ r00{1} = r01{2} /\ r10{1} = r12{2} /\ r20{1} = r22{2}); first by wp; skip.
 
-seq 2 2  : (#pre).
-  while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2}).
+seq 2 2  : (#pre). admit.
+  (*while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2}).
     by wp; skip => /> *; split; [
       by rewrite to_uintD_small 1,2:/# |
       by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
-  by wp; skip. 
+  by wp; skip. *)
 
-seq 3 3 : (#pre).
-  while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2} /\ j0{1} = j0{2}).
+seq 3 3 : (#pre). admit.
+  (*while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2} /\ j0{1} = j0{2}).
     by wp; skip => /> *; split; [
       by rewrite to_uintD_small 1,2:/# |
       by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
-  by wp; skip.
+  by wp; skip.*)
 
-seq 3 3 : (#pre).
-  while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2} /\ j0{1} = j0{2}).
+seq 3 3 : (#pre). admit.
+  (*while (#post /\ 0 <= to_uint i3{1} <= 256 /\ i3{1} = i6{2} /\ j0{1} = j0{2}).
     by wp; skip => /> *; split; [
       by rewrite to_uintD_small 1,2:/# |
       by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
-  by wp; skip. 
+  by wp; skip.*) 
 
-seq 4 4 : (#pre /\ ={rp2}).
-  while (#post /\ 0 <= i4{1} <= 256 /\ i4{1} = i7{2}); first by wp; skip => /> * /#.
+seq 4 4 : (#pre /\ ={rp2}). admit.
+  (*while (#post /\ 0 <= i4{1} <= 256 /\ i4{1} = i7{2}); first by wp; skip => /> * /#.
+  by wp; skip.*)
+
+seq 4 4 : (#pre /\ ={rp3}). admit.
+  (*while (#post /\ 0 <= i5{1} <= 256 /\ i5{1} = i8{2}); first by wp; skip => /> * /#.
+  by wp; skip.*)
+
+seq 4 4 : (#pre /\ ={rp4}). admit.
+  (*while (#post /\ 0 <= i6{1} <= 256 /\ i6{1} = i9{2}); first by wp; skip => /> * /#.
+  by wp; skip.*)
+
+seq 5 5 : (#pre /\ ={p0,p1,p2} /\ r2{1} = r21{2} /\ r3{1} = r6{2}).
   by wp; skip.
 
-seq 4 4 : (#pre /\ ={rp2, rp3}).
-  while (#post /\ 0 <= i5{1} <= 256 /\ i5{1} = i8{2}); first by wp; skip => /> * /#.
-  by wp; skip.
-
-seq 4 4 : (#pre /\ ={rp2, rp3, rp4}).
-  while (#post /\ 0 <= i6{1} <= 256 /\ i6{1} = i9{2}); first by wp; skip => /> * /#.
-  by wp; skip.
-
-seq 5 5 : (#pre /\ ={p0,p1,p2} /\ r3{1} = r6{2}).
-  by wp; skip.
-
-seq 2 2 : (#pre).
-  while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2}).
+seq 2 2 : (#pre). admit.
+  (*while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2}).
     by wp; skip => /> *; split; [
       by rewrite to_uintD_small 1,2:/# | 
       by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
-  by wp; skip.
+  by wp; skip.*)
 
-seq 3 3 : (#pre).
-  while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2} /\ ={j1}).
+seq 3 3 : (#pre). admit.
+  (*while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2} /\ ={j1}).
     by wp; skip => /> *; split; [
       by rewrite to_uintD_small 1,2:/# | 
       by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
-  by wp; skip.
+  by wp; skip.*)
 
-seq 3 3 : (#pre).
-  while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2} /\ ={j1}).
+seq 3 3 : (#pre). admit.
+  (*while (#post /\ 0 <= to_uint i7{1} <= 256 /\ i7{1} = i10{2} /\ ={j1}).
     by wp; skip => /> *; split; [
       by rewrite to_uintD_small 1,2:/# | 
       by move : H1; rewrite ultE of_uintK pmod_small // => ?; rewrite to_uintD_small 1,2:/#].
-  by wp; skip.
+  by wp; skip.*)
 
 exists* (Glob.mem{1}); elim* => mem1.
 seq 3 3 : (#[/3:7,8:10,15:]pre /\ ={aa} /\
@@ -822,8 +824,8 @@ seq 3 3 : (#[/3:7,8:10,15:]pre /\ ={aa} /\
                               storeW8 (storeW8 mem (to_uint (rp{1} + W64.of_int (k + k %/ 4))) 
                                 (truncateu8 ((r{2}.[k] `<<` W8.of_int 6) `|` (r{2}.[k - 1] `>>` W8.of_int 4)))) 
                                 (to_uint (rp{1} + W64.of_int ((k + k %/ 4) + 1))) 
-                                (truncateu8 ((((((zeroextu64 aa{2}.[k] `<<` W8.of_int 10) + W64.of_int 1664) * W64.of_int 1290168) `>>` W8.of_int 32) `&` W64.of_int 1023) `>>` W8.of_int 2))) mem1).
-  while (#[/1:25]post /\ i0{1} = i1{2} /\ 0 <= to_uint i1{2} <= 768 + 3 /\ to_uint i1{2} %% 4 = 0 /\
+                                (truncateu8 ((((((zeroextu64 aa{2}.[k] `<<` W8.of_int 10) + W64.of_int 1664) * W64.of_int 1290168) `>>` W8.of_int 32) `&` W64.of_int 1023) `>>` W8.of_int 2))) mem1).  admit.
+  (*while (#[/1:25]post /\ i0{1} = i1{2} /\ 0 <= to_uint i1{2} <= 768 + 3 /\ to_uint i1{2} %% 4 = 0 /\
           0 <= to_uint j{1} <= 964 /\ (to_uint j{1} %% 5 = 0) /\ 
           (to_uint j{1} - to_uint i1{2} = to_uint i1{2} %/ 4) /\ 
           Glob.mem{1} = iteri (to_uint i0{1}) 
@@ -1056,7 +1058,62 @@ seq 3 3 : (#[/3:7,8:10,15:]pre /\ ={aa} /\
   wp; skip => /> *; split.
     by rewrite iteri0.
     move => *.
-    by congr; move : H; rewrite ultE of_uintK pmod_small // /#. 
+    by congr; move : H; rewrite ultE of_uintK pmod_small // /#. *)
+
+exists* ctp{1}; elim* => ctp1.
+seq 4 3 : (#[/2,3,5,6,8:]pre /\ (ctp = ctp1 + (W64.of_int (3*320))){1} /\ (rp0 = ctp){1} /\
+            r10{2} = r{2} /\ ={a0,rp1}); first by wp; skip. 
+seq 2 2 : (#pre).
+  while (#pre /\ i2{1} = i5{2} /\ 0 <= i2{1} <= 256); first by wp; skip => /> * /#.
+  by wp; skip. 
+
+seq 1 2 : (#pre /\ ={a0} /\ (r0 = witness){2}); first by wp; skip.
+
+exists* Glob.mem{1}; elim* => mem1'.
+seq 2 2 : (#[/2:22,23:29]pre /\ 
+            Glob.mem{1} = iteri 128 (fun k mem => storeW8 mem (to_uint (rp0{1} + W64.of_int k)) 
+              (truncateu8 (r0{2}.[k*2] `|` (r0{2}.[k*2+1] `<<` W8.of_int 4)))) mem1').
+  while (#[/1:27]post /\ i1{1} = i2{2} /\ 0 <= i1{1} <= 128 /\ 
+          Glob.mem{1} = iteri i1{1} (fun k mem => storeW8 mem (to_uint (rp0{1} + W64.of_int k)) 
+            (truncateu8 (r0{2}.[k*2] `|` (r0{2}.[k*2+1] `<<` W8.of_int 4)))) mem1').
+    wp; skip => /> *; do split.
+      by smt().
+      by smt().
+      rewrite iteriS // /=.
+      cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[i2{2} * 2] = truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32).
+        rewrite get_setE 1:/#.
+        cut ->: i2{2} * 2 = 2 * i2{2} + 1 <=> false by smt().
+        simplify; rewrite get_setE 1:/#.
+        by rewrite mulzC /= //.
+      cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[i2{2} * 2 + 1] = truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32).
+        rewrite get_setE 1:/#.
+        cut ->: i2{2} * 2 + 1 = 2 * i2{2} + 1 by smt().
+        by simplify. 
+      congr; last first.
+        pose a := (((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32.
+        pose b := ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32).
+        by rewrite -truncate16_wlslE -truncate16_orw truncate8_16K.
+      rewrite (eq_iteri (fun (k : int) (mem : global_mem_t) => storeW8 mem (to_uint (ctp1 + (of_int (960 + k))%W64))  (truncateu8 (r0{2}.[k * 2] `|` (r0{2}.[k * 2 + 1] `<<` (of_int 4)%W8)))) (fun (k : int) (mem : global_mem_t) => storeW8 mem (to_uint (ctp1 + (of_int (960 + k))%W64)) (truncateu8 (r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[k * 2] `|` (r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[k * 2 + 1] `<<` (of_int 4)%W8)))) _ _).
+        move => k * /=.
+          cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[k * 2] = r0{2}.[k * 2].
+            rewrite get_setE 1:/#.
+            cut ->: k * 2 = 2 * i2{2} + 1 <=> false by smt().
+            simplify; rewrite get_setE 1:/#.
+            cut ->: k * 2 = 2 * i2{2} <=> false by smt().
+            by simplify.
+          cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[k * 2 + 1] = r0{2}.[k * 2 + 1].
+            rewrite get_setE 1:/#.
+            cut ->: k * 2 + 1 = 2 * i2{2} + 1 <=> false by smt().
+            simplify; rewrite get_setE 1:/#.
+            cut ->: k * 2 + 1 = 2 * i2{2} <=> false by smt().
+            by simplify.
+        by done.
+      by done.
+  wp; skip => /> *; do split.
+    by rewrite (iteri0 0 _ _) //.
+    move => *.
+      cut ->: i2_R = 128 by smt().
+    by done.
 
 admit.
 qed.
