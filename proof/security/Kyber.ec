@@ -1,4 +1,4 @@
-require import AllCore Array128 Array256 Array768 IntDiv IntExtra Distr List DList.
+require import AllCore Array128 Array256 Array768 IntDiv IntExtra Distr List DList Real RealExp RealExtra.
 require import ZModP.
 require import MLWE_PKE.
 
@@ -12,12 +12,19 @@ type elem = zmod.
 op trueval = (q+1) %/ 2.
 op falseval = 0.
 
-op dshort_elem : elem distr. (* To make concrete *)
+op dshort_elem : elem distr. 
 op duni_elem : elem distr.
 op pe = 1%r /q%r.
 
-(* Do these go away when things are concrete ? *)
-axiom supp_duni_elem x : 0 <= asint x < q => x \in duni_elem.
+(* Concrete distributions *)
+axiom supp_dshort_elem x : -2 <= (if q %/2 <= (asint x) then (asint x -q) else (asint x)) <= 2 <=> x \in dshort_elem.
+axiom dshort_elem1E_2 : mu1 duni_elem (inzmod 2) = 1%r / 16%r.
+axiom dshort_elem1E_m2 : mu1 duni_elem (inzmod (q-2)) = 1%r / 16%r.
+axiom dshort_elem1E_1 : mu1 duni_elem (inzmod 1) = 1%r / 4%r.
+axiom dshort_elem1E_m1 : mu1 duni_elem (inzmod (q-1)) = 1%r / 4%r.
+axiom dshort_elem1E_0 : mu1 duni_elem (inzmod (0)) = 3%r / 8%r.
+
+axiom supp_duni_elem x : 0 <= asint x < q <=> x \in duni_elem.
 axiom duni_elem1E x : mu1 duni_elem x = pe.
 
 axiom dshort_elem_ll : is_lossless dshort_elem.
@@ -60,11 +67,17 @@ axiom basemul_sem (ap bp rs: poly) :
          (dcmplx_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
                     (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas.[k+64])).
 
-op ( *) (pa pb : poly) : poly.
+op ( *) (pa pb : poly) : poly =
+  Array256.init (fun (i : int) => foldr (fun (k : int) (ci : elem) =>
+     if (0 <= i - k) 
+     then ci + pa.[k] * pb.[i - k] 
+     else ci - pa.[k] * pb.[256 - (i - k)]) 
+      ZModRing.zero (iota_ 0 256)).
 
 op scale(p : poly, c : elem) : poly = 
   Array256.map (fun x => x * c) p.
 
+(* This should be proved in polynomial theory *)
 axiom mul_sem (pa pb : poly) (c : elem) : 
   invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
    scale (pa * pb) c.
@@ -236,8 +249,8 @@ proof.
   rewrite supp_dmap; exists (Array256.to_list p).
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
-    rewrite allP => *.
-    by rewrite supp_duni_elem 1:smt(@ZModRing).
+    rewrite allP => *. 
+    by rewrite -supp_duni_elem 1:smt(@ZModRing).
     by rewrite Array256.to_listK.
 qed.
 
@@ -253,6 +266,8 @@ proof.
   move => x l hind /=.
     by rewrite hind duni_elem1E /pe addzC powrS; first by smt(size_ge0).
 qed.
+
+
 
 realize H_MLWE.duni_matrixE.
 proof.
@@ -281,8 +296,12 @@ proof.
     by rewrite aux; first by smt(kvec_ge3).
   cut ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
             foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
-  rewrite aux; first by smt(kvec_ge3).
-  admit. (* FIXME: missing over the reals? *)
+  rewrite aux; first by smt(kvec_ge3). 
+  pose a := inv q%r ^ 256.
+  rewrite (_: a^kvec = a^(kvec%r)). smt.
+  rewrite (_: a^(kvec%r)^kvec = a^(kvec%r)^(kvec%r)). smt.
+  rewrite (_: a^(kvec*kvec) = a^(kvec%r*kvec%r)). smt.
+  rewrite (rpowM (inv q%r ^ 256)). smt. done.
 qed.
 
 realize encode_noise.

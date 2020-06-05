@@ -17,7 +17,8 @@ def p2_cyclotomic_final_error_distribution(ps):
 
     B1 = law_product(chie, chiRs)                       # (LWE+Rounding error) * LWE (as in a E*S product)
     B2 = law_product(chis, chiRe)
-
+    # B1 => ei[i] * s[i]
+    # B2 => s[i] * (ei[i] + cu[i]) = (s[i] * ei[i]) + (s[i] * cu[i])
     C1 = iter_law_convolution(B1, ps.m * ps.n)
     C2 = iter_law_convolution(B2, ps.m * ps.n)
 
