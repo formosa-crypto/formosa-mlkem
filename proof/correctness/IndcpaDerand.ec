@@ -736,8 +736,8 @@ require import IndcpaDerandAux.
 
 equiv enc_same : M.indcpa_enc_jazz ~ Mderand.indcpa_enc_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
-proc.
-inline Mderand.indcpa_enc_expand_seed Mderand.indcpa_enc_compute.
+proc. admit. 
+(*inline Mderand.indcpa_enc_expand_seed Mderand.indcpa_enc_compute.
 swap {1} 9 -8.
 swap {1} 18 -16.
 swap {2} [6..9] -3.
@@ -1268,17 +1268,77 @@ wp; skip => /> *; do split.
   move => *; do split.
     by smt().
     move => *.
-    by congr => /#.
+    by congr => /#.*)
 qed.
 
 equiv dec_same :  M.indcpa_dec_jazz ~ Mderand.indcpa_dec_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
 proc.
 inline Mderand.indcpa_dec_compute.
-swap {2} 8 2.
-swap {2} 1 8.
-swap {2} 4 4.
-seq 7 7 : (={Glob.mem,msgp,skp,bp,v}).
-inline *; auto => />; admit. 
-by sim.
+swap {2} 7 2.
+swap {2} 1 7.
+(*swap {2} 4 4.*)
+seq 7 7 : (={Glob.mem,msgp,skp,bp,v}); last first.
+seq 6 7 : (#pre). by sim.
+admit.
+
+inline *; auto => />.
+
+seq 5 1 : (#pre /\ ={ap} /\ (bp = witness){1} /\ (mp = witness){1} /\ (skpv = witness){1} /\ 
+            (v = witness){1} /\ (ap = ctp){1}).
+by wp; skip.
+seq 5 5 : (#pre /\ 
+          (forall k, 0 <= k < 768 => r{1}.[k] = 
+                                      truncateu16 
+                                        (((r{2}.[k] * W32.of_int 3329) + W32.of_int 512) `>>` W8.of_int 10))).
+  while (#pre /\ ={i,j} /\ 0 <= to_uint i{1} < 768+3 /\ to_uint i{1} %% 4 = 0 /\ 
+          0 <= to_uint j{1} < 960 + 4 /\ to_uint j{1} %% 5 = 0 /\
+          to_uint j{1} - to_uint i{1} = to_uint i{1} %/ 4 /\
+          (forall k, 0 <= k < to_uint i{1} => r{1}.[k] = 
+                                      truncateu16 
+                                        (((r{2}.[k] * W32.of_int 3329) + W32.of_int 512) `>>` W8.of_int 10))).
+    unroll{1} 2; unroll{1} 3; unroll{1} 4; unroll{1} 5; unroll{1} 6.
+      + (rcondt{1} 2; first by move => &m; wp; skip); (rcondt{1} 5; first by move => &m; wp; skip);
+        (rcondt{1} 8; first by move => &m; wp; skip); (rcondt{1} 11; first by move => &m; wp; skip);
+        (rcondt{1} 14; first by move => &m; wp; skip); (rcondf{1} 17; first by move => &m; wp; skip).
+    unroll{2} 2; unroll{2} 3; unroll{2} 4; unroll{2} 5; unroll{2} 6.
+      + (rcondt{2} 2; first by move => &m; wp; skip); (rcondt{2} 5; first by move => &m; wp; skip);
+        (rcondt{2} 8; first by move => &m; wp; skip); (rcondt{2} 11; first by move => &m; wp; skip);
+        (rcondt{2} 14; first by move => &m; wp; skip); (rcondf{2} 17; first by move => &m; wp; skip).
+    unroll{1} 36; unroll{1} 37; unroll{1} 38; unroll{1} 39.
+      + (rcondt{1} 36; first by move => &m; wp; skip); (rcondt{1} 42; first by move => &m; wp; skip);
+        (rcondt{1} 48; first by move => &m; wp; skip); (rcondt{1} 54; first by move => &m; wp; skip);
+        (rcondf{1} 60; first by move => &m; wp; skip).
+    unroll{2} 36; unroll{2} 37; unroll{2} 38; unroll{2} 39.
+      + (rcondt{2} 36; first by move => &m; wp; skip); (rcondt{2} 39; first by move => &m; wp; skip);
+        (rcondt{2} 42; first by move => &m; wp; skip); (rcondt{2} 45; first by move => &m; wp; skip);
+        (rcondf{2} 48; first by move => &m; wp; skip).
+    wp; skip => /> *; do split.
+      by rewrite to_uintD_small 1,2:/#.
+      by rewrite to_uintD_small // 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#. 
+      by rewrite !to_uintD_small 1,2:/#.
+      by rewrite to_uintD_small 1,2:/#.
+      by rewrite to_uintD_small 1:/# !of_uintK //; move : H7; rewrite ultE of_uintK pmod_small // /#.
+      by rewrite to_uintD_small 1:/# /#.
+      by rewrite !to_uintD_small 1,2:/# !of_uintK //; move : H7; rewrite ultE of_uintK pmod_small // /#.
+      move => k. rewrite to_uintD_small 1:/#. rewrite of_uintK. simplify => *.
+        rewrite !Array768.get_setE.
+          by rewrite to_uintD_small 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#.
+          by rewrite to_uintD_small 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#.
+          by rewrite to_uintD_small 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#.
+          by move : H7; rewrite ultE of_uintK pmod_small // /#.
+          by rewrite to_uintD_small 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#.
+          by rewrite to_uintD_small 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#.
+          by rewrite to_uintD_small 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#.
+          by move : H7; rewrite ultE of_uintK pmod_small // /#.
+        case (k = to_uint (i{2} + (of_int 3)%W64)) => ?; first by done.
+        case (k = to_uint (i{2} + (of_int 2)%W64)) => ?; first by done.
+        case (k = to_uint (i{2} + (of_int 1)%W64)) => ?; first by done.
+        case (k = to_uint (i{2})) => ?; first by done.
+        by rewrite H6; move : H10 H11 H12; rewrite !to_uintD_small 1,2,3:/# !of_uintK /= /#.
+      wp; skip => />; do split.
+        by smt().
+        by move => *; rewrite H8; move : H; rewrite ultE of_uintK pmod_small // /#.
+
+admit.
 qed.
