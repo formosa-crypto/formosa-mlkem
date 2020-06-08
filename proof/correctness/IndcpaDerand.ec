@@ -415,7 +415,7 @@ module Mderand = {
     while (i \ult (of_int 768)%W64){
       k <- 0;
       while (k < 5){
-        t.[k] <- rp.[to_uint i];
+        t.[k] <- rp.[to_uint i + k];
         j <- j + W64.one;
         k <- k + 1;
       }
@@ -1336,9 +1336,97 @@ seq 5 5 : (#pre /\
         case (k = to_uint (i{2} + (of_int 1)%W64)) => ?; first by done.
         case (k = to_uint (i{2})) => ?; first by done.
         by rewrite H6; move : H10 H11 H12; rewrite !to_uintD_small 1,2,3:/# !of_uintK /= /#.
-      wp; skip => />; do split.
-        by smt().
-        by move => *; rewrite H8; move : H; rewrite ultE of_uintK pmod_small // /#.
+  wp; skip => />; do split.
+    by smt().
+    by move => *; rewrite H8; move : H; rewrite ultE of_uintK pmod_small // /#.
 
-admit.
+seq 4 4 : (#[/1:6,7:10,11:]pre /\ bp{1} = r{1} /\ r1{2} = r{2} /\ ={ctp} /\ ={ap0} /\ 
+            (ap0 = ctp){1} /\ ={rp} /\ (rp = witness){1}); first by wp; skip.
+
+seq 2 2 : (#[/1:15]pre /\ 
+            (forall k, 0 <= k < 256 =>
+              rp{1}.[k] = ((rp{2}.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
+  while (#[/1:15]post /\ ={i0} /\ 0 <= i0{1} <= 128 /\
+            (forall k, 0 <= k < i0{1}*2 =>
+              rp{1}.[k] = ((rp{2}.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
+    wp; skip => /> *; do split.
+      by smt().
+      by smt().
+      move => k *.
+        rewrite !Array256.get_setE. 
+          by smt().
+          by smt().
+          by smt().
+          by smt().
+          case (k = 2 * i0{2} + 1) => ?; first by done.
+          case (k = 2 * i0{2}) => ?; first by done.
+          by rewrite H2 1:/#.
+  wp; skip => /> *; do split.
+    by smt().
+    move => *.
+      by rewrite H4 1:/#. 
+
+sp 0 4.
+seq 0 5 : (#pre /\ r{1} = r0{2}).
+  while{2} (#[/1:20]post /\ 0 <= to_uint i1{2} <= 768+3 /\ to_uint i1{2} %% 4 = 0 /\
+              (forall k, 0 <= k < to_uint i1{2} => r0{2}.[k] = r{1}.[k])) (768 - to_uint i1{2}).
+    move => &m z.
+    unroll 2; unroll 3; unroll 4; unroll 5; unroll 6.
+      + (rcondt 2; first by wp; skip); (rcondt 5; first by wp; skip);
+        (rcondt 8; first by wp; skip); (rcondt 11; first by wp; skip);
+        (rcondt 14; first by wp; skip); (rcondf 17; first by wp; skip).
+    unroll 18; unroll 19; unroll 20; unroll 21.
+      + (rcondt 18; first by wp; skip); (rcondt 24; first by wp; skip);
+        (rcondt 30; first by wp; skip); (rcondt 36; first by wp; skip);
+        (rcondf 42; first by wp; skip).
+    wp; skip => /> *; do split.
+      by rewrite to_uintD_small 1,2:/#.
+      by rewrite to_uintD_small // 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#. 
+      by rewrite !to_uintD_small 1,2:/#.
+      move => k *.
+        rewrite !Array768.get_setE.
+          by rewrite to_uintD_small 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#.
+          by rewrite to_uintD_small 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#.
+          by rewrite to_uintD_small 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#.
+          by move : H5; rewrite ultE of_uintK pmod_small /= /#.
+          case (k = to_uint (i1{hr} + (of_int 3)%W64)) => ?. 
+            rewrite H8 H; first by rewrite to_uintD_small 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#.
+            by rewrite to_uintD_small 1:/# of_uintK pmod_small /=.
+          case (k = to_uint (i1{hr} + (of_int 2)%W64)) => ?. 
+            rewrite H9 H; first by rewrite to_uintD_small 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#.
+            by rewrite to_uintD_small 1:/# of_uintK pmod_small /=.
+          case (k = to_uint (i1{hr} + (of_int 1)%W64)) => ?. 
+            rewrite H10 H; first by rewrite to_uintD_small 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#.
+            by rewrite to_uintD_small 1:/# of_uintK pmod_small /=.
+          case (k = to_uint (i1{hr})) => ?. 
+            rewrite H11 H; first by move : H5; rewrite ultE of_uintK pmod_small /= /#.
+            by done.
+          by rewrite H4; move : H5 H6 H7 H8 H9 H10; rewrite !to_uintD_small 1,2,3,4,5:/#. 
+        by rewrite to_uintD_small 1:/#; move : H5; rewrite ultE of_uintK pmod_small /= /#.
+  wp; skip => /> *; do split.
+    by smt().
+    move => *; do split.
+      by move => *; rewrite ultE of_uintK pmod_small /= /#.
+      by rewrite ultE of_uintK pmod_small /= // => *; rewrite tP /#.
+
+while{2} (#pre /\ (bp = r0){2} /\ (r3 = r20){2} /\ ={bp} /\ 0 <= i2{2} <= 128 /\
+          (forall k, 0 <= k < i2{2}*2 => rp1{2}.[k] = rp{1}.[k])) (128 - i2{2}).
+  move => &m z.
+  wp; skip => /> *; do split.
+    by smt().
+    by smt().
+    move => k *.
+      rewrite !Array256.get_setE.
+        by smt().
+        by smt().
+        case (k = 2 * i2{hr} + 1) => ?; first by rewrite H0 1:/# H7.
+        case (k = 2 * i2{hr}) => ?; first by rewrite H0 1:/# H8.
+        by rewrite -H3 1:/#.
+    by smt().
+
+wp; skip => /> *; do split.
+  by smt().
+  move => *; do split.
+    by smt().
+    by move => *; rewrite tP /#.
 qed.
