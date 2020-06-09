@@ -736,15 +736,80 @@ require import IndcpaDerandAux.
 
 equiv enc_same : M.indcpa_enc_jazz ~ Mderand.indcpa_enc_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
-proc. admit. 
-(*inline Mderand.indcpa_enc_expand_seed Mderand.indcpa_enc_compute.
+proc.
+inline Mderand.indcpa_enc_expand_seed Mderand.indcpa_enc_compute.
 swap {1} 9 -8.
 swap {1} 18 -16.
 swap {2} [6..9] -3.
 swap {1} [22..24] 16.
 
-seq 53 49 : (={Glob.mem,bp,v,ctp}).
-admit.
+(***********************)
+swap{1} 16-15.
+swap{1} 7-5.
+seq 2 0 : (#pre); first by wp; skip.
+(***********************)
+
+seq 51 49 : (={Glob.mem,bp,v,ctp}).
+sim.
+
+seq 35 25 : (={Glob.mem,ctp,msgp,poly0,poly1,poly2,publicseed,noiseseed,pkpv} /\ epp{1} = epp0{2} /\ ep{1} = ep0{2} /\ sp_0{1} = sp_00{2}).
+swap{2} 1 3.
+sim.
+
+(*********)
+inline*.
+sp 0 1.
+seq 4 4 : (#pre /\
+            (forall k, 0 <= k < 256 => rp{1}.[k] = rp{2}.[k] * W16.of_int ((3329 + 1) %/ 2))).
+  while (#pre /\ 0 <= i0{1} <= 32 /\ i0{1} = i1{2} /\ ={ap} /\
+          (forall k, 0 <= k < i0{1} * 8 => rp{1}.[k] = rp{2}.[k] * W16.of_int ((3329 + 1) %/ 2))).
+    wp; skip => /> *; do split.
+      by smt().
+      by smt().
+      move => k *.
+        rewrite !Array256.get_setE 1..16:/#.
+        case (k = 8 * i1{2} + 7) => ?; first by done. 
+        case (k = 8 * i1{2} + 6) => ?; first by smt(). 
+        case (k = 8 * i1{2} + 5) => ?; first by smt(). 
+        case (k = 8 * i1{2} + 4) => ?; first by smt(). 
+        case (k = 8 * i1{2} + 3) => ?; first by smt(). 
+        case (k = 8 * i1{2} + 2) => ?; first by smt(). 
+        case (k = 8 * i1{2} + 1) => ?; first by smt(). 
+        case (k = 8 * i1{2}) => ?; first by done.
+        by smt(). 
+  wp; skip => /> *; do split.
+    by smt().
+    by move => *; rewrite H3 /#. 
+
+sp 0 8.
+wp.
+while{2} (#pre /\ 0 <= i2{2} <= 32 /\
+          (forall k, 0 <= k < i2{2} * 8 => rp{1}.[k] = rp0{2}.[k])) (32 - i2{2}).
+  move => &m z.
+  wp; skip => />.
+    move => *; do split.
+      by smt().
+      by smt().
+      move => k *.
+        rewrite !Array256.get_setE 1..8:/#.
+        case (k = 8 * i2{hr} + 7) => ?; first by rewrite H 1:/# H6.
+        case (k = 8 * i2{hr} + 6) => ?; first by rewrite H 1:/# H7.
+        case (k = 8 * i2{hr} + 5) => ?; first by rewrite H 1:/# H8.
+        case (k = 8 * i2{hr} + 4) => ?; first by rewrite H 1:/# H9.
+        case (k = 8 * i2{hr} + 3) => ?; first by rewrite H 1:/# H10.
+        case (k = 8 * i2{hr} + 2) => ?; first by rewrite H 1:/# H11.
+        case (k = 8 * i2{hr} + 1) => ?; first by rewrite H 1:/# H12.
+        case (k = 8 * i2{hr}) => ?; first by rewrite H 1:/# H13.
+        by rewrite H2 1:/#.
+      by smt().
+
+wp; skip => /> *; do split.
+  by smt().
+  move => *; split => *.
+    by smt().
+    by rewrite tP /#.
+(*********)
+
 inline *; auto => />.
 
 seq 14 12 : (#pre /\ ={a,t,pv} /\ rp{1} = ctp{1} /\ aa{1} = witness /\ i0{1} = i1{2} /\ r{2} = witness /\
@@ -879,17 +944,17 @@ seq 3 3 : (#[/3:7,8:10,15:]pre /\ ={aa} /\ Glob.mem{2} = mem1 /\
         by rewrite to_uintD_small // 1:/#; move : H6; rewrite ultE of_uintK pmod_small // /#. 
         by rewrite !to_uintD_small 1,2:/#.
         rewrite tP => j *.
-          rewrite get_setE //; case (j = 3) => ?; subst; rewrite get_setE //.
-          rewrite get_setE //; case (j = 2) => ?; subst; rewrite get_setE //.
-          rewrite get_setE //; case (j = 1) => ?; subst; rewrite get_setE //.
-          rewrite get_setE //; case (j = 0) => ?; subst; rewrite get_setE //.
+          rewrite Array4.get_setE //; case (j = 3) => ?; subst; rewrite Array4.get_setE //.
+          rewrite Array4.get_setE //; case (j = 2) => ?; subst; rewrite Array4.get_setE //.
+          rewrite Array4.get_setE //; case (j = 1) => ?; subst; rewrite Array4.get_setE //.
+          rewrite Array4.get_setE //; case (j = 0) => ?; subst; rewrite Array4.get_setE //.
           by smt().
         move => k *.
-          rewrite get_setE //; case (k = 3) => ?; subst; first by
-            (cut ->: to_uint (i1{2} + (of_int 3)%W64) = to_uint i1{2} + 3 by rewrite !to_uintD_small 1,2:/#); smt().          rewrite get_setE //; case (k = 2) => ?; subst; first by
-            (cut ->: to_uint (i1{2} + (of_int 2)%W64) = to_uint i1{2} + 2 by rewrite !to_uintD_small 1,2:/#); smt().          rewrite get_setE //; case (k = 1) => ?; subst; first by
+          rewrite Array4.get_setE //; case (k = 3) => ?; subst; first by
+            (cut ->: to_uint (i1{2} + (of_int 3)%W64) = to_uint i1{2} + 3 by rewrite !to_uintD_small 1,2:/#); smt().          rewrite Array4.get_setE //; case (k = 2) => ?; subst; first by
+            (cut ->: to_uint (i1{2} + (of_int 2)%W64) = to_uint i1{2} + 2 by rewrite !to_uintD_small 1,2:/#); smt().          rewrite Array4.get_setE //; case (k = 1) => ?; subst; first by
             (cut ->: to_uint (i1{2} + (of_int 1)%W64) = to_uint i1{2} + 1 by rewrite !to_uintD_small 1,2:/#); smt().
-          rewrite get_setE //; case (k = 0) => ?; subst => //. 
+          rewrite Array4.get_setE //; case (k = 0) => ?; subst => //. 
           by smt().
     wp; skip => /> *; do split.
       by rewrite to_uintD_small 1,2:/#.
@@ -921,30 +986,30 @@ seq 3 3 : (#[/3:7,8:10,15:]pre /\ ={aa} /\ Glob.mem{2} = mem1 /\
             to_uint i0' + 3] = truncateu16 t{2}.[3] by rewrite get_setE; first by smt(@W64).
     cut ->: r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
             to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].[
-            to_uint i0' + 2] = truncateu16 t{2}.[2]. 
-      rewrite get_setE; first by smt(@W64).
+            to_uint i0' + 2] = truncateu16 t{2}.[2].
+      rewrite Array768.get_setE; first by smt(@W64).
       cut ->: to_uint i0' + 2 = to_uint i0' + 3 <=> false by smt().
-      simplify; rewrite get_setE; first by smt(@W64).
+      simplify; rewrite Array768.get_setE; first by smt(@W64).
       by simplify.
     cut ->: r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
             to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].[
             to_uint i0' + 1] = truncateu16 t{2}.[1].
-      rewrite get_setE; first by smt(@W64).
+      rewrite Array768.get_setE; first by smt(@W64).
       cut ->: to_uint i0' + 1 = to_uint i0' + 3 <=> false by smt().
-      simplify; rewrite get_setE; first by smt(@W64).
+      simplify; rewrite Array768.get_setE; first by smt(@W64).
       cut ->: to_uint i0' + 1 = to_uint i0' + 2 <=> false by smt().
-      simplify; rewrite get_setE; first by smt(@W64).
+      simplify; rewrite Array768.get_setE; first by smt(@W64).
       by simplify.
     cut ->: r{2}.[to_uint i0' <- truncateu16 t{2}.[0]].[to_uint i0' + 1 <- truncateu16 t{2}.[1]].[
             to_uint i0' + 2 <- truncateu16 t{2}.[2]].[to_uint i0' + 3 <- truncateu16 t{2}.[3]].[
             to_uint i0'] = truncateu16 t{2}.[0].
-      rewrite get_setE; first by smt(@W64).
+      rewrite Array768.get_setE; first by smt(@W64).
       cut ->: to_uint i0' = to_uint i0' + 3 <=> false by smt().
-      simplify; rewrite get_setE; first by smt(@W64).
+      simplify; rewrite Array768.get_setE; first by smt(@W64).
       cut ->: to_uint i0' = to_uint i0' + 2 <=> false by smt().
-      simplify; rewrite get_setE; first by smt(@W64).
+      simplify; rewrite Array768.get_setE; first by smt(@W64).
       cut ->: to_uint i0' = to_uint i0' + 1 <=> false by smt().
-      simplify; rewrite get_setE; first by smt(@W64).
+      simplify; rewrite Array768.get_setE; first by smt(@W64).
       by simplify.
       pose f := (fun (k : int) (mem : global_mem_t) =>
                     if k %% 4 = 0 then
@@ -987,67 +1052,67 @@ seq 3 3 : (#[/3:7,8:10,15:]pre /\ ={aa} /\ Glob.mem{2} = mem1 /\
       rewrite (eq_iteri f g _ _).
         move => k mem ? /=; rewrite /f /g /r.
         case (k %% 4 = 0) => ?.
-          rewrite get_setE; first by smt(@W64).
+          rewrite Array768.get_setE; first by smt(@W64).
           cut ->: k = to_uint i0' + 3 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64). 
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k = to_uint i0' + 2 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' + 1 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' <=> false by smt().
           by simplify.
         case (k %% 4 = 1) => ?.
-          rewrite get_setE; first by smt(@W64).
+          rewrite Array768.get_setE; first by smt(@W64).
           cut ->: k = to_uint i0' + 3 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64). 
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k = to_uint i0' + 2 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' + 1 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64). 
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 3 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 2 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 1 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' <=> false by smt().
           by simplify.
         case (k %% 4 = 2) => ?.
-          rewrite get_setE; first by smt(@W64).
+          rewrite Array768.get_setE; first by smt(@W64).
           cut ->: k = to_uint i0' + 3 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64). 
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k = to_uint i0' + 2 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' + 1 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64). 
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 3 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 2 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 1 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' <=> false by smt().
           by simplify.
         case (k %% 4 = 3) => ?.
-          rewrite get_setE; first by smt(@W64).
+          rewrite Array768.get_setE; first by smt(@W64).
           cut ->: k = to_uint i0' + 3 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64). 
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k = to_uint i0' + 2 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' + 1 <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64).
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64).
           cut ->: k = to_uint i0' <=> false by smt().
-          simplify; rewrite get_setE /=; first by smt(@W64). 
+          simplify; rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 3 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 2 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' + 1 <=> false by smt().
-          rewrite get_setE /=; first by smt(@W64). 
+          rewrite Array768.get_setE /=; first by smt(@W64). 
           cut ->: k - 1 = to_uint i0' <=> false by smt().
           by simplify.
         by smt().
@@ -1117,14 +1182,14 @@ seq 2 2 : (#[/2:30,31]pre /\
     wp; skip => /> *; do split.
       by smt().
       by smt().
-      rewrite iteriS // /=.
+      (rewrite iteriS; first by done) => /=.
       cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[i2{2} * 2] = truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32).
-        rewrite get_setE 1:/#.
+        rewrite Array256.get_setE 1:/#.
         cut ->: i2{2} * 2 = 2 * i2{2} + 1 <=> false by smt().
-        simplify; rewrite get_setE 1:/#.
+        simplify; rewrite Array256.get_setE 1:/#.
         by rewrite mulzC /= //.
       cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[i2{2} * 2 + 1] = truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32).
-        rewrite get_setE 1:/#.
+        rewrite Array256.get_setE 1:/#.
         cut ->: i2{2} * 2 + 1 = 2 * i2{2} + 1 by smt().
         by simplify. 
       congr; last first.
@@ -1157,15 +1222,15 @@ seq 2 2 : (#[/2:30,31]pre /\
             (of_int 4)%W8)))) _ _).
         move => k * /=.
           cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[k * 2] = r0{2}.[k * 2].
-            rewrite get_setE 1:/#.
+            rewrite Array256.get_setE 1:/#.
             cut ->: k * 2 = 2 * i2{2} + 1 <=> false by smt().
-            simplify; rewrite get_setE 1:/#.
+            simplify; rewrite Array256.get_setE 1:/#.
             cut ->: k * 2 = 2 * i2{2} <=> false by smt().
             by simplify.
           cut ->: r0{2}.[2 * i2{2} <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2}] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[2 * i2{2} + 1 <- truncateu16 ((((zeroextu32 a0{2}.[2 * i2{2} + 1] `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` (of_int 15)%W32)].[k * 2 + 1] = r0{2}.[k * 2 + 1].
-            rewrite get_setE 1:/#.
+            rewrite Array256.get_setE 1:/#.
             cut ->: k * 2 + 1 = 2 * i2{2} + 1 <=> false by smt().
-            simplify; rewrite get_setE 1:/#.
+            simplify; rewrite Array256.get_setE 1:/#.
             cut ->: k * 2 + 1 = 2 * i2{2} <=> false by smt().
             by simplify.
         by done.
@@ -1268,7 +1333,14 @@ wp; skip => /> *; do split.
   move => *; do split.
     by smt().
     move => *.
-    by congr => /#.*)
+    by congr => /#.
+qed.
+
+lemma iteri8 (f : int -> 'a -> 'a) (st : 'a) :
+  iteri 8 f st = f 7 (f 6 (f 5 (f 4 (f 3 (f 2 (f 1 (f 0 st))))))).
+proof.
+  cut ->: 8 = 0+1+1+1+1+1+1+1+1 by done.
+  by rewrite !iteriS //= iteri0.
 qed.
 
 equiv dec_same :  M.indcpa_dec_jazz ~ Mderand.indcpa_dec_jazz :
@@ -1277,10 +1349,95 @@ proc.
 inline Mderand.indcpa_dec_compute.
 swap {2} 7 2.
 swap {2} 1 7.
-(*swap {2} 4 4.*)
+
 seq 7 7 : (={Glob.mem,msgp,skp,bp,v}); last first.
-seq 6 7 : (#pre). by sim.
-admit.
+seq 6 7 : (#pre /\ ={mp}). by sim.
+
+(*********)
+inline*.
+seq 3 2 : (#pre /\ (rp = msgp){1} /\ ={a} /\ (a = mp){1} /\ rp0{1} = rp1{2} /\ (rp0 = a){1}).
+  by wp; skip => />.
+seq 2 2 : (#[/1:11]pre).
+  while (#post /\ 0 <= i0{1} <= 256 /\ i0{1} = i1{2}); first by wp; skip => /> /#. 
+  by wp; skip => />.
+swap{2} 3-1.
+seq 1 2 : (#[/1:9,10:]pre /\ ={a} /\ r{2} = witness).
+  by wp; skip.
+exists* Glob.mem{1}; elim* => mem1.
+seq 2 2 : (#[/3:12]pre /\ Glob.mem{2} = mem1 /\
+            Glob.mem{1} = iteri 32 (fun i mem => storeW8 mem (to_uint (msgp{1} + (W64.of_int i))) 
+                            (iteri 8 (fun j r => r `|` truncateu8 (rp{2}.[8*i+j] `<<` W8.of_int j)) W8.zero)) mem1).
+  while (#[/1:11]post /\ ={i} /\ 0 <= i{1} <= 32 /\
+          Glob.mem{1} = iteri i{1} (fun i mem => storeW8 mem (to_uint (msgp{1} + (W64.of_int i))) 
+                            (iteri 8 (fun j r => r `|` truncateu8 (rp{2}.[8*i+j] `<<` W8.of_int j)) W8.zero)) mem1).
+    unroll{1} 3; unroll{1} 4; unroll{1} 5; unroll{1} 6; unroll{1} 7; unroll{1} 8; unroll{1} 9; unroll{1} 10.
+      (rcondt{1} 3; first by move => &m; wp; skip); (rcondt{1} 13; first by move => &m; wp; skip); (rcondt{1} 23; first by move => &m; wp; skip); (rcondt{1} 33; first by move => &m; wp; skip); (rcondt{1} 43; first by move => &m; wp; skip); (rcondt{1} 53; first by move => &m; wp; skip); (rcondt{1} 63; first by move => &m; wp; skip); (rcondt{1} 73; first by move => &m; wp; skip); (rcondf{1} 83; first by move => &m; wp; skip).
+    unroll{2} 3; unroll{2} 4; unroll{2} 5; unroll{2} 6; unroll{2} 7; unroll{2} 8; unroll{2} 9; unroll{2} 10.
+      (rcondt{2} 3; first by move => &m; wp; skip); (rcondt{2} 12; first by move => &m; wp; skip); (rcondt{2} 21; first by move => &m; wp; skip); (rcondt{2} 30; first by move => &m; wp; skip); (rcondt{2} 39; first by move => &m; wp; skip); (rcondt{2} 48; first by move => &m; wp; skip); (rcondt{2} 57; first by move => &m; wp; skip); (rcondt{2} 66; first by move => &m; wp; skip); (rcondf{2} 75; first by move => &m; wp; skip).
+  exists* rp{2}; elim* => rp2.
+    seq 0 73 : (#[/2:15,16:]pre /\ 
+                Glob.mem{1} = iteri i{1} (fun (i2 : int) (mem : global_mem_t) =>
+                  storeW8 mem (to_uint (msgp{1} + (of_int i2)%W64)) (iteri 8 (fun (j1 : int) (r3 : W8.t) => 
+                    r3 `|` truncateu8 (rp{2}.[8 * i2 + j1] `<<` (of_int j1)%W8)) W8.zero)) mem1 /\ 
+                (forall k, 0 <= k < 8 => rp{2}.[8*i{2}+k] = (((((zeroextu32 a{2}.[8 * i{2} + k]) `<<` W8.one) + 
+                  W32.of_int 1664) * W32.of_int 80636) `>>` W8.of_int 28) `&` W32.one)).
+      wp; skip => /> *; do split.
+      rewrite (eq_iteri (fun (i : int) (mem : global_mem_t) => storeW8 mem (to_uint (msgp{2} + (of_int i)%W64)) (iteri 8 (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i + j] `<<` (of_int j)%W8)) W8.zero)) (fun (i2 : int) (mem : global_mem_t) => storeW8 mem (to_uint (msgp{2} + (of_int i2)%W64)) (iteri 8 (fun (j1 : int) (r3 : W8.t) => r3 `|`  truncateu8 (rp{2}.[8 * i{2} <- (((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 1   <- (((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 2 <- (((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 3 <- (((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 4 <- (((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 5 <- (((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 6 <- (((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 7 <- (((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i2 + j1] `<<` (of_int j1)%W8)) W8.zero)) _ _).
+        simplify => *.
+        rewrite (eq_iteri (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i2 + j] `<<` (of_int j)%W8)) (fun (j1 : int) (r3 : W8.t) => r3 `|` truncateu8 (rp{2}.[8 * i{2} <- (((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 1 <- (((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 2 <- (((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 3 <- (((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 4 <- (((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 5 <- (((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 6 <- (((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 7 <- (((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i2 + j1] `<<`            (of_int j1)%W8)) _ _).
+          by simplify => *; do 2! congr; rewrite !Array256.set_neqiE 1..16:/#.
+          by done.
+        by done.
+      move => k *.
+        rewrite !Array256.get_setE 1..8:/#.
+        case (k = 7) => ?; first by rewrite !H4 /=.
+        case (k = 6) => ?; first by rewrite !H5 /#.
+        case (k = 5) => ?; first by rewrite !H6 /#.
+        case (k = 4) => ?; first by rewrite !H7 /#.
+        case (k = 3) => ?; first by rewrite !H8 /#.
+        case (k = 2) => ?; first by rewrite !H9 /#.
+        case (k = 1) => ?; first by rewrite !H10 /#.
+        case (k = 0) => ?; first by rewrite !H11 /#.
+        by smt().
+    wp; skip => /> *; do split.
+      by smt().
+      by smt().
+      (rewrite iteriS; first by done) => /=.
+        cut ->: (iteri 8 (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i{2} + j] `<<` (of_int j)%W8)) W8.zero) = (truncateu8 ((((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` W8.zero) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` W8.one) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 2)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 3)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 4)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 5)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 6)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 7)%W8)).
+          rewrite iteri8 /=.
+          do 7! (rewrite H2; first by done).
+          cut ->: 8 * i{2} = 8 * i{2} + 0 by done.
+          rewrite H2; first by done.
+          by done. 
+        by done.
+   wp; skip => /> *; do split.
+     by rewrite iteri0.
+     by move => *; congr => /#.
+
+sp 0 4; 
+while{2} (#[/1:14,15:]pre /\ 0 <= i0{2} <= 32 /\
+            Glob.mem{2} = iteri i0{2} (fun i mem => storeW8 mem (to_uint (msgp{2} + (W64.of_int i))) 
+            (iteri 8 (fun j r => r `|` truncateu8 (rp{2}.[8*i+j] `<<` W8.of_int j)) W8.zero)) mem1) (32 - i0{2}).
+  move => &m z.
+  unroll 3; unroll 4; unroll 5; unroll 6; unroll 7; unroll 8; unroll 9; unroll 10.
+    (rcondt 3; first by wp; skip); (rcondt 7; first by wp; skip); (rcondt 11; first by wp; skip); (rcondt 15; first by wp; skip); (rcondt 19; first by wp; skip); (rcondt 23; first by wp; skip); (rcondt 27; first by wp; skip); (rcondt 31; first by wp; skip); (rcondf 35; first by wp; skip).
+  wp; skip => /> *; do split.
+    by smt().
+    by smt().
+    (rewrite iteriS; first by done) => /=.
+      cut ->: (iteri 8 (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{hr}.[8 * i0{hr} + j] `<<` (of_int j)%W8)) W8.zero) = (truncateu8 (rp{hr}.[8 * i0{hr}] `<<` W8.zero) `|` truncateu8 (rp{hr}.[8 * i0{hr} + 1] `<<` W8.one) `|` truncateu8 (rp{hr}.[8 * i0{hr} + 2] `<<` (of_int 2)%W8) `|` truncateu8 (rp{hr}.[8 * i0{hr} + 3] `<<` (of_int 3)%W8) `|` truncateu8 (rp{hr}.[8 * i0{hr} + 4] `<<` (of_int 4)%W8) `|` truncateu8 (rp{hr}.[8 * i0{hr} + 5] `<<` (of_int 5)%W8) `|` truncateu8 (rp{hr}.[8 * i0{hr} + 6] `<<` (of_int 6)%W8) `|` truncateu8 (rp{hr}.[8 * i0{hr} + 7] `<<` (of_int 7)%W8)).
+        by rewrite iteri8 /=.
+      by done.
+  by smt().
+
+wp; skip => />.
+  move => *; do split.
+    by rewrite iteri0.
+    move => *; do split.
+      by smt().
+      move => *.
+        by congr => /#.
+(*********)
 
 inline *; auto => />.
 
