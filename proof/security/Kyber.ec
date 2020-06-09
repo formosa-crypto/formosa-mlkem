@@ -297,11 +297,16 @@ proof.
   cut ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
             foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
   rewrite aux; first by smt(kvec_ge3). 
+search Real.(^).
+search StdRing.RField.exp Int.(+).
+
   pose a := inv q%r ^ 256.
-  rewrite (_: a^kvec = a^(kvec%r)). smt.
+  rewrite (_: a^kvec = a^(kvec%r)). 
+  rewrite rpow_int /a //.
+  + by rewrite StdRing.RField.powrE StdOrder.RealOrder.exprz_ge0 StdOrder.RealOrder.invr_ge0 le_fromint qE.
   rewrite (_: a^(kvec%r)^kvec = a^(kvec%r)^(kvec%r)). smt.
-  rewrite (_: a^(kvec*kvec) = a^(kvec%r*kvec%r)). smt.
-  rewrite (rpowM (inv q%r ^ 256)). smt. done.
+  rewrite (_: a^(kvec*kvec) = a^(kvec%r*kvec%r)). admit. 
+  rewrite (rpowM (inv q%r ^ 256)). admit. done.
 qed.
 
 realize encode_noise.
