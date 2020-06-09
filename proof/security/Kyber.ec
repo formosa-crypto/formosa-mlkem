@@ -297,28 +297,17 @@ proof.
   cut ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
             foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
   rewrite aux; first by smt(kvec_ge3). 
-  pose a := inv q%r ^ 256.
-  rewrite (_: a^kvec = a^(kvec%r)). smt.
-  rewrite (_: a^(kvec%r)^kvec = a^(kvec%r)^(kvec%r)). smt.
-  rewrite (_: a^(kvec*kvec) = a^(kvec%r*kvec%r)). smt.
-  rewrite (rpowM (inv q%r ^ 256)). smt. done.
+  by rewrite !StdRing.RField.powrE -StdRing.RField.exprM.
 qed.
 
 realize encode_noise.
 move => /> *.
-split; last by smt.
+split; last by rewrite round_poly_errE.
 rewrite /round_poly /round_poly_err /roundc_err  => />.
 apply H_MLWE.M.Vector.eq_vectorP => /> *.
-rewrite H_MLWE.M.Vector.offunvE; first by smt().
-rewrite H_MLWE.M.Vector.offunvE; first by smt().
-auto=> />. 
+rewrite H_MLWE.M.Vector.offunvE 1:/# H_MLWE.M.Vector.offunvE 1:/# /=.
 apply Array256.ext_eq => /> *.
-rewrite mapiE; first by smt().
-rewrite map2iE; first by smt().
-rewrite mapiE; first by smt().
-auto => />.
-rewrite PolyVec.roundc_errE.  
-by congr.
+by rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.  
 qed.
 
 realize matrix_props2.
