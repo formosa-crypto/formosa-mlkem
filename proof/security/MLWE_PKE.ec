@@ -506,7 +506,8 @@ end section.
 
 (* Now we shift things to make the upper bound computable as 
    based on a max over all messages. *)
-
+search noise_val.
+search rnd_err_v.
 op cv_bound : int.
 axiom cv_bound_valid _A s e r e2 m :
       s \in dshort =>
@@ -525,7 +526,6 @@ axiom noise_commutes n n' (b : int) :
 
 
 op noise_exp_part _A s e r e1 e2 = 
-    let t = _A *^ s + e in
     let u = m_transpose _A *^ r + e1 in
     let cu = rnd_err_u u in
           ((e `<*>` r) -&
