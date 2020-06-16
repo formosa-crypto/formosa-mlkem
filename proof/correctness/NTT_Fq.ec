@@ -103,7 +103,15 @@ move => [#] *.
 split; last by smt().
 split; first by smt().
 split; first by smt().
-exists (l-1). smt(@IntExtra @IntDiv).
+exists (l-1). split; last by smt(). rewrite /len0. move : H1 => [#]  ?? -> *.
+(* FIX ME *) 
+have ? : (0 <= l). case (0 < l). smt. move => *. admit.
+clear H12 H9 H7 H.
+move : H13 H8.
+ elim/natcase: l.
+move=> n le0_n ge0_n; rewrite (_ : n = 0)  1:/# expr0 => /#.
+by move=> n ge0_n   /=; rewrite exprS // mulKz.
+(*********) 
 move => *.
 wp.
 while (0 <= start <= 256 /\ 
@@ -152,15 +160,17 @@ while (1 <= len /\ len <= 128 /\ len = 2 ^ l /\
        2* (zetasctr - zetasctr1 ) * len <= 256 /\
        0 <= start <= 256 /\
        start = 2*(zetasctr - zetasctr1)*len) (256 -start); last first.
-wp;skip => [#] *. 
+wp;skip => [#] *.
+move : H => [#] *. 
 split; first by smt().
-move => [#] *.
+move => start zetasctr.
 split; first by smt().
 move => [#] *.
 split; last by smt().
 split; first by smt().
 split; first by smt().
-exists (l+1). smt(@IntExtra @IntDiv).
+(* FIXME *)
+exists (l+1).  split; last by smt(). rewrite /len0. rewrite exprS.  admit. smt().
 move => *.
 wp.
 while (0 <= start <= 256 /\ 

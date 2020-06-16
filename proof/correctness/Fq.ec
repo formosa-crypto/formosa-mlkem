@@ -1,4 +1,4 @@
-require import List Int IntExtra IntDiv CoreMap.
+require import AllCore List IntDiv CoreMap.
 require (****) ZModP.
 from Jasmin require  import JModel JWord.
 require import Montgomery.
@@ -27,8 +27,6 @@ clone import SignedReductions with
     proof qinv_bnd by (auto => />; smt).
 
 require import IndcpaDerand.
-
-print Mderand.
 
 lemma balmod_W16 a:
   a %%+- W16.modulus = W16.smod (a %% W16.modulus)
@@ -163,8 +161,8 @@ wp; skip  => &hr [#] //= ??.
 pose _c := _a * _b.
 rewrite /SREDC.
 rewrite SAR_sem16 SAR_sem16 /=. 
-rewrite (_: R*R = W32.modulus); first by auto => />.
-rewrite (_: R = W16.modulus); first by auto => />.
+rewrite (_: R*(R *R^0) = W32.modulus); first by rewrite expr0 /R  => />.
+rewrite (_: R = W16.modulus); first by rewrite /R => />.
 rewrite balmod_W32 balmod_W32 balmod_W16.
 rewrite /(`<<`) /sigextu32 /truncateu16 /=. 
 rewrite W16.of_sintK. 
@@ -322,6 +320,7 @@ rewrite (_:to_uint (- (of_int (x %% 4294967296))%W16) = to_uint (W16.of_int (-x)
   case (x %% (65536 * 65536) = 0). smt. smt.
  
 rewrite /BREDC.
+rewrite  (_: R^2 = W32.modulus); first by rewrite /R  /= expr0 /=.
 rewrite !balmod_W32  => /=.
 rewrite !balmod_W16.
 rewrite -H.
@@ -366,19 +365,20 @@ rewrite /add  => />.
 pose aszb := 2^asz.
 pose bszb := 2^bsz.
 move => ?? ?? ?? ??.
-have bounds_asz : 0 < aszb <= 16384;
-  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle asz 14 _) => /#].
-have bounds_bsz : 0 < bszb <= 16384; 
-  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle bsz 14 _) => /#].
-rewrite !to_sintD_small => />; first by  by smt().
-
+have bounds_asz : 0 < aszb <= 16384.
+rewrite(_: 16384 = 2^14); first by auto => />.
+split; [ apply gt0_pow2 | move => *; rewrite  /aszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
+have bounds_bsz : 0 < bszb <= 16384.
+rewrite(_: 16384 = 2^14); first by auto => />.
+split; [ apply gt0_pow2 | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
+rewrite !to_sintD_small => />; first  by smt().
 split; first by smt(@ZModRing).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;
-  rewrite (_: 2^(asz + 1) = aszb * 2); smt(@W16 @IntExtra). 
-+ move => maxx; rewrite (_: max asz bsz = bsz); 
-    [by smt() | by rewrite (_: 2^(bsz + 1) = bszb * 2); smt(@W16 @IntExtra)]. 
+  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
++ move => maxx; rewrite (_: max asz bsz = bsz); first by smt(). 
+  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
 qed.
 
 lemma sub_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
@@ -394,19 +394,20 @@ rewrite /sub  => />.
 pose aszb := 2^asz.
 pose bszb := 2^bsz.
 move => ?? ?? ?? ??.
-have bounds_asz : 0 < aszb <= 16384;
-  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle asz 14 _) => /#].
-have bounds_bsz : 0 < bszb <= 16384; 
-  first by split; [ apply gt0_pow2 | move => *; apply (pow_Mle bsz 14 _) => /#].
-rewrite !to_sintB_small => />; first by  by smt().
-
+have bounds_asz : 0 < aszb <= 16384.
+rewrite(_: 16384 = 2^14); first by auto => />.
+split; [ apply gt0_pow2 | move => *; rewrite  /aszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
+have bounds_bsz : 0 < bszb <= 16384.
+rewrite(_: 16384 = 2^14); first by auto => />.
+split; [ apply gt0_pow2 | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
+rewrite !to_sintB_small => />; first  by smt().
 split; first by smt(@ZModRing).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;
-  rewrite (_: 2^(asz + 1) = aszb * 2); smt(@W16 @IntExtra). 
-+ move => maxx; rewrite (_: max asz bsz = bsz); 
-    [by smt() | by rewrite (_: 2^(bsz + 1) = bszb * 2); smt(@W16 @IntExtra)]. 
+  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
++ move => maxx; rewrite (_: max asz bsz = bsz); first by smt(). 
+  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
 qed.
 
 end Fq.

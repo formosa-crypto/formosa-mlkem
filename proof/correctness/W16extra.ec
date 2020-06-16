@@ -1,4 +1,4 @@
-require import List Int IntExtra IntDiv CoreMap IntDiv.
+require import AllCore List IntDiv CoreMap IntDiv.
 from Jasmin require  import JModel JMemory.
 
 op b16 (a : W16.t) (b : int) = 
@@ -109,5 +109,5 @@ proof.
     case (to_uint a = 65535); first by smt(@W16).
     move => *.
     rewrite (_: (- to_uint a) %% 65536 = 65536 - to_uint a);
-           smt(@IntDiv @W16 @IntExtra).
+           smt(@IntDiv @W16 @Int).
 qed.

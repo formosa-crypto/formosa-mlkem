@@ -1,7 +1,7 @@
-require import Core Int IntDiv IntExtra Ring StdOrder.
+require import AllCore IntDiv Ring StdOrder.
 import Ring.IntID IntOrder.
 
-op ceil a b = -((-a)%/b).
+op ceil (a b : int) = -((-a)%/b).
 
 lemma ceilP a b :
   0 < b =>

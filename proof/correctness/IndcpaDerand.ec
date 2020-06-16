@@ -1,4 +1,4 @@
-require import List Int IntExtra IntDiv CoreMap.
+require import AllCore List IntDiv CoreMap.
 from Jasmin require import JModel.
 
 require import Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64
@@ -739,6 +739,7 @@ proof.
   rewrite (BitEncoding.BS2Int.bs2int_eq 8 (to_uint a %% W8.modulus) 
           (to_uint ((bits2w ((BitEncoding.BS2Int.int2bs 16 (to_uint a %% W16.modulus)))%BitEncoding.BS2Int))%W16 %% W8.modulus)) // 1,2:/#.
   by rewrite -of_intE of_uintK !modz_mod modz_dvd_pow.
+  by auto => />; smt.
 qed.
 
 lemma truncateu8_16K_W64 (a : W64.t) : truncateu8 a = truncateu8 (truncateu16 a).
@@ -748,6 +749,7 @@ proof.
   rewrite (BitEncoding.BS2Int.bs2int_eq 8 (to_uint a %% W8.modulus) 
           (to_uint ((bits2w ((BitEncoding.BS2Int.int2bs 16 (to_uint a %% W16.modulus)))%BitEncoding.BS2Int))%W16 %% W8.modulus)) // 1,2:/#.
   by rewrite -of_intE of_uintK !modz_mod modz_dvd_pow.
+  by auto => />;smt.
 qed.
 
 lemma truncateu16_shl (a : W32.t) : truncateu16 (a `<<` (W8.of_int 4)) = 

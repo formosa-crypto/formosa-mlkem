@@ -1,7 +1,7 @@
-require import AllCore Array128 Array256 Array768 IntDiv IntExtra Distr List DList Real RealExp RealExtra.
+require import AllCore Array128 Array256 Array768 IntDiv Distr List DList.
 require import ZModP.
 require import MLWE_PKE.
-
+import RField.
 theory Kyber.
 
 op q : int = 3329 axiomatized by qE.
@@ -262,9 +262,9 @@ proof.
   rewrite dlist1E //.
   cut ->: 256 = size (to_list p) by rewrite size_to_list.
   rewrite /StdBigop.Bigreal.BRM.big filter_predT /=.
-  elim (to_list p) => /=; first by rewrite powr0 1:/#.
+  elim (to_list p) => /=; first by rewrite expr0 1:/#.
   move => x l hind /=.
-    by rewrite hind duni_elem1E /pe addzC powrS; first by smt(size_ge0).
+    by rewrite hind duni_elem1E /pe addzC exprS; first by smt(size_ge0).
 qed.
 
 
@@ -286,10 +286,10 @@ proof.
   have aux : forall (x : real) (y : int), 0 <= y => 
               (foldr (fun (_ : int) (z : real) => x * z) 1%r (range 0 y)) = x ^ y.
     move => x y; elim y.
-    by rewrite range_geq //= ; rewrite powr0 /#.
-    move => j *; rewrite range_ltn 1:/# /= powrS // -H0.
+    by rewrite range_geq //= ; rewrite expr0 /#.
+    move => j *; rewrite range_ltn 1:/# /= exprS // -H0.
     have mulrC : forall (x y : real), x * y = y * x by smt(). (* how to use lemma?? *)
-    rewrite mulrC; congr.
+    congr.
     by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);
       first by rewrite !size_range.
   cut ->: (foldr (fun (_ : int) (z : real) => inv q%r ^ 256 * z) 1%r (range 0 kvec)) = inv q%r ^ 256 ^ kvec
@@ -297,7 +297,7 @@ proof.
   cut ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
             foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
   rewrite aux; first by smt(kvec_ge3). 
-  by rewrite !StdRing.RField.powrE -StdRing.RField.exprM.
+  by rewrite  exprM expr0 /=.
 qed.
 
 realize encode_noise.

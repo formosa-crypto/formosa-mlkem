@@ -1,4 +1,4 @@
-require import Core Int IntDiv IntExtra Ring StdOrder.
+require import AllCore IntDiv Ring StdOrder.
 import Ring.IntID IntOrder.
 
 theory SignedReductions.
@@ -9,8 +9,8 @@ op R = 2^k.
 
 lemma dvd4R : 4 %| R.
 proof.
-rewrite /R (_ : k = (k - 2) + 2) // -pow_add // 1:[smt(gt2_k)].
-by rewrite dvdz_mull (powS 1) // pow1 dvdzz.
+rewrite /R (_ : k = (k - 2) + 2) // exprDn // 1:[smt(gt2_k)].
+rewrite dvdz_mull (exprS _ 1) // expr1 dvdzz.
 qed.
 
 hint exact : dvd4R.
@@ -20,7 +20,7 @@ proof. by apply: (dvdz_trans 4). qed.
 
 hint exact : dvd2R.
 
-lemma gt0_R: 0 < R by apply: powPos.
+lemma gt0_R: 0 < R by apply: expr_gt0.
 
 (* [q] is the modulus *)
 op q: int.
@@ -76,14 +76,14 @@ lemma wd_bnd x :
 lemma div_pow x n m : 0 <= m <= n => 0 < x => x^n %/ x^m = x^(n - m).
 proof. (* FIXME: move *)
 move=> le_0mn gt0_x; rewrite eq_sym eqz_div.
-+ by apply/gtr_eqF/powPos.
-+ by apply/dvdzP; exists (x^(n - m)); rewrite pow_add /#.
-+ by rewrite pow_add /#.
++ by apply/gtr_eqF/expr_gt0.
++ by apply/dvdzP; exists (x^(n - m)); rewrite -exprDn /#.
++ by rewrite -exprDn /#.
 qed.
 
 lemma pow_div1 b k :
   0 < k => 0 < b => b^k %/ b = b^(k - 1).
-proof. by move=> *; rewrite -div_pow ?pow1 //#. qed.
+proof. by move=> *; rewrite -div_pow ?expr1 //#. qed.
 
 lemma pow_div2 b k :
   1 < k => 0 < b => b^k %/ b^2 = b^(k - 2).
@@ -110,7 +110,7 @@ proof. (* FIXME: move *)
 by move=> dvd_mp; rewrite mulrC div_mulr // mulrC.
 qed.
 
-lemma dvdNz m n : ((-m) %| n) = (m %| n).
+lemma dvdNz (m n : int) : ((-m) %| n) = (m %| n).
 proof. (* FIXME: move *) by rewrite !dvdzE modzN. qed.
 
 lemma div_mul p m n : 0 <= m => m %| p => p %/ (m * n) = p %/ m %/ n.
@@ -399,7 +399,7 @@ axiom k_pos: 0 < k.
 
 op R = 2^k.
 
-lemma R_gt0: 0 < R by smt(powPos).
+lemma R_gt0: 0 < R by smt(expr_gt0).
 
 (* [N] is the modulus *)
 op N: int.
@@ -447,7 +447,7 @@ lemma nosmt REDC'_bnds T n:
 proof.
 pose m := ((T %% R)*N') %% R.
 pose t := (T + m*N) %/ R.
-move=> Hn; rewrite powS //; move=> [HT1 HT2].
+move=> Hn; rewrite exprS //; move=> [HT1 HT2].
 have [Hm1 Hm2]: 0 <= m < R.
  split => *; first smt. (*modz_ge0*)
  move: (ltz_mod ((T %% R)*N') R _); first smt.
@@ -482,7 +482,7 @@ lemma REDC_corr T:
 proof.
 move=> *; rewrite /REDC /=; split.
  move: (REDC'_bnds T 0 _) => />.
- rewrite pow1 pow0 H /= /#.
+ rewrite expr1 expr0 H /= /#.
 rewrite -(REDC'_congr T).
 case: (N <= REDC' T) => // ?.
 by rewrite (_:REDC' T - N = REDC' T + (-1) * N) 1:/# modzMDr.
@@ -525,10 +525,10 @@ elim/natind: r T => /= /> *.
 rewrite REDCkS 1:/#.
 move: H3; case: (n=0) => E.
  rewrite E !REDCk0 //= => ?.
- move: (REDC'_bnds T 0 _ _) => //=; rewrite pow0 => ?.
+ move: (REDC'_bnds T 0 _ _) => //=; rewrite expr0 => ?.
  split.
   split => *; smt().
- by rewrite pow1; apply REDC'_congr.
+ by rewrite expr1; apply REDC'_congr.
 move=> *.
 move: (H0 (REDC' T) _ _). smt().
  by move: (REDC'_bnds T n _ _) => //=.
@@ -536,7 +536,7 @@ move=> [??].
 split; first smt().
 rewrite H5.
 move: (REDC'_congr T) => ?.
-by rewrite -modzMml H6 modzMml powS /#.
+by rewrite -modzMml H6 modzMml exprS /#.
 qed.
 
 op REDC T = let t = REDCk r T in if N <= t then t-N else t.
