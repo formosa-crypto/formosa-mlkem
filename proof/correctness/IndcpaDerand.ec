@@ -786,6 +786,9 @@ lemma truncateu8_truncate16_shr (a : W64.t) :
 proof.
   rewrite wordP => *.
   rewrite /truncateu8 !of_intwE H /= /int_bit to_uint_shr 1:/# to_uint_shr 1:/# !of_uintK /=.
+  cut ->: 4 = 2^2 by done.
+  cut ->: 256 = 2^8 by done.
+  cut ->: 65536 = 2^16 by done.
   rewrite (modz_pow2_div 16 2 (to_uint a)) //=.
   cut ->: to_uint a %/ 4 %% 16384 %% 256 = to_uint a %/ 4 %% 256.
     pose x := to_uint a %/ 4.
