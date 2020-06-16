@@ -1,4 +1,4 @@
-require import AllCore Real Distr SmtMap.
+require import AllCore Distr SmtMap.
 require (****) PKE H_MLWE.
 
 (** NOTE: WHEN CLONING THIS THEORY ALL AXIOMS MUST BE PROVED *)
@@ -395,8 +395,12 @@ lemma noise_exp_val _A s e r e1 e2 m :
           ((e `<*>` r) -&
            (s `<*>` e1) -&
            (s `<*>` cu) +& e2
-          ) +& cv
-     by rewrite /noise_exp //= encode_noise //= matrix_props1 matrix_props2 //=; ring. 
+          ) +& cv.
+proof.
+    move :matrix_props1 matrix_props2.
+    rewrite /noise_exp //= encode_noise => matrix_props1 matrix_props2. 
+    by rewrite matrix_props1 //= matrix_props2 //=; ring. 
+qed.
 
 (* The above noise expression is computed over the abstract
    rings that define the scheme. Noise bounds are checked and
@@ -482,7 +486,9 @@ rewrite (_:
      rnd_err_u (m_transpose (oget LRO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2})))) = 
 m_encode m{2} +& noise_exp (oget LRO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
                    e2{2} m{2}); last by apply good_decode.
-by rewrite  noise_exp_val //= matrix_props1 matrix_props2 => />; ring.
+move : matrix_props1 matrix_props2.
+rewrite  noise_exp_val //= => matrix_props1 matrix_props2.
+by rewrite matrix_props1 matrix_props2 => />; ring.
 auto => />;first by smt(duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
 seq 5 7 : ( #pre /\
            ={LRO.m,s,e,sd,_A} /\

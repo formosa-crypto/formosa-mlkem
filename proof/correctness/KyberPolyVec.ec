@@ -1,4 +1,4 @@
-require import List Int IntExtra IntDiv CoreMap IntDiv.
+require import AllCore List IntDiv CoreMap IntDiv.
 from Jasmin require  import JModel JMemory.
 require import W16extra Array256 Array128 Array768.
 require import Fq.

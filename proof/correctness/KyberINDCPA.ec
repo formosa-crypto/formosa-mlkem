@@ -1,4 +1,4 @@
-require import List Int IntExtra IntDiv CoreMap.
+require import AllCore List IntDiv CoreMap.
 from Jasmin require import JModel.
 
 require import Fq.
@@ -71,7 +71,7 @@ admitted.
 
 section.
 
-declare module H : H_MLWE.H_MLWE_ROM.Types.ARO.
+declare module H : H_MLWE.H_MLWE_ROM.POracle.
 
 lemma kg_corr : 
   equiv [ MLWE_PKE(H).kg ~ Mderand.kg :
