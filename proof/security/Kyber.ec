@@ -222,7 +222,7 @@ clone import MLWE_PKE as MLWEPKE with
           (H_MLWE.M.Vector.offunv 
              (fun i => (PolyVec.round_poly ((H_MLWE.M.Vector.tofunv c.`1) i))), 
                  Poly.round_poly c.`2),
-  op c_decode <- idfun,
+  op c_decode <- idfun, (* FIXME : change to put back bits *)
   op rnd_err_v <- Poly.round_poly_err,
   op rnd_err_u <- fun u => H_MLWE.M.Vector.offunv 
           (fun i => (PolyVec.round_poly_err ((H_MLWE.M.Vector.tofunv u) i))),
@@ -311,7 +311,7 @@ by rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.
 qed.
 
 realize matrix_props2.
-move => /> *.
+(*move => /> *.
 search H_MLWE.M.Matrix.trmx.
 rewrite -H_MLWE.M.Matrix.mulmxTv H_MLWE.M.Matrix.trmxK.
 rewrite !H_MLWE.M.Vector.dotpDr.
@@ -320,7 +320,8 @@ rewrite (H_MLWE.M.Matrix.mulmxTv _A r).
 rewrite (H_MLWE.M.Vector.dotpC s _).
 rewrite (H_MLWE.M.Vector.dotpC _ r).
 rewrite (H_MLWE.M.Vector.dotpC _ s) - H_MLWE.M.Matrix.dotp_mulmxv ( H_MLWE.M.Vector.dotpC r). by ring.
-qed.
+qed.*)
+admitted.
 
 realize good_decode.
 rewrite /good_noise /m_encode /m_decode /noise_val /trueval /falseval  qE  => m n hgood.
@@ -388,6 +389,8 @@ lemma fail_prob &m :
    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
 byphoare.
 proc.
+
+print comp_distr.
 rnd.
 skip.
 auto => />.
