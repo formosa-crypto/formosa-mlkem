@@ -1,7 +1,7 @@
 require import AllCore IntDiv Array256 Array128.
-require import Fq.
+require import Ring StdOrder Fq.
 
-import Fq.
+import Fq IntOrder.
 theory NTT_Fq.
 
 import Kyber_.ZModRing.
@@ -79,123 +79,102 @@ axiom invntt_spec_h _r  :
 lemma ntt_spec_ll : islossless NTT.ntt.
 proc.
 sp.
-while (1 <= len /\ len <= 128 /\ exists l, len = 2^l /\   0 <= zetasctr <= 127 /\
-   2*(zetasctr+1)*len = 256) (len); last by
- auto => />;split; [ by exists 7 | by smt()].
-move => *.
-wp. sp.
-move => *.
-exists *zetasctr.
-elim* => zetasctr1 l.
-while (1 <= len /\ len <= 128 /\ len = 2 ^ l /\ 
-        0 <= zetasctr1 <= 127 /\ 
-        0 <= zetasctr <= 127 /\ 
-        2 * (zetasctr1+ 1) * len = 256 /\ 
-        2 <= len /\ 
-       2* (zetasctr - zetasctr1 ) * len <= 256 /\
-       0 <= start <= 256 /\
-       start = 2*(zetasctr - zetasctr1)*len) (256 -start); last first.
-wp;skip => [#] *. 
-split; first by smt().
-move => [#] *.
-split; first by smt().
-move => [#] *.
-split; last by smt().
-split; first by smt().
-split; first by smt().
-exists (l-1). split; last by smt(). rewrite /len0. move : H1 => [#]  ?? -> *.
-(* FIX ME *) 
-have ? : (0 <= l). case (0 < l). smt. move => *. admit.
-clear H12 H9 H7 H.
-move : H13 H8.
- elim/natcase: l.
-move=> n le0_n ge0_n; rewrite (_ : n = 0)  1:/# expr0 => /#.
-by move=> n ge0_n   /=; rewrite exprS // mulKz.
-(*********) 
-move => *.
-wp.
-while (0 <= start <= 256 /\ 
-       1 <= len /\ len <= 128  /\ start <= j <= start + len /\ 
-        0 <= zetasctr <= 127 /\ 
-2 * (zetasctr1 + 1) * len = 256 /\ 
-       start = 2*(zetasctr -1 - zetasctr1) * len /\ 
-       2* (zetasctr - zetasctr1 ) * len <= 256) (start + len - j); last first. 
-wp;skip => *.
-split;  first by smt().
-move => *.
-split; first by smt().
-move => *.
-split; last by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; last by smt().
-smt().
-move => *.
-auto => />.
-move => *. smt().
+while (   1 <= len /\ len <= 128
+       /\ exists l, 0 <= l /\ len = 2^l
+       /\ 0 <= zetasctr <= 127
+       /\ 2*(zetasctr+1)*len = 256) (len);
+  last by auto => />; split; [ by exists 7 | by smt()].
+move=> z; wp; sp => *; exists *zetasctr; elim* => zetasctr1 l.
+while (   1 <= len /\ len <= 128 /\ 0 <= l /\ len = 2 ^ l
+       /\ 0 <= zetasctr1 <= 127
+       /\ 0 <= zetasctr <= 127
+       /\ 2 * (zetasctr1+ 1) * len = 256
+       /\ 2 <= len
+       /\ 2* (zetasctr - zetasctr1 ) * len <= 256
+       /\ 0 <= start <= 256
+       /\ start = 2*(zetasctr - zetasctr1)*len) (256 -start); last first.
++ wp; skip => [#] &m h; split; first by smt().
+  move => [#] start zt0; split; first by smt().
+  move => [#] ge2576_start h2; split; last by smt().
+  do 2! (split; first by smt()).
+have gt0_l: 0 < l.
+  have /ler_eqVlt [<<- /=|/#]: 0 <= l by move: h2 => [#].
+  have: 2 <= len{m} by move: h => [#] *.
+  have ->: len{m} = 2^0 by move: h2 => [#] *.
+  by rewrite expr0.
+exists (l-1); do! split; 1,3,4,5:smt().
++ have ->: len{m} = 2^l by move: h2=> [#].
+  by rewrite -{1}(@subrK l 1) exprDn 1:/# // expr1 mulzK.
+move=> *; wp.
+while (   0 <= start <= 256
+       /\ 1 <= len /\ len <= 128
+       /\ start <= j <= start + len
+       /\ 0 <= zetasctr <= 127
+       /\ 2 * (zetasctr1 + 1) * len = 256
+       /\ start = 2*(zetasctr -1 - zetasctr1) * len
+       /\ 2 * (zetasctr - zetasctr1 ) * len <= 256) (start + len - j); last first. 
++ wp; skip=> *; split; first by smt().
+  move=> *; split; first by smt().
+  move => *; split; last by smt().
+  do 6! (split; first by smt()).
+  split; smt().
+by auto=> /> /#.
 qed.
-
 
 lemma invntt_spec_ll : islossless NTT.invntt.
 proc.
 sp.
 while(0<=j<=256) (256-j); first by move => *; auto => /> /#.
 wp.
-while (2 <= len /\ len <= 256 /\ exists l, len = 2^l /\   0 <= zetasctr <= 128 /\
-   zetasctr * len = 128 * (len - 2)) (256-len); last by
- auto => />; split; [ by exists 1 | by smt()].
-move => *.
-wp. sp.
-move => *.
-exists *zetasctr.
-elim* => zetasctr1 l.
-while (1 <= len /\ len <= 128 /\ len = 2 ^ l /\ 
-        0 <= zetasctr1 <= 128 /\ 
-        0 <= zetasctr <= 128 /\ 
-        zetasctr1 * len = 128 * (len - 2) /\ 
-       2* (zetasctr - zetasctr1 ) * len <= 256 /\
-       0 <= start <= 256 /\
-       start = 2*(zetasctr - zetasctr1)*len) (256 -start); last first.
-wp;skip => [#] *.
-move : H => [#] *. 
-split; first by smt().
-move => start zetasctr.
-split; first by smt().
-move => [#] *.
-split; last by smt().
-split; first by smt().
-split; first by smt().
-(* FIXME *)
-exists (l+1).  split; last by smt(). rewrite /len0. rewrite exprS.  admit. smt().
-move => *.
-wp.
-while (0 <= start <= 256 /\ 
-       1 <= len /\ len <= 128  /\ start <= j <= start + len /\ 
-        0 <= zetasctr <= 128 /\ 
-        zetasctr1 * len = 128 * (len - 2) /\ 
-       start = 2*(zetasctr -1 - zetasctr1) * len /\ 
-       2* (zetasctr - zetasctr1 ) * len <= 256) (start + len - j); last first. 
-wp;skip => *.
-split; first by smt().
-move => *.
-split; first by smt().
-move => *.
-split; last by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; last by smt().
-smt().
-move => *.
-auto => />.
-move => *. smt().
+while (   2 <= len /\ len <= 256
+       /\ exists l, 0 <= l /\ len = 2^l
+       /\ 0 <= zetasctr <= 128
+       /\ zetasctr * len = 128 * (len - 2)) (256-len);
+ last by auto => />; split; [exists 1 | smt()].
+move => *; wp; sp=> *; move=> *; exists *zetasctr.
+elim*=> zetasctr1 l.
+while (   1 <= len /\ len <= 128 /\ 0 <= l /\ len = 2 ^ l
+       /\ 0 <= zetasctr1 <= 128
+       /\ 0 <= zetasctr <= 128
+       /\ zetasctr1 * len = 128 * (len - 2)
+       /\ 2 * (zetasctr - zetasctr1 ) * len <= 256
+       /\ 0 <= start <= 256
+       /\ start = 2 * (zetasctr - zetasctr1)*len) (256 -start); last first.
++ wp; skip => [#] &m h.
+  split; first by smt().
+  move => start zetasctr; split; first by smt().
+  move=> ge256_st h2; split; last by smt().
+  do 2! (split; first by smt()).
+have gt0_l: 0 < l.
+  have /ler_eqVlt [<<- /=|/#]: 0 <= l by move: h2 => [#].
+  have: 2 <= len{m} by move: h => [#] *.
+  have ->: len{m} = 2^0 by move: h2 => [#] *.
+  by rewrite expr0.
+exists (l+1); do! split; 1,3,4,5:smt().
++ have ->: len{m} = 2^l by move: h2=> [#].
+  by rewrite exprS 1:/# mulrC.
+move => *; wp.
+while (   0 <= start <= 256
+       /\ 1 <= len /\ len <= 128  /\ start <= j <= start + len
+       /\ 0 <= zetasctr <= 128
+       /\ zetasctr1 * len = 128 * (len - 2)
+       /\ start = 2 * (zetasctr -1 - zetasctr1) * len
+       /\ 2 * (zetasctr - zetasctr1 ) * len <= 256) (start + len - j); last first.
++ wp;skip => *.
+  split; first by smt().
+  move => *.
+  split; first by smt().
+  move => *.
+  split; last by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; last by smt().
+  smt().
+by auto=> /> /#.
 qed.
 
 lemma ntt_spec _r :
