@@ -20,13 +20,30 @@ lemma logs :
    log2 8   = 3 /\
    log2 4   = 2 /\
    log2 2   = 1 /\
-   log2 1   = 0
-  by smt(pow0 pow2_1 pow2_2 pow2_3 pow2_4 pow2_5 pow2_6 pow2_7  log2E log2pos).
+   log2 1   = 0.
+proof.
+do split.
+smt(pow2_7 log2E log2pos).
+smt(pow2_6 log2E log2pos).
+smt(pow2_5 log2E log2pos).
+smt(pow2_4 log2E log2pos).
+smt(pow2_3 log2E log2pos).
+smt(pow2_2 log2E log2pos).
+smt(pow2_1 log2E log2pos).
+rewrite (log2E 1 0) //.
+qed.
 
 lemma logdiv2 n l :
   1 < n =>
   n = 2^l =>
-  log2 (n %/2) = log2 n - 1 by smt(@IntExtra log2E). 
+  log2 (n %/2) = log2 n - 1. 
+proof.
+move => *.
+rewrite (log2E (n %/ 2) (log2 n - 1)).
+by smt(@Ring.IntID log2E). 
+by smt(@Ring.IntID log2E). 
+done.
+qed.
 (**************)
 
 
@@ -75,7 +92,7 @@ proof.
 move => *.
 rewrite of_intwE => />.
 rewrite /int_bit => />. 
-case (x = 0); first by auto => />.
+case (x = 0); first by smt(@Ring.IntID) => />.
 move => *; case(x=1); first by auto => />.
 move => *; case(x=2); first by auto => />.
 move => *; case(x=3); first by auto => />.
@@ -98,13 +115,14 @@ lemma getsign x :
 (x \slt W16.zero => x `|>>` (of_int 15)%W8 = (of_int 65535)%W16) /\
 (W16.zero \sle x => x `|>>` (of_int 15)%W8 = W16.zero).
 proof.
-rewrite /(`|>>`) sarE  sltE sleE !to_sintE => />.
+rewrite /(`|>>`) sarE sltE sleE !to_sintE => />.
 rewrite (_: W16.smod 0 = 0); first by rewrite /smod => />. 
 split.
 move => *.
 have  ? : (32768 <= to_uint x).
    move : H; rewrite /smod => />; smt(@W16).
 apply W16.ext_eq => /> *.
+rewrite /smod.
 rewrite initiE => />.
 rewrite (_: min 15 (x0+15) = 15); first by smt().
 rewrite m1true => />.
@@ -130,8 +148,8 @@ lemma poly_csubq_corr_h ap :
            pos_bound256_cxq rp 0 256 2 
            ==>
            ap = lift_array256 res /\
-           pos_bound256_cxq res 0 256 1 ] 
-. 
+           pos_bound256_cxq res 0 256 1 ].
+proof.
 move => *.
 proc.
 while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 i 1 /\ 0 <= i<=256).
@@ -183,14 +201,66 @@ move : H; rewrite /pos_bound256_cxq => bnd.
 move : (bnd i{hr} _); first by smt().
 auto => />.
 rewrite qE => /> *.
-split; first by smt(@W16).
+split. 
+
+(****)
+rewrite to_sintN.
+search (to_sint (W16.of_int _)).
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+done.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt().
+(****)
+
+(****)
+rewrite to_sintN.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+done.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt().
+(****)
+
+
+(*search to_sint.
+rewrite (W16.to_sintE (- (of_int 3329)%W16)).
+rewrite /smod.
+cut ->: 2 ^ (16 - 1) <= to_uint (- (of_int 3329)%W16).
+smt(@W16).
+(*first by smt(@W16).*)
 move => *.
 rewrite (_: to_sint (- (of_int 3329)%W16) = -3329). 
    by rewrite to_sintE /smod to_uintN => />. 
-by smt().
+by smt().*)
 rewrite inzmodD. ring. 
 rewrite to_sintE /smod to_uintN => />. 
-smt.
+
+(***)
+have ?: 3329 %% q = 0.
+rewrite qE.
+smt().
+rewrite inzmodN.
+rewrite /zero.
+cut ->: - - inzmod 3329 = inzmod 3329. smt(@ZModRing).
+rewrite -eq_inzmod.
+smt().
+(***)
+
 move : H H0; rewrite /pos_bound256_cxq => /> *.
 split.
 move => k.
@@ -205,21 +275,145 @@ move => asp.
 rewrite (H4 asp) qE => />.
 rewrite (_: rp{hr}.[i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 =
               (rp{hr}.[i{hr}])); first by ring.
-split;by smt(@W16).
+split; first by smt(@W16 @Ring.IntID @JWord.W16.WRingA).
+
+(*****)
+move => *.
+rewrite to_sint_unsigned.
+done.
+rewrite -to_sint_unsigned.
+done.
+move : (H i{hr}).
+rewrite H6 H7 H8.
+simplify.
+rewrite qE.
+simplify.
+smt().
+(*****)
+
 move => *.
 rewrite (H5 _); first by smt(@W16).
 auto => />.
-split; first by smt(@W16).
+split.
+
+(******)
+search W16.to_sint.
+move : H9.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H6 H7 H8.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt().
+(******)
+
 move => *.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />. 
 rewrite of_sintK => />.
-rewrite of_sintK => />.
+(*rewrite of_sintK => />.*)
 rewrite /smod => />.
-split; first by smt(@W16).
-move => *. smt.
+split.
+
+(******)
+search W16.to_sint.
+move : H9.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H6 H7 H8.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt().
+(******)
+
+move => *. 
+
+(******)
+move : H9.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H6 H7 H8.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+move : H10 H11.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H6 H7 H8.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+move => *.
+move : (H i{hr}).
+rewrite H6 H7 H8.
+simplify.
+rewrite qE.
+simplify.
+smt().
+(******)
+
 rewrite qE to_sintN of_sintK => />.
-rewrite /smod => />. smt.
+rewrite /smod => />. 
+
+move : (H i{hr}).
+rewrite H6 H7 H8.
+simplify.
+rewrite qE.
+simplify.
+rewrite /smod /=.
+smt().
+
 split; last by smt().
 move => *.
 case (0 <= k < i{hr}).
@@ -234,21 +428,201 @@ move => asp.
 rewrite (H4 asp) qE => />.
 rewrite (_: rp{hr}.[i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 =
               (rp{hr}.[i{hr}])); first by ring.
-split;by smt(@W16).
+split.
+smt().
+
+(******)
+move => *.
+have ?: 0 < k \/ i{hr} <= k.
+smt().
+have ?: i{hr} <= k.
+smt().
+have ?: i{hr} = k.
+smt().
+move : asp.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt().
+(******)
+
 move => *.
 rewrite (H5 _); first by smt(@W16).
 auto => />.
-split; first by smt(@W16).
+split.
+
+(******)
+move : H9.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt().
+(******)
+
 move => *.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />. 
 rewrite of_sintK => />.
-rewrite of_sintK => />.
+(*rewrite of_sintK => />.*)
 rewrite /smod => />.
-split; first by smt(@W16).
-move => *. smt.
+split.
+
+(******)
+move : H9.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt().
+(******)
+
+move => *. 
+
+(******)
+move : H9.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+move : H10 H11.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+move => *.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+(******)
+
 rewrite qE to_sintN of_sintK => />.
-rewrite /smod => />. smt.
+rewrite /smod => />. 
+
+(******)
+move => *.
+have ?: 0 < k \/ i{hr} <= k.
+smt().
+have ?: i{hr} <= k.
+smt().
+have ?: i{hr} = k.
+smt().
+move : H9.
+rewrite sltE.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+cut ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+move : H10.
+rewrite to_sintB_small.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H i{hr}).
+rewrite H1 H3.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite of_sintK /=.
+rewrite /smod /=.
+move => *.
+smt tmo=10. 
+(******)
+
 by auto => /> /#. 
 qed.
 
