@@ -2880,10 +2880,17 @@ rewrite Array256.set_eqiE; first 2 by smt(@W64).
 rewrite Array256.set_eqiE; first 2 by smt(@W64). 
 
 
-rewrite !to_sintD_small. smt(@Fq @W16).
+rewrite !to_sintD_small. 
+smt.
 rewrite r0val inzmodD rrval rrvall.
 split. split; by ring.
-smt(@W16 @Fq).
+split.
+split.
+done.
+done.
+split.
+smt().
+smt().
 
 (* Second complex multiplication *)
 
@@ -2932,8 +2939,15 @@ move : bas; rewrite /signed_bound_cxq => /> bas.
 move : bbs; rewrite /signed_bound_cxq => /> bbs. 
  move : (bbs ( (4*i{hr} + 3)) _); first by smt().
  move : (bbs (4*i{hr}+2) _); first by smt(@W64). move => bibnd bi1bnd.
+rewrite /R qE /=.
+split.
+move : ai1bnd.
+rewrite /R qE => /> *.
+smt. 
+move : ai1bnd.
+rewrite /R qE => /> *.
+smt. 
 
-smt(@Fq @W16).
 by rewrite eq_inzmod -rval !inzmodM; smt(@Fq).
 
 seq 1 : (#{~inzmod (to_sint r0) = inzmod (to_sint ap.[4 * i + 3]) * inzmod (to_sint bp.[4 * i + 3]) * inzmod 169}pre /\
@@ -3087,7 +3101,13 @@ rewrite Array256.set_eqiE; first 2 by smt(@W64).
 rewrite !to_sintD_small. smt(@Fq).
 rewrite r0val inzmodD rrval rrvall.
 split. split; by ring.
-smt(@W16 @Fq).
+split.
+split.
+done.
+done.
+split.
+smt().
+smt().
 
 (**** FINAL GOAL *)
  auto => />.
