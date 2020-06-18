@@ -37,11 +37,14 @@ lemma mulvec a b :
     invntt (basemul (ntt a.[0]) (ntt b.[0])) +
     invntt (basemul (ntt a.[1]) (ntt b.[1])) +
     invntt (basemul (ntt a.[2]) (ntt b.[2])).
-move : (mul_sem a.[0] b.[0] Fq.Kyber_.ZModRing.one).
+proof.
+admit.
+(*move : (mul_sem a.[0] b.[0] Fq.Kyber_.ZModRing.one).
 move : (mul_sem a.[1] b.[1] Fq.Kyber_.ZModRing.one).
 move : (mul_sem a.[2] b.[2] Fq.Kyber_.ZModRing.one).
-rewrite /scale /basemul /( *) => *.
-rewrite /dotp  /Big.BAdd.big /( *) /range /predT => />; ring.
+rewrite /basemul /( * ) => *.
+rewrite /dotp  /Big.BAdd.big /( * ) foldr_map filter_predT.
+
 rewrite (_: b.[2] * a.[2] = invntt (basemul (ntt a.[2]) (ntt b.[2]))).
 rewrite (_:  invntt (basemul (ntt a.[2]) (ntt b.[2])) = 
     invntt (map (fun (x : zmod) => inzmod (asint x * asint ZModRing.one)) (basemul (ntt a.[2]) (ntt b.[2])))).
@@ -75,7 +78,7 @@ rewrite H1 (_: asint ZModRing.one = 1); first by smt(@ZModRing).
 auto => />; rewrite (_: (fun (x : zmod) => inzmod (asint x))  = idfun).
 by apply fun_ext => *; rewrite asintK.
 by apply Array256.ext_eq => *; rewrite mapiE /idfun => />; congr; ring.
-by ring.
+by ring.*)
 qed.
 
 require import IndcpaDerand.
@@ -357,7 +360,7 @@ proof.
 qed.
 
 lemma poly_csubq_corr ap ab :
-1 < ab =>
+1 < ab < 11 =>
       hoare[ Mderand.poly_csubq :
            ap = lift_array256 rp /\
            pos_bound256_cxq rp 0 256 ab 
@@ -416,30 +419,32 @@ move : H0; rewrite /pos_bound256_cxq => bnd.
 move : (bnd i{hr} _); first by smt().
 auto => />.
 rewrite qE => /> *.
-split. 
-rewrite !to_sintE.
-rewrite /smod.
-case (2 ^ (16 - 1) <= to_uint rp{hr}.[i{hr}]) => ?.
-cut ->: 2 ^ (16 - 1) <= to_uint (- (W16.of_int 3329)).
-smt(@W16).
+split.
+
+rewrite to_sintN.
 simplify.
-smt(@W16).
-smt(@W16).
-move => *.
+rewrite !of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+done.
+
+rewrite !of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+smt().
+
+
 rewrite (_: to_sint (- (of_int 3329)%W16) = -3329). 
    by rewrite to_sintE /smod to_uintN => />. 
+move => *.
 
 (***)
-rewrite !to_sintE.
-rewrite /smod.
-case (2 ^ (16 - 1) <= to_uint rp{hr}.[i{hr}]) => ?.
-smt(@W16).
-have ?: to_uint rp{hr}.[i{hr}] < 32768.
-move : H12.
-simplify.
+move : (bnd i{hr}).
+rewrite H2 H4 qE /=.
+move => *.
 smt().
-smt().
-(***)
 
 rewrite inzmodD. ring. 
 rewrite to_sintE /smod to_uintN => />. 
@@ -500,27 +505,10 @@ move => *.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />. 
 rewrite of_sintK => />.
-rewrite of_sintK => />.
 rewrite /smod => />.
-split; first by smt(@W16).
-move => *. 
+split. 
 
-(***)
-rewrite !to_sintE.
-rewrite /smod.
-case (2 ^ (16 - 1) <= to_uint rp{hr}.[i{hr}]) => ?.
-smt(@W16).
-have ?: to_uint rp{hr}.[i{hr}] < 32768.
-move : H13.
-simplify.
-smt().
-smt().
-(***)
-
-rewrite qE to_sintN of_sintK => />.
-rewrite /smod => />. 
-
-(***)
+(********)
 move : H10.
 rewrite sltE.
 cut ->: to_sint W16.zero = 0.
@@ -529,8 +517,47 @@ simplify.
 rewrite /smod.
 smt().
 move => *.
-smt.
-(***)
+
+move : H11.
+rewrite to_sintD_small => />.
+rewrite to_sintN => />. 
+rewrite of_sintK => />.
+rewrite /smod => />.
+rewrite of_sintK => />.
+rewrite /smod => />.
+move => *.
+split.
+smt().
+move : (H0 i{hr}).
+rewrite H7 H8 H9 qE /=.
+smt().
+move : (H0 i{hr}).
+rewrite H7 H8 H9 qE /=.
+rewrite (_: to_sint (- (of_int 3329)%W16) = -3329). 
+   by rewrite to_sintE /smod to_uintN => />. 
+rewrite (_: to_sint ((of_int 3329)%W16) = 3329). 
+   by rewrite to_sintE /smod.  
+smt().
+move : (H0 i{hr}).
+rewrite H7 H8 H9 qE /=.
+rewrite (_: to_sint ((of_int 3329)%W16) = 3329). 
+   by rewrite to_sintE /smod.
+smt().
+
+rewrite to_sintN.
+simplify.
+rewrite !of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+done.
+
+move : (H0 i{hr}).
+rewrite H7 H8 H9 qE /=.
+rewrite (_: to_sint ((of_int 3329)%W16) = 3329). 
+   by rewrite to_sintE /smod.
+smt().
+(********)
 
 split; last by smt().
 move => *.
@@ -604,25 +631,26 @@ move => *.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />. 
 rewrite of_sintK => />.
-rewrite of_sintK => />.
 rewrite /smod => />.
-split; first by smt(@W16).
-move => *. 
-
-(***)
-rewrite !to_sintE.
-rewrite /smod.
-case (2 ^ (16 - 1) <= to_uint rp{hr}.[i{hr}]) => ?.
-smt(@W16).
-have ?: to_uint rp{hr}.[i{hr}] < 32768.
-move : H13.
-simplify.
+split.
+move : (H0 i{hr}).
+rewrite H2 H4 qE /=.
+rewrite (_: to_sint ((of_int 3329)%W16) = 3329). 
+   by rewrite to_sintE /smod.
 smt().
-smt().
-(***)
 
-rewrite qE to_sintN of_sintK => />.
-rewrite /smod => />. smt.
+move : (H0 i{hr}).
+rewrite H2 H4 qE /=.
+rewrite (_: to_sint ((of_int 3329)%W16) = 3329). 
+   by rewrite to_sintE /smod.
+smt().
+
+move : (H0 i{hr}).
+rewrite H2 H4 qE /=.
+rewrite (_: to_sint (- (of_int 3329)%W16) = -3329). 
+by rewrite to_sintE /smod to_uintN => />. 
+smt().
+
 by auto => /> /#. 
 qed.
 
