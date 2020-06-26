@@ -688,15 +688,51 @@ op fail_prob : real.
 axiom fail_prob &m : 
    Pr[ CorrectnessBound_simpl.main() @ &m : res] <= fail_prob.
 
-(* FIX ME STATISTICAL DISTANCE *)
-axiom simpl_dist_bound &m : true. (* Delta u_distr duni <= simpl_dist *)
+module StatDist = {
+  proc trueD(p : vector -> bool) : bool = { var u; u <$ u_distr; return p(u); }
+  proc unifD(p : vector -> bool) : bool = { var u; u <$ duni; return p(u); }
+}.
+
+axiom simpl_dist_bound &m (p : vector -> bool): 
+  `| Pr[ StatDist.trueD(p) @ &m : res ] - 
+     Pr[ StatDist.unifD(p) @ &m :res ]| <= simpl_dist.
+(* FIXME: HOW TO PROVE THIS GIVEN A STATISTICAL DISTANCE? *)
   
+module Aux = {
+   proc main_trueD() : bool = {
+       var r,b;
+       r <$ rdistr_simpl;
+       b <@ StatDist.trueD(fun u =>
+                let n = noise_exp_final_simpl u r
+                in (!good_noise (noise_bound - cv_bound) (noise_val n)));
+       return b;
+   }
+
+   proc main_unifD() : bool = {
+       var r,b;
+       r <$ rdistr_simpl;
+       b <@ StatDist.unifD(fun u =>
+                let n = noise_exp_final_simpl u r
+                in (!good_noise (noise_bound - cv_bound) (noise_val n)));
+       return b;
+   }
+}.
+
+lemma aux_trueD &m :
+   Pr[CorrectnessBound.main() @ &m : res] = 
+   Pr[Aux.main_trueD() @ &m : res].
+admitted. (* FIX ME: HOW TO PROVE THIS *)
+
+lemma aux_unifD &m :
+   Pr[CorrectnessBound_simpl.main() @ &m : res] = 
+   Pr[Aux.main_unifD() @ &m : res].
+admitted.  (* FIX ME: HOW TO PROVE THIS *)
+
 lemma correctness_simpl &m :
   `| Pr[CorrectnessBound.main() @ &m : res] - 
      Pr[CorrectnessBound_simpl.main() @ &m : res] | <= simpl_dist.
-admitted.
-(* FIX ME STATISTICAL DISTANCE *)
-
+rewrite aux_trueD aux_unifD.
+admitted.  (* FIX ME: HOW TO PROVE THIS *)
 
 lemma correctness_bound_final &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
