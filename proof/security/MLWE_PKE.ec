@@ -546,6 +546,7 @@ lemma noise_exp_part_val _A s e r e1 e2 m :
     let v = (t `<*>` r) +& e2 +& (m_encode m) in
           rnd_err_v v by rewrite noise_exp_val /noise_exp_part.
 
+
 module CorrectnessNoiseAprox = {
    proc main() = {
          var s,e,_A,r,e1,e2,n;
@@ -623,24 +624,80 @@ module CorrectnessBound = {
     }
 }.
 
-op fail_prob : real.
-
-axiom fail_prob &m : 
-   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
-  
 lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob.
+  1%r - Pr[CorrectnessBound.main() @ &m : res].
 proof.
-have  := (fail_prob &m).
 rewrite (_:
    Pr[CorrectnessBound.main() @ &m : res] =
    Pr[CorrectnessNoiseAprox.main() @ &m : res]). 
 byequiv => //.
 proc.
 by admit. (* 6-product composition of distributions *)
-move : (correctness_aprox &m).
-smt().
+by apply (correctness_aprox &m).
+qed.
+
+(* We will bound it in simplified form *)
+
+op noise_exp_part_simpl u s e r e1 e2 = 
+    let cu = rnd_err_u u in
+          ((e `<*>` r) -&
+           (s `<*>` e1) -&
+           (s `<*>` cu) +& e2
+          ).
+
+type rtuple_simpl =  (((((vector * vector) * vector) * vector) * vector) * R).
+
+op noise_exp_final_simpl (t : rtuple_simpl) : R = 
+         noise_exp_part_simpl
+              t.`1.`1.`1.`2 
+              t.`1.`1.`1.`1.`1  
+              t.`1.`1.`1.`1.`2  
+              t.`1.`1.`2 
+              t.`1.`2 
+              t.`2.
+
+op rdistr_simpl : rtuple_simpl distr = 
+     (((((dshort `*` dshort) `*` dshort) `*` duni) `*` dshort) `*` dshort_R).
+
+op comp_distr_simpl : R distr = 
+      dmap
+      rdistr_simpl
+      noise_exp_final_simpl.
+
+module CorrectnessBound_simpl = {
+   proc main() = {
+         var n;
+         n <$ comp_distr_simpl;
+         return (!good_noise (noise_bound - cv_bound) (noise_val n));
+    }
+}.
+
+op simpl_dist : real.
+op fail_prob : real.
+
+axiom fail_prob &m : 
+   Pr[ CorrectnessBound_simpl.main() @ &m : res] <= fail_prob.
+
+(* FIX ME STATISTICAL DISTANCE *)
+axiom simpl_dist_bound &m : true. (* Delta comp_distr_simpl comp_distr <= simpl_dist *)
+  
+lemma correctness_simpl &m :
+  `| Pr[CorrectnessBound.main() @ &m : res] - 
+     Pr[CorrectnessBound_simpl.main() @ &m : res] | <= simpl_dist.
+admitted.
+(* FIX ME STATISTICAL DISTANCE *)
+
+
+lemma correctness_bound_final &m :
+  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
+  1%r - fail_prob - simpl_dist.
+proof.
+have  := (fail_prob &m).
+have  := (correctness_simpl &m). 
+have := (correctness_bound &m).
+move => *.
+smt(@Real).
 qed.
 
 end section.
