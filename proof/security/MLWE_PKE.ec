@@ -639,6 +639,14 @@ qed.
 
 (* We will bound it in simplified form *)
 
+type ur_tupl = (matrix * vector) * vector.
+
+op u_exp(t :  ur_tupl)  = m_transpose t.`1.`1 *^ t.`1.`2 + t.`2. 
+
+op urdistr = (duni_matrix `*` dshort) `*` dshort.
+
+op u_distr = dmap urdistr u_exp.
+
 op noise_exp_part_simpl u s e r e1 e2 = 
     let cu = rnd_err_u u in
           ((e `<*>` r) -&
@@ -646,29 +654,30 @@ op noise_exp_part_simpl u s e r e1 e2 =
            (s `<*>` cu) +& e2
           ).
 
-type rtuple_simpl =  (((((vector * vector) * vector) * vector) * vector) * R).
+type rtuple_simpl =  (((vector * vector) * vector) * vector) * R.
 
-op noise_exp_final_simpl (t : rtuple_simpl) : R = 
+op noise_exp_final_simpl (u : vector, t : rtuple_simpl) : R = 
          noise_exp_part_simpl
-              t.`1.`1.`1.`2 
-              t.`1.`1.`1.`1.`1  
-              t.`1.`1.`1.`1.`2  
+              u
+              t.`1.`1.`1.`1  
+              t.`1.`1.`1.`2  
               t.`1.`1.`2 
-              t.`1.`2 
+              t.`1.`2
               t.`2.
 
 op rdistr_simpl : rtuple_simpl distr = 
-     (((((dshort `*` dshort) `*` dshort) `*` duni) `*` dshort) `*` dshort_R).
+     ((((dshort `*` dshort) `*` dshort) `*` dshort) `*` dshort_R).
 
-op comp_distr_simpl : R distr = 
+op comp_distr_simpl u : R distr = 
       dmap
       rdistr_simpl
-      noise_exp_final_simpl.
+      (noise_exp_final_simpl u).
 
 module CorrectnessBound_simpl = {
    proc main() = {
-         var n;
-         n <$ comp_distr_simpl;
+         var n,u;
+         u <$ duni;
+         n <$ comp_distr_simpl u;
          return (!good_noise (noise_bound - cv_bound) (noise_val n));
     }
 }.
@@ -680,7 +689,7 @@ axiom fail_prob &m :
    Pr[ CorrectnessBound_simpl.main() @ &m : res] <= fail_prob.
 
 (* FIX ME STATISTICAL DISTANCE *)
-axiom simpl_dist_bound &m : true. (* Delta comp_distr_simpl comp_distr <= simpl_dist *)
+axiom simpl_dist_bound &m : true. (* Delta u_distr duni <= simpl_dist *)
   
 lemma correctness_simpl &m :
   `| Pr[CorrectnessBound.main() @ &m : res] - 
