@@ -637,106 +637,108 @@ by admit. (* 6-product composition of distributions *)
 by apply (correctness_aprox &m).
 qed.
 
-(* We will bound it in simplified form *)
+(* We will bound it in simplified form. *)
 
+(* u  and r will be fixed from the following  randomness space *)
 type ur_tupl = (matrix * vector) * vector.
-
-op u_exp(t :  ur_tupl)  = m_transpose t.`1.`1 *^ t.`1.`2 + t.`2. 
-
 op urdistr = (duni_matrix `*` dshort) `*` dshort.
 
-op u_distr = dmap urdistr u_exp.
+(* (u,r) come from this expression that computes u and exposes r *)
+op ur_exp(t :  ur_tupl)  = (m_transpose t.`1.`1 *^ t.`1.`2 + t.`2, t.`1.`2). 
 
-op noise_exp_part_simpl u s e r e1 e2 = 
+(* This is the real distribution  of u and r *)
+op ur_distr = dmap urdistr ur_exp.
+
+(* Now we rewrite the noise expression so that it is written
+   with u and r as inputs. *)
+op noise_exp_part_simpl u r s e e1 e2 = 
     let cu = rnd_err_u u in
           ((e `<*>` r) -&
            (s `<*>` e1) -&
            (s `<*>` cu) +& e2
           ).
 
-type rtuple_simpl =  (((vector * vector) * vector) * vector) * R.
+type rtuple_simpl =  ((vector * vector) * vector) * R.
 
-op noise_exp_final_simpl (u : vector, t : rtuple_simpl) : R = 
+op noise_exp_final_simpl (u : vector, r : vector, t : rtuple_simpl) : R = 
          noise_exp_part_simpl
-              u
-              t.`1.`1.`1.`1  
-              t.`1.`1.`1.`2  
-              t.`1.`1.`2 
-              t.`1.`2
+              u r
+              t.`1.`1.`1  
+              t.`1.`1.`2  
+              t.`1.`2 
               t.`2.
 
 op rdistr_simpl : rtuple_simpl distr = 
-     ((((dshort `*` dshort) `*` dshort) `*` dshort) `*` dshort_R).
+     (((dshort `*` dshort) `*` dshort) `*` dshort_R).
 
-op comp_distr_simpl u : R distr = 
+(* This distribution gives us the noise conditioned on
+   a given u and r. *)
+op comp_distr_simpl u r : R distr = 
       dmap
       rdistr_simpl
-      (noise_exp_final_simpl u).
+      (noise_exp_final_simpl u r).
 
+(* We will jump to this game where instead of the real
+   distribution of u and r, we use an idealized one where
+   they are independent. *)
 module CorrectnessBound_simpl = {
    proc main() = {
-         var n,u;
-         u <$ duni;
-         n <$ comp_distr_simpl u;
+         var n,u,r;
+         u <$ duni; r <$ dshort;
+         n <$ comp_distr_simpl u r;
          return (!good_noise (noise_bound - cv_bound) (noise_val n));
     }
 }.
 
-op simpl_dist : real.
+module type Dist = {
+    proc guess(u : vector,r : vector) : bool
+}.
+
+module URAssumption(D : Dist) = {
+  proc trueD() : bool = { var ur,b; ur <$ ur_distr; 
+                                           b <@ D.guess(ur.`1,ur.`2); return b; }
+  proc idealD() : bool = { var u,r,b; u <$ duni; r <$ dshort; 
+                                           b <@ D.guess(u,r); return b;  }
+}.
+
+  
+module D : Dist = {
+   proc guess(u : vector, r : vector) : bool = {
+       var n;
+       n <$ comp_distr_simpl u r;
+       return (!good_noise (noise_bound - cv_bound) (noise_val n));
+   }
+}.
+
+lemma correctness_simpl &m :
+  `| Pr[CorrectnessBound.main() @ &m : res] - 
+     Pr[CorrectnessBound_simpl.main() @ &m : res] | =
+  `| Pr[URAssumption(D).trueD() @ &m : res] - 
+     Pr[URAssumption(D).idealD() @ &m : res] |.
+proof.
+rewrite (_: 
+  Pr[CorrectnessBound.main() @ &m : res] = 
+  Pr[URAssumption(D).trueD() @ &m : res]).
+byequiv => />. 
+by  proc;inline *; wp;  admit. (* prove composition of distributions *)
+rewrite (_: 
+  Pr[CorrectnessBound_simpl.main() @ &m : res] = 
+  Pr[URAssumption(D).idealD() @ &m : res]).
+byequiv => />. 
+proc. inline *. admit. (* trivial but EC blocks *)
+done.
+qed.
+
 op fail_prob : real.
 
 axiom fail_prob &m : 
    Pr[ CorrectnessBound_simpl.main() @ &m : res] <= fail_prob.
 
-module StatDist = {
-  proc trueD(p : vector -> bool) : bool = { var u; u <$ u_distr; return p(u); }
-  proc unifD(p : vector -> bool) : bool = { var u; u <$ duni; return p(u); }
-}.
-
-axiom simpl_dist_bound &m (p : vector -> bool): 
-  `| Pr[ StatDist.trueD(p) @ &m : res ] - 
-     Pr[ StatDist.unifD(p) @ &m :res ]| <= simpl_dist.
-(* FIXME: HOW TO PROVE THIS GIVEN A STATISTICAL DISTANCE? *)
-  
-module Aux = {
-   proc main_trueD() : bool = {
-       var r,b;
-       r <$ rdistr_simpl;
-       b <@ StatDist.trueD(fun u =>
-                let n = noise_exp_final_simpl u r
-                in (!good_noise (noise_bound - cv_bound) (noise_val n)));
-       return b;
-   }
-
-   proc main_unifD() : bool = {
-       var r,b;
-       r <$ rdistr_simpl;
-       b <@ StatDist.unifD(fun u =>
-                let n = noise_exp_final_simpl u r
-                in (!good_noise (noise_bound - cv_bound) (noise_val n)));
-       return b;
-   }
-}.
-
-lemma aux_trueD &m :
-   Pr[CorrectnessBound.main() @ &m : res] = 
-   Pr[Aux.main_trueD() @ &m : res].
-admitted. (* FIX ME: HOW TO PROVE THIS *)
-
-lemma aux_unifD &m :
-   Pr[CorrectnessBound_simpl.main() @ &m : res] = 
-   Pr[Aux.main_unifD() @ &m : res].
-admitted.  (* FIX ME: HOW TO PROVE THIS *)
-
-lemma correctness_simpl &m :
-  `| Pr[CorrectnessBound.main() @ &m : res] - 
-     Pr[CorrectnessBound_simpl.main() @ &m : res] | <= simpl_dist.
-rewrite aux_trueD aux_unifD.
-admitted.  (* FIX ME: HOW TO PROVE THIS *)
-
 lemma correctness_bound_final &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob - simpl_dist.
+  1%r - fail_prob - 
+   `| Pr[URAssumption(D).trueD() @ &m : res] - 
+     Pr[URAssumption(D).idealD() @ &m : res] |.
 proof.
 have  := (fail_prob &m).
 have  := (correctness_simpl &m). 
