@@ -640,72 +640,70 @@ qed.
 (* We will bound it in simplified form. *)
 
 (* u  and r will be fixed from the following  randomness space *)
-type ur_tupl = (matrix * vector) * vector.
-op urdistr = (duni_matrix `*` dshort) `*` dshort.
+type ure1_tupl = (matrix * vector) * vector.
+op ure1distr = (duni_matrix `*` dshort) `*` dshort.
 
 (* (u,r) come from this expression that computes u and exposes r *)
-op ur_exp(t :  ur_tupl)  = (m_transpose t.`1.`1 *^ t.`1.`2 + t.`2, t.`1.`2). 
+op ure1_exp(t :  ure1_tupl)  = (m_transpose t.`1.`1 *^ t.`1.`2 + t.`2, t.`1.`2, t.`2). 
 
 (* This is the real distribution  of u and r *)
-op ur_distr = dmap urdistr ur_exp.
+op ure1_distr = dmap ure1distr ure1_exp.
 
 (* Now we rewrite the noise expression so that it is written
    with u and r as inputs. *)
-op noise_exp_part_simpl u r s e e1 e2 = 
+op noise_exp_part_simpl u r e1 s e e2 = 
     let cu = rnd_err_u u in
           ((e `<*>` r) -&
            (s `<*>` e1) -&
            (s `<*>` cu) +& e2
           ).
 
-type rtuple_simpl =  ((vector * vector) * vector) * R.
+type rtuple_simpl =  (vector  * vector) * R.
 
-op noise_exp_final_simpl (u : vector, r : vector, t : rtuple_simpl) : R = 
+op noise_exp_final_simpl (u : vector, r : vector, e1 : vector, t : rtuple_simpl) : R = 
          noise_exp_part_simpl
-              u r
-              t.`1.`1.`1  
-              t.`1.`1.`2  
-              t.`1.`2 
+              u r e1
+              t.`1.`1  
+              t.`1.`2  
               t.`2.
 
 op rdistr_simpl : rtuple_simpl distr = 
-     (((dshort `*` dshort) `*` dshort) `*` dshort_R).
+     ((dshort `*` dshort) `*` dshort_R).
 
 (* This distribution gives us the noise conditioned on
    a given u and r. *)
-op comp_distr_simpl u r : R distr = 
+op comp_distr_simpl u r e1 : R distr = 
       dmap
       rdistr_simpl
-      (noise_exp_final_simpl u r).
+      (noise_exp_final_simpl u r e1).
 
 (* We will jump to this game where instead of the real
    distribution of u and r, we use an idealized one where
    they are independent. *)
 module CorrectnessBound_simpl = {
    proc main() = {
-         var n,u,r;
-         u <$ duni; r <$ dshort;
-         n <$ comp_distr_simpl u r;
+         var n,u,r,e1;
+         u <$ duni; r <$ dshort; e1 <$ dshort;
+         n <$ comp_distr_simpl u r e1;
          return (!good_noise (noise_bound - cv_bound) (noise_val n));
     }
 }.
 
 module type Dist = {
-    proc guess(u : vector,r : vector) : bool
+    proc guess(u : vector,r : vector, e1 : vector) : bool
 }.
 
 module URAssumption(D : Dist) = {
-  proc trueD() : bool = { var ur,b; ur <$ ur_distr; 
-                                           b <@ D.guess(ur.`1,ur.`2); return b; }
-  proc idealD() : bool = { var u,r,b; u <$ duni; r <$ dshort; 
-                                           b <@ D.guess(u,r); return b;  }
+  proc trueD() : bool = { var ure1,b; ure1 <$ ure1_distr; 
+                b <@ D.guess(ure1.`1,ure1.`2, ure1.`3); return b; }
+  proc idealD() : bool = { var u,r,e1, b; u <$ duni; r <$ dshort; e1 <$ dshort;
+                b <@ D.guess(u,r,e1); return b;  }
 }.
 
-  
 module D : Dist = {
-   proc guess(u : vector, r : vector) : bool = {
+   proc guess(u : vector, r : vector, e1 : vector) : bool = {
        var n;
-       n <$ comp_distr_simpl u r;
+       n <$ comp_distr_simpl u r e1;
        return (!good_noise (noise_bound - cv_bound) (noise_val n));
    }
 }.
@@ -738,7 +736,7 @@ lemma correctness_bound_final &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - fail_prob - 
    `| Pr[URAssumption(D).trueD() @ &m : res] - 
-     Pr[URAssumption(D).idealD() @ &m : res] |.
+      Pr[URAssumption(D).idealD() @ &m : res] |.
 proof.
 have  := (fail_prob &m).
 have  := (correctness_simpl &m). 
