@@ -652,7 +652,7 @@ op ur_distr = dmap urdistr ur_exp.
 (* Now we rewrite the noise expression so that it is written
    with u and r as inputs. *)
 op noise_exp_part_simpl u r s e e1 e2 = 
-    let cu = rnd_err_u u in
+    let cu = rnd_err_u u in (* note here u does not depend on e1 *)
           ((e `<*>` r) -&
            (s `<*>` e1) -&
            (s `<*>` cu) +& e2
@@ -719,7 +719,11 @@ rewrite (_:
   Pr[CorrectnessBound.main() @ &m : res] = 
   Pr[URAssumption(D).trueD() @ &m : res]).
 byequiv => />. 
-by  proc;inline *; wp;  admit. (* prove composition of distributions *)
+proc;inline *; wp.  admit. (* prove composition of distributions
+                              and argue that the distribution of u
+                              without e1 added is the same as the
+                              distribution of u with e1 added, as
+                              it is uniform. *)
 rewrite (_: 
   Pr[CorrectnessBound_simpl.main() @ &m : res] = 
   Pr[URAssumption(D).idealD() @ &m : res]).
