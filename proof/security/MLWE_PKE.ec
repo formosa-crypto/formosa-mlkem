@@ -689,7 +689,7 @@ op fail_prob : real.
 axiom fail_prob &m : 
    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
 
-lemma correctness_bound_final &m :
+lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - fail_prob - 
    `| Pr[URAssumption(D).trueD() @ &m : res] - 

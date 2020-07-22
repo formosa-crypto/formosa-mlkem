@@ -172,6 +172,7 @@ op kvec : int.
 axiom kvec_ge3 : 3 <= kvec.
 
 
+op pv = pe_R^(kvec).
 op pm = pe_R^(kvec^2).
 
 op noise_val (p : poly) : int =
@@ -214,6 +215,7 @@ clone import MLWE_PKE as MLWEPKE with
   op H_MLWE.duni_R <- Kyber.Poly.duni_R,
   op H_MLWE.pe <- pe_R,
   op H_MLWE.pm <- pm,
+  op H_MLWE.pv <- pv,
   type plaintext <- message,
   type ciphertext <- H_MLWE.M.vector * poly,
   op m_encode <- m_encode,
@@ -236,6 +238,7 @@ clone import MLWE_PKE as MLWEPKE with
   proof H_MLWE.duni_R_fu
   proof H_MLWE.duni_RE
   proof H_MLWE.duni_matrixE
+  proof H_MLWE.duni_vectorE
   proof encode_noise 
   proof matrix_props1 by smt
   proof matrix_props2
@@ -267,6 +270,29 @@ proof.
     by rewrite hind duni_elem1E /pe addzC exprS; first by smt(size_ge0).
 qed.
 
+realize H_MLWE.duni_vectorE.
+proof.
+  rewrite /H_MLWE.duni => m.
+  rewrite M.Matrix.dvector1E /StdBigop.Bigreal.BRM.big /StdBigop.Bigreal.BRM.big filter_predT !foldr_map /=.
+  rewrite /pv /pe_R /pe /=. 
+  have aux : forall (x : real) (y : int), 0 <= y => 
+              (foldr (fun (_ : int) (z : real) => x * z) 1%r (range 0 y)) = x ^ y.
+    move => x y; elim y.
+    by rewrite range_geq //= ; rewrite expr0 /#.
+    move => j *; rewrite range_ltn 1:/# /= exprS // -H0.
+    have mulrC : forall (x y : real), x * y = y * x by smt(). (* how to use lemma?? *)
+    congr.
+    by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);
+      first by rewrite !size_range.
+cut -> : 
+  (fun (x : int) (z : real) => mu1 Poly.duni_R (M.Vector."_.[_]" m x) * z)  = 
+   (fun (x : int) (z : real) =>  (inv q%r ^ 256 * z)).
+    rewrite fun_ext /(==) => x. 
+    rewrite fun_ext /(==) => z. 
+    by rewrite H_MLWE.duni_RE /pe_R /pe.
+  rewrite aux; first by smt(kvec_ge3). 
+done.
+qed.
 
 
 realize H_MLWE.duni_matrixE.
@@ -389,20 +415,17 @@ lemma fail_prob &m :
    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
 byphoare.
 proc.
-
-print comp_distr.
-rnd.
-skip.
 auto => />.
 rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
 rewrite /good_noise /cv_bound /noise_val.
 admitted. (* We need concrete distributions *)
 
-print correctness_bound.
 lemma kyber_correctness &m : 
-  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob by
-   apply (correctness_bound A All fail_prob &m).
+ Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
+  1%r - fail_prob - 
+   `| Pr[URAssumption(D).trueD() @ &m : res] - 
+      Pr[URAssumption(D).idealD() @ &m : res] |
+  by  apply (correctness_bound A All fail_prob &m).
 end section.
 
 (* At this point we can write down some intermediate results that
