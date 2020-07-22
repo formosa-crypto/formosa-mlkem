@@ -96,6 +96,11 @@ op dshort = dvector dshort_R.
 op duni = dvector duni_R.
 
 lemma duni_ll : is_lossless duni by rewrite /duni /dvector => />; smt.
+op pv : real. (* Needs to be instantiated *)
+axiom duni_vectorE: forall (v: vector), mu1 duni v = pv.
+lemma duni_vector_uni: is_funiform duni.
+proof. by move=> ??;rewrite !duni_vectorE. qed.
+
 lemma dshort_ll : is_lossless dshort by rewrite /dshort /dvector => />;smt.
 
 op duni_matrix = dmatrix duni_R.

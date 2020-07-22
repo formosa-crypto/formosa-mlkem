@@ -421,10 +421,10 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
          var sd,s,e,_A,r,e1,e2,m,n;
          O.init();
          sd <$ dseed;
-         s <$ dshort;
-         e <$ dshort;
          _A <@ O.o(sd);
          r <$ dshort;
+         s <$ dshort;
+         e <$ dshort;
          e1 <$ dshort;
          e2 <$ dshort_R;
          m <@ A(O).find((sd,_A *^ s + e),s);
@@ -455,8 +455,10 @@ call (_: true); [ by move => H; apply (All H) | by  apply LRO_o_ll; first by smt
 auto => />; first by smt(duni_matrix_ll duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
 + byequiv => //.
 proc. 
-inline MLWE_PKE(LRO).dec MLWE_PKE(LRO).enc MLWE_PKE(LRO).kg; wp.
-swap {1} 9 -3.
+inline MLWE_PKE(LRO).dec MLWE_PKE(LRO).enc MLWE_PKE(LRO).kg.
+swap {2} 5 -2.
+swap {2} 12 -8.
+swap {2} [13..14] -6.
 seq 9 14 : ( 
            ={LRO.m,e2,e1,r,s,e,sd} /\
            sd0{2} = sd{2} /\
@@ -489,9 +491,9 @@ m_encode m{2} +& noise_exp (oget LRO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
 move : matrix_props1 matrix_props2.
 rewrite  noise_exp_val //= => matrix_props1 matrix_props2.
 by rewrite matrix_props1 matrix_props2 => />; ring.
-auto => />;first by smt(duni_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
-seq 5 7 : ( #pre /\
-           ={LRO.m,s,e,sd,_A} /\
+auto => />. 
+seq 8 10 : ( #pre /\
+           ={LRO.m,r,s,e,e1,e2,sd,_A} /\
            pk.`1{2} = sd{2} /\
            pk.`2{2} = t{2} /\
            sk{2} = s{2} /\
@@ -500,20 +502,16 @@ seq 5 7 : ( #pre /\
            oget LRO.m{2}.[sd{2}] = _A{2}); last first.
 exists* _A{2}, pk{2}.`1.
 elim* => _A sd.
-call(_: ={glob LRO} /\ oget LRO.m{2}.[sd] = _A /\ sd \in LRO.m{2} ).
-proc.
-auto => />; smt(@SmtMap).
-auto => /> /#.
-inline *.
-auto => />;  smt(@SmtMap).
+call(_: ={glob LRO} /\ oget LRO.m{2}.[sd] = _A /\ sd \in LRO.m{2} ). 
+by  proc; by auto => />; smt(@SmtMap).
+by auto => /> /#.
+by inline *; auto => />;  smt(@SmtMap).
 qed.
 
 end section.
 
 (* Now we shift things to make the upper bound computable as 
    based on a max over all messages. *)
-search noise_val.
-search rnd_err_v.
 op cv_bound : int.
 axiom cv_bound_valid _A s e r e2 m :
       s \in dshort =>
@@ -547,13 +545,13 @@ lemma noise_exp_part_val _A s e r e1 e2 m :
           rnd_err_v v by rewrite noise_exp_val /noise_exp_part.
 
 
-module CorrectnessNoiseAprox = {
+module CorrectnessNoiseApprox = {
    proc main() = {
          var s,e,_A,r,e1,e2,n;
-         s <$ dshort;
-         e <$ dshort;
          _A <$ duni_matrix;
          r <$ dshort;
+         s <$ dshort;
+         e <$ dshort;
          e1 <$ dshort;
          e2 <$ dshort_R;
          n <- noise_exp_part _A s e r e1 e2;
@@ -570,7 +568,7 @@ axiom All (O <: POracle{A}):
 
 lemma correctness_slack &m :
   Pr[ AdvCorrectnessNoise(A,LRO).main() @ &m : res]<=
-  Pr[ CorrectnessNoiseAprox.main() @ &m : res].
+  Pr[ CorrectnessNoiseApprox.main() @ &m : res].
 proof.
 byequiv => //.
 proc.
@@ -587,9 +585,9 @@ skip;auto => />.
 move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; move : noise_commutes cv_bound_valid => />; smt().
 qed.
 
-lemma correctness_aprox &m :
+lemma correctness_approx &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - Pr[ CorrectnessNoiseAprox.main() @ &m : res].
+  1%r - Pr[ CorrectnessNoiseApprox.main() @ &m : res].
 proof.
 move : (correctness A All &m).
 move : (correctness_slack &m).
@@ -597,145 +595,99 @@ smt().
 qed.
 
 (* Finally we just need to compute a concrete probability *)
+(* Which we will bound in simplified form *)
 
-type rtuple =  (((((vector * vector) * matrix) * vector) * vector) * R).
-op rdistr : rtuple distr = 
-     (((((dshort `*` dshort) `*` duni_matrix) `*` dshort) `*` dshort) `*` dshort_R).
-
-op noise_exp_final (t : rtuple) : R = 
-         noise_exp_part 
-              t.`1.`1.`1.`2 
-              t.`1.`1.`1.`1.`1  
-              t.`1.`1.`1.`1.`2  
-              t.`1.`1.`2 
-              t.`1.`2 
-              t.`2.
-
-op comp_distr : R distr = 
-      dmap
-      rdistr
-      noise_exp_final.
-
-module CorrectnessBound = {
-   proc main() = {
-         var n;
-         n <$ comp_distr;
-         return (!good_noise (noise_bound - cv_bound) (noise_val n));
-    }
-}.
-
-lemma correctness_bound &m :
-  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - Pr[CorrectnessBound.main() @ &m : res].
-proof.
-rewrite (_:
-   Pr[CorrectnessBound.main() @ &m : res] =
-   Pr[CorrectnessNoiseAprox.main() @ &m : res]). 
-byequiv => //.
-proc.
-by admit. (* 6-product composition of distributions *)
-by apply (correctness_aprox &m).
-qed.
-
-(* We will bound it in simplified form. *)
-
-(* u  and r will be fixed from the following  randomness space *)
-type ur_tupl = matrix * vector.
-op urdistr = duni_matrix `*` dshort.
-
-(* (u,r) come from this expression that computes u and exposes r *)
-op ur_exp(t :  ur_tupl)  = (m_transpose t.`1 *^ t.`2,  t.`2). 
-
-(* This is the real distribution  of u and r *)
-op ur_distr = dmap urdistr ur_exp.
-
-(* Now we rewrite the noise expression so that it is written
-   with u and r as inputs. *)
-op noise_exp_part_simpl u r s e e1 e2 = 
+op noise_exp_part_simpl u s e r e1 e2 = 
     let cu = rnd_err_u u in (* note here u does not depend on e1 *)
           ((e `<*>` r) -&
            (s `<*>` e1) -&
            (s `<*>` cu) +& e2
           ).
 
-type rtuple_simpl =  ((vector  * vector) * vector) * R.
-
-op noise_exp_final_simpl (u : vector, r : vector,  t : rtuple_simpl) : R = 
-         noise_exp_part_simpl
-              u r
-              t.`1.`1.`1  
-              t.`1.`1.`2  
-              t.`1.`2
-              t.`2.
-
-op rdistr_simpl : rtuple_simpl distr = 
-     (((dshort `*` dshort) `*` dshort) `*` dshort_R).
-
-(* This distribution gives us the noise conditioned on
-   a given u and r. *)
-op comp_distr_simpl u r : R distr = 
-      dmap
-      rdistr_simpl
-      (noise_exp_final_simpl u r).
 
 (* We will jump to this game where instead of the real
    distribution of u and r, we use an idealized one where
    they are independent. *)
-module CorrectnessBound_simpl = {
+module CorrectnessBound = {
    proc main() = {
-         var n,u,r;
-         u <$ duni; r <$ dshort; 
-         n <$ comp_distr_simpl u r;
+         var s,e,u,r,e1,e2,n;
+         s <$ dshort;
+         e <$ dshort;
+         u <$ duni;
+         r <$ dshort;
+         e1 <$ dshort;
+         e2 <$ dshort_R;
+         n <- noise_exp_part_simpl u s e r e1 e2;
          return (!good_noise (noise_bound - cv_bound) (noise_val n));
     }
 }.
 
+(* This jump is based on the following computational assumption
+   which we would like to prove valid down to statistical distance
+   but so far have been unable to *)
 module type Dist = {
     proc guess(u : vector,r : vector) : bool
 }.
 
 module URAssumption(D : Dist) = {
-  proc trueD() : bool = { var ur,b; ur <$ ur_distr; 
-                b <@ D.guess(ur.`1,ur.`2); return b; }
+  proc trueD() : bool = { var _A,r,b; _A <$ duni_matrix; r <$ dshort; 
+                b <@ D.guess(m_transpose _A *^ r,r); return b; }
   proc idealD() : bool = { var u,r, b; u <$ duni; r <$ dshort; 
                 b <@ D.guess(u,r); return b;  }
 }.
 
 module D : Dist = {
    proc guess(u : vector, r : vector) : bool = {
-       var n;
-       n <$ comp_distr_simpl u r;
-       return (!good_noise (noise_bound - cv_bound) (noise_val n));
+         var s,e,e1,e2,n;
+         s <$ dshort;
+         e <$ dshort;
+         e1 <$ dshort;
+         e2 <$ dshort_R;
+         n <- noise_exp_part_simpl (u + e1) s e r e1 e2;
+         return (!good_noise (noise_bound - cv_bound) (noise_val n));
    }
 }.
 
 lemma correctness_simpl &m :
-  `| Pr[CorrectnessBound.main() @ &m : res] - 
-     Pr[CorrectnessBound_simpl.main() @ &m : res] | =
+  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
+     Pr[CorrectnessBound.main() @ &m : res] | =
   `| Pr[URAssumption(D).trueD() @ &m : res] - 
      Pr[URAssumption(D).idealD() @ &m : res] |.
 proof.
 rewrite (_: 
   Pr[CorrectnessBound.main() @ &m : res] = 
-  Pr[URAssumption(D).trueD() @ &m : res]).
-byequiv => />. 
-proc;inline *; wp.  admit. (* prove composition of distributions
-                              and argue that the distribution of u
-                              without e1 added is the same as the
-                              distribution of u with e1 added, as
-                              it is uniform. *)
-rewrite (_: 
-  Pr[CorrectnessBound_simpl.main() @ &m : res] = 
   Pr[URAssumption(D).idealD() @ &m : res]).
 byequiv => />. 
-proc. inline *. admit. (* trivial but EC blocks *)
+proc;inline *; wp.
+swap {1} 3 3.
+swap {2} [3..4] 4; wp.
+swap {2} 1 5.
+swap {2} 1 2.
+seq 5 5 : (#pre /\ ={s,e,r,e1,e2}); first by sim.
+rnd (fun (u : vector) => u + (- e1{2})) (fun (u : vector) => u + e1{2}).
+auto => />. 
+move => *. 
+split. by move => *; smt(@Vector).
+move => *.
+split. by move => *; smt(duni_vectorE).
+move => *.
+split. by smt(duni_vector_uni).
+move => *.
+split. by smt(@Vector). 
+move => *.
+by smt().
+rewrite (_: 
+  Pr[CorrectnessNoiseApprox.main() @ &m : res] = 
+  Pr[URAssumption(D).trueD() @ &m : res]).
+byequiv => />. 
+by proc; inline *; auto => />. 
 done.
 qed.
 
 op fail_prob : real.
 
 axiom fail_prob &m : 
-   Pr[ CorrectnessBound_simpl.main() @ &m : res] <= fail_prob.
+   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
 
 lemma correctness_bound_final &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
@@ -745,7 +697,7 @@ lemma correctness_bound_final &m :
 proof.
 have  := (fail_prob &m).
 have  := (correctness_simpl &m). 
-have := (correctness_bound &m).
+have := (correctness_approx &m).
 move => *.
 smt(@Real).
 qed.
