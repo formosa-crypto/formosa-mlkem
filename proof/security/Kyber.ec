@@ -82,6 +82,25 @@ axiom mul_sem (pa pb : poly) (c : elem) :
   invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
    scale (pa * pb) c.
 
+lemma mul_sem1 (pa pb : poly) :
+  invntt (basemul (ntt pa) (ntt pb)) = 
+     invntt (scale (basemul (ntt pa) (ntt pb)) (ZModRing.one)).
+       congr. rewrite /scale.
+       pose a := basemul (ntt pa) (ntt pb).
+       apply Array256.ext_eq => *.
+       rewrite mapE initiE => />.
+       by smt(@ZModRing).
+qed.
+
+lemma scale1 (p : poly) :
+   scale p (ZModRing.one) = p.
+proof.
+rewrite /scale.
+apply Array256.ext_eq => *.
+rewrite mapiE => />.
+smt(@ZModRing).
+qed.
+
 op ( +) (pa pb : poly) : poly = 
   map2 (fun a b : elem  => ZModRing.(+) a b) pa pb.
 

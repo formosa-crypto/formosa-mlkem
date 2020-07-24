@@ -26,11 +26,7 @@ op pos_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
 
 import MLWEPKE.H_MLWE.M.
 
-
 require import IndcpaDerand.
-
-print Mderand.
-
 
 lemma mulvec a b :
    dotp a b = 
@@ -38,47 +34,13 @@ lemma mulvec a b :
     invntt (basemul (ntt a.[1]) (ntt b.[1])) +
     invntt (basemul (ntt a.[2]) (ntt b.[2])).
 proof.
-admit.
-(*move : (mul_sem a.[0] b.[0] Fq.Kyber_.ZModRing.one).
-move : (mul_sem a.[1] b.[1] Fq.Kyber_.ZModRing.one).
-move : (mul_sem a.[2] b.[2] Fq.Kyber_.ZModRing.one).
-rewrite /basemul /( * ) => *.
-rewrite /dotp  /Big.BAdd.big /( * ) foldr_map filter_predT.
-
-rewrite (_: b.[2] * a.[2] = invntt (basemul (ntt a.[2]) (ntt b.[2]))).
-rewrite (_:  invntt (basemul (ntt a.[2]) (ntt b.[2])) = 
-    invntt (map (fun (x : zmod) => inzmod (asint x * asint ZModRing.one)) (basemul (ntt a.[2]) (ntt b.[2])))).
-congr; apply Array256.ext_eq => *.
-rewrite Array256.mapiE => />. 
-move : H; rewrite (_: asint ZModRing.one = 1); first by smt(@ZModRing).
-by auto => />; rewrite asintK.
-rewrite H (_: asint ZModRing.one = 1); first by smt(@ZModRing).
-auto => />; rewrite (_: (fun (x : zmod) => inzmod (asint x))  = idfun).
-by apply fun_ext => *; rewrite asintK.
-by apply Array256.ext_eq => *; rewrite mapiE /idfun => />; congr; ring.
-rewrite (_: b.[1] * a.[1] = invntt (basemul (ntt a.[1]) (ntt b.[1]))).
-rewrite (_:  invntt (basemul (ntt a.[1]) (ntt b.[1])) = 
-    invntt (map (fun (x : zmod) => inzmod (asint x * asint ZModRing.one)) (basemul (ntt a.[1]) (ntt b.[1])))).
-congr; apply Array256.ext_eq => *.
-rewrite Array256.mapiE => />. 
-move : H; rewrite (_: asint ZModRing.one = 1); first by smt(@ZModRing).
-by auto => />; rewrite asintK.
-rewrite H0 (_: asint ZModRing.one = 1); first by smt(@ZModRing).
-auto => />; rewrite (_: (fun (x : zmod) => inzmod (asint x))  = idfun).
-by apply fun_ext => *; rewrite asintK.
-by apply Array256.ext_eq => *; rewrite mapiE /idfun => />; congr; ring.
-rewrite (_: b.[0] * a.[0] = invntt (basemul (ntt a.[0]) (ntt b.[0]))).
-rewrite (_:  invntt (basemul (ntt a.[0]) (ntt b.[0])) = 
-    invntt (map (fun (x : zmod) => inzmod (asint x * asint ZModRing.one)) (basemul (ntt a.[0]) (ntt b.[0])))).
-congr; apply Array256.ext_eq => *.
-rewrite Array256.mapiE => />. 
-move : H; rewrite (_: asint ZModRing.one = 1); first by smt(@ZModRing).
-by auto => />; rewrite asintK.
-rewrite H1 (_: asint ZModRing.one = 1); first by smt(@ZModRing).
-auto => />; rewrite (_: (fun (x : zmod) => inzmod (asint x))  = idfun).
-by apply fun_ext => *; rewrite asintK.
-by apply Array256.ext_eq => *; rewrite mapiE /idfun => />; congr; ring.
-by ring.*)
+move : (mul_sem a.[0] b.[0] (ZModRing.one)).
+move : (mul_sem a.[1] b.[1] (ZModRing.one)).
+move : (mul_sem a.[2] b.[2] (ZModRing.one)).
+rewrite -mul_sem1 !scale1. 
+move => -> -> ->.
+rewrite /dotp => />. 
+by smt(@Big).
 qed.
 
 require import IndcpaDerand.
@@ -1890,10 +1852,12 @@ smt().
 by smt(). 
 qed.
 
+print Mderand.
+
 (*
   - proc polyvec_add(a : W16.t t, b : W16.t t) : W16.t t = Indcpa.M.polyvec_add
   
-  proc polyvec_pointwise_acc(a : W16.t t, b : W16.t t) : W16.t Array256.t = Indcpa.M.polyvec_pointwise_acc
+  - proc polyvec_pointwise_acc(a : W16.t t, b : W16.t t) : W16.t Array256.t = Indcpa.M.polyvec_pointwise_acc
   
   proc polyvec_ntt(r : W16.t t) : W16.t t = Indcpa.M.polyvec_ntt
   
