@@ -126,21 +126,28 @@ op roundc(c : elem) : elem =
     ZModRing.inzmod (((ZModRing.asint c * 2^4 + (q %/ 2)) %/q) %% 2^4) 
       axiomatized by roundcE.
 
-op roundc_err(c: elem) : elem = ZModRing.(+) (roundc c) (ZModRing.([-]) c).
+op unroundc(c : elem) : elem = 
+    ZModRing.inzmod (((ZModRing.asint c * q + 8) %/ 2^4)) 
+      axiomatized by unroundcE.
 
-lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = roundc c 
+op roundc_err(c: elem) : elem = ZModRing.(+) (unroundc (roundc c)) (ZModRing.([-]) c).
+
+lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = unroundc (roundc c)
       by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
    map roundc p.
 
+op unround_poly(p : poly) : poly = 
+   map unroundc p.
+
 op round_poly_err(p : poly) : poly = 
    map roundc_err p.
 
-lemma round_poly_errE p : p + (round_poly_err p) = (round_poly p).
+lemma round_poly_errE p : p + (round_poly_err p) = unround_poly (round_poly p).
 proof. 
 rewrite /round_poly_err /round_poly /Poly.(+); apply Array256.ext_eq => /> x xl xh.
-by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
+rewrite map2iE //= mapiE //= mapiE; first by smt(). smt.
 qed.
 
 op dshort_R : poly distr = 
@@ -167,21 +174,28 @@ op roundc(c : elem) : elem =
     ZModRing.inzmod (((ZModRing.asint c * 2^10 + (q %/ 2)) %/q) %% 2^10) 
      axiomatized by roundcE.
 
-op roundc_err(c: elem) : elem = ZModRing.(+) (roundc c) (ZModRing.([-]) c).
+op unroundc(c : elem) : elem =
+    ZModRing.inzmod (((ZModRing.asint c * q + 512) %/ 2^10)) 
+      axiomatized by unroundcE.
 
-lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = roundc c 
+op roundc_err(c: elem) : elem = ZModRing.(+) (unroundc (roundc c)) (ZModRing.([-]) c).
+
+lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = unroundc (roundc c)
     by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
    map roundc p.
 
+op unround_poly(p : poly) : poly = 
+   map unroundc p.
+
 op round_poly_err(p : poly) : poly = 
    map roundc_err p.
 
-lemma round_poly_errE p: p + (round_poly_err p) = round_poly p.
+lemma round_poly_errE p: p + (round_poly_err p) = unround_poly (round_poly p).
 proof. 
 rewrite /round_poly_err /round_poly /Poly.(+); apply Array256.ext_eq => /> x xl xh.
-by rewrite map2iE //= mapiE //= mapiE => />; apply roundc_errE.
+rewrite map2iE //= mapiE //= mapiE => />. smt.
 qed.
 
 
@@ -243,7 +257,10 @@ clone import MLWE_PKE as MLWEPKE with
           (H_MLWE.M.Vector.offunv 
              (fun i => (PolyVec.round_poly ((H_MLWE.M.Vector.tofunv c.`1) i))), 
                  Poly.round_poly c.`2),
-  op c_decode <- idfun, (* FIXME : change to put back bits *)
+  op c_decode <- fun (c : H_MLWE.M.vector * poly) => 
+          (H_MLWE.M.Vector.offunv 
+             (fun i => (PolyVec.unround_poly ((H_MLWE.M.Vector.tofunv c.`1) i))), 
+                 Poly.unround_poly c.`2),
   op rnd_err_v <- Poly.round_poly_err,
   op rnd_err_u <- fun u => H_MLWE.M.Vector.offunv 
           (fun i => (PolyVec.round_poly_err ((H_MLWE.M.Vector.tofunv u) i))),
@@ -352,7 +369,8 @@ rewrite /round_poly /round_poly_err /roundc_err  => />.
 apply H_MLWE.M.Vector.eq_vectorP => /> *.
 rewrite H_MLWE.M.Vector.offunvE 1:/# H_MLWE.M.Vector.offunvE 1:/# /=.
 apply Array256.ext_eq => /> *.
-by rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.  
+rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.  
+smt.
 qed.
 
 realize matrix_props2.

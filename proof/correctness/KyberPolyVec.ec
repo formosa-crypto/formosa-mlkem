@@ -1852,7 +1852,26 @@ smt().
 by smt(). 
 qed.
 
-print Mderand.
+
+op lift_array768_32 (p : W32.t Array768.t) =
+  Array768.map (fun x => inzmod (W32.to_sint x)) p.
+
+op bpos32 a b = (0 <= W32.to_sint a && to_sint a < b)
+  axiomatized by bpos32E.
+
+op pos_bound768_cxq_32 (coefs : W32.t Array768.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => bpos32 coefs.[k] (c * q).
+
+lemma polyvec_decompress_restore_corr ap :
+      hoare[ Mderand.polyvec_decompress_restore :
+           ap = lift_array768_32 rp /\
+           pos_bound768_cxq_32 rp 0 768 1 
+           ==>
+           Array768.map PolyVec.unroundc ap = lift_array768 res /\
+           signed_bound768_cxq res 0 768 1 ] . 
+proof.
+admitted.
+
 
 (*
   - proc polyvec_add(a : W16.t t, b : W16.t t) : W16.t t = Indcpa.M.polyvec_add
@@ -1865,7 +1884,7 @@ print Mderand.
   
   - proc polyvec_reduce(r : W16.t t) : W16.t t = Indcpa.M.polyvec_reduce
 
-  proc polyvec_decompress_restore(rp : W32.t t) : W16.t t
+-   proc polyvec_decompress_restore(rp : W32.t t) : W16.t t
 
 *)
 
