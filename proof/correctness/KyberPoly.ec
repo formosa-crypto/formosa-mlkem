@@ -3189,4 +3189,16 @@ by ring.
 smt().
 qed.
 
+print Mderand.
+
+lemma poly_decompress_restore_corr ap :
+      hoare[ Mderand.poly_decompress_restore :
+           ap = lift_array256 r /\
+           pos_bound256_cxq r 0 256 1 
+           ==>
+           Array256.map Poly.unroundc ap = lift_array256 res /\
+           signed_bound_cxq res 0 256 1 ] . 
+proof.
+admitted.
+
 end KyberPoly.
