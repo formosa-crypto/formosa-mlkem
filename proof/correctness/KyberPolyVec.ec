@@ -23,6 +23,9 @@ op signed_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
 op pos_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
 
+op pos_bound768_b (coefs : W16.t Array768.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
+
 
 import MLWEPKE.H_MLWE.M.
 
@@ -1862,10 +1865,13 @@ op bpos32 a b = (0 <= W32.to_sint a && to_sint a < b)
 op pos_bound768_cxq_32 (coefs : W32.t Array768.t) (l u c : int) : bool =
   forall (k : int), l <= k < u => bpos32 coefs.[k] (c * q).
 
+op pos_bound768_b_32 (coefs : W32.t Array768.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos32 coefs.[k] b.
+
 lemma polyvec_decompress_restore_corr ap :
       hoare[ Mderand.polyvec_decompress_restore :
            ap = lift_array768_32 rp /\
-           pos_bound768_cxq_32 rp 0 768 1 
+           pos_bound768_b_32 rp 0 768 (2^10) 
            ==>
            Array768.map PolyVec.unroundc ap = lift_array768 res /\
            signed_bound768_cxq res 0 768 1 ] . 

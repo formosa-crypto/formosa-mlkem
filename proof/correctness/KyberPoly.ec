@@ -66,6 +66,8 @@ op minimum_residues(zetas : W16.t Array128.t) : bool =
 op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
 
+op pos_bound256_b (coefs : W16.t Array256.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
 
 require import IndcpaDerand.
 
@@ -3194,7 +3196,7 @@ print Mderand.
 lemma poly_decompress_restore_corr ap :
       hoare[ Mderand.poly_decompress_restore :
            ap = lift_array256 r /\
-           pos_bound256_cxq r 0 256 1 
+           pos_bound256_b r 0 256 (2^4) 
            ==>
            Array256.map Poly.unroundc ap = lift_array256 res /\
            signed_bound_cxq res 0 256 1 ] . 
