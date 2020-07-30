@@ -3193,6 +3193,10 @@ qed.
 
 print Mderand.
 
+lemma mul_mod_add_mod (x y z m : int) :
+ (x * y %% m + z) %% m = (x * y + z) %% m.
+proof. by move => *; rewrite -modzDm modz_mod modzDm. qed.
+
 lemma poly_decompress_restore_corr ap :
       hoare[ Mderand.poly_decompress_restore :
            ap = lift_array256 r /\
@@ -3201,6 +3205,59 @@ lemma poly_decompress_restore_corr ap :
            Array256.map Poly.unroundc ap = lift_array256 res /\
            signed_bound_cxq res 0 256 1 ] . 
 proof.
-admitted.
+proc.
+while (#pre /\ 0 <= i <= 128 /\
+     (forall k, 0 <= k < i*2 => rp.[k] = ((r.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
+  wp; skip => /> *; do split; first 2 by smt().
+  move => k *.
+    rewrite get_setE 1:/#.
+    case (k = 2 * i{hr} + 1) => ?.
+      by rewrite H6.
+    rewrite get_setE 1:/#.
+    case (k = 2 * i{hr}) => ?.
+      by rewrite H7.
+    by smt().
+wp; skip => /> *; do split; first by smt().
+  move => *.
+  have ?: forall (k : int), 0 <= k && k < 256 => 
+                            rp0.[k] = r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8 by smt().
+  move : H; rewrite /pos_bound256_b.
+  cut ->: (forall (k0 : int), 0 <= k0 && k0 < 256 => bpos16 r{hr}.[k0] 16) =
+          (forall (k0 : int), 0 <= k0 && k0 < 256 => 0 <= to_sint r{hr}.[k0] < 16) by done.
+  move => *; split.
+    + rewrite /lift_array256 tP => k *.
+      rewrite mapE initE /= H5 /= mapE initE /= H5 /= mapE initE /= H5 /= unroundcE /= inzmodK qE /= modz_small.
+        by move : (H k); rewrite H5 /= /#.
+      rewrite -eq_inzmod H4 //.
+      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
+      cut ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
+        rewrite shr_div_le // /=.
+        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
+          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
+        by smt.
+      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod -!divz_mod_mul // qE //.
+      congr; congr.
+      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
+
+    + rewrite /signed_bound_cxq => k *.
+      rewrite b16E; split; rewrite H4 //.
+      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
+      cut ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
+        rewrite shr_div_le // /=.
+        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
+          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
+        by smt. 
+      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod qE //.
+      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
+      move => ?.
+      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
+      cut ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
+        rewrite shr_div_le // /=.
+        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
+          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
+        by smt. 
+      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod qE //.
+      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
+qed.
 
 end KyberPoly.
