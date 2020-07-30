@@ -43,7 +43,8 @@ move : (mul_sem a.[2] b.[2] (ZModRing.one)).
 rewrite -mul_sem1 !scale1. 
 move => -> -> ->.
 rewrite /dotp => />. 
-by smt(@Big).
+rewrite /Big.BAdd.big /predT /=.
+by smt(@Big.CR).
 qed.
 
 require import IndcpaDerand.
@@ -1868,6 +1869,15 @@ op pos_bound768_cxq_32 (coefs : W32.t Array768.t) (l u c : int) : bool =
 op pos_bound768_b_32 (coefs : W32.t Array768.t) (l u b : int) : bool =
   forall (k : int), l <= k < u => bpos32 coefs.[k] b.
 
+lemma to_sint_unsigned32 : forall (x : W32.t), 
+    0 <= to_sint x =>
+    to_sint x = to_uint x.
+proof.
+  move => x; rewrite W32.to_sintE /smod.
+  move : (W32.to_uint_cmp x) => /> ? ?.
+  by case (2147483648 <= to_uint x) => ? // /#. 
+qed.
+
 lemma polyvec_decompress_restore_corr ap :
       hoare[ Mderand.polyvec_decompress_restore :
            ap = lift_array768_32 rp /\
@@ -1876,8 +1886,73 @@ lemma polyvec_decompress_restore_corr ap :
            Array768.map PolyVec.unroundc ap = lift_array768 res /\
            signed_bound768_cxq res 0 768 1 ] . 
 proof.
-admitted.
-
+proc.
+while (#pre /\ 0 <= to_uint i <= 768 /\ to_uint i %% 4 = 0 /\
+       forall k, 0 <= k < to_uint i => r.[k] = truncateu16 (((rp.[k] * W32.of_int 3329) + W32.of_int 512) `>>` 
+                                               W8.of_int 10)).
+  unroll 2; unroll 3; unroll 4; unroll 5; unroll 6.
+  rcondt 2; first by wp; skip.
+  rcondt 5; first by wp; skip.
+  rcondt 8; first by wp; skip.
+  rcondt 11; first by wp; skip.
+  rcondt 14; first by wp; skip.
+  rcondf 17; first by wp; skip.
+  unroll 18; unroll 19; unroll 20; unroll 21.
+  rcondt 18; first by wp; skip.
+  rcondt 24; first by wp; skip.
+  rcondt 30; first by wp; skip.
+  rcondt 36; first by wp; skip.
+  rcondf 42; first by wp; skip.
+  wp; skip => /> *; do split.
+    + by rewrite to_uintD_small /= /#.
+    + by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
+    + by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
+    + move => k; rewrite to_uintD_small /= 1:/# => *.
+      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
+      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
+      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
+      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= /#.
+      by rewrite !to_uintD_small /= 1..4:/#.
+wp; skip => /> *; do split; first by smt().
+  move => i r; rewrite ultE of_uintK /= => *.
+  move : H; rewrite /pos_bound768_b_32. print bpos32E.
+  cut ->: (forall (k0 : int), 0 <= k0 && k0 < 768 => bpos32 rp{hr}.[k0] 1024) <=> 
+          (forall (k0 : int), 0 <= k0 && k0 < 768 => 0 <= to_sint rp{hr}.[k0] < 1024).
+    by split => *; by move : (H k0); rewrite H5 /= bpos32E.
+  move => ?; split.  
+    + rewrite /lift_array768_32 /lift_array768 tP => k *.
+      rewrite mapE initE /= H5 /= mapE initE /= H5 /= mapE initE H5 PolyVec.unroundcE /= inzmodK qE /= modz_small.
+        by move : (H k); rewrite H5 /= /#.
+      rewrite -eq_inzmod H4 // 1:/#.
+      rewrite (W16.to_sintE (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8))) /smod /=.
+      cut ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
+        rewrite to_uint_truncateu16 shr_div_le // /=; move : (H k); rewrite H5 /= => /> *.
+        rewrite -to_uint_mod to_uintD of_uintK /= to_uintM of_uintK /=.
+        rewrite (pmod_small (to_uint rp{hr}.[k] * 3329)).
+          by rewrite -to_sint_unsigned32 => /#.
+        by rewrite -to_sint_unsigned32 => /#.
+      rewrite to_uint_truncateu16 shr_div_le // to_uintD of_uintK to_uintM of_uintK mul_mod_add_mod -!divz_mod_mul // qE // /=.
+      rewrite (pmod_small _ 4294967296).
+        by rewrite -to_sint_unsigned32 => /#.
+      rewrite (pmod_small _ 67108864).
+        by rewrite -to_sint_unsigned32 => /#.
+      by rewrite -to_sint_unsigned32 => /#.
+    + rewrite /signed_bound768_cxq => k *.
+      rewrite b16E H4 // 1:/#.
+      rewrite (W16.to_sintE (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8))) /smod /=.
+      cut ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
+        rewrite to_uint_truncateu16 shr_div_le // /=; move : (H k); rewrite H5 /= => /> *.
+        rewrite -to_uint_mod to_uintD of_uintK /= to_uintM of_uintK /=.
+        rewrite (pmod_small (to_uint rp{hr}.[k] * 3329)).
+          by rewrite -to_sint_unsigned32 => /#.
+        by rewrite -to_sint_unsigned32 => /#.
+      rewrite to_uint_truncateu16 shr_div_le // to_uintD of_uintK to_uintM of_uintK mul_mod_add_mod -!divz_mod_mul // qE // /=.
+      rewrite (pmod_small _ 4294967296).
+        by rewrite -to_sint_unsigned32 => /#.
+      rewrite (pmod_small _ 67108864).
+        by rewrite -to_sint_unsigned32 => /#.
+      by rewrite -to_sint_unsigned32 => /#.
+qed.
 
 (*
   - proc polyvec_add(a : W16.t t, b : W16.t t) : W16.t t = Indcpa.M.polyvec_add
@@ -1890,10 +1965,9 @@ admitted.
   
   - proc polyvec_reduce(r : W16.t t) : W16.t t = Indcpa.M.polyvec_reduce
 
--   proc polyvec_decompress_restore(rp : W32.t t) : W16.t t
+  - proc polyvec_decompress_restore(rp : W32.t t) : W16.t t
 
 *)
-
 
 end KyberPolyVec.
 
