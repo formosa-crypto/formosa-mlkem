@@ -579,7 +579,7 @@ seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
            r{2} \in dshort /\
            e2{2} \in dshort_R
 ).
-inline *; auto => />; first by smt(@SmtMap duni_ll duni_matrix_ll dshort_ll dshort_R_ll duni_R_ll dseed_ll).
+inline *; auto => />; split; [ by apply dseed_ll | by auto; smt(@SmtMap)]. 
 wp;call {1} (_: true ==> true).  by apply (All LRO); smt(LRO_o_ll duni_matrix_ll).
 skip;auto => />.
 move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; move : noise_commutes cv_bound_valid => />; smt().
@@ -622,67 +622,15 @@ module CorrectnessBound = {
     }
 }.
 
-(* This jump is based on the following computational assumption
-   which we would like to prove valid down to statistical distance
-   but so far have been unable to *)
-module type Dist = {
-    proc guess(u : vector,r : vector) : bool
-}.
-
-module URAssumption(D : Dist) = {
-  proc trueD() : bool = { var _A,r,b; _A <$ duni_matrix; r <$ dshort; 
-                b <@ D.guess(m_transpose _A *^ r,r); return b; }
-  proc idealD() : bool = { var u,r, b; u <$ duni; r <$ dshort; 
-                b <@ D.guess(u,r); return b;  }
-}.
-
-module D : Dist = {
-   proc guess(u : vector, r : vector) : bool = {
-         var s,e,e1,e2,n;
-         s <$ dshort;
-         e <$ dshort;
-         e1 <$ dshort;
-         e2 <$ dshort_R;
-         n <- noise_exp_part_simpl (u + e1) s e r e1 e2;
-         return (!good_noise (noise_bound - cv_bound) (noise_val n));
-   }
-}.
+(* This jump is assumed to introduce no slack in the
+   Kyber proposal. 
+   We need to figure out how to bound it. *)
 
 lemma correctness_simpl &m :
   `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | =
-  `| Pr[URAssumption(D).trueD() @ &m : res] - 
-     Pr[URAssumption(D).idealD() @ &m : res] |.
-proof.
-rewrite (_: 
-  Pr[CorrectnessBound.main() @ &m : res] = 
-  Pr[URAssumption(D).idealD() @ &m : res]).
-byequiv => />. 
-proc;inline *; wp.
-swap {1} 3 3.
-swap {2} [3..4] 4; wp.
-swap {2} 1 5.
-swap {2} 1 2.
-seq 5 5 : (#pre /\ ={s,e,r,e1,e2}); first by sim.
-rnd (fun (u : vector) => u + (- e1{2})) (fun (u : vector) => u + e1{2}).
-auto => />. 
-move => *. 
-split. by move => *; smt(@Vector).
-move => *.
-split. by move => *; smt(duni_vectorE).
-move => *.
-split. by smt(duni_vector_uni).
-move => *.
-split. by smt(@Vector). 
-move => *.
-by smt().
-rewrite (_: 
-  Pr[CorrectnessNoiseApprox.main() @ &m : res] = 
-  Pr[URAssumption(D).trueD() @ &m : res]).
-byequiv => />. 
-by proc; inline *; auto => />. 
-done.
-qed.
+     Pr[CorrectnessBound.main() @ &m : res] | = 0%r.
+admitted.
+
 
 op fail_prob : real.
 
@@ -691,9 +639,7 @@ axiom fail_prob &m :
 
 lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob - 
-   `| Pr[URAssumption(D).trueD() @ &m : res] - 
-      Pr[URAssumption(D).idealD() @ &m : res] |.
+  1%r - fail_prob.
 proof.
 have  := (fail_prob &m).
 have  := (correctness_simpl &m). 
