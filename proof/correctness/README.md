@@ -1,2 +1,2 @@
-W16extra.ec: No dependencies. Signed W16 lemmas.
+W16extra.ec: No dependencies. Signed W16 arithmetic lemmas.
 
