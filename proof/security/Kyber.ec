@@ -218,6 +218,8 @@ op cv_bound : int = 104. (* computed in sec estimates, must be
 op fail_prob : real. (* Need to compute exact value or replace
                         with suitable bound *)
 
+op epsilon_hack : real. (* Assumed simplification loss *)
+
 import H_MLWE.
 import M.
 import Matrix.
@@ -267,7 +269,8 @@ clone import MLWE_PKE as MLWEPKE with
   op noise_val <- noise_val,
   op noise_bound <- q %/ 4,
   op cv_bound <- cv_bound,
-  op fail_prob <- fail_prob
+  op fail_prob <- fail_prob,
+  op epsilon_hack <- epsilon_hack
   proof H_MLWE.M.ge0_size by smt(kvec_ge3)
   proof H_MLWE.dshort_R_ll  by apply Kyber.Poly.dshort_R_ll
   proof H_MLWE.duni_R_ll by apply Kyber.Poly.duni_R_ll
@@ -448,6 +451,16 @@ axiom All (O <: POracle{A}):
      islossless O.o =>
      islossless A(O).find.
 
+(* This is an assumption on what loss there could be wrt 
+   correctness because we consider rounding of uniform 
+   and independent coefficients *)
+axiom correctness_hack &m :
+  epsilon_hack =
+  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
+     Pr[CorrectnessBound.main() @ &m : res] |.
+
+(* This is the  exact bound one gets assuming the rounding
+   of uniform and independent coefficients *)
 lemma fail_prob &m : 
    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
 byphoare.
@@ -459,10 +472,8 @@ admitted. (* We need concrete distributions *)
 
 lemma kyber_correctness &m : 
  Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob - 
-   `| Pr[URAssumption(D).trueD() @ &m : res] - 
-      Pr[URAssumption(D).idealD() @ &m : res] |
-  by  apply (correctness_bound A All fail_prob &m).
+  1%r - fail_prob - epsilon_hack
+  by  apply (correctness_bound A All correctness_hack fail_prob &m).
 end section.
 
 (* At this point we can write down some intermediate results that

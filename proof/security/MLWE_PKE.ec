@@ -625,11 +625,12 @@ module CorrectnessBound = {
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
+op epsilon_hack : real.
 
-lemma correctness_simpl &m :
+axiom correctness_hack &m :
+  epsilon_hack =
   `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | = 0%r.
-admitted.
+     Pr[CorrectnessBound.main() @ &m : res] |.
 
 
 op fail_prob : real.
@@ -639,10 +640,10 @@ axiom fail_prob &m :
 
 lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob.
+  1%r - fail_prob - epsilon_hack.
 proof.
 have  := (fail_prob &m).
-have  := (correctness_simpl &m). 
+have  := (correctness_hack &m). 
 have := (correctness_approx &m).
 move => *.
 smt(@Real).
