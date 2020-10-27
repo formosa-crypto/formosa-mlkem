@@ -17,7 +17,7 @@ move => *; rewrite /exp => />.
 rewrite (_: n+1 < 0 = false) /= /iterop /=; first  by smt(). 
 rewrite (_: n < 0 = false) /=; first by smt().
 rewrite iteriS => />.
-case (n = 0); last by smt.
+case (n = 0); last by smt().
 move => />.
 rewrite iteri0 => />. 
 by rewrite mulrC mul1r.
@@ -29,7 +29,7 @@ rewrite /ofint /intmul => />.
 rewrite (_: n+1 < 0 = false) /= /iterop /=; first  by smt(). 
 rewrite (_: n < 0 = false) /=; first by smt().
 rewrite iteriS => />.
-case (n = 0); last by smt.
+case (n = 0); last by smt().
 move => />.
 rewrite iteri0 => />. 
 by rewrite addrC add0r.
