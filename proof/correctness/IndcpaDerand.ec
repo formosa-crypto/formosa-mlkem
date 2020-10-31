@@ -1,4 +1,5 @@
 
+
 require import AllCore List IntDiv CoreMap.
 from Jasmin require import JModel.
 
@@ -1454,18 +1455,20 @@ equiv dec_same :  M.indcpa_dec_jazz ~ Mderand.indcpa_dec_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
 proc.
 inline Mderand.indcpa_dec_compute.
-swap {2} 7 2.
-swap {2} 1 7.
+swap {2} 7 3.
+swap {2} 1 8.
 
+swap {1} 2 10.
+swap {2} 6 7.
 seq 7 7 : (={Glob.mem,msgp,skp,bp,v}); last first.
-seq 6 7 : (#pre /\ ={mp}). by sim.
+seq 7 8 : (#pre /\ ={mp}). by sim.
 
 (*********)
 inline*.
-seq 3 2 : (#pre /\ (rp = msgp){1} /\ ={a} /\ (a = mp){1} /\ rp0{1} = rp1{2} /\ (rp0 = a){1}).
-  by wp; skip => />.
+seq 3 3 : (#pre /\ (rp = msgp){1} /\ ={a} /\ (a = mp){1} /\ rp0{1} = rp1{2} /\ (rp0 = a){1} /\ (rp = witness){2}).
+by   wp; skip => />.
 seq 2 2 : (#[/1:11]pre).
-  while (#post /\ 0 <= i0{1} <= 256 /\ i0{1} = i1{2}); first by wp; skip => /> /#. 
+  while (#post /\ 0 <= to_uint i0{1} <= 256 /\ i0{1} = i1{2}); first by wp; skip => />;smt(@W64). 
   by wp; skip => />.
 swap{2} 3-1.
 seq 1 2 : (#[/1:9,10:]pre /\ ={a} /\ r{2} = witness).
@@ -1487,11 +1490,11 @@ seq 2 2 : (#[/3:12]pre /\ Glob.mem{2} = mem1 /\
                   storeW8 mem (to_uint (msgp{1} + (of_int i2)%W64)) (iteri 8 (fun (j1 : int) (r3 : W8.t) => 
                     r3 `|` truncateu8 (rp{2}.[8 * i2 + j1] `<<` (of_int j1)%W8)) W8.zero)) mem1 /\ 
                 (forall k, 0 <= k < 8 => rp{2}.[8*i{2}+k] = (((((zeroextu32 a{2}.[8 * i{2} + k]) `<<` W8.one) + 
-                  W32.of_int 1664) * W32.of_int 80636) `>>` W8.of_int 28) `&` W32.one)).
+                  W32.of_int 1665) * W32.of_int 80635) `>>` W8.of_int 28) `&` W32.one)).
       wp; skip => /> *; do split.
-      rewrite (eq_iteri (fun (i : int) (mem : global_mem_t) => storeW8 mem (to_uint (msgp{2} + (of_int i)%W64)) (iteri 8 (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i + j] `<<` (of_int j)%W8)) W8.zero)) (fun (i2 : int) (mem : global_mem_t) => storeW8 mem (to_uint (msgp{2} + (of_int i2)%W64)) (iteri 8 (fun (j1 : int) (r3 : W8.t) => r3 `|`  truncateu8 (rp{2}.[8 * i{2} <- (((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 1   <- (((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 2 <- (((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 3 <- (((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 4 <- (((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 5 <- (((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 6 <- (((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 7 <- (((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i2 + j1] `<<` (of_int j1)%W8)) W8.zero)) _ _).
+      rewrite (eq_iteri (fun (i : int) (mem : global_mem_t) => storeW8 mem (to_uint (msgp{2} + (of_int i)%W64)) (iteri 8 (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i + j] `<<` (of_int j)%W8)) W8.zero)) (fun (i2 : int) (mem : global_mem_t) => storeW8 mem (to_uint (msgp{2} + (of_int i2)%W64)) (iteri 8 (fun (j1 : int) (r3 : W8.t) => r3 `|`  truncateu8 (rp{2}.[8 * i{2} <- (((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 1   <- (((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 2 <- (((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 3 <- (((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 4 <- (((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 5 <- (((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 6 <- (((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 7 <- (((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i2 + j1] `<<` (of_int j1)%W8)) W8.zero)) _ _).
         simplify => *.
-        rewrite (eq_iteri (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i2 + j] `<<` (of_int j)%W8)) (fun (j1 : int) (r3 : W8.t) => r3 `|` truncateu8 (rp{2}.[8 * i{2} <- (((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 1 <- (((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 2 <- (((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 3 <- (((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 4 <- (((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 5 <- (((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 6 <- (((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 7 <- (((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i2 + j1] `<<`            (of_int j1)%W8)) _ _).
+        rewrite (eq_iteri (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i2 + j] `<<` (of_int j)%W8)) (fun (j1 : int) (r3 : W8.t) => r3 `|` truncateu8 (rp{2}.[8 * i{2} <- (((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 * i{2} + 1 <- (((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 2 <- (((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 3 <- (((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 4 <- (((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 5 <- (((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 6 <- (((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i{2} + 7 <- (((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`  (of_int 28)%W8) `&` W32.one].[8 * i2 + j1] `<<`            (of_int j1)%W8)) _ _).
           by simplify => *; do 2! congr; rewrite !Array256.set_neqiE 1..16:/#.
           by done.
         by done.
@@ -1510,7 +1513,7 @@ seq 2 2 : (#[/3:12]pre /\ Glob.mem{2} = mem1 /\
       by smt().
       by smt().
       (rewrite iteriS; first by done) => /=.
-        cut ->: (iteri 8 (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i{2} + j] `<<` (of_int j)%W8)) W8.zero) = (truncateu8 ((((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` W8.zero) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` W8.one) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 2)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 3)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 4)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 5)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 6)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 7)%W8)).
+        cut ->: (iteri 8 (fun (j : int) (r : W8.t) => r `|` truncateu8 (rp{2}.[8 * i{2} + j] `<<` (of_int j)%W8)) W8.zero) = (truncateu8 ((((zeroextu32 a{2}.[8 * i{2}] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` W8.zero) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 1] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` W8.one) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 2] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 2)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 3] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 3)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 4] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 4)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 5] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 5)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 6] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 6)%W8) `|` truncateu8 ((((zeroextu32 a{2}.[8 * i{2} + 7] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one `<<` (of_int 7)%W8)).
           rewrite iteri8 /=.
           do 7! (rewrite H2; first by done).
           cut ->: 8 * i{2} = 8 * i{2} + 0 by done.
@@ -1522,9 +1525,9 @@ seq 2 2 : (#[/3:12]pre /\ Glob.mem{2} = mem1 /\
      by move => *; congr => /#.
 
 sp 0 4; 
-while{2} (#[/1:14,15:]pre /\ 0 <= i0{2} <= 32 /\
+while{2} (#[/1:9,10:14,15:]pre /\ 0 <= i0{2} <= 32 /\
             Glob.mem{2} = iteri i0{2} (fun i mem => storeW8 mem (to_uint (msgp{2} + (W64.of_int i))) 
-            (iteri 8 (fun j r => r `|` truncateu8 (rp{2}.[8*i+j] `<<` W8.of_int j)) W8.zero)) mem1) (32 - i0{2}).
+            (iteri 8 (fun j r => r `|` truncateu8 (rp{2}.[8*i+j] `<<` W8.of_int j)) W8.zero)) mem1 ) (32 - i0{2}).
   move => &m z.
   unroll 3; unroll 4; unroll 5; unroll 6; unroll 7; unroll 8; unroll 9; unroll 10.
     (rcondt 3; first by wp; skip); (rcondt 7; first by wp; skip); (rcondt 11; first by wp; skip); (rcondt 15; first by wp; skip); (rcondt 19; first by wp; skip); (rcondt 23; first by wp; skip); (rcondt 27; first by wp; skip); (rcondt 31; first by wp; skip); (rcondf 35; first by wp; skip).
