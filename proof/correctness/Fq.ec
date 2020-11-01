@@ -18,13 +18,13 @@ clone import SignedReductions with
     op q <- q,
     op qinv <- 62209,
     op Rinv <- 169
-    proof q_bnd by (auto => />; smt)
-    proof q_odd1 by smt(qE)
-    proof q_odd2 by smt(qE)
-    proof qqinv by (auto => />; smt)
-    proof Rinv_gt0 by smt()
-    proof RRinv by (auto => />; smt)
-    proof qinv_bnd by (auto => />; smt).
+    proof q_bnd by (rewrite /R qE => />) 
+    proof q_odd1 by (rewrite qE => />)
+    proof q_odd2 by (rewrite qE => />)
+    proof qqinv by (rewrite /R qE  => />)
+    proof Rinv_gt0 by (auto => />)
+    proof RRinv by (rewrite /R qE  => />)
+    proof qinv_bnd by (rewrite /R  => />).
 
 require import IndcpaDerand.
 
@@ -317,7 +317,9 @@ rewrite (_:to_uint (- (of_int (x %% 4294967296))%W16) = to_uint (W16.of_int (-x)
   rewrite of_intN'.
   rewrite W16.of_uintK. simplify.
   rewrite (_:  4294967296 = 65536 * 65536); first by smt().
-  case (x %% (65536 * 65536) = 0). smt. smt.
+  case (x %% (65536 * 65536) = 0). 
+    by smt(@IntDiv).
+    by move => *; rewrite modNz => /#. 
  
 rewrite /BREDC.
 rewrite  (_: R^2 = W32.modulus); first by rewrite /R  /= expr0 /=.
@@ -327,15 +329,15 @@ rewrite -H.
 rewrite (_: to_sint a{hr} %% R = to_uint a{hr}). 
 rewrite to_sintE /smod. 
 case (2 ^ (16 - 1) <= to_uint a{hr}).
-rewrite (_: R = W16.modulus). smt. 
+rewrite (_: R = W16.modulus); first by rewrite /R => />; smt(). 
 rewrite (_: to_uint a{hr} - W16.modulus = to_uint a{hr} + (-1) * W16.modulus); first by smt().
 rewrite modzMDr.
-move => *. move : (W16.to_uint_cmp (a{hr})) => bnd.
-smt.
-rewrite (_: R = W16.modulus). smt. 
-smt(@W16).
-rewrite (_: W16.to_uint (W16.of_int (-x)) = (-x) %% R). case (0<= -x < W16.modulus); smt(@W16).
-smt(@W16 qE).
+move => *. 
+by move : (W16.to_uint_cmp (a{hr}));auto => />;smt().
+by rewrite /R; move : (W16.to_uint_cmp (a{hr}));auto => />;smt().
+rewrite (_: W16.to_uint (W16.of_int (-x)) = (-x) %% R). 
+by case (0<= -x < W16.modulus); smt(@W16).
+by smt(@W16 qE).
 qed.
 
 lemma barrett_reduce_ll :
@@ -376,9 +378,11 @@ split; first by smt(@ZModRing).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;
-  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
+  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />.
+       split; smt(@StdOrder.IntOrder). 
 + move => maxx; rewrite (_: max asz bsz = bsz); first by smt(). 
-  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
+  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />.
+       split; smt(@StdOrder.IntOrder). 
 qed.
 
 lemma sub_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
@@ -405,9 +409,11 @@ split; first by smt(@ZModRing).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;
-  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
+  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />.
+       split; smt(@StdOrder.IntOrder). 
 + move => maxx; rewrite (_: max asz bsz = bsz); first by smt(). 
-  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />;  by smt(@W16 @StdOrder.IntOrder). 
+  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />.
+       split; smt(@StdOrder.IntOrder). 
 qed.
 
 end Fq.
