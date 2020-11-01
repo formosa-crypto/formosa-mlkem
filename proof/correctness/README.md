@@ -27,5 +27,12 @@ Fq.ec:
   q value from Kyber, but  then defines all constants required for 
   implementation-specific optimizations, such a Montgomery
   representation, etc. 
-- Depends on all previous  files.
+- Depends on all previous files.
 
+NTT_Fq.ec:
+- Specification of NTT transformation over Fq (i.e. using field
+  operations). Gives ntt operators that can be linked to  algebraic
+  theory, which will show implementation is doing polynomial
+  multiplication equivalent to the product scanning method
+  used in security/Kyber.ec. 
+- Depends only on Fq.ec for the definitions of the field. 

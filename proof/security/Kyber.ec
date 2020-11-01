@@ -38,34 +38,6 @@ type poly = elem Array256.t.
 op zero : poly = Array256.create ZModRing.zero.
 op one : poly = zero.[0<-ZModRing.one].
 
-(* These are specified by the NTT_Fq 
-   algorithm specifications lifted to
-   lists. *)
-op zetas : elem Array128.t.
-op zetas_inv : elem Array128.t.
-op ntt : poly -> poly.
-op invntt : poly -> poly.
-
-(* This is specified similarly to 
-   what is in KyberPoly, but should come
-   from polynomial theory somehow *)
-
-op cmplx_mul (a :zmod * zmod, b : zmod * zmod, zzeta : zmod) =
-     (a.`2 * b.`2 * zzeta + a.`1*b.`1, 
-      a.`1 * b.`2 + a.`2 * b.`1).
-
-op dcmplx_mul(a1 : zmod * zmod, b1 : zmod * zmod, 
-              a2 : zmod * zmod, b2 : zmod * zmod, zzeta : zmod) = 
-     (cmplx_mul a1 b1 zzeta, cmplx_mul a2 b2 (-zzeta)).
-
-op basemul : poly -> poly -> poly.
-
-axiom basemul_sem (ap bp rs: poly) :
-   rs = basemul ap bp <=> 
-   forall k, 0 <= k < 64 =>
-     ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
-         (dcmplx_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
-                    (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas.[k+64])).
 
 op ( *) (pa pb : poly) : poly =
   Array256.init (fun (i : int) => foldr (fun (k : int) (ci : elem) =>
@@ -74,32 +46,6 @@ op ( *) (pa pb : poly) : poly =
      else ci - pa.[k] * pb.[256 - (i - k)]) 
       ZModRing.zero (iota_ 0 256)).
 
-op scale(p : poly, c : elem) : poly = 
-  Array256.map (fun x => x * c) p.
-
-(* This should be proved in polynomial theory *)
-axiom mul_sem (pa pb : poly) (c : elem) : 
-  invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
-   scale (pa * pb) c.
-
-lemma mul_sem1 (pa pb : poly) :
-  invntt (basemul (ntt pa) (ntt pb)) = 
-     invntt (scale (basemul (ntt pa) (ntt pb)) (ZModRing.one)).
-       congr. rewrite /scale.
-       pose a := basemul (ntt pa) (ntt pb).
-       apply Array256.ext_eq => *.
-       rewrite mapE initiE => />.
-       by smt(@ZModRing).
-qed.
-
-lemma scale1 (p : poly) :
-   scale p (ZModRing.one) = p.
-proof.
-rewrite /scale.
-apply Array256.ext_eq => *.
-rewrite mapiE => />.
-smt(@ZModRing).
-qed.
 
 op ( +) (pa pb : poly) : poly = 
   map2 (fun a b : elem  => ZModRing.(+) a b) pa pb.
@@ -476,11 +422,5 @@ lemma kyber_correctness &m :
   by  apply (correctness_bound A All correctness_hack fail_prob &m).
 end section.
 
-(* At this point we can write down some intermediate results that
-   we will need to connect this theory with the implementation *)
-
-op polyvec_ntt(v : H_MLWE.M.vector) : H_MLWE.M.vector =
-   H_MLWE.M.Vector.offunv 
-             (fun i => (ntt ((H_MLWE.M.Vector.tofunv v) i))).
 
 end Kyber.

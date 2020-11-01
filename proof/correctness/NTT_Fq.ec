@@ -1,11 +1,13 @@
-
 require import AllCore IntDiv Array256 Array128.
 require import Ring StdOrder Fq.
 
 import Fq IntOrder.
 theory NTT_Fq.
 
-import Kyber_.ZModRing.
+import Kyber_.
+import ZModRing.
+
+(* These are imperative specifications of the  NTT algorithms  *)
 
 module NTT = {
  proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
@@ -66,16 +68,6 @@ module NTT = {
   
  
 }.
-
-axiom ntt_spec_h _r :
-   hoare[ NTT.ntt :
-     _r = r /\ Kyber_.Poly.zetas = zetas ==>
-       res = Kyber_.Poly.ntt _r ].
-
-axiom invntt_spec_h _r  :
-   hoare[ NTT.invntt :
-     _r = r /\ Kyber_.Poly.zetas_inv = zetas_inv ==>
-       res = Kyber_.Poly.invntt _r ].
 
 lemma ntt_spec_ll : islossless NTT.ntt.
 proc.
@@ -178,17 +170,94 @@ while (   0 <= start <= 256
 by auto=> /> /#.
 qed.
 
-lemma ntt_spec _r :
-   phoare[ NTT.ntt :
-     _r = r /\ Kyber_.Poly.zetas = zetas ==>
-       res = Kyber_.Poly.ntt _r ] = 1%r
-  by conseq ntt_spec_ll (ntt_spec_h _r); done.
+(* We need  to connect these to the semantics of Kyber algebra, which we will
+do by defining operators that capture the semantics of these algorithms.
+To Do: give explicit definitions and prove equivalence  between
+functional  and imperative realizations. *)
 
+op zetas_const : elem Array128.t.
+op zetas_inv_const : elem Array128.t.
+op ntt : poly -> poly.
+op invntt : poly -> poly.
+
+lemma ntt_spec_h _r :
+   hoare[ NTT.ntt :
+     arg = (_r,zetas_const) ==>
+       res = ntt _r ].
+admitted.
+
+lemma invntt_spec_h _r  :
+   hoare[ NTT.invntt : arg=(_r,zetas_inv_const) ==> res = invntt _r ].
+admitted.
+
+lemma ntt_spec _r :
+   phoare[ NTT.ntt : arg = (_r,zetas_const) ==> res = ntt _r ] = 1%r
+  by conseq ntt_spec_ll (ntt_spec_h _r); done.
 
 lemma invntt_spec _r :
    phoare[ NTT.invntt :
-     _r = r /\ Kyber_.Poly.zetas_inv = zetas_inv ==>
-       res = Kyber_.Poly.invntt _r ] = 1%r
+     arg=(_r,zetas_inv_const) ==> res = invntt _r ] = 1%r
   by conseq invntt_spec_ll (invntt_spec_h _r); done.
+
+(* ALL THIS WILL BE REPLACED WITH POLY THEORY *)
+
+(*  The end goal is to connect  this to polynomial algebra, which  should
+    give us a notion of complex multiplication that can be plugged in to
+    a theorem which we axiomatize below. *)
+
+op cmplx_mul (a :zmod * zmod, b : zmod * zmod, zzeta : zmod) =
+     (a.`2 * b.`2 * zzeta + a.`1*b.`1, 
+      a.`1 * b.`2 + a.`2 * b.`1).
+
+op dcmplx_mul(a1 : zmod * zmod, b1 : zmod * zmod, 
+              a2 : zmod * zmod, b2 : zmod * zmod, zzeta : zmod) = 
+     (cmplx_mul a1 b1 zzeta, cmplx_mul a2 b2 (-zzeta)).
+
+op basemul : poly -> poly -> poly.
+
+axiom basemul_sem (ap bp rs: poly) :
+   rs = basemul ap bp <=> 
+   forall k, 0 <= k < 64 =>
+     ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
+         (dcmplx_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
+            (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas_const.[k+64])).
+
+op scale(p : poly, c : elem) : poly =  Array256.map (fun x => x * c) p.
+
+(* This theorem should come from the algebraic infrastructure, along with
+another one that says our axiomatization of mul and add in Kyber are 
+explicit formulae for the ring operations. *)
+axiom mul_sem (pa pb : poly) (c : elem) : 
+  invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
+   scale (pa * pb) c.
+
+(* END: ALL THIS WILL BE REPLACED WITH POLY THEORY *)
+
+lemma mul_sem1 (pa pb : poly) :
+  invntt (basemul (ntt pa) (ntt pb)) = 
+     invntt (scale (basemul (ntt pa) (ntt pb)) (ZModRing.one)).
+       congr. rewrite /scale.
+       pose a := basemul (ntt pa) (ntt pb).
+       apply Array256.ext_eq => *.
+       rewrite mapE initiE => />.
+       by smt(@ZModRing).
+qed.
+
+lemma scale1 (p : poly) :
+   scale p (ZModRing.one) = p.
+proof.
+rewrite /scale.
+apply Array256.ext_eq => *.
+rewrite mapiE => />.
+smt(@ZModRing).
+qed.
+
+(* At this point we can write down some intermediate definitions that
+   we will need to connect this theory with the implementation *)
+import Kyber_.MLWEPKE.H_MLWE.M.
+
+op polyvec_ntt(v : vector) : vector =
+   Vector.offunv 
+       (fun i => (ntt ((Vector.tofunv v) i))).
 
 end NTT_Fq.
