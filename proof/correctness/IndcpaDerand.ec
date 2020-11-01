@@ -1549,10 +1549,11 @@ wp; skip => />.
         by congr => /#.
 (*********)
 
+seq 4 0 : #pre; first by auto => />.
+
 inline *; auto => />.
 
-seq 5 1 : (#pre /\ ={ap} /\ (bp = witness){1} /\ (mp = witness){1} /\ (skpv = witness){1} /\ 
-            (v = witness){1} /\ (ap = ctp){1}).
+seq 1 1 : (#pre /\ ={ap} /\ (ap = ctp){1}).
 by wp; skip.
 seq 5 5 : (#pre /\ 
           (forall k, 0 <= k < 768 => r{1}.[k] = 
@@ -1607,27 +1608,33 @@ seq 5 5 : (#pre /\
     by smt().
     by move => *; rewrite H8; move : H; rewrite ultE of_uintK pmod_small // /#.
 
-seq 4 4 : (#[/1:6,7:10,11:]pre /\ bp{1} = r{1} /\ r1{2} = r{2} /\ ={ctp} /\ ={ap0} /\ 
-            (ap0 = ctp){1} /\ ={rp} /\ (rp = witness){1}); first by wp; skip.
+seq 4 4 : (#[/1:6,7:]pre /\ bp{1} = r{1} /\ r1{2} = r{2} /\ ={ctp} /\ ={ap0} /\ 
+            (ap0 = ctp){1} /\ (rp = witness){2}). by wp; skip => />. 
 
-seq 2 2 : (#[/1:15]pre /\ 
+seq 3 2 : (#[/1:12]pre /\ 
             (forall k, 0 <= k < 256 =>
               rp{1}.[k] = ((rp{2}.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
-  while (#[/1:15]post /\ ={i0} /\ 0 <= i0{1} <= 128 /\
-            (forall k, 0 <= k < i0{1}*2 =>
-              rp{1}.[k] = ((rp{2}.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
+  while (#[/1:12]post /\ to_uint i0{1} = i0{2} /\ 0 <= to_uint i0{1} <= 128 /\
+            (forall k, 0 <= k < to_uint  i0{1}*2 =>
+              rp{1}.[k] = ((rp{2}.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4) /\
+              to_uint j0{1} = 2*to_uint i0{1}).
     wp; skip => /> *; do split.
-      by smt().
-      by smt().
+      by smt(@W64).
+      by smt(@W64).
+      by smt(@W64).
       move => k *.
         rewrite !Array256.get_setE. 
+          by smt(@W64).
           by smt().
           by smt().
           by smt().
-          by smt().
-          case (k = 2 * i0{2} + 1) => ?; first by done.
-          case (k = 2 * i0{2}) => ?; first by done.
-          by rewrite H2 1:/#.
+          rewrite to_uintD_small; first by smt().
+          rewrite (_: to_uint W64.one = 1); first by smt(@W64).
+          rewrite (H3).
+          case (k = 2 * to_uint i0{1} + 1) => ?; first by done.
+          case (k = 2 * to_uint i0{1}) => ?; first by done.
+          by rewrite H2; smt(@W64).  
+          by  rewrite  to_uintD_small; smt(@W64). by smt(@W64).   by  rewrite ultE; smt(@W64).
   wp; skip => /> *; do split.
     by smt().
     move => *.
@@ -1635,7 +1642,7 @@ seq 2 2 : (#[/1:15]pre /\
 
 sp 0 4.
 seq 0 5 : (#pre /\ r{1} = r0{2}).
-  while{2} (#[/1:20]post /\ 0 <= to_uint i1{2} <= 768+3 /\ to_uint i1{2} %% 4 = 0 /\
+  while{2} (#[/1:17]post /\ 0 <= to_uint i1{2} <= 768+3 /\ to_uint i1{2} %% 4 = 0 /\
               (forall k, 0 <= k < to_uint i1{2} => r0{2}.[k] = r{1}.[k])) (768 - to_uint i1{2}).
     move => &m z.
     unroll 2; unroll 3; unroll 4; unroll 5; unroll 6.
