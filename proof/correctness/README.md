@@ -19,12 +19,13 @@ and decryption functions take polynomials as inputs and output (possibly
 rounded) polynomials.
 
 Fq.ec: 
-- Correction of coefficient-operations and connection to semantics
-  over Fq (i.e., congruence relations + ranges).
+- Correction of coefficient-wise operations in IndCpaDerand and 
+  connection to semantics over Fq (i.e., congruence relations + ranges).
   First connection between implementation and security proof. 
   Clones ../security/Kyber and provides concrete parameters for vector 
   sizes and randomness seed type (byte arrays). Gets the modulus
   q value from Kyber, but  then defines all constants required for 
   implementation-specific optimizations, such a Montgomery
   representation, etc. 
-  
+- Depends on all previous  files.
+
