@@ -143,8 +143,8 @@ lemma poly_csubq_corr_h ap :
 proof.
 move => *.
 proc.
-while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 i 1 /\ 0 <= i<=256).
-seq 2 : (#pre /\ t = rp.[i] - W16.of_int 3329); first by auto => />.
+while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (to_uint i) 1 /\ 0 <= to_uint i<=256).
+seq 2 : (#pre /\ t = rp.[to_uint i] - W16.of_int 3329); first by auto => />.
 seq 3 : (#pre /\ 
         (t \slt W16.zero => b = W16.of_int q) /\ 
         (W16.zero \sle t => b = W16.of_int 0)).
@@ -152,7 +152,7 @@ seq 2 : (#pre /\
         (t \slt W16.zero => b = W16.of_int (W16.modulus -1)) /\ 
         (W16.zero \sle t => b = W16.of_int 0)).
 auto => /> *.
-pose x := rp{hr}.[i{hr}] - (of_int 3329)%W16.
+pose x := rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16.
 smt (getsign @W16).
 auto => />.
 move =>  *.
@@ -166,30 +166,32 @@ by rewrite (H5 asp)=> />.
 auto => />.
 move => * />.
 split. 
-case (rp{hr}.[i{hr}] - (of_int 3329)%W16 \slt W16.zero).
+case (rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16 \slt W16.zero).
 move => asp.
 rewrite (H4 asp) qE => />. 
 rewrite /lift_array256 => />.
 apply Array256.ext_eq => /> *.
 rewrite mapiE => />.
 rewrite mapiE => />.
-case (x = i{hr}); last by smt(@Array256).
+case (x = to_uint i{hr}); last by smt(@Array256).
 move => ->.
 rewrite set_eqiE => />.
-by rewrite (_: rp{hr}.[i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 = rp{hr}.[i{hr}]);  ring.
+smt(@W64).
+by rewrite (_: rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 = rp{hr}.[to_uint i{hr}]);  ring.
 
 move => *.
-have asp : (W16.zero \sle rp{hr}.[i{hr}] - (of_int 3329)%W16); first by smt(@W16).
+have asp : (W16.zero \sle rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16); first by smt(@W16).
 rewrite (H5 asp) => />. 
 apply Array256.ext_eq => /> *.
 rewrite mapiE => />.
 rewrite mapiE => />.
-case (x = i{hr}); last by smt(@Array256).
+case (x = to_uint i{hr}); last by smt(@Array256).
 move => ->.
 rewrite set_eqiE => />.
+smt(@W64).
 rewrite to_sintD_small => />.
 move : H; rewrite /pos_bound256_cxq => bnd.
-move : (bnd i{hr} _); first by smt().
+move : (bnd (to_uint i{hr}) _); first by smt(@W64).
 auto => />.
 rewrite qE => /> *.
 split. 
@@ -244,17 +246,16 @@ smt().
 move : H H0; rewrite /pos_bound256_cxq => /> *.
 split.
 move => k.
-case (i{hr} = k); last first.
+case (to_uint i{hr} = k); last first.
 move => *.
-rewrite set_neqiE => />; first by smt().
+rewrite set_neqiE => />; first 2 by smt(@W64).
 by move : (H k); rewrite /bpos16 => /#.
 move => *.
-rewrite set_eqiE => />; first by smt().
-case (rp{hr}.[i{hr}] - (of_int 3329)%W16 \slt W16.zero).
+rewrite set_eqiE => />; first 2 by smt(@W64).
+case (rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16 \slt W16.zero).
 move => asp.
 rewrite (H4 asp) qE => />.
-rewrite (_: rp{hr}.[i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 =
-              (rp{hr}.[i{hr}])); first by ring.
+rewrite (_: rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 =  (rp{hr}.[to_uint i{hr}])); first by ring.
 split; first by smt(@W16 @Ring.IntID @JWord.W16.WRingA).
 
 (*****)
@@ -263,7 +264,7 @@ rewrite to_sint_unsigned.
 done.
 rewrite -to_sint_unsigned.
 done.
-move : (H i{hr}).
+move : (H (to_uint i{hr})).
 rewrite H6 H7 H8.
 simplify.
 rewrite qE.
@@ -277,7 +278,6 @@ auto => />.
 split.
 
 (******)
-search W16.to_sint.
 move : H9.
 rewrite sltE.
 rewrite to_sintB_small.
@@ -285,7 +285,7 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
+move : (H (to_uint i{hr})).
 rewrite H6 H7 H8.
 simplify.
 rewrite qE.
@@ -310,7 +310,6 @@ rewrite /smod => />.
 split.
 
 (******)
-search W16.to_sint.
 move : H9.
 rewrite sltE.
 rewrite to_sintB_small.
@@ -318,7 +317,7 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
+move : (H (to_uint i{hr})).
 rewrite H6 H7 H8.
 simplify.
 rewrite qE.
@@ -345,7 +344,7 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
+move : (H (to_uint i{hr})).
 rewrite H6 H7 H8.
 simplify.
 rewrite qE.
@@ -365,7 +364,7 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
+move : (H (to_uint i{hr})).
 rewrite H6 H7 H8.
 simplify.
 rewrite qE.
@@ -374,7 +373,7 @@ smt().
 rewrite of_sintK /=.
 rewrite /smod /=.
 move => *.
-move : (H i{hr}).
+move : (H (to_uint i{hr})).
 rewrite H6 H7 H8.
 simplify.
 rewrite qE.
@@ -385,7 +384,7 @@ smt().
 rewrite qE to_sintN of_sintK => />.
 rewrite /smod => />. 
 
-move : (H i{hr}).
+move : (H (to_uint i{hr})).
 rewrite H6 H7 H8.
 simplify.
 rewrite qE.
@@ -393,31 +392,30 @@ simplify.
 rewrite /smod /=.
 smt().
 
-split; last by smt().
+split; last by smt(@W64).
 move => *.
-case (0 <= k < i{hr}).
+case (0 <= k < to_uint i{hr}).
 move => *.
 move : (H0 k _) => /> *.
-by rewrite !set_neqiE => />;  smt().
+by rewrite !set_neqiE => />; smt(@W64).
 move => *.
-rewrite !set_eqiE => />; first by smt().
+rewrite !set_eqiE => />; first 2 by smt(@W64).
 
-case (rp{hr}.[i{hr}] - (of_int 3329)%W16 \slt W16.zero).
+case (rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16 \slt W16.zero).
 move => asp.
 rewrite (H4 asp) qE => />.
-rewrite (_: rp{hr}.[i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 =
-              (rp{hr}.[i{hr}])); first by ring.
+rewrite (_: rp{hr}.[to_uint i{hr}] - (of_int 3329)%W16 + (of_int 3329)%W16 =  (rp{hr}.[to_uint i{hr}])); first by ring.
 split.
-smt().
+smt(@W64).
 
 (******)
 move => *.
-have ?: 0 < k \/ i{hr} <= k.
+have ?: 0 < k \/ to_uint i{hr} <= k.
 smt().
-have ?: i{hr} <= k.
+have ?: to_uint i{hr} <= k.
 smt().
-have ?: i{hr} = k.
-smt().
+have ?: to_uint i{hr} = k.
+smt(@W64).
 move : asp.
 rewrite sltE.
 rewrite to_sintB_small.
@@ -425,12 +423,9 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
 cut ->: to_sint W16.zero = 0.
@@ -455,12 +450,9 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
 cut ->: to_sint W16.zero = 0.
@@ -487,12 +479,9 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
 cut ->: to_sint W16.zero = 0.
@@ -514,12 +503,9 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
 cut ->: to_sint W16.zero = 0.
@@ -534,21 +520,15 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
 move => *.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 (******)
 
 rewrite qE to_sintN of_sintK => />.
@@ -556,12 +536,12 @@ rewrite /smod => />.
 
 (******)
 move => *.
-have ?: 0 < k \/ i{hr} <= k.
+have ?: 0 < k \/ to_uint i{hr} <= k.
 smt().
-have ?: i{hr} <= k.
+have ?: to_uint i{hr} <= k.
 smt().
-have ?: i{hr} = k.
-smt().
+have ?: to_uint i{hr} = k.
+smt(@W64).
 move : H9.
 rewrite sltE.
 rewrite to_sintB_small.
@@ -569,12 +549,9 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
 cut ->: to_sint W16.zero = 0.
@@ -589,23 +566,30 @@ rewrite of_sintK.
 simplify.
 rewrite /smod.
 simplify.
-move : (H i{hr}).
-rewrite H1 H3.
-simplify.
-rewrite qE.
-simplify.
-smt().
+move : (H (to_uint i{hr})).
+move : H3 H0; rewrite ultE qE => /> *.
+smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
 move => *.
-smt tmo=10. (* :( *)
+move : H H0 H9 H10; rewrite qE => />.
+pose aa := to_sint rp{hr}.[to_uint i{hr}]; smt(@W64).
 (******)
 
-by auto => /> /#. 
+auto => />. 
+move => *; split; 1:smt(). 
+move => i0 rp0.
+rewrite ultE =>  /> /#.
 qed.
 
-lemma poly_csubq_ll : islossless Mderand.poly_csubq
-  by proc; while (0 <= i <= 256) (256 -i); auto => /> /#. 
+lemma poly_csubq_ll : islossless Mderand.poly_csubq.
+proof.
+proc.
+while (0 <= to_uint i <= 256) (256 - to_uint i); auto => />.
+rewrite ultE => ??? /> ?.
+rewrite to_uintD_small;smt(@W64).
+smt(@W64).
+qed.
 
 lemma poly_csubq_corr ap :
       phoare[ Mderand.poly_csubq :
@@ -618,11 +602,11 @@ lemma poly_csubq_corr ap :
 
 lemma formula2 x :
   0 <= x < 3329 =>
-   (x * 2 + 1664) * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 = (x * 2 +1664) %/ 3329 %% 16.
+   (x * 2 + 1665) * (268435456 %/ 3329) %% 4294967296 %/ 268435456 = (x * 2 +1664) %/ 3329 %% 16.
 proof.
   have ? :
    (all
-     (fun x => (x * 2 + 1664) * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 = (x * 2 +1664) %/ 3329 %% 16)
+     (fun x => (x * 2 + 1665) * (268435456 %/ 3329 ) %% 4294967296 %/ 268435456 = (x * 2 +1664) %/ 3329 %% 16)
      (range 0 3329)).
 by [].
 by smt().
@@ -650,6 +634,7 @@ lemma poly_tomsg_corr_h _a :
              map (fun x => x `&` (W32.of_int 1) = W32.one) res = m_decode _a].
 proof.
 proc.
+seq 1 : #pre; first by auto => />.
 swap 2 1.
 unroll for 4.
 unroll for 130.
@@ -690,264 +675,264 @@ auto => />.
 move => *.
 rewrite (_:
 rp{hr}.[0 <-
-    (((zeroextu32 a{hr}.[0] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[1 <-
-    (((zeroextu32 a{hr}.[1] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[2 <-
-    (((zeroextu32 a{hr}.[2] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[3 <-
-    (((zeroextu32 a{hr}.[3] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[4 <-
-    (((zeroextu32 a{hr}.[4] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[5 <-
-    (((zeroextu32 a{hr}.[5] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[6 <-
-    (((zeroextu32 a{hr}.[6] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[7 <-
-    (((zeroextu32 a{hr}.[7] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 <-
-    (((zeroextu32 a{hr}.[8] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[9 <-
-    (((zeroextu32 a{hr}.[9] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[10 <-
-    (((zeroextu32 a{hr}.[10] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[11 <-
-    (((zeroextu32 a{hr}.[11] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[12 <-
-    (((zeroextu32 a{hr}.[12] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[13 <-
-    (((zeroextu32 a{hr}.[13] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[14 <-
-    (((zeroextu32 a{hr}.[14] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[15 <-
-    (((zeroextu32 a{hr}.[15] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[16 <-
-    (((zeroextu32 a{hr}.[16] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[17 <-
-    (((zeroextu32 a{hr}.[17] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[18 <-
-    (((zeroextu32 a{hr}.[18] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[19 <-
-    (((zeroextu32 a{hr}.[19] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[20 <-
-    (((zeroextu32 a{hr}.[20] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[21 <-
-    (((zeroextu32 a{hr}.[21] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[22 <-
-    (((zeroextu32 a{hr}.[22] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[23 <-
-    (((zeroextu32 a{hr}.[23] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[24 <-
-    (((zeroextu32 a{hr}.[24] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[25 <-
-    (((zeroextu32 a{hr}.[25] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[26 <-
-    (((zeroextu32 a{hr}.[26] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[27 <-
-    (((zeroextu32 a{hr}.[27] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[28 <-
-    (((zeroextu32 a{hr}.[28] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[29 <-
-    (((zeroextu32 a{hr}.[29] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[30 <-
-    (((zeroextu32 a{hr}.[30] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[31 <-
-    (((zeroextu32 a{hr}.[31] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[32 <-
-    (((zeroextu32 a{hr}.[32] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[33 <-
-    (((zeroextu32 a{hr}.[33] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[34 <-
-    (((zeroextu32 a{hr}.[34] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[35 <-
-    (((zeroextu32 a{hr}.[35] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[36 <-
-    (((zeroextu32 a{hr}.[36] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[37 <-
-    (((zeroextu32 a{hr}.[37] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[38 <-
-    (((zeroextu32 a{hr}.[38] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[39 <-
-    (((zeroextu32 a{hr}.[39] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[40 <-
-    (((zeroextu32 a{hr}.[40] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[41 <-
-    (((zeroextu32 a{hr}.[41] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[42 <-
-    (((zeroextu32 a{hr}.[42] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[43 <-
-    (((zeroextu32 a{hr}.[43] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[44 <-
-    (((zeroextu32 a{hr}.[44] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[45 <-
-    (((zeroextu32 a{hr}.[45] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[46 <-
-    (((zeroextu32 a{hr}.[46] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[47 <-
-    (((zeroextu32 a{hr}.[47] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[48 <-
-    (((zeroextu32 a{hr}.[48] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[49 <-
-    (((zeroextu32 a{hr}.[49] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[50 <-
-    (((zeroextu32 a{hr}.[50] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[51 <-
-    (((zeroextu32 a{hr}.[51] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[52 <-
-    (((zeroextu32 a{hr}.[52] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[53 <-
-    (((zeroextu32 a{hr}.[53] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[54 <-
-    (((zeroextu32 a{hr}.[54] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[55 <-
-    (((zeroextu32 a{hr}.[55] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[56 <-
-    (((zeroextu32 a{hr}.[56] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[57 <-
-    (((zeroextu32 a{hr}.[57] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[58 <-
-    (((zeroextu32 a{hr}.[58] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[59 <-
-    (((zeroextu32 a{hr}.[59] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[60 <-
-    (((zeroextu32 a{hr}.[60] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[61 <-
-    (((zeroextu32 a{hr}.[61] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[62 <-
-    (((zeroextu32 a{hr}.[62] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[63 <-
-    (((zeroextu32 a{hr}.[63] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[64 <-
-    (((zeroextu32 a{hr}.[64] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[65 <-
-    (((zeroextu32 a{hr}.[65] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[66 <-
-    (((zeroextu32 a{hr}.[66] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[67 <-
-    (((zeroextu32 a{hr}.[67] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[68 <-
-    (((zeroextu32 a{hr}.[68] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[69 <-
-    (((zeroextu32 a{hr}.[69] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[70 <-
-    (((zeroextu32 a{hr}.[70] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[71 <-
-    (((zeroextu32 a{hr}.[71] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[72 <-
-    (((zeroextu32 a{hr}.[72] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[73 <-
-    (((zeroextu32 a{hr}.[73] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[74 <-
-    (((zeroextu32 a{hr}.[74] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[75 <-
-    (((zeroextu32 a{hr}.[75] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[76 <-
-    (((zeroextu32 a{hr}.[76] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[77 <-
-    (((zeroextu32 a{hr}.[77] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[78 <-
-    (((zeroextu32 a{hr}.[78] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[79 <-
-    (((zeroextu32 a{hr}.[79] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[80 <-
-    (((zeroextu32 a{hr}.[80] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[81 <-
-    (((zeroextu32 a{hr}.[81] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[82 <-
-    (((zeroextu32 a{hr}.[82] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[83 <-
-    (((zeroextu32 a{hr}.[83] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[84 <-
-    (((zeroextu32 a{hr}.[84] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[85 <-
-    (((zeroextu32 a{hr}.[85] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[86 <-
-    (((zeroextu32 a{hr}.[86] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[87 <-
-    (((zeroextu32 a{hr}.[87] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[88 <-
-    (((zeroextu32 a{hr}.[88] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[89 <-
-    (((zeroextu32 a{hr}.[89] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[90 <-
-    (((zeroextu32 a{hr}.[90] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[91 <-
-    (((zeroextu32 a{hr}.[91] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[92 <-
-    (((zeroextu32 a{hr}.[92] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[93 <-
-    (((zeroextu32 a{hr}.[93] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[94 <-
-    (((zeroextu32 a{hr}.[94] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[95 <-
-    (((zeroextu32 a{hr}.[95] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[96 <-
-    (((zeroextu32 a{hr}.[96] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[97 <-
-    (((zeroextu32 a{hr}.[97] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[98 <-
-    (((zeroextu32 a{hr}.[98] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[99 <-
-    (((zeroextu32 a{hr}.[99] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[100 <-
-    (((zeroextu32 a{hr}.[100] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[101 <-
-    (((zeroextu32 a{hr}.[101] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[102 <-
-    (((zeroextu32 a{hr}.[102] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[103 <-
-    (((zeroextu32 a{hr}.[103] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[104 <-
-    (((zeroextu32 a{hr}.[104] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[105 <-
-    (((zeroextu32 a{hr}.[105] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[106 <-
-    (((zeroextu32 a{hr}.[106] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[107 <-
-    (((zeroextu32 a{hr}.[107] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[108 <-
-    (((zeroextu32 a{hr}.[108] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[109 <-
-    (((zeroextu32 a{hr}.[109] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[110 <-
-    (((zeroextu32 a{hr}.[110] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[111 <-
-    (((zeroextu32 a{hr}.[111] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[112 <-
-    (((zeroextu32 a{hr}.[112] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[113 <-
-    (((zeroextu32 a{hr}.[113] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[114 <-
-    (((zeroextu32 a{hr}.[114] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[115 <-
-    (((zeroextu32 a{hr}.[115] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[116 <-
-    (((zeroextu32 a{hr}.[116] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[117 <-
-    (((zeroextu32 a{hr}.[117] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[118 <-
-    (((zeroextu32 a{hr}.[118] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[119 <-
-    (((zeroextu32 a{hr}.[119] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[120 <-
-    (((zeroextu32 a{hr}.[120] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[121 <-
-    (((zeroextu32 a{hr}.[121] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[122 <-
-    (((zeroextu32 a{hr}.[122] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[123 <-
-    (((zeroextu32 a{hr}.[123] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[124 <-
-    (((zeroextu32 a{hr}.[124] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[125 <-
-    (((zeroextu32 a{hr}.[125] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[126 <-
-    (((zeroextu32 a{hr}.[126] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[127 <-
-    (((zeroextu32 a{hr}.[127] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[128 <-
-    (((zeroextu32 a{hr}.[128] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[129 <-
-    (((zeroextu32 a{hr}.[129] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[130 <-
-    (((zeroextu32 a{hr}.[130] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[131 <-
-    (((zeroextu32 a{hr}.[131] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[132 <-
-    (((zeroextu32 a{hr}.[132] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[133 <-
-    (((zeroextu32 a{hr}.[133] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[134 <-
-    (((zeroextu32 a{hr}.[134] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[135 <-
-    (((zeroextu32 a{hr}.[135] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[136 <-
-    (((zeroextu32 a{hr}.[136] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[137 <-
-    (((zeroextu32 a{hr}.[137] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[138 <-
-    (((zeroextu32 a{hr}.[138] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[139 <-
-    (((zeroextu32 a{hr}.[139] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[140 <-
-    (((zeroextu32 a{hr}.[140] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[141 <-
-    (((zeroextu32 a{hr}.[141] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[142 <-
-    (((zeroextu32 a{hr}.[142] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[143 <-
-    (((zeroextu32 a{hr}.[143] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[144 <-
-    (((zeroextu32 a{hr}.[144] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[145 <-
-    (((zeroextu32 a{hr}.[145] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[146 <-
-    (((zeroextu32 a{hr}.[146] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[147 <-
-    (((zeroextu32 a{hr}.[147] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[148 <-
-    (((zeroextu32 a{hr}.[148] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[149 <-
-    (((zeroextu32 a{hr}.[149] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[150 <-
-    (((zeroextu32 a{hr}.[150] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[151 <-
-    (((zeroextu32 a{hr}.[151] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[152 <-
-    (((zeroextu32 a{hr}.[152] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[153 <-
-    (((zeroextu32 a{hr}.[153] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[154 <-
-    (((zeroextu32 a{hr}.[154] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[155 <-
-    (((zeroextu32 a{hr}.[155] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[156 <-
-    (((zeroextu32 a{hr}.[156] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[157 <-
-    (((zeroextu32 a{hr}.[157] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[158 <-
-    (((zeroextu32 a{hr}.[158] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[159 <-
-    (((zeroextu32 a{hr}.[159] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[160 <-
-    (((zeroextu32 a{hr}.[160] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[161 <-
-    (((zeroextu32 a{hr}.[161] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[162 <-
-    (((zeroextu32 a{hr}.[162] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[163 <-
-    (((zeroextu32 a{hr}.[163] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[164 <-
-    (((zeroextu32 a{hr}.[164] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[165 <-
-    (((zeroextu32 a{hr}.[165] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[166 <-
-    (((zeroextu32 a{hr}.[166] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[167 <-
-    (((zeroextu32 a{hr}.[167] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[168 <-
-    (((zeroextu32 a{hr}.[168] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[169 <-
-    (((zeroextu32 a{hr}.[169] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[170 <-
-    (((zeroextu32 a{hr}.[170] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[171 <-
-    (((zeroextu32 a{hr}.[171] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[172 <-
-    (((zeroextu32 a{hr}.[172] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[173 <-
-    (((zeroextu32 a{hr}.[173] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[174 <-
-    (((zeroextu32 a{hr}.[174] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[175 <-
-    (((zeroextu32 a{hr}.[175] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[176 <-
-    (((zeroextu32 a{hr}.[176] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[177 <-
-    (((zeroextu32 a{hr}.[177] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[178 <-
-    (((zeroextu32 a{hr}.[178] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[179 <-
-    (((zeroextu32 a{hr}.[179] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[180 <-
-    (((zeroextu32 a{hr}.[180] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[181 <-
-    (((zeroextu32 a{hr}.[181] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[182 <-
-    (((zeroextu32 a{hr}.[182] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[183 <-
-    (((zeroextu32 a{hr}.[183] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[184 <-
-    (((zeroextu32 a{hr}.[184] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[185 <-
-    (((zeroextu32 a{hr}.[185] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[186 <-
-    (((zeroextu32 a{hr}.[186] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[187 <-
-    (((zeroextu32 a{hr}.[187] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[188 <-
-    (((zeroextu32 a{hr}.[188] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[189 <-
-    (((zeroextu32 a{hr}.[189] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[190 <-
-    (((zeroextu32 a{hr}.[190] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[191 <-
-    (((zeroextu32 a{hr}.[191] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[192 <-
-    (((zeroextu32 a{hr}.[192] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[193 <-
-    (((zeroextu32 a{hr}.[193] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[194 <-
-    (((zeroextu32 a{hr}.[194] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[195 <-
-    (((zeroextu32 a{hr}.[195] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[196 <-
-    (((zeroextu32 a{hr}.[196] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[197 <-
-    (((zeroextu32 a{hr}.[197] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[198 <-
-    (((zeroextu32 a{hr}.[198] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[199 <-
-    (((zeroextu32 a{hr}.[199] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[200 <-
-    (((zeroextu32 a{hr}.[200] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[201 <-
-    (((zeroextu32 a{hr}.[201] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[202 <-
-    (((zeroextu32 a{hr}.[202] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[203 <-
-    (((zeroextu32 a{hr}.[203] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[204 <-
-    (((zeroextu32 a{hr}.[204] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[205 <-
-    (((zeroextu32 a{hr}.[205] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[206 <-
-    (((zeroextu32 a{hr}.[206] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[207 <-
-    (((zeroextu32 a{hr}.[207] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[208 <-
-    (((zeroextu32 a{hr}.[208] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[209 <-
-    (((zeroextu32 a{hr}.[209] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[210 <-
-    (((zeroextu32 a{hr}.[210] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[211 <-
-    (((zeroextu32 a{hr}.[211] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[212 <-
-    (((zeroextu32 a{hr}.[212] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[213 <-
-    (((zeroextu32 a{hr}.[213] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[214 <-
-    (((zeroextu32 a{hr}.[214] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[215 <-
-    (((zeroextu32 a{hr}.[215] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[216 <-
-    (((zeroextu32 a{hr}.[216] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[217 <-
-    (((zeroextu32 a{hr}.[217] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[218 <-
-    (((zeroextu32 a{hr}.[218] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[219 <-
-    (((zeroextu32 a{hr}.[219] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[220 <-
-    (((zeroextu32 a{hr}.[220] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[221 <-
-    (((zeroextu32 a{hr}.[221] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[222 <-
-    (((zeroextu32 a{hr}.[222] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[223 <-
-    (((zeroextu32 a{hr}.[223] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[224 <-
-    (((zeroextu32 a{hr}.[224] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[225 <-
-    (((zeroextu32 a{hr}.[225] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[226 <-
-    (((zeroextu32 a{hr}.[226] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[227 <-
-    (((zeroextu32 a{hr}.[227] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[228 <-
-    (((zeroextu32 a{hr}.[228] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[229 <-
-    (((zeroextu32 a{hr}.[229] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[230 <-
-    (((zeroextu32 a{hr}.[230] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[231 <-
-    (((zeroextu32 a{hr}.[231] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[232 <-
-    (((zeroextu32 a{hr}.[232] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[233 <-
-    (((zeroextu32 a{hr}.[233] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[234 <-
-    (((zeroextu32 a{hr}.[234] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[235 <-
-    (((zeroextu32 a{hr}.[235] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[236 <-
-    (((zeroextu32 a{hr}.[236] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[237 <-
-    (((zeroextu32 a{hr}.[237] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[238 <-
-    (((zeroextu32 a{hr}.[238] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[239 <-
-    (((zeroextu32 a{hr}.[239] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[240 <-
-    (((zeroextu32 a{hr}.[240] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[241 <-
-    (((zeroextu32 a{hr}.[241] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[242 <-
-    (((zeroextu32 a{hr}.[242] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[243 <-
-    (((zeroextu32 a{hr}.[243] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[244 <-
-    (((zeroextu32 a{hr}.[244] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[245 <-
-    (((zeroextu32 a{hr}.[245] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[246 <-
-    (((zeroextu32 a{hr}.[246] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[247 <-
-    (((zeroextu32 a{hr}.[247] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[248 <-
-    (((zeroextu32 a{hr}.[248] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[249 <-
-    (((zeroextu32 a{hr}.[249] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[250 <-
-    (((zeroextu32 a{hr}.[250] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[251 <-
-    (((zeroextu32 a{hr}.[251] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[252 <-
-    (((zeroextu32 a{hr}.[252] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[253 <-
-    (((zeroextu32 a{hr}.[253] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[254 <-
-    (((zeroextu32 a{hr}.[254] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one].[255 <-
-    (((zeroextu32 a{hr}.[255] `<<` W8.one) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one] =
+    (((zeroextu32 a{hr}.[0] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[1 <-
+    (((zeroextu32 a{hr}.[1] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[2 <-
+    (((zeroextu32 a{hr}.[2] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[3 <-
+    (((zeroextu32 a{hr}.[3] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[4 <-
+    (((zeroextu32 a{hr}.[4] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[5 <-
+    (((zeroextu32 a{hr}.[5] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[6 <-
+    (((zeroextu32 a{hr}.[6] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[7 <-
+    (((zeroextu32 a{hr}.[7] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[8 <-
+    (((zeroextu32 a{hr}.[8] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[9 <-
+    (((zeroextu32 a{hr}.[9] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[10 <-
+    (((zeroextu32 a{hr}.[10] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[11 <-
+    (((zeroextu32 a{hr}.[11] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[12 <-
+    (((zeroextu32 a{hr}.[12] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[13 <-
+    (((zeroextu32 a{hr}.[13] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[14 <-
+    (((zeroextu32 a{hr}.[14] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[15 <-
+    (((zeroextu32 a{hr}.[15] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[16 <-
+    (((zeroextu32 a{hr}.[16] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[17 <-
+    (((zeroextu32 a{hr}.[17] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[18 <-
+    (((zeroextu32 a{hr}.[18] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[19 <-
+    (((zeroextu32 a{hr}.[19] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[20 <-
+    (((zeroextu32 a{hr}.[20] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[21 <-
+    (((zeroextu32 a{hr}.[21] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[22 <-
+    (((zeroextu32 a{hr}.[22] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[23 <-
+    (((zeroextu32 a{hr}.[23] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[24 <-
+    (((zeroextu32 a{hr}.[24] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[25 <-
+    (((zeroextu32 a{hr}.[25] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[26 <-
+    (((zeroextu32 a{hr}.[26] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[27 <-
+    (((zeroextu32 a{hr}.[27] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[28 <-
+    (((zeroextu32 a{hr}.[28] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[29 <-
+    (((zeroextu32 a{hr}.[29] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[30 <-
+    (((zeroextu32 a{hr}.[30] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[31 <-
+    (((zeroextu32 a{hr}.[31] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[32 <-
+    (((zeroextu32 a{hr}.[32] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[33 <-
+    (((zeroextu32 a{hr}.[33] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[34 <-
+    (((zeroextu32 a{hr}.[34] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[35 <-
+    (((zeroextu32 a{hr}.[35] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[36 <-
+    (((zeroextu32 a{hr}.[36] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[37 <-
+    (((zeroextu32 a{hr}.[37] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[38 <-
+    (((zeroextu32 a{hr}.[38] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[39 <-
+    (((zeroextu32 a{hr}.[39] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[40 <-
+    (((zeroextu32 a{hr}.[40] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[41 <-
+    (((zeroextu32 a{hr}.[41] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[42 <-
+    (((zeroextu32 a{hr}.[42] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[43 <-
+    (((zeroextu32 a{hr}.[43] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[44 <-
+    (((zeroextu32 a{hr}.[44] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[45 <-
+    (((zeroextu32 a{hr}.[45] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[46 <-
+    (((zeroextu32 a{hr}.[46] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[47 <-
+    (((zeroextu32 a{hr}.[47] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[48 <-
+    (((zeroextu32 a{hr}.[48] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[49 <-
+    (((zeroextu32 a{hr}.[49] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[50 <-
+    (((zeroextu32 a{hr}.[50] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[51 <-
+    (((zeroextu32 a{hr}.[51] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[52 <-
+    (((zeroextu32 a{hr}.[52] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[53 <-
+    (((zeroextu32 a{hr}.[53] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[54 <-
+    (((zeroextu32 a{hr}.[54] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[55 <-
+    (((zeroextu32 a{hr}.[55] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[56 <-
+    (((zeroextu32 a{hr}.[56] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[57 <-
+    (((zeroextu32 a{hr}.[57] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[58 <-
+    (((zeroextu32 a{hr}.[58] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[59 <-
+    (((zeroextu32 a{hr}.[59] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[60 <-
+    (((zeroextu32 a{hr}.[60] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[61 <-
+    (((zeroextu32 a{hr}.[61] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[62 <-
+    (((zeroextu32 a{hr}.[62] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[63 <-
+    (((zeroextu32 a{hr}.[63] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[64 <-
+    (((zeroextu32 a{hr}.[64] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[65 <-
+    (((zeroextu32 a{hr}.[65] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[66 <-
+    (((zeroextu32 a{hr}.[66] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[67 <-
+    (((zeroextu32 a{hr}.[67] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[68 <-
+    (((zeroextu32 a{hr}.[68] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[69 <-
+    (((zeroextu32 a{hr}.[69] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[70 <-
+    (((zeroextu32 a{hr}.[70] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[71 <-
+    (((zeroextu32 a{hr}.[71] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[72 <-
+    (((zeroextu32 a{hr}.[72] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[73 <-
+    (((zeroextu32 a{hr}.[73] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[74 <-
+    (((zeroextu32 a{hr}.[74] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[75 <-
+    (((zeroextu32 a{hr}.[75] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[76 <-
+    (((zeroextu32 a{hr}.[76] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[77 <-
+    (((zeroextu32 a{hr}.[77] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[78 <-
+    (((zeroextu32 a{hr}.[78] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[79 <-
+    (((zeroextu32 a{hr}.[79] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[80 <-
+    (((zeroextu32 a{hr}.[80] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[81 <-
+    (((zeroextu32 a{hr}.[81] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[82 <-
+    (((zeroextu32 a{hr}.[82] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[83 <-
+    (((zeroextu32 a{hr}.[83] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[84 <-
+    (((zeroextu32 a{hr}.[84] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[85 <-
+    (((zeroextu32 a{hr}.[85] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[86 <-
+    (((zeroextu32 a{hr}.[86] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[87 <-
+    (((zeroextu32 a{hr}.[87] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[88 <-
+    (((zeroextu32 a{hr}.[88] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[89 <-
+    (((zeroextu32 a{hr}.[89] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[90 <-
+    (((zeroextu32 a{hr}.[90] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[91 <-
+    (((zeroextu32 a{hr}.[91] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[92 <-
+    (((zeroextu32 a{hr}.[92] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[93 <-
+    (((zeroextu32 a{hr}.[93] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[94 <-
+    (((zeroextu32 a{hr}.[94] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[95 <-
+    (((zeroextu32 a{hr}.[95] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[96 <-
+    (((zeroextu32 a{hr}.[96] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[97 <-
+    (((zeroextu32 a{hr}.[97] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[98 <-
+    (((zeroextu32 a{hr}.[98] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[99 <-
+    (((zeroextu32 a{hr}.[99] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[100 <-
+    (((zeroextu32 a{hr}.[100] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[101 <-
+    (((zeroextu32 a{hr}.[101] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[102 <-
+    (((zeroextu32 a{hr}.[102] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[103 <-
+    (((zeroextu32 a{hr}.[103] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[104 <-
+    (((zeroextu32 a{hr}.[104] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[105 <-
+    (((zeroextu32 a{hr}.[105] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[106 <-
+    (((zeroextu32 a{hr}.[106] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[107 <-
+    (((zeroextu32 a{hr}.[107] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[108 <-
+    (((zeroextu32 a{hr}.[108] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[109 <-
+    (((zeroextu32 a{hr}.[109] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[110 <-
+    (((zeroextu32 a{hr}.[110] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[111 <-
+    (((zeroextu32 a{hr}.[111] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[112 <-
+    (((zeroextu32 a{hr}.[112] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[113 <-
+    (((zeroextu32 a{hr}.[113] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[114 <-
+    (((zeroextu32 a{hr}.[114] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[115 <-
+    (((zeroextu32 a{hr}.[115] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[116 <-
+    (((zeroextu32 a{hr}.[116] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[117 <-
+    (((zeroextu32 a{hr}.[117] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[118 <-
+    (((zeroextu32 a{hr}.[118] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[119 <-
+    (((zeroextu32 a{hr}.[119] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[120 <-
+    (((zeroextu32 a{hr}.[120] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[121 <-
+    (((zeroextu32 a{hr}.[121] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[122 <-
+    (((zeroextu32 a{hr}.[122] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[123 <-
+    (((zeroextu32 a{hr}.[123] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[124 <-
+    (((zeroextu32 a{hr}.[124] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[125 <-
+    (((zeroextu32 a{hr}.[125] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[126 <-
+    (((zeroextu32 a{hr}.[126] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[127 <-
+    (((zeroextu32 a{hr}.[127] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[128 <-
+    (((zeroextu32 a{hr}.[128] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[129 <-
+    (((zeroextu32 a{hr}.[129] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[130 <-
+    (((zeroextu32 a{hr}.[130] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[131 <-
+    (((zeroextu32 a{hr}.[131] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[132 <-
+    (((zeroextu32 a{hr}.[132] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[133 <-
+    (((zeroextu32 a{hr}.[133] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[134 <-
+    (((zeroextu32 a{hr}.[134] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[135 <-
+    (((zeroextu32 a{hr}.[135] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[136 <-
+    (((zeroextu32 a{hr}.[136] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[137 <-
+    (((zeroextu32 a{hr}.[137] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[138 <-
+    (((zeroextu32 a{hr}.[138] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[139 <-
+    (((zeroextu32 a{hr}.[139] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[140 <-
+    (((zeroextu32 a{hr}.[140] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[141 <-
+    (((zeroextu32 a{hr}.[141] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[142 <-
+    (((zeroextu32 a{hr}.[142] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[143 <-
+    (((zeroextu32 a{hr}.[143] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[144 <-
+    (((zeroextu32 a{hr}.[144] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[145 <-
+    (((zeroextu32 a{hr}.[145] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[146 <-
+    (((zeroextu32 a{hr}.[146] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[147 <-
+    (((zeroextu32 a{hr}.[147] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[148 <-
+    (((zeroextu32 a{hr}.[148] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[149 <-
+    (((zeroextu32 a{hr}.[149] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[150 <-
+    (((zeroextu32 a{hr}.[150] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[151 <-
+    (((zeroextu32 a{hr}.[151] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[152 <-
+    (((zeroextu32 a{hr}.[152] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[153 <-
+    (((zeroextu32 a{hr}.[153] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[154 <-
+    (((zeroextu32 a{hr}.[154] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[155 <-
+    (((zeroextu32 a{hr}.[155] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[156 <-
+    (((zeroextu32 a{hr}.[156] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[157 <-
+    (((zeroextu32 a{hr}.[157] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[158 <-
+    (((zeroextu32 a{hr}.[158] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[159 <-
+    (((zeroextu32 a{hr}.[159] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[160 <-
+    (((zeroextu32 a{hr}.[160] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[161 <-
+    (((zeroextu32 a{hr}.[161] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[162 <-
+    (((zeroextu32 a{hr}.[162] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[163 <-
+    (((zeroextu32 a{hr}.[163] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[164 <-
+    (((zeroextu32 a{hr}.[164] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[165 <-
+    (((zeroextu32 a{hr}.[165] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[166 <-
+    (((zeroextu32 a{hr}.[166] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[167 <-
+    (((zeroextu32 a{hr}.[167] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[168 <-
+    (((zeroextu32 a{hr}.[168] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[169 <-
+    (((zeroextu32 a{hr}.[169] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[170 <-
+    (((zeroextu32 a{hr}.[170] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[171 <-
+    (((zeroextu32 a{hr}.[171] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[172 <-
+    (((zeroextu32 a{hr}.[172] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[173 <-
+    (((zeroextu32 a{hr}.[173] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[174 <-
+    (((zeroextu32 a{hr}.[174] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[175 <-
+    (((zeroextu32 a{hr}.[175] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[176 <-
+    (((zeroextu32 a{hr}.[176] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[177 <-
+    (((zeroextu32 a{hr}.[177] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[178 <-
+    (((zeroextu32 a{hr}.[178] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[179 <-
+    (((zeroextu32 a{hr}.[179] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[180 <-
+    (((zeroextu32 a{hr}.[180] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[181 <-
+    (((zeroextu32 a{hr}.[181] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[182 <-
+    (((zeroextu32 a{hr}.[182] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[183 <-
+    (((zeroextu32 a{hr}.[183] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[184 <-
+    (((zeroextu32 a{hr}.[184] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[185 <-
+    (((zeroextu32 a{hr}.[185] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[186 <-
+    (((zeroextu32 a{hr}.[186] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[187 <-
+    (((zeroextu32 a{hr}.[187] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[188 <-
+    (((zeroextu32 a{hr}.[188] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[189 <-
+    (((zeroextu32 a{hr}.[189] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[190 <-
+    (((zeroextu32 a{hr}.[190] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[191 <-
+    (((zeroextu32 a{hr}.[191] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[192 <-
+    (((zeroextu32 a{hr}.[192] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[193 <-
+    (((zeroextu32 a{hr}.[193] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[194 <-
+    (((zeroextu32 a{hr}.[194] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[195 <-
+    (((zeroextu32 a{hr}.[195] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[196 <-
+    (((zeroextu32 a{hr}.[196] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[197 <-
+    (((zeroextu32 a{hr}.[197] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[198 <-
+    (((zeroextu32 a{hr}.[198] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[199 <-
+    (((zeroextu32 a{hr}.[199] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[200 <-
+    (((zeroextu32 a{hr}.[200] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[201 <-
+    (((zeroextu32 a{hr}.[201] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[202 <-
+    (((zeroextu32 a{hr}.[202] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[203 <-
+    (((zeroextu32 a{hr}.[203] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[204 <-
+    (((zeroextu32 a{hr}.[204] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[205 <-
+    (((zeroextu32 a{hr}.[205] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[206 <-
+    (((zeroextu32 a{hr}.[206] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[207 <-
+    (((zeroextu32 a{hr}.[207] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[208 <-
+    (((zeroextu32 a{hr}.[208] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[209 <-
+    (((zeroextu32 a{hr}.[209] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[210 <-
+    (((zeroextu32 a{hr}.[210] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[211 <-
+    (((zeroextu32 a{hr}.[211] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[212 <-
+    (((zeroextu32 a{hr}.[212] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[213 <-
+    (((zeroextu32 a{hr}.[213] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[214 <-
+    (((zeroextu32 a{hr}.[214] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[215 <-
+    (((zeroextu32 a{hr}.[215] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[216 <-
+    (((zeroextu32 a{hr}.[216] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[217 <-
+    (((zeroextu32 a{hr}.[217] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[218 <-
+    (((zeroextu32 a{hr}.[218] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[219 <-
+    (((zeroextu32 a{hr}.[219] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[220 <-
+    (((zeroextu32 a{hr}.[220] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[221 <-
+    (((zeroextu32 a{hr}.[221] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[222 <-
+    (((zeroextu32 a{hr}.[222] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[223 <-
+    (((zeroextu32 a{hr}.[223] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[224 <-
+    (((zeroextu32 a{hr}.[224] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[225 <-
+    (((zeroextu32 a{hr}.[225] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[226 <-
+    (((zeroextu32 a{hr}.[226] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[227 <-
+    (((zeroextu32 a{hr}.[227] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[228 <-
+    (((zeroextu32 a{hr}.[228] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[229 <-
+    (((zeroextu32 a{hr}.[229] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[230 <-
+    (((zeroextu32 a{hr}.[230] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[231 <-
+    (((zeroextu32 a{hr}.[231] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[232 <-
+    (((zeroextu32 a{hr}.[232] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[233 <-
+    (((zeroextu32 a{hr}.[233] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[234 <-
+    (((zeroextu32 a{hr}.[234] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[235 <-
+    (((zeroextu32 a{hr}.[235] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[236 <-
+    (((zeroextu32 a{hr}.[236] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[237 <-
+    (((zeroextu32 a{hr}.[237] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[238 <-
+    (((zeroextu32 a{hr}.[238] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[239 <-
+    (((zeroextu32 a{hr}.[239] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[240 <-
+    (((zeroextu32 a{hr}.[240] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[241 <-
+    (((zeroextu32 a{hr}.[241] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[242 <-
+    (((zeroextu32 a{hr}.[242] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[243 <-
+    (((zeroextu32 a{hr}.[243] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[244 <-
+    (((zeroextu32 a{hr}.[244] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[245 <-
+    (((zeroextu32 a{hr}.[245] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[246 <-
+    (((zeroextu32 a{hr}.[246] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[247 <-
+    (((zeroextu32 a{hr}.[247] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[248 <-
+    (((zeroextu32 a{hr}.[248] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[249 <-
+    (((zeroextu32 a{hr}.[249] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[250 <-
+    (((zeroextu32 a{hr}.[250] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[251 <-
+    (((zeroextu32 a{hr}.[251] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[252 <-
+    (((zeroextu32 a{hr}.[252] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[253 <-
+    (((zeroextu32 a{hr}.[253] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[254 <-
+    (((zeroextu32 a{hr}.[254] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one].[255 <-
+    (((zeroextu32 a{hr}.[255] `<<` W8.one) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one] =
 List.foldl (fun (aa : W32.t Array256.t) i => aa.[i <- 
-  (((W2u16.zeroextu32 (a{hr}.[i])%Array256 `<<` W8.one)%W16 + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) `&` W32.one]) rp{hr} (iota_ 0 256)).
+  (((W2u16.zeroextu32 (a{hr}.[i])%Array256 `<<` W8.one)%W16 + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one]) rp{hr} (iota_ 0 256)).
 by [].
 rewrite init_set.
 rewrite /m_decode.
@@ -971,22 +956,19 @@ rewrite W32.and_mod. by rewrite /max /=.
 rewrite /max /=.
 rewrite W32.to_uint_shr; first by smt().
 rewrite !W32.of_uintK.
-pose xx := (to_uint a{hr}.[x] * 2 + 1664) * 80636 %% W32.modulus %/ 2 ^ 28.
+pose xx := (to_uint a{hr}.[x] * 2 + 1665) * 80635 %% W32.modulus %/ 2 ^ 28.
 rewrite (_: xx %% 2 %% W32.modulus %% 2 = xx%%2). smt(@W32).
 rewrite /balasint.
 rewrite inzmodK qE.
 rewrite (_: to_uint a{hr}.[x] %% 3329 = to_uint a{hr}.[x]). smt().
 rewrite /xx => />.
-pose xxx := (to_uint a{hr}.[x] * 2 + 1664).
-pose yy := xxx * 80636 %% 4294967296 %/ 268435456 %%2.
+pose xxx := (to_uint a{hr}.[x] * 2 + 1665).
+pose yy := xxx * 80635 %% 4294967296 %/ 268435456 %%2.
 have ? : (0 <= yy < 2). smt(@W16).
 rewrite /yy.
-rewrite (_: 80636 = 268435456 %/ 3329 + 1). smt().
-rewrite (_: xxx * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 
-  = xxx %/ 3329 %% 16).
+rewrite (_: 80635 = 268435456 %/ 3329). smt().
 rewrite /xxx.
 rewrite formula2 => />.
-rewrite /xxx.
 rewrite (_: (to_uint a{hr}.[x] * 2 + 1664) %/ 3329 %% 16 %% 2 = 
    (to_uint a{hr}.[x] * 2 + 1664) %/ 3329 %% 2); first by smt().
 rewrite formula3 => />. smt().
@@ -1309,15 +1291,15 @@ lemma poly_frommont_corr_h _a :
              map W16.to_sint rp = _a ==>
              map W16.to_sint res = map (fun x => SREDC (x * ((R^2) %% q))) _a].
 proc.
-while (0 <= i <= 256 /\ dmont = W16.of_int 1353 /\
-       (forall k, 0 <= k < i =>
+while (0 <= to_uint i <= 256 /\ dmont = W16.of_int 1353 /\
+       (forall k, 0 <= k < to_uint i =>
           W16.to_sint rp.[k] =  SREDC (_a.[k] * ((R^2) %% q))) /\
-       (forall k, i <= k < 256 =>
+       (forall k, to_uint i <= k < 256 =>
           W16.to_sint rp.[k] = _a.[k])); last first.
 auto => /> *. 
 split; first by smt(@Array256).
 move => *. 
-move : H2; rewrite (_: i0 = 256); first by smt().
+move : H2; rewrite (_: to_uint i0 = 256); first by move : H; rewrite ultE;  smt(@W64).
 move =>*.
 apply Array256.ext_eq.
 move => *. 
@@ -1328,25 +1310,25 @@ sp. wp.
 ecall (fqmul_corr_h (to_sint r) (to_sint dmont)).
 auto => /> *.
 split.
-smt().
+smt(@W64).
 split.
 move => *.
-case (k < i{hr}).
+case (k < to_uint i{hr}).
 move => *.
-rewrite set_neqiE; first 2 by smt().
+rewrite set_neqiE; first 2 by smt(@W64).
 apply (H1 k _); first by smt().
 move => *.
-rewrite (_: k = i{hr}). smt().
-rewrite set_eqiE; first 2 by smt().
+rewrite (_: k = to_uint i{hr}); first by smt(@W64).
+rewrite set_eqiE; first 2 by smt(@W64).
 rewrite H4. 
-rewrite (H2 i{hr} _); first by smt().
+rewrite (H2 (to_uint i{hr}) _); first by smt(@W64).
 rewrite /R qE. simplify.
 congr. rewrite of_sintK => />. 
 rewrite expr0 /=.
 by rewrite /smod /=.
 move => *.
-rewrite -(H2 k); first by smt().
-by rewrite set_neqiE; first 2 by smt().
+rewrite -(H2 k); first by smt(@W64).
+by rewrite set_neqiE; first 2 by smt(@W64).
 qed.
 
 lemma poly_sub_corr _a _b ab bb :
@@ -1364,33 +1346,33 @@ proof.
 move => *.
 proc. 
 while (
-           0 <= i <= 256 /\
+           0 <= to_uint i <= 256 /\
            _a = lift_array256 ap /\
            _b = lift_array256 bp /\
            signed_bound_cxq ap 0 256 ab /\
            signed_bound_cxq bp 0 256 bb /\
-           signed_bound_cxq rp 0 i (ab + bb) /\ 
-           forall k, 0 <= k < i =>
+           signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
+           forall k, 0 <= k < to_uint i =>
               inzmod (to_sint rp.[k]) = _a.[k] - _b.[k]
 ); last by auto => />; smt(@Array256 @Fq). 
 
 wp; skip.
 move => &hr [#] *.
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
+split; first by smt(@W64).
+split; first by smt(@W64).
+split; first by smt(@W64).
+split; first by smt(@W64).
+split; first by smt(@W64).
 
 split; last first. 
 move => *.
 
-case (k < i{hr}); first by move => *; smt(@Array256). 
+case (k < to_uint i{hr}); first by move => *; smt(@Array256). 
 
-move => *; rewrite (_: k =i{hr}) => />; first by smt().
-rewrite set_eqiE; first 2 by smt().
+move => *; rewrite (_: k = to_uint i{hr}) => />; first by smt(@W64).
+rewrite set_eqiE; first 2 by smt(@W64).
 
-move : (sub_corr ap{hr}.[i{hr}] bp{hr}.[i{hr}] _a.[i{hr}] _b.[i{hr}] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256 @Fq). 
+move : (sub_corr ap{hr}.[to_uint i{hr}] bp{hr}.[to_uint i{hr}] _a.[to_uint i{hr}] _b.[to_uint i{hr}] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256 @Fq). 
 move : H5; rewrite /signed_bound_cxq =>  *.
 move : (H5 k _); by smt(@Fq b16E).
 move : H6; rewrite /signed_bound_cxq =>  *.
@@ -1398,26 +1380,26 @@ move : (H6 k _);  by smt(@Fq).
 
 rewrite /signed_bound_cxq.
 move => *.
-case (k < i{hr}); first by move => *; move : H7; rewrite /signed_bound_cxq;smt(@Array256). 
+case (k < to_uint  i{hr}); first by move => *; move : H7; rewrite /signed_bound_cxq;smt(@Array256). 
 
-move => *; rewrite (_: k =i{hr}) => />; first by smt().
+move => *; rewrite (_: k = to_uint i{hr}) => />; first by smt(@W64).
 
 move : H5; rewrite /signed_bound_cxq =>  *.
-move : (H5 i{hr} _); first by smt().
+move : (H5 (to_uint i{hr}) _); first by smt(@W64).
 move : H6; rewrite /signed_bound_cxq =>  *.
-move : (H6 i{hr} _); first  by smt().
+move : (H6 (to_uint i{hr}) _); first  by smt(@W64).
 move => *.
 rewrite /rp0.
-rewrite set_eqiE; first 2 by smt().
+rewrite set_eqiE; first 2 by smt(@W64).
 by rewrite !to_sintB_small => />; by smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E qE).
 qed.
 
 lemma poly_add_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
-      hoare[ Mderand.poly_add :
-           _a = lift_array256 ap /\
+      hoare[ Mderand.poly_add2 :
+           _a = lift_array256 rp /\
            _b = lift_array256 bp /\
-           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq rp 0 256 ab /\
            signed_bound_cxq bp 0 256 bb 
            ==>
            signed_bound_cxq res 0 256 (ab + bb) /\ 
@@ -1427,52 +1409,77 @@ proof.
 move => *.
 proc. 
 while (
-           0 <= i <= 256 /\
-           _a = lift_array256 ap /\
+           0 <= to_uint i <= 256 /\
+           (forall k, to_uint i <= k < 256 =>
+              inzmod (to_sint rp.[k]) = _a.[k]) /\
            _b = lift_array256 bp /\
-           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq rp (to_uint i) 256 ab /\
            signed_bound_cxq bp 0 256 bb /\
-           signed_bound_cxq rp 0 i (ab + bb) /\ 
-           forall k, 0 <= k < i =>
+           signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
+           forall k, 0 <= k < to_uint i =>
               inzmod (to_sint rp.[k]) = _a.[k] + _b.[k]
 ); last by auto => />; smt(@Array256 @Fq). 
 
 wp; skip.
 move => &hr [#] *.
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
-split; first by smt().
+move : H9; rewrite ultE => /> *.
+split; first by smt(@W64).
+rewrite (_: to_uint i0 = to_uint i{hr} + 1); first  by rewrite to_uintD_small; smt(@W64).
+split. 
+  move => *. move : (H3 k _); first by smt(). 
+  by rewrite /rp0 set_neqiE => /#.
+split.
+  move : H5; rewrite /signed_bound_cxq => *.
+  move : (H5 k _); first by smt(). 
+  by rewrite /rp0 set_neqiE => /#.
 
-split; last first. 
+split.
+  move : H7; rewrite /signed_bound_cxq => *.
+
+case (k < to_uint i{hr}). 
+  move => *. move : (H7 k _); first by smt(). 
+  by rewrite /rp0 set_neqiE => /#.
+
+  move => *;  rewrite /rp0 set_eqiE. smt(). smt(@W64).  
+
+  move : (add_corr rp{hr}.[to_uint i{hr}] bp{hr}.[to_uint i{hr}] _a.[to_uint i{hr}] _b.[to_uint i{hr}] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256 @Fq). 
+
+  move : H5; rewrite /signed_bound_cxq =>  *.
+  move : (H5 k _); by smt(@Fq b16E).
+  move : H6; rewrite /signed_bound_cxq =>  *.
+  move : (H6 k _);  by smt(@Fq).
+
+  move => *. 
+  rewrite to_sintD_small => />.
+  move : H5; rewrite /signed_bound_cxq =>  *.
+  move : (H5 (to_uint i{hr}) _); first by smt().
+  move : H6; rewrite /signed_bound_cxq =>  *.
+  move : (H6 (to_uint i{hr}) _); first  by smt().
+  move => *. 
+  smt(@W16  b16E qE).
+
+  move : H5; rewrite /signed_bound_cxq =>  *.
+  move : (H5 (to_uint i{hr}) _); first by smt().
+  move : H6; rewrite /signed_bound_cxq =>  *.
+  move : (H6 (to_uint i{hr}) _); first  by smt().
+  move => *.
+  smt(@W16  b16E qE).
+
 move => *.
-
-case (k < i{hr}); first by move => *; smt(@Array256). 
-
-move => *; rewrite (_: k =i{hr}) => />; first by smt().
-rewrite set_eqiE; first 2 by smt().
-
-move : (add_corr ap{hr}.[i{hr}] bp{hr}.[i{hr}] _a.[i{hr}] _b.[i{hr}] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256 @Fq). 
-move : H5; rewrite /signed_bound_cxq =>  *.
-move : (H5 k _); by smt(@Fq b16E).
-move : H6; rewrite /signed_bound_cxq =>  *.
-move : (H6 k _);  by smt(@Fq).
-
-rewrite /signed_bound_cxq.
-move => *.
-case (k < i{hr}); first by move => *; move : H7; rewrite /signed_bound_cxq;smt(@Array256). 
-
-move => *; rewrite (_: k =i{hr}) => />; first by smt().
-
-move : H5; rewrite /signed_bound_cxq =>  *.
-move : (H5 i{hr} _); first by smt().
-move : H6; rewrite /signed_bound_cxq =>  *.
-move : (H6 i{hr} _); first  by smt().
-move => *.
+case (k < to_uint i{hr}). 
+  move => *. move : (H8 k _); first by smt(). 
+  by rewrite /rp0 set_neqiE => /#.
+  move =>  *.
+move => *; rewrite (_: k =to_uint i{hr}) => />; first by smt().
 rewrite /rp0.
 rewrite set_eqiE; first 2 by smt().
-rewrite !to_sintD_small; by smt(@W16 @IntDiv b16E qE).
+
+  move : (add_corr rp{hr}.[to_uint i{hr}] bp{hr}.[to_uint i{hr}] _a.[to_uint i{hr}] _b.[to_uint i{hr}] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256 @Fq). 
+
+  move : H5; rewrite /signed_bound_cxq =>  *.
+  move : (H5 k _); by smt(@Fq b16E).
+  move : H6; rewrite /signed_bound_cxq =>  *.
+  move : (H6 k _);  by smt(@Fq).
 qed.
 
 lemma poly_reduce_corr_h (_a : zmod Array256.t):
@@ -1648,11 +1655,11 @@ proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
 lemma formula x :
   0 <= x < 3329 =>
-   (x * 16 + 1664) * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16.
+   (x * 16 + 1665) * (268435456 %/ 3329) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16.
 proof.
   have ? :
    (all
-     (fun x => (x * 16 + 1664) * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16)
+     (fun x => (x * 16 + 1665) * (268435456 %/ 3329 ) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16)
      (range 0 3329)).
 by [] => />.
 by smt().
@@ -1662,7 +1669,7 @@ lemma roundcimpl (a : W16.t) :
   bpos16 a q =>
   inzmod
   (to_sint (truncateu16
-         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`
+         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
            (of_int 28)%W8) `&`
           (of_int 15)%W32))) = roundc (inzmod (to_sint a)).
 proof.
@@ -1683,9 +1690,9 @@ rewrite IntDiv.pmod_small. rewrite /max /=. smt(@W32).
 rewrite IntDiv.pmod_small. rewrite /max /=. smt(@W32).
 rewrite (IntDiv.pmod_small _ 3329). smt(@W16).
 rewrite (_: (smod (to_uint a))%W16 = to_uint a). smt(@W16).
-pose xx := (to_uint a * 16 + 1664).
+pose xx := (to_uint a * 16 + 1665).
 rewrite W32.of_uintK /max => />.
-pose yy := xx * 80636 %% 4294967296 %/ 268435456 %%16.
+pose yy := xx * 80635 %% 4294967296 %/ 268435456 %%16.
 have ? : (0 <= yy < 2^16). smt(@W16).
 rewrite (_: W16.smod yy =  yy). 
 rewrite /smod.
@@ -1695,9 +1702,9 @@ smt().
 simplify.
 done.
 rewrite /yy.
-rewrite (_: 80636 = 268435456 %/ 3329 + 1). smt().
-rewrite (_: xx * (268435456 %/ 3329 + 1) %% 4294967296 %/ 268435456 
-  = xx %/ 3329 %% 16); last by smt().
+rewrite (_: 80635 = 268435456 %/ 3329). smt(). 
+rewrite (_: xx * (268435456 %/ 3329 ) %% 4294967296 %/ 268435456 
+  = (xx -1) %/ 3329 %% 16); last by smt().
    have ? : 0 <= to_uint a < 3329. smt (@W16 to_sint_unsigned). 
 rewrite /xx.
 move : (formula (to_uint a)).
@@ -1707,7 +1714,7 @@ qed.
 lemma roundcimpl_rng (a : W16.t) :
   bpos16 a q =>
   0 <= to_sint (truncateu16
-         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>`
+         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
            (of_int 28)%W8) `&`
           (of_int 15)%W32)) < 16.
 proof.
@@ -1716,7 +1723,7 @@ rewrite (_: W32.of_int 15 = W32.masklsb 4); first by rewrite /max /=.
 rewrite W32.and_mod => />. 
 pose xx := (W32.of_int
              (to_uint
-                (((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1664)%W32) * (of_int 80636)%W32 `>>` (of_int 28)%W8) %%
+                (((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) %%
               16)).
 have ? : 0<= to_uint  xx < 16; first by smt(@W32).
 have ? : 0<= to_uint  (truncateu16 xx) < 16.
@@ -1810,7 +1817,7 @@ lemma poly_compress_round_corr ap :
 
 (*******DIRECT NTT *******)
 
-import Indcpa.
+import Jindcpa.
 lemma zeta_bound :
    minimum_residues jzetas.
  proof.
@@ -2172,8 +2179,6 @@ qed.
 
 (*******INVERSE *******)
 
-print Mderand.
-
 lemma zetainv_bound :
    minimum_residues jzetas_inv.
 proof.
@@ -2189,27 +2194,28 @@ auto => />.
 done.
 qed. 
 
+import NTT_Fq.
 lemma ntt_correct _r :
    phoare[ Mderand.poly_ntt :
         _r = lift_array256 rp /\ 
-        array_mont Kyber_.Poly.zetas = 
+        array_mont zetas_const = 
            lift_array128  jzetas /\
         signed_bound_cxq rp 0 256 2
           ==> 
-            Kyber_.Poly.ntt _r = lift_array256 res /\
+            ntt _r = lift_array256 res /\
             forall k, 0<=k<256 => bpos16 res.[k] (2*Kyber_.q)] = 1%r.
 proof.
 bypr.
 move => &m [#] *.
-apply (eq_trans _ (Pr[NTT_Fq.NTT.ntt(_r,zetas) @ &m :
+apply (eq_trans _ (Pr[NTT.ntt(_r,zetas_const) @ &m :
    ntt _r = res])).
 have ? : (
-Pr[NTT_Fq.NTT.ntt(_r, zetas) @ &m : ntt _r = res] = 
+Pr[NTT.ntt(_r, zetas_const) @ &m : ntt _r = res] = 
 Pr[Mderand.poly_ntt(rp{m}) @ &m :
    ntt _r = lift_array256 res /\ forall (k : int), 0 <= k < 256 => bpos16 res.[k] (2 * q)]); last by rewrite H2.
 byequiv ntt_correct_aux.
 smt(). smt().
-byphoare (NTT_Fq.ntt_spec _r). smt(). smt().
+byphoare (ntt_spec _r). smt(). smt().
 qed.
 
 lemma expr_pos (b e : int) :
@@ -2624,32 +2630,34 @@ rewrite /R qE /=.
 smt(@Fq @W16 @ZModRing).
    by rewrite -inzmodB !inzmodM; ring.
 qed.
+
 lemma invntt_correct _r :
    phoare[ Mderand.poly_invntt :
         _r = lift_array256 rp /\ 
-        array_mont Kyber_.Poly.zetas_inv = 
+        array_mont zetas_inv_const = 
            lift_array128  jzetas_inv /\
         signed_bound_cxq rp 0 256 2
           ==> 
-            Kyber_.Poly.invntt _r = lift_array256 res /\
+            invntt _r = lift_array256 res /\
             forall k, 0<=k<256 => b16 res.[k] (Kyber_.q+1)] = 1%r.
 proof.
 bypr.
 move => &m [#] *.
-apply (eq_trans _ (Pr[NTT_Fq.NTT.invntt(_r,zetas_inv) @ &m :
+apply (eq_trans _ (Pr[NTT.invntt(_r,zetas_inv_const) @ &m :
    invntt _r = res])).
 have ? : (
-Pr[NTT_Fq.NTT.invntt(_r, zetas_inv) @ &m : invntt _r = res] = 
+Pr[NTT.invntt(_r, zetas_inv_const) @ &m : invntt _r = res] = 
 Pr[Mderand.poly_invntt(rp{m}) @ &m :
   invntt _r = lift_array256 res /\ forall (k : int), 0 <= k < 256 => b16 res.[k] (q+1)]); last by rewrite H2.
 byequiv invntt_correct_aux.
 smt(). smt().
-byphoare (NTT_Fq.invntt_spec _r). smt(). smt().
+byphoare (invntt_spec _r). smt(). smt().
 qed.
 
 
-(* COMPLEX MULTIPLICATION *)
-
+(* COMPLEX MULTIPLICATION IN MONTGOMERY MULTIPLICATION WITH SOME EXTRA
+   CONSTANTS THAT ARE LEFT AROUND. THEY SHOULD BE  TRIVIAL TO MATCH WITH
+   THE SPECS IN NTT_Fq, SO MAYBE THEY ARE NOT ACTUALLY NEEDED. *)
 
 op complex_mul (a :zmod * zmod, b : zmod * zmod, zzeta : zmod) =
      (a.`2 * b.`2 * zzeta * (inzmod 169) + a.`1*b.`1  * (inzmod 169), 
@@ -2659,7 +2667,8 @@ op double_mul(a1 : zmod * zmod, b1 : zmod * zmod,
               a2 : zmod * zmod, b2 : zmod * zmod, zzeta : zmod) = 
      (complex_mul a1 b1 zzeta, complex_mul a2 b2 (-zzeta)).
 
-op base_mul(ap bp : zmod Array256.t, zetas : zmod Array128.t, rs : zmod Array256.t, i : int) : bool = 
+op base_mul(ap bp : zmod Array256.t, zetas : zmod Array128.t, 
+            rs : zmod Array256.t, i : int) : bool = 
    forall k, 0 <= k < i =>
      ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
          (double_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])

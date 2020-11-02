@@ -36,3 +36,7 @@ NTT_Fq.ec:
   multiplication equivalent to the product scanning method
   used in security/Kyber.ec. 
 - Depends only on Fq.ec for the definitions of the field. 
+
+KyberPoly.ec:
+- Proves all poly computations correct with respect to the
+  abstract specifications.
