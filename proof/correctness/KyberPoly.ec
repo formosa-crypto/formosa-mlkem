@@ -612,6 +612,7 @@ by [].
 by smt().
 qed.
 
+(*
 lemma formula3 x :
   0 <= x < 3329 =>
 ((of_int ((x * 2 + 1664) %/ 3329 %% 2))%W32 = W32.one) =
@@ -1330,7 +1331,7 @@ move => *.
 rewrite -(H2 k); first by smt(@W64).
 by rewrite set_neqiE; first 2 by smt(@W64).
 qed.
-
+*)
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
       hoare[ Mderand.poly_sub :
@@ -1652,7 +1653,7 @@ lemma poly_reduce_corr (_a : zmod Array256.t):
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
 
-
+(*
 lemma formula x :
   0 <= x < 3329 =>
    (x * 16 + 1665) * (268435456 %/ 3329) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16.
@@ -1814,12 +1815,16 @@ lemma poly_compress_round_corr ap :
             0<= k < 256  => 0<= to_sint res.[k] < 16 ] = 1%r
   by conseq poly_compress_ll (poly_compress_round_corr_h ap).
 
-
+*)
 (*******DIRECT NTT *******)
 
 import Jindcpa.
+
+
 lemma zeta_bound :
    minimum_residues jzetas.
+admitted.
+(*
  proof.
 rewrite /minimum_residues qE.
 apply/(allP jzetas (fun x => bpos16 x 3329)).
@@ -2178,9 +2183,11 @@ smt(@ZModRing).
 qed.
 
 (*******INVERSE *******)
-
+*)
 lemma zetainv_bound :
    minimum_residues jzetas_inv.
+admitted.
+(*
 proof.
 rewrite /minimum_residues qE.
 apply/(allP jzetas_inv (fun x => bpos16 x 3329)).
@@ -2653,7 +2660,7 @@ byequiv invntt_correct_aux.
 smt(). smt().
 byphoare (invntt_spec _r). smt(). smt().
 qed.
-
+*)
 
 (* COMPLEX MULTIPLICATION IN MONTGOMERY MULTIPLICATION WITH SOME EXTRA
    CONSTANTS THAT ARE LEFT AROUND. THEY SHOULD BE  TRIVIAL TO MATCH WITH
@@ -2669,7 +2676,7 @@ op double_mul(a1 : zmod * zmod, b1 : zmod * zmod,
 
 op base_mul(ap bp : zmod Array256.t, zetas : zmod Array128.t, 
             rs : zmod Array256.t, i : int) : bool = 
-   forall k, 0 <= k < i =>
+   forall k, 0 <= k < i %/ 4 =>
      ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
          (double_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
                     (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas.[k+64])).
@@ -2684,71 +2691,85 @@ lemma poly_basemul_corr _ap _bp _zetas:
            signed_bound_cxq ap 0 256 2 /\
            signed_bound_cxq bp 0 256 2 ==>
              signed_bound_cxq res 0 256 4 /\
-             base_mul _ap _bp _zetas (lift_array256 res) 64].
+             base_mul _ap _bp _zetas (lift_array256 res) 256].
 proof.
 move => *.
 proc.
 seq 2 : #pre; first by auto => />.
-sp.
-while (#{/~i=0}{~zetasctr = W64.of_int 64}pre /\
-    0<= i <= 64/\
-    to_uint zetasctr = i + 64 /\
-    signed_bound_cxq rp 0 (4*i) 4 /\
-    base_mul _ap _bp _zetas (lift_array256 rp) i); last first. 
+while (#pre /\ srp = rp /\
+    0<= to_uint i <= 256 /\ to_uint i %% 4 = 0 /\
+    to_uint zetasctr = to_uint i %/ 4 + 64 /\
+    signed_bound_cxq rp 0 (to_uint i) 4 /\
+    base_mul _ap _bp _zetas (lift_array256 rp) (to_uint i)); last first. 
     auto => />.
+    move => &hr ???. 
     move => *; split; first by smt(). 
-    move => *; have ? : i0 = 64; first by smt(). 
-    by move : H6 H7; rewrite H8 => />. 
+    move => ???. 
+    rewrite ultE => /> ????. have -> : to_uint i0 = 256; first by smt(@W64). 
+    by auto  => />. 
 
-seq 2 : (#{/~to_uint zetasctr = i + 64}pre /\ inzmod (to_sint zeta_0) = 
-            _zetas.[i + 64] * inzmod R /\
-            to_uint zetasctr - 1 = i + 64 /\
+seq 3 : (#{/~to_uint zetasctr = to_uint i %/ 4 + 64}pre /\ inzmod (to_sint zeta_0) = 
+            _zetas.[to_uint i %/4 + 64] * inzmod R /\ 
+            to_uint zetasctr - 1 = to_uint i %/ 4 + 64 /\
              bpos16 zeta_0 Kyber_.q).
 
 auto => />.
-move => &hr mnt abnd bbnd? ??? rbndrval ?.
+move => &hr mnt abnd bbnd?? ??? rbndrval.
+rewrite ultE => /> *.
 move :mnt; rewrite /minimum_residues /array_mont /lift_array128. 
 move => ?.
-split; first by rewrite H1; smt(@Array128).
-split; first by rewrite to_uintD_small H1; smt(@W64).
+split; first by  smt(@Array128).
+split; first by rewrite to_uintD_small H2; smt(@W64).
 move : zeta_bound; rewrite /minimum_residues =>/>.
 by rewrite qE to_sintE => />; smt(@W16).
 
 (* First complex multiplication *)
 
-seq  13 : (#pre /\
-           (inzmod (to_sint rp.[4*i]),inzmod (to_sint rp.[4*i+1])) = 
-             complex_mul (inzmod (to_sint ap.[4*i]),inzmod (to_sint ap.[4*i+1])) 
-                         (inzmod (to_sint bp.[4*i]),inzmod (to_sint bp.[4*i+1])) 
-                         (_zetas.[64+i]) /\
-             b16 rp.[4*i] (4*Kyber_.q) /\ b16 rp.[4*i+1] (4*Kyber_.q)).
+exists* (to_uint i). elim*=>ii.
 
+seq 6 : (#pre /\ a0 = ap.[ii] /\ a1 = ap.[ii+1] /\ b0 = bp.[ii] /\ b1 = bp.[ii+1]).
+    auto => /> &hr. rewrite (_: i{hr} + W64.one - W64.one = i{hr}); first by ring. 
+    rewrite ultE => /> ????????. rewrite to_uintD_small; by smt(@W64).
 
-sp;wp.
+seq  14 : (#{/~ii = to_uint i}
+            {~to_uint i %% 4 = 0}
+            {~inzmod (to_sint zeta_0) = _zetas.[to_uint i %/ 4 + 64] * inzmod R }
+            {~bpos16 zeta_0 Kyber_.q}pre /\
+            ii + 2 = to_uint i /\ to_uint i %% 4 = 2 /\
+           inzmod (to_sint zeta_0) = -_zetas.[to_uint i %/ 4 + 64] * inzmod R  /\
+           -Kyber_.q < to_sint zeta_0 <= 0 /\
+           (inzmod (to_sint rp.[ii]),inzmod (to_sint rp.[ii+1])) = 
+             complex_mul (inzmod (to_sint ap.[ii]),inzmod (to_sint ap.[ii+1])) 
+                         (inzmod (to_sint bp.[ii]),inzmod (to_sint bp.[ii+1])) 
+                         (_zetas.[ii %/4 + 64]) /\
+             b16 rp.[ii] (4*Kyber_.q) /\ b16 rp.[ii+1] (4*Kyber_.q)).
+
 seq 4 : (#pre /\
           inzmod (to_sint r0) = 
-           inzmod (to_sint ap.[4*i+1]) * inzmod (to_sint bp.[4*i+1]) * 
-           _zetas.[64+i] * (inzmod 169)  + 
-           inzmod (to_sint ap.[4*i]) * inzmod (to_sint bp.[4*i])  * (inzmod 169) /\
+           inzmod (to_sint ap.[ii+1]) * inzmod (to_sint bp.[ii+1]) * 
+           _zetas.[ii %/4 + 64] * (inzmod 169)  + 
+           inzmod (to_sint ap.[ii]) * inzmod (to_sint bp.[ii])  * (inzmod 169) /\
            b16 r0 (4*Kyber_.q)
         ).
+
+
 seq 1 : (#pre /\
            inzmod (to_sint r0) = 
-           inzmod (to_sint ap.[4*i+1]) * inzmod (to_sint bp.[4*i+1])  * (inzmod 169) /\
+           inzmod (to_sint ap.[ii+1]) * inzmod (to_sint bp.[ii+1])  * (inzmod 169) /\
            b16 r0 (2*Kyber_.q)).
 ecall (fqmul_corr_h (to_sint a1) (to_sint b1)).
 auto => />. 
-move => &hr mont bas bbs ?? pbnd  ?????? ? rval.
+move => &hr mont bas bbs ??? pbnd  ?????? ? rval.
 
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr} + 1] * to_sint bp{hr}.[4 * i{hr} + 1]) _ _) => />; first by smt(@Fq). 
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr} + 1]) _ _) => />; first by smt(@Fq). 
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
- move : (bas ( (4*i{hr} + 1)) _); first by smt().
- move : (bas (4*i{hr}) _); first by smt(@W64). move => aibnd ai1bnd.
+ move : (bas ( (to_uint i{hr} + 1)) _); first by smt(@W64).
+ move : (bas (to_uint i{hr}) _); first by smt(@W64). move => aibnd ai1bnd.
 
 move : bbs; rewrite /signed_bound_cxq => /> bbs. 
- move : (bbs ( (4*i{hr} + 1)) _); first by smt().
- move : (bbs (4*i{hr}) _); first by smt(@W64). move => bibnd bi1bnd.
+ move : (bbs ( (to_uint i{hr} + 1)) _); first by smt(@W64).
+ move : (bbs (to_uint i{hr}) _); first by smt(@W64). move => bibnd bi1bnd.
 rewrite /R qE /=.
 split.
 move : ai1bnd.
@@ -2760,14 +2781,14 @@ smt.
 
 by rewrite eq_inzmod -rval !inzmodM; smt(@Fq).
 
-seq 1 : (#{~inzmod (to_sint r0) = inzmod (to_sint ap.[4 * i + 1]) * inzmod (to_sint bp.[4 * i + 1]) * inzmod 169}pre /\
+seq 1 : (#{~inzmod (to_sint r0) = inzmod (to_sint ap.[ii + 1]) * inzmod (to_sint bp.[ii + 1]) * inzmod 169}pre /\
            inzmod (to_sint r0) = 
-           inzmod (to_sint ap.[4*i+1]) * inzmod (to_sint bp.[4*i+1]) *
-               _zetas.[i+64] * (inzmod 169) /\
+           inzmod (to_sint ap.[ii+1]) * inzmod (to_sint bp.[ii+1]) *
+               _zetas.[ii %/ 4 + 64] * (inzmod 169) /\
            b16 r0 (2*Kyber_.q)).
 ecall (fqmul_corr_h (to_sint r0) (to_sint zeta_0)).
 auto => />. 
-move => &hr mont bas bbs ??pbndt  ??zetaval ??? r0val ???rval.
+move => &hr mont bas bbs ???pbndt  ??zetaval ??? r0val ???rval.
 
 move : (SREDCp_corr (to_sint r0{hr} * to_sint zeta_0{hr}) _ _) => />;
   first 2 by smt(@Fq). 
@@ -2780,16 +2801,16 @@ split; first by  smt(@Fq).
 split; last by  smt(@Fq).
 
 rewrite zetaval.
-have ? : (inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * inzmod 169 *
-(_zetas.[64 + i{hr}] * inzmod R) * inzmod 169 =
-inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * inzmod 169 *
-_zetas.[64 + i{hr}] * (inzmod (R * 169))
+have ? : (inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 *
+(_zetas.[to_uint i{hr} %/4 + 64] * inzmod R) * inzmod 169 =
+inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 *
+_zetas.[to_uint i{hr} %/4 + 64] * (inzmod (R * 169))
 ); first by  rewrite inzmodM; ring. 
 
-cut ->: inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * inzmod 169 *
-(_zetas.[i{hr} + 64] * inzmod R) * inzmod 169 = 
-inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * inzmod 169 *
-_zetas.[i{hr} + 64] * (inzmod R * inzmod 169).
+cut ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 *
+(_zetas.[to_uint i{hr} %/ 4 + 64] * inzmod R) * inzmod 169 = 
+inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 *
+_zetas.[to_uint i{hr} %/4 + 64] * (inzmod R * inzmod 169).
 smt(@ZModRing).
 cut ->: inzmod R * inzmod 169 = inzmod 1.
 cut ->: inzmod R * inzmod 169 = inzmod (R * 169).
@@ -2798,28 +2819,27 @@ have ?: zmodcgr (R * 169) 1.
 smt(RRinv).
 rewrite -eq_inzmod.
 done.
-cut ->: inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * inzmod 169 * _zetas.[i{hr} + 64] *
-inzmod 1 = inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * inzmod 169 * _zetas.[i{hr} + 64].
+cut ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[ to_uint i{hr}  %/4 + 64] *
+inzmod 1 = inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[to_uint i{hr} %/4 + 64].
 smt(@ZModRing).
-print ZModRing.
-cut ->: inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * inzmod 169 * _zetas.[i{hr} + 64] = inzmod (to_sint ap{hr}.[4 * i{hr} + 1]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 1]) * (inzmod 169 * _zetas.[i{hr} + 64]).
+cut ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[to_uint i{hr} %/ 4 + 64] = inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * (inzmod 169 * _zetas.[to_uint i{hr} %/ 4 + 64]).
 smt(@ZModRing).
 smt(@ZModRing).
 
 wp.
 ecall (fqmul_corr_h (to_sint a0) (to_sint b0)).
 auto => />. 
-move => &hr mnt bas bbs ?? rbnd rv ? zval ????? r0val ?rval.
+move => &hr mnt bas bbs ??? rbnd rv ? zval ????? r0val ?rval.
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
- move : (bas ( (4*i{hr} + 1)) _); first by smt().
- move : (bas (4*i{hr}) _); first by smt(@W64). move => aibnd ai1bnd.
+ move : (bas ( (to_uint i{hr} + 1)) _); first by smt(@W64).
+ move : (bas (to_uint i{hr}) _); first by smt(@W64). move => aibnd ai1bnd.
 
 move : bbs; rewrite /signed_bound_cxq => /> bbs. 
- move : (bbs ( (4*i{hr} + 1)) _); first by smt().
- move : (bbs (4*i{hr}) _); first by smt(@W64). move => bibnd bi1bnd.
+ move : (bbs ( (to_uint i{hr} + 1)) _); first by smt(@W64).
+ move : (bbs (to_uint i{hr}) _); first by smt(@W64). move => bibnd bi1bnd.
 
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr}] * to_sint bp{hr}.[4 * i{hr}]) _ _) => />;
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr}]) _ _) => />;
   first 2 by smt(@Fq). 
 
 rewrite eq_inzmod -rval !inzmodM. 
@@ -2827,31 +2847,44 @@ move => ?? rrval.
 
 rewrite !to_sintD_small. smt(@Fq).
 split.
-rewrite  !inzmodD rrval => /#.
+rewrite  !inzmodD rrval. 
+by smt(@Fq). 
 by smt(@Fq).
+
+(**************)
+wp.
 
 ecall (fqmul_corr_h (to_sint a1) (to_sint b0)).
 ecall (fqmul_corr_h (to_sint a0) (to_sint b1)).
 
 auto => />.
 
-move => &hr mnt bas bbs ?? rbnd rv ? zval ??? r0val ??? rval ?rvall. 
+move => &hr mnt bas bbs ??? rbnd rv ? zval ??? r0val ??? rval ?rvall. 
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
- move : (bas ( (4*i{hr} + 1)) _); first by smt().
- move : (bas (4*i{hr}) _); first by smt(@W64). move => aibnd ai1bnd.
+ move : (bas ( (to_uint i{hr} + 1)) _); first by smt(@W64).
+ move : (bas (to_uint i{hr}) _); first by smt(@W64). move => aibnd ai1bnd.
 
 move : bbs; rewrite /signed_bound_cxq => /> bbs. 
- move : (bbs ( (4*i{hr} + 1)) _); first by smt().
- move : (bbs (4*i{hr}) _); first by smt(@W64). move => bibnd bi1bnd.
+ move : (bbs ( (to_uint i{hr} + 1)) _); first by smt(@W64).
+ move : (bbs (to_uint i{hr}) _); first by smt(@W64). move => bibnd bi1bnd.
 
-split. split.
+rewrite !to_uintD_small; first 2 by smt(@W64).
+move : H2; rewrite !ultE => /> *.
+
+split.
+
+split; first by smt(@W64).
+split; first by smt(@W64).
+
+split.
 
 move => k kl kh.
-case (k = 4 * i{hr}). smt(@Array256 @Fq). 
-case (k = 4 * i{hr}+1). smt(@Array256 @Fq). 
+case (k = to_uint  i{hr}). smt(@Array256 @Fq). 
+case (k = to_uint i{hr}+1). smt(@Array256 @Fq). 
 
 move => *.
+
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 
@@ -2859,28 +2892,41 @@ move : rbnd; rewrite /signed_bound_cxq => rbnd.
 move : (rbnd k). rewrite b16E.
 smt(@Fq).
 
-rewrite /base_mul.
-move => k kb.
-rewrite /lift_array256 !mapiE; first 12 by smt(). 
+split.
 
+rewrite /base_mul.
+
+move =>  k kb.
+
+rewrite /lift_array256 !mapiE; first 12 by smt(). 
 rewrite !Array256.set_neqiE; first 16 by smt(@W64). 
 
 simplify => />.
 
 move : rv; rewrite /base_mul => rv.
 
-move : (rv k kb).
+move : (rv k _); first by smt().
 rewrite /lift_array256 !mapiE; first 12 by smt(). 
 simplify => />.
 
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr}] * to_sint bp{hr}.[4 * i{hr} + 1]) _ _) => />;
+rewrite !to_uintD_small; first by smt(@W64).
+
+split; first by smt(@W64).
+smt(@Fq).
+
+split; first by smt(@W64).
+
+split; first by  smt(@Fq @ZModRing).
+
+
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr} + 1]) _ _) => />;
   first 2 by smt(@Fq). 
 
 rewrite eq_inzmod -rval !inzmodM. 
 move => ?? rrval.
 
 
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr} + 1] * to_sint bp{hr}.[4 * i{hr}]) _ _) => />;
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr}]) _ _) => />;
   first 2 by smt(@Fq). 
 
 rewrite eq_inzmod -rvall !inzmodM. 
@@ -2894,62 +2940,58 @@ rewrite Array256.set_eqiE; first 2 by smt(@W64).
 rewrite !to_sintD_small. 
 smt.
 rewrite r0val inzmodD rrval rrvall.
-split. split; by ring.
-split.
-split.
-done.
-done.
-split.
-smt().
-smt().
+split. smt(@Fq). 
+
+by smt().
 
 (* Second complex multiplication *)
 
-seq 1 : (#{/~inzmod (to_sint zeta_0) = _zetas.[i + 64] * inzmod R}
-          {~bpos16 zeta_0 Kyber_.q}pre /\
-          inzmod (to_sint zeta_0) = - _zetas.[i + 64] * inzmod R /\
-          -Kyber_.q < to_sint zeta_0 <= 0).
-auto => />. 
-move => *. split. rewrite to_sintN => />. 
-move : H9 H10. 
-rewrite to_sintE /smod qE => />; smt(@W16).
-smt(@ZModRing). 
-rewrite to_sintN => />.  
-move : H9 H10; rewrite qE => />; smt(@W16). 
-move : H9 H10; rewrite qE => />; smt(@W16). 
+seq 6 : (#{/~a0 = ap.[ii]}{~a1 = ap.[ii+1]}{~b0 = bp.[ii]}{~b1 = bp.[ii+1]}pre /\ 
+         a0 = ap.[ii+2] /\ a1 = ap.[ii+3] /\ 
+         b0 = bp.[ii+2] /\ b1 = bp.[ii+3]).
+    auto => /> &hr. 
+    rewrite (_: i{hr} + W64.one - W64.one = i{hr}); first by ring. 
+    rewrite ultE => /> ????????????????????. 
+    rewrite to_uintD_small; by smt(@W64).
 
-seq  13 : (#pre /\
-           (inzmod (to_sint rp.[4*i+2]),inzmod (to_sint rp.[4*i+3])) = 
-             complex_mul (inzmod (to_sint ap.[4*i+2]),inzmod (to_sint ap.[4*i+3])) 
-                         (inzmod (to_sint bp.[4*i+2]),inzmod (to_sint bp.[4*i+3])) 
-                         (-_zetas.[64+i]) /\
-             b16 rp.[4*i+2] (4*Kyber_.q) /\ b16 rp.[4*i+3] (4*Kyber_.q)).
+seq  13 : (#{/~ii + 2 = to_uint i}
+            {~to_uint i %% 4 = 2}
+            {~i \ult W64.of_int 256}
+            {~to_uint zetasctr{hr} - 1 = to_uint i{hr} %/ 4 + 64}
+            {~inzmod (to_sint zeta_0) = - _zetas.[to_uint i %/ 4 + 64] * inzmod R}pre /\
+            ii + 4 = to_uint i /\ to_uint i %% 4 = 0 /\ to_uint i <= 256 /\ to_uint zetasctr{hr} = to_uint i{hr} %/ 4 + 64 /\
+            inzmod (to_sint zeta_0) = - _zetas.[to_uint i %/ 4 - 1 + 64] * inzmod R /\
+           (inzmod (to_sint rp.[ii+2]),inzmod (to_sint rp.[ii+3])) = 
+             complex_mul (inzmod (to_sint ap.[ii+2]),inzmod (to_sint ap.[ii+3])) 
+                         (inzmod (to_sint bp.[ii+2]),inzmod (to_sint bp.[ii+3])) 
+                         (-_zetas.[ii %/4 + 64]) /\
+             b16 rp.[ii+2] (4*Kyber_.q) /\ b16 rp.[ii+3] (4*Kyber_.q)).
 
-sp;wp.
+wp.
 seq 4 : (#pre /\
           inzmod (to_sint r0) = 
-           inzmod (to_sint ap.[4*i+3]) * inzmod (to_sint bp.[4*i+3]) * 
-           (-_zetas.[64+i]) * (inzmod 169)  + 
-           inzmod (to_sint ap.[4*i+2]) * inzmod (to_sint bp.[4*i+2])  * (inzmod 169) /\
+           inzmod (to_sint ap.[ii+3]) * inzmod (to_sint bp.[ii+3]) * 
+           (-_zetas.[ii %/4 + 64]) * (inzmod 169)  + 
+           inzmod (to_sint ap.[ii+2]) * inzmod (to_sint bp.[ii+2])  * (inzmod 169) /\
            b16 r0 (4*Kyber_.q)
         ).
 seq 1 : (#pre /\
            inzmod (to_sint r0) = 
-           inzmod (to_sint ap.[4*i+3]) * inzmod (to_sint bp.[4*i+3])  * (inzmod 169) /\
+           inzmod (to_sint ap.[ii+3]) * inzmod (to_sint bp.[ii+3])  * (inzmod 169) /\
            b16 r0 (2*Kyber_.q)).
 ecall (fqmul_corr_h (to_sint a1) (to_sint b1)).
 auto => />. 
-move => &hr mont bas bbs ?? rb rv ???????? zval zbl zbh ? rval.
+move => &hr mont bas bbs ?? rb rv ???? zval zbl zbh ??????? rval.
 
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr} + 3] * to_sint bp{hr}.[4 * i{hr} + 3]) _ _) => />; first by smt(@Fq). 
+move : (SREDCp_corr (to_sint ap{hr}.[ii + 3] * to_sint bp{hr}.[ii + 3]) _ _) => />; first by smt(@Fq). 
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
- move : (bas ( (4*i{hr} + 3)) _); first by smt().
- move : (bas (4*i{hr}+2) _); first by smt(@W64). move => aibnd ai1bnd.
+ move : (bas ( (ii + 3)) _); first by smt().
+ move : (bas (ii+2) _); first by smt(@W64). move => aibnd ai1bnd.
 
 move : bbs; rewrite /signed_bound_cxq => /> bbs. 
- move : (bbs ( (4*i{hr} + 3)) _); first by smt().
- move : (bbs (4*i{hr}+2) _); first by smt(@W64). move => bibnd bi1bnd.
+ move : (bbs ( (ii + 3)) _); first by smt().
+ move : (bbs (ii+2) _); first by smt(@W64). move => bibnd bi1bnd.
 rewrite /R qE /=.
 split.
 move : ai1bnd.
@@ -2961,14 +3003,14 @@ smt.
 
 by rewrite eq_inzmod -rval !inzmodM; smt(@Fq).
 
-seq 1 : (#{~inzmod (to_sint r0) = inzmod (to_sint ap.[4 * i + 3]) * inzmod (to_sint bp.[4 * i + 3]) * inzmod 169}pre /\
+seq 1 : (#{~inzmod (to_sint r0) = inzmod (to_sint ap.[ii + 3]) * inzmod (to_sint bp.[ii + 3]) * inzmod 169}pre /\
            inzmod (to_sint r0) = 
-           inzmod (to_sint ap.[4*i+3]) * inzmod (to_sint bp.[4*i+3]) *
-               -_zetas.[i+64] * (inzmod 169) /\
+           inzmod (to_sint ap.[ii+3]) * inzmod (to_sint bp.[ii+3]) *
+               -_zetas.[ii %/4 +64] * (inzmod 169) /\
            b16 r0 (2*Kyber_.q)).
 ecall (fqmul_corr_h (to_sint r0) (to_sint zeta_0)).
 auto => />.
-move => &hr mont bas bbs ?? rb rv ???????? zval zbl zbh  r0val ???rval.
+move => &hr mont bas bbs ?? rb rv ???? zval zbl zbh ?????? r0val ???rval.
 
 move : (SREDCp_corr (to_sint r0{hr} * to_sint zeta_0{hr}) _ _) => />.
   by smt(@Fq). 
@@ -2982,20 +3024,20 @@ split; first by  smt(@Fq).
 split; last by  smt(@Fq).
 
 rewrite zval.
-have aux : (inzmod (to_sint ap{hr}.[4 * i{hr} + 3]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 3]) * inzmod 169 *
-- _zetas.[64 + i{hr}] * inzmod R * inzmod 169 =
-(inzmod R * inzmod 169) * inzmod (to_sint ap{hr}.[4 * i{hr} + 3]) * inzmod (to_sint bp{hr}.[4 * i{hr} + 3]) *
-- _zetas.[64 + i{hr}]  * inzmod 169
+have aux : (inzmod (to_sint ap{hr}.[ii + 3]) * inzmod (to_sint bp{hr}.[ii + 3]) * inzmod 169 *
+- _zetas.[ii %/4 + 64] * inzmod R * inzmod 169 =
+(inzmod R * inzmod 169) * inzmod (to_sint ap{hr}.[ii + 3]) * inzmod (to_sint bp{hr}.[ii + 3]) *
+- _zetas.[ii %/4 + 64]  * inzmod 169
 ); first by ring. 
 move : aux.
 rewrite (_: (inzmod R * inzmod 169)= inzmod (R*169)); first by rewrite inzmodM.
 move : RRinv; rewrite eq_inzmod => ->.
 rewrite (_: inzmod 1 = Kyber_.ZModRing.one); first by smt(@ZModRing). 
 rewrite ZModRing.ComRing.mul1r. 
-rewrite (_: i{hr} + 64 = 64+ i{hr}); first by ring.
-pose a := inzmod (to_sint ap{hr}.[4 * i{hr} + 3]).
-pose b := inzmod (to_sint bp{hr}.[4 * i{hr} + 3]).
-pose z := _zetas.[64 + i{hr}].
+pose a := inzmod (to_sint ap{hr}.[ii + 3]).
+pose b := inzmod (to_sint bp{hr}.[ii + 3]).
+rewrite (_: to_uint i{hr} %/ 4 = ii %/ 4). smt().
+pose z := _zetas.[ii %/ 4 + 64].
 pose c := inzmod 169.
 pose d := inzmod R.
 move => XX; rewrite -XX. 
@@ -3004,17 +3046,17 @@ by ring.
 wp.
 ecall (fqmul_corr_h (to_sint a0) (to_sint b0)).
 auto => />. 
-move => &hr mont bas bbs ?? rb rv ???????? zval zbl zbh  r0val ???rval.
+move => &hr mont bas bbs ?? rb rv ???? zval zbl zbh ?????? r0val ???rval.
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
- move : (bas ( (4*i{hr} + 3)) _); first by smt().
- move : (bas (4*i{hr} + 2) _); first by smt(@W64). move => aibnd ai1bnd.
+ move : (bas ( (ii + 3)) _); first by smt().
+ move : (bas (ii + 2) _); first by smt(@W64). move => aibnd ai1bnd.
 
 move : bbs; rewrite /signed_bound_cxq => /> bbs. 
- move : (bbs ( (4*i{hr} + 3)) _); first by smt().
- move : (bbs (4*i{hr} + 2) _); first by smt(@W64). move => bibnd bi1bnd.
+ move : (bbs ( (ii + 3)) _); first by smt().
+ move : (bbs (ii + 2) _); first by smt(@W64). move => bibnd bi1bnd.
 
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr} + 2] * to_sint bp{hr}.[4 * i{hr} + 2]) _ _) => />;
+move : (SREDCp_corr (to_sint ap{hr}.[ii + 2] * to_sint bp{hr}.[ii + 2]) _ _) => />;
   first 2 by smt(@Fq). 
 
 rewrite eq_inzmod -rval !inzmodM. 
@@ -3022,134 +3064,111 @@ move => ?? rrval.
 
 rewrite !to_sintD_small. smt(@Fq).
 split.
-rewrite  !inzmodD rrval H10.
-rewrite (_: i{hr} + 64 = 64+ i{hr});  by ring.
+rewrite  !inzmodD rrval.
+smt(@Fq).
 smt(@Fq).
 
 ecall (fqmul_corr_h (to_sint a1) (to_sint b0)).
 ecall (fqmul_corr_h (to_sint a0) (to_sint b1)).
 
 auto => />.
-move => &hr mont bas bbs ?? rb rv ???????? zval zbl zbh  r0val ???rval ?rvall. 
+move => &hr mont bas bbs ?? rb rv ???? zval zbl zbh ?????? r0val ???rval ?rvall. 
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
- move : (bas ( (4*i{hr} + 3)) _); first by smt().
- move : (bas (4*i{hr}+2) _); first by smt(@W64). move => aibnd ai1bnd.
+ move : (bas ( (ii + 3)) _); first by smt().
+ move : (bas (ii+2) _); first by smt(@W64). move => aibnd ai1bnd.
 
 move : bbs; rewrite /signed_bound_cxq => /> bbs. 
- move : (bbs ( (4*i{hr} + 3)) _); first by smt().
- move : (bbs (4*i{hr} + 2) _); first by smt(@W64). move => bibnd bi1bnd.
+ move : (bbs ( (ii + 3)) _); first by smt().
+ move : (bbs (ii + 2) _); first by smt(@W64). move => bibnd bi1bnd.
 
-split. split.
+rewrite !to_uintD_small; first 2 by smt(@W64).
+move : H1; rewrite !ultE => /> *.
+
+split.
+
+split; first by smt(@W64).
+split; first by smt(@W64).
+
+split.
 
 move => k kl kh.
-case (k = 4 * i{hr}+2). smt(@Array256 @Fq). 
-case (k = 4 * i{hr}+3). smt(@Array256 @Fq). 
+case (k = ii + 2). smt(@Array256 @Fq). 
+case (k = ii + 3). smt(@Array256 @Fq). 
 
 move => *.
+
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 
-move : rb. rewrite /signed_bound_cxq => rb. 
+move : rb; rewrite /signed_bound_cxq => rb. 
 move : (rb k). rewrite b16E.
 smt(@Fq).
 
-split. 
+
+split.
 
 rewrite /base_mul.
+
+rewrite -H3.
+
+rewrite (_: (ii + 2 + 2) %/ 4 = ii %/4 + 1). smt().
+
 move => k kb.
 rewrite /lift_array256 !mapiE; first 12 by smt(). 
 
-rewrite !Array256.set_neqiE; first 16 by smt(@W64). 
+case (k < ii %/4); last first.
+(**************)
+move => *.
+have -> : k = ii %/4; first by smt(). 
+have -> : 4 * (ii %/4) = ii; first by smt(). 
+simplify.
+move => *; rewrite Array256.set_neqiE; first 2 by smt(@W64). 
+move => *; rewrite Array256.set_neqiE; first 2 by smt(@W64). 
+move => *; rewrite Array256.set_neqiE; first 2 by smt(@W64). 
+move => *; rewrite Array256.set_neqiE; first 2 by smt(@W64). 
+move => *; rewrite Array256.set_neqiE; first 2 by smt(@W64). 
+move => *; rewrite Array256.set_eqiE; first 2 by smt(@W64). 
+move => *; rewrite Array256.set_eqiE; first 2 by smt(@W64). 
+rewrite H5 H6 /double_mul /complex_mul => />.
 
-simplify => />.
+move : (SREDCp_corr (to_sint ap{hr}.[ii+2] * to_sint bp{hr}.[ii + 3]) _ _) => />;
+  first 2 by smt(@Fq). 
+
+rewrite eq_inzmod -rval !inzmodM. 
+move => ?? rrval.
+
+
+move : (SREDCp_corr (to_sint ap{hr}.[ii + 3] * to_sint bp{hr}.[ii+2]) _ _) => />;
+  first 2 by smt(@Fq). 
+
+rewrite eq_inzmod -rvall !inzmodM. 
+move => ?? rrvall.
+
+smt(@Fq).
+
+
+(********************)
+move => *.
+move => *; rewrite !Array256.set_neqiE; first 16 by smt(@W64). 
 
 move : rv; rewrite /base_mul => rv.
 
-move : (rv k kb).
+move : (rv k _); first by smt().
 rewrite /lift_array256 !mapiE; first 12 by smt(). 
 simplify => />.
 
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr}+2] * to_sint bp{hr}.[4 * i{hr} + 3]) _ _) => />;
-  first 2 by smt(@Fq). 
-
-rewrite eq_inzmod -rval !inzmodM. 
-move => ?? rrval.
-
-
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr} + 3] * to_sint bp{hr}.[4 * i{hr}+2]) _ _) => />;
-  first 2 by smt(@Fq). 
-
-rewrite eq_inzmod -rvall !inzmodM. 
-move => ?? rrvall.
-
-rewrite Array256.set_neqiE; first 2 by smt(@W64). 
-rewrite Array256.set_neqiE; first 2 by smt(@W64). 
-rewrite Array256.set_neqiE; first 2 by smt(@W64). 
-rewrite Array256.set_neqiE; first 2 by smt(@W64). 
-
-split ;  by smt().
-
-
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr}+2] * to_sint bp{hr}.[4 * i{hr} + 3]) _ _) => />;
-  first 2 by smt(@Fq). 
-
-rewrite eq_inzmod -rval !inzmodM. 
-move => ?? rrval.
-
-
-move : (SREDCp_corr (to_sint ap{hr}.[4 * i{hr} + 3] * to_sint bp{hr}.[4 * i{hr}+2]) _ _) => />;
-  first 2 by smt(@Fq). 
-
-rewrite eq_inzmod -rvall !inzmodM. 
-move => ?? rrvall.
-
-rewrite Array256.set_neqiE; first 2 by smt(@W64). 
-rewrite Array256.set_eqiE; first 2 by smt(@W64). 
-rewrite Array256.set_eqiE; first 2 by smt(@W64). 
-
-
-rewrite !to_sintD_small. smt(@Fq).
-rewrite r0val inzmodD rrval rrvall.
-split. split; by ring.
-split.
-split.
-done.
-done.
-split.
-smt().
-smt().
+smt(@Fq).
+smt(@Fq).
 
 (**** FINAL GOAL *)
- auto => />.
-move => &hr mont bas bbs ?? rb rv ???????? zval zbl zbh  r0val ???rval ?. 
-
-split; first by  smt(@W64).
-split; first by smt().
-split.
-rewrite /signed_bound_cxq => /> k kb.
-case (k < 4*i{hr}).
-   move : rb; rewrite /signed_bound_cxq => /> /#. 
-case (k = 4*i{hr}); smt(@Array256 @Fq).
-
-rewrite /base_mul =>  k kb.
-case (k < i{hr}). 
-   move => *.
-   move : rv; rewrite /base_mul => /> rv.
-   move : (rv k _); rewrite /double_mul /complex_mul => /> /#. 
-move => *. 
-rewrite (_: k = i{hr}); first by smt().
-rewrite /double_mul /complex_mul /lift_array256.
-split. split. 
-rewrite !mapiE; first 6 by smt() => />. 
-rewrite !mapiE; first 6 by smt() => />. 
-rewrite !mapiE; first 6 by smt() => />. 
-smt().
+by  auto => />.
 qed.
 
+import NTT_Fq.
 
 lemma basemul_scales ap bp rs :
- base_mul ap bp  zetas rs 64=>
+ base_mul ap bp zetas_const rs 256 =>
   rs = scale (basemul ap bp) (inzmod 169). 
 rewrite /base_mul /double_mul /basemul /scale /complex_mul => /> *.
 apply Array256.ext_eq => /> *.
@@ -3161,7 +3180,7 @@ move => *.
 move : (H6 (x %/ 4) _); first by smt().
 move => [#] *.
 rewrite (_: (basemul ap bp).[x] = 
-  ap.[4 * (x %/4) + 1] * bp.[4 * (x %/4) + 1] * zetas.[(x %/4) + 64] + ap.[4 * (x %/4)] * bp.[4 * (x %/4)]). smt().
+  ap.[4 * (x %/4) + 1] * bp.[4 * (x %/4) + 1] * zetas_const.[(x %/4) + 64] + ap.[4 * (x %/4)] * bp.[4 * (x %/4)]). smt().
 rewrite (_: x = 4 * (x %/ 4)); first by smt().
 rewrite H2. 
 rewrite (_: 4 * (x %/ 4) %/ 4 = (x %/ 4)); first by smt(). 
@@ -3181,7 +3200,7 @@ move => *.
 move : (H6 (x %/ 4) _); first by smt().
 move => [#] *.
 rewrite (_: (basemul ap bp).[x] = 
-  ap.[4 * (x %/ 4) + 3] * bp.[4 * (x %/ 4) + 3] * - zetas.[x %/ 4 + 64] +
+  ap.[4 * (x %/ 4) + 3] * bp.[4 * (x %/ 4) + 3] * - zetas_const.[x %/ 4 + 64] +
      ap.[4 * (x %/ 4) + 2] * bp.[4 * (x %/ 4) + 2]). smt().
 rewrite (_: x = 4 * (x %/ 4) + 2); first by smt().
 rewrite H4. 
@@ -3199,8 +3218,6 @@ rewrite (_: (4 * (x %/ 4) + 3) %/ 4 = (x %/ 4)); first by smt().
 by ring.
 smt().
 qed.
-
-print Mderand.
 
 lemma mul_mod_add_mod (x y z m : int) :
  (x * y %% m + z) %% m = (x * y + z) %% m.
