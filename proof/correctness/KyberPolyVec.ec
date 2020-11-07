@@ -496,12 +496,12 @@ qed.
 
 lemma formula_polyvec x : 
   0 <= x < 3329 =>
-  (x * 1024 + 1664) * (4294967296 %/ 3329 + 1) %% 18446744073709551616 %/ 4294967296 %% 1024 =
+  (x * 1024 + 1665) * (4294967296 %/ 3329) %% 18446744073709551616 %/ 4294967296 %% 1024 =
   (x * 1024 + 1664) %/ 3329 %% 1024.
 proof.  
 have ? :  
    (all
-     (fun x => (x * 1024 + 1664) * (4294967296 %/ 3329 + 1) %% 18446744073709551616 %/ 4294967296 %% 1024 =
+     (fun x => (x * 1024 + 1665) * (4294967296 %/ 3329) %% 18446744073709551616 %/ 4294967296 %% 1024 =
 (x * 1024 + 1664) %/ 3329 %% 1024)
      (range 0 3329)).
 by [] => />.
@@ -512,7 +512,7 @@ lemma roundcimpl64 (a : W16.t) :
   bpos16 a q =>
   inzmod
   (to_sint (truncateu16
-         ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1664)%W64) * (of_int 1290168)%W64 `>>`
+         ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
            (of_int 32)%W8) `&`
           (of_int 1023)%W64))) = PolyVec.roundc (inzmod (to_sint a)).
 proof.
@@ -533,9 +533,9 @@ rewrite IntDiv.pmod_small /max /=. smt(@W64).
 rewrite IntDiv.pmod_small /max /=. smt(@W64).
 rewrite (IntDiv.pmod_small _ 3329). smt(@W16).
 rewrite (_: (smod (to_uint a))%W16 = to_uint a). smt(@W16).
-pose xx := (to_uint a * 1024 + 1664).
+pose xx := (to_uint a * 1024 + 1665).
 rewrite W64.of_uintK => />.
-pose yy := xx * 1290168 %% 18446744073709551616 %/ 4294967296 %% 1024.
+pose yy := xx * 1290167 %% 18446744073709551616 %/ 4294967296 %% 1024.
 have ? : (0 <= yy < 2^16). smt(@W16).
 rewrite (_: W16.smod yy =  yy). 
 rewrite /smod.
@@ -543,7 +543,7 @@ simplify.
 case (32768 <= yy) => ?. smt().
 done.
 rewrite /yy.
-rewrite (_: 1290168 = 4294967296 %/ 3329 + 1). smt().
+rewrite (_: 1290167 = 4294967296 %/ 3329). smt().
 
 rewrite /xx.
 pose x := to_uint a.
@@ -559,7 +559,7 @@ qed.
 lemma roundcimpl_rng (a : W16.t) :
   bpos16 a q =>
   0 <= to_sint (truncateu16
-         ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1664)%W64) * (of_int 1290168)%W64 `>>`
+         ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
            (of_int 32)%W8) `&`
           (of_int 1023)%W64)) < 1024.
 proof.
@@ -568,7 +568,7 @@ rewrite (_: W64.of_int 1023 = W64.masklsb 10); first by rewrite /max /=.
 rewrite W64.and_mod => />. 
 pose xx := (W64.of_int
              (to_uint
-                (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1664)%W64) * (of_int 1290168)%W64 `>>` (of_int 32)%W8) %%
+                (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>` (of_int 32)%W8) %%
               1024)).
 have ? : 0<= to_uint  xx < 1024; first by smt(@W64).
 have ? : 0<= to_uint  (truncateu16 xx) < 1024.
@@ -580,7 +580,7 @@ qed.
 lemma polyvec_compress_round_corr ap :
       hoare[ Mderand.polyvec_compress_round :
            ap = lift_array768 a /\
-           pos_bound768_cxq a 0 768 1 
+           pos_bound768_cxq a 0 768 2 
            ==>
            Array768.map PolyVec.roundc ap = lift_array768 res /\
            signed_bound768_cxq res 0 768 1 ] . 
@@ -757,44 +757,25 @@ smt().
 
 smt().
 
-call (polyvec_csubq_corr_ab ap 1). 
+call (polyvec_csubq_corr ap). 
 wp; skip => /> *.
 
 split.
-smt().
 
-move => k r.
-rewrite ultE of_uintK pmod_small.
-done.
+by smt().
+
 move => *.
-have ?: to_uint k = 768.
-smt().
-
 split.
 rewrite tP => j *.
 rewrite mapiE //.
 rewrite -H6.
-smt().
-rewrite lift_array768E //.
+by move : H2; rewrite ultE; smt().
+smt(@Array768).
 
 rewrite /signed_bound768_cxq => j *.
 rewrite b16E.
-split.
-have ?: 0 <= to_sint r.[j]. smt().
-rewrite to_sint_unsigned.
-done.
-have ?: 0 <= to_uint r.[j] < W16.modulus.
-rewrite to_uint_cmp.
-elim H11 => *.
-
-have aux : forall x y, x < 0 => 0 <= y => x <= y.
-smt().
-
-rewrite aux. by rewrite qE /=. done.
-move => *.
-have ?: to_sint r.[j] < 1024. smt().
-rewrite qE /=.
-smt().
+have ? : (to_uint i0 <= 768). smt().
+by move : H2; rewrite ultE; smt(qE).
 qed.
 
 (******************************************************)
