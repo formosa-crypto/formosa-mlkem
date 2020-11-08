@@ -612,7 +612,6 @@ by [].
 by smt().
 qed.
 
-(*
 lemma formula3 x :
   0 <= x < 3329 =>
 ((of_int ((x * 2 + 1664) %/ 3329 %% 2))%W32 = W32.one) =
@@ -1331,7 +1330,7 @@ move => *.
 rewrite -(H2 k); first by smt(@W64).
 by rewrite set_neqiE; first 2 by smt(@W64).
 qed.
-*)
+
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
       hoare[ Mderand.poly_sub :
@@ -1653,7 +1652,7 @@ lemma poly_reduce_corr (_a : zmod Array256.t):
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
 
-(*
+
 lemma formula x :
   0 <= x < 3329 =>
    (x * 16 + 1665) * (268435456 %/ 3329) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16.
@@ -1815,7 +1814,7 @@ lemma poly_compress_round_corr ap :
             0<= k < 256  => 0<= to_sint res.[k] < 16 ] = 1%r
   by conseq poly_compress_ll (poly_compress_round_corr_h ap).
 
-*)
+
 (*******DIRECT NTT *******)
 
 import Jindcpa.
@@ -1823,8 +1822,6 @@ import Jindcpa.
 
 lemma zeta_bound :
    minimum_residues jzetas.
-admitted.
-(*
  proof.
 rewrite /minimum_residues qE.
 apply/(allP jzetas (fun x => bpos16 x 3329)).
@@ -1842,7 +1839,7 @@ equiv ntt_correct_aux :
   NTT_Fq.NTT.ntt ~ Mderand.poly_ntt : 
         r{1} = lift_array256 rp{2} /\ 
         array_mont zetas{1} = 
-           lift_array128  jzetas{2} /\
+           lift_array128  jzetas /\
         signed_bound_cxq rp{2} 0 256 2
           ==> 
             res{1} = lift_array256 res{2} /\
@@ -2183,11 +2180,9 @@ smt(@ZModRing).
 qed.
 
 (*******INVERSE *******)
-*)
+
 lemma zetainv_bound :
    minimum_residues jzetas_inv.
-admitted.
-(*
 proof.
 rewrite /minimum_residues qE.
 apply/(allP jzetas_inv (fun x => bpos16 x 3329)).
@@ -2242,7 +2237,7 @@ equiv invntt_correct_aux :
   NTT_Fq.NTT.invntt ~ Mderand.poly_invntt : 
         r{1} = lift_array256 rp{2} /\ 
         array_mont zetas_inv{1} = 
-           lift_array128  jzetas_inv{2} /\
+           lift_array128  jzetas_inv /\
         signed_bound_cxq rp{2} 0 256 2
           ==> 
             res{1} = lift_array256 res{2} /\
@@ -2250,16 +2245,16 @@ equiv invntt_correct_aux :
 proc.
 (* Dealing with final loop *)
 seq 3 5 :  (r{1} = lift_array256 rp{2} /\
-         zetasp{2} = jzetas_inv{2} /\
+         zetasp{2} = jzetas_inv /\
         array_mont zetas_inv{1} = 
-           lift_array128  jzetas_inv{2} /\
+           lift_array128  jzetas_inv /\
         signed_bound_cxq rp{2} 0 256 4
 ); last first.
 while (j{1} = to_uint j{2} /\
        0 <= j{1} <= 256 /\
        r{1} = lift_array256 rp{2} /\
-       zetas_inv.[127]{1} * inzmod R  = inzmod (to_sint jzetas_inv{2}.[127]) /\
-       zeta_0{2} = jzetas_inv{2}.[127] /\
+       zetas_inv.[127]{1} * inzmod R  = inzmod (to_sint jzetas_inv.[127]) /\
+       zeta_0{2} = jzetas_inv.[127] /\
        signed_bound_cxq rp{2} 0 256 4 /\
        (forall k, 0 <= k < j{1} =>
            b16 rp{2}.[k] (Kyber_.q + 1))
@@ -2660,7 +2655,7 @@ byequiv invntt_correct_aux.
 smt(). smt().
 byphoare (invntt_spec _r). smt(). smt().
 qed.
-*)
+
 
 (* COMPLEX MULTIPLICATION IN MONTGOMERY MULTIPLICATION WITH SOME EXTRA
    CONSTANTS THAT ARE LEFT AROUND. THEY SHOULD BE  TRIVIAL TO MATCH WITH

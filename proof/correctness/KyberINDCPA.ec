@@ -60,6 +60,7 @@ lemma kg_correct sd s_ e_ :
       lift_vector res.`1 = polyvec_ntt s_ /\
        lift_vector res.`2 = H_MLWE.M.Vector.(+) (H_MLWE.M.Matrix.( *^) (H_MLWE.H sd) s_) e_
        ].
+proc.
 admitted.
 
 
@@ -80,7 +81,7 @@ inline Mderand.indcpa_keypair_jazz.
 have indhop : 
    equiv [ MLWE_PKE(H).kg ~ Mderand.indcpa_keypair_jazz :
      true ==> true ].
-
+proc.
 admitted.
 
 lemma enc_corr &m : 
