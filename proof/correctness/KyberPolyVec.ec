@@ -225,6 +225,26 @@ lemma pos_bound768_cxqP a i j x :
   pos_bound768_cxq a i j x <=> (forall k, i <= k < j => 0 <= to_sint a.[k] < x * q).
 proof. by split; rewrite /pos_bound768_cxq. qed.
 
+op lift_array768_32 (p : W32.t Array768.t) =
+  Array768.map (fun x => inzmod (W32.to_sint x)) p.
+
+op bpos32 a b = (0 <= W32.to_sint a && to_sint a < b)
+  axiomatized by bpos32E.
+
+op pos_bound768_cxq_32 (coefs : W32.t Array768.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => bpos32 coefs.[k] (c * q).
+
+op pos_bound768_b_32 (coefs : W32.t Array768.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos32 coefs.[k] b.
+
+lemma to_sint_unsigned32 : forall (x : W32.t), 
+    0 <= to_sint x =>
+    to_sint x = to_uint x.
+proof.
+  move => x; rewrite W32.to_sintE /smod.
+  move : (W32.to_uint_cmp x) => /> ? ?.
+  by case (2147483648 <= to_uint x) => ? // /#. 
+qed.
 
 (* END AUX *)
 
@@ -779,13 +799,12 @@ by move : H2; rewrite ultE; smt(qE).
 qed.
 
 (******************************************************)
-
 lemma polyvec_add_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
-      hoare[ Mderand.polyvec_add :
-           _a = lift_array768 a /\
+      hoare[ Mderand.polyvec_add2 :
+           _a = lift_array768 r /\
            _b = lift_array768 b /\
-           signed_bound768_cxq a 0 768 ab /\
+           signed_bound768_cxq r 0 768 ab /\
            signed_bound768_cxq b 0 768 bb 
            ==>
            signed_bound768_cxq res 0 768 (ab + bb) /\ 
@@ -794,17 +813,17 @@ lemma polyvec_add_corr _a _b ab bb :
 proof.
 move => *.
 proc.
-seq 10 : (#pre).
+seq 6 : (#pre).
 by wp; skip.
-seq 1 : (#pre /\ signed_bound_cxq a0 0 256 ab /\ signed_bound_cxq a1 0 256 ab /\
-        signed_bound_cxq a2 0 256 ab /\ (forall k, 0 <= k < 256 => a0.[k] = a.[k]) /\
-        (forall k, 0 <= k < 256 => a1.[k] = a.[k+256]) /\ (forall k, 0 <= k < 256 => a2.[k] = a.[k+512]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint a0.[k]) = _a.[k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint a1.[k]) = _a.[256+k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint a2.[k]) = _a.[512+k])).
-exists* a; elim* => a'.
+seq 1 : (#pre /\ signed_bound_cxq r0 0 256 ab /\ signed_bound_cxq r1 0 256 ab /\
+        signed_bound_cxq r2 0 256 ab /\ (forall k, 0 <= k < 256 => r0.[k] = r.[k]) /\
+        (forall k, 0 <= k < 256 => r1.[k] = r.[k+256]) /\ (forall k, 0 <= k < 256 => r2.[k] = r.[k+512]) /\
+        (forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = _a.[k]) /\
+        (forall k, 0 <= k < 256 => inzmod (to_sint r1.[k]) = _a.[256+k]) /\
+        (forall k, 0 <= k < 256 => inzmod (to_sint r2.[k]) = _a.[512+k])).
+exists* r; elim* => a'.
 call (polyvec_topolys_corr _a ab a').
-skip => /> *. 
+by skip => /> *. 
 
 seq 1 : (#pre /\ signed_bound_cxq b0 0 256 bb /\ signed_bound_cxq b1 0 256 bb /\
         signed_bound_cxq b2 0 256 bb /\ (forall k, 0 <= k < 256 => b0.[k] = b.[k]) /\
@@ -814,92 +833,36 @@ seq 1 : (#pre /\ signed_bound_cxq b0 0 256 bb /\ signed_bound_cxq b1 0 256 bb /\
         (forall k, 0 <= k < 256 => inzmod (to_sint b2.[k]) = _b.[512+k])).
 exists* b; elim* => b'.
 call (polyvec_topolys_corr _b bb b').
-skip => /> *.
+by skip => /> *.
 
-seq 1 : (#pre /\ signed_bound_cxq r0 0 256 (ab + bb) /\
-        forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = (lift_array256 a0).[k] + (lift_array256 b0).[k]).
-exists* a0; elim* => a0'. 
+seq 1 : (#{/~r0}pre /\ signed_bound_cxq r0 0 256 (ab + bb) /\
+        forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = (lift_array768 r).[k] + (lift_array768 b).[k]).
+exists* r0; elim* => a0'. 
 exists* b0; elim* => b0'.
 call (poly_add_corr (lift_array256 a0') (lift_array256 b0') ab bb).
-skip => /> *.
+skip => /> *. by smt(@Array256).
 
-seq 1 : (#pre /\ signed_bound_cxq r1 0 256 (ab + bb) /\
-        forall k, 0 <= k < 256 => inzmod (to_sint r1.[k]) = (lift_array256 a1).[k] + (lift_array256 b1).[k]).
-exists* a1; elim* => a1'. 
+seq 1 : (#{/~r1}pre /\ signed_bound_cxq r1 0 256 (ab + bb) /\
+        forall k, 0 <= k < 256 => inzmod (to_sint r1.[k]) = (lift_array768 r).[256+k] + (lift_array768 b).[256+k]).
+exists* r1; elim* => a1'. 
 exists* b1; elim* => b1'.
 call (poly_add_corr (lift_array256 a1') (lift_array256 b1') ab bb).
-skip => /> *.
+skip => /> *. by smt(@Array256).
 
-seq 1 : (#pre /\ signed_bound_cxq r2 0 256 (ab + bb) /\
-        forall k, 0 <= k < 256 => inzmod (to_sint r2.[k]) = (lift_array256 a2).[k] + (lift_array256 b2).[k]).
-exists* a2; elim* => a2'. 
+seq 1 : (#{/~r2}pre /\ signed_bound_cxq r2 0 256 (ab + bb) /\
+        forall k, 0 <= k < 256 => inzmod (to_sint r2.[k]) = (lift_array768 r).[512+k] + (lift_array768 b).[512+k]).
+exists* r2; elim* => a2'. 
 exists* b2; elim* => b2'.
 call (poly_add_corr (lift_array256 a2') (lift_array256 b2') ab bb).
-skip => /> *.
+skip => /> *. by smt(@Array256).
+
 
 exists* r0; elim* => r0'.
 exists* r1; elim* => r1'.
 exists* r2; elim* => r2'.
 call (polyvec_frompolys_corr (lift_array256 r0') (lift_array256 r1') (lift_array256 r2') (ab + bb)).
 skip => /> *.
-
-case (k < 256) => *.
-rewrite H28.
-done.
-rewrite -lift_array256_inzmod.
-done.
-rewrite H22.
-done.
-rewrite -lift_array256_inzmod.
-done.
-rewrite H9.
-done.
-rewrite -lift_array256_inzmod.
-done.
-rewrite H18.
-done.
-done.
-
-case (k < 512) => *.
-move : (H29 (k-256)) => *.
-rewrite H35.
-smt().
-rewrite -lift_array256_inzmod.
-smt().
-move : (H24 (k-256)) => *.
-rewrite H36.
-smt().
-rewrite -lift_array256_inzmod.
-smt().
-move : (H10 (k-256)) => *.
-rewrite H37.
-smt().
-rewrite -lift_array256_inzmod.
-smt().
-move : (H19 (k-256)) => *.
-rewrite H38.
-smt().
-smt().
-
-move : (H30 (k-512)) => *.
-rewrite H35.
-smt().
-rewrite -lift_array256_inzmod.
-smt().
-move : (H26 (k-512)) => *.
-rewrite H36.
-smt().
-rewrite -lift_array256_inzmod.
-smt().
-move : (H11 (k-512)) => *.
-rewrite H37.
-smt().
-rewrite -lift_array256_inzmod.
-smt().
-move : (H20 (k-512)) => *.
-rewrite H38.
-smt().
-smt().
+by smt(@Array768 @Array256).
 qed.
 
 (******************************************************)
@@ -1143,27 +1106,6 @@ by smt().
 qed.
 
 
-op lift_array768_32 (p : W32.t Array768.t) =
-  Array768.map (fun x => inzmod (W32.to_sint x)) p.
-
-op bpos32 a b = (0 <= W32.to_sint a && to_sint a < b)
-  axiomatized by bpos32E.
-
-op pos_bound768_cxq_32 (coefs : W32.t Array768.t) (l u c : int) : bool =
-  forall (k : int), l <= k < u => bpos32 coefs.[k] (c * q).
-
-op pos_bound768_b_32 (coefs : W32.t Array768.t) (l u b : int) : bool =
-  forall (k : int), l <= k < u => bpos32 coefs.[k] b.
-
-lemma to_sint_unsigned32 : forall (x : W32.t), 
-    0 <= to_sint x =>
-    to_sint x = to_uint x.
-proof.
-  move => x; rewrite W32.to_sintE /smod.
-  move : (W32.to_uint_cmp x) => /> ? ?.
-  by case (2147483648 <= to_uint x) => ? // /#. 
-qed.
-
 lemma polyvec_decompress_restore_corr ap :
       hoare[ Mderand.polyvec_decompress_restore :
            ap = lift_array768_32 rp /\
@@ -1241,17 +1183,12 @@ wp; skip => /> *; do split; first by smt().
 qed.
 
 (*
-  - proc polyvec_add(a : W16.t t, b : W16.t t) : W16.t t = Indcpa.M.polyvec_add
-  
   - proc polyvec_pointwise_acc(a : W16.t t, b : W16.t t) : W16.t Array256.t = Indcpa.M.polyvec_pointwise_acc
   
   proc polyvec_ntt(r : W16.t t) : W16.t t = Indcpa.M.polyvec_ntt
   
   proc polyvec_invntt(r : W16.t t) : W16.t t = Indcpa.M.polyvec_invntt
   
-  - proc polyvec_reduce(r : W16.t t) : W16.t t = Indcpa.M.polyvec_reduce
-
-  - proc polyvec_decompress_restore(rp : W32.t t) : W16.t t
 
 *)
 

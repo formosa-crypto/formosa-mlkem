@@ -39,4 +39,9 @@ NTT_Fq.ec:
 
 KyberPoly.ec:
 - Proves all poly computations correct with respect to the
-  abstract specifications.
+  abstract specifications. Uses  all previous files.
+
+KyberPolyVec.ec:
+- Proves all poly computations correct with respect to the
+  abstract specifications. Uses  all previous files.
+  
