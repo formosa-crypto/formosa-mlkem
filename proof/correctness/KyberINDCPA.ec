@@ -16,7 +16,6 @@ require import IndcpaDerand.
 import MLWE_PKE.
 import MLWE_PKE.
 
-print Mderand.
 (* WE DEFINE ALTERNATIVE VERSIONS OF THE EXTRACTED CODE TO
    MODULARIZE RANDOMNESS SAMPLINGS *)
 

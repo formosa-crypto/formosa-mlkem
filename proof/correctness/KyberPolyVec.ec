@@ -461,8 +461,6 @@ proof.
 qed.
 
 
-print poly_csubq_corr_h.
-
 lemma polyvec_csubq_corr ap :
       hoare[ Mderand.polyvec_csubq :
            ap = lift_array768 r /\

@@ -11,7 +11,6 @@ require import WArray20 WArray32 WArray33 WArray34 WArray40 WArray64
 
 require import Jindcpa.
 
-print M.
 (* WE DEFINE ALTERNATIVE VERSIONS OF THE EXTRACTED CODE TO
    MODULARIZE RANDOMNESS SAMPLINGS *)
 
