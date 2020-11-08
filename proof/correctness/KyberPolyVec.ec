@@ -1190,5 +1190,9 @@ qed.
 
 *)
 
+op polyvec_ntt(v : vector) : vector =
+   Vector.offunv 
+       (fun i => (ntt ((Vector.tofunv v) i))).
+
 end KyberPolyVec.
 

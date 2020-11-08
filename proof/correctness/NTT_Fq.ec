@@ -252,12 +252,4 @@ rewrite mapiE => />.
 smt(@ZModRing).
 qed.
 
-(* At this point we can write down some intermediate definitions that
-   we will need to connect this theory with the implementation *)
-import Kyber_.MLWEPKE.H_MLWE.M.
-
-op polyvec_ntt(v : vector) : vector =
-   Vector.offunv 
-       (fun i => (ntt ((Vector.tofunv v) i))).
-
 end NTT_Fq.
