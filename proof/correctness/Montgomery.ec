@@ -427,7 +427,6 @@ move : subeq; rewrite (_: a0 - t0 = 0) => />; first by smt().
 move => *.
 rewrite (_: (a1 - t1) %% q = (a1 - t1) * (R * Rinv) %% q).
 rewrite -modzMm. smt. rewrite mulrA -H1 /t.
-search ( +).
 rewrite Ring.IntID.mulrDl.
 rewrite (_:(-m * q) * Rinv = (-m*Rinv)*q). smt.
 rewrite Ring.IntID.addrC -modzDm modzMl => />.

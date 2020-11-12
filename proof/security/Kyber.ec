@@ -16,13 +16,13 @@ op dshort_elem : elem distr.
 op duni_elem : elem distr.
 op pe = 1%r /q%r.
 
-(* Concrete distributions *)
+(* Concrete distributions : CAUSES INCONSISTENCY
 axiom supp_dshort_elem x : -2 <= (if q %/2 <= (asint x) then (asint x -q) else (asint x)) <= 2 <=> x \in dshort_elem.
 axiom dshort_elem1E_2 : mu1 duni_elem (inzmod 2) = 1%r / 16%r.
 axiom dshort_elem1E_m2 : mu1 duni_elem (inzmod (q-2)) = 1%r / 16%r.
 axiom dshort_elem1E_1 : mu1 duni_elem (inzmod 1) = 1%r / 4%r.
 axiom dshort_elem1E_m1 : mu1 duni_elem (inzmod (q-1)) = 1%r / 4%r.
-axiom dshort_elem1E_0 : mu1 duni_elem (inzmod (0)) = 3%r / 8%r.
+axiom dshort_elem1E_0 : mu1 duni_elem (inzmod (0)) = 3%r / 8%r. *)
 
 axiom supp_duni_elem x : 0 <= asint x < q <=> x \in duni_elem.
 axiom duni_elem1E x : mu1 duni_elem x = pe.
@@ -324,7 +324,6 @@ qed.
 
 realize matrix_props2.
 (*move => /> *.
-search H_MLWE.M.Matrix.trmx.
 rewrite -H_MLWE.M.Matrix.mulmxTv H_MLWE.M.Matrix.trmxK.
 rewrite !H_MLWE.M.Vector.dotpDr.
 ring. 
