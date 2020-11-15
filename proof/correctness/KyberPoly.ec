@@ -98,39 +98,25 @@ smt().
 qed.
 
 lemma getsign x :
-(x \slt W16.zero => x `|>>` (of_int 15)%W8 = (of_int 65535)%W16) /\
-(W16.zero \sle x => x `|>>` (of_int 15)%W8 = W16.zero).
+      (x \slt W16.zero => x `|>>` (of_int 15)%W8 = (of_int 65535)%W16) /\
+      (W16.zero \sle x => x `|>>` (of_int 15)%W8 = W16.zero).
 proof.
-rewrite /(`|>>`) sarE sltE sleE !to_sintE => />.
-rewrite (_: W16.smod 0 = 0); first by rewrite /smod => />. 
-split.
-move => *.
-have  ? : (32768 <= to_uint x).
-   move : H; rewrite /smod => />; smt(@W16).
-apply W16.ext_eq => /> *.
-rewrite /smod.
-rewrite initiE => />.
-rewrite (_: min 15 (x0+15) = 15); first by smt().
-rewrite m1true => />.
-rewrite get_to_uint => />.
-move : H.
-rewrite /smod /=.
-rewrite H0.
-simplify.
-move => *.
-smt(@IntDiv).
-move => *.
-have  ? : (0 <= to_uint x < 32768).
-   move : H; rewrite /smod => /> *. split; first by smt(@W16).
-      case (32768 <= to_uint x); last by smt().
+rewrite /(`|>>`) sarE sltE sleE !to_sintE /smod => />.
+split; move => hh.
+  have  xb : (32768 <= to_uint x); first by smt(W16.to_uint_cmp).
+  apply W16.ext_eq => k kb; rewrite initiE => />.
+  rewrite (_: min 15 (k+15) = 15); first by smt().
+  by rewrite m1true // get_to_uint => />;smt().
+have  xb : (0 <= to_uint x < 32768).
+   split; first by smt().
+   case (32768 <= to_uint x).
       move => *.
-      move : H; rewrite H0 => />. 
-      move => *. have ? : false. move : (W16.to_uint_cmp x) => />. smt(). smt().
-apply W16.ext_eq => /> *.
-rewrite initiE => />.
-rewrite (_: min 15 (x0+15) = 15); first by smt().
-rewrite get_to_uint => />.
-smt(@IntDiv).
+      have ? : false;  move : (W16.to_uint_cmp x) => />; smt().
+      smt(). 
+move => *.
+  apply W16.ext_eq => k kb; rewrite initiE => />.
+  rewrite (_: min 15 (k+15) = 15); first by smt().
+  by rewrite get_to_uint => />;smt().
 qed.
 
 lemma poly_csubq_corr_h ap :
@@ -3221,7 +3207,7 @@ move => ?? rrvall.
 move : H14 H15 H16 H17; rewrite qE => *.
 rewrite to_sintD_small =>  />. smt(@W16).
 
-smt(@Fq).
+rewrite inzmodD. rewrite rrval rrvall. by ring. 
 
 (********************)
 move => *.
@@ -3238,7 +3224,7 @@ rewrite Array256.set_neqiE; first 2 by smt(@W64).
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
-smt(@Fq).
+smt(qE).
 
 split; first by smt(). 
 split; first by smt(). 
@@ -3269,7 +3255,8 @@ rewrite Array256.set_eqiE; first 2 by smt(@W64).
 
 move : H13 H14 H15 H16; rewrite qE => *.
 rewrite to_sintD_small =>  />. smt(@W16).
-smt(@Fq).
+rewrite inzmodD. split; first by rewrite rrval rrvall; ring.
+smt(qE).
 
 (**** FINAL GOAL *)
 by  auto => />.
