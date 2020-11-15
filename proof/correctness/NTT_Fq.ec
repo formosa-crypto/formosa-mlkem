@@ -224,24 +224,32 @@ axiom basemul_sem (ap bp rs: poly) :
 
 op scale(p : poly, c : elem) : poly =  Array256.map (fun x => x * c) p.
 
-(* This theorem should come from the algebraic infrastructure, along with
+(* These theorems should come from the algebraic infrastructure, along with
 another one that says our axiomatization of mul and add in Kyber are 
 explicit formulae for the ring operations. *)
-axiom mul_sem (pa pb : poly) (c : elem) : 
+axiom invnttK : cancel ntt invntt.
+axiom nttK : cancel invntt ntt.
+
+axiom ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
+
+axiom add_comm_ntt (pa pb : poly):
+  ntt (pa + pb) = (ntt pa) + (ntt pb).
+
+axiom mul_comm_ntt (pa pb : poly):
+  ntt (pa * pb) = basemul (ntt pa) (ntt pb).
+
+lemma mul_scale_ntt (pa pb : poly) (c : elem) : 
   invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
-   scale (pa * pb) c.
+   scale (pa * pb) c by
+ smt(mul_comm_ntt ntt_scale invnttK).
+
+lemma add_scale_ntt (pa pb : poly) (c : elem) : 
+  invntt (scale ((ntt pa) + (ntt pb)) c) = 
+   scale (pa + pb) c by
+ smt(add_comm_ntt ntt_scale invnttK).
+
 
 (* END: ALL THIS WILL BE REPLACED WITH POLY THEORY *)
-
-lemma mul_sem1 (pa pb : poly) :
-  invntt (basemul (ntt pa) (ntt pb)) = 
-     invntt (scale (basemul (ntt pa) (ntt pb)) (ZModRing.one)).
-       congr. rewrite /scale.
-       pose a := basemul (ntt pa) (ntt pb).
-       apply Array256.ext_eq => *.
-       rewrite mapE initiE => />.
-       by smt(@ZModRing).
-qed.
 
 lemma scale1 (p : poly) :
    scale p (ZModRing.one) = p.
