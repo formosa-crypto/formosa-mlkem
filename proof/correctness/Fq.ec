@@ -354,6 +354,7 @@ op add (a b : W16.t) = (a + b).
 op sub (a b : W16.t) = (a - b).
 
 import ZModRing.
+
 lemma add_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
    0 <= asz < 15 => 0 <= bsz < 15 =>
    a' = inzmod (W16.to_sint a) =>
@@ -383,6 +384,26 @@ case (max asz bsz = asz).
 + move => maxx; rewrite (_: max asz bsz = bsz); first by smt(). 
   rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />.
        split; smt(@StdOrder.IntOrder). 
+qed.
+
+lemma add_corr_qv (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
+   1 <= asz <= 6 => 1 <= bsz <= 3 =>
+   a' = inzmod (W16.to_sint a) =>
+   b' = inzmod (W16.to_sint b) =>
+   -asz*q <= (W16.to_sint a) < asz*q =>
+   -bsz*q <= (W16.to_sint b) < bsz*q =>
+     inzmod (W16.to_sint (add a b)) = a' + b' /\
+      -(asz+bsz)*q <= (W16.to_sint b) < (asz+bsz)*q.
+proof.
+rewrite /add  => />.
+pose aszb := asz*q.
+pose bszb := bsz*q.
+move => ?? ?? ?? ??.
+have bounds_asz : 3329 <= aszb <= 19974. smt(qE).
+have bounds_bsz : 3329 <= bszb <= 19974. smt(qE).
+rewrite !to_sintD_small => />; first  by smt(qE).
+split; first by smt(@ZModRing).
+smt().
 qed.
 
 lemma sub_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 

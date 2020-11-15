@@ -4,6 +4,7 @@ from Jasmin require import JModel.
 require import Fq.
 require import KyberPoly.
 require import KyberPolyVec.
+require import KyberAlgLift.
 
 require import Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64
                Array128 Array168 Array256 Array768.
@@ -30,18 +31,6 @@ import Fq.Kyber_.
 import MLWEPKE.
 import KyberPoly KyberPolyVec.
 
-op lift_vector(vec: W16.t Array768.t) : H_MLWE.M.vector =
-    H_MLWE.M.Vector.offunv (fun i => lift_polyvec vec i).
-
-op lift_matrix( rows : W16.t Array768.t * W16.t Array768.t * W16.t Array768.t) : 
-     H_MLWE.M.Matrix.matrix =
-     H_MLWE.M.Matrix.offunm (fun i j => 
-        if i = 0
-        then lift_polyvec rows.`1 j
-        else if i = 1
-             then lift_polyvec rows.`2 j
-             else lift_polyvec rows.`3 j).
-
 axiom gen_matrix s :
   hoare [ Mderand.gen_matrix  :
     s = seed /\ transposed = W64.zero ==>
@@ -60,7 +49,7 @@ lemma kg_correct sd s_ e_ :
       lift_vector res.`1 = polyvec_ntt s_ /\
        lift_vector res.`2 = H_MLWE.M.Vector.(+) (H_MLWE.M.Matrix.( *^) (H_MLWE.H sd) s_) e_
        ].
-proc.
+proc. 
 admitted.
 
 
