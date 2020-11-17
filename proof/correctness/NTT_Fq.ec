@@ -229,6 +229,7 @@ another one that says our axiomatization of mul and add in Kyber are
 explicit formulae for the ring operations. *)
 axiom invnttK : cancel ntt invntt.
 axiom nttK : cancel invntt ntt.
+axiom nttZero : ntt Poly.zero = Poly.zero.
 
 axiom ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
 
