@@ -74,18 +74,11 @@ op polyvec_ntt(v : vector) : vector =
 lemma polyvec_ntt_add (v1 v2 : vector) :
    polyvec_ntt (v1 + v2) = 
     polyvec_ntt v1 + polyvec_ntt v2.
-admitted.
-(*
 proof.
-rewrite /polyvec_ntt /(+) /=. 
+rewrite /polyvec_ntt. 
 rewrite eq_vectorP => *.
-rewrite !offunvE //= offunvK /vclamp H //=.
-case (i = 0).
-move => -> //=.
-rewrite !map2E => //=.
-rewrite add_comm_ntt.
+rewrite !offunvE //= offunvK /vclamp H //= !offunvE //=. by rewrite add_comm_ntt.
 qed.
-*)
 
 op polyvec_invntt(v : vector) : vector =
    Vector.offunv 
