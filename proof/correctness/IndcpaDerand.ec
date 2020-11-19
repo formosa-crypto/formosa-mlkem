@@ -496,6 +496,13 @@ module Mderand = {
     return (publicseed,e,skpv);
   }
 
+  proc aux_inner_prod(ai skpv : W16.t Array768.t) : W16.t Array256.t = {
+    var polyi;
+    polyi <@ polyvec_pointwise_acc (ai, skpv);
+    polyi <@ poly_frommont (polyi);
+    return polyi;
+  }
+
   proc indcpa_keypair_compute(publicseed : W8.t Array32.t, e skpv : W16.t Array768.t) : 
       W16.t Array768.t *  W16.t Array768.t = {
     var poly0:W16.t Array256.t;
@@ -517,12 +524,9 @@ module Mderand = {
     (a0, a1, a2) <@ gen_matrix (publicseed, zero);
     skpv <@ polyvec_ntt (skpv);
     e <@ polyvec_ntt (e);
-    poly0 <@ polyvec_pointwise_acc (a0, skpv);
-    poly0 <@ poly_frommont (poly0);
-    poly1 <@ polyvec_pointwise_acc (a1, skpv);
-    poly1 <@ poly_frommont (poly1);
-    poly2 <@ polyvec_pointwise_acc (a2, skpv);
-    poly2 <@ poly_frommont (poly2);
+    poly0 <@ aux_inner_prod(a0,skpv);
+    poly1 <@ aux_inner_prod(a1,skpv);
+    poly2 <@ aux_inner_prod(a2,skpv);
     pkpv <@ polyvec_frompolys (poly0, poly1, poly2);
     pkpv <@ polyvec_add2 (pkpv, e);
     pkpv <@ polyvec_reduce (pkpv);
@@ -731,7 +735,7 @@ module Mderand = {
 equiv keypair_same :  M.indcpa_keypair_jazz ~ Mderand.indcpa_keypair_jazz :
   ={arg,Glob.mem} ==> ={res,Glob.mem}.
 proc.
-inline Mderand.indcpa_keypair_expandseed Mderand.indcpa_keypair_compute. 
+inline Mderand.indcpa_keypair_expandseed Mderand.indcpa_keypair_compute Mderand.aux_inner_prod. 
 swap {1} [22..23] 14.
 by sim; auto => />.
 qed.
