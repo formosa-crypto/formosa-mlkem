@@ -25,11 +25,7 @@ lemma mulvec a b :
     invntt (basemul (ntt a.[1]) (ntt b.[1])) +
     invntt (basemul (ntt a.[2]) (ntt b.[2])).
 proof.
-move : (mul_sem a.[0] b.[0] (ZModRing.one)).
-move : (mul_sem a.[1] b.[1] (ZModRing.one)).
-move : (mul_sem a.[2] b.[2] (ZModRing.one)).
-rewrite -mul_sem1 !scale1. 
-move => -> -> ->.
+rewrite -!mul_comm_ntt !invnttK.
 rewrite /dotp => />. 
 rewrite /Big.BAdd.big /predT /=.
 by smt(@Big.CR).
@@ -1184,7 +1180,6 @@ split.
 rewrite H5. apply Array256.ext_eq => x xb. 
 rewrite (Array256.initiE). apply xb.
  smt().
-search bpos16.
 rewrite /pos_bound768_cxq => *.
 smt().
 qed.
@@ -1282,7 +1277,6 @@ split.
 rewrite H5. apply Array256.ext_eq => x xb. 
 rewrite (Array256.initiE). apply xb.
  smt().
-search bpos16.
 rewrite /pos_bound768_cxq => *.
 smt().
 qed. 

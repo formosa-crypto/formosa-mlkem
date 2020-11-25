@@ -30,11 +30,11 @@ require import IndcpaDerand.
 
 lemma balmod_W16 a:
   a %%+- W16.modulus = W16.smod (a %% W16.modulus)
-  by rewrite bal_modE /W16.smod //=.
+  by rewrite bal_modE /W16.smod /=.
 
 lemma balmod_W32 a:
   a %%+- W32.modulus = W32.smod (a %% W32.modulus)
-  by rewrite bal_modE /W32.smod //=.
+  by rewrite bal_modE /W32.smod /=.
 
 lemma aux16_0 x :
   16 <= x < 32 =>
@@ -109,7 +109,7 @@ qed.
 lemma SAR_sem16 (a : W32.t) :
    a `|>>` W8.of_int 16 = W32.of_int (to_sint a %/ 2^16).
 proof.
-rewrite /(`|>>`) to_sintE /smod sarE //=.
+rewrite /(`|>>`) to_sintE /smod sarE /=.
 case (2147483648 <= to_uint a); last first.
 move => * />.
 rewrite (_: 65536 = 2^16); first by auto.
@@ -157,16 +157,16 @@ lemma fqmul_corr_h _a _b:
    to_sint res = SREDC (_a * _b)].
 proof.
 proc.
-wp; skip  => &hr [#] //= ??.
+wp; skip  => &hr [#] /= ??.
 pose _c := _a * _b.
 rewrite /SREDC.
 rewrite SAR_sem16 SAR_sem16 /=. 
 rewrite (_: R*(R *R^0) = W32.modulus); first by rewrite expr0 /R  => />.
 rewrite (_: R = W16.modulus); first by rewrite /R => />.
 rewrite balmod_W32 balmod_W32 balmod_W16.
-rewrite /(`<<`) /sigextu32 /truncateu16 /=. 
 rewrite W16.of_sintK. 
-rewrite  H H0 -/_c.
+rewrite /(`<<`) /sigextu32 /truncateu16 /=. 
+rewrite  H H0.
 rewrite shlMP; first by smt().  
 rewrite W32.to_sintE W32.of_uintK W32.of_uintK. 
 by rewrite W32.of_sintK /=; smt(qE). 
@@ -255,7 +255,7 @@ qed.
 lemma SAR_sem26 (a : W32.t) :
    a `|>>` W8.of_int 26 = W32.of_int (to_sint a %/ 2^26).
 proof.
-rewrite /(`|>>`) to_sintE /smod sarE //=.
+rewrite /(`|>>`) to_sintE /smod sarE /=.
 case (2147483648 <= to_uint a); last first.
 move => * />.
 rewrite (_: 67108864 = 2^26); first by auto.
@@ -304,14 +304,14 @@ lemma barrett_reduce_corr_h _a :
          W16.to_sint res = BREDC _a 26].
 proof.
 proc.
-wp; skip  => &hr [#] //= ?.
-rewrite /sigextu32 /truncateu16 //=. 
+wp; skip  => &hr [#] /= ?.
+rewrite /sigextu32 /truncateu16 /=. 
 rewrite SAR_sem26  /=. 
 rewrite !W32.of_sintK. 
-rewrite !W32.of_uintK //=.
+rewrite !W32.of_uintK /=.
 pose x := (smod (to_sint a{hr} * 20159 %% 4294967296))%W32 %/ 67108864 * 3329.
-rewrite W16.to_sintE //=.
-rewrite to_uintD //=.
+rewrite W16.to_sintE /=.
+rewrite to_uintD /=.
 rewrite (_:to_uint (- (of_int (x %% 4294967296))%W16) = to_uint (W16.of_int (-x))).
   rewrite of_uintK.
   rewrite of_intN'.
@@ -377,12 +377,12 @@ split; [ apply gt0_pow2 | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler
 rewrite !to_sintD_small => />; first  by smt().
 split; first by smt(@ZModRing).
 
-case (max asz bsz = asz).
+case (max asz bsz = asz). 
 + move => maxx; rewrite maxx;
-  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />.
+  rewrite (_: 2^(asz + 1) = aszb * 2); first by rewrite (Ring.IntID.exprS 2 asz) => /> /#. 
        split; smt(@StdOrder.IntOrder). 
 + move => maxx; rewrite (_: max asz bsz = bsz); first by smt(). 
-  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />.
+  rewrite (_: 2^(bsz + 1) = bszb * 2); first by rewrite (Ring.IntID.exprS 2 bsz) => /> /#. 
        split; smt(@StdOrder.IntOrder). 
 qed.
 
@@ -430,10 +430,10 @@ split; first by smt(@ZModRing).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;
-  rewrite (_: 2^(asz + 1) = aszb * 2); rewrite ?exprDn => />.
+  rewrite (_: 2^(asz + 1) = aszb * 2); first by rewrite (Ring.IntID.exprS 2 asz) => /> /#. 
        split; smt(@StdOrder.IntOrder). 
 + move => maxx; rewrite (_: max asz bsz = bsz); first by smt(). 
-  rewrite (_: 2^(bsz + 1) = bszb * 2); rewrite ?exprDn => />.
+  rewrite (_: 2^(bsz + 1) = bszb * 2); first by rewrite (Ring.IntID.exprS 2 bsz) => /> /#. 
        split; smt(@StdOrder.IntOrder). 
 qed.
 

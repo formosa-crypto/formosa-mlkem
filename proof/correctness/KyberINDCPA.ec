@@ -1,3 +1,4 @@
+
 require import AllCore List IntDiv CoreMap.
 from Jasmin require import JModel.
 
@@ -349,7 +350,6 @@ by rewrite H6.
 seq 1 : (#pre /\
              signed_bound768_cxq pkpv 0 768 2 /\
              polyvec_ntt (H(sd) *^ s_) = lift_vector pkpv).
-print polyvec_frompolys_corr.
 ecall (polyvec_frompolys_corr_h poly0 poly1 poly2
          (ntt (row_i ((H sd))%MLWEPKE.H_MLWE 0 `<*>` s_))
          (ntt (row_i ((H sd))%MLWEPKE.H_MLWE 1 `<*>` s_))
@@ -464,7 +464,7 @@ qed.
 
 section.
 
-declare module H : H_MLWE.H_MLWE_ROM.POracle.
+declare module H : H_MLWE_ROM.POracle.
 
 lemma kg_corr : 
   equiv [ MLWE_PKE(H).kg ~ Mderand.kg :

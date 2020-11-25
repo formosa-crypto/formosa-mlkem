@@ -9,8 +9,8 @@ op R = 2^k.
 
 lemma dvd4R : 4 %| R.
 proof.
-rewrite /R (_ : k = (k - 2) + 2) // exprDn // 1:[smt(gt2_k)].
-rewrite dvdz_mull (exprS _ 1) // expr1 dvdzz.
+rewrite /R (_ : k = (k - 2) + 2) //=.
+cut -> : (4 = 2^2); smt(expr2 dvdz_exp2l gt2_k). 
 qed.
 
 hint exact : dvd4R.
@@ -80,9 +80,9 @@ qed.
 lemma div_pow x n m : 0 <= m <= n => 0 < x => x^n %/ x^m = x^(n - m).
 proof. (* FIXME: move *)
 move=> le_0mn gt0_x; rewrite eq_sym eqz_div.
-+ by apply/gtr_eqF/expr_gt0.
-+ by apply/dvdzP; exists (x^(n - m)); rewrite -exprDn /#.
-+ by rewrite -exprDn /#.
++ by apply/gtr_eqF/expr_gt0.  
++ by apply/dvdzP; exists (x^(n - m)); rewrite -exprD_nneg /#.
++ by rewrite -exprD_nneg /#.
 qed.
 
 lemma pow_div1 b k :
@@ -334,7 +334,7 @@ have scalar1 : (a %/ R * R - (a * qinv +kk0 * R) * q %/ R * R =
 
 pose xx := (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) %/ R.
 rewrite (_: xx %% q = xx * (R * Rinv) %% q).
-  by rewrite -(modzMmr _ (R * Rinv) q) RRinv (modzMmr _ (1) q) //=.
+  by rewrite -(modzMmr _ (R * Rinv) q) RRinv (modzMmr _ (1) q) /=.
 rewrite /xx. clear xx.
 
 rewrite Ring.IntID.mulrA.
@@ -576,7 +576,7 @@ move: H3; case: (n=0) => E.
  by rewrite expr1; apply REDC'_congr.
 move=> *.
 move: (H0 (REDC' T) _ _). smt().
- by move: (REDC'_bnds T n _ _) => //=.
+ by move: (REDC'_bnds T n _ _) => /=.
 move=> [??].
 split; first smt().
 rewrite H5.

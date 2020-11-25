@@ -31,8 +31,6 @@ come from the poly theory.
 
 import KyberPoly.
 
-print poly_add_corr.
-
 lemma poly_add_corr_R _a _b ab bb :
   0 <= ab <= 6 =>
   0 <= bb <= 3 =>

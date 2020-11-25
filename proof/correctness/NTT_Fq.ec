@@ -97,7 +97,7 @@ have gt0_l: 0 < l.
   by rewrite expr0.
 exists (l-1); do! split; 1,3,4,5:smt().
 + have ->: len{m} = 2^l by move: h2=> [#].
-  by rewrite -{1}(@subrK l 1) exprDn 1:/# // expr1 mulzK.
+  by rewrite -{1}(@subrK l 1) JUtils.powS_minus /#.
 move=> *; wp.
 while (   0 <= start <= 256
        /\ 1 <= len /\ len <= 128
