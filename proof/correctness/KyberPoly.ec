@@ -1311,8 +1311,8 @@ congr. rewrite of_sintK => />.
 rewrite expr0 /=.
 by rewrite /smod /=.
 move => *.
-rewrite -(H2 k); first by smt(@W64).
-by rewrite set_neqiE; first 2 by smt(@W64).
+rewrite -(H2 k). move : H5;  rewrite to_uintD; by smt(@W64).
+by rewrite set_neqiE;  by smt(@W64).
 qed.
 
 lemma poly_sub_corr _a _b ab bb :
@@ -3180,6 +3180,12 @@ move => *; rewrite Array256.set_neqiE; first 2 by smt(@W64).
 move => *; rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 move => *; rewrite Array256.set_eqiE; first 2 by smt(@W64). 
 move => *; rewrite Array256.set_eqiE; first 2 by smt(@W64). 
+move :  H5 H6.
+rewrite (_: odflt witness ((Sub.insub (to_sint rp{hr}.[ii] %% q)))%Sub 
+    =  inzmod (to_sint rp{hr}.[ii])). smt(@Sub).
+rewrite (_: odflt witness ((Sub.insub (to_sint rp{hr}.[ii +1] %% q)))%Sub 
+    =  inzmod (to_sint rp{hr}.[ii + 1])). smt(@Sub).
+move => H5 H6.
 rewrite H5 H6 /double_mul /complex_mul => />.
 
 move : (SREDCp_corr (to_sint ap{hr}.[ii+2] * to_sint bp{hr}.[ii + 3]) _ _) => />;
@@ -3246,7 +3252,8 @@ rewrite Array256.set_eqiE; first 2 by smt(@W64).
 
 move : H13 H14 H15 H16; rewrite qE => *.
 rewrite to_sintD_small =>  />. smt(@W16).
-rewrite inzmodD. split; first by rewrite rrval rrvall; ring.
+rewrite inzmodD. 
+split; first by rewrite rrval rrvall; rewrite /complex_mul => />. 
 smt(qE).
 
 (**** FINAL GOAL *)

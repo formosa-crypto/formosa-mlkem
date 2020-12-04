@@ -1222,7 +1222,8 @@ seq 3 3 : ((* #[/3:7,8:10,15:]pre *)
       congr; last by rewrite of_intD to_uintK. 
       congr; last by rewrite of_intD to_uintK. 
       congr; last by rewrite of_intD to_uintK. 
-      congr; last by simplify; rewrite of_intD to_uintK. 
+      congr; last by simplify. 
+     by  rewrite !of_intD to_uintK. 
   wp; skip => *.
    do split;  1..34: by smt(@W64). 
     by move : H => [#] *;  rewrite H H12 /= /range iteri0 => />. 
@@ -1419,6 +1420,8 @@ seq 0 3 : (#[/1:22,23:37]pre /\ Glob.mem{2} = mem1').
       congr; last by rewrite !to_uintD_small 1,2:/# !of_uintK /=.
       congr; last by rewrite !to_uintD_small 1,2:/# !of_uintK /=.
       congr; last by rewrite !to_uintD_small 1,2:/# !of_uintK /=.
+      congr; last by simplify. 
+
       by rewrite of_intD to_uintK.
       by rewrite of_intD to_uintK.
       by rewrite of_intD to_uintK.
