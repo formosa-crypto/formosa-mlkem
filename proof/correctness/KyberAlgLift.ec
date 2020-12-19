@@ -69,6 +69,10 @@ op polyvec_ntt(v : vector) : vector =
    Vector.offunv 
        (fun i => (ntt ((Vector.tofunv v) i))).
 
+op scale_vector(v : vector, c : zmod) : vector = 
+   Vector.offunv 
+       (fun i => (scale ((Vector.tofunv v) i) c)).
+
 lemma polyvec_ntt_add (v1 v2 : vector) :
    polyvec_ntt (v1 + v2) = 
     polyvec_ntt v1 + polyvec_ntt v2.
@@ -81,6 +85,55 @@ qed.
 op polyvec_invntt(v : vector) : vector =
    Vector.offunv 
        (fun i => (invntt ((Vector.tofunv v) i))).
+
+lemma polyvec_pointwise_acc_corr_alg va vb :
+  array_mont zetas_const = lift_array128 Jindcpa.jzetas =>
+  hoare [ IndcpaDerand.Mderand.polyvec_pointwise_acc :
+    polyvec_ntt va = lift_vector a /\
+    polyvec_ntt vb = lift_vector b /\
+    signed_bound768_cxq a 0 768 2 /\
+    signed_bound768_cxq b 0 768 2
+    ==> 
+    signed_bound_cxq res 0 256 2 /\
+    lift_array256  res = scale (ntt (va `<*>` vb)) (inzmod 169)  ].
+proof.
+move => zetasasp.
+ move : (polyvec_pointwise_acc_corr_h (ntt va.[0]) (ntt va.[1]) 
+               (ntt va.[2]) (ntt vb.[0]) (ntt vb.[1]) (ntt vb.[2]) 
+          (scale (basemul (ntt va.[0]) (ntt vb.[0])) (inzmod 169))
+          (scale (basemul (ntt va.[1]) (ntt vb.[1])) (inzmod 169))
+          (scale (basemul (ntt va.[2]) (ntt vb.[2])) (inzmod 169))
+          ((scale (basemul (ntt va.[0]) (ntt vb.[0])) (inzmod 169)) +&
+           (scale (basemul (ntt va.[1]) (ntt vb.[1])) (inzmod 169)) +&
+           (scale (basemul (ntt va.[2]) (ntt vb.[2])) (inzmod 169)))  zetasasp _ _ _ _) => //= *.
+rewrite /Poly.(+) map2E /Poly.(+) map2E /= initE H /= initE H //=.
+conseq (H).
+move => &hr.
+rewrite /polyvec_ntt /lift_vector /lift_polyvec  => /> *.
+move : H0 H1 H2; rewrite !eq_vectorP => />*. 
+do split.
+by move : (H0 0 _) => //; rewrite !offunvE => />.
+by move : (H0 1 _) => //; rewrite !offunvE => />.
+by move : (H0 2 _) => //; rewrite !offunvE => />.
+by move : (H1 0 _) => //; rewrite !offunvE => />.
+by move : (H1 1 _) => //; rewrite !offunvE => />.
+by move : (H1 2 _) => //; rewrite !offunvE => />.
+move => &hr [#] *.
+move : H4 =>  [# *].
+split; first by rewrite /signed_bound_cxq; smt().
+rewrite H4 /dotp //= !Big.BAdd.big_consT //= Big.BAdd.big_nil //=. 
+rewrite /scale !add_comm_ntt !mul_comm_ntt.  
+apply Array256.ext_eq => x xb.
+rewrite !mapE   => />.
+rewrite /Poly.(+) map2E //=  !initiE => />.
+rewrite /Poly.(+) map2E //=  !initiE => />.
+rewrite /Poly.(+) map2E //=  !initiE => />.
+rewrite map2E //=  !initiE => />.
+rewrite map2E //=  !initiE => />.
+rewrite nttZero.
+rewrite /Poly.zero createE initiE => />.
+by  ring.
+qed.
 
 lemma innerprod_corr va vb:
   array_mont zetas_const = lift_array128 Jindcpa.jzetas =>
@@ -96,44 +149,10 @@ proof.
 move => zetasasp.
 proc.
 seq 1 : (#pre /\
-    lift_array256 polyi =  scale (ntt (va `<*>` vb)) (inzmod 169)  /\ 
-    (forall (k : int), 0 <= k && k < 256 => (bpos16 polyi.[k] (2 * q)))).
- call (polyvec_pointwise_acc_corr_h (ntt va.[0]) (ntt va.[1]) 
-               (ntt va.[2]) (ntt vb.[0]) (ntt vb.[1]) (ntt vb.[2]) 
-          (scale (basemul (ntt va.[0]) (ntt vb.[0])) (inzmod 169))
-          (scale (basemul (ntt va.[1]) (ntt vb.[1])) (inzmod 169))
-          (scale (basemul (ntt va.[2]) (ntt vb.[2])) (inzmod 169))
-          ((scale (basemul (ntt va.[0]) (ntt vb.[0])) (inzmod 169)) +&
-           (scale (basemul (ntt va.[1]) (ntt vb.[1])) (inzmod 169)) +&
-           (scale (basemul (ntt va.[2]) (ntt vb.[2])) (inzmod 169)))  zetasasp).
-move => k kb.
-rewrite /(+) !map2E !initiE // !inzmodK => />.
-by do  congr => />; rewrite initiE // !inzmodK => />.
-skip => &hr.
-move => /> VA VB AB BB.
-split.
- move : VA VB; rewrite /polyvec_ntt /lift_vector /lift_polyvec !eq_vectorP => /> VA VB.
-do split.
-  by move : (VA 0 _)=> />; rewrite !offunvE => />.  
-  by move : (VA 1 _)=> />; rewrite !offunvE => />.  
-  by move : (VA 2 _)=> />; rewrite !offunvE => />.  
-  by move : (VB 0 _)=> />; rewrite !offunvE => />.  
-  by move : (VB 1 _)=> />; rewrite !offunvE => />.  
-  by move : (VB 2 _)=> />; rewrite !offunvE => />.  
-move => *.
-rewrite H5 => />.
-rewrite /dotp //= !Big.BAdd.big_consT //= Big.BAdd.big_nil //=. 
-rewrite /scale !add_comm_ntt !mul_comm_ntt.  
-apply Array256.ext_eq => x xb.
-rewrite !mapE   => />.
-rewrite /Poly.(+) map2E //=  !initiE => />.
-rewrite /Poly.(+) map2E //=  !initiE => />.
-rewrite /Poly.(+) map2E //=  !initiE => />.
-rewrite map2E //=  !initiE => />.
-rewrite map2E //=  !initiE => />.
-rewrite nttZero.
-rewrite /Poly.zero createE initiE => />.
-by  ring.
+    signed_bound_cxq polyi 0 256 2 /\
+    lift_array256 polyi =  scale (ntt (va `<*>` vb)) (inzmod 169)
+    ).
+by call (polyvec_pointwise_acc_corr_alg va vb); auto => />.
 
 ecall(poly_frommont_corr_h (map W16.to_sint polyi)).
 skip => &hr.
@@ -152,20 +171,20 @@ rewrite qE (_: 65536 ^ 0 = 1); first by smt(@Int).
 rewrite (_: 65536 * (65536 * 1) %% 3329 = 1353); first smt().
 move => ->.
 move : (SignedReductions.SREDCp_corr (to_sint polyi{hr}.[k] * 1353) _ _); rewrite qE /R => />.
-by move : (H0 k kb); rewrite qE => />; smt(@W16).
+by move : (H k kb); rewrite qE => />; smt(@W16).
 by  smt(@W16).
 
-move :H; rewrite /lift_array256 /scale.
+move :H0; rewrite /lift_array256 /scale.
 rewrite (Array256.tP (map (fun (x : W16.t) => inzmod (to_sint x)) polyi{hr})
         (map (transpose ZModRing.( * ) (inzmod 169)) (ntt (dotp va vb)))) => *.
 apply Array256.ext_eq => k kb.
-move : (H k kb).
+move : (H0 k kb).
 move : (rval k kb).
 rewrite !mapiE /R => /> -> *.
 rewrite qE (_: 65536 ^ 0 = 1); first by smt(@Int).
 rewrite (_: 65536 * (65536 * 1) %% 3329 = 1353); first smt().
 move : (SignedReductions.SREDCp_corr (to_sint polyi{hr}.[k] * 1353) _ _); rewrite qE /R => />.
-by move : (H0 k kb); rewrite qE => />; smt(@W16).
+by move : (H k kb); rewrite qE => />; smt(@W16).
 move => *.
 rewrite (_: inzmod (SREDC (to_sint polyi{hr}.[k] * 1353)) = inzmod (to_sint polyi{hr}.[k] * 1353 * 169 %% 3329)); first by rewrite -H4 -qE -inzmodK asintK.
 rewrite -qE -(inzmodK (to_sint polyi{hr}.[k] * 1353 * 169)) asintK  !inzmodM H1.
@@ -178,6 +197,7 @@ rewrite (_:(ntt (dotp va vb)).[k] * inzmod 169 * inzmod R * inzmod R * inzmod 16
 rewrite  (_: inzmod R * inzmod 169 = ZModRing.one); first by rewrite -inzmodM; smt(@ZModP RRinv).
 by ring.
 qed.
+
 
 (* OPERATIONS OVER MATRICES *)
 

@@ -1095,9 +1095,8 @@ lemma ntt_correct_h (_r0 : zmod Array256.t):
                _r0 = lift_array256 arg /\
                array_mont zetas_const = lift_array128 jzetas /\ signed_bound_cxq arg 0 256 2 ==>
                ntt _r0 = lift_array256 res /\
-               forall (k : int), 0 <= k && k < 256 => bpos16 res.[k] (2 * q)].
-(* conseq (ntt_correct _r0). *)
-admitted. 
+               forall (k : int), 0 <= k && k < 256 => bpos16 res.[k] (2 * q)]
+ by conseq (ntt_correct _r0). 
 
 lemma polyvec_ntt_correct _r:
    hoare[ Mderand.polyvec_ntt :
@@ -1187,22 +1186,21 @@ qed.
 lemma invntt_correct_h (_r : zmod Array256.t):
       hoare[  Mderand.poly_invntt :
              _r = lift_array256 arg /\
-             array_mont zetas_inv_const = lift_array128 jzetas_inv /\ signed_bound_cxq arg 0 256 2 ==>
-             invntt _r = lift_array256 res /\
-             forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)].
-(* conseq (invntt_correct _r). *)
-admitted. 
+             array_mont_inv zetas_inv_const = lift_array128 jzetas_inv /\ signed_bound_cxq arg 0 256 2 ==>
+             scale (invntt _r) (inzmod SignedReductions.R) = lift_array256 res /\
+             forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
+by conseq (invntt_correct _r). 
 
 lemma polyvec_invntt_correct _r:
    hoare[ Mderand.polyvec_invntt :
         _r = lift_array768 r /\
-        array_mont zetas_inv_const = 
+        array_mont_inv zetas_inv_const = 
            lift_array128  jzetas_inv /\
         signed_bound768_cxq r 0 768 2
           ==> 
-            invntt (Array256.of_list witness (sub _r 0 256)) = lift_polyvec res 0 /\
-            invntt (Array256.of_list witness (sub _r 256 256)) = lift_polyvec res 1 /\
-            invntt (Array256.of_list witness (sub _r 512 256)) = lift_polyvec res 2 /\
+            scale (invntt (Array256.of_list witness (sub _r 0 256))) (inzmod SignedReductions.R) = lift_polyvec res 0 /\
+            scale (invntt (Array256.of_list witness (sub _r 256 256))) (inzmod SignedReductions.R) = lift_polyvec res 1 /\
+            scale (invntt (Array256.of_list witness (sub _r 512 256))) (inzmod SignedReductions.R) = lift_polyvec res 2 /\
             forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q + 1) ].
 proof.
 move => *.
@@ -1218,37 +1216,37 @@ ecall (polyvec_topolys_corr_h _r 2 r).
 by skip => /> *. 
 
 seq 1 : (#{/~r0}pre /\ 
-            invntt (Array256.of_list witness (sub _r 0 256)) = lift_array256 r0 /\
+            scale (invntt (Array256.of_list witness (sub _r 0 256)))  (inzmod SignedReductions.R) = lift_array256 r0 /\
             forall k, 0<=k<256 => b16 r0.[k] (q + 1)).
 
 ecall (invntt_correct_h (lift_array256 r0)).
 skip => /> *.  
 rewrite -H10 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr.
+congr. congr.
 apply Array256.ext_eq. 
 move => *. 
 smt(@Array256 @Array768).
 
 seq 1 : (#{/~r1}pre /\ 
-            invntt (Array256.of_list witness (sub _r 256 256)) = lift_array256 r1 /\
+            scale (invntt (Array256.of_list witness (sub _r 256 256)))  (inzmod SignedReductions.R) = lift_array256 r1 /\
             forall k, 0<=k<256 => b16 r1.[k] (q + 1)).
 
 ecall (invntt_correct_h (lift_array256 r1)).
 skip => /> *.  
 rewrite -H9 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr.
+congr. congr.
 apply Array256.ext_eq. 
 move => *. 
 smt(@Array256 @Array768).
 
 seq 1 : (#{/~r2}pre /\ 
-            invntt (Array256.of_list witness (sub _r 512 256)) = lift_array256 r2 /\
+            scale (invntt (Array256.of_list witness (sub _r 512 256)))  (inzmod SignedReductions.R) = lift_array256 r2 /\
             forall k, 0<=k<256 => b16 r2.[k] (q + 1)).
 
 ecall (invntt_correct_h (lift_array256 r2)).
 skip => /> *.  
 rewrite -H8 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr.
+congr. congr.
 apply Array256.ext_eq. 
 move => *. 
 smt(@Array256 @Array768).

@@ -53,6 +53,38 @@ rewrite offunmE => />.
 by rewrite H0 => />.
 qed.
 
+lemma aux_oflist_lift (a : W16.t Array768.t) k :
+ 0 <= k < 3 =>
+ Array256.of_list witness (sub (lift_array768 a) (256*k) 256) = 
+  (Array256.init (fun (i : int) => (ZModRing.inzmod (to_sint a.[256*k+i])))).
+proof.
+move => kb.
+rewrite /Array256.of_list.
+apply Array256.ext_eq.
+move => x xb.
+rewrite !initiE //=.
+rewrite /sub /lift_array768 mapE /=.
+rewrite nth_mkseq_if xb /=.
+rewrite initiE; first by smt().
+by auto => />.
+qed.
+
+lemma scale_scale_cancel v: 
+scale (scale v (ZModRing.inzmod 169)) (ZModRing.inzmod Fq.SignedReductions.R) = v.
+proof.
+rewrite /scale. search Array256.map. rewrite !mapE /=. 
+apply Array256.ext_eq.
+move => x xb.
+rewrite initiE //=.
+rewrite initiE //=.
+move : Fq.SignedReductions.RRinv.
+rewrite ZModRing.eq_inzmod ZModRing.inzmodM ZModRing.ComRing.mulrC.
+rewrite -ZModRing.ComRing.mulrA => ->.
+rewrite -ZModRing.oneE. 
+rewrite ZModRing.asintK.
+by ring.
+qed.
+
 axiom gen_matrix s :
   hoare [ Mderand.gen_matrix  :
     s = seed /\ transposed = W64.zero ==>
@@ -66,9 +98,9 @@ axiom gen_matrix_t s :
   hoare [ Mderand.gen_matrix  :
     s = seed /\ transposed = W64.one ==>
       trmx (ntt_matrix (H s)) = lift_matrix res /\
-       signed_bound768_cxq res.`1 0 256 2 /\
-       signed_bound768_cxq res.`2 0 256 2 /\
-       signed_bound768_cxq res.`3 0 256 2
+       signed_bound768_cxq res.`1 0 768 2 /\
+       signed_bound768_cxq res.`2 0 768 2 /\
+       signed_bound768_cxq res.`3 0 768 2
   ].
 
 lemma kg_correct sd s_ e_ : 
@@ -461,6 +493,495 @@ rewrite !initiE; first 4 by smt().
 by move => ->.
 by smt().
 qed.
+
+lemma enc_correct _msg sd t_ r_ e_ ep_ : 
+   array_mont_inv zetas_inv_const = lift_array128 Jindcpa.jzetas_inv =>
+   array_mont zetas_const = lift_array128 Jindcpa.jzetas =>
+   hoare  [ Mderand.indcpa_enc_compute :  
+    msgp = Array256.map (fun (x : bool) => if x then W16.one else W16.zero) _msg /\
+    sd = publicseed  /\ lift_vector pkpv = polyvec_ntt t_ /\ 
+     lift_vector ep = e_ /\ lift_array256 epp = ep_ /\  lift_vector  sp_0  = r_ /\
+     signed_bound768_cxq pkpv{hr} 0 768 2 /\
+     signed_bound768_cxq sp_0{hr} 0 768 2 /\
+     signed_bound_cxq epp{hr} 0 256 2 /\
+     signed_bound768_cxq ep{hr} 0 768 2 ==> 
+      (lift_vector res.`1,lift_array256 res.`2) = 
+         c_encode ((((m_transpose (H sd)) *^ r_) + e_),
+                   ((t_ `<*>` r_) +& ep_ +& (m_encode _msg))) /\
+      signed_bound768_cxq res.`1 0 768 2 /\
+      signed_bound_cxq res.`2 0 256 2 ].
+(*********)
+(*********)
+proof.
+move => Hzinv Hz.
+proc => //=. 
+print poly_compress_round_corr.
+print Poly.
+(*****)
+seq 1 : (#pre /\ lift_array256 k = (m_encode _msg) /\ 
+         pos_bound256_cxq k 0 256 1).
+call  (poly_frommsg_corr_h _msg).
+by auto  =>  />.
+(******)
+seq 2 : (#pre /\
+   lift_vector at0 = row_i (m_transpose (ntt_matrix (H sd))) 0 /\
+   lift_vector at1 = row_i (m_transpose (ntt_matrix (H sd))) 1 /\
+   lift_vector at2 = row_i (m_transpose (ntt_matrix (H sd))) 2 /\
+   signed_bound768_cxq at0 0 768 2 /\
+   signed_bound768_cxq at1 0 768 2 /\
+   signed_bound768_cxq at2 0 768 2).
+ecall (gen_matrix_t sd).
+auto => /> &hr ???????? -> *. 
+rewrite /row_i /lift_vector /lift_matrix /ntt_matrix /lift_polyvec => />.
+do split.
+rewrite eq_vectorP // => *.
+rewrite !offunvE => />.
+by rewrite !offunmE => />.
+rewrite eq_vectorP // => *.
+rewrite !offunvE => />.
+by rewrite !offunmE => />.
+rewrite eq_vectorP // => *.
+rewrite !offunvE => />.
+by rewrite !offunmE => />.
+(******)
+seq 1 : (#{/~sp_0}pre /\
+   lift_vector sp_0 = polyvec_ntt r_ /\
+   signed_bound768_cxq sp_0 0 768 2
+   ).
+ecall(polyvec_ntt_correct (lift_array768 sp_0)).
+skip => /> &hr ?.
+rewrite /row_i /lift_vector /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
+split; last  by smt(@Array768). 
+rewrite eq_vectorP  => /= *.
+rewrite !offunvE => />.
+rewrite offunvK /vclamp H17 =>  />.
+case (i = 0).
+move => -> />.
+rewrite -H13 => />.
+congr. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE => />. 
+rewrite nth_mkseq => />.
+rewrite  mapiE; first by smt().
+by auto => />.
+move => *.
+case (i = 1).
+move => -> />.
+rewrite -H14 => />.
+congr. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE => />. 
+rewrite nth_mkseq => />. 
+rewrite  mapiE; first by smt().
+by auto => />.
+case (i = 2).
+move => -> />.
+rewrite -H15 => />.
+congr. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE => />. 
+rewrite nth_mkseq => />. 
+rewrite  mapiE; first by smt().
+by auto => />.
+smt().
+(*****)
+seq 1 : (#pre /\
+    signed_bound_cxq poly0 0 256 2 /\ lift_array256 poly0 = scale (ntt ((row_i (m_transpose (H sd)) 0) `<*>` r_)) (ZModRing.inzmod 169)).
+call (polyvec_pointwise_acc_corr_alg (row_i (m_transpose (H sd)) 0) r_ Hz).
+auto => /> &hr.
+rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
+split. 
+(*****)
+rewrite eq_vectorP  =>  *.
+rewrite !offunvE => />.
+rewrite offunvK /vclamp H13 /=.
+case (i = 0).
+move => iis0.
+apply Array256.ext_eq => x xb.
+move : H5.
+rewrite iis0 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 0]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[0, i0])).[0]).
+rewrite /ntt_matrix offunvE //=  !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H5.
+rewrite offunvE => />.
+by rewrite initiE.
+move => *.
+case (i = 1).
+move => iis1.
+apply Array256.ext_eq => x xb.
+move : H5.
+rewrite iis1 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 1]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[0, i0])).[1]).
+rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H5.
+rewrite offunvE => />.
+by rewrite initiE.
+move => *.
+case (i = 2).
+move => iis2.
+apply Array256.ext_eq => x xb.
+move : H5.
+rewrite iis2 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 2]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[0, i0])).[2]).
+rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H5.
+rewrite offunvE => />.
+by rewrite initiE.
+smt().
+(*****)
+by rewrite H11.
+(****)
+seq 1 : (#pre /\
+    signed_bound_cxq poly1 0 256 2 /\ lift_array256 poly1 = scale (ntt ((row_i (m_transpose (H sd)) 1) `<*>` r_)) (ZModRing.inzmod 169)).
+call (polyvec_pointwise_acc_corr_alg (row_i (m_transpose (H sd)) 1) r_ Hz).
+auto => /> &hr.
+rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
+split. 
+(*****)
+rewrite eq_vectorP  =>  *.
+rewrite !offunvE => />.
+rewrite offunvK /vclamp H15 /=.
+case (i = 0).
+move => iis0.
+apply Array256.ext_eq => x xb.
+move : H6.
+rewrite iis0 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 0]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[1, i0])).[0]).
+rewrite /ntt_matrix offunvE //=  !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H6.
+rewrite offunvE => />.
+by rewrite initiE.
+move => *.
+case (i = 1).
+move => iis1.
+apply Array256.ext_eq => x xb.
+move : H6.
+rewrite iis1 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 1]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[1, i0])).[1]).
+rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H6.
+rewrite offunvE => />.
+by rewrite initiE.
+move => *.
+case (i = 2).
+move => iis2.
+apply Array256.ext_eq => x xb.
+move : H6.
+rewrite iis2 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 2]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[1, i0])).[2]).
+rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H6.
+rewrite offunvE => />.
+by rewrite initiE.
+smt().
+(*****)
+by rewrite H11.
+(******)
+seq 1 : (#pre /\
+    signed_bound_cxq poly2 0 256 2 /\ lift_array256 poly2 = scale (ntt ((row_i (m_transpose (H sd)) 2) `<*>` r_)) (ZModRing.inzmod 169)).
+call (polyvec_pointwise_acc_corr_alg (row_i (m_transpose (H sd)) 2) r_ Hz).
+auto => /> &hr.
+rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
+split. 
+(*****)
+rewrite eq_vectorP  =>  *.
+rewrite !offunvE => />.
+rewrite offunvK /vclamp H17 /=.
+case (i = 0).
+move => iis0.
+apply Array256.ext_eq => x xb.
+move : H7.
+rewrite iis0 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 0]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[2, i0])).[0]).
+rewrite /ntt_matrix offunvE //=  !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H7.
+rewrite offunvE => />.
+by rewrite initiE.
+move => *.
+case (i = 1).
+move => iis1.
+apply Array256.ext_eq => x xb.
+move : H7.
+rewrite iis1 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 1]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[2, i0])).[1]).
+rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H7.
+rewrite offunvE => />.
+by rewrite initiE.
+move => *.
+case (i = 2).
+move => iis2.
+apply Array256.ext_eq => x xb.
+move : H7.
+rewrite iis2 /row_i => /> *.
+rewrite !initiE => />. 
+rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 2]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[2, i0])).[2]).
+rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
+by  rewrite !offunmE  => />.
+rewrite -H7.
+rewrite offunvE => />.
+by rewrite initiE.
+smt().
+(*****)
+by rewrite H11.
+
+(*********************************)
+seq 1 : (#pre /\
+             signed_bound768_cxq bp 0 768 2 /\
+             scale_vector (polyvec_ntt ((m_transpose (H(sd))) *^ r_)) (ZModRing.inzmod 169) = lift_vector bp).
+ecall (polyvec_frompolys_corr_h poly0 poly1 poly2
+         (scale (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 0 `<*>` r_)) (ZModRing.inzmod 169))
+          (scale (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 1 `<*>` r_)) (ZModRing.inzmod 169))
+          (scale  (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 2 `<*>` r_)) (ZModRing.inzmod 169)) 2  ).
+auto => /> &hr.
+move => *.
+split; first by smt().
+move => *.
+
+rewrite /lift_vector /polyvec_ntt /lift_polyvec => />.
+rewrite eq_vectorP  =>  *.
+rewrite !offunvE => />.
+case (i = 0).
+move => -> />. 
+apply Array256.ext_eq => k kb.
+rewrite initiE => />.
+rewrite (H26 k kb).
+rewrite /row_i => />.
+do congr.
+rewrite  /( *^) offunvK /vclamp. 
+rewrite /dotp /= !Big.BAdd.big_consT /= !Big.BAdd.big_nil /=. 
+by rewrite !offunvE //= offunvK => />.
+case (i = 1).
+move => -> />. 
+apply Array256.ext_eq => k kb.
+rewrite initiE => />.
+rewrite  (_: 256 + k = k + 256); first by smt().
+rewrite (H27 k kb) =>/> *.
+rewrite /row_i => />.
+do congr.
+rewrite  /( *^) offunvK /vclamp. 
+rewrite /dotp /= !Big.BAdd.big_consT /= !Big.BAdd.big_nil /=. 
+by rewrite !offunvE //= offunvK => />.
+case (i = 2).
+move => -> />. 
+apply Array256.ext_eq => k kb.
+rewrite initiE => />.
+rewrite  (_: 512 + k = k + 512); first by smt().
+rewrite (H28 k kb) =>/> *.
+rewrite /row_i => />.
+do congr.
+rewrite  /( *^) offunvK /vclamp. 
+rewrite /dotp /= !Big.BAdd.big_consT /= !Big.BAdd.big_nil /=. 
+by rewrite !offunvE //= offunvK => />.
+smt().
+(***********)
+(*****)
+seq 1 : (#pre /\
+    signed_bound_cxq v 0 256 2 /\ lift_array256 v = scale (ntt (t_ `<*>` r_)) (ZModRing.inzmod 169)).
+call (polyvec_pointwise_acc_corr_alg (t_) (r_) Hz).
+auto => /> &hr.
+rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
+by rewrite H H11. 
+(*****)
+seq 1 : (#{/~bp}pre /\
+signed_bound768_cxq bp 0 768 2 /\
+   (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_) = lift_vector bp).
+ecall (polyvec_invntt_correct (lift_array768 bp)).
+auto=> />.
+move  => *.
+split; first by rewrite /signed_bound768_cxq;smt(@Array768 qE).
+
+have ? : (
+scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[0]) (ZModRing.inzmod 169)  = (Array256.of_list witness (sub (lift_array768 bp{hr}) 0 256))).
+move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
+move : (H20 0 _) => // ; rewrite !offunvE //=. 
+rewrite (aux_oflist_lift bp{hr} 0) //.
+move => <-.
+congr => /=.
+by rewrite /( *^) !offunvK /vclamp /=.  
+
+have ? : (
+scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[1]) ((ZModRing.inzmod 169))%ZModRing = (Array256.of_list witness (sub (lift_array768 bp{hr}) 256 256))).
+move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
+move : (H20 1 _) => // ; rewrite !offunvE //=. 
+rewrite (aux_oflist_lift bp{hr} 1) //.
+move => <-.
+congr => /=.
+by rewrite /( *^) !offunvK /vclamp /=.  
+
+have ? : (
+scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[2]) ((ZModRing.inzmod 169))%ZModRing = (Array256.of_list witness (sub (lift_array768 bp{hr}) 512 256))).
+move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
+move : (H20 2 _) => // ; rewrite !offunvE //=. 
+rewrite (aux_oflist_lift bp{hr} 2) //.
+move => <-.
+congr => /=.
+by rewrite /( *^) !offunvK /vclamp /=.  
+
+move : H24  H25 H26; rewrite /scale_vector /lift_vector /lift_polyvec /= => *.
+apply  eq_vectorP => i ib.
+rewrite !offunvE //=.
+
+case (i = 0).
+move => -> /=.
+rewrite -H24.
+rewrite -H28 invntt_scale invnttK.
+rewrite scale_scale_cancel.
+rewrite /( *^) /=.
+rewrite /big !foldr_map /=. 
+rewrite /predT /=.
+by rewrite offunvE //.
+
+move =>  *.
+case (i = 1).
+move => -> /=.
+rewrite -H25.
+rewrite -H29 invntt_scale invnttK.
+rewrite scale_scale_cancel.
+rewrite /( *^) /=.
+rewrite /big !foldr_map /=. 
+rewrite /predT /=.
+by rewrite offunvE //.
+
+move =>  *.
+case (i = 2).
+move => -> /=.
+rewrite -H26.
+rewrite -H30 invntt_scale invnttK.
+rewrite scale_scale_cancel.
+rewrite /( *^) /=.
+rewrite /big !foldr_map /=. 
+rewrite /predT /=.
+by rewrite offunvE //.
+
+smt().
+
+(********)
+(*****)
+seq 1 : (#{/~v}pre /\
+signed_bound_cxq v 0 256 2 /\
+lift_array256 v = (t_ `<*>` r_)).
+ecall (invntt_correct_h (lift_array256 v)).
+auto=> />.
+move  => *.
+split; first by rewrite /signed_bound_cxq;smt(@Array256 qE).
+rewrite -H24 H20 invntt_scale invnttK.
+by rewrite scale_scale_cancel.
+
+(********)
+(********)
+(*****)
+seq 1 : (#{/~bp}pre /\
+signed_bound768_cxq bp 0 768 4 /\
+   (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_ + e_) = lift_vector bp).
+exists *bp, ep. elim* => bpp epp.
+call (polyvec_add_corr (lift_array768 bpp) (lift_array768 epp) (2) (2) _ _).
+auto=> />.
+move  => *.
+rewrite H20 /(+) /= /lift_vector. 
+rewrite eq_vectorP => i ib.
+rewrite !offunvE //= map2E /= !offunvE //=.
+rewrite/lift_polyvec /=.
+apply Array256.ext_eq => x xb.
+rewrite !initiE //=.
+rewrite (H24 (i * 256 + x)); first by smt().
+by rewrite /lift_array768 /= !mapE /= !initiE //; first 2 by smt().
+
+(********)
+(*****)
+seq 1 : (#{/~v}pre /\
+signed_bound_cxq v 0 256 4 /\
+   (lift_array256 v = (t_ `<*>` r_) + ep_)).
+exists *v, epp. elim* => vp eppp.
+call (poly_add_corr (lift_array256 vp) (lift_array256 eppp) (2) (2) _ _).
+auto=> />.
+move  => *.
+rewrite -H20 /lift_array256 /= /Poly.(+) /= map2E /=. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE //= mapiE //=.
+rewrite (H24 (x) _); first by smt().
+by rewrite /lift_array256 /=.
+
+(********)
+(*****)
+seq 1 : (#{/~v}pre /\
+signed_bound_cxq v 0 256 5 /\
+   (lift_array256 v = (t_ `<*>` r_) + ep_ + m_encode _msg)).
+exists *v, k. elim* => vp kp.
+call (poly_add_corr (lift_array256 vp) (lift_array256 kp) (4) (1) _ _).
+auto=> />.
+move  => *.
+split; first by move : H4; rewrite /pos_bound256_cxq  /signed_bound_cxq /=; smt(@Array256 @Fq).
+move => *.
+rewrite -H22 /lift_array256 /= /Poly.(+) /= map2E /=. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE //= mapiE //=.
+rewrite (H25 (x) _); first by smt().
+rewrite H3.
+by rewrite /lift_array256 /=.
+(********)
+(*****)
+(*****)
+seq 1 : (#{/~bp}pre /\
+signed_bound768_cxq bp 0 768 2 /\
+   (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_ + e_) = lift_vector bp).
+exists *bp. elim* => bpp.
+call(polyvec_reduce_corr (lift_array768 bpp)).
+auto => />.
+move => *. 
+split.
+rewrite /signed_bound768_cxq => k kb.
+by move : (H24 k kb); smt().
+
+admit.
+
+(********)
+(*****)
+seq 1 : (#{/~v}pre /\
+signed_bound_cxq v 0 256 2 /\
+   (lift_array256 v = (t_ `<*>` r_) + ep_ + m_encode _msg)).
+exists *v. elim* => vp.
+call(poly_reduce_corr_h (lift_array256 vp)).
+auto => />.
+move => *. 
+split.
+rewrite /signed_bound_cxq => k kb.
+by move : (H24 k kb); smt().
+smt().
+
+(********)
+(*****)
+print polyvec_compress_round_corr.
+XXXX
+
+qed.
+
+
 
 section.
 

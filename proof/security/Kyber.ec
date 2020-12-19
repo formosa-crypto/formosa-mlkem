@@ -197,15 +197,15 @@ clone import MLWE_PKE as MLWEPKE with
   op H_MLWE.pe <- pe_R,
   op H_MLWE.pm <- pm,
   op H_MLWE.pv <- pv,
-  type plaintext <- message,
-  type ciphertext <- H_MLWE.M.vector * poly,
+  type plaintext = message,
+  type ciphertext = H_MLWE.M.vector * poly,
   op m_encode <- m_encode,
   op m_decode <- m_decode,
-  op c_encode <- fun (c : H_MLWE.M.vector * poly) => 
+  op c_encode = fun (c : H_MLWE.M.vector * poly) => 
           (H_MLWE.M.Vector.offunv 
              (fun i => (PolyVec.round_poly ((H_MLWE.M.Vector.tofunv c.`1) i))), 
                  Poly.round_poly c.`2),
-  op c_decode <- fun (c : H_MLWE.M.vector * poly) => 
+  op c_decode = fun (c : H_MLWE.M.vector * poly) => 
           (H_MLWE.M.Vector.offunv 
              (fun i => (PolyVec.unround_poly ((H_MLWE.M.Vector.tofunv c.`1) i))), 
                  Poly.unround_poly c.`2),
@@ -313,7 +313,8 @@ qed.
 
 realize encode_noise.
 move => /> *.
-split; last by rewrite round_poly_errE.
+rewrite /c_decode /c_encode => />.
+split; last  by rewrite round_poly_errE.
 rewrite /round_poly /round_poly_err /roundc_err  => />.
 apply H_MLWE.M.Vector.eq_vectorP => /> *.
 rewrite H_MLWE.M.Vector.offunvE 1:/# H_MLWE.M.Vector.offunvE 1:/# /=.

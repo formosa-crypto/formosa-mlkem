@@ -233,6 +233,12 @@ axiom nttZero : ntt Poly.zero = Poly.zero.
 
 axiom ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
 
+lemma invntt_scale p c : invntt (scale p c) = scale (invntt p) c.
+proof.
+rewrite (_: p = ntt (invntt p)); first by rewrite nttK.
+by rewrite -ntt_scale {1}invnttK  nttK.
+qed.
+
 axiom add_comm_ntt (pa pb : poly):
   ntt (pa + pb) = (ntt pa) + (ntt pb).
 
