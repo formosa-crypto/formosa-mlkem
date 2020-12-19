@@ -5,8 +5,9 @@ import RField.
 theory Kyber.
 
 op q : int = 3329 axiomatized by qE.
+axiom prime_q : prime q.
 
-clone import ZModRing with op p <- q proof ge2_p by smt(qE).
+clone import ZModField with op p <- q proof  prime_p by apply prime_q.
 
 type elem = zmod.
 op trueval = (q+1) %/ 2.
@@ -35,8 +36,8 @@ theory Poly.
 
 type poly = elem Array256.t.
 
-op zero : poly = Array256.create ZModRing.zero.
-op one : poly = zero.[0<-ZModRing.one].
+op zero : poly = Array256.create ZModField.zero.
+op one : poly = zero.[0<-ZModField.one].
 
 
 op ( *) (pa pb : poly) : poly =
@@ -44,41 +45,41 @@ op ( *) (pa pb : poly) : poly =
      if (0 <= i - k) 
      then ci + pa.[k] * pb.[i - k] 
      else ci - pa.[k] * pb.[256 - (i - k)]) 
-      ZModRing.zero (iota_ 0 256)).
+      ZModField.zero (iota_ 0 256)).
 
 
 op ( +) (pa pb : poly) : poly = 
-  map2 (fun a b : elem  => ZModRing.(+) a b) pa pb.
+  map2 (fun a b : elem  => ZModField.(+) a b) pa pb.
 
 op ([-]) (p : poly) : poly = 
-  map ZModRing.([-]) p.
+  map ZModField.([-]) p.
 
 type message = bool Array256.t.
 
 op m_encode(m : message) : poly =
    map (fun b => if b 
-                 then ZModRing.inzmod trueval 
-                 else ZModRing.inzmod falseval) m.
+                 then ZModField.inzmod trueval 
+                 else ZModField.inzmod falseval) m.
 
-op balasint c = if q %/ 2 < (ZModRing.asint c) 
-                     then ((ZModRing.asint c) - q) 
-                     else (ZModRing.asint c).
+op balasint c = if q %/ 2 < (ZModField.asint c) 
+                     then ((ZModField.asint c) - q) 
+                     else (ZModField.asint c).
 
 
 op m_decode(mp : poly) : message =
    map (fun c => ! (`| balasint c | < q%/ 4 + 1)) mp.
 
 op roundc(c : elem) : elem = 
-    ZModRing.inzmod (((ZModRing.asint c * 2^4 + (q %/ 2)) %/q) %% 2^4) 
+    ZModField.inzmod (((ZModField.asint c * 2^4 + (q %/ 2)) %/q) %% 2^4) 
       axiomatized by roundcE.
 
 op unroundc(c : elem) : elem = 
-    ZModRing.inzmod (((ZModRing.asint c * q + 8) %/ 2^4)) 
+    ZModField.inzmod (((ZModField.asint c * q + 8) %/ 2^4)) 
       axiomatized by unroundcE.
 
-op roundc_err(c: elem) : elem = ZModRing.(+) (unroundc (roundc c)) (ZModRing.([-]) c).
+op roundc_err(c: elem) : elem = ZModField.(+) (unroundc (roundc c)) (ZModField.([-]) c).
 
-lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = unroundc (roundc c)
+lemma roundc_errE c: ZModField.(+) c (roundc_err c) = unroundc (roundc c)
       by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
@@ -117,16 +118,16 @@ export Poly.
 theory PolyVec.
 
 op roundc(c : elem) : elem = 
-    ZModRing.inzmod (((ZModRing.asint c * 2^10 + (q %/ 2)) %/q) %% 2^10) 
+    ZModField.inzmod (((ZModField.asint c * 2^10 + (q %/ 2)) %/q) %% 2^10) 
      axiomatized by roundcE.
 
 op unroundc(c : elem) : elem =
-    ZModRing.inzmod (((ZModRing.asint c * q + 512) %/ 2^10)) 
+    ZModField.inzmod (((ZModField.asint c * q + 512) %/ 2^10)) 
       axiomatized by unroundcE.
 
-op roundc_err(c: elem) : elem = ZModRing.(+) (unroundc (roundc c)) (ZModRing.([-]) c).
+op roundc_err(c: elem) : elem = ZModField.(+) (unroundc (roundc c)) (ZModField.([-]) c).
 
-lemma roundc_errE c: ZModRing.(+) c (roundc_err c) = unroundc (roundc c)
+lemma roundc_errE c: ZModField.(+) c (roundc_err c) = unroundc (roundc c)
     by rewrite /roundc_err; ring.
 
 op round_poly(p : poly) : poly = 
@@ -238,7 +239,7 @@ proof.
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
     rewrite allP => *. 
-    by rewrite -supp_duni_elem 1:smt(@ZModRing).
+    by rewrite -supp_duni_elem 1:smt(@ZModField).
     by rewrite Array256.to_listK.
 qed.
 
@@ -343,14 +344,14 @@ auto => />.
 rewrite /Poly.(+) map2E => />. 
 rewrite initiE; first by smt().
 rewrite /balasint qE=> />.
-rewrite ZModRing.addE  qE => />.
+rewrite ZModField.addE  qE => />.
 rewrite mapiE; first by smt().
 auto => />.
 have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first. 
 + case (m.[x]). move => * />. rewrite inzmodK qE => />. 
   move : H.
   case (1664 < asint n.[x]); smt().  
-  by move => *; case (1664 < asint n.[x]); smt(@ZModRing). 
+  by move => *; case (1664 < asint n.[x]); smt(@ZModField). 
 pose F := fun (cc : int) (c : zmod) => if `|cc| < `|balasint c| then balasint c else cc.
 have hgen: 
   forall c0, `|foldl F c0 (to_list n)| < 832 => `|c0| < 832 /\ forall x, x \in (to_list n) => `|balasint x| < 832.

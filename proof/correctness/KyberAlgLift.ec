@@ -13,7 +13,7 @@ import MLWEPKE.
 import H_MLWE.
 import M.
 import NTT_Fq.
-import Kyber_.ZModRing. 
+import Kyber_.ZModField. 
 import KyberPolyVec.
 import SignedReductions.
 
@@ -176,7 +176,7 @@ by  smt(@W16).
 
 move :H0; rewrite /lift_array256 /scale.
 rewrite (Array256.tP (map (fun (x : W16.t) => inzmod (to_sint x)) polyi{hr})
-        (map (transpose ZModRing.( * ) (inzmod 169)) (ntt (dotp va vb)))) => *.
+        (map (transpose ZModField.( * ) (inzmod 169)) (ntt (dotp va vb)))) => *.
 apply Array256.ext_eq => k kb.
 move : (H0 k kb).
 move : (rval k kb).
@@ -190,11 +190,11 @@ rewrite (_: inzmod (SREDC (to_sint polyi{hr}.[k] * 1353)) = inzmod (to_sint poly
 rewrite -qE -(inzmodK (to_sint polyi{hr}.[k] * 1353 * 169)) asintK  !inzmodM H1.
 rewrite (_: inzmod 1353 = inzmod (R*R)); first by  rewrite /R //= -eq_inzmod; smt(qE).
 rewrite inzmodM. 
-rewrite ZModRing.ComRing.mulrA.
+rewrite ZModField.ComRing.mulrA.
 
 rewrite (_:(ntt (dotp va vb)).[k] * inzmod 169 * inzmod R * inzmod R * inzmod 169
         =(ntt (dotp va vb)).[k] * (inzmod R * inzmod 169) * (inzmod R * inzmod 169)); first by ring.
-rewrite  (_: inzmod R * inzmod 169 = ZModRing.one); first by rewrite -inzmodM; smt(@ZModP RRinv).
+rewrite  (_: inzmod R * inzmod 169 = ZModField.one); first by rewrite -inzmodM; smt(@ZModP RRinv).
 by ring.
 qed.
 

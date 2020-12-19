@@ -5,7 +5,7 @@ import Fq IntOrder.
 theory NTT_Fq.
 
 import Kyber_.
-import ZModRing.
+import ZModField.
 
 (* These are imperative specifications of the  NTT algorithms  *)
 
@@ -259,12 +259,12 @@ lemma add_scale_ntt (pa pb : poly) (c : elem) :
 (* END: ALL THIS WILL BE REPLACED WITH POLY THEORY *)
 
 lemma scale1 (p : poly) :
-   scale p (ZModRing.one) = p.
+   scale p (ZModField.one) = p.
 proof.
 rewrite /scale.
 apply Array256.ext_eq => *.
 rewrite mapiE => />.
-smt(@ZModRing).
+smt(@ZModField).
 qed.
 
 end NTT_Fq.

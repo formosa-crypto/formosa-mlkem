@@ -56,7 +56,7 @@ qed.
 lemma aux_oflist_lift (a : W16.t Array768.t) k :
  0 <= k < 3 =>
  Array256.of_list witness (sub (lift_array768 a) (256*k) 256) = 
-  (Array256.init (fun (i : int) => (ZModRing.inzmod (to_sint a.[256*k+i])))).
+  (Array256.init (fun (i : int) => (ZModField.inzmod (to_sint a.[256*k+i])))).
 proof.
 move => kb.
 rewrite /Array256.of_list.
@@ -70,7 +70,7 @@ by auto => />.
 qed.
 
 lemma scale_scale_cancel v: 
-scale (scale v (ZModRing.inzmod 169)) (ZModRing.inzmod Fq.SignedReductions.R) = v.
+scale (scale v (ZModField.inzmod 169)) (ZModField.inzmod Fq.SignedReductions.R) = v.
 proof.
 rewrite /scale. search Array256.map. rewrite !mapE /=. 
 apply Array256.ext_eq.
@@ -78,10 +78,10 @@ move => x xb.
 rewrite initiE //=.
 rewrite initiE //=.
 move : Fq.SignedReductions.RRinv.
-rewrite ZModRing.eq_inzmod ZModRing.inzmodM ZModRing.ComRing.mulrC.
-rewrite -ZModRing.ComRing.mulrA => ->.
-rewrite -ZModRing.oneE. 
-rewrite ZModRing.asintK.
+rewrite ZModField.eq_inzmod ZModField.inzmodM ZModField.ComRing.mulrC.
+rewrite -ZModField.ComRing.mulrA => ->.
+rewrite -ZModField.oneE. 
+rewrite ZModField.asintK.
 by ring.
 qed.
 
@@ -445,21 +445,21 @@ move => -> //=.
 rewrite !initiE => //=.
 move : (H19 x _); first by smt().
 rewrite /lift_array768 //= !mapiE //=; first  2 by smt().
-rewrite  -ZModRing.inzmodD.
+rewrite  -ZModField.inzmodD.
 by move => ->.
 case (i = 1).
 move => -> //=.
 rewrite !initiE => //=.
 move : (H19 (256 + x) _); first by smt().
 rewrite /lift_array768 //= !mapiE //=; first  2 by smt().
-rewrite  -ZModRing.inzmodD.
+rewrite  -ZModField.inzmodD.
 by move => ->.
 case (i = 2).
 move => -> //=.
 rewrite !initiE => //=.
 move : (H19 (512 + x) _); first by smt().
 rewrite /lift_array768 //= !mapiE //=; first  2 by smt().
-rewrite  -ZModRing.inzmodD.
+rewrite  -ZModField.inzmodD.
 by move => ->.
 by smt().
 (***************************************)
@@ -468,8 +468,8 @@ auto => /> *.
 split; last by rewrite /signed_bound768_cxq;smt(@Array768).
 move : H17 H18; rewrite /polyvec_ntt  /lift_vector /lift_array768 /lift_polyvec  !mapE.
 rewrite (Array768.tP 
-  ((Array768.init (fun (i : int) => (fun (x : W16.t) => (ZModRing.inzmod (to_sint x))%ZModRing) pkpv{hr}.[i])))
-  ((Array768.init (fun (i : int) => (fun (x : W16.t) => (ZModRing.inzmod (to_sint x))%ZModRing) result.[i])))).
+  ((Array768.init (fun (i : int) => (fun (x : W16.t) => (ZModField.inzmod (to_sint x))%ZModField) pkpv{hr}.[i])))
+  ((Array768.init (fun (i : int) => (fun (x : W16.t) => (ZModField.inzmod (to_sint x))%ZModField) result.[i])))).
 rewrite !eq_vectorP  //=  => *.
 rewrite (H17 i H20) //.
 rewrite !offunvE //=.
@@ -586,7 +586,7 @@ by auto => />.
 smt().
 (*****)
 seq 1 : (#pre /\
-    signed_bound_cxq poly0 0 256 2 /\ lift_array256 poly0 = scale (ntt ((row_i (m_transpose (H sd)) 0) `<*>` r_)) (ZModRing.inzmod 169)).
+    signed_bound_cxq poly0 0 256 2 /\ lift_array256 poly0 = scale (ntt ((row_i (m_transpose (H sd)) 0) `<*>` r_)) (ZModField.inzmod 169)).
 call (polyvec_pointwise_acc_corr_alg (row_i (m_transpose (H sd)) 0) r_ Hz).
 auto => /> &hr.
 rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
@@ -641,7 +641,7 @@ smt().
 by rewrite H11.
 (****)
 seq 1 : (#pre /\
-    signed_bound_cxq poly1 0 256 2 /\ lift_array256 poly1 = scale (ntt ((row_i (m_transpose (H sd)) 1) `<*>` r_)) (ZModRing.inzmod 169)).
+    signed_bound_cxq poly1 0 256 2 /\ lift_array256 poly1 = scale (ntt ((row_i (m_transpose (H sd)) 1) `<*>` r_)) (ZModField.inzmod 169)).
 call (polyvec_pointwise_acc_corr_alg (row_i (m_transpose (H sd)) 1) r_ Hz).
 auto => /> &hr.
 rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
@@ -696,7 +696,7 @@ smt().
 by rewrite H11.
 (******)
 seq 1 : (#pre /\
-    signed_bound_cxq poly2 0 256 2 /\ lift_array256 poly2 = scale (ntt ((row_i (m_transpose (H sd)) 2) `<*>` r_)) (ZModRing.inzmod 169)).
+    signed_bound_cxq poly2 0 256 2 /\ lift_array256 poly2 = scale (ntt ((row_i (m_transpose (H sd)) 2) `<*>` r_)) (ZModField.inzmod 169)).
 call (polyvec_pointwise_acc_corr_alg (row_i (m_transpose (H sd)) 2) r_ Hz).
 auto => /> &hr.
 rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
@@ -753,11 +753,11 @@ by rewrite H11.
 (*********************************)
 seq 1 : (#pre /\
              signed_bound768_cxq bp 0 768 2 /\
-             scale_vector (polyvec_ntt ((m_transpose (H(sd))) *^ r_)) (ZModRing.inzmod 169) = lift_vector bp).
+             scale_vector (polyvec_ntt ((m_transpose (H(sd))) *^ r_)) (ZModField.inzmod 169) = lift_vector bp).
 ecall (polyvec_frompolys_corr_h poly0 poly1 poly2
-         (scale (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 0 `<*>` r_)) (ZModRing.inzmod 169))
-          (scale (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 1 `<*>` r_)) (ZModRing.inzmod 169))
-          (scale  (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 2 `<*>` r_)) (ZModRing.inzmod 169)) 2  ).
+         (scale (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 0 `<*>` r_)) (ZModField.inzmod 169))
+          (scale (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 1 `<*>` r_)) (ZModField.inzmod 169))
+          (scale  (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 2 `<*>` r_)) (ZModField.inzmod 169)) 2  ).
 auto => /> &hr.
 move => *.
 split; first by smt().
@@ -802,7 +802,7 @@ smt().
 (***********)
 (*****)
 seq 1 : (#pre /\
-    signed_bound_cxq v 0 256 2 /\ lift_array256 v = scale (ntt (t_ `<*>` r_)) (ZModRing.inzmod 169)).
+    signed_bound_cxq v 0 256 2 /\ lift_array256 v = scale (ntt (t_ `<*>` r_)) (ZModField.inzmod 169)).
 call (polyvec_pointwise_acc_corr_alg (t_) (r_) Hz).
 auto => /> &hr.
 rewrite  /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
@@ -817,7 +817,7 @@ move  => *.
 split; first by rewrite /signed_bound768_cxq;smt(@Array768 qE).
 
 have ? : (
-scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[0]) (ZModRing.inzmod 169)  = (Array256.of_list witness (sub (lift_array768 bp{hr}) 0 256))).
+scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[0]) (ZModField.inzmod 169)  = (Array256.of_list witness (sub (lift_array768 bp{hr}) 0 256))).
 move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
 move : (H20 0 _) => // ; rewrite !offunvE //=. 
 rewrite (aux_oflist_lift bp{hr} 0) //.
@@ -826,7 +826,7 @@ congr => /=.
 by rewrite /( *^) !offunvK /vclamp /=.  
 
 have ? : (
-scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[1]) ((ZModRing.inzmod 169))%ZModRing = (Array256.of_list witness (sub (lift_array768 bp{hr}) 256 256))).
+scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[1]) ((ZModField.inzmod 169))%ZModField = (Array256.of_list witness (sub (lift_array768 bp{hr}) 256 256))).
 move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
 move : (H20 1 _) => // ; rewrite !offunvE //=. 
 rewrite (aux_oflist_lift bp{hr} 1) //.
@@ -835,7 +835,7 @@ congr => /=.
 by rewrite /( *^) !offunvK /vclamp /=.  
 
 have ? : (
-scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[2]) ((ZModRing.inzmod 169))%ZModRing = (Array256.of_list witness (sub (lift_array768 bp{hr}) 512 256))).
+scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[2]) ((ZModField.inzmod 169))%ZModField = (Array256.of_list witness (sub (lift_array768 bp{hr}) 512 256))).
 move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
 move : (H20 2 _) => // ; rewrite !offunvE //=. 
 rewrite (aux_oflist_lift bp{hr} 2) //.

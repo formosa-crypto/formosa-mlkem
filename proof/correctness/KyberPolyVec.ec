@@ -10,7 +10,7 @@ theory KyberPolyVec.
 import KyberPoly.
 import Fq.
 import Kyber_.
-import ZModRing.
+import ZModField.
 
 import MLWEPKE.H_MLWE.M.
 

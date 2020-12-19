@@ -353,7 +353,7 @@ proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.
 op add (a b : W16.t) = (a + b).
 op sub (a b : W16.t) = (a - b).
 
-import ZModRing.
+import ZModField.
 
 lemma add_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
    0 <= asz < 15 => 0 <= bsz < 15 =>
@@ -375,7 +375,7 @@ have bounds_bsz : 0 < bszb <= 16384.
 rewrite(_: 16384 = 2^14); first by auto => />.
 split; [ apply gt0_pow2 | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
 rewrite !to_sintD_small => />; first  by smt().
-split; first by smt(@ZModRing).
+split; first by smt(@ZModField).
 
 case (max asz bsz = asz). 
 + move => maxx; rewrite maxx;
@@ -402,7 +402,7 @@ move => ?? ?? ?? ??.
 have bounds_asz : 3329 <= aszb <= 19974. smt(qE).
 have bounds_bsz : 3329 <= bszb <= 19974. smt(qE).
 rewrite !to_sintD_small => />; first  by smt(qE).
-split; first by smt(@ZModRing).
+split; first by smt(@ZModField).
 smt().
 qed.
 
@@ -426,7 +426,7 @@ have bounds_bsz : 0 < bszb <= 16384.
 rewrite(_: 16384 = 2^14); first by auto => />.
 split; [ apply gt0_pow2 | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
 rewrite !to_sintB_small => />; first  by smt().
-split; first by smt(@ZModRing).
+split; first by smt(@ZModField).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;
