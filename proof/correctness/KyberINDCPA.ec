@@ -521,8 +521,8 @@ lemma enc_correct _msg sd t_ r_ e_ ep_ :
       (lift_vector res.`1,lift_array256 res.`2) = 
          c_encode ((((m_transpose (H sd)) *^ r_) + e_),
                    ((t_ `<*>` r_) +& ep_ +& (m_encode _msg))) /\
-      signed_bound768_cxq res.`1 0 768 2 /\
-      signed_bound_cxq res.`2 0 256 2 ].
+      (forall k, 0 <= k < 768 => 0 <= to_sint res.`1.[k] < 1024) /\
+      (forall k, 0 <= k < 256 => 0 <= to_sint res.`2.[k] < 16)  ].
 (*********)
 (*********)
 proof.
@@ -984,7 +984,7 @@ by rewrite -H23 H20.
 (********)
 (*****)
 seq 1 : (#pre /\
-   (offunv (fun (i : int) => (PolyVec.round_poly (tofunv (m_transpose (H sd) *^ r_ + e_) i)))) = lift_vector r1 /\ signed_bound768_cxq r1 0 768 1).
+   (offunv (fun (i : int) => (PolyVec.round_poly (tofunv (m_transpose (H sd) *^ r_ + e_) i)))) = lift_vector r1 /\ (forall k, 0 <= k < 768 => 0 <= to_sint r1.[k] < 1024)).
 
 ecall (polyvec_compress_round_corr (lift_array768 bp)).
 
@@ -1018,21 +1018,18 @@ by rewrite !map2E /= !offunvE //.
 
 (********)
 (*****)
-print c_encode.
 seq 1 : (#pre /\
-   round_poly ((t_ `<*>` r_) +& ep_ +& m_encode _msg)  = lift_array256 r2 /\ signed_bound_cxq r2 0 256 1).
+   round_poly ((t_ `<*>` r_) +& ep_ +& m_encode _msg)  = lift_array256 r2 /\ forall k, 0 <= k < 256 => 0 <= to_sint r2.[k] < 16).
 
 ecall (poly_compress_round_corr_h (lift_array256 v)).
 auto  => />.
 move => *.
-split; last by admit. (* need to tighten bounds *)
 by rewrite -H25 H22 /round_poly.
 
 (*******)
 auto  => />.
 move => *.
-split; first by rewrite -H25 -H23 /c_encode /=.
-admit. (* need to tighten bounds *)
+by rewrite -H25 -H23 /c_encode /=.
 qed.
 
 

@@ -593,7 +593,7 @@ lemma polyvec_compress_round_corr ap :
            pos_bound768_cxq a 0 768 2 
            ==>
            Array768.map PolyVec.roundc ap = lift_array768 res /\
-           signed_bound768_cxq res 0 768 1 ] . 
+           forall k, 0 <= k < 768 => 0 <= to_sint res.[k] < 1024 ] . 
 proof.
   move => *; proc.
 
@@ -782,10 +782,8 @@ rewrite -H6.
 by move : H2; rewrite ultE; smt().
 smt(@Array768).
 
-rewrite /signed_bound768_cxq => j *.
-rewrite b16E.
-have ? : (to_uint i0 <= 768). smt().
-by move : H2; rewrite ultE; smt(qE).
+by move  : H2; rewrite ultE; smt().
+
 qed.
 
 (******************************************************)
