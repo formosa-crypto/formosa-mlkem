@@ -85,6 +85,19 @@ rewrite ZModField.asintK.
 by ring.
 qed.
 
+lemma lift_equiv a b :
+  lift_array768 a = lift_array768 b =>
+    lift_vector a = lift_vector b.
+proof.
+rewrite /lift_array768 /lift_vector /lift_polyvec !mapE /=.
+rewrite tP eq_vectorP /=. 
+move => ? i ib.
+rewrite !offunvE //=. 
+apply Array256.ext_eq => x xb.
+move : (H (256*i + x) _); first by smt().
+by rewrite !initiE //=; smt().
+qed. 
+
 axiom gen_matrix s :
   hoare [ Mderand.gen_matrix  :
     s = seed /\ transposed = W64.zero ==>
@@ -948,37 +961,78 @@ by rewrite /lift_array256 /=.
 (*****)
 (*****)
 seq 1 : (#{/~bp}pre /\
-signed_bound768_cxq bp 0 768 2 /\
+pos_bound768_cxq bp 0 768 2 /\
    (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_ + e_) = lift_vector bp).
 exists *bp. elim* => bpp.
 call(polyvec_reduce_corr (lift_array768 bpp)).
 auto => />.
 move => *. 
-split.
-rewrite /signed_bound768_cxq => k kb.
-by move : (H24 k kb); smt().
-
-admit.
+by rewrite -(lift_equiv bp{hr} result H23) -H20.
 
 (********)
 (*****)
+print poly_reduce_corr.
 seq 1 : (#{/~v}pre /\
-signed_bound_cxq v 0 256 2 /\
+pos_bound256_cxq v 0 256 2 /\
    (lift_array256 v = (t_ `<*>` r_) + ep_ + m_encode _msg)).
 exists *v. elim* => vp.
 call(poly_reduce_corr_h (lift_array256 vp)).
 auto => />.
 move => *. 
-split.
-rewrite /signed_bound_cxq => k kb.
-by move : (H24 k kb); smt().
-smt().
+by rewrite -H23 H20.
 
 (********)
 (*****)
-print polyvec_compress_round_corr.
-XXXX
+seq 1 : (#pre /\
+   (offunv (fun (i : int) => (PolyVec.round_poly (tofunv (m_transpose (H sd) *^ r_ + e_) i)))) = lift_vector r1 /\ signed_bound768_cxq r1 0 768 1).
 
+ecall (polyvec_compress_round_corr (lift_array768 bp)).
+
+auto  => />.
+move => *.
+move : H23 H20.
+rewrite /lift_array768 /lift_vector /lift_polyvec /=.
+rewrite Array768.tP  => ?.
+rewrite eq_vectorP => ?.
+
+apply eq_vectorP => i ib.
+rewrite !offunvE //=.
+rewrite /round_poly /=.
+
+apply Array256.ext_eq => x xb.
+move : (H20 (i*256+x) _) => /=; first by smt().
+move : (H23 i ib).
+
+rewrite !mapE !initiE  //=; first 2 by smt().
+move => ? <-.
+congr.
+rewrite initiE /=; first by smt().
+move : H25; rewrite !offunvE //=. 
+rewrite tP  => ?.
+move : (H25 x xb).
+rewrite initiE //=.
+move => <-.
+congr => /=.
+rewrite /(+) /= !offunvK /vclamp ib /=. 
+by rewrite !map2E /= !offunvE //.
+
+(********)
+(*****)
+print c_encode.
+seq 1 : (#pre /\
+   round_poly ((t_ `<*>` r_) +& ep_ +& m_encode _msg)  = lift_array256 r2 /\ signed_bound_cxq r2 0 256 1).
+
+ecall (poly_compress_round_corr_h (lift_array256 v)).
+auto  => />.
+move => *.
+split; last by admit. (* need to tighten bounds *)
+by rewrite -H25 H22 /round_poly.
+
+(*******)
+auto  => />.
+move => *.
+split; first by rewrite -H25 -H23 /c_encode /=.
+admit. (* need to tighten bounds *)
 qed.
 
 
