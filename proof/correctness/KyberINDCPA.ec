@@ -72,7 +72,7 @@ qed.
 lemma scale_scale_cancel v: 
 scale (scale v (ZModField.inzmod 169)) (ZModField.inzmod Fq.SignedReductions.R) = v.
 proof.
-rewrite /scale. search Array256.map. rewrite !mapE /=. 
+rewrite /scale. rewrite !mapE /=. 
 apply Array256.ext_eq.
 move => x xb.
 rewrite initiE //=.
@@ -528,8 +528,6 @@ lemma enc_correct _msg sd t_ r_ e_ ep_ :
 proof.
 move => Hzinv Hz.
 proc => //=. 
-print poly_compress_round_corr.
-print Poly.
 (*****)
 seq 1 : (#pre /\ lift_array256 k = (m_encode _msg) /\ 
          pos_bound256_cxq k 0 256 1).
@@ -971,7 +969,6 @@ by rewrite -(lift_equiv bp{hr} result H23) -H20.
 
 (********)
 (*****)
-print poly_reduce_corr.
 seq 1 : (#{/~v}pre /\
 pos_bound256_cxq v 0 256 2 /\
    (lift_array256 v = (t_ `<*>` r_) + ep_ + m_encode _msg)).
@@ -1030,6 +1027,214 @@ by rewrite -H25 H22 /round_poly.
 auto  => />.
 move => *.
 by rewrite -H25 -H23 /c_encode /=.
+qed.
+
+(*******)
+(*XXXXXX*)
+(*******)
+
+op lift_polyvec32 (row : W32.t Array768.t) (c : int) : ZModField.zmod Array256.t =
+  (Array256.init (fun (i : int) => (ZModField.inzmod (to_sint row.[c * 256 + i])))).
+
+op lift_vector32(a : W32.t Array768.t) = 
+    offunv (fun (i : int) => lift_polyvec32 a i).
+
+op b32(a : W32.t, b : int) = (-b <= to_sint a && to_sint a < b)
+   axiomatized by b32E.
+
+
+op signed_bound_cxq32 (coefs : W32.t Array256.t) (l u c : int) : bool =
+  forall (k : int), l <= k && k < u => (b32 coefs.[k] (c * q)).
+
+op lift_array256_32 (p : W32.t Array256.t) : ZModField.zmod Array256.t =
+  Array256.map (fun (x : W32.t) => (ZModField.inzmod (to_sint x))) p.
+
+lemma dec_correct s_ c1_ c2_ : 
+   array_mont_inv zetas_inv_const = lift_array128 Jindcpa.jzetas_inv =>
+   array_mont zetas_const = lift_array128 Jindcpa.jzetas =>
+   hoare  [ Mderand.indcpa_dec_compute : 
+       polyvec_ntt s_ = lift_vector skpv /\
+       signed_bound768_cxq skpv 0 768 2 /\
+       c1_ = lift_vector32 r1 /\
+       c2_ = lift_array256 r2 /\
+       (forall  k, 0 <= k < 768 => 0 <= to_sint r1.[k] < 1024) /\
+       (forall  k, 0 <= k < 256 => 0 <= to_sint r2.[k] < 16)
+        ==> 
+       res = let (u,v) = c_decode (c1_,c2_) in
+          Array256.map (fun (x : bool) => if x then W32.one else W32.zero)
+                     (m_decode (v -& (s_ `<*>` u))) ].
+(*********)
+(*********)
+proof.
+move => Hzinv Hz.
+proc => //=. 
+(*****)
+seq 1 : #pre; first by auto => />.
+(*****)
+seq 1 : (#pre /\
+  lift_vector bp = offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i))) /\
+  signed_bound768_cxq bp 0 768 1).
+ecall(polyvec_decompress_restore_corr (lift_array768_32 r1)).
+auto => />.
+move => *.
+split.
++ rewrite /pos_bound768_b_32 => k kb.
+  by rewrite bpos32E; apply (H1 k kb).
+move => *.
+move : H4.
+rewrite /lift_vector /lift_vector32 /unround_poly /lift_array768_32 /lift_array768 /lift_polyvec32  /= offunvK /vclamp /lift_polyvec /=.
+rewrite tP => *.
+apply eq_vectorP => i ib.
+rewrite !offunvE /= ib //=.
+apply Array256.ext_eq => x xb.
+move : (H4 (i*256 + x) _); first by smt().
+rewrite !mapiE  /=; first 4 by smt().
+by rewrite !initiE //= => <-.
+(********)
+seq 1 : (#pre /\
+  lift_array256 v = Poly.unround_poly c2_ /\
+  signed_bound_cxq v 0 256 1).
+ecall(poly_decompress_restore_corr (lift_array256 r2)).
+by auto => /> /#.
+(********)
+seq 1 : (#{/~bp}pre /\
+   lift_vector bp = polyvec_ntt (offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i)))) /\
+   signed_bound768_cxq bp 0 768 2
+   ).
+ecall(polyvec_ntt_correct (lift_array768 bp)).
+skip => /> &hr ?.
+rewrite /lift_vector /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 /sub => /> *.
+split; first  by smt(@Array768). 
+move => *.
+split; last  by smt(@Array768). 
+rewrite eq_vectorP  => /= *.
+rewrite !offunvE => />.
+rewrite offunvK /vclamp H13 =>  />.
+move : H3; rewrite eq_vectorP => *.
+move : (H3 i H13).
+rewrite !offunvE //=. 
+case (i = 0).
+move => -> /> *.
+rewrite -H9 => />.
+congr. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE => />. 
+rewrite nth_mkseq => />.
+rewrite  mapiE /=; first by smt().
+by rewrite -H14 initiE //.
+move => ?.
+case (i = 1).
+move => -> /> *.
+rewrite -H10 => />.
+congr. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE => />. 
+rewrite nth_mkseq => />. 
+rewrite  mapiE; first by smt().
+by rewrite -H15 initiE //.
+case (i = 2).
+move => -> />  *.
+rewrite -H11 => />.
+congr. 
+apply Array256.ext_eq => x xb.
+rewrite !initiE => />. 
+rewrite nth_mkseq => />. 
+rewrite  mapiE; first by smt().
+by rewrite -H15 initiE //.
+smt().
+(************)
+(*****)
+seq 1 : (#pre /\
+    signed_bound_cxq t 0 256 2 /\ lift_array256 t = scale (ntt (s_ `<*>` ((offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i))%PolyVec))))) (ZModField.inzmod 169)).
+call (polyvec_pointwise_acc_corr_alg s_ ((offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i))%PolyVec))) Hz).
+auto => /> &hr.
+rewrite  /lift_vector /lift_vector32 /lift_polyvec /polyvec_ntt /pos_bound768_cxq  /signed_bound768_cxq /lift_array768 => /> *.
+(*****)
+rewrite eq_vectorP  =>  *.
+rewrite !offunvE => />.
+rewrite offunvK /vclamp H7 /=.
+case (i = 0).
+move => iis0.
+move : H5.
+rewrite iis0 /=.
+rewrite eq_vectorP => *.
+move : (H5 i H7).
+rewrite !offunvE //=.
+rewrite iis0 /= => ->.
+by rewrite !offunvK /vclamp /=.
+
+move => *.
+case (i = 1).
+move => iis1.
+move : H5.
+rewrite iis1 /=.
+rewrite eq_vectorP => *.
+move : (H5 i H7).
+rewrite !offunvE //=.
+rewrite iis1 /= => ->.
+by rewrite !offunvK /vclamp /=.
+
+move => *.
+case (i = 2).
+move => iis2.
+move : H5.
+rewrite iis2 /=.
+rewrite eq_vectorP => *.
+move : (H5 i H7).
+rewrite !offunvE //=.
+rewrite iis2 /= => ->.
+by rewrite !offunvK /vclamp /=.
+
+smt().
+(*****)
+(*****)
+seq 1 : (#{/~t}pre /\
+signed_bound_cxq t 0 256 2 /\
+lift_array256 t = ((s_ `<*>` offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i))%PolyVec)))).
+ecall (invntt_correct_h (lift_array256 t)).
+auto=> />.
+move  => *.
+split; first by rewrite /signed_bound_cxq;smt(@Array256 qE).
+rewrite -H10 H8 invntt_scale invnttK.
+by rewrite scale_scale_cancel.
+(*****)
+seq 1 : (#pre /\
+  lift_array256 mp = 
+    (unround_poly c2_) -& ((s_ `<*>` offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i))%PolyVec))) /\
+     signed_bound_cxq mp 0 256 3).
+call(poly_sub_corr (unround_poly c2_) (s_ `<*>` offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i))%PolyVec))
+        1 2).
+auto => />.
+move => *.
+split; first by rewrite H3 H8 /=.
+move => *.
+rewrite /(-&) /Poly.(+) /Poly.([-]) map2E /= mapE /=.
+rewrite /lift_array256.
+apply Array256.ext_eq => x xb.
+rewrite !mapiE //=. 
+rewrite initiE //=.
+rewrite (H12 x xb) => /=.
+rewrite  /lift_array256.
+by rewrite initiE //=.
+(***********)
+seq 1 : (#{/~mp}pre /\
+pos_bound256_cxq mp 0 256 2 /\
+   (lift_array256 mp = unround_poly c2_ -& (s_ `<*>` offunv (fun (i : int) => (PolyVec.unround_poly (tofunv c1_ i)))))).
+exists *mp. elim* => mp.
+call(poly_reduce_corr_h (lift_array256 mp)).
+auto => />.
+move => *. 
+by rewrite -H11 H9.
+(***********)
+
+ecall(poly_tomsg_corr_h (lift_array256 mp)).
+auto => />.
+move => *.
+rewrite /c_decode /=.
+move : H11; rewrite H10 => <-.
+apply Array256.ext_eq => x xb.
+rewrite mapiE //= mapiE //=.
+by smt().
 qed.
 
 

@@ -621,7 +621,9 @@ lemma poly_tomsg_corr_h _a :
     hoare[ Mderand.poly_tomsg_decode :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a ==>
-             map (fun x => x `&` (W32.of_int 1) = W32.one) res = m_decode _a].
+             map (fun x => x  = W32.one) res = m_decode _a /\
+             forall k, 0 <= k < 256  => 
+                 res.[k] <> W32.zero => res.[k] = W32.one].
 proof.
 proc.
 seq 1 : #pre; first by auto => />.
@@ -925,6 +927,7 @@ List.foldl (fun (aa : W32.t Array256.t) i => aa.[i <-
   (((W2u16.zeroextu32 (a{hr}.[i])%Array256 `<<` W8.one)%W16 + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&` W32.one]) rp{hr} (iota_ 0 256)).
 by rewrite -iotaredE => [].
 rewrite init_set /m_decode.
+split.
 apply Array256.ext_eq => /> *.
 rewrite !mapiE => />.
 rewrite initiE => />.
@@ -941,12 +944,10 @@ auto => />.
 rewrite W32.shlMP; first by smt().
 rewrite (_: W32.one = W32.masklsb 1); first by rewrite /max /=.
 rewrite W32.and_mod. by rewrite /max /=.
-rewrite W32.and_mod. by rewrite /max /=.
 rewrite /max /=.
 rewrite W32.to_uint_shr; first by smt().
 rewrite !W32.of_uintK.
 pose xx := (to_uint a{hr}.[x] * 2 + 1665) * 80635 %% W32.modulus %/ 2 ^ 28.
-rewrite (_: xx %% 2 %% W32.modulus %% 2 = xx%%2). smt(@W32).
 rewrite /balasint.
 rewrite inzmodK qE.
 rewrite (_: to_uint a{hr}.[x] %% 3329 = to_uint a{hr}.[x]). smt().
@@ -961,6 +962,12 @@ rewrite formula2 => />.
 rewrite (_: (to_uint a{hr}.[x] * 2 + 1664) %/ 3329 %% 16 %% 2 = 
    (to_uint a{hr}.[x] * 2 + 1664) %/ 3329 %% 2); first by smt().
 rewrite formula3 => />. smt().
+move => ???.
+rewrite !initiE //=. 
+rewrite (_: W32.one = W32.masklsb 1); first by rewrite /max /=.
+rewrite !W32.and_mod. by rewrite /max /=.
+rewrite /max /=.
+by  smt(@IntDiv).
 qed.
 
 lemma poly_tomsg_ll : islossless  Mderand.poly_tomsg_decode.
@@ -977,9 +984,8 @@ lemma poly_tomsg_corr _a :
     phoare[ Mderand.poly_tomsg_decode :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a ==>
-             map (fun x => x `&` (W32.of_int 1) = W32.one) res = m_decode _a] = 1%r
+             map (fun x => x = W32.one) res = m_decode _a] = 1%r
   by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
-
 
 lemma poly_frommsg_corr_h _a : 
     hoare[ Mderand.poly_frommsg_encode :
