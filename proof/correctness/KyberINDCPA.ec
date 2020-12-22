@@ -34,7 +34,7 @@ import MLWEPKE.
 import KyberPoly KyberPolyVec.
 
 import H_MLWE.
-import M.
+import Matrix_.
 import Vector.
 import Matrix.
 import NTT_Fq.
@@ -402,7 +402,7 @@ ecall (polyvec_frompolys_corr_h poly0 poly1 poly2
 auto => /> &hr.
 move => *.
 split; first by smt().
-move => *.
+rewrite /(`<*>`); move => *.
 
 rewrite /lift_vector /polyvec_ntt /lift_polyvec => />.
 rewrite eq_vectorP  =>  *.
@@ -770,7 +770,7 @@ ecall (polyvec_frompolys_corr_h poly0 poly1 poly2
           (scale (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 1 `<*>` r_)) (ZModField.inzmod 169))
           (scale  (ntt (row_i (m_transpose (H sd))%MLWEPKE.H_MLWE 2 `<*>` r_)) (ZModField.inzmod 169)) 2  ).
 auto => /> &hr.
-move => *.
+rewrite /(`<*>`); move => *.
 split; first by smt().
 move => *.
 

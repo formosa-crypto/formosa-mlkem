@@ -12,7 +12,7 @@ import Fq.
 import Kyber_.
 import ZModField.
 
-import MLWEPKE.H_MLWE.M.
+import MLWEPKE.H_MLWE.Matrix_.
 
 require import IndcpaDerand.
 import NTT_Fq.

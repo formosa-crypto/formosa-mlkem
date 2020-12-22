@@ -11,7 +11,7 @@ import Fq.
 import Kyber_.
 import MLWEPKE.
 import H_MLWE.
-import M.
+import Matrix_.
 import NTT_Fq.
 import Kyber_.ZModField. 
 import KyberPolyVec.
@@ -121,7 +121,7 @@ by move : (H1 2 _) => //; rewrite !offunvE => />.
 move => &hr [#] *.
 move : H4 =>  [# *].
 split; first by rewrite /signed_bound_cxq; smt().
-rewrite H4 /dotp //= !Big.BAdd.big_consT //= Big.BAdd.big_nil //=. 
+rewrite H4 /(`<*>`) /dotp //= !Big.BAdd.big_consT //= Big.BAdd.big_nil //=. 
 rewrite /scale !add_comm_ntt !mul_comm_ntt.  
 apply Array256.ext_eq => x xb.
 rewrite !mapE   => />.
@@ -156,7 +156,7 @@ by call (polyvec_pointwise_acc_corr_alg va vb); auto => />.
 
 ecall(poly_frommont_corr_h (map W16.to_sint polyi)).
 skip => &hr.
-move => /> VA VB AB BB  ???.
+rewrite /(`<*>`); move => /> VA VB AB BB  ???.
 rewrite (Array256.tP (Array256.map W16.to_sint result)
                          (map
         (fun (x : int) =>
