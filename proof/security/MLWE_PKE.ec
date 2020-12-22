@@ -1,30 +1,29 @@
 require import AllCore Distr SmtMap.
 require (****) PKE H_MLWE.
 
-(** NOTE: WHEN CLONING THIS THEORY ALL AXIOMS MUST BE PROVED *)
-
 theory MLWE_PKE.
 
-  clone import H_MLWE.
-  import M.
-  import H_MLWE_ROM Lazy.
+clone import H_MLWE.
+import H_MLWE_ROM Lazy.
+import Matrix_.
 
-  type plaintext.
-  type ciphertext.
+type plaintext.
+type ciphertext.
 
-  clone import PKE with 
-    type pkey = (seed * vector),
-    type skey = vector,
-    type plaintext <- plaintext,
-    type ciphertext <- ciphertext.
+clone import PKE with 
+  type pkey = (seed * vector),
+  type skey = vector,
+  type plaintext <- plaintext,
+  type ciphertext <- ciphertext.
+  (* proof*  reveals irrelevant axiom on qD *)
 
-  type raw_ciphertext = vector * R.
+type raw_ciphertext = vector * R.
 
-  op m_encode : plaintext -> R. 
-  op m_decode : R -> plaintext.
- 
-  op c_encode : raw_ciphertext -> ciphertext.
-  op c_decode : ciphertext -> raw_ciphertext.
+op m_encode : plaintext -> R. 
+op m_decode : R -> plaintext.
+
+op c_encode : raw_ciphertext -> ciphertext.
+op c_decode : ciphertext -> raw_ciphertext.
 
 (******************************************************************)
 (*                    The Encryption Scheme                       *)
@@ -406,12 +405,11 @@ qed.
    rings that define the scheme. Noise bounds are checked and
    computed over the integers. *)
 
-op noise_val : R -> int.
-op noise_bound : int.
-op good_noise (b n : int) = -b < n < b.
+op max_noise : int.
+op under_noise_bound : R -> int -> bool.
 
 axiom good_decode m n :
-    good_noise noise_bound (noise_val n) =>
+    under_noise_bound n max_noise =>
       m_decode (m_encode m +& n) = m.
 
 (* We now rewrite the correctness game in terms of noise *)
@@ -429,7 +427,7 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
          e2 <$ dshort_R;
          m <@ A(O).find((sd,_A *^ s + e),s);
          n <- noise_exp _A s e r e1 e2 m;
-         return (!good_noise (noise_bound) (noise_val n));
+         return (!under_noise_bound n max_noise);
     }
 }.
 
@@ -475,7 +473,7 @@ seq 9 14 : (
 inline *. auto => />.  move => &2 -> ?. 
 split; first by smt(duni_matrix_ll). 
 move => ???.
-move => noise_expL noise_expH.
+move => noise_exp. 
 rewrite  encode_noise  => //.
 rewrite (_: 
    (((oget LRO.m{2}.[pk0{2}.`1] *^ s{2} + e{2}) `<*>` r{2}) +&
@@ -521,13 +519,12 @@ axiom cv_bound_valid _A s e r e2 m :
       e2 \in dshort_R =>
       let t = _A *^ s + e in
       let v = (t `<*>` r) +& e2 +& (m_encode m) in
-          -cv_bound < noise_val (rnd_err_v v) < cv_bound.
+          under_noise_bound (rnd_err_v v) cv_bound.
 
 axiom noise_commutes n n' (b : int) : 
-    -b < noise_val n' < b =>
-    good_noise (noise_bound - b) (noise_val n) =>
-       good_noise noise_bound (noise_val (n +& n')).
-
+    under_noise_bound n' b =>
+    under_noise_bound n (max_noise - b) =>
+       under_noise_bound (n +& n') max_noise.
 
 op noise_exp_part _A s e r e1 e2 = 
     let u = m_transpose _A *^ r + e1 in
@@ -555,7 +552,7 @@ module CorrectnessNoiseApprox = {
          e1 <$ dshort;
          e2 <$ dshort_R;
          n <- noise_exp_part _A s e r e1 e2;
-         return (!good_noise (noise_bound - cv_bound) (noise_val n));
+         return (!under_noise_bound n (max_noise - cv_bound));
     }
 }.
 
@@ -618,7 +615,7 @@ module CorrectnessBound = {
          e1 <$ dshort;
          e2 <$ dshort_R;
          n <- noise_exp_part_simpl u s e r e1 e2;
-         return (!good_noise (noise_bound - cv_bound) (noise_val n));
+         return (!under_noise_bound n (max_noise - cv_bound));
     }
 }.
 
