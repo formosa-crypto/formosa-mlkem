@@ -1,5 +1,5 @@
 require import AllCore IntDiv Array256 Array128.
-require import Ring StdOrder Fq.
+require import List Ring StdOrder Fq.
 
 import Fq IntOrder.
 theory NTT_Fq.
@@ -177,6 +177,122 @@ functional  and imperative realizations. *)
 
 op zetas_const : elem Array128.t.
 op zetas_inv_const : elem Array128.t.
+
+require Matrix.
+
+abstract theory DFT.
+  clone import Ring.IDomain as Domain.
+
+  clone import Bigalg.BigComRing as BigDom with
+    type  t        <- t,
+      op  CR.zeror <- Domain.zeror,
+      op  CR.oner  <- Domain.oner,
+      op  CR.(+)   <- Domain.(+),
+      op  CR.([-]) <- Domain.([-]),
+      op  CR.( * ) <- Domain.( * ),
+      op  CR.invr  <- Domain.invr,
+    pred  CR.unit  <- Domain.unit
+    proof CR.*.
+
+  realize CR.addrA     by exact: Domain.addrA    .
+  realize CR.addrC     by exact: Domain.addrC    .
+  realize CR.add0r     by exact: Domain.add0r    .
+  realize CR.addNr     by exact: Domain.addNr    .
+  realize CR.oner_neq0 by exact: Domain.oner_neq0.
+  realize CR.mulrA     by exact: Domain.mulrA    .
+  realize CR.mulrC     by exact: Domain.mulrC    .
+  realize CR.mul1r     by exact: Domain.mul1r    .
+  realize CR.mulrDl    by exact: Domain.mulrDl   .
+  realize CR.mulVr     by exact: Domain.mulVr    .
+  realize CR.unitP     by exact: Domain.unitP    .
+  realize CR.unitout   by exact: Domain.unitout  .
+
+  op a : t.
+  op n : { int | 0 < n } as gt0_n.
+
+  hint exact : gt0_n.
+
+  clone import Matrix with
+    type  R        <- t,
+      op  size     <- n,
+      op  ZR.zeror <- Domain.zeror,
+      op  ZR.oner  <- Domain.oner,
+      op  ZR.(+)   <- Domain.(+),
+      op  ZR.([-]) <- Domain.([-]),
+      op  ZR.( * ) <- Domain.( * ),
+      op  ZR.invr  <- Domain.invr,
+    pred  ZR.unit  <- Domain.unit
+    proof ZR.*, ge0_size.
+
+  realize ZR.addrA     by exact: Domain.addrA    .
+  realize ZR.addrC     by exact: Domain.addrC    .
+  realize ZR.add0r     by exact: Domain.add0r    .
+  realize ZR.addNr     by exact: Domain.addNr    .
+  realize ZR.oner_neq0 by exact: Domain.oner_neq0.
+  realize ZR.mulrA     by exact: Domain.mulrA    .
+  realize ZR.mulrC     by exact: Domain.mulrC    .
+  realize ZR.mul1r     by exact: Domain.mul1r    .
+  realize ZR.mulrDl    by exact: Domain.mulrDl   .
+  realize ZR.mulVr     by exact: Domain.mulVr    .
+  realize ZR.unitP     by exact: Domain.unitP    .
+  realize ZR.unitout   by exact: Domain.unitout  .
+  realize ZR.mulf_eq0  by exact: Domain.mulf_eq0 .
+  realize ge0_size     by apply/ltzW/gt0_n.
+      
+  (* `a` is a principle `n`-th root of unity *)
+  axiom aXn_eq1 : exp a n = oner.
+
+  axiom sum_aXi_eq0 : forall k, 0 < k < n =>
+    BAdd.bigi predT (fun i => exp a (i * k)) 0 n = zeror.
+
+  hint exact : aXn_eq1.
+
+  lemma unit_a : unit a.
+  proof. by apply/(@unitP _ (exp a (n - 1))); rewrite mulrC -exprS // [smt(gt0_n)]. qed.
+
+  hint exact : unit_a.
+
+  lemma sum_aXi_dvd_eq0 : forall k, ! (n %| k) =>
+    BAdd.bigi predT (fun i => exp a (i * k)) 0 n = zeror.
+  proof.
+  move=> k h; pose F i := exp a (i * (k %% n)).
+  rewrite -(BAdd.eq_big_int _ _ F) => /= [i rg_i|] @/F => {F}.
+    rewrite {2}(divz_eq k n) mulrDr exprD //.
+    rewrite !(mulzC i) -mulrA mulrCA (@exprM _ n).
+    by rewrite aXn_eq1 expr1z mul1r.
+  apply: sum_aXi_eq0; rewrite ltz_pmod //=.
+  rewrite ltr_neqAle modz_ge0 1:gtr_eqF //=.
+  by rewrite eq_sym; apply: contra h => h; apply: dvdzE.
+  qed.
+
+  op dft (v : vector) =
+    offunv (fun k => BAdd.bigi predT (fun j => v.[j] * exp a (j * k)) 0 n).
+
+  op dftV (v : vector) =
+    offunv (fun k => invr (ofint n) *
+      BAdd.bigi predT (fun j => v.[j] * exp a (- (j * k))) 0 n).
+
+  lemma dftK : unit (ofint n) => cancel dft dftV.
+  proof.
+  move=> ut_n v; apply/eq_vectorP=> i rg_i; rewrite offunvE //=.
+  apply: (mulrI (ofint n)) => //; rewrite mulrA divrr // mul1r.
+  pose F j := BAdd.bigi predT (fun j' => v.[j'] * exp a (j * (j' - i))) 0 n.
+  rewrite -(BAdd.eq_big_int _ _ F) => /= [k rg_k @/F|].
+    rewrite /dft !offunvE //= BAdd.mulr_suml.
+    rewrite &(BAdd.eq_big_int) => /= k' rg_k'.
+    by rewrite -mulrA -exprD // (@mulzC k' k) IntID.mulrBr.
+  rewrite /F BAdd.exchange_big => {F} /=.
+  pose F j' := v.[j'] * BAdd.bigi predT (fun j => exp a (j * (j' - i))) 0 n.
+  rewrite -(BAdd.eq_big_int _ _ F) => /= [k rg_k @/F|].
+    by rewrite BAdd.mulr_sumr.
+  rewrite /F /= (BAdd.bigD1 _ _ i) 1,2:(mem_range, range_uniq) //=.
+  rewrite BAdd.sumri_const 1:/# /= expr0 -/(ofint _) (@mulrC v.[i]).
+  rewrite BAdd.big_seq_cond BAdd.big1 ?addr0 //= => j.
+  case=> [/mem_range rg_j @/predC1 ne_ji] {F}.
+  by rewrite sum_aXi_dvd_eq0 ?mulr0 //; apply/negP=> /dvdzP[q] /#.
+  qed.
+end DFT.
+
 op ntt : poly -> poly.
 op invntt : poly -> poly.
 
