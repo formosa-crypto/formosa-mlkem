@@ -1824,7 +1824,6 @@ lemma poly_compress_round_corr ap :
 
 import Jindcpa.
 
-
 lemma zeta_bound :
    minimum_residues jzetas.
  proof.
@@ -1836,7 +1835,7 @@ rewrite (_:
   (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x then to_uint x - 65536 else to_uint x) < 3329)).
 apply/fun_ext => x *.
 by rewrite to_sintE /smod => />.
-admit. (* this should be proved by evaluation *)
+by rewrite /all -iotaredE; cbv delta.
 qed. 
 
 equiv ntt_correct_aux :
@@ -2221,7 +2220,7 @@ rewrite (_:
   (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x then to_uint x - 65536 else to_uint x) < 3329)).
 apply/fun_ext => x *.
 rewrite to_sintE /smod => />.
-admit. (* this should be proved by evaluation *)
+by rewrite /all -iotaredE; cbv delta.
 qed. 
 
 lemma expr_pos (b e : int) :
