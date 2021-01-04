@@ -1,6 +1,53 @@
 require import AllCore IntDiv Ring StdOrder.
 import Ring.IntID IntOrder.
 
+(***** TO MOVE *****)
+
+lemma div_pow x n m : 0 <= m <= n => 0 < x => x^n %/ x^m = x^(n - m).
+proof. (* FIXME: move *)
+move=> le_0mn gt0_x; rewrite eq_sym eqz_div.
++ by apply/gtr_eqF/expr_gt0.  
++ by apply/dvdzP; exists (x^(n - m)); rewrite -exprD_nneg /#.
++ by rewrite -exprD_nneg /#.
+qed.
+
+lemma pow_div1 b k :
+  0 < k => 0 < b => b^k %/ b = b^(k - 1).
+proof. by move=> *; rewrite -div_pow ?expr1 //#. qed.
+
+lemma pow_div2 b k :
+  1 < k => 0 < b => b^k %/ b^2 = b^(k - 2).
+proof. by move=> *; rewrite -div_pow //#. qed.
+
+lemma div_mulr p q m : m %| q => (p * q) %/ m = p * (q %/ m).
+proof. (* FIXME: move *)
+case: (m = 0) => [->>//|nz_m /dvdzE z_mq].
+by rewrite {1}(divz_eq q m) z_mq /= mulrCA mulrA mulzK // mulrC.
+qed.
+
+lemma div_mull p q m : m %| p => (p * q) %/ m = (p %/ m) * q.
+proof. (* FIXME: move *)
+by move=> dvd_mp; rewrite mulrC div_mulr // mulrC.
+qed.
+
+lemma dvdNz (m n : int) : ((-m) %| n) = (m %| n).
+proof. (* FIXME: move *) by rewrite !dvdzE modzN. qed.
+
+lemma div_mul p m n : 0 <= m => m %| p => p %/ (m * n) = p %/ m %/ n.
+proof. (* FIXME: move *)
+rewrite ler_eqVlt => -[<-//|gt0_m /dvdzE z_pm].
+by rewrite {1}(divz_eq p m) z_pm /= (mulrC m n) divzMpr.
+qed.
+
+lemma divM_mul p q m n :
+  0 <= m => m %| p => n %| q => (p * q) %/ (m * n) = (p %/ m) * (q %/ n).
+proof. (* FIXME: move *)
+move=> ge0_m dvd_mp dvd_nq; rewrite div_mul // 1:dvdz_mulr //.
+by rewrite div_mull // div_mulr.
+qed.
+
+(********************************)
+
 theory SignedReductions.
 (* [`R] is a power of 2 *)
 op k : { int | 2 < k } as gt2_k.
@@ -77,22 +124,6 @@ lemma wd_bnd x :
   by split;smt(gt0_R).
 qed.
 
-lemma div_pow x n m : 0 <= m <= n => 0 < x => x^n %/ x^m = x^(n - m).
-proof. (* FIXME: move *)
-move=> le_0mn gt0_x; rewrite eq_sym eqz_div.
-+ by apply/gtr_eqF/expr_gt0.  
-+ by apply/dvdzP; exists (x^(n - m)); rewrite -exprD_nneg /#.
-+ by rewrite -exprD_nneg /#.
-qed.
-
-lemma pow_div1 b k :
-  0 < k => 0 < b => b^k %/ b = b^(k - 1).
-proof. by move=> *; rewrite -div_pow ?expr1 //#. qed.
-
-lemma pow_div2 b k :
-  1 < k => 0 < b => b^k %/ b^2 = b^(k - 2).
-proof. by move=> *; rewrite -div_pow //#. qed.
-
 lemma bal_mod_small x y:
    1 < y =>
    -y %/ 2 <= x < y %/2 =>
@@ -101,33 +132,6 @@ proof.
 move => ypos [#] xlb yub.
 rewrite bal_modE.
 case (0 <= x < y %/ 2); smt(@IntDiv).
-qed.
-
-lemma div_mulr p q m : m %| q => (p * q) %/ m = p * (q %/ m).
-proof. (* FIXME: move *)
-case: (m = 0) => [->>//|nz_m /dvdzE z_mq].
-by rewrite {1}(divz_eq q m) z_mq /= mulrCA mulrA mulzK // mulrC.
-qed.
-
-lemma div_mull p q m : m %| p => (p * q) %/ m = (p %/ m) * q.
-proof. (* FIXME: move *)
-by move=> dvd_mp; rewrite mulrC div_mulr // mulrC.
-qed.
-
-lemma dvdNz (m n : int) : ((-m) %| n) = (m %| n).
-proof. (* FIXME: move *) by rewrite !dvdzE modzN. qed.
-
-lemma div_mul p m n : 0 <= m => m %| p => p %/ (m * n) = p %/ m %/ n.
-proof. (* FIXME: move *)
-rewrite ler_eqVlt => -[<-//|gt0_m /dvdzE z_pm].
-by rewrite {1}(divz_eq p m) z_pm /= (mulrC m n) divzMpr.
-qed.
-
-lemma divM_mul p q m n :
-  0 <= m => m %| p => n %| q => (p * q) %/ (m * n) = (p %/ m) * (q %/ n).
-proof. (* FIXME: move *)
-move=> ge0_m dvd_mp dvd_nq; rewrite div_mul // 1:dvdz_mulr //.
-by rewrite div_mull // div_mulr.
 qed.
 
 lemma b0 :  R*R %/ 2 = R * (R %/ 2).
@@ -182,7 +186,10 @@ lemma inrange a :
 lemma outrange a :
   - R%/2 <= a < 0 => a %% R = R + a by smt().
 
-
+lemma sign_comp a b: (a %%R + b %% R) %%+- R = (a + b) %%+- R.
+move => *. rewrite !bal_modE.
+by rewrite modzDm.
+qed. 
 (* Signed Barrett reduction as used in Kyber 2.0 *)
 
 op BREDC(a bits : int) =
@@ -192,55 +199,42 @@ op BREDC(a bits : int) =
 require import Barrett_kyber_general.
 
 lemma nosmt BREDCp_corr a bits:
-
- 0 < 2 * q < R %/2 =>
- R < 2^bits =>
- 2 ^ bits %/ q * q < 2 ^ bits =>
- 2^bits %/ q + 1 < R =>
- -R %/ 2 <= a < R %/2 =>
- (forall (a0 : int),
-   - R %/ 2 <= a0 < R %/ 2 => barrett_pred a0 (2 ^ bits) SignedReductions.q (2 ^ bits %/ SignedReductions.q + 1)) =>
-  0  <= BREDC a bits < 2 * q /\
- BREDC a bits %% q = a %% q.
+   0 < 2 * q < R %/2 =>
+   R < 2^bits =>
+   2 ^ bits %/ q * q < 2 ^ bits =>
+   2^bits %/ q + 1 < R =>
+   -R %/ 2 <= a < R %/2 =>
+   (forall (a0 : int),
+     - R %/ 2 <= a0 < R %/ 2 => 
+        barrett_pred a0 (2 ^ bits) q (2 ^ bits %/ q + 1)) =>
+          0  <= BREDC a bits < 2 * q /\ BREDC a bits %% q = a %% q.
 proof.
-move => [#] ?? ??? [#] ???.
-
-rewrite /BREDC /=.
-
+move => [#] ?? ??? [#] ???;rewrite /BREDC /=.
 have extra : (0 <= 2^bits %/ q + 1); first by smt().
 have tubnd : (a * (2^bits %/ q + 1) < R %/2 * R). 
-   move : H3 H4 H5.
-   rewrite /R. rewrite pow_div1; first 2 by smt(gt2_k). 
+   move : H3 H4 H5; rewrite /R pow_div1; first 2 by smt(gt2_k). 
    case (a <= 0); first by smt(). 
    by move => *; apply ltr_pmul => /#. 
 have tlbnd : (- R %/2 * R<= a * (2^bits %/ q + 1)).
-   move : H3 H4 H5.
-   rewrite /R. rewrite pow_div1; first 2 by smt(gt2_k). 
-   case (0<=a); first by smt(). 
+   move : H3 H4 H5; rewrite /R pow_div1; first 2 by smt(gt2_k). 
+   case (0<=a); first by smt().
    move => *.
-   have ? : (-a * (2 ^ bits %/ SignedReductions.q + 1) <= 2 ^ (k - 1) * 2 ^ k); last by smt().
-   rewrite  (_:  - a * (2 ^ bits %/ SignedReductions.q + 1) = (- a) * (2 ^ bits %/ SignedReductions.q + 1)); first   by smt().
-   apply ler_pmul => /#. 
+   have ? : (-a * (2 ^ bits %/ q + 1) <= 2 ^ (k - 1) * 2 ^ k); last by smt().
+   rewrite  (_:  - a * (2 ^ bits %/ q + 1) = 
+                (- a) * (2 ^ bits %/ q + 1)); first   by smt().
+   by apply ler_pmul => /#. 
+rewrite (bal_mod_small (a * (2 ^ bits %/ q + 1))); first  by smt(expr2).
+   by rewrite (_: R^2 = R*R); smt(expr2).
 
-rewrite (bal_mod_small (a * (2 ^ bits %/ q + 1))); first by rewrite /R; smt(@IntOrder).
-rewrite (_: R^2 = R*R);  by smt(@Domain).
+move : (H6 a _); rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /= 
+       => *; first by smt().
+rewrite sign_comp bal_mod_small; first 2 by smt().
 
-(*******)
-have sign_comp : forall a b, (a %%R + b %% R) %%+- R = (a + b) %%+- R.
-move => *. rewrite !bal_modE.
-by rewrite modzDm.
-
-rewrite sign_comp. 
-rewrite bal_mod_small; first by smt(). 
-move : (H6 a _); rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux => /> *; smt().
-
-split.
-
-(* Bound proof *)
-move : (H6 a _); rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux => /> *; smt().
+split; first by smt().
 
 (* Congruence proof *)
-rewrite (_: - a * (2 ^ bits %/ q + 1) %/ 2 ^ bits * q = (- a * (2 ^ bits %/ q + 1) %/ 2 ^ bits) * q); first by smt().
+rewrite (_: - a * (2 ^ bits %/ q + 1) %/ 2 ^ bits * q = 
+            (- a * (2 ^ bits %/ q + 1) %/ 2 ^ bits) * q); first by smt().
 by rewrite modzMDr.
 qed.
 
@@ -253,50 +247,38 @@ op SREDC (a: int) : int =
 
 
 lemma nosmt SREDCp_corr a:
- 0 < q < R %/2 =>
- -R %/ 2 * q <= a < R %/2 * q =>
-  -q   <= SREDC a <= q /\
- SREDC a %% q = (a * Rinv) %% q.
+   0 < q < R %/2 =>
+   -R %/ 2 * q <= a < R %/2 * q =>
+   -q   <= SREDC a <= q /\
+       SREDC a %% q = (a * Rinv) %% q.
 proof.
 move => [#] ?? [#] ??.
 have albnd : (- R * R %/4 <= a).
  case (0<=a); first by smt().
- move =>*. 
- rewrite b1.
- have ? : (R %/ 2 * SignedReductions.q <= R %/ 2 * R %/ 2);  by smt(gt0_R q_bnd dvd2R).
+ move =>*; rewrite b1.
+ have ? : (R %/ 2 * SignedReductions.q <= R %/ 2 * R %/ 2); by smt(gt0_R q_bnd dvd2R).
 have aubnd : (a < R* R %/4); first by smt(b1).
-rewrite /SREDC /=.
-rewrite (bal_mod_div (a * qinv)).
-
-move : (bal_mod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R).
+rewrite /SREDC /= (bal_mod_div (a * qinv)).
+move : (bal_mod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 
 move => inner_bnd.
 
 have ulbnd : (-R*R %/4 <= a * qinv %%+- R * q).
-    have ? : (- R*R %/4 <= -R %/2 * q). 
-    rewrite b1.
-    have ? : (R %/ 2 * SignedReductions.q <= R %/ 2 * R %/ 2);  by smt(gt0_R q_bnd dvd2R).
-    move : H3.
-    rewrite b1. 
     case (0 <=a * qinv %%+- R); first by smt().
     move => *.
-    have ? : ( (- (a * qinv %%+- R)) * SignedReductions.q <= (R %/ 2) * (R %/ 2)); last by smt().
-    apply ler_pmul => /#.
+    have ? : ((- (a * qinv %%+- R))*q <= (R %/ 2) * (R %/ 2)); last by smt().
+    by apply ler_pmul => /#.
 
 have uubnd : (a * qinv %%+- R * q < R*R %/4). 
-  rewrite b1.
     case (a * qinv %%+- R <=0); first by smt().
-    have ? : ((a * qinv %%+- R) * SignedReductions.q < (R %/ 2) * (R %/ 2)); last by smt().
-    have ? : (R %/ 2 * SignedReductions.q <= R %/ 2 * R %/ 2);  by smt(gt0_R q_bnd dvd2R).
+    have ? : ((a * qinv %%+- R) * q < (R %/ 2) * (R %/ 2)); last by smt().
+    by smt(gt0_R q_bnd dvd2R).
 
-rewrite (bal_mod_small ((a - a * qinv %%+- R * q))); first 2 by  smt( @IntOrder). 
+rewrite (bal_mod_small ((a - a * qinv %%+- R * q))); first 2 by  smt(@IntOrder). 
 rewrite (bal_mod_sq ((a - a * qinv %%+- R * q))).
 rewrite (bal_mod_small ((a - a * qinv %%+- R * q) %/R)); first by smt(). 
 
-split; last first.
-have ? : ( (a - a * qinv %%+- R * SignedReductions.q) < R %/ 2 *R);first  by  smt(b1 b2  b3).
-by smt(gt0_R @IntDiv). 
-
-have ? : ((-R %/ 2) *R< (a - a * qinv %%+- R * SignedReductions.q));first  by  smt(b1 b2  b3).
+have ? : ( (a - a * qinv %%+- R * q) < R %/ 2 *R);first  by  smt(b1 b2  b3).
+have ? : ((-R %/ 2) *R< (a - a * qinv %%+- R * q));first  by  smt(b1 b2  b3).
 by smt(gt0_R @IntDiv). 
 
 split.
@@ -304,10 +286,10 @@ split.
 (* Bound proof *)
 have aux : (-  a * qinv %%+- R * q <= R %/2 * q); first by smt(b0 b1 b2).
 split; last first.
-have ? : ( (a - a * qinv %%+- R * SignedReductions.q) < SignedReductions.q *R);first  by  smt(b1 b2  b3).
+have ? : ( (a - a * qinv %%+- R * q) < q *R);first  by  smt(b1 b2  b3).
 by smt(gt0_R @IntDiv). 
 
-have ? : ((-SignedReductions.q) *R<= (a - a * qinv %%+- R * SignedReductions.q));first  by  smt(b1 b2  b3).
+have ? : ((-q) *R<= (a - a * qinv %%+- R * q));first  by  smt(b1 b2  b3).
 by smt(gt0_R @IntDiv). 
 
 (* Congruence proof *)
