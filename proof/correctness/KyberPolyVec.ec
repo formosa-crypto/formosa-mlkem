@@ -134,7 +134,7 @@ proof.
   move => *; rewrite tP => j ?.
   rewrite -H0 //.
   rewrite /of_list initE H1 /= nth_sub // /lift_array768 mapiE //.
-  cut ->: 0 <= n + j < 768 by smt() => //.
+  have ->: 0 <= n + j < 768 by smt() => //.
   by done.
   by simplify => /#.
 qed.
@@ -144,7 +144,7 @@ lemma pos_bound256_signed_boundD (r : W16.t Array256.t) x :
   signed_bound_cxq r 0 256 x.
 proof.
   rewrite /pos_bound256_cxq /signed_bound_cxq.
-  cut ->: (forall (k : int), 0 <= k < 256 => bpos16 r.[k] (x * q)) =
+  have ->: (forall (k : int), 0 <= k < 256 => bpos16 r.[k] (x * q)) =
           (forall (k : int), 0 <= k < 256 => 0 <= to_sint r.[k] < (x * q)) by done.
   by move => *; rewrite b16E /#.
 qed.
@@ -169,10 +169,10 @@ proof.
     by rewrite H 1:/# get_of_list 1:/# nth_sub 1:/#.
   case (k < 512) => ?.
     move : (H0 (k-256)).
-    cut ->: 0 <= k - 256 < 256 by smt().
+    have ->: 0 <= k - 256 < 256 by smt().
     by simplify => *; rewrite H5 /= get_of_list 1:/# nth_sub 1,2:/#.
   move : (H1 (k-512)).
-  cut ->: 0 <= k - 512 < 256 by smt().
+  have ->: 0 <= k - 512 < 256 by smt().
   simplify => *.
   by rewrite H5 get_of_list 1:/# nth_sub 1,2:/#.
 qed.
@@ -189,7 +189,7 @@ lemma pos_bound768_signed_bound768 a i j x :
   pos_bound768_cxq a i j x => signed_bound768_cxq a i j x.
 proof.
   rewrite /pos_bound768_cxq /signed_bound768_cxq.
-  cut ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
+  have ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
           (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < (x * q)) by done.
   by move => *; rewrite b16E /#.
 qed.
@@ -198,7 +198,7 @@ lemma pos_bound256_cxqD a i j x :
   1 < x => pos_bound256_cxq a i j (x-1) => pos_bound256_cxq a i j x.
 proof.
   move => ?; rewrite /pos_bound256_cxq. 
-  cut ->: (forall (k : int), i <= k < j => bpos16 a.[k] ((x - 1) * q)) =
+  have ->: (forall (k : int), i <= k < j => bpos16 a.[k] ((x - 1) * q)) =
           (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < ((x - 1) * q)) by done.
   move => *; rewrite bpos16E.
   move : (H0 k); rewrite H1 qE /= => /> *; smt(@W16). 
@@ -208,7 +208,7 @@ lemma pos_bound256_signed_bound a i j x :
   pos_bound256_cxq a i j x => signed_bound_cxq a i j x.
 proof.
   rewrite /pos_bound256_cxq /signed_bound_cxq.
-  cut ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
+  have ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
           (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < (x * q)) by done.
   by move => *; rewrite b16E /#.
 qed.
@@ -367,10 +367,10 @@ proof.
                 0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 512).
     wp; skip => /> *; do split.
       move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
-      cut ->: k = to_uint j{hr} <=> false by smt().
+      have ->: k = to_uint j{hr} <=> false by smt().
       by rewrite H //.
       move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
-      cut ->: k + 256 = to_uint j{hr} <=> false by smt().
+      have ->: k + 256 = to_uint j{hr} <=> false by smt().
       by rewrite H0 //.
       move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
       case (k + 512 = to_uint j{hr}) => ?; first by smt().
@@ -383,7 +383,7 @@ proof.
                 0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 256).
     wp; skip => /> *; do split.
       move => *; rewrite get_setE; first by move : H4; rewrite ultE of_uintK pmod_small // /#. 
-      cut ->: k = to_uint j{hr} <=> false by smt().
+      have ->: k = to_uint j{hr} <=> false by smt().
       by rewrite H //.
       move => *; rewrite get_setE; first by move : H4; rewrite ultE of_uintK pmod_small // /#. 
       case (k + 256 = to_uint j{hr}) => ?; first by smt().
@@ -676,7 +676,7 @@ split.
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr} + 3) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 3])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -687,7 +687,7 @@ smt().
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr} + 2) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 2])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -698,7 +698,7 @@ smt().
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr} + 1) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 1])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -709,7 +709,7 @@ smt().
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr}) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr}])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr}] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr}] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -724,7 +724,7 @@ clear H10.
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr} + 3) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 3])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -735,7 +735,7 @@ smt().
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr} + 2) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 2])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -746,7 +746,7 @@ smt().
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr} + 1) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 1])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -757,7 +757,7 @@ smt().
 rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
 case (k = to_uint i{hr}) => ?.
 move : (roundcimpl_rng (aa{hr}.[to_uint i{hr}])).
-cut ->: bpos16 aa{hr}.[to_uint i{hr}] q.
+have ->: bpos16 aa{hr}.[to_uint i{hr}] q.
 move : H4.
 rewrite /pos_bound768_cxq /= => *.
 rewrite H4.
@@ -941,7 +941,7 @@ call (poly_reduce_corr_h (lift_array256 r0')).
 skip => /> *.
 move : H5.
 rewrite tP.
-cut ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r0{hr}).[i] = (lift_array256 result).[i]) = 
+have ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r0{hr}).[i] = (lift_array256 result).[i]) = 
         (forall (i : int), 0 <= i < 256 => inzmod (to_sint r0{hr}.[i]) = inzmod (to_sint result.[i])).
 smt(lift_array256_inzmod).
 move => ?.
@@ -953,7 +953,7 @@ call (poly_reduce_corr_h (lift_array256 r1')).
 skip => /> *.
 move : H5.
 rewrite tP.
-cut ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r1{hr}).[i] = (lift_array256 result).[i]) = 
+have ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r1{hr}).[i] = (lift_array256 result).[i]) = 
         (forall (i : int), 0 <= i < 256 => inzmod (to_sint r1{hr}.[i]) = inzmod (to_sint result.[i])).
 smt(lift_array256_inzmod).
 move => ?.
@@ -965,7 +965,7 @@ call (poly_reduce_corr_h (lift_array256 r2')).
 skip => /> *.
 move : H5.
 rewrite tP.
-cut ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r2{hr}).[i] = (lift_array256 result).[i]) = 
+have ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r2{hr}).[i] = (lift_array256 result).[i]) = 
         (forall (i : int), 0 <= i < 256 => inzmod (to_sint r2{hr}.[i]) = inzmod (to_sint result.[i])).
 smt(lift_array256_inzmod).
 move => ?.
@@ -1048,7 +1048,7 @@ while (#pre /\ 0 <= to_uint i <= 768 /\ to_uint i %% 4 = 0 /\
 wp; skip => /> *; do split; first by smt().
   move => i r; rewrite ultE of_uintK /= => *.
   move : H; rewrite /pos_bound768_b_32. 
-  cut ->: (forall (k0 : int), 0 <= k0 && k0 < 768 => bpos32 rp{hr}.[k0] 1024) <=> 
+  have ->: (forall (k0 : int), 0 <= k0 && k0 < 768 => bpos32 rp{hr}.[k0] 1024) <=> 
           (forall (k0 : int), 0 <= k0 && k0 < 768 => 0 <= to_sint rp{hr}.[k0] < 1024).
     by split => *; by move : (H k0); rewrite H5 /= bpos32E.
   move => ?; split.  
@@ -1057,7 +1057,7 @@ wp; skip => /> *; do split; first by smt().
         by move : (H k); rewrite H5 /= /#.
       rewrite -eq_inzmod H4 // 1:/#.
       rewrite (W16.to_sintE (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8))) /smod /=.
-      cut ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
+      have ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
         rewrite to_uint_truncateu16 shr_div_le // /=; move : (H k); rewrite H5 /= => /> *.
         rewrite -to_uint_mod to_uintD of_uintK /= to_uintM of_uintK /=.
         rewrite (pmod_small (to_uint rp{hr}.[k] * 3329)).
@@ -1072,7 +1072,7 @@ wp; skip => /> *; do split; first by smt().
     + rewrite /signed_bound768_cxq => k *.
       rewrite b16E H4 // 1:/#.
       rewrite (W16.to_sintE (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8))) /smod /=.
-      cut ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
+      have ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
         rewrite to_uint_truncateu16 shr_div_le // /=; move : (H k); rewrite H5 /= => /> *.
         rewrite -to_uint_mod to_uintD of_uintK /= to_uintM of_uintK /=.
         rewrite (pmod_small (to_uint rp{hr}.[k] * 3329)).

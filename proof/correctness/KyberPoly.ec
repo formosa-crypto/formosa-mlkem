@@ -192,13 +192,13 @@ rewrite to_sintN.
 rewrite of_sintK.
 simplify.
 rewrite /smod.
-cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
 simplify.
 done.
 rewrite of_sintK.
 simplify.
 rewrite /smod.
-cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt().
 (****)
@@ -208,13 +208,13 @@ rewrite to_sintN.
 rewrite of_sintK.
 simplify.
 rewrite /smod.
-cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
 simplify.
 done.
 rewrite of_sintK.
 simplify.
 rewrite /smod.
-cut ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt().
 (****)
@@ -228,7 +228,7 @@ rewrite qE.
 smt().
 rewrite inzmodN.
 rewrite /zero.
-cut ->: - - inzmod 3329 = inzmod 3329. smt(@ZModField).
+have ->: - - inzmod 3329 = inzmod 3329. smt(@ZModField).
 rewrite -eq_inzmod.
 smt().
 (***)
@@ -283,7 +283,7 @@ simplify.
 smt().
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -315,7 +315,7 @@ simplify.
 smt().
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -342,7 +342,7 @@ simplify.
 smt().
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -418,7 +418,7 @@ move : H3 H0; rewrite ultE qE => /> *.
 smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -445,7 +445,7 @@ move : H3 H0; rewrite ultE qE => /> *.
 smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -474,7 +474,7 @@ move : H3 H0; rewrite ultE qE => /> *.
 smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -498,7 +498,7 @@ move : H3 H0; rewrite ultE qE => /> *.
 smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -544,7 +544,7 @@ move : H3 H0; rewrite ultE qE => /> *.
 smt(@W64).
 rewrite of_sintK /=.
 rewrite /smod /=.
-cut ->: to_sint W16.zero = 0.
+have ->: to_sint W16.zero = 0.
 rewrite to_sintE.
 rewrite to_uint0.
 rewrite /smod /=.
@@ -1617,7 +1617,7 @@ move : H6.
 rewrite to_uintD_small.
 smt().
 smt().
-cut ->: k = to_uint j{hr} <=> false.
+have ->: k = to_uint j{hr} <=> false.
 move : H6. 
 rewrite to_uintD_small.
 smt().
@@ -1702,7 +1702,7 @@ have ? : (0 <= yy < 2^16). smt(@W16).
 rewrite (_: W16.smod yy =  yy). 
 rewrite /smod.
 simplify.
-cut ->: 32768 <= yy <=> false.
+have ->: 32768 <= yy <=> false.
 smt().
 simplify.
 done.
@@ -2135,10 +2135,10 @@ done.
    rewrite (_: inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * (zeta_{1} * inzmod R) * inzmod 169 = 
      inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * ((zeta_{1} * inzmod R) * inzmod 169)); first by ring.
    rewrite (_: (zeta_{1} * inzmod R) * inzmod 169 = zeta_{1}). 
-cut ->: zeta_{1} * inzmod R * inzmod 169 = zeta_{1} * (inzmod R * inzmod 169).
+have ->: zeta_{1} * inzmod R * inzmod 169 = zeta_{1} * (inzmod R * inzmod 169).
 smt(@ZModField).
-cut ->: inzmod R * inzmod 169 = inzmod 1.
-cut ->: inzmod R * inzmod 169 = inzmod (R * 169).
+have ->: inzmod R * inzmod 169 = inzmod 1.
+have ->: inzmod R * inzmod 169 = inzmod (R * 169).
 smt(@ZModField).
 have ?: zmodcgr (R * 169) 1.
 smt(RRinv).
@@ -2161,10 +2161,10 @@ smt (@ZModField).
    rewrite (_: inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * (zeta_{1} * inzmod R) * inzmod 169 = 
      inzmod (to_sint rp{2}.[to_uint j{2} + to_uint len{2}]) * ((zeta_{1} * inzmod R) * inzmod 169)); first by ring.
    rewrite (_: (zeta_{1} * inzmod R) * inzmod 169 = zeta_{1}).
-cut ->: zeta_{1} * inzmod R * inzmod 169 = zeta_{1} * (inzmod R * inzmod 169).
+have ->: zeta_{1} * inzmod R * inzmod 169 = zeta_{1} * (inzmod R * inzmod 169).
 smt(@ZModField).
-cut ->: inzmod R * inzmod 169 = inzmod 1.
-cut ->: inzmod R * inzmod 169 = inzmod (R * 169).
+have ->: inzmod R * inzmod 169 = inzmod 1.
+have ->: inzmod R * inzmod 169 = inzmod (R * 169).
 smt(@ZModField).
 have ?: zmodcgr (R * 169) 1.
 smt(RRinv).
@@ -2175,7 +2175,7 @@ smt (@ZModField).
    ring.
 rewrite mapE.
 rewrite initE.
-cut ->: 0 <= to_uint j{2} && to_uint j{2} < 256.
+have ->: 0 <= to_uint j{2} && to_uint j{2} < 256.
 split.
 smt().
 smt().
@@ -2646,8 +2646,8 @@ smt().
        rewrite inzmodM -zetaval.
        rewrite (_: zeta_{1} * inzmod R * inzmod 169 =
                     zeta_{1} * (inzmod R * inzmod 169)); first by ring.
-cut ->: inzmod R * inzmod 169 = inzmod 1.
-cut ->: inzmod R * inzmod 169 = inzmod (R * 169).
+have ->: inzmod R * inzmod 169 = inzmod 1.
+have ->: inzmod R * inzmod 169 = inzmod (R * 169).
 smt(@ZModField).
 have ?: zmodcgr (R * 169) 1.
 smt(RRinv).
@@ -2850,22 +2850,22 @@ inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{
 _zetas.[to_uint i{hr} %/4 + 64] * (inzmod (R * 169))
 ); first by  rewrite inzmodM; ring. 
 
-cut ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 *
+have ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 *
 (_zetas.[to_uint i{hr} %/ 4 + 64] * inzmod R) * inzmod 169 = 
 inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 *
 _zetas.[to_uint i{hr} %/4 + 64] * (inzmod R * inzmod 169).
 smt(@ZModField).
-cut ->: inzmod R * inzmod 169 = inzmod 1.
-cut ->: inzmod R * inzmod 169 = inzmod (R * 169).
+have ->: inzmod R * inzmod 169 = inzmod 1.
+have ->: inzmod R * inzmod 169 = inzmod (R * 169).
 smt(@ZModField).
 have ?: zmodcgr (R * 169) 1.
 smt(RRinv).
 rewrite -eq_inzmod.
 done.
-cut ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[ to_uint i{hr}  %/4 + 64] *
+have ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[ to_uint i{hr}  %/4 + 64] *
 inzmod 1 = inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[to_uint i{hr} %/4 + 64].
 smt(@ZModField).
-cut ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[to_uint i{hr} %/ 4 + 64] = inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * (inzmod 169 * _zetas.[to_uint i{hr} %/ 4 + 64]).
+have ->: inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * inzmod 169 * _zetas.[to_uint i{hr} %/ 4 + 64] = inzmod (to_sint ap{hr}.[to_uint i{hr} + 1]) * inzmod (to_sint bp{hr}.[to_uint i{hr} + 1]) * (inzmod 169 * _zetas.[to_uint i{hr} %/ 4 + 64]).
 smt(@ZModField).
 smt(@ZModField).
 
@@ -3390,7 +3390,7 @@ wp; skip => /> *; do split; first by smt().
   have ?: forall (k : int), 0 <= k && k < 256 => 
                             rp0.[k] = r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8 by smt().
   move : H; rewrite /pos_bound256_b.
-  cut ->: (forall (k0 : int), 0 <= k0 && k0 < 256 => bpos16 r{hr}.[k0] 16) =
+  have ->: (forall (k0 : int), 0 <= k0 && k0 < 256 => bpos16 r{hr}.[k0] 16) =
           (forall (k0 : int), 0 <= k0 && k0 < 256 => 0 <= to_sint r{hr}.[k0] < 16) by done.
   move => *; split.
     + rewrite /lift_array256 tP => k *.
@@ -3398,7 +3398,7 @@ wp; skip => /> *; do split; first by smt().
         by move : (H k); rewrite H5 /= /#.
       rewrite -eq_inzmod H4 //.
       rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      cut ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
+      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
         rewrite shr_div_le // /=.
         have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
           by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
@@ -3410,7 +3410,7 @@ wp; skip => /> *; do split; first by smt().
     + rewrite /signed_bound_cxq => k *.
       rewrite b16E; split; rewrite H4 //.
       rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      cut ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
+      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
         rewrite shr_div_le // /=.
         have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
           by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
@@ -3419,7 +3419,7 @@ wp; skip => /> *; do split; first by smt().
       by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
       move => ?.
       rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      cut ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
+      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
         rewrite shr_div_le // /=.
         have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
           by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).

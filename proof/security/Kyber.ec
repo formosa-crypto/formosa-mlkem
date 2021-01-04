@@ -254,7 +254,7 @@ proof.
   rewrite (dmap1E_can _ _ (Array256.to_list) _); first by by rewrite Array256.to_listK.
     by move => a; rewrite supp_dlist // => /> *; rewrite of_listK.
   rewrite dlist1E //.
-  cut ->: 256 = size (to_list p) by rewrite size_to_list.
+  have ->: 256 = size (to_list p) by rewrite size_to_list.
   rewrite /StdBigop.Bigreal.BRM.big filter_predT /=.
   elim (to_list p) => /=; first by rewrite expr0 1:/#.
   move => x l hind /=.
@@ -275,7 +275,7 @@ proof.
     congr.
     by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);
       first by rewrite !size_range.
-cut -> : 
+have -> : 
   (fun (x : int) (z : real) => mu1 Poly.duni_R (Matrix_.Vector."_.[_]" m x) * z)  = 
    (fun (x : int) (z : real) =>  (inv q%r ^ 256 * z)).
     rewrite fun_ext /(==) => x. 
@@ -289,7 +289,7 @@ realize H_MLWE.duni_matrixE.
 proof.
   rewrite /H_MLWE.duni_matrix => m.
   rewrite Matrix_.Matrix.dmatrix1E /StdBigop.Bigreal.BRM.big /StdBigop.Bigreal.BRM.big filter_predT !foldr_map /=.
-  cut ->: (fun (x : int) (z : real) => foldr Real.( * ) 1%r 
+  have ->: (fun (x : int) (z : real) => foldr Real.( * ) 1%r 
             (map (fun (j : int) => mu1 Poly.duni_R (Matrix_.Matrix."_.[_]" m (x, j))) (range 0 kvec)) * z) =
           (fun (x : int) => Real.( * ) (foldr (fun (x0 : int) (z : real) => (1%r / q%r)^256 * z) 
             1%r (range 0 kvec))).
@@ -308,9 +308,9 @@ proof.
     congr.
     by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);
       first by rewrite !size_range.
-  cut ->: (foldr (fun (_ : int) (z : real) => inv q%r ^ 256 * z) 1%r (range 0 kvec)) = inv q%r ^ 256 ^ kvec
+  have ->: (foldr (fun (_ : int) (z : real) => inv q%r ^ 256 * z) 1%r (range 0 kvec)) = inv q%r ^ 256 ^ kvec
     by rewrite aux; first by smt(kvec_ge3).
-  cut ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
+  have ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
             foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
   rewrite aux; first by smt(kvec_ge3). 
   by rewrite  exprM expr0 /=.

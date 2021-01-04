@@ -57,7 +57,7 @@ op R = 2^k.
 lemma dvd4R : 4 %| R.
 proof.
 rewrite /R (_ : k = (k - 2) + 2) //=.
-cut -> : (4 = 2^2); smt(expr2 dvdz_exp2l gt2_k). 
+have -> : (4 = 2^2); smt(expr2 dvdz_exp2l gt2_k). 
 qed.
 
 hint exact : dvd4R.
