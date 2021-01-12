@@ -1,6 +1,7 @@
 
 require import AllCore List IntDiv CoreMap.
 from Jasmin require import JModel.
+pragma +oldip.
 
 require import Fq.
 require import KyberPoly.

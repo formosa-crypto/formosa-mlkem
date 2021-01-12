@@ -6,6 +6,7 @@ require import NTT_Fq.
 require import KyberPoly.
 require import KyberPolyVec.
 require import Fq.
+pragma +oldip.
 
 import Fq.
 import Kyber_.

@@ -1,6 +1,8 @@
 require import AllCore Array128 Array256 Array768 IntDiv Distr List DList.
 require import ZModP.
 require import MLWE_PKE.
+pragma +oldip.
+
 import RField.
 
 theory Kyber.
@@ -270,7 +272,7 @@ proof.
               (foldr (fun (_ : int) (z : real) => x * z) 1%r (range 0 y)) = x ^ y.
     move => x y; elim y.
     by rewrite range_geq //= ; rewrite expr0 /#.
-    move => j *; rewrite range_ltn 1:/# /= exprS // -H0.
+    move => j ? H0; rewrite range_ltn 1:/# /= exprS // -H0.
     have mulrC : forall (x y : real), x * y = y * x by smt(). (* how to use lemma?? *)
     congr.
     by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);

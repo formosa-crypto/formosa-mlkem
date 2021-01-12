@@ -4,6 +4,7 @@ from Jasmin require  import JModel JWord.
 require import Montgomery.
 require import W16extra.
 require import Array32.
+pragma +oldip.
 
 theory Fq.
 

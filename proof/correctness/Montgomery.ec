@@ -1,5 +1,6 @@
 require import AllCore IntDiv Ring StdOrder.
 import Ring.IntID IntOrder.
+pragma +oldip.
 
 (***** TO MOVE *****)
 

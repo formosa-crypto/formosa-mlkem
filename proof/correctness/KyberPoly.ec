@@ -3,6 +3,7 @@ from Jasmin require  import JModel JMemory.
 require import W16extra Array256 Array128.
 require import Fq.
 require import NTT_Fq.
+pragma +oldip.
 
 hint simplify range_ltn, range_geq.
 

@@ -31,3 +31,6 @@ check:
 
 check-xunit:
 	$(ECCHECK) --jobs=$(ECJOBS) --bin-args="$(ECARGS)" --report=$(XUNITOUT) $(ECCONF) $(CHECKS)
+
+clean_eco:
+	find proof -name '*.eco' -exec rm '{}' ';'

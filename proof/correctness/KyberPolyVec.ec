@@ -5,6 +5,8 @@ require import Fq.
 require import KyberPoly.
 require import NTT_Fq.
 
+pragma -oldip.
+
 theory KyberPolyVec.
 
 import KyberPoly.
@@ -51,7 +53,7 @@ op pos_bound768_b (coefs : W16.t Array768.t) (l u b : int) : bool =
 lemma lift_array768_inzmod (a : W16.t t) k :
   0 <= k < 768 =>
   inzmod (to_sint a.[k]) = (lift_array768 a).[k].
-proof. by move => ?; rewrite /lift_array768 mapE /= initE H. qed.
+proof. by move => H; rewrite /lift_array768 mapE /= initE H. qed.
 
 lemma signed_bound768_signed_bound (a : W16.t t) (b : W16.t Array256.t) n i (sa sb : int) x :
   0 <= n <= sa - sb => 0 <= i <= 256 =>
@@ -59,15 +61,14 @@ lemma signed_bound768_signed_bound (a : W16.t t) (b : W16.t Array256.t) n i (sa 
   (forall k, 0 <= k < sb => b.[k] = a.[k+n]) =>
   signed_bound_cxq b i sb x.
 proof.
-  rewrite /signed_bound768_cxq /signed_bound_cxq => *.
+  rewrite /signed_bound768_cxq /signed_bound_cxq => 2? H1 H2 *.
   by rewrite H2 1:/# H1 1:/#.
 qed.
-
 
 lemma lift_array256_inzmod (a : W16.t Array256.t) k :
   0 <= k < 256 =>
   inzmod (to_sint a.[k]) = (lift_array256 a).[k].
-proof. by move => ?; rewrite /lift_array256 mapE /= initE H. qed.
+proof. by move => H; rewrite /lift_array256 mapE /= initE H. qed.
 
 lemma signed_bound256_signed_bound (a : W16.t t) (b c d : W16.t Array256.t) x :
   signed_bound_cxq b 0 256 x =>
@@ -78,7 +79,7 @@ lemma signed_bound256_signed_bound (a : W16.t t) (b c d : W16.t Array256.t) x :
   (forall k, 512 <= k < 768 => a.[k] = d.[k-512]) =>
   signed_bound768_cxq a 0 768 x.
 proof.
-  rewrite /signed_bound768_cxq /signed_bound_cxq => *.
+  rewrite /signed_bound768_cxq /signed_bound_cxq => H H0 H1 H2 H3 H4 k *.
   case (k < 256) => hb.
     by rewrite H2 1:/# H 1:/#.
   case (k < 512) => hc.
@@ -95,8 +96,8 @@ lemma pos_bound256_pos_bound768 (a : W16.t t) (b c d : W16.t Array256.t) x :
   (forall k, 512 <= k < 768 => a.[k] = d.[k-512]) =>
   pos_bound768_cxq a 0 768 x.
 proof.
-  rewrite /pos_bound768_cxq /pos_bound256_cxq => *.
-  case (k < 256) => hb.
+  rewrite /pos_bound768_cxq /pos_bound256_cxq => H H0 H1 H2 H3 H4 k *.
+  case (k < 256) => hb. 
     by rewrite H2 1:/# H 1:/#.
   case (k < 512) => hc.
     by rewrite H3 1:/# H0 1:/#.
@@ -109,7 +110,7 @@ lemma pos_bound768_pos_bound (a : W16.t t) (b : W16.t Array256.t) i n (sa sb : i
   (forall k, 0 <= k < sb => b.[k] = a.[k+n]) =>
   pos_bound256_cxq b i sb x.
 proof.
-  rewrite /pos_bound768_cxq /pos_bound256_cxq => *.
+  rewrite /pos_bound768_cxq /pos_bound256_cxq => H H0 H1 H2 k *.
   by rewrite H2 1:/# H1 1:/#.
 qed.
 
@@ -120,8 +121,8 @@ lemma lift_array256_sub_768 a (b : W16.t Array256.t) x n :
   (forall (k : int), 0 <= k < 256 => b.[k] = a.[k+n]) =>
   lift_array256 b = Array256.of_list witness (sub x n 256).
 proof.
-  rewrite /lift_array768 => *.
-  rewrite /lift_array256 tP => j ?.
+  rewrite /lift_array768 => H H0 H1 H2.
+  rewrite /lift_array256 tP => j H3.
   rewrite mapE /of_list !initE H3 /=.
   by rewrite H1 // nth_sub // addzC.
 qed.
@@ -131,22 +132,16 @@ lemma inzmod_lift_array256 (x : W16.t t) y n :
   (forall (k : int), 0 <= k < 256 => inzmod (to_sint x.[k+n]) = (lift_array256 y).[k]) =>
   lift_array256 y = Array256.of_list witness (sub (lift_array768 x) n 256).
 proof.
-  move => *; rewrite tP => j ?.
+  move => H H0; rewrite tP => j H1.
   rewrite -H0 //.
-  rewrite /of_list initE H1 /= nth_sub // /lift_array768 mapiE //.
-  have ->: 0 <= n + j < 768 by smt() => //.
-  by done.
-  by simplify => /#.
+  rewrite /of_list initE H1 /= nth_sub // /lift_array768 mapiE // /#. 
 qed.
 
 lemma pos_bound256_signed_boundD (r : W16.t Array256.t) x :
   pos_bound256_cxq r 0 256 x =>
   signed_bound_cxq r 0 256 x.
 proof.
-  rewrite /pos_bound256_cxq /signed_bound_cxq.
-  have ->: (forall (k : int), 0 <= k < 256 => bpos16 r.[k] (x * q)) =
-          (forall (k : int), 0 <= k < 256 => 0 <= to_sint r.[k] < (x * q)) by done.
-  by move => *; rewrite b16E /#.
+  rewrite /pos_bound256_cxq /signed_bound_cxq; smt (b16E).
 qed.
 
 lemma lift_array768E (x : W16.t t) k :
@@ -163,17 +158,16 @@ lemma lift_array768_eq (x y : W16.t t) :
     inzmod (to_sint x.[k+512]) = (Array256.of_list witness (sub (lift_array768 y) 512 256)).[k]) =>
   lift_array768 x = lift_array768 y.
 proof.
-  move => *; rewrite tP => k *.
+  move => H H0 H1; rewrite tP => k H2.
   rewrite lift_array768E //.
-  case (k < 256) => ?.
+  case (k < 256) => H3.
     by rewrite H 1:/# get_of_list 1:/# nth_sub 1:/#.
-  case (k < 512) => ?.
+  case (k < 512) => H4.
     move : (H0 (k-256)).
     have ->: 0 <= k - 256 < 256 by smt().
-    by simplify => *; rewrite H5 /= get_of_list 1:/# nth_sub 1,2:/#.
+    by move=> /= ->; rewrite /= get_of_list 1:/# nth_sub 1,2:/#.
   move : (H1 (k-512)).
-  have ->: 0 <= k - 512 < 256 by smt().
-  simplify => *.
+  have -> /= H5: 0 <= k - 512 < 256 by smt().
   by rewrite H5 get_of_list 1:/# nth_sub 1,2:/#.
 qed.
 
@@ -181,36 +175,30 @@ lemma lift_array768P (x y : W16.t t) :
   lift_array768 x = lift_array768 y <=>
   (forall k, 0 <= k < 768 => inzmod (to_sint x.[k]) = inzmod (to_sint y.[k])).
 proof. 
-  split; first by rewrite tP => *; rewrite -!lift_array768E // H //. 
-  by rewrite tP => *; rewrite !lift_array768E // H //. 
+  split; first by rewrite tP => H *; rewrite -!lift_array768E // H //. 
+  by rewrite tP => H *; rewrite !lift_array768E // H //. 
 qed.
 
 lemma pos_bound768_signed_bound768 a i j x :
   pos_bound768_cxq a i j x => signed_bound768_cxq a i j x.
 proof.
-  rewrite /pos_bound768_cxq /signed_bound768_cxq.
-  have ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
-          (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < (x * q)) by done.
-  by move => *; rewrite b16E /#.
+  rewrite /pos_bound768_cxq /signed_bound768_cxq; smt(b16E).
 qed.
 
 lemma pos_bound256_cxqD a i j x :
   1 < x => pos_bound256_cxq a i j (x-1) => pos_bound256_cxq a i j x.
 proof.
-  move => ?; rewrite /pos_bound256_cxq. 
+  move => H; rewrite /pos_bound256_cxq. 
   have ->: (forall (k : int), i <= k < j => bpos16 a.[k] ((x - 1) * q)) =
           (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < ((x - 1) * q)) by done.
-  move => *; rewrite bpos16E.
+  move => H0 k H1; rewrite bpos16E.
   move : (H0 k); rewrite H1 qE /= => /> *; smt(@W16). 
 qed.
 
 lemma pos_bound256_signed_bound a i j x :
   pos_bound256_cxq a i j x => signed_bound_cxq a i j x.
 proof.
-  rewrite /pos_bound256_cxq /signed_bound_cxq.
-  have ->: (forall (k : int), i <= k < j => bpos16 a.[k] (x * q)) = 
-          (forall (k : int), i <= k < j => 0 <= to_sint a.[k] < (x * q)) by done.
-  by move => *; rewrite b16E /#.
+  rewrite /pos_bound256_cxq /signed_bound_cxq; smt (b16E).
 qed.
 
 lemma pos_bound256_cxqP a i j x :
@@ -266,7 +254,7 @@ proof.
                 (forall i, 0 <= i < 256 => r1.[i] = pv.[i + 256]) /\ 
                 (forall k, 0 <= k < to_uint i => r2.[k] = pv.[k + 512]) /\ 
                 0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 512).
-    wp; skip => /> *; split => *.
+    wp; skip => /> &hr H H0 H1 H2 H3 H4 H5; split => [k H6 H7| ]. 
       rewrite get_setE.
         by move : H5; rewrite ultE of_uintK pmod_small //. 
         case (k = to_uint i{hr}) => ?; first by smt().
@@ -278,7 +266,7 @@ proof.
   wp; while ((forall i, 0 <= i < 256 => r0.[i] = pv.[i]) /\ 
               (forall k, 0 <= k < to_uint i => r1.[k] = pv.[k + 256]) /\ 
               0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 256).
-    wp; skip => /> *; split => *.
+    wp; skip => /> &hr H H0 H1 H2 H3 H4; split => [k H5 H6 | ].
       rewrite get_setE.
         by move : H4; rewrite ultE of_uintK pmod_small //. 
         case (k = to_uint i{hr}) => ?; first by smt().
@@ -289,7 +277,7 @@ proof.
         by rewrite !to_uintD_small 1,2:/# /#.
   wp; while ((forall k, 0 <= k < to_uint i => r0.[k] = pv.[k]) /\
               0 <= to_uint i <= 256).
-    wp; skip => /> *; split => *.
+    wp; skip => /> &hr H H0 H1 H2; split => [k H3 H4 | ]. 
       rewrite get_setE.
         by move : H2; rewrite ultE of_uintK pmod_small //. 
         case (k = to_uint i{hr}) => ?; first by smt().
@@ -297,27 +285,21 @@ proof.
     split.
       by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
       by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-  wp; skip => /> => *; split; first by smt().
-  move => *; split; first split.
-    by move => *; rewrite H1; move : H0; rewrite ultE of_uintK pmod_small // /#.
-    by smt().
-  move => *; split; first split.
-    by move => *; rewrite H6; move : H4; rewrite ultE of_uintK pmod_small // /#.
-    by smt().
-  move => *. 
-  have ?: to_uint i2 = 256 by move : H10; rewrite ultE of_uintK pmod_small // /#.
-  do split.
-    by rewrite (signed_bound768_signed_bound pv{hr} _ 0 _ 768 _ _).
-    by rewrite (signed_bound768_signed_bound pv{hr} _ 256 _ 768 _ _).
-    by rewrite (signed_bound768_signed_bound pv{hr} _ 512 _ 768 _ _) // /#.
-    by move => *; rewrite H12 // /#.
-    by move => *; rewrite H5 // lift_array768_inzmod 1:/#.
-    by move => *; rewrite H11 // lift_array768_inzmod 1:/# addzC.
-    by move => *; rewrite H12 1:/# lift_array768_inzmod 1:/# addzC.
+  wp; skip => /> => &hr *; split; first by smt().
+  move => i0 rr0; rewrite W64.ultE /= => ? + ??.
+  have -> ? : to_uint i0 = 256 by smt().
+  split; first smt().
+  move => i1 j0 r10; rewrite W64.ultE /= => ? + + ???.
+  have -> * : to_uint i1 = 256 by smt().
+  split; 1: smt().
+  move=> i2 j1 r20; rewrite W64.ultE /= => ? + + ???.
+  have -> * : to_uint i2 = 256 by smt().
+  smt (lift_array768_inzmod signed_bound768_signed_bound).
 qed.
 
 lemma polyvec_topolys_ll  :
       islossless Mderand.polyvec_topolys.
+proof.
 admitted.
 
 lemma polyvec_topolys_corr ap ab pv' :
@@ -365,54 +347,21 @@ proof.
                 (forall k, 0 <= k < 256 => r.[k+256] = p1.[k]) /\ 
                 (forall k, 0 <= k < to_uint i => r.[k+512] = p2.[k]) /\ 
                 0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 512).
-    wp; skip => /> *; do split.
-      move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
-      have ->: k = to_uint j{hr} <=> false by smt().
-      by rewrite H //.
-      move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
-      have ->: k + 256 = to_uint j{hr} <=> false by smt().
-      by rewrite H0 //.
-      move => *; rewrite get_setE; first by move : H5; rewrite ultE of_uintK pmod_small // /#. 
-      case (k + 512 = to_uint j{hr}) => ?; first by smt().
-        by rewrite H1; move : H7; rewrite to_uintD_small 1,2:/#.
-      by move : H5; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-      by move : H5; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-      by rewrite !to_uintD_small 1,2:/# /#.
+    wp; skip => /> &hr; rewrite W64.ultE /= => *. 
+    rewrite !to_uintD_small /= 1,2:/#;smt(get_setE).
   wp; while ((forall k, 0 <= k < 256 => r.[k] = p0.[k]) /\ 
                 (forall k, 0 <= k < to_uint i => r.[k+256] = p1.[k]) /\ 
                 0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 256).
-    wp; skip => /> *; do split.
-      move => *; rewrite get_setE; first by move : H4; rewrite ultE of_uintK pmod_small // /#. 
-      have ->: k = to_uint j{hr} <=> false by smt().
-      by rewrite H //.
-      move => *; rewrite get_setE; first by move : H4; rewrite ultE of_uintK pmod_small // /#. 
-      case (k + 256 = to_uint j{hr}) => ?; first by smt().
-        by rewrite H0; move : H6; rewrite to_uintD_small 1,2:/#.
-      by move : H4; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-      by move : H4; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-      by rewrite !to_uintD_small 1,2:/# /#.
+    wp; skip => /> &hr; rewrite W64.ultE /= => *.
+    rewrite !to_uintD_small /= 1,2:/#; smt(get_setE).
   wp; while ((forall k, 0 <= k < to_uint i => r.[k] = p0.[k]) /\ 0 <= to_uint i <= 256).
-    wp; skip => /> *; do split.
-      move => *; rewrite get_setE; first by move : H2; rewrite ultE of_uintK pmod_small // /#. 
-      case (k = to_uint i{hr}) => ?; first by smt().
-        by rewrite H; move : H4; rewrite to_uintD_small 1,2:/#.
-      by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-      by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+    wp; skip => /> &hr; rewrite W64.ultE /= => *.
+    rewrite to_uintD_small 1:/#; smt(get_setE).
   wp; skip => /> *; split; first by smt().
-    move => *; do split.
-      by move => *; rewrite H3; move : H2; rewrite ultE of_uintK pmod_small // /#.
-      by smt().
-    move => *; do split.
-      by move => *; rewrite H8; move : H6; rewrite ultE of_uintK pmod_small // /#.
-      by smt().
-    move => *.
-    have ?: to_uint i2 = 256 by move : H12; rewrite ultE of_uintK pmod_small // /#.
-    do split.
-      by rewrite (signed_bound256_signed_bound r2 p0{hr} p1{hr} p2{hr} ab) // /#.
-      smt(@Array256 @Array768).
-      by move => *; rewrite H13 // lift_array256_inzmod 1:/#.
-      by move => *; rewrite H14 // lift_array256_inzmod 1:/#.
-      by move => *; rewrite H15 1:/# lift_array256_inzmod 1:/#.
+  move=> 2?;rewrite ultE /= => *. 
+  split; 1: smt().
+  move=> 3?; rewrite ultE /= => *; split; 1:smt().
+  move=> 3?; rewrite ultE /=; smt (signed_bound256_signed_bound lift_array256_inzmod).
 qed.
 
 
@@ -467,8 +416,8 @@ proof.
           lift_array256 r1 = Array256.of_list witness (sub ap 256 256) /\
           lift_array256 r2 = Array256.of_list witness (sub ap 512 256)).
     call (polyvec_topolys_corr_h ap 2 r').
-      skip => /> *; split; first by apply pos_bound768_signed_bound768.
-      move => *; do split.
+      skip => /> &hr *; split; first by apply pos_bound768_signed_bound768.
+      move => ? result *; do split.
         by rewrite (pos_bound768_pos_bound r{hr} result.`1 0 0 768 256 2) //.
         by rewrite (pos_bound768_pos_bound r{hr} result.`2 0 256 768 256 2) //. 
         by rewrite (pos_bound768_pos_bound r{hr} result.`3 0 512 768 256 2) //. 
@@ -477,28 +426,25 @@ proof.
         by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 512) // /#.
   seq 1 : (#[/1:4,5:7,8:]pre /\  pos_bound256_cxq r0 0 256 1).
     exists* r0; elim* => r0'; call (poly_csubq_corr_h (Array256.of_list witness (sub ap 0 256))).
-    skip => /> *; split; first by rewrite H9 //.
-    by move => ? *; rewrite H12;smt(@Array256).   
+    skip => /> *; smt(@Array256).  
   seq 1 : (#[/1:4,5:7,8:]pre /\  pos_bound256_cxq r1 0 256 1).
     exists* r0; elim* => r0'; call (poly_csubq_corr_h (Array256.of_list witness (sub ap 256 256))).
-    skip => /> *; split; first by rewrite H8 //.
-    move => ? *; rewrite H12; smt(@Array256).  
+    skip => /> *;smt(@Array256).   
   seq 1 : (#[/1:4,5:7,8:]pre /\  pos_bound256_cxq r2 0 256 1).
     exists* r0; elim* => r0'; call (poly_csubq_corr_h (Array256.of_list witness (sub ap 512 256))).
-    skip => /> *; split; first by rewrite H7 //.
-    move => ? *; rewrite H11; smt(@Array256).  
+    skip => /> *; smt(@Array256).
   ecall (polyvec_frompolys_corr_h r0 r1 r2
                                (Array256.of_list witness (sub ap 0 256)) 
                                (Array256.of_list witness (sub ap 256 256)) 
                                (Array256.of_list witness (sub ap 512 256)) 1).
-  skip => /> *; do split. 
+  skip => /> &hr H H0 H1 H2 H3 H4 H5 H6 H7 H8; do split. 
      by rewrite H3.
      by move : H6; rewrite /pos_bound256_cxq /signed_bound_cxq  => />; smt(@Array256).
      by rewrite H4.
      by move : H7; rewrite /pos_bound256_cxq /signed_bound_cxq  => />; smt(@Array256).
      by rewrite H5.
      by move : H8; rewrite /pos_bound256_cxq /signed_bound_cxq  => />; smt(@Array256).
-  move => *; rewrite -(lift_array768_eq result r{hr}) //.  
+  move => 6? result *; rewrite -(lift_array768_eq result r{hr}) //.  
   split; first by done.
   move : H6 H7 H8; rewrite /lift_array256 /lift_array768 /pos_bound768_cxq /signed_bound768_cxq /pos_bound256_cxq /signed_bound256_cxq qE=> /> *.
  smt(@Array768).
@@ -508,14 +454,15 @@ lemma formula_polyvec x :
   0 <= x < 3329 =>
   (x * 1024 + 1665) * (4294967296 %/ 3329) %% 18446744073709551616 %/ 4294967296 %% 1024 =
   (x * 1024 + 1664) %/ 3329 %% 1024.
-proof.  
-have ? :  
+proof.
+move=> /mem_range.
+have :  
    (all
      (fun x => (x * 1024 + 1665) * (4294967296 %/ 3329) %% 18446744073709551616 %/ 4294967296 %% 1024 =
 (x * 1024 + 1664) %/ 3329 %% 1024)
      (range 0 3329)).
-by [] => />.
-smt tmo=30. (* This should be very easy to prove. It should be discarded by smt() but it does not and takes forever to use allP *)
+by move=> />.
+by rewrite allP => H /H /={H}.
 qed.
 
 lemma roundcimpl64 (a : W16.t) :
@@ -607,183 +554,18 @@ while (#pre /\ 0 <= to_uint i <= 768 + 3 /\ to_uint i %% 4 = 0 /\
       unroll 2; unroll 3; unroll 4; unroll 5.
       (rcondt 2; first by wp; skip); (rcondt 10; first by wp; skip); (rcondt 18; first by wp; skip);
         (rcondt 26; first by wp; skip); (rcondf 34; first by wp; skip).
-      wp; skip => /> *.
-        split. split.
-          + by rewrite to_uintD_small 1,2:/#.
-          + by rewrite to_uintD_small // 1:/#; move : H7; rewrite ultE of_uintK pmod_small // /#. 
-        split.
-          + by rewrite !to_uintD_small 1,2:/#.
-      split; move => k ?.
-        + rewrite !to_uintD_small 1..4:/#.
-        + rewrite !of_uintK !pmod_small 1..4:/# /=.
-        move => *.
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 3) => ?. 
-rewrite roundcimpl64.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-rewrite H10 H3.
-rewrite lift_array768E.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-done.
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 2) => ?. 
-rewrite roundcimpl64.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-rewrite H11 H3.
-rewrite lift_array768E.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-done.
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 1) => ?. 
-rewrite roundcimpl64.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-rewrite H12 H3.
-rewrite lift_array768E.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-done.
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr}) => ?. 
-rewrite roundcimpl64.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-rewrite H13 H3.
-rewrite lift_array768E.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-done.
-
-rewrite H5.
-smt().
-done.
-
-        + rewrite !to_uintD_small 1..4:/#.
-        + rewrite !of_uintK !pmod_small 1..4:/# /=.
-        move => *.
-split.
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 3) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 3])).
-have ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 2) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 2])).
-have ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 1) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 1])).
-have ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr}) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr}])).
-have ->: bpos16 aa{hr}.[to_uint i{hr}] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-smt().
-
-move => ?.
-clear H10.
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 3) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 3])).
-have ->: bpos16 aa{hr}.[to_uint i{hr} + 3] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 2) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 2])).
-have ->: bpos16 aa{hr}.[to_uint i{hr} + 2] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr} + 1) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr} + 1])).
-have ->: bpos16 aa{hr}.[to_uint i{hr} + 1] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-rewrite get_setE; first by move : H7; rewrite ultE of_uintK pmod_small // /#. 
-case (k = to_uint i{hr}) => ?.
-move : (roundcimpl_rng (aa{hr}.[to_uint i{hr}])).
-have ->: bpos16 aa{hr}.[to_uint i{hr}] q.
-move : H4.
-rewrite /pos_bound768_cxq /= => *.
-rewrite H4.
-move : H7; rewrite ultE of_uintK pmod_small // /#. 
-simplify.
-smt().
-
-smt().
-
+      wp; skip => /> &hr H H0 H1 H2 H3 H4 H5 H6; rewrite ultE /= => ?.
+      rewrite !to_uintD_small /= 1..4:/#; split; 1:smt().
+      split; 1:smt().
+      split; move => k *; 1: smt (get_setE lift_array768E  roundcimpl64).
+      rewrite /pos_bound768_cxq /= in H4.
+      move: (roundcimpl_rng (aa{hr}.[k])).
+      have ->: bpos16 aa{hr}.[k] q by smt().
+      smt (get_setE).
 call (polyvec_csubq_corr ap). 
-wp; skip => /> *.
-
-split.
-
-by smt().
-
-move => *.
-split.
-rewrite tP => j *.
-rewrite mapiE //.
-rewrite -H6.
-by move : H2; rewrite ultE; smt().
-smt(@Array768).
-
-by move  : H2; rewrite ultE; smt().
-
+wp; skip => /> *; split; 1: smt().
+move => i0 r0; rewrite ultE /= => *; split; 2: smt().
+rewrite tP => j *; rewrite mapiE //; smt(@Array768).
 qed.
 
 (******************************************************)
@@ -869,51 +651,23 @@ proof.
                 (forall i, 0 <= i < 256 => r1.[i] = pv.[i + 256]) /\ 
                 (forall k, 0 <= k < to_uint i => r2.[k] = pv.[k + 512]) /\ 
                 0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 512).
-    wp; skip => /> *; split => *.
-      rewrite get_setE.
-        by move : H5; rewrite ultE of_uintK pmod_small //. 
-        case (k = to_uint i{hr}) => ?; first by smt().
-          by rewrite H1; move : H7; rewrite to_uintD_small 1,2:/#.
-      split; first split.
-        by move : H5; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-        by move : H5; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-        by rewrite !to_uintD_small 1,2:/# /#.
+    wp; skip => /> &hr; rewrite ultE /= => *; split => [k | ].
+    + rewrite to_uintD_small /= 1:/# => *; smt(Array256.get_setE).
+    rewrite !to_uintD_small /=; smt().
   wp; while ((forall i, 0 <= i < 256 => r0.[i] = pv.[i]) /\ 
               (forall k, 0 <= k < to_uint i => r1.[k] = pv.[k + 256]) /\ 
               0 <= to_uint i <= 256 /\ to_uint j - to_uint i = 256).
-    wp; skip => /> *; split => *.
-      rewrite get_setE.
-        by move : H4; rewrite ultE of_uintK pmod_small //. 
-        case (k = to_uint i{hr}) => ?; first by smt().
-          by rewrite H0; move : H6; rewrite to_uintD_small 1,2:/#.
-      split; first split.
-        by move : H4; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-        by move : H4; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-        by rewrite !to_uintD_small 1,2:/# /#.
+    wp; skip => /> &hr; rewrite ultE /= => *. 
+    rewrite !to_uintD_small /= 1,2:/#; smt(Array256.get_setE).
   wp; while ((forall k, 0 <= k < to_uint i => r0.[k] = pv.[k]) /\
               0 <= to_uint i <= 256).
-    wp; skip => /> *; split => *.
-      rewrite get_setE.
-        by move : H2; rewrite ultE of_uintK pmod_small //. 
-        case (k = to_uint i{hr}) => ?; first by smt().
-          by rewrite H; move : H4; rewrite to_uintD_small 1,2:/#.
-    split.
-      by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
-      by move : H2; rewrite ultE of_uintK pmod_small //; rewrite to_uintD_small 1,2:/#.
+    wp; skip => /> &hr; rewrite ultE /= => *. 
+    rewrite !to_uintD_small /= 1:/#; smt(Array256.get_setE).
   wp; skip => /> => *; split; first by smt().
-  move => *; do split.    
-    by move => *; rewrite H0; move : H; rewrite ultE of_uintK pmod_small // /#.
-    by smt().
-  move => *; do split.
-    by move => *; rewrite H5; move : H3; rewrite ultE of_uintK pmod_small // /#.
-    by smt().
-  move => *. 
-  have ?: to_uint i2 = 256 by move : H9; rewrite ultE of_uintK pmod_small // /#.
-  do split.
-    by move => *; rewrite H11 // /#.
-    by move => *; rewrite H4 // lift_array768_inzmod 1:/#.
-    by move => *; rewrite H10 // lift_array768_inzmod 1:/# addzC.
-    by move => *; rewrite H11 1:/# lift_array768_inzmod 1:/# addzC.
+  move=> ??; rewrite ultE /= => *.
+  split;1 :smt().
+  move=> 3?; rewrite ultE /= => *; split;1: smt().
+  move=> 3?; rewrite ultE /= => *; smt (lift_array768_inzmod).
 qed.
 
 lemma polyvec_reduce_corr _a :
@@ -923,93 +677,18 @@ lemma polyvec_reduce_corr _a :
           forall k, 0 <= k < 768 => bpos16 res.[k] (2*Kyber_.q)].
 proof.
 proc.
-seq 3 : (#pre).
-by wp; skip.
-
-seq 1 : (#pre /\ (forall k, 0 <= k < 256 => r0.[k] = r.[k]) /\
-        (forall k, 0 <= k < 256 => r1.[k] = r.[k+256]) /\ (forall k, 0 <= k < 256 => r2.[k] = r.[k+512]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = _a.[k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r1.[k]) = _a.[256+k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r2.[k]) = _a.[512+k])).
-exists* r; elim* => r'.
-call (polyvec_topolys_corr_aux _a r').
-skip => /> *.
-
-seq 1 : (#[/1,3:]pre /\ (forall k, 0 <= k < 256 => bpos16  r0.[k] (2*Kyber_.q))).
-exists* r0; elim* => r0'.
-call (poly_reduce_corr_h (lift_array256 r0')).
-skip => /> *.
-move : H5.
-rewrite tP.
-have ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r0{hr}).[i] = (lift_array256 result).[i]) = 
-        (forall (i : int), 0 <= i < 256 => inzmod (to_sint r0{hr}.[i]) = inzmod (to_sint result.[i])).
-smt(lift_array256_inzmod).
-move => ?.
-by rewrite -H5 // H2.
-
-seq 1 : (#[/1,3:]pre /\ (forall k, 0 <= k < 256 => bpos16  r1.[k] (2*Kyber_.q))).
-exists* r1; elim* => r1'.
-call (poly_reduce_corr_h (lift_array256 r1')).
-skip => /> *.
-move : H5.
-rewrite tP.
-have ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r1{hr}).[i] = (lift_array256 result).[i]) = 
-        (forall (i : int), 0 <= i < 256 => inzmod (to_sint r1{hr}.[i]) = inzmod (to_sint result.[i])).
-smt(lift_array256_inzmod).
-move => ?.
-by rewrite -H5 // H2.
-
-seq 1 : (#[/1,3:]pre /\ (forall k, 0 <= k < 256 => bpos16  r2.[k] (2*Kyber_.q))).
-exists* r2; elim* => r2'.
-call (poly_reduce_corr_h (lift_array256 r2')).
-skip => /> *.
-move : H5.
-rewrite tP.
-have ->: (forall (i : int), 0 <= i < 256 => (lift_array256 r2{hr}).[i] = (lift_array256 result).[i]) = 
-        (forall (i : int), 0 <= i < 256 => inzmod (to_sint r2{hr}.[i]) = inzmod (to_sint result.[i])).
-smt(lift_array256_inzmod).
-move => ?.
-by rewrite -H5 // H2.
-
 ecall (polyvec_frompolys_corr_h r0 r1 r2 (lift_array256 r0) (lift_array256 r1) (lift_array256 r2) 2).
-skip => /> *; do split.
-rewrite /signed_bound_cxq => *.
-rewrite b16E => /#.
-rewrite /signed_bound_cxq => *.
-rewrite b16E => /#.
-rewrite /signed_bound_cxq => *.
-rewrite b16E => /#.
-move => *.
-split.
-
-rewrite tP => *.
-rewrite -(lift_array768_inzmod result) //.
-case (i < 256) => ?.
-rewrite H12.
-smt().
-rewrite -(lift_array256_inzmod) //.
-smt().
-smt().
-
-case (i < 512) => ?.
-move : (H13 (i-256)) => ?.
-rewrite H18.
-smt().
-rewrite -(lift_array256_inzmod) //.
-smt().
-smt().
-
-move : (H14 (i-512)) => ?.
-rewrite H18.
-smt().
-rewrite -(lift_array256_inzmod) //.
-smt().
-smt().
-
-by smt(). 
+ecall (poly_reduce_corr_h (lift_array256 r2)).
+ecall (poly_reduce_corr_h (lift_array256 r1)).
+ecall (poly_reduce_corr_h (lift_array256 r0)).
+ecall (polyvec_topolys_corr_aux _a r).
+wp; skip => /> &hr *.
+split; 1: by rewrite /signed_bound_cxq; smt (b16E).
+move=> *; split; 2: smt().
+apply tP => *; smt (lift_array768_inzmod lift_array256_inzmod).
 qed.
 
-
+import Array5.
 lemma polyvec_decompress_restore_corr ap :
       hoare[ Mderand.polyvec_decompress_restore :
            ap = lift_array768_32 rp /\
@@ -1022,68 +701,43 @@ proc.
 while (#pre /\ 0 <= to_uint i <= 768 /\ to_uint i %% 4 = 0 /\
        forall k, 0 <= k < to_uint i => r.[k] = truncateu16 (((rp.[k] * W32.of_int 3329) + W32.of_int 512) `>>` 
                                                W8.of_int 10)).
-  unroll 2; unroll 3; unroll 4; unroll 5; unroll 6.
-  rcondt 2; first by wp; skip.
-  rcondt 5; first by wp; skip.
-  rcondt 8; first by wp; skip.
-  rcondt 11; first by wp; skip.
-  rcondt 14; first by wp; skip.
-  rcondf 17; first by wp; skip.
-  unroll 18; unroll 19; unroll 20; unroll 21.
-  rcondt 18; first by wp; skip.
-  rcondt 24; first by wp; skip.
-  rcondt 30; first by wp; skip.
-  rcondt 36; first by wp; skip.
-  rcondf 42; first by wp; skip.
-  wp; skip => /> *; do split.
-    + by rewrite to_uintD_small /= /#.
-    + by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
-    + by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
-    + move => k; rewrite to_uintD_small /= 1:/# => *.
-      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
-      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
-      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= to_uintD_small /= /#.
-      rewrite get_setE; first by move : H4; rewrite ultE of_uintK /= /#.
-      by rewrite !to_uintD_small /= 1..4:/#.
-wp; skip => /> *; do split; first by smt().
-  move => i r; rewrite ultE of_uintK /= => *.
-  move : H; rewrite /pos_bound768_b_32. 
-  have ->: (forall (k0 : int), 0 <= k0 && k0 < 768 => bpos32 rp{hr}.[k0] 1024) <=> 
-          (forall (k0 : int), 0 <= k0 && k0 < 768 => 0 <= to_sint rp{hr}.[k0] < 1024).
-    by split => *; by move : (H k0); rewrite H5 /= bpos32E.
-  move => ?; split.  
-    + rewrite /lift_array768_32 /lift_array768 tP => k *.
-      rewrite mapE initE /= H5 /= mapE initE /= H5 /= mapE initE H5 PolyVec.unroundcE /= inzmodK qE /= modz_small.
-        by move : (H k); rewrite H5 /= /#.
-      rewrite -eq_inzmod H4 // 1:/#.
-      rewrite (W16.to_sintE (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8))) /smod /=.
-      have ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
-        rewrite to_uint_truncateu16 shr_div_le // /=; move : (H k); rewrite H5 /= => /> *.
-        rewrite -to_uint_mod to_uintD of_uintK /= to_uintM of_uintK /=.
-        rewrite (pmod_small (to_uint rp{hr}.[k] * 3329)).
-          by rewrite -to_sint_unsigned32 => /#.
-        by rewrite -to_sint_unsigned32 => /#.
-      rewrite to_uint_truncateu16 shr_div_le // to_uintD of_uintK to_uintM of_uintK mul_mod_add_mod -!divz_mod_mul // qE // /=.
-      rewrite (pmod_small _ 4294967296).
-        by rewrite -to_sint_unsigned32 => /#.
-      rewrite (pmod_small _ 67108864).
-        by rewrite -to_sint_unsigned32 => /#.
-      by rewrite -to_sint_unsigned32 => /#.
-    + rewrite /signed_bound768_cxq => k *.
-      rewrite b16E H4 // 1:/#.
-      rewrite (W16.to_sintE (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8))) /smod /=.
-      have ->: 32768 <= to_uint (truncateu16 (rp{hr}.[k] * (of_int 3329)%W32 + (of_int 512)%W32 `>>` (of_int 10)%W8)) <=> false.
-        rewrite to_uint_truncateu16 shr_div_le // /=; move : (H k); rewrite H5 /= => /> *.
-        rewrite -to_uint_mod to_uintD of_uintK /= to_uintM of_uintK /=.
-        rewrite (pmod_small (to_uint rp{hr}.[k] * 3329)).
-          by rewrite -to_sint_unsigned32 => /#.
-        by rewrite -to_sint_unsigned32 => /#.
-      rewrite to_uint_truncateu16 shr_div_le // to_uintD of_uintK to_uintM of_uintK mul_mod_add_mod -!divz_mod_mul // qE // /=.
-      rewrite (pmod_small _ 4294967296).
-        by rewrite -to_sint_unsigned32 => /#.
-      rewrite (pmod_small _ 67108864).
-        by rewrite -to_sint_unsigned32 => /#.
-      by rewrite -to_sint_unsigned32 => /#.
+ + exlim (to_uint i) => i0.
+   while ((0 <= i0 && i0 < 768) /\ i0 %% 4 = 0 /\ to_uint i = i0 + k /\ 0 <= k <= 4 /\
+          (forall z, k <= z < 5 => t.[z] = rp.[i0 + z]) /\
+          forall k, 0 <= k < to_uint i => r.[k] = 
+               truncateu16 (((rp.[k] * W32.of_int 3329) + W32.of_int 512) `>>` W8.of_int 10)).
+   + auto => /> &hr *.
+     by rewrite to_uintD_small /= 1:/#; smt (Array5.get_setE Array768.get_setE). 
+   wp; while ((0 <= i0 && i0 < 768) /\ i0 %% 4 = 0 /\ to_uint i = i0 /\ 0 <= k <= 5 /\
+           (forall z, 0 <= z < k=> t.[z] = rp.[i0 + z])).
+   + auto => /> &hr; smt (Array5.get_setE).
+   by auto => /> &hr; rewrite ultE /= /#.
+
+wp; skip => /> &hr H; split; 1: smt().
+move=> i0 r0; rewrite ultE /= => 4?.
+have -> hr0 : to_uint i0 = 768 by smt().
+have h : forall k, 0 <= k && k < 768 => 
+  to_sint r0.[k] = ((to_sint rp{hr}.[k] %% 3329 * 3329 + 512) %/ 2 ^ 10).
++ move=> k hk; rewrite hr0 1://.
+  move: (H k hk); rewrite bpos32E => /> *.
+  have heq : to_uint (rp{hr}.[k] * W32.of_int 3329) = to_uint rp{hr}.[k] * 3329.
+  + by rewrite to_uintM_small /=; smt(to_sint_unsigned32).
+  have heq1 : to_uint (rp{hr}.[k] * W32.of_int 3329 + W32.of_int 512) = 
+              to_uint rp{hr}.[k] * 3329 + 512.
+  + rewrite to_uintD_small /=; smt(to_sint_unsigned32).
+  pose X := (W2u16.truncateu16 _).
+  have heq2 : to_uint X = (to_sint rp{hr}.[k] %% 3329 * 3329 + 512) %/ 2 ^ 10.
+  + rewrite to_uint_truncateu16 shr_div_le // /=. 
+    rewrite heq1; smt(to_sint_unsigned32).
+  rewrite (W16.to_sintE X) /smod /=.
+  have -> /=: !(32768 <= to_uint X). 
+  + rewrite heq2 /=; smt(to_sint_unsigned32).
+  by rewrite heq2.
+split.
++ apply Array768.tP => k hk.
+  by rewrite /lift_array768 !mapiE 1..3:// /= PolyVec.unroundcE inzmodK qE h.
+move=> k hk; rewrite b16E h 1:// /= qE. 
+by move: (H k hk); rewrite bpos32E /#.
 qed.
 
 require import Jindcpa.
@@ -1108,77 +762,33 @@ lemma polyvec_ntt_correct _r:
             ntt (Array256.of_list witness (sub _r 512 256)) = lift_polyvec res 2 /\
             pos_bound768_cxq res 0 768 2 ].
 proof.
-move => *.
 proc.
-seq 3 : (#pre); first  by wp; skip.
-seq 1 : (#pre /\ signed_bound_cxq r0 0 256 2 /\ signed_bound_cxq r1 0 256 2 /\
-        signed_bound_cxq r2 0 256 2 /\ (forall k, 0 <= k < 256 => r0.[k] = r.[k]) /\
-        (forall k, 0 <= k < 256 => r1.[k] = r.[k+256]) /\ (forall k, 0 <= k < 256 => r2.[k] = r.[k+512]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = _r.[k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r1.[k]) = _r.[256+k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r2.[k]) = _r.[512+k])).
-ecall (polyvec_topolys_corr_h _r 2 r).
-by skip => /> *. 
-
-seq 1 : (#{/~r0}pre /\ 
-            ntt (Array256.of_list witness (sub _r 0 256)) = lift_array256 r0 /\
-            forall k, 0<=k<256 => bpos16 r0.[k] (2*q)).
-
-ecall (ntt_correct_h (lift_array256 r0)).
-skip => /> *.  
-rewrite -H10 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr.
-apply Array256.ext_eq. 
-move => *. 
-smt(@Array256 @Array768).
-
-seq 1 : (#{/~r1}pre /\ 
-            ntt (Array256.of_list witness (sub _r 256 256)) = lift_array256 r1 /\
-            forall k, 0<=k<256 => bpos16 r1.[k] (2*q)).
-
-ecall (ntt_correct_h (lift_array256 r1)).
-skip => /> *.  
-rewrite -H9 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr.
-apply Array256.ext_eq. 
-move => *. 
-smt(@Array256 @Array768).
-
-seq 1 : (#{/~r2}pre /\ 
-            ntt (Array256.of_list witness (sub _r 512 256)) = lift_array256 r2 /\
-            forall k, 0<=k<256 => bpos16 r2.[k] (2*q)).
-
-ecall (ntt_correct_h (lift_array256 r2)).
-skip => /> *.  
-rewrite -H8 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr.
-apply Array256.ext_eq. 
-move => *. 
-smt(@Array256 @Array768).
-
 ecall (polyvec_frompolys_corr_h r0 r1 r2 (lift_array256 r0) (lift_array256 r1) (lift_array256 r2) 2).
-skip => /> *.
-split.  
-rewrite /signed_bound_cxq. 
-smt(@Array256).
-move => /> *.
-rewrite /lift_polyvec => />.
-split. 
-rewrite H1. apply Array256.ext_eq => x xb. 
-rewrite (Array256.initiE). apply xb.
- smt().
-
+ecall (ntt_correct_h (lift_array256 r2)).
+ecall (ntt_correct_h (lift_array256 r1)).
+ecall (ntt_correct_h (lift_array256 r0)).
+ecall (polyvec_topolys_corr_h _r 2 r).
+wp; skip => /> &hr 2? result 6? H1 H2 H3 ? H4 ? ? H5 ? ? H6 ?.
+split; 1: smt(b16E). 
+move=>5? H7 H8 H9 H10 H11 H12; split.
++ apply Array256.tP => i hi.
+  rewrite /lift_polyvec /= initiE 1:// /= H10 1:// -H4.
+  congr; congr.
+  apply Array256.tP => j hj.
+  smt(@Array256 @Array768).
 split.
-rewrite H3. apply Array256.ext_eq => x xb. 
-rewrite (Array256.initiE). apply xb.
- smt().
-
++ apply Array256.tP => i hi.
+  rewrite /lift_polyvec /= initiE 1:// /= addzC H11 1:// -H5.
+  congr; congr.
+  apply Array256.tP => j hj.
+  smt(@Array256 @Array768).
 split.
-rewrite H5. apply Array256.ext_eq => x xb. 
-rewrite (Array256.initiE). apply xb.
- smt().
-rewrite /pos_bound768_cxq => *.
-smt().
+  apply Array256.tP => i hi.
+  rewrite /lift_polyvec /= initiE 1:// /= addzC H12 1:// -H6.
+  congr; congr.
+  apply Array256.tP => j hj.
+  smt(@Array256 @Array768).
+smt (b16E bpos16E). 
 qed.
 
 lemma invntt_correct_h (_r : zmod Array256.t):
@@ -1201,82 +811,39 @@ lemma polyvec_invntt_correct _r:
             scale (invntt (Array256.of_list witness (sub _r 512 256))) (inzmod SignedReductions.R) = lift_polyvec res 2 /\
             forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q + 1) ].
 proof.
-move => *.
 proc.
-seq 3 : (#pre); first  by wp; skip.
-seq 1 : (#pre /\ signed_bound_cxq r0 0 256 2 /\ signed_bound_cxq r1 0 256 2 /\
-        signed_bound_cxq r2 0 256 2 /\ (forall k, 0 <= k < 256 => r0.[k] = r.[k]) /\
-        (forall k, 0 <= k < 256 => r1.[k] = r.[k+256]) /\ (forall k, 0 <= k < 256 => r2.[k] = r.[k+512]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r0.[k]) = _r.[k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r1.[k]) = _r.[256+k]) /\
-        (forall k, 0 <= k < 256 => inzmod (to_sint r2.[k]) = _r.[512+k])).
-ecall (polyvec_topolys_corr_h _r 2 r).
-by skip => /> *. 
-
-seq 1 : (#{/~r0}pre /\ 
-            scale (invntt (Array256.of_list witness (sub _r 0 256)))  (inzmod SignedReductions.R) = lift_array256 r0 /\
-            forall k, 0<=k<256 => b16 r0.[k] (q + 1)).
-
-ecall (invntt_correct_h (lift_array256 r0)).
-skip => /> *.  
-rewrite -H10 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr. congr.
-apply Array256.ext_eq. 
-move => *. 
-smt(@Array256 @Array768).
-
-seq 1 : (#{/~r1}pre /\ 
-            scale (invntt (Array256.of_list witness (sub _r 256 256)))  (inzmod SignedReductions.R) = lift_array256 r1 /\
-            forall k, 0<=k<256 => b16 r1.[k] (q + 1)).
-
-ecall (invntt_correct_h (lift_array256 r1)).
-skip => /> *.  
-rewrite -H9 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr. congr.
-apply Array256.ext_eq. 
-move => *. 
-smt(@Array256 @Array768).
-
-seq 1 : (#{/~r2}pre /\ 
-            scale (invntt (Array256.of_list witness (sub _r 512 256)))  (inzmod SignedReductions.R) = lift_array256 r2 /\
-            forall k, 0<=k<256 => b16 r2.[k] (q + 1)).
-
-ecall (invntt_correct_h (lift_array256 r2)).
-skip => /> *.  
-rewrite -H8 /lift_array256 /lift_array768 Array256.mapE => />. 
-congr. congr.
-apply Array256.ext_eq. 
-move => *. 
-smt(@Array256 @Array768).
-
 ecall (polyvec_frompolys_corr_h r0 r1 r2 (lift_array256 r0) (lift_array256 r1) (lift_array256 r2) 2).
-skip => /> *.
-split.  
-rewrite /signed_bound_cxq. 
-do split. 
-move => *; rewrite b16E. smt(@Fq). 
-move => *; rewrite b16E. smt(@Fq). 
-move => *; rewrite b16E. smt(@Fq). 
-move => /> *.
-rewrite /lift_polyvec => />.
-split. 
-rewrite H1. apply Array256.ext_eq => x xb. 
-rewrite (Array256.initiE). apply xb.
- smt().
-
+ecall (invntt_correct_h (lift_array256 r2)).
+ecall (invntt_correct_h (lift_array256 r1)).
+ecall (invntt_correct_h (lift_array256 r0)).
+ecall (polyvec_topolys_corr_h _r 2 r).
+wp; skip => /> &hr ?? result 9? result0 h0 ? result1 h1 ? result2 h2 ?.
+split; 1: smt (b16E qE).
+move=> 5? H1 H2 H3 H4 H5 H6. 
+rewrite /lift_polyvec.
 split.
-rewrite H3. apply Array256.ext_eq => x xb. 
-rewrite (Array256.initiE). apply xb.
- smt().
-
++ apply Array256.tP => i hi.
+  rewrite initiE 1:// /=. 
+  rewrite H4 1:// -h0.
+  congr; congr; congr.
+  apply Array256.tP => j hj.
+  smt(@Array256 @Array768).
 split.
-rewrite H5. apply Array256.ext_eq => x xb. 
-rewrite (Array256.initiE). apply xb.
- smt().
-rewrite /pos_bound768_cxq => *.
++ apply Array256.tP => i hi.
+  rewrite initiE 1:// /=. 
+  rewrite addzC H5 1:// -h1.
+  congr; congr; congr.
+  apply Array256.tP => j hj.
+  smt(@Array256 @Array768).
+split.
++ apply Array256.tP => i hi.
+  rewrite initiE 1:// /=. 
+  rewrite addzC H6 1:// -h2.
+  congr; congr; congr.
+  apply Array256.tP => j hj.
+  smt(@Array256 @Array768).
 smt().
-qed. 
-
+qed.
 
 lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : zmod Array256.t) :
   array_mont zetas_const = lift_array128 jzetas =>
@@ -1299,6 +866,7 @@ lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : zmo
     forall (k : int), 0 <= k && k < 256 => 
         bpos16 res.[k] (2 * q)
   ].
+proof.
 move => *.
 proc.
 seq 8 : #pre; first by auto => />.
@@ -1330,32 +898,28 @@ seq 1 : (#pre /\
    signed_bound_cxq r 0 256 3 /\ _p0 = lift_array256 r).
 
 ecall (poly_basemul_corr _a0 _b0 zetas_const).
-skip => &hr.
-auto => /> *.
+skip => &hr /> *. 
 do split. 
-move : H12 ; rewrite /lift_polyvec /lift_array256 mapE => /> *. 
+rewrite /lift_polyvec /lift_array256 mapE. 
 apply Array256.ext_eq=> x xb.
  smt(@Array256).
-move : H21 ; rewrite /lift_polyvec /lift_array256 mapE => /> *. 
+rewrite /lift_polyvec /lift_array256 mapE => /> *. 
 apply Array256.ext_eq=> x xb.
  smt(@Array256).
-move => *.
 by smt(basemul_scales).
 
 seq 1 : (#pre /\ 
    signed_bound_cxq t 0 256 3 /\ _p1 = lift_array256 t).
 
 ecall (poly_basemul_corr _a1 _b1 zetas_const).
-skip => &hr.
-auto => /> *.
+skip => &hr /> *.
 do split. 
-move : H13 ; rewrite /lift_polyvec /lift_array256 mapE => /> *. 
+rewrite /lift_polyvec /lift_array256 mapE => /> *. 
 apply Array256.ext_eq=> x xb.
  smt(@Array256).
-move : H22 ; rewrite /lift_polyvec /lift_array256 mapE => /> *. 
+rewrite /lift_polyvec /lift_array256 mapE => /> *. 
 apply Array256.ext_eq=> x xb.
  smt(@Array256).
-move => *.
 by smt(basemul_scales).
 
 seq 1 : (#{/~r}pre /\ 
@@ -1364,24 +928,21 @@ seq 1 : (#{/~r}pre /\
      (lift_array256 r).[k] = _p0.[k] + _p1.[k])).
 call (poly_add_corr _p0 _p1 3 3 _ _) => />.
 by move => * /#.
-skip => &hr.
-move =>  [#] *.
+skip => &hr /> *.
 smt(@Array256).
 
 seq 1 : (#{/~t}pre /\ 
    signed_bound_cxq t 0 256 3 /\ _p2 = lift_array256 t).
 
 ecall (poly_basemul_corr _a2 _b2 zetas_const).
-skip => &hr.
-auto => /> *.
+skip => &hr /> *.
 do split. 
-move : H14 ; rewrite /lift_polyvec /lift_array256 mapE => /> *. 
+rewrite /lift_polyvec /lift_array256 mapE => /> *. 
 apply Array256.ext_eq=> x xb.
  smt(@Array256).
-move : H23 ; rewrite /lift_polyvec /lift_array256 mapE => /> *. 
+rewrite /lift_polyvec /lift_array256 mapE => /> *. 
 apply Array256.ext_eq=> x xb.
- smt(@Array256).
-move => *.
+smt(@Array256).
 by smt(basemul_scales).
 
 seq 1 : (#{/~r}pre /\ 
@@ -1391,16 +952,15 @@ seq 1 : (#{/~r}pre /\
 exists* (lift_array256 r). elim* => _rr.
 call (poly_add_corr _rr _p2 6 3 _ _) => />.
 by move => * /#.
-skip => &hr.
-move =>  [#] *.
+skip => &hr />.
 smt(@Array256).
 
 ecall (poly_reduce_corr_h (lift_array256 r)).
-skip => &hr.
-auto => /> *.
+skip => &hr /> *.
 apply Array256.ext_eq.
 move => x xb.
 smt(@Array256).
 qed.
 
 end KyberPolyVec.
+

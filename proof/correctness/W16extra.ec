@@ -1,5 +1,6 @@
 require import AllCore List IntDiv CoreMap IntDiv.
 from Jasmin require  import JModel JMemory.
+pragma +oldip.
 
 op b16 (a : W16.t) (b : int) = 
      -b <= to_sint a < b axiomatized by b16E.

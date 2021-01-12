@@ -1,5 +1,6 @@
 require import AllCore.
 require (****) Matrix.
+pragma +oldip.
 
 clone import Matrix as Matrix_.
 
