@@ -1599,8 +1599,7 @@ by smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E).
 while (0 <= to_uint j <= 256 /\ 
        (forall k, 0 <= k < to_uint j => to_sint rp.[k] = (BREDC (to_sint _rp.[k]) 26)) /\
        (forall k, to_uint j <= k < 256 => to_sint rp.[k] =  (to_sint _rp.[k]))); last first.
-auto => />. 
-move => &ht H.
+auto => /> H. 
 split; first by smt().
 move => ??; move : H; rewrite ultE of_uintK => />; smt(@W16 @W64).
 move => *;wp; sp; ecall (barrett_reduce_corr_h (to_sint _rp.[to_uint j])); 

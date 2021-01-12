@@ -418,12 +418,12 @@ proof.
     call (polyvec_topolys_corr_h ap 2 r').
       skip => /> &hr *; split; first by apply pos_bound768_signed_bound768.
       move => ? result *; do split.
-        by rewrite (pos_bound768_pos_bound r{hr} result.`1 0 0 768 256 2) //.
-        by rewrite (pos_bound768_pos_bound r{hr} result.`2 0 256 768 256 2) //. 
-        by rewrite (pos_bound768_pos_bound r{hr} result.`3 0 512 768 256 2) //. 
-        by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 0) //.
-        by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 256) // /#.
-        by rewrite (lift_array256_sub_768 r{hr} _ (lift_array768 r{hr}) 512) // /#.
+        by rewrite (pos_bound768_pos_bound r' result.`1 0 0 768 256 2) //.
+        by rewrite (pos_bound768_pos_bound r' result.`2 0 256 768 256 2) //. 
+        by rewrite (pos_bound768_pos_bound r' result.`3 0 512 768 256 2) //. 
+        by rewrite (lift_array256_sub_768 r' _ (lift_array768 r') 0) //.
+        by rewrite (lift_array256_sub_768 r' _ (lift_array768 r') 256) // /#.
+        by rewrite (lift_array256_sub_768 r' _ (lift_array768 r') 512) // /#.
   seq 1 : (#[/1:4,5:7,8:]pre /\  pos_bound256_cxq r0 0 256 1).
     exists* r0; elim* => r0'; call (poly_csubq_corr_h (Array256.of_list witness (sub ap 0 256))).
     skip => /> *; smt(@Array256).  
@@ -444,7 +444,7 @@ proof.
      by move : H7; rewrite /pos_bound256_cxq /signed_bound_cxq  => />; smt(@Array256).
      by rewrite H5.
      by move : H8; rewrite /pos_bound256_cxq /signed_bound_cxq  => />; smt(@Array256).
-  move => 6? result *; rewrite -(lift_array768_eq result r{hr}) //.  
+  move => 6? result *; rewrite -(lift_array768_eq result r') //.  
   split; first by done.
   move : H6 H7 H8; rewrite /lift_array256 /lift_array768 /pos_bound768_cxq /signed_bound768_cxq /pos_bound256_cxq /signed_bound256_cxq qE=> /> *.
  smt(@Array768).

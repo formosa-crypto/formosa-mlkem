@@ -251,8 +251,8 @@ apply Array256.ext_eq => x xb.
 move : H0.
 rewrite iis0 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 0]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[0, i0])).[0]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[0, 0]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[0, i0])).[0]).
 by rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H0.
 rewrite offunvE => />.
@@ -264,8 +264,8 @@ apply Array256.ext_eq => x xb.
 move : H0.
 rewrite iis1 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 1]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[0, i0])).[1]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[0, 1]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[0, i0])).[1]).
 rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H0.
 rewrite offunvE => />.
@@ -277,8 +277,8 @@ apply Array256.ext_eq => x xb.
 move : H0.
 rewrite iis2 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 2]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[0, i0])).[2]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[0, 2]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[0, i0])).[2]).
 rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H0.
 rewrite offunvE => />.
@@ -304,8 +304,8 @@ apply Array256.ext_eq => x xb.
 move : H1.
 rewrite iis0 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 0]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[1, i0])).[0]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[1, 0]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[1, i0])).[0]).
 by rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H1.
 rewrite offunvE => />.
@@ -317,8 +317,8 @@ apply Array256.ext_eq => x xb.
 move : H1.
 rewrite iis1 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 1]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[1, i0])).[1]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[1, 1]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[1, i0])).[1]).
 rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H1.
 rewrite offunvE => />.
@@ -330,8 +330,8 @@ apply Array256.ext_eq => x xb.
 move : H1.
 rewrite iis2 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 2]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[1, i0])).[2]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[1, 2]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[1, i0])).[2]).
 rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H1.
 rewrite offunvE => />.
@@ -357,8 +357,8 @@ apply Array256.ext_eq => x xb.
 move : H2.
 rewrite iis0 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 0]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[2, i0])).[0]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[2, 0]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[2, i0])).[0]).
 by rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H2.
 rewrite offunvE => />.
@@ -370,8 +370,8 @@ apply Array256.ext_eq => x xb.
 move : H2.
 rewrite iis1 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 1]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[2, i0])).[1]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[2, 1]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[2, i0])).[1]).
 rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H2.
 rewrite offunvE => />.
@@ -383,8 +383,8 @@ apply Array256.ext_eq => x xb.
 move : H2.
 rewrite iis2 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt ((H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 2]) = 
-   (offunv (fun (i0 : int) => (ntt_matrix ((H publicseed{hr}))%MLWEPKE.H_MLWE).[2, i0])).[2]).
+rewrite (_: (ntt ((H sd))%MLWEPKE.H_MLWE.[2, 2]) = 
+   (offunv (fun (i0 : int) => (ntt_matrix ((H sd))%MLWEPKE.H_MLWE).[2, i0])).[2]).
 rewrite /ntt_matrix offunvE //= offunmE  => />.
 rewrite -H2.
 rewrite offunvE => />.
@@ -613,8 +613,8 @@ apply Array256.ext_eq => x xb.
 move : H5.
 rewrite iis0 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 0]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[0, i0])).[0]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[0, 0]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[0, i0])).[0]).
 rewrite /ntt_matrix offunvE //=  !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H5.
@@ -627,8 +627,8 @@ apply Array256.ext_eq => x xb.
 move : H5.
 rewrite iis1 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 1]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[0, i0])).[1]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[0, 1]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[0, i0])).[1]).
 rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H5.
@@ -641,8 +641,8 @@ apply Array256.ext_eq => x xb.
 move : H5.
 rewrite iis2 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[0, 2]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[0, i0])).[2]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[0, 2]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[0, i0])).[2]).
 rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H5.
@@ -668,8 +668,8 @@ apply Array256.ext_eq => x xb.
 move : H6.
 rewrite iis0 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 0]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[1, i0])).[0]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[1, 0]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[1, i0])).[0]).
 rewrite /ntt_matrix offunvE //=  !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H6.
@@ -682,8 +682,8 @@ apply Array256.ext_eq => x xb.
 move : H6.
 rewrite iis1 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 1]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[1, i0])).[1]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[1, 1]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[1, i0])).[1]).
 rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H6.
@@ -696,8 +696,8 @@ apply Array256.ext_eq => x xb.
 move : H6.
 rewrite iis2 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[1, 2]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[1, i0])).[2]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[1, 2]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[1, i0])).[2]).
 rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H6.
@@ -723,8 +723,8 @@ apply Array256.ext_eq => x xb.
 move : H7.
 rewrite iis0 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 0]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[2, i0])).[0]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[2, 0]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[2, i0])).[0]).
 rewrite /ntt_matrix offunvE //=  !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H7.
@@ -737,8 +737,8 @@ apply Array256.ext_eq => x xb.
 move : H7.
 rewrite iis1 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 1]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[2, i0])).[1]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[2, 1]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[2, i0])).[1]).
 rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H7.
@@ -751,8 +751,8 @@ apply Array256.ext_eq => x xb.
 move : H7.
 rewrite iis2 /row_i => /> *.
 rewrite !initiE => />. 
-rewrite (_: (ntt (m_transpose (H publicseed{hr}))%MLWEPKE.H_MLWE.[2, 2]) = 
-   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H publicseed{hr})))%MLWEPKE.H_MLWE).[2, i0])).[2]).
+rewrite (_: (ntt (m_transpose (H sd))%MLWEPKE.H_MLWE.[2, 2]) = 
+   (offunv (fun (i0 : int) => (m_transpose (ntt_matrix ((H sd)))%MLWEPKE.H_MLWE).[2, i0])).[2]).
 rewrite /ntt_matrix offunvE //= offunmE //= !offunmE  => />.
 by  rewrite !offunmE  => />.
 rewrite -H7.
@@ -829,7 +829,7 @@ move  => *.
 split; first by rewrite /signed_bound768_cxq;smt(@Array768 qE).
 
 have ? : (
-scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[0]) (ZModField.inzmod 169)  = (Array256.of_list witness (sub (lift_array768 bp{hr}) 0 256))).
+scale (ntt (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_).[0]) (ZModField.inzmod 169)  = (Array256.of_list witness (sub (lift_array768 bp{hr}) 0 256))).
 move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
 move : (H20 0 _) => // ; rewrite !offunvE //=. 
 rewrite (aux_oflist_lift bp{hr} 0) //.
@@ -838,7 +838,7 @@ congr => /=.
 by rewrite /( *^) !offunvK /vclamp /=.  
 
 have ? : (
-scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[1]) ((ZModField.inzmod 169))%ZModField = (Array256.of_list witness (sub (lift_array768 bp{hr}) 256 256))).
+scale (ntt (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_).[1]) ((ZModField.inzmod 169))%ZModField = (Array256.of_list witness (sub (lift_array768 bp{hr}) 256 256))).
 move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
 move : (H20 1 _) => // ; rewrite !offunvE //=. 
 rewrite (aux_oflist_lift bp{hr} 1) //.
@@ -847,7 +847,7 @@ congr => /=.
 by rewrite /( *^) !offunvK /vclamp /=.  
 
 have ? : (
-scale (ntt (m_transpose ((H publicseed{hr}))%MLWEPKE.H_MLWE *^ r_).[2]) ((ZModField.inzmod 169))%ZModField = (Array256.of_list witness (sub (lift_array768 bp{hr}) 512 256))).
+scale (ntt (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_).[2]) ((ZModField.inzmod 169))%ZModField = (Array256.of_list witness (sub (lift_array768 bp{hr}) 512 256))).
 move :  H20; rewrite /polyvec_ntt /scale_vector /lift_vector /lift_polyvec eq_vectorP  => * //.
 move : (H20 2 _) => // ; rewrite !offunvE //=. 
 rewrite (aux_oflist_lift bp{hr} 2) //.
@@ -966,7 +966,7 @@ exists *bp. elim* => bpp.
 call(polyvec_reduce_corr (lift_array768 bpp)).
 auto => />.
 move => *. 
-by rewrite -(lift_equiv bp{hr} result H23) -H20.
+by rewrite -(lift_equiv _ result H23) -H20.
 
 (********)
 (*****)
