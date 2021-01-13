@@ -843,7 +843,10 @@ seq 52 53 : (={Glob.mem,bp,v,ctp} /\ sctp{1} = ctp{2}).
   while{2} (#pre /\ 0 <= i2{2} <= 32 /\
           (forall k, 0 <= k < i2{2} * 8 => rp{1}.[k] = rp0{2}.[k])) (32 - i2{2}).
   + by move => *; wp; skip => />; smt(Array256.get_setE).
-  by wp; skip => /> *; smt (Array256.tP).
+  wp; skip => /> *. 
+  split; 1: smt().
+  move=> *; split; 1:smt().
+  smt (Array256.tP).
 inline *; auto => />.
 
 seq 15 12 : (#pre /\ ={a,t,pv} /\ rp{1} = ctp{1} /\ aa{1} = witness /\ i0{1} = i1{2} /\ r{2} = witness /\
