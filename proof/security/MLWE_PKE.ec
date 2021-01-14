@@ -646,8 +646,6 @@ axiom dmatrix_dvector d :
   dmap (djoin (nseq Matrix_.size (dvector d))) 
     (fun (vs:vector list) => offunm (fun i j => (nth witness vs j).[i])).
 
-axiom gt0_size : 0 < Matrix_.size.
-
 lemma djoin_cat_cons ['a] l1 (d:'a distr) l2 :
     djoin (l1 ++ d :: l2) = 
     dlet (djoin l1 `*` djoin l2) (fun (p:_ * _) => dmap d (fun x => p.`1 ++ x :: p.`2)).
@@ -656,11 +654,51 @@ proof.
   rewrite djoin_cons /= dmap_dprodE_swap dlet_dlet dmap_dlet &(eq_dlet) //= => ls2.
   by rewrite dmap_comp dlet_unit /=.
 qed.
-import Big.BAdd.
-(*
-lemma dmatrix_dvector (v:vector) i :
-  0 <= i < Matrix_.size =>  
-  v.[i] <> R.zeror =>
+
+import Big.BAdd StdOrder.IntOrder.
+
+lemma dvector_uni d : is_uniform d => is_uniform (dvector d).
+proof.
+move=> uni_d; apply/dmap_uni_in_inj/djoin_uni.
+- move=> xs ys /supp_djoin[+ _] /supp_djoin[+ _] /=.
+  rewrite !size_nseq !ler_maxr // => ??.
+  move/(congr1 tofunv); rewrite !offunvK => eqv.
+  apply/(eq_from_nth witness) => [/#|i rg_i].
+  by move/fun_ext/(_ i): eqv => /#.
+- by move=> d'; rewrite mem_nseq => -[_ <-].
+qed.
+
+lemma dmap_fu_in ['a 'b] (d : 'a distr) (f : 'a -> 'b) :
+     (forall b, exists a, a \in d /\ b = f a)
+  => is_full (dmap d f).
+proof. by move=> surj_f b; apply/supp_dmap/surj_f. qed.
+
+lemma dvector_ll d : is_lossless d => is_lossless (dvector d).
+proof.
+move=> ll_d; apply/dmap_ll/djoin_ll.
+by move=> d'; rewrite mem_nseq => -[_ <-].
+qed.
+
+lemma dvector_full d : is_full d => is_full (dvector d).
+proof.
+move=> full_d; apply/dmap_fu_in => v.
+exists (map (fun i => v.[i]) (range 0 Matrix_.size)); split=> /=.
+- apply/supp_djoin; rewrite size_nseq ler_maxr // size_map.
+  rewrite size_range /= ler_maxr //=; apply/allP.
+  case=> d' x /mem_zip []; rewrite mem_nseq => -[_ <<-] /= _.
+  by apply: full_d.  
+- apply/eq_vectorP=> i rg_i; rewrite offunvE //.
+  by rewrite (nth_map witness) -1:nth_range // size_range ler_maxr.
+qed.
+ 
+lemma dvector_funi d : is_full d => is_uniform d => is_funiform (dvector d).
+proof.
+move=> ??; apply/is_full_funiform => //; first by apply/dvector_full.
+by apply/dvector_uni.
+qed.
+
+lemma dmatrix_dvector2 (v:vector) i :
+  0 <= i < Matrix_.size => unit v.[i] =>
   dmap duni_matrix (fun A => A *^ v) = dvector duni_R.
 proof.
   move=> hi hvi.
@@ -669,9 +707,9 @@ proof.
   have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
   rewrite -cat_nseq 1,2:/# nseqS 1:/#.
   rewrite djoin_cat_cons dmap_dlet.
-  pose D := _ `*` _.
-  rewrite -{2}(dlet_cst D duvector).
-  + admit.
+  pose D := _ `*` _; rewrite -{2}(dlet_cst D duvector).
+  + by apply/dprod_ll; split; apply/djoin_ll=> d;
+      rewrite mem_nseq => -[_ <-]; apply/dvector_ll/duni_R_ll.
   apply in_eq_dlet => //= ls /supp_dprod [] + _.
   move=> /supp_djoin [] + _.
   rewrite size_nseq StdOrder.IntOrder.ler_maxr 1:/# => ->>.
@@ -679,10 +717,10 @@ proof.
   pose k := size  ls.`1.
   pose size := Matrix_.size.
   pose f (x:vector) :=  
-    offunv (fun i => x.[i]*v.[k] + bigi (predC1 k) (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
+    offunv (fun i => x.[i]*v.[k] + bigi (predC1 k)
+      (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
   rewrite (eq_dmap duvector _ f).
-  + move=> x /=.
-    apply eq_vectorP => i h.
+  + move=> x /=; apply eq_vectorP => i h.
     rewrite /f mulmxvE offunvE //=.  
     rewrite (bigD1 _ _ k) 1:mem_range // 1:range_uniq /=.
     congr. 
@@ -690,12 +728,24 @@ proof.
     apply congr_big_seq => //= i0 /mem_range ? _ _.
     by rewrite offunmE 1:/#.
   pose finv (y:vector) := 
-    offunv (fun i => (y.[i] - bigi (predC1 k) (fun j => (nth witness (ls.`1 ++ y :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
+    offunv (fun i => (y.[i] - bigi (predC1 k)
+      (fun j => (nth witness (ls.`1 ++ witness :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
   apply (dmap_bij duvector duvector f finv).
-  + admit. (* full *)
-  + admit. (* full uni *)
-  move=> x _
- *)
+  + by move=> x _; apply/dvector_full/duni_R_fu.
+  + move=> x _; apply/dvector_funi.
+    - by apply/duni_R_fu.
+    - by apply/funi_uni/duni_R_uni.
+  + move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
+    do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
+    rewrite (_ : z2 = z1); last first.
+    + by rewrite -addrA subrr addr0 mulrK.
+    by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
+  + move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
+    do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
+    rewrite mulrAC mulrK //; rewrite (_ : z2 = z1); last first.
+    + by rewrite -addrA addNr addr0.
+    by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
+qed.
 
 op noise_exp_part_simpl u s e r e1 e2 = 
     let cu = rnd_err_u u in (* note here u does not depend on e1 *)
