@@ -525,32 +525,25 @@ axiom noise_commutes n n' (b : int) :
     under_noise_bound n (max_noise - b) =>
        under_noise_bound (n +& n') max_noise.
 
+op noise_exp_part_simpl u s e r e1 e2 = 
+  let cu = rnd_err_u u in 
+  ((e `<*>` r) -& (s `<*>` e1) -& (s `<*>` cu) +& e2 ).
+
 op noise_exp_part _A s e r e1 e2 = 
-    let u = m_transpose _A *^ r + e1 in
-    let cu = rnd_err_u u in
-          ((e `<*>` r) -&
-           (s `<*>` e1) -&
-           (s `<*>` cu) +& e2
-          ).
-
-lemma noise_exp_part_val _A s e r e1 e2 m :
-   noise_exp _A s e r e1 e2 m = 
-       (noise_exp_part _A s e r e1 e2) +& 
-    let t = _A *^ s + e in
-    let v = (t `<*>` r) +& e2 +& (m_encode m) in
-          rnd_err_v v by rewrite noise_exp_val /noise_exp_part.
-
+  let u = m_transpose _A *^ r + e1 in
+  noise_exp_part_simpl u s e r e1 e2.
 
 module CorrectnessNoiseApprox = {
    proc main() = {
-         var s,e,_A,r,e1,e2,n;
+         var s,e,_A,r,e1,e2,n,u;
          _A <$ duni_matrix;
          r <$ dshort;
          s <$ dshort;
          e <$ dshort;
          e1 <$ dshort;
          e2 <$ dshort_R;
-         n <- noise_exp_part _A s e r e1 e2;
+         u <- m_transpose _A *^ r + e1;
+         n <- noise_exp_part_simpl u s e r e1 e2;
          return (!under_noise_bound n (max_noise - cv_bound));
     }
 }.
@@ -575,10 +568,12 @@ seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
            r{2} \in dshort /\
            e2{2} \in dshort_R
 ).
-inline *; auto => />; split; [ by apply dseed_ll | by auto; smt(@SmtMap)]. 
-wp;call {1} (_: true ==> true).  by apply (All LRO); smt(LRO_o_ll duni_matrix_ll).
++ by inline *; auto => />; split; [ apply dseed_ll | auto; smt(@SmtMap)]. 
+wp;call {1} (_: true ==> true). 
++ by apply (All LRO); smt(LRO_o_ll duni_matrix_ll).
 skip;auto => />.
-move => &1 &2 ssup esup _Asup rsup e2sup; rewrite  noise_exp_part_val; move : noise_commutes cv_bound_valid => />; smt().
+move => &1 &2 ssup esup _Asup rsup e2sup; rewrite noise_exp_val /=.
+smt (noise_commutes cv_bound_valid).
 qed.
 
 lemma correctness_approx &m :
@@ -747,13 +742,6 @@ proof.
     by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
 qed.
 
-op noise_exp_part_simpl u s e r e1 e2 = 
-    let cu = rnd_err_u u in (* note here u does not depend on e1 *)
-          ((e `<*>` r) -&
-           (s `<*>` e1) -&
-           (s `<*>` cu) +& e2
-          ).
-
 
 (* We will jump to this game where instead of the real
    distribution of u and r, we use an idealized one where
@@ -772,17 +760,89 @@ module CorrectnessBound = {
     }
 }.
 
+(* Do to a fisrt try *)
+axiom dshort_unit : 
+  forall v, v \in dshort => exists i, 0 <= i < Matrix_.size /\ unit v.[i].
+
+hint solve 0 random : duni_matrix_uni duni_matrix_ll.
+hint solve 0 random : duni_vector_uni duni_ll.
+import Vector.ZModule.
+
+module AUX = {
+  proc f (r:vector) = {
+    var _A;
+    _A <$ duni_matrix;
+    return _A *^ r;
+  }
+
+  proc g () = {
+    var u;
+    u <$ duni;
+    return u;
+  } 
+}.
+
+equiv AUX_fg : AUX.f ~ AUX.g : r{1} \in dshort ==> ={res}.
+proof.
+bypr (res{1}) (res{2}) => // &1 &2 a /dshort_unit [i [h1 h2]].
+have -> : Pr[AUX.g() @ &2 : res = a] = mu1 duni a.
++ byphoare => //.
+  by proc; rnd; skip.
+have -> : Pr[AUX.f(r{1}) @ &1 : res = a] = 
+            mu1 (dmap duni_matrix (fun _A => _A *^ r{1})) a.
++ byphoare (: r = r{1} ==> res = a) => //.
+  by proc; rnd; skip => />; rewrite (dmapE duni_matrix).
+by rewrite (dmatrix_dvector2 r{1} i h1 h2).
+qed.
+
+equiv NoiseApprox_Bound : 
+  CorrectnessNoiseApprox.main ~ CorrectnessBound.main : true ==> ={res}.
+proof.
+  proc; wp.
+  rewrite /noise_exp_part /noise_exp_part_simpl /=.
+  swap{1} 1 5; swap{2} 3 3. 
+  swap{1} 1 4; swap{2} 3 2.
+  seq 5 5 : (={e,e1,e2,r,s} /\ r{1} \in dshort); 1: by auto.
+  conseq (_: u{2} = m_transpose _A{1} *^ r{1} + e1{1}); 1: done.
+  transitivity{1} { _A <$ duni_matrix; }
+    ( ={r,e1} ==> _A{1} = m_transpose _A{2} /\ ={r,e1})
+    ( r{1} \in dshort ==> u{2} = _A{1} *^ r{1} + e1{1} ) => />; 1:smt().
+  + by move=> *; rewrite trmxK.
+  + rnd m_transpose; skip => />.
+    split=> *; rewrite trmxK //=.
+    admit. (* duni_matrix_fu *)
+  transitivity{1} { u <- AUX.f(r); }
+    ( ={r,e1} ==> _A{1} *^ r{1} = u{2} /\ ={e1})
+    ( r{1} \in dshort ==> u{2} = u{1} + e1{1} ) => />; 1:smt().
+  + by inline *; auto.
+  transitivity{1} { u <@ AUX.g(); } 
+    ( ={e1} /\ r{1} \in dshort ==> ={u,e1})
+    ( true ==> u{2} = u{1} + e1{1} ) => />; 1: smt(); last first.
+  + inline *;wp.
+    rnd (fun u => u + e1{1}) (fun u => u + - e1{1}); skip => /> &1; split => *.
+    + by rewrite addrNK.
+    rewrite -addrA subrr addr0 /=.
+    admit. (* duni_fu *)
+  by call AUX_fg.
+qed.
+
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
-op epsilon_hack : real.
+(* FIXME *)
+op epsilon_hack : real = 0%r.
 
-axiom correctness_hack &m :
+lemma correctness_hack &m :
   epsilon_hack =
   `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
      Pr[CorrectnessBound.main() @ &m : res] |.
-
-
+proof.
+  have -> /# :
+    Pr[CorrectnessNoiseApprox.main() @ &m : res] =
+    Pr[CorrectnessBound.main() @ &m : res].
+  by byequiv NoiseApprox_Bound.
+qed.
+   
 op fail_prob : real.
 
 axiom fail_prob &m : 
