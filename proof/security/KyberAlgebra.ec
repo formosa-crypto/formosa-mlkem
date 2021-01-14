@@ -2,67 +2,62 @@ require import AllCore.
 require (****) Matrix.
 pragma +oldip.
 
-clone import Matrix as Matrix_.
+type R.
+clone import Ring.IDomain as R with type t <- R.
 
-abbrev (+&) = ZR.(+).
-op (-&) = ZR.(-).
-op (`<*>`) a b = dotp a b.
+clone import Matrix as Matrix_ with   
+    type  R        <- R,
+      op  ZR.zeror <- R.zeror,
+      op  ZR.oner  <- R.oner,
+      op  ZR.(+)   <- R.(+),
+      op  ZR.([-]) <- R.([-]),
+      op  ZR.( * ) <- R.( * ),
+      op  ZR.invr  <- R.invr,
+    pred  ZR.unit  <- R.unit
+    proof ZR.*.
 
-import ZR.
-lemma exprS: forall (x : R) (n : int), 0 <= n => exp x (n + 1) = x * exp x n.
-move => *; rewrite /exp => />. 
-rewrite (_: n+1 < 0 = false) /= /iterop /=; first  by smt(). 
-rewrite (_: n < 0 = false) /=; first by smt().
-rewrite iteriS => />.
-case (n = 0); last by smt().
-move => />.
-rewrite iteri0 => />. 
-by rewrite mulrC mul1r.
-qed.
+  realize ZR.addrA     by exact: R.addrA    .
+  realize ZR.addrC     by exact: R.addrC    .
+  realize ZR.add0r     by exact: R.add0r    .
+  realize ZR.addNr     by exact: R.addNr    .
+  realize ZR.oner_neq0 by exact: R.oner_neq0.
+  realize ZR.mulrA     by exact: R.mulrA    .
+  realize ZR.mulrC     by exact: R.mulrC    .
+  realize ZR.mul1r     by exact: R.mul1r    .
+  realize ZR.mulrDl    by exact: R.mulrDl   .
+  realize ZR.mulVr     by exact: R.mulVr    .
+  realize ZR.unitP     by exact: R.unitP    .
+  realize ZR.unitout   by exact: R.unitout  .
+  realize ZR.mulf_eq0  by exact: R.mulf_eq0 .
 
-lemma ofintS: forall (n : int), 0 <= n => ofint (n + 1) = oner +& (ofint n). 
-move => *.
-rewrite /ofint /intmul => />.
-rewrite (_: n+1 < 0 = false) /= /iterop /=; first  by smt(). 
-rewrite (_: n < 0 = false) /=; first by smt().
-rewrite iteriS => />.
-case (n = 0); last by smt().
-move => />.
-rewrite iteri0 => />. 
-by rewrite addrC add0r.
-qed.
-
-lemma ofintN: forall (n : int), ofint (-n) = (- ofint n).
-rewrite /ofint /intmul =>*.
-case (n=0); first by move => -> /=; rewrite iterop0; smt(@ZR).
-by smt(@ZR).
-qed.
+abbrev (+&) = R.(+).
+op (-&) = R.(-).
+abbrev (`<*>`) a b = dotp a b.
 
 instance ring with R
-  op rzero = ZR.zeror
-  op rone  = ZR.oner
-  op add   = ZR.( + )
-  op opp   = ZR.([-])
-  op mul   = ZR.( * )
-  op expr  = ZR.exp
+  op rzero = R.zeror
+  op rone  = R.oner
+  op add   = R.( + )
+  op opp   = R.([-])
+  op mul   = R.( * )
+  op expr  = R.exp
   op sub   = (-&)
-  op ofint = ZR.ofint
+  op ofint = R.ofint
 
-  proof oner_neq0 by apply ZR.oner_neq0
-  proof addrA     by apply ZR.addrA
-  proof addrC     by apply ZR.addrC
-  proof addr0     by (move => *;rewrite ZR.addrC; apply ZR.add0r)
-  proof addrN     by (move => *;rewrite ZR.addrC; apply ZR.addNr)
-  proof mulr1     by (move => *;rewrite ZR.mulrC; apply ZR.mul1r)
-  proof mulrA     by apply ZR.mulrA
-  proof mulrC     by apply ZR.mulrC
-  proof mulrDl    by apply ZR.mulrDl
-  proof expr0     by smt
-  proof subrE     by smt
-  proof ofint0    by smt
-  proof ofint1    by smt
-  proof exprS     by apply exprS
-  proof ofintS    by apply ofintS
-  proof ofintN    by apply ofintN.
- 
-(*************)
+  proof oner_neq0 by apply R.oner_neq0
+  proof addrA     by apply R.addrA
+  proof addrC     by apply R.addrC
+  proof addr0     by apply R.addr0
+  proof addrN     by apply R.addrN
+  proof mulr1     by apply R.mulr1
+  proof mulrA     by apply R.mulrA
+  proof mulrC     by apply R.mulrC
+  proof mulrDl    by apply R.mulrDl
+  proof expr0     by apply R.expr0
+  proof subrE     by done
+  proof ofint0    by apply R.ofint0
+  proof ofint1    by apply R.ofint1
+  proof exprS     by apply R.exprS
+  proof ofintS    by apply R.ofintS
+  proof ofintN    by apply R.ofintN.
+
