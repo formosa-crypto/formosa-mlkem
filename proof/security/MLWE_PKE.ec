@@ -375,14 +375,16 @@ axiom encode_noise u v :
    c_decode (c_encode (u,v)) = 
       (u + rnd_err_u u, v +& rnd_err_v v).
 
-axiom matrix_props1 _A s e r :
-(_A *^ s + e) `<*>` r = 
-(s ^* m_transpose _A `<*>` r) +& (e `<*>` r).
+lemma matrix_props1 _A s e r :
+  (_A *^ s + e) `<*>` r = 
+  (s ^* m_transpose _A `<*>` r) +& (e `<*>` r).
+proof. by rewrite dotpDl -mulmxTv trmxK. qed.
 
-axiom matrix_props2 s _A r e1 cu :
-s `<*>` (m_transpose _A *^ r + e1 + cu) = 
+lemma matrix_props2 s _A r e1 cu :
+  s `<*>` (m_transpose _A *^ r + e1 + cu) = 
   (s ^* m_transpose _A `<*>` r) +& 
     (s `<*>` e1) +& (s `<*>` cu).
+proof. by rewrite !dotpDr dotpC dotp_mulmxv dotpC. qed.
 
 lemma noise_exp_val _A s e r e1 e2 m :
     noise_exp _A s e r e1 e2 m = 
@@ -396,9 +398,7 @@ lemma noise_exp_val _A s e r e1 e2 m :
            (s `<*>` cu) +& e2
           ) +& cv.
 proof.
-    move :matrix_props1 matrix_props2.
-    rewrite /noise_exp //= encode_noise => matrix_props1 matrix_props2. 
-    by rewrite matrix_props1 //= matrix_props2 //=; ring. 
+  rewrite /noise_exp /= encode_noise /= matrix_props1 matrix_props2; ring. 
 qed.
 
 (* The above noise expression is computed over the abstract
@@ -486,9 +486,8 @@ rewrite (_:
      rnd_err_u (m_transpose (oget LRO.m{2}.[pk0{2}.`1]) *^ r{2} + e1{2})))) = 
 m_encode m{2} +& noise_exp (oget LRO.m{2}.[pk0{2}.`1]) s{2} e{2} r{2} e1{2}
                    e2{2} m{2}); last by apply good_decode.
-move : matrix_props1 matrix_props2.
-rewrite  noise_exp_val //= => matrix_props1 matrix_props2.
-by rewrite matrix_props1 matrix_props2 => />; ring.
+by rewrite noise_exp_val /= matrix_props1 matrix_props2; ring.
+
 auto => />. 
 seq 8 10 : ( #pre /\
            ={LRO.m,r,s,e,e1,e2,sd,_A} /\
@@ -593,6 +592,110 @@ qed.
 
 (* Finally we just need to compute a concrete probability *)
 (* Which we will bound in simplified form *)
+
+import R.
+
+lemma uniform_mul (v:R) : v <> zeror =>
+  is_uniform (dlet duni_R (fun v' => dunit (v' * v))).
+proof.
+  move=> hu; apply dmap_uni.
+  + by apply R.mulIf.
+  apply /funi_uni /duni_R_uni.
+qed.
+
+import List.
+import Matrix_.
+
+(* This proof the random rule *)
+lemma dmap_bij ['a 'b] (d1 : 'a distr) (d2: 'b distr) (f : 'a -> 'b) (g : 'b -> 'a) :
+     (forall x, x \in d1 => f x \in d2)
+  => (forall x, x \in d2 => mu1 d2 x = mu1 d1 (g x))
+  => (forall a, a \in d1 => g (f a) = a)
+  => (forall b, b \in d2 => f (g b) = b)
+  => dmap d1 f = d2.
+proof.
+move=> eqf eqg can_gf can_fg.
+apply eq_distr => b.
+rewrite dmap1E /(\o) {1}/pred1.
+case (b \in d2); last first.
++ move=> ^ /supportPn ->.
+  by apply contraR => /neq0_mu [a [/= h1 <-]]; apply eqf.
+move=> hin.
+rewrite eqg 1:// &(mu_eq_support) /pred1 /= => x hin1.
+by apply eq_iff;split => [<<- | ->>]; rewrite ?can_gf ?can_fg.
+qed.
+
+import RealSeries.
+
+lemma dlet_cst ['a 'b] (d1:'a distr) (d2:'b distr) :
+  is_lossless d1 =>
+  dlet d1 (fun _ => d2) = d2.
+proof.
+  move=> d1_ll.
+  apply eq_distr => x.
+  by rewrite dlet1E /= sumZr -(eq_sum (mass d1)) /= 1:&(massE) -weightE d1_ll.
+qed.
+
+lemma dmap_cst ['a 'b] (d:'a distr) (b:'b) :
+  is_lossless d =>
+  dmap d (fun _ => b) = dunit b.
+proof. apply dlet_cst. qed.
+
+axiom dmatrix_dvector d : 
+  dmatrix d = 
+  dmap (djoin (nseq Matrix_.size (dvector d))) 
+    (fun (vs:vector list) => offunm (fun i j => (nth witness vs j).[i])).
+
+axiom gt0_size : 0 < Matrix_.size.
+
+lemma djoin_cat_cons ['a] l1 (d:'a distr) l2 :
+    djoin (l1 ++ d :: l2) = 
+    dlet (djoin l1 `*` djoin l2) (fun (p:_ * _) => dmap d (fun x => p.`1 ++ x :: p.`2)).
+proof.
+  rewrite djoin_cat dmap_dprodE dprod_dlet dlet_dlet &(eq_dlet) //= => ls1.
+  rewrite djoin_cons /= dmap_dprodE_swap dlet_dlet dmap_dlet &(eq_dlet) //= => ls2.
+  by rewrite dmap_comp dlet_unit /=.
+qed.
+import Big.BAdd.
+(*
+lemma dmatrix_dvector (v:vector) i :
+  0 <= i < Matrix_.size =>  
+  v.[i] <> R.zeror =>
+  dmap duni_matrix (fun A => A *^ v) = dvector duni_R.
+proof.
+  move=> hi hvi.
+  rewrite /duni_matrix dmatrix_dvector dmap_comp /(\o).
+  pose duvector := dvector duni_R.
+  have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
+  rewrite -cat_nseq 1,2:/# nseqS 1:/#.
+  rewrite djoin_cat_cons dmap_dlet.
+  pose D := _ `*` _.
+  rewrite -{2}(dlet_cst D duvector).
+  + admit.
+  apply in_eq_dlet => //= ls /supp_dprod [] + _.
+  move=> /supp_djoin [] + _.
+  rewrite size_nseq StdOrder.IntOrder.ler_maxr 1:/# => ->>.
+  rewrite dmap_comp /(\o) /=.
+  pose k := size  ls.`1.
+  pose size := Matrix_.size.
+  pose f (x:vector) :=  
+    offunv (fun i => x.[i]*v.[k] + bigi (predC1 k) (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
+  rewrite (eq_dmap duvector _ f).
+  + move=> x /=.
+    apply eq_vectorP => i h.
+    rewrite /f mulmxvE offunvE //=.  
+    rewrite (bigD1 _ _ k) 1:mem_range // 1:range_uniq /=.
+    congr. 
+    + by rewrite offunmE 1:/# /= nth_cat ltzz /= subrr. 
+    apply congr_big_seq => //= i0 /mem_range ? _ _.
+    by rewrite offunmE 1:/#.
+  pose finv (y:vector) := 
+    offunv (fun i => (y.[i] - bigi (predC1 k) (fun j => (nth witness (ls.`1 ++ y :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
+  apply (dmap_bij duvector duvector f finv).
+  + admit. (* full *)
+  + admit. (* full uni *)
+  move=> x _
+ *)
 
 op noise_exp_part_simpl u s e r e1 e2 = 
     let cu = rnd_err_u u in (* note here u does not depend on e1 *)
