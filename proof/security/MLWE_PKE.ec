@@ -590,107 +590,17 @@ qed.
 
 import R.
 
-lemma uniform_mul (v:R) : v <> zeror =>
-  is_uniform (dlet duni_R (fun v' => dunit (v' * v))).
-proof.
-  move=> hu; apply dmap_uni.
-  + by apply R.mulIf.
-  apply /funi_uni /duni_R_uni.
-qed.
-
 import List.
 import Matrix_.
 
-(* This proof the random rule *)
-lemma dmap_bij ['a 'b] (d1 : 'a distr) (d2: 'b distr) (f : 'a -> 'b) (g : 'b -> 'a) :
-     (forall x, x \in d1 => f x \in d2)
-  => (forall x, x \in d2 => mu1 d2 x = mu1 d1 (g x))
-  => (forall a, a \in d1 => g (f a) = a)
-  => (forall b, b \in d2 => f (g b) = b)
-  => dmap d1 f = d2.
-proof.
-move=> eqf eqg can_gf can_fg.
-apply eq_distr => b.
-rewrite dmap1E /(\o) {1}/pred1.
-case (b \in d2); last first.
-+ move=> ^ /supportPn ->.
-  by apply contraR => /neq0_mu [a [/= h1 <-]]; apply eqf.
-move=> hin.
-rewrite eqg 1:// &(mu_eq_support) /pred1 /= => x hin1.
-by apply eq_iff;split => [<<- | ->>]; rewrite ?can_gf ?can_fg.
-qed.
-
-import RealSeries.
-
-lemma dlet_cst ['a 'b] (d1:'a distr) (d2:'b distr) :
-  is_lossless d1 =>
-  dlet d1 (fun _ => d2) = d2.
-proof.
-  move=> d1_ll.
-  apply eq_distr => x.
-  by rewrite dlet1E /= sumZr -(eq_sum (mass d1)) /= 1:&(massE) -weightE d1_ll.
-qed.
-
-lemma dmap_cst ['a 'b] (d:'a distr) (b:'b) :
-  is_lossless d =>
-  dmap d (fun _ => b) = dunit b.
-proof. apply dlet_cst. qed.
+(* This proves the random rule *)
 
 axiom dmatrix_dvector d : 
   dmatrix d = 
   dmap (djoin (nseq Matrix_.size (dvector d))) 
     (fun (vs:vector list) => offunm (fun i j => (nth witness vs j).[i])).
 
-lemma djoin_cat_cons ['a] l1 (d:'a distr) l2 :
-    djoin (l1 ++ d :: l2) = 
-    dlet (djoin l1 `*` djoin l2) (fun (p:_ * _) => dmap d (fun x => p.`1 ++ x :: p.`2)).
-proof.
-  rewrite djoin_cat dmap_dprodE dprod_dlet dlet_dlet &(eq_dlet) //= => ls1.
-  rewrite djoin_cons /= dmap_dprodE_swap dlet_dlet dmap_dlet &(eq_dlet) //= => ls2.
-  by rewrite dmap_comp dlet_unit /=.
-qed.
-
 import Big.BAdd StdOrder.IntOrder.
-
-lemma dvector_uni d : is_uniform d => is_uniform (dvector d).
-proof.
-move=> uni_d; apply/dmap_uni_in_inj/djoin_uni.
-- move=> xs ys /supp_djoin[+ _] /supp_djoin[+ _] /=.
-  rewrite !size_nseq !ler_maxr // => ??.
-  move/(congr1 tofunv); rewrite !offunvK => eqv.
-  apply/(eq_from_nth witness) => [/#|i rg_i].
-  by move/fun_ext/(_ i): eqv => /#.
-- by move=> d'; rewrite mem_nseq => -[_ <-].
-qed.
-
-lemma dmap_fu_in ['a 'b] (d : 'a distr) (f : 'a -> 'b) :
-     (forall b, exists a, a \in d /\ b = f a)
-  => is_full (dmap d f).
-proof. by move=> surj_f b; apply/supp_dmap/surj_f. qed.
-
-lemma dvector_ll d : is_lossless d => is_lossless (dvector d).
-proof.
-move=> ll_d; apply/dmap_ll/djoin_ll.
-by move=> d'; rewrite mem_nseq => -[_ <-].
-qed.
-
-lemma dvector_full d : is_full d => is_full (dvector d).
-proof.
-move=> full_d; apply/dmap_fu_in => v.
-exists (map (fun i => v.[i]) (range 0 Matrix_.size)); split=> /=.
-- apply/supp_djoin; rewrite size_nseq ler_maxr // size_map.
-  rewrite size_range /= ler_maxr //=; apply/allP.
-  case=> d' x /mem_zip []; rewrite mem_nseq => -[_ <<-] /= _.
-  by apply: full_d.  
-- apply/eq_vectorP=> i rg_i; rewrite offunvE //.
-  by rewrite (nth_map witness) -1:nth_range // size_range ler_maxr.
-qed.
- 
-lemma dvector_funi d : is_full d => is_uniform d => is_funiform (dvector d).
-proof.
-move=> ??; apply/is_full_funiform => //; first by apply/dvector_full.
-by apply/dvector_uni.
-qed.
 
 lemma dmatrix_dvector2 (v:vector) i :
   0 <= i < Matrix_.size => unit v.[i] =>
@@ -701,7 +611,7 @@ proof.
   pose duvector := dvector duni_R.
   have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
   rewrite -cat_nseq 1,2:/# nseqS 1:/#.
-  rewrite djoin_cat_cons dmap_dlet.
+  rewrite djoin_perm_s1s dmap_dlet.
   pose D := _ `*` _; rewrite -{2}(dlet_cst D duvector).
   + by apply/dprod_ll; split; apply/djoin_ll=> d;
       rewrite mem_nseq => -[_ <-]; apply/dvector_ll/duni_R_ll.
