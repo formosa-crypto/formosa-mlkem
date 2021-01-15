@@ -698,7 +698,7 @@ proof.
   + by move=> *; rewrite trmxK.
   + rnd m_transpose; skip => />.
     split=> *; rewrite trmxK //=.
-    admit. (* duni_matrix_fu *)
+    by apply/dmatrix_full/duni_R_fu.
   transitivity{1} { u <- AUX.f(r); }
     ( ={r,e1} ==> _A{1} *^ r{1} = u{2} /\ ={e1})
     ( r{1} \in dshort ==> u{2} = u{1} + e1{1} ) => />; 1:smt().
@@ -710,7 +710,7 @@ proof.
     rnd (fun u => u + e1{1}) (fun u => u + - e1{1}); skip => /> &1; split => *.
     + by rewrite addrNK.
     rewrite -addrA subrr addr0 /=.
-    admit. (* duni_fu *)
+    by apply/dvector_full/duni_R_fu.
   by call AUX_fg.
 qed.
 
@@ -740,11 +740,10 @@ lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack.
 proof.
-have  := (fail_prob &m).
-have  := (correctness_hack &m). 
+have := (fail_prob &m).
+have := (correctness_hack &m). 
 have := (correctness_approx &m).
-move => *.
-smt(@Real).
+smt().
 qed.
 
 end section.
