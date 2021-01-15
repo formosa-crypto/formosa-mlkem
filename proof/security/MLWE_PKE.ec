@@ -1,11 +1,12 @@
-require import AllCore Distr SmtMap.
-require (****) PKE H_MLWE.
+require import AllCore Distr List SmtMap.
+require (****) StdOrder PKE H_MLWE.
 
 theory MLWE_PKE.
 
 clone import H_MLWE.
+
+import StdOrder.IntOrder R Matrix_ Big.BAdd.
 import H_MLWE_ROM Lazy.
-import Matrix_.
 
 type plaintext.
 type ciphertext.
@@ -588,63 +589,47 @@ qed.
 (* Finally we just need to compute a concrete probability *)
 (* Which we will bound in simplified form *)
 
-import R.
-
-import List.
-import Matrix_.
-
-import Big.BAdd StdOrder.IntOrder.
-
-lemma dmatrix_dvector (v:vector) i :
+lemma dmatrix_dvector (v : vector) i :
   0 <= i < Matrix_.size => unit v.[i] =>
   dmap duni_matrix (fun A => A *^ v) = dvector duni_R.
 proof.
-  move=> hi hvi.
-  rewrite /duni_matrix dmatrix_dvector dmap_comp /(\o).
-  pose duvector := dvector duni_R.
-  have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
-  rewrite -cat_nseq 1,2:/# nseqS 1:/#.
-  rewrite djoin_perm_s1s dmap_dlet.
-  pose D := _ `*` _; rewrite -{2}(dlet_cst D duvector).
-  + by apply/dprod_ll; split; apply/djoin_ll=> d;
-      rewrite mem_nseq => -[_ <-]; apply/dvector_ll/duni_R_ll.
-  apply in_eq_dlet => //= ls /supp_dprod [] + _.
-  move=> /supp_djoin [] + _.
-  rewrite size_nseq StdOrder.IntOrder.ler_maxr 1:/# => ->>.
-  rewrite dmap_comp /(\o) /=.
-  pose k := size  ls.`1.
-  pose size := Matrix_.size.
-  pose f (x:vector) :=  
-    offunv (fun i => x.[i]*v.[k] + bigi (predC1 k)
-      (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
-  rewrite (eq_dmap duvector _ f).
-  + move=> x /=; apply eq_vectorP => i h.
-    rewrite /f mulmxvE offunvE //=.  
-    rewrite (bigD1 _ _ k) 1:mem_range // 1:range_uniq /=.
-    congr. 
-    + by rewrite offunmE 1:/# /= nth_cat ltzz /= subrr. 
-    apply congr_big_seq => //= i0 /mem_range ? _ _.
-    by rewrite offunmE 1:/#.
-  pose finv (y:vector) := 
-    offunv (fun i => (y.[i] - bigi (predC1 k)
-      (fun j => (nth witness (ls.`1 ++ witness :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
-  apply (dmap_bij duvector duvector f finv).
-  + by move=> x _; apply/dvector_full/duni_R_fu.
-  + move=> x _; apply/dvector_funi.
-    - by apply/duni_R_fu.
-    - by apply/funi_uni/duni_R_uni.
-  + move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
-    do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
-    rewrite (_ : z2 = z1); last first.
-    + by rewrite -addrA subrr addr0 mulrK.
-    by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
-  + move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
-    do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
-    rewrite mulrAC mulrK //; rewrite (_ : z2 = z1); last first.
-    + by rewrite -addrA addNr addr0.
-    by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
+move=> rg_i ut_vi; rewrite /duni_matrix dmatrix_dvector dmap_comp /(\o).
+pose duvector := dvector duni_R.
+have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
+rewrite -cat_nseq 1,2:/# nseqS 1:/# djoin_perm_s1s dmap_dlet.
+pose D := _ `*` _; rewrite -{2}(dlet_cst D duvector).
++ by apply/dprod_ll; split; apply/djoin_ll=> d;
+    rewrite mem_nseq => -[_ <-]; apply/dvector_ll/duni_R_ll.
+apply in_eq_dlet => //= ls /supp_dprod [] + _ - /supp_djoin [] + _.
+rewrite size_nseq ler_maxr 1:/# => ->>; rewrite dmap_comp /(\o) /=.
+move: rg_i ut_vi; (pose k := size  ls.`1) => rg_k ut_vk.
+pose size := Matrix_.size; pose f (x : vector) :=  
+  offunv (fun i => x.[i] * v.[k] + bigi (predC1 k)
+    (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
+rewrite -(eq_dmap duvector f) => /= [x|].
++ apply eq_vectorP => i rg_i; rewrite /f mulmxvE offunvE //=.  
+  rewrite (bigD1 _ _ k) 1:mem_range // 1:range_uniq /=; congr. 
+  + by rewrite offunmE 1:/# /= nth_cat ltzz /= subrr. 
+  by apply congr_big_seq => //= i0 /mem_range ? _ _; rewrite offunmE 1:/#.
+pose finv (y : vector) := 
+  offunv (fun i => (y.[i] - bigi (predC1 k)
+    (fun j => (nth witness (ls.`1 ++ witness :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
+apply (dmap_bij duvector duvector f finv).
++ by move=> x _; apply/dvector_full/duni_R_fu.
++ move=> x _; apply/dvector_funi.
+  - by apply/duni_R_fu.
+  - by apply/funi_uni/duni_R_uni.
++ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
+  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
+  rewrite (_ : z2 = z1); last first.
+  + by rewrite -addrA subrr addr0 mulrK.
+  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
++ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
+  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
+  rewrite mulrAC mulrK //; rewrite (_ : z2 = z1); last first.
+  + by rewrite -addrA addNr addr0.
+  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
 qed.
-
 
 (* We will jump to this game where instead of the real
    distribution of u and r, we use an idealized one where
@@ -695,7 +680,7 @@ have -> : Pr[AUX.f(r{1}) @ &1 : res = a] =
             mu1 (dmap duni_matrix (fun _A => _A *^ r{1})) a.
 + byphoare (: r = r{1} ==> res = a) => //.
   by proc; rnd; skip => />; rewrite (dmapE duni_matrix).
-by rewrite (dmatrix_dvector2 r{1} i h1 h2).
+by rewrite (dmatrix_dvector r{1} i h1 h2).
 qed.
 
 equiv NoiseApprox_Bound : 
