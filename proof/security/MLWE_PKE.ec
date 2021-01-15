@@ -593,16 +593,9 @@ import R.
 import List.
 import Matrix_.
 
-(* This proves the random rule *)
-
-axiom dmatrix_dvector d : 
-  dmatrix d = 
-  dmap (djoin (nseq Matrix_.size (dvector d))) 
-    (fun (vs:vector list) => offunm (fun i j => (nth witness vs j).[i])).
-
 import Big.BAdd StdOrder.IntOrder.
 
-lemma dmatrix_dvector2 (v:vector) i :
+lemma dmatrix_dvector (v:vector) i :
   0 <= i < Matrix_.size => unit v.[i] =>
   dmap duni_matrix (fun A => A *^ v) = dvector duni_R.
 proof.
