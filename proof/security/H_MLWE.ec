@@ -8,35 +8,43 @@ type seed.
 
 op H : seed -> matrix.
 
-abbrev m_transpose = trmx.
+abbrev [-printing] m_transpose = trmx.
 
-op dseed : seed distr.
-op duni_R  : R distr.
-op dshort_R  : R distr.
+op [lossless] dseed : seed distr.
+(* axiom dseed_ll : is_lossless dseed. *)
 
-op pe : real.
-op pv : real. 
+(* Uniform distribution over the finite field R *)
+op [lossless uniform full] duni_R : R distr.
 
-axiom dseed_ll : is_lossless dseed.
-axiom dshort_R_ll : is_lossless dshort_R.
-axiom duni_R_ll : is_lossless duni_R.
+op pe : real = mu1 duni_R witness.
 
-axiom duni_R_fu: is_full duni_R.
-axiom duni_RE: forall (s: R), mu1 duni_R s = pe.
-lemma duni_R_uni: is_funiform duni_R.
-proof. by move=> ??;rewrite !duni_RE. qed.
+lemma duni_R_funi: is_funiform duni_R.
+proof. apply is_full_funiform; [apply duni_R_fu | apply duni_R_uni]. qed.
 
-hint exact random : duni_R_fu duni_R_ll duni_R_uni.
+lemma duni_RE: forall (s: R), mu1 duni_R s = pe.
+proof. move=> *; apply duni_R_funi. qed.
 
-op dshort = dvector dshort_R.
+(* Distribution over R ( short value ) *)
+
+op [lossless] dshort_R  : R distr.
+
+(* We define the distribution over vector *)
 op duni = dvector duni_R.
+op dshort = dvector dshort_R.
+
+
+(* FIXME clean the remaining part *)
+op pv : real. 
 
 lemma duni_ll : is_lossless duni by rewrite /duni /dvector; smt.
 axiom duni_vectorE: forall (v: vector), mu1 duni v = pv.
+(* FIXME rename this lemma *)
 lemma duni_vector_uni: is_funiform duni.
 proof. by move=> ??;rewrite !duni_vectorE. qed.
 
 lemma dshort_ll : is_lossless dshort by rewrite /dshort /dvector => />;smt.
+
+hint solve 0 random : dshor_ll duni_ll duni_vector_uni.
 
 op duni_matrix = dmatrix duni_R.
 
