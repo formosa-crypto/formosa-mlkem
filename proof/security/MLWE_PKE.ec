@@ -489,10 +489,25 @@ module CorrectnessNoiseApprox = {
   }
 }.
 
-(* FIXME: prove those lemmas *)
+(* FIXME: prove this lemma *)
 axiom dshort0 : mu1 dshort zerov < 1%r.
-axiom dshort_unit : 
+axiom dshort_R_unit x : x \in dshort_R => x <> R.zeror => unit x.
+
+(* FIXME move this *) 
+lemma supp_dvector (d: R distr) v i: v \in dvector d => 0 <= i < Matrix_.size => v.[i] \in d.
+move=> /supp_dmap [l /=] [] /supp_djoin [].
+rewrite size_nseq ler_maxr 1:ge0_size => hl /allP /= hz -> hi.
+rewrite offunvE 1:// &(hz (d, nth witness l i)) hl.
+by apply/mem_zip_nseqL/mem_nth;rewrite -hl.
+qed.
+
+lemma dshort_unit : 
   forall v, v \in dshort \ pred1 zerov => exists i, 0 <= i < Matrix_.size /\ unit v.[i].
+proof.
+  move=> v /supp_dexcepted @/pred1 [] /supp_dvector hvi hv.
+  case: (exists (i : int), (0 <= i && i < Matrix_.size) /\ unit v.[i]) => //. 
+  move=> /negb_exists hunit; apply/hv/eq_vectorP; smt (dshort_R_unit).
+qed.
 
 (* FIXME: move this in RndExcept *)
 abstract theory RndExcept1.
