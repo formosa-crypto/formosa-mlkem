@@ -1,5 +1,5 @@
-require import AllCore Distr List SmtMap.
-require (****) StdOrder PKE H_MLWE.
+require import AllCore Distr List SmtMap Dexcepted.
+require (****) RndExcept StdOrder PKE H_MLWE.
 
 theory MLWE_PKE.
 
@@ -489,6 +489,100 @@ module CorrectnessNoiseApprox = {
   }
 }.
 
+(* FIXME: prove those lemmas *)
+axiom dshort0 : mu1 dshort zerov < 1%r.
+axiom dshort_unit : 
+  forall v, v \in dshort \ pred1 zerov => exists i, 0 <= i < Matrix_.size /\ unit v.[i].
+
+(* FIXME: move this in RndExcept *)
+abstract theory RndExcept1.
+
+module type ADV = {
+   proc main (r:vector) : bool
+}.
+
+module G1 (A:ADV) = {
+  proc main () = {
+    var r, b;
+    r <$ dshort;
+    b <- A.main(r);
+    return b;
+  }
+}.
+
+module G2 (A:ADV) = {
+  proc main () = {
+    var r, b;
+    r <$ dshort \ pred1 zerov;
+    b <- A.main(r);
+    return b;
+  }
+}.
+
+section.
+
+declare module A:ADV.
+
+local clone import RndExcept with
+  type input <- unit,
+  type t     <- vector,
+  op   d     <- fun _ => dshort,
+  type out   <- bool
+  proof *.
+realize d_ll. by move=> *; apply dshort_ll. qed.
+
+local clone import Adversary with
+  op test <- fun _ X => X = [Vector.zerov]
+  proof *.
+realize test_spec.
+proof.
+move=> _ X ->.
+apply Dexcepted.dexcepted_ll; 1: by apply dshort_ll.
+rewrite (mu_eq _ _ (pred1 zerov)) 1:// &(dshort0).
+qed.
+
+local clone import Bad
+  proof *.
+
+local module MADV (A:ADV) (O:SAMPLE_ADV)= {
+  proc main () = {
+    var r, b;
+    r <@ O.sample((), [zerov]);
+    b <- A.main(r);
+    return b;
+  }
+}.
+
+
+lemma Pr_except : islossless A.main =>
+  forall &m, `| Pr[G1(A).main() @ &m : res] - Pr[G2(A).main() @ &m : res] | <= 
+               mu1 dshort zerov.
+proof.
+  move=> A_ll &m.
+  have /= := pr_A_upto (<:MADV(A)) _ (fun b _ => b) &m.
+  + by move=> O O_ll; proc; call (A_ll); call O_ll.
+  have : Pr[G1(A).main() @ &m : res] = 
+         Pr[Main(R(Sample), MADV(A)).main() @ &m : res].
+  + byequiv => //.  
+    proc; inline *. rcondt{2} ^if; 1: by auto.
+    by sim; auto. 
+  have -> : Pr[G2(A).main() @ &m : res] =
+            Pr[Main(R(SampleE), MADV(A)).main() @ &m : res].
+  + byequiv => //.
+    proc; inline *; rcondt{2} ^if; 1: by auto.
+    by sim; auto.
+  have /# : Pr[Main(R(SampleB), MADV(A)).main() @ &m : SampleB.bad] <= mu1 dshort zerov.
+  byphoare => //.
+  proc; inline *; rcondt ^if; 1: by auto.
+  wp; seq 10 : SampleB.bad (mu1 dshort zerov) 1%r _ 0%r => //.
+  + by wp; rnd (pred1 zerov); auto.
+  by conseq (_: false).
+qed.
+
+end section.
+
+end RndExcept1.
+
 section.
 
 declare module A : CAdversary {LRO}.
@@ -577,13 +671,38 @@ module CorrectnessBound = {
   }
 }.
 
-(* Do to a fisrt try *)
-axiom dshort_unit : 
-  forall v, v \in dshort => exists i, 0 <= i < Matrix_.size /\ unit v.[i].
+local clone import RndExcept1 as RndExcept1'.
+
+local module AdvCorrectnessBound = {
+  proc main(r:vector) = {
+    var s,e,u,e1,e2,n;
+    s <$ dshort;
+    e <$ dshort;
+    u <$ duni;
+    e1 <$ dshort;
+    e2 <$ dshort_R;
+    n <- noise_exp_part_simpl u s e r e1 e2;
+    return (!under_noise_bound n (max_noise - cv_bound));
+  }
+}.
+
+local module AdvCorrectnessNoiseApprox = {
+  proc main(r:vector) = {
+    var s,e,_A,e1,e2,n,u;
+    _A <$ duni_matrix;
+    s <$ dshort;
+    e <$ dshort;
+    e1 <$ dshort;
+    e2 <$ dshort_R;
+    u <- m_transpose _A *^ r + e1;
+    n <- noise_exp_part_simpl u s e r e1 e2;
+    return (!under_noise_bound n (max_noise - cv_bound));
+  }
+}.
 
 import Vector.ZModule.
 
-module AUX = {
+local module AUX = {
   proc f (r:vector) = {
     var _A;
     _A <$ duni_matrix;
@@ -597,7 +716,7 @@ module AUX = {
   } 
 }.
 
-equiv AUX_fg : AUX.f ~ AUX.g : r{1} \in dshort ==> ={res}.
+local equiv AUX_fg : AUX.f ~ AUX.g : r{1} \in dshort \ pred1 zerov ==> ={res}.
 proof.
 bypr (res{1}) (res{2}) => // &1 &2 a /dshort_unit [i [h1 h2]].
 have -> : Pr[AUX.g() @ &2 : res = a] = mu1 duni a.
@@ -610,27 +729,27 @@ have -> : Pr[AUX.f(r{1}) @ &1 : res = a] =
 by rewrite (dmatrix_dvector r{1} i h1 h2).
 qed.
 
-equiv NoiseApprox_Bound : 
-  CorrectnessNoiseApprox.main ~ CorrectnessBound.main : true ==> ={res}.
+local equiv NoiseApprox_Bound : 
+  G2(AdvCorrectnessNoiseApprox).main ~ G2(AdvCorrectnessBound).main : true ==> ={res}.
 proof.
-  proc; wp.
+  proc; inline *; swap 2 5; wp.
   rewrite /noise_exp_part /noise_exp_part_simpl /=.
-  swap{1} 1 5; swap{2} 3 3. 
-  swap{1} 1 4; swap{2} 3 2.
-  seq 5 5 : (={e,e1,e2,r,s} /\ r{1} \in dshort); 1: by auto.
+  swap{1} [1..2] 4; swap{2} 1 2. 
+  swap{2} [3..4] 2.
+  seq 5 5 : (={e,e1,e2,r,s} /\ r{1} \in dshort \ pred1 zerov); 1: by auto.
   conseq (_: u{2} = m_transpose _A{1} *^ r{1} + e1{1}); 1: done.
   transitivity{1} { _A <$ duni_matrix; }
     ( ={r,e1} ==> _A{1} = m_transpose _A{2} /\ ={r,e1})
-    ( r{1} \in dshort ==> u{2} = _A{1} *^ r{1} + e1{1} ) => />; 1:smt().
+    ( r{1} \in dshort \ pred1 zerov ==> u{2} = _A{1} *^ r{1} + e1{1} ) => />; 1:smt().
   + by move=> *; rewrite trmxK.
   + rnd m_transpose; skip => />.
     by split=> *; rewrite trmxK.
   transitivity{1} { u <- AUX.f(r); }
     ( ={r,e1} ==> _A{1} *^ r{1} = u{2} /\ ={e1})
-    ( r{1} \in dshort ==> u{2} = u{1} + e1{1} ) => />; 1:smt().
+    ( r{1} \in dshort \ pred1 zerov ==> u{2} = u{1} + e1{1} ) => />; 1:smt().
   + by inline *; auto.
   transitivity{1} { u <@ AUX.g(); } 
-    ( ={e1} /\ r{1} \in dshort ==> ={u,e1})
+    ( ={e1} /\ r{1} \in dshort \ pred1 zerov ==> ={u,e1})
     ( true ==> u{2} = u{1} + e1{1} ) => />; 1: smt(); last first.
   + inline *;wp.
     rnd (fun u => u + e1{1}) (fun u => u + - e1{1}); skip => /> &1; split => *.
@@ -643,16 +762,28 @@ qed.
    Kyber proposal. 
    We need to figure out how to bound it. *)
 (* FIXME *)
-op epsilon_hack : real = 0%r.
+op epsilon_hack : real = 2%r * mu1 dshort zerov.
 
 lemma correctness_hack &m :
-  epsilon_hack =
   `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] |.
+     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack 
+.
 proof.
+  have := Pr_except AdvCorrectnessNoiseApprox _ &m.
+  + by islossless.
+  have :=  Pr_except AdvCorrectnessBound _ &m.
+  + by islossless.
+  have -> : Pr[G1(AdvCorrectnessBound).main() @ &m : res] = 
+            Pr[CorrectnessBound.main() @ &m : res].
+  + byequiv => //.
+    by proc; inline *; swap{2} 4 - 3; wp; sim.
+  have -> : Pr[G1(AdvCorrectnessNoiseApprox).main() @ &m : res] =
+            Pr[CorrectnessNoiseApprox.main() @ &m : res].
+  + byequiv => //.
+    by proc; inline *; swap{2} 2 -1; wp; sim.
   have -> /# :
-    Pr[CorrectnessNoiseApprox.main() @ &m : res] =
-    Pr[CorrectnessBound.main() @ &m : res].
+    Pr[G2(AdvCorrectnessNoiseApprox).main() @ &m : res] =
+    Pr[G2(AdvCorrectnessBound).main() @ &m : res].
   by byequiv NoiseApprox_Bound.
 qed.
    
