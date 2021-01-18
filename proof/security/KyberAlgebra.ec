@@ -31,7 +31,7 @@ clone import Matrix as Matrix_ with
   realize ZR.mulf_eq0  by exact: R.mulf_eq0 .
 
 abbrev (+&) = R.(+).
-op (-&) = R.(-).
+abbrev (-&) = R.(-).
 abbrev (`<*>`) a b = dotp a b.
 
 instance ring with R
@@ -41,7 +41,6 @@ instance ring with R
   op opp   = R.([-])
   op mul   = R.( * )
   op expr  = R.exp
-  op sub   = (-&)
   op ofint = R.ofint
 
   proof oner_neq0 by apply R.oner_neq0
@@ -54,7 +53,6 @@ instance ring with R
   proof mulrC     by apply R.mulrC
   proof mulrDl    by apply R.mulrDl
   proof expr0     by apply R.expr0
-  proof subrE     by done
   proof ofint0    by apply R.ofint0
   proof ofint1    by apply R.ofint1
   proof exprS     by apply R.exprS
