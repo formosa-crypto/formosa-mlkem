@@ -402,6 +402,25 @@ proof.
   rewrite /noise_exp /= encode_noise /= matrix_props1 matrix_props2; ring. 
 qed.
 
+op cucv_real _A s e r e1 e2 m  = 
+    let t = _A *^ s + e in
+    let u = m_transpose _A *^ r + e1 in
+    let v = (t `<*>` r) +& e2 +& (m_encode m) in
+    let cu = rnd_err_u u in
+    let cv = rnd_err_v v in
+      (cu,cv).
+
+op cucv_ideal u v  = 
+    let cu = rnd_err_u u in
+    let cv = rnd_err_v v in
+      (cu,cv).
+
+real game m : sample _A s e r e1 e2 as in correctness game, return A(u,v,s,cucv_real _A s e r e1 e2 m)
+
+ideal game m : sample u v uniformly at random s from noise, return A(u,v,s,cucv_ideal u v)
+
+
+
 (* The above noise expression is computed over the abstract
    rings that define the scheme. Noise bounds are checked and
    computed over the integers. *)
@@ -714,16 +733,9 @@ proof.
   by call AUX_fg.
 qed.
 
-(* This jump is assumed to introduce no slack in the
-   Kyber proposal. 
-   We need to figure out how to bound it. *)
-(* FIXME *)
-op epsilon_hack : real = 0%r.
-
-lemma correctness_hack &m :
-  epsilon_hack =
-  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] |.
+lemma correctness_last_hop &m :
+  Pr[CorrectnessNoiseApprox.main() @ &m : res] =
+     Pr[CorrectnessBound.main() @ &m : res].
 proof.
   have -> /# :
     Pr[CorrectnessNoiseApprox.main() @ &m : res] =
@@ -738,10 +750,10 @@ axiom fail_prob &m :
 
 lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob - epsilon_hack.
+  1%r - fail_prob.
 proof.
 have := (fail_prob &m).
-have := (correctness_hack &m). 
+have := (correctness_last_hop &m). 
 have := (correctness_approx &m).
 smt().
 qed.
