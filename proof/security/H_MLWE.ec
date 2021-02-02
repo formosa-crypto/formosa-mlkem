@@ -40,7 +40,7 @@ lemma duni_ll : is_lossless duni.
 proof. apply/dvector_ll/duni_R_ll. qed.
 
 lemma duni_fu : is_full duni.
-proof. apply /dvector_full/duni_R_fu. qed.
+proof. apply /dvector_fu /duni_R_fu. qed.
 
 lemma duni_uni : is_uniform duni.
 proof. apply /dvector_uni/duni_R_uni. qed.
@@ -64,7 +64,7 @@ lemma duni_matrix_ll : is_lossless duni_matrix.
 proof. apply/dmatrix_ll/duni_R_ll. qed.
 
 lemma duni_matrix_fu : is_full duni_matrix.
-proof. apply /dmatrix_full/duni_R_fu. qed.
+proof. apply /dmatrix_fu/duni_R_fu. qed.
 
 lemma duni_matrix_uni : is_uniform duni_matrix.
 proof. apply /dmatrix_uni/duni_R_uni. qed.

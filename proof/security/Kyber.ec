@@ -192,18 +192,15 @@ qed.
 
 (* Should the ring structure for R come from here? *)
 clone import MLWE_PKE as MLWEPKE with
-  type H_MLWE.Matrix_.R <- poly,
-  op H_MLWE.Matrix_.ZR.zeror <- Poly.zero,
-  op H_MLWE.Matrix_.ZR.(+) <- Poly.(+),
-  op H_MLWE.Matrix_.ZR.([-]) <- Poly.([-]),
-  op H_MLWE.Matrix_.ZR.oner <- Poly.one, 
-  op H_MLWE.Matrix_.ZR.( * ) <- Poly.( *),
+  type H_MLWE.R <- poly,
+  op H_MLWE.R.zeror <- Poly.zero,
+  op H_MLWE.R.(+) <- Poly.(+),
+  op H_MLWE.R.([-]) <- Poly.([-]),
+  op H_MLWE.R.oner <- Poly.one, 
+  op H_MLWE.R.( * ) <- Poly.( *),
   op H_MLWE.Matrix_.size <- kvec,
   op H_MLWE.dshort_R <- Kyber.Poly.dshort_R,
   op H_MLWE.duni_R <- Kyber.Poly.duni_R,
-  op H_MLWE.pe <- pe_R,
-  op H_MLWE.pm <- pm,
-  op H_MLWE.pv <- pv,
   type plaintext = message,
   type ciphertext = H_MLWE.Matrix_.vector * poly,
   op m_encode <- m_encode,
@@ -224,20 +221,15 @@ clone import MLWE_PKE as MLWEPKE with
   op cv_bound <- cv_bound,
   op fail_prob <- fail_prob,
   op epsilon_hack <- epsilon_hack
-  proof H_MLWE.Matrix_.ge0_size by smt(kvec_ge3)
   proof H_MLWE.dshort_R_ll  by apply Kyber.Poly.dshort_R_ll
   proof H_MLWE.duni_R_ll by apply Kyber.Poly.duni_R_ll
-  proof matrix_props1 by smt(@H_MLWE.Matrix_)
+  proof H_MLWE.Matrix_.ge0_size by smt(kvec_ge3)
   proof H_MLWE.duni_R_fu
-  proof H_MLWE.duni_RE
-  proof H_MLWE.duni_vectorE
-  proof H_MLWE.duni_matrixE
   proof encode_noise
   proof good_decode
-  proof matrix_props2
   proof cv_bound_valid
   proof noise_commutes.
-  (* proof* a lot of trash coming from ring theories *)
+  (* proof* a lot of unproved axioms coming from ring theories *)
 
 realize H_MLWE.duni_R_fu.
 proof.
@@ -250,73 +242,6 @@ proof.
     by rewrite Array256.to_listK.
 qed.
 
-realize H_MLWE.duni_RE.
-proof.
-  rewrite /Poly.duni_R /pe_R  /Kyber.pe => p.
-  rewrite (dmap1E_can _ _ (Array256.to_list) _); first by by rewrite Array256.to_listK.
-    by move => a; rewrite supp_dlist // => /> *; rewrite of_listK.
-  rewrite dlist1E //.
-  have ->: 256 = size (to_list p) by rewrite size_to_list.
-  rewrite /StdBigop.Bigreal.BRM.big filter_predT /=.
-  elim (to_list p) => /=; first by rewrite expr0 1:/#.
-  move => x l hind /=.
-    by rewrite hind duni_elem1E /pe addzC exprS; first by smt(size_ge0).
-qed.
-
-realize H_MLWE.duni_vectorE.
-proof.
-  rewrite /H_MLWE.duni => m.
-  rewrite Matrix_.Matrix.dvector1E /StdBigop.Bigreal.BRM.big /StdBigop.Bigreal.BRM.big filter_predT !foldr_map /=.
-  rewrite /pv /pe_R /pe /=. 
-  have aux : forall (x : real) (y : int), 0 <= y => 
-              (foldr (fun (_ : int) (z : real) => x * z) 1%r (range 0 y)) = x ^ y.
-    move => x y; elim y.
-    by rewrite range_geq //= ; rewrite expr0 /#.
-    move => j ? H0; rewrite range_ltn 1:/# /= exprS // -H0.
-    have mulrC : forall (x y : real), x * y = y * x by smt(). (* how to use lemma?? *)
-    congr.
-    by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);
-      first by rewrite !size_range.
-have -> : 
-  (fun (x : int) (z : real) => mu1 Poly.duni_R (Matrix_.Vector."_.[_]" m x) * z)  = 
-   (fun (x : int) (z : real) =>  (inv q%r ^ 256 * z)).
-    rewrite fun_ext /(==) => x. 
-    rewrite fun_ext /(==) => z. 
-    by rewrite H_MLWE.duni_RE /pe_R /pe.
-  rewrite aux; first by smt(kvec_ge3). 
-done.
-qed.
-
-realize H_MLWE.duni_matrixE.
-proof.
-  rewrite /H_MLWE.duni_matrix => m.
-  rewrite Matrix_.Matrix.dmatrix1E /StdBigop.Bigreal.BRM.big /StdBigop.Bigreal.BRM.big filter_predT !foldr_map /=.
-  have ->: (fun (x : int) (z : real) => foldr Real.( * ) 1%r 
-            (map (fun (j : int) => mu1 Poly.duni_R (Matrix_.Matrix."_.[_]" m (x, j))) (range 0 kvec)) * z) =
-          (fun (x : int) => Real.( * ) (foldr (fun (x0 : int) (z : real) => (1%r / q%r)^256 * z) 
-            1%r (range 0 kvec))).
-    rewrite fun_ext /(==) => x.
-    rewrite foldr_map => /=.
-    congr. congr.
-    rewrite fun_ext /(==) => y.
-    by rewrite H_MLWE.duni_RE /pe_R /pe.
-  rewrite /pm /pe_R /pe /=.
-  have aux : forall (x : real) (y : int), 0 <= y => 
-              (foldr (fun (_ : int) (z : real) => x * z) 1%r (range 0 y)) = x ^ y.
-    move => x y; elim y.
-    by rewrite range_geq //= ; rewrite expr0 /#.
-    move => j *; rewrite range_ltn 1:/# /= exprS // -H0.
-    have mulrC : forall (x y : real), x * y = y * x by smt(). (* how to use lemma?? *)
-    congr.
-    by rewrite (foldr_eq_size (Real.( * )) (range 1 (j + 1)) (range 0 j) _ _);
-      first by rewrite !size_range.
-  have ->: (foldr (fun (_ : int) (z : real) => inv q%r ^ 256 * z) 1%r (range 0 kvec)) = inv q%r ^ 256 ^ kvec
-    by rewrite aux; first by smt(kvec_ge3).
-  have ->: foldr (fun (_ : int) => ( * ) (inv q%r ^ 256 ^ kvec)) 1%r (range 0 kvec) = 
-            foldr (fun (_ : int) (z : real) => (inv q%r ^ 256 ^ kvec) * z) 1%r (range 0 kvec) by smt().
-  rewrite aux; first by smt(kvec_ge3). 
-  by rewrite  exprM expr0 /=.
-qed.
 
 realize encode_noise.
 move => /> *.
@@ -327,21 +252,8 @@ apply H_MLWE.Matrix_.Vector.eq_vectorP => /> *.
 rewrite H_MLWE.Matrix_.Vector.offunvE 1:/# H_MLWE.Matrix_.Vector.offunvE 1:/# /=.
 apply Array256.ext_eq => /> *.
 rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.  
+congr => />.
 smt.
-qed.
-
-realize matrix_props2.
-move => /> *.
-rewrite -H_MLWE.Matrix_.Matrix.mulmxTv H_MLWE.Matrix_.Matrix.trmxK.
-rewrite /(`<*>`) H_MLWE.Matrix_.Vector.dotpDr.
-ring. 
-rewrite (H_MLWE.Matrix_.Matrix.mulmxTv _A r).
-rewrite (H_MLWE.Matrix_.Vector.dotpC s _).
-rewrite (H_MLWE.Matrix_.Vector.dotpC _ r).
-rewrite  (H_MLWE.Matrix_.Vector.dotpC _ s) /=.
-rewrite H_MLWE.Matrix_.Vector.dotpDr.
-rewrite -(H_MLWE.Matrix_.Matrix.dotp_mulmxv _A s r) ( H_MLWE.Matrix_.Vector.dotpC r). 
-by ring.
 qed.
 
 realize good_decode.
@@ -391,9 +303,8 @@ axiom All (O <: POracle{A}):
    correctness because we consider rounding of uniform 
    and independent coefficients *)
 axiom correctness_hack &m :
-  epsilon_hack =
   `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] |.
+     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack.
 
 (* This is the  exact bound one gets assuming the rounding
    of uniform and independent coefficients *)

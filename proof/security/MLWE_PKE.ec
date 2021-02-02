@@ -5,6 +5,48 @@ theory MLWE_PKE.
 
 clone import H_MLWE.
 
+(****** FIX ME: MOVE ELSEWHERE *******
+
+lemma dmatrix_dvector (v : vector) i :
+  0 <= i < Matrix_.size => unit v.[i] =>
+  dmap duni_matrix (fun A => A *^ v) = duni.
+proof.
+move=> rg_i ut_vi; rewrite /duni_matrix dmatrix_dvector dmap_comp /(\o).
+have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
+rewrite -cat_nseq 1,2:/# nseqS 1:/# djoin_perm_s1s dmap_dlet -/duni.
+pose D := _ `*` _; rewrite -{2}(dlet_cst D duni).
++ by apply/dprod_ll; split; apply/djoin_ll=> d; rewrite mem_nseq => -[_ <-]; apply/duni_ll.
+apply in_eq_dlet => //= ls /supp_dprod [] + _ - /supp_djoin [] + _.
+rewrite size_nseq ler_maxr 1:/# => ->>; rewrite dmap_comp /(\o) /=.
+move: rg_i ut_vi; (pose k := size  ls.`1) => rg_k ut_vk.
+pose size := Matrix_.size; pose f (x : vector) :=  
+  offunv (fun i => x.[i] * v.[k] + bigi (predC1 k)
+    (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
+rewrite -(eq_dmap duni f) => /= [x|].
++ apply eq_vectorP => i rg_i; rewrite /f mulmxvE offunvE //=.  
+  rewrite (bigD1 _ _ k) 1:mem_range // 1:range_uniq /=; congr. 
+  + by rewrite offunmE 1:/# /= nth_cat ltzz /= subrr. 
+  by apply congr_big_seq => //= i0 /mem_range ? _ _; rewrite offunmE 1:/#.
+pose finv (y : vector) := 
+  offunv (fun i => (y.[i] - bigi (predC1 k)
+    (fun j => (nth witness (ls.`1 ++ witness :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
+apply (dmap_bij duni duni f finv).
++ by move=> x _; apply/duni_fu.
++ by move=> *; apply duni_funi.
++ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
+  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
+  rewrite (_ : z2 = z1); last first.
+  + by rewrite -addrA subrr addr0 mulrK.
+  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
++ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
+  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
+  rewrite mulrAC mulrK //; rewrite (_ : z2 = z1); last first.
+  + by rewrite -addrA addNr addr0.
+  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
+qed.
+
+************************************)
+
 import StdOrder.IntOrder R Matrix_ Big.BAdd.
 import H_MLWE_ROM Lazy.
 
@@ -352,25 +394,6 @@ proof.
   rewrite /noise_exp /= encode_noise /= matrix_props1 matrix_props2; ring. 
 qed.
 
-op cucv_real _A s e r e1 e2 m  = 
-    let t = _A *^ s + e in
-    let u = m_transpose _A *^ r + e1 in
-    let v = (t `<*>` r) +& e2 +& (m_encode m) in
-    let cu = rnd_err_u u in
-    let cv = rnd_err_v v in
-      (cu,cv).
-
-op cucv_ideal u v  = 
-    let cu = rnd_err_u u in
-    let cv = rnd_err_v v in
-      (cu,cv).
-
-real game m : sample _A s e r e1 e2 as in correctness game, return A(u,v,s,cucv_real _A s e r e1 e2 m)
-
-ideal game m : sample u v uniformly at random s from noise, return A(u,v,s,cucv_ideal u v)
-
-
-
 (* The above noise expression is computed over the abstract
    rings that define the scheme. Noise bounds are checked and
    computed over the integers. *)
@@ -485,17 +508,17 @@ axiom noise_commutes n n' (b : int) :
   under_noise_bound n (max_noise - b) =>
   under_noise_bound (n +& n') max_noise.
 
-op noise_exp_part_simpl u s e r e1 e2 = 
-  let cu = rnd_err_u u in 
+op noise_exp_part_simpl cu s e r e1 e2 = 
   ((e `<*>` r) -& (s `<*>` e1) -& (s `<*>` cu) +& e2 ).
 
 op noise_exp_part _A s e r e1 e2 = 
   let u = m_transpose _A *^ r + e1 in
-  noise_exp_part_simpl u s e r e1 e2.
+  let cu = rnd_err_u u in 
+  noise_exp_part_simpl cu s e r e1 e2.
 
 module CorrectnessNoiseApprox = {
   proc main() = {
-    var s,e,_A,r,e1,e2,n,u;
+    var s,e,_A,r,e1,e2,n,u,cu;
     _A <$ duni_matrix;
     r <$ dshort;
     s <$ dshort;
@@ -503,119 +526,11 @@ module CorrectnessNoiseApprox = {
     e1 <$ dshort;
     e2 <$ dshort_R;
     u <- m_transpose _A *^ r + e1;
-    n <- noise_exp_part_simpl u s e r e1 e2;
+    cu <- rnd_err_u u;
+    n <- noise_exp_part_simpl cu s e r e1 e2;
     return (!under_noise_bound n (max_noise - cv_bound));
   }
 }.
-
-(* FIXME: prove this lemma *)
-axiom dshort0 : mu1 dshort zerov < 1%r.
-axiom dshort_R_unit x : x \in dshort_R => x <> R.zeror => unit x.
-
-(* FIXME move this *) 
-lemma supp_dvector (d: R distr) v i: v \in dvector d => 0 <= i < Matrix_.size => v.[i] \in d.
-move=> /supp_dmap [l /=] [] /supp_djoin [].
-rewrite size_nseq ler_maxr 1:ge0_size => hl /allP /= hz -> hi.
-rewrite offunvE 1:// &(hz (d, nth witness l i)) hl.
-by apply/mem_zip_nseqL/mem_nth;rewrite -hl.
-qed.
-
-lemma dshort_unit : 
-  forall v, v \in dshort \ pred1 zerov => exists i, 0 <= i < Matrix_.size /\ unit v.[i].
-proof.
-  move=> v /supp_dexcepted @/pred1 [] /supp_dvector hvi hv.
-  case: (exists (i : int), (0 <= i && i < Matrix_.size) /\ unit v.[i]) => //. 
-  move=> /negb_exists hunit; apply/hv/eq_vectorP; smt (dshort_R_unit).
-qed.
-
-(* FIXME: move this in RndExcept *)
-abstract theory RndExcept1.
-
-module type ADV = {
-   proc main (r:vector) : bool
-}.
-
-module G1 (A:ADV) = {
-  proc main () = {
-    var r, b;
-    r <$ dshort;
-    b <- A.main(r);
-    return b;
-  }
-}.
-
-module G2 (A:ADV) = {
-  proc main () = {
-    var r, b;
-    r <$ dshort \ pred1 zerov;
-    b <- A.main(r);
-    return b;
-  }
-}.
-
-section.
-
-declare module A:ADV.
-
-local clone import RndExcept with
-  type input <- unit,
-  type t     <- vector,
-  op   d     <- fun _ => dshort,
-  type out   <- bool
-  proof *.
-realize d_ll. by move=> *; apply dshort_ll. qed.
-
-local clone import Adversary with
-  op test <- fun _ X => X = [Vector.zerov]
-  proof *.
-realize test_spec.
-proof.
-move=> _ X ->.
-apply Dexcepted.dexcepted_ll; 1: by apply dshort_ll.
-rewrite (mu_eq _ _ (pred1 zerov)) 1:// &(dshort0).
-qed.
-
-local clone import Bad
-  proof *.
-
-local module MADV (A:ADV) (O:SAMPLE_ADV)= {
-  proc main () = {
-    var r, b;
-    r <@ O.sample((), [zerov]);
-    b <- A.main(r);
-    return b;
-  }
-}.
-
-
-lemma Pr_except : islossless A.main =>
-  forall &m, `| Pr[G1(A).main() @ &m : res] - Pr[G2(A).main() @ &m : res] | <= 
-               mu1 dshort zerov.
-proof.
-  move=> A_ll &m.
-  have /= := pr_A_upto (<:MADV(A)) _ (fun b _ => b) &m.
-  + by move=> O O_ll; proc; call (A_ll); call O_ll.
-  have : Pr[G1(A).main() @ &m : res] = 
-         Pr[Main(R(Sample), MADV(A)).main() @ &m : res].
-  + byequiv => //.  
-    proc; inline *. rcondt{2} ^if; 1: by auto.
-    by sim; auto. 
-  have -> : Pr[G2(A).main() @ &m : res] =
-            Pr[Main(R(SampleE), MADV(A)).main() @ &m : res].
-  + byequiv => //.
-    proc; inline *; rcondt{2} ^if; 1: by auto.
-    by sim; auto.
-  have /# : Pr[Main(R(SampleB), MADV(A)).main() @ &m : SampleB.bad] <= mu1 dshort zerov.
-  byphoare => //.
-  proc; inline *; rcondt ^if; 1: by auto.
-  wp; seq 10 : SampleB.bad (mu1 dshort zerov) 1%r _ 0%r => //.
-  + by wp; rnd (pred1 zerov); auto.
-  by conseq (_: false).
-qed.
-
-end section.
-
-end RndExcept1.
 
 section.
 
@@ -650,183 +565,38 @@ proof. move : (correctness A All &m) (correctness_slack &m) => /#. qed.
 (* Finally we just need to compute a concrete probability *)
 (* Which we will bound in simplified form *)
 
-lemma dmatrix_dvector (v : vector) i :
-  0 <= i < Matrix_.size => unit v.[i] =>
-  dmap duni_matrix (fun A => A *^ v) = duni.
-proof.
-move=> rg_i ut_vi; rewrite /duni_matrix dmatrix_dvector dmap_comp /(\o).
-have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
-rewrite -cat_nseq 1,2:/# nseqS 1:/# djoin_perm_s1s dmap_dlet -/duni.
-pose D := _ `*` _; rewrite -{2}(dlet_cst D duni).
-+ by apply/dprod_ll; split; apply/djoin_ll=> d; rewrite mem_nseq => -[_ <-]; apply/duni_ll.
-apply in_eq_dlet => //= ls /supp_dprod [] + _ - /supp_djoin [] + _.
-rewrite size_nseq ler_maxr 1:/# => ->>; rewrite dmap_comp /(\o) /=.
-move: rg_i ut_vi; (pose k := size  ls.`1) => rg_k ut_vk.
-pose size := Matrix_.size; pose f (x : vector) :=  
-  offunv (fun i => x.[i] * v.[k] + bigi (predC1 k)
-    (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
-rewrite -(eq_dmap duni f) => /= [x|].
-+ apply eq_vectorP => i rg_i; rewrite /f mulmxvE offunvE //=.  
-  rewrite (bigD1 _ _ k) 1:mem_range // 1:range_uniq /=; congr. 
-  + by rewrite offunmE 1:/# /= nth_cat ltzz /= subrr. 
-  by apply congr_big_seq => //= i0 /mem_range ? _ _; rewrite offunmE 1:/#.
-pose finv (y : vector) := 
-  offunv (fun i => (y.[i] - bigi (predC1 k)
-    (fun j => (nth witness (ls.`1 ++ witness :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
-apply (dmap_bij duni duni f finv).
-+ by move=> x _; apply/duni_fu.
-+ by move=> *; apply duni_funi.
-+ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
-  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
-  rewrite (_ : z2 = z1); last first.
-  + by rewrite -addrA subrr addr0 mulrK.
-  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
-+ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
-  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
-  rewrite mulrAC mulrK //; rewrite (_ : z2 = z1); last first.
-  + by rewrite -addrA addNr addr0.
-  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
-qed.
 
 (* We will jump to this game where instead of the real
    distribution of u and r, we use an idealized one where
    they are independent. *)
 module CorrectnessBound = {
   proc main() = {
-    var s,e,u,r,e1,e2,n;
+    var s,e,u,r,e1,e2,n,cu;
     s <$ dshort;
     e <$ dshort;
     u <$ duni;
     r <$ dshort;
     e1 <$ dshort;
     e2 <$ dshort_R;
-    n <- noise_exp_part_simpl u s e r e1 e2;
+    cu <- rnd_err_u u;
+    n <- noise_exp_part_simpl cu s e r e1 e2;
     return (!under_noise_bound n (max_noise - cv_bound));
   }
 }.
 
-local clone import RndExcept1 as RndExcept1'.
-
-local module AdvCorrectnessBound = {
-  proc main(r:vector) = {
-    var s,e,u,e1,e2,n;
-    s <$ dshort;
-    e <$ dshort;
-    u <$ duni;
-    e1 <$ dshort;
-    e2 <$ dshort_R;
-    n <- noise_exp_part_simpl u s e r e1 e2;
-    return (!under_noise_bound n (max_noise - cv_bound));
-  }
-}.
-
-local module AdvCorrectnessNoiseApprox = {
-  proc main(r:vector) = {
-    var s,e,_A,e1,e2,n,u;
-    _A <$ duni_matrix;
-    s <$ dshort;
-    e <$ dshort;
-    e1 <$ dshort;
-    e2 <$ dshort_R;
-    u <- m_transpose _A *^ r + e1;
-    n <- noise_exp_part_simpl u s e r e1 e2;
-    return (!under_noise_bound n (max_noise - cv_bound));
-  }
-}.
-
-import Vector.ZModule.
-
-local module AUX = {
-  proc f (r:vector) = {
-    var _A;
-    _A <$ duni_matrix;
-    return _A *^ r;
-  }
-
-  proc g () = {
-    var u;
-    u <$ duni;
-    return u;
-  } 
-}.
-
-local equiv AUX_fg : AUX.f ~ AUX.g : r{1} \in dshort \ pred1 zerov ==> ={res}.
-proof.
-bypr (res{1}) (res{2}) => // &1 &2 a /dshort_unit [i [h1 h2]].
-have -> : Pr[AUX.g() @ &2 : res = a] = mu1 duni a.
-+ byphoare => //.
-  by proc; rnd; skip.
-have -> : Pr[AUX.f(r{1}) @ &1 : res = a] = 
-            mu1 (dmap duni_matrix (fun _A => _A *^ r{1})) a.
-+ byphoare (: r = r{1} ==> res = a) => //.
-  by proc; rnd; skip => />; rewrite (dmapE duni_matrix).
-by rewrite (dmatrix_dvector r{1} i h1 h2).
-qed.
-
-local equiv NoiseApprox_Bound : 
-  G2(AdvCorrectnessNoiseApprox).main ~ G2(AdvCorrectnessBound).main : true ==> ={res}.
-proof.
-  proc; inline *; swap 2 5; wp.
-  rewrite /noise_exp_part /noise_exp_part_simpl /=.
-  swap{1} [1..2] 4; swap{2} 1 2. 
-  swap{2} [3..4] 2.
-  seq 5 5 : (={e,e1,e2,r,s} /\ r{1} \in dshort \ pred1 zerov); 1: by auto.
-  conseq (_: u{2} = m_transpose _A{1} *^ r{1} + e1{1}); 1: done.
-  transitivity{1} { _A <$ duni_matrix; }
-    ( ={r,e1} ==> _A{1} = m_transpose _A{2} /\ ={r,e1})
-    ( r{1} \in dshort \ pred1 zerov ==> u{2} = _A{1} *^ r{1} + e1{1} ) => />; 1:smt().
-  + by move=> *; rewrite trmxK.
-  + rnd m_transpose; skip => />.
-    by split=> *; rewrite trmxK.
-  transitivity{1} { u <- AUX.f(r); }
-    ( ={r,e1} ==> _A{1} *^ r{1} = u{2} /\ ={e1})
-    ( r{1} \in dshort \ pred1 zerov ==> u{2} = u{1} + e1{1} ) => />; 1:smt().
-  + by inline *; auto.
-  transitivity{1} { u <@ AUX.g(); } 
-    ( ={e1} /\ r{1} \in dshort \ pred1 zerov ==> ={u,e1})
-    ( true ==> u{2} = u{1} + e1{1} ) => />; 1: smt(); last first.
-  + inline *;wp.
-    rnd (fun u => u + e1{1}) (fun u => u + - e1{1}); skip => /> &1; split => *.
-    + by rewrite addrNK.
-    by rewrite -addrA subrr addr0.
-  by call AUX_fg.
-qed.
-
-<<<<<<< HEAD
-lemma correctness_last_hop &m :
-  Pr[CorrectnessNoiseApprox.main() @ &m : res] =
-     Pr[CorrectnessBound.main() @ &m : res].
-=======
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
 (* FIXME *)
-op epsilon_hack : real = 2%r * mu1 dshort zerov.
+op epsilon_hack : real.
 
-lemma correctness_hack &m :
+axiom correctness_hack &m :
   `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
      Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack 
 .
->>>>>>> eb32a948414cd69e1686a5c203cc5703ae4d264a
-proof.
-  have := Pr_except AdvCorrectnessNoiseApprox _ &m.
-  + by islossless.
-  have :=  Pr_except AdvCorrectnessBound _ &m.
-  + by islossless.
-  have -> : Pr[G1(AdvCorrectnessBound).main() @ &m : res] = 
-            Pr[CorrectnessBound.main() @ &m : res].
-  + byequiv => //.
-    by proc; inline *; swap{2} 4 - 3; wp; sim.
-  have -> : Pr[G1(AdvCorrectnessNoiseApprox).main() @ &m : res] =
-            Pr[CorrectnessNoiseApprox.main() @ &m : res].
-  + byequiv => //.
-    by proc; inline *; swap{2} 2 -1; wp; sim.
-  have -> /# :
-    Pr[G2(AdvCorrectnessNoiseApprox).main() @ &m : res] =
-    Pr[G2(AdvCorrectnessBound).main() @ &m : res].
-  by byequiv NoiseApprox_Bound.
-qed.
-   
+
+(* The following failure probability can be bounded as
+in the Python script for Kyber *)   
 op fail_prob : real.
 
 axiom fail_prob &m : 
@@ -834,16 +604,9 @@ axiom fail_prob &m :
 
 lemma correctness_bound &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob.
+  1%r - fail_prob - epsilon_hack.
 proof.
-<<<<<<< HEAD
-have := (fail_prob &m).
-have := (correctness_last_hop &m). 
-have := (correctness_approx &m).
-smt().
-=======
-move: (fail_prob &m) (correctness_hack &m) (correctness_approx &m) => /#.
->>>>>>> eb32a948414cd69e1686a5c203cc5703ae4d264a
+by move: (fail_prob &m) (correctness_hack &m) (correctness_approx &m) => /#.
 qed.
 
 end section.
