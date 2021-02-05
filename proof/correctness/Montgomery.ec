@@ -272,7 +272,8 @@ have ulbnd : (-R*R %/4 <= a * qinv %%+- R * q).
 have uubnd : (a * qinv %%+- R * q < R*R %/4). 
     case (a * qinv %%+- R <=0); first by smt().
     have ? : ((a * qinv %%+- R) * q < (R %/ 2) * (R %/ 2)); last by smt().
-    by smt(gt0_R q_bnd dvd2R).
+    case (a * qinv %%+- R <=0); 
+    by smt(dvd2R gt0_R q_bnd).
 
 rewrite (bal_mod_small ((a - a * qinv %%+- R * q))); first 2 by  smt(@IntOrder). 
 rewrite (bal_mod_sq ((a - a * qinv %%+- R * q))).
@@ -285,12 +286,17 @@ by smt(gt0_R @IntDiv).
 split.
 
 (* Bound proof *)
-have aux : (-  a * qinv %%+- R * q <= R %/2 * q); first by smt(b0 b1 b2).
+have aux : (-  a * qinv %%+- R * q <= R %/2 * q).
+   have ? : (- a * qinv %%+- R <= R %/2); by smt(b1 b2 b3).
 split; last first.
 have ? : ( (a - a * qinv %%+- R * q) < q *R);first  by  smt(b1 b2  b3).
-by smt(gt0_R @IntDiv). 
+ by smt(gt0_R @IntDiv). 
 
-have ? : ((-q) *R<= (a - a * qinv %%+- R * q));first  by  smt(b1 b2  b3).
+have aux2 : (R %/2 * (-q) <= -  a * qinv %%+- R * q).
+   have ? : (-R %/2 <= - a * qinv %%+- R); by smt(b1 b2 b3).
+
+have ? : ((-q) *R<= (a - a * qinv %%+- R * q)). 
+   by  smt(b1 b2  b3).
 by smt(gt0_R @IntDiv). 
 
 (* Congruence proof *)
