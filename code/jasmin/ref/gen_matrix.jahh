@@ -9,7 +9,7 @@ param int _19KYBER_Q = 63251;
 inline
 fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[KYBER_N]
 {
-  reg u16 val val2;
+  reg u16 val1 val2;
   reg u16 t;
   reg u64 pos ctr;
   reg u64 cnd0 cnd1 exit;
@@ -21,13 +21,14 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
 
   while(exit == 0)
   {
-    val = (16u)buf[(int)pos];
+    val1 = (16u)buf[(int)pos];
     pos += 1;
     t   = (16u)buf[(int)pos];
     val2 = t;
     val2 >>= 4;
-    t <<= 12;
-    val |= t;
+    t &= 0x0F;
+    t <<= 8;
+    val1 |= t;
     pos += 1;
 
     t   = (16u)buf[(int)pos];
@@ -35,9 +36,9 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
     val2 |= t;
     pos += 1;
 
-    if(val < KYBER_Q)
+    if(val1 < KYBER_Q)
     {
-      rp[(int)ctr] = val;
+      rp[(int)ctr] = val1;
       ctr += 1;
     }
 
