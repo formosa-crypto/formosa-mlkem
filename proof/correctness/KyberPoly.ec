@@ -1383,8 +1383,8 @@ rewrite set_eqiE; first 2 by smt(@W64).
 move : (sub_corr ap{hr}.[to_uint i{hr}] bp{hr}.[to_uint i{hr}] _a.[to_uint i{hr}] _b.[to_uint i{hr}] 14 14 _ _ _ _ _ _) => />.
 by smt(@Array256). 
 by smt(@Array256). 
-move :  H5; rewrite /signed_bound_cxq => />; smt(@Fq).
-move :  H6; rewrite /signed_bound_cxq => />; smt(@Fq).
+move :  H5; rewrite /signed_bound_cxq => />. move => *; split;  smt(@Fq).
+move :  H6; rewrite /signed_bound_cxq => />. move => *; split; smt(@Fq).
 
 rewrite /signed_bound_cxq.
 move => *.
@@ -1888,7 +1888,8 @@ while (#{/~zetasctr1=zetasctr{1}}
        signed_bound_cxq  rp{2} start{1} 256 (9 - log2 len{1})
        ); last first.
 auto => />; move => &1 &2 zmont ????? cinv cbnd ??.
-split; first by  move : cbnd; rewrite /signed_bound_cxq => />; smt(@Fq).
+split.
+move : cbnd; rewrite /signed_bound_cxq => />. move => *;split;smt(@Fq).
 move => *;rewrite uleE !shr_div => />.
 split; last by  
    rewrite (logdiv2 (to_uint len{2}) (log2 (to_uint len{2}))); 
@@ -2376,7 +2377,7 @@ while (
    signed_bound_cxq rp{2} 0 256 4); last first.
 auto => />. move => &1 &2 ?cbnd.
 split; first by exists (1);  smt(logs).
-move : cbnd; rewrite /signed_bound_cxq;smt(@Array256 @Fq).
+move : cbnd; rewrite /signed_bound_cxq. rewrite /b16 qE;smt().
 
 wp; exists* zetasctr{1}; elim* => zetasctr1 l.
 
@@ -2924,15 +2925,49 @@ split.
 
 move => k kl kh.
 case (k = to_uint  i{hr}). 
-  move =>*; rewrite Array256.set_neqiE; first 2 by smt(). smt(@Array256 @Fq). 
+  move =>*; rewrite Array256.set_neqiE; first 2 by smt(). rewrite qE. smt(@Array256). 
 case (k = to_uint i{hr}+1). 
   move => *. rewrite Array256.set_eqiE; first 2 by smt(). 
    rewrite qE to_sintD_small => />.
-move : rbnd; rewrite /signed_bound_cxq => rbnd. 
-move : (rbnd k). rewrite b16E.
-smt(@Fq).
+
+(*********************)
+(*********************)
+
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr} + 1]) _ _) => />;
+  first 2 by smt(@Fq). 
+
+rewrite eq_inzmod -rval !inzmodM. 
+move => ?? rrval.
+
+
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr}]) _ _) => />;
+  first 2 by smt(@Fq). 
+
+rewrite eq_inzmod -rvall !inzmodM. 
+move => ?? rrvall.
+
 smt(@Fq).
 
+
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr} + 1]) _ _) => />;
+  first 2 by smt(@Fq). 
+
+rewrite eq_inzmod -rval !inzmodM. 
+move => ?? rrval.
+
+
+move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr}]) _ _) => />;
+  first 2 by smt(@Fq). 
+
+rewrite eq_inzmod -rvall !inzmodM. 
+move => ?? rrvall.
+
+smt(@Fq).
+
+
+
+(*********************)
+(********************)
 move => *.
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
 rewrite Array256.set_neqiE; first 2 by smt(@W64). 
