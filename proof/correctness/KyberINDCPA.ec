@@ -912,7 +912,7 @@ seq 1 : (#{/~bp}pre /\
 signed_bound768_cxq bp 0 768 4 /\
    (m_transpose ((H sd))%MLWEPKE.H_MLWE *^ r_ + e_) = lift_vector bp).
 exists *bp, ep. elim* => bpp epp.
-call (polyvec_add_corr (lift_array768 bpp) (lift_array768 epp) (2) (2) _ _).
+call (polyvec_add_corr (lift_array768 bpp) (lift_array768 epp) (2) (2)).
 auto=> />.
 move  => *.
 rewrite H20 /(+) /= /lift_vector. 
@@ -930,7 +930,7 @@ seq 1 : (#{/~v}pre /\
 signed_bound_cxq v 0 256 4 /\
    (lift_array256 v = (t_ `<*>` r_) + ep_)).
 exists *v, epp. elim* => vp eppp.
-call (poly_add_corr (lift_array256 vp) (lift_array256 eppp) (2) (2) _ _).
+call (poly_add_corr (lift_array256 vp) (lift_array256 eppp) (2) (2)).
 auto=> />.
 move  => *.
 rewrite -H20 /lift_array256 /= /Poly.(+) /= map2E /=. 
@@ -945,10 +945,10 @@ seq 1 : (#{/~v}pre /\
 signed_bound_cxq v 0 256 5 /\
    (lift_array256 v = (t_ `<*>` r_) + ep_ + m_encode _msg)).
 exists *v, k. elim* => vp kp.
-call (poly_add_corr (lift_array256 vp) (lift_array256 kp) (4) (1) _ _).
+call (poly_add_corr (lift_array256 vp) (lift_array256 kp) (4) (1)).
 auto=> />.
 move  => *.
-split; first by move : H4; rewrite /pos_bound256_cxq  /signed_bound_cxq /=; smt(@Array256 @Fq).
+split; first by move : H4; rewrite /pos_bound256_cxq  /signed_bound_cxq /=;smt(qE).
 move => *.
 rewrite -H22 /lift_array256 /= /Poly.(+) /= map2E /=. 
 apply Array256.ext_eq => x xb.
