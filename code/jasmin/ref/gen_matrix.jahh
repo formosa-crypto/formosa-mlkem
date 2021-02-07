@@ -9,7 +9,7 @@ param int _19KYBER_Q = 63251;
 inline
 fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[KYBER_N]
 {
-  reg u16 val;
+  reg u16 val1 val2;
   reg u16 t;
   reg u64 pos ctr;
   reg u64 cnd0 cnd1 exit;
@@ -21,21 +21,34 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
 
   while(exit == 0)
   {
-    val = (16u)buf[(int)pos];
+    val1 = (16u)buf[(int)pos];
     pos += 1;
     t   = (16u)buf[(int)pos];
+    val2 = t;
+    val2 >>= 4;
+    t &= 0x0F;
     t <<= 8;
-    val |= t;
+    val1 |= t;
     pos += 1;
 
-    if(val < _19KYBER_Q)
+    t   = (16u)buf[(int)pos];
+    t <<= 4;
+    val2 |= t;
+    pos += 1;
+
+    if(val1 < KYBER_Q)
     {
-      t = val;
-      t >>= 12;
-      t *= KYBER_Q;
-      val -= t;
-      rp[(int)ctr] = val;
+      rp[(int)ctr] = val1;
       ctr += 1;
+    }
+
+    if(val2 < KYBER_Q)
+    {
+      if(ctr < KYBER_N)
+      {
+        rp[(int)ctr] = val2;
+        ctr += 1;
+      }
     }
 
     // Check if we should exit the loop
@@ -44,7 +57,7 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
     cnd0 -= 1;
     cnd1  = SHAKE128_RATE;
     cnd1 -= pos;
-    cnd1 -= 2;
+    cnd1 -= 3; //TODO: (potentially) wasting 2 'good' bytes
     exit  = cnd0 | cnd1;
     exit >>= 63;
   }
