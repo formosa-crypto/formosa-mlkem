@@ -320,7 +320,13 @@ rewrite (_:to_uint (- (of_int (x %% 4294967296))%W16) = to_uint (W16.of_int (-x)
   rewrite (_:  4294967296 = 65536 * 65536); first by smt().
   case (x %% (65536 * 65536) = 0). 
     by smt(@IntDiv).
-    by move => *; rewrite modNz => /#. 
+    move => *; rewrite modNz. smt(). smt().  
+     rewrite -modzDml. 
+     rewrite (modz_dvd x (65536 * 65536) 65536). smt().
+     rewrite (_: 65536 - 1 = (-1) %% 65536). smt().
+     ring.
+     have ? : (((- (-x) %% 65536) - (x %% 65536 - 1) %% 65536 + (-1) %% 65536) %% 65536 = 0). smt(). smt(@IntDiv).
+     
  
 rewrite /BREDC.
 rewrite  (_: R^2 = W32.modulus); first by rewrite /R  /= expr0 /=.

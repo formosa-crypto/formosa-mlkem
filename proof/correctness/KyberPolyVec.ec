@@ -5,6 +5,8 @@ require import Fq.
 require import KyberPoly.
 require import NTT_Fq.
 
+
+
 theory KyberPolyVec.
 
 import KyberPoly.
@@ -357,7 +359,7 @@ lemma polyvec_compress_round_corr ap :
            Array768.map PolyVec.roundc ap = lift_array768 res /\
            forall k, 0 <= k < 768 => 0 <= to_sint res.[k] < 1024 ] . 
 proof.
-move => *; proc.
+proc.
 while (#pre /\ 0 <= to_uint i <= 768 + 3 /\ to_uint i %% 4 = 0 /\ 
         ap = lift_array768 aa /\ pos_bound768_cxq aa 0 768 1 /\
         (forall k,
@@ -365,9 +367,18 @@ while (#pre /\ 0 <= to_uint i <= 768 + 3 /\ to_uint i %% 4 = 0 /\
            inzmod (W16.to_sint r.[k]) = PolyVec.roundc ap.[k]) /\ 
         (forall k,
             0<= k < to_uint i => 0 <= to_sint r.[k] < 1024)).
-+ unroll for ^while; wp; skip => />;rewrite /(\ult) /= => &hr *.
++ unroll for ^while; wp; skip => />;rewrite /(\ult) /= => &hr H H0 H1 H2 H3 H4 H5 H6 H7.
   rewrite !to_uintD_small /= 1..4:/# andbA; split; 1:smt().
-  split; move => k *; 1: smt (get_setE lift_array768E  roundcimpl64).
+  split; move => k [#] *.
+  move : (H5 k).
+  rewrite H3 !lift_array768E; 1: smt(). 
+  rewrite -roundcimpl64; 1: smt(). 
+  case (0 <= k && k < to_uint i{hr}) => /> *. 
+  rewrite !get_setE; 1..4: smt().
+  by smt().
+  rewrite !get_setE; 1..4: smt().
+  by smt().
+  rewrite !get_setE; 1..4: smt().
   smt(roundcimpl_rng get_setE).
 call (polyvec_csubq_corr ap). 
 wp; skip => /> *; split; 1: smt().
@@ -547,7 +558,8 @@ ecall (ntt_correct_h (lift_array256 r1)).
 ecall (ntt_correct_h (lift_array256 r0)).
 ecall (polyvec_topolys_corr_h _r 2 r).
 wp; skip => /> &hr 2? result 6? H1 H2 H3 ? H4 ? ? H5 ? ? H6 ?.
-split; 1: by rewrite /signed_bound_cxq; smt(b16E). 
+split.
+ + rewrite /signed_bound_cxq=> />; do split; smt(b16E). 
 move=>5? H7 H8 H9 H10 H11 H12; split.
 + apply Array256.tP => i hi.
   rewrite /lift_polyvec /= initiE 1:// /= H10 1:// -H4.
@@ -596,7 +608,7 @@ ecall (invntt_correct_h (lift_array256 r1)).
 ecall (invntt_correct_h (lift_array256 r0)).
 ecall (polyvec_topolys_corr_h _r 2 r).
 wp; skip => /> &hr ?? result 9? result0 h0 ? result1 h1 ? result2 h2 ?.
-split; 1: smt (b16E qE).
+split. do split; smt (b16E qE).
 move=> 5? H1 H2 H3 H4 H5 H6. 
 rewrite /lift_polyvec.
 split.

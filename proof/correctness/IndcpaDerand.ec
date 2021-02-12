@@ -1067,7 +1067,12 @@ seq 7 7 : (={Glob.mem,msgp,skp,bp,v}); last first.
     while (r0 = iteri j0 (fun j r => r `|` truncateu8 (a0.[8*i0+j] `<<` W8.of_int j)) W8.zero /\ 0 <= j0 <= 8)
           (8 - j0).
     + by move=> z0; wp; skip => />; smt (iteriS).  
-    by wp; skip => />; smt(iteri0 iteriS).
+    wp; skip => />. 
+      move => *. do split. smt(iteri0).
+         move => *. do split. smt().
+         move => *. do split. rewrite iteriS. smt().
+           simplify; congr; smt(). smt(). smt(). smt().
+         
   wp; skip => /> &2. 
   rewrite iteri0 1:// /= => i0_R; split => *; 1:smt().
   by have -> : i0_R = 32 by smt().  
