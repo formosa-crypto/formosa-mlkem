@@ -44,6 +44,7 @@ HEADERS = params.h poly.h fips202.h ntt.h \
 JHEADERS = params.jahh \
 				   reduce.jahh \
            fips202.jahh \
+					 fips202_4x.jahh \
 					 consts.jahh \
 					 shuffle.jahh
 
