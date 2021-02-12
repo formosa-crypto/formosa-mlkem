@@ -2,7 +2,7 @@
 #define GEN_MATRIX_HH
 
 #include "fips202.jahh"
-#include "fips202x4.jahh"
+#include "fips202_4x.jahh"
 #include "params.jahh"
 #include "shuffle.jahh"
 

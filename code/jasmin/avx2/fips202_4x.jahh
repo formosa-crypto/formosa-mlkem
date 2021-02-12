@@ -1400,15 +1400,21 @@ fn shake128_absorb4x_34(reg ptr u256[25] s, reg ptr u8[34] m0, reg ptr u8[34] m1
 
 inline fn shake128_squeezeblock4x(reg ptr u256[25] state, reg ptr u8[SHAKE128_RATE] h0, reg ptr u8[SHAKE128_RATE] h1, reg ptr u8[SHAKE128_RATE] h2, reg ptr u8[SHAKE128_RATE] h3) -> reg ptr u256[25], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE]
 {
-  reg u8 c;
+  reg u64 t64;
   inline int i;
 
   state = KeccakF1600_StatePermute4x(state);
 
-  for i = 0 to SHAKE128_RATE {
-    c = state[u8 (int) i];
-    h0[i] = c;
-  }
+	for i = 0 to (SHAKE128_RATE / 8) {
+		t64 = state[u64 4 * i];
+		h0[u64 i] = t64;
+		t64 = state[u64 4 * i + 1];
+		h1[u64 i] = t64;
+		t64 = state[u64 4 * i + 2];
+		h2[u64 i] = t64;
+		t64 = state[u64 4 * i + 3];
+		h3[u64 i] = t64;
+	}
   return state, h0, h1, h2, h3;
 }
 
