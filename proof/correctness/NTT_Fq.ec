@@ -6,6 +6,7 @@ theory NTT_Fq.
 
 import Kyber_.
 import ZModField.
+import BitEncoding.BS2Int.
 
 (* These are imperative specifications of the  NTT algorithms  *)
 
@@ -97,7 +98,7 @@ have gt0_l: 0 < l.
   by rewrite expr0.
 exists (l-1); do! split; 1,3,4,5:smt().
 + have ->: len{m} = 2^l by move: h2=> [#].
-  by rewrite -{1}(@subrK l 1) JUtils.powS_minus /#.
+  by rewrite -{1}(@IntID.subrK l 1) JUtils.powS_minus /#.
 move=> *; wp.
 while (   0 <= start <= 256
        /\ 1 <= len /\ len <= 128
@@ -291,7 +292,392 @@ abstract theory DFT.
   case=> [/mem_range rg_j @/predC1 ne_ji] {F}.
   by rewrite sum_aXi_dvd_eq0 ?mulr0 //; apply/negP=> /dvdzP[q] /#.
   qed.
+
 end DFT.
+
+
+
+theory NTTequiv.
+
+  (*TODO: all here*)
+
+
+  op bitrev (i k : int) = bs2int (rev (int2bs i k)).
+
+  lemma bitrev_involutive (i k : int) :
+    0 <= i =>
+    0 <= k < 2 ^ i =>
+    bitrev i (bitrev i k) = k.
+  proof.
+    move => le0i [le0k ltk2powi] @/bitrev.
+    suff {1}->: i = size (rev (int2bs i k)).
+    - by rewrite bs2intK revK int2bsK.
+    by rewrite size_rev size_int2bs /#.
+  qed.
+
+  import ZModpRing.
+
+  module NTT3 = {
+   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+     var len, start, j, zetasctr;
+     var  t, zeta_;
+
+     zetasctr <- 0;
+     len <- 1;
+     while (len <= 64) {
+      start <- 0;
+      while(start < len) {
+         zetasctr <- start;
+         zeta_ <- exp (ZModpRing.ofint(17)) zetasctr; 
+         j <- 0;
+         while (j < 256) {
+           t <- zeta_ * r.[bitrev 8 (j + len + start)];
+           r.[bitrev 8 (j + len + start)] <- r.[bitrev 8 (j + start)] + (-t);
+           r.[bitrev 8 (j + start)]       <- r.[bitrev 8 (j + start)] + t;
+           j <- j + (len * 2);
+         }
+         start <- start + 1;
+       }
+       len <- len * 2;
+     }     
+     return r;
+   }
+  
+  }.
+
+module NTT2 = {
+   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+     var len, start, j, zetasctr;
+     var  t, zeta_;
+
+     zetasctr <- 0;
+     len <- 128;
+     while (2 <= len) {
+      start <- 0;
+      while(start < 256) {
+         zetasctr <- (128 %/ len) + (start %/ (len * 2));
+         zeta_ <- zetas.[zetasctr]; 
+         j <- start;
+         while (j < start + len) {
+           t <- zeta_ * r.[j + len];
+           r.[j + len] <- r.[j] + (-t);
+           r.[j]       <- r.[j] + t;
+           j <- j + 1;
+         }
+         start <- start + (len * 2);
+       }
+       len <- len %/ 2;
+     }     
+     return r;
+   }
+
+   proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+     var len, start, j, zetasctr;
+     var  t, zeta_;
+
+     zetasctr <- 0;
+     len <- 2;
+     while (len <= 128) {
+      start <- 0;
+      while(start < 256) {
+         zetasctr <- 128 - (256 %/ len) + (start %/ (2 * len));
+         zeta_ <- zetas_inv.[zetasctr];
+         j <- start;
+         while (j < start + len) {
+          t <- r.[j];
+          r.[j]       <- t + r.[j + len];
+          r.[j + len] <- t + (-r.[j + len]);
+          r.[j + len] <- zeta_ * r.[j + len];
+           j <- j + 1;
+         }
+         start <- start + (len * 2);
+       }
+       len <- len * 2;
+     }
+     j <- 0;
+     while (j < 256) {
+       r.[j] <- r.[j] * zetas_inv.[127]; 
+       j <- j + 1;
+     }    
+     return r;
+   }
+  
+ 
+  }.
+
+  module NTT1 = {
+   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+     var len, start, j, zetasctr;
+     var  t, zeta_;
+
+     zetasctr <- 0;
+     len <- 128;
+     while (2 <= len) {
+      start <- 0;
+      while(start < 256) {
+         zetasctr <- zetasctr + 1;
+         zeta_ <- zetas.[zetasctr]; 
+         j <- start;
+         while (j < start + len) {
+           t <- zeta_ * r.[j + len];
+           r.[j + len] <- r.[j] + (-t);
+           r.[j]       <- r.[j] + t;
+           j <- j + 1;
+         }
+         start <- start + (len * 2);
+       }
+       len <- len %/ 2;
+     }     
+     return r;
+   }
+
+   proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+     var len, start, j, zetasctr;
+     var  t, zeta_;
+
+     zetasctr <- 0;
+     len <- 2;
+     while (len <= 128) {
+      start <- 0;
+      while(start < 256) {
+         zeta_ <- zetas_inv.[zetasctr]; 
+         zetasctr <- zetasctr + 1;
+         j <- start;
+         while (j < start + len) {
+          t <- r.[j];
+          r.[j]       <- t + r.[j + len];
+          r.[j + len] <- t + (-r.[j + len]);
+          r.[j + len] <- zeta_ * r.[j + len];
+           j <- j + 1;
+         }
+         start <- start + (len * 2);
+       }
+       len <- len * 2;
+     }
+     j <- 0;
+     while (j < 256) {
+       r.[j] <- r.[j] * zetas_inv.[127]; 
+       j <- j + 1;
+     }    
+     return r;
+   }
+  
+ 
+  }.
+
+  module NTT = {
+   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+     var len, start, j, zetasctr;
+     var  t, zeta_;
+
+     zetasctr <- 0;
+     len <- 128;
+     while (2 <= len) {
+      start <- 0;
+      while(start < 256) {
+         zetasctr <- zetasctr + 1;
+         zeta_ <- zetas.[zetasctr]; 
+         j <- start;
+         while (j < start + len) {
+           t <- zeta_ * r.[j + len];
+           r.[j + len] <- r.[j] + (-t);
+           r.[j]       <- r.[j] + t;
+           j <- j + 1;
+         }
+         start <- j + len;
+       }
+       len <- len %/ 2;
+     }     
+     return r;
+   }
+
+   proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+     var len, start, j, zetasctr;
+     var  t, zeta_;
+
+     zetasctr <- 0;
+     len <- 2;
+     while (len <= 128) {
+      start <- 0;
+      while(start < 256) {
+         zeta_ <- zetas_inv.[zetasctr]; 
+         zetasctr <- zetasctr + 1;
+         j <- start;
+         while (j < start + len) {
+          t <- r.[j];
+          r.[j]       <- t + r.[j + len];
+          r.[j + len] <- t + (-r.[j + len]);
+          r.[j + len] <- zeta_ * r.[j + len];
+           j <- j + 1;
+         }
+         start <- j + len;
+       }
+       len <- len * 2;
+     }
+     j <- 0;
+     while (j < 256) {
+       r.[j] <- r.[j] * zetas_inv.[127]; 
+       j <- j + 1;
+     }    
+     return r;
+   }
+  
+ 
+  }.
+
+  op zeta1_ = ZModpRing.ofint 17.
+
+  (*op dft (v : vector) =
+    offunv (fun k => BAdd.bigi predT (fun j => v.[j] * exp a (j * k)) 0 n).*)
+
+clone import Bigalg.BigComRing as BigZmod with
+    type  t        <- zmod,
+      op  CR.zeror <- ZModField.zero,
+      op  CR.oner  <- ZModField.one,
+      op  CR.(+)   <- ZModField.(+),
+      op  CR.([-]) <- ZModField.([-]),
+      op  CR.( * ) <- ZModField.( * ),
+      op  CR.invr  <- ZModField.inv,
+    pred  CR.unit  <- ZModField.unit.
+
+
+  lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
+    (forall i ,
+      0 <= i < 128 =>
+      zs.[i] = exp zeta1_ (bitrev 8 i)) =>
+      hoare
+        [NTT3.ntt :
+        arg = (p,zs) ==>
+        forall a b ,
+          0 <= a < 128 =>
+          0 <= b < 2 =>
+          res.[bitrev 8 (128 * b + a)] =
+          BAdd.bigi
+            predT
+            (fun c => p.[bitrev 8 (128 * b + c)] * exp zeta1_ (c * a))
+            0 128].
+  proof.
+    move => Hzs.
+    proc.
+    sp.
+    while
+      ( (exists k ,
+          0 <= k < 8 /\
+          len = 2 ^ k) /\
+        (forall a b ,
+          0 <= a < len =>
+          0 <= b < 256 %/ len =>
+          r.[bitrev 8 (len * b + a)] =
+          BAdd.bigi
+            predT
+            (fun k =>
+              p.[bitrev 8 (len * b + k)] *
+              (exp zeta1_ (k * a)))
+            0 len)).
+    + sp; wp => /=.
+      while
+        ( (exists k ,
+            0 <= k < 8 /\
+            len = 2 ^ k) /\
+          start < len /\
+          (forall a b ,
+            0 <= a < start * 2 =>
+            0 <= b < 128 %/ len =>
+            r.[bitrev 8 (len * 2 * b + a)] =
+            BAdd.bigi
+              predT
+              (fun k =>
+                p.[bitrev 8 (len * 2 * b + k)] *
+                (exp zeta1_ (k * a)))
+              0 (len * 2)) /\
+          (forall a b ,
+            start <= a < len =>
+            0 <= b < 256 %/ len =>
+            r.[bitrev 8 (len * b + a)] =
+            BAdd.bigi
+              predT
+              (fun k =>
+                p.[bitrev 8 (len * b + k)] *
+                (exp zeta1_ (k * a)))
+              0 len)).
+      - sp; wp.
+        (*
+        while
+          ( (exists k ,
+              0 <= k < 8 /\
+              len = 2 ^ k) /\
+            start < len /\
+            j <= 256 /\
+            (forall a b ,
+              0 <= a < start * 2 =>
+              0 <= b < 128 %/ len =>
+              r.[bitrev 8 (len * 2 * b + a)] =
+              BAdd.bigi
+                predT
+                (fun k =>
+                  p.[bitrev 8 (len * 2 * b + k)] *
+                  (exp zeta1_ (k * a)))
+                0 (len * 2)) /\
+            (forall b ,
+              0 <= b < 128 %/ len =>
+              r.[bitrev 8 (len * 2 * b + start * 2)] =
+              BAdd.bigi
+                predT
+                (fun k =>
+                  p.[bitrev 8 (len * 2 * b + k)] *
+                  (exp zeta1_ (k * (start * 2))))
+                0 (len * 2)) /\
+            (forall b ,
+              0 <= b < 256 %/ len =>
+              r.[bitrev 8 (len * b + start)] =
+              BAdd.bigi
+                predT
+                (fun k =>
+                  p.[bitrev 8 (len * b + k)] *
+                  (exp zeta1_ (k * start)))
+                0 len) /\
+            (forall a b ,
+              start < a < len =>
+              0 <= b < 256 %/ len =>
+              r.[bitrev 8 (len * b + a)] =
+              BAdd.bigi
+                predT
+                (fun k =>
+                  p.[bitrev 8 (len * b + k)] *
+                  (exp zeta1_ (k * a)))
+                0 len)).
+        * sp; skip.
+          admit.
+        skip.
+        move => /> &hr k le0k ltk8 ltstart2powk IHstartpast IHstartfuture; do!split.
+        * move => b le0b /= ltb64.
+          admit.
+        * move => b le0b /= ltb128.
+          admit.
+        * admit.
+        *)
+        admit.
+      skip.
+      move => /> &hr k le0k ltk8 IHlen le2powk64; split; first by apply expr_gt0.
+      move => a b le0a lta0; smt().
+    skip.
+    move => />; do!split.
+    + by exists 0.
+    + move => a b le0a lta1 le0b ltb256.
+      have ->: a=0 by smt().
+      by rewrite BAdd.big_ltn // BAdd.big_geq //= addr0 expr0 mulr1.
+    move => len r nltlen64 k le0k ltk8 ?; subst len.
+    have ->: k=7.
+    + admit.
+    by move => /= IHlen a b le0a lta128 le0b ltb2; rewrite IHlen.
+  qed.
+
+
+end NTTequiv.
+
+
+
+
 
 op ntt : poly -> poly.
 op invntt : poly -> poly.
