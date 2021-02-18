@@ -44,6 +44,7 @@ HEADERS = params.h poly.h fips202.h ntt.h \
 JHEADERS = params.jahh \
 				   reduce.jahh \
            fips202.jahh \
+					 fips202_4x.jahh \
 					 consts.jahh \
 					 shuffle.jahh
 
@@ -155,3 +156,4 @@ clean:
 	-rm test/test_fips202
 	-rm test/test_indcpa
 	-rm test/speed_indcpa
+	-rm -r test/*.dSYM
