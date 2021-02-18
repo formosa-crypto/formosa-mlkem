@@ -540,6 +540,11 @@ clone import Bigalg.BigComRing as BigZmod with
       op  CR.invr  <- ZModField.inv,
     pred  CR.unit  <- ZModField.unit.
 
+  (*Proof not done and ugly, two lemmas might be useful:*)
+  (*- one that gives a postcondition when the loop being adressed is a for loop*)
+  (*- another that does the same for the specific for loops that always write on different parts of the memory that is described in the postcondition (the two innermost loops in our case)*)
+
+  
 
   lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
     (forall i ,
@@ -579,7 +584,7 @@ clone import Bigalg.BigComRing as BigZmod with
         ( (exists k ,
             0 <= k < 8 /\
             len = 2 ^ k) /\
-          start < len /\
+          start <= len /\
           (forall a b ,
             0 <= a < start * 2 =>
             0 <= b < 128 %/ len =>
@@ -601,13 +606,12 @@ clone import Bigalg.BigComRing as BigZmod with
                 (exp zeta1_ (k * a)))
               0 len)).
       - sp; wp.
-        (*
         while
           ( (exists k ,
               0 <= k < 8 /\
               len = 2 ^ k) /\
-            start < len /\
-            j <= 256 /\
+            start <= len /\
+            (exists bsj , 0 <= bsj <= 128 %/ len /\ j = len * 2 * bsj) /\
             (forall a b ,
               0 <= a < start * 2 =>
               0 <= b < 128 %/ len =>
@@ -619,7 +623,7 @@ clone import Bigalg.BigComRing as BigZmod with
                   (exp zeta1_ (k * a)))
                 0 (len * 2)) /\
             (forall b ,
-              0 <= b < 128 %/ len =>
+              0 <= b < j %/ (len * 2) =>
               r.[bitrev 8 (len * 2 * b + start * 2)] =
               BAdd.bigi
                 predT
@@ -628,7 +632,16 @@ clone import Bigalg.BigComRing as BigZmod with
                   (exp zeta1_ (k * (start * 2))))
                 0 (len * 2)) /\
             (forall b ,
-              0 <= b < 256 %/ len =>
+              0 <= b < j %/ (len * 2) =>
+              r.[bitrev 8 (len * 2 * b + start * 2 + 1)] =
+              BAdd.bigi
+                predT
+                (fun k =>
+                  p.[bitrev 8 (len * 2 * b + k)] *
+                  (exp zeta1_ (k * (start * 2 + 1))))
+                0 (len * 2)) /\
+            (forall b ,
+              j %/ len <= b < 256 %/ len =>
               r.[bitrev 8 (len * b + start)] =
               BAdd.bigi
                 predT
@@ -647,19 +660,60 @@ clone import Bigalg.BigComRing as BigZmod with
                   (exp zeta1_ (k * a)))
                 0 len)).
         * sp; skip.
+          move => /> &hr r k le0k ltk8 lestart2powk bsj le0bsj ltbsj2pow.
+          move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej.
+          move => ltj256; do!split.
+          + exists (bsj + 1).
+            split => //; last by rewrite mulzDr.
+            split => //; first by apply addz_ge0.
+            move => _; apply ltzE; apply (ltr_pmul2l (2 ^ k * 2));
+            first by apply mulr_gt0 => //; apply expr_gt0.
+            rewrite -Montgomery.div_mulr //;
+            last by rewrite (mulzA _ _ 128) mulKz //=; apply neq_ltz; right; apply expr_gt0.
+            have /= Hdiv:= (dvdz_exp2l 2 k 7); apply Hdiv; split => // _.
+            smt().
+          + move => a b le0a lta2start le0b ltb2pow.
+            admit.
+          + move => b le0b ltb.
+            admit.
+          + move => b le0b ltb.
+            admit.
+          + move => b leb ltb2pow.
+            admit.
+          move => a b ltstarta lta2powk le0b ltb2pow.
           admit.
         skip.
-        move => /> &hr k le0k ltk8 ltstart2powk IHstartpast IHstartfuture; do!split.
-        * move => b le0b /= ltb64.
-          admit.
-        * move => b le0b /= ltb128.
-          admit.
-        * admit.
-        *)
-        admit.
+        move => /> &hr k le0k ltk8 lestart2powk IHstartpast IHstartfuture ltstart2powk; do!split.
+        * by exists 0 => /=; apply divz_ge0 => //; apply expr_gt0.
+        * by move => b le0b ltb0; smt().
+        * by move => b le0b ltb0; smt().
+        * by move => b le0b ltb2pow; rewrite IHstartfuture.
+        * move => a b ltstarta lta2powk le0b ltbpow.
+          by rewrite IHstartfuture //; split => //; apply ltrW.
+        move => j r nltj256 bsj le0bsj ltbsj2pow ?; subst j.
+        have ->: (bsj = 128 %/ 2 ^ k) by smt().
+        move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej; do!split.
+        * by apply ltzE.
+        * move => a b le0a lta le0b ltb2pow.
+          case: (a < start{hr} * 2) => [lta2start|nlta2start]; first by rewrite IHstartpastj.
+          case: (a = start{hr} * 2) => [eqa2start|neqa2start];
+          first by rewrite eqa2start IHjpasteven //; split => // _; smt().
+          have ->: a = start{hr} * 2 + 1 by smt().
+          by rewrite addzA IHjpastodd //; split => // _; smt().
+        move => a b lestartp1a lta2powk le0b ltbpow.
+        by rewrite IHstartfuturej //; split => //; apply ltzE.
       skip.
-      move => /> &hr k le0k ltk8 IHlen le2powk64; split; first by apply expr_gt0.
-      move => a b le0a lta0; smt().
+      move => /> &hr k le0k ltk8 IHlen le2powk64; do!split; first by apply expr_ge0.
+      - move => a b le0a lta0; smt().
+      move => r start nltstart2powk lestart2powk.
+      have ->: (start = 2 ^ k) by smt().
+      move => IHstartpast IHstartfuture; split.
+      - exists (k+1); do!split => //; [by smt()| |by rewrite Domain.exprSr] => _.
+        apply ltzE => /=; apply ler_subr_addr => /=.
+        search _ (_ ^ _ <= _ ^ _)%IntID.
+        admit.
+      move => a b le0a lta2pow le0b ltb2pow; rewrite IHstartpast //; split => // _.
+      by move: ltb2pow; rewrite (mulzC _ 2) Montgomery.div_mul.
     skip.
     move => />; do!split.
     + by exists 0.
