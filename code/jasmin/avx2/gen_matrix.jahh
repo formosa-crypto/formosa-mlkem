@@ -79,9 +79,9 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[GENMATRIX_NBLOCKS
       ctr += 1;
     }
 
-    if(val2 < KYBER_Q)
+    if(ctr < KYBER_N)
     {
-      if(ctr < KYBER_N)
+      if(val2 < KYBER_Q)
       {
         rp[(int)ctr] = val2;
         ctr += 1;
@@ -158,58 +158,66 @@ fn gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack
   return rr;
 }
 
+inline fn __r2s(reg u256 f) -> stack u256 {
+  stack u256 fs;
+  fs = f;
+  return f;
+}
+
+
+inline fn __s2r(stack u256 fs) -> reg u256 {
+  reg u256 f;
+  f = fs;
+  return f;
+}
+
+
 inline
 fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16[KYBER_K*KYBER_VECN]
 {
-  stack u8[34] extseed0;
-  stack u8[34] extseed1;
-  stack u8[34] extseed2;
-  stack u8[34] extseed3;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf0;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf1;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf2;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf3;
   stack u256[25] state;
   stack u16[KYBER_K*KYBER_VECN] rr;
+  stack u256 fs;
 
-  reg u8 c;
-  reg u16 t;
-  reg u64 ctr0 ctr1 ctr2 ctr3 k l;
-  inline int i, j, k;
+  reg u256 f;
+  reg u64 ctr0 ctr1 ctr2 ctr3;
+  inline int i, j;
 
-  for j = 0 to KYBER_SYMBYTES
-  {
-    c = seed[j];
-    extseed0[j] = c;
-    extseed1[j] = c;
-    extseed2[j] = c;
-    extseed3[j] = c;
-  }
+  f = seed[u256 0];
+  buf0[u256 0] = f;
+  buf1[u256 0] = f;
+  buf2[u256 0] = f;
+  buf3[u256 0] = f;
+  fs = __r2s(f);
 
   if(transposed == 1)
   {
-    extseed0[KYBER_SYMBYTES]   = 0;
-    extseed0[KYBER_SYMBYTES+1] = 0;
-    extseed1[KYBER_SYMBYTES]   = 0;
-    extseed1[KYBER_SYMBYTES+1] = 1;
-    extseed2[KYBER_SYMBYTES]   = 0;
-    extseed2[KYBER_SYMBYTES+1] = 2;
-    extseed3[KYBER_SYMBYTES]   = 1;
-    extseed3[KYBER_SYMBYTES+1] = 0;
+    buf0[KYBER_SYMBYTES]   = 0;
+    buf0[KYBER_SYMBYTES+1] = 0;
+    buf1[KYBER_SYMBYTES]   = 0;
+    buf1[KYBER_SYMBYTES+1] = 1;
+    buf2[KYBER_SYMBYTES]   = 0;
+    buf2[KYBER_SYMBYTES+1] = 2;
+    buf3[KYBER_SYMBYTES]   = 1;
+    buf3[KYBER_SYMBYTES+1] = 0;
   }
   else
   {
-    extseed0[KYBER_SYMBYTES]   = 0;
-    extseed0[KYBER_SYMBYTES+1] = 0;
-    extseed1[KYBER_SYMBYTES]   = 1;
-    extseed1[KYBER_SYMBYTES+1] = 0;
-    extseed2[KYBER_SYMBYTES]   = 2;
-    extseed2[KYBER_SYMBYTES+1] = 0;
-    extseed3[KYBER_SYMBYTES]   = 0;
-    extseed3[KYBER_SYMBYTES+1] = 1;
+    buf0[KYBER_SYMBYTES]   = 0;
+    buf0[KYBER_SYMBYTES+1] = 0;
+    buf1[KYBER_SYMBYTES]   = 1;
+    buf1[KYBER_SYMBYTES+1] = 0;
+    buf2[KYBER_SYMBYTES]   = 2;
+    buf2[KYBER_SYMBYTES+1] = 0;
+    buf3[KYBER_SYMBYTES]   = 0;
+    buf3[KYBER_SYMBYTES+1] = 1;
   }
 
-  state = shake128_absorb4x_34(state, extseed0, extseed1, extseed2, extseed3);
+  state = shake128_absorb4x_34(state, buf0[0:34], buf1[0:34], buf2[0:34], buf3[0:34]);
 
   state, buf0, buf1, buf2, buf3 = shake128_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
 
@@ -222,33 +230,40 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
   ctr1, rr[0*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+1*KYBER_N:KYBER_N], ctr1, buf1, GENMATRIX_NBLOCKS*SHAKE128_RATE);
   ctr2, rr[0*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+2*KYBER_N:KYBER_N], ctr2, buf2, GENMATRIX_NBLOCKS*SHAKE128_RATE);
   ctr3, rr[1*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[1*KYBER_VECN+0*KYBER_N:KYBER_N], ctr3, buf3, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-
   //TODO: Check if enough has been generated; squeeze more
+
+  f = __s2r(fs);
+  buf0[u256 0] = f;
+  buf1[u256 0] = f;
+  buf2[u256 0] = f;
+  buf3[u256 0] = f;
+  fs = __r2s(f);
 
   if(transposed == 1)
   {
-    extseed0[KYBER_SYMBYTES]   = 1;
-    extseed0[KYBER_SYMBYTES+1] = 1;
-    extseed1[KYBER_SYMBYTES]   = 1;
-    extseed1[KYBER_SYMBYTES+1] = 2;
-    extseed2[KYBER_SYMBYTES]   = 2;
-    extseed2[KYBER_SYMBYTES+1] = 0;
-    extseed3[KYBER_SYMBYTES]   = 2;
-    extseed3[KYBER_SYMBYTES+1] = 1;
+    buf0[KYBER_SYMBYTES]   = 1;
+    buf0[KYBER_SYMBYTES+1] = 1;
+    buf1[KYBER_SYMBYTES]   = 1;
+    buf1[KYBER_SYMBYTES+1] = 2;
+    buf2[KYBER_SYMBYTES]   = 2;
+    buf2[KYBER_SYMBYTES+1] = 0;
+    buf3[KYBER_SYMBYTES]   = 2;
+    buf3[KYBER_SYMBYTES+1] = 1;
   }
   else
   {
-    extseed0[KYBER_SYMBYTES]   = 1;
-    extseed0[KYBER_SYMBYTES+1] = 1;
-    extseed1[KYBER_SYMBYTES]   = 2;
-    extseed1[KYBER_SYMBYTES+1] = 1;
-    extseed2[KYBER_SYMBYTES]   = 0;
-    extseed2[KYBER_SYMBYTES+1] = 2;
-    extseed3[KYBER_SYMBYTES]   = 1;
-    extseed3[KYBER_SYMBYTES+1] = 2;
+    buf0[KYBER_SYMBYTES]   = 1;
+    buf0[KYBER_SYMBYTES+1] = 1;
+    buf1[KYBER_SYMBYTES]   = 2;
+    buf1[KYBER_SYMBYTES+1] = 1;
+    buf2[KYBER_SYMBYTES]   = 0;
+    buf2[KYBER_SYMBYTES+1] = 2;
+    buf3[KYBER_SYMBYTES]   = 1;
+    buf3[KYBER_SYMBYTES+1] = 2;
   }
 
-  state = shake128_absorb4x_34(state, extseed0, extseed1, extseed2, extseed3);
+
+  state = shake128_absorb4x_34(state, buf0[0:34], buf1[0:34], buf2[0:34], buf3[0:34]);
 
   state, buf0, buf1, buf2, buf3 = shake128_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
 
@@ -264,10 +279,12 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
 
   //TODO: Check if enough has been generated; squeeze more
 
-  extseed0[KYBER_SYMBYTES]   = 2;
-  extseed0[KYBER_SYMBYTES+1] = 2;
-  
-  state[u64 0:25] = shake128_absorb34(state[u64 0:25], extseed0);
+  f = __s2r(fs);
+  buf0[u256 0] = f;
+  buf0[KYBER_SYMBYTES]   = 2;
+  buf0[KYBER_SYMBYTES+1] = 2;
+
+  state[u64 0:25] = shake128_absorb34(state[u64 0:25], buf0[0:34]);
   
   state[u64 0:25], buf0 = shake128_squeezenblocks(state[u64 0:25], buf0);
   
