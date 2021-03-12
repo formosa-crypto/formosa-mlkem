@@ -105,7 +105,7 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_N] r;
 
-  r = poly_frommsg(r, ap);
+  r = poly_frommsg_avx(r, ap);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -265,7 +265,7 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
     seed[i] = d;
   }
 
-  r = poly_getnoise(r, seed, nonce);
+  r = poly_getnoise_avx(r, seed, nonce);
 
   rp = srp;
   for i = 0 to KYBER_N {
