@@ -67,8 +67,6 @@ fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u
 
 u16 mask_ebits = 0x0055;
 u16 mask2 = 0x0003;
-u32 smask_1 = 0x00040000;
-u32 smask_2 = 0x00060002;
 
 fn poly_getnoise_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
@@ -76,7 +74,7 @@ fn poly_getnoise_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, r
   stack u8[33] extseed;
   stack u8[128] buf;
   stack ptr u16[KYBER_N] srp;
-  reg u256 ta, tb, tm_1, tm_2, tsm_1, tsm_2;
+  reg u256 t0 ta tb tm_1 tm_2;
   reg u64 t64;
 
   srp = rp;
@@ -94,9 +92,8 @@ fn poly_getnoise_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, r
   
   tm_1 = #VPBROADCAST_16u16(mask_ebits);
   tm_2 = #VPBROADCAST_16u16(mask2);
-  tsm_1 = #VPBROADCAST_8u32(smask_1);
-  tsm_2 = #VPBROADCAST_8u32(smask_2);
-  
+  t0 = #set0_256();
+
   for i=0 to 16
   {
     ta = #VPMOVZX_8u8_8u32(buf[u64 i]);
@@ -105,12 +102,23 @@ fn poly_getnoise_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, r
     tb = #VPSRA_16u16(ta, 1);
     ta &= tm_1;
     tb &= tm_1;
+
     ta = #VPADD_16u16(ta, tb);
-    tb = #VPSRLV_16u16(ta, tsm_2);
+
+    tb = #VPSRL_16u16(ta, 2);
+    t0 = #VPBLEND_16u16(t0, tb,0xAA);
+    tb ^= t0;
+    t0 = #VPSRL_16u16(t0, 4);
+    tb ^= t0;
     tb &= tm_2;
-    ta = #VPSRLV_16u16(ta, tsm_1);
+
+    t0 = #VPBLEND_16u16(t0, ta,0xAA);
+    ta ^= t0;
+    t0 = #VPSRL_16u16(t0, 4);
+    ta ^= t0;
     ta &= tm_2;
     ta = #VPSUB_16u16(ta, tb);
+
     rp[u256 i]  = ta;
   }
 
