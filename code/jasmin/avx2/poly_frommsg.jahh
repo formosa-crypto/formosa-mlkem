@@ -3,9 +3,6 @@
 
 #include "params.jahh"
 
-u256 smask = 0x000F000E000D000C000B000A0009000800070006000500040003000200010000;
-u16 mask1 = 0x0001;
-
 fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
   reg u8 c;
@@ -68,23 +65,28 @@ fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   return rp;
 }
 
+u16[16] shift_s = {0, 1, 2, 3, 4, 5, 6, 7,
+                  8, 9, 10, 11, 12, 13, 14, 15};
+u16 mask_s = 0x0001;
 
 fn poly_frommsg_avx(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
   inline int i;
-  reg u256 t0 t1 hq;
+  reg u256 t0 hq shift mask;
   reg u16 c;
   reg ptr u16[16] hqp;
 
   hqp = hqx16;
   hq = hqp[u256 0];
 
+  mask = #VPBROADCAST_16u16(mask_s);
+  shift = shift_s[u256 0];
+
   for i=0 to 16
   {
     t0 = #VPBROADCAST_16u16((u16)[ap+2*i]);
-    t0 = #VPSRLV_16u16(t0, smask);
-    t1 = #VPBROADCAST_16u16(mask1);
-    t0 &= t1;
+    t0 = #VPSRLV_16u16(t0, shift);
+    t0 = #VPAND_256(t0, mask);
     t0 = #VPMULL_16u16(t0, hq);
     rp[u256 i] = t0;
   }
