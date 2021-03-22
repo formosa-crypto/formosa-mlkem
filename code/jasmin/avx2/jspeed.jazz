@@ -25,6 +25,7 @@
 #include "polyvec_reduce.jahh"
 #include "gen_matrix.jahh"
 
+/* Exported functions only for benchmarking */
 
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
 {
@@ -56,7 +57,7 @@ export fn poly_decompress_jazz(reg u64 rp, reg u64 ap)
   stack u16[KYBER_N] r;
   stack u8[128] a;
 
-  r = poly_decompress(r, ap);
+  r = poly_decompress_avx(r, ap);
 }
 
 export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap) 
@@ -119,7 +120,7 @@ export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_VECN] r;
 
-  r = polyvec_decompress(ap);
+  r = polyvec_decompress_avx(ap);
 }
 
 
@@ -146,7 +147,6 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 }
 
 
-/* Exported functions only for benchmarking */
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
   stack u16[KYBER_K*KYBER_VECN] aa;
@@ -219,8 +219,8 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   pkp = spkp;
   skp = sskp;
 
-  polyvec_tobytes(skp, skpv);
-  polyvec_tobytes(pkp, pkpv);
+  polyvec_tobytes_avx(skp, skpv);
+  polyvec_tobytes_avx(pkp, pkpv);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES; 
@@ -256,7 +256,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
     i += 1;
   }
 
-  pkpv = polyvec_frombytes(pkp);
+  pkpv = polyvec_frombytes_avx(pkp);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES;
@@ -268,7 +268,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
     i += 1;
   }
 
-  k = poly_frommsg(k, msgp);
+  k = poly_frommsg_avx(k, msgp);
 
   aat = gen_matrix(publicseed, 1);
 
@@ -320,11 +320,11 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
   stack u16[KYBER_N] t v mp;
   stack u16[KYBER_VECN] bp skpv;
 
-  bp = polyvec_decompress(ctp);
+  bp = polyvec_decompress_avx(ctp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  v = poly_decompress(v, ctp);
+  v = poly_decompress_avx(v, ctp);
 
-  skpv = polyvec_frombytes(skp);
+  skpv = polyvec_frombytes_avx(skp);
   
   bp = polyvec_ntt(bp);
   t = polyvec_pointwise_acc(t, skpv, bp);

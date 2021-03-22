@@ -41,7 +41,7 @@ export fn poly_decompress_jazz(reg u64 rp, reg u64 ap)
   stack u16[KYBER_N] r;
   stack u8[128] a;
 
-  r = poly_decompress(r, ap);
+  r = poly_decompress_avx(r, ap);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -62,7 +62,7 @@ export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap)
   }
   
   a = nttunpack(a);
-  a = poly_tobytes(rp, a);
+  a = poly_tobytes_avx(rp, a);
 }
 
 export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap) 
@@ -72,7 +72,7 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_N] r;
 
-  r = poly_frombytes(r, ap);
+  r = poly_frombytes_avx(r, ap);
 
   r = nttpack(r);
 
@@ -96,6 +96,7 @@ export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap)
   }
 
   a = poly_tomsg(rp, a);
+//  a = poly_tomsg_avx(rp, a);
 }
 
 export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 
@@ -112,7 +113,6 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
     (u16)[rp + 2*i] = t;
   }
 }
-
 
 
 export fn poly_add2_jazz(reg u64 rp,  reg u64 bp) 

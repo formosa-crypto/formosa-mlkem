@@ -21,13 +21,12 @@ void poly_decompress_jazz(poly *r, const unsigned char *a);
 void poly_frommsg_jazz(poly *r, const unsigned char msg[KYBER_SYMBYTES]);
 void poly_tomsg_jazz(unsigned char msg[KYBER_SYMBYTES], poly *r);
 
-
 void poly_getnoise_jazz(poly *r,const unsigned char *seed, unsigned char nonce);
 
 void poly_ntt_jazz(poly *r);
 void poly_invntt_jazz(poly *r);
 
-/*Poly vec functions*/
+/*Polyvec functions*/
 void polyvec_compress_jazz(unsigned char *r, polyvec *a);
 void polyvec_decompress_jazz(polyvec *r, const unsigned char *a);
 

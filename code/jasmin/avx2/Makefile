@@ -108,13 +108,13 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyve
 jfips202.japp: jfips202.jazz fips202.jahh
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
-gen_matrix.japp: gen_matrix.jazz gen_matrix.jahh
+gen_matrix.japp: gen_matrix.jazz gen_matrix.jahh $(JHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
-jspeed.japp: jspeed.jazz $(JHEADERS) $(POLYHEADERS)
+jspeed.japp: jspeed.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	cat $< | $(CC) -E - | grep -v ^# > $@
 
 jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
@@ -133,10 +133,11 @@ clean:
 	-rm *.japp
 	-rm *.o
 	-rm gen_matrix.s
-	-rm indcpa.s
+	-rm jindcpa.s
 	-rm jfips202.s
 	-rm jpoly.s
 	-rm jpolyvec.s
+	-rm jspeed.s
 	-rm test/test_poly_compress
 	-rm test/test_poly_decompress
 	-rm test/test_poly_tobytes
@@ -163,6 +164,7 @@ clean:
 	-rm test/test_polyvec_reduce
 	-rm test/test_polyvec_csubq
 	-rm test/test_fips202
+	-rm test/test_gen_matrix
 	-rm test/test_indcpa
 	-rm test/speed_indcpa
 	-rm test/speed_kyber
