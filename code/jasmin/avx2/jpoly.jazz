@@ -30,7 +30,7 @@ export fn poly_compress_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  a = poly_compress(rp, a);
+  a = poly_compress_avx(rp, a);
 }
 
 export fn poly_decompress_jazz(reg u64 rp, reg u64 ap) 
@@ -95,8 +95,7 @@ export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  a = poly_tomsg(rp, a);
-//  a = poly_tomsg_avx(rp, a);
+  a = poly_tomsg_avx(rp, a);
 }
 
 export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 

@@ -65,7 +65,7 @@ fn poly_tomsg_avx(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
     f1 = #VPSUB_16u16(f1, hhq);
     f0 = #VPACKSS_16u16(f0, f1);
     f0 = #VPERMQ(f0, 0xD8);
-    c = #VPEXTR_32(f0, 1);  //FIXME: c = #VPMOVMSKB_32u8(f0);
+    c = #VPMOVMSKB_u256u32(f0);
     (u32)[rp+4*i] = c;
   }
   return a;
