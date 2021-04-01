@@ -549,7 +549,7 @@ fn rej_uniform_avx(stack u16[KYBER_N] rp, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RA
     val0 |= t16;
     val0 &= 0xFFF;
 
-    val1 &= 0xF;
+    val1 >>= 4;
     t16 = (16u)buf[(int)pos];
     pos += 1;
     t16 <<= 4;
