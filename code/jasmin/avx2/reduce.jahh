@@ -41,6 +41,20 @@ fn fqmulprecomp16x(reg u256 b al ah qx16) -> reg u256
 }
 
 inline
+fn fqmulx16(reg u256 a b qx16 qinvx16) -> reg u256
+{
+  reg u256 rd rhi rlo;
+  rhi = #VPMULH_16u16(a, b);
+  rlo = #VPMULL_16u16(a, b);
+
+  rlo = #VPMULL_16u16(rlo, qinvx16);
+  rlo = #VPMULH_16u16(rlo, qx16);
+  rd = #VPSUB_16u16(rhi, rlo);
+
+  return rd;
+}
+
+inline
 fn fqmul(reg u16 a, reg u16 b) -> reg u16
 {
   reg u32 ad;
