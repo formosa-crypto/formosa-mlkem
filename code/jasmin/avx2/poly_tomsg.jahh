@@ -45,7 +45,7 @@ fn poly_tomsg_avx(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 
   a = poly_csubq(a);
 
-  px16 = hqx16;
+  px16 = hqx16_m1;
   hq = px16[u256 0];
 
   px16 = hhqx16;

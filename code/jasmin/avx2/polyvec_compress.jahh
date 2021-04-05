@@ -111,7 +111,7 @@ fn polyvec_compress_avx(reg u64 rp, stack u16[KYBER_VECN] a)
     f0 = #VPSUB_16u16(f0, f1);
     f0 = #VPMULHRS_16u16(f0, shift1);
     f0 = #VPAND_256(f0, mask);
-    f0 = #VPOR_256(f0, shift2); //FIXME: f0 = #VPMADD_16u16(f0, shift2);
+    f0 = #VPMADDWD_256(f0, shift2);
     f0 = #VPSLLV_8u32(f0, sllvdidx);
     f0 = #VPSRL_4u64(f0, 12);
     f0 = #VPSHUFB_256(f0, shufbidx);

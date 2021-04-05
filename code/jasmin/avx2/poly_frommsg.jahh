@@ -76,7 +76,7 @@ fn poly_frommsg_avx(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   reg u16 c;
   reg ptr u16[16] hqp;
 
-  hqp = hqx16;
+  hqp = hqx16_p1;
   hq = hqp[u256 0];
 
   mask = #VPBROADCAST_16u16(mask_s);
