@@ -71,6 +71,7 @@ module NTT = {
 }.
 
 lemma ntt_spec_ll : islossless NTT.ntt.
+proof.
 proc.
 sp.
 while (   1 <= len /\ len <= 128
@@ -116,6 +117,7 @@ by auto=> /> /#.
 qed.
 
 lemma invntt_spec_ll : islossless NTT.invntt.
+proof.
 proc.
 sp.
 while(0<=j<=256) (256-j); first by move => *; auto => /> /#.
@@ -299,10 +301,15 @@ end DFT.
 
 theory NTTequiv.
 
-  (*TODO: all here*)
-
-
   op bitrev (i k : int) = bs2int (rev (int2bs i k)).
+
+  lemma bitrev_ineq (i k : int) :
+    0 <= i =>
+    0 <= bitrev i k < 2 ^ i.
+  proof.
+    move => le0i; split; [apply bs2int_ge0|move => _]; rewrite /bitrev; move: (size_int2bs i k) => @/max.
+    by case: (0 < i) => [_ {2}<-|lei0]; [|(have <-: (i = 0) by smt()); move => {2}<-]; rewrite -size_rev; apply bs2int_le2Xs.
+  qed.
 
   lemma bitrev_involutive (i k : int) :
     0 <= i =>
@@ -544,8 +551,6 @@ clone import Bigalg.BigComRing as BigZmod with
   (*- one that gives a postcondition when the loop being adressed is a for loop*)
   (*- another that does the same for the specific for loops that always write on different parts of the memory that is described in the postcondition (the two innermost loops in our case)*)
 
-  
-
   lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
     (forall i ,
       0 <= i < 128 =>
@@ -562,9 +567,7 @@ clone import Bigalg.BigComRing as BigZmod with
             (fun c => p.[bitrev 8 (128 * b + c)] * exp zeta1_ (c * a))
             0 128].
   proof.
-    move => Hzs.
-    proc.
-    sp.
+    move => Hzs; proc. sp.
     while
       ( (exists k ,
           0 <= k < 8 /\
@@ -581,10 +584,7 @@ clone import Bigalg.BigComRing as BigZmod with
             0 len)).
     + sp; wp => /=.
       while
-        ( (exists k ,
-            0 <= k < 8 /\
-            len = 2 ^ k) /\
-          start <= len /\
+        ( start <= len /\
           (forall a b ,
             0 <= a < start * 2 =>
             0 <= b < 128 %/ len =>
@@ -607,11 +607,7 @@ clone import Bigalg.BigComRing as BigZmod with
               0 len)).
       - sp; wp.
         while
-          ( (exists k ,
-              0 <= k < 8 /\
-              len = 2 ^ k) /\
-            start <= len /\
-            (exists bsj , 0 <= bsj <= 128 %/ len /\ j = len * 2 * bsj) /\
+          ( (exists bsj , 0 <= bsj <= 128 %/ len /\ j = len * 2 * bsj) /\
             (forall a b ,
               0 <= a < start * 2 =>
               0 <= b < 128 %/ len =>
@@ -660,9 +656,10 @@ clone import Bigalg.BigComRing as BigZmod with
                   (exp zeta1_ (k * a)))
                 0 len)).
         * sp; skip.
-          move => /> &hr r k le0k ltk8 lestart2powk bsj le0bsj ltbsj2pow.
+          move => /> &hr r bsj le0bsj ltbsj2pow.
           move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej.
-          move => ltj256; do!split.
+          move => ltmul256 k le0k ltk8 ->> le2powk64 ltstartlen _.
+          do!split.
           + exists (bsj + 1).
             split => //; last by rewrite mulzDr.
             split => //; first by apply addz_ge0.
@@ -673,6 +670,7 @@ clone import Bigalg.BigComRing as BigZmod with
             have /= Hdiv:= (dvdz_exp2l 2 k 7); apply Hdiv; split => // _.
             smt().
           + move => a b le0a lta2start le0b ltb2pow.
+            do!(rewrite get_setE; first by apply bitrev_ineq).
             admit.
           + move => b le0b ltb.
             admit.
@@ -683,7 +681,7 @@ clone import Bigalg.BigComRing as BigZmod with
           move => a b ltstarta lta2powk le0b ltb2pow.
           admit.
         skip.
-        move => /> &hr k le0k ltk8 lestart2powk IHstartpast IHstartfuture ltstart2powk; do!split.
+        move => /> &hr _ IHstartpast IHstartfuture ltstartlen lelen64 k le0k ltk8 ->>; do!split.
         * by exists 0 => /=; apply divz_ge0 => //; apply expr_gt0.
         * by move => b le0b ltb0; smt().
         * by move => b le0b ltb0; smt().
@@ -726,6 +724,94 @@ clone import Bigalg.BigComRing as BigZmod with
     by move => /= IHlen a b le0a lta128 le0b ltb2; rewrite IHlen.
   qed.
 
+  (*TODO: there is only HL, pHL and pRHL, not RHL, right? Because this equivalence proof could see the new while do wonders.*)
+  equiv eq_NTT1_NTT2: NTT1.ntt ~ NTT2.ntt:
+    ={arg} ==> ={res}.
+  proof.
+    proc; sp.
+    while
+      ( (exists k ,
+          0 <= k < 8 /\
+          len{1} = 2 ^ k) /\
+        (zetasctr{1} + 1 = 128 %/ len{1}) /\
+        ={zetasctr, len, r, zetas}).
+    + sp; wp => /=.
+      while
+        ( (exists k ,
+            0 <= k < 8 /\
+            len{1} = 2 ^ k) /\
+          (exists s ,
+            0 <= s <= 128 %/ len{1} /\
+            start{1} = len{1} * 2 * s) /\
+          (zetasctr{1} + 1 = 128 %/ len{1} + start{1} %/ (len{1} * 2)) /\
+          ={zetasctr, len, r, zetas, start}).
+      - wp => /=.
+        while
+          ( (exists k ,
+              0 <= k < 8 /\
+              len{1} = 2 ^ k) /\
+            (exists s ,
+              0 <= s < 128 %/ len{1} /\
+              start{1} = len{1} * 2 * s) /\
+            (zetasctr{1} = 128 %/ len{1} + start{1} %/ (len{1} * 2)) /\
+            ={zetasctr, len, r, zetas, start, zeta_, j}).
+        * by sp; skip => />.
+        auto => />; do!(move => *; split).
+        * admit.
+        * smt().
+        * admit.
+        admit.
+      skip => /> &hr2 k le0k ltk8 Hzetasctr le22powk; do!split.
+      - exists 0; do!split => // _.
+        apply lez_eqVlt; right.
+        apply ltz_divRL => //=; first by apply expr_gt0.
+        move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv.
+        by split => // _; apply ltzS.
+      move => start1 start2 zetasctr /lezNgt le256start1 _ s le0s les_ ->> -> <<-; split.
+      - exists (k-1); do!split => //=.
+        * by apply ler_subr_addr; apply ltzE; move: le0k => /le0r [->>|].
+        * by move: ltk8 => /ltzW lek8 _; apply ltzE; rewrite -addzA.
+        by apply Montgomery.pow_div1; move: le0k => /le0r [->>|].
+      move: (ler_wpmul2l (2 ^ k * 2) _ _ _ les_).
+      - by apply mulr_ge0 => //; apply lez_eqVlt; right; apply expr_gt0.
+      rewrite {2}(mulzC (2 ^ k) 2) (mulzA 2) (mulzC _ (128 %/ 2 ^ k)) divzK.
+      - move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv.
+        by split => // _; apply ltzS.
+      have Htrivial: forall (x y : int) , x <= y => y <= x => x = y by smt().
+      move => /= lestart1256; rewrite (Htrivial _ _ lestart1256 le256start1).
+      rewrite (mulzC (2 ^ k) 2) Montgomery.div_mul //=.
+      have ->: (forall (x : int) , x + x = 2 * x) by smt().
+      rewrite -Montgomery.div_mulr /=.
+      - move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv.
+        by split => // _; apply ltzS.
+      rewrite {1}(_: k = k - 1 + 1) 1:// exprS.
+      - admit.
+      rewrite (divzMpl 2 128) 1://.
+      search _ (_ %/ _) (_ ^ _)%IntID.
+      rewrite -Montgomery.pow_div1 //.
+      admit.
+    by skip => />; exists 7; split.
+  qed.
+
+  equiv eq_NTT_NTT1: NTT.ntt ~ NTT1.ntt:
+    ={arg} ==> ={res}.
+  proof.
+    proc; sp.
+    while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas}).
+    + sp; wp => /=.
+      while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas, start}).
+      - sp; wp => /=.
+        while ((0 <= len{1}) /\ (start{1} <= j{1} <= start{1} + len{1}) /\ ={zetasctr, len, r, zetas, start, zeta_, j}).
+        * sp; skip => /> &hr2 j le0len lestartj _ ltj_; split => //.
+          + admit.
+          move => _; admit.
+        skip => /> &hr2 le0len ltstart256; do!split => //.
+        + admit.
+        move => j  /lezNgt le_j
+        admit.
+      by skip => />.
+    by skip => />.
+  qed.
 
 end NTTequiv.
 
