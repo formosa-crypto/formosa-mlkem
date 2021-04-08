@@ -65,17 +65,22 @@ fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u
 }
 
 
-u16 mask_ebits = 0x0055;
-u16 mask2 = 0x0003;
-
 fn poly_getnoise_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
   inline int i;
-  stack u8[33] extseed;
-  stack u8[128] buf;
-  stack ptr u16[KYBER_N] srp;
-  reg u256 t0 ta tb tm_1 tm_2;
+  reg u256 f0 f1 f2 f3;
+  reg u128 t;
+  reg u256 mask55 mask33 mask03 mask0F;
   reg u64 t64;
+  stack ptr u16[KYBER_N] srp;
+  stack u8[128] buf;
+  stack u8[33] extseed;
+  stack u32 mask55_s mask33_s mask03_s mask0F_s;
+
+  mask55_s = 0x55555555;
+  mask33_s = 0x33333333;
+  mask03_s = 0x03030303;
+  mask0F_s = 0x0F0F0F0F;
 
   srp = rp;
 
@@ -89,37 +94,48 @@ fn poly_getnoise_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, r
   buf = shake256_128_33(buf, extseed);
 
   rp = srp;
-  
-  tm_1 = #VPBROADCAST_16u16(mask_ebits);
-  tm_2 = #VPBROADCAST_16u16(mask2);
-  t0 = #set0_256();
 
-  for i=0 to 16
+  mask55 = #VPBROADCAST_8u32(mask55_s);
+  mask33 = #VPBROADCAST_8u32(mask33_s);
+  mask03 = #VPBROADCAST_8u32(mask03_s);
+  mask0F = #VPBROADCAST_8u32(mask0F_s);
+
+  for i=0 to KYBER_N/64
   {
-    ta = #VPMOVZX_8u8_8u32(buf[u64 i]);
-    tb = #VPSLL_8u32(ta, 16);
-    ta |= tb;
-    tb = #VPSRA_16u16(ta, 1);
-    ta &= tm_1;
-    tb &= tm_1;
+    f0 = buf[u256 i];
 
-    ta = #VPADD_16u16(ta, tb);
+    f1 = #VPSRL_16u16(f0, 1);
+    f0 = #VPAND_256(mask55, f0);
+    f1 = #VPAND_256(mask55, f1);
+    f0 = #VPADD_32u8(f0, f1);
 
-    tb = #VPSRL_16u16(ta, 2);
-    t0 = #VPBLEND_16u16(t0, tb,0xAA);
-    tb ^= t0;
-    t0 = #VPSRL_16u16(t0, 4);
-    tb ^= t0;
-    tb &= tm_2;
+    f1 = #VPSRL_16u16(f0, 2);
+    f0 = #VPAND_256(mask33, f0);
+    f1 = #VPAND_256(mask33, f1);
+    f0 = #VPADD_32u8(f0, mask33);
+    f0 = #VPSUB_32u8(f0, f1);
 
-    t0 = #VPBLEND_16u16(t0, ta,0xAA);
-    ta ^= t0;
-    t0 = #VPSRL_16u16(t0, 4);
-    ta ^= t0;
-    ta &= tm_2;
-    ta = #VPSUB_16u16(ta, tb);
+    f1 = #VPSRL_16u16(f0, 4);
+    f0 = #VPAND_256(mask0F, f0);
+    f1 = #VPAND_256(mask0F, f1);
+    f0 = #VPSUB_32u8(f0, mask03);
+    f1 = #VPSUB_32u8(f1, mask03);
 
-    rp[u256 i]  = ta;
+    f2 = #VPUNPCKL_32u8(f0, f1);
+    f3 = #VPUNPCKH_32u8(f0, f1);
+
+    t = (128u)f2;
+    f0 = #VPMOVSX_16u8_16u16(t);
+    t = #VEXTRACTI128(f2, 1);
+    f1 = #VPMOVSX_16u8_16u16(t);
+    t = (128u)f3;
+    f2 = #VPMOVSX_16u8_16u16(t);
+    t = #VEXTRACTI128(f3, 1);
+    f3 = #VPMOVSX_16u8_16u16(t);
+    rp[u256 4*i] = f0;
+    rp[u256 4*i + 1] = f2;
+    rp[u256 4*i + 2] = f1;
+    rp[u256 4*i + 3] = f3;
   }
 
   return rp;
