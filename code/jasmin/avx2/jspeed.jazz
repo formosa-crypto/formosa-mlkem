@@ -26,7 +26,6 @@
 #include "gen_matrix.jahh"
 
 /* Exported functions only for benchmarking */
-
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
 {
   stack u16[KYBER_K*KYBER_VECN] aa;
@@ -309,7 +308,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   v  = poly_reduce(v);
 
   ctp = sctp;
-  polyvec_compress(ctp, bp);
+  polyvec_compress_avx(ctp, bp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
   v = poly_compress_avx(ctp, v);
 }
