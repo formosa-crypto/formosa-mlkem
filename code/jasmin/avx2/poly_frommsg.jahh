@@ -65,32 +65,54 @@ fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   return rp;
 }
 
-u16[16] shift_s = {0, 1, 2, 3, 4, 5, 6, 7,
-                  8, 9, 10, 11, 12, 13, 14, 15};
-u16 mask_s = 0x0001;
+u32[4] shift_s = {3, 2, 1, 0};
+u8[16] idx_s = {0, 1, 4, 5, 8, 9, 12, 13,
+                2, 3, 6, 7, 10, 11, 14, 15};
 
 fn poly_frommsg_avx(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
   inline int i;
-  reg u256 t0 hq shift mask;
-  reg u16 c;
-  reg ptr u16[16] hqp;
+  reg u256 f g0 g1 g2 g3 g4 h0 h1 h2 h3;
+  reg u256 shift idx hqs;
+  reg ptr u16[16] x16p;
 
-  hqp = hqx16_p1;
-  hq = hqp[u256 0];
+  x16p = hqx16_p1;
+  hqs = x16p[u256 0];
+  shift = #VPBROADCAST_2u128(shift_s[u128 0]);
+  idx = #VPBROADCAST_2u128(idx_s[u128 0]);
 
-  mask = #VPBROADCAST_16u16(mask_s);
-  shift = shift_s[u256 0];
+  f = (u256)[ap];
 
-  for i=0 to 16
+  for i=0 to 4
   {
-    t0 = #VPBROADCAST_16u16((u16)[ap+2*i]);
-    t0 = #VPSRLV_16u16(t0, shift);
-    t0 = #VPAND_256(t0, mask);
-    t0 = #VPMULL_16u16(t0, hq);
-    rp[u256 i] = t0;
+    g3 =  #VPSHUFD_256(f, 0x55*i);
+    g3 = #VPSLLV_8u32(g3, shift);
+    g3 = #VPSHUFB_256(g3, idx);
+    g0 = #VPSLL_16u16(g3,12);
+    g1 = #VPSLL_16u16(g3,8);
+    g2 = #VPSLL_16u16(g3,4);
+    g0 = #VPSRA_16u16(g0,15);
+    g1 = #VPSRA_16u16(g1,15);
+    g2 = #VPSRA_16u16(g2,15);
+    g3 = #VPSRA_16u16(g3,15);
+    g0 = #VPAND_256(g0,hqs);
+    g1 = #VPAND_256(g1,hqs);
+    g2 = #VPAND_256(g2,hqs);
+    g3 = #VPAND_256(g3,hqs);
+    h0 = #VPUNPCKL_4u64(g0,g1);
+    h2 = #VPUNPCKH_4u64(g0,g1);
+    h1 = #VPUNPCKL_4u64(g2,g3);
+    h3 = #VPUNPCKH_4u64(g2,g3);
+    g0 = #VPERM2I128(h0,h1,0x20);
+    g2 = #VPERM2I128(h0,h1,0x31);
+    g1 = #VPERM2I128(h2,h3,0x20);
+    g3 = #VPERM2I128(h2,h3,0x31);
+    rp[u256 2*i] = g0;
+    rp[u256 2*i + 1] = g1;
+    rp[u256 2*i + 8] = g2;
+    rp[u256 2*i + 8 + 1] = g3;
   }
+
   return rp;
 }
-
 #endif
