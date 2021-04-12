@@ -1,5 +1,6 @@
 require import AllCore IntDiv Array256 Array128.
 require import List Ring StdOrder Fq.
+require import IntMin.
 
 import Fq IntOrder.
 theory NTT_Fq.
@@ -299,6 +300,100 @@ end DFT.
 
 
 
+abstract theory FOR.
+
+  type t, it, ct.
+
+  (*TODO: abbrev, op?*)
+  op incr : it -> t -> t.
+  op cond : ct -> t -> bool.
+  op out : it -> ct -> t -> int.
+  op finite : it -> ct -> t -> bool.
+  op val : it -> t -> int -> t.
+
+  abbrev ncond_val i c x n = ! cond c (val i x n).
+  abbrev form i c x n = (0 <= n <= out i c x).
+  op inv i c x v = exists n , (v = (val i x n)) /\ (form i c x n).
+
+  axiom val_iter i x n : 0 <= n => val i x n = (iter n (incr i) x).
+  axiom finite_nsempty i c x : finite i c x => ! sempty (pcap (ncond_val i c x)).
+  axiom pmin_out i c x : finite i c x => pmin (ncond_val i c x) = out i c x.
+
+  lemma inv_loop i c x v : finite i c x => inv i c x v => cond c v => inv i c x (incr i v).
+  proof.
+    move => Hfin [n [->> [le0n /ler_eqVlt lenout]]] Hcond.
+    case lenout => [->>|ltnout].
+    + by have:= pmin_mem _ (finite_nsempty _ _ _ Hfin); rewrite (pmin_out _ _ _ Hfin) /= => /negP Hncond; have:= (Hncond Hcond).
+    exists (n+1); do!split.
+    + by rewrite !val_iter ?addr_ge0 // iterS.
+    + by apply addr_ge0.
+    by move => _; apply ltzE.
+  qed.
+
+  (*TODO: use new lemmas on pmin.*)
+  lemma inv_in i c x : finite i c x => inv i c x x.
+  proof.
+    move => Hfin; exists 0; rewrite val_iter // iter0 //=.
+    rewrite -(pmin_out _ _ _ Hfin).
+    admit.
+  qed.
+
+  lemma inv_out i c x v : finite i c x => inv i c x v => !(cond c v) => v = (val i x (out i c x)).
+  proof.
+    move => Hfin [n [->> [le0n /ler_eqVlt lenout]]] Hncond.
+    case lenout => [-> //|ltnout].
+    have:= (pmin_min _ _ (finite_nsempty _ _ _ Hfin) le0n Hncond).
+    by rewrite (pmin_out _ _ _ Hfin) => /lezNgt /negP nltnout; move: (nltnout ltnout).
+  qed.
+
+end FOR.
+
+
+
+theory FOR_INT_ADD_LT.
+
+  clone import FOR with 
+    type t <- int,
+    type it <- int,
+    type ct <- int,
+    op incr <- (fun i x : int => x + i),
+    op cond <- (fun c x : int => x < c),
+    op out = (fun i c x : int => max (- (x - c) %/ i) 0),
+    op finite <- (fun i c x : int => (0 < i)),
+    op val <- (fun i x n : int => x + n * i)
+    proof *.
+
+    realize val_iter.
+    proof.
+      by move => i x; elim; [rewrite iter0|move => n le0n; rewrite mulzDl addzA iterS // => <- /=].
+    qed.
+
+    realize finite_nsempty.
+    proof.
+      move => i c x lt0i; apply semptyNP.
+      exists (out i c x); rewrite /out maxrE.
+      case: (0 <= - (x - c) %/ i) => [le0_|/ltzNge lt_0]; split => //=.
+      + apply/negP => /ltr_subr_addl; rewrite mulNr => /ltr_oppl; rewrite opprB /=.
+        by apply /ler_gtF; apply lez_floor; apply gtr_eqF.
+      move: lt_0 => /ltr_oppl /= lt0_; apply/ltr_gtF/subr_gt0.
+      by apply (ltr_le_trans ((x - c) %/ i * i)); [apply mulr_gt0|apply/lez_floor/gtr_eqF].
+    qed.
+
+    (*TODO: use new lemmas on pmin.*)
+    realize pmin_out.
+    proof.
+      move => i c x lt0i.
+      admit.
+    qed.
+
+end FOR_INT_ADD_LT.
+
+
+
+(*TODO: an int logarithm or something for a FOR_INT_DIV_GE ?*)
+
+
+
 theory NTTequiv.
 
   op bitrev (i k : int) = bs2int (rev (int2bs i k)).
@@ -352,7 +447,7 @@ theory NTTequiv.
   
   }.
 
-module NTT2 = {
+  module NTT2 = {
    proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
      var len, start, j, zetasctr;
      var  t, zeta_;
@@ -537,7 +632,7 @@ module NTT2 = {
   (*op dft (v : vector) =
     offunv (fun k => BAdd.bigi predT (fun j => v.[j] * exp a (j * k)) 0 n).*)
 
-clone import Bigalg.BigComRing as BigZmod with
+  clone import Bigalg.BigComRing as BigZmod with
     type  t        <- zmod,
       op  CR.zeror <- ZModField.zero,
       op  CR.oner  <- ZModField.one,
@@ -551,6 +646,40 @@ clone import Bigalg.BigComRing as BigZmod with
   (*- one that gives a postcondition when the loop being adressed is a for loop*)
   (*- another that does the same for the specific for loops that always write on different parts of the memory that is described in the postcondition (the two innermost loops in our case)*)
 
+  abbrev all_range P (min max : int) = all P (range min max).
+
+  lemma all_range_empty P (min max : int) : max <= min => all_range P min max.
+  proof.
+    by move => lemaxmin; rewrite range_geq.
+  qed.
+
+  lemma all_range_min P (min max : int) : min < max => all_range P min max <=> P min /\ all_range P (min + 1) max.
+  proof.
+    by move => ltminmax; rewrite range_ltn.
+  qed.
+
+  lemma all_range_max P (min max : int) : min < max => all_range P min max <=> P (max - 1) /\ all_range P min (max - 1).
+  proof.
+    move => ltminmax; rewrite -{1}(IntID.subrK max 1) rangeSr; first by apply/(ler_add2r 1) => /=; apply/ltzE.
+    split => [/allP Hall|[HP /allP Hall]].
+    + by split; [|apply/allP => x Hin]; apply Hall; rewrite mem_rcons // in_cons; right.
+    by apply /allP => x; rewrite mem_rcons in_cons; case => [->> //|]; apply Hall.
+  qed.
+
+  abbrev all_range_2 P (min1 max1 min2 max2 : int) = all_range (fun x => all_range (P x) min2 max2) min1 max1.
+
+  op index (len a b : int) = bitrev 8 (len * b + a).
+
+  op partial_ntt (p : zmod Array256.t, len a b : int) =
+  BAdd.bigi
+    predT
+    (fun k =>
+      p.[index len k b] *
+      (exp zeta1_ (k * a)))
+    0 len.
+
+  op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
+
   lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
     (forall i ,
       0 <= i < 128 =>
@@ -558,173 +687,85 @@ clone import Bigalg.BigComRing as BigZmod with
       hoare
         [NTT3.ntt :
         arg = (p,zs) ==>
-        forall a b ,
-          0 <= a < 128 =>
-          0 <= b < 2 =>
-          res.[bitrev 8 (128 * b + a)] =
-          BAdd.bigi
-            predT
-            (fun c => p.[bitrev 8 (128 * b + c)] * exp zeta1_ (c * a))
-            0 128].
+        all_range_2 (partial_ntt_spec res p 128) 0 128 0 2].
   proof.
-    move => Hzs; proc. sp.
+    move => Hzs; proc; sp.
     while
       ( (exists k ,
           0 <= k < 8 /\
           len = 2 ^ k) /\
-        (forall a b ,
-          0 <= a < len =>
-          0 <= b < 256 %/ len =>
-          r.[bitrev 8 (len * b + a)] =
-          BAdd.bigi
-            predT
-            (fun k =>
-              p.[bitrev 8 (len * b + k)] *
-              (exp zeta1_ (k * a)))
-            0 len)).
+        (all_range_2 (partial_ntt_spec r p len) 0 len 0 (256 %/ len))).
     + sp; wp => /=.
       while
-        ( start <= len /\
-          (forall a b ,
-            0 <= a < start * 2 =>
-            0 <= b < 128 %/ len =>
-            r.[bitrev 8 (len * 2 * b + a)] =
-            BAdd.bigi
-              predT
-              (fun k =>
-                p.[bitrev 8 (len * 2 * b + k)] *
-                (exp zeta1_ (k * a)))
-              0 (len * 2)) /\
-          (forall a b ,
-            start <= a < len =>
-            0 <= b < 256 %/ len =>
-            r.[bitrev 8 (len * b + a)] =
-            BAdd.bigi
-              predT
-              (fun k =>
-                p.[bitrev 8 (len * b + k)] *
-                (exp zeta1_ (k * a)))
-              0 len)).
+        ( FOR_INT_ADD_LT.FOR.inv 1 len 0 start /\
+          all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
+          all_range_2 (partial_ntt_spec r p len) start len 0 (256 %/ len)).
       - sp; wp.
         while
-          ( (exists bsj , 0 <= bsj <= 128 %/ len /\ j = len * 2 * bsj) /\
-            (forall a b ,
-              0 <= a < start * 2 =>
-              0 <= b < 128 %/ len =>
-              r.[bitrev 8 (len * 2 * b + a)] =
-              BAdd.bigi
-                predT
-                (fun k =>
-                  p.[bitrev 8 (len * 2 * b + k)] *
-                  (exp zeta1_ (k * a)))
-                0 (len * 2)) /\
-            (forall b ,
-              0 <= b < j %/ (len * 2) =>
-              r.[bitrev 8 (len * 2 * b + start * 2)] =
-              BAdd.bigi
-                predT
-                (fun k =>
-                  p.[bitrev 8 (len * 2 * b + k)] *
-                  (exp zeta1_ (k * (start * 2))))
-                0 (len * 2)) /\
-            (forall b ,
-              0 <= b < j %/ (len * 2) =>
-              r.[bitrev 8 (len * 2 * b + start * 2 + 1)] =
-              BAdd.bigi
-                predT
-                (fun k =>
-                  p.[bitrev 8 (len * 2 * b + k)] *
-                  (exp zeta1_ (k * (start * 2 + 1))))
-                0 (len * 2)) /\
-            (forall b ,
-              j %/ len <= b < 256 %/ len =>
-              r.[bitrev 8 (len * b + start)] =
-              BAdd.bigi
-                predT
-                (fun k =>
-                  p.[bitrev 8 (len * b + k)] *
-                  (exp zeta1_ (k * start)))
-                0 len) /\
-            (forall a b ,
-              start < a < len =>
-              0 <= b < 256 %/ len =>
-              r.[bitrev 8 (len * b + a)] =
-              BAdd.bigi
-                predT
-                (fun k =>
-                  p.[bitrev 8 (len * b + k)] *
-                  (exp zeta1_ (k * a)))
-                0 len)).
+          ( FOR_INT_ADD_LT.FOR.inv (len * 2) 256 0 j /\
+            all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
+            all_range (partial_ntt_spec r p (len * 2) (start * 2)) 0 (j %/ (len * 2)) /\
+            all_range (partial_ntt_spec r p (len * 2) (start * 2 + 1)) 0 (j %/ (len * 2)) /\
+            all_range (partial_ntt_spec r p len start) (j %/ len) (256 %/ len) /\
+            all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len)).
         * sp; skip.
+          (*TODO: Any way not to use /> to stay a bit abstract in the handling of for loops?*)
           move => /> &hr r bsj le0bsj ltbsj2pow.
+          (*TODO: why is the all_range_2 abbrev not abbreviating here, and why so slow for move?*)
           move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej.
-          move => ltmul256 k le0k ltk8 ->> le2powk64 ltstartlen _.
+          move => ltmul256 k le0k ltk8 ->> le2powk64 ltstartlen.
+          move => start <<- le0start ltstart2pow_ ->>.
           do!split.
-          + exists (bsj + 1).
-            split => //; last by rewrite mulzDr.
-            split => //; first by apply addz_ge0.
-            move => _; apply ltzE; apply (ltr_pmul2l (2 ^ k * 2));
-            first by apply mulr_gt0 => //; apply expr_gt0.
-            rewrite -Montgomery.div_mulr //;
-            last by rewrite (mulzA _ _ 128) mulKz //=; apply neq_ltz; right; apply expr_gt0.
-            have /= Hdiv:= (dvdz_exp2l 2 k 7); apply Hdiv; split => // _.
-            smt().
-          + move => a b le0a lta2start le0b ltb2pow.
-            do!(rewrite get_setE; first by apply bitrev_ineq).
-            admit.
-          + move => b le0b ltb.
-            admit.
-          + move => b le0b ltb.
-            admit.
-          + move => b leb ltb2pow.
-            admit.
-          move => a b ltstarta lta2powk le0b ltb2pow.
+          + apply FOR_INT_ADD_LT.FOR.inv_loop => //; first by apply mulr_gt0 => //; apply expr_gt0.
+            by exists bsj; do!split.
+          (*TODO: use bitrev_involutive.*)
+          + admit.
+          + admit.
+          + admit.
+          + admit.
           admit.
         skip.
-        move => /> &hr _ IHstartpast IHstartfuture ltstartlen lelen64 k le0k ltk8 ->>; do!split.
-        * by exists 0 => /=; apply divz_ge0 => //; apply expr_gt0.
-        * by move => b le0b ltb0; smt().
-        * by move => b le0b ltb0; smt().
-        * by move => b le0b ltb2pow; rewrite IHstartfuture.
-        * move => a b ltstarta lta2powk le0b ltbpow.
-          by rewrite IHstartfuture //; split => //; apply ltrW.
-        move => j r nltj256 bsj le0bsj ltbsj2pow ?; subst j.
-        have ->: (bsj = 128 %/ 2 ^ k) by smt().
-        move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej; do!split.
-        * by apply ltzE.
-        * move => a b le0a lta le0b ltb2pow.
-          case: (a < start{hr} * 2) => [lta2start|nlta2start]; first by rewrite IHstartpastj.
-          case: (a = start{hr} * 2) => [eqa2start|neqa2start];
-          first by rewrite eqa2start IHjpasteven //; split => // _; smt().
-          have ->: a = start{hr} * 2 + 1 by smt().
-          by rewrite addzA IHjpastodd //; split => // _; smt().
-        move => a b lestartp1a lta2powk le0b ltbpow.
-        by rewrite IHstartfuturej //; split => //; apply ltzE.
+        move => /> &hr start le0start lestartlen IHstartpast IHstartfuture.
+        move => ltstartlen lelen64 k le0k ltk8 ->>.
+        do!split.
+        * by apply FOR_INT_ADD_LT.FOR.inv_in; apply mulr_gt0 => //; apply expr_gt0.
+        * by apply all_range_empty.
+        * by apply all_range_empty.
+        * (*TODO: why can't I just apply all_range_min?*)
+          by move: IHstartfuture => /(all_range_min _ start (2 ^ k) ltstartlen) [].
+        * by move: IHstartfuture => /(all_range_min _ start (2 ^ k) ltstartlen) [].
+        move => j r nltj256 bsj ->> le0bsj ltbsjout.
+        (*TODO: any way for out to be an abbrev or to unfold automaticaly once all the inv preservation stuff is done?*)
+        have ->: (bsj = 128 %/ 2 ^ k) by admit (*smt()*).
+        rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+        move => IHstartpastj IHjpasteven IHjpastodd _ IHstartfuturej; do!split.
+        * by apply FOR_INT_ADD_LT.FOR.inv_loop => //; exists start; do!split.
+        * rewrite mulrDl; apply/all_range_max => [/#|] /=; split => //.
+          by apply/all_range_max => [/#|] /=; split.
       skip.
-      move => /> &hr k le0k ltk8 IHlen le2powk64; do!split; first by apply expr_ge0.
-      - move => a b le0a lta0; smt().
-      move => r start nltstart2powk lestart2powk.
-      have ->: (start = 2 ^ k) by smt().
-      move => IHstartpast IHstartfuture; split.
+      move => /> &hr k le0k ltk8 IHlen le2powk64; do!split.
+      - by apply FOR_INT_ADD_LT.FOR.inv_in.
+      - by apply all_range_empty.
+      move => r start nltstart2powk lestart2powk start' <<- lestartout.
+      have ->: (start = 2 ^ k) by admit(*smt()*).
+      move => IHstartpast _; split.
       - exists (k+1); do!split => //; [by smt()| |by rewrite Domain.exprSr] => _.
         apply ltzE => /=; apply ler_subr_addr => /=.
         search _ (_ ^ _ <= _ ^ _)%IntID.
         admit.
-      move => a b le0a lta2pow le0b ltb2pow; rewrite IHstartpast //; split => // _.
-      by move: ltb2pow; rewrite (mulzC _ 2) Montgomery.div_mul.
+      by rewrite {2}(mulzC _ 2) Montgomery.div_mul.
     skip.
     move => />; do!split.
     + by exists 0.
-    + move => a b le0a lta1 le0b ltb256.
-      have ->: a=0 by smt().
+    + apply all_range_max => //=; split; last by apply all_range_empty.
+      apply/allP => x xinrange; rewrite /partial_ntt_spec /partial_ntt.
       by rewrite BAdd.big_ltn // BAdd.big_geq //= addr0 expr0 mulr1.
-    move => len r nltlen64 k le0k ltk8 ?; subst len.
+    move => len r nltlen64 k le0k ltk8 ->>.
     have ->: k=7.
     + admit.
-    by move => /= IHlen a b le0a lta128 le0b ltb2; rewrite IHlen.
+    by trivial.
   qed.
 
-  (*TODO: there is only HL, pHL and pRHL, not RHL, right? Because this equivalence proof could see the new while do wonders.*)
   equiv eq_NTT1_NTT2: NTT1.ntt ~ NTT2.ntt:
     ={arg} ==> ={res}.
   proof.
