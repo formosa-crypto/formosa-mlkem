@@ -1,6 +1,7 @@
 require import AllCore IntDiv Array256 Array128.
 require import List Ring StdOrder Fq.
 require import IntMin.
+require import For.
 
 import Fq IntOrder.
 theory NTT_Fq.
@@ -9,7 +10,7 @@ import Kyber_.
 import ZModField.
 import BitEncoding.BS2Int.
 
-(* These are imperative specifications of the  NTT algorithms  *)
+(* These are imperative specifications of the NTT algorithms  *)
 
 module NTT = {
  proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
@@ -300,100 +301,6 @@ end DFT.
 
 
 
-abstract theory FOR.
-
-  type t, it, ct.
-
-  (*TODO: abbrev, op?*)
-  op incr : it -> t -> t.
-  op cond : ct -> t -> bool.
-  op out : it -> ct -> t -> int.
-  op finite : it -> ct -> t -> bool.
-  op val : it -> t -> int -> t.
-
-  abbrev ncond_val i c x n = ! cond c (val i x n).
-  abbrev form i c x n = (0 <= n <= out i c x).
-  op inv i c x v = exists n , (v = (val i x n)) /\ (form i c x n).
-
-  axiom val_iter i x n : 0 <= n => val i x n = (iter n (incr i) x).
-  axiom finite_nsempty i c x : finite i c x => ! sempty (pcap (ncond_val i c x)).
-  axiom pmin_out i c x : finite i c x => pmin (ncond_val i c x) = out i c x.
-
-  lemma inv_loop i c x v : finite i c x => inv i c x v => cond c v => inv i c x (incr i v).
-  proof.
-    move => Hfin [n [->> [le0n /ler_eqVlt lenout]]] Hcond.
-    case lenout => [->>|ltnout].
-    + by have:= pmin_mem _ (finite_nsempty _ _ _ Hfin); rewrite (pmin_out _ _ _ Hfin) /= => /negP Hncond; have:= (Hncond Hcond).
-    exists (n+1); do!split.
-    + by rewrite !val_iter ?addr_ge0 // iterS.
-    + by apply addr_ge0.
-    by move => _; apply ltzE.
-  qed.
-
-  (*TODO: use new lemmas on pmin.*)
-  lemma inv_in i c x : finite i c x => inv i c x x.
-  proof.
-    move => Hfin; exists 0; rewrite val_iter // iter0 //=.
-    rewrite -(pmin_out _ _ _ Hfin).
-    admit.
-  qed.
-
-  lemma inv_out i c x v : finite i c x => inv i c x v => !(cond c v) => v = (val i x (out i c x)).
-  proof.
-    move => Hfin [n [->> [le0n /ler_eqVlt lenout]]] Hncond.
-    case lenout => [-> //|ltnout].
-    have:= (pmin_min _ _ (finite_nsempty _ _ _ Hfin) le0n Hncond).
-    by rewrite (pmin_out _ _ _ Hfin) => /lezNgt /negP nltnout; move: (nltnout ltnout).
-  qed.
-
-end FOR.
-
-
-
-theory FOR_INT_ADD_LT.
-
-  clone import FOR with 
-    type t <- int,
-    type it <- int,
-    type ct <- int,
-    op incr <- (fun i x : int => x + i),
-    op cond <- (fun c x : int => x < c),
-    op out = (fun i c x : int => max (- (x - c) %/ i) 0),
-    op finite <- (fun i c x : int => (0 < i)),
-    op val <- (fun i x n : int => x + n * i)
-    proof *.
-
-    realize val_iter.
-    proof.
-      by move => i x; elim; [rewrite iter0|move => n le0n; rewrite mulzDl addzA iterS // => <- /=].
-    qed.
-
-    realize finite_nsempty.
-    proof.
-      move => i c x lt0i; apply semptyNP.
-      exists (out i c x); rewrite /out maxrE.
-      case: (0 <= - (x - c) %/ i) => [le0_|/ltzNge lt_0]; split => //=.
-      + apply/negP => /ltr_subr_addl; rewrite mulNr => /ltr_oppl; rewrite opprB /=.
-        by apply /ler_gtF; apply lez_floor; apply gtr_eqF.
-      move: lt_0 => /ltr_oppl /= lt0_; apply/ltr_gtF/subr_gt0.
-      by apply (ltr_le_trans ((x - c) %/ i * i)); [apply mulr_gt0|apply/lez_floor/gtr_eqF].
-    qed.
-
-    (*TODO: use new lemmas on pmin.*)
-    realize pmin_out.
-    proof.
-      move => i c x lt0i.
-      admit.
-    qed.
-
-end FOR_INT_ADD_LT.
-
-
-
-(*TODO: an int logarithm or something for a FOR_INT_DIV_GE ?*)
-
-
-
 theory NTTequiv.
 
   op bitrev (i k : int) = bs2int (rev (int2bs i k)).
@@ -408,13 +315,23 @@ theory NTTequiv.
 
   lemma bitrev_involutive (i k : int) :
     0 <= i =>
-    0 <= k < 2 ^ i =>
+    k \in range 0 (2 ^ i) =>
     bitrev i (bitrev i k) = k.
   proof.
-    move => le0i [le0k ltk2powi] @/bitrev.
+    move => le0i /mem_range [le0k ltk2powi] @/bitrev.
     suff {1}->: i = size (rev (int2bs i k)).
     - by rewrite bs2intK revK int2bsK.
-    by rewrite size_rev size_int2bs /#.
+    by rewrite size_rev size_int2bs ler_maxr.
+  qed.
+
+  lemma bitrev_injective (i k1 k2 : int) :
+    0 <= i =>
+    k1 \in range 0 (2 ^ i) =>
+    k2 \in range 0 (2 ^ i) =>
+    bitrev i k1 = bitrev i k2 =>
+    k1 = k2.
+  proof.
+    by move => le0i Hk1in Hk2in eq_bitrev; rewrite -(bitrev_involutive i k1) // -(bitrev_involutive i k2) // eq_bitrev.
   qed.
 
   import ZModpRing.
@@ -666,9 +583,14 @@ theory NTTequiv.
     by apply /allP => x; rewrite mem_rcons in_cons; case => [->> //|]; apply Hall.
   qed.
 
+  lemma all_range_imp P Q (min max : int) : (forall x , x \in range min max => P x => Q x) => all_range P min max => all_range Q min max.
+  proof.
+    by move => Himp /allP HallrangeP; apply /allP => x Hxin; apply Himp => //; apply HallrangeP.
+  qed.
+
   abbrev all_range_2 P (min1 max1 min2 max2 : int) = all_range (fun x => all_range (P x) min2 max2) min1 max1.
 
-  op index (len a b : int) = bitrev 8 (len * b + a).
+  abbrev index (len a b : int) = bitrev 8 (len * b + a).
 
   op partial_ntt (p : zmod Array256.t, len a b : int) =
   BAdd.bigi
@@ -679,6 +601,21 @@ theory NTTequiv.
     0 len.
 
   op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
+
+  (*TODO: replace in JArray.*)
+  lemma set_neqiE_out ['a](t : 'a Array256.t) (x y : int) (a : 'a) : y <> x => t.[x <- a].[y] = t.[y].
+  proof.
+    by move => neqyx; case: (0 <= x < 256) => [Hxin|Hxout]; [rewrite set_neqiE|rewrite set_out].
+  qed.
+
+  (*TODO: add this in EasyCrypt (in Ring).*)
+  lemma mulzD1l x y : (x + 1) * y = x * y + y.
+  proof. by rewrite mulzDl. qed.
+
+  (*TODO: add in IntID*)
+  search _ 2 intmul.
+  lemma addz_double (x : int) : x + x = x * 2.
+  proof. by ring. qed.
 
   lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
     (forall i ,
@@ -697,57 +634,91 @@ theory NTTequiv.
         (all_range_2 (partial_ntt_spec r p len) 0 len 0 (256 %/ len))).
     + sp; wp => /=.
       while
-        ( FOR_INT_ADD_LT.FOR.inv 1 len 0 start /\
+        ( FOR_INT_ADD_LT.inv 1 len 0 start /\
           all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
           all_range_2 (partial_ntt_spec r p len) start len 0 (256 %/ len)).
       - sp; wp.
         while
-          ( FOR_INT_ADD_LT.FOR.inv (len * 2) 256 0 j /\
+          ( FOR_INT_ADD_LT.inv (len * 2) 256 0 j /\
             all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
             all_range (partial_ntt_spec r p (len * 2) (start * 2)) 0 (j %/ (len * 2)) /\
             all_range (partial_ntt_spec r p (len * 2) (start * 2 + 1)) 0 (j %/ (len * 2)) /\
             all_range (partial_ntt_spec r p len start) (j %/ len) (256 %/ len) /\
             all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len)).
         * sp; skip.
-          (*TODO: Any way not to use /> to stay a bit abstract in the handling of for loops?*)
+          (*TODO: use |>*)
           move => /> &hr r bsj le0bsj ltbsj2pow.
           (*TODO: why is the all_range_2 abbrev not abbreviating here, and why so slow for move?*)
           move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej.
           move => ltmul256 k le0k ltk8 ->> le2powk64 ltstartlen.
           move => start <<- le0start ltstart2pow_ ->>.
+          move: IHjpasteven IHjpastodd IHjfuture.
+          rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+          rewrite {3}(mulzC (2 ^ k) 2) {1}mulrA mulzK; first by apply/gtr_eqF/expr_gt0.
+          move => IHjpasteven IHjpastodd IHjfuture.
           do!split.
-          + apply FOR_INT_ADD_LT.FOR.inv_loop => //; first by apply mulr_gt0 => //; apply expr_gt0.
+          + apply FOR_INT_ADD_LT.inv_loop => //; first by apply mulr_gt0 => //; apply expr_gt0.
             by exists bsj; do!split.
           (*TODO: use bitrev_involutive.*)
+          + move : IHstartpastj; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
+            rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
+            - apply/negP => eq_index; move: (bitrev_injective _ _ _ _ _ _ eq_index) => //.
+              * rewrite mem_range.
+                admit.
+              * admit.
+              apply/negP/gtr_eqF.  (*Or maybe it is ltr_eqF*)
+              admit.
+            admit.
+          + rewrite -mulzD1l mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+            apply/all_range_max; [by apply ltzS|split].
+            - admit.
+            move : IHjpasteven; apply all_range_imp => x Hxin /=.
+            rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
+            - admit.
+            admit.
+          + rewrite -mulzD1l mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+            apply/all_range_max; [by apply ltzS|split].
+            - admit.
+            move : IHjpastodd; apply all_range_imp => x Hxin /=.
+            rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
+            - admit.
+            admit.
           + admit.
-          + admit.
-          + admit.
+          move : IHstartfuturej; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
+          rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
           + admit.
           admit.
         skip.
+
         move => /> &hr start le0start lestartlen IHstartpast IHstartfuture.
         move => ltstartlen lelen64 k le0k ltk8 ->>.
         do!split.
-        * by apply FOR_INT_ADD_LT.FOR.inv_in; apply mulr_gt0 => //; apply expr_gt0.
+        * by apply FOR_INT_ADD_LT.inv_in; apply mulr_gt0 => //; apply expr_gt0.
         * by apply all_range_empty.
         * by apply all_range_empty.
         * (*TODO: why can't I just apply all_range_min?*)
           by move: IHstartfuture => /(all_range_min _ start (2 ^ k) ltstartlen) [].
         * by move: IHstartfuture => /(all_range_min _ start (2 ^ k) ltstartlen) [].
-        move => j r nltj256 bsj ->> le0bsj ltbsjout.
-        (*TODO: any way for out to be an abbrev or to unfold automaticaly once all the inv preservation stuff is done?*)
-        have ->: (bsj = 128 %/ 2 ^ k) by admit (*smt()*).
+        move => j r nltj256 bsj eqj le0bsj ltbsjout.
+        move: (FOR_INT_ADD_LT.inv_out (2 ^ k * 2) 256 0 j); subst j => -> //=.
+        * by apply mulr_gt0 => //; apply expr_gt0.
+        * by exists bsj; do!split.
+        have ->: FOR_INT_ADD_LT.out (2 ^ k * 2) 256 0 = 128 %/ (2 ^ k).
+        * admit.
         rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
         move => IHstartpastj IHjpasteven IHjpastodd _ IHstartfuturej; do!split.
-        * by apply FOR_INT_ADD_LT.FOR.inv_loop => //; exists start; do!split.
+        * by apply FOR_INT_ADD_LT.inv_loop => //; exists start; do!split.
         * rewrite mulrDl; apply/all_range_max => [/#|] /=; split => //.
           by apply/all_range_max => [/#|] /=; split.
       skip.
       move => /> &hr k le0k ltk8 IHlen le2powk64; do!split.
-      - by apply FOR_INT_ADD_LT.FOR.inv_in.
+      - by apply FOR_INT_ADD_LT.inv_in.
       - by apply all_range_empty.
-      move => r start nltstart2powk lestart2powk start' <<- lestartout.
-      have ->: (start = 2 ^ k) by admit(*smt()*).
+      move => r start nltstart2powk ? <<- le0start lestartout.
+      rewrite (FOR_INT_ADD_LT.inv_out 1 (2 ^ k) 0 start) //=.
+      - by exists start; do!split.
+      have ->: FOR_INT_ADD_LT.out 1 (2 ^ k) 0 = (2 ^ k).
+      - admit.
       move => IHstartpast _; split.
       - exists (k+1); do!split => //; [by smt()| |by rewrite Domain.exprSr] => _.
         apply ltzE => /=; apply ler_subr_addr => /=.
@@ -842,15 +813,19 @@ theory NTTequiv.
     + sp; wp => /=.
       while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas, start}).
       - sp; wp => /=.
-        while ((0 <= len{1}) /\ (start{1} <= j{1} <= start{1} + len{1}) /\ ={zetasctr, len, r, zetas, start, zeta_, j}).
-        * sp; skip => /> &hr2 j le0len lestartj _ ltj_; split => //.
-          + admit.
-          move => _; admit.
-        skip => /> &hr2 le0len ltstart256; do!split => //.
-        + admit.
-        move => j  /lezNgt le_j
-        admit.
-      by skip => />.
+        while (   (0 <= len{1})
+               /\ ={zetasctr, len, r, zetas, start, zeta_, j}
+               /\ (FOR_INT_ADD_LT.inv 1 (start{1} + len{1}) start{1} j{1})).
+        * sp; skip => /> &hr2 le0len i le0i leiout Hcond.
+          by apply FOR_INT_ADD_LT.inv_loop => //; exists i; do!split.
+        skip => /> &hr2 le0len ltstart256; split.
+        + by apply FOR_INT_ADD_LT.inv_in.
+        move => j le_j _ i ? le0i leiout.
+        move: (FOR_INT_ADD_LT.inv_out 1 (start{hr2} + len{hr2}) start{hr2} j); subst j => -> //.
+        + by exists i; do!split.
+        rewrite /out /= opprD opprK addrA /= ler_maxl //.
+        by rewrite -addz_double addzA.
+      by skip => /> &hr2 le0len _ _ _ _; apply/divz_ge0.
     by skip => />.
   qed.
 
