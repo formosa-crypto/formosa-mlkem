@@ -602,12 +602,6 @@ theory NTTequiv.
 
   op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
 
-  (*TODO: replace in JArray.*)
-  lemma set_neqiE_out ['a](t : 'a Array256.t) (x y : int) (a : 'a) : y <> x => t.[x <- a].[y] = t.[y].
-  proof.
-    by move => neqyx; case: (0 <= x < 256) => [Hxin|Hxout]; [rewrite set_neqiE|rewrite set_out].
-  qed.
-
   (*TODO: add this in EasyCrypt (in Ring).*)
   lemma mulzD1l x y : (x + 1) * y = x * y + y.
   proof. by rewrite mulzDl. qed.
@@ -616,6 +610,12 @@ theory NTTequiv.
   search _ 2 intmul.
   lemma addz_double (x : int) : x + x = x * 2.
   proof. by ring. qed.
+
+  (*TODO: move*)
+  lemma dvdNdiv x y : x <> 0 => x %| y => (-y) %/ x = - y %/ x.
+  proof.
+    by move => neqx0 /dvdzP [z ->>]; rewrite -mulNr !mulzK.
+  qed.
 
   lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
     (forall i ,
@@ -646,22 +646,20 @@ theory NTTequiv.
             all_range (partial_ntt_spec r p len start) (j %/ len) (256 %/ len) /\
             all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len)).
         * sp; skip.
-          (*TODO: use |>*)
-          move => /> &hr r bsj le0bsj ltbsj2pow.
+          move => |> &hr j r Hinvj.
           (*TODO: why is the all_range_2 abbrev not abbreviating here, and why so slow for move?*)
           move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej.
-          move => ltmul256 k le0k ltk8 ->> le2powk64 ltstartlen.
-          move => start <<- le0start ltstart2pow_ ->>.
+          move => Hcondj k le0k ltk8 ->> le2powk64 Hcondstart Hinvstart.
+          rewrite (FOR_INT_ADD_LT.inv_loop _ _ _ _ _ Hinvj Hcondj) /=; first by apply mulr_gt0 => //; apply expr_gt0.
+          move: Hinvj Hcondj => [bsj [/= ->> [le0bsj ltbsjout]]] ltmul256.
           move: IHjpasteven IHjpastodd IHjfuture.
           rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
           rewrite {3}(mulzC (2 ^ k) 2) {1}mulrA mulzK; first by apply/gtr_eqF/expr_gt0.
           move => IHjpasteven IHjpastodd IHjfuture.
           do!split.
-          + apply FOR_INT_ADD_LT.inv_loop => //; first by apply mulr_gt0 => //; apply expr_gt0.
-            by exists bsj; do!split.
           (*TODO: use bitrev_involutive.*)
           + move : IHstartpastj; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
-            rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
+            rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
             - apply/negP => eq_index; move: (bitrev_injective _ _ _ _ _ _ eq_index) => //.
               * rewrite mem_range.
                 admit.
@@ -673,50 +671,46 @@ theory NTTequiv.
             apply/all_range_max; [by apply ltzS|split].
             - admit.
             move : IHjpasteven; apply all_range_imp => x Hxin /=.
-            rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
+            rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
             - admit.
             admit.
           + rewrite -mulzD1l mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
             apply/all_range_max; [by apply ltzS|split].
             - admit.
             move : IHjpastodd; apply all_range_imp => x Hxin /=.
-            rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
+            rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
             - admit.
             admit.
           + admit.
           move : IHstartfuturej; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
-          rewrite /partial_ntt_spec => <-; rewrite set_neqiE_out; [|rewrite set_neqiE_out //].
+          rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
           + admit.
           admit.
         skip.
-
-        move => /> &hr start le0start lestartlen IHstartpast IHstartfuture.
-        move => ltstartlen lelen64 k le0k ltk8 ->>.
+        move => |> &hr Hinv IHstartpast IHstartfuture Hcond lelen64 k le0k ltk8 ->>.
+        rewrite (FOR_INT_ADD_LT.inv_loop _ _ _ _ _ Hinv Hcond) //=.
+        move: Hinv Hcond => [? [/= <<- [le0start lestartout]]] ltstart2powk.
         do!split.
         * by apply FOR_INT_ADD_LT.inv_in; apply mulr_gt0 => //; apply expr_gt0.
         * by apply all_range_empty.
         * by apply all_range_empty.
         * (*TODO: why can't I just apply all_range_min?*)
-          by move: IHstartfuture => /(all_range_min _ start (2 ^ k) ltstartlen) [].
-        * by move: IHstartfuture => /(all_range_min _ start (2 ^ k) ltstartlen) [].
-        move => j r nltj256 bsj eqj le0bsj ltbsjout.
-        move: (FOR_INT_ADD_LT.inv_out (2 ^ k * 2) 256 0 j); subst j => -> //=.
-        * by apply mulr_gt0 => //; apply expr_gt0.
-        * by exists bsj; do!split.
+          by move: IHstartfuture => /(all_range_min _ _ (2 ^ k) ltstart2powk) [].
+        * by move: IHstartfuture => /(all_range_min _ _ (2 ^ k) ltstart2powk) [].
+        move => j r Hncond Hinv.
+        rewrite (FOR_INT_ADD_LT.inv_out _ _ _ _ _ Hinv Hncond) /=; first by apply mulr_gt0 => //; apply expr_gt0.
         have ->: FOR_INT_ADD_LT.out (2 ^ k * 2) 256 0 = 128 %/ (2 ^ k).
         * admit.
         rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
-        move => IHstartpastj IHjpasteven IHjpastodd _ IHstartfuturej; do!split.
-        * by apply FOR_INT_ADD_LT.inv_loop => //; exists start; do!split.
-        * rewrite mulrDl; apply/all_range_max => [/#|] /=; split => //.
-          by apply/all_range_max => [/#|] /=; split.
+        move => IHstartpastj IHjpasteven IHjpastodd _ IHstartfuturej.
+        rewrite mulrDl; apply/all_range_max => [/#|] /=; split => //.
+        by apply/all_range_max => [/#|] /=; split.
       skip.
-      move => /> &hr k le0k ltk8 IHlen le2powk64; do!split.
+      move => |> &hr k le0k ltk8 IHlen le2powk64; do!split.
       - by apply FOR_INT_ADD_LT.inv_in.
       - by apply all_range_empty.
-      move => r start nltstart2powk ? <<- le0start lestartout.
-      rewrite (FOR_INT_ADD_LT.inv_out 1 (2 ^ k) 0 start) //=.
-      - by exists start; do!split.
+      move => r start Hncond Hinv.
+      rewrite (FOR_INT_ADD_LT.inv_out _ _ _ _ _ Hinv Hncond) //=.
       have ->: FOR_INT_ADD_LT.out 1 (2 ^ k) 0 = (2 ^ k).
       - admit.
       move => IHstartpast _; split.
@@ -745,63 +739,45 @@ theory NTTequiv.
       ( (exists k ,
           0 <= k < 8 /\
           len{1} = 2 ^ k) /\
-        (zetasctr{1} + 1 = 128 %/ len{1}) /\
-        ={zetasctr, len, r, zetas}).
+        ={zetasctr, len, r, zetas} /\
+        (zetasctr{1} + 1 = 128 %/ len{1})).
     + sp; wp => /=.
       while
         ( (exists k ,
             0 <= k < 8 /\
             len{1} = 2 ^ k) /\
-          (exists s ,
-            0 <= s <= 128 %/ len{1} /\
-            start{1} = len{1} * 2 * s) /\
-          (zetasctr{1} + 1 = 128 %/ len{1} + start{1} %/ (len{1} * 2)) /\
-          ={zetasctr, len, r, zetas, start}).
-      - wp => /=.
+          (FOR_INT_ADD_LT.inv (len{1} * 2) 256 0 start{1}) /\
+          ={zetasctr, len, r, zetas, start} /\
+          (zetasctr{1} + 1 = 128 %/ len{1} + start{1} %/ (len{1} * 2))).
+      - sp; wp => /=.
         while
-          ( (exists k ,
-              0 <= k < 8 /\
-              len{1} = 2 ^ k) /\
-            (exists s ,
-              0 <= s < 128 %/ len{1} /\
-              start{1} = len{1} * 2 * s) /\
-            (zetasctr{1} = 128 %/ len{1} + start{1} %/ (len{1} * 2)) /\
-            ={zetasctr, len, r, zetas, start, zeta_, j}).
-        * by sp; skip => />.
-        auto => />; do!(move => *; split).
-        * admit.
-        * smt().
-        * admit.
-        admit.
-      skip => /> &hr2 k le0k ltk8 Hzetasctr le22powk; do!split.
-      - exists 0; do!split => // _.
-        apply lez_eqVlt; right.
-        apply ltz_divRL => //=; first by apply expr_gt0.
-        move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv.
-        by split => // _; apply ltzS.
-      move => start1 start2 zetasctr /lezNgt le256start1 _ s le0s les_ ->> -> <<-; split.
+        ( (exists k ,
+            0 <= k < 8 /\
+            len{1} = 2 ^ k) /\
+          (FOR_INT_ADD_LT.inv (len{1} * 2) 256 0 start{1}) /\
+          ={zetasctr, len, r, zetas, start, zeta_, j} /\
+          (zetasctr{1} = 128 %/ len{1} + start{1} %/ (len{1} * 2))).
+        * by sp; skip => |>.
+        skip => |> &hr2 zetasctr k le0k ltk8 Hinv Hzetasctr ltstart256.
+        rewrite Hzetasctr /= => _ _ _; split; first by apply FOR_INT_ADD_LT.inv_loop => //; apply mulr_gt0 => //; apply expr_gt0.
+        rewrite divzDr ?dvdzz // divzz addzA -Hzetasctr /b2i.
+        have -> //=: 2 ^ k * 2 <> 0.
+        by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+      skip => |> &hr2 k le0k ltk8 Hzetasctr le22powk; do!split.
+      - by apply/FOR_INT_ADD_LT.inv_in/mulr_gt0 => //; apply expr_gt0.
+      move => start zetasctr Hncond _ Hinv ->; split.
       - exists (k-1); do!split => //=.
         * by apply ler_subr_addr; apply ltzE; move: le0k => /le0r [->>|].
         * by move: ltk8 => /ltzW lek8 _; apply ltzE; rewrite -addzA.
         by apply Montgomery.pow_div1; move: le0k => /le0r [->>|].
-      move: (ler_wpmul2l (2 ^ k * 2) _ _ _ les_).
-      - by apply mulr_ge0 => //; apply lez_eqVlt; right; apply expr_gt0.
-      rewrite {2}(mulzC (2 ^ k) 2) (mulzA 2) (mulzC _ (128 %/ 2 ^ k)) divzK.
-      - move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv.
-        by split => // _; apply ltzS.
-      have Htrivial: forall (x y : int) , x <= y => y <= x => x = y by smt().
-      move => /= lestart1256; rewrite (Htrivial _ _ lestart1256 le256start1).
-      rewrite (mulzC (2 ^ k) 2) Montgomery.div_mul //=.
-      have ->: (forall (x : int) , x + x = 2 * x) by smt().
-      rewrite -Montgomery.div_mulr /=.
-      - move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv.
-        by split => // _; apply ltzS.
-      rewrite {1}(_: k = k - 1 + 1) 1:// exprS.
+      rewrite (FOR_INT_ADD_LT.inv_out _ _ _ _ _ Hinv Hncond); first by apply/mulr_gt0 => //; apply expr_gt0.
+      rewrite /out /= mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+      rewrite (mulzC (2 ^ k) 2) Montgomery.div_mul //= dvdNdiv; first by apply/gtr_eqF/expr_gt0.
+      - by move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv; rewrite le0k -ltzS.
+      rewrite opprK ler_maxl; first by apply divz_ge0 => //; apply expr_gt0.
+      rewrite -(divzMpr 2 128 (_ %/ _)) //= divzK.
       - admit.
-      rewrite (divzMpl 2 128) 1://.
-      search _ (_ %/ _) (_ ^ _)%IntID.
-      rewrite -Montgomery.pow_div1 //.
-      admit.
+      by rewrite -divzDl //=; move: (dvdz_exp2l 2 k 7); rewrite /= le0k -ltzS /= ltk8.
     by skip => />; exists 7; split.
   qed.
 
@@ -816,14 +792,13 @@ theory NTTequiv.
         while (   (0 <= len{1})
                /\ ={zetasctr, len, r, zetas, start, zeta_, j}
                /\ (FOR_INT_ADD_LT.inv 1 (start{1} + len{1}) start{1} j{1})).
-        * sp; skip => /> &hr2 le0len i le0i leiout Hcond.
-          by apply FOR_INT_ADD_LT.inv_loop => //; exists i; do!split.
-        skip => /> &hr2 le0len ltstart256; split.
+        * sp; skip => |> &hr2 j le0len.
+          by apply FOR_INT_ADD_LT.inv_loop.
+        skip => |> &hr2 le0len ltstart256; split.
         + by apply FOR_INT_ADD_LT.inv_in.
-        move => j le_j _ i ? le0i leiout.
-        move: (FOR_INT_ADD_LT.inv_out 1 (start{hr2} + len{hr2}) start{hr2} j); subst j => -> //.
-        + by exists i; do!split.
-        rewrite /out /= opprD opprK addrA /= ler_maxl //.
+        move => j Hncond _ Hinv.
+        rewrite (FOR_INT_ADD_LT.inv_out _ _ _ _ _ Hinv Hncond) // /out /=.
+        rewrite opprD opprK addrA /= ler_maxl //.
         by rewrite -addz_double addzA.
       by skip => /> &hr2 le0len _ _ _ _; apply/divz_ge0.
     by skip => />.
