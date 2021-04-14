@@ -10,7 +10,6 @@ fn index(inline int x, inline int y) -> inline int {
   return r;
 }
 
-
 inline
 fn ROL64(reg u64 x, inline int c) -> reg u64 {
   reg u64 y;
@@ -147,7 +146,6 @@ fn __keccakf1600_ref(reg ptr u64[25] state) -> reg ptr u64[25] {
   inline int round;
   reg ptr u64[24] constptr;
 
-
   /*
   for round = 0 to 24 {
     state = theta(state);
@@ -165,6 +163,14 @@ fn __keccakf1600_ref(reg ptr u64[25] state) -> reg ptr u64[25] {
   rctr = 0;
 
   while (rctr < 192) {
+    state = theta(state);
+    state = rho(state);
+    state = pi(state);
+    state = chi(state);
+    constptr = roundconstants;
+    state = iota(state, constptr.[(int)rctr]);
+    rctr += 8;
+
     state = theta(state);
     state = rho(state);
     state = pi(state);
@@ -411,6 +417,7 @@ fn shake256(reg u64 out outlen in inlen)
 fn shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 {
   stack u64[25] state;
+  reg u64 t64;
   reg u8 c;
   inline int i;
 
@@ -420,21 +427,25 @@ fn shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128
 
   state = st0(state);
 
-  for i = 0 to 33 {
-    c = in[i];
-    state[u8 i] ^= c;
+  for i = 0 to 4 {
+    t64 = in[u64 i];
+    state[u64 i] ^= t64;
   }
+
+  c = in[32];
+  state[u8 32] ^= c;
   state[u8 33] ^= 0x1f;
   state[u8 SHAKE256_RATE-1] ^= 0x80;
-    
+
   state = __keccakf1600_ref(state);
 
   out = sout; 
 
-  for i = 0 to 128 {
-    c = state[u8 (int) i];
-    out[i] = c;
+  for i = 0 to 16 {
+    t64 = state[u64 i];
+    out[u64 i] = t64;
   }
+
   return out;
 }
 
