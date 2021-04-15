@@ -478,7 +478,7 @@ theory NTTequiv.
        r.[j] <- r.[j] * zetas_inv.[127]; 
        j <- j + 1;
      }    
-     return r;
+      return r;
    }
   
  
@@ -588,9 +588,9 @@ theory NTTequiv.
     by move => Himp /allP HallrangeP; apply /allP => x Hxin; apply Himp => //; apply HallrangeP.
   qed.
 
-  abbrev all_range_2 P (min1 max1 min2 max2 : int) = all_range (fun x => all_range (P x) min2 max2) min1 max1.
+  abbrev all_range_2 P (min1 max1 min2 max2 : int) = all_range (fun x => all_range (P x) min1 max1) min2 max2.
 
-  abbrev index (len a b : int) = bitrev 8 (len * b + a).
+  abbrev index (len a b : int) = bitrev 8 (len * a + b).
 
   op partial_ntt (p : zmod Array256.t, len a b : int) =
   BAdd.bigi
@@ -661,7 +661,7 @@ theory NTTequiv.
           + move : IHstartpastj; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
             rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
             - apply/negP => eq_index; move: (bitrev_injective _ _ _ _ _ _ eq_index) => //.
-              * rewrite mem_range.
+              * rewrite /=. (*TODO: use mem_range*)
                 admit.
               * admit.
               apply/negP/gtr_eqF.  (*Or maybe it is ltr_eqF*)
@@ -694,9 +694,9 @@ theory NTTequiv.
         * by apply FOR_INT_ADD_LT.inv_in; apply mulr_gt0 => //; apply expr_gt0.
         * by apply all_range_empty.
         * by apply all_range_empty.
-        * (*TODO: why can't I just apply all_range_min?*)
-          by move: IHstartfuture => /(all_range_min _ _ (2 ^ k) ltstart2powk) [].
-        * by move: IHstartfuture => /(all_range_min _ _ (2 ^ k) ltstart2powk) [].
+        * (*TODO: why can't I just apply the view all_range_min?*)
+          by move: IHstartfuture => /(all_range_min _ _ _ ltstart2powk) [].
+        * by move: IHstartfuture => /(all_range_min _ _ _ ltstart2powk) [].
         move => j r Hncond Hinv.
         rewrite (FOR_INT_ADD_LT.inv_out _ _ _ _ _ Hinv Hncond) /=; first by apply mulr_gt0 => //; apply expr_gt0.
         have ->: FOR_INT_ADD_LT.out (2 ^ k * 2) 256 0 = 128 %/ (2 ^ k).

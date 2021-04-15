@@ -1,4 +1,4 @@
-require import AllCore StdOrder IntMin IntDiv.
+require import AllCore StdOrder IntMin IntDiv List.
 
 import IntOrder.
 
@@ -12,36 +12,43 @@ abstract theory FOR.
   op finite : it -> ct -> t -> bool.
   op val : it -> t -> int -> t.
 
-  abbrev ncond_val i c x n = ! cond c (val i x n).
-  abbrev form i c x n = (0 <= n <= out i c x).
-  op inv i c x v = exists n , (v = (val i x n)) /\ (form i c x n).
+  op ncond_val i c x n = ! cond c (val i x n).
+  (*TODO: anything such as exists n \in range r , P n ?*)
+  op inv i c x v = exists n : int , (n \in (range 0 (out i c x + 1))) /\ (v = (val i x n)).
 
   axiom val_iter i x n : 0 <= n => val i x n = (iter n (incr i) x).
   axiom finite_nsempty i c x : finite i c x => ! sempty (pcap (ncond_val i c x)).
   axiom pmin_out i c x : finite i c x => pmin (ncond_val i c x) = out i c x.
 
-  lemma inv_loop i c x v : finite i c x => inv i c x v => cond c v => inv i c x (incr i v).
+  lemma inv_loop_post i c x v : finite i c x => inv i c x v => cond c v => inv i c x (incr i v).
   proof.
-    move => Hfin [n [->> [le0n /ler_eqVlt lenout]]] Hcond.
-    case lenout => [->>|ltnout].
+    move => Hfin [n [/mem_range [le0n /ltzS /ler_eqVlt [->>|ltnout]] ->>]] Hcond.
     + by have:= pmin_mem _ (finite_nsempty _ _ _ Hfin); rewrite (pmin_out _ _ _ Hfin) /= => /negP Hncond; have:= (Hncond Hcond).
-    exists (n+1); do!split.
-    + by rewrite !val_iter ?addr_ge0 // iterS.
+    exists (n+1); split; first apply/mem_range; split.
     + by apply addr_ge0.
-    by move => _; apply ltzE.
+    + by move => _; apply ltz_add2r.
+    by rewrite !val_iter ?addr_ge0 // iterS.
+  qed.
+
+  lemma inv_loopP i c x v : finite i c x => inv i c x v => cond c v => exists n , (n \in (range 0 (out i c x))) /\ (v = (val i x n)).
+  proof.
+    move => Hfin [n [/mem_range [le0n /ltzS /ler_eqVlt [eqnout|ltnout]] ->>]] Hcond;
+    exists n; split => //; apply/mem_range; split => // _.
+    have //: false; move: eqnout Hcond => ->>; rewrite -(pmin_out _ _ _ Hfin); apply/negP.
+    (*TODO: why is this necessary?*)
+    by move: (pmin_mem (ncond_val i c x) (finite_nsempty i c x _)).
   qed.
 
   lemma inv_in i c x : finite i c x => inv i c x x.
   proof.
     move => Hfin; exists 0; rewrite val_iter // iter0 //=.
-    rewrite -(pmin_out _ _ _ Hfin).
+    rewrite -(pmin_out _ _ _ Hfin); apply/mem_range => //=; apply/ltzS.
     by apply ge0_pmin.
   qed.
 
-  lemma inv_out i c x v : finite i c x => inv i c x v => !(cond c v) => v = (val i x (out i c x)).
+  lemma inv_outP i c x v : finite i c x => inv i c x v => ! cond c v => v = val i x (out i c x).
   proof.
-    move => Hfin [n [->> [le0n /ler_eqVlt lenout]]] Hncond.
-    case lenout => [-> //|ltnout].
+    move => Hfin [n [/mem_range [le0n /ltzS /ler_eqVlt [-> //|ltnout]] ->>]] Hncond.
     have:= (pmin_min _ _ (finite_nsempty _ _ _ Hfin) le0n Hncond).
     by rewrite (pmin_out _ _ _ Hfin) => /lezNgt /negP nltnout; move: (nltnout ltnout).
   qed.
@@ -79,11 +86,13 @@ theory FOR_INT_ADD_LT.
       by apply (ltr_le_trans ((x - c) %/ i * i)); [apply mulr_gt0|apply/lez_floor/gtr_eqF].
     qed.
 
-    (*TODO: use new lemmas on pmin.*)
     realize pmin_out.
     proof.
-      move => i c x lt0i.
-      admit.
+      move => i c x lt0i; apply pmin_eq.
+      + by apply maxrr.
+      + apply/ler_gtF; rewrite /out /max. case (_ < _)%Int.
+        apply/ler_gtF/ler_subl_addl.
+        rewrite /out.
     qed.
 
 end FOR_INT_ADD_LT.
