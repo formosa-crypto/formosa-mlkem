@@ -48,6 +48,7 @@ JHEADERS = params.jahh \
            fips202_common.jahh \
            fips202.jahh \
            fips202_4x.jahh \
+           keccakf1600.jahh \
            consts.jahh \
            shuffle.jahh
 

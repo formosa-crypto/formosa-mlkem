@@ -431,38 +431,41 @@ fn rej_uniform_avx(stack u16[KYBER_N] rp, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RA
     t64_3 &= 0xFF;
     h = #MOVD_64(idxp[u64 (int)t64_3]);
 
-    _, _, _, _, _, t64 = #POPCNT_64(t64);
-    _, _, _, _, _, t64_2 = #POPCNT_64(t64_2);
-    _, _, _, _, _, t64_1 = #POPCNT_64(t64_1);
-    _, _, _, _, _, t64_3 = #POPCNT_64(t64_3);
 
     g0 = #VINSERTI128(g0, f, 0);
     g0 = #VINSERTI128(g0, l, 1);
+
+    _, _, _, _, _, t64 = #POPCNT_64(t64);
+    _, _, _, _, _, t64_2 = #POPCNT_64(t64_2);
+
     g2 = #VPADD_32u8(g0, ones);
     g0 = #VPUNPCKL_32u8(g0, g2);
     f0 = #VPSHUFB_256(f0, g0);
 
     g1 = #VINSERTI128(g1, t, 0);
     g1 = #VINSERTI128(g1, h, 1);
+
+    _, _, _, _, _, t64_1 = #POPCNT_64(t64_1);
+    _, _, _, _, _, t64_3 = #POPCNT_64(t64_3);
+
     g3 = #VPADD_32u8(g1, ones);
     g1 = #VPUNPCKL_32u8(g1, g3);
     f1 = #VPSHUFB_256(f1, g1);
 
     f = (128u)f0;
     rp.[u128 2*(int)ctr] = f;
-
     ctr += t64;
+
     f = #VEXTRACTI128(f0, 1);
     rp.[u128 2*(int)ctr] = f;
-
     ctr += t64_2;
+
     f = (128u)f1;
     rp.[u128 2*(int)ctr] = f;
-
     ctr += t64_1;
+
     f = #VEXTRACTI128(f1, 1);
     rp.[u128 2*(int)ctr] = f;
-
     ctr += t64_3;
 
     cnd = KYBER_N;
@@ -475,6 +478,7 @@ fn rej_uniform_avx(stack u16[KYBER_N] rp, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RA
     exit >>= 63;
   }
 
+
   cnd = KYBER_N;
   cnd -= 8;
   cnd -= ctr;
@@ -485,7 +489,6 @@ fn rej_uniform_avx(stack u16[KYBER_N] rp, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RA
   exit >>= 63;
 
   t64 = 0x5555;
-
   while(exit == 0)
   {
     f = buf.[u128 (int)pos];
@@ -500,21 +503,22 @@ fn rej_uniform_avx(stack u16[KYBER_N] rp, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RA
 
     good = #PEXT_64(good, t64);
     l = #MOVD_64(idxp[u64 (int)good]);
+    _, _, _, _, _, good =  #POPCNT_64(good);
+
+    exit = buflen;
+    exit -= 12;
+    exit -= pos;
 
     h = #VPADD_16u8(l, ones);
     l = #VPUNPCKL_16u8(l, h);
     f = #VPSHUFB_128(f, l);
 
     rp.[u128 2*(int)ctr] = f;
-    _, _, _, _, _, good =  #POPCNT_64(good);
     ctr += good;
 
     cnd = KYBER_N;
     cnd -= 8;
     cnd -= ctr;
-    exit = buflen;
-    exit -= 12;
-    exit -= pos;
     exit |= cnd;
     exit >>= 63;
   }
@@ -587,7 +591,6 @@ fn gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack
   reg u8 c;
   reg u16 t;
   reg u64 ctr k l;
-  stack u64 sctr;
   inline int i, j, k;
 
   for j = 0 to KYBER_SYMBYTES
@@ -746,7 +749,6 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
     done >>= 63;
   }
 
-
   f = __s2r(fs);
   buf0[u256 0] = f;
   buf1[u256 0] = f;
@@ -835,7 +837,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
     done >>= 63;
   }
 
-  f = seed[u256 0];
+  f = __s2r(fs);
   buf0[u256 0] = f;
   buf0[KYBER_SYMBYTES]   = 2;
   buf0[KYBER_SYMBYTES+1] = 2;
@@ -860,8 +862,7 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
     done -= ctr0;
     done -= 1;
     done >>= 63;
-  }  
-
+  }
 
   for i = 0 to KYBER_K
   {
