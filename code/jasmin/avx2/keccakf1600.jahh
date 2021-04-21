@@ -62,7 +62,7 @@ inline fn __rhotates(inline int x y) -> inline int
   return r;
 }
 
-inline fn __theta_sum_scalar(stack u64[25] a) -> reg u64[5]
+inline fn __theta_sum_scalar(reg ptr u64[25] a) -> reg u64[5]
 {
   inline int i j;
   reg u64[5] c;
@@ -94,7 +94,7 @@ inline fn __theta_rol_scalar(reg u64[5] c) -> reg u64[5]
 
 inline fn __rol_sum_scalar(
   reg u64[5] d,
-  stack u64[25] a,
+  reg ptr u64[25] a,
   inline int offset
 ) -> reg u64[5]
 {
@@ -114,31 +114,29 @@ inline fn __rol_sum_scalar(
 }
 
 inline fn __set_row_scalar(
-  stack u64[25] r,
+  reg ptr u64[25] r,
   inline int row,
   reg u64[5] c,
   reg u64 iota
 ) -> reg ptr u64[25]
 {
   inline int j j1 j2;
-  stack u64 t;
+  reg u64 t;
 
   for j= 0 to 5
   {
     j1 = (j+1) % 5;
     j2 = (j+2) % 5;
-    t = c[j];
-    c[j] = !c[j1] & c[j2];
-    if row==0 && j==0 { c[j] ^= iota; }
-    S(r, row, j) = c[j];
-    c[j] = t;
-    S(r, row, j) ^= c[j];
+    t = !c[j1] & c[j2];
+    if row==0 && j==0 { t ^= iota; }
+    t ^= c[j];
+    S(r, row, j) = t;
   }
 
   return r;
 }
 
-inline fn __round2x_scalar(stack u64[25] a r, reg u64 iota) -> stack u64[25], stack u64[25]
+inline fn __round2x_scalar(reg ptr u64[25] a r, reg u64 iota) -> reg ptr u64[25], reg ptr u64[25]
 {
   reg u64[5] c d;
 
@@ -158,11 +156,14 @@ inline fn __round2x_scalar(stack u64[25] a r, reg u64 iota) -> stack u64[25], st
   return a, r;
 }
 
-inline fn __keccakf1600_scalar(stack u64[25] a) -> stack u64[25]
+#[returnaddress="stack"]
+fn __keccakf1600_scalar(reg ptr u64[25] a) -> reg ptr u64[25]
 {
   stack u64[25] r;
   reg ptr u64[24] iotas_p;
+  reg u64 iota;
   reg u64 round;
+  stack u64 round_s;
 
   iotas_p = KECCAK_RC;
 
@@ -170,10 +171,16 @@ inline fn __keccakf1600_scalar(stack u64[25] a) -> stack u64[25]
 
   while(round < 24)
   {
-    a, r = __round2x_scalar(a, r, iotas_p[(int) round]);
+    iota = iotas_p[(int) round];
+    round_s = round;
+    a, r = __round2x_scalar(a, r, iota);
+    round = round_s;
     round += 1;
 
+    iota = iotas_p[(int) round];
+    round_s = round;
     r, a = __round2x_scalar(r, a, iotas_p[(int) round]);
+    round = round_s;
     round += 1;
   }
 

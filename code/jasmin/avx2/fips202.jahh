@@ -220,6 +220,7 @@ fn keccak1600_scalar(reg u64 out outlen in inlen, stack u64[2] config)
   __keccak1600_scalar(s_out, s_outlen, in, inlen, s_trail_byte, rate);
 }
 
+#[returnaddress="stack"]
 fn shake256(reg u64 out outlen in inlen)
 {
   reg u64 ds;
@@ -232,6 +233,7 @@ fn shake256(reg u64 out outlen in inlen)
   keccak1600_scalar(out, outlen, in, inlen, config);
 }
 
+#[returnaddress="stack"]
 fn shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 {
   stack u64[25] state;
@@ -267,6 +269,7 @@ fn shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128
   return out;
 }
 
+#[returnaddress="stack"]
 fn sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 {
   stack u64[25] state;
@@ -298,7 +301,6 @@ fn sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 
   return out;
 }
-
 
 fn shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
 {

@@ -1,4 +1,5 @@
 CC=/usr/bin/gcc
+GFLAGS?=
 CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
 JASMIN=jasminc_dev
 JFLAGS=-lea ${JADDFLAGS}
@@ -107,26 +108,25 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyve
 
 
 jfips202.japp: jfips202.jazz fips202.jahh
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 gen_matrix.japp: gen_matrix.jazz gen_matrix.jahh $(JHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 jspeed.japp: jspeed.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 %.s: %.japp
-	$(JASMIN) -o $@ $(JFLAGS) $^ 
-
+	$(JASMIN) -o $@ $(JFLAGS) $^
 
 .PHONY: clean
 
