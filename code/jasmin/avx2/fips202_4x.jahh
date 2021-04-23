@@ -1346,30 +1346,20 @@ fn shake128_squeezeblock4x(reg ptr u256[25] state, reg ptr u8[SHAKE128_RATE] h0,
 {
   reg u256 t256;
   reg u128 t128;
-  reg u64 t64;
   inline int i;
 
   state = KeccakF1600_StatePermute4x(state);
 
 	for i = 0 to (SHAKE128_RATE / 8) {
-/*
     t256 = state[i];
     t128 = (128u)t256;
-		h0[u64 i] = #VPEXTR_64(t128, 0);
-		h1[u64 i] = #VPEXTR_64(t128, 1);
+		h0[u64 i] = #VMOVLPD(t128);
+		h1[u64 i] = #VMOVHPD(t128);
     t128 = #VEXTRACTI128(t256, 1);
-		h2[u64 i] = #VPEXTR_64(t128, 0);
-		h3[u64 i] = #VPEXTR_64(t128, 1);
-*/
-		t64 = state[u64 4 * i];
-		h0[u64 i] = t64;
-		t64 = state[u64 4 * i + 1];
-		h1[u64 i] = t64;
-		t64 = state[u64 4 * i + 2];
-		h2[u64 i] = t64;
-		t64 = state[u64 4 * i + 3];
-		h3[u64 i] = t64;
+		h2[u64 i] = #VMOVLPD(t128);
+		h3[u64 i] = #VMOVHPD(t128);
 	}
+
   return state, h0, h1, h2, h3;
 }
 
