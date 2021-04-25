@@ -650,8 +650,10 @@ theory NTTequiv.
           (*TODO: why is the all_range_2 abbrev not abbreviating here, and why so slow for move?*)
           move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej.
           move => Hcondj k le0k ltk8 ->> le2powk64 Hcondstart Hinvstart.
-          rewrite (FOR_INT_ADD_LT.inv_loop _ _ _ _ _ Hinvj Hcondj) /=; first by apply mulr_gt0 => //; apply expr_gt0.
-          move: Hinvj Hcondj => [bsj [/= ->> [le0bsj ltbsjout]]] ltmul256.
+          have Hfinj: (256 <= 0 \/ 0 < 2 ^ k * 2) by move => /=; apply mulr_gt0 => //; apply expr_gt0.
+          rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ Hfinj Hinvj Hcondj) => /=.
+          move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ Hfinj Hinvj Hcondj) => /= [bsj [bsj_range ->>]].
+          move: (bsj_range) => /mem_range [le0bsj ltbsj_].
           move: IHjpasteven IHjpastodd IHjfuture.
           rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
           rewrite {3}(mulzC (2 ^ k) 2) {1}mulrA mulzK; first by apply/gtr_eqF/expr_gt0.

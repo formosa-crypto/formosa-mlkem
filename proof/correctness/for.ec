@@ -2,6 +2,8 @@ require import AllCore StdOrder IntMin IntDiv List.
 
 import IntOrder.
 
+require import IntDiv_extra RealExp.
+
 abstract theory FOR.
 
   type t, it, ct.
@@ -65,42 +67,82 @@ theory FOR_INT_ADD_LT.
     type ct <- int,
     op incr <- (fun i x : int => x + i),
     op cond <- (fun c x : int => x < c),
-    op out = (fun i c x : int => max (- (x - c) %/ i) 0),
-    op finite <- (fun i c x : int => (0 < i)),
+    op out = (fun i c x : int => if c <= x then 0 else (c - x) %\ i),
+    op finite <- (fun i c x : int => (c <= x) \/ (0 < i)),
     op val <- (fun i x n : int => x + n * i)
     proof *.
 
     realize val_iter.
-    proof.
-      by move => i x; elim; [rewrite iter0|move => n le0n; rewrite mulzDl addzA iterS // => <- /=].
-    qed.
+    proof. by move => i x; elim; [rewrite iter0|move => n le0n; rewrite mulzDl addzA iterS // => <- /=]. qed.
 
     realize finite_nsempty.
     proof.
-      move => i c x lt0i; apply semptyNP.
-      exists (out i c x); rewrite /out maxrE.
-      case: (0 <= - (x - c) %/ i) => [le0_|/ltzNge lt_0]; split => //=.
-      + apply/negP => /ltr_subr_addl; rewrite mulNr => /ltr_oppl; rewrite opprB /=.
-        by apply /ler_gtF; apply lez_floor; apply gtr_eqF.
-      move: lt_0 => /ltr_oppl /= lt0_; apply/ltr_gtF/subr_gt0.
-      by apply (ltr_le_trans ((x - c) %/ i * i)); [apply mulr_gt0|apply/lez_floor/gtr_eqF].
+      move => i c x /or_andr [lecx|[nlecx lt0i]]; apply semptyNP; exists (out i c x); rewrite /out.
+      + by rewrite lecx /=; split => //; rewrite /ncond_val /= ler_gtF.
+      rewrite nlecx /=; move: nlecx => /ltzNge ltxc; split.
+      + by rewrite ltrW ltz_NdivNLR //= ltr_subr_addr.
+      by apply/lezNgt/ler_subl_addl/lez_ceil/gtr_eqF.
     qed.
 
     realize pmin_out.
     proof.
-      move => i c x lt0i; apply pmin_eq.
-      + by apply maxrr.
-      + apply/ler_gtF; rewrite /out /max. case (_ < _)%Int.
-        apply/ler_gtF/ler_subl_addl.
-        rewrite /out.
+      move => i c x /or_andr [lecx|[nlecx lt0i]]; [rewrite /out lecx /=|rewrite /out nlecx /=]; apply pmin_eq => //.
+      + by rewrite /ncond_val /= ler_gtF.
+      + by move => j [le0j ltj0]; move: (ler_lt_trans _ _ _ le0j ltj0).
+      + by apply ltrW; rewrite ltz_NdivNLR //= subr_gt0 ltrNge.
+      + by apply/lezNgt/ler_subl_addl/lez_ceil/gtr_eqF.
+      by move => j [le0j ltj_]; rewrite /ncond_val /= -ltr_subr_addl -ltz_NdivNLR.
     qed.
 
 end FOR_INT_ADD_LT.
 
 
 
-(*TODO: an int logarithm or something for a FOR_INT_DIV_GE ?*)
+theory FOR_INT_MUL_LE.
 
-require import RealExp.
+  clone include FOR with 
+    type t <- int,
+    type it <- int,
+    type ct <- int,
+    op incr <- (fun i x : int => x * i),
+    op cond <- (fun c x : int => x <= c),
+    op out = (fun i c x : int =>
+                if (c < x) then 0
+                else if (c < x * i) then 1
+                else if (1 < i) \/ (x < 0 <=> ilog `|i| (`|c| %/ `|x|) %% 2 = 0) then ilog `|i| (`|c| %/ `|x|) + 1
+                else ilog `|i| (`|c| %/ `|x|) + 2),
+    op finite <- (fun i c x : int => (c < x) \/ (c < x * i) \/ (1 < `|i| /\ (x <> 0) /\ (1 < i => 0 < x))),
+    op val <- (fun i x n : int => x * (i ^ n))
+    proof *.
 
-search _ ilog.
+    realize val_iter.
+    proof. by move => i x; elim; [rewrite iter0 // expr0|move => n le0n; rewrite exprSr // mulrA iterS //= => ->]. qed.
+
+    realize finite_nsempty.
+    proof.
+      move => i c x /or_andr [ltcx|[nltcx /or_andr [ltc_|[nltc_ [lt1abzi [neqx0 Hix]]]]]]; apply semptyNP; exists (out i c x); rewrite /out.
+      + by rewrite ltcx /=; split => //; rewrite /ncond_val lerNgt expr0.
+      + by rewrite nltcx ltc_ /=; split => //; rewrite /ncond_val lerNgt expr1.
+      rewrite nltcx nltc_ /=.
+      (*TODO: why does this not put the case inthe context?*)
+      (*case (_ \/ (_ <=> _)).*)
+      case (1 < i \/ (x < 0 <=> ilog (`|i|) (`|c| %/ `|x|) %% 2 = 0)) => [[lt1i|Heq]|/negb_or [nlt1i /negb_eqbl Heq]];
+      (split; first by apply/addr_ge0 => //; apply/ilog_ge0; [apply/ltzW|apply/lez_divRL; smt()]).
+      + rewrite /ncond_val lerNgt /= mulrC -ltz_divLR ?Hix // !gtr0_norm 1,2,3:/#.
+        by move: (ilogP i (c %/ x) _ _) => //=; apply/lez_divRL; smt().
+      + admit.
+      admit.
+    qed.
+
+    realize pmin_out.
+    proof.
+      admit.
+    qed.
+
+end FOR_INT_MUL_LE.
+
+
+
+theory FOR_INT_DIV_GE.
+
+end FOR_INT_DIV_GE.
