@@ -23,21 +23,22 @@ fn shuffle4(reg u256 a b) -> reg u256, reg u256
 inline 
 fn shuffle2(reg u256 a b) -> reg u256, reg u256
 {
-  reg u256 r0 r1 t0 t1; 
-  t0 = #VPSLL_4u64(b,32);
-  t1 = #VPSRL_4u64(a,32);
-  r0 = #VPBLEND_8u32(a,t0,0xAA);
-  r1 = #VPBLEND_8u32(t1,b,0xAA);
-  return r0, r1;
+  reg u256 t0 t1;
+  t0 = #VMOVSLDUP_8u32(b);
+  t0 = #VPBLEND_8u32(a, t0, 0xAA);
+  a = #VPSRL_4u64(a,32);
+  t1 = #VPBLEND_8u32(a, b, 0xAA);
+  return t0, t1;
 }
+
 
 inline 
 fn shuffle1(reg u256 a b) -> reg u256, reg u256
 {
   reg u256 r0 r1 t0 t1; 
   t0 = #VPSLL_8u32(b,16);
-  t1 = #VPSRL_8u32(a,16);
   r0 = #VPBLEND_16u16(a,t0,0xAA);
+  t1 = #VPSRL_8u32(a,16);
   r1 = #VPBLEND_16u16(t1,b,0xAA);
   return r0, r1;
 }
@@ -73,7 +74,7 @@ fn nttpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
 
 
 // Transform from bitreversed order to AVX order
-inline 
+inline
 fn nttunpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
     -> reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256
 {
@@ -99,8 +100,6 @@ fn nttunpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
 
   return r0, r4, r1, r5, r2, r6, r3, r7;
 }
-
-
 
 fn nttpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
@@ -149,6 +148,7 @@ fn nttpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
+inline
 fn nttunpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   reg u256 r0 r1 r2 r3 r4 r5 r6 r7;
