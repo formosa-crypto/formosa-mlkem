@@ -81,7 +81,6 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   nonce3 = 7;
   e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N] = poly_getnoise_4x(e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N], noiseseed, nonce0, nonce1, nonce2, nonce3);
 
-
   skpv = polyvec_ntt(skpv);
   e    = polyvec_ntt(e);
 

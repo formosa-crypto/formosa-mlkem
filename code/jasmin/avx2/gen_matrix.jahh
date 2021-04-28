@@ -267,7 +267,7 @@ u8[2048] idx = {-1, -1, -1, -1, -1, -1, -1, -1,
                 0,  2,  4,  6,  8, 10, 12, 14};
 
 inline
-fn shake128_squeezenblocks(stack u64[25] state, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] out) 
+fn shake128_squeezenblocks(stack u64[25] state, stack u8[GENMATRIX_NBLOCKS * SHAKE128_RATE] out)
       -> stack u64[25], stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE]
 {
   inline int i;
@@ -280,11 +280,7 @@ fn shake128_squeezenblocks(stack u64[25] state, stack u8[GENMATRIX_NBLOCKS*SHAKE
 }
 
 inline
-fn shake128_squeezenblocks4x(reg ptr u256[25] state,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h0,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h1,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h2,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h3)
+fn shake128_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[GENMATRIX_NBLOCKS * SHAKE128_RATE] h0 h1 h2 h3)
   -> reg ptr u256[25], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE]
 {
   inline int i;
