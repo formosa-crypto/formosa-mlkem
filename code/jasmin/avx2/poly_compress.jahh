@@ -40,55 +40,58 @@ fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   return a;
 }
 
+u16 shift1_s = 0x200;
+u16 mask_s = 0x0F;
+u16 shift2_s = 0x1001;
+u32[8] permidx_s = {0,4,1,5,2,6,3,7};
 
-/*
-  reg u256 x y t0 t1 r qx16 shuf;
+fn poly_compress_avx(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
+{
+  inline int i;
+  reg u256 f0 f1 f2 f3 v shift1 mask shift2 permidx;
+  reg u128 t0 t1 t3;
+  reg ptr u16[16] x16p;
+  reg u64 t64;
+  reg u32 t32;
+  reg u16 t16;
 
-  qx16 = jqx16[u256 0];
-  shuf = jshuf[u256 0];
+  a = poly_csubq(a);
 
-  for i = 0 to 16 {
-    x  = a.[u256 32*i];
+  x16p = jvx16;
+  v = x16p[u256 0];
+  shift1 = #VPBROADCAST_16u16(shift1_s);
+  mask = #VPBROADCAST_16u16(mask_s);
+  shift2 = #VPBROADCAST_16u16(shift2_s);
+  permidx = permidx_s[u256 0];
 
-    x  = csubq(x, qx16);
-
-    y  = #VPXOR_256(y, y);
-    t0 = #VPUNPCKL_8u32(y, x);
-    t1 = #VPUNPCKHW_8u32(y, x);
-
-    // TODO
-
-    t0 = #VPACKUS
+  for i=0 to KYBER_N/64
+  {
+    f0 = a[u256 4*i];
+    f1 = a[u256 4*i + 1];
+    f2 = a[u256 4*i + 2];
+    f3 = a[u256 4*i + 3];
+    f0 = #VPMULH_16u16(f0, v);
+    f1 = #VPMULH_16u16(f1, v);
+    f2 = #VPMULH_16u16(f2, v);
+    f3 = #VPMULH_16u16(f3, v);
+    f0 = #VPMULHRS_16u16(f0, shift1);
+    f1 = #VPMULHRS_16u16(f1, shift1);
+    f2 = #VPMULHRS_16u16(f2, shift1);
+    f3 = #VPMULHRS_16u16(f3, shift1);
+    f0 = #VPAND_256(f0, mask);
+    f1 = #VPAND_256(f1, mask);
+    f2 = #VPAND_256(f2, mask);
+    f3 = #VPAND_256(f3, mask);
+    f0 = #VPACKUS_16u16(f0, f1);
+    f2 = #VPACKUS_16u16(f2, f3);
+    f0 = #VPMADDUBSW_256(f0, shift2);
+    f2 = #VPMADDUBSW_256(f2, shift2);
+    f0 = #VPACKUS_16u16(f0, f2);
+    f0 = #VPERMD_256(permidx, f0);
+    (u256)[rp + 32*i] = f0;
   }
 
-
-  .global unpck
-unpck:
-
-vmovdqu 0(%rsi), %ymm0
-vmovdqu 0(%rdx), %ymm8
-vpxor   %ymm1, %ymm1, %ymm1
-vpunpcklwd %ymm1, %ymm0, %ymm2
-vpunpckhwd %ymm1, %ymm0, %ymm3
-
-// TODO:  do actual work
-vpsrad $12,%ymm2,%ymm2
-vpsrad $12,%ymm3,%ymm3
-
-
-
-vpackusdw %ymm2, %ymm3, %ymm2
-vpsrad $12, %ymm2, %ymm4
-vpxor %ymm2, %ymm4, %ymm2
-
-vpshufb %ymm8, %ymm2, %ymm2
-vperm2f128 $21, %ymm2, %ymm2, %ymm3
-vpxor %ymm2, %ymm3, %ymm2
-
-vpextrq $0, %xmm2, 0(%rdi)
-
-ret
-*/
-
+  return a;
+}
 
 #endif

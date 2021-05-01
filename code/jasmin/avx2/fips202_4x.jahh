@@ -1,9 +1,7 @@
 #ifndef FIPS202x4_HH
 #define FIPS202x4_HH
 
-param int SHAKE128_RATE = 168;
-param int SHAKE256_RATE = 136;
-param int SHA3512_RATE = 72;
+#include "fips202_common.jahh"
 
 u256 rho56 = 0x181F1E1D1C1B1A191017161514131211080F0E0D0C0B0A090007060504030201;
 u256 rho8 = 0x1E1D1C1B1A19181F16151413121110170E0D0C0B0A09080F0605040302010007;
@@ -162,10 +160,10 @@ inline fn first(reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu)
 
 
 inline fn second_even(
-reg ptr u256[25] A_4x, stack u256[25] E_4x, inline int index,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, inline int index,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> reg ptr u256[25], stack u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bba, Bbe, Bbi, Bbo, Bbu;
     reg u256 t256;
@@ -235,10 +233,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn third_even(
-reg ptr u256[25] A_4x, stack u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> reg ptr u256[25], stack u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bga, Bge, Bgi, Bgo, Bgu;
     reg u256 t256;
@@ -307,10 +305,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn fourth_even(
-reg ptr u256[25] A_4x, stack u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> reg ptr u256[25], stack u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bka, Bke, Bki, Bko, Bku;
     reg u256 t256;
@@ -379,37 +377,31 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn fifth_even(
-reg ptr u256[25] A_4x, stack u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> reg ptr u256[25], stack u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
-    reg u256 Bm1, Bm2, Bm3;
-    stack u256 Bma, Bme, Bmi, Bmo, Bmu;
+    reg u256 Bma, Bme, Bmi, Bmo, Bmu;
     reg u256 t256;
 
     t256 = A_4x[bu];
     t256 ^= Du;
     A_4x[bu] = t256;
-    Bm3 = rol_4u64(t256, 27);
-    Bma = Bm3;
+    Bma = rol_4u64(t256, 27);
 
     t256 = A_4x[ga];
     t256 ^= Da;
     A_4x[ga] = t256;
-    Bm3 = rol_4u64(t256, 36);
-    Bme = Bm3;
+    Bme = rol_4u64(t256, 36);
 
     t256 = A_4x[ke];
     t256 ^= De;
     A_4x[ke] = t256;
-    Bm3 = rol_4u64(t256, 10);
-    Bmi = Bm3;
+    Bmi = rol_4u64(t256, 10);
 
     // E##ma = XOR256(Bma, ANDnu256(Bme, Bmi));
-    Bm1 = Bme;
-    Bm2 = Bmi;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bme, Bmi);
     t256 ^= Bma;
     E_4x[ma] = t256;
 
@@ -418,12 +410,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     t256 = A_4x[mi];
     t256 ^= Di;
     A_4x[mi] = t256;
-    Bm3 = rol_4u64(t256, 15);
-    Bmo = Bm3;
+    Bmo = rol_4u64(t256, 15);
 
     // E##me = XOR256(Bme, ANDnu256(Bmi, Bmo));
-    Bm1 = Bmo;
-    t256 = #VPANDN_256(Bm2, Bm1);
+    t256 = #VPANDN_256(Bmi, Bmo);
     t256 ^= Bme;
     E_4x[me] = t256;
 
@@ -432,28 +422,24 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     t256 = A_4x[so];
     t256 ^= Do;
     A_4x[so] = t256;
-    Bm3 = rol_4u64_rho56(t256);
-    Bmu = Bm3;
+    Bmu = rol_4u64_rho56(t256);
 
     // E##mi = XOR256(Bmi, ANDnu256(Bmo, Bmu));
-    Bm2 = Bmu;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bmo, Bmu);
     t256 ^= Bmi;
     E_4x[mi] = t256;
 
     Ci ^= t256;
 
     // E##mo = XOR256(Bmo, ANDnu256(Bmu, Bma));
-    Bm1 = Bma;
-    t256 = #VPANDN_256(Bm2, Bm1);
+    t256 = #VPANDN_256(Bmu, Bma);
     t256 ^= Bmo;
     E_4x[mo] = t256;
 
     Co ^= t256;
 
     // E##mu = XOR256(Bmu, ANDnu256(Bma, Bme));
-    Bm2 = Bme;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bma, Bme);
     t256 ^= Bmu;
     E_4x[mu] = t256;
 
@@ -463,10 +449,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn sixth_even(
-reg ptr u256[25] A_4x, stack u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> reg ptr u256[25], stack u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bsa, Bse, Bsi, Bso, Bsu;
     reg u256 t256;
@@ -535,10 +521,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn second_odd(
-stack u256[25] A_4x, reg ptr u256[25] E_4x, inline int index,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, inline int index,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bba, Bbe, Bbi, Bbo, Bbu;
     reg u256 t256;
@@ -608,10 +594,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn third_odd(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bga, Bge, Bgi, Bgo, Bgu;
     reg u256 t256;
@@ -680,10 +666,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn fourth_odd(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bka, Bke, Bki, Bko, Bku;
     reg u256 t256;
@@ -752,37 +738,31 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn fifth_odd(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
-    reg u256 Bm1, Bm2, Bm3;
-    stack u256 Bma, Bme, Bmi, Bmo, Bmu;
+    reg u256 Bma, Bme, Bmi, Bmo, Bmu;
     reg u256 t256;
 
     t256 = A_4x[bu];
     t256 ^= Du;
     A_4x[bu] = t256;
-    Bm3 = rol_4u64(t256, 27);
-    Bma = Bm3;
+    Bma = rol_4u64(t256, 27);
 
     t256 = A_4x[ga];
     t256 ^= Da;
     A_4x[ga] = t256;
-    Bm3 = rol_4u64(t256, 36);
-    Bme = Bm3;
+    Bme = rol_4u64(t256, 36);
 
     t256 = A_4x[ke];
     t256 ^= De;
     A_4x[ke] = t256;
-    Bm3 = rol_4u64(t256, 10);
-    Bmi = Bm3;
+    Bmi = rol_4u64(t256, 10);
 
     // E##ma = XOR256(Bma, ANDnu256(Bme, Bmi));
-    Bm1 = Bme;
-    Bm2 = Bmi;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bme, Bmi);
     t256 ^= Bma;
     E_4x[ma] = t256;
 
@@ -791,12 +771,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     t256 = A_4x[mi];
     t256 ^= Di;
     A_4x[mi] = t256;
-    Bm3 = rol_4u64(t256, 15);
-    Bmo = Bm3;
+    Bmo = rol_4u64(t256, 15);
 
     // E##me = XOR256(Bme, ANDnu256(Bmi, Bmo));
-    Bm1 = Bmo;
-    t256 = #VPANDN_256(Bm2, Bm1);
+    t256 = #VPANDN_256(Bmi, Bmo);
     t256 ^= Bme;
     E_4x[me] = t256;
 
@@ -805,28 +783,24 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
     t256 = A_4x[so];
     t256 ^= Do;
     A_4x[so] = t256;
-    Bm3 = rol_4u64_rho56(t256);
-    Bmu = Bm3;
+    Bmu = rol_4u64_rho56(t256);
 
     // E##mi = XOR256(Bmi, ANDnu256(Bmo, Bmu));
-    Bm2 = Bmu;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bmo, Bmu);
     t256 ^= Bmi;
     E_4x[mi] = t256;
 
     Ci ^= t256;
 
     // E##mo = XOR256(Bmo, ANDnu256(Bmu, Bma));
-    Bm1 = Bma;
-    t256 = #VPANDN_256(Bm2, Bm1);
+    t256 = #VPANDN_256(Bmu, Bma);
     t256 ^= Bmo;
     E_4x[mo] = t256;
 
     Co ^= t256;
 
     // E##mu = XOR256(Bmu, ANDnu256(Bma, Bme));
-    Bm2 = Bme;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bma, Bme);
     t256 ^= Bmu;
     E_4x[mu] = t256;
 
@@ -836,10 +810,10 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn sixth_odd(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Ca, reg u256 Ce, reg u256 Ci, reg u256 Co, reg u256 Cu,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
+-> reg ptr u256[25], reg ptr u256[25], reg u256, reg u256, reg u256, reg u256, reg u256
 {
     reg u256 Bsa, Bse, Bsi, Bso, Bsu;
     reg u256 t256;
@@ -908,9 +882,9 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn second_last(
-stack u256[25] A_4x, reg ptr u256[25] E_4x, inline int index,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x, inline int index,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25]
+-> reg ptr u256[25], reg ptr u256[25]
 {
     reg u256 Bba, Bbe, Bbi, Bbo, Bbu;
     reg u256 t256;
@@ -970,9 +944,9 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn third_last(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25]
+-> reg ptr u256[25], reg ptr u256[25]
 {
     reg u256 Bga, Bge, Bgi, Bgo, Bgu;
     reg u256 t256;
@@ -1031,9 +1005,9 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn fourth_last(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25]
+-> reg ptr u256[25], reg ptr u256[25]
 {
     reg u256 Bka, Bke, Bki, Bko, Bku;
     reg u256 t256;
@@ -1092,72 +1066,60 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn fifth_last(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25]
+-> reg ptr u256[25], reg ptr u256[25]
 {
-    reg u256 Bm1, Bm2, Bm3;
-    stack u256 Bma, Bme, Bmi, Bmo, Bmu;
+    reg u256 Bma, Bme, Bmi, Bmo, Bmu;
     reg u256 t256;
 
     t256 = A_4x[bu];
     t256 ^= Du;
     A_4x[bu] = t256;
-    Bm3 = rol_4u64(t256, 27);
-    Bma = Bm3;
+    Bma = rol_4u64(t256, 27);
 
     t256 = A_4x[ga];
     t256 ^= Da;
     A_4x[ga] = t256;
-    Bm3 = rol_4u64(t256, 36);
-    Bme = Bm3;
+    Bme = rol_4u64(t256, 36);
 
     t256 = A_4x[ke];
     t256 ^= De;
     A_4x[ke] = t256;
-    Bm3 = rol_4u64(t256, 10);
-    Bmi = Bm3;
+    Bmi = rol_4u64(t256, 10);
 
     // E##ma = XOR256(Bma, ANDnu256(Bme, Bmi));
-    Bm1 = Bme;
-    Bm2 = Bmi;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bme, Bmi);
     t256 ^= Bma;
     E_4x[ma] = t256;
 
     t256 = A_4x[mi];
     t256 ^= Di;
     A_4x[mi] = t256;
-    Bm3 = rol_4u64(t256, 15);
-    Bmo = Bm3;
+    Bmo = rol_4u64(t256, 15);
 
     // E##me = XOR256(Bme, ANDnu256(Bmi, Bmo));
-    Bm1 = Bmo;
-    t256 = #VPANDN_256(Bm2, Bm1);
+    t256 = #VPANDN_256(Bmi, Bmo);
     t256 ^= Bme;
     E_4x[me] = t256;
 
     t256 = A_4x[so];
     t256 ^= Do;
     A_4x[so] = t256;
-    Bm3 = rol_4u64_rho56(t256);
-    Bmu = Bm3;
+    Bmu = rol_4u64_rho56(t256);
 
     // E##mi = XOR256(Bmi, ANDnu256(Bmo, Bmu));
-    Bm2 = Bmu;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bmo, Bmu);
     t256 ^= Bmi;
     E_4x[mi] = t256;
 
     // E##mo = XOR256(Bmo, ANDnu256(Bmu, Bma));
-    Bm1 = Bma;
-    t256 = #VPANDN_256(Bm2, Bm1);
+    t256 = #VPANDN_256(Bmu, Bma);
     t256 ^= Bmo;
     E_4x[mo] = t256;
 
     // E##mu = XOR256(Bmu, ANDnu256(Bma, Bme));
-    Bm2 = Bme;
-    t256 = #VPANDN_256(Bm1, Bm2);
+    t256 = #VPANDN_256(Bma, Bme);
     t256 ^= Bmu;
     E_4x[mu] = t256;
 
@@ -1165,9 +1127,9 @@ reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du)
 }
 
 inline fn sixth_last(
-stack u256[25] A_4x, reg ptr u256[25] E_4x,
+reg ptr u256[25] A_4x, reg ptr u256[25] E_4x,
 reg u256 Da, reg u256 De, reg u256 Di, reg u256 Do, reg u256 Du) 
--> stack u256[25], reg ptr u256[25]
+-> reg ptr u256[25], reg ptr u256[25]
 {
     reg u256 Bsa, Bse, Bsi, Bso, Bsu;
     reg u256 t256;
@@ -1329,92 +1291,148 @@ fn KeccakF1600_StatePermute4x(reg ptr u256[25] A_4x) -> reg ptr u256[25]
 }
 
 
-fn shake128_absorb4x_34(reg ptr u256[25] s, reg ptr u8[34] m0, reg ptr u8[34] m1, reg ptr u8[34] m2, reg ptr u8[34] m3) -> reg ptr u256[25]
+fn shake128_absorb4x_34(reg ptr u256[25] s, reg ptr u8[34] m0 m1 m2 m3) -> reg ptr u256[25]
 {
 	inline int i;
-  reg u256 t;
-
-	reg u8 t8;
+  reg u256 t0 t1;
+  reg u16 t16;
 	reg u64 t64;
-  stack u8[200] t0;
-	stack u8[200] t1;
-	stack u8[200] t2;
-	stack u8[200] t3;
 
   for i = 0 to 25
   {
-    t = #set0_256();
-    s[i] = t;
+    t0 = #set0_256();
+    s[i] = t0;
   }
 
-	
-
-	for i = 0 to SHAKE128_RATE
+	for i = 0 to 4
   {
-		t0[i] = 0;
-		t1[i] = 0;
-		t2[i] = 0;
-		t3[i] = 0;
-	}
+    t64 = m0[u64 i];
+    s[u64 4 * i] ^= t64;
+    t64 = m1[u64 i];
+    s[u64 4 * i + 1] ^= t64;
+    t64 = m2[u64 i];
+    s[u64 4 * i + 2] ^= t64;
+    t64 = m3[u64 i];
+    s[u64 4 * i + 3] ^= t64;
+  }
 
-	for i = 0 to 34
-  {
-		t8 = m0[i];
-		t0[i] = t8;
-		
-		t8 = m1[i];
-		t1[i] = t8;
-		
-		t8 = m2[i];
-		t2[i] = t8;
-		
-		t8 = m3[i];
-		t3[i] = t8;
-	}
+  t16 = m0.[u16 32];
+  s[u16 64] ^= t16;
+  s[u8 130] ^= 0x1F;
 
-	t0[34] = 0x1F;
-	t1[34] = 0x1F;
-	t2[34] = 0x1F;
-	t3[34] = 0x1F;
+  t16 = m1.[u16 32];
+  s[u16 68] ^= t16;
+  s[u8 138] ^= 0x1F;
 
-	t0[SHAKE128_RATE - 1] ^= 0x80;
-	t1[SHAKE128_RATE - 1] ^= 0x80;
-	t2[SHAKE128_RATE - 1] ^= 0x80;
-	t3[SHAKE128_RATE - 1] ^= 0x80;
+  t16 = m2.[u16 32];
+  s[u16 72] ^= t16;
+  s[u8 146] ^= 0x1F;
 
-	for i = 0 to (SHAKE128_RATE / 8)
-  {
-		t64 = t0[u64 i];
-		s[u64 4 * i] ^= t64;
-		t64 = t1[u64 i];
-		s[u64 4 * i + 1] ^= t64;
-		t64 = t2[u64 i];
-		s[u64 4 * i + 2] ^= t64;
-		t64 = t3[u64 i];
-		s[u64 4 * i + 3] ^= t64;
-	}
+  t16 = m3.[u16 32];
+  s[u16 76] ^= t16;
+  s[u8 154] ^= 0x1F;
+
+  t0 = shake_sep[u256 0];
+  t1 = s[SHAKE128_RATE / 8 - 1];
+  t0 = t0 ^ t1;
+  s[SHAKE128_RATE / 8 - 1] = t0;
 
 	return s;
 }
 
 
-inline fn shake128_squeezeblock4x(reg ptr u256[25] state, reg ptr u8[SHAKE128_RATE] h0, reg ptr u8[SHAKE128_RATE] h1, reg ptr u8[SHAKE128_RATE] h2, reg ptr u8[SHAKE128_RATE] h3) -> reg ptr u256[25], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE]
+inline
+fn shake128_squeezeblock4x(reg ptr u256[25] state, reg ptr u8[SHAKE128_RATE] h0 h1 h2 h3) -> reg ptr u256[25], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE], reg ptr u8[SHAKE128_RATE]
 {
-  reg u64 t64;
+  reg u256 t256;
+  reg u128 t128;
   inline int i;
 
   state = KeccakF1600_StatePermute4x(state);
 
 	for i = 0 to (SHAKE128_RATE / 8) {
-		t64 = state[u64 4 * i];
-		h0[u64 i] = t64;
-		t64 = state[u64 4 * i + 1];
-		h1[u64 i] = t64;
-		t64 = state[u64 4 * i + 2];
-		h2[u64 i] = t64;
-		t64 = state[u64 4 * i + 3];
-		h3[u64 i] = t64;
+    t256 = state[i];
+    t128 = (128u)t256;
+		h0[u64 i] = #VMOVLPD(t128);
+		h1[u64 i] = #VMOVHPD(t128);
+    t128 = #VEXTRACTI128(t256, 1);
+		h2[u64 i] = #VMOVLPD(t128);
+		h3[u64 i] = #VMOVHPD(t128);
 	}
+
+  return state, h0, h1, h2, h3;
+}
+
+
+fn shake256_absorb4x_33(reg ptr u256[25] s, reg ptr u8[33] m0 m1 m2 m3) -> reg ptr u256[25]
+{
+	inline int i;
+  reg u256 t0 t1;
+	reg u64 t64;
+  reg u8 t8;
+
+  for i = 0 to 25
+  {
+    t0 = #set0_256();
+    s[i] = t0;
+  }
+
+	for i = 0 to 4
+  {
+    t64 = m0[u64 i];
+    s[u64 4 * i] ^= t64;
+    t64 = m1[u64 i];
+    s[u64 4 * i + 1] ^= t64;
+    t64 = m2[u64 i];
+    s[u64 4 * i + 2] ^= t64;
+    t64 = m3[u64 i];
+    s[u64 4 * i + 3] ^= t64;
+  }
+
+  t8 = m0[32];
+  s[u8 128] ^= t8;
+  s[u8 129] ^= 0x1F;
+
+  t8 = m1[32];
+  s[u8 136] ^= t8;
+  s[u8 137] ^= 0x1F;
+
+  t8 = m2[32];
+  s[u8 144] ^= t8;
+  s[u8 145] ^= 0x1F;
+
+  t8 = m3[32];
+  s[u8 152] ^= t8;
+  s[u8 153] ^= 0x1F;
+
+  t0 = shake_sep[u256 0];
+  t1 = s[SHAKE256_RATE / 8 - 1];
+  t0 = t0 ^ t1;
+  s[SHAKE256_RATE / 8 - 1] = t0;
+
+	return s;
+}
+
+
+inline
+fn shake256_squeezeblock4x(reg ptr u256[25] state, reg ptr u8[SHAKE256_RATE] h0 h1 h2 h3) -> reg ptr u256[25], reg ptr u8[SHAKE256_RATE], reg ptr u8[SHAKE256_RATE], reg ptr u8[SHAKE256_RATE], reg ptr u8[SHAKE256_RATE]
+{
+  reg u256 t256;
+  reg u128 t128;
+  inline int i;
+
+  state = KeccakF1600_StatePermute4x(state);
+
+	for i = 0 to (SHAKE256_RATE / 8) {
+    t256 = state[i];
+    t128 = (128u)t256;
+		h0[u64 i] = #VMOVLPD(t128);
+		h1[u64 i] = #VMOVHPD(t128);
+    t128 = #VEXTRACTI128(t256, 1);
+		h2[u64 i] = #VMOVLPD(t128);
+		h3[u64 i] = #VMOVHPD(t128);
+	}
+
   return state, h0, h1, h2, h3;
 }
 

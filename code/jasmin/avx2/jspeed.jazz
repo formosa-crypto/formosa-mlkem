@@ -1,4 +1,3 @@
-#include "params.jahh"
 #include "poly_compress.jahh"
 #include "poly_decompress.jahh"
 #include "poly_tobytes.jahh"
@@ -25,6 +24,126 @@
 #include "polyvec_csubq.jahh"
 #include "polyvec_reduce.jahh"
 #include "gen_matrix.jahh"
+
+/* Exported functions only for benchmarking */
+export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
+{
+  stack u16[KYBER_K*KYBER_VECN] aa;
+  stack u8[KYBER_SYMBYTES] seed;
+  reg u8 c;
+  reg u16 t;
+  inline int i;
+
+  aa = gen_matrix(seed, 1);
+}
+
+export fn poly_compress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_N] a;
+  stack u8[128] r;
+
+  a = poly_compress_avx(rp, a);
+}
+
+export fn poly_decompress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_N] r;
+  stack u8[128] a;
+
+  r = poly_decompress_avx(r, ap);
+}
+
+export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_N] a;
+  stack u8[32] r;
+
+  a = poly_tomsg_avx(rp, a);
+}
+
+export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_N] r;
+
+  r = poly_frommsg_avx(r, ap);
+}
+
+export fn poly_ntt_jazz(reg u64 rp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  r = poly_ntt(r);
+}
+
+export fn poly_invntt_jazz(reg u64 rp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+
+  r = poly_invntt(r);
+}
+
+
+export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce) 
+{
+  reg u8 d;
+  reg u16 t;
+  stack u16[KYBER_N] r;
+  stack u8[KYBER_SYMBYTES] seed;
+  inline int i;
+  stack u64 srp;
+
+  r = poly_getnoise_avx(r, seed, nonce);
+}
+
+
+export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_VECN] r;
+
+  r = polyvec_decompress_avx(ap);
+}
+
+
+export fn polyvec_compress_jazz(reg u64 rp, reg u64 ap) 
+{
+  inline int i;
+  reg u16 t;
+  reg u8 c;
+  stack u16[KYBER_VECN] a;
+
+  polyvec_compress_avx(rp, a);
+}
+
+
+export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
+{
+  inline int i;
+  reg u16 t;
+  stack u16[KYBER_VECN] a;
+  stack u16[KYBER_VECN] b;
+  stack u16[KYBER_N] r;
+
+  r = polyvec_pointwise_acc(r, a, b);
+}
 
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
@@ -97,8 +216,8 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   pkp = spkp;
   skp = sskp;
 
-  polyvec_tobytes(skp, skpv);
-  polyvec_tobytes(pkp, pkpv);
+  polyvec_tobytes_avx(skp, skpv);
+  polyvec_tobytes_avx(pkp, pkpv);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES; 
@@ -134,7 +253,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
     i += 1;
   }
 
-  pkpv = polyvec_frombytes(pkp);
+  pkpv = polyvec_frombytes_avx(pkp);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES;
@@ -146,7 +265,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
     i += 1;
   }
 
-  k = poly_frommsg(k, msgp);
+  k = poly_frommsg_avx(k, msgp);
 
   aat = gen_matrix(publicseed, 1);
 
@@ -182,11 +301,10 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   v  = poly_reduce(v);
 
   ctp = sctp;
-  polyvec_compress(ctp, bp);
+  polyvec_compress_avx(ctp, bp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  v = poly_compress(ctp, v);
+  v = poly_compress_avx(ctp, v);
 }
-
 
 
 export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
@@ -194,11 +312,11 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
   stack u16[KYBER_N] t v mp;
   stack u16[KYBER_VECN] bp skpv;
 
-  bp = polyvec_decompress(ctp);
+  bp = polyvec_decompress_avx(ctp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  v = poly_decompress(v, ctp);
+  v = poly_decompress_avx(v, ctp);
 
-  skpv = polyvec_frombytes(skp);
+  skpv = polyvec_frombytes_avx(skp);
   
   bp = polyvec_ntt(bp);
   t = polyvec_pointwise_acc(t, skpv, bp);
@@ -207,5 +325,5 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
   mp = poly_sub(mp, v, t);
   mp = poly_reduce(mp);
   
-  mp = poly_tomsg(msgp, mp);
+  mp = poly_tomsg_avx(msgp, mp);
 }

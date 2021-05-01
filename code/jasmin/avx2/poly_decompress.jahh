@@ -33,4 +33,40 @@ fn poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   return rp;
 }
 
+u8[32] jshufbidx = {0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,
+                    4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7};
+u32 mask_s = 0x00F0000F;
+u32 shift_s = 0x800800;
+
+fn poly_decompress_avx(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
+{
+  inline int i;
+  reg u256 f q shufbidx mask shift;
+  reg u128 t;
+  reg ptr u16[16] x16p;
+  reg ptr u8[32] x32p;
+
+  x16p = jqx16;
+  q = x16p[u256 0];
+  x32p = jshufbidx;
+  shufbidx = x32p[u256 0];
+  mask = #VPBROADCAST_8u32(mask_s);
+  shift = #VPBROADCAST_8u32(shift_s);
+
+  t = #set0_128();
+  f = #set0_256();
+
+  for i=0 to KYBER_N/16
+  {
+    f = #VPBROADCAST_2u128((u128)[ap + 8*i]);
+    f = #VPSHUFB_256(f, shufbidx);
+    f = #VPAND_256(f, mask);
+    f = #VPMULL_16u16(f, shift);
+    f = #VPMULHRS_16u16(f, q);
+    rp[u256 i] = f;
+  }
+
+  return rp;
+}
+
 #endif

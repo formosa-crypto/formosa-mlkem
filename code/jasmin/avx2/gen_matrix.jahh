@@ -5,11 +5,269 @@
 #include "fips202_4x.jahh"
 #include "params.jahh"
 #include "shuffle.jahh"
+#include "consts.jahh"
 
-param int GENMATRIX_NBLOCKS = 6;
+param int GENMATRIX_NBLOCKS = 3;
+
+u8[2048] idx = {-1, -1, -1, -1, -1, -1, -1, -1,
+                0, -1, -1, -1, -1, -1, -1, -1,
+                2, -1, -1, -1, -1, -1, -1, -1,
+                0,  2, -1, -1, -1, -1, -1, -1,
+                4, -1, -1, -1, -1, -1, -1, -1,
+                0,  4, -1, -1, -1, -1, -1, -1,
+                2,  4, -1, -1, -1, -1, -1, -1,
+                0,  2,  4, -1, -1, -1, -1, -1,
+                6, -1, -1, -1, -1, -1, -1, -1,
+                0,  6, -1, -1, -1, -1, -1, -1,
+                2,  6, -1, -1, -1, -1, -1, -1,
+                0,  2,  6, -1, -1, -1, -1, -1,
+                4,  6, -1, -1, -1, -1, -1, -1,
+                0,  4,  6, -1, -1, -1, -1, -1,
+                2,  4,  6, -1, -1, -1, -1, -1,
+                0,  2,  4,  6, -1, -1, -1, -1,
+                8, -1, -1, -1, -1, -1, -1, -1,
+                0,  8, -1, -1, -1, -1, -1, -1,
+                2,  8, -1, -1, -1, -1, -1, -1,
+                0,  2,  8, -1, -1, -1, -1, -1,
+                4,  8, -1, -1, -1, -1, -1, -1,
+                0,  4,  8, -1, -1, -1, -1, -1,
+                2,  4,  8, -1, -1, -1, -1, -1,
+                0,  2,  4,  8, -1, -1, -1, -1,
+                6,  8, -1, -1, -1, -1, -1, -1,
+                0,  6,  8, -1, -1, -1, -1, -1,
+                2,  6,  8, -1, -1, -1, -1, -1,
+                0,  2,  6,  8, -1, -1, -1, -1,
+                4,  6,  8, -1, -1, -1, -1, -1,
+                0,  4,  6,  8, -1, -1, -1, -1,
+                2,  4,  6,  8, -1, -1, -1, -1,
+                0,  2,  4,  6,  8, -1, -1, -1,
+                10, -1, -1, -1, -1, -1, -1, -1,
+                0, 10, -1, -1, -1, -1, -1, -1,
+                2, 10, -1, -1, -1, -1, -1, -1,
+                0,  2, 10, -1, -1, -1, -1, -1,
+                4, 10, -1, -1, -1, -1, -1, -1,
+                0,  4, 10, -1, -1, -1, -1, -1,
+                2,  4, 10, -1, -1, -1, -1, -1,
+                0,  2,  4, 10, -1, -1, -1, -1,
+                6, 10, -1, -1, -1, -1, -1, -1,
+                0,  6, 10, -1, -1, -1, -1, -1,
+                2,  6, 10, -1, -1, -1, -1, -1,
+                0,  2,  6, 10, -1, -1, -1, -1,
+                4,  6, 10, -1, -1, -1, -1, -1,
+                0,  4,  6, 10, -1, -1, -1, -1,
+                2,  4,  6, 10, -1, -1, -1, -1,
+                0,  2,  4,  6, 10, -1, -1, -1,
+                8, 10, -1, -1, -1, -1, -1, -1,
+                0,  8, 10, -1, -1, -1, -1, -1,
+                2,  8, 10, -1, -1, -1, -1, -1,
+                0,  2,  8, 10, -1, -1, -1, -1,
+                4,  8, 10, -1, -1, -1, -1, -1,
+                0,  4,  8, 10, -1, -1, -1, -1,
+                2,  4,  8, 10, -1, -1, -1, -1,
+                0,  2,  4,  8, 10, -1, -1, -1,
+                6,  8, 10, -1, -1, -1, -1, -1,
+                0,  6,  8, 10, -1, -1, -1, -1,
+                2,  6,  8, 10, -1, -1, -1, -1,
+                0,  2,  6,  8, 10, -1, -1, -1,
+                4,  6,  8, 10, -1, -1, -1, -1,
+                0,  4,  6,  8, 10, -1, -1, -1,
+                2,  4,  6,  8, 10, -1, -1, -1,
+                0,  2,  4,  6,  8, 10, -1, -1,
+                12, -1, -1, -1, -1, -1, -1, -1,
+                0, 12, -1, -1, -1, -1, -1, -1,
+                2, 12, -1, -1, -1, -1, -1, -1,
+                0,  2, 12, -1, -1, -1, -1, -1,
+                4, 12, -1, -1, -1, -1, -1, -1,
+                0,  4, 12, -1, -1, -1, -1, -1,
+                2,  4, 12, -1, -1, -1, -1, -1,
+                0,  2,  4, 12, -1, -1, -1, -1,
+                6, 12, -1, -1, -1, -1, -1, -1,
+                0,  6, 12, -1, -1, -1, -1, -1,
+                2,  6, 12, -1, -1, -1, -1, -1,
+                0,  2,  6, 12, -1, -1, -1, -1,
+                4,  6, 12, -1, -1, -1, -1, -1,
+                0,  4,  6, 12, -1, -1, -1, -1,
+                2,  4,  6, 12, -1, -1, -1, -1,
+                0,  2,  4,  6, 12, -1, -1, -1,
+                8, 12, -1, -1, -1, -1, -1, -1,
+                0,  8, 12, -1, -1, -1, -1, -1,
+                2,  8, 12, -1, -1, -1, -1, -1,
+                0,  2,  8, 12, -1, -1, -1, -1,
+                4,  8, 12, -1, -1, -1, -1, -1,
+                0,  4,  8, 12, -1, -1, -1, -1,
+                2,  4,  8, 12, -1, -1, -1, -1,
+                0,  2,  4,  8, 12, -1, -1, -1,
+                6,  8, 12, -1, -1, -1, -1, -1,
+                0,  6,  8, 12, -1, -1, -1, -1,
+                2,  6,  8, 12, -1, -1, -1, -1,
+                0,  2,  6,  8, 12, -1, -1, -1,
+                4,  6,  8, 12, -1, -1, -1, -1,
+                0,  4,  6,  8, 12, -1, -1, -1,
+                2,  4,  6,  8, 12, -1, -1, -1,
+                0,  2,  4,  6,  8, 12, -1, -1,
+                10, 12, -1, -1, -1, -1, -1, -1,
+                0, 10, 12, -1, -1, -1, -1, -1,
+                2, 10, 12, -1, -1, -1, -1, -1,
+                0,  2, 10, 12, -1, -1, -1, -1,
+                4, 10, 12, -1, -1, -1, -1, -1,
+                0,  4, 10, 12, -1, -1, -1, -1,
+                2,  4, 10, 12, -1, -1, -1, -1,
+                0,  2,  4, 10, 12, -1, -1, -1,
+                6, 10, 12, -1, -1, -1, -1, -1,
+                0,  6, 10, 12, -1, -1, -1, -1,
+                2,  6, 10, 12, -1, -1, -1, -1,
+                0,  2,  6, 10, 12, -1, -1, -1,
+                4,  6, 10, 12, -1, -1, -1, -1,
+                0,  4,  6, 10, 12, -1, -1, -1,
+                2,  4,  6, 10, 12, -1, -1, -1,
+                0,  2,  4,  6, 10, 12, -1, -1,
+                8, 10, 12, -1, -1, -1, -1, -1,
+                0,  8, 10, 12, -1, -1, -1, -1,
+                2,  8, 10, 12, -1, -1, -1, -1,
+                0,  2,  8, 10, 12, -1, -1, -1,
+                4,  8, 10, 12, -1, -1, -1, -1,
+                0,  4,  8, 10, 12, -1, -1, -1,
+                2,  4,  8, 10, 12, -1, -1, -1,
+                0,  2,  4,  8, 10, 12, -1, -1,
+                6,  8, 10, 12, -1, -1, -1, -1,
+                0,  6,  8, 10, 12, -1, -1, -1,
+                2,  6,  8, 10, 12, -1, -1, -1,
+                0,  2,  6,  8, 10, 12, -1, -1,
+                4,  6,  8, 10, 12, -1, -1, -1,
+                0,  4,  6,  8, 10, 12, -1, -1,
+                2,  4,  6,  8, 10, 12, -1, -1,
+                0,  2,  4,  6,  8, 10, 12, -1,
+                14, -1, -1, -1, -1, -1, -1, -1,
+                0, 14, -1, -1, -1, -1, -1, -1,
+                2, 14, -1, -1, -1, -1, -1, -1,
+                0,  2, 14, -1, -1, -1, -1, -1,
+                4, 14, -1, -1, -1, -1, -1, -1,
+                0,  4, 14, -1, -1, -1, -1, -1,
+                2,  4, 14, -1, -1, -1, -1, -1,
+                0,  2,  4, 14, -1, -1, -1, -1,
+                6, 14, -1, -1, -1, -1, -1, -1,
+                0,  6, 14, -1, -1, -1, -1, -1,
+                2,  6, 14, -1, -1, -1, -1, -1,
+                0,  2,  6, 14, -1, -1, -1, -1,
+                4,  6, 14, -1, -1, -1, -1, -1,
+                0,  4,  6, 14, -1, -1, -1, -1,
+                2,  4,  6, 14, -1, -1, -1, -1,
+                0,  2,  4,  6, 14, -1, -1, -1,
+                8, 14, -1, -1, -1, -1, -1, -1,
+                0,  8, 14, -1, -1, -1, -1, -1,
+                2,  8, 14, -1, -1, -1, -1, -1,
+                0,  2,  8, 14, -1, -1, -1, -1,
+                4,  8, 14, -1, -1, -1, -1, -1,
+                0,  4,  8, 14, -1, -1, -1, -1,
+                2,  4,  8, 14, -1, -1, -1, -1,
+                0,  2,  4,  8, 14, -1, -1, -1,
+                6,  8, 14, -1, -1, -1, -1, -1,
+                0,  6,  8, 14, -1, -1, -1, -1,
+                2,  6,  8, 14, -1, -1, -1, -1,
+                0,  2,  6,  8, 14, -1, -1, -1,
+                4,  6,  8, 14, -1, -1, -1, -1,
+                0,  4,  6,  8, 14, -1, -1, -1,
+                2,  4,  6,  8, 14, -1, -1, -1,
+                0,  2,  4,  6,  8, 14, -1, -1,
+                10, 14, -1, -1, -1, -1, -1, -1,
+                0, 10, 14, -1, -1, -1, -1, -1,
+                2, 10, 14, -1, -1, -1, -1, -1,
+                0,  2, 10, 14, -1, -1, -1, -1,
+                4, 10, 14, -1, -1, -1, -1, -1,
+                0,  4, 10, 14, -1, -1, -1, -1,
+                2,  4, 10, 14, -1, -1, -1, -1,
+                0,  2,  4, 10, 14, -1, -1, -1,
+                6, 10, 14, -1, -1, -1, -1, -1,
+                0,  6, 10, 14, -1, -1, -1, -1,
+                2,  6, 10, 14, -1, -1, -1, -1,
+                0,  2,  6, 10, 14, -1, -1, -1,
+                4,  6, 10, 14, -1, -1, -1, -1,
+                0,  4,  6, 10, 14, -1, -1, -1,
+                2,  4,  6, 10, 14, -1, -1, -1,
+                0,  2,  4,  6, 10, 14, -1, -1,
+                8, 10, 14, -1, -1, -1, -1, -1,
+                0,  8, 10, 14, -1, -1, -1, -1,
+                2,  8, 10, 14, -1, -1, -1, -1,
+                0,  2,  8, 10, 14, -1, -1, -1,
+                4,  8, 10, 14, -1, -1, -1, -1,
+                0,  4,  8, 10, 14, -1, -1, -1,
+                2,  4,  8, 10, 14, -1, -1, -1,
+                0,  2,  4,  8, 10, 14, -1, -1,
+                6,  8, 10, 14, -1, -1, -1, -1,
+                0,  6,  8, 10, 14, -1, -1, -1,
+                2,  6,  8, 10, 14, -1, -1, -1,
+                0,  2,  6,  8, 10, 14, -1, -1,
+                4,  6,  8, 10, 14, -1, -1, -1,
+                0,  4,  6,  8, 10, 14, -1, -1,
+                2,  4,  6,  8, 10, 14, -1, -1,
+                0,  2,  4,  6,  8, 10, 14, -1,
+                12, 14, -1, -1, -1, -1, -1, -1,
+                0, 12, 14, -1, -1, -1, -1, -1,
+                2, 12, 14, -1, -1, -1, -1, -1,
+                0,  2, 12, 14, -1, -1, -1, -1,
+                4, 12, 14, -1, -1, -1, -1, -1,
+                0,  4, 12, 14, -1, -1, -1, -1,
+                2,  4, 12, 14, -1, -1, -1, -1,
+                0,  2,  4, 12, 14, -1, -1, -1,
+                6, 12, 14, -1, -1, -1, -1, -1,
+                0,  6, 12, 14, -1, -1, -1, -1,
+                2,  6, 12, 14, -1, -1, -1, -1,
+                0,  2,  6, 12, 14, -1, -1, -1,
+                4,  6, 12, 14, -1, -1, -1, -1,
+                0,  4,  6, 12, 14, -1, -1, -1,
+                2,  4,  6, 12, 14, -1, -1, -1,
+                0,  2,  4,  6, 12, 14, -1, -1,
+                8, 12, 14, -1, -1, -1, -1, -1,
+                0,  8, 12, 14, -1, -1, -1, -1,
+                2,  8, 12, 14, -1, -1, -1, -1,
+                0,  2,  8, 12, 14, -1, -1, -1,
+                4,  8, 12, 14, -1, -1, -1, -1,
+                0,  4,  8, 12, 14, -1, -1, -1,
+                2,  4,  8, 12, 14, -1, -1, -1,
+                0,  2,  4,  8, 12, 14, -1, -1,
+                6,  8, 12, 14, -1, -1, -1, -1,
+                0,  6,  8, 12, 14, -1, -1, -1,
+                2,  6,  8, 12, 14, -1, -1, -1,
+                0,  2,  6,  8, 12, 14, -1, -1,
+                4,  6,  8, 12, 14, -1, -1, -1,
+                0,  4,  6,  8, 12, 14, -1, -1,
+                2,  4,  6,  8, 12, 14, -1, -1,
+                0,  2,  4,  6,  8, 12, 14, -1,
+                10, 12, 14, -1, -1, -1, -1, -1,
+                0, 10, 12, 14, -1, -1, -1, -1,
+                2, 10, 12, 14, -1, -1, -1, -1,
+                0,  2, 10, 12, 14, -1, -1, -1,
+                4, 10, 12, 14, -1, -1, -1, -1,
+                0,  4, 10, 12, 14, -1, -1, -1,
+                2,  4, 10, 12, 14, -1, -1, -1,
+                0,  2,  4, 10, 12, 14, -1, -1,
+                6, 10, 12, 14, -1, -1, -1, -1,
+                0,  6, 10, 12, 14, -1, -1, -1,
+                2,  6, 10, 12, 14, -1, -1, -1,
+                0,  2,  6, 10, 12, 14, -1, -1,
+                4,  6, 10, 12, 14, -1, -1, -1,
+                0,  4,  6, 10, 12, 14, -1, -1,
+                2,  4,  6, 10, 12, 14, -1, -1,
+                0,  2,  4,  6, 10, 12, 14, -1,
+                8, 10, 12, 14, -1, -1, -1, -1,
+                0,  8, 10, 12, 14, -1, -1, -1,
+                2,  8, 10, 12, 14, -1, -1, -1,
+                0,  2,  8, 10, 12, 14, -1, -1,
+                4,  8, 10, 12, 14, -1, -1, -1,
+                0,  4,  8, 10, 12, 14, -1, -1,
+                2,  4,  8, 10, 12, 14, -1, -1,
+                0,  2,  4,  8, 10, 12, 14, -1,
+                6,  8, 10, 12, 14, -1, -1, -1,
+                0,  6,  8, 10, 12, 14, -1, -1,
+                2,  6,  8, 10, 12, 14, -1, -1,
+                0,  2,  6,  8, 10, 12, 14, -1,
+                4,  6,  8, 10, 12, 14, -1, -1,
+                0,  4,  6,  8, 10, 12, 14, -1,
+                2,  4,  6,  8, 10, 12, 14, -1,
+                0,  2,  4,  6,  8, 10, 12, 14};
 
 inline
-fn shake128_squeezenblocks(stack u64[25] state, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] out) 
+fn shake128_squeezenblocks(stack u64[25] state, stack u8[GENMATRIX_NBLOCKS * SHAKE128_RATE] out)
       -> stack u64[25], stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE]
 {
   inline int i;
@@ -21,13 +279,8 @@ fn shake128_squeezenblocks(stack u64[25] state, stack u8[GENMATRIX_NBLOCKS*SHAKE
   return state, out;
 }
 
-
 inline
-fn shake128_squeezenblocks4x(reg ptr u256[25] state,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h0,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h1,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h2,
-                              reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] h3)
+fn shake128_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[GENMATRIX_NBLOCKS * SHAKE128_RATE] h0 h1 h2 h3)
   -> reg ptr u256[25], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE], reg ptr u8[GENMATRIX_NBLOCKS*SHAKE128_RATE]
 {
   inline int i;
@@ -40,11 +293,10 @@ fn shake128_squeezenblocks4x(reg ptr u256[25] state,
   return state, h0, h1, h2, h3;
 }
 
-
 inline
 fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf, inline int buflen) ->  reg u64, stack u16[KYBER_N]
 {
-  reg u16 val1 val2;
+  reg u16 val0 val1;
   reg u16 t;
   reg u64 pos ctr;
   reg u64 cnd0 cnd1 exit;
@@ -52,38 +304,41 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[GENMATRIX_NBLOCKS
 
   ctr = offset;
   pos = 0;
-  exit = 0;
+  exit  = KYBER_N;
+  exit -= ctr;
+  exit -= 1;
+  exit >>= 63;
 
   while(exit == 0)
   {
-    val1 = (16u)buf[(int)pos];
+    val0 = (16u)buf[(int)pos];
     pos += 1;
 
     t   = (16u)buf[(int)pos];
-    val2 = t;
-    val2 >>= 4;
+    val1 = t;
+    val1 >>= 4;
 
     t &= 0x0F;
     t <<= 8;
-    val1 |= t;
+    val0 |= t;
     pos += 1;
 
     t   = (16u)buf[(int)pos];
     t <<= 4;
-    val2 |= t;
+    val1 |= t;
     pos += 1;
 
-    if(val1 < KYBER_Q)
+    if(val0 < KYBER_Q)
     {
-      rp[(int)ctr] = val1;
+      rp[(int)ctr] = val0;
       ctr += 1;
     }
 
-    if(val2 < KYBER_Q)
+    if(ctr < KYBER_N)
     {
-      if(ctr < KYBER_N)
+      if(val1 < KYBER_Q)
       {
-        rp[(int)ctr] = val2;
+        rp[(int)ctr] = val1;
         ctr += 1;
       }
     }
@@ -102,6 +357,222 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[GENMATRIX_NBLOCKS
   return ctr, rp;
 }
 
+u8 ones_s = 1;
+u16 mask_s = 0x0FFF;
+u64[2] maskl64_s = {0xFFFFFFFFFFFFFFFF, 0};
+u8[32] idx8_s = {0, 1, 1, 2, 3, 4, 4, 5,
+                 6, 7, 7, 8, 9, 10, 10, 11,
+                 4, 5, 5, 6, 7, 8, 8, 9,
+                 10, 11, 11, 12, 13, 14, 14, 15};
+
+inline
+fn rej_uniform_avx(stack u16[KYBER_N] rp, stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf, inline int buflen) -> reg u64, stack u16[KYBER_N]
+{
+  reg u256 f0 f1 g0 g1 g2 g3;
+  reg u256 bound ones mask idx8;
+  reg u128 f t l h;
+  reg u128 maskl64;
+  reg u64 pos ctr t64 t64_1 t64_2 t64_3;
+  reg u64 good cnd exit;
+  reg u16 val0 val1 t16;
+  reg ptr u8[2048] idxp;
+
+  idxp = idx;
+
+  bound = jqx16[u256 0];
+  ones = #VPBROADCAST_32u8(ones_s);
+  mask = #VPBROADCAST_16u16(mask_s);
+  maskl64 = maskl64_s[u128 0];
+  idx8 = idx8_s[u256 0];
+
+  ctr = 0;
+  pos = 0;
+  exit = 0;
+
+  while(exit == 0)
+  {
+    f0 = buf.[u256 (int)pos];
+    f1 = buf.[u256 24 + (int)pos];
+    f0 = #VPERMQ(f0, 0x94);
+    f1 = #VPERMQ(f1, 0x94);
+    f0 = #VPSHUFB_256(f0, idx8);
+    f1 = #VPSHUFB_256(f1, idx8);
+    g0 = #VPSRL_16u16(f0, 4);
+    g1 = #VPSRL_16u16(f1, 4);
+    f0 = #VPBLEND_16u16(f0, g0, 0xAA);
+    f1 = #VPBLEND_16u16(f1, g1, 0xAA);
+    f0 = #VPAND_256(f0, mask);
+    f1 = #VPAND_256(f1, mask);
+    pos += 48;
+
+    g0 = #VPCMPGT_16u16(bound, f0);
+    g1 = #VPCMPGT_16u16(bound, f1);
+
+    g0 = #VPACKSS_16u16(g0, g1);
+    good = #VPMOVMSKB_u256u64(g0);
+
+    t64 = good;
+    t64 &= 0xFF;
+    f = #MOVD_64(idxp[u64 (int)t64]);
+    t64_2 = good;
+    t64_2 >>= 16;
+    t64_2 &= 0xFF;
+    l = #MOVD_64(idxp[u64 (int)t64_2]);
+    t64_1 = good;
+    t64_1 >>= 8;
+    t64_1 &= 0xFF;
+    t = #MOVD_64(idxp[u64 (int)t64_1]);
+    t64_3 = good;
+    t64_3 >>= 24;
+    t64_3 &= 0xFF;
+    h = #MOVD_64(idxp[u64 (int)t64_3]);
+
+
+    g0 = #VINSERTI128(g0, f, 0);
+    g0 = #VINSERTI128(g0, l, 1);
+
+    _, _, _, _, _, t64 = #POPCNT_64(t64);
+    _, _, _, _, _, t64_2 = #POPCNT_64(t64_2);
+
+    g2 = #VPADD_32u8(g0, ones);
+    g0 = #VPUNPCKL_32u8(g0, g2);
+    f0 = #VPSHUFB_256(f0, g0);
+
+    g1 = #VINSERTI128(g1, t, 0);
+    g1 = #VINSERTI128(g1, h, 1);
+
+    _, _, _, _, _, t64_1 = #POPCNT_64(t64_1);
+    _, _, _, _, _, t64_3 = #POPCNT_64(t64_3);
+
+    g3 = #VPADD_32u8(g1, ones);
+    g1 = #VPUNPCKL_32u8(g1, g3);
+    f1 = #VPSHUFB_256(f1, g1);
+
+    f = (128u)f0;
+    rp.[u128 2*(int)ctr] = f;
+    ctr += t64;
+
+    f = #VEXTRACTI128(f0, 1);
+    rp.[u128 2*(int)ctr] = f;
+    ctr += t64_2;
+
+    f = (128u)f1;
+    rp.[u128 2*(int)ctr] = f;
+    ctr += t64_1;
+
+    f = #VEXTRACTI128(f1, 1);
+    rp.[u128 2*(int)ctr] = f;
+    ctr += t64_3;
+
+    cnd = KYBER_N;
+    cnd -= 32;
+    cnd -= ctr;
+    exit = buflen;
+    exit -= 48;
+    exit -= pos;
+    exit |= cnd;
+    exit >>= 63;
+  }
+
+
+  cnd = KYBER_N;
+  cnd -= 8;
+  cnd -= ctr;
+  exit = buflen;
+  exit -= 12;
+  exit -= pos;
+  exit |= cnd;
+  exit >>= 63;
+
+  t64 = 0x5555;
+  while(exit == 0)
+  {
+    f = buf.[u128 (int)pos];
+    f = #VPSHUFB_128(f, idx8);
+    t = #VPSRL_8u16(f, 4);
+    f = #VPBLEND_8u16(f, t, 0xAA);
+    f = #VPAND_128(f, mask);
+    pos += 12;
+
+    t = #VPCMPGT_8u16(bound, f);
+    good = #VPMOVMSKB_u128u64(t);
+
+    good = #PEXT_64(good, t64);
+    l = #MOVD_64(idxp[u64 (int)good]);
+    _, _, _, _, _, good =  #POPCNT_64(good);
+
+    exit = buflen;
+    exit -= 12;
+    exit -= pos;
+
+    h = #VPADD_16u8(l, ones);
+    l = #VPUNPCKL_16u8(l, h);
+    f = #VPSHUFB_128(f, l);
+
+    rp.[u128 2*(int)ctr] = f;
+    ctr += good;
+
+    cnd = KYBER_N;
+    cnd -= 8;
+    cnd -= ctr;
+    exit |= cnd;
+    exit >>= 63;
+  }
+
+  cnd = KYBER_N;
+  cnd -= 1;
+  cnd -= ctr;
+  exit = buflen;
+  exit -= 3;
+  exit -= pos;
+  exit |= cnd;
+  exit >>= 63;
+
+  while(exit == 0)
+  {
+    val0 = (16u)buf[(int)pos];
+    pos += 1;
+    t16 = (16u)buf[(int)pos];
+    pos += 1;
+    val1 = t16;
+
+    t16 <<= 8;
+    val0 |= t16;
+    val0 &= 0xFFF;
+
+    val1 >>= 4;
+    t16 = (16u)buf[(int)pos];
+    pos += 1;
+    t16 <<= 4;
+    val1 |= t16;
+
+    if(val0 < KYBER_Q)
+    {
+      rp[(int)ctr] = val0;
+      ctr += 1;
+    }
+    if(val1 < KYBER_Q)
+    {
+      if(ctr < KYBER_N)
+      {
+        rp[(int)ctr] = val1;
+        ctr += 1;
+      }
+    }
+
+    cnd = KYBER_N;
+    cnd -= 1;
+    cnd -= ctr;
+    exit = buflen;
+    exit -= 3;
+    exit -= pos;
+    exit |= cnd;
+    exit >>= 63;
+  }
+
+  return ctr, rp;
+}
+
 inline
 fn gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16[KYBER_K*KYBER_VECN]
 {
@@ -113,16 +584,14 @@ fn gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack
   stack u64[25] state;
   stack u16[KYBER_K*KYBER_VECN] rr;
 
-  reg u8 c;
-  reg u16 t;
-  reg u64 ctr k l;
-  stack u64 sctr;
+  reg u64 t64;
+  stack u64 t64_s;
   inline int i, j, k;
 
-  for j = 0 to KYBER_SYMBYTES
+  for j = 0 to 4
   {
-    c = seed[j];
-    extseed[j] = c;
+    t64 = seed[u64 j];
+    extseed[u64 j] = t64;
   }
 
   for i = 0 to KYBER_K
@@ -143,13 +612,15 @@ fn gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack
       state = shake128_absorb34(state, extseed);
 
       state, buf = shake128_squeezenblocks(state, buf);
-      ctr = 0;
-      ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], ctr, buf, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+      t64 = 0;
+      t64, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], t64, buf, GENMATRIX_NBLOCKS*SHAKE128_RATE);
       
-      while (ctr < KYBER_N)
+      while (t64 < KYBER_N)
       {
+        t64_s = t64;
         state, buf[0:SHAKE128_RATE] = shake128_squeezeblock(state, buf[0:SHAKE128_RATE]);
-        ctr, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], ctr, buf, SHAKE128_RATE);
+        t64 = t64_s;
+        t64, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = rej_uniform(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], t64, buf, SHAKE128_RATE);
       }
       rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = nttunpack(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N]);
     }
@@ -158,59 +629,67 @@ fn gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack
   return rr;
 }
 
+inline fn __r2s(reg u256 f) -> stack u256 {
+  stack u256 fs;
+  fs = f;
+  return f;
+}
+
+
+inline fn __s2r(stack u256 fs) -> reg u256 {
+  reg u256 f;
+  f = fs;
+  return f;
+}
+
+
 inline
 fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16[KYBER_K*KYBER_VECN]
 {
-  stack u8[34] extseed0;
-  stack u8[34] extseed1;
-  stack u8[34] extseed2;
-  stack u8[34] extseed3;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf0;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf1;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf2;
   stack u8[GENMATRIX_NBLOCKS*SHAKE128_RATE] buf3;
   stack u256[25] state;
   stack u16[KYBER_K*KYBER_VECN] rr;
+  stack u256 fs;
 
-  reg u8 c;
-  reg u16 t;
-  reg u64 ctr0 ctr1 ctr2 ctr3 k l;
-  inline int i, j, k;
+  reg u256 f;
+  reg u64 ctr0 ctr1 ctr2 ctr3 done cnd;
+  stack u64 ctr0_s;
+  inline int i, j;
 
-  for j = 0 to KYBER_SYMBYTES
-  {
-    c = seed[j];
-    extseed0[j] = c;
-    extseed1[j] = c;
-    extseed2[j] = c;
-    extseed3[j] = c;
-  }
+  f = seed[u256 0];
+  buf0[u256 0] = f;
+  buf1[u256 0] = f;
+  buf2[u256 0] = f;
+  buf3[u256 0] = f;
+  fs = __r2s(f);
 
   if(transposed == 1)
   {
-    extseed0[KYBER_SYMBYTES]   = 0;
-    extseed0[KYBER_SYMBYTES+1] = 0;
-    extseed1[KYBER_SYMBYTES]   = 0;
-    extseed1[KYBER_SYMBYTES+1] = 1;
-    extseed2[KYBER_SYMBYTES]   = 0;
-    extseed2[KYBER_SYMBYTES+1] = 2;
-    extseed3[KYBER_SYMBYTES]   = 1;
-    extseed3[KYBER_SYMBYTES+1] = 0;
+    buf0[KYBER_SYMBYTES]   = 0;
+    buf0[KYBER_SYMBYTES+1] = 0;
+    buf1[KYBER_SYMBYTES]   = 0;
+    buf1[KYBER_SYMBYTES+1] = 1;
+    buf2[KYBER_SYMBYTES]   = 0;
+    buf2[KYBER_SYMBYTES+1] = 2;
+    buf3[KYBER_SYMBYTES]   = 1;
+    buf3[KYBER_SYMBYTES+1] = 0;
   }
   else
   {
-    extseed0[KYBER_SYMBYTES]   = 0;
-    extseed0[KYBER_SYMBYTES+1] = 0;
-    extseed1[KYBER_SYMBYTES]   = 1;
-    extseed1[KYBER_SYMBYTES+1] = 0;
-    extseed2[KYBER_SYMBYTES]   = 2;
-    extseed2[KYBER_SYMBYTES+1] = 0;
-    extseed3[KYBER_SYMBYTES]   = 0;
-    extseed3[KYBER_SYMBYTES+1] = 1;
+    buf0[KYBER_SYMBYTES]   = 0;
+    buf0[KYBER_SYMBYTES+1] = 0;
+    buf1[KYBER_SYMBYTES]   = 1;
+    buf1[KYBER_SYMBYTES+1] = 0;
+    buf2[KYBER_SYMBYTES]   = 2;
+    buf2[KYBER_SYMBYTES+1] = 0;
+    buf3[KYBER_SYMBYTES]   = 0;
+    buf3[KYBER_SYMBYTES+1] = 1;
   }
 
-  state = shake128_absorb4x_34(state, extseed0, extseed1, extseed2, extseed3);
-
+  state = shake128_absorb4x_34(state, buf0[0:34], buf1[0:34], buf2[0:34], buf3[0:34]);
   state, buf0, buf1, buf2, buf3 = shake128_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
 
   ctr0 = 0;
@@ -218,38 +697,87 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
   ctr2 = 0;
   ctr3 = 0;
 
-  ctr0, rr[0*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+0*KYBER_N:KYBER_N], ctr0, buf0, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-  ctr1, rr[0*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+1*KYBER_N:KYBER_N], ctr1, buf1, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-  ctr2, rr[0*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+2*KYBER_N:KYBER_N], ctr2, buf2, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-  ctr3, rr[1*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[1*KYBER_VECN+0*KYBER_N:KYBER_N], ctr3, buf3, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr0, rr[0*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform_avx(rr[0*KYBER_VECN+0*KYBER_N:KYBER_N], buf0, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr1, rr[0*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform_avx(rr[0*KYBER_VECN+1*KYBER_N:KYBER_N], buf1, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr2, rr[0*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform_avx(rr[0*KYBER_VECN+2*KYBER_N:KYBER_N], buf2, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr3, rr[1*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform_avx(rr[1*KYBER_VECN+0*KYBER_N:KYBER_N], buf3, GENMATRIX_NBLOCKS*SHAKE128_RATE);
 
-  //TODO: Check if enough has been generated; squeeze more
+  cnd = KYBER_N;
+  cnd -= ctr0;
+  cnd -= 1;
+  done = cnd;
+  cnd = KYBER_N;
+  cnd -= ctr1;
+  cnd -= 1;
+  done |= cnd;
+  cnd = KYBER_N;
+  cnd -= ctr2;
+  cnd -= 1;
+  done |= cnd;
+  cnd = KYBER_N;
+  cnd -= ctr3;
+  cnd -= 1;
+  done |= cnd;
+  done >>= 63;
+
+  while(done == 0) {
+    state, buf0[0:SHAKE128_RATE], buf1[0:SHAKE128_RATE], buf2[0:SHAKE128_RATE], buf3[0:SHAKE128_RATE] = shake128_squeezeblock4x(state, buf0[0:SHAKE128_RATE], buf1[0:SHAKE128_RATE], buf2[0:SHAKE128_RATE], buf3[0:SHAKE128_RATE]);
+
+    ctr0, rr[0*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+0*KYBER_N:KYBER_N], ctr0, buf0, SHAKE128_RATE);
+    ctr1, rr[0*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+1*KYBER_N:KYBER_N], ctr1, buf1, SHAKE128_RATE);
+    ctr2, rr[0*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform(rr[0*KYBER_VECN+2*KYBER_N:KYBER_N], ctr2, buf2, SHAKE128_RATE);
+    ctr3, rr[1*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[1*KYBER_VECN+0*KYBER_N:KYBER_N], ctr3, buf3, SHAKE128_RATE);
+
+    cnd = KYBER_N;
+    cnd -= ctr0;
+    cnd -= 1;
+    done = cnd;
+    cnd = KYBER_N;
+    cnd -= ctr1;
+    cnd -= 1;
+    done |= cnd;
+    cnd = KYBER_N;
+    cnd -= ctr2;
+    cnd -= 1;
+    done |= cnd;
+    cnd = KYBER_N;
+    cnd -= ctr3;
+    cnd -= 1;
+    done |= cnd;
+    done >>= 63;
+  }
+
+  f = __s2r(fs);
+  buf0[u256 0] = f;
+  buf1[u256 0] = f;
+  buf2[u256 0] = f;
+  buf3[u256 0] = f;
+  fs = __r2s(f);
 
   if(transposed == 1)
   {
-    extseed0[KYBER_SYMBYTES]   = 1;
-    extseed0[KYBER_SYMBYTES+1] = 1;
-    extseed1[KYBER_SYMBYTES]   = 1;
-    extseed1[KYBER_SYMBYTES+1] = 2;
-    extseed2[KYBER_SYMBYTES]   = 2;
-    extseed2[KYBER_SYMBYTES+1] = 0;
-    extseed3[KYBER_SYMBYTES]   = 2;
-    extseed3[KYBER_SYMBYTES+1] = 1;
+    buf0[KYBER_SYMBYTES]   = 1;
+    buf0[KYBER_SYMBYTES+1] = 1;
+    buf1[KYBER_SYMBYTES]   = 1;
+    buf1[KYBER_SYMBYTES+1] = 2;
+    buf2[KYBER_SYMBYTES]   = 2;
+    buf2[KYBER_SYMBYTES+1] = 0;
+    buf3[KYBER_SYMBYTES]   = 2;
+    buf3[KYBER_SYMBYTES+1] = 1;
   }
   else
   {
-    extseed0[KYBER_SYMBYTES]   = 1;
-    extseed0[KYBER_SYMBYTES+1] = 1;
-    extseed1[KYBER_SYMBYTES]   = 2;
-    extseed1[KYBER_SYMBYTES+1] = 1;
-    extseed2[KYBER_SYMBYTES]   = 0;
-    extseed2[KYBER_SYMBYTES+1] = 2;
-    extseed3[KYBER_SYMBYTES]   = 1;
-    extseed3[KYBER_SYMBYTES+1] = 2;
+    buf0[KYBER_SYMBYTES]   = 1;
+    buf0[KYBER_SYMBYTES+1] = 1;
+    buf1[KYBER_SYMBYTES]   = 2;
+    buf1[KYBER_SYMBYTES+1] = 1;
+    buf2[KYBER_SYMBYTES]   = 0;
+    buf2[KYBER_SYMBYTES+1] = 2;
+    buf3[KYBER_SYMBYTES]   = 1;
+    buf3[KYBER_SYMBYTES+1] = 2;
   }
 
-  state = shake128_absorb4x_34(state, extseed0, extseed1, extseed2, extseed3);
-
+  state = shake128_absorb4x_34(state, buf0[0:34], buf1[0:34], buf2[0:34], buf3[0:34]);
   state, buf0, buf1, buf2, buf3 = shake128_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
 
   ctr0 = 0;
@@ -257,24 +785,84 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
   ctr2 = 0;
   ctr3 = 0;
 
-  ctr0, rr[1*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform(rr[1*KYBER_VECN+1*KYBER_N:KYBER_N], ctr0, buf0, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-  ctr1, rr[1*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform(rr[1*KYBER_VECN+2*KYBER_N:KYBER_N], ctr1, buf1, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-  ctr2, rr[2*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[2*KYBER_VECN+0*KYBER_N:KYBER_N], ctr2, buf2, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-  ctr3, rr[2*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform(rr[2*KYBER_VECN+1*KYBER_N:KYBER_N], ctr3, buf3, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr0, rr[1*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform_avx(rr[1*KYBER_VECN+1*KYBER_N:KYBER_N], buf0, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr1, rr[1*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform_avx(rr[1*KYBER_VECN+2*KYBER_N:KYBER_N], buf1, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr2, rr[2*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform_avx(rr[2*KYBER_VECN+0*KYBER_N:KYBER_N], buf2, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+  ctr3, rr[2*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform_avx(rr[2*KYBER_VECN+1*KYBER_N:KYBER_N], buf3, GENMATRIX_NBLOCKS*SHAKE128_RATE);
 
-  //TODO: Check if enough has been generated; squeeze more
+  cnd = KYBER_N;
+  cnd -= ctr0;
+  cnd -= 1;
+  done = cnd;
+  cnd = KYBER_N;
+  cnd -= ctr1;
+  cnd -= 1;
+  done |= cnd;
+  cnd = KYBER_N;
+  cnd -= ctr2;
+  cnd -= 1;
+  done |= cnd;
+  cnd = KYBER_N;
+  cnd -= ctr3;
+  cnd -= 1;
+  done |= cnd;
+  done >>= 63;
 
-  extseed0[KYBER_SYMBYTES]   = 2;
-  extseed0[KYBER_SYMBYTES+1] = 2;
-  
-  state[u64 0:25] = shake128_absorb34(state[u64 0:25], extseed0);
-  
+  while(done == 0) {
+    state, buf0[0:SHAKE128_RATE], buf1[0:SHAKE128_RATE], buf2[0:SHAKE128_RATE], buf3[0:SHAKE128_RATE] = shake128_squeezeblock4x(state, buf0[0:SHAKE128_RATE], buf1[0:SHAKE128_RATE], buf2[0:SHAKE128_RATE], buf3[0:SHAKE128_RATE]);
+
+    ctr0, rr[1*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[1*KYBER_VECN+0*KYBER_N:KYBER_N], ctr0, buf0, SHAKE128_RATE);
+    ctr1, rr[1*KYBER_VECN+1*KYBER_N:KYBER_N] = rej_uniform(rr[1*KYBER_VECN+1*KYBER_N:KYBER_N], ctr1, buf1, SHAKE128_RATE);
+    ctr2, rr[2*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform(rr[2*KYBER_VECN+2*KYBER_N:KYBER_N], ctr2, buf2, SHAKE128_RATE);
+    ctr3, rr[2*KYBER_VECN+0*KYBER_N:KYBER_N] = rej_uniform(rr[2*KYBER_VECN+0*KYBER_N:KYBER_N], ctr3, buf3, SHAKE128_RATE);
+
+    cnd = KYBER_N;
+    cnd -= ctr0;
+    cnd -= 1;
+    done = cnd;
+    cnd = KYBER_N;
+    cnd -= ctr1;
+    cnd -= 1;
+    done |= cnd;
+    cnd = KYBER_N;
+    cnd -= ctr2;
+    cnd -= 1;
+    done |= cnd;
+    cnd = KYBER_N;
+    cnd -= ctr3;
+    cnd -= 1;
+    done |= cnd;
+    done >>= 63;
+  }
+
+  f = __s2r(fs);
+  buf0[u256 0] = f;
+  buf0[KYBER_SYMBYTES]   = 2;
+  buf0[KYBER_SYMBYTES+1] = 2;
+
+  state[u64 0:25] = shake128_absorb34(state[u64 0:25], buf0[0:34]);
   state[u64 0:25], buf0 = shake128_squeezenblocks(state[u64 0:25], buf0);
-  
+
   ctr0 = 0;
-  ctr0, rr[2*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform(rr[2*KYBER_VECN+2*KYBER_N:KYBER_N], ctr0, buf0, GENMATRIX_NBLOCKS*SHAKE128_RATE);
-  
-  //TODO: Check if enough has been generated; squeeze more
+  ctr0, rr[2*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform_avx(rr[2*KYBER_VECN+2*KYBER_N:KYBER_N], buf0, GENMATRIX_NBLOCKS*SHAKE128_RATE);
+
+  done = KYBER_N;
+  done -= ctr0;
+  done -= 1;
+  done >>= 63;
+
+  while(done == 0) {
+    ctr0_s = ctr0;
+    state[u64 0:25], buf0[0:SHAKE128_RATE] = shake128_squeezeblock(state[u64 0:25], buf0[0:SHAKE128_RATE]);
+    ctr0 = ctr0_s;
+
+    ctr0, rr[2*KYBER_VECN+2*KYBER_N:KYBER_N] = rej_uniform(rr[2*KYBER_VECN+2*KYBER_N:KYBER_N], ctr0, buf0, SHAKE128_RATE);
+
+    done = KYBER_N;
+    done -= ctr0;
+    done -= 1;
+    done >>= 63;
+  }
 
   for i = 0 to KYBER_K
   {

@@ -28,7 +28,7 @@ export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap)
   a[KYBER_N:KYBER_N] = nttunpack(a[KYBER_N:KYBER_N]);
   a[2*KYBER_N:KYBER_N] = nttunpack(a[2*KYBER_N:KYBER_N]);
 
-  polyvec_tobytes(rp, a);
+  polyvec_tobytes_avx(rp, a);
 }
 
 
@@ -39,7 +39,7 @@ export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_VECN] r;
 
-  r = polyvec_decompress(ap);
+  r = polyvec_decompress_avx(ap);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -60,7 +60,7 @@ export fn polyvec_compress_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  polyvec_compress(rp, a);
+  polyvec_compress_avx(rp, a);
 }
 
 
@@ -71,7 +71,7 @@ export fn polyvec_frombytes_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_VECN] r;
 
-  r = polyvec_frombytes(ap);
+  r = polyvec_frombytes_avx(ap);
 
   r[0:KYBER_N] = nttpack(r[0:KYBER_N]);
   r[KYBER_N:KYBER_N] = nttpack(r[KYBER_N:KYBER_N]);

@@ -1,52 +1,57 @@
 CC=/usr/bin/gcc
+GFLAGS?=
 CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
-JASMIN=jasminc
+JASMIN=jasminc_dev
 JFLAGS=-lea ${JADDFLAGS}
+OS = $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o
 
 default: test speed
 
 test: test/test_poly_compress \
- 		  test/test_poly_decompress \
-			test/test_poly_tobytes \
-			test/test_poly_frombytes \
-			test/test_poly_tomsg \
-			test/test_poly_frommsg \
-			test/test_poly_add2 \
- 			test/test_poly_sub \
- 			test/test_poly_ntt \
- 			test/test_poly_invntt \
- 			test/test_poly_basemul \
- 			test/test_poly_frommont \
- 			test/test_poly_reduce \
- 			test/test_poly_csubq \
- 			test/test_poly_getnoise \
-			test/test_polyvec_compress\
-			test/test_polyvec_decompress\
-			test/test_polyvec_tobytes \
-			test/test_polyvec_frombytes \
-			test/test_polyvec_add2 \
-			test/test_polyvec_ntt \
-			test/test_polyvec_invntt \
-			test/test_polyvec_pointwise_acc \
-			test/test_polyvec_reduce\
-			test/test_polyvec_csubq \
- 			test/test_fips202 \
- 			test/test_gen_matrix \
- 			test/test_indcpa \
+      test/test_poly_decompress \
+      test/test_poly_tobytes \
+      test/test_poly_frombytes \
+      test/test_poly_tomsg \
+      test/test_poly_frommsg \
+      test/test_poly_add2 \
+      test/test_poly_sub \
+      test/test_poly_ntt \
+      test/test_poly_invntt \
+      test/test_poly_basemul \
+      test/test_poly_frommont \
+      test/test_poly_reduce \
+      test/test_poly_csubq \
+      test/test_poly_getnoise \
+      test/test_polyvec_compress\
+      test/test_polyvec_decompress\
+      test/test_polyvec_tobytes \
+      test/test_polyvec_frombytes \
+      test/test_polyvec_add2 \
+      test/test_polyvec_ntt \
+      test/test_polyvec_invntt \
+      test/test_polyvec_pointwise_acc \
+      test/test_polyvec_reduce\
+      test/test_polyvec_csubq \
+      test/test_fips202 \
+      test/test_gen_matrix \
+      test/test_indcpa \
 
-speed: test/speed_indcpa
+speed: test/speed_indcpa \
+       test/speed_kyber
 
-HEADERS = params.h poly.h fips202.h ntt.h \
+HEADERS = params.h poly.h fips202.h ntt.h indcpa.h \
 
 
 JHEADERS = params.jahh \
-				   reduce.jahh \
+           reduce.jahh \
+           fips202_common.jahh \
            fips202.jahh \
-					 fips202_4x.jahh \
-					 consts.jahh \
-					 shuffle.jahh
+           fips202_4x.jahh \
+           keccakf1600.jahh \
+           consts.jahh \
+           shuffle.jahh
 
 POLYHEADERS = poly_compress.jahh \
               poly_decompress.jahh \
@@ -86,37 +91,42 @@ test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
+test/speed_kyber: test/speed_kyber.c $(HEADERS) $(SOURCES) $(INCS) jspeed.s
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jspeed.s $<
+
 test/test_fips202: test/test_fips202.c $(HEADERS) fips202.c jfips202.s
 	$(CC) $(CFLAGS) -o $@ fips202.c jfips202.s $<
- 
+
 test/test_gen_matrix: test/test_gen_matrix.c $(HEADERS) gen_matrix.s
 	$(CC) $(CFLAGS) -o $@ gen_matrix.s $<
- 
+
 test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) $(INCS) jpoly.s 
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s $<
-			
+
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
 
 jfips202.japp: jfips202.jazz fips202.jahh
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
-gen_matrix.japp: gen_matrix.jazz gen_matrix.jahh
-	cat $< | $(CC) -E - | grep -v ^# > $@
+gen_matrix.japp: gen_matrix.jazz gen_matrix.jahh $(JHEADERS)
+	gpp -I. $(GFLAGS) -o $@ $<
 
 jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
+
+jspeed.japp: jspeed.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
+	gpp -I. $(GFLAGS) -o $@ $<
 
 jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
+	gpp -I. $(GFLAGS) -o $@ $<
 
 %.s: %.japp
-	$(JASMIN) -o $@ $(JFLAGS) $^ 
-
+	$(JASMIN) -o $@ $(JFLAGS) $^
 
 .PHONY: clean
 
@@ -124,10 +134,11 @@ clean:
 	-rm *.japp
 	-rm *.o
 	-rm gen_matrix.s
-	-rm indcpa.s
+	-rm jindcpa.s
 	-rm jfips202.s
 	-rm jpoly.s
 	-rm jpolyvec.s
+	-rm jspeed.s
 	-rm test/test_poly_compress
 	-rm test/test_poly_decompress
 	-rm test/test_poly_tobytes
@@ -154,6 +165,10 @@ clean:
 	-rm test/test_polyvec_reduce
 	-rm test/test_polyvec_csubq
 	-rm test/test_fips202
+	-rm test/test_gen_matrix
 	-rm test/test_indcpa
 	-rm test/speed_indcpa
+	-rm test/speed_kyber
+ifeq ($(OS),Darwin)
 	-rm -r test/*.dSYM
+endif
