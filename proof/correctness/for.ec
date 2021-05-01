@@ -98,6 +98,109 @@ end FOR_INT_ADD_LT.
 
 
 
+theory FOR_NAT_MUL_LE.
+
+  clone include FOR with 
+    type t <- int,
+    type it <- int,
+    type ct <- int,
+    op incr <- (fun i x : int => x * i),
+    op cond <- (fun c x : int => x <= c),
+    op out = (fun i c x : int =>
+                if (c < x) then 0
+                else ilog i (c %/ x) + 1),
+    op finite <- (fun i c x : int => (c < x) \/ (1 < i /\ (0 < x))),
+    op val <- (fun i x n : int => x * (i ^ n))
+    proof *.
+
+    realize val_iter.
+    proof. by move => i x; elim; [rewrite iter0 // expr0|move => n le0n; rewrite exprSr // mulrA iterS //= => ->]. qed.
+
+    realize finite_nsempty.
+    proof.
+      move => i c x /or_andr [ltcx|[nltcx [lt1i lt0x]]];
+      apply semptyNP; exists (out i c x); rewrite /out.
+      + by rewrite ltcx /=; split => //; rewrite /ncond_val lerNgt expr0.
+      rewrite nltcx /ncond_val /=; split.
+      + by apply addz_ge0 => //; apply ilog_ge0 => //;
+        [apply/ltzW|apply lez_divRL => //=; apply lezNgt].
+      apply/ltzNge; rewrite mulzC; apply/ltz_divLR => //; case (ilogP i (c %/ x) _ _) => //.
+      by apply lez_divRL => //=; apply lezNgt.
+    qed.
+
+    realize pmin_out.
+    proof.
+      move => i c x /or_andr [ltcx|[nltcx [lt1i lt0x]]]; [rewrite /out ltcx /=|rewrite /out nltcx /=]; apply pmin_eq => //.
+      + by rewrite /ncond_val expr0 /= lezNgt.
+      + by move => j [le0j ltj0]; move: (ler_lt_trans _ _ _ le0j ltj0).
+      + by apply addz_ge0 => //; apply ilog_ge0 => //;
+        [apply/ltzW|apply lez_divRL => //=; apply lezNgt].
+      + apply/ltzNge; rewrite mulzC; apply/ltz_divLR => //; case (ilogP i (c %/ x) _ _) => //.
+        by apply lez_divRL => //=; apply lezNgt.
+      move => j [le0j ltj_]; rewrite /ncond_val /= mulzC -lez_divRL //.
+      apply/(lez_trans (i ^ (ilog i (c %/ x)))).
+      + by apply ler_weexpn2l; [apply ltzW|split => // _; apply ltzS].
+      by case (ilogP i (c %/ x) _ _) => //; apply lez_divRL => //=; apply lezNgt.
+    qed.
+
+end FOR_NAT_MUL_LE.
+
+
+theory FOR_NAT_DIV_GE.
+
+  clone include FOR with 
+    type t <- int,
+    type it <- int,
+    type ct <- int,
+    op incr <- (fun i x : int => x %/ i),
+    op cond <- (fun c x : int => c <= x),
+    op out = (fun i c x : int =>
+                if (x < c) then 0
+                else ilog i (x %/ c) + 1),
+    op finite <- (fun i c x : int => (x < c) \/ (1 < i /\ (0 < x))),
+    op val <- (fun i x n : int => x %/ (i ^ n))
+    proof *.
+
+    realize val_iter.
+    proof.
+      move => i x; elim; first by rewrite iter0 // expr0.
+      move => n le0n.
+      rewrite exprSr //. mulrA iterS //= => ->.
+    qed.
+
+    realize finite_nsempty.
+    proof.
+      move => i c x /or_andr [ltcx|[nltcx [lt1i lt0x]]];
+      apply semptyNP; exists (out i c x); rewrite /out.
+      + by rewrite ltcx /=; split => //; rewrite /ncond_val lerNgt expr0.
+      rewrite nltcx /ncond_val /=; split.
+      + by apply addz_ge0 => //; apply ilog_ge0 => //;
+        [apply/ltzW|apply lez_divRL => //=; apply lezNgt].
+      apply/ltzNge; rewrite mulzC; apply/ltz_divLR => //; case (ilogP i (c %/ x) _ _) => //.
+      by apply lez_divRL => //=; apply lezNgt.
+    qed.
+
+    realize pmin_out.
+    proof.
+      move => i c x /or_andr [ltcx|[nltcx [lt1i lt0x]]]; [rewrite /out ltcx /=|rewrite /out nltcx /=]; apply pmin_eq => //.
+      + by rewrite /ncond_val expr0 /= lezNgt.
+      + by move => j [le0j ltj0]; move: (ler_lt_trans _ _ _ le0j ltj0).
+      + by apply addz_ge0 => //; apply ilog_ge0 => //;
+        [apply/ltzW|apply lez_divRL => //=; apply lezNgt].
+      + apply/ltzNge; rewrite mulzC; apply/ltz_divLR => //; case (ilogP i (c %/ x) _ _) => //.
+        by apply lez_divRL => //=; apply lezNgt.
+      move => j [le0j ltj_]; rewrite /ncond_val /= mulzC -lez_divRL //.
+      apply/(lez_trans (i ^ (ilog i (c %/ x)))).
+      + by apply ler_weexpn2l; [apply ltzW|split => // _; apply ltzS].
+      by case (ilogP i (c %/ x) _ _) => //; apply lez_divRL => //=; apply lezNgt.
+    qed.
+
+end FOR_NAT_DIV_GE.
+
+
+
+(*TODO: the beefier version.*)
+(*
 theory FOR_INT_MUL_LE.
 
   clone include FOR with 
@@ -120,17 +223,19 @@ theory FOR_INT_MUL_LE.
 
     realize finite_nsempty.
     proof.
-      move => i c x /or_andr [ltcx|[nltcx /or_andr [ltc_|[nltc_ [lt1abzi [neqx0 Hix]]]]]]; apply semptyNP; exists (out i c x); rewrite /out.
+      move => i c x /or_andr [ltcx|[nltcx /or_andr [ltc_|[nltc_ [lt1normi [neqx0 Hix]]]]]]; apply semptyNP; exists (out i c x); rewrite /out.
       + by rewrite ltcx /=; split => //; rewrite /ncond_val lerNgt expr0.
       + by rewrite nltcx ltc_ /=; split => //; rewrite /ncond_val lerNgt expr1.
       rewrite nltcx nltc_ /=.
-      (*TODO: why does this not put the case inthe context?*)
+      (*TODO: why does this not put the case in the context?*)
       (*case (_ \/ (_ <=> _)).*)
-      case (1 < i \/ (x < 0 <=> ilog (`|i|) (`|c| %/ `|x|) %% 2 = 0)) => [[lt1i|Heq]|/negb_or [nlt1i /negb_eqbl Heq]];
+      case (1 < i \/ (x < 0 <=> ilog (`|i|) (`|c| %/ `|x|) %% 2 = 0)) => [/or_andr [lt1i|[nlt1i Heq]]|/negb_or [nlt1i /negb_eqbl Heq]];
       (split; first by apply/addr_ge0 => //; apply/ilog_ge0; [apply/ltzW|apply/lez_divRL; smt()]).
       + rewrite /ncond_val lerNgt /= mulrC -ltz_divLR ?Hix // !gtr0_norm 1,2,3:/#.
         by move: (ilogP i (c %/ x) _ _) => //=; apply/lez_divRL; smt().
-      + admit.
+      + rewrite /ncond_val lerNgt /= mulrC; move: lt1normi => /ltr_normr; case => // ltinegi.
+        search _ (_ < `|_|)%Int.
+        admit.
       admit.
     qed.
 
@@ -146,3 +251,4 @@ end FOR_INT_MUL_LE.
 theory FOR_INT_DIV_GE.
 
 end FOR_INT_DIV_GE.
+*)
