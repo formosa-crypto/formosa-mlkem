@@ -36,7 +36,7 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   stack u8[KYBER_SYMBYTES] publicseed noiseseed;
   stack u8[32] inbuf;
   reg u8 c;
-  reg u8 nonce0 nonce1 nonce2 nonce3;
+  reg u8 c nonce;
   reg u64 i, j;
 
   stack u64 spkp;
@@ -69,17 +69,11 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 
   aa = gen_matrix(publicseed, 0);
 
-  nonce0 = 0;
-  nonce1 = 1;
-  nonce2 = 2;
-  nonce3 = 3;
-  skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N] = poly_getnoise_4x(skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N], noiseseed, nonce0, nonce1, nonce2, nonce3);
+  nonce = 0;
+  skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N] = poly_getnoise_4x(skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N], noiseseed, nonce);
 
-  nonce0 = 4;
-  nonce1 = 5;
-  nonce2 = 6;
-  nonce3 = 7;
-  e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N] = poly_getnoise_4x(e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N], noiseseed, nonce0, nonce1, nonce2, nonce3);
+  nonce = 4;
+  e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N] = poly_getnoise_4x(e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N], noiseseed, nonce);
 
   skpv = polyvec_ntt(skpv);
   e    = polyvec_ntt(e);
@@ -102,6 +96,16 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 
   i = 0;
   pkp += KYBER_POLYVECBYTES; 
+  while (i < KYBER_SYMBYTES/8)
+  {
+    j = publicseed[u64 (int)i];
+    (u64)[pkp] = j;
+    pkp += 8;
+    i += 1;
+  }
+
+  i <<= 3;
+
   while (i < KYBER_SYMBYTES)
   {
     c = publicseed[(int)i];
@@ -121,7 +125,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   stack u8[KYBER_SYMBYTES] noiseseed;
   reg u64 i j;
   reg u16 t;
-  reg u8 c nonce0 nonce1 nonce2 nonce3;
+  reg u8 c nonce;
   stack u64 sctp;
 
   sctp = ctp;
@@ -150,19 +154,12 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
 
   aat = gen_matrix(publicseed, 1);
 
-  nonce0 = 0;
-  nonce1 = 1;
-  nonce2 = 2;
-  nonce3 = 3;
+  nonce = 0;
+  sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N] = poly_getnoise_4x(sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N], noiseseed, nonce);
 
-  sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N] = poly_getnoise_4x(sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N], noiseseed, nonce0, nonce1, nonce2, nonce3);
+  nonce = 4;
+  ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N] = poly_getnoise_4x(ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N], noiseseed, nonce);
 
-  nonce0 = 4;
-  nonce1 = 5;
-  nonce2 = 6;
-  nonce3 = 7;
-
-  ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N] = poly_getnoise_4x(ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N], noiseseed, nonce0, nonce1, nonce2, nonce3);
 
   sp = polyvec_ntt(sp);
     
