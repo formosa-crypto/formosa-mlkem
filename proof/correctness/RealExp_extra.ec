@@ -74,6 +74,3 @@ by rewrite lez_divRL 1:/# ltz_divLR 1:/# -!IntID.exprSr //; smt(ilog_ge0).
 qed.
 
 hint simplify ilog_small, ilog_dvd.
-
-lemma ilog_2_67_6 : ilog 2 67 = 6.
-proof. by simplify. qed.

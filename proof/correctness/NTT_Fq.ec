@@ -1,7 +1,8 @@
 require import AllCore IntDiv Array256 Array128.
 require import List Ring StdOrder Fq.
 require import IntMin.
-require import IntDiv_extra For.
+require import Ring_extra RealExp_extra IntDiv_extra.
+require import IntDiv_hakyber For.
 
 import Fq IntOrder.
 theory NTT_Fq.
