@@ -1,15 +1,14 @@
 require import AllCore IntDiv Array256 Array128.
 require import List Ring StdOrder Fq.
 require import IntMin.
-require import Ring_extra RealExp_extra IntDiv_extra.
-require import IntDiv_hakyber For.
+require import List_extra Ring_extra RealExp_extra IntDiv_extra.
+require import List_hakyber IntDiv_hakyber BitEncoding_hakyber For.
 
 import Fq IntOrder.
 theory NTT_Fq.
 
 import Kyber_.
 import ZModField.
-import BitEncoding.BS2Int.
 
 (* These are imperative specifications of the NTT algorithms  *)
 
@@ -304,36 +303,6 @@ end DFT.
 
 theory NTTequiv.
 
-  op bitrev (i k : int) = bs2int (rev (int2bs i k)).
-
-  lemma bitrev_ineq (i k : int) :
-    0 <= i =>
-    0 <= bitrev i k < 2 ^ i.
-  proof.
-    move => le0i; split; [apply bs2int_ge0|move => _]; rewrite /bitrev; move: (size_int2bs i k) => @/max.
-    by case: (0 < i) => [_ {2}<-|lei0]; [|(have <-: (i = 0) by smt()); move => {2}<-]; rewrite -size_rev; apply bs2int_le2Xs.
-  qed.
-
-  lemma bitrev_involutive (i k : int) :
-    0 <= i =>
-    k \in range 0 (2 ^ i) =>
-    bitrev i (bitrev i k) = k.
-  proof.
-    move => le0i /mem_range [le0k ltk2powi] @/bitrev.
-    suff {1}->: i = size (rev (int2bs i k)).
-    - by rewrite bs2intK revK int2bsK.
-    by rewrite size_rev size_int2bs ler_maxr.
-  qed.
-
-  lemma bitrev_injective (i k1 k2 : int) :
-    0 <= i =>
-    k1 \in range 0 (2 ^ i) =>
-    k2 \in range 0 (2 ^ i) =>
-    bitrev i k1 = bitrev i k2 =>
-    k1 = k2.
-  proof.
-    by move => le0i Hk1in Hk2in eq_bitrev; rewrite -(bitrev_involutive i k1) // -(bitrev_involutive i k2) // eq_bitrev.
-  qed.
 
   import ZModpRing.
 
@@ -347,7 +316,7 @@ theory NTTequiv.
      while (len <= 64) {
       start <- 0;
       while(start < len) {
-         zetasctr <- start;
+         zetasctr <- bitrev 8 (len + start);
          zeta_ <- exp (ZModpRing.ofint(17)) zetasctr; 
          j <- 0;
          while (j < 256) {
@@ -564,45 +533,17 @@ theory NTTequiv.
   (*- one that gives a postcondition when the loop being adressed is a for loop*)
   (*- another that does the same for the specific for loops that always write on different parts of the memory that is described in the postcondition (the two innermost loops in our case)*)
 
-  abbrev all_range P (min max : int) = all P (range min max).
-
-  lemma all_range_empty P (min max : int) : max <= min => all_range P min max.
-  proof.
-    by move => lemaxmin; rewrite range_geq.
-  qed.
-
-  lemma all_range_min P (min max : int) : min < max => all_range P min max <=> P min /\ all_range P (min + 1) max.
-  proof.
-    by move => ltminmax; rewrite range_ltn.
-  qed.
-
-  lemma all_range_max P (min max : int) : min < max => all_range P min max <=> P (max - 1) /\ all_range P min (max - 1).
-  proof.
-    move => ltminmax; rewrite -{1}(IntID.subrK max 1) rangeSr; first by apply/(ler_add2r 1) => /=; apply/ltzE.
-    split => [/allP Hall|[HP /allP Hall]].
-    + by split; [|apply/allP => x Hin]; apply Hall; rewrite mem_rcons // in_cons; right.
-    by apply /allP => x; rewrite mem_rcons in_cons; case => [->> //|]; apply Hall.
-  qed.
-
-  lemma all_range_imp P Q (min max : int) : (forall x , x \in range min max => P x => Q x) => all_range P min max => all_range Q min max.
-  proof.
-    by move => Himp /allP HallrangeP; apply /allP => x Hxin; apply Himp => //; apply HallrangeP.
-  qed.
-
-  abbrev all_range_2 P (min1 max1 min2 max2 : int) = all_range (fun x => all_range (P x) min1 max1) min2 max2.
-
-  abbrev index (len a b : int) = bitrev 8 (len * a + b).
+  abbrev index (len a b : int) = bitrev 8 (a * len + b).
 
   op partial_ntt (p : zmod Array256.t, len a b : int) =
   BAdd.bigi
     predT
     (fun k =>
-      p.[index len k b] *
-      (exp zeta1_ (k * a)))
+      (exp zeta1_ (bitrev 8 (k * b))) *
+      p.[index len a k])
     0 len.
 
   op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
-
 
   lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
     (forall i ,
@@ -611,12 +552,12 @@ theory NTTequiv.
       hoare
         [NTT3.ntt :
         arg = (p,zs) ==>
-        all_range_2 (partial_ntt_spec res p 128) 0 128 0 2].
+        all_range_2 (partial_ntt_spec res p 128) 0 2 0 128].
   proof.
     move => Hzs; proc; sp.
     while (
-      all_range_2 (partial_ntt_spec r p len) 0 len 0 (256 %/ len) /\
-      FOR_NAT_MUL_LE.inv 2 64 1 len).
+      FOR_NAT_MUL_LE.inv 2 64 1 len /\
+      all_range_2 (partial_ntt_spec r p len) 0 (256 %/ len) 0 len).
     + sp; wp => /=.
       while (
         all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
