@@ -5,7 +5,7 @@ JASMIN=jasminc_dev
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
-.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o
+.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jindcca.s
 
 default: test speed
 
@@ -37,12 +37,12 @@ test: test/test_poly_compress \
       test/test_fips202 \
       test/test_gen_matrix \
       test/test_indcpa \
+			test/test_indcca
 
 speed: test/speed_indcpa \
        test/speed_kyber
 
-HEADERS = params.h poly.h fips202.h ntt.h indcpa.h \
-
+HEADERS = params.h poly.h fips202.h ntt.h indcpa.h indcca.h \
 
 JHEADERS = params.jahh \
            reduce.jahh \
@@ -51,7 +51,8 @@ JHEADERS = params.jahh \
            fips202_4x.jahh \
            keccakf1600.jahh \
            consts.jahh \
-           shuffle.jahh
+           shuffle.jahh \
+					 indcpa.jahh
 
 POLYHEADERS = poly_compress.jahh \
               poly_decompress.jahh \
@@ -83,10 +84,13 @@ POLYVECHEADERS = polyvec_compress.jahh \
                  gen_matrix.jahh \
 
 INCS    = fq.inc shuffle.inc
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c consts.c shuffle.S fq.S\
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c indcca.c consts.c shuffle.S fq.S\
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
+
+test/test_indcca: test/test_indcca.c $(HEADERS) $(SOURCES) $(INCS) jindcca.o
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcca.o $<
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
@@ -125,6 +129,9 @@ jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
 	gpp -I. $(GFLAGS) -o $@ $<
 
+jindcca.japp: indcca.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
+	gpp -I. $(GFLAGS) -o $@ $<
+
 %.s: %.japp
 	$(JASMIN) -o $@ $(JFLAGS) $^
 
@@ -135,6 +142,7 @@ clean:
 	-rm *.o
 	-rm gen_matrix.s
 	-rm jindcpa.s
+	-rm jindcca.s
 	-rm jfips202.s
 	-rm jpoly.s
 	-rm jpolyvec.s
@@ -167,6 +175,7 @@ clean:
 	-rm test/test_fips202
 	-rm test/test_gen_matrix
 	-rm test/test_indcpa
+	-rm test/test_indcca
 	-rm test/speed_indcpa
 	-rm test/speed_kyber
 ifeq ($(OS),Darwin)

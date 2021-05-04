@@ -1,0 +1,157 @@
+#include "indcpa.jahh"
+
+export fn indcca_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+{
+  stack u8[32] h_pk;
+  stack u64 s_randomnessp s_skp s_pkp;
+  reg u64 t64;
+  inline int i;
+
+  //indcpa_keypair(pkp, skp, randomnessp);
+
+  randomnessp += KYBER_SYMBYTES;
+  s_randomnessp = randomnessp;
+
+  skp += KYBER_POLYVECBYTES;
+  
+  for i=0 to KYBER_POLYVECBYTES/8 + 4
+  {
+    t64 = (u64)[pkp + 8*i];
+    skp += 8*i;
+    (u64)[skp] = t64;
+  }
+
+  s_skp = skp;
+  h_pk = isha3_256(h_pk, pkp, KYBER_POLYVECBYTES + 32);
+  skp = s_skp;
+
+  for i=0 to 4
+  {
+    t64 = h_pk[u64 i];
+    skp += 8*i;
+    (u64)[skp] = t64;
+  }
+  
+  randomnessp = s_randomnessp;
+
+  for i=0 to 4
+  {
+    t64 = (u64)[randomnessp + 8*i];
+    (u64)[skp + 8*i] = t64;
+  }
+}
+
+
+export fn indcca_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 shkp)
+{
+  stack u8[KYBER_CT_LEN] ctpc;
+  stack u8[64] a64 a64_1;
+  stack u64 s_pkp s_ctp s_shkp;
+  reg u64 t64;
+  inline int i;
+
+  s_pkp = pkp;
+  s_ctp = ctp;
+  s_shkp = shkp;
+  
+  a64[0:32] = isha3_256(a64[0:32], msgp, 32);
+
+  pkp = s_pkp;
+
+  a64[32:32] = isha3_256(a64[32:32], pkp, 32);
+
+  a64_1 = sha3_512_64(a64_1, a64);
+
+  pkp = s_pkp;
+
+  ctpc = indcpa_enc(ctpc, a64[0:32], pkp, a64[32:KYBER_SYMBYTES]);
+
+  ctp = s_ctp;
+
+  for i=0 to KYBER_CT_LEN/8
+  {
+    t64 = ctpc[u64 i];
+    (u64)[ctp + 8*i] = t64;
+  }
+
+  a64[32:32] = isha3_256(a64[32:32], ctp, KYBER_CT_LEN);
+
+  shkp = s_shkp;
+  t64 = 16;
+  shake256_64(shkp, t64, a64);
+}
+
+
+export fn indcca_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
+{
+  stack u8[KYBER_CT_LEN] ctpc;
+  stack u8[64] a64 a64_1;
+  stack u8[KYBER_N/8 + 32] m;
+  stack u64 s_skp s_ctp s_shkp;
+  reg u64 pkp hp zp t1 t2 cnd;
+  inline int i;
+
+  s_shkp = shkp;
+
+  m[0:KYBER_N/8] = indcpa_dec(m[0:KYBER_N/8], ctp, skp);
+
+  hp = skp + 32;
+  hp += 24 * KYBER_K * KYBER_N>>3;
+
+  for i=0 to 4
+  {
+    t1 = (u64)[hp + 8*i];
+    m.[u64 KYBER_N/8 + 8*i] = t1;
+  }
+
+  s_ctp = ctp;
+  s_skp = skp;
+
+  a64_1 = sha3_512_64(a64_1, a64);
+
+  pkp = s_skp;
+  pkp += 12 * KYBER_K * KYBER_N>>3;
+  
+  ctpc = indcpa_enc(ctpc, a64[0:32], pkp, a64[32:KYBER_SYMBYTES]);
+
+  ctp = s_ctp;
+  
+  //TODO: optimize with AVX2
+  cnd = 0;
+  for i=0 to KYBER_CT_LEN/8
+  {
+    t1 = ctpc[u64 i];
+    t2 = (u64)[ctp + 8*i];
+    t1 ^= t2;
+    cnd |= t1;
+  }
+
+  zp = s_skp;
+  zp += 64;
+  zp += 24 * KYBER_K * KYBER_N>>3;
+
+  if(cnd!=0)
+  {
+    for i=0 to 4
+    {
+      t1 = (u64)[zp + 8*i];
+      a64[u64 i] = t1;
+    }
+  }else{
+    for i=0 to 4
+    {
+      t1 = a64_1[u64 i];
+      a64[u64 i] = t1;
+    }
+  }
+
+  a64[32:32] = isha3_256(a64[32:32], ctp, KYBER_CT_LEN);
+
+  shkp = s_shkp;
+  t1 = 32;
+  shake256_64(shkp, t1, a64);
+}
+
+// H: SHA3-256
+// G: SHA3-512
+// KDF: SHAKE-256
