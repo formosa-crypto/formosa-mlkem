@@ -107,7 +107,14 @@ int main(void)
     t[i] = cpucycles();
     poly_getnoise_jazz(&ap, seed, 0);
   }
-  print_results("poly_getnoise: ", t, NRUNS);
+
+  /* Test get_noise_4x */
+  for(i=0;i<NRUNS;i++)
+  {
+    t[i] = cpucycles();
+    poly_getnoise_4x_jazz(&ap, &ap, &ap, &ap, seed, 0);
+  }
+  print_results("poly_getnoise_4x: ", t, NRUNS);
 
   /* Test NTT */
   for(i=0; i<NRUNS;i++)
