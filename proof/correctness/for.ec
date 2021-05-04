@@ -1,8 +1,8 @@
 require import AllCore StdOrder IntMin IntDiv List.
+(*---*) import IntOrder.
+require import Logic_extra IntDiv_extra RealExp.
+require import IntDiv_hakyber.
 
-import IntOrder.
-
-require import IntDiv_extra RealExp.
 
 abstract theory FOR.
 
@@ -58,7 +58,6 @@ abstract theory FOR.
 end FOR.
 
 
-
 theory FOR_INT_ADD_LT.
 
   clone include FOR with 
@@ -96,7 +95,6 @@ theory FOR_INT_ADD_LT.
     qed.
 
 end FOR_INT_ADD_LT.
-
 
 
 theory FOR_NAT_MUL_LE.
