@@ -233,6 +233,200 @@ fn shake256(reg u64 out outlen in inlen)
   keccak1600_scalar(out, outlen, in, inlen, config);
 }
 
+
+#[returnaddress="stack"]
+fn sha3_512(reg u64 out in inlen)
+{
+  reg u64 ds;
+  reg u64 rate;
+  stack u64[2] config;
+
+  ds = 0x06;
+  rate = SHA3512_RATE;
+  config[0] = ds;
+  config[1] = rate;
+  keccak1600_scalar(out, 64, in, inlen, config);
+}
+
+
+#[returnaddress="stack"]
+fn sha3_256(reg u64 out in inlen)
+{
+  reg u64 ds;
+  reg u64 rate;
+  stack u64[2] config;
+
+  ds = 0x06;
+  rate = SHA3256_RATE;
+  config[0] = ds;
+  config[1] = rate;
+  keccak1600_scalar(out, 32, in, inlen, config);
+}
+
+inline
+fn isha3_256(reg ptr u8[32] out, reg u64 in, inline int inlen) -> stack u8[32]
+{
+  stack u64[25] state;
+  stack ptr u8[32] s_out;
+  stack u64 s_in s_ilen s_r8;
+  reg u64 ilen r8 t64;
+  reg u8 t8;
+  inline int i;
+
+  s_out = out;
+
+  state = st0(state);
+
+  r8 = SHA3256_RATE;
+  ilen = inlen;
+
+  while(ilen > r8)
+  {
+    state, in, ilen = add_full_block(state, in, ilen, r8);
+
+    s_in = in;
+    s_ilen = ilen;
+    s_r8 = r8;
+
+    state = __keccakf1600_scalar(state);
+
+    in = s_in;
+    ilen = s_ilen;
+    r8 = s_r8;
+  }
+
+  t8 = 0x06;
+  state = add_final_block(state, in, ilen, t8, r8);
+
+  state = __keccakf1600_scalar(state);
+
+  out = s_out;
+
+  for i=0 to 4
+  {
+    t64 = state[i];
+    out[u64 i] = t64;
+  }
+
+  return out;
+}
+
+inline
+fn isha3_512(reg ptr u8[64] out, reg u64 in, inline int inlen) -> stack u8[64]
+{
+  stack u64[25] state;
+  stack ptr u8[64] s_out;
+  stack u64 s_in s_ilen s_r8;
+  reg u64 ilen r8 t64;
+  reg u8 t8;
+  inline int i;
+
+  s_out = out;
+
+  state = st0(state);
+
+  r8 = SHA3512_RATE;
+  ilen = inlen;
+
+  while(ilen > r8)
+  {
+    state, in, ilen = add_full_block(state, in, ilen, r8);
+
+    s_in = in;
+    s_ilen = ilen;
+    s_r8 = r8;
+
+    state = __keccakf1600_scalar(state);
+
+    in = s_in;
+    ilen = s_ilen;
+    r8 = s_r8;
+  }
+
+  t8 = 0x06;
+  state = add_final_block(state, in, ilen, t8, r8);
+
+  state = __keccakf1600_scalar(state);
+
+  out = s_out;
+
+  for i=0 to 8
+  {
+    t64 = state[i];
+    out[u64 i] = t64;
+  }
+
+  return out;
+}
+
+#[returnaddress="stack"]
+fn shake256_64(reg u64 out outlen, reg const ptr u8[64] in)
+{
+  reg u64 t64 j;
+  reg u8 c;
+  stack u64[25] state;
+  stack u64 s_out s_outlen;
+  inline int i;
+
+  s_out = out;
+  s_outlen = outlen;
+
+  state = st0(state);
+
+  for i = 0 to 8 {
+    t64 = in[u64 i];
+    state[u64 i] ^= t64;
+  }
+
+  state[u8 64] ^= 0x1f;
+  state[u8 SHAKE256_RATE-1] ^= 0x80;
+
+  state = __keccakf1600_scalar(state);
+
+  outlen = s_outlen;
+  out = s_out;
+
+  while(outlen > SHAKE256_RATE)
+  {
+    for i = 0 to SHAKE256_RATE/8
+    {
+      t64 = state[u64 i];
+      (u64)[out + 8*i] = t64;
+    }
+
+    out += SHAKE256_RATE;
+    outlen -= SHAKE256_RATE;
+
+    s_out = out;
+    s_outlen = outlen;
+
+    state = __keccakf1600_scalar(state);
+
+    outlen = s_outlen;
+    out = s_out;
+  }
+
+  s_outlen = outlen;
+  outlen >>= 3;
+  j = 0;
+  while(j < outlen)
+  {
+    t64 = state[(int) j];
+    (u64)[out + 8 * j] = t64;
+    j = j + 1;
+  }
+
+  j <<= 3;
+  outlen = s_outlen;
+
+  while (j < outlen)
+  {
+    c = state[u8 (int) j];
+    (u8)[out + j] = c;
+    j = j + 1;
+  }
+}
+
 #[returnaddress="stack"]
 fn shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 {
@@ -270,6 +464,40 @@ fn shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128
 }
 
 #[returnaddress="stack"]
+fn sha3_512_64(reg ptr u8[64] out, reg const ptr u8[64] in) -> stack u8[64]
+{
+  stack u64[25] state;
+  stack ptr u8[64] out_s;
+  reg u64 t64;
+  inline int i;
+
+  state = st0(state);
+
+  for i = 0 to 8
+  {
+    t64 = in[u64 i];
+    state[i] ^= t64;
+  }
+
+  state[u8 64] ^= 0x06;
+  state[u8 SHA3512_RATE - 1] ^= 0x80;
+
+  out_s = out;
+
+  state = __keccakf1600_scalar(state);
+
+  out = out_s;
+
+  for i = 0 to 8
+  {
+    t64 = state[i];
+    out[u64 i] = t64;
+  }
+
+  return out;
+}
+
+#[returnaddress="stack"]
 fn sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 {
   stack u64[25] state;
@@ -282,7 +510,7 @@ fn sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
   for i = 0 to 4
   {
     t64 = in[u64 i];
-    state[u64 i] ^= t64;
+    state[i] ^= t64;
   }
 
   state[u8 32] ^= 0x06;
