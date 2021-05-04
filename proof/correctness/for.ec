@@ -68,6 +68,7 @@ theory FOR_INT_ADD_LT.
     op incr <- (fun i x : int => x + i),
     op cond <- (fun c x : int => x < c),
     op out = (fun i c x : int => if c <= x then 0 else (c - x) %\ i),
+    (*TODO: put equal here*)
     op finite <- (fun i c x : int => (c <= x) \/ (0 < i)),
     op val <- (fun i x n : int => x + n * i)
     proof *.
@@ -146,6 +147,8 @@ theory FOR_NAT_MUL_LE.
 end FOR_NAT_MUL_LE.
 
 
+(*TODO: add axioms before clone.*)
+(*
 theory FOR_NAT_DIV_GE.
 
   clone include FOR with 
@@ -164,8 +167,10 @@ theory FOR_NAT_DIV_GE.
     realize val_iter.
     proof.
       move => i x; elim; first by rewrite iter0 // expr0.
-      move => n le0n.
-      rewrite exprSr //. mulrA iterS //= => ->.
+      move => n le0n; rewrite exprSr // iterS //= => <-; rewrite divz_mul //.
+      admit. admit.
+      search _ (_ %/ (-_)%Int)%IntDiv.
+      search _ (_ %/ (_ * _)%Int)%IntDiv.
     qed.
 
     realize finite_nsempty.
@@ -196,6 +201,7 @@ theory FOR_NAT_DIV_GE.
     qed.
 
 end FOR_NAT_DIV_GE.
+*)
 
 
 

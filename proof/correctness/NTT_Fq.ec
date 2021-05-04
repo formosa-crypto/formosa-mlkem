@@ -1,7 +1,7 @@
 require import AllCore IntDiv Array256 Array128.
 require import List Ring StdOrder Fq.
 require import IntMin.
-require import For.
+require import IntDiv_extra For.
 
 import Fq IntOrder.
 theory NTT_Fq.
@@ -602,20 +602,6 @@ theory NTTequiv.
 
   op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
 
-  (*TODO: add this in EasyCrypt (in Ring).*)
-  lemma mulzD1l x y : (x + 1) * y = x * y + y.
-  proof. by rewrite mulzDl. qed.
-
-  (*TODO: add in IntID*)
-  search _ 2 intmul.
-  lemma addz_double (x : int) : x + x = x * 2.
-  proof. by ring. qed.
-
-  (*TODO: move*)
-  lemma dvdNdiv x y : x <> 0 => x %| y => (-y) %/ x = - y %/ x.
-  proof.
-    by move => neqx0 /dvdzP [z ->>]; rewrite -mulNr !mulzK.
-  qed.
 
   lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
     (forall i ,
@@ -627,40 +613,55 @@ theory NTTequiv.
         all_range_2 (partial_ntt_spec res p 128) 0 128 0 2].
   proof.
     move => Hzs; proc; sp.
-    while
-      ( (exists k ,
-          0 <= k < 8 /\
-          len = 2 ^ k) /\
-        (all_range_2 (partial_ntt_spec r p len) 0 len 0 (256 %/ len))).
+    while (
+      all_range_2 (partial_ntt_spec r p len) 0 len 0 (256 %/ len) /\
+      FOR_NAT_MUL_LE.inv 2 64 1 len).
     + sp; wp => /=.
-      while
-        ( FOR_INT_ADD_LT.inv 1 len 0 start /\
-          all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
-          all_range_2 (partial_ntt_spec r p len) start len 0 (256 %/ len)).
+      while (
+        all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
+        all_range_2 (partial_ntt_spec r p len) start len 0 (256 %/ len) /\
+        FOR_INT_ADD_LT.inv 1 len 0 start).
       - sp; wp.
-        while
-          ( FOR_INT_ADD_LT.inv (len * 2) 256 0 j /\
-            all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
-            all_range (partial_ntt_spec r p (len * 2) (start * 2)) 0 (j %/ (len * 2)) /\
-            all_range (partial_ntt_spec r p (len * 2) (start * 2 + 1)) 0 (j %/ (len * 2)) /\
-            all_range (partial_ntt_spec r p len start) (j %/ len) (256 %/ len) /\
-            all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len)).
+        while (
+          all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
+          all_range (partial_ntt_spec r p (len * 2) (start * 2)) 0 (j %/ (len * 2)) /\
+          all_range (partial_ntt_spec r p (len * 2) (start * 2 + 1)) 0 (j %/ (len * 2)) /\
+          all_range (partial_ntt_spec r p len start) (j %/ len) (256 %/ len) /\
+          all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len) /\
+          FOR_INT_ADD_LT.inv (len * 2) 256 0 j).
         * sp; skip.
-          move => |> &hr j r Hinvj.
           (*TODO: why is the all_range_2 abbrev not abbreviating here, and why so slow for move?*)
-          move => IHstartpastj IHjpasteven IHjpastodd IHjfuture IHstartfuturej.
-          move => Hcondj k le0k ltk8 ->> le2powk64 Hcondstart Hinvstart.
-          have Hfinj: (256 <= 0 \/ 0 < 2 ^ k * 2) by move => /=; apply mulr_gt0 => //; apply expr_gt0.
-          rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ Hfinj Hinvj Hcondj) => /=.
-          move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ Hfinj Hinvj Hcondj) => /= [bsj [bsj_range ->>]].
-          move: (bsj_range) => /mem_range [le0bsj ltbsj_].
-          move: IHjpasteven IHjpastodd IHjfuture.
-          rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
-          rewrite {3}(mulzC (2 ^ k) 2) {1}mulrA mulzK; first by apply/gtr_eqF/expr_gt0.
-          move => IHjpasteven IHjpastodd IHjfuture.
+          move => |> &hr j r.
+          move => IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
+          (*TODO: see free variable propag*)
+          move => Hinv_j Hcond_j Hinv_len Hcond_len Hcond_start Hinv_start.
+          (*have Hfin_len: (FOR_NAT_MUL_LE.finite 2 64 1).*)
+          (*TODO: shortcut to apply this immediatly before moving into context?*)
+          move: (FOR_NAT_MUL_LE.inv_loopP _ _ _ _ _ Hinv_len Hcond_len) => //= [k [Hk_range ->>]].
+          move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hinv_start Hcond_start) => //= [start [Hstart_range ->>]].
+          move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hinv_j Hcond_j);
+          [by rewrite //=; apply mulr_gt0 => //; apply expr_gt0|move => [bsj [Hbsj_range /= ->>]]].
+          move: (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hinv_j Hcond_j);
+          [by rewrite //=; apply mulr_gt0 => //; apply expr_gt0|move => -> /=].
+          (*TODO: shortcut to clear these when last used? List of shortcuts in EasyCrypt manual?*)
+          move => {Hinv_len Hcond_len Hinv_start Hcond_start Hinv_j Hcond_j}.
+          move: Hk_range Hstart_range Hbsj_range; rewrite /out /=; move => Hk_range Hstart_range Hbsj_range.
+          (*TODO: why no simplification? Pierre-Yves*)
+          rewrite lezNgt expr_gt0 //= in Hstart_range.
+          rewrite /= in Hstart_range.
+          rewrite -mulrD1l !mulrA (IntID.mulrAC bsj _ 2) -mulrD1l -!mulrA.
+          move: Hbsj_range IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
+          rewrite -exprS; first by smt(mem_range).
+          rewrite -exprSr; first by smt(mem_range).
+          do 2!(rewrite mulzK ?expf_eq0 //=).
+          do 2!(rewrite -divzpMr; first by apply dvdz_exp2l; smt(mem_range)).
+          rewrite -exprD_subz //; [by smt(mem_range)|rewrite addrAC /=].
+          do 3!(rewrite divz_pow //=; first by smt(mem_range)).
+          rewrite mulNr opprD /= (addzC (-k)).
+          move => Hbsj_range IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
           do!split.
           (*TODO: use bitrev_involutive.*)
-          + move : IHstartpastj; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
+          + move : IHstart_past; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
             rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
             - apply/negP => eq_index; move: (bitrev_injective _ _ _ _ _ _ eq_index) => //.
               * rewrite /=. (*TODO: use mem_range*)
@@ -669,52 +670,61 @@ theory NTTequiv.
               apply/negP/gtr_eqF.  (*Or maybe it is ltr_eqF*)
               admit.
             admit.
-          + rewrite -mulzD1l mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
-            apply/all_range_max; [by apply ltzS|split].
-            - admit.
-            move : IHjpasteven; apply all_range_imp => x Hxin /=.
-            rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
-            - admit.
-            admit.
-          + rewrite -mulzD1l mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
-            apply/all_range_max; [by apply ltzS|split].
-            - admit.
-            move : IHjpastodd; apply all_range_imp => x Hxin /=.
-            rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
-            - admit.
-            admit.
           + admit.
-          move : IHstartfuturej; apply all_range_imp => x Hxin /=; apply all_range_imp => y Hyin.
-          rewrite /partial_ntt_spec => <-; rewrite set_neqiE; [|rewrite set_neqiE //].
+          + admit.
           + admit.
           admit.
         skip.
-        move => |> &hr Hinv IHstartpast IHstartfuture Hcond lelen64 k le0k ltk8 ->>.
-        rewrite (FOR_INT_ADD_LT.inv_loop _ _ _ _ _ Hinv Hcond) //=.
-        move: Hinv Hcond => [? [/= <<- [le0start lestartout]]] ltstart2powk.
+        move => |> &hr.
+        move => IHstart_past IHstart_future.
+        move => Hinv_start Hcond_start Hcond_len Hinv_len.
+        move: (FOR_NAT_MUL_LE.inv_loopP _ _ _ _ _ Hinv_len Hcond_len) => //= [k [Hk_range ->>]].
+        move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hinv_start Hcond_start) => //= [start [Hstart_range ->>]].
+        rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hinv_start Hcond_start) //=.
+        rewrite FOR_INT_ADD_LT.inv_in /=; first by rewrite //=; apply mulr_gt0 => //; apply expr_gt0.
+        move => {Hinv_len Hcond_len Hinv_start Hcond_start}.
+        move: Hk_range Hstart_range; rewrite /out /=; move => Hk_range Hstart_range.
+        rewrite lezNgt expr_gt0 //= in Hstart_range.
+        rewrite /= in Hstart_range.
+        move: IHstart_past IHstart_future.
+        do 2!(rewrite divz_pow //=; first by smt(mem_range)).
+        move => IHstart_past IHstart_future.
         do!split.
-        * by apply FOR_INT_ADD_LT.inv_in; apply mulr_gt0 => //; apply expr_gt0.
         * by apply all_range_empty.
         * by apply all_range_empty.
-        * (*TODO: why can't I just apply the view all_range_min?*)
-          by move: IHstartfuture => /(all_range_min _ _ _ ltstart2powk) [].
-        * by move: IHstartfuture => /(all_range_min _ _ _ ltstart2powk) [].
-        move => j r Hncond Hinv.
-        rewrite (FOR_INT_ADD_LT.inv_out _ _ _ _ _ Hinv Hncond) /=; first by apply mulr_gt0 => //; apply expr_gt0.
-        have ->: FOR_INT_ADD_LT.out (2 ^ k * 2) 256 0 = 128 %/ (2 ^ k).
+        * (*TODO: why can't I just apply the view all_range_min? Use rewrite.*)
+          (*move: IHstart_future => /all_range_min.*)
+          (*rewrite all_range_min /= in IHstart_future; first by apply expr_gt0.*)
+          move: IHstart_future; apply all_range_imp => x Hx_range /=.
+          (*move/all_range_min.*)
+          rewrite all_range_min //; first by smt(mem_range).
+          admit.
         * admit.
-        rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
-        move => IHstartpastj IHjpasteven IHjpastodd _ IHstartfuturej.
-        rewrite mulrDl; apply/all_range_max => [/#|] /=; split => //.
+        move => j r.
+        (*TODO: the order here seems reversed...*)
+        move => {IHstart_past IHstart_future}.
+        move => Hncond_j.
+        move => IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
+        move => Hinv_j.
+        move: (FOR_INT_ADD_LT.inv_outP _ _ _ _ _ Hinv_j Hncond_j); first by rewrite //=; apply mulr_gt0 => //; apply expr_gt0.
+        rewrite /out /= => {Hinv_j Hncond_j} ->>.
+        (*TODO: seems I somehow mixed up the indices...*)
+        (*
+        rewrite mulrDl /=; apply/all_range_max => /=; first by apply expr_gt0.
         by apply/all_range_max => [/#|] /=; split.
+        *)
+        admit.
       skip.
-      move => |> &hr k le0k ltk8 IHlen le2powk64; do!split.
-      - by apply FOR_INT_ADD_LT.inv_in.
-      - by apply all_range_empty.
-      move => r start Hncond Hinv.
-      rewrite (FOR_INT_ADD_LT.inv_out _ _ _ _ _ Hinv Hncond) //=.
-      have ->: FOR_INT_ADD_LT.out 1 (2 ^ k) 0 = (2 ^ k).
-      - admit.
+      move => |> &hr.
+      move => IHlen.
+      move => Hinv_len Hcond_len.
+      move: (FOR_NAT_MUL_LE.inv_loopP _ _ _ _ _ Hinv_len Hcond_len) => //= [k [Hk_range ->>]].
+      rewrite FOR_INT_ADD_LT.inv_in //=.
+      do!split.
+      - (*by apply all_range_empty.*)
+        admit.
+      move => r start _ IHstart_past IHstart_future _.
+      (*TODO: can't get rid of the value of start, must substitute in whole context.*)
       move => IHstartpast _; split.
       - exists (k+1); do!split => //; [by smt()| |by rewrite Domain.exprSr] => _.
         apply ltzE => /=; apply ler_subr_addr => /=.

@@ -3,48 +3,7 @@ require import CoreReal Real RealExp.
 (*---*) import RField.
 require import IntMin IntDiv.
 (*---*) import IntOrder.
-
-
-(*TODO: move stuff in EasyCrypt when needed.*)
-
-
-(*-----------------------------------------------------------------------------*)
-
-lemma andb_id2 a b c d : (a <=> b) => (c <=> d) => ((a /\ c) <=> (b /\ d)).
-proof. by case a; case b; case c; case d. qed.
-
-lemma or_andl a b : (a \/ b) <=> ((a /\ !b) \/ b).
-proof. by case a; case b. qed.
-
-lemma or_andr a b : (a \/ b) <=> (a \/ (!a /\ b)).
-proof. by case a; case b. qed.
-
-lemma and_impl a b : (a /\ b) <=> ((b => a) /\ b).
-proof. by case a; case b. qed.
-
-lemma and_impr a b : (a /\ b) <=> ( a /\ (a => b)).
-proof. by case a; case b. qed.
-
-lemma negb_eqbl a b : ! (a <=> b) <=> (!a <=> b).
-proof. by case a; case b. qed.
-
-lemma negb_eqbr a b : ! (a <=> b) <=> (a <=> !b).
-proof. by case a; case b. qed.
-
-
-(*-----------------------------------------------------------------------------*)
-
-lemma pmin_nmem E i : ! sempty (pcap E) => 0 <= i < pmin E => ! E i.
-proof.
-move => Hnsempty [le0i ltipmin]; apply/negP => HEi.
-by move: (ltr_le_trans _ _ _ ltipmin (pmin_min _ _ Hnsempty le0i HEi)).
-qed.
-
-lemma pmin_max E i : ! sempty (pcap E) => 0 <= i => (forall j , 0 <= j < i => ! E j) => i <= pmin E.
-proof.
-move=> h ge0_i min_i; rewrite lerNgt; apply/negP=> gti.
-by apply/(min_i (pmin E))/pmin_mem => //; rewrite ge0_pmin.
-qed.
+require import Logic_extra Ring_extra IntMin_extra.
 
 
 (*-----------------------------------------------------------------------------*)
@@ -64,21 +23,78 @@ move => lt1b le0x le0y; rewrite -implybNN -!ltrNge ltzE => le_x; apply (ltr_le_t
 by apply ler_weexpn2l;[apply ltzW|split => //; apply addz_ge0].
 qed.
 
-
-(*-----------------------------------------------------------------------------*)
-
-lemma divrK: forall (u v : real) , v <> 0%r => u = u / v * v.
-proof. by move => u v neqv0; rewrite -mulrA mulVf. qed.
-
-
-(*-----------------------------------------------------------------------------*)
-
-lemma nosmt eq_div_range m d n : 0 < d =>  m %/ d = n <=> m \in range (n * d) ((n + 1) * d).
+lemma exprD_subz (x m n : int) : x <> 0 => 0 <= n <= m => x ^ (m - n) = (x ^ m) %/ (x ^ n).
 proof.
-move => lt0d; rewrite mem_range andabP eq_sym eqz_leq; apply andb_id2.
+move => neqx0 [le0n lenm]; rewrite eq_sym -(eqz_mul (x ^ n) (x ^ m) (x ^ (m - n))).
++ by move: neqx0; rewrite implybNN expf_eq0.
++ by apply dvdz_exp2l.
+by rewrite -exprD_nneg ?subrK // ler_subr_addr.
+qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
+lemma divrK (u v : real) : v <> 0%r => u = u / v * v.
+proof. by move => neqv0; rewrite -mulrA mulVf. qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
+lemma divz_eqP (m d n : int) :
+  0 < d => m %/ d = n <=> n * d <= m < (n + 1) * d.
+proof.
+  move => lt0d; split => [<<-|[le_m ltm_]].
+  + by split => [|_]; [apply/lez_floor/gtr_eqF|apply/ltz_ceil].
+  by apply/eqz_leq; split; [apply/ltzS/ltz_divLR|apply/lez_divRL].
+qed.
+
+lemma divz_mulp (n d1 d2 : int) : 
+  0 < d1 =>
+  0 < d2 =>
+  n %/ (d1 * d2) = n %/ d1 %/ d2.
+proof.
+  (*TODO: seems that mulzA and mulrA are not written the same way? Pierre-Yves*)
+  print mulzA.
+  print mulrA.
+  print associative.
+  move => lt0d1 lt0d2; rewrite (mulzC d1); apply divz_eqP; [by apply mulr_gt0|split => [|_]].
+  + by rewrite mulrA; apply (lez_trans (n %/ d1 * d1));
+    [apply/ler_pmul2r => //|]; apply/lez_floor/gtr_eqF.
+  by rewrite mulrA; apply (ltr_le_trans ((n %/ d1 + 1) * d1));
+  [|apply/ler_pmul2r => //; apply/ltzE]; apply/ltz_ceil.
+qed.
+
+lemma divz_mul (n d1 d2 : int) :
+  0 <= d1 =>
+  n %/ (d1 * d2) = n %/ d1 %/ d2.
+proof.
+move => /lez_eqVlt [<<- //=|lt0d1];
+(case (0 <= d2) => [/lez_eqVlt [<<- //=|lt0d2]|/ltzNge ltd20]).
++ by rewrite divz_mulp.
+by rewrite -(oppzK d2) mulrN 2!divzN eqr_opp divz_mulp // ltr_oppr.
+qed.
+
+lemma divzpMr p m d : d %| m => p * (m %/ d) = p * m %/ d.
+proof. by move => /dvdzP [q ->>]; case (d = 0) => [->> //|neqd0]; rewrite mulrA !mulzK. qed.
+
+lemma dvdNdiv x y : x <> 0 => x %| y => (-y) %/ x = - y %/ x.
+proof. by move => neqx0 /dvdzP [z ->>]; rewrite -mulNr !mulzK. qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
+lemma eq_range m n : m = n <=> m \in range n (n+1).
+proof. by rewrite mem_range ltzS eqz_leq. qed.
+
+lemma range_div_range m d min max : 0 < d => m %/ d \in range min max <=> m \in range (min * d) (max * d).
+proof.
+move => lt0d; rewrite !mem_range !andabP; apply andb_id2.
 + by apply lez_divRL.
 by rewrite -ltz_divLR // ltzS.
 qed.
+
+lemma eq_div_range m d n : 0 < d => m %/ d = n <=> m \in range (n * d) ((n + 1) * d).
+proof. by move => lt0d; rewrite eq_range range_div_range. qed.
 
 
 (*-----------------------------------------------------------------------------*)
@@ -219,7 +235,6 @@ move=> pN; rewrite /argmin choiceb_dfl => //= x; rewrite !negb_and -implybE => l
 by rewrite -implybE => px; move: (pN _ le0x).
 qed.
 
-(*TODO: naming: le, ge, _, ...*)
 lemma le_argmin ['a] f p i :
   0 <= i =>
   ((exists j, (0 <= j) /\ (p (f j))) => (exists j, (0 <= j <= i) /\ (p (f j)))) <=>
@@ -316,8 +331,7 @@ proof.                          (* FIXME: choice_spec *)
 case: (exists i, 0 <= i /\ p (f i)).
 + by case=> i [? Hpfi] ? Hnpfj; move: (argmaxP_r _ _ _ _ _ _ Hpfi Hnpfj).
 move=> h i; rewrite /argmax choiceb_dfl ?lez_lt_asym //=.
-+ (*TODO: what does [# _] do?*)
-  by move=> x; apply/negP=> [# le0x Hpfx Hnpfx]; apply/h; exists x.
++ by move=> x; apply/negP=> [# le0x Hpfx Hnpfx]; apply/h; exists x.
 by move => _ k lt0k; apply/negP => Hpfk; apply/h; exists k; split => //; apply/ltzW.
 qed.
 
@@ -362,7 +376,7 @@ have ->/=: (exists (l : int), 0 <= l /\ forall (m : int), l <= m => ! p (f m)).
 + by exists k; split => // l ltkl; move: (Npl l) => /negb_and; rewrite ltkl.
 split => [[l [leil pl]]|lei_]; last by exists (argmax f p); split => //; apply/(argmaxP _ _ _ k le0j le0k pj _) => l lekl; move: (Npl l); rewrite lekl.
 apply/lezNgt/negP => lt_i.
-(*TODO: why no one liner?*)
+(*TODO: why no one liner? Pierre-Yves*)
 have lt_l:= (ltr_le_trans _ _ _ lt_i leil).
 by move: (argmax_max _ _ _ le0k _ _ lt_l); [move => m lekm; move: (Npl m); rewrite lekm|].
 qed.
@@ -412,6 +426,15 @@ move => lt1b neqx0; apply/negP => dvdb_; move: (dvdz_mul _ (b ^ (vp b x)) _ (b ^
 rewrite dvdzz /= vp_rem_powK // -IntID.exprS 1:ge0_vp.
 move: (argmax_max ((^) b) (transpose (%|) x) `|x|).
 by move=> /= -> //=; [apply normr_ge0|apply vp_bound|rewrite /vp ltzE].
+qed.
+
+lemma mulz_pow b x n : 1 < b => x <> 0 => 0 <= n => x * b ^ n = vp_rem b x * b ^ (vp b x + n).
+proof. by move => lt1b neqx0 le0n; rewrite exprD_nneg // ?ge0_vp mulrA vp_rem_powK. qed.
+
+lemma divz_pow b x n : 1 < b => x <> 0 => 0 <= n <= vp b x => x %/ (b ^ n) = vp_rem b x * b ^ (vp b x - n).
+proof.
+move => lt1b neqx0 [le0n len_]; rewrite exprD_subz // ?divzpMr ?dvdz_exp2l // ?vp_rem_powK //.
+by apply gtr_eqF; move: (ler_lt_add (-1) 0 _ _ _ lt1b).
 qed.
 
 lemma vp0 b x : 1 < b => x <> 0 => x %% b <> 0 => vp b x = 0.
