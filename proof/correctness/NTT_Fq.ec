@@ -533,14 +533,14 @@ theory NTTequiv.
   (*- one that gives a postcondition when the loop being adressed is a for loop*)
   (*- another that does the same for the specific for loops that always write on different parts of the memory that is described in the postcondition (the two innermost loops in our case)*)
 
-  abbrev index (len a b : int) = bitrev 8 (a * len + b).
+  abbrev index (len a b : int) = bitrev 8 (a + b * len).
 
   op partial_ntt (p : zmod Array256.t, len a b : int) =
   BAdd.bigi
     predT
     (fun k =>
-      (exp zeta1_ (bitrev 8 (k * b))) *
-      p.[index len a k])
+      (exp zeta1_ (bitrev 8 (k * a))) *
+      p.[index len k b])
     0 len.
 
   op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
@@ -552,31 +552,34 @@ theory NTTequiv.
       hoare
         [NTT3.ntt :
         arg = (p,zs) ==>
-        all_range_2 (partial_ntt_spec res p 128) 0 2 0 128].
+        all_range_2 (partial_ntt_spec res p 128) 0 128 0 2].
   proof.
     move => Hzs; proc; sp.
     while (
       FOR_NAT_MUL_LE.inv 2 64 1 len /\
-      all_range_2 (partial_ntt_spec r p len) 0 (256 %/ len) 0 len).
+      all_range_2 (partial_ntt_spec r p len) 0 len 0 (256 %/ len)).
     + sp; wp => /=.
       while (
+        FOR_INT_ADD_LT.inv 1 len 0 start /\
         all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
-        all_range_2 (partial_ntt_spec r p len) start len 0 (256 %/ len) /\
-        FOR_INT_ADD_LT.inv 1 len 0 start).
+        all_range_2 (partial_ntt_spec r p len) start len 0 (256 %/ len)).
       - sp; wp.
         while (
+          FOR_INT_ADD_LT.inv (len * 2) 256 0 j /\
           all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
           all_range (partial_ntt_spec r p (len * 2) (start * 2)) 0 (j %/ (len * 2)) /\
           all_range (partial_ntt_spec r p (len * 2) (start * 2 + 1)) 0 (j %/ (len * 2)) /\
           all_range (partial_ntt_spec r p len start) (j %/ len) (256 %/ len) /\
-          all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len) /\
-          FOR_INT_ADD_LT.inv (len * 2) 256 0 j).
+          all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len)).
         * sp; skip.
           (*TODO: why is the all_range_2 abbrev not abbreviating here, and why so slow for move?*)
           move => |> &hr j r.
-          move => IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
-          (*TODO: see free variable propag*)
-          move => Hinv_j Hcond_j Hinv_len Hcond_len Hcond_start Hinv_start.
+          move => Hcond_len Hinv_len; move: (FOR_NAT_MUL_LE.inv_loopP _ _ _ _ _ Hinv_len Hcond_len) => //= [k [Hk_range ->>]].
+          move => Hcond_start Hinv_start; move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hinv_start Hcond_start) => //= [start [Hstart_range ->>]].
+          move => Hcond_j Hinv_j; move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hinv_j Hcond_j);
+          [by rewrite //=; apply mulr_gt0 => //; apply expr_gt0|move => [bsj [Hbsj_range /= ->>]]].
+          
+          move => Hinv_j Hcond_j Hinv_start Hcond_start Hinv_len Hcond_len.
           (*have Hfin_len: (FOR_NAT_MUL_LE.finite 2 64 1).*)
           (*TODO: shortcut to apply this immediatly before moving into context?*)
           move: (FOR_NAT_MUL_LE.inv_loopP _ _ _ _ _ Hinv_len Hcond_len) => //= [k [Hk_range ->>]].
@@ -587,11 +590,13 @@ theory NTTequiv.
           [by rewrite //=; apply mulr_gt0 => //; apply expr_gt0|move => -> /=].
           (*TODO: shortcut to clear these when last used? List of shortcuts in EasyCrypt manual?*)
           move => {Hinv_len Hcond_len Hinv_start Hcond_start Hinv_j Hcond_j}.
+          (*move => IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.*)
           move: Hk_range Hstart_range Hbsj_range; rewrite /out /=; move => Hk_range Hstart_range Hbsj_range.
           (*TODO: why no simplification? Pierre-Yves*)
           rewrite lezNgt expr_gt0 //= in Hstart_range.
           rewrite /= in Hstart_range.
           rewrite -mulrD1l !mulrA (IntID.mulrAC bsj _ 2) -mulrD1l -!mulrA.
+          move => IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
           move: Hbsj_range IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
           rewrite -exprS; first by smt(mem_range).
           rewrite -exprSr; first by smt(mem_range).
