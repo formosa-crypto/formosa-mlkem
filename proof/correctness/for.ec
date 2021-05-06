@@ -22,9 +22,9 @@ abstract theory FOR.
   axiom finite_nsempty i c x : finite i c x => ! sempty (pcap (ncond_val i c x)).
   axiom pmin_out i c x : finite i c x => pmin (ncond_val i c x) = out i c x.
 
-  lemma inv_loop_post i c x v : finite i c x => inv i c x v => cond c v => inv i c x (incr i v).
+  lemma inv_loop_post i c x v : finite i c x => cond c v => inv i c x v => inv i c x (incr i v).
   proof.
-    move => Hfin [n [/mem_range [le0n /ltzS /ler_eqVlt [->>|ltnout]] ->>]] Hcond.
+    move => Hfin Hcond [n [/mem_range [le0n /ltzS /ler_eqVlt [->>|ltnout]] ->>]].
     + by have:= pmin_mem _ (finite_nsempty _ _ _ Hfin); rewrite (pmin_out _ _ _ Hfin) /= => /negP Hncond; have:= (Hncond Hcond).
     exists (n+1); split; first apply/mem_range; split.
     + by apply addr_ge0.
@@ -32,9 +32,9 @@ abstract theory FOR.
     by rewrite !val_iter ?addr_ge0 // iterS.
   qed.
 
-  lemma inv_loopP i c x v : finite i c x => inv i c x v => cond c v => exists n , (n \in (range 0 (out i c x))) /\ (v = (val i x n)).
+  lemma inv_loopP i c x v : finite i c x => cond c v => inv i c x v => exists n , (n \in (range 0 (out i c x))) /\ (v = (val i x n)).
   proof.
-    move => Hfin [n [/mem_range [le0n /ltzS /ler_eqVlt [eqnout|ltnout]] ->>]] Hcond;
+    move => Hfin Hcond [n [/mem_range [le0n /ltzS /ler_eqVlt [eqnout|ltnout]] ->>]];
     exists n; split => //; apply/mem_range; split => // _.
     have //: false; move: eqnout Hcond => ->>; rewrite -(pmin_out _ _ _ Hfin); apply/negP.
     (*TODO: why is this necessary?*)
@@ -48,9 +48,9 @@ abstract theory FOR.
     by apply ge0_pmin.
   qed.
 
-  lemma inv_outP i c x v : finite i c x => inv i c x v => ! cond c v => v = val i x (out i c x).
+  lemma inv_outP i c x v : finite i c x => ! cond c v => inv i c x v => v = val i x (out i c x).
   proof.
-    move => Hfin [n [/mem_range [le0n /ltzS /ler_eqVlt [-> //|ltnout]] ->>]] Hncond.
+    move => Hfin Hncond [n [/mem_range [le0n /ltzS /ler_eqVlt [-> //|ltnout]] ->>]].
     have:= (pmin_min _ _ (finite_nsempty _ _ _ Hfin) le0n Hncond).
     by rewrite (pmin_out _ _ _ Hfin) => /lezNgt /negP nltnout; move: (nltnout ltnout).
   qed.
@@ -60,13 +60,15 @@ end FOR.
 
 theory FOR_INT_ADD_LT.
 
+  abbrev out (i c x : int) = if c <= x then 0 else (c - x) %\ i.
+
   clone include FOR with 
     type t <- int,
     type it <- int,
     type ct <- int,
     op incr <- (fun i x : int => x + i),
     op cond <- (fun c x : int => x < c),
-    op out = (fun i c x : int => if c <= x then 0 else (c - x) %\ i),
+    op out <- out,
     (*TODO: put equal here*)
     op finite <- (fun i c x : int => (c <= x) \/ (0 < i)),
     op val <- (fun i x n : int => x + n * i)
@@ -99,15 +101,15 @@ end FOR_INT_ADD_LT.
 
 theory FOR_NAT_MUL_LE.
 
+  abbrev out (i c x :int) = if (c < x) then 0 else ilog i (c %/ x) + 1.
+
   clone include FOR with 
     type t <- int,
     type it <- int,
     type ct <- int,
     op incr <- (fun i x : int => x * i),
     op cond <- (fun c x : int => x <= c),
-    op out = (fun i c x : int =>
-                if (c < x) then 0
-                else ilog i (c %/ x) + 1),
+    op out <- out,
     op finite <- (fun i c x : int => (c < x) \/ (1 < i /\ (0 < x))),
     op val <- (fun i x n : int => x * (i ^ n))
     proof *.
@@ -256,3 +258,131 @@ theory FOR_INT_DIV_GE.
 
 end FOR_INT_DIV_GE.
 *)
+
+
+
+
+
+
+
+abstract theory FOR2.
+
+  type t.
+
+  op x : t.
+  op incr : t -> t.
+  op cond : t -> bool.
+  op out : int.
+  op val : int -> t.
+
+  op ncond_val n = ! cond (val n).
+  (*TODO: anything such as exists n \in range r , P n ?*)
+  op inv v = exists n : int , (n \in range 0 (out + 1)) /\ (v = val n).
+
+  axiom val_iter n : 0 <= n => val n = (iter n incr x).
+  axiom nsempty : ! sempty (pcap ncond_val).
+  axiom pmin_out : pmin ncond_val = out.
+
+  lemma inv_loop_post v : cond v => inv v => inv (incr v).
+  proof.
+    move => Hcond [n [/mem_range [le0n /ltzS /ler_eqVlt [->>|ltnout]] ->>]].
+    + by have:= pmin_mem _ nsempty; rewrite pmin_out /= => /negP Hncond; have:= (Hncond Hcond).
+    exists (n+1); split; first apply/mem_range; split.
+    + by apply addr_ge0.
+    + by move => _; apply ltz_add2r.
+    by rewrite !val_iter ?addr_ge0 // iterS.
+  qed.
+
+  lemma inv_loopP v : cond v => inv v => exists n , (n \in range 0 out) /\ (v = val n).
+  proof.
+    move => Hcond [n [/mem_range [le0n /ltzS /ler_eqVlt [eqnout|ltnout]] ->>]];
+    exists n; split => //; apply/mem_range; split => // _.
+    have //: false; move: eqnout Hcond => ->>; rewrite -pmin_out; apply/negP.
+    (*TODO: why is this necessary?*)
+    by move: (pmin_mem ncond_val nsempty).
+  qed.
+
+  lemma inv_in : inv x.
+  proof.
+    exists 0; rewrite val_iter // iter0 //=.
+    rewrite -pmin_out; apply/mem_range => //=; apply/ltzS.
+    by apply ge0_pmin.
+  qed.
+
+  lemma inv_outP v : ! cond v => inv v => v = val out.
+  proof.
+    move => Hncond [n [/mem_range [le0n /ltzS /ler_eqVlt [-> //|ltnout]] ->>]].
+    have:= (pmin_min _ _ nsempty le0n Hncond).
+    by rewrite pmin_out => /lezNgt /negP nltnout; move: (nltnout ltnout).
+  qed.
+
+end FOR2.
+
+
+theory FOR2_INT_ADD_LT.
+
+  op i : int.
+  op c : int.
+  op x : int.
+
+  axiom finite : (c <= x) \/ (0 < i).
+
+  abbrev out = if c <= x then 0 else (c - x) %\ i.
+
+  clone include FOR2 with 
+    type t <- int,
+    op x <- x,
+    op incr <- transpose (+)%Int i,
+    op cond <- transpose (<)%Int c,
+    op out <- out,
+    op val <- (fun n : int => x + n * i)
+    proof *.
+
+    realize val_iter.
+    proof. by elim; [rewrite iter0|move => n le0n; rewrite mulzDl addzA iterS // => <- /=]. qed.
+
+    realize nsempty.
+    proof.
+      move: finite => /or_andr [lecx|[nlecx lt0i]]; apply semptyNP; exists out.
+      + by rewrite lecx /=; split => //; rewrite /ncond_val /= ler_gtF.
+      rewrite nlecx /=; move: nlecx => /ltzNge ltxc; split.
+      + by rewrite ltrW ltz_NdivNLR //= ltr_subr_addr.
+      by apply/lezNgt/ler_subl_addl/lez_ceil/gtr_eqF.
+    qed.
+
+    realize pmin_out.
+    proof.
+      move: finite => /or_andr [lecx|[nlecx lt0i]]; [rewrite lecx /=|rewrite nlecx /=]; apply pmin_eq => //.
+      + by rewrite /ncond_val /= ler_gtF.
+      + by move => j [le0j ltj0]; move: (ler_lt_trans _ _ _ le0j ltj0).
+      + by apply ltrW; rewrite ltz_NdivNLR //= subr_gt0 ltrNge.
+      + by apply/lezNgt/ler_subl_addl/lez_ceil/gtr_eqF.
+      by move => j [le0j ltj_]; rewrite /ncond_val /= -ltr_subr_addl -ltz_NdivNLR.
+    qed.
+
+end FOR2_INT_ADD_LT.
+
+module MAIN = {
+  proc id_while (n : int) : int = {
+    var i;
+    i <- 3;
+    while (i < n) {
+      i <- i + 2;
+    }
+    return i;
+  }
+}.
+
+lemma id_while_free m :
+  hoare [MAIN.id_while : (n = m) ==> res = 3 + (if m <= 3 then 0 else (m - 3) %\ 2) * 2].
+proof.
+  proc.
+  sp.
+  (*TODO: use this op without clone?*)
+  print FOR2_INT_ADD_LT.inv.
+  (*
+  while(i <= n).
+  + by sp; skip => /> /#.
+  by skip => /> /#.
+  *)
+abort.
