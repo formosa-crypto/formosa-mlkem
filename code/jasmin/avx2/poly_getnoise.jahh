@@ -223,7 +223,7 @@ fn shake256_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[NOISE_BLOCKS * S
 }
 
 #[returnaddress="stack"]
-fn poly_getnoise_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce0 nonce1 nonce2 nonce3) -> reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N]
+fn poly_getnoise_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N]
 {
   reg u256 f;
   stack u256[25] state;
@@ -238,10 +238,13 @@ fn poly_getnoise_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES]
   buf2[u256 0] = f;
   buf3[u256 0] = f;
 
-  buf0.[32] = nonce0;
-  buf1.[32] = nonce1;
-  buf2.[32] = nonce2;
-  buf3.[32] = nonce3;
+  buf0.[32] = nonce;
+  nonce += 1;
+  buf1.[32] = nonce;
+  nonce += 1;
+  buf2.[32] = nonce;
+  nonce += 1;
+  buf3.[32] = nonce;
 
   state = shake256_absorb4x_33(state, buf0[0:33], buf1[0:33], buf2[0:33], buf3[0:33]);
   state, buf0, buf1, buf2, buf3 = shake256_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
