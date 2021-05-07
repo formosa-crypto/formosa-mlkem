@@ -1,4 +1,4 @@
-require import AllCore StdOrder List Ring.
+require import AllCore StdOrder List Ring IntDiv.
 (*---*) import IntOrder.
 require import List_extra.
 
@@ -101,5 +101,22 @@ lemma add_range (x y min1 max1 min2 max2 : int) :
   x + y \in range (min1 + min2) (max1 + max2 - 1).
 proof. by rewrite !mem_range => -[? ?] [? ?]; rewrite ler_add //= ltr_subr_addl addrA ler_lt_add // lez_add1r. qed.
 
-lemma range_mul x m n a : 0 < a => x \in range m n => x * a \in range (m * a) (n * a).
-proof. by rewrite !mem_range => le0a [? ?]; rewrite ler_pmul2r // ltr_pmul2r. qed.
+lemma range_mul x m n a :
+  0 < a =>
+  x \in range m n =>
+  x * a \in range (m * a) ((n - 1) * a + 1).
+proof. by rewrite !mem_range => le0a [? ?]; rewrite ltzS !ler_pmul2r //; split => // _; rewrite -ltzS. qed.
+
+lemma range_mul_add (x1 y1 x2 y2 min max len : int) :
+  max - min <= len =>
+  y1 \in range min max =>
+  y2 \in range min max =>
+  x1 * len + y1 = x2 * len + y2 <=>
+  x1 = x2 /\ y1 = y2.
+proof.
+  move => le_len /mem_range [? ?] /mem_range [? ?]; split => [Heq|[->> ->>] //]; split.
+  + move: (congr1 (transpose (%/)%IntID len) _ _ Heq) => /=.
+    rewrite !divzMDl. admit. admit.
+    admit.
+  admit.
+abort.

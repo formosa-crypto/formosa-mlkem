@@ -303,221 +303,7 @@ end DFT.
 
 theory NTTequiv.
 
-
   import ZModpRing.
-
-  module NTT3 = {
-   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
-     var len, start, j, zetasctr;
-     var  t, zeta_;
-
-     zetasctr <- 0;
-     len <- 1;
-     while (len <= 64) {
-      start <- 0;
-      while(start < len) {
-         zetasctr <- bitrev 8 (len + start);
-         zeta_ <- exp (ZModpRing.ofint(17)) zetasctr; 
-         j <- 0;
-         while (j < 256) {
-           t <- zeta_ * r.[bitrev 8 (j + len + start)];
-           r.[bitrev 8 (j + len + start)] <- r.[bitrev 8 (j + start)] + (-t);
-           r.[bitrev 8 (j + start)]       <- r.[bitrev 8 (j + start)] + t;
-           j <- j + (len * 2);
-         }
-         start <- start + 1;
-       }
-       len <- len * 2;
-     }     
-     return r;
-   }
-  
-  }.
-
-  module NTT2 = {
-   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
-     var len, start, j, zetasctr;
-     var  t, zeta_;
-
-     zetasctr <- 0;
-     len <- 128;
-     while (2 <= len) {
-      start <- 0;
-      while(start < 256) {
-         zetasctr <- (128 %/ len) + (start %/ (len * 2));
-         zeta_ <- zetas.[zetasctr]; 
-         j <- start;
-         while (j < start + len) {
-           t <- zeta_ * r.[j + len];
-           r.[j + len] <- r.[j] + (-t);
-           r.[j]       <- r.[j] + t;
-           j <- j + 1;
-         }
-         start <- start + (len * 2);
-       }
-       len <- len %/ 2;
-     }     
-     return r;
-   }
-
-   proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
-     var len, start, j, zetasctr;
-     var  t, zeta_;
-
-     zetasctr <- 0;
-     len <- 2;
-     while (len <= 128) {
-      start <- 0;
-      while(start < 256) {
-         zetasctr <- 128 - (256 %/ len) + (start %/ (2 * len));
-         zeta_ <- zetas_inv.[zetasctr];
-         j <- start;
-         while (j < start + len) {
-          t <- r.[j];
-          r.[j]       <- t + r.[j + len];
-          r.[j + len] <- t + (-r.[j + len]);
-          r.[j + len] <- zeta_ * r.[j + len];
-           j <- j + 1;
-         }
-         start <- start + (len * 2);
-       }
-       len <- len * 2;
-     }
-     j <- 0;
-     while (j < 256) {
-       r.[j] <- r.[j] * zetas_inv.[127]; 
-       j <- j + 1;
-     }    
-     return r;
-   }
-  
- 
-  }.
-
-  module NTT1 = {
-   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
-     var len, start, j, zetasctr;
-     var  t, zeta_;
-
-     zetasctr <- 0;
-     len <- 128;
-     while (2 <= len) {
-      start <- 0;
-      while(start < 256) {
-         zetasctr <- zetasctr + 1;
-         zeta_ <- zetas.[zetasctr]; 
-         j <- start;
-         while (j < start + len) {
-           t <- zeta_ * r.[j + len];
-           r.[j + len] <- r.[j] + (-t);
-           r.[j]       <- r.[j] + t;
-           j <- j + 1;
-         }
-         start <- start + (len * 2);
-       }
-       len <- len %/ 2;
-     }     
-     return r;
-   }
-
-   proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
-     var len, start, j, zetasctr;
-     var  t, zeta_;
-
-     zetasctr <- 0;
-     len <- 2;
-     while (len <= 128) {
-      start <- 0;
-      while(start < 256) {
-         zeta_ <- zetas_inv.[zetasctr]; 
-         zetasctr <- zetasctr + 1;
-         j <- start;
-         while (j < start + len) {
-          t <- r.[j];
-          r.[j]       <- t + r.[j + len];
-          r.[j + len] <- t + (-r.[j + len]);
-          r.[j + len] <- zeta_ * r.[j + len];
-           j <- j + 1;
-         }
-         start <- start + (len * 2);
-       }
-       len <- len * 2;
-     }
-     j <- 0;
-     while (j < 256) {
-       r.[j] <- r.[j] * zetas_inv.[127]; 
-       j <- j + 1;
-     }    
-      return r;
-   }
-  
- 
-  }.
-
-  module NTT = {
-   proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
-     var len, start, j, zetasctr;
-     var  t, zeta_;
-
-     zetasctr <- 0;
-     len <- 128;
-     while (2 <= len) {
-      start <- 0;
-      while(start < 256) {
-         zetasctr <- zetasctr + 1;
-         zeta_ <- zetas.[zetasctr]; 
-         j <- start;
-         while (j < start + len) {
-           t <- zeta_ * r.[j + len];
-           r.[j + len] <- r.[j] + (-t);
-           r.[j]       <- r.[j] + t;
-           j <- j + 1;
-         }
-         start <- j + len;
-       }
-       len <- len %/ 2;
-     }     
-     return r;
-   }
-
-   proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
-     var len, start, j, zetasctr;
-     var  t, zeta_;
-
-     zetasctr <- 0;
-     len <- 2;
-     while (len <= 128) {
-      start <- 0;
-      while(start < 256) {
-         zeta_ <- zetas_inv.[zetasctr]; 
-         zetasctr <- zetasctr + 1;
-         j <- start;
-         while (j < start + len) {
-          t <- r.[j];
-          r.[j]       <- t + r.[j + len];
-          r.[j + len] <- t + (-r.[j + len]);
-          r.[j + len] <- zeta_ * r.[j + len];
-           j <- j + 1;
-         }
-         start <- j + len;
-       }
-       len <- len * 2;
-     }
-     j <- 0;
-     while (j < 256) {
-       r.[j] <- r.[j] * zetas_inv.[127]; 
-       j <- j + 1;
-     }    
-     return r;
-   }
-  
- 
-  }.
-
-  op zeta1_ = ZModpRing.ofint 17.
-
-  (*op dft (v : vector) =
-    offunv (fun k => BAdd.bigi predT (fun j => v.[j] * exp a (j * k)) 0 n).*)
 
   clone import Bigalg.BigComRing as BigZmod with
     type  t        <- zmod,
@@ -528,6 +314,170 @@ theory NTTequiv.
       op  CR.( * ) <- ZModField.( * ),
       op  CR.invr  <- ZModField.inv,
     pred  CR.unit  <- ZModField.unit.
+
+  op zeta1_ = ZModpRing.ofint 17.
+
+  module NTT5 = {
+    proc ntt(r : zmod Array256.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 1;
+      while (len <= 64) {
+       start <- 0;
+       while(start < len) {
+          zetasctr <- len + start;
+          zeta_ <- exp zeta1_ zetasctr;
+          j <- 0;
+          while (j < 256) {
+            t <- zeta_ * r.[bitrev 8 (j + len + start)];
+            r.[bitrev 8 (j + len + start)] <- r.[bitrev 8 (j + start)] + (-t);
+            r.[bitrev 8 (j + start)]       <- r.[bitrev 8 (j + start)] + t;
+            j <- j + (len * 2);
+          }
+          start <- start + 1;
+        }
+        len <- len * 2;
+      }     
+      return r;
+    }
+  }.
+
+  module NTT4 = {
+    proc ntt(r : zmod Array256.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 128;
+      while (2 <= len) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- bitrev 8 ((256 %/ len) + (start %/ len));
+          zeta_ <- exp zeta1_ zetasctr;
+          j <- 0;
+          while (j < len) {
+            t <- zeta_ * r.[j + len + start];
+            r.[j + len + start] <- r.[j + start] + (-t);
+            r.[j + start]       <- r.[j + start] + t;
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len %/ 2;
+      }     
+      return r;
+    }
+  }.
+
+  module NTT3 = {
+    proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 128;
+      while (2 <= len) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- (128 %/ len) + (start %/ (len * 2));
+          zeta_ <- zetas.[zetasctr]; 
+          j <- 0;
+          while (j < len) {
+            t <- zeta_ * r.[j + len + start];
+            r.[j + len + start] <- r.[j + start] + (-t);
+            r.[j + start]       <- r.[j + start] + t;
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len %/ 2;
+      }     
+      return r;
+    }
+  }.
+
+  module NTT2 = {
+    proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 128;
+      while (2 <= len) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- (128 %/ len) + (start %/ (len * 2));
+          zeta_ <- zetas.[zetasctr]; 
+          j <- start;
+          while (j < start + len) {
+            t <- zeta_ * r.[j + len];
+            r.[j + len] <- r.[j] + (-t);
+            r.[j]       <- r.[j] + t;
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len %/ 2;
+      }     
+      return r;
+    }
+  }.
+
+  module NTT1 = {
+    proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 128;
+      while (2 <= len) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- zetasctr + 1;
+          zeta_ <- zetas.[zetasctr]; 
+          j <- start;
+          while (j < start + len) {
+            t <- zeta_ * r.[j + len];
+            r.[j + len] <- r.[j] + (-t);
+            r.[j]       <- r.[j] + t;
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len %/ 2;
+      }     
+      return r;
+    }
+  }.
+
+  module NTT = {
+    proc ntt(r : zmod Array256.t,  zetas : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 128;
+      while (2 <= len) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- zetasctr + 1;
+          zeta_ <- zetas.[zetasctr]; 
+          j <- start;
+          while (j < start + len) {
+            t <- zeta_ * r.[j + len];
+            r.[j + len] <- r.[j] + (-t);
+            r.[j]       <- r.[j] + t;
+            j <- j + 1;
+          }
+          start <- j + len;
+        }
+        len <- len %/ 2;
+      }     
+      return r;
+    }
+  }.
 
   (*Proof not done and ugly, two lemmas might be useful:*)
   (*- one that gives a postcondition when the loop being adressed is a for loop*)
@@ -545,16 +495,13 @@ theory NTTequiv.
 
   op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
 
-  lemma naiventt (p : zmod Array256.t, zs : zmod Array128.t) : 
-    (forall i ,
-      0 <= i < 128 =>
-      zs.[i] = exp zeta1_ (bitrev 8 i)) =>
+  lemma naiventt (p : zmod Array256.t) :
       hoare
-        [NTT3.ntt :
-        arg = (p,zs) ==>
+        [NTT5.ntt :
+        arg = (p) ==>
         all_range_2 (partial_ntt_spec res p 128) 0 128 0 2].
   proof.
-    move => Hzs; proc; sp.
+    proc; sp.
     while (
       FOR_NAT_MUL_LE.inv 2 64 1 len /\
       all_range_2 (partial_ntt_spec r p len) 0 len 0 (256 %/ len)).
@@ -598,19 +545,27 @@ theory NTTequiv.
           move => Hbsj_range IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
           do!split.
           (*TODO: use bitrev_involutive.*)
-          + move : IHstart_past; apply all_range_imp => y Hy_range /=; apply all_range_imp => x Hx_range /=.
-            rewrite /partial_ntt_spec /= => <-; rewrite !get_set_if -!mem_range.
+          + move : IHstart_past => {IHj_past_even IHj_past_odd IHj_future IHstart_future}.
+            apply all_range_imp => y Hy_range /=; apply all_range_imp => x Hx_range /=.
+            rewrite /partial_ntt_spec /= => <-.
+            print set_neqiE.
+            rewrite set_neqiE.
+            - rewrite bitrev_bijective //. admit. admit.
+              admit.
+            (*
+            rewrite !get_set_if -!mem_range.
             do 2!(rewrite (range_incl _ _ _ _ _ _ _ (bitrev_range _ _)) //=).
             rewrite bitrev_bijective //.
             - (*TODO: actually should be able to infer placeholders.*)
               (*move: (add_range _ _ _ _ _ _ (range_mul _ _ _ _ _ Hy_range) Hx_range).*)
               move: (add_range _ _ _ _ _ _ (range_mul _ _ _ (2 ^ (k + 1)) _ Hy_range) Hx_range); first by apply expr_gt0.
-              apply range_incl => //=; rewrite -exprD_nneg; [by smt(mem_range)|by smt(mem_range)|].
-              rewrite addrA -(IntID.addrA 7) /=.
+              (*apply range_incl => //=; rewrite -exprD_nneg; [by smt(mem_range)|by smt(mem_range)|].
+              rewrite addrA -(IntID.addrA 7) /=.*)
               (*TODO: must be a bit more precise than the range_mul.*)
               admit.
             - admit.
             search _ bitrev.
+            *)
             admit.
           + admit.
           + admit.
@@ -680,6 +635,62 @@ theory NTTequiv.
       by rewrite BAdd.big_ltn // BAdd.big_geq //= addr0 bitrev_0 expr0 mul1r.
     move => len r.
     by move => Hncond_len Hinv_len; move: (FOR_NAT_MUL_LE.inv_outP _ _ _ _ _ Hncond_len Hinv_len).
+  qed.
+
+  equiv eq_NTT4_NTT5 : NTT4.ntt ~ NTT5.ntt:
+    ={arg} ==> ={res}.
+  proof.
+    proc; sp.
+  abort.
+
+  op zetas_spec (zs : zmod Array128.t) =
+    forall i ,
+      0 <= i < 128 =>
+      zs.[i] = exp zeta1_ (bitrev 8 (i * 2)).
+
+  equiv eq_NTT3_NTT4 p zs : NTT3.ntt ~ NTT4.ntt:
+    zetas_spec zs /\ arg{1} = (p, zs) /\ arg{2} = (p) ==> ={res}.
+  proof.
+    proc; sp.
+    while ((0 <= len{1}) /\ ={zetasctr, len, r}).
+    + sp; wp => /=.
+      while ((0 <= len{1}) /\ ={zetasctr, len, r, start}).
+      - wp => /=.
+        while (   (0 <= len{1})
+               /\ ={len, r, start, zeta_, j}).
+        * by sp; skip => />.
+        (*TODO: something less brutal than sp and wp.*)
+        (*TODO: btw why do sp and wp work that way?*)
+        sp; skip => |> &hr1 &hr2 le0len ltstart256.
+        (*TODO: also need FOR_NAT_DIV_LE, adn the explicif form of start*)
+        search _ (_ %/ _)%IntID vp.
+        search _ (_ %/ (_ * _)%Int)%IntID.
+        admit.
+      by skip => /> &hr2 le0len _ _ _ _; apply/divz_ge0.
+    by skip => />.
+  qed.
+
+  equiv eq_NTT2_NTT3: NTT2.ntt ~ NTT3.ntt:
+    ={arg} ==> ={res}.
+  proof.
+    proc; sp.
+    while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas}).
+    + sp; wp => /=.
+      while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas, start}).
+      - sp; wp => /=.
+        while (   (0 <= len{1})
+               /\ ={zetasctr, len, r, zetas, start, zeta_}
+               /\ (FOR_INT_ADD_LT.inv 1 len{2} 0 j{2})
+               /\ (j{1} = j{2} + start{2})).
+        * sp; skip => |> &hr2 j r le0len.
+          move => Hinv_j _ Hcond_j.
+          rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hcond_j Hinv_j) //=.
+          move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hcond_j Hinv_j) => //= [bsj [Hbsj_range ->>]].
+          by rewrite !(IntID.addrAC _ start{hr2}) /= (IntID.addrC start{hr2}) ltr_add2r.
+        skip => |> &hr2 le0len ltstart256.
+        by rewrite ltr_addl !FOR_INT_ADD_LT.inv_in //=.
+      by skip => /> &hr2 le0len _ _ _ _; apply/divz_ge0.
+    by skip => />.
   qed.
 
   equiv eq_NTT1_NTT2: NTT1.ntt ~ NTT2.ntt:
