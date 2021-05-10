@@ -327,6 +327,7 @@ theory NTTequiv.
       while (len <= 64) {
        start <- 0;
        while(start < len) {
+          (*TODO: the value of zetasctr is suspicious*)
           zetasctr <- len + start;
           zeta_ <- exp zeta1_ zetasctr;
           j <- 0;
@@ -508,14 +509,16 @@ theory NTTequiv.
     + sp; wp => /=.
       while (
         FOR_INT_ADD_LT.inv 1 len 0 start /\
-        all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
+        all_range_2 (partial_ntt_spec r p (len * 2)) 0 start 0 (128 %/ len) /\
+        all_range_2 (partial_ntt_spec r p (len * 2)) len (len + start) 0 (128 %/ len) /\
         all_range_2 (partial_ntt_spec r p len) start len 0 (256 %/ len)).
       - sp; wp.
         while (
           FOR_INT_ADD_LT.inv (len * 2) 256 0 j /\
-          all_range_2 (partial_ntt_spec r p (len * 2)) 0 (start * 2) 0 (128 %/ len) /\
-          all_range (partial_ntt_spec r p (len * 2) (start * 2)) 0 (j %/ (len * 2)) /\
-          all_range (partial_ntt_spec r p (len * 2) (start * 2 + 1)) 0 (j %/ (len * 2)) /\
+          all_range_2 (partial_ntt_spec r p (len * 2)) 0 start 0 (128 %/ len) /\
+          all_range_2 (partial_ntt_spec r p (len * 2)) len (len + start) 0 (128 %/ len) /\
+          all_range (partial_ntt_spec r p (len * 2) start) 0 (j %/ (len * 2)) /\
+          all_range (partial_ntt_spec r p (len * 2) (len + start)) 0 (j %/ (len * 2)) /\
           all_range (partial_ntt_spec r p len start) (j %/ len) (256 %/ len) /\
           all_range_2 (partial_ntt_spec r p len) (start + 1) len 0 (256 %/ len)).
         * sp; skip.
@@ -542,31 +545,91 @@ theory NTTequiv.
           rewrite -exprD_subz //; [by smt(mem_range)|rewrite addrAC /=].
           do 3!(rewrite divz_pow //=; first by smt(mem_range)).
           rewrite mulNr opprD /= (addzC (-k)).
-          move => Hbsj_range IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
+          move => Hbsj_range IHstart_past_0 IHstart_past_1 IHj_past_0 IHj_past_1 IHj_future IHstart_future.
           do!split.
-          (*TODO: use bitrev_involutive.*)
-          + move : IHstart_past => {IHj_past_even IHj_past_odd IHj_future IHstart_future}.
+          + move : IHstart_past_0 => {IHstart_past_1 IHj_past_0 IHj_past_1 IHj_future IHstart_future}.
             apply all_range_imp => y Hy_range /=; apply all_range_imp => x Hx_range /=.
             rewrite /partial_ntt_spec /= => <-.
-            print set_neqiE.
-            rewrite set_neqiE.
-            - rewrite bitrev_bijective //. admit. admit.
-              admit.
-            (*
-            rewrite !get_set_if -!mem_range.
-            do 2!(rewrite (range_incl _ _ _ _ _ _ _ (bitrev_range _ _)) //=).
-            rewrite bitrev_bijective //.
-            - (*TODO: actually should be able to infer placeholders.*)
-              (*move: (add_range _ _ _ _ _ _ (range_mul _ _ _ _ _ Hy_range) Hx_range).*)
-              move: (add_range _ _ _ _ _ _ (range_mul _ _ _ (2 ^ (k + 1)) _ Hy_range) Hx_range); first by apply expr_gt0.
-              (*apply range_incl => //=; rewrite -exprD_nneg; [by smt(mem_range)|by smt(mem_range)|].
-              rewrite addrA -(IntID.addrA 7) /=.*)
-              (*TODO: must be a bit more precise than the range_mul.*)
-              admit.
-            - admit.
-            search _ bitrev.
-            *)
-            admit.
+            rewrite !set_neqiE ?bitrev_bijective //.
+            - move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range) => //.
+              * apply/(lez_trans (2 ^ k)); first by apply/ltzW; move/mem_range: Hstart_range.
+                by apply/ler_weexpn2l => //; smt(mem_range).
+              move => {Hx_range} Hx_range; move: (range_mul_add _ _ _ _ _ Hy_range Hx_range).
+              (*TODO: why  does it fail despite the try?*)
+              (*apply/range_incl => //=; rewrite -exprD_nneg //=; try by smt(mem_range).*)
+              apply/range_incl => //=; rewrite -exprD_nneg //=; [by smt(mem_range)|by smt(mem_range)|].
+              by rewrite addrAC addrA /= -addrA.
+            - move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hstart_range) => //.
+              * by apply/ler_weexpn2l => //; smt(mem_range).
+              move => {Hstart_range} Hstart_range; move: (range_mul_add _ _ _ _ _ Hbsj_range Hstart_range).
+              apply/range_incl => //=; rewrite -exprD_nneg //=; [by smt(mem_range)|by smt(mem_range)|].
+              by rewrite addrAC addrA /= -addrA.
+            - rewrite range_mul_add_eq.
+              * move: Hx_range; apply/range_incl => //.
+                apply/(lez_trans (2 ^ k)); first by apply/ltzW; move/mem_range: Hstart_range.
+                by apply/ler_weexpn2l => //; smt(mem_range).
+              * move: Hstart_range; apply range_incl => //.
+                by apply/ler_weexpn2l => //; smt(mem_range).
+              by rewrite negb_and; right; apply/ltr_eqF; move/mem_range: Hx_range.
+            - move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range) => //.
+              * apply/(lez_trans (2 ^ k)); first by apply/ltzW; move/mem_range: Hstart_range.
+                by apply/ler_weexpn2l => //; smt(mem_range).
+              move => {Hx_range} Hx_range; move: (range_mul_add _ _ _ _ _ Hy_range Hx_range).
+              apply/range_incl => //=; rewrite -exprD_nneg //=; [by smt(mem_range)|by smt(mem_range)|].
+              by rewrite addrAC addrA /= -addrA.
+            - move: (range_mul_add _ 1 _ _ 2 Hbsj_range _); first by apply/mem_range.
+              move => {Hbsj_range} Hbsj_range; move: (range_mul_add _ _ _ _ _ Hbsj_range Hstart_range).
+              by apply/range_incl => //=; rewrite -exprSr -?exprD_nneg //= -?addrA //=; smt(mem_range).
+            rewrite mulrDl /= -addrA -mulrA -exprS; first by move/mem_range: Hk_range.
+            rewrite range_mul_add_eq.
+            - move: Hx_range; apply/range_incl => //.
+              apply/(lez_trans (2 ^ k)); first by apply/ltzW; move/mem_range: Hstart_range.
+              by apply/ler_weexpn2l => //; smt(mem_range).
+            - rewrite (addzC _ start); move: (range_add _ (2 ^ k) _ _ Hstart_range).
+              rewrite addr_double -exprSr /=; first by move/mem_range: Hk_range.
+              by apply range_incl => //; apply expr_ge0.
+            rewrite negb_and; right; apply/ltr_eqF/ltr_paddl; first by apply/expr_ge0.
+            by move/mem_range: Hx_range.
+          + move : IHstart_past_1 => {IHstart_past_0 IHj_past_0 IHj_past_1 IHj_future IHstart_future}.
+            apply all_range_imp => y Hy_range /=; apply all_range_imp => x Hx_range /=.
+            rewrite /partial_ntt_spec /= => <-.
+            rewrite !set_neqiE ?bitrev_bijective //.
+            - move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range); first by apply/expr_ge0.
+              * rewrite exprSr -?addr_double; first by move/mem_range: Hk_range.
+                by apply/ler_add2l/ltzW; move/mem_range: Hstart_range.
+              move => {Hx_range} Hx_range; move: (range_mul_add _ _ _ _ _ Hy_range Hx_range).
+              apply/range_incl => //=; rewrite -exprD_nneg //=; [by smt(mem_range)|by smt(mem_range)|].
+              by rewrite addrAC addrA /= -addrA.
+            - move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hstart_range) => //.
+              * by apply/ler_weexpn2l => //; smt(mem_range).
+              move => {Hstart_range} Hstart_range; move: (range_mul_add _ _ _ _ _ Hbsj_range Hstart_range).
+              apply/range_incl => //=; rewrite -exprD_nneg //=; [by smt(mem_range)|by smt(mem_range)|].
+              by rewrite addrAC addrA /= -addrA.
+            - rewrite range_mul_add_eq.
+              * move: Hx_range; apply/range_incl; first by apply expr_ge0.
+                rewrite exprSr -?addr_double; first by move/mem_range: Hk_range.
+                by apply/ler_add2l/ltzW; move/mem_range: Hstart_range.
+              * move: Hstart_range; apply range_incl => //.
+                by apply/ler_weexpn2l => //; smt(mem_range).
+              by rewrite negb_and; right; apply/gtr_eqF/(ltr_le_trans (2 ^ k)); smt(mem_range).
+            - move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range); first by apply expr_ge0.
+              * rewrite exprSr -?addr_double; first by move/mem_range: Hk_range.
+                by apply/ler_add2l/ltzW; move/mem_range: Hstart_range.
+              move => {Hx_range} Hx_range; move: (range_mul_add _ _ _ _ _ Hy_range Hx_range).
+              apply/range_incl => //=; rewrite -exprD_nneg //=; [by smt(mem_range)|by smt(mem_range)|].
+              by rewrite addrAC addrA /= -addrA.
+            - move: (range_mul_add _ 1 _ _ 2 Hbsj_range _); first by apply/mem_range.
+              move => {Hbsj_range} Hbsj_range; move: (range_mul_add _ _ _ _ _ Hbsj_range Hstart_range).
+              by apply/range_incl => //=; rewrite -exprSr -?exprD_nneg //= -?addrA //=; smt(mem_range).
+            rewrite mulrDl /= -addrA -mulrA -exprS; first by move/mem_range: Hk_range.
+            rewrite range_mul_add_eq.
+            - move: Hx_range; apply/range_incl; first by apply/expr_ge0.
+              rewrite exprSr -?addr_double; first by move/mem_range: Hk_range.
+              by apply/ler_add2l/ltzW; move/mem_range: Hstart_range.
+            - rewrite (addzC _ start); move: (range_add _ (2 ^ k) _ _ Hstart_range).
+              rewrite addr_double -exprSr /=; first by move/mem_range: Hk_range.
+              by apply range_incl => //; apply expr_ge0.
+            by rewrite negb_and; right; apply/ltr_eqF; move/mem_range: Hx_range.
           + admit.
           + admit.
           + admit.
@@ -582,7 +645,7 @@ theory NTTequiv.
         rewrite /= in Hstart_range.
         rewrite -exprSr; first by smt(mem_range).
         do 2!(rewrite divz_pow //=; first by smt(mem_range)).
-        move => IHstart_past IHstart_future.
+        move => IHstart_past_0 IHstart_past_1 IHstart_future.
         do!split.
         * by apply all_range_empty.
         * by apply all_range_empty.
@@ -592,7 +655,7 @@ theory NTTequiv.
         * by move: IHstart_future; rewrite all_range_2_min /=; first by smt(mem_range).
         move => j r.
         (*TODO: the order here seems reversed...*)
-        move => {IHstart_past IHstart_future}.
+        move => {IHstart_past_0 IHstart_past_1 IHstart_future}.
         move => Hncond_j Hinv_j; move: (FOR_INT_ADD_LT.inv_outP _ _ _ _ _ Hncond_j Hinv_j);
         [by rewrite //=; apply expr_gt0|move => ->> /=].
         move => {Hncond_j Hinv_j}.
@@ -602,13 +665,9 @@ theory NTTequiv.
         rewrite mulNr opprD /= (addzC (-k)).
         rewrite -exprD_subz //; [by smt(mem_range)|rewrite addrAC /=].
         rewrite -exprSr; first by smt(mem_range).
-        rewrite (IntID.addrAC _ (-k)) mulrDl /=.
-        move => IHstart_past IHj_past_even IHj_past_odd IHj_future IHstart_future.
-        (*TODO: the second /= does not seem to simplify the second goal.*)
-        apply/all_range_2_max => /=; first by smt(mem_range).
-        rewrite /= IHj_past_odd /=.
-        apply/all_range_2_max => /=; first by smt(mem_range).
-        by trivial.
+        rewrite (IntID.addrAC _ (-k)) /=.
+        move => IHstart_past_0 IHstart_past_1 IHj_past_0 IHj_past_1 IHj_future IHstart_future.
+        by rewrite addrA; split; apply/all_range_2_max => //=; smt(mem_range).
       skip.
       move => |> &hr.
       move => Hcond_len Hinv_len; move: (FOR_NAT_MUL_LE.inv_loopP _ _ _ _ _ Hcond_len Hinv_len) => //= [k [Hk_range ->>]].
@@ -621,11 +680,16 @@ theory NTTequiv.
       move => IHlen.
       do!split.
       - by apply all_range_2_empty.
+      - by apply all_range_2_empty.
       move => r start.
       move => Hncond_start Hinv_start; move: (FOR_INT_ADD_LT.inv_outP _ _ _ _ _ Hncond_start Hinv_start) => //= ->>.
       move => {Hncond_start Hinv_start}.
       rewrite lezNgt expr_gt0 //=.
-      by rewrite -exprSr; first by smt(mem_range).
+      rewrite addr_double.
+      rewrite -exprSr; first by smt(mem_range).
+      move => IHstart_past_0 IHstart_past_1 _.
+      apply/(all_range_2_cat _ (2 ^ k)) => //.
+      by rewrite expr_ge0 //= ler_weexpn2l //; smt(mem_range).
     skip.
     move => |>.
     rewrite FOR_NAT_MUL_LE.inv_in //=.
