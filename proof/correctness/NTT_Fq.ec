@@ -328,7 +328,7 @@ theory NTTequiv.
        start <- 0;
        while(start < len) {
           (*TODO: the value of zetasctr is suspicious*)
-          zetasctr <- len + start;
+          zetasctr <- (start * 2 + 1) * (64 %/ len);
           zeta_ <- exp zeta1_ zetasctr;
           j <- 0;
           while (j < 256) {
@@ -484,17 +484,30 @@ theory NTTequiv.
   (*- one that gives a postcondition when the loop being adressed is a for loop*)
   (*- another that does the same for the specific for loops that always write on different parts of the memory that is described in the postcondition (the two innermost loops in our case)*)
 
-  abbrev index (len a b : int) = bitrev 8 (b * len + a).
+  abbrev index (len start bsj : int) = bitrev 8 (bsj * len + start).
 
-  op partial_ntt (p : zmod Array256.t, len a b : int) =
+  op partial_ntt (p : zmod Array256.t, len start bsj : int) =
   BAdd.bigi
     predT
     (fun k =>
-      (exp zeta1_ (bitrev 8 (k * a))) *
-      p.[index len k b])
+      (*TODO: the value of this exponent is suspicious.*)
+      (exp zeta1_ (bitrev 8 (k * start))) *
+      p.[index len k bsj])
     0 len.
 
-  op partial_ntt_spec (r p : zmod Array256.t, len a b : int) = (r.[index len a b] = partial_ntt p len a b).
+  op partial_ntt_spec (r p : zmod Array256.t, len start bsj : int) =
+    r.[index len start bsj] = partial_ntt p len start bsj.
+
+  (*abbrev update (p : zmod Array256.t, k start bsj : int) =
+    p.[index (2 ^ (k + 1)) (2 ^ k + start) bsj <- ].*)
+
+(*
+
+            t <- zeta_ * r.[bitrev 8 (j + len + start)];
+            r.[bitrev 8 (j + len + start)] <- r.[bitrev 8 (j + start)] + (-t);
+            r.[bitrev 8 (j + start)]       <- r.[bitrev 8 (j + start)] + t;
+*)
+    
 
   lemma naiventt (p : zmod Array256.t) :
       hoare
@@ -543,7 +556,7 @@ theory NTTequiv.
           do 2!(rewrite mulzK ?expf_eq0 //=).
           do 2!(rewrite -divzpMr; first by apply dvdz_exp2l; smt(mem_range)).
           rewrite -exprD_subz //; [by smt(mem_range)|rewrite addrAC /=].
-          do 3!(rewrite divz_pow //=; first by smt(mem_range)).
+          do 4!(rewrite divz_pow //=; first by smt(mem_range)).
           rewrite mulNr opprD /= (addzC (-k)).
           move => Hbsj_range IHstart_past_0 IHstart_past_1 IHj_past_0 IHj_past_1 IHj_future IHstart_future.
           rewrite all_range_min in IHj_future.
