@@ -317,8 +317,17 @@ theory NTTequiv.
 
   op zeta1 = ZModpRing.ofint 17.
 
+  (*TODO: is that even true?*)
+  lemma exp_ofint m n : exp (ofint m) n = ofint (exp m n).
+  proof.
+    admit.
+  qed.
+
+  (*TODO: need something like this, or is there a better way?*)
   lemma exp_zeta1_128 : exp zeta1 128 = -ZModField.one.
   proof.
+    (*TODO: How does /= work? Depth and int capacity.*)
+    rewrite exp_ofint (*/=*).
     admit.
   qed.
 
@@ -624,16 +633,18 @@ theory NTTequiv.
     by rewrite addr_double -exprSr //; move/mem_range: Hk_range.
   qed.
 
-  (*TODO: define this guy such that it works.*)
-  op exponent (len start s : int) : int.
+  (*TODO: prove that it works.*)
+  op exponent (len start s : int) : int = (2 * start + 1) * (bitrev 8 (2 * (s %% len))).
 
   lemma exponent_0 : exponent 1 0 0 = 0.
-  proof.
-    admit.
-  qed.
+  proof. by rewrite /exponent /= bitrev_0. qed.
 
-  lemma exponent_ge0 len start s : 0 <= exponent len start s.
+  lemma exponent_ge0 len start s :
+    0 <= start =>
+    0 <= exponent len start s.
   proof.
+    move => le0start; apply/mulr_ge0; last first.
+    move/mem_range: (bitrev_range 8 (2 * (s %% len))) => [? _].
     admit.
   qed.
 
