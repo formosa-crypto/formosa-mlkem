@@ -1,5 +1,26 @@
-require import AllCore StdOrder List BitEncoding StdBigop.
+require import AllCore StdOrder List BitEncoding StdBigop IntDiv.
+require import IntDiv_hakyber.
 (*---*) import IntOrder BS2Int Bigint.
+
+
+lemma int2bs_range (N n : int) :
+  n \in range 0 (2 ^ N) <=> forall i j , `|N| <= i => ! (nth false (int2bs j n) i).
+proof.
+  split.
+  + move => /mem_range [le0n ltn_] i j le_i; apply/neqF.
+    rewrite nth_mkseq_if (lez_trans _ _ _ (normr_ge0 N) le_i) /=.
+    rewrite neqF andaE negb_and -implybE /= => ltij.
+    have -> //=: (n %/ 2 ^ i = 0).
+    apply/divz_eq0; first by apply expr_gt0.
+    rewrite le0n /=; apply/(ltr_le_trans _ _ _ ltn_).
+    move/ler_norml: le_i => [/ler_oppl le_i leNi].
+    case (0 <= N) => [le0N|/ltzNge/ltzW/oppr_ge0 leN0].
+    + by apply/ler_weexpn2l.
+    by rewrite -(opprK N) exprN; apply/ler_weexpn2l.
+  move: (eq_div_range n (2 ^ N) 0 (expr_gt0 N 2 _)) => //= <-.
+  
+  admit.
+qed.
 
 
 op bitrev (i k : int) = bs2int (rev (int2bs i k)).
@@ -52,3 +73,12 @@ lemma bitrev_bijective (i k1 k2 : int) :
   bitrev i k1 = bitrev i k2 <=>
   k1 = k2.
 proof. by move => le0i Hk1in Hk2in; split => [|-> //]; apply bitrev_injective. qed.
+
+lemma bitrev_dvdz (i j k : int) :
+  0 <= j <= i =>
+  k \in range 0 (2 ^ j) =>
+  2 ^ (i - j) %| bitrev i k.
+proof.
+  move => [le0j leji] /mem_range [le0k ltk_].
+  rewrite /bitrev.
+qed.

@@ -317,24 +317,70 @@ theory NTTequiv.
 
   op zeta1 = ZModpRing.ofint 17.
 
-  (*TODO: is that even true?*)
-  lemma exp_ofint m n : exp (ofint m) n = ofint (exp m n).
+  lemma ofintSz i : ofint (i + 1) = ZModField.one + ofint i.
+  proof. by rewrite /ofint mulrSz. qed.
+
+  lemma addr_int m n : 0 <= m => ofint m + ofint n = ofint (m + n).
   proof.
-    admit.
+    elim m => /=; first by rewrite ofint0 add0r.
+    move => m le0m; rewrite ofintSz -addrA => ->.
+    by rewrite -addrAC ofintSz.
   qed.
 
-  (*TODO: need something like this, or is there a better way?*)
+  lemma addr_intz m n : ofint m + ofint n = ofint (m + n).
+  proof.
+    case (0 <= m) => [le0m|/ltrNge ltm0]; first by apply addr_int.
+    rewrite -(oppzK m) -(oppzK n) -!opprD !(ofintN (-_)%Int) -opprD.
+    rewrite addr_int; first by apply/ltzW/oppr_gt0.
+    by rewrite -!ofintN !opprD !opprK.
+  qed.
+
+  lemma mulr_int m n : 0 <= m => ofint m * ofint n = ofint (m * n).
+  proof.
+    elim m => /=; first by rewrite ofint0 mul0r.
+    move => m le0m; rewrite mulrDl /= -!addr_intz.
+    by rewrite mulrDl ofint1 mul1r => ->.
+  qed.
+
+  lemma mulr_intz m n : ofint m * ofint n = ofint (m * n).
+  proof.
+    case (0 <= m) => [le0m|/ltrNge ltm0]; first by apply mulr_int.
+    rewrite -(oppzK m) !mulNr !(ofintN (-_)%Int) mulNr.
+    rewrite mulr_int; first by apply/ltzW/oppr_gt0.
+    by rewrite mulNr.
+  qed.
+
+  lemma exp_ofint m n : 0 <= n => exp (ofint m) n = ofint (exp m n).
+  proof.
+    elim n => /=; first by rewrite !expr0 ofint1.
+    move => n le0n; rewrite !exprD_nneg // => ->.
+    by rewrite !expr1 mulr_intz.
+  qed.
+
+  lemma eq_ofint_3329_0 : ofint 3329 = ZModField.zero.
+  proof. admit. qed.
+
+  lemma modz_ofint m d : ofint d = ZModField.zero => ofint m = ofint (m %% d).
+  proof.
+    rewrite {1}(divz_eq m d) -addr_intz -mulr_intz => ->.
+    by rewrite mulr0 add0r.
+  qed.
+
   lemma exp_zeta1_128 : exp zeta1 128 = -ZModField.one.
   proof.
-    (*TODO: How does /= work? Depth and int capacity.*)
-    rewrite exp_ofint (*/=*).
-    admit.
+    (*TODO: limits of /= and int capacity.*)
+    rewrite exp_ofint //= expr0 /= -ofint1 -ofintN.
+    by rewrite (modz_ofint _ _ eq_ofint_3329_0) (modz_ofint (-1) _ eq_ofint_3329_0).
   qed.
 
   lemma exp_zeta1_256 : exp zeta1 256 = ZModField.one.
   proof.
-    admit.
+    rewrite exp_ofint //= expr0 /= -ofint1.
+    by rewrite (modz_ofint _ _ eq_ofint_3329_0).
   qed.
+
+  lemma dvdz_exp (x : zmod) (m d : int) : d %| m => exp x d = ZModField.one => exp x m = ZModField.one.
+  proof. by move => /dvdzP [q ->>]; rewrite mulrC exprM => ->; rewrite expr1z. qed.
 
   op zetasctr_ntt5 len start = (start * 2 + 1) * (64 %/ len).
 
@@ -633,18 +679,19 @@ theory NTTequiv.
     by rewrite addr_double -exprSr //; move/mem_range: Hk_range.
   qed.
 
-  (*TODO: prove that it works.*)
-  op exponent (len start s : int) : int = (2 * start + 1) * (bitrev 8 (2 * (s %% len))).
+  op exponent (len start x : int) = (2 * start + 1) * (bitrev 8 (2 * (x %% len))).
 
   lemma exponent_0 : exponent 1 0 0 = 0.
   proof. by rewrite /exponent /= bitrev_0. qed.
 
-  lemma exponent_ge0 len start s :
+  lemma exponent_ge0 len start x :
     0 <= start =>
-    0 <= exponent len start s.
+    0 <= exponent len start x.
   proof.
-    move => le0start; apply/mulr_ge0; last first.
-    move/mem_range: (bitrev_range 8 (2 * (s %% len))) => [? _].
+    move => le0start; apply/mulr_ge0; first by apply/addr_ge0 => //; apply/mulr_ge0.
+    move/mem_range: (bitrev_range 8 (2 * (x %% len))).
+    (*TODO: what?*)
+    (*by trivial.*)
     admit.
   qed.
 
@@ -655,7 +702,14 @@ theory NTTequiv.
     exp zeta1 (exponent (2 ^ k) start x) =
     exp zeta1 (exponent (2 ^ (k + 1)) start x).
   proof.
-    admit.
+    move => Hk_range Hstart_range Hx_range.
+    rewrite /exponent !modz_small // -mem_range normrX_nat //=.
+    + by move/mem_range: Hk_range.
+    + by apply/addr_ge0 => //; move/mem_range: Hk_range.
+    move: Hx_range; apply range_incl => //=.
+    (*TODO: why is `|2| still here, and why does it not matter?*)
+    apply/ler_weexpn2l => //; split; first by move/mem_range: Hk_range.
+    by move => _; apply/ltzW/ltzS.
   qed.
 
   lemma exponent_spec_01 (k start x : int) :
@@ -665,6 +719,21 @@ theory NTTequiv.
     exp zeta1 (zetasctr_ntt5 (2 ^ k) start + exponent (2 ^ k) start x) =
     exp zeta1 (exponent (2 ^ (k + 1)) start (2 ^ k + x)).
   proof.
+    move => Hk_range Hstart_range Hx_range.
+    rewrite /exponent !modz_small // -?mem_range ?normrX_nat //=.
+    + by move/mem_range: Hk_range.
+    + by apply/addr_ge0 => //; move/mem_range: Hk_range.
+    + rewrite (IntID.addrC _ x); move: (range_add _ (2 ^ k) _ _ Hx_range) => /=.
+      rewrite addr_double -exprSr; first by move/mem_range: Hk_range.
+      by apply range_incl => //=; apply expr_ge0.
+    rewrite mulrDr -exprS; first by move/mem_range: Hk_range.
+    rewrite /zetasctr_ntt5 (IntID.mulrC _ 2) -mulrDr.
+    do 2!congr.
+    move: (range_mul _ _ _ 2 _ Hx_range) => //= {Hx_range} Hx_range.
+    move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range) => // {Hx_range}.
+    + by rewrite mulrDl /= ltzW ltzE /= exprSr //; move/mem_range: Hk_range.
+    rewrite (IntID.mulrC _ 2) => Hx_range.
+    rewrite divz_pow //=; first by rewrite -(ltzS _ 6) /= -mem_range.
     admit.
   qed.
 
@@ -675,6 +744,32 @@ theory NTTequiv.
     exp zeta1 (exponent (2 ^ k) start x) =
     exp zeta1 (exponent (2 ^ (k + 1)) (2 ^ k + start) x).
   proof.
+    move => Hk_range Hstart_range Hx_range.
+    rewrite /exponent !modz_small // -?mem_range ?normrX_nat //=.
+    + by move/mem_range: Hk_range.
+    + by apply/addr_ge0 => //; move/mem_range: Hk_range.
+    + move: Hx_range; apply range_incl => //=.
+      apply/ler_weexpn2l => //; split; first by move/mem_range: Hk_range.
+      by move => _; apply/ltzW/ltzS.
+    rewrite mulrDr -exprS; first by move/mem_range: Hk_range.
+    rewrite -addrA (IntID.mulrDl (2 ^ (k + 1))).
+    rewrite exprD_nneg.
+    + apply/mulr_ge0; first by apply/expr_ge0.
+      move/mem_range: (bitrev_range 8 (2 * x)).
+      admit.
+    + apply/mulr_ge0; first by apply/addr_ge0 => //; apply/mulr_ge0 => //; move/mem_range: Hstart_range.
+      move/mem_range: (bitrev_range 8 (2 * x)).
+      admit.
+    rewrite (dvdz_exp _ (_ ^ _ * _)%IntID _ _ exp_zeta1_256) ?mul1r //.
+    move: (dvdz_mul (2 ^ (k + 1)) (2 ^ (7 - k)) (2 ^ (k + 1)) (bitrev 8 (2 * x))).
+    rewrite -exprD_nneg.
+    + by apply/addr_ge0 => //; move/mem_range: Hk_range.
+    + by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+    rewrite addrA /= addrAC /= => -> //; first by apply dvdzz.
+    rewrite mulrC.
+    move: (range_mul _ _ _ 2 _ Hx_range) => //= {Hx_range} Hx_range.
+    move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range) => // {Hx_range}; last move => Hx_range.
+    + by rewrite mulrDl /= ltzW ltzE /= exprSr //; move/mem_range: Hk_range.
     admit.
   qed.
 
@@ -685,6 +780,31 @@ theory NTTequiv.
     exp zeta1 (128 + zetasctr_ntt5 (2 ^ k) start + exponent (2 ^ k) start x) =
     exp zeta1 (exponent (2 ^ (k + 1)) (2 ^ k + start) (2 ^ k + x)).
   proof.
+    move => Hk_range Hstart_range Hx_range.
+    rewrite /exponent !modz_small // -?mem_range ?normrX_nat //=.
+    + by move/mem_range: Hk_range.
+    + by apply/addr_ge0 => //; move/mem_range: Hk_range.
+    + rewrite (IntID.addrC _ x); move: (range_add _ (2 ^ k) _ _ Hx_range) => /=.
+      rewrite addr_double -exprSr; first by move/mem_range: Hk_range.
+      by apply range_incl => //=; apply expr_ge0.
+    do 2!(rewrite mulrDr -exprS; first by move/mem_range: Hk_range).
+    rewrite /zetasctr_ntt5 (IntID.mulrC _ 2) -addrA -mulrDr.
+    rewrite -addrA (IntID.mulrDl _ _ (bitrev _ _)).
+    rewrite divz_pow //=; first by rewrite -(ltzS _ 6) /= -mem_range.
+    rewrite exprD_nneg //.
+    + apply/mulr_ge0; apply addr_ge0 => //; [by apply/mulr_ge0 => //; move/mem_range: Hstart_range|by apply/expr_ge0|].
+      move/mem_range: (bitrev_range 8 (2 * x)).
+      admit.
+    rewrite exprD_nneg //.
+    + apply/mulr_ge0; first by apply/expr_ge0.
+      move/mem_range: (bitrev_range 8 (2 ^ (k + 1) + 2 * x)).
+      admit.
+    + apply/mulr_ge0; first by apply addr_ge0 => //; apply/mulr_ge0 => //; move/mem_range: Hstart_range.
+      move/mem_range: (bitrev_range 8 (2 ^ (k + 1) + 2 * x)).
+      admit.
+    congr.
+    + admit.
+    do 2!congr.
     admit.
   qed.
 
@@ -913,7 +1033,7 @@ theory NTTequiv.
     rewrite /(\o) /= mulrA -exprD_nneg.
     + apply/zetasctr_ntt5_ge0; first by apply/expr_ge0.
       by move/mem_range: Hstart_range.
-    + by apply/exponent_ge0.
+    + by apply/exponent_ge0; move/mem_range: Hstart_range.
     rewrite !mulrDl /= -!mulrA -!addrA -!exprS.
     + by move/mem_range: Hk_range.
     congr.
@@ -958,7 +1078,7 @@ theory NTTequiv.
     rewrite /(\o) /= mulrA -exprD_nneg.
     + apply/zetasctr_ntt5_ge0; first by apply/expr_ge0.
       by move/mem_range: Hstart_range.
-    + by apply/exponent_ge0.
+    + by apply/exponent_ge0; move/mem_range: Hstart_range.
     rewrite !mulrDl /= -!mulrA -!addrA -!exprS.
     + by move/mem_range: Hk_range.
     rewrite -mulNr.
@@ -967,7 +1087,7 @@ theory NTTequiv.
     + apply/addr_ge0.
      - apply/zetasctr_ntt5_ge0; first by apply/expr_ge0.
         by move/mem_range: Hstart_range.
-      by apply/exponent_ge0.
+      by apply/exponent_ge0; move/mem_range: Hstart_range.
     rewrite addrA.
       by apply exponent_spec_11.
   qed.
