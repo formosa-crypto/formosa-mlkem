@@ -357,6 +357,7 @@ theory NTTequiv.
     by rewrite !expr1 mulr_intz.
   qed.
 
+  (*TODO: specify in the clone of ZModpRing*)
   lemma eq_ofint_3329_0 : ofint 3329 = ZModField.zero.
   proof. admit. qed.
 
@@ -368,7 +369,6 @@ theory NTTequiv.
 
   lemma exp_zeta1_128 : exp zeta1 128 = -ZModField.one.
   proof.
-    (*TODO: limits of /= and int capacity.*)
     rewrite exp_ofint //= expr0 /= -ofint1 -ofintN.
     by rewrite (modz_ofint _ _ eq_ofint_3329_0) (modz_ofint (-1) _ eq_ofint_3329_0).
   qed.
@@ -690,8 +690,7 @@ theory NTTequiv.
   proof.
     move => le0start; apply/mulr_ge0; first by apply/addr_ge0 => //; apply/mulr_ge0.
     move/mem_range: (bitrev_range 8 (2 * (x %% len))).
-    (*TODO: what?*)
-    (*by trivial.*)
+    (*TODO: Pierre-Yves*)
     admit.
   qed.
 
