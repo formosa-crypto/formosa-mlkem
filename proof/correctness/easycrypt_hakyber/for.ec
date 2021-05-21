@@ -270,29 +270,27 @@ end FOR_INT_DIV_GE.
 
 
 
-
-(*TODO: clone with theory: merge 1.0*)
 abstract theory PERM_FOR.
 
   clone import FOR as FOR1.
   clone import FOR as FOR2.
 
-  type t, u.
+  type t.
 
   op rel : FOR1.it -> FOR1.ct -> FOR1.t -> FOR2.it -> FOR2.ct -> FOR2.t -> bool.
   op pt1 : FOR1.t -> t.
   op pt2 : FOR2.t -> t.
 
-  abbrev lt1 i1 x1 n = map (pt1 \o (FOR1.val i1 x1)) (range 0 n).
-  abbrev lt2 i2 x2 n = map (pt2 \o (FOR2.val i2 x2)) (range 0 n).
+  abbrev lt1 i1 x1 n = rev (map (pt1 \o (FOR1.val i1 x1)) (range 0 n)).
+  abbrev lt2 i2 x2 n = rev (map (pt2 \o (FOR2.val i2 x2)) (range 0 n)).
 
-  op left_commutative_in f (z : u) lt =
+  op left_commutative_in ['u] f (z : 'u) lt =
     forall (a b : t) ,
       a \in lt =>
       b \in lt =>
       f a (f b z) = f b (f a z).
 
-  op inv f z i1 c1 x1 v1 (t1 : u) i2 x2 v2 (t2 : u) =
+  op inv ['u] f z i1 c1 x1 v1 (t1 : 'u) i2 x2 v2 (t2 : 'u) =
     exists n ,
       n \in range 0 (FOR1.out i1 c1 x1 + 1) /\
       v1 = (FOR1.val i1 x1 n) /\
@@ -309,10 +307,10 @@ abstract theory PERM_FOR.
   (*TODO: why is it not using left_commutative?*)
   print foldr_perm.
 
-  lemma left_commutative_in_foldr f lt1 lt2 :
-    (forall z , left_commutative_in f z lt1) =>
+  lemma left_commutative_in_foldr ['u] f lt1 lt2 :
+    (forall (z : 'u) , left_commutative_in f z lt1) =>
     perm_eq lt1 lt2 =>
-    (forall z , foldr f z lt1 = foldr f z lt2).
+    (forall (z : 'u) , foldr f z lt1 = foldr f z lt2).
   proof.
     elim: lt1 lt2 => [|t1 lt1 IHlt1] lt2 Hlci Heqlt12 /=.
     + by have -> //: lt2 = []; apply/perm_eq_small/perm_eq_sym.
@@ -338,13 +336,12 @@ abstract theory PERM_FOR.
     move => Hrel Hfin1 Hfin2.
     have Hperm_eq:= (perm_val _ _ _ _ _ _ Hrel Hfin1 Hfin2).
     have:= (perm_eq_size _ _ Hperm_eq).
-    rewrite !size_map !size_range /=.
+    rewrite !size_rev !size_map !size_range /=.
     by do 2!rewrite ler_maxr ?out_ge0 //.
   qed.
 
-  lemma inv_loop_post f z i1 c1 x1 v1 (t1 : u) i2 c2 x2 v2 (t2 : u) :
+  lemma inv_loop_post ['u] f z i1 c1 x1 v1 (t1 : 'u) i2 c2 x2 v2 (t2 : 'u) :
     rel i1 c1 x1 i2 c2 x2 =>
-    (forall z , left_commutative_in f z (lt1 i1 x1 (out i1 c1 x1))) =>
     FOR1.finite i1 c1 x1 =>
     FOR2.finite i2 c2 x2 =>
     FOR1.cond c1 v1 =>
@@ -352,9 +349,8 @@ abstract theory PERM_FOR.
     inv f z i1 c1 x1 v1 t1 i2 x2 v2 t2 =>
     inv f z i1 c1 x1 (FOR1.incr i1 v1) (f (pt1 v1) t1) i2 x2 (FOR2.incr i2 v2) (f (pt2 v2) t2).
   proof.
-    move => Hrel Hlci Hfin1 Hfin2 Hcond1 Hcond2 [n [Hn_range [->> [->> [->> ->>]]]]].
-    rewrite /inv; move: Hn_range; rewrite {1}rangeSr ?FOR1.out_ge0 // mem_rcons /=.
-    case => [->>|Hn_range].
+    move => Hrel Hfin1 Hfin2 Hcond1 Hcond2 [n [Hn_range [->> [->> [->> ->>]]]]].
+    move: Hn_range; rewrite {1}rangeSr ?FOR1.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
     + have:= pmin_mem _ (FOR1.finite_nsempty _ _ _ Hfin1).
       by rewrite (FOR1.pmin_out _ _ _ Hfin1) /= => /negP; rewrite Hcond1.
     exists (n + 1); do!split.
@@ -362,69 +358,53 @@ abstract theory PERM_FOR.
       by move: (range_add _ 1 _ _ Hn_range).
     + by rewrite !val_iter ?addr_ge0 // ?iterS; move/mem_range: Hn_range.
     + by rewrite !val_iter ?addr_ge0 // ?iterS; move/mem_range: Hn_range.
-    + rewrite rangeSr ?map_rcons ?foldr_rcons /=; first by move/mem_range: Hn_range.
-      rewrite (left_commutative_in_foldr _ (rcons _ _) ((pt1 (val i1 x1 n)) :: (lt1 i1 x1 n))) //.
-      - move => w a b.
-        (*TODO: why not working?*)
-        (*rewrite -map_rcons.*)
-        print map_rcons.
-        have <-:= (map_rcons ((\o) pt1 (val i1 x1)) (range 0 n) n).
-        rewrite -rangeSr; first by move/mem_range: Hn_range.
-        move => /mapP [ma [Hma_range ->>]] /mapP [mb [Hmb_range ->>]]; apply Hlci.
-        * apply (map_f ((\o) pt1 (val i1 x1))); move: Hma_range.
-          by apply range_incl => //; rewrite -ltzE; move/mem_range: Hn_range.
-        apply (map_f ((\o) pt1 (val i1 x1))); move: Hmb_range.
-        by apply range_incl => //; rewrite -ltzE; move/mem_range: Hn_range.
-      by rewrite -cats1 perm_catCl /=; apply/perm_eq_refl.
-    rewrite rangeSr ?map_rcons ?foldr_rcons /=; first by move/mem_range: Hn_range.
-    rewrite (left_commutative_in_foldr _ (rcons _ _) ((pt2 (val i2 x2 n)) :: (lt2 i2 x2 n))) //.
-    + move => w a b.
-      have <-:= (map_rcons ((\o) pt2 (val i2 x2)) (range 0 n) n).
-      rewrite -rangeSr; first by move/mem_range: Hn_range.
-      have {Hlci} Hlci: forall z , left_commutative_in f z (lt2 i2 x2 (out i2 c2 x2)).
-      - move => w' a' b'.
-        do 2!(rewrite -(perm_eq_mem (lt1 i1 x1 (out i1 c1 x1))) ?perm_val // => ?).
-        by apply Hlci.
-      move => /mapP [ma [Hma_range ->>]] /mapP [mb [Hmb_range ->>]]; apply Hlci.
-      - apply (map_f ((\o) pt2 (val i2 x2))); move: Hma_range; rewrite -(eq_out i1 c1 x1) //.
-        by apply range_incl => //; rewrite -ltzE; move/mem_range: Hn_range.
-      apply (map_f ((\o) pt2 (val i2 x2))); move: Hmb_range; rewrite -(eq_out i1 c1 x1) //.
-      by apply range_incl => //; rewrite -ltzE; move/mem_range: Hn_range.
-    by rewrite -cats1 perm_catCl /=; apply/perm_eq_refl.
+    + by rewrite rangeSr ?map_rcons ?rev_rcons /(\o) //=; move/mem_range: Hn_range.
+    by rewrite rangeSr ?map_rcons ?rev_rcons /(\o) //=; move/mem_range: Hn_range.
   qed.
 
-  lemma inv_in f z i1 c1 x1 i2 x2 :
+  lemma inv_in ['u] f (z : 'u) i1 c1 x1 i2 x2 :
     FOR1.finite i1 c1 x1 =>
     inv f z i1 c1 x1 x1 z i2 x2 x2 z.
   proof.
-    move => Hfin1; exists 0; rewrite !val_iter // !iter0 //= (range_geq 0 0) //=.
+    move => Hfin1; exists 0; rewrite !val_iter // !iter0 //= (range_geq 0 0) //= rev_nil //=.
     rewrite -(FOR1.pmin_out _ _ _ Hfin1); apply/mem_range => //=; apply/ltzS.
     by apply ge0_pmin.
   qed.
 
-  print FOR1.inv_outP.
-
-  lemma inv_outP f z i1 c1 x1 v1 (t1 : u) i2 c2 x2 v2 (t2 : u) :
+  lemma inv_outP ['u] f z i1 c1 x1 v1 (t1 : 'u) i2 c2 x2 v2 (t2 : 'u) :
     rel i1 c1 x1 i2 c2 x2 =>
+    (forall z , left_commutative_in f z (lt1 i1 x1 (out i1 c1 x1))) =>
     FOR1.finite i1 c1 x1 =>
     FOR2.finite i2 c2 x2 =>
     ! FOR1.cond c1 v1 =>
-    ! FOR2.cond c2 v2 =>
     inv f z i1 c1 x1 v1 t1 i2 x2 v2 t2 =>
     v1 = FOR1.val i1 x1 (FOR1.out i1 c1 x1) /\
     v2 = FOR2.val i2 x2 (FOR2.out i2 c2 x2) /\
     t1 = t2.
   proof.
-    move => Hfin Hncond [n [/mem_range [le0n /ltzS /ler_eqVlt [-> //|ltnout]] ->>]].
-    have:= (pmin_min _ _ (finite_nsempty _ _ _ Hfin) le0n Hncond).
-    by rewrite (pmin_out _ _ _ Hfin) => /lezNgt /negP nltnout; move: (nltnout ltnout).
+    move => Hrel Hlci Hfin1 Hfin2 Hncond1 [n [Hn_range [->> [->> [->> ->>]]]]].
+    move: Hn_range; rewrite {1}rangeSr ?FOR1.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
+    + rewrite -(eq_out i1 c1 x1) //=; apply left_commutative_in_foldr => //.
+      by rewrite {2}(eq_out _ _ _ i2 c2 x2) //; apply perm_val.
+    (*TODO: why specifying the n is necessary?*)
+    have:= (pmin_min _ n (FOR1.finite_nsempty _ _ _ Hfin1) _ Hncond1); first by move/mem_range: Hn_range.
+    by rewrite (FOR1.pmin_out _ _ _ Hfin1) => /lezNgt; move/mem_range: Hn_range => [_ ->].
   qed.
-
-  
 
 end PERM_FOR.
 
 
 
-clone (*abstract*) PERM_FOR as PERM_FOR_ with theory FOR1 <- FOR_INT_ADD_LT , theory FOR2 <- FOR_INT_ADD_LT proof *.
-realize _.
+(*TODO: merge 1.0.*)
+(*
+clone PERM_FOR as PERM_FOR_INT_ADD_LT_BITREV_8 with
+  theory FOR1 <- FOR_INT_ADD_LT ,
+  theory FOR2 <- FOR_INT_ADD_LT ,
+  type t <- int ,
+  op rel <- (fun (i1 c1 x1 i2 c2 x2 : int) => (i1 = 1) /\ (c2 = 256) /\ (i2 * c1 = 256) /\ (x1 = 0) /\ (x2 = 0)) ,
+  op pt1 <- idfun ,
+  op pt2 <- bitrev 8
+  proof *.
+
+realize perm_val.
+*)
