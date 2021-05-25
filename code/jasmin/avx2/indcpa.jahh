@@ -38,8 +38,7 @@ fn indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   reg u8 c nonce;
   reg u64 i, j;
 
-  stack u64 spkp;
-  stack u64 sskp;
+  stack u64 spkp sskp srandomnessp;
 
   spkp = pkp;
   sskp = skp;
@@ -51,6 +50,8 @@ fn indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
     inbuf[(int) i] = c;
     i += 1;
   }
+
+  srandomnessp = randomnessp;
 
   buf = sha3512_32(buf, inbuf);
 
@@ -66,7 +67,6 @@ fn indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
     j += 1;
   }
 
-  sskp = skp;
   aa = gen_matrix(publicseed, 0);
 
   nonce = 0;
@@ -90,6 +90,7 @@ fn indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 
   pkp = spkp;
   skp = sskp;
+  randomnessp = srandomnessp;
 
   polyvec_tobytes(skp, skpv);
   polyvec_tobytes(pkp, pkpv);

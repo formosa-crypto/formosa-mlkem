@@ -111,12 +111,11 @@ export fn indcca_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 
   pkp = s_skp;
   pkp += 12 * KYBER_K * KYBER_N>>3;
-  
+
   ctpc = indcpa_enc(ctpc, a64[0:32], pkp, a64[32:KYBER_SYMBYTES]);
 
   ctp = s_ctp;
-  
-  //TODO: optimize with AVX2
+
   cnd = 0;
   for i=0 to KYBER_CT_LEN/8
   {
@@ -126,32 +125,31 @@ export fn indcca_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
     cnd |= t1;
   }
 
+  t1 = cnd;
+  cnd = !cnd;
+  cnd += 1;
+  cnd |= t1;
+  cnd >>= 63;
+  cnd = !cnd;
+  cnd += 1;
+
   zp = s_skp;
   zp += 64;
   zp += 24 * KYBER_K * KYBER_N>>3;
 
-  if(cnd!=0)
+  for i=0 to 4
   {
-    for i=0 to 4
-    {
-      t1 = (u64)[zp + 8*i];
-      a64[u64 i] = t1;
-    }
-  }else{
-    for i=0 to 4
-    {
-      t1 = a64_1[u64 i];
-      a64[u64 i] = t1;
-    }
+    t1 = (u64)[zp + 8*i];
+    t2 = a64_1[u64 i];
+    t1 &= cnd;
+    _, _, _, _, _, t2 = #ANDN(cnd, t2);
+    t1 |= t2;
+    a64_1[u64 i] = t1;
   }
 
-  a64[32:32] = isha3_256(a64[32:32], ctp, KYBER_CT_LEN);
+  a64_1[32:32] = isha3_256(a64_1[32:32], ctp, KYBER_CT_LEN);
 
   shkp = s_shkp;
   t1 = 32;
-  shake256_64(shkp, t1, a64);
+  shake256_64(shkp, t1, a64_1);
 }
-
-// H: SHA3-256
-// G: SHA3-512
-// KDF: SHAKE-256
