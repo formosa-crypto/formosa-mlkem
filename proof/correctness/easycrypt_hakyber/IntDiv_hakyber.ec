@@ -6,50 +6,6 @@ require import Logic_extra Ring_extra Int_extra IntDiv_extra.
 
 (*-----------------------------------------------------------------------------*)
 
-lemma eq_range m n : m = n <=> m \in range n (n+1).
-proof. by rewrite mem_range ltzS eqz_leq. qed.
-
-lemma range_div_range m d min max : 0 < d => m %/ d \in range min max <=> m \in range (min * d) (max * d).
-proof.
-move => lt0d; rewrite !mem_range !andabP; apply andb_id2.
-+ by apply lez_divRL.
-by rewrite -ltz_divLR // ltzS.
-qed.
-
-lemma eq_div_range m d n : 0 < d => m %/ d = n <=> m \in range (n * d) ((n + 1) * d).
-proof. by move => lt0d; rewrite eq_range range_div_range. qed.
-
-
-(*-----------------------------------------------------------------------------*)
-
-abbrev (%\) (m d : int) : int = - ((- m) %/ d).
-
-lemma lez_ceil m d : d <> 0 => m <= m %\ d * d.
-proof. by rewrite mulNr => neqd0; apply/ler_oppr/lez_floor. qed.
-
-lemma ltz_floor m d : 0 < d => (m %\ d - 1) * d < m.
-proof. by rewrite -opprD mulNr => lt0d; apply/ltr_oppl/ltz_ceil. qed.
-
-lemma lez_NdivNLR (d m n : int) : 0 < d => d %| n => m <= n %\ d <=> m * d <= n.
-proof.
-move => lt0d dvddn; rewrite ler_oppr lez_divLR //; first by apply dvdzN.
-by rewrite mulNr ler_opp2.
-qed.
-
-lemma lez_NdivNRL (m n d : int) : 0 < d => m %\ d <= n <=> m <= n * d.
-proof. by move => lt0d; rewrite ler_oppl lez_divRL // mulNr ler_opp2. qed.
-
-lemma ltz_NdivNLR (m n d : int) : 0 < d => m < n %\ d <=> m * d < n.
-proof. by move => lt0d; rewrite ltr_oppr ltz_divLR // mulNr ltr_opp2. qed.
-
-lemma ltz_NdivNRL (d m n : int) : 0 < d => d %| m => m %\ d < n  <=> m < n * d.
-move => lt0d dvddm; rewrite ltr_oppl ltz_divRL //; first by apply dvdzN.
-by rewrite mulNr ltr_opp2.
-qed.
-
-
-(*-----------------------------------------------------------------------------*)
-
 op vp (b x : int) = argmax ((^) b) (transpose (%|) x).
 
 abbrev vp_rem b x = x %/ (b ^ (vp b x)).

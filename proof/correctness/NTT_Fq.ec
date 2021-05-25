@@ -1,8 +1,8 @@
 require import AllCore IntDiv Array256 Array128.
-require import List Ring StdOrder Fq.
-require import IntMin.
-require import List_extra Ring_extra RealExp_extra IntDiv_extra.
-require import List_hakyber IntDiv_hakyber BitEncoding_hakyber For.
+require import List Ring StdOrder IntMin.
+require import List_extra Ring_extra RealExp_extra IntDiv_extra For BitEncoding_extra.
+require import List_hakyber IntDiv_hakyber.
+require import Fq.
 
 import Fq IntOrder.
 theory NTT_Fq.
@@ -563,6 +563,11 @@ theory NTTequiv.
   abbrev set2_add_mulr (p : zmod Array256.t, z : zmod, a b : int) =
     (p.[b <- p.[a] + - z * p.[b]].[a <- p.[b <- p.[a] + - z * p.[b]].[a] + z * p.[b]])%CR.
 
+  (*TODO: this lemma's version in Jasmin has a useless hypothesis.*)
+  lemma nosmt set_neqiE (t : zmod Array256.t) x y a :
+    y <> x => t.[x <- a].[y] = t.[y].
+  proof. by rewrite get_set_if => /neqF ->. qed.
+
   lemma set2_add_mulr_eq1iE (p : zmod Array256.t, z : zmod, a b x : int) :
     a <> b =>
     a \in range 0 256 =>
@@ -682,7 +687,7 @@ theory NTTequiv.
   op exponent (len start x : int) = (2 * start + 1) * (bitrev 8 (2 * (x %% len))).
 
   lemma exponent_0 : exponent 1 0 0 = 0.
-  proof. by rewrite /exponent /= bitrev_0. qed.
+  proof. by rewrite /exponent /= bitrev0. qed.
 
   lemma exponent_ge0 len start x :
     0 <= start =>
@@ -733,7 +738,12 @@ theory NTTequiv.
     + by rewrite mulrDl /= ltzW ltzE /= exprSr //; move/mem_range: Hk_range.
     rewrite (IntID.mulrC _ 2) => Hx_range.
     rewrite divz_pow //=; first by rewrite -(ltzS _ 6) /= -mem_range.
-    admit.
+    move: (bitrev_add _ 8 _ 1 _ Hx_range) => /=.
+    + by split; [apply/addr_ge0 => //|move => _; apply/ltzW/ltr_subr_addr]; move/mem_range: Hk_range => //.
+    rewrite (addzC (_ * _)%Int) (addzC (bitrev _ _)%Int) bitrev1 //= => ->.
+    rewrite divz_pow //=.
+    + by split; [apply/addr_ge0 => //|move => _; apply/ltzE]; move/mem_range: Hk_range => //.
+    by rewrite opprD addrA IntID.addrAC.
   qed.
 
   lemma exponent_spec_10 (k start x : int) :
@@ -769,7 +779,8 @@ theory NTTequiv.
     move: (range_mul _ _ _ 2 _ Hx_range) => //= {Hx_range} Hx_range.
     move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range) => // {Hx_range}; last move => Hx_range.
     + by rewrite mulrDl /= ltzW ltzE /= exprSr //; move/mem_range: Hk_range.
-    admit.
+    apply bitrev_range_dvdz; last by rewrite opprD addrA /= (addzC 1).
+    by split; [apply/subr_ge0/ltzW|move => _; apply/ler_subl_addl/ler_subl_addr/ltzW/ltzE]; move/mem_range: Hk_range.
   qed.
 
   lemma exponent_spec_11 (k start x : int) :
@@ -801,10 +812,41 @@ theory NTTequiv.
     + apply/mulr_ge0; first by apply addr_ge0 => //; apply/mulr_ge0 => //; move/mem_range: Hstart_range.
       move/mem_range: (bitrev_range 8 (2 ^ (k + 1) + 2 * x)).
       admit.
+    move: (range_mul _ _ _ 2 _ Hx_range) => //= {Hx_range} Hx_range.
+    move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range) => // {Hx_range}.
+    + by rewrite mulrDl /= ltzW ltzE /= exprSr //; move/mem_range: Hk_range.
+    rewrite (IntID.mulrC _ 2) => Hx_range.
     congr.
-    + admit.
+    + move: (bitrev_add _ 8 _ 1 _ Hx_range) => /=.
+      - by split; [apply/addr_ge0 => //|move => _; apply/ltzW/ltr_subr_addr]; move/mem_range: Hk_range => //.
+      rewrite (addzC (_ * _)%Int) (addzC (bitrev _ _)%Int) bitrev1 //= => ->.
+      rewrite mulrDr divz_pow //=.
+      - by split; [apply/addr_ge0 => //|move => _; apply/ltzE]; move/mem_range: Hk_range => //.
+      rewrite -IntID.exprD_nneg.
+      - by apply/addr_ge0 => //; move/mem_range: Hk_range.
+      - by apply/subr_ge0/ltzE; move/mem_range: Hk_range.
+      rewrite opprD !addrA /= addrAC /= addrAC /=.
+      rewrite exprD_nneg //.
+      - apply/mulr_ge0 => //; [apply/expr_ge0|] => //.
+        move/mem_range: (bitrev_range 8 (2 * x)).
+        admit.
+      rewrite !exp_zeta1_128 mulNr mul1r eq_sym; congr.
+      apply (dvdz_exp _ _ _ _ exp_zeta1_256).
+      move: (dvdz_mul (2 ^ (k + 1)) (2 ^ (7 - k)) (2 ^ (k + 1)) (bitrev 8 (2 * x))).
+      rewrite -IntID.exprD_nneg.
+      - by apply/addr_ge0; move/mem_range: Hk_range.
+      - by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+      rewrite dvdzz !addrA /= addrAC /= => -> //.
+      apply bitrev_range_dvdz => //.
+      - by split; [apply/subr_ge0/ltzW|move => _; apply/ler_subr_addr/ler_subl_addl/ltzW/ltzE]; move/mem_range: Hk_range.
+      by rewrite opprD IntID.addrCA /= addrC.
     do 2!congr.
-    admit.
+    move: (bitrev_add _ 8 _ 1 _ Hx_range) => /=.
+    + by split; [apply/addr_ge0 => //|move => _; apply/ltzW/ltr_subr_addr]; move/mem_range: Hk_range => //.
+    rewrite (addzC (_ * _)%Int) (addzC (bitrev _ _)%Int) bitrev1 //= => ->.
+    rewrite divz_pow //=.
+    + by split; [apply/addr_ge0 => //|move => _; apply/ltzE]; move/mem_range: Hk_range => //.
+    by rewrite opprD addrA addrAC.
   qed.
 
   op partial_ntt (p : zmod Array256.t, len start bsj : int) =

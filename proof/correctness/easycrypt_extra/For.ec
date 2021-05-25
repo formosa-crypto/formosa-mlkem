@@ -1,7 +1,6 @@
 require import AllCore StdOrder IntMin IntDiv List.
 (*---*) import IntOrder.
-require import Logic_extra IntDiv_extra RealExp.
-require import IntDiv_hakyber List_hakyber.
+require import Logic_extra List_extra IntDiv_extra RealExp.
 
 
 abstract theory FOR.
@@ -15,7 +14,6 @@ abstract theory FOR.
   op val : it -> t -> int -> t.
 
   op ncond_val i c x n = ! cond c (val i x n).
-  (*TODO: anything such as exists n \in range r , P n ?*)
   op inv i c x v = exists n : int , (n \in (range 0 (out i c x + 1))) /\ (v = (val i x n)).
 
   axiom val_iter i x n : 0 <= n => val i x n = (iter n (incr i) x).
@@ -41,7 +39,6 @@ abstract theory FOR.
     move => Hfin Hcond [n [/mem_range [le0n /ltzS /ler_eqVlt [eqnout|ltnout]] ->>]];
     exists n; split => //; apply/mem_range; split => // _.
     have //: false; move: eqnout Hcond => ->>; rewrite -(pmin_out _ _ _ Hfin); apply/negP.
-    (*TODO: why is this necessary?*)
     by move: (pmin_mem (ncond_val i c x) (finite_nsempty i c x _)).
   qed.
 
@@ -73,7 +70,6 @@ theory FOR_INT_ADD_LT.
     op incr <- (fun i x : int => x + i),
     op cond <- (fun c x : int => x < c),
     op out <- out,
-    (*TODO: put equal here*)
     op finite <- (fun i c x : int => (c <= x) \/ (0 < i)),
     op val <- (fun i x n : int => x + n * i)
     proof *.
@@ -151,7 +147,6 @@ theory FOR_NAT_MUL_LE.
 end FOR_NAT_MUL_LE.
 
 
-(*TODO: add axioms before clone.*)
 theory FOR_NAT_DIV_GE.
 
   abbrev out (i c x : int) = if (x < c) then 0 else ilog i (x %/ c) + 1.
@@ -304,7 +299,7 @@ abstract theory PERM_FOR.
     FOR2.finite i2 c2 x2 =>
     perm_eq (lt1 i1 x1 (out i1 c1 x1)) (lt2 i2 x2 (out i2 c2 x2)).
 
-  (*TODO: why is it not using left_commutative?*)
+  (*TODO: why is it not using left_commutative? Modify.*)
   print foldr_perm.
 
   lemma left_commutative_in_foldr ['u] f lt1 lt2 :
@@ -386,7 +381,6 @@ abstract theory PERM_FOR.
     move: Hn_range; rewrite {1}rangeSr ?FOR1.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
     + rewrite -(eq_out i1 c1 x1) //=; apply left_commutative_in_foldr => //.
       by rewrite {2}(eq_out _ _ _ i2 c2 x2) //; apply perm_val.
-    (*TODO: why specifying the n is necessary?*)
     have:= (pmin_min _ n (FOR1.finite_nsempty _ _ _ Hfin1) _ Hncond1); first by move/mem_range: Hn_range.
     by rewrite (FOR1.pmin_out _ _ _ Hfin1) => /lezNgt; move/mem_range: Hn_range => [_ ->].
   qed.
@@ -401,7 +395,10 @@ clone PERM_FOR as PERM_FOR_INT_ADD_LT_BITREV_8 with
   theory FOR1 <- FOR_INT_ADD_LT ,
   theory FOR2 <- FOR_INT_ADD_LT ,
   type t <- int ,
-  op rel <- (fun (i1 c1 x1 i2 c2 x2 : int) => (i1 = 1) /\ (c2 = 256) /\ (i2 * c1 = 256) /\ (x1 = 0) /\ (x2 = 0)) ,
+  op rel <- (fun (i1 c1 x1 i2 c2 x2 : int) =>
+              (0 <= i1) /\ (0 <= i2) /\
+              (i1 * c2 = 256) /\ (i2 * c1 = 256) /\
+              (x1 = 0) /\ (x2 = 0)) ,
   op pt1 <- idfun ,
   op pt2 <- bitrev 8
   proof *.

@@ -1,6 +1,6 @@
 require import AllCore List IntDiv CoreMap.
 require (****) ZModP.
-from Jasmin require  import JModel JWord.
+from Jasmin require import JWord JModel.
 require import Montgomery.
 require import W16extra.
 require import Array32.
