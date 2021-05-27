@@ -189,14 +189,14 @@ abstract theory DFT.
   clone import Ring.IDomain as Domain.
 
   clone import Bigalg.BigComRing as BigDom with
-    type  t        <- t,
-      op  CR.zeror <- Domain.zeror,
-      op  CR.oner  <- Domain.oner,
-      op  CR.(+)   <- Domain.(+),
-      op  CR.([-]) <- Domain.([-]),
-      op  CR.( * ) <- Domain.( * ),
-      op  CR.invr  <- Domain.invr,
-    pred  CR.unit  <- Domain.unit
+    type  CR.t     <= t,
+      op  CR.zeror <= Domain.zeror,
+      op  CR.oner  <= Domain.oner,
+      op  CR.(+)   <= Domain.(+),
+      op  CR.([-]) <= Domain.([-]),
+      op  CR.( * ) <= Domain.( * ),
+      op  CR.invr  <= Domain.invr,
+    pred  CR.unit  <= Domain.unit
     proof CR.*.
 
   realize CR.addrA     by exact: Domain.addrA    .
@@ -218,15 +218,15 @@ abstract theory DFT.
   hint exact : gt0_n.
 
   clone import Matrix with
-    type  R        <- t,
-      op  size     <- n,
-      op  ZR.zeror <- Domain.zeror,
-      op  ZR.oner  <- Domain.oner,
-      op  ZR.(+)   <- Domain.(+),
-      op  ZR.([-]) <- Domain.([-]),
-      op  ZR.( * ) <- Domain.( * ),
-      op  ZR.invr  <- Domain.invr,
-    pred  ZR.unit  <- Domain.unit
+    type  ZR.t     <= t,
+      op  size     <= n,
+      op  ZR.zeror <= Domain.zeror,
+      op  ZR.oner  <= Domain.oner,
+      op  ZR.(+)   <= Domain.(+),
+      op  ZR.([-]) <= Domain.([-]),
+      op  ZR.( * ) <= Domain.( * ),
+      op  ZR.invr  <= Domain.invr,
+    pred  ZR.unit  <= Domain.unit
     proof ZR.*, ge0_size.
 
   realize ZR.addrA     by exact: Domain.addrA    .
@@ -694,9 +694,9 @@ theory NTTequiv.
     0 <= exponent len start x.
   proof.
     move => le0start; apply/mulr_ge0; first by apply/addr_ge0 => //; apply/mulr_ge0.
-    move/mem_range: (bitrev_range 8 (2 * (x %% len))).
     (*TODO: Pierre-Yves*)
-    admit.
+    (*by move/mem_range: (bitrev_range 8 (2 * (x %% len))).*)
+    by apply bitrev_ge0.
   qed.
 
   lemma exponent_spec_00 (k start x : int) :
@@ -763,12 +763,8 @@ theory NTTequiv.
     rewrite mulrDr -exprS; first by move/mem_range: Hk_range.
     rewrite -addrA (IntID.mulrDl (2 ^ (k + 1))).
     rewrite exprD_nneg.
-    + apply/mulr_ge0; first by apply/expr_ge0.
-      move/mem_range: (bitrev_range 8 (2 * x)).
-      admit.
-    + apply/mulr_ge0; first by apply/addr_ge0 => //; apply/mulr_ge0 => //; move/mem_range: Hstart_range.
-      move/mem_range: (bitrev_range 8 (2 * x)).
-      admit.
+    + by apply/mulr_ge0; [apply/expr_ge0|apply/bitrev_ge0].
+    + by apply/mulr_ge0; [apply/addr_ge0 => //; apply/mulr_ge0 => //; move/mem_range: Hstart_range|apply/bitrev_ge0].
     rewrite (dvdz_exp _ (_ ^ _ * _)%IntID _ _ exp_zeta1_256) ?mul1r //.
     move: (dvdz_mul (2 ^ (k + 1)) (2 ^ (7 - k)) (2 ^ (k + 1)) (bitrev 8 (2 * x))).
     rewrite -exprD_nneg.
@@ -802,16 +798,10 @@ theory NTTequiv.
     rewrite -addrA (IntID.mulrDl _ _ (bitrev _ _)).
     rewrite divz_pow //=; first by rewrite -(ltzS _ 6) /= -mem_range.
     rewrite exprD_nneg //.
-    + apply/mulr_ge0; apply addr_ge0 => //; [by apply/mulr_ge0 => //; move/mem_range: Hstart_range|by apply/expr_ge0|].
-      move/mem_range: (bitrev_range 8 (2 * x)).
-      admit.
+    + by apply/mulr_ge0; apply addr_ge0 => //; [apply/mulr_ge0 => //; move/mem_range: Hstart_range|apply/expr_ge0|apply/bitrev_ge0].
     rewrite exprD_nneg //.
-    + apply/mulr_ge0; first by apply/expr_ge0.
-      move/mem_range: (bitrev_range 8 (2 ^ (k + 1) + 2 * x)).
-      admit.
-    + apply/mulr_ge0; first by apply addr_ge0 => //; apply/mulr_ge0 => //; move/mem_range: Hstart_range.
-      move/mem_range: (bitrev_range 8 (2 ^ (k + 1) + 2 * x)).
-      admit.
+    + by apply/mulr_ge0; [apply/expr_ge0|apply/bitrev_ge0].
+    + by apply/mulr_ge0; [apply addr_ge0 => //; apply/mulr_ge0 => //; move/mem_range: Hstart_range|apply/bitrev_ge0].
     move: (range_mul _ _ _ 2 _ Hx_range) => //= {Hx_range} Hx_range.
     move: (range_incl _ _ _ 0 (2 ^ (k + 1)) _ _ Hx_range) => // {Hx_range}.
     + by rewrite mulrDl /= ltzW ltzE /= exprSr //; move/mem_range: Hk_range.
@@ -827,9 +817,7 @@ theory NTTequiv.
       - by apply/subr_ge0/ltzE; move/mem_range: Hk_range.
       rewrite opprD !addrA /= addrAC /= addrAC /=.
       rewrite exprD_nneg //.
-      - apply/mulr_ge0 => //; [apply/expr_ge0|] => //.
-        move/mem_range: (bitrev_range 8 (2 * x)).
-        admit.
+      - by apply/mulr_ge0 => //; [apply/expr_ge0|apply/bitrev_ge0].
       rewrite !exp_zeta1_128 mulNr mul1r eq_sym; congr.
       apply (dvdz_exp _ _ _ _ exp_zeta1_256).
       move: (dvdz_mul (2 ^ (k + 1)) (2 ^ (7 - k)) (2 ^ (k + 1)) (bitrev 8 (2 * x))).

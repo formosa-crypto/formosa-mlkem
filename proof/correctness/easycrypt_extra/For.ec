@@ -1,6 +1,6 @@
 require import AllCore StdOrder IntMin IntDiv List.
 (*---*) import IntOrder.
-require import Logic_extra List_extra IntDiv_extra RealExp.
+require import Logic_extra List_extra IntDiv_extra RealExp BitEncoding_extra.
 
 
 abstract theory FOR.
@@ -61,17 +61,17 @@ end FOR.
 
 theory FOR_INT_ADD_LT.
 
-  abbrev out (i c x : int) = if c <= x then 0 else (c - x) %\ i.
+  abbrev a_out (i c x : int) = if c <= x then 0 else (c - x) %\ i.
 
   clone include FOR with 
-    type t <- int,
-    type it <- int,
-    type ct <- int,
-    op incr <- (fun i x : int => x + i),
-    op cond <- (fun c x : int => x < c),
-    op out <- out,
-    op finite <- (fun i c x : int => (c <= x) \/ (0 < i)),
-    op val <- (fun i x n : int => x + n * i)
+    type t <= int,
+    type it <= int,
+    type ct <= int,
+    op incr <= (fun i x : int => x + i),
+    op cond <= (fun c x : int => x < c),
+    op out <= a_out,
+    op finite <= (fun i c x : int => (c <= x) \/ (0 < i)),
+    op val <= (fun i x n : int => x + n * i)
     proof *.
 
     realize val_iter.
@@ -79,7 +79,7 @@ theory FOR_INT_ADD_LT.
 
     realize finite_nsempty.
     proof.
-      move => i c x /or_andr [lecx|[nlecx lt0i]]; apply semptyNP; exists (out i c x); rewrite /out.
+      move => i c x /or_andr [lecx|[nlecx lt0i]]; apply semptyNP; exists (a_out i c x); rewrite /out.
       + by rewrite lecx /=; split => //; rewrite /ncond_val /= ler_gtF.
       rewrite nlecx /=; move: nlecx => /ltzNge ltxc; split.
       + by rewrite ltrW ltz_NdivNLR //= ltr_subr_addr.
@@ -279,12 +279,6 @@ abstract theory PERM_FOR.
   abbrev lt1 i1 x1 n = rev (map (pt1 \o (FOR1.val i1 x1)) (range 0 n)).
   abbrev lt2 i2 x2 n = rev (map (pt2 \o (FOR2.val i2 x2)) (range 0 n)).
 
-  op left_commutative_in ['u] f (z : 'u) lt =
-    forall (a b : t) ,
-      a \in lt =>
-      b \in lt =>
-      f a (f b z) = f b (f a z).
-
   op inv ['u] f z i1 c1 x1 v1 (t1 : 'u) i2 x2 v2 (t2 : 'u) =
     exists n ,
       n \in range 0 (FOR1.out i1 c1 x1 + 1) /\
@@ -298,29 +292,6 @@ abstract theory PERM_FOR.
     FOR1.finite i1 c1 x1 =>
     FOR2.finite i2 c2 x2 =>
     perm_eq (lt1 i1 x1 (out i1 c1 x1)) (lt2 i2 x2 (out i2 c2 x2)).
-
-  (*TODO: why is it not using left_commutative? Modify.*)
-  print foldr_perm.
-
-  lemma left_commutative_in_foldr ['u] f lt1 lt2 :
-    (forall (z : 'u) , left_commutative_in f z lt1) =>
-    perm_eq lt1 lt2 =>
-    (forall (z : 'u) , foldr f z lt1 = foldr f z lt2).
-  proof.
-    elim: lt1 lt2 => [|t1 lt1 IHlt1] lt2 Hlci Heqlt12 /=.
-    + by have -> //: lt2 = []; apply/perm_eq_small/perm_eq_sym.
-    have/perm_eq_mem/(_ t1) := Heqlt12; rewrite mem_head /=.
-    move/splitPr => [hlt2 tlt2] ->> z; rewrite foldr_cat /=.
-    move: Heqlt12; rewrite -(cat1s t1 tlt2) catA perm_eq_sym.
-    rewrite perm_catCA /= perm_cons perm_eq_sym => Heqlt1_.
-    move: (IHlt1 _ _ Heqlt1_); first by move => w a b Halt1 Hblt1; apply/Hlci => /=; right.
-    move => ->; rewrite foldr_cat; have Heqin:= (perm_eq_mem _ _ Heqlt1_).
-    have {Heqlt1_ Heqin Hlci} Hlci: forall z , left_commutative_in f z (t1 :: hlt2).
-    + by move => w a b /= [->>|Halt1] [->>|Hblt1]; apply/Hlci => //=; right; rewrite Heqin mem_cat; left.
-    elim: hlt2 Hlci => [|x hlt2 {IHlt1} IHlt1 Hlci] //=.
-    rewrite -IHlt1; first by move => w a b /= [->>|Halt1] [->>|Hblt1] //; apply/Hlci => //=; rewrite ?Halt1 ?Hblt1.
-    by rewrite Hlci.
-  qed.
 
   lemma eq_out i1 c1 x1 i2 c2 x2 :
     rel i1 c1 x1 i2 c2 x2 =>
@@ -379,7 +350,7 @@ abstract theory PERM_FOR.
   proof.
     move => Hrel Hlci Hfin1 Hfin2 Hncond1 [n [Hn_range [->> [->> [->> ->>]]]]].
     move: Hn_range; rewrite {1}rangeSr ?FOR1.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
-    + rewrite -(eq_out i1 c1 x1) //=; apply left_commutative_in_foldr => //.
+    + rewrite -(eq_out i1 c1 x1) //=; apply foldr_perm_in => //.
       by rewrite {2}(eq_out _ _ _ i2 c2 x2) //; apply perm_val.
     have:= (pmin_min _ n (FOR1.finite_nsempty _ _ _ Hfin1) _ Hncond1); first by move/mem_range: Hn_range.
     by rewrite (FOR1.pmin_out _ _ _ Hfin1) => /lezNgt; move/mem_range: Hn_range => [_ ->].
@@ -390,7 +361,6 @@ end PERM_FOR.
 
 
 (*TODO: merge 1.0.*)
-(*
 clone PERM_FOR as PERM_FOR_INT_ADD_LT_BITREV_8 with
   theory FOR1 <- FOR_INT_ADD_LT ,
   theory FOR2 <- FOR_INT_ADD_LT ,
@@ -404,4 +374,4 @@ clone PERM_FOR as PERM_FOR_INT_ADD_LT_BITREV_8 with
   proof *.
 
 realize perm_val.
-*)
+admitted.

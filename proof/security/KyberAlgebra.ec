@@ -3,17 +3,17 @@ require (****) Matrix.
 pragma +oldip.
 
 type R.
-clone import Ring.IDomain as R with type t <- R.
+clone import Ring.IDomain as R with type t <= R.
 
 clone import Matrix as Matrix_ with   
-    type  R        <- R,
-      op  ZR.zeror <- R.zeror,
-      op  ZR.oner  <- R.oner,
-      op  ZR.(+)   <- R.(+),
-      op  ZR.([-]) <- R.([-]),
-      op  ZR.( * ) <- R.( * ),
-      op  ZR.invr  <- R.invr,
-    pred  ZR.unit  <- R.unit
+    type  ZR.t     <= R,
+      op  ZR.zeror <= R.zeror,
+      op  ZR.oner  <= R.oner,
+      op  ZR.(+)   <= R.(+),
+      op  ZR.([-]) <= R.([-]),
+      op  ZR.( * ) <= R.( * ),
+      op  ZR.invr  <= R.invr,
+    pred  ZR.unit  <= R.unit
     proof ZR.*.
 
   realize ZR.addrA     by exact: R.addrA    .

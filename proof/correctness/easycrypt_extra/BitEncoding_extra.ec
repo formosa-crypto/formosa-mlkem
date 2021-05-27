@@ -3,6 +3,8 @@ require import Ring_extra List_extra IntDiv_extra.
 (*---*) import IntOrder BS2Int.
 
 
+(*-----------------------------------------------------------------------------*)
+
 (*TODO: change names*)
 print int2bsS.
 print bs2int_rcons.
@@ -75,6 +77,8 @@ proof.
 qed.
 
 
+(*-----------------------------------------------------------------------------*)
+
 lemma bs2int_nseq_false N :
   bs2int (nseq N false) = 0.
 proof.
@@ -117,6 +121,8 @@ lemma bs2int_pow2 K N :
 proof. by rewrite bs2int_mulr_pow2 bs2int1. qed.
 
 
+(*-----------------------------------------------------------------------------*)
+
 op bitrev N n = bs2int (rev (int2bs N n)).
 
 lemma bitrev_neg N n :
@@ -124,12 +130,23 @@ lemma bitrev_neg N n :
   bitrev N n = 0.
 proof. by rewrite /bitrev => leN0; move: (size_int2bs N n); rewrite ler_maxl // size_eq0 => ->; rewrite rev_nil bs2int_nil. qed.
 
+lemma bitrev_ge0 N n :
+  0 <= bitrev N n.
+proof. by rewrite /bitrev bs2int_ge0. qed.
+
+(*TODO: weird name.*)
+print bs2int_le2Xs.
+lemma bitrev_lt_pow2 N n :
+  bitrev N n < 2 ^ N.
+proof.
+  case (0 <= N) => [le0N|/ltrNge /ltzW leN0]; last by rewrite bitrev_neg // expr_gt0.
+  rewrite /bitrev; move: (bs2int_le2Xs (rev (int2bs N n))).
+  by rewrite size_rev size_int2bs ler_maxr.
+qed.
+
 lemma bitrev_range N n :
   bitrev N n \in range 0 (2 ^ N).
-proof.
-  case (0 <= N) => [le0N|/ltrNge /ltzW leN0]; last by rewrite bitrev_neg // mem_range /= expr_gt0.
-  by move: (bs2int_range (rev (int2bs N n))); rewrite size_rev size_int2bs ler_maxr.
-qed.
+proof. by rewrite mem_range bitrev_ge0 bitrev_lt_pow2. qed.
 
 lemma bitrev_cat K N n :
   0 <= K <= N =>
