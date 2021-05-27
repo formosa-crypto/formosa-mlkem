@@ -18,3 +18,5 @@ proof. by case a; case b. qed.
 
 lemma negb_eqbr a b : ! (a <=> b) <=> (a <=> !b).
 proof. by case a; case b. qed.
+
+lemma transposeP ['a, 'b, 'c] (f : 'a -> 'b -> 'c) (x : 'a) (y : 'b) : f x y = transpose f y x by done.

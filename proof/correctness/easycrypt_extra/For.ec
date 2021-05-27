@@ -360,7 +360,6 @@ end PERM_FOR.
 
 
 
-(*TODO: merge 1.0.*)
 clone PERM_FOR as PERM_FOR_INT_ADD_LT_BITREV_8 with
   theory FOR1 <- FOR_INT_ADD_LT ,
   theory FOR2 <- FOR_INT_ADD_LT ,
@@ -374,4 +373,11 @@ clone PERM_FOR as PERM_FOR_INT_ADD_LT_BITREV_8 with
   proof *.
 
 realize perm_val.
-admitted.
+  move => i1 c1 x1 i2 c2 x2 |> le0i1 le0i2 eqmul1 eqmul2.
+  move => /or_andr [lec10|[nlec10 lt0i1]]; first by have:= (mulr_ge0_le0 _ _ le0i2 lec10); rewrite eqmul2.
+  move => /or_andr [lec20|[nlec20 lt0i2]]; first by have:= (mulr_ge0_le0 _ _ le0i1 lec20); rewrite eqmul1.
+  rewrite nlec10 nlec20 /=; move: nlec10 nlec20 => /ltzNge lt0c1 /ltzNge lt0c2 {le0i1 le0i2}.
+  apply/(perm_eq_trans (map (bitrev 8 \o transpose Int.( * ) i2) (range 0 (c2 %\ i2)))); last by apply/perm_eq_rev.
+  apply/(perm_eq_trans (map (idfun \o transpose Int.( * ) i1) (range 0 (c1 %\ i1)))); first by apply/perm_eq_sym/perm_eq_rev.
+  search _ (_ %| (exp _ _)%IntDiv) prime.
+qed.

@@ -1,6 +1,6 @@
-require import AllCore StdOrder List IntDiv.
+require import AllCore StdOrder List Int IntDiv.
 (*---*) import IntOrder.
-require import Logic_extra.
+require import Logic_extra Int_extra.
 
 
 (*TODO: in the entirety of IntDiv, there are many lemmas with superfluous hypothesises*)
@@ -57,6 +57,23 @@ qed.
 
 (*-----------------------------------------------------------------------------*)
 
+lemma dvdz2_eq m n :
+  0 <= m =>
+  0 <= n =>
+  m %| n =>
+  n %| m =>
+  m = n.
+proof.
+  move => le0m le0n /dvdzP [x ->>] /dvdzP [y /(congr1 (transpose (%/) m) _ _) /=].
+  rewrite mulrA divzz; case (m = 0) => /= [->> //=|neqm0]. 
+  rewrite /b2i mulzK //= => eq1mul; move: (unitrM y x); move: eq1mul => <- /=.
+  move => [_ [|] ->> //=]; move: le0n; rewrite mulNr /= oppr_ge0 => lem0.
+  by move: neqm0; rewrite eqz_leq lem0 le0m.
+qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
 (*TODO: this lemma is admitted, and weaker that the ones below.*)
 print modz_pow2_div.
 
@@ -85,6 +102,36 @@ lemma modz_pow2_div n p m :
   0 <= p <= n =>
   m %% 2 ^ n %/ 2 ^ p = (m %/ 2 ^ p) %% (2 ^ (n - p)).
 proof. by apply modz_pow_div. qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
+lemma dvd_pow_prime p x n :
+  prime p =>
+  0 <= x =>
+  0 <= n =>
+  x %| p ^ n =>
+  exists k ,
+    0 <= k <= n /\
+    x = p ^ k.
+proof.
+  move => primep le0x le0n dvdxpow; exists (argmax ((^) p) (transpose (%|) x)); do!split.
+  + by apply ge0_argmax.
+  + move => _; apply le_argmax => // -[j [le0j _]] i ltni /=; apply/negP => dvdpowx.
+    have lexpow:= (dvdz_le _ _ _ dvdxpow); first by apply/gtr_eqF/expr_gt0/gt0_prime.
+    have lepowx:= (dvdz_le _ _ _ dvdpowx).
+    - by apply/negP => ->>; move/dvd0z: dvdxpow; apply/negP/gtr_eqF/expr_gt0/gt0_prime.
+    have := (lez_trans _ _ _ lepowx lexpow); apply/negP/ltzNge.
+    rewrite !normrX_nat //; first by apply(lez_trans n) => //; apply/ltzW.
+    rewrite !gtr0_norm ?gt0_prime //; apply/(ltr_le_trans (p ^ (n + 1))).
+    - by rewrite exprSr // ltr_pmulr ?expr_gt0 ?gt0_prime ?gt1_prime.
+    apply/ler_weexpn2l; first by apply/ltzW/gt1_prime.
+    by rewrite -ltzE ltni /= addr_ge0.
+  apply/dvdz2_eq => //; [by apply/expr_ge0/ltzW/gt0_prime| | ]; last first.
+  rewrite transposeP.
+  print argmaxP.
+  apply argmaxP.
+qed.
 
 
 (*-----------------------------------------------------------------------------*)
