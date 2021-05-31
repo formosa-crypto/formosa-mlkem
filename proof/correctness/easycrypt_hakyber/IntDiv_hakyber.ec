@@ -75,33 +75,65 @@ rewrite (ger0_norm n) // => lenormrjn; move: (ler_lt_trans _ _ _ lenormrjn ltnj)
 by apply/negP/lezNgt/ler_norm.
 qed.
 
-lemma dvd_pow_prime p x n :
-  prime p =>
+lemma vp_le_pow_dvd (b x n : int) :
+  1 < b =>
+  x <> 0 =>
+  b ^ n %| x =>
+  n <= vp b x.
+proof.
+  move => lt1b neqx0 dvdpowx; case (0 < n) => [lt0n|/lezNgt len0]; last first.
+  + by apply/(lez_trans 0) => //; apply/ge0_vp.
+  rewrite /vp -ge_argmax //; split; last by exists n.
+  exists `|x|; rewrite normr_ge0 /= => k lenormrk; apply/negP => {dvdpowx} dvdpowx.
+  move: (dvdz_trans _ _ _ (dvdz_exp2l b `|x| k _) dvdpowx); first by rewrite normr_ge0.
+  by rewrite -pow_normr negP Ndvd_pow // ltr_normr; left.
+qed.
+
+lemma vp_le_dvd_pow (b x n : int) :
+  1 < b =>
+  x <> 0 =>
+  x %| b ^ n =>
+  vp b x <= `|n|.
+proof.
+  move => lt1b neqx0 dvdxpow; rewrite /vp -le_argmax; first by apply normr_ge0.
+  move => [j [le0j _]] k ltnormrk /=; apply/negP => dvdpowx.
+  move: (dvdz_trans _ _ _ (dvdz_trans _ _ _ (dvdz_exp2l b (`|n| + 1) k _) dvdpowx) dvdxpow).
+  + by rewrite -ltzE ltnormrk /= addr_ge0 // normr_ge0.
+  rewrite exprS ?normr_ge0 // -pow_normr.
+  move => /dvdzP [q]; rewrite mulrA eqz_mul ?dvdzz; first by apply/gtr_eqF/expr_gt0/ltzE/ltzW.
+  rewrite divzz neq_ltz expr_gt0; first by apply/ltzE/ltzW.
+  (*TODO: any way to make q an exists again?*)
+  move => Heq; move: (dvdzP b 1) => [_ dvd1b]; move: (dvd1b _).
+  + by exists q; rewrite -Heq /=.
+  by rewrite dvdz1 eqr_norml /= negb_or; split; apply/gtr_eqF => //; apply/ltzE/ltzW/ltzE/ltzW.
+qed.
+
+lemma dvd_pow_prime b x n :
+  prime b =>
   0 <= x =>
   0 <= n =>
-  x %| p ^ n =>
+  x %| b ^ n =>
   exists k ,
     0 <= k <= n /\
-    x = p ^ k.
+    x = b ^ k.
 proof.
-  move => primep le0x le0n.
+  move => primeb le0x le0n.
   case (x = 0) => [->>|neqx0 dvdxpow].
   + by rewrite dvd0z expf_eq0 => -[_ ->>]; exists 0.
-  exists (vp p x); do!split.
+  exists (vp b x); do!split.
   + by apply ge0_vp.
-  + have dvdpowx:= (vp_pow_dvd p x _ _) => //; first by apply/gt1_prime.
+  + have dvdpowx:= (vp_pow_dvd b x _ _) => //; first by apply/gt1_prime.
     move: (dvdz_le _ _ _ (dvdz_trans _ _ _ dvdpowx dvdxpow)).
-    - admit.
+    - by apply/gtr_eqF/expr_gt0/gt0_prime.
     rewrite !normrX_nat ?ge0_vp //= => lepow2.
     move: (ler_weexpn2r _ _ _ _ _ _ lepow2) => //; last by apply ge0_vp.
     by rewrite ltr_normr; left; apply gt1_prime.
-  move: (dvdxpow); rewrite -{1}(vp_rem_powK p) ?gt1_prime // => /dvdzP [q].
-  rewrite mulrA => /(congr1 (transpose (%/) (p ^ vp p x))) /=.
+  move: (dvdxpow); rewrite -{1}(vp_rem_powK b) ?gt1_prime // => /dvdzP [q].
+  rewrite mulrA => /(congr1 (transpose (%/) (b ^ vp b x))) /=.
   rewrite mulzK -?exprD_subz.
   + by apply/gtr_eqF/expr_gt0/gt0_prime.
   + by apply/gtr_eqF/gt0_prime.
-  + rewrite ge0_vp /=.
-    search _ (exp _ _ %/ exp _ _)%Int.
-    admit.
+  + rewrite ge0_vp /=; move: (vp_le_dvd_pow b x n _ _ _) => //; first by apply/gt1_prime.
+    by rewrite ger0_norm.
   admit.
 qed.

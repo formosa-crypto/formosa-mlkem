@@ -306,7 +306,7 @@ theory NTTequiv.
   import ZModpRing.
 
   clone import Bigalg.BigComRing as BigZmod with
-    type  t        <- zmod,
+    type  CR.t        <- zmod,
       op  CR.zeror <- ZModField.zero,
       op  CR.oner  <- ZModField.one,
       op  CR.(+)   <- ZModField.(+),
@@ -1337,11 +1337,53 @@ theory NTTequiv.
     by move => Hncond_len Hinv_len; move: (FOR_NAT_MUL_LE.inv_outP _ _ _ _ _ Hncond_len Hinv_len).
   qed.
 
-  equiv eq_NTT4_NTT5 : NTT4.ntt ~ NTT5.ntt:
-    ={arg} ==> ={res}.
+  equiv eq_NTT4_NTT5 p : NTT4.ntt ~ NTT5.ntt:
+    arg{1} = p /\ arg{2} = p ==> ={res}.
   proof.
     proc; sp.
-    admit.
+    while (
+      FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
+      len{1} = bitrev 8 len{2} /\
+      (*TODO: modify these qualities or replace by PERM_FOR*)
+      r{1} = p /\
+      r{2} = p).
+    + sp; wp => /=.
+      while (
+        2 <= len{1} /\
+        FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
+        len{1} = bitrev 8 len{2} /\
+        (*TODO: modify f*)
+        PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p (len{1} * 2) 256 0 start{1} r{1} 1 0 start{2} r{2} /\
+        r{1} = p /\
+        r{2} = p).
+      - sp; wp => /=.
+        while (
+          2 <= len{1} /\
+          FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
+          len{1} = bitrev 8 len{2} /\
+          (*TODO: modify f in both*)
+          start{1} < 256 /\
+          start{2} < len{2} /\
+          PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p (len{1} * 2) 256 0 start{1} r{1} 1 0 start{2} r{2} /\
+          PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p 1 len{1} 0 j{1} r{1} (len{2} * 2) 0 j{2} r{2} /\
+          r{1} = p /\
+          r{2} = p).
+        * sp; skip => |> &hr1 &hr2 j2 j1.
+          move => Hcond_len Hinv_len Hcond_start1 Hcond_start2 Hinv_start Hinv_j Hcond_j1 Hcond_j2.
+          move: (PERM_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ (len{hr2}) _ _ _ _ _ _ _ Hinv_start) => //.
+          + admit.
+          admit.
+        skip => |> &hr1 &hr2.
+        move => Hcond_len Hinv_len Hinv_start Hcond_start1 Hcond_start2.
+        admit.
+      skip => |> &hr2.
+      move => Hinv_len1 Hcond_len1 _.
+      move: (FOR_NAT_DIV_GE.inv_loopP _ _ _ _ _ Hcond_len1 Hinv_len1) => //= [k1 [Hk1_range Heq]].
+      rewrite PERM_FOR_INT_ADD_LT2.inv_in.
+      - admit.
+      admit.
+    skip => |>.
+    by rewrite FOR_NAT_DIV_GE.inv_in // bitrev1.
   qed.
 
   op zetas_spec (zs : zmod Array128.t) =

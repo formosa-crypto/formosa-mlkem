@@ -272,12 +272,12 @@ abstract theory PERM_FOR.
 
   type t.
 
-  op rel : FOR1.it -> FOR1.ct -> FOR1.t -> FOR2.it -> FOR2.ct -> FOR2.t -> bool.
   op pt1 : FOR1.t -> t.
   op pt2 : FOR2.t -> t.
 
   abbrev lt1 i1 x1 n = rev (map (pt1 \o (FOR1.val i1 x1)) (range 0 n)).
   abbrev lt2 i2 x2 n = rev (map (pt2 \o (FOR2.val i2 x2)) (range 0 n)).
+  abbrev perm_eq_12 i1 c1 x1 i2 c2 x2 = perm_eq (lt1 i1 x1 (FOR1.out i1 c1 x1)) (lt2 i2 x2 (FOR2.out i2 c2 x2)).
 
   op inv ['u] f z i1 c1 x1 v1 (t1 : 'u) i2 x2 v2 (t2 : 'u) =
     exists n ,
@@ -287,27 +287,7 @@ abstract theory PERM_FOR.
       t1 = foldr f z (lt1 i1 x1 n) /\
       t2 = foldr f z (lt2 i2 x2 n).
 
-  axiom perm_val i1 c1 x1 i2 c2 x2 :
-    rel i1 c1 x1 i2 c2 x2 =>
-    FOR1.finite i1 c1 x1 =>
-    FOR2.finite i2 c2 x2 =>
-    perm_eq (lt1 i1 x1 (out i1 c1 x1)) (lt2 i2 x2 (out i2 c2 x2)).
-
-  lemma eq_out i1 c1 x1 i2 c2 x2 :
-    rel i1 c1 x1 i2 c2 x2 =>
-    FOR1.finite i1 c1 x1 =>
-    FOR2.finite i2 c2 x2 =>
-    FOR1.out i1 c1 x1 = FOR2.out i2 c2 x2.
-  proof.
-    move => Hrel Hfin1 Hfin2.
-    have Hperm_eq:= (perm_val _ _ _ _ _ _ Hrel Hfin1 Hfin2).
-    have:= (perm_eq_size _ _ Hperm_eq).
-    rewrite !size_rev !size_map !size_range /=.
-    by do 2!rewrite ler_maxr ?out_ge0 //.
-  qed.
-
   lemma inv_loop_post ['u] f z i1 c1 x1 v1 (t1 : 'u) i2 c2 x2 v2 (t2 : 'u) :
-    rel i1 c1 x1 i2 c2 x2 =>
     FOR1.finite i1 c1 x1 =>
     FOR2.finite i2 c2 x2 =>
     FOR1.cond c1 v1 =>
@@ -315,7 +295,7 @@ abstract theory PERM_FOR.
     inv f z i1 c1 x1 v1 t1 i2 x2 v2 t2 =>
     inv f z i1 c1 x1 (FOR1.incr i1 v1) (f (pt1 v1) t1) i2 x2 (FOR2.incr i2 v2) (f (pt2 v2) t2).
   proof.
-    move => Hrel Hfin1 Hfin2 Hcond1 Hcond2 [n [Hn_range [->> [->> [->> ->>]]]]].
+    move => Hfin1 Hfin2 Hcond1 Hcond2 [n [Hn_range [->> [->> [->> ->>]]]]].
     move: Hn_range; rewrite {1}rangeSr ?FOR1.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
     + have:= pmin_mem _ (FOR1.finite_nsempty _ _ _ Hfin1).
       by rewrite (FOR1.pmin_out _ _ _ Hfin1) /= => /negP; rewrite Hcond1.
@@ -338,7 +318,8 @@ abstract theory PERM_FOR.
   qed.
 
   lemma inv_outP ['u] f z i1 c1 x1 v1 (t1 : 'u) i2 c2 x2 v2 (t2 : 'u) :
-    rel i1 c1 x1 i2 c2 x2 =>
+    FOR1.out i1 c1 x1 = FOR2.out i2 c2 x2 =>
+    perm_eq_12 i1 c1 x1 i2 c2 x2 =>
     (forall z , left_commutative_in f z (lt1 i1 x1 (out i1 c1 x1))) =>
     FOR1.finite i1 c1 x1 =>
     FOR2.finite i2 c2 x2 =>
@@ -348,10 +329,10 @@ abstract theory PERM_FOR.
     v2 = FOR2.val i2 x2 (FOR2.out i2 c2 x2) /\
     t1 = t2.
   proof.
-    move => Hrel Hlci Hfin1 Hfin2 Hncond1 [n [Hn_range [->> [->> [->> ->>]]]]].
+    move => Heq_out Hperm_eq Hlci Hfin1 Hfin2 Hncond1 [n [Hn_range [->> [->> [->> ->>]]]]].
     move: Hn_range; rewrite {1}rangeSr ?FOR1.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
-    + rewrite -(eq_out i1 c1 x1) //=; apply foldr_perm_in => //.
-      by rewrite {2}(eq_out _ _ _ i2 c2 x2) //; apply perm_val.
+    + rewrite -Heq_out //=; apply foldr_perm_in => //.
+      by rewrite {2}Heq_out //; apply perm_val.
     have:= (pmin_min _ n (FOR1.finite_nsempty _ _ _ Hfin1) _ Hncond1); first by move/mem_range: Hn_range.
     by rewrite (FOR1.pmin_out _ _ _ Hfin1) => /lezNgt; move/mem_range: Hn_range => [_ ->].
   qed.
@@ -360,25 +341,20 @@ end PERM_FOR.
 
 
 
-clone PERM_FOR as PERM_FOR_INT_ADD_LT_BITREV_8 with
+clone PERM_FOR as PERM_FOR_INT_ADD_LT2 with
   theory FOR1 <- FOR_INT_ADD_LT ,
   theory FOR2 <- FOR_INT_ADD_LT ,
   type t <- int ,
-  op rel <- (fun (i1 c1 x1 i2 c2 x2 : int) =>
-              (0 <= i1) /\ (0 <= i2) /\
-              (i1 * c2 = 256) /\ (i2 * c1 = 256) /\
-              (x1 = 0) /\ (x2 = 0)) ,
   op pt1 <- idfun ,
-  op pt2 <- bitrev 8
-  proof *.
+  op pt2 <- idfun.
 
-realize perm_val.
-  move => i1 c1 x1 i2 c2 x2 |> le0i1 le0i2 eqmul1 eqmul2.
-  move => /or_andr [lec10|[nlec10 lt0i1]]; first by have:= (mulr_ge0_le0 _ _ le0i2 lec10); rewrite eqmul2.
-  move => /or_andr [lec20|[nlec20 lt0i2]]; first by have:= (mulr_ge0_le0 _ _ le0i1 lec20); rewrite eqmul1.
-  rewrite nlec10 nlec20 /=; move: nlec10 nlec20 => /ltzNge lt0c1 /ltzNge lt0c2 {le0i1 le0i2}.
-  apply/(perm_eq_trans (map (bitrev 8 \o transpose Int.( * ) i2) (range 0 (c2 %\ i2)))); last by apply/perm_eq_rev.
-  apply/(perm_eq_trans (map (idfun \o transpose Int.( * ) i1) (range 0 (c1 %\ i1)))); first by apply/perm_eq_sym/perm_eq_rev.
-  
-  search _ (_ %| (exp _ _)%IntDiv) prime.
-qed.
+
+
+(*
+clone PERM_FOR as PERM_FOR_NAT_DIV_GE_MUL_LE with
+  theory FOR1 <- FOR_NAT_DIV_GE ,
+  theory FOR2 <- FOR_NAT_MUL_LE ,
+  type t <- int ,
+  op pt1 <- idfun ,
+  op pt2 <- idfun.
+*)
