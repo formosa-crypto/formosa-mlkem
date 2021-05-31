@@ -1,6 +1,6 @@
 require import AllCore StdOrder List Int IntDiv.
 (*---*) import IntOrder.
-require import Logic_extra Int_extra.
+require import Logic_extra Ring_extra Int_extra Number_extra.
 
 
 (*TODO: in the entirety of IntDiv, there are many lemmas with superfluous hypothesises*)
@@ -57,6 +57,31 @@ qed.
 
 (*-----------------------------------------------------------------------------*)
 
+lemma pow_normr (p x : int) :
+  p ^ x = p ^ `|x|.
+proof. by rewrite normrP; case (0 <= x) => //; rewrite exprN. qed.
+
+lemma lt_pow (p x : int) :
+  1 < p =>
+  x < p ^ x.
+proof.
+  move => lt1p; case (0 <= x) => [|/ltzNge ltx0]; last by apply/(ltr_le_trans _ _ _ ltx0)/expr_ge0/ltzW/ltzE/ltzW.
+  elim x => [|x le0x ltxpow]; first by rewrite expr0.
+  apply/(ler_lt_trans (p ^ x)); first by apply/ltzE.
+  by rewrite exprSr // ltr_pmulr // expr_gt0 ltzE ltzW.
+qed.
+
+lemma Ndvd_pow (p x : int) :
+  1 < `|p| =>
+  x <> 0 =>
+  ! p ^ x %| x.
+proof.
+  move => lt1norm neqx0; apply/negP => dvdpowx.
+  move: (dvdz_le _ _ _ dvdpowx) => //.
+  rewrite pow_normr normrX_nat ?normr_ge0 //; apply/negP/ltzNge.
+  by apply/lt_pow.
+qed.
+
 lemma dvdz2_eq m n :
   0 <= m =>
   0 <= n =>
@@ -69,6 +94,26 @@ proof.
   rewrite /b2i mulzK //= => eq1mul; move: (unitrM y x); move: eq1mul => <- /=.
   move => [_ [|] ->> //=]; move: le0n; rewrite mulNr /= oppr_ge0 => lem0.
   by move: neqm0; rewrite eqz_leq lem0 le0m.
+qed.
+
+lemma dvd_le_pow (p m n : int) :
+  1 < `|p| =>
+  p ^ m %| p ^ n =>
+  `|m| <= `|n|.
+proof.
+  rewrite (pow_normr p m) (pow_normr p n) => lt1norm dvdpow2.
+  have:= (dvdz_le _ _ _ dvdpow2); first by rewrite expf_eq0 -negP => -[_ ->>].
+  rewrite !normrX_nat ?normr_ge0 //.
+  by apply ler_weexpn2r => //; apply normr_ge0.
+qed.
+
+lemma le_dvd_pow (p m n : int) :
+  `|m| <= `|n| =>
+  p ^ m %| p ^ n.
+proof.
+  rewrite (pow_normr p m) (pow_normr p n) => lenormr2.
+  apply/dvdzP; exists (p ^ (`|n| - `|m|)).
+  by rewrite -exprD_nneg; [apply subr_ge0|apply normr_ge0|rewrite -addrA].
 qed.
 
 
@@ -102,36 +147,6 @@ lemma modz_pow2_div n p m :
   0 <= p <= n =>
   m %% 2 ^ n %/ 2 ^ p = (m %/ 2 ^ p) %% (2 ^ (n - p)).
 proof. by apply modz_pow_div. qed.
-
-
-(*-----------------------------------------------------------------------------*)
-
-lemma dvd_pow_prime p x n :
-  prime p =>
-  0 <= x =>
-  0 <= n =>
-  x %| p ^ n =>
-  exists k ,
-    0 <= k <= n /\
-    x = p ^ k.
-proof.
-  move => primep le0x le0n dvdxpow; exists (argmax ((^) p) (transpose (%|) x)); do!split.
-  + by apply ge0_argmax.
-  + move => _; apply le_argmax => // -[j [le0j _]] i ltni /=; apply/negP => dvdpowx.
-    have lexpow:= (dvdz_le _ _ _ dvdxpow); first by apply/gtr_eqF/expr_gt0/gt0_prime.
-    have lepowx:= (dvdz_le _ _ _ dvdpowx).
-    - by apply/negP => ->>; move/dvd0z: dvdxpow; apply/negP/gtr_eqF/expr_gt0/gt0_prime.
-    have := (lez_trans _ _ _ lepowx lexpow); apply/negP/ltzNge.
-    rewrite !normrX_nat //; first by apply(lez_trans n) => //; apply/ltzW.
-    rewrite !gtr0_norm ?gt0_prime //; apply/(ltr_le_trans (p ^ (n + 1))).
-    - by rewrite exprSr // ltr_pmulr ?expr_gt0 ?gt0_prime ?gt1_prime.
-    apply/ler_weexpn2l; first by apply/ltzW/gt1_prime.
-    by rewrite -ltzE ltni /= addr_ge0.
-  apply/dvdz2_eq => //; [by apply/expr_ge0/ltzW/gt0_prime| | ]; last first.
-  rewrite transposeP.
-  print argmaxP.
-  apply argmaxP.
-qed.
 
 
 (*-----------------------------------------------------------------------------*)

@@ -379,5 +379,6 @@ realize perm_val.
   rewrite nlec10 nlec20 /=; move: nlec10 nlec20 => /ltzNge lt0c1 /ltzNge lt0c2 {le0i1 le0i2}.
   apply/(perm_eq_trans (map (bitrev 8 \o transpose Int.( * ) i2) (range 0 (c2 %\ i2)))); last by apply/perm_eq_rev.
   apply/(perm_eq_trans (map (idfun \o transpose Int.( * ) i1) (range 0 (c1 %\ i1)))); first by apply/perm_eq_sym/perm_eq_rev.
+  
   search _ (_ %| (exp _ _)%IntDiv) prime.
 qed.
