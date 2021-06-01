@@ -113,21 +113,11 @@ lemma dvd_pow_prime b x n :
   0 <= x =>
   0 <= n =>
   x %| b ^ n =>
-  exists k ,
-    0 <= k <= n /\
-    x = b ^ k.
+  x = b ^ vp b x.
 proof.
   move => primeb le0x le0n.
   case (x = 0) => [->>|neqx0 dvdxpow].
-  + by rewrite dvd0z expf_eq0 => -[_ ->>]; exists 0.
-  exists (vp b x); do!split.
-  + by apply ge0_vp.
-  + have dvdpowx:= (vp_pow_dvd b x _ _) => //; first by apply/gt1_prime.
-    move: (dvdz_le _ _ _ (dvdz_trans _ _ _ dvdpowx dvdxpow)).
-    - by apply/gtr_eqF/expr_gt0/gt0_prime.
-    rewrite !normrX_nat ?ge0_vp //= => lepow2.
-    move: (ler_weexpn2r _ _ _ _ _ _ lepow2) => //; last by apply ge0_vp.
-    by rewrite ltr_normr; left; apply gt1_prime.
+  + by rewrite dvd0z expf_eq0 => -[_ ->>].
   move: (dvdxpow); rewrite -{1}(vp_rem_powK b) ?gt1_prime // => /dvdzP [q].
   rewrite mulrA => /(congr1 (transpose (%/) (b ^ vp b x))) /=.
   rewrite mulzK -?exprD_subz.
@@ -135,5 +125,16 @@ proof.
   + by apply/gtr_eqF/gt0_prime.
   + rewrite ge0_vp /=; move: (vp_le_dvd_pow b x n _ _ _) => //; first by apply/gt1_prime.
     by rewrite ger0_norm.
+  move => Heq; move: (dvdzP (vp_rem b x) (b ^ (n - vp b x))) => [_ /(_ _)].
+  + by exists q.
+  move => {Heq} Hdiv.
+  rewrite -{1}(vp_rem_powK b x) //; first by apply gt1_prime.
+  rewrite eq_sym eqz_mul.
+  + by apply/gtr_eqF/expr_gt0/gt0_prime.
+  + by apply/dvdzz.
+  rewrite divzz neq_ltz /b2i expr_gt0 ?gt0_prime //= eq_sym.
+  have Hndvd:= (vp_rem_ndvd b x _ _) => //; first by apply/gt1_prime.
+  search _ prime.
+  print prime.
   admit.
 qed.

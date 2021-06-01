@@ -350,11 +350,9 @@ clone PERM_FOR as PERM_FOR_INT_ADD_LT2 with
 
 
 
-(*
 clone PERM_FOR as PERM_FOR_NAT_DIV_GE_MUL_LE with
   theory FOR1 <- FOR_NAT_DIV_GE ,
   theory FOR2 <- FOR_NAT_MUL_LE ,
   type t <- int ,
   op pt1 <- idfun ,
   op pt2 <- idfun.
-*)
