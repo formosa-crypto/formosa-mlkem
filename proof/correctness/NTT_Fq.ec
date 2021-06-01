@@ -1342,48 +1342,40 @@ theory NTTequiv.
   proof.
     proc; sp.
     while (
-      FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
-      len{1} = bitrev 8 len{2} /\
-      (*TODO: modify these qualities or replace by PERM_FOR*)
-      r{1} = p /\
-      r{2} = p).
+      (*TODO: modify f*)
+      PERM_FOR_NAT_DIV_GE_MUL_LE.inv (fun (n : int) (a : zmod Array256.t) => a) p 2 2 128 len{1} r{1} 2 1 len{2} r{2}
+      ).
     + sp; wp => /=.
       while (
         2 <= len{1} /\
-        FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
-        len{1} = bitrev 8 len{2} /\
-        (*TODO: modify f*)
-        PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p (len{1} * 2) 256 0 start{1} r{1} 1 0 start{2} r{2} /\
-        r{1} = p /\
-        r{2} = p).
+        len{2} <= 64 /\
+        PERM_FOR_NAT_DIV_GE_MUL_LE.inv (fun (n : int) (a : zmod Array256.t) => a) p 2 2 128 len{1} r{1} 2 1 len{2} r{2} /\
+        PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p (len{1} * 2) 256 0 start{1} r{1} 1 0 start{2} r{2}
+        ).
       - sp; wp => /=.
         while (
           2 <= len{1} /\
-          FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
-          len{1} = bitrev 8 len{2} /\
-          (*TODO: modify f in both*)
+          len{2} <= 64 /\
+          PERM_FOR_NAT_DIV_GE_MUL_LE.inv (fun (n : int) (a : zmod Array256.t) => a) p 2 2 128 len{1} r{1} 2 1 len{2} r{2} /\
           start{1} < 256 /\
           start{2} < len{2} /\
           PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p (len{1} * 2) 256 0 start{1} r{1} 1 0 start{2} r{2} /\
-          PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p 1 len{1} 0 j{1} r{1} (len{2} * 2) 0 j{2} r{2} /\
-          r{1} = p /\
-          r{2} = p).
-        * sp; skip => |> &hr1 &hr2 j2 j1.
-          move => Hcond_len Hinv_len Hcond_start1 Hcond_start2 Hinv_start Hinv_j Hcond_j1 Hcond_j2.
-          move: (PERM_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ (len{hr2}) _ _ _ _ _ _ _ Hinv_start) => //.
-          + admit.
+          PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p 1 len{1} 0 j{1} r{1} (len{2} * 2) 0 j{2} r{2}).
+        * sp; skip => |> &hr1 &hr2 j2 r2 j1 r1.
+          move => Hcond_len1 Hcond_len2 Hinv_len Hcond_start1 Hcond_start2 Hinv_start Hinv_j Hcond_j1 Hcond_j2.
           admit.
         skip => |> &hr1 &hr2.
-        move => Hcond_len Hinv_len Hinv_start Hcond_start1 Hcond_start2.
+        move => Hcond_len1 Hcond_len2 Hinv_len Hinv_start Hcond_start1 Hcond_start2.
         admit.
-      skip => |> &hr2.
-      move => Hinv_len1 Hcond_len1 _.
-      move: (FOR_NAT_DIV_GE.inv_loopP _ _ _ _ _ Hcond_len1 Hinv_len1) => //= [k1 [Hk1_range Heq]].
-      rewrite PERM_FOR_INT_ADD_LT2.inv_in.
-      - admit.
+      skip => |> &hr1 &hr2.
+      move => Hinv_len Hcond_len1 Hcond_len2.
       admit.
     skip => |>.
-    by rewrite FOR_NAT_DIV_GE.inv_in // bitrev1.
+    rewrite PERM_FOR_NAT_DIV_GE_MUL_LE.inv_in //=.
+    move => len1 r1 len2 r2 Hncond_len1 Hncond_len2 Hinv_len.
+    move: (PERM_FOR_NAT_DIV_GE_MUL_LE.inv_outP _ _ _ _ _ _ _ _ 64 _ _ _ _ _ _ _ _ Hncond_len1 Hinv_len) => //=.
+    apply perm_eq_refl_eq; congr; apply eq_in_map => k Hk_range; rewrite /(\o) /=.
+    search _ (map _ _ = map _ _)%List.
   qed.
 
   op zetas_spec (zs : zmod Array128.t) =

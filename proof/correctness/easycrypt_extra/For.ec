@@ -101,17 +101,17 @@ end FOR_INT_ADD_LT.
 
 theory FOR_NAT_MUL_LE.
 
-  abbrev out (i c x : int) = if (c < x) then 0 else ilog i (c %/ x) + 1.
+  abbrev a_out (i c x : int) = if (c < x) then 0 else ilog i (c %/ x) + 1.
 
   clone include FOR with 
-    type t <- int,
-    type it <- int,
-    type ct <- int,
-    op incr <- (fun i x : int => x * i),
-    op cond <- (fun c x : int => x <= c),
-    op out <- out,
-    op finite <- (fun i c x : int => (c < x) \/ (1 < i /\ (0 < x))),
-    op val <- (fun i x n : int => x * (i ^ n))
+    type t    <= int,
+    type it   <= int,
+    type ct   <= int,
+    op incr   <= (fun i x : int => x * i),
+    op cond   <= (fun c x : int => x <= c),
+    op out    <= a_out,
+    op finite <= (fun i c x : int => (c < x) \/ (1 < i /\ (0 < x))),
+    op val    <= (fun i x n : int => x * (i ^ n))
     proof *.
 
     realize val_iter.
@@ -120,7 +120,7 @@ theory FOR_NAT_MUL_LE.
     realize finite_nsempty.
     proof.
       move => i c x /or_andr [ltcx|[nltcx [lt1i lt0x]]];
-      apply semptyNP; exists (out i c x); rewrite /out.
+      apply semptyNP; exists (a_out i c x); rewrite /out.
       + by rewrite ltcx /=; split => //; rewrite /ncond_val lerNgt expr0.
       rewrite nltcx /ncond_val /=; split.
       + by apply addz_ge0 => //; apply ilog_ge0 => //;
@@ -149,17 +149,17 @@ end FOR_NAT_MUL_LE.
 
 theory FOR_NAT_DIV_GE.
 
-  abbrev out (i c x : int) = if (x < c) then 0 else ilog i (x %/ c) + 1.
+  abbrev a_out (i c x : int) = if (x < c) then 0 else ilog i (x %/ c) + 1.
 
   clone include FOR with 
-    type t <- int,
-    type it <- int,
-    type ct <- int,
-    op incr <- (fun i x : int => x %/ i),
-    op cond <- (fun c x : int => c <= x),
-    op out <- out,
-    op finite <- (fun i c x : int => (x < c) \/ (1 < i /\ (0 < c))),
-    op val <- (fun i x n : int =>
+    type t    <= int,
+    type it   <= int,
+    type ct   <= int,
+    op incr   <= (fun i x : int => x %/ i),
+    op cond   <= (fun c x : int => c <= x),
+    op out    <= a_out,
+    op finite <= (fun i c x : int => (x < c) \/ (1 < i /\ (0 < c))),
+    op val    <= (fun i x n : int =>
                  if 0 <= i then x %/ (i ^ n)
                  else iter n (transpose (%/)%Int i) x)
     proof *.
@@ -175,7 +175,7 @@ theory FOR_NAT_DIV_GE.
     realize finite_nsempty.
     proof.
       move => i c x /or_andr [ltcx|[nltcx [lt1i lt0x]]];
-      apply semptyNP; exists (out i c x).
+      apply semptyNP; exists (a_out i c x).
       + by rewrite ltcx /=; split => //; rewrite /ncond_val expr0 iter0 //=; apply/ltrNge; case (0 <= i).
       rewrite nltcx /ncond_val /=; split.
       + by apply addz_ge0 => //; apply ilog_ge0 => //;
@@ -344,15 +344,15 @@ end PERM_FOR.
 clone PERM_FOR as PERM_FOR_INT_ADD_LT2 with
   theory FOR1 <- FOR_INT_ADD_LT ,
   theory FOR2 <- FOR_INT_ADD_LT ,
-  type t <- int ,
-  op pt1 <- idfun ,
-  op pt2 <- idfun.
+  type t <= int ,
+  op pt1 <= idfun ,
+  op pt2 <= idfun.
 
 
 
 clone PERM_FOR as PERM_FOR_NAT_DIV_GE_MUL_LE with
   theory FOR1 <- FOR_NAT_DIV_GE ,
   theory FOR2 <- FOR_NAT_MUL_LE ,
-  type t <- int ,
-  op pt1 <- idfun ,
-  op pt2 <- idfun.
+  type t <= int ,
+  op pt1 <= idfun ,
+  op pt2 <= idfun.
