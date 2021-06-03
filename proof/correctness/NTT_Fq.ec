@@ -1,6 +1,6 @@
 require import AllCore IntDiv Array256 Array128.
-require import List Ring StdOrder IntMin.
-require import List_extra Ring_extra RealExp_extra IntDiv_extra For BitEncoding_extra.
+require import List Ring StdOrder IntMin Real RealExp.
+require import List_extra Ring_extra RealExp_extra IntDiv_extra For BitEncoding_extra Real_extra RealExp_extra.
 require import List_hakyber IntDiv_hakyber.
 require import Fq.
 
@@ -1337,45 +1337,195 @@ theory NTTequiv.
     by move => Hncond_len Hinv_len; move: (FOR_NAT_MUL_LE.inv_outP _ _ _ _ _ Hncond_len Hinv_len).
   qed.
 
+  op update_r len start (j : int) (r : zmod Array256.t) =
+    set2_add_mulr r (exp zeta1 (bitrev 8 ((256 %/ len) + (start %/ len)))) (j + start) (j + len + start).
+
+  op update_r_j_partial len start r j = foldr (update_r len start) r (rev (range 0 j)).
+
+  op update_r_j len start r = update_r_j_partial len start r len.
+
+  op update_r_j_start_partial len r start = foldr (update_r_j len) r (rev (map (( * ) (len * 2)) (range 0 (start %/ (len * 2))))).
+
+  op update_r_j_start len r = update_r_j_start_partial len r (128 %/ len).
+
+  op update_r_j_start_len_partial r len = foldr update_r_j_start r (rev (map (fun k => 2 ^ (7 - k)) (range 0 (7 - ilog 2 len)))).
+
+  print set2_add_mulr.
+
+  lemma set2_add_mulr_congr r1 z1 a1 b1 r2 z2 a2 b2 :
+    r1 = r2 =>
+    z1 = z2 =>
+    a1 = a2 =>
+    b1 = b2 =>
+    set2_add_mulr r1 z1 a1 b1 = set2_add_mulr r2 z2 a2 b2.
+  proof. by move => |>. qed.
+
   equiv eq_NTT4_NTT5 p : NTT4.ntt ~ NTT5.ntt:
     arg{1} = p /\ arg{2} = p ==> ={res}.
   proof.
     proc; sp.
     while (
       (*TODO: modify f*)
-      PERM_FOR_NAT_DIV_GE_MUL_LE.inv (fun (n : int) (a : zmod Array256.t) => a) p 2 2 128 len{1} r{1} 2 1 len{2} r{2}
+      FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv
+        update_r_j_start
+        idfun      p r{1} 2 2 128 len{1}
+        (bitrev 8) p r{2} 2   1   len{2}
       ).
     + sp; wp => /=.
       while (
         2 <= len{1} /\
         len{2} <= 64 /\
-        PERM_FOR_NAT_DIV_GE_MUL_LE.inv (fun (n : int) (a : zmod Array256.t) => a) p 2 2 128 len{1} r{1} 2 1 len{2} r{2} /\
-        PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p (len{1} * 2) 256 0 start{1} r{1} 1 0 start{2} r{2}
+        FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv
+          update_r_j_start
+          idfun      p (update_r_j_start_len_partial p len{1}) 2 2 128 len{1}
+          (bitrev 8) p (update_r_j_start_len_partial p len{1}) 2   1   len{2} /\
+        PERM_RHL_FOR_INT_ADD_LT2.inv
+          (update_r_j len{1})
+          idfun      (update_r_j_start_len_partial p len{1}) r{1} (len{1} * 2) 256 0 start{1}
+          (bitrev 8) (update_r_j_start_len_partial p len{1}) r{2} 1                0 start{2}
         ).
       - sp; wp => /=.
         while (
           2 <= len{1} /\
           len{2} <= 64 /\
-          PERM_FOR_NAT_DIV_GE_MUL_LE.inv (fun (n : int) (a : zmod Array256.t) => a) p 2 2 128 len{1} r{1} 2 1 len{2} r{2} /\
+          FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv
+            update_r_j_start
+            idfun      p (update_r_j_start_len_partial p len{1}) 2 2 128 len{1}
+            (bitrev 8) p (update_r_j_start_len_partial p len{1}) 2   1   len{2} /\
           start{1} < 256 /\
           start{2} < len{2} /\
-          PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p (len{1} * 2) 256 0 start{1} r{1} 1 0 start{2} r{2} /\
-          PERM_FOR_INT_ADD_LT2.inv (fun (n : int) (a : zmod Array256.t) => a) p 1 len{1} 0 j{1} r{1} (len{2} * 2) 0 j{2} r{2}).
+          PERM_RHL_FOR_INT_ADD_LT2.inv
+            (update_r_j len{1})
+            idfun
+            (update_r_j_start_len_partial p len{1})
+            (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
+            (len{1} * 2) 256 0 start{1}
+            (bitrev 8)
+            (update_r_j_start_len_partial p len{1})
+            (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
+            1                0 start{2} /\
+          PERM_RHL_FOR_INT_ADD_LT2.inv
+            (*TODO: two different functions are being applied on both sides, need to modify For to account for this.*)
+            (update_r len{1} start{1})
+            idfun
+            (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
+            r{1}
+            1            len{1} 0 j{1}
+            (bitrev 8)
+            (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
+            r{2}
+            (len{2} * 2)        0 j{2} /\
+          zetasctr{1} = bitrev 8 (256 %/ len{1} + start{1} %/ len{1}) /\
+          zeta_{1} = exp zeta1 zetasctr{1} /\
+          ={zetasctr, zeta_}
+          ).
         * sp; skip => |> &hr1 &hr2 j2 r2 j1 r1.
-          move => Hcond_len1 Hcond_len2 Hinv_len Hcond_start1 Hcond_start2 Hinv_start Hinv_j Hcond_j1 Hcond_j2.
-          admit.
+          move => Hcond_len1 Hcond_len2 Hinv_len.
+          move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                  _ _ Hcond_len1 Hcond_len2 Hinv_len) => //.
+          move => [k /= [Hk_range [->> [->> _]]]].
+          move => {Hcond_len1 Hcond_len2 Hinv_len}.
+          move => Hcond_start1 Hcond_start2 Hinv_start.
+          move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                  _ _ Hcond_start1 Hcond_start2 Hinv_start) => //.
+          + rewrite /= divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+            rewrite -exprSr /=; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+            by apply/expr_gt0.
+          move => [s /= [Hs_range [->> [->> _]]]].
+          rewrite divz_pow //= in Hs_range; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+          (*TODO: why does it not work.*)
+          rewrite //= in Hs_range.
+          (*And this does?*)
+          rewrite /= in Hs_range.
+          rewrite -exprSr /= in Hs_range; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+          rewrite divz_pow /= // in Hs_range.
+          + rewrite subr_ge0 ler_subl_addr -ler_subl_addl /=; move/mem_range: Hk_range => [-> /=].
+            by move => ltk7; apply/ltzS/(ltr_le_trans 7).
+          rewrite opprD /= mulNr mul1r opprK in Hs_range.
+          move => {Hcond_start1 Hcond_start2 Hinv_start}.
+          move => Hinv_j Hcond_j1 Hcond_j2.
+          move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                  _ _ Hcond_j1 Hcond_j2 Hinv_j) => //; [|move => Hinv_j_post].
+          + rewrite /= -exprSr; first by move/mem_range: Hk_range.
+            by apply/expr_gt0.
+          move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                  _ _ Hcond_j1 Hcond_j2 Hinv_j) => //.
+          + rewrite /= -exprSr; first by move/mem_range: Hk_range.
+            by apply/expr_gt0.
+          move => [j /= [Hj_range [->> [->> _]]]].
+          rewrite divz_pow // /= in Hj_range; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+          rewrite lezNgt expr_gt0 // /= in Hj_range.
+          move => {Hinv_j Hcond_j1 Hcond_j2}.
+          split.
+          + move: Hinv_j_post; apply/iffLR/eq_iff; congr; rewrite /update_r /idfun /zetasctr_ntt5 //=.
+            rewrite -exprSr; first by move/mem_range: Hk_range.
+            rewrite divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+            rewrite divz_pow //=.
+            - move/mem_range: Hk_range => [? ?]; split => [|_]; first by apply/subr_ge0/ltzW.
+              by apply/ler_subl_addl/ler_subl_addr/ltzW/ltzE.
+            rewrite opprD opprK /=.
+            (*TODO: issue with s: it should be bitreversed in the RHS of the equality.*)
+            apply set2_add_mulr_congr => //.
+            - admit.
+            - admit.
+            admit.
+          apply/iffE => {Hinv_j_post}.
+          rewrite -exprSr; first by move/mem_range: Hk_range.
+          rewrite -mulrD1l -ltz_NdivNLR; first by apply/expr_gt0.
+          rewrite divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+          rewrite divz_pow //=; first by move/mem_range: Hk_range => [? ?]; split => [|_]; [apply/addr_ge0|apply/ltzW/ltr_subr_addr].
+          by rewrite mulNr mul1r opprK opprD /= (addzC (-k)).
         skip => |> &hr1 &hr2.
-        move => Hcond_len1 Hcond_len2 Hinv_len Hinv_start Hcond_start1 Hcond_start2.
+        move => Hcond_len1 Hcond_len2 Hinv_len.
+        move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                _ _ Hcond_len1 Hcond_len2 Hinv_len) => //.
+        move => [k /= [Hk_range [->> [->> [Heq_update_len1 Heq_update_len2]]]]].
+        move => {Hcond_len1 Hcond_len2 Hinv_len}.
+        move => Hinv_start Hcond_start1 Hcond_start2.
+        move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                _ _ Hcond_start1 Hcond_start2 Hinv_start) => //.
+        * rewrite /= divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+          rewrite -exprSr /=; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+          by apply/expr_gt0.
+        move => [s /= [Hs_range [->> [->> [Heq_update_start1 Heq_update_start2]]]]].
+        rewrite divz_pow // /= in Hs_range; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+        rewrite -exprSr /= in Hs_range; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+        rewrite divz_pow /= // in Hs_range.
+        * rewrite subr_ge0 ler_subl_addr -ler_subl_addl /=; move/mem_range: Hk_range => [-> /=].
+          by move => ltk7; apply/ltzS/(ltr_le_trans 7).
+        rewrite opprD /= mulNr mul1r opprK in Hs_range.
+        move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                _ _ Hcond_start1 Hcond_start2 Hinv_start) => //; [|move => Hinv_start_post].
+        * rewrite /= divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
+          rewrite -exprSr /=; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+          by apply/expr_gt0.
+        move => {Hcond_start1 Hcond_start2 Hinv_start}.
+        do!split.
+        * admit.
+        * admit.
+        * admit.
         admit.
       skip => |> &hr1 &hr2.
       move => Hinv_len Hcond_len1 Hcond_len2.
+      move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+              _ _ Hcond_len1 Hcond_len2 Hinv_len) => //.
+      move => [k /= [Hk_range [->> [->> [Heq_update_len1 Heq_update_len2]]]]].
+      move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+              _ _ Hcond_len1 Hcond_len2 Hinv_len) => // Hinv_len_post.
+      move => {Hcond_len1 Hcond_len2 Hinv_len}.
+      do!split.
+      - admit.
+      - admit.
+      - admit.
       admit.
     skip => |>.
-    rewrite PERM_FOR_NAT_DIV_GE_MUL_LE.inv_in //=.
+    rewrite FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_in //=.
     move => len1 r1 len2 r2 Hncond_len1 Hncond_len2 Hinv_len.
-    move: (PERM_FOR_NAT_DIV_GE_MUL_LE.inv_outP _ _ _ _ _ _ _ _ 64 _ _ _ _ _ _ _ _ Hncond_len1 Hinv_len) => //=.
-    apply perm_eq_refl_eq; congr; apply eq_in_map => k Hk_range; rewrite /(\o) /=.
-    search _ (map _ _ = map _ _)%List.
+    move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_outP _ _ _ _ _ _ _ _ _ _ _ _ 64 _ _
+            _ _ _ Hncond_len1 Hinv_len) => //=.
+    move => |>; congr; congr; apply eq_in_map => k Hk_range; rewrite /(\o) /idfun /=.
+    rewrite bitrev_pow2 /=; first by move: Hk_range; apply range_incl.
+    by rewrite divz_pow //=; move/mem_range: Hk_range => [-> /=]; apply/ltzW.
   qed.
 
   op zetas_spec (zs : zmod Array128.t) =

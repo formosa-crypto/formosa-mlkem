@@ -136,5 +136,4 @@ proof.
   have Hndvd:= (vp_rem_ndvd b x _ _) => //; first by apply/gt1_prime.
   search _ prime.
   print prime.
-  admit.
-qed.
+abort.
