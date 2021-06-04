@@ -711,7 +711,6 @@ theory NTTequiv.
     + by move/mem_range: Hk_range.
     + by apply/addr_ge0 => //; move/mem_range: Hk_range.
     move: Hx_range; apply range_incl => //=.
-    (*TODO: why is `|2| still here, and why does it not matter?*)
     apply/ler_weexpn2l => //; split; first by move/mem_range: Hk_range.
     by move => _; apply/ltzW/ltzS.
   qed.
@@ -1223,7 +1222,6 @@ theory NTTequiv.
           [by rewrite //=; apply mulr_gt0 => //; apply expr_gt0|move => -> /=].
           (*TODO: shortcut to clear these when last used? List of shortcuts in EasyCrypt manual?*)
           move => {Hinv_len Hcond_len Hinv_start Hcond_start Hinv_j Hcond_j}.
-          (*TODO: why no simplification? Pierre-Yves*)
           rewrite lezNgt expr_gt0 //= in Hstart_range.
           rewrite /= in Hstart_range.
           move: Hbsj_range.
@@ -1350,7 +1348,23 @@ theory NTTequiv.
 
   op update_r_j_start_len_partial r len = foldr update_r_j_start r (rev (map (fun k => 2 ^ (7 - k)) (range 0 (7 - ilog 2 len)))).
 
-  print set2_add_mulr.
+  op bitrev_8_update_r len start =
+    (update_r (bitrev 8 len) (bitrev 8 start)) \o (bitrev 8).
+
+  op bitrev_8_update_r_j_partial len start r =
+    (update_r_j_partial (bitrev 8 len) (bitrev 8 start) r) \o (bitrev 8).
+
+  op bitrev_8_update_r_j len =
+    (update_r_j (bitrev 8 len)) \o (bitrev 8).
+
+  op bitrev_8_update_r_j_start_partial len r =
+    (update_r_j_start_partial (bitrev 8 len) r) \o (bitrev 8).
+
+  op bitrev_8_update_r_j_start =
+    update_r_j_start \o (bitrev 8).
+
+  op bitrev_8_update_r_j_start_len_partial r =
+    (update_r_j_start_len_partial r) \o (bitrev 8).
 
   lemma set2_add_mulr_congr r1 z1 a1 b1 r2 z2 a2 b2 :
     r1 = r2 =>
@@ -1365,54 +1379,46 @@ theory NTTequiv.
   proof.
     proc; sp.
     while (
-      (*TODO: modify f*)
       FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv
-        update_r_j_start
-        idfun      p r{1} 2 2 128 len{1}
-        (bitrev 8) p r{2} 2   1   len{2}
+        update_r_j_start          p r{1} 2 2 128 len{1}
+        bitrev_8_update_r_j_start p r{2} 2   1   len{2}
       ).
     + sp; wp => /=.
       while (
         2 <= len{1} /\
         len{2} <= 64 /\
         FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv
-          update_r_j_start
-          idfun      p (update_r_j_start_len_partial p len{1}) 2 2 128 len{1}
-          (bitrev 8) p (update_r_j_start_len_partial p len{1}) 2   1   len{2} /\
-        PERM_RHL_FOR_INT_ADD_LT2.inv
-          (update_r_j len{1})
-          idfun      (update_r_j_start_len_partial p len{1}) r{1} (len{1} * 2) 256 0 start{1}
-          (bitrev 8) (update_r_j_start_len_partial p len{1}) r{2} 1                0 start{2}
+          update_r_j_start          p (update_r_j_start_len_partial p len{1})          2 2 128 len{1}
+          bitrev_8_update_r_j_start p (bitrev_8_update_r_j_start_len_partial p len{2}) 2   1   len{2} /\
+        FOLDR_RHL_FOR_INT_ADD_LT2.inv
+          (update_r_j len{1})          (update_r_j_start_len_partial p len{1})          r{1} (len{1} * 2) 256 0 start{1}
+          (bitrev_8_update_r_j len{2}) (bitrev_8_update_r_j_start_len_partial p len{2}) r{2} 1                0 start{2}
         ).
       - sp; wp => /=.
         while (
           2 <= len{1} /\
           len{2} <= 64 /\
           FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv
-            update_r_j_start
-            idfun      p (update_r_j_start_len_partial p len{1}) 2 2 128 len{1}
-            (bitrev 8) p (update_r_j_start_len_partial p len{1}) 2   1   len{2} /\
+            update_r_j_start          p (update_r_j_start_len_partial p len{1})          2 2 128 len{1}
+            bitrev_8_update_r_j_start p (bitrev_8_update_r_j_start_len_partial p len{2}) 2   1   len{2} /\
           start{1} < 256 /\
           start{2} < len{2} /\
-          PERM_RHL_FOR_INT_ADD_LT2.inv
+          FOLDR_RHL_FOR_INT_ADD_LT2.inv
             (update_r_j len{1})
-            idfun
             (update_r_j_start_len_partial p len{1})
             (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
             (len{1} * 2) 256 0 start{1}
-            (bitrev 8)
-            (update_r_j_start_len_partial p len{1})
-            (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
+            (bitrev_8_update_r_j len{2})
+            (bitrev_8_update_r_j_start_len_partial p len{2})
+            (bitrev_8_update_r_j_start_partial len{2} (bitrev_8_update_r_j_start_len_partial p len{2}) start{2})
             1                0 start{2} /\
-          PERM_RHL_FOR_INT_ADD_LT2.inv
-            (*TODO: two different functions are being applied on both sides, need to modify For to account for this.*)
+          FOLDR_RHL_FOR_INT_ADD_LT2.inv
             (update_r len{1} start{1})
-            idfun
             (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
             r{1}
             1            len{1} 0 j{1}
-            (bitrev 8)
-            (update_r_j_start_partial len{1} (update_r_j_start_len_partial p len{1}) start{1})
+            (bitrev_8_update_r len{2} start{2})
+            (bitrev_8_update_r_j_start_partial len{2} (bitrev_8_update_r_j_start_len_partial p len{2}) start{2})
             r{2}
             (len{2} * 2)        0 j{2} /\
           zetasctr{1} = bitrev 8 (256 %/ len{1} + start{1} %/ len{1}) /\
@@ -1421,34 +1427,30 @@ theory NTTequiv.
           ).
         * sp; skip => |> &hr1 &hr2 j2 r2 j1 r1.
           move => Hcond_len1 Hcond_len2 Hinv_len.
-          move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+          move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _
                   _ _ Hcond_len1 Hcond_len2 Hinv_len) => //.
           move => [k /= [Hk_range [->> [->> _]]]].
           move => {Hcond_len1 Hcond_len2 Hinv_len}.
           move => Hcond_start1 Hcond_start2 Hinv_start.
-          move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+          move: (FOLDR_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _
                   _ _ Hcond_start1 Hcond_start2 Hinv_start) => //.
           + rewrite /= divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
             rewrite -exprSr /=; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
             by apply/expr_gt0.
           move => [s /= [Hs_range [->> [->> _]]]].
           rewrite divz_pow //= in Hs_range; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
-          (*TODO: why does it not work.*)
-          rewrite //= in Hs_range.
-          (*And this does?*)
-          rewrite /= in Hs_range.
-          rewrite -exprSr /= in Hs_range; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+          rewrite /= -exprSr /= in Hs_range; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
           rewrite divz_pow /= // in Hs_range.
           + rewrite subr_ge0 ler_subl_addr -ler_subl_addl /=; move/mem_range: Hk_range => [-> /=].
             by move => ltk7; apply/ltzS/(ltr_le_trans 7).
           rewrite opprD /= mulNr mul1r opprK in Hs_range.
           move => {Hcond_start1 Hcond_start2 Hinv_start}.
           move => Hinv_j Hcond_j1 Hcond_j2.
-          move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+          move: (FOLDR_RHL_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _
                   _ _ Hcond_j1 Hcond_j2 Hinv_j) => //; [|move => Hinv_j_post].
           + rewrite /= -exprSr; first by move/mem_range: Hk_range.
             by apply/expr_gt0.
-          move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+          move: (FOLDR_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _
                   _ _ Hcond_j1 Hcond_j2 Hinv_j) => //.
           + rewrite /= -exprSr; first by move/mem_range: Hk_range.
             by apply/expr_gt0.
@@ -1464,9 +1466,11 @@ theory NTTequiv.
             - move/mem_range: Hk_range => [? ?]; split => [|_]; first by apply/subr_ge0/ltzW.
               by apply/ler_subl_addl/ler_subl_addr/ltzW/ltzE.
             rewrite opprD opprK /=.
-            (*TODO: issue with s: it should be bitreversed in the RHS of the equality.*)
             apply set2_add_mulr_congr => //.
-            - admit.
+            - congr; congr.
+              rewrite bitrev_pow2 /=; first by move: Hk_range; apply range_incl.
+              (*TODO: still an issue with what function is what.*)
+              admit.
             - admit.
             admit.
           apply/iffE => {Hinv_j_post}.
@@ -1477,12 +1481,12 @@ theory NTTequiv.
           by rewrite mulNr mul1r opprK opprD /= (addzC (-k)).
         skip => |> &hr1 &hr2.
         move => Hcond_len1 Hcond_len2 Hinv_len.
-        move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+        move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _
                 _ _ Hcond_len1 Hcond_len2 Hinv_len) => //.
         move => [k /= [Hk_range [->> [->> [Heq_update_len1 Heq_update_len2]]]]].
         move => {Hcond_len1 Hcond_len2 Hinv_len}.
         move => Hinv_start Hcond_start1 Hcond_start2.
-        move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+        move: (FOLDR_RHL_FOR_INT_ADD_LT2.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _
                 _ _ Hcond_start1 Hcond_start2 Hinv_start) => //.
         * rewrite /= divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
           rewrite -exprSr /=; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
@@ -1494,7 +1498,7 @@ theory NTTequiv.
         * rewrite subr_ge0 ler_subl_addr -ler_subl_addl /=; move/mem_range: Hk_range => [-> /=].
           by move => ltk7; apply/ltzS/(ltr_le_trans 7).
         rewrite opprD /= mulNr mul1r opprK in Hs_range.
-        move: (PERM_RHL_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+        move: (FOLDR_RHL_FOR_INT_ADD_LT2.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _
                 _ _ Hcond_start1 Hcond_start2 Hinv_start) => //; [|move => Hinv_start_post].
         * rewrite /= divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
           rewrite -exprSr /=; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
@@ -1504,13 +1508,15 @@ theory NTTequiv.
         * admit.
         * admit.
         * admit.
+        * admit.
+        * admit.
         admit.
       skip => |> &hr1 &hr2.
       move => Hinv_len Hcond_len1 Hcond_len2.
-      move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+      move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loopP _ _ _ _ _ _ _ _ _ _ _ _ _ _
               _ _ Hcond_len1 Hcond_len2 Hinv_len) => //.
       move => [k /= [Hk_range [->> [->> [Heq_update_len1 Heq_update_len2]]]]].
-      move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+      move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _
               _ _ Hcond_len1 Hcond_len2 Hinv_len) => // Hinv_len_post.
       move => {Hcond_len1 Hcond_len2 Hinv_len}.
       do!split.
@@ -1521,9 +1527,11 @@ theory NTTequiv.
     skip => |>.
     rewrite FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_in //=.
     move => len1 r1 len2 r2 Hncond_len1 Hncond_len2 Hinv_len.
-    move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_outP _ _ _ _ _ _ _ _ _ _ _ _ 64 _ _
+    move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_outP _ _ _ _ _ _ _ _ _ _ _ 64 _ _
             _ _ _ Hncond_len1 Hinv_len) => //=.
-    move => |>; congr; congr; apply eq_in_map => k Hk_range; rewrite /(\o) /idfun /=.
+    move => |>.
+    rewrite /bitrev_8_update_r_j_start foldr_comp; congr; rewrite map_rev; congr.
+    rewrite -map_comp -eq_in_map => k Hk_range; rewrite /(\o) /=.
     rewrite bitrev_pow2 /=; first by move: Hk_range; apply range_incl.
     by rewrite divz_pow //=; move/mem_range: Hk_range => [-> /=]; apply/ltzW.
   qed.

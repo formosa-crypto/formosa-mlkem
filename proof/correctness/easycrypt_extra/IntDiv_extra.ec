@@ -19,10 +19,6 @@ lemma divz_mulp (n d1 d2 : int) :
   0 < d2 =>
   n %/ (d1 * d2) = n %/ d1 %/ d2.
 proof.
-  (*TODO: seems that mulzA and mulrA are not written the same way? Pierre-Yves*)
-  print mulzA.
-  print mulrA.
-  print associative.
   move => lt0d1 lt0d2; rewrite (mulzC d1); apply divz_eqP; [by apply mulr_gt0|split => [|_]].
   + by rewrite mulrA; apply (lez_trans (n %/ d1 * d1));
     [apply/ler_pmul2r => //|]; apply/lez_floor/gtr_eqF.

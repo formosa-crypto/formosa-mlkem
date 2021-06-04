@@ -28,6 +28,22 @@ qed.
 
 (*-----------------------------------------------------------------------------*)
 
+lemma foldr_comp ['a, 'b, 'c] (f1 : 'b -> 'a -> 'a) (f2 : 'c -> 'b) z s : foldr (f1 \o f2) z s = foldr f1 z (map f2 s).
+proof. by elim s => //= hs ts ->; rewrite /(\o). qed.
+
+lemma eq_foldr ['a, 'b] (f1 f2 : 'a -> 'b -> 'b) z1 z2 s1 s2 :
+  (forall x , f1 x = f2 x) =>
+  z1 = z2 =>
+  s1 = s2 =>
+  foldr f1 z1 s1 = foldr f2 z2 s2.
+proof. by move => Heq <<- <<-; elim s1 => //= hs1 ts1 ->; rewrite Heq. qed.
+
+lemma eq_in_foldr ['a, 'b] (f1 f2 : 'a -> 'b -> 'b) z1 z2 s1 s2 :
+  (forall x,  x \in s1 => f1 x = f2 x) =>
+  z1 = z2 =>
+  s1 = s2 =>
+  foldr f1 z1 s1 = foldr f2 z2 s2.
+proof. by move => Heq <<- <<-; elim s1 Heq => //= hs1 ts1 IHs1 Heq; rewrite IHs1 => [x Hin|]; rewrite Heq // Hin. qed.  
 
 (*TODO: why is it not using left_commutative? Modify.*)
 print foldr_perm.
@@ -61,9 +77,6 @@ qed.
 
 (*-----------------------------------------------------------------------------*)
 
-search _ (_ \in range _ _).
-
-(*TODO: why must I specify the type int here?*)
 lemma mem_range_incl (m1 n1 m2 n2 i : int) :
   m2 <= m1 =>
   n1 <= n2 =>

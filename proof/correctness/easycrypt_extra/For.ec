@@ -268,19 +268,19 @@ abstract theory FOLDR_FOR.
     Or maybe make even more abstract class cloned by everybody?*)
   clone import FOR.
 
-  abbrev lt ['t] (pt : t -> 't) i x n = rev (map (pt \o (val i x)) (range 0 n)).
+  abbrev lt i x n = rev (map (val i x) (range 0 n)).
 
-  op inv ['t, 'u] f (pt : t -> 't) z (t : 'u) i c x v =
+  op inv ['u] f z (t : 'u) i c x v =
     exists n ,
       n \in range 0 (out i c x + 1) /\
       v = (val i x n) /\
-      t = foldr f z (lt pt i x n).
+      t = foldr f z (lt i x n).
 
-  lemma inv_loop_post ['t, 'u] f (pt : t -> 't) z (t : 'u) i c x v :
+  lemma inv_loop_post ['u] f z (t : 'u) i c x v :
     finite i c x =>
     cond c v =>
-    inv f pt z t i c x v =>
-    inv f pt z (f (pt v) t) i c x (incr i v).
+    inv f z t i c x v =>
+    inv f z (f v t) i c x (incr i v).
   proof.
     move => Hfin Hcond [n [Hn_range [->> ->>]]].
     move: Hn_range; rewrite {1}rangeSr ?out_ge0 // mem_rcons /=; case => [->>|Hn_range].
@@ -293,14 +293,14 @@ abstract theory FOLDR_FOR.
     by rewrite rangeSr ?map_rcons ?rev_rcons /(\o) //=; move/mem_range: Hn_range.
   qed.
 
-  lemma inv_loopP ['t, 'u] f (pt : t -> 't) z (t : 'u) i c x v :
+  lemma inv_loopP ['u] f z (t : 'u) i c x v :
     finite i c x =>
     cond c v =>
-    inv f pt z t i c x v =>
+    inv f z t i c x v =>
     exists n ,
       n \in (range 0 (out i c x)) /\
       v = (val i x n) /\
-      t = foldr f z (lt pt i x n).
+      t = foldr f z (lt i x n).
   proof.
     move => Hfin Hcond [n [/mem_range [le0n /ltzS /ler_eqVlt [eqnout|ltnout]] [->> ->>]]];
     exists n; split => //; apply/mem_range; split => // _.
@@ -308,21 +308,21 @@ abstract theory FOLDR_FOR.
     by move: (pmin_mem (ncond_val i c x) (finite_nsempty i c x _)).
   qed.
 
-  lemma inv_in ['t, 'u] f (pt : t -> 't) (z : 'u) i c x :
+  lemma inv_in ['u] f (z : 'u) i c x :
     finite i c x =>
-    inv f pt z z i c x x.
+    inv f z z i c x x.
   proof.
     move => Hfin; exists 0; rewrite !val_iter // !iter0 //= (range_geq 0 0) //= rev_nil //=.
     rewrite -(pmin_out _ _ _ Hfin); apply/mem_range => //=; apply/ltzS.
     by apply ge0_pmin.
   qed.
 
-  lemma inv_outP ['t, 'u] f (pt : t -> 't) z (t : 'u) i c x v :
+  lemma inv_outP ['u] f z (t : 'u) i c x v :
     finite i c x =>
     ! cond c v =>
-    inv f pt z t i c x v =>
+    inv f z t i c x v =>
     v = val i x (FOR.out i c x) /\
-    t = foldr f z (lt pt i x (out i c x)).
+    t = foldr f z (lt i x (out i c x)).
   proof.
     move => Hfin Hncond [n [Hn_range [->> ->>]]].
     move: Hn_range; rewrite {1}rangeSr ?out_ge0 // mem_rcons /=; case => [->>|Hn_range].
@@ -333,50 +333,6 @@ abstract theory FOLDR_FOR.
   qed.
 
 end FOLDR_FOR.
-
-
-
-abstract theory PERM_FOR.
-
-  clone import FOLDR_FOR.
-
-  lemma inv_loop_post ['t, 'u] f (pt : FOR.t -> 't) z (t : 'u) i c x v :
-    FOR.finite i c x =>
-    FOR.cond c v =>
-    inv f pt z t i c x v =>
-    inv f pt z (f (pt v) t) i c x (FOR.incr i v).
-  proof. by apply inv_loop_post. qed.
-
-  lemma inv_loopP ['t, 'u] f (pt : FOR.t -> 't) z (t : 'u) i c x v :
-    FOR.finite i c x =>
-    FOR.cond c v =>
-    inv f pt z t i c x v =>
-    exists n ,
-      n \in (range 0 (FOR.out i c x)) /\
-      v = (FOR.val i x n) /\
-      t = foldr f z (lt pt i x n).
-  proof. by apply inv_loopP. qed.
-
-  lemma inv_in ['t, 'u] f (pt : FOR.t -> 't) (z : 'u) i c x :
-    FOR.finite i c x =>
-    inv f pt z z i c x x.
-  proof. by apply inv_in. qed.
-
-  lemma inv_outP ['t, 'u] l f (pt : FOR.t -> 't) z (t : 'u) i c x v :
-    (forall z , left_commutative_in f z (lt pt i x (FOR.out i c x))) =>
-    perm_eq (lt pt i x (FOR.out i c x)) l =>
-    FOR.finite i c x =>
-    ! FOR.cond c v =>
-    inv f pt z t i c x v =>
-    v = FOR.val i x (FOR.out i c x) /\
-    t = foldr f z l.
-  proof.
-    move => Hlci Hperm_eq.
-    rewrite -(foldr_perm_in _ _ _ Hlci Hperm_eq).
-    by apply inv_outP.
-  qed.
-
-end PERM_FOR.
 
 
 
@@ -461,27 +417,27 @@ abstract theory FOLDR_RHL_FOR.
   clone import FOLDR_FOR as FOLDR_FOR1.
   clone import FOLDR_FOR as FOLDR_FOR2.
 
-  op inv ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 x2 v2 =
+  op inv ['u]
+    f1 z1 (t1 : 'u) i1 c1 x1 v1
+    f2 z2 (t2 : 'u) i2 x2 v2 =
     exists n ,
       n \in range 0 (FOLDR_FOR1.FOR.out i1 c1 x1 + 1) /\
       v1 = (FOLDR_FOR1.FOR.val i1 x1 n) /\
       v2 = (FOLDR_FOR2.FOR.val i2 x2 n) /\
-      t1 = foldr f z1 (FOLDR_FOR1.lt pt1 i1 x1 n) /\
-      t2 = foldr f z2 (FOLDR_FOR2.lt pt2 i2 x2 n).
+      t1 = foldr f1 z1 (FOLDR_FOR1.lt i1 x1 n) /\
+      t2 = foldr f2 z2 (FOLDR_FOR2.lt i2 x2 n).
 
-  lemma inv_loop_post ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 c2 x2 v2 :
+  lemma inv_loop_post ['u]
+    f1 z1 (t1 : 'u) i1 c1 x1 v1
+    f2 z2 (t2 : 'u) i2 c2 x2 v2 :
     FOLDR_FOR1.FOR.finite i1 c1 x1 =>
     FOLDR_FOR2.FOR.finite i2 c2 x2 =>
     FOLDR_FOR1.FOR.cond c1 v1 =>
     FOLDR_FOR2.FOR.cond c2 v2 =>
-    inv f pt1 z1 t1 i1 c1 x1 v1 pt2 z2 t2 i2 x2 v2 =>
-    inv f
-      pt1 z1 (f (pt1 v1) t1) i1 c1 x1 (FOLDR_FOR1.FOR.incr i1 v1)
-      pt2 z2 (f (pt2 v2) t2) i2 x2 (FOLDR_FOR2.FOR.incr i2 v2).
+    inv f1 z1 t1 i1 c1 x1 v1 f2 z2 t2 i2 x2 v2 =>
+    inv
+      f1 z1 (f1 v1 t1) i1 c1 x1 (FOLDR_FOR1.FOR.incr i1 v1)
+      f2 z2 (f2 v2 t2) i2    x2 (FOLDR_FOR2.FOR.incr i2 v2).
   proof.
     move => Hfin1 Hfin2 Hcond1 Hcond2 [n [Hn_range [->> [->> [->> ->>]]]]].
     move: Hn_range; rewrite {1}rangeSr ?FOLDR_FOR1.FOR.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
@@ -496,20 +452,20 @@ abstract theory FOLDR_RHL_FOR.
     by rewrite rangeSr ?map_rcons ?rev_rcons /(\o) //=; move/mem_range: Hn_range.
   qed.
 
-  lemma inv_loopP  ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 c2 x2 v2 :
+  lemma inv_loopP  ['u]
+    f1 z1 (t1 : 'u) i1 c1 x1 v1
+    f2 z2 (t2 : 'u) i2 c2 x2 v2 :
     FOLDR_FOR1.FOR.finite i1 c1 x1 =>
     FOLDR_FOR2.FOR.finite i2 c2 x2 =>
     FOLDR_FOR1.FOR.cond c1 v1 =>
     FOLDR_FOR2.FOR.cond c2 v2 =>
-    inv f pt1 z1 t1 i1 c1 x1 v1 pt2 z2 t2 i2 x2 v2 =>
+    inv f1 z1 t1 i1 c1 x1 v1 f2 z2 t2 i2 x2 v2 =>
     exists n ,
       n \in (range 0 (FOLDR_FOR1.FOR.out i1 c1 x1)) /\
       v1 = (FOLDR_FOR1.FOR.val i1 x1 n) /\
       v2 = (FOLDR_FOR2.FOR.val i2 x2 n) /\
-      t1 = foldr f z1 (FOLDR_FOR1.lt pt1 i1 x1 n) /\
-      t2 = foldr f z2 (FOLDR_FOR2.lt pt2 i2 x2 n).
+      t1 = foldr f1 z1 (FOLDR_FOR1.lt i1 x1 n) /\
+      t2 = foldr f2 z2 (FOLDR_FOR2.lt i2 x2 n).
   proof.
     move => Hfin1 Hfin2 Hcond1 Hcond2 [n [/mem_range [le0n /ltzS /ler_eqVlt [eqnout|ltnout]] [->> [->> [->> ->>]]]]];
     exists n; split => //; apply/mem_range; split => // _.
@@ -517,30 +473,30 @@ abstract theory FOLDR_RHL_FOR.
     by move: (pmin_mem (FOLDR_FOR1.FOR.ncond_val i1 c1 x1) (FOLDR_FOR1.FOR.finite_nsempty i1 c1 x1 _)).
   qed.
 
-  lemma inv_in ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) (z1 : 'u) i1 c1 x1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) (z2 : 'u) i2 x2 :
+  lemma inv_in ['u]
+    f1 (z1 : 'u) i1 c1 x1
+    f2 (z2 : 'u) i2 x2 :
     FOLDR_FOR1.FOR.finite i1 c1 x1 =>
-    inv f pt1 z1 z1 i1 c1 x1 x1 pt2 z2 z2 i2 x2 x2.
+    inv f1 z1 z1 i1 c1 x1 x1 f2 z2 z2 i2 x2 x2.
   proof.
     move => Hfin1; exists 0; rewrite FOLDR_FOR1.FOR.val_iter // FOLDR_FOR2.FOR.val_iter //.
     rewrite !iter0 //= (range_geq 0 0) //= rev_nil //=.
-    rewrite -(FOLDR_FOR1.FOR.pmin_out _ _ _ Hfin1); apply/mem_range => //=; apply/ltzS.
+    rewrite -(FOLDR_FOR1.FOR.pmin_out _ _ _ Hfin1) rev_nil /=; apply/mem_range => //=; apply/ltzS.
     by apply ge0_pmin.
   qed.
 
-  lemma inv_outP ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 c2 x2 v2 :
+  lemma inv_outP ['u]
+    f1 z1 (t1 : 'u) i1 c1 x1 v1
+    f2 z2 (t2 : 'u) i2 c2 x2 v2 :
     FOLDR_FOR1.FOR.out i1 c1 x1 = FOLDR_FOR2.FOR.out i2 c2 x2 =>
     FOLDR_FOR1.FOR.finite i1 c1 x1 =>
     FOLDR_FOR2.FOR.finite i2 c2 x2 =>
     ! FOLDR_FOR1.FOR.cond c1 v1 =>
-    inv f pt1 z1 t1 i1 c1 x1 v1 pt2 z2 t2 i2 x2 v2 =>
+    inv f1 z1 t1 i1 c1 x1 v1 f2 z2 t2 i2 x2 v2 =>
     v1 = FOLDR_FOR1.FOR.val i1 x1 (FOLDR_FOR1.FOR.out i1 c1 x1) /\
     v2 = FOLDR_FOR2.FOR.val i2 x2 (FOLDR_FOR2.FOR.out i2 c2 x2) /\
-    t1 = foldr f z1 (FOLDR_FOR1.lt pt1 i1 x1 (FOLDR_FOR1.FOR.out i1 c1 x1)) /\
-    t2 = foldr f z2 (FOLDR_FOR2.lt pt2 i2 x2 (FOLDR_FOR2.FOR.out i2 c2 x2)).
+    t1 = foldr f1 z1 (FOLDR_FOR1.lt i1 x1 (FOLDR_FOR1.FOR.out i1 c1 x1)) /\
+    t2 = foldr f2 z2 (FOLDR_FOR2.lt i2 x2 (FOLDR_FOR2.FOR.out i2 c2 x2)).
   proof.
     move => Heq_out Hfin1 Hfin2 Hncond1 [n [Hn_range [->> [->> [->> ->>]]]]].
     move: Hn_range; rewrite {1}rangeSr ?FOLDR_FOR1.FOR.out_ge0 // mem_rcons /=; case => [->>|Hn_range].
@@ -554,87 +510,12 @@ end FOLDR_RHL_FOR.
 
 
 
-abstract theory PERM_RHL_FOR.
-
-  clone import FOLDR_RHL_FOR.
-
-  op inv ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 x2 v2 =
-    exists n ,
-      n \in range 0 (FOLDR_FOR1.FOR.out i1 c1 x1 + 1) /\
-      v1 = (FOLDR_FOR1.FOR.val i1 x1 n) /\
-      v2 = (FOLDR_FOR2.FOR.val i2 x2 n) /\
-      t1 = foldr f z1 (FOLDR_FOR1.lt pt1 i1 x1 n) /\
-      t2 = foldr f z2 (FOLDR_FOR2.lt pt2 i2 x2 n).
-
-  lemma inv_loop_post ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 c2 x2 v2 :
-    FOLDR_FOR1.FOR.finite i1 c1 x1 =>
-    FOLDR_FOR2.FOR.finite i2 c2 x2 =>
-    FOLDR_FOR1.FOR.cond c1 v1 =>
-    FOLDR_FOR2.FOR.cond c2 v2 =>
-    inv f pt1 z1 t1 i1 c1 x1 v1 pt2 z2 t2 i2 x2 v2 =>
-    inv f
-      pt1 z1 (f (pt1 v1) t1) i1 c1 x1 (FOLDR_FOR1.FOR.incr i1 v1)
-      pt2 z2 (f (pt2 v2) t2) i2 x2 (FOLDR_FOR2.FOR.incr i2 v2).
-  proof. by apply inv_loop_post. qed.
-
-  lemma inv_loopP  ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 c2 x2 v2 :
-    FOLDR_FOR1.FOR.finite i1 c1 x1 =>
-    FOLDR_FOR2.FOR.finite i2 c2 x2 =>
-    FOLDR_FOR1.FOR.cond c1 v1 =>
-    FOLDR_FOR2.FOR.cond c2 v2 =>
-    inv f pt1 z1 t1 i1 c1 x1 v1 pt2 z2 t2 i2 x2 v2 =>
-    exists n ,
-      n \in (range 0 (FOLDR_FOR1.FOR.out i1 c1 x1)) /\
-      v1 = (FOLDR_FOR1.FOR.val i1 x1 n) /\
-      v2 = (FOLDR_FOR2.FOR.val i2 x2 n) /\
-      t1 = foldr f z1 (FOLDR_FOR1.lt pt1 i1 x1 n) /\
-      t2 = foldr f z2 (FOLDR_FOR2.lt pt2 i2 x2 n).
-  proof. by apply inv_loopP. qed.
-
-  lemma inv_in ['t, 'u] f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) (z1 : 'u) i1 c1 x1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) (z2 : 'u) i2 x2 :
-    FOLDR_FOR1.FOR.finite i1 c1 x1 =>
-    inv f pt1 z1 z1 i1 c1 x1 x1 pt2 z2 z2 i2 x2 x2.
-  proof. by apply inv_in. qed.
-
-  lemma inv_outP ['t, 'u] l f
-    (pt1 : FOLDR_FOR1.FOR.t -> 't) z1 (t1 : 'u) i1 c1 x1 v1
-    (pt2 : FOLDR_FOR2.FOR.t -> 't) z2 (t2 : 'u) i2 c2 x2 v2 :
-    (forall (z : 'u) ,
-      left_commutative_in f z (FOLDR_FOR1.lt pt1 i1 x1 (FOLDR_FOR1.FOR.out i1 c1 x1))) =>
-    perm_eq (FOLDR_FOR1.lt pt1 i1 x1 (FOLDR_FOR1.FOR.out i1 c1 x1)) l =>
-    FOLDR_FOR1.FOR.out i1 c1 x1 = FOLDR_FOR2.FOR.out i2 c2 x2 =>
-    FOLDR_FOR1.FOR.finite i1 c1 x1 =>
-    FOLDR_FOR2.FOR.finite i2 c2 x2 =>
-    ! FOLDR_FOR1.FOR.cond c1 v1 =>
-    inv f pt1 z1 t1 i1 c1 x1 v1 pt2 z2 t2 i2 x2 v2 =>
-    v1 = FOLDR_FOR1.FOR.val i1 x1 (FOLDR_FOR1.FOR.out i1 c1 x1) /\
-    v2 = FOLDR_FOR2.FOR.val i2 x2 (FOLDR_FOR2.FOR.out i2 c2 x2) /\
-    t1 = foldr f z1 l /\
-    t2 = foldr f z2 (FOLDR_FOR2.lt pt2 i2 x2 (FOLDR_FOR2.FOR.out i2 c2 x2)).
-  proof.
-    move => Hlci Hperm_eq.
-    rewrite -(foldr_perm_in _ _ _ Hlci Hperm_eq).
-    by apply inv_outP.
-  qed.
-
-end PERM_RHL_FOR.
-
-
-
 clone FOLDR_RHL_FOR as FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE with
   theory FOLDR_FOR1.FOR <- FOR_NAT_DIV_GE ,
   theory FOLDR_FOR2.FOR <- FOR_NAT_MUL_LE.
 
 
 
-clone PERM_RHL_FOR as PERM_RHL_FOR_INT_ADD_LT2 with
-  theory FOLDR_RHL_FOR.FOLDR_FOR1.FOR <- FOR_INT_ADD_LT,
-  theory FOLDR_RHL_FOR.FOLDR_FOR2.FOR <- FOR_INT_ADD_LT.
+clone FOLDR_RHL_FOR as FOLDR_RHL_FOR_INT_ADD_LT2 with
+  theory FOLDR_FOR1.FOR <- FOR_INT_ADD_LT,
+  theory FOLDR_FOR2.FOR <- FOR_INT_ADD_LT.
