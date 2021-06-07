@@ -77,6 +77,46 @@ qed.
 
 (*-----------------------------------------------------------------------------*)
 
+lemma rev_drop ['a] n (s : 'a list) :
+  0 <= n <= size s =>
+  rev (drop n s) = take (size s - n) (rev s).
+proof.
+  move => [le0n lensizes]; rewrite -(cat_take_drop n s) drop_size_cat.
+  + by rewrite size_take //; move: lensizes => [->|->>].
+  rewrite rev_cat size_cat size_take // size_drop // ler_maxr ?subr_ge0 // !addrA /=.
+  have ->: ((if n < size s then n else size s) = n) by move: lensizes => [->|->>].
+  rewrite (addrC n) -(addrA (size _)) /= take_size_cat //.
+  by rewrite size_rev size_drop // ler_maxr // subr_ge0.
+qed.
+
+lemma drop_mkseq ['a] (f : int -> 'a) k n :
+  0 <= k <= n =>
+  drop k (mkseq f n) = mkseq (f \o ((+) k)) (n - k).
+proof.
+  move => [le0k lekn]; move: (mkseq_add f k (n - k) _ _) => //; first by apply subr_ge0.
+  by rewrite addrA addrAC /= => ->; rewrite drop_size_cat // size_mkseq ler_maxr.
+qed.
+
+lemma rev_take ['a] n (s : 'a list) :
+  0 <= n <= size s =>
+  rev (take n s) = drop (size s - n) (rev s).
+proof.
+  move => [? ?]; apply rev_inj; rewrite revK rev_drop.
+  + by rewrite size_rev subr_ge0 ler_subl_addr -ler_subl_addl.
+  by rewrite revK size_rev opprD opprK addrA.
+qed.
+
+lemma take_mkseq ['a] (f : int -> 'a) k n :
+  0 <= k <= n =>
+  take k (mkseq f n) = mkseq f k.
+proof.
+  move => [le0k lekn]; move: (mkseq_add f k (n - k) _ _) => //; first by apply subr_ge0.
+  by rewrite addrA addrAC /= => ->; rewrite take_size_cat // size_mkseq ler_maxr.
+qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
 lemma mem_range_incl (m1 n1 m2 n2 i : int) :
   m2 <= m1 =>
   n1 <= n2 =>
@@ -119,6 +159,11 @@ lemma mem_range_mulr (m n x y : int) :
   0 < y =>
   x * y \in range m n <=> x \in range (m %\ y) (n %\ y).
 proof. by rewrite mulrC; apply/mem_range_mull. qed.
+
+lemma mem_range_mod (x y : int) :
+  y <> 0 =>
+  x %% y \in range 0 `|y|.
+proof. by move => neqy0; rewrite mem_range modz_ge0 // ltz_mod. qed.
 
 lemma mem_range_mul (m1 n1 m2 n2 x y : int) :
   0 <= m1 =>

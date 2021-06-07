@@ -1351,20 +1351,20 @@ theory NTTequiv.
   op bitrev_8_update_r len start =
     (update_r (bitrev 8 len) (bitrev 8 start)) \o (bitrev 8).
 
-  op bitrev_8_update_r_j_partial len start r =
-    (update_r_j_partial (bitrev 8 len) (bitrev 8 start) r) \o (bitrev 8).
+  op bitrev_8_update_r_j_partial len start r j =
+    foldr (bitrev_8_update_r len start) r (rev (map (( * ) (128 %/ len)) (range 0 (j %/ (128 %/ len))))).
 
   op bitrev_8_update_r_j len =
-    (update_r_j (bitrev 8 len)) \o (bitrev 8).
+    (update_r_j len) \o (bitrev 8).
 
-  op bitrev_8_update_r_j_start_partial len r =
-    (update_r_j_start_partial (bitrev 8 len) r) \o (bitrev 8).
+  op bitrev_8_update_r_j_start_partial len r start =
+    foldr (bitrev_8_update_r_j len) r (rev (range 0 start)).
 
   op bitrev_8_update_r_j_start =
     update_r_j_start \o (bitrev 8).
 
-  op bitrev_8_update_r_j_start_len_partial r =
-    (update_r_j_start_len_partial r) \o (bitrev 8).
+  op bitrev_8_update_r_j_start_len_partial r len =
+    foldr update_r_j_start r (rev (map (fun k => 2 ^ (7 - k)) (range 0 (ilog 2 len)))).
 
   lemma set2_add_mulr_congr r1 z1 a1 b1 r2 z2 a2 b2 :
     r1 = r2 =>
@@ -1423,7 +1423,8 @@ theory NTTequiv.
             (len{2} * 2)        0 j{2} /\
           zetasctr{1} = bitrev 8 (256 %/ len{1} + start{1} %/ len{1}) /\
           zeta_{1} = exp zeta1 zetasctr{1} /\
-          ={zetasctr, zeta_}
+          zetasctr{2} = zetasctr_ntt5 len{2} start{2} /\
+          zeta_{2} = exp zeta1 zetasctr{2}
           ).
         * sp; skip => |> &hr1 &hr2 j2 r2 j1 r1.
           move => Hcond_len1 Hcond_len2 Hinv_len.
@@ -1461,18 +1462,55 @@ theory NTTequiv.
           split.
           + move: Hinv_j_post; apply/iffLR/eq_iff; congr; rewrite /update_r /idfun /zetasctr_ntt5 //=.
             rewrite -exprSr; first by move/mem_range: Hk_range.
-            rewrite divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
-            rewrite divz_pow //=.
-            - move/mem_range: Hk_range => [? ?]; split => [|_]; first by apply/subr_ge0/ltzW.
-              by apply/ler_subl_addl/ler_subl_addr/ltzW/ltzE.
-            rewrite opprD opprK /=.
             apply set2_add_mulr_congr => //.
-            - congr; congr.
-              rewrite bitrev_pow2 /=; first by move: Hk_range; apply range_incl.
-              (*TODO: still an issue with what function is what.*)
-              admit.
-            - admit.
-            admit.
+            - congr; rewrite !bitrev_pow2 /=; first by move: Hk_range; apply range_incl.
+              rewrite divz_pow //=.
+              * rewrite ler_subr_addr /= -ler_subr_addr opprK -ler_subl_addl /=.
+                by move/mem_range: Hk_range => [? ?]; split => [|_]; [apply/ltzW|apply/ltzW/ltzE].
+              rewrite opprD /= (addzC 1) (addzC (_ ^ _)%IntID) -(mulz1 (2 ^ (k + 1))) bitrev_add.
+              * by move/mem_range: Hk_range => [? ?]; split => [|_]; [apply/addr_ge0|apply/ltzW/ltr_subr_addr].
+              * rewrite range_div_range ?expr_gt0 //=; move/mem_range: Hk_range => [? ?].
+                rewrite -exprD_nneg //; [by apply/addr_ge0|by apply/subr_ge0/ltzW| ].
+                by rewrite !addrA /= addrAC /=; apply/(bitrev_range 8).
+              rewrite bitrev1 //= bitrev_divr_pow2.
+              * move/mem_range: Hk_range => [? ?]; rewrite subr_ge0 -ler_subr_addr opprK -ler_subl_addl /=.
+                by split => [|_]; [apply/ltzW|apply/ltzW/ltzE].
+              rewrite bitrev2_ge /=; first by rewrite ler_subr_addr -ler_subr_addl ltzW; move/mem_range: Hk_range.
+              rewrite (modz_small s).
+              * rewrite -mem_range; move: Hs_range; apply/mem_range_incl => //.
+                move: (ler_weexpn2l 2 _ k 8) => // ->; move/mem_range: Hk_range => [? ?] //.
+                by split => // _; apply/ltzW/ltzE/ltzW/ltr_subr_addr.
+              rewrite modz_small.
+              * rewrite -mem_range mem_range_mull ?expr_gt0 //=; move: Hs_range; apply/mem_range_incl => //.
+                rewrite divz_pow //=.
+                + rewrite subr_ge0 -ler_subr_addr opprK -ler_subl_addl; move/mem_range: Hk_range => [? ?].
+                  split => [|_]; [by apply/ltzW|].
+                  (*TODO: why do I have to do this? hint simplify seems to have a max depth?*)
+                  do 8!(rewrite vp_dvd //=); rewrite vp0 //=.
+                  by apply/ltzW/ltzE.
+                do 8!(rewrite vp_dvd //=); rewrite vp0 //=; rewrite opprD /CoreInt.absz /= mulNr /=.
+                by apply/ler_weexpn2l => //; move/mem_range: Hk_range => [-> _]; rewrite ler_paddl.
+              rewrite divz_pow //=; first by rewrite -ltzE; move/mem_range: Hk_range => [? -> /=]; apply/addr_ge0.
+              rewrite opprD addrA addrAC /= divz_pow //=; first by rewrite -(ltzS k 6) -mem_range.
+              rewrite mulrDl /= -mulrA -exprS; first by apply/subr_ge0/ltzS; move/mem_range: Hk_range.
+              by rewrite addrAC /= mulrC.
+            - rewrite (addzC (_ * _)%Int) mulrC bitrev_add.
+              * by move/mem_range: Hk_range => [? ?]; split => [|_]; [apply/addr_ge0|apply/ltzW/ltr_subr_addr].
+              * move: Hs_range; apply/mem_range_incl => //.
+                by apply/ler_weexpn2l => //; move/mem_range: Hk_range => [-> _]; rewrite ler_paddr.
+              rewrite addrC bitrev_mulr_pow2 //.
+              by move/mem_range: Hk_range => [? ?]; split => [|_]; [apply/addr_ge0|apply/ltzW/ltr_subr_addr].
+            rewrite -!addrA (addzC (_ * _)%Int) mulrC bitrev_add.
+            - by move/mem_range: Hk_range => [? ?]; split => [|_]; [apply/addr_ge0|apply/ltzW/ltr_subr_addr].
+            - rewrite mem_range_addl; move: Hs_range; apply/mem_range_incl => //; first by rewrite /= oppr_le0 expr_ge0.
+              rewrite exprSr; first by move/mem_range: Hk_range.
+              by rewrite -addr_double -addrA.
+            rewrite addrC bitrev_mulr_pow2.
+            - by move/mem_range: Hk_range => [? ?]; split => [|_]; [apply/addr_ge0|apply/ltzW/ltr_subr_addr].
+            congr; rewrite (addzC _ s) -(mulz1 (2 ^ k)) bitrev_add //.
+            - by move/mem_range: Hk_range => [-> ? /=]; apply/ltzW/ltzE/ltzW/ltr_subr_addr.
+            rewrite bitrev1 //= bitrev_pow2 /=; first by move: Hk_range; apply/mem_range_incl.
+            by rewrite addrC divz_pow //=; move/mem_range: Hk_range => [-> ? /=]; apply/ltzW.
           apply/iffE => {Hinv_j_post}.
           rewrite -exprSr; first by move/mem_range: Hk_range.
           rewrite -mulrD1l -ltz_NdivNLR; first by apply/expr_gt0.

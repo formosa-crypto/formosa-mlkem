@@ -66,6 +66,15 @@ proof.
   by rewrite divzMpl //; apply expr_gt0.
 qed.
 
+lemma int2bs_divr_pow2 K N n :
+  int2bs N (n %/ 2 ^ K) = drop `|K| (int2bs (N + `|K|) n).
+proof.
+  rewrite pow_normr; case (0 <= N) => [le0N|/ltzNge/ltzW leN0]; last first.
+  + by rewrite drop_oversize; [rewrite size_int2bs ler_maxrP normr_ge0 ler_naddl|rewrite int2bs0s_le].
+  rewrite (int2bs_cat `|K| (N + `|K|)) ?normr_ge0 ?lez_addr //= drop_size_cat -?addrA //=.
+  by rewrite size_int2bs ler_maxr // normr_ge0.
+qed.
+
 lemma int2bs_pow2 K N :
   K \in range 0 N =>
   int2bs N (2 ^ K) = nseq K false ++ true :: nseq (N - 1 - K) false.
@@ -202,10 +211,23 @@ lemma bitrev_mulr_pow2 K N n :
 proof.
   move => [le0K leKN]; rewrite /bitrev int2bs_mulr_pow2 // rev_cat rev_nseq bs2int_cat bs2int_nseq_false /=.
   rewrite (int2bs_cat (N - K) N); first by split; [rewrite subr_ge0|move => _; rewrite ler_subl_addr ler_addl].
-  (*TODO: why must I put exp instead of ^?*)
   rewrite rev_cat bs2int_cat size_rev size_int2bs opprD addrA /= ler_maxr // (mulrC (exp _ _)%IntDiv) divzMDr.
   + by apply/gtr_eqF/expr_gt0.
   by rewrite divz_small // -mem_range normrX_nat // bitrev_range.
+qed.
+
+lemma bitrev_divr_pow2 K N n :
+  0 <= K <= N =>
+  bitrev N (n %/ 2 ^ K) = (bitrev (N + K) n) %% (2 ^ N).
+proof.
+  move => [le0K leKN]; rewrite /bitrev int2bs_divr_pow2 ger0_norm // /int2bs drop_mkseq.
+  + by split => // _; rewrite ler_addr (lez_trans K).
+  rewrite -addrA /= addrC mkseq_add //; first by apply/(lez_trans K).
+  rewrite rev_cat bs2int_cat size_rev size_mkseq ler_maxr //; first by apply/(lez_trans K).
+  rewrite mulrC modzMDr modz_small //.
+  rewrite -mem_range normrX_nat; first by apply/(lez_trans K).
+  move: (bs2int_range (rev (mkseq (fun (i : int) => (fun (i0 : int) => n %/ 2 ^ i0 %% 2 <> 0) (K + i)) N))).
+  by rewrite size_rev size_mkseq ler_maxr //; apply/(lez_trans K).
 qed.
 
 lemma bitrev_pow2 K N :
@@ -258,6 +280,32 @@ proof.
   rewrite !opprD addrA /= (mulrC (exp _ _)) divzMDr.
   + by apply/gtr_eqF/expr_gt0.
   by rewrite divz_small // -mem_range normrX_nat // bitrev_range.
+qed.
+
+lemma bitrev2_le M N n :
+  0 <= M <= N =>
+  bitrev M (bitrev N n) = n %% 2 ^ N %/ 2 ^ (N - M).
+proof.
+  move => [le0M leMN]; rewrite -(bitrev_mod N) /bitrev (int2bs_cat (N - M) N).
+  + by rewrite subr_ge0 ler_subl_addl -ler_subl_addr.
+  rewrite opprD addrA /= rev_cat bs2int_cat size_rev size_int2bs ler_maxr //.
+  rewrite -{1}int2bs_mod mulrC modzMDr int2bs_mod.
+  move: (bitrev_involutive M (n %% 2 ^ N %/ 2 ^ (N - M)) _ _) => //.
+  rewrite range_div_range /=; first by apply/expr_gt0.
+  rewrite -exprD_nneg //; first by apply/subr_ge0.
+  rewrite addrA addrAC /=; move: (mem_range_mod n (2 ^ N)).
+  by rewrite normrX_nat; [apply/(lez_trans M)|move => -> //; apply/gtr_eqF/expr_gt0].
+qed.
+
+lemma bitrev2_ge M N n :
+  0 <= N <= M =>
+  bitrev M (bitrev N n) = 2 ^ (M - N) * (n %% 2 ^ N).
+proof.
+  move => [le0N leNM]; rewrite -(bitrev_mod N) /bitrev (int2bs_cat N M) //.
+  rewrite divz_small; first by rewrite -mem_range normrX_nat // bitrev_range.
+  rewrite int2bs0 rev_cat rev_nseq bs2int_cat size_nseq ler_maxr ?subr_ge0 //.
+  rewrite bs2int_nseq_false /=; congr; move: (bitrev_involutive N (n %% 2 ^ N) _ _) => //.
+  by move: (mem_range_mod n (2 ^ N)); rewrite normrX_nat; [apply/(lez_trans N)|move => -> //; apply/gtr_eqF/expr_gt0].
 qed.
 
 (*TODO: jasmin/eclibs/JUtils.ec has a lot of things in common with this.*)
