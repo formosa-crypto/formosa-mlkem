@@ -1369,7 +1369,7 @@ theory NTTequiv.
     update_r_j_start \o (bitrev 8).
 
   op bitrev_8_update_r_j_start_len_partial r len =
-    foldr update_r_j_start r (rev (map (fun k => 2 ^ (7 - k)) (range 0 (ilog 2 len)))).
+    foldr bitrev_8_update_r_j_start r (rev (map (fun k => 2 ^ k) (range 0 (ilog 2 len)))).
 
   lemma set2_add_mulr_congr r1 z1 a1 b1 r2 z2 a2 b2 :
     r1 = r2 =>
@@ -1604,17 +1604,57 @@ theory NTTequiv.
       move => [k /= [Hk_range [->> [->> [->> ->>]]]]].
       move: (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_loop_post _ _ _ _ _ _ _ _ _ _ _ _ _ _
               _ _ Hcond_len1 Hcond_len2 Hinv_len) => //.
-      move => {Hcond_len1 Hcond_len2 Hinv_len}.
+      move => {Hcond_len1 Hcond_len2}.
+      move: Hinv_len.
       rewrite /update_r_j_start_len_partial /bitrev_8_update_r_j_start_len_partial /bitrev_8_update_r_j_start.
       rewrite expr_gt0 //= foldr_comp divz_pow //=; first by move/mem_range: Hk_range => [-> ? /=]; apply/ltzW.
       rewrite !ilog_powK //; [by apply/subr_ge0/ltzW; move/mem_range: Hk_range|by move/mem_range: Hk_range| ].
-      rewrite opprD /=.
-      move => Hinv_len_post.
-      do!split.
-      - admit.
-        print FOLDR_RHL_FOR_INT_ADD_LT2.inv_in.
+      rewrite opprD /= foldr_comp !map_rev -!map_comp.
+      move: (eq_in_map (fun (n : int) => 128 %/ 2 ^ n) (fun (n : int) => 2 ^ (7 - n)) (range 0 k)) => [->]; [|move => _].
+      - move => x Hx_range /=; rewrite divz_pow //=; move/mem_range: Hx_range => [-> ? /=].
+        by apply/ltzW/(ltz_trans k) => //; move/mem_range: Hk_range.
+      move: (eq_in_map (bitrev 8 \o (^) 2) (fun (n : int) => 2 ^ (7 - n)) (range 0 k)) => [->]; [|move => _].
+      - move => x Hx_range /=; rewrite /(\o) /= bitrev_pow2 //; move: Hx_range; apply/mem_range_incl => //.
+        by apply/ltzW/ltzE/ltzW/ltr_subr_addr; move/mem_range: Hk_range.
+      move => -> Hinv_len_post /=; rewrite FOLDR_RHL_FOR_INT_ADD_LT2.inv_in /=.
+      - by apply/mulr_gt0 => //; apply/expr_gt0.
+      move => r1 start1 r2 start2.
+      move => Hncond_start1 Hncond_start2 Hinv_start.
+      move: (FOLDR_RHL_FOR_INT_ADD_LT2.inv_outP _ _ _ _ _ _ _ _ _ _ _ (2 ^ k) _ _
+              _ _ _ Hncond_start1 Hinv_start) => //=.
+      - rewrite lezNgt expr_gt0 //= -exprSr; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+        rewrite addrAC /= divz_pow //=.
+        * rewrite subr_ge0 -ler_subr_addr opprK -ler_subl_addl /=.
+          by move/mem_range: Hk_range => [-> ? /=]; apply/ltzW/ltzE/ltzW/ltr_subr_addr.
+        by rewrite mulNr opprK mul1r opprD addrA.
+      - by apply/mulr_gt0 => //; apply/expr_gt0.
+      move => [->> [->> [->> ->>]]].
+      move: {Hncond_start1 Hncond_start2 Hinv_start}.
+      split.
+      - move: Hinv_len_post.
+        rewrite lezNgt expr_gt0 //= -!exprSr; first by move/mem_range: Hk_range.
+        * by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+        rewrite addrAC /= divz_pow //=.
+        * rewrite subr_ge0 -ler_subr_addr opprK -ler_subl_addl /=; move/mem_range: Hk_range => [-> ? /=].
+          by apply/ltzW/ltzE/ltzW/ltr_subr_addr.
+        rewrite mulNr opprK mul1r opprD /= /(\o) /bitrev_8_update_r_j.
+        pose Hinv1:= (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv _ _ _ _ _ _ _ _ _ _ _ _ _).
+        pose Hinv2:= (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv _ _ _ _ _ _ _ _ _ _ _ _ _).
+        rewrite -(eqT Hinv1) -(eqT Hinv2) /Hinv1 /Hinv2 => <- {Hinv1 Hinv2}; congr => //.
+        * rewrite {2}/update_r_j_start /update_r_j_start_partial.
+          (*TODO: issue in the range here.*)
+          admit.
+        rewrite {2}/update_r_j_start /update_r_j_start_partial.
+        (*TODO: same here.*)
         admit.
-      admit.
+      apply/iffE => {Hinv_len_post}.
+      rewrite mulrC -lez_divRL ?expr_gt0 // divz_pow //=.
+      - by move/mem_range: Hk_range => [-> ? /=]; apply/ltzS.
+      rewrite -{3}(IntID.expr1 2) divz_pow //=.
+      - by apply/gtr_eqF/expr_gt0.
+      - by rewrite vp_pow //; [apply/subr_ge0/ltzW|apply/ler_subr_addl/ltzE]; move/mem_range: Hk_range.
+      rewrite vp_pow //; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+      by rewrite divzz addrAC /= /b2i gtr_eqF //=; apply/expr_gt0.
     skip => |>.
     rewrite FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv_in //=.
     move => len1 r1 len2 r2 Hncond_len1 Hncond_len2 Hinv_len.
