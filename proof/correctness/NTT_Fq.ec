@@ -1348,7 +1348,7 @@ theory NTTequiv.
     foldr (update_r_j len) r (rev (map (transpose ( * )%Int (len * 2)) (range 0 (start %/ (len * 2))))).
 
   op update_r_j_start len r =
-    update_r_j_start_partial len r (128 %/ len).
+    update_r_j_start_partial len r 256.
 
   op update_r_j_start_len_partial r len =
     foldr update_r_j_start r (rev (map (fun k => 2 ^ (7 - k)) (range 0 (7 - ilog 2 len)))).
@@ -1640,12 +1640,20 @@ theory NTTequiv.
         rewrite mulNr opprK mul1r opprD /= /(\o) /bitrev_8_update_r_j.
         pose Hinv1:= (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv _ _ _ _ _ _ _ _ _ _ _ _ _).
         pose Hinv2:= (FOLDR_RHL_FOR_NAT_DIV_GE_MUL_LE.inv _ _ _ _ _ _ _ _ _ _ _ _ _).
-        rewrite -(eqT Hinv1) -(eqT Hinv2) /Hinv1 /Hinv2 => <- {Hinv1 Hinv2}; congr => //.
-        * rewrite {2}/update_r_j_start /update_r_j_start_partial.
-          (*TODO: issue in the range here.*)
+        rewrite -(eqT Hinv1) -(eqT Hinv2) /Hinv1 /Hinv2 => <- {Hinv1 Hinv2}.
+        rewrite {6 8}/update_r_j_start /update_r_j_start_partial.
+        rewrite bitrev_pow2; first by move: Hk_range; apply/mem_range_incl.
+        rewrite -exprSr; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+        rewrite addrAC /= -exprSr; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+        rewrite addrAC /= divz_pow //=.
+        * rewrite subr_ge0 -ler_subr_addr opprK -ler_subl_addl /=.
+          by move/mem_range: Hk_range => [-> ? /=]; apply/ltzW/ltzE/ltzW/ltr_subr_addr.
+        rewrite opprD opprK /= foldr_comp map_rev -map_comp; congr => //.
+        apply foldr_perm_in.
+        * move => r ? ?; rewrite !mem_rev => /mapP [x [Hx_range ->>]] /mapP [y [Hy_range ->>]].
           admit.
-        rewrite {2}/update_r_j_start /update_r_j_start_partial.
-        (*TODO: same here.*)
+        rewrite (perm_eq_trans _ _ _ _ (perm_eq_rev (map (transpose Int.( * ) (2 ^ (8 - k))) (range 0 (2 ^ k))))) perm_eq_sym.
+        rewrite (perm_eq_trans _ _ _ _ (perm_eq_rev (map (bitrev 8 \o fun (n : int) => n) (range 0 (2 ^ k))))).
         admit.
       apply/iffE => {Hinv_len_post}.
       rewrite mulrC -lez_divRL ?expr_gt0 // divz_pow //=.

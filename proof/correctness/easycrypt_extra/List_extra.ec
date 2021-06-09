@@ -1,12 +1,20 @@
-require import AllCore StdOrder List Ring IntDiv.
+require import AllCore StdOrder List Ring Int IntDiv.
 (*---*) import IntOrder.
 require import Ring_extra IntDiv_extra.
-
 
 (*-----------------------------------------------------------------------------*)
 
 lemma all_predI p1 p2 (s : 'a list): all (predI p1 p2) s = (all p1 s /\ all p2 s).
 proof. by elim: s => //= x s ->; rewrite /predI /=; case: (p1 x); case (p2 x). qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
+lemma mem_count ['a] x (s : 'a list) : (x \in s) <=> (0 < count (pred1 x) s).
+proof.
+  elim: s => //= hs ts IHs; rewrite /b2i {1}/pred1 (eq_sym x).
+  by case (hs = x) => /= _ //; rewrite addrC ltzS count_ge0.
+qed.
 
 
 (*-----------------------------------------------------------------------------*)
@@ -112,6 +120,27 @@ lemma take_mkseq ['a] (f : int -> 'a) k n :
 proof.
   move => [le0k lekn]; move: (mkseq_add f k (n - k) _ _) => //; first by apply subr_ge0.
   by rewrite addrA addrAC /= => ->; rewrite take_size_cat // size_mkseq ler_maxr.
+qed.
+
+
+(*-----------------------------------------------------------------------------*)
+
+lemma perm_eqP_pred1 ['a] (s1 s2 : 'a list) : perm_eq s1 s2 <=> forall (x : 'a), count (pred1 x) s1 = count (pred1 x) s2.
+proof.
+  rewrite perm_eqP; split => [Heq x|Heq p]; first by apply/Heq.
+  elim s1 s2 Heq => [s2 /= Heq|hs1 ts1 IHs1 s2 /= Heq].
+  + elim: s2 Heq => //= hs2 ts2 IHs2 Heq.
+    move: (Heq hs2); rewrite /b2i /pred1 /= eqz_leq => -[_].
+    by rewrite addrC -ltzE ltzNge count_ge0.
+  move: IHs1 => /(_ (rem hs1 s2)) => ->.
+  + move => x; move: (Heq hs1) (Heq x) => {Heq}.
+    rewrite {1}/b2i {1}/pred1 /= => Heqhs1.
+    rewrite (count_rem (pred1 x) s2 hs1); last by apply addrI.
+    by rewrite mem_count -Heqhs1 addrC ltzS count_ge0.
+  move: (Heq hs1) => {Heq}.
+  rewrite {1}/b2i {1}/pred1 /= => Heqhs1.
+  rewrite (count_rem p s2 hs1) //.
+  by rewrite mem_count -Heqhs1 addrC ltzS count_ge0.
 qed.
 
 

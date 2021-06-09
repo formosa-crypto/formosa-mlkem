@@ -308,4 +308,38 @@ proof.
   by move: (mem_range_mod n (2 ^ N)); rewrite normrX_nat; [apply/(lez_trans N)|move => -> //; apply/gtr_eqF/expr_gt0].
 qed.
 
+lemma bitrev_mul_range_pow2_perm_eq K N :
+  0 <= K <= N =>
+  perm_eq
+    (map (bitrev N)            (range 0 (2 ^ K)))
+    (map (( * ) (2 ^ (N - K))) (range 0 (2 ^ K))).
+proof.
+  move => [le0K leKN]; rewrite perm_eqP_pred1 => x.
+  rewrite !count_uniq_mem.
+  + rewrite map_inj_in_uniq ?range_uniq // => {x} x y Hx_range Hy_range.
+    apply/bitrev_injective; first last.
+    - by move: Hx_range; apply/mem_range_incl => //; apply/ler_weexpn2l.
+    - by move: Hy_range; apply/mem_range_incl => //; apply/ler_weexpn2l.
+    by apply/(lez_trans K).
+  + rewrite map_inj_in_uniq ?range_uniq // => {x} x y Hx_range Hy_range.
+    by apply/mulfI/gtr_eqF/expr_gt0.
+  congr; rewrite eq_iff !mapP; split => -[y [Hy_range ->>]].
+  + exists (bitrev N y %/ (2 ^ (N - K))).
+    rewrite mulrC divzK /=.
+    - apply/bitrev_range_dvdz; last by rewrite opprD addrA.
+      by rewrite subr_ge0 leKN /= ger_addl oppz_le0.
+    rewrite range_div_range ?expr_gt0 //= -exprD_nneg ?subr_ge0 //.
+    by rewrite addrA addrAC /= bitrev_range.
+  exists (bitrev N y %/ (2 ^ (N - K))).
+  rewrite -bitrev_mulr_pow2 ?bitrev_involutive /=.
+  + by rewrite subr_ge0 leKN /= ger_addl oppz_le0.
+  + by apply/(lez_trans K).
+  + rewrite mem_range_mull ?expr_gt0 //=.
+    rewrite -(mulN1r (exp _ _)%Int) -divzpMr.
+    - by rewrite dvdz_exp2l subr_ge0 leKN /= ger_addl oppz_le0.
+    rewrite mulN1r opprK -exprD_subz // ?opprD ?addrA //=.
+    by rewrite subr_ge0 leKN /= ger_addl oppz_le0.
+  by rewrite bitrev_dvdz_range // dvdz_mulr dvdzz.
+qed.
+
 (*TODO: jasmin/eclibs/JUtils.ec has a lot of things in common with this.*)
