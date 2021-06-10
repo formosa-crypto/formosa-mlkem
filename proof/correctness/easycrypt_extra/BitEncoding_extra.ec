@@ -308,7 +308,7 @@ proof.
   by move: (mem_range_mod n (2 ^ N)); rewrite normrX_nat; [apply/(lez_trans N)|move => -> //; apply/gtr_eqF/expr_gt0].
 qed.
 
-lemma bitrev_mul_range_pow2_perm_eq K N :
+lemma bitrev_range_pow2_perm_eq K N :
   0 <= K <= N =>
   perm_eq
     (map (bitrev N)            (range 0 (2 ^ K)))
@@ -340,6 +340,25 @@ proof.
     rewrite mulN1r opprK -exprD_subz // ?opprD ?addrA //=.
     by rewrite subr_ge0 leKN /= ger_addl oppz_le0.
   by rewrite bitrev_dvdz_range // dvdz_mulr dvdzz.
+qed.
+
+lemma bitrev_mul_range_pow2_perm_eq K M N :
+  0 <= K =>
+  0 <= M =>
+  K + M <= N =>
+  perm_eq
+    (map (bitrev N \o (( * ) (2 ^ M))) (range 0 (2 ^ K)))
+    (map (( * ) (2 ^ (N - K - M)))     (range 0 (2 ^ K))).
+proof.
+  move => le0K le0M le_N.
+  move: (eq_in_map (bitrev N \o ( * ) (2 ^ M)) (transpose (%/) (2 ^ M) \o (bitrev N)) (range 0 (2 ^ K))).
+  move => [Heq_map _]; move: Heq_map => -> => [x Hx_range|]; last rewrite map_comp.
+  + by rewrite /(\o) bitrev_mulr_pow2; first rewrite le0M /= (lez_trans (K + M)) // ler_addr.
+  move: (eq_in_map (( * ) (2 ^ (N - K - M))) ((transpose (fun (m d : int) => m %/ d) (2 ^ M)) \o (( * ) (2 ^ (N - K)))) (range 0 (2 ^ K))).
+  move => [Heq_map _]; move: Heq_map => -> => [x Hx_range|].
+  + admit.
+  rewrite (map_comp (transpose _ _) (( * )%Int _)) perm_eq_map bitrev_range_pow2_perm_eq.
+  by rewrite le0K /= (lez_trans (K + M)) // ler_addl.
 qed.
 
 (*TODO: jasmin/eclibs/JUtils.ec has a lot of things in common with this.*)

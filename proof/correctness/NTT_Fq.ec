@@ -1379,6 +1379,89 @@ theory NTTequiv.
     set2_add_mulr r1 z1 a1 b1 = set2_add_mulr r2 z2 a2 b2.
   proof. by move => |>. qed.
 
+  lemma update_r_comm (len start j1 j2 : int) r :
+    start \in range 0 (256 - len * 2) =>
+    j1 \in range 0 len =>
+    j2 \in range 0 len =>
+    update_r len start j1 (update_r len start j2 r) =
+    update_r len start j2 (update_r len start j1 r).
+  proof.
+    move => Hstart_range Hj1_range Hj2_range.
+    have lt0len: 0 < len by move/mem_range: Hj1_range => [? ?]; apply/(ler_lt_trans j1).
+    case (j1 = j2) => [->> //|Hneqj12].
+    have Hneq: j1 + start <> j2 + start by move: Hneqj12; rewrite implybNN => /addIz.
+    have Hneq1: j1 + start <> j2 + start + len.
+    + rewrite ltr_eqF // addrAC ltz_add2r (ltr_le_trans len); first by move/mem_range: Hj1_range.
+      by rewrite lez_addr; move/mem_range: Hj2_range.
+    have Hneq2: j1 + start + len <> j2 + start.
+    + rewrite eq_sym ltr_eqF // addrAC ltz_add2r (ltr_le_trans len); first by move/mem_range: Hj2_range.
+      by rewrite lez_addr; move/mem_range: Hj1_range.
+    have Hneq12: j1 + start + len <> j2 + start + len.
+    + by rewrite !(addzAC _ start); apply/negP => /addIz /addIz.
+    have H1_range: j1 + start \in range 0 256.
+    + move: (mem_range_add2 _ _ _ _ _ _ Hj1_range Hstart_range).
+      apply mem_range_incl => //.
+      rewrite -addr_double opprD !addrA (addzAC len) /=.
+      by rewrite -ler_subr_addr opprK -ler_subl_addl /= ltzW ltzE ltzW.
+    have H1l_range: j1 + start + len \in range 0 256.
+    + apply mem_range_addr.
+      move: (mem_range_add2 _ _ _ _ _ _ Hj1_range Hstart_range).
+      apply mem_range_incl; first by rewrite /= ler_oppl ltzW.
+      rewrite -addr_double opprD !addrA (addzAC len) /=.
+      by rewrite lez_add2r.
+    have H2_range: j2 + start \in range 0 256.
+    + move: (mem_range_add2 _ _ _ _ _ _ Hj2_range Hstart_range).
+      apply mem_range_incl => //.
+      rewrite -addr_double opprD !addrA (addzAC len) /=.
+      by rewrite -ler_subr_addr opprK -ler_subl_addl /= ltzW ltzE ltzW.
+    have H2l_range: j2 + start + len \in range 0 256.
+    + apply mem_range_addr.
+      move: (mem_range_add2 _ _ _ _ _ _ Hj2_range Hstart_range).
+      apply mem_range_incl; first by rewrite /= ler_oppl ltzW.
+      rewrite -addr_double opprD !addrA (addzAC len) /=.
+      by rewrite lez_add2r.
+    have Hneqp: forall y , y <> y + len.
+    + by move => y; rewrite ltr_eqF // ltr_addl.
+    have Hneqn: forall y , y - len <> y.
+    + by move => y; rewrite ltr_eqF // ltr_subl_addr ltr_addl.
+    have Hneqpn: forall y , y - len <> y + len.
+    + by move => y; rewrite ltr_eqF // ltr_subl_addr -addrA ltr_addl addr_gt0.
+    apply/Array256.ext_eq => x /mem_range Hx_range; rewrite /update_r !(addzAC _ len).
+    move => {Hstart_range Hj1_range Hj2_range lt0len}.
+    move: Hneqj12 Hneq Hneq1 Hneq2 Hneq12 H1_range H1l_range H2_range H2l_range.
+    case  (j1 + start = x) => [->|Hneqx1]; [|case (j1 + start = x - len) => [->|Hneqxl1]];
+    (case (j2 + start = x) => [->|Hneqx2]; [|case (j2 + start = x - len) => [->|Hneqxl2]]);
+    rewrite ?subrK //; move => Hneqj12 Hneq Hneq1 Hneq2 Hneq12 H1_range H1l_range H2_range H2l_range.
+    + rewrite set2_add_mulr_eq1iE ?Hneqp //.
+      rewrite set2_add_mulr_neqiE ?Heq //.
+      rewrite set2_add_mulr_neqiE //.
+      rewrite set2_add_mulr_neqiE //.
+      by rewrite set2_add_mulr_eq1iE ?Hneqp.
+    + rewrite set2_add_mulr_eq2iE ?Hneqn //.
+      rewrite set2_add_mulr_neqiE //.
+      rewrite set2_add_mulr_neqiE //.
+      rewrite set2_add_mulr_neqiE //.
+      by rewrite set2_add_mulr_eq2iE ?Hneqn.
+    + rewrite set2_add_mulr_neqiE //; first 2 by rewrite eq_sym.
+      rewrite set2_add_mulr_eq1iE ?Hneqp //.
+      rewrite set2_add_mulr_eq1iE ?Hneqp //.
+      rewrite set2_add_mulr_neqiE //; first 2 by rewrite eq_sym.
+      by rewrite set2_add_mulr_neqiE //; rewrite eq_sym.
+    + rewrite set2_add_mulr_neqiE //; first 2 by rewrite eq_sym.
+      rewrite set2_add_mulr_eq2iE ?Hneqn //.
+      rewrite set2_add_mulr_eq2iE ?Hneqn //.
+      rewrite set2_add_mulr_neqiE //; first 2 by rewrite eq_sym.
+      by rewrite set2_add_mulr_neqiE //; rewrite eq_sym.
+    rewrite set2_add_mulr_neqiE //; first 2 rewrite eq_sym //.
+    + by move: Hneqxl1; rewrite implybNN => <-; rewrite -!(addrA).
+    rewrite set2_add_mulr_neqiE //; first 2 rewrite eq_sym //.
+    + by move: Hneqxl2; rewrite implybNN => <-; rewrite -!(addrA).
+    rewrite set2_add_mulr_neqiE //; first 2 rewrite eq_sym //.
+    + by move: Hneqxl2; rewrite implybNN => <-; rewrite -!(addrA).
+    rewrite set2_add_mulr_neqiE // eq_sym //.
+    by move: Hneqxl1; rewrite implybNN => <-; rewrite -!(addrA).
+  qed.
+
   equiv eq_NTT4_NTT5 p : NTT4.ntt ~ NTT5.ntt:
     arg{1} = p /\ arg{2} = p ==> ={res}.
   proof.
@@ -1583,12 +1666,24 @@ theory NTTequiv.
           + by move: Hk_range; apply/mem_range_incl.
           apply foldr_perm_in.
           + move => r ? ?; rewrite !mem_rev => /mapP [x [Hx_range ->>]] /mapP [y [Hy_range ->>]].
-            (*TODO: make lemma for this; as well as other commutations.*)
+            apply update_r_comm => //.
+            - admit.
+            - rewrite /(\o) /= mulrC bitrev_mulr_pow2.
+              * admit.
+              rewrite range_div_range; first by apply/expr_gt0.
+              rewrite -exprD_nneg /=. admit. admit.
+              by rewrite addrA -(addzA 7) /= (bitrev_range 8).
             admit.
           rewrite (perm_eq_trans _ _ _ _ (perm_eq_rev (range 0 (2 ^ (7 - k))))) perm_eq_sym.
           rewrite (perm_eq_trans _ _ _ _ (perm_eq_rev (map (bitrev 8 \o transpose Int.( * ) (2 ^ (k + 1))) (range 0 (2 ^ (7 - k)))))).
-          (*TODO: make lemma for this also.*)
-          admit.
+          rewrite perm_eq_sym.
+          move: (eq_in_map (bitrev 8 \o transpose Int.( * ) (2 ^ (k + 1))) (bitrev 8 \o ( * ) (2 ^ (k + 1))) (range 0 (2 ^ (7 - k)))).
+          move => [Heq_map _]; move: Heq_map => -> => [x Hx_range|]; first by rewrite /(\o) /= mulrC.
+          rewrite (perm_eq_trans _ _ _ (bitrev_mul_range_pow2_perm_eq (7 - k) (k + 1) 8 _ _ _)).
+          + by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
+          + by apply/addr_ge0 => //; move/mem_range: Hk_range.
+          + by rewrite addrA -(addzA 7).
+          by rewrite !opprD opprK !addrA /= -(addzA 1) /= (eq_map _ idfun) // map_id perm_eq_refl.
         apply/iffE => {Hinv_start_post}.
         rewrite divz_pow //=; first by move/mem_range: Hk_range => [-> /=]; apply/ltzW.
         rewrite -exprSr; first by apply/subr_ge0/ltzW; move/mem_range: Hk_range.
@@ -1654,7 +1749,10 @@ theory NTTequiv.
           admit.
         rewrite (perm_eq_trans _ _ _ _ (perm_eq_rev (map (transpose Int.( * ) (2 ^ (8 - k))) (range 0 (2 ^ k))))) perm_eq_sym.
         rewrite (perm_eq_trans _ _ _ _ (perm_eq_rev (map (bitrev 8 \o fun (n : int) => n) (range 0 (2 ^ k))))).
-        admit.
+        rewrite perm_eq_sym (eq_map _ (bitrev 8)) //.
+        rewrite (perm_eq_trans _ _ _ (bitrev_range_pow2_perm_eq k 8 _)).
+        * by move/mem_range: Hk_range => [-> ? /=]; apply/ltzW/ltzE/ltzW/ltr_subr_addr.
+        by apply/perm_eq_refl_eq/eq_map => x; rewrite mulrC.
       apply/iffE => {Hinv_len_post}.
       rewrite mulrC -lez_divRL ?expr_gt0 // divz_pow //=.
       - by move/mem_range: Hk_range => [-> ? /=]; apply/ltzS.
