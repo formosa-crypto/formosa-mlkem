@@ -51,7 +51,14 @@ lemma eq_in_foldr ['a, 'b] (f1 f2 : 'a -> 'b -> 'b) z1 z2 s1 s2 :
   z1 = z2 =>
   s1 = s2 =>
   foldr f1 z1 s1 = foldr f2 z2 s2.
-proof. by move => Heq <<- <<-; elim s1 Heq => //= hs1 ts1 IHs1 Heq; rewrite IHs1 => [x Hin|]; rewrite Heq // Hin. qed.  
+proof. by move => Heq <<- <<-; elim s1 Heq => //= hs1 ts1 IHs1 Heq; rewrite IHs1 => [x Hin|]; rewrite Heq // Hin. qed.
+
+lemma foldr_zip_nseq ['a,'b,'c] (f : 'a -> 'b -> 'c -> 'c) x z s :
+  foldr (f x) z s = foldr (fun p => f (fst p) (snd p)) z (zip (nseq (size s) x) s).
+proof.
+  elim s => [|hs ts IHs] /=; first by rewrite nseq0.
+  by rewrite addrC nseqS ?size_ge0 //= IHs.
+qed.
 
 (*TODO: why is it not using left_commutative? Modify.*)
 print foldr_perm.
