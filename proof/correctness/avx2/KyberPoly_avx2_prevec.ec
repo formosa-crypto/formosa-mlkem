@@ -1,10 +1,16 @@
 require import AllCore List Int IntExtra IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
-require import W16extra Array256 Fq Array16p WArray512.
+require import W16extra Array256 Fq Array16p WArray512 WArray32.
 require import Ops.
 require import List_hakyber.
 
 pragma +oldip.
+
+abbrev jqx16 = Array16.of_list witness [W16.of_int 3329; W16.of_int 3329;
+W16.of_int 3329; W16.of_int 3329; W16.of_int 3329; W16.of_int 3329;
+W16.of_int 3329; W16.of_int 3329; W16.of_int 3329; W16.of_int 3329;
+W16.of_int 3329; W16.of_int 3329; W16.of_int 3329; W16.of_int 3329;
+W16.of_int 3329; W16.of_int 3329].
 
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
@@ -65,6 +71,43 @@ module Mavx2_prevec = {
       i <- i + 1;
     }
 
+    return (rp);
+  }
+
+  proc csubq (r:W16.t Array16.t, qx16:W16.t Array16.t) : W16.t Array16.t = {
+    var t:W16.t Array16.t;
+
+    r <@ Ops.ivsub16u256(r, qx16);
+    t <@ Ops.iVPSRA_16u16(r, (W8.of_int 15));
+    t <@ Ops.ivpand16u16(t,qx16);
+    r <@ Ops.ivadd16u256(t, r);
+
+    return (r);
+  }
+
+  proc poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var qx16:W256.t;
+    var _qx16: W16.t Array16.t;
+    var i:int;
+    var r:W256.t;
+    var _r: W16.t Array16.t;
+
+    qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    _qx16 <- lift2poly(qx16);
+    i <- 0;
+    while (i < 16) {
+      r <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
+      _r <- lift2poly(r);
+      _r <@ csubq (_r, _qx16);
+      r <- W16u16.pack16 [_r.[0]; _r.[1]; _r.[2]; _r.[3]; _r.[4]; _r.[5]; _r.[6]; _r.[7];
+                          _r.[8]; _r.[9]; _r.[10]; _r.[11]; _r.[12]; _r.[13]; _r.[14]; _r.[15]];
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
+      i <- i + 1;
+    }
     return (rp);
   }
 }.

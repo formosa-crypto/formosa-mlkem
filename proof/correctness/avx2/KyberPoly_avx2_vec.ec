@@ -1,44 +1,11 @@
 require import AllCore List Int IntExtra IntDiv CoreMap.
 from Jasmin require import JModel.
-require import Array256 Array16p.
-require import WArray512.
+require import Array256 Array16p Array16.
+require import WArray512 WArray32.
 require import Ops.
 require import KyberPoly_avx2.
 
 module Mvec = {
-(*
-  proc csubq (r:W256.t, qx16:W256.t) : W256.t = {
-    var t:W256.t;
-    
-    r <@ OpsV.ivsub16u256(r, qx16);
-    t <@ OpsV.iVPSRA_16u16(r, (W8.of_int 15));
-    t <@ OpsV.ivpand16u16(t,qx16);
-    r <@ OpsV.ivsub16u256(t, r);
-    r <@ OpsV.iVPACKUS_8u32(t, r);
-
-    return (r);
-  }
-
-  proc poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux: int;
-    
-    var qx16:W256.t;
-    var i:int;
-    var r:W256.t;
-    
-    qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
-    i <- 0;
-    while (i < 16) {
-      r <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
-      r <@ csubq (r, qx16);
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
-      i <- i + 1;
-    }
-    return (rp);
-  }
-*)
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
     var a:W256.t;
@@ -82,6 +49,36 @@ module Mvec = {
     return (rp);
   }
 
+  proc csubq (r:W256.t, qx16:W256.t) : W256.t = {
+    var t:W256.t;
+
+    r <@ OpsV.ivsub16u256(r, qx16);
+    t <@ OpsV.iVPSRA_16u16(r, (W8.of_int 15));
+    t <@ OpsV.ivpand16u16(t,qx16);
+    r <@ OpsV.ivadd16u256(t, r);
+
+    return (r);
+  }
+
+  proc poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var qx16:W256.t;
+    var i:int;
+    var r:W256.t;
+
+    qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    i <- 0;
+    while (i < 16) {
+      r <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
+      r <@ csubq (r, qx16);
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
+      i <- i + 1;
+    }
+    return (rp);
+  }
 }.
 
 require import KyberPoly_avx2_prevec.
@@ -118,13 +115,37 @@ proof.
 trivial.
 qed.
 
+equiv eq_poly_csubq:
+  Mavx2_prevec.poly_csubq ~ Mvec.poly_csubq: ={rp} ==> ={res}.
+proof.
+  proc.
+  while(={rp, i, qx16} /\ is16u16 _qx16{1} qx16{2}).
+    inline Mavx2_prevec.csubq Mvec.csubq.
+    wp.
+    call eq_ivadd16u256.
+    call eq_ivpand16u16.
+    call eq_iVPSRA_16u16.
+    call eq_ivsub16u256.
+    wp. skip. rewrite /is16u16 => />. move => *.
+    rewrite /lift2poly; simplify; rewrite pack16_bits16 => //.
+  wp; skip.
+  move => &1 &2 H.
+  split.
+  simplify.
+  rewrite H => /=. split. admit. (* FIXME: trivial *)
+  rewrite /lift2poly /is16u16 => />.
+  rewrite pack16_bits16.
+  admit. (* FIXME: trivial *)
+  trivial.
+qed.
+
 equiv veceq_poly_add2 :
   Mvec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
 proof.
   proc.
-while (={rp, bp, i}).
-  inline{1} OpsV.ivadd16u256.
-  wp. skip. auto => //.
+  while (={rp, bp, i}).
+    inline{1} OpsV.ivadd16u256.
+    wp. skip. auto => //.
   wp. skip. auto => //.
 qed.
 
@@ -133,9 +154,19 @@ equiv veceq_poly_sub :
   Mvec.poly_sub ~ M.poly_sub: ={rp, ap, bp} ==> ={res}.
 proof.
   proc.
-while (={rp, ap, bp, i}).
-  inline{1} OpsV.ivsub16u256.
+  while (={rp, ap, bp, i}).
+    inline{1} OpsV.ivsub16u256.
+    wp. skip. auto => //.
   wp. skip. auto => //.
+qed.
+
+equiv veceq_poly_csubq :
+  Mvec.poly_csubq ~ M.poly_csubq: ={rp} ==> ={res}.
+proof.
+  proc.
+  while (={rp, i, qx16}).
+    inline *.
+    wp. skip. auto => //.
   wp. skip. auto => //.
 qed.
 
@@ -154,3 +185,12 @@ smt. trivial.
 apply eq_poly_sub.
 apply veceq_poly_sub.
 qed.
+
+equiv prevec_eq_poly_csubq:
+   Mavx2_prevec.poly_csubq ~ M.poly_csubq: ={rp} ==> ={res}.
+    transitivity Mvec.poly_csubq (={rp} ==> ={res}) (={rp} ==> ={res}).
+smt. trivial.
+apply eq_poly_csubq.
+apply veceq_poly_csubq.
+qed.
+
