@@ -1,4 +1,4 @@
-require import AllCore List Int IntExtra IntDiv CoreMap Real Number.
+require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
 require import W16extra Array256 Fq Array16p WArray512 WArray32.
 require import Ops.
@@ -74,17 +74,6 @@ module Mavx2_prevec = {
     return (rp);
   }
 
-  proc csubq (r:W16.t Array16.t, qx16:W16.t Array16.t) : W16.t Array16.t = {
-    var t:W16.t Array16.t;
-
-    r <@ Ops.ivsub16u256(r, qx16);
-    t <@ Ops.iVPSRA_16u16(r, (W8.of_int 15));
-    t <@ Ops.ivpand16u16(t,qx16);
-    r <@ Ops.ivadd16u256(t, r);
-
-    return (r);
-  }
-
   proc poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
 
@@ -93,6 +82,7 @@ module Mavx2_prevec = {
     var i:int;
     var r:W256.t;
     var _r: W16.t Array16.t;
+    var t: W16.t Array16.t;
 
     qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
     _qx16 <- lift2poly(qx16);
@@ -102,7 +92,11 @@ module Mavx2_prevec = {
 
       _r <- lift2poly(r);
 
-      _r <@ csubq (_r, _qx16);
+      _r <@ Ops.ivsub16u256(_r, _qx16);
+      t <@ Ops.iVPSRA_16u16(_r, (W8.of_int 15));
+      t <@ Ops.ivpand16u16(t, _qx16);
+      _r <@ Ops.ivadd16u256(t, _r);
+
       r <- W16u16.pack16 [_r.[0]; _r.[1]; _r.[2]; _r.[3]; _r.[4]; _r.[5]; _r.[6]; _r.[7];
                           _r.[8]; _r.[9]; _r.[10]; _r.[11]; _r.[12]; _r.[13]; _r.[14]; _r.[15]];
       rp <-
@@ -490,9 +484,8 @@ lemma poly_csubq_corr_h ap :
              pos_bound256_cxq res 0 256 1 ].
 proof.
 proc.
-while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16).
-inline Mavx2_prevec.csubq.
-seq 5 : (#pre /\ forall k, 16*i <= k < 16*i + 16 => r0.[k%%16] = rp.[k] - qx160.[k%%16]).
+while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = jqx16.[k]).
+seq 3 : (#pre /\ forall k, 16*i <= k < 16*i + 16 => _r.[k%%16] = rp.[k] - _qx16.[k%%16]).
 inline Ops.ivsub16u256.
 wp. skip. simplify.
 move => &hr [#] *.
@@ -502,11 +495,11 @@ move => k k_i.
 do rewrite get_set_if => />.
 rewrite -(lift2poly_iso _ i{hr}) => /#.
 seq 2 : (#pre /\
-         (forall k, 16*i <= k < 16 * i + 16 => (r0.[k%%16] \slt W16.zero => t.[k%%16] = qx160.[k%%16]))  /\
-          (forall k, 16*i <= k < 16 * i + 16 => (W16.zero \sle r0.[k%%16] => t.[k%%16] = W16.zero))).
+         (forall k, 16*i <= k < 16 * i + 16 => (_r.[k%%16] \slt W16.zero => t.[k%%16] = _qx16.[k%%16]))  /\
+          (forall k, 16*i <= k < 16 * i + 16 => (W16.zero \sle _r.[k%%16] => t.[k%%16] = W16.zero))).
 seq 1 : (#pre /\
-         (forall k, 16*i <= k < 16 * i + 16 => (r0.[k%%16] \slt W16.zero => t.[k%%16] = W16.of_int (W16.modulus - 1))) /\
-         (forall k, 16*i <= k < 16 * i + 16 => (W16.zero \sle r0.[k%%16] => t.[k%%16] = W16.zero))).
+         (forall k, 16*i <= k < 16 * i + 16 => (_r.[k%%16] \slt W16.zero => t.[k%%16] = W16.of_int (W16.modulus - 1))) /\
+         (forall k, 16*i <= k < 16 * i + 16 => (W16.zero \sle _r.[k%%16] => t.[k%%16] = W16.zero))).
 auto => />.
 move => &hr [#] *.
 do split.
@@ -520,6 +513,7 @@ apply H5.
 move => k k_i.
 move : H6 => /#.
 move : H6 => /#.
+move : H7 => /#.
 inline Ops.iVPSRA_16u16.
 auto => />.
 move => &hr [#] *.
@@ -540,85 +534,297 @@ apply H2.
 move => *; apply H3.
 apply H4.
 move : H5 => //=.
+move : H6 => /#.
 move : H7 => /#.
-move : H7 => /#.
+move : H8 => /#.
 inline Ops.ivpand16u16.
 auto => />.
 move => &hr [#] *.
 split.
 move => *.
 have k_i : 0 <= k %% 16 && k %% 16 < 16.
-move : H7 H8 => /#.
-move : (H5 _ _ H9).
-move : H7 H8 => //=.
+move : H8 H9 => /#.
+move : (H6 _ _ H10).
+move : H8 H9 => //=.
 move => t.
 do rewrite get_set_if => />.
-case (k%%16 = 15).
+case (k%%16 = 15) => *.
+rewrite -H11 t  -/W16.onew and1w => //.
+admit.
+(* FIXME: works but not pretty
+case (k%%16 = 14) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 13) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 12) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 11) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 10) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 9) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 8) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 7) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 6) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 4) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 3) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 2) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 1) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+case (k%%16 = 0) => *.
+rewrite -H10 t  -/W16.onew and1w => //.
+*)
 move => *.
-rewrite -H10 t.
-smt(m1true @W16 @Array16).
-
-
-rewrite (Array16.mapiE (fun i => (Array16."_.[_<-_]" r1{hr} 0 (map2 W16.(`&`) t{hr} qx160{hr}).[0])) (Array16.of_list 0 (iota_ 0 16) )).
-move : k_i t.
-smt.
-do rewrite /(Array16."_.[_<-_]" _ _ (map2 W16.(`&`) t{hr} qx160{hr}).[_]).
-
-smt(@Array16 @W16).
-
-move : H5.
-
-move => H8.
-
-move : H5.
-move => [#] *.
-move => H8.
-move : H8 H5 => //=.
-split.
+have k_i : 0 <= k %% 16 && k %% 16 < 16.
+  move : H8 H9 => /#.
+move : (H7 _ _ H10).
+move : H8 H9 => /#.
+move => t.
 do rewrite get_set_if => />.
-smt(@Array16 @W16).
-smt(@W16).
+case (k%%16 = 15) => *.
+rewrite -H11 t and0w => //.
+admit.
+(* FIXME: works but not pretty
+case (k%%16 = 14) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 13) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 12) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 11) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 10) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 9) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 8) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 7) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 6) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 4) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 3) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 2) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 1) => *.
+rewrite -H10 t and0w => //.
+case (k%%16 = 0) => *.
+rewrite -H10 t and0w => //.
 *)
 inline Ops.ivadd16u256.
 auto => />.
 move => &hr [#] * => />.
 do split.
-case (forall k, 16*i{hr} <= k < 16 * i{hr} + 16 => (rp{hr}.[k] - qx160{hr}.[k%%16]) \slt W16.zero).
-pose w := pack16 [t{hr}.[0] + r0{hr}.[0]; t{hr}.[1] + r0{hr}.[1];
-                  t{hr}.[2] + r0{hr}.[2]; t{hr}.[3] + r0{hr}.[3];
-                  t{hr}.[4] + r0{hr}.[4]; t{hr}.[5] + r0{hr}.[5];
-                  t{hr}.[6] + r0{hr}.[6]; t{hr}.[7] + r0{hr}.[7];
-                  t{hr}.[8] + r0{hr}.[8]; t{hr}.[9] + r0{hr}.[9];
-                  t{hr}.[10] + r0{hr}.[10]; t{hr}.[11] + r0{hr}.[11];
-                  t{hr}.[12] + r0{hr}.[12]; t{hr}.[13] + r0{hr}.[13];
-                  t{hr}.[14] + r0{hr}.[14]; t{hr}.[15] + r0{hr}.[15]].
+case (forall k, 16*i{hr} <= k < 16 * i{hr} + 16 => (rp{hr}.[k] - _qx16{hr}.[k%%16]) \slt W16.zero).
+pose w := pack16 [t{hr}.[0] + _r{hr}.[0]; t{hr}.[1] + _r{hr}.[1];
+                  t{hr}.[2] + _r{hr}.[2]; t{hr}.[3] + _r{hr}.[3];
+                  t{hr}.[4] + _r{hr}.[4]; t{hr}.[5] + _r{hr}.[5];
+                  t{hr}.[6] + _r{hr}.[6]; t{hr}.[7] + _r{hr}.[7];
+                  t{hr}.[8] + _r{hr}.[8]; t{hr}.[9] + _r{hr}.[9];
+                  t{hr}.[10] + _r{hr}.[10]; t{hr}.[11] + _r{hr}.[11];
+                  t{hr}.[12] + _r{hr}.[12]; t{hr}.[13] + _r{hr}.[13];
+                  t{hr}.[14] + _r{hr}.[14]; t{hr}.[15] + _r{hr}.[15]].
 move => *.
+have r_b : (forall k, 16*i{hr} <= k < 16 * i{hr} + 16 => _r{hr}.[k %% 16] \slt W16.zero).
+  by move => *; rewrite H5 => //=; apply H8 => //=.
 rewrite /lift_array256 => />.
 apply Array256.ext_eq => /> *.
-rewrite mapiE => />.
-rewrite mapiE => />.
+do rewrite mapiE => />.
 case (16 * i{hr} <= x0 < 16 * i{hr} + 16); first last.
 move => x_b.
 rewrite -(set_get_diff rp{hr} w i{hr}).
-rewrite H1 H3 => //.
-rewrite H7 H8 => //.
-apply x_b => />.
+rewrite H1 H4 => //.
+rewrite H9 H10 => //.
+apply x_b.
 rewrite initiE.
-rewrite H7 H8 => //=.
+rewrite H9 H10 => //.
 trivial.
 move => x_b.
+have x_i : 0 <= x0 %% 16 && x0 %% 16 < 16.
+  move : x_b => /#.
 rewrite initiE.
-rewrite H7 H8 => //=.
+rewrite H9 H10 => //.
 simplify.
 rewrite set_get_eq.
-rewrite H1 H3 => //.
-rewrite H7 H8 => //.
+rewrite H1 H4 => //.
+rewrite H9 H10 => //.
 apply x_b.
 rewrite /w.
-do rewrite -Array16.map2iE => //.
-do 16? rewrite -mapiE => />.
-rewrite -/(mkseq (Array16."_.[_]" (map (::) (map2 W16.(+) t{hr} r0{hr}))) 16).
-admitted. (* FIXME *)
-(* qed.*)
+rewrite -get_unpack16 => //=.
+rewrite get_of_list => //=.
+case (x0 %% 16 = 0) => *.
+rewrite -H11.
+rewrite H6 => //=.
+apply r_b => //=.
+rewrite H5 => //=.
+rewrite addrC; smt(@W16).
+admit. (* FIXME *)
+
+pose w := pack16 [t{hr}.[0] + _r{hr}.[0]; t{hr}.[1] + _r{hr}.[1];
+                  t{hr}.[2] + _r{hr}.[2]; t{hr}.[3] + _r{hr}.[3];
+                  t{hr}.[4] + _r{hr}.[4]; t{hr}.[5] + _r{hr}.[5];
+                  t{hr}.[6] + _r{hr}.[6]; t{hr}.[7] + _r{hr}.[7];
+                  t{hr}.[8] + _r{hr}.[8]; t{hr}.[9] + _r{hr}.[9];
+                  t{hr}.[10] + _r{hr}.[10]; t{hr}.[11] + _r{hr}.[11];
+                  t{hr}.[12] + _r{hr}.[12]; t{hr}.[13] + _r{hr}.[13];
+                  t{hr}.[14] + _r{hr}.[14]; t{hr}.[15] + _r{hr}.[15]].
+pose qx16 := [(of_int 3329)%W16; (of_int 3329)%W16; (of_int 3329)%W16;
+               (of_int 3329)%W16; (of_int 3329)%W16; (of_int 3329)%W16;
+               (of_int 3329)%W16; (of_int 3329)%W16; (of_int 3329)%W16;
+               (of_int 3329)%W16; (of_int 3329)%W16; (of_int 3329)%W16;
+               (of_int 3329)%W16; (of_int 3329)%W16; (of_int 3329)%W16;
+               (of_int 3329)%W16].
+move => *.
+have H9: (forall k, 16*i{hr} <= k < 16 * i{hr} + 16 => W16.zero \sle _r{hr}.[k%%16]).
+  move => k k_i.
+  rewrite /W16.(\sle). rewrite H5 => //=. rewrite (lezNgt (to_sint W16.zero) (to_sint (rp{hr}.[k] - _qx16{hr}.[k %% 16]))).
+  rewrite -W16.sltE. (* apply H7. *) admit.
+rewrite /lift_array256 => />.
+apply Array256.ext_eq => /> *.
+do rewrite mapiE => />.
+case (16 * i{hr} <= x0 < 16 * i{hr} + 16); first last.
+move => x_b.
+rewrite -(set_get_diff rp{hr} w i{hr}).
+rewrite H1 H4 => //.
+rewrite H10 H11 => //.
+apply x_b.
+rewrite initiE.
+rewrite H10 H11 => //.
+trivial.
+move => x_b.
+have x_i : 0 <= x0 %% 16 && x0 %% 16 < 16.
+  move : x_b => /#.
+rewrite initiE.
+rewrite H10 H11 => //.
+simplify.
+rewrite set_get_eq.
+rewrite H1 H4 => //.
+rewrite H10 H11 => //.
+apply x_b.
+rewrite /w.
+rewrite -get_unpack16 => //=.
+rewrite get_of_list => //=.
+case (x0 %% 16 = 0) => *.
+rewrite -H12.
+rewrite H5 => //=.
+rewrite H7 => //=.
+apply H9 => //=.
+rewrite to_sintD_small => />.
+move : H; rewrite /pos_bound256_cxq => bnd.
+move : (bnd x0 _); first by smt(@W64).
+auto => />.
+rewrite qE => /> *.
+split.
+
+(****)
+rewrite to_sintN => //=.
+rewrite H3 => //=.
+rewrite /(jqx16).
+rewrite get_of_list => //=.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt.
+rewrite H3 => //=.
+rewrite /(jqx16).
+rewrite get_of_list => //=.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt.
+(****)
+
+(****)
+rewrite to_sintN => //=.
+rewrite H3 => //=.
+rewrite /(jqx16).
+rewrite get_of_list => //=.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt.
+rewrite H3 => //=.
+rewrite /(jqx16).
+rewrite get_of_list => //=.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt.
+(****)
+
+rewrite inzmodD. ring.
+rewrite H3 => //=.
+rewrite /(jqx16).
+rewrite get_of_list => //=.
+rewrite fun_if.
+do rewrite fun_if.
+rewrite to_sintE /smod to_uintN => />.
+
+have ?: 3329 %% q = 0.
+  rewrite qE => /#.
+
+rewrite -inzmodN.
+rewrite /zero.
+simplify.
+do smt(eq_inzmod).
+admit. (* FIXME *)
+
+(****)
+pose w := pack16 [t{hr}.[0] + _r{hr}.[0]; t{hr}.[1] + _r{hr}.[1];
+                  t{hr}.[2] + _r{hr}.[2]; t{hr}.[3] + _r{hr}.[3];
+                  t{hr}.[4] + _r{hr}.[4]; t{hr}.[5] + _r{hr}.[5];
+                  t{hr}.[6] + _r{hr}.[6]; t{hr}.[7] + _r{hr}.[7];
+                  t{hr}.[8] + _r{hr}.[8]; t{hr}.[9] + _r{hr}.[9];
+                  t{hr}.[10] + _r{hr}.[10]; t{hr}.[11] + _r{hr}.[11];
+                  t{hr}.[12] + _r{hr}.[12]; t{hr}.[13] + _r{hr}.[13];
+                  t{hr}.[14] + _r{hr}.[14]; t{hr}.[15] + _r{hr}.[15]].
+move : H H0; rewrite /pos_bound256_cxq => /> *.
+split.
+case (forall k, 16*i{hr} <= k < 16 * i{hr} + 16 => (rp{hr}.[k] - _qx16{hr}.[k%%16]) \slt W16.zero).
+move => *.
+case (16 * i{hr} <= k < 16 * i{hr} + 16); last first.
+move => *.
+rewrite initiE => //=.
+rewrite (set_get_diff rp{hr} w i{hr}) => //=.
+move : (H k); rewrite /bpos16 => /#.
+move => *.
+have k_i : 0 <= k %% 16 && k %% 16 < 16.
+  move : H10 => /#.
+rewrite initiE => //=.
+rewrite set_get_eq => //=.
+rewrite /w.
+rewrite -get_unpack16 => //=.
+rewrite get_of_list => //=.
+case (k %% 16 = 0). (* FIXME *)
+move => *.
+rewrite -H12.
+
+(* rewrite (if_congr (k %% 16 = 0) (k %% 16 = 0) (t{hr}.[0] + _r{hr}.[0]) _ (t{hr}.[k %% 16] + _r{hr}.[k%%16]) _). *)
+
+admit.
+
+qed.
 
 end KyberPolyAVX.
