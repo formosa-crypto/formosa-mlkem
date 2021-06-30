@@ -87,7 +87,7 @@ fn poly_compress_avx(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
     f0 = #VPMADDUBSW_256(f0, shift2);
     f2 = #VPMADDUBSW_256(f2, shift2);
     f0 = #VPACKUS_16u16(f0, f2);
-    f0 = #VPERMD_256(permidx, f0);
+    f0 = #VPERMD(permidx, f0);
     (u256)[rp + 32*i] = f0;
   }
 
@@ -136,7 +136,7 @@ fn i_poly_compress_avx(reg ptr u8[KYBER_POLYCOMPRESSEDBYTES] rp, reg ptr u16[KYB
     f0 = #VPMADDUBSW_256(f0, shift2);
     f2 = #VPMADDUBSW_256(f2, shift2);
     f0 = #VPACKUS_16u16(f0, f2);
-    f0 = #VPERMD_256(permidx, f0);
+    f0 = #VPERMD(permidx, f0);
     rp[u256 i] = f0;
   }
 
