@@ -92,8 +92,8 @@ fn indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   skp = sskp;
   randomnessp = srandomnessp;
 
-  polyvec_tobytes(skp, skpv);
-  polyvec_tobytes(pkp, pkpv);
+  polyvec_tobytes_avx(skp, skpv);
+  polyvec_tobytes_avx(pkp, pkpv);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES; 

@@ -18,7 +18,6 @@ fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
   a[2*KYBER_N:KYBER_N] = poly_tobytes(pp, a[2*KYBER_N:KYBER_N]);
 }
 
-// FIXME
 inline
 fn polyvec_tobytes_avx(reg u64 rp, stack u16[KYBER_VECN] a)
 {
