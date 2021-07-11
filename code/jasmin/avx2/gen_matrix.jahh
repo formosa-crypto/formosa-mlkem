@@ -483,32 +483,36 @@ fn rej_uniform_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[REJ_UNIFORM_AVX_BUFLEN] b
 
     t64 = good;
     t64 &= 0xFF;
-    f = #MOVD_64(idxp[u64 (int)t64]);
-    t64_2 = good;
-    t64_2 >>= 16;
-    t64_2 &= 0xFF;
-    l = #MOVD_64(idxp[u64 (int)t64_2]);
+    g0 = (256u) #VMOV(idxp[u64 (int)t64]);
+
     t64_1 = good;
-    t64_1 >>= 8;
+    t64_1 >>= 16;
     t64_1 &= 0xFF;
-    t = #MOVD_64(idxp[u64 (int)t64_1]);
+    l = #VMOV(idxp[u64 (int)t64_1]);
+
+    t64_2 = good;
+    t64_2 >>= 8;
+    t64_2 &= 0xFF;
+    g1 = (256u) #VMOV(idxp[u64 (int)t64_2]);
+
     t64_3 = good;
     t64_3 >>= 24;
     t64_3 &= 0xFF;
-    h = #MOVD_64(idxp[u64 (int)t64_3]);
+    h = #VMOV(idxp[u64 (int)t64_3]);
 
-
-    g0 = #VINSERTI128(g0, f, 0);
     g0 = #VINSERTI128(g0, l, 1);
 
     _, _, _, _, _, t64 = #POPCNT_64(t64);
-    _, _, _, _, _, t64_2 = #POPCNT_64(t64_2);
+    _, _, _, _, _, t64_1 = #POPCNT_64(t64_1);
+    t64 += ctr;
 
-    g1 = #VINSERTI128(g1, t, 0);
     g1 = #VINSERTI128(g1, h, 1);
 
-    _, _, _, _, _, t64_1 = #POPCNT_64(t64_1);
+    t64_1 += t64;
+    _, _, _, _, _, t64_2 = #POPCNT_64(t64_2);
+    t64_2 += t64_1;
     _, _, _, _, _, t64_3 = #POPCNT_64(t64_3);
+    t64_3 += t64_2;
 
     g2 = #VPADD_32u8(g0, ones);
     g0 = #VPUNPCKL_32u8(g0, g2);
@@ -518,21 +522,12 @@ fn rej_uniform_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[REJ_UNIFORM_AVX_BUFLEN] b
     f0 = #VPSHUFB_256(f0, g0);
     f1 = #VPSHUFB_256(f1, g1);
 
-    f = (128u)f0;
-    rp.[u128 2*(int)ctr] = f;
-    ctr += t64;
+    rp.[u128 2*(int)ctr] = (128u)f0;
+    rp.[u128 2*(int)t64] = #VEXTRACTI128(f0, 1);
+    rp.[u128 2*(int)t64_1] = (128u)f1;
+    rp.[u128 2*(int)t64_2] = #VEXTRACTI128(f1, 1);
 
-    f = #VEXTRACTI128(f0, 1);
-    rp.[u128 2*(int)ctr] = f;
-    ctr += t64_2;
-
-    f = (128u)f1;
-    rp.[u128 2*(int)ctr] = f;
-    ctr += t64_1;
-
-    f = #VEXTRACTI128(f1, 1);
-    rp.[u128 2*(int)ctr] = f;
-    ctr += t64_3;
+    ctr = t64_3;
 
     _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 32);
     fl1 = #SETcc(cf || zf);
@@ -545,10 +540,10 @@ fn rej_uniform_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[REJ_UNIFORM_AVX_BUFLEN] b
   }
 
   /*
-  _, cf, _, _, zf = #CMP_64(ctr, 0xf8);
+  _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 8);
   fl1 = #SETcc(cf || zf);
 
-  _, cf, _, _, zf = #CMP_64(pos, 0x1ec);
+  _, cf, _, _, zf = #CMP_64(pos, REJ_UNIFORM_AVX_BUFLEN - 12);
   fl2 = #SETcc(cf || zf);
 
    _, _, _, _, b = #TEST_8(fl1, fl2);
@@ -576,11 +571,12 @@ fn rej_uniform_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[REJ_UNIFORM_AVX_BUFLEN] b
     rp.[u128 2*(int)ctr] = f;
     ctr += good;
 
-    _, cf, _, _, zf = #CMP_64(ctr, 0xf8);
+    pos += 12;
+
+    _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 8);
     fl1 = #SETcc(cf || zf);
 
-    pos += 12;
-    _, cf, _, _, zf = #CMP_64(pos, 0x1ec);
+    _, cf, _, _, zf = #CMP_64(pos, REJ_UNIFORM_AVX_BUFLEN - 12);
     fl2 = #SETcc(cf || zf);
 
      _, _, _, _, b = #TEST_8(fl1, fl2);
