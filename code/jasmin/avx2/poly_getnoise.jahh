@@ -7,68 +7,6 @@
 
 param int NOISE_BLOCKS = (KYBER_ETA * KYBER_N/4 + SHAKE256_RATE - 1)/SHAKE256_RATE;
 
-#[returnaddress="stack"]
-fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
-{
-  stack u8[33] extseed;   /* 33 = KYBER_SYMBYTES +1 */
-  stack u8[128] buf;      /* 128 = KYBER_ETA*KYBER_N/4 */
-  reg u64 outlen;
-  reg u8 c,a,b;
-  reg u16 t;
-  reg u64 i j;
-  inline int k;
-
-  stack ptr u16[KYBER_N] srp;
-
-  srp = rp;
-  
-  for k = 0 to KYBER_SYMBYTES
-  {
-    c = seed[k];
-    extseed[k] = c;
-  }
-  extseed[KYBER_SYMBYTES] = nonce;
-
-  buf = shake256_128_33(buf, extseed);
-
-  rp = srp;
-  
-  i = 0;
-  j = 0;
-  while (i < 128) {
-    c = buf[(int)i];
-    a = c;
-    a &= 0x55;
-
-    c >>= 1;
-    c &= 0x55;
-    c += a;
-
-    a = c;
-    a &= 0x3;
-    b = c;
-    b >>= 2;
-    b &= 0x3;
-    a -= b;
-    t = (16s)a;
-    rp[(int)j] = t;
-    a = c;
-    a >>= 4;
-    a &= 0x3;
-    b = c >> 6;
-    b &= 0x3;
-    a -= b;
-    t = (16s)a;
-    j += 1;
-    rp[(int)j] = t;
-    i += 1;
-    j += 1;
-  }
-  
-  return rp;
-}
-
-
 inline
 fn poly_cbd(reg ptr u16[KYBER_N] rp, reg ptr u8[NOISE_BLOCKS * SHAKE256_RATE] buf) -> reg ptr u16[KYBER_N]
 {
@@ -132,7 +70,7 @@ fn poly_cbd(reg ptr u16[KYBER_N] rp, reg ptr u8[NOISE_BLOCKS * SHAKE256_RATE] bu
 
 
 #[returnaddress="stack"]
-fn poly_getnoise_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
+fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
   inline int i;
   reg u256 f0 f1 f2 f3;

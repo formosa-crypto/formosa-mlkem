@@ -3,73 +3,11 @@
 
 #include "params.jahh"
 
-fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
-{
-  reg u8 c;
-  reg u16 t;
-  inline int i;
-  inline int j;
-
-  for i = 0 to 32
-  {
-    c = (u8)[ap + i];
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i] = t;
-    c >>= 1;
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i+1] = t;
-    c >>= 1;
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i+2] = t;
-    c >>= 1;
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i+3] = t;
-    c >>= 1;
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i+4] = t;
-    c >>= 1;
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i+5] = t;
-    c >>= 1;
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i+6] = t;
-    c >>= 1;
-
-    t = (16u)c; 
-    t &= 1;
-    t *= (KYBER_Q+1)/2;
-    rp[8*i+7] = t;
-    c >>= 1;
-  }
-  return rp;
-}
-
 u32[4] shift_s = {3, 2, 1, 0};
 u8[16] idx_s = {0, 1, 4, 5, 8, 9, 12, 13,
                 2, 3, 6, 7, 10, 11, 14, 15};
 
-fn poly_frommsg_avx(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
+fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
   inline int i;
   reg u256 f g0 g1 g2 g3 g4 h0 h1 h2 h3;
@@ -117,7 +55,7 @@ fn poly_frommsg_avx(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 }
 
 
-fn i_poly_frommsg_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[32] ap) -> stack u16[KYBER_N]
+fn i_poly_frommsg(reg ptr u16[KYBER_N] rp, reg ptr u8[32] ap) -> stack u16[KYBER_N]
 {
   inline int i;
   reg u256 f g0 g1 g2 g3 g4 h0 h1 h2 h3;

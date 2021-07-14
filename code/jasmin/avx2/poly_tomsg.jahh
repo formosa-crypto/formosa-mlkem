@@ -5,37 +5,8 @@
 #include "consts.jahh"
 #include "poly_csubq.jahh"
 
+
 fn poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
-{
-  reg u16 t;
-  reg u8 r;
-  reg u32 d;
-  inline int i j k;
-  
-  a = poly_csubq(a); 
-
-  for i = 0 to 32
-  {
-    r = 0;
-    for j = 0 to 8
-    {
-      t = a[8*i+j]; 
-      d = (32u)t;
-      d <<= 1;
-      d += 1665;
-      d *= 80635;
-      d >>= 28;
-      d &= 1;
-      d <<= j;
-      r  |= d;
-    }
-
-    (u8)[rp+i] = r;
-  }
-  return a;
-}
-
-fn poly_tomsg_avx(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
   inline int i;
   reg u256 f0 f1 g0 g1 hq hhq;
@@ -70,7 +41,7 @@ fn poly_tomsg_avx(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   return a;
 }
 
-fn i_poly_tomsg_avx(reg ptr u8[KYBER_N/8] rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N], reg ptr u8[KYBER_N/8]
+fn i_poly_tomsg(reg ptr u8[KYBER_N/8] rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N], reg ptr u8[KYBER_N/8]
 {
   inline int i;
   reg u256 f0 f1 g0 g1 hq hhq;

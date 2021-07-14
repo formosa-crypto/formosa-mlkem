@@ -4,69 +4,6 @@
 #include "params.jahh"
 #include "polyvec_csubq.jahh"
 
-inline
-fn polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
-{
-  stack u16[KYBER_VECN] aa;
-  reg u16 c, b;
-  reg u16 d;
-  reg u64[4] t;
-  reg u64 i j;
-  inline int k;
-
-  i = 0;
-  j = 0;
-  
-  aa = polyvec_csubq(a);
-
-  while (i < KYBER_VECN)
-  {
-    for k = 0 to 4
-    {
-      t[k] = (64u)aa[(int) i];
-      i += 1;
-      t[k] <<= 10;
-      t[k] += 1665;
-      t[k] *= 1290167;
-      t[k] >>= 32;
-      t[k] &= 0x3ff;
-    }
-
-    c = t[0];
-    c &= 0xff;
-    (u8)[rp + j] = c;
-    j += 1;
-
-    b = t[0];
-    b >>= 8;
-    c = t[1];
-    c <<= 2;
-    c |= b;
-    (u8)[rp + j] = c;
-    j += 1;
-
-    b = t[1];
-    b >>= 6;
-    c = t[2];
-    c <<= 4;
-    c |= b;
-    (u8)[rp + j] = c;
-    j += 1;
-    
-    b = t[2];
-    b >>= 4;
-    c = t[3];
-    c <<= 6;
-    c |= b;
-    (u8)[rp + j] = c;
-    j += 1;
-
-    
-    t[3] >>= 2;
-    (u8)[rp + j] = t[3];
-    j += 1;
-  }
-}
 
 u16 soff = 0x0f;
 u16 sshift1 = 0x1000;
@@ -77,7 +14,7 @@ u8[32] sshufbidx = {0, 1, 2, 3, 4, 8, 9, 10, 11, 12, -1, -1, -1, -1, -1, -1,
                     9, 10, 11, 12, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 8};
 
 inline
-fn polyvec_compress_avx(reg u64 rp, stack u16[KYBER_VECN] a)
+fn polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
 {
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx shufbidx;
@@ -123,7 +60,7 @@ fn polyvec_compress_avx(reg u64 rp, stack u16[KYBER_VECN] a)
 }
 
 inline
-fn i_polyvec_compress_avx(reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES] rp, stack u16[KYBER_VECN] a) -> reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES]
+fn i_polyvec_compress(reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES] rp, stack u16[KYBER_VECN] a) -> reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES]
 {
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx shufbidx;
