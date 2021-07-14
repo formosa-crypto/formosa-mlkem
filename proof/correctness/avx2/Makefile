@@ -23,7 +23,7 @@ KyberCPA_avx2.ec: $(TOP_DIR)/code/jasmin/avx2/jindcpa.japp
 	cd $$(dirname $@) && jasminc_dev -ec indcpa_keypair_jazz -ec indcpa_enc_jazz -ec indcpa_dec_jazz -oec $$(basename $@) $<
 
 KyberPoly_avx2.ec: $(TOP_DIR)/code/jasmin/avx2/jpoly.japp
-	cd $$(dirname $@) && jasminc -ec poly_add2 -ec poly_sub -ec poly_csubq -oec $$(basename $@) $<
+	cd $$(dirname $@) && jasminc -ec poly_add2 -ec poly_sub -ec poly_csubq -ec poly_compress_avx -oec $$(basename $@) $<
 
 KyberPolyvec_avx2.ec: $(TOP_DIR)/code/jasmin/avx2/jpolyvec.japp
 	cd $$(dirname $@) && jasminc_dev -ec polyvec_add2 -oec $$(basename $@) $<

@@ -1,4 +1,4 @@
-require import AllCore List Int IntExtra IntDiv CoreMap Real Number.
+require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
 require import W16extra Array256 Fq Array16p WArray512 WArray32.
 require import Ops.
@@ -74,17 +74,6 @@ module Mavx2_prevec = {
     return (rp);
   }
 
-  proc csubq (r:W16.t Array16.t, qx16:W16.t Array16.t) : W16.t Array16.t = {
-    var t:W16.t Array16.t;
-
-    r <@ Ops.ivsub16u256(r, qx16);
-    t <@ Ops.iVPSRA_16u16(r, (W8.of_int 15));
-    t <@ Ops.ivpand16u16(t,qx16);
-    r <@ Ops.ivadd16u256(t, r);
-
-    return (r);
-  }
-
   proc poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
 
@@ -93,6 +82,7 @@ module Mavx2_prevec = {
     var i:int;
     var r:W256.t;
     var _r: W16.t Array16.t;
+    var t: W16.t Array16.t;
 
     qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
     _qx16 <- lift2poly(qx16);
@@ -102,12 +92,13 @@ module Mavx2_prevec = {
 
       _r <- lift2poly(r);
 
-      _r <@ csubq (_r, _qx16);
-      r <- W16u16.pack16 [_r.[0]; _r.[1]; _r.[2]; _r.[3]; _r.[4]; _r.[5]; _r.[6]; _r.[7];
-                          _r.[8]; _r.[9]; _r.[10]; _r.[11]; _r.[12]; _r.[13]; _r.[14]; _r.[15]];
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
+      _r <@ Ops.ivsub16u256(_r, _qx16);
+      t <@ Ops.iVPSRA_16u16(_r, (W8.of_int 15));
+      t <@ Ops.ivpand16u16(t, _qx16);
+      _r <@ Ops.ivadd16u256(t, _r);
+
+      rp <- rp.[16*i + 0 <- _r.[0]].[16*i + 1 <- _r.[1]].[16*i + 2 <- _r.[2]].[16*i + 3 <- _r.[3]].[16*i + 4 <- _r.[4]].[16*i + 5 <- _r.[5]].[16*i + 6 <- _r.[6]].[16*i + 7 <- _r.[7]]
+         .[16*i + 8 <- _r.[8]].[16*i + 9 <- _r.[9]].[16*i + 10 <- _r.[10]].[16*i + 11 <- _r.[11]].[16*i + 12 <- _r.[12]].[16*i + 13 <- _r.[13]].[16*i + 14 <- _r.[14]].[16*i + 15 <- _r.[15]];
       i <- i + 1;
     }
     return (rp);
@@ -490,9 +481,8 @@ lemma poly_csubq_corr_h ap :
              pos_bound256_cxq res 0 256 1 ].
 proof.
 proc.
-while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16).
-inline Mavx2_prevec.csubq.
-seq 5 : (#pre /\ forall k, 16*i <= k < 16*i + 16 => r0.[k%%16] = rp.[k] - qx160.[k%%16]).
+while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = jqx16.[k]).
+seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
 inline Ops.ivsub16u256.
 wp. skip. simplify.
 move => &hr [#] *.
@@ -502,11 +492,9 @@ move => k k_i.
 do rewrite get_set_if => />.
 rewrite -(lift2poly_iso _ i{hr}) => /#.
 seq 2 : (#pre /\
-         (forall k, 16*i <= k < 16 * i + 16 => (r0.[k%%16] \slt W16.zero => t.[k%%16] = qx160.[k%%16]))  /\
-          (forall k, 16*i <= k < 16 * i + 16 => (W16.zero \sle r0.[k%%16] => t.[k%%16] = W16.zero))).
+         (forall k, 0 <= k < 16 => (t.[k] = if _r.[k] \slt W16.zero then _qx16.[k] else W16.zero))).
 seq 1 : (#pre /\
-         (forall k, 16*i <= k < 16 * i + 16 => (r0.[k%%16] \slt W16.zero => t.[k%%16] = W16.of_int (W16.modulus - 1))) /\
-         (forall k, 16*i <= k < 16 * i + 16 => (W16.zero \sle r0.[k%%16] => t.[k%%16] = W16.zero))).
+         (forall k, 0 <= k < 16 => (t.[k] = if _r.[k] \slt W16.zero then W16.of_int (W16.modulus - 1) else W16.zero))).
 auto => />.
 move => &hr [#] *.
 do split.
@@ -523,12 +511,10 @@ move : H6 => /#.
 inline Ops.iVPSRA_16u16.
 auto => />.
 move => &hr [#] *.
-split.
-move => *.
 do rewrite get_set_if => />.
+case (_r{hr}.[k] \slt W16.zero).
 smt(getsign @Array16 @W16).
-move => *.
-do rewrite get_set_if => />.
+rewrite W16.sltE ltzNge -W16.sleE => /=.
 smt(getsign @Array16 @W16).
 auto => />.
 move => &hr [#] *.
@@ -540,85 +526,603 @@ apply H2.
 move => *; apply H3.
 apply H4.
 move : H5 => //=.
-move : H7 => /#.
+move : H6 => /#.
 move : H7 => /#.
 inline Ops.ivpand16u16.
 auto => />.
-move => &hr [#] *.
-split.
-move => *.
-have k_i : 0 <= k %% 16 && k %% 16 < 16.
-move : H7 H8 => /#.
-move : (H5 _ _ H9).
-move : H7 H8 => //=.
-move => t.
-do rewrite get_set_if => />.
-case (k%%16 = 15).
-move => *.
-rewrite -H10 t.
-smt(m1true @W16 @Array16).
-
-
-rewrite (Array16.mapiE (fun i => (Array16."_.[_<-_]" r1{hr} 0 (map2 W16.(`&`) t{hr} qx160{hr}).[0])) (Array16.of_list 0 (iota_ 0 16) )).
-move : k_i t.
-smt.
-do rewrite /(Array16."_.[_<-_]" _ _ (map2 W16.(`&`) t{hr} qx160{hr}).[_]).
-
-smt(@Array16 @W16).
-
-move : H5.
-
-move => H8.
-
-move : H5.
-move => [#] *.
-move => H8.
-move : H8 H5 => //=.
-split.
-do rewrite get_set_if => />.
-smt(@Array16 @W16).
-smt(@W16).
-*)
-inline Ops.ivadd16u256.
+move => &hr pos_bound_2 pos_bound_1 i_lb i_eub _qx16_def i_ub _r_def  t_def k k_lb k_ub.
+rewrite (_:
+r0{hr}.[0 <- t{hr}.[0] `&` _qx16{hr}.[0]].[1 <- t{hr}.[1] `&` _qx16{hr}.[1]]
+      .[2 <- t{hr}.[2] `&` _qx16{hr}.[2]].[3 <- t{hr}.[3] `&` _qx16{hr}.[3]]
+      .[4 <- t{hr}.[4] `&` _qx16{hr}.[4]].[5 <- t{hr}.[5] `&` _qx16{hr}.[5]]
+      .[6 <- t{hr}.[6] `&` _qx16{hr}.[6]].[7 <- t{hr}.[7] `&` _qx16{hr}.[7]]
+      .[8 <- t{hr}.[8] `&` _qx16{hr}.[8]].[9 <- t{hr}.[9] `&` _qx16{hr}.[9]]
+      .[10 <- t{hr}.[10] `&` _qx16{hr}.[10]].[11 <- t{hr}.[11] `&` _qx16{hr}.[11]]
+      .[12 <- t{hr}.[12] `&` _qx16{hr}.[12]].[13 <- t{hr}.[13] `&` _qx16{hr}.[13]]
+      .[14 <- t{hr}.[14] `&` _qx16{hr}.[14]].[15 <- t{hr}.[15] `&` _qx16{hr}.[15]]
+= fill (fun k => t{hr}.[k] `&` _qx16{hr}.[k]) 0 16 r0{hr}).
+  rewrite fillE. apply  Array16.ext_eq => /> *.
+  do rewrite get_setE; first 16 (move : i_lb i_ub => /#).
+  rewrite initiE => //.
+  smt(@Array16).
+rewrite filliE => //.
+rewrite k_lb k_ub=> />.
+rewrite t_def.
+rewrite k_lb k_ub=> />.
+case (_r{hr}.[k] \slt W16.zero).
+move => _r_ub.
+rewrite -/W16.onew and1w => //.
+rewrite -/W16.zero and0w => //.
+wp.
+ecall (ivadd16u256_spec t _r).
 auto => />.
-move => &hr [#] * => />.
-do split.
-case (forall k, 16*i{hr} <= k < 16 * i{hr} + 16 => (rp{hr}.[k] - qx160{hr}.[k%%16]) \slt W16.zero).
-pose w := pack16 [t{hr}.[0] + r0{hr}.[0]; t{hr}.[1] + r0{hr}.[1];
-                  t{hr}.[2] + r0{hr}.[2]; t{hr}.[3] + r0{hr}.[3];
-                  t{hr}.[4] + r0{hr}.[4]; t{hr}.[5] + r0{hr}.[5];
-                  t{hr}.[6] + r0{hr}.[6]; t{hr}.[7] + r0{hr}.[7];
-                  t{hr}.[8] + r0{hr}.[8]; t{hr}.[9] + r0{hr}.[9];
-                  t{hr}.[10] + r0{hr}.[10]; t{hr}.[11] + r0{hr}.[11];
-                  t{hr}.[12] + r0{hr}.[12]; t{hr}.[13] + r0{hr}.[13];
-                  t{hr}.[14] + r0{hr}.[14]; t{hr}.[15] + r0{hr}.[15]].
-move => *.
+move => &hr pos_bound_2 pos_bound_1 i_lb i_eub _qx16_def i_ub _r_def t_def result result_def.
+have rp_simpl : rp{hr}.[16 * i{hr} <-
+                     t{hr}.[0] + _r{hr}.[0]].[16 * i{hr} + 1 <-
+                     t{hr}.[1] + _r{hr}.[1]].[16 * i{hr} + 2 <-
+                     t{hr}.[2] + _r{hr}.[2]].[16 * i{hr} + 3 <-
+                     t{hr}.[3] + _r{hr}.[3]].[16 * i{hr} + 4 <-
+                     t{hr}.[4] + _r{hr}.[4]].[16 * i{hr} + 5 <-
+                     t{hr}.[5] + _r{hr}.[5]].[16 * i{hr} + 6 <-
+                     t{hr}.[6] + _r{hr}.[6]].[16 * i{hr} + 7 <-
+                     t{hr}.[7] + _r{hr}.[7]].[16 * i{hr} + 8 <-
+                     t{hr}.[8] + _r{hr}.[8]].[16 * i{hr} + 9 <-
+                     t{hr}.[9] + _r{hr}.[9]].[16 * i{hr} + 10 <-
+                     t{hr}.[10] + _r{hr}.[10]].[16 * i{hr} + 11 <-
+                     t{hr}.[11] + _r{hr}.[11]].[16 * i{hr} + 12 <-
+                     t{hr}.[12] + _r{hr}.[12]].[16 * i{hr} + 13 <-
+                     t{hr}.[13] + _r{hr}.[13]].[16 * i{hr} + 14 <-
+                     t{hr}.[14] + _r{hr}.[14]].[16 * i{hr} + 15 <-
+                     t{hr}.[15] + _r{hr}.[15]]
+= fill (fun k => t{hr}.[k %% 16] + _r{hr}.[k %% 16]) (16*i{hr}) 16 rp{hr}.
+  rewrite fillE. apply  Array256.ext_eq => /> *.
+  do rewrite get_setE; first 16 (move : i_lb i_ub => /#).
+  rewrite initiE => //.
+  smt(@Array256).
+split.
 rewrite /lift_array256 => />.
 apply Array256.ext_eq => /> *.
-rewrite mapiE => />.
-rewrite mapiE => />.
-case (16 * i{hr} <= x0 < 16 * i{hr} + 16); first last.
+do rewrite mapiE => />.
+case (16 * i{hr} <= x < 16 * i{hr} + 16); first last.
 move => x_b.
-rewrite -(set_get_diff rp{hr} w i{hr}).
-rewrite H1 H3 => //.
-rewrite H7 H8 => //.
-apply x_b => />.
-rewrite initiE.
-rewrite H7 H8 => //=.
-trivial.
+do rewrite get_setE; first 16 (move : i_lb i_ub => /#).
+smt().
 move => x_b.
-rewrite initiE.
-rewrite H7 H8 => //=.
+have x_i : 0 <= x %% 16 && x %% 16 < 16.
+  move : x_b => /#.
+do rewrite result_def.
+rewrite rp_simpl.
+rewrite filliE => //.
+rewrite x_b => />.
+rewrite _r_def => //.
+rewrite t_def => //.
+case (_r{hr}.[x %% 16] \slt W16.zero).
+rewrite (W16.WRingA.addrC _qx16{hr}.[_] _).
+rewrite subrK.
+smt(@Array256 @W16).
+rewrite add0r_s.
+move => _r_ub.
+rewrite to_sintD_small.
+move : pos_bound_2; rewrite /pos_bound256_cxq => bnd.
+move : (bnd (16 * i{hr} + x %% 16) _); first by smt(@W64).
+auto => />.
+rewrite qE => /> *.
+split.
+
+(****)
+rewrite to_sintN => //=.
+rewrite (_qx16_def (x%% 16))  => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite of_sintK.
 simplify.
-rewrite set_get_eq.
-rewrite H1 H3 => //.
-rewrite H7 H8 => //.
-apply x_b.
-rewrite /w.
-do rewrite -Array16.map2iE => //.
-do 16? rewrite -mapiE => />.
-rewrite -/(mkseq (Array16."_.[_]" (map (::) (map2 W16.(+) t{hr} r0{hr}))) 16).
-admitted. (* FIXME *)
-(* qed.*)
+rewrite /smod.
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+do rewrite (fun_if ((+) (to_sint rp{hr}.[16 * i{hr} + x %% 16])) _ _ _).
+smt.
+(****)
+
+rewrite to_sintN => //=.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+simplify.
+smt.
+(****)
+
+rewrite _qx16_def => //=.
+rewrite (_: rp{hr}.[16 * i{hr} + x %% 16] = rp{hr}.[x]).
+  by smt.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite inzmodD. ring.
+do rewrite (fun_if inzmod _ _ _).
+do rewrite (fun_if  ZModField.([-]) _ _ _).
+rewrite to_sintE /smod to_uintN => />.
+
+(***)
+have zero_congr_3329: 3329 %% q = 0.
+  by rewrite qE; smt.
+rewrite inzmodN.
+rewrite /zero.
+have ->: - - inzmod 3329 = inzmod 3329. smt(@ZModField).
+rewrite -inzmodN.
+do rewrite -(fun_if inzmod _ _ _).
+rewrite -eq_inzmod.
+smt.
+
+(****)
+move : pos_bound_2 pos_bound_1; rewrite /pos_bound256_cxq => /> *.
+split.
+move => k.
+case (16 * i{hr} <= k < 16 * i{hr} + 16); last first.
+move => k_b.
+do (rewrite set_neqiE => />; first 2 by smt(@W64)).
+by move : (H k); rewrite /bpos16 => /#.
+move => k_b k_lb k_ub.
+have idx_bounds: 0 <= 16 * i{hr} + k %% 16 && 16 * i{hr} + k %% 16 < 256.
+  move : k_b i_lb i_ub => /#.
+have k_i : 0 <= k %% 16 && k %% 16 < 16.
+  move : k_b => /#.
+do rewrite result_def.
+rewrite rp_simpl.
+rewrite filliE => //.
+rewrite k_b => />.
+rewrite _r_def => //.
+rewrite t_def => //.
+case (_r{hr}.[k %% 16] \slt W16.zero).
+move => _r_ub.
+rewrite addrC.
+rewrite (_: rp{hr}.[16 * i{hr} +  k %% 16] - _qx16{hr}.[k%%16] + _qx16{hr}.[k%%16] = rp{hr}.[16 * i{hr} + k %% 16]). ring.
+split.
+move : (H (16 * i{hr} + k %% 16) _).
+move : k_b k_i => /#.
+trivial.
+
+(*****)
+rewrite qE => />.
+move => sint_rp_lb.
+rewrite to_sint_unsigned.
+done.
+rewrite -to_sint_unsigned.
+done.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds.
+simplify.
+rewrite qE.
+simplify.
+smt.
+
+(*****)
+move => _r_lb.
+auto => />.
+split.
+
+(*****)
+move : _r_lb.
+rewrite _r_def => //.
+rewrite W16.sltE.
+rewrite to_sintB_small.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+do rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+do rewrite of_sintK.
+simplify.
+rewrite /smod /=.
+smt.
+
+(******)
+rewrite to_sintD_small => />.
+rewrite to_sintN => />.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+do rewrite of_sintK => />.
+rewrite /smod => />.
+smt.
+split.
+
+(******)
+move : _r_lb.
+rewrite _r_def => //.
+rewrite sltE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds.
+simplify.
+rewrite qE.
+simplify.
+smt().
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+have ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt().
+(******)
+
+move => rp_qx16_lb.
+
+(******)
+move : _r_lb.
+rewrite _r_def => //.
+rewrite sltE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds.
+simplify.
+rewrite qE.
+simplify.
+smt().
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+have ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move : rp_qx16_lb.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds.
+simplify.
+rewrite qE.
+simplify.
+smt().
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite to_sintN /=.
+  rewrite of_sintK. simplify. rewrite /smod => />.
+rewrite of_sintK /=.
+rewrite /smod /=.
+move => rp_q_lb.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds.
+simplify.
+rewrite qE.
+simplify.
+smt().
+
+(******)
+split; last by smt(@W64).
+move => k k_lb k_ub.
+case (16 * i{hr} <= k < 16 * i{hr} + 16); last first.
+rewrite andaE negb_and.
+rewrite -lezNgt -ltzNge.
+move => k_i.
+move : (H0 k _) => /> *.
+move : k_ub k_i => /#.
+by rewrite !set_neqiE => />; smt(@W64).
+move => k_i.
+
+have idx_bounds: 0 <= 16 * i{hr} + k %% 16 && 16 * i{hr} + k %% 16 < 256.
+  move : k_i i_lb i_ub => /#.
+have k_b : 0 <= k %% 16 && k %% 16 < 16.
+  move : k_i => /#.
+do rewrite result_def.
+rewrite rp_simpl.
+rewrite filliE => //.
+move : k_i i_ub => /#.
+simplify.
+rewrite k_i => />.
+rewrite t_def => //.
+
+case (_r{hr}.[k %% 16] \slt W16.zero).
+move => _r_ub.
+rewrite _r_def => //.
+rewrite qE => />.
+rewrite addrC.
+rewrite (_: rp{hr}.[16 * i{hr} + k %% 16] - _qx16{hr}.[k %% 16] + _qx16{hr}.[k %% 16] =  (rp{hr}.[16 * i{hr} + k %% 16])); first by ring.
+split.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds.
+simplify.
+trivial.
+
+(******)
+move => rp_lb.
+rewrite _r_def in _r_ub => //.
+move : _r_ub.
+rewrite sltE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+have ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt.
+
+(******)
+move => _r_lb.
+rewrite _r_def in _r_lb.
+auto => />.
+split.
+
+(******)
+rewrite _r_def => //.
+move : _r_lb.
+rewrite sltE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+have ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt.
+(******)
+
+move => _sr_lb.
+rewrite _r_def => />.
+rewrite to_sintD_small => />.
+rewrite to_sintN => />.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite of_sintK => />.
+rewrite /smod => />.
+smt.
+split.
+
+(******)
+move : _r_lb.
+rewrite sltE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+have ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => *.
+smt.
+
+(******)
+move => rp_qx16_lb.
+move : _r_lb.
+rewrite sltE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+have ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => _r_lb.
+rewrite _r_def in _sr_lb => //.
+move : _sr_lb rp_qx16_lb.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+move => rp_qx16_lb_0 rp_qx16_lb_word.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+
+rewrite qE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+do rewrite fun_if.
+rewrite to_sintN of_sintK => />.
+rewrite /smod => />.
+
+move : _r_lb.
+rewrite sltE.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+have ->: to_sint W16.zero = 0.
+rewrite to_sintE.
+rewrite to_uint0.
+rewrite /smod /=.
+done.
+move => rp_q_lb_neg.
+rewrite _r_def in _sr_lb => //.
+move : _sr_lb.
+rewrite _qx16_def => //=.
+rewrite /(jqx16).
+rewrite get_of_list => />.
+rewrite to_sintB_small.
+do rewrite fun_if.
+rewrite of_sintK.
+simplify.
+rewrite /smod.
+simplify.
+move : (H (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => /> *.
+smt(@W64).
+do rewrite fun_if.
+rewrite of_sintK /=.
+rewrite /smod /=.
+move => rp_q_lb.
+move : H H0 rp_q_lb_neg rp_q_lb; rewrite qE => />.
+trivial.
+move => rp_2q_bnd rp_q_bnd rp_q_lb_neg rp_q_lb.
+move : (rp_2q_bnd (16 * i{hr} + k %% 16)).
+rewrite idx_bounds => />.
+smt.
+(******)
+
+auto => />.
+move => &hr *.
+split.
+split. smt.
+admit. (* FIXME: auxiliar iso lemma *)
+move => i0 rp0.
+auto => /> /#.
+qed.
+
+lemma poly_csubq_ll : islossless Mavx2_prevec.poly_csubq.
+proof.
+proc.
+while (0 <= i <= 16) (16 - i); auto => />.
+inline Ops.ivsub16u256 Ops.iVPSRA_16u16 Ops.ivpand16u16 Ops.ivadd16u256.
+auto => />.
+smt(@W16).
+smt(@W16).
+qed.
+
+lemma poly_csubq_corr ap :
+      phoare[ Mavx2_prevec.poly_csubq :
+           ap = lift_array256 rp /\
+           pos_bound256_cxq rp 0 256 2 
+           ==>
+           ap = lift_array256 res /\
+           pos_bound256_cxq res 0 256 1 ] = 1%r
+  by conseq poly_csubq_ll (poly_csubq_corr_h ap).
 
 end KyberPolyAVX.
