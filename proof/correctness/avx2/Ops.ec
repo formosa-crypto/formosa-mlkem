@@ -2,12 +2,14 @@ require import List Int IntExtra IntDiv CoreMap.
 
 from Jasmin require import JModel JArray JWord_array.
 
-require import Array2p Array4p Array8p Array16p WArray128p WArray160p.
+require import Array2p Array4p Array8p Array16p Array32p WArray128p WArray160p.
 
 type t8u32 = W32.t Array8.t.
 type t16u16 = W16.t Array16.t.
+type t32u8 = W8.t Array32.t.
 type t2u64 = W64.t Array2.t.
 type t4u64 = W64.t Array4.t.
+type t2u128 = W128.t Array2.t.
 
 hint simplify W8.of_intwE @0.
 
@@ -42,6 +44,15 @@ module Ops = {
     r.[1] <-v;
     r.[2] <-v;
     r.[3] <-v;
+    return r;
+  }
+
+  proc iVPBROADCAST_2u128(v: W128.t) : t2u128 = {
+    var r : t2u128;
+
+    r.[0] <- v;
+    r.[1] <- v;
+
     return r;
   }
 
@@ -209,6 +220,142 @@ module Ops = {
     return r;
   }
 
+  (* FIXME *)
+  proc iVPACKSS_16u16(x y: t16u16) : t32u8 = {
+    var r: t32u8;
+
+    r.[0] <-
+      if x.[0] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[0] then (W8.of_int W8.max_sint)
+      else x.[0] \bits8 0;
+    r.[1] <-
+      if x.[1] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[1] then (W8.of_int W8.max_sint)
+      else x.[1] \bits8 0;
+    r.[2] <-
+      if x.[2] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[2] then (W8.of_int W8.max_sint)
+      else x.[2] \bits8 0;
+    r.[3] <-
+      if x.[3] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[3] then (W8.of_int W8.max_sint)
+      else x.[3] \bits8 0;
+    r.[4] <-
+      if y.[0] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[0] then (W8.of_int W8.max_sint)
+      else y.[0] \bits8 0;
+    r.[5] <-
+      if y.[1] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[1] then (W8.of_int W8.max_sint)
+      else y.[1] \bits8 0;
+    r.[6] <-
+      if y.[2] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[2] then (W8.of_int W8.max_sint)
+      else y.[2] \bits8 0;
+    r.[7] <-
+      if y.[3] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[3] then (W8.of_int W8.max_sint)
+      else y.[3] \bits8 0;
+    r.[8] <-
+      if x.[4] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[4] then (W8.of_int W8.max_sint)
+      else x.[4] \bits8 0;
+    r.[9] <-
+      if x.[5] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[5] then (W8.of_int W8.max_sint)
+      else x.[5] \bits8 0;
+    r.[10] <-
+      if x.[6] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[6] then (W8.of_int W8.max_sint)
+      else x.[6] \bits8 0;
+    r.[11] <-
+      if x.[7] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle x.[7] then (W8.of_int W8.max_sint)
+      else x.[7] \bits8 0;
+    r.[12] <-
+      if y.[4] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[4] then (W8.of_int W8.max_sint)
+      else y.[4] \bits8 0;
+    r.[13] <-
+      if y.[5] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[5] then (W8.of_int W8.max_sint)
+      else y.[5] \bits8 0;
+    r.[14] <-
+      if y.[6] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[6] then (W8.of_int W8.max_sint)
+      else y.[6] \bits8 0;
+    r.[15] <-
+      if y.[7] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[7] then (W8.of_int W8.max_sint)
+      else y.[7] \bits8 0;
+    r.[16] <-
+      if y.[0] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[0] then (W8.of_int W8.max_sint)
+      else y.[0] \bits8 0;
+    r.[1] <-
+      if y.[1] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[1] then (W8.of_int W8.max_sint)
+      else y.[1] \bits8 0;
+    r.[2] <-
+      if y.[2] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[2] then (W8.of_int W8.max_sint)
+      else y.[2] \bits8 0;
+    r.[3] <-
+      if y.[3] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[3] then (W8.of_int W8.max_sint)
+      else y.[3] \bits8 0;
+    r.[4] <-
+      if y.[0] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[0] then (W8.of_int W8.max_sint)
+      else y.[0] \bits8 0;
+    r.[5] <-
+      if y.[1] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[1] then (W8.of_int W8.max_sint)
+      else y.[1] \bits8 0;
+    r.[6] <-
+      if y.[2] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[2] then (W8.of_int W8.max_sint)
+      else y.[2] \bits8 0;
+    r.[7] <-
+      if y.[3] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[3] then (W8.of_int W8.max_sint)
+      else y.[3] \bits8 0;
+    r.[8] <-
+      if y.[4] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[4] then (W8.of_int W8.max_sint)
+      else y.[4] \bits8 0;
+    r.[9] <-
+      if y.[5] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[5] then (W8.of_int W8.max_sint)
+      else y.[5] \bits8 0;
+    r.[10] <-
+      if y.[6] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[6] then (W8.of_int W8.max_sint)
+      else y.[6] \bits8 0;
+    r.[11] <-
+      if y.[7] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[7] then (W8.of_int W8.max_sint)
+      else y.[7] \bits8 0;
+    r.[12] <-
+      if y.[4] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[4] then (W8.of_int W8.max_sint)
+      else y.[4] \bits8 0;
+    r.[13] <-
+      if y.[5] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[5] then (W8.of_int W8.max_sint)
+      else y.[5] \bits8 0;
+    r.[14] <-
+      if y.[6] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[6] then (W8.of_int W8.max_sint)
+      else y.[6] \bits8 0;
+    r.[15] <-
+      if y.[7] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
+      else if (W16.of_int W8.max_sint) \sle y.[7] then (W8.of_int W8.max_sint)
+      else y.[7] \bits8 0;
+
+    return r;
+  }
+
   proc iVPERM2I128(x y:t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
     r <- witness;
@@ -331,6 +478,28 @@ module Ops = {
     return r;
   }
 
+  proc iVPSLL_16u16 (x: t16u16, y: W8.t) : t16u16 = {
+    var r : t16u16;
+    r.[0] <- x.[0] `<<` y;
+    r.[1] <- x.[1] `<<` y;
+    r.[2] <- x.[2] `<<` y;
+    r.[3] <- x.[3] `<<` y;
+    r.[4] <- x.[4] `<<` y;
+    r.[5] <- x.[5] `<<` y;
+    r.[6] <- x.[6] `<<` y;
+    r.[7] <- x.[7] `<<` y;
+    r.[8] <- x.[8] `<<` y;
+    r.[9] <- x.[9] `<<` y;
+    r.[10] <- x.[10] `<<` y;
+    r.[11] <- x.[11] `<<` y;
+    r.[12] <- x.[12] `<<` y;
+    r.[13] <- x.[13] `<<` y;
+    r.[14] <- x.[14] `<<` y;
+    r.[15] <- x.[15] `<<` y;
+
+    return r;
+  }
+
   proc ivshr64u256 (x: t4u64, y: W8.t) : t4u64 = {
     var r : t4u64;
     r.[0] <- x.[0] `>>` y;
@@ -350,6 +519,7 @@ module Ops = {
   }
 
 
+
   proc iVPSRLV_4u64 (x: t4u64, y: t4u64) : t4u64 = {
     var r : t4u64;
     r.[0] <- x.[0] `>>>` W64.to_uint y.[0];
@@ -365,6 +535,19 @@ module Ops = {
     r.[1] <- x.[1] `<<<` W64.to_uint y.[1];
     r.[2] <- x.[2] `<<<` W64.to_uint y.[2];
     r.[3] <- x.[3] `<<<` W64.to_uint y.[3];
+    return r;
+  }
+
+  proc iVPSLLV_8u32 (x: t8u32, y:  t8u32) : t8u32 = {
+    var r : t8u32;
+    r.[0] <- x.[0] `<<<` W32.to_uint y.[0];
+    r.[1] <- x.[1] `<<<` W32.to_uint y.[1];
+    r.[2] <- x.[2] `<<<` W32.to_uint y.[2];
+    r.[3] <- x.[3] `<<<` W32.to_uint y.[3];
+    r.[4] <- x.[4] `<<<` W32.to_uint y.[4];
+    r.[5] <- x.[5] `<<<` W32.to_uint y.[5];
+    r.[6] <- x.[6] `<<<` W32.to_uint y.[6];
+    r.[7] <- x.[7] `<<<` W32.to_uint y.[7];
     return r;
   }
 
@@ -507,12 +690,24 @@ module Ops = {
         pack2 [x.[p1 %/ 2 + 2] \bits32 p1 %% 2; x.[p2 %/ 2 + 2] \bits32 p2 %% 2];
     return r;
   }
+
+  proc iVPSHUFB_256 (x: t32u8, m: t32u8): t32u8 = {
+    var r: t32u8;
+
+    r.[0] <-
+      let i = W8.to_uint m.[0] in
+      if 128 <= i then W8.zero else x.[i %% 16];
+
+    return r;
+  }
 }.
 
 type vt2u64 = W128.t.
 type vt4u64 = W256.t.
 type vt8u32 = W256.t.
 type vt16u16 = W256.t.
+type vt32u8 = W256.t.
+type vt2u128 = W256.t.
 
 module OpsV = {
   proc itruncate_4u64_2u64(t : vt4u64) : vt2u64 = {
@@ -525,6 +720,10 @@ module OpsV = {
 
   proc iVPBROADCAST_4u64(v : W64.t) : vt4u64 = {
     return VPBROADCAST_4u64 v;
+  }
+
+  proc iVPBROADCAST_2u128(v : W128.t) : vt2u128 = {
+    return VPBROADCAST_2u128 v;
   }
 
   proc iVPMULH_256 (x y: vt16u16) : vt16u16 = {
@@ -554,7 +753,11 @@ module OpsV = {
   proc iVPACKUS_8u32(x y: vt8u32) : vt16u16 = {
     return VPACKUS_8u32 x y;
   }
-
+  (* FIXME
+  proc iVPACKSS_16u16(x y: vt16u16) : vt32u8 = {
+    return VPACKSS_16u16 x y;
+  }
+  *)
   proc iVPERM2I128(x y:vt4u64, p : W8.t) : vt4u64 = {
     return VPERM2I128 x y p;
   }
@@ -587,6 +790,10 @@ module OpsV = {
     return VPSRA_16u16 x y;
   }
 
+  proc iVPSLL_16u16 (x: vt16u16, y: W8.t) : vt16u16 = {
+    return VPSLL_16u16 x y;
+  }
+
   proc ivshr64u256 (x: vt4u64, y: W8.t) : vt4u64 = {
     return VPSRL_4u64 x y;
   }
@@ -601,6 +808,10 @@ module OpsV = {
 
   proc iVPSLLV_4u64 (x: vt4u64, y: vt4u64) : vt4u64 = {
     return VPSLLV_4u64 x y;
+  }
+
+  proc iVPSLLV_8u32 (x: vt8u32, y: vt8u32) : vt8u32 = {
+    return VPSLLV_8u32 x y;
   }
 
   proc ivpand16u16 (x: vt16u16, y: vt16u16) : vt16u16 = {
@@ -631,6 +842,9 @@ module OpsV = {
     return VPSHUFD_256 x p;
   }
 
+  proc iVPSHUFB_256 (x: vt32u8, m: vt32u8): vt32u8 = {
+    return VPSHUFB_256 x m;
+  } 
 }.
 
 op is2u64 (x : t2u64) (xv: vt2u64)  = xv = W2u64.pack2 [x.[0]; x.[1]].
@@ -638,8 +852,13 @@ op is4u64 (x : t4u64) (xv: vt4u64) = xv = W4u64.pack4 [x.[0]; x.[1]; x.[2]; x.[3
 op is16u16 (x : t16u16) (xv: vt16u16) = xv = W16u16.pack16 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
   x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15]].
 op is8u32 (x: t8u32) (xv: vt8u32) = xv = W8u32.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
+op is2u128 (x : t2u128) (xv: vt2u128) = xv = W2u128.pack2 [x.[0]; x.[1]].
+op is32u8 (x : t32u8) (xv: vt32u8) = xv = W32u8.pack32 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
+                                                        x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15];
+                                                        x.[16]; x.[17]; x.[18]; x.[19]; x.[20]; x.[21]; x.[21]; x.[23];
+                                                        x.[24]; x.[25]; x.[26]; x.[27]; x.[28]; x.[29]; x.[30]; x.[31]].
 
-(* FIXME *)
+(* TODO *)
 lemma ivadd16u256_spec x_ y_ : hoare[Ops.ivadd16u256 : x = x_ /\ y = y_ ==> forall i, res.[i] = x_.[i] + y_.[i]].
 admitted.
 
@@ -722,6 +941,11 @@ proof. by proc;wp;skip;rewrite /is16u16 /VPADD_16u16. qed.
 equiv eq_ivsub16u256: Ops.ivsub16u256 ~ OpsV.ivsub16u256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is16u16 /VPSUB_16u16. qed.
 
+(* TODO *)
+equiv eq_iVPBROADCAST_2u128 : Ops.iVPBROADCAST_2u128 ~ OpsV.iVPBROADCAST_2u128 : ={v} ==> is2u128 res{1} res{2}.
+proof.
+admit.
+qed.
 
 equiv eq_iVPBROADCAST_4u64 : Ops.iVPBROADCAST_4u64 ~ OpsV.iVPBROADCAST_4u64 : ={v} ==> is4u64 res{1} res{2}.
 proof. proc => /=. wp. skip. rewrite /is4u64 /VPBROADCAST_4u64. admit. (* FIXME *) qed.
@@ -842,6 +1066,9 @@ qed.
 equiv eq_iVPEXTR_64: Ops.iVPEXTR_64 ~ OpsV.iVPEXTR_64 : is2u64 x{1} x{2} /\ ={p} /\ (p{1} = W8.of_int 0 \/ p{2} = W8.of_int 1)==> res{1} = res{2}.
 proof. by proc; skip; rewrite /is2u64 /VPEXTR_64 => /> &1 &2 [] -> /=. qed.
 
+equiv eq_iVPSLL_16u16: Ops.iVPSLL_16u16 ~ OpsV.iVPSLL_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16 /VPSLL_16u16. qed.
+
 equiv eq_iVPSRA_16u16: Ops.iVPSRA_16u16 ~ OpsV.iVPSRA_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is16u16 /VPSRA_16u16. qed.
 
@@ -852,7 +1079,7 @@ equiv eq_ivshl64u256: Ops.ivshl64u256 ~ OpsV.ivshl64u256 : is4u64 x{1} x{2} /\ =
 proof. by proc; wp; skip; rewrite /is4u64 /VPSLL_4u64. qed.
 
 equiv eq_ivpand16u16: Ops.ivpand16u16 ~ OpsV.ivpand16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is16u61. qed.
+proof. by proc; wp; skip; rewrite /is16u16. qed.
 
 equiv eq_iland4u64: Ops.iland4u64 ~ OpsV.iland4u64 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is4u64. qed.
@@ -939,4 +1166,11 @@ proof.
   (* FIXME
   by case: (to_uint p{2} %/ 16 %% 4 %/ 2 = to_uint p{2} %/ 64 %% 4 %/ 2 /\
        to_uint p{2} %/ 16 %% 4 %% 2 = 0 /\ to_uint p{2} %/ 64 %% 4 %% 2 = 1) => [[# -> _ ->]|].*)
+qed.
+
+(* TODO *)
+equiv eq_iVPSHUFB_256 : Ops.iVPSHUFB_256 ~ OpsV.iVPSHUFB_256 : 
+  is32u8 x{1} x{2} /\ is32u8 m{1} m{2} ==> is32u8 res{1} res{2}.
+proof.
+admit.
 qed.
