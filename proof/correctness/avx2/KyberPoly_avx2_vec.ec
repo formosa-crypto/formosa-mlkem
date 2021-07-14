@@ -1,7 +1,7 @@
 require import AllCore List Int IntExtra IntDiv CoreMap.
 from Jasmin require import JModel.
-require import Array256 Array16p Array16.
-require import WArray512 WArray32.
+require import Array256 Array16p Array16 Array4.
+require import WArray512 WArray32 WArray16.
 require import Ops.
 require import KyberPoly_avx2.
 
@@ -75,6 +75,71 @@ module Mvec = {
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
+      i <- i + 1;
+    }
+    return (rp);
+  }
+
+  proc poly_frommsg (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var x16p:W16.t Array16.t;
+    var hqs:W256.t;
+    var shift:W256.t;
+    var idx:W256.t;
+    var f:W256.t;
+    var i:int;
+    var g3:W256.t;
+    var g0:W256.t;
+    var g1:W256.t;
+    var g2:W256.t;
+    var h0:W256.t;
+    var h2:W256.t;
+    var h1:W256.t;
+    var h3:W256.t;
+    x16p <- witness;
+    x16p <- hqx16_p1;
+    hqs <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    shift <-
+    OpsV.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
+    idx <- OpsV.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
+    f <- (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int 0))));
+    i <- 0;
+    while (i < 4) {
+      g3 <- OpsV.iVPSHUFD_256(f, W8.of_int (85 * i));
+      g3 <- OpsV.iVPSLLV_8u32(g3, shift);
+      g3 <- OpsV.iVPSHUFB_256(g3, idx);
+      g0 <- OpsV.iVPSLL_16u16(g3, (W8.of_int 12));
+      g1 <- OpsV.iVPSLL_16u16(g3, (W8.of_int 8));
+      g2 <- OpsV.iVPSLL_16u16(g3, (W8.of_int 4));
+      g0 <- OpsV.iVPSRA_16u16(g0, (W8.of_int 15));
+      g1 <- OpsV.iVPSRA_16u16(g1, (W8.of_int 15));
+      g2 <- OpsV.iVPSRA_16u16(g2, (W8.of_int 15));
+      g3 <- OpsV.iVPSRA_16u16(g3, (W8.of_int 15));
+      g0 <- OpsV.ivpand16u16(g0, hqs);
+      g1 <- OpsV.ivpand16u16(g1, hqs);
+      g2 <- OpsV.ivpand16u16(g2, hqs);
+      g3 <- OpsV.ivpand16u16(g3, hqs);
+      h0 <- OpsV.iVPUNPCKL_4u64(g0, g1);
+      h2 <- OpsV.iVPUNPCKL_4u64(g0, g1);
+      h1 <- OpsV.iVPUNPCKL_4u64(g2, g3);
+      h3 <- OpsV.iVPUNPCKL_4u64(g2, g3);
+      g0 <- OpsV.iVPERM2I128(h0, h1, (W8.of_int 32));
+      g2 <- OpsV.iVPERM2I128(h0, h1, (W8.of_int 49));
+      g1 <- OpsV.iVPERM2I128(h2, h3, (W8.of_int 32));
+      g3 <- OpsV.iVPERM2I128(h2, h3, (W8.of_int 49));
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) (2 * i) g0));
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) ((2 * i) + 1) g1));
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) ((2 * i) + 8) g2));
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) (((2 * i) + 8) + 1) g3));
       i <- i + 1;
     }
     return (rp);
