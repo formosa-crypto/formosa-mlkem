@@ -1,19 +1,18 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
-require import W16extra Array256 Fq Array16p WArray512 WArray32.
+require import Array256 Fq Array16 Array16p Array4 Array4p Array8 Array8p.
+require import W16extra WArray512 WArray32 WArray16.
 require import Ops.
 require import List_hakyber.
+require import KyberPoly_avx2.
 
 pragma +oldip.
 
-abbrev jqx16 = Array16.of_list witness [W16.of_int 3329; W16.of_int 3329;
-W16.of_int 3329; W16.of_int 3329; W16.of_int 3329; W16.of_int 3329;
-W16.of_int 3329; W16.of_int 3329; W16.of_int 3329; W16.of_int 3329;
-W16.of_int 3329; W16.of_int 3329; W16.of_int 3329; W16.of_int 3329;
-W16.of_int 3329; W16.of_int 3329].
-
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
+
+op lift2array (p: W128.t): W16.t Array8.t =
+  Array8.init (fun (n : int) => p \bits16 n).
 
 module Mavx2_prevec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
@@ -84,7 +83,7 @@ module Mavx2_prevec = {
     var _r: W16.t Array16.t;
     var t: W16.t Array16.t;
 
-    qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i => KyberPoly_avx2.jqx16.[i])) 0);
     _qx16 <- lift2poly(qx16);
     i <- 0;
     while (i < 16) {
@@ -101,6 +100,85 @@ module Mavx2_prevec = {
          .[16*i + 8 <- _r.[8]].[16*i + 9 <- _r.[9]].[16*i + 10 <- _r.[10]].[16*i + 11 <- _r.[11]].[16*i + 12 <- _r.[12]].[16*i + 13 <- _r.[13]].[16*i + 14 <- _r.[14]].[16*i + 15 <- _r.[15]];
       i <- i + 1;
     }
+    return (rp);
+  }
+
+
+  proc poly_frommsg (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+(* FIXME
+    var aux: int;
+
+    var hqs:W16.t Array16.t;
+    var shift:W16.t Array16.t;
+    var idx:W16.t Array16.t;
+    var f: W16.t Array16.t;
+    var i:int;
+    var g3:W16.t Array16.t;
+    var g0:W16.t Array16.t;
+    var g1:W16.t Array16.t;
+    var g2:W16.t Array16.t;
+    var h0:W16.t Array16.t;
+    var h2:W16.t Array16.t;
+    var h1:W16.t Array16.t;
+    var h3:W16.t Array16.t;
+
+    hqs <- lift2poly(get256 (WArray32.init16 (fun i => hqx16_p1.[i])) 0);
+    shift <-
+    Ops.iVPBROADCAST_2u8u16(lift2array (get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
+    idx <- Ops.iVPBROADCAST_2u8u16(lift2array (get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
+    f <- Ops.iload16u16(Glob.mem, ap);
+    i <- 0;
+    while (i < 4) {
+      g3 <- Ops.iVPSHUFD_256(f, W8.of_int (85 * i));
+      g3 <- Ops.iVPSLLV_8u32(g3, shift);
+      g3 <- Ops.iVPSHUFB_256(g3, idx);
+      g0 <- Ops.iVPSLL_16u16(g3, (W8.of_int 12));
+      g1 <- Ops.iVPSLL_16u16(g3, (W8.of_int 8));
+      g2 <- Ops.iVPSLL_16u16(g3, (W8.of_int 4));
+      g0 <- Ops.iVPSRA_16u16(g0, (W8.of_int 15));
+      g1 <- Ops.iVPSRA_16u16(g1, (W8.of_int 15));
+      g2 <- Ops.iVPSRA_16u16(g2, (W8.of_int 15));
+      g3 <- Ops.iVPSRA_16u16(g3, (W8.of_int 15));
+      g0 <- Ops.ivpand16u16(g0, hqs);
+      g1 <- Ops.ivpand16u16(g1, hqs);
+      g2 <- Ops.ivpand16u16(g2, hqs);
+      g3 <- Ops.ivpand16u16(g3, hqs);
+      h0 <- Ops.iVPUNPCKL_4u64(g0, g1);
+      h2 <- Ops.iVPUNPCKH_4u64(g0, g1);
+      h1 <- Ops.iVPUNPCKL_4u64(g2, g3);
+      h3 <- Ops.iVPUNPCKH_4u64(g2, g3);
+      g0 <- Ops.iVPERM2I128(h0, h1, (W8.of_int 32));
+      g2 <- Ops.iVPERM2I128(h0, h1, (W8.of_int 49));
+      g1 <- Ops.iVPERM2I128(h2, h3, (W8.of_int 32));
+      g3 <- Ops.iVPERM2I128(h2, h3, (W8.of_int 49));
+
+      rp <- fill (fun k => g0.[k %% 32]) (32*i) 16 rp;
+
+(*
+      rp <- rp.[32*i + 0 <- g0.[0]].[32*i + 1 <- g0.[1]].[32*i + 2 <- g0.[2]].[32*i + 3 <- g0.[3]].[32*i + 4 <- g0.[4]].[32*i + 5 <- g0.[5]].[32*i + 6 <- g0.[6]].[32*i + 7 <- g0.[7]]
+         .[32*i + 8 <- g0.[8]].[32*i + 9 <- g0.[9]].[32*i + 10 <- g0.[10]].[32*i + 11 <- g0.[11]].[32*i + 12 <- g0.[12]].[32*i + 13 <- g0.[13]].[32*i + 14 <- g0.[14]].[32*i + 15 <- g0.[15]];
+*)
+
+      rp <- fill (fun k => g1.[k %% 32]) (32*i + 16) 16 rp;
+(*
+      rp <- rp.[32*i + 16 + 0 <- g1.[0]].[32*i + 16 + 1 <- g1.[1]].[32*i + 16 + 2 <- g1.[2]].[32*i + 16 + 3 <- g1.[3]].[32*i + 16 + 4 <- g1.[4]].[32*i + 16 + 5 <- g1.[5]].[32*i + 16 + 6 <- g1.[6]].[32*i + 16 + 7 <- g1.[7]]
+         .[32*i + 16 + 8 <- g1.[8]].[32*i + 16 + 9 <- g1.[9]].[32*i + 16 + 10 <- g1.[10]].[32*i + 16 + 11 <- g1.[11]].[32*i + 16 + 12 <- g1.[12]].[32*i + 16 + 13 <- g1.[13]].[32*i + 16 + 14 <- g1.[14]].[32*i + 16 + 15 <- g1.[15]];
+*)
+
+      rp <- fill (fun k => g1.[k %% 32]) (32*i + 128) 16 rp;
+(*
+      rp <- rp.[32*i + 128 + 0 <- g2.[0]].[32*i + 128 + 1 <- g2.[1]].[32*i + 128 + 2 <- g2.[2]].[32*i + 128 + 3 <- g2.[3]].[32*i + 128 + 4 <- g2.[4]].[32*i + 128 + 5 <- g2.[5]].[32*i + 128 + 6 <- g2.[6]].[32*i + 128 + 7 <- g2.[7]]
+         .[32*i + 128 + 8 <- g2.[8]].[32*i + 128 + 9 <- g2.[9]].[32*i + 128 + 10 <- g2.[10]].[32*i + 128 + 11 <- g2.[11]].[32*i + 128 + 12 <- g2.[12]].[32*i + 128 + 13 <- g2.[13]].[32*i + 128 + 14 <- g2.[14]].[32*i + 128 + 15 <- g2.[15]];
+*)
+
+      rp <- fill (fun k => g1.[k %% 32]) (32*i + 144) 16 rp;
+(*
+      rp <- rp.[32*i + 144 + 0 <- g3.[0]].[32*i + 144 + 1 <- g3.[1]].[32*i + 144 + 2 <- g3.[2]].[32*i + 144 + 3 <- g3.[3]].[32*i + 144 + 4 <- g3.[4]].[32*i + 144 + 5 <- g3.[5]].[32*i + 144 + 6 <- g3.[6]].[32*i + 144 + 7 <- g3.[7]]
+         .[32*i + 144 + 8 <- g3.[8]].[32*i + 144 + 9 <- g3.[9]].[32*i + 144 + 10 <- g3.[10]].[32*i + 144 + 11 <- g3.[11]].[32*i + 144 + 12 <- g3.[12]].[32*i + 144 + 13 <- g3.[13]].[32*i + 144 + 14 <- g3.[14]].[32*i + 144 + 15 <- g3.[15]];
+*)
+      i <- i + 1;
+    }
+*)
     return (rp);
   }
 }.
@@ -481,7 +559,7 @@ lemma poly_csubq_corr_h ap :
              pos_bound256_cxq res 0 256 1 ].
 proof.
 proc.
-while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = jqx16.[k]).
+while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = KyberPoly_avx2.jqx16.[k]).
 seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
 inline Ops.ivsub16u256.
 wp. skip. simplify.
@@ -612,7 +690,7 @@ split.
 (****)
 rewrite to_sintN => //=.
 rewrite (_qx16_def (x%% 16))  => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -622,7 +700,7 @@ have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -635,7 +713,7 @@ smt.
 
 rewrite to_sintN => //=.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -645,7 +723,7 @@ have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -659,7 +737,7 @@ smt.
 rewrite _qx16_def => //=.
 rewrite (_: rp{hr}.[16 * i{hr} + x %% 16] = rp{hr}.[x]).
   by smt.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite inzmodD. ring.
@@ -731,7 +809,7 @@ rewrite _r_def => //.
 rewrite W16.sltE.
 rewrite to_sintB_small.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 do rewrite of_sintK.
@@ -745,7 +823,7 @@ rewrite qE.
 simplify.
 smt().
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 do rewrite of_sintK.
@@ -757,7 +835,7 @@ smt.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 do rewrite of_sintK => />.
@@ -770,7 +848,7 @@ move : _r_lb.
 rewrite _r_def => //.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -803,7 +881,7 @@ move : _r_lb.
 rewrite _r_def => //.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -827,7 +905,7 @@ rewrite /smod /=.
 done.
 move : rp_qx16_lb.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -841,7 +919,7 @@ rewrite qE.
 simplify.
 smt().
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite to_sintN /=.
@@ -898,7 +976,7 @@ rewrite _r_def in _r_ub => //.
 move : _r_ub.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -931,7 +1009,7 @@ rewrite _r_def => //.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -959,7 +1037,7 @@ rewrite _r_def => />.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK => />.
@@ -971,7 +1049,7 @@ split.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -998,7 +1076,7 @@ move => rp_qx16_lb.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -1021,7 +1099,7 @@ move => _r_lb.
 rewrite _r_def in _sr_lb => //.
 move : _sr_lb rp_qx16_lb.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -1042,7 +1120,7 @@ smt(@W64).
 
 rewrite qE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite to_sintN of_sintK => />.
@@ -1051,7 +1129,7 @@ rewrite /smod => />.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -1074,7 +1152,7 @@ move => rp_q_lb_neg.
 rewrite _r_def in _sr_lb => //.
 move : _sr_lb.
 rewrite _qx16_def => //=.
-rewrite /(jqx16).
+rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.

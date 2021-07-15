@@ -5,6 +5,8 @@ require import WArray512 WArray32 WArray16.
 require import Ops.
 require import KyberPoly_avx2.
 
+pragma +oldip.
+
 module Mvec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
@@ -101,9 +103,9 @@ module Mvec = {
     x16p <- hqx16_p1;
     hqs <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
     shift <-
-    OpsV.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
-    idx <- OpsV.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
-    f <- (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int 0))));
+    OpsV.iVPBROADCAST_2u8u16((get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
+    idx <- OpsV.iVPBROADCAST_2u8u16((get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
+    f <- OpsV.iload4u64(Glob.mem, ap);
     i <- 0;
     while (i < 4) {
       g3 <- OpsV.iVPSHUFD_256(f, W8.of_int (85 * i));
@@ -121,9 +123,9 @@ module Mvec = {
       g2 <- OpsV.ivpand16u16(g2, hqs);
       g3 <- OpsV.ivpand16u16(g3, hqs);
       h0 <- OpsV.iVPUNPCKL_4u64(g0, g1);
-      h2 <- OpsV.iVPUNPCKL_4u64(g0, g1);
+      h2 <- OpsV.iVPUNPCKH_4u64(g0, g1);
       h1 <- OpsV.iVPUNPCKL_4u64(g2, g3);
-      h3 <- OpsV.iVPUNPCKL_4u64(g2, g3);
+      h3 <- OpsV.iVPUNPCKH_4u64(g2, g3);
       g0 <- OpsV.iVPERM2I128(h0, h1, (W8.of_int 32));
       g2 <- OpsV.iVPERM2I128(h0, h1, (W8.of_int 49));
       g1 <- OpsV.iVPERM2I128(h2, h3, (W8.of_int 32));
@@ -180,12 +182,32 @@ proof.
 trivial.
 qed.
 
+equiv eq_poly_frommsg:
+  Mavx2_prevec.poly_frommsg ~ Mvec.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
+proof.
+  admit.
+  (* FIXME
+  proc.
+  while(={rp, ap, bp, i}).
+  wp.
+  call eq_ivsub16u256.
+  wp. skip. rewrite /is16u16 => />. move => *. split.
+  rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
+  rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
+  wp; skip.
+  move => &1 &2 H.
+  split. simplify. split. smt. smt.
+  trivial.
+  *)
+qed.
+
+
 equiv eq_poly_csubq:
   Mavx2_prevec.poly_csubq ~ Mvec.poly_csubq: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16} /\ is16u16 _qx16{1} qx16{2}).
-    inline Mavx2_prevec.csubq Mvec.csubq.
+    inline Mvec.csubq.
     wp.
     call eq_ivadd16u256.
     call eq_ivpand16u16.
@@ -193,14 +215,16 @@ proof.
     call eq_ivsub16u256.
     wp. skip. rewrite /is16u16 => />. move => *.
     rewrite /lift2poly; simplify; rewrite pack16_bits16 => //.
+    simplify.
+    admit. (* FIXME *)
   wp; skip.
   move => &1 &2 H.
-  split.
   simplify.
-  rewrite H => /=. split. admit. (* FIXME: trivial *)
+  split.
+  rewrite H => /=.
   rewrite /lift2poly /is16u16 => />.
   rewrite pack16_bits16.
-  admit. (* FIXME: trivial *)
+  trivial.
   trivial.
 qed.
 
@@ -235,6 +259,17 @@ proof.
   wp. skip. auto => //.
 qed.
 
+equiv veceq_poly_frommsg :
+  Mvec.poly_frommsg ~ M.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while (={rp, ap, i, f, shift, idx, hqs, x16p}).
+    inline *.
+    wp. skip. auto => />.
+  inline *.
+  wp. skip. auto => />.
+qed.
+
 equiv prevec_eq_poly_add2:
     Mavx2_prevec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
@@ -259,3 +294,10 @@ apply eq_poly_csubq.
 apply veceq_poly_csubq.
 qed.
 
+equiv prevec_eq_poly_frommsg:
+   Mavx2_prevec.poly_frommsg ~ M.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
+     transitivity Mvec.poly_frommsg (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
+smt. trivial.
+apply eq_poly_frommsg.
+apply veceq_poly_frommsg.
+qed.
