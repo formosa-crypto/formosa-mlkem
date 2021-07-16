@@ -105,14 +105,15 @@ module Mavx2_prevec = {
 
 
   proc poly_frommsg (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
-(* FIXME
+(*
     var aux: int;
 
     var hqs:W16.t Array16.t;
     var shift:W16.t Array16.t;
     var idx:W16.t Array16.t;
-    var f: W16.t Array16.t;
+    var f:W16.t Array16.t;
     var i:int;
+
     var g3:W16.t Array16.t;
     var g0:W16.t Array16.t;
     var g1:W16.t Array16.t;
@@ -124,10 +125,11 @@ module Mavx2_prevec = {
 
     hqs <- lift2poly(get256 (WArray32.init16 (fun i => hqx16_p1.[i])) 0);
     shift <-
-    Ops.iVPBROADCAST_2u8u16(lift2array (get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
-    idx <- Ops.iVPBROADCAST_2u8u16(lift2array (get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
+    Ops.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
+    idx <- Ops.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
     f <- Ops.iload16u16(Glob.mem, ap);
     i <- 0;
+
     while (i < 4) {
       g3 <- Ops.iVPSHUFD_256(f, W8.of_int (85 * i));
       g3 <- Ops.iVPSLLV_8u32(g3, shift);
@@ -153,34 +155,43 @@ module Mavx2_prevec = {
       g3 <- Ops.iVPERM2I128(h2, h3, (W8.of_int 49));
 
       rp <- fill (fun k => g0.[k %% 32]) (32*i) 16 rp;
-
-(*
-      rp <- rp.[32*i + 0 <- g0.[0]].[32*i + 1 <- g0.[1]].[32*i + 2 <- g0.[2]].[32*i + 3 <- g0.[3]].[32*i + 4 <- g0.[4]].[32*i + 5 <- g0.[5]].[32*i + 6 <- g0.[6]].[32*i + 7 <- g0.[7]]
-         .[32*i + 8 <- g0.[8]].[32*i + 9 <- g0.[9]].[32*i + 10 <- g0.[10]].[32*i + 11 <- g0.[11]].[32*i + 12 <- g0.[12]].[32*i + 13 <- g0.[13]].[32*i + 14 <- g0.[14]].[32*i + 15 <- g0.[15]];
-*)
-
       rp <- fill (fun k => g1.[k %% 32]) (32*i + 16) 16 rp;
-(*
-      rp <- rp.[32*i + 16 + 0 <- g1.[0]].[32*i + 16 + 1 <- g1.[1]].[32*i + 16 + 2 <- g1.[2]].[32*i + 16 + 3 <- g1.[3]].[32*i + 16 + 4 <- g1.[4]].[32*i + 16 + 5 <- g1.[5]].[32*i + 16 + 6 <- g1.[6]].[32*i + 16 + 7 <- g1.[7]]
-         .[32*i + 16 + 8 <- g1.[8]].[32*i + 16 + 9 <- g1.[9]].[32*i + 16 + 10 <- g1.[10]].[32*i + 16 + 11 <- g1.[11]].[32*i + 16 + 12 <- g1.[12]].[32*i + 16 + 13 <- g1.[13]].[32*i + 16 + 14 <- g1.[14]].[32*i + 16 + 15 <- g1.[15]];
-*)
-
       rp <- fill (fun k => g1.[k %% 32]) (32*i + 128) 16 rp;
-(*
-      rp <- rp.[32*i + 128 + 0 <- g2.[0]].[32*i + 128 + 1 <- g2.[1]].[32*i + 128 + 2 <- g2.[2]].[32*i + 128 + 3 <- g2.[3]].[32*i + 128 + 4 <- g2.[4]].[32*i + 128 + 5 <- g2.[5]].[32*i + 128 + 6 <- g2.[6]].[32*i + 128 + 7 <- g2.[7]]
-         .[32*i + 128 + 8 <- g2.[8]].[32*i + 128 + 9 <- g2.[9]].[32*i + 128 + 10 <- g2.[10]].[32*i + 128 + 11 <- g2.[11]].[32*i + 128 + 12 <- g2.[12]].[32*i + 128 + 13 <- g2.[13]].[32*i + 128 + 14 <- g2.[14]].[32*i + 128 + 15 <- g2.[15]];
-*)
-
       rp <- fill (fun k => g1.[k %% 32]) (32*i + 144) 16 rp;
-(*
-      rp <- rp.[32*i + 144 + 0 <- g3.[0]].[32*i + 144 + 1 <- g3.[1]].[32*i + 144 + 2 <- g3.[2]].[32*i + 144 + 3 <- g3.[3]].[32*i + 144 + 4 <- g3.[4]].[32*i + 144 + 5 <- g3.[5]].[32*i + 144 + 6 <- g3.[6]].[32*i + 144 + 7 <- g3.[7]]
-         .[32*i + 144 + 8 <- g3.[8]].[32*i + 144 + 9 <- g3.[9]].[32*i + 144 + 10 <- g3.[10]].[32*i + 144 + 11 <- g3.[11]].[32*i + 144 + 12 <- g3.[12]].[32*i + 144 + 13 <- g3.[13]].[32*i + 144 + 14 <- g3.[14]].[32*i + 144 + 15 <- g3.[15]];
-*)
+
       i <- i + 1;
     }
 *)
     return (rp);
   }
+
+  proc poly_reduce (rp:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var qx16:W16.t Array16.t;
+    var vx16:W16.t Array16.t;
+    var i:int;
+    var r:W16.t Array16.t;
+
+    qx16 <- lift2poly (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    vx16 <- lift2poly (get256 (WArray32.init16 (fun i => jvx16.[i])) 0);
+    i <- 0;
+
+    while (i < 16) {
+      r <- lift2poly (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
+
+      r <- Ops.iVPMULH_256(r, vx16);
+      r <- Ops.iVPSRA_16u16(r, (W8.of_int 10));
+      r <- Ops.iVPMULL_16u16(r, qx16);
+      r <- Ops.ivsub16u256(r, r);
+
+      rp <- fill (fun k => r.[k %% 16]) (16*i) 16 rp;
+
+      i <- i + 1;
+    }
+    return (rp);
+  }
+
 }.
 
 lemma lift2poly_iso (p: W16.t Array256.t) i:
