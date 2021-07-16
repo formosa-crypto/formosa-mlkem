@@ -48,25 +48,11 @@ module Ops = {
     return r;
   }
 
-  proc iVPBROADCAST_2u8u16(v: t8u16) : t16u16 = {
-    var r : t16u16;
+  proc iVPBROADCAST_2u128(v: W128.t) : t2u128 = {
+    var r: t2u128;
 
-    r.[0] <-v.[0];
-    r.[1] <-v.[1];
-    r.[2] <-v.[2];
-    r.[3] <-v.[3];
-    r.[4] <-v.[4];
-    r.[5] <-v.[5];
-    r.[6] <-v.[6];
-    r.[7] <-v.[7];
-    r.[8] <-v.[0];
-    r.[9] <-v.[1];
-    r.[10] <-v.[2];
-    r.[11] <-v.[3];
-    r.[12] <-v.[4];
-    r.[13] <-v.[5];
-    r.[14] <-v.[6];
-    r.[15] <-v.[7];
+    r.[0] <-v;
+    r.[1] <-v;
 
     return r;
   }
@@ -89,6 +75,28 @@ module Ops = {
     r.[13] <- wmulhs x.[13] y.[13];
     r.[14] <- wmulhs x.[14] y.[14];
     r.[15] <- wmulhs x.[15] y.[15];
+
+    return r;
+  }
+
+  proc iVPMULL_16u16(x y: t16u16) : t16u16 = {
+    var r : t16u16;
+    r.[0] <- x.[0] * y.[0];
+    r.[1] <- x.[1] * y.[1];
+    r.[2] <- x.[2] * y.[2];
+    r.[3] <- x.[3] * y.[3];
+    r.[4] <- x.[4] * y.[4];
+    r.[5] <- x.[5] * y.[5];
+    r.[6] <- x.[6] * y.[6];
+    r.[7] <- x.[7] * y.[7];
+    r.[8] <- x.[8] * y.[8];
+    r.[9] <- x.[9] * y.[9];
+    r.[10] <- x.[10] * y.[10];
+    r.[11] <- x.[11] * y.[11];
+    r.[12] <- x.[12] * y.[12];
+    r.[13] <- x.[13] * y.[13];
+    r.[14] <- x.[14] * y.[14];
+    r.[15] <- x.[15] * y.[15];
 
     return r;
   }
@@ -851,12 +859,16 @@ module OpsV = {
     return VPBROADCAST_4u64 v;
   }
 
-  proc iVPBROADCAST_2u8u16(v : vt8u16) : vt16u16 = {
+  proc iVPBROADCAST_2u128(v : W128.t) : vt2u128 = {
     return VPBROADCAST_2u128 v;
   }
 
   proc iVPMULH_256 (x y: vt16u16) : vt16u16 = {
     return VPMULH_16u16 x y;
+  }
+
+  proc iVPMULL_16u16 (x y: vt16u16) : vt16u16 = {
+    return VPMULL_16u16 x y;
   }
 
   proc iVPMULU_256 (x y:vt4u64) : vt4u64 = {
@@ -1066,6 +1078,9 @@ proof. by proc;wp;skip;rewrite /is4u64 /VPADD_4u64. qed.
 equiv eq_iVPMULH_256 : Ops.iVPMULH_256 ~ OpsV.iVPMULH_256: is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed.
 
+equiv eq_iVPMULL_16u16 : Ops.iVPMULL_16u16 ~ OpsV.iVPMULL_16u16: is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed.
+
 equiv eq_iVPMULU_256 : Ops.iVPMULU_256 ~ OpsV.iVPMULU_256 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is4u64 => /> &1; rewrite /VPMULU_256. qed.
 
@@ -1075,7 +1090,7 @@ proof. by proc;wp;skip;rewrite /is16u16 /VPADD_16u16. qed.
 equiv eq_ivsub16u256: Ops.ivsub16u256 ~ OpsV.ivsub16u256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is16u16 /VPSUB_16u16. qed.
 
-equiv eq_iVPBROADCAST_2u8u16 : Ops.iVPBROADCAST_2u8u16 ~ OpsV.iVPBROADCAST_2u8u16 : is8u16 v{1} v{2} ==> is16u16 res{1} res{2}.
+equiv eq_iVPBROADCAST_2u128 : Ops.iVPBROADCAST_2u128 ~ OpsV.iVPBROADCAST_2u128 : ={v} ==> is2u128 res{1} res{2}.
 proof.
   proc; wp; skip; rewrite /is2u128 /VPBROADCAST_2u128.
   admit. (* FIXME *)
