@@ -268,7 +268,7 @@ equiv eq_poly_reduce:
 proof.
   proc.
   while(={rp, i} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2}).
-  inline Mvec.red16x.
+  inline Mavx2_prevec.red16x Mvec.red16x.
   wp.
   do !(call eq_ivsub16u256 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
   wp. skip. rewrite /is16u16 => />. move => *.
@@ -277,9 +277,6 @@ proof.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   move => *.
   do split.
-  admit. (* FIXME *)
-  move => *.
-  split.
   rewrite /fill => //.
   rewrite Array256.tP.
   move => *.

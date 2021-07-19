@@ -11,9 +11,6 @@ pragma +oldip.
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
 
-op lift2array (p: W128.t): W16.t Array8.t =
-  Array8.init (fun (n : int) => p \bits16 n).
-
 module Mavx2_prevec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
@@ -165,6 +162,18 @@ module Mavx2_prevec = {
     return (rp);
   }
 
+  proc red16x (r:W16.t Array16.t, qx16:W16.t Array16.t, vx16:W16.t Array16.t) : W16.t Array16.t = {
+    var x:W16.t Array16.t;
+
+    x <- Ops.iVPMULH_256(r, vx16);
+    x <- Ops.iVPSRA_16u16(x, (W8.of_int 10));
+    x <- Ops.iVPMULL_16u16(x, qx16);
+    r <- Ops.ivsub16u256(r, x);
+
+    return (r);
+  }
+
+
   proc poly_reduce (rp:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
 
@@ -180,10 +189,7 @@ module Mavx2_prevec = {
     while (i < 16) {
       r <- lift2poly (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
 
-      r <- Ops.iVPMULH_256(r, vx16);
-      r <- Ops.iVPSRA_16u16(r, (W8.of_int 10));
-      r <- Ops.iVPMULL_16u16(r, qx16);
-      r <- Ops.ivsub16u256(r, r);
+      r <@ red16x (r, qx16, vx16);
 
       rp <- fill (fun k => r.[k %% 16]) (16*i) 16 rp;
 
@@ -289,9 +295,12 @@ qed.
 
 theory KyberPolyAVX.
 
-import Fq. 
+import Fq.
+import SignedReductions.
 import Kyber_.
 import ZModField.
+import Fq_avx2.
+
 
 op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
   forall k, l <= k < u => b16 coefs.[k] (c*Kyber_.q).
@@ -707,7 +716,7 @@ do rewrite fun_if.
 rewrite of_sintK.
 simplify.
 rewrite /smod.
-have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt.
 rewrite _qx16_def => //=.
@@ -730,7 +739,7 @@ do rewrite fun_if.
 rewrite of_sintK.
 simplify.
 rewrite /smod.
-have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt.
 rewrite _qx16_def => //=.
@@ -740,7 +749,7 @@ do rewrite fun_if.
 rewrite of_sintK.
 simplify.
 rewrite /smod.
-have ->: 2 ^ (16 - 1) <= 3329 <=> false. smt().
+have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt.
 (****)
@@ -1213,5 +1222,188 @@ lemma poly_csubq_corr ap :
            ap = lift_array256 res /\
            pos_bound256_cxq res 0 256 1 ] = 1%r
   by conseq poly_csubq_ll (poly_csubq_corr_h ap).
+
+(* FIXME: clean *)
+op lift_array16 (p: W16.t Array16.t) =
+  Array16.map (fun x => (W16.to_sint x)) p.
+
+lemma barret_red16x_corr_h a:
+  hoare[ Mavx2_prevec.red16x :
+       a = lift_array16 r ==>
+       forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC a.[k] 26].
+proof.
+proc.
+admit. (* FIXME *)
+qed.
+
+lemma poly_reduce_corr_h (ap: zmod Array256.t):
+     hoare[ Mavx2_prevec.poly_reduce :
+          ap = lift_array256 rp ==>
+          ap = lift_array256 res /\
+          forall k, 0 <= k < 256 => bpos16 res.[k] (2*Kyber_.q)].
+proof.
+proc.
+exists *rp; elim* => _rp.
+conseq (_:
+  _rp = rp /\
+ (forall i, 0<= i < 256 =>
+              inzmod (to_sint rp.[i]) = ap.[i]) ==> 
+           forall i, 0<= i < 256 =>
+              to_sint rp.[i] = BREDC (to_sint _rp.[i]) 26
+). 
+move => &hr.
+rewrite /lift_array256 => />*.
+rewrite mapiE => />.
+move => &hr.
+rewrite /lift_array256 => />*.
+split.
+apply Array256.ext_eq => />.
+move => x x_lb x_ub.
+rewrite !mapiE => />.
+move : (H x _).
+rewrite x_lb x_ub => //.
+move : (BREDCp_corr (to_sint rp{hr}.[x]) 26 _ _ _ _ _ _) => />.
+by rewrite ?qE /R /=.
+by rewrite ?qE /R /=.
+by rewrite ?qE /R /=.
+
+rewrite /R => />.
+
+split.
+rewrite to_sintE.
+have uint_non_neg: 0 <= to_uint rp{hr}.[x] < W16.modulus by rewrite to_uint_cmp.
+rewrite /smod /=.
+case (32768 <= to_uint rp{hr}.[x]).
+smt.
+smt.
+
+move => *.
+rewrite !to_sintE.
+rewrite /smod.
+move : (W16.to_uint_cmp rp{hr}.[x]); smt().
+
+move => a; rewrite /R /= => a_lb a_ub.
+rewrite qE /=.
+split.
+rewrite /Barrett_kyber_general.barrett_pred_low.
+rewrite /Barrett_kyber_general.barrett_fun.
+rewrite /Barrett_kyber_general.barrett_fun_aux.
+simplify.
+smt().
+rewrite /Barrett_kyber_general.barrett_pred_high.
+rewrite /Barrett_kyber_general.barrett_fun.
+rewrite /Barrett_kyber_general.barrett_fun_aux.
+simplify.
+smt().
+
+admit. (* FIXME: by smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E qE). *)
+
+move => k k_lb k_ub.
+move : (H k _ ) => />.
+move => rp_bred.
+move : (BREDCp_corr (to_sint rp{hr}.[k]) 26  _ _ _ _ _ _) => />.
+by rewrite ?qE /R /=.
+by rewrite ?qE /R /=.
+by rewrite ?qE /R /=.
+
+rewrite ?qE /R => />.
+
+split.
+rewrite to_sintE.
+have rp_uint_bounds: 0 <= to_uint rp{hr}.[k] < W16.modulus by rewrite to_uint_cmp.
+rewrite /smod /=.
+case (32768 <= to_uint rp{hr}.[k]) => ?.
+smt().
+smt().
+
+move => rp_sint_lb.
+rewrite !to_sintE.
+rewrite /smod.
+move : (W16.to_uint_cmp rp{hr}.[k]); smt().
+
+move => a; rewrite /R /= => a_lb a_ub.
+split.
+rewrite /Barrett_kyber_general.barrett_pred_low.
+rewrite /Barrett_kyber_general.barrett_fun.
+rewrite /Barrett_kyber_general.barrett_fun_aux.
+simplify.
+smt().
+rewrite /Barrett_kyber_general.barrett_pred_high.
+rewrite /Barrett_kyber_general.barrett_fun.
+rewrite /Barrett_kyber_general.barrett_fun_aux.
+simplify.
+smt().
+
+by smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E).
+
+
+while (0 <= i <= 16 /\
+       (forall k, 0 <= k < 16 * i => to_sint rp.[k] = (BREDC (to_sint _rp.[k]) 26)) /\
+       (forall k, 16 * i <= k < 256 => to_sint rp.[k] =  (to_sint _rp.[k]))); last first.
+auto => /> H.
+split; first by smt().
+move => i0 rp0.
+move : H; simplify. admit. (* FIXME: smt(@W16 @W64). *)
+wp; sp; ecall (barret_red16x_corr_h (lift_array16 r)); auto => />.
+move => &hr i_lb i_rub rp_sbred rp_eq__rp i_ub result red16x_bred.
+do split.
+move : i_lb => /#.
+move : i_ub => /#.
+rewrite mulzDr mulz1.
+move => k k_lb k_ub.
+rewrite filliE.
+rewrite k_lb /=.
+move : i_ub k_ub => /#.
+case (k < 16*i{hr}) => k_tub.
+rewrite ltzNge in k_tub.
+rewrite k_tub /=.
+rewrite -ltzNge in k_tub.
+rewrite (rp_sbred k _) //.
+move : k_tub.
+rewrite -lezNgt.
+move => k_tlb.
+rewrite k_tlb k_ub /=.
+rewrite (red16x_bred (k %% 16) _).
+move : k_tlb k_ub => /#.
+rewrite /lift_array16 /=.
+rewrite mapiE.
+move : k_tlb k_ub => /#.
+rewrite lift2poly_iso //.
+rewrite rp_eq__rp.
+rewrite k_tlb /=.
+move : i_ub k_ub => /#.
+trivial.
+rewrite mulzDr mulz1.
+move => k k_lb k_ub.
+rewrite filliE //.
+move : k_lb k_ub => /#.
+simplify.
+rewrite lezNgt in k_lb.
+rewrite k_lb /=.
+rewrite -lezNgt in k_lb.
+rewrite rp_eq__rp.
+rewrite k_ub //; move : k_lb => /#.
+trivial.
+qed.
+
+lemma poly_reduce_ll:
+  islossless Mavx2_prevec.poly_reduce.
+proof.
+proc; while(0 <= i <= 16) (16 - i);
+  move => *; inline *; auto => />.
+move => &hr i_lb i_ub i_tub.
+split.
+move : i_lb i_tub => /#.
+smt.
+smt(@W64).
+qed.
+
+lemma poly_reduce_corr ap:
+  phoare[ Mavx2_prevec.poly_reduce :
+        ap = lift_array256 rp ==>
+        ap = lift_array256 res /\
+        forall k, 0 <= k < 256 => bpos16 res.[k] (2*Kyber_.q)] = 1%r.
+proof. by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
+
 
 end KyberPolyAVX.
