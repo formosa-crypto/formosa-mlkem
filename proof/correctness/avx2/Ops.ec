@@ -266,7 +266,6 @@ module Ops = {
     return r;
   }
 
-  (* FIXME *)
   proc iVPACKSS_16u16(x y: t16u16) : t32u8 = {
     var r: t32u8;
 
@@ -656,6 +655,29 @@ module Ops = {
     return r; 
   }
 
+  proc ilxor16u16 (x y: t16u16) : t16u16 = {
+    var r : t16u16;
+
+    r.[0] <- x.[0] `^` y.[0];
+    r.[1] <- x.[1] `^` y.[1];
+    r.[2] <- x.[2] `^` y.[2];
+    r.[3] <- x.[3] `^` y.[3];
+    r.[4] <- x.[4] `^` y.[4];
+    r.[5] <- x.[5] `^` y.[5];
+    r.[6] <- x.[6] `^` y.[6];
+    r.[7] <- x.[7] `^` y.[7];
+    r.[8] <- x.[8] `^` y.[8];
+    r.[9] <- x.[9] `^` y.[9];
+    r.[10] <- x.[10] `^` y.[10];
+    r.[11] <- x.[11] `^` y.[11];
+    r.[12] <- x.[12] `^` y.[12];
+    r.[13] <- x.[13] `^` y.[13];
+    r.[14] <- x.[14] `^` y.[14];
+    r.[15] <- x.[15] `^` y.[15];
+
+    return r;
+  }
+
   proc iVPBLENDD_256(x y:t4u64, p : W8.t) :  W64.t Array4.t = {
     var r : t4u64;
     r <- witness;
@@ -836,6 +858,12 @@ module Ops = {
 
     return r;
   }
+  (* FIXME *)
+  proc iVPMOVMSKB_u256_u32(x: t16u16): W32.t = {
+    var r: W32.t;
+
+    return r;
+  }
 }.
 
 type vt2u64 = W128.t.
@@ -898,11 +926,11 @@ module OpsV = {
   proc iVPACKUS_8u32(x y: vt8u32) : vt16u16 = {
     return VPACKUS_8u32 x y;
   }
-  (* FIXME
+
   proc iVPACKSS_16u16(x y: vt16u16) : vt32u8 = {
     return VPACKSS_16u16 x y;
   }
-  *)
+
   proc iVPERM2I128(x y:vt4u64, p : W8.t) : vt4u64 = {
     return VPERM2I128 x y p;
   }
@@ -979,6 +1007,10 @@ module OpsV = {
     return x `^` y;
   }
 
+  proc ilxor16u16(x y: vt16u16) : vt16u16 = {
+    return x `^` y;
+  }
+
   proc iVPBLENDD_256(x y:vt4u64, p : W8.t) :  vt4u64 = {
     return VPBLENDD_256 x y p;
   }
@@ -989,7 +1021,11 @@ module OpsV = {
 
   proc iVPSHUFB_256 (x: vt32u8, m: vt32u8): vt32u8 = {
     return VPSHUFB_256 x m;
-  } 
+  }
+
+  proc iVPMOVMSKB_u256_u32(x: vt16u16): W32.t = {
+    return VPMOVMSKB_256 x;
+  }
 }.
 
 op is2u64 (x : t2u64) (xv: vt2u64)  = xv = W2u64.pack2 [x.[0]; x.[1]].

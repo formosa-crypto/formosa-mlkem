@@ -4,6 +4,8 @@ require import Array256 Array16p Array16 Array4.
 require import WArray512 WArray32 WArray16.
 require import Ops.
 require import KyberPoly_avx2.
+require import KyberPoly_avx2_prevec.
+require import KyberPoly_avx2_proof.
 
 pragma +oldip.
 
@@ -147,6 +149,61 @@ module Mvec = {
     return (rp);
   }
 
+  proc fqmulx16 (a:W256.t, b:W256.t, qx16:W256.t, qinvx16:W256.t) : W256.t = {
+
+    var rd:W256.t;
+    var rhi:W256.t;
+    var rlo:W256.t;
+
+    rhi <- OpsV.iVPMULH_256(a, b);
+    rlo <- OpsV.iVPMULL_16u16(a, b);
+    rlo <- OpsV.iVPMULL_16u16(rlo, qinvx16);
+    rlo <- OpsV.iVPMULH_256(rlo, qx16);
+    rd <-  OpsV.ivsub16u256(rhi, rlo);
+    return (rd);
+  }
+
+  proc poly_tomsg (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var px16:W16.t Array16.t;
+    var hq:W256.t;
+    var hhq:W256.t;
+    var i:int;
+    var f0:W256.t;
+    var f1:W256.t;
+    var g0:W256.t;
+    var g1:W256.t;
+    var c:W32.t;
+    px16 <- witness;
+    a <@ poly_csubq (a);
+    px16 <- hqx16_m1;
+    hq <- (get256 (WArray32.init16 (fun i => px16.[i])) 0);
+    px16 <- hhqx16;
+    hhq <- (get256 (WArray32.init16 (fun i => px16.[i])) 0);
+    aux <- (256 %/ 32);
+    i <- 0;
+    while (i < aux) {
+      f0 <- (get256 (WArray512.init16 (fun i => a.[i])) (2 * i));
+      f1 <- (get256 (WArray512.init16 (fun i => a.[i])) ((2 * i) + 1));
+      f0 <- OpsV.ivsub16u256(hq, f0);
+      f1 <- OpsV.ivsub16u256(hq, f1);
+      g0 <- OpsV.iVPSRA_16u16(f0, (W8.of_int 15));
+      g1 <- OpsV.iVPSRA_16u16(f1, (W8.of_int 15));
+      f0 <- OpsV.ilxor16u16(f0, g0);
+      f1 <- OpsV.ilxor16u16(f1, g1);
+      f0 <- OpsV.ivsub16u256(f0, hhq);
+      f1 <- OpsV.ivsub16u256(f1, hhq);
+      f0 <- OpsV.iVPACKSS_16u16(f0, f1);
+      f0 <- OpsV.iVPERMQ(f0, (W8.of_int 216));
+      c <-  OpsV.iVPMOVMSKB_u256_u32(f0);
+      Glob.mem <-
+      storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
+      i <- i + 1;
+    }
+    return (a);
+  }
+
   proc red16x (r:W256.t, qx16:W256.t, vx16:W256.t) : W256.t = {
     var x:W256.t;
 
@@ -178,9 +235,36 @@ module Mvec = {
     }
     return (rp);
   }
-}.
 
-require import KyberPoly_avx2_prevec.
+  proc poly_frommont (rp:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var x16p:W16.t Array16.t;
+    var qx16:W256.t;
+    var qinvx16:W256.t;
+    var dmontx16:W256.t;
+    var i:int;
+    var t:W256.t;
+    x16p <- witness;
+    x16p <- jqx16;
+    qx16 <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    x16p <- jqinvx16;
+    qinvx16 <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    x16p <- jdmontx16;
+    dmontx16 <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    aux <- (256 %/ 16);
+    i <- 0;
+    while (i < aux) {
+      t <- (get256 (WArray512.init16 (fun i => rp.[i])) i);
+      t <@ fqmulx16 (t, dmontx16, qx16, qinvx16);
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) i t));
+      i <- i + 1;
+    }
+    return (rp);
+  }
+}.
 
 equiv eq_poly_add2:
   Mavx2_prevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.

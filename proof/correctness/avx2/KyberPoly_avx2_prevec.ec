@@ -162,6 +162,59 @@ module Mavx2_prevec = {
     return (rp);
   }
 
+  proc fqmulx16 (a b qx16 qinvx16: W16.t Array16.t) : W16.t Array16.t = {
+
+    var rd:W16.t Array16.t;
+    var rhi:W16.t Array16.t;
+    var rlo:W16.t Array16.t;
+
+    rhi <- Ops.iVPMULH_256(a, b);
+    rlo <- Ops.iVPMULL_16u16(a, b);
+    rlo <- Ops.iVPMULL_16u16(rlo, qinvx16);
+    rlo <- Ops.iVPMULH_256(rlo, qx16);
+    rd <-  Ops.ivsub16u256(rhi, rlo);
+    return (rd);
+  }
+
+  proc poly_tomsg (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var hq:W16.t Array16.t;
+    var hhq:W16.t Array16.t;
+    var i:int;
+    var f0:W16.t Array16.t;
+    var f1:W16.t Array16.t;
+    var g0:W16.t Array16.t;
+    var g1:W16.t Array16.t;
+    var c:W32.t;
+
+    a <@ poly_csubq (a);
+    hq <- lift2poly(get256 (WArray32.init16 (fun i => hqx16_m1.[i])) 0);
+    hhq <- lift2poly(get256 (WArray32.init16 (fun i => hhqx16.[i])) 0);
+    aux <- (256 %/ 32);
+
+    i <- 0;
+    while (i < aux) {
+      f0 <- lift2poly(get256 (WArray512.init16 (fun i => a.[i])) (2 * i));
+      f1 <- lift2poly(get256 (WArray512.init16 (fun i => a.[i])) ((2 * i) + 1));
+      f0 <- Ops.ivsub16u256(hq, f0);
+      f1 <- Ops.ivsub16u256(hq, f1);
+      g0 <- Ops.iVPSRA_16u16(f0, (W8.of_int 15));
+      g1 <- Ops.iVPSRA_16u16(f1, (W8.of_int 15));
+      f0 <- Ops.ilxor16u16(f0, g0);
+      f1 <- Ops.ilxor16u16(f1, g1);
+      f0 <- Ops.ivsub16u256(f0, hhq);
+      f1 <- Ops.ivsub16u256(f1, hhq);
+      (* f0 <- Ops.iVPACKSS_16u16(f0, f1); *)
+      (* FIXME: f0 <- Ops.VPERMQ(f0, (W8.of_int 216)); *)
+      c <-  Ops.iVPMOVMSKB_u256_u32(f0);
+      Glob.mem <-
+      storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
+      i <- i + 1;
+    }
+    return (a);
+  }
+
   proc red16x (r:W16.t Array16.t, qx16:W16.t Array16.t, vx16:W16.t Array16.t) : W16.t Array16.t = {
     var x:W16.t Array16.t;
 
@@ -172,7 +225,6 @@ module Mavx2_prevec = {
 
     return (r);
   }
-
 
   proc poly_reduce (rp:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
@@ -198,4 +250,29 @@ module Mavx2_prevec = {
     return (rp);
   }
 
+  proc poly_frommont (rp:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var qx16:W16.t Array16.t;
+    var qinvx16:W16.t Array16.t;
+    var dmontx16:W16.t Array16.t;
+    var i:int;
+    var t:W16.t Array16.t;
+
+    qx16 <- lift2poly(get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    qinvx16 <- lift2poly(get256 (WArray32.init16 (fun i => jqinvx16.[i])) 0);
+    dmontx16 <- lift2poly(get256 (WArray32.init16 (fun i => jdmontx16.[i])) 0);
+    aux <- (256 %/ 16);
+
+    i <- 0;
+    while (i < aux) {
+      t <- lift2poly(get256 (WArray512.init16 (fun i => rp.[i])) i);
+      t <@ fqmulx16 (t, dmontx16, qx16, qinvx16);
+
+      rp <- fill (fun k => t.[k %% 16]) (16*i) 16 rp;
+
+      i <- i + 1;
+    }
+    return (rp);
+  }
 }.
