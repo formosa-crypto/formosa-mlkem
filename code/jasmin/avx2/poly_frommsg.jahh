@@ -71,7 +71,7 @@ fn i_poly_frommsg(reg ptr u16[KYBER_N] rp, reg ptr u8[32] ap) -> stack u16[KYBER
 
   for i=0 to 4
   {
-    g3 =  #VPSHUFD_256(f, 0x55*i);
+    g3 = #VPSHUFD_256(f, 0x55*i);
     g3 = #VPSLLV_8u32(g3, shift);
     g3 = #VPSHUFB_256(g3, idx);
     g0 = #VPSLL_16u16(g3,12);

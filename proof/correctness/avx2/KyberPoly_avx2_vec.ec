@@ -381,6 +381,38 @@ proof.
   trivial.
 qed.
 
+equiv eq_poly_frommont:
+  Mavx2_prevec.poly_frommont ~ Mvec.poly_frommont: ={rp} ==> ={res}.
+proof.
+  proc.
+  while(={rp, i, aux} /\ aux{1} = 16 /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} /\ is16u16 dmontx16{1} dmontx16{2}).
+  inline Mavx2_prevec.fqmulx16 Mvec.fqmulx16.
+  wp.
+  do !(call eq_ivsub16u256 || call eq_iVPMULH_256 || call eq_iVPMULL_16u16).
+  wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
+  do split.
+  rewrite /lift2poly initiE => />.
+  rewrite pack16_bits16 => //.
+  move => rp_eq_pack_rp.
+  move => result_L3.
+  split.
+  rewrite fillE. apply Array256.ext_eq => />. move => x x_lb x_ub.
+  do rewrite initiE => />.
+  rewrite set_get_def => //.
+  admit. (* FIXME: pack16 \bits16 *)
+  move : i_lb => /#.
+  wp; skip.
+  move => &1 &2 rp_eq qx16_R qinvx16_R dmontx16_R aux_R qx16_L qinvx16_L dmontx16_L aux_L.
+  split.
+  rewrite rp_eq /=.
+  rewrite /aux_L /aux_R /=.
+  rewrite /is16u16.
+  rewrite /qx16_R /qinvx16_R /dmontx16_R /qx16_L /qinvx16_L /dmontx16_L.
+  rewrite /lift2poly initiE => />.
+  do rewrite pack16_bits16 //.
+  trivial.
+qed.
+
 equiv veceq_poly_add2 :
   Mvec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
 proof.
@@ -433,6 +465,16 @@ proof.
   wp. skip. auto => />.
 qed.
 
+equiv veceq_poly_frommont:
+  Mvec.poly_frommont ~ M.poly_frommont: ={rp} ==> ={res}.
+proof.
+  proc.
+  while(={rp, i, qx16, qinvx16, dmontx16, aux}).
+  inline *.
+  wp. skip. auto => />.
+  wp. skip. auto => />.
+qed.
+
 equiv prevec_eq_poly_add2:
     Mavx2_prevec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
@@ -471,4 +513,12 @@ equiv prevec_eq_poly_reduce:
 smt. trivial.
 apply eq_poly_reduce.
 apply veceq_poly_reduce.
+qed.
+
+equiv prevec_eq_poly_frommont:
+  Mavx2_prevec.poly_frommont ~ M.poly_frommont: ={rp} ==> ={res}.
+    transitivity Mvec.poly_frommont (={rp} ==> ={res}) (={rp} ==> ={res}).
+smt. trivial.
+apply eq_poly_frommont.
+apply veceq_poly_frommont.
 qed.
