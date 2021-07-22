@@ -464,45 +464,21 @@ wp.
 ecall (ivadd16u256_spec t _r).
 auto => />.
 move => &hr pos_bound_2 pos_bound_1 i_lb i_eub _qx16_def i_ub _r_def t_def result result_def.
-have rp_simpl : rp{hr}.[16 * i{hr} <-
-                     t{hr}.[0] + _r{hr}.[0]].[16 * i{hr} + 1 <-
-                     t{hr}.[1] + _r{hr}.[1]].[16 * i{hr} + 2 <-
-                     t{hr}.[2] + _r{hr}.[2]].[16 * i{hr} + 3 <-
-                     t{hr}.[3] + _r{hr}.[3]].[16 * i{hr} + 4 <-
-                     t{hr}.[4] + _r{hr}.[4]].[16 * i{hr} + 5 <-
-                     t{hr}.[5] + _r{hr}.[5]].[16 * i{hr} + 6 <-
-                     t{hr}.[6] + _r{hr}.[6]].[16 * i{hr} + 7 <-
-                     t{hr}.[7] + _r{hr}.[7]].[16 * i{hr} + 8 <-
-                     t{hr}.[8] + _r{hr}.[8]].[16 * i{hr} + 9 <-
-                     t{hr}.[9] + _r{hr}.[9]].[16 * i{hr} + 10 <-
-                     t{hr}.[10] + _r{hr}.[10]].[16 * i{hr} + 11 <-
-                     t{hr}.[11] + _r{hr}.[11]].[16 * i{hr} + 12 <-
-                     t{hr}.[12] + _r{hr}.[12]].[16 * i{hr} + 13 <-
-                     t{hr}.[13] + _r{hr}.[13]].[16 * i{hr} + 14 <-
-                     t{hr}.[14] + _r{hr}.[14]].[16 * i{hr} + 15 <-
-                     t{hr}.[15] + _r{hr}.[15]]
-= fill (fun k => t{hr}.[k %% 16] + _r{hr}.[k %% 16]) (16*i{hr}) 16 rp{hr}.
-  rewrite fillE. apply  Array256.ext_eq => /> *.
-  do rewrite get_setE; first 16 (move : i_lb i_ub => /#).
-  rewrite initiE => //.
-  smt(@Array256).
 split.
 rewrite /lift_array256 => />.
-apply Array256.ext_eq => /> *.
+apply Array256.ext_eq.
+move => x x_b.
 do rewrite mapiE => />.
-case (16 * i{hr} <= x < 16 * i{hr} + 16); first last.
-move => x_b.
-do rewrite get_setE; first 16 (move : i_lb i_ub => /#).
-smt().
-move => x_b.
-have x_i : 0 <= x %% 16 && x %% 16 < 16.
+have x_mb : 0 <= x %% 16 && x %% 16 < 16.
   move : x_b => /#.
-do rewrite result_def.
-rewrite rp_simpl.
-rewrite filliE => //.
-rewrite x_b => />.
-rewrite _r_def => //.
-rewrite t_def => //.
+rewrite filliE => />.
+rewrite (result_def (x %% 16)).
+rewrite fun_if fun_if.
+rewrite _r_def //.
+rewrite t_def //.
+case (16 * i{hr} <= x < 16 * i{hr} + 16); first last.
+trivial.
+move => x_i.
 case (_r{hr}.[x %% 16] \slt W16.zero).
 rewrite (W16.WRingA.addrC _qx16{hr}.[_] _).
 rewrite subrK.
@@ -565,7 +541,7 @@ smt.
 
 rewrite _qx16_def => //=.
 rewrite (_: rp{hr}.[16 * i{hr} + x %% 16] = rp{hr}.[x]).
-  by smt.
+  by move : x_i x_mb => /#.
 rewrite /(KyberPoly_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
@@ -588,29 +564,26 @@ smt.
 (****)
 move : pos_bound_2 pos_bound_1; rewrite /pos_bound256_cxq => /> *.
 split.
-move => k.
+move => k k_lb k_ub.
+have k_mb : 0 <= k %% 16 && k %% 16 < 16.
+  move : k_lb k_ub => /#.
+rewrite filliE => />.
+rewrite (result_def (k %% 16)).
+rewrite fun_if fun_if.
+rewrite _r_def //.
+rewrite t_def //.
 case (16 * i{hr} <= k < 16 * i{hr} + 16); last first.
-move => k_b.
-do (rewrite set_neqiE => />; first 2 by smt(@W64)).
 by move : (H k); rewrite /bpos16 => /#.
-move => k_b k_lb k_ub.
+move => k_b.
 have idx_bounds: 0 <= 16 * i{hr} + k %% 16 && 16 * i{hr} + k %% 16 < 256.
   move : k_b i_lb i_ub => /#.
-have k_i : 0 <= k %% 16 && k %% 16 < 16.
-  move : k_b => /#.
-do rewrite result_def.
-rewrite rp_simpl.
-rewrite filliE => //.
-rewrite k_b => />.
-rewrite _r_def => //.
-rewrite t_def => //.
 case (_r{hr}.[k %% 16] \slt W16.zero).
 move => _r_ub.
 rewrite addrC.
 rewrite (_: rp{hr}.[16 * i{hr} +  k %% 16] - _qx16{hr}.[k%%16] + _qx16{hr}.[k%%16] = rp{hr}.[16 * i{hr} + k %% 16]). ring.
 split.
 move : (H (16 * i{hr} + k %% 16) _).
-move : k_b k_i => /#.
+move : k_b k_mb => /#.
 trivial.
 
 (*****)
@@ -766,30 +739,26 @@ smt().
 (******)
 split; last by smt(@W64).
 move => k k_lb k_ub.
+have k_mb : 0 <= k %% 16 && k %% 16 < 16.
+  move : k_lb k_ub => /#.
+rewrite filliE => />.
+move : i_ub k_ub => /#.
+rewrite (result_def (k %% 16)).
+rewrite fun_if fun_if.
+rewrite _r_def //.
+rewrite t_def //.
 case (16 * i{hr} <= k < 16 * i{hr} + 16); last first.
 rewrite andaE negb_and.
 rewrite -lezNgt -ltzNge.
 move => k_i.
 move : (H0 k _) => /> *.
 move : k_ub k_i => /#.
-by rewrite !set_neqiE => />; smt(@W64).
-move => k_i.
 
+move => k_i.
 have idx_bounds: 0 <= 16 * i{hr} + k %% 16 && 16 * i{hr} + k %% 16 < 256.
   move : k_i i_lb i_ub => /#.
-have k_b : 0 <= k %% 16 && k %% 16 < 16.
-  move : k_i => /#.
-do rewrite result_def.
-rewrite rp_simpl.
-rewrite filliE => //.
-move : k_i i_ub => /#.
-simplify.
-rewrite k_i => />.
-rewrite t_def => //.
-
 case (_r{hr}.[k %% 16] \slt W16.zero).
 move => _r_ub.
-rewrite _r_def => //.
 rewrite qE => />.
 rewrite addrC.
 rewrite (_: rp{hr}.[16 * i{hr} + k %% 16] - _qx16{hr}.[k %% 16] + _qx16{hr}.[k %% 16] =  (rp{hr}.[16 * i{hr} + k %% 16])); first by ring.
@@ -834,7 +803,6 @@ auto => />.
 split.
 
 (******)
-rewrite _r_def => //.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
@@ -862,7 +830,7 @@ smt.
 (******)
 
 move => _sr_lb.
-rewrite _r_def => />.
+simplify.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />.
 rewrite _qx16_def => //=.
@@ -925,7 +893,6 @@ rewrite to_uint0.
 rewrite /smod /=.
 done.
 move => _r_lb.
-rewrite _r_def in _sr_lb => //.
 move : _sr_lb rp_qx16_lb.
 rewrite _qx16_def => //=.
 rewrite /(KyberPoly_avx2.jqx16).
@@ -978,7 +945,6 @@ rewrite to_uint0.
 rewrite /smod /=.
 done.
 move => rp_q_lb_neg.
-rewrite _r_def in _sr_lb => //.
 move : _sr_lb.
 rewrite _qx16_def => //=.
 rewrite /(KyberPoly_avx2.jqx16).
@@ -1008,7 +974,23 @@ auto => />.
 move => &hr *.
 split.
 split. smt.
-admit. (* FIXME: auxiliar iso lemma *)
+
+move => k k_lb k_ub.
+rewrite /lift2poly initiE => />.
+rewrite /get256_direct => />.
+rewrite k_lb k_ub => /=.
+rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+rewrite initiE. move : k_lb k_ub => /#. simplify.
+rewrite initiE. move : k_lb k_ub => /#. simplify.
+rewrite (_:(2*k + 1) %/2 = 2*k %/ 2).
+  smt(@Int @IntDiv).
+rewrite (_: 2*k %% 2 = 0).
+  smt(@IntDiv).
+rewrite (_: (2*k + 1) %% 2 = 1).
+  smt(@IntDiv).
+rewrite pack2_bits8.
+smt(@IntDiv).
 move => i0 rp0.
 auto => /> /#.
 qed.
@@ -1138,8 +1120,41 @@ while (0 <= i <= 16 /\
        (forall k, 0 <= k < 16 => vx16.[k] = KyberPoly_avx2.jvx16.[k])); last first.
 auto => /> H.
 do split; first by smt().
-admit. (*FIXME: iso *)
-admit. (*FIXME: iso *)
+
+move => k k_lb k_ub.
+rewrite /lift2poly initiE => />.
+rewrite /get256_direct => />.
+rewrite k_lb k_ub => /=.
+rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+rewrite initiE. move : k_lb k_ub => /#. simplify.
+rewrite initiE. move : k_lb k_ub => /#. simplify.
+rewrite (_:(2*k + 1) %/2 = 2*k %/ 2).
+  smt(@Int @IntDiv).
+rewrite (_: 2*k %% 2 = 0).
+  smt(@IntDiv).
+rewrite (_: (2*k + 1) %% 2 = 1).
+  smt(@IntDiv).
+rewrite pack2_bits8.
+smt(@IntDiv).
+
+move => k k_lb k_ub.
+rewrite /lift2poly initiE => />.
+rewrite /get256_direct => />.
+rewrite k_lb k_ub => /=.
+rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+rewrite initiE. move : k_lb k_ub => /#. simplify.
+rewrite initiE. move : k_lb k_ub => /#. simplify.
+rewrite (_:(2*k + 1) %/2 = 2*k %/ 2).
+  smt(@Int @IntDiv).
+rewrite (_: 2*k %% 2 = 0).
+  smt(@IntDiv).
+rewrite (_: (2*k + 1) %% 2 = 1).
+  smt(@IntDiv).
+rewrite pack2_bits8.
+smt(@IntDiv).
+
 move => i0 rp0.
 move : H; simplify. admit. (* FIXME: smt(@W16 @W64). *)
 wp; sp; ecall (Fq_avx2.barret_red16x_corr_h (Fq_avx2.lift_array16 r)); auto => />.
@@ -1192,7 +1207,7 @@ proc; while(0 <= i <= 16) (16 - i);
 move => &hr i_lb i_ub i_tub.
 split.
 move : i_lb i_tub => /#.
-smt.
+smt(@Int).
 smt(@W64).
 qed.
 

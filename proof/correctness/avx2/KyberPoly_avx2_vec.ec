@@ -311,11 +311,17 @@ proof.
     simplify.
     move => result_L2.
     split.
+    rewrite fillE.
     apply Array256.ext_eq.
     move => x x_i.
-    rewrite initiE => />.
-    rewrite set_get_def => />.
-    admit. (* FIXME *)
+    do rewrite initiE => />.
+    have x_mb : 0 <= (x %% 16) < 16.
+      move : x_i => /#.
+    rewrite set_get_def => //.
+    rewrite -get_unpack16 => //.
+    rewrite pack16K.
+    rewrite get_of_list => //.
+    smt(@Array16).
     move : i_lb => /#.
   wp; skip.
   move => &1 &2 H.
