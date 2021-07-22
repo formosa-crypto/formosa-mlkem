@@ -306,17 +306,17 @@ proof.
     inline Mvec.csubq.
     wp.
     do !(call eq_ivadd16u256 || call eq_ivpand16u16 || call eq_iVPSRA_16u16 || call eq_ivsub16u256).
-    wp. skip. rewrite /is16u16 => />. move => *.
+    wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
     rewrite /lift2poly; simplify; rewrite pack16_bits16 => //.
     simplify.
     move => result_L2.
     split.
-    rewrite Array256.tP.
-    move => *.
-    do rewrite initiE => />.
+    apply Array256.ext_eq.
+    move => x x_i.
+    rewrite initiE => />.
     rewrite set_get_def => />.
     admit. (* FIXME *)
-    move : H => /#.
+    move : i_lb => /#.
   wp; skip.
   move => &1 &2 H.
   simplify.
@@ -355,18 +355,23 @@ proof.
   inline Mavx2_prevec.red16x Mvec.red16x.
   wp.
   do !(call eq_ivsub16u256 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
-  wp. skip. rewrite /is16u16 => />. move => *.
+  wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
   do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   move => *.
   do split.
-  rewrite /fill => //.
-  rewrite Array256.tP.
-  move => *.
+  rewrite fillE.
+  apply Array256.ext_eq.
+  move => x x_i.
   do rewrite initiE => />.
-  rewrite set_get_def => />.
-  admit. (* FIXME *)
+  have x_mb : 0 <= (x %% 16) < 16.
+    move : x_i => /#.
+  rewrite set_get_def => //.
+  rewrite -get_unpack16 => //.
+  rewrite pack16K.
+  rewrite get_of_list => //.
+  smt(@Array16).
   move : H => /#.
   wp; skip.
   move => &1 &2 rp_eq qx16_R vx16_R qx16_L vx16_L.
@@ -396,10 +401,17 @@ proof.
   move => rp_eq_pack_rp.
   move => result_L3.
   split.
-  rewrite fillE. apply Array256.ext_eq => />. move => x x_lb x_ub.
+  rewrite fillE.
+  apply Array256.ext_eq.
+  move => x x_i.
   do rewrite initiE => />.
+  have x_mb : 0 <= (x %% 16) < 16.
+    move : x_i => /#.
   rewrite set_get_def => //.
-  admit. (* FIXME: pack16 \bits16 *)
+  rewrite -get_unpack16 => //.
+  rewrite pack16K.
+  rewrite get_of_list => //.
+  smt(@Array16).
   move : i_lb => /#.
   wp; skip.
   move => &1 &2 rp_eq qx16_R qinvx16_R dmontx16_R aux_R qx16_L qinvx16_L dmontx16_L aux_L.
