@@ -16,22 +16,27 @@ lemma lift2poly_iso (p: W16.t Array256.t) i:
     forall k, 16 * i <= k < 16 * i + 16 => x.[k %% 16] = p.[k].
 proof.
 move => i_b x k k_b.
-rewrite /x /lift2poly get256E => />.
-rewrite initiE.
-move : k_b => /#.
-have k_mb : 0 <= k %% 16 && k %% 16 < 16.
- by move : k_b => /#.
-admit. (* FIXME 
-rewrite (H4 asp) qE => />. 
-rewrite /lift_array256 => />.
-apply Array256.ext_eq => /> *.
-rewrite mapiE => />.
-rewrite mapiE => />.
-case (x = to_uint i{hr}); last by smt(@Array256).
-move => ->.
-rewrite set_eqiE => />.
-smt(@W64).
-*)
+have k_mb: 0 <= k %% 16 < 16.
+  smt(@IntDiv).
+rewrite /x.
+rewrite /lift2poly initiE => />.
+rewrite get256E => />.
+rewrite k_mb //=.
+rewrite initiE. move : k_mb => /#.
+rewrite initiE. move : k_mb => /#.
+simplify.
+rewrite /init16.
+rewrite initiE. move : k_mb => /#.
+rewrite initiE. move : k_mb => /#.
+simplify.
+rewrite (_: (32 * i + (2 * (k %% 16) + 1)) %/ 2 = (32 * i + 2 * (k %% 16)) %/ 2).
+  smt(@IntDiv).
+rewrite (_: (32 * i + 2 * (k %% 16)) %% 2 = 0).
+  smt(@IntDiv).
+rewrite (_: (32 * i + (2 * (k %% 16) + 1)) %% 2 = 1).
+  smt(@IntDiv).
+rewrite pack2_bits8.
+smt(@IntDiv).
 qed.
 
 lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
