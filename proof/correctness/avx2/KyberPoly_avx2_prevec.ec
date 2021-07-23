@@ -14,26 +14,20 @@ op lift2poly (p: W256.t): W16.t Array16.t =
 module Mavx2_prevec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
-    var a:W256.t;
-    var b:W256.t;
-    var r:W256.t;
-    var __a:W16.t Array16.t;
-    var __b:W16.t Array16.t;
-    var _r:W16.t Array16.t;
+    var a:W16.t Array16.t;
+    var b:W16.t Array16.t;
+    var r:W16.t Array16.t;
 
     i <- 0;
 
     while (i < 16) {
-      a <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
-      b <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * i));
-      __a <- lift2poly(a);
-      __b <- lift2poly(b);
-      _r <@ Ops.ivadd16u256(__a, __b);
-      r <- W16u16.pack16 [_r.[0]; _r.[1]; _r.[2]; _r.[3]; _r.[4]; _r.[5]; _r.[6]; _r.[7];
-                          _r.[8]; _r.[9]; _r.[10]; _r.[11]; _r.[12]; _r.[13]; _r.[14]; _r.[15]];
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
+      a <- lift2poly(get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
+      b <- lift2poly(get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * i));
+
+      r <@ Ops.ivadd16u256(a, b);
+
+      rp <- fill (fun k => r.[k %% 16]) (16*i) 16 rp;
+
       i <- i + 1;
     }
 
@@ -45,25 +39,19 @@ module Mavx2_prevec = {
     var aux: int;
 
     var i:int;
-    var a:W256.t;
-    var b:W256.t;
-    var r:W256.t;
-    var __a:W16.t Array16.t;
-    var __b:W16.t Array16.t;
-    var _r:W16.t Array16.t;
+    var a:W16.t Array16.t;
+    var b:W16.t Array16.t;
+    var r:W16.t Array16.t;
 
     i <- 0;
     while (i < 16) {
-      a <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * i));
-      b <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * i));
-      __a <- lift2poly(a);
-      __b <- lift2poly(b);
-      _r <@ Ops.ivsub16u256(__a, __b);
-      r <- W16u16.pack16 [_r.[0]; _r.[1]; _r.[2]; _r.[3]; _r.[4]; _r.[5]; _r.[6]; _r.[7];
-                          _r.[8]; _r.[9]; _r.[10]; _r.[11]; _r.[12]; _r.[13]; _r.[14]; _r.[15]];
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
+      a <- lift2poly(get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * i));
+      b <- lift2poly(get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * i));
+
+      r <@ Ops.ivsub16u256(a, b);
+
+      rp <- fill (fun k => r.[k %% 16]) (16*i) 16 rp;
+
       i <- i + 1;
     }
 

@@ -148,16 +148,17 @@ lemma poly_add_corr _a _b ab bb :
              inzmod (to_sint res.[k]) = _a.[k] + _b.[k]].
 proof.
 move => a_i b_i.
-  proc => /=.
+  proc.
+  sp.
   while (
   0 <= i <= 16 /\
-  (forall k, i*16 <= k < 256 =>
+  (forall k, 16*i <= k < 256 =>
     inzmod (to_sint rp.[k]) = _a.[k]) /\
   _b = lift_array256 bp /\
-    signed_bound_cxq rp (i*16) 256 ab /\
+    signed_bound_cxq rp (16*i) 256 ab /\
     signed_bound_cxq bp 0 256 bb /\
-    signed_bound_cxq rp 0 (i*16) (ab + bb) /\
-  (forall k, 0 <= k < i*16 =>
+    signed_bound_cxq rp 0 (16*i) (ab + bb) /\
+  (forall k, 0 <= k < (16*i) =>
     inzmod (to_sint rp.[k]) = _a.[k] + _b.[k])
 ); last first.
 auto => />.
@@ -170,78 +171,121 @@ move => *.
 split. 
   smt(@Array256).
   smt(@Array256).
-inline Ops.ivadd16u256. wp; skip.
-move => &hr [#] H1 H2 H3 H4 H5 H6 H7 H8 H9 x y r rpu i.
-have rpu_eqb_rp: forall k, 0 <= k < (i-1)*16 => rp{hr}.[k] = rpu.[k].
-  by rewrite /rpu /i; apply get_set_get_eqb.
-have rpu_eqa_rp: forall k, i*16 <= k < 256 => rp{hr}.[k] = rpu.[k].
-  by rewrite /rpu /i mulzDl; apply get_set_get_eqa.
-have rpu_eqm_ab: forall k, (i-1)*16 <= k < i*16 => rp{hr}.[k] + bp{hr}.[k] = rpu.[k].
-  rewrite /rpu. rewrite /i. do rewrite mulzDl => />. move => k k_lb k_ub. rewrite -get_set_get_diff.
-  smt. rewrite k_lb k_ub => />. rewrite -get_unpack16. smt. rewrite pack16K. rewrite get_of_list. smt. rewrite /r. do rewrite get_set_if => />.
-  rewrite /x /y. rewrite -(lift2poly_iso rp{hr} (i-1)). smt. smt. rewrite -(lift2poly_iso bp{hr} (i-1)). smt. smt. smt.
+inline Ops.ivadd16u256.
+wp; skip.
+move => &hr [#] i_lb i_ub _a_def _b_def sgnd_bnd_rp_b sgnd_bnd_bp sgnd_bnd_rp_a _a_plus_b i_tub x y.
+rewrite (_:
+r0{hr}.[0 <- x.[0] + y.[0]].[1 <- x.[1] + y.[1]]
+      .[2 <- x.[2] + y.[2]].[3 <- x.[3] + y.[3]]
+      .[4 <- x.[4] + y.[4]].[5 <- x.[5] + y.[5]]
+      .[6 <- x.[6] + y.[6]].[7 <- x.[7] + y.[7]]
+      .[8 <- x.[8] + y.[8]].[9 <- x.[9] + y.[9]]
+      .[10 <- x.[10] + y.[10]].[11 <- x.[11] + y.[11]]
+      .[12 <- x.[12] + y.[12]].[13 <- x.[13] + y.[13]]
+      .[14 <- x.[14] + y.[14]].[15 <- x.[15] + y.[15]]
+= fill (fun k => x.[k] + y.[k]) 0 16 r0{hr}).
+  apply  Array16.ext_eq => /> x0 x0_lb x0_ub.
+  do rewrite get_setE; first 16 (move : x0_lb x0_ub => /#).
+  rewrite filliE => //.
+  smt(@Array16).
+move => r i.
+rewrite /i /r.
 do split. 
-  rewrite /i. apply ltzW. apply ltzS. auto. move => H10. move : H9. rewrite /i. apply ltzE.
-  move => k k_i. rewrite -rpu_eqa_rp. apply k_i. apply H3. move : k_i => /#.
-  apply H4.
-  rewrite /signed_bound_cxq. move => k k_i. rewrite -rpu_eqa_rp. apply k_i. apply H5. move : k_i => /#.
-  apply H6.
-  rewrite /signed_bound_cxq => k k_i.
-case (k < (i-1)*16).
-  move => k_ni.
-  rewrite -rpu_eqb_rp.
-  rewrite k_ni => /=.
-  move : k_i => //.
-  apply H7.
-  rewrite /i in k_ni.
-  rewrite k_ni => /=.
-  move : k_i. trivial.
-rewrite -lezNgt => k_ni.
-rewrite /b16.
-rewrite -rpu_eqm_ab.
-rewrite k_ni => /#.
+  move : i_lb => /#.
+  move : i_tub => /#. 
+  move => k k_i.
+  rewrite filliE. move : k_i i_lb => /#.
+  rewrite -_a_def. move : k_i i_lb => /#.
+move : k_i.
+rewrite mulzDr /=.
+smt(@Array256).
+apply _b_def.
+
+rewrite /signed_bound_cxq => k k_i.
+rewrite filliE. move : i_lb k_i => /#.
+move : sgnd_bnd_rp_b.
+rewrite /signed_bound_cxq.
+move : k_i.
+smt(@Array256 @Array16).
+apply sgnd_bnd_bp.
+
+rewrite /signed_bound_cxq => k k_i.
+
+case (k < 16 * (i - 1)).
+rewrite filliE => //. move : k_i i_tub => /#.
+move => k_ub.
+rewrite /i -addzA addzN addz0 ltzNge /= in k_ub.
+rewrite k_ub /=.
+rewrite -ltzNge in k_ub.
+move : sgnd_bnd_rp_a => /#.
+
+rewrite -lezNgt /i -addzA addzN addz0 => k_ub.
+rewrite filliE. move : k_i i_tub => /#.
+have ->: ((16 * (i-1) <= k && k < 16 * (i-1) + 16) = true).
+  by smt(@Int @IntDiv).
+simplify.
+have k_mb: 0 <= k %% 16 < 16.
+  smt(@IntDiv).
+rewrite filliE => />.
+rewrite k_mb /=.
+
+rewrite /x /y.
+do rewrite lift2poly_iso //=.
+move : k_i k_ub => /#.
+move : k_i k_ub => /#.
 
 move : (add_corr_qv rp{hr}.[k] bp{hr}.[k] _a.[k] _b.[k] 6 3 _ _ _ _ _ _) => />; first 2 by smt(@Array256).
 
 split.
-  move : (H5 k _) => /#. move : (H5 k _) => /#.
-  move : (H6 k _) => /#. 
+  move : (sgnd_bnd_rp_b k _) => /#. move : (sgnd_bnd_rp_b k _) => /#.
+  move : (sgnd_bnd_bp k _) => /#. 
 
 move => *.
 rewrite to_sintD_small => />.
-move : (H5 k _); first by smt().
-move : (H6 k _); first by smt().
+move : (sgnd_bnd_rp_b k _); first by smt().
+move : (sgnd_bnd_bp k _); first by smt().
 move => *.
-rewrite /b16 in H11.
-rewrite /b16 in H12.
+rewrite /b16 in H2.
+rewrite /b16 in H3.
 split.
-move : H11 => /#.
-move : H12 => /#.
+move : H2 => /#.
+move : H3 => /#.
 split.
-move : (H5 k _) (H6 k _) => /#.
-move : (H5 k _) (H6 k _) => /#.
+move : (sgnd_bnd_rp_b k _) (sgnd_bnd_bp k _) => /#.
+move : (sgnd_bnd_rp_b k _) (sgnd_bnd_bp k _) => /#.
 
 move => k k_i.
-case (k < (i-1)*16).
-  move => k_ni.
-  rewrite -rpu_eqb_rp.
-  rewrite k_ni => /=.
-  move : k_i => //.
-  apply H8.
-  rewrite k_ni => /=.
-  move : k_i => //.
-  rewrite -lezNgt => k_ni.
-rewrite -rpu_eqm_ab.
-smt.
+case (k < 16 * (i - 1)).
+rewrite filliE => //. move : k_i i_tub => /#.
+move => k_ub.
+rewrite /i -addzA addzN addz0 ltzNge /= in k_ub.
+rewrite k_ub /=.
+rewrite -ltzNge in k_ub.
+apply (_a_plus_b k).
+move : k_i k_ub => /#.
+
+rewrite -lezNgt /i -addzA addzN addz0 => k_ub.
+rewrite filliE. move : k_i i_tub => /#.
+have ->: ((16 * (i-1) <= k && k < 16 * (i-1) + 16) = true).
+  by smt(@Int @IntDiv).
+simplify.
+have k_mb: 0 <= k %% 16 < 16.
+  smt(@IntDiv).
+rewrite filliE => />.
+rewrite k_mb /=.
+rewrite /x /y.
+do rewrite lift2poly_iso //=.
+move : k_i k_ub => /#.
+move : k_i k_ub => /#.
 
 move : (add_corr_qv rp{hr}.[k] bp{hr}.[k] _a.[k] _b.[k] 6 3 _ _ _ _ _ _) => />.
-move : (H3 k _) => /#.
-move : H4. rewrite /lift_array256. smt(@Array256).
+move : (_a_def k _) => /#.
+move : _b_def. rewrite /lift_array256. smt(@Array256).
 
 split.
-  move : (H5 k _) => /#. 
-  move : (H5 k _) => /#.
-  move : (H6 k _) => /#. 
+  move : (sgnd_bnd_rp_b k _) => /#. 
+  move : (sgnd_bnd_rp_b k _) => /#.
+  move : (sgnd_bnd_bp k _) => /#. 
 qed.
 
 
@@ -265,8 +309,8 @@ while (
            _b = lift_array256 bp /\
            signed_bound_cxq ap 0 256 ab /\
            signed_bound_cxq bp 0 256 bb /\
-           signed_bound_cxq rp 0 (i*16) (ab + bb) /\ 
-           forall k, 0 <= k < (i*16) =>
+           signed_bound_cxq rp 0 (16*i) (ab + bb) /\ 
+           forall k, 0 <= k < (16*i) =>
               inzmod (to_sint rp.[k]) = _a.[k] - _b.[k]
 ); first last.
 auto => />.
@@ -277,62 +321,96 @@ do split.
  smt(@Array256).
 move => *.
  inline Ops.ivsub16u256; wp; skip.
-move => &hr [#] H1 H2 H3 H4 H5 H6 H7 H8 H9 x y r rpu i.
-have rpu_eqb_rp: forall k, 0 <= k < (i-1)*16 => rp{hr}.[k] = rpu.[k].
-   by rewrite /rpu /i; apply get_set_get_eqb.
-have rpu_eqa_rp: forall k, i*16 <= k < 256 => rp{hr}.[k] = rpu.[k].
-  by rewrite /rpu /i mulzDl; apply get_set_get_eqa.
-have rpu_eqm_ab: forall k, (i-1)*16 <= k < i*16 => ap{hr}.[k] - bp{hr}.[k] = rpu.[k].
-  rewrite /rpu. rewrite /i. do rewrite mulzDl => />. move => k k_lb k_ub. rewrite -get_set_get_diff.
-  smt. rewrite k_lb k_ub => />. rewrite -get_unpack16. smt. rewrite pack16K. rewrite get_of_list. smt. rewrite /r. do rewrite get_set_if => />.
-  rewrite /x /y. rewrite -(lift2poly_iso ap{hr} (i-1)). smt. smt. rewrite -(lift2poly_iso bp{hr} (i-1)). smt. smt. smt.
+move => &hr [#] i_lb i_ub _a_def _b_def sgnd_bnd_ap_b sgnd_bnd_bp sgnd_bnd_ap_a _a_minus_b i_tub x y.
+rewrite (_:
+r0{hr}.[0 <- x.[0] - y.[0]].[1 <- x.[1] - y.[1]]
+      .[2 <- x.[2] - y.[2]].[3 <- x.[3] - y.[3]]
+      .[4 <- x.[4] - y.[4]].[5 <- x.[5] - y.[5]]
+      .[6 <- x.[6] - y.[6]].[7 <- x.[7] - y.[7]]
+      .[8 <- x.[8] - y.[8]].[9 <- x.[9] - y.[9]]
+      .[10 <- x.[10] - y.[10]].[11 <- x.[11] - y.[11]]
+      .[12 <- x.[12] - y.[12]].[13 <- x.[13] - y.[13]]
+      .[14 <- x.[14] - y.[14]].[15 <- x.[15] - y.[15]]
+= fill (fun k => x.[k] - y.[k]) 0 16 r0{hr}).
+  apply  Array16.ext_eq => /> x0 x0_lb x0_ub.
+  do rewrite get_setE; first 16 (move : x0_lb x0_ub => /#).
+  rewrite filliE => //.
+  smt(@Array16).
+move => r i.
 split.
- rewrite /i; move : H1 H9 => /#.
+ rewrite /i; move : i_lb i_tub => /#.
 do split.
- apply H3.
- apply H4.
- apply H5.
- apply H6.
- rewrite /signed_bound_cxq => k k_i.
-case (k < (i-1) * 16).
-  move => k_ni.
-  rewrite -rpu_eqb_rp.
-  rewrite k_ni => /=.
-  move : k_i => //.
-  apply H7.
-  rewrite /i in k_ni.
-  rewrite k_ni => /=.
-  move : k_i => />.
-rewrite -lezNgt => k_ni.
-rewrite /b16.
-rewrite -rpu_eqm_ab.
-rewrite k_ni => /#.
+apply _a_def.
+apply _b_def.
+apply sgnd_bnd_ap_b.
+apply sgnd_bnd_bp.
+
+rewrite /signed_bound_cxq => k k_i.
+have k_mb: 0 <= k %% 16 < 16.
+  by smt(@IntDiv).
+rewrite /r.
+rewrite filliE. move : k_i i_tub => /#.
+simplify.
+rewrite filliE //=.
+rewrite k_mb //=.
+
+case (k < 16 * (i - 1)).
+rewrite /i -addzA addzN addz0 ltzNge => k_ub.
+rewrite k_ub /=.
+rewrite -ltzNge in k_ub.
+apply (sgnd_bnd_ap_a k).
+move : k_i k_ub => /#.
+
+rewrite -lezNgt /i -addzA addzN addz0 => k_lb.
+rewrite /i mulzDr /= in k_i.
+have ->: ((16 * (i-1) <= k && k < 16 * (i-1) + 16) = true).
+  by smt(@Int @IntDiv).
+simplify.
+rewrite /x /y.
+do rewrite lift2poly_iso //=.
+move : k_i k_lb => /#.
+move : k_i k_lb => /#.
 
 move : (sub_corr ap{hr}.[k] bp{hr}.[k] _a.[k] _b.[k] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256).
 
-move : (H5 k _) => /#.
-move : (H6 k _) => /#.
+move : (sgnd_bnd_ap_b k _) => /#.
+move : (sgnd_bnd_bp k _) => /#.
 
 move => *.
 rewrite to_sintB_small => />.
-move : (H5 k _) (H6 k _) => /#.
-move : (H5 k _) (H6 k _) => /#.
+move : (sgnd_bnd_ap_b k _) (sgnd_bnd_bp k _) => /#.
+move : (sgnd_bnd_ap_b k _) (sgnd_bnd_bp k _) => /#.
 
 move => k k_i.
-case (k < (i-1)*16).
-move => k_ub.
-rewrite -rpu_eqb_rp => /=.
-rewrite k_ub; move : k_i => />.
-apply H8.
-rewrite k_ub; move : k_i => />.
-rewrite -lezNgt => k_ni.
+have k_mb: 0 <= k %% 16 < 16.
+  by smt(@IntDiv).
 
-rewrite -rpu_eqm_ab.
-rewrite k_ni => /#.
+rewrite /r.
+rewrite filliE. move : k_i i_tub => /#.
+simplify.
+rewrite filliE //=.
+rewrite k_mb //=.
+
+case (k < 16 * (i-1)).
+rewrite /i -addzA addzN addz0 ltzNge => k_ub.
+rewrite k_ub /=.
+rewrite -ltzNge in k_ub.
+apply _a_minus_b.
+move : k_i k_ub => /#.
+
+rewrite -lezNgt /i -addzA addzN addz0 => k_lb.
+rewrite /i mulzDr /= in k_i.
+have ->: ((16 * (i-1) <= k && k < 16 * (i-1) + 16) = true).
+  by smt(@Int @IntDiv).
+simplify.
+rewrite /x /y.
+do rewrite lift2poly_iso //=.
+move : k_i k_lb => /#.
+move : k_i k_lb => /#.
 
 move : (sub_corr ap{hr}.[k] bp{hr}.[k] _a.[k] _b.[k] 14 14 _ _ _ _ _ _) => />; first 2 by smt(@Array256).
-move : (H5 k _) => /#.
-move : (H6 k _) => /#.
+move : (sgnd_bnd_ap_b k _) => /#.
+move : (sgnd_bnd_bp k _) => /#.
 qed.
 
 (* FIXME: dup from KyberPoly*)

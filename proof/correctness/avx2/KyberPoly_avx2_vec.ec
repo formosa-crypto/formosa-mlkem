@@ -270,32 +270,64 @@ equiv eq_poly_add2:
   Mavx2_prevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.
 proof.
   proc.
-  while(={rp, bp, i}).
+  while(={rp, bp, i} /\ 0 <= i{1}).
   wp.
   call eq_ivadd16u256.
-  wp. skip. rewrite /is16u16 => />. move => *. split.
+  wp. skip. rewrite /is16u16 => />. move => *.
+  do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
+  move => rp_eq bp_eq result_L.
+  split.
+  rewrite fillE //=.
+  apply Array256.ext_eq.
+  move => x x_i.
+  have x_mb: 0 <= x %% 16 < 16.
+    by smt(@IntDiv).
+  do rewrite initiE //=.
+  rewrite set_get_def //=.
+  rewrite -get_unpack16 //.
+  rewrite pack16K.
+  rewrite get_of_list //.
+  smt(@Array16).
+  move : H => /#.
   wp; skip.
   move => &1 &2 H.
-  split. simplify. split. smt. smt.
-trivial.
+  split.
+  trivial.
+  trivial.
 qed.
 
 equiv eq_poly_sub:
   Mavx2_prevec.poly_sub ~ Mvec.poly_sub: ={rp, ap, bp} ==> ={res}.
 proof.
   proc.
-  while(={rp, ap, bp, i}).
+  while(={rp, ap, bp, i} /\ 0 <= i{1}).
   wp.
   call eq_ivsub16u256.
-  wp. skip. rewrite /is16u16 => />. move => *. split.
+  wp. skip. rewrite /is16u16 => />. move => *.
+  do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
+  move => ap_eq bp_eq result_L.
+  split.
+  rewrite fillE //=.
+  apply Array256.ext_eq.
+  move => x x_i.
+  have x_mb: 0 <= x %% 16 < 16.
+    by smt(@IntDiv).
+  do rewrite initiE //=.
+  rewrite set_get_def //=.
+  rewrite -get_unpack16 //.
+  rewrite pack16K.
+  rewrite get_of_list //.
+  smt(@Array16).
+  move : H => /#.
   wp; skip.
   move => &1 &2 H.
-  split. simplify. split. smt. smt.
-trivial.
+  split.
+  trivial.
+  trivial.
 qed.
 
 equiv eq_poly_csubq:
