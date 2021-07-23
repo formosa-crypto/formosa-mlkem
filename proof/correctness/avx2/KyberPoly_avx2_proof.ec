@@ -50,11 +50,12 @@ lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
       rewrite -(W2u8.unpack8K (if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16) else v.[j])); congr.
       apply W2u8.Pack.ext_eq => k hk.
       rewrite W2u8.get_unpack8 //= W2u8.Pack.initiE 1:/# /=.
-      have H : (32 * i <= 2 * j + k < 32 * (i + 1)) = (16 * i <= j < 16 * i + 16) by smt().
-      rewrite /H.
+      rewrite initiE /=. move : hk hs => /#.
+      rewrite initiE /=. move : hk hs => /#.
+      have ->: (32 * i <= 2 * j + k < 32 * i + 32) = (16 * i <= j < 16 * i + 16) by smt().
       case : (16 * i <= j < 16 * i + 16) => h.
-      +  by admit. (* FIXME: rewrite W256_bits16_bits8 1:// /#. *)
-      by admit. (*FIXME: rewrite /init16 initiE /#. *)
+      + by rewrite W256_bits16_bits8 1:// /#.
+      + by rewrite /init16 /#.
     qed.
 
 lemma set_get_eq (v: W16.t Array256.t) (w: W256.t) i j:
