@@ -120,4 +120,15 @@ by smt(@W16 qE).
 *)
 qed.
 
+lemma fqmulx16_corr_h _a _b:
+  hoare[ Mavx2_prevec.fqmulx16:
+       _a = lift_array16 a /\
+       _b = lift_array16 b /\
+       (forall k, 0 <= k < 16 => qx16.[k] = KyberPoly_avx2.jqx16.[k]) /\
+       (forall k, 0 <= k < 16 => qinvx16.[k] = KyberPoly_avx2.jqinvx16.[k]) ==>
+       forall k, 0 <= k < 16 => W16.to_sint res.[k] = SREDC (_a.[k] * _b.[k])].
+proof.
+admit. (* FIXME *)
+qed.
+
 end Fq_avx2.

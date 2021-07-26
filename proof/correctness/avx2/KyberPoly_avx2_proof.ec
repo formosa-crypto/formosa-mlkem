@@ -1302,4 +1302,151 @@ lemma poly_reduce_corr ap:
         forall k, 0 <= k < 256 => bpos16 res.[k] (2*Kyber_.q)] = 1%r.
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
 
+lemma poly_frommont_corr_h ap:
+  hoare[ Mavx2_prevec.poly_frommont :
+       ap = map W16.to_sint rp ==>
+       map W16.to_sint res = map (fun x => SREDC (x * ((R^2) %% q))) ap].
+proof.
+proc.
+while(0 <= i <= 16 /\ aux = 16 /\
+      (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
+      (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
+      (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) /\
+      (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((R^2) %% q))) /\
+      (forall k, 16 * i <= k < 256 => W16.to_sint rp.[k] = ap.[k])); last first.
+auto => />.
+move => &hr.
+do split.
+
+move => k k_lb k_ub.
+rewrite /lift2poly //=.
+rewrite initiE //.
+rewrite /get256_direct //=.
+rewrite k_lb k_ub /=.
+rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
+  by smt(@IntDiv).
+rewrite (_: 2 * k %% 2 = 0).
+  by smt(@IntDiv).
+rewrite (_: (2 * k + 1) %% 2 = 1).
+  by smt(@IntDiv).
+rewrite pack2_bits8.
+rewrite /(KyberPoly_avx2.jdmontx16) => />.
+rewrite initiE => />. move : k_lb k_ub => /#.
+smt(@Array16).
+
+move => k k_lb k_ub.
+rewrite /lift2poly //=.
+rewrite initiE //.
+rewrite /get256_direct //=.
+rewrite k_lb k_ub /=.
+rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
+  by smt(@IntDiv).
+rewrite (_: 2 * k %% 2 = 0).
+  by smt(@IntDiv).
+rewrite (_: (2 * k + 1) %% 2 = 1).
+  by smt(@IntDiv).
+rewrite pack2_bits8.
+rewrite /(KyberPoly_avx2.jqx16) => />.
+rewrite initiE => />. move : k_lb k_ub => /#.
+smt(@Array16).
+
+move => k k_lb k_ub.
+rewrite /lift2poly //=.
+rewrite initiE //.
+rewrite /get256_direct //=.
+rewrite k_lb k_ub /=.
+rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
+  by smt(@IntDiv).
+rewrite (_: 2 * k %% 2 = 0).
+  by smt(@IntDiv).
+rewrite (_: (2 * k + 1) %% 2 = 1).
+  by smt(@IntDiv).
+rewrite pack2_bits8.
+rewrite initiE => />. move : k_lb k_ub => /#.
+smt(@Array16).
+
+smt(@Array256).
+smt(@Array256).
+move => i rp i_tlb i_lb i_ub jdmontx16_def jqinvx16_def jqx16_def rp_sredc rp_sint_rp0.
+apply Array256.ext_eq.
+move => x x_bnds.
+do rewrite mapiE => //.
+simplify.
+rewrite -lezNgt in i_tlb.
+rewrite (rp_sredc x).
+move : i_tlb i_ub x_bnds => /#.
+rewrite mapiE //.
+sp. wp.
+ecall (Fq_avx2.fqmulx16_corr_h (Fq_avx2.lift_array16 t) (Fq_avx2.lift_array16 dmontx16)).
+auto => />.
+move => &hr i_lb i_ub dmontx16_def qx16_def qinvx16_def rp_sredc rp_eq_ap i_tub.
+do split.
+move => k k_lb k_ub.
+rewrite qx16_def //=.
+rewrite /(KyberPoly_avx2.jqx16) initiE //=.
+smt(@Array16).
+move => k k_lb k_ub.
+rewrite qinvx16_def //=.
+rewrite /(KyberPoly_avx2.jqinvx16) initiE //=.
+smt(@Array16). 
+move => qx16_eq_jqx16 qinvx16_eq_jqinvx16 result result_def.
+split.
+move : i_lb i_tub => /#.
+
+rewrite fillE.
+split.
+
+move => k k_lb k_ub.
+have k_mb: 0 <= k %% 16 < 16.
+  by smt(@IntDiv).
+rewrite initiE.
+move : k_lb k_ub i_tub => /#.
+simplify.
+
+case (k < 16 * i{hr}).
+move => k_tub.
+rewrite ltzNge in k_tub.
+rewrite k_tub /=.
+rewrite -ltzNge in k_tub.
+apply (rp_sredc k).
+rewrite k_lb k_tub //.
+
+move => k_tlb.
+rewrite -lezNgt in k_tlb.
+rewrite mulzDr mulz1 in k_ub.
+rewrite k_tlb k_ub => /=.
+rewrite result_def //.
+rewrite /lift_array16 //=.
+rewrite mapiE //=.
+rewrite lift2poly_iso //.
+rewrite mapiE //=.
+rewrite dmontx16_def //.
+rewrite rp_eq_ap //. rewrite k_tlb; move : k_ub i_tub => /#.
+rewrite /R qE /=.
+congr. rewrite of_sintK => />.
+rewrite expr0 /=.
+by rewrite /smod /=.
+
+move => k k_lb k_ub.
+rewrite initiE //. move : k_lb i_lb k_ub => /#.
+simplify.
+rewrite mulzDr mulz1 lezNgt in k_lb.
+rewrite k_lb /=.
+rewrite -lezNgt in k_lb.
+apply rp_eq_ap.
+move : k_lb k_ub => /#.
+qed.
+
 end KyberPolyAVX.
