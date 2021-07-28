@@ -161,6 +161,18 @@ rewrite (_: w %% 4294967296 %/ 65536 %/ 1024 = w %% 4294967296 %/ 67108864) //=.
 
 qed.
 
+lemma barret_red16x_ll:
+  islossless Mavx2_prevec.red16x by proc; islossless.
+
+lemma barret_red16x_corr a:
+  phoare [Mavx2_prevec.red16x:
+          a = lift_array16 r /\
+          (forall k, 0 <= k < 16 => qx16.[k] = KyberPoly_avx2.jqx16.[k]) /\
+          (forall k, 0 <= k < 16 => vx16.[k] = KyberPoly_avx2.jvx16.[k]) ==>
+          forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC a.[k] 26] = 1%r.
+proof.
+by conseq barret_red16x_ll (barret_red16x_corr_h a). qed.
+
 lemma fqmulx16_corr_h _a _b:
   hoare[ Mavx2_prevec.fqmulx16:
        _a = lift_array16 a /\
