@@ -246,11 +246,16 @@ rewrite qx16_def //; rewrite qinvx16_def //.
 rewrite of_sintK /=.
 rewrite -/_c.
 rewrite /(W16.smod 3329) /=.
-rewrite (_: (_c %/ 65536 - to_sint (a{hr}.[k] * b{hr}.[k] * (of_int 62209)%W16) * 3329 %/ 65536) =
-            ((_c - to_sint (a{hr}.[k] * b{hr}.[k] * (of_int 62209)%W16) * 3329) %/ 65536)).
-  smt(@IntDiv @Int).
+congr.
+rewrite (modz_dvd _ 4294967296 65536) //.
+rewrite to_sintE.
+rewrite to_uintM.
+rewrite of_uintK //=.
+rewrite to_uintM //=.
+rewrite -modzMm //=.
+rewrite modz_mod.
 
-admit. (* FIXME *)
+admit.
 
 qed.
 
