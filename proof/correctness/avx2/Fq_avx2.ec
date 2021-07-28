@@ -112,12 +112,53 @@ by move : (W16.to_uint_cmp (r{hr}.[k]));auto => />;smt().
 rewrite /R.
 by move : (W16.to_uint_cmp (r{hr}.[k]));auto => />;smt().
 rewrite (_: W16.to_uint (W16.of_int (-x)) = (-x) %% R).
-admit.
-admit. (* FIXME:
+  by rewrite /R of_uintK.
+congr.
+rewrite /x qE /R /=.
+pose w := to_sint r{hr}.[k] * 20159.
+do rewrite modzDmr.
+case (0 <= to_sint r{hr}.[k]).
+move => r_gt0.
 
-by case (0<= -x < W16.modulus); smt(@W16).
-by smt(@W16 qE).
-*)
+have ww_ub : (w %/ 65536 %% 65536) <= W16.max_sint.
+  rewrite /w. simplify. move : r_gt0. admit. (* FIXME: smt(@W16 @Int @IntDiv) *)
+rewrite /W16.smod /=.
+rewrite (_: 32768 <= (w %/ 65536 %% 65536) = false) /=.
+ move : ww_ub. smt(@W16 @Int).
+rewrite -(modz_pow2_div 32 16) //=.
+
+have wdw_ub : (w %% 4294967296) <= W32.max_sint.
+  rewrite /w. simplify. move : r_gt0. admit. (* FIXME: smt(@W32 @Int @IntDiv) *)
+rewrite /W32.smod /=.
+rewrite (_: 2147483648 <= w %% 4294967296 = false) /=.
+ move : wdw_ub. smt(@W32 @W16 @Int).
+
+rewrite (_: w %% 4294967296 %/ 65536 %/ 1024 = w %% 4294967296 %/ 67108864) //=.
+  smt(@Int @IntDiv).
+
+(*****)
+move => r_lt0.
+have ww_lb : W16.max_sint < (w %/ 65536 %% 65536).
+  rewrite /w. simplify. move : r_lt0. admit. (* FIXME: smt(@W16 @Int @IntDiv) *)
+rewrite /W16.smod /=.
+rewrite (_: 32768 <= (w %/ 65536 %% 65536) = true) /=.
+ move : ww_lb. smt(@W16 @Int).
+rewrite -(modz_pow2_div 32 16) //=.
+
+have wdw_lb : W32.max_sint < (w %% 4294967296).
+  rewrite /w. simplify. move : r_lt0. admit. (* FIXME: smt(@W32 @Int @IntDiv) *)
+rewrite /W32.smod /=.
+rewrite (_: 2147483648 <= w %% 4294967296 = true) /=.
+ move : wdw_lb. smt(@W32 @W16 @Int).
+rewrite (_: w %% 4294967296 %/ 65536 - 65536 = w %% 4294967296 %/ 65536 - 64*1024).
+  trivial.
+rewrite (_: w %% 4294967296 - 4294967296 = w %% 4294967296 - 64*67108864).
+  trivial.
+rewrite (divzMDr (-64) _ 1024) //.
+rewrite (divzMDr (-64) _ 67108864) //.
+rewrite (_: w %% 4294967296 %/ 65536 %/ 1024 = w %% 4294967296 %/ 67108864) //=.
+  smt(@Int @IntDiv).
+
 qed.
 
 lemma fqmulx16_corr_h _a _b:
@@ -193,6 +234,9 @@ rewrite qx16_def //; rewrite qinvx16_def //.
 rewrite of_sintK /=.
 rewrite -/_c.
 rewrite /(W16.smod 3329) /=.
+rewrite (_: (_c %/ 65536 - to_sint (a{hr}.[k] * b{hr}.[k] * (of_int 62209)%W16) * 3329 %/ 65536) =
+            ((_c - to_sint (a{hr}.[k] * b{hr}.[k] * (of_int 62209)%W16) * 3329) %/ 65536)).
+  smt(@IntDiv @Int).
 
 admit. (* FIXME *)
 
