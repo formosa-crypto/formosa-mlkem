@@ -1313,6 +1313,9 @@ proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed.
 equiv eq_iVPMULU_256 : Ops.iVPMULU_256 ~ OpsV.iVPMULU_256 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is4u64 => /> &1; rewrite /VPMULU_256. qed.
 
+equiv eq_iVPMULHRS_256 : Ops.iVPMULHRS_256 ~ OpsV.iVPMULHRS_256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof. by proc;wp;skip;rewrite /is16u16 => /> &1; rewrite /VPMULHRSW_256 /round_scalew. qed.
+
 equiv eq_ivadd16u256: Ops.ivadd16u256 ~ OpsV.ivadd16u256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is16u16 /VPADD_16u16. qed.
 
@@ -1349,6 +1352,11 @@ qed.
 equiv eq_iVPACKUS_8u32 : Ops.iVPACKUS_8u32 ~ OpsV.iVPACKUS_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. proc; wp; skip; rewrite /is8u32 /VPACKUS_8u32 /packus_4u32 //=. qed.
 
+equiv eq_iVPACKUS_16u16 : Ops.iVPACKUS_16u16 ~ OpsV.iVPACKUS_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is32u8 res{1} res{2}.
+proof.
+proc; wp; skip; rewrite /is16u16 /VPACKUS_16u16 /packus_8u16 //=.
+qed.
+
 equiv eq_iVPERM2I128 : Ops.iVPERM2I128 ~ OpsV.iVPERM2I128 : 
   is4u64 x{1} x{2} /\ is4u64 y{1} y{2} /\ ={p} ==> is4u64 res{1} res{2}.
 proof. 
@@ -1373,6 +1381,17 @@ equiv eq_iVPERMQ : Ops.iVPERMQ ~ OpsV.iVPERMQ : is4u64 x{1} x{2} /\ ={p} ==> is4
 proof. 
   proc; wp; skip; rewrite /is4u64 => /> &1 &2.
   by rewrite /VPERMQ /= !pack4_bits64 ?modz_cmp.
+qed.
+
+lemma pack8_bits32 (x:t8u32) (i:int): 0 <= i < 8 =>
+    pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]] \bits32 i = x.[i].
+proof. admit. (*by have /= <- [#|] -> := mema_iota 0 8.*) qed.
+
+
+equiv eq_iVPERMD : Ops.iVPERMD ~ OpsV.iVPERMD : is8u32 x{1} x{2} /\ is8u32 p{1} p{2} ==> is8u32 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is8u32 => /> &1.
+  rewrite /VPERMD /permd /= !pack8_bits32 ?modz_cmp //.
 qed.
 
 lemma lsr_2u64 (w1 w2:W64.t) (x:int) : 0 <= x <= 64 => 
@@ -1549,6 +1568,23 @@ qed.
 equiv eq_iVPSHUFB_256 : Ops.iVPSHUFB_256 ~ OpsV.iVPSHUFB_256:
   is32u8 x{1} x{2} /\ is32u8 m{1} m{2} ==> is32u8 res{1} res{2}.
 proof.
-proc; wp; skip. rewrite /is32u8 /VPSHUFB_256 /VPSHUFB_128 /VPSHUFB_128_B. auto => />.
-admit.
+proc; wp; skip.
+rewrite  /is32u8 /VPSHUFB_256 /VPSHUFB_128 /VPSHUFB_128_B /=. auto => />.
+
+move => &1.
+do 32?(rewrite -get_unpack8 1:modz_cmp 1:// pack16K).
+
+have x_lh_ls_get: forall k, 0 <= k < 16 => [x{1}.[0]; x{1}.[1]; x{1}.[2]; x{1}.[3]; x{1}.[4]; x{1}.[5]; x{1}.[6];
+                                       x{1}.[7]; x{1}.[8]; x{1}.[9]; x{1}.[10]; x{1}.[11]; x{1}.[12];
+                                       x{1}.[13]; x{1}.[14]; x{1}.[15]].[k] = x{1}.[k].
+  move => k k_bnds. smt(@Array16).
+
+have x_uh_ls_get: forall k, 0 <= k < 16 => [x{1}.[16]; x{1}.[17]; x{1}.[18]; x{1}.[19]; x{1}.[20]; x{1}.[21];
+                                             x{1}.[22]; x{1}.[23]; x{1}.[24]; x{1}.[25]; x{1}.[26];
+                                             x{1}.[27]; x{1}.[28]; x{1}.[29]; x{1}.[30]; x{1}.[31]].[k] = x{1}.[16 + k].
+  move => k k_bnds. smt(@Array16 @Array32).
+
+do 32?(rewrite get_of_list 1:modz_cmp 1://).
+do 32?(rewrite x_lh_ls_get 1:modz_cmp 1:// || rewrite x_uh_ls_get 1:modz_cmp 1://).
+trivial.
 qed.
