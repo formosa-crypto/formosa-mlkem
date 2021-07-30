@@ -1043,14 +1043,12 @@ module Ops = {
     return r;
   }
 
-  (* TODO:
-     - spec
-     - equiv
-  *)
-  proc iVPMOVMSKB_u256_u32(x: t16u16): W32.t = {
-    var r: W32.t;
+  proc iVPMOVMSKB_u256_u32(x: t32u8): W32.t = {
+    var rb: bool list;
 
-    return r;
+    rb <- mkseq (fun i => 128 <= to_uint x.[i]) 32;
+
+    return W32.bits2w(rb);
   }
 }.
 
@@ -1623,3 +1621,21 @@ do 32?(rewrite get_of_list 1:modz_cmp 1://).
 do 32?(rewrite x_lh_ls_get 1:modz_cmp 1:// || rewrite x_uh_ls_get 1:modz_cmp 1://).
 trivial.
 qed.
+
+equiv eq_iVPMOVMSKB_u256_u32 : Ops.iVPMOVMSKB_u256_u32 ~ OpsV.iVPMOVMSKB_u256_u32:
+  is32u8 x{1} x{2} ==> ={res}.
+proof.
+proc; wp; skip.
+rewrite /is32u8 /VPMOVMSKB_256 /=.
+move => &1 &2 x_eq.
+rewrite x_eq.
+rewrite -get_unpack8 //=.
+apply W32.wordP.
+print W32.
+move => i i_bnds.
+do rewrite get_bits2w //.
+rewrite nth_mkseq => />.
+rewrite /msb.
+smt(@List).
+qed.
+
