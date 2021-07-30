@@ -189,7 +189,8 @@ module Ops = {
 
     return r;
   }
-  
+
+  (* FIXME: equiv *)  
   proc iload4u64 (mem:global_mem_t, p:W64.t) : t4u64 = {
     var r : t4u64;
     r.[0] <- loadW64 mem (to_uint p);
@@ -199,6 +200,7 @@ module Ops = {
     return r;
   }
 
+  (* TODO: equiv *)
   proc iload16u16 (mem: global_mem_t, p: W64.t) : t16u16 = {
     var r : t16u16;
 
@@ -896,6 +898,7 @@ module Ops = {
   }
 
 
+  (* FIXME: equiv *)
   proc iVPSHUFD_256 (x :t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
     r <- witness;
@@ -1039,7 +1042,11 @@ module Ops = {
 
     return r;
   }
-  (* FIXME *)
+
+  (* TODO:
+     - spec
+     - equiv
+  *)
   proc iVPMOVMSKB_u256_u32(x: t16u16): W32.t = {
     var r: W32.t;
 
@@ -1324,12 +1331,29 @@ proof. by proc;wp;skip;rewrite /is16u16 /VPSUB_16u16. qed.
 
 equiv eq_iVPBROADCAST_2u128 : Ops.iVPBROADCAST_2u128 ~ OpsV.iVPBROADCAST_2u128 : ={v} ==> is2u128 res{1} res{2}.
 proof.
-  proc; wp; skip; rewrite /is2u128 /VPBROADCAST_2u128.
-  admit. (* FIXME *)
+  proc; wp; skip.
+  move => &1 &2 v_eq.
+  rewrite /is2u128 /VPBROADCAST_2u128.
+  rewrite get_setE //=.
+  rewrite -createL.
+  apply W2u128.wordP => i i_bnds.
+  do rewrite -get_unpack128 //=.
+  rewrite createiE // get_of_list //.
+  smt(@List).
 qed.
 
 equiv eq_iVPBROADCAST_4u64 : Ops.iVPBROADCAST_4u64 ~ OpsV.iVPBROADCAST_4u64 : ={v} ==> is4u64 res{1} res{2}.
-proof. proc => /=. wp. skip. rewrite /is4u64 /VPBROADCAST_4u64. admit. (* FIXME *) qed.
+proof.
+  proc => /=. wp. skip.
+  move => &1 &2 v_eq.
+  rewrite /is4u64 /VPBROADCAST_4u64 v_eq.
+  rewrite get_setE //=.
+  rewrite -createL.
+  apply W4u64.wordP => i i_bnds.
+  do rewrite -get_unpack64 //=.
+  rewrite createiE // get_of_list //.
+  smt(@List).
+qed.
 
 equiv eq_iload4u64: Ops.iload4u64 ~ OpsV.iload4u64 : ={mem, p} /\ to_uint p{1} + 32 <= W64.modulus ==> is4u64 res{1} res{2}.
 proof. 
@@ -1355,6 +1379,11 @@ proof. proc; wp; skip; rewrite /is8u32 /VPACKUS_8u32 /packus_4u32 //=. qed.
 equiv eq_iVPACKUS_16u16 : Ops.iVPACKUS_16u16 ~ OpsV.iVPACKUS_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is32u8 res{1} res{2}.
 proof.
 proc; wp; skip; rewrite /is16u16 /VPACKUS_16u16 /packus_8u16 //=.
+qed.
+
+equiv eq_iVPACKSS_16u16 : Ops.iVPACKSS_16u16 ~ OpsV.iVPACKSS_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is32u8 res{1} res{2}.
+proof.
+proc; wp; skip; rewrite /is16u16 /VPACKSS_16u16 /packss_8u16 //=.
 qed.
 
 equiv eq_iVPERM2I128 : Ops.iVPERM2I128 ~ OpsV.iVPERM2I128 : 
@@ -1490,11 +1519,17 @@ proof. by proc; wp; skip; rewrite /is4u64 => />; cbv delta. qed.
 equiv eq_ilxor4u64: Ops.ilxor4u64 ~ OpsV.ilxor4u64 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is4u64. qed.
 
+equiv eq_ilxor16u16: Ops.ilxor16u16 ~ OpsV.ilxor16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16. qed.
+
 equiv eq_iVPSRLV_4u64 : Ops.iVPSRLV_4u64 ~ OpsV.iVPSRLV_4u64 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc;wp; skip; rewrite /is4u64 => />; cbv delta. qed.
 
 equiv eq_iVPSLLV_4u64 : Ops.iVPSLLV_4u64 ~ OpsV.iVPSLLV_4u64 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc;wp; skip; rewrite /is4u64 => />; cbv delta. qed.
+
+equiv eq_iVPSLLV_8u32 : Ops.iVPSLLV_8u32 ~ OpsV.iVPSLLV_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is8u32 res{1} res{2}.
+proof. by proc;wp; skip; rewrite /is8u32 => />; cbv delta. qed.
 
 equiv eq_iVPBLENDD_256 : Ops.iVPBLENDD_256 ~ OpsV.iVPBLENDD_256 : 
   is4u64 x{1} x{2} /\ is4u64 y{1} y{2} /\ ={p}
