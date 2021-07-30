@@ -114,6 +114,29 @@ module Ops = {
     return r; 
   }
 
+  proc iVPMULHRS_256 (x y: t16u16) : t16u16 = {
+    var r : t16u16;
+
+    r.[0] <- round_scalew ((W16.to_sint x.[0]) * (W16.to_sint y.[0]));
+    r.[1] <- round_scalew ((W16.to_sint x.[1]) * (W16.to_sint y.[1]));
+    r.[2] <- round_scalew ((W16.to_sint x.[2]) * (W16.to_sint y.[2]));
+    r.[3] <- round_scalew ((W16.to_sint x.[3]) * (W16.to_sint y.[3]));
+    r.[4] <- round_scalew ((W16.to_sint x.[4]) * (W16.to_sint y.[4]));
+    r.[5] <- round_scalew ((W16.to_sint x.[5]) * (W16.to_sint y.[5]));
+    r.[6] <- round_scalew ((W16.to_sint x.[6]) * (W16.to_sint y.[6]));
+    r.[7] <- round_scalew ((W16.to_sint x.[7]) * (W16.to_sint y.[7]));
+    r.[8] <- round_scalew ((W16.to_sint x.[8]) * (W16.to_sint y.[8]));
+    r.[9] <- round_scalew ((W16.to_sint x.[9]) * (W16.to_sint y.[9]));
+    r.[10] <- round_scalew ((W16.to_sint x.[10]) * (W16.to_sint y.[10]));
+    r.[11] <- round_scalew ((W16.to_sint x.[11]) * (W16.to_sint y.[11]));
+    r.[12] <- round_scalew ((W16.to_sint x.[12]) * (W16.to_sint y.[12]));
+    r.[13] <- round_scalew ((W16.to_sint x.[13]) * (W16.to_sint y.[13]));
+    r.[14] <- round_scalew ((W16.to_sint x.[14]) * (W16.to_sint y.[14]));
+    r.[15] <- round_scalew ((W16.to_sint x.[15]) * (W16.to_sint y.[15]));
+
+    return r;
+  }
+
   proc ivadd64u256(x y:t4u64) : t4u64 = {
     var r : t4u64;
     r.[0] <- x.[0] + y.[0];
@@ -270,6 +293,141 @@ module Ops = {
     return r;
   }
 
+  proc iVPACKUS_16u16(x y: t16u16) : t32u8 = {
+    var r: t32u8;
+
+    r.[0] <-
+      if x.[0] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[0] then (W8.of_int W8.max_uint)
+      else x.[0] \bits8 0;
+    r.[1] <-
+      if x.[1] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[1] then (W8.of_int W8.max_uint)
+      else x.[1] \bits8 0;
+    r.[2] <-
+      if x.[2] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[2] then (W8.of_int W8.max_uint)
+      else x.[2] \bits8 0;
+    r.[3] <-
+      if x.[3] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[3] then (W8.of_int W8.max_uint)
+      else x.[3] \bits8 0;
+    r.[4] <-
+      if x.[4] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[4] then (W8.of_int W8.max_uint)
+      else x.[4] \bits8 0;
+    r.[5] <-
+      if x.[5] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[5] then (W8.of_int W8.max_uint)
+      else x.[5] \bits8 0;
+    r.[6] <-
+      if x.[6] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[6] then (W8.of_int W8.max_uint)
+      else x.[6] \bits8 0;
+    r.[7] <-
+      if x.[7] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[7] then (W8.of_int W8.max_uint)
+      else x.[7] \bits8 0;
+    r.[8] <-
+      if y.[0] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[0] then (W8.of_int W8.max_uint)
+      else y.[0] \bits8 0;
+    r.[9] <-
+      if y.[1] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[1] then (W8.of_int W8.max_uint)
+      else y.[1] \bits8 0;
+    r.[10] <-
+      if y.[2] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[2] then (W8.of_int W8.max_uint)
+      else y.[2] \bits8 0;
+    r.[11] <-
+      if y.[3] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[3] then (W8.of_int W8.max_uint)
+      else y.[3] \bits8 0;
+    r.[12] <-
+      if y.[4] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[4] then (W8.of_int W8.max_uint)
+      else y.[4] \bits8 0;
+    r.[13] <-
+      if y.[5] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[5] then (W8.of_int W8.max_uint)
+      else y.[5] \bits8 0;
+    r.[14] <-
+      if y.[6] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[6] then (W8.of_int W8.max_uint)
+      else y.[6] \bits8 0;
+    r.[15] <-
+      if y.[7] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[7] then (W8.of_int W8.max_uint)
+      else y.[7] \bits8 0;
+    r.[16] <-
+      if x.[8] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[8] then (W8.of_int W8.max_uint)
+      else x.[8] \bits8 0;
+    r.[17] <-
+      if x.[9] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[9] then (W8.of_int W8.max_uint)
+      else x.[9] \bits8 0;
+    r.[18] <-
+      if x.[10] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[10] then (W8.of_int W8.max_uint)
+      else x.[10] \bits8 0;
+    r.[19] <-
+      if x.[11] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[11] then (W8.of_int W8.max_uint)
+      else x.[11] \bits8 0;
+    r.[20] <-
+      if x.[12] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[12] then (W8.of_int W8.max_uint)
+      else x.[12] \bits8 0;
+    r.[21] <-
+      if x.[13] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[13] then (W8.of_int W8.max_uint)
+      else x.[13] \bits8 0;
+    r.[22] <-
+      if x.[14] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[14] then (W8.of_int W8.max_uint)
+      else x.[14] \bits8 0;
+    r.[23] <-
+      if x.[15] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle x.[15] then (W8.of_int W8.max_uint)
+      else x.[15] \bits8 0;
+    r.[24] <-
+      if y.[8] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[8] then (W8.of_int W8.max_uint)
+      else y.[8] \bits8 0;
+    r.[25] <-
+      if y.[9] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[9] then (W8.of_int W8.max_uint)
+      else y.[9] \bits8 0;
+    r.[26] <-
+      if y.[10] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[10] then (W8.of_int W8.max_uint)
+      else y.[10] \bits8 0;
+    r.[27] <-
+      if y.[11] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[11] then (W8.of_int W8.max_uint)
+      else y.[11] \bits8 0;
+    r.[28] <-
+      if y.[12] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[12] then (W8.of_int W8.max_uint)
+      else y.[12] \bits8 0;
+    r.[29] <-
+      if y.[13] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[13] then (W8.of_int W8.max_uint)
+      else y.[13] \bits8 0;
+    r.[30] <-
+      if y.[14] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[14] then (W8.of_int W8.max_uint)
+      else y.[14] \bits8 0;
+    r.[31] <-
+      if y.[15] \slt W16.zero then W8.zero
+      else if (W16.of_int W8.max_uint) \sle y.[15] then (W8.of_int W8.max_uint)
+      else y.[15] \bits8 0;
+
+    return r;
+  }
+
   proc iVPACKSS_16u16(x y: t16u16) : t32u8 = {
     var r: t32u8;
 
@@ -277,7 +435,7 @@ module Ops = {
       if x.[0] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
       else if (W16.of_int W8.max_sint) \sle x.[0] then (W8.of_int W8.max_sint)
       else x.[0] \bits8 0;
-    r.[2] <-
+    r.[1] <-
       if x.[1] \slt W16.of_int W8.min_sint then W8.of_int W8.min_sint
       else if (W16.of_int W8.max_sint) \sle x.[1] then (W8.of_int W8.max_sint)
       else x.[1] \bits8 0;
@@ -443,6 +601,22 @@ module Ops = {
     r.[1] <- x.[ (to_uint p %/  4) %% 4 ];
     r.[2] <- x.[ (to_uint p %/ 16) %% 4 ];
     r.[3] <- x.[ (to_uint p %/ 64) %% 4 ];
+    return r;
+  }
+
+  proc iVPERMD(x p: t8u32) : t8u32 = {
+    var r : t8u32;
+
+    r <- witness;
+    r.[0] <- x.[ (to_uint p.[0]) %% 8 ];
+    r.[1] <- x.[ (to_uint p.[1]) %% 8 ];
+    r.[2] <- x.[ (to_uint p.[2]) %% 8 ];
+    r.[3] <- x.[ (to_uint p.[3]) %% 8 ];
+    r.[4] <- x.[ (to_uint p.[4]) %% 8 ];
+    r.[5] <- x.[ (to_uint p.[5]) %% 8 ];
+    r.[6] <- x.[ (to_uint p.[6]) %% 8 ];
+    r.[7] <- x.[ (to_uint p.[7]) %% 8 ];
+
     return r;
   }
 
@@ -766,6 +940,9 @@ module Ops = {
   proc iVPSHUFB_256 (x: t32u8, m: t32u8): t32u8 = {
     var r: t32u8;
 
+    r.[0] <-
+      let i = W8.to_uint m.[0] in
+      if 128 <= i then W8.zero else x.[i %% 16];
     r.[1] <-
       let i = W8.to_uint m.[1] in
       if 128 <= i then W8.zero else x.[i %% 16];
@@ -813,52 +990,52 @@ module Ops = {
       if 128 <= i then W8.zero else x.[i %% 16];
     r.[16] <-
       let i = W8.to_uint m.[16] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[17] <-
       let i = W8.to_uint m.[17] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[18] <-
       let i = W8.to_uint m.[18] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[19] <-
       let i = W8.to_uint m.[19] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[20] <-
       let i = W8.to_uint m.[20] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[21] <-
       let i = W8.to_uint m.[21] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[22] <-
       let i = W8.to_uint m.[22] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[23] <-
       let i = W8.to_uint m.[23] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[24] <-
       let i = W8.to_uint m.[24] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[25] <-
       let i = W8.to_uint m.[25] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[26] <-
       let i = W8.to_uint m.[26] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[27] <-
       let i = W8.to_uint m.[27] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[28] <-
       let i = W8.to_uint m.[28] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[29] <-
       let i = W8.to_uint m.[29] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[30] <-
       let i = W8.to_uint m.[30] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
     r.[31] <-
       let i = W8.to_uint m.[31] in
-      if 128 <= i then W8.zero else x.[i %% 16];
+      if 128 <= i then W8.zero else x.[16 + i %% 16];
 
     return r;
   }
@@ -907,6 +1084,10 @@ module OpsV = {
     return VPMULU_256 x y; 
   }
 
+  proc iVPMULHRS_256(x y: vt16u16): vt16u16 = {
+    return VPMULHRSW_256 x y;
+  }
+
   proc ivadd64u256(x y:vt4u64) : vt4u64 = {
     return VPADD_4u64 x y; 
   }
@@ -931,6 +1112,10 @@ module OpsV = {
     return VPACKUS_8u32 x y;
   }
 
+  proc iVPACKUS_16u16(x y: vt16u16) : vt32u8 = {
+    return VPACKUS_16u16 x y;
+  }
+
   proc iVPACKSS_16u16(x y: vt16u16) : vt32u8 = {
     return VPACKSS_16u16 x y;
   }
@@ -942,6 +1127,10 @@ module OpsV = {
   proc iVPERMQ(x :vt4u64, p : W8.t) : vt4u64 = {
     return VPERMQ x p;
   }
+
+  proc iVPERMD(x p: vt8u32) : vt8u32 = {
+    return VPERMD x p;
+ }
 
   proc iVPSRLDQ_256(x:vt4u64, p : W8.t) : vt4u64 = {
     return VPSRLDQ_256 x p;
@@ -1041,7 +1230,7 @@ op is8u32 (x: t8u32) (xv: vt8u32) = xv = W8u32.pack8 [x.[0]; x.[1]; x.[2]; x.[3]
 op is2u128 (x : t2u128) (xv: vt2u128) = xv = W2u128.pack2 [x.[0]; x.[1]].
 op is32u8 (x : t32u8) (xv: vt32u8) = xv = W32u8.pack32 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
                                                         x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15];
-                                                        x.[16]; x.[17]; x.[18]; x.[19]; x.[20]; x.[21]; x.[21]; x.[23];
+                                                        x.[16]; x.[17]; x.[18]; x.[19]; x.[20]; x.[21]; x.[22]; x.[23];
                                                         x.[24]; x.[25]; x.[26]; x.[27]; x.[28]; x.[29]; x.[30]; x.[31]].
 
 (* TODO *)
@@ -1158,7 +1347,7 @@ proof.
 qed.
 
 equiv eq_iVPACKUS_8u32 : Ops.iVPACKUS_8u32 ~ OpsV.iVPACKUS_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is16u16 res{1} res{2}.
-proof. proc; wp; skip; rewrite /is8u32 /VPACKUS_8u32 /packus_32. admit. (* FIXME *)qed.
+proof. proc; wp; skip; rewrite /is8u32 /VPACKUS_8u32 /packus_4u32 //=. qed.
 
 equiv eq_iVPERM2I128 : Ops.iVPERM2I128 ~ OpsV.iVPERM2I128 : 
   is4u64 x{1} x{2} /\ is4u64 y{1} y{2} /\ ={p} ==> is4u64 res{1} res{2}.
