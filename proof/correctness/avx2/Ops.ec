@@ -43,6 +43,15 @@ module Ops = {
     return vv.[i].[o];
   }
 
+  proc iVPBROADCAST_2u128(v: W128.t) : t2u128 = {
+    var r: t2u128;
+
+    r.[0] <-v;
+    r.[1] <-v;
+
+    return r;
+  }
+
   proc iVPBROADCAST_4u64(v : W64.t) : t4u64 = {
     var r : t4u64;
     r.[0] <-v;
@@ -52,11 +61,40 @@ module Ops = {
     return r;
   }
 
-  proc iVPBROADCAST_2u128(v: W128.t) : t2u128 = {
-    var r: t2u128;
+ proc iVPBROADCAST_8u32(v : W32.t) : t8u32 = {
+    var r : t8u32;
 
-    r.[0] <-v;
-    r.[1] <-v;
+    r.[0] <- v;
+    r.[1] <- v;
+    r.[2] <- v;
+    r.[3] <- v;
+    r.[4] <- v;
+    r.[5] <- v;
+    r.[6] <- v;
+    r.[7] <- v;
+
+    return r;
+  }
+
+  proc iVPBROADCAST_16u16(v : W16.t) : t16u16 = {
+    var r : t16u16;
+
+    r.[0] <- v;
+    r.[1] <- v;
+    r.[2] <- v;
+    r.[3] <- v;
+    r.[4] <- v;
+    r.[5] <- v;
+    r.[6] <- v;
+    r.[7] <- v;
+    r.[8] <- v;
+    r.[9] <- v;
+    r.[10] <- v;
+    r.[11] <- v;
+    r.[12] <- v;
+    r.[13] <- v;
+    r.[14] <- v;
+    r.[15] <- v;
 
     return r;
   }
@@ -1069,12 +1107,20 @@ module OpsV = {
     return (get64 (WArray128.init256 (fun i2 => vv.[i2])) (o+4*i));
   }
 
+  proc iVPBROADCAST_2u128(v : W128.t) : vt2u128 = {
+    return VPBROADCAST_2u128 v;
+  }
+
   proc iVPBROADCAST_4u64(v : W64.t) : vt4u64 = {
     return VPBROADCAST_4u64 v;
   }
 
-  proc iVPBROADCAST_2u128(v : W128.t) : vt2u128 = {
-    return VPBROADCAST_2u128 v;
+  proc iVPBROADCAST_8u32(v : W32.t) : vt8u32 = {
+    return VPBROADCAST_8u32 v;
+  }
+
+  proc iVPBROADCAST_16u16(v : W16.t) : vt16u16 = {
+    return VPBROADCAST_16u16 v;
   }
 
   proc iVPMULH_256 (x y: vt16u16) : vt16u16 = {
@@ -1221,7 +1267,7 @@ module OpsV = {
     return VPSHUFB_256 x m;
   }
 
-  proc iVPMOVMSKB_u256_u32(x: vt16u16): W32.t = {
+  proc iVPMOVMSKB_u256_u32(x: vt32u8): W32.t = {
     return VPMOVMSKB_256 x;
   }
 }.
@@ -1349,6 +1395,32 @@ proof.
   rewrite -createL.
   apply W4u64.wordP => i i_bnds.
   do rewrite -get_unpack64 //=.
+  rewrite createiE // get_of_list //.
+  smt(@List).
+qed.
+
+equiv eq_iVPBROADCAST_8u32 : Ops.iVPBROADCAST_8u32 ~ OpsV.iVPBROADCAST_8u32 : ={v} ==> is8u32 res{1} res{2}.
+proof.
+  proc => /=. wp. skip.
+  move => &1 &2 v_eq.
+  rewrite /is8u32 /VPBROADCAST_8u32 v_eq.
+  rewrite get_setE //=.
+  rewrite -createL.
+  apply W8u32.wordP => i i_bnds.
+  do rewrite -get_unpack32 //=.
+  rewrite createiE // get_of_list //.
+  smt(@List).
+qed.
+
+equiv eq_iVPBROADCAST_16u16 : Ops.iVPBROADCAST_16u16 ~ OpsV.iVPBROADCAST_16u16 : ={v} ==> is16u16 res{1} res{2}.
+proof.
+  proc => /=. wp. skip.
+  move => &1 &2 v_eq.
+  rewrite /is16u16 /VPBROADCAST_16u16 v_eq.
+  rewrite get_setE //=.
+  rewrite -createL.
+  apply W16u16.wordP => i i_bnds.
+  do rewrite -get_unpack16 //=.
   rewrite createiE // get_of_list //.
   smt(@List).
 qed.
@@ -1631,7 +1703,6 @@ move => &1 &2 x_eq.
 rewrite x_eq.
 rewrite -get_unpack8 //=.
 apply W32.wordP.
-print W32.
 move => i i_bnds.
 do rewrite get_bits2w //.
 rewrite nth_mkseq => />.
