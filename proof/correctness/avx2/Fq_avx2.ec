@@ -191,9 +191,9 @@ have w'_sl16_lb: W16.min_sint < to_sint r{hr}.[k] * 2^15 %/ W16.modulus.
 have w_sl16_lb: W16.min_sint < w %/ W16.modulus.
   move : rs_ub. simplify. smt(@Int @IntDiv @W16).
 
-have ww_lb : W16.max_sint < (w %/ 65536 %% 65536).
+have ww_lb : 32768 <= (w %/ 65536 %% 65536).
   rewrite /w.
-  apply (ltz_trans (to_sint r{hr}.[k] * 2^15 %/ 65536 %% 65536) W16.max_sint _).
+  apply (lez_trans (to_sint r{hr}.[k] * 2^15 %/ 65536 %% 65536) 32768 _).
   rewrite smod_red //=.
     by move : w'_sl16_lb; simplify; smt(@Int @IntDiv @W16).
   move : w'_sl16_lb. simplify. smt(@Int @IntDiv @W16).
@@ -201,12 +201,10 @@ have ww_lb : W16.max_sint < (w %/ 65536 %% 65536).
     by move : w'_sl16_lb; simplify; smt(@Int @IntDiv @W16).
   rewrite smod_red //=.
     by move : w_sl16_lb; simplify; smt(@Int @IntDiv @W16).
-  apply ltz_add2r.
-  admit. (* FIXME: move : w_tub. rewrite /w. smt(@Int @IntDiv @W16 @W32). *)
+  apply lez_add2r. apply leq_div2r. apply w_tub. trivial.
 
 rewrite /W16.smod /=.
-rewrite (_: 32768 <= (w %/ 65536 %% 65536) = true) /=.
- move : ww_lb. smt(@W16 @Int).
+rewrite ww_lb //=.
 rewrite -(modz_pow2_div 32 16) //=.
 
 have wdw_lb : W32.max_sint < (w %% 4294967296).
@@ -328,6 +326,7 @@ rewrite of_uintK //=.
 rewrite to_uintM //=.
 rewrite -modzMm //=.
 rewrite modz_mod.
+
 
 admit.
 
