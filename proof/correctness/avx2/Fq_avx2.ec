@@ -120,27 +120,18 @@ do rewrite modzDmr.
 case (0 <= to_sint r{hr}.[k]).
 move => r_gt0.
 
-(* TODO: move to BitWord theory as to_sint_cmp *)
-have rs_ub: to_sint r{hr}.[k] <= W16.max_sint.
-  rewrite /to_sint /smod /=.
-  case (32768 <= to_uint r{hr}.[k]).
-  move : (W16.to_uint_cmp r{hr}.[k]) => [#] to_uint_r_lb to_uint_r_ub to_uint_r_tlb.
-  move : to_uint_r_ub.
-  simplify.
-  rewrite -subz_lt0.
-  smt(@Int).
-  smt(@Int).
+move : (W16.to_sint_cmp r{hr}.[k]) => rs_bnds.
 
 have w_tub: w <= to_sint r{hr}.[k] * 2^15.
   rewrite /w. smt(@Int @IntDiv @W16).
 
 have ww_dub: to_sint r{hr}.[k] * 2^15 %/ 65536 %% 65536 = to_sint r{hr}.[k] * 2^15 %/ 65536.
-  rewrite pmod_small. move : rs_ub. smt(@Int @IntDiv @W16). trivial.
+  rewrite pmod_small. move : rs_bnds. smt(@Int @IntDiv @W16). trivial.
 
 have ww_ub : (w %/ 65536 %% 65536) <= W16.max_sint.
   rewrite /w. rewrite pmod_small. move : w_tub ww_dub. smt(@Int @IntDiv).
   apply (lez_trans (to_sint r{hr}.[k] * 2^15 %/ 65536) _ W16.max_sint).
-  move : w_tub. smt(@Int @IntDiv). move : rs_ub. smt(@Int @IntDiv @W16).
+  move : w_tub. smt(@Int @IntDiv). move : rs_bnds. smt(@Int @IntDiv @W16).
 
 rewrite /W16.smod /=.
 rewrite (_: 32768 <= (w %/ 65536 %% 65536) = false) /=.
@@ -148,12 +139,12 @@ rewrite (_: 32768 <= (w %/ 65536 %% 65536) = false) /=.
 rewrite -(modz_pow2_div 32 16) //=.
 
 have wdw_dub: to_sint r{hr}.[k] * 2^15 %% 4294967296 = to_sint r{hr}.[k] * 2^15.
-  rewrite pmod_small. move : rs_ub. smt(@Int @IntDiv @W32). trivial.
+  rewrite pmod_small. move : rs_bnds. smt(@Int @IntDiv @W32). trivial.
 
 have wdw_ub : (w %% 4294967296) <= W32.max_sint.
   rewrite /w. rewrite pmod_small. move : w_tub wdw_dub. smt(@Int @IntDiv).
   apply (lez_trans (to_sint r{hr}.[k] * 2^15) _ W32.max_sint).
-  apply w_tub. move : rs_ub. smt(@Int @IntDiv @W16).
+  apply w_tub. move : rs_bnds. smt(@Int @IntDiv @W16).
 
 rewrite /W32.smod /=.
 rewrite (_: 2147483648 <= w %% 4294967296 = false) /=.
@@ -165,18 +156,7 @@ rewrite (_: w %% 4294967296 %/ 65536 %/ 1024 = w %% 4294967296 %/ 67108864) //=.
 (*****)
 move => r_lt0.
 
-(* TODO: move to BitWord theory as to_sint_cmp *)
-have rs_ub: W16.min_sint <= to_sint r{hr}.[k].
-  rewrite /to_sint /smod /=.
-  move : (W16.to_uint_cmp r{hr}.[k]) => [#] to_uint_r_lb to_uint_r_ub.
-  case (32768 <= to_uint r{hr}.[k]).
-  move => to_uint_r_tlb. 
-  move : to_uint_r_ub.
-  simplify.
-  rewrite -subz_lt0.
-  smt(@Int).
-  move : to_uint_r_lb.
-  smt(@Int).
+move : (W16.to_sint_cmp r{hr}.[k]) => rs_bnds.
 
 (* TODO: move to IntDiv? *)
 have smod_red : forall m, 0 < m => forall x, -m <= x < 0 => x %% m = x + m.
@@ -186,10 +166,10 @@ have w_tub: to_sint r{hr}.[k] * 2^15 <= w.
   rewrite /w. smt(@Int @IntDiv @W16).
 
 have w'_sl16_lb: W16.min_sint < to_sint r{hr}.[k] * 2^15 %/ W16.modulus.
-  move : rs_ub. simplify. smt(@Int @IntDiv @W16).
+  move : rs_bnds. simplify. smt(@Int @IntDiv @W16).
 
 have w_sl16_lb: W16.min_sint < w %/ W16.modulus.
-  move : rs_ub. simplify. smt(@Int @IntDiv @W16).
+  move : rs_bnds. simplify. smt(@Int @IntDiv @W16).
 
 have ww_lb : 32768 <= (w %/ 65536 %% 65536).
   rewrite /w.
@@ -300,8 +280,9 @@ rewrite (_: r3{hr}.[0 <- wmulhs a{hr}.[0] b{hr}.[0] -
 move => k k_bnds.
 rewrite initiE //=.
 pose _c := _a.[k] * _b.[k].
-rewrite /SREDC.
 rewrite /wmulhs /=.
+rewrite /SREDC.
+
 
 rewrite (_: R*(R *R^0) = W32.modulus); first by rewrite expr0 /R  => />.
 rewrite (_: R = W16.modulus); first by rewrite /R => />.
@@ -326,7 +307,6 @@ rewrite of_uintK //=.
 rewrite to_uintM //=.
 rewrite -modzMm //=.
 rewrite modz_mod.
-
 
 admit.
 
