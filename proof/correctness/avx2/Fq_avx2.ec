@@ -280,9 +280,8 @@ rewrite (_: r3{hr}.[0 <- wmulhs a{hr}.[0] b{hr}.[0] -
 move => k k_bnds.
 rewrite initiE //=.
 pose _c := _a.[k] * _b.[k].
-rewrite /wmulhs /=.
-rewrite /SREDC.
-
+rewrite /wmulhs.
+rewrite /SREDC /=.
 
 rewrite (_: R*(R *R^0) = W32.modulus); first by rewrite expr0 /R  => />.
 rewrite (_: R = W16.modulus); first by rewrite /R => />.
@@ -307,9 +306,26 @@ rewrite of_uintK //=.
 rewrite to_uintM //=.
 rewrite -modzMm //=.
 rewrite modz_mod.
+rewrite modzMml.
+rewrite /smod /=.
 
 admit.
 
 qed.
+
+
+lemma fqmulx16_ll:
+  islossless Mavx2_prevec.fqmulx16 by proc; islossless.
+
+print Mavx2_prevec.
+
+lemma fqmulx16_corr _a _b :
+  phoare [Mavx2_prevec.fqmulx16 :
+          _a = lift_array16 a /\
+          _b = lift_array16 b /\
+          (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
+          (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) ==>
+          forall k, 0 <= k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])] = 1%r.
+proof. by conseq fqmulx16_ll (fqmulx16_corr_h _a _b). qed.
 
 end Fq_avx2.
