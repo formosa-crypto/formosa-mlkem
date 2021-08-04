@@ -1,6 +1,6 @@
 require import AllCore List Int IntExtra IntDiv CoreMap.
 from Jasmin require import JModel.
-require import Array256 Array16p Array16 Array4.
+require import Array256 Array16p Array16 Array4 Array8 Array32.
 require import WArray512 WArray32 WArray16.
 require import Ops.
 require import KyberPoly_avx2.
@@ -204,7 +204,7 @@ module Mvec = {
     return (a);
   }
 
-  proc red16x (r:W256.t, qx16:W256.t, vx16:W256.t) : W256.t = {
+  proc  red16x (r:W256.t, qx16:W256.t, vx16:W256.t) : W256.t = {
     var x:W256.t;
 
     x <- OpsV.iVPMULH_256(r, vx16);
@@ -260,6 +260,99 @@ module Mvec = {
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) i t));
+      i <- i + 1;
+    }
+    return (rp);
+  }
+
+  proc poly_compress (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var x16p:W16.t Array16.t;
+    var v:W256.t;
+    var shift1:W256.t;
+    var mask:W256.t;
+    var shift2:W256.t;
+    var permidx:W256.t;
+    var i:int;
+    var f0:W256.t;
+    var f1:W256.t;
+    var f2:W256.t;
+    var f3:W256.t;
+    x16p <- witness;
+    a <@ poly_csubq (a);
+    x16p <- jvx16;
+    v <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    shift1 <- OpsV.iVPBROADCAST_16u16(shift1_s);
+    mask <- OpsV.iVPBROADCAST_16u16(mask_s_0);
+    shift2 <- OpsV.iVPBROADCAST_16u16(shift2_s);
+    permidx <- (get256 (WArray32.init32 (fun i => permidx_s.[i])) 0);
+    aux <- (256 %/ 64);
+    i <- 0;
+    while (i < aux) {
+      f0 <- (get256 (WArray512.init16 (fun i => a.[i])) (4 * i));
+      f1 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 1));
+      f2 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 2));
+      f3 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 3));
+      f0 <- OpsV.iVPMULH_256(f0, v);
+      f1 <- OpsV.iVPMULH_256(f1, v);
+      f2 <- OpsV.iVPMULH_256(f2, v);
+      f3 <- OpsV.iVPMULH_256(f3, v);
+      f0 <- OpsV.iVPMULHRS_256(f0, shift1);
+      f1 <- OpsV.iVPMULHRS_256(f1, shift1);
+      f2 <- OpsV.iVPMULHRS_256(f2, shift1);
+      f3 <- OpsV.iVPMULHRS_256(f3, shift1);
+      f0 <- OpsV.ivpand16u16(f0, mask);
+      f1 <- OpsV.ivpand16u16(f1, mask);
+      f2 <- OpsV.ivpand16u16(f2, mask);
+      f3 <- OpsV.ivpand16u16(f3, mask);
+      f0 <- OpsV.iVPACKUS_16u16(f0, f1);
+      f2 <- OpsV.iVPACKUS_16u16(f2, f3);
+      f0 <- OpsV.iVPMADDUBSW_256(f0, shift2);
+      f2 <- OpsV.iVPMADDUBSW_256(f2, shift2);
+      f0 <- OpsV.iVPACKUS_16u16(f0, f2);
+      f0 <- OpsV.iVPERMD(permidx, f0);
+      Glob.mem <-
+      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int (32 * i)))) f0;
+      i <- i + 1;
+    }
+    return (a);
+  }
+
+  proc poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var x16p:W16.t Array16.t;
+    var q:W256.t;
+    var x32p:W8.t Array32.t;
+    var shufbidx:W256.t;
+    var mask:W256.t;
+    var shift:W256.t;
+    var t:W128.t;
+    var f:W256.t;
+    var i:int;
+    x16p <- witness;
+    x32p <- witness;
+    x16p <- jqx16;
+    q <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    x32p <- jshufbidx;
+    shufbidx <- (get256 (WArray32.init8 (fun i => x32p.[i])) 0);
+    mask <- OpsV.iVPBROADCAST_8u32(mask_s);
+    shift <- OpsV.iVPBROADCAST_8u32(shift_s_0);
+    t <- setw0_128 ;
+    f <- setw0_256 ;
+    aux <- (256 %/ 16);
+    i <- 0;
+    while (i < aux) {
+      f <-
+      OpsV.iVPBROADCAST_2u128(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      f <- OpsV.iVPSHUFB_256(f, shufbidx);
+      f <- OpsV.ivpand16u16(f, mask);
+      f <- OpsV.iVPMULL_16u16(f, shift);
+      f <- OpsV.iVPMULHRS_256(f, q);
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) i f));
       i <- i + 1;
     }
     return (rp);
@@ -385,6 +478,14 @@ proof.
   *)
 qed.
 
+equiv eq_red16x:
+  Mavx2_prevec.red16x ~ Mvec.red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
+proof.
+  proc.
+  do (call eq_ivsub16u256 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
+  trivial.
+qed.
+
 equiv eq_poly_reduce:
   Mavx2_prevec.poly_reduce ~ Mvec.poly_reduce: ={rp} ==> ={res}.
 proof.
@@ -421,6 +522,14 @@ proof.
   rewrite /is16u16 /vx16_R /vx16_L /lift2poly;
   do rewrite initiE => />.
   rewrite pack16_bits16 => //.
+  trivial.
+qed.
+
+equiv eq_fqmulx16:
+  Mavx2_prevec.fqmulx16 ~ Mvec.fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
+proof.
+  proc.
+  do (call eq_ivsub16u256 || call eq_iVPMULH_256 || call eq_iVPMULL_16u16).
   trivial.
 qed.
 
@@ -505,6 +614,14 @@ proof.
   wp. skip. auto => />.
 qed.
 
+equiv veceq_red16x:
+  Mvec.red16x ~ M.red16x: ={r, qx16, vx16} ==> ={res}.
+proof.
+  proc.
+  inline *.
+  wp. skip. auto => />.
+qed.
+
 equiv veceq_poly_reduce:
   Mvec.poly_reduce ~ M.poly_reduce: ={rp} ==> ={res}.
 proof.
@@ -512,6 +629,14 @@ proof.
   while(={rp, i, qx16, vx16}).
     inline *.
     wp. skip. auto => />.
+  wp. skip. auto => />.
+qed.
+
+equiv veceq_fqmulx16:
+  Mvec.fqmulx16 ~ M.fqmulx16: ={a, b, qx16, qinvx16} ==> ={res}.
+proof.
+  proc.
+  inline *.
   wp. skip. auto => />.
 qed.
 
@@ -557,12 +682,30 @@ apply eq_poly_frommsg.
 apply veceq_poly_frommsg.
 qed.
 
+equiv prevec_eq_red16x:
+  Mavx2_prevec.red16x ~ M.red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
+  transitivity Mvec.red16x (is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2})
+                           (={r, qx16, vx16} ==> ={res}).
+smt. trivial.
+apply eq_red16x.
+apply veceq_red16x.
+qed.
+
 equiv prevec_eq_poly_reduce:
   Mavx2_prevec.poly_reduce ~ M.poly_reduce: ={rp} ==> ={res}.
     transitivity Mvec.poly_reduce (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_reduce.
 apply veceq_poly_reduce.
+qed.
+
+equiv prevec_eq_fqmulx16:
+  Mavx2_prevec.fqmulx16 ~ M.fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
+    transitivity Mvec.fqmulx16 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2})
+                               (={a, b, qx16, qinvx16} ==> ={res}).
+smt. trivial.
+apply eq_fqmulx16.
+apply veceq_fqmulx16.
 qed.
 
 equiv prevec_eq_poly_frommont:
