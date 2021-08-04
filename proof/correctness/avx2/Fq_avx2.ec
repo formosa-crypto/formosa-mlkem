@@ -279,6 +279,7 @@ rewrite (_: r3{hr}.[0 <- wmulhs a{hr}.[0] b{hr}.[0] -
 
 move => k k_bnds.
 rewrite initiE //=.
+
 pose _c := _a.[k] * _b.[k].
 rewrite /wmulhs.
 rewrite /SREDC /=.
@@ -286,28 +287,42 @@ rewrite /SREDC /=.
 rewrite (_: R*(R *R^0) = W32.modulus); first by rewrite expr0 /R  => />.
 rewrite (_: R = W16.modulus); first by rewrite /R => />.
 rewrite balmod_W32 balmod_W32 balmod_W16.
-rewrite W16.of_sintK.
 rewrite qE /=.
+
 rewrite /lift_array16 in _a_def.
 rewrite /lift_array16 in _b_def.
-rewrite (_: to_sint a{hr}.[k] = _a.[k]).
-  rewrite _a_def => /=. rewrite mapiE //.
-rewrite (_: to_sint b{hr}.[k] = _b.[k]).
-  rewrite _b_def /=. rewrite mapiE //.
+
+rewrite of_sintK.
 rewrite qx16_def //; rewrite qinvx16_def //.
-rewrite of_sintK /=.
-rewrite -/_c.
-rewrite /(W16.smod 3329) /=.
+rewrite of_sintK /= /(W16.smod 3329) /=.
+rewrite {3}/W16.to_sint.
+rewrite to_uintM.
+rewrite of_uintK.
+rewrite modzMmr /=.
+rewrite /W16.( * ) /ulift2.
+rewrite of_uintK.
+rewrite modzMml /=.
 congr.
 rewrite (modz_dvd _ 4294967296 65536) //.
-rewrite to_sintE.
-rewrite to_uintM.
-rewrite of_uintK //=.
-rewrite to_uintM //=.
-rewrite -modzMm //=.
-rewrite modz_mod.
-rewrite modzMml.
-rewrite /smod /=.
+rewrite -of_sintK.
+rewrite of_intD.
+rewrite /_c.
+rewrite -of_intM.
+rewrite (_: to_sint a{hr}.[k] = _a.[k]) _a_def /= mapiE //.
+rewrite (_: to_sint b{hr}.[k] = _b.[k]) _b_def /= mapiE //.
+rewrite of_intD.
+rewrite of_intN /=.
+rewrite {5 6}/W16.to_sint.
+rewrite (_: (smod (to_uint a{hr}.[k]))%W16 * (smod (to_uint b{hr}.[k]))%W16 * 62209 * 65536 %% 4294967296 =
+            to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 * 65536 %% 4294967296).
+  rewrite /smod.
+  case (2 ^ (16 - 1) <= to_uint a{hr}.[k]) => ua_lb.
+    case (2 ^ (16 - 1) <= to_uint b{hr}.[k]) => ub_lb.
+    + smt(@Int @IntDiv).
+    + smt(@Int @IntDiv).
+    case (2 ^ (16 - 1) <= to_uint b{hr}.[k]) => ub_lb.
+    + smt(@Int @IntDiv).
+    + smt(@Int @IntDiv).
 
 admit.
 
@@ -316,8 +331,6 @@ qed.
 
 lemma fqmulx16_ll:
   islossless Mavx2_prevec.fqmulx16 by proc; islossless.
-
-print Mavx2_prevec.
 
 lemma fqmulx16_corr _a _b :
   phoare [Mavx2_prevec.fqmulx16 :
