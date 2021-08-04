@@ -175,6 +175,16 @@ module Ops = {
     return r;
   }
 
+  (* TODO:
+     - spec
+     - equiv
+  *)
+  proc iVPMADDUBSW_256(x y: t16u16): t16u16 = {
+    var r : t16u16;
+
+    return r;
+  }
+
   proc ivadd64u256(x y:t4u64) : t4u64 = {
     var r : t4u64;
     r.[0] <- x.[0] + y.[0];
@@ -1084,7 +1094,7 @@ module Ops = {
   proc iVPMOVMSKB_u256_u32(x: t32u8): W32.t = {
     var rb: bool list;
 
-    rb <- mkseq (fun i => 128 <= to_uint x.[i]) 32;
+    rb <- mkseq (fun i => W8.msb(x.[i])) 32;
 
     return W32.bits2w(rb);
   }
@@ -1137,6 +1147,10 @@ module OpsV = {
 
   proc iVPMULHRS_256(x y: vt16u16): vt16u16 = {
     return VPMULHRSW_256 x y;
+  }
+
+  proc iVPMADDUBSW_256(x y: vt16u16): vt16u16 = {
+    return VPMADDUBSW_256 x y;
   }
 
   proc ivadd64u256(x y:vt4u64) : vt4u64 = {
