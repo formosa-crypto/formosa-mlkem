@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
-require import Array256 Fq Array16 Array16p Array4 Array4p Array8 Array8p.
+require import Array256 Fq Array16 Array16p Array4 Array4p Array8 Array8p Array32p.
 require import W16extra WArray512 WArray32 WArray16.
 require import Ops.
 require import List_hakyber.
@@ -170,7 +170,11 @@ module Mavx2_prevec = {
     var hq:W16.t Array16.t;
     var hhq:W16.t Array16.t;
     var i:int;
-    var f0:W16.t Array16.t;
+
+    var f0: t16u16;
+    var f0_b: t32u8;
+    var f0_q: t4u64;
+
     var f1:W16.t Array16.t;
     var g0:W16.t Array16.t;
     var g1:W16.t Array16.t;
@@ -193,9 +197,15 @@ module Mavx2_prevec = {
       f1 <- Ops.ilxor16u16(f1, g1);
       f0 <- Ops.ivsub16u256(f0, hhq);
       f1 <- Ops.ivsub16u256(f1, hhq);
-      (* f0 <- Ops.iVPACKSS_16u16(f0, f1); *)
-      (* FIXME: f0 <- Ops.VPERMQ(f0, (W8.of_int 216)); *)
-      c <-  Ops.iVPMOVMSKB_u256_u32(f0);
+
+      f0_b <- Ops.iVPACKSS_16u16(f0, f1);
+
+      f0_q <- Array4.init (fun i => pack8_t (W8u8.Pack.init(fun j => f0_b.[8*i + j])));
+      f0_q <- Ops.iVPERMQ(f0_q, (W8.of_int 216));
+
+      f0_b <- Array32.init (fun i => f0_q.[i %/ 8] \bits8 (i %% 8));
+      c <-  Ops.iVPMOVMSKB_u256_u32(f0_b);
+
       Glob.mem <-
       storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
       i <- i + 1;
