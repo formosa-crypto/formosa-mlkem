@@ -293,8 +293,8 @@ rewrite /lift_array16 in _a_def.
 rewrite /lift_array16 in _b_def.
 
 rewrite of_sintK.
-rewrite qx16_def //; rewrite qinvx16_def //.
-rewrite of_sintK /= /(W16.smod 3329) /=.
+rewrite qx16_def 1:// qinvx16_def 1://.
+rewrite of_sintK 1:/= /(W16.smod 3329) /=.
 rewrite {3}/W16.to_sint.
 rewrite to_uintM.
 rewrite of_uintK.
@@ -303,6 +303,7 @@ rewrite /W16.( * ) /ulift2.
 rewrite of_uintK.
 rewrite modzMml /=.
 congr.
+
 rewrite (modz_dvd _ 4294967296 65536) //.
 rewrite -of_sintK.
 rewrite of_intD.
@@ -312,6 +313,7 @@ rewrite (_: to_sint a{hr}.[k] = _a.[k]) _a_def /= mapiE //.
 rewrite (_: to_sint b{hr}.[k] = _b.[k]) _b_def /= mapiE //.
 rewrite of_intD.
 rewrite of_intN /=.
+
 rewrite {5 6}/W16.to_sint.
 rewrite (_: (smod (to_uint a{hr}.[k]))%W16 * (smod (to_uint b{hr}.[k]))%W16 * 62209 * 65536 %% 4294967296 =
             to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 * 65536 %% 4294967296).
@@ -324,7 +326,25 @@ rewrite (_: (smod (to_uint a{hr}.[k]))%W16 * (smod (to_uint b{hr}.[k]))%W16 * 62
     + smt(@Int @IntDiv).
     + smt(@Int @IntDiv).
 
-admit.
+rewrite of_sintK.
+rewrite (_: (smod ((to_sint a{hr}.[k] * to_sint b{hr}.[k] -
+            (smod (to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 * 65536 %% 4294967296))%W32 %/
+            65536 * 3329) %% W32.modulus))%W32 %/ 65536 %% 65536 =
+            ((to_sint a{hr}.[k] * to_sint b{hr}.[k] -
+            (smod (to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 * 65536 %% 4294967296))%W32 %/
+            65536 * 3329) %% W32.modulus)%W32 %/ 65536 %% 65536).
+  pose tmpv :=  ((to_sint a{hr}.[k] * to_sint b{hr}.[k] -
+                (smod (to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 * 65536 %% 4294967296))%W32 %/
+                65536 * 3329) %% W32.modulus).
+  rewrite /smod /=.
+  case (2147483648 <= tmpv) => tmpv_lb.
+  + rewrite(_: -4294967296 = (-65536) * 65536); trivial. rewrite divzMDr //. smt(@Int @IntDiv).
+  + reflexivity.
+
+rewrite (modz_pow2_div 32 16 _) 1:// /= modz_mod.
+
+
+admit. (*FIXME *)
 
 qed.
 
