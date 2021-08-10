@@ -342,12 +342,21 @@ rewrite (_: (smod ((to_sint a{hr}.[k] * to_sint b{hr}.[k] -
   + reflexivity.
 
 rewrite (modz_pow2_div 32 16 _) 1:// /= modz_mod.
+have ->: forall (x: int), x * 65536 %% 4294967296 = x %% 65536 * 65536.
+  by move => x; smt(@Int @IntDiv).
 
+rewrite (_: (smod (to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 %% 65536 * 65536))%W32 %/ 65536 =
+            (smod (to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 %% 65536))%W16).
+  rewrite /smod.
+  case ((2^(32-1) <= to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 %% 65536 * 65536)) => m_lb.
+  + have ->: (2^(16-1) <= to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 %% 65536). move : m_lb. smt(@Int @IntDiv @W32 @W16).
+    simplify. rewrite divzMDl //.
+  + have ->: (! 2^(16-1) <= to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 %% 65536). move : m_lb. smt(@Int @IntDiv @W32 @W16).
+    simplify. rewrite mulzK //.
 
 admit. (*FIXME *)
 
 qed.
-
 
 lemma fqmulx16_ll:
   islossless Mavx2_prevec.fqmulx16 by proc; islossless.
