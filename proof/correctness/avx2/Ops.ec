@@ -1282,7 +1282,7 @@ module OpsV = {
   }
 
   proc iVPMOVMSKB_u256_u32(x: vt32u8): W32.t = {
-    return VPMOVMSKB_256 x;
+    return VPMOVMSKB_u256_u32 x;
   }
 }.
 
@@ -1712,7 +1712,7 @@ equiv eq_iVPMOVMSKB_u256_u32 : Ops.iVPMOVMSKB_u256_u32 ~ OpsV.iVPMOVMSKB_u256_u3
   is32u8 x{1} x{2} ==> ={res}.
 proof.
 proc; wp; skip.
-rewrite /is32u8 /VPMOVMSKB_256 /=.
+rewrite /is32u8 /VPMOVMSKB_u256_u32 /=.
 move => &1 &2 x_eq.
 rewrite x_eq.
 rewrite -get_unpack8 //=.
