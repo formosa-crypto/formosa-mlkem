@@ -3,9 +3,9 @@ from Jasmin require import JModel.
 require import Array256 Array16p Array16 Array4 Array8 Array32.
 require import WArray512 WArray32 WArray16.
 require import Ops.
-require import KyberPoly_avx2.
 require import KyberPoly_avx2_prevec.
 require import KyberPoly_avx2_proof.
+require import KyberCPA_avx2.
 
 pragma +oldip.
 
@@ -101,12 +101,13 @@ module Mvec = {
     var h2:W256.t;
     var h1:W256.t;
     var h3:W256.t;
+
     x16p <- witness;
     x16p <- hqx16_p1;
     hqs <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
     shift <-
-    OpsV.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
-    idx <- OpsV.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
+    OpsV.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
+    idx <- OpsV.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
     f <- OpsV.iload4u64(Glob.mem, ap);
     i <- 0;
     while (i < 4) {
@@ -177,10 +178,10 @@ module Mvec = {
     var c:W32.t;
     px16 <- witness;
     a <@ poly_csubq (a);
-    px16 <- hqx16_m1;
-    hq <- (get256 (WArray32.init16 (fun i => px16.[i])) 0);
-    px16 <- hhqx16;
-    hhq <- (get256 (WArray32.init16 (fun i => px16.[i])) 0);
+(*    px16 <- hqx16_m1; *)
+    hq <- (get256 (WArray32.init16 (fun i => hqx16_m1.[i])) 0);
+(*    px16 <- hhqx16; *)
+    hhq <- (get256 (WArray32.init16 (fun i => hhqx16.[i])) 0);
     aux <- (256 %/ 32);
     i <- 0;
     while (i < aux) {
@@ -246,12 +247,12 @@ module Mvec = {
     var i:int;
     var t:W256.t;
     x16p <- witness;
-    x16p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    x16p <- jqinvx16;
-    qinvx16 <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    x16p <- jdmontx16;
-    dmontx16 <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+(*    x16p <- jqx16; *)
+    qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+(*    x16p <- jqinvx16;*)
+    qinvx16 <- (get256 (WArray32.init16 (fun i => jqinvx16.[i])) 0);
+(*    x16p <- jdmontx16; *)
+    dmontx16 <- (get256 (WArray32.init16 (fun i => jdmontx16.[i])) 0);
     aux <- (256 %/ 16);
     i <- 0;
     while (i < aux) {
@@ -281,12 +282,12 @@ module Mvec = {
     var f3:W256.t;
     x16p <- witness;
     a <@ poly_csubq (a);
-    x16p <- jvx16;
-    v <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    shift1 <- OpsV.iVPBROADCAST_16u16(shift1_s);
-    mask <- OpsV.iVPBROADCAST_16u16(mask_s_0);
-    shift2 <- OpsV.iVPBROADCAST_16u16(shift2_s);
-    permidx <- (get256 (WArray32.init32 (fun i => permidx_s.[i])) 0);
+(*    x16p <- jvx16; *)
+    v <- (get256 (WArray32.init16 (fun i => jvx16.[i])) 0);
+    shift1 <- OpsV.iVPBROADCAST_16u16(pc_shift1_s);
+    mask <- OpsV.iVPBROADCAST_16u16(pc_mask_s);
+    shift2 <- OpsV.iVPBROADCAST_16u16(pc_shift2_s);
+    permidx <- (get256 (WArray32.init32 (fun i => pc_permidx_s.[i])) 0);
     aux <- (256 %/ 64);
     i <- 0;
     while (i < aux) {
@@ -333,12 +334,12 @@ module Mvec = {
     var i:int;
     x16p <- witness;
     x32p <- witness;
-    x16p <- jqx16;
-    q <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    x32p <- jshufbidx;
+(*    x16p <- jqx16; *)
+    q <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    x32p <- pd_jshufbidx;
     shufbidx <- (get256 (WArray32.init8 (fun i => x32p.[i])) 0);
-    mask <- OpsV.iVPBROADCAST_8u32(mask_s);
-    shift <- OpsV.iVPBROADCAST_8u32(shift_s_0);
+    mask <- OpsV.iVPBROADCAST_8u32(pd_mask_s);
+    shift <- OpsV.iVPBROADCAST_8u32(pd_shift_s);
     t <- setw0_128 ;
     f <- setw0_256 ;
     aux <- (256 %/ 16);

@@ -4,7 +4,7 @@ require import Fq Array16 Array16p.
 require import W16extra WArray512 WArray32 WArray16.
 require import Ops.
 require import List_hakyber.
-require import KyberPoly_avx2.
+require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 
 pragma +oldip.
@@ -22,8 +22,8 @@ op lift_array16 (p: W16.t Array16.t) =
 lemma barret_red16x_corr_h a :
   hoare[ Mavx2_prevec.red16x :
        a = lift_array16 r /\
-       (forall k, 0 <= k < 16 => qx16.[k] = KyberPoly_avx2.jqx16.[k]) /\
-       (forall k, 0 <= k < 16 => vx16.[k] = KyberPoly_avx2.jvx16.[k]) ==>
+       (forall k, 0 <= k < 16 => qx16.[k] = KyberCPA_avx2.jqx16.[k]) /\
+       (forall k, 0 <= k < 16 => vx16.[k] = KyberCPA_avx2.jvx16.[k]) ==>
        forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC a.[k] 26].
 proof.
 proc.
@@ -219,8 +219,8 @@ lemma barret_red16x_ll:
 lemma barret_red16x_corr a:
   phoare [Mavx2_prevec.red16x:
           a = lift_array16 r /\
-          (forall k, 0 <= k < 16 => qx16.[k] = KyberPoly_avx2.jqx16.[k]) /\
-          (forall k, 0 <= k < 16 => vx16.[k] = KyberPoly_avx2.jvx16.[k]) ==>
+          (forall k, 0 <= k < 16 => qx16.[k] = KyberCPA_avx2.jqx16.[k]) /\
+          (forall k, 0 <= k < 16 => vx16.[k] = KyberCPA_avx2.jvx16.[k]) ==>
           forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC a.[k] 26] = 1%r.
 proof.
 by conseq barret_red16x_ll (barret_red16x_corr_h a). qed.

@@ -4,7 +4,7 @@ require import Array256 Fq Array16 Array16p Array4 Array4p Array8 Array8p Array3
 require import W16extra WArray512 WArray32 WArray16.
 require import Ops.
 require import List_hakyber.
-require import KyberPoly_avx2.
+require import KyberCPA_avx2.
 
 pragma +oldip.
 
@@ -68,7 +68,7 @@ module Mavx2_prevec = {
     var _r: W16.t Array16.t;
     var t: W16.t Array16.t;
 
-    qx16 <- (get256 (WArray32.init16 (fun i => KyberPoly_avx2.jqx16.[i])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i => KyberCPA_avx2.jqx16.[i])) 0);
     _qx16 <- lift2poly(qx16);
     i <- 0;
     while (i < 16) {
@@ -232,8 +232,8 @@ module Mavx2_prevec = {
     var i:int;
     var r:W16.t Array16.t;
 
-    qx16 <- lift2poly (get256 (WArray32.init16 (fun i => KyberPoly_avx2.jqx16.[i])) 0);
-    vx16 <- lift2poly (get256 (WArray32.init16 (fun i => KyberPoly_avx2.jvx16.[i])) 0);
+    qx16 <- lift2poly (get256 (WArray32.init16 (fun i => KyberCPA_avx2.jqx16.[i])) 0);
+    vx16 <- lift2poly (get256 (WArray32.init16 (fun i => KyberCPA_avx2.jvx16.[i])) 0);
     i <- 0;
 
     while (i < 16) {

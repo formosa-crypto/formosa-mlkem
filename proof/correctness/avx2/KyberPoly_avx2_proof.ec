@@ -4,7 +4,7 @@ require import Array256 Fq Array16 Array16p Array4 Array4p Array8 Array8p.
 require import W16extra WArray512 WArray32 WArray16.
 require import Ops.
 require import List_hakyber.
-require import KyberPoly_avx2.
+require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 require import Fq_avx2.
 
@@ -472,7 +472,7 @@ lemma poly_csubq_corr_h ap :
              pos_bound256_cxq res 0 256 1 ].
 proof.
 proc.
-while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = KyberPoly_avx2.jqx16.[k]).
+while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = KyberCPA_avx2.jqx16.[k]).
 seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
 inline Ops.ivsub16u256.
 wp. skip. simplify.
@@ -579,7 +579,7 @@ split.
 (****)
 rewrite to_sintN => //=.
 rewrite (_qx16_def (x%% 16))  => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -589,7 +589,7 @@ have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -602,7 +602,7 @@ smt.
 
 rewrite to_sintN => //=.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -612,7 +612,7 @@ have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
 simplify.
 smt.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -626,7 +626,7 @@ smt.
 rewrite _qx16_def => //=.
 rewrite (_: rp{hr}.[16 * i{hr} + x %% 16] = rp{hr}.[x]).
   by move : x_i x_mb => /#.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite inzmodD. ring.
@@ -695,7 +695,7 @@ rewrite _r_def => //.
 rewrite W16.sltE.
 rewrite to_sintB_small.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 do rewrite of_sintK.
@@ -709,7 +709,7 @@ rewrite qE.
 simplify.
 smt().
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 do rewrite of_sintK.
@@ -721,7 +721,7 @@ smt.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 do rewrite of_sintK => />.
@@ -734,7 +734,7 @@ move : _r_lb.
 rewrite _r_def => //.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -767,7 +767,7 @@ move : _r_lb.
 rewrite _r_def => //.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -791,7 +791,7 @@ rewrite /smod /=.
 done.
 move : rp_qx16_lb.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK.
@@ -805,7 +805,7 @@ rewrite qE.
 simplify.
 smt().
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite to_sintN /=.
@@ -858,7 +858,7 @@ rewrite _r_def in _r_ub => //.
 move : _r_ub.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -890,7 +890,7 @@ split.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -918,7 +918,7 @@ simplify.
 rewrite to_sintD_small => />.
 rewrite to_sintN => />.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite of_sintK => />.
@@ -930,7 +930,7 @@ split.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -957,7 +957,7 @@ move => rp_qx16_lb.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -979,7 +979,7 @@ done.
 move => _r_lb.
 move : _sr_lb rp_qx16_lb.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -1000,7 +1000,7 @@ smt(@W64).
 
 rewrite qE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 do rewrite fun_if.
 rewrite to_sintN of_sintK => />.
@@ -1009,7 +1009,7 @@ rewrite /smod => />.
 move : _r_lb.
 rewrite sltE.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -1031,7 +1031,7 @@ done.
 move => rp_q_lb_neg.
 move : _sr_lb.
 rewrite _qx16_def => //=.
-rewrite /(KyberPoly_avx2.jqx16).
+rewrite /(KyberCPA_avx2.jqx16).
 rewrite get_of_list => />.
 rewrite to_sintB_small.
 do rewrite fun_if.
@@ -1200,8 +1200,8 @@ by smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E).
 while (0 <= i <= 16 /\
        (forall k, 0 <= k < 16 * i => to_sint rp.[k] = (BREDC (to_sint _rp.[k]) 26)) /\
        (forall k, 16 * i <= k < 256 => to_sint rp.[k] =  (to_sint _rp.[k])) /\
-       (forall k, 0 <= k < 16 => qx16.[k] = KyberPoly_avx2.jqx16.[k]) /\
-       (forall k, 0 <= k < 16 => vx16.[k] = KyberPoly_avx2.jvx16.[k])); last first.
+       (forall k, 0 <= k < 16 => qx16.[k] = KyberCPA_avx2.jqx16.[k]) /\
+       (forall k, 0 <= k < 16 => vx16.[k] = KyberCPA_avx2.jvx16.[k])); last first.
 auto => /> H.
 do split; first by smt().
 
@@ -1305,14 +1305,14 @@ proof. by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
 lemma poly_frommont_corr_h ap:
   hoare[ Mavx2_prevec.poly_frommont :
        ap = map W16.to_sint rp ==>
-       map W16.to_sint res = map (fun x => SREDC (x * ((R^2) %% q))) ap].
+       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) R 2) %% q))) ap].
 proof.
 proc.
 while(0 <= i <= 16 /\ aux = 16 /\
       (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
       (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
       (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) /\
-      (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((R^2) %% q))) /\
+      (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) R 2) %% q))) /\
       (forall k, 16 * i <= k < 256 => W16.to_sint rp.[k] = ap.[k])); last first.
 auto => />.
 move => &hr.
@@ -1334,7 +1334,7 @@ rewrite (_: 2 * k %% 2 = 0).
 rewrite (_: (2 * k + 1) %% 2 = 1).
   by smt(@IntDiv).
 rewrite pack2_bits8.
-rewrite /(KyberPoly_avx2.jdmontx16) => />.
+rewrite /(KyberCPA_avx2.jdmontx16) => />.
 rewrite initiE => />. move : k_lb k_ub => /#.
 smt(@Array16).
 
@@ -1354,7 +1354,7 @@ rewrite (_: 2 * k %% 2 = 0).
 rewrite (_: (2 * k + 1) %% 2 = 1).
   by smt(@IntDiv).
 rewrite pack2_bits8.
-rewrite /(KyberPoly_avx2.jqx16) => />.
+rewrite /(KyberCPA_avx2.jqx16) => />.
 rewrite initiE => />. move : k_lb k_ub => /#.
 smt(@Array16).
 
@@ -1391,17 +1391,7 @@ rewrite mapiE //.
 sp. wp.
 ecall (Fq_avx2.fqmulx16_corr_h (Fq_avx2.lift_array16 t) (Fq_avx2.lift_array16 dmontx16)).
 auto => />.
-move => &hr i_lb i_ub dmontx16_def qx16_def qinvx16_def rp_sredc rp_eq_ap i_tub.
-do split.
-move => k k_lb k_ub.
-rewrite qx16_def //=.
-rewrite /(KyberPoly_avx2.jqx16) initiE //=.
-smt(@Array16).
-move => k k_lb k_ub.
-rewrite qinvx16_def //=.
-rewrite /(KyberPoly_avx2.jqinvx16) initiE //=.
-smt(@Array16). 
-move => qx16_eq_jqx16 qinvx16_eq_jqinvx16 result result_def.
+move => &hr i_lb i_ub dmontx16_def qx16_def qinvx16_def rp_sredc rp_eq_ap i_tub result result_def.
 split.
 move : i_lb i_tub => /#.
 
