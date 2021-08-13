@@ -10,7 +10,7 @@
 param int GENMATRIX_NBLOCKS = 3;
 param int REJ_UNIFORM_AVX_BUFLEN = GENMATRIX_NBLOCKS * SHAKE128_RATE;
 
-u8[2048] idx = {-1, -1, -1, -1, -1, -1, -1, -1,
+u8[2048] ru_idx = {-1, -1, -1, -1, -1, -1, -1, -1,
                 0, -1, -1, -1, -1, -1, -1, -1,
                 2, -1, -1, -1, -1, -1, -1, -1,
                 0,  2, -1, -1, -1, -1, -1, -1,
@@ -426,9 +426,9 @@ fn rej_uniform(reg ptr u16[KYBER_N] rp, reg u64 offset, reg ptr u8[SHAKE128_RATE
   return ctr, rp;
 }
 
-u8 ones_s = 1;
-u16 mask_s = 0x0FFF;
-u8[32] idx8_s = {0, 1, 1, 2, 3, 4, 4, 5,
+u8 ru_ones_s = 1;
+u16 ru_mask_s = 0x0FFF;
+u8[32] ru_idx8_s = {0, 1, 1, 2, 3, 4, 4, 5,
                  6, 7, 7, 8, 9, 10, 10, 11,
                  4, 5, 5, 6, 7, 8, 8, 9,
                  10, 11, 11, 12, 13, 14, 14, 15};
@@ -445,14 +445,14 @@ fn rej_uniform_avx(reg ptr u16[KYBER_N] rp, reg ptr u8[REJ_UNIFORM_AVX_BUFLEN] b
   reg u8 fl1 fl2;
   reg bool cf zf b;
 
-  idxp = idx;
+  idxp = ru_idx;
 
   bound = jqx16[u256 0];
   ctr = 0;
   pos = 0;
-  ones = #VPBROADCAST_32u8(ones_s);
-  mask = #VPBROADCAST_16u16(mask_s);
-  idx8 = idx8_s[u256 0];
+  ones = #VPBROADCAST_32u8(ru_ones_s);
+  mask = #VPBROADCAST_16u16(ru_mask_s);
+  idx8 = ru_idx8_s[u256 0];
 
   _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 32);
   fl1 = #SETcc(cf || zf);

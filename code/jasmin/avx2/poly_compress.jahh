@@ -4,10 +4,10 @@
 #include "params.jahh"
 #include "poly_csubq.jahh"
 
-u16 shift1_s = 0x200;
-u16 mask_s = 0x0F;
-u16 shift2_s = 0x1001;
-u32[8] permidx_s = {0,4,1,5,2,6,3,7};
+u16 pc_shift1_s = 0x200;
+u16 pc_mask_s = 0x0F;
+u16 pc_shift2_s = 0x1001;
+u32[8] pc_permidx_s = {0,4,1,5,2,6,3,7};
 
 fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
@@ -23,10 +23,10 @@ fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 
   x16p = jvx16;
   v = x16p[u256 0];
-  shift1 = #VPBROADCAST_16u16(shift1_s);
-  mask = #VPBROADCAST_16u16(mask_s);
-  shift2 = #VPBROADCAST_16u16(shift2_s);
-  permidx = permidx_s[u256 0];
+  shift1 = #VPBROADCAST_16u16(pc_shift1_s);
+  mask = #VPBROADCAST_16u16(pc_mask_s);
+  shift2 = #VPBROADCAST_16u16(pc_shift2_s);
+  permidx = pc_permidx_s[u256 0];
 
   for i=0 to KYBER_N/64
   {
@@ -72,10 +72,10 @@ fn i_poly_compress(reg ptr u8[KYBER_POLYCOMPRESSEDBYTES] rp, reg ptr u16[KYBER_N
 
   x16p = jvx16;
   v = x16p[u256 0];
-  shift1 = #VPBROADCAST_16u16(shift1_s);
-  mask = #VPBROADCAST_16u16(mask_s);
-  shift2 = #VPBROADCAST_16u16(shift2_s);
-  permidx = permidx_s[u256 0];
+  shift1 = #VPBROADCAST_16u16(pc_shift1_s);
+  mask = #VPBROADCAST_16u16(pc_mask_s);
+  shift2 = #VPBROADCAST_16u16(pc_shift2_s);
+  permidx = pc_permidx_s[u256 0];
 
   for i=0 to KYBER_N/64
   {
