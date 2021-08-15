@@ -136,8 +136,8 @@ smt (@Array256).
 qed.
 
 lemma poly_add_corr _a _b ab bb :
-    0 <= ab <= 6 => 0 <= bb <= 3 =>
       hoare[ Mavx2_prevec.poly_add2 :
+           (0 <= ab <= 6 /\ 0 <= bb <= 3) /\
            _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
@@ -146,8 +146,15 @@ lemma poly_add_corr _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
              inzmod (to_sint res.[k]) = _a.[k] + _b.[k]].
-proof.
-move => a_i b_i.
+bypr => &m [[ma_i mb_i] [_ma_def] [_mb_def] [msgnd_bnd_rp] msgnd_bnd_bp].
+byphoare (_ : _a = lift_array256 rp /\
+              _b = lift_array256 bp /\
+              signed_bound_cxq rp 0 256 ab /\
+              signed_bound_cxq bp 0 256 bb ==>
+              !(signed_bound_cxq res 0 256 (ab + bb) /\
+              forall (k : int), 0 <= k && k < 256 => inzmod (to_sint res.[k]) = _a.[k] + _b.[k]) ) => //.
+hoare.
+simplify.
   proc.
   sp.
   while (
