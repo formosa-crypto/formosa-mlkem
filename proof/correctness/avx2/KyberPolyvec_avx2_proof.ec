@@ -8,23 +8,19 @@ require import KyberCPA_avx2.
 require import KyberPolyvec_avx2_prevec.
 require import KyberPoly_avx2_proof.
 require import Fq_avx2.
+require import KyberPolyVec.
 
-theory KyberPolyvecAVX2.
+theory KyberPolyvecAVX.
 
 import Fq.
 import SignedReductions.
 import Kyber_.
 import ZModField.
 import KyberPolyAVX.
-
-op lift_array768 (p: W16.t Array768.t) =
-  Array768.map (fun x => inzmod (W16.to_sint x)) p.
-
-op signed_bound768_cxq(coefs : W16.t Array768.t, l u c : int) : bool =
-  forall k, l <= k < u => b16 coefs.[k] (c*Kyber_.q).
+import KyberPolyVec.
 
 lemma polvec_add_corr_h _a _b ab bb:
-      hoare[ Mavx2_prevec.polyvec_add2:
+      hoare[Mavx2_prevec.polyvec_add2:
            (0 <= ab <= 6 /\ 0 <= bb <= 3) /\
            _a = lift_array768 r /\
            _b = lift_array768 b /\
@@ -86,3 +82,59 @@ proof.
   do rewrite initiE 1:/#.
   smt(@Array256 @Array768 @KyberPolyAVX @Int).
 qed.
+
+
+lemma polyvec_csubq_corr ap :
+  hoare[Mavx2_prevec.polyvec_csubq:
+       ap = lift_array768 r /\
+       pos_bound768_cxq r 0 768 2
+       ==>
+       ap = lift_array768 res /\
+       pos_bound768_cxq res 0 768 1].
+proof.
+  proc; sp.
+  wp.
+  ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
+  wp.
+  ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
+  wp.
+  ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
+   wp. skip.
+   move => &hr [ap_def pos_bound_r]; split.
+   split; trivial; smt(@Array256).
+   move => [r_eq_r_1 pos_bound_r_1 res1 [r_eq_res_1 pos_bound_res_1] res_1_def]; split.
+   split; trivial; smt(@Array768 @Array256).
+   move => [r_eq_r_2 pos_bound_r_2 res2 [r_eq_res_2 pos_bound_res_2] res_2_def]; split.
+   split; trivial; smt(@Array768 @Array256).
+   move => [r_eq_r_3 pos_bound_r_3 res3 [r_eq_res_3 pos_bound_res_3] res_3_def]; split.
+   rewrite /res_3_def /res_2_def /res_1_def /=.
+   rewrite ap_def.
+   rewrite lift_array768P; move => k k_i.
+   do rewrite initiE 1:/# //=.
+   do rewrite fun_if.
+   rewrite lift_array256P //= in r_eq_res_3.
+   rewrite lift_array256P //= in r_eq_res_2.
+   rewrite lift_array256P //= in r_eq_res_1.
+   case (512 <= k < 768) => k_si.
+   rewrite -(r_eq_res_3 (k - 512)) 1:/#.
+   do rewrite initiE 1:/# //=.
+   rewrite (_: (256 <= k && k < 512) = false) 1:/# //=.
+   rewrite (_: (0 <= k && k < 256) = false) 1:/# //=.
+   case (256 <= k < 512) => k_ssi.
+   rewrite -(r_eq_res_2 (k -  256)) 1:/#.
+   do rewrite initiE 1:/# //=.
+   rewrite (_: (0 <= k && k < 256) = false) 1:/# //=.
+   rewrite -(r_eq_res_1 k) 1:/#.
+   do rewrite initiE 1:/# //=.
+   rewrite /res_3_def /res_2_def /res_1_def.
+   rewrite /pos_bound768_cxq => k k_i.
+   do rewrite initiE //=.
+   rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_3.
+   rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_2.
+   rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_1.
+   move : (pos_bound_res_3 (k - 512))  (pos_bound_res_2 (k - 256))  (pos_bound_res_1 k).
+   smt(@Array256 @Array768).
+qed.
+
+end KyberPolyvecAVX.
+
