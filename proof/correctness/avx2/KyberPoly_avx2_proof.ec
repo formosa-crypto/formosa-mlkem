@@ -93,7 +93,7 @@ lemma get_set_get_eqa (v: W16.t Array256.t) (w: W256.t) i:
 proof.
 move => i_i k k_i.
 rewrite Array256.initiE.
-move : i_i k_i; smt.
+move : i_i k_i => /#.
 simplify.
 rewrite set_get_def => /#.
 qed.
@@ -104,7 +104,7 @@ lemma get_set_get_diff (v: W16.t Array256.t) (w: vt16u16) i:
 proof.
 move => i_i k k_i.
 rewrite Array256.initiE.
-move : i_i k_i; smt.
+move : i_i k_i => /#.
 simplify.
 rewrite set_get_def => /#.
 qed.
@@ -125,6 +125,19 @@ op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
 
 op lift_array256 (p: W16.t Array256.t) =
   Array256.map (fun x => inzmod (W16.to_sint x)) p.
+
+lemma lift_array256E (x : W16.t Array256.t) k :
+  0 <= k < 256 =>
+  (lift_array256 x).[k] = inzmod (to_sint x.[k]).
+proof.  by move => ?; rewrite /lift_array256 mapiE //. qed.
+
+lemma lift_array256P (x y : W16.t Array256.t) :
+  lift_array256 x = lift_array256 y <=>
+  (forall k, 0 <= k < 256 => inzmod (to_sint x.[k]) = inzmod (to_sint y.[k])).
+proof.
+  split; first by rewrite tP => H *; rewrite -!lift_array256E // H //.
+  by rewrite tP => H *; rewrite !lift_array256E // H //.
+qed.
 
 lemma get_lift_array256_eq (p: W16.t Array256.t):
   let p_lift = lift_array256 p in
