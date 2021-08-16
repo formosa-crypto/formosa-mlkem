@@ -136,5 +136,53 @@ proof.
    smt(@Array256 @Array768).
 qed.
 
+
+lemma polyvec_reduce_corr _a:
+  hoare[Mavx2_prevec.polyvec_reduce:
+       _a  = lift_array768 r ==>
+       _a  = lift_array768 res /\
+       forall k, 0 <= k < 768 => bpos16 res.[k] (2*Kyber_.q)].
+proof.
+  proc; sp.
+  wp.
+  ecall (KyberPolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
+  wp.
+  ecall (KyberPolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
+  wp.
+  ecall (KyberPolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
+  wp. skip.
+  move => &hr _a_def.
+  split; first by trivial.
+  move => r_eq_r_1 res1 [r_eq_res1 res1_bound] res1_def res2 [r_eq_res2 res2_bound] res2_def res3 [r_eq_res3 res3_bound] res3_def.
+  split.
+  rewrite /res3_def /res2_def /res1_def /=.
+  rewrite _a_def.
+  rewrite lift_array768P; move => k k_i.
+  do rewrite initiE 1:/# //=.
+  do rewrite fun_if.
+  rewrite lift_array256P //= in r_eq_res3.
+  rewrite lift_array256P //= in r_eq_res2.
+  rewrite lift_array256P //= in r_eq_res1.  
+   case (512 <= k < 768) => k_si.
+   rewrite -(r_eq_res3 (k - 512)) 1:/#.
+   do rewrite initiE 1:/# //=.
+   rewrite (_: (256 <= k && k < 512) = false) 1:/# //=.
+   rewrite (_: (0 <= k && k < 256) = false) 1:/# //=.
+   case (256 <= k < 512) => k_ssi.
+   rewrite -(r_eq_res2 (k -  256)) 1:/#.
+   do rewrite initiE 1:/# //=.
+   rewrite (_: (0 <= k && k < 256) = false) 1:/# //=.
+   rewrite -(r_eq_res1 k) 1:/#.
+   do rewrite initiE 1:/# //=.
+   rewrite /res3_def /res2_def /res1_def.
+   move => k k_i.
+   do rewrite initiE //=.
+   rewrite /bpos16 //=in res3_bound.
+   rewrite /bpos16 //=in res2_bound.
+   rewrite /bpos16 //=in res1_bound.
+   move : (res3_bound (k - 512))  (res2_bound (k - 256))  (res1_bound k).
+   smt(@Array256 @Array768).
+qed.
+
 end KyberPolyvecAVX.
 
