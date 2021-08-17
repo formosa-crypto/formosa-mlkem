@@ -1,7 +1,9 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
-require import Array256 Fq Array16 Array16p Array4 Array4p Array8 Array8p Array32p.
-require import W16extra WArray512 WArray32 WArray16.
+require import Array400 Array256 Array64 Array32 Array32p Array16 Array16p Array8 Array8p Array4 Array4p.
+require import WArray800 WArray512 WArray128 WArray128p WArray64 WArray32 WArray16.
+require W16extra.
+require import Fq.
 require import Ops.
 require import List_hakyber.
 require import KyberCPA_avx2.
@@ -271,6 +273,186 @@ module Mavx2_prevec = {
 
       i <- i + 1;
     }
+    return (rp);
+  }
+
+  proc schoolbook (ap:W16.t Array32.t, bp:W16.t Array32.t, zeta_0: t16u16,
+                   qx16:t16u16, qinvx16:t16u16, sign:int) : t16u16 * t16u16 *
+                                                            t16u16 * t16u16 = {
+
+    var x0:t16u16;
+    var x1:t16u16;
+    var y0:t16u16;
+    var y1:t16u16;
+    var b:t16u16;
+    var d:t16u16;
+    var a:t16u16;
+    var c:t16u16;
+    var bdlo:t16u16;
+    var bdhi:t16u16;
+    var bclo:t16u16;
+    var bchi:t16u16;
+    var adlo:t16u16;
+    var adhi:t16u16;
+    var aclo:t16u16;
+    var achi:t16u16;
+    var bd:t16u16;
+    var rbdlo:t16u16;
+    var rbdhi:t16u16;
+    var bc0:t16u16;
+    var bc1:t16u16;
+    var ad0:t16u16;
+    var ad1:t16u16;
+    var ac0:t16u16;
+    var ac1:t16u16;
+    var rbd0:t16u16;
+    var rbd1:t16u16;
+
+    b <- lift2poly(get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 1));
+    d <- lift2poly(get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 1));
+    a <- lift2poly(get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 0));
+    c <- lift2poly(get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 0));
+    bdlo <- Ops.iVPMULL_16u16(b, d);
+    bdhi <- Ops.iVPMULH_256(b, d);
+    bclo <- Ops.iVPMULL_16u16(b, c);
+    bchi <- Ops.iVPMULH_256(b, c);
+    adlo <- Ops.iVPMULL_16u16(a, d);
+    adhi <- Ops.iVPMULH_256(a, d);
+    aclo <- Ops.iVPMULL_16u16(a, c);
+    achi <- Ops.iVPMULH_256(a, c);
+    bdlo <- Ops.iVPMULL_16u16(bdlo, qinvx16);
+    bdlo <- Ops.iVPMULH_256(bdlo, qx16);
+    bd <- Ops.ivsub16u256(bdhi, bdlo);
+    rbdlo <- Ops.iVPMULL_16u16(zeta_0, bd);
+    rbdhi <- Ops.iVPMULH_256(zeta_0, bd);
+    bc0 <- Ops.iVPUNPCKL_16u16(bclo, bchi);
+    bc1 <- Ops.iVPUNPCKH_16u16(bclo, bchi);
+    ad0 <- Ops.iVPUNPCKL_16u16(adlo, adhi);
+    ad1 <- Ops.iVPUNPCKH_16u16(adlo, adhi);
+    ac0 <- Ops.iVPUNPCKL_16u16(aclo, achi);
+    ac1 <- Ops.iVPUNPCKH_16u16(aclo, achi);
+    rbd0 <- Ops.iVPUNPCKL_16u16(rbdlo, rbdhi);
+    rbd1 <- Ops.iVPUNPCKH_16u16(rbdlo, rbdhi);
+(* FIXME
+    if ((sign = 0)) {
+      x0 <- Ops.ivadd32u256(ac0, rbd0);
+      x1 <- Ops.ivadd32u256(ac1, rbd1);
+    } else {
+      x0 <- Ops.ivsub32u256(ac0, rbd0);
+      x1 <- Ops.ivsub32u256(ac1, rbd1);
+    }
+    y0 <- Ops.ivadd32u256(bc0, ad0);
+    y1 <- Ops.ivadd32u256(bc1, ad1);
+*)
+    return (x0, x1, y0, y1);
+  }
+
+  proc basemul_red (a0:t16u16, a1:t16u16, b0:t16u16, b1:t16u16, qx16:t16u16,
+                    qinvx16:t16u16) : t16u16 * t16u16 = {
+
+    var zero:t16u16;
+    var y:t16u16;
+    var z:t16u16;
+    var x:t16u16;
+
+    zero <- lift2poly(setw0_256);
+    y <- Ops.iVPBLENDW_256(a0, zero, (W8.of_int 170));
+    z <- Ops.iVPBLENDW_256(a1, zero, (W8.of_int 170));
+(* FIXME
+    a0 <- Ops.iVPSRL_8u32(a0, (W8.of_int 16));
+    a1 <- Ops.iVPSRL_8u32(a1, (W8.of_int 16));
+    z <- Ops.iVPACKUS_8u32(y, z);
+    a0 <- Ops.iVPACKUS_8u32(a0, a1);
+*)
+    y <- Ops.iVPBLENDW_256(b0, zero, (W8.of_int 170));
+    x <- Ops.iVPBLENDW_256(b1, zero, (W8.of_int 170));
+(* FIXME
+    b0 <- Ops.iVPSRL_8u32(b0, (W8.of_int 16));
+    b1 <- Ops.iVPSRL_8u32(b1, (W8.of_int 16));
+    y <- Ops.iVPACKUS_8u32(y, x);
+    b0 <- Ops.iVPACKUS_8u32(b0, b1);
+*)
+    z <- Ops.iVPMULL_16u16(z, qinvx16);
+    y <- Ops.iVPMULL_16u16(y, qinvx16);
+    z <- Ops.iVPMULH_256(z, qx16);
+    y <- Ops.iVPMULH_256(y, qx16);
+    a0 <- Ops.ivsub16u256(a0, z);
+    b0 <- Ops.ivsub16u256(b0, y);
+    return (a0, b0);
+  }
+
+  proc basemul32x (rp:W16.t Array64.t, ap:W16.t Array64.t,
+                   bp:W16.t Array64.t, zeta_0:t16u16, qx16:t16u16,
+                   qinvx16:t16u16) : W16.t Array64.t = {
+
+    var x0:t16u16;
+    var x1:t16u16;
+    var y0:t16u16;
+    var y1:t16u16;
+
+    (x0, x1, y0, y1) <@ schoolbook ((Array32.init (fun i => ap.[0 + i])),
+    (Array32.init (fun i => bp.[0 + i])), zeta_0, qx16, qinvx16, 0);
+    (x0, x1) <@ basemul_red (x0, x1, y0, y1, qx16, qinvx16);
+
+    rp <- fill (fun k => x0.[k %% 16]) 0 16 rp;
+    rp <- fill (fun k => x1.[k %% 16]) 16 16 rp;
+
+    (x0, x1, y0, y1) <@ schoolbook ((Array32.init (fun i => ap.[32 + i])),
+    (Array32.init (fun i => bp.[32 + i])), zeta_0, qx16, qinvx16, 1);
+    (x0, x1) <@ basemul_red (x0, x1, y0, y1, qx16, qinvx16);
+
+    rp <- fill (fun k => x0.[k %% 16]) 32 16 rp;
+    rp <- fill (fun k => x1.[k %% 16]) 48 16 rp;
+
+    return (rp);
+  }
+
+  proc poly_basemul (rp:W16.t Array256.t, ap:W16.t Array256.t,
+                     bp:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: W16.t Array64.t;
+
+    var qx16:t16u16;
+    var qinvx16:t16u16;
+    var zeta_0:t16u16;
+
+    qx16 <- lift2poly(get256_direct (WArray32.init16 (fun i => jqx16.[i])) 0);
+    qinvx16 <- lift2poly(get256_direct (WArray32.init16 (fun i => jqinvx16.[i])) 0);
+    zeta_0 <-
+    lift2poly(get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 304);
+
+    aux <@ basemul32x ((Array64.init (fun i => rp.[0 + i])),
+    (Array64.init (fun i => ap.[0 + i])),
+    (Array64.init (fun i => bp.[0 + i])), zeta_0, qx16, qinvx16);
+
+    rp <- fill (fun k => aux.[k %% 64]) 0 64 rp;
+
+    zeta_0 <-
+    lift2poly(get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 368);
+
+    aux <@ basemul32x ((Array64.init (fun i => rp.[64 + i])),
+    (Array64.init (fun i => ap.[64 + i])),
+    (Array64.init (fun i => bp.[64 + i])), zeta_0, qx16, qinvx16);
+
+    rp <- fill (fun k => aux.[k %% 64]) 64 64 rp;
+
+    zeta_0 <-
+    lift2poly(get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 696);
+
+    aux <@ basemul32x ((Array64.init (fun i => rp.[128 + i])),
+    (Array64.init (fun i => ap.[128 + i])),
+    (Array64.init (fun i => bp.[128 + i])), zeta_0, qx16, qinvx16);
+
+    rp <- fill (fun k => aux.[k %% 64]) 128 64 rp;
+
+    zeta_0 <-
+    lift2poly(get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 760);
+
+    aux <@ basemul32x ((Array64.init (fun i => rp.[192 + i])),
+    (Array64.init (fun i => ap.[192 + i])),
+    (Array64.init (fun i => bp.[192 + i])), zeta_0, qx16, qinvx16);
+
+    rp <- fill (fun k => aux.[k %% 64]) 192 64 rp;
+
     return (rp);
   }
 }.

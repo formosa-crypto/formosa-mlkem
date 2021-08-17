@@ -1897,4 +1897,3 @@ rewrite nth_mkseq => />.
 rewrite /msb.
 smt(@List).
 qed.
-
