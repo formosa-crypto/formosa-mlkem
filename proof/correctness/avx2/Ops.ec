@@ -194,6 +194,20 @@ module Ops = {
     return r; 
   }
 
+  proc ivadd32u256(x y:t8u32) : t8u32 = {
+    var r : t8u32;
+    r.[0] <- x.[0] + y.[0];
+    r.[1] <- x.[1] + y.[1];
+    r.[2] <- x.[2] + y.[2];
+    r.[3] <- x.[3] + y.[3];
+    r.[4] <- x.[4] + y.[4];
+    r.[5] <- x.[5] + y.[5];
+    r.[6] <- x.[6] + y.[6];
+    r.[7] <- x.[7] + y.[7];
+
+    return r;
+  }
+
   proc ivadd16u256(x y:t16u16) : t16u16 = {
     var r : t16u16;
     r.[0] <- x.[0] + y.[0];
@@ -212,6 +226,20 @@ module Ops = {
     r.[13] <- x.[13] + y.[13];
     r.[14] <- x.[14] + y.[14];
     r.[15] <- x.[15] + y.[15];
+
+    return r;
+  }
+
+  proc ivsub32u256(x y: t8u32) : t8u32 = {
+    var r : t8u32;
+    r.[0] <- x.[0] - y.[0];
+    r.[1] <- x.[1] - y.[1];
+    r.[2] <- x.[2] - y.[2];
+    r.[3] <- x.[3] - y.[3];
+    r.[4] <- x.[4] - y.[4];
+    r.[5] <- x.[5] - y.[5];
+    r.[6] <- x.[6] - y.[6];
+    r.[7] <- x.[7] - y.[7];
 
     return r;
   }
@@ -717,6 +745,52 @@ module Ops = {
     return r;
   }
 
+  proc iVPUNPCKH_16u16(x y:t16u16) : t16u16 = {
+    var r : t16u16;
+
+    r.[0] <- x.[4];
+    r.[1] <- y.[4];
+    r.[2] <- x.[5];
+    r.[3] <- y.[5];
+    r.[4] <- x.[6];
+    r.[5] <- y.[6];
+    r.[6] <- x.[7];
+    r.[7] <- y.[7];
+    r.[8] <- x.[12];
+    r.[9] <- y.[12];
+    r.[10] <- x.[13];
+    r.[11] <- y.[13];
+    r.[12] <- x.[14];
+    r.[13] <- y.[14];
+    r.[14] <- x.[15];
+    r.[15] <- y.[15];
+
+    return r;
+  }
+
+  proc iVPUNPCKL_16u16 (x y:t16u16) : t16u16 = {
+    var r : t16u16;
+
+    r.[0] <- x.[0];
+    r.[1] <- y.[0];
+    r.[2] <- x.[1];
+    r.[3] <- y.[1];
+    r.[4] <- x.[2];
+    r.[5] <- y.[2];
+    r.[6] <- x.[3];
+    r.[7] <- y.[3];
+    r.[8] <- x.[8];
+    r.[9] <- y.[8];
+    r.[10] <- x.[9];
+    r.[11] <- y.[9];
+    r.[12] <- x.[10];
+    r.[13] <- y.[10];
+    r.[14] <- x.[11];
+    r.[15] <- y.[11];
+
+    return r;
+  }
+
   proc iVEXTRACTI128(x:t4u64, p : W8.t) : t2u64 = {
     var r : t2u64;
     r <- witness;
@@ -769,6 +843,20 @@ module Ops = {
     r.[13] <- x.[13] `<<` y;
     r.[14] <- x.[14] `<<` y;
     r.[15] <- x.[15] `<<` y;
+
+    return r;
+  }
+
+  proc iVPSRL_8u32 (x: t8u32, y: W8.t) : t8u32 = {
+    var r : t8u32;
+    r.[0] <- x.[0] `>>` y;
+    r.[1] <- x.[1] `>>` y;
+    r.[2] <- x.[2] `>>` y;
+    r.[3] <- x.[3] `>>` y;
+    r.[4] <- x.[4] `>>` y;
+    r.[5] <- x.[5] `>>` y;
+    r.[6] <- x.[6] `>>` y;
+    r.[7] <- x.[7] `>>` y;
 
     return r;
   }
@@ -906,7 +994,7 @@ module Ops = {
     return r;
   }
 
-  proc iVPBLENDD_256(x y:t4u64, p : W8.t) :  W64.t Array4.t = {
+  proc iVPBLENDD_256(x y:t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
     r <- witness;
     r.[0] <- 
@@ -945,6 +1033,28 @@ module Ops = {
     return r;
   }
 
+  proc iVPBLENDW_256(x y:t16u16, p : W8.t) : t16u16 = {
+    var r : t16u16;
+    r <- witness;
+    r.[0] <- if p.[0] then y.[0] else x.[0];
+    r.[1] <- if p.[1] then y.[1] else x.[1];
+    r.[2] <- if p.[2] then y.[2] else x.[2];
+    r.[3] <- if p.[3] then y.[3] else x.[3];
+    r.[4] <- if p.[4] then y.[4] else x.[4];
+    r.[5] <- if p.[5] then y.[5] else x.[5];
+    r.[6] <- if p.[6] then y.[6] else x.[6];
+    r.[7] <- if p.[7] then y.[7] else x.[7];
+    r.[8] <- if p.[0] then y.[8] else x.[8];
+    r.[9] <- if p.[1] then y.[9] else x.[9];
+    r.[10] <- if p.[2] then y.[10] else x.[10];
+    r.[11] <- if p.[3] then y.[11] else x.[11];
+    r.[12] <- if p.[4] then y.[12] else x.[12];
+    r.[13] <- if p.[5] then y.[13] else x.[13];
+    r.[14] <- if p.[6] then y.[14] else x.[14];
+    r.[15] <- if p.[7] then y.[15] else x.[15];
+
+    return r;
+  }
 
   (* FIXME: equiv *)
   proc iVPSHUFD_256 (x :t4u64, p : W8.t) : t4u64 = {
@@ -1157,8 +1267,16 @@ module OpsV = {
     return VPADD_4u64 x y; 
   }
 
+  proc ivadd32u256(x y:vt8u32) : vt8u32 = {
+    return VPADD_8u32 x y;
+  }
+
   proc ivadd16u256(x y:vt16u16) : vt16u16 = {
-    return VPADD_16u16 x y; 
+    return VPADD_16u16 x y;
+  }
+
+  proc ivsub32u256(x y: vt8u32) : vt8u32 = {
+    return VPSUB_8u32 x y; 
   }
 
   proc ivsub16u256(x y: vt16u16) : vt16u16 = {
@@ -1209,6 +1327,14 @@ module OpsV = {
     return VPUNPCKL_4u64 x y;
   }
 
+  proc iVPUNPCKH_16u16(x y:vt16u16) : vt16u16 = {
+    return VPUNPCKH_16u16 x y;
+  }
+
+  proc iVPUNPCKL_16u16 (x y:vt16u16) : vt16u16 = {
+    return VPUNPCKL_16u16 x y;
+  }
+
   proc iVEXTRACTI128(x:vt4u64, p : W8.t) : vt2u64 = {
     return VEXTRACTI128 x p;
   }  
@@ -1223,6 +1349,10 @@ module OpsV = {
 
   proc iVPSLL_16u16 (x: vt16u16, y: W8.t) : vt16u16 = {
     return VPSLL_16u16 x y;
+  }
+
+  proc iVPSRL_8u32 (x: vt8u32, y: W8.t) : vt8u32 = {
+    return VPSRL_8u32 x y;
   }
 
   proc ivshr64u256 (x: vt4u64, y: W8.t) : vt4u64 = {
@@ -1271,6 +1401,10 @@ module OpsV = {
 
   proc iVPBLENDD_256(x y:vt4u64, p : W8.t) :  vt4u64 = {
     return VPBLENDD_256 x y p;
+  }
+
+  proc iVPBLENDW_256(x y:vt16u16, p : W8.t) :  vt16u16 = {
+    return VPBLENDW_256 x y p;
   }
 
   proc iVPSHUFD_256 (x :vt4u64, p : W8.t) : vt4u64 = {
@@ -1381,8 +1515,14 @@ proof. by proc;wp;skip;rewrite /is4u64 => /> &1; rewrite /VPMULU_256. qed.
 equiv eq_iVPMULHRS_256 : Ops.iVPMULHRS_256 ~ OpsV.iVPMULHRS_256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is16u16 => /> &1; rewrite /VPMULHRSW_256 /round_scalew. qed.
 
+equiv eq_ivadd32u256: Ops.ivadd32u256 ~ OpsV.ivadd32u256 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is8u32 res{1} res{2}.
+proof. by proc;wp;skip;rewrite /is8u32 /VPADD_8u32. qed.
+
 equiv eq_ivadd16u256: Ops.ivadd16u256 ~ OpsV.ivadd16u256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is16u16 /VPADD_16u16. qed.
+
+equiv eq_ivsub32u256: Ops.ivsub32u256 ~ OpsV.ivsub32u256 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is8u32 res{1} res{2}.
+proof. by proc;wp;skip;rewrite /is8u32 /VPSUB_8u32. qed.
 
 equiv eq_ivsub16u256: Ops.ivsub16u256 ~ OpsV.ivsub16u256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is16u16 /VPSUB_16u16. qed.
@@ -1566,6 +1706,12 @@ proof. by proc; wp; skip; rewrite /is4u64 => />; cbv delta. qed.
 equiv eq_iVPUNPCKL_4u64: Ops.iVPUNPCKL_4u64 ~ OpsV.iVPUNPCKL_4u64 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is4u64 => />; cbv delta. qed.
 
+equiv eq_iVPUNPCKH_16u16: Ops.iVPUNPCKH_16u16 ~ OpsV.iVPUNPCKH_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof. proc; wp; skip; rewrite /is16u16 => />; cbv delta. admit. (* FIXME *) qed.
+
+equiv eq_iVPUNPCKL_16u16: Ops.iVPUNPCKL_16u16 ~ OpsV.iVPUNPCKL_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof. proc; wp; skip; rewrite /is16u16 => />; cbv delta. admit. (* FIXME *) qed.
+
 equiv eq_iVEXTRACTI128: Ops.iVEXTRACTI128 ~ OpsV.iVEXTRACTI128 : 
   is4u64 x{1} x{2} /\ ={p} ==> is2u64 res{1} res{2}.
 proof.
@@ -1578,6 +1724,9 @@ proof. by proc; skip; rewrite /is2u64 /VPEXTR_64 => /> &1 &2 [] -> /=. qed.
 
 equiv eq_iVPSLL_16u16: Ops.iVPSLL_16u16 ~ OpsV.iVPSLL_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is16u16 /VPSLL_16u16. qed.
+
+equiv eq_iVPSRL_8u32: Ops.iVPSRL_8u32 ~ OpsV.iVPSRL_8u32: is8u32 x{1} x{2} /\ ={y} ==> is8u32 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is8u32 /VPSRL_8u32. qed.
 
 equiv eq_iVPSRA_16u16: Ops.iVPSRA_16u16 ~ OpsV.iVPSRA_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is16u16 /VPSRA_16u16. qed.
@@ -1630,6 +1779,31 @@ proof.
   split; 1: by case: ( p{2}.[4] = p{2}.[5]) => [->|]; case: (p{2}.[5]).
   split; 1: by case: (p{2}.[6] = p{2}.[7]); case: (p{2}.[6]).
   by case: (p{2}.[6] = p{2}.[7]) => [->|]; case: (p{2}.[7]).
+qed.
+
+equiv eq_iVPBLENDW_256 : Ops.iVPBLENDW_256 ~ OpsV.iVPBLENDW_256 :
+  is16u16 x{1} x{2} /\ is16u16 y{1} y{2} /\ ={p}
+  ==>
+  is16u16 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is16u16 /VPBLENDW_256 => /> &1 &2 /=.
+  apply W16u16.allP => /=.
+  split; 1: by case (p{2}.[0]).
+  split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[2]).
+  split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[4]).
+  split; 1: by case (p{2}.[5]).
+  split; 1: by case (p{2}.[6]).
+  split; 1: by case (p{2}.[7]).
+  split; 1: by case (p{2}.[0]).
+  split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[2]).
+  split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[4]).
+  split; 1: by case (p{2}.[5]).
+  split; 1: by case (p{2}.[6]).
+  by case (p{2}.[7]).
 qed.
 
 equiv eq_iVPSHUFD_256 : Ops.iVPSHUFD_256 ~ OpsV.iVPSHUFD_256 : 
