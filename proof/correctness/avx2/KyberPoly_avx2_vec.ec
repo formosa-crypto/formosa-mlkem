@@ -821,6 +821,16 @@ proof.
   wp. skip. auto => />.
 qed.
 
+equiv veceq_eq_poly_basemul:
+  Mvec.poly_basemul ~ M.poly_basemul: ={rp, ap, bp} ==> ={res}.
+proof.
+  admit.
+  (*FIXME: takes too long (>1hr)
+  proc.
+  inline *.
+  wp. skip. trivial. *)
+qed.
+
 equiv prevec_eq_poly_add2:
     Mavx2_prevec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).

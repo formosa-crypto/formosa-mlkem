@@ -13,6 +13,19 @@ pragma +oldip.
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
 
+op t16u16_to_8u32 (t: t16u16): t8u32 =
+  Array8.of_list witness [
+              W2u16.pack2 [t.[0]; t.[1]];
+              W2u16.pack2 [t.[2]; t.[3]];
+              W2u16.pack2 [t.[4]; t.[5]];
+              W2u16.pack2 [t.[6]; t.[7]];
+              W2u16.pack2 [t.[8]; t.[9]];
+              W2u16.pack2 [t.[10]; t.[11]];
+              W2u16.pack2 [t.[12]; t.[13]];
+              W2u16.pack2 [t.[14]; t.[15]]].
+
+op t8u32_to_16u16 (t: t8u32): t16u16 = Array16.init (fun i => t.[i %/ 2] \bits16 (i %% 2)).
+
 module Mavx2_prevec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
@@ -308,6 +321,20 @@ module Mavx2_prevec = {
     var rbd0:t16u16;
     var rbd1:t16u16;
 
+    var x0_dw:t8u32;
+    var x1_dw:t8u32;
+    var y0_dw:t8u32;
+    var y1_dw:t8u32;
+    var bc0_dw:t8u32;
+    var bc1_dw:t8u32;
+    var ad0_dw:t8u32;
+    var ad1_dw:t8u32;
+    var ac0_dw: t8u32;
+    var ac1_dw: t8u32;
+    var rbd0_dw: t8u32;
+    var rbd1_dw: t8u32;
+
+
     b <- lift2poly(get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 1));
     d <- lift2poly(get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 1));
     a <- lift2poly(get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 0));
@@ -333,17 +360,33 @@ module Mavx2_prevec = {
     ac1 <- Ops.iVPUNPCKH_16u16(aclo, achi);
     rbd0 <- Ops.iVPUNPCKL_16u16(rbdlo, rbdhi);
     rbd1 <- Ops.iVPUNPCKH_16u16(rbdlo, rbdhi);
-(* FIXME
+
+    ac0_dw <- t16u16_to_8u32 ac0;
+    rbd0_dw <- t16u16_to_8u32 rbd0;
+
+    ac1_dw <- t16u16_to_8u32 ac1;
+    rbd1_dw <- t16u16_to_8u32 rbd1;
+
+    bc0_dw <- t16u16_to_8u32 bc0;
+    bc1_dw <- t16u16_to_8u32 bc1;
+    ad0_dw <- t16u16_to_8u32 ad0;
+    ad1_dw <- t16u16_to_8u32 ad1;
+
     if ((sign = 0)) {
-      x0 <- Ops.ivadd32u256(ac0, rbd0);
-      x1 <- Ops.ivadd32u256(ac1, rbd1);
+      x0_dw <- Ops.ivadd32u256(ac0_dw, rbd0_dw);
+      x1_dw <- Ops.ivadd32u256(ac1_dw, rbd1_dw);
     } else {
-      x0 <- Ops.ivsub32u256(ac0, rbd0);
-      x1 <- Ops.ivsub32u256(ac1, rbd1);
+      x0_dw <- Ops.ivsub32u256(ac0_dw, rbd0_dw);
+      x1_dw <- Ops.ivsub32u256(ac1_dw, rbd1_dw);
     }
-    y0 <- Ops.ivadd32u256(bc0, ad0);
-    y1 <- Ops.ivadd32u256(bc1, ad1);
-*)
+    y0_dw <- Ops.ivadd32u256(bc0_dw, ad0_dw);
+    y1_dw <- Ops.ivadd32u256(bc1_dw, ad1_dw);
+
+    x0 <- t8u32_to_16u16 x0_dw;
+    x1 <- t8u32_to_16u16 x1_dw;
+    y0 <- t8u32_to_16u16 y0_dw;
+    y1 <- t8u32_to_16u16 y1_dw;
+
     return (x0, x1, y0, y1);
   }
 
@@ -355,23 +398,41 @@ module Mavx2_prevec = {
     var z:t16u16;
     var x:t16u16;
 
+    var a0_dw: t8u32;
+    var a1_dw: t8u32;
+    var b0_dw: t8u32;
+    var b1_dw: t8u32;
+    var y_dw: t8u32;
+    var z_dw: t8u32;
+    var x_dw: t8u32;
+
     zero <- lift2poly(setw0_256);
     y <- Ops.iVPBLENDW_256(a0, zero, (W8.of_int 170));
     z <- Ops.iVPBLENDW_256(a1, zero, (W8.of_int 170));
-(* FIXME
-    a0 <- Ops.iVPSRL_8u32(a0, (W8.of_int 16));
-    a1 <- Ops.iVPSRL_8u32(a1, (W8.of_int 16));
-    z <- Ops.iVPACKUS_8u32(y, z);
-    a0 <- Ops.iVPACKUS_8u32(a0, a1);
-*)
+
+    a0_dw <- t16u16_to_8u32 a0;
+    a1_dw <- t16u16_to_8u32 a1;
+    z_dw <- t16u16_to_8u32 z;
+    y_dw <- t16u16_to_8u32 y;
+
+    a0_dw <- Ops.iVPSRL_8u32(a0_dw, (W8.of_int 16));
+    a1_dw <- Ops.iVPSRL_8u32(a1_dw, (W8.of_int 16));
+    z <- Ops.iVPACKUS_8u32(y_dw, z_dw);
+    a0 <- Ops.iVPACKUS_8u32(a0_dw, a1_dw);
+
     y <- Ops.iVPBLENDW_256(b0, zero, (W8.of_int 170));
     x <- Ops.iVPBLENDW_256(b1, zero, (W8.of_int 170));
-(* FIXME
-    b0 <- Ops.iVPSRL_8u32(b0, (W8.of_int 16));
-    b1 <- Ops.iVPSRL_8u32(b1, (W8.of_int 16));
-    y <- Ops.iVPACKUS_8u32(y, x);
-    b0 <- Ops.iVPACKUS_8u32(b0, b1);
-*)
+
+    b0_dw <- t16u16_to_8u32 b0;
+    b1_dw <- t16u16_to_8u32 b1;
+    x_dw <- t16u16_to_8u32 x;
+    y_dw <- t16u16_to_8u32 y;
+
+    b0_dw <- Ops.iVPSRL_8u32(b0_dw, (W8.of_int 16));
+    b1_dw <- Ops.iVPSRL_8u32(b1_dw, (W8.of_int 16));
+    y <- Ops.iVPACKUS_8u32(y_dw, x_dw);
+    b0 <- Ops.iVPACKUS_8u32(b0_dw, b1_dw);
+
     z <- Ops.iVPMULL_16u16(z, qinvx16);
     y <- Ops.iVPMULL_16u16(y, qinvx16);
     z <- Ops.iVPMULH_256(z, qx16);
