@@ -32,6 +32,10 @@ lemma pack2_bits8 (w: W16.t):
    pack2 [w \bits8 0; w \bits8 1] = w.
 proof. by apply W2u8.allP. qed.
 
+lemma pack2_bits16 (w: W32.t):
+   pack2 [w \bits16 0; w \bits16 1] = w.
+proof. by apply W2u16.allP. qed.
+
 hint simplify pack2_bits32_red @0.
 
 module Ops = {

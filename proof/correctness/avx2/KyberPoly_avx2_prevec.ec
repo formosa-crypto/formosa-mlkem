@@ -13,18 +13,42 @@ pragma +oldip.
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
 
-op t16u16_to_8u32 (t: t16u16): t8u32 =
-  Array8.of_list witness [
-              W2u16.pack2 [t.[0]; t.[1]];
-              W2u16.pack2 [t.[2]; t.[3]];
-              W2u16.pack2 [t.[4]; t.[5]];
-              W2u16.pack2 [t.[6]; t.[7]];
-              W2u16.pack2 [t.[8]; t.[9]];
-              W2u16.pack2 [t.[10]; t.[11]];
-              W2u16.pack2 [t.[12]; t.[13]];
-              W2u16.pack2 [t.[14]; t.[15]]].
+op f16u16_t8u32 (t: t16u16): t8u32 = Array8.init (fun i => pack2_t (W2u16.Pack.init(fun j => t.[2*i + j]))).
+op f8u32_t16u16 (t: t8u32): t16u16 = Array16.init (fun i => t.[i %/ 2] \bits16 (i %% 2)).
 
-op t8u32_to_16u16 (t: t8u32): t16u16 = Array16.init (fun i => t.[i %/ 2] \bits16 (i %% 2)).
+op f32u8_t4u64 (t: t32u8): t4u64 = Array4.init (fun i => pack8_t (W8u8.Pack.init(fun j => t.[8*i + j]))).
+op f4u64_t32u8 (t: t4u64): t32u8 = Array32.init (fun i => t.[i %/ 8] \bits8 (i %% 8)).
+
+lemma f16u16_t8u32K: cancel f8u32_t16u16 f16u16_t8u32.
+proof.
+  move => w.
+  rewrite /f8u32_t16u16 /f16u16_t8u32 /=.
+  do rewrite pack2_bits16.
+  apply Array8.ext_eq => x x_b.
+  rewrite get_of_list //=.
+  smt(@Array8).
+qed.
+
+lemma f8u32_t16u16K: cancel f16u16_t8u32 f8u32_t16u16.
+proof.
+  move => w.
+  rewrite /f16u16_t8u32 /f8u32_t16u16 /=.
+  apply Array16.ext_eq => x x_b.
+  rewrite initiE //=.
+  rewrite -get_unpack16 1:/#.
+  admit. (* FIXME *)
+qed.
+
+lemma f32u8_t4u64K: cancel f4u64_t32u8 f32u8_t4u64.
+proof.
+  admit. (* FIXME *)
+qed.
+
+lemma f4u64_t8u32K: cancel f32u8_t4u64 f4u64_t32u8.
+proof.
+  admit. (* FIXME *)
+qed.
+
 
 module Mavx2_prevec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
@@ -212,13 +236,12 @@ module Mavx2_prevec = {
       f1 <- Ops.ilxor16u16(f1, g1);
       f0 <- Ops.ivsub16u256(f0, hhq);
       f1 <- Ops.ivsub16u256(f1, hhq);
-
       f0_b <- Ops.iVPACKSS_16u16(f0, f1);
 
-      f0_q <- Array4.init (fun i => pack8_t (W8u8.Pack.init(fun j => f0_b.[8*i + j])));
+      f0_q <- f32u8_t4u64 f0_b;
       f0_q <- Ops.iVPERMQ(f0_q, (W8.of_int 216));
+      f0_b <- f4u64_t32u8 f0_q;
 
-      f0_b <- Array32.init (fun i => f0_q.[i %/ 8] \bits8 (i %% 8));
       c <-  Ops.iVPMOVMSKB_u256_u32(f0_b);
 
       Glob.mem <-
@@ -361,16 +384,16 @@ module Mavx2_prevec = {
     rbd0 <- Ops.iVPUNPCKL_16u16(rbdlo, rbdhi);
     rbd1 <- Ops.iVPUNPCKH_16u16(rbdlo, rbdhi);
 
-    ac0_dw <- t16u16_to_8u32 ac0;
-    rbd0_dw <- t16u16_to_8u32 rbd0;
+    ac0_dw <- f16u16_t8u32 ac0;
+    rbd0_dw <- f16u16_t8u32 rbd0;
 
-    ac1_dw <- t16u16_to_8u32 ac1;
-    rbd1_dw <- t16u16_to_8u32 rbd1;
+    ac1_dw <- f16u16_t8u32 ac1;
+    rbd1_dw <- f16u16_t8u32 rbd1;
 
-    bc0_dw <- t16u16_to_8u32 bc0;
-    bc1_dw <- t16u16_to_8u32 bc1;
-    ad0_dw <- t16u16_to_8u32 ad0;
-    ad1_dw <- t16u16_to_8u32 ad1;
+    bc0_dw <- f16u16_t8u32 bc0;
+    bc1_dw <- f16u16_t8u32 bc1;
+    ad0_dw <- f16u16_t8u32 ad0;
+    ad1_dw <- f16u16_t8u32 ad1;
 
     if ((sign = 0)) {
       x0_dw <- Ops.ivadd32u256(ac0_dw, rbd0_dw);
@@ -382,10 +405,10 @@ module Mavx2_prevec = {
     y0_dw <- Ops.ivadd32u256(bc0_dw, ad0_dw);
     y1_dw <- Ops.ivadd32u256(bc1_dw, ad1_dw);
 
-    x0 <- t8u32_to_16u16 x0_dw;
-    x1 <- t8u32_to_16u16 x1_dw;
-    y0 <- t8u32_to_16u16 y0_dw;
-    y1 <- t8u32_to_16u16 y1_dw;
+    x0 <- f8u32_t16u16 x0_dw;
+    x1 <- f8u32_t16u16 x1_dw;
+    y0 <- f8u32_t16u16 y0_dw;
+    y1 <- f8u32_t16u16 y1_dw;
 
     return (x0, x1, y0, y1);
   }
@@ -410,10 +433,10 @@ module Mavx2_prevec = {
     y <- Ops.iVPBLENDW_256(a0, zero, (W8.of_int 170));
     z <- Ops.iVPBLENDW_256(a1, zero, (W8.of_int 170));
 
-    a0_dw <- t16u16_to_8u32 a0;
-    a1_dw <- t16u16_to_8u32 a1;
-    z_dw <- t16u16_to_8u32 z;
-    y_dw <- t16u16_to_8u32 y;
+    a0_dw <- f16u16_t8u32 a0;
+    a1_dw <- f16u16_t8u32 a1;
+    z_dw <- f16u16_t8u32 z;
+    y_dw <- f16u16_t8u32 y;
 
     a0_dw <- Ops.iVPSRL_8u32(a0_dw, (W8.of_int 16));
     a1_dw <- Ops.iVPSRL_8u32(a1_dw, (W8.of_int 16));
@@ -423,10 +446,10 @@ module Mavx2_prevec = {
     y <- Ops.iVPBLENDW_256(b0, zero, (W8.of_int 170));
     x <- Ops.iVPBLENDW_256(b1, zero, (W8.of_int 170));
 
-    b0_dw <- t16u16_to_8u32 b0;
-    b1_dw <- t16u16_to_8u32 b1;
-    x_dw <- t16u16_to_8u32 x;
-    y_dw <- t16u16_to_8u32 y;
+    b0_dw <- f16u16_t8u32 b0;
+    b1_dw <- f16u16_t8u32 b1;
+    x_dw <- f16u16_t8u32 x;
+    y_dw <- f16u16_t8u32 y;
 
     b0_dw <- Ops.iVPSRL_8u32(b0_dw, (W8.of_int 16));
     b1_dw <- Ops.iVPSRL_8u32(b1_dw, (W8.of_int 16));

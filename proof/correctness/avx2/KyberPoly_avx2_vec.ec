@@ -630,6 +630,43 @@ proof.
   trivial.
 qed.
 
+equiv eq_poly_tomsg:
+  Mavx2_prevec.poly_tomsg ~ Mvec.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while(={i, rp, a, aux} /\ 0 <= i{1} /\ is16u16 hq{1} hq{2} /\ is16u16 hhq{1} hhq{2}).
+    wp.
+    call eq_iVPMOVMSKB_u256_u32.
+    wp.
+    call eq_iVPERMQ.
+    wp.
+    do !(call eq_iVPACKSS_16u16 || call eq_ivsub16u256 || call eq_ilxor16u16 || call eq_iVPSRA_16u16).
+    wp. skip. rewrite /is16u16 /is32u8 => />. move => &2 i_lb ii_ub.
+    rewrite /lift2poly /=.
+    do rewrite pack16_bits16 /=.
+    move => result_L7.
+    rewrite /is4u64 /f32u8_t4u64 /=.
+    move => result_L8 result_R result_r8_eq_l8.
+    (* rewrite /f4u64_t32u8 /=. *)
+    (* rewrite pack32E.  *)
+    (* rewrite /f32u8_t4u64 /=. *)
+    (* move => result_r8_eq_l8. *)
+    (* rewrite result_r8_eq_l8. *)
+    (* rewrite /f4u64_t32u8 /=. *)
+    (* rewrite W256.wordP. *)
+    admit.
+  wp.
+  call eq_poly_csubq.
+  wp. skip.
+  move => &1 &2 [rp1_eq_rp2 [a2_eq_a2 mem1_eq_mem2]].
+  rewrite a2_eq_a2 //=.
+  move => result_L result_R result_L_eq_R.
+  rewrite rp1_eq_rp2 result_L_eq_R /=.
+  rewrite /is16u16 /lift2poly.
+  rewrite initiE //=.
+  do rewrite pack16_bits16 //=.
+qed.
+
 equiv eq_poly_frommsg:
   Mavx2_prevec.poly_frommsg ~ Mvec.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
@@ -774,6 +811,19 @@ proof.
   wp. skip. auto => //.
 qed.
 
+equiv veceq_poly_tomsg :
+  Mvec.poly_tomsg ~ M.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while(={i, rp, a, aux, hq, hhq} /\ 0 <= i{1}).
+    inline *.
+    wp. skip. auto => />.
+    smt(@Int).
+    wp.
+    call veceq_poly_csubq.
+    wp. skip. auto => />.
+qed.
+
 equiv veceq_poly_frommsg :
   Mvec.poly_frommsg ~ M.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
@@ -832,7 +882,7 @@ proof.
 qed.
 
 equiv prevec_eq_poly_add2:
-    Mavx2_prevec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
+  Mavx2_prevec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
 smt. trivial.
 apply eq_poly_add2.
@@ -840,7 +890,7 @@ apply veceq_poly_add2.
 qed.
 
 equiv prevec_eq_poly_sub:
-    Mavx2_prevec.poly_sub ~ M.poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mavx2_prevec.poly_sub ~ M.poly_sub: ={rp, ap, bp} ==> ={res}.
     transitivity Mvec.poly_sub (={rp, ap, bp} ==> ={res}) (={rp, ap, bp} ==> ={res}).
 smt. trivial.
 apply eq_poly_sub.
@@ -848,15 +898,23 @@ apply veceq_poly_sub.
 qed.
 
 equiv prevec_eq_poly_csubq:
-   Mavx2_prevec.poly_csubq ~ M.poly_csubq: ={rp} ==> ={res}.
+  Mavx2_prevec.poly_csubq ~ M.poly_csubq: ={rp} ==> ={res}.
     transitivity Mvec.poly_csubq (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_csubq.
 apply veceq_poly_csubq.
 qed.
 
+equiv prevec_eq_poly_tomsg:
+  Mavx2_prevec.poly_tomsg ~ M.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
+    transitivity Mvec.poly_tomsg (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
+smt. trivial.
+apply eq_poly_tomsg.
+apply veceq_poly_tomsg.
+qed.
+
 equiv prevec_eq_poly_frommsg:
-   Mavx2_prevec.poly_frommsg ~ M.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
+  Mavx2_prevec.poly_frommsg ~ M.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
      transitivity Mvec.poly_frommsg (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_frommsg.
