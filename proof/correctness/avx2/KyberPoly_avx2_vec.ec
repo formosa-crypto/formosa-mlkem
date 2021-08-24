@@ -1,11 +1,11 @@
 require import AllCore List Int IntExtra IntDiv CoreMap.
 from Jasmin require import JModel.
-require import Array400 Array256 Array64 Array32 Array16p Array16 Array8 Array4.
+require import Array400 Array256 Array64 Array32 Array16p Array16 Array8 Array4 Array4p.
 require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import Ops.
+require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 require import KyberPoly_avx2_proof.
-require import KyberCPA_avx2.
 
 pragma +oldip.
 
@@ -530,6 +530,7 @@ module Mvec = {
   }
 }.
 
+
 equiv eq_poly_add2:
   Mavx2_prevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.
 proof.
@@ -647,14 +648,22 @@ proof.
     move => result_L7.
     rewrite /is4u64 /f32u8_t4u64 /=.
     move => result_L8 result_R result_r8_eq_l8.
-    (* rewrite /f4u64_t32u8 /=. *)
-    (* rewrite pack32E.  *)
-    (* rewrite /f32u8_t4u64 /=. *)
-    (* move => result_r8_eq_l8. *)
-    (* rewrite result_r8_eq_l8. *)
-    (* rewrite /f4u64_t32u8 /=. *)
-    (* rewrite W256.wordP. *)
-    admit.
+    split.
+    rewrite result_r8_eq_l8.
+    rewrite -(pack8_bits8 (result_L8.[0])).
+    rewrite -(pack8_bits8 (result_L8.[1])).
+    rewrite -(pack8_bits8 (result_L8.[2])).
+    rewrite -(pack8_bits8 (result_L8.[3])).
+    simplify.
+    rewrite /f4u64_t32u8 //=.
+    rewrite result_r8_eq_l8.
+    rewrite -(pack8_bits8 (result_L8.[0])).
+    rewrite -(pack8_bits8 (result_L8.[1])).
+    rewrite -(pack8_bits8 (result_L8.[2])).
+    rewrite -(pack8_bits8 (result_L8.[3])).
+    simplify.
+    rewrite /f4u64_t32u8 //=.
+    move : i_lb => /#.
   wp.
   call eq_poly_csubq.
   wp. skip.
