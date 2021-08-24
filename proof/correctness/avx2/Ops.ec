@@ -22,7 +22,7 @@ lemma pack16_bits16 (w: W256.t):
     pack16 [w \bits16 0; w \bits16 1; w \bits16 2; w \bits16 3; w \bits16 4; w \bits16 5; w \bits16 6; w \bits16 7;
     w \bits16 8; w \bits16 9; w \bits16 10; w \bits16 11; w \bits16 12; w \bits16 13; w \bits16 14; w \bits16 15] = w.
 proof. by apply W16u16.allP. qed.
-    
+
 lemma pack2_bits32_red (w1 w2: W64.t):
    w1 = w2 =>
    pack2 [w1 \bits32 0; w2 \bits32 1] = w1.
@@ -150,14 +150,14 @@ module Ops = {
 
     return r;
   }
-  
+
   proc iVPMULU_256 (x y:t4u64) : t4u64 = {
     var r : t4u64;
     r.[0] <- mulu64 x.[0] y.[0];
     r.[1] <- mulu64 x.[1] y.[1];
     r.[2] <- mulu64 x.[2] y.[2];
     r.[3] <- mulu64 x.[3] y.[3];
-    return r; 
+    return r;
   }
 
   proc iVPMULHRS_256 (x y: t16u16) : t16u16 = {
@@ -199,7 +199,7 @@ module Ops = {
     r.[1] <- x.[1] + y.[1];
     r.[2] <- x.[2] + y.[2];
     r.[3] <- x.[3] + y.[3];
-    return r; 
+    return r;
   }
 
   proc ivadd32u256(x y:t8u32) : t8u32 = {
@@ -274,7 +274,7 @@ module Ops = {
     return r;
   }
 
-  (* FIXME: equiv *)  
+  (* FIXME: equiv *)
   proc iload4u64 (mem:global_mem_t, p:W64.t) : t4u64 = {
     var r : t4u64;
     r.[0] <- loadW64 mem (to_uint p);
@@ -652,31 +652,49 @@ module Ops = {
   proc iVPERM2I128(x y:t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
     r <- witness;
-    r.[0] <- 
+    r.[0] <-
       let n = 0 in
       if p.[n + 3] then W64.of_int 0
-      else 
+      else
         let w = if p.[n+1] then y else x in
         if p.[n] then w.[2] else w.[0];
-    r.[1] <- 
+    r.[1] <-
       let n = 0 in
       if p.[n + 3] then W64.of_int 0
-      else 
+      else
         let w = if p.[n+1] then y else x in
         if p.[n] then w.[3] else w.[1];
-    r.[2] <- 
+    r.[2] <-
       let n = 4 in
       if p.[n + 3] then W64.of_int 0
-      else 
+      else
         let w = if p.[n+1] then y else x in
         if p.[n] then w.[2] else w.[0];
-    r.[3] <- 
+    r.[3] <-
       let n = 4 in
       if p.[n + 3] then W64.of_int 0
-      else 
+      else
         let w = if p.[n+1] then y else x in
         if p.[n] then w.[3] else w.[1];
-      
+
+    return r;
+  }
+
+  proc iVPERM2I128o(x y:t2u128, p : W8.t) : t2u128 = {
+    var r : t2u128;
+    r <- witness;
+    r.[0] <-
+      if p.[3] then W128.zero
+      else
+        let w = if p.[1] then y else x in
+        if p.[0] then w.[1] else w.[0];
+    r.[1] <-
+      let n = 0 in
+      if p.[7] then W128.zero
+      else
+        let w = if p.[5] then y else x in
+        if p.[4] then w.[1] else w.[0];
+
     return r;
   }
 
@@ -709,25 +727,25 @@ module Ops = {
   proc iVPSRLDQ_256(x:t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
     r <- witness;
-   
-    r.[0] <- 
+
+    r.[0] <-
       if to_uint p = 8 then x.[1]
       else let i = min (to_uint p) 16 in
       if i < 8 then (x.[0] `>>>` 8 * i) `|` (x.[1] `<<<` (64 - 8 * i))
       else x.[1] `>>>` 8 * (i - 8);
 
-    r.[1] <- 
+    r.[1] <-
       let i = min (to_uint p) 16 in
       if i < 8 then x.[1] `>>>` 8 * i
       else W64.zero;
 
-    r.[2] <- 
+    r.[2] <-
       if to_uint p = 8 then x.[3]
       else let i = min (to_uint p) 16 in
       if i < 8 then (x.[2] `>>>` 8 * i) `|` (x.[3] `<<<` (64 - 8 * i))
       else x.[3] `>>>` 8 * (i - 8);
 
-    r.[3] <- 
+    r.[3] <-
       let i = min (to_uint p) 16 in
       if i < 8 then x.[3] `>>>` 8 * i
       else W64.zero;
@@ -805,11 +823,11 @@ module Ops = {
     r.[0] <- if p.[0] then x.[2] else x.[0];
     r.[1] <- if p.[0] then x.[3] else x.[1];
     return r;
-  }  
+  }
 
   proc iVPEXTR_64(x:t2u64, p : W8.t) : W64.t = {
-    return x.[to_uint p]; 
-  }  
+    return x.[to_uint p];
+  }
 
   proc iVPSRA_16u16 (x: t16u16, y: W8.t) : t16u16 = {
     var r : t16u16;
@@ -967,7 +985,7 @@ module Ops = {
     r.[1] <- invw x.[1] `&` y.[1];
     r.[2] <- invw x.[2] `&` y.[2];
     r.[3] <- invw x.[3] `&` y.[3];
-    return r; 
+    return r;
   }
 
   proc ilxor4u64(x y:t4u64) : t4u64 = {
@@ -976,7 +994,7 @@ module Ops = {
     r.[1] <- x.[1] `^` y.[1];
     r.[2] <- x.[2] `^` y.[2];
     r.[3] <- x.[3] `^` y.[3];
-    return r; 
+    return r;
   }
 
   proc ilxor16u16 (x y: t16u16) : t16u16 = {
@@ -1005,7 +1023,7 @@ module Ops = {
   proc iVPBLENDD_256(x y:t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
     r <- witness;
-    r.[0] <- 
+    r.[0] <-
       if p.[0] = p.[1] then
         let w = if p.[0] then y else x in
         w.[0]
@@ -1013,7 +1031,7 @@ module Ops = {
         let w0 = if p.[0] then y else x in
         let w1 = if p.[1] then y else x in
         W2u32.pack2 [w0.[0] \bits32 0; w1.[0] \bits32 1];
-    r.[1] <- 
+    r.[1] <-
       if p.[2] = p.[3] then
         let w = if p.[2] then y else x in
         w.[1]
@@ -1021,7 +1039,7 @@ module Ops = {
         let w0 = if p.[2] then y else x in
         let w1 = if p.[3] then y else x in
         W2u32.pack2 [w0.[1] \bits32 0; w1.[1] \bits32 1];
-    r.[2] <- 
+    r.[2] <-
       if p.[4] = p.[5] then
         let w = if p.[4] then y else x in
         w.[2]
@@ -1033,7 +1051,7 @@ module Ops = {
       if p.[6] = p.[7] then
         let w = if p.[6] then y else x in
         w.[3]
-      else 
+      else
         let w0 = if p.[6] then y else x in
         let w1 = if p.[7] then y else x in
         W2u32.pack2 [w0.[3] \bits32 0; w1.[3] \bits32 1];
@@ -1064,45 +1082,92 @@ module Ops = {
     return r;
   }
 
-  (* FIXME: equiv *)
+  (* FIXME:
   proc iVPSHUFD_256 (x :t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
     r <- witness;
-    r.[0] <- 
+    r.[0] <-
       let m = W8.to_uint p in
-      let p1 = (m %/ (2^(2*0)))%%4 in 
+      let p1 = (m %/ (2^(2*0)))%%4 in
       let p2 = (m %/ (2^(2*1)))%%4 in
-      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then 
-        x.[p1 %/ 2] 
+      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then
+        x.[p1 %/ 2]
       else
         pack2 [x.[p1 %/ 2] \bits32 p1 %% 2; x.[p2 %/ 2] \bits32 p2 %% 2];
 
-    r.[1] <- 
+    r.[1] <-
       let m = W8.to_uint p in
-      let p1 = (m %/ (2^(2*2)))%%4 in 
-      let p2 = (m %/ (2^(2*3)))%%4 in 
-      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then 
-        x.[p1 %/ 2] 
+      let p1 = (m %/ (2^(2*2)))%%4 in
+      let p2 = (m %/ (2^(2*3)))%%4 in
+      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then
+        x.[p1 %/ 2]
       else
         pack2 [x.[p1 %/ 2] \bits32 p1 %% 2; x.[p2 %/ 2] \bits32 p2 %% 2];
 
-    r.[2] <- 
+    r.[2] <-
       let m = W8.to_uint p in
-      let p1 = (m %/ (2^(2*0)))%%4 in 
-      let p2 = (m %/ (2^(2*1)))%%4 in 
-      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then 
-        x.[p1 %/ 2 + 2] 
+      let p1 = (m %/ (2^(2*0)))%%4 in
+      let p2 = (m %/ (2^(2*1)))%%4 in
+      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then
+        x.[p1 %/ 2 + 2]
       else
         pack2 [x.[p1 %/ 2 + 2] \bits32 p1 %% 2; x.[p2 %/ 2 + 2] \bits32 p2 %% 2];
 
-    r.[3] <- 
+    r.[3] <-
       let m = W8.to_uint p in
-      let p1 = (m %/ (2^(2*2)))%%4 in 
-      let p2 = (m %/ (2^(2*3)))%%4 in 
-      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then 
-        x.[p1 %/ 2 + 2] 
+      let p1 = (m %/ (2^(2*2)))%%4 in
+      let p2 = (m %/ (2^(2*3)))%%4 in
+      if p1 %/ 2 = p2 %/ 2 /\ p1 %% 2 = 0 /\ p2 %% 2 = 1 then
+        x.[p1 %/ 2 + 2]
       else
         pack2 [x.[p1 %/ 2 + 2] \bits32 p1 %% 2; x.[p2 %/ 2 + 2] \bits32 p2 %% 2];
+    return r;
+  }
+  *)
+
+  proc iVPSHUFD_256 (x :t8u32, p : W8.t) : t8u32 = {
+    var r : t8u32;
+    r <- witness;
+    r.[0] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*0)))%%4 in
+      x.[pi];
+
+    r.[1] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*1)))%%4 in
+      x.[pi];
+
+    r.[2] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*2)))%%4 in
+      x.[pi];
+
+    r.[3] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*3)))%%4 in
+      x.[pi];
+
+    r.[4] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*0)))%%4 in
+      x.[4 + pi];
+
+    r.[5] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*1)))%%4 in
+      x.[4 + pi];
+
+    r.[6] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*2)))%%4 in
+      x.[4 + pi];
+
+    r.[7] <-
+      let m = W8.to_uint p in
+      let pi = (m %/ (2^(2*3)))%%4 in
+      x.[4 + pi];
+
     return r;
   }
 
@@ -1260,7 +1325,7 @@ module OpsV = {
   }
 
   proc iVPMULU_256 (x y:vt4u64) : vt4u64 = {
-    return VPMULU_256 x y; 
+    return VPMULU_256 x y;
   }
 
   proc iVPMULHRS_256(x y: vt16u16): vt16u16 = {
@@ -1272,7 +1337,7 @@ module OpsV = {
   }
 
   proc ivadd64u256(x y:vt4u64) : vt4u64 = {
-    return VPADD_4u64 x y; 
+    return VPADD_4u64 x y;
   }
 
   proc ivadd32u256(x y:vt8u32) : vt8u32 = {
@@ -1284,15 +1349,15 @@ module OpsV = {
   }
 
   proc ivsub32u256(x y: vt8u32) : vt8u32 = {
-    return VPSUB_8u32 x y; 
+    return VPSUB_8u32 x y;
   }
 
   proc ivsub16u256(x y: vt16u16) : vt16u16 = {
-    return VPSUB_16u16 x y; 
+    return VPSUB_16u16 x y;
   }
 
   proc iload4u64 (mem: global_mem_t, p:W64.t) : vt4u64 = {
-    return loadW256 mem (to_uint p);  
+    return loadW256 mem (to_uint p);
   }
 
   proc iload16u16 (mem: global_mem_t, p: W64.t) : vt16u16 = {
@@ -1312,6 +1377,10 @@ module OpsV = {
   }
 
   proc iVPERM2I128(x y:vt4u64, p : W8.t) : vt4u64 = {
+    return VPERM2I128 x y p;
+  }
+
+  proc iVPERM2I128o(x y:vt2u128, p : W8.t) : vt2u128 = {
     return VPERM2I128 x y p;
   }
 
@@ -1345,7 +1414,7 @@ module OpsV = {
 
   proc iVEXTRACTI128(x:vt4u64, p : W8.t) : vt2u64 = {
     return VEXTRACTI128 x p;
-  }  
+  }
 
   proc iVPEXTR_64(x:vt2u64, p : W8.t) : W64.t = {
     return VPEXTR_64 x p;
@@ -1414,8 +1483,13 @@ module OpsV = {
   proc iVPBLENDW_256(x y:vt16u16, p : W8.t) :  vt16u16 = {
     return VPBLENDW_256 x y p;
   }
-
+  (*
   proc iVPSHUFD_256 (x :vt4u64, p : W8.t) : vt4u64 = {
+    return VPSHUFD_256 x p;
+  }
+  *)
+
+  proc iVPSHUFD_256 (x :vt8u32, p : W8.t) : vt8u32 = {
     return VPSHUFD_256 x p;
   }
 
@@ -1456,7 +1530,7 @@ proof.
   rewrite /int_bit /= modz_mod.
   have /= -> := modz_pow2_div 128 i; 1:smt().
   rewrite (modz_dvd_pow 1 (128 - i) _ 2) 1:/# /=.
-  have : (to_uint (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]) %/ (IntExtra.(^) 2 i) %% 2 <> 0) = 
+  have : (to_uint (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]) %/ (IntExtra.(^) 2 i) %% 2 <> 0) =
             (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]).[i].
   + rewrite -{2}(W256.to_uintK (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]])) W256.of_intwE /int_bit (modz_small _ W256.modulus) 2:/#.
     by have /= := W256.to_uint_cmp  (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]);rewrite /(`|_|).
@@ -1472,11 +1546,11 @@ proof.
   admit.
 qed.
 
-op is4u64_4 (x:t4u64 Array4.t) (xv:vt4u64 Array4.t) = 
+op is4u64_4 (x:t4u64 Array4.t) (xv:vt4u64 Array4.t) =
   xv = Array4.init (fun i => W4u64.pack4 [x.[i].[0]; x.[i].[1]; x.[i].[2]; x.[i].[3]]).
 
-lemma get8_pack4u64 ws j: 
-  W4u64.pack4_t ws \bits8 j = 
+lemma get8_pack4u64 ws j:
+  W4u64.pack4_t ws \bits8 j =
     if 0 <= j < 32 then ws.[j %/ 8] \bits8 (j %% 8) else W8.zero.
 proof.
   rewrite pack4E W8.wordP => i hi.
@@ -1588,16 +1662,16 @@ proof.
 qed.
 
 equiv eq_iload4u64: Ops.iload4u64 ~ OpsV.iload4u64 : ={mem, p} /\ to_uint p{1} + 32 <= W64.modulus ==> is4u64 res{1} res{2}.
-proof. 
+proof.
   proc; wp; skip; rewrite /is4u64 => /> &2 hp.
   rewrite /loadW256 -(W32u8.unpack8K (W4u64.pack4 _));congr.
-  apply W32u8.Pack.packP => j hj. 
+  apply W32u8.Pack.packP => j hj.
   rewrite initiE 1:// W32u8.get_unpack8 1:// /= get8_pack4u64 hj /=.
   (* FIXME
   have /= <- := W4u64.Pack.init_of_list (fun j => loadW64 mem{2} (to_uint (p{2} + W64.of_int (8 * j)))).
   have ? : 0 <= j %/ 8 < 4 by rewrite ltz_divLR // lez_divRL.
   have ? := modz_cmp j 8.
-  rewrite initiE 1:// /loadW64 /= pack8bE 1:// initiE 1:// /=. 
+  rewrite initiE 1:// /loadW64 /= pack8bE 1:// initiE 1:// /=.
   have heq : to_uint (W64.of_int (8 * (j %/ 8))) = 8 * (j %/ 8).
   + by rewrite of_uintK modz_small 2:// /= /#.
   rewrite to_uintD_small heq 1:/#; smt (edivzP).
@@ -1618,9 +1692,9 @@ proof.
 proc; wp; skip; rewrite /is16u16 /VPACKSS_16u16 /packss_8u16 //=.
 qed.
 
-equiv eq_iVPERM2I128 : Ops.iVPERM2I128 ~ OpsV.iVPERM2I128 : 
+equiv eq_iVPERM2I128 : Ops.iVPERM2I128 ~ OpsV.iVPERM2I128 :
   is4u64 x{1} x{2} /\ is4u64 y{1} y{2} /\ ={p} ==> is4u64 res{1} res{2}.
-proof. 
+proof.
   proc; wp; skip; rewrite /is4u64 => /> &1 &2; cbv delta.
   rewrite -(W8.to_uintK' p{2}) !of_intwE /=.
   apply W2u128.allP => /=.
@@ -1629,9 +1703,25 @@ proof.
     case: (W8.int_bit (to_uint p{2}) 7) => ?; 1: by apply W2u64.allP; cbv delta.
     by case: (W8.int_bit (to_uint p{2}) 5) => ?; case: (W8.int_bit (to_uint p{2}) 4).
   split.
-  + by case: (W8.int_bit (to_uint p{2}) 1) => ?; case: (W8.int_bit (to_uint p{2}) 0). 
+  + by case: (W8.int_bit (to_uint p{2}) 1) => ?; case: (W8.int_bit (to_uint p{2}) 0).
   case: (W8.int_bit (to_uint p{2}) 7) => ?;  1: by apply W2u64.allP; cbv delta.
   by case: (W8.int_bit (to_uint p{2}) 5) => ?; case: (W8.int_bit (to_uint p{2}) 4).
+qed.
+
+equiv eq_iVPERM2I128o: Ops.iVPERM2I128o ~ OpsV.iVPERM2I128o :
+  is2u128 x{1} x{2} /\ is2u128 y{1} y{2} /\ ={p} ==> is2u128 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is2u128 => /> &1 &2.
+  rewrite /VPERM2I128 /=.
+  apply W2u128.allP => />.
+  case (p{2}.[3]) => ?.
+  + split; 1: by trivial.
+    case(p{2}.[7]) => ?; trivial.
+    by case(p{2}.[5]) => ?; case(p{2}.[4]).
+  split.
+  + by case(p{2}.[1]) => ?; case(p{2}.[0]).
+  case(p{2}.[7]) => ?; trivial.
+  by case (p{2}.[5]) => ?; case (p{2}.[4]).
 qed.
 
 lemma pack4_bits64 (x:t4u64) (i:int): 0 <= i < 4 =>
@@ -1639,7 +1729,7 @@ lemma pack4_bits64 (x:t4u64) (i:int): 0 <= i < 4 =>
 proof. admit. (*by have /= <- [#|] -> := mema_iota 0 4.*) qed.
 
 equiv eq_iVPERMQ : Ops.iVPERMQ ~ OpsV.iVPERMQ : is4u64 x{1} x{2} /\ ={p} ==> is4u64 res{1} res{2}.
-proof. 
+proof.
   proc; wp; skip; rewrite /is4u64 => /> &1 &2.
   by rewrite /VPERMQ /= !pack4_bits64 ?modz_cmp.
 qed.
@@ -1655,14 +1745,14 @@ proof.
   rewrite /VPERMD /permd /= !pack8_bits32 ?modz_cmp //.
 qed.
 
-lemma lsr_2u64 (w1 w2:W64.t) (x:int) : 0 <= x <= 64 => 
+lemma lsr_2u64 (w1 w2:W64.t) (x:int) : 0 <= x <= 64 =>
   pack2 [w1; w2] `>>>` x = pack2 [(w1 `>>>` x) `|` (w2 `<<<` 64 - x); w2 `>>>` x].
 proof.
   move=> hx;apply W128.wordP => i hi.
   rewrite pack2wE 1://.
   rewrite W128.shrwE hi /=.
   case: (i < 64) => hi1.
-  + have [-> ->] /=: i %/ 64 = 0 /\ i %% 64 = i by smt(edivzP). 
+  + have [-> ->] /=: i %/ 64 = 0 /\ i %% 64 = i by smt(edivzP).
     rewrite pack2wE 1:/#.
     have -> : 0 <= i < 64 by smt().
     case: (i + x < 64) => hix.
@@ -1670,14 +1760,14 @@ proof.
       by rewrite (W64.get_out w2) 1:/#.
     have [-> ->] /= : (i + x) %/ 64 = 1 /\ (i + x) %% 64 = i - (64 - x) by smt(edivzP).
     by rewrite (W64.get_out w1) 1:/#.
-  have [-> ->] /= : i %/ 64 = 1 /\ i %% 64 = i - 64 by smt(edivzP). 
-  case (i + x < 128) => hix;last by rewrite W128.get_out 1:/# W64.get_out 1:/#.  
+  have [-> ->] /= : i %/ 64 = 1 /\ i %% 64 = i - 64 by smt(edivzP).
+  case (i + x < 128) => hix;last by rewrite W128.get_out 1:/# W64.get_out 1:/#.
   rewrite pack2wE 1:/#.
   have -> /= : 0 <= i - 64 < 64 by smt().
   by have [-> ->] : (i + x) %/ 64 = 1 /\ (i + x) %% 64 = i - 64 + x by smt(edivzP).
 qed.
 
-lemma lsr_2u64_64 (w1 w2:W64.t) (x:int) : 64 <= x <= 128 => 
+lemma lsr_2u64_64 (w1 w2:W64.t) (x:int) : 64 <= x <= 128 =>
   pack2 [w1; w2] `>>>` x = pack2 [(w2 `>>>` (x - 64)); W64.zero].
 proof.
   move=> hx;apply W128.wordP => i hi.
@@ -1689,16 +1779,16 @@ proof.
     + rewrite pack2wE 1:/#.
       by have -> /= /# : (i + x) %/ 64 = 1 by smt().
     by rewrite W128.get_out 1:/# W64.get_out 1:/#.
-  have [-> ->] /= : i %/ 64 = 1 /\ i %% 64 = i - 64 by smt(edivzP). 
+  have [-> ->] /= : i %/ 64 = 1 /\ i %% 64 = i - 64 by smt(edivzP).
   by rewrite W128.get_out 1:/#.
 qed.
 
 lemma lsr_0 (w:W64.t) : w `<<<` 0 = w.
 proof. by apply W64.wordP => i hi; rewrite W64.shlwE hi. qed.
 
-equiv eq_iVPSRLDQ_256: Ops.iVPSRLDQ_256 ~ OpsV.iVPSRLDQ_256 : 
+equiv eq_iVPSRLDQ_256: Ops.iVPSRLDQ_256 ~ OpsV.iVPSRLDQ_256 :
   is4u64 x{1} x{2} /\ ={p} ==> is4u64 res{1} res{2}.
-proof. 
+proof.
   proc; wp; skip; rewrite /is4u64 => /> &1 &2; cbv delta.
   case: (to_uint p{2} = 8) => [-> | ?] /=.
   + by rewrite !lsr_2u64 //= !lsr_0.
@@ -1720,13 +1810,13 @@ proof. proc; wp; skip; rewrite /is16u16 => />; cbv delta. admit. (* FIXME *) qed
 equiv eq_iVPUNPCKL_16u16: Ops.iVPUNPCKL_16u16 ~ OpsV.iVPUNPCKL_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. proc; wp; skip; rewrite /is16u16 => />; cbv delta. admit. (* FIXME *) qed.
 
-equiv eq_iVEXTRACTI128: Ops.iVEXTRACTI128 ~ OpsV.iVEXTRACTI128 : 
+equiv eq_iVEXTRACTI128: Ops.iVEXTRACTI128 ~ OpsV.iVEXTRACTI128 :
   is4u64 x{1} x{2} /\ ={p} ==> is2u64 res{1} res{2}.
 proof.
   proc; wp; skip;rewrite /is4u64 /is2u64 /VEXTRACTI128 => /> &1 &2.
   by case: (p{2}.[0]) => ?; cbv delta.
 qed.
- 
+
 equiv eq_iVPEXTR_64: Ops.iVPEXTR_64 ~ OpsV.iVPEXTR_64 : is2u64 x{1} x{2} /\ ={p} /\ (p{1} = W8.of_int 0 \/ p{2} = W8.of_int 1)==> res{1} = res{2}.
 proof. by proc; skip; rewrite /is2u64 /VPEXTR_64 => /> &1 &2 [] -> /=. qed.
 
@@ -1772,11 +1862,11 @@ proof. by proc;wp; skip; rewrite /is4u64 => />; cbv delta. qed.
 equiv eq_iVPSLLV_8u32 : Ops.iVPSLLV_8u32 ~ OpsV.iVPSLLV_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is8u32 res{1} res{2}.
 proof. by proc;wp; skip; rewrite /is8u32 => />; cbv delta. qed.
 
-equiv eq_iVPBLENDD_256 : Ops.iVPBLENDD_256 ~ OpsV.iVPBLENDD_256 : 
+equiv eq_iVPBLENDD_256 : Ops.iVPBLENDD_256 ~ OpsV.iVPBLENDD_256 :
   is4u64 x{1} x{2} /\ is4u64 y{1} y{2} /\ ={p}
-  ==> 
+  ==>
   is4u64 res{1} res{2}.
-proof. 
+proof.
   proc; wp; skip; rewrite /is4u64 /VPBLENDD_256 => /> &1 &2 /=.
   apply W8u32.allP => /=.
   split; 1: by case: (p{2}.[0] = p{2}.[1]); case: (p{2}.[0]).
@@ -1814,9 +1904,10 @@ proof.
   by case (p{2}.[7]).
 qed.
 
-equiv eq_iVPSHUFD_256 : Ops.iVPSHUFD_256 ~ OpsV.iVPSHUFD_256 : 
+(*
+equiv eq_iVPSHUFD_256 : Ops.iVPSHUFD_256 ~ OpsV.iVPSHUFD_256 :
   is4u64 x{1} x{2} /\ ={p} ==> is4u64 res{1} res{2}.
-proof. 
+proof.
   proc; wp; skip; rewrite /is4u64 => /> &1 &2; apply W8u32.allP; cbv delta.
   have heq0 : forall (w: t4u64) i, 0 <= i < 2 => (W2u64.Pack.of_list [w.[0]; w.[1]]).[i] = w.[i].
   + admit. (* FIXME: by move=> w i /(mema_iota 0 2) /= [#|] -> /=.*)
@@ -1864,6 +1955,13 @@ proof.
   (* FIXME
   by case: (to_uint p{2} %/ 16 %% 4 %/ 2 = to_uint p{2} %/ 64 %% 4 %/ 2 /\
        to_uint p{2} %/ 16 %% 4 %% 2 = 0 /\ to_uint p{2} %/ 64 %% 4 %% 2 = 1) => [[# -> _ ->]|].*)
+qed.
+*)
+
+equiv eq_iVPSHUFD_256 : Ops.iVPSHUFD_256 ~ OpsV.iVPSHUFD_256 :
+  is8u32 x{1} x{2} /\ ={p} ==> is8u32 res{1} res{2}.
+proof.
+  admit. (* FIXME *)
 qed.
 
 equiv eq_iVPSHUFB_256 : Ops.iVPSHUFB_256 ~ OpsV.iVPSHUFB_256:
