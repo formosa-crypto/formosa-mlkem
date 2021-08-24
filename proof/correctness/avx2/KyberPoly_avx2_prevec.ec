@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
-require import Array400 Array256 Array64 Array32 Array32p Array16 Array16p Array8 Array8p Array4 Array4p.
+require import Array400 Array256 Array64 Array32 Array32p Array16 Array16p Array8 Array8p Array4 Array4p Array2p.
 require import WArray800 WArray512 WArray128 WArray128p WArray64 WArray32 WArray16.
 require W16extra.
 require import Fq.
@@ -13,11 +13,23 @@ pragma +oldip.
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
 
-op f16u16_t8u32 (t: t16u16): t8u32 = Array8.init (fun i => pack2_t (W2u16.Pack.init(fun j => t.[2*i + j]))).
+op f16u16_t8u32 (t: t16u16): t8u32 = Array8.init (fun i => pack2_t (W2u16.Pack.init (fun j => t.[2*i + j]))).
 op f8u32_t16u16 (t: t8u32): t16u16 = Array16.init (fun i => t.[i %/ 2] \bits16 (i %% 2)).
 
-op f32u8_t4u64 (t: t32u8): t4u64 = Array4.init (fun i => pack8_t (W8u8.Pack.init(fun j => t.[8*i + j]))).
+op f32u8_t4u64 (t: t32u8): t4u64 = Array4.init (fun i => pack8_t (W8u8.Pack.init (fun j => t.[8*i + j]))).
 op f4u64_t32u8 (t: t4u64): t32u8 = Array32.init (fun i => t.[i %/ 8] \bits8 (i %% 8)).
+
+op f32u8_t8u32 (t: t32u8): t8u32 = Array8.init (fun i => pack4_t (W4u8.Pack.init (fun j => t.[4*i + j]))).
+op f8u32_t32u8 (t: t8u32): t32u8 = Array32.init (fun i => t.[i %/ 4] \bits8 (i %% 4)).
+
+op f16u16_t4u64 (t: t16u16): t4u64 = Array4.init (fun i => pack4_t (W4u16.Pack.init (fun j => t.[4*i + j]))).
+op f4u64_t16u16 (t: t4u64): t16u16 = Array16.init (fun i => t.[i %/ 4] \bits16 (i %% 4)).
+
+op f4u64_t2u128 (t: t4u64): t2u128 = Array2.init (fun i => pack2_t (W2u64.Pack.init (fun j => t.[2*i + j]))).
+op f2u128_t4u64 (t: t2u128): t4u64 = Array4.init (fun i => t.[i %/ 2] \bits64 (i %% 2)).
+
+op f16u16_t2u128 (t: t16u16): t2u128 = Array2.init (fun i => pack8_t (W8u16.Pack.init (fun j => t.[8*i + j]))).
+op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16 (i %% 8)).
 
 lemma f16u16_t8u32K: cancel f8u32_t16u16 f16u16_t8u32.
 proof.
@@ -159,35 +171,71 @@ module Mavx2_prevec = {
 
 
   proc poly_frommsg (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
-(*
     var aux: int;
 
-    var hqs:W16.t Array16.t;
-    var shift:W16.t Array16.t;
-    var idx:W16.t Array16.t;
-    var f:W16.t Array16.t;
-    var i:int;
+    var hqs: t16u16;
+    var shift: t16u16;
+    var idx: t16u16;
+    var f: t16u16;
+    var i: int;
+    var g3: t16u16;
+    var g0: t16u16;
+    var g1: t16u16;
+    var g2: t16u16;
+    var h0: t16u16;
+    var h2: t16u16;
+    var h1: t16u16;
+    var h3: t16u16;
 
-    var g3:W16.t Array16.t;
-    var g0:W16.t Array16.t;
-    var g1:W16.t Array16.t;
-    var g2:W16.t Array16.t;
-    var h0:W16.t Array16.t;
-    var h2:W16.t Array16.t;
-    var h1:W16.t Array16.t;
-    var h3:W16.t Array16.t;
+    var g0_i128: t2u128;
+    var g1_i128: t2u128;
+    var g2_i128: t2u128;
+    var g3_i128: t2u128;
+    var h0_i128: t2u128;
+    var h1_i128: t2u128;
+    var h2_i128: t2u128;
+    var h3_i128: t2u128;
+    var shift_i128: t2u128;
+    var idx_i128: t2u128;
+
+    var g0_qw: t4u64;
+    var g1_qw: t4u64;
+    var g2_qw: t4u64;
+    var g3_qw: t4u64;
+    var h0_qw: t4u64;
+    var h1_qw: t4u64;
+    var h2_qw: t4u64;
+    var h3_qw: t4u64;
+
+    var shift_dw: t8u32;
+    var f_dw: t8u32;
+    var g0_dw: t8u32;
+    var g1_dw: t8u32;
+    var g2_dw: t8u32;
+    var g3_dw: t8u32;
+
+    var g3_b: t32u8;
+    var idx_dw: t32u8;
 
     hqs <- lift2poly(get256 (WArray32.init16 (fun i => hqx16_p1.[i])) 0);
-    shift <-
-    Ops.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => shift_s.[i])) 0));
-    idx <- Ops.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => idx_s.[i])) 0));
+    shift_i128 <-
+    Ops.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
+    idx_i128 <- Ops.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
     f <- Ops.iload16u16(Glob.mem, ap);
     i <- 0;
 
+    f_dw <- f16u16_t8u32 f;
+
     while (i < 4) {
-      g3 <- Ops.iVPSHUFD_256(f, W8.of_int (85 * i));
-      g3 <- Ops.iVPSLLV_8u32(g3, shift);
-      g3 <- Ops.iVPSHUFB_256(g3, idx);
+      g3_dw <- Ops.iVPSHUFD_256(f_dw, W8.of_int (85 * i));
+      g3_dw <- Ops.iVPSLLV_8u32(g3_dw, shift_dw);
+
+      g3_b <- f8u32_t32u8 g3_dw;
+      g3_b <- Ops.iVPSHUFB_256(g3_b, idx_dw);
+      g3_dw <- f32u8_t8u32 g3_b;
+
+      g3 <- f8u32_t16u16 g3_dw;
+
       g0 <- Ops.iVPSLL_16u16(g3, (W8.of_int 12));
       g1 <- Ops.iVPSLL_16u16(g3, (W8.of_int 8));
       g2 <- Ops.iVPSLL_16u16(g3, (W8.of_int 4));
@@ -199,14 +247,31 @@ module Mavx2_prevec = {
       g1 <- Ops.ivpand16u16(g1, hqs);
       g2 <- Ops.ivpand16u16(g2, hqs);
       g3 <- Ops.ivpand16u16(g3, hqs);
-      h0 <- Ops.iVPUNPCKL_4u64(g0, g1);
-      h2 <- Ops.iVPUNPCKH_4u64(g0, g1);
-      h1 <- Ops.iVPUNPCKL_4u64(g2, g3);
-      h3 <- Ops.iVPUNPCKH_4u64(g2, g3);
-      g0 <- Ops.iVPERM2I128(h0, h1, (W8.of_int 32));
-      g2 <- Ops.iVPERM2I128(h0, h1, (W8.of_int 49));
-      g1 <- Ops.iVPERM2I128(h2, h3, (W8.of_int 32));
-      g3 <- Ops.iVPERM2I128(h2, h3, (W8.of_int 49));
+
+      g0_qw <- f16u16_t4u64 g0;
+      g1_qw <- f16u16_t4u64 g1;
+      g2_qw <- f16u16_t4u64 g2;
+      g3_qw <- f16u16_t4u64 g3;
+
+      h0_qw <- Ops.iVPUNPCKL_4u64(g0_qw, g1_qw);
+      h2_qw <- Ops.iVPUNPCKH_4u64(g0_qw, g1_qw);
+      h1_qw <- Ops.iVPUNPCKL_4u64(g2_qw, g3_qw);
+      h3_qw <- Ops.iVPUNPCKH_4u64(g2_qw, g3_qw);
+
+      h0_i128 <- f4u64_t2u128 h0_qw;
+      h1_i128 <- f4u64_t2u128 h1_qw;
+      h2_i128 <- f4u64_t2u128 h2_qw;
+      h3_i128 <- f4u64_t2u128 h3_qw;
+
+      g0_i128 <- Ops.iVPERM2I128o(h0_i128, h1_i128, (W8.of_int 32));
+      g2_i128 <- Ops.iVPERM2I128o(h0_i128, h1_i128, (W8.of_int 49));
+      g1_i128 <- Ops.iVPERM2I128o(h2_i128, h3_i128, (W8.of_int 32));
+      g3_i128 <- Ops.iVPERM2I128o(h2_i128, h3_i128, (W8.of_int 49));
+
+      g0 <- f2u128_t16u16 g0_i128;
+      g1 <- f2u128_t16u16 g1_i128;
+      g2 <- f2u128_t16u16 g2_i128;
+      g3 <- f2u128_t16u16 g3_i128;
 
       rp <- fill (fun k => g0.[k %% 32]) (32*i) 16 rp;
       rp <- fill (fun k => g1.[k %% 32]) (32*i + 16) 16 rp;
@@ -215,7 +280,7 @@ module Mavx2_prevec = {
 
       i <- i + 1;
     }
-*)
+
     return (rp);
   }
 
