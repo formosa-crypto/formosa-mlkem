@@ -346,6 +346,65 @@ module Mavx2_prevec = {
     return (a);
   }
 
+  (*--------------------------------------------------------------------*)
+  (* FIXME: equiv proof with Mavx2_prevec.poly_tomsg ?? *)
+  proc poly_tomsg_decode (a:W16.t Array256.t) : W32.t Array256.t = {
+    var aux: int;
+    var rp: W32.t Array256.t;
+
+    var hq:W16.t Array16.t;
+    var hhq:W16.t Array16.t;
+    var i:int;
+
+    var f0: t16u16;
+    var f0_b: t32u8;
+    var f0_q: t4u64;
+
+    var f1:W16.t Array16.t;
+    var g0:W16.t Array16.t;
+    var g1:W16.t Array16.t;
+    var c:W32.t;
+
+    rp <- witness;
+    a <@ poly_csubq (a);
+    hq <- lift2poly(get256 (WArray32.init16 (fun i => hqx16_m1.[i])) 0);
+    hhq <- lift2poly(get256 (WArray32.init16 (fun i => hhqx16.[i])) 0);
+    aux <- (256 %/ 32);
+
+    i <- 0;
+    while (i < aux) {
+      f0 <- lift2poly(get256 (WArray512.init16 (fun i => a.[i])) (2 * i));
+      f1 <- lift2poly(get256 (WArray512.init16 (fun i => a.[i])) ((2 * i) + 1));
+      f0 <- Ops.ivsub16u256(hq, f0);
+      f1 <- Ops.ivsub16u256(hq, f1);
+      g0 <- Ops.iVPSRA_16u16(f0, (W8.of_int 15));
+      g1 <- Ops.iVPSRA_16u16(f1, (W8.of_int 15));
+      f0 <- Ops.ilxor16u16(f0, g0);
+      f1 <- Ops.ilxor16u16(f1, g1);
+      f0 <- Ops.ivsub16u256(f0, hhq);
+      f1 <- Ops.ivsub16u256(f1, hhq);
+      f0_b <- Ops.iVPACKSS_16u16(f0, f1);
+
+      f0_q <- f32u8_t4u64 f0_b;
+      f0_q <- Ops.iVPERMQ(f0_q, (W8.of_int 216));
+      f0_b <- f4u64_t32u8 f0_q;
+
+      c <-  Ops.iVPMOVMSKB_u256_u32(f0_b);
+
+      (* TODO: is this the best way??? *)
+      rp <-  fill (fun k => if c.[k %% 16] then W32.one else W32.zero) (32*i) 32 rp;
+
+      i <- i + 1;
+    }
+    return rp;
+  }
+
+  proc poly_tomsg_store (rp: W64.t, a: W32.t Array256.t): unit = {
+    (*TODO: spec *)
+    return ();
+  }
+  (*--------------------------------------------------------------------*)
+
   proc red16x (r:W16.t Array16.t, qx16:W16.t Array16.t, vx16:W16.t Array16.t) : W16.t Array16.t = {
     var x:W16.t Array16.t;
 
