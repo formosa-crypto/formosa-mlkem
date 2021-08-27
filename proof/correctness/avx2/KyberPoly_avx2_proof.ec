@@ -1459,4 +1459,81 @@ apply rp_eq_ap.
 move : k_lb k_ub => /#.
 qed.
 
+(* Single coefficient decode
+   TODO: move to Kyber theory *)
+op s_decode(c: zmod) : bool = ! `|balasint c| < q %/ 4 + 1.
+
+lemma poly_tomsg_corr_h _a:
+   hoare[Mavx2_prevec.poly_tomsg_decode:
+         pos_bound256_cxq a 0 256 2 /\
+         lift_array256 a = _a ==>
+         map (fun x => x = W32.one) res = m_decode _a /\
+         forall k, 0 <= k && k < 256 =>
+           res.[k] <> W32.zero => res.[k] = W32.one].
+proof.
+  proc.
+  seq 1 : #pre; first by auto => />.
+  cfold 4.
+  seq 1: (pos_bound256_cxq a 0 256 1 /\ lift_array256 a = _a).
+  ecall (poly_csubq_corr_h _a) => />. smt(). auto => />. smt().
+  wp.
+  while(0 <= i <= 8 /\
+      lift_array256 a = _a /\
+      (forall k, 0 <= k < 16 => hhqx16.[k] = W16.of_int 832) /\
+      (forall k, 0 <= k < 16 => hqx16_m1.[k] = W16.of_int 1664) /\
+      (forall k, 0 <= k < 32 * i => (rp.[k] = W32.one) = s_decode _a.[k]) /\
+      (forall k, 0 <= k < 32 * i => rp.[k] <> W32.zero => rp.[k] = W32.one)).
+  sp.
+  inline *.
+  wp.
+  skip.
+  simplify.
+  move => &hr [#] f0_def f1_def i_lb i_ub _a_def hhqx16_def hqx16_m1_def rp_eq_decode__a rp_def i_tub.
+  split.
+  move : i_lb i_tub => /#.
+  split.
+  apply _a_def.
+  split.
+  apply hhqx16_def.
+  split.
+  apply hqx16_m1_def.
+  split.
+  move => k k_i.
+  rewrite f0_def.
+  have H: forall k, 0 <= k < 16 => (lift2poly (get256 ((init16 (fun j => a{hr}.[j])))%WArray512 (2 * i{hr}))).[k] = a{hr}.[32 * i{hr} + k].
+    move => k0 k0_i; rewrite -(lift2poly_iso a{hr} (2*i{hr})); move : i_lb i_tub => /#; rewrite -mulzA /=; smt(@Int); smt(@Int @IntDiv).
+  do rewrite H //.
+  admit.
+  admit.
+  wp.
+  skip.
+  move => &hr [#] pos_bound_a _a_def.
+  do split.
+  apply _a_def. 
+  rewrite /(KyberCPA_avx2.hhqx16) => />.
+    smt(@List @Array16).
+  rewrite /(KyberCPA_avx2.hqx16_m1) => />.
+    smt(@List @Array16).
+  admit.
+  admit.
+  simplify.
+  auto => />.
+  move => [#] i rp0 i_tlb i_lb i_ub _a_ddef hhqx16_def hqx16_m1_def.
+  have ->: i = 8.
+    by move : i_tlb i_ub => /#.
+  simplify.
+  move => rp0_eq_decode__a rp0_def.
+  split.
+  apply Array256.ext_eq.
+  rewrite /m_decode.
+  move => x x_i.
+  rewrite mapiE //=.
+  rewrite mapiE //=.
+  rewrite /s_decode in rp0_eq_decode__a.
+  rewrite rp0_eq_decode__a //.
+  move => x x_lb x_ub.
+  apply rp0_def.
+  rewrite x_lb x_ub //=.
+qed.
+
 end KyberPolyAVX.
