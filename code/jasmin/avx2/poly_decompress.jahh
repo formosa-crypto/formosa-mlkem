@@ -12,7 +12,6 @@ fn poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
   inline int i;
   reg u256 f q shufbidx mask shift;
-  reg u128 t;
   reg ptr u16[16] x16p;
   reg ptr u8[32] x32p;
 

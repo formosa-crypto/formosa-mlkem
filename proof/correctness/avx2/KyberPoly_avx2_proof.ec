@@ -123,6 +123,9 @@ op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
 op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
 
+op pos_bound256_b (coefs : W16.t Array256.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
+
 op lift_array256 (p: W16.t Array256.t) =
   Array256.map (fun x => inzmod (W16.to_sint x)) p.
 
@@ -1459,9 +1462,185 @@ apply rp_eq_ap.
 move : k_lb k_ub => /#.
 qed.
 
-(* Single coefficient decode
-   TODO: move to Kyber theory *)
-op s_decode(c: zmod) : bool = ! `|balasint c| < q %/ 4 + 1.
+lemma poly_decompress_restore_corr ap :
+  hoare[Mavx2_prevec.poly_decompress_restore :
+        ap = lift_array256 r /\
+        (forall k, 0 <= k < 256 => bpos16 r.[k] (if (k %% 2 = 0) then (2^4) else (2^8)))
+        ==>
+        Array256.map Poly.unroundc ap = lift_array256 res /\
+        signed_bound_cxq res 0 256 1].
+proof.
+  proc.
+  cfold 4.
+  wp.
+  while(#pre /\ 0 <= i <= 16 /\
+        (forall k, 0 <= k < 16 => q.[k] = W16.of_int 3329) /\
+        (forall k, 0 <= k < 16 => shift.[k] = if ((k %% 2) = 0) then (W16.of_int (2^11)) else (W16.of_int (2^7))) /\
+        (forall k, 0 <= k < 16*i => rp.[k] = ((r.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
+  inline *.
+  wp. skip.
+  simplify.
+  move => &hr [#] ap_def pos_bound_r i_lb i_ub q_def shift_def rp_def i_tub.
+  do split; first 6 by smt().
+  rewrite mulzDr /=.
+  move => k k_i.
+  rewrite filliE //=; first by smt().
+  case (16 * i{hr} <= k && k < 16 * i{hr} + 16); last first.
+  move => k_b.
+  rewrite rp_def.
+  move : k_i k_b => /#.
+  trivial.
+  move => k_b.
+  have H: forall k, 0 <= k < 16 => (lift2poly (get256 ((init16 ("_.[_]" r{hr})))%WArray512 i{hr})).[k] = r{hr}.[16 * i{hr} + k].
+    by move => k0 k0_i; rewrite -(lift2poly_iso r{hr} i{hr}) /#.
+  do rewrite H //.
+  rewrite (_: r1{hr}.[0 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 0] * shift{hr}.[0]) * to_sint q{hr}.[0])].[1 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 1] * shift{hr}.[1]) * to_sint q{hr}.[1])].[2 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 2] * shift{hr}.[2]) * to_sint q{hr}.[2])].[3 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 3] * shift{hr}.[3]) * to_sint q{hr}.[3])].[4 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 4] * shift{hr}.[4]) * to_sint q{hr}.[4])].[5 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 5] * shift{hr}.[5]) * to_sint q{hr}.[5])].[6 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 6] * shift{hr}.[6]) * to_sint q{hr}.[6])].[7 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 7] * shift{hr}.[7]) * to_sint q{hr}.[7])].[8 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 8] * shift{hr}.[8]) * to_sint q{hr}.[8])].[9 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 9] * shift{hr}.[9]) * to_sint q{hr}.[9])].[10 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 10] * shift{hr}.[10]) * to_sint q{hr}.[10])].[11 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 11] * shift{hr}.[11]) * to_sint q{hr}.[11])].[12 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 12] * shift{hr}.[12]) * to_sint q{hr}.[12])].[13 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 13] * shift{hr}.[13]) * to_sint q{hr}.[13])].[14 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 14] * shift{hr}.[14]) * to_sint q{hr}.[14])].[15 <-
+  round_scalew
+    (to_sint (r{hr}.[16 * i{hr} + 15] * shift{hr}.[15]) * to_sint q{hr}.[15])] =
+     Array16.init (fun k => round_scalew (to_sint (r{hr}.[16 * i{hr} + k] * shift{hr}.[k]) * to_sint q{hr}.[k]))).
+    apply Array16.ext_eq. move => x x_i. rewrite initiE //=.
+    do rewrite get_setE //.
+    smt(@Array16).
+  rewrite initiE 1:/# //=.
+  rewrite /round_scalew //=.
+  rewrite (_: 16 * i{hr} + k %% 16 = k).
+    smt(@Int @IntDiv).
+  rewrite /truncateu16.
+  rewrite q_def 1:/#.
+  rewrite -of_intM.
+  rewrite of_sintK //=.
+  rewrite /smod //=.
+  rewrite -of_intM.
+  case ((k %% 16 %% 2) = 0).
+  move => k_even.
+  rewrite shift_def 1:/#.
+  rewrite k_even //=.
+  rewrite to_sintM_small.
+    move : (pos_bound_r k).
+    rewrite modz_dvd // in k_even.
+    rewrite k_even //=.
+    rewrite (_: (0 <= k && k < 256) = true) //=.
+      by move : k_i k_b i_lb i_tub => /#.
+    rewrite of_sintK //= /smod //=.
+    smt().
+  rewrite mulzA mulzC mulzA mulzC.
+  rewrite of_sintK //=.
+  rewrite /smod //=.
+  rewrite (_: 2048 = 2^11). by trivial.
+  rewrite -shlMP 1://=.
+  do rewrite shr_shrw 1://=.
+  rewrite W32.shlw_shrw_shrw 1://= //=.
+  rewrite (_: (W32.masklsb 21) = (W32.of_int (2 ^ 21 - 1))); first by rewrite /max /=.
+  rewrite W32.and_mod. by rewrite /max /=.
+  rewrite W32.of_uintK.
+  rewrite modz_dvd 1://=.
+  rewrite pmod_small.
+    move : (pos_bound_r k).
+    rewrite modz_dvd // in k_even.
+    rewrite k_even //=.
+    rewrite (_: (0 <= k && k < 256) = true) //=.
+      by move : k_i k_b i_lb i_tub => /#.
+    smt().
+  rewrite shrDP //=.
+  rewrite addzC -divzMDl 1://= //=.
+  rewrite {2}(_:8 = 2^3). by trivial.
+  rewrite (_: 8 + 3329 * to_sint r{hr}.[k] %% 4294967296 =
+              (8 + 3329 * to_sint r{hr}.[k]) %% 4294967296).
+    move : (pos_bound_r k).
+    rewrite modz_dvd // in k_even.
+    rewrite k_even //=.
+    rewrite (_: (0 <= k && k < 256) = true) //=.
+      by move : k_i k_b i_lb i_tub => /#.
+    smt().
+  rewrite -shrDP //=.
+  rewrite to_uint_shr 1://.
+  rewrite of_uintK.
+  rewrite (_: (8 + 3329 * to_sint r{hr}.[k]) %% W32.modulus =
+              (8 + 3329 * to_sint r{hr}.[k]) %% W16.modulus).
+    smt().
+  rewrite -shrDP //=.
+  rewrite of_intD -of_intM.
+  admit. (* FIXME *)
+  move => k_odd.
+  rewrite shift_def 1:/#.
+  rewrite k_odd //=.
+  rewrite to_sintM_small.
+    move : (pos_bound_r k).
+    rewrite modz_dvd // in k_odd.
+    rewrite k_odd //=.
+    rewrite (_: (0 <= k && k < 256) = true) //=.
+      by move : k_i k_b i_lb i_tub => /#.
+    rewrite of_sintK //= /smod //=.
+    smt().
+  rewrite mulzA mulzC mulzA mulzC.
+  rewrite of_sintK //=.
+  rewrite /smod //=.
+  rewrite (_: 128 = 2^7). by trivial.
+  rewrite -shlMP 1://=.
+  do rewrite shr_shrw 1://=.
+  rewrite W32.shlw_shrw_shrw 1://= //=.
+  rewrite (_: (W32.masklsb 25) = (W32.of_int (2 ^ 25 - 1))); first by rewrite /max /=.
+  rewrite W32.and_mod. by rewrite /max /=.
+  rewrite W32.of_uintK.
+  rewrite modz_dvd 1://=.
+  rewrite pmod_small.
+    move : (pos_bound_r k).
+    rewrite modz_dvd // in k_odd.
+    rewrite k_odd //=.
+    rewrite (_: (0 <= k && k < 256) = true) //=.
+      by move : k_i k_b i_lb i_tub => /#.
+    smt().
+  rewrite shrDP //=.
+  rewrite addzC -divzMDl 1://= //=.
+  rewrite {2}(_: 128 = 2^7). by trivial.
+  rewrite (_: 128 + 3329 * to_sint r{hr}.[k] %% 4294967296 =
+              (128 + 3329 * to_sint r{hr}.[k]) %% 4294967296).
+    move : (pos_bound_r k).
+    rewrite modz_dvd // in k_odd.
+    rewrite k_odd //=.
+    rewrite (_: (0 <= k && k < 256) = true) //=.
+      by move : k_i k_b i_lb i_tub => /#.
+    smt().
+  rewrite -shrDP //=.
+  rewrite of_intD.
+  admit. (* FIXME *)
+  sp.
+  inline *.
+  wp.
+  skip.
+  admit. (* FIXME *)
+qed.
+
 
 lemma poly_tomsg_corr_h _a:
    hoare[Mavx2_prevec.poly_tomsg_decode:
