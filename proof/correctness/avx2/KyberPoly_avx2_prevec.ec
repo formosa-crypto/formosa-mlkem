@@ -693,4 +693,109 @@ module Mavx2_prevec = {
 
     return (rp);
   }
+
+
+  proc poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+(*
+    var aux: int;
+
+    var x16p:W16.t Array16.t;
+    var q:W256.t;
+    var x32p:W8.t Array32.t;
+    var shufbidx:W256.t;
+    var mask:W256.t;
+    var shift:W256.t;
+    var t:W128.t;
+    var f:W256.t;
+    var i:int;
+    x16p <- witness;
+    x32p <- witness;
+    x16p <- jqx16;
+    q <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    x32p <- pd_jshufbidx;
+    shufbidx <- (get256 (WArray32.init8 (fun i => x32p.[i])) 0);
+    mask <- OpsV.iVPBROADCAST_8u32(pd_mask_s);
+    shift <- OpsV.iVPBROADCAST_8u32(pd_shift_s);
+    t <- setw0_128 ;
+    f <- setw0_256 ;
+    aux <- (256 %/ 16);
+    i <- 0;
+    while (i < aux) {
+      f <-
+      OpsV.iVPBROADCAST_2u128(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      f <- OpsV.iVPSHUFB_256(f, shufbidx);
+      f <- OpsV.ivpand16u16(f, mask);
+      f <- OpsV.iVPMULL_16u16(f, shift);
+      f <- OpsV.iVPMULHRS_256(f, q);
+      rp <-
+      Array256.init
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) i f));
+      i <- i + 1;
+    }
+*)
+    return (rp);
+  }
+  (*--------------------------------------------------------------------*)
+  proc poly_decompress_load (ap:W64.t) : W16.t Array256.t = {
+    var rp: W16.t Array256.t;
+(*
+    var aux: int;
+
+    var x32p:W8.t Array32.t;
+    var shufbidx:W8.t Array32.t;
+    var mask:W256.t;
+    var f:W16.t Array16.t;
+    var i:int;
+
+    var f_b <- W8.t Array32.t;
+
+    x32p <- pd_jshufbidx;
+    shufbidx <- (get256 (WArray32.init8 (fun i => x32p.[i])) 0);
+    mask <- Ops.iVPBROADCAST_8u32(pd_mask_s);
+
+    f <- setw0_256 ;
+    aux <- (256 %/ 16);
+    i <- 0;
+
+    while (i < aux) {
+      f <-
+      Ops.iVPBROADCAST_2u128(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      f <- Ops.iVPSHUFB_256(f, shufbidx);
+      f <- Ops.ivpand16u16(f, mask);
+
+      rp <- fill (fun k => f.[k %% 16]) (16*i) 16 rp;
+
+      i <- i + 1;
+    }
+*)
+    return (rp);
+  }
+
+  proc poly_decompress_restore (r:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+    var rp: W16.t Array256.t;
+    var q: t16u16;
+    var shift: t16u16;
+    var f: t16u16;
+    var shift_d: t8u32;
+    var i: int;
+
+    q <- lift2poly(get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    shift_d <- Ops.iVPBROADCAST_8u32(pd_shift_s);
+    shift <- f8u32_t16u16 shift_d;
+    aux <- (256 %/ 16);
+    i <- 0;
+
+    while (i < aux) {
+      f <- lift2poly(get256_direct (WArray512.init16 (fun i => r.[i])) (32 * i));
+
+      f <- Ops.iVPMULL_16u16(f, shift);
+      f <- Ops.iVPMULHRS_256(f, q);
+
+      rp <- fill (fun k => f.[k %% 16]) (16*i) 16 rp;
+      i <- i + 1;
+    }
+    return rp;
+  }
+  (*--------------------------------------------------------------------*)
 }.
