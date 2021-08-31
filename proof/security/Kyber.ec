@@ -74,6 +74,7 @@ op balasint c = if q %/ 2 < (ZModField.asint c)
                      then ((ZModField.asint c) - q) 
                      else (ZModField.asint c).
 
+op s_decode(c: zmod) : bool = ! `|balasint c| < q %/ 4 + 1.
 
 op m_decode(mp : poly) : message =
    map (fun c => ! (`| balasint c | < q%/ 4 + 1)) mp.
