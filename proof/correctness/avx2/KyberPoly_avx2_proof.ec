@@ -1575,7 +1575,26 @@ proof.
   rewrite initiE //=.
   rewrite initiE //= 1:/#.
   rewrite /pd_shift_s /(KyberCPA_avx2.pd_shift_s).
+  simplify.
+  rewrite bits16E.
+  rewrite /int2bs /bits2w.
+  rewrite W16.wordP.
+  move => i i_i.
+  rewrite initiE //= initiE //= 1:/#.
+  case (k %% 2 = 0) => k_even.
+  rewrite of_intwE i_i //=.
+  rewrite /int_bit //=.
+  rewrite nth_mkseq 1:/# //=.
+  congr. congr.
+  rewrite k_even //=.
   admit. (* FIXME *)
+  rewrite of_intwE i_i //=.
+  rewrite /int_bit //=.
+  rewrite nth_mkseq 1:/# //=.
+  congr. congr.
+  have ->: (k %% 2) = 1. smt(@IntDiv @Int).
+  admit. (* FIXME *)
+
   smt().
 
   move => i rp i_tlb [#] ap_defd pos_bound_rd i_lb i_ub q_defd shift_defd rp_def.
