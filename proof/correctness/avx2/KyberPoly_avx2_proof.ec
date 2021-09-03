@@ -1462,10 +1462,11 @@ apply rp_eq_ap.
 move : k_lb k_ub => /#.
 qed.
 
-lemma poly_decompress_restore_corr ap :
+
+lemma poly_decompress_restore_corr (ap: zmod Array256.t) :
   hoare[Mavx2_prevec.poly_decompress_restore :
-        ap = lift_array256 r /\
-        (forall k, 0 <= k < 256 => bpos16 r.[k] (if (k %% 2 = 0) then (2^4) else (2^8)))
+        (forall k, 0 <= k < 256 => ap.[k] = if (k %% 2 = 0) then inzmod(to_sint(r.[k])) else inzmod(to_sint(r.[k]) %/ 2^4)) /\
+        (forall k, 0 <= k < 256 => if (k %% 2 = 0) then bpos16 r.[k] (2^4) else ((to_sint r.[k]) = 0 \/ 2^4 <= to_sint r.[k] < (2^8)))
         ==>
         Array256.map Poly.unroundc ap = lift_array256 res /\
         signed_bound_cxq res 0 256 1].
@@ -1475,8 +1476,8 @@ proof.
   wp.
   while(#pre /\ 0 <= i <= 16 /\
         (forall k, 0 <= k < 16 => q.[k] = W16.of_int 3329) /\
-        (forall k, 0 <= k < 16 => shift.[k] = if ((k %% 2) = 0) then (W16.of_int (2^11)) else (W16.of_int (2^7))) /\
-        (forall k, 0 <= k < 16*i => rp.[k] = ((r.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
+        (forall k, 0 <= k < 16 => shift.[k] = if (k %% 2 = 0) then (W16.of_int (2^11)) else (W16.of_int (2^7))) /\
+        (forall k, 0 <= k < 16*i => rp.[k] = round_scalew (to_sint (r.[k] * shift.[k %% 16]) * to_sint q.[k %% 16]))).
   inline *.
   wp. skip.
   simplify.
@@ -1532,113 +1533,156 @@ proof.
     do rewrite get_setE //.
     smt(@Array16).
   rewrite initiE 1:/# //=.
-  rewrite /round_scalew //=.
-  rewrite (_: 16 * i{hr} + k %% 16 = k).
-    smt(@Int @IntDiv).
+  rewrite (_: 16 * i{hr} + k %% 16 = k). by move : k_i k_b => /#.
+  trivial.
+
+  sp.
+  inline *.
+  wp.
+  skip.
+  move => &hr [#] q_def ap_def pos_bound_r pd_shift_s shift_def.
+  simplify.
+  split.
+  do split.
+  apply ap_def.
+  rewrite /bpos16 in pos_bound_r.
+  apply pos_bound_r.
+  rewrite q_def.
+  rewrite /lift2poly //=.
+  move => k k_i.
+  rewrite initiE //=.
+  rewrite /init16.
+  rewrite get256E //= k_i //=.
+  do rewrite W32u8.Pack.initiE //= 1:/#.
+  do rewrite WArray32.initiE //= 1:/#.
+  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2). by smt(@IntDiv).
+  rewrite {2 4}mulzC.
+  rewrite modzMDl modzMl //=.
+  rewrite pack2_bits8.
+  rewrite /(jqx16).
+  rewrite initiE //= 1:/#.
+  smt(@List @Array16).
+  rewrite /shift_def.
+  move => k k_i.
+  rewrite (_: r0{hr}.[0 <- pd_shift_s].[1 <- pd_shift_s].[2 <- pd_shift_s].[3 <-
+                      pd_shift_s].[4 <- pd_shift_s].[5 <- pd_shift_s].[6 <-
+                      pd_shift_s].[7 <- pd_shift_s] =
+              Array8.init (fun i => pd_shift_s)).
+    apply Array8.ext_eq. move => x x_i. rewrite initiE //=.
+    do rewrite get_setE //.
+    smt(@Array8).
+  rewrite /f8u32_t16u16.
+  rewrite initiE //=.
+  rewrite initiE //= 1:/#.
+  rewrite /pd_shift_s /(KyberCPA_avx2.pd_shift_s).
+  admit. (* FIXME *)
+  smt().
+
+  move => i rp i_tlb [#] ap_defd pos_bound_rd i_lb i_ub q_defd shift_defd rp_def.
+  have i_eq: i = 16.
+    move : i_lb i_ub i_tlb => /#.
+  split.
+  apply Array256.ext_eq.
+  move => x x_i.
+  rewrite /lift_array256 //=.
+  do rewrite mapiE //=.
+  rewrite ap_def 1://=.
+  rewrite rp_def 1:/#.
+  rewrite /unroundc qE.
+  rewrite fun_if.
+  do rewrite inzmodK.
+  do rewrite (pmod_small _ q).
+    move : (pos_bound_r x x_i) => /#.
+    move : (pos_bound_r x x_i) => /#.
+  rewrite /round_scalew => />.
   rewrite /truncateu16.
-  rewrite q_def 1:/#.
-  rewrite -of_intM.
-  rewrite of_sintK //=.
-  rewrite /smod //=.
-  rewrite -of_intM.
-  case ((k %% 16 %% 2) = 0).
-  move => k_even.
-  rewrite shift_def 1:/#.
-  rewrite k_even //=.
+  rewrite shift_defd 1:/#.
+  rewrite modz_dvd //.
+  admit. (* FIXME *)
+
+  rewrite /signed_bound_cxq.
+  rewrite /b16 //=.
+  move => k k_i.
+  rewrite rp_def 1:/#.
+  rewrite /round_scalew (shift_defd (k%%16)) 1:/#  (q_defd (k%%16)) 1:/# //=.
+  rewrite /truncateu16.
+  move : (pos_bound_rd k k_i). 
+  rewrite modz_dvd //.
+
+  case(k %% 2 = 0).
+  move => k_even r_bounds_even.
+  rewrite shr_shrw 1://=.
   rewrite to_sintM_small.
-    move : (pos_bound_r k).
-    rewrite modz_dvd // in k_even.
-    rewrite k_even //=.
-    rewrite (_: (0 <= k && k < 256) = true) //=.
-      by move : k_i k_b i_lb i_tub => /#.
-    rewrite of_sintK //= /smod //=.
-    smt().
-  rewrite mulzA mulzC mulzA mulzC.
-  rewrite of_sintK //=.
-  rewrite /smod //=.
+    rewrite of_sintK /smod //= => /#.
+  rewrite (W16.of_sintK 2048) /smod //=.
+  rewrite (_: to_sint r{hr}.[k] * 2048 * to_sint ((W16.of_int 3329)) =
+              (to_sint r{hr}.[k] * 3329) * 2048).
+    rewrite W16.of_sintK /smod //=.
+    rewrite mulzA mulzA (mulzC 2048 3329).
+    trivial.
   rewrite (_: 2048 = 2^11). by trivial.
   rewrite -shlMP 1://=.
   do rewrite shr_shrw 1://=.
   rewrite W32.shlw_shrw_shrw 1://= //=.
   rewrite (_: (W32.masklsb 21) = (W32.of_int (2 ^ 21 - 1))); first by rewrite /max /=.
   rewrite W32.and_mod. by rewrite /max /=.
-  rewrite W32.of_uintK.
-  rewrite modz_dvd 1://=.
-  rewrite pmod_small.
-    move : (pos_bound_r k).
-    rewrite modz_dvd // in k_even.
-    rewrite k_even //=.
-    rewrite (_: (0 <= k && k < 256) = true) //=.
-      by move : k_i k_b i_lb i_tub => /#.
-    smt().
-  rewrite shrDP //=.
-  rewrite addzC -divzMDl 1://= //=.
-  rewrite {2}(_:8 = 2^3). by trivial.
-  rewrite (_: 8 + 3329 * to_sint r{hr}.[k] %% 4294967296 =
-              (8 + 3329 * to_sint r{hr}.[k]) %% 4294967296).
-    move : (pos_bound_r k).
-    rewrite modz_dvd // in k_even.
-    rewrite k_even //=.
-    rewrite (_: (0 <= k && k < 256) = true) //=.
-      by move : k_i k_b i_lb i_tub => /#.
-    smt().
-  rewrite -shrDP //=.
-  rewrite to_uint_shr 1://.
   rewrite of_uintK.
-  rewrite (_: (8 + 3329 * to_sint r{hr}.[k]) %% W32.modulus =
-              (8 + 3329 * to_sint r{hr}.[k]) %% W16.modulus).
-    smt().
-  rewrite -shrDP //=.
-  rewrite of_intD -of_intM.
-  admit. (* FIXME *)
-  move => k_odd.
-  rewrite shift_def 1:/#.
-  rewrite k_odd //=.
-  rewrite to_sintM_small.
-    move : (pos_bound_r k).
-    rewrite modz_dvd // in k_odd.
-    rewrite k_odd //=.
-    rewrite (_: (0 <= k && k < 256) = true) //=.
-      by move : k_i k_b i_lb i_tub => /#.
-    rewrite of_sintK //= /smod //=.
-    smt().
-  rewrite mulzA mulzC mulzA mulzC.
-  rewrite of_sintK //=.
+  rewrite pmod_small.
+    move : r_bounds_even => /#.
+  rewrite shrDP 1://=.
+  rewrite -of_intD.
+  rewrite addrC.
+  rewrite -divzMDl 1://=.
+  rewrite (_: (1 * 2 ^ 3 + to_sint r{hr}.[k] * 3329 %% W32.modulus %% W32.modulus) =
+              (8 +  to_sint r{hr}.[k] * 3329) %% W32.modulus).
+    move : r_bounds_even => /#.
+  rewrite -shrDP 1://= shrw_add //= shrDP 1://=.
+  rewrite of_uintK.
+  do (rewrite pmod_small; first by move : r_bounds_even => /#).
+  rewrite of_sintK.
+  rewrite pmod_small.
+    move : r_bounds_even => /#.
   rewrite /smod //=.
+  have ->: ! 32768 <= (8 + to_sint r{hr}.[k] * 3329) %/ 16.
+    smt().
+  smt().
+
+  move => k_odd r_bounds_odd.
+  rewrite shr_shrw 1://=.
+  rewrite to_sintM_small.
+    rewrite of_sintK /smod //= => /#.
+  rewrite (W16.of_sintK 128) /smod //=.
+  rewrite (_: to_sint r{hr}.[k] * 128 * to_sint ((W16.of_int 3329)) =
+              (to_sint r{hr}.[k] * 3329) * 128).
+    rewrite W16.of_sintK /smod //=.
+    rewrite mulzA mulzA (mulzC 128 3329).
+    trivial.
   rewrite (_: 128 = 2^7). by trivial.
   rewrite -shlMP 1://=.
   do rewrite shr_shrw 1://=.
   rewrite W32.shlw_shrw_shrw 1://= //=.
   rewrite (_: (W32.masklsb 25) = (W32.of_int (2 ^ 25 - 1))); first by rewrite /max /=.
   rewrite W32.and_mod. by rewrite /max /=.
-  rewrite W32.of_uintK.
-  rewrite modz_dvd 1://=.
+  rewrite of_uintK.
   rewrite pmod_small.
-    move : (pos_bound_r k).
-    rewrite modz_dvd // in k_odd.
-    rewrite k_odd //=.
-    rewrite (_: (0 <= k && k < 256) = true) //=.
-      by move : k_i k_b i_lb i_tub => /#.
+    move : r_bounds_odd => /#.
+  rewrite shrDP 1://=.
+  rewrite -of_intD.
+  rewrite addrC.
+  rewrite -divzMDl 1://=.
+  rewrite (_: (1 * 2 ^ 7 + to_sint r{hr}.[k] * 3329 %% W32.modulus %% W32.modulus) =
+              (128 +  to_sint r{hr}.[k] * 3329) %% W32.modulus).
+    move : r_bounds_odd => /#.
+  rewrite -shrDP 1://= shrw_add //= shrDP 1://=.
+  rewrite of_uintK.
+  do (rewrite pmod_small; first by move : r_bounds_odd => /#).
+  rewrite of_sintK.
+  rewrite pmod_small.
+    move : r_bounds_odd => /#.
+  rewrite /smod //=.
+  have ->: ! 32768 <= (128 + to_sint r{hr}.[k] * 3329) %/ 256.
     smt().
-  rewrite shrDP //=.
-  rewrite addzC -divzMDl 1://= //=.
-  rewrite {2}(_: 128 = 2^7). by trivial.
-  rewrite (_: 128 + 3329 * to_sint r{hr}.[k] %% 4294967296 =
-              (128 + 3329 * to_sint r{hr}.[k]) %% 4294967296).
-    move : (pos_bound_r k).
-    rewrite modz_dvd // in k_odd.
-    rewrite k_odd //=.
-    rewrite (_: (0 <= k && k < 256) = true) //=.
-      by move : k_i k_b i_lb i_tub => /#.
-    smt().
-  rewrite -shrDP //=.
-  rewrite of_intD.
-  admit. (* FIXME *)
-  sp.
-  inline *.
-  wp.
-  skip.
-  admit. (* FIXME *)
+  smt().
 qed.
 
 
