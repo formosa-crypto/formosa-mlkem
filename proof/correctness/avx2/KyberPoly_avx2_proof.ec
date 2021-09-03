@@ -1466,7 +1466,7 @@ qed.
 lemma poly_decompress_restore_corr (ap: zmod Array256.t) :
   hoare[Mavx2_prevec.poly_decompress_restore :
         (forall k, 0 <= k < 256 => ap.[k] = if (k %% 2 = 0) then inzmod(to_sint(r.[k])) else inzmod(to_sint(r.[k]) %/ 2^4)) /\
-        (forall k, 0 <= k < 256 => if (k %% 2 = 0) then bpos16 r.[k] (2^4) else ((to_sint r.[k]) = 0 \/ 2^4 <= to_sint r.[k] < (2^8)))
+        (forall k, 0 <= k < 256 => (if k %% 2 = 0 then bpos16 r{hr}.[k] (2 ^ 4) else (forall m, 0 <= m < (2^4) => to_sint r{hr}.[k] = (2^4) * m)))
         ==>
         Array256.map Poly.unroundc ap = lift_array256 res /\
         signed_bound_cxq res 0 256 1].
@@ -1598,7 +1598,96 @@ proof.
   rewrite /truncateu16.
   rewrite shift_defd 1:/#.
   rewrite modz_dvd //.
-  admit. (* FIXME *)
+  rewrite q_defd 1:/#.
+  rewrite to_sintM_small.
+    move : (pos_bound_r x x_i).
+    case (x %% 2 = 0) => x_even.
+    rewrite /bpos16.
+    rewrite of_sintK /smod //=.
+    smt().
+    move => x_odd.
+    rewrite of_sintK /smod //=.
+    smt().
+  rewrite (fun_if W16.to_sint).
+  rewrite (W16.of_sintK 2048) (W16.of_sintK 128) (W16.of_sintK 3329) /smod //=.
+  do rewrite shr_shrw 1://=.
+  rewrite shrDP 1://=.
+  rewrite addrC -of_intD.
+  rewrite -divzMDl 1://=.
+  rewrite (_: (1 * 2 ^ 14 + to_sint r{hr}.[x] * (if x %% 2 = 0 then 2048 else 128) * 3329 %% W32.modulus) =
+              (1 * 2 ^ 14 + to_sint r{hr}.[x] * (if x %% 2 = 0 then 2048 else 128) * 3329) %% W32.modulus).
+    smt().
+  rewrite -shrDP 1://= shrw_add //= shrDP 1://=.
+  move : (pos_bound_r x x_i).
+  rewrite /bpos16.
+  case(x %% 2 = 0).
+  move => x_even r_bounds_even.
+  rewrite (_: 16384 = 2^11 * 2^3). by trivial.
+  rewrite (_: 2048 = 2^11). by trivial.
+  rewrite (mulzC _ (2^11)) mulzA -(mulzDr (2^11) _ _) (mulzC (2^11)).
+  rewrite (_: (2 ^ 3 + to_sint r{hr}.[x] * 3329) =
+              (2 ^ 3 + to_sint r{hr}.[x] * 3329) %% W32.modulus).
+    smt().
+  rewrite -shrDP 1:// -shlMP 1://= W32.shlw_shrw_shrw 1://= //=.
+  rewrite (_: (W32.masklsb 21) = (W32.of_int (2 ^ 21 - 1))); first by rewrite /max /=.
+  rewrite W32.and_mod. by rewrite /max /=.
+  rewrite pmod_small.
+    rewrite pmod_small.
+    move : r_bounds_even => /#.
+    rewrite of_uintK.
+    move : r_bounds_even => /#.
+  rewrite of_uintK.
+  rewrite pmod_small.
+    move : r_bounds_even => /#.
+  rewrite shrDP 1://=.
+  rewrite of_uintK.
+  rewrite (_: ((8 + to_sint r{hr}.[x] * 3329) %% 4294967296 %% W32.modulus %/ 2 ^ 4 %% W32.modulus) =
+              (8 + to_sint r{hr}.[x] * 3329) %/ 2 ^ 4).
+    move : r_bounds_even => /#.
+  rewrite of_sintK.
+  rewrite pmod_small.
+    move : r_bounds_even => /#.
+  rewrite /smod //=.
+  have ->: ! 32768 <= (8 + to_sint r{hr}.[x] * 3329) %/ 16.
+    smt().
+  smt().
+
+  move => x_odd r_bounds_odd.
+  rewrite (_: 16384 = 2^7 * 2^7). by trivial.
+  rewrite (_: to_sint r{hr}.[x] * 128 * 3329 = 2^7 * (to_sint r{hr}.[x] * 3329)). by smt(@Int).
+  rewrite -(mulzDr (2^7) _ _) (mulzC (2^7)).
+  rewrite (_: (2 ^ 7 + to_sint r{hr}.[x] * 3329) =
+              (2 ^ 7 + to_sint r{hr}.[x] * 3329) %% W32.modulus).
+    smt().
+  rewrite -shrDP 1:// -shlMP 1://= W32.shlw_shrw_shrw 1://= //=.
+  rewrite (_: (W32.masklsb 25) = (W32.of_int (2 ^ 25 - 1))); first by rewrite /max /=.
+  rewrite W32.and_mod. by rewrite /max /=.
+  rewrite pmod_small.
+    rewrite pmod_small.
+    move : r_bounds_odd => /#.
+    rewrite of_uintK.
+    move : r_bounds_odd => /#.
+  rewrite of_uintK.
+  rewrite pmod_small.
+    move : r_bounds_odd => /#.
+  rewrite shrDP 1://=.
+  rewrite of_uintK.
+  rewrite (_: ((128 + to_sint r{hr}.[x] * 3329) %% 4294967296 %% W32.modulus %/ 2 ^ 8 %% W32.modulus) =
+              (128 + to_sint r{hr}.[x] * 3329) %/ (2^4) %/ (2^4)).
+    move : r_bounds_odd => /#.
+  rewrite of_sintK.
+  rewrite pmod_small.
+    move : r_bounds_odd => /#.
+  rewrite /smod //=.
+  have ->: ! 32768 <= (128 + to_sint r{hr}.[x] * 3329) %/ 16 %/ 16.
+    smt().
+  simplify.
+  rewrite (addzC 128 _).
+  rewrite (divzDr _ 128 _) 1://=.
+  rewrite (_: to_sint r{hr}.[x] * 3329 %/ 16 = to_sint r{hr}.[x] %/ 16 * 3329).
+    move : r_bounds_odd.
+    smt().
+  trivial.
 
   rewrite /signed_bound_cxq.
   rewrite /b16 //=.
