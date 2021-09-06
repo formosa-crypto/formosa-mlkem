@@ -39,6 +39,7 @@ rewrite pack2_bits8.
 smt(@IntDiv).
 qed.
 
+
 lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
     0 <= i < 16 => 0 <= j < 256 =>
     WArray512.get16
@@ -1587,14 +1588,17 @@ proof.
   rewrite nth_mkseq 1:/# //=.
   congr. congr.
   rewrite k_even //=.
-  admit. (* FIXME *)
+  move : i_i.
+  rewrite andabP => /(mem_iota 0 16 i).
+  smt(@List).
   rewrite of_intwE i_i //=.
   rewrite /int_bit //=.
   rewrite nth_mkseq 1:/# //=.
   congr. congr.
   have ->: (k %% 2) = 1. smt(@IntDiv @Int).
-  admit. (* FIXME *)
-
+  move : i_i.
+  rewrite andabP => /(mem_iota 0 16 i).
+  smt(@List).
   smt().
 
   move => i rp i_tlb [#] ap_defd pos_bound_rd i_lb i_ub q_defd shift_defd rp_def.
