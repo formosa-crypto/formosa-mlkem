@@ -153,12 +153,16 @@ smt().
 qed.
 
 lemma aux10_0 x :
-  10 <= x < 16 =>
-   (W16.of_int 64512).[x] = true.
+  6 <= x < 16 =>
+   (W16.of_int 65472).[x] = true.
 proof.
 rewrite of_intwE => />.
 rewrite /int_bit => />.
-case (x = 10); first by move =>  -> />.
+case (x = 6); first by move =>  -> />.
+move => *;case (x = 7); first by move =>  -> />.
+move => *;case (x = 8); first by move =>  -> />.
+move => *;case (x = 9); first by move =>  -> />.
+move => *;case (x = 10); first by move =>  -> />.
 move => *;case (x = 11); first by move =>  -> />.
 move => *;case (x = 12); first by move =>  -> />.
 move => *;case (x = 13); first by move =>  -> />.
@@ -168,8 +172,8 @@ by smt().
 qed.
 
 lemma aux10_1 x :
-  0 <= x < 10 =>
-   (W16.of_int 64512).[x] = false.
+  0 <= x < 6 =>
+   (W16.of_int 65472).[x] = false.
 proof.
 rewrite of_intwE => />.
 rewrite /int_bit => />.
@@ -179,26 +183,21 @@ move => *;case (x = 2); first by move =>  -> />.
 move => *;case (x = 3); first by move =>  -> />.
 move => *;case (x = 4); first by move =>  -> />.
 move => *;case (x = 5); first by move =>  -> />.
-move => *;case (x = 6); first by move =>  -> />.
-move => *;case (x = 7); first by move =>  -> />.
-move => *;case (x = 8); first by move =>  -> />.
-move => *;case (x = 9); first by move =>  -> />.
 by smt().
 qed.
 
 lemma aux10_2 (a : W16.t) :
-  (a `>>>` 10) + (of_int 64512)%W16
-              = (a `>>>` 10) `|` (of_int 64512)%W16.
+  (a `>>>` 10) + (of_int 65472)%W16
+              = (a `>>>` 10) `|` (of_int 65472)%W16.
 proof.
 rewrite orw_xpnd.
-rewrite (_: (a `>>>` 10) `&` (of_int 64512)%W16 = W16.of_int 0).
+rewrite (_: (a `>>>` 10) `&` (of_int 65472)%W16 = W16.of_int 0).
 have ? : (0 <= to_uint (a `>>>` 10) < 1024).
-rewrite to_uint_shr => />.
-split; first by smt(@IntDiv @W16).
-move => *.
-move : (W16.to_uint_cmp a) => />. smt(@IntDiv).
+  rewrite to_uint_shr => />.
+  split; first by   move : (W16.to_uint_cmp a); smt(@IntDiv @Int @W16).
+  move : (W16.to_uint_cmp a) => />. smt(@IntDiv).
 apply W16.ext_eq =>  *.
-case (0 <= x < 10).
+case (0 <= x < 6).
 rewrite andwE; move => *.
 by rewrite (aux10_1 _ H1) => />.
 move => *.
@@ -218,12 +217,16 @@ rewrite to_uintK.
 apply W16.ext_eq => *.
 rewrite initiE => />.
 case (x+10 < 16).
-move => *. smt(@W16).
-move => *.
-rewrite (_: min 15 (x + 10) = 15). smt().
+  move => *. rewrite H0 /min //= => /#.
+move => *. rewrite (_: min 15 (x + 10) = 15). smt().
 rewrite (_: (0 <= x < 16 && a.[x + 10]) = false). smt(@W16).
 rewrite get_to_uint => />.
+apply neqF.
+rewrite pdiv_small.
+rewrite -ltzNge in H.
+rewrite H //=.
 smt(@W16).
+trivial.
 
 move => * />.
 rewrite divzDr => />.
@@ -233,25 +236,22 @@ rewrite -to_uint_shr; first by smt().
 rewrite to_uintK => />.
 apply W16.ext_eq => *.
 rewrite initiE => />.
-admit. (*FIXME:
 rewrite aux10_2.
-
 rewrite orwE; move => *.
-case (x+10 < 32).
+case (x+10 < 16).
 move => *.
 rewrite (aux10_1 _ _); first by smt() => />.
 auto => />.
-rewrite (_: min 31 (x + 10) = x + 10); smt().
+rewrite (_: min 15 (x + 10) = x + 10); smt().
 move => *.
-rewrite (_: (a `>>>` 10).[x] = false); first  by smt(@W32).
+rewrite (_: (a `>>>` 10).[x] = false); first  by smt(@W16).
 auto => />.
-rewrite (_: min 31 (x + 10) = 31). smt().
-rewrite (_: a.[31] = true).
+rewrite (_: min 15 (x + 10) = 15). smt().
+rewrite (_: a.[15] = true).
 rewrite get_to_uint => />.
-move : (W32.to_uint_cmp a) => />. smt(@W32).
-rewrite aux16_0 => />.
+move : (W16.to_uint_cmp a) => />. smt(@W16).
+rewrite aux10_0 => />.
 smt().
-*)
 qed.
 
 lemma fqmul_corr_h _a _b: 
