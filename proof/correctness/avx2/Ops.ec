@@ -183,12 +183,25 @@ module Ops = {
     return r;
   }
 
-  (* TODO:
-     - spec
-     - equiv
-  *)
-  proc iVPMADDUBSW_256(x y: t16u16): t16u16 = {
+  proc iVPMADDUBSW_256(x y: t32u8): t16u16 = {
     var r : t16u16;
+
+    r.[0] <- packssw ((W8.to_uint x.[0]) * (W8.to_sint y.[0]) + (W8.to_uint x.[1]) * (W8.to_sint y.[1]));
+    r.[1] <- packssw ((W8.to_uint x.[2]) * (W8.to_sint y.[2]) + (W8.to_uint x.[3]) * (W8.to_sint y.[3]));
+    r.[2] <- packssw ((W8.to_uint x.[4]) * (W8.to_sint y.[4]) + (W8.to_uint x.[5]) * (W8.to_sint y.[5]));
+    r.[3] <- packssw ((W8.to_uint x.[6]) * (W8.to_sint y.[6]) + (W8.to_uint x.[7]) * (W8.to_sint y.[7]));
+    r.[4] <- packssw ((W8.to_uint x.[8]) * (W8.to_sint y.[8]) + (W8.to_uint x.[9]) * (W8.to_sint y.[9]));
+    r.[5] <- packssw ((W8.to_uint x.[10]) * (W8.to_sint y.[10]) + (W8.to_uint x.[11]) * (W8.to_sint y.[11]));
+    r.[6] <- packssw ((W8.to_uint x.[12]) * (W8.to_sint y.[12]) + (W8.to_uint x.[13]) * (W8.to_sint y.[13]));
+    r.[7] <- packssw ((W8.to_uint x.[14]) * (W8.to_sint y.[14]) + (W8.to_uint x.[15]) * (W8.to_sint y.[15]));
+    r.[8] <- packssw ((W8.to_uint x.[16]) * (W8.to_sint y.[16]) + (W8.to_uint x.[17]) * (W8.to_sint y.[17]));
+    r.[9] <- packssw ((W8.to_uint x.[18]) * (W8.to_sint y.[18]) + (W8.to_uint x.[19]) * (W8.to_sint y.[19]));
+    r.[10] <- packssw ((W8.to_uint x.[20]) * (W8.to_sint y.[20]) + (W8.to_uint x.[21]) * (W8.to_sint y.[21]));
+    r.[11] <- packssw ((W8.to_uint x.[22]) * (W8.to_sint y.[22]) + (W8.to_uint x.[23]) * (W8.to_sint y.[23]));
+    r.[12] <- packssw ((W8.to_uint x.[24]) * (W8.to_sint y.[24]) + (W8.to_uint x.[25]) * (W8.to_sint y.[25]));
+    r.[13] <- packssw ((W8.to_uint x.[26]) * (W8.to_sint y.[26]) + (W8.to_uint x.[27]) * (W8.to_sint y.[27]));
+    r.[14] <- packssw ((W8.to_uint x.[28]) * (W8.to_sint y.[28]) + (W8.to_uint x.[29]) * (W8.to_sint y.[29]));
+    r.[15] <- packssw ((W8.to_uint x.[30]) * (W8.to_sint y.[30]) + (W8.to_uint x.[31]) * (W8.to_sint y.[31]));
 
     return r;
   }
@@ -2002,4 +2015,23 @@ do rewrite get_bits2w //.
 rewrite nth_mkseq => />.
 rewrite /msb.
 smt(@List).
+qed.
+
+equiv eq_iVPMADDUBSW_256: Ops.iVPMADDUBSW_256 ~ OpsV.iVPMADDUBSW_256 :
+  is32u8 x{1} x{2} /\ is32u8 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof.
+proc; wp; skip.
+rewrite /is32u8 /VPMADDUBSW_256 /=.
+move => &1 &2 [#] x_eq y_eq.
+rewrite x_eq y_eq.
+rewrite -get_unpack8 //=.
+rewrite /is16u16.
+do rewrite get_setE //=.
+apply W16u16.wordP => /=.
+move => i i_i.
+rewrite -get_unpack16 //=.
+rewrite -get_unpack16 //=.
+do rewrite haddE.
+do rewrite map_cons.
+smt(@List @W16u16).
 qed.
