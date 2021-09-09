@@ -1735,6 +1735,15 @@ proof.
   admit.
 qed.
 
+equiv eq_istore32u8: Ops.istore32u8 ~ OpsV.istore32u8 : ={mem, p} /\ is32u8 w{1} w{2} ==> ={res}.
+proof.
+  proc.
+  wp. skip.
+  simplify.
+  move => &1 &2 [#] mem_eq p_eq w_eq.
+  smt().
+qed.
+
 equiv eq_iVPACKUS_8u32 : Ops.iVPACKUS_8u32 ~ OpsV.iVPACKUS_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. proc; wp; skip; rewrite /is8u32 /VPACKUS_8u32 /packus_4u32 //=. qed.
 
