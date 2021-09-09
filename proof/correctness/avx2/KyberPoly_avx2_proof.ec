@@ -10,12 +10,11 @@ require import Fq_avx2.
 
 pragma +oldip.
 
-lemma lift2poly_iso (p: W16.t Array256.t) i:
+lemma lift2poly_iso (p: W16.t Array256.t) (i k: int):
     0 <= i < 16 =>
-    let x = lift2poly (get256 (WArray512.init16 (fun j => p.[j])) i) in
-    forall k, 16 * i <= k < 16 * i + 16 => x.[k %% 16] = p.[k].
+    16 * i <= k < 16 * i + 16 => (lift2poly (get256 (WArray512.init16 (fun j => p.[j])) i)).[k %% 16] = p.[k].
 proof.
-move => i_b x k k_b.
+move => i_b k_b.
 have k_mb: 0 <= k %% 16 < 16.
   smt(@IntDiv).
 rewrite /x.
@@ -38,7 +37,6 @@ rewrite (_: (32 * i + (2 * (k %% 16) + 1)) %% 2 = 1).
 rewrite pack2_bits8.
 smt(@IntDiv).
 qed.
-
 
 lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
     0 <= i < 16 => 0 <= j < 256 =>
@@ -1798,6 +1796,492 @@ proof.
 qed.
 
 
+lemma poly_compress_round_corr_h ap :
+  hoare[Mavx2_prevec.poly_compress_round:
+        ap = lift_array256 a /\
+        pos_bound256_cxq a 0 256 2 ==>
+        Array256.map Poly.roundc ap = lift_array256 res /\
+        forall k,
+          0 <= k < 256 => 0 <= to_sint res.[k] < 16].
+proof.
+  proc.
+  seq 1 : (ap = lift_array256 a /\
+           pos_bound256_cxq a 0 256 1).
+  call (poly_csubq_corr_h ap) => />; first by auto => />.
+  cfold 4.
+  wp.
+  seq 3 : (#pre /\
+           (forall k, 0 <= k < 16 => v.[k] = W16.of_int 20159) /\
+           (forall k, 0 <= k < 16 => shift1.[k] = W16.of_int 512) /\
+           (forall k, 0 <= k < 16 => mask.[k] = W16.of_int 15)).
+  inline *.
+  wp. skip.
+  move => &hr [#] ap_def pos_bound_a shift1_def mask_def.
+  split.
+  rewrite ap_def pos_bound_a //=.
+  split.
+  move => k k_i.
+  rewrite /lift2poly //=.
+  rewrite initiE //.
+  rewrite /get256_direct //=.
+  rewrite k_i.
+  rewrite W32u8.Pack.initiE //=. move : k_i => /#.
+  rewrite W32u8.Pack.initiE //=. move : k_i => /#.
+  rewrite WArray32.initiE //=. move : k_i => /#.
+  rewrite WArray32.initiE //=. move : k_i => /#.
+  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2). by smt(@IntDiv).
+  rewrite (_: 2 * k %% 2 = 0). by smt(@IntDiv).
+  rewrite (_: (2 * k + 1) %% 2 = 1). by smt(@IntDiv).
+  rewrite pack2_bits8 /(KyberCPA_avx2.jvx16) => />.
+  rewrite initiE => />. move : k_i => /#.
+  smt(@Array16).
+  rewrite /shift1_def /mask_def.
+  rewrite /(pc_shift1_s) /(pc_mask_s).
+  split.
+  move => k k_i.
+  do rewrite get_setE //=.
+  smt(@Array16 @W16 @List).
+  move => k k_i.
+  do rewrite get_setE //=.
+  smt(@Array16 @W16 @List).
+
+  while(#pre /\
+        (forall k,
+           0 <= k < 64*i =>
+           inzmod (W16.to_sint rp.[k]) = roundc ap.[k]) /\
+       (forall k,
+            0<= k < 64*i  => 0<= to_sint rp.[k] < 16) /\
+       0 <= i <= 4); last first.
+  wp. skip.
+  move => &hr [#] ap_def pos_bound_a v_def shift1_def mask_def.
+  simplify.
+  rewrite ap_def pos_bound_a //=.
+  split.
+  smt().
+  move => i rp i_tlb [#] v_defd shift1_defd mask_defd rp_def rp_bounds i_lb i_ub.
+  have i_val: i = 4. by move : i_tlb i_lb i_ub => /#.
+  move : rp_def rp_bounds. rewrite i_val //=.
+  move => rp_def rp_bounds.
+  split.
+  apply Array256.ext_eq => k k_i.
+  rewrite {2}/lift_array256 //=.
+  rewrite mapiE //=.
+  rewrite (Array256.mapiE _ rp _) //=.
+  rewrite (rp_def k k_i) //=.
+  apply rp_bounds.
+
+  inline *.
+  wp. skip.
+  simplify.
+  move => &hr [#] ap_def pos_bound_a v_def shift1_def mask_def rp_def rp_bounds i_lb i_ub i_tub.
+  rewrite ap_def pos_bound_a //=.
+  split.
+  do split.
+  apply v_def.
+  apply shift1_def.
+  apply mask_def.
+  have H: forall off, 0 <= off < 4 => (forall k, 0 <= k < 16 => (lift2poly (get256 ((init16 (fun j => a{hr}.[j])))%WArray512 (4 * i{hr} + off))).[k] = a{hr}.[64 * i{hr} + 16 * off + k]).
+    move => off off_i k k_i; rewrite -(lift2poly_iso a{hr} (4*i{hr}+off)); move : i_lb i_tub => /#; rewrite -mulzA /=; smt(@Int); do smt(@Int @IntDiv).
+  rewrite -(addz0 (4 * i{hr})).
+  do (rewrite H 1://= 1://=).
+  rewrite (_: r10{hr}.[0 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 0] v{hr}.[0]) *
+                to_sint shift1{hr}.[0]) `&`
+             mask{hr}.[0]].[1 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 1] v{hr}.[1]) *
+                to_sint shift1{hr}.[1]) `&`
+             mask{hr}.[1]].[2 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 2] v{hr}.[2]) *
+                to_sint shift1{hr}.[2]) `&`
+             mask{hr}.[2]].[3 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 3] v{hr}.[3]) *
+                to_sint shift1{hr}.[3]) `&`
+             mask{hr}.[3]].[4 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 4] v{hr}.[4]) *
+                to_sint shift1{hr}.[4]) `&`
+             mask{hr}.[4]].[5 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 5] v{hr}.[5]) *
+                to_sint shift1{hr}.[5]) `&`
+             mask{hr}.[5]].[6 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 6] v{hr}.[6]) *
+                to_sint shift1{hr}.[6]) `&`
+             mask{hr}.[6]].[7 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 7] v{hr}.[7]) *
+                to_sint shift1{hr}.[7]) `&`
+             mask{hr}.[7]].[8 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 8] v{hr}.[8]) *
+                to_sint shift1{hr}.[8]) `&`
+             mask{hr}.[8]].[9 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 9] v{hr}.[9]) *
+                to_sint shift1{hr}.[9]) `&`
+             mask{hr}.[9]].[10 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 10] v{hr}.[10]) *
+                to_sint shift1{hr}.[10]) `&`
+             mask{hr}.[10]].[11 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 11] v{hr}.[11]) *
+                to_sint shift1{hr}.[11]) `&`
+             mask{hr}.[11]].[12 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 12] v{hr}.[12]) *
+                to_sint shift1{hr}.[12]) `&`
+             mask{hr}.[12]].[13 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 13] v{hr}.[13]) *
+                to_sint shift1{hr}.[13]) `&`
+             mask{hr}.[13]].[14 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 14] v{hr}.[14]) *
+                to_sint shift1{hr}.[14]) `&`
+             mask{hr}.[14]].[15 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + 15] v{hr}.[15]) *
+                to_sint shift1{hr}.[15]) `&`
+             mask{hr}.[15]] = Array16.init (fun k => round_scalew (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + k] v{hr}.[k]) *
+                                                                   to_sint shift1{hr}.[k]) `&` mask{hr}.[k])).
+    apply Array16.ext_eq. move => x x_i. rewrite initiE //=.
+    do rewrite get_setE //.
+    smt(@Array16).
+  rewrite (_: r9{hr}.[0 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 0] v{hr}.[0]) *
+                to_sint shift1{hr}.[0]) `&`
+             mask{hr}.[0]].[1 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 1] v{hr}.[1]) *
+                to_sint shift1{hr}.[1]) `&`
+             mask{hr}.[1]].[2 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 2] v{hr}.[2]) *
+                to_sint shift1{hr}.[2]) `&`
+             mask{hr}.[2]].[3 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 3] v{hr}.[3]) *
+                to_sint shift1{hr}.[3]) `&`
+             mask{hr}.[3]].[4 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 4] v{hr}.[4]) *
+                to_sint shift1{hr}.[4]) `&`
+             mask{hr}.[4]].[5 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 5] v{hr}.[5]) *
+                to_sint shift1{hr}.[5]) `&`
+             mask{hr}.[5]].[6 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 6] v{hr}.[6]) *
+                to_sint shift1{hr}.[6]) `&`
+             mask{hr}.[6]].[7 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 7] v{hr}.[7]) *
+                to_sint shift1{hr}.[7]) `&`
+             mask{hr}.[7]].[8 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 8] v{hr}.[8]) *
+                to_sint shift1{hr}.[8]) `&`
+             mask{hr}.[8]].[9 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 9] v{hr}.[9]) *
+                to_sint shift1{hr}.[9]) `&`
+             mask{hr}.[9]].[10 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 10] v{hr}.[10]) *
+                to_sint shift1{hr}.[10]) `&`
+             mask{hr}.[10]].[11 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 11] v{hr}.[11]) *
+                to_sint shift1{hr}.[11]) `&`
+             mask{hr}.[11]].[12 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 12] v{hr}.[12]) *
+                to_sint shift1{hr}.[12]) `&`
+             mask{hr}.[12]].[13 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 13] v{hr}.[13]) *
+                to_sint shift1{hr}.[13]) `&`
+             mask{hr}.[13]].[14 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 14] v{hr}.[14]) *
+                to_sint shift1{hr}.[14]) `&`
+             mask{hr}.[14]].[15 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + 15] v{hr}.[15]) *
+                to_sint shift1{hr}.[15]) `&`
+             mask{hr}.[15]] = Array16.init (fun k => round_scalew (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + k] v{hr}.[k]) *
+                                                                   to_sint shift1{hr}.[k]) `&` mask{hr}.[k])).
+    apply Array16.ext_eq. move => x x_i. rewrite initiE //=.
+    do rewrite get_setE //.
+    smt(@Array16).
+  rewrite (_: r8{hr}.[0 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 0] v{hr}.[0]) *
+                to_sint shift1{hr}.[0]) `&`
+             mask{hr}.[0]].[1 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 1] v{hr}.[1]) *
+                to_sint shift1{hr}.[1]) `&`
+             mask{hr}.[1]].[2 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 2] v{hr}.[2]) *
+                to_sint shift1{hr}.[2]) `&`
+             mask{hr}.[2]].[3 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 3] v{hr}.[3]) *
+                to_sint shift1{hr}.[3]) `&`
+             mask{hr}.[3]].[4 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 4] v{hr}.[4]) *
+                to_sint shift1{hr}.[4]) `&`
+             mask{hr}.[4]].[5 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 5] v{hr}.[5]) *
+                to_sint shift1{hr}.[5]) `&`
+             mask{hr}.[5]].[6 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 6] v{hr}.[6]) *
+                to_sint shift1{hr}.[6]) `&`
+             mask{hr}.[6]].[7 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 7] v{hr}.[7]) *
+                to_sint shift1{hr}.[7]) `&`
+             mask{hr}.[7]].[8 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 8] v{hr}.[8]) *
+                to_sint shift1{hr}.[8]) `&`
+             mask{hr}.[8]].[9 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 9] v{hr}.[9]) *
+                to_sint shift1{hr}.[9]) `&`
+             mask{hr}.[9]].[10 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 10] v{hr}.[10]) *
+                to_sint shift1{hr}.[10]) `&`
+             mask{hr}.[10]].[11 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 11] v{hr}.[11]) *
+                to_sint shift1{hr}.[11]) `&`
+             mask{hr}.[11]].[12 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 12] v{hr}.[12]) *
+                to_sint shift1{hr}.[12]) `&`
+             mask{hr}.[12]].[13 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 13] v{hr}.[13]) *
+                to_sint shift1{hr}.[13]) `&`
+             mask{hr}.[13]].[14 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 14] v{hr}.[14]) *
+                to_sint shift1{hr}.[14]) `&`
+             mask{hr}.[14]].[15 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + 15] v{hr}.[15]) *
+                to_sint shift1{hr}.[15]) `&`
+             mask{hr}.[15]] = Array16.init (fun k => round_scalew (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + k] v{hr}.[k]) *
+                                                                   to_sint shift1{hr}.[k]) `&` mask{hr}.[k])).
+    apply Array16.ext_eq. move => x x_i. rewrite initiE //=.
+    do rewrite get_setE //.
+    smt(@Array16).
+  rewrite (_: r7{hr}.[0 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 0] v{hr}.[0]) *
+                to_sint shift1{hr}.[0]) `&`
+             mask{hr}.[0]].[1 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 1] v{hr}.[1]) *
+                to_sint shift1{hr}.[1]) `&`
+             mask{hr}.[1]].[2 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 2] v{hr}.[2]) *
+                to_sint shift1{hr}.[2]) `&`
+             mask{hr}.[2]].[3 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 3] v{hr}.[3]) *
+                to_sint shift1{hr}.[3]) `&`
+             mask{hr}.[3]].[4 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 4] v{hr}.[4]) *
+                to_sint shift1{hr}.[4]) `&`
+             mask{hr}.[4]].[5 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 5] v{hr}.[5]) *
+                to_sint shift1{hr}.[5]) `&`
+             mask{hr}.[5]].[6 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 6] v{hr}.[6]) *
+                to_sint shift1{hr}.[6]) `&`
+             mask{hr}.[6]].[7 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 7] v{hr}.[7]) *
+                to_sint shift1{hr}.[7]) `&`
+             mask{hr}.[7]].[8 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 8] v{hr}.[8]) *
+                to_sint shift1{hr}.[8]) `&`
+             mask{hr}.[8]].[9 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 9] v{hr}.[9]) *
+                to_sint shift1{hr}.[9]) `&`
+             mask{hr}.[9]].[10 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 10] v{hr}.[10]) *
+                to_sint shift1{hr}.[10]) `&`
+             mask{hr}.[10]].[11 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 11] v{hr}.[11]) *
+                to_sint shift1{hr}.[11]) `&`
+             mask{hr}.[11]].[12 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 12] v{hr}.[12]) *
+                to_sint shift1{hr}.[12]) `&`
+             mask{hr}.[12]].[13 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 13] v{hr}.[13]) *
+                to_sint shift1{hr}.[13]) `&`
+             mask{hr}.[13]].[14 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 14] v{hr}.[14]) *
+                to_sint shift1{hr}.[14]) `&`
+             mask{hr}.[14]].[15 <-
+             round_scalew
+               (to_sint (wmulhs a{hr}.[64 * i{hr} + 16 * 0 + 15] v{hr}.[15]) *
+                to_sint shift1{hr}.[15]) `&`
+             mask{hr}.[15]] = Array16.init (fun k => round_scalew (to_sint (wmulhs a{hr}.[64 * i{hr} + k] v{hr}.[k]) *
+                                                                   to_sint shift1{hr}.[k]) `&` mask{hr}.[k])).
+    apply Array16.ext_eq. move => x x_i. rewrite initiE //=.
+    do rewrite get_setE //.
+    smt(@Array16).
+
+  rewrite (_: fill
+           (fun (k0 : int) =>
+              ((init
+                  (fun (k1 : int) =>
+                     round_scalew
+                       (to_sint
+                          (wmulhs a{hr}.[64 * i{hr} + 16 * 3 + k1] v{hr}.[k1]) *
+                        to_sint shift1{hr}.[k1]) `&`
+                     mask{hr}.[k1])))%Array16.[k0 %% 16]) (64 * i{hr} + 48)
+           16
+           (fill
+              (fun (k0 : int) =>
+                 ((init
+                     (fun (k1 : int) =>
+                        round_scalew
+                          (to_sint
+                             (wmulhs a{hr}.[64 * i{hr} + 16 * 2 + k1]
+                                v{hr}.[k1]) *
+                           to_sint shift1{hr}.[k1]) `&`
+                        mask{hr}.[k1])))%Array16.[k0 %% 16])
+              (64 * i{hr} + 32) 16
+              (fill
+                 (fun (k0 : int) =>
+                    ((init
+                        (fun (k1 : int) =>
+                           round_scalew
+                             (to_sint
+                                (wmulhs a{hr}.[64 * i{hr} + 16 * 1 + k1]
+                                   v{hr}.[k1]) *
+                              to_sint shift1{hr}.[k1]) `&`
+                           mask{hr}.[k1])))%Array16.[k0 %% 16])
+                 (64 * i{hr} + 16) 16
+                 (fill
+                    (fun (k0 : int) =>
+                       ((init
+                           (fun (k1 : int) =>
+                              round_scalew
+                                (to_sint
+                                   (wmulhs a{hr}.[64 * i{hr} + k1] v{hr}.[k1]) *
+                                 to_sint shift1{hr}.[k1]) `&`
+                              mask{hr}.[k1])))%Array16.[k0 %% 16])
+                    (64 * i{hr}) 16 rp{hr}))) =
+           fill (fun k =>   round_scalew (to_sint (wmulhs a{hr}.[k] v{hr}.[k %% 16]) *
+                                          to_sint shift1{hr}.[k %% 16]) `&` mask{hr}.[k %% 16]) (64 * i{hr}) 64 rp{hr}).
+    apply Array256.ext_eq. move => x x_i. do rewrite filliE //=.
+    smt(@Array256 @Int @IntDiv).
+
+  rewrite mulzDr mulz1.
+  split.
+
+  move => k k_i.
+  rewrite /lift_array256 /=.
+  rewrite mapiE //=. move : i_lb i_tub => /#.
+   rewrite /roundc inzmodK //=.
+  rewrite filliE 1:/# //=.
+  rewrite (v_def (k %% 16)) 1:/# (mask_def (k %% 16)) 1:/# (shift1_def (k %% 16)) 1:/# qE.
+  rewrite /wmulhs /round_scalew //=.
+  do rewrite shr_shrw 1://=.
+  rewrite (W16.of_sintK 20159) /smod //= /truncateu16.
+  rewrite (pmod_small (to_sint a{hr}.[k]) 3329).
+    move : pos_bound_a => /#.
+  rewrite (_: pc_mask_s = W16.of_int (2^4 - 1)). smt().
+  rewrite W16.and_mod 1://=.
+  rewrite (_: to_sint pc_shift1_s = 2 ^ 9). by rewrite of_sintK /smod //=.
+  do (rewrite -shlMP 1://= || rewrite W32.shlw_shrw_shrw 1://= //=).
+  rewrite (_: (W32.masklsb 23) = (W32.of_int (2 ^ 23 - 1))); first by rewrite /max /=.
+  rewrite W32.and_mod 1:/# of_uintK.
+  have a_mul_ub: 0 <= to_sint ((W16.of_int (to_sint a{hr}.[k] * 20159 %/ 65536))) <= 1024.
+    rewrite to_sint_unsigned.
+      rewrite /pos_bound256_cxq /bpos16 in pos_bound_a.
+      move : (pos_bound_a k).
+      rewrite {3}/W16.to_sint of_uintK /smod /=.
+    have ->: ! 32768 <= to_sint a{hr}.[k] * 20159 %/ 65536 %% 65536.
+      by move : pos_bound_a => /#.
+    rewrite qE //=.
+    smt(@Int @IntDiv @W16).
+    rewrite of_uintK.
+    rewrite pmod_small. by move : pos_bound_a => /#.
+    by move : (pos_bound_a k) => /#.
+  do rewrite of_sintK.
+  rewrite (_: (W16.smod (to_sint a{hr}.[k] * 20159 %/ 65536 %% W16.modulus)) = to_sint a{hr}.[k] * 20159 %/ 65536 %% W16.modulus).
+    rewrite /smod /=.
+    move : a_mul_ub => /#.
+  rewrite (modz_dvd _ W32.modulus (2^23)) 1:/# (pmod_small _ (2^23)) 1:/# (pmod_small _ W16.modulus) 1:/#.
+  rewrite shrDP 1://= -of_intD (pmod_small _ W32.modulus) 1:/#.
+  rewrite(_: to_sint a{hr}.[k] * 20159 %/ 65536 %/ 2 ^ 5 = to_sint a{hr}.[k] * 20159 %/ (2^21)) 1:/#.
+  rewrite (addzC _ 1) -(divzMDl 1 _ (2^21)) 1://= mul1z.
+  rewrite shrDP 1://= (pmod_small _ W32.modulus) 1:/#.
+  rewrite (_: (2 ^ 21 + to_sint a{hr}.[k] * 20159) %/ 2 ^ 21 %/ 2 ^ 1 = (2 ^ 21 + to_sint a{hr}.[k] * 20159) %/ 2 ^ 22) 1:/#.
+  do (rewrite of_uintK || rewrite (modz_dvd _ _ 16) 1:/#).
+  rewrite fun_if fun_if of_sintK.
+  rewrite (_: (W16.smod ((2^21 + to_sint a{hr}.[k] * 20159) %/ 2^22 %% 16 %% W16.modulus)) = (2^21 + to_sint a{hr}.[k] * 20159 %/ 2^22 %% 16)).
+    rewrite /smod /=.
+    move : a_mul_ub => /#.
+  case (64 * i{hr} <= k && k < 64 * i{hr} + 64) => k_si.
+    smt(@Int @IntDiv @W16).
+  rewrite rp_def 1:/# /roundc qE //=.
+  rewrite ap_def /lift_array256 mapiE 1:/# inzmodK //=.
+  smt(@Int @IntDiv).
+
+  split.
+  move => k k_i.
+  rewrite filliE 1:/# //=.
+  rewrite (v_def (k %% 16)) 1:/# (mask_def (k %% 16)) 1:/# (shift1_def (k %% 16)) 1:/#.
+  rewrite (_: pc_mask_s = W16.of_int (2^4 - 1)). smt().
+  rewrite W16.and_mod 1://=.
+  rewrite (fun_if W16.to_sint) of_sintK.
+  rewrite (pmod_small _ W16.modulus) 1:/#.
+  rewrite (_: W16.smod (to_uint (round_scalew (to_sint (wmulhs a{hr}.[k] ((of_int 20159))%W16) *
+              to_sint pc_shift1_s)) %% 2 ^ 4) =
+              to_uint (round_scalew (to_sint (wmulhs a{hr}.[k] ((of_int 20159))%W16) *
+              to_sint pc_shift1_s)) %% 2 ^ 4).
+    rewrite /smod /=. smt(@IntDiv).
+  case (64 * i{hr} <= k && k < 64 * i{hr} + 64) => k_si.
+  rewrite modz_ge0 1://= ltz_pmod 1://= //=.
+  apply (rp_bounds k). move : k_si k_i => /#.
+
+  move : i_lb i_tub => /#.
+qed.
+
+
 lemma poly_tomsg_corr_h _a:
    hoare[Mavx2_prevec.poly_tomsg_decode:
          pos_bound256_cxq a 0 256 2 /\
@@ -1844,7 +2328,7 @@ proof.
   skip.
   move => &hr [#] pos_bound_a _a_def.
   do split.
-  apply _a_def. 
+  apply _a_def.
   rewrite /(KyberCPA_avx2.hhqx16) => />.
     smt(@List @Array16).
   rewrite /(KyberCPA_avx2.hqx16_m1) => />.
@@ -1870,5 +2354,4 @@ proof.
   apply rp0_def.
   rewrite x_lb x_ub //=.
 qed.
-
 end KyberPolyAVX.
