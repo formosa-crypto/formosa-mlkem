@@ -313,8 +313,7 @@ module Mvec = {
       f2 <- OpsV.iVPMADDUBSW_256(f2, shift2);
       f0 <- OpsV.iVPACKUS_16u16(f0, f2);
       f0 <- OpsV.iVPERMD(permidx, f0);
-      Glob.mem <-
-      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int (32 * i)))) f0;
+      Glob.mem <- OpsV.istore32u8(Glob.mem, rp + (W64.of_int (32 * i)), f0);
       i <- i + 1;
     }
     return (a);
