@@ -321,6 +321,45 @@ module Ops = {
     return r;
   }
 
+  (* TODO: equiv *)
+  proc istore32u8 (mem: global_mem_t, p: W64.t, w: t32u8): global_mem_t = {
+
+    mem <- storeW8 mem (to_uint p + 0) w.[0];
+    mem <- storeW8 mem (to_uint p + 1) w.[1];
+    mem <- storeW8 mem (to_uint p + 2) w.[2];
+    mem <- storeW8 mem (to_uint p + 3) w.[3];
+    mem <- storeW8 mem (to_uint p + 4) w.[4];
+    mem <- storeW8 mem (to_uint p + 5) w.[5];
+    mem <- storeW8 mem (to_uint p + 6) w.[6];
+    mem <- storeW8 mem (to_uint p + 7) w.[7];
+    mem <- storeW8 mem (to_uint p + 8) w.[8];
+    mem <- storeW8 mem (to_uint p + 9) w.[9];
+    mem <- storeW8 mem (to_uint p + 10) w.[10];
+    mem <- storeW8 mem (to_uint p + 11) w.[11];
+    mem <- storeW8 mem (to_uint p + 12) w.[12];
+    mem <- storeW8 mem (to_uint p + 13) w.[13];
+    mem <- storeW8 mem (to_uint p + 14) w.[14];
+    mem <- storeW8 mem (to_uint p + 15) w.[15];
+    mem <- storeW8 mem (to_uint p + 16) w.[16];
+    mem <- storeW8 mem (to_uint p + 17) w.[17];
+    mem <- storeW8 mem (to_uint p + 18) w.[18];
+    mem <- storeW8 mem (to_uint p + 19) w.[19];
+    mem <- storeW8 mem (to_uint p + 20) w.[20];
+    mem <- storeW8 mem (to_uint p + 21) w.[21];
+    mem <- storeW8 mem (to_uint p + 22) w.[22];
+    mem <- storeW8 mem (to_uint p + 23) w.[23];
+    mem <- storeW8 mem (to_uint p + 24) w.[24];
+    mem <- storeW8 mem (to_uint p + 25) w.[25];
+    mem <- storeW8 mem (to_uint p + 26) w.[26];
+    mem <- storeW8 mem (to_uint p + 27) w.[27];
+    mem <- storeW8 mem (to_uint p + 28) w.[28];
+    mem <- storeW8 mem (to_uint p + 29) w.[29];
+    mem <- storeW8 mem (to_uint p + 30) w.[30];
+    mem <- storeW8 mem (to_uint p + 31) w.[31];
+
+    return mem;
+  }
+
   proc iVPACKUS_8u32(x y: t8u32): t16u16 = {
     var r : t16u16;
 
@@ -1345,7 +1384,7 @@ module OpsV = {
     return VPMULHRSW_256 x y;
   }
 
-  proc iVPMADDUBSW_256(x y: vt16u16): vt16u16 = {
+  proc iVPMADDUBSW_256(x y: vt32u8): vt16u16 = {
     return VPMADDUBSW_256 x y;
   }
 
@@ -1375,6 +1414,10 @@ module OpsV = {
 
   proc iload16u16 (mem: global_mem_t, p: W64.t) : vt16u16 = {
     return loadW256 mem (to_uint p);
+  }
+
+  proc istore32u8 (mem: global_mem_t, p: W64.t, w: vt32u8): global_mem_t = {
+    return storeW256 mem (W64.to_uint p) w;
   }
 
   proc iVPACKUS_8u32(x y: vt8u32) : vt16u16 = {
