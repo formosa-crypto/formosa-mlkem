@@ -143,7 +143,7 @@ fn indcpa_enc(reg ptr u8[KYBER_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp, re
     i += 1;
   }
 
-  k = i_poly_frommsg_avx(k, msgp);
+  k = i_poly_frommsg(k, msgp);
 
   s_noiseseed = noiseseed;
   aat = gen_matrix(publicseed, 1);
@@ -173,8 +173,8 @@ fn indcpa_enc(reg ptr u8[KYBER_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp, re
   v  = poly_reduce(v);
 
   ctp = sctp;
-  ctp[0:KYBER_POLYVECCOMPRESSEDBYTES] = i_polyvec_compress_avx(ctp[0:KYBER_POLYVECCOMPRESSEDBYTES], bp);
-  ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v = i_poly_compress_avx(ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v);
+  ctp[0:KYBER_POLYVECCOMPRESSEDBYTES] = i_polyvec_compress(ctp[0:KYBER_POLYVECCOMPRESSEDBYTES], bp);
+  ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v = i_poly_compress(ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v);
 
   return ctp;
 }
@@ -199,7 +199,7 @@ fn indcpa_dec(reg ptr u8[KYBER_N/8] msgp, reg u64 ctp, reg u64 skp) -> reg ptr u
   mp = poly_sub(mp, v, t);
   mp = poly_reduce(mp);
   
-  mp, msgp = i_poly_tomsg_avx(msgp, mp);
+  mp, msgp = i_poly_tomsg(msgp, mp);
 
   return msgp;
 }
