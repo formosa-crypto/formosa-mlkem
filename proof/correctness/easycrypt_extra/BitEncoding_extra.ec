@@ -139,6 +139,16 @@ lemma bitrev_neg N n :
   bitrev N n = 0.
 proof. by rewrite /bitrev => leN0; move: (size_int2bs N n); rewrite ler_maxl // size_eq0 => ->; rewrite rev_nil bs2int_nil. qed.
 
+lemma bitrev_cons N n :
+  0 < N =>
+  bitrev N n = 2 ^ (N - 1) * b2i (!2 %| n) + bitrev (N - 1) (n %/ 2).
+proof.
+  move => lt0N; rewrite /bitrev int2bs_cons // rev_cons -cats1 bs2int_cat size_rev size_int2bs ler_maxr; first by rewrite -ltzS.
+  by rewrite bs2int_cons; move: (bs2int_nseq_false 0); rewrite nseq0 => -> /=; rewrite addrC.
+qed.
+
+(*hint simplify bitrev_neg, bitrev_cons.*)
+
 lemma bitrev_ge0 N n :
   0 <= bitrev N n.
 proof. by rewrite /bitrev bs2int_ge0. qed.

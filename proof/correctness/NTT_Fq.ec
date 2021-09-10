@@ -316,6 +316,8 @@ theory NTTequiv.
     pred  CR.unit  <- ZModField.unit.
 
   op zeta1 = ZModpRing.ofint 17.
+  op zeta127 = ZModpRing.ofint 1628.
+  op R = ZModpRing.ofint 65536.
 
   lemma ofintSz i : ofint (i + 1) = ZModField.one + ofint i.
   proof. by rewrite /ofint mulrSz. qed.
@@ -365,6 +367,12 @@ theory NTTequiv.
   proof.
     rewrite {1}(divz_eq m d) -addr_intz -mulr_intz => ->.
     by rewrite mulr0 add0r.
+  qed.
+
+  lemma exp_zeta1_127 : R * exp zeta1 127 = zeta127.
+  proof.
+    rewrite exp_ofint //= expr0 /R /zeta127 mulr_int //=.
+    by rewrite (modz_ofint _ _ eq_ofint_3329_0).
   qed.
 
   lemma exp_zeta1_128 : exp zeta1 128 = -ZModField.one.
@@ -419,6 +427,38 @@ theory NTTequiv.
       }     
       return r;
     }
+
+   (*TODO*)
+    proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 128;
+      while (2 <= len) {
+        start <- 0;
+        while (start < 128 %/ len) {
+          zetasctr <- bitrev 8 ((256 %/ len) + (start %/ len));
+          zeta_ <- exp zeta1 zetasctr;
+          j <- 0;
+          while (j < 256) {
+            t <- r.[bitrev 8 (j + start)];
+            r.[bitrev 8 (j + start)]       <- t + r.[bitrev 8 (j + start + len)];
+            r.[bitrev 8 (j + start + len)] <- t + (-r.[bitrev 8 (j + start + len)]);
+            r.[bitrev 8 (j + start + len)] <- zeta_ * r.[bitrev 8 (j + start + len)];
+            j <- j + (128 %/ len);
+          }
+          start <- start + 1;
+        }
+        len <- len %/ 2;
+      }
+      j <- 0;
+      while (j < 256) {
+        r.[j] <- r.[j] * zetas_inv.[127]; 
+        j <- j + 1;
+      }    
+      return r;
+    }
   }.
 
   module NTT4 = {
@@ -444,6 +484,37 @@ theory NTTequiv.
         }
         len <- len %/ 2;
       }     
+      return r;
+    }
+
+    proc invntt(r : zmod Array256.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 2;
+      while (len <= 128) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- bitrev 8 ((256 %/ len) + (start %/ len));
+          zeta_ <- exp zeta1 zetasctr;
+          j <- 0;
+          while (j < len) {
+            t <- r.[j + start];
+            r.[j + start]       <- t + r.[j + start + len];
+            r.[j + start + len] <- t + (-r.[j + start + len]);
+            r.[j + start + len] <- zeta_ * r.[j + start + len];
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len * 2;
+      }
+      j <- 0;
+      while (j < 256) {
+        r.[j] <- r.[j] * zeta127; 
+        j <- j + 1;
+      }    
       return r;
     }
   }.
@@ -473,6 +544,37 @@ theory NTTequiv.
       }     
       return r;
     }
+
+    proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 2;
+      while (len <= 128) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- 128 - (256 %/ len) + (start %/ (len * 2));
+          zeta_ <- zetas_inv.[zetasctr];
+          j <- 0;
+          while (j < len) {
+            t <- r.[j + start];
+            r.[j + start]       <- t + r.[j + start + len];
+            r.[j + start + len] <- t + (-r.[j + start + len]);
+            r.[j + start + len] <- zeta_ * r.[j + start + len];
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len * 2;
+      }
+      j <- 0;
+      while (j < 256) {
+        r.[j] <- r.[j] * zetas_inv.[127]; 
+        j <- j + 1;
+      }    
+      return r;
+    }
   }.
 
   module NTT2 = {
@@ -486,7 +588,7 @@ theory NTTequiv.
         start <- 0;
         while(start < 256) {
           zetasctr <- (128 %/ len) + (start %/ (len * 2));
-          zeta_ <- zetas.[zetasctr]; 
+          zeta_ <- zetas.[zetasctr];
           j <- start;
           while (j < start + len) {
             t <- zeta_ * r.[j + len];
@@ -498,6 +600,37 @@ theory NTTequiv.
         }
         len <- len %/ 2;
       }     
+      return r;
+    }
+
+    proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 2;
+      while (len <= 128) {
+        start <- 0;
+        while(start < 256) {
+          zetasctr <- 128 - (256 %/ len) + (start %/ (len * 2));
+          zeta_ <- zetas_inv.[zetasctr];
+          j <- start;
+          while (j < start + len) {
+            t <- r.[j];
+            r.[j]       <- t + r.[j + len];
+            r.[j + len] <- t + (-r.[j + len]);
+            r.[j + len] <- zeta_ * r.[j + len];
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len * 2;
+      }
+      j <- 0;
+      while (j < 256) {
+        r.[j] <- r.[j] * zetas_inv.[127]; 
+        j <- j + 1;
+      }    
       return r;
     }
   }.
@@ -513,7 +646,7 @@ theory NTTequiv.
         start <- 0;
         while(start < 256) {
           zetasctr <- zetasctr + 1;
-          zeta_ <- zetas.[zetasctr]; 
+          zeta_ <- zetas.[zetasctr];
           j <- start;
           while (j < start + len) {
             t <- zeta_ * r.[j + len];
@@ -525,6 +658,37 @@ theory NTTequiv.
         }
         len <- len %/ 2;
       }     
+      return r;
+    }
+
+    proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 2;
+      while (len <= 128) {
+        start <- 0;
+        while(start < 256) {
+          zeta_ <- zetas_inv.[zetasctr]; 
+          zetasctr <- zetasctr + 1;
+          j <- start;
+          while (j < start + len) {
+            t <- r.[j];
+            r.[j]       <- t + r.[j + len];
+            r.[j + len] <- t + (-r.[j + len]);
+            r.[j + len] <- zeta_ * r.[j + len];
+            j <- j + 1;
+          }
+          start <- start + (len * 2);
+        }
+        len <- len * 2;
+      }
+      j <- 0;
+      while (j < 256) {
+        r.[j] <- r.[j] * zetas_inv.[127]; 
+        j <- j + 1;
+      }    
       return r;
     }
   }.
@@ -552,6 +716,37 @@ theory NTTequiv.
         }
         len <- len %/ 2;
       }     
+      return r;
+    }
+
+    proc invntt(r : zmod Array256.t, zetas_inv : zmod Array128.t) : zmod Array256.t = {
+      var len, start, j, zetasctr;
+      var  t, zeta_;
+
+      zetasctr <- 0;
+      len <- 2;
+      while (len <= 128) {
+        start <- 0;
+        while(start < 256) {
+          zeta_ <- zetas_inv.[zetasctr]; 
+          zetasctr <- zetasctr + 1;
+          j <- start;
+          while (j < start + len) {
+            t <- r.[j];
+            r.[j]       <- t + r.[j + len];
+            r.[j + len] <- t + (-r.[j + len]);
+            r.[j + len] <- zeta_ * r.[j + len];
+            j <- j + 1;
+          }
+          start <- j + len;
+        }
+        len <- len * 2;
+      }
+      j <- 0;
+      while (j < 256) {
+        r.[j] <- r.[j] * zetas_inv.[127]; 
+        j <- j + 1;
+      }    
       return r;
     }
   }.
@@ -684,6 +879,7 @@ theory NTTequiv.
     by rewrite addr_double -exprSr //; move/mem_range: Hk_range.
   qed.
 
+  (*TODO: must be modified to account for the R * *)
   op exponent (len start x : int) = (2 * start + 1) * (bitrev 8 (2 * (x %% len))).
 
   lemma exponent_0 : exponent 1 0 0 = 0.
@@ -836,6 +1032,7 @@ theory NTTequiv.
     by rewrite opprD addrA addrAC.
   qed.
 
+  (*TODO: must be modified to account for the R * *)
   op partial_ntt (p : zmod Array256.t, len start bsj : int) =
   BAdd.bigi
     predT
@@ -1050,14 +1247,14 @@ theory NTTequiv.
     rewrite (BAdd.big_cat_int (2 ^ k) 0 (2 ^ (k + 1))); first by apply/expr_ge0.
     + apply ler_weexpn2l => //; split; first by move/mem_range: Hk_range.
       by move => _; apply/ltzW/ltzS.
-    congr.
+    rewrite -BAdd.mulr_sumr; congr.
     + apply BAdd.eq_big_seq => x Hx_range /=.
       rewrite -mulrA -exprS; first by move/mem_range: Hk_range.
       congr.
       by apply exponent_spec_00.
     have ->: range (2 ^ k) (2 ^ (k + 1)) = map ((+)%Int (2 ^ k)) (range 0 (2 ^ k)).
     + by rewrite -Range.range_add /= addr_double exprSr //; move/mem_range: Hk_range.
-    rewrite BAdd.big_mapT; apply BAdd.eq_big_seq => x Hx_range /=.
+    rewrite BAdd.big_mapT BAdd.mulr_sumr; apply BAdd.eq_big_seq => x Hx_range /=.
     rewrite /(\o) /= mulrA -exprD_nneg.
     + apply/zetasctr_ntt5_ge0; first by apply/expr_ge0.
       by move/mem_range: Hstart_range.
@@ -1117,7 +1314,7 @@ theory NTTequiv.
         by move/mem_range: Hstart_range.
       by apply/exponent_ge0; move/mem_range: Hstart_range.
     rewrite addrA.
-      by apply exponent_spec_11.
+    by apply exponent_spec_11.
   qed.
 
   lemma IHj_past_1 (r p : zmod Array256.t, k start bsj y : int) :
@@ -1873,7 +2070,7 @@ theory NTTequiv.
   op zetas_spec (zs : zmod Array128.t) =
     forall i ,
       0 <= i < 128 =>
-      zs.[i] = exp zeta1 (bitrev 8 (i * 2)).
+      zs.[i] = R * exp zeta1 (bitrev 8 (i * 2)).
 
   lemma eq_NTT3_NTT4 p zs :
     zetas_spec zs =>
@@ -1915,7 +2112,7 @@ theory NTTequiv.
         do 2!(rewrite -exprD_subz //; [by smt(mem_range)|rewrite addrAC /=]).
         rewrite opprD /= addrAC !addrA /= -addrA /=.
         rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hcond_start Hinv_start) ?expr_gt0 //=.
-        rewrite Hzs; last by rewrite mulzDl -exprSr; first by smt(mem_range).
+        rewrite Hzs; first split. first by admit; last by admit.
         move: Hstart_range.
         rewrite divz_pow //=; first by smt(mem_range).
         rewrite opprD mulNr /= => Hstart_range.
@@ -2027,6 +2224,192 @@ theory NTTequiv.
         rewrite (FOR_INT_ADD_LT.inv_outP _ _ _ _ _ Hncond Hinv) //=.
         by smt(mem_range).
       by skip => /> &hr2 le0len _ _ _ _; apply/divz_ge0.
+    by skip => />.
+  qed.
+
+
+
+
+
+
+  op zetas_inv_spec = zetas_spec.
+
+  lemma eq_inv_NTT3_NTT4 p zs :
+    zetas_inv_spec zs =>
+    equiv [NTT3.invntt ~ NTT4.invntt:
+      arg{1} = (p, zs) /\ arg{2} = (p) ==> ={res}].
+  proof.
+    move => Hzs.
+    proc; sp.
+    while (={r, j} /\ zetas_inv{1} = zs).
+    + wp; skip => &hr1 &hr2 /> _; rewrite Hzs //=.
+      do 8!(rewrite bitrev_cons ?dvdzE /b2i //=); rewrite bitrev0 /=.
+    wp.
+    while (
+      FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
+      ={len, r} /\
+      zetas{1} = zs).
+    + sp; wp => /=.
+      while (
+        2 <= len{1} /\
+        FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
+        FOR_INT_ADD_LT.inv (len{1} * 2) 256 0 start{1} /\
+        ={len, r, start} /\
+        zetas{1} = zs).
+      - sp; wp => /=.
+        while (
+          2 <= len{1} /\
+          FOR_NAT_DIV_GE.inv 2 2 128 len{1} /\
+          start{1} < 256 /\
+          FOR_INT_ADD_LT.inv (len{1} * 2) 256 0 start{1} /\
+          ={len, r, start, zeta_, j} /\
+          zetas{1} = zs).
+        * by sp; skip.
+        skip => |> &hr2.
+        (*TODO: why the mixup?*)
+        move => Hcond_len Hinv_len; move: (FOR_NAT_DIV_GE.inv_loopP _ _ _ _ _ Hcond_len Hinv_len) => //= [k [Hk_range ->>]].
+        move => {Hcond_len Hinv_len}.
+        do 3!(rewrite divz_pow //=; first by smt(mem_range)).
+        rewrite -exprSr; first by smt(mem_range).
+        rewrite opprD /= (addzC _ k).
+        move => Hinv_start Hcond_start; move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hcond_start Hinv_start) => //=; first by apply/expr_gt0.
+        move => [start [Hstart_range ->>]].
+        do 2!(rewrite -divzpMr; first by apply dvdz_exp2l; smt(mem_range)).
+        do 2!(rewrite -exprD_subz //; [by smt(mem_range)|rewrite addrAC /=]).
+        rewrite opprD /= addrAC !addrA /= -addrA /=.
+        rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hcond_start Hinv_start) ?expr_gt0 //=.
+        rewrite Hzs; last by rewrite mulzDl -exprSr; first by smt(mem_range).
+        move: Hstart_range.
+        rewrite divz_pow //=; first by smt(mem_range).
+        rewrite opprD mulNr /= => Hstart_range.
+        split => [|_]; first by apply/addz_ge0; [apply/expr_ge0|move: Hstart_range => /mem_range []].
+        apply/(ltr_le_trans (2 ^ (k + 1))).
+        * rewrite exprD_nneg //=; first by move: Hk_range => /mem_range [].
+          by rewrite -addr_double ler_lt_add //; move: Hstart_range => /mem_range.
+        move: (ler_weexpn2l 2 _ (k + 1) 7) => //= -> //; move: Hk_range => /mem_range [? ?].
+        by rewrite -ltzE; split => //; apply addr_ge0.
+      skip => |> &hr2.
+      move => Hinv_len Hcond_len; rewrite (FOR_NAT_DIV_GE.inv_loop_post _ _ _ _ _ Hcond_len Hinv_len) //=.
+      by rewrite FOR_INT_ADD_LT.inv_in /=; apply/mulr_gt0 => //; apply/(ltr_le_trans 2).
+    skip => |>.
+    by rewrite FOR_NAT_DIV_GE.inv_in.
+  qed.
+
+  equiv eq_inv_NTT2_NTT3: NTT2.invntt ~ NTT3.invntt:
+    ={arg} ==> ={res}.
+  proof.
+    proc; sp.
+    while (={r, zetas_inv, j}).
+    + by wp; skip => &hr1 &hr2 />.
+    wp.
+    while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas_inv}).
+    + sp; wp => /=.
+      while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas_inv, start}).
+      - sp; wp => /=.
+        while (   (0 <= len{1})
+               /\ ={zetasctr, len, r, zetas_inv, start, zeta_}
+               /\ (FOR_INT_ADD_LT.inv 1 len{2} 0 j{2})
+               /\ (j{1} = j{2} + start{2})).
+        * sp; skip => |> &hr2 j r.
+          move => Hinv_j _ Hcond_j.
+          rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hcond_j Hinv_j) //=.
+          move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hcond_j Hinv_j) => //= [bsj [Hbsj_range ->>]].
+          by rewrite !(IntID.addrAC _ start{hr2}) /= (IntID.addrC start{hr2}) ltr_add2r.
+        skip => |> &hr2 le0len ltstart256.
+        by rewrite ltr_addl !FOR_INT_ADD_LT.inv_in //=.
+      by skip => /> &hr2 le0len _ _ _ _; apply/mulr_ge0.
+    by skip => />.
+  qed.
+
+  equiv eq_inv_NTT1_NTT2: NTT1.invntt ~ NTT2.invntt:
+    ={arg} ==> ={res}.
+  proof.
+    proc; sp.
+    while (={r, zetas_inv, j}).
+    + by wp; skip => &hr1 &hr2 />.
+    wp.
+    while
+      ( (exists k ,
+          1 <= k < 9 /\
+          len{1} = 2 ^ k) /\
+        ={len, r, zetas_inv} /\
+        (zetasctr{1} =        128 - 256 %/ len{1}) /\
+        (zetasctr{2} = max 0 (128 - 256 %/ len{1} - 1))).
+    + sp; wp => /=.
+      while
+        ( (exists k ,
+            1 <= k < 9 /\
+            len{1} = 2 ^ k) /\
+          (FOR_INT_ADD_LT.inv (len{1} * 2) 256 0 start{1}) /\
+          ={len, r, zetas_inv, start} /\
+          (zetasctr{1} =        128 - 256 %/ len{1} + start{1} %/ (len{1} * 2)) /\
+          (zetasctr{2} = max 0 (128 - 256 %/ len{1} + start{1} %/ (len{1} * 2) - 1))).
+      - sp; wp => /=.
+        while
+        ( (exists k ,
+            1 <= k < 9 /\
+            len{1} = 2 ^ k) /\
+          (FOR_INT_ADD_LT.inv (len{1} * 2) 256 0 start{1}) /\
+          ={len, r, zetas_inv, start, zeta_, j} /\
+          (zetasctr{1} = 128 - 256 %/ len{1} + start{1} %/ (len{1} * 2) + 1) /\
+          (zetasctr{2} = 128 - 256 %/ len{1} + start{1} %/ (len{1} * 2))).
+        * by sp; skip => |>.
+        skip => |> &hr2 k le1k ltk9 Hinv Hcond _ _ _.
+        rewrite FOR_INT_ADD_LT.inv_loop_post //=; first by apply mulr_gt0 => //; apply expr_gt0.
+        rewrite divzDr ?dvdzz // divzz addzA /b2i.
+        have -> //=: 2 ^ k * 2 <> 0 by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+        move: (FOR_INT_ADD_LT.inv_loopP _ _ _ _ _ Hcond Hinv); first by right; apply mulr_gt0 => //; apply expr_gt0.
+        move => /= [s [Hsrange ->>]]; rewrite mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+        rewrite ler_maxr // addr_ge0; last by move/mem_range: Hsrange.
+        rewrite subr_ge0 divz_pow //=; first by rewrite -(ltzS _ 8) /= ltk9 /= (lez_trans 1).
+        move: (ler_weexpn2l 2 _ (8 - k) 7) => //= -> //.
+        by rewrite subr_ge0 -ltzS /= ltk9 /= ler_subl_addr -ler_subl_addl.
+      skip => |> k le1k ltk9 le22powk; do!split.
+      - by rewrite FOR_INT_ADD_LT.inv_in //=; apply mulr_gt0 => //; apply expr_gt0.
+      move => start Hncond _ Hinv; split.
+      - exists (k+1); do!split => //=.
+        * smt().
+        * by move => _; rewrite ltzE /= -ler_subr_addr /=; apply (ler_weexpn2r 2); rewrite // (ler_trans 1).
+        by rewrite exprSr // (ler_trans 1).
+      rewrite (FOR_INT_ADD_LT.inv_outP _ _ _ _ _ Hncond Hinv) //=; first by apply/mulr_gt0 => //; apply expr_gt0.
+      rewrite /out /= mulzK; first by apply gtr_eqF; apply mulr_gt0 => //; apply expr_gt0.
+      rewrite (mulzC (2 ^ k) 2) Montgomery.div_mul //= dvdNdiv; first by apply/gtr_eqF/expr_gt0.
+      - move : (dvdz_exp2l 2 k 7) => /= Hdiv; apply Hdiv; rewrite (ler_trans 1) //=.
+        by apply (ler_weexpn2r 2); rewrite // (ler_trans 1).
+      rewrite -exprS; first by smt().
+      rewrite divz_pow //=; first by smt().
+      rewrite divz_pow //=; first by rewrite (ler_trans 1) //=; apply (ler_weexpn2r 2); rewrite // (ler_trans 1).
+      rewrite divz_pow //=.
+      - by rewrite (ler_trans 2) // -?ler_subl_addr //= -ler_subr_addr /=; apply (ler_weexpn2r 2); rewrite // (ler_trans 1).
+      move: (IntID.exprS 2 (7 - k)); rewrite opprD addrA (addzAC 8) /= !(addzAC _ _ (-1)) /= -!addrA => ->.
+      - by rewrite subr_ge0; apply (ler_weexpn2r 2); rewrite // (ler_trans 1).
+      by rewrite -mulNr -mulrD1l /= mulNr.
+    by skip => />; exists 1; split.
+  qed.
+
+  equiv eq_inv_NTT_NTT1: NTT.invntt ~ NTT1.invntt:
+    ={arg} ==> ={res}.
+  proof.
+    proc; sp.
+    while (={r, zetas_inv, j}).
+    + by wp; skip => &hr1 &hr2 />.
+    wp.
+    while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas_inv}).
+    + sp; wp => /=.
+      while ((0 <= len{1}) /\ ={zetasctr, len, r, zetas_inv, start}).
+      - sp; wp => /=.
+        while (   (0 <= len{1})
+               /\ ={zetasctr, len, r, zetas_inv, start, zeta_, j}
+               /\ (FOR_INT_ADD_LT.inv 1 (start{1} + len{1}) start{1} j{1})).
+        * sp; skip => |> &hr2 j le0len.
+          by move => Hinv_j Hcond_j; move: (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hcond_j Hinv_j).
+        skip => |> &hr2 le0len ltstart256; split.
+        + by apply FOR_INT_ADD_LT.inv_in.
+        move => j _.
+        move => Hncond Hinv.
+        rewrite (FOR_INT_ADD_LT.inv_outP _ _ _ _ _ Hncond Hinv) //=.
+        by smt(mem_range).
+      by skip => /> &hr2 le0len _ _ _ _; apply/mulr_ge0.
     by skip => />.
   qed.
 
