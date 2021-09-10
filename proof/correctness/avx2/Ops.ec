@@ -321,7 +321,6 @@ module Ops = {
     return r;
   }
 
-  (* TODO: equiv *)
   proc istore32u8 (mem: global_mem_t, p: W64.t, w: t32u8): global_mem_t = {
 
     mem <- storeW8 mem (to_uint p + 0) w.[0];
@@ -1741,7 +1740,11 @@ proof.
   wp. skip.
   simplify.
   move => &1 &2 [#] mem_eq p_eq w_eq.
-  smt().
+  rewrite /storeW256 /storeW8 /stores => />.
+  rewrite mem_eq p_eq w_eq.
+  do (rewrite -get_unpack8 1://=).
+  rewrite pack32K.
+  smt(@List @Int @W32u8).
 qed.
 
 equiv eq_iVPACKUS_8u32 : Ops.iVPACKUS_8u32 ~ OpsV.iVPACKUS_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is16u16 res{1} res{2}.
