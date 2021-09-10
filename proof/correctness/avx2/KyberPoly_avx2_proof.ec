@@ -2206,7 +2206,21 @@ proof.
            fill (fun k =>   round_scalew (to_sint (wmulhs a{hr}.[k] v{hr}.[k %% 16]) *
                                           to_sint shift1{hr}.[k %% 16]) `&` mask{hr}.[k %% 16]) (64 * i{hr}) 64 rp{hr}).
     apply Array256.ext_eq. move => x x_i. do rewrite filliE //=.
-    smt(@Array256 @Int @IntDiv).
+    case (!64 * i{hr} <= x) => x_ub.
+      rewrite x_ub //=.
+      rewrite (_: ! 64 * i{hr} + 16 <= x) //=. move : x_ub => /#.
+      rewrite (_: ! 64 * i{hr} + 32 <= x) //=. move : x_ub => /#.
+      rewrite (_: ! 64 * i{hr} + 48 <= x) //=. move : x_ub => /#.
+    case (!x < 64 * i{hr} + 64) => x_lb.
+      rewrite x_lb //=.
+      rewrite (_: ! x < 64 * i{hr} + 48) //=. move : x_lb => /#.
+      rewrite (_: ! x < 64 * i{hr} + 32) //=. move : x_lb => /#.
+      rewrite (_: ! x < 64 * i{hr} + 16) //=. move : x_lb => /#.
+    apply negbNE in x_ub.
+    apply negbNE in x_lb.
+    rewrite (_: (64 * i{hr} <= x && x < 64 * i{hr} + 64) = true) //=. by rewrite x_lb x_ub //=.
+    do (rewrite initiE 1:/# //=).
+    smt(@Array256 @IntDiv @Int).
 
   rewrite mulzDr mulz1.
   split.
@@ -2252,14 +2266,22 @@ proof.
   rewrite (_: (2 ^ 21 + to_sint a{hr}.[k] * 20159) %/ 2 ^ 21 %/ 2 ^ 1 = (2 ^ 21 + to_sint a{hr}.[k] * 20159) %/ 2 ^ 22) 1:/#.
   do (rewrite of_uintK || rewrite (modz_dvd _ _ 16) 1:/#).
   rewrite fun_if fun_if of_sintK.
-  rewrite (_: (W16.smod ((2^21 + to_sint a{hr}.[k] * 20159) %/ 2^22 %% 16 %% W16.modulus)) = (2^21 + to_sint a{hr}.[k] * 20159 %/ 2^22 %% 16)).
+  rewrite (_: (W16.smod ((2^21 + to_sint a{hr}.[k] * 20159) %/ 2^22 %% 16 %% W16.modulus)) = ((2^21 + to_sint a{hr}.[k] * 20159) %/ 2^22 %% 16)).
+    rewrite (pmod_small _ W16.modulus) 1:/#.
     rewrite /smod /=.
-    move : a_mul_ub => /#.
+    smt(@IntDiv @Int).
+
   case (64 * i{hr} <= k && k < 64 * i{hr} + 64) => k_si.
-    smt(@Int @IntDiv @W16).
+    rewrite /pos_bound256_cxq /bpos16 qE in pos_bound_a.
+      move : (pos_bound_a k).
+      rewrite (_: 0 <= k && k < 256) //=. by move : i_lb i_tub k_i => /#.
+      rewrite andabP => /(mem_iota 0 3329 (to_sint a{hr}.[k])).
+    smt().
+
   rewrite rp_def 1:/# /roundc qE //=.
-  rewrite ap_def /lift_array256 mapiE 1:/# inzmodK //=.
-  smt(@Int @IntDiv).
+  rewrite ap_def /lift_array256 mapiE 1:/# inzmodK //= qE.
+  rewrite (pmod_small _ 3329). move : pos_bound_a => /#.
+  trivial.
 
   split.
   move => k k_i.
@@ -2280,6 +2302,26 @@ proof.
 
   move : i_lb i_tub => /#.
 qed.
+
+
+lemma poly_compress_ll : islossless Mavx2_prevec.poly_compress_round.
+proof.
+  proc.
+  cfold 5. wp; while(0 <= i <= 4) (4-i).
+    move => *; inline *; auto => />. smt().
+  inline Ops.iVPBROADCAST_16u16; wp; call poly_csubq_ll; auto => /> /#.
+qed.
+
+
+lemma poly_compress_round_corr ap :
+  phoare[Mavx2_prevec.poly_compress_round :
+         ap = lift_array256 a /\
+         pos_bound256_cxq a 0 256 2
+         ==>
+         Array256.map Poly.roundc ap = lift_array256 res /\
+         forall k,
+          0 <= k < 256  => 0 <= to_sint res.[k] < 16] = 1%r.
+proof.  by conseq poly_compress_ll (poly_compress_round_corr_h ap). qed.
 
 
 lemma poly_tomsg_corr_h _a:
@@ -2303,10 +2345,7 @@ proof.
       (forall k, 0 <= k < 32 * i => (rp.[k] = W32.one) = s_decode _a.[k]) /\
       (forall k, 0 <= k < 32 * i => rp.[k] <> W32.zero => rp.[k] = W32.one)).
   sp.
-  inline *.
-  wp.
-  skip.
-  simplify.
+  inline *; wp; skip; simplify.
   move => &hr [#] f0_def f1_def i_lb i_ub _a_def hhqx16_def hqx16_m1_def rp_eq_decode__a rp_def i_tub.
   split.
   move : i_lb i_tub => /#.
