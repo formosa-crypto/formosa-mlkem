@@ -305,14 +305,10 @@ rewrite modzMml /=.
 congr.
 
 rewrite (modz_dvd _ 4294967296 65536) //.
-rewrite -of_sintK.
-rewrite of_intD.
-rewrite /_c.
-rewrite -of_intM.
+rewrite -of_sintK of_intD /_c -of_intM.
 rewrite (_: to_sint a{hr}.[k] = _a.[k]) _a_def /= mapiE //.
 rewrite (_: to_sint b{hr}.[k] = _b.[k]) _b_def /= mapiE //.
-rewrite of_intD.
-rewrite of_intN /=.
+rewrite of_intD of_intN /=.
 
 rewrite {5 6}/W16.to_sint.
 rewrite (_: (smod (to_uint a{hr}.[k]))%W16 * (smod (to_uint b{hr}.[k]))%W16 * 62209 * 65536 %% 4294967296 =
@@ -353,9 +349,7 @@ rewrite (_: (smod (to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 %% 65536 * 6553
     simplify. rewrite divzMDl //.
   + have ->: (! 2^(16-1) <= to_uint a{hr}.[k] * to_uint b{hr}.[k] * 62209 %% 65536). move : m_lb. smt(@Int @IntDiv @W32 @W16).
     simplify. rewrite mulzK //.
-
-admit. (*FIXME *)
-
+  admit.
 qed.
 
 lemma fqmulx16_ll:
