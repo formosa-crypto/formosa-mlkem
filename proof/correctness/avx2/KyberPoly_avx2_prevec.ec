@@ -361,7 +361,6 @@ module Mavx2_prevec = {
 
     var f0: t16u16;
     var f0_b: t32u8;
-    var f0_q: t4u64;
 
     var f1:W16.t Array16.t;
     var g0:W16.t Array16.t;
@@ -388,14 +387,12 @@ module Mavx2_prevec = {
       f1 <- Ops.ivsub16u256(f1, hhq);
       f0_b <- Ops.iVPACKSS_16u16(f0, f1);
 
-      f0_q <- f32u8_t4u64 f0_b;
-      f0_q <- Ops.iVPERMQ(f0_q, (W8.of_int 216));
-      f0_b <- f4u64_t32u8 f0_q;
+      f0_b <- Ops.iVPERMQ_32u8(f0_b, (W8.of_int 216));
 
       c <-  Ops.iVPMOVMSKB_u256_u32(f0_b);
 
       (* TODO: is this the best way??? *)
-      rp <-  fill (fun k => if c.[k %% 16] then W32.one else W32.zero) (32*i) 32 rp;
+      rp <-  fill (fun k => if c.[k %% 32] then W32.one else W32.zero) (32*i) 32 rp;
 
       i <- i + 1;
     }
