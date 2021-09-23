@@ -2785,4 +2785,20 @@ proof.
   apply rp0_def.
   rewrite k_i.
 qed.
+
+lemma poly_tomsg_ll : islossless  Mavx2_prevec.poly_tomsg_decode.
+proc.
+  cfold 5. wp; while (0 <= i <= 8) (8-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
+  move => *.
+  wp.
+  inline *; wp; auto => /> /#.
+qed.
+
+lemma poly_tomsg_corr _a :
+    phoare[ Mavx2_prevec.poly_tomsg_decode :
+             pos_bound256_cxq a 0 256 2 /\
+             lift_array256 a = _a ==>
+             map (fun x => x = W32.one) res = m_decode _a] = 1%r
+  by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
+
 end KyberPolyAVX.
