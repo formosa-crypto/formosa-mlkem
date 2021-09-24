@@ -172,121 +172,6 @@ module Mavx2_prevec = {
     return (rp);
   }
 
-
-  proc poly_frommsg (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
-    var aux: int;
-
-    var hqs: t16u16;
-    var shift: t16u16;
-    var idx: t16u16;
-    var f: t16u16;
-    var i: int;
-    var g3: t16u16;
-    var g0: t16u16;
-    var g1: t16u16;
-    var g2: t16u16;
-    var h0: t16u16;
-    var h2: t16u16;
-    var h1: t16u16;
-    var h3: t16u16;
-
-    var g0_i128: t2u128;
-    var g1_i128: t2u128;
-    var g2_i128: t2u128;
-    var g3_i128: t2u128;
-    var h0_i128: t2u128;
-    var h1_i128: t2u128;
-    var h2_i128: t2u128;
-    var h3_i128: t2u128;
-    var shift_i128: t2u128;
-    var idx_i128: t2u128;
-
-    var g0_qw: t4u64;
-    var g1_qw: t4u64;
-    var g2_qw: t4u64;
-    var g3_qw: t4u64;
-    var h0_qw: t4u64;
-    var h1_qw: t4u64;
-    var h2_qw: t4u64;
-    var h3_qw: t4u64;
-
-    var shift_dw: t8u32;
-    var f_dw: t8u32;
-    var g0_dw: t8u32;
-    var g1_dw: t8u32;
-    var g2_dw: t8u32;
-    var g3_dw: t8u32;
-
-    var g3_b: t32u8;
-    var idx_dw: t32u8;
-
-    hqs <- lift2poly(get256 (WArray32.init16 (fun i => hqx16_p1.[i])) 0);
-    shift_i128 <-
-    Ops.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
-    idx_i128 <- Ops.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
-    f <- Ops.iload16u16(Glob.mem, ap);
-    i <- 0;
-
-    f_dw <- f16u16_t8u32 f;
-
-    while (i < 4) {
-      g3_dw <- Ops.iVPSHUFD_256(f_dw, W8.of_int (85 * i));
-      g3_dw <- Ops.iVPSLLV_8u32(g3_dw, shift_dw);
-
-      g3_b <- f8u32_t32u8 g3_dw;
-      g3_b <- Ops.iVPSHUFB_256(g3_b, idx_dw);
-      g3_dw <- f32u8_t8u32 g3_b;
-
-      g3 <- f8u32_t16u16 g3_dw;
-
-      g0 <- Ops.iVPSLL_16u16(g3, (W8.of_int 12));
-      g1 <- Ops.iVPSLL_16u16(g3, (W8.of_int 8));
-      g2 <- Ops.iVPSLL_16u16(g3, (W8.of_int 4));
-      g0 <- Ops.iVPSRA_16u16(g0, (W8.of_int 15));
-      g1 <- Ops.iVPSRA_16u16(g1, (W8.of_int 15));
-      g2 <- Ops.iVPSRA_16u16(g2, (W8.of_int 15));
-      g3 <- Ops.iVPSRA_16u16(g3, (W8.of_int 15));
-      g0 <- Ops.ivpand16u16(g0, hqs);
-      g1 <- Ops.ivpand16u16(g1, hqs);
-      g2 <- Ops.ivpand16u16(g2, hqs);
-      g3 <- Ops.ivpand16u16(g3, hqs);
-
-      g0_qw <- f16u16_t4u64 g0;
-      g1_qw <- f16u16_t4u64 g1;
-      g2_qw <- f16u16_t4u64 g2;
-      g3_qw <- f16u16_t4u64 g3;
-
-      h0_qw <- Ops.iVPUNPCKL_4u64(g0_qw, g1_qw);
-      h2_qw <- Ops.iVPUNPCKH_4u64(g0_qw, g1_qw);
-      h1_qw <- Ops.iVPUNPCKL_4u64(g2_qw, g3_qw);
-      h3_qw <- Ops.iVPUNPCKH_4u64(g2_qw, g3_qw);
-
-      h0_i128 <- f4u64_t2u128 h0_qw;
-      h1_i128 <- f4u64_t2u128 h1_qw;
-      h2_i128 <- f4u64_t2u128 h2_qw;
-      h3_i128 <- f4u64_t2u128 h3_qw;
-
-      g0_i128 <- Ops.iVPERM2I128o(h0_i128, h1_i128, (W8.of_int 32));
-      g2_i128 <- Ops.iVPERM2I128o(h0_i128, h1_i128, (W8.of_int 49));
-      g1_i128 <- Ops.iVPERM2I128o(h2_i128, h3_i128, (W8.of_int 32));
-      g3_i128 <- Ops.iVPERM2I128o(h2_i128, h3_i128, (W8.of_int 49));
-
-      g0 <- f2u128_t16u16 g0_i128;
-      g1 <- f2u128_t16u16 g1_i128;
-      g2 <- f2u128_t16u16 g2_i128;
-      g3 <- f2u128_t16u16 g3_i128;
-
-      rp <- fill (fun k => g0.[k %% 32]) (32*i) 16 rp;
-      rp <- fill (fun k => g1.[k %% 32]) (32*i + 16) 16 rp;
-      rp <- fill (fun k => g1.[k %% 32]) (32*i + 128) 16 rp;
-      rp <- fill (fun k => g1.[k %% 32]) (32*i + 144) 16 rp;
-
-      i <- i + 1;
-    }
-
-    return (rp);
-  }
-
   proc fqmulx16 (a b qx16 qinvx16: W16.t Array16.t) : W16.t Array16.t = {
 
     var rd:W16.t Array16.t;
@@ -301,6 +186,7 @@ module Mavx2_prevec = {
     return (rd);
   }
 
+  (*--------------------------------------------------------------------*)
   proc poly_tomsg (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
 
@@ -349,7 +235,6 @@ module Mavx2_prevec = {
     return (a);
   }
 
-  (*--------------------------------------------------------------------*)
   (* FIXME: equiv proof with Mavx2_prevec.poly_tomsg ?? *)
   proc poly_tomsg_decode (a:W16.t Array256.t) : W32.t Array256.t = {
     var aux: int;
@@ -403,6 +288,96 @@ module Mavx2_prevec = {
     (*TODO: spec *)
     return ();
   }
+
+  (* TODO:
+     - prove equiv w/ vec version
+  *)
+  proc poly_frommsg(rp: W16.t Array256.t, ap: W64.t): W16.t Array256.t = {
+    var f: W256.t;
+
+    f <@ poly_frommsg_load(ap);
+
+    rp <@ poly_frommsg_encode(rp, f);
+
+    return rp;
+  }
+
+  proc poly_frommsg_load (ap: W64.t): W256.t = {
+    var f: W256.t;
+
+    f <- Ops.iload4u64(Glob.mem, ap);
+
+    return f;
+  }
+
+  (* FIXME: spec *)
+  proc poly_frommsg_encode (rp: W16.t Array256.t, f: W256.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var hqs: t16u16;
+    var shift: t8u32;
+    var idx: t32u8;
+    var f_dw: t8u32;
+    var i:int;
+    var g3: t16u16;
+    var g0: t16u16;
+    var g1: t16u16;
+    var g2: t16u16;
+    var h0: t16u16;
+    var h2: t16u16;
+    var h1: t16u16;
+    var h3: t16u16;
+
+    var g3_dw: t8u32;
+    var g3_b: t32u8;
+
+    hqs <- lift2poly (get256 (WArray32.init16 (fun i => hqx16_p1.[i])) 0);
+    shift <-
+    Ops.iVPBROADCAST_2u128_8u32((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
+    idx <- Ops.iVPBROADCAST_2u128_32u8((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
+    i <- 0;
+
+    while (i < 4) {
+      g3_dw <- Ops.iVPSHUFD_256(f_dw, W8.of_int (85 * i));
+      g3_dw <- Ops.iVPSLLV_8u32(g3_dw, shift);
+
+      g3_b <- f8u32_t32u8 g3_dw;
+      g3_b <- Ops.iVPSHUFB_256(g3_b, idx);
+      g3 <- f32u8_t16u16 g3_b;
+
+      g0 <- Ops.iVPSLL_16u16(g3, (W8.of_int 12));
+      g1 <- Ops.iVPSLL_16u16(g3, (W8.of_int 8));
+      g2 <- Ops.iVPSLL_16u16(g3, (W8.of_int 4));
+      g0 <- Ops.iVPSRA_16u16(g0, (W8.of_int 15));
+      g1 <- Ops.iVPSRA_16u16(g1, (W8.of_int 15));
+      g2 <- Ops.iVPSRA_16u16(g2, (W8.of_int 15));
+      g3 <- Ops.iVPSRA_16u16(g3, (W8.of_int 15));
+
+      g0 <- Ops.ivpand16u16(g0, hqs);
+      g1 <- Ops.ivpand16u16(g1, hqs);
+      g2 <- Ops.ivpand16u16(g2, hqs);
+      g3 <- Ops.ivpand16u16(g3, hqs);
+
+      h0 <- Ops.iVPUNPCKL_4u64_16u16(g0, g1);
+      h2 <- Ops.iVPUNPCKH_4u64_16u16(g0, g1);
+      h1 <- Ops.iVPUNPCKL_4u64_16u16(g2, g3);
+      h3 <- Ops.iVPUNPCKH_4u64_16u16(g2, g3);
+      g0 <- Ops.iVPERM2I128_16u16(h0, h1, (W8.of_int 32));
+      g2 <- Ops.iVPERM2I128_16u16(h0, h1, (W8.of_int 49));
+      g1 <- Ops.iVPERM2I128_16u16(h2, h3, (W8.of_int 32));
+      g3 <- Ops.iVPERM2I128_16u16(h2, h3, (W8.of_int 49));
+
+      rp <- fill (fun k => g0.[k %% 16]) (32*i) 16 rp;
+      rp <- fill (fun k => g1.[k %% 16]) (32*i + 16) 16 rp;
+      rp <- fill (fun k => g2.[k %% 16]) (128 + 32*i) 16 rp;
+      rp <- fill (fun k => g3.[k %% 16]) (128 + 32*i + 16) 16 rp;
+
+      i <- i + 1;
+    }
+
+    return (rp);
+  }
+
   (*--------------------------------------------------------------------*)
 
   proc red16x (r:W16.t Array16.t, qx16:W16.t Array16.t, vx16:W16.t Array16.t) : W16.t Array16.t = {
@@ -770,8 +745,8 @@ module Mavx2_prevec = {
 *)
     return (rp);
   }
-
-  proc poly_decompress_restore (r:W16.t Array256.t) : W16.t Array256.t = {
+ 
+ proc poly_decompress_restore (r:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
     var rp: W16.t Array256.t;
     var q: t16u16;

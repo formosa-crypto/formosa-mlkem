@@ -5,9 +5,11 @@ from Jasmin require import JModel JArray JWord_array.
 require import Array2p Array4p Array8p Array16p Array32p WArray128p WArray160p.
 
 type t8u32 = W32.t Array8.t.
+type t4u32 = W32.t Array4.t.
 type t16u16 = W16.t Array16.t.
 type t8u16 = W16.t Array8.t.
 type t32u8 = W8.t Array32.t.
+type t16u8 = W8.t Array16.t.
 type t2u64 = W64.t Array2.t.
 type t4u64 = W64.t Array4.t.
 type t2u128 = W128.t Array2.t.
@@ -56,6 +58,68 @@ module Ops = {
 
     r.[0] <-v;
     r.[1] <-v;
+
+    return r;
+  }
+
+  (* TODO
+     - equiv
+  *)
+  proc iVPBROADCAST_2u128_8u32(v: t4u32) : t8u32 = {
+    var r: t8u32;
+
+    r.[0] <- v.[0];
+    r.[1] <- v.[1];
+    r.[2] <- v.[2];
+    r.[3] <- v.[3];
+
+    r.[4] <- v.[0];
+    r.[5] <- v.[1];
+    r.[6] <- v.[2];
+    r.[7] <- v.[3];
+
+    return r;
+  }
+
+  (* TODO:
+     - equiv
+  *)
+  proc iVPBROADCAST_2u128_32u8(v: t16u8): t32u8 = {
+    var r: t32u8;
+
+    r.[0] <- v.[0];
+    r.[1] <- v.[1];
+    r.[2] <- v.[2];
+    r.[3] <- v.[3];
+    r.[4] <- v.[4];
+    r.[5] <- v.[5];
+    r.[6] <- v.[6];
+    r.[7] <- v.[7];
+    r.[8] <- v.[8];
+    r.[9] <- v.[9];
+    r.[10] <- v.[10];
+    r.[11] <- v.[11];
+    r.[12] <- v.[12];
+    r.[13] <- v.[13];
+    r.[14] <- v.[14];
+    r.[15] <- v.[15];
+
+    r.[16] <- v.[0];
+    r.[17] <- v.[1];
+    r.[18] <- v.[2];
+    r.[19] <- v.[3];
+    r.[20] <- v.[4];
+    r.[21] <- v.[5];
+    r.[22] <- v.[6];
+    r.[23] <- v.[7];
+    r.[24] <- v.[8];
+    r.[25] <- v.[9];
+    r.[26] <- v.[10];
+    r.[27] <- v.[11];
+    r.[28] <- v.[12];
+    r.[29] <- v.[13];
+    r.[30] <- v.[14];
+    r.[31] <- v.[15];
 
     return r;
   }
@@ -539,6 +603,22 @@ module Ops = {
     return r;
   }
 
+  (* TODO:
+      - equiv
+  *)
+  proc iVPERM2I128_16u16(x y: t16u16, p: W8.t): t16u16 = {
+    var r: t16u16;
+
+    r <- Array16.init(fun i => 
+                      let n = (i %/ 8) in
+                      if p.[n + 3] then W16.zero
+                      else
+                        let w = if p.[n + 1] then y else x in
+                        if p.[n] then w.[8 + i %% 8] else w.[i %% 8]);
+
+    return r;
+  }
+
   proc iVPERM2I128o(x y:t2u128, p : W8.t) : t2u128 = {
     var r : t2u128;
     r <- witness;
@@ -637,12 +717,72 @@ module Ops = {
     return r;
   }
 
+  (* TODO:
+    - review spec
+    - equiv
+  *)
+  proc iVPUNPCKH_4u64_16u16(x y: t16u16): t16u16 = {
+    var r: t16u16;
+
+    r.[0] <- x.[4];
+    r.[1] <- x.[5];
+    r.[2] <- x.[6];
+    r.[3] <- x.[7];
+
+    r.[4] <- y.[4];
+    r.[5] <- y.[5];
+    r.[6] <- y.[6];
+    r.[7] <- y.[7];
+
+    r.[8] <- x.[12];
+    r.[9] <- x.[13];
+    r.[10] <- x.[14];
+    r.[11] <- x.[15];
+
+    r.[12] <- y.[12];
+    r.[13] <- y.[13];
+    r.[14] <- y.[14];
+    r.[15] <- y.[15];
+
+    return r;
+  }
+
   proc iVPUNPCKL_4u64 (x y:t4u64) : t4u64 = {
     var r : t4u64;
     r.[0] <- x.[0];
     r.[1] <- y.[0];
     r.[2] <- x.[2];
     r.[3] <- y.[2];
+    return r;
+  }
+
+  (* TODO:
+    - review spec
+    - equiv
+  *)
+  proc iVPUNPCKL_4u64_16u16(x y: t16u16): t16u16 = {
+    var r: t16u16;
+
+    r.[0] <- x.[0];
+    r.[1] <- x.[1];
+    r.[2] <- x.[2];
+    r.[3] <- x.[3];
+
+    r.[4] <- y.[0];
+    r.[5] <- y.[1];
+    r.[6] <- y.[2];
+    r.[7] <- y.[3];
+
+    r.[8] <- x.[8];
+    r.[9] <- x.[9];
+    r.[10] <- x.[10];
+    r.[11] <- x.[11];
+
+    r.[12] <- y.[8];
+    r.[13] <- y.[9];
+    r.[14] <- y.[10];
+    r.[15] <- y.[11];
+
     return r;
   }
 
@@ -1160,6 +1300,8 @@ module Ops = {
 
 type vt2u64 = W128.t.
 type vt8u16 = W128.t.
+type vt4u32 = W128.t.
+type vt16u8 = W128.t.
 type vt4u64 = W256.t.
 type vt8u32 = W256.t.
 type vt16u16 = W256.t.
@@ -1176,6 +1318,14 @@ module OpsV = {
   }
 
   proc iVPBROADCAST_2u128(v : W128.t) : vt2u128 = {
+    return VPBROADCAST_2u128 v;
+  }
+
+  proc iVPBROADCAST_2u128_8u32(v : vt4u32) : vt8u32 = {
+    return VPBROADCAST_2u128 v;
+  }
+
+  proc iVPBROADCAST_2u128_32u8(v : vt16u8) : vt32u8 = {
     return VPBROADCAST_2u128 v;
   }
 
@@ -1259,6 +1409,10 @@ module OpsV = {
     return VPERM2I128 x y p;
   }
 
+  proc iVPERM2I128_16u16(x y: vt16u16, p: W8.t): vt16u16 = {
+    return VPERM2I128 x y p;
+  }
+
   proc iVPERM2I128o(x y:vt2u128, p : W8.t) : vt2u128 = {
     return VPERM2I128 x y p;
   }
@@ -1283,7 +1437,15 @@ module OpsV = {
     return VPUNPCKH_4u64 x y;
   }
 
+  proc iVPUNPCKH_4u64_16u16(x y: vt16u16): vt16u16 = {
+    return VPUNPCKH_4u64 x y;
+  }
+
   proc iVPUNPCKL_4u64 (x y:vt4u64) : vt4u64 = {
+    return VPUNPCKL_4u64 x y;
+  }
+
+  proc iVPUNPCKL_4u64_16u16(x y: vt16u16): vt16u16 = {
     return VPUNPCKL_4u64 x y;
   }
 
