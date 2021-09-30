@@ -1,9 +1,6 @@
-#ifndef POLYVEC_FROMBYTES_HH
-#define POLYVEC_FROMBYTES_HH
-
-#include "params.jahh"
-#include "poly_frombytes.jahh"
-#include "polyvec_frompolys.jahh"
+require "params.jahh"
+require "poly_frombytes.jahh"
+require "polyvec_frompolys.jahh"
 
 inline
 fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
@@ -23,5 +20,3 @@ fn polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
 
   return r;
 }
-
-#endif

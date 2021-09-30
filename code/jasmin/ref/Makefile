@@ -92,29 +92,13 @@ test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) jpoly.s
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
-
-
-jfips202.japp: jfips202.jazz fips202.jahh
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-%.s: %.japp
+%.s: %.jazz
 	$(JASMIN) -o $@ $(JFLAGS) $^ 
-
 
 .PHONY: clean
 
 clean:
 	-rm *.s
-	-rm *.japp
 	-rm test/test_poly_compress
 	-rm test/test_poly_decompress
 	-rm test/test_poly_tobytes
@@ -142,3 +126,4 @@ clean:
 	-rm test/test_polyvec_csubq
 	-rm test/test_fips202
 	-rm test/test_indcpa
+	-rm test/speed_indcpa

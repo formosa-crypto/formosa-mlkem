@@ -1,7 +1,4 @@
-#ifndef POLY_DECOMPRESS_HH
-#define POLY_DECOMPRESS_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 fn poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
@@ -32,5 +29,3 @@ fn poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   }
   return rp;
 }
-
-#endif

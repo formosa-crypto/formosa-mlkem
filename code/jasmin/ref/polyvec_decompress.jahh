@@ -1,7 +1,4 @@
-#ifndef POLYVEC_DECOMPRESS_HH
-#define POLYVEC_DECOMPRESS_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 inline
 fn polyvec_decompress(reg u64 ap) -> stack u16[KYBER_VECN]
@@ -56,5 +53,3 @@ fn polyvec_decompress(reg u64 ap) -> stack u16[KYBER_VECN]
   }
   return r;
 }
-
-#endif

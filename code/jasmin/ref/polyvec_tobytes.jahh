@@ -1,10 +1,7 @@
-#ifndef POLYVEC_TOBYTES_HH
-#define POLYVEC_TOBYTES_HH
-
-#include "params.jahh"
-#include "poly_tobytes.jahh"
-#include "polyvec_topolys.jahh"
-#include "polyvec_frompolys.jahh"
+require "params.jahh"
+require "poly_tobytes.jahh"
+require "polyvec_topolys.jahh"
+require "polyvec_frompolys.jahh"
 
 inline
 fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
@@ -21,5 +18,3 @@ fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
   pp += KYBER_POLYBYTES;
   a2 = poly_tobytes(pp, a2);
 }
-
-#endif

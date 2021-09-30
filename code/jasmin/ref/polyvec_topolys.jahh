@@ -1,6 +1,3 @@
-#ifndef POLYVEC_TOPOLYS_HH
-#define POLYVEC_TOPOLYS_HH
-
 inline
 fn polyvec_topolys(stack u16[KYBER_VECN] pv) -> stack u16[KYBER_N], stack u16[KYBER_N], stack u16[KYBER_N]
 {
@@ -38,6 +35,3 @@ fn polyvec_topolys(stack u16[KYBER_VECN] pv) -> stack u16[KYBER_N], stack u16[KY
 
   return r0, r1, r2;
 }
-
-#endif
-

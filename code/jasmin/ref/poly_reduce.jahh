@@ -1,8 +1,5 @@
-#ifndef POLY_REDUCE_HH
-#define POLY_REDUCE_HH
-
-#include "params.jahh"
-#include "reduce.jahh"
+require "params.jahh"
+require "reduce.jahh"
 
 inline
 fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
@@ -19,5 +16,3 @@ fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   }
   return rp;
 }
-
-#endif

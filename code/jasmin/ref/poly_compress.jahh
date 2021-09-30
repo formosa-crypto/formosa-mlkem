@@ -1,8 +1,5 @@
-#ifndef POLY_COMPRESS_HH
-#define POLY_COMPRESS_HH
-
-#include "params.jahh"
-#include "poly_csubq.jahh"
+require "params.jahh"
+require "poly_csubq.jahh"
 
 fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
@@ -39,5 +36,3 @@ fn poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   }
   return a;
 }
-
-#endif

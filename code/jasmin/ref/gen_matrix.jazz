@@ -1,4 +1,4 @@
-#include "gen_matrix.jahh"
+require "gen_matrix.jahh"
 
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp, reg u64 transposed)
 {

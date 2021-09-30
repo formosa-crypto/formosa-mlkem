@@ -1,7 +1,4 @@
-#ifndef POLY_FROMBYTES_HH
-#define POLY_FROMBYTES_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 fn poly_frombytes(reg ptr u16[KYBER_N] rp, reg u64 ap) -> reg ptr u16[KYBER_N]
 {
@@ -29,5 +26,3 @@ fn poly_frombytes(reg ptr u16[KYBER_N] rp, reg u64 ap) -> reg ptr u16[KYBER_N]
   }
   return rp;
 }
-
-#endif

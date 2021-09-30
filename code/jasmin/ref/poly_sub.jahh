@@ -1,7 +1,4 @@
-#ifndef POLY_SUB_HH
-#define POLY_SUB_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 fn poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
 {
@@ -20,5 +17,3 @@ fn poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
   }
   return rp;
 }
-
-#endif

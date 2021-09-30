@@ -1,10 +1,7 @@
-#ifndef POLYVEC_CSUBQ_HH
-#define POLYVEC_CSUBQ_HH
-
-#include "params.jahh"
-#include "poly_csubq.jahh"
-#include "polyvec_topolys.jahh"
-#include "polyvec_frompolys.jahh"
+require "params.jahh"
+require "poly_csubq.jahh"
+require "polyvec_topolys.jahh"
+require "polyvec_frompolys.jahh"
 
 inline
 fn polyvec_csubq(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
@@ -21,5 +18,3 @@ fn polyvec_csubq(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 
   return r;
 }
-
-#endif
