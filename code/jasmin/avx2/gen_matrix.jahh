@@ -1,11 +1,8 @@
-#ifndef GEN_MATRIX_HH
-#define GEN_MATRIX_HH
-
-#include "fips202.jahh"
-#include "fips202_4x.jahh"
-#include "params.jahh"
-#include "shuffle.jahh"
-#include "consts.jahh"
+require "fips202.jahh"
+require "fips202_4x.jahh"
+require "params.jahh"
+require "shuffle.jahh"
+require "consts.jahh"
 
 param int GENMATRIX_NBLOCKS = 3;
 param int REJ_UNIFORM_AVX_BUFLEN = GENMATRIX_NBLOCKS * SHAKE128_RATE;
@@ -926,5 +923,3 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16
 
   return rr;
 }
-
-#endif

@@ -1,8 +1,5 @@
-#ifndef POLY_BASEMUL_HH
-#define POLY_BASEMUL_HH
-
-#include "params.jahh"
-#include "reduce.jahh"
+require "params.jahh"
+require "reduce.jahh"
 
 inline 
 fn schoolbook(reg ptr u16[32] ap bp, reg u256 zeta qx16 qinvx16, inline int sign) -> reg u256, reg u256, reg u256, reg u256
@@ -124,6 +121,3 @@ fn poly_basemul(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
   
   return rp;
 }
-
-
-#endif

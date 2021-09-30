@@ -1,7 +1,4 @@
-#ifndef POLY_DECOMPRESS_HH
-#define POLY_DECOMPRESS_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 u8[32] pd_jshufbidx = {0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,
                        4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7};
@@ -36,5 +33,3 @@ fn poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 
   return rp;
 }
-
-#endif

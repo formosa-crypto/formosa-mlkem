@@ -1,8 +1,5 @@
-#ifndef POLYVEC_INVNTT_HH
-#define POLYVEC_INVNTT_HH
-
-#include "params.jahh"
-#include "poly_invntt.jahh"
+require "params.jahh"
+require "poly_invntt.jahh"
 
 inline
 fn polyvec_invntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
@@ -13,5 +10,3 @@ fn polyvec_invntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 
   return r;
 }
-
-#endif

@@ -1,9 +1,6 @@
-#ifndef POLY_GETNOISE_HH
-#define POLY_GETNOISE_HH
-
-#include "params.jahh"
-#include "fips202.jahh"
-#include "fips202_4x.jahh"
+require "params.jahh"
+require "fips202.jahh"
+require "fips202_4x.jahh"
 
 param int NOISE_BLOCKS = (KYBER_ETA * KYBER_N/4 + SHAKE256_RATE - 1)/SHAKE256_RATE;
 
@@ -194,6 +191,3 @@ fn poly_getnoise_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES]
 
   return r0, r1, r2, r3;
 }
-
-
-#endif

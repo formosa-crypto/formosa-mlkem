@@ -25,8 +25,6 @@ u64[24] KECCAK_RC =
   ,0x8000000080008008
 };
 
-#define S(base,x,y) base[(5*((x) % 5) + ((y) % 5))]
-
 inline fn __index(inline int x y) -> inline int
 {
   inline int r;
@@ -64,15 +62,21 @@ inline fn __rhotates(inline int x y) -> inline int
 
 inline fn __theta_sum_scalar(reg ptr u64[25] a) -> reg u64[5]
 {
-  inline int i j;
+  inline int i j ti;
   reg u64[5] c;
 
   for i=0 to 5
-  { c[i] = S(a, 0, i); }
+  {
+    ti = __index(i, 0);
+    c[i] = a[ti];
+  }
 
   for j=1 to 5
   { for i=0 to 5
-    { c[i] ^= S(a, j, i); }
+    {
+      ti = __index(i, j);
+      c[i] ^= a[ti];
+    }
   }
 
   return c;
@@ -98,14 +102,15 @@ inline fn __rol_sum_scalar(
   inline int offset
 ) -> reg u64[5]
 {
-  inline int j j1 k;
+  inline int j j1 k ti;
   reg u64[5] c;
 
   for j = 0 to 5
   {
     j1 = (j+offset) % 5;
     k = __rhotates(j1, j);
-    c[j] = S(a,j,j1);
+    ti = __index(j1, j);
+    c[j] = a[ti];
     c[j] ^= d[j1];
     _, _, c[j] = #ROL_64(c[j], k);
   }
@@ -120,7 +125,7 @@ inline fn __set_row_scalar(
   reg u64 iota
 ) -> reg ptr u64[25]
 {
-  inline int j j1 j2;
+  inline int j j1 j2 ti;
   reg u64 t;
 
   for j= 0 to 5
@@ -130,7 +135,8 @@ inline fn __set_row_scalar(
     t = !c[j1] & c[j2];
     if row==0 && j==0 { t ^= iota; }
     t ^= c[j];
-    S(r, row, j) = t;
+    ti = __index(j, row);
+    r[ti] = t;
   }
 
   return r;

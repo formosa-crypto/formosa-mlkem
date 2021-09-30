@@ -110,35 +110,12 @@ test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) $(INCS) jpoly.s
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
-
-jfips202.japp: jfips202.jazz fips202.jahh
-	gpp -I. $(GFLAGS) -o $@ $<
-
-gen_matrix.japp: gen_matrix.jazz gen_matrix.jahh $(JHEADERS)
-	gpp -I. $(GFLAGS) -o $@ $<
-
-jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
-	gpp -I. $(GFLAGS) -o $@ $<
-
-jspeed.japp: jspeed.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	gpp -I. $(GFLAGS) -o $@ $<
-
-jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	gpp -I. $(GFLAGS) -o $@ $<
-
-jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	gpp -I. $(GFLAGS) -o $@ $<
-
-jindcca.japp: indcca.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	gpp -I. $(GFLAGS) -o $@ $<
-
-%.s: %.japp
+%.s: %.jazz
 	$(JASMIN) -o $@ $(JFLAGS) $^
 
 .PHONY: clean
 
 clean:
-	-rm *.japp
 	-rm *.o
 	-rm gen_matrix.s
 	-rm jindcpa.s

@@ -1,14 +1,14 @@
-#include "params.jahh"
-#include "polyvec_compress.jahh"
-#include "polyvec_decompress.jahh"
-#include "polyvec_tobytes.jahh"
-#include "polyvec_frombytes.jahh"
-#include "polyvec_add2.jahh"
-#include "polyvec_ntt.jahh"
-#include "polyvec_invntt.jahh"
-#include "polyvec_pointwise_acc.jahh"
-#include "polyvec_csubq.jahh"
-#include "polyvec_reduce.jahh"
+require "params.jahh"
+require "polyvec_compress.jahh"
+require "polyvec_decompress.jahh"
+require "polyvec_tobytes.jahh"
+require "polyvec_frombytes.jahh"
+require "polyvec_add2.jahh"
+require "polyvec_ntt.jahh"
+require "polyvec_invntt.jahh"
+require "polyvec_pointwise_acc.jahh"
+require "polyvec_csubq.jahh"
+require "polyvec_reduce.jahh"
 
 /* These exported functions are just for unit testing */
 
@@ -222,4 +222,3 @@ export fn polyvec_reduce_jazz(reg u64 rp)
     (u16)[rp + 2*i] = t;
   }
 }
-

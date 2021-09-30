@@ -1,7 +1,4 @@
-#ifndef FIPS202x4_HH
-#define FIPS202x4_HH
-
-#include "fips202_common.jahh"
+require "fips202_common.jahh"
 
 u256 rho56 = 0x181F1E1D1C1B1A191017161514131211080F0E0D0C0B0A090007060504030201;
 u256 rho8 = 0x1E1D1C1B1A19181F16151413121110170E0D0C0B0A09080F0605040302010007;
@@ -40,31 +37,31 @@ inline fn rol_4u64(reg u256 a, inline int o) -> reg u256
 }
 
 
-#define ba 0
-#define be 1
-#define bi 2
-#define bo 3
-#define bu 4
-#define ga 5
-#define ge 6
-#define gi 7
-#define go 8
-#define gu 9
-#define ka 10
-#define ke 11
-#define ki 12
-#define ko 13
-#define ku 14
-#define ma 15
-#define me 16
-#define mi 17
-#define mo 18
-#define mu 19
-#define sa 20
-#define se 21
-#define si 22
-#define so 23
-#define su 24
+param int ba=0;
+param int be=1;
+param int bi=2;
+param int bo=3;
+param int bu=4;
+param int ga=5;
+param int ge=6;
+param int gi=7;
+param int go=8;
+param int gu=9;
+param int ka=10;
+param int ke=11;
+param int ki=12;
+param int ko=13;
+param int ku=14;
+param int ma=15;
+param int me=16;
+param int mi=17;
+param int mo=18;
+param int mu=19;
+param int sa=20;
+param int se=21;
+param int si=22;
+param int so=23;
+param int su=24;
 
 u256[24] KeccakF1600RoundConstants = {
   0x0000000000000001000000000000000100000000000000010000000000000001,
@@ -1435,5 +1432,3 @@ fn shake256_squeezeblock4x(reg ptr u256[25] state, reg ptr u8[SHAKE256_RATE] h0 
 
   return state, h0, h1, h2, h3;
 }
-
-#endif

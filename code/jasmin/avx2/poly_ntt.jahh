@@ -1,12 +1,8 @@
-#ifndef POLY_NTT_HH
-#define POLY_NTT_HH
-
-#include "params.jahh"
-#include "poly_reduce.jahh"
-#include "consts.jahh"
-#include "reduce.jahh"
-#include "shuffle.jahh"
-
+require "params.jahh"
+require "poly_reduce.jahh"
+require "consts.jahh"
+require "reduce.jahh"
+require "shuffle.jahh"
 
 
 inline
@@ -236,5 +232,3 @@ fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 
   return rp;
 }
-
-#endif

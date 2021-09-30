@@ -1,9 +1,5 @@
-#ifndef POLYVEC_COMPRESS_HH
-#define POLYVEC_COMPRESS_HH
-
-#include "params.jahh"
-#include "polyvec_csubq.jahh"
-
+require "params.jahh"
+require "polyvec_csubq.jahh"
 
 u16 pvc_off_s = 0x0f;
 u16 pvc_shift1_s = 0x1000;
@@ -106,5 +102,3 @@ fn i_polyvec_compress(reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES] rp, stack u16[KYB
 
   return rp;
 }
-
-#endif
