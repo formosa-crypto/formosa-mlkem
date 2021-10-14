@@ -2877,7 +2877,7 @@ proof.
            (forall k, 0 <= k < 8 => shift.[k] = W32.of_int (3 - k %% 4))).
   inline *.
   wp. skip.
-  move => &hr [#] _a_def pfm_idx_vdef pfm_shift_vdef.
+  move => &hr [#] _a_def.
   split; first by rewrite _a_def.
 
   split.
@@ -2903,15 +2903,12 @@ proof.
 
   split.
   move => k k_i.
-  do (rewrite Array32.get_setE //).
-  rewrite /pfm_idx_vdef Array16.initiE //=.
-  rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
-  smt(@Array32 @Array16 @IntDiv).
+  rewrite Array32.initiE 1:/# //= Array16.initiE 1:/# //=.
 
   move => k k_i.
-  do (rewrite Array8.get_setE //).
-  rewrite /pfm_shift_vdef Array4.initiE //=.
-  smt(@Array8 @Array4 @IntDiv).
+  rewrite Array8.initiE 1:/# //= Array4.initiE 1:/# //=.
+  rewrite /(KyberCPA_avx2.pfm_shift_s) initiE 1:/# //=.
+  smt(@IntDiv @Int @Array4).
 
   while(#pre /\
         0 <= i <= 4 /\
