@@ -65,6 +65,9 @@ op ([-]) (p : poly) : poly =
 
 type message = bool Array256.t.
 
+op s_encode(b: bool): int =
+  if b then trueval else falseval.
+
 op m_encode(m : message) : poly =
    map (fun b => if b 
                  then ZModField.inzmod trueval 
