@@ -1,5 +1,5 @@
-require import List Int IntExtra IntDiv CoreMap.
-
+require import List Int Ring IntExtra IntDiv CoreMap.
+import Ring.IntID.
 from Jasmin require import JModel JArray JWord_array.
 
 require import Array2p Array4p Array8p Array16p Array32p WArray128p WArray160p.
@@ -62,9 +62,6 @@ module Ops = {
     return r;
   }
 
-  (* TODO
-     - equiv
-  *)
   proc iVPBROADCAST_2u128_8u32(v: t4u32) : t8u32 = {
     var r: t8u32;
 
@@ -81,9 +78,6 @@ module Ops = {
     return r;
   }
 
-  (* TODO:
-     - equiv
-  *)
   proc iVPBROADCAST_2u128_32u8(v: t16u8): t32u8 = {
     var r: t32u8;
 
@@ -603,14 +597,11 @@ module Ops = {
     return r;
   }
 
-  (* TODO:
-      - equiv
-  *)
   proc iVPERM2I128_16u16(x y: t16u16, p: W8.t): t16u16 = {
     var r: t16u16;
 
     r <- Array16.init(fun i => 
-                      let n = (i %/ 8) in
+                      let n = 4 * (i %/ 8) in
                       if p.[n + 3] then W16.zero
                       else
                         let w = if p.[n + 1] then y else x in
@@ -652,7 +643,7 @@ module Ops = {
   proc iVPERMQ_32u8(x :t32u8, p : W8.t) : t32u8 = {
     var r : t32u8;
 
-    r <- Array32.init (fun i => x.[8 * ((to_uint p %/ (4^(i %/ 8))) %% 4) + i %% 8]);
+    r <- Array32.init (fun i => x.[8 * ((to_uint p %/ (Ring.IntID.(^) 4 (i %/ 8))) %% 4) + i %% 8]);
     (* r.[0] <- x.[ (to_uint p *)
     (* r.[0] <- x.[ *)
     (* r.[0] <- x.[ (to_uint p      ) %% 4 ]; *)
@@ -717,32 +708,10 @@ module Ops = {
     return r;
   }
 
-  (* TODO:
-    - review spec
-    - equiv
-  *)
   proc iVPUNPCKH_4u64_16u16(x y: t16u16): t16u16 = {
     var r: t16u16;
 
-    r.[0] <- x.[4];
-    r.[1] <- x.[5];
-    r.[2] <- x.[6];
-    r.[3] <- x.[7];
-
-    r.[4] <- y.[4];
-    r.[5] <- y.[5];
-    r.[6] <- y.[6];
-    r.[7] <- y.[7];
-
-    r.[8] <- x.[12];
-    r.[9] <- x.[13];
-    r.[10] <- x.[14];
-    r.[11] <- x.[15];
-
-    r.[12] <- y.[12];
-    r.[13] <- y.[13];
-    r.[14] <- y.[14];
-    r.[15] <- y.[15];
+    r <- Array16.init (fun i => if ((i %/ 4 %% 2) = 0) then x.[8 * (i %/ 8) + 4 + (i %% 4)] else y.[8 * (i %/ 8) + 4 + (i %% 4)]);
 
     return r;
   }
@@ -756,32 +725,10 @@ module Ops = {
     return r;
   }
 
-  (* TODO:
-    - review spec
-    - equiv
-  *)
   proc iVPUNPCKL_4u64_16u16(x y: t16u16): t16u16 = {
     var r: t16u16;
 
-    r.[0] <- x.[0];
-    r.[1] <- x.[1];
-    r.[2] <- x.[2];
-    r.[3] <- x.[3];
-
-    r.[4] <- y.[0];
-    r.[5] <- y.[1];
-    r.[6] <- y.[2];
-    r.[7] <- y.[3];
-
-    r.[8] <- x.[8];
-    r.[9] <- x.[9];
-    r.[10] <- x.[10];
-    r.[11] <- x.[11];
-
-    r.[12] <- y.[8];
-    r.[13] <- y.[9];
-    r.[14] <- y.[10];
-    r.[15] <- y.[11];
+    r <- Array16.init (fun i => if ((i %/ 4 %% 2) = 0) then x.[8 * (i %/ 8) + (i %% 4)] else y.[8 * (i %/ 8) + (i %% 4)]);
 
     return r;
   }
@@ -846,6 +793,9 @@ module Ops = {
 
   proc iVPSRA_16u16 (x: t16u16, y: W8.t) : t16u16 = {
     var r : t16u16;
+
+    r <- Array16.init (fun i => x.[i] `|>>` y);
+(*
     r.[0] <- x.[0] `|>>` y;
     r.[1] <- x.[1] `|>>` y;
     r.[2] <- x.[2] `|>>` y;
@@ -862,12 +812,15 @@ module Ops = {
     r.[13] <- x.[13] `|>>` y;
     r.[14] <- x.[14] `|>>` y;
     r.[15] <- x.[15] `|>>` y;
-
+*)
     return r;
   }
 
   proc iVPSLL_16u16 (x: t16u16, y: W8.t) : t16u16 = {
     var r : t16u16;
+
+    r <- Array16.init (fun i => x.[i] `<<` y);
+(*
     r.[0] <- x.[0] `<<` y;
     r.[1] <- x.[1] `<<` y;
     r.[2] <- x.[2] `<<` y;
@@ -884,7 +837,7 @@ module Ops = {
     r.[13] <- x.[13] `<<` y;
     r.[14] <- x.[14] `<<` y;
     r.[15] <- x.[15] `<<` y;
-
+*)
     return r;
   }
 
@@ -942,6 +895,9 @@ module Ops = {
 
   proc iVPSLLV_8u32 (x: t8u32, y:  t8u32) : t8u32 = {
     var r : t8u32;
+
+    r <- Array8.init (fun i => x.[i] `<<<` W32.to_uint y.[i]);
+(*
     r.[0] <- x.[0] `<<<` W32.to_uint y.[0];
     r.[1] <- x.[1] `<<<` W32.to_uint y.[1];
     r.[2] <- x.[2] `<<<` W32.to_uint y.[2];
@@ -950,6 +906,7 @@ module Ops = {
     r.[5] <- x.[5] `<<<` W32.to_uint y.[5];
     r.[6] <- x.[6] `<<<` W32.to_uint y.[6];
     r.[7] <- x.[7] `<<<` W32.to_uint y.[7];
+*)
     return r;
   }
 
@@ -974,6 +931,8 @@ module Ops = {
   proc ivpand16u16 (x y: t16u16) : t16u16 = {
     var r : t16u16;
 
+    r <- Array16.init (fun i => x.[i] `&` y.[i]);
+(*
     r.[0] <- x.[0] `&` y.[0];
     r.[1] <- x.[1] `&` y.[1];
     r.[2] <- x.[2] `&` y.[2];
@@ -990,7 +949,7 @@ module Ops = {
     r.[13] <- x.[13] `&` y.[13];
     r.[14] <- x.[14] `&` y.[14];
     r.[15] <- x.[15] `&` y.[15];
-
+*)
     return r;
   }
 
@@ -1142,6 +1101,11 @@ module Ops = {
 
   proc iVPSHUFD_256 (x :t8u32, p : W8.t) : t8u32 = {
     var r : t8u32;
+
+    r <- Array8.init (fun i => let m = W8.to_uint p in
+                               let pi = 4 * (i %/ 4) + (m %/ (Ring.IntID.(^) 2 (2*(i %% 4)))) %% 4 in
+                               x.[pi]);
+(*
     r <- witness;
     r.[0] <-
       let m = W8.to_uint p in
@@ -1182,13 +1146,17 @@ module Ops = {
       let m = W8.to_uint p in
       let pi = (m %/ (2^(2*3)))%%4 in
       x.[4 + pi];
-
+*)
     return r;
   }
 
   proc iVPSHUFB_256 (x: t32u8, m: t32u8): t32u8 = {
     var r: t32u8;
 
+    r <- Array32.init (fun i => let k = W8.to_uint m.[i] in
+                               if 128 <= k then W8.zero
+                               else x.[16 * (i %/ 16) + k %% 16]);
+(*
     r.[0] <-
       let i = W8.to_uint m.[0] in
       if 128 <= i then W8.zero else x.[i %% 16];
@@ -1285,7 +1253,7 @@ module Ops = {
     r.[31] <-
       let i = W8.to_uint m.[31] in
       if 128 <= i then W8.zero else x.[16 + i %% 16];
-
+*)
     return r;
   }
 
@@ -1547,17 +1515,22 @@ module OpsV = {
   }
 }.
 
-op is2u64 (x : t2u64) (xv: vt2u64)  = xv = W2u64.pack2 [x.[0]; x.[1]].
-op is8u16 (x : t8u16) (xv: vt8u16) = xv = W8u16.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
-op is4u64 (x : t4u64) (xv: vt4u64) = xv = W4u64.pack4 [x.[0]; x.[1]; x.[2]; x.[3]].
-op is16u16 (x : t16u16) (xv: vt16u16) = xv = W16u16.pack16 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
+op is16u8 (x: t16u8) (xv: vt16u8) = xv = W16u8.pack16 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
   x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15]].
-op is8u32 (x: t8u32) (xv: vt8u32) = xv = W8u32.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
-op is2u128 (x : t2u128) (xv: vt2u128) = xv = W2u128.pack2 [x.[0]; x.[1]].
-op is32u8 (x : t32u8) (xv: vt32u8) = xv = W32u8.pack32 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
+op is8u16 (x: t8u16) (xv: vt8u16) = xv = W8u16.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
+op is4u32 (x: t4u32) (xv: vt4u32) = xv = W4u32.pack4 [x.[0]; x.[1]; x.[2]; x.[3]].
+op is2u64 (x: t2u64) (xv: vt2u64)  = xv = W2u64.pack2 [x.[0]; x.[1]].
+
+op is32u8 (x: t32u8) (xv: vt32u8) = xv = W32u8.pack32 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
                                                         x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15];
                                                         x.[16]; x.[17]; x.[18]; x.[19]; x.[20]; x.[21]; x.[22]; x.[23];
                                                         x.[24]; x.[25]; x.[26]; x.[27]; x.[28]; x.[29]; x.[30]; x.[31]].
+op is16u16 (x: t16u16) (xv: vt16u16) = xv = W16u16.pack16 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
+  x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15]].
+op is8u32 (x: t8u32) (xv: vt8u32) = xv = W8u32.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
+op is4u64 (x: t4u64) (xv: vt4u64) = xv = W4u64.pack4 [x.[0]; x.[1]; x.[2]; x.[3]].
+op is2u128 (x: t2u128) (xv: vt2u128) = xv = W2u128.pack2 [x.[0]; x.[1]].
+
 
 (* TODO *)
 lemma ivadd16u256_spec x_ y_ : hoare[Ops.ivadd16u256 : x = x_ /\ y = y_ ==> forall i, res.[i] = x_.[i] + y_.[i]].
@@ -1665,6 +1638,20 @@ proof.
   do rewrite -get_unpack128 //=.
   rewrite createiE // get_of_list //.
   smt(@List).
+qed.
+
+equiv eq_iVPBROADCAST_2u128_8u32: Ops.iVPBROADCAST_2u128_8u32 ~ OpsV.iVPBROADCAST_2u128_8u32: is4u32 v{1} v{2} ==> is8u32 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is4u32 /is8u32 => &1 &2 />; cbv delta.
+  apply W8u32.allP => />.
+  do (rewrite nth_mkseq 1:/# //=).
+qed.
+
+equiv eq_iVPBROADCAST_2u128_32u8: Ops.iVPBROADCAST_2u128_32u8 ~ OpsV.iVPBROADCAST_2u128_32u8: is16u8 v{1} v{2} ==> is32u8 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is16u8 /is32u8 => &1 &2 />; cbv delta.
+  apply W32u8.allP => />.
+  do (rewrite nth_mkseq 1:/# //=).
 qed.
 
 equiv eq_iVPBROADCAST_4u64 : Ops.iVPBROADCAST_4u64 ~ OpsV.iVPBROADCAST_4u64 : ={v} ==> is4u64 res{1} res{2}.
@@ -1782,9 +1769,32 @@ proof.
   by case (p{2}.[5]) => ?; case (p{2}.[4]).
 qed.
 
+
+equiv eq_iVPERM2I128_16u16: Ops.iVPERM2I128_16u16 ~ OpsV.iVPERM2I128_16u16 :
+  is16u16 x{1} x{2} /\ is16u16 y{1} y{2} /\ ={p} ==> is16u16 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is16u16 => /> &1 &2; cbv delta.
+  rewrite -(W8.to_uintK' p{2}) !of_intwE /=.
+  apply W2u128.allP => /=.
+  case: (W8.int_bit (to_uint p{2}) 3) => p_3.
+  + split; first by apply W8u16.allP; cbv delta.
+    case: (W8.int_bit (to_uint p{2}) 7) => p_7; first by apply W8u16.allP; cbv delta.
+    by case: (W8.int_bit (to_uint p{2}) 5) => p_5; case: (W8.int_bit (to_uint p{2}) 4).
+  split.
+  + by case: (W8.int_bit (to_uint p{2}) 1) => p_1; case: (W8.int_bit (to_uint p{2}) 0).
+  case: (W8.int_bit (to_uint p{2}) 7) => p_7;  1: by apply W8u16.allP; cbv delta.
+  by case: (W8.int_bit (to_uint p{2}) 5) => p_5; case: (W8.int_bit (to_uint p{2}) 4).
+qed.
+
+
 lemma pack4_bits64 (x:t4u64) (i:int): 0 <= i < 4 =>
     pack4 [x.[0]; x.[1]; x.[2]; x.[3]] \bits64 i = x.[i].
-proof. admit. (*by have /= <- [#|] -> := mema_iota 0 4.*) qed.
+proof.
+  move => i_i.
+  rewrite -get_unpack64 1:i_i pack4K //=.
+  rewrite get_of_list 1:i_i //=.
+  smt(@Array4 @List).
+qed.
 
 equiv eq_iVPERMQ : Ops.iVPERMQ ~ OpsV.iVPERMQ : is4u64 x{1} x{2} /\ ={p} ==> is4u64 res{1} res{2}.
 proof.
@@ -1802,7 +1812,8 @@ lemma pack32_bits64 (x: t32u8) (i:int): 0 <= i < 4 =>
         x.[31]] \bits64 i
     = pack8 [x.[8 * i]; x.[8 * i + 1]; x.[8 * i + 2]; x.[8 * i + 3];
             x.[8 * i + 4]; x.[8 * i + 5]; x.[8 * i + 6]; x.[8 * i + 7]].
-proof. admit. (* FIXME: by have /= <- [#|] -> := mema_iota 0 8.*) qed.
+proof.
+admit. (* FIXME: by have /= <- [#|] -> := mema_iota 0 8.*) qed.
 
 equiv eq_iVPERMQ_32u8 : Ops.iVPERMQ_32u8 ~ OpsV.iVPERMQ_32u8 : is32u8 x{1} x{2} /\ ={p} ==> is32u8 res{1} res{2}.
 proof.
@@ -1884,17 +1895,18 @@ proof.
           x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 6];
           x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 7]]).
     smt(@List @W8u8 @W4u64 @W32u8).
-  rewrite (_: 4 ^ 0 = 1). smt(@Int @IntDiv @IntExtra).
-  rewrite (_: 4 ^ 1 = 4). smt(@Int @IntDiv @IntExtra).
-  rewrite (_: 4 ^ 2 = 16). smt(@Int @IntDiv @IntExtra).
-  rewrite (_: 4 ^ 3 = 64). smt(@Int @IntDiv @IntExtra).
+  rewrite (_: Ring.IntID.(^) 4 0 = 1). smt(@Int @Ring.IntID).
   smt(@IntDiv).
 qed.
 
 lemma pack8_bits32 (x:t8u32) (i:int): 0 <= i < 8 =>
     pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]] \bits32 i = x.[i].
-proof. admit. (*by have /= <- [#|] -> := mema_iota 0 8.*) qed.
-
+proof.
+  move => i_i.
+  rewrite -get_unpack32 1:i_i pack8K //=.
+  rewrite get_of_list 1:i_i //=.
+  smt(@Array8 @List).
+qed.
 
 equiv eq_iVPERMD : Ops.iVPERMD ~ OpsV.iVPERMD : is8u32 x{1} x{2} /\ is8u32 p{1} p{2} ==> is8u32 res{1} res{2}.
 proof.
@@ -1960,6 +1972,12 @@ proof. by proc; wp; skip; rewrite /is4u64 => />; cbv delta. qed.
 
 equiv eq_iVPUNPCKL_4u64: Ops.iVPUNPCKL_4u64 ~ OpsV.iVPUNPCKL_4u64 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is4u64 => />; cbv delta. qed.
+
+equiv eq_iVPUNPCKH_4u64_16u16: Ops.iVPUNPCKH_4u64_16u16 ~ OpsV.iVPUNPCKH_4u64_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16 => &1 &2 />; cbv delta; apply W16u16.allP. qed.
+
+equiv eq_iVPUNPCKL_4u64_16u16: Ops.iVPUNPCKL_4u64_16u16 ~ OpsV.iVPUNPCKL_4u64_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16 => &1 &2 />; cbv delta; apply W16u16.allP. qed.
 
 equiv eq_iVPUNPCKH_16u16: Ops.iVPUNPCKH_16u16 ~ OpsV.iVPUNPCKH_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. proc; wp; skip; rewrite /is16u16 => />; cbv delta. admit. (* FIXME *) qed.
@@ -2118,7 +2136,13 @@ qed.
 equiv eq_iVPSHUFD_256 : Ops.iVPSHUFD_256 ~ OpsV.iVPSHUFD_256 :
   is8u32 x{1} x{2} /\ ={p} ==> is8u32 res{1} res{2}.
 proof.
-  admit. (* FIXME *)
+  proc; wp; skip.
+  rewrite /is8u32 /VPSHUFD_256 /VPSHUFD_128 /VPSHUFD_128_B /=.
+  move => &1 &2 [#] eq_x eq_p.
+  rewrite eq_p eq_x //=.
+  do (rewrite -get_unpack32 1:/# pack4K //=).
+  do (rewrite get_of_list 1:/#).
+  smt(@Array4 @Array8 @List).
 qed.
 
 equiv eq_iVPSHUFB_256 : Ops.iVPSHUFB_256 ~ OpsV.iVPSHUFB_256:

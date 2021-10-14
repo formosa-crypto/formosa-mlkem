@@ -292,20 +292,10 @@ module Mavx2_prevec = {
   (* TODO:
      - prove equiv w/ vec version
   *)
-  proc poly_frommsg(rp: W16.t Array256.t, ap: W64.t): W16.t Array256.t = {
-    var f: W256.t;
-
-    f <@ poly_frommsg_load(ap);
-
-    rp <@ poly_frommsg_encode(rp, f);
-
-    return rp;
-  }
-
   proc poly_frommsg_load (ap: W64.t): W256.t = {
     var f: W256.t;
 
-    f <- Ops.iload4u64(Glob.mem, ap);
+    f <- OpsV.iload4u64(Glob.mem, ap);
 
     return f;
   }
@@ -331,10 +321,12 @@ module Mavx2_prevec = {
     var g3_dw: t8u32;
     var g3_b: t32u8;
 
+
+    f_dw <- Array8.init (fun i => f \bits32 i);
     hqs <- lift2poly (get256 (WArray32.init16 (fun i => hqx16_p1.[i])) 0);
+    idx <- Ops.iVPBROADCAST_2u128_32u8(Array16.init (fun i => KyberCPA_avx2.pfm_idx_s.[i]));
     shift <-
-    Ops.iVPBROADCAST_2u128_8u32((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
-    idx <- Ops.iVPBROADCAST_2u128_32u8((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
+    Ops.iVPBROADCAST_2u128_8u32(Array4.init (fun i => KyberCPA_avx2.pfm_shift_s.[i]));
     i <- 0;
 
     while (i < 4) {
@@ -376,6 +368,16 @@ module Mavx2_prevec = {
     }
 
     return (rp);
+  }
+
+  proc poly_frommsg(rp: W16.t Array256.t, ap: W64.t): W16.t Array256.t = {
+    var f: W256.t;
+
+    f <@ poly_frommsg_load(ap);
+
+    rp <@ poly_frommsg_encode(rp, f);
+
+    return rp;
   }
 
   (*--------------------------------------------------------------------*)
