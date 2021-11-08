@@ -3443,6 +3443,23 @@ proof.
   smt(@Array256 @W16 @Int @ZModField).
 qed.
 
+lemma poly_frommsg_ll : islossless  Mavx2_prevec.poly_frommsg_encode.
+proof.
+  proc.
+  wp; while (0 <= i <= 4) (4-i); last first.
+  inline *; wp; skip.
+  simplify.
+  move => * /#.
+  auto => />; inline *; wp; skip.
+  move => * /#.
+qed.
 
+lemma poly_frommsg_corr _a :
+    phoare[ Mavx2_prevec.poly_frommsg_encode :
+             lift_msg f = _a
+              ==>
+             pos_bound256_cxq res 0 256 1 /\
+             lift_array256 res = m_encode _a] = 1%r
+   by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
 
 end KyberPolyAVX.

@@ -755,24 +755,7 @@ module Ops = {
     var r : t16u16;
 
     r <- Array16.init (fun i => x.[i] `|>>` y);
-(*
-    r.[0] <- x.[0] `|>>` y;
-    r.[1] <- x.[1] `|>>` y;
-    r.[2] <- x.[2] `|>>` y;
-    r.[3] <- x.[3] `|>>` y;
-    r.[4] <- x.[4] `|>>` y;
-    r.[5] <- x.[5] `|>>` y;
-    r.[6] <- x.[6] `|>>` y;
-    r.[7] <- x.[7] `|>>` y;
-    r.[8] <- x.[8] `|>>` y;
-    r.[9] <- x.[9] `|>>` y;
-    r.[10] <- x.[10] `|>>` y;
-    r.[11] <- x.[11] `|>>` y;
-    r.[12] <- x.[12] `|>>` y;
-    r.[13] <- x.[13] `|>>` y;
-    r.[14] <- x.[14] `|>>` y;
-    r.[15] <- x.[15] `|>>` y;
-*)
+
     return r;
   }
 
@@ -780,24 +763,7 @@ module Ops = {
     var r : t16u16;
 
     r <- Array16.init (fun i => x.[i] `<<` y);
-(*
-    r.[0] <- x.[0] `<<` y;
-    r.[1] <- x.[1] `<<` y;
-    r.[2] <- x.[2] `<<` y;
-    r.[3] <- x.[3] `<<` y;
-    r.[4] <- x.[4] `<<` y;
-    r.[5] <- x.[5] `<<` y;
-    r.[6] <- x.[6] `<<` y;
-    r.[7] <- x.[7] `<<` y;
-    r.[8] <- x.[8] `<<` y;
-    r.[9] <- x.[9] `<<` y;
-    r.[10] <- x.[10] `<<` y;
-    r.[11] <- x.[11] `<<` y;
-    r.[12] <- x.[12] `<<` y;
-    r.[13] <- x.[13] `<<` y;
-    r.[14] <- x.[14] `<<` y;
-    r.[15] <- x.[15] `<<` y;
-*)
+
     return r;
   }
 
@@ -857,16 +823,7 @@ module Ops = {
     var r : t8u32;
 
     r <- Array8.init (fun i => x.[i] `<<<` W32.to_uint y.[i]);
-(*
-    r.[0] <- x.[0] `<<<` W32.to_uint y.[0];
-    r.[1] <- x.[1] `<<<` W32.to_uint y.[1];
-    r.[2] <- x.[2] `<<<` W32.to_uint y.[2];
-    r.[3] <- x.[3] `<<<` W32.to_uint y.[3];
-    r.[4] <- x.[4] `<<<` W32.to_uint y.[4];
-    r.[5] <- x.[5] `<<<` W32.to_uint y.[5];
-    r.[6] <- x.[6] `<<<` W32.to_uint y.[6];
-    r.[7] <- x.[7] `<<<` W32.to_uint y.[7];
-*)
+
     return r;
   }
 
@@ -892,24 +849,7 @@ module Ops = {
     var r : t16u16;
 
     r <- Array16.init (fun i => x.[i] `&` y.[i]);
-(*
-    r.[0] <- x.[0] `&` y.[0];
-    r.[1] <- x.[1] `&` y.[1];
-    r.[2] <- x.[2] `&` y.[2];
-    r.[3] <- x.[3] `&` y.[3];
-    r.[4] <- x.[4] `&` y.[4];
-    r.[5] <- x.[5] `&` y.[5];
-    r.[6] <- x.[6] `&` y.[6];
-    r.[7] <- x.[7] `&` y.[7];
-    r.[8] <- x.[8] `&` y.[8];
-    r.[9] <- x.[9] `&` y.[9];
-    r.[10] <- x.[10] `&` y.[10];
-    r.[11] <- x.[11] `&` y.[11];
-    r.[12] <- x.[12] `&` y.[12];
-    r.[13] <- x.[13] `&` y.[13];
-    r.[14] <- x.[14] `&` y.[14];
-    r.[15] <- x.[15] `&` y.[15];
-*)
+
     return r;
   }
 
@@ -1116,104 +1056,6 @@ module Ops = {
     r <- Array32.init (fun i => let k = W8.to_uint m.[i] in
                                if 128 <= k then W8.zero
                                else x.[16 * (i %/ 16) + k %% 16]);
-(*
-    r.[0] <-
-      let i = W8.to_uint m.[0] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[1] <-
-      let i = W8.to_uint m.[1] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[2] <-
-      let i = W8.to_uint m.[2] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[3] <-
-      let i = W8.to_uint m.[3] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[4] <-
-      let i = W8.to_uint m.[4] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[5] <-
-      let i = W8.to_uint m.[5] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[6] <-
-      let i = W8.to_uint m.[6] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[7] <-
-      let i = W8.to_uint m.[7] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[8] <-
-      let i = W8.to_uint m.[8] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[9] <-
-      let i = W8.to_uint m.[9] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[10] <-
-      let i = W8.to_uint m.[10] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[11] <-
-      let i = W8.to_uint m.[11] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[12] <-
-      let i = W8.to_uint m.[12] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[13] <-
-      let i = W8.to_uint m.[13] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[14] <-
-      let i = W8.to_uint m.[14] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[15] <-
-      let i = W8.to_uint m.[15] in
-      if 128 <= i then W8.zero else x.[i %% 16];
-    r.[16] <-
-      let i = W8.to_uint m.[16] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[17] <-
-      let i = W8.to_uint m.[17] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[18] <-
-      let i = W8.to_uint m.[18] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[19] <-
-      let i = W8.to_uint m.[19] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[20] <-
-      let i = W8.to_uint m.[20] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[21] <-
-      let i = W8.to_uint m.[21] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[22] <-
-      let i = W8.to_uint m.[22] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[23] <-
-      let i = W8.to_uint m.[23] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[24] <-
-      let i = W8.to_uint m.[24] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[25] <-
-      let i = W8.to_uint m.[25] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[26] <-
-      let i = W8.to_uint m.[26] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[27] <-
-      let i = W8.to_uint m.[27] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[28] <-
-      let i = W8.to_uint m.[28] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[29] <-
-      let i = W8.to_uint m.[29] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[30] <-
-      let i = W8.to_uint m.[30] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-    r.[31] <-
-      let i = W8.to_uint m.[31] in
-      if 128 <= i then W8.zero else x.[16 + i %% 16];
-*)
     return r;
   }
 
