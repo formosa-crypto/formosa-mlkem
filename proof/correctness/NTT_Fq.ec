@@ -2112,7 +2112,7 @@ theory NTTequiv.
         do 2!(rewrite -exprD_subz //; [by smt(mem_range)|rewrite addrAC /=]).
         rewrite opprD /= addrAC !addrA /= -addrA /=.
         rewrite (FOR_INT_ADD_LT.inv_loop_post _ _ _ _ _ Hcond_start Hinv_start) ?expr_gt0 //=.
-        rewrite Hzs; first split. first by admit; last by admit.
+        rewrite Hzs; first split; first by admit; last by admit.
         move: Hstart_range.
         rewrite divz_pow //=; first by smt(mem_range).
         rewrite opprD mulNr /= => Hstart_range.
