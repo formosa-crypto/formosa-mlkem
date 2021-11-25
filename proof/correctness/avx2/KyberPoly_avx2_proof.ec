@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
-from Jasmin require import JModel JMemory JWord.
-require import Array256 Fq Array32 Array32p Array16 Array16p Array4 Array4p Array8 Array8p.
+from Jasmin require import JModel.
+require import Array400 Array256 Array128 Fq Array32 Array32p Array16 Array16p Array4 Array4p Array8 Array8p.
 require import W16extra WArray512 WArray32 WArray16.
 require import Ops.
 require import List_hakyber Number_extra IntDiv_extra Ring_extra.
@@ -127,6 +127,9 @@ op pos_bound256_b (coefs : W16.t Array256.t) (l u b : int) : bool =
 
 op lift_array256 (p: W16.t Array256.t) =
   Array256.map (fun x => inzmod (W16.to_sint x)) p.
+
+op lift_array128 (p: W16.t Array128.t) =
+  Array128.map (fun x => inzmod (W16.to_sint x)) p.
 
 lemma lift_array256E (x : W16.t Array256.t) k :
   0 <= k < 256 =>
@@ -2861,6 +2864,23 @@ proof.
   rewrite W16.and0w of_sintK /smod //=.
 qed.
 
+(* TODO: generalize *)
+lemma true_32: forall x, 0 <= x < 8 => (W8.of_int 32).[x] = (x = 5).
+proof.
+move => x x_i.
+rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
+rewrite /bits2w initiE 1:x_i /=.
+smt(@Int).
+qed.
+
+lemma true_49: forall x, 0 <= x < 8 => (W8.of_int 49).[x] = (x = 5 \/ x = 4 \/ x = 0).
+proof.
+move => x x_i.
+rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
+rewrite /bits2w initiE 1:x_i /=.
+smt(@Int).
+qed.
+
 lemma poly_frommsg_corr_h _a:
       hoare[Mavx2_prevec.poly_frommsg_encode:
             lift_msg f = _a
@@ -2946,12 +2966,13 @@ proof.
 
   split.
   move => k k_i.
+  rewrite /f8u32_t32u8 //=.
   do (rewrite initiE 1://= //=).
   rewrite hqs_def 1://=.
   rewrite (pmod_small _ 256).
     move : i_lb i_tub => /#.
 
-  rewrite /f8u32_t32u8 //=.
+
   rewrite (_: (Array8.init (fun (i1: int) => ((Array8.init (fun (i2 : int) => f_dw{hr}.[4 * (i2 %/ 4) + 85 * i{hr} %/ (2 ^ (2 * (i2 %% 4))) %% 4]))).[i1] `<<<` to_uint shift{hr}.[i1])) =
               (Array8.init (fun (i1: int) => f_dw{hr}.[4 * (i1 %/ 4) + 85 * i{hr} %/ (2 ^ (2 * (i1 %% 4))) %% 4] `<<<` to_uint shift{hr}.[i1]))).
     apply Array8.ext_eq.
@@ -3165,34 +3186,6 @@ proof.
 
   rewrite /h0_h1_32 /h2_h3_32.
 
-  have true_32: forall x, 0 <= x < 8 => (W8.of_int 32).[x] = (x = 5).
-    move => x x_i.
-    rewrite get_to_uint x_i of_uintK //=.
-    rewrite (_: 32 = 2 ^ 5) 1://=.
-    case (5 < x) => x_lb.
-      have x_si: 5 < x < 8. by move : x_lb x_i => /#.
-      rewrite pdiv_small.
-      split; first by trivial. simplify.
-      rewrite (_: x = x - 5 + 5). by trivial.
-      rewrite (_: 2 ^ (x - 5 + 5) = 2 ^ (x - 5) * 2 ^ 5).
-        rewrite exprD_nneg.
-          move : x_si => /#.
-          trivial.
-          trivial.
-      smt(@Int @Ring.IntID @Ring_extra).
-    move : x_lb => /#.
-    move : x_lb; rewrite -lezNgt => x_ub.
-    + rewrite -exprD_subz 1://=. move : x_i x_ub => /#.
-      case (x < 5) => x_tub.
-        + have x_si: 0 <= x < 5. by move : x_i x_tub => /#.
-          have ->: !(x = 5). move : x_si => /#.
-          simplify.
-          rewrite neqF //=.
-          rewrite (_: 2 ^ (5 - x) = 2 * 2 ^ (4 - x)). by smt(@Int @Ring.IntID @Ring_extra).
-          smt(@Int @IntDiv).
-        + have ->: x = 5. by move : x_tub x_ub => /#.
-          smt(@Int @IntDiv @Ring.IntID).
-
   have ->: !(W8.of_int 32).[4 * (k %% 16 %/ 8) + 3].
     rewrite true_32 1:/#.
     have k_vals: 0 <= k %% 16 %/ 8 < 2.
@@ -3297,43 +3290,6 @@ proof.
 
   rewrite /h0_h1_49 /h2_h3_49.
 
-  have true_49: forall x, 0 <= x < 8 => (W8.of_int 49).[x] = (x = 5 \/ x = 4 \/ x = 0).
-    move => x x_i.
-    rewrite get_to_uint x_i of_uintK //=.
-    case (5 < x) => x_lb.
-      have x_si: 5 < x < 8. by move : x_lb x_i => /#.
-      rewrite pdiv_small.
-      split; first by trivial. simplify.
-      rewrite (_: 49 = 2 ^ 5 + 2 ^ 4 + 2 ^ 0) 1://=.
-      rewrite (_: x = x - 6 + 6). by trivial.
-      rewrite (_: 2 ^ (x - 6 + 6) = 2 ^ (x - 6) * 2 ^ 6).
-        rewrite exprD_nneg //=; first by move : x_si => /#.
-      smt(@Int @Ring.IntID @Ring_extra).
-    move : x_si => /#.
-    move : x_lb; rewrite -lezNgt => x_ub.
-    case (x = 5) => x_v5.
-    + rewrite x_v5; smt(@Int @IntDiv @Ring.IntID).
-    case (x = 4) => x_v4.
-    + rewrite x_v4; smt(@Int @IntDiv @Ring.IntID).
-    case (x = 0) => x_v0.
-    + rewrite x_v0; smt(@Int @IntDiv @Ring.IntID).
-    have x_si: 0 < x < 4. move : x_i x_ub x_v5 x_v4 x_v0 => /#.
-    rewrite neqF //= (_: 49 = 2 ^ 5 + 2 ^ 4 + 2 ^ 0) 1://=.
-    rewrite (_: 5 = 5 - x + x). smt(@Int @IntDiv).
-    rewrite (_: 2 ^ (5 - x + x) = 2 ^ (5 - x) * 2 ^ x).
-      rewrite exprD_nneg //=; first 2 by move : x_si => /#.
-    rewrite (_: 4 = 4 - x + x). smt(@Int @IntDiv).
-    rewrite (_: 2 ^ (4 - x + x) = 2 ^ (4 - x) * 2 ^ x).
-      rewrite exprD_nneg //=; first 2 by move : x_si => /#.
-    rewrite (_: (2 ^ (5 - x) * 2 ^ x + 2 ^ (4 - x) * 2 ^ x + 2 ^ 0) %/ 2 ^ x =
-                (2 ^ (5 - x) * 2 ^ x + (2 ^ (4 - x) * 2 ^ x + (2 ^ 0))) %/ 2 ^ x).
-      smt(@Int).
-     do (rewrite divzMDl; first by move : x_si; smt(@Int @Ring.IntID @Ring_extra)).
-     rewrite pdiv_small //=. move : x_si; smt(@Int @Ring.IntID @Ring_extra).
-     rewrite (_: 2 ^ (5 - x) = 2 * 2 ^ (4 - x)). smt(@Int @IntDiv @Ring.IntID @Ring_extra).
-     rewrite (_: 2 ^ (4 - x) = 2 * 2 ^ (3 - x)). smt(@Int @IntDiv @Ring.IntID @Ring_extra).
-     smt(@Int @IntDiv).
-
   have ->: !(W8.of_int 49).[4 * (k %% 16 %/ 8) + 3].
     rewrite true_49 1:/#.
     move : (modz_cmp k 16) => /#.
@@ -3375,7 +3331,7 @@ proof.
         move : (true_49 (4 * (k %% 16 %/ 8))).
         smt(@W8 @Int @IntDiv).
       have ->: W8.int_bit 49 (4 * (k %% 16 %/ 8) + 1).
-        move : (true_49 (4 * (k %% 16 %/ 8))).
+        move : (true_49 (4 * (k %% 16 %/ 8) + 1)).
         smt(@W8 @Int @IntDiv).
       simplify.
       smt(@Int @IntDiv @W16 @Array256 @Logic @List).
@@ -3393,7 +3349,7 @@ proof.
         move : (true_49 (4 * (k %% 16 %/ 8))).
         smt(@W8 @Int @IntDiv).
       have ->: W8.int_bit 49 (4 * (k %% 16 %/ 8) + 1).
-        move : (true_49 (4 * (k %% 16 %/ 8))).
+        move : (true_49 (4 * (k %% 16 %/ 8) + 1)).
         smt(@W8 @Int @IntDiv).
       simplify.
       smt(@Int @IntDiv @W16 @Array256 @Logic @List).
