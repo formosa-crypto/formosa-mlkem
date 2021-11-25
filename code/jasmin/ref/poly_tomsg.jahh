@@ -1,8 +1,5 @@
-#ifndef POLY_TOMSG_HH
-#define POLY_TOMSG_HH
-
-#include "params.jahh"
-#include "poly_csubq.jahh"
+require "params.jahh"
+require "poly_csubq.jahh"
 
 fn poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
@@ -33,5 +30,3 @@ fn poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   }
   return a;
 }
-
-#endif

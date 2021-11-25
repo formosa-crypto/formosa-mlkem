@@ -1,9 +1,6 @@
-#ifndef POLY_INVNTT_HH
-#define POLY_INVNTT_HH
-
-#include "params.jahh"
-#include "reduce.jahh"
-#include "consts.jahh"
+require "params.jahh"
+require "reduce.jahh"
+require "consts.jahh"
 
 inline
 fn invntt_butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 zh1 qx16) 
@@ -212,5 +209,3 @@ fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   rp = invntt_level6(rp);
   return rp;
 }
-
-#endif

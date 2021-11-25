@@ -1,11 +1,8 @@
-#ifndef POLYVEC_POINTWISE_ACC_HH
-#define POLYVEC_POINTWISE_ACC_HH
-
-#include "params.jahh"
-#include "poly_basemul.jahh"
-#include "poly_add2.jahh"
-#include "polyvec_topolys.jahh"
-#include "polyvec_frompolys.jahh"
+require "params.jahh"
+require "poly_basemul.jahh"
+require "poly_add2.jahh"
+require "polyvec_topolys.jahh"
+require "polyvec_frompolys.jahh"
 
 inline
 fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_N]
@@ -28,5 +25,3 @@ fn polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> st
 
   return r;
 }
-
-#endif

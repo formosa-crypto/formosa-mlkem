@@ -1,10 +1,7 @@
-#ifndef POLYVEC_REDUCE_HH
-#define POLYVEC_REDUCE_HH
-
-#include "params.jahh"
-#include "poly_reduce.jahh"
-#include "polyvec_topolys.jahh"
-#include "polyvec_frompolys.jahh"
+require "params.jahh"
+require "poly_reduce.jahh"
+require "polyvec_topolys.jahh"
+require "polyvec_frompolys.jahh"
 
 inline
 fn polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
@@ -21,5 +18,3 @@ fn polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 
   return r;
 }
-
-#endif

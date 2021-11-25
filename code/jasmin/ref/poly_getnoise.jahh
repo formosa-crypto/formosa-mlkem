@@ -1,8 +1,5 @@
-#ifndef POLY_GETNOISE_HH
-#define POLY_GETNOISE_HH
-
-#include "params.jahh"
-#include "fips202.jahh"
+require "params.jahh"
+require "fips202.jahh"
 
 fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
@@ -63,5 +60,3 @@ fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u
   
   return rp;
 }
-
-#endif

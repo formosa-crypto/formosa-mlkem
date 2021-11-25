@@ -1,4 +1,4 @@
-#include "indcpa.jahh"
+require "indcpa.jahh"
 
 export fn indcca_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {

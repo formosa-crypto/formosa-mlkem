@@ -1,7 +1,4 @@
-#ifndef POLY_FROMMSG_HH
-#define POLY_FROMMSG_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 u32[4] pfm_shift_s = {3, 2, 1, 0};
 u8[16] pfm_idx_s = {0, 1, 4, 5, 8, 9, 12, 13,
@@ -101,4 +98,3 @@ fn i_poly_frommsg(reg ptr u16[KYBER_N] rp, reg ptr u8[32] ap) -> stack u16[KYBER
 
   return rp;
 }
-#endif

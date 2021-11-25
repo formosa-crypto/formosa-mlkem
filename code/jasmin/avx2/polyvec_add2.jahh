@@ -1,8 +1,5 @@
-#ifndef POLYVEC_ADD_HH
-#define POLYVEC_ADD_HH
-
-#include "params.jahh"
-#include "poly_add2.jahh"
+require "params.jahh"
+require "poly_add2.jahh"
 
 inline
 fn polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
@@ -13,5 +10,3 @@ fn polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16[K
 
   return r;
 }
-
-#endif

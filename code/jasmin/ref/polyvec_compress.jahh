@@ -1,8 +1,5 @@
-#ifndef POLYVEC_COMPRESS_HH
-#define POLYVEC_COMPRESS_HH
-
-#include "params.jahh"
-#include "polyvec_csubq.jahh"
+require "params.jahh"
+require "polyvec_csubq.jahh"
 
 inline
 fn polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
@@ -67,5 +64,3 @@ fn polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
     j += 1;
   }
 }
-
-#endif

@@ -1,9 +1,6 @@
-#ifndef POLYVEC_TOBYTES_HH
-#define POLYVEC_TOBYTES_HH
-
-#include "params.jahh"
-#include "shuffle.jahh"
-#include "poly_tobytes.jahh"
+require "params.jahh"
+require "shuffle.jahh"
+require "poly_tobytes.jahh"
 
 inline
 fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
@@ -17,6 +14,3 @@ fn polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
   pp += KYBER_POLYBYTES;
   a[2*KYBER_N:KYBER_N] = poly_tobytes(pp, a[2*KYBER_N:KYBER_N]);
 }
-
-
-#endif

@@ -1,8 +1,5 @@
-#ifndef GEN_MATRIX_HH
-#define GEN_MATRIX_HH
-
-#include "fips202.jahh"
-#include "params.jahh"
+require "fips202.jahh"
+require "params.jahh"
 
 inline
 fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[KYBER_N]
@@ -202,6 +199,3 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
 
   return r0, r1, r2;
 }
-
-
-#endif

@@ -1,9 +1,6 @@
-#ifndef POLY_CSUBQ_HH
-#define POLY_CSUBQ_HH
-
-#include "params.jahh"
-#include "reduce.jahh"
-#include "consts.jahh"
+require "params.jahh"
+require "reduce.jahh"
+require "consts.jahh"
 
 
 fn poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
@@ -21,5 +18,3 @@ fn poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 
   return rp;
 }
-
-#endif

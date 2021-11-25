@@ -1,9 +1,6 @@
-#ifndef POLY_NTT_HH
-#define POLY_NTT_HH
-
-#include "params.jahh"
-#include "poly_reduce.jahh"
-#include "zetas.jahh"
+require "params.jahh"
+require "poly_reduce.jahh"
+require "zetas.jahh"
 
 fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
@@ -55,5 +52,3 @@ fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 
   return rp;
 }
-
-#endif

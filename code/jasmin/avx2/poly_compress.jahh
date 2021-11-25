@@ -1,8 +1,5 @@
-#ifndef POLY_COMPRESS_HH
-#define POLY_COMPRESS_HH
-
-#include "params.jahh"
-#include "poly_csubq.jahh"
+require "params.jahh"
+require "poly_csubq.jahh"
 
 u16 pc_shift1_s = 0x200;
 u16 pc_mask_s = 0x0F;
@@ -106,5 +103,3 @@ fn i_poly_compress(reg ptr u8[KYBER_POLYCOMPRESSEDBYTES] rp, reg ptr u16[KYBER_N
 
   return rp, a;
 }
-
-#endif

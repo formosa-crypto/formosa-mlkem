@@ -1,4 +1,4 @@
-#include "gen_matrix.jahh"
+require "gen_matrix.jahh"
 
 export fn gen_matrix_old_jazz(reg u64 ap, reg u64 seedp)
 {
@@ -55,4 +55,3 @@ export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
     (u16)[ap + 2*i] = t;
   }
 }
-

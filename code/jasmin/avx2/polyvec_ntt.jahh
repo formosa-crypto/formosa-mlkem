@@ -1,8 +1,5 @@
-#ifndef POLYVEC_NTT_HH
-#define POLYVEC_NTT_HH
-
-#include "params.jahh"
-#include "poly_ntt.jahh"
+require "params.jahh"
+require "poly_ntt.jahh"
 
 inline
 fn polyvec_ntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
@@ -13,5 +10,3 @@ fn polyvec_ntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 
   return r;
 }
-
-#endif

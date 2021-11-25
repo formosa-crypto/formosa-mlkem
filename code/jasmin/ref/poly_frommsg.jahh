@@ -1,7 +1,4 @@
-#ifndef POLY_FROMMSG_HH
-#define POLY_FROMMSG_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
@@ -64,5 +61,3 @@ fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   }
   return rp;
 }
-
-#endif

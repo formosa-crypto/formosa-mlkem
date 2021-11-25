@@ -1,8 +1,4 @@
-#ifndef POLYVEC_DECOMPRESS_HH
-#define POLYVEC_DECOMPRESS_HH
-
-#include "params.jahh"
-
+require "params.jahh"
 
 u32 pvd_q_s = 0x0d013404;
 u8[32] pvd_shufbdidx_s = {0, 1, 1, 2, 2, 3, 3, 4,
@@ -41,5 +37,3 @@ fn polyvec_decompress(reg u64 rp) -> stack u16[KYBER_VECN]
 
   return r;
 }
-
-#endif

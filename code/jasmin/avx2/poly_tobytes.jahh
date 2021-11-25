@@ -1,10 +1,7 @@
-#ifndef POLY_TOBYTES_HH
-#define POLY_TOBYTES_HH
-
-#include "params.jahh"
-#include "consts.jahh"
-#include "shuffle.jahh"
-#include "poly_csubq.jahh"
+require "params.jahh"
+require "consts.jahh"
+require "shuffle.jahh"
+require "poly_csubq.jahh"
 
 fn poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
@@ -83,5 +80,3 @@ fn poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 
   return a;
 }
-
-#endif

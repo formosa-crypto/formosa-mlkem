@@ -1,7 +1,4 @@
-#ifndef POLY_ADD_HH
-#define POLY_ADD_HH
-
-#include "params.jahh"
+require "params.jahh"
 
 fn poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
 {
@@ -21,5 +18,3 @@ fn poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
   }
   return rp;
 }
-
-#endif
