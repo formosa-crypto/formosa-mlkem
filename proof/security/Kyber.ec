@@ -242,7 +242,7 @@ proof.
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
     rewrite allP => *. 
-    by rewrite -supp_duni_elem 1:smt(@ZModField).
+    by rewrite -supp_duni_elem 1: #smt(@ZModField).
     by rewrite Array256.to_listK.
 qed.
 
@@ -298,7 +298,7 @@ qed.
 section.
 
 import H_MLWE.H_MLWE_ROM Lazy.
-declare module A : CAdversary {LRO}.
+declare module A <: CAdversary {LRO}.
 axiom All (O <: POracle{A}):
      islossless O.o =>
      islossless A(O).find.
