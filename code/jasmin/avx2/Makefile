@@ -1,6 +1,6 @@
 CC=/usr/bin/gcc
 GFLAGS?=
-CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
+CFLAGS=-Wall -Wextra -g -Ofast -fomit-frame-pointer
 JASMIN=jasminc
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
@@ -116,45 +116,45 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyve
 .PHONY: clean
 
 clean:
-	-rm *.o
-	-rm gen_matrix.s
-	-rm jindcpa.s
-	-rm jindcca.s
-	-rm jfips202.s
-	-rm jpoly.s
-	-rm jpolyvec.s
-	-rm jspeed.s
-	-rm test/test_poly_compress
-	-rm test/test_poly_decompress
-	-rm test/test_poly_tobytes
-	-rm test/test_poly_frombytes
-	-rm test/test_poly_tomsg
-	-rm test/test_poly_frommsg
-	-rm test/test_poly_add2
-	-rm test/test_poly_sub
-	-rm test/test_poly_ntt
-	-rm test/test_poly_invntt
-	-rm test/test_poly_basemul
-	-rm test/test_poly_frommont
-	-rm test/test_poly_reduce
-	-rm test/test_poly_csubq
-	-rm test/test_poly_getnoise
-	-rm test/test_polyvec_compress
-	-rm test/test_polyvec_decompress
-	-rm test/test_polyvec_tobytes
-	-rm test/test_polyvec_frombytes
-	-rm test/test_polyvec_add2
-	-rm test/test_polyvec_ntt
-	-rm test/test_polyvec_invntt
-	-rm test/test_polyvec_pointwise_acc
-	-rm test/test_polyvec_reduce
-	-rm test/test_polyvec_csubq
-	-rm test/test_fips202
-	-rm test/test_gen_matrix
-	-rm test/test_indcpa
-	-rm test/test_indcca
-	-rm test/speed_indcpa
-	-rm test/speed_kyber
+	-rm -f *.o
+	-rm -f gen_matrix.s
+	-rm -f jindcpa.s
+	-rm -f jindcca.s
+	-rm -f jfips202.s
+	-rm -f jpoly.s
+	-rm -f jpolyvec.s
+	-rm -f jspeed.s
+	-rm -f test/test_poly_compress
+	-rm -f test/test_poly_decompress
+	-rm -f test/test_poly_tobytes
+	-rm -f test/test_poly_frombytes
+	-rm -f test/test_poly_tomsg
+	-rm -f test/test_poly_frommsg
+	-rm -f test/test_poly_add2
+	-rm -f test/test_poly_sub
+	-rm -f test/test_poly_ntt
+	-rm -f test/test_poly_invntt
+	-rm -f test/test_poly_basemul
+	-rm -f test/test_poly_frommont
+	-rm -f test/test_poly_reduce
+	-rm -f test/test_poly_csubq
+	-rm -f test/test_poly_getnoise
+	-rm -f test/test_polyvec_compress
+	-rm -f test/test_polyvec_decompress
+	-rm -f test/test_polyvec_tobytes
+	-rm -f test/test_polyvec_frombytes
+	-rm -f test/test_polyvec_add2
+	-rm -f test/test_polyvec_ntt
+	-rm -f test/test_polyvec_invntt
+	-rm -f test/test_polyvec_pointwise_acc
+	-rm -f test/test_polyvec_reduce
+	-rm -f test/test_polyvec_csubq
+	-rm -f test/test_fips202
+	-rm -f test/test_gen_matrix
+	-rm -f test/test_indcpa
+	-rm -f test/test_indcca
+	-rm -f test/speed_indcpa
+	-rm -f test/speed_kyber
 ifeq ($(OS),Darwin)
-	-rm -r test/*.dSYM
+	-rm -r -f test/*.dSYM
 endif
