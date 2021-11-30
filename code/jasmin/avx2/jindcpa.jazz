@@ -1,30 +1,30 @@
-require "params.jahh"
-require "poly_compress.jahh"
-require "poly_decompress.jahh"
-require "poly_tobytes.jahh"
-require "poly_frombytes.jahh"
-require "poly_tomsg.jahh"
-require "poly_frommsg.jahh"
-require "poly_add2.jahh"
-require "poly_sub.jahh"
-require "poly_ntt.jahh"
-require "poly_invntt.jahh"
-require "poly_basemul.jahh"
-require "poly_frommont.jahh"
-require "poly_reduce.jahh"
-require "poly_csubq.jahh"
-require "poly_getnoise.jahh"
-require "polyvec_tobytes.jahh"
-require "polyvec_frombytes.jahh"
-require "polyvec_compress.jahh"
-require "polyvec_decompress.jahh"
-require "polyvec_add2.jahh"
-require "polyvec_pointwise_acc.jahh"
-require "polyvec_ntt.jahh"
-require "polyvec_invntt.jahh"
-require "polyvec_csubq.jahh"
-require "polyvec_reduce.jahh"
-require "gen_matrix.jahh"
+require "params.jinc"
+require "poly_compress.jinc"
+require "poly_decompress.jinc"
+require "poly_tobytes.jinc"
+require "poly_frombytes.jinc"
+require "poly_tomsg.jinc"
+require "poly_frommsg.jinc"
+require "poly_add2.jinc"
+require "poly_sub.jinc"
+require "poly_ntt.jinc"
+require "poly_invntt.jinc"
+require "poly_basemul.jinc"
+require "poly_frommont.jinc"
+require "poly_reduce.jinc"
+require "poly_csubq.jinc"
+require "poly_getnoise.jinc"
+require "polyvec_tobytes.jinc"
+require "polyvec_frombytes.jinc"
+require "polyvec_compress.jinc"
+require "polyvec_decompress.jinc"
+require "polyvec_add2.jinc"
+require "polyvec_pointwise_acc.jinc"
+require "polyvec_ntt.jinc"
+require "polyvec_invntt.jinc"
+require "polyvec_csubq.jinc"
+require "polyvec_reduce.jinc"
+require "gen_matrix.jinc"
 
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
@@ -53,7 +53,7 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
     i += 1;
   }
 
-  buf = sha3512_32(buf, inbuf);
+  buf = _sha3_512_32(buf, inbuf);
 
   i = 0;
   j = KYBER_SYMBYTES;
@@ -67,7 +67,7 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
     j += 1;
   }
 
-  aa = gen_matrix(publicseed, 0);
+  aa = __gen_matrix(publicseed, 0);
 
   nonce = 0;
   skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N] = poly_getnoise_4x(skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N], noiseseed, nonce);
@@ -75,24 +75,24 @@ export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   nonce = 4;
   e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N] = poly_getnoise_4x(e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N], noiseseed, nonce);
 
-  skpv = polyvec_ntt(skpv);
-  e    = polyvec_ntt(e);
+  skpv = __polyvec_ntt(skpv);
+  e    = __polyvec_ntt(e);
 
-  pkpv[0:KYBER_N] = polyvec_pointwise_acc(pkpv[0:KYBER_N], aa[0:KYBER_VECN], skpv);
+  pkpv[0:KYBER_N] = __polyvec_pointwise_acc(pkpv[0:KYBER_N], aa[0:KYBER_VECN], skpv);
   pkpv[0:KYBER_N] = poly_frommont(pkpv[0:KYBER_N]);
-  pkpv[KYBER_N:KYBER_N] = polyvec_pointwise_acc(pkpv[KYBER_N:KYBER_N], aa[KYBER_VECN:KYBER_VECN], skpv);
+  pkpv[KYBER_N:KYBER_N] = __polyvec_pointwise_acc(pkpv[KYBER_N:KYBER_N], aa[KYBER_VECN:KYBER_VECN], skpv);
   pkpv[KYBER_N:KYBER_N] = poly_frommont(pkpv[KYBER_N:KYBER_N]);
-  pkpv[2*KYBER_N:KYBER_N] = polyvec_pointwise_acc(pkpv[2*KYBER_N:KYBER_N], aa[2*KYBER_VECN:KYBER_VECN], skpv);
+  pkpv[2*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(pkpv[2*KYBER_N:KYBER_N], aa[2*KYBER_VECN:KYBER_VECN], skpv);
   pkpv[2*KYBER_N:KYBER_N] = poly_frommont(pkpv[2*KYBER_N:KYBER_N]);
 
-  pkpv = polyvec_add2(pkpv, e);
-  pkpv = polyvec_reduce(pkpv);
+  pkpv = __polyvec_add2(pkpv, e);
+  pkpv = __polyvec_reduce(pkpv);
 
   pkp = spkp;
   skp = sskp;
 
-  polyvec_tobytes(skp, skpv);
-  polyvec_tobytes(pkp, pkpv);
+  __polyvec_tobytes(skp, skpv);
+  __polyvec_tobytes(pkp, pkpv);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES; 
@@ -138,7 +138,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
     i += 1;
   }
 
-  pkpv = polyvec_frombytes(pkp);
+  pkpv = __polyvec_frombytes(pkp);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES;
@@ -152,7 +152,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
 
   k = poly_frommsg(k, msgp);
 
-  aat = gen_matrix(publicseed, 1);
+  aat = __gen_matrix(publicseed, 1);
 
   nonce = 0;
   sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N] = poly_getnoise_4x(sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N], noiseseed, nonce);
@@ -161,27 +161,27 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N] = poly_getnoise_4x(ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N], noiseseed, nonce);
 
 
-  sp = polyvec_ntt(sp);
+  sp = __polyvec_ntt(sp);
     
-  bp[0:KYBER_N] = polyvec_pointwise_acc(bp[0:KYBER_N], aat[0:KYBER_VECN], sp);
-  bp[KYBER_N:KYBER_N]= polyvec_pointwise_acc(bp[KYBER_N:KYBER_N], aat[KYBER_VECN:KYBER_VECN], sp);
-  bp[2*KYBER_N:KYBER_N] = polyvec_pointwise_acc(bp[2*KYBER_N:KYBER_N], aat[2*KYBER_VECN:KYBER_VECN], sp);
+  bp[0:KYBER_N] = __polyvec_pointwise_acc(bp[0:KYBER_N], aat[0:KYBER_VECN], sp);
+  bp[KYBER_N:KYBER_N]= __polyvec_pointwise_acc(bp[KYBER_N:KYBER_N], aat[KYBER_VECN:KYBER_VECN], sp);
+  bp[2*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(bp[2*KYBER_N:KYBER_N], aat[2*KYBER_VECN:KYBER_VECN], sp);
   
-  v = polyvec_pointwise_acc(v, pkpv, sp);
+  v = __polyvec_pointwise_acc(v, pkpv, sp);
 
-  bp = polyvec_invntt(bp);
+  bp = __polyvec_invntt(bp);
   v = poly_invntt(v);
 
-  bp = polyvec_add2(bp, ep);
-  v = poly_add2(v, epp);
-  v = poly_add2(v, k);
-  bp = polyvec_reduce(bp);
+  bp = __polyvec_add2(bp, ep);
+  v = _poly_add2(v, epp);
+  v = _poly_add2(v, k);
+  bp = __polyvec_reduce(bp);
   v  = poly_reduce(v);
 
   ctp = sctp;
-  polyvec_compress(ctp, bp);
+  __polyvec_compress(ctp, bp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  v = poly_compress(ctp, v);
+  v = _poly_compress(ctp, v);
 }
 
 
@@ -191,18 +191,18 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
   stack u16[KYBER_N] t v mp;
   stack u16[KYBER_VECN] bp skpv;
 
-  bp = polyvec_decompress(ctp);
+  bp = __polyvec_decompress(ctp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  v = poly_decompress(v, ctp);
+  v = _poly_decompress(v, ctp);
 
-  skpv = polyvec_frombytes(skp);
+  skpv = __polyvec_frombytes(skp);
   
-  bp = polyvec_ntt(bp);
-  t = polyvec_pointwise_acc(t, skpv, bp);
+  bp = __polyvec_ntt(bp);
+  t = __polyvec_pointwise_acc(t, skpv, bp);
   t = poly_invntt(t );
 
-  mp = poly_sub(mp, v, t);
+  mp = _poly_sub(mp, v, t);
   mp = poly_reduce(mp);
   
-  mp = poly_tomsg(msgp, mp);
+  mp = _poly_tomsg(msgp, mp);
 }

@@ -2,6 +2,7 @@ CC=/usr/bin/gcc
 CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
 JASMIN=jasminc
 JFLAGS=-lea ${JADDFLAGS}
+OS = $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o
 
@@ -99,31 +100,34 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 
 clean:
 	-rm *.s
-	-rm test/test_poly_compress
-	-rm test/test_poly_decompress
-	-rm test/test_poly_tobytes
-	-rm test/test_poly_frombytes
-	-rm test/test_poly_tomsg
-	-rm test/test_poly_frommsg
-	-rm test/test_poly_add2
-	-rm test/test_poly_sub
-	-rm test/test_poly_ntt
-	-rm test/test_poly_invntt
-	-rm test/test_poly_basemul
-	-rm test/test_poly_frommont
-	-rm test/test_poly_reduce
-	-rm test/test_poly_csubq
-	-rm test/test_poly_getnoise
-	-rm test/test_polyvec_compress
-	-rm test/test_polyvec_decompress
-	-rm test/test_polyvec_tobytes
-	-rm test/test_polyvec_frombytes
-	-rm test/test_polyvec_add2
-	-rm test/test_polyvec_ntt
-	-rm test/test_polyvec_invntt
-	-rm test/test_polyvec_pointwise_acc
-	-rm test/test_polyvec_reduce
-	-rm test/test_polyvec_csubq
-	-rm test/test_fips202
-	-rm test/test_indcpa
-	-rm test/speed_indcpa
+	-rm -f test/test_poly_compress
+	-rm -f test/test_poly_decompress
+	-rm -f test/test_poly_tobytes
+	-rm -f test/test_poly_frombytes
+	-rm -f test/test_poly_tomsg
+	-rm -f test/test_poly_frommsg
+	-rm -f test/test_poly_add2
+	-rm -f test/test_poly_sub
+	-rm -f test/test_poly_ntt
+	-rm -f test/test_poly_invntt
+	-rm -f test/test_poly_basemul
+	-rm -f test/test_poly_frommont
+	-rm -f test/test_poly_reduce
+	-rm -f test/test_poly_csubq
+	-rm -f test/test_poly_getnoise
+	-rm -f test/test_polyvec_compress
+	-rm -f test/test_polyvec_decompress
+	-rm -f test/test_polyvec_tobytes
+	-rm -f test/test_polyvec_frombytes
+	-rm -f test/test_polyvec_add2
+	-rm -f test/test_polyvec_ntt
+	-rm -f test/test_polyvec_invntt
+	-rm -f test/test_polyvec_pointwise_acc
+	-rm -f test/test_polyvec_reduce
+	-rm -f test/test_polyvec_csubq
+	-rm -f test/test_fips202
+	-rm -f test/test_indcpa
+	-rm -f test/speed_indcpa
+ifeq ($(OS),Darwin)
+	-rm -r test/*.dSYM
+endif

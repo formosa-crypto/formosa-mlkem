@@ -1,0 +1,43 @@
+require "consts.jinc"
+require "params.jinc"
+
+param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
+
+fn poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+/*
+  reg u64 i;
+  reg u16 r;
+  reg u16 dmont;
+
+  dmont = DMONT;
+  
+  i = 0;
+  while (i < KYBER_N)
+  {
+    r = rp[(int)i];
+    r = __fqmul(r, dmont);
+    rp[(int)i] = r;
+    i += 1;
+  }
+*/
+  reg u256 t qx16 qinvx16 dmontx16;
+  inline int i;
+  reg ptr u16[16] x16p;
+
+  x16p = jqx16;
+  qx16 = x16p[u256 0];
+  x16p = jqinvx16;
+  qinvx16 = x16p[u256 0];
+  x16p = jdmontx16;
+  dmontx16 = x16p[u256 0];
+
+  for i=0 to KYBER_N/16
+  {
+    t = rp[u256 i];
+    t = __fqmulx16(t, dmontx16, qx16, qinvx16);
+    rp[u256 i] = t;
+  }
+
+  return rp; 
+}

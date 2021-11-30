@@ -1,0 +1,12 @@
+require "params.jinc"
+require "poly_add2.jinc"
+
+inline
+fn __polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
+{
+  r[0:KYBER_N]         = _poly_add2(r[0:KYBER_N], b[0:KYBER_N]);
+  r[KYBER_N:KYBER_N]   = _poly_add2(r[KYBER_N:KYBER_N], b[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = _poly_add2(r[2*KYBER_N:KYBER_N], b[2*KYBER_N:KYBER_N]);
+
+  return r;
+}

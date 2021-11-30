@@ -5,7 +5,7 @@ JASMIN=jasminc
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
-.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jindcca.s
+.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jkem.s
 
 default: test speed
 
@@ -37,60 +37,60 @@ test: test/test_poly_compress \
       test/test_fips202 \
       test/test_gen_matrix \
       test/test_indcpa \
-			test/test_indcca
+			test/test_kem
 
 speed: test/speed_indcpa \
        test/speed_kyber
 
-HEADERS = params.h poly.h fips202.h ntt.h indcpa.h indcca.h \
+HEADERS = params.h poly.h fips202.h ntt.h indcpa.h kem.h \
 
-JHEADERS = params.jahh \
-           reduce.jahh \
-           fips202_common.jahh \
-           fips202.jahh \
-           fips202_4x.jahh \
-           keccakf1600.jahh \
-           consts.jahh \
-           shuffle.jahh \
-					 indcpa.jahh
+JHEADERS = params.jinc \
+           reduce.jinc \
+           fips202_common.jinc \
+           fips202.jinc \
+           fips202_4x.jinc \
+           keccakf1600.jinc \
+           consts.jinc \
+           shuffle.jinc \
+					 indcpa.jinc
 
-POLYHEADERS = poly_compress.jahh \
-              poly_decompress.jahh \
-              poly_tobytes.jahh \
-              poly_frombytes.jahh \
-              poly_tomsg.jahh \
-              poly_frommsg.jahh \
-              poly_add2.jahh \
-              poly_sub.jahh \
-              poly_ntt.jahh \
-              poly_invntt.jahh \
-              poly_basemul.jahh \
-              poly_frommont.jahh \
-              poly_reduce.jahh \
-              poly_csubq.jahh \
-              poly_getnoise.jahh \
-							consts.jahh \
+POLYHEADERS = poly_compress.jinc \
+              poly_decompress.jinc \
+              poly_tobytes.jinc \
+              poly_frombytes.jinc \
+              poly_tomsg.jinc \
+              poly_frommsg.jinc \
+              poly_add2.jinc \
+              poly_sub.jinc \
+              poly_ntt.jinc \
+              poly_invntt.jinc \
+              poly_basemul.jinc \
+              poly_frommont.jinc \
+              poly_reduce.jinc \
+              poly_csubq.jinc \
+              poly_getnoise.jinc \
+							consts.jinc \
 
-POLYVECHEADERS = polyvec_compress.jahh \
-                 polyvec_decompress.jahh \
-                 polyvec_tobytes.jahh \
-                 polyvec_frombytes.jahh \
-                 polyvec_add2.jahh \
-                 polyvec_ntt.jahh \
-                 polyvec_invntt.jahh \
-                 polyvec_pointwise_acc.jahh \
-                 polyvec_reduce.jahh \
-                 polyvec_csubq.jahh \
-                 gen_matrix.jahh \
+POLYVECHEADERS = polyvec_compress.jinc \
+                 polyvec_decompress.jinc \
+                 polyvec_tobytes.jinc \
+                 polyvec_frombytes.jinc \
+                 polyvec_add2.jinc \
+                 polyvec_ntt.jinc \
+                 polyvec_invntt.jinc \
+                 polyvec_pointwise_acc.jinc \
+                 polyvec_reduce.jinc \
+                 polyvec_csubq.jinc \
+                 gen_matrix.jinc \
 
 INCS    = fq.inc shuffle.inc
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c indcca.c consts.c shuffle.S fq.S\
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c consts.c shuffle.S fq.S\
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
-test/test_indcca: test/test_indcca.c $(HEADERS) $(SOURCES) $(INCS) jindcca.o
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcca.o $<
+test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $<
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
@@ -119,7 +119,7 @@ clean:
 	-rm -f *.o
 	-rm -f gen_matrix.s
 	-rm -f jindcpa.s
-	-rm -f jindcca.s
+	-rm -f jkem.s
 	-rm -f jfips202.s
 	-rm -f jpoly.s
 	-rm -f jpolyvec.s
@@ -152,7 +152,7 @@ clean:
 	-rm -f test/test_fips202
 	-rm -f test/test_gen_matrix
 	-rm -f test/test_indcpa
-	-rm -f test/test_indcca
+	-rm -f test/test_kem
 	-rm -f test/speed_indcpa
 	-rm -f test/speed_kyber
 ifeq ($(OS),Darwin)
