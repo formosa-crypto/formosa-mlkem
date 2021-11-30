@@ -98,7 +98,7 @@ fn i_poly_compress(reg ptr u8[KYBER_POLYCOMPRESSEDBYTES] rp, reg ptr u16[KYBER_N
     f2 = #VPMADDUBSW_256(f2, shift2);
     f0 = #VPACKUS_16u16(f0, f2);
     f0 = #VPERMD(permidx, f0);
-    rp[u256 i] = f0;
+    rp.[u256 32*i] = f0;
   }
 
   return rp, a;

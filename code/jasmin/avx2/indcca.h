@@ -8,7 +8,7 @@ void indcca_keypair(unsigned char *pk,
                     const unsigned char *randomness);
 
 void indcca_enc(unsigned char *c,
-                const unsigned char *m,
+                unsigned char *m,
                 const unsigned char *pk,
                 const unsigned char *coins);
 
