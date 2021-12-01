@@ -24,6 +24,8 @@ require "polyvec_invntt.jinc"
 require "polyvec_csubq.jinc"
 require "polyvec_reduce.jinc"
 require "gen_matrix.jinc"
+require "indcpa.jinc"
+require "verify.jinc"
 
 /* Exported functions only for benchmarking */
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
@@ -82,7 +84,7 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
   stack u16[KYBER_N] r;
   stack u8[KYBER_SYMBYTES] seed;
 
-  r = poly_getnoise(r, seed, nonce);
+  r = _poly_getnoise(r, seed, nonce);
 }
 
 
@@ -91,7 +93,7 @@ export fn poly_getnoise_4x_jazz(reg u64 r0 r1 r2 r3, reg u64 seedp, reg u8 nonce
   stack u16[KYBER_N] r0 r1 r2 r3;
   stack u8[KYBER_SYMBYTES] seed;
 
-  r0, r1, r2, r3 = poly_getnoise_4x(r0, r1, r2, r3, seed, nonce);
+  r0, r1, r2, r3 = _poly_getnoise_4x(r0, r1, r2, r3, seed, nonce);
 }
 
 
@@ -124,89 +126,7 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
-  stack u16[KYBER_K*KYBER_VECN] aa;
-  stack u16[KYBER_VECN] a0 a1 a2 e pkpv skpv;
-  stack u16[KYBER_N] poly0 poly1 poly2;
-  stack u8[64] buf;
-  stack u8[KYBER_SYMBYTES] publicseed noiseseed;
-  stack u8[32] inbuf;
-  reg u8 c nonce;
-  reg u64 i, j;
-
-  stack u64 spkp;
-  stack u64 sskp;
-
-  spkp = pkp;
-  sskp = skp;
-
-  i = 0;
-  while (i < KYBER_SYMBYTES)
-  {
-    c = (u8)[randomnessp + i];
-    inbuf[(int) i] = c;
-    i += 1;
-  }
-
-  buf = _sha3_512_32(buf, inbuf);
-
-  i = 0;
-  j = KYBER_SYMBYTES;
-  while (i < KYBER_SYMBYTES)
-  {
-    c = buf[(int)i];
-    publicseed[(int)i] = c;
-    c = buf[(int)j];
-    noiseseed[(int)i] = c;
-    i += 1;
-    j += 1;
-  }
-
-  aa = __gen_matrix(publicseed, 0);
-
-  nonce = 0;
-  skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N] = poly_getnoise_4x(skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N], noiseseed, nonce);
-
-  nonce = 4;
-  e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N] = poly_getnoise_4x(e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N], noiseseed, nonce);
-
-  skpv = __polyvec_ntt(skpv);
-  e    = __polyvec_ntt(e);
-
-  pkpv[0:KYBER_N] = __polyvec_pointwise_acc(pkpv[0:KYBER_N], aa[0:KYBER_VECN], skpv);
-  pkpv[0:KYBER_N] = poly_frommont(pkpv[0:KYBER_N]);
-  pkpv[KYBER_N:KYBER_N] = __polyvec_pointwise_acc(pkpv[KYBER_N:KYBER_N], aa[KYBER_VECN:KYBER_VECN], skpv);
-  pkpv[KYBER_N:KYBER_N] = poly_frommont(pkpv[KYBER_N:KYBER_N]);
-  pkpv[2*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(pkpv[2*KYBER_N:KYBER_N], aa[2*KYBER_VECN:KYBER_VECN], skpv);
-  pkpv[2*KYBER_N:KYBER_N] = poly_frommont(pkpv[2*KYBER_N:KYBER_N]);
-
-  pkpv = __polyvec_add2(pkpv, e);
-  pkpv = __polyvec_reduce(pkpv);
-
-  pkp = spkp;
-  skp = sskp;
-
-  __polyvec_tobytes(skp, skpv);
-  __polyvec_tobytes(pkp, pkpv);
-
-  i = 0;
-  pkp += KYBER_POLYVECBYTES; 
-  while (i < KYBER_SYMBYTES/8)
-  {
-    j = publicseed[u64 (int)i];
-    (u64)[pkp] = j;
-    pkp += 8;
-    i += 1;
-  }
-
-  i <<= 3;
-
-  while (i < KYBER_SYMBYTES)
-  {
-    c = publicseed[(int)i];
-    (u8)[pkp] = c;
-    pkp += 1;
-    i += 1;
-  }
+  __indcpa_keypair(pkp, skp, randomnessp);
 }
 
 
@@ -249,10 +169,10 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
   aat = __gen_matrix(publicseed, 1);
 
   nonce = 0;
-  sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N] = poly_getnoise_4x(sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N], noiseseed, nonce);
+  sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N] = _poly_getnoise_4x(sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N], noiseseed, nonce);
 
   nonce = 4;
-  ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N] = poly_getnoise_4x(ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N], noiseseed, nonce);
+  ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N] = _poly_getnoise_4x(ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N], noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
     
@@ -297,4 +217,138 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
   mp = poly_reduce(mp);
   
   mp = _poly_tomsg(msgp, mp);
+}
+
+export fn crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+{
+  stack u8[32] h_pk;
+  stack u64 s_randomnessp s_skp s_pkp;
+  reg u64 t64;
+  inline int i;
+
+  s_randomnessp = randomnessp;
+  s_pkp = pkp;
+  s_skp = skp;
+
+  __indcpa_keypair(pkp, skp, randomnessp);
+
+  randomnessp = s_randomnessp;
+  randomnessp += KYBER_SYMBYTES;
+  s_randomnessp = randomnessp;
+
+  skp = s_skp;
+  skp += KYBER_POLYVECBYTES;
+  pkp = s_pkp;
+
+  for i=0 to KYBER_INDCPA_PUBLICKEYBYTES/8
+  {
+    t64 = (u64)[pkp + 8*i];
+    (u64)[skp] = t64;
+    skp += 8;
+  }
+
+  s_skp = skp;
+  pkp = s_pkp;
+  t64 = KYBER_POLYVECBYTES + KYBER_SYMBYTES;
+  h_pk = _isha3_256(h_pk, pkp, t64);
+  skp = s_skp;
+
+  for i=0 to 4
+  {
+    t64 = h_pk[u64 i];
+    (u64)[skp] = t64;
+    skp += 8;
+  }
+  
+  randomnessp = s_randomnessp;
+
+  for i=0 to KYBER_SYMBYTES/8
+  {
+    t64 = (u64)[randomnessp + 8*i];
+    (u64)[skp] = t64;
+    skp += 8;
+  }
+}
+
+
+export fn crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg u64 randomnessp)
+{
+  stack u8[KYBER_SYMBYTES * 2] buf kr;
+  stack u64 s_pkp s_ctp s_randomnessp s_shkp;
+  reg u64 t64;
+
+  s_pkp = pkp;
+  s_ctp = ctp;
+  s_shkp = shkp;
+  
+  t64 = KYBER_SYMBYTES;
+  buf[0:KYBER_SYMBYTES] = _isha3_256(buf[0:KYBER_SYMBYTES], randomnessp, t64);
+
+  s_randomnessp = randomnessp;
+  pkp = s_pkp;
+
+  t64 = KYBER_PUBLICKEYBYTES;
+  buf[KYBER_SYMBYTES:KYBER_SYMBYTES] = _isha3_256(buf[KYBER_SYMBYTES:KYBER_SYMBYTES], pkp, t64);
+
+  kr = _sha3_512_64(kr, buf);
+
+  pkp = s_pkp;
+
+  __indcpa_enc(s_ctp, buf[0:KYBER_SYMBYTES], pkp, kr[KYBER_SYMBYTES:KYBER_SYMBYTES]);
+
+  ctp = s_ctp;
+  t64 = KYBER_CT_LEN;
+  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _isha3_256(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
+
+  shkp = s_shkp;
+  t64 = KYBER_SSBYTES;
+  _shake256_64(shkp, t64, kr);
+}
+
+
+export fn crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
+{
+  stack u8[KYBER_CT_LEN] ctpc;
+  stack u8[2*KYBER_SYMBYTES] kr buf;
+  stack u64 s_skp s_ctp s_shkp;
+  reg u64 pkp hp zp t64 cnd;
+  inline int i;
+
+  s_shkp = shkp;
+  s_ctp = ctp;
+
+  buf[0:KYBER_MSGBYTES] = __indcpa_dec(buf[0:KYBER_MSGBYTES], ctp, skp);
+
+  hp = skp + 32;
+  hp += 24 * KYBER_K * KYBER_N>>3;
+
+  for i=0 to KYBER_SYMBYTES/8
+  {
+    t64 = (u64)[hp + 8*i];
+    buf.[u64 KYBER_SYMBYTES + 8*i] = t64;
+  }
+
+  s_skp = skp;
+
+  kr = _sha3_512_64(kr, buf);
+
+  pkp = s_skp;
+  pkp += 12 * KYBER_K * KYBER_N>>3;
+
+  ctpc = __iindcpa_enc(ctpc, buf[0:KYBER_SYMBYTES], pkp, kr[KYBER_SYMBYTES:KYBER_SYMBYTES]);
+
+  ctp = s_ctp;
+  cnd = __verify(ctp, ctpc);
+
+  zp = s_skp;
+  zp += 64;
+  zp += 24 * KYBER_K * KYBER_N>>3;
+  kr[0:KYBER_SYMBYTES] = __cmov(kr[0:KYBER_SYMBYTES], zp, cnd);
+
+  t64 = KYBER_CT_LEN;
+  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _isha3_256(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
+
+  shkp = s_shkp;
+  t64 = KYBER_SSBYTES;
+  _shake256_64(shkp, t64, kr);
 }

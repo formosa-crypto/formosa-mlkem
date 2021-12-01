@@ -5,7 +5,7 @@ require "fips202_4x.jinc"
 param int NOISE_BLOCKS = (KYBER_ETA * KYBER_N/4 + SHAKE256_RATE - 1)/SHAKE256_RATE;
 
 inline
-fn poly_cbd(reg ptr u16[KYBER_N] rp, reg ptr u8[NOISE_BLOCKS * SHAKE256_RATE] buf) -> reg ptr u16[KYBER_N]
+fn __poly_cbd(reg ptr u16[KYBER_N] rp, reg ptr u8[NOISE_BLOCKS * SHAKE256_RATE] buf) -> reg ptr u16[KYBER_N]
 {
 
   inline int i;
@@ -67,7 +67,7 @@ fn poly_cbd(reg ptr u16[KYBER_N] rp, reg ptr u8[NOISE_BLOCKS * SHAKE256_RATE] bu
 
 
 #[returnaddress="stack"]
-fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
+fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
   inline int i;
   reg u256 f0 f1 f2 f3;
@@ -145,7 +145,7 @@ fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u
 
 
 inline
-fn shake256_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[NOISE_BLOCKS * SHAKE256_RATE] buf0 buf1 buf2 buf3) -> reg ptr u256[25], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE]
+fn __shake256_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[NOISE_BLOCKS * SHAKE256_RATE] buf0 buf1 buf2 buf3) -> reg ptr u256[25], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_BLOCKS*SHAKE256_RATE]
 {
   inline int i;
 
@@ -158,7 +158,7 @@ fn shake256_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[NOISE_BLOCKS * S
 }
 
 #[returnaddress="stack"]
-fn poly_getnoise_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N]
+fn _poly_getnoise_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N]
 {
   reg u256 f;
   stack u256[25] state;
@@ -182,12 +182,12 @@ fn poly_getnoise_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES]
   buf3.[32] = nonce;
 
   state = _shake256_absorb4x_33(state, buf0[0:33], buf1[0:33], buf2[0:33], buf3[0:33]);
-  state, buf0, buf1, buf2, buf3 = shake256_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
+  state, buf0, buf1, buf2, buf3 = __shake256_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
 
-  r0 = poly_cbd(r0, buf0);
-  r1 = poly_cbd(r1, buf1);
-  r2 = poly_cbd(r2, buf2);
-  r3 = poly_cbd(r3, buf3);
+  r0 = __poly_cbd(r0, buf0);
+  r1 = __poly_cbd(r1, buf1);
+  r2 = __poly_cbd(r2, buf2);
+  r3 = __poly_cbd(r3, buf3);
 
   return r0, r1, r2, r3;
 }

@@ -44,7 +44,7 @@ export fn crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   
   randomnessp = s_randomnessp;
 
-  for i=0 to 4
+  for i=0 to KYBER_SYMBYTES/8
   {
     t64 = (u64)[randomnessp + 8*i];
     (u64)[skp] = t64;
