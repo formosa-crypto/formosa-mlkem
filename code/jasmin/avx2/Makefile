@@ -1,7 +1,7 @@
 CC=/usr/bin/gcc
 GFLAGS?=
 CFLAGS=-Wall -Wextra -g -Ofast -fomit-frame-pointer
-JASMIN=jasminc
+JASMIN=jasminc_dev
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
@@ -52,7 +52,8 @@ JHEADERS = params.jinc \
            keccakf1600.jinc \
            consts.jinc \
            shuffle.jinc \
-					 indcpa.jinc
+           indcpa.jinc \
+           verify.jinc
 
 POLYHEADERS = poly_compress.jinc \
               poly_decompress.jinc \
@@ -95,7 +96,7 @@ test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
-test/speed_kyber: test/speed_kyber.c $(HEADERS) $(JHEADERS) $(SOURCES) $(INCS) jspeed.s
+test/speed_kyber: test/speed_kyber.c $(HEADERS) $(SOURCES) $(INCS) jspeed.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jspeed.s $<
 
 test/test_fips202: test/test_fips202.c $(HEADERS) fips202.c jfips202.s
