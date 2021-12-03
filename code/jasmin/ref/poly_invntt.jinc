@@ -1,8 +1,8 @@
-require "params.jahh"
-require "reduce.jahh"
-require "zetas.jahh"
+require "params.jinc"
+require "reduce.jinc"
+require "zetas.jinc"
 
-fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   reg u64 len;  
   reg u64 start;
@@ -38,10 +38,10 @@ fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
         s = rp[(int)offset];
         t = rp[(int)j];
         m = s + t;
-        m = barrett_reduce(m);
+        m = __barrett_reduce(m);
         rp[(int)j] = m;
         t -= s;
-        t = fqmul(t, zeta);
+        t = __fqmul(t, zeta);
         rp[(int)offset] = t;
         j += 1;
       }
@@ -55,7 +55,7 @@ fn poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   while (j < KYBER_N) 
   {
     t = rp[(int)j];
-    t = fqmul(t, zeta);
+    t = __fqmul(t, zeta);
     rp[(int)j] = t;
     j += 1;
   }

@@ -1,6 +1,6 @@
-require "params.jahh"
+require "params.jinc"
 
-fn poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   reg u64 i;
   reg u16 t;

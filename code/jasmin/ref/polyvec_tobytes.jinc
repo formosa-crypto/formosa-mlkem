@@ -1,0 +1,20 @@
+require "params.jinc"
+require "poly_tobytes.jinc"
+require "polyvec_topolys.jinc"
+require "polyvec_frompolys.jinc"
+
+inline
+fn __polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
+{
+  stack u16[KYBER_N] a0 a1 a2;
+  reg u64 pp;
+
+  a0, a1, a2 = __polyvec_topolys(a);
+  
+  pp = rp;
+  a0 = _poly_tobytes(pp, a0);
+  pp += KYBER_POLYBYTES;
+  a1 = _poly_tobytes(pp, a1);
+  pp += KYBER_POLYBYTES;
+  a2 = _poly_tobytes(pp, a2);
+}

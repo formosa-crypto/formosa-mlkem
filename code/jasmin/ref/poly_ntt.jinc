@@ -1,8 +1,8 @@
-require "params.jahh"
-require "poly_reduce.jahh"
-require "zetas.jahh"
+require "params.jinc"
+require "poly_reduce.jinc"
+require "zetas.jinc"
 
-fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   reg u64 len;  
   reg u64 start;
@@ -34,7 +34,7 @@ fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
       {
         offset = j + len;
         t = rp[(int)offset];
-        t = fqmul(t, zeta);
+        t = __fqmul(t, zeta);
         s = rp[(int)j];
         m = s;
         m -= t;
@@ -48,7 +48,7 @@ fn poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
     len >>= 1;
   }
 
-  rp = poly_reduce(rp);
+  rp = __poly_reduce(rp);
 
   return rp;
 }

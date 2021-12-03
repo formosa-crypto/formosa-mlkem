@@ -1,5 +1,5 @@
 inline
-fn polyvec_frompolys(stack u16[KYBER_N] p0 p1 p2) -> stack u16[KYBER_VECN]
+fn __polyvec_frompolys(stack u16[KYBER_N] p0 p1 p2) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_VECN] r;
   reg u64 i j;

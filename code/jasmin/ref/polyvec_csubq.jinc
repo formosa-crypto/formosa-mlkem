@@ -1,0 +1,20 @@
+require "params.jinc"
+require "poly_csubq.jinc"
+require "polyvec_topolys.jinc"
+require "polyvec_frompolys.jinc"
+
+inline
+fn __polyvec_csubq(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_N] r0 r1 r2;
+
+  r0, r1, r2 = __polyvec_topolys(r);
+
+  r0 = _poly_csubq(r0);
+  r1 = _poly_csubq(r1);
+  r2 = _poly_csubq(r2);
+
+  r = __polyvec_frompolys(r0, r1, r2);
+
+  return r;
+}

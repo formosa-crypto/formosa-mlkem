@@ -1,13 +1,13 @@
-require "params.jahh"
-require "poly_csubq.jahh"
+require "params.jinc"
+require "poly_csubq.jinc"
 
 
-fn poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
+fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
   reg u16 t0, t1, d;
   reg u64 i j;
 
-  a = poly_csubq(a);
+  a = _poly_csubq(a);
 
   i = 0;
   j = 0;

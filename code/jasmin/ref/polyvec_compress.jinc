@@ -1,8 +1,8 @@
-require "params.jahh"
-require "polyvec_csubq.jahh"
+require "params.jinc"
+require "polyvec_csubq.jinc"
 
 inline
-fn polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
+fn __polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
 {
   stack u16[KYBER_VECN] aa;
   reg u16 c, b;
@@ -14,7 +14,7 @@ fn polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
   i = 0;
   j = 0;
   
-  aa = polyvec_csubq(a);
+  aa = __polyvec_csubq(a);
 
   while (i < KYBER_VECN)
   {

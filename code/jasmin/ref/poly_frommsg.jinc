@@ -1,6 +1,6 @@
-require "params.jahh"
+require "params.jinc"
 
-fn poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
+fn _poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 {
   reg u8 c;
   reg u16 t;

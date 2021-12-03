@@ -1,14 +1,14 @@
-require "params.jahh"
-require "polyvec_compress.jahh"
-require "polyvec_decompress.jahh"
-require "polyvec_tobytes.jahh"
-require "polyvec_frombytes.jahh"
-require "polyvec_add2.jahh"
-require "polyvec_ntt.jahh"
-require "polyvec_invntt.jahh"
-require "polyvec_pointwise_acc.jahh"
-require "polyvec_csubq.jahh"
-require "polyvec_reduce.jahh"
+require "params.jinc"
+require "polyvec_compress.jinc"
+require "polyvec_decompress.jinc"
+require "polyvec_tobytes.jinc"
+require "polyvec_frombytes.jinc"
+require "polyvec_add2.jinc"
+require "polyvec_ntt.jinc"
+require "polyvec_invntt.jinc"
+require "polyvec_pointwise_acc.jinc"
+require "polyvec_csubq.jinc"
+require "polyvec_reduce.jinc"
 
 /* These exported functions are just for unit testing */
 
@@ -24,7 +24,7 @@ export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  polyvec_tobytes(rp, a);
+  __polyvec_tobytes(rp, a);
 }
 
 
@@ -35,7 +35,7 @@ export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_VECN] r;
 
-  r = polyvec_decompress(ap);
+  r = __polyvec_decompress(ap);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -56,7 +56,7 @@ export fn polyvec_compress_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  polyvec_compress(rp, a);
+  __polyvec_compress(rp, a);
 }
 
 
@@ -67,7 +67,7 @@ export fn polyvec_frombytes_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_VECN] r;
 
-  r = polyvec_frombytes(ap);
+  r = __polyvec_frombytes(ap);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -90,7 +90,7 @@ export fn polyvec_add2_jazz(reg u64 rp, reg u64 bp)
     b[i] = t;
   }
 
-  r = polyvec_add2(a, b);
+  r = __polyvec_add2(a, b);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -113,7 +113,7 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     b[i] = t;
   }
 
-  r = polyvec_pointwise_acc(a, b);
+  r = __polyvec_pointwise_acc(a, b);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -132,7 +132,7 @@ export fn polyvec_ntt_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = polyvec_ntt(r);
+  r = __polyvec_ntt(r);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -151,7 +151,7 @@ export fn polyvec_invntt_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = polyvec_invntt(r);
+  r = __polyvec_invntt(r);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -170,7 +170,7 @@ export fn polyvec_csubq_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = polyvec_csubq(r);
+  r = __polyvec_csubq(r);
 
   for i = 0 to KYBER_VECN {
     t = r[i];
@@ -189,7 +189,7 @@ export fn polyvec_reduce_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = polyvec_reduce(r);
+  r = __polyvec_reduce(r);
 
   for i = 0 to KYBER_VECN {
     t = r[i];

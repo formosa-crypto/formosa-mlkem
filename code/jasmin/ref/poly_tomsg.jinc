@@ -1,14 +1,14 @@
-require "params.jahh"
-require "poly_csubq.jahh"
+require "params.jinc"
+require "poly_csubq.jinc"
 
-fn poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
+fn _poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 {
   reg u16 t;
   reg u8 r;
   reg u32 d;
   inline int i j;
 
-  a = poly_csubq(a); 
+  a = _poly_csubq(a); 
 
   for i = 0 to 32
   {

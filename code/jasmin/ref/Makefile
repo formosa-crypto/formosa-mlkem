@@ -41,40 +41,40 @@ speed: test/speed_indcpa
 HEADERS = params.h poly.h fips202.h \
 
 
-JHEADERS = params.jahh \
-				   reduce.jahh \
-           fips202.jahh \
+JHEADERS = params.jinc \
+				   reduce.jinc \
+           fips202.jinc \
 
-POLYHEADERS = poly_compress.jahh \
-              poly_decompress.jahh \
-              poly_tobytes.jahh \
-              poly_frombytes.jahh \
-              poly_tomsg.jahh \
-              poly_frommsg.jahh \
-              poly_add2.jahh \
-              poly_sub.jahh \
-              poly_ntt.jahh \
-              poly_invntt.jahh \
-              poly_basemul.jahh \
-              poly_frommont.jahh \
-              poly_reduce.jahh \
-              poly_csubq.jahh \
-              poly_getnoise.jahh \
-							zetas.jahh \
+POLYHEADERS = poly_compress.jinc \
+              poly_decompress.jinc \
+              poly_tobytes.jinc \
+              poly_frombytes.jinc \
+              poly_tomsg.jinc \
+              poly_frommsg.jinc \
+              poly_add2.jinc \
+              poly_sub.jinc \
+              poly_ntt.jinc \
+              poly_invntt.jinc \
+              poly_basemul.jinc \
+              poly_frommont.jinc \
+              poly_reduce.jinc \
+              poly_csubq.jinc \
+              poly_getnoise.jinc \
+							zetas.jinc \
 
-POLYVECHEADERS = polyvec_compress.jahh \
-                 polyvec_decompress.jahh \
-                 polyvec_tobytes.jahh \
-                 polyvec_frombytes.jahh \
-                 polyvec_add2.jahh \
-                 polyvec_ntt.jahh \
-                 polyvec_invntt.jahh \
-                 polyvec_pointwise_acc.jahh \
-                 polyvec_reduce.jahh \
-                 polyvec_csubq.jahh \
-								 polyvec_topolys.jahh \
-								 polyvec_frompolys.jahh \
-                 gen_matrix.jahh \
+POLYVECHEADERS = polyvec_compress.jinc \
+                 polyvec_decompress.jinc \
+                 polyvec_tobytes.jinc \
+                 polyvec_frombytes.jinc \
+                 polyvec_add2.jinc \
+                 polyvec_ntt.jinc \
+                 polyvec_invntt.jinc \
+                 polyvec_pointwise_acc.jinc \
+                 polyvec_reduce.jinc \
+                 polyvec_csubq.jinc \
+								 polyvec_topolys.jinc \
+								 polyvec_frompolys.jinc \
+                 gen_matrix.jinc \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 

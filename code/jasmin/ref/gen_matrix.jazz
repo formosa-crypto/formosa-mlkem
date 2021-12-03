@@ -1,4 +1,4 @@
-require "gen_matrix.jahh"
+require "gen_matrix.jinc"
 
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp, reg u64 transposed)
 {
@@ -17,7 +17,7 @@ export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp, reg u64 transposed)
     seed[i] = c;
   }
 
-  a0, a1, a2 = gen_matrix(seed, transposed);
+  a0, a1, a2 = __gen_matrix(seed, transposed);
 
   pp = ap;
   for i = 0 to KYBER_VECN

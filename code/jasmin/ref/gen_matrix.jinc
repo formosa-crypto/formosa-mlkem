@@ -1,8 +1,8 @@
-require "fips202.jahh"
-require "params.jahh"
+require "fips202.jinc"
+require "params.jinc"
 
 inline
-fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[KYBER_N]
+fn __rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[KYBER_N]
 {
   reg u16 val1 val2;
   reg u16 t;
@@ -61,7 +61,7 @@ fn rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] bu
 }
 
 inline
-fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KYBER_VECN], stack u16[KYBER_VECN], stack u16[KYBER_VECN]
+fn __gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KYBER_VECN], stack u16[KYBER_VECN], stack u16[KYBER_VECN]
 {
   stack u8[34] extseed;
   stack u8[SHAKE128_RATE] buf;
@@ -101,15 +101,15 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
       extseed[KYBER_SYMBYTES+1] = j;
     }
 
-    state = shake128_absorb34(state, extseed);
+    state = _shake128_absorb34(state, extseed);
 
     ctr = 0;
     while (ctr < KYBER_N)
     {
       sctr = ctr;
-      state, buf = shake128_squeezeblock(state, buf);
+      state, buf = _shake128_squeezeblock(state, buf);
       ctr = sctr;
-      ctr, poly  = rej_uniform(poly, ctr, buf);
+      ctr, poly  = __rej_uniform(poly, ctr, buf);
     }
 
     k = 0;
@@ -138,15 +138,15 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
       extseed[KYBER_SYMBYTES+1] = j;
     }
 
-    state = shake128_absorb34(state, extseed);
+    state = _shake128_absorb34(state, extseed);
 
     ctr = 0;
     while (ctr < KYBER_N)
     {
       sctr = ctr;
-      state, buf = shake128_squeezeblock(state, buf);
+      state, buf = _shake128_squeezeblock(state, buf);
       ctr = sctr;
-      ctr, poly  = rej_uniform(poly, ctr, buf);
+      ctr, poly  = __rej_uniform(poly, ctr, buf);
     }
 
     k = 0;
@@ -175,15 +175,15 @@ fn gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[KY
       extseed[KYBER_SYMBYTES+1] = j;
     }
 
-    state = shake128_absorb34(state, extseed);
+    state = _shake128_absorb34(state, extseed);
 
     ctr = 0;
     while (ctr < KYBER_N)
     {
       sctr = ctr;
-      state, buf = shake128_squeezeblock(state, buf);
+      state, buf = _shake128_squeezeblock(state, buf);
       ctr = sctr;
-      ctr, poly  = rej_uniform(poly, ctr, buf);
+      ctr, poly  = __rej_uniform(poly, ctr, buf);
     }
 
     k = 0;

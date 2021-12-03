@@ -1,8 +1,8 @@
-require "params.jahh"
-require "reduce.jahh"
+require "params.jinc"
+require "reduce.jinc"
 
 inline
-fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn __poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   reg u64 j; 
   reg u16 t;
@@ -10,7 +10,7 @@ fn poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   while (j < KYBER_N) 
   {
     t = rp[(int)j];
-    t = barrett_reduce(t);
+    t = __barrett_reduce(t);
     rp[(int)j] = t;
     j += 1;
   }

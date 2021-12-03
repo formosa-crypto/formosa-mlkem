@@ -1,0 +1,20 @@
+require "params.jinc"
+require "poly_reduce.jinc"
+require "polyvec_topolys.jinc"
+require "polyvec_frompolys.jinc"
+
+inline
+fn __polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_N] r0 r1 r2;
+
+  r0, r1, r2 = __polyvec_topolys(r);
+
+  r0 = __poly_reduce(r0);
+  r1 = __poly_reduce(r1);
+  r2 = __poly_reduce(r2);
+
+  r = __polyvec_frompolys(r0, r1, r2);
+
+  return r;
+}

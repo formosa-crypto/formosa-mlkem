@@ -1,7 +1,7 @@
-require "params.jahh"
-require "fips202.jahh"
+require "params.jinc"
+require "fips202.jinc"
 
-fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
+fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
   stack u8[33] extseed;   /* 33 = KYBER_SYMBYTES +1 */
   stack u8[128] buf;      /* 128 = KYBER_ETA*KYBER_N/4 */
@@ -22,7 +22,7 @@ fn poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u
   }
   extseed[KYBER_SYMBYTES] = nonce;
 
-  buf = shake256_128_33(buf, extseed);
+  buf = _shake256_128_33(buf, extseed);
 
   rp = srp;
 

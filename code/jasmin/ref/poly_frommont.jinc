@@ -1,8 +1,8 @@
-require "params.jahh"
+require "params.jinc"
 
 param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
 
-fn poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
   reg u64 i;
   reg u16 r;
@@ -14,7 +14,7 @@ fn poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   while (i < KYBER_N)
   {
     r = rp[(int)i];
-    r = fqmul(r, dmont);
+    r = __fqmul(r, dmont);
     rp[(int)i] = r;
     i += 1;
   }

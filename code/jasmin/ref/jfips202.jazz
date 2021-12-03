@@ -1,4 +1,4 @@
-require "fips202.jahh"
+require "fips202.jinc"
 
 export fn shake256_128_33_jazz(reg u64 outp inp) 
 {
@@ -14,7 +14,7 @@ export fn shake256_128_33_jazz(reg u64 outp inp)
   }
   
   soutp = outp;
-  out = shake256_128_33(out, in);
+  out = _shake256_128_33(out, in);
   outp = soutp;
 
   for i = 0 to 128 {
@@ -37,7 +37,7 @@ export fn sha3512_32_jazz(reg u64 outp inp)
   }
    
   soutp = outp;
-  out = sha3512_32(out, in);
+  out = _sha3512_32(out, in);
   outp = soutp;
   for i = 0 to 64 {
     c = out[i];
@@ -59,7 +59,7 @@ export fn shake128_absorb34_jazz(reg u64 statep, reg u64 inp)
     in[i] = c;
   }
 
-  state = shake128_absorb34(state, in);
+  state = _shake128_absorb34(state, in);
   
   for i = 0 to 25 {
     t = state[i];
@@ -85,7 +85,7 @@ export fn shake128_squeezeblock_jazz(reg u64 outp, reg u64 statep)
   soutp   = outp;
   sstatep = statep;
 
-  state, out = shake128_squeezeblock(state, out);
+  state, out = _shake128_squeezeblock(state, out);
   
   outp   = soutp;
   statep = sstatep;

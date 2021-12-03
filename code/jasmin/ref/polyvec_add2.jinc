@@ -1,0 +1,22 @@
+require "params.jinc"
+require "polyvec_topolys.jinc"
+require "polyvec_frompolys.jinc"
+require "poly_add2.jinc"
+
+inline
+fn __polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_N] r0 r1 r2;
+  stack u16[KYBER_N] b0 b1 b2;
+
+  r0, r1, r2 = __polyvec_topolys(r);
+  b0, b1, b2 = __polyvec_topolys(b);
+
+  r0 = _poly_add2(r0, b0);
+  r1 = _poly_add2(r1, b1);
+  r2 = _poly_add2(r2, b2);
+
+  r = __polyvec_frompolys(r0, r1, r2);
+
+  return r;
+}
