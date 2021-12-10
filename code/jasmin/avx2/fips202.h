@@ -19,7 +19,7 @@ void sha3_512(unsigned char *output, const unsigned char *input,  unsigned long 
 
 
 void shake256_128_33_jazz(unsigned char *output, const unsigned char *input);
-void sha3512_32_jazz(unsigned char *output, const unsigned char *input);
+void sha3_512_32_jazz(unsigned char *output, const unsigned char *input);
 
 void shake128_absorb34_jazz(uint64_t *s, const unsigned char *input);
 void shake128_squeezeblock_jazz(unsigned char *output, uint64_t *s);

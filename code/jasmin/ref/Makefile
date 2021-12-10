@@ -2,6 +2,7 @@ CC=/usr/bin/gcc
 CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
 JASMIN=jasminc
 JFLAGS=-lea ${JADDFLAGS}
+OS = $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o
 
@@ -40,40 +41,40 @@ speed: test/speed_indcpa
 HEADERS = params.h poly.h fips202.h \
 
 
-JHEADERS = params.jahh \
-				   reduce.jahh \
-           fips202.jahh \
+JHEADERS = params.jinc \
+				   reduce.jinc \
+           fips202.jinc \
 
-POLYHEADERS = poly_compress.jahh \
-              poly_decompress.jahh \
-              poly_tobytes.jahh \
-              poly_frombytes.jahh \
-              poly_tomsg.jahh \
-              poly_frommsg.jahh \
-              poly_add2.jahh \
-              poly_sub.jahh \
-              poly_ntt.jahh \
-              poly_invntt.jahh \
-              poly_basemul.jahh \
-              poly_frommont.jahh \
-              poly_reduce.jahh \
-              poly_csubq.jahh \
-              poly_getnoise.jahh \
-							zetas.jahh \
+POLYHEADERS = poly_compress.jinc \
+              poly_decompress.jinc \
+              poly_tobytes.jinc \
+              poly_frombytes.jinc \
+              poly_tomsg.jinc \
+              poly_frommsg.jinc \
+              poly_add2.jinc \
+              poly_sub.jinc \
+              poly_ntt.jinc \
+              poly_invntt.jinc \
+              poly_basemul.jinc \
+              poly_frommont.jinc \
+              poly_reduce.jinc \
+              poly_csubq.jinc \
+              poly_getnoise.jinc \
+							zetas.jinc \
 
-POLYVECHEADERS = polyvec_compress.jahh \
-                 polyvec_decompress.jahh \
-                 polyvec_tobytes.jahh \
-                 polyvec_frombytes.jahh \
-                 polyvec_add2.jahh \
-                 polyvec_ntt.jahh \
-                 polyvec_invntt.jahh \
-                 polyvec_pointwise_acc.jahh \
-                 polyvec_reduce.jahh \
-                 polyvec_csubq.jahh \
-								 polyvec_topolys.jahh \
-								 polyvec_frompolys.jahh \
-                 gen_matrix.jahh \
+POLYVECHEADERS = polyvec_compress.jinc \
+                 polyvec_decompress.jinc \
+                 polyvec_tobytes.jinc \
+                 polyvec_frombytes.jinc \
+                 polyvec_add2.jinc \
+                 polyvec_ntt.jinc \
+                 polyvec_invntt.jinc \
+                 polyvec_pointwise_acc.jinc \
+                 polyvec_reduce.jinc \
+                 polyvec_csubq.jinc \
+								 polyvec_topolys.jinc \
+								 polyvec_frompolys.jinc \
+                 gen_matrix.jinc \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
 
@@ -92,53 +93,41 @@ test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) jpoly.s
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
-
-
-jfips202.japp: jfips202.jazz fips202.jahh
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-jpoly.japp: jpoly.jazz $(JHEADERS) $(POLYHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-jpolyvec.japp: jpolyvec.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-jindcpa.japp: indcpa.jazz $(JHEADERS) $(POLYHEADERS) $(POLYVECHEADERS)
-	cat $< | $(CC) -E - | grep -v ^# > $@
-
-%.s: %.japp
+%.s: %.jazz
 	$(JASMIN) -o $@ $(JFLAGS) $^ 
-
 
 .PHONY: clean
 
 clean:
 	-rm *.s
-	-rm *.japp
-	-rm test/test_poly_compress
-	-rm test/test_poly_decompress
-	-rm test/test_poly_tobytes
-	-rm test/test_poly_frombytes
-	-rm test/test_poly_tomsg
-	-rm test/test_poly_frommsg
-	-rm test/test_poly_add2
-	-rm test/test_poly_sub
-	-rm test/test_poly_ntt
-	-rm test/test_poly_invntt
-	-rm test/test_poly_basemul
-	-rm test/test_poly_frommont
-	-rm test/test_poly_reduce
-	-rm test/test_poly_csubq
-	-rm test/test_poly_getnoise
-	-rm test/test_polyvec_compress
-	-rm test/test_polyvec_decompress
-	-rm test/test_polyvec_tobytes
-	-rm test/test_polyvec_frombytes
-	-rm test/test_polyvec_add2
-	-rm test/test_polyvec_ntt
-	-rm test/test_polyvec_invntt
-	-rm test/test_polyvec_pointwise_acc
-	-rm test/test_polyvec_reduce
-	-rm test/test_polyvec_csubq
-	-rm test/test_fips202
-	-rm test/test_indcpa
+	-rm -f test/test_poly_compress
+	-rm -f test/test_poly_decompress
+	-rm -f test/test_poly_tobytes
+	-rm -f test/test_poly_frombytes
+	-rm -f test/test_poly_tomsg
+	-rm -f test/test_poly_frommsg
+	-rm -f test/test_poly_add2
+	-rm -f test/test_poly_sub
+	-rm -f test/test_poly_ntt
+	-rm -f test/test_poly_invntt
+	-rm -f test/test_poly_basemul
+	-rm -f test/test_poly_frommont
+	-rm -f test/test_poly_reduce
+	-rm -f test/test_poly_csubq
+	-rm -f test/test_poly_getnoise
+	-rm -f test/test_polyvec_compress
+	-rm -f test/test_polyvec_decompress
+	-rm -f test/test_polyvec_tobytes
+	-rm -f test/test_polyvec_frombytes
+	-rm -f test/test_polyvec_add2
+	-rm -f test/test_polyvec_ntt
+	-rm -f test/test_polyvec_invntt
+	-rm -f test/test_polyvec_pointwise_acc
+	-rm -f test/test_polyvec_reduce
+	-rm -f test/test_polyvec_csubq
+	-rm -f test/test_fips202
+	-rm -f test/test_indcpa
+	-rm -f test/speed_indcpa
+ifeq ($(OS),Darwin)
+	-rm -r test/*.dSYM
+endif

@@ -1,15 +1,16 @@
 #include <stdio.h>
 #include "../polyvec.h"
 #include "../ntt.h"
+#include "../reduce.h"
 
 void polyvec_setrandom(polyvec *r)
 {
   FILE *urandom = fopen("/dev/urandom", "r");
   for(int i=0;i<KYBER_K;i++)
     fread(r->vec[i].coeffs, sizeof(int16_t), KYBER_N, urandom);
-  for(int i=0;i<KYBER_K;i++)
-    for(int j=0;j<KYBER_N;j++)
-      r->vec[i].coeffs[j] %= KYBER_Q;
+
+  polyvec_reduce(r);
+
   fclose(urandom);
 }
 

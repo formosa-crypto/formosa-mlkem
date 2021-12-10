@@ -105,7 +105,7 @@ module B1(A : Adversary) : Adv_T = {
 
 section.
 
-declare module A : Adversary.
+declare module A <: Adversary.
 
 lemma hop1_left &m: 
   Pr[CPA(MLWE_PKE_H,A).main() @ &m : res] =
@@ -171,7 +171,7 @@ module B2(A : Adversary) : Adv_T = {
 
 section.
 
-declare module A : Adversary.
+declare module A <: Adversary.
 
 
 lemma hop2_left &m: 
@@ -212,7 +212,7 @@ end section.
 
 section.
 
-declare module A : Adversary.
+declare module A <: Adversary.
 axiom A_guess_ll : islossless A.guess.
 axiom A_choose_ll : islossless A.choose.
 
@@ -385,7 +385,7 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
 
 section.
 
-declare module A : CAdversary {LRO}.
+declare module A <: CAdversary {LRO}.
 axiom A_ll (O <: POracle{A}): islossless O.o => islossless A(O).find.
 
 lemma correctness &m :
@@ -493,7 +493,7 @@ module CorrectnessNoiseApprox = {
 
 section.
 
-declare module A : CAdversary {LRO}.
+declare module A <: CAdversary {LRO}.
 axiom All (O <: POracle{A}): islossless O.o => islossless A(O).find.
 
 lemma correctness_slack &m :

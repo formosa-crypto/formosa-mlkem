@@ -908,14 +908,14 @@ seq 3 3 : ((* #[/3:7,8:10,15:]pre *)
       have -> : to_uint i0' + i1 + (to_uint i0' + i1) %/ 4 + 1 = 
                 to_uint j{1} + (i1 + 1) by smt().
       by rewrite W64.of_intD W64.to_uintK'.
-    rewrite (iteri_red (to_uint i0' + 4)) 1:[smt(W64.to_uint_cmp)] /= {2}/f hmod 1:// /=.  
+    rewrite (iteri_red (to_uint i0' + 4)) 1: #smt(W64.to_uint_cmp) /= {2}/f hmod 1:// /=.
     congr; 2,3:smt().
     congr; 2,3:smt(Array768.get_setE).
-    rewrite (iteri_red (to_uint i0' + 3)) 1:[smt(W64.to_uint_cmp)] /= {2}/f hmod 1:// /=.  
+    rewrite (iteri_red (to_uint i0' + 3)) 1:#smt(W64.to_uint_cmp) /= {2}/f hmod 1:// /=.
     congr; 2,3:smt(Array768.get_setE).
-    rewrite (iteri_red (to_uint i0' + 2)) 1:[smt(W64.to_uint_cmp)] /= {2}/f hmod 1:// /=.  
+    rewrite (iteri_red (to_uint i0' + 2)) 1:#smt(W64.to_uint_cmp) /= {2}/f hmod 1:// /=.
     congr; 2,3:smt(Array768.get_setE).
-    rewrite (iteri_red (to_uint i0' + 1)) 1:[smt(W64.to_uint_cmp)] /= {2}/f (hmod 0) 1:// /=.  
+    rewrite (iteri_red (to_uint i0' + 1)) 1:#smt(W64.to_uint_cmp) /= {2}/f (hmod 0) 1:// /=.
     congr; 2,3: smt(W64.to_uintK' Array768.get_setE).
     by apply eq_iteri; smt (Array768.get_setE).
 
@@ -992,13 +992,13 @@ seq 0 3 : (#[/1:22,23:37]pre /\ Glob.mem{2} = mem1').
     have heq : forall z, 0 <= z < 4 => to_uint (i3{hr} + W64.of_int z) = to_uint i3{hr} + z.
     + by move=> *; rewrite to_uintD_small //= W64.to_uint_small /= /#. 
     rewrite !heq //.
-    rewrite (iteri_red (to_uint i3{hr} + 4)) 1:[smt(W64.to_uint_cmp)] /= {2}/h hmod 1:// /=.
+    rewrite (iteri_red (to_uint i3{hr} + 4)) 1:#smt(W64.to_uint_cmp) /= {2}/h hmod 1:// /=.
     congr; 2:smt ().
-    rewrite (iteri_red (to_uint i3{hr} + 3)) 1:[smt(W64.to_uint_cmp)] /= {2}/h hmod 1:// /=.
+    rewrite (iteri_red (to_uint i3{hr} + 3)) 1:#smt(W64.to_uint_cmp) /= {2}/h hmod 1:// /=.
     congr; 2:smt ().
-    rewrite (iteri_red (to_uint i3{hr} + 2)) 1:[smt(W64.to_uint_cmp)] /= {2}/h hmod 1:// /=.
+    rewrite (iteri_red (to_uint i3{hr} + 2)) 1:#smt(W64.to_uint_cmp) /= {2}/h hmod 1:// /=.
     congr; 2:smt ().
-    rewrite (iteri_red (to_uint i3{hr} + 1)) 1:[smt(W64.to_uint_cmp)] /= {2}/h hmod0 /=.
+    rewrite (iteri_red (to_uint i3{hr} + 1)) 1:#smt(W64.to_uint_cmp) /= {2}/h hmod0 /=.
     smt(W64.to_uintK).
   wp; skip => /> &2 hr; split.
   + rewrite iteri0 /= /#.

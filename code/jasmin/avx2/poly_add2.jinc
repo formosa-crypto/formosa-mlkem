@@ -1,0 +1,18 @@
+require "params.jinc"
+
+fn _poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
+{
+  inline int i;
+  reg u256 a;
+  reg u256 b;
+  reg u256 r;
+
+  for i = 0 to 16 {
+    a = rp.[u256 32*i];
+    b = bp.[u256 32*i];
+    r = #VPADD_16u16(a, b);
+    rp.[u256 32*i] = r;
+  }
+
+  return rp;
+}

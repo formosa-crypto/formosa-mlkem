@@ -23,7 +23,7 @@ int main(void)
     if(out0[k] != out1[k]) printf("error shake256 at %d: %d %d\n", k, out0[k], out1[k]);
 
   sha3_512(out0, in, 32);
-  sha3512_32_jazz(out1, in);
+  sha3_512_32_jazz(out1, in);
 
   for(k=0;k<64;k++)
     if(out0[k] != out1[k]) printf("error sha3512 at %d: %d %d\n", k, out0[k], out1[k]);

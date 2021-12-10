@@ -1,0 +1,22 @@
+require "params.jinc"
+require "poly_frombytes.jinc"
+require "polyvec_frompolys.jinc"
+
+inline
+fn __polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
+{
+  stack u16[KYBER_VECN] r;
+  stack u16[KYBER_N] r0, r1, r2;
+  reg u64 pp;
+
+  pp = ap;
+  r0 = _poly_frombytes(r0, pp);
+  pp += KYBER_POLYBYTES;
+  r1 = _poly_frombytes(r1, pp);
+  pp += KYBER_POLYBYTES;
+  r2 = _poly_frombytes(r2, pp);
+
+  r = __polyvec_frompolys(r0, r1, r2);
+
+  return r;
+}

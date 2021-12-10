@@ -213,7 +213,29 @@ int main(void)
   }
   print_results("indcpa dec: ", t, NRUNS);
 
-  /* Test Keccak: TODO */
+  /* Test KEM KEYPAIR */
+  for(i=0;i<NRUNS;i++)
+  {
+    t[i] = cpucycles();
+    crypto_kem_keypair_jazz(pk, sk, randomness0);
+  }
+  print_results("kyber_keypair: ", t, NRUNS);
+
+  /* Test KEM ENCAPSULATION */
+  for(i=0;i<NRUNS;i++)
+  {
+    t[i] = cpucycles();
+    crypto_kem_enc_jazz(ct, message, pk, randomness1);
+  }
+  print_results("kyber_encaps: ", t, NRUNS);
+
+  /* Test KEM DECAPSULATION */
+  for(i=0;i<NRUNS;i++)
+  {
+    t[i] = cpucycles();
+    crypto_kem_dec_jazz(outmsg, ct, sk);
+  }
+  print_results("kyber_decaps: ", t, NRUNS);
   
   return 0;
 }

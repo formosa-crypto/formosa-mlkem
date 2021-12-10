@@ -2,6 +2,7 @@ require import AllCore.
 require (****) Matrix.
 
 type R.
+
 clone import Ring.IDomain as R with type t = R.
 
 clone import Matrix as Matrix_ with

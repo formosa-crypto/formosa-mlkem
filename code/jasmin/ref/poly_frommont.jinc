@@ -1,0 +1,22 @@
+require "params.jinc"
+
+param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
+
+fn _poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u64 i;
+  reg u16 r;
+  reg u16 dmont;
+
+  dmont = DMONT;
+  
+  i = 0;
+  while (i < KYBER_N)
+  {
+    r = rp[(int)i];
+    r = __fqmul(r, dmont);
+    rp[(int)i] = r;
+    i += 1;
+  }
+  return rp; 
+}

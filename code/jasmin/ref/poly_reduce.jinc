@@ -1,0 +1,18 @@
+require "params.jinc"
+require "reduce.jinc"
+
+inline
+fn __poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+{
+  reg u64 j; 
+  reg u16 t;
+  j = 0;
+  while (j < KYBER_N) 
+  {
+    t = rp[(int)j];
+    t = __barrett_reduce(t);
+    rp[(int)j] = t;
+    j += 1;
+  }
+  return rp;
+}

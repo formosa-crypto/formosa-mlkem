@@ -1,0 +1,27 @@
+require "params.jinc"
+require "poly_basemul.jinc"
+require "poly_add2.jinc"
+require "polyvec_topolys.jinc"
+require "polyvec_frompolys.jinc"
+
+inline
+fn __polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> stack u16[KYBER_N]
+{
+  stack u16[KYBER_N] a0 a1 a2;
+  stack u16[KYBER_N] b0 b1 b2;
+  stack u16[KYBER_N] t;
+  stack u16[KYBER_N] r;
+
+  a0, a1, a2 = __polyvec_topolys(a);
+  b0, b1, b2 = __polyvec_topolys(b);
+
+  r = _poly_basemul(r, a0, b0);
+  t = _poly_basemul(t, a1, b1);
+  r = _poly_add2(r, t);
+  t = _poly_basemul(t, a2, b2);
+  r = _poly_add2(r, t);
+
+  r = __poly_reduce(r);
+
+  return r;
+}

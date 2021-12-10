@@ -1,19 +1,19 @@
-#include "params.jahh"
-#include "poly_compress.jahh"
-#include "poly_decompress.jahh"
-#include "poly_tobytes.jahh"
-#include "poly_frombytes.jahh"
-#include "poly_tomsg.jahh"
-#include "poly_frommsg.jahh"
-#include "poly_add2.jahh"
-#include "poly_sub.jahh"
-#include "poly_ntt.jahh"
-#include "poly_invntt.jahh"
-#include "poly_basemul.jahh"
-#include "poly_frommont.jahh"
-#include "poly_reduce.jahh"
-#include "poly_csubq.jahh"
-#include "poly_getnoise.jahh"
+require "params.jinc"
+require "poly_compress.jinc"
+require "poly_decompress.jinc"
+require "poly_tobytes.jinc"
+require "poly_frombytes.jinc"
+require "poly_tomsg.jinc"
+require "poly_frommsg.jinc"
+require "poly_add2.jinc"
+require "poly_sub.jinc"
+require "poly_ntt.jinc"
+require "poly_invntt.jinc"
+require "poly_basemul.jinc"
+require "poly_frommont.jinc"
+require "poly_reduce.jinc"
+require "poly_csubq.jinc"
+require "poly_getnoise.jinc"
 
 /* These exported functions are just for unit testing */
 
@@ -30,7 +30,7 @@ export fn poly_compress_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  a = poly_compress(rp, a);
+  a = _poly_compress(rp, a);
 }
 
 export fn poly_decompress_jazz(reg u64 rp, reg u64 ap) 
@@ -41,7 +41,7 @@ export fn poly_decompress_jazz(reg u64 rp, reg u64 ap)
   stack u16[KYBER_N] r;
   stack u8[128] a;
 
-  r = poly_decompress(r, ap);
+  r = _poly_decompress(r, ap);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -61,7 +61,7 @@ export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  a = poly_tobytes(rp, a);
+  a = _poly_tobytes(rp, a);
 }
 
 export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap) 
@@ -71,7 +71,7 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_N] r;
 
-  r = poly_frombytes(r, ap);
+  r = _poly_frombytes(r, ap);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -92,7 +92,7 @@ export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap)
     a[i] = t;
   }
 
-  a = poly_tomsg(rp, a);
+  a = _poly_tomsg(rp, a);
 }
 
 export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 
@@ -102,7 +102,7 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_N] r;
 
-  r = poly_frommsg(r, ap);
+  r = _poly_frommsg(r, ap);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -126,7 +126,7 @@ export fn poly_add2_jazz(reg u64 rp,  reg u64 bp)
     b[i] = t;
   }
 
-  r = poly_add2(r, b);
+  r = _poly_add2(r, b);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -149,7 +149,7 @@ export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
     b[i] = t;
   }
 
-  r = poly_sub(r, a, b);
+  r = _poly_sub(r, a, b);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -168,7 +168,7 @@ export fn poly_ntt_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_ntt(r);
+  r = _poly_ntt(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -187,7 +187,7 @@ export fn poly_invntt_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_invntt(r);
+  r = _poly_invntt(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -211,7 +211,7 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
   }
 
   r[0] = 0;
-  r = poly_basemul(r, a, b);
+  r = _poly_basemul(r, a, b);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -230,7 +230,7 @@ export fn poly_frommont_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_frommont(r);
+  r = _poly_frommont(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -254,7 +254,7 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
     seed[i] = d;
   }
 
-  r = poly_getnoise(r, seed, nonce);
+  r = _poly_getnoise(r, seed, nonce);
 
   rp = srp;
   for i = 0 to KYBER_N {
@@ -274,7 +274,7 @@ export fn poly_reduce_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_reduce(r);
+  r = __poly_reduce(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -293,7 +293,7 @@ export fn poly_csubq_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_csubq(r);
+  r = _poly_csubq(r);
 
   for i = 0 to KYBER_N {
     t = r[i];

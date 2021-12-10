@@ -11,7 +11,6 @@ lemma addr_double (x : int) : x + x = x * 2.
 proof. by ring. qed.
 
 
-
 (*-----------------------------------------------------------------------------*)
 
 lemma lt_exp_pow (b n : int) : 1 < b => 0 <= n => n < b ^ n.

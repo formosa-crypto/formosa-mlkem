@@ -64,6 +64,9 @@ op ([-]) (p : poly) : poly =
 
 type message = bool Array256.t.
 
+op s_encode(b: bool): int =
+  if b then trueval else falseval.
+
 op m_encode(m : message) : poly =
    map (fun b => if b 
                  then ZModField.inzmod trueval 
@@ -73,6 +76,7 @@ op balasint c = if q %/ 2 < (ZModField.asint c)
                      then ((ZModField.asint c) - q) 
                      else (ZModField.asint c).
 
+op s_decode(c: zmod) : bool = ! `|balasint c| < q %/ 4 + 1.
 
 op m_decode(mp : poly) : message =
    map (fun c => ! (`| balasint c | < q%/ 4 + 1)) mp.
@@ -237,7 +241,7 @@ proof.
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
     rewrite allP => *. 
-    by rewrite -supp_duni_elem 1:smt(@ZModField).
+    by rewrite -supp_duni_elem 1: #smt(@ZModField).
     by rewrite Array256.to_listK.
 qed.
 
@@ -291,7 +295,7 @@ qed.
 section.
 
 import H_MLWE.H_MLWE_ROM Lazy.
-declare module A : CAdversary {LRO}.
+declare module A <: CAdversary {LRO}.
 axiom All (O <: POracle{A}):
      islossless O.o =>
      islossless A(O).find.
