@@ -1,7 +1,7 @@
 require import AllCore Ring SmtMap Distr.
 require (****) ROM KyberAlgebra.
 
-clone include  KyberAlgebra.
+clone include KyberAlgebra.
 import Matrix_.
 abbrev [-printing] m_transpose = trmx.
 
@@ -80,6 +80,7 @@ clone import ROM as H_MLWE_ROM with
   op dout    <- fun (sd : seed) => duni_matrix, 
   type d_in_t <- unit,
   type d_out_t <- bool.
+
 import Lazy.
 
 module type Adv_T = {
