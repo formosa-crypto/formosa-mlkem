@@ -1,7 +1,6 @@
 require import AllCore Array128 Array256 Array768 IntDiv Distr List DList.
 require import ZModP.
 require import MLWE_PKE.
-pragma +oldip.
 
 import RField.
 
@@ -272,20 +271,18 @@ rewrite ZModField.addE  qE => />.
 rewrite mapiE /=; first by smt().
 have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first. 
 + case (m.[x]). move => * />. rewrite inzmodK qE => />. 
-  move : H.
   case (1664 < asint n.[x]); smt().  
   by move => *; case (1664 < asint n.[x]); smt(@ZModField). 
 pose F := fun (cc : int) (c : zmod) => if `|cc| < `|balasint c| then balasint c else cc.
 move: hgood; rewrite allP  => *.
-move : (H x _) => //=.
-rewrite /balasint qE /#.
+rewrite /balasint; smt(qE).
 qed.
 
 realize cv_bound_valid.
 admitted. (* We need concrete distributions *)
 
 realize noise_commutes.
-move => n n' b *.
+move => n n' b H H0.
 move : H H0; rewrite /under_noise_bound.
 rewrite !allP.
 move => Hn Hnp i ib.

@@ -5,48 +5,6 @@ theory MLWE_PKE.
 
 clone import H_MLWE.
 
-(****** FIX ME: MOVE ELSEWHERE *******
-
-lemma dmatrix_dvector (v : vector) i :
-  0 <= i < Matrix_.size => unit v.[i] =>
-  dmap duni_matrix (fun A => A *^ v) = duni.
-proof.
-move=> rg_i ut_vi; rewrite /duni_matrix dmatrix_dvector dmap_comp /(\o).
-have -> : Matrix_.size = i + (Matrix_.size - (i + 1) + 1) by ring.
-rewrite -cat_nseq 1,2:/# nseqS 1:/# djoin_perm_s1s dmap_dlet -/duni.
-pose D := _ `*` _; rewrite -{2}(dlet_cst D duni).
-+ by apply/dprod_ll; split; apply/djoin_ll=> d; rewrite mem_nseq => -[_ <-]; apply/duni_ll.
-apply in_eq_dlet => //= ls /supp_dprod [] + _ - /supp_djoin [] + _.
-rewrite size_nseq ler_maxr 1:/# => ->>; rewrite dmap_comp /(\o) /=.
-move: rg_i ut_vi; (pose k := size  ls.`1) => rg_k ut_vk.
-pose size := Matrix_.size; pose f (x : vector) :=  
-  offunv (fun i => x.[i] * v.[k] + bigi (predC1 k)
-    (fun j => (nth witness (ls.`1 ++ x :: ls.`2) j).[i] * v.[j]) 0 size).
-rewrite -(eq_dmap duni f) => /= [x|].
-+ apply eq_vectorP => i rg_i; rewrite /f mulmxvE offunvE //=.  
-  rewrite (bigD1 _ _ k) 1:mem_range // 1:range_uniq /=; congr. 
-  + by rewrite offunmE 1:/# /= nth_cat ltzz /= subrr. 
-  by apply congr_big_seq => //= i0 /mem_range ? _ _; rewrite offunmE 1:/#.
-pose finv (y : vector) := 
-  offunv (fun i => (y.[i] - bigi (predC1 k)
-    (fun j => (nth witness (ls.`1 ++ witness :: ls.`2) j).[i] * v.[j]) 0 size) / v.[k]).
-apply (dmap_bij duni duni f finv).
-+ by move=> x _; apply/duni_fu.
-+ by move=> *; apply duni_funi.
-+ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
-  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
-  rewrite (_ : z2 = z1); last first.
-  + by rewrite -addrA subrr addr0 mulrK.
-  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
-+ move=> x _ @/f @/finv; apply: eq_vectorP => i rg_i.
-  do! rewrite offunvE //=; pose z1 := big _ _ _; pose z2 := big _ _ _.
-  rewrite mulrAC mulrK //; rewrite (_ : z2 = z1); last first.
-  + by rewrite -addrA addNr addr0.
-  by apply: eq_bigr => j @/predC1 ne_jk /=; do 2! congr; smt(nth_cat).
-qed.
-
-************************************)
-
 import StdOrder.IntOrder R Matrix_ Big.BAdd.
 import H_MLWE_ROM Lazy.
 
@@ -214,6 +172,7 @@ module B2(A : Adversary) : Adv_T = {
 section.
 
 declare module A <: Adversary.
+
 
 lemma hop2_left &m: 
   Pr[CPA(MLWE_PKE1,A).main() @ &m : res] =

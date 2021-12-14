@@ -1,34 +1,13 @@
 require import AllCore.
 require (****) Matrix.
-pragma +oldip.
 
 type R.
-clone import Ring.IDomain as R with type t <= R.
 
-clone import Matrix as Matrix_ with   
-    type  ZR.t     <= R,
-      op  ZR.zeror <= R.zeror,
-      op  ZR.oner  <= R.oner,
-      op  ZR.(+)   <= R.(+),
-      op  ZR.([-]) <= R.([-]),
-      op  ZR.( * ) <= R.( * ),
-      op  ZR.invr  <= R.invr,
-    pred  ZR.unit  <= R.unit
-    proof ZR.*.
+clone import Ring.IDomain as R with type t = R.
 
-  realize ZR.addrA     by exact: R.addrA    .
-  realize ZR.addrC     by exact: R.addrC    .
-  realize ZR.add0r     by exact: R.add0r    .
-  realize ZR.addNr     by exact: R.addNr    .
-  realize ZR.oner_neq0 by exact: R.oner_neq0.
-  realize ZR.mulrA     by exact: R.mulrA    .
-  realize ZR.mulrC     by exact: R.mulrC    .
-  realize ZR.mul1r     by exact: R.mul1r    .
-  realize ZR.mulrDl    by exact: R.mulrDl   .
-  realize ZR.mulVr     by exact: R.mulVr    .
-  realize ZR.unitP     by exact: R.unitP    .
-  realize ZR.unitout   by exact: R.unitout  .
-  realize ZR.mulf_eq0  by exact: R.mulf_eq0 .
+clone import Matrix as Matrix_ with
+    type R <- R, 
+    theory ZR <- R.
 
 abbrev (+&) = R.(+).
 abbrev (-&) = R.(-).
