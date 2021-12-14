@@ -55,33 +55,10 @@ JHEADERS = params.jinc \
            indcpa.jinc \
            verify.jinc
 
-POLYHEADERS = poly_compress.jinc \
-              poly_decompress.jinc \
-              poly_tobytes.jinc \
-              poly_frombytes.jinc \
-              poly_tomsg.jinc \
-              poly_frommsg.jinc \
-              poly_add2.jinc \
-              poly_sub.jinc \
-              poly_ntt.jinc \
-              poly_invntt.jinc \
-              poly_basemul.jinc \
-              poly_frommont.jinc \
-              poly_reduce.jinc \
-              poly_csubq.jinc \
-              poly_getnoise.jinc \
+POLYHEADERS = poly.jinc \
 							consts.jinc \
 
-POLYVECHEADERS = polyvec_compress.jinc \
-                 polyvec_decompress.jinc \
-                 polyvec_tobytes.jinc \
-                 polyvec_frombytes.jinc \
-                 polyvec_add2.jinc \
-                 polyvec_ntt.jinc \
-                 polyvec_invntt.jinc \
-                 polyvec_pointwise_acc.jinc \
-                 polyvec_reduce.jinc \
-                 polyvec_csubq.jinc \
+POLYVECHEADERS = polyvec.jinc \
                  gen_matrix.jinc \
 
 INCS    = fq.inc shuffle.inc

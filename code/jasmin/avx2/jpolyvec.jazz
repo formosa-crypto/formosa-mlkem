@@ -1,14 +1,5 @@
 require "params.jinc"
-require "polyvec_compress.jinc"
-require "polyvec_decompress.jinc"
-require "polyvec_tobytes.jinc"
-require "polyvec_frombytes.jinc"
-require "polyvec_add2.jinc"
-require "polyvec_ntt.jinc"
-require "polyvec_invntt.jinc"
-require "polyvec_pointwise_acc.jinc"
-require "polyvec_csubq.jinc"
-require "polyvec_reduce.jinc"
+require "polyvec.jinc"
 
 /* These exported functions are just for unit testing */
 

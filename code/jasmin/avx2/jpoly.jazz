@@ -1,19 +1,5 @@
 require "params.jinc"
-require "poly_compress.jinc"
-require "poly_decompress.jinc"
-require "poly_tobytes.jinc"
-require "poly_frombytes.jinc"
-require "poly_tomsg.jinc"
-require "poly_frommsg.jinc"
-require "poly_add2.jinc"
-require "poly_sub.jinc"
-require "poly_ntt.jinc"
-require "poly_invntt.jinc"
-require "poly_basemul.jinc"
-require "poly_frommont.jinc"
-require "poly_reduce.jinc"
-require "poly_csubq.jinc"
-require "poly_getnoise.jinc"
+require "poly.jinc"
 
 /* These exported functions are just for unit testing */
 
@@ -170,7 +156,7 @@ export fn poly_ntt_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_ntt(r);
+  r = _poly_ntt(r);
 
   r = _nttpack(r);
 
@@ -193,7 +179,7 @@ export fn poly_invntt_jazz(reg u64 rp)
   
   r = _nttunpack(r);
 
-  r = poly_invntt(r);
+  r = _poly_invntt(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -284,7 +270,7 @@ export fn poly_reduce_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_reduce(r);
+  r = __poly_reduce(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
