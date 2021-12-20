@@ -178,23 +178,7 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
 
 export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
 {
-  stack u16[KYBER_N] t v mp;
-  stack u16[KYBER_VECN] bp skpv;
-
-  bp = __polyvec_decompress(ctp);
-  ctp += KYBER_POLYVECCOMPRESSEDBYTES;
-  v = _poly_decompress(v, ctp);
-
-  skpv = __polyvec_frombytes(skp);
-  
-  bp = __polyvec_ntt(bp);
-  t = __polyvec_pointwise_acc(t, skpv, bp);
-  t = _poly_invntt(t );
-
-  mp = _poly_sub(mp, v, t);
-  mp = __poly_reduce(mp);
-  
-  mp = _poly_tomsg(msgp, mp);
+  __indcpa_dec_jazz(msgp, ctp, skp);
 }
 
 export fn crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
