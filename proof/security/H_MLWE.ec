@@ -1,9 +1,36 @@
 require import AllCore Ring SmtMap Distr.
-require (****) ROM KyberAlgebra.
+require (****) ROM Matrix.
 
-clone include KyberAlgebra.
-import Matrix_.
-abbrev [-printing] m_transpose = trmx.
+clone import Matrix as Matrix_.
+
+(***************************************************)
+(* FIXME: THIS SHOULD COME FROM MATRIX             *)
+
+instance ring with R
+  op rzero = ZR.zeror
+  op rone  = ZR.oner
+  op add   = ZR.( + )
+  op opp   = ZR.([-])
+  op mul   = ZR.( * )
+  op expr  = ZR.exp
+  op ofint = ZR.ofint
+
+  proof oner_neq0 by apply ZR.oner_neq0
+  proof addrA     by apply ZR.addrA
+  proof addrC     by apply ZR.addrC
+  proof addr0     by smt(@ZR)
+  proof addrN     by smt(@ZR)
+  proof mulr1     by smt(@ZR)
+  proof mulrA     by apply ZR.mulrA
+  proof mulrC     by apply ZR.mulrC
+  proof mulrDl    by apply ZR.mulrDl
+  proof expr0     by smt
+  proof ofint0    by smt
+  proof ofint1    by smt
+  proof exprS     by admit
+  proof ofintS    by admit
+  proof ofintN    by admit.
+
 
 (* --------------------------------------------------------------------------- *)
 type seed.
@@ -74,18 +101,14 @@ proof. apply /is_full_funiform; [apply duni_matrix_fu | apply duni_matrix_uni]. 
 
 hint solve 0 random : duni_matrix_ll duni_matrix_fu duni_matrix_uni duni_matrix_funi.
 
-clone import ROM as H_MLWE_ROM with
-  type in_t  <- seed,
-  type out_t <- matrix,
-  op dout    <- fun (sd : seed) => duni_matrix, 
-  type d_in_t <- unit,
-  type d_out_t <- bool.
-
-import Lazy.
-
 module type Adv_T = {
    proc guess(sd : seed, t : vector, uv : vector * R) : bool
 }.
+
+abbrev [-printing] m_transpose = trmx.
+abbrev (`<*>`) = dotp.
+abbrev (+&) = ZR.(+).
+abbrev (-&) = ZR.(-).
 
 module H_MLWE(Adv : Adv_T) = {
 

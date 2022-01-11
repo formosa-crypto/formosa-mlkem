@@ -1,23 +1,19 @@
 require import AllCore Distr List SmtMap Dexcepted.
-require (****) RndExcept StdOrder PKE H_MLWE.
+require (****) ROM RndExcept StdOrder PKE H_MLWE.
 
-theory MLWE_PKE.
+clone import H_MLWE as HMLWE.
 
-clone import H_MLWE.
-
-import StdOrder.IntOrder R Matrix_ Big.BAdd.
-import H_MLWE_ROM Lazy.
+import StdOrder.IntOrder Matrix_ Big.BAdd.
 
 type plaintext.
 type ciphertext.
 
-clone import PKE with 
+clone import PKE as PKE_ with 
   type pkey = (seed * vector),
   type skey = vector,
   type plaintext <- plaintext,
-  type ciphertext <- ciphertext.
-  (* proof *. reveals irrelevant axiom on qD,
-     FIXME: we need to clean this in PKE *)
+  type ciphertext <- ciphertext
+  proof *. 
 
 type raw_ciphertext = vector * R.
 
@@ -26,6 +22,19 @@ op m_decode : R -> plaintext.
 
 op c_encode : raw_ciphertext -> ciphertext.
 op c_decode : ciphertext -> raw_ciphertext.
+
+(******************************************************************)
+(*                       The Random Oracle                        *)
+
+clone import ROM as ROM_ with
+  type in_t  <- seed,
+  type out_t <- matrix,
+  op dout    <- fun (sd : seed) => duni_matrix, 
+  type d_in_t <- unit,
+  type d_out_t <- bool.
+
+import Lazy.
+   
 
 (******************************************************************)
 (*                    The Encryption Scheme                       *)
@@ -105,7 +114,7 @@ module B1(A : Adversary) : Adv_T = {
 
 section.
 
-declare module A <: Adversary.
+declare module A : Adversary.
 
 lemma hop1_left &m: 
   Pr[CPA(MLWE_PKE_H,A).main() @ &m : res] =
@@ -171,7 +180,7 @@ module B2(A : Adversary) : Adv_T = {
 
 section.
 
-declare module A <: Adversary.
+declare module A : Adversary.
 
 
 lemma hop2_left &m: 
@@ -212,7 +221,7 @@ end section.
 
 section.
 
-declare module A <: Adversary.
+declare module A : Adversary.
 axiom A_guess_ll : islossless A.guess.
 axiom A_choose_ll : islossless A.choose.
 
@@ -385,8 +394,8 @@ module AdvCorrectnessNoise(A : CAdversary, O : Oracle) = {
 
 section.
 
-declare module A <: CAdversary {LRO}.
-axiom A_ll (O <: POracle{A}): islossless O.o => islossless A(O).find.
+declare module A : CAdversary {-LRO}.
+axiom A_ll (O <: POracle{-A}): islossless O.o => islossless A(O).find.
 
 lemma correctness &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
@@ -493,8 +502,8 @@ module CorrectnessNoiseApprox = {
 
 section.
 
-declare module A <: CAdversary {LRO}.
-axiom All (O <: POracle{A}): islossless O.o => islossless A(O).find.
+declare module A : CAdversary {-LRO}.
+axiom All (O <: POracle{-A}): islossless O.o => islossless A(O).find.
 
 lemma correctness_slack &m :
   Pr[ AdvCorrectnessNoise(A,LRO).main() @ &m : res]<=
@@ -519,7 +528,7 @@ qed.
 lemma correctness_approx &m :
   Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - Pr[ CorrectnessNoiseApprox.main() @ &m : res].
-proof. move : (correctness A All &m) (correctness_slack &m) => /#. qed.
+proof. move : (correctness A  All &m) (correctness_slack &m)  => /#. qed.
 
 (* Finally we just need to compute a concrete probability *)
 (* Which we will bound in simplified form *)
@@ -569,5 +578,3 @@ by move: (fail_prob &m) (correctness_hack &m) (correctness_approx &m) => /#.
 qed.
 
 end section.
-
-end MLWE_PKE.
