@@ -597,80 +597,33 @@ export Poly.
 op kvec : int. 
 axiom kvec_ge3 : 3 <= kvec.
 
-(*****************************************************)
-(* I WOULD PREFER TO CLONE MATRIX HERE AND THEN CLONE*)
-(* MLWE_PKE BELOW INSTANTIATING THE SUBTHEORY MATRIX *)
-require (***) MLWE_PKE.
 
-op pv = pe_R^(kvec).
-op pm = pe_R^(kvec^2).
+require Matrix.
+clone import Matrix as Matrix_ with
+    op size <- kvec,
+    type R <- poly,
+    op ZR.zeror <- Poly.zero,
+    op ZR.oner <- Poly.one,
+    pred ZR.unit <- fun x => x = Poly.one,
+    op ZR.(+) <- Poly.(&+),
+    op ZR.([-]) <- Poly.(&-),
+    op ZR.( * ) <- Poly.(&*)
+    proof ZR.addrA by admit
+    proof ZR.addrC by admit
+    proof ZR.add0r by admit
+    proof ZR.addNr by admit
+    proof ZR.oner_neq0 by admit
+    proof ZR.mulrA by admit
+    proof ZR.mulrC by admit
+    proof ZR.mul1r by admit
+    proof ZR.mulrDl by admit
+    proof ZR.mulVr by admit
+    proof ZR.unitP by admit
+    proof ZR.unitout by admit
+    proof ZR.mulf_eq0 by admit.
 
-op under_noise_bound (p : poly) (b : int) =
-     all (fun cc => `| as_sint cc| < b) p.
 
-op cv_bound : int = 104. (* this is the compress error bound for d = 4 *)
-op fail_prob : real. (* Need to compute exact value or replace
-                        with suitable bound *)
 
-op epsilon_hack : real. (* Assumed simplification loss *)
-
-clone import MLWE_PKE as MLWEPKE with 
-    op HMLWE.Matrix_.size <- kvec,
-    type HMLWE.Matrix_.R <- poly,
-    op HMLWE.Matrix_.ZR.zeror <- Poly.zero,
-    op HMLWE.Matrix_.ZR.oner <- Poly.one,
-    pred HMLWE.Matrix_.ZR.unit <- fun x => x = Poly.one,
-    op HMLWE.Matrix_.ZR.(+) <- Poly.(&+),
-    op HMLWE.Matrix_.ZR.([-]) <- Poly.(&-),
-    op HMLWE.Matrix_.ZR.( * ) <- Poly.(&*),
-    op HMLWE.duni_R <- duni_R,
-    op HMLWE.dshort_R <- dshort_R,
-    (* op invr : poly -> poly *)
-  type plaintext = bool Array256.t,
-  type ciphertext = HMLWE.Matrix_.vector * poly,
-  op m_encode <- Array256.map b_encode ,
-  op m_decode <- Array256.map b_decode,
-  op c_encode = fun (c : HMLWE.Matrix_.vector * poly) => 
-          (HMLWE.Matrix_.Vector.offunv 
-             (fun i => (compress_poly 10 ((HMLWE.Matrix_.Vector.tofunv c.`1) i))), 
-                 compress_poly 4 c.`2),
-  op c_decode = fun (c : HMLWE.Matrix_.vector * poly) => 
-          (HMLWE.Matrix_.Vector.offunv 
-             (fun i => (decompress_poly 10 ((HMLWE.Matrix_.Vector.tofunv c.`1) i))), 
-                 decompress_poly 4 c.`2),
-  op rnd_err_v <- compress_poly_err 4,
-  op rnd_err_u <- fun u => HMLWE.Matrix_.Vector.offunv 
-          (fun i => (compress_poly_err 10 ((HMLWE.Matrix_.Vector.tofunv u) i))),
-  op under_noise_bound <- under_noise_bound,
-  op max_noise <- q %/ 4,
-  op cv_bound <- cv_bound,
-  op fail_prob <- fail_prob,
-  op epsilon_hack <- epsilon_hack
-  proof HMLWE.dshort_R_ll  by apply dshort_R_ll
-  proof HMLWE.duni_R_ll by apply duni_R_ll
-  proof HMLWE.Matrix_.ge0_size by smt(kvec_ge3)
-  proof HMLWE.duni_R_fu
-  proof encode_noise
-  proof good_decode
-  proof cv_bound_valid
-  proof noise_commutes
-    proof HMLWE.Matrix_.ZR.addrA by admit
-    proof HMLWE.Matrix_.ZR.addrC by admit
-    proof HMLWE.Matrix_.ZR.add0r by admit
-    proof HMLWE.Matrix_.ZR.addNr by admit
-    proof HMLWE.Matrix_.ZR.oner_neq0 by admit
-    proof HMLWE.Matrix_.ZR.mulrA by admit
-    proof HMLWE.Matrix_.ZR.mulrC by admit
-    proof HMLWE.Matrix_.ZR.mul1r by admit
-    proof HMLWE.Matrix_.ZR.mulrDl by admit
-    proof HMLWE.Matrix_.ZR.mulVr by admit
-    proof HMLWE.Matrix_.ZR.unitP by admit
-    proof HMLWE.Matrix_.ZR.unitout by admit
-    proof HMLWE.Matrix_.ZR.mulf_eq0 by admit.
-    (* proof*. a lot of unproved axioms coming from ring theories *)
-
-import HMLWE.
-import Matrix_.
 import Vector.
 
 (* This should be added to matrix *)
@@ -828,6 +781,20 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) = {
 (**********************************)
 (**********************************)
 
+require (***) MLWE_PKE.
+
+type plaintext = bool Array256.t.
+type ciphertext = vector * poly.
+op m_encode(m : plaintext) : poly = Array256.map b_encode m.
+op m_decode(p : poly) : plaintext = Array256.map b_decode p. 
+op c_encode(c :  ciphertext) : vector * poly = 
+      (mapv (compress_poly 10) c.`1, compress_poly 4 c.`2).
+op c_decode = fun (c : vector * poly) => 
+      (mapv (decompress_poly 10) c.`1, decompress_poly 4 c.`2).
+op rnd_err_v = compress_poly_err 4. 
+op rnd_err_u = mapv (compress_poly_err 10). 
+op max_noise = q %/ 4.
+
 op pv = pe_R^(kvec).
 op pm = pe_R^(kvec^2).
 
@@ -840,100 +807,99 @@ op fail_prob : real. (* Need to compute exact value or replace
 
 op epsilon_hack : real. (* Assumed simplification loss *)
 
-
-(* auxiliary lemma *)
-lemma foldr_eq_size (f : 'b -> 'b -> 'b) (s s' : 'a list) c z :
-  size s = size s' =>
-  foldr (fun (x : 'a) (y : 'b) => f c y) z s = foldr (fun (x : 'a) (y : 'b) => f c y) z s'.
-proof.
-  elim: s s' => /= s. 
-    by rewrite (_ : 0 = size s <=> size s = 0) 1:/#; rewrite size_eq0 => -> /=.
-  move => /> hind s'.
-  elim s' => /=; first by smt(size_ge0).
-  by move => s' hind' hsize /#.
-qed.
-
-(* Should the ring structure for R come from here? *)
-clone import MLWE_PKE as MLWEPKE with
-  type H_MLWE.R <- poly,
-  op H_MLWE.R.zeror <- Poly.zero,
-  op H_MLWE.R.(+) <- Poly.(+),
-  op H_MLWE.R.([-]) <- Poly.([-]),
-  op H_MLWE.R.oner <- Poly.one, 
-  op H_MLWE.R.( * ) <- Poly.( *),
-  op H_MLWE.Matrix_.size <- kvec,
-  op H_MLWE.dshort_R <- Kyber.Poly.dshort_R,
-  op H_MLWE.duni_R <- Kyber.Poly.duni_R,
-  type plaintext = message,
-  type ciphertext = H_MLWE.Matrix_.vector * poly,
+clone import MLWE_PKE as MLWEPKE with 
+  type HMLWE.Matrix_.R <- poly,
+  op HMLWE.Matrix_.ZR.(+) <- Poly.(&+),
+  op HMLWE.Matrix_.ZR.([-]) <- Poly.(&-),
+  op HMLWE.Matrix_.ZR.zeror <- Poly.zero,
+  op HMLWE.Matrix_.ZR.oner <- Poly.one,
+  pred HMLWE.Matrix_.ZR.unit <- fun x => x = Poly.one,
+  op HMLWE.Matrix_.ZR.( * ) <- Poly.(&*),
+  op HMLWE.Matrix_.size <- kvec,
+  type HMLWE.Matrix_.Matrix.matrix <- matrix,
+  type HMLWE.Matrix_.vector <- vector,
+  op HMLWE.Matrix_.Vector.tofunv <- tofunv,
+  op HMLWE.duni_R <- duni_R,
+  op HMLWE.dshort_R <- dshort_R,
+  (* op invr : poly -> poly *)
+  type plaintext <- plaintext,
+  type ciphertext <- ciphertext,
   op m_encode <- m_encode,
   op m_decode <- m_decode,
-  op c_encode = fun (c : H_MLWE.Matrix_.vector * poly) => 
-          (H_MLWE.Matrix_.Vector.offunv 
-             (fun i => (PolyVec.round_poly ((H_MLWE.Matrix_.Vector.tofunv c.`1) i))), 
-                 Poly.round_poly c.`2),
-  op c_decode = fun (c : H_MLWE.Matrix_.vector * poly) => 
-          (H_MLWE.Matrix_.Vector.offunv 
-             (fun i => (PolyVec.unround_poly ((H_MLWE.Matrix_.Vector.tofunv c.`1) i))), 
-                 Poly.unround_poly c.`2),
-  op rnd_err_v <- Poly.round_poly_err,
-  op rnd_err_u <- fun u => H_MLWE.Matrix_.Vector.offunv 
-          (fun i => (PolyVec.round_poly_err ((H_MLWE.Matrix_.Vector.tofunv u) i))),
+  op c_encode <- c_encode,
+  op c_decode <- c_decode, 
+  op rnd_err_v <- rnd_err_v,
+  op rnd_err_u <- rnd_err_u,
   op under_noise_bound <- under_noise_bound,
-  op max_noise <- q %/ 4,
+  op max_noise <- max_noise,
   op cv_bound <- cv_bound,
   op fail_prob <- fail_prob,
   op epsilon_hack <- epsilon_hack
-  proof H_MLWE.dshort_R_ll  by apply Kyber.Poly.dshort_R_ll
-  proof H_MLWE.duni_R_ll by apply Kyber.Poly.duni_R_ll
-  proof H_MLWE.Matrix_.ge0_size by smt(kvec_ge3)
-  proof H_MLWE.duni_R_fu
+  proof HMLWE.dshort_R_ll  by apply dshort_R_ll
+  proof HMLWE.duni_R_ll by apply duni_R_ll
+  proof HMLWE.duni_R_fu 
+  proof HMLWE.Matrix_.ge0_size by smt(kvec_ge3)
+  proof HMLWE.Matrix_.ZR.addrA by admit
+  proof HMLWE.Matrix_.ZR.addrC by admit
+  proof HMLWE.Matrix_.ZR.add0r by admit
+  proof HMLWE.Matrix_.ZR.addNr by admit
+  proof HMLWE.Matrix_.ZR.oner_neq0 by admit
+  proof HMLWE.Matrix_.ZR.mulrA by admit
+  proof HMLWE.Matrix_.ZR.mulrC by admit
+  proof HMLWE.Matrix_.ZR.mul1r by admit
+  proof HMLWE.Matrix_.ZR.mulrDl by admit
+  proof HMLWE.Matrix_.ZR.mulVr by admit
+  proof HMLWE.Matrix_.ZR.unitP by admit
+  proof HMLWE.Matrix_.ZR.unitout by admit
+  proof HMLWE.Matrix_.ZR.mulf_eq0 by admit
   proof encode_noise
   proof good_decode
   proof cv_bound_valid
-  proof noise_commutes.
-  (* proof* a lot of unproved axioms coming from ring theories *)
+  proof noise_commutes. 
+  (* fixme: this clone is a mess. 
+     check unproved axioms coming from ring theories *)
 
-realize H_MLWE.duni_R_fu.
+realize HMLWE.duni_R_fu.
 proof.
   rewrite /is_full /Poly.duni_R => p.
   rewrite supp_dmap; exists (Array256.to_list p).
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
     rewrite allP => *. 
-    by rewrite -supp_duni_elem 1: #smt(@ZModField).
+    by rewrite -supp_duni_elem 1: smt(@ZModField).
     by rewrite Array256.to_listK.
 qed.
 
-
 realize encode_noise.
+admitted.
+(* This proof doesn't work because of the matrix clone and vector operations types 
 move => /> *.
 rewrite /c_decode /c_encode => />.
 split; last  by rewrite round_poly_errE.
 rewrite /round_poly /round_poly_err /roundc_err  => />.
-apply H_MLWE.Matrix_.Vector.eq_vectorP => /> *.
-rewrite H_MLWE.Matrix_.Vector.offunvE 1:/# H_MLWE.Matrix_.Vector.offunvE 1:/# /=.
+apply eq_vectorP => /> *.
+rewrite offunvE 1:/# offunvE 1:/# /=.
 apply Array256.ext_eq => /> *.
 rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.  
 congr => />.
 smt.
-qed.
+qed.*)
 
 realize good_decode.
-rewrite /under_noise_bound /m_encode /m_decode /trueval /falseval  qE  => m n hgood.
+rewrite /under_noise_bound /b_encode /b_decode /trueval /falseval  qE  => m n hgood.
 apply Array256.ext_eq => /> x h0x hx256.
 rewrite mapiE; first by smt().
 auto => />.
-rewrite /Poly.(+) map2E => />. 
+rewrite /Poly.(&+) map2E => />. 
 rewrite initiE; first by smt().
-rewrite /balasint qE=> />.
-rewrite ZModField.addE  qE => />.
+rewrite /as_sint => />.
+rewrite Zq.addE  qE => />.
 rewrite mapiE /=; first by smt().
 have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first. 
-+ case (m.[x]). move => * />. rewrite inzmodK qE => />. 
++ case (m.[x]). move => * />. rewrite inFqK qE => />. 
   case (1664 < asint n.[x]); smt().  
-  by move => *; case (1664 < asint n.[x]); smt(@ZModField). 
-pose F := fun (cc : int) (c : zmod) => if `|cc| < `|balasint c| then balasint c else cc.
+  by move => *; case (1664 < asint n.[x]); smt(@Zq). 
+pose F := fun (cc : int) (c : Fq) => if `|cc| < `|as_sint c| then as_sint c else cc.
 move: hgood; rewrite allP  => *.
 rewrite /balasint; smt(qE).
 qed.
@@ -948,15 +914,15 @@ rewrite !allP.
 move => Hn Hnp i ib.
 move : (Hn i ib). 
 move : (Hnp i ib) => /=. 
-rewrite /balasint /Poly.(+) /= map2E !initiE //= addE qE /=  !StdOrder.IntOrder.ltr_norml /= => Hni Hnpi.
+rewrite /as_sint /Poly.(&+) /= map2E !initiE //= addE qE /=  !StdOrder.IntOrder.ltr_norml /= => Hni Hnpi.
 by smt().
 qed.
 
 section.
 
-import H_MLWE.H_MLWE_ROM Lazy.
-declare module A <: CAdversary {LRO}.
-axiom All (O <: POracle{A}):
+import ROM_ Lazy.
+declare module A : CAdversary {-LRO}.
+axiom All (O <: POracle{-A}):
      islossless O.o =>
      islossless A(O).find.
 
@@ -984,5 +950,11 @@ lemma kyber_correctness &m :
   by  apply (correctness_bound A All correctness_hack fail_prob &m).
 end section.
 
+(* AT THIS POINT WE HAVE THE REFINED THEORETICAL ABSTRACTION
+   AND THE SPEC. The theoretical abstraction is still working
+   over arrays over Fq/bools, rather than byte encodings.
+   We can prove security and correctness of the spec via
+   a reduction, which is probably easier than defining operators
+   for the encoding/decoding functions and include them in
+   the refinement. *)
 
-end Kyber.
