@@ -308,9 +308,9 @@ module type XOF_t = {
 
 module Parse(XOF : XOF_t) = {
    proc sample_real() : poly = {
-      var i, j, bi, bi1, bi2, d1, d2;
+      var j, bi, bi1, bi2, d1, d2;
       var aa : poly;
-      i <- 0; j <- 0;
+      j <- 0;
       while (j < 256) {
          bi  <@ XOF.next_byte();
          bi1 <@ XOF.next_byte();
