@@ -886,7 +886,7 @@ smt.
 qed.*)
 
 realize good_decode.
-rewrite /under_noise_bound /b_encode /b_decode /trueval /falseval  qE  => m n hgood.
+rewrite /under_noise_bound /m_encode /m_decode /b_encode /b_decode /trueval /falseval  qE  => m n hgood.
 apply Array256.ext_eq => /> x h0x hx256.
 rewrite mapiE; first by smt().
 auto => />.
@@ -919,6 +919,8 @@ by smt().
 qed.
 
 section.
+
+
 
 import ROM_ Lazy.
 declare module A : CAdversary {-LRO}.
