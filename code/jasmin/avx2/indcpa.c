@@ -215,9 +215,9 @@ void indcpa_keypair(unsigned char *pk,
   gen_a(a, publicseed);
   
   for(i=0;i<KYBER_K;i++)
-    poly_getnoise(skpv.vec+i, noiseseed, nonce++);
+    poly_getnoise_eta1(skpv.vec+i, noiseseed, nonce++);
   for(i=0;i<KYBER_K;i++)
-    poly_getnoise(e.vec+i, noiseseed, nonce++);
+    poly_getnoise_eta1(e.vec+i, noiseseed, nonce++);
 
   polyvec_ntt(&skpv);
   polyvec_ntt(&e);
@@ -263,10 +263,10 @@ void indcpa_enc(unsigned char *c,
   gen_at(at, seed);
 
   for(i=0;i<KYBER_K;i++)
-    poly_getnoise(sp.vec+i, coins, nonce++);
+    poly_getnoise_eta1(sp.vec+i, coins, nonce++);
   for(i=0;i<KYBER_K;i++)
-    poly_getnoise(ep.vec+i, coins, nonce++);
-  poly_getnoise(&epp, coins, nonce++);
+    poly_getnoise_eta1(ep.vec+i, coins, nonce++);
+  poly_getnoise_eta1(&epp, coins, nonce++);
 
   polyvec_ntt(&sp);
 
