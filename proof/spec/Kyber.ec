@@ -88,26 +88,34 @@ op decompress(d : int, x : Fq) : Fq = inFq (round (q%r / (2^d)%r * (asint x)%r))
    asint or assint as we prove below. Decompression *must* use
    asint, as it assumes an input between 0..2^d-1. *)
 
+axiom noties_s d x xr : (* Checked in Sage *)
+   0 <= d => 2^d < q => x <> Zq.zero =>
+        xr = ((2 ^ d)%r * (as_sint x)%r / q%r) =>
+          floor (xr + inv 2%r) <> ceil (xr + inv 2%r).
+
+axiom noties_u d x xr : (* Checked in Sage *)
+   0 <= d => 2^d < q => x <> Zq.zero =>
+        xr = ((2 ^ d)%r * (asint x)%r / q%r) =>
+          floor (xr + inv 2%r) <> ceil (xr + inv 2%r).
+
 lemma compress_sint x d : 
    0 <= d => 2^d < q =>
    compress d x = inFq (round ((2^d)%r / q%r * (as_sint x)%r) %% 2^d).
 proof.
-move => dlb dub;rewrite /compress /as_sint => />; congr.
-case ((q - 1) %/ 2 < asint x); last by auto. 
+move => dlb dub;rewrite /compress => />; congr.
+case ((q - 1) %/ 2 < asint x); last by rewrite /as_sint; auto => />. 
 case (x = Zq.zero); first by smt(@Zq).
 move => H H0. 
-pose xr := ((2 ^ d)%r * (asint x - q)%r / q%r).
-have H1 : floor (xr + inv 2%r) <> ceil (xr + inv 2%r) by admit. (* checked in sage *)
-rewrite (round_notie xr H1).
-have -> : -xr =  (2 ^ d)%r - (2 ^ d)%r * (asint x)%r / q%r by smt(@Real).
+pose xr := ((2 ^ d)%r * (as_sint x)%r / q%r).
+rewrite (round_notie xr (noties_s d x xr dlb dub H _)) => //.
+have -> : -xr =  (2 ^ d)%r - (2 ^ d)%r * (asint x)%r / q%r by rewrite /xr /as_sint; smt(@Real).
 rewrite round_add.
 have -> : - (2 ^ d + round (- (2 ^ d)%r * (asint x)%r / q%r)) = (- 2^d) + (- round (- (2 ^ d)%r * (asint x)%r / q%r)) by smt().
 rewrite -modzDm.
 have -> : (- 2 ^ d) %% 2 ^ d = 0 by smt(@IntDiv).
 simplify.
 pose xr' := ((2 ^ d)%r * (asint x)%r / q%r).
-have H2 : floor (xr' + inv 2%r) <> ceil (xr' + inv 2%r) by admit. (* checked in sage *)
-rewrite (round_notie xr' H2). 
+rewrite (round_notie xr' (noties_u d x xr' dlb dub H _)) => //.
 smt(@IntDiv).
 qed.
 
@@ -294,8 +302,6 @@ op duni_R : poly distr =  dmap (dlist duni_elem 256) (Array256.of_list witness).
 
 lemma duni_R_ll : is_lossless duni_R
  by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
-
-op pe_R = pe^256.
 
 module type G_t = {
    proc sample() : (W8.t Array32.t) *  (W8.t Array32.t)
@@ -642,12 +648,15 @@ op nttm m = mapm ntt m.
 op invnttv v = mapv invntt v.
 op invnttm m = mapm invntt m.
 
-type sk = (W8.t Array384.t) Array3.t.
-type pk = (W8.t Array384.t) Array3.t * W8.t Array32.t.
-type msg = W8.t Array32.t.
-
-module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) = {
-  proc key_gen() : pk * sk = {
+require import PKE.
+clone import PKE as KyberPKE with
+  type pkey = (W8.t Array384.t) Array3.t * W8.t Array32.t,
+  type skey = (W8.t Array384.t) Array3.t,
+  type plaintext = W8.t Array32.t,
+  type ciphertext = (W8.t Array320.t) Array3.t * W8.t Array128.t.
+  
+module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) : Scheme = {
+  proc kg() : pkey * skey = {
      var rho, sig, i, j, _N,c,t,tb,sb;
      var tv,sv : (W8.t Array384.t) Array3.t;
      var a : matrix;
@@ -692,12 +701,12 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) = {
      return ((tv,rho),sv);
   }
 
-  proc enc(pkey : pk, m : msg) : (W8.t Array320.t) Array3.t * W8.t Array128.t = {
+  proc enc(pk : pkey, m : plaintext) : ciphertext = {
       var _N,i,j,c,tb,tv,rho,r,e1,e2,rhat,u,v,mp,c2,c1i;
       var that : vector;
       var a : matrix;
       var c1 : (W8.t Array320.t) Array3.t;
-      (tv,rho) <- pkey;
+      (tv,rho) <- pk;
       _N <- 0;
       (* Spec is silly here *)
       i <- 0;
@@ -746,9 +755,10 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) = {
       return (c1,c2);
   }
 
-  proc dec(skey : sk, c1 : (W8.t Array320.t) Array3.t, c2 : W8.t Array128.t) : W8.t Array32.t = {
-      var m,mp,i,ui,v,si;
+  proc dec(sk : skey, cph : ciphertext) : plaintext option = {
+      var m,mp,i,ui,v,si, c1, c2;
       var u,s : vector;
+      (c1,c2) <- cph;
       i <- 0;
       while (i < 3) {
          ui <@ EncDec.decode10(c1.[i]);
@@ -759,13 +769,13 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) = {
       v <- decompress_poly 4 v;
       i <- 0;
       while (i < 3) {
-         si <@ EncDec.decode12(skey.[i]);
+         si <@ EncDec.decode12(sk.[i]);
          s <- set s i (decompress_poly 12 si);
          i <- i + 1;
       }
       mp <- v &+ ((&-) (invntt (dotp s (nttv u))));
       m <@ EncDec.encode1(compress_poly 1 mp);
-      return m;
+      return Some m;
   }
 
 }.
@@ -795,6 +805,7 @@ op rnd_err_v = compress_poly_err 4.
 op rnd_err_u = mapv (compress_poly_err 10). 
 op max_noise = q %/ 4.
 
+op pe_R = pe^256.
 op pv = pe_R^(kvec).
 op pm = pe_R^(kvec^2).
 
@@ -919,8 +930,6 @@ by smt().
 qed.
 
 section.
-
-
 
 import ROM_ Lazy.
 declare module A : CAdversary {-LRO}.
