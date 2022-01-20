@@ -1,4 +1,4 @@
-require import AllCore ZModP IntDiv Distr List DList.
+require import AllCore ZModP IntDiv Distr List DList PKE.
 from Jasmin require import JWord.
 require import Array3 Array32 Array128 Array256 Array320.
 require import Array384 Array768 Array1024 Array2560 Array3072.
@@ -58,6 +58,13 @@ lemma round_add (x : real) (y : int) :
 (**************************************************)
 (**************************************************)
 
+(* We'll need to define a ROM type that will model the
+   SHA3 family. For now it is still a to do. *)
+clone import PKE as KyberPKE with
+  type pkey = (W8.t Array384.t) Array3.t * W8.t Array32.t,
+  type skey = (W8.t Array384.t) Array3.t,
+  type plaintext = W8.t Array32.t,
+  type ciphertext = (W8.t Array320.t) Array3.t * W8.t Array128.t.
 
 (****************************************************)
 (*               The finite field Zq/Fq             *)
@@ -303,24 +310,24 @@ op duni_R : poly distr =  dmap (dlist duni_elem 256) (Array256.of_list witness).
 lemma duni_R_ll : is_lossless duni_R
  by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
 
-module type G_t = {
+module type G_t(O : RO.POracle) = {
    proc sample() : (W8.t Array32.t) *  (W8.t Array32.t)
 }.
 
-module type XOF_t = {
+module type XOF_t(O : RO.POracle) = {
    proc init(rho :  W8.t Array32.t, i j : int) : unit
    proc next_byte() : W8.t
 }.
 
-module Parse(XOF : XOF_t) = {
+module Parse(XOF : XOF_t, O : RO.POracle) = {
    proc sample_real() : poly = {
       var j, bi, bi1, bi2, d1, d2;
       var aa : poly;
       j <- 0;
       while (j < 256) {
-         bi  <@ XOF.next_byte();
-         bi1 <@ XOF.next_byte();
-         bi2 <@ XOF.next_byte();
+         bi  <@ XOF(O).next_byte();
+         bi1 <@ XOF(O).next_byte();
+         bi2 <@ XOF(O).next_byte();
          d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
          d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
          if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
@@ -336,7 +343,7 @@ module Parse(XOF : XOF_t) = {
    }
 }.
 
-module type PRF_t = {
+module type PRF_t(O : RO.POracle) = {
    proc init(sig : W8.t Array32.t) : unit
    proc next_bytes(_N : int) : W8.t Array128.t
 }.
@@ -347,11 +354,11 @@ op bytes2bits128 : W8.t Array128.t -> bool Array1024.t.
 op bytes2bits320 : W8.t Array320.t -> bool Array2560.t.
 op bytes2bits384 : W8.t Array384.t -> bool Array3072.t.
 
-module CBD2(PRF : PRF_t) = {
+module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
       var bits,i,a,b,bytes;
       var rr : poly;
-      bytes <@ PRF.next_bytes(_N);
+      bytes <@ PRF(O).next_bytes(_N);
       bits <- bytes2bits128 bytes;
       i <- 0;
       while (i < 256) {
@@ -648,43 +655,42 @@ op nttm m = mapm ntt m.
 op invnttv v = mapv invntt v.
 op invnttm m = mapm invntt m.
 
-require import PKE.
-clone import PKE as KyberPKE with
-  type pkey = (W8.t Array384.t) Array3.t * W8.t Array32.t,
-  type skey = (W8.t Array384.t) Array3.t,
-  type plaintext = W8.t Array32.t,
-  type ciphertext = (W8.t Array320.t) Array3.t * W8.t Array128.t.
-  
-module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) : Scheme = {
+(****************)
+(****************)
+(* THE SPEC     *)
+(****************)
+(****************)
+
+module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
   proc kg() : pkey * skey = {
      var rho, sig, i, j, _N,c,t,tb,sb;
      var tv,sv : (W8.t Array384.t) Array3.t;
      var a : matrix;
      var s,e : vector;
-     (rho,sig) <@ G.sample();
+     (rho,sig) <@ G(O).sample();
      _N <- 0; 
      i <- 0;
      while (i < kvec) {
         j <- 0;
         while (j < kvec) {
-           XOF.init(rho,i,j);
-           c <@ Parse(XOF).sample_real();
+           XOF(O).init(rho,i,j);
+           c <@ Parse(XOF,O).sample_real();
            a.[(i,j)] <- c;
            j <- j + 1;
         }
         i <- i + 1;
      }      
-     PRF.init(sig);
+     PRF(O).init(sig);
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF).sample_real(_N);
+        c <@ CBD2(PRF,O).sample_real(_N);
         s <- set s i c;
         i <- i + 1;
         _N <- _N + 1;
      }         
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF).sample_real(_N);
+        c <@ CBD2(PRF,O).sample_real(_N);
         e <- set e i c;
         i <- i + 1;
         _N <- _N + 1;
@@ -695,7 +701,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) : Scheme = {
      i <- 0;
      while (i < 3) {
        tb <@ EncDec.encode12(t.[i]); tv.[i] <- tb;
-       sb <@ EncDec.encode12(t.[i]); sv.[i] <- sb;
+       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
        i <- i + 1;
      }
      return ((tv,rho),sv);
@@ -719,8 +725,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) : Scheme = {
       while (i < kvec) {
         j <- 0;
         while (j < kvec) {
-           XOF.init(rho,i,j);
-           c <@ Parse(XOF).sample_real();
+           XOF(O).init(rho,i,j);
+           c <@ Parse(XOF,O).sample_real();
            a.[(i,j)] <- c;
            j <- j + 1;
         }
@@ -728,19 +734,19 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t) : Scheme = {
       }           
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF).sample_real(_N);
+        c <@ CBD2(PRF,O).sample_real(_N);
         r <- set r i c;
         i <- i + 1;
         _N <- _N + 1;
       }         
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF).sample_real(_N);
+        c <@ CBD2(PRF,O).sample_real(_N);
         e1 <- set e1 i c;
         i <- i + 1;
         _N <- _N + 1;
       }      
-      e2 <@ CBD2(PRF).sample_real(_N);
+      e2 <@ CBD2(PRF,O).sample_real(_N);
       rhat <- nttv r;
       u <- (a *^ rhat) + e1;
       mp <@ EncDec.decode1(m);
@@ -819,19 +825,21 @@ op fail_prob : real. (* Need to compute exact value or replace
 op epsilon_hack : real. (* Assumed simplification loss *)
 
 clone import MLWE_PKE as MLWEPKE with 
-  type HMLWE.Matrix_.R <- poly,
-  op HMLWE.Matrix_.ZR.(+) <- Poly.(&+),
-  op HMLWE.Matrix_.ZR.([-]) <- Poly.(&-),
-  op HMLWE.Matrix_.ZR.zeror <- Poly.zero,
-  op HMLWE.Matrix_.ZR.oner <- Poly.one,
-  pred HMLWE.Matrix_.ZR.unit <- fun x => x = Poly.one,
-  op HMLWE.Matrix_.ZR.( * ) <- Poly.(&*),
-  op HMLWE.Matrix_.size <- kvec,
-  type HMLWE.Matrix_.Matrix.matrix <- matrix,
-  type HMLWE.Matrix_.vector <- vector,
-  op HMLWE.Matrix_.Vector.tofunv <- tofunv,
-  op HMLWE.duni_R <- duni_R,
-  op HMLWE.dshort_R <- dshort_R,
+  type MLWE_.Matrix_.R <- poly,
+  op MLWE_.Matrix_.ZR.(+) <- Poly.(&+),
+  op MLWE_.Matrix_.ZR.([-]) <- Poly.(&-),
+  op MLWE_.Matrix_.ZR.zeror <- Poly.zero,
+  op MLWE_.Matrix_.ZR.oner <- Poly.one,
+  pred MLWE_.Matrix_.ZR.unit <- fun x => x = Poly.one,
+  op MLWE_.Matrix_.ZR.( * ) <- Poly.(&*),
+  op MLWE_.Matrix_.size <- kvec,
+  type MLWE_.Matrix_.Matrix.matrix <- matrix,
+  type MLWE_.Matrix_.vector <- vector,
+  op MLWE_.Matrix_.Vector.tofunv <- tofunv,
+  op MLWE_.duni_R <- duni_R,
+  op MLWE_.dshort_R <- dshort_R,
+  type MLWE_.seed <- W8.t Array32.t,
+  (*type MLWE_.RO.in_t <- W8.t Array32.t, *)
   (* op invr : poly -> poly *)
   type plaintext <- plaintext,
   type ciphertext <- ciphertext,
@@ -846,23 +854,23 @@ clone import MLWE_PKE as MLWEPKE with
   op cv_bound <- cv_bound,
   op fail_prob <- fail_prob,
   op epsilon_hack <- epsilon_hack
-  proof HMLWE.dshort_R_ll  by apply dshort_R_ll
-  proof HMLWE.duni_R_ll by apply duni_R_ll
-  proof HMLWE.duni_R_fu 
-  proof HMLWE.Matrix_.ge0_size by smt(kvec_ge3)
-  proof HMLWE.Matrix_.ZR.addrA by admit
-  proof HMLWE.Matrix_.ZR.addrC by admit
-  proof HMLWE.Matrix_.ZR.add0r by admit
-  proof HMLWE.Matrix_.ZR.addNr by admit
-  proof HMLWE.Matrix_.ZR.oner_neq0 by admit
-  proof HMLWE.Matrix_.ZR.mulrA by admit
-  proof HMLWE.Matrix_.ZR.mulrC by admit
-  proof HMLWE.Matrix_.ZR.mul1r by admit
-  proof HMLWE.Matrix_.ZR.mulrDl by admit
-  proof HMLWE.Matrix_.ZR.mulVr by admit
-  proof HMLWE.Matrix_.ZR.unitP by admit
-  proof HMLWE.Matrix_.ZR.unitout by admit
-  proof HMLWE.Matrix_.ZR.mulf_eq0 by admit
+  proof MLWE_.dshort_R_ll  by apply dshort_R_ll
+  proof MLWE_.duni_R_ll by apply duni_R_ll
+  proof MLWE_.duni_R_fu 
+  proof MLWE_.Matrix_.ge0_size by smt(kvec_ge3)
+  proof MLWE_.Matrix_.ZR.addrA by admit
+  proof MLWE_.Matrix_.ZR.addrC by admit
+  proof MLWE_.Matrix_.ZR.add0r by admit
+  proof MLWE_.Matrix_.ZR.addNr by admit
+  proof MLWE_.Matrix_.ZR.oner_neq0 by admit
+  proof MLWE_.Matrix_.ZR.mulrA by admit
+  proof MLWE_.Matrix_.ZR.mulrC by admit
+  proof MLWE_.Matrix_.ZR.mul1r by admit
+  proof MLWE_.Matrix_.ZR.mulrDl by admit
+  proof MLWE_.Matrix_.ZR.mulVr by admit
+  proof MLWE_.Matrix_.ZR.unitP by admit
+  proof MLWE_.Matrix_.ZR.unitout by admit
+  proof MLWE_.Matrix_.ZR.mulf_eq0 by admit
   proof encode_noise
   proof good_decode
   proof cv_bound_valid
@@ -870,7 +878,7 @@ clone import MLWE_PKE as MLWEPKE with
   (* fixme: this clone is a mess. 
      check unproved axioms coming from ring theories *)
 
-realize HMLWE.duni_R_fu.
+realize MLWE_.duni_R_fu.
 proof.
   rewrite /is_full /Poly.duni_R => p.
   rewrite supp_dmap; exists (Array256.to_list p).
@@ -931,9 +939,8 @@ qed.
 
 section.
 
-import ROM_ Lazy.
-declare module A : CAdversary {-LRO}.
-axiom All (O <: POracle{-A}):
+declare module A : MLWEPKE.PKE_.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
+axiom All (O <: MLWE_.RO.POracle{-A}):
      islossless O.o =>
      islossless A(O).find.
 
@@ -956,7 +963,7 @@ rewrite /good_noise /cv_bound /noise_val.
 admitted. (* We need concrete distributions *)
 
 lemma kyber_correctness &m : 
- Pr[ AdvCorrectness(MLWE_PKE,A,LRO).main() @ &m : res]  >=
+ Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,A,MLWE_.RO.Lazy.LRO).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack
   by  apply (correctness_bound A All correctness_hack fail_prob &m).
 end section.
@@ -969,3 +976,138 @@ end section.
    for the encoding/decoding functions and include them in
    the refinement. *)
 
+(* We wrap the refined abstraction with encoding/decoding
+   algorithms first. *)
+
+module (WrapMLWEPKE : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) = {
+  module H : MLWE_.RO.POracle = {
+      proc o(x : W8.t Array32.t) : matrix = { 
+          (* we'll just sample matrices as Kyber does and will
+             need to prove this is the same as generating a 
+             random matrix. Note that we'll need to invert
+             the NTT. It's going to be fun. *)
+          return witness; 
+      }
+  }
+
+  proc kg() : KyberPKE.pkey * KyberPKE.skey = {
+     var rhot,s,i,tb,sb;
+     var tv,sv : (W8.t Array384.t) Array3.t;
+     (rhot,s) <@ MLWEPKE.MLWE_PKE(H).kg();
+     i <- 0;
+     while (i < 3) {
+       tb <@ EncDec.encode12(rhot.`2.[i]); tv.[i] <- tb;
+       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
+       i <- i + 1;
+     }
+     return ((tv,rhot.`1),sv);
+  }
+
+  proc enc(pk : KyberPKE.pkey, m : KyberPKE.plaintext) : KyberPKE.ciphertext = {
+      var i,tb,tv,rho,u,v,mp,c2,c1i;
+      var that : vector;
+      var a : matrix;
+      var c1 : (W8.t Array320.t) Array3.t;
+      (tv,rho) <- pk;
+      (* Spec is silly here *)
+      i <- 0;
+      while (i < 3) {
+        tb <@ EncDec.decode12(tv.[i]); 
+        that <- set that 0 tb;
+        i <- i + 1;
+      }
+      mp <@ EncDec.decode1(m);
+      (u,v) <@ MLWEPKE.MLWE_PKE(H).enc((rho,that),m_decode mp);
+      i <- 0;
+      while (i < 3) {
+         c1i <@ EncDec.encode10(u.[i]); 
+         c1.[i] <- c1i;
+         i <- i + 1;
+      }
+      c2 <@ EncDec.encode4(v);
+      return (c1,c2);
+  }
+
+  proc dec(sk : KyberPKE.skey, cph : KyberPKE.ciphertext) : KyberPKE.plaintext option = {
+      var m,mp,i,ui,v,si, c1, c2;
+      var u,s : vector;
+      (c1,c2) <- cph;
+      i <- 0;
+      while (i < 3) {
+         ui <@ EncDec.decode10(c1.[i]);
+         u <- set u i ui;
+         i <- i + 1;
+      }
+      v <@ EncDec.decode4(c2);
+      i <- 0;
+      while (i < 3) {
+         si <@ EncDec.decode12(sk.[i]);
+         s <- set s i (si);
+         i <- i + 1;
+      }
+      mp <@ MLWEPKE.MLWE_PKE(H).dec(s,(u,v));
+      m <@ EncDec.encode1(m_encode (oget mp));
+      return Some m;
+  }
+
+}.
+
+(* The first proof goal shows that encoding/decoding and using rejection sampling
+   are irrelevant, so that our wrapper has the same correctness and security as
+   the refined abstract scheme. *)
+
+section.
+
+declare module As : KyberPKE.AdversaryRO {-MLWE_.RO.Lazy.LRO}.
+
+declare module Ac : KyberPKE.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
+
+(* These modules are reductions that need to be written to attack
+   refined spec. They just encode/decode things coming from the
+   refined game to the scheme adversary. Strangely enough this seems
+   to imply simulating a random oracle returning bytes to feed to the
+   XOF using one that gives us random matrices. lol *)
+declare module Bs : MLWEPKE.PKE_.AdversaryRO {-MLWE_.RO.Lazy.LRO}.
+declare module Bc : MLWEPKE.PKE_.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
+
+lemma wrap_correctness &m :  
+  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE,Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
+  Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc,MLWE_.RO.Lazy.LRO).main() @ &m : res].
+admitted.
+
+lemma wrap_security &m :  
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE,As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
+  Pr[ MLWEPKE.PKE_.CPAGameROM(MLWEPKE.PKE_.CPA,MLWEPKE.MLWE_PKE,Bs,MLWE_.RO.Lazy.LRO).main() @ &m : res].
+admitted.
+
+end section.
+
+(* The second proof goal is to show that the way in which the spec defines
+   the various operations of the schemes, e.g., using NTT and the likes  *)
+
+section.
+
+declare module As : KyberPKE.AdversaryRO.
+
+declare module Ac : KyberPKE.CAdversaryRO.
+
+(* These will need to be defined, possibly starting from a the LRO returning bytes. *)
+declare module G : G_t.
+declare module XOF : XOF_t.
+declare module PRF : PRF_t.
+
+(* In the ROM there should be no PRF loss *)
+lemma wrap_equiv_corr &m :  
+  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE,Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
+  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,Kyber(G,XOF,PRF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res].
+admitted.
+
+lemma wrap_equiv_security &m :  
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE,As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,PRF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res].
+admitted.
+
+end section.
+
+(* At this point we will have that the spec is as correct and secure as the refined abstract Kyber.
+   We can start the implementation correctness proof. *)
