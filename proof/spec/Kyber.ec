@@ -1,6 +1,6 @@
 require import AllCore ZModP IntDiv Distr List DList PKE.
 from Jasmin require import JWord.
-require import Array3 Array32 Array128 Array256 Array320.
+require import Array3 Array32 Array64 Array128 Array168 Array256 Array320.
 require import Array384 Array768 Array1024 Array2560 Array3072.
 
 (**************************************************)
@@ -58,9 +58,20 @@ lemma round_add (x : real) (y : int) :
 (**************************************************)
 (**************************************************)
 
-(* We'll need to define a ROM type that will model the
-   SHA3 family. For now it is still a to do. *)
+(* We will model the three usages of SHA3 family 
+   components as independent random oracles 
+
+G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
+XOF =
+fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
+fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> reg ptr u64[25], reg ptr u8[SHAKE128_RATE] => RATE is 168
+
+PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
+
+*)
 clone import PKE as KyberPKE with
+  type RO.in_t = (unit option) * ((W8.t Array32.t * int *int * int) option) * ((W8.t Array32.t * int) option),
+  type RO.out_t = W8.t Array64.t * W8.t Array168.t * W8.t Array128.t,
   type pkey = (W8.t Array384.t) Array3.t * W8.t Array32.t,
   type skey = (W8.t Array384.t) Array3.t,
   type plaintext = W8.t Array32.t,
@@ -316,22 +327,30 @@ module type G_t(O : RO.POracle) = {
 
 module type XOF_t(O : RO.POracle) = {
    proc init(rho :  W8.t Array32.t, i j : int) : unit
-   proc next_byte() : W8.t
+   proc next_bytes() : W8.t Array168.t
 }.
 
+(* We take some liberty to specify parse using a XOF that
+   returns 168 bytes at a time, which is what the Kyber
+   implementation does. *)
 module Parse(XOF : XOF_t, O : RO.POracle) = {
    proc sample_real() : poly = {
-      var j, bi, bi1, bi2, d1, d2;
+      var j, b168, bi, bi1, bi2, d1, d2,k;
       var aa : poly;
       j <- 0;
       while (j < 256) {
-         bi  <@ XOF(O).next_byte();
-         bi1 <@ XOF(O).next_byte();
-         bi2 <@ XOF(O).next_byte();
-         d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
-         d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
-         if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
-         if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
+         b168 <@ XOF(O).next_bytes();
+         k <- 0;
+         while ((j < 256) && (k < 168)) {
+            bi  <- b168.[k];
+            bi1 <- b168.[k+1];
+            bi2 <- b168.[k+2];
+            k <- k + 3;
+            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
+            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
+            if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
+            if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
+         }
       }
       return aa;
    }
@@ -463,6 +482,7 @@ module EncDec = {
    proc decode12(bytes : W8.t Array384.t) : poly = {
        var bits,i,j,fi;
        var r : poly;
+       r <- witness;
        bits <- bytes2bits384 bytes;
        i <- 0;
        while (i < 256) {
@@ -481,6 +501,7 @@ module EncDec = {
    proc decode10(bytes : W8.t Array320.t) : poly = {
        var bits,i,j,fi;
        var r : poly;
+       r <- witness;
        bits <- bytes2bits320 bytes;
        i <- 0;
        while (i < 256) {
@@ -499,6 +520,7 @@ module EncDec = {
    proc decode4(bytes : W8.t Array128.t) : poly = {
        var bits,i,j,fi;
        var r : poly;
+       r <- witness;
        bits <- bytes2bits128 bytes;
        i <- 0;
        while (i < 256) {
@@ -517,6 +539,7 @@ module EncDec = {
    proc decode1(bytes : W8.t Array32.t) : poly = {
        var bits,i,fi;
        var r : poly;
+       r <- witness;
        bits <- bytes2bits32 bytes;
        i <- 0;
        while (i < 256) {
@@ -534,6 +557,7 @@ module EncDec = {
    proc encode12(p : poly) : W8.t Array384.t = {
        var fi,fi1,i,k;
        var r : W8.t Array384.t;
+       r <- witness;
        i <- 0; k <- 0;
        while (i < 256) {
           fi <- asint p.[i];
@@ -550,6 +574,7 @@ module EncDec = {
    proc encode10(p : poly) : W8.t Array320.t = {
        var fi,fi1,fi2,fi3,i,k;
        var r : W8.t Array320.t;
+       r <- witness;
        i <- 0; k <- 0;
        while (i < 256) {
           fi <- asint p.[i];
@@ -570,6 +595,7 @@ module EncDec = {
    proc encode4(p : poly) : W8.t Array128.t = {
        var fi,fi1,i,k;
        var r : W8.t Array128.t;
+       r <- witness;
        i <- 0; k <- 0;
        while (i < 256) {
           fi <- asint p.[i];
@@ -584,6 +610,7 @@ module EncDec = {
    proc encode1(p : poly) : W8.t Array32.t = {
        var fi,fi1,fi2,fi3,fi4,fi5,fi6,fi7,i,k;
        var r : W8.t Array32.t;
+       r <- witness;
        i <- 0; k <- 0;
        while (i < 256) {
           fi <- asint p.[i];
@@ -937,6 +964,13 @@ rewrite /as_sint /Poly.(&+) /= map2E !initiE //= addE qE /=  !StdOrder.IntOrder.
 by smt().
 qed.
 
+(* This is an assumption on what loss there could be wrt 
+   correctness because we consider rounding of uniform 
+   and independent coefficients *)
+axiom correctness_hack &m :
+  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
+     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack.
+
 section.
 
 declare module A : MLWEPKE.PKE_.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
@@ -944,12 +978,6 @@ axiom All (O <: MLWE_.RO.POracle{-A}):
      islossless O.o =>
      islossless A(O).find.
 
-(* This is an assumption on what loss there could be wrt 
-   correctness because we consider rounding of uniform 
-   and independent coefficients *)
-axiom correctness_hack &m :
-  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack.
 
 (* This is the  exact bound one gets assuming the rounding
    of uniform and independent coefficients *)
@@ -962,7 +990,7 @@ rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
 rewrite /good_noise /cv_bound /noise_val.
 admitted. (* We need concrete distributions *)
 
-lemma kyber_correctness &m : 
+lemma kyber_refined_correctness &m : 
  Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,A,MLWE_.RO.Lazy.LRO).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack
   by  apply (correctness_bound A All correctness_hack fail_prob &m).
@@ -984,6 +1012,8 @@ module WrapUnwrap  = {
   proc wrap_keys(trho : PKE_.pkey, s : PKE_.skey) : KyberPKE.pkey * KyberPKE.skey = {
      var i,tb,sb;
      var tv,sv : (W8.t Array384.t) Array3.t;
+     tv <- witness;
+     sv <- witness;
      i <- 0;
      while (i < 3) {
        tb <@ EncDec.encode12(trho.`1.[i]); tv.[i] <- tb;
@@ -996,6 +1026,8 @@ module WrapUnwrap  = {
   proc unwrap_keys(trho : KyberPKE.pkey, s : KyberPKE.skey) : PKE_.pkey * PKE_.skey = {
      var i,tb,sb;
      var tv,sv : vector;
+     tv <- witness;
+     sv <- witness;
      i <- 0;
      while (i < 3) {
        tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i tb;
@@ -1008,6 +1040,7 @@ module WrapUnwrap  = {
   proc wrap_sk(s : PKE_.skey) : KyberPKE.skey = {
      var i,sb;
      var sv : (W8.t Array384.t) Array3.t;
+     sv <- witness;
      i <- 0;
      while (i < 3) {
        sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
@@ -1019,6 +1052,7 @@ module WrapUnwrap  = {
   proc unwrap_sk(s : KyberPKE.skey) : PKE_.skey = {
      var i,sb;
      var sv : vector;
+     sv <- witness;
      i <- 0;
      while (i < 3) {
        sb <@ EncDec.decode12(s.[i]); sv <- set sv i sb;
@@ -1030,6 +1064,7 @@ module WrapUnwrap  = {
   proc wrap_pk(trho : PKE_.pkey) : KyberPKE.pkey = {
      var i,tb;
      var tv : (W8.t Array384.t) Array3.t;
+     tv <- witness;
      i <- 0;
      while (i < 3) {
        tb <@ EncDec.encode12(trho.`1.[i]); tv.[i] <- tb;
@@ -1041,6 +1076,7 @@ module WrapUnwrap  = {
   proc unwrap_pk(trho : KyberPKE.pkey) : PKE_.pkey = {
      var i,tb;
      var tv : vector;
+     tv <- witness;
      i <- 0;
      while (i < 3) {
        tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i tb;
@@ -1054,6 +1090,9 @@ module WrapUnwrap  = {
       var that : vector;
       var a : matrix;
       var c1 : (W8.t Array320.t) Array3.t;
+      that <- witness;
+      a <- witness;
+      c1 <- witness;
       (u,v) <- c;
       i <- 0;
       while (i < 3) {
@@ -1070,6 +1109,9 @@ module WrapUnwrap  = {
       var that : (W8.t Array384.t) Array3.t;
       var a : matrix;
       var c1 : vector;
+      that <- witness;
+      a <- witness;
+      c1 <- witness;
       (u,v) <- c;
       i <- 0;
       while (i < 3) {
@@ -1104,6 +1146,7 @@ module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) 
              the NTT. *)
           var i,j,c;
           var a : matrix;
+          a <- witness;
           i <- 0;
           while (i < kvec) {
             j <- 0;
@@ -1151,7 +1194,49 @@ module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) 
 
 }.
 
+(* We now specify the various components used by Kyber in the ROM *)
 
+module (G : G_t) (O : RO.POracle) = {
+   proc sample() : (W8.t Array32.t) *  (W8.t Array32.t) = {
+        var bb;
+        var r1, r2 : W8.t Array32.t;
+        bb <@ O.o((Some (), None, None));
+        r1 <- Array32.init (fun i => bb.`1.[i]);
+        r2 <- Array32.init (fun i => bb.`1.[i+32]);
+        return (r1,r2);
+   }
+}.
+
+module (XOF :  XOF_t) (O : RO.POracle) = {
+   var _rho : W8.t Array32.t
+   var _i, _j : int
+   var count : int
+
+   proc init(rho :  W8.t Array32.t, i j : int) : unit = {
+      _rho <- rho;
+      _i <- i;
+      _j <- j;
+      count <- 0;
+   }
+   proc next_bytes() : W8.t Array168.t = {
+        var bb;
+        bb <@ O.o((None, Some (_rho,_i,_j,count), None));
+        return bb.`2;
+   }
+}.
+
+module (PRF : PRF_t) (O : RO.POracle) = {
+   var _sig : W8.t Array32.t
+
+   proc init(sig : W8.t Array32.t) : unit = {
+       _sig <- sig;
+   }
+   proc next_bytes(_N : int) : W8.t Array128.t = {
+        var bb;
+        bb <@ O.o((None, None, Some (_sig,_N)));
+        return bb.`3;
+   }
+}.
 
 (* The first proof goal shows that encoding/decoding and using rejection sampling
    are irrelevant, so that our wrapper has the same correctness and security as
@@ -1204,7 +1289,6 @@ module (Bs(A : KyberPKE.AdversaryRO) : MLWEPKE.PKE_.AdversaryRO) (O : MLWE_.RO.P
    }
 }.
 
-declare module XOF : XOF_t.
 lemma wrap_correctness &m :  
   Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc(Ac),MLWE_.RO.Lazy.LRO).main() @ &m : res].
@@ -1222,26 +1306,56 @@ end section.
 
 section.
 
-declare module As : KyberPKE.AdversaryRO.
+declare module As : KyberPKE.AdversaryRO  {-MLWE_.RO.Lazy.LRO,-MLWE_.B, -MLWE_.Bt}.
 
-declare module Ac : KyberPKE.CAdversaryRO.
-
-(* These will need to be defined, possibly starting from a the LRO returning bytes. *)
-declare module G : G_t.
-declare module XOF : XOF_t.
-declare module PRF : PRF_t.
+declare module Ac : KyberPKE.CAdversaryRO  {-MLWE_.RO.Lazy.LRO}.
 
 (* In the ROM there should be no PRF loss *)
 lemma wrap_equiv_corr &m :  
   Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,Kyber(G,XOF,PRF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res].
-admitted.
+proof.
+byequiv => //.
+proc.
+inline {1} 2.
+inline {2} 2.
+admitted. (* a bunch of equivs that need to be proved once and for all *)
 
 lemma wrap_equiv_security &m :  
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,PRF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res].
-admitted.
+byequiv => //.
+proc.
+inline {1} 2.
+inline {2} 2.
+admitted. (* a bunch of equivs that need to be proved once and for all *)
+
+(* The following are corollarys that give us Kyber correctness and security *)
+
+lemma KyberCorrectness &m : 
+  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,Kyber(G,XOF,PRF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] >=
+      1%r - fail_prob - epsilon_hack.
+proof.
+rewrite -wrap_equiv_corr.
+rewrite (wrap_correctness Ac).
+apply (kyber_refined_correctness (Bc(Ac)) _ &m). 
+admit. (* lossless *)
+qed.
+
+lemma KyberSecurity &m :
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,PRF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] - 1%r / 2%r =
+      Pr[MLWE_.MLWE(MLWE_.B(B1ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(false) @ &m : res] -
+      Pr[MLWE_.MLWE(MLWE_.B(B1ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(true) @ &m : res] +
+      Pr[MLWE_.MLWE(MLWE_.Bt(B2ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(false) @ &m : res] -
+      Pr[MLWE_.MLWE(MLWE_.Bt(B2ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(true) @ &m : res].
+rewrite -wrap_equiv_security.
+rewrite (wrap_security As).
+apply (main_theorem_h (Bs(As)) _ _). 
+admit. (* lossless *)
+admit. (* lossless *)
+qed.
 
 end section.
 
-(* At this point we will have that the spec is as correct and secure as the refined abstract Kyber. We can start the implementation correctness proof. *)
+(* At this point we will have that the spec is as correct and secure as the refined abstract Kyber. We can start the implementation correctness proof. We first move to an alternative version of the scheme that separates random samplings from algebraic computations. *)
+
