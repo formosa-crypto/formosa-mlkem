@@ -979,6 +979,122 @@ end section.
 (* We wrap the refined abstraction with encoding/decoding
    algorithms first. *)
 
+module WrapUnwrap  = {
+
+  proc wrap_keys(trho : PKE_.pkey, s : PKE_.skey) : KyberPKE.pkey * KyberPKE.skey = {
+     var i,tb,sb;
+     var tv,sv : (W8.t Array384.t) Array3.t;
+     i <- 0;
+     while (i < 3) {
+       tb <@ EncDec.encode12(trho.`1.[i]); tv.[i] <- tb;
+       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
+       i <- i + 1;
+     }
+     return ((tv,trho.`2),sv);
+  }
+
+  proc unwrap_keys(trho : KyberPKE.pkey, s : KyberPKE.skey) : PKE_.pkey * PKE_.skey = {
+     var i,tb,sb;
+     var tv,sv : vector;
+     i <- 0;
+     while (i < 3) {
+       tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i tb;
+       sb <@ EncDec.decode12(s.[i]); sv <- set sv i sb;
+       i <- i + 1;
+     }
+     return ((tv,trho.`2),sv);
+  }
+
+  proc wrap_sk(s : PKE_.skey) : KyberPKE.skey = {
+     var i,sb;
+     var sv : (W8.t Array384.t) Array3.t;
+     i <- 0;
+     while (i < 3) {
+       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
+       i <- i + 1;
+     }
+     return sv;
+  }
+
+  proc unwrap_sk(s : KyberPKE.skey) : PKE_.skey = {
+     var i,sb;
+     var sv : vector;
+     i <- 0;
+     while (i < 3) {
+       sb <@ EncDec.decode12(s.[i]); sv <- set sv i sb;
+       i <- i + 1;
+     }
+     return sv;
+  }
+
+  proc wrap_pk(trho : PKE_.pkey) : KyberPKE.pkey = {
+     var i,tb;
+     var tv : (W8.t Array384.t) Array3.t;
+     i <- 0;
+     while (i < 3) {
+       tb <@ EncDec.encode12(trho.`1.[i]); tv.[i] <- tb;
+       i <- i + 1;
+     }
+     return (tv,trho.`2);
+  }
+
+  proc unwrap_pk(trho : KyberPKE.pkey) : PKE_.pkey = {
+     var i,tb;
+     var tv : vector;
+     i <- 0;
+     while (i < 3) {
+       tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i tb;
+       i <- i + 1;
+     }
+     return (tv,trho.`2);
+  }
+
+  proc wrap_ciphertext(c : ciphertext) : KyberPKE.ciphertext = {
+      var i,u,v,c2,c1i;
+      var that : vector;
+      var a : matrix;
+      var c1 : (W8.t Array320.t) Array3.t;
+      (u,v) <- c;
+      i <- 0;
+      while (i < 3) {
+         c1i <@ EncDec.encode10(u.[i]); 
+         c1.[i] <- c1i;
+         i <- i + 1;
+      }
+      c2 <@ EncDec.encode4(v);
+      return (c1,c2);
+  }
+
+  proc unwrap_ciphertext(c : KyberPKE.ciphertext) : ciphertext = {
+      var i,u,v,c2,c1i;
+      var that : (W8.t Array384.t) Array3.t;
+      var a : matrix;
+      var c1 : vector;
+      (u,v) <- c;
+      i <- 0;
+      while (i < 3) {
+         c1i <@ EncDec.decode10(u.[i]); 
+         c1 <- set c1 i c1i;
+         i <- i + 1;
+      }
+      c2 <@ EncDec.decode4(v);
+      return (c1,c2);
+  }
+
+  proc wrap_plaintext(m : plaintext) : KyberPKE.plaintext = {
+      var mp;
+      mp <@ EncDec.encode1(m_encode m);
+      return mp;
+  }
+
+  proc unwrap_plaintext(m : KyberPKE.plaintext) : plaintext = {
+      var mp;
+      mp <@ EncDec.decode1(m);
+      return m_decode mp;
+  }
+
+}.
+
 module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) = {
   module H : MLWE_.RO.POracle = {
       proc o(x : W8.t Array32.t) : matrix = { 
@@ -1004,143 +1120,38 @@ module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) 
   }
 
   proc kg() : KyberPKE.pkey * KyberPKE.skey = {
-     var trho,s,i,tb,sb;
+     var pk,sk,kp;
      var tv,sv : (W8.t Array384.t) Array3.t;
-     (trho,s) <@ MLWEPKE.MLWE_PKE(H).kg();
-     i <- 0;
-     while (i < 3) {
-       tb <@ EncDec.encode12(trho.`1.[i]); tv.[i] <- tb;
-       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
-       i <- i + 1;
-     }
-     return ((tv,trho.`2),sv);
+     kp <@ MLWEPKE.MLWE_PKE(H).kg();
+     (pk,sk) <@ WrapUnwrap.wrap_keys(kp);
+     return (pk,sk);
   }
 
   proc enc(pk : KyberPKE.pkey, m : KyberPKE.plaintext) : KyberPKE.ciphertext = {
-      var i,tb,tv,rho,u,v,mp,c2,c1i;
+      var pks,c,cs,mp;
       var that : vector;
       var a : matrix;
       var c1 : (W8.t Array320.t) Array3.t;
-      (tv,rho) <- pk;
-      (* Spec is silly here *)
-      i <- 0;
-      while (i < 3) {
-        tb <@ EncDec.decode12(tv.[i]); 
-        that <- set that 0 tb;
-        i <- i + 1;
-      }
-      mp <@ EncDec.decode1(m);
-      (u,v) <@ MLWEPKE.MLWE_PKE(H).enc((that,rho),m_decode mp);
-      i <- 0;
-      while (i < 3) {
-         c1i <@ EncDec.encode10(u.[i]); 
-         c1.[i] <- c1i;
-         i <- i + 1;
-      }
-      c2 <@ EncDec.encode4(v);
-      return (c1,c2);
+      pks <@ WrapUnwrap.unwrap_pk(pk);
+      mp <@ WrapUnwrap.unwrap_plaintext(m);
+      cs <@ MLWEPKE.MLWE_PKE(H).enc(pks,mp);
+      c <@ WrapUnwrap.wrap_ciphertext(cs);
+      return c;
   }
 
   proc dec(sk : KyberPKE.skey, cph : KyberPKE.ciphertext) : KyberPKE.plaintext option = {
-      var m,mp,i,ui,v,si, c1, c2;
+      var sks,cphs,m,mp;
       var u,s : vector;
-      (c1,c2) <- cph;
-      i <- 0;
-      while (i < 3) {
-         ui <@ EncDec.decode10(c1.[i]);
-         u <- set u i ui;
-         i <- i + 1;
-      }
-      v <@ EncDec.decode4(c2);
-      i <- 0;
-      while (i < 3) {
-         si <@ EncDec.decode12(sk.[i]);
-         s <- set s i (si);
-         i <- i + 1;
-      }
-      mp <@ MLWEPKE.MLWE_PKE(H).dec(s,(u,v));
-      m <@ EncDec.encode1(m_encode (oget mp));
+      sks <@ WrapUnwrap.unwrap_sk(sk);
+      cphs <@ WrapUnwrap.unwrap_ciphertext(cph);
+      mp <@ MLWEPKE.MLWE_PKE(H).dec(sks,cphs);
+      m <@ WrapUnwrap.wrap_plaintext(oget mp);
       return Some m;
   }
 
 }.
 
-(* Unwrapping must also be defined to prove equivalence *)
 
-module (UnWrapMLWEPKE(G : G_t, XOF : XOF_t, PRF : PRF_t) : PKE_.SchemeRO) (O : PKE_.RO.POracle) = {
-  module KRO : KyberPKE.RO.POracle = {
-      proc o(x : RO.in_t) : RO.out_t = { 
-        (* Sure enough this seems
-        to imply simulating a random oracle returning bytes to feed to the
-        XOF using one that gives us random matrices. lol
-        A nice thing could be done in these random oracles with rejection
-        sampling and indifferenciability. *)
-         return witness;
-      }
-  }
-
-  proc kg() : PKE_.pkey * PKE_.skey = {
-     var trho,s,i,tb,sb;
-     var tv,sv : vector;
-     (trho,s) <@ Kyber(G,XOF,PRF,KRO).kg();
-     i <- 0;
-     while (i < 3) {
-       tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i tb;
-       sb <@ EncDec.decode12(s.[i]); sv <- set sv i sb;
-       i <- i + 1;
-     }
-     return ((tv,trho.`2),sv);
-  }
-
-  proc enc(pk : PKE_.pkey , m : bool Array256.t) : ciphertext = {
-      var i,tb,tv,rho,u,v,mp,c2,c1i;
-      var that : (W8.t Array384.t) Array3.t;
-      var a : matrix;
-      var c1 : vector;
-      (tv,rho) <- pk;
-      (* Spec is silly here *)
-      i <- 0;
-      while (i < 3) {
-        tb <@ EncDec.encode12(tv.[i]); 
-        that.[i] <- tb;
-        i <- i + 1;
-      }
-      mp <@ EncDec.encode1(m_encode m);
-      (u,v) <@ Kyber(G,XOF,PRF,KRO).enc((that,rho),mp);
-      i <- 0;
-      while (i < 3) {
-         c1i <@ EncDec.decode10(u.[i]); 
-         c1 <- set c1 i c1i;
-         i <- i + 1;
-      }
-      c2 <@ EncDec.decode4(v);
-      return (c1,c2);
-  }
-
-  proc dec(sk : PKE_.skey, cph : ciphertext) : plaintext option = {
-      var m,mp,i,ui,v,si, c1, c2;
-      var u : (W8.t Array320.t) Array3.t;
-      var s : (W8.t Array384.t) Array3.t;
-      (c1,c2) <- cph;
-      i <- 0;
-      while (i < 3) {
-         ui <@ EncDec.encode10(c1.[i]);
-         u.[i] <- ui;
-         i <- i + 1;
-      }
-      v <@ EncDec.encode4(c2);
-      i <- 0;
-      while (i < 3) {
-         si <@ EncDec.encode12(sk.[i]);
-         s.[i] <- si;
-         i <- i + 1;
-      }
-      mp <@ Kyber(G,XOF,PRF,KRO).dec(s,(u,v));
-      m <@ EncDec.decode1(oget mp);
-      return Some (m_decode m);
-  }
-
-}.
 
 (* The first proof goal shows that encoding/decoding and using rejection sampling
    are irrelevant, so that our wrapper has the same correctness and security as
@@ -1148,25 +1159,60 @@ module (UnWrapMLWEPKE(G : G_t, XOF : XOF_t, PRF : PRF_t) : PKE_.SchemeRO) (O : P
 
 section.
 
+declare module Ac : KyberPKE.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
 declare module As : KyberPKE.AdversaryRO {-MLWE_.RO.Lazy.LRO}.
 
-declare module Ac : KyberPKE.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
-
-(* These modules are reductions that need to be written to attack
-   refined spec. They just encode/decode things coming from the
+(* These modules are reductions. They just encode/decode things coming from the
    refined game to the scheme adversary.  *)
-declare module Bs : MLWEPKE.PKE_.AdversaryRO {-MLWE_.RO.Lazy.LRO}.
-declare module Bc : MLWEPKE.PKE_.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
+
+module KRO(O : PKE_.RO.POracle) : KyberPKE.RO.POracle = {
+    proc o(x : RO.in_t) : RO.out_t = { 
+      (* Sure enough this seems
+      to imply simulating a random oracle returning bytes to feed to the
+      XOF using one that gives us random matrices. lol
+      A nice thing could be done in these random oracles with rejection
+      sampling and indifferenciability. *)
+       return witness;
+    }
+}.
+
+module (Bc(A : KyberPKE.CAdversaryRO) : MLWEPKE.PKE_.CAdversaryRO) (O : MLWE_.RO.POracle) = {
+   proc find(pk : PKE_.pkey, sk : PKE_.skey) : plaintext = {
+      var kpa, ma, m;
+      kpa <@ WrapUnwrap.wrap_keys((pk,sk));
+      ma <@ A(KRO(O)).find(kpa);
+      m <@ WrapUnwrap.unwrap_plaintext(ma);
+      return m;
+   }
+}.
+
+module (Bs(A : KyberPKE.AdversaryRO) : MLWEPKE.PKE_.AdversaryRO) (O : MLWE_.RO.POracle) = {
+   proc choose(pk : PKE_.pkey) : plaintext * plaintext = {
+      var pka, m1m2, m1, m2;
+      pka <@ WrapUnwrap.wrap_pk(pk);
+      m1m2 <@ A(KRO(O)).choose(pka);
+      m1 <@ WrapUnwrap.unwrap_plaintext(m1m2.`1);
+      m2 <@ WrapUnwrap.unwrap_plaintext(m1m2.`2);
+      return (m1,m2);
+   }
+
+   proc guess(c : ciphertext) : bool = {
+      var ca,b;
+      ca <@ WrapUnwrap.wrap_ciphertext(c);
+      b <@ A(KRO(O)).guess(ca);
+      return b;
+   }
+}.
 
 declare module XOF : XOF_t.
 lemma wrap_correctness &m :  
   Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
-  Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc,MLWE_.RO.Lazy.LRO).main() @ &m : res].
+  Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc(Ac),MLWE_.RO.Lazy.LRO).main() @ &m : res].
 admitted.
 
 lemma wrap_security &m :  
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
-  Pr[ MLWEPKE.PKE_.CPAGameROM(MLWEPKE.PKE_.CPA,MLWEPKE.MLWE_PKE,Bs,MLWE_.RO.Lazy.LRO).main() @ &m : res].
+  Pr[ MLWEPKE.PKE_.CPAGameROM(MLWEPKE.PKE_.CPA,MLWEPKE.MLWE_PKE,Bs(As),MLWE_.RO.Lazy.LRO).main() @ &m : res].
 admitted.
 
 end section.
@@ -1198,5 +1244,4 @@ admitted.
 
 end section.
 
-(* At this point we will have that the spec is as correct and secure as the refined abstract Kyber.
-   We can start the implementation correctness proof. *)
+(* At this point we will have that the spec is as correct and secure as the refined abstract Kyber. We can start the implementation correctness proof. *)
