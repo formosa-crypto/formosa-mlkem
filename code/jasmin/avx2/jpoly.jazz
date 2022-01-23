@@ -91,7 +91,7 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
   reg u8 c;
   stack u16[KYBER_N] r;
 
-  r = poly_frommsg(r, ap);
+  r = _poly_frommsg(r, ap);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -226,7 +226,7 @@ export fn poly_frommont_jazz(reg u64 rp)
     r[i] = t;
   }
 
-  r = poly_frommont(r);
+  r = _poly_frommont(r);
 
   for i = 0 to KYBER_N {
     t = r[i];
@@ -234,11 +234,12 @@ export fn poly_frommont_jazz(reg u64 rp)
   }
 }
 
-export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce) 
+
+export fn poly_getnoise_eta1_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 {
   reg u8 d;
   reg u16 t;
-  stack u16[KYBER_N] r;
+  stack u16[4 * KYBER_N] r;
   stack u8[KYBER_SYMBYTES] seed;
   inline int i;
   stack u64 srp;
@@ -250,14 +251,40 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
     seed[i] = d;
   }
 
-  r = _poly_getnoise(r, seed, nonce);
+  r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N] = _poly_getnoise_eta1_4x(r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N], seed, nonce);
 
   rp = srp;
-  for i = 0 to KYBER_N {
+  for i = 0 to 4*KYBER_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
 }
+
+export fn poly_getnoise_eta1122_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
+{
+  reg u8 d;
+  reg u16 t;
+  stack u16[4 * KYBER_N] r;
+  stack u8[KYBER_SYMBYTES] seed;
+  inline int i;
+  stack u64 srp;
+
+  srp = rp;
+
+  for i = 0 to KYBER_SYMBYTES {
+    d       = (u8)[seedp + i];
+    seed[i] = d;
+  }
+
+  r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N] = _poly_getnoise_eta1122_4x(r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N], seed, nonce);
+
+  rp = srp;
+  for i = 0 to 4*KYBER_N {
+    t = r[i];
+    (u16)[rp + 2*i] = t;
+  }
+}
+
 
 export fn poly_reduce_jazz(reg u64 rp)
 {

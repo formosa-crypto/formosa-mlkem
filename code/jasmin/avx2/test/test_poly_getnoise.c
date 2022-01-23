@@ -6,22 +6,40 @@
 
 int main(void)
 {
-  poly r0, r1;
+  poly r0[4], r1[4];
   unsigned char seed[KYBER_SYMBYTES];
 
   FILE *urandom = fopen("/dev/urandom", "r");
   fread(seed, 1, KYBER_SYMBYTES, urandom);
   fclose(urandom);
 
-  for(int i = 0; i < 1; i++)
-  {
-    poly_getnoise(&r0, seed, i);
-    poly_getnoise_jazz(&r1, seed, i);
+  poly_getnoise_eta1(r0, seed, 0);
+  poly_getnoise_eta1(&r0[1], seed, 1);
+  poly_getnoise_eta1(&r0[2], seed, 2);
+  poly_getnoise_eta1(&r0[3], seed, 3);
+  poly_getnoise_eta1_4x_jazz(r1, seed, 0);
 
+  for(int i=0;i<4;i++)
+  {
     for(int j=0;j<KYBER_N;j++)
     {
-      if(r0.coeffs[j] != r1.coeffs[j])
-        printf("error getnoise %d, %d, %d\n", j, r0.coeffs[j], r1.coeffs[j]);
+      if(r0[i].coeffs[j] != r1[i].coeffs[j])
+        printf("error getnoise %d, %d, %d\n", i*256+j, r0[i].coeffs[j], r1[i].coeffs[j]);
+    }
+  }
+
+  poly_getnoise_eta1(r0, seed, 0);
+  poly_getnoise_eta1(&r0[1], seed, 1);
+  poly_getnoise_eta2(&r0[2], seed, 2);
+  poly_getnoise_eta2(&r0[3], seed, 3);
+  poly_getnoise_eta1122_4x_jazz(r1, seed, 0);
+
+  for(int i=0;i<4;i++)
+  {
+    for(int j=0;j<KYBER_N;j++)
+    {
+      if(r0[i].coeffs[j] != r1[i].coeffs[j])
+        printf("error getnoise %d, %d, %d\n", i*256+j, r0[i].coeffs[j], r1[i].coeffs[j]);
     }
   }
 
