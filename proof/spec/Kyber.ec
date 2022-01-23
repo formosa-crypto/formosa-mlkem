@@ -775,7 +775,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       }      
       e2 <@ CBD2(PRF,O).sample_real(_N);
       rhat <- nttv r;
-      u <- (aT *^ rhat) + e1;
+      u <- invnttv (aT *^ rhat) + e1;
       mp <@ EncDec.decode1(m);
       v <- invntt (dotp that r) &+ e2 &+ decompress_poly 1 mp; 
       i <- 0;
