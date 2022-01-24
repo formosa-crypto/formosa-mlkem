@@ -2,9 +2,7 @@ require "gen_matrix.jinc"
 
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp, reg u64 transposed)
 {
-  stack u16[KYBER_VECN] a0;
-  stack u16[KYBER_VECN] a1;
-  stack u16[KYBER_VECN] a2;
+  stack u16[KYBER_K * KYBER_VECN] a;
   stack u8[KYBER_SYMBYTES] seed;
   reg u8 c;
   reg u16 t;
@@ -17,26 +15,12 @@ export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp, reg u64 transposed)
     seed[i] = c;
   }
 
-  a0, a1, a2 = __gen_matrix(seed, transposed);
+  a = __gen_matrix(seed, transposed);
 
   pp = ap;
-  for i = 0 to KYBER_VECN
+  for i = 0 to KYBER_K*KYBER_VECN
   {
-    t = a0[i];
-    (u16)[pp + 2*i] = t;
-  }
-  pp += 2*KYBER_VECN;
-
-  for i = 0 to KYBER_VECN
-  {
-    t = a1[i];
-    (u16)[pp + 2*i] = t;
-  }
-  pp += 2*KYBER_VECN;
-
-  for i = 0 to KYBER_VECN
-  {
-    t = a2[i];
+    t = a[i];
     (u16)[pp + 2*i] = t;
   }
 }

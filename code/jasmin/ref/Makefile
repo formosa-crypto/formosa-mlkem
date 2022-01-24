@@ -4,7 +4,7 @@ JASMIN=jasminc
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
-.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o
+.SECONDARY: jpoly.s jpolyvec.s jfips203.s jindcpa.s jkem.s
 
 default: test speed
 
@@ -35,71 +35,55 @@ test: test/test_poly_compress \
 			test/test_polyvec_csubq \
  			test/test_fips202 \
  			test/test_indcpa \
+			test/test_kem
 
 speed: test/speed_indcpa
 
-HEADERS = params.h poly.h fips202.h \
+HEADERS = params.h poly.h fips202.h kem.h
 
 
 JHEADERS = params.jinc \
 				   reduce.jinc \
            fips202.jinc \
+					 kem.jinc \
+					 verify.jinc
 
-POLYHEADERS = poly_compress.jinc \
-              poly_decompress.jinc \
-              poly_tobytes.jinc \
-              poly_frombytes.jinc \
-              poly_tomsg.jinc \
-              poly_frommsg.jinc \
-              poly_add2.jinc \
-              poly_sub.jinc \
-              poly_ntt.jinc \
-              poly_invntt.jinc \
-              poly_basemul.jinc \
-              poly_frommont.jinc \
-              poly_reduce.jinc \
-              poly_csubq.jinc \
-              poly_getnoise.jinc \
+POLYHEADERS = poly.jinc \
 							zetas.jinc \
 
-POLYVECHEADERS = polyvec_compress.jinc \
-                 polyvec_decompress.jinc \
-                 polyvec_tobytes.jinc \
-                 polyvec_frombytes.jinc \
-                 polyvec_add2.jinc \
-                 polyvec_ntt.jinc \
-                 polyvec_invntt.jinc \
-                 polyvec_pointwise_acc.jinc \
-                 polyvec_reduce.jinc \
-                 polyvec_csubq.jinc \
-								 polyvec_topolys.jinc \
-								 polyvec_frompolys.jinc \
+POLYVECHEADERS = polyvec.jinc \
                  gen_matrix.jinc \
 
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c \
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c \
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
+
+test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $<
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
 test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jfips202.s $<
- 
+
 test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) jpoly.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s $<
-			
+
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
 %.s: %.jazz
 	$(JASMIN) -o $@ $(JFLAGS) $^ 
 
+
 .PHONY: clean
 
 clean:
-	-rm *.s
+	-rm -f *.s
+	-rm -f jindcpa.o
+	-rm -f jkem.o
 	-rm -f test/test_poly_compress
 	-rm -f test/test_poly_decompress
 	-rm -f test/test_poly_tobytes
@@ -127,7 +111,8 @@ clean:
 	-rm -f test/test_polyvec_csubq
 	-rm -f test/test_fips202
 	-rm -f test/test_indcpa
+	-rm -f test/test_kem
 	-rm -f test/speed_indcpa
 ifeq ($(OS),Darwin)
-	-rm -r test/*.dSYM
+	-rm -rf test/*.dSYM
 endif
