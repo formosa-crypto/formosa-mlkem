@@ -1,11 +1,10 @@
-require import List Int (*IntExtra*) IntDiv CoreMap.
+require import AllCore IntDiv CoreMap List.
 from Jasmin require import JModel.
 
-require import Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64
-               Array128 Array168 Array256 Array768.
-require import WArray20 WArray32 WArray33 WArray34 WArray40 WArray64
-               WArray128 WArray168 WArray192 WArray200 WArray256 WArray512
-               WArray1536.
+require import Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array128
+               Array168 Array256 Array768.
+require import WArray20 WArray32 WArray33 WArray34 WArray40 WArray128
+               WArray168 WArray192 WArray200 WArray256 WArray512 WArray1536.
 
 abbrev roundconstants = Array24.of_list witness [W64.of_int 1;
 W64.of_int 32898; W64.of_int (-9223372036854742902);
@@ -91,7 +90,7 @@ W16.of_int 1522; W16.of_int 1628].
 
 
 module M = {
-  proc poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
     
     var i:W64.t;
     var t:W16.t;
@@ -112,7 +111,7 @@ module M = {
     return (rp);
   }
   
-  proc poly_compress (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_compress (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     
     var i:W64.t;
     var j:W64.t;
@@ -120,7 +119,7 @@ module M = {
     var d0:W32.t;
     var d1:W32.t;
     
-    a <@ poly_csubq (a);
+    a <@ _poly_csubq (a);
     i <- (W64.of_int 0);
     j <- (W64.of_int 0);
     
@@ -149,7 +148,7 @@ module M = {
     return (a);
   }
   
-  proc poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+  proc _poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
     
     var i:W64.t;
     var j:W64.t;
@@ -181,42 +180,7 @@ module M = {
     return (rp);
   }
   
-  proc poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
-    
-    var i:W64.t;
-    var j:W64.t;
-    var t0:W16.t;
-    var t1:W16.t;
-    var d:W16.t;
-    
-    a <@ poly_csubq (a);
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 0);
-    
-    while ((i \ult (W64.of_int 256))) {
-      t0 <- a.[(W64.to_uint i)];
-      i <- (i + (W64.of_int 1));
-      t1 <- a.[(W64.to_uint i)];
-      i <- (i + (W64.of_int 1));
-      d <- t0;
-      d <- (d `&` (W16.of_int 255));
-      Glob.mem <- storeW8 Glob.mem (W64.to_uint (rp + j)) (truncateu8 d);
-      j <- (j + (W64.of_int 1));
-      t0 <- (t0 `>>` (W8.of_int 8));
-      d <- t1;
-      d <- (d `&` (W16.of_int 15));
-      d <- (d `<<` (W8.of_int 4));
-      d <- (d `|` t0);
-      Glob.mem <- storeW8 Glob.mem (W64.to_uint (rp + j)) (truncateu8 d);
-      j <- (j + (W64.of_int 1));
-      t1 <- (t1 `>>` (W8.of_int 4));
-      Glob.mem <- storeW8 Glob.mem (W64.to_uint (rp + j)) (truncateu8 t1);
-      j <- (j + (W64.of_int 1));
-    }
-    return (a);
-  }
-  
-  proc poly_frombytes (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+  proc _poly_frombytes (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
     var aux: int;
     
     var i:int;
@@ -252,7 +216,7 @@ module M = {
     return (rp);
   }
   
-  proc poly_tomsg (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_tomsg (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
     
     var r:W8.t;
@@ -261,7 +225,7 @@ module M = {
     var t:W16.t;
     var d:W32.t;
     
-    a <@ poly_csubq (a);
+    a <@ _poly_csubq (a);
     i <- 0;
     while (i < 32) {
       r <- (W8.of_int 0);
@@ -284,7 +248,7 @@ module M = {
     return (a);
   }
   
-  proc poly_frommsg (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+  proc _poly_frommsg (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
     var aux: int;
     
     var i:int;
@@ -339,7 +303,7 @@ module M = {
     return (rp);
   }
   
-  proc poly_add2 (rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_add2 (rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     
     var i:W64.t;
     var a:W16.t;
@@ -358,8 +322,8 @@ module M = {
     return (rp);
   }
   
-  proc poly_sub (rp:W16.t Array256.t, ap:W16.t Array256.t,
-                 bp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_sub (rp:W16.t Array256.t, ap:W16.t Array256.t,
+                  bp:W16.t Array256.t) : W16.t Array256.t = {
     
     var i:W64.t;
     var a:W16.t;
@@ -378,7 +342,7 @@ module M = {
     return (rp);
   }
   
-  proc fqmul (a:W16.t, b:W16.t) : W16.t = {
+  proc __fqmul (a:W16.t, b:W16.t) : W16.t = {
     
     var r:W16.t;
     var ad:W32.t;
@@ -400,7 +364,7 @@ module M = {
     return (r);
   }
   
-  proc barrett_reduce (a:W16.t) : W16.t = {
+  proc __barrett_reduce (a:W16.t) : W16.t = {
     
     var r:W16.t;
     var t:W32.t;
@@ -415,7 +379,7 @@ module M = {
     return (r);
   }
   
-  proc poly_reduce (rp:W16.t Array256.t) : W16.t Array256.t = {
+  proc __poly_reduce (rp:W16.t Array256.t) : W16.t Array256.t = {
     
     var j:W64.t;
     var t:W16.t;
@@ -424,14 +388,14 @@ module M = {
     
     while ((j \ult (W64.of_int 256))) {
       t <- rp.[(W64.to_uint j)];
-      t <@ barrett_reduce (t);
+      t <@ __barrett_reduce (t);
       rp.[(W64.to_uint j)] <- t;
       j <- (j + (W64.of_int 1));
     }
     return (rp);
   }
   
-  proc poly_ntt (rp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_ntt (rp:W16.t Array256.t) : W16.t Array256.t = {
     
     var zetasp:W16.t Array128.t;
     var zetasctr:W64.t;
@@ -461,7 +425,7 @@ module M = {
         while ((j \ult cmp)) {
           offset <- (j + len);
           t <- rp.[(W64.to_uint offset)];
-          t <@ fqmul (t, zeta_0);
+          t <@ __fqmul (t, zeta_0);
           s <- rp.[(W64.to_uint j)];
           m <- s;
           m <- (m - t);
@@ -474,11 +438,11 @@ module M = {
       }
       len <- (len `>>` (W8.of_int 1));
     }
-    rp <@ poly_reduce (rp);
+    rp <@ __poly_reduce (rp);
     return (rp);
   }
   
-  proc poly_invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
     
     var zetasp:W16.t Array128.t;
     var zetasctr:W64.t;
@@ -510,10 +474,10 @@ module M = {
           s <- rp.[(W64.to_uint offset)];
           t <- rp.[(W64.to_uint j)];
           m <- (s + t);
-          m <@ barrett_reduce (m);
+          m <@ __barrett_reduce (m);
           rp.[(W64.to_uint j)] <- m;
           t <- (t - s);
-          t <@ fqmul (t, zeta_0);
+          t <@ __fqmul (t, zeta_0);
           rp.[(W64.to_uint offset)] <- t;
           j <- (j + (W64.of_int 1));
         }
@@ -526,15 +490,15 @@ module M = {
     
     while ((j \ult (W64.of_int 256))) {
       t <- rp.[(W64.to_uint j)];
-      t <@ fqmul (t, zeta_0);
+      t <@ __fqmul (t, zeta_0);
       rp.[(W64.to_uint j)] <- t;
       j <- (j + (W64.of_int 1));
     }
     return (rp);
   }
   
-  proc poly_basemul (rp:W16.t Array256.t, ap:W16.t Array256.t,
-                     bp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_basemul (rp:W16.t Array256.t, ap:W16.t Array256.t,
+                      bp:W16.t Array256.t) : W16.t Array256.t = {
     
     var srp:W16.t Array256.t;
     var zetasctr:W64.t;
@@ -564,12 +528,12 @@ module M = {
       a1 <- ap.[(W64.to_uint i)];
       b1 <- bp.[(W64.to_uint i)];
       i <- (i - (W64.of_int 1));
-      r0 <@ fqmul (a1, b1);
-      r0 <@ fqmul (r0, zeta_0);
-      t <@ fqmul (a0, b0);
+      r0 <@ __fqmul (a1, b1);
+      r0 <@ __fqmul (r0, zeta_0);
+      t <@ __fqmul (a0, b0);
       r0 <- (r0 + t);
-      r1 <@ fqmul (a0, b1);
-      t <@ fqmul (a1, b0);
+      r1 <@ __fqmul (a0, b1);
+      t <@ __fqmul (a1, b0);
       r1 <- (r1 + t);
       rp <- srp;
       rp.[(W64.to_uint i)] <- r0;
@@ -584,12 +548,12 @@ module M = {
       a1 <- ap.[(W64.to_uint i)];
       b1 <- bp.[(W64.to_uint i)];
       i <- (i - (W64.of_int 1));
-      r0 <@ fqmul (a1, b1);
-      r0 <@ fqmul (r0, zeta_0);
-      t <@ fqmul (a0, b0);
+      r0 <@ __fqmul (a1, b1);
+      r0 <@ __fqmul (r0, zeta_0);
+      t <@ __fqmul (a0, b0);
       r0 <- (r0 + t);
-      r1 <@ fqmul (a0, b1);
-      t <@ fqmul (a1, b0);
+      r1 <@ __fqmul (a0, b1);
+      t <@ __fqmul (a1, b0);
       r1 <- (r1 + t);
       rp <- srp;
       rp.[(W64.to_uint i)] <- r0;
@@ -601,25 +565,7 @@ module M = {
     return (rp);
   }
   
-  proc poly_frommont (rp:W16.t Array256.t) : W16.t Array256.t = {
-    
-    var dmont:W16.t;
-    var i:W64.t;
-    var r:W16.t;
-    
-    dmont <- (W16.of_int 1353);
-    i <- (W64.of_int 0);
-    
-    while ((i \ult (W64.of_int 256))) {
-      r <- rp.[(W64.to_uint i)];
-      r <@ fqmul (r, dmont);
-      rp.[(W64.to_uint i)] <- r;
-      i <- (i + (W64.of_int 1));
-    }
-    return (rp);
-  }
-  
-  proc index (x:int, y:int) : int = {
+  proc __index (x:int, y:int) : int = {
     
     var r:int;
     
@@ -627,7 +573,7 @@ module M = {
     return (r);
   }
   
-  proc theta (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc __theta (a:W64.t Array25.t) : W64.t Array25.t = {
     var aux_1: bool;
     var aux_0: bool;
     var aux: int;
@@ -673,7 +619,7 @@ module M = {
     return (a);
   }
   
-  proc keccakRhoOffsets (i:int) : int = {
+  proc __keccakRhoOffsets (i:int) : int = {
     var aux: int;
     
     var r:int;
@@ -700,7 +646,7 @@ module M = {
     return (r);
   }
   
-  proc rho (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc __rho (a:W64.t Array25.t) : W64.t Array25.t = {
     var aux_1: bool;
     var aux_0: bool;
     var aux: int;
@@ -717,8 +663,8 @@ module M = {
     while (x < 5) {
       y <- 0;
       while (y < 5) {
-        i <@ index (x, y);
-        z <@ keccakRhoOffsets (i);
+        i <@ __index (x, y);
+        z <@ __keccakRhoOffsets (i);
         (aux_1, aux_0, aux_2) <- ROL_64 a.[i] (W8.of_int z);
          _0 <- aux_1;
          _1 <- aux_0;
@@ -730,7 +676,7 @@ module M = {
     return (a);
   }
   
-  proc pi (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc __pi (a:W64.t Array25.t) : W64.t Array25.t = {
     var aux: int;
     
     var i:int;
@@ -750,7 +696,7 @@ module M = {
       y <- 0;
       while (y < 5) {
         t <- b.[(x + (5 * y))];
-        i <@ index (y, ((2 * x) + (3 * y)));
+        i <@ __index (y, ((2 * x) + (3 * y)));
         a.[i] <- t;
         y <- y + 1;
       }
@@ -759,7 +705,7 @@ module M = {
     return (a);
   }
   
-  proc chi (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc __chi (a:W64.t Array25.t) : W64.t Array25.t = {
     var aux: int;
     
     var x:int;
@@ -771,12 +717,12 @@ module M = {
     while (y < 5) {
       x <- 0;
       while (x < 5) {
-        i <@ index ((x + 1), y);
+        i <@ __index ((x + 1), y);
         c.[x] <- a.[i];
         c.[x] <- (invw c.[x]);
-        i <@ index ((x + 2), y);
+        i <@ __index ((x + 2), y);
         c.[x] <- (c.[x] `&` a.[i]);
-        i <@ index (x, y);
+        i <@ __index (x, y);
         c.[x] <- (c.[x] `^` a.[i]);
         x <- x + 1;
       }
@@ -790,7 +736,7 @@ module M = {
     return (a);
   }
   
-  proc iota_0 (a:W64.t Array25.t, c:W64.t) : W64.t Array25.t = {
+  proc __iota (a:W64.t Array25.t, c:W64.t) : W64.t Array25.t = {
     
     
     
@@ -798,7 +744,7 @@ module M = {
     return (a);
   }
   
-  proc __keccakf1600_ref (state:W64.t Array25.t) : W64.t Array25.t = {
+  proc _keccakf1600_ref (state:W64.t Array25.t) : W64.t Array25.t = {
     
     var constptr:W64.t Array24.t;
     var rctr:W64.t;
@@ -806,21 +752,19 @@ module M = {
     constptr <- roundconstants;
     rctr <- (W64.of_int 0);
     
-    while ((rctr \ult (W64.of_int 192))) {
-      state <@ theta (state);
-      state <@ rho (state);
-      state <@ pi (state);
-      state <@ chi (state);
+    while ((rctr \ult (W64.of_int 24))) {
+      state <@ __theta (state);
+      state <@ __rho (state);
+      state <@ __pi (state);
+      state <@ __chi (state);
       constptr <- roundconstants;
-      state <@ iota_0 (state,
-      (get64_direct (WArray192.init64 (fun i => constptr.[i]))
-      (W64.to_uint rctr)));
-      rctr <- (rctr + (W64.of_int 8));
+      state <@ __iota (state, constptr.[(W64.to_uint rctr)]);
+      rctr <- (rctr + (W64.of_int 1));
     }
     return (state);
   }
   
-  proc st0 (state:W64.t Array25.t) : W64.t Array25.t = {
+  proc __st0 (state:W64.t Array25.t) : W64.t Array25.t = {
     var aux: int;
     
     var i:int;
@@ -833,7 +777,8 @@ module M = {
     return (state);
   }
   
-  proc shake256_128_33 (out:W8.t Array128.t, in_0:W8.t Array33.t) : W8.t Array128.t = {
+  proc _shake256_128_33 (out:W8.t Array128.t, in_0:W8.t Array33.t) : 
+  W8.t Array128.t = {
     var aux: int;
     
     var sout:W8.t Array128.t;
@@ -843,7 +788,7 @@ module M = {
     sout <- witness;
     state <- witness;
     sout <- out;
-    state <@ st0 (state);
+    state <@ __st0 (state);
     i <- 0;
     while (i < 33) {
       c <- in_0.[i];
@@ -861,7 +806,7 @@ module M = {
     Array25.init
     (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i => state.[i])) (136 - 1) (
     (get8 (WArray200.init64 (fun i => state.[i])) (136 - 1)) `^` (W8.of_int 128))));
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ref (state);
     out <- sout;
     i <- 0;
     while (i < 128) {
@@ -872,49 +817,14 @@ module M = {
     return (out);
   }
   
-  proc sha3512_32 (out:W8.t Array64.t, in_0:W8.t Array32.t) : W8.t Array64.t = {
-    var aux: int;
-    
-    var state:W64.t Array25.t;
-    var i:int;
-    var c:W8.t;
-    state <- witness;
-    state <@ st0 (state);
-    i <- 0;
-    while (i < 32) {
-      c <- in_0.[i];
-      state <-
-      Array25.init
-      (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i => state.[i])) i (
-      (get8 (WArray200.init64 (fun i => state.[i])) i) `^` c)));
-      i <- i + 1;
-    }
-    state <-
-    Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i => state.[i])) 32 (
-    (get8 (WArray200.init64 (fun i => state.[i])) 32) `^` (W8.of_int 6))));
-    state <-
-    Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i => state.[i])) (72 - 1) (
-    (get8 (WArray200.init64 (fun i => state.[i])) (72 - 1)) `^` (W8.of_int 128))));
-    state <@ __keccakf1600_ref (state);
-    i <- 0;
-    while (i < 64) {
-      c <- (get8 (WArray200.init64 (fun i => state.[i])) i);
-      out.[i] <- c;
-      i <- i + 1;
-    }
-    return (out);
-  }
-  
-  proc shake128_absorb34 (state:W64.t Array25.t, in_0:W8.t Array34.t) : 
+  proc _shake128_absorb34 (state:W64.t Array25.t, in_0:W8.t Array34.t) : 
   W64.t Array25.t = {
     var aux: int;
     
     var i:int;
     var c:W8.t;
     
-    state <@ st0 (state);
+    state <@ __st0 (state);
     i <- 0;
     while (i < 34) {
       c <- in_0.[i];
@@ -935,14 +845,14 @@ module M = {
     return (state);
   }
   
-  proc shake128_squeezeblock (state:W64.t Array25.t, out:W8.t Array168.t) : 
+  proc _shake128_squeezeblock (state:W64.t Array25.t, out:W8.t Array168.t) : 
   W64.t Array25.t * W8.t Array168.t = {
     var aux: int;
     
     var i:int;
     var c:W8.t;
     
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ref (state);
     i <- 0;
     while (i < 168) {
       c <- (get8 (WArray200.init64 (fun i => state.[i])) i);
@@ -952,7 +862,7 @@ module M = {
     return (state, out);
   }
   
-  proc poly_getnoise (rp:W16.t Array256.t, seed:W8.t Array32.t, nonce:W8.t) : 
+  proc _poly_getnoise (rp:W16.t Array256.t, seed:W8.t Array32.t, nonce:W8.t) : 
   W16.t Array256.t = {
     var aux: int;
     
@@ -977,7 +887,7 @@ module M = {
       k <- k + 1;
     }
     extseed.[32] <- nonce;
-    buf <@ shake256_128_33 (buf, extseed);
+    buf <@ _shake256_128_33 (buf, extseed);
     rp <- srp;
     i <- (W64.of_int 0);
     j <- (W64.of_int 0);
@@ -1012,9 +922,9 @@ module M = {
     return (rp);
   }
   
-  proc polyvec_topolys (pv:W16.t Array768.t) : W16.t Array256.t *
-                                               W16.t Array256.t *
-                                               W16.t Array256.t = {
+  proc __polyvec_topolys (pv:W16.t Array768.t) : W16.t Array256.t *
+                                                 W16.t Array256.t *
+                                                 W16.t Array256.t = {
     
     var r0:W16.t Array256.t;
     var r1:W16.t Array256.t;
@@ -1053,8 +963,8 @@ module M = {
     return (r0, r1, r2);
   }
   
-  proc polyvec_frompolys (p0:W16.t Array256.t, p1:W16.t Array256.t,
-                          p2:W16.t Array256.t) : W16.t Array768.t = {
+  proc __polyvec_frompolys (p0:W16.t Array256.t, p1:W16.t Array256.t,
+                            p2:W16.t Array256.t) : W16.t Array768.t = {
     
     var r:W16.t Array768.t;
     var i:W64.t;
@@ -1089,26 +999,7 @@ module M = {
     return (r);
   }
   
-  proc polyvec_tobytes (rp:W64.t, a:W16.t Array768.t) : unit = {
-    
-    var a0:W16.t Array256.t;
-    var a1:W16.t Array256.t;
-    var a2:W16.t Array256.t;
-    var pp:W64.t;
-    a0 <- witness;
-    a1 <- witness;
-    a2 <- witness;
-    (a0, a1, a2) <@ polyvec_topolys (a);
-    pp <- rp;
-    a0 <@ poly_tobytes (pp, a0);
-    pp <- (pp + (W64.of_int 384));
-    a1 <@ poly_tobytes (pp, a1);
-    pp <- (pp + (W64.of_int 384));
-    a2 <@ poly_tobytes (pp, a2);
-    return ();
-  }
-  
-  proc polyvec_frombytes (ap:W64.t) : W16.t Array768.t = {
+  proc __polyvec_frombytes (ap:W64.t) : W16.t Array768.t = {
     
     var r:W16.t Array768.t;
     var pp:W64.t;
@@ -1120,16 +1011,16 @@ module M = {
     r1 <- witness;
     r2 <- witness;
     pp <- ap;
-    r0 <@ poly_frombytes (r0, pp);
+    r0 <@ _poly_frombytes (r0, pp);
     pp <- (pp + (W64.of_int 384));
-    r1 <@ poly_frombytes (r1, pp);
+    r1 <@ _poly_frombytes (r1, pp);
     pp <- (pp + (W64.of_int 384));
-    r2 <@ poly_frombytes (r2, pp);
-    r <@ polyvec_frompolys (r0, r1, r2);
+    r2 <@ _poly_frombytes (r2, pp);
+    r <@ __polyvec_frompolys (r0, r1, r2);
     return (r);
   }
   
-  proc polyvec_csubq (r:W16.t Array768.t) : W16.t Array768.t = {
+  proc __polyvec_csubq (r:W16.t Array768.t) : W16.t Array768.t = {
     
     var r0:W16.t Array256.t;
     var r1:W16.t Array256.t;
@@ -1137,15 +1028,15 @@ module M = {
     r0 <- witness;
     r1 <- witness;
     r2 <- witness;
-    (r0, r1, r2) <@ polyvec_topolys (r);
-    r0 <@ poly_csubq (r0);
-    r1 <@ poly_csubq (r1);
-    r2 <@ poly_csubq (r2);
-    r <@ polyvec_frompolys (r0, r1, r2);
+    (r0, r1, r2) <@ __polyvec_topolys (r);
+    r0 <@ _poly_csubq (r0);
+    r1 <@ _poly_csubq (r1);
+    r2 <@ _poly_csubq (r2);
+    r <@ __polyvec_frompolys (r0, r1, r2);
     return (r);
   }
   
-  proc polyvec_compress (rp:W64.t, a:W16.t Array768.t) : unit = {
+  proc __polyvec_compress (rp:W64.t, a:W16.t Array768.t) : unit = {
     var aux: int;
     
     var i:W64.t;
@@ -1159,7 +1050,7 @@ module M = {
     t <- witness;
     i <- (W64.of_int 0);
     j <- (W64.of_int 0);
-    aa <@ polyvec_csubq (a);
+    aa <@ __polyvec_csubq (a);
     
     while ((i \ult (W64.of_int 768))) {
       k <- 0;
@@ -1205,7 +1096,7 @@ module M = {
     return ();
   }
   
-  proc polyvec_decompress (ap:W64.t) : W16.t Array768.t = {
+  proc __polyvec_decompress (ap:W64.t) : W16.t Array768.t = {
     var aux: int;
     
     var r:W16.t Array768.t;
@@ -1257,7 +1148,7 @@ module M = {
     return (r);
   }
   
-  proc polyvec_add2 (r:W16.t Array768.t, b:W16.t Array768.t) : W16.t Array768.t = {
+  proc __polyvec_add2 (r:W16.t Array768.t, b:W16.t Array768.t) : W16.t Array768.t = {
     
     var r0:W16.t Array256.t;
     var r1:W16.t Array256.t;
@@ -1271,16 +1162,16 @@ module M = {
     r0 <- witness;
     r1 <- witness;
     r2 <- witness;
-    (r0, r1, r2) <@ polyvec_topolys (r);
-    (b0, b1, b2) <@ polyvec_topolys (b);
-    r0 <@ poly_add2 (r0, b0);
-    r1 <@ poly_add2 (r1, b1);
-    r2 <@ poly_add2 (r2, b2);
-    r <@ polyvec_frompolys (r0, r1, r2);
+    (r0, r1, r2) <@ __polyvec_topolys (r);
+    (b0, b1, b2) <@ __polyvec_topolys (b);
+    r0 <@ _poly_add2 (r0, b0);
+    r1 <@ _poly_add2 (r1, b1);
+    r2 <@ _poly_add2 (r2, b2);
+    r <@ __polyvec_frompolys (r0, r1, r2);
     return (r);
   }
   
-  proc polyvec_pointwise_acc (a:W16.t Array768.t, b:W16.t Array768.t) : 
+  proc __polyvec_pointwise_acc (a:W16.t Array768.t, b:W16.t Array768.t) : 
   W16.t Array256.t = {
     
     var r:W16.t Array256.t;
@@ -1299,18 +1190,18 @@ module M = {
     b2 <- witness;
     r <- witness;
     t <- witness;
-    (a0, a1, a2) <@ polyvec_topolys (a);
-    (b0, b1, b2) <@ polyvec_topolys (b);
-    r <@ poly_basemul (r, a0, b0);
-    t <@ poly_basemul (t, a1, b1);
-    r <@ poly_add2 (r, t);
-    t <@ poly_basemul (t, a2, b2);
-    r <@ poly_add2 (r, t);
-    r <@ poly_reduce (r);
+    (a0, a1, a2) <@ __polyvec_topolys (a);
+    (b0, b1, b2) <@ __polyvec_topolys (b);
+    r <@ _poly_basemul (r, a0, b0);
+    t <@ _poly_basemul (t, a1, b1);
+    r <@ _poly_add2 (r, t);
+    t <@ _poly_basemul (t, a2, b2);
+    r <@ _poly_add2 (r, t);
+    r <@ __poly_reduce (r);
     return (r);
   }
   
-  proc polyvec_ntt (r:W16.t Array768.t) : W16.t Array768.t = {
+  proc __polyvec_ntt (r:W16.t Array768.t) : W16.t Array768.t = {
     
     var r0:W16.t Array256.t;
     var r1:W16.t Array256.t;
@@ -1318,15 +1209,15 @@ module M = {
     r0 <- witness;
     r1 <- witness;
     r2 <- witness;
-    (r0, r1, r2) <@ polyvec_topolys (r);
-    r0 <@ poly_ntt (r0);
-    r1 <@ poly_ntt (r1);
-    r2 <@ poly_ntt (r2);
-    r <@ polyvec_frompolys (r0, r1, r2);
+    (r0, r1, r2) <@ __polyvec_topolys (r);
+    r0 <@ _poly_ntt (r0);
+    r1 <@ _poly_ntt (r1);
+    r2 <@ _poly_ntt (r2);
+    r <@ __polyvec_frompolys (r0, r1, r2);
     return (r);
   }
   
-  proc polyvec_invntt (r:W16.t Array768.t) : W16.t Array768.t = {
+  proc __polyvec_invntt (r:W16.t Array768.t) : W16.t Array768.t = {
     
     var r0:W16.t Array256.t;
     var r1:W16.t Array256.t;
@@ -1334,15 +1225,15 @@ module M = {
     r0 <- witness;
     r1 <- witness;
     r2 <- witness;
-    (r0, r1, r2) <@ polyvec_topolys (r);
-    r0 <@ poly_invntt (r0);
-    r1 <@ poly_invntt (r1);
-    r2 <@ poly_invntt (r2);
-    r <@ polyvec_frompolys (r0, r1, r2);
+    (r0, r1, r2) <@ __polyvec_topolys (r);
+    r0 <@ _poly_invntt (r0);
+    r1 <@ _poly_invntt (r1);
+    r2 <@ _poly_invntt (r2);
+    r <@ __polyvec_frompolys (r0, r1, r2);
     return (r);
   }
   
-  proc polyvec_reduce (r:W16.t Array768.t) : W16.t Array768.t = {
+  proc __polyvec_reduce (r:W16.t Array768.t) : W16.t Array768.t = {
     
     var r0:W16.t Array256.t;
     var r1:W16.t Array256.t;
@@ -1350,22 +1241,23 @@ module M = {
     r0 <- witness;
     r1 <- witness;
     r2 <- witness;
-    (r0, r1, r2) <@ polyvec_topolys (r);
-    r0 <@ poly_reduce (r0);
-    r1 <@ poly_reduce (r1);
-    r2 <@ poly_reduce (r2);
-    r <@ polyvec_frompolys (r0, r1, r2);
+    (r0, r1, r2) <@ __polyvec_topolys (r);
+    r0 <@ __poly_reduce (r0);
+    r1 <@ __poly_reduce (r1);
+    r2 <@ __poly_reduce (r2);
+    r <@ __polyvec_frompolys (r0, r1, r2);
     return (r);
   }
   
-  proc rej_uniform (rp:W16.t Array256.t, offset:W64.t, buf:W8.t Array168.t) : 
+  proc __rej_uniform (rp:W16.t Array256.t, offset:W64.t, buf:W8.t Array168.t) : 
   W64.t * W16.t Array256.t = {
     
     var ctr:W64.t;
     var pos:W64.t;
     var exit:W64.t;
-    var val:W16.t;
+    var val1:W16.t;
     var t:W16.t;
+    var val2:W16.t;
     var cnd0:W64.t;
     var cnd1:W64.t;
     
@@ -1374,19 +1266,32 @@ module M = {
     exit <- (W64.of_int 0);
     
     while ((exit = (W64.of_int 0))) {
-      val <- (zeroextu16 buf.[(W64.to_uint pos)]);
+      val1 <- (zeroextu16 buf.[(W64.to_uint pos)]);
       pos <- (pos + (W64.of_int 1));
       t <- (zeroextu16 buf.[(W64.to_uint pos)]);
+      val2 <- t;
+      val2 <- (val2 `>>` (W8.of_int 4));
+      t <- (t `&` (W16.of_int 15));
       t <- (t `<<` (W8.of_int 8));
-      val <- (val `|` t);
+      val1 <- (val1 `|` t);
       pos <- (pos + (W64.of_int 1));
-      if ((val \ult (W16.of_int 63251))) {
-        t <- val;
-        t <- (t `>>` (W8.of_int 12));
-        t <- (t * (W16.of_int 3329));
-        val <- (val - t);
-        rp.[(W64.to_uint ctr)] <- val;
+      t <- (zeroextu16 buf.[(W64.to_uint pos)]);
+      t <- (t `<<` (W8.of_int 4));
+      val2 <- (val2 `|` t);
+      pos <- (pos + (W64.of_int 1));
+      if ((val1 \ult (W16.of_int 3329))) {
+        rp.[(W64.to_uint ctr)] <- val1;
         ctr <- (ctr + (W64.of_int 1));
+      } else {
+        
+      }
+      if ((val2 \ult (W16.of_int 3329))) {
+        if ((ctr \ult (W64.of_int 256))) {
+          rp.[(W64.to_uint ctr)] <- val2;
+          ctr <- (ctr + (W64.of_int 1));
+        } else {
+          
+        }
       } else {
         
       }
@@ -1395,16 +1300,16 @@ module M = {
       cnd0 <- (cnd0 - (W64.of_int 1));
       cnd1 <- (W64.of_int 168);
       cnd1 <- (cnd1 - pos);
-      cnd1 <- (cnd1 - (W64.of_int 2));
+      cnd1 <- (cnd1 - (W64.of_int 3));
       exit <- (cnd0 `|` cnd1);
       exit <- (exit `>>` (W8.of_int 63));
     }
     return (ctr, rp);
   }
   
-  proc gen_matrix (seed:W8.t Array32.t, transposed:W64.t) : W16.t Array768.t *
-                                                            W16.t Array768.t *
-                                                            W16.t Array768.t = {
+  proc __gen_matrix (seed:W8.t Array32.t, transposed:W64.t) : W16.t Array768.t *
+                                                              W16.t Array768.t *
+                                                              W16.t Array768.t = {
     var aux: int;
     
     var r0:W16.t Array768.t;
@@ -1446,14 +1351,14 @@ module M = {
         extseed.[32] <- (W8.of_int 0);
         extseed.[(32 + 1)] <- (W8.of_int j);
       }
-      state <@ shake128_absorb34 (state, extseed);
+      state <@ _shake128_absorb34 (state, extseed);
       ctr <- (W64.of_int 0);
       
       while ((ctr \ult (W64.of_int 256))) {
         sctr <- ctr;
-        (state, buf) <@ shake128_squeezeblock (state, buf);
+        (state, buf) <@ _shake128_squeezeblock (state, buf);
         ctr <- sctr;
-        (ctr, poly) <@ rej_uniform (poly, ctr, buf);
+        (ctr, poly) <@ __rej_uniform (poly, ctr, buf);
       }
       k <- (W64.of_int 0);
       l <- (W64.of_int (j * 256));
@@ -1476,14 +1381,14 @@ module M = {
         extseed.[32] <- (W8.of_int 1);
         extseed.[(32 + 1)] <- (W8.of_int j);
       }
-      state <@ shake128_absorb34 (state, extseed);
+      state <@ _shake128_absorb34 (state, extseed);
       ctr <- (W64.of_int 0);
       
       while ((ctr \ult (W64.of_int 256))) {
         sctr <- ctr;
-        (state, buf) <@ shake128_squeezeblock (state, buf);
+        (state, buf) <@ _shake128_squeezeblock (state, buf);
         ctr <- sctr;
-        (ctr, poly) <@ rej_uniform (poly, ctr, buf);
+        (ctr, poly) <@ __rej_uniform (poly, ctr, buf);
       }
       k <- (W64.of_int 0);
       l <- (W64.of_int (j * 256));
@@ -1506,14 +1411,14 @@ module M = {
         extseed.[32] <- (W8.of_int 2);
         extseed.[(32 + 1)] <- (W8.of_int j);
       }
-      state <@ shake128_absorb34 (state, extseed);
+      state <@ _shake128_absorb34 (state, extseed);
       ctr <- (W64.of_int 0);
       
       while ((ctr \ult (W64.of_int 256))) {
         sctr <- ctr;
-        (state, buf) <@ shake128_squeezeblock (state, buf);
+        (state, buf) <@ _shake128_squeezeblock (state, buf);
         ctr <- sctr;
-        (ctr, poly) <@ rej_uniform (poly, ctr, buf);
+        (ctr, poly) <@ __rej_uniform (poly, ctr, buf);
       }
       k <- (W64.of_int 0);
       l <- (W64.of_int (j * 256));
@@ -1527,105 +1432,6 @@ module M = {
       j <- j + 1;
     }
     return (r0, r1, r2);
-  }
-  
-  proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
-    
-    var spkp:W64.t;
-    var sskp:W64.t;
-    var i:W64.t;
-    var c:W8.t;
-    var inbuf:W8.t Array32.t;
-    var buf:W8.t Array64.t;
-    var j:W64.t;
-    var publicseed:W8.t Array32.t;
-    var noiseseed:W8.t Array32.t;
-    var zero:W64.t;
-    var a0:W16.t Array768.t;
-    var a1:W16.t Array768.t;
-    var a2:W16.t Array768.t;
-    var nonce:W8.t;
-    var poly0:W16.t Array256.t;
-    var poly1:W16.t Array256.t;
-    var poly2:W16.t Array256.t;
-    var skpv:W16.t Array768.t;
-    var e:W16.t Array768.t;
-    var pkpv:W16.t Array768.t;
-    a0 <- witness;
-    a1 <- witness;
-    a2 <- witness;
-    buf <- witness;
-    e <- witness;
-    inbuf <- witness;
-    noiseseed <- witness;
-    pkpv <- witness;
-    poly0 <- witness;
-    poly1 <- witness;
-    poly2 <- witness;
-    publicseed <- witness;
-    skpv <- witness;
-    spkp <- pkp;
-    sskp <- skp;
-    i <- (W64.of_int 0);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- (loadW8 Glob.mem (W64.to_uint (randomnessp + i)));
-      inbuf.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-    }
-    buf <@ sha3512_32 (buf, inbuf);
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 32);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- buf.[(W64.to_uint i)];
-      publicseed.[(W64.to_uint i)] <- c;
-      c <- buf.[(W64.to_uint j)];
-      noiseseed.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
-    }
-    zero <- (W64.of_int 0);
-    (a0, a1, a2) <@ gen_matrix (publicseed, zero);
-    nonce <- (W8.of_int 0);
-    poly0 <@ poly_getnoise (poly0, noiseseed, nonce);
-    nonce <- (W8.of_int 1);
-    poly1 <@ poly_getnoise (poly1, noiseseed, nonce);
-    nonce <- (W8.of_int 2);
-    poly2 <@ poly_getnoise (poly2, noiseseed, nonce);
-    skpv <@ polyvec_frompolys (poly0, poly1, poly2);
-    nonce <- (W8.of_int 3);
-    poly0 <@ poly_getnoise (poly0, noiseseed, nonce);
-    nonce <- (W8.of_int 4);
-    poly1 <@ poly_getnoise (poly1, noiseseed, nonce);
-    nonce <- (W8.of_int 5);
-    poly2 <@ poly_getnoise (poly2, noiseseed, nonce);
-    e <@ polyvec_frompolys (poly0, poly1, poly2);
-    skpv <@ polyvec_ntt (skpv);
-    e <@ polyvec_ntt (e);
-    poly0 <@ polyvec_pointwise_acc (a0, skpv);
-    poly0 <@ poly_frommont (poly0);
-    poly1 <@ polyvec_pointwise_acc (a1, skpv);
-    poly1 <@ poly_frommont (poly1);
-    poly2 <@ polyvec_pointwise_acc (a2, skpv);
-    poly2 <@ poly_frommont (poly2);
-    pkpv <@ polyvec_frompolys (poly0, poly1, poly2);
-    pkpv <@ polyvec_add2 (pkpv, e);
-    pkpv <@ polyvec_reduce (pkpv);
-    pkp <- spkp;
-    skp <- sskp;
-    polyvec_tobytes (skp, skpv);
-    polyvec_tobytes (pkp, pkpv);
-    i <- (W64.of_int 0);
-    pkp <- (pkp + (W64.of_int (3 * 384)));
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- publicseed.[(W64.to_uint i)];
-      Glob.mem <- storeW8 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))) c;
-      pkp <- (pkp + (W64.of_int 1));
-      i <- (i + (W64.of_int 1));
-    }
-    return ();
   }
   
   proc indcpa_enc_jazz (ctp:W64.t, msgp:W64.t, pkp:W64.t, coinsp:W64.t) : unit = {
@@ -1673,7 +1479,7 @@ module M = {
       noiseseed.[(W64.to_uint i)] <- c;
       i <- (i + (W64.of_int 1));
     }
-    pkpv <@ polyvec_frombytes (pkp);
+    pkpv <@ __polyvec_frombytes (pkp);
     i <- (W64.of_int 0);
     pkp <- (pkp + (W64.of_int (3 * 384)));
     
@@ -1683,42 +1489,42 @@ module M = {
       pkp <- (pkp + (W64.of_int 1));
       i <- (i + (W64.of_int 1));
     }
-    k <@ poly_frommsg (k, msgp);
+    k <@ _poly_frommsg (k, msgp);
     one <- (W64.of_int 1);
-    (at0, at1, at2) <@ gen_matrix (publicseed, one);
+    (at0, at1, at2) <@ __gen_matrix (publicseed, one);
     nonce <- (W8.of_int 0);
-    poly0 <@ poly_getnoise (poly0, noiseseed, nonce);
+    poly0 <@ _poly_getnoise (poly0, noiseseed, nonce);
     nonce <- (W8.of_int 1);
-    poly1 <@ poly_getnoise (poly1, noiseseed, nonce);
+    poly1 <@ _poly_getnoise (poly1, noiseseed, nonce);
     nonce <- (W8.of_int 2);
-    poly2 <@ poly_getnoise (poly2, noiseseed, nonce);
-    sp_0 <@ polyvec_frompolys (poly0, poly1, poly2);
+    poly2 <@ _poly_getnoise (poly2, noiseseed, nonce);
+    sp_0 <@ __polyvec_frompolys (poly0, poly1, poly2);
     nonce <- (W8.of_int 3);
-    poly0 <@ poly_getnoise (poly0, noiseseed, nonce);
+    poly0 <@ _poly_getnoise (poly0, noiseseed, nonce);
     nonce <- (W8.of_int 4);
-    poly1 <@ poly_getnoise (poly1, noiseseed, nonce);
+    poly1 <@ _poly_getnoise (poly1, noiseseed, nonce);
     nonce <- (W8.of_int 5);
-    poly2 <@ poly_getnoise (poly2, noiseseed, nonce);
-    ep <@ polyvec_frompolys (poly0, poly1, poly2);
+    poly2 <@ _poly_getnoise (poly2, noiseseed, nonce);
+    ep <@ __polyvec_frompolys (poly0, poly1, poly2);
     nonce <- (W8.of_int 6);
-    epp <@ poly_getnoise (epp, noiseseed, nonce);
-    sp_0 <@ polyvec_ntt (sp_0);
-    poly0 <@ polyvec_pointwise_acc (at0, sp_0);
-    poly1 <@ polyvec_pointwise_acc (at1, sp_0);
-    poly2 <@ polyvec_pointwise_acc (at2, sp_0);
-    bp <@ polyvec_frompolys (poly0, poly1, poly2);
-    v <@ polyvec_pointwise_acc (pkpv, sp_0);
-    bp <@ polyvec_invntt (bp);
-    v <@ poly_invntt (v);
-    bp <@ polyvec_add2 (bp, ep);
-    v <@ poly_add2 (v, epp);
-    v <@ poly_add2 (v, k);
-    bp <@ polyvec_reduce (bp);
-    v <@ poly_reduce (v);
+    epp <@ _poly_getnoise (epp, noiseseed, nonce);
+    sp_0 <@ __polyvec_ntt (sp_0);
+    poly0 <@ __polyvec_pointwise_acc (at0, sp_0);
+    poly1 <@ __polyvec_pointwise_acc (at1, sp_0);
+    poly2 <@ __polyvec_pointwise_acc (at2, sp_0);
+    bp <@ __polyvec_frompolys (poly0, poly1, poly2);
+    v <@ __polyvec_pointwise_acc (pkpv, sp_0);
+    bp <@ __polyvec_invntt (bp);
+    v <@ _poly_invntt (v);
+    bp <@ __polyvec_add2 (bp, ep);
+    v <@ _poly_add2 (v, epp);
+    v <@ _poly_add2 (v, k);
+    bp <@ __polyvec_reduce (bp);
+    v <@ __poly_reduce (v);
     ctp <- sctp;
-    polyvec_compress (ctp, bp);
+    __polyvec_compress (ctp, bp);
     ctp <- (ctp + (W64.of_int (3 * 320)));
-    v <@ poly_compress (ctp, v);
+    v <@ _poly_compress (ctp, v);
     return ();
   }
   
@@ -1734,16 +1540,16 @@ module M = {
     skpv <- witness;
     t <- witness;
     v <- witness;
-    bp <@ polyvec_decompress (ctp);
+    bp <@ __polyvec_decompress (ctp);
     ctp <- (ctp + (W64.of_int (3 * 320)));
-    v <@ poly_decompress (v, ctp);
-    skpv <@ polyvec_frombytes (skp);
-    bp <@ polyvec_ntt (bp);
-    t <@ polyvec_pointwise_acc (skpv, bp);
-    t <@ poly_invntt (t);
-    mp <@ poly_sub (mp, v, t);
-    mp <@ poly_reduce (mp);
-    mp <@ poly_tomsg (msgp, mp);
+    v <@ _poly_decompress (v, ctp);
+    skpv <@ __polyvec_frombytes (skp);
+    bp <@ __polyvec_ntt (bp);
+    t <@ __polyvec_pointwise_acc (skpv, bp);
+    t <@ _poly_invntt (t);
+    mp <@ _poly_sub (mp, v, t);
+    mp <@ __poly_reduce (mp);
+    mp <@ _poly_tomsg (msgp, mp);
     return ();
   }
 }.
