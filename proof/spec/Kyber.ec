@@ -641,7 +641,7 @@ axiom kvec_ge3 : 3 <= kvec.
 require Matrix.
 clone import Matrix as Matrix_ with
     op size <- kvec,
-    type R <- poly,
+    type ZR.t <- poly,
     op ZR.zeror <- Poly.zero,
     op ZR.oner <- Poly.one,
     pred ZR.unit <- fun x => x = Poly.one,
@@ -852,7 +852,7 @@ op fail_prob : real. (* Need to compute exact value or replace
 op epsilon_hack : real. (* Assumed simplification loss *)
 
 clone import MLWE_PKE as MLWEPKE with 
-  type MLWE_.Matrix_.R <- poly,
+  type MLWE_.Matrix_.ZR.t <- poly,
   op MLWE_.Matrix_.ZR.(+) <- Poly.(&+),
   op MLWE_.Matrix_.ZR.([-]) <- Poly.(&-),
   op MLWE_.Matrix_.ZR.zeror <- Poly.zero,
@@ -912,7 +912,7 @@ proof.
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
     rewrite allP => *. 
-    by rewrite -supp_duni_elem 1: smt(@ZModField).
+    by rewrite -supp_duni_elem; smt(@Zq).
     by rewrite Array256.to_listK.
 qed.
 
@@ -973,8 +973,8 @@ axiom correctness_hack &m :
 
 section.
 
-declare module A : MLWEPKE.PKE_.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
-axiom All (O <: MLWE_.RO.POracle{-A}):
+declare module A <: MLWEPKE.PKE_.CAdversaryRO {MLWE_.RO.Lazy.LRO}.
+axiom All (O <: MLWE_.RO.POracle{A}):
      islossless O.o =>
      islossless A(O).find.
 
@@ -993,7 +993,7 @@ admitted. (* We need concrete distributions *)
 lemma kyber_refined_correctness &m : 
  Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,A,MLWE_.RO.Lazy.LRO).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack
-  by  apply (correctness_bound A All correctness_hack fail_prob &m).
+  by  apply (correctness_bound A &m).
 end section.
 
 (* AT THIS POINT WE HAVE THE REFINED THEORETICAL ABSTRACTION
@@ -1244,8 +1244,8 @@ module (PRF : PRF_t) (O : RO.POracle) = {
 
 section.
 
-declare module Ac : KyberPKE.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
-declare module As : KyberPKE.AdversaryRO {-MLWE_.RO.Lazy.LRO}.
+declare module Ac <: KyberPKE.CAdversaryRO {MLWE_.RO.Lazy.LRO}.
+declare module As <: KyberPKE.AdversaryRO {MLWE_.RO.Lazy.LRO}.
 
 (* These modules are reductions. They just encode/decode things coming from the
    refined game to the scheme adversary.  *)
@@ -1306,9 +1306,9 @@ end section.
 
 section.
 
-declare module As : KyberPKE.AdversaryRO  {-MLWE_.RO.Lazy.LRO,-MLWE_.B, -MLWE_.Bt}.
+declare module As <: KyberPKE.AdversaryRO  {MLWE_.RO.Lazy.LRO,MLWE_.B, MLWE_.Bt}.
 
-declare module Ac : KyberPKE.CAdversaryRO  {-MLWE_.RO.Lazy.LRO}.
+declare module Ac <: KyberPKE.CAdversaryRO  {MLWE_.RO.Lazy.LRO}.
 
 (* In the ROM there should be no PRF loss *)
 lemma wrap_equiv_corr &m :  
@@ -1338,8 +1338,7 @@ lemma KyberCorrectness &m :
 proof.
 rewrite -wrap_equiv_corr.
 rewrite (wrap_correctness Ac).
-apply (kyber_refined_correctness (Bc(Ac)) _ &m). 
-admit. (* lossless *)
+apply (kyber_refined_correctness (Bc(Ac))&m). 
 qed.
 
 lemma KyberSecurity &m :
@@ -1350,9 +1349,7 @@ lemma KyberSecurity &m :
       Pr[MLWE_.MLWE(MLWE_.Bt(B2ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(true) @ &m : res].
 rewrite -wrap_equiv_security.
 rewrite (wrap_security As).
-apply (main_theorem_h (Bs(As)) _ _). 
-admit. (* lossless *)
-admit. (* lossless *)
+apply (main_theorem_h (Bs(As))). 
 qed.
 
 end section.

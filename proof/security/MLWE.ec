@@ -256,7 +256,7 @@ module Bt(A : HAdv_RO_T, O : Oracle) : Adv_T = {
 
 }.
 
-lemma H_MLWE_RO_equiv b &m (A <: HAdv_RO_T {-LRO,-B}):
+lemma H_MLWE_RO_equiv b &m (A <: HAdv_RO_T {LRO,B}):
   Pr[  H_MLWE_RO(A,LRO).main(false,b) @ &m : res ] =
   Pr[  MLWE(B(A,LRO)).main(b) @ &m : res].
 proof.
@@ -283,7 +283,7 @@ case (sd{2} = B._sd{2}).
 by auto => />.
 qed.
 
-lemma H_MLWE_RO_equiv_t b &m (A <: HAdv_RO_T {-LRO,-Bt}):
+lemma H_MLWE_RO_equiv_t b &m (A <: HAdv_RO_T {LRO,Bt}):
   Pr[  H_MLWE_RO(A,LRO).main(true,b) @ &m : res ] =
   Pr[  MLWE(Bt(A,LRO)).main(b) @ &m : res].
 proof.

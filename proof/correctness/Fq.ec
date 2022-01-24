@@ -4,14 +4,10 @@ from Jasmin require import JWord JModel.
 require import Montgomery.
 require import W16extra.
 require import Array32.
-pragma +oldip.
+require import Kyber.
 
 theory Fq.
 
-require import Kyber.  
-clone import Kyber as Kyber_ with
-   op kvec <- 3,
-   type MLWEPKE.H_MLWE.seed = W8.t Array32.t.
 
 
 clone import SignedReductions with
@@ -27,15 +23,15 @@ clone import SignedReductions with
     proof RRinv by (rewrite /R qE  => />)
     proof qinv_bnd by (rewrite /R  => />).
 
-require import IndcpaDerand.
+require import Jindcpa.
 
-lemma balmod_W16 a:
-  a %%+- W16.modulus = W16.smod (a %% W16.modulus)
-  by rewrite bal_modE /W16.smod /=.
+lemma smod_W16 a:
+  smod a W16.modulus = W16.smod (a %% W16.modulus)
+  by rewrite smodE /W16.smod /=.
 
-lemma balmod_W32 a:
-  a %%+- W32.modulus = W32.smod (a %% W32.modulus)
-  by rewrite bal_modE /W32.smod /=.
+lemma smod_W32 a:
+  smod a W32.modulus = W32.smod (a %% W32.modulus)
+  by rewrite smodE /W32.smod /=.
 
 lemma aux16_0 x :
   16 <= x < 32 =>
@@ -98,10 +94,10 @@ rewrite to_uint_shr => />.
 split; first by smt(@IntDiv @W32).
 move => *. 
 move : (W32.to_uint_cmp a) => />. smt(@IntDiv).
-apply W32.ext_eq =>  *.
+apply W32.ext_eq =>  x.
 case (0 <= x < 16). 
 rewrite andwE; move => *.
-by rewrite (aux16_1 _ H1) => />.
+by rewrite (aux16_1 _ _) => />.
 move => *.
 have ? : ((a `>>>` 16).[x] = false);   by smt(@W32).
 by ring.
@@ -116,7 +112,7 @@ move => * />.
 rewrite (_: 65536 = 2^16); first by auto.
 rewrite -to_uint_shr; first by smt().
 rewrite to_uintK.
-apply W32.ext_eq => *.
+apply W32.ext_eq => x *.
 rewrite initiE => />.
 case (x+16 < 32).
 move => *. smt(@W32). 
@@ -132,7 +128,7 @@ rewrite of_intD.
 rewrite (_: 65536 = 2^16); first by auto.
 rewrite -to_uint_shr; first by smt().
 rewrite to_uintK => />.
-apply W32.ext_eq => *.
+apply W32.ext_eq => x *.
 rewrite initiE => />.
 rewrite aux16_2.
 rewrite orwE; move => *.
@@ -196,10 +192,10 @@ have ? : (0 <= to_uint (a `>>>` 10) < 1024).
   rewrite to_uint_shr => />.
   split; first by   move : (W16.to_uint_cmp a); smt(@IntDiv @Int @W16).
   move : (W16.to_uint_cmp a) => />. smt(@IntDiv).
-apply W16.ext_eq =>  *.
+apply W16.ext_eq =>  x.
 case (0 <= x < 6).
 rewrite andwE; move => *.
-by rewrite (aux10_1 _ H1) => />.
+by rewrite (aux10_1 _) => />.
 move => *.
 have ? : ((a `>>>` 10).[x] = false);   by smt(@W16).
 by ring.
@@ -210,11 +206,11 @@ lemma SAR_sem10 (a : W16.t) :
 proof.
 rewrite /(`|>>`) to_sintE /smod sarE /=.
 case (32768 <= to_uint a); last first.
-move => * />.
+move => H />.
 rewrite (_: 1024 = 2^10); first by auto.
 rewrite -to_uint_shr; first by smt().
 rewrite to_uintK.
-apply W16.ext_eq => *.
+apply W16.ext_eq => x H0.
 rewrite initiE => />.
 case (x+10 < 16).
   move => *. rewrite H0 /min //= => /#.
@@ -234,7 +230,7 @@ rewrite of_intD.
 rewrite (_: 1024 = 2^10); first by auto.
 rewrite -to_uint_shr; first by smt().
 rewrite to_uintK => />.
-apply W16.ext_eq => *.
+apply W16.ext_eq => x *.
 rewrite initiE => />.
 rewrite aux10_2.
 rewrite orwE; move => *.
@@ -255,17 +251,17 @@ smt().
 qed.
 
 lemma fqmul_corr_h _a _b: 
-   hoare[ Mderand.fqmul : to_sint a = _a /\ to_sint b = _b ==> 
+   hoare[ Jindcpa.M.__fqmul : to_sint a = _a /\ to_sint b = _b ==> 
    to_sint res = SREDC (_a * _b)].
 proof.
 proc.
-wp; skip  => &hr [#] /= ??.
+wp; skip  => &hr [#] /= H H0.
 pose _c := _a * _b.
 rewrite /SREDC.
 rewrite SAR_sem16 SAR_sem16 /=. 
 rewrite (_: R*(R *R^0) = W32.modulus); first by rewrite expr0 /R  => />.
 rewrite (_: R = W16.modulus); first by rewrite /R => />.
-rewrite balmod_W32 balmod_W32 balmod_W16.
+rewrite smod_W32 smod_W32 smod_W16.
 rewrite W16.of_sintK. 
 rewrite /(`<<`) /sigextu32 /truncateu16 /=. 
 rewrite  H H0.
@@ -275,10 +271,10 @@ by rewrite W32.of_sintK /=; smt(qE).
 qed.
 
 lemma fqmul_ll :
-  islossless Mderand.fqmul by proc; islossless.
+  islossless M.__fqmul by proc; islossless.
 
 lemma fqmul_corr _a _b :
-  phoare [ Mderand.fqmul : 
+  phoare [ M.__fqmul : 
      W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
          W16.to_sint res = SREDC (_a * _b)] = 1%r.
 proof. by conseq fqmul_ll (fqmul_corr_h _a _b). qed.
@@ -345,9 +341,9 @@ rewrite to_uint_shr => />.
 split; first by smt(@IntDiv @W32).
 move => *. 
 move : (W32.to_uint_cmp a) => />. smt(@IntDiv).
-apply W32.ext_eq =>  *.
+apply W32.ext_eq =>  x.
 case (0 <= x < 6). 
-rewrite andwE; move => *.
+rewrite andwE; move => H1.
 by rewrite (aux26_1 _ H1) => />.
 move => *.
 have ? : ((a `>>>` 26).[x] = false);   by smt(@W32).
@@ -363,10 +359,9 @@ move => * />.
 rewrite (_: 67108864 = 2^26); first by auto.
 rewrite -to_uint_shr; first by smt().
 rewrite to_uintK.
-apply W32.ext_eq => *.
+apply W32.ext_eq => x xb.
 rewrite initiE => />.
-case (x+26 < 32).
-move => *. smt(@W32). 
+case (x+26 < 32). smt(@W64).
 move => *. 
 rewrite (_: min 31 (x + 26) = 31). smt().
 rewrite (_: (0 <= x < 32 && a.[x + 26]) = false). smt(@W32).
@@ -379,10 +374,10 @@ rewrite of_intD.
 rewrite (_: 67108864 = 2^26); first by auto.
 rewrite -to_uint_shr; first by smt().
 rewrite to_uintK => />.
-apply W32.ext_eq => *.
+apply W32.ext_eq => x xb.
 rewrite initiE => />.
 rewrite aux26_2.
-rewrite orwE; move => *.
+rewrite orwE.
 case (x+26 < 32).
 move => *. 
 rewrite (aux26_1 _ _); first by smt() => />.
@@ -401,12 +396,12 @@ qed.
 
 
 lemma barrett_reduce_corr_h _a :
-  hoare [ Mderand.barrett_reduce : 
+  hoare [ M.__barrett_reduce : 
      W16.to_sint a = _a  ==> 
          W16.to_sint res = BREDC _a 26].
 proof.
 proc.
-wp; skip  => &hr [#] /= ?.
+wp; skip  => &hr [#] /= H.
 rewrite /sigextu32 /truncateu16 /=. 
 rewrite SAR_sem26  /=. 
 rewrite !W32.of_sintK. 
@@ -431,8 +426,8 @@ rewrite (_:to_uint (- (of_int (x %% 4294967296))%W16) = to_uint (W16.of_int (-x)
  
 rewrite /BREDC.
 rewrite  (_: R^2 = W32.modulus); first by rewrite /R  /= expr0 /=.
-rewrite !balmod_W32  => /=.
-rewrite !balmod_W16.
+rewrite !smod_W32  => /=.
+rewrite !smod_W16.
 rewrite -H.
 rewrite (_: to_sint a{hr} %% R = to_uint a{hr}). 
 rewrite to_sintE /smod. 
@@ -449,10 +444,10 @@ by smt(@W16 qE).
 qed.
 
 lemma barrett_reduce_ll :
-  islossless Mderand.barrett_reduce by proc; islossless.
+  islossless M.__barrett_reduce by proc; islossless.
 
 lemma barrett_reduce_corr _a :
-  phoare [ Mderand.barrett_reduce : 
+  phoare [ M.__barrett_reduce : 
      W16.to_sint a = _a  ==> 
          W16.to_sint res = BREDC _a 26] = 1%r.
 proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.
@@ -461,15 +456,15 @@ proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.
 op add (a b : W16.t) = (a + b).
 op sub (a b : W16.t) = (a - b).
 
-import ZModField.
+import Zq.
 
-lemma add_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
+lemma add_corr (a b : W16.t) (a' b' : Fq) (asz bsz : int): 
    0 <= asz < 15 => 0 <= bsz < 15 =>
-   a' = inzmod (W16.to_sint a) =>
-   b' = inzmod (W16.to_sint b) =>
+   a' = inFq (W16.to_sint a) =>
+   b' = inFq (W16.to_sint b) =>
    bw16 a asz => 
    bw16 b bsz =>
-     inzmod (W16.to_sint (add a b)) = a' + b' /\
+     inFq (W16.to_sint (add a b)) = a' + b' /\
            bw16 (add a b) (max asz bsz + 1).
 proof.
 rewrite /add  => />.
@@ -483,7 +478,7 @@ have bounds_bsz : 0 < bszb <= 16384.
 rewrite(_: 16384 = 2^14); first by auto => />.
 split; [ apply gt0_pow2 | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
 rewrite !to_sintD_small => />; first  by smt().
-split; first by smt(@ZModField).
+split; first by smt(@Zq).
 
 case (max asz bsz = asz). 
 + move => maxx; rewrite maxx;
@@ -494,13 +489,13 @@ case (max asz bsz = asz).
        split; smt(@StdOrder.IntOrder). 
 qed.
 
-lemma add_corr_qv (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
+lemma add_corr_qv (a b : W16.t) (a' b' : Fq) (asz bsz : int): 
    1 <= asz <= 6 => 1 <= bsz <= 3 =>
-   a' = inzmod (W16.to_sint a) =>
-   b' = inzmod (W16.to_sint b) =>
+   a' = inFq (W16.to_sint a) =>
+   b' = inFq (W16.to_sint b) =>
    -asz*q <= (W16.to_sint a) < asz*q =>
    -bsz*q <= (W16.to_sint b) < bsz*q =>
-     inzmod (W16.to_sint (add a b)) = a' + b' /\
+     inFq (W16.to_sint (add a b)) = a' + b' /\
       -(asz+bsz)*q <= (W16.to_sint b) < (asz+bsz)*q.
 proof.
 rewrite /add  => />.
@@ -510,17 +505,17 @@ move => ?? ?? ?? ??.
 have bounds_asz : 3329 <= aszb <= 19974. smt(qE).
 have bounds_bsz : 3329 <= bszb <= 19974. smt(qE).
 rewrite !to_sintD_small => />; first  by smt(qE).
-split; first by smt(@ZModField).
+split; first by smt(@Zq).
 smt().
 qed.
 
-lemma sub_corr (a b : W16.t) (a' b' : zmod) (asz bsz : int): 
+lemma sub_corr (a b : W16.t) (a' b' : Fq) (asz bsz : int): 
    0 <= asz < 15 => 0 <= bsz < 15 =>
-   a' = inzmod (W16.to_sint a) =>
-   b' = inzmod (W16.to_sint b) =>
+   a' = inFq (W16.to_sint a) =>
+   b' = inFq (W16.to_sint b) =>
    bw16 a asz => 
    bw16 b bsz =>
-     inzmod (W16.to_sint (sub a b)) = a' - b' /\
+     inFq (W16.to_sint (sub a b)) = a' - b' /\
            bw16 (sub a b) (max asz bsz + 1).
 proof.
 rewrite /sub  => />.
@@ -534,7 +529,7 @@ have bounds_bsz : 0 < bszb <= 16384.
 rewrite(_: 16384 = 2^14); first by auto => />.
 split; [ apply gt0_pow2 | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
 rewrite !to_sintB_small => />; first  by smt().
-split; first by smt(@ZModField).
+split; first by smt(@Zq).
 
 case (max asz bsz = asz).
 + move => maxx; rewrite maxx;

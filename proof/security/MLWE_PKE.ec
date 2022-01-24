@@ -113,7 +113,7 @@ module B1(A : Adversary) : HAdv_T = {
 
 section.
 
-declare module A : Adversary.
+declare module A <: Adversary.
 
 lemma hop1_left &m: 
   Pr[CPA(MLWE_PKE_H,A).main() @ &m : res] =
@@ -180,7 +180,7 @@ module B2(A : Adversary) : HAdv_T = {
 
 section.
 
-declare module A : Adversary.
+declare module A <: Adversary.
 
 
 lemma hop2_left &m: 
@@ -221,7 +221,7 @@ end section.
 
 section.
 
-declare module A : Adversary.
+declare module A <: Adversary.
 axiom A_guess_ll : islossless A.guess.
 axiom A_choose_ll : islossless A.choose.
 
@@ -308,7 +308,7 @@ module (B1ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
 
 section.
 
-declare module A : AdversaryRO {-LRO,-B1ROM,-MLWE_.B}.
+declare module A <: AdversaryRO {LRO,B1ROM,MLWE_.B}.
 
 lemma hop1_left_h &m: 
   Pr[CPAROM(MLWE_PKE,A,LRO).main() @ &m : res] =
@@ -368,7 +368,7 @@ module (B2ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
 
 section.
 
-declare module A : AdversaryRO {-LRO,-B2ROM,-MLWE_.Bt}.
+declare module A <: AdversaryRO {LRO,B2ROM,MLWE_.Bt}.
 
 
 lemma hop2_left_h &m: 
@@ -428,9 +428,9 @@ end section.
 
 section.
 
-declare module A : AdversaryRO {-LRO, -B, -Bt}.
-axiom A_guess_ll (O <: POracle) : islossless O.o => islossless A(O).guess.
-axiom A_choose_ll (O <: POracle) : islossless O.o => islossless A(O).choose.
+declare module A <: AdversaryRO {LRO, B, Bt}.
+axiom A_guess_lll (O <: POracle) : islossless O.o => islossless A(O).guess.
+axiom A_choose_lll (O <: POracle) : islossless O.o => islossless A(O).choose.
 
 local module Game2RO(A : AdversaryRO) = {
   proc main() = {
@@ -486,8 +486,8 @@ rnd  (pred1 b')=> //=.
 conseq (: _ ==> true).
 + by move=> />; apply DBool.dbool1E.
 islossless.
-apply (A_guess_ll LRO). by islossless. 
-apply (A_choose_ll LRO). by islossless. 
+apply (A_guess_lll LRO). by islossless. 
+apply (A_choose_lll LRO). by islossless. 
 qed.
 
 lemma main_theorem_h &m :
@@ -598,8 +598,8 @@ module CorrectnessAdvNoise(A : CAdversaryRO, O : Oracle) = {
 
 section.
 
-declare module A : CAdversaryRO {-LRO}.
-axiom A_ll (O <: POracle{-A}): islossless O.o => islossless A(O).find.
+declare module A <: CAdversaryRO {LRO}.
+axiom A_ll (O <: POracle{A}): islossless O.o => islossless A(O).find.
 
 lemma correctness &m :
   Pr[ CorrectnessAdvROM(MLWE_PKE,A,LRO).main() @ &m : res]  >=
@@ -706,8 +706,8 @@ module CorrectnessNoiseApprox = {
 
 section.
 
-declare module A : CAdversaryRO {-LRO}.
-axiom All (O <: POracle{-A}): islossless O.o => islossless A(O).find.
+declare module A <: CAdversaryRO {LRO}.
+axiom All (O <: POracle{A}): islossless O.o => islossless A(O).find.
 
 lemma correctness_slack &m :
   Pr[ CorrectnessAdvNoise(A,LRO).main() @ &m : res]<=
@@ -732,7 +732,7 @@ qed.
 lemma correctness_approx &m :
   Pr[ CorrectnessAdvROM(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - Pr[ CorrectnessNoiseApprox.main() @ &m : res].
-proof. move : (correctness A  All &m) (correctness_slack &m)  => /#. qed.
+proof. move : (correctness A  &m) (correctness_slack &m)  => /#. qed.
 
 (* Finally we just need to compute a concrete probability *)
 (* Which we will bound in simplified form *)
