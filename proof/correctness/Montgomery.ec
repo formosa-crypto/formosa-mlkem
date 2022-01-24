@@ -1,6 +1,5 @@
 require import AllCore IntDiv Ring StdOrder.
 import Ring.IntID IntOrder.
-pragma +oldip.
 
 (***** TO MOVE *****)
 
@@ -84,21 +83,17 @@ op Rinv : int.
 axiom Rinv_gt0 : 0 < Rinv.
 axiom RRinv: (R * Rinv) %% q = 1 %% q.
 
-(* EasyCrypt defines division for negative numbers
-   as needed: remainder is always positive.
-   We need a special mod to get the balanced
-   representative. *)
-op ( %%+- ) (a b : int) =
-    if (b %/ 2 <= a %% b) then a %% b - b else a %% b axiomatized by bal_modE.
+op smod (a b : int) =
+    if (b %/ 2 <= a %% b) then a %% b - b else a %% b axiomatized by smodE.
 
-lemma bal_mod_bnd a b :
+lemma smod_bnd a b :
    0< b =>  2 %| b =>
-  - b %/ 2 <=  a %%+- b < b %/ 2 by smt(bal_modE).
+  - b %/ 2 <=  smod a b < b %/ 2 by smt(smodE).
 
-lemma bal_mod_congr a b :
-  (a %%+- b) %% b = a %% b.
+lemma smod_congr a b :
+  (smod a b) %% b = a %% b.
 proof.
-rewrite bal_modE /=.
+rewrite smodE /=.
 case (b %/ 2 <= a %% b).
 move => *.
 rewrite (_: a%%b - b = a %%b + (-1)*b); first by ring.
@@ -106,13 +101,11 @@ by rewrite modzMDr modz_mod.
 by rewrite modz_mod.
 qed.
 
-lemma bal_mod_sq t:
-   (t %/ R %% (R ^ 2)) %%+- R = (t %/ R) %%+- R.
+lemma smod_sq t: smod (t %/ R %% (R ^ 2))R = smod (t %/ R) R.
 proof.
-rewrite bal_modE.
-rewrite bal_modE.
+rewrite smodE smodE.
 rewrite (_: t %/ R %% (R ^ 2) %% R = t %/ R  %% R).
-have ? : R %| R^2.
+have H : R %| R^2.
 rewrite (_: R^2 = R * R); first by smt(@Domain).
 apply (dvdz_mulr _); first by smt(gt0_R).
 apply (modz_dvd _); apply H. 
@@ -125,13 +118,13 @@ lemma wd_bnd x :
   by split;smt(gt0_R).
 qed.
 
-lemma bal_mod_small x y:
+lemma smod_small x y:
    1 < y =>
    -y %/ 2 <= x < y %/2 =>
-   x %%+- y = x.
+   smod x y = x.
 proof.
 move => ypos [#] xlb yub.
-rewrite bal_modE.
+rewrite smodE.
 case (0 <= x < y %/ 2); smt(@IntDiv).
 qed.
 
@@ -151,10 +144,10 @@ qed.
 lemma b3 : R = R %/ 2 + R %/ 2.
 proof. by rewrite -{1}(divzK 2 R) 1:dvd2R /#. qed.
 
-lemma bal_mod_div x :
-   x * R %%+- (R ^ 2) %/R = x  %%+- R.
+lemma smod_div x :
+   smod (x * R) (R ^ 2) %/R = smod x  R.
 proof.
-rewrite !bal_modE.
+rewrite !smodE.
 rewrite (_: R^2 = R*R); first by smt(@Domain).
 rewrite b0.
 rewrite -!mulz_modl; first by apply gt0_R.
@@ -166,11 +159,11 @@ move => *.
 by have -> : (! R %/ 2 <= x %% R); smt(dvd2R gt0_R).
 qed.
 
-lemma bal_mod_exists x y :
+lemma smod_exists x y :
    exists k,
-   x %%+- y = x + k * y.
+   smod x y = x + k * y.
 proof.
-rewrite bal_modE.
+rewrite smodE.
 case (y %/ 2 <= x %%y).
 move => *.
 exists (- (x %/ y + 1)).
@@ -187,15 +180,15 @@ lemma inrange a :
 lemma outrange a :
   - R%/2 <= a < 0 => a %% R = R + a by smt().
 
-lemma sign_comp a b: (a %%R + b %% R) %%+- R = (a + b) %%+- R.
-move => *. rewrite !bal_modE.
+lemma sign_comp a b: smod (a %%R + b %% R) R = smod (a + b) R.
+move => *. rewrite !smodE.
 by rewrite modzDm.
 qed. 
 (* Signed Barrett reduction as used in Kyber 2.0 *)
 
 op BREDC(a bits : int) =
-   let t = a * (2^bits %/ q + 1) %%+- R^2 %/ 2^bits * q in
-      (a %% R + (-t) %% R) %%+- R.
+   let t = smod (a * (2^bits %/ q + 1)) (R^2) %/ 2^bits * q in
+      smod (a %% R + (-t) %% R) R.
 
 require import Barrett_kyber_general.
 
@@ -210,7 +203,7 @@ lemma nosmt BREDCp_corr a bits:
         barrett_pred a0 (2 ^ bits) q (2 ^ bits %/ q + 1)) =>
           0  <= BREDC a bits < 2 * q /\ BREDC a bits %% q = a %% q.
 proof.
-move => [#] ?? ??? [#] ???;rewrite /BREDC /=.
+move => [#] ?? ? ? H3 [#] H4 H5 H6;rewrite /BREDC /=.
 have extra : (0 <= 2^bits %/ q + 1); first by smt().
 have tubnd : (a * (2^bits %/ q + 1) < R %/2 * R). 
    move : H3 H4 H5; rewrite /R pow_div1; first 2 by smt(gt2_k). 
@@ -219,17 +212,17 @@ have tubnd : (a * (2^bits %/ q + 1) < R %/2 * R).
 have tlbnd : (- R %/2 * R<= a * (2^bits %/ q + 1)).
    move : H3 H4 H5; rewrite /R pow_div1; first 2 by smt(gt2_k). 
    case (0<=a); first by smt().
-   move => *.
+   move => ????.
    have ? : (-a * (2 ^ bits %/ q + 1) <= 2 ^ (k - 1) * 2 ^ k); last by smt().
    rewrite  (_:  - a * (2 ^ bits %/ q + 1) = 
                 (- a) * (2 ^ bits %/ q + 1)); first   by smt().
    by apply ler_pmul => /#. 
-rewrite (bal_mod_small (a * (2 ^ bits %/ q + 1))); first  by smt(expr2).
-   by rewrite (_: R^2 = R*R); smt(expr2).
+rewrite (smod_small (a * (2 ^ bits %/ q + 1)) (R^2) _ _); first by smt(expr2). 
+rewrite !expr2. smt(@IntOrder).
 
 move : (H6 a _); rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /= 
        => *; first by smt().
-rewrite sign_comp bal_mod_small; first 2 by smt().
+rewrite sign_comp smod_small; first 2 by smt().
 
 split; first by smt().
 
@@ -242,9 +235,9 @@ qed.
 (* Signed Montgomery reduction as used in Kyber v2.0 *)
 
 op SREDC (a: int) : int =
-  let u = (a * qinv * R) %%+- (R^2) in
-  let t = (a - u %/ R * q) %%+- (R^2)in
-      (t %/ R %% (R^2)) %%+- R.
+  let u = smod (a * qinv * R) (R^2) in
+  let t = smod (a - u %/ R * q) (R^2)in
+      smod (t %/ R %% (R^2)) R.
 
 
 lemma nosmt SREDCp_corr a:
@@ -253,54 +246,54 @@ lemma nosmt SREDCp_corr a:
    -q   <= SREDC a <= q /\
        SREDC a %% q = (a * Rinv) %% q.
 proof.
-move => [#] ?? [#] ??.
+move => [#] H H0 [#] H1 H2.
 have albnd : (- R * R %/4 <= a).
  case (0<=a); first by smt().
- move =>*; rewrite b1.
+ move => *; rewrite b1.
  have ? : (R %/ 2 * SignedReductions.q <= R %/ 2 * R %/ 2); by smt(gt0_R q_bnd dvd2R).
 have aubnd : (a < R* R %/4); first by smt(b1).
-rewrite /SREDC /= (bal_mod_div (a * qinv)).
-move : (bal_mod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 
+rewrite /SREDC /= (smod_div (a * qinv)).
+move : (smod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 
 move => inner_bnd.
 
-have ulbnd : (-R*R %/4 <= a * qinv %%+- R * q).
-    case (0 <=a * qinv %%+- R); first by smt().
+have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q).
+    case (0 <= smod (a * qinv) R); first by smt().
     move => *.
-    have ? : ((- (a * qinv %%+- R))*q <= (R %/ 2) * (R %/ 2)); last by smt().
+    have ? : ((- (smod (a * qinv) R))*q <= (R %/ 2) * (R %/ 2)); last by smt().
     by apply ler_pmul => /#.
 
-have uubnd : (a * qinv %%+- R * q < R*R %/4). 
-    case (a * qinv %%+- R <=0); first by smt().
-    have ? : ((a * qinv %%+- R) * q < (R %/ 2) * (R %/ 2)); last by smt().
-    case (a * qinv %%+- R <=0); 
+have uubnd : (smod (a * qinv) R * q < R*R %/4). 
+    case (smod (a * qinv) R <=0); first by smt().
+    have ? : ((smod (a * qinv) R) * q < (R %/ 2) * (R %/ 2)); last by smt().
+    case (smod (a * qinv) R <=0); 
     by smt(dvd2R gt0_R q_bnd).
 
-rewrite (bal_mod_small ((a - a * qinv %%+- R * q))); first 2 by  smt(@IntOrder). 
-rewrite (bal_mod_sq ((a - a * qinv %%+- R * q))).
-rewrite (bal_mod_small ((a - a * qinv %%+- R * q) %/R)); first by smt(). 
+rewrite (smod_small ((a - smod (a * qinv)R * q))); first 2 by  smt(@IntOrder). 
+rewrite (smod_sq ((a - smod (a * qinv) R * q))).
+rewrite (smod_small ((a - smod (a * qinv) R * q) %/R)); first by smt(). 
 
-have ? : ( (a - a * qinv %%+- R * q) < R %/ 2 *R);first  by  smt(b1 b2  b3).
-have ? : ((-R %/ 2) *R< (a - a * qinv %%+- R * q));first  by  smt(b1 b2  b3).
+have ? : ( (a - smod (a * qinv) R * q) < R %/ 2 *R);first  by  smt(b1 b2  b3).
+have ? : ((-R %/ 2) *R< (a - smod (a * qinv) R * q));first  by  smt(b1 b2  b3).
 by smt(gt0_R @IntDiv). 
 
 split.
 
 (* Bound proof *)
-have aux : (-  a * qinv %%+- R * q <= R %/2 * q).
-   have ? : (- a * qinv %%+- R <= R %/2); by smt(b1 b2 b3).
+have aux : (-  smod (a * qinv) R * q <= R %/2 * q).
+   have ? : (- smod (a * qinv) R <= R %/2); by smt(b1 b2 b3).
 split; last first.
-have ? : ( (a - a * qinv %%+- R * q) < q *R);first  by  smt(b1 b2  b3).
+have ? : ( (a - smod (a * qinv) R * q) < q *R);first  by  smt(b1 b2  b3).
  by smt(gt0_R @IntDiv). 
 
-have aux2 : (R %/2 * (-q) <= -  a * qinv %%+- R * q).
-   have ? : (-R %/2 <= - a * qinv %%+- R); by smt(b1 b2 b3).
+have aux2 : (R %/2 * (-q) <= -  smod (a * qinv) R * q).
+   have ? : (-R %/2 <= - smod (a * qinv) R); by smt(b1 b2 b3).
 
-have ? : ((-q) *R<= (a - a * qinv %%+- R * q)). 
+have ? : ((-q) *R<= (a - smod (a * qinv) R * q)). 
    by  smt(b1 b2  b3).
 by smt(gt0_R @IntDiv). 
 
 (* Congruence proof *)
-move : (bal_mod_exists (a * qinv) R) => kk0_exists.
+move : (smod_exists (a * qinv) R) => kk0_exists.
 elim kk0_exists => kk0 kk0_val.
 rewrite kk0_val.
 
@@ -331,9 +324,8 @@ rewrite (_: (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) %/R * R = (a %/ R *
 apply dvdz_eq.
 rewrite (_: (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) = (a %/ R  - (a * qinv + kk0 * R) * q %/ R )*R). smt().
 apply dvdz_mull. apply dvdzz.
-move : scalar1 => /= *.
-by rewrite H3 -modzMml modzMDr modzMml.
-
+move : scalar1 => /= ->.
+by rewrite -modzMml modzMDr modzMml.
 qed.
 
 
@@ -514,7 +506,7 @@ lemma REDC_corr T:
  0 <= T < N + N*R =>
  0 <= REDC T < N  /\  REDC T %% N = T * Rinv %% N.
 proof.
-move=> *; rewrite /REDC /=; split.
+move=> H; rewrite /REDC /=; split.
  move: (REDC'_bnds T 0 _) => />.
  rewrite expr1 expr0 H /= /#.
 rewrite -(REDC'_congr T).
@@ -553,23 +545,25 @@ lemma REDCk_corr r T:
  0 <= T < N + N * R^r =>
  (0 <= REDCk r T < 2*N) /\ REDCk r T %% N = T * Rinv^r %% N.
 proof.
-elim/natind: r T => /= /> *.
+elim/natind: r T => /= />.
+move => n ? T *.
  have ->: n=0 by smt().
  rewrite REDCk0 // /#.
+move => n H H0 T H1 H2 H3.
 rewrite REDCkS 1:/#.
 move: H3; case: (n=0) => E.
- rewrite E !REDCk0 //= => ?.
- move: (REDC'_bnds T 0 _ _) => //=; rewrite expr0 => ?.
+ rewrite E !REDCk0 //= => H4.
+ move: (REDC'_bnds T 0 _ _) => //=; rewrite expr0 => H5.
  split.
   split => *; smt().
  by rewrite expr1; apply REDC'_congr.
-move=> *.
+move=> H3.
 move: (H0 (REDC' T) _ _). smt().
  by move: (REDC'_bnds T n _ _) => /=.
-move=> [??].
+move=> [H4 H5].
 split; first smt().
 rewrite H5.
-move: (REDC'_congr T) => ?.
+move: (REDC'_congr T) => H6.
 by rewrite -modzMml H6 modzMml exprS /#.
 qed.
 
