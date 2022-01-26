@@ -8,8 +8,6 @@ require import Kyber.
 
 theory Fq.
 
-
-
 clone import SignedReductions with
     op k <- 16,
     op q <- q,

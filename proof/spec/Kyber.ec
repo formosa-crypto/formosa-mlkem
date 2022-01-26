@@ -87,9 +87,10 @@ axiom prime_q : prime q.
 clone import ZModField as Zq with 
   op p <- q 
   rename "zmod" as "Fq"
+  rename "ZModp" as "Zq"
   proof  prime_p by apply prime_q.
 
-(* Signed representation: could go in ZModField *)
+(* Signed representation: could go in Fq *)
 
 op as_sint(x : Fq) = if (q-1) %/ 2 < asint x then asint x - q else asint x.
 lemma as_sint_range x :  - (q-1) %/2 <= as_sint x <= (q-1) %/2 by smt(rg_asint).
@@ -277,7 +278,9 @@ op one : poly = zero.[0<-Zq.one].
 
 (* Ring multiplication: schoolbook multiplication in this
    ring is essentially generating a square matrix of coefficient
-   multiplications and summing over the columns *)
+   multiplications and summing over the columns. 
+   Fix me: should we just pass the ntt base mul when we
+   instantiate MLWE? *)
 op (&*) (pa pb : poly) : poly =
   Array256.init (fun (i : int) => foldr (fun (k : int) (ci : Fq) =>
      if (0 <= i - k) 
@@ -397,7 +400,7 @@ module CBD2(PRF : PRF_t, O : RO.POracle) = {
 
 (* The NTT operation over ring elements 
 
-We need to add here the mathematical specification of the NTT in
+We give here the mathematical specification of the NTT in
 a way that roughly matches what is described in the spec.
 
 Then we will have an NTT.ec file where we prove that 1) the imperative
@@ -405,75 +408,70 @@ specs are equivalent to these operators and 2) that these operators have
 the properties we require to show that Kyber is correct up to some
 decryption failure bound.
 
-We should have no axioms below.
-
 *)
 
-op ntt : poly -> poly.
-op invntt : poly -> poly.
+require (****) Bigalg.
+  clone import Bigalg.BigComRing as BigDom with
+    type  CR.t     <= Fq,
+      op  CR.zeror <= Zq.zero,
+      op  CR.oner  <= Zq.one,
+      op  CR.(+)   <= Zq.(+),
+      op  CR.([-]) <= Zq.([-]),
+      op  CR.( * ) <= Zq.( * ),
+      op  CR.invr  <= Zq.inv,
+    pred  CR.unit  <= Zq.unit
+    proof CR.*.
 
-(*  The end goal is to connect  this to polynomial algebra, which  should
-    give us a notion of complex multiplication that can be plugged in to
-    a theorem which we axiomatize below. *)
+  realize CR.addrA     by admit.
+  realize CR.addrC     by admit.
+  realize CR.add0r     by admit.
+  realize CR.addNr     by admit.
+  realize CR.oner_neq0 by admit.
+  realize CR.mulrA     by admit.
+  realize CR.mulrC     by admit.
+  realize CR.mul1r     by admit.
+  realize CR.mulrDl    by admit.
+  realize CR.mulVr     by admit.
+  realize CR.unitP     by admit.
+  realize CR.unitout   by admit.
 
-op cmplx_mul (a :Fq * Fq, b : Fq * Fq, zzeta : Fq) =
-     (a.`2 * b.`2 * zzeta + a.`1*b.`1, 
-      a.`1 * b.`2 + a.`2 * b.`1).
+op zroot = inFq 17.
 
-op dcmplx_mul(a1 : Fq * Fq, b1 : Fq * Fq, 
-              a2 : Fq * Fq, b2 : Fq * Fq, zzeta : Fq) = 
-     (cmplx_mul a1 b1 zzeta, cmplx_mul a2 b2 (-zzeta)).
+op br(i : int) = BitEncoding.BS2Int.bs2int (BitEncoding.BS2Int.int2bs 7 i).
 
-op basemul : poly -> poly -> poly.
+op ntt(p : poly) = Array256.init (fun i => 
+   if i %% 2  = 0 
+   then let ii = i %/ 2     in BAdd.bigi predT (fun j => p.[2*j]   * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128
+   else let ii = (i-1) %/ 2 in BAdd.bigi predT (fun j => p.[2*j+1] * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128).
 
-op zetas_const : Fq Array128.t.
-op zetas_inv_const : Fq Array128.t.
+op invntt(p : poly) = Array256.init (fun i => 
+   if i %% 2  = 0 
+   then let ii = i %/ 2     in BAdd.bigi predT (fun j => (inv (inFq 128)) * p.[2*j] * ZqRing.exp zroot (-((2 * br ii + 1) * j))) 0 128
+   else let ii = (i-1) %/ 2 in BAdd.bigi predT (fun j => (inv (inFq 128)) * p.[2*j+1] * ZqRing.exp zroot (-((2 * br ii + 1) * j))) 0 128).
 
-axiom basemul_sem (ap bp rs: poly) :
-   rs = basemul ap bp <=> 
-   forall k, 0 <= k < 64 =>
-     ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
-         (dcmplx_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
-            (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas_const.[k+64])).
+(* This is multiplication of two degree-1 polynomials in Fq
+    modulo X^2 - zroot.
+  
+    (a1 + a2 X) * (b1 + b2 X) mod (X^2 - zroot) = 
 
-op scale(p : poly, c : Fq) : poly =  Array256.map (fun x => x * c) p.
+    (a2b2zroot + a1b1) + (a1b2 + a2b1)X 
 
-axiom invnttK : cancel ntt invntt.
-axiom nttK : cancel invntt ntt.
-axiom nttZero : ntt Poly.zero = Poly.zero.
 
-axiom ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
+    And its extension to two products, one over   
+    (X^2 - zroot) and another one over (X^2 + zroot)
+ *)
+op cmplx_mul (a :Fq * Fq, b : Fq * Fq, zzeta : Fq) : Fq * Fq =
+     (a.`2 * b.`2 * zzeta + a.`1*b.`1, a.`1 * b.`2 + a.`2 * b.`1).
 
-lemma invntt_scale p c : invntt (scale p c) = scale (invntt p) c.
-proof.
-rewrite (_: p = ntt (invntt p)); first by rewrite nttK.
-by rewrite -ntt_scale {1}invnttK  nttK.
-qed.
+(* The base multiplication in the NTT domain is defined in the
+   spec as follows. *)
 
-axiom add_comm_ntt (pa pb : poly):
-  ntt (pa &+ pb) = (ntt pa) &+ (ntt pb).
-
-axiom mul_comm_ntt (pa pb : poly):
-  ntt (pa &* pb) = basemul (ntt pa) (ntt pb).
-
-lemma mul_scale_ntt (pa pb : poly) (c : Fq) : 
-  invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
-   scale (pa &* pb) c by
- smt(mul_comm_ntt ntt_scale invnttK).
-
-lemma add_scale_ntt (pa pb : poly) (c : Fq) : 
-  invntt (scale ((ntt pa) &+ (ntt pb)) c) = 
-   scale (pa &+ pb) c by
- smt(add_comm_ntt ntt_scale invnttK).
-
-lemma scale1 (p : poly) :
-   scale p (Zq.one) = p.
-proof.
-rewrite /scale.
-apply Array256.ext_eq => *.
-rewrite mapiE => />.
-smt(@Zq).
-qed.
+op basemul(a b : poly) :  poly = Array256.init (fun i =>
+   if i %% 2  = 0 
+   then let ii = i %/ 2     in 
+       (cmplx_mul (a.[2*ii],a.[2*ii+1]) (b.[2*ii],b.[2*ii+1]) (ZqRing.exp zroot ((2 * br ii + 1)))).`1
+   else let ii = (i-1) %/ 2 in 
+       (cmplx_mul (a.[2*ii],a.[2*ii+1]) (b.[2*ii],b.[2*ii+1]) (ZqRing.exp zroot ((2 * br ii + 1)))).`2).
 
 (* END: NTT *)
 
