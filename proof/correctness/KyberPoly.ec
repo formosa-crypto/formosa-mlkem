@@ -625,14 +625,18 @@ by [].
 smt(@W32).
 qed.
 
-(*
 lemma poly_tomsg_corr_h _a : 
-    hoare[ M._poly_tomsg_decode :
+    hoare[ M._poly_tomsg :
+             (* need some region validity on rp for 32 bytes *)
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a ==>
-             map (fun x => x  = W32.one) res = m_decode _a /\
-             forall k, 0 <= k < 256  => 
-                 res.[k] <> W32.zero => res.[k] = W32.one].
+           (* lift from region of 32 bytes from rp converted 
+              to bool array is encoding of poly or decodes to poly
+             map (fun x => x  = W32.one) res = m_decode _a /\ *)
+             lift_array256 res = _a /\
+             pos_bound256_cxq res 0 256 1].
+admitted.
+(*
 proof.
 proc.
 seq 1 : #pre; first by auto => />.
@@ -978,8 +982,9 @@ rewrite !W32.and_mod. by rewrite /max /=.
 rewrite /max /=.
 by  smt(@IntDiv).
 qed.
+*)
 
-lemma poly_tomsg_ll : islossless  Mderand.poly_tomsg_decode.
+lemma poly_tomsg_ll : islossless  M._poly_tomsg.
 proc.
 while (0 <= i <= 32) (32-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
 move => *.
@@ -990,19 +995,28 @@ by auto => /> /#.
 qed.
 
 lemma poly_tomsg_corr _a : 
-    phoare[ Mderand.poly_tomsg_decode :
+    phoare[ M._poly_tomsg :
+             (* need some region validity on rp for 32 bytes *)
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a ==>
-             map (fun x => x = W32.one) res = m_decode _a] = 1%r
+           (* lift from region of 32 bytes from rp converted 
+              to bool array is encoding of poly or decodes to poly
+             map (fun x => x  = W32.one) res = m_decode _a /\ *)
+             lift_array256 res = _a /\
+             pos_bound256_cxq res 0 256 1] = 1%r
   by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
 
-
+print M.
 lemma poly_frommsg_corr_h _a : 
     hoare[ M._poly_frommsg :
-             r = Array256.map (fun x => if x then W16.one else W16.zero) _a
+             true
+             (* need some region validity on rp for 32 bytes plus the lift
+                of mem region decodes to _a *)
               ==>
              pos_bound256_cxq res 0 256 1 /\
              lift_array256 res = m_encode _a].
+admitted.
+(*
 proof.
 proc.
 unroll for 3.
@@ -1279,19 +1293,22 @@ rewrite !mapiE => />.
 rewrite initiE => />.
 by case (_a.[x]); rewrite to_sintE /smod => />. 
 qed.
+*)
 
-lemma poly_frommsg_ll : islossless  Mderand.poly_frommsg_encode
+lemma poly_frommsg_ll : islossless  M._poly_frommsg
  by proc; while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
 
 lemma poly_frommsg_corr _a : 
-    phoare[ Mderand.poly_frommsg_encode :
-             r = Array256.map (fun x => if x then W16.one else W16.zero) _a
+    phoare[ M._poly_frommsg :
+             true
+             (* need some region validity on rp for 32 bytes plus the lift
+                of mem region decodes to _a *)
               ==>
              pos_bound256_cxq res 0 256 1 /\
              lift_array256 res = m_encode _a] = 1%r
    by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
 
-
+(*
 lemma poly_frommont_corr_h _a : 
     hoare[ M.poly_frommont :
              map W16.to_sint rp = _a ==>
@@ -1839,7 +1856,6 @@ lemma mul_mod_add_mod (x y z m : int) :
  (x * y %% m + z) %% m = (x * y + z) %% m.
 proof. by move => *; rewrite -modzDm modz_mod modzDm. qed.
 
-print M.
 
 lemma poly_decompress ap :
       hoare[ M._poly_decompress :
@@ -1908,6 +1924,9 @@ wp; skip => /> *; do split; first by smt().
       by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
 qed.
 *)
+
+
+
 (*******DIRECT NTT *******)
 
 import Jindcpa.
