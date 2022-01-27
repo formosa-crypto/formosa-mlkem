@@ -124,7 +124,7 @@ move => *.
 qed.
 
 lemma poly_csubq_corr_h ap :
-      hoare[ M._poly_csubq :
+      hoare[ M.poly_csubq :
            ap = lift_array256 rp /\
            pos_bound256_cxq rp 0 256 2 
            ==>
@@ -581,7 +581,7 @@ move => i0 rp0.
 rewrite ultE =>  /> /#.
 qed.
 
-lemma poly_csubq_ll : islossless M._poly_csubq.
+lemma poly_csubq_ll : islossless M.poly_csubq.
 proof.
 proc.
 while (0 <= to_uint i <= 256) (256 - to_uint i); auto => />.
@@ -591,7 +591,7 @@ smt(@W64).
 qed.
 
 lemma poly_csubq_corr ap :
-      phoare[ M._poly_csubq :
+      phoare[ M.poly_csubq :
            ap = lift_array256 rp /\
            pos_bound256_cxq rp 0 256 2 
            ==>
@@ -626,7 +626,7 @@ smt(@W32).
 qed.
 
 lemma poly_tomsg_corr_h _a : 
-    hoare[ M._poly_tomsg :
+    hoare[ M.poly_tomsg :
              (* need some region validity on rp for 32 bytes *)
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a ==>
@@ -984,7 +984,7 @@ by  smt(@IntDiv).
 qed.
 *)
 
-lemma poly_tomsg_ll : islossless  M._poly_tomsg.
+lemma poly_tomsg_ll : islossless  M.poly_tomsg.
 proc.
 while (0 <= i <= 32) (32-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
 move => *.
@@ -995,7 +995,7 @@ by auto => /> /#.
 qed.
 
 lemma poly_tomsg_corr _a : 
-    phoare[ M._poly_tomsg :
+    phoare[ M.poly_tomsg :
              (* need some region validity on rp for 32 bytes *)
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a ==>
@@ -1006,9 +1006,8 @@ lemma poly_tomsg_corr _a :
              pos_bound256_cxq res 0 256 1] = 1%r
   by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
 
-print M.
 lemma poly_frommsg_corr_h _a : 
-    hoare[ M._poly_frommsg :
+    hoare[ M.poly_frommsg :
              true
              (* need some region validity on rp for 32 bytes plus the lift
                 of mem region decodes to _a *)
@@ -1295,11 +1294,11 @@ by case (_a.[x]); rewrite to_sintE /smod => />.
 qed.
 *)
 
-lemma poly_frommsg_ll : islossless  M._poly_frommsg
+lemma poly_frommsg_ll : islossless  M.poly_frommsg
  by proc; while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
 
 lemma poly_frommsg_corr _a : 
-    phoare[ M._poly_frommsg :
+    phoare[ M.poly_frommsg :
              true
              (* need some region validity on rp for 32 bytes plus the lift
                 of mem region decodes to _a *)
@@ -1308,7 +1307,7 @@ lemma poly_frommsg_corr _a :
              lift_array256 res = m_encode _a] = 1%r
    by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
 
-(*
+
 lemma poly_frommont_corr_h _a : 
     hoare[ M.poly_frommont :
              map W16.to_sint rp = _a ==>
@@ -1319,23 +1318,23 @@ while (0 <= to_uint i <= 256 /\ dmont = W16.of_int 1353 /\
           W16.to_sint rp.[k] =  SREDC (_a.[k] * ((R^2) %% q))) /\
        (forall k, to_uint i <= k < 256 =>
           W16.to_sint rp.[k] = _a.[k])); last first.
-auto => /> *. 
+auto => /> &hr. 
 split; first by smt(@Array256).
-move => *. 
+move => i0 rp0 H H0 H1 H2 H3. 
 move : H2; rewrite (_: to_uint i0 = 256); first by move : H; rewrite ultE;  smt(@W64).
-move =>*.
+move => H2.
 apply Array256.ext_eq.
-move => *. 
+move => x H4. 
 rewrite mapiE; first by smt().
 rewrite mapiE; first by smt().
 by rewrite (H2 x H4) => />. 
 sp. wp.
 ecall (fqmul_corr_h (to_sint r) (to_sint dmont)).
-auto => /> *.
+auto => /> &hr H H0 H1 H2 H3 result H4.
 split.
 smt(@W64).
 split.
-move => *.
+move => k H5.
 case (k < to_uint i{hr}).
 move => *.
 rewrite set_neqiE; first 2 by smt(@W64).
@@ -1349,14 +1348,13 @@ rewrite /R qE. simplify.
 congr. rewrite of_sintK => />. 
 rewrite expr0 /=.
 by rewrite /smod /=.
-move => *.
+move => k H5 H6.
 rewrite -(H2 k). move : H5;  rewrite to_uintD; by smt(@W64).
 move : H5; rewrite to_uintD.
 move : H3; rewrite ultE /=.
 move => *.
 rewrite set_neqiE; by smt(@W64).
 qed.
-*)
 
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
