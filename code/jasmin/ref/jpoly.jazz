@@ -1,19 +1,5 @@
 require "params.jinc"
-require "poly_compress.jinc"
-require "poly_decompress.jinc"
-require "poly_tobytes.jinc"
-require "poly_frombytes.jinc"
-require "poly_tomsg.jinc"
-require "poly_frommsg.jinc"
-require "poly_add2.jinc"
-require "poly_sub.jinc"
-require "poly_ntt.jinc"
-require "poly_invntt.jinc"
-require "poly_basemul.jinc"
-require "poly_frommont.jinc"
-require "poly_reduce.jinc"
-require "poly_csubq.jinc"
-require "poly_getnoise.jinc"
+require "poly.jinc"
 
 /* These exported functions are just for unit testing */
 
