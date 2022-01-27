@@ -253,7 +253,7 @@ abstract theory DFT.
   hint exact : aXn_eq1.
 
   lemma unit_a : unit a.
-  proof. by apply/(@unitP _ (exp a (n - 1))); rewrite mulrC -exprS // [smt(gt0_n)]. qed.
+  proof. by apply/(@unitP _ (exp a (n - 1))); rewrite mulrC -exprS // 1:#smt(gt0_n). qed.
 
   hint exact : unit_a.
 
