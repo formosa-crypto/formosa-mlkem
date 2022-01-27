@@ -293,22 +293,23 @@ lemma invntt_spec _r :
 
 (* These theorems should come from the algebraic infrastructure, along with
 another one that says our axiomatization of mul and add in Kyber are 
-explicit formulae for the ring operations. 
+explicit formulae for the ring operations. *)
 
-op scale(p : poly, c : elem) : poly =  Array256.map (fun x => x * c) p.
+op scale(p : poly, c : Fq) : poly =  Array256.map (fun x => x * c) p.
 
-
-axiom invnttK : cancel ntt invntt.
-axiom nttK : cancel invntt ntt.
-axiom nttZero : ntt Poly.zero = Poly.zero.
 
 axiom ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
+axiom invnttK : cancel ntt invntt.
+axiom nttK : cancel invntt ntt.
 
 lemma invntt_scale p c : invntt (scale p c) = scale (invntt p) c.
 proof.
 rewrite (_: p = ntt (invntt p)); first by rewrite nttK.
 by rewrite -ntt_scale {1}invnttK  nttK.
 qed.
+
+(*
+axiom nttZero : ntt Poly.zero = Poly.zero.
 
 axiom add_comm_ntt (pa pb : poly):
   ntt (pa + pb) = (ntt pa) + (ntt pb).
