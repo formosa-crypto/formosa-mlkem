@@ -2824,6 +2824,7 @@ op double_mul(a1 : Fq * Fq, b1 : Fq * Fq,
 
 op base_mul(ap bp : Fq Array256.t, zetas : Fq Array128.t, 
             rs : Fq Array256.t, i : int) : bool = 
+    0 <= i <= 256 /\
    forall k, 0 <= k < i %/ 4 =>
      ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
          (double_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
@@ -2851,10 +2852,9 @@ while (#pre /\ srp = rp /\
     base_mul _ap _bp _zetas (lift_array256 rp) (to_uint i)); last first. 
     auto => />.
     move => &hr ???. 
-    move => *; split; first by smt(). 
-    move => i0 rp0 zetasctr0. 
-    rewrite ultE => /> ????. have -> : to_uint i0 = 256; first by smt(@W64). 
-    by auto  => />. 
+    split; first by smt(). 
+    move => i0 rp0 zetasctr. 
+    rewrite ultE => /> ????. smt(). 
 
 seq 3 : (#{/~to_uint zetasctr = to_uint i %/ 4 + 64}pre /\ inFq (to_sint zeta_0) = 
             _zetas.[to_uint i %/4 + 64] * inFq R /\ 
@@ -2907,7 +2907,7 @@ seq 1 : (#pre /\
            b16 r0 (q+1)).
 ecall (fqmul_corr_h (to_sint a1) (to_sint b1)).
 auto => />. 
-move => &hr mont bas bbs ??? pbnd  ?????? ? rval.
+move => &hr mont bas bbs ??? pbnd  ?????? ??? rval.
 
 move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr} + 1]) _ _) => />; first by smt(@Fq). 
 
@@ -2925,7 +2925,7 @@ rewrite /R qE => /> *.
 smt. 
 move : ai1bnd.
 rewrite /R qE => /> *.
-smt. 
+smt.
 
 by rewrite eq_inFq -rval !inFqM; smt(@Fq).
 
@@ -2936,7 +2936,7 @@ seq 1 : (#{~inFq (to_sint r0) = inFq (to_sint ap.[ii + 1]) * inFq (to_sint bp.[i
            b16 r0 (q+1)).
 ecall (fqmul_corr_h (to_sint r0) (to_sint zeta_0)).
 auto => />. 
-move => &hr mont bas bbs ???pbndt  ??zetaval ??? r0val ???rval.
+move => &hr mont bas bbs ???pbndt  ????zetaval ??? r0val ???rval.
 
 move : (SREDCp_corr (to_sint r0{hr} * to_sint zeta_0{hr}) _ _) => />;
   first 2 by smt(@Fq). 
@@ -2991,7 +2991,7 @@ move : (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{
   first 2 by smt(@Fq). 
 
 rewrite eq_inFq -rval !inFqM. 
-move => ?? rrval.
+move => ???? rrval.
 
 rewrite !to_sintD_small. smt(@Fq).
 split.
@@ -3007,7 +3007,7 @@ ecall (fqmul_corr_h (to_sint a0) (to_sint b1)).
 
 auto => />.
 
-move => &hr mnt bas bbs ??? rbnd rv H2 zval ? H4 H5 r0val ?? ? rval  ?rvall. 
+move => &hr mnt bas bbs ??? rbnd ?? rv H2 zval ? H4 H5 r0val ?? ? rval  ?rvall. 
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
  move : (bas ( (to_uint i{hr} + 1)) _); first by smt(@W64).
@@ -3082,9 +3082,9 @@ smt(@Fq).
 
 split.
 
-rewrite /base_mul.
+rewrite /base_mul. split; first by smt().
 
-move =>  k kb.
+move =>  k kb kbb.
 
 rewrite /lift_array256 !mapiE; first 12 by smt(). 
 rewrite !Array256.set_neqiE; first 16 by smt(@W64). 
@@ -3176,7 +3176,7 @@ seq 1 : (#pre /\
            b16 r0 (q+1)).
 ecall (fqmul_corr_h (to_sint a1) (to_sint b1)).
 auto => />. 
-move => &hr mont bas bbs ?? rb rv ???? zval zbl zbh ??????? rval.
+move => &hr mont bas bbs ?? rb rv ?????? zval zbl zbh ??????? rval.
 
 move : (SREDCp_corr (to_sint ap{hr}.[ii + 3] * to_sint bp{hr}.[ii + 3]) _ _) => />; first by smt(@Fq). 
 
@@ -3205,7 +3205,7 @@ seq 1 : (#{~inFq (to_sint r0) = inFq (to_sint ap.[ii + 3]) * inFq (to_sint bp.[i
            b16 r0 (q+1)).
 ecall (fqmul_corr_h (to_sint r0) (to_sint zeta_0)).
 auto => />.
-move => &hr mont bas bbs ?? rb rv ???? zval zbl zbh ?????? r0val ???rval.
+move => &hr mont bas bbs ?? rb rv ?????? zval zbl zbh ?????? r0val ???rval.
 
 move : (SREDCp_corr (to_sint r0{hr} * to_sint zeta_0{hr}) _ _) => />.
   by smt(@Fq). 
@@ -3241,7 +3241,7 @@ by ring.
 wp.
 ecall (fqmul_corr_h (to_sint a0) (to_sint b0)).
 auto => />. 
-move => &hr mont bas bbs ?? rb rv ???? zval zbl zbh ?????? r0val ?H12?rval.
+move => &hr mont bas bbs ?? rb ??rv ???? zval zbl zbh ?????? r0val ?H12?rval.
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
  move : (bas ( (ii + 3)) _); first by smt().
@@ -3266,7 +3266,7 @@ ecall (fqmul_corr_h (to_sint a1) (to_sint b0)).
 ecall (fqmul_corr_h (to_sint a0) (to_sint b1)).
 
 auto => />.
-move => &hr mont bas bbs ?? rb rv  H1 ? H3 ? zval zbl zbh H5  H6 ???? r0val ???rval ?rvall. 
+move => &hr mont bas bbs ?? rb ?? rv   H1 ? H3 ? zval zbl zbh H5  H6 ???? r0val ???rval ?rvall. 
 
 move : bas; rewrite /signed_bound_cxq => /> bas. 
  move : (bas ( (ii + 3)) _); first by smt().
@@ -3350,7 +3350,10 @@ rewrite -H3.
 
 rewrite (_: (ii + 2 + 2) %/ 4 = ii %/4 + 1). smt().
 
-move => k kb.
+split. by smt().
+
+
+move => k *.
 rewrite /lift_array256 !mapiE; first 12 by smt(). 
 
 case (k < ii %/4); last first.
@@ -3446,56 +3449,94 @@ qed.
 
 import NTT_Fq.
 
-lemma basemul_scales ap bp rs :
- base_mul ap bp zetas_const rs 256 =>
+lemma basemul_scales ap bp rs _zetas:
+ array_mont _zetas = zetas_const =>
+ base_mul ap bp _zetas rs 256 =>
   rs = scale (basemul ap bp) (inFq 169). 
-rewrite /base_mul /double_mul /basemul /scale /complex_mul => /> *.
-apply Array256.ext_eq => /> *.
-move : (H (x %/4) _) => /> *; first by smt().
-rewrite mapiE; first by smt().
-move : (basemul_sem ap bp ((basemul ap bp))); rewrite /dcmplx_mul /cmplx_mul => /> *.
-case (x %%4 = 0).
-move => *.
-move : (H6 (x %/ 4) _); first by smt().
-move => [#] *.
-rewrite (_: (basemul ap bp).[x] = 
-  ap.[4 * (x %/4) + 1] * bp.[4 * (x %/4) + 1] * zetas_const.[(x %/4) + 64] + ap.[4 * (x %/4)] * bp.[4 * (x %/4)]). smt().
-rewrite (_: x = 4 * (x %/ 4)); first by smt().
-rewrite H2. 
-rewrite (_: 4 * (x %/ 4) %/ 4 = (x %/ 4)); first by smt(). 
+proof.
+rewrite /base_mul /double_mul /basemul /scale /complex_mul => /> H0 H.
+move : H0; rewrite /array_mont => />.
+rewrite (Array128.tP (map (transpose Zq.( * ) (inFq R)) _zetas) zetas_const) => H0. 
+apply Array256.ext_eq => /> k *.
+rewrite mapiE /=; first by smt().
+rewrite initiE /=; first by smt().
+move : (H (k %/4) _) => />; first by smt().
+rewrite /dcmplx_mul /cmplx_mul => /> H2 H3 H4 H5.
+case (k %% 4 = 0).
+move => H6.
+have -> : (k %% 2 = 0);1:  smt().
+simplify.
+move : H2.
+have -> : (4 * (k %/ 4)) = k. smt().
+move => ->.
+have -> : 2 * (k %/ 2) + 1 = k + 1. smt().
+have -> : 2 * (k %/ 2) = k . smt().
+move : (H0 (k %/ 4 + 64) _) => />. smt().
+rewrite mapiE //=; 1: smt().
+move => H00.
+have -> : ap.[k + 1] * bp.[k + 1] * _zetas.[k %/ 4 + 64] * inFq 169 + ap.[k] * bp.[k] * inFq 169 = 
+     ap.[k + 1] * bp.[k + 1] * (zetas_const.[k %/ 4 + 64] * inFq 169)  * inFq 169 + ap.[k] * bp.[k] * inFq 169.
+rewrite -H00.
+have ->: (_zetas.[k %/ 4 + 64] * inFq R * inFq 169) = (_zetas.[k %/ 4 + 64] * (inFq R * inFq 169)).
 by ring.
-case (x %%4 = 1).
-move => *.
-move : (H6 (x %/ 4) _); first by smt().
-move => [#] *.
-rewrite (_: (basemul ap bp).[x] = 
-  ap.[4 * (x %/ 4)] * bp.[4 * (x %/ 4) + 1] + ap.[4 * (x %/ 4) + 1] * bp.[4 * (x %/ 4)]). smt().
-rewrite (_: x = 4 * (x %/ 4) + 1); first by smt().
-rewrite H3. 
-rewrite (_: (4 * (x %/ 4) + 1) %/ 4 = (x %/ 4)); first by smt(). 
+have -> : inFq R * inFq 169= Zq.one. smt(@Zq RRinv). by ring. 
+rewrite zetavals1 //. 
+have -> : (ap.[k + 1] * bp.[k + 1] * (inFq R * (ZqRing.exp zroot (2 * br (k %/ 2) + 1))%ZqRing * inFq 169) * inFq 169 +
+ap.[k] * bp.[k] * inFq 169) =
+          (ap.[k + 1] * bp.[k + 1] * ((inFq R * inFq 169) * (ZqRing.exp zroot (2 * br (k %/ 2) + 1))%ZqRing) * inFq 169 +
+ap.[k] * bp.[k] * inFq 169).
 by ring.
-case (x %%4 = 2).
+have -> : inFq R * inFq 169= Zq.one. smt(@Zq RRinv). by ring. 
 move => *.
-move : (H6 (x %/ 4) _); first by smt().
-move => [#] *.
-rewrite (_: (basemul ap bp).[x] = 
-  ap.[4 * (x %/ 4) + 3] * bp.[4 * (x %/ 4) + 3] * - zetas_const.[x %/ 4 + 64] +
-     ap.[4 * (x %/ 4) + 2] * bp.[4 * (x %/ 4) + 2]). smt().
-rewrite (_: x = 4 * (x %/ 4) + 2); first by smt().
-rewrite H4. 
-rewrite (_: (4 * (x %/ 4) + 2) %/ 4 = (x %/ 4)); first by smt(). 
+case (k %% 4 = 1).
+move => H6.
+have -> : (k %% 2 = 1);1:  smt().
+simplify.
+move : H3.
+have -> : (4 * (k %/ 4) + 1) = k. smt().
+move => ->.
+have -> : 2 * ((k-1) %/ 2) = 4 * (k %/ 4). smt().
+have -> : (4 * (k %/ 4) + 1) = k. smt().
 by ring.
-case (x %%4 = 3).
+
+case (k %% 4 = 2).
+move => H6 *.
+have -> : (k %% 2 = 0);1:  smt().
+simplify.
+move : H4.
+have -> : (4 * (k %/ 4) + 2) = k. smt().
+move => ->.
+have -> : 2 * (k %/ 2) + 1 = k + 1. smt().
+have -> : (4 * (k %/ 4) + 3) = k + 1. smt().
+have -> : 2 * (k %/ 2) = k . smt().
+move : (H0 (k %/ 4 + 64) _) => />. smt().
+rewrite mapiE //=; 1: smt().
+move => H00.
+have -> : ap.[k + 1] * bp.[k + 1] * (- _zetas.[k %/ 4 + 64]) * inFq 169 + ap.[k] * bp.[k] * inFq 169 = 
+     ap.[k + 1] * bp.[k + 1] * -(zetas_const.[k %/ 4 + 64] * inFq 169)  * inFq 169 + ap.[k] * bp.[k] * inFq 169.
+rewrite -H00.
+have ->: (_zetas.[k %/ 4 + 64] * inFq R * inFq 169) = (_zetas.[k %/ 4 + 64] * (inFq R * inFq 169)).
+by ring.
+have -> : inFq R * inFq 169= Zq.one. smt(@Zq RRinv). by ring. 
+have -> : ap.[k + 1] * bp.[k + 1] * - zetas_const.[k %/ 4 + 64] * inFq 169 * inFq 169 + ap.[k] * bp.[k] * inFq 169 = 
+          ap.[k + 1] * bp.[k + 1] * - (zetas_const.[k %/ 4 + 64] * inFq 169) * inFq 169 + ap.[k] * bp.[k] * inFq 169.
+by ring.
+rewrite zetavals2 //.
+have -> : ap.[k + 1] * bp.[k + 1] * - (inFq R * - (ZqRing.exp zroot (2 * br (k %/ 2) + 1))%ZqRing) * inFq 169 * inFq 169 +
+ap.[k] * bp.[k] * inFq 169 = ap.[k + 1] * bp.[k + 1] * ((ZqRing.exp zroot (2 * br (k %/ 2) + 1))%ZqRing) * (inFq R * inFq 169) * inFq 169 +
+ap.[k] * bp.[k] * inFq 169.
+by ring.
+have -> : inFq R * inFq 169= Zq.one. smt(@Zq RRinv). by ring. 
 move => *.
-move : (H6 (x %/ 4) _); first by smt().
-move => [#] *.
-rewrite (_: (basemul ap bp).[x] = 
-  ap.[4 * (x %/ 4) + 2] * bp.[4 * (x %/ 4) + 3] + ap.[4 * (x %/ 4) + 3] * bp.[4 * (x %/ 4) + 2]). smt().
-rewrite (_: x = 4 * (x %/ 4) + 3); first by smt().
-rewrite H5. 
-rewrite (_: (4 * (x %/ 4) + 3) %/ 4 = (x %/ 4)); first by smt(). 
+have ? : k %% 4 = 3; 1: smt().
+have -> : (k %% 2 = 1);1:  smt().
+simplify.
+move : H5.
+have -> : (4 * (k %/ 4) + 3) = k. smt().
+move => ->.
+have -> : 2 * ((k-1) %/ 2) = 4 * (k %/ 4) + 2. smt().
+have -> : (4 * (k %/ 4) + 2 + 1) = k. smt().
 by ring.
-smt().
 qed.
 
 

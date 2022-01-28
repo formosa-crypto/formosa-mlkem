@@ -1,6 +1,6 @@
 require import AllCore List IntDiv Ring StdOrder Array256 Array128.
 require import Fq.
-require import Kyber.
+import Kyber.
 
 import Zq IntOrder.
 
@@ -177,7 +177,9 @@ do by defining operators that capture the semantics of these algorithms.
 To Do: give explicit definitions and prove equivalence  between
 functional  and imperative realizations. *)
 
-op zetas_const : Fq Array128.t =
+(* These are powers of roots of unit in Mont form and
+   bitwise permuted indices *)
+op zetas_inv_const : Fq Array128.t =
     Array128.of_list witness
        [ inFq 1701; inFq 1807; inFq 1460; 
          inFq 2371; inFq 2338; inFq 2333; 
@@ -223,7 +225,7 @@ op zetas_const : Fq Array128.t =
          inFq 1836; inFq 1517; inFq 359; 
          inFq 758; inFq 1441].
   
-op zetas_inv_const  : Fq Array128.t =
+op zetas_const  : Fq Array128.t =
     Array128.of_list witness
        [inFq 2285; inFq 2571; inFq 2970; 
          inFq 1812; inFq 1493; inFq 1422; 
@@ -268,6 +270,13 @@ op zetas_inv_const  : Fq Array128.t =
          inFq 3221; inFq 3021; inFq 996; 
          inFq 991; inFq 958; inFq 1869; 
          inFq 1522; inFq 1628].
+
+(* These properties is needed to show that ntt_inv is computing something
+   that makes sense. Checked in sage. *)
+axiom zetavals1  k : 0 <= k < 256 => k%%4 = 0 => 
+     zetas_const.[k %/ 4 + 64] = inFq Fq.SignedReductions.R * ZqRing.exp zroot (2 * br (k %/ 2) + 1). 
+
+axiom zetavals2 k : 0 <= k < 256 => k%%4 = 2 => zetas_const.[k %/ 4 + 64] = inFq Fq.SignedReductions.R * (-ZqRing.exp zroot (2 * br (k %/ 2) + 1)).
 
 (* TO DO: These need to be proved using the results in NTT_Algebra *)
 lemma ntt_spec_h _r :

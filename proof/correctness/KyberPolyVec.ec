@@ -728,8 +728,11 @@ rewrite H3; 1: smt().
  smt (). 
 qed.
 
+op array_unmont : Fq Array128.t -> Fq Array128.t.
+axiom array_unmontK : cancel array_unmont array_mont.
+
 lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : Fq Array256.t) :
-  array_mont zetas_const = lift_array128 jzetas =>
+  zetas_const = lift_array128 jzetas =>
   _p0 = scale (basemul _a0 _b0) (inFq 169) =>
   _p1 = scale (basemul _a1 _b1) (inFq 169) =>
   _p2 = scale (basemul _a2 _b2) (inFq 169) =>
@@ -754,26 +757,32 @@ move => *.
 proc.
 ecall (poly_reduce_corr_h (lift_array256 r)).
 ecall (poly_add_corr (lift_array256 r) _p2 6 3).
-call (poly_basemul_corr _a2 _b2 zetas_const).
+call (poly_basemul_corr _a2 _b2 (array_unmont zetas_const)).
 call (poly_add_corr _p0 _p1 3 3).
-call (poly_basemul_corr _a1 _b1 zetas_const).
-call (poly_basemul_corr _a0 _b0 zetas_const).
+call (poly_basemul_corr _a1 _b1 (array_unmont zetas_const)).
+call (poly_basemul_corr _a0 _b0 (array_unmont zetas_const)).
 ecall (polyvec_topolys_corr_h (lift_array768 b) 2 b).
 ecall (polyvec_topolys_corr_h (lift_array768 a) 2 a).
-wp; skip; subst => /> &hr /> *.
+wp; skip; subst => /> &hr /> ??????????????????????.
 split.
-+ rewrite /lift_polyvec /lift_array256 mapE. 
++ rewrite array_unmontK /lift_polyvec /lift_array256 mapE //.
+  split; first by smt(). 
   split; apply Array256.ext_eq; smt(Array256.initiE). 
-move=> *;split.
+move=> ???result1 ??;split.
 + rewrite /lift_polyvec /lift_array256 mapE. 
   split; apply Array256.ext_eq; smt(Array256.initiE).
-move=> *; split. 
-+ smt(basemul_scales).
-move=> *; split.
+move=> ??result2??; split. 
+split. 
++ move : (basemul_scales (lift_polyvec a{hr} 0) (lift_polyvec b{hr} 0) (lift_array256 result1) (array_unmont zetas_const)).
+  rewrite array_unmontK. smt().
++ move : (basemul_scales (lift_polyvec a{hr} 1) (lift_polyvec b{hr} 1) (lift_array256 result2) (array_unmont zetas_const)).
+  rewrite array_unmontK. smt().  
+move=> ?? result3 ??; split.
 + rewrite /lift_polyvec /lift_array256 mapE. 
   split; apply Array256.ext_eq; smt(Array256.initiE).
-move=> *; split.
-+ smt(basemul_scales).
+move=> ?? result4 ??; split.
++ move : (basemul_scales (lift_polyvec a{hr} 2) (lift_polyvec b{hr} 2) (lift_array256 result4) (array_unmont zetas_const)).
+  rewrite array_unmontK. smt().
 move=> *; apply Array256.ext_eq; smt(@Array256).
 qed.
 
