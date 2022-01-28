@@ -308,14 +308,15 @@ rewrite (_: p = ntt (invntt p)); first by rewrite nttK.
 by rewrite -ntt_scale {1}invnttK  nttK.
 qed.
 
+axiom mul_comm_ntt (pa pb : poly):
+  ntt (pa &* pb) = basemul (ntt pa) (ntt pb).
+
 (*
 axiom nttZero : ntt Poly.zero = Poly.zero.
 
 axiom add_comm_ntt (pa pb : poly):
   ntt (pa + pb) = (ntt pa) + (ntt pb).
 
-axiom mul_comm_ntt (pa pb : poly):
-  ntt (pa * pb) = basemul (ntt pa) (ntt pb).
 
 lemma mul_scale_ntt (pa pb : poly) (c : elem) : 
   invntt (scale (basemul (ntt pa) (ntt pb)) c) = 

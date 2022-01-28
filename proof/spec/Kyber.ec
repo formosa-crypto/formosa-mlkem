@@ -632,8 +632,8 @@ end Poly.
 
 export Poly.
 
-op kvec : int. 
-axiom kvec_ge3 : 3 <= kvec.
+op kvec : int = 3. 
+(* axiom kvec_ge3 : 3 <= kvec. *)
 
 
 require Matrix.
@@ -882,7 +882,7 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
   proof MLWE_.duni_R_fu 
-  proof MLWE_.Matrix_.ge0_size by smt(kvec_ge3)
+  proof MLWE_.Matrix_.ge0_size by smt()
   proof MLWE_.Matrix_.ZR.addrA by admit
   proof MLWE_.Matrix_.ZR.addrC by admit
   proof MLWE_.Matrix_.ZR.add0r by admit
