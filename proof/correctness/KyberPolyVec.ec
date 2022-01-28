@@ -231,7 +231,21 @@ proof.
     wp; skip => /> &hr; rewrite /(\ult) /= => *.
     rewrite to_uintD_small 1:/#; smt(get_setE).
   wp; skip => /> *; rewrite /(\ult) /= => *.
+  do split => //. smt(). 
+  move => *.
+  do split => //. smt(). smt().
+  move => *. 
+  do split => //.  smt().  smt(). 
+  move => *. 
+  do split => //; first last.  
+  smt().  
   smt (lift_array256_inFq).
+  smt (lift_array256_inFq).
+  smt (lift_array256_inFq).
+  rewrite /signed_bound768_cxq => k *.
+  case (0 <= k < 256). smt().
+  case (256 <= k < 512). smt().
+  smt().  
 qed.
 
 lemma polyvec_frompolys_ll  :
@@ -277,12 +291,22 @@ proof.
   ecall (poly_csubq_corr_h (Array256.of_list witness (sub ap 256 256))).
   ecall (poly_csubq_corr_h (Array256.of_list witness (sub ap 0 256))).
   ecall (polyvec_topolys_corr_h ap 2 r); skip => />.
-  move=> &hr *. 
+  move=> &hr H. 
   split; 1: smt().
-  move=> *; split; 1:smt(lift_array256_sub_768).
-  move=> *; split; 1:smt(lift_array256_sub_768).
-  move=> *; split; 1:smt(lift_array256_sub_768).
-  smt(lift_array768_eq).
+  move=> H0 result H1 H2 H3 H4 H5 H6 H7 H8 H9; split; 1:smt(lift_array256_sub_768).
+  move=> H10 H11 result0 H12 H13; split; 1:smt(lift_array256_sub_768).
+  move=> H14 H15 result1 H16 H17; split; 1:smt(lift_array256_sub_768).
+  move=> H18 H19 result2 H20 H21; split; 1:smt().
+  move=> H22 H23 H24 result3 H25 H26 H27 H28 H29 H30 H31; split; 1:smt(lift_array768_eq).
+  rewrite /pos_bound768_cxq => k *.
+  case (0 <= k < 256). smt().
+  case (256 <= k < 512).
+  move => *. pose kp := k - 256.
+   have -> : result3.[k] = result3.[kp + 256]; 1: smt().
+    rewrite (H27 kp _); smt().
+  move => *. pose kp := k - 512.
+   have -> : result3.[k] = result3.[kp + 512]; 1: smt().
+    rewrite (H28 kp _); smt().
 qed.
 
 lemma formula_polyvec x : 
@@ -300,15 +324,16 @@ by move=> />.
 by rewrite allP => H /H /={H}.
 qed.
 
-lemma roundcimpl64 (a : W16.t) :
+lemma compressimpl64 (a : W16.t) :
   bpos16 a q =>
   inFq
   (to_sint (truncateu16
          ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
            (of_int 32)%W8) `&`
-          (of_int 1023)%W64))) = PolyVec.roundc (inFq (to_sint a)).
+          (of_int 1023)%W64))) = compress 10 (inFq (to_sint a)).
 proof.
-rewrite /zeroextu64 /truncateu16 PolyVec.roundcE qE => /> *.
+rewrite /zeroextu64 /truncateu16 -compress_alt_compress; 1..2 : smt(). 
+rewrite /compress_alt qE => /> *.
 rewrite (_: W64.of_int 1023 = W64.masklsb 10); first by rewrite /max /=.
 rewrite W64.and_mod 1:// /max /= !W64.of_uintK to_sintE /(`<<`) /(`>>`) W64.shlMP 1:/#.
 rewrite W64.to_uint_shr 1:/# W16.of_uintK; congr.
@@ -328,7 +353,7 @@ rewrite /xx formula_polyvec 2://.
 by rewrite -to_sint_unsigned.
 qed.
 
-lemma roundcimpl_rng (a : W16.t) :
+lemma compress_rng (a : W16.t) :
   bpos16 a q =>
   0 <= to_sint (truncateu16
          ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
@@ -348,6 +373,7 @@ have ? : 0<= to_uint (truncateu16 xx) < 1024.
 by rewrite /max /smod /=;  smt(@W16).
 qed.
 
+(*
 lemma polyvec_compress_round_corr ap :
       hoare[ M.polyvec_compress_round :
            ap = lift_array768 a /\
@@ -382,10 +408,11 @@ wp; skip => /> *; split; 1: smt().
 rewrite /(\ult) /= => i0 r0 *; split; 2: smt().
 rewrite tP => j *; rewrite mapiE //; smt(@Array768).
 qed.
+*)
 
 (******************************************************)
 (* FIXME: this is a dirty hack, it should be defined like that in KyberPoly *)
-lemma poly_add_corr (_a _b : zmod Array256.t) (ab bb : int) :
+lemma poly_add_corr (_a _b : Fq Array256.t) (ab bb : int) :
     hoare[ Jindcpa.M.poly_add2 :
            (0 <= ab <= 6 /\ 0 <= bb <= 3) /\
 
@@ -402,7 +429,7 @@ hoare; apply (poly_add_corr _a _b ab bb h1 h2).
 qed.
 
 lemma polyvec_add_corr _a _b ab bb :
-      hoare[ Mderand.polyvec_add2 :
+      hoare[ M.polyvec_add2 :
             0 <= ab <= 6 /\ 0 <= bb <= 3 /\
            _a = lift_array768 r /\
            _b = lift_array768 b /\
@@ -421,13 +448,26 @@ ecall (poly_add_corr (lift_array256 r0) (lift_array256 b0) ab bb).
 ecall (polyvec_topolys_corr_h _b bb b).
 ecall (polyvec_topolys_corr_h _a ab r).
 wp; skip => />.
+move => &hr ?????????? H11 H12 H13 H14 H15 H16????????? ?? H17 H18 ?  H19 H20 ? H21 ?? H22 H23 H24 H25 H26?? k??.
+case (0 <= k < 256).
+by smt(@Array768 @Array256).
+case (256 <= k < 512).
+move => *. 
+pose kp := k - 256.
+have -> : k = kp + 256; 1:  smt().
+rewrite H24; 1: smt(). 
+by smt(@Array768 @Array256).
+move => *. 
+pose kp := k - 512.
+have -> : k = kp + 512; 1:  smt().
+rewrite H25; 1: smt(). 
 by smt(@Array768 @Array256).
 qed.
 
 (******************************************************)
 
 lemma polyvec_topolys_corr_aux ap pv' :
-      hoare[ Mderand.polyvec_topolys :
+      hoare[ M.polyvec_topolys :
            pv = pv' /\ ap = lift_array768 pv
            ==>
            (forall k, 0 <= k < 256 => res.`1.[k] = pv'.[k]) /\
@@ -457,10 +497,10 @@ proof.
 qed.
 
 lemma polyvec_reduce_corr _a :
-      hoare[ Mderand.polyvec_reduce :
+      hoare[ M.polyvec_reduce :
           _a = lift_array768 r ==> 
           _a = lift_array768 res /\
-          forall k, 0 <= k < 768 => bpos16 res.[k] (2*Kyber_.q)].
+          forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)].
 proof.
 proc.
 ecall (polyvec_frompolys_corr_h r0 r1 r2 (lift_array256 r0) (lift_array256 r1) (lift_array256 r2) 2).
@@ -468,15 +508,40 @@ ecall (poly_reduce_corr_h (lift_array256 r2)).
 ecall (poly_reduce_corr_h (lift_array256 r1)).
 ecall (poly_reduce_corr_h (lift_array256 r0)).
 ecall (polyvec_topolys_corr_aux _a r).
-wp; skip => /> &hr *.
+wp; skip => /> &hr ???? ????????????.
 split; 1: by rewrite /signed_bound_cxq; smt (b16E).
-move=> *; split; 2: smt().
-apply tP => *; smt (lift_array768_inFq lift_array256_inFq).
+move=> ?????H H0 H1 H2 H3 H4; split.
+apply tP => k *.
+rewrite /lift_array768 => *.
+rewrite !Array768.mapiE //=.
+case (0 <= k < 256). 
+move => *; rewrite H; 1: smt(). 
+smt(lift_array768_inFq lift_array256_inFq).
+case (256 <= k < 512).
+pose kp := k - 256.
+have -> : k = kp + 256; 1: smt(). 
+move => *; rewrite H0; 1: smt(). 
+smt(lift_array768_inFq lift_array256_inFq).
+smt(lift_array768_inFq lift_array256_inFq).
+move => k *.
+case (0 <= k < 256). 
+move => *; rewrite H; 1: smt(). 
+smt(lift_array768_inFq lift_array256_inFq).
+case (256 <= k < 512).
+pose kp := k - 256.
+have -> : k = kp + 256; 1: smt(). 
+move => *; rewrite H0; 1: smt(). 
+smt(lift_array768_inFq lift_array256_inFq).
+pose kp := k - 512.
+have -> : k = kp + 512; 1: smt(). 
+move => *; rewrite H1; 1: smt(). 
+smt(lift_array768_inFq lift_array256_inFq).
 qed.
 
+(*
 import Array5.
 lemma polyvec_decompress_restore_corr ap :
-      hoare[ Mderand.polyvec_decompress_restore :
+      hoare[ M.polyvec_decompress_restore :
            ap = lift_array768_32 rp /\
            pos_bound768_b_32 rp 0 768 (2^10) 
            ==>
@@ -524,12 +589,12 @@ split.
   by rewrite /lift_array768 !mapiE 1..3:// /= PolyVec.unroundcE inFqK qE h.
 move=> k hk; rewrite b16E h 1:// /= qE. 
 by move: (H k hk); rewrite bpos32E /#.
-qed.
+qed.*)
 
 require import Jindcpa.
 
-lemma ntt_correct_h (_r0 : zmod Array256.t):
-      hoare[ Mderand.poly_ntt :
+lemma ntt_correct_h (_r0 : Fq Array256.t):
+      hoare[ M.poly_ntt :
                _r0 = lift_array256 arg /\
                array_mont zetas_const = lift_array128 jzetas /\ signed_bound_cxq arg 0 256 2 ==>
                ntt _r0 = lift_array256 res /\
@@ -537,7 +602,7 @@ lemma ntt_correct_h (_r0 : zmod Array256.t):
  by conseq (ntt_correct _r0). 
 
 lemma polyvec_ntt_correct _r:
-   hoare[ Mderand.polyvec_ntt :
+   hoare[ M.polyvec_ntt :
         _r = lift_array768 r /\
         array_mont zetas_const = 
            lift_array128  jzetas /\
@@ -575,27 +640,43 @@ split.
   congr; congr.
   apply Array256.tP => j hj.
   smt(@Array256 @Array768).
-rewrite /pos_bound768_cxq; smt (bpos16E). 
+rewrite /pos_bound768_cxq.
+move => k *.
+case (0 <= k < 256).
+ smt (bpos16E). 
+case (256 <= k < 512).
+move => *.
+pose kp := k - 256.
+have -> : k = kp + 256; 1: smt().
+rewrite H8; 1: smt().
+ smt (bpos16E). 
+case (512 <= k < 768).
+move => *.
+pose kp := k - 512.
+have -> : k = kp + 512; 1: smt().
+rewrite H9; 1: smt().
+ smt (bpos16E). 
+ smt (). 
 qed.
 
-lemma invntt_correct_h (_r : zmod Array256.t):
-      hoare[  Mderand.poly_invntt :
+lemma invntt_correct_h (_r : Fq Array256.t):
+      hoare[  M.poly_invntt :
              _r = lift_array256 arg /\
              array_mont_inv zetas_inv_const = lift_array128 jzetas_inv /\ signed_bound_cxq arg 0 256 2 ==>
-             scale (invntt _r) (inFq SignedReductions.R) = lift_array256 res /\
+             scale (invntt _r) (inFq Fq.SignedReductions.R) = lift_array256 res /\
              forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
 by conseq (invntt_correct _r). 
 
 lemma polyvec_invntt_correct _r:
-   hoare[ Mderand.polyvec_invntt :
+   hoare[ M.polyvec_invntt :
         _r = lift_array768 r /\
         array_mont_inv zetas_inv_const = 
            lift_array128  jzetas_inv /\
         signed_bound768_cxq r 0 768 2
           ==> 
-            scale (invntt (Array256.of_list witness (sub _r 0 256))) (inFq SignedReductions.R) = lift_polyvec res 0 /\
-            scale (invntt (Array256.of_list witness (sub _r 256 256))) (inFq SignedReductions.R) = lift_polyvec res 1 /\
-            scale (invntt (Array256.of_list witness (sub _r 512 256))) (inFq SignedReductions.R) = lift_polyvec res 2 /\
+            scale (invntt (Array256.of_list witness (sub _r 0 256))) (inFq Fq.SignedReductions.R) = lift_polyvec res 0 /\
+            scale (invntt (Array256.of_list witness (sub _r 256 256))) (inFq Fq.SignedReductions.R) = lift_polyvec res 1 /\
+            scale (invntt (Array256.of_list witness (sub _r 512 256))) (inFq Fq.SignedReductions.R) = lift_polyvec res 2 /\
             forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q + 1) ].
 proof.
 proc.
@@ -629,10 +710,25 @@ split.
   congr; congr; congr.
   apply Array256.tP => j hj.
   smt(@Array256 @Array768).
-smt().
+move => k *.
+case (0 <= k < 256).
+ smt (). 
+case (256 <= k < 512).
+move => *.
+pose kp := k - 256.
+have -> : k = kp + 256; 1: smt().
+rewrite H2; 1: smt().
+ smt (). 
+case (512 <= k < 768).
+move => *.
+pose kp := k - 512.
+have -> : k = kp + 512; 1: smt().
+rewrite H3; 1: smt().
+ smt (). 
+ smt (). 
 qed.
 
-lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : zmod Array256.t) :
+lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : Fq Array256.t) :
   array_mont zetas_const = lift_array128 jzetas =>
   _p0 = scale (basemul _a0 _b0) (inFq 169) =>
   _p1 = scale (basemul _a1 _b1) (inFq 169) =>

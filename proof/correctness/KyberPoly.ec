@@ -3444,7 +3444,6 @@ smt(qE).
 by  auto => />.
 qed.
 
-(* 
 import NTT_Fq.
 
 lemma basemul_scales ap bp rs :
@@ -3499,6 +3498,5 @@ by ring.
 smt().
 qed.
 
-*)
 
 end KyberPoly.
