@@ -1,3 +1,4 @@
+
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Real RealExp.
 require import List_extra Ring_extra RealExp_extra IntDiv_extra For BitEncoding_extra Real_extra RealExp_extra.
 require import List_hakyber IntDiv_hakyber.
@@ -2241,4 +2242,5 @@ theory NTTequiv.
   qed.
 
 end NTTequiv.
+
 
