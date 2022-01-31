@@ -340,6 +340,7 @@ module Parse(XOF : XOF_t, O : RO.POracle) = {
    proc sample_real() : poly = {
       var j, b168, bi, bi1, bi2, d1, d2,k;
       var aa : poly;
+      aa <- witness;
       j <- 0;
       while (j < 256) {
          b168 <@ XOF(O).next_bytes();
@@ -380,6 +381,7 @@ module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
       var bits,i,a,b,bytes;
       var rr : poly;
+      rr <- witness;
       bytes <@ PRF(O).next_bytes(_N);
       bits <- bytes2bits128 bytes;
       i <- 0;
@@ -626,6 +628,60 @@ module EncDec = {
        return r;
    }
 
+(* Extension to vectors *)
+
+   proc encode10_vec(u : poly Array3.t) : (W8.t Array320.t) Array3.t = {
+      var c : (W8.t Array320.t) Array3.t;
+      var ci,i;
+      c <- witness;
+      i <- 0;
+      while (i < 3) {
+         ci <@ encode10(u.[i]); 
+         c.[i] <- ci;
+         i <- i + 1;
+      }
+      return c;
+   }
+
+   proc encode12_vec(u : poly Array3.t) : (W8.t Array384.t) Array3.t = {
+      var c : (W8.t Array384.t) Array3.t;
+      var ci,i;
+      c <- witness;
+      i <- 0;
+      while (i < 3) {
+         ci <@ encode12(u.[i]); 
+         c.[i] <- ci;
+         i <- i + 1;
+      }
+      return c;
+   }
+
+   proc decode10_vec(u : (W8.t Array320.t) Array3.t) : poly Array3.t = {
+      var c : poly Array3.t;
+      var ci,i;
+      c <- witness;
+      i <- 0;
+      while (i < 3) {
+         ci <@ decode10(u.[i]); 
+         c.[i] <- ci;
+         i <- i + 1;
+      }
+      return c;
+   }
+
+   proc decode12_vec(u : (W8.t Array384.t) Array3.t) : poly Array3.t = {
+      var c : poly Array3.t;
+      var ci,i;
+      c <- witness;
+      i <- 0;
+      while (i < 3) {
+         ci <@ decode12(u.[i]); 
+         c.[i] <- ci;
+         i <- i + 1;
+      }
+      return c;
+   }
+
 }.
 
 end Poly.
@@ -692,6 +748,11 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      var tv,sv : (W8.t Array384.t) Array3.t;
      var a : matrix;
      var s,e : vector;
+     a <- witness;
+     e <- witness;
+     s <- witness;
+     sv <- witness;
+     tv <- witness;
      (rho,sig) <@ G(O).sample();
      _N <- 0; 
      i <- 0;
@@ -737,6 +798,11 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       var that : vector;
       var aT : matrix;
       var c1 : (W8.t Array320.t) Array3.t;
+      aT <- witness;
+      c1 <- witness;
+      e1 <- witness;
+      r <- witness;
+      that <- witness;
       (tv,rho) <- pk;
       _N <- 0;
       (* Spec is silly here *)
@@ -789,6 +855,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
   proc dec(sk : skey, cph : ciphertext) : plaintext option = {
       var m,mp,i,ui,v,si, c1, c2;
       var u,s : vector;
+      u <- witness;
+      s <- witness;
       (c1,c2) <- cph;
       i <- 0;
       while (i < 3) {

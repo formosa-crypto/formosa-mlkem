@@ -1,6 +1,6 @@
 require import AllCore List IntDiv CoreMap IntDiv Real.
 from Jasmin require  import JModel JMemory.
-require import W16extra Array256 Array128.
+require import W16extra Array32 Array320 Array256 Array128 Array384.
 require import Fq.
 require import NTT_Fq.
 require import Kyber.
@@ -55,12 +55,6 @@ op array_mont_inv (p : Fq Array128.t) =
   let vv = Array128.map (fun x => x *  (inFq R)) p in
       vv.[127 <- p.[127] * (inFq R) * (inFq R)].
 
-op load_array_from_mem(mem : global_mem_t, ptr : W64.t) : W16.t Array256.t.
-
-axiom load_array_from_memE mem ptr i :
-   0 <= i < 256 =>
-     loadW16 mem (W64.to_uint ptr + 2* i) = (load_array_from_mem mem ptr).[i].
-
 op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
    forall k, l <= k < u => b16 coefs.[k] (c*q).
 
@@ -72,6 +66,21 @@ op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
 
 op pos_bound256_b (coefs : W16.t Array256.t) (l u b : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] b.
+
+op touches (m m' : global_mem_t) (p : address) (len : int) =
+    forall i, 0 < i <= len => m'.[p + i] = m.[p + i].
+
+op load_array32(m : global_mem_t, p : address) : W8.t Array32.t = 
+      Array32.init (fun i => m.[p + i]).
+
+op load_array128(m : global_mem_t, p : address) : W8.t Array128.t = 
+      Array128.init (fun i => m.[p + i]).
+
+op load_array320(m : global_mem_t, p : address) : W8.t Array320.t = 
+      Array320.init (fun i => m.[p + i]).
+
+op load_array384(m : global_mem_t, p : address) : W8.t Array384.t = 
+      Array384.init (fun i => m.[p + i]).
 
 require import Jindcpa.
 
@@ -625,16 +634,18 @@ by [].
 smt(@W32).
 qed.
 
-lemma poly_tomsg_corr_h _a : 
-    hoare[ M.poly_tomsg :
-             (* need some region validity on rp for 32 bytes *)
-             pos_bound256_cxq a 0 256 2 /\
-             lift_array256 a = _a ==>
-           (* lift from region of 32 bytes from rp converted 
-              to bool array is encoding of poly or decodes to poly
-             map (fun x => x  = W32.one) res = m_decode _a /\ *)
-             lift_array256 res = _a /\
-             pos_bound256_cxq res 0 256 1].
+lemma poly_tomsg_corr _a (_p : address) mem : 
+    equiv [ M.poly_tomsg ~ EncDec.encode1 :
+             pos_bound256_cxq a{1} 0 256 2 /\
+             lift_array256 a{1} = _a /\
+             p{2} = compress_poly 1 _a /\
+             valid_range W8 Glob.mem{1} _p 32 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             lift_array256 res{1} = _a /\
+             pos_bound256_cxq res{1} 0 256 1 /\
+             touches mem Glob.mem{1} _p 32 /\
+             load_array32 Glob.mem{1} _p = res{2}].
 admitted.
 (*
 proof.
@@ -994,29 +1005,17 @@ move => *.
 by auto => /> /#.
 qed.
 
-lemma poly_tomsg_corr _a : 
-    phoare[ M.poly_tomsg :
-             (* need some region validity on rp for 32 bytes *)
-             pos_bound256_cxq a 0 256 2 /\
-             lift_array256 a = _a ==>
-           (* lift from region of 32 bytes from rp converted 
-              to bool array is encoding of poly or decodes to poly
-             map (fun x => x  = W32.one) res = m_decode _a /\ *)
-             lift_array256 res = _a /\
-             pos_bound256_cxq res 0 256 1] = 1%r
-  by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
-
-lemma poly_frommsg_corr_h _a : 
-    hoare[ M.poly_frommsg :
-             true
-             (* need some region validity on rp for 32 bytes plus the lift
-                of mem region decodes to _a *)
+lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t): 
+    equiv [ M.poly_frommsg ~ EncDec.decode1 :
+             valid_range W8 Glob.mem{1} _p 32 /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array32 Glob.mem{1} _p = _m
               ==>
-             pos_bound256_cxq res 0 256 1 /\
-             lift_array256 res = m_encode _a].
+             Glob.mem{1} = mem /\
+             lift_array256 res{1} = decompress_poly 1 res{2} /\
+             pos_bound256_cxq res{1} 0 256 1 ].
 admitted.
-(*
-proof.
+(*proof.
 proc.
 unroll for 3.
 auto => />.
@@ -1296,17 +1295,6 @@ qed.
 
 lemma poly_frommsg_ll : islossless  M.poly_frommsg
  by proc; while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
-
-lemma poly_frommsg_corr _a : 
-    phoare[ M.poly_frommsg :
-             true
-             (* need some region validity on rp for 32 bytes plus the lift
-                of mem region decodes to _a *)
-              ==>
-             pos_bound256_cxq res 0 256 1 /\
-             lift_array256 res = m_encode _a] = 1%r
-   by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
-
 
 lemma poly_frommont_corr_h _a : 
     hoare[ M.poly_frommont :
@@ -1762,16 +1750,45 @@ have ? : 0<= to_uint  (truncateu16 xx) < 16.
   by rewrite /max /= /smod;  smt(@W16).
 qed.
 
-lemma poly_compress_h ap :
-      hoare[ M.poly_compress :
-           ap = lift_array256 a /\
-           pos_bound256_cxq a 0 256 2 
-           (* missing some precondition on the validity of rp *)
-           ==>
-           (* Array256.map (compress 4) ap = decode 4 (region rp 128)   /\ nothing else touched /\ *)
-           ap = lift_array256 res /\
-           pos_bound256_cxq res 0 256 1 ].
-admitted. 
+lemma poly_tobytes_corr _a (_p : address) mem : 
+    equiv [ M.poly_tobytes ~ EncDec.encode12 :
+             pos_bound256_cxq a{1} 0 256 2 /\
+             lift_array256 a{1} = _a /\
+             p{2} = _a /\
+             valid_range W8 Glob.mem{1} _p 384 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             lift_array256 res{1} = _a /\
+             pos_bound256_cxq res{1} 0 256 1 /\
+             touches mem Glob.mem{1} _p 384 /\
+             load_array384 Glob.mem{1} _p = res{2}].
+admitted.
+
+lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t): 
+    equiv [ M.poly_frombytes ~ EncDec.decode12 :
+             valid_range W8 Glob.mem{1} _p 384 /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array384 Glob.mem{1} _p = _a
+              ==>
+             Glob.mem{1} = mem /\
+             lift_array256 res{1} = res{2} /\
+             pos_bound256_cxq res{1} 0 256 1 ].
+admitted.
+
+
+lemma poly_compress_corr _a (_p : address) mem : 
+    equiv [ M.poly_compress ~ EncDec.encode4 :
+             pos_bound256_cxq a{1} 0 256 2 /\
+             lift_array256 a{1} = _a /\
+             p{2} = compress_poly 4 _a /\
+             valid_range W8 Glob.mem{1} _p 128 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             lift_array256 res{1} = _a /\
+             pos_bound256_cxq res{1} 0 256 1 /\
+             touches mem Glob.mem{1} _p 32 /\
+             load_array128 Glob.mem{1} _p = res{2}].
+admitted.
 (* 
 proc.
 seq 1 : (ap = lift_array256 a /\
@@ -1839,31 +1856,19 @@ move => *;  auto => /> &hr H H0.
 by rewrite ultE => H1; smt(@W64).
 qed.
 
-lemma poly_compress_round_corr ap :
-      phoare[ M.poly_compress :
-           ap = lift_array256 a /\
-           pos_bound256_cxq a 0 256 2 
-           (* missing some precondition on the validity of rp *)
-           ==>
-           (* Array256.map (compress 4) ap = decode 4 (region rp 128)   /\ nothing else touched /\ *)
-           ap = lift_array256 res /\
-           pos_bound256_cxq res 0 256 1 ] = 1%r
-  by conseq poly_compress_ll (poly_compress_h ap).
-
 lemma mul_mod_add_mod (x y z m : int) :
  (x * y %% m + z) %% m = (x * y + z) %% m.
 proof. by move => *; rewrite -modzDm modz_mod modzDm. qed.
 
-
-lemma poly_decompress ap :
-      hoare[ M.poly_decompress :
-           true
-           (* add some memory region bound on ap  /\ *)
-           (* lift memory region ap = encode 4 lift memory region  /\ *)
-           ==>
-           Array256.map (decompress 4) ap = lift_array256 res /\
-           signed_bound_cxq res 0 256 1
-           (* we probably need also to say that memory is untouched *) ] . 
+lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
+    equiv [ M.poly_decompress ~ EncDec.decode4 :
+             valid_range W8 Glob.mem{1} _p 128 /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array128 Glob.mem{1} _p = _a
+              ==>
+             Glob.mem{1} = mem /\
+             lift_array256 res{1} = decompress_poly 4 res{2} /\
+             pos_bound256_cxq res{1} 0 256 1 ].
 admitted.
 (*
 proof.
@@ -1933,7 +1938,7 @@ lemma zeta_bound :
    minimum_residues jzetas.
  proof.
 rewrite /minimum_residues qE.
-apply/(allP jzetas (fun x => bpos16 x 3329)).
+apply/(Array128.allP jzetas (fun x => bpos16 x 3329)).
 simplify.
 rewrite (_: 
   (fun (x : W16.t) => 0 <= to_sint x < 3329) = 
@@ -2319,7 +2324,7 @@ lemma zetainv_bound :
    minimum_residues jzetas_inv.
 proof.
 rewrite /minimum_residues qE.
-apply/(allP jzetas_inv (fun x => bpos16 x 3329)).
+apply/(Array128.allP jzetas_inv (fun x => bpos16 x 3329)).
 simplify.
 rewrite (_: 
   (fun (x : W16.t) => 0 <= to_sint x < 3329) = 

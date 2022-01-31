@@ -1,6 +1,6 @@
 require import AllCore List IntDiv CoreMap.
 from Jasmin require  import JModel JMemory.
-require import W16extra Array256 Array128 Array768.
+require import W16extra Array3 Array320 Array384 Array256 Array128 Array768 .
 require import Fq.
 require import KyberPoly.
 require import NTT_Fq.
@@ -373,14 +373,23 @@ have ? : 0<= to_uint (truncateu16 xx) < 1024.
 by rewrite /max /smod /=;  smt(@W16).
 qed.
 
+lemma polyvec_compress_corr mem _p _a :
+    equiv [ M.polyvec_compress ~ EncDec.encode10_vec :
+             pos_bound768_cxq a{1} 0 768 2 /\
+             lift_array768 a{1} = _a /\
+             u{2}.[0] = compress_poly 10 (Array256.of_list witness (sub _a 0 256)) /\
+             u{2}.[1] = compress_poly 10 (Array256.of_list witness (sub _a 256 256)) /\
+             u{2}.[2] = compress_poly 10 (Array256.of_list witness (sub _a 512 256)) /\
+             valid_range W8 Glob.mem{1} _p (3*320) /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             touches mem Glob.mem{1} _p (3*320) /\
+             load_array320 Glob.mem{1} _p = res{2}.[0] /\
+             load_array320 Glob.mem{1} (_p + 320) = res{2}.[1] /\
+             load_array320 Glob.mem{1} (_p + 640) = res{2}.[2]
+              ].
+admitted.
 (*
-lemma polyvec_compress_round_corr ap :
-      hoare[ M.polyvec_compress_round :
-           ap = lift_array768 a /\
-           pos_bound768_cxq a 0 768 2 
-           ==>
-           Array768.map PolyVec.roundc ap = lift_array768 res /\
-           forall k, 0 <= k < 768 => 0 <= to_sint res.[k] < 1024 ] . 
 proof.
 proc.
 while (#pre /\ 0 <= to_uint i <= 768 + 3 /\ to_uint i %% 4 = 0 /\ 
@@ -538,17 +547,20 @@ move => *; rewrite H1; 1: smt().
 smt(lift_array768_inFq lift_array256_inFq).
 qed.
 
+lemma polyvec_decompress_corr mem _p (_a : (W8.t Array320.t) Array3.t) :
+    equiv [ M.polyvec_decompress ~ EncDec.decode10_vec :
+             valid_range W8 Glob.mem{1} _p (3*320) /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array320 Glob.mem{1} _p = _a.[0] /\
+             load_array320 Glob.mem{1} (_p + 320) = _a.[1] /\
+             load_array320 Glob.mem{1} (_p + 640) = _a.[2]
+              ==>
+             lift_array256 (Array256.of_list witness (sub res{1} 0 256)) = decompress_poly 10 res{2}.[0] /\
+             lift_array256 (Array256.of_list witness (sub res{1} 256 256)) = decompress_poly 10 res{2}.[1] /\
+             lift_array256 (Array256.of_list witness (sub res{1} 512 256)) = decompress_poly 10 res{2}.[2] /\
+             Glob.mem{1} = mem ].
+admitted.
 (*
-import Array5.
-lemma polyvec_decompress_restore_corr ap :
-      hoare[ M.polyvec_decompress_restore :
-           ap = lift_array768_32 rp /\
-           pos_bound768_b_32 rp 0 768 (2^10) 
-           ==>
-           Array768.map PolyVec.unroundc ap = lift_array768 res /\
-           signed_bound768_cxq res 0 768 1 ] . 
-proof.
-proc.
 while (#pre /\ 0 <= to_uint i <= 768 /\ to_uint i %% 4 = 0 /\
        forall k, 0 <= k < to_uint i => r.[k] = truncateu16 (((rp.[k] * W32.of_int 3329) + W32.of_int 512) `>>` 
                                                W8.of_int 10)).
@@ -785,6 +797,37 @@ move=> ?? result4 ??; split.
   rewrite array_unmontK. smt().
 move=> *; apply Array256.ext_eq; smt(@Array256).
 qed.
+
+lemma polyvec_tobytes_corr mem _p _a :
+    equiv [ M.polyvec_tobytes ~ EncDec.encode12_vec :
+             pos_bound768_cxq a{1} 0 768 2 /\
+             lift_array768 a{1} = _a /\
+             u{2}.[0] = Array256.of_list witness (sub _a 0 256) /\
+             u{2}.[1] = Array256.of_list witness (sub _a 256 256) /\
+             u{2}.[2] = Array256.of_list witness (sub _a 512 256) /\
+             valid_range W8 Glob.mem{1} _p (3*384) /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             touches mem Glob.mem{1} _p (3*384) /\
+             load_array384 Glob.mem{1} _p = res{2}.[0] /\
+             load_array384 Glob.mem{1} (_p + 384) = res{2}.[1] /\
+             load_array384 Glob.mem{1} (_p + 768) = res{2}.[2]
+              ].
+admitted.
+
+lemma polyvec_frombytes_corr mem _p (_a : (W8.t Array384.t) Array3.t) :
+    equiv [ M.polyvec_frombytes ~ EncDec.decode12_vec :
+             valid_range W8 Glob.mem{1} _p (3*384) /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array384 Glob.mem{1} _p = _a.[0] /\
+             load_array384 Glob.mem{1} (_p + 384) = _a.[1] /\
+             load_array384 Glob.mem{1} (_p + 768) = _a.[2]
+              ==>
+             lift_array256 (Array256.of_list witness (sub res{1} 0 384)) = res{2}.[0] /\
+             lift_array256 (Array256.of_list witness (sub res{1} 384 384)) = res{2}.[1] /\
+             lift_array256 (Array256.of_list witness (sub res{1} 768 384)) = res{2}.[2] /\
+             Glob.mem{1} = mem ].
+admitted.
 
 end KyberPolyVec.
 
