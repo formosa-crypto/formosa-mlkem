@@ -1,27 +1,20 @@
-
 require import AllCore List IntDiv CoreMap.
 from Jasmin require import JModel.
-pragma +oldip.
 
-require import Fq.
-require import KyberPoly.
-require import KyberPolyVec.
-require import KyberAlgLift.
-require import NTT_Fq.
 
-require import Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64
-               Array128 Array168 Array256 Array768.
-require import WArray20 WArray32 WArray33 WArray34 WArray40 WArray64
-               WArray128 WArray168 WArray192 WArray200 WArray256 WArray512
-               WArray1536.
+require import KyberPoly KyberPolyVec NTT_Fq.
 
-require import IndcpaDerand.
+require import Jindcpa.
 
-import MLWE_PKE.
-import MLWE_PKE.
+import NTT_Fq.
+import KyberPolyVec.
+import KyberPoly.
+import Kyber.
+import Poly.
+import Zq.
+import Matrix_.
 
-(* WE DEFINE ALTERNATIVE VERSIONS OF THE EXTRACTED CODE TO
-   MODULARIZE RANDOMNESS SAMPLINGS *)
+require import Jindcpa.
 
 
 (***************************************************)
