@@ -794,14 +794,14 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
   }
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
-      var _N,i,j,c,tb,tv,rho,r,e1,e2,rhat,u,v,mp,c2,c1i;
+      var _N,i,j,c,tb,tv,rho,rv,e1,e2,rhat,u,v,mp,c2,c1i;
       var that : vector;
       var aT : matrix;
       var c1 : (W8.t Array320.t) Array3.t;
       aT <- witness;
       c1 <- witness;
       e1 <- witness;
-      r <- witness;
+      rv <- witness;
       that <- witness;
       (tv,rho) <- pk;
       _N <- 0;
@@ -822,11 +822,12 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
            j <- j + 1;
         }
         i <- i + 1;
-      }           
+      } 
+      (* PRF(O).init(r); Weird that spec does not use G here! *)         
       i <- 0;
       while (i < kvec) {
         c <@ CBD2(PRF,O).sample_real(_N);
-        r <- set r i c;
+        rv <- set rv i c;
         i <- i + 1;
         _N <- _N + 1;
       }         
@@ -838,10 +839,10 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
         _N <- _N + 1;
       }      
       e2 <@ CBD2(PRF,O).sample_real(_N);
-      rhat <- nttv r;
+      rhat <- nttv rv;
       u <- invnttv (aT *^ rhat) + e1;
       mp <@ EncDec.decode1(m);
-      v <- invntt (dotp that r) &+ e2 &+ decompress_poly 1 mp; 
+      v <- invntt (dotp that rv) &+ e2 &+ decompress_poly 1 mp; 
       i <- 0;
       while (i < 3) {
          c1i <@ EncDec.encode10(compress_poly 10 u.[i]); 

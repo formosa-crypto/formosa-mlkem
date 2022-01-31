@@ -208,3 +208,4 @@ op lift_matrix( rows : W16.t Array768.t * W16.t Array768.t * W16.t Array768.t) :
         else if i = 1
              then KyberPolyVec.lift_polyvec rows.`2 j
              else KyberPolyVec.lift_polyvec rows.`3 j).
+
