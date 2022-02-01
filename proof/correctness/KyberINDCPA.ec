@@ -109,11 +109,9 @@ sp 0 2.
 seq 1 1 : #pre.
 exists* (lift_array768 skpv{2}).
 elim* => s2.
-call {2} (_: lift_array768 r = s2 /\
-              signed_bound768_cxq r 0 768 2 ==>
-             lift_array768 res = s2 /\
-              signed_bound768_cxq res 0 768 2  ).
-apply (polyvec_ntt_correct s2).
+call {2} (polyvec_ntt_corr s2).
+auto => />. 
+move => *. split. smt().
 conseq => />.
 
 (*

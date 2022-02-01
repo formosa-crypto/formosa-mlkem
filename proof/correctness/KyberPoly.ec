@@ -1504,6 +1504,35 @@ rewrite set_eqiE; first 2 by smt().
   move : (H6 k _);  by smt(@Fq).
 qed.
 
+lemma poly_add_corr_R _a _b ab bb :
+  0 <= ab <= 6 =>
+  0 <= bb <= 3 =>
+  hoare [ Jindcpa.M.poly_add2 :
+    _a = lift_array256 rp /\
+    _b = lift_array256 bp /\ 
+    signed_bound_cxq rp 0 256 ab /\ 
+    signed_bound_cxq bp 0 256 bb
+     ==>
+    signed_bound_cxq res 0 256 (ab + bb)%Int /\
+    lift_array256 res = _a &+ _b].
+move => AB BB.
+conseq (_: _ ==>
+     signed_bound_cxq res 0 256 (ab + bb) /\
+     forall (k : int),
+        0 <= k && k < 256 =>
+            inFq (to_sint res.[k]) = _a.[k] + _b.[k]).
+move => ? [#] ????? [#] ? sum.
+split; first smt().
+rewrite /lift_array256 /Poly.(&+) mapE map2E => />.
+apply Array256.ext_eq => x xb.
+rewrite initiE; first  by apply xb.
+auto => />.
+rewrite (sum x xb).
+rewrite initiE; first  by apply xb.
+by auto => />.
+apply (poly_add_corr _a _b ab bb AB BB). 
+qed.
+
 lemma poly_reduce_corr_h (_a : Fq Array256.t):
       hoare[ M.poly_reduce :
           _a = lift_array256 rp ==> 
