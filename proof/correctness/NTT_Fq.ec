@@ -177,9 +177,20 @@ do by defining operators that capture the semantics of these algorithms.
 To Do: give explicit definitions and prove equivalence  between
 functional  and imperative realizations. *)
 
+op array_mont (p : Fq Array128.t) =
+  Array128.map (fun x => x *  (inFq Fq.SignedReductions.R)) p.
+
+op array_mont_inv (p : Fq Array128.t) =
+  let vv = Array128.map (fun x => x *  (inFq Fq.SignedReductions.R)) p in
+      vv.[127 <- p.[127] * (inFq Fq.SignedReductions.R) * (inFq Fq.SignedReductions.R)].
+
+op zetas_inv : Fq Array128.t.
+
 (* These are powers of roots of unit in Mont form and
-   bitwise permuted indices *)
-op zetas_inv_const : Fq Array128.t =
+   bitwise permuted indices  zetas inv above needs to be
+   defined, this axiom discharged, and then used to
+   discharge other axioms below. *)
+axiom zetas_invE : array_mont_inv zetas_inv =
     Array128.of_list witness
        [ inFq 1701; inFq 1807; inFq 1460; 
          inFq 2371; inFq 2338; inFq 2333; 
@@ -225,7 +236,13 @@ op zetas_inv_const : Fq Array128.t =
          inFq 1836; inFq 1517; inFq 359; 
          inFq 758; inFq 1441].
   
-op zetas_const  : Fq Array128.t =
+op zetas : Fq Array128.t.
+
+(* These are powers of roots of unit in Mont form and
+   bitwise permuted indices  zetas inv above needs to be
+   defined, this axiom discharged, and then used to
+   discharge other axioms below. *)
+axiom zetasE : array_mont zetas =
     Array128.of_list witness
        [inFq 2285; inFq 2571; inFq 2970; 
          inFq 1812; inFq 1493; inFq 1422; 
@@ -274,27 +291,28 @@ op zetas_const  : Fq Array128.t =
 (* These properties is needed to show that ntt_inv is computing something
    that makes sense. Checked in sage. *)
 axiom zetavals1  k : 0 <= k < 256 => k%%4 = 0 => 
-     zetas_const.[k %/ 4 + 64] = inFq Fq.SignedReductions.R * ZqRing.exp zroot (2 * br (k %/ 2) + 1). 
+     zetas.[k %/ 4 + 64] = ZqRing.exp zroot (2 * br (k %/ 2) + 1). 
 
-axiom zetavals2 k : 0 <= k < 256 => k%%4 = 2 => zetas_const.[k %/ 4 + 64] = inFq Fq.SignedReductions.R * (-ZqRing.exp zroot (2 * br (k %/ 2) + 1)).
+axiom zetavals2 k : 0 <= k < 256 => k%%4 = 2 => 
+     zetas.[k %/ 4 + 64] = (-ZqRing.exp zroot (2 * br (k %/ 2) + 1)).
 
 (* TO DO: These need to be proved using the results in NTT_Algebra *)
 lemma ntt_spec_h _r :
    hoare[ NTT.ntt :
-     arg = (_r,zetas_const) ==> res = ntt _r ].
+     arg = (_r,zetas) ==> res = ntt _r ].
 admitted.
 
-lemma invntt_spec_h _r  :
-   hoare[ NTT.invntt : arg=(_r,zetas_inv_const) ==> res = invntt _r ].
+lemma invntt_spec_h _r :
+   hoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = invntt _r ].
 admitted.
 
 lemma ntt_spec _r :
-   phoare[ NTT.ntt : arg = (_r,zetas_const) ==> res = ntt _r ] = 1%r
+   phoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ] = 1%r
   by conseq ntt_spec_ll (ntt_spec_h _r); done.
 
-lemma invntt_spec _r :
+lemma invntt_spec _r:
    phoare[ NTT.invntt :
-     arg=(_r,zetas_inv_const) ==> res = invntt _r ] = 1%r
+     arg=(_r,zetas_inv) ==> res = invntt _r ] = 1%r
   by conseq invntt_spec_ll (invntt_spec_h _r); done.
 
 (* ALL THIS WILL BE REPLACED WITH POLY THEORY *)

@@ -605,10 +605,11 @@ qed.*)
 
 require import Jindcpa.
 
+
 lemma ntt_correct_h (_r0 : Fq Array256.t):
       hoare[ M.poly_ntt :
                _r0 = lift_array256 arg /\
-               array_mont zetas_const = lift_array128 jzetas /\ signed_bound_cxq arg 0 256 2 ==>
+               signed_bound_cxq arg 0 256 2 ==>
                ntt _r0 = lift_array256 res /\
                forall (k : int), 0 <= k && k < 256 => bpos16 res.[k] (2 * q)]
  by conseq (ntt_correct _r0). 
@@ -616,8 +617,6 @@ lemma ntt_correct_h (_r0 : Fq Array256.t):
 lemma polyvec_ntt_correct _r:
    hoare[ M.polyvec_ntt :
         _r = lift_array768 r /\
-        array_mont zetas_const = 
-           lift_array128  jzetas /\
         signed_bound768_cxq r 0 768 2
           ==> 
             ntt (Array256.of_list witness (sub _r 0 256)) = lift_polyvec res 0 /\
@@ -631,7 +630,7 @@ ecall (ntt_correct_h (lift_array256 r2)).
 ecall (ntt_correct_h (lift_array256 r1)).
 ecall (ntt_correct_h (lift_array256 r0)).
 ecall (polyvec_topolys_corr_h _r 2 r).
-wp; skip => /> &hr 2? result 6? H1 H2 H3 ? H4 ? ? H5 ? ? H6 ?.
+wp; skip => /> &hr ? result 6? H1 H2 H3 ? H4 ? ? H5 ? ? H6 ?.
 split.
  + rewrite /signed_bound_cxq=> />; do split; smt(b16E). 
 move=>5? H7 H8 H9 H10 H11 H12; split.
@@ -674,7 +673,7 @@ qed.
 lemma invntt_correct_h (_r : Fq Array256.t):
       hoare[  M.poly_invntt :
              _r = lift_array256 arg /\
-             array_mont_inv zetas_inv_const = lift_array128 jzetas_inv /\ signed_bound_cxq arg 0 256 2 ==>
+             signed_bound_cxq arg 0 256 2 ==>
              scale (invntt _r) (inFq Fq.SignedReductions.R) = lift_array256 res /\
              forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
 by conseq (invntt_correct _r). 
@@ -682,8 +681,6 @@ by conseq (invntt_correct _r).
 lemma polyvec_invntt_correct _r:
    hoare[ M.polyvec_invntt :
         _r = lift_array768 r /\
-        array_mont_inv zetas_inv_const = 
-           lift_array128  jzetas_inv /\
         signed_bound768_cxq r 0 768 2
           ==> 
             scale (invntt (Array256.of_list witness (sub _r 0 256))) (inFq Fq.SignedReductions.R) = lift_polyvec res 0 /\
@@ -697,7 +694,7 @@ ecall (invntt_correct_h (lift_array256 r2)).
 ecall (invntt_correct_h (lift_array256 r1)).
 ecall (invntt_correct_h (lift_array256 r0)).
 ecall (polyvec_topolys_corr_h _r 2 r).
-wp; skip => /> &hr ?? result 9? result0 h0 ? result1 h1 ? result2 h2 ?.
+wp; skip => /> &hr ? result 9? result0 h0 ? result1 h1 ? result2 h2 ?.
 split. do split; smt (b16E qE).
 move=> 5? H1 H2 H3 H4 H5 H6. 
 rewrite /lift_polyvec.
@@ -740,11 +737,7 @@ rewrite H3; 1: smt().
  smt (). 
 qed.
 
-op array_unmont : Fq Array128.t -> Fq Array128.t.
-axiom array_unmontK : cancel array_unmont array_mont.
-
 lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : Fq Array256.t) :
-  zetas_const = lift_array128 jzetas =>
   _p0 = scale (basemul _a0 _b0) (inFq 169) =>
   _p1 = scale (basemul _a1 _b1) (inFq 169) =>
   _p2 = scale (basemul _a2 _b2) (inFq 169) =>
@@ -769,32 +762,31 @@ move => *.
 proc.
 ecall (poly_reduce_corr_h (lift_array256 r)).
 ecall (poly_add_corr (lift_array256 r) _p2 6 3).
-call (poly_basemul_corr _a2 _b2 (array_unmont zetas_const)).
+call (poly_basemul_corr _a2 _b2).
 call (poly_add_corr _p0 _p1 3 3).
-call (poly_basemul_corr _a1 _b1 (array_unmont zetas_const)).
-call (poly_basemul_corr _a0 _b0 (array_unmont zetas_const)).
+call (poly_basemul_corr _a1 _b1).
+call (poly_basemul_corr _a0 _b0).
 ecall (polyvec_topolys_corr_h (lift_array768 b) 2 b).
 ecall (polyvec_topolys_corr_h (lift_array768 a) 2 a).
 wp; skip; subst => /> &hr /> ??????????????????????.
 split.
-+ rewrite array_unmontK /lift_polyvec /lift_array256 mapE //.
-  split; first by smt(). 
++ rewrite /lift_polyvec /lift_array256 mapE //.
   split; apply Array256.ext_eq; smt(Array256.initiE). 
-move=> ???result1 ??;split.
+move=> ??result1 ??;split.
 + rewrite /lift_polyvec /lift_array256 mapE. 
   split; apply Array256.ext_eq; smt(Array256.initiE).
 move=> ??result2??; split. 
 split. 
-+ move : (basemul_scales (lift_polyvec a{hr} 0) (lift_polyvec b{hr} 0) (lift_array256 result1) (array_unmont zetas_const)).
-  rewrite array_unmontK. smt().
-+ move : (basemul_scales (lift_polyvec a{hr} 1) (lift_polyvec b{hr} 1) (lift_array256 result2) (array_unmont zetas_const)).
-  rewrite array_unmontK. smt().  
++ move : (basemul_scales (lift_polyvec a{hr} 0) (lift_polyvec b{hr} 0) (lift_array256 result1)).
+  smt().
++ move : (basemul_scales (lift_polyvec a{hr} 1) (lift_polyvec b{hr} 1) (lift_array256 result2)).
+  smt().  
 move=> ?? result3 ??; split.
 + rewrite /lift_polyvec /lift_array256 mapE. 
   split; apply Array256.ext_eq; smt(Array256.initiE).
 move=> ?? result4 ??; split.
-+ move : (basemul_scales (lift_polyvec a{hr} 2) (lift_polyvec b{hr} 2) (lift_array256 result4) (array_unmont zetas_const)).
-  rewrite array_unmontK. smt().
++ move : (basemul_scales (lift_polyvec a{hr} 2) (lift_polyvec b{hr} 2) (lift_array256 result4)).
+  smt().
 move=> *; apply Array256.ext_eq; smt(@Array256).
 qed.
 
