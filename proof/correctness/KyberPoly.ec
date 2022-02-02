@@ -2338,6 +2338,15 @@ byequiv ntt_correct_aux =>//.
 byphoare (ntt_spec _r)=> //.
 qed.
 
+lemma ntt_correct_h (_r0 : Fq Array256.t):
+      hoare[ M.poly_ntt :
+               _r0 = lift_array256 arg /\
+               signed_bound_cxq arg 0 256 2 ==>
+               ntt _r0 = lift_array256 res /\
+               forall (k : int), 0 <= k && k < 256 => bpos16 res.[k] (2 * q)]
+ by conseq (ntt_correct _r0). 
+
+
 (*******INVERSE *******)
 
 lemma zetainv_bound :
@@ -2834,6 +2843,13 @@ rewrite !Array256.initiE //=. smt().
 byphoare (invntt_spec _r). smt(). smt().
 qed.
 
+lemma invntt_correct_h (_r : Fq Array256.t):
+      hoare[  M.poly_invntt :
+             _r = lift_array256 arg /\
+             signed_bound_cxq arg 0 256 2 ==>
+             scale (invntt _r) (inFq R) = lift_array256 res /\
+             forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
+by conseq (invntt_correct _r). 
 
 (* COMPLEX MULTIPLICATION IN MONTGOMERY MULTIPLICATION WITH SOME EXTRA
    CONSTANTS THAT ARE LEFT AROUND. THEY SHOULD BE  TRIVIAL TO MATCH WITH

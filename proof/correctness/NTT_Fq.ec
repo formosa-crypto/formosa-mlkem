@@ -329,6 +329,25 @@ axiom ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
 axiom invnttK : cancel ntt invntt.
 axiom nttK : cancel invntt ntt.
 
+lemma nttvK : cancel invnttv nttv.
+proof. 
+rewrite /nttv /invnttv /mapv /= /cancel => x.
+rewrite Matrix_.Vector.offunvK /vclamp /kvec /=.
+apply Matrix_.Vector.eq_vectorP => i ib.
+rewrite Matrix_.Vector.offunvE //=.
+smt(nttK).
+qed.
+
+lemma invnttvK : cancel nttv invnttv.
+proof. 
+rewrite /nttv /invnttv /mapv /= /cancel => x.
+rewrite Matrix_.Vector.offunvK /vclamp /kvec /=.
+apply Matrix_.Vector.eq_vectorP => i ib.
+rewrite Matrix_.Vector.offunvE //=.
+smt(invnttK).
+qed.
+
+
 lemma invntt_scale p c : invntt (scale p c) = scale (invntt p) c.
 proof.
 rewrite (_: p = ntt (invntt p)); first by rewrite nttK.
