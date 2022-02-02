@@ -453,7 +453,7 @@ byphoare (_ : _a = lift_array256 rp /\
 hoare; apply (poly_add_corr _a _b ab bb h1 h2).
 qed.
 
-lemma polyvec_add_corr _a _b ab bb :
+lemma polyvec_add_corr_h _a _b ab bb :
       hoare[ M.polyvec_add2 :
             0 <= ab <= 6 /\ 0 <= bb <= 3 /\
            _a = lift_array768 r /\
@@ -489,6 +489,24 @@ rewrite H25; 1: smt().
 by smt(@Array768 @Array256).
 qed.
 
+lemma polyvec_add_ll  :
+      islossless M.polyvec_add2.
+admitted.
+
+lemma polyvec_add_corr  _a _b ab bb:
+   phoare[ M.polyvec_add2 :
+            0 <= ab <= 6 /\ 0 <= bb <= 3 /\
+           _a = lift_array768 r /\
+           _b = lift_array768 b /\
+           signed_bound768_cxq r 0 768 ab /\
+           signed_bound768_cxq b 0 768 bb 
+           ==>
+           signed_bound768_cxq res 0 768 (ab + bb) /\ 
+           forall k, 0 <= k < 768 =>
+              inFq (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r 
+by conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb).
+
+
 (******************************************************)
 
 lemma polyvec_topolys_corr_aux ap pv' :
@@ -521,7 +539,7 @@ proof.
   wp; skip => /> => *; rewrite /(\ult) /=; smt (lift_array768_inFq).
 qed.
 
-lemma polyvec_reduce_corr _a :
+lemma polyvec_reduce_corr_h _a :
       hoare[ M.polyvec_reduce :
           _a = lift_array768 r ==> 
           _a = lift_array768 res /\
@@ -562,6 +580,17 @@ have -> : k = kp + 512; 1: smt().
 move => *; rewrite H1; 1: smt(). 
 smt(lift_array768_inFq lift_array256_inFq).
 qed.
+
+lemma polyvec_reduce_ll  :
+      islossless M.polyvec_reduce.
+admitted.
+
+lemma polyvec_reduce_corr  _a :
+      phoare[ M.polyvec_reduce :
+          _a = lift_array768 r ==> 
+          _a = lift_array768 res /\
+          forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)]  = 1%r 
+by conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a).
 
 lemma polyvec_decompress_corr mem _p (_a : (W8.t Array320.t) Array3.t) :
     equiv [ M.polyvec_decompress ~ EncDec.decode10_vec :

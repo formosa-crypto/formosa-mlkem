@@ -475,6 +475,7 @@ op basemul(a b : poly) :  poly = Array256.init (fun i =>
    else let ii = (i-1) %/ 2 in 
        (cmplx_mul (a.[2*ii],a.[2*ii+1]) (b.[2*ii],b.[2*ii+1]) (ZqRing.exp zroot ((2 * br ii + 1)))).`2).
 
+
 (* END: NTT *)
 
 
@@ -736,6 +737,9 @@ op nttm m = mapm ntt m.
 op invnttv v = mapv invntt v.
 op invnttm m = mapm invntt m.
 
+op ntt_mmul(m : matrix, v : vector) : vector = 
+   offunv (fun (i : int) => (Big.BAdd.bigi predT (fun (j : int) => basemul m.[i, j] v.[j]) 0 kvec)).
+
 (****************)
 (****************)
 (* THE SPEC     *)
@@ -783,7 +787,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      }      
      s <- nttv s;
      e <- nttv e; 
-     t <- a *^ s + e;
+     t <- ntt_mmul a s + e;
      i <- 0;
      while (i < 3) {
        tb <@ EncDec.encode12(t.[i]); tv.[i] <- tb;
@@ -840,7 +844,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       }      
       e2 <@ CBD2(PRF,O).sample_real(_N);
       rhat <- nttv rv;
-      u <- invnttv (aT *^ rhat) + e1;
+      u <- invnttv (ntt_mmul aT rhat) + e1;
       mp <@ EncDec.decode1(m);
       v <- invntt (dotp that rv) &+ e2 &+ decompress_poly 1 mp; 
       i <- 0;
