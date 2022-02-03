@@ -453,6 +453,20 @@ byphoare (_ : _a = lift_array256 rp /\
 hoare; apply (poly_add_corr _a _b ab bb h1 h2).
 qed.
 
+lemma poly_add_ll : islossless Jindcpa.M.poly_add2.
+admitted. 
+lemma poly_add_corr_ph (_a _b : Fq Array256.t) (ab bb : int) :
+    phoare[ Jindcpa.M.poly_add2 :
+           (0 <= ab <= 6 /\ 0 <= bb <= 3) /\
+
+            _a = lift_array256 rp /\
+            _b = lift_array256 bp /\ signed_bound_cxq rp 0 256 ab /\ signed_bound_cxq bp 0 256 bb ==>
+            signed_bound_cxq res 0 256 (ab + bb) /\
+            forall (k : int), 0 <= k && k < 256 => inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r 
+by conseq poly_add_ll (poly_add_corr  _a _b ab bb).
+
+(*******)
+
 lemma polyvec_add_corr_h _a _b ab bb :
       hoare[ M.polyvec_add2 :
             0 <= ab <= 6 /\ 0 <= bb <= 3 /\
@@ -912,7 +926,7 @@ lemma polyvec_frombytes_corr mem _p (_a : (W8.t Array384.t) Array3.t) :
 admitted.
 
 
-lemma polyvec_pointwise_acc_corr_alg va vb :
+lemma polyvec_pointwise_acc_corr_alg_h va vb :
   hoare [ M.polyvec_pointwise_acc :
     nttv va = lift_vector a /\
     nttv vb = lift_vector b /\
@@ -960,6 +974,17 @@ rewrite /Poly.zero createE !initiE => />.
 rewrite /basemul.
 by ring.
 qed.
+
+lemma polyvec_pointwise_acc_corr_alg va vb :
+  phoare [ M.polyvec_pointwise_acc :
+    nttv va = lift_vector a /\
+    nttv vb = lift_vector b /\
+    signed_bound768_cxq a 0 768 2 /\
+    signed_bound768_cxq b 0 768 2
+    ==> 
+    signed_bound_cxq res 0 256 2 /\
+    lift_array256  res = scale (ntt (dotp va vb)) (inFq 169)  ] = 1%r by
+move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_alg_h va vb) => //.
 
 module Aux = {
    proc inner_product(ai skpv : W16.t Array768.t) : W16.t Array256.t = {

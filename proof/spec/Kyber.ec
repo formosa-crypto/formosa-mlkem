@@ -740,6 +740,10 @@ op invnttm m = mapm invntt m.
 op ntt_mmul(m : matrix, v : vector) : vector = 
    offunv (fun (i : int) => (Big.BAdd.bigi predT (fun (j : int) => basemul m.[i, j] v.[j]) 0 kvec)).
 
+print dotp.
+op ntt_dotp(v1 v2 : vector) : poly = 
+   Big.BAdd.bigi predT (fun (i : int) => v1.[i] &* v2.[i]) 0 kvec.
+
 (****************)
 (****************)
 (* THE SPEC     *)
@@ -846,7 +850,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       rhat <- nttv rv;
       u <- invnttv (ntt_mmul aT rhat) + e1;
       mp <@ EncDec.decode1(m);
-      v <- invntt (dotp that rv) &+ e2 &+ decompress_poly 1 mp; 
+      v <- invntt (ntt_dotp that rv) &+ e2 &+ decompress_poly 1 mp; 
       i <- 0;
       while (i < 3) {
          c1i <@ EncDec.encode10(compress_poly 10 u.[i]); 

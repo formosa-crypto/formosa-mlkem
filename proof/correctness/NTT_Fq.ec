@@ -184,13 +184,14 @@ op array_mont_inv (p : Fq Array128.t) =
   let vv = Array128.map (fun x => x *  (inFq Fq.SignedReductions.R)) p in
       vv.[127 <- p.[127] * (inFq Fq.SignedReductions.R) * (inFq Fq.SignedReductions.R)].
 
-op zetas_inv : Fq Array128.t.
+op zetas_inv : Fq Array128.t = 
+    Array128.init (fun k => ZqRing.exp zroot (-(2 * br (k %/ 2) + 1))).
 
 (* These are powers of roots of unit in Mont form and
    bitwise permuted indices  zetas inv above needs to be
    defined, this axiom discharged, and then used to
    discharge other axioms below. *)
-axiom zetas_invE : array_mont_inv zetas_inv =
+lemma zetas_invE : array_mont_inv zetas_inv =
     Array128.of_list witness
        [ inFq 1701; inFq 1807; inFq 1460; 
          inFq 2371; inFq 2338; inFq 2333; 
@@ -235,14 +236,17 @@ axiom zetas_invE : array_mont_inv zetas_inv =
          inFq 3127; inFq 3042; inFq 1907; 
          inFq 1836; inFq 1517; inFq 359; 
          inFq 758; inFq 1441].
+admitted.
   
-op zetas : Fq Array128.t.
+op zetas : Fq Array128.t = 
+    Array128.init (fun k => ZqRing.exp zroot (2 * br (k %/ 2) + 1)).
+
 
 (* These are powers of roots of unit in Mont form and
    bitwise permuted indices  zetas inv above needs to be
    defined, this axiom discharged, and then used to
    discharge other axioms below. *)
-axiom zetasE : array_mont zetas =
+lemma zetasE : array_mont zetas =
     Array128.of_list witness
        [inFq 2285; inFq 2571; inFq 2970; 
          inFq 1812; inFq 1493; inFq 1422; 
@@ -287,6 +291,7 @@ axiom zetasE : array_mont zetas =
          inFq 3221; inFq 3021; inFq 996; 
          inFq 991; inFq 958; inFq 1869; 
          inFq 1522; inFq 1628].
+admitted.
 
 (* These properties is needed to show that ntt_inv is computing something
    that makes sense. Checked in sage. *)
