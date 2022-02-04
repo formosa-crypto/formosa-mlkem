@@ -1336,7 +1336,7 @@ move => *.
 rewrite set_neqiE; by smt(@W64).
 qed.
 
-lemma poly_sub_corr _a _b ab bb :
+lemma poly_sub_corr_h _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
       hoare[ M.poly_sub :
            _a = lift_array256 ap /\
@@ -1407,6 +1407,24 @@ rewrite /rp0.
 rewrite set_eqiE; first 2 by smt(@W64).
 by rewrite !to_sintB_small => />; by smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E qE).
 qed.
+
+lemma poly_sub_ll: islossless M.poly_sub.
+admitted.
+
+
+lemma poly_sub_corr _a _b ab bb :
+    0 <= ab <= 4 => 0 <= bb <= 4 =>  
+      phoare[ M.poly_sub :
+           _a = lift_array256 ap /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           forall k, 0 <= k < 256 =>
+              inFq (to_sint res.[k]) = _a.[k] - _b.[k]] = 1%r 
+   by move => *;conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _).
+
 
 lemma poly_add_corr _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  

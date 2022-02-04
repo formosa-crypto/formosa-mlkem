@@ -291,8 +291,7 @@ op (&*) (pa pb : poly) : poly =
 op (&+) (pa pb : poly) : poly = 
   map2 (fun a b : Fq  => Zq.(+) a b) pa pb.
 
-op (&-) (p : poly) : poly = 
-  map Zq.([-]) p.
+op (&-) (p : poly) : poly =  map Zq.([-]) p.
 
 (* End Fixme *)
 
@@ -742,7 +741,7 @@ op ntt_mmul(m : matrix, v : vector) : vector =
 
 print dotp.
 op ntt_dotp(v1 v2 : vector) : poly = 
-   Big.BAdd.bigi predT (fun (i : int) => v1.[i] &* v2.[i]) 0 kvec.
+   Big.BAdd.bigi predT (fun (i : int) => basemul v1.[i] v2.[i]) 0 kvec.
 
 (****************)
 (****************)
@@ -850,7 +849,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       rhat <- nttv rv;
       u <- invnttv (ntt_mmul aT rhat) + e1;
       mp <@ EncDec.decode1(m);
-      v <- invntt (ntt_dotp that rv) &+ e2 &+ decompress_poly 1 mp; 
+      v <- invntt (ntt_dotp that rhat) &+ e2 &+ decompress_poly 1 mp; 
       i <- 0;
       while (i < 3) {
          c1i <@ EncDec.encode10(compress_poly 10 u.[i]); 
@@ -881,7 +880,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
          s <- set s i (decompress_poly 12 si);
          i <- i + 1;
       }
-      mp <- v &+ ((&-) (invntt (dotp s (nttv u))));
+      mp <- v &+ ((&-) (invntt (ntt_dotp s (nttv u))));
       m <@ EncDec.encode1(compress_poly 1 mp);
       return Some m;
   }

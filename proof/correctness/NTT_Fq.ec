@@ -365,7 +365,18 @@ axiom mul_comm_ntt (pa pb : poly):
 axiom add_comm_ntt (pa pb : poly):
   ntt (pa &+ pb) = (ntt pa) &+ (ntt pb).
 
+lemma add_comm_invntt (pa pb : poly) : 
+  invntt (pa &+ pb) = (invntt pa) &+ (invntt pb)
+    by smt(invnttK nttK add_comm_ntt).
+
+lemma mul_comm_invntt : forall (pa pb : poly), 
+  invntt (basemul pa  pb) = (invntt pa) &* (invntt pb)
+    by smt(invnttK nttK mul_comm_ntt).
+
 axiom nttZero : ntt Poly.zero = Poly.zero.
+
+lemma invnttzero : invntt Poly.zero = Poly.zero by 
+   smt(invnttK nttZero).
 
 (*
 
