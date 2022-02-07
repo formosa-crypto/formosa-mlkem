@@ -4,7 +4,7 @@ require import Array3 Array32 Array64 Array128 Array168 Array256 Array320.
 require import Array384 Array768 Array1024 Array2560 Array3072.
 
 (**************************************************)
-(* Aux stuff needed for compression/decompression *)
+(* Aux stuff needed for compression/decomp``ression *)
 (**************************************************)
 
 lemma ceil_floor x : (ceil x)%r <> x => ceil x = floor x + 1.
@@ -1363,6 +1363,9 @@ module (Bs(A : KyberPKE.AdversaryRO) : MLWEPKE.PKE_.AdversaryRO) (O : MLWE_.RO.P
    }
 }.
 
+(* THIS IS WHERE WE NEED TO PROVE THAT SAMPLING LIKE THE SPEC IS
+   THE SAME AS SAMPLING THE OPERATORS *)
+
 lemma wrap_correctness &m :  
   Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc(Ac),MLWE_.RO.Lazy.LRO).main() @ &m : res].
@@ -1393,6 +1396,12 @@ byequiv => //.
 proc.
 inline {1} 2.
 inline {2} 2.
+inline {1} 2.
+inline {2} 2.
+inline {1} 3.
+inline {1} 2.
+inline {1} 5.
+inline {1} 11.
 admitted. (* a bunch of equivs that need to be proved once and for all *)
 
 lemma wrap_equiv_security &m :  
