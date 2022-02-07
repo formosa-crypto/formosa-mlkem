@@ -1010,7 +1010,7 @@ seq 1 : (#pre /\
     signed_bound_cxq polyi 0 256 2 /\
     lift_array256 polyi =  scale (ntt (dotp va vb)) (inFq 169)
     ).
-by call (polyvec_pointwise_acc_corr_alg va vb); auto => />.
+by call (polyvec_pointwise_acc_corr_alg_h va vb); auto => />.
 
 ecall(poly_frommont_corr_h (map W16.to_sint polyi)).
 skip => &hr.
