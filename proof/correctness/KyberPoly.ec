@@ -1,6 +1,6 @@
-require import AllCore List IntDiv CoreMap IntDiv Real.
+require import AllCore List IntDiv CoreMap IntDiv Real Number.
 from Jasmin require  import JModel JMemory.
-require import W16extra Array256 Array128.
+require import IntDiv_extra Ring_extra W16extra Array256 Array128.
 require import Fq.
 require import NTT_Fq.
 pragma +oldip.
@@ -31,7 +31,15 @@ lemma logdiv2 n l :
   1 < n =>
   n = 2^l =>
   log2 (n %/2) = log2 n - 1. 
-proof. admit. (* FIXME: by move => *; rewrite (log2E (n %/ 2) (log2 n - 1)); smt(@Ring.IntID log2E). *) qed.
+proof.
+  move => n_lb n_val.
+  rewrite (log2E (n %/ 2) (log2 n - 1)).
+  have ?: 1 <= l.
+    have n_lbe: 2 <= n. by move : n_lb => /#.
+    move : n_lbe. rewrite n_val {1}(_: 2 = 2^1) 1://.
+    move => ?.
+    rewrite (ler_weexpn2r 2 1 l) 1:// 1://. (* HERE *)
+admitted. (* FIXME: by move => *; rewrite (log2E (n %/ 2) (log2 n - 1)); smt(@Ring.IntID log2E). qed. *)
 (**************)
 
 theory KyberPoly.
@@ -126,7 +134,7 @@ move => *.
 qed.
 
 lemma poly_csubq_corr_h ap :
-      hoare[ Mderand.poly_csubq :
+      hoare[ Mderand._poly_csubq :
            ap = lift_array256 rp /\
            pos_bound256_cxq rp 0 256 2 
            ==>
@@ -584,7 +592,7 @@ move => i0 rp0.
 rewrite ultE =>  /> /#.
 qed.
 
-lemma poly_csubq_ll : islossless Mderand.poly_csubq.
+lemma poly_csubq_ll : islossless Mderand._poly_csubq.
 proof.
 proc.
 while (0 <= to_uint i <= 256) (256 - to_uint i); auto => />.
@@ -594,7 +602,7 @@ smt(@W64).
 qed.
 
 lemma poly_csubq_corr ap :
-      phoare[ Mderand.poly_csubq :
+      phoare[ Mderand._poly_csubq :
            ap = lift_array256 rp /\
            pos_bound256_cxq rp 0 256 2 
            ==>
@@ -1294,7 +1302,7 @@ lemma poly_frommsg_corr _a :
    by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
 
 lemma poly_frommont_corr_h _a : 
-    hoare[ Mderand.poly_frommont :
+    hoare[ Mderand._poly_frommont :
              map W16.to_sint rp = _a ==>
              map W16.to_sint res = map (fun x => SREDC (x * ((R^2) %% q))) _a].
 proc.
@@ -1349,7 +1357,7 @@ qed.
 
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
-      hoare[ Mderand.poly_sub :
+      hoare[ Mderand._poly_sub :
            _a = lift_array256 ap /\
            _b = lift_array256 bp /\
            signed_bound_cxq ap 0 256 ab /\
@@ -1382,7 +1390,7 @@ smt(@Array256).
 
 wp; skip.
 move => &hr [#] *.
-split; first by admit. (* FIXME: smt(@W64). *)
+split; first by move : H1 H9; rewrite /i0 ultE to_uintD_small 1:/#; smt(@W64 @Int).
 split; first by smt(@W64).
 split; first by smt(@W64).
 split; first by smt(@W64).
@@ -1431,7 +1439,7 @@ qed.
 
 lemma poly_add_corr _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
-      hoare[ Mderand.poly_add2 :
+      hoare[ Mderand._poly_add2 :
            _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
@@ -1526,7 +1534,7 @@ rewrite set_eqiE; first 2 by smt().
 qed.
 
 lemma poly_reduce_corr_h (_a : zmod Array256.t):
-      hoare[ Mderand.poly_reduce :
+      hoare[ Mderand.__poly_reduce :
           _a = lift_array256 rp ==> 
           _a = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*Kyber_.q)].
@@ -1669,7 +1677,7 @@ done.
 qed.
 
 lemma poly_reduce_ll:
-  islossless Mderand.poly_reduce.
+  islossless Mderand.__poly_reduce.
 proof.
 proc;while (0 <= to_uint j <= 256) (256 - to_uint j); 
    move=>*;inline *; auto => />. 
@@ -1688,7 +1696,7 @@ smt(@W64).
 qed.
 
 lemma poly_reduce_corr (_a : zmod Array256.t):
-      phoare[ Mderand.poly_reduce :
+      phoare[ Mderand.__poly_reduce :
           _a = lift_array256 rp ==> 
           _a = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*Kyber_.q)] = 1%r.
@@ -1884,7 +1892,7 @@ by rewrite /all -iotaredE; cbv delta.
 qed. 
 
 equiv ntt_correct_aux :
-  NTT_Fq.NTT.ntt ~ Mderand.poly_ntt : 
+  NTT_Fq.NTT.ntt ~ Mderand._poly_ntt : 
         r{1} = lift_array256 rp{2} /\ 
         array_mont zetas{1} = 
            lift_array128  jzetas /\
@@ -1941,7 +1949,9 @@ split; last by
     [ smt(@W64) | smt(log2E) | smt(@W64) ].
  exists (l-1).
  split; first by move : H H0; smt(@Int).
- rewrite H1; admit. (* FIXME: smt(@Ring.IntID @Int @IntDiv). *)
+ rewrite H1 exprD_subz 1:// //=.
+ rewrite H1 in H4; move : H4; smt(@IntDiv_extra @Ring.IntID). 
+
 wp.
 
 (* Inner loop *)
@@ -2072,8 +2082,12 @@ move => *.
 split; last first.
 (* part 1*)
 move => *.
-case (k <> to_uint j{2} /\ k <> to_uint j{2} + to_uint len{2}); first by admit. (*FIXME:
-  move => *; rewrite !Array256.set_neqiE; smt(@W64). *)
+case (k <> to_uint j{2} /\ k <> to_uint j{2} + to_uint len{2}).
+  move => *. rewrite !Array256.set_neqiE. smt(@W64).
+  move : H20 => /#.
+  smt(@W64).
+  move : H20 => /#.
+  move : (btightlarge k) => /#.
   case (k = to_uint j{2}). 
   move => *;rewrite !Array256.set_eqiE;  smt(@W64).
   move => *; rewrite (_:k = to_uint j{2} + to_uint len{2}); first by smt().
@@ -2081,8 +2095,12 @@ case (k <> to_uint j{2} /\ k <> to_uint j{2} + to_uint len{2}); first by admit. 
   rewrite Array256.set_eqiE; by smt(@W64). 
 (* part 2 *)
 move => *.
-case (k <> to_uint j{2} /\ k <> to_uint j{2} + to_uint len{2}); first by admit. (* FIXME:
-  move => *; rewrite !Array256.set_neqiE; smt(@W64). *)
+case (k <> to_uint j{2} /\ k <> to_uint j{2} + to_uint len{2}).
+  move => *. rewrite !Array256.set_neqiE. smt(@W64).
+  move : H20 => /#.
+  smt(@W64).
+  move : H20 => /#.
+  move : (btightsmall k) => /#.
   case (k = to_uint j{2}). 
   move => *;rewrite !Array256.set_eqiE;  smt(@W64).
   move => *; rewrite (_:k = to_uint j{2} + to_uint len{2}); first by smt().
@@ -2234,7 +2252,7 @@ qed.
 
 import NTT_Fq.
 lemma ntt_correct _r :
-   phoare[ Mderand.poly_ntt :
+   phoare[ Mderand._poly_ntt :
         _r = lift_array256 rp /\ 
         array_mont zetas_const = 
            lift_array128  jzetas /\
@@ -2286,7 +2304,7 @@ smt().
 qed.
 
 equiv invntt_correct_aux :
-  NTT_Fq.NTT.invntt ~ Mderand.poly_invntt : 
+  NTT_Fq.NTT.invntt ~ Mderand._poly_invntt : 
         r{1} = lift_array256 rp{2} /\ 
         array_mont_inv zetas_inv{1} = 
            lift_array128  jzetas_inv /\
@@ -2453,7 +2471,12 @@ split; last by smt(@W64).
 split; first by rewrite modz_small; smt().
 split; last by smt(). 
 exists (l+1).
- admit. (* FIXME:  smt(@Ring.IntID log2E logs). *)
+ split.
+   split; first by move : H0 => /#.
+   move => _.
+   rewrite (ler_weexpn2r 2 (l+1) 8) 1:// 1:// 1:/# 1://.
+     smt(@W8 @Int @Ring.IntID).
+   rewrite H2; smt(@Int @Ring.IntID).
 
 wp.
 
@@ -2556,7 +2579,8 @@ smt().
 smt().
 
 rewrite /R qE /= => a.
-admit. (* FIXME: smt(@Barrett_kyber_general). *)
+rewrite /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux.
+smt(@Int @IntDiv).
 
 by move => ? resval; smt(@ZModField).
 
@@ -2735,7 +2759,7 @@ smt(@Fq @W16 @ZModField).
 qed.
 
 lemma invntt_correct _r :
-   phoare[ Mderand.poly_invntt :
+   phoare[ Mderand._poly_invntt :
         _r = lift_array256 rp /\ 
         array_mont_inv zetas_inv_const = 
            lift_array128  jzetas_inv /\
@@ -2771,7 +2795,7 @@ move => x xb.
 move : (H4 x xb).
 rewrite !initiE //=.
 have ? : (inzmod R <> ZModField.zero); first by rewrite /R; smt(@ZModField qE).
-by admit. (* FIXME: move : (ZModField.ZModpField.mulIf (inzmod R) H6) => /#. *)
+  move : (ZModField.ZModpField.mulIf (inzmod R) H6). rewrite /injective /transpose => /#.
 byphoare (invntt_spec _r). smt(). smt().
 qed.
 
@@ -2797,7 +2821,7 @@ op base_mul(ap bp : zmod Array256.t, zetas : zmod Array128.t,
 
 
 lemma poly_basemul_corr _ap _bp _zetas:
-      hoare[ Mderand.poly_basemul :
+      hoare[ Mderand._poly_basemul :
         array_mont _zetas = 
            lift_array128 jzetas /\
            _ap = lift_array256 ap /\
