@@ -3,7 +3,7 @@ W16extra.ec:
 - No dependencies. 
 
 barrett_kyber_general.ec:
-- Tight bound on Barrett refuction claimed in Kyber
+- Tight bound on Barrett reduction claimed in Kyber
 - No dependencies
 
 Montgomery.ec: 
