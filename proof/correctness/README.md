@@ -10,14 +10,6 @@ Montgomery.ec:
 - General results for (signed) Mongomery representation, including Barrett reduction. 
 - Depends on barrett_kyber_general.ec for the tight bound of Barrett reduction.
 
-IndCpaDerand.ec:
-- Starting point for correctness proof: refactored version of the extracted code
-in folder extraction, proved equivalent  to the extracted code, but with 
-explicit separation of randomness generation and memory encoding/decoding
-to match the abstract specification in the security proof. The encryption
-and decryption functions take polynomials as inputs and output (possibly
-rounded) polynomials.
-
 Fq.ec: 
 - Correction of coefficient-wise operations in IndCpaDerand and 
   connection to semantics over Fq (i.e., congruence relations + ranges).

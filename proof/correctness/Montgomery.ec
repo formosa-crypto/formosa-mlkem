@@ -49,16 +49,14 @@ qed.
 (********************************)
 
 theory SignedReductions.
+
 (* [`R] is a power of 2 *)
 op k : { int | 2 < k } as gt2_k.
 
 op R = 2^k.
 
-lemma dvd4R : 4 %| R.
-proof.
-rewrite /R (_ : k = (k - 2) + 2) //=.
-have -> : (4 = 2^2); smt(expr2 dvdz_exp2l gt2_k). 
-qed.
+lemma dvd4R : 4 %| R
+  by have -> : (4 = 2^2); smt(expr2 dvdz_exp2l gt2_k). 
 
 hint exact : dvd4R.
 
@@ -73,7 +71,7 @@ lemma gt0_R: 0 < R by apply: expr_gt0.
 op q: int.
 axiom q_bnd: 0 < q /\ q < R %/2.
 axiom q_odd1: 2 %| (q + 1).
-axiom q_odd2: 2 %| (q - 1).
+lemma q_odd2: 2 %| (q - 1) by smt(q_odd1).
 
 op qinv : int.
 axiom qqinv: (qinv * q) %% R = 1 %% R.
@@ -84,106 +82,60 @@ axiom Rinv_gt0 : 0 < Rinv.
 axiom RRinv: (R * Rinv) %% q = 1 %% q.
 
 op smod (a b : int) =
-    if (b %/ 2 <= a %% b) then a %% b - b else a %% b axiomatized by smodE.
+    if (b %/ 2 <= a %% b) 
+    then a %% b - b 
+    else a %% b axiomatized by smodE.
 
 lemma smod_bnd a b :
    0< b =>  2 %| b =>
   - b %/ 2 <=  smod a b < b %/ 2 by smt(smodE).
 
-lemma smod_congr a b :
-  (smod a b) %% b = a %% b.
-proof.
-rewrite smodE /=.
-case (b %/ 2 <= a %% b).
-move => *.
+lemma smod_congr a b :  (smod a b) %% b = a %% b.
+rewrite smodE /=. 
+case (b %/ 2 <= a %% b); last by rewrite modz_mod.
 rewrite (_: a%%b - b = a %%b + (-1)*b); first by ring.
 by rewrite modzMDr modz_mod.
-by rewrite modz_mod.
 qed.
 
-lemma smod_sq t: smod (t %/ R %% (R ^ 2))R = smod (t %/ R) R.
+lemma smod_sq t: smod (t %/ R %% (R ^ 2)) R = smod (t %/ R) R.
 proof.
-rewrite smodE smodE.
-rewrite (_: t %/ R %% (R ^ 2) %% R = t %/ R  %% R).
-have H : R %| R^2.
-rewrite (_: R^2 = R * R); first by smt(@Domain).
-apply (dvdz_mulr _); first by smt(gt0_R).
-apply (modz_dvd _); apply H. 
-done.
+rewrite !smodE. 
+have -> : t %/ R %% (R ^ 2) %% R = t %/ R  %% R; last by done.
+rewrite expr2; apply modz_dvd. 
+by apply (dvdz_mulr _); smt(gt0_R).
 qed.
 
-lemma wd_bnd x :
-   0 <= x  %% (R*R) %/ R < `| R |.
-  rewrite (_: `| R| = R); first by rewrite normr_idP; smt(gt0_R).  
-  by split;smt(gt0_R).
-qed.
+lemma wd_bnd x : 0 <= x  %% (R*R) %/ R < `| R |
+  by rewrite (_: `| R| = R); rewrite ?normr_idP; smt(gt0_R).  
 
 lemma smod_small x y:
    1 < y =>
    -y %/ 2 <= x < y %/2 =>
-   smod x y = x.
+   smod x y = x by smt().
+
+lemma smod_div x : smod (x * R) (R ^ 2) %/ R = smod x  R.
 proof.
-move => ypos [#] xlb yub.
-rewrite smodE.
-case (0 <= x < y %/ 2); smt(@IntDiv).
-qed.
-
-lemma b0 :  R*R %/ 2 = R * (R %/ 2).
-proof. by rewrite div_mulr. qed.
-
-lemma b1 : R*R %/4 = R %/2 * R %/2.
-proof. by rewrite (divM_mul _ _ 2 2) // div_mulr. qed.
-
-lemma b2 : R*R %/ 2 = R*R %/ 4 + R*R %/ 4.
-proof.
-rewrite -{1}(divzK 2 ((R * R) %/ 2)).
-+ by rewrite b0 dvdz_mulr.
-+ by rewrite -div_mul // 1:dvdz_mulr //#.
-qed.
-
-lemma b3 : R = R %/ 2 + R %/ 2.
-proof. by rewrite -{1}(divzK 2 R) 1:dvd2R /#. qed.
-
-lemma smod_div x :
-   smod (x * R) (R ^ 2) %/R = smod x  R.
-proof.
-rewrite !smodE.
-rewrite (_: R^2 = R*R); first by smt(@Domain).
-rewrite b0.
+rewrite !smodE expr2 !(div_mulr _ _ _ dvd2R).  
 rewrite -!mulz_modl; first by apply gt0_R.
-case (R * (R %/ 2) <= x %% R * R ).
-move => *.
-have -> : (R %/ 2 <= x %% R); first by smt(dvd2R gt0_R).
-rewrite (_: (x %% R * R - R * R) = ((x %% R - R) * R));smt(gt0_R).
-move => *.
-by have -> : (! R %/ 2 <= x %% R); smt(dvd2R gt0_R).
+case (R * (R %/ 2) <= x %% R * R ); 1: by smt(dvd2R gt0_R).
+rewrite mulrC => H.
+by have -> : !(R %/ 2 <= x %% R); smt(ler_wpmul2r gt0_R).
 qed.
 
-lemma smod_exists x y :
-   exists k,
-   smod x y = x + k * y.
+
+lemma smod_exists x y : exists k, smod x y = x + k * y.
 proof.
-rewrite smodE.
-case (y %/ 2 <= x %%y).
-move => *.
-exists (- (x %/ y + 1)).
-rewrite modzE. smt(gt0_R).
-move => *.
-exists (- x %/ y).
-rewrite modzE. smt(gt0_R).
+rewrite smodE;case (y %/ 2 <= x %%y).
++ by move => *; exists (- (x %/ y + 1)); smt(modzE gt0_R).
+by move => *; exists (- x %/ y); smt(modzE gt0_R).
 qed.
 
-lemma inrange a :
-  0 <= a < R %/ 2 => a %% R = a by smt().
+lemma inrange a :  0 <= a < R %/ 2 => a %% R = a by smt().
+lemma outrange a :  - R%/2 <= a < 0 => a %% R = R + a by smt().
 
+lemma sign_comp a b: smod (a %%R + b %% R) R = smod (a + b) R
+   by move => *; rewrite !smodE modzDm.
 
-lemma outrange a :
-  - R%/2 <= a < 0 => a %% R = R + a by smt().
-
-lemma sign_comp a b: smod (a %%R + b %% R) R = smod (a + b) R.
-move => *. rewrite !smodE.
-by rewrite modzDm.
-qed. 
 (* Signed Barrett reduction as used in Kyber 2.0 *)
 
 op BREDC(a bits : int) =
@@ -238,6 +190,22 @@ op SREDC (a: int) : int =
   let u = smod (a * qinv * R) (R^2) in
   let t = smod (a - u %/ R * q) (R^2)in
       smod (t %/ R %% (R^2)) R.
+
+lemma b0 :  R*R %/ 2 = R * (R %/ 2).
+proof. by rewrite div_mulr. qed.
+
+lemma b3 : R = R %/ 2 + R %/ 2.
+proof. by rewrite -{1}(divzK 2 R) 1:dvd2R /#. qed.
+
+lemma b2 : R*R %/ 2 = R*R %/ 4 + R*R %/ 4.
+proof.
+rewrite -{1}(divzK 2 ((R * R) %/ 2)).
++ by rewrite b0 dvdz_mulr.
++ by rewrite -div_mul // 1:dvdz_mulr //#.
+qed.
+
+lemma b1 : R*R %/4 = R %/2 * R %/2.
+proof. by rewrite (divM_mul _ _ 2 2) // div_mulr. qed.
 
 
 lemma nosmt SREDCp_corr a:
@@ -327,94 +295,6 @@ apply dvdz_mull. apply dvdzz.
 move : scalar1 => /= ->.
 by rewrite -modzMml modzMDr modzMml.
 qed.
-
-
-(* This is an alternative reduction in the IBM Research paper
-op SREDC (a: int) : int =
- let a1 = a %/ R in
- let a0 = a %% R in
- let  m = (a0 * qinv) %%+- R in
- let t1 = (m * q) %/ R in
-     a1 - t1.
-
-lemma nosmt SREDC_corr a:
- 0 < q < R %/2 =>
- -R %/ 2 * q <= a < R %/2 * q =>
- -q <= SREDC a <= q /\ (* Paper claims -q < SREDC a < q *)
- SREDC a %% q = (a * Rinv) %% q.
-proof.
-move => *.
-pose a1 := a %/ R.
-pose a0 := a %% R.
-pose m  := (a0 * qinv) %%+- R.
-pose t1 := (m * q) %/ R.
-pose t0 := (m * q) %% R.
-have a0bounds : 0 <= a0 < R; first by smt().
-have a1bounds : -R %/4 <= - (q+1) %/2 <= a1 <= (q-1) %/2 < R %/4.
-move : H0 => [#] alb aup.
-split; last by smt().
-split; last first.
-move => *.
-rewrite /a1.
-smt(@IntDiv q_odd1 dvd2R).
-split; first by smt().
-move => *.
-rewrite /a1.
-smt(@IntDiv q_odd1 dvd2R).
-
-have t1bounds : -R %/4 <= -(q+1) %/2 <= t1 <= (q-1) %/2 < R %/4.
-move : H0 => [#] alb aup.
-split; last by smt().
-split; last first.
-rewrite /t1 /m /a0 /=.
-move : (bal_mod_bnd (a %% R * qinv) R R_gt0 _); first by smt.
-pose x := (a %% R * qinv) %%+- R.
-move => *.
-have ? : ( R%/2 * q %/R = q %/2).
-rewrite (_: R %/ 2 * q %/ R = R * q %/2 %/ R ); first by smt(dvd2R dvdz_mull dvdz_mulr).
-rewrite (_: R * q  %/ 2 %/ R = q * R  %/ 2 %/ R); first by smt().
-rewrite (_: q * R  %/ 2 %/ R = q %/ 2 * R %/ R); first by smt(). smt.
-rewrite -(_: q %/2 = (q-1) %/ 2).  smt(q_odd2). smt.
-split; first by smt().
-move => *.
-rewrite /t1 /m /a0 /=.
-move : (bal_mod_bnd (a %% R * qinv) R R_gt0 _); first by smt.
-pose x := (a %% R * qinv) %%+- R.
-move => *.
-rewrite (_: -(q+1) %/ 2 = (-R%/2) * (q+1) %/R).
-rewrite (_: (-R %/ 2) * (q+1) %/ R = (-R * (q+1) %/2) %/ R ); first by smt(dvd2R dvdz_mull dvdz_mulr).
-rewrite (_: (- R * (q + 1) %/ 2) = (- (q + 1) * R %/ 2)); first by smt().
-rewrite (_: (- (q + 1) * R %/ 2) = (- (q + 1) %/ 2 * R)); first by smt(q_odd1).
-rewrite -(_: -q %/2 - 1 = - (q + 1) %/ 2).  smt(q_odd1). smt. smt.
-have nooverflow: -q <= a1 - t1 <= q; first by smt().
-split; first by rewrite /SREDC -/a1 -/a0 /= -/m -/t1; apply nooverflow.
-rewrite /SREDC  -/a0 -/a1 /= -/m -/t1.
-pose t := m*q.
-have subeq : (a-t = (a1 - t1)*R + (a0 - t0)). smt.
-have a0t0cancel : (a0 = t0).
-rewrite /a0 /t0 /m bal_modE /a0 //=.
-case (R %/ 2 <= a %% R * qinv %% R); last first.
-progress.
-rewrite (_: a %% R * qinv %% R * q %% R = a %% R * (qinv * q) %% R).
-rewrite modzMml. smt().  rewrite modzMml -modzMml -modzMm. smt.
-progress.
-rewrite (_: (a %% R * qinv %% R -R) * q %% R = a %% R * (qinv * q) %% R).
-rewrite mulrDl -modzDmr.
-rewrite (_: (-R) * q = R * (-q)); first by smt().
-rewrite modzMr => />.
-rewrite modzMml. smt.
-rewrite modzMml -modzMml -modzMm. smt.
-move : subeq; rewrite (_: a0 - t0 = 0) => />; first by smt().
-move => *.
-rewrite (_: (a1 - t1) %% q = (a1 - t1) * (R * Rinv) %% q).
-rewrite -modzMm. smt. rewrite mulrA -H1 /t.
-rewrite Ring.IntID.mulrDl.
-rewrite (_:(-m * q) * Rinv = (-m*Rinv)*q). smt.
-rewrite Ring.IntID.addrC -modzDm modzMl => />.
-by rewrite modz_mod.
-qed.
-*)
-
 
 end SignedReductions.
 
