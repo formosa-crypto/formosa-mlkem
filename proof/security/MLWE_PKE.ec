@@ -1,5 +1,5 @@
 require import AllCore Distr List SmtMap Dexcepted.
-require (****) ROM RndExcept StdOrder PKE MLWE.
+require (****) ROM RndExcept StdOrder PKE_Ext MLWE.
 
 clone import MLWE as MLWE_.
 import RO.
@@ -22,7 +22,7 @@ op c_decode : ciphertext -> raw_ciphertext.
 (*    The Security Games                                          *)
 
 
-clone import PKE as PKE_ with 
+clone import PKE_Ext as PKE_ with 
   type RO.in_t  <- seed,
   type RO.out_t <- matrix,
   op RO.dout    <- fun (sd : seed) => duni_matrix, 

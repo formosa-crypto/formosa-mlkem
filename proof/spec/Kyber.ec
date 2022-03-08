@@ -1,4 +1,4 @@
-require import AllCore ZModP IntDiv Distr List DList PKE.
+require import AllCore ZModP IntDiv Distr List DList PKE_Ext.
 from Jasmin require import JWord.
 require import Array3 Array32 Array64 Array128 Array168 Array256 Array320.
 require import Array384 Array768 Array1024 Array2560 Array3072.
@@ -69,7 +69,7 @@ fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) 
 PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 
 *)
-clone import PKE as KyberPKE with
+clone import PKE_Ext as KyberPKE with
   type RO.in_t = (unit option) * ((W8.t Array32.t * int *int * int) option) * ((W8.t Array32.t * int) option),
   type RO.out_t = W8.t Array64.t * W8.t Array168.t * W8.t Array128.t,
   type pkey = (W8.t Array384.t) Array3.t * W8.t Array32.t,
