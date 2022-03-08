@@ -203,23 +203,6 @@ op SREDC (a: int) : int =
   let t = smod (a - u %/ R * q) (R^2)in
       smod (t %/ R %% (R^2)) R.
 
-lemma b0 :  R*R %/ 2 = R * (R %/ 2).
-proof. by rewrite div_mulr. qed.
-
-lemma b3 : R = R %/ 2 + R %/ 2.
-proof. by rewrite -{1}(divzK 2 R) 1:dvd2R /#. qed.
-
-lemma b2 : R*R %/ 2 = R*R %/ 4 + R*R %/ 4.
-proof.
-rewrite -{1}(divzK 2 ((R * R) %/ 2)).
-+ by rewrite b0 dvdz_mulr.
-+ by rewrite -div_mul // 1:dvdz_mulr //#.
-qed.
-
-lemma b1 : R*R %/4 = R %/2 * R %/2.
-proof. by rewrite (divM_mul _ _ 2 2) // div_mulr. qed.
-
-
 lemma nosmt SREDCp_corr a:
    0 < q < R %/2 =>
    -R %/ 2 * q <= a < R %/2 * q =>
@@ -227,50 +210,21 @@ lemma nosmt SREDCp_corr a:
        SREDC a %% q = (a * Rinv) %% q.
 proof.
 move => [#] H H0 [#] H1 H2.
-have albnd : (- R * R %/4 <= a).
- case (0<=a); first by smt().
- move => *; rewrite b1.
- have ? : (R %/ 2 * SignedReductions.q <= R %/ 2 * R %/ 2); by smt(gt0_R q_bnd dvd2R).
-have aubnd : (a < R* R %/4); first by smt(b1).
+have albnd : (- R * R %/4 <= a); 1: by smt().
+have aubnd : (a < R* R %/4); 1: by smt().
 rewrite /SREDC /= (smod_div (a * qinv)).
 move : (smod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 
 move => inner_bnd.
 
-have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q).
-    case (0 <= smod (a * qinv) R); first by smt().
-    move => *.
-    have ? : ((- (smod (a * qinv) R))*q <= (R %/ 2) * (R %/ 2)); last by smt().
-    by apply ler_pmul => /#.
+have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q); 1: by smt().
+have uubnd : (smod (a * qinv) R * q < R*R %/4); 1: by smt().
 
-have uubnd : (smod (a * qinv) R * q < R*R %/4). 
-    case (smod (a * qinv) R <=0); first by smt().
-    have ? : ((smod (a * qinv) R) * q < (R %/ 2) * (R %/ 2)); last by smt().
-    case (smod (a * qinv) R <=0); 
-    by smt(dvd2R gt0_R q_bnd).
-
-rewrite (smod_small ((a - smod (a * qinv)R * q))); first 2 by  smt(@IntOrder). 
+rewrite (smod_small ((a - smod (a * qinv)R * q))); 1 : by smt(gt0_R exprn_egt1).
++ by rewrite !expr2;smt().
 rewrite (smod_sq ((a - smod (a * qinv) R * q))).
-rewrite (smod_small ((a - smod (a * qinv) R * q) %/R)); first by smt(). 
+rewrite (smod_small ((a - smod (a * qinv) R * q) %/R)); first 2 by smt(). 
 
-have ? : ( (a - smod (a * qinv) R * q) < R %/ 2 *R);first  by  smt(b1 b2  b3).
-have ? : ((-R %/ 2) *R< (a - smod (a * qinv) R * q));first  by  smt(b1 b2  b3).
-by smt(gt0_R @IntDiv). 
-
-split.
-
-(* Bound proof *)
-have aux : (-  smod (a * qinv) R * q <= R %/2 * q).
-   have ? : (- smod (a * qinv) R <= R %/2); by smt(b1 b2 b3).
-split; last first.
-have ? : ( (a - smod (a * qinv) R * q) < q *R);first  by  smt(b1 b2  b3).
- by smt(gt0_R @IntDiv). 
-
-have aux2 : (R %/2 * (-q) <= -  smod (a * qinv) R * q).
-   have ? : (-R %/2 <= - smod (a * qinv) R); by smt(b1 b2 b3).
-
-have ? : ((-q) *R<= (a - smod (a * qinv) R * q)). 
-   by  smt(b1 b2  b3).
-by smt(gt0_R @IntDiv). 
+split; 1: by smt(). 
 
 (* Congruence proof *)
 move : (smod_exists (a * qinv) R) => kk0_exists.
@@ -279,31 +233,32 @@ rewrite kk0_val.
 
 rewrite (_: a - (a * qinv + kk0 * R) * q =
       a %/ R * R - ((a * qinv  + kk0 * R) * q) %/ R * R).
-rewrite (divzE a).
-rewrite (divzE ((a * qinv  + kk0 * R) * q)).
-rewrite (_ : (a * qinv + kk0 * R) * q %% R = a %% R).
-rewrite mulrDl.
-rewrite (_:kk0 * R * q = (kk0 * q) * R); first by smt().
-by rewrite modzMDr -Ring.IntID.mulrA -modzMm qqinv modzMm => /#.
-by ring.
++ rewrite (divzE a) (divzE ((a * qinv  + kk0 * R) * q)).
+  rewrite (_ : (a * qinv + kk0 * R) * q %% R = a %% R).
+  + rewrite mulrDl.
+    rewrite (_:kk0 * R * q = (kk0 * q) * R); first by smt().
+    by rewrite modzMDr -Ring.IntID.mulrA -modzMm qqinv modzMm => /#.
+  by ring.
 
 have scalar1 : (a %/ R * R - (a * qinv +kk0 * R) * q %/ R * R =
              a + (- a * qinv - kk0 * R)*q).
-    rewrite !divzE.  ring.
-    rewrite  -modzMm -modzDm modzMl /= modz_mod modzMm.
-    rewrite (_: a * qinv * q = a * (qinv * q)); first by smt().
-    by rewrite -modzMm qqinv modzMmr /= modz_mod; ring.
++ rewrite !divzE.  ring.
+  rewrite  -modzMm -modzDm modzMl /= modz_mod modzMm.
+  rewrite (_: a * qinv * q = a * (qinv * q)); first by smt().
+  by rewrite -modzMm qqinv modzMmr /= modz_mod; ring.
 
 pose xx := (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) %/ R.
-rewrite (_: xx %% q = xx * (R * Rinv) %% q).
-  by rewrite -(modzMmr _ (R * Rinv) q) RRinv (modzMmr _ (1) q) /=.
-rewrite /xx. clear xx.
+rewrite (_: xx %% q = xx * (R * Rinv) %% q);  
+ 1: by rewrite -(modzMmr _ (R * Rinv) q) RRinv (modzMmr _ (1) q) /=.
+rewrite /xx; clear xx.
 
 rewrite Ring.IntID.mulrA.
-rewrite (_: (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) %/R * R = (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R)).
-apply dvdz_eq.
-rewrite (_: (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) = (a %/ R  - (a * qinv + kk0 * R) * q %/ R )*R). smt().
-apply dvdz_mull. apply dvdzz.
+rewrite (_: (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) %/R * R = 
+          (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R)).
++ apply dvdz_eq.
+  rewrite (_: (a %/ R * R - (a * qinv + kk0 * R) * q %/ R * R) = 
+          (a %/ R  - (a * qinv + kk0 * R) * q %/ R )*R); 1: by smt().
+  by apply dvdz_mull; apply dvdzz.
 move : scalar1 => /= ->.
 by rewrite -modzMml modzMDr modzMml.
 qed.
@@ -368,22 +323,17 @@ proof.
 pose m := ((T %% R)*N') %% R.
 pose t := (T + m*N) %/ R.
 move=> Hn; rewrite exprS //; move=> [HT1 HT2].
-have [Hm1 Hm2]: 0 <= m < R.
- split => *; first smt(@IntOrder). 
- move: (ltz_mod ((T %% R)*N') R _); first smt(@IntOrder).
- rewrite -/m.
- have ->//: `|R| = R.
- rewrite -IntOrder.ger0_def.
- by apply ltzW; apply R_gt0.
+have [Hm1 Hm2]: 0 <= m < R; 1: by smt(R_gt0 ltz_mod gtr0_norm).
 have Ht: 0 <= t < N + N*R^n.
- split => *; first by smt(@IntOrder).
- rewrite /t ltz_divLR 1:/#.
- have ?: m * N <= N*R - N.
-  rewrite mulzC.
-  have ->: N*R-N = N*(R-1) by ring.
-  apply ler_pmul2l;   smt(@IntOrder).
-  smt().
-  smt().
++ split; 1: by smt(divz_ge0 R_gt0 N_bnd). 
+  move => tge0.
+  rewrite /t ltz_divLR 1:/#.
+  have ?: m * N <= N*R - N.
+  + rewrite mulzC.
+    have ->: N*R-N = N*(R-1) by ring.
+    apply ler_pmul2l;   smt(N_bnd). 
+  by smt().
+by smt().
 qed.
 
 end Montgomery'.
@@ -438,22 +388,21 @@ lemma REDCk_corr r T:
  (0 <= REDCk r T < 2*N) /\ REDCk r T %% N = T * Rinv^r %% N.
 proof.
 elim/natind: r T => /= />.
-move => n ? T *.
- have ->: n=0 by smt().
- rewrite REDCk0 // /#.
++ move => n ? T *.
+  have ->: n=0 by smt().
+  by rewrite REDCk0 // /#.
 move => n H H0 T H1 H2 H3.
 rewrite REDCkS 1:/#.
 move: H3; case: (n=0) => E.
- rewrite E !REDCk0 //= => H4.
- move: (REDC'_bnds T 0 _ _) => //=; rewrite expr0 => H5.
- split.
-  split => *; smt().
- by rewrite expr1; apply REDC'_congr.
++ rewrite E !REDCk0 //= => H4.
+  move: (REDC'_bnds T 0 _ _) => //=; rewrite expr0 => H5.
+  split; 1: by smt().
+  by rewrite expr1; apply REDC'_congr.
 move=> H3.
-move: (H0 (REDC' T) _ _). smt().
- by move: (REDC'_bnds T n _ _) => /=.
+move: (H0 (REDC' T) _ _); 1: smt().
++ by move: (REDC'_bnds T n _ _) => /=.
 move=> [H4 H5].
-split; first smt().
+split; first by smt().
 rewrite H5.
 move: (REDC'_congr T) => H6.
 by rewrite -modzMml H6 modzMml exprS /#.
@@ -467,8 +416,7 @@ lemma REDC_corr T:
 proof.
 move=> *; rewrite /REDC /=.
 move: (REDCk_corr r T _ _) => //; first by smt(r_ge0).
-move=> [??].
-case: (N <= REDCk r T); smt( @IntDiv). 
+by smt(). 
 qed.
 
 end MontgomeryLimbs.
