@@ -155,34 +155,46 @@ lemma nosmt BREDCp_corr a bits:
         barrett_pred a0 (2 ^ bits) q (2 ^ bits %/ q + 1)) =>
           0  <= BREDC a bits < 2 * q /\ BREDC a bits %% q = a %% q.
 proof.
-move => [#] ?? ? ? H3 [#] H4 H5 H6;rewrite /BREDC /=.
-have extra : (0 <= 2^bits %/ q + 1); first by smt().
-have tubnd : (a * (2^bits %/ q + 1) < R %/2 * R). 
-   move : H3 H4 H5; rewrite /R pow_div1; first 2 by smt(gt2_k). 
-   case (a <= 0); first by smt(). 
-   by move => *; apply ltr_pmul => /#. 
-have tlbnd : (- R %/2 * R<= a * (2^bits %/ q + 1)).
-   move : H3 H4 H5; rewrite /R pow_div1; first 2 by smt(gt2_k). 
-   case (0<=a); first by smt().
-   move => ????.
-   have ? : (-a * (2 ^ bits %/ q + 1) <= 2 ^ (k - 1) * 2 ^ k); last by smt().
-   rewrite  (_:  - a * (2 ^ bits %/ q + 1) = 
-                (- a) * (2 ^ bits %/ q + 1)); first   by smt().
-   by apply ler_pmul => /#. 
-rewrite (smod_small (a * (2 ^ bits %/ q + 1)) (R^2) _ _); first by smt(expr2). 
-rewrite !expr2. smt(@IntOrder).
+rewrite /BREDC /= /R /smod /=.
+move => ????.
+rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux /= => H brt.
+move : (brt a H); move => [#] brtl brth.
+rewrite !modzDm.
+case (0 <= a). 
++ move => agt0; rewrite !(modz_small (a * (2 ^ bits %/ SignedReductions.q + 1))); 
+    1: by smt(expr2 gtr0_norm ltr_pmul).  
+  have -> /= : !(2 ^ k ^ 2 %/ 2 <= a * (2 ^ bits %/ SignedReductions.q + 1)).
+  + rewrite ltr_geF; last by done.
+    rewrite expr2 mulrC div_mulr; 1: by rewrite -{1}(expr1 2); apply dvdz_exp2l; smt(gt2_k).
+    by smt(expr2 gtr0_norm ltr_pmul).  
+  rewrite !(modz_small ((a - a * (2 ^ bits %/ SignedReductions.q + 1) %/ 2 ^ bits * SignedReductions.q))); 
+    1: by smt(). 
+  split; 1: by smt(). 
+  case (2 ^ k %/ 2 <= a - a * (2 ^ bits %/ SignedReductions.q + 1) %/ 2 ^ bits * SignedReductions.q); 1: by smt().
+  by move => *; rewrite -(modzMDr (- a * (2 ^ bits %/ SignedReductions.q + 1) %/ 2 ^ bits) a q); smt(). 
 
-move : (H6 a _); rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /= 
-       => *; first by smt().
-rewrite sign_comp smod_small; first 2 by smt().
-
-split; first by smt().
-
-(* Congruence proof *)
-rewrite (_: - a * (2 ^ bits %/ q + 1) %/ 2 ^ bits * q = 
-            (- a * (2 ^ bits %/ q + 1) %/ 2 ^ bits) * q); first by smt().
-by rewrite modzMDr.
-qed.
+move => alt0.
+pose d := -a;have -> : (a = -d); 1: by auto.
+rewrite !mulNr !modNz; 1..4: smt(gt2_k expr_gt0). 
+rewrite !(modz_small (-a * (2 ^ bits %/ SignedReductions.q + 1) - 1)).
++  rewrite gtr0_norm; 1: by  smt(gt2_k expr_gt0).
+   split; 1: by smt().
+   by move => *; have ? : (- a * (2 ^ bits %/ SignedReductions.q + 1) <= 2^k*2^k); smt(expr2).
+have -> /=: 2 ^ k ^ 2 %/ 2 <= 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1).
++ have -> : 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) = 
+        2^k^2 - d * (2 ^ bits %/ SignedReductions.q + 1); 1: by rewrite /d;ring. 
+  have ? : (0 <= d * (2 ^ bits %/ SignedReductions.q + 1) <= 2^k^2 %/ 2); last by smt().
+  split; 1: by smt().
+  move => *. 
+    rewrite expr2 mulrC div_mulr; 1: by rewrite -{1}(expr1 2); apply dvdz_exp2l; smt(gt2_k).
+    by apply ler_pmul; smt(gt2_k).  
+  split; 1: by smt(). 
+  case (2 ^ k %/ 2 <= a - a * (2 ^ bits %/ SignedReductions.q + 1) %/ 2 ^ bits * SignedReductions.q); 1: by smt().
+  move => *. 
+  rewrite !(modz_small _ (2^k)) => //; 1: smt(). 
+  case (2 ^ k %/ 2 <=  (-d) - (2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits * SignedReductions.q); 1: by smt().
+  by move : (modzMDr (-((2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits)) (-d) q) => /=; smt(modNz). 
+qed. 
 
 (* Signed Montgomery reduction as used in Kyber v2.0 *)
 
