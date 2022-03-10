@@ -7,7 +7,7 @@ require import Kyber.
 
 hint simplify range_ltn, range_geq.
 
-(* TODO: use easycrypt's native log to base *)
+(* TODO: use easycrypt's native log to base 
 op log2(n : int) : int.
 
 axiom log2E n l : 0 <= l => n = 2^l => log2 n = l.
@@ -39,7 +39,7 @@ proof.
     move : n_lbe. rewrite n_val {1}(_: 2 = 2^1) 1://.
     move => ?.
     rewrite (ler_weexpn2r 2 1 l) 1:// 1://. (* HERE *)
-admitted. (* FIXME: by move => *; rewrite (log2E (n %/ 2) (log2 n - 1)); smt(@Ring.IntID log2E). qed. *)
+admitted. (* FIXME: by move => *; rewrite (log2E (n %/ 2) (log2 n - 1)); smt(@Ring.IntID log2E). qed. *)*)
 (**************)
 
 theory KyberPoly.
@@ -86,7 +86,7 @@ require import Jindcpa.
 
 lemma m1true x :
   0 <= x < 16 =>
-    (W16.of_int 65535).[x].
+    (W16.of_int 65535).[x] = true.
 proof.
 move => *.
 rewrite of_intwE => />.
@@ -116,20 +116,12 @@ lemma getsign x :
 proof.
 rewrite /(`|>>`) sarE sltE sleE !to_sintE /smod => />.
 split; move => hh.
-  have  xb : (32768 <= to_uint x); first by smt(W16.to_uint_cmp).
-  apply W16.ext_eq => k kb; rewrite initiE => />.
-  rewrite (_: min 15 (k+15) = 15); first by smt().
-  by rewrite m1true // get_to_uint => />;smt().
-have  xb : (0 <= to_uint x < 32768).
-   split; first by smt().
-   case (32768 <= to_uint x).
-      move => *.
-      have ? : false;  move : (W16.to_uint_cmp x) => />; smt().
-      smt(). 
-move => *.
-  apply W16.ext_eq => k kb; rewrite initiE => />.
-  rewrite (_: min 15 (k+15) = 15); first by smt().
-  by rewrite get_to_uint => />;smt().
++ apply W16.ext_eq => k kb; rewrite initiE => />.
+  have -> : min 15 (k+15) = 15; first by smt().
+  by rewrite m1true // get_to_uint => />;smt(W16.to_uint_cmp pow2_16).
+apply W16.ext_eq => k kb; rewrite initiE => />.
+rewrite (_: min 15 (k+15) = 15); first by smt().
+ by rewrite get_to_uint => />;smt(W16.to_uint_cmp pow2_16).
 qed.
 
 lemma poly_csubq_corr_h ap :
