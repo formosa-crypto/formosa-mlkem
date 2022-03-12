@@ -98,8 +98,8 @@ lemma as_sint_range x :  - (q-1) %/2 <= as_sint x <= (q-1) %/2 by smt(rg_asint).
 (* Compression and decompression are used as operations between 
    polynomials over Fq, but we first define the basic operations 
    over coefficients. *)
-op compress(d : int, x : Fq) : Fq = inFq (round ((2^d)%r / q%r * (asint x)%r) %% 2^d).
-op decompress(d : int, x : Fq) : Fq = inFq (round (q%r / (2^d)%r * (asint x)%r)).
+op compress(d : int, x : Fq) : int = round ((2^d)%r / q%r * (asint x)%r) %% 2^d.
+op decompress(d : int, x : int) : Fq = inFq (round (q%r / (2^d)%r * x%r)).
 
 (* This, however, raises the issue of how to convert from Zq to
    the reals when computing the error bounds. 
@@ -119,9 +119,9 @@ axiom noties_u d x xr : (* Checked in Sage *)
 
 lemma compress_sint x d : 
    0 <= d => 2^d < q =>
-   compress d x = inFq (round ((2^d)%r / q%r * (as_sint x)%r) %% 2^d).
+   compress d x = round ((2^d)%r / q%r * (as_sint x)%r) %% 2^d.
 proof.
-move => dlb dub;rewrite /compress => />; congr.
+move => dlb dub;rewrite /compress => />.
 case ((q - 1) %/ 2 < asint x); last by rewrite /as_sint; auto => />. 
 case (x = Zq.zero); first by smt(@Zq).
 move => H H0. 
@@ -167,19 +167,19 @@ lemma compress_err_bound c d :
 (*******************************************************)
 
 (* This is the implementation of compress d in C/Jasmin *)
-op compress_alt(d : int, c : Fq) : Fq =
-    inFq (((asint c * 2^d + (q %/ 2)) %/q) %% 2^d).
+op compress_alt(d : int, c : Fq) : int =
+    (asint c * 2^d + ((q + 1) %/ 2)) * (2^28 %/ q) %/ 2^28 %% 2^d.
 
 lemma compress_alt_compress c d :    
    0 <= d => 2^d < q =>
       compress_alt d c = compress d c.
-proof. move => *; rewrite /compress_alt /compress /round; congr;congr; congr.
+proof. move => *; rewrite /compress_alt /compress /round; congr;congr.
 rewrite StdBigop.Bigreal.Num.Domain.mulrC StdBigop.Bigreal.Num.Domain.mulrA.
 admitted.
 
 (* This is the implementation of decompress d in C/Jasmin *)
-op decompress_alt(d : int, c : Fq) : Fq = 
-    inFq (((asint c * q + 2^(d-1)) %/ 2^d)).
+op decompress_alt(d : int, c : int) : Fq = 
+    inFq (((c * q + 2^(d-1)) %/ 2^d)).
 
 lemma decompress_alt_decompress c d : 
    0 <= d => 2^d < q =>
@@ -209,11 +209,11 @@ op b_decode(c: Fq) : bool = ! `| as_sint c| < q %/ 4 + 1.
 (* The spec uses compress and decompress to do encode/decode,
    so these should be true *)
 lemma b_encode_sem c :
- b_encode c = decompress 1 (if c then inFq 1 else inFq 0).
+ b_encode c = decompress 1 (if c then 1 else 0).
 admitted.
 
 lemma b_decode_sem c :
-   compress 1 c = if b_decode c then inFq 1 else inFq 0.
+   compress 1 c = if b_decode c then 1 else 0.
 admitted.
 
 (****************************************************)
@@ -297,9 +297,9 @@ op (&-) (p : poly) : poly =  map Zq.([-]) p.
 
 (* Compression/decompression of polys *)
 
-op compress_poly(d : int, p : poly) : poly =  map (compress d) p.
+op compress_poly(d : int, p : poly) : int Array256.t =  map (compress d) p.
 
-op decompress_poly(d : int, p : poly) : poly =  map (decompress d) p.
+op decompress_poly(d : int, p : int Array256.t) : poly =  map (decompress d) p.
 
 op compress_poly_err(d : int, p : poly) : poly =  map (compress_err d) p.
 
@@ -477,11 +477,15 @@ op basemul(a b : poly) :  poly = Array256.init (fun i =>
 
 (* END: NTT *)
 
+op bit_at(x : int) (i : int) : bool = nth false (BitEncoding.BS2Int.int2bs 16 x) i.
+type ipoly = int Array256.t.
+op toipoly(p : poly) = map asint p.
+op ofipoly(p : ipoly) = map inFq p.
 
 module EncDec = {
-   proc decode12(bytes : W8.t Array384.t) : poly = {
+   proc decode12(bytes : W8.t Array384.t) : ipoly = {
        var bits,i,j,fi;
-       var r : poly;
+       var r : ipoly;
        r <- witness;
        bits <- bytes2bits384 bytes;
        i <- 0;
@@ -492,15 +496,15 @@ module EncDec = {
             fi <- fi + b2i bits.[i*12 + j] * 2^j;
             j <- j + 1; 
           }
-          r.[i] <- inFq fi;
+          r.[i] <- fi;
           i <- i + 1;
        }
        return r;
    }
 
-   proc decode10(bytes : W8.t Array320.t) : poly = {
+   proc decode10(bytes : W8.t Array320.t) : ipoly = {
        var bits,i,j,fi;
-       var r : poly;
+       var r : ipoly;
        r <- witness;
        bits <- bytes2bits320 bytes;
        i <- 0;
@@ -511,15 +515,15 @@ module EncDec = {
             fi <- fi + b2i bits.[i*10 + j] * 2^j;
             j <- j + 1; 
           }
-          r.[i] <- inFq fi;
+          r.[i] <- fi;
           i <- i + 1;
        }
        return r;
    }
 
-   proc decode4(bytes : W8.t Array128.t) : poly = {
+   proc decode4(bytes : W8.t Array128.t) : ipoly = {
        var bits,i,j,fi;
-       var r : poly;
+       var r : ipoly;
        r <- witness;
        bits <- bytes2bits128 bytes;
        i <- 0;
@@ -530,21 +534,21 @@ module EncDec = {
             fi <- fi + b2i bits.[i*4 + j] * 2^j;
             j <- j + 1; 
           }
-          r.[i] <- inFq fi;
+          r.[i] <- fi;
           i <- i + 1;
        }
        return r;
    }
 
-   proc decode1(bytes : W8.t Array32.t) : poly = {
+   proc decode1(bytes : W8.t Array32.t) : ipoly = {
        var bits,i,fi;
-       var r : poly;
+       var r : ipoly;
        r <- witness;
        bits <- bytes2bits32 bytes;
        i <- 0;
        while (i < 256) {
           fi <- b2i bits.[i];
-          r.[i] <- inFq fi;
+          r.[i] <- fi;
           i <- i + 1;
        }
        return r;
@@ -554,14 +558,14 @@ module EncDec = {
       the above, so we can choose the implementation
       that best suits us and prove equivalence. *)
 
-   proc encode12(p : poly) : W8.t Array384.t = {
+   proc encode12(p : ipoly) : W8.t Array384.t = {
        var fi,fi1,i,k;
        var r : W8.t Array384.t;
        r <- witness;
        i <- 0; k <- 0;
        while (i < 256) {
-          fi <- asint p.[i];
-          fi1 <- asint p.[i+1];
+          fi <- p.[i];
+          fi1 <- p.[i+1];
           r.[k] <- witness;
           r.[k+1] <- witness;
           r.[k+2] <- witness;
@@ -571,16 +575,16 @@ module EncDec = {
        return r;
    }
 
-   proc encode10(p : poly) : W8.t Array320.t = {
+   proc encode10(p : ipoly) : W8.t Array320.t = {
        var fi,fi1,fi2,fi3,i,k;
        var r : W8.t Array320.t;
        r <- witness;
        i <- 0; k <- 0;
        while (i < 256) {
-          fi <- asint p.[i];
-          fi1 <- asint p.[i+1];
-          fi2 <- asint p.[i+2];
-          fi3 <- asint p.[i+3];
+          fi <- p.[i];
+          fi1 <- p.[i+1];
+          fi2 <- p.[i+2];
+          fi3 <- p.[i+3];
           r.[k] <- witness;
           r.[k+1] <- witness;
           r.[k+2] <- witness;
@@ -592,14 +596,14 @@ module EncDec = {
        return r;
    }
 
-   proc encode4(p : poly) : W8.t Array128.t = {
+   proc encode4(p : ipoly) : W8.t Array128.t = {
        var fi,fi1,i,k;
        var r : W8.t Array128.t;
        r <- witness;
        i <- 0; k <- 0;
        while (i < 256) {
-          fi <- asint p.[i];
-          fi1 <- asint p.[i+1];
+          fi <- p.[i];
+          fi1 <- p.[i+1];
           r.[k] <- witness;
           i <- i + 2;
           k <- k + 1;
@@ -607,30 +611,27 @@ module EncDec = {
        return r;
    }
 
-   proc encode1(p : poly) : W8.t Array32.t = {
-       var fi,fi1,fi2,fi3,fi4,fi5,fi6,fi7,i,k;
-       var r : W8.t Array32.t;
-       r <- witness;
-       i <- 0; k <- 0;
-       while (i < 256) {
-          fi <- asint p.[i];
-          fi1 <- asint p.[i+1];
-          fi2 <- asint p.[i+2];
-          fi3 <- asint p.[i+3];
-          fi4 <- asint p.[i+4];
-          fi5 <- asint p.[i+5];
-          fi6 <- asint p.[i+6];
-          fi7 <- asint p.[i+7];
-          r.[k] <- witness;
-          i <- i + 8;
-          k <- k + 1;
+   proc encode1(a : ipoly) : W8.t Array32.t = {
+       var i,j,r;
+       var ra : W8.t Array32.t;
+       ra <- witness;
+       i <- 0;
+       while (i < 32) {
+          r <- W8.zero;
+          j <- 0;
+          while (j < 8) {
+             r.[j] <- bit_at a.[8*i+j] 0;
+             j <- j + 1;
+          }
+          ra.[i] <- r;
+          i <- i + 1;
        }
-       return r;
+       return ra;      
    }
 
 (* Extension to vectors *)
 
-   proc encode10_vec(u : poly Array3.t) : (W8.t Array320.t) Array3.t = {
+   proc encode10_vec(u : ipoly Array3.t) : (W8.t Array320.t) Array3.t = {
       var c : (W8.t Array320.t) Array3.t;
       var ci,i;
       c <- witness;
@@ -643,7 +644,7 @@ module EncDec = {
       return c;
    }
 
-   proc encode12_vec(u : poly Array3.t) : (W8.t Array384.t) Array3.t = {
+   proc encode12_vec(u : ipoly Array3.t) : (W8.t Array384.t) Array3.t = {
       var c : (W8.t Array384.t) Array3.t;
       var ci,i;
       c <- witness;
@@ -656,8 +657,8 @@ module EncDec = {
       return c;
    }
 
-   proc decode10_vec(u : (W8.t Array320.t) Array3.t) : poly Array3.t = {
-      var c : poly Array3.t;
+   proc decode10_vec(u : (W8.t Array320.t) Array3.t) : ipoly Array3.t = {
+      var c : ipoly Array3.t;
       var ci,i;
       c <- witness;
       i <- 0;
@@ -669,8 +670,8 @@ module EncDec = {
       return c;
    }
 
-   proc decode12_vec(u : (W8.t Array384.t) Array3.t) : poly Array3.t = {
-      var c : poly Array3.t;
+   proc decode12_vec(u : (W8.t Array384.t) Array3.t) : ipoly Array3.t = {
+      var c : ipoly Array3.t;
       var ci,i;
       c <- witness;
       i <- 0;
@@ -793,8 +794,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      t <- ntt_mmul a s + e;
      i <- 0;
      while (i < 3) {
-       tb <@ EncDec.encode12(t.[i]); tv.[i] <- tb;
-       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
+       tb <@ EncDec.encode12(toipoly t.[i]); tv.[i] <- tb;
+       sb <@ EncDec.encode12(toipoly s.[i]); sv.[i] <- sb;
        i <- i + 1;
      }
      return ((tv,rho),sv);
@@ -816,7 +817,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       i <- 0;
       while (i < 3) {
         tb <@ EncDec.decode12(tv.[i]); 
-        that <- set that 0 tb;
+        that <- set that 0 (ofipoly tb);
         i <- i + 1;
       }
       i <- 0;
@@ -861,7 +862,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
   }
 
   proc dec(sk : skey, cph : ciphertext) : plaintext option = {
-      var m,mp,i,ui,v,si, c1, c2;
+      var m,mp,i,ui,v,vi,si, c1, c2;
       var u,s : vector;
       u <- witness;
       s <- witness;
@@ -872,8 +873,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
          u <- set u i (decompress_poly 10 ui);
          i <- i + 1;
       }
-      v <@ EncDec.decode4(c2);
-      v <- decompress_poly 4 v;
+      vi <@ EncDec.decode4(c2);
+      v <- decompress_poly 4 vi;
       i <- 0;
       while (i < 3) {
          si <@ EncDec.decode12(sk.[i]);
@@ -901,13 +902,13 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
 require (***) MLWE_PKE.
 
 type plaintext = bool Array256.t.
-type ciphertext = vector * poly.
+type ciphertext = ipoly Array3.t * ipoly.
 op m_encode(m : plaintext) : poly = Array256.map b_encode m.
 op m_decode(p : poly) : plaintext = Array256.map b_decode p. 
-op c_encode(c :  ciphertext) : vector * poly = 
-      (mapv (compress_poly 10) c.`1, compress_poly 4 c.`2).
-op c_decode = fun (c : vector * poly) => 
-      (mapv (decompress_poly 10) c.`1, decompress_poly 4 c.`2).
+op c_encode(c :  vector * poly) : ipoly Array3.t * ipoly = 
+      (Array3.init (fun i => compress_poly 10 c.`1.[i]), compress_poly 4 c.`2).
+op c_decode(c : ipoly Array3.t * ipoly) =
+      (offunv (fun i => decompress_poly 10 c.`1.[i]), decompress_poly 4 c.`2).
 op rnd_err_v = compress_poly_err 4. 
 op rnd_err_u = mapv (compress_poly_err 10). 
 op max_noise = q %/ 4.
@@ -1090,8 +1091,8 @@ module WrapUnwrap  = {
      sv <- witness;
      i <- 0;
      while (i < 3) {
-       tb <@ EncDec.encode12(trho.`1.[i]); tv.[i] <- tb;
-       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
+       tb <@ EncDec.encode12(toipoly trho.`1.[i]); tv.[i] <- tb;
+       sb <@ EncDec.encode12(toipoly s.[i]); sv.[i] <- sb;
        i <- i + 1;
      }
      return ((tv,trho.`2),sv);
@@ -1104,8 +1105,8 @@ module WrapUnwrap  = {
      sv <- witness;
      i <- 0;
      while (i < 3) {
-       tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i tb;
-       sb <@ EncDec.decode12(s.[i]); sv <- set sv i sb;
+       tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i (ofipoly tb);
+       sb <@ EncDec.decode12(s.[i]); sv <- set sv i (ofipoly sb);
        i <- i + 1;
      }
      return ((tv,trho.`2),sv);
@@ -1117,7 +1118,7 @@ module WrapUnwrap  = {
      sv <- witness;
      i <- 0;
      while (i < 3) {
-       sb <@ EncDec.encode12(s.[i]); sv.[i] <- sb;
+       sb <@ EncDec.encode12(toipoly s.[i]); sv.[i] <- sb;
        i <- i + 1;
      }
      return sv;
@@ -1129,7 +1130,7 @@ module WrapUnwrap  = {
      sv <- witness;
      i <- 0;
      while (i < 3) {
-       sb <@ EncDec.decode12(s.[i]); sv <- set sv i sb;
+       sb <@ EncDec.decode12(s.[i]); sv <- set sv i (ofipoly sb);
        i <- i + 1;
      }
      return sv;
@@ -1141,7 +1142,7 @@ module WrapUnwrap  = {
      tv <- witness;
      i <- 0;
      while (i < 3) {
-       tb <@ EncDec.encode12(trho.`1.[i]); tv.[i] <- tb;
+       tb <@ EncDec.encode12(toipoly trho.`1.[i]); tv.[i] <- tb;
        i <- i + 1;
      }
      return (tv,trho.`2);
@@ -1153,7 +1154,7 @@ module WrapUnwrap  = {
      tv <- witness;
      i <- 0;
      while (i < 3) {
-       tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i tb;
+       tb <@ EncDec.decode12(trho.`1.[i]); tv <- set tv i (ofipoly tb);
        i <- i + 1;
      }
      return (tv,trho.`2);
@@ -1182,7 +1183,7 @@ module WrapUnwrap  = {
       var i,u,v,c2,c1i;
       var that : (W8.t Array384.t) Array3.t;
       var a : matrix;
-      var c1 : vector;
+      var c1 : ipoly Array3.t;
       that <- witness;
       a <- witness;
       c1 <- witness;
@@ -1190,7 +1191,7 @@ module WrapUnwrap  = {
       i <- 0;
       while (i < 3) {
          c1i <@ EncDec.decode10(u.[i]); 
-         c1 <- set c1 i c1i;
+         c1.[i] <- c1i;
          i <- i + 1;
       }
       c2 <@ EncDec.decode4(v);
@@ -1199,14 +1200,14 @@ module WrapUnwrap  = {
 
   proc wrap_plaintext(m : plaintext) : KyberPKE.plaintext = {
       var mp;
-      mp <@ EncDec.encode1(m_encode m);
+      mp <@ EncDec.encode1(toipoly (m_encode m));
       return mp;
   }
 
   proc unwrap_plaintext(m : KyberPKE.plaintext) : plaintext = {
       var mp;
       mp <@ EncDec.decode1(m);
-      return m_decode mp;
+      return m_decode (ofipoly mp);
   }
 
 }.
