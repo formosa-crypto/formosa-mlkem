@@ -7,41 +7,6 @@ require import Kyber.
 
 hint simplify range_ltn, range_geq.
 
-(* TODO: use easycrypt's native log to base 
-op log2(n : int) : int.
-
-axiom log2E n l : 0 <= l => n = 2^l => log2 n = l.
-axiom log2pos n : 1 <= n => 0 <= log2 n.
-
-lemma logs :
-   log2 128 = 7 /\
-   log2 64  = 6 /\
-   log2 32  = 5 /\
-   log2 16  = 4 /\
-   log2 8   = 3 /\
-   log2 4   = 2 /\
-   log2 2   = 1 /\
-   log2 1   = 0.
-proof.
-  do split; first 7 by smt(pow2_7 pow2_6 pow2_5 pow2_4 pow2_3 pow2_2 pow2_1 log2E log2pos).
-  by rewrite (log2E 1 0) //.
-qed.
-
-lemma logdiv2 n l :
-  1 < n =>
-  n = 2^l =>
-  log2 (n %/2) = log2 n - 1. 
-proof.
-  move => n_lb n_val.
-  rewrite (log2E (n %/ 2) (log2 n - 1)).
-  have ?: 1 <= l.
-    have n_lbe: 2 <= n. by move : n_lb => /#.
-    move : n_lbe. rewrite n_val {1}(_: 2 = 2^1) 1://.
-    move => ?.
-    rewrite (ler_weexpn2r 2 1 l) 1:// 1://. (* HERE *)
-admitted. (* FIXME: by move => *; rewrite (log2E (n %/ 2) (log2 n - 1)); smt(@Ring.IntID log2E). qed. *)*)
-(**************)
-
 theory KyberPoly.
 
 import Fq. 
@@ -276,348 +241,93 @@ qed.
 
 lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t): 
     equiv [ M._poly_frommsg ~ EncDec.decode1 :
-             valid_range W8 Glob.mem{1} _p 32 /\
+             valid_ptr _p 32 /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array32 Glob.mem{1} _p = _m
+             load_array32 Glob.mem{1} _p = _m /\
+             bytes{2} = _m
               ==>
              Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 1 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 ].
 proc. 
-admitted.
-(*proof.
-proc.
-unroll for 3.
-auto => />.
-rewrite (_: 
-(witness.[0 <- (if _a.[0] then W16.one else W16.zero) * (of_int 1665)%W16].[1 <-
-    (if _a.[1] then W16.one else W16.zero) * (of_int 1665)%W16].[2 <-
-    (if _a.[2] then W16.one else W16.zero) * (of_int 1665)%W16].[3 <-
-    (if _a.[3] then W16.one else W16.zero) * (of_int 1665)%W16].[4 <-
-    (if _a.[4] then W16.one else W16.zero) * (of_int 1665)%W16].[5 <-
-    (if _a.[5] then W16.one else W16.zero) * (of_int 1665)%W16].[6 <-
-    (if _a.[6] then W16.one else W16.zero) * (of_int 1665)%W16].[7 <-
-    (if _a.[7] then W16.one else W16.zero) * (of_int 1665)%W16].[8 <-
-    (if _a.[8] then W16.one else W16.zero) * (of_int 1665)%W16].[9 <-
-    (if _a.[9] then W16.one else W16.zero) * (of_int 1665)%W16].[10 <-
-    (if _a.[10] then W16.one else W16.zero) * (of_int 1665)%W16].[11 <-
-    (if _a.[11] then W16.one else W16.zero) * (of_int 1665)%W16].[12 <-
-    (if _a.[12] then W16.one else W16.zero) * (of_int 1665)%W16].[13 <-
-    (if _a.[13] then W16.one else W16.zero) * (of_int 1665)%W16].[14 <-
-    (if _a.[14] then W16.one else W16.zero) * (of_int 1665)%W16].[15 <-
-    (if _a.[15] then W16.one else W16.zero) * (of_int 1665)%W16].[16 <-
-    (if _a.[16] then W16.one else W16.zero) * (of_int 1665)%W16].[17 <-
-    (if _a.[17] then W16.one else W16.zero) * (of_int 1665)%W16].[18 <-
-    (if _a.[18] then W16.one else W16.zero) * (of_int 1665)%W16].[19 <-
-    (if _a.[19] then W16.one else W16.zero) * (of_int 1665)%W16].[20 <-
-    (if _a.[20] then W16.one else W16.zero) * (of_int 1665)%W16].[21 <-
-    (if _a.[21] then W16.one else W16.zero) * (of_int 1665)%W16].[22 <-
-    (if _a.[22] then W16.one else W16.zero) * (of_int 1665)%W16].[23 <-
-    (if _a.[23] then W16.one else W16.zero) * (of_int 1665)%W16].[24 <-
-    (if _a.[24] then W16.one else W16.zero) * (of_int 1665)%W16].[25 <-
-    (if _a.[25] then W16.one else W16.zero) * (of_int 1665)%W16].[26 <-
-    (if _a.[26] then W16.one else W16.zero) * (of_int 1665)%W16].[27 <-
-    (if _a.[27] then W16.one else W16.zero) * (of_int 1665)%W16].[28 <-
-    (if _a.[28] then W16.one else W16.zero) * (of_int 1665)%W16].[29 <-
-    (if _a.[29] then W16.one else W16.zero) * (of_int 1665)%W16].[30 <-
-    (if _a.[30] then W16.one else W16.zero) * (of_int 1665)%W16].[31 <-
-    (if _a.[31] then W16.one else W16.zero) * (of_int 1665)%W16].[32 <-
-    (if _a.[32] then W16.one else W16.zero) * (of_int 1665)%W16].[33 <-
-    (if _a.[33] then W16.one else W16.zero) * (of_int 1665)%W16].[34 <-
-    (if _a.[34] then W16.one else W16.zero) * (of_int 1665)%W16].[35 <-
-    (if _a.[35] then W16.one else W16.zero) * (of_int 1665)%W16].[36 <-
-    (if _a.[36] then W16.one else W16.zero) * (of_int 1665)%W16].[37 <-
-    (if _a.[37] then W16.one else W16.zero) * (of_int 1665)%W16].[38 <-
-    (if _a.[38] then W16.one else W16.zero) * (of_int 1665)%W16].[39 <-
-    (if _a.[39] then W16.one else W16.zero) * (of_int 1665)%W16].[40 <-
-    (if _a.[40] then W16.one else W16.zero) * (of_int 1665)%W16].[41 <-
-    (if _a.[41] then W16.one else W16.zero) * (of_int 1665)%W16].[42 <-
-    (if _a.[42] then W16.one else W16.zero) * (of_int 1665)%W16].[43 <-
-    (if _a.[43] then W16.one else W16.zero) * (of_int 1665)%W16].[44 <-
-    (if _a.[44] then W16.one else W16.zero) * (of_int 1665)%W16].[45 <-
-    (if _a.[45] then W16.one else W16.zero) * (of_int 1665)%W16].[46 <-
-    (if _a.[46] then W16.one else W16.zero) * (of_int 1665)%W16].[47 <-
-    (if _a.[47] then W16.one else W16.zero) * (of_int 1665)%W16].[48 <-
-    (if _a.[48] then W16.one else W16.zero) * (of_int 1665)%W16].[49 <-
-    (if _a.[49] then W16.one else W16.zero) * (of_int 1665)%W16].[50 <-
-    (if _a.[50] then W16.one else W16.zero) * (of_int 1665)%W16].[51 <-
-    (if _a.[51] then W16.one else W16.zero) * (of_int 1665)%W16].[52 <-
-    (if _a.[52] then W16.one else W16.zero) * (of_int 1665)%W16].[53 <-
-    (if _a.[53] then W16.one else W16.zero) * (of_int 1665)%W16].[54 <-
-    (if _a.[54] then W16.one else W16.zero) * (of_int 1665)%W16].[55 <-
-    (if _a.[55] then W16.one else W16.zero) * (of_int 1665)%W16].[56 <-
-    (if _a.[56] then W16.one else W16.zero) * (of_int 1665)%W16].[57 <-
-    (if _a.[57] then W16.one else W16.zero) * (of_int 1665)%W16].[58 <-
-    (if _a.[58] then W16.one else W16.zero) * (of_int 1665)%W16].[59 <-
-    (if _a.[59] then W16.one else W16.zero) * (of_int 1665)%W16].[60 <-
-    (if _a.[60] then W16.one else W16.zero) * (of_int 1665)%W16].[61 <-
-    (if _a.[61] then W16.one else W16.zero) * (of_int 1665)%W16].[62 <-
-    (if _a.[62] then W16.one else W16.zero) * (of_int 1665)%W16].[63 <-
-    (if _a.[63] then W16.one else W16.zero) * (of_int 1665)%W16].[64 <-
-    (if _a.[64] then W16.one else W16.zero) * (of_int 1665)%W16].[65 <-
-    (if _a.[65] then W16.one else W16.zero) * (of_int 1665)%W16].[66 <-
-    (if _a.[66] then W16.one else W16.zero) * (of_int 1665)%W16].[67 <-
-    (if _a.[67] then W16.one else W16.zero) * (of_int 1665)%W16].[68 <-
-    (if _a.[68] then W16.one else W16.zero) * (of_int 1665)%W16].[69 <-
-    (if _a.[69] then W16.one else W16.zero) * (of_int 1665)%W16].[70 <-
-    (if _a.[70] then W16.one else W16.zero) * (of_int 1665)%W16].[71 <-
-    (if _a.[71] then W16.one else W16.zero) * (of_int 1665)%W16].[72 <-
-    (if _a.[72] then W16.one else W16.zero) * (of_int 1665)%W16].[73 <-
-    (if _a.[73] then W16.one else W16.zero) * (of_int 1665)%W16].[74 <-
-    (if _a.[74] then W16.one else W16.zero) * (of_int 1665)%W16].[75 <-
-    (if _a.[75] then W16.one else W16.zero) * (of_int 1665)%W16].[76 <-
-    (if _a.[76] then W16.one else W16.zero) * (of_int 1665)%W16].[77 <-
-    (if _a.[77] then W16.one else W16.zero) * (of_int 1665)%W16].[78 <-
-    (if _a.[78] then W16.one else W16.zero) * (of_int 1665)%W16].[79 <-
-    (if _a.[79] then W16.one else W16.zero) * (of_int 1665)%W16].[80 <-
-    (if _a.[80] then W16.one else W16.zero) * (of_int 1665)%W16].[81 <-
-    (if _a.[81] then W16.one else W16.zero) * (of_int 1665)%W16].[82 <-
-    (if _a.[82] then W16.one else W16.zero) * (of_int 1665)%W16].[83 <-
-    (if _a.[83] then W16.one else W16.zero) * (of_int 1665)%W16].[84 <-
-    (if _a.[84] then W16.one else W16.zero) * (of_int 1665)%W16].[85 <-
-    (if _a.[85] then W16.one else W16.zero) * (of_int 1665)%W16].[86 <-
-    (if _a.[86] then W16.one else W16.zero) * (of_int 1665)%W16].[87 <-
-    (if _a.[87] then W16.one else W16.zero) * (of_int 1665)%W16].[88 <-
-    (if _a.[88] then W16.one else W16.zero) * (of_int 1665)%W16].[89 <-
-    (if _a.[89] then W16.one else W16.zero) * (of_int 1665)%W16].[90 <-
-    (if _a.[90] then W16.one else W16.zero) * (of_int 1665)%W16].[91 <-
-    (if _a.[91] then W16.one else W16.zero) * (of_int 1665)%W16].[92 <-
-    (if _a.[92] then W16.one else W16.zero) * (of_int 1665)%W16].[93 <-
-    (if _a.[93] then W16.one else W16.zero) * (of_int 1665)%W16].[94 <-
-    (if _a.[94] then W16.one else W16.zero) * (of_int 1665)%W16].[95 <-
-    (if _a.[95] then W16.one else W16.zero) * (of_int 1665)%W16].[96 <-
-    (if _a.[96] then W16.one else W16.zero) * (of_int 1665)%W16].[97 <-
-    (if _a.[97] then W16.one else W16.zero) * (of_int 1665)%W16].[98 <-
-    (if _a.[98] then W16.one else W16.zero) * (of_int 1665)%W16].[99 <-
-    (if _a.[99] then W16.one else W16.zero) * (of_int 1665)%W16].[100 <-
-    (if _a.[100] then W16.one else W16.zero) * (of_int 1665)%W16].[101 <-
-    (if _a.[101] then W16.one else W16.zero) * (of_int 1665)%W16].[102 <-
-    (if _a.[102] then W16.one else W16.zero) * (of_int 1665)%W16].[103 <-
-    (if _a.[103] then W16.one else W16.zero) * (of_int 1665)%W16].[104 <-
-    (if _a.[104] then W16.one else W16.zero) * (of_int 1665)%W16].[105 <-
-    (if _a.[105] then W16.one else W16.zero) * (of_int 1665)%W16].[106 <-
-    (if _a.[106] then W16.one else W16.zero) * (of_int 1665)%W16].[107 <-
-    (if _a.[107] then W16.one else W16.zero) * (of_int 1665)%W16].[108 <-
-    (if _a.[108] then W16.one else W16.zero) * (of_int 1665)%W16].[109 <-
-    (if _a.[109] then W16.one else W16.zero) * (of_int 1665)%W16].[110 <-
-    (if _a.[110] then W16.one else W16.zero) * (of_int 1665)%W16].[111 <-
-    (if _a.[111] then W16.one else W16.zero) * (of_int 1665)%W16].[112 <-
-    (if _a.[112] then W16.one else W16.zero) * (of_int 1665)%W16].[113 <-
-    (if _a.[113] then W16.one else W16.zero) * (of_int 1665)%W16].[114 <-
-    (if _a.[114] then W16.one else W16.zero) * (of_int 1665)%W16].[115 <-
-    (if _a.[115] then W16.one else W16.zero) * (of_int 1665)%W16].[116 <-
-    (if _a.[116] then W16.one else W16.zero) * (of_int 1665)%W16].[117 <-
-    (if _a.[117] then W16.one else W16.zero) * (of_int 1665)%W16].[118 <-
-    (if _a.[118] then W16.one else W16.zero) * (of_int 1665)%W16].[119 <-
-    (if _a.[119] then W16.one else W16.zero) * (of_int 1665)%W16].[120 <-
-    (if _a.[120] then W16.one else W16.zero) * (of_int 1665)%W16].[121 <-
-    (if _a.[121] then W16.one else W16.zero) * (of_int 1665)%W16].[122 <-
-    (if _a.[122] then W16.one else W16.zero) * (of_int 1665)%W16].[123 <-
-    (if _a.[123] then W16.one else W16.zero) * (of_int 1665)%W16].[124 <-
-    (if _a.[124] then W16.one else W16.zero) * (of_int 1665)%W16].[125 <-
-    (if _a.[125] then W16.one else W16.zero) * (of_int 1665)%W16].[126 <-
-    (if _a.[126] then W16.one else W16.zero) * (of_int 1665)%W16].[127 <-
-    (if _a.[127] then W16.one else W16.zero) * (of_int 1665)%W16].[128 <-
-    (if _a.[128] then W16.one else W16.zero) * (of_int 1665)%W16].[129 <-
-    (if _a.[129] then W16.one else W16.zero) * (of_int 1665)%W16].[130 <-
-    (if _a.[130] then W16.one else W16.zero) * (of_int 1665)%W16].[131 <-
-    (if _a.[131] then W16.one else W16.zero) * (of_int 1665)%W16].[132 <-
-    (if _a.[132] then W16.one else W16.zero) * (of_int 1665)%W16].[133 <-
-    (if _a.[133] then W16.one else W16.zero) * (of_int 1665)%W16].[134 <-
-    (if _a.[134] then W16.one else W16.zero) * (of_int 1665)%W16].[135 <-
-    (if _a.[135] then W16.one else W16.zero) * (of_int 1665)%W16].[136 <-
-    (if _a.[136] then W16.one else W16.zero) * (of_int 1665)%W16].[137 <-
-    (if _a.[137] then W16.one else W16.zero) * (of_int 1665)%W16].[138 <-
-    (if _a.[138] then W16.one else W16.zero) * (of_int 1665)%W16].[139 <-
-    (if _a.[139] then W16.one else W16.zero) * (of_int 1665)%W16].[140 <-
-    (if _a.[140] then W16.one else W16.zero) * (of_int 1665)%W16].[141 <-
-    (if _a.[141] then W16.one else W16.zero) * (of_int 1665)%W16].[142 <-
-    (if _a.[142] then W16.one else W16.zero) * (of_int 1665)%W16].[143 <-
-    (if _a.[143] then W16.one else W16.zero) * (of_int 1665)%W16].[144 <-
-    (if _a.[144] then W16.one else W16.zero) * (of_int 1665)%W16].[145 <-
-    (if _a.[145] then W16.one else W16.zero) * (of_int 1665)%W16].[146 <-
-    (if _a.[146] then W16.one else W16.zero) * (of_int 1665)%W16].[147 <-
-    (if _a.[147] then W16.one else W16.zero) * (of_int 1665)%W16].[148 <-
-    (if _a.[148] then W16.one else W16.zero) * (of_int 1665)%W16].[149 <-
-    (if _a.[149] then W16.one else W16.zero) * (of_int 1665)%W16].[150 <-
-    (if _a.[150] then W16.one else W16.zero) * (of_int 1665)%W16].[151 <-
-    (if _a.[151] then W16.one else W16.zero) * (of_int 1665)%W16].[152 <-
-    (if _a.[152] then W16.one else W16.zero) * (of_int 1665)%W16].[153 <-
-    (if _a.[153] then W16.one else W16.zero) * (of_int 1665)%W16].[154 <-
-    (if _a.[154] then W16.one else W16.zero) * (of_int 1665)%W16].[155 <-
-    (if _a.[155] then W16.one else W16.zero) * (of_int 1665)%W16].[156 <-
-    (if _a.[156] then W16.one else W16.zero) * (of_int 1665)%W16].[157 <-
-    (if _a.[157] then W16.one else W16.zero) * (of_int 1665)%W16].[158 <-
-    (if _a.[158] then W16.one else W16.zero) * (of_int 1665)%W16].[159 <-
-    (if _a.[159] then W16.one else W16.zero) * (of_int 1665)%W16].[160 <-
-    (if _a.[160] then W16.one else W16.zero) * (of_int 1665)%W16].[161 <-
-    (if _a.[161] then W16.one else W16.zero) * (of_int 1665)%W16].[162 <-
-    (if _a.[162] then W16.one else W16.zero) * (of_int 1665)%W16].[163 <-
-    (if _a.[163] then W16.one else W16.zero) * (of_int 1665)%W16].[164 <-
-    (if _a.[164] then W16.one else W16.zero) * (of_int 1665)%W16].[165 <-
-    (if _a.[165] then W16.one else W16.zero) * (of_int 1665)%W16].[166 <-
-    (if _a.[166] then W16.one else W16.zero) * (of_int 1665)%W16].[167 <-
-    (if _a.[167] then W16.one else W16.zero) * (of_int 1665)%W16].[168 <-
-    (if _a.[168] then W16.one else W16.zero) * (of_int 1665)%W16].[169 <-
-    (if _a.[169] then W16.one else W16.zero) * (of_int 1665)%W16].[170 <-
-    (if _a.[170] then W16.one else W16.zero) * (of_int 1665)%W16].[171 <-
-    (if _a.[171] then W16.one else W16.zero) * (of_int 1665)%W16].[172 <-
-    (if _a.[172] then W16.one else W16.zero) * (of_int 1665)%W16].[173 <-
-    (if _a.[173] then W16.one else W16.zero) * (of_int 1665)%W16].[174 <-
-    (if _a.[174] then W16.one else W16.zero) * (of_int 1665)%W16].[175 <-
-    (if _a.[175] then W16.one else W16.zero) * (of_int 1665)%W16].[176 <-
-    (if _a.[176] then W16.one else W16.zero) * (of_int 1665)%W16].[177 <-
-    (if _a.[177] then W16.one else W16.zero) * (of_int 1665)%W16].[178 <-
-    (if _a.[178] then W16.one else W16.zero) * (of_int 1665)%W16].[179 <-
-    (if _a.[179] then W16.one else W16.zero) * (of_int 1665)%W16].[180 <-
-    (if _a.[180] then W16.one else W16.zero) * (of_int 1665)%W16].[181 <-
-    (if _a.[181] then W16.one else W16.zero) * (of_int 1665)%W16].[182 <-
-    (if _a.[182] then W16.one else W16.zero) * (of_int 1665)%W16].[183 <-
-    (if _a.[183] then W16.one else W16.zero) * (of_int 1665)%W16].[184 <-
-    (if _a.[184] then W16.one else W16.zero) * (of_int 1665)%W16].[185 <-
-    (if _a.[185] then W16.one else W16.zero) * (of_int 1665)%W16].[186 <-
-    (if _a.[186] then W16.one else W16.zero) * (of_int 1665)%W16].[187 <-
-    (if _a.[187] then W16.one else W16.zero) * (of_int 1665)%W16].[188 <-
-    (if _a.[188] then W16.one else W16.zero) * (of_int 1665)%W16].[189 <-
-    (if _a.[189] then W16.one else W16.zero) * (of_int 1665)%W16].[190 <-
-    (if _a.[190] then W16.one else W16.zero) * (of_int 1665)%W16].[191 <-
-    (if _a.[191] then W16.one else W16.zero) * (of_int 1665)%W16].[192 <-
-    (if _a.[192] then W16.one else W16.zero) * (of_int 1665)%W16].[193 <-
-    (if _a.[193] then W16.one else W16.zero) * (of_int 1665)%W16].[194 <-
-    (if _a.[194] then W16.one else W16.zero) * (of_int 1665)%W16].[195 <-
-    (if _a.[195] then W16.one else W16.zero) * (of_int 1665)%W16].[196 <-
-    (if _a.[196] then W16.one else W16.zero) * (of_int 1665)%W16].[197 <-
-    (if _a.[197] then W16.one else W16.zero) * (of_int 1665)%W16].[198 <-
-    (if _a.[198] then W16.one else W16.zero) * (of_int 1665)%W16].[199 <-
-    (if _a.[199] then W16.one else W16.zero) * (of_int 1665)%W16].[200 <-
-    (if _a.[200] then W16.one else W16.zero) * (of_int 1665)%W16].[201 <-
-    (if _a.[201] then W16.one else W16.zero) * (of_int 1665)%W16].[202 <-
-    (if _a.[202] then W16.one else W16.zero) * (of_int 1665)%W16].[203 <-
-    (if _a.[203] then W16.one else W16.zero) * (of_int 1665)%W16].[204 <-
-    (if _a.[204] then W16.one else W16.zero) * (of_int 1665)%W16].[205 <-
-    (if _a.[205] then W16.one else W16.zero) * (of_int 1665)%W16].[206 <-
-    (if _a.[206] then W16.one else W16.zero) * (of_int 1665)%W16].[207 <-
-    (if _a.[207] then W16.one else W16.zero) * (of_int 1665)%W16].[208 <-
-    (if _a.[208] then W16.one else W16.zero) * (of_int 1665)%W16].[209 <-
-    (if _a.[209] then W16.one else W16.zero) * (of_int 1665)%W16].[210 <-
-    (if _a.[210] then W16.one else W16.zero) * (of_int 1665)%W16].[211 <-
-    (if _a.[211] then W16.one else W16.zero) * (of_int 1665)%W16].[212 <-
-    (if _a.[212] then W16.one else W16.zero) * (of_int 1665)%W16].[213 <-
-    (if _a.[213] then W16.one else W16.zero) * (of_int 1665)%W16].[214 <-
-    (if _a.[214] then W16.one else W16.zero) * (of_int 1665)%W16].[215 <-
-    (if _a.[215] then W16.one else W16.zero) * (of_int 1665)%W16].[216 <-
-    (if _a.[216] then W16.one else W16.zero) * (of_int 1665)%W16].[217 <-
-    (if _a.[217] then W16.one else W16.zero) * (of_int 1665)%W16].[218 <-
-    (if _a.[218] then W16.one else W16.zero) * (of_int 1665)%W16].[219 <-
-    (if _a.[219] then W16.one else W16.zero) * (of_int 1665)%W16].[220 <-
-    (if _a.[220] then W16.one else W16.zero) * (of_int 1665)%W16].[221 <-
-    (if _a.[221] then W16.one else W16.zero) * (of_int 1665)%W16].[222 <-
-    (if _a.[222] then W16.one else W16.zero) * (of_int 1665)%W16].[223 <-
-    (if _a.[223] then W16.one else W16.zero) * (of_int 1665)%W16].[224 <-
-    (if _a.[224] then W16.one else W16.zero) * (of_int 1665)%W16].[225 <-
-    (if _a.[225] then W16.one else W16.zero) * (of_int 1665)%W16].[226 <-
-    (if _a.[226] then W16.one else W16.zero) * (of_int 1665)%W16].[227 <-
-    (if _a.[227] then W16.one else W16.zero) * (of_int 1665)%W16].[228 <-
-    (if _a.[228] then W16.one else W16.zero) * (of_int 1665)%W16].[229 <-
-    (if _a.[229] then W16.one else W16.zero) * (of_int 1665)%W16].[230 <-
-    (if _a.[230] then W16.one else W16.zero) * (of_int 1665)%W16].[231 <-
-    (if _a.[231] then W16.one else W16.zero) * (of_int 1665)%W16].[232 <-
-    (if _a.[232] then W16.one else W16.zero) * (of_int 1665)%W16].[233 <-
-    (if _a.[233] then W16.one else W16.zero) * (of_int 1665)%W16].[234 <-
-    (if _a.[234] then W16.one else W16.zero) * (of_int 1665)%W16].[235 <-
-    (if _a.[235] then W16.one else W16.zero) * (of_int 1665)%W16].[236 <-
-    (if _a.[236] then W16.one else W16.zero) * (of_int 1665)%W16].[237 <-
-    (if _a.[237] then W16.one else W16.zero) * (of_int 1665)%W16].[238 <-
-    (if _a.[238] then W16.one else W16.zero) * (of_int 1665)%W16].[239 <-
-    (if _a.[239] then W16.one else W16.zero) * (of_int 1665)%W16].[240 <-
-    (if _a.[240] then W16.one else W16.zero) * (of_int 1665)%W16].[241 <-
-    (if _a.[241] then W16.one else W16.zero) * (of_int 1665)%W16].[242 <-
-    (if _a.[242] then W16.one else W16.zero) * (of_int 1665)%W16].[243 <-
-    (if _a.[243] then W16.one else W16.zero) * (of_int 1665)%W16].[244 <-
-    (if _a.[244] then W16.one else W16.zero) * (of_int 1665)%W16].[245 <-
-    (if _a.[245] then W16.one else W16.zero) * (of_int 1665)%W16].[246 <-
-    (if _a.[246] then W16.one else W16.zero) * (of_int 1665)%W16].[247 <-
-    (if _a.[247] then W16.one else W16.zero) * (of_int 1665)%W16].[248 <-
-    (if _a.[248] then W16.one else W16.zero) * (of_int 1665)%W16].[249 <-
-    (if _a.[249] then W16.one else W16.zero) * (of_int 1665)%W16].[250 <-
-    (if _a.[250] then W16.one else W16.zero) * (of_int 1665)%W16].[251 <-
-    (if _a.[251] then W16.one else W16.zero) * (of_int 1665)%W16].[252 <-
-    (if _a.[252] then W16.one else W16.zero) * (of_int 1665)%W16].[253 <-
-    (if _a.[253] then W16.one else W16.zero) * (of_int 1665)%W16].[254 <-
-    (if _a.[254] then W16.one else W16.zero) * (of_int 1665)%W16].[255 <-
-    (if _a.[255] then W16.one else W16.zero) * (of_int 1665)%W16])%Array256
-=
-List.foldl (fun (a : W16.t Array256.t) i => a.[i <- (if _a.[i] then W16.one else W16.zero) * (W16.of_int 1665)]) witness (iota_ 0 256)).
-by rewrite -iotaredE =>[].
-rewrite init_set.
-split. 
-rewrite /pos_bound256_cxq.
-move => /= *.
-rewrite initiE => />.
-by case (_a.[k]); rewrite to_sintE /smod qE => />. 
-rewrite /m_encode /trueval /falseval qE /lift_array256 /=.
-apply Array256.ext_eq => /> *.
-rewrite !mapiE => />.
-rewrite initiE => />.
-by case (_a.[x]); rewrite to_sintE /smod => />. 
+seq 0 2 : (#pre /\ bits{2} = bytes2bits32 bytes{2}); 1: by auto.
+while(#pre /\ ={i} /\ 0 <= i{1} <= 32 /\ 
+   forall k, 0<=k<i{1}*8 => inFq (to_sint rp{1}.[k]) = decompress 1 r{2}.[k] /\
+                0 <= to_sint rp{1}.[k] <q); last first.
++ auto => /> &1 &2; rewrite /lift_array256 /decompress_poly /pos_bound256_cxq /=.
+  move =>  vrl vrh; split; 1: by smt(). 
+  move => rp i ip exit _ ibl ibh k; split; 2: by smt().
+  by rewrite tP => x xb; rewrite !mapiE //= /#.
+
+auto => /> &1 &2 => vrl vrh il ih [#] ??; split; 1: by smt().
+move => k kl kh.
+rewrite /(`>>`) /= /load_array32 /= !to_uintD_small /=; 1: by rewrite of_uintK /=;  smt(). 
+rewrite !of_uintK /= modz_small /=; 1:by smt().
+have -> : zeroextu16 (loadW8 mem (to_uint ap{1} + i{2})) `&` W16.one =
+          zeroextu16 (loadW8 mem (to_uint ap{1} + i{2}) `>>>` 0) `&` W16.one by
+        congr; congr; rewrite /(`>>>`) /=; apply  W8.ext_eq => i ib; rewrite W8.initiE //.  
+
+split;last first.
++ case(k < i{2} * 8); 1: by smt(Array256.set_neqiE).
+  move => khigh.
+  have ? : forall k, 0 <= k < 8 => 
+     0 <= to_sint (zeroextu16 (loadW8 mem (to_uint ap{1} + i{2}) `>>>` k) `&` W16.one * W16.of_int 1665) < q; last 
+        by smt(Array256.set_neqiE Array256.set_eqiE).
+  move => j jb.
+  have one : W16.one = W16.of_int (2^1-1) by smt().
+  by rewrite /to_sint /smod /= to_uintM_small; rewrite one W16.to_uint_and_mod //=; smt(). 
+
+have -> : (bytes2bits32 ((init (fun (i : int) => mem.[to_uint ap{1} + i])))%Array32).[i{2} * 8] = 
+            (bytes2bits32 ((init (fun (i : int) => mem.[to_uint ap{1} + i])))%Array32).[i{2} * 8 + 0] by auto.
+rewrite !bytes2bits32E // !initiE //=. 
+  have ? : forall k, 0 <= k < 8 => 
+     inFq (to_sint (zeroextu16 (loadW8 mem (to_uint ap{1} + i{2}) `>>>` k) `&` W16.one * W16.of_int 1665)) =
+         decompress 1 (b2i (bit_at (to_uint mem.[to_uint ap{1} + i{2}]) k)); last 
+        by smt(Array256.set_neqiE Array256.set_eqiE).
+
+move => kk kkb; rewrite -decompress_alt_decompress /decompress_alt //; 1: by smt(qE).
+congr; rewrite qE /=.
+have one : W16.one = W16.of_int (2^1-1) by smt().
+rewrite /to_sint /smod /= to_uintM_small; rewrite one W16.to_uint_and_mod //=; 1: smt(). 
+rewrite /bit_at /b2i /int2bs /mkseq -iotaredE /=.
+rewrite to_uint_zeroextu16 /loadW8 /=.
+have -> /= : !(32768 <= to_uint (mem.[to_uint ap{1} + i{2}] `>>>` kk) %% 2 * 1665) by smt().
+rewrite to_uint_shr; 1: smt().
+case (kk = 0); 1: by move => -> /=; smt().
+case (kk = 1); 1: by move => -> /=; smt().
+case (kk = 2); 1: by move => -> /=; smt().
+case (kk = 3); 1: by move => -> /=; smt().
+case (kk = 4); 1: by move => -> /=; smt().
+case (kk = 5); 1: by move => -> /=; smt().
+case (kk = 6); 1: by move => -> /=; smt().
+case (kk = 7); 1: by move => -> /=; smt().
+by smt().
 qed.
-*)
 
 lemma poly_frommsg_ll : islossless  M._poly_frommsg
  by proc; while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
 
-lemma poly_frommont_corr_h _a : 
+lemma poly_frommont_corr_h (_a : int Array256.t) : 
     hoare[ M._poly_frommont :
-             map W16.to_sint rp = _a ==>
-             map W16.to_sint res = map (fun x => SREDC (x * ((R^2) %% q))) _a].
+             forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
+             forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))].
 proc.
 while (0 <= to_uint i <= 256 /\ dmont = W16.of_int 1353 /\
        (forall k, 0 <= k < to_uint i =>
           W16.to_sint rp.[k] =  SREDC (_a.[k] * ((R^2) %% q))) /\
        (forall k, to_uint i <= k < 256 =>
-          W16.to_sint rp.[k] = _a.[k])); last first.
-auto => /> &hr. 
-split; first by smt(@Array256).
-move => i0 rp0 H H0 H1 H2 H3. 
-move : H2; rewrite (_: to_uint i0 = 256); first by move : H; rewrite ultE;  smt(@W64).
-move => H2.
-apply Array256.ext_eq.
-move => x H4. 
-rewrite mapiE; first by smt().
-rewrite mapiE; first by smt().
-by rewrite (H2 x H4) => />. 
-sp. wp.
+          W16.to_sint rp.[k] = _a.[k])); last by 
+  auto => /= &hr [#] ?; split; [ smt() | move => 2?; rewrite ultE of_uintK /=; smt()]. 
+
+sp;wp;conseq />;1: by smt(). 
 ecall (fqmul_corr_h (to_sint r) (to_sint dmont)).
-auto => /> &hr H H0 H1 H2 H3 result H4.
-split.
-split; first by move : H1; smt(@W64).
-rewrite to_uintD_small of_uintK 1:/#; smt(@W64 @Int).
-
-split.
-move => k H5.
-case (k < to_uint i{hr}).
-move => *.
-rewrite set_neqiE; first 2 by smt(@W64).
-apply (H1 k _); first by smt().
-move => k_nlb k_ub.
-rewrite (_: k = to_uint i{hr}).
-rewrite -lezNgt in k_nlb.
-rewrite to_uintD_small of_uintK 1:/# in k_ub.
-move : k_nlb k_ub; smt(@W64).
-
-rewrite set_eqiE; first 2 by smt(@W64).
-rewrite H4. 
-rewrite (H2 (to_uint i{hr}) _); first by smt(@W64).
-rewrite /R qE. simplify.
-congr. rewrite of_sintK => />. 
-rewrite expr0 /=.
-by rewrite /smod /=.
-move => k H5 H6.
-rewrite -(H2 k). move : H5;  rewrite to_uintD; by smt(@W64).
-move : H5; rewrite to_uintD.
-move : H3; rewrite ultE /=.
-move => *.
-rewrite set_neqiE; by smt(@W64).
+auto => /> &hr ??.
+rewrite qE /R ultE /= => ??? r rval. 
+rewrite !to_uintD_small /=; 1: by smt(W64.to_uint_cmp pow2_64).
+do split; 1, 2, 4: by smt(Array256.set_neqiE). 
+move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
+move => -> ?; rewrite Array256.set_eqiE // rval.
+by congr;rewrite W16.of_sintK /= /smod /= /#.
 qed.
 
 lemma poly_sub_corr_h _a _b ab bb :
@@ -632,8 +342,7 @@ lemma poly_sub_corr_h _a _b ab bb :
            forall k, 0 <= k < 256 =>
               inFq (to_sint res.[k]) = _a.[k] - _b.[k]]. 
 proof.
-move => H H0.
-proc. 
+move => abbnd bbbnd;proc. 
 while (
            0 <= to_uint i <= 256 /\
            _a = lift_array256 ap /\
@@ -643,73 +352,25 @@ while (
            signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
            forall k, 0 <= k < to_uint i =>
               inFq (to_sint rp.[k]) = _a.[k] - _b.[k]
-); last first. 
-auto => />. 
-move => &hr H1 H2. 
-do split. 
-smt(@Array256). 
-smt().
-move => i rp H3 H4 H5 H6 k.
-move : H3; rewrite ultE => />.
-smt(@Array256).
+); last by auto => /= &hr [#] 4?; split; [ smt() | move => 2?; rewrite ultE of_uintK /=; smt()]. 
 
-wp; skip.
-move => &hr [#] H1 H2 H3 H4 H5 H6 H7 H8 H9.
-split; first by move : H1 H9; rewrite /i0 ultE to_uintD_small 1:/#; smt(@W64 @Int).
-split; first by smt(@W64).
-split; first by smt(@W64).
-split; first by smt(@W64).
-split; first by smt(@W64).
+auto => /> &hr ??.
+rewrite /signed_bound_cxq qE ultE /lift_array256 !to_uintD_small /= ; 1: by smt(W64.to_uint_cmp pow2_64).
+move => abnd bbnd pastb pastv inloop; split; 1: by smt().
+split.
++ move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
+  by move => ->; rewrite !Array256.set_eqiE //= to_sintB_small /= /#.
 
-move : H9; rewrite ultE => /> H10.
-
-split; last first. 
-move => k H11 H12.
-case (k < to_uint i{hr}); first by move => *; smt(@Array256). 
-
-move => H13; rewrite (_: k = to_uint i{hr}) => />.
-rewrite -lezNgt in H13.
-rewrite to_uintD_small of_uintK 1:/# in H12.
-smt(@W64).
-rewrite set_eqiE; first 2 by smt(@W64).
-
-move : (sub_corr ap{hr}.[to_uint i{hr}] bp{hr}.[to_uint i{hr}] _a.[to_uint i{hr}] _b.[to_uint i{hr}] 14 14 _ _ _ _ _ _) => />.
-by smt(@Array256). 
-by smt(@Array256). 
-move :  H5; rewrite /signed_bound_cxq => />. move => *; split;  smt(@Zq).
-move :  H6; rewrite /signed_bound_cxq => />. move => *; split; smt(@Zq).
-
-rewrite /signed_bound_cxq.
-
-move => k.
-case (k < to_uint  i{hr}). move => H9 H11.
-rewrite /signed_bound_cxq in H7. move : (H7 k).
-rewrite set_neqiE. rewrite H1 H10 //=. move : H11 => /#. smt(@Array256).
-
-
-case (k < to_uint  i{hr}); first by move => *; move : H7; rewrite /signed_bound_cxq; smt(@Array256). 
-
-simplify.
-move => H11 H12. rewrite (_: k = to_uint i{hr}).
-rewrite -lezNgt in H11.
-rewrite /i0 to_uintD_small of_uintK 1:/# in H12.
-smt(@W64).
-
-move : H5; rewrite /signed_bound_cxq =>  H5.
-move : (H5 (to_uint i{hr}) _); first by smt(@W64).
-move : H6; rewrite /signed_bound_cxq =>  H6.
-move : (H6 (to_uint i{hr}) _); first  by smt(@W64).
-move => H13 H14.
-rewrite /rp0.
-rewrite set_eqiE; first 2 by smt(@W64).
-rewrite !to_sintB_small => />.
-move : H13 H14; smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E qE).
-move : H13 H14; smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E qE).
+move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
+move => ->; rewrite !Array256.set_eqiE //= to_sintB_small /=; 1: by smt().
+by rewrite !mapiE //= inFqD inFqN.
 qed.
 
 lemma poly_sub_ll: islossless M._poly_sub.
-admitted.
-
+proc; while (0 <= to_uint i <= 256) (256 - to_uint i).
++  by move => *; auto => /> ???;rewrite ultE to_uintD_small /=; by smt(W32.to_uint_cmp).
+by move => *; auto => /> i ibl ibh; rewrite ultE of_uintK; smt(W32.to_uint_cmp).
+qed.
 
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
@@ -737,12 +398,10 @@ lemma poly_add_corr _a _b ab bb :
            forall k, 0 <= k < 256 =>
               inFq (to_sint res.[k]) = _a.[k] + _b.[k]]. 
 proof.
-move => H H0.
-proc. 
+move => abbnd bbbnd;proc. 
 while (
            0 <= to_uint i <= 256 /\
-           (forall k, to_uint i <= k < 256 =>
-              inFq (to_sint rp.[k]) = _a.[k]) /\
+           (forall k, to_uint i <= k < 256 => _a.[k] = inFq (to_sint rp.[k])) /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp (to_uint i) 256 ab /\
            signed_bound_cxq bp 0 256 bb /\
@@ -750,77 +409,22 @@ while (
            forall k, 0 <= k < to_uint i =>
               inFq (to_sint rp.[k]) = _a.[k] + _b.[k]
 ); last first. 
-auto => />. 
-move => &hr H1 H2. 
-do split. 
-smt(@Array256). 
-smt().
-smt(@Array256).
-move => i rp H3.
-move : H3; rewrite ultE.
-smt(@Array256).
++ auto => /= &hr; rewrite /lift_array256 !tP => [#] av bv ??; split. 
+  + do split => //; 2,3: by smt().
+    by  move => k kb; move : (av k kb); rewrite !mapiE //. 
+  by move => i rp; rewrite ultE of_uintK /= /#.
 
-wp; skip.
-
-move => &hr [#] H1 H2 H3 H4 H5 H6 H7 H8 H9 rp0 i0.
-move : H9; rewrite ultE => /> H9.
-split; first by rewrite /i0 to_uintD_small 1:/# of_uintK; move : H1 H9; smt(@W64).
-
-rewrite (_: to_uint i0 = to_uint i{hr} + 1); first  by rewrite to_uintD_small; smt(@W64).
-split. 
-  move => k H10 H11; move : (H3 k _);  first by smt(). 
-  by rewrite /rp0 set_neqiE => /#.
-split.
-  move : H5; rewrite /signed_bound_cxq => H5 k H10.
-  move : (H5 k _); first by smt(). 
-  by rewrite /rp0 set_neqiE => /#.
-
-split.
-  move : H7; rewrite /signed_bound_cxq => H7 k H10.
-
-case (k < to_uint i{hr}). 
-+ move => H11; move : (H7 k _); first by smt(). 
-  by rewrite /rp0 set_neqiE => /#.
-
-+ move => H11;  rewrite /rp0 set_eqiE; 1,2 : smt(@W64).  
-  move : (add_corr_qv rp{hr}.[to_uint i{hr}] bp{hr}.[to_uint i{hr}] _a.[to_uint i{hr}] _b.[to_uint i{hr}] 6 3 _ _ _ _ _ _) => />; first 2by smt(@Array256 @Zq). 
-
-  move : H5; rewrite /signed_bound_cxq =>  H5.
-  move : (H5 k _); first by smt(). by smt(@Zq b16E).
-  move : H6; rewrite /signed_bound_cxq =>  H6.
-  move : (H6 k _);  by smt(@Zq).
-
-  move => H12 H13 H14. 
-  rewrite to_sintD_small => />.
-  move : H5; rewrite /signed_bound_cxq =>  H5.
-  move : (H5 (to_uint i{hr}) _); first by smt().
-  move : H6; rewrite /signed_bound_cxq =>  H6.
-  move : (H6 (to_uint i{hr}) _); first  by smt().
-  move => H15 H16.
-  move : H15 H16; smt(@W16  b16E qE).
-
-  move : H5; rewrite /signed_bound_cxq =>  H5.
-  move : (H5 (to_uint i{hr}) _); first by smt().
-  move : H6; rewrite /signed_bound_cxq =>  H6.
-  move : (H6 (to_uint i{hr}) _); first  by smt().
-  move => H15 H16.
-  move : H15 H16; smt(@W16  b16E qE).
-
-move =>  k H10 H11.
-case (k < to_uint i{hr}). 
-  move => H12; move : (H8 k _); first by smt(). 
-  by rewrite /rp0 set_neqiE => /#.
-  move =>  H12.
-rewrite (_: k =to_uint i{hr}) => />; first by smt().
-rewrite /rp0.
-rewrite set_eqiE; first 2 by smt().
-
-  move : (add_corr_qv rp{hr}.[to_uint i{hr}] bp{hr}.[to_uint i{hr}] _a.[to_uint i{hr}] _b.[to_uint i{hr}] 6 3 _ _ _ _ _ _) => />; first 2 by smt(@Array256 @Fq). 
-
-  move : H5; rewrite /signed_bound_cxq =>  H5.
-  move : (H5 k _); by smt(@Fq b16E).
-  move : H6; rewrite /signed_bound_cxq =>  H6.
-  move : (H6 k _);  by smt(@Fq).
+auto => /> &hr ??.
+rewrite /signed_bound_cxq qE ultE /lift_array256 !to_uintD_small /= ; 1: by smt(W64.to_uint_cmp pow2_64).
+move => aval abnd bbnd pastb pastv inloop; split; 1: by smt().
+do split; first last.
++ by smt(Array256.set_neqiE).
++ move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
+  by move => ->; rewrite !Array256.set_eqiE //= to_sintD_small /= /#.
++ move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
+  move => ->; rewrite !Array256.set_eqiE //= to_sintD_small /=; 1: by smt().
+  by rewrite !mapiE //= inFqD /#.
+by smt(Array256.set_neqiE).
 qed.
 
 lemma poly_add_corr_R _a _b ab bb :
@@ -828,28 +432,17 @@ lemma poly_add_corr_R _a _b ab bb :
   0 <= bb <= 3 =>
   hoare [ Jindcpa.M._poly_add2 :
     _a = lift_array256 rp /\
-    _b = lift_array256 bp /\ 
-    signed_bound_cxq rp 0 256 ab /\ 
-    signed_bound_cxq bp 0 256 bb
-     ==>
-    signed_bound_cxq res 0 256 (ab + bb)%Int /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq rp 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
     lift_array256 res = _a &+ _b].
-move => AB BB.
-conseq (_: _ ==>
-     signed_bound_cxq res 0 256 (ab + bb) /\
-     forall (k : int),
-        0 <= k && k < 256 =>
-            inFq (to_sint res.[k]) = _a.[k] + _b.[k]).
-move => ? [#] ????? [#] ? sum.
-split; first smt().
-rewrite /lift_array256 /Poly.(&+) mapE map2E => />.
-apply Array256.ext_eq => x xb.
-rewrite initiE; first  by apply xb.
-auto => />.
-rewrite (sum x xb).
-rewrite initiE; first  by apply xb.
-by auto => />.
-apply (poly_add_corr _a _b ab bb AB BB). 
+move => abbnd bbbnd.
+conseq (poly_add_corr _a _b ab bb abbnd bbbnd). 
+move => ? [#] ????r [#] ? sum;split; 1: by smt().
+rewrite /lift_array256 /(&+) mapE map2E /= tP /= => i ib.
+by rewrite !initiE //= (sum i ib).
 qed.
 
 lemma poly_reduce_corr_h (_a : Fq Array256.t):
@@ -962,7 +555,6 @@ move => &hr H H0 H1 H2 H3; do split.
 smt(@W64 @Array256).
 move => H4 result H5; do split.
 smt(@W64 @Array256).
-(* <<<<<<< HEAD *)
 rewrite to_uintD_small 1:/#; move : H3; smt(@W64).
 move => k H6 H7.
 case (k < to_uint j{hr}) => k_tub.
@@ -1036,80 +628,6 @@ by [] => />.
 by smt().
 qed.
 
-lemma roundcimpl (a : W16.t) :
-  bpos16 a q =>
-  inFq
-  (to_sint (truncateu16
-         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
-           (of_int 28)%W8) `&`
-          (of_int 15)%W32))) = compress 4 (inFq (to_sint a)).
-proof.
-rewrite -compress_alt_compress //; first smt(qE).
-rewrite /zeroextu32 /truncateu16 /compress_alt qE => /> *.
-rewrite (_: W32.of_int 15 = W32.masklsb 4); first by rewrite /max /=.
-rewrite W32.and_mod => />. 
-rewrite W32.of_uintK to_sintE.
-rewrite /(`<<`) /(`>>`).
-rewrite W32.shlMP; first by smt().
-rewrite W32.to_uint_shr; first by smt().
-rewrite W16.of_uintK.
-congr.
-rewrite inFqK.
-rewrite to_sintE.
-rewrite qE.
-auto => />.
-rewrite IntDiv.pmod_small. rewrite /max /=. smt(@W32).
-rewrite IntDiv.pmod_small. rewrite /max /=. smt(@W32).
-rewrite (IntDiv.pmod_small _ 3329). smt(@W16).
-rewrite (_: (smod (to_uint a))%W16 = to_uint a). smt(@W16).
-pose xx := (to_uint a * 16 + 1665).
-rewrite W32.of_uintK /max => />.
-pose yy := xx * 80635 %% 4294967296 %/ 268435456 %%16.
-have ? : (0 <= yy < 2^16). smt(@W16).
-rewrite (_: W16.smod yy =  yy). 
-rewrite /smod.
-simplify.
-have ->: 32768 <= yy <=> false.
-smt().
-simplify.
-done.
-rewrite /yy.
-rewrite (_: 80635 = 268435456 %/ 3329). smt(). 
-rewrite (_: xx * (268435456 %/ 3329 ) %% 4294967296 %/ 268435456 
-  = (xx -1) %/ 3329 %% 16); last by smt().
-   have ? : 0 <= to_uint a < 3329. smt (@W16 to_sint_unsigned). 
-rewrite /xx.
-move : (formula (to_uint a)).
-smt().
-qed.
-
-lemma roundcimpl_rng (a : W16.t) :
-  bpos16 a q =>
-  0 <= to_sint (truncateu16
-         ((((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
-           (of_int 28)%W8) `&`
-          (of_int 15)%W32)) < 16.
-proof.
-rewrite to_sintE; move => /> *.
-rewrite (_: W32.of_int 15 = W32.masklsb 4); first by rewrite /max /=.
-rewrite W32.and_mod => />. 
-pose xx := (W32.of_int
-             (to_uint
-                (((zeroextu32 a `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) %%
-              16)).
-have ? : 0<= to_uint  xx < 16.
-print ltz_pmod.
-print to_uint_cmp.
-split; first by move : (W32.to_uint_cmp xx) => /#.
-move => _.
-rewrite /xx. rewrite W32.of_uintK pmod_small.
-smt(@IntDiv ltz_pmod @Int).
-smt(@IntDiv ltz_pmod @Int).
-have ? : 0<= to_uint  (truncateu16 xx) < 16.
-  rewrite /truncateu16. 
-  do 4!(rewrite of_uintK pmod_small || smt(@IntDiv @Int)).
-  by rewrite /max /= /smod;  smt(@W16).
-qed.
 
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ M._poly_tobytes ~ EncDec.encode12 :

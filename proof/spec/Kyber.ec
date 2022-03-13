@@ -370,11 +370,17 @@ module type PRF_t(O : RO.POracle) = {
    proc next_bytes(_N : int) : W8.t Array128.t
 }.
 
-(* To Do *)
 op bytes2bits32 : W8.t Array32.t -> bool Array256.t.
 op bytes2bits128 : W8.t Array128.t -> bool Array1024.t.
 op bytes2bits320 : W8.t Array320.t -> bool Array2560.t.
 op bytes2bits384 : W8.t Array384.t -> bool Array3072.t.
+
+op bit_at(x : int) (i : int) : bool = nth false (BitEncoding.BS2Int.int2bs 16 x) i.
+
+axiom bytes2bits32E i j a: 
+  0 <= i < 32 => 0 <= j < 8 =>
+   (bytes2bits32 a).[i*8+j] = bit_at (to_uint a.[i]) j.
+
 
 module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
@@ -477,7 +483,6 @@ op basemul(a b : poly) :  poly = Array256.init (fun i =>
 
 (* END: NTT *)
 
-op bit_at(x : int) (i : int) : bool = nth false (BitEncoding.BS2Int.int2bs 16 x) i.
 type ipoly = int Array256.t.
 op toipoly(p : poly) = map asint p.
 op ofipoly(p : ipoly) = map inFq p.
@@ -546,10 +551,24 @@ module EncDec = {
        r <- witness;
        bits <- bytes2bits32 bytes;
        i <- 0;
-       while (i < 256) {
-          fi <- b2i bits.[i];
-          r.[i] <- fi;
-          i <- i + 1;
+       while (i < 32) {
+          fi <- b2i bits.[i*8+0];
+          r.[i*8+0] <- fi;
+          fi <- b2i bits.[i*8+1];
+          r.[i*8+1] <- fi;
+          fi <- b2i bits.[i*8+2];
+          r.[i*8+2] <- fi;
+          fi <- b2i bits.[i*8+3];
+          r.[i*8+3] <- fi;
+          fi <- b2i bits.[i*8+4];
+          r.[i*8+4] <- fi;
+          fi <- b2i bits.[i*8+5];
+          r.[i*8+5] <- fi;
+          fi <- b2i bits.[i*8+6];
+          r.[i*8+6] <- fi;
+          fi <- b2i bits.[i*8+7];
+          r.[i*8+7] <- fi;
+          i<-i+1;
        }
        return r;
    }

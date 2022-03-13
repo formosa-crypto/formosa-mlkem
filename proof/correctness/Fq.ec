@@ -417,4 +417,64 @@ rewrite (Ring.IntID.exprS 2 (max asz bsz)); 1: by smt().
 by smt(exp_max).
 qed.
 
+lemma compress_impl_small (a : W16.t) (d : int):
+  1 <= d <= 4 =>
+  bpos16 a q =>
+  (to_uint (truncateu16
+         ((((zeroextu32 a `<<` (of_int d)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
+           (of_int 28)%W8) `&`
+          (of_int (2^d - 1))%W32))) = compress d (inFq (to_sint a)).
+proof.
+move => drng.
+have /= dpow : 2^1<=2^d <= 2^10 by split; move => *;  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
+rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
+move => au; rewrite -compress_alt_compress; 1,2: by smt(). 
+rewrite /zeroextu32 /truncateu16 /compress_alt qE => /= *.
+have -> : W32.of_int (2^d -1) = W32.masklsb d; 1: by smt().
+rewrite W32.and_mod //=; 1: by smt(). 
+rewrite W32.of_uintK  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
+rewrite W32.to_uint_shr; 1: by smt().
+rewrite inFqK to_sintE /max /= !W32.of_uintK !W16.of_uintK qE.
+rewrite !(modz_small _ 256) /=; 1: smt().
+rewrite !(modz_small _ 32) /=; 1: smt().
+rewrite !(modz_small _ 3329) /=; 1: smt().
+rewrite !(modz_small _ 65536) /=; 1: smt().
+rewrite (modz_small _ 4294967296) /=; 1: smt().
+rewrite (_: 0<d) /=; 1: smt().
+pose xx := (to_uint a * 2^d + 1665).
+have -> : (4294967296 = 16*268435456) by auto. 
+rewrite divz_mod_mul //. 
+rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
+rewrite -pow2_4; apply dvdz_exp2l; smt().
+qed.
+
+lemma compressimpl_rng_small (a : W16.t)(d : int) :
+  1 <= d <= 4 =>
+  bpos16 a q =>
+  0 <= to_uint (truncateu16
+         ((((zeroextu32 a `<<` (of_int d)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
+           (of_int 28)%W8) `&`
+          (of_int (2^d - 1))%W32)) < 2^d.
+proof.
+move => drng.
+have /= dpow : 2^1<=2^d <= 2^10 by split; move => *;  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
+rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
+move => au;rewrite /zeroextu32 /truncateu16 /compress_alt => /= *.
+have -> : W32.of_int (2^d -1) = W32.masklsb d; 1: by smt().
+rewrite W32.and_mod //=; 1: by smt(). 
+rewrite W32.of_uintK  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
+rewrite W32.to_uint_shr; 1: by smt().
+rewrite  /max /= !W32.of_uintK !W16.of_uintK.
+rewrite !(modz_small _ 256) /=; 1: smt().
+rewrite !(modz_small _ 32) /=; 1: smt().
+rewrite !(modz_small _ 65536) /=; 1: smt().
+rewrite (modz_small _ 4294967296) /=; 1: smt().
+pose xx := (to_uint a * 2^d + 1665).
+have -> : (4294967296 = 16*268435456) by auto. 
+rewrite divz_mod_mul //. 
+rewrite modz_dvd; 1: by rewrite -pow2_4; apply dvdz_exp2l; smt().
+by smt(modzE).
+qed.
+
+
 end Fq.
