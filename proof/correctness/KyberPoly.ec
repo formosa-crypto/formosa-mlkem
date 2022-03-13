@@ -92,10 +92,12 @@ do split. (* 5 goals *)
   move => current; rewrite set_eqiE /=; 1,2:smt(). 
   case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = rp{hr}.[to_uint i{hr}] by ring.
+    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
+              rp{hr}.[to_uint i{hr}] by ring.
     by smt().
   move =>  H; rewrite (getsignPos _ _) /=; first by smt().
-  by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; smt(to_uint_cmp pow2_16).
+  by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
+     smt(to_uint_cmp pow2_16).
 
 + move => ii iib /=.
   case(ii <> to_uint i{hr}); 
@@ -103,10 +105,12 @@ do split. (* 5 goals *)
   move => current; rewrite set_eqiE /=; 1,2:smt(). 
   case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = rp{hr}.[to_uint i{hr}] by ring.
+    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
+            rp{hr}.[to_uint i{hr}] by ring.
     by smt().
   move =>  H; rewrite (getsignPos _ _) /=; first by smt().
-  by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; smt(to_uint_cmp pow2_16).
+  by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
+     smt(to_uint_cmp pow2_16).
 
 + move => ii; rewrite /= to_uintD_small /=; 1: by smt(). 
   move => iib;case(ii <> to_uint i{hr}); 
@@ -114,13 +118,15 @@ do split. (* 5 goals *)
   move => current; rewrite set_eqiE /=; 1,2:smt(). 
   case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = rp{hr}.[to_uint i{hr}] by ring.
+    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
+              rp{hr}.[to_uint i{hr}] by ring.
     move : H; rewrite sltE to_sintD_small /=; 
        1: by move :rbpre; rewrite /to_sint /smod /= to_uintN /= /#. 
     rewrite to_sintN /=; 1: by rewrite /to_sint /smod /=.
     by move :rbpre; rewrite /to_sint /smod /= /#.
   move =>  H; rewrite (getsignPos _ _) /=; first by smt().
-  by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; smt(to_uint_cmp pow2_16).
+  by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
+     smt(to_uint_cmp pow2_16).
 
 + by rewrite to_uintD_small /= /#.
 
@@ -141,11 +147,16 @@ lemma poly_csubq_corr ap :
            ap = lift_array256 res /\ pos_bound256_cxq res 0 256 1 ] = 1%r
   by conseq poly_csubq_ll (poly_csubq_corr_h ap). 
 
+
+
+
 lemma setbitor (r : W8.t) (w : W32.t) (v : int) j :
     0 <= j < 8 =>
-    v %% 2 = to_uint (truncateu8 w) %% 2 =>
+    v = to_uint (truncateu8 (w `&` W32.one)) =>
     !r.[j] => r `|` truncateu8 ((w `&` W32.one) `<<` W8.of_int j) = 
          r.[j <- bit_at v 0].
+admitted. 
+(* 
 proof.
 move => jb vv rj0.
 have jpow : 1<= 2^j <=128. 
@@ -181,6 +192,7 @@ move => eq; rewrite set_eqiE //.
   rewrite -b2i_mod2 -H /W32.one /= /int2bs /mkseq -iotaredE /= /b2i.
   by rewrite W32.get_to_uint /= /#.
 qed.
+*)
 
 lemma poly_tomsg_corr _a (_p : address) mem : 
     equiv [ M._poly_tomsg ~ EncDec.encode1 :
@@ -215,21 +227,9 @@ conseq (_: _ ==>
 while(#{/~j{1}=0}pre /\ 0 <= j{2} <=8); last by  auto => /> /#. 
 auto => /> &1 &2; rewrite /pos_bound256_cxq /bpos16 qE=> ?? bound ?????????. 
 rewrite /lift_array256 !mapiE /=; 1,2:smt().
-rewrite (setbitor r{2} _ (compress 1 (inFq (to_sint a{1}.[8 * i{2} + j{2}]))) _) //; 2,3: by smt(W8.get_setE). 
-
- rewrite to_uint_truncateu8 /= /zeroextu32 /(`<<`) shlMP //=. 
- rewrite W32.to_uint_shr; first by smt().
- rewrite W32.of_uintK W8.of_uintK modz_dvd //.
- rewrite (modz_small _ W32.modulus); 1: by smt(W16.to_uint_cmp pow2_32).
- rewrite (modz_small _ 32); 1: by smt().
- rewrite -compress_alt_compress //; 1: by rewrite qE /=.
- rewrite /compress_alt !inFqK qE modz_mod /=.
- have -> : to_sint a{1}.[8 * i{2} + j{2}] %% 3329 = 
-           to_uint a{1}.[8 * i{2} + j{2}].
- + move : (bound (8*i{2} + j{2}) _); 1: by smt(). 
-   rewrite to_sintE /= /smod /= => boundi. 
-   by rewrite modz_small; smt(W16.to_uint_cmp pow2_16).
- done.
+rewrite (setbitor r{2} _ (compress 1 (inFq (to_sint a{1}.[8 * i{2} + j{2}]))) _) //; 
+   2,3: by smt(W8.get_setE). 
+by rewrite compress_impl_small_trunc // /#. 
 qed.
 
 lemma poly_tomsg_ll : islossless  M._poly_tomsg.
@@ -293,6 +293,7 @@ rewrite /bit_at /b2i /int2bs /mkseq -iotaredE /=.
 rewrite to_uint_zeroextu16 /loadW8 /=.
 have -> /= : !(32768 <= to_uint (mem.[to_uint ap{1} + i{2}] `>>>` kk) %% 2 * 1665) by smt().
 rewrite to_uint_shr; 1: smt().
+(* Fix me: how to do this compactly? *)
 case (kk = 0); 1: by move => -> /=; smt().
 case (kk = 1); 1: by move => -> /=; smt().
 case (kk = 2); 1: by move => -> /=; smt().
@@ -343,16 +344,16 @@ lemma poly_sub_corr_h _a _b ab bb :
               inFq (to_sint res.[k]) = _a.[k] - _b.[k]]. 
 proof.
 move => abbnd bbbnd;proc. 
-while (
-           0 <= to_uint i <= 256 /\
-           _a = lift_array256 ap /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq ap 0 256 ab /\
-           signed_bound_cxq bp 0 256 bb /\
-           signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
-           forall k, 0 <= k < to_uint i =>
-              inFq (to_sint rp.[k]) = _a.[k] - _b.[k]
-); last by auto => /= &hr [#] 4?; split; [ smt() | move => 2?; rewrite ultE of_uintK /=; smt()]. 
+while (0 <= to_uint i <= 256 /\
+      _a = lift_array256 ap /\
+      _b = lift_array256 bp /\
+      signed_bound_cxq ap 0 256 ab /\
+      signed_bound_cxq bp 0 256 bb /\
+      signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
+      forall k, 0 <= k < to_uint i =>
+              inFq (to_sint rp.[k]) = _a.[k] - _b.[k]); 
+   last by auto => /= &hr [#] 4?; split; 
+    [ smt() | move => 2?; rewrite ultE of_uintK /=; smt()]. 
 
 auto => /> &hr ??.
 rewrite /signed_bound_cxq qE ultE /lift_array256 !to_uintD_small /= ; 1: by smt(W64.to_uint_cmp pow2_64).
@@ -399,23 +400,22 @@ lemma poly_add_corr _a _b ab bb :
               inFq (to_sint res.[k]) = _a.[k] + _b.[k]]. 
 proof.
 move => abbnd bbbnd;proc. 
-while (
-           0 <= to_uint i <= 256 /\
-           (forall k, to_uint i <= k < 256 => _a.[k] = inFq (to_sint rp.[k])) /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq rp (to_uint i) 256 ab /\
-           signed_bound_cxq bp 0 256 bb /\
-           signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
-           forall k, 0 <= k < to_uint i =>
-              inFq (to_sint rp.[k]) = _a.[k] + _b.[k]
-); last first. 
+while (0 <= to_uint i <= 256 /\
+        (forall k, to_uint i <= k < 256 => _a.[k] = inFq (to_sint rp.[k])) /\
+        _b = lift_array256 bp /\
+        signed_bound_cxq rp (to_uint i) 256 ab /\
+        signed_bound_cxq bp 0 256 bb /\
+        signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
+        forall k, 0 <= k < to_uint i =>
+           inFq (to_sint rp.[k]) = _a.[k] + _b.[k]); last first. 
 + auto => /= &hr; rewrite /lift_array256 !tP => [#] av bv ??; split. 
   + do split => //; 2,3: by smt().
     by  move => k kb; move : (av k kb); rewrite !mapiE //. 
   by move => i rp; rewrite ultE of_uintK /= /#.
 
 auto => /> &hr ??.
-rewrite /signed_bound_cxq qE ultE /lift_array256 !to_uintD_small /= ; 1: by smt(W64.to_uint_cmp pow2_64).
+rewrite /signed_bound_cxq qE ultE /lift_array256 !to_uintD_small /= ; 
+   1: by smt(W64.to_uint_cmp pow2_64).
 move => aval abnd bbnd pastb pastv inloop; split; 1: by smt().
 do split; first last.
 + by smt(Array256.set_neqiE).
@@ -452,161 +452,44 @@ lemma poly_reduce_corr_h (_a : Fq Array256.t):
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)].
 proof.
 proc.
-exists *rp; elim* => _rp.
-conseq (_:
-  _rp = rp /\
- (forall i, 0<= i < 256 =>
-              inFq (to_sint rp.[i]) = _a.[i]) ==> 
-           forall i, 0<= i < 256 =>
-              to_sint rp.[i] = BREDC (to_sint _rp.[i]) 26
-). 
-move => &hr.
-rewrite /lift_array256 => /> i H H0.
-rewrite mapiE => />.
-move => &hr.
-rewrite /lift_array256 => /> _rp0 H.
-split.
-apply Array256.ext_eq => /> x H0 H1.
-rewrite !mapiE => />.
-move : (H x _) => />.
-move : (BREDCp_corr (to_sint rp{hr}.[x]) 26 _ _ _ _ _ _) => />.
-by rewrite ?qE /R /=.
-by rewrite ?qE /R /=.
-by rewrite ?qE /R /=.
+while (0 <= to_uint j <= 256 /\
+     (forall k, 0 <= k < 256 => _a.[k] = inFq (to_sint rp.[k])) /\
+     forall k, 0 <= k < to_uint j => bpos16  rp.[k] (2*q)
+); last first. 
++ auto => /= &hr; rewrite /lift_array256 !tP => [#] av; split. 
+  + split => //; 2: by smt().
+    by  move => k kb; move : (av k kb); rewrite !mapiE //. 
+  move => i rp'; rewrite ultE of_uintK /= => exit [#] ?? ??.
+  split; last by smt(). 
+  by rewrite tP => k kb; move : (av k kb); rewrite !mapiE //= /#.
 
-rewrite ?qE /R => />. 
-
-split.
-rewrite to_sintE.
-have ?: 0 <= to_uint rp{hr}.[x] < W16.modulus by rewrite to_uint_cmp.
-rewrite /smod /=.
-case (32768 <= to_uint rp{hr}.[x]) => ?.
-smt().
-smt().
-
-move => H2.
-rewrite !to_sintE.
-rewrite /smod.
-move : (W16.to_uint_cmp rp{hr}.[x]); smt().
-
-move => a. rewrite /R /= => H2 H3.
-rewrite qE /=.
-split.
-rewrite /Barrett_kyber_general.barrett_pred_low.
-rewrite /Barrett_kyber_general.barrett_fun.
-rewrite /Barrett_kyber_general.barrett_fun_aux.
-simplify.
-smt().
-rewrite /Barrett_kyber_general.barrett_pred_high.
-rewrite /Barrett_kyber_general.barrett_fun.
-rewrite /Barrett_kyber_general.barrett_fun_aux.
-simplify.
-smt().
-rewrite -eq_inFq => /#.
-
-move => k H0 H1.
-move : (H k _) => /> H2.
-move : (BREDCp_corr (to_sint rp{hr}.[k]) 26 _ _ _ _ _ _) => />.
-by rewrite ?qE /R /=.
-by rewrite ?qE /R /=.
-by rewrite ?qE /R /=.
-
-rewrite ?qE /R => />. 
-
-split.
-rewrite to_sintE.
-have H3: 0 <= to_uint rp{hr}.[k] < W16.modulus by rewrite to_uint_cmp.
-rewrite /smod /=.
-case (32768 <= to_uint rp{hr}.[k]) => H4.
-smt().
-smt().
-
-move => H3.
-rewrite !to_sintE.
-rewrite /smod.
-move : (W16.to_uint_cmp rp{hr}.[k]); smt().
-
-move => a. rewrite /R /= => H3 H4.
-rewrite qE /=.
-split.
-rewrite /Barrett_kyber_general.barrett_pred_low.
-rewrite /Barrett_kyber_general.barrett_fun.
-rewrite /Barrett_kyber_general.barrett_fun_aux.
-simplify.
-smt().
-rewrite /Barrett_kyber_general.barrett_pred_high.
-rewrite /Barrett_kyber_general.barrett_fun.
-rewrite /Barrett_kyber_general.barrett_fun_aux.
-simplify.
-smt().
-
-by smt(@W16 @Ring.IntID @JWord.W16.WRingA @IntDiv to_sint_unsigned b16E).
-
-while (0 <= to_uint j <= 256 /\ 
-       (forall k, 0 <= k < to_uint j => to_sint rp.[k] = (BREDC (to_sint _rp.[k]) 26)) /\
-       (forall k, to_uint j <= k < 256 => to_sint rp.[k] =  (to_sint _rp.[k]))); last first.
-auto => /> H. 
-split; first by smt().
-move => ??; move : H; rewrite ultE of_uintK => />; smt(@W16 @W64).
-move => *;wp; sp; ecall (barrett_reduce_corr_h (to_sint _rp.[to_uint j])); 
- auto => />. 
-
-move => &hr H H0 H1 H2 H3; do split.
-smt(@W64 @Array256).
-move => H4 result H5; do split.
-smt(@W64 @Array256).
-rewrite to_uintD_small 1:/#; move : H3; smt(@W64).
-move => k H6 H7.
-case (k < to_uint j{hr}) => k_tub.
-move : (H1 k); rewrite H6 k_tub //=.
-smt(@W64 @Array256).
-rewrite get_setE.
-move : H3; smt(@W64).
-have ->: k = to_uint j{hr}.
-rewrite -lezNgt in k_tub.
-rewrite to_uintD_small of_uintK 1:/# in H7.
-smt(@W64).
-simplify.
-apply H5.
-
-move => k H6 H7.
-
-rewrite get_setE.
-move : H6. 
-rewrite to_uintD_small.
-smt().
-smt().
-have ->: k = to_uint j{hr} <=> false.
-move : H6. 
-rewrite to_uintD_small.
-smt().
-smt().
-simplify.
-rewrite (H2 k).
-move : H6. 
-rewrite to_uintD_small.
-smt().
-smt().
-done.
+sp;wp;conseq />;1: by smt(). 
+ecall (barrett_reduce_corr_h (to_sint t)).
+auto => /> &hr ??.
+rewrite qE /R ultE /= => av ab inl r rval. 
+rewrite !to_uintD_small /=; 1: by smt(W64.to_uint_cmp pow2_64).
+have bred := (BREDCp_corr (to_sint rp{hr}.[to_uint j{hr}]) 26 _ _ _ _ _ _); 
+     1..4,6: smt(qE pow2_16).
++ by rewrite /R /=; move : W16.to_sint_cmp => /= /#.
+do split; 1, 2: by smt(). 
++ move => k kbl kbh; case (k = to_uint j{hr}); last by smt(Array256.set_neqiE).
+  move => ->>; rewrite Array256.set_eqiE // rval.
+  move : (av (to_uint j{hr}) _) => // ->.
+  by apply eq_inFq => /#. 
+  
+move => k kbl kbh.
+case (k = to_uint j{hr}); last by smt(Array256.set_neqiE).
+move => ->; rewrite !Array256.set_eqiE //=.
+by smt().
 qed.
 
-lemma poly_reduce_ll:
-  islossless M.__poly_reduce.
+
+lemma poly_reduce_ll: islossless M.__poly_reduce.
 proof.
 proc;while (0 <= to_uint j <= 256) (256 - to_uint j).
-move => z;inline *; auto => />. 
-move =>  &hr H H0 H1; do split.
-smt(@W64).
-move => _.
-rewrite to_uintD_small 1:/#; move : H1; smt(@Int @W64).
-move : H1.
-rewrite ultE.
-rewrite of_uintK /=.
-move => *.
-rewrite to_uintD_small.
-smt().
-smt().
-auto => />; smt(@W64). 
++ by move => z; inline *; auto => />; 
+     move =>  &hr ??; rewrite ultE !to_uintD_small /= /#. 
+by auto => />; move => ??; rewrite ultE  /= /#. 
 qed.
 
 lemma poly_reduce_corr (_a : Fq Array256.t):
@@ -616,6 +499,7 @@ lemma poly_reduce_corr (_a : Fq Array256.t):
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)] = 1%r.
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
+(* 
 lemma formula x :
   0 <= x < 3329 =>
    (x * 16 + 1665) * (268435456 %/ 3329) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16.
@@ -627,13 +511,13 @@ proof.
 by [] => />.
 by smt().
 qed.
-
+*)
 
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ M._poly_tobytes ~ EncDec.encode12 :
-             pos_bound256_cxq a{1} 0 256 2 /\
+             pos_bound256_cxq a{1} 0 256 2 /\ 
              lift_array256 a{1} = _a /\
-             p{2} = _a /\
+             map inFq p{2} = _a /\
              valid_range W8 Glob.mem{1} _p 384 /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p
               ==>
@@ -650,7 +534,7 @@ lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t):
              load_array384 Glob.mem{1} _p = _a
               ==>
              Glob.mem{1} = mem /\
-             lift_array256 res{1} = res{2} /\
+             lift_array256 res{1} = map inFq res{2} /\
              pos_bound256_cxq res{1} 0 256 1 ].
 admitted.
 
@@ -660,73 +544,59 @@ lemma poly_compress_corr _a (_p : address) mem :
              pos_bound256_cxq a{1} 0 256 2 /\
              lift_array256 a{1} = _a /\
              p{2} = compress_poly 4 _a /\
-             valid_range W8 Glob.mem{1} _p 128 /\
+             valid_ptr _p 128 /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p
               ==>
              lift_array256 res{1} = _a /\
              pos_bound256_cxq res{1} 0 256 1 /\
-             touches mem Glob.mem{1} _p 32 /\
+             touches mem Glob.mem{1} _p 128 /\
              load_array128 Glob.mem{1} _p = res{2}].
-admitted.
-(* 
-proc.
-seq 1 : (ap = lift_array256 a /\
-           pos_bound256_cxq a 0 256 1).
-call (poly_csubq_corr_h ap) => />; first by auto => />.
-while (ap = lift_array256 a /\
-       pos_bound256_cxq a 0 256 1 /\
-       (forall k,
-          0 <= k < 2* to_uint i =>
-           inFq (W16.to_sint r.[k]) = roundc ap.[k]) /\
-       (forall k,
-            0<= k < 2*i  => 0<= to_sint r.[k] < 16) /\
-       0 <= i <= 128); last first.
-auto => />  *.
-split. smt().
-move => *. 
-split; last  by smt().
-move : H1; rewrite /lift_array256 => *.
-apply Array256.ext_eq => /> *.
-move : (H1 x _) => />; first by smt().
-by rewrite !mapiE => /> ->.
-auto => />.
-move => *.
-split.
-move => *.
-case (k <2*i{hr}) => /> *.
-rewrite set_neqiE; first 2 by smt().
-rewrite set_neqiE; first 2 by smt().
-by apply (H0 k _) => />.
-case (k = 2*i{hr}) => /> *.
-rewrite set_neqiE; first 2 by smt().
-rewrite set_eqiE; first 2 by smt().
-rewrite /lift_array256 mapiE => />; first by smt().
-apply (roundcimpl a{hr}.[2 * i{hr}]).
-  move : H; rewrite /pos_bound256_cxq => /> *.
-  by move : (H (2*i{hr}) _); smt().
-rewrite (_: k = 2*i{hr} + 1); first by smt().
-rewrite set_eqiE; first 2 by smt().
-rewrite /lift_array256 mapiE => />; first by smt().
-apply (roundcimpl a{hr}.[2 * i{hr} + 1]).
-  move : H; rewrite /pos_bound256_cxq => /> *.
-  by move : (H (2*i{hr} + 1) _); smt().
+proc => /=.
+seq 3 3 : (#{/~a{1}}pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
+           to_uint j{1} = j{2} /\ j{2} = 0 /\
+           pos_bound256_cxq a{1} 0 256 1 /\ lift_array256 a{1} = _a).
+wp => /=;call{1} (poly_csubq_corr _a); 1: by auto => /#.
 
-split; last by smt().
+while (#{/~mem}{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=128  /\ 
+       to_uint j{1} = j{2} /\ j{2} = 2* i{2} /\
+       touches mem Glob.mem{1} _p i{2} /\ 
+       forall k, 0<=k<i{2} => loadW8 Glob.mem{1} (_p + k) = r{2}.[k]); last first.  
++ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
+    vpl vph bnd ??; split; 1: by smt().
+  move => mem' i' j' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  touch load.
+  split; 1:  smt(). 
+  by rewrite tP => k kb; rewrite initiE //= (load k _) /#.
 
-move : H H1; rewrite /pos_bound256_cxq => /> *.
-case (k <2*i{hr}) => /> *.
-rewrite set_neqiE; first 2 by smt().
-rewrite set_neqiE; first 2 by smt().
-by smt().
-case (k = 2*i{hr}) => /> *.
-rewrite set_neqiE; first 2 by smt().
-rewrite set_eqiE; first 2 by smt().
-by move : (roundcimpl_rng a{hr}.[2*i{hr}]); smt().
-rewrite (_: k = 2*i{hr} + 1); first by smt().
-rewrite set_eqiE; first 2 by smt().
-by move : (roundcimpl_rng a{hr}.[2*i{hr} + 1]); smt().
+auto => /> &1 &2 ??; rewrite /pos_bound256_cxq /touches /storeW8  /loadW8 /=.
+rewrite  ultE of_uintK /= => ????????. 
+rewrite !to_uintD_small /=; 1..4: smt().
+do split; 1..4: by smt(get_set_neqE_s). 
++ move => k kbl kbh.
+  case (k = to_uint i{1}); last first.
+  + move => neq; rewrite get_set_neqE_s; 1: by smt().
+    by rewrite set_neqiE // /#.
+  move => eq; rewrite get_set_eqE_s; 1: by smt().
+  rewrite set_eqiE //.
+  have -> : W32.of_int 15 = W32.of_int (2^4 - 1) by auto.
+  rewrite /lift_array256 !mapiE /=; 1..4: smt().
+  rewrite -compress_impl_small_trunc //; 1: smt().
+  rewrite  -compress_impl_small //; 1:smt().
+  
+  case (k = to_uint i{1}); last by smt(Array128.set_neqiE).
+  move => iv. 
+  have -> : 15 = 2^4 - 1 by auto.
+  rewrite !and_mod //.
+  rewrite !to_uintK. 
+  pose x := to_uint (((zeroextu32 a{1}.[to_uint j{1}] `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
+          (of_int 28)%W8) %% 2^4.
+  pose y := to_uint (((zeroextu32 a{1}.[to_uint j{1} + 1] `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
+          (of_int 28)%W8) %% 2^4.
+  admit.
+ 
++ rewrite ultE /= to_uintD_small; smt().
+
+rewrite ultE /= to_uintD_small; smt().
 qed.
-*)
 
 lemma poly_compress_ll : islossless M._poly_compress.
 proc.

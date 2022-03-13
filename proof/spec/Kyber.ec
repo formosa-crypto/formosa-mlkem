@@ -616,16 +616,17 @@ module EncDec = {
    }
 
    proc encode4(p : ipoly) : W8.t Array128.t = {
-       var fi,fi1,i,k;
+       var fi,fi1,i,j;
        var r : W8.t Array128.t;
        r <- witness;
-       i <- 0; k <- 0;
-       while (i < 256) {
-          fi <- p.[i];
-          fi1 <- p.[i+1];
-          r.[k] <- witness;
-          i <- i + 2;
-          k <- k + 1;
+       i <- 0; j <- 0;
+       while (i < 128) {
+          fi <- p.[j];
+          j <- j + 1;
+          fi1 <- p.[j];
+          j <- j + 1;
+          r.[i] <- W8.of_int(fi) `|` W8.of_int (fi1) `<<` W8.of_int 4;
+          i <- i + 1;
        }
        return r;
    }

@@ -417,6 +417,7 @@ rewrite (Ring.IntID.exprS 2 (max asz bsz)); 1: by smt().
 by smt(exp_max).
 qed.
 
+(*
 lemma compress_impl_small (a : W16.t) (d : int):
   1 <= d <= 4 =>
   bpos16 a q =>
@@ -475,6 +476,53 @@ rewrite divz_mod_mul //.
 rewrite modz_dvd; 1: by rewrite -pow2_4; apply dvdz_exp2l; smt().
 by smt(modzE).
 qed.
+*)
+
+lemma compress_impl_small (a : W16.t) (d : int):
+  1 <= d <= 4 =>
+  bpos16 a q =>
+  (to_uint (((zeroextu32 a `<<` W8.of_int d) + 
+     W32.of_int 1665) * W32.of_int 80635 `>>` W8.of_int 28)) %% 2^d=
+       compress d (inFq (to_sint a)).
+proof.
+move => drng.
+have /= dpow : 2^1<=2^d <= 2^10 
+ by split; move => *; apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
+rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
+move => au; rewrite -compress_alt_compress; 1,2: by smt(). 
+rewrite /zeroextu32 /truncateu8 /compress_alt qE => /= *.
+rewrite  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
+rewrite W32.to_uint_shr; 1: by smt().
+rewrite inFqK to_sintE /max /= !W32.of_uintK /= qE /=.
+rewrite !(modz_small _ 32) /=; 1: smt().
+rewrite !(modz_small _ 256) /=; 1: smt().
+rewrite !(modz_small _ 3329) /=; 1: smt().
+have ->: W16.smod (to_uint a) = to_uint a by
+  move : abl; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
+pose xx := (to_uint a * 2^d + 1665).
+have -> : (4294967296 = 16*268435456) by auto. 
+rewrite divz_mod_mul //. 
+rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
+rewrite -pow2_4; apply dvdz_exp2l; smt().
+qed.
+
+
+lemma compress_impl_small_trunc (a : W16.t) (d : int):
+  1 <= d <= 4 =>
+  bpos16 a q =>
+  (to_uint (truncateu8 ((((zeroextu32 a `<<` W8.of_int d) + 
+     W32.of_int 1665) * W32.of_int 80635 `>>` W8.of_int 28) `&` W32.of_int (2^d - 1)))) = 
+       compress d (inFq (to_sint a)).
+admitted.
+(*
+proof.
+move => dbnd abnd.
+rewrite to_uint_truncateu8 /=.
+rewrite -compress_impl_small //=.
+rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
+rewrite -pow2_8; apply dvdz_exp2l; smt().
+qed.
+*)
 
 
 end Fq.
