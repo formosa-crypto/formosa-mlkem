@@ -486,7 +486,7 @@ lemma compress_impl_small (a : W16.t) (d : int):
        compress d (inFq (to_sint a)).
 proof.
 move => drng.
-have /= dpow : 2^1<=2^d <= 2^10 
+have /= dpow : 2^1<=2^d <= 2^4 
  by split; move => *; apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
 rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
 move => au; rewrite -compress_alt_compress; 1,2: by smt(). 
@@ -513,16 +513,16 @@ lemma compress_impl_small_trunc (a : W16.t) (d : int):
   (to_uint (truncateu8 ((((zeroextu32 a `<<` W8.of_int d) + 
      W32.of_int 1665) * W32.of_int 80635 `>>` W8.of_int 28) `&` W32.of_int (2^d - 1)))) = 
        compress d (inFq (to_sint a)).
-admitted.
-(*
 proof.
 move => dbnd abnd.
+have /= dpow : 2^1<=2^d <= 2^4 
+ by split; move => *; apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
 rewrite to_uint_truncateu8 /=.
 rewrite -compress_impl_small //=.
-rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
-rewrite -pow2_8; apply dvdz_exp2l; smt().
+rewrite and_mod; 1: smt().
+rewrite of_uintK modz_dvd; 1: by smt().
+by rewrite modz_small; 1: smt().
 qed.
-*)
 
 
 end Fq.

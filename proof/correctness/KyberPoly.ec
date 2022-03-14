@@ -1,6 +1,6 @@
 require import AllCore List IntDiv CoreMap IntDiv Real Number.
 from Jasmin require  import JModel JMemory.
-require import IntDiv_extra Ring_extra W16extra Array32 Array320 Array256 Array128 Array384.
+require import IntDiv_extra Ring_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
 require import Fq.
 require import NTT_Fq.
 require import Kyber.
@@ -631,21 +631,80 @@ split;last first.
     rewrite !to_uint_shr // to_uint_zeroextu16 /=.
     by rewrite /smod /=; smt(W8.to_uint_cmp pow2_8).
 
+
 case(k < to_uint i{1} * 2); 1: by smt(Array256.set_neqiE).
 case(k = to_uint j{1}).
 + move => ->;rewrite set_neqiE;1,2:smt(). 
   rewrite set_eqiE;1,2:smt().
   rewrite set_neqiE;1,2:smt(). 
   rewrite set_eqiE;1,2:smt().
+
+  pose x := BitEncoding.BS2Int.bs2int (mkseq 
+              (fun (k0 : int) => (bytes2bits128 bytes{2}).[2 * to_uint i{1} * 4 + k0]) 4).
+  have /= xb : 0 <= x < 2^4.
+  + split; first by smt(BitEncoding.BS2Int.bs2int_ge0).
+    move => *. 
+    have -> : 4 = size (mkseq (fun (k0 : int) => (bytes2bits128 bytes{2}).[2 * to_uint i{1} * 4 + k0]) 4)
+      by rewrite size_mkseq.
+    by apply BitEncoding.BS2Int.bs2int_le2Xs.
+
   move => _;rewrite -decompress_alt_decompress //; 1: smt(qE).
   rewrite /decompress_alt; congr.
-  admit.
+  have -> : zeroextu16 (loadW8 mem (to_uint ap{1} + to_uint i{1})) `&` (W16.of_int 15) =
+            W16.of_int (BitEncoding.BS2Int.bs2int (mkseq 
+              (fun (k0 : int) => (bytes2bits128 bytes{2}).[2 * to_uint i{1} * 4 + k0]) 4)); last first.
+  rewrite /to_sint to_uint_shr //.
+ by rewrite -/x /= !of_uintK /= qE modz_small 1:/# /smod /#.
 
+ apply W16.ext_eq => kk kkb.
+ rewrite /W16.(`&`) map2iE // !get_to_uint of_uintK kkb /= /loadW8 /= 
+   of_uintK /= !(modz_small _ 65536); 1, 2: smt(W8.to_uint_cmp pow2_8). 
+ (* Fix me: do compactly *)
+ case(kk=4); 1: by move => -> /=; smt().
+ case(kk=5); 1: by move => -> /=; smt().
+ case(kk=6); 1: by move => -> /=; smt().
+ case(kk=7); 1: by move => -> /=; smt().
+ case(kk=8); 1: by move => -> /=; smt().
+ case(kk=9); 1: by move => -> /=; smt().
+ case(kk=10); 1: by move => -> /=; smt().
+ case(kk=11); 1: by move => -> /=; smt().
+ case(kk=12); 1: by move => -> /=; smt().
+ case(kk=13); 1: by move => -> /=; smt().
+ case(kk=14); 1: by move => -> /=; smt().
+ case(kk=15); 1: by move => -> /=; smt().
+ move => *.
+ have -> /=: ( 15 %/ 2 ^ kk %% 2 <> 0). 
+ + case(kk=0); 1: by move => -> /=; smt().
+   case(kk=1); 1: by move => -> /=; smt().
+   case(kk=2); 1: by move => -> /=; smt().
+   case(kk=3); 1: by move => -> /=; smt().
+   by smt().
+ admit.
+    
 move => *;rewrite set_eqiE;1,2:smt(). 
 rewrite set_eqiE;1,2:smt().
+
+pose x := BitEncoding.BS2Int.bs2int (mkseq 
+              (fun (k0 : int) => (bytes2bits128 bytes{2}).[(2 * to_uint i{1} + 1) * 4 + k0]) 4).
+have /= xb : 0 <= x < 2^4.
++ split; first by smt(BitEncoding.BS2Int.bs2int_ge0).
+  move => *. 
+  have -> : 4 = size (mkseq (fun (k0 : int) => (bytes2bits128 bytes{2}).[(2 * to_uint i{1} + 1) * 4 + k0]) 4)
+    by rewrite size_mkseq.
+  by apply BitEncoding.BS2Int.bs2int_le2Xs.
+
 rewrite -decompress_alt_decompress //; 1: smt(qE).
 rewrite /decompress_alt; congr.
-admit.
+have -> : zeroextu16 (loadW8 mem (to_uint ap{1} + to_uint i{1})) `>>>` 4 =
+          W16.of_int (BitEncoding.BS2Int.bs2int (mkseq 
+             (fun (k0 : int) => (bytes2bits128 bytes{2}).[(2 * to_uint i{1} + 1) * 4 + k0]) 4)); last first.
+rewrite /to_sint to_uint_shr //.
+rewrite -/x /= !of_uintK /= qE modz_small 1:/# /smod /#.
+
+ apply W16.ext_eq => kk kkb.
+ rewrite !get_to_uint of_uintK kkb /= /loadW8 /= to_uint_shr // to_uint_zeroextu16 /=
+    !(modz_small _ 65536); 1: smt(W8.to_uint_cmp pow2_8). 
+ admit.
 
 qed.
 
@@ -654,36 +713,34 @@ qed.
 
 import Jindcpa.
 
-lemma zeta_bound :
-   minimum_residues jzetas.
+lemma zeta_bound :  minimum_residues jzetas.
  proof.
 rewrite /minimum_residues qE.
-apply/(Array128.allP jzetas (fun x => bpos16 x 3329)).
-simplify.
-rewrite (_: 
+apply/(Array128.allP jzetas (fun x => bpos16 x 3329)) => /=.
+have -> : 
   (fun (x : W16.t) => 0 <= to_sint x < 3329) = 
-  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x then to_uint x - 65536 else to_uint x) < 3329)).
-apply/fun_ext => x *.
-by rewrite to_sintE /smod => />.
+  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x 
+                            then to_uint x - 65536 
+                            else to_uint x) < 3329) 
+    by apply/fun_ext => x *; rewrite to_sintE /smod => />.
 by rewrite /all -iotaredE; cbv delta.
 qed. 
 
 equiv ntt_correct_aux :
   NTT_Fq.NTT.ntt ~ M._poly_ntt : 
-        r{1} = lift_array256 rp{2} /\ 
-        NTT_Fq.array_mont zetas{1} = 
-           lift_array128  jzetas /\
+        r{1} = lift_array256 rp{2} /\  
+        NTT_Fq.array_mont zetas{1} = lift_array128  jzetas /\
         signed_bound_cxq rp{2} 0 256 2
           ==> 
-            res{1} = lift_array256 res{2} /\
-            forall k, 0<=k<256 => bpos16 res{2}.[k] (2*q).
+        res{1} = lift_array256 res{2} /\
+        forall k, 0<=k<256 => bpos16 res{2}.[k] (2*q).
 proc.
-(* Dealing with final barret reduction *)
+(* Simplify post usiung barret reduction *)
 seq 3 5 :  (r{1} = lift_array256 rp{2}); last first.
-ecall{2} (poly_reduce_corr (lift_array256 rp{2})).
-skip; move => &1 &2 [#] ?? [#] ? bres.
-split; first by smt (@Array256).
-by apply bres.
++ ecall{2} (poly_reduce_corr (lift_array256 rp{2})).
+  skip; move => &1 &2 [#] ?? [#] ? bres.
+  split; first by smt ().
+  by apply bres.
 
 (***********************************)
 
@@ -697,39 +754,35 @@ while (
    NTT_Fq.array_mont zetas{1} = lift_array128 jzetas /\
    len{1} = to_uint len{2} /\
    zetasctr{1} = to_uint zetasctr{2}/\
-   (exists l, 0 <= l <= 7 /\ len{1} = 2^l) /\
    0 <= zetasctr{1} <= 127 /\
    2*(zetasctr{1}+1)*len{1} = 256 /\
-   signed_bound_cxq rp{2} 0 256 (9 - log2 len{1})); last 
-    by auto => />; move => *; split; [exists 7 => />; smt()| by smt(logs log2E)].
+   (exists l, 0 <= l <= 7 /\ len{1} = 2^l /\
+      signed_bound_cxq rp{2} 0 256 (9 - l))); 
+      last by auto => />; move => *; exists 7; auto.
+
 wp; exists* zetasctr{1}; elim* => zetasctr1 l.
 
 (* Middle loop *)
 while (#{/~zetasctr1=zetasctr{1}}
         {~2*(zetasctr{1}+1)*len{1} = 256}
-        {~signed_bound_cxq rp{2} 0 256 (9 - log2 len{1})}pre /\ 
+        {~exists l, 0 <= l <= 7 /\ len{1} = 2^l /\
+      signed_bound_cxq rp{2} 0 256 (9 - l)}pre /\ 
        2*(zetasctr1+1)*len{1}= 256 /\
        start{1} = to_uint start{2} /\
        0 <= start{1} <= 256 /\
        start{1} = 2*(zetasctr{1} - zetasctr1)*len{1} /\
        2* (zetasctr{1} - zetasctr1 ) * to_uint len{2} <= 256 /\
        (* Nasty carry inv *)
-       signed_bound_cxq  rp{2} 0 256 (9 - log2 len{1} + 1) /\
-       signed_bound_cxq  rp{2} start{1} 256 (9 - log2 len{1})
+       (exists l, 0 <= l <= 7 /\ len{1} = 2^l /\
+          signed_bound_cxq  rp{2} 0 256 (9 - l + 1) /\
+          signed_bound_cxq  rp{2} start{1} 256 (9 - l))
        ); last first.
-auto => />; move => &1 &2 zmont H H0 H1 H2 H3 cinv cbnd H4 H5.
-split.
-move : cbnd; rewrite /signed_bound_cxq => />. move => *;split;smt(@Fq).
-move => rp start zetasctr H6 H7 H8 H9 H10 H11 H12 H13 H14 H15;rewrite uleE !shr_div => />.
-split; last by  
-   rewrite (logdiv2 (to_uint len{2}) (log2 (to_uint len{2}))); 
-    [ smt(@W64) | smt(log2E) | smt(@W64) ].
- exists (l-1).
- split; first by move : H H0; smt(@Int).
- rewrite H1 exprD_subz 1:// //=.
- rewrite H1 in H4; move : H4; smt(@IntDiv_extra @Ring.IntID). 
++ auto => />; move => &1 &2; rewrite /signed_bound_cxq => zmont H H0 H1 ll lh rep blow exit ?;split;
+     1: by exists l; do split; smt().
+  move => rp start zetasctr; rewrite !ultE !uleE !shr_div /= => H6 H7 H8 H9 H10 H11 H12 H13 H14 l0 l0l l0h l0v vl vh. 
+  split; 1: by smt().  
+  exists (l - 1); do split. admit. smt(). admit.  smt().
 
-wp.
 
 (* Inner loop *)
 while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}}
