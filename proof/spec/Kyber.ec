@@ -381,6 +381,10 @@ axiom bytes2bits32E i j a:
   0 <= i < 32 => 0 <= j < 8 =>
    (bytes2bits32 a).[i*8+j] = bit_at (to_uint a.[i]) j.
 
+axiom bytes2bits128E i j a: 
+  0 <= i < 128 => 0 <= j < 8 =>
+   (bytes2bits128 a).[i*8+j] = bit_at (to_uint a.[i]) j.
+
 
 module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
@@ -527,19 +531,18 @@ module EncDec = {
    }
 
    proc decode4(bytes : W8.t Array128.t) : ipoly = {
-       var bits,i,j,fi;
+       var bits,i,j,fj,fj1;
        var r : ipoly;
        r <- witness;
        bits <- bytes2bits128 bytes;
-       i <- 0;
-       while (i < 256) {
-          fi <- 0;
-          j <- 0;
-          while (j < 4) {
-            fi <- fi + b2i bits.[i*4 + j] * 2^j;
-            j <- j + 1; 
-          }
-          r.[i] <- fi;
+       i <- 0; j <- 0;
+       while (i < 128) {
+          fj  <- BitEncoding.BS2Int.bs2int (mkseq (fun k => bits.[2*i*4+k]) 4);
+          fj1 <- BitEncoding.BS2Int.bs2int (mkseq (fun k => bits.[(2*i+1)*4+k]) 4);
+          r.[j] <- fj;
+          j <- j + 1;
+          r.[j] <- fj1;
+          j <- j + 1;
           i <- i + 1;
        }
        return r;
@@ -625,7 +628,8 @@ module EncDec = {
           j <- j + 1;
           fi1 <- p.[j];
           j <- j + 1;
-          r.[i] <- W8.of_int(fi) `|` W8.of_int (fi1) `<<` W8.of_int 4;
+          r.[i] <- truncateu8 (W32.of_int(fi) `|` 
+                   (W32.of_int (fi1) `<<` W8.of_int 4));
           i <- i + 1;
        }
        return r;

@@ -155,44 +155,37 @@ lemma setbitor (r : W8.t) (w : W32.t) (v : int) j :
     v = to_uint (truncateu8 (w `&` W32.one)) =>
     !r.[j] => r `|` truncateu8 ((w `&` W32.one) `<<` W8.of_int j) = 
          r.[j <- bit_at v 0].
-admitted. 
-(* 
 proof.
-move => jb vv rj0.
+move => jb.
 have jpow : 1<= 2^j <=128. 
 + split; 1: smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l). 
   move => *; rewrite (_: 128 = 2^7) //.
   by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ j 7) => // /#.
-apply W8.ext_eq => x xb.
-rewrite /W32.(`<<`) /=  modz_dvd // modz_small //;1:smt().
+rewrite /W32.(`<<`) /=  modz_dvd // (modz_small _ 32) //;1:smt().
+move => vval rv0;apply W8.ext_eq => x xb /=.
+rewrite /bit_at /int2bs /mkseq -iotaredE /=.
+rewrite vval.
 rewrite (W8.get_to_uint (truncateu8 (w `&` W32.one `<<<` j)))  /= xb /=.
-rewrite to_uint_truncateu8 /= (modz_small _ 256).
-+ split; 1: by smt(W32.to_uint_cmp pow2_32).
-  rewrite to_uint_shl; 1: smt().
-  by rewrite modz_small /= andwC /=;  
-      move : (W32.to_uint_ule_andw W32.one w); 
-       rewrite !W32.of_uintK /=; smt(W32.to_uint_cmp).
+rewrite !to_uint_truncateu8 /=.
+rewrite (_: W32.one = W32.of_int (2^1 - 1)) 1://= !W32.and_mod //=.
+rewrite of_uintK /= modz_dvd //.
+rewrite modz_dvd // modz_mod.
+pose ww := to_uint w %% 2.
+rewrite to_uint_shl 1:/# of_uintK /= !(modz_small _ 4294967296) 1,2,3:/# (modz_small _ 256) 1:/#.
 
-case(x <> j).
-+ move => neq; rewrite set_neqiE //. 
-  have ? : !((w `&` W32.one) `<<<` j).[x]; last by smt(W32.get_to_uint).
-  case (0 <= x-j < 32); last by smt(W32.get_out). 
-  rewrite /(`&`)/=.
-  move => *; rewrite(W32.get_to_uint W32.one) /=.
-  have ? : 2^1<=2^(x - j); last by smt(Ring.IntID.expr1).
-  by apply StdOrder.IntOrder.ler_weexpn2l =>  /#.
+case (x = j); 1: by move => eq; rewrite eq set_eqiE // rv0 /= /#.
 
-move => eq; rewrite set_eqiE //.
-  move : rj0;rewrite (_: j = x); 1:by smt(). 
-  move => -> /=; rewrite /bit_at /int2bs /mkseq /= -iotaredE /=; congr; congr.
-  rewrite vv to_uint_truncateu8 /= modz_dvd //. 
-  move : (W32.get_to_uint (w `&` W32.one `<<<` x) x).
-  have /=  : 0 <= x < 32 by smt(). 
-  move => -> /= => H.
-  rewrite -b2i_mod2 -H /W32.one /= /int2bs /mkseq -iotaredE /= /b2i.
-  by rewrite W32.get_to_uint /= /#.
+move => neq; rewrite set_neqiE //.  
+case(ww = 0); 1: by move => -> /=.
+move => wwn0;have -> : ww = 1 by smt(). 
+have : (2 ^ j %/ 2 ^ x) %% 2 = 0; last by smt().
+case (j < x). 
++ move => *;rewrite -(mod0z 2);congr;congr. 
+  apply pdiv_small; split; 1: by smt(gt0_pow2).
+  smt(StdOrder.IntOrder.ieexprIn StdOrder.IntOrder.ler_weexpn2l).
+move => *; rewrite expz_div //; 1: smt().
+by rewrite -(Ring.IntID.expr1 2); apply dvdz_exp2l; smt().
 qed.
-*)
 
 lemma poly_tomsg_corr _a (_p : address) mem : 
     equiv [ M._poly_tomsg ~ EncDec.encode1 :
@@ -499,19 +492,6 @@ lemma poly_reduce_corr (_a : Fq Array256.t):
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)] = 1%r.
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
-(* 
-lemma formula x :
-  0 <= x < 3329 =>
-   (x * 16 + 1665) * (268435456 %/ 3329) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16.
-proof.
-  have ? :
-   (all
-     (fun x => (x * 16 + 1665) * (268435456 %/ 3329 ) %% 4294967296 %/ 268435456 = (x * 16 +1664) %/ 3329 %% 16)
-     (range 0 3329)).
-by [] => />.
-by smt().
-qed.
-*)
 
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ M._poly_tobytes ~ EncDec.encode12 :
@@ -579,170 +559,95 @@ do split; 1..4: by smt(get_set_neqE_s).
   rewrite set_eqiE //.
   have -> : W32.of_int 15 = W32.of_int (2^4 - 1) by auto.
   rewrite /lift_array256 !mapiE /=; 1..4: smt().
-  rewrite -compress_impl_small_trunc //; 1: smt().
+  rewrite -compress_impl_small //; 1: smt().
   rewrite  -compress_impl_small //; 1:smt().
   
   case (k = to_uint i{1}); last by smt(Array128.set_neqiE).
-  move => iv. 
-  have -> : 15 = 2^4 - 1 by auto.
-  rewrite !and_mod //.
-  rewrite !to_uintK. 
-  pose x := to_uint (((zeroextu32 a{1}.[to_uint j{1}] `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
-          (of_int 28)%W8) %% 2^4.
-  pose y := to_uint (((zeroextu32 a{1}.[to_uint j{1} + 1] `<<` (of_int 4)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
-          (of_int 28)%W8) %% 2^4.
-  admit.
- 
-+ rewrite ultE /= to_uintD_small; smt().
+  move => iv; have -> : 15 = 2^4 - 1 by auto.
+  by rewrite !and_mod //.
++ by rewrite ultE /= to_uintD_small; smt().
 
-rewrite ultE /= to_uintD_small; smt().
+by rewrite ultE /= to_uintD_small; smt().
 qed.
 
 lemma poly_compress_ll : islossless M._poly_compress.
 proc.
-while (0 <= to_uint i <= 128) (128-to_uint i); last by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
-move => *;  auto => /> &hr H H0.
-rewrite W64.ultE W64.to_uintD_small 1:/# /= => H1.
-smt(@W64).
+while (0 <= to_uint i <= 128) (128-to_uint i); last 
+   by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
+move => *;  auto => /> &hr ??.
+by rewrite W64.ultE W64.to_uintD_small /#. 
 qed.
 
+(*
 lemma mul_mod_add_mod (x y z m : int) :
  (x * y %% m + z) %% m = (x * y + z) %% m.
 proof. by move => *; rewrite -modzDm modz_mod modzDm. qed.
-
-(*
-lemma poly_decompress_restore_corr ap :
-      hoare[ Mderand.poly_decompress_restore :
-           ap = lift_array256 r /\
-           pos_bound256_b r 0 256 (2^4) 
-           ==>
-           Array256.map Poly.unroundc ap = lift_array256 res /\
-           signed_bound_cxq res 0 256 1 ] . 
-proof.
-proc.
-while (#pre /\ 0 <= i <= 128 /\
-     (forall k, 0 <= k < i*2 => rp.[k] = ((r.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
-  wp; skip => /> *; do split; first 2 by smt().
-  move => k *.
-    rewrite get_setE 1:/#.
-    case (k = 2 * i{hr} + 1) => ?.
-      by rewrite H6.
-    rewrite get_setE 1:/#.
-    case (k = 2 * i{hr}) => ?.
-      by rewrite H7.
-    by smt().
-wp; skip => /> *; do split; first by smt().
-  move => *.
-  have ?: forall (k : int), 0 <= k && k < 256 => 
-                            rp0.[k] = r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8 by smt().
-  move : H; rewrite /pos_bound256_b.
-  have ->: (forall (k0 : int), 0 <= k0 && k0 < 256 => bpos16 r{hr}.[k0] 16) =
-          (forall (k0 : int), 0 <= k0 && k0 < 256 => 0 <= to_sint r{hr}.[k0] < 16) by done.
-  move => *; split.
-    + rewrite /lift_array256 tP => k *.
-      rewrite mapE initE /= H5 /= mapE initE /= H5 /= mapE initE /= H5 /= unroundcE /= inzmodK qE /= modz_small.
-        by move : (H k); rewrite H5 /= /#.
-      rewrite -eq_inzmod H4 //.
-      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
-        rewrite shr_div_le // /=.
-        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
-          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
-        by rewrite -ltzNge; move : H6 => /#.
-      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod -!divz_mod_mul // qE //.
-      congr; congr.
-      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
-
-    + rewrite /signed_bound_cxq => k *.
-      rewrite b16E; split; rewrite H4 //.
-      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
-        rewrite shr_div_le // /=.
-        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
-          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
-        by rewrite -ltzNge; move : H6 => /#.
-      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod qE //.
-      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
-      move => ?.
-      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
-        rewrite shr_div_le // /=.
-        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
-          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
-        by rewrite -ltzNge; move : H7 => /#.
-      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod qE //.
-      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
-qed.
 *)
 
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
     equiv [ M._poly_decompress ~ EncDec.decode4 :
-             valid_range W8 Glob.mem{1} _p 128 /\
+             valid_ptr _p 128 /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
              load_array128 Glob.mem{1} _p = _a
               ==>
              Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 4 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 ].
-admitted.
-(*
-proof.
-proc.
-while (#pre /\ 0 <= i <= 128 /\
-     (forall k, 0 <= k < i*2 => rp.[k] = ((r.[k] * W16.of_int 3329) + W16.of_int 8) `>>` W8.of_int 4)).
-  wp; skip => /> *; do split; first 2 by smt().
-  move => k *.
-    rewrite get_setE 1:/#.
-    case (k = 2 * i{hr} + 1) => ?.
-      by rewrite H6.
-    rewrite get_setE 1:/#.
-    case (k = 2 * i{hr}) => ?.
-      by rewrite H7.
-    by smt().
-wp; skip => /> *; do split; first by smt().
-  move => *.
-  have ?: forall (k : int), 0 <= k && k < 256 => 
-                            rp0.[k] = r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8 by smt().
-  move : H; rewrite /pos_bound256_b.
-  have ->: (forall (k0 : int), 0 <= k0 && k0 < 256 => bpos16 r{hr}.[k0] 16) =
-          (forall (k0 : int), 0 <= k0 && k0 < 256 => 0 <= to_sint r{hr}.[k0] < 16) by done.
-  move => *; split.
-    + rewrite /lift_array256 tP => k *.
-      rewrite mapE initE /= H5 /= mapE initE /= H5 /= mapE initE /= H5 /= unroundcE /= inFqK qE /= modz_small.
-        by move : (H k); rewrite H5 /= /#.
-      rewrite -eq_inFq H4 //.
-      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
-        rewrite shr_div_le // /=.
-        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
-          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
-        by smt.
-      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod -!divz_mod_mul // qE //.
-      congr; congr.
-      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
+proc. 
+seq 0 2 : (#pre /\ bits{2} = bytes2bits128 bytes{2}); 1: by auto.
+while(#pre /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ 0 <= i{2} <= 128 /\ j{2} = 2*i{2} /\
+   forall k, 0<=k<i{2}*2 => inFq (to_sint rp{1}.[k]) = decompress 4 r{2}.[k] /\
+                0 <= to_sint rp{1}.[k] <q); last first.
++ auto => /> &1 &2; rewrite /lift_array256 /decompress_poly /pos_bound256_cxq /=.
+  move =>  vrl vrh; split; 1: by smt(). 
+  move => i j rp rr; rewrite ultE of_uintK /= => exit _ ibl ibh jv prior; split; 2: by smt(). 
+  by rewrite tP => x xb; rewrite !mapiE //= /#.
 
-    + rewrite /signed_bound_cxq => k *.
-      rewrite b16E; split; rewrite H4 //.
-      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
-        rewrite shr_div_le // /=.
-        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
-          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
-        by smt. 
-      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod qE //.
-      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
-      move => ?.
-      rewrite (W16.to_sintE (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8)) /smod /=.
-      have ->: 32768 <= to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16 `>>` (of_int 4)%W8) <=> false.
-        rewrite shr_div_le // /=.
-        have ?: to_uint (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16) < 2^16.
-          by move : (W16.to_uint_cmp (r{hr}.[k] * (of_int 3329)%W16 + (of_int 8)%W16)).
-        by smt. 
-      rewrite shr_div_le /= // to_uintD of_uintK /= to_uintM of_uintK /= mul_mod_add_mod qE //.
-      by rewrite -to_sint_unsigned 1:/# (pmod_small _ 65536) => /#.
+auto => /> &1 &2 vpl vph il ih jv prior; rewrite ultE of_uintK /= => enter _; 
+  split; 2: by rewrite ultE of_uintK /= to_uintD_small /#.
+rewrite  !to_uintD_small /=; 1..4: by smt().
+do split; 1..3: by smt().
+move => k kl kh.
+rewrite /(`>>`) /= /load_array32 /=. 
+
+split;last first.
++ case(k < to_uint i{1} * 2); 1: by smt(Array256.set_neqiE).
+  case(k = to_uint j{1}).
+  + move => ->;rewrite set_neqiE;1,2:smt(). 
+    rewrite set_eqiE;1,2:smt().
+    move => _;  have pow : W16.of_int 15 = W16.of_int (2^4-1) by smt().
+    rewrite pow and_mod //= /to_sint !to_uint_shr // !to_uint_zeroextu16. 
+    rewrite !of_uintK /= qE !(modz_small _ 65536) /=; 1: smt(). 
+    by rewrite /smod /=; smt(to_uint_cmp).
+ move => *;rewrite set_eqiE;1,2:smt(). 
+ rewrite /to_sint  !to_uint_shr //.
+ rewrite !to_uintD_small; first
+   by rewrite !to_uintM_small; rewrite of_uintK /= to_uint_shr // 
+                                  to_uint_zeroextu16 /= /loadW8 /=; 
+                                  smt(W8.to_uint_cmp pow2_8).
+    rewrite !of_uintK /= qE !to_uintM_small;1: by rewrite of_uintK /= to_uint_shr // 
+                                  to_uint_zeroextu16 /= /loadW8 /=; 
+                                  smt(W8.to_uint_cmp pow2_8).
+    rewrite !to_uint_shr // to_uint_zeroextu16 /=.
+    by rewrite /smod /=; smt(W8.to_uint_cmp pow2_8).
+
+case(k < to_uint i{1} * 2); 1: by smt(Array256.set_neqiE).
+case(k = to_uint j{1}).
++ move => ->;rewrite set_neqiE;1,2:smt(). 
+  rewrite set_eqiE;1,2:smt().
+  rewrite set_neqiE;1,2:smt(). 
+  rewrite set_eqiE;1,2:smt().
+  move => _;rewrite -decompress_alt_decompress //; 1: smt(qE).
+  rewrite /decompress_alt; congr.
+  admit.
+
+move => *;rewrite set_eqiE;1,2:smt(). 
+rewrite set_eqiE;1,2:smt().
+rewrite -decompress_alt_decompress //; 1: smt(qE).
+rewrite /decompress_alt; congr.
+admit.
+
 qed.
-*)
-
 
 
 (*******DIRECT NTT *******)
