@@ -194,7 +194,7 @@ case (32768 <= to_uint a); last first. (* positive numbers *)
     by smt(leq_div2r).
  move => /= lb.
  have -> : to_uint a %/ 2 ^ (x + 10) = to_uint a %/ 1024 %/ 2 ^ x; last by smt().
- rewrite (_: 1024 = 2^10) // {1}(divz_eq (to_uint a) (2^16)) exprD_nneg //; 1: smt().  
+ rewrite (_: 1024 = 2^10) // {1}(divz_eq (to_uint a) (2^10)) exprD_nneg //; 1: smt().  
  by smt(divmod_mul gt0_pow2). 
 
 move => neg.
@@ -506,7 +506,7 @@ rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
 rewrite -pow2_4; apply dvdz_exp2l; smt().
 qed.
 
-
+(*
 lemma compress_impl_small_trunc (a : W16.t) (d : int):
   1 <= d <= 4 =>
   bpos16 a q =>
@@ -523,6 +523,6 @@ rewrite and_mod; 1: smt().
 rewrite of_uintK modz_dvd; 1: by smt().
 by rewrite modz_small; 1: smt().
 qed.
-
+*)
 
 end Fq.

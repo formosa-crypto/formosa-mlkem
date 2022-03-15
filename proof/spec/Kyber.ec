@@ -370,21 +370,19 @@ module type PRF_t(O : RO.POracle) = {
    proc next_bytes(_N : int) : W8.t Array128.t
 }.
 
-op bytes2bits32 : W8.t Array32.t -> bool Array256.t.
-op bytes2bits128 : W8.t Array128.t -> bool Array1024.t.
-op bytes2bits320 : W8.t Array320.t -> bool Array2560.t.
-op bytes2bits384 : W8.t Array384.t -> bool Array3072.t.
-
-op bit_at(x : int) (i : int) : bool = nth false (BitEncoding.BS2Int.int2bs 16 x) i.
+op bytes2bits32 : W8.t Array32.t   -> int Array256.t.
+op bytes2bits128 : W8.t Array128.t -> int Array256.t.
+op bytes2bits320 : W8.t Array320.t -> int Array256.t.
+op bytes2bits384 : W8.t Array384.t -> int Array256.t.
 
 axiom bytes2bits32E i j a: 
   0 <= i < 32 => 0 <= j < 8 =>
-   (bytes2bits32 a).[i*8+j] = bit_at (to_uint a.[i]) j.
+   (bytes2bits32 a).[i*8+j] = b2i a.[i].[j].
 
-axiom bytes2bits128E i j a: 
-  0 <= i < 128 => 0 <= j < 8 =>
-   (bytes2bits128 a).[i*8+j] = bit_at (to_uint a.[i]) j.
-
+axiom bytes2bits128E a i: 
+  0 <= i < 128 => 
+   (bytes2bits128 a).[i*2] = to_uint (a.[i] `&` W8.of_int 15) /\
+   (bytes2bits128 a).[i*2+1] = to_uint (a.[i] `>>` W8.of_int 4).
 
 module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
@@ -395,8 +393,8 @@ module CBD2(PRF : PRF_t, O : RO.POracle) = {
       bits <- bytes2bits128 bytes;
       i <- 0;
       while (i < 256) {
-        a <- b2i bits.[4*i] + b2i bits.[4*i+1];
-        b <- b2i bits.[4*i + 2] + b2i  bits.[4*i+3];
+        a <- bits.[4*i] + bits.[4*i+1];
+        b <- bits.[4*i + 2] + bits.[4*i+3];
         rr.[i] <- inFq  (a - b);
       }
       return rr;
@@ -502,7 +500,7 @@ module EncDec = {
           fi <- 0;
           j <- 0;
           while (j < 12) {
-            fi <- fi + b2i bits.[i*12 + j] * 2^j;
+            fi <- fi + bits.[i*12 + j] * 2^j;
             j <- j + 1; 
           }
           r.[i] <- fi;
@@ -521,7 +519,7 @@ module EncDec = {
           fi <- 0;
           j <- 0;
           while (j < 10) {
-            fi <- fi + b2i bits.[i*10 + j] * 2^j;
+            fi <- fi + bits.[i*10 + j] * 2^j;
             j <- j + 1; 
           }
           r.[i] <- fi;
@@ -531,46 +529,34 @@ module EncDec = {
    }
 
    proc decode4(bytes : W8.t Array128.t) : ipoly = {
-       var bits,i,j,fj,fj1;
+       var bits,i;
        var r : ipoly;
        r <- witness;
        bits <- bytes2bits128 bytes;
-       i <- 0; j <- 0;
+       i <- 0;
        while (i < 128) {
-          fj  <- BitEncoding.BS2Int.bs2int (mkseq (fun k => bits.[2*i*4+k]) 4);
-          fj1 <- BitEncoding.BS2Int.bs2int (mkseq (fun k => bits.[(2*i+1)*4+k]) 4);
-          r.[j] <- fj;
-          j <- j + 1;
-          r.[j] <- fj1;
-          j <- j + 1;
+          r.[i*2+0]  <- bits.[i*2+0];
+          r.[i*2+1]  <- bits.[i*2+1];
           i <- i + 1;
        }
        return r;
    }
 
    proc decode1(bytes : W8.t Array32.t) : ipoly = {
-       var bits,i,fi;
+       var bits,i;
        var r : ipoly;
        r <- witness;
        bits <- bytes2bits32 bytes;
        i <- 0;
        while (i < 32) {
-          fi <- b2i bits.[i*8+0];
-          r.[i*8+0] <- fi;
-          fi <- b2i bits.[i*8+1];
-          r.[i*8+1] <- fi;
-          fi <- b2i bits.[i*8+2];
-          r.[i*8+2] <- fi;
-          fi <- b2i bits.[i*8+3];
-          r.[i*8+3] <- fi;
-          fi <- b2i bits.[i*8+4];
-          r.[i*8+4] <- fi;
-          fi <- b2i bits.[i*8+5];
-          r.[i*8+5] <- fi;
-          fi <- b2i bits.[i*8+6];
-          r.[i*8+6] <- fi;
-          fi <- b2i bits.[i*8+7];
-          r.[i*8+7] <- fi;
+          r.[i*8+0] <- bits.[i*8+0];
+          r.[i*8+1] <- bits.[i*8+1];
+          r.[i*8+2] <- bits.[i*8+2];
+          r.[i*8+3] <- bits.[i*8+3];
+          r.[i*8+4] <- bits.[i*8+4];
+          r.[i*8+5] <- bits.[i*8+5];
+          r.[i*8+6] <- bits.[i*8+6];
+          r.[i*8+7] <- bits.[i*8+7];
           i<-i+1;
        }
        return r;
@@ -644,7 +630,7 @@ module EncDec = {
           r <- W8.zero;
           j <- 0;
           while (j < 8) {
-             r.[j] <- bit_at a.[8*i+j] 0;
+             r <- r `|` (W8.of_int a.[8*i+j] `<<` W8.of_int j);
              j <- j + 1;
           }
           ra.[i] <- r;
