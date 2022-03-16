@@ -19,7 +19,6 @@ op lift_array256 (p : W16.t Array256.t) =
 
 op lift_array128 (p : W16.t Array128.t) =
   Array128.map (fun x => inFq (W16.to_sint x)) p.
-
 op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
    forall k, l <= k < u => b16 coefs.[k] (c*q).
 
@@ -1006,7 +1005,7 @@ while (#{/~zetasctr1=zetasctr{1}}
 wp.
 (* Inner loop *)
 while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
-       zeta_{1}  *  (inFq R) = inFq (to_sint zeta_0{2}) /\  
+       zeta_{1} = inFq (to_sint zeta_0{2}) *  (inFq 169) /\  
        0 <= to_sint zeta_0{2} < q /\
        start{1} = 2*((zetasctr{1}-1) - zetasctr1) * len{1} /\
        W64.to_uint cmp{2} = start{1} + len{1} /\ 
@@ -1019,245 +1018,82 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
   move : zetainv_bound; rewrite /minimum_residues /bpos16 => zb.
 
   rewrite !ultE //= !to_uintD_small;1,2:smt().
-  do split; 1..3,5..6:smt(). 
-  + by rewrite (mont_lift_commute zetas_inv{1} jzetas_inv zetas (to_uint zetasctr{2}) _); smt().
+  do split; 1..3,5..6:smt().
+  + move : (mont_lift_commute zetas_inv{1} jzetas_inv zetas (to_uint zetasctr{2}) _); 1: smt().
+    by move => <-; rewrite -ZqField.mulrA rrinvFq; ring.
+
   by smt().
  
   by move => jl rpl; rewrite !ultE => 13?; rewrite !to_uintD_small; smt(). 
 
 (* Preservation *)
 
-(*  Dealing with barrett reduction *)
-wp; sp; exists* m{2}; elim* => m2.
-seq 0 1 : (#{/~m2=m{2}}{~ m{2} = s{2} + t{2}}pre /\ 
-          inFq (to_sint m{2}) = inFq(to_sint (s{2} + t{2})) /\ 
-          bpos16 m{2} (2*q)).
-  ecall {2}  (barrett_reduce_corr (to_sint m2)) => />.
-  auto => />; move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 result H26.
- by  smt().
-auto => />.
-move => &1 &2 [#] H H0 H1 H2 H3 H4   cbnd H5 H6 H7 H8 H9 H10 H11 H12 zetaval H13 H14 -> ??? H19?? resval.
+wp;ecall {2}(fqmul_corr (to_sint t{2}) (to_sint zeta_0{2})).
+wp;ecall {2} (barrett_reduce_corr (to_sint m{2})).
 
-move : cbnd; rewrite /signed_bound_cxq => /> cbnd. 
- move : (cbnd (to_uint (j{2} + len{2})) _).
- rewrite to_uintD_small.   by smt(@W16 @W64). split. 
-smt(@W64).
- by smt(@W16 @W64). move => jlenbound.
- move : (cbnd (to_uint j{2}) _); first by by smt(@W64). move => jbound.
+auto => />  &1 &2; rewrite !uleE /signed_bound_cxq /b16. 
+move => zetas 2? rep 3? lb; rewrite !ultE => 15?; rewrite !to_uintD_small; 1,2: smt(). 
+move => result rval result0 rval0.
+rewrite /lift_array256 /=.
 
-move : resval.
-rewrite !to_uintD_small; first by smt(@W64).
-move : H12 H6 H19; rewrite !ultE uleE => *.
-move  :  (BREDCp_corr (to_sint (rp{2}.[to_uint j{2} + to_uint len{2}] + rp{2}.[to_uint j{2}])) 26 _ _ _ _ _ _) => />; first 3 by rewrite /R; smt(@Fq).
+have [#]bredbl bredbh bredv := (BREDCp_corr (to_sint (rp{2}.[to_uint j{2} + to_uint len{2}] + rp{2}.[to_uint j{2}])) 26 _ _ _ _ _ _); 
+     1..4: smt(qE pow2_16).
++ by rewrite to_sintD_small /= /R /=; smt(qE).
++ by move => a; rewrite /R qE /= /barrett_pred => bnd; split; smt().
 
-move : jlenbound jbound cbnd; rewrite qE /R !to_uintD_small /=; 1: by smt(@W16).
-move => jlenbound jbound cbnd.
-rewrite to_sintD_small. split. 
+have  /= [#] redbl redbh redv := 
+   (SREDCp_corr (to_sint (rp{2}.[to_uint j{2}] - rp{2}.[to_uint j{2} + to_uint len{2}]) * to_sint zeta_0{2})_ _).
+  + by rewrite /R qE /=.
+  by rewrite /R qE /= !to_sintB_small /=; smt(qE). 
 
-move : jlenbound jbound.
-rewrite -to_uintD_small.
-smt().
-smt().
-move : jlenbound jbound.
-rewrite -to_uintD_small.
-smt().
-smt().
+move : redbl redbh; rewrite -rval0 => redbl redbh.
+move : bredbl bredbh; rewrite -rval => bredbl bredbh.
 
-move : jlenbound jbound.
-rewrite /R => /> *.
-rewrite -to_uintD_small.
-smt().
-rewrite to_uintD_small.
-smt().
-smt().
+do split; 4..: smt().
 
-rewrite /R qE /= => a.
-rewrite /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux.
-smt(@Int @IntDiv).
++ apply Array256.ext_eq  => x xb.
+  case (x = to_uint j{2} + to_uint len{2}); last first.
+  + move => *; rewrite (set_neqiE);1 ,2: smt().
+    case(x = to_uint j{2}); last first.
+    + move => *; rewrite !(set_neqiE);1,2 : smt().
+      by rewrite !mapiE //= !(set_neqiE);  smt().
+    move => ->; rewrite !(set_eqiE); 1,2: smt().
+    rewrite !mapiE //=; 1..3: smt().
+    rewrite (set_neqiE); 1..2:  smt().
+    rewrite (set_eqiE); 1..2:  smt().
+    rewrite rval -eq_inFq bredv !inFqK modzDm addrC.
+    by rewrite to_sintD_small /=; smt(qE).
+  move => ->; rewrite set_eqiE; 1,2: smt().
+  rewrite (set_eqiE); 1..2:  smt().
+  rewrite (set_neqiE); 1..2:  smt().
+  rewrite !mapiE //=; 1..3: smt().
+  rewrite (set_eqiE); 1..2:  smt().
+  rewrite -inFqB; apply eq_inFq; rewrite rval0 redv !inFqK. 
+  rewrite !modzMm !(modz_small 169 _) qE 1:/# (modz_small (to_sint zeta_0{2})); 1: by smt(qE).
+  rewrite to_sintB_small /= ; 1: smt(qE).
+  by rewrite mulrC mulrA.
 
-by move => ? resval; smt(@Zq).
++ move => x xb.
+  case (x = to_uint j{2} + to_uint len{2}); last first.
+  + move => *; rewrite (set_neqiE);1 ,2: smt().
+    case(x = to_uint j{2}); last first.
+    + by move => *; rewrite !(set_neqiE); smt().
+    by move => ->; rewrite !(set_eqiE); smt().
+  by move => ->; rewrite set_eqiE; smt().
 
-(* Dealing with the multiplication *)
-sp.
-
-ecall {2} (fqmul_corr (to_sint t{2}) (to_sint zeta_0{2})).
-skip => />.
-move => &1 &2 rP_R [#] H H0 H1 H2 H3 H4 cbnd H5 H6 H7 H8 H9 H10 H11 H12 zetaval H13 H14 -> cmp H15 H16 H17 H18 H19 H20 H21 H22 resval.
-
-move : cbnd; rewrite /signed_bound_cxq => /> cbnd. 
- move : (cbnd (to_uint (j{2} + len{2})) _). 
-rewrite !to_uintD_small.
-smt().
-split.
-have ?: 0 <= to_uint len{2}.
-rewrite H2.
-rewrite expr_pos.
-done. smt(). 
-move : (W64.to_uint_cmp j{2}) (W64.to_uint_cmp len{2}); smt(). 
-smt(@W16 @W64).
- rewrite !to_uintD_small;  first 2  by smt(@W16 @W64). move => /> jlenboundl jlenboundh.
- move : (cbnd (to_uint j{2}) _); first by smt(@W64). move => /> jboundl jboundh.
-
-have bound1 : 2 <= to_uint len{2}; first by smt(@Ring.IntID).
-have bound2 : (-R %/ 2 < -4*q ); first by smt(@Fq).
-have bound3 : (-R %/ 2 * q < -4*q*q ) by rewrite /R qE /=.
-
-move : resval.
-rewrite !to_uintD_small; first by smt(@W64).
-move : (SREDCp_corr (to_sint (rP_R.[to_uint j{2}] - rP_R.[to_uint j{2} + to_uint len{2}]) * to_sint zeta_0{2}) _ _) => />; first by rewrite /R qE.
- rewrite !to_sintD_small => />.  
-
-rewrite !to_sintN; by smt(@Fq @Zq @W16).
-rewrite !to_sintN;  by smt(@Fq @Zq @W16).
-
- move => resbl resbh rescong resval.
-
-split; last first. 
-split.
-rewrite ultE to_uintD_small 1:/# of_uintK /=.
-rewrite cmp.
-done.
-rewrite ultE to_uintD_small 1:/# of_uintK /=.
-rewrite cmp.
-done.
-
-split; last smt(@W64).
-
-(********* bounding carries *)
-split; last first.
-split.
-(* part 1*)
-
-move => k H23 H24.
-case (k <> to_uint j{2} /\ k <> to_uint j{2} + to_uint len{2}).
-  move => [#] H25 H26; rewrite !Array256.set_neqiE.
-  move : bound1 H5 H15 H17; smt(@W64 @Int @IntDiv).
-  apply H26.
-  move : H15 H17; smt(@W64 @Int @IntDiv).
-  apply H25.
-  move : (cbnd k); smt(@W64).
-
-  case (k = to_uint j{2}). 
-  move =>  ->;rewrite Array256.set_neqiE; first 2  by smt(@W64). 
-  rewrite Array256.set_eqiE;   by smt(@W64). 
-  move => *; rewrite (_:k = to_uint j{2} + to_uint len{2}); first by smt().
-  rewrite Array256.set_eqiE; first 2 by smt(@W64). 
-smt. 
-(* part 2 *)
-
-move => k H23 H24.
-case (k <> to_uint j{2} /\ k <> to_uint j{2} + to_uint len{2}).
-  move => [#] H25 H26; rewrite !Array256.set_neqiE.
-  move : bound1 H5 H15 H17; smt(@W64 @Int @IntDiv).
-  apply H26.
-  move : H15 H17; smt(@W64 @Int @IntDiv).
-  apply H25.
-  move : (cbnd k); smt(@W64).
-
-  case (k = to_uint j{2}). 
-  move => *. rewrite Array256.set_neqiE; first 2 by smt(@W64).
-  move => *. rewrite Array256.set_eqiE; by smt(@W64).
-  move => *; rewrite (_:k = to_uint j{2} + to_uint len{2}); first by smt().
-  rewrite Array256.set_eqiE;  by smt(@W64). 
-
-(*****************)
-(* One goal *)
-apply Array256.ext_eq.
-move => x xb => />.
-rewrite /lift_array256 !mapiE => />.
-split.
-smt(@W64).
-smt().
-split.
-have ?: 0 <= to_uint len{2}.
-smt(expr_pos).
-rewrite /lift_array256 /=. 
-move : (W64.to_uint_cmp j{2}) (W64.to_uint_cmp len{2}); smt(). 
-smt().
-
-case (x <> to_uint j{2} + to_uint len{2}). 
-+ case (x <> to_uint j{2}). 
-move => *.
-rewrite Array256.set_neqiE.
-split.
-have ?: 0 <= to_uint len{2}.
-smt(expr_pos).
-smt(@W64).
-smt().
-done.
-rewrite Array256.set_neqiE.
-split.
-smt(@W64).
-smt().
-done.
-rewrite Array256.set_neqiE.
-split.
-have ?: 0 <= to_uint len{2}.
-smt(expr_pos).
-smt(@W64).
-smt().
-done.
-rewrite Array256.set_neqiE.
-split.
-smt(@W64).
-smt().
-done.
-rewrite mapiE.
-done.
-done.
-   move => *.
-   rewrite Array256.set_neqiE; first 2 by smt(@W64).
-   rewrite Array256.set_eqiE; first 2 by smt(@W64). 
-   rewrite Array256.set_neqiE; first 2 by smt(@W64).
-   rewrite Array256.set_eqiE; first 2 by smt(@W64). 
-   rewrite H19.
-   rewrite !to_sintD_small to_uintD_small; first  by smt().
-   simplify => />. smt(@Fq @W16).
-   simplify => />. smt(@Fq @W16).
-   by rewrite !inFqD; ring.
-
-+ case (x <> to_uint j{2}); last by smt(@Array256).
-   move => *; rewrite (_: x = to_uint j{2}  + to_uint len{2}); first by smt().
-   rewrite Array256.set_eqiE; first 2 by smt(@W64). 
-   rewrite Array256.set_eqiE; first 2 by smt(@W64).
-   rewrite Array256.set_neqiE. 
-split.
-smt(@W64).
-smt().
-smt().
-   rewrite Array256.set_eqiE; first 2 by smt(@W64). 
-   rewrite mapiE; first by smt(@W64).
-   rewrite resval => />. 
-   rewrite (_:
-     inFq (SREDC (to_sint (rP_R.[to_uint j{2}] - rP_R.[to_uint j{2} + to_uint len{2}]) * to_sint zeta_0{2})) = 
-     inFq ((to_sint (rP_R.[to_uint j{2}] - rP_R.[to_uint j{2} + to_uint len{2}]) * to_sint zeta_0{2} * 169))).
-     rewrite -eq_inFq. apply rescong.
-   rewrite (_: zeta_{1} = inFq (to_sint zeta_0{2} * 169)).
-       rewrite inFqM -zetaval.
-       rewrite (_: zeta_{1} * inFq R * inFq 169 =
-                    zeta_{1} * (inFq R * inFq 169)); first by ring.
-have ->: inFq R * inFq 169 = inFq 1.
-have ->: inFq R * inFq 169 = inFq (R * 169).
-  by rewrite inFqM.
-have ?: Fqcgr (R * 169) 1.
-smt(RRinv).
-rewrite -eq_inFq.
-done.
-smt (@Zq). 
- 
-   rewrite !to_sintD_small. rewrite to_sintN /R => />;  smt(@Fq @W16). 
-   rewrite !to_sintN. 
-move : jboundl jboundh.
-rewrite /R qE /=.
-smt(@Fq @W16 @Zq).
-   by rewrite -inFqB !inFqM; ring.
+move => x xb.
+case (x = to_uint j{2} + to_uint len{2}); last first.
++ move => *; rewrite (set_neqiE);1 ,2: smt().
+  case(x = to_uint j{2}); last first.
+  + by move => *; rewrite !(set_neqiE); smt().
+  by move => ->; rewrite !(set_eqiE); smt().
+by move => ->; rewrite set_eqiE; smt().
 qed.
 
 
 lemma invntt_correct _r  :
    phoare[ M._poly_invntt :
-        _r = lift_array256 rp /\ 
-        signed_bound_cxq rp 0 256 2
+        _r = lift_array256 rp /\ signed_bound_cxq rp 0 256 2
           ==> 
             scale (invntt _r) (inFq R) = lift_array256 res /\
             forall k, 0<=k<256 => b16 res.[k] (q+1)] = 1%r.
