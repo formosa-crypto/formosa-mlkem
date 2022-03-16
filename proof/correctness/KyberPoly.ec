@@ -882,173 +882,93 @@ lemma ntt_correct_h (_r0 : Fq Array256.t):
 
 (*******INVERSE *******)
 
-lemma zetainv_bound :
-   minimum_residues jzetas_inv.
+lemma zetainv_bound :  minimum_residues jzetas_inv.
 proof.
 rewrite /minimum_residues qE.
-apply/(Array128.allP jzetas_inv (fun x => bpos16 x 3329)).
-simplify.
-rewrite (_: 
+apply/(Array128.allP jzetas_inv (fun x => bpos16 x 3329)) => /=.
+have -> : 
   (fun (x : W16.t) => 0 <= to_sint x < 3329) = 
-  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x then to_uint x - 65536 else to_uint x) < 3329)).
-apply/fun_ext => x *.
-rewrite to_sintE /smod => />.
+  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x 
+                            then to_uint x - 65536 
+                            else to_uint x) < 3329) 
+    by apply/fun_ext => x *; rewrite to_sintE /smod => />.
 by rewrite /all -iotaredE; cbv delta.
-qed. 
+qed.
 
-lemma expr_pos (b e : int) :
-  0 <= b => 0 <= e => 0 <= b ^ e.
+lemma mont_lift_commute  a b :
+  array_mont_inv a = lift_array128  b =>
+     forall k, 0<=k<127 => a.[k] * inFq R = inFq (to_sint b.[k]).
 proof.
-move => ?.
-elim e.
-rewrite expr0.
-done.
-move => *.
-rewrite exprS.
-done.
-smt().
+rewrite /array_mont_inv /lift_array128 /= tP => H.
+move => k kb; move : (H k _); 1: smt(); rewrite !mapiE 1:/# => <-.
+by move => *;rewrite set_neqiE 1,2:/# mapiE /#.
 qed.
 
 equiv invntt_correct_aux :
   NTT_Fq.NTT.invntt ~ M._poly_invntt : 
-        r{1} = lift_array256 rp{2} /\ 
-        array_mont_inv zetas_inv{1} = 
-           lift_array128  jzetas_inv /\
-        signed_bound_cxq rp{2} 0 256 2
+        r{1} = lift_array256 rp{2} /\ array_mont_inv zetas_inv{1} = 
+           lift_array128  jzetas_inv /\  signed_bound_cxq rp{2} 0 256 2
           ==> 
             map (fun x => x * (inFq R)) res{1} = lift_array256 res{2} /\
             forall k, 0<=k<256 => b16 res{2}.[k] (q+1).
 proc.
-(* Dealing with final loop *)
-seq 3 5 :  (r{1} = lift_array256 rp{2} /\
-         zetasp{2} = jzetas_inv /\
-        array_mont_inv zetas_inv{1} = 
-           lift_array128  jzetas_inv /\
+(* Final loop just reduces the range *)
+seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
+        array_mont_inv zetas_inv{1} = lift_array128  jzetas_inv /\
         signed_bound_cxq rp{2} 0 256 4
 ); last first.
-while (j{1} = to_uint j{2} /\
++ while (j{1} = to_uint j{2} /\
        0 <= j{1} <= 256 /\
-       (forall k, (0 <= k < j{1} =>
-            r{1}.[k] * inFq R = inFq (to_sint rp{2}.[k])) /\
-                   (j{1} <= k < 256 =>
-            r{1}.[k] = inFq (to_sint rp{2}.[k]))
+       (forall k, (0 <= k < j{1} => r{1}.[k] * inFq R = inFq (to_sint rp{2}.[k])) /\
+                  (j{1} <= k < 256 => r{1}.[k] = inFq (to_sint rp{2}.[k]))
 
        ) /\
-       zetas_inv.[127]{1} * inFq R * inFq R  = inFq (to_sint jzetas_inv.[127]) /\
+       zetas_inv.[127]{1} * inFq R  = inFq (to_sint jzetas_inv.[127]) * inFq 169 /\
        zeta_0{2} = jzetas_inv.[127] /\
        signed_bound_cxq rp{2} 0 256 4 /\
-       (forall k, 0 <= k < j{1} =>
-           b16 rp{2}.[k] (q + 1))
-); last first. 
-  wp;skip; move => &1 &2 [#] -> zp zvals zbnd zeta_0_R j_R.
-  split.
-  do split.
-  + move => k; split; first by smt().
-    by move => *; rewrite /lift_array256 /= mapE /= initiE //.
-  + move : zvals; rewrite /array_mont_inv /lift_array128 !mapE /=. 
-    rewrite Array128.tP => H.
-    move : (H 127 _) => //.
-  + by rewrite /zeta_0_R zp.
-  + by apply zbnd.
-  + by smt(@W64 b16E @Array256).
+       (forall k, 0 <= k < j{1} => b16 rp{2}.[k] (q + 1))); last first. 
+  + wp;skip; move => &1 &2 [#] ->. 
+    rewrite /array_mont_inv /lift_array128 /lift_array256 /signed_bound_cxq !tP.
+    move => /= zp zvals zbnd.
+    split.
+    + do split; 4..: by smt().
+      + by move => k; split; move => kb;rewrite !mapiE 1:/# /= /#.
+      + by move : (zvals 127 _) => //= <-; rewrite -Zq.ComRing.mulrA rrinvFq; ring.
+      by move : (zp 127 _) => //=.
+    move => jl rl jr rpr; rewrite ultE /= => ??[#] *.
+    split; last by smt().
+    by rewrite tP => x xb; rewrite !mapiE /#.
+  
+  auto => />.
+  + move => &1 &2  [#] ->.
+    rewrite /array_mont_inv /lift_array128 /lift_array256 /signed_bound_cxq.
+    by move => /= ?? zp zvals z2 bnd1 bnd2; rewrite !ultE => ?? t ? /#.
+  ecall {2}(fqmul_corr (to_sint t{2}) (to_sint zeta_0{2})).
+  auto => /> &1 &2;rewrite /array_mont_inv /lift_array128 /lift_array256 /signed_bound_cxq.
+  move => /= ?? zp zvals bnd1 bnd2; rewrite !ultE => ?? result rval.
 
-  move => j_L r_L j_R0 rp_R H ;rewrite !ultE /=.
-  move => H0 [#] H1 H2 H3. 
-  rewrite (_: j_L = 256); first by smt().
-  move => H4 H5 H6 H7 H8.
-  split.
-  + rewrite /lift_array256 !mapE.
-    apply Array256.ext_eq => x xb.
-    rewrite !initiE //=.
-    move : (H4 x) => [#] H9.
-    by rewrite (H9 _) //.
-  + by apply H8.
+  have  /= [#] redbl redbh redv := 
+    (SREDCp_corr (to_sint rp{2}.[to_uint j{2}] * to_sint ((of_int 1441))%W16)_ _).
+  + by rewrite /R qE /=.
+  by  rewrite /R /=; move : (bnd1 (to_uint j{2}) _); 1:smt(); 
+      rewrite /to_sint /of_uintK /smod qE /#.
+  
+  rewrite to_uintD_small; 1: smt().
+  split; 2: smt();do split; 1..2:smt().
+  + move => k; split. 
+    + move => kbl kbh; case (k = to_uint j{2}); last by move => *;rewrite !set_neqiE /#.
+      move => ->; rewrite !set_eqiE // -ZqField.mulrA zvals.
+      move : (zp (to_uint j{2})) => [#] _ -> //.
+      apply eq_inFq; rewrite rval redv.
+      by rewrite -inFqM !inFqK modzMm mulrA. 
+    by move => kbl kbh;rewrite !set_neqiE /#.
+  
+  + move => k kb; case (k = to_uint j{2}); last by move => *;rewrite !set_neqiE /#. 
+    by move => ->; rewrite !set_eqiE /#.
 
-sp;wp;ecall{2} (fqmul_corr (to_sint t{2}) (to_sint jzetas_inv.[127])).
+  move => k kb; case (k = to_uint j{2}); last by move => *;rewrite !set_neqiE /#. 
+  by move => ->; rewrite !set_eqiE /#.
 
-skip => />; move => &1 &2 r_L H0 H1 H2 zetaval  cbound tightbound H3 H4 H5 resval.
-
-move : cbound; rewrite /signed_bound_cxq => /> cbound. 
-move : (cbound (to_uint j{2}) _) => />.
-move => jboundl jboundh.
-
-have bound4 : -4*q <=  to_sint rp{2}.[to_uint j{2}]<= 4*q; first by smt().
-have bound5 : (-R %/ 2 * q < -4*q*q ); first by smt(@Fq).
-
-move :resval; rewrite to_uintD_small; first by smt(@W64). move => resval.
-
-move : (SREDCp_corr (to_sint rp{2}.[to_uint j{2}] * to_sint ((W16.of_int 1441))) _ _).
-by rewrite /R qE /=.
-have ? : (-R %/ 2 * q < -4*q* to_sint ((of_int 1441))%W16 ).
-   by rewrite /R qE to_sintE => />; smt(@W16).
-simplify => />. move : (cbound (to_uint j{2}) _); first  by smt(@Fq @W16).
-move => * />. 
-by move : H4 jboundl jboundh; rewrite ultE qE /R !to_sintE /smod => />;smt(@W16).
-
-move => H6.
-split. 
-split; first by smt(@W64).
-split; first by smt(@W64).
-split; last first.
-split. 
-
-move => k H7 H8.
-case (k = to_uint j{2}).
-
-   move => ->; rewrite !Array256.set_eqiE; smt(@W64).
-   move => H9;rewrite !Array256.set_neqiE. rewrite H0 H3 //. rewrite H9 //.
-   move : (cbound k); rewrite H7 H8 //.
-move => k k_lb k_ub.
-
-case (k = to_uint j{2}).
-   by move => ->; rewrite !Array256.set_eqiE; smt(@W64). 
-   move => H7;rewrite !Array256.set_neqiE. rewrite H0 H3 //. rewrite H7 //.
-   move : (tightbound k). rewrite k_lb //. smt(@W64). 
-
-move => k.
-split; last first.
-  move => k_lb k_ub.
-  rewrite Array256.set_neqiE. rewrite H0 H3 //. move : k_lb => /#.
-  rewrite Array256.set_neqiE. rewrite H0 H3 //. move : k_lb => /#.
-  move : (H2 k) => /#.
-
-move => k_lb j_ub.
-case (k = to_uint j{2}).
-   move => ->; rewrite !Array256.set_eqiE //. 
-rewrite (_: r_L.[to_uint j{2}] * zetas_inv{1}.[127] * inFq R = 
-   r_L.[to_uint j{2}] * zetas_inv{1}.[127] * inFq R * (inFq R * (inFq 169))).
-have zzz: Fqcgr (R * 169) 1.
-smt(RRinv).
-move : zzz; rewrite eq_inFq inFqM => ->.
-rewrite -Zq.oneE asintK.
-by ring.
-
-rewrite ComRing.mulrA.
-rewrite resval.
-(* <<<<<<< HEAD *)
-move : (H2 (to_uint j{2})) => [#] H7 H8.
-rewrite (H8 _) //.
-rewrite (_: inFq (SREDC (to_sint rp{2}.[to_uint j{2}] * to_sint ((of_int 1441))%W16)) =
-   inFq ((to_sint rp{2}.[to_uint j{2}] * to_sint ((of_int 1441))%W16 * 169))).
-   rewrite -eq_inFq. move : H4 => /#.
-
-have H10: Fqcgr (R * 169) 1.
-smt(RRinv).
-rewrite !inFqM /= of_sintK /=.
-move : H10; rewrite eq_inFq inFqM.
-move => H9.
-have ->: inFq (to_sint rp{2}.[to_uint j{2}]) * zetas_inv{1}.[127] * inFq R * inFq R * inFq 169 = inFq (to_sint rp{2}.[to_uint j{2}]) * inFq (to_sint ((of_int 1441))%W16) * inFq 169. smt(@Zq).
-
-rewrite (_: to_sint ((of_int 1441))%W16 = W16.smod 1441).
-by rewrite /smod to_sintE /smod /=; smt(@W16).
-done.
-
-by move => *;rewrite !Array256.set_neqiE; smt(@W64). 
-by move : H3; rewrite !ultE to_uintD_small; smt(@W64).
-
-(***********************************)
-
-sp.
 (* Outer loop *)
 while (
    zetasp{2} = jzetas_inv /\
@@ -1060,9 +980,8 @@ while (
    zetasctr{1} = to_uint zetasctr{2} /\
    zetasctr{1} * len{1} = 128 * (len{1} - 2) /\
    signed_bound_cxq rp{2} 0 256 4); last first.
-auto => />. move => &1 &2 ?cbnd.
-split; first by exists (1);  smt(logs).
-move : cbnd; rewrite /signed_bound_cxq => cbnd k k_i. move : (cbnd k k_i); rewrite /b16 qE. smt(@Int).
++ auto => /> &1 &2 ?cbnd; split; first by exists (1); smt().
+by move : cbnd; rewrite /signed_bound_cxq /#. 
 
 wp; exists* zetasctr{1}; elim* => zetasctr1 l.
 
@@ -1076,22 +995,15 @@ while (#{/~zetasctr1=zetasctr{1}}
        2* (zetasctr{1} - zetasctr1) * to_uint len{2} <= 256 /\
        (* Nasty carry inv *)
        signed_bound_cxq  rp{2} 0 256 4); last first.
-auto => />; move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7 H8 rp start zetasctr H9 H10 H11 H12 H13 H14 H15 H16 H17.
 
-rewrite /(W64.(`<<`)) !uleE !of_uintK !to_uint_shl=> />.
-split; last by smt(@W64).
-split; first by rewrite modz_small; smt().
-split; last by smt(). 
-exists (l+1).
- split.
-   split; first by move : H0 => /#.
-   move => H18.
-   rewrite (ler_weexpn2r 2 (l+1) 8) 1:// 1:// 1:/# 1://.
-     smt(@W8 @Int @Ring.IntID).
-   rewrite H2; smt(@Int @Ring.IntID).
++ auto => /> &1 &2; rewrite /array_mont_inv /lift_array128 tP !uleE /signed_bound_cxq.
+  move => zetas 2? rep 4? lb ? rp start zetasctr *.
+  rewrite !to_uint_shl //= !(modz_small _ W64.modulus); 1: smt().
+  do split; 2..: smt().
+  exists (l+1); split; last by rewrite rep exprD_nneg /#.
+  by smt(StdOrder.IntOrder.ler_weexpn2l pow2_7 StdOrder.IntOrder.ieexprIn). 
 
 wp.
-
 (* Inner loop *)
 while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
        zeta_{1}  *  (inFq R) = inFq (to_sint zeta_0{2}) /\  
@@ -1100,51 +1012,18 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
        W64.to_uint cmp{2} = start{1} + len{1} /\ 
        j{1} = to_uint j{2} /\
        start{1} <= j{1} <= start{1} + len{1}); last first.
-auto => />. 
-move => &1 &2 zetasd H H0 lenpow2 H1 H2 cbd H3 H4 H5 H6 H7 H8 H9 H10 H11 => />.
 
-split.
++ auto => />  &1 &2; rewrite !uleE /signed_bound_cxq.
+  move => zetas 2? rep 3? lb ? rp ??????.
 
-(* Initialization *) 
-split; last by rewrite ultE to_uintD_small; by smt(@W64).
-split.
-split.
-by smt(@W64).
-split; first by smt().
-split; last first.
-smt(@Int @W64).
-rewrite to_uintD_small; smt(@W64).
+  move : zetainv_bound; rewrite /minimum_residues /bpos16 => zb.
 
-split. 
-move : zetasd; rewrite /array_mont_inv /lift_array128.
-move => zz.
-have H12 :(forall k, 0 <= k < 127 => 
-  (map (transpose Zq.( * ) (inFq R)) zetas_inv{1}).[k] = (map (fun (x : W16.t) => inFq (to_sint x)) jzetas_inv).[k]).
-rewrite -zz /= => *. rewrite set_neqiE //; first by smt().
-move : (H12 (to_uint zetasctr{2})_); first by smt().
-rewrite mapiE; first by smt().
-rewrite mapiE; first by smt().
-by simplify => />.
-
-split; last first.
-rewrite to_uintD_small. smt(). 
-simplify.
-have ?: 0 <= to_uint len{2}.
-rewrite lenpow2.
-rewrite expr_pos.
-done.
-smt(). 
-smt().
-
-move : zetainv_bound; rewrite /minimum_residues => zbnd; 
-  move : (zbnd (to_uint zetasctr{2}) _);  smt(@W64).
-
-(* Termination *)
-move => j_R rp_R *.
-split.
-rewrite (_:to_uint j_R = to_uint start{2} + to_uint len{2}); first by smt().
-split; [ by rewrite !to_uintD_small => />;  by smt(@W64) | by smt(@W64) ].
-by rewrite ultE /of_uingK to_uintD_small; smt(@W64).
+  rewrite !ultE //= !to_uintD_small;1,2:smt().
+  do split; 1..3,5..6:smt(). 
+  + by rewrite (mont_lift_commute zetas_inv{1} jzetas_inv zetas (to_uint zetasctr{2}) _); smt().
+  by smt().
+ 
+  by move => jl rpl; rewrite !ultE => 13?; rewrite !to_uintD_small; smt(). 
 
 (* Preservation *)
 
