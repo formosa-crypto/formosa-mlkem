@@ -1036,13 +1036,15 @@ move => zetas 2? rep 3? lb; rewrite !ultE => 15?; rewrite !to_uintD_small; 1,2: 
 move => result rval result0 rval0.
 rewrite /lift_array256 /=.
 
-have [#]bredbl bredbh bredv := (BREDCp_corr (to_sint (rp{2}.[to_uint j{2} + to_uint len{2}] + rp{2}.[to_uint j{2}])) 26 _ _ _ _ _ _); 
+have [#]bredbl bredbh bredv := (BREDCp_corr (to_sint (rp{2}.[to_uint j{2} + 
+                          to_uint len{2}] + rp{2}.[to_uint j{2}])) 26 _ _ _ _ _ _); 
      1..4: smt(qE pow2_16).
 + by rewrite to_sintD_small /= /R /=; smt(qE).
 + by move => a; rewrite /R qE /= /barrett_pred => bnd; split; smt().
 
 have  /= [#] redbl redbh redv := 
-   (SREDCp_corr (to_sint (rp{2}.[to_uint j{2}] - rp{2}.[to_uint j{2} + to_uint len{2}]) * to_sint zeta_0{2})_ _).
+   (SREDCp_corr (to_sint (rp{2}.[to_uint j{2}] - rp{2}.[to_uint j{2} + 
+                                to_uint len{2}]) * to_sint zeta_0{2})_ _).
   + by rewrite /R qE /=.
   by rewrite /R qE /= !to_sintB_small /=; smt(qE). 
 
@@ -1098,39 +1100,28 @@ lemma invntt_correct _r  :
             scale (invntt _r) (inFq R) = lift_array256 res /\
             forall k, 0<=k<256 => b16 res.[k] (q+1)] = 1%r.
 proof.
-have H0 : array_mont_inv zetas_inv = lift_array128  jzetas_inv
-  by rewrite zetas_invE /lift_array128 /to_sint /smod /=; smt(@Array128).
-bypr.
-move => &m [#] &1 &2 *.
-apply (eq_trans _ (Pr[NTT.invntt( _r,zetas_inv) @ &m :
-   invntt _r = res])).
-have -> : (
+have ? : array_mont_inv zetas_inv = lift_array128  jzetas_inv. print zetas_invE.
++ rewrite zetas_invE /lift_array128 /to_sint /smod /=.
+  by rewrite tP => x xb; rewrite !get_of_list; smt(nth_change_dfl).
+
+bypr;move => &m [#] H H1.
+apply (eq_trans _ (Pr[NTT.invntt( _r,zetas_inv) @ &m :  invntt _r = res])).
++ have -> : (
 Pr[NTT.invntt(_r, zetas_inv) @ &m : invntt _r = res] = 
 Pr[M._poly_invntt(rp{m}) @ &m :
-  invntt (map (fun x => x * (inFq R)) _r) = lift_array256 res /\ forall (k : int), 0 <= k < 256 => b16 res.[k] (q+1)]); last first.  
-by rewrite invntt_scale.
-byequiv invntt_correct_aux.
-smt().
-move => &10 &20.
-rewrite invntt_scale /scale.  
-move => [#] H2 H3.
-split. 
-move => ->. 
-split; last by apply H3.
-by apply H2.
-move =>  [#] H4 H5.
-move : H4; rewrite -H2.
-rewrite tP !mapE.
-move => H4.
-have H6 : (inFq R <> Zq.zero); first by rewrite /R; smt(@Zq qE).
-move : (Zq.ZqField.mulIf (inFq R) H6) => inj.
-apply Array256.ext_eq => x xb.
-move : (H4 x xb).
-(* <<<<<<< HEAD *)
-rewrite !initiE //=.
-have H7 : (inFq R <> Zq.zero); first by rewrite /R; smt(@Zq qE).
-  move : (Zq.ZqField.mulIf (inFq R) H7). rewrite /injective /transpose => /#.
-byphoare (invntt_spec _r). smt(). smt().
+  invntt (map (fun x => x * (inFq R)) _r) = lift_array256 res /\ 
+   forall (k : int), 0 <= k < 256 => b16 res.[k] (q+1)]); last by rewrite invntt_scale.
+byequiv invntt_correct_aux; 1: by smt(). 
++ move => &1 &2;rewrite invntt_scale /scale /= /lift_array256 /= !tP/=.  
+  move => [#] H2 H3;split.
+  + move => H4; split; last by apply H3.
+    by move => i ib; move : (H2 i ib) => <- /=; rewrite mapiE // (H4 i ib) mapiE //.
+  move =>  [#] H4 H5.
+  move => i ib; move : (H4 i ib) => /=; rewrite mapiE //= -(H2 i ib) mapiE //=. 
+  have : inFq R <> Zq.zero; rewrite /R /=; move : (eq_inFq 65536 0); 1: smt().
+  move => ? H0;move : (ZqField.mulfI (inFq 65536) H0) => minj. 
+  by rewrite !(ZqField.mulrC _ (inFq 65536)) /#. 
+by byphoare (invntt_spec _r) => /#. 
 qed.
 
 lemma invntt_correct_h (_r : Fq Array256.t):
@@ -1141,34 +1132,77 @@ lemma invntt_correct_h (_r : Fq Array256.t):
              forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
 by conseq (invntt_correct _r). 
 
-(* COMPLEX MULTIPLICATION IN MONTGOMERY MULTIPLICATION WITH SOME EXTRA
-   CONSTANTS THAT ARE LEFT AROUND. THEY SHOULD BE  TRIVIAL TO MATCH WITH
-   THE SPECS IN NTT_Fq, SO MAYBE THEY ARE NOT ACTUALLY NEEDED. *)
+(* some auxilliary definitions *) 
 
-op complex_mul (a :Fq * Fq, b : Fq * Fq, zzeta : Fq) =
+op cmplx_mul_169 (a :Fq * Fq, b : Fq * Fq, zzeta : Fq) =
      (a.`2 * b.`2 * zzeta * (inFq 169) + a.`1*b.`1  * (inFq 169), 
       a.`1 * b.`2  * (inFq 169) + a.`2 * b.`1  * (inFq 169)).
 
-op double_mul(a1 : Fq * Fq, b1 : Fq * Fq, 
+op doublemul(a1 : Fq * Fq, b1 : Fq * Fq, 
               a2 : Fq * Fq, b2 : Fq * Fq, zzeta : Fq) = 
-     (complex_mul a1 b1 zzeta, complex_mul a2 b2 (-zzeta)).
+     (cmplx_mul_169 a1 b1 zzeta, cmplx_mul_169 a2 b2 (-zzeta)).
 
-op base_mul(ap bp : Fq Array256.t, zetas : Fq Array128.t, 
+op isbasemul(ap bp : Fq Array256.t, zetas : Fq Array128.t, 
             rs : Fq Array256.t, i : int) : bool = 
-    0 <= i <= 256 /\
    forall k, 0 <= k < i %/ 4 =>
      ((rs.[4*k],rs.[4*k+1]),(rs.[4*k+2],rs.[4*k+3])) =
-         (double_mul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
+         (doublemul (ap.[4*k],ap.[4*k+1]) (bp.[4*k],bp.[4*k+1])
                     (ap.[4*k+2],ap.[4*k+3]) (bp.[4*k+2],bp.[4*k+3]) (zetas.[k+64])).
 
+
+lemma basemul_sem p1 p2 r :
+     isbasemul p1 p2 zetas r 256 =>
+      r = scale (basemul p1 p2) (inFq 169). 
+proof.
+rewrite /isbasemul /scale /doublemul /cmplxmul_169 /lift_array256 /basemul.
+move => H.
+rewrite tP => i ib; move : (H (i %/ 4) _); 1: smt().
+rewrite !mapiE 1:/# !initiE  1,2:/# => /=  HH.
+case (i %% 4 = 0).
++ move => case1; have subcase /= : i %% 2 = 0; 1: by smt().
+  rewrite subcase; move : HH.
+  have -> : 4 * (i %/ 4) = i by smt().
+  have ->/= : 2 * (i %/ 2) = i by smt().
+  rewrite /cmplx_mul_169 /cmplx_mul /= => [#] -> ? three four.
+  move : (zetavals1 i _ case1); 1: smt(). 
+  move => <-; rewrite /zetas initiE /=; 1: smt(). 
+  by ring.
+
+case (i %% 4 = 1).
++ move => case2 ncase1; have subcase /= : i %% 2 = 1; 1: by smt().
+  rewrite subcase; move : HH.
+  have -> : 2 * ((i - 1) %/ 2) = 4 * (i %/ 4) by smt().
+  have -> : 4 * (i %/ 4) + 1 = i by smt().
+  rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ? -> ??.
+  by ring.
+
+case (i %% 4 = 2).
++ move => case3 ncase2 ncase1; have subcase /= : i %% 2 = 0; 1: by smt().
+  rewrite subcase /=; move : HH.
+  have -> : 4 * (i %/ 4) + 2= i by smt().
+  have -> : 4 * (i %/ 4) + 3= i+1 by smt().
+  have -> : 2*(i%/2) = i by smt().
+  rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ??->?.
+  move : (zetavals2 i _ case3); 1: smt(). 
+  rewrite /zetas initiE /=; 1: smt().
+  by move => ->; ring.
+
+case (i %% 4 = 3).
++ move => case4 ncase3 ncase2 ncase1; have subcase /= : i %% 2 = 1; 1: by smt().
+  rewrite subcase; move : HH.
+  have -> : 2 * ((i - 1) %/ 2) + 1 = 4 * (i %/ 4) + 3 by smt().
+  have -> : 4 * (i %/ 4) + 3 = i by smt().
+  have -> : 2*((i-1)%/2) = 4 * (i %/ 4) + 2 by smt().
+  rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ???->.
+  by ring.
+by smt().
+qed.
+
 lemma poly_basemul_corr _ap _bp:
-      hoare[ M._poly_basemul :
-           _ap = lift_array256 ap /\
-           _bp = lift_array256 bp /\
-           signed_bound_cxq ap 0 256 2 /\
-           signed_bound_cxq bp 0 256 2 ==>
-             signed_bound_cxq res 0 256 3 /\
-             base_mul _ap _bp zetas (lift_array256 res) 256].
+   hoare[ M._poly_basemul :
+     _ap = lift_array256 ap /\ _bp = lift_array256 bp /\
+     signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
+     signed_bound_cxq res 0 256 3 /\ base_mul _ap _bp zetas (lift_array256 res) 256].
 proof.
 have H : array_mont zetas = lift_array128  jzetas
   by rewrite zetasE /lift_array128 /to_sint /smod /=; smt(@Array128).
@@ -1794,59 +1828,5 @@ qed.
 
 import NTT_Fq.
 
-lemma basemul_scales ap bp rs:
- base_mul ap bp zetas rs 256 =>
-  rs = scale (basemul ap bp) (inFq 169). 
-proof.
-rewrite /base_mul /double_mul /basemul /scale /complex_mul => /> H.
-apply Array256.ext_eq => /> k *.
-rewrite mapiE /=; first by smt().
-rewrite initiE /=; first by smt().
-move : (H (k %/4) _) => />; first by smt().
-rewrite /dcmplx_mul /cmplx_mul => /> H2 H3 H4 H5.
-case (k %% 4 = 0).
-move => H6.
-have -> : (k %% 2 = 0);1:  smt().
-simplify.
-move : H2.
-have -> : (4 * (k %/ 4)) = k. smt().
-move => ->.
-have -> : 2 * (k %/ 2) + 1 = k + 1. smt().
-have -> : 2 * (k %/ 2) = k . smt().
-rewrite zetavals1 //. by ring.
-move => *.
-case (k %% 4 = 1).
-move => H6.
-have -> : (k %% 2 = 1);1:  smt().
-simplify.
-move : H3.
-have -> : (4 * (k %/ 4) + 1) = k. smt().
-move => ->.
-have -> : 2 * ((k-1) %/ 2) = 4 * (k %/ 4). smt().
-have -> : (4 * (k %/ 4) + 1) = k. smt().
-by ring.
-
-case (k %% 4 = 2).
-move => H6 *.
-have -> : (k %% 2 = 0);1:  smt().
-simplify.
-move : H4.
-have -> : (4 * (k %/ 4) + 2) = k. smt().
-move => ->.
-have -> : 2 * (k %/ 2) + 1 = k + 1. smt().
-have -> : (4 * (k %/ 4) + 3) = k + 1. smt().
-have -> : 2 * (k %/ 2) = k . smt().
-rewrite zetavals2 //. by ring.
-move => *.
-have ? : k %% 4 = 3; 1: smt().
-have -> : (k %% 2 = 1);1:  smt().
-simplify.
-move : H5.
-have -> : (4 * (k %/ 4) + 3) = k. smt().
-move => ->.
-have -> : 2 * ((k-1) %/ 2) = 4 * (k %/ 4) + 2. smt().
-have -> : (4 * (k %/ 4) + 2 + 1) = k. smt().
-by ring.
-qed.
 
 end KyberPoly.
