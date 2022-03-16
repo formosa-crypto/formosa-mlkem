@@ -421,14 +421,14 @@ decryption failure bound.
 
 require (****) Bigalg.
   clone import Bigalg.BigComRing as BigDom with
-    type  CR.t     <= Fq,
-      op  CR.zeror <= Zq.zero,
-      op  CR.oner  <= Zq.one,
-      op  CR.(+)   <= Zq.(+),
-      op  CR.([-]) <= Zq.([-]),
-      op  CR.( * ) <= Zq.( * ),
-      op  CR.invr  <= Zq.inv,
-    pred  CR.unit  <= Zq.unit
+    type  CR.t     <- Fq,
+      op  CR.zeror <- Zq.zero,
+      op  CR.oner  <- Zq.one,
+      op  CR.(+)   <- Zq.(+),
+      op  CR.([-]) <- Zq.([-]),
+      op  CR.( * ) <- Zq.( * ),
+      op  CR.invr  <- Zq.inv,
+    pred  CR.unit  <- Zq.unit
     proof CR.*.
 
   realize CR.addrA     by admit.
