@@ -177,147 +177,38 @@ do by defining operators that capture the semantics of these algorithms.
 To Do: give explicit definitions and prove equivalence  between
 functional  and imperative realizations. *)
 
-op array_mont (p : Fq Array128.t) =
-  Array128.map (fun x => x *  (inFq Fq.SignedReductions.R)) p.
-
-op array_mont_inv (p : Fq Array128.t) =
-  let vv = Array128.map (fun x => x *  (inFq Fq.SignedReductions.R)) p in
-      vv.[127 <- p.[127] * (inFq Fq.SignedReductions.R) * (inFq Fq.SignedReductions.R)].
-
-op zetas_inv : Fq Array128.t = 
-    Array128.init (fun k => ZqRing.exp zroot (-(2 * br (k %/ 2) + 1))).
-
-(* These are powers of roots of unit in Mont form and
-   bitwise permuted indices  zetas inv above needs to be
-   defined, this axiom discharged, and then used to
-   discharge other axioms below. *)
-lemma zetas_invE : array_mont_inv zetas_inv =
-    Array128.of_list witness
-       [ inFq 1701; inFq 1807; inFq 1460; 
-         inFq 2371; inFq 2338; inFq 2333; 
-         inFq 308; inFq 108; inFq 2851; 
-         inFq 870; inFq 854; inFq 1510; 
-         inFq 2535; inFq 1278; inFq 1530; 
-         inFq 1185; inFq 1659; inFq 1187; 
-         inFq 3109; inFq 874; inFq 1335; 
-         inFq 2111; inFq 136; inFq 1215; 
-         inFq 2945; inFq 1465; inFq 1285; 
-         inFq 2007; inFq 2719; inFq 2726; 
-         inFq 2232; inFq 2512; inFq 75; 
-         inFq 156; inFq 3000; inFq 2911; 
-         inFq 2980; inFq 872; inFq 2685; 
-         inFq 1590; inFq 2210; inFq 602; 
-         inFq 1846; inFq 777; inFq 147; 
-         inFq 2170; inFq 2551; inFq 246; 
-         inFq 1676; inFq 1755; inFq 460; 
-         inFq 291; inFq 235; inFq 3152; 
-         inFq 2742; inFq 2907; inFq 3224; 
-         inFq 1779; inFq 2458; inFq 1251; 
-         inFq 2486; inFq 2774; inFq 2899; 
-         inFq 1103; inFq 1275; inFq 2652; 
-         inFq 1065; inFq 2881; inFq 725; 
-         inFq 1508; inFq 2368; inFq 398; 
-         inFq 951; inFq 247; inFq 1421; 
-         inFq 3222; inFq 2499; inFq 271; 
-         inFq 90; inFq 853; inFq 1860; 
-         inFq 3203; inFq 1162; inFq 1618; 
-         inFq 666; inFq 320; inFq 8; 
-         inFq 2813; inFq 1544; inFq 282; 
-         inFq 1838; inFq 1293; inFq 2314; 
-         inFq 552; inFq 2677; inFq 2106; 
-         inFq 1571; inFq 205; inFq 2918; 
-         inFq 1542; inFq 2721; inFq 2597; 
-         inFq 2312; inFq 681; inFq 130; 
-         inFq 1602; inFq 1871; inFq 829; 
-         inFq 2946; inFq 3065; inFq 1325; 
-         inFq 2756; inFq 1861; inFq 1474; 
-         inFq 1202; inFq 2367; inFq 3147; 
-         inFq 1752; inFq 2707; inFq 171; 
-         inFq 3127; inFq 3042; inFq 1907; 
-         inFq 1836; inFq 1517; inFq 359; 
-         inFq 758; inFq 1441].
-admitted.
-  
 op zetas : Fq Array128.t = 
     Array128.init (fun k => ZqRing.exp zroot (2 * br (k %/ 2) + 1)).
 
 
-(* These are powers of roots of unit in Mont form and
-   bitwise permuted indices  zetas inv above needs to be
-   defined, this axiom discharged, and then used to
-   discharge other axioms below. *)
-lemma zetasE : array_mont zetas =
-    Array128.of_list witness
-       [inFq 2285; inFq 2571; inFq 2970; 
-         inFq 1812; inFq 1493; inFq 1422; 
-         inFq 287; inFq 202; inFq 3158; 
-         inFq 622; inFq 1577; inFq 182; 
-         inFq 962; inFq 2127; inFq 1855; 
-         inFq 1468; inFq 573; inFq 2004; 
-         inFq 264; inFq 383; inFq 2500; 
-         inFq 1458; inFq 1727; inFq 3199; 
-         inFq 2648; inFq 1017; inFq 732; 
-         inFq 608; inFq 1787; inFq 411; 
-         inFq 3124; inFq 1758; inFq 1223; 
-         inFq 652; inFq 2777; inFq 1015; 
-         inFq 2036; inFq 1491; inFq 3047; 
-         inFq 1785; inFq 516; inFq 3321; 
-         inFq 3009; inFq 2663; inFq 1711; 
-         inFq 2167; inFq 126; inFq 1469; 
-         inFq 2476; inFq 3239; inFq 3058; 
-         inFq 830; inFq 107; inFq 1908; 
-         inFq 3082; inFq 2378; inFq 2931; 
-         inFq 961; inFq 1821; inFq 2604; 
-         inFq 448; inFq 2264; inFq 677; 
-         inFq 2054; inFq 2226; inFq 430; 
-         inFq 555; inFq 843; inFq 2078; 
-         inFq 871; inFq 1550; inFq 105; 
-         inFq 422; inFq 587; inFq 177; 
-         inFq 3094; inFq 3038; inFq 2869; 
-         inFq 1574; inFq 1653; inFq 3083; 
-         inFq 778; inFq 1159; inFq 3182; 
-         inFq 2552; inFq 1483; inFq 2727; 
-         inFq 1119; inFq 1739; inFq 644; 
-         inFq 2457; inFq 349; inFq 418; 
-         inFq 329; inFq 3173; inFq 3254; 
-         inFq 817; inFq 1097; inFq 603; 
-         inFq 610; inFq 1322; inFq 2044; 
-         inFq 1864; inFq 384; inFq 2114; 
-         inFq 3193; inFq 1218; inFq 1994; 
-         inFq 2455; inFq 220; inFq 2142; 
-         inFq 1670; inFq 2144; inFq 1799; 
-         inFq 2051; inFq 794; inFq 1819; 
-         inFq 2475; inFq 2459; inFq 478; 
-         inFq 3221; inFq 3021; inFq 996; 
-         inFq 991; inFq 958; inFq 1869; 
-         inFq 1522; inFq 1628].
-admitted.
+op zetas_inv : Fq Array128.t = 
+    Array128.init (fun k => ZqRing.exp zroot (-(2 * br (k %/ 2) + 1))).
+
 
 (* These properties is needed to show that ntt_inv is computing something
    that makes sense. Checked in sage. *)
-axiom zetavals1  k : 0 <= k < 256 => k%%4 = 0 => 
-     zetas.[k %/ 4 + 64] = ZqRing.exp zroot (2 * br (k %/ 2) + 1). 
+lemma zetavals1  k : 0 <= k < 256 => k%%4 = 0 => 
+     ZqRing.exp zroot (2 * br ((k %/ 4 + 64) %/ 2) + 1) = 
+     ZqRing.exp zroot (2 * br (k %/ 2) + 1).
+admitted.
 
-axiom zetavals2 k : 0 <= k < 256 => k%%4 = 2 => 
-     zetas.[k %/ 4 + 64] = (-ZqRing.exp zroot (2 * br (k %/ 2) + 1)).
+lemma zetavals2 k : 0 <= k < 256 => k%%4 = 2 => 
+     ZqRing.exp zroot (2 * br ((k %/ 4 + 64) %/ 2) + 1) = 
+     - ZqRing.exp zroot (2 * br (k %/ 2) + 1).
+admitted.
 
 (* TO DO: These need to be proved using the results in NTT_Algebra *)
-lemma ntt_spec_h _r :
-   hoare[ NTT.ntt :
-     arg = (_r,zetas) ==> res = ntt _r ].
+lemma ntt_spec_h _r : hoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ].
 admitted.
 
-lemma invntt_spec_h _r :
-   hoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = invntt _r ].
+lemma invntt_spec_h _r : hoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = invntt _r ].
 admitted.
 
-lemma ntt_spec _r :
-   phoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ] = 1%r
+lemma ntt_spec _r : phoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ] = 1%r
   by conseq ntt_spec_ll (ntt_spec_h _r); done.
 
-lemma invntt_spec _r:
-   phoare[ NTT.invntt :
-     arg=(_r,zetas_inv) ==> res = invntt _r ] = 1%r
+lemma invntt_spec _r: 
+   phoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = invntt _r ] = 1%r
   by conseq invntt_spec_ll (invntt_spec_h _r); done.
 
 (* ALL THIS WILL BE REPLACED WITH POLY THEORY *)
@@ -400,5 +291,6 @@ apply Array256.ext_eq => *.
 rewrite mapiE => />.
 smt(@FqField).
 qed. *)
+
 
 end NTT_Fq.
