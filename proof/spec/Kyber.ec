@@ -191,6 +191,9 @@ admitted.
 lemma compress12 x : 0 <= x < q =>  compress 12 (inFq x) =  x.
 admitted.
 
+lemma decompress12 x : 0 <= x < 2^12 =>  decompress 12 x = inFq x.
+admitted.
+
 
 (** End extension *)
 
@@ -385,8 +388,13 @@ axiom bytes2bits32E i j a:
 
 axiom bytes2bits128E a i: 
   0 <= i < 128 => 
-   (bytes2bits128 a).[i*2] = to_uint (a.[i] `&` W8.of_int 15) /\
-   (bytes2bits128 a).[i*2+1] = to_uint (a.[i] `>>` W8.of_int 4).
+   (bytes2bits128 a).[i*2] = to_uint a.[i] %% 16 /\
+   (bytes2bits128 a).[i*2+1] = to_uint a.[i] %/ 16.
+
+axiom bytes2bits384E a i: 
+  0 <= i < 128 => 
+   (bytes2bits384 a).[i*2] = to_uint a.[3*i] + to_uint a.[3*i+1] %% 16 * 256 /\
+   (bytes2bits384 a).[i*2+1] = to_uint a.[3*i+2] * 16 + to_uint a.[3*i+1] %/ 16.
 
 module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
