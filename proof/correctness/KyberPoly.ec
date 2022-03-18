@@ -785,8 +785,6 @@ case(k = to_uint j{1}).
   rewrite (_: 15 = 2^4-1) // and_mod // of_uintK /=. 
   rewrite (modz_small _ 65536) //; 1: smt(W8.to_uint_cmp pow2_8).
   rewrite W16.of_uintK /= (modz_small _ 65536) //; 1: smt(W8.to_uint_cmp pow2_8).
-  rewrite (_: 15 = 2^4-1) // and_mod // of_uintK /=. 
-  rewrite (modz_small _ 256) //; 1: smt(W8.to_uint_cmp pow2_8).
   by rewrite /smod /=; smt(W8.to_uint_cmp pow2_8).
     
 move => *;rewrite set_eqiE;1,2:smt(). 
@@ -802,7 +800,6 @@ rewrite to_uint_shr //= to_uintD_small /=.
   rewrite to_uintM_small /=.
   + rewrite to_uint_shr // to_uint_zeroextu16 /=; 1: smt(W8.to_uint_cmp pow2_8).
   rewrite to_uint_shr // to_uint_zeroextu16 /=.
-  rewrite to_uint_shr // of_uintK /=.
   by rewrite /smod;smt(W8.to_uint_cmp pow2_8).
 qed.
 
