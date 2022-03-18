@@ -131,11 +131,11 @@ have -> : -xr =  (2 ^ d)%r - (2 ^ d)%r * (asint x)%r / q%r by rewrite /xr /as_si
 rewrite round_add.
 have -> : - (2 ^ d + round (- (2 ^ d)%r * (asint x)%r / q%r)) = (- 2^d) + (- round (- (2 ^ d)%r * (asint x)%r / q%r)) by smt().
 rewrite -modzDm.
-have -> : (- 2 ^ d) %% 2 ^ d = 0 by smt(@IntDiv).
+have -> : (- 2 ^ d) %% 2 ^ d = 0 by smt(modzNm modz0). 
 simplify.
 pose xr' := ((2 ^ d)%r * (asint x)%r / q%r).
 rewrite (round_notie xr' (noties_u d x xr' dlb dub H _)) => //.
-smt(@IntDiv).
+by rewrite modz_mod.
 qed.
 
 
@@ -187,6 +187,10 @@ lemma decompress_alt_decompress c d :
 proof. move => *; rewrite /decompress_alt /decompress /round; congr.
 rewrite StdBigop.Bigreal.Num.Domain.mulrC StdBigop.Bigreal.Num.Domain.mulrA.
 admitted.
+
+lemma compress12 x : 0 <= x < q =>  compress 12 (inFq x) =  x.
+admitted.
+
 
 (** End extension *)
 
@@ -491,19 +495,14 @@ op ofipoly(p : ipoly) = map inFq p.
 
 module EncDec = {
    proc decode12(bytes : W8.t Array384.t) : ipoly = {
-       var bits,i,j,fi;
+       var bits,i;
        var r : ipoly;
        r <- witness;
        bits <- bytes2bits384 bytes;
        i <- 0;
-       while (i < 256) {
-          fi <- 0;
-          j <- 0;
-          while (j < 12) {
-            fi <- fi + bits.[i*12 + j] * 2^j;
-            j <- j + 1; 
-          }
-          r.[i] <- fi;
+       while (i < 128) {
+          r.[i*2+0]  <- bits.[i*2+0];
+          r.[i*2+1]  <- bits.[i*2+1];
           i <- i + 1;
        }
        return r;
@@ -566,42 +565,30 @@ module EncDec = {
       the above, so we can choose the implementation
       that best suits us and prove equivalence. *)
 
-   proc encode12(p : ipoly) : W8.t Array384.t = {
-       var fi,fi1,i,k;
+   proc encode12(a : ipoly) : W8.t Array384.t = {
+       var fi1,fi2,i,j;
        var r : W8.t Array384.t;
        r <- witness;
-       i <- 0; k <- 0;
+       i <- 0; j <- 0;
        while (i < 256) {
-          fi <- p.[i];
-          fi1 <- p.[i+1];
-          r.[k] <- witness;
-          r.[k+1] <- witness;
-          r.[k+2] <- witness;
-          i <- i + 2;
-          k <- k + 3;
+          fi1 <- a.[i];
+          i <- i + 1;
+          fi2 <- a.[i];
+          i <- i + 1;
+          r.[j] <- truncateu8 (W16.of_int fi1);
+          j <- j + 1;
+          (* Redundant? *)
+          r.[j] <- truncateu8 (((W16.of_int fi2 `&` W16.of_int 15) `<<` W8.of_int 4) `|`
+                               ((W16.of_int fi1) `>>` W8.of_int 8));
+          j <- j + 1;
+          r.[j] <- truncateu8 ((W16.of_int fi2) `>>` W8.of_int 4);
+          j <- j + 1;
        }
        return r;
    }
 
    proc encode10(p : ipoly) : W8.t Array320.t = {
-       var fi,fi1,fi2,fi3,i,k;
-       var r : W8.t Array320.t;
-       r <- witness;
-       i <- 0; k <- 0;
-       while (i < 256) {
-          fi <- p.[i];
-          fi1 <- p.[i+1];
-          fi2 <- p.[i+2];
-          fi3 <- p.[i+3];
-          r.[k] <- witness;
-          r.[k+1] <- witness;
-          r.[k+2] <- witness;
-          r.[k+3] <- witness;
-          r.[k+4] <- witness;
-          i <- i + 4;
-          k <- k + 5;
-       }
-       return r;
+      return witness;
    }
 
    proc encode4(p : ipoly) : W8.t Array128.t = {
