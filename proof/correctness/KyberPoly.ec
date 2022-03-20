@@ -482,12 +482,18 @@ lemma poly_add_corr_R _a _b ab bb :
            signed_bound_cxq bp 0 256 bb 
            ==>
            signed_bound_cxq res 0 256 (ab + bb) /\ 
-    lift_array256 res = _a &+ _b].
+           lift_array256 res = _a &+ _b].
 move => abbnd bbbnd.
 conseq (poly_add_corr _a _b ab bb abbnd bbbnd). 
-move => ? [#] ????r [#] ? sum;split; 1: by smt().
-rewrite /lift_array256 /(&+) mapE map2E /= tP /= => i ib.
-by rewrite !initiE //= (sum i ib).
+move => ? [#] ??r [#] ? sum. 
+rewrite /signed_bound_cxq /lift_array256 /= tP /= !mapE /=. 
+split.
++ move => [#] sumb sumv; split; 1: by smt().
+  move => i ib; move : (sumv i ib); rewrite !initiE //=.
+  by rewrite  /(&+)/= map2E //= initiE //=. 
++ move => [#] sumb sumv; split; 1: by smt().
+  move => i ib; move : (sumv i ib); rewrite !initiE //=.
+  by rewrite  /(&+)/= map2E //= initiE //=. 
 qed.
 
 lemma poly_reduce_corr_h (_a : Fq Array256.t):
@@ -1067,6 +1073,8 @@ lemma ntt_correct_h (_r0 : Fq Array256.t):
  by conseq (ntt_correct _r0). 
 
 
+lemma ntt_ll : islossless M._poly_ntt by admit.
+
 (*******INVERSE *******)
 
 lemma zetainv_bound :  minimum_residues jzetas_inv.
@@ -1314,6 +1322,8 @@ lemma invntt_correct_h (_r : Fq Array256.t):
              forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
 by conseq (invntt_correct _r). 
 
+lemma invntt_ll : islossless M._poly_invntt by admit.
+
 (* some auxilliary definitions *) 
 
 op cmplx_mul_169 (a :Fq * Fq, b : Fq * Fq, zzeta : Fq) =
@@ -1542,7 +1552,6 @@ rewrite inFqD redv9 redv10 !inFqM.
 by ring.
 qed.
 
-import NTT_Fq.
-
+lemma poly_basemul_ll : islossless M._poly_basemul by admit.
 
 end KyberPoly.

@@ -153,6 +153,9 @@ qed.
 op load_array960 (m : global_mem_t) (p : address) : W8.t Array960.t = 
   (Array960.init (fun (i : int) => m.[p + i])).
 
+op load_array1152 (m : global_mem_t) (p : address) : W8.t Array1152.t = 
+  (Array1152.init (fun (i : int) => m.[p + i])).
+
 (* TODO: write aux lemma to deal w/ subarrays cleanly *)
 
 (* END AUX *)
@@ -229,23 +232,32 @@ truncateu8
    (truncateu16 (x `&` (of_int 1023)%W64) `>>` (of_int (10-d))%W8)) =
 (of_int (to_uint x %% 1024 %/ 2^(10-d) + to_uint y %% 1024 * 2^d))%W8.
 move => db;rewrite /truncateu8 /=; congr.
-rewrite orw_disjoint. admit.
-have -> : 1023 = 2^10-1 by auto.
-rewrite !and_mod //.
-rewrite to_uintD_small. admit. 
-rewrite /(`<<`) /(`>>`).
+
+have /= ? : 2^2 <= 2^d <= 2^6 /\ 2^ 4 <= 2^(10 - d) by
+  do split; [ move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 2 d) => // /# |
+              move : (StdOrder.IntOrder.ler_weexpn2l 2 _ d 6) => // /# |
+              move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 4 (10 - d)) => // /#].
+
+rewrite orw_disjoint. 
++ rewrite /W16.(`&`); apply W16.ext_eq => k kb.
+  rewrite !map2iE // zerowE.
+  rewrite /truncateu16 (_:1023 = 2^10-1) // !W64.and_mod //= /(`<<`) /(`>>`) /= kb /=.
+  rewrite !(modz_small _ 256) 1,2:/# !(modz_small _ 16) 1,2:/#.
+  case (!(d <= k < 6+d)); first by smt(W16.get_out).
+  move => *; rewrite !get_to_uint.  
+  rewrite !of_uintK /= !(modz_small _ 18446744073709551616) 1,2:/# !(modz_small _ 65536) 1,2:/# /=.
+  by rewrite (_: 1024 = 2^10); move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 10 (k+10-d)) => // /#.
+  
+have -> : 1023 = 2^10-1 by auto;rewrite !and_mod //.
+rewrite /truncateu16 !W64.and_mod //= /(`<<`) /(`>>`) /=. 
+  rewrite to_uintD_small.
++ rewrite !(modz_small _ 256) 1,2:/# !(modz_small _ 16) 1,2:/#.
+  rewrite !of_uintK /= !(modz_small _ 18446744073709551616) 1,2:/#.
+  rewrite W16.to_uint_shr 1:/# W16.to_uint_shl 1:/# /=.
+  by rewrite !of_uintK /=  !(modz_small _ 65536) /#.
 rewrite shlMP /= 1:/# shrDP /= 1:/# !of_uintK /=. 
-rewrite !(modz_small _ 18446744073709551616); 1,2: smt().
+rewrite !(modz_small _ 18446744073709551616) 1,2:/# .
 rewrite !(modz_small _ 256) 1,2:/#  !(modz_small _ 16) 1,2:/#.
-have dpow1 : 0<= 2^d <=64. 
-+ split; 1: smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l). 
-  move => *; rewrite (_: 64 = 2^6) //.
-  by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ d 6) => // /#.
-have /= dpow2 : 16<= 2^(10-d) <=2^8. 
-+ move => *; rewrite /= (_: 256 = 2^8) //.
-  rewrite (_: 16 = 2^4) //.
-  split; 2: by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ (10-d) 8) => // /#.
-  by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 4) => // /#.
 by rewrite !(modz_small _ 65536) /#.
 qed.
 
@@ -282,7 +294,7 @@ while (#{/~mem}{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\
        to_uint j{1} = j{2} /\ 4*j{2} = 5*i{2} /\ i{2} %% 4 = 0 /\
        touches mem Glob.mem{1} _p j{2} /\ 
        (forall k, 0<=k<j{2} => 
-         loadW8 Glob.mem{1} (_p + k) = c{2}.[k{2}])); last first.  
+         loadW8 Glob.mem{1} (_p + k) = c{2}.[k])); last first.  
 + auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
     ? vpl vph ?? baa vaa; split; 1: by smt().
   move => mem' i' j' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  im0 touch load.
@@ -510,12 +522,120 @@ lemma polyvec_reduce_corr  _a :
 by conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a).
 
 (******************************************************)
+(* Fix me: these are all very similar *)
+
+lemma untruncate1 (a b : W8.t) :
+   to_uint (zeroextu32 a `|` (zeroextu32 b `&` (of_int 3)%W32 `<<` (of_int 8)%W8)) =
+   to_uint a + to_uint b %% 4 * 256.
+proof.
+rewrite orw_disjoint; last first.
++ rewrite to_uintD_small /=.
+  + rewrite /(`<<`) to_uint_shl //=.
+    rewrite (_: 3 = 2^2-1) // and_mod //= !of_uintK /=.
+    rewrite !(modz_small _ 4294967296); 1..9:smt(W8.to_uint_cmp pow2_8).
+  rewrite (_: 3 = 2^2-1) // and_mod //= !of_uintK /=.
+  rewrite /(`<<`) shlMP //= of_uintK /=. 
+  by rewrite !(modz_small _ 4294967296); 1..4:smt(W8.to_uint_cmp pow2_8).
+apply W32.ext_eq => k kb.
+rewrite /W32.(`&`) map2iE // (_: 3 = 2^2-1) // and_mod //= !of_uintK /=.
+rewrite !(modz_small _ 4294967296); 1:smt(W8.to_uint_cmp pow2_8).
+rewrite /(`<<`) shlMP //=.
+rewrite !W32.get_to_uint /= kb //= !of_uintK /=.
+rewrite !(modz_small _ 4294967296); 1..2:smt(W8.to_uint_cmp pow2_8).
+case(8 <= k); 1: by rewrite (_: 256 = 2^8); move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 8 k) => //=;smt(W8.to_uint_cmp pow2_8).
+move => *; have -> : to_uint b %% 4 * 256 %/ 2 ^ k %% 2 = 0; last by smt().
+rewrite (_: 256 = 2^8) // Montgomery.div_mulr //;1: by apply dvdz_exp2l; 1:smt(). 
+rewrite expz_div; 1,2: smt().
+move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 1 (8-k) _) => //=; 1: smt(). 
+rewrite -modzMml; have : 2 ^ (8 - k) %% 2 = 0; last by smt().
+by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
+qed.
+
+lemma untruncate2 (a b : W8.t) :
+   to_uint ((zeroextu32 a `>>` (of_int 2)%W8)  `|` 
+           (zeroextu32 b `&` (of_int 15)%W32 `<<` (of_int 6)%W8)) =
+   to_uint a %/4 + to_uint b %% 16 * 64.
+proof.
+rewrite orw_disjoint; last first.
++ rewrite to_uintD_small /=.
+  + rewrite /(`<<`) to_uint_shl //= /(`>>`) to_uint_shr //=.
+    rewrite (_: 15 = 2^4-1) // and_mod //= !of_uintK /=.
+    rewrite !(modz_small _ 4294967296); 1..9:smt(W8.to_uint_cmp pow2_8).
+  rewrite (_: 15 = 2^4-1) // and_mod //= !of_uintK /=.
+  rewrite /(`<<`) shlMP //= of_uintK /= /(`>>`) shrDP //= of_uintK. 
+  by rewrite !(modz_small _ 4294967296); 1..6:smt(W8.to_uint_cmp pow2_8).
+apply W32.ext_eq => k kb.
+rewrite /W32.(`&`) map2iE // (_: 15 = 2^4-1) // and_mod //= !of_uintK /=.
+rewrite !(modz_small _ 4294967296); 1:smt(W8.to_uint_cmp pow2_8).
+rewrite /(`<<`) shlMP //= /(`>>`) shrDP //=. 
+rewrite !W32.get_to_uint /= kb //= !of_uintK /=.
+rewrite !(modz_small _ 4294967296); 1..4:smt(W8.to_uint_cmp pow2_8).
+case(6 <= k); 1: by rewrite (_: 64 = 2^6); move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 6 k) => //=;smt(W8.to_uint_cmp pow2_8).
+move => *; have -> : to_uint b %% 16 * 64 %/ 2 ^ k %% 2 = 0; last by smt().
+rewrite (_: 64 = 2^6) // Montgomery.div_mulr //;1: by apply dvdz_exp2l; 1:smt(). 
+rewrite expz_div; 1,2: smt().
+move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 1 (6-k) _) => //=; 1: smt(). 
+rewrite -modzMml; have : 2 ^ (6 - k) %% 2 = 0; last by smt().
+by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
+qed.
+
+lemma untruncate3 (a b : W8.t) :
+   to_uint ((zeroextu32 a `>>` (of_int 4)%W8)  `|` 
+           (zeroextu32 b `&` (of_int 63)%W32 `<<` (of_int 4)%W8)) =
+   to_uint a %/16 + to_uint b %% 64 * 16.
+rewrite orw_disjoint; last first.
++ rewrite to_uintD_small /=.
+  + rewrite /(`<<`) to_uint_shl //= /(`>>`) to_uint_shr //=.
+    rewrite (_: 63 = 2^6-1) // and_mod //= !of_uintK /=.
+    rewrite !(modz_small _ 4294967296); 1..9:smt(W8.to_uint_cmp pow2_8).
+  rewrite (_: 63 = 2^6-1) // and_mod //= !of_uintK /=.
+  rewrite /(`<<`) shlMP //= of_uintK /= /(`>>`) shrDP //= of_uintK. 
+  by rewrite !(modz_small _ 4294967296); 1..6:smt(W8.to_uint_cmp pow2_8).
+apply W32.ext_eq => k kb.
+rewrite /W32.(`&`) map2iE // (_: 63 = 2^6-1) // and_mod //= !of_uintK /=.
+rewrite !(modz_small _ 4294967296); 1:smt(W8.to_uint_cmp pow2_8).
+rewrite /(`<<`) shlMP //= /(`>>`) shrDP //=. 
+rewrite !W32.get_to_uint /= kb //= !of_uintK /=.
+rewrite !(modz_small _ 4294967296); 1..4:smt(W8.to_uint_cmp pow2_8).
+case(4 <= k); 1: by rewrite (_: 16 = 2^4); move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 4 k) => //=;smt(W8.to_uint_cmp pow2_8).
+move => *; have -> : to_uint b %% 64 * 16 %/ 2 ^ k %% 2 = 0; last by smt().
+rewrite (_: 16 = 2^4) // Montgomery.div_mulr //; 1: by apply dvdz_exp2l;  smt(). 
+rewrite expz_div; 1,2: smt().
+move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 1 (4-k) _) => //=; 1: smt(). 
+rewrite -modzMml; have : 2 ^ (4 - k) %% 2 = 0; last by smt().
+by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
+qed.
+
+lemma untruncate4 (a b : W8.t) :
+   to_uint ((zeroextu32 a `>>` (of_int 6)%W8)  `|` 
+           ((zeroextu32 b `<<` (of_int 2)%W8))) =
+   to_uint a %/64 + to_uint b * 4.
+proof.
+rewrite orw_disjoint; last first.
++ rewrite to_uintD_small /=.
+  + rewrite /(`<<`) to_uint_shl //= /(`>>`) to_uint_shr //= !to_uint_zeroextu32.
+    rewrite !(modz_small _ 4294967296); 1..2:smt(W8.to_uint_cmp pow2_8).
+  rewrite /(`<<`) shlMP //= of_uintK /= /(`>>`) shrDP //= of_uintK /=. 
+  by rewrite !(modz_small _ 4294967296); 1..4:smt(W8.to_uint_cmp pow2_8).
+apply W32.ext_eq => k kb.
+rewrite /W32.(`&`) map2iE //=.
+rewrite /(`<<`) shlMP //= /(`>>`) shrDP //=. 
+rewrite !W32.get_to_uint /= kb //= !of_uintK /=.
+rewrite !(modz_small _ 4294967296); 1..4:smt(W8.to_uint_cmp pow2_8).
+case(2 <= k); 1: by rewrite (_: 64 = 2^6); move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 2 k) => //=;smt(W8.to_uint_cmp pow2_8).
+move => *; have -> : to_uint b * 4 %/ 2 ^ k %% 2  = 0; last by smt().
+rewrite (_: 4 = 2^2) // Montgomery.div_mulr //; 1: by apply dvdz_exp2l;  smt(). 
+rewrite expz_div; 1,2: smt().
+move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 1 (2-k) _) => //=; 1: smt(). 
+rewrite -modzMml; have : 2 ^ (2- k) %% 2 = 0; last by smt().
+by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
+qed.
 
 lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t) :
     equiv [ M.__polyvec_decompress ~ EncDec.decode10_vec :
              valid_ptr _p (3*320) /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array960 Glob.mem{1} _p = _a
+             load_array960 Glob.mem{1} _p = _a /\ u{2} = _a
               ==>
              pos_bound768_cxq res{1} 0 768 1 /\
              lift_vector res{1} = decompress_polyvec 10 res{2} /\
@@ -543,7 +663,8 @@ while (#{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\
     
 unroll for {1} 22; unroll for {1} 2.
 
-auto => /> &1 &2 vpl vph il ih jv im0 prior priorb; rewrite ultE of_uintK /= => enter _; split; 2: by rewrite ultE of_uintK /= to_uintD_small /#.
+auto => /> &1 &2 vpl vph il ih jv im0 prior priorb; rewrite ultE of_uintK /= => enter _.
+rewrite /load_array960;split; 2: by rewrite ultE of_uintK /= to_uintD_small /#.
 rewrite  !to_uintD_small /=; 1..18: by smt().
 do split; 1..4: by smt().
 
@@ -553,79 +674,93 @@ do split; 1..4: by smt().
   + move => eq1 neq; do 3! (rewrite set_neqiE; 1,2: by smt()).
     rewrite set_eqiE; 1,2: by smt().
     do 3! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    admit.
-XXX
-  case (k = to_uint j{1} + 1).
-  + move => eq2 neq1 neq; do 3! (rewrite get_set_neqE_s; 1: by smt()).
-    rewrite get_set_eqE_s; 1: by smt().
-    do 3! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}) _) //. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 1) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
+    rewrite set_eqiE 1,2:/# !initiE /= 1,2:/#.
+    rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint. 
+    congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+    rewrite to_uintD_small /=; 1: rewrite to_uintM_small; 1,2: smt(untruncate1 W8.to_uint_cmp pow2_8).
+    rewrite to_uintM_small /=;  1:smt(untruncate1 W8.to_uint_cmp pow2_8).
+    rewrite modz_small; 1: smt(untruncate1 W8.to_uint_cmp pow2_8). 
+    by rewrite /smod /=; smt(untruncate1 W8.to_uint_cmp pow2_8).  
 
-  case (k = to_uint j{1} + 2).
-  + move => eq3 neq2 neq1 neq; do 2! (rewrite get_set_neqE_s; 1: by smt()).
-    rewrite get_set_eqE_s; 1: by smt().
+  case (k = to_uint i{1} + 1).
+  + move => eq2 neq1 neq; do 2! (rewrite set_neqiE; 1,2: by smt()).
+    rewrite set_eqiE; 1,2: by smt().
     do 2! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}+1) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 2) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
+    rewrite set_eqiE 1,2:/# !initiE /= 1,2:/#.
+    rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint.
+    congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+    rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate2 W8.to_uint_cmp pow2_8).
+    rewrite to_uintM_small /=;  1:smt(untruncate2 W8.to_uint_cmp pow2_8).
+    rewrite modz_small; 1: smt(untruncate2 W8.to_uint_cmp pow2_8). 
+    by rewrite /smod /=; smt(untruncate2 W8.to_uint_cmp pow2_8).  
 
-  case (k = to_uint j{1} + 3).
-  + move => eq4 neq3 neq2 neq1 neq; rewrite get_set_neqE_s; 1: by smt().
-    rewrite get_set_eqE_s; 1: by smt().
+  case (k = to_uint i{1} + 2).
+  + move => eq3 neq2 neq1 neq; rewrite set_neqiE; 1,2: by smt().
+    rewrite set_eqiE; 1,2: by smt().
     rewrite set_neqiE; 1,2:smt().
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}+2) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 3) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
+    rewrite set_eqiE 1,2:/# !initiE /= 1,2:/#.
+    rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint.
+    congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+    rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate3 W8.to_uint_cmp pow2_8).
+    rewrite to_uintM_small /=;  1:smt(untruncate3 W8.to_uint_cmp pow2_8).
+    rewrite modz_small; 1: smt(untruncate3 W8.to_uint_cmp pow2_8). 
+    by rewrite /smod /=; smt(untruncate3 W8.to_uint_cmp pow2_8).  
+    
+  move => neq3 neq2 neq1 neq.
+  rewrite !set_eqiE 1..4:/# !initiE /= 1,2:/#.
+  rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint.
+  congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate4 W8.to_uint_cmp pow2_8).
+  rewrite to_uintM_small /=;  1:smt(untruncate4 W8.to_uint_cmp pow2_8).
+  rewrite modz_small; 1: smt(untruncate4 W8.to_uint_cmp pow2_8). 
+  by rewrite /smod /=; smt(untruncate4 W8.to_uint_cmp pow2_8).  
 
-  move => neq4 neq3 neq2 neq1 neq.
-  rewrite get_set_eqE_s; 1: by smt().
-  rewrite set_eqiE; 1,2:smt().
-  rewrite mapiE /=; 1: smt().
-  rewrite -(aav (to_uint i{1}+3) _) 1:/#. 
-  rewrite mapiE /=; 1: smt().
-  rewrite -!Fq.compress_impl_large //; 1: smt().
-  by apply truncation3.  
+move => k kl kh.
+case (k < to_uint i{1}); 1: by move => *;rewrite !set_neqiE /= /#.
+case (k = to_uint i{1}).
++ move => eq1 neq; do 3! (rewrite set_neqiE; 1,2: by smt()).
+  rewrite set_eqiE; 1,2: by smt().
+  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate1 W8.to_uint_cmp pow2_8).
+  rewrite to_uintM_small /=;  1:smt(untruncate1 W8.to_uint_cmp pow2_8).
+  rewrite modz_small; 1: smt(untruncate1 W8.to_uint_cmp pow2_8). 
+  by rewrite /smod /=; smt(untruncate1 W8.to_uint_cmp pow2_8).
 
-+ by rewrite ultE /= to_uintD_small; smt().
+case (k = to_uint i{1} + 1).
++ move => eq2 neq1 neq; do 2! (rewrite set_neqiE; 1,2: by smt()).
+  rewrite set_eqiE; 1,2: by smt().
+  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate2 W8.to_uint_cmp pow2_8).
+  rewrite to_uintM_small /=;  1:smt(untruncate2 W8.to_uint_cmp pow2_8).
+  rewrite modz_small; 1: smt(untruncate2 W8.to_uint_cmp pow2_8). 
+  by rewrite /smod /=; smt(untruncate2 W8.to_uint_cmp pow2_8).
 
-by rewrite ultE /= to_uintD_small; smt().
+case (k = to_uint i{1} + 2).
++ move => eq3 neq2 neq1 neq; rewrite set_neqiE; 1,2: by smt().
+  rewrite set_eqiE; 1,2: by smt().
+  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate3 W8.to_uint_cmp pow2_8).
+  rewrite to_uintM_small /=;  1:smt(untruncate3 W8.to_uint_cmp pow2_8).
+  rewrite modz_small; 1: smt(untruncate3 W8.to_uint_cmp pow2_8). 
+  by rewrite /smod /=; smt(untruncate3 W8.to_uint_cmp pow2_8).
+    
+move => neq3 neq2 neq1 neq.
+rewrite !set_eqiE 1..2:/#.
+  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
+  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate4 W8.to_uint_cmp pow2_8).
+  rewrite to_uintM_small /=;  1:smt(untruncate4 W8.to_uint_cmp pow2_8).
+  rewrite modz_small; 1: smt(untruncate4 W8.to_uint_cmp pow2_8). 
+  by rewrite /smod /=; smt(untruncate4 W8.to_uint_cmp pow2_8).
+
 qed.
-
-
-
-
 
 (******************************************************)
 
-require import Jindcpa.
-
 lemma polyvec_ntt_correct_h _r:
    hoare[ M.__polyvec_ntt :
-        _r = r /\
-        signed_bound768_cxq r 0 768 2
+        _r = r /\ signed_bound768_cxq r 0 768 2
           ==> 
-            nttv (lift_vector _r) = lift_vector res /\
+        nttv (lift_vector _r) = lift_vector res /\
             pos_bound768_cxq res 0 768 2 ].
 proof.
 proc; sp.
@@ -705,10 +840,7 @@ split.
   (* ========== *)
 qed.
 
-(* TODO *)
-lemma polyvec_ntt_ll  :
-      islossless M.__polyvec_ntt.
-admitted.
+lemma polyvec_ntt_ll  : islossless M.__polyvec_ntt by  proc;do 3! (wp;call(ntt_ll)).
 
 lemma polyvec_ntt_corr _r:
    phoare[ M.__polyvec_ntt :
@@ -808,10 +940,8 @@ split.
   (* ========== *)
 qed.
 
-(* TODO *)
 lemma polyvec_invntt_ll  :
-      islossless M.__polyvec_invntt.
-admitted.
+      islossless M.__polyvec_invntt by  proc;do 3! (wp;call(invntt_ll)).
 
 lemma polyvec_invntt_corr _r:
    phoare[ M.__polyvec_invntt :
@@ -847,9 +977,9 @@ lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : Fq 
 proof.
 move => _p0_def _p1_def _p2_def _r_def; proc.
 ecall (poly_reduce_corr_h (lift_array256 r)).
-ecall (poly_add_corr (lift_array256 r) _p2 6 3).
+have H:= (poly_add_corr_impl 6 3 _ _) => //; ecall (H (lift_array256 r) _p2); clear H.
 call (poly_basemul_corr _a2 _b2).
-call (poly_add_corr _p0 _p1 3 3).
+have H:= (poly_add_corr_impl 3 3 _ _) => //; ecall (H _p0 _p1); clear H.
 call (poly_basemul_corr _a1 _b1).
 call (poly_basemul_corr _a0 _b0).
 
@@ -872,8 +1002,9 @@ split.
 
 move => _a1_ddef _b1_ddef signed_bound_a1 signed_bound_b1 r1 signed_bound_r1 a1tb1_eq_r1.
 split.
+admit. (*
 + move : (basemul_scales (lift_polyvec a{hr} 0) (lift_polyvec b{hr} 0) (lift_array256 r0)) (basemul_scales (lift_polyvec a{hr} 1) (lift_polyvec b{hr} 1) (lift_array256 r1)) => /#.
-
+*)
 move => a0tb0f_eq_r0 a1tb1f_eq_r1 res1 signed_bound_res1 res1_def.
 
 split.
@@ -885,8 +1016,9 @@ split.
 
 move => _a2_ddef _b2_ddef signed_bound_a2 signed_bound_b2 r2 signed_bound_r2 a2tb2_eq_r2.
 split.
+admit. (*
 + move : (basemul_scales (lift_polyvec a{hr} 2) (lift_polyvec b{hr} 2) (lift_array256 r2)) => /#.
-
+*)
 move => a2tb2f_eq_r2 res2 signed_bound_res2 res2_eq_a2tb2red r4 r2_eq_r4 signed_bound_r4.
 rewrite -r2_eq_r4.
 apply Array256.ext_eq => x x_b.
@@ -900,8 +1032,8 @@ qed.
 
 (* TODO *)
 lemma polyvec_pointwise_acc_ll  :
-      islossless M.__polyvec_pointwise_acc.
-admitted.
+      islossless M.__polyvec_pointwise_acc
+by  proc;call poly_reduce_ll; do 2! (call poly_add_ll;call poly_basemul_ll); call poly_basemul_ll;auto.
 
 lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : Fq Array256.t) :
   _p0 = scale (basemul _a0 _b0) (inFq 169) =>
@@ -927,35 +1059,28 @@ move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 
 
 (******************************************************)
 (* TODO *)
+print compress_polyvec.
 lemma polyvec_tobytes_corr mem _p _a :
     equiv [ M.__polyvec_tobytes ~ EncDec.encode12_vec :
              pos_bound768_cxq a{1} 0 768 2 /\
-             lift_array768 a{1} = _a /\
-             u{2}.[0] = Array256.of_list witness (sub _a 0 256) /\
-             u{2}.[1] = Array256.of_list witness (sub _a 256 256) /\
-             u{2}.[2] = Array256.of_list witness (sub _a 512 256) /\
+             lift_array768 a{1} = _a /\ u{2} = map (compress 12) _a /\
              valid_range W8 Glob.mem{1} _p (3*384) /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p
               ==>
              touches mem Glob.mem{1} _p (3*384) /\
-             load_array384 Glob.mem{1} _p = res{2}.[0] /\
-             load_array384 Glob.mem{1} (_p + 384) = res{2}.[1] /\
-             load_array384 Glob.mem{1} (_p + 768) = res{2}.[2]
+             load_array1152 Glob.mem{1} _p = res{2}
               ].
 admitted.
 
-(* TODO *)
-lemma polyvec_frombytes_corr mem _p (_a : (W8.t Array384.t) Array3.t) :
+(* TODO *) 
+lemma polyvec_frombytes_corr mem _p (_a : W8.t Array1152.t) :
     equiv [ M.__polyvec_frombytes ~ EncDec.decode12_vec :
              valid_range W8 Glob.mem{1} _p (3*384) /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array384 Glob.mem{1} _p = _a.[0] /\
-             load_array384 Glob.mem{1} (_p + 384) = _a.[1] /\
-             load_array384 Glob.mem{1} (_p + 768) = _a.[2]
+             load_array1152 Glob.mem{1} _p = _a
               ==>
-             lift_array256 (Array256.of_list witness (sub res{1} 0 384)) = res{2}.[0] /\
-             lift_array256 (Array256.of_list witness (sub res{1} 384 384)) = res{2}.[1] /\
-             lift_array256 (Array256.of_list witness (sub res{1} 768 384)) = res{2}.[2] /\
+             lift_array768 res{1}= map (decompress 12) res{2} /\
+             signed_bound768_cxq  res{1}0 256  1 /\
              Glob.mem{1} = mem ].
 admitted.
 
@@ -1049,7 +1174,9 @@ by call (polyvec_pointwise_acc_corr_alg_h va vb); auto => />.
 
 ecall(poly_frommont_corr_h (map W16.to_sint polyi)).
 skip => &hr.
-move => /> VA VB AB BB  H H0 result.
+move => /> VA VB AB BB H H0. 
+admit.
+(* 
 rewrite (Array256.tP (Array256.map W16.to_sint result)
                          (map
         (fun (x : int) =>
@@ -1089,7 +1216,7 @@ rewrite (_:(ntt (dotp va vb)).[k] * inFq 169 * inFq Fq.SignedReductions.R * inFq
         =(ntt (dotp va vb)).[k] * (inFq Fq.SignedReductions.R * inFq 169) * (inFq Fq.SignedReductions.R * inFq 169)); first by ring.
  rewrite  (_: inFq Fq.SignedReductions.R * inFq 169 = Zq.one).
    by rewrite -inFqM -eq_inFq Fq.SignedReductions.RRinv.
-by ring.
+by ring. *)
 qed.
 
 (* TODO *)

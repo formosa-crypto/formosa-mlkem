@@ -684,6 +684,7 @@ module EncDec = {
        return r;
    }
 
+   (* Annoying to use these bitwise operations here. Fix *)
    proc encode1(a : ipoly) : W8.t Array32.t = {
        var i,j,r;
        var ra : W8.t Array32.t;
@@ -750,7 +751,7 @@ module EncDec = {
          i <- i + 1;
          c.[i] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4;
          i <- i + 1;
-         c.[i] <-  to_uint t2 %% 2^6 + (to_uint t4) * 2^2;
+         c.[i] <-  to_uint t3 %/ 2^6 + (to_uint t4) * 2^2;
          i <- i + 1;
          j <- j + 5;
       }
