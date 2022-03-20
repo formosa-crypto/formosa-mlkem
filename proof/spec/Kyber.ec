@@ -590,7 +590,7 @@ op decompress_polyvec(d : int, p : ipolyvec) =
                    then Array256.init (fun i => decompress d p.[i])
                    else if k = 1
                         then Array256.init (fun i => decompress d p.[i+256])
-                        else Array256.init (fun i => decompress d p.[i+256])).
+                        else Array256.init (fun i => decompress d p.[i+512])).
 
 module EncDec = {
 
@@ -734,7 +734,27 @@ module EncDec = {
    }
 
    proc decode10_vec(u : W8.t Array960.t) : ipolyvec = {
-      return witness;
+      var c : ipolyvec;
+      var i,j,t0,t1,t2,t3,t4;
+      c <- witness;
+      i <- 0; j <- 0;
+      while (i < 768) {
+         t0 <- u.[j];
+         t1 <- u.[j + 1];
+         t2 <- u.[j + 2];
+         t3 <- u.[j + 3];
+         t4 <- u.[j + 4];
+         c.[i] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;
+         i <- i + 1;
+         c.[i] <-  to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6;
+         i <- i + 1;
+         c.[i] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4;
+         i <- i + 1;
+         c.[i] <-  to_uint t2 %% 2^6 + (to_uint t4) * 2^2;
+         i <- i + 1;
+         j <- j + 5;
+      }
+      return c;
    }
 
    proc decode12_vec(u : W8.t Array1152.t) : ipolyvec = {

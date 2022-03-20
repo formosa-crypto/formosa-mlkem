@@ -150,6 +150,9 @@ proof.
   by case (2147483648 <= to_uint x) => ? // /#. 
 qed.    
 
+op load_array960 (m : global_mem_t) (p : address) : W8.t Array960.t = 
+  (Array960.init (fun (i : int) => m.[p + i])).
+
 (* TODO: write aux lemma to deal w/ subarrays cleanly *)
 
 (* END AUX *)
@@ -196,14 +199,8 @@ move => kb0 /=;move : (rval (k) kb0).
 
 qed. 
 
-lemma polyvec_csubq_ll : islossless M.__polyvec_csubq.
-proof.
-proc.
-wp;call poly_csubq_ll.
-wp;call poly_csubq_ll.
-wp;call poly_csubq_ll.
-done.
-qed.
+lemma polyvec_csubq_ll : islossless M.__polyvec_csubq 
+  by proc; do 3! (wp;call poly_csubq_ll).
 
 lemma polyvec_csubq_corr ap :
       phoare[ M.__polyvec_csubq :
@@ -212,27 +209,55 @@ lemma polyvec_csubq_corr ap :
            ap = lift_array768 res /\ pos_bound768_cxq res 0 768 1 ] = 1%r
   by conseq polyvec_csubq_ll (polyvec_csubq_corr_h ap). 
 
-
-(*
-lemma formula_polyvec x : 
-  0 <= x < 3329 =>
-  (x * 1024 + 1665) * (4294967296 %/ 3329) %% 18446744073709551616 %/ 4294967296 %% 1024 =
-  (x * 1024 + 1664) %/ 3329 %% 1024.
-proof.
-move=> /mem_range.
-have :  
-   (all
-     (fun x => (x * 1024 + 1665) * (4294967296 %/ 3329) %% 18446744073709551616 %/ 4294967296 %% 1024 =
-               (x * 1024 + 1664) %/ 3329 %% 1024)
-     (range 0 3329)).
-by move=> />.
-by rewrite allP => H /H /={H}.
+lemma truncation1 x :
+truncateu8 (truncateu16 (x `&` W64.of_int 1023) `&` W16.of_int 255) = 
+W8.of_int (to_uint x %% 1024).
+proof. rewrite /truncateu8; 
+have -> : 255 = 2^8-1 by auto.
+have -> : 1023 = 2^10-1 by auto.
+rewrite !and_mod //=.
+rewrite to_uint_truncateu16 /= !of_uintK /=.
+rewrite (modz_small _ 18446744073709551616); 1: smt().
+rewrite !(modz_small _ 65536); 1..3: smt().
+by apply W8.to_uint_eq; rewrite !of_uintK /= /#.
 qed.
-*)
 
+lemma truncation2 x y d:
+2 <= d <= 6 =>
+truncateu8
+  ((truncateu16 (y `&` (of_int 1023)%W64) `<<` (of_int d)%W8) `|`
+   (truncateu16 (x `&` (of_int 1023)%W64) `>>` (of_int (10-d))%W8)) =
+(of_int (to_uint x %% 1024 %/ 2^(10-d) + to_uint y %% 1024 * 2^d))%W8.
+move => db;rewrite /truncateu8 /=; congr.
+rewrite orw_disjoint. admit.
+have -> : 1023 = 2^10-1 by auto.
+rewrite !and_mod //.
+rewrite to_uintD_small. admit. 
+rewrite /(`<<`) /(`>>`).
+rewrite shlMP /= 1:/# shrDP /= 1:/# !of_uintK /=. 
+rewrite !(modz_small _ 18446744073709551616); 1,2: smt().
+rewrite !(modz_small _ 256) 1,2:/#  !(modz_small _ 16) 1,2:/#.
+have dpow1 : 0<= 2^d <=64. 
++ split; 1: smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l). 
+  move => *; rewrite (_: 64 = 2^6) //.
+  by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ d 6) => // /#.
+have /= dpow2 : 16<= 2^(10-d) <=2^8. 
++ move => *; rewrite /= (_: 256 = 2^8) //.
+  rewrite (_: 16 = 2^4) //.
+  split; 2: by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ (10-d) 8) => // /#.
+  by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 4) => // /#.
+by rewrite !(modz_small _ 65536) /#.
+qed.
 
-op load_array960 (m : global_mem_t) (p : address) : W8.t Array960.t = (Array960.init (fun (i : int) => m.[p + i])).
-
+lemma truncation3 x :
+truncateu8 (x `&` (of_int 1023)%W64 `>>` (of_int 2)%W8) = (of_int (to_uint x %% 1024 %/ 4))%W8.
+proof.
+have -> : 1023 = 2^10-1 by auto.
+rewrite !and_mod //=.
+rewrite /(`>>`) shrDP /= 1:/#. 
+rewrite /truncateu8 /= !of_uintK /=.
+by rewrite !(modz_small _ 18446744073709551616); 1..3: smt().
+qed.
 
 lemma polyvec_compress_corr mem _p _a :
     equiv [ M.__polyvec_compress ~ EncDec.encode10_vec :
@@ -249,108 +274,103 @@ proof.
 proc.
 seq 5 3 : (#pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
            to_uint j{1} = j{2} /\ j{2} = 0 /\
-           pos_bound768_cxq aa{1} 0 256 1 /\ lift_array768 aa{1} = _a).
+           pos_bound768_cxq aa{1} 0 768 1 /\ lift_array768 aa{1} = _a).
 wp => /=.
 ecall{1} (polyvec_csubq_corr _a); 1: by auto => /#.
-XXXX
-while (#{/~mem}{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\ 
-       to_uint j{1} = j{2} /\ j{2} = 2* i{2} /\
-       touches mem Glob.mem{1} _p j{2} /\ 
-       forall k, 0<=k<j{2} => loadW8 Glob.mem{1} (_p + k) = c{2}.[i{2} %/ 256].[k %/ 5]); last first.  
-+ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
-    vpl vph bnd ??; split; 1: by smt().
-  move => mem' i' j' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  touch load.
-  split; 1:  smt(). 
-  by rewrite tP => k kb; rewrite initiE //= (load k _) /#.
 
-auto => /> &1 &2 ??; rewrite /pos_bound256_cxq /touches /storeW8  /loadW8 /=.
-rewrite  ultE of_uintK /= => ????????. 
-rewrite !to_uintD_small /=; 1..4: smt().
-do split; 1..4: by smt(get_set_neqE_s). 
-+ move => k kbl kbh.
-  case (k = to_uint i{1}); last first.
-  + move => neq; rewrite get_set_neqE_s; 1: by smt().
-    by rewrite set_neqiE // /#.
-  move => eq; rewrite get_set_eqE_s; 1: by smt().
-  rewrite set_eqiE //.
-  have -> : W32.of_int 15 = W32.of_int (2^4 - 1) by auto.
-  rewrite /lift_array256 !mapiE /=; 1..4: smt().
-  rewrite -compress_impl_small //; 1: smt().
-  rewrite  -compress_impl_small //; 1:smt().
-  
-  case (k = to_uint i{1}); last by smt(Array128.set_neqiE).
-  move => iv; have -> : 15 = 2^4 - 1 by auto.
-  by rewrite !and_mod //.
+while (#{/~mem}{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\ 
+       to_uint j{1} = j{2} /\ 4*j{2} = 5*i{2} /\ i{2} %% 4 = 0 /\
+       touches mem Glob.mem{1} _p j{2} /\ 
+       (forall k, 0<=k<j{2} => 
+         loadW8 Glob.mem{1} (_p + k) = c{2}.[k{2}])); last first.  
++ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
+    ? vpl vph ?? baa vaa; split; 1: by smt().
+  move => mem' i' j' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  im0 touch load.
+  split; 1:  smt(). 
+  by rewrite tP => k kb; rewrite initiE //= (load k _)/#.
+
+unroll for {1} 2.
+auto => />.
+move =>  &1 &2 [#] ; rewrite /pos_bound768_cxq /lift_array768 /touches /storeW8  /loadW8 !tP /=.
+rewrite  ultE of_uintK /= => 4? aav 8?. 
+rewrite !to_uintD_small /=; 1..18: smt().
+
+do split; 1..5:by smt(get_set_neqE_s). 
+
++ move => k kb kbh.
+  case (k < to_uint j{1}).
+  + move => neq; rewrite !get_set_neqE_s; 1..5: by smt().
+    by rewrite !set_neqiE // /#.
+  case (k = to_uint j{1}).
+  + move => eq1 neq; do 4! (rewrite get_set_neqE_s; 1: by smt()).
+    rewrite get_set_eqE_s; 1: by smt().
+    do 4! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}) _) //. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -Fq.compress_impl_large //; 1: smt().
+    by apply truncation1.  
+
+  case (k = to_uint j{1} + 1).
+  + move => eq2 neq1 neq; do 3! (rewrite get_set_neqE_s; 1: by smt()).
+    rewrite get_set_eqE_s; 1: by smt().
+    do 3! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}) _) //. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 1) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  case (k = to_uint j{1} + 2).
+  + move => eq3 neq2 neq1 neq; do 2! (rewrite get_set_neqE_s; 1: by smt()).
+    rewrite get_set_eqE_s; 1: by smt().
+    do 2! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}+1) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 2) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  case (k = to_uint j{1} + 3).
+  + move => eq4 neq3 neq2 neq1 neq; rewrite get_set_neqE_s; 1: by smt().
+    rewrite get_set_eqE_s; 1: by smt().
+    rewrite set_neqiE; 1,2:smt().
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}+2) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 3) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  move => neq4 neq3 neq2 neq1 neq.
+  rewrite get_set_eqE_s; 1: by smt().
+  rewrite set_eqiE; 1,2:smt().
+  rewrite mapiE /=; 1: smt().
+  rewrite -(aav (to_uint i{1}+3) _) 1:/#. 
+  rewrite mapiE /=; 1: smt().
+  rewrite -!Fq.compress_impl_large //; 1: smt().
+  by apply truncation3.  
+
 + by rewrite ultE /= to_uintD_small; smt().
 
 by rewrite ultE /= to_uintD_small; smt().
 qed.
 
-
-
-while (#pre /\ 0 <= to_uint i <= 768 + 3 /\ to_uint i %% 4 = 0 /\ 
-        ap = lift_array768 aa /\ pos_bound768_cxq aa 0 768 1 /\
-        (forall k,
-          0 <= k < to_uint i =>
-           inFq (W16.to_sint r.[k]) = PolyVec.roundc ap.[k]) /\ 
-        (forall k,
-            0<= k < to_uint i => 0 <= to_sint r.[k] < 1024)).
-+ unroll for ^while; wp; skip => />;rewrite /(\ult) /= => &hr H H0 H1 H2 H3 H4 H5 H6 H7.
-  rewrite !to_uintD_small /= 1..4:/# andbA; split; 1:smt().
-  split; move => k [#] *.
-  move : (H5 k).
-  rewrite H3 !lift_array768E; 1: smt(). 
-  rewrite -roundcimpl64; 1: smt(). 
-  case (0 <= k && k < to_uint i{hr}) => /> *. 
-  rewrite !get_setE; 1..4: smt().
-  by smt().
-  rewrite !get_setE; 1..4: smt().
-  by smt().
-  rewrite !get_setE; 1..4: smt().
-  do (rewrite (fun_if W16.to_sint)).
-  smt(roundcimpl_rng get_setE).
-call (polyvec_csubq_corr ap). 
-wp; skip => /> *; split; 1: smt().
-rewrite /(\ult) /= => i0 r0 *; split; 2: smt().
-rewrite tP => j *; rewrite mapiE //; smt(@Array768).
-qed.
-*)
-
-(******************************************************)
-(* FIXME: this is a durty hack, it should be defined like that in KyberPoly *)
-lemma poly_add_corr (_a _b : Fq Array256.t) (ab bb : int) :
-    hoare[ Jindcpa.M._poly_add2 :
-           (0 <= ab <= 6 /\ 0 <= bb <= 3) /\
-
-            _a = lift_array256 rp /\
-            _b = lift_array256 bp /\ signed_bound_cxq rp 0 256 ab /\ signed_bound_cxq bp 0 256 bb ==>
-            signed_bound_cxq res 0 256 (ab + bb) /\
-            forall (k : int), 0 <= k && k < 256 => inFq (to_sint res.[k]) = _a.[k] + _b.[k]].
-bypr => &m [[h1 h2] h].
-byphoare (_ : _a = lift_array256 rp /\
-            _b = lift_array256 bp /\ signed_bound_cxq rp 0 256 ab /\ signed_bound_cxq bp 0 256 bb ==>
-            !(signed_bound_cxq res 0 256 (ab + bb) /\
-              forall (k : int), 0 <= k && k < 256 => inFq (to_sint res.[k]) = _a.[k] + _b.[k]) ) => //.
-hoare; apply (poly_add_corr _a _b ab bb h1 h2).
-qed.
-
-(* TODO *)
-lemma poly_add_ll : islossless Jindcpa.M._poly_add2.
-admitted.
-
-lemma poly_add_corr_ph (_a _b : Fq Array256.t) (ab bb : int) :
-    phoare[ Jindcpa.M._poly_add2 :
-           (0 <= ab <= 6 /\ 0 <= bb <= 3) /\
-            _a = lift_array256 rp /\
-            _b = lift_array256 bp /\ signed_bound_cxq rp 0 256 ab /\ signed_bound_cxq bp 0 256 bb ==>
-            signed_bound_cxq res 0 256 (ab + bb) /\
-            forall (k : int), 0 <= k && k < 256 => inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r 
-by conseq poly_add_ll (poly_add_corr  _a _b ab bb).
-
-
 lemma polyvec_add_corr_h _a _b ab bb :
+      0 <= ab <= 6 => 0 <= bb <= 3 =>
       hoare[ M.__polyvec_add2 :
-            0 <= ab <= 6 /\ 0 <= bb <= 3 /\
            _a = lift_array768 r /\
            _b = lift_array768 b /\
            signed_bound768_cxq r 0 768 ab /\
@@ -360,74 +380,57 @@ lemma polyvec_add_corr_h _a _b ab bb :
            forall k, 0 <= k < 768 =>
               inFq (to_sint res.[k]) = _a.[k] + _b.[k]]. 
 proof.
-  proc; sp.
-  wp.
-  ecall (poly_add_corr (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i]))) (lift_array256 (Array256.init (fun i => b.[(2 * 256) + i]))) ab bb).
-  wp.
-  ecall (poly_add_corr (lift_array256 (Array256.init (fun i => r.[256 + i]))) (lift_array256 (Array256.init (fun i => b.[256 + i]))) ab bb).
-  wp.
-  ecall (poly_add_corr (lift_array256 (Array256.init (fun i => r.[i]))) (lift_array256 (Array256.init (fun i => b.[i]))) ab bb).
-  skip; move => &hr [[ab_lb ab_ub][[bb_lb bb_ub] [_a_def [_b_def [signed_bound_r signed_bound_b]]]]] />.
-  rewrite ab_lb ab_ub bb_lb bb_ub /=.
-  split. move : signed_bound_r signed_bound_b. smt(@Array256 @Array768).
-  move => signed_bound_r_1 signed_bound_b_1 res1 signed_bound_res1 res1_eq_rb.
-  split.
-  smt(@Array768 @Array256).
-  move => signed_bound_r_2 signed_bound_b_2 res2 signed_bound_res2 res2_eq_rb.
-  do split.
-  rewrite /signed_bound_cxq => k k_b />.
-  do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint)).
-  move : signed_bound_res2 signed_bound_res1.
-  smt(@Array256 @Array768).
-  move : signed_bound_b; smt(@Array256 @Array768).
-  move => signed_bound_r_3 signed_bound_b_3 res3 signed_bound_res3 res3_eq_rb.
-  do split.
-  rewrite /signed_bound768_cxq => k k_b />.
-  do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint)).
-  (* ========== *)
-  (* TODO: replace with aux lemmas *)
-  case (512 <= k < 768) => k_si.
-    move : signed_bound_res3 => /#.
-  move : k_si => ?.
-  case (256 <= k < 512) => k_si.
-    move : signed_bound_res2 => /#.
-  move : k_si => ?.
-  case (0 <= k < 256) => k_si.
-    move : signed_bound_res1 => /#.
-  smt(@Array256 @Array768).
+move => abb bbb;  move : (poly_add_corr_impl ab bb abb bbb) => H.
+proc.
+wp;ecall (H (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i]))) (lift_array256 (Array256.init (fun i => b.[(2 * 256) + i])))).
+wp;ecall (H (lift_array256 (Array256.init (fun i => r.[256 + i]))) (lift_array256 (Array256.init (fun i => b.[256 + i])))).
+wp;ecall (H (lift_array256 (Array256.init (fun i => r.[i]))) (lift_array256 (Array256.init (fun i => b.[i])))).
+clear H.
+auto => /> &hr.
+rewrite /signed_bound768_cxq /signed_bound_cxq /lift_array768 /lift_array256 /=.
+move => [#] 2?.
+do split; 1..2: by move => *; rewrite !initiE //= /#.
+move => H H0 res1 resb1 resv1.
+do split.
++ by move => k kb; move : (resb1 k kb); rewrite !initiE  //= !Array768.initiE  /#.
++ by move => k kb; move : (resb1 k kb); rewrite !initiE  //= /#.
 
-  move => k k_lb k_ub.
-  rewrite _a_def _b_def /= -lift_array768_inFq 1:/#  -lift_array768_inFq 1:/#.
-  do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint) (fun_if inFq)).
+move => vsofar bsofar res2 res2b res2v.
+do split.
++ move => k kb; rewrite !initiE  //= !Array768.initiE  /= 1:/#.
+  rewrite  (_: (256 <= 512 + k && 512 + k < 512)=false) /= 1:/#.
+  by rewrite !Array768.initiE  /= /#.
++ by move => k kb;rewrite !initiE  /= /#.
 
-  case (512 <= k < 768) => k_si.
-    rewrite res3_eq_rb 1:/#.
-    do (rewrite -lift_array256_inFq 1:/#).
-    do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint) (fun_if inFq)).
-    smt(@Array768 @Array256).
-  move : k_si => ?.
-  case (256 <= k < 512) => k_si.
-    rewrite res2_eq_rb 1:/#.
-    do (rewrite -lift_array256_inFq 1:/#).
-    do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint) (fun_if inFq)).
-    smt(@Array768 @Array256).
-  move : k_si => ?.
-  case (0 <= k < 256) => k_si.
-    rewrite res1_eq_rb 1:/#.
-    do (rewrite -lift_array256_inFq 1:/# || rewrite initiE 1:/# /=).
-    done.
-  smt(@Array768 @Array256).
-  (* ========== *)
+move => vsofar2 bsofar2 res3 res3b res3v.
+do split.
++ move => k kb; rewrite !initiE  //= !Array768.initiE  /= 1:/#.
+  case (512 <= k && k < 768); 1: by smt().
+  case (256 <= k && k < 512); 1: by smt().
+  by move => *; rewrite !initiE /= /#.
+
+move => k kbl kbh; rewrite !initiE  //= !Array768.initiE  /= 1:/# !mapiE //= !initiE //=.
+case (512 <= k && k < 768).
++ move => kbb.
+  rewrite (res3v (k - 512) _) 1:/# !mapiE /= 1..2:/# !initiE /= 1..2:/#.
+  by rewrite !Array768.initiE /= 1:/# !Array768.initiE /= /#.
+
+move => nkbb.
+case (256 <= k && k < 512).
++ move => kbb.
+  rewrite (res2v (k - 256) _) 1:/# !mapiE /= 1..2:/# !initiE /= 1..2:/#.
+  by rewrite !Array768.initiE /= /#.
+
+move => nkbb2.
+have -> : 0 <= k < 256 by smt().
+by rewrite (resv1 k _) 1:/# !mapiE /= 1..2:/# !initiE /= 1..2:/#.
 qed.
 
-(* TODO *)
-lemma polyvec_add_ll  :
-      islossless M.__polyvec_add2.
-admitted.
+lemma polyvec_add_ll  : islossless M.__polyvec_add2 by proc; do 3! (wp; call poly_add_ll).
 
 lemma polyvec_add_corr  _a _b ab bb:
+    0 <= ab <= 6 => 0 <= bb <= 3 =>
    phoare[ M.__polyvec_add2 :
-            0 <= ab <= 6 /\ 0 <= bb <= 3 /\
            _a = lift_array768 r /\
            _b = lift_array768 b /\
            signed_bound768_cxq r 0 768 ab /\
@@ -435,8 +438,8 @@ lemma polyvec_add_corr  _a _b ab bb:
            ==>
            signed_bound768_cxq res 0 768 (ab + bb) /\ 
            forall k, 0 <= k < 768 =>
-              inFq (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r 
-by conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb).
+              inFq (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r by 
+  move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb).
 
 (******************************************************)
 
@@ -446,56 +449,58 @@ lemma polyvec_reduce_corr_h _a :
           _a = lift_array768 res /\
           forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)].
 proof.
-  proc; sp.
-  wp.
-  ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
-  wp.
-  ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
-  wp.
-  ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[i])))).
-  skip; move => &hr _a_def />.
-  move => res1 res1_eq_r signed_bound_res1 res2 res2_eq_r signed_bound_res2 res3 res3_eq_r signed_bound_res3.
+proc. 
+wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
+wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
+wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[i])))).
+  
+auto => /> &hr; rewrite /lift_array256 /lift_array768=> res1 res1v res1b res2 res2v res2b res3 res3v res3b.
 
-  split.
-  rewrite _a_def lift_array768P => k k_b.
-  do (rewrite initiE 1:k_b /= || rewrite fun_if).
+rewrite tP in res3v.
+rewrite tP in res2v.
+rewrite tP in res1v.
 
-  (* ========== *)
-  (* TODO: replace with aux lemmas *)
-  case (512 <= k < 768) => k_si.
-    rewrite lift_array256_inFq 1:/# -res3_eq_r.
-    rewrite -lift_array256_inFq 1:/#.
-    smt(@Array768 @Array256).
-  move : k_si => ?.
-  case (256 <= k < 512) => k_si.
-    rewrite lift_array256_inFq 1:/# -res2_eq_r.
-    rewrite -lift_array256_inFq 1:/#.
-    smt(@Array768 @Array256).
-  move : k_si => ?.
-  case (0 <= k < 256) => k_si.
-    rewrite lift_array256_inFq 1:/# -res1_eq_r.
-    rewrite -lift_array256_inFq 1:/#.
-    smt(@Array768 @Array256).
-  trivial.
+split.
 
-  move => k k_lb k_ub.
-  do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint)).
-  case (512 <= k < 768) => k_si.
-    move : signed_bound_res3 => /#.
-  move : k_si => ?.
-  case (256 <= k < 512) => k_si.
-    move : signed_bound_res2 => /#.
-  move : k_si => ?.
-  case (0 <= k < 256) => k_si.
-    move : signed_bound_res1 => /#.
-  smt(@Array768 @Array256).
-  (* ========== *)
++ rewrite tP => k kb; rewrite !mapiE //= !initiE //= !Array768.initiE  /= 1:/#.
+  case (512 <= k && k < 768).
+  + move => kbb.
+    move : (res3v (k - 512) _); 1:smt(); rewrite !mapiE /= 1,2:/# !initiE /= 1:/#.
+    by rewrite !Array768.initiE  /= 1:/# !Array768.initiE  /= /#. 
+
+  move => nkbb.
+  case (256 <= k && k < 512).
+  + move => kbb.
+    move : (res2v (k - 256) _); 1:smt(); rewrite !mapiE /= 1,2:/# !initiE /= 1:/#.
+    by rewrite !Array768.initiE  /=  /#. 
+
+  move => nkbb2.
+  rewrite !Array768.initiE  /=  1:/#.
+  have -> : 0 <= k < 256 by smt().
+  by move : (res1v (k) _); 1:smt(); rewrite !mapiE /= 1,2:/# !initiE /= /#.
+
+move => k kbl kbh.
+
+case (512 <= k && k < 768).
++ move => kbb.
+  rewrite !initiE /= 1:/#.
+  by rewrite !Array768.initiE  /= 1:/# !Array768.initiE  /= /#. 
+
+move => nkbb.
+case (256 <= k && k < 512).
++ move => kbb.
+  rewrite !initiE /= 1:/#.
+  by rewrite !Array768.initiE  /= 1:/# !Array768.initiE  /= /#. 
+
+move => nkbb2.
+rewrite !Array768.initiE  /=  1:/#.
+rewrite !Array768.initiE  /=  1:/#.
+by rewrite !initiE /= /#.
 qed.
 
+
 (* TODO *)
-lemma polyvec_reduce_ll  :
-      islossless M.__polyvec_reduce.
-admitted.
+lemma polyvec_reduce_ll: islossless M.__polyvec_reduce  by proc; do 3! (wp; call poly_reduce_ll).
 
 lemma polyvec_reduce_corr  _a :
       phoare[ M.__polyvec_reduce :
@@ -506,75 +511,110 @@ by conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a).
 
 (******************************************************)
 
-lemma polyvec_decompress_corr mem _p (_a : (W8.t Array320.t) Array3.t) :
+lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t) :
     equiv [ M.__polyvec_decompress ~ EncDec.decode10_vec :
-             valid_range W8 Glob.mem{1} _p (3*320) /\
+             valid_ptr _p (3*320) /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array320 Glob.mem{1} _p = _a.[0] /\
-             load_array320 Glob.mem{1} (_p + 320) = _a.[1] /\
-             load_array320 Glob.mem{1} (_p + 640) = _a.[2]
+             load_array960 Glob.mem{1} _p = _a
               ==>
-             lift_array256 (Array256.of_list witness (sub res{1} 0 256)) = decompress_poly 10 res{2}.[0] /\
-             lift_array256 (Array256.of_list witness (sub res{1} 256 256)) = decompress_poly 10 res{2}.[1] /\
-             lift_array256 (Array256.of_list witness (sub res{1} 512 256)) = decompress_poly 10 res{2}.[2] /\
+             pos_bound768_cxq res{1} 0 768 1 /\
+             lift_vector res{1} = decompress_polyvec 10 res{2} /\
              Glob.mem{1} = mem ].
-admitted.
-(*
-while (#pre /\ 0 <= to_uint i <= 768 /\ to_uint i %% 4 = 0 /\
-       forall k, 0 <= k < to_uint i => r.[k] = truncateu16 (((rp.[k] * W32.of_int 3329) + W32.of_int 512) `>>` 
-                                               W8.of_int 10)).
- + exlim (to_uint i) => i0.
-   while ((0 <= i0 && i0 < 768) /\ i0 %% 4 = 0 /\ to_uint i = i0 + k /\ 0 <= k <= 4 /\
-          (forall z, k <= z < 5 => t.[z] = rp.[i0 + z]) /\
-          forall k, 0 <= k < to_uint i => r.[k] = 
-               truncateu16 (((rp.[k] * W32.of_int 3329) + W32.of_int 512) `>>` W8.of_int 10)).
-   + auto => /> &hr i_lb i_ub i_mod_4 ui_val k_lb k_ub t_val r_val k_tub.
-     split; first by rewrite to_uintD_small; smt(@Int @W64).
-     split; first by move : k_lb k_tub; smt(@Int).
-     split.
-     move => z z_lb z_ub.
-     rewrite Array5.set_neqiE 1:/# 1:/#.
-     rewrite t_val 1:/# => />.
+proof.
+proc.
+seq 4 3 : (#pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
+           to_uint j{1} = j{2} /\ j{2} = 0);
+  first by auto => />.
 
-     move => z z_lb z_ub.
-     do (rewrite get_setE 1:/# /=).
-     case (z = to_uint i{hr}) => z_val.
-       rewrite t_val 1:/#.
-       smt(@Array768 @Array5).
-       rewrite r_val 1:z_lb /=.
-         move : z_val z_ub; rewrite to_uintD_small 1:/#. smt(@Int @W64).
-       done.
-   wp; while ((0 <= i0 && i0 < 768) /\ i0 %% 4 = 0 /\ to_uint i = i0 /\ 0 <= k <= 5 /\
-           (forall z, 0 <= z < k=> t.[z] = rp.[i0 + z])).
-   + auto => /> &hr; smt (Array5.get_setE).
-   by auto => /> &hr; rewrite ultE /= /#.
+while (#{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\ 
+       to_uint j{1} = j{2} /\ 4*j{2} = 5*i{2} /\ i{2} %% 4 = 0 /\
+       (forall k, 0<=k<i{2} => 
+          inFq (to_sint r{1}.[k])  = decompress 10 c{2}.[k]) /\
+       (forall k, 0<=k<i{2} => 
+          0<=to_sint r{1}.[k] < q)); last first.  
++ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
+    vpl vph ??; split; 1: by smt().
+  move => i' j' r1 c2; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  im0 vals bds.
+  split; 1:  smt(). 
+  rewrite /lift_vector /decompress_polyvec eq_vectorP => i ib; rewrite  !offunvE //= /lift_polyvec . 
+  case (i = 0); 1: by move => iv; rewrite tP => x xv; rewrite !initiE //= /#.
+  case (i = 1); 1: by move => iv niv; rewrite tP => x xv; rewrite !initiE //= /#.
+  by move => *;rewrite tP => x xv; rewrite !initiE //= /#.
+    
+unroll for {1} 22; unroll for {1} 2.
 
-wp; skip => /> &hr H; split; 1: smt().
-rewrite /(\ult) /= => i0 r0 4?.
-have -> hr0 : to_uint i0 = 768 by smt().
-have h : forall k, 0 <= k && k < 768 => 
-  to_sint r0.[k] = ((to_sint rp{hr}.[k] %% 3329 * 3329 + 512) %/ 2 ^ 10).
-+ move=> k hk; rewrite hr0 1://.
-  move: (H k hk); rewrite bpos32E => /> *.
-  have heq : to_uint (rp{hr}.[k] * W32.of_int 3329) = to_uint rp{hr}.[k] * 3329.
-  + by rewrite to_uintM_small /=; smt(to_sint_unsigned32).
-  have heq1 : to_uint (rp{hr}.[k] * W32.of_int 3329 + W32.of_int 512) = 
-              to_uint rp{hr}.[k] * 3329 + 512.
-  + rewrite to_uintD_small /=; smt(to_sint_unsigned32).
-  pose X := (W2u16.truncateu16 _).
-  have heq2 : to_uint X = (to_sint rp{hr}.[k] %% 3329 * 3329 + 512) %/ 2 ^ 10.
-  + rewrite to_uint_truncateu16 shr_div_le // /=. 
-    rewrite heq1; smt(to_sint_unsigned32).
-  rewrite (W16.to_sintE X) /smod /=.
-  have -> /=: !(32768 <= to_uint X). 
-  + rewrite heq2 /=; smt(to_sint_unsigned32).
-  by rewrite heq2.
-split.
-+ apply Array768.tP => k hk.
-  by rewrite /lift_array768 !mapiE 1..3:// /= PolyVec.unroundcE inFqK qE h.
-move=> k hk; rewrite b16E h 1:// /= qE. 
-by move: (H k hk); rewrite bpos32E /#.
-qed.*)
+auto => /> &1 &2 vpl vph il ih jv im0 prior priorb; rewrite ultE of_uintK /= => enter _; split; 2: by rewrite ultE of_uintK /= to_uintD_small /#.
+rewrite  !to_uintD_small /=; 1..18: by smt().
+do split; 1..4: by smt().
+
++ move => k kl kh.
+  case (k < to_uint i{1}); 1: by move => *;rewrite !set_neqiE /= /#.
+  case (k = to_uint i{1}).
+  + move => eq1 neq; do 3! (rewrite set_neqiE; 1,2: by smt()).
+    rewrite set_eqiE; 1,2: by smt().
+    do 3! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    admit.
+XXX
+  case (k = to_uint j{1} + 1).
+  + move => eq2 neq1 neq; do 3! (rewrite get_set_neqE_s; 1: by smt()).
+    rewrite get_set_eqE_s; 1: by smt().
+    do 3! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}) _) //. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 1) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  case (k = to_uint j{1} + 2).
+  + move => eq3 neq2 neq1 neq; do 2! (rewrite get_set_neqE_s; 1: by smt()).
+    rewrite get_set_eqE_s; 1: by smt().
+    do 2! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}+1) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 2) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  case (k = to_uint j{1} + 3).
+  + move => eq4 neq3 neq2 neq1 neq; rewrite get_set_neqE_s; 1: by smt().
+    rewrite get_set_eqE_s; 1: by smt().
+    rewrite set_neqiE; 1,2:smt().
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}+2) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 3) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  move => neq4 neq3 neq2 neq1 neq.
+  rewrite get_set_eqE_s; 1: by smt().
+  rewrite set_eqiE; 1,2:smt().
+  rewrite mapiE /=; 1: smt().
+  rewrite -(aav (to_uint i{1}+3) _) 1:/#. 
+  rewrite mapiE /=; 1: smt().
+  rewrite -!Fq.compress_impl_large //; 1: smt().
+  by apply truncation3.  
+
++ by rewrite ultE /= to_uintD_small; smt().
+
+by rewrite ultE /= to_uintD_small; smt().
+qed.
+
+
+
+
 
 (******************************************************)
 

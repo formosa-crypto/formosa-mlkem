@@ -395,7 +395,7 @@ lemma poly_sub_corr _a _b ab bb :
    by move => *;conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _).
 
 
-lemma poly_add_corr _a _b ab bb :
+lemma poly_add_corr_h _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
       hoare[ M._poly_add2 :
            _a = lift_array256 rp /\
@@ -433,6 +433,43 @@ do split; first last.
   move => ->; rewrite !Array256.set_eqiE //= to_sintD_small /=; 1: by smt().
   by rewrite !mapiE //= inFqD /#.
 by smt(Array256.set_neqiE).
+qed.
+
+lemma poly_add_ll : islossless M._poly_add2.
+proc; while (0<= to_uint i <= 256) (256 - to_uint i).
+by move => *; auto => /> &hr ??;rewrite !ultE !to_uintD_small /= /#.  
+by auto => /> i ??;rewrite !ultE /= /#.  
+qed.
+
+lemma poly_add_corr _a _b ab bb :
+    0 <= ab <= 6 => 0 <= bb <= 3 =>  
+      phoare[ M._poly_add2 :
+           _a = lift_array256 rp /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq rp 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           forall k, 0 <= k < 256 =>
+              inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
+   by move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb). 
+ 
+
+lemma poly_add_corr_impl ab bb :
+  0 <= ab <= 6 =>
+  0 <= bb <= 3 =>
+  forall _a _b,
+      hoare[ M._poly_add2 :
+           _a = lift_array256 rp /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq rp 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           forall k, 0 <= k < 256 =>
+              inFq (to_sint res.[k]) = _a.[k] + _b.[k]].
+move => abb bbb _a _b.
+apply (poly_add_corr_h _a _b ab bb abb bbb).
 qed.
 
 lemma poly_add_corr_R _a _b ab bb :
