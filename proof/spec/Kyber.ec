@@ -373,36 +373,18 @@ module type PRF_t(O : RO.POracle) = {
    proc next_bytes(_N : int) : W8.t Array128.t
 }.
 
-op bytes2bits32 : W8.t Array32.t   -> int Array256.t.
-op bytes2bits128 : W8.t Array128.t -> int Array256.t.
-op bytes2bits384 : W8.t Array384.t -> int Array256.t.
-
-axiom bytes2bits32E i j a: 
-  0 <= i < 32 => 0 <= j < 8 =>
-   (bytes2bits32 a).[i*8+j] = b2i a.[i].[j].
-
-axiom bytes2bits128E a i: 
-  0 <= i < 128 => 
-   (bytes2bits128 a).[i*2] = to_uint a.[i] %% 16 /\
-   (bytes2bits128 a).[i*2+1] = to_uint a.[i] %/ 16.
-
-axiom bytes2bits384E a i: 
-  0 <= i < 128 => 
-   (bytes2bits384 a).[i*2] = to_uint a.[3*i] + to_uint a.[3*i+1] %% 16 * 256 /\
-   (bytes2bits384 a).[i*2+1] = to_uint a.[3*i+2] * 16 + to_uint a.[3*i+1] %/ 16.
-
 module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
-      var bits,i,a,b,bytes;
+      var i,a,b,bytes;
       var rr : poly;
       rr <- witness;
       bytes <@ PRF(O).next_bytes(_N);
-      bits <- bytes2bits128 bytes;
       i <- 0;
       while (i < 256) {
-        a <- bits.[4*i] + bits.[4*i+1];
-        b <- bits.[4*i + 2] + bits.[4*i+3];
+        a <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 0] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 1];
+        b <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 2] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 3];
         rr.[i] <- inFq  (a - b);
+        i <- i + 1;
       }
       return rr;
    }
@@ -560,77 +542,81 @@ op ofipoly(p : ipoly)  : poly = map inFq p.
 
 type ipolyvec = int Array768.t.
 
-op toipolyvec(p : vector) : ipolyvec = 
-   Array768.init (fun k => if 0 <= k < 256
-                  then asint p.[0].[k]
-                  else if 256 <= k < 512
-                       then asint p.[1].[k-256] 
-                       else asint p.[2].[k-512]).
-op ofipolyvec(p : ipolyvec) =  
-  offunv (fun k => if k = 0
-                   then Array256.init (fun i => inFq p.[i])
-                   else if k = 1
-                        then Array256.init (fun i => inFq p.[i+256])
-                        else Array256.init (fun i => inFq p.[i+256])).
+op [a] subarray256(x : 'a Array768.t, i : int) =
+   Array256.init (fun k => x.[256*i + k]).
 
-op compress_polyvec(d : int, p : vector) : ipolyvec = 
+op [a] fromarray256(a0 a1 a2 : 'a Array256.t) : 'a Array768.t = 
    Array768.init (fun k => if 0 <= k < 256
-                           then compress d p.[0].[k]
-                           else if 256 <= k < 512
-                           then compress d p.[1].[k-256] 
-                           else compress d p.[2].[k-512]).
+                  then a0.[k]
+                  else if 256 <= k < 512
+                       then a1.[k-256] 
+                       else a2.[k-512]).   
+
+op [a] subarray384(x : 'a Array1152.t, i : int) =
+   Array384.init (fun k => x.[384*i + k]).
+
+op [a] fromarray384(a0 a1 a2 : 'a Array384.t) : 'a Array1152.t = 
+   Array1152.init (fun k => if 0 <= k < 384
+                  then a0.[k]
+                  else if 384 <= k < 768
+                       then a1.[k-384] 
+                       else a2.[k-768]).   
+
+op toipolyvec(p : vector) : ipolyvec = map asint (fromarray256 p.[0] p.[1] p.[2]).
+
+op ofipolyvec(p : ipolyvec) =  offunv (fun k => map inFq (subarray256 p k)).
+
+op compress_polyvec(d : int, p : vector) : ipolyvec =  
+        map (compress d) (fromarray256 p.[0] p.[1] p.[2]).
 
 op decompress_polyvec(d : int, p : ipolyvec) =  
-  offunv (fun k => if k = 0
-                   then Array256.init (fun i => decompress d p.[i])
-                   else if k = 1
-                        then Array256.init (fun i => decompress d p.[i+256])
-                        else Array256.init (fun i => decompress d p.[i+512])).
+        offunv (fun k => map (decompress d) (subarray256 p k)).
+
+(* To avoid loop matching pain with the implementation
+   we adopt the same control structure and specify EncDec
+   in a more palattable way. *)
 
 module EncDec = {
 
-   proc decode12(bytes : W8.t Array384.t) : ipoly = {
-       var bits,i;
+   proc decode12(a : W8.t Array384.t) : ipoly = {
+       var i;
        var r : ipoly;
        r <- witness;
-       bits <- bytes2bits384 bytes;
        i <- 0;
        while (i < 128) {
-          r.[i*2+0]  <- bits.[i*2+0];
-          r.[i*2+1]  <- bits.[i*2+1];
+          r.[i*2+0]  <- to_uint a.[3*i] + to_uint a.[3*i+1] %% 2^4 * 2^8;
+          r.[i*2+1]  <- to_uint a.[3*i+2] * 2^4 + to_uint a.[3*i+1] %/ 2^4;
           i <- i + 1;
        }
        return r;
    }
-   proc decode4(bytes : W8.t Array128.t) : ipoly = {
-       var bits,i;
+   proc decode4(a : W8.t Array128.t) : ipoly = {
+       var i;
        var r : ipoly;
        r <- witness;
-       bits <- bytes2bits128 bytes;
        i <- 0;
        while (i < 128) {
-          r.[i*2+0]  <- bits.[i*2+0];
-          r.[i*2+1]  <- bits.[i*2+1];
+          r.[i*2+0]  <- to_uint a.[i] %% 16;
+          r.[i*2+1]  <- to_uint a.[i] %/ 16;
           i <- i + 1;
        }
        return r;
    }
 
-   proc decode1(bytes : W8.t Array32.t) : ipoly = {
-       var bits,i;
+   proc decode1(a : W8.t Array32.t) : ipoly = {
+       var i;
        var r : ipoly;
        r <- witness;
-       bits <- bytes2bits32 bytes;
        i <- 0;
        while (i < 32) {
-          r.[i*8+0] <- bits.[i*8+0];
-          r.[i*8+1] <- bits.[i*8+1];
-          r.[i*8+2] <- bits.[i*8+2];
-          r.[i*8+3] <- bits.[i*8+3];
-          r.[i*8+4] <- bits.[i*8+4];
-          r.[i*8+5] <- bits.[i*8+5];
-          r.[i*8+6] <- bits.[i*8+6];
-          r.[i*8+7] <- bits.[i*8+7];
+          r.[i*8+0] <- b2i a.[i].[0];
+          r.[i*8+1] <- b2i a.[i].[1];
+          r.[i*8+2] <- b2i a.[i].[2];
+          r.[i*8+3] <- b2i a.[i].[3];
+          r.[i*8+4] <- b2i a.[i].[4];
+          r.[i*8+5] <- b2i a.[i].[5];
+          r.[i*8+6] <- b2i a.[i].[6];
+          r.[i*8+7] <- b2i a.[i].[7];
           i<-i+1;
        }
        return r;
@@ -652,9 +638,9 @@ module EncDec = {
           i <- i + 1;
           r.[j] <- W8.of_int fi1;
           j <- j + 1;
-          r.[j] <- W8.of_int ((fi2 %% 16) * 16 + fi1 %/ 256);
+          r.[j] <- W8.of_int ((fi2 %% 2^4) * 2^4 + fi1 %/ 2^8);
           j <- j + 1;
-          r.[j] <- W8.of_int (fi2 %/ 16);
+          r.[j] <- W8.of_int (fi2 %/ 2^4);
           j <- j + 1;
        }
        return r;
@@ -670,13 +656,12 @@ module EncDec = {
           j <- j + 1;
           fi1 <- p.[j];
           j <- j + 1;
-          r.[i] <- W8.of_int (fi + fi1 * 16);
+          r.[i] <- W8.of_int (fi + fi1 * 2^4);
           i <- i + 1;
        }
        return r;
    }
 
-   (* Annoying to use these bitwise operations here. Fix *)
    proc encode1(a : ipoly) : W8.t Array32.t = {
        var i,j,r;
        var ra : W8.t Array32.t;
@@ -722,8 +707,12 @@ module EncDec = {
       return c;
    }
 
-   proc encode12_vec(u : ipolyvec) : W8.t Array1152.t = {
-      return witness;
+   proc encode12_vec(a : ipolyvec) : W8.t Array1152.t = {
+      var a1, a2, a3;
+      a1 <@ encode12(subarray256 a 0);
+      a2 <@ encode12(subarray256 a 1);
+      a3 <@ encode12(subarray256 a 2);
+      return fromarray384 a1 a2 a3;
    }
 
    proc decode10_vec(u : W8.t Array960.t) : ipolyvec = {
@@ -750,8 +739,12 @@ module EncDec = {
       return c;
    }
 
-   proc decode12_vec(u : W8.t Array1152.t) : ipolyvec = {
-      return witness;
+   proc decode12_vec(a : W8.t Array1152.t) : ipolyvec = {
+      var a1, a2, a3;
+      a1 <@ decode12(subarray384 a 0);
+      a2 <@ decode12(subarray384 a 1);
+      a3 <@ decode12(subarray384 a 2);
+      return fromarray256 a1 a2 a3;
    }
 
 }.
@@ -804,8 +797,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      s <- nttv s;
      e <- nttv e; 
      t <- ntt_mmul a s + e;
-     tv <@ EncDec.encode12_vec(toipolyvec t); 
-     sv <@ EncDec.encode12_vec(toipolyvec s);
+     tv <@ EncDec.encode12_vec(toipolyvec t); (* minimum residues *)
+     sv <@ EncDec.encode12_vec(toipolyvec s); (* minimum residues *)
      return ((tv,rho),sv);
   }
 

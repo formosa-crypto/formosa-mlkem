@@ -1,7 +1,7 @@
 require import AllCore.
 from Jasmin require import JModel.
 require import Fq Kyber KyberPoly KyberPolyVec.
-require import Array3 Array32 Array64 Array128 Array168 Array256 Array768.
+require import Array32 Array64 Array128 Array168 Array256 Array768 Array1152.
 
 require import Jindcpa.
 
@@ -64,55 +64,121 @@ module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
   proc next_bytes(_N : int) : W8.t Array128.t = { return witness; }
 }.
 
-(* Won't prove we only touch passed in regions *)
-op valid_ptr(p : address, l : int) = 0 <= p /\ 0 <= l /\ p + l < W64.modulus.
 op valid_disj_reg(p1 : address, l1 : int, p2 : address, l2 : int) =
-      valid_ptr p1 l1 => valid_ptr p2 l2 => ((p1 + l1) <= p2  || (p2 + l2) <= p1).
+      valid_ptr p1 l1 /\ valid_ptr p2 l2 /\ ((p1 + l1) <= p2  || (p2 + l2) <= p1).
 
 (* We model G exactly as the implementation does it *)
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
-   equiv [ Kyber(G,XOF,PRF,H).kg ~ M.indcpa_keypair_jazz : 
-       Glob.mem{2} = mem /\ to_uint pkp{2} = _pkp /\ to_uint skp{2} = _skp /\ to_uint randomnessp{2} = _randomnessp /\
-       Glob.mem{1} = mem /\ to_uint G.randomnessp{1} = _randomnessp /\
+   equiv [ M.indcpa_keypair_jazz ~ Kyber(G,XOF,PRF,H).kg : 
+       Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
+       to_uint randomnessp{1} = _randomnessp /\
+       Glob.mem{2} = mem /\ to_uint G.randomnessp{2} = _randomnessp /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
-       let (pk,sk) = res{1} in let (t,rho) = pk in
-         sk.[0] = load_array384 Glob.mem{2} _skp /\
-         sk.[1] = load_array384 Glob.mem{2} (_skp+384) /\
-         sk.[2] = load_array384 Glob.mem{2} (_skp+2*384) /\
-         t.[0] = load_array384 Glob.mem{2} _pkp /\
-         t.[1] = load_array384 Glob.mem{2} (_pkp+384) /\
-         t.[2] = load_array384 Glob.mem{2} (_pkp+2*384) /\
-         rho = load_array32 Glob.mem{2} (_pkp+3*384)
- ].
+       let (pk,sk) = res{2} in let (t,rho) = pk in
+         sk = load_array1152 Glob.mem{1} _skp /\
+         t = load_array1152 Glob.mem{1} _pkp  /\
+         rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc.
-swap {1} 6 -5.
-swap {2} 4 -3.
-swap {2} [6..7] -4.
-swap {2} 12 -8.
-swap {2} [16..21] -11.
-seq 1 10 : (#pre /\ rho{1} = publicseed{2} /\ sig{1} = noiseseed{2}).
-+ by inline *; conseq => />; sim; auto => />; smt(W64.to_uintK W64.to_uint_small).
+swap {2} 6 -5.
+swap {1} 4 -3.
+swap {1} 3 -1.
+swap {1} [11..13] -8.
+swap {1} 8 -5.
+swap {1} 10 -7.
+swap {1} [14..16] -6.
+seq 10 1 : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
++ by inline G(H).sample; conseq => />; sim; auto => />; smt(W64.to_uintK W64.to_uint_small).
 swap {1} [7..8] -5.
-swap {2} [12..13] -8.
-seq 3 5 : (#pre /\ a{1} = lift_matrix (a0{2},a1{2},a2{2}) /\
-            signed_bound768_cxq a0{2} 0 768 2 /\
-            signed_bound768_cxq a1{2} 0 768 2 /\
-            signed_bound768_cxq a2{2} 0 768 2). 
-inline M.gen_matrix. (* Need to define XOF such that this works. *)
+swap {2} [7..8] -5.
+seq 5 3 : (#pre /\ a{2} = lift_matrix a{1} /\
+            pos_bound2304_cxq a{1} 0 2304 2). 
+inline M.__gen_matrix. (* Need to define XOF such that this works. *)
 admit. (* To Do: HUGE *)
-swap {1} [5..10]  -2.
-swap {2} 6 -4.
-swap {2} [4..6] -1.
-swap {2} [9..22] -3.
-seq 8 19 : (#pre /\ s{1} = lift_vector skpv{2} /\ e{1} = lift_vector e{2} /\
-                signed_bound768_cxq skpv{2} 0 768 2 /\
-                signed_bound768_cxq e{2} 0 768 2).
+swap {2} [5..10]  -2.
+swap {1} 4 -2.
+swap {1} [5..6] -2.
+swap {1} [7..21] -2.
+seq 19 8 : (#pre /\ s{2} = lift_vector skpv{1} /\ e{2} = lift_vector e{1} /\
+                signed_bound768_cxq skpv{1} 0 768 1 /\
+                signed_bound768_cxq e{1} 0 768 1).
+inline M._poly_getnoise.
 admit. (* To Do: Define PRF so that this works *)
-seq 5 14 : (#pre /\ t{1} = lift_vector pkpv{2} /\
-                signed_bound768_cxq pkpv{2} 0 768 2). 
+sp 2 0.
+seq 16 5 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}pre /\ 
+                t{2} = lift_vector pkpv{1} /\
+                pos_bound768_cxq pkpv{1} 0 768 2 /\
+                pos_bound768_cxq skpv{1} 0 768 2
+                ); last first.
+
++ while{1} (0<=to_uint i{1} <= 32 /\ 
+            to_uint pkp{1} = _pkp + 3*384 + to_uint i{1} /\ 
+            to_uint skp{1} = _skp /\ rho{2} = publicseed{1} /\
+            valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3) /\
+                sv{2} = load_array1152 Glob.mem{1} _skp /\
+                tv{2} = load_array1152 Glob.mem{1} _pkp /\ 
+                forall k, 0<=k<to_uint i{1} =>
+                 rho{2}.[k] = loadW8 Glob.mem{1} (_pkp + 1152 + k)) 
+             (32 - to_uint i{1}).
+
++ move => *;
+  auto => /> &hr ??; rewrite /loadW8 /storeW8 /valid_disj_reg /valid_ptr /=.
+  move  => ppk [#] reg1 reg2 reg3 reg4 reg5 loaded.
+  rewrite ultE /= to_uintD_small /= 1:/# => enter.
+  rewrite to_uintD_small /= 1:/#.
+  do split; 1..3,7:smt().
+  + rewrite /load_array1152 Array1152.tP => k kb.
+    by rewrite !initiE //=;  rewrite get_set_neqE_s; smt().
+  + rewrite /load_array1152 Array1152.tP => k kb.
+    by rewrite !initiE //=;  rewrite  get_set_neqE_s; smt().
+  move => k kbl kbh.
+  case (k <to_uint i{hr}).
+  + by move => *;rewrite get_set_neqE_s /#. 
+  by move => *;rewrite get_set_eqE_s /#. 
+
+  swap {2} 2 -1.
+  wp; ecall(polyvec_tobytes_corr Glob.mem{1} (to_uint pkp{1}) (lift_array768 pkpv{1})). 
+  wp; ecall(polyvec_tobytes_corr Glob.mem{1} (to_uint skp{1}) (lift_array768 skpv{1})).
+  auto => /> &1 &2 *.
+  do split.
+  + move => *. rewrite /lift_vector /toipolyvec /fromarray256 !mapiE //. 
+    by smt(rg_asint).
+  + move => *. rewrite /lift_vector /toipolyvec /fromarray256 /lift_array768 tP => k kb.  
+    rewrite !mapiE // asintK /=.  
+    rewrite !offunvE //= /lift_array256 /subarray256 initiE //=. 
+    case (0 <= k && k < 256); 1: by move => *; rewrite mapiE //= initiE //.
+    case (256 <= k && k < 512); 1: by  move => *; rewrite mapiE 1:/# /= initiE /#.
+    by  move => *; rewrite mapiE 1:/# /= initiE /#.
+
+  move => ???; rewrite /touches => touches0.
+  do split.
+  + move => *. rewrite /lift_vector /toipolyvec /fromarray256 !mapiE //. 
+    by smt(rg_asint).
+  + move => *. rewrite /lift_vector /toipolyvec /fromarray256 /lift_array768 tP => k kb.  
+    rewrite !mapiE // asintK /=.  
+    rewrite !offunvE //= /lift_array256 /subarray256 initiE //=. 
+    case (0 <= k && k < 256); 1: by move => *; rewrite mapiE //= initiE //.
+    case (256 <= k && k < 512); 1: by  move => *; rewrite mapiE 1:/# /= initiE /#.
+    by  move => *; rewrite mapiE 1:/# /= initiE /#.
+  + by smt().
+
+  move => ?????; rewrite /touches => touches1.
+  do split => //.
+  + by rewrite to_uintD_small //=. 
+  + rewrite /load_array1152 tP => k kb; rewrite !initiE //=. 
+    move : (touches1 (to_uint skp{1} - to_uint pkp{1} + k) _); 1: by smt().
+    by have -> ->: to_uint pkp{1} + (to_uint skp{1} - to_uint pkp{1} + k) = to_uint skp{1} + k by ring.
+  + by smt().
+  
+  move => *; rewrite !ultE /=.
+  split; 1: by smt(). 
+  by move => *;rewrite /load_array32 tP => k kb; rewrite initiE //= /#. 
+
+(* Algebraic part remaining *)
+
+
+(*
 seq 2 1: #pre; first by auto.
-sp 0 2.
 exists * s{1}, e{1}, skpv{2}, e{2} .
 elim * => _s1 _e1 _s2 _e2.
 seq 1 1 : (#{/~_s1}{~_s2}pre /\ s{1} = nttv _s1).
@@ -284,6 +350,7 @@ transitivity {2} {poly2 <@ Aux.inner_product(a2,skpv); }
   wp; call(_: true); 1: by sim.
   wp; call(_: true); 1: by sim.
   by auto => />. 
+
 (*********************************)
 seq 0 1 : (#pre /\
              signed_bound768_cxq pkpv{2} 0 768 2 /\
@@ -453,9 +520,8 @@ rewrite !offunvE //=.
 rewrite !NTT_Fq.NTT_Fq.add_comm_ntt.
 have mul_comm_invntt : forall a b, ntt (invntt a &* invntt b) = basemul a b by smt(NTT_Fq.NTT_Fq.mul_comm_ntt NTT_Fq.NTT_Fq.nttK).
 rewrite !mul_comm_invntt.
-by smt(@NTT_Fq).
-smt().
-admit. (* just storing in memory *)
+by smt(@NTT_Fq). 
+smt().*)
 qed.
 
 lemma kyber_correct_enc mem _coinsp _msgp _ctp _pkp : 
