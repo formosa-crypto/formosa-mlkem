@@ -165,7 +165,7 @@ lemma poly_csubq_corr ap :
   by conseq poly_csubq_ll (poly_csubq_corr_h ap). 
 
 lemma compress_rng a d :
-   1 <= d <= 12 =>
+   1 <= d < 12 =>
    0 <= compress d a < 2^d.
 move => drng; rewrite /compress.
 by apply modz_cmp; apply gt0_pow2.
@@ -191,7 +191,7 @@ while (#{/~mem}{~i{1}=0}pre /\ 0<=i{1}<=32  /\ touches mem Glob.mem{1} _p i{1} /
   move => mem' i' ra' exit _ ibl ibh touch load;split; 1:smt(). 
   by rewrite tP => k kb; rewrite initiE //= (load k _) /#.
 
-wp;seq 2 2 : (#pre /\ j{1} = 0 /\ ={j,r} /\ forall k, j{1} <= k < 8 => !r{2}.[k]); 1: by auto.
+wp;seq 2 2 : (#pre /\ j{1} = 0 /\ ={j,r} /\ forall k, j{1} <= k < 8 => !r{2}.[k] /\ r{2} = W8.zero); 1: by auto.
 conseq (_: _ ==> 
   0 <= i{2} + 1 <= 32 /\
   touches mem Glob.mem{1} _p i{1} /\
@@ -201,7 +201,9 @@ conseq (_: _ ==>
 + by move => &1 &2 [#]; rewrite /valid_ptr /touches /storeW8 /loadW8 /=  => 16? rL rR [#] ??; 
      rewrite !to_uintD_small /= of_uintK /= modz_small; 
      smt(get_set_neqE_s get_set_eqE_s Array32.set_neqiE Array32.set_eqiE). 
-while(#{/~j{1}=0}pre /\ 0 <= j{2} <=8); last by  auto => /> /#. 
+while(#{/~j{1}=0}{~r{2} = W8.zero}pre /\ 0 <= j{2} <=8 /\ to_uint r{2} < 2^j{2}); 
+  last by  auto => /> *; smt(W8.to_uint0).
+ 
 auto => /> &1 &2; rewrite /pos_bound256_cxq /bpos16 qE=> ?? bound ?????????. 
 
 have jpow : 1<= 2^j{2} <=128. 
@@ -209,34 +211,47 @@ have jpow : 1<= 2^j{2} <=128.
   move => *; rewrite (_: 128 = 2^7) //.
   by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ j{2} 7) => // /#.
 
-rewrite /lift_array256 !mapiE /=; 1,2:smt().
-split; last by smt(). 
 pose x:=(compress 1 (inFq (to_sint a{1}.[8 * i{2} + j{2}]))).
 have /= xrng := (compress_rng (inFq (to_sint a{1}.[8 * i{2} + j{2}])) 1 _) => //.
 
-split.
-+ congr; rewrite to_uint_eq to_uint_truncateu8 /= modz_small.
-  + rewrite (_: W32.one = W32.of_int (2^1 - 1)) // W32.and_mod //= compress_impl_small // 1:/#.
-    split; 1: by smt(W32.to_uint_cmp).
-    move => *;rewrite /(`<<`) W32.to_uint_shl 1:/# W32.of_uintK /=.
-    rewrite modz_dvd // (modz_small _ 32) 1:/# modz_small; 1: by rewrite modz_small; smt().
-    by smt(). 
-  rewrite (_: W32.one = W32.of_int (2^1 - 1)) // W32.and_mod //= compress_impl_small // 1:/# -/x.  
-    move => *;rewrite /(`<<`) W32.to_uint_shl  1:/# W32.of_uintK /=.
-    move => *;rewrite /(`<<`) W8.to_uint_shl  1:/# W8.of_uintK /=.
-    by rewrite modz_dvd // !modz_small; smt(). 
+rewrite /lift_array256 !mapiE /=; 1,2:smt().
+split; last by smt(modz_small W8.to_uint_cmp Ring.IntID.exprS).
 
-move => k kbl kbh.
-have : ((of_int x)%W8 `<<` (of_int j{2})%W8).[k] = false; last by smt().
+rewrite to_uint_eq of_uintK modz_small /=; 1: smt(W8.to_uint_cmp). 
+rewrite W8.to_uint_orw_disjoint. 
++ apply W8.ext_eq => k kb; rewrite /W8.(`&`) map2E initiE //=.
+  case (!(0 <= k < j{2})).
+  + move => kbb; have -> : !r{2}.[k]; last by smt().
+    rewrite W8.get_to_uint kb /=.
+    by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ (j{2}) k  _) => //; smt(W8.to_uint_cmp).
+  
+   
+  move => kbb;have -> : !(truncateu8 ((((zeroextu32 a{1}.[8 * i{2} + j{2}] `<<` W8.one) + 
+                         (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&`
+                            W32.one `<<` (of_int j{2})%W8)).[k].
+  rewrite W8.get_to_uint kb /= to_uint_truncateu8  to_uint_shl /= 1:/#.
+  rewrite (modz_small j{2} 256); 1: smt().
+  rewrite (modz_small j{2} 32); 1: smt().
+  rewrite (_: W32.one = W32.of_int (2^1 - 1)) // and_mod // compress_impl_small // 1:/#.
+  rewrite (modz_small _  4294967296); 1: by rewrite of_uintK /= /#. 
+  rewrite (modz_small _  256); 1: by rewrite of_uintK /= /#.  
+  rewrite W32.of_uintK /= (modz_small _ 4294967296) 1:/#.
+  rewrite divMr; 1: by smt(le_dvd_pow). 
+  rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
+  + have -> : 2 %| 2 ^ (j{2} - k) = 2^1 %| 2 ^ (j{2} - k) by auto.  
+    by apply le_dvd_pow; smt().
+  by smt().
 
-move => *;rewrite /(`<<`) /(`<<<`) /= initiE /=; 1: smt(). 
-rewrite get_to_uint /= modz_dvd // !(modz_small _ 8); 1: smt().
-have ->  /=: ((0 <= k - j{2} && k - j{2} < 8)); 1: smt().
-rewrite (modz_small _ 256); 1: smt().
+congr; rewrite to_uint_truncateu8 /= modz_small.
++ rewrite (_: W32.one = W32.of_int (2^1 - 1)) // W32.and_mod //= compress_impl_small // 1:/#.
+  split; 1: by smt(W32.to_uint_cmp).
+  move => *;rewrite /(`<<`) W32.to_uint_shl 1:/# W32.of_uintK /=.
+  rewrite modz_dvd // (modz_small _ 32) 1:/# modz_small; 1: by rewrite modz_small; smt().
+  by smt(). 
 
-have /= ? : 2^1 <= 2^(k-j{2}) 
-  by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 1 (k-j{2})) => // /#.
-by smt(pdiv_small).
+rewrite (_: W32.one = W32.of_int (2^1 - 1)) // W32.and_mod //= compress_impl_small // 1:/# -/x.  
+move => *;rewrite /(`<<`) W32.to_uint_shl  1:/# W32.of_uintK /=.
+by rewrite modz_dvd // !modz_small; smt(). 
 qed.
 
 
@@ -337,6 +352,14 @@ do split; 1, 2, 4: by smt(Array256.set_neqiE).
 move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
 move => -> ?; rewrite Array256.set_eqiE // rval.
 by congr;rewrite W16.of_sintK /= /smod /= /#.
+qed.
+
+lemma poly_frommont_ll : islossless  M._poly_frommont.
+proc. 
+while (0 <= to_uint i <= 256) (256 - to_uint i).
++ move => *; wp; call fqmul_ll; auto => />.
+  by move => &hr ??; rewrite ultE to_uintD_small;smt(to_uint_cmp pow2_64).
+by auto => /> ???; rewrite ultE /#.
 qed.
 
 lemma poly_sub_corr_h _a _b ab bb :
@@ -553,7 +576,8 @@ proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ M._poly_tobytes ~ EncDec.encode12 :
              pos_bound256_cxq a{1} 0 256 2 /\  lift_array256 a{1} = _a /\
-             compress_poly 12 _a = a{2} /\ valid_ptr _p 384 /\
+             (forall i, 0<=i<256 => 0 <= a{2}.[i] <q) /\
+             map inFq a{2} = _a /\ valid_ptr _p 384 /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p
               ==>
              pos_bound256_cxq res{1} 0 256 1 /\
@@ -561,25 +585,32 @@ lemma poly_tobytes_corr _a (_p : address) mem :
              load_array384 Glob.mem{1} _p = res{2}].
 proc => /=.
 seq 3 3 : (#{/~a{1}}pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
-           to_uint j{1} = j{2} /\ j{2} = 0 /\compress_poly 12 _a = a{2} /\ 
+           to_uint j{1} = j{2} /\ j{2} = 0 /\ 
+           map W16.to_uint a{1} = a{2} /\
            pos_bound256_cxq a{1} 0 256 1 /\ lift_array256 a{1} = _a).
-wp => /=;call{1} (poly_csubq_corr _a); 1: by auto => /#.
++ wp => /=;call{1} (poly_csubq_corr _a); auto => /> &1 &2.
+  rewrite /pos_bound256_cxq /bpos16 /lift_array256 !tP => ?? a1v ?? result. 
+  rewrite !tP => resv ?; split; 2: smt().
+  move => i ib; move : (resv i ib) (a1v i ib);rewrite !mapiE //=.
+  rewrite -!eq_inFq (modz_small (to_sint result.[i])) 1:/#.
+  by rewrite (to_sint_unsigned (result.[i])) /#.
+  
 
 while (#{/~mem}{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=256  /\ 
        to_uint j{1} = j{2} /\ 2 * j{2} = 3 * i{2}  /\
        touches mem Glob.mem{1} _p j{2} /\ 
        forall k, 0<=k<j{2} => loadW8 Glob.mem{1} (_p + k) = r{2}.[k]); last first.  
 + auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
-    vpl vph ?? bnd; split; 1: by smt().
+    ? vpl vph ?? bnd ?; split; 1: by smt().
   move => mem' i' j' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  touch load.
   split; 1:  smt(). 
   by rewrite tP => k kb; rewrite initiE //= (load k _) /#.
 
-auto => /> &1 &2 ??; rewrite /compress_poly /lift_array256 /pos_bound256_cxq.
+auto => /> &1 &2  H ???; rewrite /lift_array256 /pos_bound256_cxq !tP /=. 
 rewrite /touches /storeW8  /loadW8 /=  ultE of_uintK /= => ????????. 
 rewrite !to_uintD_small /=; 1..10: smt().
 do split; 1..4: by smt(get_set_neqE_s). 
-+ move => k kbl kbh.
++ move => k kbl kbh;rewrite !mapiE /=; 1,2:smt(to_uint_cmp).
   case (k < to_uint j{1}).
   + move => neq; rewrite !get_set_neqE_s; 1..3: by smt().
     by rewrite !set_neqiE // /#.
@@ -590,29 +621,43 @@ do split; 1..4: by smt(get_set_neqE_s).
     rewrite set_neqiE //; 1,2: by smt().
     rewrite set_neqiE //; 1,2: by smt().
     rewrite set_eqiE //; 1: by smt().
-    rewrite !mapiE /= 1,2:/#.
     rewrite /truncateu8 (_: 255 = 2^8-1) //  W16.and_mod // !of_uintK /=. 
-    rewrite compress12; 1: smt().
-    rewrite !(modz_small _ 65536); 1,2: smt().
-    rewrite to_sint_unsigned; 1: smt().
+    rewrite !(modz_small _ 65536);1: smt(W16.to_uint_cmp pow2_16).
     by rewrite of_int_mod.
   move => case1; case (k = to_uint j{1} + 1).
   + move => case2; rewrite get_set_neqE_s; 1: by smt().
     rewrite get_set_eqE_s; 1: by smt().
     rewrite set_neqiE //; 1,2: by smt().
     rewrite set_eqiE //; 1: by smt().
-    rewrite !mapiE /= 1..4:/#.
-    rewrite !compress12; 1,2: smt().
-    rewrite to_sint_unsigned; 1: smt().
-    rewrite to_sint_unsigned; 1: smt().
-    by auto.
+    + rewrite /truncateu8; congr.
+      rewrite to_uint_orw_disjoint. 
+      + apply W16.ext_eq => x xb; rewrite /W16.(`&`) map2E initiE //=.
+        case (!(0 <= x < 4)).
+        + move => kbb; have -> : !(a{1}.[to_uint i{1}] `>>` (of_int 8)%W8).[x]; last by smt().
+          rewrite get_to_uint xb /= to_uint_shr // of_uintK /=. 
+          rewrite (_: 256 = 2^8) // -divz_mulp //; 1: smt(gt0_pow2).
+          rewrite -exprD_nneg //; 1:by smt().
+          have /= expbnd:= (StdOrder.IntOrder.ler_weexpn2l 2 _ 12 (8+x)  _); 1,2: smt().
+          have -> : to_uint a{1}.[to_uint i{1}] %/ 2 ^ (8 + x) = 0; last by smt(mod0z).
+          apply divz_small; move : (H (to_uint i{1}) _); 1: smt().
+          by rewrite mapiE //; smt(qE).
+        move => *; have -> : !(a{1}.[to_uint i{1} + 1] `&` 
+                         (of_int 15)%W16 `<<` (of_int 4)%W8).[x]; last by smt().
+        rewrite get_to_uint xb /= to_uint_shl // of_uintK /=. 
+        rewrite (_: 15 = 2^4-1) // and_mod // !of_uintK /=.
+        rewrite !(modz_small _ 65536) 1,2,3:/#.  
+        have /= expbnd:= (StdOrder.IntOrder.ler_weexpn2l 2 _ x 3  _); 1,2: smt().
+        rewrite (_: 16 = 2^4) // divMr; first by apply le_dvd_pow; smt(). 
+        rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
+        + have -> : 2 %| 2 ^ (4 - x) = 2^1 %| 2 ^ (4 - x) by auto.  
+        by apply le_dvd_pow; smt().
+      rewrite (_: 15 = 2^4 - 1) // and_mod //=.
+      rewrite to_uint_shl //= (modz_small _ 65536); 1: rewrite !of_uintK /#.
+      by rewrite to_uint_shr //= !of_uintK /= (modz_small _ 65536) 1:/#.
   move => case2; case (k = to_uint j{1} + 2).
   + move => case3; rewrite get_set_eqE_s; 1: by smt().
     rewrite set_eqiE //; 1: by smt().
-    rewrite !mapiE /= 1,2:/#.
-    rewrite compress12; 1: smt().
-    rewrite to_sint_unsigned; 1: smt().
-    by auto.
+    by rewrite to_uint_eq to_uint_truncateu8 /= to_uint_shr //.
   by smt().
 
 + by rewrite ultE to_uintD_small /=; smt().
@@ -628,14 +673,14 @@ lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t):
              bytes{2} = _a
               ==>
              Glob.mem{1} = mem /\
-             lift_array256 res{1} = decompress_poly 12 res{2} /\
+             map W16.to_sint res{1} = res{2} /\
              pos_bound256_cxq res{1} 0 256 2 ].
 proc.
 seq 1 2 : (#pre /\ bits{2} = bytes2bits384 bytes{2} /\ aux{1} = 128); 1: by auto.
 while(#pre /\ i{1} = i{2} /\ 0 <= i{2} <=  128 /\ 
-   forall k, 0<=k<i{2}*2 => inFq (to_sint rp{1}.[k]) = decompress 12 r{2}.[k] /\
+   forall k, 0<=k<i{2}*2 => to_sint rp{1}.[k] = r{2}.[k] /\
                 0 <= to_sint rp{1}.[k] <2*q); last first.
-+ auto => /> &1 &2; rewrite /lift_array256 /decompress_poly /pos_bound256_cxq /=.
++ auto => /> &1 &2; rewrite /lift_array256  /pos_bound256_cxq /=.
   move =>  vrl vrh; split; 1: by smt(). 
   move => r i a _ exit ibl ibh prior; split; 2: by smt(). 
   by rewrite tP => x xb; rewrite !mapiE //= /#.
@@ -684,7 +729,6 @@ case(k = i{2} * 2).
        !(modz_small _ 65536);smt(W8.to_uint_cmp pow2_8).
   rewrite /loadW8 !to_uint_zeroextu16 !to_uint_shl //= !of_uintK /=.
   rewrite bits0 /load_array284 /= !initiE /= 1..2:/#.
-  rewrite decompress12; 1: by auto; smt(W8.to_uint_cmp pow2_8).
   by rewrite /smod /=; smt(W8.to_uint_cmp pow2_8 modz_small).
 
 move => *;rewrite set_eqiE;1,2:smt(). 
@@ -695,7 +739,6 @@ rewrite /loadW8 /to_sint !to_uint_orw_disjoint.
   by rewrite xb !zeroextu16_bit /= /#.
 rewrite !to_uint_shl // !to_uint_shr //= !of_uintK /=. 
 rewrite bits1 /load_array284 /= !initiE /= 1..2:/#.
-rewrite decompress12; 1: by auto; smt(W8.to_uint_cmp pow2_8 modz_small).
 by rewrite /smod /=; smt(W8.to_uint_cmp pow2_8 modz_small).
 qed.
 
@@ -744,7 +787,30 @@ do split; 1..4: by smt(get_set_neqE_s).
   
   case (k = to_uint i{1}); last by smt(Array128.set_neqiE).
   move => iv; have -> : 15 = 2^4 - 1 by auto.
-  by rewrite !and_mod //.
+  rewrite !and_mod //. 
+  pose x := (((zeroextu32 a{1}.[to_uint j{1}] `<<` (of_int 4)%W8) + 
+              (of_int 1665)%W32) * (of_int 80635)%W32 `>>`(of_int 28)%W8).
+  pose y := (((zeroextu32 a{1}.[to_uint j{1} + 1] `<<` (of_int 4)%W8) + 
+              (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8).
+  rewrite to_uint_eq to_uint_truncateu8 !of_uintK to_uint_orw_disjoint. 
+  + apply W32.ext_eq => i ib; rewrite /W32.(`&`) map2E initiE //=.
+    case (!(0 <= i < 4)).
+    + move => kbb; have -> : !((of_int (to_uint x %% 16)))%W32.[i]; last by smt().
+      rewrite get_to_uint ib /= of_uintK /= (modz_small _ 4294967296); 1: smt().
+      by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 4 i  _) => //; smt().
+  
+    move => kbb;have -> : !((of_int (to_uint y %% 16))%W32 `<<` (of_int 4)%W8).[i].
+    rewrite get_to_uint ib /=  to_uint_shl /= 1:/# of_uintK /=.
+    rewrite !(modz_small _ 4294967296); 1,2,3: smt().
+    rewrite  (_: 16 = 2^4) // divMr; 1: by apply  le_dvd_pow; smt(). 
+    rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
+    + have -> : 2 %| 2 ^ (4 - i) = 2^1 %| 2 ^ (4 - i) by auto.  
+      by apply le_dvd_pow; smt().
+    by smt().
+  
+  rewrite !of_uintK /= (modz_small _ 4294967296) 1:/#.
+  by rewrite to_uint_shl //= !of_uintK /= !(modz_small _ 4294967296) 1,2,3:/#.
+  
 + by rewrite ultE /= to_uintD_small; smt().
 
 by rewrite ultE /= to_uintD_small; smt().
@@ -1552,6 +1618,13 @@ rewrite inFqD redv9 redv10 !inFqM.
 by ring.
 qed.
 
-lemma poly_basemul_ll : islossless M._poly_basemul by admit.
+lemma poly_basemul_ll : islossless M._poly_basemul.
+proc.
+while (0 <= to_uint i <= 256 /\ to_uint i %%4 = 0) (256 - to_uint i); last by auto => /> i ib; rewrite !ultE /#.
+move => *; do 10! (wp;call fqmul_ll); auto => />.
+move => &hr; rewrite !ultE /= => ??.
+have -> : i{hr} + W64.one - W64.one + (of_int 3)%W64 - W64.one + (of_int 2)%W64 = i{hr} + (W64.of_int 4); last by move => *; rewrite to_uintD_small /=; smt(to_uint_cmp pow2_64). 
+by ring.
+qed.
 
 end KyberPoly.

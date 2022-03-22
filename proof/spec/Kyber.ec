@@ -189,12 +189,6 @@ proof. move => *; rewrite /decompress_alt /decompress /round; congr.
 rewrite StdBigop.Bigreal.Num.Domain.mulrC StdBigop.Bigreal.Num.Domain.mulrA.
 admitted.
 
-lemma compress12 x : 0 <= x < q =>  compress 12 (inFq x) =  x.
-admitted.
-
-lemma decompress12 x : 0 <= x < 2^12 =>  decompress 12 x = inFq x.
-admitted.
-
 
 (** End extension *)
 
@@ -217,12 +211,13 @@ op b_decode(c: Fq) : bool = ! `| as_sint c| < q %/ 4 + 1.
 (* The spec uses compress and decompress to do encode/decode,
    so these should be true *)
 lemma b_encode_sem c :
- b_encode c = decompress 1 (if c then 1 else 0).
-admitted.
+ b_encode c = decompress 1 (if c then 1 else 0)
+by rewrite /b_encode -decompress_alt_decompress /decompress_alt //; smt(qE).
+
 
 lemma b_decode_sem c :
-   compress 1 c = if b_decode c then 1 else 0.
-admitted.
+   compress 1 c = if b_decode c then 1 else 0
+by rewrite /b_decode -compress_alt_compress /compress_alt //=; smt(qE rg_asint).
 
 (****************************************************)
 (*               Distributions over Fq              *)
@@ -655,13 +650,11 @@ module EncDec = {
           i <- i + 1;
           fi2 <- a.[i];
           i <- i + 1;
-          r.[j] <- truncateu8 (W16.of_int fi1);
+          r.[j] <- W8.of_int fi1;
           j <- j + 1;
-          (* Redundant? *)
-          r.[j] <- truncateu8 (((W16.of_int fi2 `&` W16.of_int 15) `<<` W8.of_int 4) `|`
-                               ((W16.of_int fi1) `>>` W8.of_int 8));
+          r.[j] <- W8.of_int ((fi2 %% 16) * 16 + fi1 %/ 256);
           j <- j + 1;
-          r.[j] <- truncateu8 ((W16.of_int fi2) `>>` W8.of_int 4);
+          r.[j] <- W8.of_int (fi2 %/ 16);
           j <- j + 1;
        }
        return r;
@@ -677,8 +670,7 @@ module EncDec = {
           j <- j + 1;
           fi1 <- p.[j];
           j <- j + 1;
-          r.[i] <- truncateu8 (W32.of_int(fi) `|` 
-                   (W32.of_int (fi1) `<<` W8.of_int 4));
+          r.[i] <- W8.of_int (fi + fi1 * 16);
           i <- i + 1;
        }
        return r;
@@ -694,7 +686,7 @@ module EncDec = {
           r <- W8.zero;
           j <- 0;
           while (j < 8) {
-             r <- r `|` (W8.of_int a.[8*i+j] `<<` W8.of_int j);
+             r <- W8.of_int (to_uint r + a.[8*i+j] * 2^j);
              j <- j + 1;
           }
           ra.[i] <- r;
@@ -812,7 +804,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      s <- nttv s;
      e <- nttv e; 
      t <- ntt_mmul a s + e;
-     tv <@ EncDec.encode12_vec(toipolyvec t); (* mod+q ? *)
+     tv <@ EncDec.encode12_vec(toipolyvec t); 
      sv <@ EncDec.encode12_vec(toipolyvec s);
      return ((tv,rho),sv);
   }

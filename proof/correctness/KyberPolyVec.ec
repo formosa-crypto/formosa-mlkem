@@ -763,39 +763,24 @@ lemma polyvec_ntt_correct_h _r:
         nttv (lift_vector _r) = lift_vector res /\
             pos_bound768_cxq res 0 768 2 ].
 proof.
-proc; sp.
-wp.
-ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
-wp.
-ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
-wp.
-ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[i])))).
-skip; move => &hr [_r_def signed_bound_r] />.
-split.
-rewrite /signed_bound_cxq => k k_b;  rewrite /signed_bound768_cxq in signed_bound_r; rewrite initiE 1:/# (signed_bound_r k) 1:/#.
+proc.
+wp;ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
+wp;ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
+wp;ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[i])))).
+skip; move => &hr; rewrite /signed_bound_cxq /signed_bound768_cxq => [# _r_def signed_bound_r] />.
+
+split; 1: by move => k kb kbl; rewrite initiE /#.
 
 move => signed_bound_r1 res1 r_eq_res1 signed_bound_res1.
-split.
-rewrite /signed_bound_cxq => k k_b.
-rewrite initiE 1:k_b /= initiE 1:/# /= (fun_if W16.to_sint).
-have ->: !(0 <= 256 + k && 256 + k < 256).
-  move : k_b => /#.
-rewrite /signed_bound768_cxq /b16 in signed_bound_r; rewrite (signed_bound_r (256 + k)) 1:/#.
+
+split; 1: by move => k k_bl kbh; rewrite !initiE 1:/# /= !initiE 1:/# /= (fun_if W16.to_sint) /#.
 
 move => signed_bound_r2 res2 r_eq_res2 signed_bound_res2 />.
-split.
-rewrite /signed_bound_cxq => k k_b.
-do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint)).
-have ->: !(256 <= 512 + k && 512 + k < 512).
-  move : k_b => /#.
-have ->: !(0 <= 512 + k && 512 + k < 256).
-  move : k_b => /#.
-simplify.
-rewrite /signed_bound768_cxq /b16 in signed_bound_r; rewrite (signed_bound_r (512 + k)) 1:/#.
+
+split; 1: by move => k k_bl kbh; rewrite !initiE 1:/# /= !initiE 1:/# /= !Array768.initiE 1:/# /= (fun_if W16.to_sint) /#.
 
 move => signed_bound_r3 res3 r_eq_res3 signed_bound_res3 />.
-(* ========== *)
-(* TODO: replace with aux lemmas *)
+
 split.
   rewrite /nttv /lift_vector /mapv offunvK /vclamp /= eq_vectorP => k k_b.
   rewrite !offunvE //= k_b /= tP /= => i i_b.
@@ -830,24 +815,22 @@ split.
     apply Array256.tP => j j_b.
     rewrite -lift_array256_inFq 1:j_b.
     do (rewrite initiE 1:/# /=).
-    smt(@Array768 @Array256).
-  smt(@Array768 @Array256).
+    by smt().
+  by smt().
 
   rewrite /pos_bound768_cxq => k k_b.
   do (rewrite initiE 1:k_b /= || rewrite (fun_if W16.to_sint)).
   move : (signed_bound_res3 (k - 512)) (signed_bound_res2 (k - 256)) (signed_bound_res1 k).
-  smt(bpos16E @Int @Array768 @Array256).
-  (* ========== *)
+  by smt().
 qed.
 
 lemma polyvec_ntt_ll  : islossless M.__polyvec_ntt by  proc;do 3! (wp;call(ntt_ll)).
 
 lemma polyvec_ntt_corr _r:
    phoare[ M.__polyvec_ntt :
-        _r = r /\
-        signed_bound768_cxq r 0 768 2
+        _r = r /\ signed_bound768_cxq r 0 768 2
           ==> 
-            nttv (lift_vector _r) = lift_vector res /\
+       nttv (lift_vector _r) = lift_vector res /\
             pos_bound768_cxq res 0 768 2 ]  = 1%r 
 by conseq polyvec_ntt_ll (polyvec_ntt_correct_h _r).
 
@@ -861,40 +844,25 @@ lemma polyvec_invntt_correct_h _r:
             scale_vector (invnttv (lift_vector _r)) (inFq Fq.SignedReductions.R) = lift_vector res /\
             forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q + 1) ].
 proof.
-proc; sp.
-wp.
-ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
-wp.
-ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
-wp.
-ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[i])))).
+proc.
+wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
+wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
+wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[i])))).
 
-wp; skip; move => &hr [_r_def signed_bound_r] * />.
-split.
-rewrite /signed_bound_cxq => k k_b;  rewrite /signed_bound768_cxq in signed_bound_r; rewrite initiE 1:/# (signed_bound_r k) 1:/#.
+wp; skip; move => &hr; rewrite /signed_bound_cxq /signed_bound768_cxq => [ #_r_def signed_bound_r] * />.
+
+split; 1: by move => k kb kbl; rewrite initiE /#.
 
 move => signed_bound_r1 res1 r_eq_res1 signed_bound_res1.
-split.
-rewrite /signed_bound_cxq => k k_b.
-rewrite initiE 1:k_b /= initiE 1:/# /= (fun_if W16.to_sint).
-have ->: !(0 <= 256 + k && 256 + k < 256).
-  move : k_b => /#.
-rewrite /signed_bound768_cxq /b16 in signed_bound_r; rewrite (signed_bound_r (256 + k)) 1:/#.
+
+split; 1: by move => k k_bl kbh; rewrite !initiE 1:/# /= !initiE 1:/# /= (fun_if W16.to_sint) /#.
 
 move => signed_bound_r2 res2 r_eq_res2 signed_bound_res2 />.
-split.
-rewrite /signed_bound_cxq => k k_b.
-do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint)).
-have ->: !(256 <= 512 + k && 512 + k < 512).
-  move : k_b => /#.
-have ->: !(0 <= 512 + k && 512 + k < 256).
-  move : k_b => /#.
-simplify.
-rewrite /signed_bound768_cxq /b16 in signed_bound_r; rewrite (signed_bound_r (512 + k)) 1:/#.
+
+split; 1: by move => k k_bl kbh; rewrite !initiE 1:/# /= !initiE 1:/# /= !Array768.initiE 1:/# /= (fun_if W16.to_sint) /#.
 
 move => signed_bound_r3 res3 r_eq_res3 signed_bound_res3 />.
-(* ========== *)
-(* TODO: replace with aux lemmas *)
+
 split.
   rewrite /scale_vector /invnttv /lift_vector /mapv offunvK /vclamp /= eq_vectorP => k k_b.
   rewrite !offunvE //= k_b /= tP /= => i i_b.
@@ -930,14 +898,13 @@ split.
     apply Array256.tP => j j_b.
     rewrite -lift_array256_inFq 1:j_b.
     do (rewrite initiE 1:/# /=).
-    smt(@Array768 @Array256).
-  smt(@Array768 @Array256).
+    by smt().
+  by smt().
 
   move => k k_lb k_ub.
   do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint)).
   move : (signed_bound_res3 (k - 512)) (signed_bound_res2 (k - 256)) (signed_bound_res1 k).
-  smt(bpos16E @Int @Array768 @Array256).
-  (* ========== *)
+  by smt().
 qed.
 
 lemma polyvec_invntt_ll  :
@@ -945,15 +912,14 @@ lemma polyvec_invntt_ll  :
 
 lemma polyvec_invntt_corr _r:
    phoare[ M.__polyvec_invntt :
-        _r = r /\
-        signed_bound768_cxq r 0 768 2
-          ==> 
-            scale_vector (invnttv (lift_vector _r)) (inFq Fq.SignedReductions.R) = lift_vector res /\
+    _r = r /\ signed_bound768_cxq r 0 768 2
+      ==> 
+     scale_vector (invnttv (lift_vector _r)) (inFq Fq.SignedReductions.R) = lift_vector res /\
             forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q + 1) ]  = 1%r   
    by conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r).
 
 (******************************************************)
-(* FIXME ?? *)
+
 lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : Fq Array256.t) :
   _p0 = scale (basemul _a0 _b0) (inFq 169) =>
   _p1 = scale (basemul _a1 _b1) (inFq 169) =>
@@ -983,54 +949,47 @@ have H:= (poly_add_corr_impl 3 3 _ _) => //; ecall (H _p0 _p1); clear H.
 call (poly_basemul_corr _a1 _b1).
 call (poly_basemul_corr _a0 _b0).
 
-wp; skip; subst => &hr [_a0_def [_a1_def [_a2_def [_b0_def [_b1_def [_b2_def [signed_bound_a signed_bound_b]]]]]]] * />.
+wp; skip; subst => &hr; rewrite /lift_polyvec /lift_array256 /signed_bound768_cxq /signed_bound_cxq /= => [#].
+
+move => _a0_def _a1_def _a2_def _b0_def _b1_def _b2_def  signed_bound_a signed_bound_b.
 
 split.
-+ rewrite _a0_def _b0_def /lift_polyvec /lift_array256 mapE.
-  split. apply Array256.ext_eq; smt(Array256.initiE).
-  split. apply Array256.ext_eq; smt(Array256.initiE).
-  split; first by move : signed_bound_a; smt(@Array256 @Array768).
-  by move : signed_bound_b; smt(@Array256 @Array768).
++ rewrite _a0_def _b0_def mapE.
+  split; 1: by  apply Array256.ext_eq; smt(Array256.initiE).
+  split; 1: by  apply Array256.ext_eq; smt(Array256.initiE).
+  by smt(Array256.initiE). 
 
-move => _a0_ddef _b0_ddef signed_bound_a0 signed_bound_b0 r0 signed_bound_r0 a0tb0_eq_r0.
-split.
-+ rewrite _a1_def _b1_def /lift_polyvec /lift_array256 mapE.
-  split. apply Array256.ext_eq; smt(Array256.initiE).
-  split. apply Array256.ext_eq; smt(Array256.initiE).
-  split; first by move : signed_bound_a; smt(@Array256 @Array768).
-  by move : signed_bound_b; smt(@Array256 @Array768).
+move => [#] _a0_ddef _b0_ddef signed_bound_a0 signed_bound_b0 r0 [#] signed_bound_r0 a0tb0_eq_r0.
+split. 
++ rewrite _a1_def _b1_def mapE.
+  split; 1: by apply Array256.ext_eq; smt(Array256.initiE).
+  split; 1: by apply Array256.ext_eq; smt(Array256.initiE).
+  by smt(Array256.initiE). 
 
-move => _a1_ddef _b1_ddef signed_bound_a1 signed_bound_b1 r1 signed_bound_r1 a1tb1_eq_r1.
-split.
-admit. (*
-+ move : (basemul_scales (lift_polyvec a{hr} 0) (lift_polyvec b{hr} 0) (lift_array256 r0)) (basemul_scales (lift_polyvec a{hr} 1) (lift_polyvec b{hr} 1) (lift_array256 r1)) => /#.
-*)
-move => a0tb0f_eq_r0 a1tb1f_eq_r1 res1 signed_bound_res1 res1_def.
+move => [#] _a1_ddef _b1_ddef signed_bound_a1 signed_bound_b1 r1 [#] signed_bound_r1 a1tb1_eq_r1.
+
+split; 1: by rewrite a0tb0_eq_r0 a1tb1_eq_r1 //=.
+
+move => [#] a0tb0f_eq_r0 a1tb1f_eq_r1 signed_bound_res0 signed_bound_res1 res2 [#] res2bound res2val.
 
 split.
 + rewrite _a2_def _b2_def /lift_polyvec /lift_array256 mapE.
-  split. apply Array256.ext_eq; smt(Array256.initiE).
-  split. apply Array256.ext_eq; smt(Array256.initiE).
-  split; first by move : signed_bound_a; smt(@Array256 @Array768).
-  by move : signed_bound_b; smt(@Array256 @Array768).
+  split; 1: by apply Array256.ext_eq; smt(Array256.initiE).
+  split; 1: by apply Array256.ext_eq; smt(Array256.initiE).
+  by smt(Array256.initiE). 
 
-move => _a2_ddef _b2_ddef signed_bound_a2 signed_bound_b2 r2 signed_bound_r2 a2tb2_eq_r2.
-split.
-admit. (*
-+ move : (basemul_scales (lift_polyvec a{hr} 2) (lift_polyvec b{hr} 2) (lift_array256 r2)) => /#.
-*)
-move => a2tb2f_eq_r2 res2 signed_bound_res2 res2_eq_a2tb2red r4 r2_eq_r4 signed_bound_r4.
-rewrite -r2_eq_r4.
-apply Array256.ext_eq => x x_b.
-rewrite /lift_array256 mapiE 1:x_b /= res2_eq_a2tb2red 1:x_b.
-rewrite /lift_array256 mapiE 1:x_b /= res1_def 1:x_b.
-rewrite _r_def 1:x_b.
-rewrite _a0_def _a1_def _a2_def /= /lift_polyvec /=.
-rewrite _b0_def _b1_def _b2_def /= /lift_polyvec /=.
-do congr; by apply Array256.ext_eq => k k_b; rewrite -lift_array256_inFq 1:k_b; smt(@Array256 @Array768).
+move => [#] _a2_ddef _b2_ddef signed_bound_2 signed_bound_b2 r2 [#] signed_bound_r2 a2tb2_eq_r2.
+
+do split; 1,2,3: by smt().
+
+move => [#] _r2_ddef signed_bound_r2d signed_bound_res2d  ss2 [#] ss2b ss2v res3 [#] r3val r3b.
+
+split; 1: by rewrite -r3val; rewrite tP => k kb; rewrite mapiE //= (ss2v k kb) mapiE //= res2val // _r_def //=.
+
+
+by smt().
 qed.
 
-(* TODO *)
 lemma polyvec_pointwise_acc_ll  :
       islossless M.__polyvec_pointwise_acc
 by  proc;call poly_reduce_ll; do 2! (call poly_add_ll;call poly_basemul_ll); call poly_basemul_ll;auto.
@@ -1155,6 +1114,8 @@ module Aux = {
    }
 }.
 
+import Fq.SignedReductions.
+
 lemma innerprod_corr_h va vb:
   hoare [ Aux.inner_product :
     nttv va = lift_vector ai /\
@@ -1173,56 +1134,36 @@ seq 1 : (#pre /\
 by call (polyvec_pointwise_acc_corr_alg_h va vb); auto => />.
 
 ecall(poly_frommont_corr_h (map W16.to_sint polyi)).
-skip => &hr.
+skip => &hr; rewrite /lift_vector /signed_bound768_cxq  /lift_polyvec /lift_array256 /signed_bound_cxq /scale /= !tP /=.
 move => /> VA VB AB BB H H0. 
-admit.
-(* 
-rewrite (Array256.tP (Array256.map W16.to_sint result)
-                         (map
-        (fun (x : int) =>
-           (Fq.SignedReductions.SREDC (x * (Fq.SignedReductions.R * (Fq.SignedReductions.R * Fq.SignedReductions.R ^ 0) %% q)%IntDiv)))
-        (map W16.to_sint polyi{hr}))).
-move => rval.
+
+split; 1: by move => k kbl kbh; move : (H k _) => //; rewrite !mapiE //=.
+move => polyval result rval.
 
 split.
-rewrite /signed_bound_cxq qE => k kb => />.
-move : (rval k kb); rewrite !mapiE /R => />.
-rewrite qE (_: 65536 ^ 0 = 1); first by smt(@Int).
-rewrite (_: 65536 * (65536 * 1) %% 3329 = 1353); first smt().
-move => ->.
-move : (Fq.SignedReductions.SREDCp_corr (to_sint polyi{hr}.[k] * 1353) _ _); rewrite qE /R => />.
-by move : (H k kb); rewrite qE => />; smt(@W16).
-by  smt(@W16).
 
-move :H0; rewrite /lift_array256 /scale.
-rewrite (Array256.tP (map (fun (x : W16.t) => inFq (to_sint x)) polyi{hr})
-        (map (transpose Zq.( * ) (inFq 169)) (ntt (dotp va vb)))) => H0.
-apply Array256.ext_eq => k kb.
-move : (H0 k kb).
-move : (rval k kb).
-rewrite !mapiE /R => /> -> H1.
-rewrite qE (_: 65536 ^ 0 = 1); first by smt(@Int).
-rewrite (_: 65536 * (65536 * 1) %% 3329 = 1353); first smt().
-move : (Fq.SignedReductions.SREDCp_corr (to_sint polyi{hr}.[k] * 1353) _ _); rewrite qE /R => />.
-by move : (H k kb); rewrite qE => />; smt(@W16).
-move => H2 H3 H4.
-rewrite (_: inFq (Fq.SignedReductions.SREDC (to_sint polyi{hr}.[k] * 1353)) = inFq (to_sint polyi{hr}.[k] * 1353 * 169 %% 3329)); first by rewrite -H4 -qE -inFqK asintK.
-rewrite -qE -(inFqK (to_sint polyi{hr}.[k] * 1353 * 169)) asintK  !inFqM H1.
-rewrite (_: inFq 1353 = inFq (Fq.SignedReductions.R*Fq.SignedReductions.R)); first by  rewrite /R //= -eq_inFq; smt(qE).
-rewrite inFqM. 
-rewrite Zq.ComRing.mulrA.
+move => k kbl kbh; move : (rval k _) => //; rewrite mapiE // => ->. 
 
-rewrite (_:(ntt (dotp va vb)).[k] * inFq 169 * inFq Fq.SignedReductions.R * inFq Fq.SignedReductions.R * inFq 169
-        =(ntt (dotp va vb)).[k] * (inFq Fq.SignedReductions.R * inFq 169) * (inFq Fq.SignedReductions.R * inFq 169)); first by ring.
- rewrite  (_: inFq Fq.SignedReductions.R * inFq 169 = Zq.one).
-   by rewrite -inFqM -eq_inFq Fq.SignedReductions.RRinv.
-by ring. *)
+by move : (SREDCp_corr (to_sint polyi{hr}.[k] * (R * R %% q)) _ _); rewrite /R;smt(qE).
+
+rewrite tP => k kb; rewrite mapiE //= (rval k kb) mapiE //.
+
+have [#] redbl redbh redv := (SREDCp_corr (to_sint polyi{hr}.[k] * (R * R %% q)) _ _); 1,2 : by rewrite /R;smt(qE).
+
+have -> : inFq (SREDC (to_sint polyi{hr}.[k] * (R * R %% q)))  = 
+          inFq (to_sint polyi{hr}.[k] * (R * R %% q)  * 169) by rewrite -eq_inFq; apply redv.
+
+rewrite !inFqM;move : (H0 k kb); rewrite !mapiE //= => ->.
+
+have -> : inFq (R * R %% q)  = inFq R * inFq R; 1: by rewrite -inFqM -eq_inFq modz_mod. 
+
+have -> : (ntt (dotp va vb)).[k] * inFq 169 * (inFq R * inFq R) * inFq 169 = 
+          (ntt (dotp va vb)).[k] * (inFq R * inFq 169) * (inFq R * inFq 169) by ring.
+
+by rewrite rrinvFq; ring.
 qed.
 
-(* TODO *)
-lemma inner_product_ll  :
-      islossless Aux.inner_product.
-admitted.
+lemma inner_product_ll  :  islossless Aux.inner_product by proc; call poly_frommont_ll;call polyvec_pointwise_acc_ll.
 
 lemma innerprod_corr va vb:
   phoare [ Aux.inner_product :
