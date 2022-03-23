@@ -1124,7 +1124,7 @@ lemma polyvec_frombytes_corr mem _p :
              load_array1152 Glob.mem{1} _p = a{2}
               ==>
              map W16.to_sint res{1} = res{2}  /\
-             pos_bound768_cxq  res{1}0 256  2 /\
+             pos_bound768_cxq  res{1}0 768  2 /\
              Glob.mem{1} = mem ].
 proc => /=.  
 wp;ecall (poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (load_array384 Glob.mem{1} (_p + 768))).
@@ -1151,9 +1151,10 @@ move => *;split.
   by move => nkbb nkbbb; rewrite initiE 1:/# (_: 0<= k <256 = true) 1:/# /= mapiE /#.
 
 move => k kb; rewrite initiE 1:/# /=.
-have -> : !( 512 <= k && k < 768); 1: by smt().
-rewrite initiE 1:/# /= initiE 1:/# /= kb /=. 
-by smt().
+case ( 512 <= k && k < 768);1: by smt(). 
+case ( 256 <= k && k < 512). 
++ by move => kbb; rewrite (_: 512<= k <768 = false) 1:/# /= initiE /#.
+by move => kbb nkbb; rewrite !initiE 1:/# /= kbb /= !initiE /#.
 qed.
 
 (******************************************************)

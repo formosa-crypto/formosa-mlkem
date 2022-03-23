@@ -476,96 +476,95 @@ move => ?? resf ? vsf. admit.
 qed.
 
 lemma kyber_correct_enc mem _coinsp _msgp _ctp _pkp : 
-   equiv [ Kyber(G,XOF,PRF,H).enc ~ M.indcpa_enc_jazz : 
+   equiv [ M.indcpa_enc_jazz ~ Kyber(G,XOF,PRF,H).enc: 
      valid_ptr _coinsp 32 /\
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _msgp 32 /\
      valid_ptr _ctp (3*320+128) /\
-     Glob.mem{2} = mem /\ to_uint coinsp{2} = _coinsp /\ to_uint msgp{2} = _msgp /\ to_uint ctp{2} = _ctp /\ to_uint pkp{2} = _pkp /\
-     PRF.key{1} = load_array32 mem _coinsp /\
-     m{1} = load_array32 mem _msgp /\
-     pk{1}.`1.[0] = load_array384 mem _pkp /\
-     pk{1}.`1.[2] = load_array384 mem (_pkp + 384) /\
-     pk{1}.`1.[3] = load_array384 mem (_pkp + 2*384) /\
-     pk{1}.`2 = load_array32 mem (_pkp + 3*384)
+     Glob.mem{1} = mem /\ to_uint coinsp{1} = _coinsp /\ 
+                   to_uint msgp{1} = _msgp /\ to_uint ctp{1} = _ctp /\ 
+                   to_uint pkp{1} = _pkp /\
+     PRF.key{2} = load_array32 mem _coinsp /\
+     m{2} = load_array32 mem _msgp /\
+     pk{2}.`1 = load_array1152 mem _pkp /\
+     pk{2}.`2 = load_array32 mem (_pkp + 3*384)
        ==> 
-     let (c1,c2) = res{1} in
-     c1.[0] = load_array320 Glob.mem{2} _ctp /\
-     c1.[1] = load_array320 Glob.mem{2} (_ctp + 320) /\
-     c1.[2] = load_array320 Glob.mem{2} (_ctp + 640) /\
+     let (c1,c2) = res{2} in
+     c1 = load_array960 Glob.mem{2} _ctp /\
      c2 = load_array128 Glob.mem{2} (_ctp + 960)
 ].
-proc.
-swap {1} 6 -5; sp 1 0.
-swap {2} 8 -7.
-swap {2} [17..18] -15.
-seq 0 3 : (#pre /\ PRF.key{1} = noiseseed{2}).
-while {2} (valid_ptr _coinsp 32  /\ _coinsp = to_uint coinsp{2} /\  
-           mem = Glob.mem{2} /\ PRF.key{1} = load_array32 mem _coinsp /\ 
-           0 <= to_uint i{2} <= 32 /\ 
-           forall k, 0 <= k < to_uint i{2} => PRF.key{1}.[k] = noiseseed{2}.[k]) (32 - to_uint i{2}).
-+ move => &m z; rewrite /load_array32 //; auto => /> &hr ??? ? H ?. 
-    do split; 1,2: by smt(@W64).
-    + move => k0 kb0 kb1. rewrite /load_array32 initiE //=; 1:  smt(@W64).
-      rewrite to_uintD_small; 1: smt(@W64).
-      case (0<= k0 < to_uint i{hr}). 
-      + move => *; rewrite set_neqiE; 1,2: smt(@W64). 
-        move : (H k0 _); 1: smt(). 
-        by rewrite initiE => //; smt().
-      + move => *; have -> : k0 = to_uint i{hr}; 1: smt(@W64).
-        rewrite get_setE /=; 1,2: smt(@W64). 
-        by rewrite to_uintD_small; smt(@W64).
-    + auto => />; move => *; split; 1: smt(). 
-      move => iR noise; split; 1: smt(@W64). 
-      rewrite ultE /load_array32 /= => 3?.
-      have -> : to_uint iR = 32; 1: smt(@W64).
-      by move => H; rewrite tP => i ib; smt().
-swap {1} 5 -4.
-swap {1} [7..8] -5.
-swap {2} 8 -7.
-swap {2} 16 -14.
-seq 3 2 : (#pre /\ that{1} = lift_vector pkpv{2} /\
-    signed_bound768_cxq pkpv{2} 0 768 2).
-admit. (* easy todo *)
-swap {2} 11 -10.
-swap {2} [15..17] -13.
-seq 0 4 : (#{~pkp{2}}pre /\ rho{1} = publicseed{2}). 
-while {2} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{2} = to_uint pkp{2} /\ mem = Glob.mem{2} /\ pk{1}.`2 = load_array32 mem (_pkp + 3*384) /\ 0 <= to_uint i{2} <= 32 /\ forall k, 0 <= k < to_uint i{2} => pk{1}.`2.[k] = publicseed{2}.[k]) (32 - to_uint i{2}).
-+ move => &m z; auto => /> &hr; rewrite /load_array32 ultE Array32.tP => ?? ppp HH ?? H ?. 
-  do split. 
-    rewrite !to_uintD_small; smt(@W64). 
-    rewrite !to_uintD_small; smt(@W64).  
-    rewrite !to_uintD_small; smt(@W64).
-    move => k ?.
-    rewrite !to_uintD_small;1: smt(@W64).
-    move => ?.
-    case (0 <= k < to_uint i{hr}); smt(@Array32 @W64).
-    rewrite !to_uintD_small; smt(@W64).
-    auto => /> &1 &2 12?. 
-    do split. 
-    rewrite !to_uintD_small; smt(@W64).
-     smt().
-    move => ir pkr pseed; rewrite ultE /load_array32 Array32.tP.
-    do split. 
-     smt(@W64).
-     move => ????H i ?.
-     rewrite initiE //= -(H i _) //=; 1: smt(@W64). 
-    by rewrite initiE //=.
+proc => /=.
+swap {2} 6 -5.
+sp 0 1.
+swap {1} 6 -5.
+swap {1} [12..13] -10.
+seq 3 0 : (#pre /\ PRF.key{2} = noiseseed{1}).
+while {1} (valid_ptr _coinsp 32  /\ 
+           _coinsp = to_uint coinsp{1} /\  
+           mem = Glob.mem{1} /\ 
+           PRF.key{2} = load_array32 mem _coinsp /\ 
+           0 <= to_uint i{1} <= 32 /\ 
+           forall k, 0 <= k < to_uint i{1} => PRF.key{2}.[k] = noiseseed{1}.[k]) (32 - to_uint i{1}).
++ move => &m z; rewrite /load_array32 //; auto => /> &hr ??? ? H. 
+  rewrite ultE !to_uintD_small /=; 1,2: by smt(). 
+   move => *;do split; 1,2,4: by smt().
+   move => k0 kb0 kb1; rewrite !initiE /loadW8 1:/# /=. 
+   case (0<= k0 < to_uint i{hr}); first by 
+      move => kbb; move : (H k0 kbb); rewrite initiE 1:/#  set_neqiE /#.
+   by move => *; rewrite set_eqiE /#.
+auto => /> &1 &2 ???????; rewrite /load_array1152 /load_array32.
+split; 1: smt().
+move => il noisel; rewrite ultE /=; split; 1:smt().
+move => ???H; rewrite tP => k kb; rewrite initiE //=.
+by move : (H k _);1:smt(); rewrite initiE //= /#.
 
-swap {1} [6..7] -4.
-swap {2} [15..16] -11. 
-seq 3 5 : (#pre /\ aT{1} = lift_matrix (at0{2},at1{2},at2{2}) /\
-            signed_bound768_cxq at0{2} 0 768 2 /\
-            signed_bound768_cxq at1{2} 0 768 2 /\
-            signed_bound768_cxq at2{2} 0 768 2).
-inline M.__gen_matrix. (* Need to define XOF such that this works. *)
+swap {2} 5 -4.
+swap {2} [7..8] -5.
+swap {1} 6 -5.
+swap {1} 11 -9.
+seq 2 3 : (#pre /\ that{2} = lift_vector pkpv{1} /\
+              signed_bound768_cxq pkpv{1} 0 768 2).
+wp; ecall(polyvec_frombytes_corr Glob.mem{1} _pkp).
++ auto => />  &1 ????????; split; 1: by smt().
+  rewrite /pos_bound768_cxq /ofipolyvec /lift_vector /signed_bound768_cxq /subarray256 /lift_array256 => ?? result rbound.
+  split; last by smt(). 
+  by rewrite eq_vectorP => i ib; rewrite !offunvE //= tP => k kb; rewrite !mapiE //= !initiE //= mapiE /#.
+
+swap {1} 6 -5.
+swap {1} [10..12] -8.
+seq 4 0 : (#{/~pkp{1}}pre /\ rho{2} = publicseed{1}). 
+while {1} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{1} = to_uint pkp{1} /\ 
+           mem = Glob.mem{1} /\ rho{2} = load_array32 mem (_pkp + 3*384) /\ 
+           0 <= to_uint i{1} <= 32 /\ 
+          forall k, 0 <= k < to_uint i{1} => rho{2}.[k] = publicseed{1}.[k]) (32 - to_uint i{1}).
++ move => &m ?; auto => /> &hr ?????; rewrite /load_array32 ultE /loadW8 /= => H?. 
+  rewrite  !to_uintD_small /=; 1,2:smt(); move => *.
+  do split; 1..3,5:smt().
+  move => k kbl kbh.
+  case (0<=k <to_uint i{hr}).
+  + move => *; move : (H k _); 1: smt().
+    by rewrite !initiE //= 1:/# set_neqiE /#. 
+  by move => *;rewrite initiE //= 1:/# set_eqiE /#.
+auto => /> &1 &2 ????????; rewrite /load_array1152 /load_array32.
+rewrite !to_uintD_small 1:/#.
+split; 1: smt().
+move => il pkpl pseedl; rewrite ultE /=; split; 1:smt().
+move => ????H; rewrite tP => k kb; rewrite initiE //=.
+by move : (H k _);1:smt(); rewrite initiE //= /#.
+
+swap {1} [10..11] -8.
+swap {2} [6..7] -4. 
+seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
+            pos_bound2304_cxq at{1} 0 2304 2). 
 admit. (* To Do: HUGE but same as kg*)
-swap {1} 12 -11.
-swap {2} 4 -3.
-swap {2} 11 -9.
-seq 1 2 : (#pre /\ decompress_poly 1 mp{1} = lift_array256 k{2}  /\
-            signed_bound_cxq k{2} 0 256 1). 
-admit. (* easy todo *)
+
+swap {2} 12 -11.
+swap {1} 4 -3.
+swap {1} 8 -6.
+seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\
+            signed_bound_cxq k{1} 0 256 1). 
+ecall (poly_frommsg_corr Glob.mem{1} _msgp m{2}); 1: by auto => /> /#.
+
 swap {1} [3..6] -2.
 swap {2} [4..7] -3.
 swap {2} [10..16] -5.
