@@ -450,6 +450,20 @@ lemma polyvec_add_corr  _a _b ab bb:
               inFq (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r by 
   move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb).
 
+lemma polyvec_add_corr_impl  ab bb:
+    0 <= ab <= 6 => 0 <= bb <= 3 =>
+    forall _a _b,
+   phoare[ M.__polyvec_add2 :
+           _a = lift_array768 r /\
+           _b = lift_array768 b /\
+           signed_bound768_cxq r 0 768 ab /\
+           signed_bound768_cxq b 0 768 bb 
+           ==>
+           signed_bound768_cxq res 0 768 (ab + bb) /\ 
+           forall k, 0 <= k < 768 =>
+              inFq (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r
+  by move => abb bbb _a _b;  apply (polyvec_add_corr  _a _b ab bb abb bbb).
+
 (******************************************************)
 
 lemma polyvec_reduce_corr_h _a :
