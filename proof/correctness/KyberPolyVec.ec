@@ -19,8 +19,7 @@ import Matrix_.
 (* AUX *)
 
 lemma nttv_add (v1 v2 : vector) :
-   nttv (v1 + v2) = 
-    nttv v1 + nttv v2.
+   nttv (v1 + v2) = nttv v1 + nttv v2.
 proof.
 rewrite /nttv /mapv. 
 rewrite eq_vectorP => x H.
@@ -63,90 +62,6 @@ lemma lift_array256_inFq (a : W16.t Array256.t) k :
   inFq (to_sint a.[k]) = (lift_array256 a).[k].
 proof. by move => H; rewrite /lift_array256 mapE /= initE H. qed.
 
-(*
-lemma lift_array768_inFq (a : W16.t t) k :
-  0 <= k < 768 =>
-  inFq (to_sint a.[k]) = (lift_array768 a).[k].
-proof. by move => H; rewrite /lift_array768 mapE /= initE H. qed.
-
-
-lemma lift_array256_sub_768 (a: W16.t Array768.t) (b : W16.t Array256.t) x n :
-  0 <= n < 3 =>
-  lift_array768 a = x =>
-  (forall (k : int), 0 <= k < 256 => inFq (to_sint b.[k]) = x.[k+256*n]) =>
-  (forall (k : int), 0 <= k < 256 => b.[k] = a.[k+256*n]) =>
-  lift_array256 b = subarray256 x n.
-proof.
-  rewrite /lift_array768 => H H0 H1 H2.
-  rewrite /lift_array256 tP => j H3.
-  rewrite mapE /of_list !initE /=.
-  by smt(nth_sub).
-qed.
-
-lemma inFq_lift_array256 (x : W16.t t) y n :
-  0 <= n < 3 =>
-  (forall (k : int), 0 <= k < 256 => 
-     inFq (to_sint x.[k+n*256]) = (lift_array256 y).[k]) =>
-  lift_array256 y = subarray256 (lift_array768 x) n.
-proof.
-  move => H H0; rewrite tP => j H1.
-  rewrite -H0 // /of_list initE H1 /= nth_sub // /lift_array768 mapiE // /#. 
-qed.
-
-lemma lift_array768E (x : W16.t t) k :
-  0 <= k < 768 =>
-  (lift_array768 x).[k] = inFq (to_sint x.[k]).
-proof.  by move => ?; rewrite /lift_array768 mapiE //. qed.
-
-lemma lift_array768_eq (x y : W16.t t) :
-  (forall k, 0 <= k < 256 =>
-    inFq (to_sint x.[k]) = (subarray256 (lift_array768 y) 0).[k]) =>
-  (forall k, 0 <= k < 256 =>
-    inFq (to_sint x.[k+256]) = (subarray256 (lift_array768 y) 1).[k]) =>
-  (forall k, 0 <= k < 256 =>
-    inFq (to_sint x.[k+512]) = (subarray256 (lift_array768 y) 2).[k]) =>
-               lift_array768 x = lift_array768 y.
-proof.
-  rewrite /subarray256; move => H H0 H1; rewrite tP => k H2; rewrite lift_array768E //.
-  case (k < 256) => H3; 1: by rewrite H 1:/# get_of_list 1:/# nth_sub 1:/#.
-  case (k < 512) => H4.
-  + move : (H0 (k-256)).
-    have ->: 0 <= k - 256 < 256 by smt().
-    by move=> /= ->; rewrite /= get_of_list 1:/# nth_sub 1,2:/#.
-  move : (H1 (k-512)).
-  have -> /= H5: 0 <= k - 512 < 256 by smt().
-  by rewrite H5 get_of_list 1:/# nth_sub 1,2:/#.
-qed.
-
-lemma lift_array768P (x y : W16.t t) :
-  lift_array768 x = lift_array768 y <=>
-  (forall k, 0 <= k < 768 => inFq (to_sint x.[k]) = inFq (to_sint y.[k])).
-proof. 
-  split; first by rewrite tP => H *; rewrite -!lift_array768E // H //. 
-  by rewrite tP => H *; rewrite !lift_array768E // H //. 
-qed.
-
-op lift_array768_32 (p : W32.t Array768.t) =
-  Array768.map (fun x => inFq (W32.to_sint x)) p.
-
-op bpos32 a b = (0 <= W32.to_sint a && to_sint a < b)
-  axiomatized by bpos32E.
-
-op pos_bound768_cxq_32 (coefs : W32.t Array768.t) (l u c : int) : bool =
-  forall (k : int), l <= k < u => bpos32 coefs.[k] (c * q).
-
-op pos_bound768_b_32 (coefs : W32.t Array768.t) (l u b : int) : bool =
-  forall (k : int), l <= k < u => bpos32 coefs.[k] b.
-
-lemma to_sint_unsigned32 : forall (x : W32.t), 
-    0 <= to_sint x =>
-    to_sint x = to_uint x.
-proof.
-  move => x; rewrite W32.to_sintE /smod.
-  move : (W32.to_uint_cmp x) => /> ? ?.
-  by case (2147483648 <= to_uint x) => ? // /#. 
-qed.    
-*)
 op load_array960 (m : global_mem_t) (p : address) : W8.t Array960.t = 
   (Array960.init (fun (i : int) => m.[p + i])).
 

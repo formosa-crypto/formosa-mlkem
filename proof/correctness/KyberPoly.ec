@@ -481,18 +481,19 @@ move => abb bbb _a _b.
 apply (poly_add_corr_h _a _b ab bb abb bbb).
 qed.
 
-lemma poly_add_corr_R _a _b ab bb :
+lemma poly_add_corr_alg ab bb :
   0 <= ab <= 6 =>
   0 <= bb <= 3 =>
-  hoare [ Jindcpa.M._poly_add2 :
+  forall _a _b, 
+  phoare [ Jindcpa.M._poly_add2 :
     _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
            signed_bound_cxq bp 0 256 bb 
            ==>
            signed_bound_cxq res 0 256 (ab + bb) /\ 
-           lift_array256 res = _a &+ _b].
-move => abbnd bbbnd.
+           lift_array256 res = _a &+ _b] = 1%r.
+move => abbnd bbbnd _a _b.
 conseq (poly_add_corr _a _b ab bb abbnd bbbnd). 
 move => ? [#] ??r [#] ? sum. 
 rewrite /signed_bound_cxq /lift_array256 /= tP /= !mapE /=. 
