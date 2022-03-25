@@ -167,7 +167,7 @@ module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
 
 module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
   var key : W8.t Array32.t
-  proc init(sig : W8.t Array32.t) : unit = {}
+  proc init(sig : W8.t Array32.t) : unit = { key <- sig; }
   proc next_bytes(_N : int) : W8.t Array128.t = { return witness; }
 }.
 
@@ -211,41 +211,92 @@ proc __gen_matrix_transposed(seed : W8.t Array32.t) : W16.t Array2304.t = {
   return unlift_matrix a;
 }
 
-proc sample_noise2(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t= {
-  var e, s, _N,i,c;
-  e <- witness;                     
-  s <- witness;                      
+
+proc sample_noise2_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t = {
+    var nonce,aux;
+    var noise1:W16.t Array768.t;    
+    var noise2:W16.t Array768.t;    
+    noise1 <- witness;
+    noise2 <- witness;
+    nonce <- (W8.of_int 0);
+    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise1.[0 + i_0])),
+    noiseseed, nonce);
+    noise1 <- Array768.init
+            (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise1.[i]);
+    nonce <- (W8.of_int 1);
+    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise1.[256 + i_0])),
+    noiseseed, nonce);
+    noise1 <- Array768.init
+            (fun i => if 256 <= i < 256 + 256 then aux.[i-256]
+            else noise1.[i]);
+    nonce <- (W8.of_int 2);
+    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
+    noiseseed, nonce);
+    noise1 <- Array768.init
+            (fun i => if (2 * 256) <= i < (2 * 256) + 256
+            then aux.[i-(2 * 256)] else noise1.[i]);
+    nonce <- (W8.of_int 3);
+    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise2.[0 + i_0])),
+    noiseseed, nonce);
+    noise2 <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise2.[i]);
+    nonce <- (W8.of_int 4);
+    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise2.[256 + i_0])),
+    noiseseed, nonce);
+    noise2 <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else noise2.[i]);
+    nonce <- (W8.of_int 5);
+    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
+    noiseseed, nonce);
+    noise2 <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else noise2.[i]);
+    return (noise1,noise2);
+}
+
+proc sample_noise2_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * int= {
+  var noise1, noise2, _N,i,c;
+  noise1 <- witness;                     
+  noise2 <- witness;                      
   _N <- 0;                      
   PRF(H).init(noiseseed);                   
   i <- 0;                             
   while (i < kvec) {                 
     c <@ CBD2(PRF, H).sample_real(_N);
-    s <- set s i c;                   
+    noise1 <- set noise1 i c;                   
     i <- i + 1;                       
     _N <- _N + 1;                     
   }                                  
   i <- 0;                             
   while (i < kvec) {                 
     c <@ CBD2(PRF, H).sample_real(_N);
-    e <- set e i c;                   
+    noise2 <- set noise2 i c;                   
     i <- i + 1;                       
     _N <- _N + 1;                     
   }                                  
 
-  return (unlift_vector s,unlift_vector e);
+  return (unlift_vector noise1,unlift_vector noise2,_N);
 }
 
-proc sample_noise3(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
+proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
+  var noise1, noise2, nonce,noise3;
+  (noise1,noise2) <@ sample_noise2_jasmin(noiseseed);
+  nonce <- (W8.of_int 6);
+  noise3 <- witness;
+  noise3 <@ M._poly_getnoise (noise3,noiseseed, nonce);
+  return (noise1,noise2,noise3);
+}
+
+proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
   var e, s, _N,e2;
-  (s,e) <@ sample_noise2(noiseseed);
-  _N <- 6;
+  (s,e,_N) <@ sample_noise2_spec(noiseseed);
   e2 <@ CBD2(PRF, H).sample_real(_N);
   return (s,e, unlift_poly e2);
 }
 
 proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     var aux: W16.t Array256.t;
-    
+    var _N : int;
     var spkp:W64.t;
     var sskp:W64.t;
     var i:W64.t;
@@ -261,7 +312,6 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     var pkpv:W16.t Array768.t;
 
 
-    G.randomnessp <- randomnessp; 
     (publicseed,noiseseed) <@  G(H).sample();
 
     a <- witness;
@@ -270,7 +320,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
 
     pkpv <- witness;               
 
-    (skpv,e) <@ sample_noise2(noiseseed);
+    (skpv,e,_N) <@ sample_noise2_spec(noiseseed);
 
     skpv <@ M.__polyvec_ntt (skpv);
     e <@ M.__polyvec_ntt (e);
@@ -354,7 +404,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     k <- witness;
     k <@ M._poly_frommsg (k, msgp);
 
-    (sp_0,ep,epp) <@ sample_noise3(noiseseed);
+    (sp_0,ep,epp) <@ sample_noise3_spec(noiseseed);
 
     sp_0 <@ M.__polyvec_ntt (sp_0);
 
@@ -416,19 +466,21 @@ inline Parse(XOF, H).sample_real.
 inline M.__rej_uniform.
 admitted. (* define XOF so that this works *)
 
-(*
-quiv sample_noise_good2 :
-  M.__gen_matrix ~ AuxKyber.__gen_matrix :
-    transposed{1} = W64.zero /\ ={seed} ==> ={res}.
-proc. 
-inline Parse(XOF, H).sample_real.
-inline M.__rej_uniform.
-admitted. (* define XOF so that this works *)
-*)
+
+equiv sample_noise_good2 :
+  AuxKyber.sample_noise2_jasmin ~ AuxKyber.sample_noise2_spec :
+    ={noiseseed} ==> res{1}.`1 = res{2}.`1 /\ res{1}.`2 = res{2}.`2.
+proc.
+admitted. (* define PRF so that this works *)
+
+equiv sample_noise_good3 :
+  AuxKyber.sample_noise3_jasmin ~ AuxKyber.sample_noise3_spec :
+    ={noiseseed} ==> ={res}.
+admitted. (* define PRF so that this works *)
 
 equiv auxkg_good :
   M.indcpa_keypair_jazz ~ AuxKyber.indcpa_keypair_jazz :
-     ={Glob.mem,arg} ==> ={Glob.mem,res}. 
+     ={Glob.mem,arg} /\ G.randomnessp{2} = randomnessp{1} ==> ={Glob.mem,res}. 
 proc. 
 inline Aux.inner_product.
 swap {1} 4 -3.
@@ -437,23 +489,33 @@ swap {1} [11..13] -8.
 swap {1} 8 -5.
 swap {1} 10 -7.
 swap {1} [14..16] -6.
-seq 10 2 : (#pre /\ ={publicseed, noiseseed}); 1: by inline *; sim.
+seq 10 1 : (#{~G.randomnessp{2}}pre /\ ={publicseed, noiseseed}); 1: by inline *; conseq />; sim.
 
 swap {1} [7..8] -5.
 seq 3 3 : (#pre /\ ={a}); 1: by call auxgenmatrix_good_zero; auto => />.
 
 swap {1} [6..23] -2.
-seq 21 2 : (#pre /\ ={skpv,e,pkpv}). 1: by admit. 
+swap {1} 2 24.
+swap {2} 1 8.
+
+seq 20 1 : (#pre /\ ={skpv,e}).
+transitivity {1} {(skpv,e) <@ AuxKyber.sample_noise2_jasmin(noiseseed);}
+     (={Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a} ==> 
+          ={skpv,e,Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a,skpv,e})
+     (={Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a} ==> 
+          ={skpv,e,Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a,skpv,e}); 1,2: by smt(). 
++ by inline  AuxKyber.sample_noise2_jasmin; sim; auto => />. 
++ conseq />; call sample_noise_good2; auto => />.
 
 swap{1} [1..2] 16.
 
 seq 2 2 : (#pre); 1: by sim.
 
-seq 4 6 : #pre.
+seq 5 7 : (#pre /\ ={pkpv}).
 
 + wp;call(_: true); 1: by sim. 
   wp;call(_:true); 1: by sim.
-  auto => /> &1 result /=. 
+  auto => /> result /=. 
   do split.
   + by rewrite tP => x xb; rewrite !initiE 1,2:/# /= xb /=.
   + by move => *; rewrite tP => x xb; rewrite !initiE 1,2:/# /= !initiE 1,2:/#.
@@ -511,7 +573,14 @@ swap {1} [7..25] -4.
 swap {1} 23 -1.
 swap {1} 26 -3.
 
-seq 23 25 : (#pre /\ ={sp_0,ep,epp}); 1: by sim.
+seq 23 1 : (#pre /\ ={sp_0,ep,epp}).
+transitivity {1} {(sp_0,ep,epp) <@ AuxKyber.sample_noise3_jasmin(noiseseed);}
+     (={Glob.mem,ctp,msgp,pkp,coinsp,noiseseed,pkpv,publicseed,at,k} ==> 
+          ={Glob.mem,ctp,msgp,pkp,coinsp,noiseseed,pkpv,publicseed,at,k,sp_0,ep,epp})
+      (={Glob.mem,ctp,msgp,pkp,coinsp,noiseseed,pkpv,publicseed,at,k} ==> 
+          ={Glob.mem,ctp,msgp,pkp,coinsp,noiseseed,pkpv,publicseed,at,k,sp_0,ep,epp}); 1,2: by smt(). 
++ by inline  AuxKyber.sample_noise3_jasmin AuxKyber.sample_noise2_jasmin; sim; auto => />. 
++ by conseq />; call sample_noise_good3; auto => />.
 
 swap {1} 4 -3.
 
@@ -538,11 +607,11 @@ lemma kyber_correct_kg mem _pkp _skp _randomnessp :
          rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc*.
 transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, randomnessp);} 
-(={Glob.mem,arg} ==> ={Glob.mem,r}) 
+(={Glob.mem,arg} /\ randomnessp{2} = G.randomnessp{2} ==> ={Glob.mem,r}) 
 (   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\
+    to_uint randomnessp{1} = _randomnessp /\ to_uint G.randomnessp{1} = _randomnessp /\
     Glob.mem{2} = mem /\ to_uint G.randomnessp{2} = _randomnessp /\ 
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)
     ==> 
@@ -551,7 +620,7 @@ transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, randomnessp);}
         sk = load_array1152 Glob.mem{1} _skp /\
         t = load_array1152 Glob.mem{1} _pkp /\ 
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt().
-+ by call auxkg_good; auto => />.
++ call auxkg_good; auto => />.
 
 inline {1} 1; inline {2} 1.
 
@@ -559,7 +628,7 @@ sp 3 0.
 
 swap {2} 6 -5.
 seq 1 1 : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
-+ by inline G(H).sample; inline AuxKyber.sample_seeds; conseq => />; 
++ by inline G(H).sample; conseq => />; 
     sim; auto => />; smt(W64.to_uintK W64.to_uint_small).
 
 swap {2} [7..8] -5.
@@ -574,8 +643,9 @@ swap {1} 1 1.
 seq 1 8 : (#pre /\ s{2} = lift_vector skpv{1} /\ e{2} = lift_vector e{1} /\
                 signed_bound768_cxq skpv{1} 0 768 1 /\
                 signed_bound768_cxq e{1} 0 768 1).
-
-admit. (* To Do: Define PRF so that this works *)
++ inline AuxKyber.sample_noise2_spec; conseq />. 
+  seq 9 8 : (noise1{1}=s{2} /\ noise2{1} = e{2}); 1: by sim; auto => />.
+  by auto => />;  smt(vector_unlift).
 
 swap {1} 1 2; seq 0 2: #pre; 1: by auto.
 
@@ -672,7 +742,7 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ?????????.
+  move => ??????????.
   do split; 1,2,4: smt(NTT_Fq.nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
@@ -696,7 +766,7 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ??????????.
+  move => ???????????.
   do split; 1,2,4: smt(NTT_Fq.nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
@@ -723,7 +793,7 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ???????????.
+  move => ????????????.
   do split; 1,2,4: smt(NTT_Fq.nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
@@ -758,7 +828,7 @@ last first.
 have H := polyvec_add_corr_impl 2 2 _ _ => //.
 ecall{1} (H (lift_array768 pkpv{1}) (lift_array768 e{1})).
 clear H.
-auto => /> &1 &2 ????????? vs0 vs1 vs2.
+auto => /> &1 &2 ?????????? vs0 vs1 vs2.
 
 do split; 1,2:smt().
 
@@ -816,7 +886,8 @@ transitivity {1} { AuxKyber.indcpa_enc_jazz(ctp,msgp,pkp,coinsp);}
   to_uint ctp{1} = _ctp /\
   to_uint pkp{1} = _pkp /\
   PRF.key{2} = load_array32 mem _coinsp /\
-  m{2} = load_array32 mem _msgp /\ pk{2}.`1 = load_array1152 mem _pkp /\ pk{2}.`2 = load_array32 mem (_pkp + 3 * 384)
+  m{2} = load_array32 mem _msgp /\ pk{2}.`1 = load_array1152 mem _pkp /\ 
+  pk{2}.`2 = load_array32 mem (_pkp + 3 * 384)
   ==>
   let (c1, c2) = r{2} in 
       c1 = load_array960 Glob.mem{1} _ctp /\ 
@@ -889,13 +960,18 @@ seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\
 ecall (poly_frommsg_corr Glob.mem{1} _msgp m{2}); 1: by auto => /> /#.
 
 swap {2} [2..9] -1.
-seq 4 8 : (#pre /\ rv{2} = lift_vector sp_0{1} /\
+seq 1 8 : (#pre /\ rv{2} = lift_vector sp_0{1} /\
     signed_bound768_cxq sp_0{1} 0 768 1 /\
      e1{2} = lift_vector ep{1} /\
     signed_bound768_cxq ep{1} 0 768 1 /\
     e2{2} = lift_array256 epp{1} /\
-    signed_bound_cxq epp{1} 0 768 1). 
-admit. (* To Do: Define PRF so that this works. same as kg *)
+    signed_bound_cxq epp{1} 0 256 1).
++ inline AuxKyber.sample_noise3_spec AuxKyber.sample_noise2_spec. 
+  wp; call(_: true); 1: by sim.
+  conseq />; 1: smt().
+  seq 10 7 : (noise1{1}=rv{2} /\ noise2{1} = e1{2} /\ _N0{1} = _N{2}); 
+    1: by sim; inline *;  auto => />.  
+  by auto => />; smt(poly_unlift vector_unlift).
 
 swap {2} 1 3.
 
