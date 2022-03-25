@@ -79,6 +79,41 @@ rewrite of_uintK /= modz_small; 1: by smt(rg_asint).
   by rewrite /smod /=; smt(rg_asint qE).
 qed.
 
+op unlift_vector(a : vector) = Array768.init (fun i => W16.of_int (as_sint a.[i %/ 256].[i%%256])).
+
+lemma vector_unlift a : 
+    lift_vector (unlift_vector a) = a /\
+    signed_bound768_cxq (unlift_vector a) 0 768 1.
+proof.
+split. 
++ rewrite /lift_vector /unlift_vector eq_vectorP => i ib.
+  rewrite offunvE //= /subarray256 /lift_array256 /= tP => k kb.
+  rewrite mapiE //= initiE //= initiE //= 1:/# /to_sint /smod /=.
+  rewrite !of_uintK /=; rewrite /as_sint qE /=.
+  by smt(rg_asint asintK).
+
+rewrite /unlift_vector /signed_bound768_cxq => k kb; rewrite initiE //=.
+rewrite /to_sint /smod /= !of_uintK /= /as_sint qE /=.
+by smt(rg_asint).
+qed.
+
+op unlift_poly(a : poly) = Array256.init (fun i => W16.of_int (as_sint a.[i])).
+
+lemma poly_unlift a : 
+    lift_array256 (unlift_poly a) = a /\
+    signed_bound_cxq (unlift_poly a) 0 256 1.
+proof.
+split. 
++ rewrite /lift_array256 /unlift_poly /= tP => k kb.
+  rewrite mapiE //= initiE //= /to_sint /smod /=.
+  rewrite !of_uintK /=; rewrite /as_sint qE /=.
+  by smt(rg_asint asintK).
+
+rewrite /unlift_poly /signed_bound_cxq => k kb; rewrite initiE //=.
+rewrite /to_sint /smod /= !of_uintK /= /as_sint qE /=.
+by smt(rg_asint).
+qed.
+
 (*******)
 
 (** DEFINING THE EXTERNAL COMPONENTS BASED ON THE SHA ALGORITHMS *)
@@ -176,81 +211,38 @@ proc __gen_matrix_transposed(seed : W8.t Array32.t) : W16.t Array2304.t = {
   return unlift_matrix a;
 }
 
-proc sample_seeds(randomnessp : W64.t) : W8.t Array32.t * W8.t Array32.t = {
-    var i,j,c;
-    var inbuf:W8.t Array32.t;
-    var buf:W8.t Array64.t;
-    var publicseed:W8.t Array32.t;
-    var noiseseed:W8.t Array32.t;
+proc sample_noise2(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t= {
+  var e, s, _N,i,c;
+  e <- witness;                     
+  s <- witness;                      
+  _N <- 0;                      
+  PRF(H).init(noiseseed);                   
+  i <- 0;                             
+  while (i < kvec) {                 
+    c <@ CBD2(PRF, H).sample_real(_N);
+    s <- set s i c;                   
+    i <- i + 1;                       
+    _N <- _N + 1;                     
+  }                                  
+  i <- 0;                             
+  while (i < kvec) {                 
+    c <@ CBD2(PRF, H).sample_real(_N);
+    e <- set e i c;                   
+    i <- i + 1;                       
+    _N <- _N + 1;                     
+  }                                  
 
-    inbuf <- witness;
-    buf <- witness;
-    publicseed <- witness;
-    noiseseed <- witness;
-
-    i <- (W64.of_int 0);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- (loadW8 Glob.mem (W64.to_uint (randomnessp + i)));
-      inbuf.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-    }
-    buf <@ M._sha3512_32 (buf, inbuf);
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 32);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- buf.[(W64.to_uint i)];
-      publicseed.[(W64.to_uint i)] <- c;
-      c <- buf.[(W64.to_uint j)];
-      noiseseed.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
-    }
-    return (publicseed,noiseseed);
-} 
-
-proc sample_noise(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t= {
-    var nonce,aux;
-    var noise1:W16.t Array768.t;    
-    var noise2:W16.t Array768.t;    
-    noise1 <- witness;
-    noise2 <- witness;
-    nonce <- (W8.of_int 0);
-    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise1.[0 + i_0])),
-    noiseseed, nonce);
-    noise1 <- Array768.init
-            (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise1.[i]);
-    nonce <- (W8.of_int 1);
-    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise1.[256 + i_0])),
-    noiseseed, nonce);
-    noise1 <- Array768.init
-            (fun i => if 256 <= i < 256 + 256 then aux.[i-256]
-            else noise1.[i]);
-    nonce <- (W8.of_int 2);
-    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
-    noiseseed, nonce);
-    noise1 <- Array768.init
-            (fun i => if (2 * 256) <= i < (2 * 256) + 256
-            then aux.[i-(2 * 256)] else noise1.[i]);
-    nonce <- (W8.of_int 3);
-    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise2.[0 + i_0])),
-    noiseseed, nonce);
-    noise2 <- Array768.init
-         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise2.[i]);
-    nonce <- (W8.of_int 4);
-    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise2.[256 + i_0])),
-    noiseseed, nonce);
-    noise2 <- Array768.init
-         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else noise2.[i]);
-    nonce <- (W8.of_int 5);
-    aux <@ M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
-    noiseseed, nonce);
-    noise2 <- Array768.init
-         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
-         else noise2.[i]);
-    return (noise1,noise2);
+  return (unlift_vector s,unlift_vector e);
 }
+
+proc sample_noise3(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
+  var e, s, _N,e2;
+  (s,e) <@ sample_noise2(noiseseed);
+  _N <- 6;
+  e2 <@ CBD2(PRF, H).sample_real(_N);
+  return (s,e, unlift_poly e2);
+}
+
 proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     var aux: W16.t Array256.t;
     
@@ -269,7 +261,8 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     var pkpv:W16.t Array768.t;
 
 
-    (publicseed,noiseseed) <@ sample_seeds(randomnessp);
+    G.randomnessp <- randomnessp; 
+    (publicseed,noiseseed) <@  G(H).sample();
 
     a <- witness;
     zero <- (W64.of_int 0);
@@ -277,7 +270,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
 
     pkpv <- witness;               
 
-    (skpv,e) <@ sample_noise(noiseseed);
+    (skpv,e) <@ sample_noise2(noiseseed);
 
     skpv <@ M.__polyvec_ntt (skpv);
     e <@ M.__polyvec_ntt (e);
@@ -361,11 +354,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     k <- witness;
     k <@ M._poly_frommsg (k, msgp);
 
-    (sp_0,ep) <@ sample_noise(noiseseed);
-
-    nonce <- (W8.of_int 6);
-    epp <- witness;
-    epp <@ M._poly_getnoise (epp, noiseseed, nonce);
+    (sp_0,ep,epp) <@ sample_noise3(noiseseed);
 
     sp_0 <@ M.__polyvec_ntt (sp_0);
 
@@ -427,23 +416,35 @@ inline Parse(XOF, H).sample_real.
 inline M.__rej_uniform.
 admitted. (* define XOF so that this works *)
 
+(*
+quiv sample_noise_good2 :
+  M.__gen_matrix ~ AuxKyber.__gen_matrix :
+    transposed{1} = W64.zero /\ ={seed} ==> ={res}.
+proc. 
+inline Parse(XOF, H).sample_real.
+inline M.__rej_uniform.
+admitted. (* define XOF so that this works *)
+*)
 
 equiv auxkg_good :
   M.indcpa_keypair_jazz ~ AuxKyber.indcpa_keypair_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
-inline AuxKyber.sample_seeds AuxKyber.sample_noise Aux.inner_product.
+inline Aux.inner_product.
 swap {1} 4 -3.
 swap {1} 3 -1.
 swap {1} [11..13] -8.
 swap {1} 8 -5.
 swap {1} 10 -7.
 swap {1} [14..16] -6.
-seq 10 12 : (#pre /\ ={publicseed, noiseseed}); 1: by sim.
+seq 10 2 : (#pre /\ ={publicseed, noiseseed}); 1: by inline *; sim.
+
 swap {1} [7..8] -5.
 seq 3 3 : (#pre /\ ={a}); 1: by call auxgenmatrix_good_zero; auto => />.
+
 swap {1} [6..23] -2.
-seq 21 23 : (#pre /\ ={skpv,e,pkpv}); 1: by  sim; auto => />. 
+seq 21 2 : (#pre /\ ={skpv,e,pkpv}). 1: by admit. 
+
 swap{1} [1..2] 16.
 
 seq 2 2 : (#pre); 1: by sim.
@@ -483,7 +484,6 @@ equiv auxenc_good :
   M.indcpa_enc_jazz ~ AuxKyber.indcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
-inline AuxKyber.sample_noise.
 swap {1} 6 -5.
 swap {1} [12..13] -10.
 seq 3 3 : (#pre /\ ={noiseseed}); 1: by sim.
@@ -574,6 +574,7 @@ swap {1} 1 1.
 seq 1 8 : (#pre /\ s{2} = lift_vector skpv{1} /\ e{2} = lift_vector e{1} /\
                 signed_bound768_cxq skpv{1} 0 768 1 /\
                 signed_bound768_cxq e{1} 0 768 1).
+
 admit. (* To Do: Define PRF so that this works *)
 
 swap {1} 1 2; seq 0 2: #pre; 1: by auto.
