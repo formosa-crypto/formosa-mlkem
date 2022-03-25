@@ -1,6 +1,6 @@
 require import AllCore List IntDiv CoreMap IntDiv Real Number.
 from Jasmin require  import JModel JMemory.
-require import IntDiv_extra Ring_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
+require import IntDiv_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
 require import Fq.
 require import NTT_Fq.
 require import Kyber.
@@ -236,6 +236,7 @@ rewrite W8.to_uint_orw_disjoint.
   rewrite (modz_small _  4294967296); 1: by rewrite of_uintK /= /#. 
   rewrite (modz_small _  256); 1: by rewrite of_uintK /= /#.  
   rewrite W32.of_uintK /= (modz_small _ 4294967296) 1:/#.
+search (Ring.IntID.exp _ _ %/ Ring.IntID.exp _ _).
   rewrite divMr; 1: by smt(le_dvd_pow). 
   rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
   + have -> : 2 %| 2 ^ (j{2} - k) = 2^1 %| 2 ^ (j{2} - k) by auto.  

@@ -269,28 +269,6 @@ axiom nttZero : ntt Poly.zero = Poly.zero.
 lemma invnttzero : invntt Poly.zero = Poly.zero by 
    smt(invnttK nttZero).
 
-(*
-
-
-lemma mul_scale_ntt (pa pb : poly) (c : elem) : 
-  invntt (scale (basemul (ntt pa) (ntt pb)) c) = 
-   scale (pa * pb) c by
- smt(mul_comm_ntt ntt_scale invnttK).
-
-lemma add_scale_ntt (pa pb : poly) (c : elem) : 
-  invntt (scale ((ntt pa) + (ntt pb)) c) = 
-   scale (pa + pb) c by
- smt(add_comm_ntt ntt_scale invnttK). 
-
-
-lemma scale1 (p : poly) :
-   scale p (FqField.one) = p.
-proof.
-rewrite /scale.
-apply Array256.ext_eq => *.
-rewrite mapiE => />.
-smt(@FqField).
-qed. *)
 
 
 end NTT_Fq.
