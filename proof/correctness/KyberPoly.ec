@@ -304,7 +304,7 @@ have ? : forall k, 0 <= k < 8 =>
        decompress 1 (b2i mem.[to_uint ap{1} + i{2}].[k]); last 
           by smt(Array256.set_neqiE Array256.set_eqiE).
 
-move => kk kkb; rewrite -decompress_alt_decompress /decompress_alt //; 1: by smt(qE).
+move => kk kkb; rewrite -decompress_alt_decompress /decompress_alt //.
 congr; rewrite qE /=.
 have one : W16.one = W16.of_int (2^1-1) by smt().
 rewrite /to_sint /smod /= to_uintM_small; rewrite one W16.to_uint_and_mod //=; 1: smt(). 
@@ -883,7 +883,7 @@ case(k = to_uint j{1}).
   rewrite set_eqiE;1,2:smt().
   rewrite set_neqiE;1,2:smt(). 
   rewrite set_eqiE;1,2:smt().
-  move => _;rewrite -decompress_alt_decompress //; 1: smt(qE).
+  move => _;rewrite -decompress_alt_decompress //.
   rewrite /load_array128 Array128.initiE //.
   rewrite /decompress_alt qE /loadW8 /=; congr.
   rewrite /to_sint.
@@ -900,7 +900,7 @@ case(k = to_uint j{1}).
     
 move => *;rewrite set_eqiE;1,2:smt(). 
 rewrite set_eqiE;1,2:smt().
-rewrite -decompress_alt_decompress //; 1: smt(qE).
+rewrite -decompress_alt_decompress //.
 rewrite /load_array128 Array128.initiE //.
 rewrite /decompress_alt qE /loadW8 /=; congr.
 rewrite /to_sint.
@@ -1622,10 +1622,13 @@ qed.
 
 lemma poly_basemul_ll : islossless M._poly_basemul.
 proc.
-while (0 <= to_uint i <= 256 /\ to_uint i %%4 = 0) (256 - to_uint i); last by auto => /> i ib; rewrite !ultE /#.
+while (0 <= to_uint i <= 256 /\ to_uint i %%4 = 0) (256 - to_uint i); 
+    last by auto => /> i ib; rewrite !ultE /#.
 move => *; do 10! (wp;call fqmul_ll); auto => />.
 move => &hr; rewrite !ultE /= => ??.
-have -> : i{hr} + W64.one - W64.one + (of_int 3)%W64 - W64.one + (of_int 2)%W64 = i{hr} + (W64.of_int 4); last by move => *; rewrite to_uintD_small /=; smt(to_uint_cmp pow2_64). 
+have -> : i{hr} + W64.one - W64.one + (of_int 3)%W64 - W64.one + 
+            (of_int 2)%W64 = i{hr} + (W64.of_int 4); 
+  last by move => *; rewrite to_uintD_small /=; smt(to_uint_cmp pow2_64). 
 by ring.
 qed.
 

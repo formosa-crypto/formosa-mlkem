@@ -417,67 +417,6 @@ rewrite (Ring.IntID.exprS 2 (max asz bsz)); 1: by smt().
 by smt(exp_max).
 qed.
 
-(*
-lemma compress_impl_small (a : W16.t) (d : int):
-  1 <= d <= 4 =>
-  bpos16 a q =>
-  (to_uint (truncateu16
-         ((((zeroextu32 a `<<` (of_int d)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
-           (of_int 28)%W8) `&`
-          (of_int (2^d - 1))%W32))) = compress d (inFq (to_sint a)).
-proof.
-move => drng.
-have /= dpow : 2^1<=2^d <= 2^10 by split; move => *;  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
-rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
-move => au; rewrite -compress_alt_compress; 1,2: by smt(). 
-rewrite /zeroextu32 /truncateu16 /compress_alt qE => /= *.
-have -> : W32.of_int (2^d -1) = W32.masklsb d; 1: by smt().
-rewrite W32.and_mod //=; 1: by smt(). 
-rewrite W32.of_uintK  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
-rewrite W32.to_uint_shr; 1: by smt().
-rewrite inFqK to_sintE /max /= !W32.of_uintK !W16.of_uintK qE.
-rewrite !(modz_small _ 256) /=; 1: smt().
-rewrite !(modz_small _ 32) /=; 1: smt().
-rewrite !(modz_small _ 3329) /=; 1: smt().
-rewrite !(modz_small _ 65536) /=; 1: smt().
-rewrite (modz_small _ 4294967296) /=; 1: smt().
-rewrite (_: 0<d) /=; 1: smt().
-pose xx := (to_uint a * 2^d + 1665).
-have -> : (4294967296 = 16*268435456) by auto. 
-rewrite divz_mod_mul //. 
-rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
-rewrite -pow2_4; apply dvdz_exp2l; smt().
-qed.
-
-lemma compressimpl_rng_small (a : W16.t)(d : int) :
-  1 <= d <= 4 =>
-  bpos16 a q =>
-  0 <= to_uint (truncateu16
-         ((((zeroextu32 a `<<` (of_int d)%W8) + (of_int 1665)%W32) * (of_int 80635)%W32 `>>`
-           (of_int 28)%W8) `&`
-          (of_int (2^d - 1))%W32)) < 2^d.
-proof.
-move => drng.
-have /= dpow : 2^1<=2^d <= 2^10 by split; move => *;  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
-rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
-move => au;rewrite /zeroextu32 /truncateu16 /compress_alt => /= *.
-have -> : W32.of_int (2^d -1) = W32.masklsb d; 1: by smt().
-rewrite W32.and_mod //=; 1: by smt(). 
-rewrite W32.of_uintK  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
-rewrite W32.to_uint_shr; 1: by smt().
-rewrite  /max /= !W32.of_uintK !W16.of_uintK.
-rewrite !(modz_small _ 256) /=; 1: smt().
-rewrite !(modz_small _ 32) /=; 1: smt().
-rewrite !(modz_small _ 65536) /=; 1: smt().
-rewrite (modz_small _ 4294967296) /=; 1: smt().
-pose xx := (to_uint a * 2^d + 1665).
-have -> : (4294967296 = 16*268435456) by auto. 
-rewrite divz_mod_mul //. 
-rewrite modz_dvd; 1: by rewrite -pow2_4; apply dvdz_exp2l; smt().
-by smt(modzE).
-qed.
-*)
-
 lemma compress_impl_small (a : W16.t) (d : int):
   1 <= d <= 4 =>
   bpos16 a q =>
@@ -489,7 +428,7 @@ move => drng.
 have /= dpow : 2^1<=2^d <= 2^4 
  by split; move => *; apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
 rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
-move => au; rewrite -compress_alt_compress; 1,2: by smt(). 
+move => au; rewrite -compress_alt_compress; 1: by smt(). 
 rewrite /zeroextu32 /truncateu8 /compress_alt qE => /= *.
 rewrite  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
 rewrite W32.to_uint_shr; 1: by smt().
@@ -506,79 +445,25 @@ rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
 rewrite -pow2_4; apply dvdz_exp2l; smt().
 qed.
 
-(*
-lemma compress_impl_small_trunc (a : W16.t) (d : int):
-  1 <= d <= 4 =>
-  bpos16 a q =>
-  (to_uint (truncateu8 ((((zeroextu32 a `<<` W8.of_int d) + 
-     W32.of_int 1665) * W32.of_int 80635 `>>` W8.of_int 28) `&` W32.of_int (2^d - 1)))) = 
-       compress d (inFq (to_sint a)).
-proof.
-move => dbnd abnd.
-have /= dpow : 2^1<=2^d <= 2^4 
- by split; move => *; apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
-rewrite to_uint_truncateu8 /=.
-rewrite -compress_impl_small //=.
-rewrite and_mod; 1: smt().
-rewrite of_uintK modz_dvd; 1: by smt().
-by rewrite modz_small; 1: smt().
-qed.
-*)
 
 lemma compress_impl_large (a : W16.t) :
   bpos16 a q =>
   (to_uint (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
            (of_int 32)%W8)) %% 1024 = compress 10 (inFq (to_sint a)).
-admitted.
-(*
-proof.
-rewrite /zeroextu64 /truncateu16 -compress_alt_compress; 1..2 : smt(). 
-rewrite /compress_alt qE => /> *.
-rewrite (_: W64.of_int 1023 = W64.masklsb 10); first by rewrite /max /=.
-rewrite W64.and_mod 1:// /max /= !W64.of_uintK to_sintE /(`<<`) /(`>>`) W64.shlMP 1:/#.
-rewrite W64.to_uint_shr 1:/# W16.of_uintK; congr.
-rewrite inFqK to_sintE qE /=.
-rewrite IntDiv.pmod_small /= 1:/#.
-rewrite IntDiv.pmod_small /= 1:/#. 
-rewrite (IntDiv.pmod_small _ 3329) /= 1:/#.
-rewrite (_: W16.smod (to_uint a) = to_uint a); 1:smt(@W16).
+rewrite /bpos16 qE;move => abnd.
+move : (to_sint_unsigned a _); 1: by smt().
+move => au; rewrite -compress_alt_compress_large. 
+rewrite /zeroextu64 /compress_alt_large qE => /= *.
+rewrite  /(`<<`) /(`>>`) W64.shlMP; 1: by smt().
+rewrite W64.to_uint_shr; 1: by smt().
+rewrite inFqK to_sintE /max /= !W64.of_uintK /= qE /=.
+rewrite !(modz_small _ 3329) /=; 1: smt().
+have ->: W16.smod (to_uint a) = to_uint a by
+  move : abnd; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
 pose xx := (to_uint a * 1024 + 1665).
-rewrite W64.of_uintK => />.
-pose yy := xx * 1290167 %% 18446744073709551616 %/ 4294967296 %% 1024.
-have ? : (0 <= yy < 2^16) by smt(@W16).
-rewrite (_: W16.smod yy = yy). 
-+ by rewrite /smod /= /#.
-rewrite /yy (_: 1290167 = 4294967296 %/ 3329) 1://.
-rewrite /xx formula_polyvec 2://.
-by rewrite -to_sint_unsigned.
+have -> : (18446744073709551616 = 4294967296 * 4294967296) by auto. 
+rewrite divz_mod_mul //. 
+by rewrite (modz_small _ 4294967296); 1: by smt().
 qed.
-*)
-(*
-lemma compress_rng (a : W16.t) :
-  bpos16 a q =>
-  0 <= to_sint (truncateu16
-         ((((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-           (of_int 32)%W8) `&`
-          (of_int 1023)%W64)) < 1024.
-proof.
-rewrite to_sintE => /> *.
-rewrite (_: W64.of_int 1023 = W64.masklsb 10); first by rewrite /max /=.
-rewrite W64.and_mod => />. 
-pose xx := (W64.of_int
-             (to_uint
-                (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>` (of_int 32)%W8) %%
-              1024)).
-have ? : 0<= to_uint xx < 1024.
-  split; first by smt(@W64).
-  move => xx_lb.
-  rewrite of_uintK pmod_small.
-  smt(modz_cmp).
-  smt(modz_cmp).
-have ? : 0<= to_uint (truncateu16 xx) < 1024.
-  rewrite /truncateu16. 
-  do 4!(rewrite of_uintK pmod_small || smt(@IntDiv @Int)).
-by rewrite /max /smod /=;  smt(@W16).
-qed.
-*)
 
 end Fq.

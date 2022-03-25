@@ -167,28 +167,32 @@ lemma compress_err_bound c d :
 (*   well as defining rounding errors additively       *)
 (*******************************************************)
 
-(* This is the implementation of compress d in C/Jasmin *)
+(* This is the implementation of compress d in C/Jasmin for d = 1,4 *)
 op compress_alt(d : int, c : Fq) : int =
     (asint c * 2^d + ((q + 1) %/ 2)) * (2^28 %/ q) %/ 2^28 %% 2^d.
 
 lemma compress_alt_compress c d :    
-   0 <= d => 2^d < q =>
+   1 <= d <=4 =>
       compress_alt d c = compress d c.
-proof. move => *; rewrite /compress_alt /compress /round; congr;congr.
-rewrite StdBigop.Bigreal.Num.Domain.mulrC StdBigop.Bigreal.Num.Domain.mulrA.
-admitted.
+admitted. (* checked in sage *)
 
+(* This is the implementation of compress d in C/Jasmin for d = 10 *)
+op compress_alt_large (c : Fq) : int = 
+   (asint c * 2 ^ 10 + (q + 1) %/ 2) * (2 ^ 32 %/ q) %/ 2 ^ 32 %% 2 ^ 10.
+
+lemma compress_alt_compress_large (c : Fq): 
+    compress_alt_large c = compress 10 c.
+admitted. (* checked in Sage *)
+
+print decompress.
 (* This is the implementation of decompress d in C/Jasmin *)
 op decompress_alt(d : int, c : int) : Fq = 
     inFq (((c * q + 2^(d-1)) %/ 2^d)).
 
 lemma decompress_alt_decompress c d : 
-   0 <= d => 2^d < q =>
+   0 < d => d<=10 =>
     decompress_alt d c = decompress d c.
-proof. move => *; rewrite /decompress_alt /decompress /round; congr.
-rewrite StdBigop.Bigreal.Num.Domain.mulrC StdBigop.Bigreal.Num.Domain.mulrA.
-admitted.
-
+admitted. (* checked in sage *)
 
 (** End extension *)
 
