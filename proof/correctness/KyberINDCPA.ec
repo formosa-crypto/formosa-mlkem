@@ -55,8 +55,33 @@ lemma liftarrayvector a i k : 0<=i<3 => 0<=k<256 =>
 move => ib lb; rewrite /lift_vector /lift_array768 offunvE // mapiE 1:/# /=.
 by rewrite /lift_array256 /subarray256 mapiE //= initiE //=.
 qed.
+
+op unlift_matrix(a : matrix) = Array2304.init (fun i => W16.of_int (asint a.[i %/ 768,i %% 768 %/ 256].[i %% 256])).
+
+lemma matrix_unlift a : 
+    lift_matrix (unlift_matrix a) = a /\
+    pos_bound2304_cxq (unlift_matrix a) 0 2304 2.
+proof.
+split. 
++ rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
+  rewrite offunmE //= /subarray256 /subarray768 /lift_array2304 /= tP => k kb.
+  rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
+  rewrite !of_uintK /= !(modz_small _ 65536); 1: smt(rg_asint). 
+  rewrite !(mulzC 768) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !asintK. 
+  rewrite !(mulzC 256) !(edivz_eq) 1:/#. 
+  rewrite (_: i*768 = (3*i)*256) 1:/# !modzMDl.
+  by smt(rg_asint).
+rewrite /unlift_matrix /pos_bound2304_cxq => k kb; rewrite initiE //=.
+rewrite to_sint_unsigned.
++ rewrite /to_sint of_uintK /= modz_small; 1: by smt(rg_asint). 
+  by rewrite /smod /=; smt(rg_asint qE).
+rewrite of_uintK /= modz_small; 1: by smt(rg_asint). 
+  by rewrite /smod /=; smt(rg_asint qE).
+qed.
+
 (*******)
 
+(** DEFINING THE EXTERNAL COMPONENTS BASED ON THE SHA ALGORITHMS *)
 
 module H : KyberPKE.RO.POracle = {
   proc o(x : KyberPKE.RO.in_t) : KyberPKE.RO.out_t = { return witness;  }
@@ -111,28 +136,9 @@ module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
   proc next_bytes(_N : int) : W8.t Array128.t = { return witness; }
 }.
 
-op unlift_matrix(a : matrix) = Array2304.init (fun i => W16.of_int (asint a.[i %/ 768,i %% 768 %/ 256].[i %% 256])).
 
-lemma matrix_unlift a : 
-    lift_matrix (unlift_matrix a) = a /\
-    pos_bound2304_cxq (unlift_matrix a) 0 2304 2.
-proof.
-split. 
-+ rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
-  rewrite offunmE //= /subarray256 /subarray768 /lift_array2304 /= tP => k kb.
-  rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
-  rewrite !of_uintK /= !(modz_small _ 65536); 1: smt(rg_asint). 
-  rewrite !(mulzC 768) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !asintK. 
-  rewrite !(mulzC 256) !(edivz_eq) 1:/#. 
-  rewrite (_: i*768 = (3*i)*256) 1:/# !modzMDl.
-  by smt(rg_asint).
-rewrite /unlift_matrix /pos_bound2304_cxq => k kb; rewrite initiE //=.
-rewrite to_sint_unsigned.
-+ rewrite /to_sint of_uintK /= modz_small; 1: by smt(rg_asint). 
-  by rewrite /smod /=; smt(rg_asint qE).
-rewrite of_uintK /= modz_small; 1: by smt(rg_asint). 
-  by rewrite /smod /=; smt(rg_asint qE).
-qed.
+(** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
+    MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
 
 module AuxKyber= {
 
@@ -413,6 +419,15 @@ inline Parse(XOF, H).sample_real.
 inline M.__rej_uniform.
 admitted. (* define XOF so that this works *)
 
+equiv auxgenmatrix_good_one :
+  M.__gen_matrix ~ AuxKyber.__gen_matrix_transposed :
+    transposed{1} = W64.one /\ ={seed} ==> ={res}.
+proc. 
+inline Parse(XOF, H).sample_real.
+inline M.__rej_uniform.
+admitted. (* define XOF so that this works *)
+
+
 equiv auxkg_good :
   M.indcpa_keypair_jazz ~ AuxKyber.indcpa_keypair_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
@@ -464,6 +479,50 @@ by sim.
 
 qed.
 
+equiv auxenc_good :
+  M.indcpa_enc_jazz ~ AuxKyber.indcpa_enc_jazz :
+     ={Glob.mem,arg} ==> ={Glob.mem,res}. 
+proc. 
+inline AuxKyber.sample_noise.
+swap {1} 6 -5.
+swap {1} [12..13] -10.
+seq 3 3 : (#pre /\ ={noiseseed}); 1: by sim.
+
+swap {1} 6 -5.
+swap {1} 11 -9.
+seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
+
+swap {1} 6 -5.
+swap {1} [10..12] -8.
+
+seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
+
+swap {1} [10..11] -8.
+seq 3 3 : (#pre /\ ={at}); 1: by call auxgenmatrix_good_one;auto => /> /#.
+
+swap {1} 4 -3.
+swap {1} 8 -6.
+
+seq 2 2 : (#pre /\ ={k}); 1: by sim.
+
+swap {1} 2 -1.
+swap {1} 4 -3.
+swap {1} [7..25] -4.
+swap {1} 23 -1.
+swap {1} 26 -3.
+
+seq 23 25 : (#pre /\ ={sp_0,ep,epp}); 1: by sim.
+
+swap {1} 4 -3.
+
+swap {1} [3..4] 6.
+swap {1} 10 8.
+
+by sim. 
+
+qed.
+
+(******* CORRECTNESS PROOFS TOP LEVEL ************)
 
 (* We model G exactly as the implementation does it *)
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
@@ -723,57 +782,6 @@ by move => [#] _ _ ->; rewrite /ntt_mmul offunvE //=.
 qed.
 
 (***************************************************)
-
-equiv auxgenmatrix_good_one :
-  M.__gen_matrix ~ AuxKyber.__gen_matrix_transposed :
-    transposed{1} = W64.one /\ ={seed} ==> ={res}.
-proc. 
-inline Parse(XOF, H).sample_real.
-inline M.__rej_uniform.
-admitted. (* define XOF so that this works *)
-
-equiv auxenc_good :
-  M.indcpa_enc_jazz ~ AuxKyber.indcpa_enc_jazz :
-     ={Glob.mem,arg} ==> ={Glob.mem,res}. 
-proc. 
-inline AuxKyber.sample_noise.
-swap {1} 6 -5.
-swap {1} [12..13] -10.
-seq 3 3 : (#pre /\ ={noiseseed}); 1: by sim.
-
-swap {1} 6 -5.
-swap {1} 11 -9.
-seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
-
-swap {1} 6 -5.
-swap {1} [10..12] -8.
-
-seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
-
-swap {1} [10..11] -8.
-seq 3 3 : (#pre /\ ={at}); 1: by call auxgenmatrix_good_one;auto => /> /#.
-
-swap {1} 4 -3.
-swap {1} 8 -6.
-
-seq 2 2 : (#pre /\ ={k}); 1: by sim.
-
-swap {1} 2 -1.
-swap {1} 4 -3.
-swap {1} [7..25] -4.
-swap {1} 23 -1.
-swap {1} 26 -3.
-
-seq 23 25 : (#pre /\ ={sp_0,ep,epp}); 1: by sim.
-
-swap {1} 4 -3.
-
-swap {1} [3..4] 6.
-swap {1} 10 8.
-
-by sim. 
-
-qed.
 
 
 lemma kyber_correct_enc mem _coinsp _msgp _ctp _pkp : 
