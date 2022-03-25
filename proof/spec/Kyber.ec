@@ -854,7 +854,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
   }
 
   proc dec(sk : skey, cph : ciphertext) : plaintext option = {
-      var m,mp,i,ui,v,vi,si, c1, c2;
+      var m,mp,ui,v,vi,si, c1, c2;
       var u,s : vector;
       u <- witness;
       s <- witness;
@@ -863,9 +863,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       u <- decompress_polyvec 10 ui;
       vi <@ EncDec.decode4(c2);
       v <- decompress_poly 4 vi;
-      i <- 0;
       si <@ EncDec.decode12_vec(sk);
-      s <- decompress_polyvec 12 si;
+      s <- ofipolyvec si;
       mp <- v &+ ((&-) (invntt (ntt_dotp s (nttv u))));
       m <@ EncDec.encode1(compress_poly 1 mp);
       return Some m;
