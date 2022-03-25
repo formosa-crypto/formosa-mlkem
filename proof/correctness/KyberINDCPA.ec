@@ -1,4 +1,4 @@
-require import AllCore.
+require import AllCore IntDiv.
 from Jasmin require import JModel.
 require import Fq Kyber KyberPoly KyberPolyVec W16extra NTT_Fq.
 require import Array32 Array64 Array128 Array168 Array256 Array768 Array960 Array1152 Array2304.
@@ -111,8 +111,65 @@ module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
   proc next_bytes(_N : int) : W8.t Array128.t = { return witness; }
 }.
 
-(*
+op unlift_matrix(a : matrix) = Array2304.init (fun i => W16.of_int (asint a.[i %/ 768,i %% 768 %/ 256].[i %% 256])).
+
+lemma matrix_unlift a : 
+    lift_matrix (unlift_matrix a) = a /\
+    pos_bound2304_cxq (unlift_matrix a) 0 2304 2.
+proof.
+split. 
++ rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
+  rewrite offunmE //= /subarray256 /subarray768 /lift_array2304 /= tP => k kb.
+  rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
+  rewrite !of_uintK /= !(modz_small _ 65536); 1: smt(rg_asint). 
+  rewrite !(mulzC 768) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !asintK. 
+  rewrite !(mulzC 256) !(edivz_eq) 1:/#. 
+  rewrite (_: i*768 = (3*i)*256) 1:/# !modzMDl.
+  by smt(rg_asint).
+rewrite /unlift_matrix /pos_bound2304_cxq => k kb; rewrite initiE //=.
+rewrite to_sint_unsigned.
++ rewrite /to_sint of_uintK /= modz_small; 1: by smt(rg_asint). 
+  by rewrite /smod /=; smt(rg_asint qE).
+rewrite of_uintK /= modz_small; 1: by smt(rg_asint). 
+  by rewrite /smod /=; smt(rg_asint qE).
+qed.
+
 module AuxKyber= {
+
+proc __gen_matrix(seed : W8.t Array32.t) : W16.t Array2304.t = {
+  var a, i, j,c;
+  a <- witness;                       
+  i <- 0;                       
+  while (i < kvec) {                  
+    j <- 0;                          
+    while (j < kvec) {                
+      XOF(H).init(seed, i, j);        
+      c <@ Parse(XOF, H).sample_real();
+      a <- a.[i, j <- c];         
+      j <- j + 1;                      
+    }                                 
+    i <- i + 1;                       
+  }                                   
+  return unlift_matrix a;
+}
+
+proc __gen_matrix_transposed(seed : W8.t Array32.t) : W16.t Array2304.t = {
+  var a, i, j,c;
+  a <- witness;                       
+  i <- 0;                       
+  while (i < kvec) {                  
+    j <- 0;                          
+    while (j < kvec) {                
+      XOF(H).init(seed, i, j);        
+      c <@ Parse(XOF, H).sample_real();
+      a <- a.[j, i <- c];         
+      j <- j + 1;                      
+    }                                 
+    i <- i + 1;                       
+  }                                   
+  return unlift_matrix a;
+}
+
 proc sample_seeds(randomnessp : W64.t) : W8.t Array32.t * W8.t Array32.t = {
     var i,j,c;
     var inbuf:W8.t Array32.t;
@@ -210,7 +267,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
 
     a <- witness;
     zero <- (W64.of_int 0);
-    a <@ M.__gen_matrix (publicseed, zero);
+    a <@ __gen_matrix (publicseed);
 
     pkpv <- witness;               
 
@@ -293,7 +350,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
 
     at <- witness;
     one <- (W64.of_int 1);
-    at <@ M.__gen_matrix (publicseed, one);
+    at <@ __gen_matrix_transposed (publicseed);
 
     k <- witness;
     k <@ M._poly_frommsg (k, msgp);
@@ -348,6 +405,14 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
 
 }.
 
+equiv auxgenmatrix_good_zero :
+  M.__gen_matrix ~ AuxKyber.__gen_matrix :
+    transposed{1} = W64.zero /\ ={seed} ==> ={res}.
+proc. 
+inline Parse(XOF, H).sample_real.
+inline M.__rej_uniform.
+admitted. (* define XOF so that this works *)
+
 equiv auxkg_good :
   M.indcpa_keypair_jazz ~ AuxKyber.indcpa_keypair_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
@@ -361,7 +426,7 @@ swap {1} 10 -7.
 swap {1} [14..16] -6.
 seq 10 12 : (#pre /\ ={publicseed, noiseseed}); 1: by sim.
 swap {1} [7..8] -5.
-seq 3 3 : (#pre /\ ={a}); 1: by sim.
+seq 3 3 : (#pre /\ ={a}); 1: by call auxgenmatrix_good_zero; auto => />.
 swap {1} [6..23] -2.
 seq 21 23 : (#pre /\ ={skpv,e,pkpv}); 1: by  sim; auto => />. 
 swap{1} [1..2] 16.
@@ -435,12 +500,15 @@ sp 3 0.
 
 swap {2} 6 -5.
 seq 1 1 : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
-+ by inline G(H).sample; inline AuxKyber.sample_seeds; conseq => />; sim; auto => />; smt(W64.to_uintK W64.to_uint_small).
++ by inline G(H).sample; inline AuxKyber.sample_seeds; conseq => />; 
+    sim; auto => />; smt(W64.to_uintK W64.to_uint_small).
 
 swap {2} [7..8] -5.
 seq 3 3 : (#pre /\ a{2} = lift_matrix a{1} /\
-            pos_bound2304_cxq a{1} 0 2304 2). 
-admit. (* To Do: HUGE *)
+            pos_bound2304_cxq a{1} 0 2304 2).
++ inline AuxKyber.__gen_matrix; conseq />.
+  seq 6 3 : (a0{1}=a{2}); 1: by sim.
+  by auto => />;  smt(matrix_unlift).
 
 swap {2} [5..10]  -2.
 swap {1} 1 1.
@@ -656,6 +724,14 @@ qed.
 
 (***************************************************)
 
+equiv auxgenmatrix_good_one :
+  M.__gen_matrix ~ AuxKyber.__gen_matrix_transposed :
+    transposed{1} = W64.one /\ ={seed} ==> ={res}.
+proc. 
+inline Parse(XOF, H).sample_real.
+inline M.__rej_uniform.
+admitted. (* define XOF so that this works *)
+
 equiv auxenc_good :
   M.indcpa_enc_jazz ~ AuxKyber.indcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
@@ -675,7 +751,7 @@ swap {1} [10..12] -8.
 seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
 
 swap {1} [10..11] -8.
-seq 3 3 : (#pre /\ ={at}); 1: by sim.
+seq 3 3 : (#pre /\ ={at}); 1: by call auxgenmatrix_good_one;auto => /> /#.
 
 swap {1} 4 -3.
 swap {1} 8 -6.
@@ -794,7 +870,9 @@ by move : (H k _);1:smt(); rewrite initiE //= /#.
 swap {2} [6..7] -4. 
 seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
             pos_bound2304_cxq at{1} 0 2304 2). 
-admit. (* To Do: HUGE but same as kg*)
++ inline AuxKyber.__gen_matrix_transposed; conseq />.
+  seq 6 3 : (a{1}=aT{2}); 1: by sim.
+  by auto => />;  smt(matrix_unlift).
 
 swap {2} 12 -11.
 seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\
@@ -1005,7 +1083,7 @@ ecall{1}(poly_reduce_corr (lift_array256 v{1})).
 by auto =>/> /#. 
 
 qed.
-*)
+
 lemma kyber_correct_dec mem _msgp _ctp _skp : 
    equiv [ M.indcpa_dec_jazz ~ Kyber(G,XOF,PRF,H).dec : 
      valid_ptr _msgp 32 /\
