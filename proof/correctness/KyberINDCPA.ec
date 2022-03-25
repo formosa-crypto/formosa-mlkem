@@ -11,6 +11,53 @@ import Vector.
 import Fq.
 import Zq.
 
+(** Aux *)
+op valid_disj_reg(p1 : address, l1 : int, p2 : address, l2 : int) =
+      valid_ptr p1 l1 /\ valid_ptr p2 l2 /\ ((p1 + l1) <= p2  || (p2 + l2) <= p1).
+
+lemma matrixcols (m : 'a Array2304.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3 =>
+    Array256.map f (subarray256 ((Array768.init ((fun (i_0 : int) => m.[j*768 + i_0])))) i) =
+                      (subarray256 (subarray768 (map f m) j) i).
+move => ib jb;rewrite /subarray256 /subarray768 tP => k kb.
+by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
+qed. 
+
+lemma subliftsub (a : W16.t Array768.t) i k: 0<=i <3 => 0<=k<256 =>
+    (lift_array256 (subarray256 a i)).[k] = (lift_array768 a).[256*i+k].
+move => ib kb; rewrite /subarray256 /lift_array256 /lift_array768.
+by rewrite !mapiE 1,2:/# /= !initiE /#.
+qed.
+
+lemma subsublift (a : W16.t Array2304.t) i j k:
+  0 <= i < 3 => 0<= j < 3 => 0 <=  k < 256 =>
+  (subarray256 (subarray768 (lift_array2304 a) i) j).[k] =
+(lift_array768 ((init (fun x => a.[i*768 + x])))%Array768).[256 * j + k].
+move => *; rewrite /subarray256 /subarray768 /lift_array2304 /lift_array768.
+by rewrite !mapiE 1:/# /= !initiE 1,2:/# /= !initiE 1:/# /= mapiE /#.
+qed.
+
+lemma dotpmm (a : matrix) (v : vector) r :
+  0 <= r < 3 =>
+  (ntt (dotp (invnttv (offunv (fun (i : int) => a.[r, i]))) (invnttv v))) =
+  (ntt_mmul a v).[r].
+move => rb.
+rewrite /ntt_mmul /dotp /kvec !offunvE //=.
+rewrite !Big.BAdd.big_consT /= !Big.BAdd.big_nil => />. 
+rewrite !offunvE //= !offunvK /= /vclamp /kvec /=.
+by rewrite !NTT_Fq.add_comm_ntt !NTT_Fq.mul_comm_ntt !NTT_Fq.nttK NTT_Fq.nttZero. 
+qed.
+
+lemma nttvecinv v i: 0 <= i < kvec => ntt (invnttv v).[i] = v.[i]
+  by move => ib; rewrite /invnttv /mapv/= offunvE //= NTT_Fq.nttK.
+
+lemma liftarrayvector a i k : 0<=i<3 => 0<=k<256 =>
+         (lift_vector a).[i].[k] = (lift_array768 a).[256*i+k].
+move => ib lb; rewrite /lift_vector /lift_array768 offunvE // mapiE 1:/# /=.
+by rewrite /lift_array256 /subarray256 mapiE //= initiE //=.
+qed.
+(*******)
+
+
 module H : KyberPKE.RO.POracle = {
   proc o(x : KyberPKE.RO.in_t) : KyberPKE.RO.out_t = { return witness;  }
 }.
@@ -64,10 +111,7 @@ module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
   proc next_bytes(_N : int) : W8.t Array128.t = { return witness; }
 }.
 
-op valid_disj_reg(p1 : address, l1 : int, p2 : address, l2 : int) =
-      valid_ptr p1 l1 /\ valid_ptr p2 l2 /\ ((p1 + l1) <= p2  || (p2 + l2) <= p1).
-
-
+(*
 module AuxKyber= {
 proc sample_seeds(randomnessp : W64.t) : W8.t Array32.t * W8.t Array32.t = {
     var i,j,c;
@@ -355,18 +399,6 @@ by sim.
 
 qed.
 
-lemma matrixcols (m : 'a Array2304.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3 =>
-    Array256.map f (subarray256 ((Array768.init ((fun (i_0 : int) => m.[j*768 + i_0])))) i) =
-                      (subarray256 (subarray768 (map f m) j) i).
-move => ib jb;rewrite /subarray256 /subarray768 tP => k kb.
-by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
-qed. 
-
-lemma subliftsub (a : W16.t Array768.t) i k: 0<=i <3 => 0<=k<256 =>
-    (lift_array256 (subarray256 a i)).[k] = (lift_array768 a).[256*i+k].
-move => ib kb; rewrite /subarray256 /lift_array256 /lift_array768.
-by rewrite !mapiE 1,2:/# /= !initiE /#.
-qed.
 
 (* We model G exactly as the implementation does it *)
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
@@ -667,33 +699,6 @@ by sim.
 
 qed.
 
-lemma subsublift (a : W16.t Array2304.t) i j k:
-  0 <= i < 3 => 0<= j < 3 => 0 <=  k < 256 =>
-  (subarray256 (subarray768 (lift_array2304 a) i) j).[k] =
-(lift_array768 ((init (fun x => a.[i*768 + x])))%Array768).[256 * j + k].
-move => *; rewrite /subarray256 /subarray768 /lift_array2304 /lift_array768.
-by rewrite !mapiE 1:/# /= !initiE 1,2:/# /= !initiE 1:/# /= mapiE /#.
-qed.
-
-lemma dotpmm (a : matrix) (v : vector) r :
-  0 <= r < 3 =>
-  (ntt (dotp (invnttv (offunv (fun (i : int) => a.[r, i]))) (invnttv v))) =
-  (ntt_mmul a v).[r].
-move => rb.
-rewrite /ntt_mmul /dotp /kvec !offunvE //=.
-rewrite !Big.BAdd.big_consT /= !Big.BAdd.big_nil => />. 
-rewrite !offunvE //= !offunvK /= /vclamp /kvec /=.
-by rewrite !NTT_Fq.add_comm_ntt !NTT_Fq.mul_comm_ntt !NTT_Fq.nttK NTT_Fq.nttZero. 
-qed.
-
-lemma nttvecinv v i: 0 <= i < kvec => ntt (invnttv v).[i] = v.[i]
-  by move => ib; rewrite /invnttv /mapv/= offunvE //= NTT_Fq.nttK.
-
-lemma liftarrayvector a i k : 0<=i<3 => 0<=k<256 =>
-         (lift_vector a).[i].[k] = (lift_array768 a).[256*i+k].
-move => ib lb; rewrite /lift_vector /lift_array768 offunvE // mapiE 1:/# /=.
-by rewrite /lift_array256 /subarray256 mapiE //= initiE //=.
-qed.
 
 lemma kyber_correct_enc mem _coinsp _msgp _ctp _pkp : 
    equiv [ M.indcpa_enc_jazz ~ Kyber(G,XOF,PRF,H).enc: 
@@ -1000,7 +1005,7 @@ ecall{1}(poly_reduce_corr (lift_array256 v{1})).
 by auto =>/> /#. 
 
 qed.
-
+*)
 lemma kyber_correct_dec mem _msgp _ctp _skp : 
    equiv [ M.indcpa_dec_jazz ~ Kyber(G,XOF,PRF,H).dec : 
      valid_ptr _msgp 32 /\
@@ -1015,7 +1020,7 @@ lemma kyber_correct_dec mem _msgp _ctp _skp :
        c1 = load_array960 Glob.mem{1} _ctp /\
        c2 = load_array128 Glob.mem{1} (_ctp + 960)
        ==> 
-     oget res{2} = load_array32 mem _msgp
+     oget res{2} = load_array32 Glob.mem{1} _msgp
 ].
 proc => /=. 
 swap {2} 3 -2.
@@ -1074,6 +1079,14 @@ ecall {1} (invntt_correct (lift_array256 t{1})).
   by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
 
 seq 2 0 : (#pre /\
-           lift_array256 mp{1} =  v{2} &+ (&-) (invntt (ntt_dotp s{2} (nttv u{2}))) /\ signed_bound_cxq mp{1} 0 256 3).
-print poly_sub_corr_impl.
-CCCCC
+           lift_array256 mp{1} =  v{2} &+ (&-) (invntt (ntt_dotp s{2} (nttv u{2}))) /\ 
+           signed_bound_cxq mp{1} 0 256 3).
+have H := poly_sub_corr_alg 1 2 _ _ => //.
+ecall{1} (H (lift_array256 v{1}) (lift_array256 t{1})); 1: by  auto => /> /#.
+
+seq 1 1 : (valid_ptr _msgp 32 /\ pos_bound256_cxq mp{1} 0 256 2 /\
+           Glob.mem{1} = mem /\ to_uint msgp{1} = _msgp /\ lift_array256 mp{1} = mp{2}).
+ecall{1}(poly_reduce_corr (lift_array256 mp{1})); 1: by auto => /> /#.
+
+by ecall(poly_tomsg_corr (lift_array256 mp{1})  _msgp mem); auto => /> /#.
+qed.

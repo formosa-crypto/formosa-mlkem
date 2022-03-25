@@ -403,6 +403,30 @@ lemma poly_sub_corr _a _b ab bb :
               inFq (to_sint res.[k]) = _a.[k] - _b.[k]] = 1%r 
    by move => *;conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _).
 
+lemma poly_sub_corr_alg ab bb :
+  0 <= ab <= 4 =>
+  0 <= bb <= 4 =>
+  forall _a _b, 
+  phoare [ Jindcpa.M._poly_sub :
+           _a = lift_array256 ap /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           lift_array256 res = _a &+ (&-) _b] = 1%r.
+move => abbnd bbbnd _a _b.
+conseq (poly_sub_corr _a _b ab bb abbnd bbbnd). 
+move => ? [#] ??r [#] ? sum. 
+rewrite /signed_bound_cxq /lift_array256 /= tP /= !mapE /=. 
+split.
++ move => [#] subb subv; split; 1: by smt().
+  move => i ib; move : (subv i ib); rewrite !initiE //=.
+  by rewrite  /(&+) /(&-) /= map2E //= initiE //=  mapiE //=. 
++ move => [#] subb subv; split; 1: by smt().
+  move => i ib; move : (subv i ib); rewrite !initiE //=.
+  by rewrite  /(&+) /(&-) /= map2E //= initiE //=  mapiE //=. 
+qed.
 
 lemma poly_add_corr_h _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
