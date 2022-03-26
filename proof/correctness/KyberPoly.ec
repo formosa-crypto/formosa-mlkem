@@ -938,25 +938,6 @@ lemma mul_congr a b : Fqcgr (asint (inFq b) * asint (inFq a)) (b * a) by rewrite
 
 import NTT_Fq.
 
-(* 
-lemma mont_lift_commute_inv  a b :
-  array_mont_inv a = lift_array128  b =>
-     forall k, 0<=k<127 => a.[k] * inFq R = inFq (to_sint b.[k]).
-proof.
-rewrite /array_mont_inv /lift_array128 /= tP => H.
-move => k kb; move : (H k _); 1: smt(); rewrite !mapiE 1:/# => <-.
-by move => *;rewrite set_neqiE 1,2:/# mapiE /#.
-qed.
-
-lemma mont_lift_commute  a b :
-  array_mont a = lift_array128  b =>
-     forall k, 0<=k<128 => a.[k] * inFq R = inFq (to_sint b.[k]).
-proof.
-rewrite /array_mont /lift_array128 /= tP => H.
-by move => k kb; move : (H k _); 1: smt(); rewrite !mapiE 1,2:/# /=.
-qed.
-*)
-
 equiv ntt_correct_aux :
      NTT.ntt ~ M._poly_ntt : 
         r{1} = lift_array256 rp{2} /\  
@@ -1140,7 +1121,6 @@ lemma ntt_correct_h (_r0 : Fq Array256.t):
                ntt _r0 = lift_array256 res /\
                forall (k : int), 0 <= k && k < 256 => bpos16 res.[k] (2 * q)]
  by conseq (ntt_correct _r0). 
-
 
 lemma ntt_ll : islossless M._poly_ntt by admit.
 
