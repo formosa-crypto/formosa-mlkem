@@ -170,7 +170,12 @@ module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
        state <- witness;
        state <@ M._shake128_absorb34(state, extseed);
   }
-  proc next_bytes() : W8.t Array168.t = { return witness; }
+  proc next_bytes() : W8.t Array168.t = { 
+       var buf;
+       buf <- witness;
+       (state, buf) <@ M._shake128_squeezeblock(state, buf);
+       return buf; 
+  }
 }.
 
 module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
@@ -254,15 +259,15 @@ proc sample_noise2_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Arr
   while (i < kvec) {                 
     c <@ CBD2(PRF, H).sample_real(_N);
     noise1 <- set noise1 i c;                   
-    i <- i + 1;                       
     _N <- _N + 1;                     
+    i <- i + 1;                       
   }                                  
   i <- 0;                             
   while (i < kvec) {                 
     c <@ CBD2(PRF, H).sample_real(_N);
     noise2 <- set noise2 i c;                   
-    i <- i + 1;                       
     _N <- _N + 1;                     
+    i <- i + 1;                       
   }                                  
 
   return (unlift_vector noise1,unlift_vector noise2,_N);
@@ -496,7 +501,7 @@ while {1} (={i,j} /\ 0<=i{1}<3 /\ 0<j{1} + 1<=3  /\
   by move => *;rewrite !set_eqiE /#. 
 
 wp;while  (
-   stransposed{1} = (if trans{2} then W64.one else W64.zero) /\
+   stransposed{1} = (if trans{2} then W64.one else W64.zero) /\ state{1} = XOF.state{2} /\
          (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\ 
    ={i,j} /\ 0<=i{1}<3 /\ 0<j{1} + 1<=3  /\
    (forall kk, 0 <= kk < i{1}*768 + j{1}*256 => 
@@ -527,9 +532,31 @@ wp;while  (
     + by rewrite of_uintK /=; smt(modz_small).
     move => kl ll rl; split; 1: smt().
     move => ? H H0 H1 *; split; 1: smt().
-    move => k kbl kbh; split.
-    (* HANG ON! WHAT IS THE STATE? *)
-admitted. (* define XOF so that this works *)
+    move => k kbl kbh.
+    case (k < i{2} * 768 + j{2} * 256).
+    + admit.
+    admit.
+  rcondt {1} 2; 1: by move => *; auto => />; smt(W64.WRingA.oner_neq0). 
+  auto => /> &1 &2 *; split.
+  + apply Array34.tP => k kb; rewrite initiE //=.
+    case (k < 32); 1: by  move => *;rewrite !Array34.set_neqiE /#.
+    case (k = 32); 1: by move => *;rewrite Array34.set_neqiE 1,2:/# Array34.set_eqiE /#.  
+    by move => *;rewrite Array34.set_eqiE /#. 
+  move => *;do split; 2,3,4:smt().
+  + by move => k *; rewrite  !Array34.set_neqiE /#.
+  move => *;do split; 1,2:smt().
+  + by rewrite of_uintK /=; smt(modz_small).
+  move => kl ll rl; split; 1: smt().
+  move => ? H H0 H1 *; split; 1: smt().
+  move => k kbl kbh.
+  case (k < i{2} * 768 + j{2} * 256).
+  + admit.
+  admit.
+swap {1} 1 1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
++ inline XOF(H).next_bytes; sp;wp.
+  call(_: arg{1}.`1 = arg{2}.`1 ==> ={res}); last by auto => />.
+  proc. admit.
+admitted. (* obviously works :-) *)
 
 
 equiv sample_noise_good2 :
@@ -708,9 +735,9 @@ seq 3 3 : (#pre /\ a{2} = lift_matrix a{1} /\
          (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a0{1}.[ii,jj] = a{2}.[ii,jj]) /\
          (forall jj, 0 <= jj <j0{1} => a0{1}.[i0{1},jj] = a{2}.[i0{1},jj])); last 
             by auto => />  /#.
-  wp; call(_: true); 1: by sim.
-  wp; call(_: true); 1: by sim.
-  by auto => /> &1 &2;  smt(offunmK). 
+  wp; call(_: ={XOF.state}); 1: by sim.
+  wp; call(_: ={arg} ==> ={XOF.state}); last by auto => /> &1 &2;  smt(offunmK). 
+  admit.
   
 swap {2} [5..10]  -2.
 swap {1} 1 1.
@@ -1033,9 +1060,9 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
          (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a{1}.[ii,jj] = aT{2}.[ii,jj]) /\
          (forall jj, 0 <= jj <j{1} => a{1}.[i0{1},jj] = aT{2}.[i0{1},jj])); last 
             by auto => />  /#.
-  wp; call(_: true); 1: by sim.
-  wp; call(_: true); 1: by sim.
-  by auto => />;  smt(offunmK). 
+  wp; call(_: ={XOF.state}); 1: by sim.
+  wp; call(_: ={arg} ==> ={XOF.state}); last by auto => />;  smt(offunmK). 
+  admit.
 
 swap {2} 12 -11.
 seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\

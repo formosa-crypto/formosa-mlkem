@@ -788,15 +788,15 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      while (i < kvec) {
         c <@ CBD2(PRF,O).sample_real(_N);
         s <- set s i c;
-        i <- i + 1;
         _N <- _N + 1;
+        i <- i + 1;
      }         
      i <- 0;
      while (i < kvec) {
         c <@ CBD2(PRF,O).sample_real(_N);
         e <- set e i c;
-        i <- i + 1;
         _N <- _N + 1;
+        i <- i + 1;
      }      
      s <- nttv s;
      e <- nttv e; 
@@ -837,15 +837,15 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       while (i < kvec) {
         c <@ CBD2(PRF,O).sample_real(_N);
         rv <- set rv i c;
-        i <- i + 1;
         _N <- _N + 1;
+        i <- i + 1;
       }         
       i <- 0;
       while (i < kvec) {
         c <@ CBD2(PRF,O).sample_real(_N);
         e1 <- set e1 i c;
-        i <- i + 1;
         _N <- _N + 1;
+        i <- i + 1;
       }      
       e2 <@ CBD2(PRF,O).sample_real(_N);
       rhat <- nttv rv;
