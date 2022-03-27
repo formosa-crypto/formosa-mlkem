@@ -827,7 +827,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
         while (j < kvec) {
            XOF(O).init(rho,i,j);
            c <@ Parse(XOF,O).sample_real();
-           aT.[(j,i)] <- c; (* this is the transposed matrix *)
+           aT.[(i,j)] <- c; (* this is the transposed matrix *)
            j <- j + 1;
         }
         i <- i + 1;

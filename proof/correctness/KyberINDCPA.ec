@@ -1,7 +1,7 @@
 require import AllCore IntDiv.
 from Jasmin require import JModel.
 require import Fq Kyber KyberPoly KyberPolyVec W16extra NTT_Fq.
-require import Array32 Array34 Array64 Array128 Array168 Array256 Array768.
+require import Array25 Array32 Array34 Array64 Array128 Array168 Array256 Array768.
 require import Array960 Array1152 Array2304.
 
 require import Jindcpa.
@@ -162,7 +162,14 @@ module (G : G_t) (H : KyberPKE.RO.POracle) = {
 }.
 
 module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
-  proc init(rho : W8.t Array32.t, i : int, j : int) : unit = {}
+  var state : W64.t Array25.t
+  proc init(rho : W8.t Array32.t, i : int, j : int) : unit = {
+       var extseed : W8.t Array34.t;
+       extseed <- Array34.init
+        (fun k => if k < 32 then rho.[k] else if k=32 then W8.of_int i else W8.of_int j);
+       state <- witness;
+       state <@ M._shake128_absorb34(state, extseed);
+  }
   proc next_bytes() : W8.t Array168.t = { return witness; }
 }.
 
@@ -187,7 +194,7 @@ proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
     while (j < kvec) {                
       XOF(H).init(seed, if trans then i else j, if trans then j else i);        
       c <@ Parse(XOF, H).sample_real();
-      a <- a.[if trans then j else i, if trans then i else j <- c];         
+      a <- a.[i, j <- c];         
       j <- j + 1;                      
     }                                 
     i <- i + 1;                       
@@ -440,10 +447,10 @@ proc => /=.
 inline Parse(XOF, H).sample_real.
 inline M.__rej_uniform.
 seq 6 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
-seq 2 0 : (#pre /\ forall k, 0<=k<32 => extseed {1}.[k] = seed{1}.[k]).
+seq 2 0 : (#pre /\ forall k, 0<=k<32 => extseed {1}.[k] = seed{2}.[k]).
 + conseq => />; 1: smt().
   while{1} (#pre /\ 0<=j{1}<=32 /\
-      forall k, 0<=k<j{1} => extseed {1}.[k] = seed{1}.[k]) (32-j{1}); 
+      forall k, 0<=k<j{1} => extseed {1}.[k] = seed{2}.[k]) (32-j{1}); 
          last by auto => /#.
   auto => /> &hr *; do split; 1..2,4..: by smt().
   by move => k kb ?; case (k < j{hr}); move => *; 
@@ -459,7 +466,7 @@ while(#pre /\ ={i} /\ 0<=i{1}<=3 /\
   by rewrite inFqK modz_small 1:/# to_sint_unsigned 1: /# to_uintK. 
 
 wp;while(stransposed{1} = (if trans{2} then W64.one else W64.zero) /\
-         (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{1}.[k0]) /\
+         (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
          ={i,j} /\ 0<=i{1}<=3 /\ 0<=j{1}<=3  /\ i{1} < 3 /\
    forall k, 0 <= k < i{1}*768 + j{1}*256 => 
          a{2}.[k %/ 768,k %% 768 %/ 256].[k %% 256] = inFq (to_sint r{1}.[k]) /\
@@ -490,7 +497,7 @@ while {1} (={i,j} /\ 0<=i{1}<3 /\ 0<j{1} + 1<=3  /\
 
 wp;while  (
    stransposed{1} = (if trans{2} then W64.one else W64.zero) /\
-         (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{1}.[k0]) /\ 
+         (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\ 
    ={i,j} /\ 0<=i{1}<3 /\ 0<j{1} + 1<=3  /\
    (forall kk, 0 <= kk < i{1}*768 + j{1}*256 => 
          a{2}.[kk %/ 768,kk %% 768 %/ 256].[kk %% 256] = inFq (to_sint r{1}.[kk]) /\
@@ -500,7 +507,28 @@ wp;while  (
                   inFq (to_sint poly{1}.[kk]) /\
          bpos16 poly{1}.[kk] q) /\ 
    to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256); last first.
-
++ inline XOF(H).init; wp; call(_: arg{1}.`2 = arg{2}.`2 ==> ={res}).
+  + proc; seq 1 1: (#pre /\ ={state}); last by sim.
+    call(_: true ==> ={res}); last by auto => />.
+    + proc; while (={i} /\ 0<=i{1}<=25 /\ forall k, 0<=k<i{1} => state{1}.[k] = state{2}.[k]);
+          1: by auto => />; smt(Array25.set_eqiE Array25.set_neqiE).
+      auto => /> *; split; 1: by smt().
+      by move => *;rewrite tP => k kb; smt().
+  case (trans{2}).
+  + rcondf {1} 2; 1: by move => *; auto => />; smt(W64.WRingA.oner_neq0). 
+    auto => /> &1 &2 *; split.
+    + apply Array34.tP => k kb; rewrite initiE //=.
+      case (k < 32); 1: by  move => *;rewrite !Array34.set_neqiE /#.
+      case (k = 32); 1: by move => *;rewrite Array34.set_neqiE 1,2:/# Array34.set_eqiE /#.  
+      by move => *;rewrite Array34.set_eqiE /#. 
+    move => *;do split; 2,3,4:smt().
+    + by move => k *; rewrite  !Array34.set_neqiE /#.
+    move => *;do split; 1,2:smt().
+    + by rewrite of_uintK /=; smt(modz_small).
+    move => kl ll rl; split; 1: smt().
+    move => ? H H0 H1 *; split; 1: smt().
+    move => k kbl kbh; split.
+    (* HANG ON! WHAT IS THE STATE? *)
 admitted. (* define XOF so that this works *)
 
 
@@ -999,11 +1027,11 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
 + inline AuxKyber.__gen_matrix; conseq />.
   seq 7 3 : (a{1}=aT{2});  last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
-         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a{1}.[jj,ii] = aT{2}.[jj,ii]); last  
+         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a{1}.[ii,jj] = aT{2}.[ii,jj]); last  
           by auto => />; smt(eq_matrixP).
   wp; while (i0{1} = i{2} /\ j{1} = j{2} /\ 0<=i0{1}<kvec /\ 0<=j{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
-         (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a{1}.[jj,ii] = aT{2}.[jj,ii]) /\
-         (forall jj, 0 <= jj <j{1} => a{1}.[jj,i0{1}] = aT{2}.[jj,i0{1}])); last 
+         (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a{1}.[ii,jj] = aT{2}.[ii,jj]) /\
+         (forall jj, 0 <= jj <j{1} => a{1}.[i0{1},jj] = aT{2}.[i0{1},jj])); last 
             by auto => />  /#.
   wp; call(_: true); 1: by sim.
   wp; call(_: true); 1: by sim.
