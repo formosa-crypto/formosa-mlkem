@@ -1,16 +1,14 @@
-require import AllCore List IntDiv CoreMap IntDiv Real Number.
+require import AllCore List IntDiv CoreMap IntDiv Real Number Ring StdOrder.
+
 from Jasmin require  import JModel JMemory.
 require import IntDiv_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
-require import Fq.
-require import NTT_Fq.
-require import Kyber.
+require import Fq NTT_Fq Kyber.
 
 hint simplify range_ltn, range_geq.
 
 theory KyberPoly.
 
-import Fq. 
-import Zq.
+import Fq Zq IntOrder.
 
 import SignedReductions.
 
@@ -1122,7 +1120,56 @@ lemma ntt_correct_h (_r0 : Fq Array256.t):
                forall (k : int), 0 <= k && k < 256 => bpos16 res.[k] (2 * q)]
  by conseq (ntt_correct _r0). 
 
-lemma ntt_ll : islossless M._poly_ntt by admit.
+lemma ntt_ll : islossless M._poly_ntt.
+proof.
+proc; call poly_reduce_ll.
+while (   1 <= to_uint len /\ to_uint len <= 128
+       /\ exists l, 0 <= l /\ to_uint len = 2^l
+       /\ 0 <= to_uint zetasctr <= 127
+       /\ 2*(to_uint zetasctr+1)*to_uint len = 256) (to_uint len);
+  last by auto => />; split; [ by exists 7 | by smt()].
+move=> z; wp; sp => *; exists *zetasctr; elim* => zetasctr1 l.
+while (   1 <= to_uint len /\ to_uint len <= 128 /\ 0 <= l /\ to_uint len = 2 ^ l
+       /\ 0 <= to_uint zetasctr1 <= 127
+       /\ 0 <= to_uint zetasctr <= 127
+       /\ 2 * (to_uint zetasctr1+ 1) * to_uint len = 256
+       /\ 2 <= to_uint len
+       /\ 2* (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256
+       /\ 0 <= to_uint start <= 256
+       /\ to_uint start = 2*(to_uint zetasctr - to_uint zetasctr1)* to_uint len) (256 -to_uint start); last first.
++ wp; skip => &m [#] ?????????; rewrite !uleE !of_uintK //= => ??; split;1: by smt(W64.to_uint0).
+  move => start zt0; rewrite !ultE !of_uintK //=; split;1: by smt(W64.to_uint0).
+  move => ge2576_start h2; split; last by rewrite to_uint_shr; smt(). 
+  do 2! (split; first by rewrite to_uint_shr; smt()).
+have gt0_l: 0 < l. 
+  have /ler_eqVlt [<<- /=|/#]: 0 <= l by move: h2 => [#].
+  have: 2 <= to_uint len{m} by smt().
+  have ->: to_uint len{m} = 2^0 by move: h2 => [#] *.
+  by rewrite expr0.
+exists (l-1); do! split; 1,3,4:smt().
++ rewrite to_uint_shr to_uint1 //=; have ->: to_uint len{m} = 2^l by move: h2=> [#].
+  by rewrite  -{1}(@IntID.subrK l 1) JUtils.powS_minus /#.
+by rewrite to_uint_shr //= /#.
+
+move=> *; wp.
+while (   to_uint cmp = to_uint start + to_uint len 
+       /\ 0 <= to_uint start <= 256
+       /\ 1 <= to_uint len /\ to_uint len <= 128
+       /\ to_uint start <= to_uint j <= to_uint start + to_uint len
+       /\ 0 <= to_uint zetasctr <= 127
+       /\ 2 * (to_uint zetasctr1 + 1) * to_uint len = 256
+       /\ to_uint start = 2*(to_uint zetasctr -1 - to_uint zetasctr1) * to_uint len
+       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256) (to_uint start + to_uint len - to_uint j); last first. 
++ wp; skip; rewrite !ultE !of_uintK /= => *; split; 1:by rewrite !to_uintD_small //= /#.
+  move=> *; split; 1: by rewrite to_uintD_small //= 1:/# !ultE //= => [#] *; rewrite to_uintD_small //= /#.
+  rewrite !ultE to_uintD_small 1:/#.
+  move => *; split; last by  rewrite to_uintD_small //= /#.
+  do 6! (split; first by smt()).
+  split; 1: by smt().
+  by rewrite !to_uintD_small //= /#. 
+move => *;wp; call fqmul_ll; auto => /> &1; rewrite !ultE /=  => *.
+rewrite !to_uintD_small /= /#.
+qed.
 
 (*******INVERSE *******)
 
@@ -1371,7 +1418,70 @@ lemma invntt_correct_h (_r : Fq Array256.t):
              forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
 by conseq (invntt_correct _r). 
 
-lemma invntt_ll : islossless M._poly_invntt by admit.
+lemma invntt_ll : islossless M._poly_invntt.
+proof.
+proc.
+while(0<=to_uint j<=256) (256-to_uint j).
++ move => *; auto => />;call fqmul_ll; auto => /> &1.
+  by rewrite ultE /= => ???; rewrite !to_uintD_small /= /#.
+wp.
+while (   2 <= to_uint len /\ to_uint len <= 256
+       /\ exists l, 0 <= l /\ to_uint len = 2^l
+       /\ 0 <= to_uint zetasctr <= 128
+       /\ to_uint zetasctr * to_uint len = 128 * (to_uint len - 2)) (256-to_uint len);
+ last first.
++ auto => />; split; 1: by exists 1 => /=.
+  move => len zct;rewrite !uleE /=;split; [ smt() | move => *;rewrite ultE /#]. 
+move => *; wp; sp=> *; move=> *; exists *zetasctr.
+elim*=> zetasctr1 l.
+while (   1 <= to_uint len /\ to_uint len <= 128 /\ 0 <= l /\ to_uint len = 2 ^ l
+       /\ 0 <= to_uint zetasctr1 <= 128
+       /\ 0 <= to_uint zetasctr <= 128
+       /\ to_uint zetasctr1 * to_uint len = 128 * (to_uint len - 2)
+       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256
+       /\ 0 <= to_uint start <= 256
+       /\ to_uint start = 2 * (to_uint zetasctr - to_uint zetasctr1)*to_uint len) (256 -to_uint start); last first.
++ wp; skip;rewrite uleE /= => [#] &m h.
+  split;1: smt(W64.to_uint0). 
+  move => start zetasctr; split;first by rewrite ultE;smt(W64.to_uint0).
+  rewrite ultE /=;move=> ge256_st h2; split.
+  rewrite !to_uint_shl //=; do split; 1,2:by smt(). 
+  rewrite !(modz_small _ 18446744073709551616) 1:/#.
+have gt0_l: 0 < l.
+  have /ler_eqVlt [<<- /=|/#]: 0 <= l by move: h2 => [#].
+  have: 2 <= to_uint len{m} by move: h => [#] *.
+  have ->: to_uint len{m} = 2^0 by move: h2 => [#] *.
+  by rewrite expr0.
+exists (l+1); do! split; 1,3,4,5:smt().
++ have ->: to_uint len{m} = 2^l by move: h2=> [#].
+  by rewrite exprS 1:/# mulrC.
+by rewrite to_uint_shl //= /#.
+
+move => *; wp.
+while (   to_uint cmp = to_uint start + to_uint len 
+       /\ 0 <= to_uint start <= 256
+       /\ 1 <= to_uint len /\ to_uint len <= 128  /\ to_uint start <= to_uint j <= to_uint start + to_uint len
+       /\ 0 <= to_uint zetasctr <= 128
+       /\ to_uint zetasctr1 * to_uint len = 128 * (to_uint len - 2)
+       /\ to_uint start = 2 * (to_uint zetasctr -1 - to_uint zetasctr1) * to_uint len
+       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256) (to_uint start + to_uint len - to_uint j); last first.
++ wp;skip;rewrite ultE /= => *.
+  rewrite !to_uintD_small /= 1..2:/#; split; 1: by smt().
+  move => *; rewrite !ultE /= to_uintD_small /= 1:/#.
+  split;  first by smt().
+  move => *; rewrite  to_uintD_small /= 1:/#.
+  split; last  by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; first by smt().
+  split; last by smt().
+  smt().
+move => *; wp; call fqmul_ll; wp; call barrett_reduce_ll; auto => />. 
+by move => &hr; rewrite !ultE => *; rewrite !to_uintD_small /= /#.
+qed.
 
 (* some auxilliary definitions *) 
 
