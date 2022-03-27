@@ -64,8 +64,8 @@ lemma round_add (x : real) (y : int) :
 G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 XOF =
 fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
-fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> reg ptr u64[25], reg ptr u8[SHAKE128_RATE] => RATE is 168
-
+fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> 
+    reg ptr u64[25], reg ptr u8[SHAKE128_RATE] => RATE is 168
 PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 
 *)
@@ -806,7 +806,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      return ((tv,rho),sv);
   }
 
-  proc enc(pk : pkey, m : plaintext) : ciphertext = {
+  (* Spec gives a derandomized enc that matches this code *)
+  proc enc_derand(pk : pkey, m : plaintext, r : W8.t Array32.t) : ciphertext = {
       var _N,i,j,c,tv,rho,rv,e1,e2,rhat,u,v,mp,c2,thati;
       var that : vector;
       var aT : matrix;
@@ -818,7 +819,6 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       that <- witness;
       (tv,rho) <- pk;
       _N <- 0;
-      (* Spec is silly here *)
       thati <@ EncDec.decode12_vec(tv); 
       that <- ofipolyvec thati;
       i <- 0;
@@ -832,7 +832,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
         }
         i <- i + 1;
       } 
-      (* PRF(O).init(r); Weird that spec does not use G here! *)         
+      PRF(O).init(r);     
       i <- 0;
       while (i < kvec) {
         c <@ CBD2(PRF,O).sample_real(_N);
@@ -855,6 +855,13 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       c1 <@ EncDec.encode10_vec(compress_polyvec 10 u); 
       c2 <@ EncDec.encode4(compress_poly 4 v);
       return (c1,c2);
+  }
+
+  proc enc(pk : pkey, m : plaintext) : ciphertext = {
+     var rho,r,c;
+     (rho,r) <@ G(O).sample(); (* We just take the same as used in kgen *)   
+     c <@ enc_derand(pk,m,r);
+     return c;
   }
 
   proc dec(sk : skey, cph : ciphertext) : plaintext option = {
