@@ -600,9 +600,19 @@ wp; ecall (sample_noise_good2 noiseseed{2}).
 auto => /> resl resr ???; split; 1: smt().
 move => ? resl0.
 rewrite /unlift_poly /lift_array256 tP /= => bd k kbnd.
+
 rewrite !initiE //= !mapiE //=. 
 rewrite /as_sint qE /= inFqK qE. 
-admitted.
+case (0 <= to_sint resl0.[k]). 
++ move => *; rewrite modz_small 1:/#.  
+  have -> /=: !(1664 < to_sint resl0.[k]); 1: smt(). 
+  by rewrite to_sint_unsigned 1:/# to_uintK.
++ move => neg. admit.
+qed.
+
+move => *; have -> : to_sint resl0.[k] =  - to_uint resl0.[k]. admit.
+  rewrite modNz; 2:smt(). admit.
+  
 
 equiv auxkg_good :
   M.indcpa_keypair_jazz ~ AuxKyber.indcpa_keypair_jazz :
