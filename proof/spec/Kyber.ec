@@ -776,7 +776,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      while (i < kvec) {
         j <- 0;
         while (j < kvec) {
-           XOF(O).init(rho,i,j);
+           XOF(O).init(rho,j,i);
            c <@ Parse(XOF,O).sample_real();
            a.[(i,j)] <- c;
            j <- j + 1;
