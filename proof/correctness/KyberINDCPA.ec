@@ -513,7 +513,7 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
 + wp;conseq />; 1: smt().
   while{1} (
     0 <= to_uint k{1} <= 256 /\ to_uint l{1} = i{2} * 768 + j{2} * 256 + to_uint k{1} /\
-    0 <= j{2} + 1 <= 3 /\ 0<=i{2}<3 /\
+    0 <= j{2} < 3 /\ 0 <= i{2} < 3 /\
     (forall (k0 : int), 0 <= k0  < i{2} * 768 + j{2} * 256 =>
         a{2}.[k0 %/ 768, k0 %% 768 %/ 256].[k0 %% 256] = inFq (to_sint r{1}.[k0]) /\
         0 <= to_sint r{1}.[k0] < q) /\
@@ -523,11 +523,12 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
          0 <= to_sint r{1}.[k0] < q) /\
          (forall k, 0 <= k < 256 => bpos16 poly{1}.[k] q)
     ) (256 - to_uint k{1}); last first.
-  + auto => /> &1 &2 [#] 8?; rewrite /lift_array256 => ? k; do split; 2..4:smt(). 
+
+  + auto => /> &1 &2 [#] 8?; rewrite /lift_array256 => ? k; do split; 2:smt(). 
     + by rewrite of_uintK /= modz_small /#.
     move => kl ll rl; rewrite ultE /=; split; 1:  smt(). 
-    move => 8? k0 k0bl k0bh;do split; 2..: smt(). 
-    rewrite /("_.[_<-_]")%Kyber /= offunmE /= 1:/#. 
+    move => *;do split; 1,2: smt(). 
+    move => k0 k0bl k0bh;rewrite /("_.[_<-_]")%Kyber /= offunmE /= 1:/#. 
     case (k0 < i{2} * 768 + j{2} * 256); 1: smt().
     move => *.
     have -> :  k0 %/ 768 = i{2} by smt().
@@ -540,10 +541,33 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
   + by move => kk kkbl kkbh; rewrite set_neqiE /#. 
   + move => kk kkbl kkbh.
     case (kk < i{2} * 768 + j{2} * 256 + to_uint k{1}).
-    move => *. rewrite Array2304.set_neqiE. admit. smt(). smt().
-    move => *. rewrite Array2304.set_eqiE. admit. smt(). smt().
+    + by move => *; rewrite set_neqiE /#. 
+    by move => *; rewrite Array2304.set_eqiE /#.
 
 conseq />; 1: by smt().
+
+
+seq 3 1 : (
+   ={i, j} /\
+   (0 <= i{2} && i{2} < 3) /\
+   (0 <= j{2} && j{2} < 3) /\
+   (forall (k0 : int),
+     0 <= k0 && k0 < i{2} * 768 + j{2} * 256 =>
+     a{2}.[k0 %/ 768, k0 %% 768 %/ 256].[k0 %% 256] = 
+        inFq (to_sint r{1}.[k0]) /\ bpos16 r{1}.[k0] q) /\
+   state{1} = XOF.state{2}).
++ inline XOF(H).init; conseq />.
+  call absorb_ignore => /=; auto => /> &1 &2 *.
+  case(trans{2}).
+  + move => *; rewrite oner_neq0 /=. 
+    apply Array34.tP => k kb; rewrite initiE //=.
+    case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
+    case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
+    by move => *;rewrite set_eqiE /# .
+  move => * /=; apply Array34.tP => k kb; rewrite initiE //=.
+  case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
+  case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
+  by move => *;rewrite set_eqiE /# .
 admitted. (* obviously works :-) *)
 
 equiv get_noise_sample_noise :
