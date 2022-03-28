@@ -14,7 +14,7 @@ theory KyberPolyVec.
 import NTT_Fq.
 import Zq.
 import KyberPoly.
-import Matrix_.
+import KMatrix.
 
 (* AUX *)
 

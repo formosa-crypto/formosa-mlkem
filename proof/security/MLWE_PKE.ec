@@ -222,8 +222,6 @@ end section.
 section.
 
 declare module A <: Adversary.
-axiom A_guess_ll : islossless A.guess.
-axiom A_choose_ll : islossless A.choose.
 
 local module Game2(A : Adversary) = {
   proc main() = {
@@ -255,29 +253,33 @@ auto => /> *; split => *; [ ring | split => *; [ring | smt()]].
 qed.
 
 local lemma game2_prob &m :
+  islossless A.guess => islossless A.choose =>
   Pr[Game2(A).main() @ &m : res] = 1%r / 2%r.
 proof.
+move => A_guess_ll A_choose_ll.
 byphoare => //. 
 proc.
 rnd  (pred1 b')=> //=.
 conseq (: _ ==> true).
 + by move=> />; apply DBool.dbool1E.
-islossless; [ apply A_guess_ll | apply A_choose_ll].
+by islossless. 
 qed.
 
 lemma main_theorem &m :
+  islossless A.guess => islossless A.choose =>
   Pr[CPA(MLWE_PKE_H,A).main() @ &m : res] -  1%r / 2%r =
     Pr[H_MLWE(B1(A)).main(false,false) @ &m : res] -
        Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] + 
     Pr[H_MLWE(B2(A)).main(true,false) @ &m : res] -
        Pr[H_MLWE(B2(A)).main(true,true) @ &m : res].
 proof.
+move => A_guess_ll A_choose_ll.
 rewrite (hop1_left A &m).
 rewrite (hop1_right A &m).
 rewrite (hop2_left A &m).
 rewrite (hop2_right A &m).
 rewrite (game2_equiv &m).
-rewrite (game2_prob &m).
+rewrite (game2_prob &m _ _) //.
 by ring.
 qed.
 
@@ -429,8 +431,6 @@ end section.
 section.
 
 declare module A <: AdversaryRO {LRO, B, Bt}.
-axiom A_guess_lll (O <: POracle) : islossless O.o => islossless A(O).guess.
-axiom A_choose_lll (O <: POracle) : islossless O.o => islossless A(O).choose.
 
 local module Game2RO(A : AdversaryRO) = {
   proc main() = {
@@ -478,31 +478,40 @@ move => *; split.
 qed.
 
 local lemma game2_prob_h &m :
+  (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
+  (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
   Pr[Game2RO(A).main() @ &m : res] = 1%r / 2%r.
 proof.
+move => A_guess_ll A_choose_ll.
+move : (A_guess_ll LRO).
+move : (A_choose_ll LRO).
+move => _A_choose_ll _A_guess_ll.
 byphoare => //. 
 proc.
 rnd  (pred1 b')=> //=.
 conseq (: _ ==> true).
 + by move=> />; apply DBool.dbool1E.
 islossless.
-apply (A_guess_lll LRO). by islossless. 
-apply (A_choose_lll LRO). by islossless. 
++ by apply _A_guess_ll; apply LRO_o_ll => _; apply duni_matrix_ll.
+by apply _A_choose_ll; apply LRO_o_ll => _; apply duni_matrix_ll.
 qed.
 
 lemma main_theorem_h &m :
+  (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
+  (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
   Pr[CPAROM(MLWE_PKE,A,LRO).main() @ &m : res] -  1%r / 2%r =
     Pr[MLWE(B(B1ROM(A),LRO)).main(false) @ &m : res] -
        Pr[MLWE(B(B1ROM(A),LRO)).main(true) @ &m : res] + 
     Pr[MLWE(Bt(B2ROM(A),LRO)).main(false) @ &m : res] -
        Pr[MLWE(Bt(B2ROM(A),LRO)).main(true) @ &m : res].
 proof.
+move => A_guess_ll A_choose_ll.
 rewrite (hop1_left_h A &m).
 rewrite -(hop1_right_h A &m).
 rewrite (hop2_left_h A &m).
 rewrite -(hop2_right_h A &m).
 rewrite (game2_equiv_h &m).
-rewrite (game2_prob_h &m).
+rewrite (game2_prob_h &m _ _) //.
 by ring.
 qed.
 
@@ -599,12 +608,13 @@ module CorrectnessAdvNoise(A : CAdversaryRO, O : Oracle) = {
 section.
 
 declare module A <: CAdversaryRO {LRO}.
-axiom A_ll (O <: POracle{A}): islossless O.o => islossless A(O).find.
 
 lemma correctness &m :
+  (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
   Pr[ CorrectnessAdvROM(MLWE_PKE,A,LRO).main() @ &m : res]  >=
   1%r - Pr[ CorrectnessAdvNoise(A,LRO).main() @ &m : res].
 proof.
+move => A_ll.
 rewrite (_: 1%r - Pr[ CorrectnessAdvNoise(A,LRO).main() @ &m : res] =
    Pr[ CorrectnessAdvNoise(A,LRO).main() @ &m : !res]).
 rewrite Pr[mu_not]; congr => //. 
@@ -707,12 +717,13 @@ module CorrectnessNoiseApprox = {
 section.
 
 declare module A <: CAdversaryRO {LRO}.
-axiom All (O <: POracle{A}): islossless O.o => islossless A(O).find.
 
 lemma correctness_slack &m :
+  (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
   Pr[ CorrectnessAdvNoise(A,LRO).main() @ &m : res]<=
   Pr[ CorrectnessNoiseApprox.main() @ &m : res].
 proof.
+move => A_ll.
 byequiv => //.
 proc.
 seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
@@ -723,16 +734,18 @@ seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
            e2{2} \in dshort_R ).
 + inline *; auto => />; smt(get_setE mem_empty).
 wp;call {1} (_: true ==> true). 
-+ by apply (All LRO); smt(LRO_o_ll duni_matrix_ll).
++ by apply (A_ll LRO); smt(LRO_o_ll duni_matrix_ll).
 skip;auto => />.
 move => &1 &2 ssup esup _Asup rsup e2sup; rewrite noise_exp_val /=.
 smt (noise_commutes cv_bound_valid).
 qed.
 
 lemma correctness_approx &m :
+  (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
   Pr[ CorrectnessAdvROM(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - Pr[ CorrectnessNoiseApprox.main() @ &m : res].
-proof. move : (correctness A  &m) (correctness_slack &m)  => /#. qed.
+  1%r - Pr[ CorrectnessNoiseApprox.main() @ &m : res]
+ by move => A_ll; move : (correctness A  &m A_ll) (correctness_slack &m A_ll)  => /#. 
+
 
 (* Finally we just need to compute a concrete probability *)
 (* Which we will bound in simplified form *)
@@ -775,10 +788,9 @@ axiom fail_prob &m :
   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
 
 lemma correctness_bound &m :
+  (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
   Pr[ CorrectnessAdvROM(MLWE_PKE,A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob - epsilon_hack.
-proof.
-by move: (fail_prob &m) (correctness_hack &m) (correctness_approx &m) => /#.
-qed.
+  1%r - fail_prob - epsilon_hack
+by move => A_ll;move: (fail_prob &m) (correctness_hack &m) (correctness_approx &m A_ll) => /#.
 
 end section.

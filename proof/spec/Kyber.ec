@@ -236,7 +236,7 @@ by rewrite /b_decode -compress_alt_compress /compress_alt //=; smt(qE rg_asint).
 
 (* The binomial distribution over a field element *)
 
-op dshort_elem : Fq distr. 
+op [lossless]dshort_elem : Fq distr. 
 
 (* Definition of the support *)
 axiom supp_dshort_elem x : 
@@ -253,12 +253,9 @@ axiom dshort_elem1E_1 : mu1 dshort_elem (inFq 1) = 1%r / 4%r.
 axiom dshort_elem1E_m1 : mu1 dshort_elem (inFq (q-1)) = 1%r / 4%r.
 axiom dshort_elem1E_0 : mu1 dshort_elem (inFq (0)) = 3%r / 8%r. 
 
-(* The distribution is lossless *)
-axiom dshort_elem_ll : is_lossless dshort_elem.
-
 (* The uniform distribution over a field element *)
 
-op duni_elem : Fq distr.
+op [lossless]duni_elem : Fq distr.
 
 (* Definition of the support *)
 axiom supp_duni_elem x : 0 <= asint x < q <=> x \in duni_elem.
@@ -267,8 +264,11 @@ axiom supp_duni_elem x : 0 <= asint x < q <=> x \in duni_elem.
 op pe = 1%r /q%r.
 axiom duni_elem1E x : mu1 duni_elem x = pe.
 
-(* The distribution is lossless *)
-axiom duni_elem_ll : is_lossless duni_elem.
+lemma duni_elem_uni : is_uniform duni_elem 
+   by rewrite /is_uniform => *; rewrite !duni_elem1E.
+
+lemma duni_elem_fu : is_full duni_elem by 
+   rewrite /is_full /support => x; rewrite duni_elem1E; smt(qE).
 
 (*****************************************************)
 (* Representations of polynomials in Zq[X]/(X^256+1) *)
@@ -329,6 +329,26 @@ op duni_R : poly distr =  dmap (dlist duni_elem 256) (Array256.of_list witness).
 
 lemma duni_R_ll : is_lossless duni_R
  by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
+
+lemma duni_R_uni : is_uniform duni_R.
+  rewrite /Poly.duni_R => x y xin yin.
+  apply (dmap_uni_in_inj _ _ _) => //; last by
+    apply dlist_uni; apply duni_elem_uni.
+  move => x0 y0 inx iny; rewrite /of_list tP => H.
+  apply (eq_from_nth witness); 1: by smt(supp_dlist_size).
+  move => i; have -> : size x0 = 256 by smt(supp_dlist_size).
+  by move => ib; move : (H i ib); rewrite !initiE /=.
+qed.
+
+lemma duni_R_fu : is_full duni_R.
+  rewrite /is_full /Poly.duni_R => p.
+  rewrite supp_dmap; exists (Array256.to_list p).
+  split.
+    rewrite supp_dlist //; split; first by rewrite size_to_list.
+    rewrite allP => *. 
+    by rewrite -supp_duni_elem; smt(@Zq).
+    by rewrite Array256.to_listK.
+qed.
 
 module type G_t(O : RO.POracle) = {
    proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t)
@@ -424,18 +444,18 @@ require (****) Bigalg.
     pred  CR.unit  <- Zq.unit
     proof CR.*.
 
-  realize CR.addrA     by admit.
-  realize CR.addrC     by admit.
-  realize CR.add0r     by admit.
-  realize CR.addNr     by admit.
-  realize CR.oner_neq0 by admit.
-  realize CR.mulrA     by admit.
-  realize CR.mulrC     by admit.
-  realize CR.mul1r     by admit.
-  realize CR.mulrDl    by admit.
-  realize CR.mulVr     by admit.
-  realize CR.unitP     by admit.
-  realize CR.unitout   by admit.
+  realize CR.addrA     by apply ZqRing.addrA.
+  realize CR.addrC     by apply ZqRing.addrC.
+  realize CR.add0r     by apply ZqRing.add0r.
+  realize CR.addNr     by apply ZqRing.addNr.
+  realize CR.oner_neq0 by apply ZqRing.oner_neq0.
+  realize CR.mulrA     by apply ZqRing.mulrA.
+  realize CR.mulrC     by apply ZqRing.mulrC.
+  realize CR.mul1r     by apply ZqRing.mul1r.
+  realize CR.mulrDl    by apply ZqRing.mulrDl.
+  realize CR.mulVr     by apply ZqRing.mulVr.
+  realize CR.unitP     by apply ZqRing.unitP.
+  realize CR.unitout   by apply ZqRing.unitout.
 
 op zroot = inFq 17.
 
@@ -486,7 +506,7 @@ op kvec : int = 3.
 (* axiom kvec_ge3 : 3 <= kvec. *)
 
 require Matrix.
-clone import Matrix as Matrix_ with
+clone import Matrix as KMatrix with
     op size <- kvec,
     type ZR.t <- poly,
     op ZR.zeror <- Poly.zero,
@@ -530,7 +550,6 @@ op invnttm m = mapm invntt m.
 op ntt_mmul(m : matrix, v : vector) : vector = 
    offunv (fun (i : int) => (Big.BAdd.bigi predT (fun (j : int) => basemul m.[i, j] v.[j]) 0 kvec)).
 
-print dotp.
 op ntt_dotp(v1 v2 : vector) : poly = 
    Big.BAdd.bigi predT (fun (i : int) => basemul v1.[i] v2.[i]) 0 kvec.
 
@@ -759,7 +778,7 @@ module EncDec = {
 (****************)
 (****************)
 
-op srand : W8.t Array32.t distr.
+op [lossless]srand : W8.t Array32.t distr.
 
 module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
 
@@ -940,15 +959,23 @@ clone import MLWE_PKE as MLWEPKE with
   op MLWE_.Matrix_.ZR.oner <- Poly.one,
   pred MLWE_.Matrix_.ZR.unit <- fun x => x = Poly.one,
   op MLWE_.Matrix_.ZR.( * ) <- Poly.(&*),
+  op MLWE_.Matrix_.ZR.invr <- KMatrix.ZR.invr,
   op MLWE_.Matrix_.size <- kvec,
   type MLWE_.Matrix_.Matrix.matrix <- matrix,
   type MLWE_.Matrix_.vector <- vector,
+  op MLWE_.Matrix_.Vector.prevector <- prevector,
+  op MLWE_.Matrix_.Vector.vclamp <- vclamp,
   op MLWE_.Matrix_.Vector.tofunv <- tofunv,
+  op MLWE_.Matrix_.Vector.offunv <- offunv,
+  op MLWE_.Matrix_.Matrix.prematrix <- prematrix,
+  op MLWE_.Matrix_.Matrix.mclamp <- mclamp,
+  op MLWE_.Matrix_.Matrix.tofunm <- tofunm,
+  op MLWE_.Matrix_.Matrix.offunm <- offunm,
   op MLWE_.duni_R <- duni_R,
   op MLWE_.dshort_R <- dshort_R,
   type MLWE_.seed <- W8.t Array32.t,
+  op MLWE_.dseed <- srand,
   (*type MLWE_.RO.in_t <- W8.t Array32.t, *)
-  (* op invr : poly -> poly *)
   type plaintext <- plaintext,
   type ciphertext <- ciphertext,
   op m_encode <- m_encode,
@@ -962,40 +989,38 @@ clone import MLWE_PKE as MLWEPKE with
   op cv_bound <- cv_bound,
   op fail_prob <- fail_prob,
   op epsilon_hack <- epsilon_hack
+  proof MLWE_.dseed_ll by apply srand_ll
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
-  proof MLWE_.duni_R_fu 
+  proof MLWE_.duni_R_fu by apply duni_R_fu
   proof MLWE_.Matrix_.ge0_size by smt()
-  proof MLWE_.Matrix_.ZR.addrA by admit
-  proof MLWE_.Matrix_.ZR.addrC by admit
-  proof MLWE_.Matrix_.ZR.add0r by admit
-  proof MLWE_.Matrix_.ZR.addNr by admit
-  proof MLWE_.Matrix_.ZR.oner_neq0 by admit
-  proof MLWE_.Matrix_.ZR.mulrA by admit
-  proof MLWE_.Matrix_.ZR.mulrC by admit
-  proof MLWE_.Matrix_.ZR.mul1r by admit
-  proof MLWE_.Matrix_.ZR.mulrDl by admit
-  proof MLWE_.Matrix_.ZR.mulVr by admit
-  proof MLWE_.Matrix_.ZR.unitP by admit
-  proof MLWE_.Matrix_.ZR.unitout by admit
-  proof MLWE_.Matrix_.ZR.mulf_eq0 by admit
+  proof MLWE_.Matrix_.ZR.addrA by apply KMatrix.ZR.addrA
+  proof MLWE_.Matrix_.ZR.addrC by apply KMatrix.ZR.addrC
+  proof MLWE_.Matrix_.ZR.add0r by apply KMatrix.ZR.add0r
+  proof MLWE_.Matrix_.ZR.addNr by apply KMatrix.ZR.addNr
+  proof MLWE_.Matrix_.ZR.oner_neq0 by apply KMatrix.ZR.oner_neq0
+  proof MLWE_.Matrix_.ZR.mulrA by apply KMatrix.ZR.mulrA
+  proof MLWE_.Matrix_.ZR.mulrC by apply KMatrix.ZR.mulrC
+  proof MLWE_.Matrix_.ZR.mul1r by apply KMatrix.ZR.mul1r
+  proof MLWE_.Matrix_.ZR.mulrDl by apply KMatrix.ZR.mulrDl
+  proof MLWE_.Matrix_.ZR.mulVr by apply KMatrix.ZR.mulVr
+  proof MLWE_.Matrix_.ZR.unitP by apply KMatrix.ZR.unitP
+  proof MLWE_.Matrix_.ZR.unitout by apply KMatrix.ZR.unitout
+  proof MLWE_.Matrix_.ZR.mulf_eq0 by apply KMatrix.ZR.mulf_eq0
+  proof MLWE_.Matrix_.Vector.tofunv_prevector by apply tofunv_prevector
+  proof MLWE_.Matrix_.Vector.tofunvK by apply tofunvK
+  proof MLWE_.Matrix_.Vector.offunvK by apply offunvK
+  proof MLWE_.Matrix_.Matrix.tofunm_prematrix by apply tofunm_prematrix
+  proof MLWE_.Matrix_.Matrix.tofunmK by apply tofunmK
+  proof MLWE_.Matrix_.Matrix.offunmK by apply offunmK
+  proof MLWE_.duni_R_uni by apply duni_R_uni
   proof encode_noise
   proof good_decode
   proof cv_bound_valid
-  proof noise_commutes. 
-  (* fixme: this clone is a mess. 
-     check unproved axioms coming from ring theories *)
+  proof noise_commutes
+  proof correctness_hack
+  proof fail_prob.
 
-realize MLWE_.duni_R_fu.
-proof.
-  rewrite /is_full /Poly.duni_R => p.
-  rewrite supp_dmap; exists (Array256.to_list p).
-  split.
-    rewrite supp_dlist //; split; first by rewrite size_to_list.
-    rewrite allP => *. 
-    by rewrite -supp_duni_elem; smt(@Zq).
-    by rewrite Array256.to_listK.
-qed.
 
 realize encode_noise.
 admitted.
@@ -1045,37 +1070,17 @@ rewrite /as_sint /Poly.(&+) /= map2E !initiE //= addE qE /=  !StdOrder.IntOrder.
 by smt().
 qed.
 
-(* This is an assumption on what loss there could be wrt 
-   correctness because we consider rounding of uniform 
-   and independent coefficients *)
-axiom correctness_hack &m :
-  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack.
-
-section.
-
-declare module A <: MLWEPKE.PKE_.CAdversaryRO {MLWE_.RO.Lazy.LRO}.
-axiom All (O <: MLWE_.RO.POracle{A}):
-     islossless O.o =>
-     islossless A(O).find.
+realize correctness_hack.
+admitted. (* assumption: no one knows what this bound is *)
 
 
-(* This is the  exact bound one gets assuming the rounding
-   of uniform and independent coefficients *)
-lemma fail_prob &m : 
-   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
-byphoare.
+realize fail_prob.
+move => &m;byphoare.
 proc.
 auto => />.
 rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
 rewrite /good_noise /cv_bound /noise_val.
 admitted. (* We need concrete distributions *)
-
-lemma kyber_refined_correctness &m : 
- Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,A,MLWE_.RO.Lazy.LRO).main() @ &m : res]  >=
-  1%r - fail_prob - epsilon_hack
-  by  apply (correctness_bound A &m).
-end section.
 
 (* AT THIS POINT WE HAVE THE REFINED THEORETICAL ABSTRACTION
    AND THE SPEC. The theoretical abstraction is still working
@@ -1382,7 +1387,8 @@ lemma KyberCorrectness &m :
 proof.
 rewrite -wrap_equiv_corr.
 rewrite (wrap_correctness Ac).
-apply (kyber_refined_correctness (Bc(Ac))&m). 
+apply (correctness_bound (Bc(Ac))&m). 
+admit. (* lossless *)
 qed.
 
 lemma KyberSecurity &m :
@@ -1394,6 +1400,8 @@ lemma KyberSecurity &m :
 rewrite -wrap_equiv_security.
 rewrite (wrap_security As).
 apply (main_theorem_h (Bs(As))). 
+admit. (* lossless *)
+admit. (* lossless *)
 qed.
 
 end section.

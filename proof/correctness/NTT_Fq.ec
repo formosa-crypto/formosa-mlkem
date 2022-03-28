@@ -221,9 +221,14 @@ explicit formulae for the ring operations. *)
 op scale(p : poly, c : Fq) : poly =  Array256.map (fun x => x * c) p.
 
 
-axiom ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
-axiom invnttK : cancel ntt invntt.
-axiom nttK : cancel invntt ntt.
+lemma ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
+admitted.
+
+lemma invnttK : cancel ntt invntt.
+admitted.
+
+lemma nttK : cancel invntt ntt.
+admitted.
 
 lemma nttvK : cancel invnttv nttv.
 proof. 
@@ -250,11 +255,13 @@ rewrite (_: p = ntt (invntt p)); first by rewrite nttK.
 by rewrite -ntt_scale {1}invnttK  nttK.
 qed.
 
-axiom mul_comm_ntt (pa pb : poly):
+lemma mul_comm_ntt (pa pb : poly):
   ntt (pa &* pb) = basemul (ntt pa) (ntt pb).
+admitted.
 
-axiom add_comm_ntt (pa pb : poly):
+lemma add_comm_ntt (pa pb : poly):
   ntt (pa &+ pb) = (ntt pa) &+ (ntt pb).
+admitted.
 
 lemma add_comm_invntt (pa pb : poly) : 
   invntt (pa &+ pb) = (invntt pa) &+ (invntt pb)
@@ -264,7 +271,9 @@ lemma mul_comm_invntt : forall (pa pb : poly),
   invntt (basemul pa  pb) = (invntt pa) &* (invntt pb)
     by smt(invnttK nttK mul_comm_ntt).
 
-axiom nttZero : ntt Poly.zero = Poly.zero.
+lemma nttZero : ntt Poly.zero = Poly.zero.
+admitted.
+
 
 lemma invnttzero : invntt Poly.zero = Poly.zero by 
    smt(invnttK nttZero).

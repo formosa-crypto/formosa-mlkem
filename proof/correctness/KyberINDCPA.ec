@@ -7,7 +7,7 @@ require import Array960 Array1152 Array2304.
 require import Jindcpa.
 
 import KyberPoly KyberPolyVec.
-import Matrix_.
+import KMatrix.
 import Vector.
 import Fq.
 import Zq.
@@ -512,11 +512,11 @@ while {1} (={i,j} /\ 0<=i{1}<3 /\ 0<j{1} + 1<=3  /\
          a{2}.[kk %/ 768,kk %% 768 %/ 256].[kk %% 256] = inFq (to_sint r{1}.[kk]) /\
          bpos16 r{1}.[kk] q) /\
    (forall kk, 0<=kk<256=> 
-        a{2}.[i{1},j{1}].[kk] = 
+        aa{2}.[kk] = 
                   inFq (to_sint poly{1}.[kk]) /\
          bpos16 poly{1}.[kk] q) /\
    (forall kk, 0<=kk<to_uint k{1} => 
-        a{2}.[i{1},j{1}].[kk] = 
+        aa{2}.[kk] = 
                   inFq (to_sint r{1}.[i{1} * 768 + j{1} * 256 + kk]) /\
          bpos16 r{1}.[i{1} * 768 + j{1} * 256 + kk] q) /\
    0<=to_uint k{1} <= 256 /\ to_uint l{1} = i{1} * 768 + j{1} * 256 + to_uint k{1}) 
@@ -537,44 +537,48 @@ wp;while  (
          a{2}.[kk %/ 768,kk %% 768 %/ 256].[kk %% 256] = inFq (to_sint r{1}.[kk]) /\
          bpos16 r{1}.[kk] q) /\
    (forall kk, 0<=kk<j0{2}=> 
-        a{2}.[i{1},j{1}].[kk] = 
+        aa{2}.[kk] = 
                   inFq (to_sint poly{1}.[kk]) /\
          bpos16 poly{1}.[kk] q) /\ 
    to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256); last first.
-+ inline XOF(H).init; wp; call absorb_ignore.
-  case (trans{2}).
-  + rcondf {1} 2; 1: by move => *; auto => />; smt(W64.WRingA.oner_neq0). 
-    auto => /> &1 &2 *; split.
++ inline XOF(H).init. 
+  seq 2 4 : (#pre /\ ={extseed}).
+  + conseq />; 1: smt(); auto => /> &1 &2 *; case (trans{2}). 
+    + move => *; rewrite W64.WRingA.oner_neq0 /=; split. 
+      + by move => k0 kbl kbh; rewrite !set_neqiE /#. 
+      apply Array34.tP => k kb; rewrite initiE //=.
+      case(k < 32); 1:  by move => *; rewrite !set_neqiE /#. 
+      case(k = 32); 1: by move => *; rewrite set_neqiE 1,2:/# set_eqiE /#.
+      by move => *; rewrite set_eqiE /#.
+    move => /= *;split. 
+    + by move => k0 kbl kbh; rewrite !set_neqiE /#. 
+    apply Array34.tP => k kb; rewrite initiE //=.
+    case(k < 32); 1:  by move => *; rewrite !set_neqiE /#. 
+    case(k = 32); 1: by move => *; rewrite set_neqiE 1,2:/# set_eqiE /#.
+    by move => *; rewrite set_eqiE /#.
+  wp; call absorb_ignore.
+  auto => /> &1 &2 *; do split; 1..2: smt().
+(*
     + apply Array34.tP => k kb; rewrite initiE //=.
       case (k < 32); 1: by  move => *;rewrite !Array34.set_neqiE /#.
       case (k = 32); 1: by move => *;rewrite Array34.set_neqiE 1,2:/# Array34.set_eqiE /#.  
       by move => *;rewrite Array34.set_eqiE /#. 
     move => *;do split; 2,3,4:smt().
     + by move => k *; rewrite  !Array34.set_neqiE /#.
-    move => *;do split; 1,2:smt().
+    move => ctrp polyp aap; rewrite !ultE /= => *;do split; 1,2:smt().
     + by rewrite of_uintK /=; smt(modz_small).
-    move => kl ll rl; split; 1: smt().
+    move => kl ll rl; rewrite ultE /= => *; split; 1: smt().
     move => ? H H0 H1 *; split; 1: smt().
     move => k kbl kbh.
-    case (k < i{2} * 768 + j{2} * 256).
-    + admit.
+    case (k < i{2} * 768 + j{2} * 256); 1: by smt(offunmE). 
+    move => *; rewrite /("_.[_<-_]")%Kyber /= !offunmE 1:/# /=.
+    have -> :  k %/ 768 = i{2} by smt().
+    have -> /= :  k %% 768 %/ 256 = j{2} by smt().
+    case (k %% 256 < to_uint kl); 2: by smt().
+*)
     admit.
-  rcondt {1} 2; 1: by move => *; auto => />; smt(W64.WRingA.oner_neq0). 
-  auto => /> &1 &2 *; split.
-  + apply Array34.tP => k kb; rewrite initiE //=.
-    case (k < 32); 1: by  move => *;rewrite !Array34.set_neqiE /#.
-    case (k = 32); 1: by move => *;rewrite Array34.set_neqiE 1,2:/# Array34.set_eqiE /#.  
-    by move => *;rewrite Array34.set_eqiE /#. 
-  move => *;do split; 2,3,4:smt().
-  + by move => k *; rewrite  !Array34.set_neqiE /#.
-  move => *;do split; 1,2:smt().
-  + by rewrite of_uintK /=; smt(modz_small).
-  move => kl ll rl; split; 1: smt().
-  move => ? H H0 H1 *; split; 1: smt().
-  move => k kbl kbh.
-  case (k < i{2} * 768 + j{2} * 256).
-  + admit.
   admit.
+
 swap {1} 1 1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
 + inline XOF(H).next_bytes; sp;wp.
   call(_: arg{1}.`1 = arg{2}.`1 ==> ={res}); last by auto => />.
