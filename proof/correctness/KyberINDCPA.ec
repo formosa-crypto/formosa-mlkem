@@ -501,88 +501,49 @@ while(#pre /\ ={i} /\ 0<=i{1}<=3 /\
 
 wp;while(stransposed{1} = (if trans{2} then W64.one else W64.zero) /\
          (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
-         ={i,j} /\ 0<=i{1}<=3 /\ 0<=j{1}<=3  /\ i{1} < 3 /\
-   forall k, 0 <= k < i{1}*768 + j{1}*256 => 
+         ={i,j} /\ 0<=i{2}<=3 /\ 0<=j{2}<=3  /\ i{1} < 3 /\
+   forall k, 0 <= k < i{2}*768 + j{2}*256 => 
          a{2}.[k %/ 768,k %% 768 %/ 256].[k %% 256] = inFq (to_sint r{1}.[k]) /\
          bpos16 r{1}.[k] q); last by auto => /> /#.
 
-wp => /=.
-while {1} (={i,j} /\ 0<=i{1}<3 /\ 0<j{1} + 1<=3  /\
-   (forall kk, 0 <= kk < i{1}*768 + j{1}*256 => 
-         a{2}.[kk %/ 768,kk %% 768 %/ 256].[kk %% 256] = inFq (to_sint r{1}.[kk]) /\
-         bpos16 r{1}.[kk] q) /\
-   (forall kk, 0<=kk<256=> 
-        aa{2}.[kk] = 
-                  inFq (to_sint poly{1}.[kk]) /\
-         bpos16 poly{1}.[kk] q) /\
-   (forall kk, 0<=kk<to_uint k{1} => 
-        aa{2}.[kk] = 
-                  inFq (to_sint r{1}.[i{1} * 768 + j{1} * 256 + kk]) /\
-         bpos16 r{1}.[i{1} * 768 + j{1} * 256 + kk] q) /\
-   0<=to_uint k{1} <= 256 /\ to_uint l{1} = i{1} * 768 + j{1} * 256 + to_uint k{1}) 
-   (256 - to_uint k{1}).
+seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
+            forall k, 0 <= k < 256 =>
+               bpos16 poly{1}.[k] q); last first.
 
-+ move => *; auto => /> &hr 10?; rewrite !ultE /= => ?.
-  rewrite !to_uintD_small /= 1,2:/#; do split;3..:smt().
++ wp;conseq />; 1: smt().
+  while{1} (
+    0 <= to_uint k{1} <= 256 /\ to_uint l{1} = i{2} * 768 + j{2} * 256 + to_uint k{1} /\
+    0 <= j{2} + 1 <= 3 /\ 0<=i{2}<3 /\
+    (forall (k0 : int), 0 <= k0  < i{2} * 768 + j{2} * 256 =>
+        a{2}.[k0 %/ 768, k0 %% 768 %/ 256].[k0 %% 256] = inFq (to_sint r{1}.[k0]) /\
+        0 <= to_sint r{1}.[k0] < q) /\
+    (forall (k0 : int),
+        i{2} * 768 + j{2} * 256  <= k0  < i{2} * 768 + j{2} * 256 + to_uint k{1} =>
+        r{1}.[k0] = poly{1}.[k0 %% 256] /\
+         0 <= to_sint r{1}.[k0] < q) /\
+         (forall k, 0 <= k < 256 => bpos16 poly{1}.[k] q)
+    ) (256 - to_uint k{1}); last first.
+  + auto => /> &1 &2 [#] 8?; rewrite /lift_array256 => ? k; do split; 2..4:smt(). 
+    + by rewrite of_uintK /= modz_small /#.
+    move => kl ll rl; rewrite ultE /=; split; 1:  smt(). 
+    move => 8? k0 k0bl k0bh;do split; 2..: smt(). 
+    rewrite /("_.[_<-_]")%Kyber /= offunmE /= 1:/#. 
+    case (k0 < i{2} * 768 + j{2} * 256); 1: smt().
+    move => *.
+    have -> :  k0 %/ 768 = i{2} by smt().
+    have -> /= :  k0 %% 768 %/ 256 = j{2} by smt().
+    by rewrite mapiE /#.
+
+  move =>  &2 z; auto => /> &1; rewrite !ultE /= => ?????.
+  rewrite to_uintD_small /= 1:/# => *; do split;1,2,6:smt(). 
+  + by rewrite to_uintD_small /#.
   + by move => kk kkbl kkbh; rewrite set_neqiE /#. 
-  move => kk kkbl kkbh; case (kk < to_uint k{hr}).
-  + by move => *;rewrite !set_neqiE /#. 
-  by move => *;rewrite !set_eqiE /#. 
+  + move => kk kkbl kkbh.
+    case (kk < i{2} * 768 + j{2} * 256 + to_uint k{1}).
+    move => *. rewrite Array2304.set_neqiE. admit. smt(). smt().
+    move => *. rewrite Array2304.set_eqiE. admit. smt(). smt().
 
-wp;while  (
-   stransposed{1} = (if trans{2} then W64.one else W64.zero) /\ state{1} = XOF.state{2} /\
-         (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\ 
-   ={i,j} /\ 0<=i{1}<3 /\ 0<j{1} + 1<=3  /\
-   (forall kk, 0 <= kk < i{1}*768 + j{1}*256 => 
-         a{2}.[kk %/ 768,kk %% 768 %/ 256].[kk %% 256] = inFq (to_sint r{1}.[kk]) /\
-         bpos16 r{1}.[kk] q) /\
-   (forall kk, 0<=kk<j0{2}=> 
-        aa{2}.[kk] = 
-                  inFq (to_sint poly{1}.[kk]) /\
-         bpos16 poly{1}.[kk] q) /\ 
-   to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256); last first.
-+ inline XOF(H).init. 
-  seq 2 4 : (#pre /\ ={extseed}).
-  + conseq />; 1: smt(); auto => /> &1 &2 *; case (trans{2}). 
-    + move => *; rewrite W64.WRingA.oner_neq0 /=; split. 
-      + by move => k0 kbl kbh; rewrite !set_neqiE /#. 
-      apply Array34.tP => k kb; rewrite initiE //=.
-      case(k < 32); 1:  by move => *; rewrite !set_neqiE /#. 
-      case(k = 32); 1: by move => *; rewrite set_neqiE 1,2:/# set_eqiE /#.
-      by move => *; rewrite set_eqiE /#.
-    move => /= *;split. 
-    + by move => k0 kbl kbh; rewrite !set_neqiE /#. 
-    apply Array34.tP => k kb; rewrite initiE //=.
-    case(k < 32); 1:  by move => *; rewrite !set_neqiE /#. 
-    case(k = 32); 1: by move => *; rewrite set_neqiE 1,2:/# set_eqiE /#.
-    by move => *; rewrite set_eqiE /#.
-  wp; call absorb_ignore.
-  auto => /> &1 &2 *; do split; 1..2: smt().
-(*
-    + apply Array34.tP => k kb; rewrite initiE //=.
-      case (k < 32); 1: by  move => *;rewrite !Array34.set_neqiE /#.
-      case (k = 32); 1: by move => *;rewrite Array34.set_neqiE 1,2:/# Array34.set_eqiE /#.  
-      by move => *;rewrite Array34.set_eqiE /#. 
-    move => *;do split; 2,3,4:smt().
-    + by move => k *; rewrite  !Array34.set_neqiE /#.
-    move => ctrp polyp aap; rewrite !ultE /= => *;do split; 1,2:smt().
-    + by rewrite of_uintK /=; smt(modz_small).
-    move => kl ll rl; rewrite ultE /= => *; split; 1: smt().
-    move => ? H H0 H1 *; split; 1: smt().
-    move => k kbl kbh.
-    case (k < i{2} * 768 + j{2} * 256); 1: by smt(offunmE). 
-    move => *; rewrite /("_.[_<-_]")%Kyber /= !offunmE 1:/# /=.
-    have -> :  k %/ 768 = i{2} by smt().
-    have -> /= :  k %% 768 %/ 256 = j{2} by smt().
-    case (k %% 256 < to_uint kl); 2: by smt().
-*)
-    admit.
-  admit.
-
-swap {1} 1 1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
-+ inline XOF(H).next_bytes; sp;wp.
-  call(_: arg{1}.`1 = arg{2}.`1 ==> ={res}); last by auto => />.
-  proc. admit.
+conseq />; 1: by smt().
 admitted. (* obviously works :-) *)
 
 equiv get_noise_sample_noise :
