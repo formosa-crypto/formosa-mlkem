@@ -115,6 +115,27 @@ rewrite /to_sint /smod /= !of_uintK /= /as_sint qE /=.
 by smt(rg_asint).
 qed.
 
+lemma inFq_to_sint (a : W16.t) :
+  -(q-1)%/ 2 < to_sint a < (q-1)%/ 2 =>
+  a = (W16.of_int (as_sint (inFq (to_sint a)))).
+proof.
+rewrite qE /=; move => [#] bndl bndh.
+rewrite /as_sint fun_if /= !inFqK qE /=.
+case(0<= to_sint a).
++ move => ?; rewrite !modz_small 1:/#.
+  have -> : !(1664 < to_sint a) by smt().
+  by rewrite to_sint_unsigned 1:/# to_uintK.
++ move => ?; pose x := - (to_sint a); have -> : to_sint a = -x by ring.
+  have xbnd : 0 < x < 1664 by smt(). 
+  rewrite modNz 1:/# //= !modz_small 1:/# /=.
+  have -> /= : 1664 < 3328 - (x - 1) by smt().
+  have -> : a = W16.of_int (to_sint a); last by ring.
+  rewrite /to_sint /smod fun_if /= of_intS to_uintK.
+  case(32768 <= to_uint a); 2:auto.
+  by move => *; ring.
+qed.
+
+
 (*******)
 
 (** DEFINING THE EXTERNAL COMPONENTS BASED ON THE SHA ALGORITHMS *)
@@ -124,27 +145,16 @@ module H : KyberPKE.RO.POracle = {
 }.
 
 module (G : G_t) (H : KyberPKE.RO.POracle) = {
-  var randomnessp : W64.t 
-
-  proc sample() : W8.t Array32.t * W8.t Array32.t = { 
+  proc sample(inbuf : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = { 
     var i,j,c;
-    var inbuf : W8.t Array32.t;
     var buf : W8.t Array64.t;
     var publicseed : W8.t Array32.t;
     var noiseseed  : W8.t Array32.t;
 
-    inbuf <- witness; 
     buf <- witness;
     publicseed <- witness;
     noiseseed <- witness;
 
-    i <- (W64.of_int 0);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- (loadW8 Glob.mem (W64.to_uint (randomnessp + i)));
-      inbuf.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-    }
     buf <@ M._sha3512_32 (buf, inbuf);
     i <- (W64.of_int 0);
     j <- (W64.of_int 32);
@@ -297,7 +307,7 @@ proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Arr
   return (s,e, unlift_poly e2);
 }
 
-proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
+proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var aux: W16.t Array256.t;
     var _N : int;
     var spkp:W64.t;
@@ -315,10 +325,9 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     var pkpv:W16.t Array768.t;
 
 
-    (publicseed,noiseseed) <@  G(H).sample();
+    (publicseed,noiseseed) <@  G(H).sample(seed);
 
     a <- witness;
-    zero <- (W64.of_int 0);
     a <@ __gen_matrix (publicseed,false);
 
     pkpv <- witness;               
@@ -600,24 +609,17 @@ wp; ecall (sample_noise_good2 noiseseed{2}).
 auto => /> resl resr ???; split; 1: smt().
 move => ? resl0.
 rewrite /unlift_poly /lift_array256 tP /= => bd k kbnd.
-
 rewrite !initiE //= !mapiE //=. 
-rewrite /as_sint qE /= inFqK qE. 
-case (0 <= to_sint resl0.[k]). 
-+ move => *; rewrite modz_small 1:/#.  
-  have -> /=: !(1664 < to_sint resl0.[k]); 1: smt(). 
-  by rewrite to_sint_unsigned 1:/# to_uintK.
-+ move => neg. admit.
+by smt(inFq_to_sint).
 qed.
-
-move => *; have -> : to_sint resl0.[k] =  - to_uint resl0.[k]. admit.
-  rewrite modNz; 2:smt(). admit.
   
-
 equiv auxkg_good :
   M.indcpa_keypair_jazz ~ AuxKyber.indcpa_keypair_jazz :
-     ={Glob.mem,arg} /\ G.randomnessp{2} = randomnessp{1} ==> ={Glob.mem,res}. 
-proc. 
+     ={Glob.mem} /\ arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = arg{2}.`2 /\ 
+     valid_ptr (to_uint arg{1}.`3) 32 /\ 
+      arg{2}.`3 = Array32.init (fun i => loadW8 Glob.mem{1} (to_uint arg{1}.`3 + i))
+     ==> ={Glob.mem,res}. 
+proc => /=. 
 inline Aux.inner_product.
 swap {1} 4 -3.
 swap {1} 3 -1.
@@ -625,10 +627,32 @@ swap {1} [11..13] -8.
 swap {1} 8 -5.
 swap {1} 10 -7.
 swap {1} [14..16] -6.
-seq 10 1 : (#{~G.randomnessp{2}}pre /\ ={publicseed, noiseseed}); 1: by inline *; conseq />; sim.
+seq 10 1 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
++ inline G(H).sample;swap {1} [5..6] -3. 
+  seq 3 1 : (#pre /\ ={inbuf}); last by sim.   
+  conseq => />.
+  while {1} (0<= to_uint i{1} <=32 /\ 
+              valid_ptr (to_uint randomnessp{1}) 32 /\
+              seed{2} = (Array32.init (fun (i1 : int) => 
+                  loadW8 Glob.mem{1} (to_uint randomnessp{1} + i1))) /\
+             forall k, 0<= k < to_uint i{1} =>
+                    inbuf{1}.[k] = seed{2}.[k]) (32-to_uint i{1});
+    last first. 
+  + auto => /> &1 &2 ??; split; 1: smt().
+    move => il inbufl; rewrite !ultE /=; split; 1: smt().
+    move => ???H; rewrite tP => i ib; rewrite initiE //=.
+    by move : (H i _); 1: smt(); rewrite initiE //=.
+  move => *; auto => /> &hr ???; rewrite ultE /==> ?.
+  rewrite !to_uintD_small /=; 1,2:smt(); move => *.
+  split; 2: smt(); split; 1: smt().
+  move => k kb ?; case (k < to_uint i{hr}).
+  + by move => *; rewrite set_neqiE //= /#.
+  move => *; rewrite set_eqiE //= 1:/#.
+  by rewrite initiE //= /#.
+
 
 swap {1} [7..8] -5.
-seq 3 3 : (#pre /\ ={a}); 1: by call auxgenmatrix_good; auto => />.
+seq 3 2 : (#pre /\ ={a}); 1: by call auxgenmatrix_good; auto => />.
 
 swap {1} [6..23] -2.
 swap {1} 2 24.
@@ -636,16 +660,16 @@ swap {2} 1 8.
 
 seq 20 1 : (#pre /\ ={skpv,e}).
 transitivity {1} {(skpv,e) <@ AuxKyber.sample_noise2_jasmin(noiseseed);}
-     (={Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a} ==> 
-          ={skpv,e,Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a,skpv,e})
-     (={Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a} ==> 
-          ={skpv,e,Glob.mem,pkp,skp,randomnessp,publicseed,noiseseed,a,skpv,e}); 1,2: by smt(). 
+     (={Glob.mem,pkp,skp,publicseed,noiseseed,a} ==> 
+          ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e})
+     (={Glob.mem,pkp,skp,publicseed,noiseseed,a} ==> 
+          ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e}); 1,2: by smt(). 
 + by inline  AuxKyber.sample_noise2_jasmin; sim; auto => />. 
 by conseq />; ecall (sample_noise_good2 noiseseed{2}) ; auto => />.
 
 swap{1} [1..2] 16.
 
-seq 2 2 : (#pre); 1: by sim.
+seq 2 2 : (#pre); 1:by sim.
 
 seq 5 7 : (#pre /\ ={pkpv}).
 
@@ -731,10 +755,12 @@ qed.
 
 (* We model G exactly as the implementation does it *)
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
-   equiv [ M.indcpa_keypair_jazz ~ Kyber(G,XOF,PRF,H).kg : 
+   equiv [ M.indcpa_keypair_jazz ~ Kyber(G,XOF,PRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
-       Glob.mem{2} = mem /\ to_uint G.randomnessp{2} = _randomnessp /\
+       Glob.mem{2} = mem /\ 
+       seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
+       valid_ptr (to_uint randomnessp{1}) 32 /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
        let (pk,sk) = res{2} in let (t,rho) = pk in
@@ -742,13 +768,15 @@ lemma kyber_correct_kg mem _pkp _skp _randomnessp :
          t = load_array1152 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc*.
-transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, randomnessp);} 
-(={Glob.mem,arg} /\ randomnessp{2} = G.randomnessp{2} ==> ={Glob.mem,r}) 
+transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, 
+             Array32.init(fun i=> loadW8 Glob.mem (to_uint randomnessp  + i)));} 
+(={Glob.mem,arg} /\ valid_ptr (to_uint randomnessp{1}) 32 ==> ={Glob.mem,r}) 
 (   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\ to_uint G.randomnessp{1} = _randomnessp /\
-    Glob.mem{2} = mem /\ to_uint G.randomnessp{2} = _randomnessp /\ 
+    to_uint randomnessp{1} = _randomnessp /\ 
+    seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i))  /\
+    Glob.mem{2} = mem /\ 
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)
     ==> 
     let (pk, sk) = r{2} in
@@ -756,26 +784,25 @@ transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, randomnessp);}
         sk = load_array1152 Glob.mem{1} _skp /\
         t = load_array1152 Glob.mem{1} _pkp /\ 
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt().
-+ call auxkg_good; auto => />.
++ by call auxkg_good; auto => />.
 
 inline {1} 1; inline {2} 1.
 
-sp 3 0.
+sp 2 0.
 
-swap {2} 6 -5.
-seq 1 1 : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
-+ by inline G(H).sample; conseq => />; 
-    sim; auto => />; smt(W64.to_uintK W64.to_uint_small).
+swap {2} 7 -5.
+seq 2 2 : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
++ by conseq => />; call (_: true); [ by sim | by auto => />]. 
 
 swap {2} [7..8] -5.
-seq 3 3 : (#pre /\ a{2} = lift_matrix a{1} /\
+seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
             pos_bound2304_cxq a{1} 0 2304 2).
 + inline AuxKyber.__gen_matrix; conseq />.
-  seq 7 3 : (a0{1}=a{2}); last by auto => />;  smt(matrix_unlift).
-  while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed{1}=rho{2} /\ !trans{1} /\
-         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a0{1}.[ii,jj] = a{2}.[ii,jj]); last  
-          by auto => />; smt(eq_matrixP).
-  wp; while (i0{1} = i{2} /\ j0{1} = j{2} /\ 0<=i0{1}<kvec /\ 0<=j0{1}<=kvec /\ seed{1}=rho{2} /\ !trans{1} /\
+  seq 6 3 : (a0{1}=a{2}); last by auto => />;  smt(matrix_unlift).
+  while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
+         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a0{1}.[ii,jj] = a{2}.[ii,jj]); last  first.
+          auto => />; smt(eq_matrixP).
+  wp; while (i0{1} = i{2} /\ j0{1} = j{2} /\ 0<=i0{1}<kvec /\ 0<=j0{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
          (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a0{1}.[ii,jj] = a{2}.[ii,jj]) /\
          (forall jj, 0 <= jj <j0{1} => a0{1}.[i0{1},jj] = a{2}.[i0{1},jj])); last 
             by auto => />  /#.
@@ -887,7 +914,7 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ??????????.
+  move => ???????.
   do split; 1,2,4: smt(NTT_Fq.nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
@@ -911,7 +938,7 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ???????????.
+  move => ????????.
   do split; 1,2,4: smt(NTT_Fq.nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
@@ -938,7 +965,7 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ????????????.
+  move => ?????????.
   do split; 1,2,4: smt(NTT_Fq.nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
@@ -973,7 +1000,7 @@ last first.
 have H := polyvec_add_corr_impl 2 2 _ _ => //.
 ecall{1} (H (lift_array768 pkpv{1}) (lift_array768 e{1})).
 clear H.
-auto => /> &1 &2 ?????????? vs0 vs1 vs2.
+auto => /> &1 &2 ??????? vs0 vs1 vs2.
 
 do split; 1,2:smt().
 

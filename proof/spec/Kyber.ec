@@ -71,7 +71,7 @@ PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack
 *)
 
 clone import PKE_Ext as KyberPKE with
-  type RO.in_t = (unit option) * ((W8.t Array32.t * int *int * int) option) * ((W8.t Array32.t * int) option),
+  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * int *int * int) option) * ((W8.t Array32.t * int) option),
   type RO.out_t = W8.t Array64.t * W8.t Array168.t * W8.t Array128.t,
   type pkey = W8.t Array1152.t * W8.t Array32.t,
   type skey = W8.t Array1152.t,
@@ -331,7 +331,7 @@ lemma duni_R_ll : is_lossless duni_R
  by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
 
 module type G_t(O : RO.POracle) = {
-   proc sample() : (W8.t Array32.t) *  (W8.t Array32.t)
+   proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t)
 }.
 
 module type XOF_t(O : RO.POracle) = {
@@ -759,8 +759,12 @@ module EncDec = {
 (****************)
 (****************)
 
+op srand : W8.t Array32.t distr.
+
 module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
-  proc kg() : pkey * skey = {
+
+  (* Spec gives a derandomized enc that matches this code *)
+  proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
      var rho, sig, i, j, _N,c,t;
      var tv,sv : W8.t Array1152.t;
      var a : matrix;
@@ -770,7 +774,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      s <- witness;
      sv <- witness;
      tv <- witness;
-     (rho,sig) <@ G(O).sample();
+     (rho,sig) <@ G(O).sample(seed);
      _N <- 0; 
      i <- 0;
      while (i < kvec) {
@@ -804,6 +808,13 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      tv <@ EncDec.encode12_vec(toipolyvec t); (* minimum residues *)
      sv <@ EncDec.encode12_vec(toipolyvec s); (* minimum residues *)
      return ((tv,rho),sv);
+  }
+
+  proc kg() : pkey * skey = {
+     var s,kp;
+     s <$ srand;
+     kp <@ kg_derand(s);
+     return kp;
   }
 
   (* Spec gives a derandomized enc that matches this code *)
@@ -858,8 +869,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
   }
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
-     var rho,r,c;
-     (rho,r) <@ G(O).sample(); (* We just take the same as used in kgen *)   
+     var r,c;
+     r <$ srand;
      c <@ enc_derand(pk,m,r);
      return c;
   }
@@ -1230,10 +1241,10 @@ module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) 
 (* We now specify the various components used by Kyber in the ROM *)
 
 module (G : G_t) (O : RO.POracle) = {
-   proc sample() : (W8.t Array32.t) *  (W8.t Array32.t) = {
+   proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t) = {
         var bb;
         var r1, r2 : W8.t Array32.t;
-        bb <@ O.o((Some (), None, None));
+        bb <@ O.o((Some seed, None, None));
         r1 <- Array32.init (fun i => bb.`1.[i]);
         r2 <- Array32.init (fun i => bb.`1.[i+32]);
         return (r1,r2);
