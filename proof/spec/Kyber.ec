@@ -71,7 +71,7 @@ PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack
 *)
 
 clone import PKE_Ext as KyberPKE with
-  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * int *int * int) option) * ((W8.t Array32.t * int) option),
+  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * W8.t * W8.t * W8.t) option) * ((W8.t Array32.t * W8.t) option),
   type RO.out_t = W8.t Array64.t * W8.t Array168.t * W8.t Array128.t,
   type pkey = W8.t Array1152.t * W8.t Array32.t,
   type skey = W8.t Array1152.t,
@@ -355,7 +355,7 @@ module type G_t(O : RO.POracle) = {
 }.
 
 module type XOF_t(O : RO.POracle) = {
-   proc init(rho :  W8.t Array32.t, i j : int) : unit
+   proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
    proc next_bytes() : W8.t Array168.t
 }.
 
@@ -394,7 +394,7 @@ module Parse(XOF : XOF_t, O : RO.POracle) = {
 
 module type PRF_t(O : RO.POracle) = {
    proc init(sig : W8.t Array32.t) : unit
-   proc next_bytes(_N : int) : W8.t Array128.t
+   proc next_bytes(_N : W8.t) : W8.t Array128.t
 }.
 
 module CBD2(PRF : PRF_t, O : RO.POracle) = {
@@ -402,7 +402,7 @@ module CBD2(PRF : PRF_t, O : RO.POracle) = {
       var i,a,b,bytes;
       var rr : poly;
       rr <- witness;
-      bytes <@ PRF(O).next_bytes(_N);
+      bytes <@ PRF(O).next_bytes(W8.of_int _N);
       i <- 0;
       while (i < 256) {
         a <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 0] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 1];
@@ -799,7 +799,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      while (i < kvec) {
         j <- 0;
         while (j < kvec) {
-           XOF(O).init(rho,j,i);
+           XOF(O).init(rho,W8.of_int j,W8.of_int i);
            c <@ Parse(XOF,O).sample_real();
            a.[(i,j)] <- c;
            j <- j + 1;
@@ -855,7 +855,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
       while (i < kvec) {
         j <- 0;
         while (j < kvec) {
-           XOF(O).init(rho,i,j);
+           XOF(O).init(rho,W8.of_int i, W8.of_int j);
            c <@ Parse(XOF,O).sample_real();
            aT.[(i,j)] <- c; (* this is the transposed matrix *)
            j <- j + 1;
@@ -1200,7 +1200,7 @@ module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) 
           while (i < kvec) {
             j <- 0;
             while (j < kvec) {
-               XOF(O).init(x,i,j);
+               XOF(O).init(x,W8.of_int i,W8.of_int j);
                c <@ Parse(XOF,O).sample_real();
                a.[(i,j)] <- c;
                j <- j + 1;
@@ -1258,10 +1258,10 @@ module (G : G_t) (O : RO.POracle) = {
 
 module (XOF :  XOF_t) (O : RO.POracle) = {
    var _rho : W8.t Array32.t
-   var _i, _j : int
+   var _i, _j : W8.t
    var count : int
 
-   proc init(rho :  W8.t Array32.t, i j : int) : unit = {
+   proc init(rho :  W8.t Array32.t, i j : W8.t ) : unit = {
       _rho <- rho;
       _i <- i;
       _j <- j;
@@ -1269,7 +1269,7 @@ module (XOF :  XOF_t) (O : RO.POracle) = {
    }
    proc next_bytes() : W8.t Array168.t = {
         var bb;
-        bb <@ O.o((None, Some (_rho,_i,_j,count), None));
+        bb <@ O.o((None, Some (_rho,_i,_j,W8.of_int count), None));
         return bb.`2;
    }
 }.
@@ -1280,7 +1280,7 @@ module (PRF : PRF_t) (O : RO.POracle) = {
    proc init(sig : W8.t Array32.t) : unit = {
        _sig <- sig;
    }
-   proc next_bytes(_N : int) : W8.t Array128.t = {
+   proc next_bytes(_N : W8.t) : W8.t Array128.t = {
         var bb;
         bb <@ O.o((None, None, Some (_sig,_N)));
         return bb.`3;

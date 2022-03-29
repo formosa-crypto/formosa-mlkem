@@ -173,10 +173,10 @@ module (G : G_t) (H : KyberPKE.RO.POracle) = {
 
 module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
   var state : W64.t Array25.t
-  proc init(rho : W8.t Array32.t, i : int, j : int) : unit = {
+  proc init(rho : W8.t Array32.t, i j : W8.t) : unit = {
        var extseed : W8.t Array34.t;
        extseed <- Array34.init
-        (fun k => if k < 32 then rho.[k] else if k=32 then W8.of_int i else W8.of_int j);
+        (fun k => if k < 32 then rho.[k] else if k=32 then i else j);
        state <- witness;
        state <@ M._shake128_absorb34(state, extseed);
   }
@@ -191,11 +191,11 @@ module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
 module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
   var key : W8.t Array32.t
   proc init(sig : W8.t Array32.t) : unit = { key <- sig; }
-  proc next_bytes(_N : int) : W8.t Array128.t = {
+  proc next_bytes(_N : W8.t) : W8.t Array128.t = {
      var extseed : W8.t Array33.t;
      var buf;
      extseed <- Array33.init
-        (fun k => if k < 32 then key.[k] else W8.of_int _N);
+        (fun k => if k < 32 then key.[k] else  _N);
      buf <- witness;
      buf <@ M._shake256_128_33(buf, extseed);
      return buf;
@@ -215,7 +215,8 @@ proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
   while (i < kvec) {                  
     j <- 0;                          
     while (j < kvec) {                
-      XOF(H).init(seed, if trans then i else j, if trans then j else i);        
+      XOF(H).init(seed, if trans then W8.of_int i else W8.of_int j, 
+                        if trans then W8.of_int j else W8.of_int i);        
       c <@ Parse(XOF, H).sample_real();
       a <- a.[i, j <- c];         
       j <- j + 1;                      
@@ -587,6 +588,12 @@ equiv sample_noise_good2 _key :
                      PRF.key{2} = _key.
 proc.
 unroll for {2} 8; unroll for {2} 6.
+swap {2} 4 -3.
+inline PRF(H).init; seq 3 5 : (#pre /\ PRF.key{2} = noiseseed{1} /\ _N{2} = to_uint nonce{1}); 1:by auto.
+seq 2 3 : (#pre /\ lift_array256 (subarray256 noise1{1} 0) = noise1{2}.[0] /\
+              (forall k, 0<=k<256 => -5 < to_sint noise1{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 *; split.
+
 admitted. (* Should follow from get_noise_sample_noise *)
 
 equiv sample_noise_good3 :
