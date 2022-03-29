@@ -405,13 +405,13 @@ module CBD2(PRF : PRF_t, O : RO.POracle) = {
       bytes <@ PRF(O).next_bytes(W8.of_int _N);
       i <- 0; j <- 0;
       while (i < 128) { (* unroll loop body once to match code *)
-        a <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 0] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 1];
-        b <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 2] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 3];
-        rr.[i] <- inFq  (a - b);
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
         j <- j + 1;
-        a <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 0] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 1];
-        b <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 2] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 3];
-        rr.[i] <- inFq  (a - b);
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
         j <- j + 1;
         i <- i + 1;
       }

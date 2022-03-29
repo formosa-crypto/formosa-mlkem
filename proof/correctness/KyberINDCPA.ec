@@ -1,4 +1,4 @@
-require import AllCore IntDiv.
+require import AllCore IntDiv List.
 from Jasmin require import JModel.
 require import Fq Kyber KyberPoly KyberPolyVec W16extra NTT_Fq.
 require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
@@ -464,6 +464,17 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
 }.
 
+equiv squeezeblock_ignore :
+  M._shake128_squeezeblock ~ M._shake128_squeezeblock :
+   arg{1}.`1 = arg{2}.`1 ==> ={res}.
+proof.
+proc => /=; seq 1 1: (#pre); 1: by call(_:true) => /=;  sim.
+while (={i} /\ 0<=i{1}<=168 /\ ={state} /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.[k]);
+  1: by auto => />; smt(Array168.set_eqiE Array168.set_neqiE).
+auto => /> *; split; 1: by smt().
+by move => *;rewrite tP => k kb; smt().
+qed. 
+
 equiv absorb_ignore :
   M._shake128_absorb34 ~ M._shake128_absorb34 :
    arg{1}.`2 = arg{2}.`2 ==> ={res}.
@@ -502,7 +513,9 @@ equiv auxgenmatrix_good :
 proc => /=. 
 inline Parse(XOF, H).sample_real.
 inline M.__rej_uniform.
+
 seq 6 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
+
 seq 2 0 : (#pre /\ forall k, 0<=k<32 => extseed {1}.[k] = seed{2}.[k]).
 + conseq => />; 1: smt().
   while{1} (#pre /\ 0<=j{1}<=32 /\
@@ -568,30 +581,207 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
 
 conseq />; 1: by smt().
 
-
 seq 3 1 : (
    ={i, j} /\
    (0 <= i{2} && i{2} < 3) /\
    (0 <= j{2} && j{2} < 3) /\
+   (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
    (forall (k0 : int),
      0 <= k0 && k0 < i{2} * 768 + j{2} * 256 =>
      a{2}.[k0 %/ 768, k0 %% 768 %/ 256].[k0 %% 256] = 
         inFq (to_sint r{1}.[k0]) /\ bpos16 r{1}.[k0] q) /\
    state{1} = XOF.state{2}).
-+ inline XOF(H).init; conseq />.
-  call absorb_ignore => /=; auto => /> &1 &2 *.
++ inline XOF(H).init.
+  call absorb_ignore => /=; auto => /> &1 &2 *; split. 
   case(trans{2}).
-  + move => *; rewrite oner_neq0 /=. 
-    apply Array34.tP => k kb; rewrite initiE //=.
+  + by rewrite oner_neq0 //= /=.
+  move => * /=; split. 
+  + apply Array34.tP => k kb; rewrite initiE //=.
     case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
     case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
     by move => *;rewrite set_eqiE /# .
-  move => * /=; apply Array34.tP => k kb; rewrite initiE //=.
+   by move => *;rewrite !set_neqiE /#.
+
+move => * /=; split. 
++ apply Array34.tP => k kb; rewrite initiE //=.
   case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
   case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
   by move => *;rewrite set_eqiE /# .
+by move => *;rewrite !set_neqiE /#.
+
 (* sampling loop *)
-admitted. (* obviously works :-) *)
+
+while(to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256 /\ state{1} = XOF.state{2} /\
+  (forall (k0 : int), 0 <= k0 => k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
+  (forall (k0 : int),
+    0 <= k0 => k0 < j0{2} => inFq (to_sint poly{1}.[k0]) = aa{2}.[k0]) /\ 
+  (forall (k0 : int),
+    0 <= k0 => k0 < j0{2} => 0 <= to_sint poly{1}.[k0] /\ to_sint poly{1}.[k0] < q)); last first.
++ auto => /> &1 &2??????; do split; 1..3: by smt().
+  move => ctrl polyl aar; rewrite ultE /= => *; split; last by smt().
+  by rewrite /lift_array256 tP => k kb; rewrite mapiE //= /#.
+
+swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
++ inline XOF(H).next_bytes; conseq />.
+  by wp;call(squeezeblock_ignore); auto => />.
+
+wp; conseq />.
+while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{2} /\
+    to_uint pos{1} = k{2} /\ k{2} %% 3 = 0 /\
+   (forall (k0 : int), 
+           0 <=  k0 < j0{2} => 
+              inFq (to_sint rp{1}.[k0]) = aa{2}.[k0]) /\
+   (forall (k0 : int), 
+        0 <= k0 < j0{2} => 
+            0 <= to_sint rp{1}.[k0] /\ to_sint rp{1}.[k0] < q));
+  last first.
+
++ auto => /> &1 &2 ???????; do split; 1,2: smt(). 
+  move => ctrl rpl aar kr => *; do split; 1,2:  smt();
+  by  rewrite ultE /=.
+
+seq 13 6 : (#{/~k{2} < 168}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d2{2}).
+
+auto => /> &1 &2 ?????????; do split; 1,2,4:smt().
++ by rewrite to_uintD_small; smt().
++ admit.
+admit.
+
+seq 2 2 : (to_uint ctr0{1} = j0{2} /\
+           to_uint pos{1} = k{2} /\ 
+           #{/~exit{1}}post).
+
++ if; 1: by move => &1 &2; rewrite ultE qE; smt().
+  + sp 2 2; if{2}. 
+    + rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE; smt().
+      rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /= to_uintD_small /= /#.
+      auto => /> &1 aar ctrl rpl 8?; rewrite ultE /= => *; do split; 2..3:smt().
+      + rewrite to_uintD_small /= /#.
+      + rewrite to_uintD_small /= /#.
+      + move => k0 ??; rewrite to_uintD_small /= 1:/#.
+        case (k0 < to_uint ctrl); 1: by move => *; rewrite !set_neqiE /#.
+        move => *; case (k0 = to_uint ctrl). 
+        + move => *; do 2! (rewrite set_neqiE 1,2:/# set_eqiE 1,2:/#).
+          by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+        move => *;have -> : (k0 = to_uint ctrl + 1) by smt(). 
+        rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
+        by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+      move => k0 ??; rewrite to_uintD_small /= 1:/#.
+      case (k0 < to_uint ctrl); 1: by move => *; rewrite !set_neqiE /#.
+      move => *; case (k0 = to_uint ctrl). 
+      + move => *; rewrite set_neqiE 1,2:/# set_eqiE 1,2:/#.
+        by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+      move => *;have -> : (k0 = to_uint ctrl + 1) by smt(). 
+      rewrite set_eqiE 1,2:/#.
+      by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+     
+    if{1}; last first. 
+    + auto => /> &1  aar ctr0 rpl; rewrite !ultE /= => *;  do split; 2..3: smt().
+      + by rewrite to_uintD_small /= /#. 
+      + by rewrite to_uintD_small /= /#. 
+      + move => k0??;case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
+        move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+        rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
+        by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+      move => k0 ??; case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
+      move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+      rewrite set_eqiE 1,2:/#.
+      by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+    rcondf{1} 1. 
+    + move => *; auto => /> &1; rewrite !ultE /= => *.
+      by rewrite  ultE /= to_uintD_small /= /#.  
+    auto => /> &1  aar ctr0 rpl; rewrite !ultE /= => *;  do split; 2..3: smt().
+    + by rewrite to_uintD_small /= /#. 
+    + by rewrite to_uintD_small /= /#. 
+    + move => k0??;case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
+      move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+      rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
+      by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+    move => k0 ??; case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
+    move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+    rewrite set_eqiE 1,2:/#.
+    by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+
+  if{2}. 
+  + rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /#.
+    rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /#.
+    auto => /> &1 &2 8?; rewrite ultE /= => *; do split; 2..3:smt().
+    + rewrite to_uintD_small /= /#.
+    + rewrite to_uintD_small /= /#.
+    + move => k0 ??;  case (k0 < to_uint ctr0{1}); 1: by move => *; rewrite !set_neqiE /#.
+      move => *;have -> : (k0 = to_uint ctr0{1}) by smt(). 
+      rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
+      by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+    move => k0 ??; case (k0 < to_uint ctr0{1}); 1: by move => *; rewrite !set_neqiE /#.
+    move => *;have -> : (k0 = to_uint ctr0{1}) by smt(). 
+    rewrite set_eqiE 1,2:/#.
+    by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+     
+  if{1}; last by auto => />. 
+  rcondf{1} 1; 1: by move => *; auto => /> &1; rewrite !ultE /= /#.
+  by auto => />.  
+
+auto => /> &1 &2 *; split.
++ admit.
+admit.
+
+qed.
+
+
+lemma sigextu16_to_sint (a : W8.t) :  W16.to_sint (sigextu16 a) = to_sint a.
+rewrite /sigextu16 of_sintK /smod /=.
+case (0 <= to_sint a).
++ by smt(modz_small W8.to_uint_cmp pow2_8).
+move => *.
+pose x := -to_sint a; have ->: to_sint a = -x by auto.
+by rewrite !modNz; smt(modz_small W8.to_uint_cmp pow2_8).
+qed.
+
+lemma W8_of_sintK_signed a:
+    - W8.modulus %/ 2 <= a < W8.modulus %/ 2 =>
+      to_sint (W8.of_int a) = a.
+move => /= *; rewrite of_sintK /smod /=.
+case (0 <= a); 1: smt(modz_small W8.to_uint_cmp pow2_8).
+pose x := -a; have ->: a = -x by auto.
+by smt(modNz modz_small W8.to_uint_cmp pow2_8).
+qed.
+
+lemma W8_to_sintB_small (a b : W8.t):
+    - W8.modulus %/ 2 <= to_sint a - to_sint b && to_sint a - to_sint b < W8.modulus %/ 2 =>
+    to_sint (a - b) = to_sint a - to_sint b.
+move => /= *.
+rewrite -(W8_of_sintK_signed (to_sint a - to_sint b)) //= of_intD of_intN.
+have -> : W8.of_int (to_sint a) = a. 
++ by rewrite /to_sint /smod fun_if /= of_intD of_intN to_uintK /= subr0 /#. 
+have -> : W8.of_int (to_sint b) = b. 
++ by rewrite /to_sint /smod fun_if /= of_intD of_intN to_uintK /= subr0 /#. 
+done.
+qed.
+
+lemma mask85_sum (a : W8.t) (i : int) :
+  0 <= i < 4 => 
+      to_uint ((((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8)) `>>` W8.of_int (2*i)) %% 4 = 
+      b2i a.[2*i] + b2i a.[2*i + 1].
+move => ib; rewrite to_uint_shr /= 1:/# /=.
+rewrite (modz_small _ 256) 1:/# (modz_small _ 8) 1:/#.
+admitted. (* Benjamin *)
+
+lemma parallel_noisesum_low (a : W8.t) :
+  to_uint ((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8) %% 4 -
+  to_uint ((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8 `>>` (of_int 2)%W8) %% 4 =
+     b2i a.[0] + b2i a.[1] - (b2i a.[2] + b2i a.[3]).
+have -> : to_uint ((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8) %% 4 = 
+          to_uint (((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8) `>>` W8.of_int 0) %% 4
+  by rewrite /(`>>`) /= to_uint_shr //=.
+by move : (mask85_sum a 0) => /= ->; move : (mask85_sum a 1) => /= ->.
+qed.
+
+lemma parallel_noisesum_high (a : W8.t) :
+  to_uint ((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8 `>>` (of_int 4)%W8) %% 4 -
+  to_uint ((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8 `>>` (of_int 6)%W8) %% 4 =
+    b2i a.[4] + b2i a.[5] - (b2i a.[6] + b2i a.[7]).
+by move : (mask85_sum a 2) => /= ->; move : (mask85_sum a 3) => /= ->.
+qed.
 
 equiv get_noise_sample_noise :
    M._poly_getnoise ~ CBD2(PRF, H).sample_real :
@@ -624,8 +814,26 @@ while(#pre /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ 0 <= i{2} <= 128 /\ 
 
 auto => /> &1 &2; rewrite !ultE /= => *.
 do 2! (rewrite to_uintD_small /=; 1:smt()); do split; 1..3: smt(). 
-+ admit.
-admit.
++ move => k kbl; rewrite !to_uintD_small /= 1:/# =>  kbh. 
+  case (k < to_uint j{1}); 1: by move => *;rewrite !set_neqiE /#.
+  case (k = to_uint j{1}).
+  + move => *; do 2! (rewrite set_neqiE 1,2:/# set_eqiE 1,2:/#); congr.
+    rewrite sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
+    have ->  /= : to_uint j{1} %% 2 = 0 by smt().
+    by apply parallel_noisesum_low.
+  move => *; have ? : k = to_uint j{1} + 1 by smt().
+  do 2! (rewrite set_eqiE 1,2:/#); congr.
+  rewrite sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
+  have ->  /= : (to_uint j{1} + 1) %% 2 = 1 by smt().
+  by apply parallel_noisesum_high.
+move => k kbl; rewrite !to_uintD_small /= 1:/# =>  kbh. 
+case (k < to_uint j{1}); 1: by move => *;rewrite !set_neqiE /#.
+case (k = to_uint j{1}).
++ move => *; rewrite set_neqiE 1,2:/# set_eqiE 1,2:/#.
+  by rewrite sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; smt(). 
+move => *; have ? : k = to_uint j{1} + 1 by smt().
+by rewrite set_eqiE 1,2:/# sigextu16_to_sint (_: 3 = 2^2 -1) // 
+     !and_mod //= W8_of_sintK_signed /=; smt(). 
 qed.
 
 equiv sample_noise_good2 _key :
