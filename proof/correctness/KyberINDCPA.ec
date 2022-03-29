@@ -476,6 +476,26 @@ auto => /> *; split; 1: by smt().
 by move => *;rewrite tP => k kb; smt().
 qed. 
 
+equiv shake33_ignore :
+  M._shake256_128_33 ~ M._shake256_128_33 :
+   arg{1}.`2 = arg{2}.`2 ==> ={res}.
+proof.
+proc=> /=. 
+swap {1} 2 -1; swap {1} 4 -2.
+swap {2} 2 -1; swap {2} 4 -2.
+seq 2 2: (#pre /\ ={state}).
++ call(_: true ==> ={res}); last by auto => />.
+  proc; while (={i} /\ 0<=i{1}<=25 /\ forall k, 0<=k<i{1} => state{1}.[k] = state{2}.[k]);
+     1: by auto => />; smt(Array25.set_eqiE Array25.set_neqiE).
+  auto => /> *; split; 1: by smt().
+  by move => *;rewrite tP => k kb; smt().
+seq 7 7 : (={state}); 1: by sim.
+while (={i,state} /\ 0<=i{1}<=128 /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.[k]);
+  1: by auto => />; smt(Array128.set_eqiE Array128.set_neqiE).
+  auto => /> *; split; 1: by smt().
+  by move => *;rewrite tP => k kb; smt().
+qed. 
+
 equiv auxgenmatrix_good :
   M.__gen_matrix ~ AuxKyber.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
@@ -570,7 +590,7 @@ seq 3 1 : (
   case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
   case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
   by move => *;rewrite set_eqiE /# .
-
+(* sampling loop *)
 admitted. (* obviously works :-) *)
 
 equiv get_noise_sample_noise :
@@ -579,8 +599,34 @@ equiv get_noise_sample_noise :
    ==> 
    lift_array256 res{1} = res{2} /\
    forall k, 0<=k<256 => -5 < to_sint res{1}.[k] < 5.
-proc. 
-admitted. (* obviously works :-) *)
+proc => /=. 
+seq 8 2 : (buf{1} = bytes{2}).
++ inline PRF(H).next_bytes.
+  wp;call shake33_ignore;wp => /=.
+  while{1}(0<=k{1}<=32 /\ seed{1} = PRF.key{2} /\ 
+    forall i, 0<=i<k{1} => extseed{1}.[i] = PRF.key{2}.[i]) (32 - k{1}); last first.
+  + auto => /> &1 &2 *; split; 1: smt().
+    move => extseed kl *; split; 1: smt().
+    move => *; rewrite Array33.tP => ii iib.
+    by case(ii < 32); move=> *; rewrite initiE //=; smt(Array33.set_eqiE Array33.set_neqiE).
+  move => &m z; auto => /> &hr ????; do split; 1,2,4: smt().
+  by move => i0 i0b; case(i0 < k{hr}); move=> *;  smt(Array33.set_eqiE Array33.set_neqiE).
+
+while(#pre /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ 0 <= i{2} <= 128 /\ j{2} = 2*i{2} /\
+       (forall k, 0<=k<2*i{2} =>
+          inFq (to_sint rp{1}.[k]) = rr{2}.[k]) /\
+       (forall k, 0<=k<j{2} =>
+          -5 < to_sint rp{1}.[k] < 5)); last first.
+   auto => /> &1 &2 *; split; 1: smt().
+   move => i????????; have -> : 2*to_uint i = 256 by smt().
+   rewrite /lift_array256 tP; move => *;split; last by smt().
+   by move => *; rewrite mapiE //=;smt().
+
+auto => /> &1 &2; rewrite !ultE /= => *.
+do 2! (rewrite to_uintD_small /=; 1:smt()); do split; 1..3: smt(). 
++ admit.
+admit.
+qed.
 
 equiv sample_noise_good2 _key :
   AuxKyber.sample_noise2_jasmin ~ AuxKyber.sample_noise2_spec :
