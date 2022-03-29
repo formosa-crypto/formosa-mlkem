@@ -80,7 +80,8 @@ rewrite of_uintK /= modz_small; 1: by smt(rg_asint).
   by rewrite /smod /=; smt(rg_asint qE).
 qed.
 
-op unlift_vector(a : vector) = Array768.init (fun i => W16.of_int (as_sint a.[i %/ 256].[i%%256])).
+op unlift_vector(a : vector) = 
+   Array768.init (fun i => W16.of_int (as_sint a.[i %/ 256].[i%%256])).
 
 lemma vector_unlift a : 
     lift_vector (unlift_vector a) = a /\
@@ -569,6 +570,7 @@ seq 3 1 : (
   case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
   case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
   by move => *;rewrite set_eqiE /# .
+
 admitted. (* obviously works :-) *)
 
 equiv get_noise_sample_noise :
@@ -582,19 +584,87 @@ admitted. (* obviously works :-) *)
 
 equiv sample_noise_good2 _key :
   AuxKyber.sample_noise2_jasmin ~ AuxKyber.sample_noise2_spec :
-    ={noiseseed} ==> res{1}.`1 = res{2}.`1 /\ 
+    _key = noiseseed{1} /\ ={noiseseed} 
+    ==> res{1}.`1 = res{2}.`1 /\ 
                      res{1}.`2 = res{2}.`2 /\ 
                      res{2}.`3 = 6 /\
                      PRF.key{2} = _key.
-proc.
+proc => /=.
 unroll for {2} 8; unroll for {2} 6.
 swap {2} 4 -3.
-inline PRF(H).init; seq 3 5 : (#pre /\ PRF.key{2} = noiseseed{1} /\ _N{2} = to_uint nonce{1}); 1:by auto.
-seq 2 3 : (#pre /\ lift_array256 (subarray256 noise1{1} 0) = noise1{2}.[0] /\
+inline PRF(H).init; seq 2 4 : (#pre /\ PRF.key{2} = noiseseed{1}); 1:by auto.
+seq 3 4 : (#pre /\ lift_array256 (subarray256 noise1{1} 0) = noise1{2}.[0] /\ _N{2}=0 /\ i{2} = 0 /\
               (forall k, 0<=k<256 => -5 < to_sint noise1{1}.[k] < 5)).
 wp; call (get_noise_sample_noise); auto => /> &1 &2 *; split.
++ rewrite /lift_array256 /subarray256 /set /= offunvE 1:/# /= tP => k kb.
+  by rewrite !mapiE //= initiE //= initiE 1:/# /= kb /=.
+by move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= /#.
 
-admitted. (* Should follow from get_noise_sample_noise *)
+seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=1 /\ i{2} = 1 /\
+              lift_array256 (subarray256 noise1{1} 0) = noise1{2}.[0] /\
+              lift_array256 (subarray256 noise1{1} 1) = noise1{2}.[1] /\ 
+              (forall k, 0<=k<512 => -5 < to_sint noise1{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 H *; do split. 
++ move : H; rewrite /lift_array256 /subarray256 /set /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= 1:/# /= /#. 
++ move : H; rewrite /lift_array256 /subarray256 /set /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
+
+seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=2 /\ i{2} = 2 /\
+              lift_vector noise1{1} = noise1{2} /\
+              (forall k, 0<=k<768 => -5 < to_sint noise1{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 H0 H1 *; split; 
+   last by  move => *; rewrite !initiE //= /#.
+move : H0 H1; rewrite /lift_vector /lift_array256 /subarray256  /set /= eq_vectorP /= !tP =>H0 H1 r rb.
+rewrite !offunvE /= 1,2:/# !tP => k kb. 
+case (r = 0).
++ move => *; have -> /= : !2=r by smt().
+  by move : (H0 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+case (r = 1).
++ move => *; have -> /= : !2=r by smt().
+  by move : (H1 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+move => *; have -> /= : 2 = r by smt(). 
+by rewrite !mapiE //= !initiE //= !initiE //= /#. 
+
+seq 3 5 : (#{/~_N{2}}{~i{2}}pre /\ lift_array256 (subarray256 noise2{1} 0) = noise2{2}.[0] /\ _N{2}=3 /\ i{2} = 0 /\
+              (forall k, 0<=k<256 => -5 < to_sint noise2{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 *; split.
++ rewrite /lift_array256 /subarray256 /set /= offunvE 1:/# /= tP => k kb.
+  by rewrite !mapiE //= initiE //= initiE 1:/# /= kb /=.
+by move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= /#.
+
+seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=4 /\ i{2} = 1 /\
+              lift_array256 (subarray256 noise2{1} 0) = noise2{2}.[0] /\
+              lift_array256 (subarray256 noise2{1} 1) = noise2{2}.[1] /\ 
+              (forall k, 0<=k<512 => -5 < to_sint noise2{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 ?H *; do split. 
++ move : H; rewrite /lift_array256 /subarray256 /set /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= 1:/# /= /#. 
++ move : H; rewrite /lift_array256 /subarray256 /set /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
+
+seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=5 /\ i{2} = 2 /\
+              lift_vector noise2{1} = noise2{2} /\
+              (forall k, 0<=k<768 => -5 < to_sint noise2{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 ?H0 H1 *; split; 
+   last by  move => *; rewrite !initiE //= /#.
+move : H0 H1; rewrite /lift_vector /lift_array256 /subarray256  /set /= eq_vectorP /= !tP =>H0 H1 r rb.
+rewrite !offunvE /= 1,2:/# !tP => k kb. 
+case (r = 0).
++ move => *; have -> /= : !2=r by smt().
+  by move : (H0 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+case (r = 1).
++ move => *; have -> /= : !2=r by smt().
+  by move : (H1 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+move => *; have -> /= : 2 = r by smt(). 
+by rewrite !mapiE //= !initiE //= !initiE //= /#. 
+
+by auto => /> &1 H H0; rewrite /lift_vector /unlift_vector !tP /subarray256 /lift_array256;split;
+  move => i ib; rewrite initiE //= offunvE 1:/# /= mapiE 1:/# /= initiE 1:/# /=;smt(inFq_to_sint qE).
+
+qed.
 
 equiv sample_noise_good3 :
   AuxKyber.sample_noise3_jasmin ~ AuxKyber.sample_noise3_spec :
