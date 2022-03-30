@@ -57,7 +57,8 @@ move => ib lb; rewrite /lift_vector /lift_array768 offunvE // mapiE 1:/# /=.
 by rewrite /lift_array256 /subarray256 mapiE //= initiE //=.
 qed.
 
-op unlift_matrix(a : matrix) = Array2304.init (fun i => W16.of_int (asint a.[i %/ 768,i %% 768 %/ 256].[i %% 256])).
+op unlift_matrix(a : matrix) = Array2304.init 
+   (fun i => W16.of_int (asint a.[i %/ 768,i %% 768 %/ 256].[i %% 256])).
 
 lemma matrix_unlift a : 
     lift_matrix (unlift_matrix a) = a /\
@@ -507,6 +508,48 @@ while (={i,state} /\ 0<=i{1}<=128 /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.
   by move => *;rewrite tP => k kb; smt().
 qed. 
 
+lemma mergebytes b1 b2 :
+  to_uint (zeroextu16 b1 `|` (zeroextu16 b2 `&` (of_int 15)%W16 `<<` (of_int 8)%W8)) =
+  to_uint b1 + 256 * (to_uint b2 %% 16).
+proof.
+rewrite (_:15 = 2^4-1) // !W16.and_mod //= /(`<<`) /=.
+rewrite orw_disjoint. 
++ rewrite /W16.(`&`); apply W16.ext_eq => k kb.
+  rewrite !map2iE // zerowE.
+  rewrite to_uint_zeroextu16.
+  case (!(8 <= k < 16)); first by smt(W16.get_out).
+  move => /= ?; rewrite !get_to_uint kb /= (_: 0 <= k - 8 && k - 8 < 16) 1:/# /=.  
+  rewrite !of_uintK /= (modz_small _ 65536) /=; 1:smt(W8.to_uint_cmp pow2_8).
+  rewrite (modz_small _ 65536) 1:/# /=.
+  move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 8 k _) => //= ;1:smt().
+  move => *;rewrite divz_small; 1: by smt(pow2_8 W8.to_uint_cmp). 
+  by smt(mod0z).
+rewrite !to_uint_zeroextu16 /= to_uintD_small /= to_uint_zeroextu16 to_uint_shl //=.
++ rewrite of_uintK /= (modz_small (to_uint b2 %% 16) 65536); 1: smt().
+  by rewrite (modz_small _ 65536);  smt(W8.to_uint_cmp pow2_8).
+rewrite of_uintK /= (modz_small (to_uint b2 %% 16) 65536); 1: smt().
+by rewrite (modz_small _ 65536);  smt(W8.to_uint_cmp pow2_8).
+qed.
+
+lemma mergebytes2 b1 b2 :
+to_uint ((zeroextu16 b1 `>>` (of_int 4)%W8) `|` (zeroextu16 b2 `<<` (of_int 4)%W8)) =
+to_uint b1 %/ 16 + 16 * to_uint b2.
+proof.
+rewrite /(`<<`) /(`>>`) /=.
+rewrite orw_disjoint. 
++ rewrite /W16.(`&`); apply W16.ext_eq => k kb.
+  by rewrite !map2iE // zerowE /(`>>>`) /(`<<<`) !initiE //= !zeroextu16_bit /#.
+by rewrite to_uintD_small /= to_uint_shl //= to_uint_shr //= 
+    !to_uint_zeroextu16 /=;smt(W8.to_uint_cmp pow2_8).
+qed.
+
+lemma extract_msb  (x : W64.t): (x `>>` W8.of_int 63 = W64.zero) =  !x.[63].
+proof.
+rewrite /(`>>`) /= wordP /=.  
+have -> : (forall (i0 : int), 0 <= i0 && i0 < 64 => ((0 <= i0 && i0 < 64) && x.[i0 + 63]) = false) = ((x.[0 + 63] = false)  /\ (forall (i0 : int), 1 <= i0 && i0 < 64 => x.[i0 + 63] = false)); 1: by smt().
+by have ? : (forall (i0 : int), 1 <= i0 && i0 < 64 => (x.[i0 + 63] = false)); smt(W64.get_out).
+qed.
+
 equiv auxgenmatrix_good :
   M.__gen_matrix ~ AuxKyber.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
@@ -644,8 +687,8 @@ seq 13 6 : (#{/~k{2} < 168}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d
 
 auto => /> &1 &2 ?????????; do split; 1,2,4:smt().
 + by rewrite to_uintD_small; smt().
-+ admit.
-admit.
++ by rewrite mergebytes to_uintD_small; smt().
+by rewrite mergebytes2  !to_uintD_small; smt().
 
 seq 2 2 : (to_uint ctr0{1} = j0{2} /\
            to_uint pos{1} = k{2} /\ 
@@ -721,12 +764,29 @@ seq 2 2 : (to_uint ctr0{1} = j0{2} /\
   rcondf{1} 1; 1: by move => *; auto => /> &1; rewrite !ultE /= /#.
   by auto => />.  
 
-auto => /> &1 &2 *; split.
-+ admit.
-admit.
+auto => /> &1 &2 *.
+
+rewrite extract_msb.
+
+have :
+(! ((of_int 256)%W64 - ctr0{1} - W64.one `|` ((of_int 168)%W64 - pos{1} - (of_int 3)%W64)).[63]) <=>
+to_uint ctr0{1} < 256 /\ (to_uint ctr0{1} < 256 => to_uint pos{1} < 168); last by smt().
+
+rewrite /W64.(`|`) map2E //=.
+
+have ->: ((of_int 256)%W64 - ctr0{1} - W64.one).[63] = (255 - to_uint ctr0{1} < 0).
++ have -> : W64.of_int 256 - ctr0{1} - W64.one = W64.of_int (255 - to_uint ctr0{1})
+    by ring; rewrite to_uintK; ring.
+  by rewrite of_intwE /= /int_bit /= /#.
+
+have -> : ((of_int 168)%W64 - pos{1} - (of_int 3)%W64).[63] = (165 - to_uint pos{1} < 0); 
+  last by smt().
+
++ have -> : (W64.of_int 168) - pos{1} - (W64.of_int 3) = W64.of_int (165 - to_uint pos{1})
+    by ring; rewrite to_uintK; ring.
+  by rewrite of_intwE /= /int_bit /= /#.
 
 qed.
-
 
 lemma sigextu16_to_sint (a : W8.t) :  W16.to_sint (sigextu16 a) = to_sint a.
 rewrite /sigextu16 of_sintK /smod /=.
@@ -758,16 +818,51 @@ have -> : W8.of_int (to_sint b) = b.
 done.
 qed.
 
+lemma rearrange1 a b c d :
+  a + 4 * b + 16 * c + 64 * d = (32*d + 8*c + 2*b)*2 + a by ring.
+
+lemma rearrange2 a b c d :
+  a + 4 * b + 16 * c + 64 * d = (16*d + 4*c + b)*4 + a by ring.
+
+lemma rearrange3 a b c d :
+  a + 4 * b + 16 * c + 64 * d = (8*d + 2*c)*8 + (b * 4 + a) by ring.
+
+lemma rearrange4 a b c d :
+  a + 4 * b + 16 * c + 64 * d = (4*d + c)*16 + (b * 4 + a) by ring.
+
+lemma rearrange5 a b c d :
+  a + 4 * b + 16 * c + 64 * d = (2*d)*32 + (16*c + b * 4 + a) by ring.
+
+lemma rearrange6 a b c d :
+  a + 4 * b + 16 * c + 64 * d = d*64 + (16*c + b * 4 + a) by ring.
+
 lemma even85bits a: 
    a `&` W8.of_int 85 = 
           W8.of_int (b2i a.[0] + 4*b2i a.[2] + 16*b2i a.[4] + 64*b2i a.[6]).
 proof.
-admitted.
+apply W8.ext_eq => x xb; rewrite /W8.(`&`) map2E /= initiE //=.
+rewrite !W8.of_intE /= /int2bs /mkseq /= -iotaredE /=.
+case (x = 0); 1: by move => -> /=; rewrite (modz_small _ 256); smt(mod2_b2i).
+case (x = 1); 1: by move => -> /=; rewrite (modz_small _ 256) 1:/# rearrange1 edivz_eq /#.
+case (x = 2); 1: by move => -> /=; rewrite (modz_small _ 256) 1:/# rearrange2 edivz_eq;smt(mod2_b2i).
+case (x = 3); 1: by move => -> /=; rewrite (modz_small _ 256) 1:/# rearrange3 edivz_eq /#.
+case (x = 4); 1: by move => -> /=; rewrite (modz_small _ 256) 1:/# rearrange4 edivz_eq;smt(mod2_b2i).
+case (x = 5); 1: by move => -> /=; rewrite (modz_small _ 256) 1:/# rearrange5 edivz_eq /#.
+case (x = 6); 1: by move => -> /=; rewrite (modz_small _ 256) 1:/# rearrange6 edivz_eq;smt(mod2_b2i).
+move => *;have -> /= : x = 7 by smt().
+by rewrite (modz_small _ 256) /#. 
+qed.
+
+lemma nice_shift (a : W8.t) i :
+   1 <= i < 8 => b2i a.[i] = b2i (a `>>>` 1).[i-1] by smt(shrwE).
 
 lemma odd85bits (a : W8.t): 
   (a `>>>` 1) `&` W8.of_int 85 = 
           W8.of_int (b2i a.[1] + 4*b2i a.[3] + 16*b2i a.[5] + 64*b2i a.[7]).
-admitted.
+proof.
+rewrite (nice_shift a 1) // (nice_shift a 3) // (nice_shift a 5) // (nice_shift a 7) //.
+by apply even85bits.
+qed.
 
 lemma mask85_sum (a : W8.t) (i : int) :
   0 <= i < 4 => 
