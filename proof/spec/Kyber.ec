@@ -1028,21 +1028,19 @@ clone import MLWE_PKE as MLWEPKE with
   proof correctness_hack
   proof fail_prob.
 
-
 realize encode_noise.
-admitted.
-(* This proof doesn't work because of the matrix clone and vector operations types 
-move => /> *.
-rewrite /c_decode /c_encode => />.
+move => /> u v.
+rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v=> />.
 split; last  by rewrite round_poly_errE.
-rewrite /round_poly /round_poly_err /roundc_err  => />.
-apply eq_vectorP => /> *.
-rewrite offunvE 1:/# offunvE 1:/# /=.
-apply Array256.ext_eq => /> *.
-rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.  
-congr => />.
-smt.
-qed.*)
+rewrite /(+) /mapv /=.
+apply eq_vectorP => /> i il ih; rewrite !offunvE 1,2:/# /=.
+rewrite MLWE_.Matrix_.Vector.offunvE 1:/# /= /compress_poly_err /=.
+apply Array256.tP => k kb.
+rewrite /compress_polyvec /= /fromarray256 /= /Poly.(&+) /=.
+rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
+rewrite decompress_errE //; 1: smt(qE).
+by rewrite mapiE /#.
+qed.
 
 realize good_decode.
 rewrite /under_noise_bound /m_encode /m_decode /b_encode /b_decode /trueval /falseval  qE  => m n hgood.
