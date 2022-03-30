@@ -234,7 +234,6 @@ rewrite W8.to_uint_orw_disjoint.
   rewrite (modz_small _  4294967296); 1: by rewrite of_uintK /= /#. 
   rewrite (modz_small _  256); 1: by rewrite of_uintK /= /#.  
   rewrite W32.of_uintK /= (modz_small _ 4294967296) 1:/#.
-search (Ring.IntID.exp _ _ %/ Ring.IntID.exp _ _).
   rewrite divMr; 1: by smt(le_dvd_pow). 
   rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
   + have -> : 2 %| 2 ^ (j{2} - k) = 2^1 %| 2 ^ (j{2} - k) by auto.  
@@ -1691,12 +1690,15 @@ do split.
   rewrite kval zetavals1; 1,2: smt().
   rewrite ZqField.mulrA -ZqField.mulrA rrinvFq.
   by ring.
-+ rewrite set_neqiE; 1,2: smt().
++ move => *.
+  rewrite set_neqiE; 1,2: smt().
   rewrite set_neqiE; 1,2: smt().
   rewrite set_eqiE; 1,2: smt().
   rewrite to_sintD_small; 1: smt(). 
   rewrite inFqD redv4 redv5 !inFqM.
   by ring.
+
+move => *; do split.
 + rewrite set_neqiE; 1,2: smt().
   rewrite set_eqiE; 1,2: smt().
   rewrite to_sintD_small; 1: smt(). 
@@ -1705,10 +1707,13 @@ do split.
   congr;congr;rewrite -ZqRing.mulrA -(ZqRing.mulrC _ (inFq 169));congr.
   rewrite ZqField.mulNr -ZqField.mulrA rrinvFq.
   by ring.
+
+move => *.
 rewrite set_eqiE; 1,2: smt().
 rewrite to_sintD_small; 1: smt(). 
 rewrite inFqD redv9 redv10 !inFqM.
 by ring.
+
 qed.
 
 lemma poly_basemul_ll : islossless M._poly_basemul.

@@ -931,6 +931,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
 
 require (***) MLWE_PKE.
 
+theory SpecProperties.
+
 type plaintext = bool Array256.t.
 type ciphertext = ipolyvec * ipoly.
 op m_encode(m : plaintext) : poly = Array256.map b_encode m.
@@ -1298,8 +1300,8 @@ module (PRF : PRF_t) (O : RO.POracle) = {
 
 section.
 
-declare module Ac <: KyberPKE.CAdversaryRO {MLWE_.RO.Lazy.LRO}.
-declare module As <: KyberPKE.AdversaryRO {MLWE_.RO.Lazy.LRO}.
+declare module Ac <: KyberPKE.CAdversaryRO {-MLWE_.RO.Lazy.LRO}.
+declare module As <: KyberPKE.AdversaryRO {-MLWE_.RO.Lazy.LRO}.
 
 (* These modules are reductions. They just encode/decode things coming from the
    refined game to the scheme adversary.  *)
@@ -1360,9 +1362,9 @@ end section.
 
 section.
 
-declare module As <: KyberPKE.AdversaryRO  {MLWE_.RO.Lazy.LRO,MLWE_.B, MLWE_.Bt}.
+declare module As <: KyberPKE.AdversaryRO  {-MLWE_.RO.Lazy.LRO,-MLWE_.B, -MLWE_.Bt}.
 
-declare module Ac <: KyberPKE.CAdversaryRO  {MLWE_.RO.Lazy.LRO}.
+declare module Ac <: KyberPKE.CAdversaryRO  {-MLWE_.RO.Lazy.LRO}.
 
 (* In the ROM there should be no PRF loss *)
 lemma wrap_equiv_corr &m :  
@@ -1413,3 +1415,4 @@ end section.
 
 (* At this point we will have that the spec is as correct and secure as the refined abstract Kyber. We can start the implementation correctness proof. We first move to an alternative version of the scheme that separates random samplings from algebraic computations. *)
 
+end SpecProperties.

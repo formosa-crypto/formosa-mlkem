@@ -310,7 +310,7 @@ module (B1ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
 
 section.
 
-declare module A <: AdversaryRO {LRO,B1ROM,MLWE_.B}.
+declare module A <: AdversaryRO {-LRO,-B1ROM,-MLWE_.B}.
 
 lemma hop1_left_h &m: 
   Pr[CPAROM(MLWE_PKE,A,LRO).main() @ &m : res] =
@@ -370,7 +370,7 @@ module (B2ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
 
 section.
 
-declare module A <: AdversaryRO {LRO,B2ROM,MLWE_.Bt}.
+declare module A <: AdversaryRO {-LRO,-B2ROM,-MLWE_.Bt}.
 
 
 lemma hop2_left_h &m: 
@@ -430,7 +430,7 @@ end section.
 
 section.
 
-declare module A <: AdversaryRO {LRO, B, Bt}.
+declare module A <: AdversaryRO {-LRO, -B, -Bt}.
 
 local module Game2RO(A : AdversaryRO) = {
   proc main() = {
@@ -607,7 +607,7 @@ module CorrectnessAdvNoise(A : CAdversaryRO, O : Oracle) = {
 
 section.
 
-declare module A <: CAdversaryRO {LRO}.
+declare module A <: CAdversaryRO {-LRO}.
 
 lemma correctness &m :
   (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
@@ -716,7 +716,7 @@ module CorrectnessNoiseApprox = {
 
 section.
 
-declare module A <: CAdversaryRO {LRO}.
+declare module A <: CAdversaryRO {-LRO}.
 
 lemma correctness_slack &m :
   (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>

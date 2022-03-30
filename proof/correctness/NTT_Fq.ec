@@ -233,18 +233,18 @@ admitted.
 lemma nttvK : cancel invnttv nttv.
 proof. 
 rewrite /nttv /invnttv /mapv /= /cancel => x.
-rewrite Matrix_.Vector.offunvK /vclamp /kvec /=.
-apply Matrix_.Vector.eq_vectorP => i ib.
-rewrite Matrix_.Vector.offunvE //=.
+rewrite KMatrix.Vector.offunvK /vclamp /kvec /=.
+apply KMatrix.Vector.eq_vectorP => i ib.
+rewrite KMatrix.Vector.offunvE //=.
 smt(nttK).
 qed.
 
 lemma invnttvK : cancel nttv invnttv.
 proof. 
 rewrite /nttv /invnttv /mapv /= /cancel => x.
-rewrite Matrix_.Vector.offunvK /vclamp /kvec /=.
-apply Matrix_.Vector.eq_vectorP => i ib.
-rewrite Matrix_.Vector.offunvE //=.
+rewrite KMatrix.Vector.offunvK /vclamp /kvec /=.
+apply KMatrix.Vector.eq_vectorP => i ib.
+rewrite KMatrix.Vector.offunvE //=.
 smt(invnttK).
 qed.
 

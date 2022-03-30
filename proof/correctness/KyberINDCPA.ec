@@ -758,13 +758,40 @@ have -> : W8.of_int (to_sint b) = b.
 done.
 qed.
 
+lemma even85bits a: 
+   a `&` W8.of_int 85 = 
+          W8.of_int (b2i a.[0] + 4*b2i a.[2] + 16*b2i a.[4] + 64*b2i a.[6]).
+proof.
+admitted.
+
+lemma odd85bits (a : W8.t): 
+  (a `>>>` 1) `&` W8.of_int 85 = 
+          W8.of_int (b2i a.[1] + 4*b2i a.[3] + 16*b2i a.[5] + 64*b2i a.[7]).
+admitted.
+
 lemma mask85_sum (a : W8.t) (i : int) :
   0 <= i < 4 => 
       to_uint ((((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8)) `>>` W8.of_int (2*i)) %% 4 = 
       b2i a.[2*i] + b2i a.[2*i + 1].
-move => ib; rewrite to_uint_shr /= 1:/# /=.
-rewrite (modz_small _ 256) 1:/# (modz_small _ 8) 1:/#.
-admitted. (* Benjamin *)
+proof.
+move=> hi.
+rewrite /(`>>`)   W8.to_uint_small /= 1:/#.
+rewrite (modz_small (2*i)) 1:/# W8.to_uint_shr 1:/#.
+rewrite to_uintD modz_pow2_div 1:/#.
+have -> : 4 = 2^2 by done.
+rewrite JUtils.modz_mod_pow2.
+have -> : min (`|8 - 2 * i %% 8|) (`|2|) = 2 by smt().
+rewrite odd85bits even85bits !W8.to_uint_small /= 1,2:/#. 
+rewrite -(W8.to_uintK' a).
+have := W8.to_uint_cmp a. 
+move: (to_uint a) => {a} x hx.
+rewrite !W8.of_intwE /=.
+move /mem_range: hi; rewrite /range -JUtils.iotaredE.
+apply: List.allP i => /=.
+move /mem_range: hx; rewrite /range -JUtils.iotaredE.
+apply: List.allP x.
+by cbv delta.
+qed.
 
 lemma parallel_noisesum_low (a : W8.t) :
   to_uint ((a `>>` W8.one) `&` (of_int 85)%W8 + a `&` (of_int 85)%W8) %% 4 -
