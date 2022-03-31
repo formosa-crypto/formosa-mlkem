@@ -1195,16 +1195,19 @@ qed.
 
 (******* CORRECTNESS PROOFS TOP LEVEL ************)
 
-(* We model G exactly as the implementation does it *)
+op touches2 (m m' : global_mem_t) (p1 : address) (len1 : int) (p2 : address) (len2 : int) : bool =
+  forall (a : int), ! (p1 <=  a < p1+len1) =>  ! (p2 <=  a < p2+len2) => m'.[a] = m.[a].
+
+
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
    equiv [ M.indcpa_keypair_jazz ~ Kyber(G,XOF,PRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
-       Glob.mem{2} = mem /\ 
        seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
        valid_ptr (to_uint randomnessp{1}) 32 /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
+       touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
        let (pk,sk) = res{2} in let (t,rho) = pk in
          sk = load_array1152 Glob.mem{1} _skp /\
          t = load_array1152 Glob.mem{1} _pkp  /\
@@ -1212,15 +1215,15 @@ lemma kyber_correct_kg mem _pkp _skp _randomnessp :
 proc*.
 transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, 
              Array32.init(fun i=> loadW8 Glob.mem (to_uint randomnessp  + i)));} 
-(={Glob.mem,arg} /\ valid_ptr (to_uint randomnessp{1}) 32 ==> ={Glob.mem,r}) 
+(={Glob.mem,pkp,skp,randomnessp} /\ valid_ptr (to_uint randomnessp{1}) 32 ==> ={Glob.mem,r}) 
 (   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
     to_uint randomnessp{1} = _randomnessp /\ 
     seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i))  /\
-    Glob.mem{2} = mem /\ 
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)
     ==> 
+    touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
     let (pk, sk) = r{2} in
     let (t, rho) = pk in
         sk = load_array1152 Glob.mem{1} _skp /\
@@ -1274,6 +1277,7 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
             to_uint pkp0{1} = _pkp + 3*384 + to_uint i{1} /\ 
             to_uint skp0{1} = _skp /\ rho{2} = publicseed{1} /\
             valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3) /\
+            touches2 Glob.mem{1} mem _pkp (384 * 3 + 32) _skp (384 * 3) /\
                 sv{2} = load_array1152 Glob.mem{1} _skp /\
                 tv{2} = load_array1152 Glob.mem{1} _pkp /\ 
                 forall k, 0<=k<to_uint i{1} =>
@@ -1282,10 +1286,11 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
 
 + move => *;
   auto => /> &hr ??; rewrite /loadW8 /storeW8 /valid_disj_reg /valid_ptr /=.
-  move  => ppk [#] reg1 reg2 reg3 reg4 reg5 loaded.
+  move  => ppk [#] reg1 reg2 reg3 reg4 reg5 touches2 loaded.
   rewrite ultE /= to_uintD_small /= 1:/# => enter.
   rewrite to_uintD_small /= 1:/#.
-  do split; 1..3,7:smt().
+  do split; 1..3,8:smt().
+  + by rewrite /touches2 /= => a ab1 ab2; rewrite get_set_neqE_s /#.
   + rewrite /load_array1152 Array1152.tP => k kb.
     by rewrite !initiE //=;  rewrite get_set_neqE_s; smt().
   + rewrite /load_array1152 Array1152.tP => k kb.
@@ -1324,6 +1329,9 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
   move => ?????; rewrite /touches => touches1.
   do split => //.
   + by rewrite to_uintD_small //=. 
+  + rewrite /touches2 /= => a ab1 ab2. 
+    have ? := (touches1 (a - to_uint pkp{1}) _); 1: by smt().
+    by have ? := (touches0 (a - to_uint skp{1}) _); by smt().
   + rewrite /load_array1152 tP => k kb; rewrite !initiE //=. 
     move : (touches1 (to_uint skp{1} - to_uint pkp{1} + k) _); 1: by smt().
     by have -> ->: to_uint pkp{1} + (to_uint skp{1} - to_uint pkp{1} + k) = to_uint skp{1} + k by ring.
@@ -1475,21 +1483,24 @@ lemma kyber_correct_enc mem _coinsp _msgp _ctp _pkp :
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _msgp 32 /\
      valid_ptr _ctp (3*320+128) /\
-     Glob.mem{1} = mem /\ to_uint coinsp{1} = _coinsp /\ 
-                   to_uint msgp{1} = _msgp /\ to_uint ctp{1} = _ctp /\ 
-                   to_uint pkp{1} = _pkp /\
+     Glob.mem{1} = mem /\ 
+     to_uint coinsp{1} = _coinsp /\ 
+     to_uint msgp{1} = _msgp /\ 
+     to_uint ctp{1} = _ctp /\ 
+     to_uint pkp{1} = _pkp /\
      r{2} = load_array32 mem _coinsp /\
      m{2} = load_array32 mem _msgp /\
      pk{2}.`1 = load_array1152 mem _pkp /\
      pk{2}.`2 = load_array32 mem (_pkp + 3*384)
        ==> 
+     touches Glob.mem{1} mem _ctp (3*320+128) /\
      let (c1,c2) = res{2} in
      c1 = load_array960 Glob.mem{1} _ctp /\
      c2 = load_array128 Glob.mem{1} (_ctp + 960)
 ].
 proc*.
 transitivity {1} { AuxKyber.indcpa_enc_jazz(ctp,msgp,pkp,coinsp);} 
-(={Glob.mem,arg} ==> ={Glob.mem,r}) 
+(={Glob.mem,ctp,msgp,pkp,coinsp} ==> ={Glob.mem,r}) 
 ( valid_ptr _coinsp 32 /\
   valid_ptr _pkp (384 * 3 + 32) /\
   valid_ptr _msgp 32 /\
@@ -1503,6 +1514,7 @@ transitivity {1} { AuxKyber.indcpa_enc_jazz(ctp,msgp,pkp,coinsp);}
   m{2} = load_array32 mem _msgp /\ pk{2}.`1 = load_array1152 mem _pkp /\ 
   pk{2}.`2 = load_array32 mem (_pkp + 3 * 384)
   ==>
+  touches Glob.mem{1} mem _ctp (3*320+128) /\
   let (c1, c2) = r0{2} in 
       c1 = load_array960 Glob.mem{1} _ctp /\ 
       c2 = load_array128 Glob.mem{1} (_ctp + 960)); 1,2: smt().
@@ -1518,14 +1530,14 @@ while {1} (valid_ptr _coinsp 32  /\
            r{2} = load_array32 mem _coinsp /\ 
            0 <= to_uint i{1} <= 32 /\ 
            forall k, 0 <= k < to_uint i{1} => r{2}.[k] = noiseseed{1}.[k]) (32 - to_uint i{1}).
-+ move => &m z; rewrite /load_array32 //; auto => /> &hr ?? -> ?? H0. 
++ move => &m z; rewrite /load_array32 //; auto => /> &hr ???? H0. 
   rewrite ultE !to_uintD_small /=; 1,2: by smt(). 
    move => *;do split; 1,2,4: by smt().
    move => k0 kb0 kb1; rewrite !initiE /loadW8 1:/# /=. 
    case (0<= k0 < to_uint i{hr}).
       move => kbb; move : (H0 k0 kbb);rewrite !initiE 1:/# /= set_neqiE /#.
    by move => *; rewrite set_eqiE /#.
-auto => /> &1 &2 ?????????; rewrite /load_array1152 /load_array32.
+auto => /> &1 &2 ???????; rewrite /load_array1152 /load_array32.
 move => *;split; 1: smt().
 move => il noisel; rewrite ultE /=; split; 1:smt().
 by move => ???H; rewrite tP => k kb;smt().
@@ -1535,8 +1547,8 @@ swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ that{2} = lift_vector pkpv{1} /\
               signed_bound768_cxq pkpv{1} 0 768 2).
 wp; ecall(polyvec_frombytes_corr Glob.mem{1} _pkp).
-+ auto => />  &1 ??????????????; split; 1: by smt().
-  rewrite /pos_bound768_cxq /ofipolyvec /lift_vector /signed_bound768_cxq /subarray256 /lift_array256 => ??? result rbound.
++ auto => />  &1 ????????; split; 1: by smt().
+  rewrite /pos_bound768_cxq /ofipolyvec /lift_vector /signed_bound768_cxq /subarray256 /lift_array256 => ?? result rbound.
   split; last by smt(). 
   by rewrite eq_vectorP => i ib; rewrite !offunvE //= tP => k kb; rewrite !mapiE //= !initiE //= mapiE /#.
 
@@ -1553,11 +1565,11 @@ while {1} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{1} = to_uint 
   + move => *; move : (H k _); 1: smt().
     by rewrite !initiE //= 1:/# set_neqiE /#. 
   by move => *;rewrite initiE //= 1:/# set_eqiE /#.
-auto => /> &1 &2 ?????????; rewrite /load_array1152 /load_array32.
+auto => /> &1 &2 ????????; rewrite /load_array1152 /load_array32.
 rewrite !to_uintD_small 1:/#.
 move => *;split; 1: smt().
 move => il pkpl pseedl; rewrite ultE /=; split; 1:smt().
-move => ?????H; rewrite tP => k kb; rewrite initiE //=.
+move => ????H; rewrite tP => k kb; rewrite initiE //=.
 by move : (H k _);1:smt(); rewrite initiE //= /#.
 
 swap {2} [6..7] -4. 
@@ -1603,7 +1615,7 @@ seq 17 3 : (u{2} = lift_vector bp{1} /\ v{2} = lift_array256 v{1} /\
             pos_bound768_cxq bp{1} 0 768 2 /\
             valid_ptr _ctp (3 * 320 + 128) /\
             to_uint ctp{1} = _ctp /\
-            ctp0{1} = ctp{1}); last first.
+            ctp0{1} = ctp{1} /\ Glob.mem{1} = mem); last first.
 wp; ecall(poly_compress_corr (lift_array256 v{1}) (to_uint ctp0{1}) Glob.mem{1}).
 wp; ecall(polyvec_compress_corr Glob.mem{1} (to_uint ctp0{1})  (lift_array768 bp{1}) ).
 auto => /> &1 &2; rewrite /signed_bound_cxq /signed_bound768_cxq /compress_polyvec.
@@ -1616,7 +1628,9 @@ move => ???; do split; 2: by smt().
   by move => *;rewrite !mapiE 1:/# /= !initiE /#.
 + move => ??? mem2 touches2; rewrite !to_uintD_small /=; 1:smt().
   do split; 1,2: smt().
-  move => ?? result meml ?? touchesl;split; last by smt(). 
+  move => ?? result meml ?? touchesl;split.
+  + move => k kb;move : (touchesl (k -960) _); 1: smt().
+    by move : (touches2 (k) _); smt().
   rewrite tP => k kb; rewrite !initiE //=. 
   move : (touchesl (k -960) _); 1: smt().
   have -> : to_uint ctp{1} + 960 + (k - 960) = to_uint ctp{1} + k by ring.
@@ -1637,7 +1651,7 @@ seq 3 0 : (#pre /\
           signed_bound768_cxq bp{1} 0 256 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[0,i]))) (invnttv rhat{2})).
-auto => /> &1 &2 ????????????????????.
+auto => /> &1 &2 ???????????????.
 do split; 2,4: smt(NTT_Fq.nttvK). 
 + rewrite /lift_matrix /lift_vector /nttv /invnttv /mapv /=.
   apply eq_vectorP => i ib; rewrite !offunvE //= !offunvK /vclamp ib /=.
@@ -1657,7 +1671,7 @@ seq 2 0 : (#pre /\
           signed_bound768_cxq bp{1} 0 512 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[1,i]))) (invnttv rhat{2})).
-auto => /> &1 &2 ???????????????????? rold ?.
+auto => /> &1 &2 ??????????????? rold ?.
 do split; 2,4: smt(NTT_Fq.nttvK). 
 + rewrite /lift_matrix /lift_vector /nttv /invnttv /mapv /=.
   apply eq_vectorP => i ib; rewrite !offunvE //= !offunvK /vclamp ib /=.
@@ -1681,7 +1695,7 @@ seq 2 0 : (#pre /\
           signed_bound768_cxq bp{1} 0 768 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[2,i]))) (invnttv rhat{2})).
-auto => /> &1 &2 ???????????????????? rold ? rnsold ?.
+auto => /> &1 &2 ??????????????? rold ? rnsold ?.
 do split; 2,4: smt(NTT_Fq.nttvK). 
 + rewrite /lift_matrix /lift_vector /nttv /invnttv /mapv /=.
   apply eq_vectorP => i ib; rewrite !offunvE //= !offunvK /vclamp ib /=.
@@ -1708,7 +1722,7 @@ seq 2 0 : (#pre /\
           signed_bound_cxq v{1} 0 256 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv that{2}) (invnttv rhat{2})).
-auto => /> &1 &2 ??????????????????????????.
+auto => /> &1 &2 ?????????????????????.
 do split; 1,2: smt(NTT_Fq.nttvK). 
 + by rewrite /signed_bound768_cxq => k kb;  smt().
 + move => ??? result ?; rewrite /lift_array256 tP => rval. 
@@ -1720,7 +1734,7 @@ seq 1 0 : (#{/~bp{1}}pre /\
          lift_vector bp{1} = invnttv (ntt_mmul aT{2} rhat{2}) /\
          signed_bound768_cxq bp{1} 0 768 2).
 + ecall {1} (polyvec_invntt_corr bp{1}).
-  auto => /> &1 &2 ????????????????????r1?r2?r3???result <-?.
+  auto => /> &1 &2 ???????????????r1?r2?r3???result <-?.
   split; last by smt(). 
   rewrite /scale_vector /invnttv/mapv/=  eq_vectorP => i ib.
   rewrite !offunvE //= offunvK /vclamp ib /= -NTT_Fq.invntt_scale /=; congr.
@@ -1743,7 +1757,7 @@ seq 1 0 : (#{/~v{1}}pre /\
          lift_array256 v{1} = invntt (ntt_dotp that{2} rhat{2}) /\
          signed_bound_cxq v{1} 0 256 2).
 + ecall {1} (invntt_correct (lift_array256 v{1})).
-  auto => /> &1 &2 ????????????????????rold???.
+  auto => /> &1 &2 ???????????????rold???.
   move => result <- rb; split; last by smt(). 
   rewrite -NTT_Fq.invntt_scale; congr.
   rewrite /scale tP => k kb; rewrite mapiE //= rold // /scale mapiE //=.
@@ -1758,7 +1772,7 @@ seq 1 0 : (#{/~bp{1}}pre /\
          signed_bound768_cxq bp{1} 0 768 3).
 have H := polyvec_add_corr_impl 2 1 _ _ => //.
 ecall{1} (H (lift_array768 bp{1}) (lift_array768 ep{1})); clear H.
-+ auto => /> &1 &2 ????????????????????????result? rval.
++ auto => /> &1 &2 ???????????????????result? rval.
   have -> : lift_vector result = lift_vector bp{1} + lift_vector ep{1}; last by smt().
   rewrite /Vector.(+) eq_vectorP => i ib.
   rewrite !offunvE //= tP => k kb.
@@ -1783,7 +1797,7 @@ seq 1 0 : (#{/~bp{1}}pre /\
          lift_vector bp{1} = invnttv (ntt_mmul aT{2} rhat{2}) + e1{2} /\
          pos_bound768_cxq bp{1} 0 768 2).
 ecall{1}(polyvec_reduce_corr (lift_array768 bp{1})).
-auto =>/> &1 &2 ????????????????????rold????rval?.
+auto =>/> &1 &2 ???????????????rold????rval?.
 rewrite -rold; rewrite eq_vectorP => i ib.
 by rewrite tP => k kb; rewrite !liftarrayvector // /#.
 
@@ -1806,6 +1820,7 @@ lemma kyber_correct_dec mem _msgp _ctp _skp :
        c1 = load_array960 Glob.mem{1} _ctp /\
        c2 = load_array128 Glob.mem{1} (_ctp + 960)
        ==> 
+     touches Glob.mem{1} mem _msgp 32 /\
      oget res{2} = load_array32 Glob.mem{1} _msgp
 ].
 proc => /=. 

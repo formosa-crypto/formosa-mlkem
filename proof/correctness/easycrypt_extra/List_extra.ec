@@ -20,7 +20,7 @@ qed.
 (*-----------------------------------------------------------------------------*)
 
 (*TODO: should be called mkseqSr, and the following one mkseqS.*)
-print mkseqS.
+(* print mkseqS. *)
 
 lemma mkseqSr ['a] (f : int -> 'a) n : 0 <= n => mkseq f (n + 1) = f 0 :: mkseq (f \o ((+)%Int 1)) n.
 proof. by move => le0n; rewrite /mkseq iotaS //= map_comp -iota_addl. qed.
@@ -61,7 +61,7 @@ proof.
 qed.
 
 (*TODO: why is it not using left_commutative? Modify.*)
-print foldr_perm.
+(* print foldr_perm. *)
 
 op left_commutative_in ['b 'a] o (z : 'b) (s : 'a list) =
   forall x y ,

@@ -6,8 +6,8 @@ require import Ring_extra List_extra IntDiv_extra.
 (*-----------------------------------------------------------------------------*)
 
 (*TODO: change names*)
-print int2bsS.
-print bs2int_rcons.
+(* print int2bsS.
+print bs2int_rcons. *)
 lemma int2bs_cons N n :
   0 < N =>
   int2bs N n = (!2 %| n) :: int2bs (N - 1) (n %/ 2).
@@ -27,7 +27,7 @@ proof.
 qed.
 
 (*TODO: odd name, and useless hypothesis.*)
-print bs2int_mod.
+(* print bs2int_mod. *)
 lemma int2bs_mod N n :
   int2bs N (n %% 2 ^ N) = int2bs N n.
 proof.
@@ -154,7 +154,7 @@ lemma bitrev_ge0 N n :
 proof. by rewrite /bitrev bs2int_ge0. qed.
 
 (*TODO: weird name.*)
-print bs2int_le2Xs.
+(* print bs2int_le2Xs. *)
 lemma bitrev_lt_pow2 N n :
   bitrev N n < 2 ^ N.
 proof.
@@ -366,7 +366,8 @@ proof.
   + by rewrite /(\o) bitrev_mulr_pow2; first rewrite le0M /= (lez_trans (K + M)) // ler_addr.
   move: (eq_in_map (( * ) (2 ^ (N - K - M))) ((transpose (fun (m d : int) => m %/ d) (2 ^ M)) \o (( * ) (2 ^ (N - K)))) (range 0 (2 ^ K))).
   move => [Heq_map _]; move: Heq_map => -> => [x Hx_range|].
-  + admit.
+  + rewrite /(\o) /=; rewrite exprD_subz 1,2:/# mulrC -divMr 2:/#. 
+    by smt(le_dvd_pow).
   rewrite (map_comp (transpose _ _) (( * )%Int _)) perm_eq_map bitrev_range_pow2_perm_eq.
   by rewrite le0K /= (lez_trans (K + M)) // ler_addl.
 qed.

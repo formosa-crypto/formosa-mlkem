@@ -153,7 +153,7 @@ lemma compress_decompress x x' d :
     x' = decompress d (compress d x) =>
      `| as_sint (x' - x) | <= round (q%r / (2^(d+1))%r).
 (* The alternative using as_sint x' - as_sint x does not hold (checked in sage). *)
-admitted.
+admitted. (* compress and decompress max distance  (checked in sage). *)
 
 (* As a corollary we get a bound on the additive error term *)
 lemma compress_err_bound c d : 
@@ -174,7 +174,7 @@ op compress_alt(d : int, c : Fq) : int =
 lemma compress_alt_compress c d :    
    1 <= d <=4 =>
       compress_alt d c = compress d c.
-admitted. (* checked in sage *)
+admitted. (* alternative compress[1,2,4] expression: checked in sage *)
 
 (* This is the implementation of compress d in C/Jasmin for d = 10 *)
 op compress_alt_large (c : Fq) : int = 
@@ -182,7 +182,7 @@ op compress_alt_large (c : Fq) : int =
 
 lemma compress_alt_compress_large (c : Fq): 
     compress_alt_large c = compress 10 c.
-admitted. (* checked in Sage *)
+admitted. (* alternative compress[10] expression : checked in Sage *)
 
 print decompress.
 (* This is the implementation of decompress d in C/Jasmin *)
@@ -192,7 +192,7 @@ op decompress_alt(d : int, c : int) : Fq =
 lemma decompress_alt_decompress c d : 
    0 < d => d<=10 =>
     decompress_alt d c = decompress d c.
-admitted. (* checked in sage *)
+admitted. (* alternative decompress expression: checked in sage *)
 
 (** End extension *)
 
@@ -520,19 +520,19 @@ clone import Matrix as KMatrix with
     op ZR.(+) <- Poly.(&+),
     op ZR.([-]) <- Poly.(&-),
     op ZR.( * ) <- Poly.(&*)
-    proof ZR.addrA by admit
-    proof ZR.addrC by admit
-    proof ZR.add0r by admit
-    proof ZR.addNr by admit
-    proof ZR.oner_neq0 by admit
-    proof ZR.mulrA by admit
-    proof ZR.mulrC by admit
-    proof ZR.mul1r by admit
-    proof ZR.mulrDl by admit
-    proof ZR.mulVr by admit
-    proof ZR.unitP by admit
-    proof ZR.unitout by admit
-    proof ZR.mulf_eq0 by admit.
+    proof ZR.addrA by admit (* poly theory? *)
+    proof ZR.addrC by admit (* poly theory? *)
+    proof ZR.add0r by admit (* poly theory? *)
+    proof ZR.addNr by admit (* poly theory? *)
+    proof ZR.oner_neq0 by admit  (* poly theory? *)
+    proof ZR.mulrA by admit  (* poly theory? *)
+    proof ZR.mulrC by admit (* poly theory? *)
+    proof ZR.mul1r by admit (* poly theory? *)
+    proof ZR.mulrDl by admit  (* poly theory? *)
+    proof ZR.mulVr by admit (* poly theory? *)
+    proof ZR.unitP by admit (* poly theory? *)
+    proof ZR.unitout by admit (* poly theory? *)
+    proof ZR.mulf_eq0 by admit. (* poly theory? *)
 
 import Vector.
 
@@ -1062,7 +1062,7 @@ rewrite /balasint; smt(qE).
 qed.
 
 realize cv_bound_valid.
-admitted. (* We need concrete distributions *)
+admitted. (* Rounding upper bound for one coefficient: compute in EC? *)
 
 realize noise_commutes.
 move => n n' b H H0.
@@ -1085,7 +1085,7 @@ proc.
 auto => />.
 rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
 rewrite /good_noise /cv_bound /noise_val.
-admitted. (* We need concrete distributions *)
+admitted. (* Probability of failure event in distribution: compute in EC? *)
 
 (* AT THIS POINT WE HAVE THE REFINED THEORETICAL ABSTRACTION
    AND THE SPEC. The theoretical abstraction is still working
@@ -1346,12 +1346,12 @@ module (Bs(A : KyberPKE.AdversaryRO) : MLWEPKE.PKE_.AdversaryRO) (O : MLWE_.RO.P
 lemma wrap_correctness &m :  
   Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc(Ac),MLWE_.RO.Lazy.LRO).main() @ &m : res].
-admitted.
+admitted. (* Wrapper inherits abstract spec correctness *)
 
 lemma wrap_security &m :  
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ MLWEPKE.PKE_.CPAGameROM(MLWEPKE.PKE_.CPA,MLWEPKE.MLWE_PKE,Bs(As),MLWE_.RO.Lazy.LRO).main() @ &m : res].
-admitted.
+admitted. (*  Wrapper inherits abstract spec security  *)
 
 end section.
 
@@ -1373,7 +1373,7 @@ byequiv => //.
 proc.
 inline {1} 2.
 inline {2} 2.
-admitted. (* a bunch of equivs that need to be proved once and for all *)
+admitted. (* wrapped abstract spec equiv to spec: correctness *)
 
 lemma wrap_equiv_security &m :  
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
@@ -1382,7 +1382,7 @@ byequiv => //.
 proc.
 inline {1} 2.
 inline {2} 2.
-admitted. (* a bunch of equivs that need to be proved once and for all *)
+admitted. (* wrapped abstract spec equiv to spec: security *)
 
 (* The following are corollarys that give us Kyber correctness and security *)
 
@@ -1411,6 +1411,5 @@ qed.
 
 end section.
 
-(* At this point we will have that the spec is as correct and secure as the refined abstract Kyber. We can start the implementation correctness proof. We first move to an alternative version of the scheme that separates random samplings from algebraic computations. *)
 
 end SpecProperties.

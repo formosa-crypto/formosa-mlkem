@@ -62,11 +62,11 @@ op array_mont_inv (p : Fq Array128.t) =
 
 lemma zetas_invE : array_mont_inv NTT_Fq.zetas_inv = 
      Array128.map (fun x => inFq (W16.to_sint x)) jzetas_inv.
-admitted. (* need to compute the values. checked in Sage *)
+admitted. (* need to compute the constant jzetas_inv values. checked in Sage *)
 
 lemma zetasE : array_mont NTT_Fq.zetas = 
      Array128.map (fun x => inFq (W16.to_sint x)) jzetas.
-admitted. (* need to compute the values. checked in Sage *)
+admitted. (* need to compute the constant jzetas values. checked in Sage *)
 
 lemma getsignNeg x : x \slt W16.zero => x `|>>` W8.of_int 15 = W16.onew.
 proof.

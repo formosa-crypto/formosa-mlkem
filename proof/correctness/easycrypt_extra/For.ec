@@ -244,7 +244,6 @@ theory FOR_INT_MUL_LE.
       + rewrite /ncond_val lerNgt /= mulrC -ltz_divLR ?Hix // !gtr0_norm 1,2,3:/#.
         by move: (ilogP i (c %/ x) _ _) => //=; apply/lez_divRL; smt().
       + rewrite /ncond_val lerNgt /= mulrC; move: lt1normi => /ltr_normr; case => // ltinegi.
-        search _ (_ < `|_|)%Int.
     qed.
 
     realize pmin_out.

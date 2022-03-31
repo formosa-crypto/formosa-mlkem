@@ -190,19 +190,19 @@ op zetas_inv : Fq Array128.t =
 lemma zetavals1  k : 0 <= k < 256 => k%%4 = 0 => 
      ZqRing.exp zroot (2 * br ((k %/ 4 + 64) %/ 2) + 1) = 
      ZqRing.exp zroot (2 * br (k %/ 2) + 1).
-admitted.
+admitted. (* some powers of zeta match *)
 
 lemma zetavals2 k : 0 <= k < 256 => k%%4 = 2 => 
      ZqRing.exp zroot (2 * br ((k %/ 4 + 64) %/ 2) + 1) = 
      - ZqRing.exp zroot (2 * br (k %/ 2) + 1).
-admitted.
+admitted. (* some powers of zeta are symmetric *)
 
 (* TO DO: These need to be proved using the results in NTT_Algebra *)
 lemma ntt_spec_h _r : hoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ].
-admitted.
+admitted. (* ntt imperative computes ntt functional *)
 
 lemma invntt_spec_h _r : hoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = invntt _r ].
-admitted.
+admitted. (* invntt imperative computes invntt functional *)
 
 lemma ntt_spec _r : phoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ] = 1%r
   by conseq ntt_spec_ll (ntt_spec_h _r); done.
@@ -222,13 +222,13 @@ op scale(p : poly, c : Fq) : poly =  Array256.map (fun x => x * c) p.
 
 
 lemma ntt_scale p c : ntt (scale p c) = scale (ntt p) c.
-admitted.
+admitted. (* ntt commutes with multiplication by a constant *)
 
 lemma invnttK : cancel ntt invntt.
-admitted.
+admitted. (* ntt cancels invntt *)
 
 lemma nttK : cancel invntt ntt.
-admitted.
+admitted. (* invntt cancels ntt *)
 
 lemma nttvK : cancel invnttv nttv.
 proof. 
@@ -257,11 +257,11 @@ qed.
 
 lemma mul_comm_ntt (pa pb : poly):
   ntt (pa &* pb) = basemul (ntt pa) (ntt pb).
-admitted.
+admitted. (* shoolbook multiplication can be done with ntt *)
 
 lemma add_comm_ntt (pa pb : poly):
   ntt (pa &+ pb) = (ntt pa) &+ (ntt pb).
-admitted.
+admitted. (* addition commutes with ntt *)
 
 lemma add_comm_invntt (pa pb : poly) : 
   invntt (pa &+ pb) = (invntt pa) &+ (invntt pb)
@@ -272,7 +272,7 @@ lemma mul_comm_invntt : forall (pa pb : poly),
     by smt(invnttK nttK mul_comm_ntt).
 
 lemma nttZero : ntt Poly.zero = Poly.zero.
-admitted.
+admitted. (* ntt maps zero to zero *)
 
 
 lemma invnttzero : invntt Poly.zero = Poly.zero by 
