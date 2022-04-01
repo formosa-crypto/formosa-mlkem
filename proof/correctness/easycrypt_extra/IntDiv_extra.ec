@@ -116,7 +116,7 @@ qed.
 (*-----------------------------------------------------------------------------*)
 
 (*TODO: this lemma is admitted, and weaker that the ones below.*)
-print modz_pow2_div.
+(* print modz_pow2_div. *)
 
 lemma dvdz_mod_div d1 d2 m :
   0 < d1 =>

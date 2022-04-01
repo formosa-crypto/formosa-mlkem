@@ -18,18 +18,18 @@ instance ring with R
   proof oner_neq0 by apply ZR.oner_neq0
   proof addrA     by apply ZR.addrA
   proof addrC     by apply ZR.addrC
-  proof addr0     by smt(@ZR)
-  proof addrN     by smt(@ZR)
-  proof mulr1     by smt(@ZR)
+  proof addr0     by apply ZR.addr0
+  proof addrN     by apply ZR.addrN
+  proof mulr1     by apply ZR.mulr1
   proof mulrA     by apply ZR.mulrA
   proof mulrC     by apply ZR.mulrC
   proof mulrDl    by apply ZR.mulrDl
-  proof expr0     by smt
-  proof ofint0    by smt
-  proof ofint1    by smt
-  proof exprS     by admit
-  proof ofintS    by admit
-  proof ofintN    by admit.
+  proof expr0     by apply ZR.expr0
+  proof ofint0    by apply ZR.ofint0
+  proof ofint1    by apply ZR.ofint1
+  proof exprS     by apply ZR.exprS
+  proof ofintS    by apply ZR.ofintS
+  proof ofintN    by apply ZR.ofintN.
 
 
 (* --------------------------------------------------------------------------- *)
@@ -256,7 +256,7 @@ module Bt(A : HAdv_RO_T, O : Oracle) : Adv_T = {
 
 }.
 
-lemma H_MLWE_RO_equiv b &m (A <: HAdv_RO_T {LRO,B}):
+lemma H_MLWE_RO_equiv b &m (A <: HAdv_RO_T {-LRO,-B}):
   Pr[  H_MLWE_RO(A,LRO).main(false,b) @ &m : res ] =
   Pr[  MLWE(B(A,LRO)).main(b) @ &m : res].
 proof.
@@ -275,15 +275,15 @@ wp;call(: (LRO.m{1}.[B._sd{2}] = Some B.__A{2}) /\
             forall x, x <> B._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x]).
 proc;inline *.
 case (sd{2} = B._sd{2}).
-+ rcondf{1} 2; first by auto => />; smt(@SmtMap).
++ rcondf{1} 2; first by auto => /> /#.
   rcondf{2} 2; first by auto.
   by auto => /> /#.
 + rcondt{2} 2; first by auto.
-  by auto => />;smt(@SmtMap).
+  by auto => />;smt(get_setE).
 by auto => />.
 qed.
 
-lemma H_MLWE_RO_equiv_t b &m (A <: HAdv_RO_T {LRO,Bt}):
+lemma H_MLWE_RO_equiv_t b &m (A <: HAdv_RO_T {-LRO,-Bt}):
   Pr[  H_MLWE_RO(A,LRO).main(true,b) @ &m : res ] =
   Pr[  MLWE(Bt(A,LRO)).main(b) @ &m : res].
 proof.
@@ -304,10 +304,10 @@ wp;call(: (LRO.m{1}.[Bt._sd{2}] = Some Bt.__A{2}) /\
             forall x, x <> Bt._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x]).
 proc;inline *.
 case (sd{2} = Bt._sd{2}).
-+ rcondf{1} 2; first by auto => />; smt(@SmtMap).
++ rcondf{1} 2; first by auto => />/#.
   rcondf{2} 2; first by auto.
   by auto => /> /#.
 + rcondt{2} 2; first by auto.
-  by auto => />;smt(@SmtMap).
+  by auto => />;smt(get_setE).
 by auto => />;smt(trmxK).
 qed.

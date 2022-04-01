@@ -277,24 +277,24 @@ op R = 2^k.
 lemma R_gt0: 0 < R by smt(expr_gt0).
 
 (* [N] is the modulus *)
-op N: int.
-axiom N_bnd: 0 < N.
+op _N: int.
+axiom N_bnd: 0 < _N.
 
-op N' : int.
-axiom NN': (N * N') %% R = (-1) %% R.
+op _N' : int.
+axiom NN': (_N * _N') %% R = (-1) %% R.
 op Rinv : int.
-axiom RRinv: (R * Rinv) %% N = 1 %% N.
+axiom RRinv: (R * Rinv) %% _N = 1 %% _N.
 
 
 op REDC' (T: int) : int =
- let m = ((T %% R)*N') %% R
- in (T + m*N) %/ R.
+ let m = ((T %% R)*_N') %% R
+ in (T + m*_N) %/ R.
 
 lemma nosmt aux_divR T:
- let m = ((T %% R)*N') %% R
- in (T + m*N) %% R = 0.
+ let m = ((T %% R)*_N') %% R
+ in (T + m*_N) %% R = 0.
 proof.
-rewrite /= -modzDmr modzMml mulzA -modzMml (mulzC N') modz_mod.
+rewrite /= -modzDmr modzMml mulzA -modzMml (mulzC _N') modz_mod.
 rewrite modzMml -modzMmr NN' modzMmr modzDmr.
 have ->: T + T * (-1) = 0 by ring.
 smt().
@@ -302,35 +302,35 @@ qed.
 
 
 lemma nosmt REDC'_congr T:
- REDC' T %% N = T * Rinv %% N.
+ REDC' T %% _N = T * Rinv %% _N.
 proof.
-pose m := ((T %% R)*N') %% R.
-pose t := (T + m*N) %/ R.
-have tE: t*R = T + m*N.
- have:= (divz_eq (T + m * N) R).
+pose m := ((T %% R)*_N') %% R.
+pose t := (T + m*_N) %/ R.
+have tE: t*R = T + m*_N.
+ have:= (divz_eq (T + m * _N) R).
  by rewrite aux_divR /= -/t => <-.
-have t_modN: t %% N = T*Rinv %% N.
+have t_modN: t %% _N = T*Rinv %% _N.
  rewrite -(mulz1 t) -modzMmr -RRinv modzMmr -mulzA tE mulzDl.
- by rewrite mulzA (mulzC N) -mulzA -modzDml modzMDr modz_mod.
+ by rewrite mulzA (mulzC _N) -mulzA -modzDml modzMDr modz_mod.
 by rewrite /REDC'.
 qed.
 
 lemma nosmt REDC'_bnds T n:
  0 <= n =>
- 0 <= T < N + N * R^(n+1) =>
- 0 <= REDC' T < N + N*R^n.
+ 0 <= T < _N + _N * R^(n+1) =>
+ 0 <= REDC' T < _N + _N*R^n.
 proof.
-pose m := ((T %% R)*N') %% R.
-pose t := (T + m*N) %/ R.
+pose m := ((T %% R)*_N') %% R.
+pose t := (T + m*_N) %/ R.
 move=> Hn; rewrite exprS //; move=> [HT1 HT2].
 have [Hm1 Hm2]: 0 <= m < R; 1: by smt(R_gt0 ltz_mod gtr0_norm).
-have Ht: 0 <= t < N + N*R^n.
+have Ht: 0 <= t < _N + _N*R^n.
 + split; 1: by smt(divz_ge0 R_gt0 N_bnd). 
   move => tge0.
   rewrite /t ltz_divLR 1:/#.
-  have ?: m * N <= N*R - N.
+  have ?: m * _N <= _N*R - _N.
   + rewrite mulzC.
-    have ->: N*R-N = N*(R-1) by ring.
+    have ->: _N*R-_N = _N*(R-1) by ring.
     apply ler_pmul2l;   smt(N_bnd). 
   by smt().
 by smt().
@@ -342,18 +342,18 @@ theory Montgomery.
 
 clone import Montgomery'.
 
-op REDC T = let t = REDC' T in if N <= t then t-N else t.
+op REDC T = let t = REDC' T in if _N <= t then t-_N else t.
 
 lemma REDC_corr T:
- 0 <= T < N + N*R =>
- 0 <= REDC T < N  /\  REDC T %% N = T * Rinv %% N.
+ 0 <= T < _N + _N*R =>
+ 0 <= REDC T < _N  /\  REDC T %% _N = T * Rinv %% _N.
 proof.
 move=> H; rewrite /REDC /=; split.
  move: (REDC'_bnds T 0 _) => />.
  rewrite expr1 expr0 H /= /#.
 rewrite -(REDC'_congr T).
-case: (N <= REDC' T) => // ?.
-by rewrite (_:REDC' T - N = REDC' T + (-1) * N) 1:/# modzMDr.
+case: (_N <= REDC' T) => // ?.
+by rewrite (_:REDC' T - _N = REDC' T + (-1) * _N) 1:/# modzMDr.
 qed.
 
 end Montgomery.
@@ -369,11 +369,11 @@ op w : int.
 axiom w_ge0 : 0 <= w.
 
 (* [N] is the modulus *)
-op N: int.
+op _N: int.
 
 clone import Montgomery' with
   op k <- w,
-  op N <- N.
+  op _N <- _N.
 
 
 op REDCk : int -> int -> int.
@@ -384,8 +384,8 @@ axiom REDCkS k T:
 
 lemma REDCk_corr r T:
  0 < r =>
- 0 <= T < N + N * R^r =>
- (0 <= REDCk r T < 2*N) /\ REDCk r T %% N = T * Rinv^r %% N.
+ 0 <= T < _N + _N * R^r =>
+ (0 <= REDCk r T < 2*_N) /\ REDCk r T %% _N = T * Rinv^r %% _N.
 proof.
 elim/natind: r T => /= />.
 + move => n ? T *.
@@ -408,11 +408,11 @@ move: (REDC'_congr T) => H6.
 by rewrite -modzMml H6 modzMml exprS /#.
 qed.
 
-op REDC T = let t = REDCk r T in if N <= t then t-N else t.
+op REDC T = let t = REDCk r T in if _N <= t then t-_N else t.
 
 lemma REDC_corr T:
- 0 <= T < N + N*R^r =>
- 0 <= REDC T < N  /\  REDC T %% N = T * Rinv^r %% N.
+ 0 <= T < _N + _N*R^r =>
+ 0 <= REDC T < _N  /\  REDC T %% _N = T * Rinv^r %% _N.
 proof.
 move=> *; rewrite /REDC /=.
 move: (REDCk_corr r T _ _) => //; first by smt(r_ge0).

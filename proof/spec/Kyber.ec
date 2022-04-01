@@ -71,7 +71,7 @@ PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack
 *)
 
 clone import PKE_Ext as KyberPKE with
-  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * W8.t * W8.t * W8.t) option) * ((W8.t Array32.t * W8.t) option),
+  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * W8.t * W8.t * int) option) * ((W8.t Array32.t * W8.t) option),
   type RO.out_t = W8.t Array64.t * W8.t Array168.t * W8.t Array128.t,
   type pkey = W8.t Array1152.t * W8.t Array32.t,
   type skey = W8.t Array1152.t,
@@ -153,7 +153,7 @@ lemma compress_decompress x x' d :
     x' = decompress d (compress d x) =>
      `| as_sint (x' - x) | <= round (q%r / (2^(d+1))%r).
 (* The alternative using as_sint x' - as_sint x does not hold (checked in sage). *)
-admitted.
+admitted. (* compress and decompress max distance  (checked in sage). *)
 
 (* As a corollary we get a bound on the additive error term *)
 lemma compress_err_bound c d : 
@@ -174,7 +174,7 @@ op compress_alt(d : int, c : Fq) : int =
 lemma compress_alt_compress c d :    
    1 <= d <=4 =>
       compress_alt d c = compress d c.
-admitted. (* checked in sage *)
+admitted. (* alternative compress[1,2,4] expression: checked in sage *)
 
 (* This is the implementation of compress d in C/Jasmin for d = 10 *)
 op compress_alt_large (c : Fq) : int = 
@@ -182,7 +182,7 @@ op compress_alt_large (c : Fq) : int =
 
 lemma compress_alt_compress_large (c : Fq): 
     compress_alt_large c = compress 10 c.
-admitted. (* checked in Sage *)
+admitted. (* alternative compress[10] expression : checked in Sage *)
 
 print decompress.
 (* This is the implementation of decompress d in C/Jasmin *)
@@ -192,7 +192,7 @@ op decompress_alt(d : int, c : int) : Fq =
 lemma decompress_alt_decompress c d : 
    0 < d => d<=10 =>
     decompress_alt d c = decompress d c.
-admitted. (* checked in sage *)
+admitted. (* alternative decompress expression: checked in sage *)
 
 (** End extension *)
 
@@ -399,15 +399,20 @@ module type PRF_t(O : RO.POracle) = {
 
 module CBD2(PRF : PRF_t, O : RO.POracle) = {
    proc sample_real(_N : int) : poly = {
-      var i,a,b,bytes;
+      var i,j,a,b,bytes;
       var rr : poly;
       rr <- witness;
       bytes <@ PRF(O).next_bytes(W8.of_int _N);
-      i <- 0;
-      while (i < 256) {
-        a <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 0] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 1];
-        b <- b2i bytes.[i %/ 2].[i %% 2 * 4 + 2] + b2i bytes.[i %/ 2].[i %% 2 * 4 + 3];
-        rr.[i] <- inFq  (a - b);
+      i <- 0; j <- 0;
+      while (i < 128) { (* unroll loop body once to match code *)
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
         i <- i + 1;
       }
       return rr;
@@ -515,19 +520,19 @@ clone import Matrix as KMatrix with
     op ZR.(+) <- Poly.(&+),
     op ZR.([-]) <- Poly.(&-),
     op ZR.( * ) <- Poly.(&*)
-    proof ZR.addrA by admit
-    proof ZR.addrC by admit
-    proof ZR.add0r by admit
-    proof ZR.addNr by admit
-    proof ZR.oner_neq0 by admit
-    proof ZR.mulrA by admit
-    proof ZR.mulrC by admit
-    proof ZR.mul1r by admit
-    proof ZR.mulrDl by admit
-    proof ZR.mulVr by admit
-    proof ZR.unitP by admit
-    proof ZR.unitout by admit
-    proof ZR.mulf_eq0 by admit.
+    proof ZR.addrA by admit (* poly theory? *)
+    proof ZR.addrC by admit (* poly theory? *)
+    proof ZR.add0r by admit (* poly theory? *)
+    proof ZR.addNr by admit (* poly theory? *)
+    proof ZR.oner_neq0 by admit  (* poly theory? *)
+    proof ZR.mulrA by admit  (* poly theory? *)
+    proof ZR.mulrC by admit (* poly theory? *)
+    proof ZR.mul1r by admit (* poly theory? *)
+    proof ZR.mulrDl by admit  (* poly theory? *)
+    proof ZR.mulVr by admit (* poly theory? *)
+    proof ZR.unitP by admit (* poly theory? *)
+    proof ZR.unitout by admit (* poly theory? *)
+    proof ZR.mulf_eq0 by admit. (* poly theory? *)
 
 import Vector.
 
@@ -926,6 +931,8 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
 
 require (***) MLWE_PKE.
 
+theory SpecProperties.
+
 type plaintext = bool Array256.t.
 type ciphertext = ipolyvec * ipoly.
 op m_encode(m : plaintext) : poly = Array256.map b_encode m.
@@ -1021,21 +1028,19 @@ clone import MLWE_PKE as MLWEPKE with
   proof correctness_hack
   proof fail_prob.
 
-
 realize encode_noise.
-admitted.
-(* This proof doesn't work because of the matrix clone and vector operations types 
-move => /> *.
-rewrite /c_decode /c_encode => />.
+move => /> u v.
+rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v=> />.
 split; last  by rewrite round_poly_errE.
-rewrite /round_poly /round_poly_err /roundc_err  => />.
-apply eq_vectorP => /> *.
-rewrite offunvE 1:/# offunvE 1:/# /=.
-apply Array256.ext_eq => /> *.
-rewrite mapiE 1:// map2iE 1:// mapiE 1:// /= PolyVec.roundc_errE.  
-congr => />.
-smt.
-qed.*)
+rewrite /(+) /mapv /=.
+apply eq_vectorP => /> i il ih; rewrite !offunvE 1,2:/# /=.
+rewrite MLWE_.Matrix_.Vector.offunvE 1:/# /= /compress_poly_err /=.
+apply Array256.tP => k kb.
+rewrite /compress_polyvec /= /fromarray256 /= /Poly.(&+) /=.
+rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
+rewrite decompress_errE //; 1: smt(qE).
+by rewrite mapiE /#.
+qed.
 
 realize good_decode.
 rewrite /under_noise_bound /m_encode /m_decode /b_encode /b_decode /trueval /falseval  qE  => m n hgood.
@@ -1057,7 +1062,7 @@ rewrite /balasint; smt(qE).
 qed.
 
 realize cv_bound_valid.
-admitted. (* We need concrete distributions *)
+admitted. (* Rounding upper bound for one coefficient: compute in EC? *)
 
 realize noise_commutes.
 move => n n' b H H0.
@@ -1080,7 +1085,7 @@ proc.
 auto => />.
 rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
 rewrite /good_noise /cv_bound /noise_val.
-admitted. (* We need concrete distributions *)
+admitted. (* Probability of failure event in distribution: compute in EC? *)
 
 (* AT THIS POINT WE HAVE THE REFINED THEORETICAL ABSTRACTION
    AND THE SPEC. The theoretical abstraction is still working
@@ -1172,10 +1177,10 @@ module WrapUnwrap  = {
       return (c1,c2);
   }
 
-  proc wrap_plaintext(m : plaintext) : KyberPKE.plaintext = {
+  proc wrap_plaintext(m : plaintext option) : KyberPKE.plaintext option = {
       var mp;
-      mp <@ EncDec.encode1(toipoly (m_encode m));
-      return mp;
+      mp <@ EncDec.encode1(toipoly (m_encode (oget m)));
+      return if m = None then None else Some mp;
   }
 
   proc unwrap_plaintext(m : KyberPKE.plaintext) : plaintext = {
@@ -1237,8 +1242,8 @@ module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) 
       sks <@ WrapUnwrap.unwrap_sk(sk);
       cphs <@ WrapUnwrap.unwrap_ciphertext(cph);
       mp <@ MLWEPKE.MLWE_PKE(H).dec(sks,cphs);
-      m <@ WrapUnwrap.wrap_plaintext(oget mp);
-      return Some m;
+      m <@ WrapUnwrap.wrap_plaintext(mp);
+      return  m;
   }
 
 }.
@@ -1269,7 +1274,7 @@ module (XOF :  XOF_t) (O : RO.POracle) = {
    }
    proc next_bytes() : W8.t Array168.t = {
         var bb;
-        bb <@ O.o((None, Some (_rho,_i,_j,W8.of_int count), None));
+        bb <@ O.o((None, Some (_rho,_i,_j,count), None));
         return bb.`2;
    }
 }.
@@ -1287,32 +1292,29 @@ module (PRF : PRF_t) (O : RO.POracle) = {
    }
 }.
 
-(* The first proof goal shows that encoding/decoding and using rejection sampling
-   are irrelevant, so that our wrapper has the same correctness and security as
-   the refined abstract scheme.  *)
-
-section.
-
-declare module Ac <: KyberPKE.CAdversaryRO {MLWE_.RO.Lazy.LRO}.
-declare module As <: KyberPKE.AdversaryRO {MLWE_.RO.Lazy.LRO}.
 
 (* These modules are reductions. They just encode/decode things coming from the
    refined game to the scheme adversary.  *)
 
 module KRO(O : PKE_.RO.POracle) : KyberPKE.RO.POracle = {
+    proc init(sd : W8.t Array32.t) : unit = {
+        var _A,pre_A;
+        RO.Lazy.LRO.init();
+        _A <@ O.o(sd);
+        pre_A <@ Parse(XOF,RO.Lazy.LRO).sample_real();
+        (* reprogram LRO so that it is consistent with _A *)
+    }
     proc o(x : RO.in_t) : RO.out_t = { 
-      (* Sure enough this seems
-      to imply simulating a random oracle returning bytes to feed to the
-      XOF using one that gives us random matrices. lol
-      A nice thing could be done in these random oracles with rejection
-      sampling and indifferenciability. *)
-       return witness;
+       var y;
+       y <@ RO.Lazy.LRO.o(x);
+       return y;
     }
 }.
 
 module (Bc(A : KyberPKE.CAdversaryRO) : MLWEPKE.PKE_.CAdversaryRO) (O : MLWE_.RO.POracle) = {
    proc find(pk : PKE_.pkey, sk : PKE_.skey) : plaintext = {
       var kpa, ma, m;
+      KRO(O).init(pk.`2);
       kpa <@ WrapUnwrap.wrap_keys((pk,sk));
       ma <@ A(KRO(O)).find(kpa);
       m <@ WrapUnwrap.unwrap_plaintext(ma);
@@ -1323,6 +1325,7 @@ module (Bc(A : KyberPKE.CAdversaryRO) : MLWEPKE.PKE_.CAdversaryRO) (O : MLWE_.RO
 module (Bs(A : KyberPKE.AdversaryRO) : MLWEPKE.PKE_.AdversaryRO) (O : MLWE_.RO.POracle) = {
    proc choose(pk : PKE_.pkey) : plaintext * plaintext = {
       var pka, m1m2, m1, m2;
+      KRO(O).init(pk.`2);
       pka <@ WrapUnwrap.wrap_pk(pk);
       m1m2 <@ A(KRO(O)).choose(pka);
       m1 <@ WrapUnwrap.unwrap_plaintext(m1m2.`1);
@@ -1338,26 +1341,164 @@ module (Bs(A : KyberPKE.AdversaryRO) : MLWEPKE.PKE_.AdversaryRO) (O : MLWE_.RO.P
    }
 }.
 
+(******** RELATIONS BETWEEN THE RANDOM ORACLES *****)
+
+op RO_relation : 
+   W8.t Array32.t -> (* for the seed *)
+   (RO.in_t, RO.out_t) SmtMap.fmap -> 
+   (W8.t Array32.t, matrix) SmtMap.fmap -> bool.
+
+equiv rejection_sampling_vs_ideal _sd:
+   WrapMLWEPKE(XOF, RO.Lazy.LRO).H.o ~ MLWE_.RO.Lazy.LRO.o :
+     RO_relation _sd RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2} /\ ={arg, glob RO.Lazy.LRO} 
+      ==> 
+     ={res, glob RO.Lazy.LRO} /\ 
+     RO_relation _sd  RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}.
+admitted. (* matrix rejection sampling magic *)
+
+
+lemma RO_relation_empty _sd : RO_relation _sd SmtMap.empty SmtMap.empty.
+admitted. (* to do once RO_relation is fixed *)
+
+equiv lro_preserves_relation _sd:
+   RO.Lazy.LRO.o ~ RO.Lazy.LRO.o :
+     RO_relation _sd RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2} /\ ={arg, glob RO.Lazy.LRO} 
+      ==> 
+     ={res, glob RO.Lazy.LRO} /\ 
+     RO_relation _sd  RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}.
+admitted. (* calling LRO preserves relation *)
+
+(******* REIFICATION LAYER ********)
+
+op unwrap_plaintext : W8.t Array32.t -> bool Array256.t.
+lemma reify_unwrap_plaintext msg : 
+  phoare [ WrapUnwrap.unwrap_plaintext : m = msg ==> res = unwrap_plaintext msg] = 1%r.  
+admitted. (* reification *)
+
+op wrap_plaintext : (bool Array256.t) -> (W8.t Array32.t).
+lemma reify_wrap_plaintext msg : 
+  phoare [ WrapUnwrap.wrap_plaintext : m = msg ==> 
+          (msg =  None => res = None) /\
+          (msg <> None => res = Some (wrap_plaintext (oget msg)))] = 1%r. 
+admitted. (* reification *) 
+
+lemma wrap_unwrap_plaintext_op (_a : W8.t Array32.t ) : 
+    wrap_plaintext (unwrap_plaintext _a) = _a.
+admitted. (* reification *)
+
+op unwrap_ciphertext : W8.t Array960.t * W8.t Array128.t -> ipolyvec * ipoly.
+lemma reify_unwrap_ciphertext cph : 
+  phoare [ WrapUnwrap.unwrap_ciphertext : c = cph ==> res = unwrap_ciphertext cph] = 1%r.  
+admitted. (* reification *)
+
+op wrap_ciphertext : ipolyvec * ipoly-> W8.t Array960.t * W8.t Array128.t.
+lemma reify_wrap_ciphertext cph : 
+  phoare [ WrapUnwrap.wrap_ciphertext : c = cph ==> res = wrap_ciphertext cph] = 1%r.  
+admitted. (* reification *)
+
+lemma wrap_ciphertextK : cancel wrap_ciphertext unwrap_ciphertext.
+admitted. (* reification *)
+
+lemma wrap_plaintextK : cancel wrap_plaintext unwrap_plaintext.
+admitted. (* reification *)
+
+lemma unwrap_plaintextK : cancel unwrap_plaintext wrap_plaintext.
+admitted. (* reification *)
+
+print pkey.
+op wrap_keys : (vector * W8.t Array32.t) * vector -> (W8.t Array1152.t * W8.t Array32.t) * (W8.t Array1152.t).
+lemma reify_wrap_keys _kp : 
+  phoare [ WrapUnwrap.wrap_keys : (trho,s) = _kp ==> res = wrap_keys _kp] = 1%r.  
+admitted. (* reification *)
+
+op unwrap_pk : W8.t Array1152.t * W8.t Array32.t-> vector * W8.t Array32.t.
+lemma reify_unwrap_pk pk : 
+  phoare [ WrapUnwrap.unwrap_pk : pk = trho ==> res = unwrap_pk pk] = 1%r.  
+admitted. (* reification *)
+
+op unwrap_sk : W8.t Array1152.t -> vector.
+lemma reify_unwrap_sk sk : 
+  phoare [ WrapUnwrap.unwrap_sk : sk = s ==> res = unwrap_sk sk] = 1%r.  
+admitted. (* reification *)
+
+lemma unwrap_pkK kp : unwrap_pk (wrap_keys kp).`1 = kp.`1.
+admitted. (* reification *)
+
+lemma unwrap_skK kp : unwrap_sk (wrap_keys kp).`2 = kp.`2.
+admitted. (* reification *)
+
+(***************************************)
+
+
+(* The first proof goal shows that encoding/decoding and using rejection sampling
+   are irrelevant, so that our wrapper has the same correctness and security as
+   the refined abstract scheme.  *)
+
+section.
+
+declare module Ac <: KyberPKE.CAdversaryRO {-MLWE_.RO.Lazy.LRO,-RO.Lazy.LRO, -XOF}.
+declare module As <: KyberPKE.AdversaryRO {-MLWE_.RO.Lazy.LRO,-RO.Lazy.LRO, -XOF,-MLWE_.B, -MLWE_.Bt}.
+
 lemma wrap_correctness &m :  
   Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc(Ac),MLWE_.RO.Lazy.LRO).main() @ &m : res].
-admitted.
+byequiv => //.
+proc => /=.
+
+inline CorrectnessAdv(WrapMLWEPKE(XOF, RO.Lazy.LRO), Ac(RO.Lazy.LRO)).main.
+inline PKE_.CorrectnessAdv(MLWE_PKE(MLWE_.RO.Lazy.LRO), Bc(Ac, MLWE_.RO.Lazy.LRO)).main.
+inline WrapMLWEPKE(XOF, RO.Lazy.LRO).kg.
+inline WrapMLWEPKE(XOF, RO.Lazy.LRO).enc.
+inline WrapMLWEPKE(XOF, RO.Lazy.LRO).dec.
+inline Bc(Ac, MLWE_.RO.Lazy.LRO).find.
+
+seq 2 5 : (={glob Ac, glob RO.Lazy.LRO} 
+          /\ RO_relation (kp{1}.`1.`2) RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}
+          /\ kp{1} = (pk,sk){2} 
+          /\ kp{1} = (pk0,sk0){2}).
+admit. (* hairy => programming a random oracle that gives rise to a matrix *)
+
+swap {1} 4 -1.
+swap {1} 6 -2.
+swap {1} 11 -6.
+swap {1} 13 -7.
+
+seq 6 1 : (#pre /\   (pk,sk){1} = kpa{2} /\ (pks,sks){1} = (pk,sk){2}).
++ ecall {1} (reify_unwrap_sk sk1{1}).
+  wp;ecall {1} (reify_unwrap_pk pk1{1}).
+  wp;ecall {1} (reify_wrap_keys kp{1}).
+  wp;ecall {2} (reify_wrap_keys (pk0, sk0){2}).
+  by auto => />; smt(unwrap_pkK unwrap_skK).
+
+exists* kp{1}.`1.`2; elim * => _sd.
+
+wp; ecall {1} (reify_wrap_plaintext (mp0{1})).
+call(_: true); 1: by sim.
+wp; ecall {1} (reify_unwrap_ciphertext (cph{1})).
+wp; ecall {1} (reify_wrap_ciphertext (cs{1})).
+wp; call(_: ={glob RO.Lazy.LRO} /\ 
+             RO_relation  (_sd)  RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}); wp.
++ seq 4 4 : (#pre /\ ={sd,t,r,e1,e2}); 1: by conseq />;sim. 
+    by call(rejection_sampling_vs_ideal _sd);auto => />. 
+wp; ecall {1} (reify_unwrap_plaintext (m0{1})).
+wp; ecall {2} (reify_unwrap_plaintext (ma{2})).
+call(_ : ={glob RO.Lazy.LRO} /\ 
+             RO_relation _sd RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}).
++ proc*; inline KRO(MLWE_.RO.Lazy.LRO).o.
+  by wp;call (lro_preserves_relation _sd); auto => />.
+
+auto => /> &1 &2 ? res0 *; do split. 
++ apply wrap_ciphertextK.
+by smt(unwrap_plaintextK wrap_plaintextK).
+qed.
 
 lemma wrap_security &m :  
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
   Pr[ MLWEPKE.PKE_.CPAGameROM(MLWEPKE.PKE_.CPA,MLWEPKE.MLWE_PKE,Bs(As),MLWE_.RO.Lazy.LRO).main() @ &m : res].
-admitted.
-
-end section.
+admitted. (*  Wrapper inherits abstract spec security  *)
 
 (* The second proof goal is to show that the way in which the spec defines
    the various operations of the schemes, e.g., using NTT and the likes  *)
-
-section.
-
-declare module As <: KyberPKE.AdversaryRO  {MLWE_.RO.Lazy.LRO,MLWE_.B, MLWE_.Bt}.
-
-declare module Ac <: KyberPKE.CAdversaryRO  {MLWE_.RO.Lazy.LRO}.
 
 (* In the ROM there should be no PRF loss *)
 lemma wrap_equiv_corr &m :  
@@ -1368,7 +1509,7 @@ byequiv => //.
 proc.
 inline {1} 2.
 inline {2} 2.
-admitted. (* a bunch of equivs that need to be proved once and for all *)
+admitted. (* wrapped abstract spec equiv to spec: correctness *)
 
 lemma wrap_equiv_security &m :  
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
@@ -1377,7 +1518,7 @@ byequiv => //.
 proc.
 inline {1} 2.
 inline {2} 2.
-admitted. (* a bunch of equivs that need to be proved once and for all *)
+admitted. (* wrapped abstract spec equiv to spec: security *)
 
 (* The following are corollarys that give us Kyber correctness and security *)
 
@@ -1386,7 +1527,7 @@ lemma KyberCorrectness &m :
       1%r - fail_prob - epsilon_hack.
 proof.
 rewrite -wrap_equiv_corr.
-rewrite (wrap_correctness Ac).
+rewrite (wrap_correctness &m).
 apply (correctness_bound (Bc(Ac))&m). 
 admit. (* lossless *)
 qed.
@@ -1398,7 +1539,7 @@ lemma KyberSecurity &m :
       Pr[MLWE_.MLWE(MLWE_.Bt(B2ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(false) @ &m : res] -
       Pr[MLWE_.MLWE(MLWE_.Bt(B2ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(true) @ &m : res].
 rewrite -wrap_equiv_security.
-rewrite (wrap_security As).
+rewrite (wrap_security &m).
 apply (main_theorem_h (Bs(As))). 
 admit. (* lossless *)
 admit. (* lossless *)
@@ -1406,5 +1547,5 @@ qed.
 
 end section.
 
-(* At this point we will have that the spec is as correct and secure as the refined abstract Kyber. We can start the implementation correctness proof. We first move to an alternative version of the scheme that separates random samplings from algebraic computations. *)
 
+end SpecProperties.
