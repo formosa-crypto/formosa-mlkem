@@ -480,7 +480,6 @@ fn _sha3_512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 {
   stack u64[25] state;
   stack ptr u8[64] out_s;
-  stack ptr u8[32] in_s;
   reg u64 t64;
   inline int i;
 
@@ -496,12 +495,10 @@ fn _sha3_512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
   state[u8 SHA3_512_RATE-1] ^= 0x80;
 
   out_s = out;
-  in_s = in;
   
   state = _keccakf1600_scalar(state);
 
   out = out_s;
-  in = in_s;
   
   for i = 0 to 8 {
     t64 = state[i];
