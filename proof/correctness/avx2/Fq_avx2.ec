@@ -6,6 +6,7 @@ require import Ops.
 require import List_hakyber.
 require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
+require import Jindcpa.
 
 pragma +oldip.
 
@@ -13,8 +14,8 @@ theory Fq_avx2.
 
 import Fq.
 import SignedReductions.
-import Kyber_.
-import ZModField.
+import Kyber.
+import ZModP.
 
 op lift_array16 (p: W16.t Array16.t) =
   Array16.map (fun x => (W16.to_sint x)) p.
@@ -98,9 +99,9 @@ rewrite (_:to_uint (- (of_int x)%W16) = W16.to_uint (W16.of_int (-x))).
  rewrite of_intN'. trivial.
 
 rewrite /BREDC.
-rewrite  (_: R^2 = W32.modulus); first by rewrite /R  /= expr0 /=.
-rewrite !balmod_W32 /=.
-rewrite !balmod_W16.
+rewrite  (_: R^2 = W32.modulus); first by rewrite /R.
+rewrite !smod_W32 /=.
+rewrite !smod_W16.
 rewrite (_: to_sint r{hr}.[k] %% R = to_uint r{hr}.[k]).
 rewrite to_sintE /smod.
 case (2 ^ (16 - 1) <= to_uint r{hr}.[k]).
@@ -286,7 +287,7 @@ rewrite /SREDC /=.
 
 rewrite (_: R*(R *R^0) = W32.modulus); first by rewrite expr0 /R  => />.
 rewrite (_: R = W16.modulus); first by rewrite /R => />.
-rewrite balmod_W32 balmod_W32 balmod_W16.
+rewrite smod_W32 smod_W32 smod_W16.
 rewrite qE /=.
 
 rewrite /lift_array16 in _a_def.
