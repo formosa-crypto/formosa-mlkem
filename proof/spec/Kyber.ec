@@ -71,7 +71,7 @@ PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack
 *)
 
 clone import PKE_Ext as KyberPKE with
-  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * W8.t * W8.t * W8.t) option) * ((W8.t Array32.t * W8.t) option),
+  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * W8.t * W8.t * int) option) * ((W8.t Array32.t * W8.t) option),
   type RO.out_t = W8.t Array64.t * W8.t Array168.t * W8.t Array128.t,
   type pkey = W8.t Array1152.t * W8.t Array32.t,
   type skey = W8.t Array1152.t,
@@ -1274,7 +1274,7 @@ module (XOF :  XOF_t) (O : RO.POracle) = {
    }
    proc next_bytes() : W8.t Array168.t = {
         var bb;
-        bb <@ O.o((None, Some (_rho,_i,_j,W8.of_int count), None));
+        bb <@ O.o((None, Some (_rho,_i,_j,count), None));
         return bb.`2;
    }
 }.
