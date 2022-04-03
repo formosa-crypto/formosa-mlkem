@@ -39,14 +39,14 @@ op H : seed -> matrix.
 (* --------------------------------------------------------------------------- *)
 op [lossless] dseed : seed distr.
 (* this automatically add the axiom dseed_ll : is_lossless dseed. *)
-hint solve 0 random : dseed_ll.
+(* hint solve 0 random : dseed_ll. *)
 
 (* --------------------------------------------------------------------------- *)
 (* Uniform distribution over R *)
 op [lossless uniform full] duni_R : R distr.
 (* add duni_R_ll, duni_R_uni, duni_R_fu *)
 (* FIXME: without adding the hint explicitely the hint are lost after cloning *)
-hint solve 0 random : duni_R_ll duni_R_uni duni_R_fu.
+(* hint solve 0 random : duni_R_ll duni_R_uni duni_R_fu. *)
 
 lemma duni_R_funi : is_funiform duni_R.
 proof. apply is_full_funiform; [apply duni_R_fu | apply duni_R_uni]. qed.
@@ -55,7 +55,7 @@ proof. apply is_full_funiform; [apply duni_R_fu | apply duni_R_uni]. qed.
 (* Distribution over R (short values) *)
 
 op [lossless] dshort_R  : R distr.
-hint solve 0 random : dshort_R_ll.
+(* hint solve 0 random : dshort_R_ll. *)
 (* add dshort_R_ll *)
 
 (* --------------------------------------------------------------------------- *)
@@ -75,12 +75,12 @@ proof. apply /dvector_uni/duni_R_uni. qed.
 lemma duni_funi : is_funiform duni.
 proof. apply /is_full_funiform; [apply duni_fu | apply duni_uni]. qed.
 
-hint solve 0 random : duni_ll duni_fu duni_uni duni_funi.
+(* hint solve 0 random : duni_ll duni_fu duni_uni duni_funi. *)
 
 lemma dshort_ll : is_lossless dshort.
 proof. apply/dvector_ll/dshort_R_ll. qed.
 
-hint solve 0 random : dshort_ll.
+(* hint solve 0 random : dshort_ll. *)
 
 (* --------------------------------------------------------------------------- *)
 (* Extention of those definitions to matrix *) 
@@ -99,7 +99,7 @@ proof. apply /dmatrix_uni/duni_R_uni. qed.
 lemma duni_matrix_funi : is_funiform duni_matrix.
 proof. apply /is_full_funiform; [apply duni_matrix_fu | apply duni_matrix_uni]. qed.
 
-hint solve 0 random : duni_matrix_ll duni_matrix_fu duni_matrix_uni duni_matrix_funi.
+(* hint solve 0 random : duni_matrix_ll duni_matrix_fu duni_matrix_uni duni_matrix_funi. *)
 
 module type Adv_T = {
    proc guess(A : matrix, t : vector, uv : vector * R) : bool
@@ -111,8 +111,8 @@ module type HAdv_T = {
 
 abbrev [-printing] m_transpose = trmx.
 abbrev (`<*>`) = dotp.
-abbrev (+&) = ZR.(+).
-abbrev (-&) = ZR.(-).
+abbrev (&+) = ZR.(+).
+abbrev (&-) = ZR.(-).
 
 module MLWE(Adv : Adv_T) = {
 
@@ -127,7 +127,7 @@ module MLWE(Adv : Adv_T) = {
     
     t <$ duni;
     e' <$ dshort_R;
-    v0 <- (t `<*>` s) +& e';
+    v0 <- (t `<*>` s) &+ e';
     v1 <$ duni_R;
     
     b' <@ Adv.guess(_A, t, if b then (u1,v1) else (u0,v0));
@@ -150,7 +150,7 @@ module H_MLWE(Adv : HAdv_T) = {
     
     t <$ duni;
     e' <$ dshort_R;
-    v0 <- (t `<*>` s) +& e';
+    v0 <- (t `<*>` s) &+ e';
     v1 <$ duni_R;
     
     b' <@ Adv.guess(sd, t, if b then (u1,v1) else (u0,v0));
@@ -164,44 +164,52 @@ module H_MLWE(Adv : HAdv_T) = {
  *  one gets the matrix from from a random oracle.                          *)
 (****************************************************************************)
 
-clone import ROM as RO with
-  type in_t  <- seed,
-  type out_t <- matrix,
-  op dout    <- fun (sd : seed) => duni_matrix, 
-  type d_in_t <- unit,
-  type d_out_t <- bool.
+clone import ROM as RO.
 
 import Lazy.
 
-module type HAdv_RO_T(O : POracle) = {
-  include HAdv_T
+
+module type Sampler(O : POracle) = {
+    proc sample(sd : seed) : matrix
 }.
 
-module H_MLWE_RO(Adv : HAdv_RO_T, O : Oracle) = {
+module type PSampler = {
+    proc sample(sd : seed) : matrix
+}.
+
+module type HAdv_RO_T(O : POracle) = {
+   proc interact(sd : seed, t : vector) : unit
+   proc guess(uv : vector * R) : bool
+}.
+
+module H_MLWE_RO(Adv : HAdv_RO_T, S: Sampler, O : Oracle) = {
 
   proc main(tr : bool, b : bool) : bool = {
     var sd, s, e, _A, u0, u1, t, e', v0, v1, b';
     
     O.init();
+
     sd <$ dseed;
+    t <$ duni;
+    Adv(O).interact(sd,t); (* Adv may try to disturb the sampler *)
+    _A <@ S(O).sample(sd);
+
     s <$ dshort;
     e <$ dshort;
-    _A <@ O.o(sd);
-    _A <- if tr then m_transpose _A else _A;
-    u0 <- _A *^ s + e;
+    u0 <- (if tr then m_transpose _A else _A) *^ s + e;
     u1 <$ duni;
     
-    t <$ duni;
     e' <$ dshort_R;
-    v0 <- (t `<*>` s) +& e';
+    v0 <- (t `<*>` s) &+ e';
     v1 <$ duni_R;
     
-    b' <@ Adv(O).guess(sd, t, if b then (u1,v1) else (u0,v0));
+    b' <@ Adv(O).guess(if b then (u1,v1) else (u0,v0));
     return b';
    }
 
 }.
 
+(*
 module B(A : HAdv_RO_T, O : Oracle) : Adv_T = {
   var _sd : seed
   var __A : matrix
@@ -277,7 +285,7 @@ proc;inline *.
 case (sd{2} = B._sd{2}).
 + rcondf{1} 2; first by auto => /> /#.
   rcondf{2} 2; first by auto.
-  by auto => /> /#.
+  by auto => />;smt(duni_matrix_ll).
 + rcondt{2} 2; first by auto.
   by auto => />;smt(get_setE).
 by auto => />.
@@ -299,15 +307,16 @@ seq 3 6 : (#pre /\ ={b,sd} /\ _A{1} = m_transpose _A{2} /\
            Bt.__A{2} = m_transpose _A{2} /\ Bt._sd{2} = sd{2} /\ 
            (forall x, x <> Bt._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x])).
 + inline *; wp; rnd (fun m => m_transpose m) (fun m => m_transpose m).
-  by auto => /> *;   smt(@SmtMap trmxK). 
+  by auto => />; smt(@SmtMap duni_matrix_funi trmxK).
 wp;call(: (LRO.m{1}.[Bt._sd{2}] = Some Bt.__A{2}) /\ 
             forall x, x <> Bt._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x]).
 proc;inline *.
 case (sd{2} = Bt._sd{2}).
 + rcondf{1} 2; first by auto => />/#.
   rcondf{2} 2; first by auto.
-  by auto => /> /#.
+  by auto => />; smt(duni_matrix_ll).
 + rcondt{2} 2; first by auto.
   by auto => />;smt(get_setE).
 by auto => />;smt(trmxK).
 qed.
+*)

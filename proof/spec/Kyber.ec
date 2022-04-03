@@ -988,7 +988,8 @@ clone import MLWE_PKE as MLWEPKE with
   op m_encode <- m_encode,
   op m_decode <- m_decode,
   op c_encode <- c_encode,
-  op c_decode <- c_decode, 
+  op c_decode <- c_decode 
+(*
   op rnd_err_v <- rnd_err_v,
   op rnd_err_u <- rnd_err_u,
   op under_noise_bound <- under_noise_bound,
@@ -996,6 +997,7 @@ clone import MLWE_PKE as MLWEPKE with
   op cv_bound <- cv_bound,
   op fail_prob <- fail_prob,
   op epsilon_hack <- epsilon_hack
+*)
   proof MLWE_.dseed_ll by apply srand_ll
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
@@ -1021,13 +1023,15 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_.Matrix_.Matrix.tofunmK by apply tofunmK
   proof MLWE_.Matrix_.Matrix.offunmK by apply offunmK
   proof MLWE_.duni_R_uni by apply duni_R_uni
+(*
   proof encode_noise
   proof good_decode
   proof cv_bound_valid
   proof noise_commutes
   proof correctness_hack
-  proof fail_prob.
+  proof fail_prob *).
 
+(*
 realize encode_noise.
 move => /> u v.
 rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v=> />.
@@ -1086,7 +1090,7 @@ auto => />.
 rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
 rewrite /good_noise /cv_bound /noise_val.
 admitted. (* Probability of failure event in distribution: compute in EC? *)
-
+*)
 (* AT THIS POINT WE HAVE THE REFINED THEORETICAL ABSTRACTION
    AND THE SPEC. The theoretical abstraction is still working
    over arrays over Fq/bools, rather than byte encodings.

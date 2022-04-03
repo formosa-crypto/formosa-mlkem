@@ -2,8 +2,6 @@ require import AllCore Distr List SmtMap Dexcepted.
 require (****) ROM RndExcept StdOrder PKE_Ext MLWE.
 
 clone import MLWE as MLWE_.
-import RO.
-import Lazy.
 
 import StdOrder.IntOrder Matrix_ Big.BAdd.
 
@@ -23,31 +21,29 @@ op c_decode : ciphertext -> raw_ciphertext.
 
 
 clone import PKE_Ext as PKE_ with 
-  type RO.in_t  <- seed,
-  type RO.out_t <- matrix,
-  op RO.dout    <- fun (sd : seed) => duni_matrix, 
-  type RO.d_in_t <- unit,
-  type RO.d_out_t <- bool,
+  theory RO <- MLWE_.RO,
   type pkey = (vector * seed),
   type skey = vector,
   type plaintext <- plaintext,
   type ciphertext <- ciphertext.
 
+import MLWE_.RO.
+import Lazy.
+
 (******************************************************************)
 (*                    The Encryption Scheme                       *)
 
-module ConcreteH : Oracle = {
-  proc init() = {}
-  proc o(sd : seed) = { return H sd;}
+module HS : PSampler = {
+  proc sample(sd : seed) = { return H sd;}
 }.
 
-module MLWE_PKE(H: POracle) : Scheme = {
+module MLWE_PKE(H: PSampler, O : POracle) : Scheme = {
   proc kg() : pkey * skey = {
     var sd,s,e,_A,t;
     sd <$ dseed;
     s  <$ dshort;
     e  <$ dshort;
-    _A <@ H.o(sd);
+    _A <@ H.sample(sd);
     t  <- _A *^ s + e;
     return ((t,sd),s);
   }
@@ -58,39 +54,39 @@ module MLWE_PKE(H: POracle) : Scheme = {
     r  <$ dshort;
     e1 <$ dshort;
     e2 <$ dshort_R;
-    _A <@ H.o(sd);
+    _A <@ H.sample(sd);
     u  <- m_transpose _A *^ r + e1;
-    v  <- (t `<*>` r) +& e2 +& (m_encode m);
+    v  <- (t `<*>` r) &+ e2 &+ (m_encode m);
     return (c_encode (u,v));
   }
   
   proc dec(sk : skey, c : ciphertext) : plaintext option = {
     var u,v;
     (u,v) <- c_decode c;
-    return Some (m_decode (v -& (sk `<*>` u)));
+    return Some (m_decode (v &- (sk `<*>` u)));
   }
 }.
-
-module MLWE_PKE_H = MLWE_PKE(ConcreteH).
-module MLWE_PKE_RO = MLWE_PKE(LRO).
 
 (******************************************************************)
 (*       Game Hopping Security for Concrete Hash                  *)
 (******************************************************************)
 
+module NULL : POracle = { proc o(x : in_t) : out_t = { return witness; } }.
+module MLWE_PKE_H = MLWE_PKE(HS,NULL).
+
 (* Hop 1 *)
 
-module MLWE_PKE1(O : POracle) = {
+module MLWE_PKE1(S : PSampler, O : POracle) = {
   proc kg() : pkey * skey = {
     var _A,sd,s,t;
     sd <$ dseed;
     s  <$ dshort;
     t  <$ duni;
-    _A <@ O.o(sd);
+    _A <@ S.sample(sd);
     return ((t,sd),s);
   }
 
-  include MLWE_PKE(O) [-kg]
+  include MLWE_PKE(S,O) [-kg]
 
 }.
 
@@ -123,36 +119,36 @@ byequiv => //.
 proc; inline *. 
 wp; call(:true); auto => /=. 
 call (:true); wp.
-rnd{2}; wp; do 3! rnd{2}; auto.
+by rnd{2}; wp; do 3! rnd{2}; auto; smt(duni_ll).
 qed.
 
 lemma hop1_right &m: 
   Pr[H_MLWE(B1(A)).main(false,true) @ &m : res] = 
-  Pr[CPA(MLWE_PKE1(ConcreteH),A).main() @ &m : res].
+  Pr[CPA(MLWE_PKE1(HS,NULL),A).main() @ &m : res].
 proof.
 byequiv => //.
 proc;inline *. 
 wp; call(:true); auto => /=.
 call(:true); wp => /=.
 rnd{1}; wp; do 2! rnd{1}.
-rnd; wp; rnd{1}; auto.
+by rnd; wp; rnd{1}; auto; smt(duni_ll dshort_ll).
 qed.
 
 end section.
 
 (* Hop 2 *)
 
-module MLWE_PKE2(O : POracle) = {
+module MLWE_PKE2(S : PSampler, O : POracle) = {
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
     var _A,u, v;
-    _A <@ O.o(pk.`2);
+    _A <@ S.sample(pk.`2);
     u <$duni;
     v <$duni_R;
-    return (c_encode (u,v +& m_encode m));
+    return (c_encode (u,v &+ m_encode m));
   }
 
-  include MLWE_PKE1(O) [-enc]
+  include MLWE_PKE1(S,O) [-enc]
 
 }.
 
@@ -163,7 +159,7 @@ module B2(A : Adversary) : HAdv_T = {
   }
   
   proc enc(pk : pkey, m : plaintext, uv : vector * R) : ciphertext = {
-    return (c_encode (uv.`1, uv.`2 +& m_encode m));
+    return (c_encode (uv.`1, uv.`2 &+ m_encode m));
   }
   
   proc guess(sd : seed, t : vector, uv : vector * R) : bool = {
@@ -184,7 +180,7 @@ declare module A <: Adversary.
 
 
 lemma hop2_left &m: 
-  Pr[CPA(MLWE_PKE1(ConcreteH),A).main() @ &m : res] =
+  Pr[CPA(MLWE_PKE1(HS,NULL),A).main() @ &m : res] =
   Pr[H_MLWE(B2(A)).main(true,false) @ &m : res].
 proof.
 byequiv => //.
@@ -193,15 +189,15 @@ swap {2} 7 -5.
 swap {2} [11..12] -8.
 swap {2} [14..17] -9.
 seq 6 7 : (#pre /\ ={sd,t,pk} /\ pk{2}.`2 = sd{2} /\ pk{2}.`1 = t{2});
-  first by wp;rnd; rnd{1}; rnd; auto.
+  first by wp;rnd; rnd{1}; rnd; auto; smt(dshort_ll).
 swap {2} [11..13] -9.
 by wp; call(_: true); wp; rnd{2}; wp; rnd; rnd{2}; wp; 
-   rnd; rnd; wp; rnd; call(_: true); auto.
+   rnd; rnd; wp; rnd; call(_: true); auto; smt(duni_ll dshort_ll).
 qed.
 
 lemma hop2_right &m: 
   Pr[H_MLWE(B2(A)).main(true,true) @ &m : res] = 
-  Pr[CPA(MLWE_PKE2(ConcreteH),A).main() @ &m : res].
+  Pr[CPA(MLWE_PKE2(HS,NULL),A).main() @ &m : res].
 proof.
 byequiv => //.
 proc; inline *. 
@@ -209,10 +205,10 @@ swap {1} 7 -5.
 swap {1} [11..12] -8.
 swap {1} [14..17] -9.
 seq 7 6 : (#pre /\ ={sd,t,pk} /\ pk{2}.`2 = sd{2} /\ pk{2}.`1 = t{2});
-   first by wp;rnd;  rnd{2}; rnd; auto. 
+   first by wp;rnd;  rnd{2}; rnd; auto; smt(dshort_ll). 
 swap {1} [11..13] -9.
 by wp; call(_: true);wp;rnd;wp;rnd{1};rnd;wp;rnd{1};rnd{1};wp;rnd; 
-   call(_: true); auto.
+   call(_: true); auto;smt(duni_ll dshort_ll).
 qed.
 
 end section.
@@ -239,15 +235,15 @@ local module Game2(A : Adversary) = {
 }.
 
 local lemma game2_equiv &m : 
-  Pr[CPA(MLWE_PKE2(ConcreteH),A).main() @ &m : res] = 
+  Pr[CPA(MLWE_PKE2(HS,NULL),A).main() @ &m : res] = 
   Pr[Game2(A).main() @ &m : res].
 proof.
 byequiv => //.
 proc; inline *.
 swap {2} 8 -3.
 call(_: true); wp.
-rnd (fun z, z +& m_encode (if b then m1 else m0){2})
-    (fun z, z -& m_encode (if b then m1 else m0){2}).
+rnd (fun z, z &+ m_encode (if b then m1 else m0){2})
+    (fun z, z &- m_encode (if b then m1 else m0){2}).
 auto; call (_:true).
 auto => /> *; split => *; [ ring | split => *; [ring | smt()]].
 qed.
@@ -262,7 +258,7 @@ proc.
 rnd  (pred1 b')=> //=.
 conseq (: _ ==> true).
 + by move=> />; apply DBool.dbool1E.
-by islossless. 
+by islossless; smt(duni_ll dshort_ll). 
 qed.
 
 lemma main_theorem &m :
@@ -289,20 +285,23 @@ end section.
 (*       Game Hopping Security for ROM Hash                       *)
 (******************************************************************)
 
+
+module MLWE_PKE_RO(S : Sampler) = MLWE_PKE(S(LRO)).
+
 (* Hop 1 *)
 
-module (B1ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
-
-  proc kg(t : vector, sd : seed) : pkey * skey = {
-    return ((t,sd),witness);
-  }
+module (B1ROM(A : AdversaryRO, S : Sampler) : HAdv_RO_T) (O : MLWE_.RO.POracle) = {
+  var sd : seed
+  var t  : vector
   
-  proc guess(sd : seed, t : vector, uv : vector * R) : bool = {
-    var pk, sk, m0, m1, c, b, b';
-    (pk,sk) <@ kg(uv.`1,sd);
+  proc interact(_sd : seed, _t : vector) : unit = { sd <- _sd; t <- _t; }
+
+  proc guess(uv : vector * R) : bool = {
+    var pk,  m0, m1, c, b, b';
+    pk <- (uv.`1,sd);
     (m0, m1) <@ A(O).choose(pk);
     b <$ {0,1};
-    c <@ MLWE_PKE(O).enc(pk, if b then m1 else m0);
+    c <@ MLWE_PKE(S(O),O).enc(pk, if b then m1 else m0);
     b' <@ A(O).guess(c);
     return b' = b;
   }
@@ -310,56 +309,65 @@ module (B1ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
 
 section.
 
-declare module A <: AdversaryRO {-LRO,-B1ROM,-MLWE_.B}.
+declare module S <: Sampler {-LRO,-B1ROM}.
+declare module A <: AdversaryRO {-LRO,-B1ROM,-S}.
 
 lemma hop1_left_h &m: 
-  Pr[CPAROM(MLWE_PKE,A,LRO).main() @ &m : res] =
-  Pr[MLWE(B(B1ROM(A),LRO)).main(false) @ &m : res].
+  Pr[CPAROM(MLWE_PKE(S(LRO)),A,LRO).main() @ &m : res] =
+  Pr[H_MLWE_RO(B1ROM(A,S),S,LRO).main(false,false) @ &m : res].
 proof.
-rewrite -(H_MLWE_RO_equiv false &m (B1ROM(A))).
 byequiv => //.
-proc; inline {1} 2; inline {2} 13.
-seq 1 1 : (#pre /\ ={glob LRO}); 1 : by conseq => />; sim.
+proc.
+seq 1 1 : (!b{2} /\ !tr{2} /\ ={glob A, glob S,glob LRO}); 1 : by inline *;auto.
+inline *.
 wp; call(: ={glob LRO}); 1: by sim.
-inline *;wp;rnd;wp;rnd;rnd;rnd;wp;rnd. 
+wp; call(: ={glob LRO}); 1: by sim.
+rnd;rnd;rnd;wp;rnd;wp. 
 call(_: ={glob LRO}); 1: by sim.
-by wp;rnd{2};wp;rnd{2};rnd{2};rnd{2};auto => />.
+swap {2} [8..9] -6.
+wp;rnd{2};wp;rnd{2};rnd{2};wp.
+wp; call(: ={glob LRO}); 1: by sim.
+by wp;rnd{2};rnd;rnd;rnd;auto => />;smt(dshort_ll duni_ll).
 qed.
 
 lemma hop1_right_h &m: 
-  Pr[CPAROM(MLWE_PKE1,A,LRO).main() @ &m : res] =
-  Pr[MLWE(B(B1ROM(A),LRO)).main(true) @ &m : res].
+  Pr[CPAROM(MLWE_PKE1(S(LRO)),A,LRO).main() @ &m : res] =
+  Pr[H_MLWE_RO(B1ROM(A,S),S,LRO).main(false,true) @ &m : res].
 proof.
-rewrite -(H_MLWE_RO_equiv true &m (B1ROM(A))).
 byequiv => //.
-proc; inline {1} 2; inline {2} 13.
-inline {1} 2.
-swap {2} 8 -4.
-swap {2} [6..7] -1.
-seq 5 6 : (#pre /\ ={glob LRO,sd,s,_A} /\ t{1} = u1{2});
-   1: by inline *; conseq => />; auto => />.
+proc.
+seq 1 1 : (b{2} /\ !tr{2} /\ ={glob A, glob S,glob LRO}); 1 : by inline *;auto.
+inline *.
 wp; call(: ={glob LRO}); 1: by sim.
-inline *;wp;rnd;wp;rnd;rnd;rnd;wp;rnd. 
+wp; call(: ={glob LRO}); 1: by sim.
+rnd;rnd;rnd;wp;rnd;wp. 
 call(_: ={glob LRO}); 1: by sim.
-by wp;rnd{2};wp;rnd{2};rnd{2};wp;rnd{2};auto => />. 
+swap {2} 8 -6.
+swap {2} 11 -8.
+wp;rnd{2};wp;rnd{2};wp;rnd{2}.
+wp; call(: ={glob LRO}); 1: by sim.
+by wp;rnd{2};rnd;rnd;rnd;auto => />;smt(dshort_ll duni_ll).
 qed.
 
 end section.
 
-module (B2ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
+module (B2ROM(A : AdversaryRO, S : Sampler) : HAdv_RO_T) (O : POracle) = {
+  var pk : pkey
+  var m0, m1 : plaintext
 
-  proc kg(t : vector, sd : seed) : pkey * skey = {
-    return ((t,sd),witness);
+  proc interact(sd : seed, t: vector) : unit = {
+    var _A;
+    pk <- (t,sd);
+    _A <@ S(O).sample(sd); (* we need to match samplings *)
+    (m0, m1) <@ A(O).choose(pk);
   }
   
   proc enc(pk : pkey, m : plaintext, uv : vector * R) : ciphertext = {
-    return (c_encode (uv.`1, uv.`2 +& m_encode m));
+    return (c_encode (uv.`1, uv.`2 &+ m_encode m));
   }
   
-  proc guess(sd : seed, t : vector, uv : vector * R) : bool = {
-    var pk, sk, m0, m1, c, b, b';
-    (pk,sk) <@ kg(t,sd);
-    (m0, m1) <@ A(O).choose(pk);
+  proc guess(uv : vector * R) : bool = {
+    var c, b, b';
     b <$ {0,1};
     c <@ enc(pk, if b then m1 else m0,uv);
     b' <@ A(O).guess(c);
@@ -370,58 +378,47 @@ module (B2ROM(A : AdversaryRO) : HAdv_RO_T) (O : POracle) = {
 
 section.
 
-declare module A <: AdversaryRO {-LRO,-B2ROM,-MLWE_.Bt}.
+declare module S <: Sampler {-LRO,-B2ROM}.
+declare module A <: AdversaryRO {-LRO,-B2ROM, -S}.
 
 
 lemma hop2_left_h &m: 
-  Pr[CPAROM(MLWE_PKE1,A,LRO).main() @ &m : res] =
-  Pr[MLWE(Bt(B2ROM(A),LRO)).main(false) @ &m : res].
+  Pr[CPAROM(MLWE_PKE1(S(LRO)),A,LRO).main() @ &m : res] =
+  Pr[H_MLWE_RO(B2ROM(A,S),S,LRO).main(true,false) @ &m : res].
 proof.
-rewrite -(H_MLWE_RO_equiv_t false &m (B2ROM(A))).
 byequiv => //.
-proc; inline {1} 2; inline {1} 2; inline {2} 13; inline {2} 19; inline {1} 9.
-swap {2} 9 -6.
-swap {2} [6..7] -2.
-swap {2} [13..14] -7.
-swap {2} [16..17] -8.
-swap {1} 9 -2.
-swap {1} 11 -3.
-swap {1} 15 -5.
-seq 8 8 : (#pre /\ ={glob LRO,sd,t,pk} /\ pk{2}.`2 = sd{2} /\ pk{2}.`1 = t{2} /\ LRO.m{1}.[sd0{1}] = Some (m_transpose _A{2}) /\ sd{2} = sd0{2} /\ sd{1} = sd0{1} /\ t0{1} = t{1} /\ t0{2} = t{2});
- first by inline *; wp;rnd;wp;rnd;rnd{1};rnd;auto => />;  smt(@SmtMap trmxK).
-wp; call(: ={glob LRO}); first by sim.
-swap {2} [10..12] -8.
-inline *. 
-wp; rnd{2}; wp; rnd; rnd{2}; wp; rnd; wp; rnd; wp; rnd; wp; rnd{1}; wp.
-exists *sd{1}, _A{2}.
-elim* => sd _A.
-call(: ={glob LRO} /\ LRO.m{1}.[sd] = Some (m_transpose _A)); 1: by proc; auto => />; smt(@SmtMap).
-auto => />; smt(trmxK). 
+proc.
+seq 1 1 : (!b{2} /\ tr{2} /\ ={glob A, glob S,glob LRO}); 1: by inline *;auto => /> /#.
+inline *.
+wp; call(: ={glob LRO}); 1: by sim.
+swap {1} 2 -1.
+swap {1} 14 -3.
+swap {2} 17 -9.
+wp;rnd{2};wp;rnd; wp;rnd{2};wp;rnd;rnd.
+wp; call(: ={glob LRO}); 1: by sim.
+wp; rnd; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob LRO}); 1: by sim.
+by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll).
 qed.
 
 lemma hop2_right_h &m: 
-  Pr[CPAROM(MLWE_PKE2,A,LRO).main() @ &m : res] =
-  Pr[MLWE(Bt(B2ROM(A),LRO)).main(true) @ &m : res].
+  Pr[CPAROM(MLWE_PKE2(S(LRO)),A,LRO).main() @ &m : res] =
+  Pr[H_MLWE_RO(B2ROM(A,S),S,LRO).main(true,true) @ &m : res].
 proof.
-rewrite -(H_MLWE_RO_equiv_t true &m (B2ROM(A))).
 byequiv => //.
-proc; inline {1} 2; inline {1} 2; inline {2} 13; inline {2} 19; inline {1} 9.
-swap {2} 9 -6.
-swap {2} [6..7] -2.
-swap {2} [13..14] -7.
-swap {2} [16..17] -8.
-swap {1} 9 -2.
-swap {1} 11 -2.
-seq 7 8 : (#pre /\ ={glob LRO,sd,t,pk} /\ pk{2}.`2 = sd{2} /\ pk{2}.`1 = t{2} /\ LRO.m{1}.[sd{1}] = Some (m_transpose _A{2}) /\ sd{2} = sd0{2} /\ t0{2} = t{2} /\ pk0.`2{1} = sd{1});
- first by inline *; wp;rnd;wp;rnd;rnd{1};rnd;auto => />;  smt(@SmtMap trmxK).
-wp; call(: ={glob LRO}); first by sim.
-swap {2} [10..12] -8.
-inline *. 
-wp; rnd; wp; rnd{2}; wp; rnd; wp; rnd{2}; rnd{2}; wp; rnd; wp; rnd{1}; wp.
-exists *sd{1}, _A{2}.
-elim* => sd _A.
-call(: ={glob LRO} /\ LRO.m{1}.[sd] = Some (m_transpose _A)); 1: by proc; auto => />; smt(@SmtMap).
-by auto => /> /#.
+proc.
+seq 1 1 : (b{2} /\ tr{2} /\ ={glob A, glob S,glob LRO}); 1: by inline *;auto => /> /#.
+inline *.
+wp; call(: ={glob LRO}); 1: by sim.
+swap {1} 2 -1.
+swap {1} 8 -2.
+swap {1} 10 -2.
+swap {2} 17 -8.
+wp;rnd;wp;rnd{2};wp;rnd;wp;rnd{2};rnd{2};rnd.
+wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob LRO}); 1: by sim.
+by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll).
 qed.
 
 end section.
@@ -430,17 +427,19 @@ end section.
 
 section.
 
-declare module A <: AdversaryRO {-LRO, -B, -Bt}.
+declare module S <: Sampler {-LRO, -B1ROM, -B2ROM}.
+declare module A <: AdversaryRO {-LRO, -B1ROM, -B2ROM, -S}.
 
 local module Game2RO(A : AdversaryRO) = {
   proc main() = {
-    var _A,sd, s, t, m0, m1, u, v, b, b';
+    var sd, _A, s, t, m0, m1, u, v, b, b';
     LRO.init();
     sd <$ dseed;
-    _A <@ LRO.o(sd);
+    _A <@ S(LRO).sample(sd);
     s <$ dshort;
     t <$ duni;
     (m0, m1) <@ A(LRO).choose((t,sd));
+    _A <@ S(LRO).sample(sd);
     u <$duni;
     v <$duni_R;
     b' <@ A(LRO).guess(c_encode (u,v));
@@ -449,74 +448,72 @@ local module Game2RO(A : AdversaryRO) = {
   }
 }.
 
+
 local lemma game2_equiv_h &m : 
-  Pr[CPAROM(MLWE_PKE2,A,LRO).main() @ &m : res] = 
+  Pr[CPAROM(MLWE_PKE2(S(LRO)),A,LRO).main() @ &m : res] = 
   Pr[Game2RO(A).main() @ &m : res].
 proof.
 byequiv => //.
 proc; inline *.
-swap {2} 13 -3.
+swap {2} 11 -4.
 wp; call(_: ={glob LRO}); 1: by sim.  
-wp.
-rnd (fun z, z +& m_encode (if b then m1 else m0){2})
-    (fun z, z -& m_encode (if b then m1 else m0){2}).
-seq 9 8 : (#pre /\ ={glob LRO,sd,s,t,_A} /\
-     pk.`2{1} = sd{2} /\ pk.`1{1} = t{2} /\
-     LRO.m{1}.[sd{1}]=Some _A{1});
- first by swap{1} [3..4] 4; auto => />; smt(@SmtMap). 
-rnd;wp;rnd{1};wp;rnd.
-exists *sd{1}, _A{1}.
-elim* => sd _A.
-call(: ={glob LRO} /\ LRO.m{1}.[sd] = Some (_A)); 1: by proc; auto => />; smt(@SmtMap).
-auto => /> *; split; 1: smt(@SmtMap).
-move => *; split; 1: smt().
-move => *; split.
-+ by move => *; ring. 
-move => *; split.
-+ by move => *; ring. 
-+ by smt(). 
+wp;rnd (fun z, z &+ m_encode (if b then m1 else m0){2})
+       (fun z, z &- m_encode (if b then m1 else m0){2}).
+rnd; call(_: ={glob LRO}); 1: by sim.  
+wp;rnd; call(_: ={glob LRO}); 1: by sim.  
+swap {2} [4..5] -1.
+wp; call(_: ={glob LRO}); 1: by sim. 
+rnd;rnd;rnd; auto => />.
++ move => *; split; 1: by move => *; ring.
++ move => *; split; 1: by move => *; ring.
+by smt().
 qed.
 
 local lemma game2_prob_h &m :
+  (forall (x : in_t), is_lossless (dout x)) => 
+  (forall (O <: Oracle), islossless O.o => islossless S(O).sample) =>   
   (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
   (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
   Pr[Game2RO(A).main() @ &m : res] = 1%r / 2%r.
 proof.
-move => A_guess_ll A_choose_ll.
+move => dout_ll S_ll A_guess_ll A_choose_ll.
+move : (S_ll LRO).
 move : (A_guess_ll LRO).
 move : (A_choose_ll LRO).
-move => _A_choose_ll _A_guess_ll.
-byphoare => //. 
-proc.
-rnd  (pred1 b')=> //=.
-conseq (: _ ==> true).
+move => _A_choose_ll _A_guess_ll _S_ll.
+byphoare => //;proc.
+rnd  (pred1 b')=> //=; conseq (: _ ==> true).
 + by move=> />; apply DBool.dbool1E.
-islossless.
-+ by apply _A_guess_ll; apply LRO_o_ll => _; apply duni_matrix_ll.
-by apply _A_choose_ll; apply LRO_o_ll => _; apply duni_matrix_ll.
+islossless; 4,5,7:by smt(duni_ll dshort_ll).
++ apply _A_guess_ll; 1: by  apply LRO_o_ll; smt().
++ apply _S_ll; 1: by  apply LRO_o_ll; smt().
++ apply _A_choose_ll; 1: by  apply LRO_o_ll; smt().
+by apply _S_ll; 1: by  apply LRO_o_ll; smt().
 qed.
 
 lemma main_theorem_h &m :
+  (forall (x : in_t), is_lossless (dout x)) => 
+  (forall (O <: Oracle), islossless O.o => islossless S(O).sample) =>   
   (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
   (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
-  Pr[CPAROM(MLWE_PKE,A,LRO).main() @ &m : res] -  1%r / 2%r =
-    Pr[MLWE(B(B1ROM(A),LRO)).main(false) @ &m : res] -
-       Pr[MLWE(B(B1ROM(A),LRO)).main(true) @ &m : res] + 
-    Pr[MLWE(Bt(B2ROM(A),LRO)).main(false) @ &m : res] -
-       Pr[MLWE(Bt(B2ROM(A),LRO)).main(true) @ &m : res].
+  Pr[CPAROM(MLWE_PKE(S(LRO)),A,LRO).main() @ &m : res] -  1%r / 2%r =
+    Pr[H_MLWE_RO(B1ROM(A,S),S,LRO).main(false,false) @ &m : res] -
+       Pr[H_MLWE_RO(B1ROM(A,S),S,LRO).main(false,true) @ &m : res] + 
+    Pr[H_MLWE_RO(B2ROM(A,S),S,LRO).main(true,false) @ &m : res] -
+       Pr[H_MLWE_RO(B2ROM(A,S),S,LRO).main(true,true) @ &m : res].
 proof.
-move => A_guess_ll A_choose_ll.
-rewrite (hop1_left_h A &m).
-rewrite -(hop1_right_h A &m).
-rewrite (hop2_left_h A &m).
-rewrite -(hop2_right_h A &m).
+move => dout_ll S_ll A_guess_ll A_choose_ll.
+rewrite (hop1_left_h S A &m).
+rewrite -(hop1_right_h S A &m).
+rewrite (hop2_left_h S A &m).
+rewrite -(hop2_right_h S A &m).
 rewrite (game2_equiv_h &m).
 rewrite (game2_prob_h &m _ _) //.
 by ring.
 qed.
 
 end section.
-
+(*
 (******************************************************************)
 (*                        Correctness                             *)
 (* We consider adversarial correctness, where the attacker can    *)
@@ -794,3 +791,4 @@ lemma correctness_bound &m :
 by move => A_ll;move: (fail_prob &m) (correctness_hack &m) (correctness_approx &m A_ll) => /#.
 
 end section.
+*)
