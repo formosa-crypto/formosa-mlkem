@@ -1,8 +1,6 @@
 require import AllCore Ring SmtMap Distr.
 require (****) ROM Matrix.
 
-theory MLWE.
-
 clone import Matrix as Matrix_.
 
 (***************************************************)
@@ -114,23 +112,8 @@ module MLWE(Adv : Adv_T) = {
 
 }.
 
-(* add duni_R_ll, duni_R_uni, duni_R_fu *)
-(* FIXME: without adding the hint explicitely the hint are lost after cloning *)
-(* hint solve 0 random : duni_R_ll duni_R_uni duni_R_fu. *)
-(* hint solve 0 random : dshort_R_ll. *)
-(* add dshort_R_ll *)
-(* hint solve 0 random : duni_ll duni_fu duni_uni duni_funi. *)
-(* hint solve 0 random : dshort_ll. *)
-(* hint solve 0 random : duni_matrix_ll duni_matrix_fu duni_matrix_uni duni_matrix_funi. *)
-
-end MLWE.
-
-theory MLWE_H.
-
-clone include MLWE.
-
-import Matrix_.
-
+(* --------------------------------------------------------------------------- *)
+(* Version of MLWE using a concrete hash function to derive the matrix         *)
 (* --------------------------------------------------------------------------- *)
 type seed.
 op H : seed -> matrix.
@@ -165,8 +148,6 @@ module MLWE_H(Adv : HAdv_T) = {
 
 }.
 
-end MLWE_H.
-
 (****************************************************************************)
 (* Clearly the MLWE assumption and the H_MLWE assumption are the same when 
  *  one gets the matrix from from a random oracle.                          *)
@@ -174,24 +155,172 @@ end MLWE_H.
 
 theory MLWE_ROM.
 
-
-end MLWE_ROM.
-
-theory MLWE_SMP.
-
-clone include MLWE.
-import Matrix_.
-
-clone import ROM as RO.
+clone import ROM as RO_H with
+  type in_t  = seed,
+  type out_t = matrix,
+  op dout    = fun (sd : seed) => duni_matrix, 
+  type d_in_t = seed * vector,
+  type d_out_t = matrix.
 
 import Lazy.
 
-(* --------------------------------------------------------------------------- *)
-type seed.
+module type ROAdv_T(O : POracle) = {
+   proc guess(sd : seed, t : vector, uv : vector * R) : bool
+}.
 
-(* --------------------------------------------------------------------------- *)
-op [lossless] dseed : seed distr.
+module MLWE_RO(Adv : ROAdv_T, O : Oracle) = {
 
+  proc main(tr : bool, b : bool) : bool = {
+    var sd, s, e, _A, u0, u1, t, e', v0, v1, b';
+    
+    O.init();
+    sd <$ dseed;
+    s <$ dshort;
+    e <$ dshort;
+    _A <@ O.o(sd);
+    _A <- if tr then m_transpose _A else _A;
+    u0 <- _A *^ s + e;
+    u1 <$ duni;
+    
+    t <$ duni;
+    e' <$ dshort_R;
+    v0 <- (t `<*>` s) &+ e';
+    v1 <$ duni_R;
+    
+    b' <@ Adv(O).guess(sd, t, if b then (u1,v1) else (u0,v0));
+    return b';
+   }
+
+}.
+
+theory MLWE_vs_MLWE_ROM.
+
+module B(A : ROAdv_T, O : Oracle) : Adv_T = {
+  var _sd : seed
+  var __A : matrix
+
+  module FakeRO  = {
+      proc o(sd : seed) : matrix = {
+           var _Ares;
+           _Ares <- __A;
+           if (sd <> _sd) {
+              _Ares <@ O.o(sd);
+           }
+           return _Ares;
+      }
+  }
+  
+  proc guess(_A : matrix, t : vector, uv : vector * R) : bool = {
+    var sd, b;
+    sd <$ dseed;
+    _sd <- sd;
+    __A <- _A;
+    O.init();
+    b <@ A(FakeRO).guess(sd,t,uv);
+    return b;
+  }
+
+}.
+
+module Bt(A : ROAdv_T, O : Oracle) : Adv_T = {
+  var _sd : seed
+  var __A : matrix
+
+  module FakeRO  = {
+      proc o(sd : seed) : matrix = {
+           var _Ares;
+           _Ares <- __A;
+           if (sd <> _sd) {
+              _Ares <@ O.o(sd);
+           }
+           return _Ares;
+      }
+  }
+  
+  proc guess(_A : matrix, t : vector, uv : vector * R) : bool = {
+    var sd, b;
+    sd <$ dseed;
+    _sd <- sd;
+    __A <- m_transpose _A;
+    O.init();
+    b <@ A(FakeRO).guess(sd,t,uv);
+    return b;
+  }
+
+}.
+
+lemma MLWE_RO_equiv b &m (A <: ROAdv_T {-LRO,-B}):
+  Pr[  MLWE_RO(A,LRO).main(false,b) @ &m : res ] =
+  Pr[  MLWE(B(A,LRO)).main(b) @ &m : res].
+proof.
+byequiv => //.
+proc; inline B(A,LRO).guess.
+swap {2} 16 -15.
+swap {2} 11 -8.
+swap {2} 14 -13.
+swap {2} [15..16] -10.
+swap {1} 5 -2.
+seq 3 6 : (#pre /\ ={b,_A,sd} /\ (LRO.m{1}.[B._sd{2}] = Some B.__A{2}) /\ 
+          B.__A{2} = _A{2} /\ B._sd{2} = sd{2} /\ 
+          (forall x, x <> B._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x]));
+ first by inline *; auto => />; smt(@SmtMap).
+wp;call(: (LRO.m{1}.[B._sd{2}] = Some B.__A{2}) /\ 
+            forall x, x <> B._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x]).
+proc;inline *.
+case (sd{2} = B._sd{2}).
++ rcondf{1} 2; first by auto => /> /#.
+  rcondf{2} 2; first by auto.
+  by auto => />; smt(duni_matrix_ll).
++ rcondt{2} 2; first by auto.
+  by auto => />;smt(get_setE).
+by auto => />.
+qed.
+
+lemma MLWE_RO_equiv_t b &m (A <: ROAdv_T {-LRO,-Bt}):
+  Pr[  MLWE_RO(A,LRO).main(true,b) @ &m : res ] =
+  Pr[  MLWE(Bt(A,LRO)).main(b) @ &m : res].
+proof.
+byequiv => //.
+proc; inline Bt(A,LRO).guess.
+swap {2} 16 -15.
+swap {2} 11 -8.
+swap {2} 14 -13.
+swap {2} [15..16] -10.
+swap {1} 5 -2.
+seq 3 6 : (#pre /\ ={b,sd} /\ _A{1} = m_transpose _A{2} /\ 
+           LRO.m{1}.[Bt._sd{2}] = Some Bt.__A{2} /\ 
+           Bt.__A{2} = m_transpose _A{2} /\ Bt._sd{2} = sd{2} /\ 
+           (forall x, x <> Bt._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x])).
++ inline *; wp; rnd (fun m => m_transpose m) (fun m => m_transpose m).
+  by auto => />;   smt(@SmtMap trmxK duni_matrix_funi). 
+wp;call(: (LRO.m{1}.[Bt._sd{2}] = Some Bt.__A{2}) /\ 
+            forall x, x <> Bt._sd{2} => LRO.m{1}.[x] = LRO.m{2}.[x]).
+proc;inline *.
+case (sd{2} = Bt._sd{2}).
++ rcondf{1} 2; first by auto => />/#.
+  rcondf{2} 2; first by auto.
+  by auto => />;smt(duni_matrix_ll).
++ rcondt{2} 2; first by auto.
+  by auto => />;smt(get_setE).
+by auto => />;smt(trmxK).
+qed.
+
+end MLWE_vs_MLWE_ROM.
+
+end MLWE_ROM.
+
+(****************************************************************************)
+(* For Kyber it is more convenient to reduce the security of the spec
+   to the following assumption, which is based on a matrix sampler that
+   calls the ROM in a possibly intricate way. 
+   To Do. Prove equivalence to MLWE for the Kyber sampler                   *)
+(****************************************************************************)
+
+theory MLWE_SMP.
+
+clone import ROM as RO_SMP.
+
+import Lazy.
 
 (* --------------------------------------------------------------------------- *)
 module type Sampler(O : POracle) = {
@@ -236,3 +365,99 @@ module MLWE_SMP(Adv : SAdv_T, S: Sampler, O : Oracle) = {
 }.
 
 end MLWE_SMP.
+
+(* We can co back to MLWE with a trivial sampler and the RO proof *)
+theory SMP_vs_ROM.
+
+import MLWE_ROM.
+
+clone import MLWE_SMP with
+  theory RO_SMP <- RO_H.
+
+import RO_H.
+import Lazy.
+
+module (S : Sampler) (O : POracle) = {
+  proc sample(sd : seed) : matrix = {
+      var _A;
+      _A <@ O.o(sd);
+      return _A;
+  }
+}.
+
+module (BS(Adv : SAdv_T, S : Sampler) : ROAdv_T) (O : POracle) = {
+   proc guess(sd : seed, t : vector,uv : vector * R) = {
+       var b;
+       Adv(O).interact(sd,t);
+       b <@ Adv(O).guess(uv);
+       return b;
+   }
+}.
+
+import MLWE_vs_MLWE_ROM.
+
+module (DLeft(A : SAdv_T) : Distinguisher)  (O : POracle) = {
+     proc run(sd : seed, t : vector) : matrix = {
+         var _A;
+         _A <@ O.o(sd);
+         A(O).interact(sd,t);
+         return _A;
+     }
+}.
+
+module (DRight(A : SAdv_T) : Distinguisher)  (O : POracle) = {
+     proc run(sd : seed, t : vector) : matrix = {
+         var _A;
+         A(O).interact(sd,t);
+         _A <@ O.o(sd);
+         return _A;
+     }
+}.
+
+lemma MLWE_SMP_equiv b &m (A <: SAdv_T {-LRO,-B,-Bt, -BS}):
+  (forall (x : in_t), is_lossless (dout x)) =>
+  Pr[  MLWE(B(BS(A,S),LRO)).main(b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m : res].
+proof.
+move => dout_ll.
+rewrite -(MLWE_RO_equiv b &m (BS(A,S))).
+byequiv =>//;proc.  inline {1} 13. inline {2} 5.
+swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
+swap {2} [8..9] -5. swap{2} 11 -6. swap{2} 12 -5. swap {2} 14 -6. swap {2} 10 -7.
+swap {1} 1 9. swap {2} 1 8.
+seq 9 8 : (!tr{2} /\  ={tr,b,glob A,sd,sd0,s,e,u1,t,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2}); 
+   1: by inline *; auto.
+wp; call (_: ={glob LRO}); 1: by sim.
+wp;conseq (_: ={glob A, sd, sd0} /\ sd0{1} = sd{2} /\ t0{1} = t{2} 
+          ==> ={glob A, LRO.m}   /\ _A{1} = _A0{2}); 1,2: by smt().
+admit. (* To Do. Eager sampling *)
+qed.
+
+lemma MLWE_SMP_equiv_t b &m (A <: SAdv_T {-LRO,-B,-Bt, -BS}):
+  Pr[  MLWE(Bt(BS(A,S),LRO)).main(b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,LRO).main(true,b) @ &m : res].
+proof.
+rewrite -(MLWE_RO_equiv_t b &m (BS(A,S))).
+byequiv =>//;proc.  inline {1} 13. inline {2} 5.
+swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
+swap {2} [8..9] -5. swap{2} 11 -6. swap{2} 12 -5. swap {2} 14 -6. swap {2} 10 -7.
+swap {1} 1 9. swap {2} 1 8.
+seq 9 8 : (tr{2} /\  ={tr,b,glob A,sd,sd0,s,e,u1,t,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2}); 
+   1: by inline *; auto.
+wp; call (_: ={glob LRO}); 1: by sim.
+wp;conseq (_: ={glob A, sd, sd0} /\ sd0{1} = sd{2} /\ t0{1} = t{2} 
+          ==> ={glob A, LRO.m}   /\ _A{1} = _A0{2}); 1,2: by smt().
+admit. (* To Do. Eager sampling *)
+qed.
+
+end SMP_vs_ROM.
+
+(* FIXME_PY: THESE HINTS MAKE RND IMPOSSIBLY SLOW *)
+(* add duni_R_ll, duni_R_uni, duni_R_fu *)
+(* FIXME: without adding the hint explicitely the hint are lost after cloning *)
+(* hint solve 0 random : duni_R_ll duni_R_uni duni_R_fu. *)
+(* hint solve 0 random : dshort_R_ll. *)
+(* add dshort_R_ll *)
+(* hint solve 0 random : duni_ll duni_fu duni_uni duni_funi. *)
+(* hint solve 0 random : dshort_ll. *)
+(* hint solve 0 random : duni_matrix_ll duni_matrix_fu duni_matrix_uni duni_matrix_funi. *)
