@@ -16,14 +16,31 @@ op m_decode : R -> plaintext.
 op c_encode : raw_ciphertext -> ciphertext.
 op c_decode : ciphertext -> raw_ciphertext.
 
+type pkey.
+type skey.
+
+type raw_pkey  = vector * seed.
+type raw_skey  = vector.
+
+op pk_encode : raw_pkey -> pkey.
+op sk_encode : raw_skey -> skey.
+op pk_decode : pkey -> raw_pkey.
+op sk_decode : skey -> raw_skey.
+
+axiom pk_decodeK : cancel pk_decode pk_encode.
+axiom pk_encodeK : cancel pk_encode pk_decode.
+
+axiom sk_decodeK : cancel sk_decode sk_encode.
+axiom sk_encodeK : cancel sk_encode sk_decode.
+
 (******************************************************************)
 (*    The Security Games                                          *)
 
 
 clone import PKE_Ext as PKE_ with 
   theory RO <- MLWE_.RO,
-  type pkey = (vector * seed),
-  type skey = vector,
+  type pkey <- pkey,
+  type skey <- skey,
   type plaintext <- plaintext,
   type ciphertext <- ciphertext.
 
@@ -45,12 +62,12 @@ module MLWE_PKE(H: PSampler, O : POracle) : Scheme = {
     e  <$ dshort;
     _A <@ H.sample(sd);
     t  <- _A *^ s + e;
-    return ((t,sd),s);
+    return (pk_encode (t,sd),sk_encode s);
   }
   
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
     var sd,t,r,e1,e2,_A,u,v;
-    (t,sd) <- pk;
+    (t,sd) <- pk_decode pk;
     r  <$ dshort;
     e1 <$ dshort;
     e2 <$ dshort_R;
@@ -63,7 +80,7 @@ module MLWE_PKE(H: PSampler, O : POracle) : Scheme = {
   proc dec(sk : skey, c : ciphertext) : plaintext option = {
     var u,v;
     (u,v) <- c_decode c;
-    return Some (m_decode (v &- (sk `<*>` u)));
+    return Some (m_decode (v &- (sk_decode sk `<*>` u)));
   }
 }.
 
@@ -83,7 +100,7 @@ module MLWE_PKE1(S : PSampler, O : POracle) = {
     s  <$ dshort;
     t  <$ duni;
     _A <@ S.sample(sd);
-    return ((t,sd),s);
+    return (pk_encode (t,sd),sk_encode s);
   }
 
   include MLWE_PKE(S,O) [-kg]
@@ -93,7 +110,7 @@ module MLWE_PKE1(S : PSampler, O : POracle) = {
 module B1(A : Adversary) : HAdv_T = {
 
   proc kg(t : vector, sd : seed) : pkey * skey = {
-    return ((t,sd),witness);
+    return (pk_encode (t,sd),witness);
   }
   
   proc guess(sd : seed, t : vector, uv : vector * R) : bool = {
@@ -142,7 +159,7 @@ module MLWE_PKE2(S : PSampler, O : POracle) = {
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
     var _A,u, v;
-    _A <@ S.sample(pk.`2);
+    _A <@ S.sample((pk_decode pk).`2);
     u <$duni;
     v <$duni_R;
     return (c_encode (u,v &+ m_encode m));
@@ -155,7 +172,7 @@ module MLWE_PKE2(S : PSampler, O : POracle) = {
 module B2(A : Adversary) : HAdv_T = {
 
   proc kg(t : vector, sd : seed) : pkey * skey = {
-    return ((t,sd),witness);
+    return (pk_encode (t,sd),witness);
   }
   
   proc enc(pk : pkey, m : plaintext, uv : vector * R) : ciphertext = {
@@ -178,7 +195,6 @@ section.
 
 declare module A <: Adversary.
 
-
 lemma hop2_left &m: 
   Pr[CPA(MLWE_PKE1(HS,NULL),A).main() @ &m : res] =
   Pr[H_MLWE(B2(A)).main(true,false) @ &m : res].
@@ -188,8 +204,8 @@ proc; inline *.
 swap {2} 7 -5.
 swap {2} [11..12] -8.
 swap {2} [14..17] -9.
-seq 6 7 : (#pre /\ ={sd,t,pk} /\ pk{2}.`2 = sd{2} /\ pk{2}.`1 = t{2});
-  first by wp;rnd; rnd{1}; rnd; auto; smt(dshort_ll).
+seq 6 7 : (#pre /\ ={sd,t,pk} /\ (pk_decode pk{2}).`2 = sd{2} /\ (pk_decode pk{2}).`1 = t{2});
+  first by wp;rnd; rnd{1}; rnd; auto; smt(dshort_ll pk_encodeK).
 swap {2} [11..13] -9.
 by wp; call(_: true); wp; rnd{2}; wp; rnd; rnd{2}; wp; 
    rnd; rnd; wp; rnd; call(_: true); auto; smt(duni_ll dshort_ll).
@@ -204,8 +220,8 @@ proc; inline *.
 swap {1} 7 -5.
 swap {1} [11..12] -8.
 swap {1} [14..17] -9.
-seq 7 6 : (#pre /\ ={sd,t,pk} /\ pk{2}.`2 = sd{2} /\ pk{2}.`1 = t{2});
-   first by wp;rnd;  rnd{2}; rnd; auto; smt(dshort_ll). 
+seq 7 6 : (#pre /\ ={sd,t,pk} /\ (pk_decode pk{2}).`2 = sd{2} /\ (pk_decode pk{2}).`1 = t{2});
+   first by wp;rnd;  rnd{2}; rnd; auto; smt(dshort_ll pk_encodeK). 
 swap {1} [11..13] -9.
 by wp; call(_: true);wp;rnd;wp;rnd{1};rnd;wp;rnd{1};rnd{1};wp;rnd; 
    call(_: true); auto;smt(duni_ll dshort_ll).
@@ -225,7 +241,7 @@ local module Game2(A : Adversary) = {
     sd <$ dseed;
     s <$ dshort;
     t <$ duni;
-    (m0, m1) <@ A.choose((t,sd));
+    (m0, m1) <@ A.choose(pk_encode (t,sd));
     u <$duni;
     v <$duni_R;
     b' <@ A.guess(c_encode (u,v));
@@ -299,9 +315,9 @@ module (B1ROM(A : AdversaryRO, S : Sampler) : HAdv_RO_T) (O : MLWE_.RO.POracle) 
   proc guess(uv : vector * R) : bool = {
     var pk,  m0, m1, c, b, b';
     pk <- (uv.`1,sd);
-    (m0, m1) <@ A(O).choose(pk);
+    (m0, m1) <@ A(O).choose(pk_encode pk);
     b <$ {0,1};
-    c <@ MLWE_PKE(S(O),O).enc(pk, if b then m1 else m0);
+    c <@ MLWE_PKE(S(O),O).enc(pk_encode pk, if b then m1 else m0);
     b' <@ A(O).guess(c);
     return b' = b;
   }
@@ -357,7 +373,7 @@ module (B2ROM(A : AdversaryRO, S : Sampler) : HAdv_RO_T) (O : POracle) = {
 
   proc interact(sd : seed, t: vector) : unit = {
     var _A;
-    pk <- (t,sd);
+    pk <- pk_encode (t,sd);
     _A <@ S(O).sample(sd); (* we need to match samplings *)
     (m0, m1) <@ A(O).choose(pk);
   }
@@ -398,7 +414,7 @@ wp;rnd{2};wp;rnd; wp;rnd{2};wp;rnd;rnd.
 wp; call(: ={glob LRO}); 1: by sim.
 wp; rnd; call(: ={glob LRO}); 1: by sim.
 wp; call(: ={glob LRO}); 1: by sim.
-by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll).
+by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll pk_encodeK).
 qed.
 
 lemma hop2_right_h &m: 
@@ -418,7 +434,7 @@ wp;rnd;wp;rnd{2};wp;rnd;wp;rnd{2};rnd{2};rnd.
 wp; call(: ={glob LRO}); 1: by sim.
 wp; call(: ={glob LRO}); 1: by sim.
 wp; call(: ={glob LRO}); 1: by sim.
-by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll).
+by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll pk_encodeK).
 qed.
 
 end section.
@@ -438,7 +454,7 @@ local module Game2RO(A : AdversaryRO) = {
     _A <@ S(LRO).sample(sd);
     s <$ dshort;
     t <$ duni;
-    (m0, m1) <@ A(LRO).choose((t,sd));
+    (m0, m1) <@ A(LRO).choose(pk_encode (t,sd));
     _A <@ S(LRO).sample(sd);
     u <$duni;
     v <$duni_R;
@@ -464,6 +480,7 @@ wp;rnd; call(_: ={glob LRO}); 1: by sim.
 swap {2} [4..5] -1.
 wp; call(_: ={glob LRO}); 1: by sim. 
 rnd;rnd;rnd; auto => />.
++ move => *; split; 1: by rewrite pk_encodeK. 
 + move => *; split; 1: by move => *; ring.
 + move => *; split; 1: by move => *; ring.
 by smt().
