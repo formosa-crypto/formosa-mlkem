@@ -35,7 +35,7 @@ lemma mulvec a b :
 proof.
 rewrite -!mul_comm_ntt !invnttK.
 rewrite /dotp => />. 
-rewrite /Big.BAdd.big /predT /kvec => />.
+rewrite /Big.BAdd.big /predT /kvec => /=.
 by ring.
 qed.
 

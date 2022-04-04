@@ -1,3 +1,11 @@
+require import AllCore ZModP IntDiv Distr List DList PKE_Ext.
+from Jasmin require import JWord.
+require import Array32 Array64 Array128 Array168 Array256 Array384.
+require import Array768 Array960 Array1024 Array1152.
+require import Kyber.
+
+import KMatrix.
+import KyberPKE.
 (**********************************)
 (**********************************)
 (**********************************)

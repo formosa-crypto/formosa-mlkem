@@ -573,8 +573,8 @@ proof.
 move => dout_ll A_guess_ll A_choose_ll.
 have -> := (main_theorem_s S A &m dout_ll _ A_guess_ll A_choose_ll); 
     1: by move => *; islossless.
-rewrite (MLWE_SMP_equiv false &m (B1ROM(A,S))).
-rewrite (MLWE_SMP_equiv true &m (B1ROM(A,S))).
+rewrite (MLWE_SMP_equiv false &m (B1ROM(A,S)) dout_ll).
+rewrite (MLWE_SMP_equiv true &m (B1ROM(A,S)) dout_ll).
 rewrite (MLWE_SMP_equiv_t false &m (B2ROM(A,S))).
 rewrite (MLWE_SMP_equiv_t true &m (B2ROM(A,S))).
 have -> : Pr[SMP_vs_ROM.MLWE_SMP.MLWE_SMP(B1ROM(A, S), S, LRO).main(false, false) @ &m : res] = 
