@@ -924,4 +924,16 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
 
 }.
 
+(* Cloning rationale:
 
+- We clone ZModField to get Zq.
+
+- We clone PKE and to get security definitions and
+  fix the RO type to match a XOF that takes 
+  a rho and two bytes as seed, and then an
+  integer to decide which block we want.
+
+- We clone Matrix with the ring we define over
+  Fq Array256.t.
+
+*)

@@ -34,6 +34,8 @@ axiom sk_decodeK : cancel sk_decode sk_encode.
 
 theory MLWE_PKE_GENERAL.
 
+(* In this theory we will refine MLWE PKE with a specific kind of
+   sampler, so it needs its  own copy of MLWE_SMP. *)
 clone import MLWE_.MLWE_SMP.
 
 (******************************************************************)
@@ -304,7 +306,7 @@ end section.
 (******************************************************************)
 
 
-module MLWE_PKE_RO(S : Sampler) = MLWE_PKE(S(LRO)).
+module MLWE_PKE_RO(S : PSampler) = MLWE_PKE(S).
 
 (* Hop 1 *)
 
@@ -327,43 +329,44 @@ module (B1ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (O : POracle) = {
 
 section.
 
-declare module S <: Sampler {-LRO,-B1ROM}.
-declare module A <: AdversaryRO {-LRO,-B1ROM,-S}.
+declare module O <: Oracle {-B1ROM}.
+declare module S <: Sampler {-O,-B1ROM}.
+declare module A <: AdversaryRO {-O,-B1ROM,-S}.
 
 lemma hop1_left_s &m: 
-  Pr[CPAROM(MLWE_PKE(S(LRO)),A,LRO).main() @ &m : res] =
-  Pr[MLWE_SMP(B1ROM(A,S),S,LRO).main(false,false) @ &m : res].
+  Pr[CPAROM(MLWE_PKE(S(O)),A,O).main() @ &m : res] =
+  Pr[MLWE_SMP(B1ROM(A,S),S,O).main(false,false) @ &m : res].
 proof.
 byequiv => //.
 proc.
-seq 1 1 : (!b{2} /\ !tr{2} /\ ={glob A, glob S,glob LRO}); 1 : by inline *;auto.
+seq 1 1 : (!b{2} /\ !tr{2} /\ ={glob A, glob S,glob O}); 1: by  inline *; conseq => />; sim. 
 inline *.
-wp; call(: ={glob LRO}); 1: by sim.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 rnd;rnd;rnd;wp;rnd;wp. 
-call(_: ={glob LRO}); 1: by sim.
+call(_: ={glob O}); 1: by sim.
 swap {2} [8..9] -6.
 wp;rnd{2};wp;rnd{2};rnd{2};wp.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 by wp;rnd{2};rnd;rnd;rnd;auto => />;smt(dshort_ll duni_ll).
 qed.
 
 lemma hop1_right_s &m: 
-  Pr[CPAROM(MLWE_PKE1(S(LRO)),A,LRO).main() @ &m : res] =
-  Pr[MLWE_SMP(B1ROM(A,S),S,LRO).main(false,true) @ &m : res].
+  Pr[CPAROM(MLWE_PKE1(S(O)),A,O).main() @ &m : res] =
+  Pr[MLWE_SMP(B1ROM(A,S),S,O).main(false,true) @ &m : res].
 proof.
 byequiv => //.
 proc.
-seq 1 1 : (b{2} /\ !tr{2} /\ ={glob A, glob S,glob LRO}); 1 : by inline *;auto.
+seq 1 1 : (b{2} /\ !tr{2} /\ ={glob A, glob S,glob O}); 1 : by inline *;conseq => />;sim.
 inline *.
-wp; call(: ={glob LRO}); 1: by sim.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 rnd;rnd;rnd;wp;rnd;wp. 
-call(_: ={glob LRO}); 1: by sim.
+call(_: ={glob O}); 1: by sim.
 swap {2} 8 -6.
 swap {2} 11 -8.
 wp;rnd{2};wp;rnd{2};wp;rnd{2}.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 by wp;rnd{2};rnd;rnd;rnd;auto => />;smt(dshort_ll duni_ll).
 qed.
 
@@ -396,46 +399,46 @@ module (B2ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (O : POracle) = {
 
 section.
 
-declare module S <: Sampler {-LRO,-B2ROM}.
-declare module A <: AdversaryRO {-LRO,-B2ROM, -S}.
-
+declare module O <: Oracle {-B2ROM}.
+declare module S <: Sampler {-O,-B2ROM}.
+declare module A <: AdversaryRO {-O,-B2ROM, -S}.
 
 lemma hop2_left_s &m: 
-  Pr[CPAROM(MLWE_PKE1(S(LRO)),A,LRO).main() @ &m : res] =
-  Pr[MLWE_SMP(B2ROM(A,S),S,LRO).main(true,false) @ &m : res].
+  Pr[CPAROM(MLWE_PKE1(S(O)),A,O).main() @ &m : res] =
+  Pr[MLWE_SMP(B2ROM(A,S),S,O).main(true,false) @ &m : res].
 proof.
 byequiv => //.
 proc.
-seq 1 1 : (!b{2} /\ tr{2} /\ ={glob A, glob S,glob LRO}); 1: by inline *;auto => /> /#.
+seq 1 1 : (!b{2} /\ tr{2} /\ ={glob A, glob S,glob O}); 1: by inline *;conseq/>;sim.
 inline *.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 swap {1} 2 -1.
 swap {1} 14 -3.
 swap {2} 17 -9.
 wp;rnd{2};wp;rnd; wp;rnd{2};wp;rnd;rnd.
-wp; call(: ={glob LRO}); 1: by sim.
-wp; rnd; call(: ={glob LRO}); 1: by sim.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
+wp; rnd; call(: ={glob O}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll pk_encodeK).
 qed.
 
 lemma hop2_right_s &m: 
-  Pr[CPAROM(MLWE_PKE2(S(LRO)),A,LRO).main() @ &m : res] =
-  Pr[MLWE_SMP(B2ROM(A,S),S,LRO).main(true,true) @ &m : res].
+  Pr[CPAROM(MLWE_PKE2(S(O)),A,O).main() @ &m : res] =
+  Pr[MLWE_SMP(B2ROM(A,S),S,O).main(true,true) @ &m : res].
 proof.
 byequiv => //.
 proc.
-seq 1 1 : (b{2} /\ tr{2} /\ ={glob A, glob S,glob LRO}); 1: by inline *;auto => /> /#.
+seq 1 1 : (b{2} /\ tr{2} /\ ={glob A, glob S,glob O}); 1: by inline *;conseq />;sim.
 inline *.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 swap {1} 2 -1.
 swap {1} 8 -2.
 swap {1} 10 -2.
 swap {2} 17 -8.
 wp;rnd;wp;rnd{2};wp;rnd;wp;rnd{2};rnd{2};rnd.
-wp; call(: ={glob LRO}); 1: by sim.
-wp; call(: ={glob LRO}); 1: by sim.
-wp; call(: ={glob LRO}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
+wp; call(: ={glob O}); 1: by sim.
 by wp; rnd; wp; rnd; rnd{1}; auto => />; smt(dshort_ll duni_ll pk_encodeK).
 qed.
 
@@ -445,22 +448,23 @@ end section.
 
 section.
 
-declare module S <: Sampler {-LRO, -B1ROM, -B2ROM}.
-declare module A <: AdversaryRO {-LRO, -B1ROM, -B2ROM, -S}.
+declare module O <: Oracle {-B1ROM, -B2ROM}.
+declare module S <: Sampler {-O, -B1ROM, -B2ROM}.
+declare module A <: AdversaryRO {-O, -B1ROM, -B2ROM, -S}.
 
 local module Game2RO(A : AdversaryRO) = {
   proc main() = {
     var sd, _A, s, t, m0, m1, u, v, b, b';
-    LRO.init();
+    O.init();
     sd <$ dseed;
-    _A <@ S(LRO).sample(sd);
+    _A <@ S(O).sample(sd);
     s <$ dshort;
     t <$ duni;
-    (m0, m1) <@ A(LRO).choose(pk_encode (t,sd));
-    _A <@ S(LRO).sample(sd);
+    (m0, m1) <@ A(O).choose(pk_encode (t,sd));
+    _A <@ S(O).sample(sd);
     u <$duni;
     v <$duni_R;
-    b' <@ A(LRO).guess(c_encode (u,v));
+    b' <@ A(O).guess(c_encode (u,v));
     b <$ {0,1};
     return b = b';
   }
@@ -468,64 +472,69 @@ local module Game2RO(A : AdversaryRO) = {
 
 
 local lemma game2_equiv_s &m : 
-  Pr[CPAROM(MLWE_PKE2(S(LRO)),A,LRO).main() @ &m : res] = 
+  Pr[CPAROM(MLWE_PKE2(S(O)),A,O).main() @ &m : res] = 
   Pr[Game2RO(A).main() @ &m : res].
 proof.
 byequiv => //.
 proc; inline *.
 swap {2} 11 -4.
-wp; call(_: ={glob LRO}); 1: by sim.  
+wp; call(_: ={glob O}); 1: by sim.  
 wp;rnd (fun z, z &+ m_encode (if b then m1 else m0){2})
        (fun z, z &- m_encode (if b then m1 else m0){2}).
-rnd; call(_: ={glob LRO}); 1: by sim.  
-wp;rnd; call(_: ={glob LRO}); 1: by sim.  
+rnd; call(_: ={glob O}); 1: by sim.  
+wp;rnd; call(_: ={glob O}); 1: by sim.  
 swap {2} [4..5] -1.
-wp; call(_: ={glob LRO}); 1: by sim. 
-rnd;rnd;rnd; auto => />.
-+ move => *; split; 1: by rewrite pk_encodeK. 
+wp; call(_: ={glob O}); 1: by sim. 
+rnd;rnd;rnd. 
+call(_: true); auto => />.
++ move => *; split; 1:  by rewrite pk_encodeK. 
 + move => *; split; 1: by move => *; ring.
 + move => *; split; 1: by move => *; ring.
 by smt().
 qed.
 
 local lemma game2_prob_s &m :
+  islossless O.init =>
+  islossless O.o =>
   (forall (x : in_t), is_lossless (dout x)) => 
   (forall (O <: Oracle), islossless O.o => islossless S(O).sample) =>   
   (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
   (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
   Pr[Game2RO(A).main() @ &m : res] = 1%r / 2%r.
 proof.
-move => dout_ll S_ll A_guess_ll A_choose_ll.
-move : (S_ll LRO).
-move : (A_guess_ll LRO).
-move : (A_choose_ll LRO).
+move => O_init_ll O__o_ll dout_ll S_ll A_guess_ll A_choose_ll.
+move : (S_ll O).
+move : (A_guess_ll O).
+move : (A_choose_ll O).
 move => _A_choose_ll _A_guess_ll _S_ll.
 byphoare => //;proc.
 rnd  (pred1 b')=> //=; conseq (: _ ==> true).
 + by move=> />; apply DBool.dbool1E.
 islossless; 4,5,7:by smt(duni_ll dshort_ll).
-+ apply _A_guess_ll; 1: by  apply LRO_o_ll; smt().
-+ apply _S_ll; 1: by  apply LRO_o_ll; smt().
-+ apply _A_choose_ll; 1: by  apply LRO_o_ll; smt().
-by apply _S_ll; 1: by  apply LRO_o_ll; smt().
++ by apply _A_guess_ll; smt(). 
++ by apply _S_ll; smt().
++ by apply _A_choose_ll; smt().
++ by apply _S_ll; smt().
 qed.
 
 lemma main_theorem_s &m :
+  islossless O.init =>
+  islossless O.o =>
   (forall (x : in_t), is_lossless (dout x)) => 
   (forall (O <: Oracle), islossless O.o => islossless S(O).sample) =>   
   (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
   (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
-  Pr[CPAROM(MLWE_PKE(S(LRO)),A,LRO).main() @ &m : res] -  1%r / 2%r =
-    Pr[MLWE_SMP(B1ROM(A,S),S,LRO).main(false,false) @ &m : res] -
-       Pr[MLWE_SMP(B1ROM(A,S),S,LRO).main(false,true) @ &m : res] + 
-    Pr[MLWE_SMP(B2ROM(A,S),S,LRO).main(true,false) @ &m : res] -
-       Pr[MLWE_SMP(B2ROM(A,S),S,LRO).main(true,true) @ &m : res].
+  Pr[CPAROM(MLWE_PKE(S(O)),A,O).main() @ &m : res] -  1%r / 2%r =
+    Pr[MLWE_SMP(B1ROM(A,S),S,O).main(false,false) @ &m : res] -
+       Pr[MLWE_SMP(B1ROM(A,S),S,O).main(false,true) @ &m : res] + 
+    Pr[MLWE_SMP(B2ROM(A,S),S,O).main(true,false) @ &m : res] -
+       Pr[MLWE_SMP(B2ROM(A,S),S,O).main(true,true) @ &m : res].
 proof.
-move => dout_ll S_ll A_guess_ll A_choose_ll.
-rewrite (hop1_left_s S A &m).
-rewrite -(hop1_right_s S A &m).
-rewrite (hop2_left_s S A &m).
-rewrite -(hop2_right_s S A &m).
+move => O_init_ll O_o_ll dout_ll S_ll A_guess_ll A_choose_ll.
+rewrite (hop1_left_s O S A &m).
+rewrite -(hop1_right_s O S A &m).
+rewrite (hop2_left_s O S A &m).
+rewrite -(hop2_right_s O S A &m).
 rewrite (game2_equiv_s &m).
 rewrite (game2_prob_s &m _ _) //.
 by ring.
@@ -551,7 +560,7 @@ import PKE_.
 theory Security.
 
 import MLWE_SMP.
-(* HERE WE GET SECURITY THEOREM DOWN TO LWE *)
+(* HERE WE GET SECURITY THEOREM DOWN TO LWE USING THE CONCRETE LRO *)
 
 section. 
 
@@ -571,8 +580,9 @@ lemma main_theorem_ro &m :
        Pr[MLWE(Bt(BS(B2ROM(A,S),S),LRO)).main(true) @ &m : res].
 proof.
 move => dout_ll A_guess_ll A_choose_ll.
-have -> := (main_theorem_s S A &m dout_ll _ A_guess_ll A_choose_ll); 
-    1: by move => *; islossless.
+have -> := (main_theorem_s LRO S A &m _ _ dout_ll _ A_guess_ll A_choose_ll); 
+    1,3: by move => *; islossless.
++ by apply LRO_o_ll.
 rewrite (MLWE_SMP_equiv false &m (B1ROM(A,S)) dout_ll).
 rewrite (MLWE_SMP_equiv true &m (B1ROM(A,S)) dout_ll).
 rewrite (MLWE_SMP_equiv_t false &m (B2ROM(A,S))).
