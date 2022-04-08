@@ -54,29 +54,6 @@ lemma round_tie (x : real) :
 
 lemma round_add (x : real) (y : int) :
     round (y%r + x) = y + round x by rewrite /round; smt(floor_shift @Real).
-(**************************************************)
-(**************************************************)
-(**************************************************)
-
-(* We will model the three usages of SHA3 family 
-   components as independent random oracles 
-
-G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
-XOF =
-fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
-fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> 
-    reg ptr u64[25], reg ptr u8[SHAKE128_RATE] => RATE is 168
-PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
-
-*)
-
-clone import PKE_Ext as KyberPKE with
-  type RO.in_t = W8.t Array32.t * W8.t * W8.t * int,
-  type RO.out_t = W8.t Array168.t,
-  type pkey = W8.t Array1152.t * W8.t Array32.t,
-  type skey = W8.t Array1152.t,
-  type plaintext = W8.t Array32.t,
-  type ciphertext = W8.t Array960.t * W8.t Array128.t.
 
 (****************************************************)
 (*               The finite field Zq/Fq             *)
@@ -349,80 +326,8 @@ lemma duni_R_fu : is_full duni_R.
     by rewrite Array256.to_listK.
 qed.
 
-module type G_t(O : RO.POracle) = {
-   proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t)
-}.
-
-module type XOF_t(O : RO.POracle) = {
-   proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
-   proc next_bytes() : W8.t Array168.t
-}.
-
-(* We take some liberty to specify parse using a XOF that
-   returns 168 bytes at a time, which is what the Kyber
-   implementation does. *)
-module Parse(XOF : XOF_t, O : RO.POracle) = {
-   proc sample_real() : poly = {
-      var j, b168, bi, bi1, bi2, d1, d2,k;
-      var aa : poly;
-      aa <- witness;
-      j <- 0;
-      while (j < 256) {
-         b168 <@ XOF(O).next_bytes();
-         k <- 0;
-         while ((j < 256) && (k < 168)) {
-            bi  <- b168.[k];
-            bi1 <- b168.[k+1];
-            bi2 <- b168.[k+2];
-            k <- k + 3;
-            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
-            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
-            if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
-            if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
-         }
-      }
-      return aa;
-   }
-
-   proc sample_ideal() : poly = {
-      var aa;
-      aa <$ duni_R;
-      return aa;
-   }
-}.
-
-module type PRF_t(O : RO.POracle) = {
-   proc init(sig : W8.t Array32.t) : unit
-   proc next_bytes(_N : W8.t) : W8.t Array128.t
-}.
-
-module CBD2(PRF : PRF_t, O : RO.POracle) = {
-   proc sample_real(_N : int) : poly = {
-      var i,j,a,b,bytes;
-      var rr : poly;
-      rr <- witness;
-      bytes <@ PRF(O).next_bytes(W8.of_int _N);
-      i <- 0; j <- 0;
-      while (i < 128) { (* unroll loop body once to match code *)
-        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
-        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
-        rr.[j] <- inFq  (a - b);
-        j <- j + 1;
-        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
-        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
-        rr.[j] <- inFq  (a - b);
-        j <- j + 1;
-        i <- i + 1;
-      }
-      return rr;
-   }
-
-   proc sample_ideal() : poly = {
-      var rr;
-      rr <$ dshort_R;
-      return rr;
-   }
-}.
+(**************************************************)
+(**************************************************)
 
 (* The NTT operation over ring elements 
 
@@ -588,11 +493,11 @@ op ntt_mmul(m : matrix, v : vector) : vector =
 op ntt_dotp(v1 v2 : vector) : poly = 
    Big.BAdd.bigi predT (fun (i : int) => basemul v1.[i] v2.[i]) 0 kvec.
 
-(****************)
-(****************)
-(*  Encoding    *)
-(****************)
-(****************)
+(****************************************************************************)
+(****************************************************************************)
+(*  Encoding polys and vectors to and from byte arrays                      *)
+(****************************************************************************)
+(****************************************************************************)
 
 type ipoly = int Array256.t.
 op toipoly(p : poly) : ipoly = map asint p.
@@ -789,9 +694,125 @@ module EncDec = {
 (****************)
 (****************)
 
+theory KyberSpec.
+
+(* We will model the three usages of SHA3 family 
+   components as different cryptographic primitives. 
+
+This will be an entropy smoothing hash function.
+
+G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
+
+This will be a XOF construction based on a random oracle that
+takes the input to absorb plus an integer to identify the
+output block.
+
+XOF =
+fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
+fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> 
+    reg ptr u64[25], reg ptr u8[SHAKE128_RATE] => RATE is 168
+
+This will be a PRF.
+
+PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
+
+We do not clone the ROM in fully specified form because
+we want to analyse the Spec in different ROM settings.
+
+clone import PKE_Ext as KyberPKE with
+  type RO.in_t = W8.t Array32.t * W8.t * W8.t * int,
+  type RO.out_t = W8.t Array168.t,
+  type pkey = W8.t Array1152.t * W8.t Array32.t,
+  type skey = W8.t Array1152.t,
+  type plaintext = W8.t Array32.t,
+  type ciphertext = W8.t Array960.t * W8.t Array128.t.
+
+************************************************)
+
+clone import PKE_Ext as KyberPKE with
+  type pkey = W8.t Array1152.t * W8.t Array32.t,
+  type skey = W8.t Array1152.t,
+  type plaintext = W8.t Array32.t,
+  type ciphertext = W8.t Array960.t * W8.t Array128.t.
+
+module type G_t = {
+   proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t)
+}.
+
+(* We take some liberty to specify parse using a XOF that
+   returns 168 bytes at a time, which is what the Kyber
+   implementation does. *)
+module type XOF_t(O : RO.POracle) = {
+   proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
+   proc next_bytes() : W8.t Array168.t
+}.
+
+module Parse(XOF : XOF_t, O : RO.POracle) = {
+   proc sample_real() : poly = {
+      var j, b168, bi, bi1, bi2, d1, d2,k;
+      var aa : poly;
+      aa <- witness;
+      j <- 0;
+      while (j < 256) {
+         b168 <@ XOF(O).next_bytes();
+         k <- 0;
+         while ((j < 256) && (k < 168)) {
+            bi  <- b168.[k];
+            bi1 <- b168.[k+1];
+            bi2 <- b168.[k+2];
+            k <- k + 3;
+            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
+            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
+            if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
+            if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
+         }
+      }
+      return aa;
+   }
+
+   proc sample_ideal() : poly = {
+      var aa;
+      aa <$ duni_R;
+      return aa;
+   }
+}.
+
+require  PRF.
+
+(* PRF keys in encryption come directly from srand *)
 op [lossless]srand : W8.t Array32.t distr.
 
-module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
+clone PRF as PRF_DEFS with
+  type D <- W8.t,
+  type R <- W8.t Array128.t.
+
+clone import PRF_DEFS.PseudoRF with
+  type K <- W8.t Array32.t, 
+  op dK <- srand.
+
+module CBD2(PRF : PseudoRF) = {
+   proc sample(sig : W8.t Array32.t, _N : int) : poly = {
+      var i,j,a,b,bytes;
+      var rr : poly;
+      rr <- witness;
+      bytes <@ PRF.f(sig, W8.of_int _N);
+      i <- 0; j <- 0;
+      while (i < 128) { (* unroll loop body once to match code *)
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
+        i <- i + 1;
+      }
+      return rr;
+   }
+}.
+
+module Kyber(G : G_t, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
@@ -804,7 +825,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      s <- witness;
      sv <- witness;
      tv <- witness;
-     (rho,sig) <@ G(O).sample(seed);
+     (rho,sig) <@ G.sample(seed);
      _N <- 0; 
      i <- 0;
      while (i < kvec) {
@@ -817,17 +838,16 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
         }
         i <- i + 1;
      }      
-     PRF(O).init(sig);
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(sig,_N);
         s <- set s i c;
         _N <- _N + 1;
         i <- i + 1;
      }         
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(sig,_N);
         e <- set e i c;
         _N <- _N + 1;
         i <- i + 1;
@@ -873,22 +893,21 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
         }
         i <- i + 1;
       } 
-      PRF(O).init(r);     
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(r,_N);
         rv <- set rv i c;
         _N <- _N + 1;
         i <- i + 1;
       }         
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(r,_N);
         e1 <- set e1 i c;
         _N <- _N + 1;
         i <- i + 1;
       }      
-      e2 <@ CBD2(PRF,O).sample_real(_N);
+      e2 <@ CBD2(PRF).sample(r,_N);
       rhat <- nttv rv;
       u <- invnttv (ntt_mmul aT rhat) + e1;
       mp <@ EncDec.decode1(m);
@@ -924,16 +943,4 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
 
 }.
 
-(* Cloning rationale:
-
-- We clone ZModField to get Zq.
-
-- We clone PKE and to get security definitions and
-  fix the RO type to match a XOF that takes 
-  a rho and two bytes as seed, and then an
-  integer to decide which block we want.
-
-- We clone Matrix with the ring we define over
-  Fq Array256.t.
-
-*)
+end KyberSpec.

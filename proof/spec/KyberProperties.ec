@@ -282,14 +282,7 @@ module (XOF :  XOF_t) (O : RO.POracle) = {
    }
 }.
 
-require  PRF.
-
-clone import PRF as PRF_DEFS with
-  type D <- W8.t,
-  type R <- W8.t Array128.t,
-  type PseudoRF.K <- W8.t Array32.t, 
-  op PseudoRF.dK <- srand.
-
+(*
 clone import PseudoRF.
 
 module (PRF : PRF_t) (O : RO.POracle) = {
@@ -304,6 +297,7 @@ module (PRF : PRF_t) (O : RO.POracle) = {
         return bb;
    }
 }.
+*)
 
 module (KSampler(XOF : XOF_t) : MLWE_SMP.Sampler) (O : RO.POracle)  = {
     proc sample(sd : W8.t Array32.t) : matrix = { 
