@@ -217,7 +217,7 @@ by rewrite mapiE /#.
 qed.
 
 realize MLWE_PKE_RO.Correctness.good_decode. 
-rewrite /under_noise_bound /m_encode /m_decode /compress_poly /decompress_poly  => m n hgood.
+rewrite /under_noise_bound /m_encode /m_decode /compress_poly /decompress_poly /max_noise => m n hgood.
 have : sem_decode1 (sem_encode1 (map (compress 1) (map (decompress 1) (sem_decode1 m) &+ n))) = (sem_decode1 m); last by smt(sem_decode1K).
 apply Array256.ext_eq => /> x h0x hx256. 
 rewrite sem_encode1K /(&+) mapiE 1:/# map2E /= initiE /= 1:/# mapiE 1:/#.
@@ -291,7 +291,7 @@ module (KSampler(XOF : XOF_t) : MLWE_SMP.Sampler) (O : RO.POracle)  = {
         j <- 0;
         while (j < kvec) {
            XOF(O).init(sd,W8.of_int j,W8.of_int i);
-           c <@ Parse(XOF,O).sample_real();
+           c <@ Parse(XOF,O).sample();
            a.[(i,j)] <- c;
            j <- j + 1;
         }
@@ -420,16 +420,16 @@ module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PseudoRF.PseudoRF, O : RO.POr
 }.
 
 equiv kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t) :
-   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : ={arg} /\ ={glob O} ==> ={res}.
+   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : ={arg} /\ ={glob O, glob XOF} ==> ={res}.
 proc;inline*.
 seq 12 11: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\ a0{1} = a{2} /\ ={_N} /\ sd{1} = rho{2}); 1: by auto.
-sim => />. admitted. (* sim does not understand extensional equality *)
+sim => />.  admitted. (* sim does not eat this *)
 
 equiv enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t):
-   KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : ={arg} /\ ={glob O} ==> ={res}.
+   KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : ={arg} /\ ={glob O, glob XOF} ==> ={res}.
 proc;inline*. 
 seq 31 29: (#pre /\ ={that, rv, r0, m0, e1, aT, _N}); 1: by sim.
-sim => />. admitted. (* sim does not understand extensional equality or transposition. *)
+sim => />. admitted. (* match i to j for transposed *)
 
 equiv enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
    KyberS(G,KSampler(XOF),KPRF,O).dec ~ Kyber(G,XOF,KPRF,O).dec : ={arg} /\ ={glob O} ==> ={res} by proc;inline *;sim => /#.

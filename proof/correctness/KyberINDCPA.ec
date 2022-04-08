@@ -219,7 +219,7 @@ proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
     while (j < kvec) {                
       XOF(H).init(seed, if trans then W8.of_int i else W8.of_int j, 
                         if trans then W8.of_int j else W8.of_int i);        
-      c <@ Parse(XOF, H).sample_real();
+      c <@ Parse(XOF, H).sample();
       a <- a.[i, j <- c];         
       j <- j + 1;                      
     }                                 
@@ -553,7 +553,7 @@ equiv auxgenmatrix_good :
   M.__gen_matrix ~ AuxKyber.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
 proc => /=. 
-inline Parse(XOF, H).sample_real.
+inline Parse(XOF, H).sample.
 inline M.__rej_uniform.
 
 seq 6 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.

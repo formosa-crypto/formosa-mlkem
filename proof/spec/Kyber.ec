@@ -748,7 +748,7 @@ module type XOF_t(O : RO.POracle) = {
 }.
 
 module Parse(XOF : XOF_t, O : RO.POracle) = {
-   proc sample_real() : poly = {
+   proc sample() : poly = {
       var j, b168, bi, bi1, bi2, d1, d2,k;
       var aa : poly;
       aa <- witness;
@@ -767,12 +767,6 @@ module Parse(XOF : XOF_t, O : RO.POracle) = {
             if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
          }
       }
-      return aa;
-   }
-
-   proc sample_ideal() : poly = {
-      var aa;
-      aa <$ duni_R;
       return aa;
    }
 }.
@@ -832,7 +826,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
         j <- 0;
         while (j < kvec) {
            XOF(O).init(rho,W8.of_int j,W8.of_int i);
-           c <@ Parse(XOF,O).sample_real();
+           c <@ Parse(XOF,O).sample();
            a.[(i,j)] <- c;
            j <- j + 1;
         }
@@ -887,7 +881,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
         j <- 0;
         while (j < kvec) {
            XOF(O).init(rho,W8.of_int i, W8.of_int j);
-           c <@ Parse(XOF,O).sample_real();
+           c <@ Parse(XOF,O).sample();
            aT.[(i,j)] <- c; (* this is the transposed matrix *)
            j <- j + 1;
         }
