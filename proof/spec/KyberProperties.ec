@@ -71,6 +71,9 @@ require (****) MLWE_PKE.
 theory SpecProperties.
 
 import KMatrix.
+
+clone import KyberSpec. (* We get a generic RO that we can later refine *)
+
 import KyberPKE.
 
 type pkey = W8.t Array1152.t * W8.t Array32.t.
@@ -221,7 +224,7 @@ rewrite sem_encode1K /(&+) mapiE 1:/# map2E /= initiE /= 1:/# mapiE 1:/#.
 rewrite b_decode_sem /b_decode /= -decompress_alt_decompress // /decompress_alt /= qE /=.
 rewrite /as_sint => />.
 rewrite Zq.addE  qE Zq.inFqK qE => />.
-admitted. (* lost track of what is going on *)
+admitted. (*  should be an easy fix, maybe clone related. *)
 
 realize MLWE_PKE_RO.Correctness.cv_bound_valid.
 admitted. (* Rounding upper bound for one coefficient: compute in EC? *)
@@ -256,7 +259,7 @@ import MLWE_PKE_GENERAL.
 
 op SHA3_SMOOTH : W8.t Array32.t -> W8.t Array32.t * W8.t Array32.t.
 
-module (G : G_t) (O : RO.POracle) = {
+module (G : G_t) = {
    proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t) = {
         var rho, sig : W8.t Array32.t;
         (rho,sig) <- SHA3_SMOOTH seed;
@@ -264,40 +267,19 @@ module (G : G_t) (O : RO.POracle) = {
    }
 }.
 
-module (XOF :  XOF_t) (O : RO.POracle) = {
-   var _rho : W8.t Array32.t
-   var _i, _j : W8.t
-   var count : int
+op SHA3_PRF : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
 
-   proc init(rho :  W8.t Array32.t, i j : W8.t ) : unit = {
-      _rho <- rho;
-      _i <- i;
-      _j <- j;
-      count <- 0;
-   }
-   proc next_bytes() : W8.t Array168.t = {
-        var bb;
-        bb <@ O.o(_rho,_i,_j,count);
-        return bb;
-   }
+module KPRF : PseudoRF.PseudoRF = {
+  proc keygen() : W8.t Array32.t = {
+    var k : W8.t Array32.t;  
+    k <$ srand;
+    return k;
+  }
+  
+  proc f(k : W8.t Array32.t, x : W8.t) : W8.t Array128.t = {
+    return SHA3_PRF k x;
+  }
 }.
-
-(*
-clone import PseudoRF.
-
-module (PRF : PRF_t) (O : RO.POracle) = {
-   var _sig : W8.t Array32.t
-
-   proc init(sig : W8.t Array32.t) : unit = {
-       _sig <- sig;
-   }
-   proc next_bytes(_N : W8.t) : W8.t Array128.t = {
-        var bb;
-        bb <- F _sig _N;
-        return bb;
-   }
-}.
-*)
 
 module (KSampler(XOF : XOF_t) : MLWE_SMP.Sampler) (O : RO.POracle)  = {
     proc sample(sd : W8.t Array32.t) : matrix = { 
@@ -326,7 +308,7 @@ syntactic reasons.
 *************************************)
 
 
-module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PRF_t, O : RO.POracle) : Scheme = {
+module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PseudoRF.PseudoRF, O : RO.POracle) : Scheme = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
@@ -338,20 +320,19 @@ module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PRF_t, O : RO.POracle) : Sche
      s <- witness;
      sv <- witness;
      tv <- witness;
-     (rho,sig) <@ G(O).sample(seed);
+     (rho,sig) <@ G.sample(seed);
      _N <- 0; 
      a <@ S(O).sample(rho);     
-     PRF(O).init(sig);
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(sig,_N);
         s <- set s i c;
         _N <- _N + 1;
         i <- i + 1;
      }         
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(sig,_N);
         e <- set e i c;
         _N <- _N + 1;
         i <- i + 1;
@@ -388,22 +369,21 @@ module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PRF_t, O : RO.POracle) : Sche
       that <- ofipolyvec thati;
       aT <@ S(O).sample(rho);    
       aT <- trmx aT; 
-      PRF(O).init(r);     
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(r,_N);
         rv <- set rv i c;
         _N <- _N + 1;
         i <- i + 1;
       }         
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(r,_N);
         e1 <- set e1 i c;
         _N <- _N + 1;
         i <- i + 1;
       }      
-      e2 <@ CBD2(PRF,O).sample_real(_N);
+      e2 <@ CBD2(PRF).sample(r,_N);
       rhat <- nttv rv;
       u <- invnttv (ntt_mmul aT rhat) + e1;
       mp <@ EncDec.decode1(m);
@@ -439,28 +419,28 @@ module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PRF_t, O : RO.POracle) : Sche
 
 }.
 
-equiv kg_sampler_kg (O <: RO.POracle) :
-   KyberS(G,KSampler(XOF),PRF,O).kg ~ Kyber(G,XOF,PRF,O).kg : ={arg} /\ ={glob O} ==> ={res}.
+equiv kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t) :
+   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : ={arg} /\ ={glob O} ==> ={res}.
 proc;inline*.
 seq 12 11: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\ a0{1} = a{2} /\ ={_N} /\ sd{1} = rho{2}); 1: by auto.
 sim => />. admitted. (* sim does not understand extensional equality *)
 
-equiv enc_sampler_enc (O <: RO.POracle) :
-   KyberS(G,KSampler(XOF),PRF,O).enc ~ Kyber(G,XOF,PRF,O).enc : ={arg} /\ ={glob O} ==> ={res}.
+equiv enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t):
+   KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : ={arg} /\ ={glob O} ==> ={res}.
 proc;inline*. 
 seq 31 29: (#pre /\ ={that, rv, r0, m0, e1, aT, _N}); 1: by sim.
 sim => />. admitted. (* sim does not understand extensional equality or transposition. *)
 
-equiv enc_sampler_dec (O <: RO.POracle) :
-   KyberS(G,KSampler(XOF),PRF,O).dec ~ Kyber(G,XOF,PRF,O).dec : ={arg} /\ ={glob O} ==> ={res} by proc;inline *;sim => /#.
+equiv enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
+   KyberS(G,KSampler(XOF),KPRF,O).dec ~ Kyber(G,XOF,KPRF,O).dec : ={arg} /\ ={glob O} ==> ={res} by proc;inline *;sim => /#.
 
 (***************************************)
 
 section.
 
-declare module O <: RO.Oracle {-PRF, -B1ROM, -B2ROM}.
-declare module S <: MLWE_SMP.Sampler {-PRF, -O, -B1ROM, -B2ROM}.
-declare module As <: KyberPKE.AdversaryRO {-O, -S, -PRF, -B1ROM, -B2ROM}.
+declare module O <: RO.Oracle {-KPRF, -B1ROM, -B2ROM}.
+declare module S <: MLWE_SMP.Sampler {-KPRF, -O, -B1ROM, -B2ROM}.
+declare module As <: KyberPKE.AdversaryRO {-O, -S, -KPRF, -B1ROM, -B2ROM}.
 
 lemma security_any_sampler &m :  
   islossless O.init =>
@@ -469,7 +449,7 @@ lemma security_any_sampler &m :
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless S(O0).sample) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
-  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,PRF),As,O).main() @ &m : res] - 1%r/2%r = 
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
   Pr[MLWE_SMP.MLWE_SMP(B1ROM(As, S), S, O).main(false, false) @ &m : res] -
  Pr[MLWE_SMP.MLWE_SMP(B1ROM(As, S), S, O).main(false, true) @ &m : res] +
  Pr[MLWE_SMP.MLWE_SMP(B2ROM(As, S), S, O).main(true, false) @ &m : res] -
@@ -477,7 +457,7 @@ lemma security_any_sampler &m :
 move => H H0 H1 H2 H3 H4.
 have  <- : 
     Pr[ PKE_.CPAGameROM(PKE_.CPA,MLWE_PKE(S(O)),As,O).main() @ &m : res] =
-    Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,PRF),As,O).main() @ &m : res]; last by
+    Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,O).main() @ &m : res]; last by
         apply (main_theorem_s O S As &m  H H0 H1 H2 H3 H4).
 byequiv => //.
 proc.
@@ -490,8 +470,10 @@ call(_: ={glob S, glob O}).
   wp;ecall{2}(sem_encode4 (compress_poly 4 v{2})).
   wp;ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
   wp;ecall{2}(sem_decode1 (m0{2})).
-  swap {1} 5 -3. (* follows from PRF hop and product of distributions *)
-  admit.
+  swap {1} 5 -3. 
+  wp;conseq />; 1:by smt().
+  admit. (* follows from PRF hop and product of distributions,
+            plus ntt properties *)
 
 rnd;call(_: ={glob O}); 1: by sim.
 conseq />; 1: by smt().
@@ -505,9 +487,9 @@ swap {1} 4 -2.
 inline {2} 7.
 swap {2} [7..9] -4. 
 swap {2} 11 -5. 
-
+wp; conseq => />; 1: smt().
 (* follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
-   and product of distributions *)
+   and product of distributions, plus ntt properties *)
 admit.
 
 by inline *; conseq => />; sim.
@@ -516,24 +498,31 @@ qed.
 
 end section.
 
-(* TO DO: Derive the following results will require some
-changes to the Spec file, leaving the RO abstract there
-and fixing it only in cloning here *)
+end SpecProperties.
 
-section.
+theory SpecPropertiesLWE.
 
-(* Do the same for the MLWE based security theorem *)
+(* To Do: Do the same for the MLWE based security 
+   and correctness theorems.
+   Clone spec properties with the correct RO type
+   to apply these theorems as above.  *)
 print MLWEPKE.MLWE_PKE_RO.Security.main_theorem_ro.
-
-end section.
-
-section.
-
-(* Do the same for correctness *)
-
-(* Do the same for the MLWE based security theorem *)
 print MLWEPKE.MLWE_PKE_RO.Correctness.correctness_bound.
 
-end section.
+end SpecPropertiesLWE.
 
-end SpecProperties.
+theory ImplementationProperties.
+
+(* To Do: Get the equivalence results from 
+   correctness folder INDCPA and show by
+   transitivity that implementation is correct
+   and secure because of the theorems above.
+   The challenge will come from matching 
+   the used G, PRF and XOF: a blunt approach
+   is to assume functional equivalence for
+   these components, which is fine for everything
+   except the XOF, which actually uses a RO
+   in the security and correctness analyses.
+ *)
+
+end ImplementationProperties.
