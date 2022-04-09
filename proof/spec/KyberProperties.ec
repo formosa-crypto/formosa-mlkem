@@ -61,6 +61,9 @@ lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. 
 lemma sem_decode10_vecK  : cancel sem_decode10_vec  sem_encode10_vec  by admit. (* to do *)
 lemma sem_encode10_vecK  : cancel sem_encode10_vec  sem_decode10_vec  by admit. (* to do *)
 
+lemma sem_decode1_bnd a k : 0<=k<256 => 0<= (sem_decode1 a).[k] < 2 by admit. (* to do *)
+
+
 phoare sem_decode12 a : [ EncDec.decode12 : arg = a ==>  res = sem_decode12 a ] = 1%r by admit. (* reify *)
 phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = sem_decode4  a ] = 1%r by admit. (* reify *)
 phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = sem_decode1  a ] = 1%r by admit. (* reify *)
@@ -204,9 +207,7 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_.Matrix_.Matrix.tofunmK by apply tofunmK
   proof MLWE_.Matrix_.Matrix.offunmK by apply offunmK
   proof MLWE_.duni_R_uni by apply duni_R_uni
-  proof pk_decodeK
   proof pk_encodeK
-  proof sk_decodeK
   proof sk_encodeK
   proof MLWE_PKE_RO.Correctness.encode_noise
   proof MLWE_PKE_RO.Correctness.good_decode
@@ -215,21 +216,10 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_PKE_RO.Correctness.correctness_hack
   proof MLWE_PKE_RO.Correctness.fail_prob.
 
-realize pk_decodeK.
-rewrite /pk_decode /pk_encode /cancel /= => x.
-rewrite ofipolyvecK_small; last by smt(sem_decode12_vecK).
-admitted. (* Too strong. Weaken this axiom in the security proof. *)
-
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
 by rewrite sem_encode12_vecK toipolyvecK /#.
 qed.
-
-realize sk_decodeK.
-rewrite /sk_decode /sk_encode /cancel /= => x.
-rewrite ofipolyvecK_small; last by smt(sem_decode12_vecK).
-admitted. (* Too strong. Weaken this axiom in the security proof. *)
-
 
 realize sk_encodeK.
 rewrite /sk_decode /sk_encode /cancel /= => x.
@@ -251,7 +241,8 @@ by rewrite mapiE /#.
 qed.
 
 realize MLWE_PKE_RO.Correctness.good_decode. 
-rewrite /under_noise_bound /m_encode /m_decode /compress_poly /decompress_poly /max_noise /as_sint qE  /= => m n.
+rewrite /under_noise_bound /m_encode /m_decode /compress_poly 
+        /decompress_poly /max_noise /as_sint qE  /= => m n.
 rewrite allP  => /=  hgood.
 have : sem_decode1 (sem_encode1 (map (compress 1) (map (decompress 1) (sem_decode1 m) &+ n))) = 
        (sem_decode1 m); last by smt(sem_decode1K).
@@ -259,8 +250,9 @@ apply Array256.ext_eq => /> x h0x hx256.
 rewrite sem_encode1K /(&+) mapiE 1:/# map2E /= initiE /= 1:/# mapiE 1:/#.
 rewrite b_decode_sem /b_decode /= -decompress_alt_decompress // /decompress_alt /= qE /=.
 rewrite /as_sint  Zq.addE  qE Zq.inFqK qE => />.
-have add_as_axiom_to_prove_over_sem : 0<= (sem_decode1 m).[x] < 2. admit. 
-admitted. (*  should be an easy fix. *)
+move : (hgood x _) => //; rewrite /(`|_|)%Int /= => hgoodx.
+by rewrite /(`|_|)%Int; smt(sem_decode1_bnd).
+qed.
 
 realize MLWE_PKE_RO.Correctness.cv_bound_valid.
 admitted. (* Rounding upper bound for one coefficient: compute in EC? *)

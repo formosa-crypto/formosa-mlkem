@@ -27,10 +27,8 @@ op sk_encode : raw_skey -> skey.
 op pk_decode : pkey -> raw_pkey.
 op sk_decode : skey -> raw_skey.
 
-axiom pk_encodeK : cancel pk_encode pk_decode.
+axiom pk_encodeK : cancel pk_encode pk_decode. 
 axiom sk_encodeK : cancel sk_encode sk_decode.
-axiom pk_decodeK : cancel pk_decode pk_encode.
-axiom sk_decodeK : cancel sk_decode sk_encode.
 
 theory MLWE_PKE_GENERAL.
 
@@ -745,17 +743,16 @@ seq 9 14 : (
 auto => /=. 
 seq 8 10 : ( #pre /\
            ={LRO.m,r,s,e,e1,e2,sd,_A} /\
-           (pk_decode pk{2}).`2 = sd{2} /\
-           (pk_decode pk{2}).`1 = t{2} /\
-           (sk_decode sk){2} = s{2} /\
+           pk{2} = pk_encode (t,sd){2} /\
+           sk{2} = sk_encode s{2} /\
            t{2} = _A{2} *^ s{2} + e{2} /\
-           (pk_decode pk{2}).`2 \in LRO.m{2} /\
+           sd{2} \in LRO.m{2} /\
            oget LRO.m{2}.[sd{2}] = _A{2}); last first.
-+ exlim _A{2}, (pk_decode pk{2}).`2 => _A sd.
++ exlim _A{2}, sd{2} => _A sd.
   call(_: ={glob LRO} /\ oget LRO.m{2}.[sd] = _A /\ sd \in LRO.m{2} ). 
   + by proc; auto => />; smt(get_setE).
-  auto => />;smt(sk_decodeK get_setE pk_decodeK).
-by inline *; auto => />;  smt(sk_decodeK sk_encodeK get_setE pk_decodeK pk_encodeK).
+  by auto => />; smt(get_setE sk_encodeK pk_encodeK).
+by inline *; auto => />;  smt(sk_encodeK get_setE pk_encodeK).
 qed.
 
 end section.
