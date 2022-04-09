@@ -28,8 +28,8 @@ op pk_decode : pkey -> raw_pkey.
 op sk_decode : skey -> raw_skey.
 
 axiom pk_encodeK : cancel pk_encode pk_decode.
-axiom pk_decodeK : cancel pk_decode pk_encode.
 axiom sk_encodeK : cancel sk_encode sk_decode.
+axiom pk_decodeK : cancel pk_decode pk_encode.
 axiom sk_decodeK : cancel sk_decode sk_encode.
 
 theory MLWE_PKE_GENERAL.
@@ -564,10 +564,9 @@ import MLWE_SMP.
 
 section. 
 
-declare module A <: AdversaryRO {-LRO, -B1ROM, -B2ROM, -MLWE_vs_MLWE_ROM.B, -MLWE_vs_MLWE_ROM.Bt}.
-
 import MLWE_vs_MLWE_ROM.
 import SMP_vs_ROM.
+declare module A <: AdversaryRO {-LazyEager.ERO,-LRO, -B1ROM, -B2ROM, -MLWE_vs_MLWE_ROM.B, -MLWE_vs_MLWE_ROM.Bt}.
 
 lemma main_theorem_ro &m :
   (forall (x : in_t), is_lossless (dout x)) => 
@@ -585,8 +584,8 @@ have -> := (main_theorem_s LRO S A &m _ _ dout_ll _ A_guess_ll A_choose_ll);
 + by apply LRO_o_ll.
 rewrite (MLWE_SMP_equiv false &m (B1ROM(A,S)) dout_ll).
 rewrite (MLWE_SMP_equiv true &m (B1ROM(A,S)) dout_ll).
-rewrite (MLWE_SMP_equiv_t false &m (B2ROM(A,S))).
-rewrite (MLWE_SMP_equiv_t true &m (B2ROM(A,S))).
+rewrite (MLWE_SMP_equiv_t false &m (B2ROM(A,S)) dout_ll).
+rewrite (MLWE_SMP_equiv_t true &m (B2ROM(A,S)) dout_ll).
 have -> : Pr[SMP_vs_ROM.MLWE_SMP.MLWE_SMP(B1ROM(A, S), S, LRO).main(false, false) @ &m : res] = 
           Pr[PKEG.MLWE_SMP.MLWE_SMP(B1ROM(A, S), S, LRO).main(false, false) @ &m : res] by byequiv => //; sim.
 have -> : Pr[SMP_vs_ROM.MLWE_SMP.MLWE_SMP(B1ROM(A, S), S, LRO).main(false, true) @ &m : res] = 

@@ -4,6 +4,31 @@ require import Array32 Array64 Array128 Array168 Array256 Array384.
 require import Array768 Array960 Array1024 Array1152.
 require import Kyber.
 
+(* Aux *)
+import KMatrix.
+import Zq.
+lemma ofipolyvecK_small (x : ipolyvec) :
+    (forall k, 0 <= k < 768 => 0 <= x.[k] < q) =>  toipolyvec (ofipolyvec x) = x.
+move => bnd.
+rewrite /ofipolyvec /toipolyvec /fromarray256 /subarray256.
+apply Array768.ext_eq => k kb.
+rewrite mapiE //= initiE //=.
+case (0 <= k && k < 256). 
++ move => *. rewrite offunvE //= mapiE //= initiE //= inFqK; smt(modz_small).
+move => *;case (256 <= k && k < 512). 
++ move => *; rewrite offunvE //= mapiE 1:/# initiE 1:/# inFqK; smt(modz_small).
+move => *; rewrite offunvE //= mapiE 1:/# initiE 1:/# inFqK; smt(modz_small).
+qed.
+
+lemma toipolyvecK (x : vector) :
+   ofipolyvec (toipolyvec x) = x.
+rewrite /ofipolyvec /toipolyvec /fromarray256 /subarray256.
+apply eq_vectorP => i ib.
+rewrite offunvE //=.
+apply Array256.tP => k kb.
+by rewrite mapiE //= initiE //= mapiE 1:/# initiE 1:/# /= asintK /#.
+qed.
+
 (**********************************)
 (**********************************)
 (**********************************)
@@ -191,16 +216,25 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_PKE_RO.Correctness.fail_prob.
 
 realize pk_decodeK.
-admitted.
+rewrite /pk_decode /pk_encode /cancel /= => x.
+rewrite ofipolyvecK_small; last by smt(sem_decode12_vecK).
+admitted. (* Too strong. Weaken this axiom in the security proof. *)
 
 realize pk_encodeK.
-admitted.
+rewrite /pk_decode /pk_encode /cancel /= => x.
+by rewrite sem_encode12_vecK toipolyvecK /#.
+qed.
 
 realize sk_decodeK.
-admitted.
+rewrite /sk_decode /sk_encode /cancel /= => x.
+rewrite ofipolyvecK_small; last by smt(sem_decode12_vecK).
+admitted. (* Too strong. Weaken this axiom in the security proof. *)
+
 
 realize sk_encodeK.
-admitted.
+rewrite /sk_decode /sk_encode /cancel /= => x.
+by rewrite sem_encode12_vecK toipolyvecK /#.
+qed.
 
 realize MLWE_PKE_RO.Correctness.encode_noise.
 move => /> u v.
@@ -217,14 +251,16 @@ by rewrite mapiE /#.
 qed.
 
 realize MLWE_PKE_RO.Correctness.good_decode. 
-rewrite /under_noise_bound /m_encode /m_decode /compress_poly /decompress_poly /max_noise => m n hgood.
-have : sem_decode1 (sem_encode1 (map (compress 1) (map (decompress 1) (sem_decode1 m) &+ n))) = (sem_decode1 m); last by smt(sem_decode1K).
+rewrite /under_noise_bound /m_encode /m_decode /compress_poly /decompress_poly /max_noise /as_sint qE  /= => m n.
+rewrite allP  => /=  hgood.
+have : sem_decode1 (sem_encode1 (map (compress 1) (map (decompress 1) (sem_decode1 m) &+ n))) = 
+       (sem_decode1 m); last by smt(sem_decode1K).
 apply Array256.ext_eq => /> x h0x hx256. 
 rewrite sem_encode1K /(&+) mapiE 1:/# map2E /= initiE /= 1:/# mapiE 1:/#.
 rewrite b_decode_sem /b_decode /= -decompress_alt_decompress // /decompress_alt /= qE /=.
-rewrite /as_sint => />.
-rewrite Zq.addE  qE Zq.inFqK qE => />.
-admitted. (*  should be an easy fix, maybe clone related. *)
+rewrite /as_sint  Zq.addE  qE Zq.inFqK qE => />.
+have add_as_axiom_to_prove_over_sem : 0<= (sem_decode1 m).[x] < 2. admit. 
+admitted. (*  should be an easy fix. *)
 
 realize MLWE_PKE_RO.Correctness.cv_bound_valid.
 admitted. (* Rounding upper bound for one coefficient: compute in EC? *)
