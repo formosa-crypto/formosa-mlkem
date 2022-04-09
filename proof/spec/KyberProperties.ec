@@ -451,13 +451,13 @@ equiv kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t) :
    KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : ={arg} /\ ={glob O, glob XOF} ==> ={res}.
 proc;inline*.
 seq 12 11: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\ a0{1} = a{2} /\ ={_N} /\ sd{1} = rho{2}); 1: by auto.
-sim => />.  admitted. (* sim does not eat this *)
+sim => />.  admitted. (* Hugo: sim does not eat this *)
 
 equiv enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t):
    KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : ={arg} /\ ={glob O, glob XOF} ==> ={res}.
 proc;inline*. 
 seq 31 29: (#pre /\ ={that, rv, r0, m0, e1, aT, _N}); 1: by sim.
-sim => />. admitted. (* match i to j for transposed *)
+sim => />. admitted. (* Hugo: match i to j for transposed *)
 
 equiv enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
    KyberS(G,KSampler(XOF),KPRF,O).dec ~ Kyber(G,XOF,KPRF,O).dec : ={arg} /\ ={glob O} ==> ={res} by proc;inline *;sim => /#.
@@ -500,8 +500,8 @@ call(_: ={glob S, glob O}).
   wp;ecall{2}(sem_decode1 (m0{2})).
   swap {1} 5 -3. 
   wp;conseq />; 1:by smt().
-  admit. (* follows from PRF hop and product of distributions,
-            plus ntt properties *)
+  admit. (* Hugo: follows from PRF hop and product of distributions,
+                  plus ntt properties *)
 
 rnd;call(_: ={glob O}); 1: by sim.
 conseq />; 1: by smt().
@@ -516,9 +516,9 @@ inline {2} 7.
 swap {2} [7..9] -4. 
 swap {2} 11 -5. 
 wp; conseq => />; 1: smt().
-(* follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
-   and product of distributions, plus ntt properties *)
-admit.
+
+admit. (* Hugo: follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
+                and product of distributions, plus ntt properties *)
 
 by inline *; conseq => />; sim.
 
@@ -530,12 +530,57 @@ end SpecProperties.
 
 theory SpecPropertiesLWE.
 
-(* To Do: Do the same for the MLWE based security 
-   and correctness theorems.
+(* We now get MLWE based security  and correctness theorems.
    Clone spec properties with the correct RO type
    to apply these theorems as above.  *)
-print MLWEPKE.MLWE_PKE_RO.Security.main_theorem_ro.
-print MLWEPKE.MLWE_PKE_RO.Correctness.correctness_bound.
+
+clone import SpecProperties with
+  type KyberSpec.KyberPKE.RO.in_t <- W8.t Array32.t,
+  type KyberSpec.KyberPKE.RO.out_t <- matrix. 
+
+import MLWEPKE.
+import MLWE_.
+import MLWE_ROM.
+import RO_H.
+
+lemma main_theorem_ro  (A  <:
+           MLWE_PKE_RO.PKEG.PKE_.AdversaryRO{ -Lazy.LRO, -MLWE_vs_MLWE_ROM.B, -MLWE_vs_MLWE_ROM.Bt, -SMP_vs_ROM.LazyEager.ERO, -MLWE_PKE_RO.PKEG.B1ROM, -MLWE_PKE_RO.PKEG.B2ROM}) &m:
+    (forall (x : in_t), is_lossless (dout x)) =>
+    (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
+    (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
+    Pr[ SpecProperties.KyberSpec.KyberPKE.CPAGameROM(SpecProperties.KyberSpec.KyberPKE.CPA,KyberS(G,SMP_vs_ROM.S,KPRF),A,Lazy.LRO).main() @ &m : res] -
+    1%r / 2%r =
+    Pr[MLWE(MLWE_vs_MLWE_ROM.B(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B1ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
+       (false) @ &m : res] -
+    Pr[MLWE(MLWE_vs_MLWE_ROM.B(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B1ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
+       (true) @ &m : res] +
+    Pr[MLWE(MLWE_vs_MLWE_ROM.Bt(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B2ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
+       (false) @ &m : res] -
+    Pr[MLWE(MLWE_vs_MLWE_ROM.Bt(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B2ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
+       (true) @ &m : res].
+proof. 
+move => H H0 H1.
+move : (MLWEPKE.MLWE_PKE_RO.Security.main_theorem_ro A &m H H0 H1) => <-.
+have -> : 
+  Pr[KyberSpec.KyberPKE.CPAGameROM(KyberSpec.KyberPKE.CPA, KyberS(G, SMP_vs_ROM.S, KPRF), A, Lazy.LRO).main() @ &m : res] =
+  Pr[MLWE_PKE_RO.PKEG.PKE_.CPAGameROM(MLWE_PKE_RO.PKEG.PKE_.CPA, MLWE_PKE_RO.PKEG.MLWE_PKE(SMP_vs_ROM.S(Lazy.LRO)), A, Lazy.LRO).main
+   () @ &m : res]; last by ring.
+admitted. (* Hugo: should be straightforward equivalence proof *)
+
+lemma correctness_bound (A <: MLWE_PKE_RO.PKEG.PKE_.CAdversaryRO{ -Lazy.LRO}) &m:
+    (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
+    1%r - fail_prob - epsilon_hack <=
+    Pr[SpecProperties.KyberSpec.KyberPKE.CGameROM(SpecProperties.KyberSpec.KyberPKE.CorrectnessAdv, KyberS(G,SMP_vs_ROM.S,KPRF), A, Lazy.LRO).main
+       () @ &m : res].
+proof.
+move => H.
+move : (MLWEPKE.MLWE_PKE_RO.Correctness.correctness_bound A &m H).
+have -> : 
+   Pr[MLWE_PKE_RO.PKEG.PKE_.CGameROM(MLWE_PKE_RO.PKEG.PKE_.CorrectnessAdv, MLWE_PKE_RO.PKEG.MLWE_PKE(SMP_vs_ROM.S(Lazy.LRO)), A, Lazy.LRO).main
+   () @ &m : res] = 
+   Pr[KyberSpec.KyberPKE.CGameROM(KyberSpec.KyberPKE.CorrectnessAdv, KyberS(G, SMP_vs_ROM.S, KPRF), A, Lazy.LRO).main
+   () @ &m : res]; last by smt().
+admitted. (* Hugo: should be straightforward equivalence proof *)
 
 end SpecPropertiesLWE.
 
