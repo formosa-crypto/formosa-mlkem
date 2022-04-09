@@ -159,8 +159,8 @@ clone import ROM as RO_H with
   type in_t  = seed,
   type out_t = matrix,
   op dout    = fun (sd : seed) => duni_matrix, 
-  type d_in_t = seed * vector,
-  type d_out_t = matrix.
+  type d_in_t = bool,
+  type d_out_t = bool.
 
 import Lazy.
 
@@ -396,58 +396,214 @@ module (BS(Adv : SAdv_T, S : Sampler) : ROAdv_T) (O : POracle) = {
 
 import MLWE_vs_MLWE_ROM.
 
+module DLeftAux(A : SAdv_T)  (O : POracle) = {
+     proc run(tr : bool,b : bool) : bool = {
+        var sd,t,_A,s,e,u0,u1,e',v0,v1,b';     
+        sd <$ dseed;
+        s <$ dshort;
+        e <$ dshort;
+        _A <@ O.o(sd);
+        _A <- if tr then trmx _A else _A;
+        u0 <- _A *^ s + e;
+        u1 <$ duni;
+        t <$ duni;
+        e' <$ dshort_R;
+        v0 <- (t `<*>` s) &+ e';
+        v1 <$ duni_R;
+        b' <@ BS(A, S, O).guess(sd, t,if b then (u1, v1) else (u0, v0)); 
+        return b';
+     }
+}.
+
 module (DLeft(A : SAdv_T) : Distinguisher)  (O : POracle) = {
-     proc run(sd : seed, t : vector) : matrix = {
-         var _A;
-         _A <@ O.o(sd);
-         A(O).interact(sd,t);
-         return _A;
+     proc run(b : bool) : bool = {
+         var b';
+         b' <@ DLeftAux(A,O).run(false,b);
+         return b';
+     }
+}.
+
+module (DLeftT(A : SAdv_T) : Distinguisher)  (O : POracle) = {
+     proc run(b : bool) : bool = {
+         var b';
+         b' <@ DLeftAux(A,O).run(true,b);
+         return b';
+     }
+}.
+
+module DRightAux(A : SAdv_T)   (O : POracle) = {
+     proc run(tr : bool, b : bool) : bool = {
+        var sd,t,_A,s,e,u0,u1,e',v0,v1,b';
+        sd <$ dseed;
+        t <$ duni;
+        A(O).interact(sd, t);
+        _A <@ S(O).sample(sd);
+        s <$ dshort;
+        e <$ dshort;
+        u0 <- (if tr then trmx _A else _A) *^ s + e;
+        u1 <$ duni;
+        e' <$ dshort_R;
+        v0 <- (t `<*>` s) &+ e';
+        v1 <$ duni_R;
+        b' <@ A(O).guess(if b then (u1, v1) else (u0, v0));
+        return b';
      }
 }.
 
 module (DRight(A : SAdv_T) : Distinguisher)  (O : POracle) = {
-     proc run(sd : seed, t : vector) : matrix = {
-         var _A;
-         A(O).interact(sd,t);
-         _A <@ O.o(sd);
-         return _A;
+     proc run(b : bool) : bool = {
+         var b';
+         b' <@ DRightAux(A,O).run(false,b);
+         return b';
      }
 }.
 
-lemma MLWE_SMP_equiv b &m (A <: SAdv_T {-LRO,-B,-Bt, -BS}):
+module (DRightT(A : SAdv_T) : Distinguisher)  (O : POracle) = {
+     proc run(b : bool) : bool = {
+         var b';
+         b' <@ DRightAux(A,O).run(true,b);
+         return b';
+     }
+}.
+
+clone import LazyEager.
+
+lemma MLWE_SMP_equiv_lel tr b &m (A <: SAdv_T {-ERO, -LRO,-B,-Bt, -BS}):
+  (forall (x : in_t), is_lossless (dout x)) =>
+  Pr[  MLWE_RO(BS(A,S),LRO).main(tr,b) @ &m : res] =
+  Pr[  MLWE_RO(BS(A,S),ERO).main(tr,b) @ &m : res].
+move => dout_ll.
+case (tr = false).
++ move => ->.
+  have left : forall &m0,
+           Pr[  MLWE_RO(BS(A,S),LRO).main(false, b) @ &m0 : res] = 
+           Pr[  Exp(LRO,DLeft(A)).main(b) @ &m0 : res].
+  + move => &m0; byequiv => //; last by smt().  
+    by proc; inline {2} 2;  inline {2} 3; sim; wp; conseq />;  sim.
+  have right : forall &m1, Pr[  MLWE_RO(BS(A,S),ERO).main(false,b) @ &m1 : res] = 
+                         Pr[  Exp(ERO,DLeft(A)).main(b) @ &m1 : res].
+  + move => &m0; byequiv => //; last by smt().  
+    by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
+  have le : 
+     equiv [ Exp(LRO, DLeft(A)).main ~ Exp(ERO, DLeft(A)).main : 
+       ={glob DLeft(A),arg} ==> ={res}] by apply (eq_eager_sampling (DLeft(A)) dout_ll).
+  have ? : forall &m0 &m1 ,
+     (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
+       Pr[Exp(LRO, DLeft(A)).main(b) @ &m0 : res] =
+       Pr[Exp(ERO, DLeft(A)).main(b) @ &m1 : res] 
+   by move => &m0 &m1 eqB; byequiv (le); smt().
+  by smt().
+move => *; have -> : tr by smt().
+have left : forall &m0,
+         Pr[  MLWE_RO(BS(A,S),LRO).main(true, b) @ &m0 : res] = 
+         Pr[  Exp(LRO,DLeftT(A)).main(b) @ &m0 : res].
++ move => &m0; byequiv => //; last by smt().  
+  by proc; inline {2} 2;  inline {2} 3; sim; wp; conseq />;  sim.
+have right : forall &m1, Pr[  MLWE_RO(BS(A,S),ERO).main(true,b) @ &m1 : res] = 
+                         Pr[  Exp(ERO,DLeftT(A)).main(b) @ &m1 : res].
++ move => &m0; byequiv => //; last by smt().  
+  by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
+have le : 
+   equiv [ Exp(LRO, DLeftT(A)).main ~ Exp(ERO, DLeftT(A)).main : 
+       ={glob DLeftT(A),arg} ==> ={res}] by apply (eq_eager_sampling (DLeftT(A)) dout_ll).
+have ? : forall &m0 &m1 ,
+     (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
+       Pr[Exp(LRO, DLeftT(A)).main(b) @ &m0 : res] =
+       Pr[Exp(ERO, DLeftT(A)).main(b) @ &m1 : res] 
+ by move => &m0 &m1 eqB; byequiv (le); smt().
+by smt().
+qed.
+
+lemma MLWE_SMP_equiv_ler tr b &m (A <: SAdv_T {-ERO,-LRO,-B,-Bt, -BS}):
+  (forall (x : in_t), is_lossless (dout x)) =>
+  Pr[  MLWE_SMP(A,S,LRO).main(tr,b) @ &m : res]=
+  Pr[  MLWE_SMP(A,S,ERO).main(tr,b) @ &m : res].
+move => dout_ll.
+case (tr = false).
+move => ->.
++ have left : forall &m0,  
+          Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m0 : res] = 
+          Pr[ Exp(LRO,DRight(A)).main(b) @ &m0 : res].
+  + move => &m0; byequiv => //=; last by smt().
+    by proc; inline {2} 2; inline {2} 3; sim; inline *; auto => />.
+  have right : forall &m1,
+             Pr[  MLWE_SMP(A,S,ERO).main(false,b) @ &m1 : res] = 
+             Pr[ Exp(ERO,DRight(A)).main(b) @ &m1 : res].
+  + move => &m1; byequiv => //=; last by smt().
+    by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />; sim.
+  have le : 
+     equiv [ Exp(LRO, DRight(A)).main ~ Exp(ERO, DRight(A)).main : 
+     ={glob DRight(A),arg} ==> ={res}] by apply (eq_eager_sampling (DRight(A)) dout_ll).
+  have ? : forall &m0 &m1 ,
+     (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
+       Pr[Exp(LRO, DRight(A)).main(b) @ &m0 : res] =
+       Pr[Exp(ERO, DRight(A)).main(b) @ &m1 : res] 
+     by move => &m0 &m1 eqB; byequiv (le); smt().
+  by smt().
+move => *; have -> : tr by smt().
+have left : forall &m0,  
+          Pr[  MLWE_SMP(A,S,LRO).main(true,b) @ &m0 : res] = 
+          Pr[ Exp(LRO,DRightT(A)).main(b) @ &m0 : res].
++ move => &m0; byequiv => //=; last by smt().
+  by proc; inline {2} 2; inline {2} 3; sim; inline *; auto => />.
+have right : forall &m1,
+             Pr[  MLWE_SMP(A,S,ERO).main(true,b) @ &m1 : res] = 
+             Pr[ Exp(ERO,DRightT(A)).main(b) @ &m1 : res].
++ move => &m1; byequiv => //=; last by smt().
+  by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />; sim.
+have le : 
+   equiv [ Exp(LRO, DRightT(A)).main ~ Exp(ERO, DRightT(A)).main : 
+     ={glob DRightT(A),arg} ==> ={res}] by apply (eq_eager_sampling (DRightT(A)) dout_ll).
+have ? : forall &m0 &m1 ,
+     (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
+       Pr[Exp(LRO, DRightT(A)).main(b) @ &m0 : res] =
+       Pr[Exp(ERO, DRightT(A)).main(b) @ &m1 : res] 
+   by move => &m0 &m1 eqB; byequiv (le); smt().
+by smt().
+qed.
+
+lemma MLWE_SMP_equiv b &m (A <: SAdv_T {-ERO,-LRO,-B,-Bt, -BS}):
   (forall (x : in_t), is_lossless (dout x)) =>
   Pr[  MLWE(B(BS(A,S),LRO)).main(b) @ &m : res] =
   Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m : res].
 proof.
 move => dout_ll.
 rewrite -(MLWE_RO_equiv b &m (BS(A,S))).
-byequiv =>//;proc.  inline {1} 13. inline {2} 5.
+rewrite (MLWE_SMP_equiv_lel false b &m A dout_ll).
+rewrite (MLWE_SMP_equiv_ler false b &m A dout_ll).
+byequiv =>//;proc.  
+inline {1} 13. inline {2} 5.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
 swap {2} [8..9] -5. swap{2} 11 -6. swap{2} 12 -5. swap {2} 14 -6. swap {2} 10 -7.
-swap {1} 1 9. swap {2} 1 8.
+swap {1} 1 9. swap {2} 1 8. swap {2} 11 -1. 
 seq 9 8 : (!tr{2} /\  ={tr,b,glob A,sd,sd0,s,e,u1,t,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2}); 
    1: by inline *; auto.
-wp; call (_: ={glob LRO}); 1: by sim.
+wp; call (_: ={glob ERO}); 1: by sim.
 wp;conseq (_: ={glob A, sd, sd0} /\ sd0{1} = sd{2} /\ t0{1} = t{2} 
-          ==> ={glob A, LRO.m}   /\ _A{1} = _A0{2}); 1,2: by smt().
-admit. (* To Do. Eager sampling *)
+          ==> ={glob A, ERO.m}   /\ _A{1} = _A0{2}); 1,2: by smt().
+by sim.
 qed.
 
-lemma MLWE_SMP_equiv_t b &m (A <: SAdv_T {-LRO,-B,-Bt, -BS}):
+lemma MLWE_SMP_equiv_t b &m (A <: SAdv_T {-ERO,-LRO,-B,-Bt, -BS}):
+  (forall (x : in_t), is_lossless (dout x)) =>
   Pr[  MLWE(Bt(BS(A,S),LRO)).main(b) @ &m : res] =
   Pr[  MLWE_SMP(A,S,LRO).main(true,b) @ &m : res].
 proof.
+move => dout_ll.
 rewrite -(MLWE_RO_equiv_t b &m (BS(A,S))).
-byequiv =>//;proc.  inline {1} 13. inline {2} 5.
+rewrite (MLWE_SMP_equiv_lel true b &m A dout_ll).
+rewrite (MLWE_SMP_equiv_ler true b &m A dout_ll).
+byequiv =>//;proc.  
+inline {1} 13. inline {2} 5.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
 swap {2} [8..9] -5. swap{2} 11 -6. swap{2} 12 -5. swap {2} 14 -6. swap {2} 10 -7.
-swap {1} 1 9. swap {2} 1 8.
+swap {1} 1 9. swap {2} 1 8. swap {2} 11 -1. 
 seq 9 8 : (tr{2} /\  ={tr,b,glob A,sd,sd0,s,e,u1,t,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2}); 
    1: by inline *; auto.
-wp; call (_: ={glob LRO}); 1: by sim.
+wp; call (_: ={glob ERO}); 1: by sim.
 wp;conseq (_: ={glob A, sd, sd0} /\ sd0{1} = sd{2} /\ t0{1} = t{2} 
-          ==> ={glob A, LRO.m}   /\ _A{1} = _A0{2}); 1,2: by smt().
-admit. (* To Do. Eager sampling *)
+          ==> ={glob A, ERO.m}   /\ _A{1} = _A0{2}); 1,2: by smt().
+by sim.
 qed.
 
 end SMP_vs_ROM.
