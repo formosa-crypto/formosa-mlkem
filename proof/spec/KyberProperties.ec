@@ -309,6 +309,7 @@ module KPRF : PseudoRF.PseudoRF = {
   }
 }.
 
+
 module (KSampler(XOF : XOF_t) : MLWE_SMP.Sampler) (O : RO.POracle)  = {
     proc sample(sd : W8.t Array32.t) : matrix = { 
      var i,j,c;
@@ -447,14 +448,15 @@ module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PseudoRF.PseudoRF, O : RO.POr
 
 }.
 
-equiv kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t) :
-   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : ={arg} /\ ={glob O, glob XOF} ==> ={res}.
+equiv kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t {-O}) :
+   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}.
 proc;inline*.
 seq 12 11: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\ a0{1} = a{2} /\ ={_N} /\ sd{1} = rho{2}); 1: by auto.
-sim => />.  admitted. (* Hugo: sim does not eat this *)
+by sim => />.
+qed.
 
-equiv enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t):
-   KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : ={arg} /\ ={glob O, glob XOF} ==> ={res}.
+equiv enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t {-O}):
+   KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}.
 proc;inline*. 
 seq 31 29: (#pre /\ ={that, rv, r0, m0, e1, aT, _N}); 1: by sim.
 sim => />. admitted. (* Hugo: match i to j for transposed *)
@@ -525,6 +527,39 @@ by inline *; conseq => />; sim.
 qed.
 
 end section.
+
+section.
+
+declare module O <: RO.Oracle {-KPRF, -B1ROM, -B2ROM}.
+declare module XOF <: XOF_t {-KPRF, -O, -B1ROM, -B2ROM}.
+declare module As <: KyberPKE.AdversaryRO {-O, -XOF, -KPRF, -B1ROM, -B2ROM}.
+
+lemma security_spec &m :  
+  islossless O.init =>
+  islossless O.o =>
+  (forall (x : RO.in_t), is_lossless (RO.dout x)) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
+  Pr[MLWE_SMP.MLWE_SMP(B1ROM(As, KSampler(XOF)),  KSampler(XOF), O).main(false, false) @ &m : res] -
+ Pr[MLWE_SMP.MLWE_SMP(B1ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(false, true) @ &m : res] +
+ Pr[MLWE_SMP.MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, false) @ &m : res] -
+ Pr[MLWE_SMP.MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, true) @ &m : res].
+move => Oill Ooll dout_ll XOF_ll Asgll Ascll.
+have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,KSampler(XOF),KPRF),As,O).main() @ &m : res]= Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,O).main() @ &m : res];
+  last first.
++ apply (security_any_sampler O (KSampler(XOF)) As &m Oill Ooll dout_ll _ Asgll Ascll).
+  by admit. (* Rejection sampling is lossless *)
+byequiv => //.
+proc; inline {1} 2; inline {2} 2.
+wp; call(_: ={glob O, glob XOF}); 1: by sim.
+call (enc_sampler_enc O XOF).
+rnd.
+wp; call(_: ={glob O, glob XOF}); 1: by sim.
+call (kg_sampler_kg O XOF).
+by call(_: true); auto => />. 
+qed.
 
 end SpecProperties.
 
