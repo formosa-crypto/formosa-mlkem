@@ -9,8 +9,8 @@ for f in *.ec;do echo $f;easycrypt compile $f -I ../security;done
 
 cd ../correctness
 echo "##### CORRECTNESS #####"
-for f in *.ec;do echo $f;easycrypt compile $f -I ../security -I ../spec -I ./extraction -I ./easycrypt_extra;done
+for f in *.ec;do echo $f;easycrypt compile $f -I ../security -I ../spec -I ./extraction -I ./eclib;done
 
-cd easycrypt_extra
+cd eclib
 echo "##### EXTRA #####"
-for f in *.ec;do echo $f;easycrypt compile $f ;done
+for f in *.ec;do echo $f;easycrypt compile $f -I ../ -I ../extraction -I ../../spec;done
