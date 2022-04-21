@@ -268,7 +268,7 @@ op (&*) (pa pb : poly) : poly =
   Array256.init (fun (i : int) => foldr (fun (k : int) (ci : Fq) =>
      if (0 <= i - k) 
      then ci + pa.[k] * pb.[i - k] 
-     else ci - pa.[k] * pb.[256 - (i - k)]) 
+     else ci - pa.[k] * pb.[256 + (i - k)]) 
       Zq.zero (iota_ 0 256)).
 
 op (&+) (pa pb : poly) : poly = 
@@ -413,9 +413,135 @@ op basemul(a b : poly) :  poly = Array256.init (fun i =>
 
 (* END: NTT *)
 
+
+(* We can now set-up the EC algebraic libraries *)
+
+(* Note that I have no way to pass the ring operations
+   to this theory because it takes the representation
+   to be that of the base ring of polynomials, which 
+   I never work with. *)
+
+require import PolyReduce.
+clone import PolyReduce as PolyR with
+   op n <- 256,
+   type BasePoly.coeff <- Fq,
+   op BasePoly.Coeff.(+) <- Zq.(+),
+   op BasePoly.Coeff.( *) <- Zq.( *),
+   op BasePoly.Coeff.zeror <- Zq.zero,
+   op BasePoly.Coeff.oner <- Zq.one,
+   op BasePoly.Coeff.([-]) <- Zq.([-]),
+   op BasePoly.Coeff.invr <- Zq.inv,
+   pred BasePoly.Coeff.unit <- Zq.unit
+   rename "polyXnD1" as "AlgR"
+   rename "poly" as "basepoly"
+   proof BasePoly.Coeff.addrA by apply ZqRing.addrA
+   proof BasePoly.Coeff.addrC by apply ZqRing.addrC
+   proof BasePoly.Coeff.add0r by apply ZqRing.add0r 
+   proof BasePoly.Coeff.addNr by apply ZqRing.addNr 
+   proof BasePoly.Coeff.oner_neq0 by apply ZqRing.oner_neq0
+   proof BasePoly.Coeff.mulrA by apply ZqRing.mulrA
+   proof BasePoly.Coeff.mulrC by apply ZqRing.mulrC 
+   proof BasePoly.Coeff.mul1r by apply ZqRing.mul1r 
+   proof BasePoly.Coeff.mulrDl by apply ZqRing.mulrDl 
+   proof BasePoly.Coeff.mulVr by apply ZqRing.mulVr
+   proof BasePoly.Coeff.unitP by apply ZqRing.unitP 
+   proof BasePoly.Coeff.unitout by apply ZqRing.unitout
+   proof gt0_n by auto. 
+
+op poly2polyr(p : poly) : AlgR = pi (oget (BasePoly.to_basepoly 
+                              (fun i => if 0<=i<256 then p.[i] else Zq.zero))).
+op polyr2poly(p : AlgR) : poly = Array256.init (fun i => p.[i]).
+
+lemma poly2polyrP i p :  0<=i<256 => (poly2polyr p).[i] = p.[i].
+move => ib.
+have H := (BasePoly.to_basepolyT (fun (i0 : int) => if 0 <= i0 && i0 < 256 then p.[i0] else Zq.zero) _); 1: by smt(BasePoly.IsPoly).
+rewrite /poly2polyr /"_.[_]".
+rewrite piK. 
++ rewrite reducedP /=; 1: by smt(BasePoly.deg_leP).
+by smt().
+qed.
+
+lemma polyr2polyP i p :  0<=i<256 => (polyr2poly p).[i] = p.[i].
+move => ib;rewrite /polyr2poly /"_.[_]" initiE //=.
+qed.
+
+
+lemma polyr2polyK : cancel poly2polyr polyr2poly.
+rewrite /cancel => x; apply Array256.tP => i ib.
+by rewrite polyr2polyP // poly2polyrP //=.
+qed.
+
+lemma poly2polyrK : cancel polyr2poly poly2polyr.
+rewrite /cancel => x;  apply AlgR_eqP => i ib.
+by rewrite poly2polyrP // polyr2polyP //=.
+qed.
+
+lemma add_lift a b : a &+ b = polyr2poly (poly2polyr a + poly2polyr b). 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // rcoeffD !poly2polyrP //.
+by rewrite /(&+) /= map2E /= initiE //=.
+qed.
+
+lemma sub_lift a : (&-) a = polyr2poly (- poly2polyr a). 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // -rcoeffN !poly2polyrP //.
+by rewrite /(&-) /= mapE /= initiE //=.
+qed.
+
+lemma mul_lift a b : a &* b = polyr2poly (poly2polyr a * poly2polyr b). 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // rcoeffM //. 
+rewrite /(&*) /= /BasePoly.BigCf.BCA.big filter_predT /range /= initiE  //= foldr_map /=.
+have : forall x, x \in (iota_ 0 256) => 0 <= x < 256 by smt(mem_iota).
+elim (iota_ 0 256).
++ by auto.
+move => x l H H1 /=.
+case (0 <= i - x).
+ + move => * /=.
+   rewrite (H _) /=; 1: by smt(). 
+   ring.
+   have -> : (poly2polyr b).[256 + i - x] = Zq.zero by smt(lt0_rcoeff gered_rcoeff).
+   rewrite poly2polyrP; 1: by smt(mem_head). 
+   rewrite poly2polyrP; 1: by smt().
+   by ring.
+move => * /=.
+rewrite (H _) /=; 1: by smt(). 
+ring.
+rewrite poly2polyrP; 1: smt().
+rewrite poly2polyrP; 1: by smt(mem_head). 
+   have -> : (poly2polyr b).[i - x] = Zq.zero by smt(lt0_rcoeff gered_rcoeff).
+   have -> : 256 + (i - x) = 256 + i - x by smt().
+   by ring.
+qed.
+
+lemma zero_lift : KPoly.zero = polyr2poly zeroXnD1. 
+apply Array256.tP => i ib.
+by rewrite polyr2polyP // /KPoly.zero /create initiE //= rcoeff0.
+qed.
+
+lemma one_lift : KPoly.one = polyr2poly oneXnD1. 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // /KPoly.one /KPoly.zero /create.
+case (i = 0).
+move => *;rewrite set_eqiE //; smt(@PolyR).
+move => *; rewrite set_neqiE // initiE //=; smt(@PolyR).
+qed.
+
+op invr(p : poly) = polyr2poly (invr (poly2polyr p)).
+
+lemma polyr2poly_inj : injective polyr2poly.
+by apply (can_inj _ poly2polyr); apply poly2polyrK.
+qed.
+
+lemma poly2polyr_inj : injective poly2polyr.
+by apply (can_inj _ polyr2poly); apply polyr2polyK.
+qed.
+
+
 end KPoly.
 
 export KPoly.
+import PolyR.
 
 op kvec : int = 3. 
 (* axiom kvec_ge3 : 3 <= kvec. *)
@@ -426,23 +552,25 @@ clone import Matrix as KMatrix with
     type ZR.t = poly,
     op ZR.zeror <- KPoly.zero,
     op ZR.oner <- KPoly.one,
-    pred ZR.unit = fun x => x = KPoly.one,
+    pred ZR.unit = fun x => unit (poly2polyr x),
     op ZR.(+) <- KPoly.(&+),
     op ZR.([-]) <- KPoly.(&-),
-    op ZR.( * ) <- KPoly.(&*)
-    proof ZR.addrA by admit (* poly theory? *)
-    proof ZR.addrC by admit (* poly theory? *)
-    proof ZR.add0r by admit (* poly theory? *)
-    proof ZR.addNr by admit (* poly theory? *)
-    proof ZR.oner_neq0 by admit  (* poly theory? *)
-    proof ZR.mulrA by admit  (* poly theory? *)
-    proof ZR.mulrC by admit (* poly theory? *)
-    proof ZR.mul1r by admit (* poly theory? *)
-    proof ZR.mulrDl by admit  (* poly theory? *)
-    proof ZR.mulVr by admit (* poly theory? *)
-    proof ZR.unitP by admit (* poly theory? *)
-    proof ZR.unitout by admit (* poly theory? *)
-    proof ZR.mulf_eq0 by admit. (* poly theory? *)
+    op ZR.( * ) <- KPoly.(&*),
+    op ZR.invr <- KPoly.invr
+    proof ZR.addrA by smt(add_lift  poly2polyrK ComRing.addrA)
+    proof ZR.addrC by smt(add_lift  poly2polyrK ComRing.addrC)
+    proof ZR.add0r by smt(zero_lift add_lift poly2polyrK ComRing.add0r polyr2polyK)
+    proof ZR.addNr by smt(zero_lift sub_lift add_lift poly2polyrK ComRing.addNr polyr2polyK)
+    proof ZR.oner_neq0 by smt(zero_lift  poly2polyrK one_lift ComRing.oner_neq0)
+    proof ZR.mulrA by smt(mul_lift  poly2polyrK ComRing.mulrA)
+    proof ZR.mulrC by smt(mul_lift  poly2polyrK ComRing.mulrC)
+    proof ZR.mul1r by smt(one_lift mul_lift poly2polyrK ComRing.mul1r polyr2polyK)
+    proof ZR.mulrDl by smt(add_lift mul_lift poly2polyrK ComRing.mulrDl polyr2polyK)
+    proof ZR.mulVr by smt(one_lift mul_lift poly2polyrK ComRing.mulVr PolyR.ComRing.unitr1 poly2polyrK)
+    proof ZR.unitP by smt(one_lift mul_lift polyr2poly_inj ComRing.unitP)
+    proof ZR.unitout by smt(unitout polyr2polyK)
+    proof ge0_size by auto.
+    (* to do: ZR.mulf_eq0: forall (x y : t), x &* y = KPoly.zero <=> x = KPoly.zero \/ y = KPoly.zero *)
 
 instance ring with R
   op rzero = KPoly.zero
