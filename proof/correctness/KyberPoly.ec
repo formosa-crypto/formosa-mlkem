@@ -1698,15 +1698,14 @@ do split.
   rewrite inFqD redv4 redv5 !inFqM.
   by ring.
 
-move => *; do split.
-+ rewrite set_neqiE; 1,2: smt().
-  rewrite set_eqiE; 1,2: smt().
-  rewrite to_sintD_small; 1: smt(). 
-  rewrite inFqD redv7 redv8 redv6 -zv1 /zetas !initiE /=; 1,2: smt(). 
-  rewrite !inFqM kval zetavals1; 1,2:  smt(). 
-  congr;congr;rewrite -ZqRing.mulrA -(ZqRing.mulrC _ (inFq 169));congr.
-  rewrite ZqField.mulNr -ZqField.mulrA rrinvFq.
-  by ring.
+rewrite set_neqiE; 1,2: smt().
+rewrite set_eqiE; 1,2: smt().
+rewrite to_sintD_small; 1: smt(). 
+rewrite inFqD redv7 redv8 redv6 -zv1 /zetas !initiE /=; 1,2: smt(). 
+rewrite !inFqM kval zetavals1; 1,2:  smt(). 
+congr;congr;rewrite -ZqRing.mulrA -(ZqRing.mulrC _ (inFq 169));congr.
+rewrite ZqField.mulNr -ZqField.mulrA rrinvFq.
+by ring.
 
 move => *.
 rewrite set_eqiE; 1,2: smt().

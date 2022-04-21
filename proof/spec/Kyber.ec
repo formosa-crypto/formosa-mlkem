@@ -250,7 +250,7 @@ lemma duni_elem_fu : is_full duni_elem by
 (* Representations of polynomials in Zq[X]/(X^256+1) *)
 (*****************************************************)
 
-theory Poly.
+theory KPoly.
 
 (* Fixme: These definitions should come from a polynomial theory? *)
 
@@ -307,7 +307,7 @@ lemma duni_R_ll : is_lossless duni_R
  by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
 
 lemma duni_R_uni : is_uniform duni_R.
-  rewrite /Poly.duni_R => x y xin yin.
+  rewrite /KPoly.duni_R => x y xin yin.
   apply (dmap_uni_in_inj _ _ _) => //; last by
     apply dlist_uni; apply duni_elem_uni.
   move => x0 y0 inx iny; rewrite /of_list tP => H.
@@ -317,7 +317,7 @@ lemma duni_R_uni : is_uniform duni_R.
 qed.
 
 lemma duni_R_fu : is_full duni_R.
-  rewrite /is_full /Poly.duni_R => p.
+  rewrite /is_full /KPoly.duni_R => p.
   rewrite supp_dmap; exists (Array256.to_list p).
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
@@ -413,9 +413,9 @@ op basemul(a b : poly) :  poly = Array256.init (fun i =>
 
 (* END: NTT *)
 
-end Poly.
+end KPoly.
 
-export Poly.
+export KPoly.
 
 op kvec : int = 3. 
 (* axiom kvec_ge3 : 3 <= kvec. *)
@@ -424,12 +424,12 @@ require Matrix.
 clone import Matrix as KMatrix with
     op size <- kvec,
     type ZR.t = poly,
-    op ZR.zeror <- Poly.zero,
-    op ZR.oner <- Poly.one,
-    pred ZR.unit = fun x => x = Poly.one,
-    op ZR.(+) <- Poly.(&+),
-    op ZR.([-]) <- Poly.(&-),
-    op ZR.( * ) <- Poly.(&*)
+    op ZR.zeror <- KPoly.zero,
+    op ZR.oner <- KPoly.one,
+    pred ZR.unit = fun x => x = KPoly.one,
+    op ZR.(+) <- KPoly.(&+),
+    op ZR.([-]) <- KPoly.(&-),
+    op ZR.( * ) <- KPoly.(&*)
     proof ZR.addrA by admit (* poly theory? *)
     proof ZR.addrC by admit (* poly theory? *)
     proof ZR.add0r by admit (* poly theory? *)
@@ -445,11 +445,11 @@ clone import Matrix as KMatrix with
     proof ZR.mulf_eq0 by admit. (* poly theory? *)
 
 instance ring with R
-  op rzero = Poly.zero
-  op rone  = Poly.one
-  op add   = Poly.(&+)
-  op opp   = Poly.(&-)
-  op mul   = Poly.(&*)
+  op rzero = KPoly.zero
+  op rone  = KPoly.one
+  op add   = KPoly.(&+)
+  op opp   = KPoly.(&-)
+  op mul   = KPoly.(&*)
   op expr  = ZR.exp
   op ofint = ZR.ofint
 

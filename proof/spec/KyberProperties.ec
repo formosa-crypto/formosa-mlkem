@@ -142,12 +142,12 @@ clone import MLWE_PKE as MLWEPKE with
   type MLWE_.Matrix_.Matrix.matrix <- matrix,
   type MLWE_.Matrix_.vector <- vector,
   type MLWE_.Matrix_.ZR.t <- poly,
-  pred MLWE_.Matrix_.ZR.unit <- fun x => x = Poly.one,
-  op MLWE_.Matrix_.ZR.(+) <- Poly.(&+),
-  op MLWE_.Matrix_.ZR.([-]) <- Poly.(&-),
-  op MLWE_.Matrix_.ZR.zeror <- Poly.zero,
-  op MLWE_.Matrix_.ZR.oner <- Poly.one,
-  op MLWE_.Matrix_.ZR.( * ) <- Poly.(&*),
+  pred MLWE_.Matrix_.ZR.unit <- fun x => x = KPoly.one,
+  op MLWE_.Matrix_.ZR.(+) <- KPoly.(&+),
+  op MLWE_.Matrix_.ZR.([-]) <- KPoly.(&-),
+  op MLWE_.Matrix_.ZR.zeror <- KPoly.zero,
+  op MLWE_.Matrix_.ZR.oner <- KPoly.one,
+  op MLWE_.Matrix_.ZR.( * ) <- KPoly.(&*),
   op MLWE_.Matrix_.ZR.invr <- KMatrix.ZR.invr,
   op MLWE_.Matrix_.size <- kvec,
   op MLWE_.Matrix_.Vector.(+) <- KMatrix.Vector.(+),
@@ -234,7 +234,7 @@ rewrite /(+) /mapv /=.
 apply eq_vectorP => /> i il ih; rewrite !offunvE 1,2:/# /=.
 rewrite Vector.offunvE 1:/# /= /compress_poly_err /=.
 apply Array256.tP => k kb.
-rewrite /compress_polyvec /= /fromarray256 /= /Poly.(&+) /=.
+rewrite /compress_polyvec /= /fromarray256 /= /KPoly.(&+) /=.
 rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
 rewrite decompress_errE //; 1: smt(qE).
 by rewrite mapiE /#.
@@ -264,7 +264,7 @@ rewrite !allP.
 move => Hn Hnp i ib.
 move : (Hn i ib). 
 move : (Hnp i ib) => /=. 
-rewrite /as_sint /Poly.(&+) /= map2E !initiE //= Zq.addE qE /=  !StdOrder.IntOrder.ltr_norml /= => Hni Hnpi.
+rewrite /as_sint /KPoly.(&+) /= map2E !initiE //= Zq.addE qE /=  !StdOrder.IntOrder.ltr_norml /= => Hni Hnpi.
 by smt().
 qed.
 
@@ -517,7 +517,7 @@ swap {1} 4 -2.
 inline {2} 7.
 swap {2} [7..9] -4. 
 swap {2} 11 -5. 
-wp; conseq => />; 1: smt().
+wp; conseq => />.
 
 admit. (* Hugo: follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
                 and product of distributions, plus ntt properties *)
@@ -561,6 +561,7 @@ call (kg_sampler_kg O XOF).
 by call(_: true); auto => />. 
 qed.
 
+end section.
 end SpecProperties.
 
 theory SpecPropertiesLWE.

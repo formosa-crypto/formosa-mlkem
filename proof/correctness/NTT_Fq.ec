@@ -271,11 +271,11 @@ lemma mul_comm_invntt : forall (pa pb : poly),
   invntt (basemul pa  pb) = (invntt pa) &* (invntt pb)
     by smt(invnttK nttK mul_comm_ntt).
 
-lemma nttZero : ntt Poly.zero = Poly.zero.
+lemma nttZero : ntt KPoly.zero = KPoly.zero.
 admitted. (* ntt maps zero to zero *)
 
 
-lemma invnttzero : invntt Poly.zero = Poly.zero by 
+lemma invnttzero : invntt KPoly.zero = KPoly.zero by 
    smt(invnttK nttZero).
 
 

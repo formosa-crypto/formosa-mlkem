@@ -1132,7 +1132,7 @@ rewrite /(&+) map2E //=  !initiE => />.
 rewrite map2E //=  !initiE => />.
 rewrite map2E //=  !initiE => />.
 rewrite nttZero.
-rewrite /Poly.zero createE !initiE => />.
+rewrite /KPoly.zero createE !initiE => />.
 rewrite /basemul.
 by ring.
 qed.
