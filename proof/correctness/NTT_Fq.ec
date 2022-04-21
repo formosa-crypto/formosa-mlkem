@@ -488,9 +488,6 @@ lemma invntt_spec _r:
      arg=(_r,zetas_inv) ==> res = ntt _r ] = 1%r
   by conseq invntt_spec_ll (invntt_spec_h _r); done.
 
-(* ALL THIS WILL BE REPLACED WITH POLY THEORY *)
-
-
 (* These theorems should come from the algebraic infrastructure, along with
 another one that says our axiomatization of mul and add in Kyber are 
 explicit formulae for the ring operations. *)
@@ -548,8 +545,12 @@ proof.
   case: (z = Zq.one) => [->>|neqz1].
   + rewrite (BigDom.BAdd.eq_big_int _ _ _ (fun _ => Zq.one)).
     - by move => ? _ /=; rewrite ZqRing.expr1z.
-    rewrite BigDom.BAdd.sumr_1 // count_predT size_range ler_maxr ?subr_ge0 //.
-    admit.
+    rewrite BigDom.BAdd.sumr_1 // count_predT size_range ler_maxr ?subr_ge0 //. 
+    rewrite /ofint. 
+    have : 0 <= b - a by smt().
+    elim /natind (b-a).
+    + by move => n;case (n = 0); smt(@Zq).
+    by move => n *; rewrite inFqD ZqRing.mulrS; smt(). 
   move: (neqz1); rewrite -ZqRing.subr_eq0 => unitsub; apply/(ZqRing.mulrI (z - Zq.one)) => //.
   + by apply/unitE.
   rewrite ZqRing.mulrA ZqRing.divrr; [by apply/unitE|rewrite ZqRing.mul1r].
@@ -1247,9 +1248,9 @@ lemma mul_comm_invntt : forall (pa pb : poly),
   invntt (basemul pa  pb) = (invntt pa) &* (invntt pb)
     by smt(invnttK nttK mul_comm_ntt).
 
-lemma nttZero : ntt Poly.zero = Poly.zero.
+lemma nttZero : ntt KPoly.zero = KPoly.zero.
 proof.
-  rewrite /ntt /Poly.zero; apply/Array256.tP => i /mem_range mem_i_range.
+  rewrite /ntt /KPoly.zero; apply/Array256.tP => i /mem_range mem_i_range.
   rewrite Array256.createiE; [by apply/mem_range|].
   rewrite Array256.initiE /=; [by apply/mem_range|].
   rewrite (BigDom.BAdd.eq_big_int _ _ _ (fun _ => Zq.zero)).
@@ -1264,7 +1265,7 @@ proof.
   by rewrite BigDom.BAdd.big1_eq; case: (i %% 2 = 0).
 qed.
 
-lemma invnttzero : invntt Poly.zero = Poly.zero by 
+lemma invnttzero : invntt KPoly.zero = KPoly.zero by 
    smt(invnttK nttZero).
 
 

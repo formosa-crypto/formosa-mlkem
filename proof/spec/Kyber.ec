@@ -261,9 +261,7 @@ op one : poly = zero.[0<-Zq.one].
 
 (* Ring multiplication: schoolbook multiplication in this
    ring is essentially generating a square matrix of coefficient
-   multiplications and summing over the columns. 
-   Fix me: should we just pass the ntt base mul when we
-   instantiate MLWE? *)
+   multiplications and summing over the columns. *)
 op (&*) (pa pb : poly) : poly =
   Array256.init (fun (i : int) => foldr (fun (k : int) (ci : Fq) =>
      if (0 <= i - k) 
@@ -350,6 +348,7 @@ require (****) Bigalg.
       op  CR.([-]) <- Zq.([-]),
       op  CR.( * ) <- Zq.( * ),
       op  CR.invr  <- Zq.inv,
+      op  CR.ofint <- ZqRing.ofint,
     pred  CR.unit  <- Zq.unit
     proof CR.*.
 
@@ -371,20 +370,15 @@ op zroot = inFq 17.
 op br = BitEncoding.BitReverse.bsrev 7.
 
 op ntt(p : poly) = Array256.init (fun i => 
-   if i %% 2  = 0 
-   then let ii = i %/ 2  in 
-        BAdd.bigi predT (fun j => p.[2*j]   * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128
-   else let ii = i %/ 2 in 
-        BAdd.bigi predT (fun j => p.[2*j+1] * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128) 
-           axiomatized by nttE.
+   if i %% 2  = 0
+   then let ii = i %/ 2 in BAdd.bigi predT (fun j => p.[2*j]   * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128
+   else let ii = i %/ 2 in BAdd.bigi predT (fun j => p.[2*j+1] * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128) axiomatized by nttE.
+
 
 op invntt(p : poly) = Array256.init (fun i => 
    if i %% 2  = 0 
-   then let ii = i %/ 2  in 
-        BAdd.bigi predT (fun j => (inv (inFq 128)) * p.[2*j] * ZqRing.exp zroot (-((2 * br ii + 1) * j))) 0 128
-   else let ii = i %/ 2 in 
-        BAdd.bigi predT (fun j => (inv (inFq 128)) * p.[2*j+1] * ZqRing.exp zroot (-((2 * br ii + 1) * j))) 0 128) 
-          axiomatized by invnttE.
+   then let ii = i %/ 2 in BAdd.bigi predT (fun j => inv (inFq 128) * p.[2*j]   * ZqRing.exp zroot (-((2 * br j + 1) * ii))) 0 128
+   else let ii = i %/ 2 in BAdd.bigi predT (fun j => inv (inFq 128) * p.[2*j+1] * ZqRing.exp zroot (-((2 * br j + 1) * ii))) 0 128) axiomatized by invnttE.
 
 (* This is multiplication of two degree-1 polynomials in Fq
     modulo X^2 - zroot.
