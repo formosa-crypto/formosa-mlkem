@@ -48,10 +48,7 @@ op valid_ptr(p : int, o : int) = 0 <= o => 0 <= p /\ p + o < W64.modulus.
 
 require import Jindcpa.
 
-(* These are powers of roots of unit in Mont form and
-   bitwise permuted indices  zetas inv above needs to be
-   defined, this axiom discharged, and then used to
-   discharge other axioms below. *)
+(* jzetas values are correct *)
 
 op array_mont (p : Fq Array128.t) =
   Array128.map (fun x => x *  (inFq Fq.SignedReductions.R)) p.
@@ -62,11 +59,21 @@ op array_mont_inv (p : Fq Array128.t) =
 
 lemma zetas_invE : array_mont_inv NTT_Fq.zetas_inv = 
      Array128.map (fun x => inFq (W16.to_sint x)) jzetas_inv.
-admitted. (* need to compute the constant jzetas_inv values. checked in Sage *)
+have := NTT_Fq.zetas_inv_vals.
+rewrite /array128_mont_inv  /array_mont_inv /= => ->.
+rewrite !of_sintK /smod /= /of_list.
+rewrite tP /= => i ib.
+by rewrite !Array128.initiE /= /#.
+qed.
 
 lemma zetasE : array_mont NTT_Fq.zetas = 
      Array128.map (fun x => inFq (W16.to_sint x)) jzetas.
-admitted. (* need to compute the constant jzetas values. checked in Sage *)
+have := NTT_Fq.zetas_vals.
+rewrite /array128_mont  /array_mont /= => ->.
+rewrite !of_sintK /smod /= /of_list.
+rewrite tP /= => i ib.
+by rewrite !Array128.initiE /= /#.
+qed.
 
 lemma getsignNeg x : x \slt W16.zero => x `|>>` W8.of_int 15 = W16.onew.
 proof.
@@ -1191,7 +1198,7 @@ equiv invntt_correct_aux :
         r{1} = lift_array256 rp{2} /\ zetas_inv{1} = zetas_inv /\
            signed_bound_cxq rp{2} 0 256 2
           ==> 
-            map (fun x => x * (inFq R)) res{1} = lift_array256 res{2} /\
+            map (fun x => x * (inFq SignedReductions.R)) res{1} = lift_array256 res{2} /\
             forall k, 0<=k<256 => b16 res{2}.[k] (q+1).
 proc.
 (* Final loop just reduces the range *)
@@ -1201,11 +1208,11 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
 ); last first.
 + while (j{1} = to_uint j{2} /\
        0 <= j{1} <= 256 /\
-       (forall k, (0 <= k < j{1} => r{1}.[k] * inFq R = inFq (to_sint rp{2}.[k])) /\
+       (forall k, (0 <= k < j{1} => r{1}.[k] * inFq SignedReductions.R = inFq (to_sint rp{2}.[k])) /\
                   (j{1} <= k < 256 => r{1}.[k] = inFq (to_sint rp{2}.[k]))
 
        ) /\
-       zetas_inv.[127]{1} * inFq R  = inFq (to_sint jzetas_inv.[127]) * inFq 169 /\
+       zetas_inv.[127]{1} * inFq SignedReductions.R  = inFq (to_sint jzetas_inv.[127]) * inFq 169 /\
        zeta_0{2} = jzetas_inv.[127] /\
        signed_bound_cxq rp{2} 0 256 4 /\
        (forall k, 0 <= k < j{1} => b16 rp{2}.[k] (q + 1))); last first. 
@@ -1386,7 +1393,7 @@ lemma invntt_correct _r  :
    phoare[ M._poly_invntt :
         _r = lift_array256 rp /\ signed_bound_cxq rp 0 256 2
           ==> 
-            scale (invntt _r) (inFq R) = lift_array256 res /\
+            scale (invntt _r) (inFq SignedReductions.R) = lift_array256 res /\
             forall k, 0<=k<256 => b16 res.[k] (q+1)] = 1%r.
 proof.
 bypr;move => &m [#] H H1.
@@ -1394,7 +1401,7 @@ apply (eq_trans _ (Pr[NTT.invntt( _r,zetas_inv) @ &m :  invntt _r = res])).
 + have -> : (
 Pr[NTT.invntt(_r, zetas_inv) @ &m : invntt _r = res] = 
 Pr[M._poly_invntt(rp{m}) @ &m :
-  invntt (map (fun x => x * (inFq R)) _r) = lift_array256 res /\ 
+  invntt (map (fun x => x * (inFq SignedReductions.R)) _r) = lift_array256 res /\ 
    forall (k : int), 0 <= k < 256 => b16 res.[k] (q+1)]); last by rewrite invntt_scale.
 byequiv invntt_correct_aux; 1: by smt(). 
 + move => &1 &2;rewrite invntt_scale /scale /= /lift_array256 /= !tP/=.  
@@ -1403,7 +1410,7 @@ byequiv invntt_correct_aux; 1: by smt().
     by move => i ib; move : (H2 i ib) => <- /=; rewrite mapiE // (H4 i ib) mapiE //.
   move =>  [#] H4 H5.
   move => i ib; move : (H4 i ib) => /=; rewrite mapiE //= -(H2 i ib) mapiE //=. 
-  have : inFq R <> Zq.zero; rewrite /R /=; move : (eq_inFq 65536 0); 1: smt().
+  have : inFq SignedReductions.R <> Zq.zero; rewrite /R /=; move : (eq_inFq 65536 0); 1: smt().
   move => ? H0;move : (ZqField.mulfI (inFq 65536) H0) => minj. 
   by rewrite !(ZqField.mulrC _ (inFq 65536)) /#. 
 by byphoare (invntt_spec _r) => /#. 
@@ -1413,7 +1420,7 @@ lemma invntt_correct_h (_r : Fq Array256.t):
       hoare[  M._poly_invntt :
              _r = lift_array256 arg /\
              signed_bound_cxq arg 0 256 2 ==>
-             scale (invntt _r) (inFq R) = lift_array256 res /\
+             scale (invntt _r) (inFq SignedReductions.R) = lift_array256 res /\
              forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
 by conseq (invntt_correct _r). 
 
@@ -1514,13 +1521,14 @@ case (i %% 4 = 0).
   have -> : 4 * (i %/ 4) = i by smt().
   have ->/= : 2 * (i %/ 2) = i by smt().
   rewrite /cmplx_mul_169 /cmplx_mul /= => [#] -> ? three four.
-  rewrite (zetavals1 i _ case1); 1: smt(). 
-  by ring.
+  move : (zetavals1 i _ case1); 1: smt(). 
+  rewrite /zetas /= initiE 1:/# /= => ->.
+  admit . (* field vs ring exp by ring. *)
 
 case (i %% 4 = 1).
 + move => case2 ncase1; have subcase /= : i %% 2 = 1; 1: by smt().
   rewrite subcase; move : HH.
-  have -> : 2 * ((i - 1) %/ 2) = 4 * (i %/ 4) by smt().
+  have -> : 2 * (i %/ 2) = 4 * (i %/ 4) by smt().
   have -> : 4 * (i %/ 4) + 1 = i by smt().
   rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ? -> ??.
   by ring.
@@ -1532,15 +1540,16 @@ case (i %% 4 = 2).
   have -> : 4 * (i %/ 4) + 3= i+1 by smt().
   have -> : 2*(i%/2) = i by smt().
   rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ??->?.
-  rewrite (zetavals2 i _ case3); 1: smt(). 
-  by ring.
+  move : (zetavals2 i _ case3); 1: smt(). 
+  rewrite /zetas /= initiE 1:/# /= => ->.
+  admit . (* field vs ring exp by ring. *)
 
 case (i %% 4 = 3).
 + move => case4 ncase3 ncase2 ncase1; have subcase /= : i %% 2 = 1; 1: by smt().
   rewrite subcase; move : HH.
-  have -> : 2 * ((i - 1) %/ 2) + 1 = 4 * (i %/ 4) + 3 by smt().
+  have -> : 2 * (i %/ 2) + 1 = 4 * (i %/ 4) + 3 by smt().
   have -> : 4 * (i %/ 4) + 3 = i by smt().
-  have -> : 2*((i-1)%/2) = 4 * (i %/ 4) + 2 by smt().
+  have -> : 2*(i%/2) = 4 * (i %/ 4) + 2 by smt().
   rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ???->.
   by ring.
 by smt().
@@ -1687,7 +1696,9 @@ do split.
   rewrite set_eqiE; 1,2: smt().
   rewrite to_sintD_small; 1: smt(). 
   rewrite inFqD redv2 redv3 !inFqM redv1 !inFqM -zv1 /zetas !initiE /=; 1,2: smt(). 
-  rewrite kval zetavals1; 1,2: smt().
+  rewrite kval.
+  move : (zetavals1 (to_uint i{hr}) _ _); 1,2: smt().
+  rewrite /zetas /= initiE 1:/# /= => ->.
   rewrite ZqField.mulrA -ZqField.mulrA rrinvFq.
   by ring.
 + move => *.
@@ -1702,7 +1713,9 @@ rewrite set_neqiE; 1,2: smt().
 rewrite set_eqiE; 1,2: smt().
 rewrite to_sintD_small; 1: smt(). 
 rewrite inFqD redv7 redv8 redv6 -zv1 /zetas !initiE /=; 1,2: smt(). 
-rewrite !inFqM kval zetavals1; 1,2:  smt(). 
+rewrite !inFqM kval.
+move : (zetavals1 (to_uint i{hr}) _ _); 1,2: smt().
+rewrite /zetas /= initiE 1:/# /= => ->.
 congr;congr;rewrite -ZqRing.mulrA -(ZqRing.mulrC _ (inFq 169));congr.
 rewrite ZqField.mulNr -ZqField.mulrA rrinvFq.
 by ring.

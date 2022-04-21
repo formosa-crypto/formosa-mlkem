@@ -307,7 +307,7 @@ qed.
    bitwise permuted indices  zetas inv above needs to be
    defined, this axiom discharged, and then used to
    discharge other axioms below. *)
-lemma zetas_invE : array128_mont_inv zetas_inv =
+lemma zetas_inv_vals : array128_mont_inv zetas_inv =
     Array128.of_list witness
        [ inFq 1701; inFq 1807; inFq 1460; 
          inFq 2371; inFq 2338; inFq 2333; 
@@ -385,7 +385,7 @@ op zetas : Fq Array128.t =
    bitwise permuted indices  zetas inv above needs to be
    defined, this axiom discharged, and then used to
    discharge other axioms below. *)
-lemma zetasE : array128_mont zetas =
+lemma zetas_vals : array128_mont zetas =
     Array128.of_list witness
        [inFq 2285; inFq 2571; inFq 2970; 
          inFq 1812; inFq 1493; inFq 1422; 
@@ -477,7 +477,7 @@ lemma ntt_spec_h _r : hoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ].
 admitted. (* ntt imperative computes ntt functional *)
 
 lemma invntt_spec_h _r :
-   hoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = ntt _r ].
+   hoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = invntt _r ].
 admitted.
 
 lemma ntt_spec _r : phoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ] = 1%r
@@ -485,7 +485,7 @@ lemma ntt_spec _r : phoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ] = 1%r
 
 lemma invntt_spec _r:
    phoare[ NTT.invntt :
-     arg=(_r,zetas_inv) ==> res = ntt _r ] = 1%r
+     arg=(_r,zetas_inv) ==> res = invntt _r ] = 1%r
   by conseq invntt_spec_ll (invntt_spec_h _r); done.
 
 (* These theorems should come from the algebraic infrastructure, along with
