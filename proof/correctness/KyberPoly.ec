@@ -2,7 +2,9 @@ require import AllCore List IntDiv CoreMap IntDiv Real Number Ring StdOrder.
 
 from Jasmin require  import JModel JMemory.
 require import IntDiv_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
-require import Fq NTT_Fq Kyber.
+require import Fq NTTAlgebra Kyber.
+
+import NTT_Fq.
 
 hint simplify range_ltn, range_geq.
 
@@ -1523,7 +1525,8 @@ case (i %% 4 = 0).
   rewrite /cmplx_mul_169 /cmplx_mul /= => [#] -> ? three four.
   move : (zetavals1 i _ case1); 1: smt(). 
   rewrite /zetas /= initiE 1:/# /= => ->.
-  admit . (* field vs ring exp by ring. *)
+  have -> : ZqField.exp = ZqRing.exp by smt().
+  by ring.
 
 case (i %% 4 = 1).
 + move => case2 ncase1; have subcase /= : i %% 2 = 1; 1: by smt().
@@ -1542,7 +1545,8 @@ case (i %% 4 = 2).
   rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ??->?.
   move : (zetavals2 i _ case3); 1: smt(). 
   rewrite /zetas /= initiE 1:/# /= => ->.
-  admit . (* field vs ring exp by ring. *)
+  have -> : ZqField.exp = ZqRing.exp by smt().
+  by ring.
 
 case (i %% 4 = 3).
 + move => case4 ncase3 ncase2 ncase1; have subcase /= : i %% 2 = 1; 1: by smt().

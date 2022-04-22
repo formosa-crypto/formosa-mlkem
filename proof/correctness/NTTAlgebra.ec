@@ -4173,18 +4173,6 @@ theory NTTequiv.
       ntt_spec res p.
   proof. by conseq inline_ntt (opt_ntt_spec p) => /#. qed.
 
-  hoare ntt_spec_h_proved _r :
-    NTT_Fq.NTT.ntt :
-      arg = (_r, NTT_Fq.zetas) ==>
-      res = ntt _r.
-  proof.
-    proc*.
-    seq 1 : (ntt_spec r0 _r).
-    + call (ntt_spec _r). (*TODO: what just happenned?*)
-      admit.
-    by skip => &m; apply imp_ntt_spec.
-  qed.
-
   hoare bsrev_invntt_spec (p : Fq Array256.t) :
     NTT_bsrev.invntt :
       NTT_vars.r = p ==>
@@ -4203,16 +4191,34 @@ theory NTTequiv.
       invntt_spec res p.
   proof. by conseq inline_invntt (opt_invntt_spec p) => /#. qed.
 
-  hoare invntt_spec_h_proved _r :
+end NTTequiv.
+
+  (* THESE RESULTS ARE TOP LEVEL FOR THE CORRECTNESS PROOF *)
+
+  hoare ntt_spec_h _r :
+    NTT_Fq.NTT.ntt :
+      arg = (_r, NTT_Fq.zetas) ==>
+      res = ntt _r.
+  proof.
+    conseq (_: arg = (_r, NTT_Fq.zetas) ==> NTTequiv.ntt_spec res _r).
+    + by move => &hr ??; apply NTTequiv.imp_ntt_spec.
+    by proc*; call (NTTequiv.ntt_spec _r).
+  qed.
+
+  hoare invntt_spec_h _r :
     NTT_Fq.NTT.invntt :
       arg = (_r, NTT_Fq.zetas_inv) ==>
       res = invntt _r.
   proof.
-    proc*.
-    seq 1 : (invntt_spec r0 _r).
-    + call (invntt_spec _r). (*TODO: what just happenned?*)
-      admit.
-    by skip => &m; apply imp_invntt_spec.
+    conseq (_: arg = (_r, NTT_Fq.zetas_inv) ==> NTTequiv.invntt_spec res _r).
+    + by move => &hr ??; apply NTTequiv.imp_invntt_spec.
+    by proc*; call (NTTequiv.invntt_spec _r).
   qed.
 
-end NTTequiv.
+lemma ntt_spec _r : phoare[ NTT_Fq.NTT.ntt : arg = (_r,NTT_Fq.zetas) ==> res = ntt _r ] = 1%r
+  by conseq NTT_Fq.ntt_spec_ll (ntt_spec_h _r); done.
+
+lemma invntt_spec _r:
+   phoare[NTT_Fq.NTT.invntt :
+     arg=(_r,NTT_Fq.zetas_inv) ==> res = invntt _r ] = 1%r
+  by conseq NTT_Fq.invntt_spec_ll (invntt_spec_h _r); done.

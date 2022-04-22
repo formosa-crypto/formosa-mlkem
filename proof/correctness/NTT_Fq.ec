@@ -472,22 +472,6 @@ proof.
   by rewrite exp_zroot_128 inFqN ZqField.mulNr ZqField.opprK ZqField.mul1r (mulrC _ 2).
 qed.
 
-(* TO DO: These need to be proved using the results in NTT_Algebra *)
-lemma ntt_spec_h _r : hoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ].
-admitted. (* ntt imperative computes ntt functional *)
-
-lemma invntt_spec_h _r :
-   hoare[ NTT.invntt : arg=(_r,zetas_inv) ==> res = invntt _r ].
-admitted.
-
-lemma ntt_spec _r : phoare[ NTT.ntt : arg = (_r,zetas) ==> res = ntt _r ] = 1%r
-  by conseq ntt_spec_ll (ntt_spec_h _r); done.
-
-lemma invntt_spec _r:
-   phoare[ NTT.invntt :
-     arg=(_r,zetas_inv) ==> res = invntt _r ] = 1%r
-  by conseq invntt_spec_ll (invntt_spec_h _r); done.
-
 (* These theorems should come from the algebraic infrastructure, along with
 another one that says our axiomatization of mul and add in Kyber are 
 explicit formulae for the ring operations. *)
