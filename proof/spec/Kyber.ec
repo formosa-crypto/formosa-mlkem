@@ -53,7 +53,11 @@ lemma round_tie (x : real) :
      by rewrite /round; smt(@Real).
 
 lemma round_add (x : real) (y : int) :
-    round (y%r + x) = y + round x by rewrite /round; smt(floor_shift @Real).
+    round (y%r + x) = y + round x.
+proof.
+rewrite /round -StdBigop.Bigreal.Num.Domain.addrA StdBigop.Bigreal.Num.Domain.addrC.
+by rewrite floor_shift; ring.
+qed.
 
 (****************************************************)
 (*               The finite field Zq/Fq             *)
