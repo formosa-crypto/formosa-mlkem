@@ -854,29 +854,19 @@ module CorrectnessBound = {
   }
 }.
 
+lemma correctness_bound &m epsilon_hack fail_prob :
+  (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
-(* FIXME *)
-op epsilon_hack : real.
-
-axiom correctness_hack &m :
   `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack 
-.
-
+     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack =>
 (* The following failure probability can be bounded as
 in the Python script for Kyber *)   
-op fail_prob : real.
-
-axiom fail_prob &m : 
-  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob.
-
-lemma correctness_bound &m :
-  (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
+  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(LRO)),A,LRO).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack
-by move => A_ll;move: (fail_prob &m) (correctness_hack &m) (correctness_approx &m A_ll) => /#.
+by move => A_ll fail_probability correctness_hack;move:  (correctness_approx &m A_ll) => /#.
 
 end section.
 

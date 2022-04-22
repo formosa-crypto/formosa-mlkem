@@ -131,10 +131,6 @@ op under_noise_bound (p : poly) (b : int) =
      all (fun cc => `| as_sint cc| < b) p.
 
 op cv_bound : int = 104. (* this is the compress error bound for d = 4 *)
-op fail_prob : real. (* Need to compute exact value or replace
-                        with suitable bound *)
-
-op epsilon_hack : real. (* Assumed simplification loss *)
 
 clone import MLWE_PKE as MLWEPKE with 
   theory MLWE_PKE_GENERAL.MLWE_SMP.RO_SMP <- RO,
@@ -179,9 +175,7 @@ clone import MLWE_PKE as MLWEPKE with
   op MLWE_PKE_RO.Correctness.rnd_err_u <- rnd_err_u,
   op MLWE_PKE_RO.Correctness.under_noise_bound <- under_noise_bound,
   op MLWE_PKE_RO.Correctness.max_noise <- max_noise,
-  op MLWE_PKE_RO.Correctness.cv_bound <- cv_bound,
-  op MLWE_PKE_RO.Correctness.fail_prob <- fail_prob,
-  op MLWE_PKE_RO.Correctness.epsilon_hack <- epsilon_hack 
+  op MLWE_PKE_RO.Correctness.cv_bound <- cv_bound
   proof MLWE_.dseed_ll by (apply srand_ll)
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
@@ -212,9 +206,7 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_PKE_RO.Correctness.encode_noise
   proof MLWE_PKE_RO.Correctness.good_decode
   proof MLWE_PKE_RO.Correctness.cv_bound_valid
-  proof MLWE_PKE_RO.Correctness.noise_commutes
-  proof MLWE_PKE_RO.Correctness.correctness_hack
-  proof MLWE_PKE_RO.Correctness.fail_prob.
+  proof MLWE_PKE_RO.Correctness.noise_commutes.
 
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
@@ -267,18 +259,6 @@ move : (Hnp i ib) => /=.
 rewrite /as_sint /KPoly.(&+) /= map2E !initiE //= Zq.addE qE /=  !StdOrder.IntOrder.ltr_norml /= => Hni Hnpi.
 by smt().
 qed.
-
-realize MLWE_PKE_RO.Correctness.correctness_hack.
-admitted. (* assumption: no one knows what this bound is *)
-
-
-realize MLWE_PKE_RO.Correctness.fail_prob.
-move => &m;byphoare.
-proc.
-auto => />.
-rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
-rewrite /good_noise /cv_bound /noise_val.
-admitted. (* Probability of failure event in distribution: compute in EC? *)
 
 (* We now specify the various components used by Kyber spec so that 
    we can relate it to the abstract construction. The differences
@@ -603,14 +583,18 @@ have -> :
    () @ &m : res]; last by ring.
 admitted. (* Hugo: should be straightforward equivalence proof *)
 
-lemma correctness_bound (A <: MLWE_PKE_RO.PKEG.PKE_.CAdversaryRO{ -Lazy.LRO}) &m:
+lemma correctness_bound (A <: MLWE_PKE_RO.PKEG.PKE_.CAdversaryRO{ -Lazy.LRO}) &m fail_prob epsilon_hack:
     (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
+`|Pr[MLWE_PKE_RO.Correctness.CorrectnessNoiseApprox.main() @ &m : res] -
+   Pr[MLWE_PKE_RO.Correctness.CorrectnessBound.main() @ &m : res]| <=
+ fail_prob =>
+ Pr[MLWE_PKE_RO.Correctness.CorrectnessBound.main() @ &m : res] <= epsilon_hack =>
     1%r - fail_prob - epsilon_hack <=
     Pr[SpecProperties.KyberSpec.KyberPKE.CGameROM(SpecProperties.KyberSpec.KyberPKE.CorrectnessAdv, KyberS(G,SMP_vs_ROM.S,KPRF), A, Lazy.LRO).main
        () @ &m : res].
 proof.
-move => H.
-move : (MLWEPKE.MLWE_PKE_RO.Correctness.correctness_bound A &m H).
+move => H H0 H1.
+move : (MLWEPKE.MLWE_PKE_RO.Correctness.correctness_bound A &m fail_prob epsilon_hack H H0 H1).
 have -> : 
    Pr[MLWE_PKE_RO.PKEG.PKE_.CGameROM(MLWE_PKE_RO.PKEG.PKE_.CorrectnessAdv, MLWE_PKE_RO.PKEG.MLWE_PKE(SMP_vs_ROM.S(Lazy.LRO)), A, Lazy.LRO).main
    () @ &m : res] = 
