@@ -4,6 +4,7 @@ from Jasmin require import JModel JArray JWord_array.
 
 require import Array2p Array4p Array8p Array16p Array32p WArray128p WArray160p.
 
+type t2u16 = W16.t Array2.t.
 type t8u32 = W32.t Array8.t.
 type t4u32 = W32.t Array4.t.
 type t16u16 = W16.t Array16.t.
@@ -87,17 +88,18 @@ module Ops = {
     return r;
   }
 
- proc iVPBROADCAST_8u32(v : W32.t) : t8u32 = {
-    var r : t8u32;
+  proc iVPBROADCAST_8u32_16u16(v: t2u16): t16u16 = {
+    var r : t16u16;
 
-    r.[0] <- v;
-    r.[1] <- v;
-    r.[2] <- v;
-    r.[3] <- v;
-    r.[4] <- v;
-    r.[5] <- v;
-    r.[6] <- v;
-    r.[7] <- v;
+    r <- Array16.init (fun i => v.[i %% 2]);
+
+    return r;
+  }
+
+  proc iVPBROADCAST_8u32(v : W32.t) : t8u32 = {
+     var r : t8u32;
+
+    r <- Array8.init (fun i => v);
 
     return r;
   }
@@ -149,22 +151,8 @@ module Ops = {
 
   proc iVPMULL_16u16(x y: t16u16) : t16u16 = {
     var r : t16u16;
-    r.[0] <- x.[0] * y.[0];
-    r.[1] <- x.[1] * y.[1];
-    r.[2] <- x.[2] * y.[2];
-    r.[3] <- x.[3] * y.[3];
-    r.[4] <- x.[4] * y.[4];
-    r.[5] <- x.[5] * y.[5];
-    r.[6] <- x.[6] * y.[6];
-    r.[7] <- x.[7] * y.[7];
-    r.[8] <- x.[8] * y.[8];
-    r.[9] <- x.[9] * y.[9];
-    r.[10] <- x.[10] * y.[10];
-    r.[11] <- x.[11] * y.[11];
-    r.[12] <- x.[12] * y.[12];
-    r.[13] <- x.[13] * y.[13];
-    r.[14] <- x.[14] * y.[14];
-    r.[15] <- x.[15] * y.[15];
+
+    r <- Array16.init (fun i => x.[i] * y.[i]);
 
     return r;
   }
@@ -181,22 +169,7 @@ module Ops = {
   proc iVPMULHRS_256 (x y: t16u16) : t16u16 = {
     var r : t16u16;
 
-    r.[0] <- round_scalew ((W16.to_sint x.[0]) * (W16.to_sint y.[0]));
-    r.[1] <- round_scalew ((W16.to_sint x.[1]) * (W16.to_sint y.[1]));
-    r.[2] <- round_scalew ((W16.to_sint x.[2]) * (W16.to_sint y.[2]));
-    r.[3] <- round_scalew ((W16.to_sint x.[3]) * (W16.to_sint y.[3]));
-    r.[4] <- round_scalew ((W16.to_sint x.[4]) * (W16.to_sint y.[4]));
-    r.[5] <- round_scalew ((W16.to_sint x.[5]) * (W16.to_sint y.[5]));
-    r.[6] <- round_scalew ((W16.to_sint x.[6]) * (W16.to_sint y.[6]));
-    r.[7] <- round_scalew ((W16.to_sint x.[7]) * (W16.to_sint y.[7]));
-    r.[8] <- round_scalew ((W16.to_sint x.[8]) * (W16.to_sint y.[8]));
-    r.[9] <- round_scalew ((W16.to_sint x.[9]) * (W16.to_sint y.[9]));
-    r.[10] <- round_scalew ((W16.to_sint x.[10]) * (W16.to_sint y.[10]));
-    r.[11] <- round_scalew ((W16.to_sint x.[11]) * (W16.to_sint y.[11]));
-    r.[12] <- round_scalew ((W16.to_sint x.[12]) * (W16.to_sint y.[12]));
-    r.[13] <- round_scalew ((W16.to_sint x.[13]) * (W16.to_sint y.[13]));
-    r.[14] <- round_scalew ((W16.to_sint x.[14]) * (W16.to_sint y.[14]));
-    r.[15] <- round_scalew ((W16.to_sint x.[15]) * (W16.to_sint y.[15]));
+    r <- Array16.init (fun i => round_scalew ((W16.to_sint x.[i]) * (W16.to_sint y.[i])));
 
     return r;
   }
@@ -291,22 +264,15 @@ module Ops = {
   proc iload16u16 (mem: global_mem_t, p: W64.t) : t16u16 = {
     var r : t16u16;
 
-    r.[0] <- loadW16 mem (to_uint p);
-    r.[1] <- loadW16 mem (to_uint (p + W64.of_int 2));
-    r.[2] <- loadW16 mem (to_uint (p + W64.of_int 4));
-    r.[3] <- loadW16 mem (to_uint (p + W64.of_int 6));
-    r.[4] <- loadW16 mem (to_uint (p + W64.of_int 8));
-    r.[5] <- loadW16 mem (to_uint (p + W64.of_int 10));
-    r.[6] <- loadW16 mem (to_uint (p + W64.of_int 12));
-    r.[7] <- loadW16 mem (to_uint (p + W64.of_int 14));
-    r.[8] <- loadW16 mem (to_uint (p + W64.of_int 16));
-    r.[9] <- loadW16 mem (to_uint (p + W64.of_int 18));
-    r.[10] <- loadW16 mem (to_uint (p + W64.of_int 20));
-    r.[11] <- loadW16 mem (to_uint (p + W64.of_int 22));
-    r.[12] <- loadW16 mem (to_uint (p + W64.of_int 24));
-    r.[13] <- loadW16 mem (to_uint (p + W64.of_int 26));
-    r.[14] <- loadW16 mem (to_uint (p + W64.of_int 28));
-    r.[15] <- loadW16 mem (to_uint (p + W64.of_int 30));
+    r <- Array16.init(fun i => loadW16 mem (to_uint p + 2*i));
+
+    return r;
+  }
+
+  proc iload16u8 (mem: global_mem_t, p: W64.t) : t16u8 = {
+    var r: t16u8;
+
+    r <- Array16.init (fun i => loadW8 mem (to_uint p + i));
 
     return r;
   }
@@ -1040,6 +1006,7 @@ module Ops = {
   }
 }.
 
+type vt2u16 = W32.t.
 type vt2u64 = W128.t.
 type vt8u16 = W128.t.
 type vt4u32 = W128.t.
@@ -1073,6 +1040,10 @@ module OpsV = {
 
   proc iVPBROADCAST_4u64(v : W64.t) : vt4u64 = {
     return VPBROADCAST_4u64 v;
+  }
+
+  proc iVPBROADCAST_8u32_16u16(v: W32.t) : vt16u16 = {
+    return VPBROADCAST_8u32 v;
   }
 
   proc iVPBROADCAST_8u32(v : W32.t) : vt8u32 = {
@@ -1129,6 +1100,10 @@ module OpsV = {
 
   proc iload16u16 (mem: global_mem_t, p: W64.t) : vt16u16 = {
     return loadW256 mem (to_uint p);
+  }
+
+  proc iload16u8 (mem: global_mem_t, p: W64.t) : vt16u8 = {
+    return loadW128 mem (to_uint p);
   }
 
   proc istore32u8 (mem: global_mem_t, p: W64.t, w: vt32u8): global_mem_t = {
@@ -1289,6 +1264,7 @@ module OpsV = {
   }
 }.
 
+op is2u16 (x: t2u16) (xv: vt2u16) = xv = W2u16.pack2 [x.[0]; x.[1]].
 op is16u8 (x: t16u8) (xv: vt16u8) = xv = W16u8.pack16 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
   x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15]].
 op is8u16 (x: t8u16) (xv: vt8u16) = xv = W8u16.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
@@ -1424,8 +1400,7 @@ qed.
 equiv eq_iVPBROADCAST_2u128_32u8: Ops.iVPBROADCAST_2u128_32u8 ~ OpsV.iVPBROADCAST_2u128_32u8: is16u8 v{1} v{2} ==> is32u8 res{1} res{2}.
 proof.
   proc; wp; skip; rewrite /is16u8 /is32u8 => &1 &2 />; cbv delta.
-  apply W32u8.allP => />.
-  do (rewrite nth_mkseq 1:/# //=).
+  rewrite -iotaredE //=.
 qed.
 
 equiv eq_iVPBROADCAST_4u64 : Ops.iVPBROADCAST_4u64 ~ OpsV.iVPBROADCAST_4u64 : ={v} ==> is4u64 res{1} res{2}.
@@ -1441,17 +1416,21 @@ proof.
   smt(@List).
 qed.
 
+equiv eq_iVPBROADCAST_8u32_16u16 : Ops.iVPBROADCAST_8u32_16u16 ~ OpsV.iVPBROADCAST_8u32_16u16 : is2u16 v{1} v{2} ==> is16u16 res{1} res{2}.
+proof.
+  proc => /=. wp. skip.
+  move => &1 &2 v_eq.
+  rewrite /is8u32 /VPBROADCAST_8u32 v_eq.
+  rewrite /is16u16 initiE 1://= //=.
+  rewrite -iotaredE //=.
+qed.
+
 equiv eq_iVPBROADCAST_8u32 : Ops.iVPBROADCAST_8u32 ~ OpsV.iVPBROADCAST_8u32 : ={v} ==> is8u32 res{1} res{2}.
 proof.
   proc => /=. wp. skip.
   move => &1 &2 v_eq.
   rewrite /is8u32 /VPBROADCAST_8u32 v_eq.
-  rewrite get_setE //=.
-  rewrite -createL.
-  apply W8u32.wordP => i i_bnds.
-  do rewrite -get_unpack32 //=.
-  rewrite createiE // get_of_list //.
-  smt(@List).
+  rewrite -iotaredE //=.
 qed.
 
 equiv eq_iVPBROADCAST_16u16 : Ops.iVPBROADCAST_16u16 ~ OpsV.iVPBROADCAST_16u16 : ={v} ==> is16u16 res{1} res{2}.
@@ -1496,6 +1475,28 @@ proof.
   do (rewrite -get_unpack8 1://=).
   rewrite pack32K.
   smt(@List @Int @W32u8).
+qed.
+
+equiv eq_iload16u16: Ops.iload16u16 ~ OpsV.iload16u16 : ={mem, p} ==> is16u16 res{1} res{2}.
+proof.
+  proc; wp; skip.
+  simplify.
+  move => &1 &2 [#] mem_eq p_eq.
+  rewrite /loadW256 /loadW16 => />.
+  rewrite mem_eq p_eq.
+  rewrite /is16u16 => />.
+  apply W32u8.allP => //=.
+qed.
+
+equiv eq_iload16u8: Ops.iload16u8 ~ OpsV.iload16u8 : ={mem, p} ==> is16u8 res{1} res{2}.
+proof.
+  proc; wp; skip.
+  simplify.
+  move => &1 &2 [#] mem_eq p_eq.
+  rewrite /loadW128 /loadW8 => />.
+  rewrite mem_eq p_eq.
+  rewrite /is16u8 => />.
+  apply W16u8.allP => //=.
 qed.
 
 equiv eq_iVPACKUS_8u32 : Ops.iVPACKUS_8u32 ~ OpsV.iVPACKUS_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is16u16 res{1} res{2}.
@@ -1977,3 +1978,4 @@ do rewrite haddE.
 do rewrite map_cons.
 smt(@List @W16u16).
 qed.
+

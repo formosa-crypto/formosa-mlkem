@@ -4,11 +4,9 @@ require import Array400 Array256 Array64 Array32 Array32p Array16 Array16p Array
 require import WArray800 WArray512 WArray128 WArray128p WArray64 WArray32 WArray16.
 require W16extra.
 require import Fq.
-require import Ops.
+require import AVX2_Ops.
 require import List_hakyber.
 require import KyberCPA_avx2.
-
-pragma +oldip.
 
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
@@ -33,6 +31,7 @@ op f2u128_t4u64 (t: t2u128): t4u64 = Array4.init (fun i => t.[i %/ 2] \bits64 (i
 
 op f16u16_t2u128 (t: t16u16): t2u128 = Array2.init (fun i => pack8_t (W8u16.Pack.init (fun j => t.[8*i + j]))).
 op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16 (i %% 8)).
+
 
 lemma f16u16_t8u32K: cancel f8u32_t16u16 f16u16_t8u32.
 proof.
@@ -673,78 +672,47 @@ module Mavx2_prevec = {
 
   (*--------------------------------------------------------------------*)
   proc poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
-(*
     var aux: int;
 
-    var x16p:W16.t Array16.t;
-    var q:W256.t;
-    var x32p:W8.t Array32.t;
-    var shufbidx:W256.t;
-    var mask:W256.t;
-    var shift:W256.t;
-    var t:W128.t;
-    var f:W256.t;
-    var i:int;
-    x16p <- witness;
-    x32p <- witness;
-    x16p <- jqx16;
-    q <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    x32p <- pd_jshufbidx;
-    shufbidx <- (get256 (WArray32.init8 (fun i => x32p.[i])) 0);
-    mask <- OpsV.iVPBROADCAST_8u32(pd_mask_s);
-    shift <- OpsV.iVPBROADCAST_8u32(pd_shift_s);
-    t <- setw0_128 ;
-    f <- setw0_256 ;
-    aux <- (256 %/ 16);
-    i <- 0;
-    while (i < aux) {
-      f <-
-      OpsV.iVPBROADCAST_2u128(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
-      f <- OpsV.iVPSHUFB_256(f, shufbidx);
-      f <- OpsV.ivpand16u16(f, mask);
-      f <- OpsV.iVPMULL_16u16(f, shift);
-      f <- OpsV.iVPMULHRS_256(f, q);
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) i f));
-      i <- i + 1;
-    }
-*)
-    return (rp);
-  }
-
-  proc poly_decompress_load (ap:W64.t) : W16.t Array256.t = {
-    var rp: W16.t Array256.t;
-(*
-    var aux: int;
-
-    var x32p:W8.t Array32.t;
-    var shufbidx:W8.t Array32.t;
-    var mask:W256.t;
-    var f:W16.t Array16.t;
+    var q:t16u16;
+    var shufbidx:t32u8;
+    var mask_d: t8u32;
+    var mask:t16u16;
+    var shift_d: t8u32;
+    var shift:t16u16;
+    var f_b:t32u8;
+    var f:t16u16;
+    var t:t16u8;
     var i:int;
 
-    var f_b <- W8.t Array32.t;
+    q <- Array16p.Array16.init (fun i => jqx16.[i]);
 
-    x32p <- pd_jshufbidx;
-    shufbidx <- (get256 (WArray32.init8 (fun i => x32p.[i])) 0);
-    mask <- Ops.iVPBROADCAST_8u32(pd_mask_s);
+    shufbidx <- Array32p.Array32.init (fun i => pd_jshufbidx.[i]);
 
-    f <- setw0_256 ;
+    mask_d <- Ops.iVPBROADCAST_8u32(pd_mask_s);
+    mask <- f8u32_t16u16 mask_d;
+
+    shift_d <- Ops.iVPBROADCAST_8u32(pd_shift_s);
+    shift <- f8u32_t16u16 shift_d;
+
     aux <- (256 %/ 16);
     i <- 0;
 
     while (i < aux) {
-      f <-
-      Ops.iVPBROADCAST_2u128(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
-      f <- Ops.iVPSHUFB_256(f, shufbidx);
+      t <- Ops.iload16u8(Glob.mem, ap + (W64.of_int (8  * i)));
+      f_b <- Ops.iVPBROADCAST_2u128_32u8(t);
+      f_b <- Ops.iVPSHUFB_256(f_b, shufbidx);
+
+      f <- f32u8_t16u16 f_b;
       f <- Ops.ivpand16u16(f, mask);
 
-      rp <- fill (fun k => f.[k %% 16]) (16*i) 16 rp;
+      f <- Ops.iVPMULL_16u16(f, shift);
+      f <- Ops.iVPMULHRS_256(f, q);
 
+      rp <- fill (fun k => f.[k %% 16]) (16*i) 16 rp;
       i <- i + 1;
     }
-*)
+
     return (rp);
   }
  
