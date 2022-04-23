@@ -469,10 +469,8 @@ module (DRightT(A : SAdv_T) : Distinguisher)  (O : POracle) = {
 clone import LazyEager.
 
 lemma MLWE_SMP_equiv_lel tr b &m (A <: SAdv_T {-ERO, -LRO,-B,-Bt, -BS}):
-  (forall (x : in_t), is_lossless (dout x)) =>
   Pr[  MLWE_RO(BS(A,S),LRO).main(tr,b) @ &m : res] =
   Pr[  MLWE_RO(BS(A,S),ERO).main(tr,b) @ &m : res].
-move => dout_ll.
 case (tr = false).
 + move => ->.
   have left : forall &m0,
@@ -486,7 +484,7 @@ case (tr = false).
     by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
   have le : 
      equiv [ Exp(LRO, DLeft(A)).main ~ Exp(ERO, DLeft(A)).main : 
-       ={glob DLeft(A),arg} ==> ={res}] by apply (eq_eager_sampling (DLeft(A)) dout_ll).
+       ={glob DLeft(A),arg} ==> ={res}] by apply (eq_eager_sampling (DLeft(A)) _); smt(duni_matrix_ll).
   have ? : forall &m0 &m1 ,
      (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
        Pr[Exp(LRO, DLeft(A)).main(b) @ &m0 : res] =
@@ -505,7 +503,7 @@ have right : forall &m1, Pr[  MLWE_RO(BS(A,S),ERO).main(true,b) @ &m1 : res] =
   by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
 have le : 
    equiv [ Exp(LRO, DLeftT(A)).main ~ Exp(ERO, DLeftT(A)).main : 
-       ={glob DLeftT(A),arg} ==> ={res}] by apply (eq_eager_sampling (DLeftT(A)) dout_ll).
+       ={glob DLeftT(A),arg} ==> ={res}] by apply (eq_eager_sampling (DLeftT(A)) _); smt(duni_matrix_ll).
 have ? : forall &m0 &m1 ,
      (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
        Pr[Exp(LRO, DLeftT(A)).main(b) @ &m0 : res] =
@@ -515,10 +513,8 @@ by smt().
 qed.
 
 lemma MLWE_SMP_equiv_ler tr b &m (A <: SAdv_T {-ERO,-LRO,-B,-Bt, -BS}):
-  (forall (x : in_t), is_lossless (dout x)) =>
   Pr[  MLWE_SMP(A,S,LRO).main(tr,b) @ &m : res]=
   Pr[  MLWE_SMP(A,S,ERO).main(tr,b) @ &m : res].
-move => dout_ll.
 case (tr = false).
 move => ->.
 + have left : forall &m0,  
@@ -533,7 +529,7 @@ move => ->.
     by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />; sim.
   have le : 
      equiv [ Exp(LRO, DRight(A)).main ~ Exp(ERO, DRight(A)).main : 
-     ={glob DRight(A),arg} ==> ={res}] by apply (eq_eager_sampling (DRight(A)) dout_ll).
+     ={glob DRight(A),arg} ==> ={res}] by apply (eq_eager_sampling (DRight(A)) _); smt(duni_matrix_ll).
   have ? : forall &m0 &m1 ,
      (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
        Pr[Exp(LRO, DRight(A)).main(b) @ &m0 : res] =
@@ -553,7 +549,7 @@ have right : forall &m1,
   by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />; sim.
 have le : 
    equiv [ Exp(LRO, DRightT(A)).main ~ Exp(ERO, DRightT(A)).main : 
-     ={glob DRightT(A),arg} ==> ={res}] by apply (eq_eager_sampling (DRightT(A)) dout_ll).
+     ={glob DRightT(A),arg} ==> ={res}] by apply (eq_eager_sampling (DRightT(A))  _); smt(duni_matrix_ll).
 have ? : forall &m0 &m1 ,
      (glob DLeft(A)){m0} = (glob DLeft(A)){m1} =>
        Pr[Exp(LRO, DRightT(A)).main(b) @ &m0 : res] =
@@ -563,14 +559,12 @@ by smt().
 qed.
 
 lemma MLWE_SMP_equiv b &m (A <: SAdv_T {-ERO,-LRO,-B,-Bt, -BS}):
-  (forall (x : in_t), is_lossless (dout x)) =>
   Pr[  MLWE(B(BS(A,S),LRO)).main(b) @ &m : res] =
   Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m : res].
 proof.
-move => dout_ll.
 rewrite -(MLWE_RO_equiv b &m (BS(A,S))).
-rewrite (MLWE_SMP_equiv_lel false b &m A dout_ll).
-rewrite (MLWE_SMP_equiv_ler false b &m A dout_ll).
+rewrite (MLWE_SMP_equiv_lel false b &m A).
+rewrite (MLWE_SMP_equiv_ler false b &m A).
 byequiv =>//;proc.  
 inline {1} 13. inline {2} 5.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
@@ -591,8 +585,8 @@ lemma MLWE_SMP_equiv_t b &m (A <: SAdv_T {-ERO,-LRO,-B,-Bt, -BS}):
 proof.
 move => dout_ll.
 rewrite -(MLWE_RO_equiv_t b &m (BS(A,S))).
-rewrite (MLWE_SMP_equiv_lel true b &m A dout_ll).
-rewrite (MLWE_SMP_equiv_ler true b &m A dout_ll).
+rewrite (MLWE_SMP_equiv_lel true b &m A).
+rewrite (MLWE_SMP_equiv_ler true b &m A).
 byequiv =>//;proc.  
 inline {1} 13. inline {2} 5.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
@@ -608,45 +602,42 @@ qed.
 
 end SMP_vs_ROM.
 
-(* More interestingly, if one can prove a form of public indifferentiability
-   from the RO that samples matrices, we can co back to MLWE. *)
-theory SMP_vs_ROM_infinite.
+(* More interestingly, if one can prove a form of indifferentiability
+   from the RO that samples matrices, we can go back to MLWE. *)
+theory SMP_vs_ROM_IND.
 
 import MLWE_ROM.
 
-clone import MLWE_SMP.
+import MLWE_SMP.
 
 module type Simulator_t(O : RO_H.POracle) = {
    include RO_SMP.POracle
 }.
 
-module type Distinguisher_t(O : RO_SMP.POracle) = {
-   proc interact(sd : seed, t : vector) : unit
-   proc distinguish(tr b : bool, _A : matrix) : bool 
+module type Distinguisher_t(S : PSampler, O : RO_SMP.POracle) = {
+   proc distinguish(tr b : bool, sd : seed) : bool 
 }.
 
 module WIndfReal(D : Distinguisher_t, S : Sampler, O : RO_SMP.Oracle) = {
    proc main(tr b : bool) : bool = {
-        var sd,t,_A,b';
+        var sd,b';
         O.init();
         sd <$ dseed;
-        t <$ duni;
-        D(O).interact(sd, t);
-        _A <@ S(O).sample(sd);
-        b' <@ D(O).distinguish(tr, b ,_A);
+        b' <@ D(S(O),O).distinguish(tr, b ,sd);
         return b';
    }
 }.
 
 module WIndfIdeal(D : Distinguisher_t, Sim : Simulator_t, O : RO_H.Oracle) = {
+
+   module FakeS = {
+      proc sample = O.o
+   }
    proc main(tr b : bool) : bool = {
-        var sd,t,_A,b';
+        var sd,b';
         O.init();
         sd <$ dseed;
-        t <$ duni;
-        D(Sim(O)).interact(sd, t);
-        _A <@ O.o(sd);
-        b' <@ D(Sim(O)).distinguish(tr, b,_A);
+        b' <@ D(FakeS,Sim(O)).distinguish(tr, b,sd);
         return b';
    }
 }.
@@ -665,22 +656,18 @@ import MLWE_vs_MLWE_ROM.
 module O = RO_H.Lazy.LRO.
 module OS = RO_SMP.Lazy.LRO.
 
-module (D(A : SAdv_T) : Distinguisher_t) (O : RO_SMP.POracle) = {
-  var _sd : seed
-  var _t : vector
-  proc interact(sd : seed, t : vector) : unit = {
-    _sd <- sd;
-    _t <- t;
-    A(O).interact(sd, t);                 
-  }
-  proc distinguish(tr b : bool, _A : matrix) : bool = {
-    var s,e,u0,u1,e',v0,v1,b';        
+module (D(A : SAdv_T) : Distinguisher_t) (S : PSampler, O : RO_SMP.POracle) = {
+  proc distinguish(tr b : bool, sd : seed) : bool = {
+    var _A,t,s,e,u0,u1,e',v0,v1,b';        
+    t <$ duni;
+    A(O).interact(sd,t); 
+    _A <@ S.sample(sd);                
     s <$ dshort;                                             
     e <$ dshort;                                              
     u0 <- (if tr then trmx _A else _A) *^ s + e;            
     u1 <$ duni;                                               
     e' <$ dshort_R;                                          
-    v0 <- (_t `<*>` s) &+ e';                                    
+    v0 <- (t `<*>` s) &+ e';                                    
     v1 <$ duni_R;                                    
     b' <@ A(O).guess(if b then (u1, v1) else (u0, v0));
     return b';
@@ -764,10 +751,8 @@ module (DRightT(A : SAdv_T, Sim : Simulator_t) : Distinguisher)  (O : POracle) =
 
 lemma MLWE_SMP_equiv_lel tr b &m (A <: SAdv_T {-ERO, -RO_H.Lazy.LRO,-B,-Bt, -BS}) 
                                  (Sim <: Simulator_t {-ERO, -RO_H.Lazy.LRO,-B,-Bt, -BS, -A}):
-  (forall (x : in_t), is_lossless (dout x)) =>
   Pr[  MLWE_RO(BS(A,Sim),RO_H.Lazy.LRO).main(tr,b) @ &m : res] =
   Pr[  MLWE_RO(BS(A,Sim),ERO).main(tr,b) @ &m : res].
-move => dout_ll.
 case (tr = false).
 + move => ->.
   have left : forall &m0,
@@ -781,7 +766,7 @@ case (tr = false).
     by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
   have le : 
      equiv [ Exp(RO_H.Lazy.LRO, DLeft(A,Sim)).main ~ Exp(ERO, DLeft(A,Sim)).main : 
-       ={glob DLeft(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DLeft(A,Sim)) dout_ll).
+       ={glob DLeft(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DLeft(A,Sim))  _); smt(duni_matrix_ll).
   have ? : forall &m0 &m1 ,
      (glob DLeft(A,Sim)){m0} = (glob DLeft(A,Sim)){m1} =>
        Pr[Exp(RO_H.Lazy.LRO, DLeft(A, Sim)).main(b) @ &m0 : res] =
@@ -800,7 +785,7 @@ have right : forall &m1, Pr[  MLWE_RO(BS(A,Sim),ERO).main(true,b) @ &m1 : res] =
   by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
 have le : 
    equiv [ Exp(RO_H.Lazy.LRO, DLeftT(A,Sim)).main ~ Exp(ERO, DLeftT(A,Sim)).main : 
-       ={glob DLeftT(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DLeftT(A,Sim)) dout_ll).
+       ={glob DLeftT(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DLeftT(A,Sim))  _); smt(duni_matrix_ll).
 have ? : forall &m0 &m1 ,
      (glob DLeft(A,Sim)){m0} = (glob DLeft(A,Sim)){m1} =>
        Pr[Exp(RO_H.Lazy.LRO, DLeftT(A,Sim)).main(b) @ &m0 : res] =
@@ -811,15 +796,13 @@ qed.
 
 lemma MLWE_SMP_equiv_ler tr b &m (A <: SAdv_T {-ERO,-RO_H.Lazy.LRO,-B,-Bt, -BS, -D})
                                  (Sim <: Simulator_t {-A,-ERO,-RO_H.Lazy.LRO,-B,-Bt, -BS, -D}):
-  (forall (x : in_t), is_lossless (dout x)) =>
   Pr[WIndfIdeal(D(A), Sim, O).main(tr, b) @ &m : res]=
   Pr[WIndfIdeal(D(A), Sim, ERO).main(tr, b) @ &m : res].
-move => dout_ll.
 case (tr = false).
 move => ->.
 + have left : forall &m0,  
           Pr[WIndfIdeal(D(A), Sim, O).main(false, b) @ &m0 : res] = 
-          Pr[ Exp(RO_H.Lazy.LRO,DRight(A,Sim)).main(b) @ &m0 : res].
+          Pr[Exp(RO_H.Lazy.LRO,DRight(A,Sim)).main(b) @ &m0 : res].
   + move => &m0; byequiv => //=; last by smt().
     by proc; inline *; sim; auto => />. 
   have right : forall &m1,
@@ -829,7 +812,7 @@ move => ->.
     by proc; inline *; sim; auto => />; sim.
   have le : 
      equiv [ Exp(RO_H.Lazy.LRO, DRight(A,Sim)).main ~ Exp(ERO, DRight(A,Sim)).main : 
-     ={glob DRight(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DRight(A,Sim)) dout_ll).
+     ={glob DRight(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DRight(A,Sim)) _); smt(duni_matrix_ll).
   have ? : forall &m0 &m1 ,
      (glob DLeft(A,Sim)){m0} = (glob DLeft(A,Sim)){m1} =>
        Pr[Exp(RO_H.Lazy.LRO, DRight(A,Sim)).main(b) @ &m0 : res] =
@@ -849,7 +832,7 @@ have left : forall &m0,
     by proc; inline *; sim; auto => />; sim.
   have le : 
      equiv [ Exp(RO_H.Lazy.LRO, DRightT(A,Sim)).main ~ Exp(ERO, DRightT(A,Sim)).main : 
-     ={glob DRightT(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DRightT(A,Sim)) dout_ll).
+     ={glob DRightT(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DRightT(A,Sim)) _); smt(duni_matrix_ll).
   have ? : forall &m0 &m1 ,
      (glob DLeftT(A,Sim)){m0} = (glob DLeftT(A,Sim)){m1} =>
        Pr[Exp(RO_H.Lazy.LRO, DRightT(A,Sim)).main(b) @ &m0 : res] =
@@ -858,69 +841,67 @@ have left : forall &m0,
   by smt().
 qed.
 
-lemma MLWE_SMP_equiv b &m  (S <: Sampler {-O, -OS, -D}) 
+lemma MLWE_SMP_equiv _b &m  (S <: Sampler {-O, -OS, -D}) 
        (A <: SAdv_T {-ERO,-O, -OS, -B, -S, -D}) 
        (Sim <: Simulator_t {-ERO, -O, -OS,-B,-Bt, -BS, -A, -D}):
-  (forall (x : in_t), is_lossless (dout x)) =>
-     Pr[ WIndfReal(D(A),S,OS).main(false,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(A),Sim,O).main(false,b) @ &m : res] =>
-  Pr[  MLWE(B(BS(A,Sim),O)).main(b) @ &m : res] =
-  Pr[  MLWE_SMP(A,S,OS).main(false,b) @ &m : res].
+  Pr[ WIndfReal(D(A),S,OS).main(false,_b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(A),Sim,O).main(false,_b) @ &m : res] =>
+  Pr[  MLWE(B(BS(A,Sim),O)).main(_b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,OS).main(false,_b) @ &m : res].
 proof.
-move => d_out_ll HSIM.
-rewrite -(MLWE_RO_equiv b &m (BS(A,Sim))).
+move => HSIM.
+rewrite -(MLWE_RO_equiv _b &m (BS(A,Sim))).
 have -> : 
-    Pr[MLWE_SMP(A, S, OS).main(false, b) @ &m : res] = 
-    Pr[ WIndfReal(D(A),S,OS).main(false,b) @ &m : res]
- by byequiv => //; proc; inline {2} 6; inline {2} 4; sim.
+    Pr[MLWE_SMP(A, S, OS).main(false, _b) @ &m : res] = 
+    Pr[ WIndfReal(D(A),S,OS).main(false,_b) @ &m : res] by
+ byequiv => //; proc; inline {2} 3;  sim.
 rewrite HSIM.
-rewrite (MLWE_SMP_equiv_lel false b &m A Sim d_out_ll).
-rewrite (MLWE_SMP_equiv_ler false b &m A Sim d_out_ll).
+rewrite (MLWE_SMP_equiv_lel false _b &m A Sim).
+rewrite (MLWE_SMP_equiv_ler false _b &m A Sim).
 byequiv =>//;proc.  
-inline {1} 13; inline {2} 6; inline {2} 4.
+inline {1} 13. inline {2} 3.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
-swap {2} 4 -1. swap {2} [13..14] -9. swap{2} 16 -10. swap{2} 17 -8. swap {2} 19 -9. 
-swap {1} 1 9. swap {2} 1 11. swap {2} 14 -1. 
-seq 9 9 : (!tr{2} /\  ={tr,b,glob A,glob Sim,sd,sd0,t0,s,e,u1,t,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2}); 
-   1: by inline *; auto.
+swap {2} 5 -2. swap {2} [9..10] -5. swap{2} 12 -6. swap{2} 13 -6. swap {2} 15 -7. swap {2} 11 -4. 
+swap {1} 1 9. swap {2} 1 10. 
+seq 9 10 : (!tr{2} /\  ={tr,b,glob A,glob Sim,sd,sd0,t,s,e,u1,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2} /\ b0{2} = b{1} /\ tr0{2} = tr{1}); 
+   1: by inline *; auto. 
 wp; call (_: ={glob ERO,glob Sim}); 1: by sim.
-wp;conseq (_: ={glob A, glob Sim, sd, sd0, t0,b,t} /\  sd0{1} = sd{2} /\ t0{1} = t{2} 
-          ==> ={glob A, glob Sim, ERO.m} /\ D._t{2} = t{1} /\ _A{1} = _A{2}); 1,2: smt().
-by inline *; sim; smt().
+wp;conseq (_: ={glob A, glob Sim, sd, sd0, t,b} /\  sd0{1} = sd{2} /\ t0{1} = t{2} /\ tr0{2} = tr{1} /\ b0{2} = b{1} 
+          ==> ={glob A, glob Sim, ERO.m} /\ t{2} = t0{1} /\ _A{1} = _A{2}); 1,2: by smt(). 
+by inline *; swap{1} 6 -2; sim; smt().
 qed.
 
-lemma MLWE_SMP_equiv_t b &m  (S <: Sampler {-O, -OS, -D}) 
+lemma MLWE_SMP_equiv_t _b &m  (S <: Sampler {-O, -OS, -D}) 
        (A <: SAdv_T {-ERO,-O, -OS, -B, -S, -D}) 
        (Sim <: Simulator_t {-ERO, -O, -OS,-B,-Bt, -BS, -A, -D}):
-  (forall (x : in_t), is_lossless (dout x)) =>
-     Pr[ WIndfReal(D(A),S,OS).main(true,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(A),Sim,O).main(true,b) @ &m : res] =>
-  Pr[  MLWE(Bt(BS(A,Sim),O)).main(b) @ &m : res] =
-  Pr[  MLWE_SMP(A,S,OS).main(true,b) @ &m : res].
+     Pr[ WIndfReal(D(A),S,OS).main(true,_b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(A),Sim,O).main(true,_b) @ &m : res] =>
+  Pr[  MLWE(Bt(BS(A,Sim),O)).main(_b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,OS).main(true,_b) @ &m : res].
 proof.
-move => d_out_ll HSIM.
-rewrite -(MLWE_RO_equiv_t b &m (BS(A,Sim))).
+move => HSIM.
+rewrite -(MLWE_RO_equiv_t _b &m (BS(A,Sim))).
 have -> : 
-    Pr[MLWE_SMP(A, S, OS).main(true, b) @ &m : res] = 
-    Pr[ WIndfReal(D(A),S,OS).main(true,b) @ &m : res]
- by byequiv => //; proc; inline {2} 6; inline {2} 4; sim.
+    Pr[MLWE_SMP(A, S, OS).main(true, _b) @ &m : res] = 
+    Pr[ WIndfReal(D(A),S,OS).main(true,_b) @ &m : res] by
+ byequiv => //; proc; inline {2} 3;  sim.
 rewrite HSIM.
-rewrite (MLWE_SMP_equiv_lel true b &m A Sim d_out_ll).
-rewrite (MLWE_SMP_equiv_ler true b &m A Sim d_out_ll).
+rewrite (MLWE_SMP_equiv_lel true _b &m A Sim).
+rewrite (MLWE_SMP_equiv_ler true _b &m A Sim).
 byequiv =>//;proc.  
-inline {1} 13; inline {2} 6; inline {2} 4.
+inline {1} 13. inline {2} 3.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
-swap {2} 4 -1. swap {2} [13..14] -9. swap{2} 16 -10. swap{2} 17 -8. swap {2} 19 -9. 
-swap {1} 1 9. swap {2} 1 11. swap {2} 14 -1. 
-seq 9 9 : (tr{2} /\  ={tr,b,glob A,glob Sim,sd,sd0,t0,s,e,u1,t,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2}); 
-   1: by inline *; auto.
+swap {2} 5 -2. swap {2} [9..10] -5. swap{2} 12 -6. swap{2} 13 -6. swap {2} 15 -7. swap {2} 11 -4. 
+swap {1} 1 9. swap {2} 1 10. 
+seq 9 10 : (tr{2} /\  ={tr,b,glob A,glob Sim,sd,sd0,t,s,e,u1,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2} /\ b0{2} = b{1} /\ tr0{2} = tr{1}); 
+   1: by inline *; auto. 
 wp; call (_: ={glob ERO,glob Sim}); 1: by sim.
-wp;conseq (_: ={glob A, glob Sim, sd, sd0, t0,b,t} /\  sd0{1} = sd{2} /\ t0{1} = t{2} 
-          ==> ={glob A, glob Sim, ERO.m} /\ D._t{2} = t{1} /\ _A{1} = _A{2}); 1,2: smt().
-by inline *; sim; smt().
+wp;conseq (_: ={glob A, glob Sim, sd, sd0, t,b} /\  sd0{1} = sd{2} /\ t0{1} = t{2} /\ tr0{2} = tr{1} /\ b0{2} = b{1} 
+          ==> ={glob A, glob Sim, ERO.m} /\ t{2} = t0{1} /\ _A{1} = _A{2}); 1,2: by smt(). 
+by inline *; swap{1} 6 -2; sim; smt().
 qed.
 
-end SMP_vs_ROM_infinite.
+end SMP_vs_ROM_IND.
 
 (* FIXME_PY: THESE HINTS MAKE RND IMPOSSIBLY SLOW *)
 (* add duni_R_ll, duni_R_uni, duni_R_fu *)
