@@ -80,10 +80,7 @@ phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode
    MLWE_PKE is the theory where we prove an abstract PKE construction
    that matches the algebraic basis of Kyber. This theory clones MLWE
    to get the hard problem definitions, and so it gets a bunch of 
-   theories and RO clones. 
-   We are interested in a sub-theory called MLWE_PKE_GENERAL, which 
-   is the one for which we prove the most general results for 
-   Kyber. Within it, we must fix the RO_SMP clone.
+   theories and RO clones. The relevant one is RO_SMP.
 
    It also independently clones PKE_Ext as PKE_, but it already fixes
    the underlying RO to MLWE_.RO_SMP, so all we need to fix is RO_SMP in 
@@ -94,7 +91,7 @@ phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode
    how the Kyber spec functionally maps to this algebraic version
    and then derive the properties as corollaries.
 ***************************************************************************)
-require (****) MLWE_PKE.
+require import MLWE_PKE.
 
 theory SpecProperties.
 
@@ -133,7 +130,7 @@ op under_noise_bound (p : poly) (b : int) =
 op cv_bound : int = 104. (* this is the compress error bound for d = 4 *)
 
 clone import MLWE_PKE as MLWEPKE with 
-  theory MLWE_PKE_GENERAL.MLWE_SMP.RO_SMP <- RO,
+  theory MLWE_.MLWE_SMP.RO_SMP <- RO,
   type MLWE_.Matrix_.R = poly,
   type MLWE_.Matrix_.Matrix.matrix <- matrix,
   type MLWE_.Matrix_.vector <- vector,
@@ -171,11 +168,11 @@ clone import MLWE_PKE as MLWEPKE with
   op m_decode <- m_decode,
   op c_encode <- c_encode,
   op c_decode <- c_decode,  
-  op MLWE_PKE_RO.Correctness.rnd_err_v <- rnd_err_v,
-  op MLWE_PKE_RO.Correctness.rnd_err_u <- rnd_err_u,
-  op MLWE_PKE_RO.Correctness.under_noise_bound <- under_noise_bound,
-  op MLWE_PKE_RO.Correctness.max_noise <- max_noise,
-  op MLWE_PKE_RO.Correctness.cv_bound <- cv_bound
+  op rnd_err_v <- rnd_err_v,
+  op rnd_err_u <- rnd_err_u,
+  op under_noise_bound <- under_noise_bound,
+  op max_noise <- max_noise,
+  op cv_bound <- cv_bound
   proof MLWE_.dseed_ll by (apply srand_ll)
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
@@ -203,10 +200,10 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_.duni_R_uni by apply duni_R_uni
   proof pk_encodeK
   proof sk_encodeK
-  proof MLWE_PKE_RO.Correctness.encode_noise
-  proof MLWE_PKE_RO.Correctness.good_decode
-  proof MLWE_PKE_RO.Correctness.cv_bound_valid
-  proof MLWE_PKE_RO.Correctness.noise_commutes.
+  proof encode_noise
+  proof good_decode
+  proof cv_bound_valid
+  proof noise_commutes.
 
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
@@ -218,7 +215,7 @@ rewrite /sk_decode /sk_encode /cancel /= => x.
 by rewrite sem_encode12_vecK toipolyvecK /#.
 qed.
 
-realize MLWE_PKE_RO.Correctness.encode_noise.
+realize encode_noise.
 move => /> u v.
 rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v /= sem_encode10_vecK sem_encode4K => />.
 split; last  by rewrite round_poly_errE.
@@ -232,7 +229,7 @@ rewrite decompress_errE //; 1: smt(qE).
 by rewrite mapiE /#.
 qed.
 
-realize MLWE_PKE_RO.Correctness.good_decode. 
+realize good_decode. 
 rewrite /under_noise_bound /m_encode /m_decode /compress_poly 
         /decompress_poly /max_noise /as_sint qE  /= => m n.
 rewrite allP  => /=  hgood.
@@ -246,10 +243,10 @@ move : (hgood x _) => //; rewrite /(`|_|)%Int /= => hgoodx.
 by rewrite /(`|_|)%Int; smt(sem_decode1_bnd).
 qed.
 
-realize MLWE_PKE_RO.Correctness.cv_bound_valid.
+realize cv_bound_valid.
 admitted. (* Rounding upper bound for one coefficient: compute in EC? *)
 
-realize MLWE_PKE_RO.Correctness.noise_commutes.
+realize noise_commutes.
 move => n n' b H H0.
 move : H H0; rewrite /under_noise_bound.
 rewrite !allP.
@@ -263,7 +260,7 @@ qed.
 (* We now specify the various components used by Kyber spec so that 
    we can relate it to the abstract construction. The differences
    are only in the sampling procedures. *)
-import MLWE_PKE_GENERAL.
+import MLWE_.MLWE_SMP.
 
 op SHA3_SMOOTH : W8.t Array32.t -> W8.t Array32.t * W8.t Array32.t.
 
@@ -290,7 +287,7 @@ module KPRF : PseudoRF.PseudoRF = {
 }.
 
 
-module (KSampler(XOF : XOF_t) : MLWE_SMP.Sampler) (O : RO.POracle)  = {
+module (KSampler(XOF : XOF_t) : Sampler) (O : RO.POracle)  = {
     proc sample(sd : W8.t Array32.t) : matrix = { 
      var i,j,c;
      var a : matrix;
@@ -308,6 +305,25 @@ module (KSampler(XOF : XOF_t) : MLWE_SMP.Sampler) (O : RO.POracle)  = {
      }
      return a;      
     }
+
+    proc sampleT(sd : W8.t Array32.t) : matrix = { 
+     var i,j,c;
+     var a : matrix;
+     a <- witness;
+     i <- 0;
+     while (i < kvec) {
+        j <- 0;
+        while (j < kvec) {
+           XOF(O).init(sd,W8.of_int i,W8.of_int j);
+           c <@ Parse(XOF,O).sample();
+           a.[(i,j)] <- c;
+           j <- j + 1;
+        }
+        i <- i + 1;
+     }
+     return a;      
+    }
+
 }.
 
 (*************************************
@@ -317,7 +333,7 @@ syntactic reasons.
 *************************************)
 
 
-module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PseudoRF.PseudoRF, O : RO.POracle) : Scheme = {
+module KyberS(G : G_t, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.POracle) : Scheme = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
@@ -428,47 +444,70 @@ module KyberS(G : G_t, S : MLWE_SMP.Sampler, PRF : PseudoRF.PseudoRF, O : RO.POr
 
 }.
 
-equiv kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t {-O}) :
-   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}.
+lemma kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t {-O}) :
+  equiv [   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : 
+     ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
 proc;inline*.
-seq 12 11: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\ a0{1} = a{2} /\ ={_N} /\ sd{1} = rho{2}); 1: by auto.
+seq 12 11: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\ 
+            a0{1} = a{2} /\ ={_N} /\ sd{1} = rho{2}); 1: by auto.
 by sim => />.
 qed.
 
-equiv enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t {-O}):
-   KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}.
-proc;inline*. 
-seq 31 29: (#pre /\ ={that, rv, r0, m0, e1, aT, _N}); 1: by sim.
-sim => />. admitted. (* Hugo: match i to j for transposed *)
+(* It so happens that Kyber specifies the rejection sampling 
+   of the transposed matrix in the most annoying way. 
+   Rather than fixing the indices in transposed order, it
+   computes the values in transposed order.
+   This means that we can only prove the sampler adequately
+   generates the transposed matrix after we have a concrete
+   XOF and a concrete RO. *)
+lemma enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t {-O}):
+ equiv [ KSampler(XOF,O).sample ~ KSampler(XOF,O).sampleT :
+       ={glob XOF, glob O, arg} ==> ={glob XOF, glob O} /\ res{2} = trmx res{1}] =>
+ equiv [
+   KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : 
+    ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
+move => good_smp.
+proc. 
+inline {1} 2; inline {2} 2. 
+swap {1} 5 8.
+swap {2} 5 8.
+seq 12 12: (#pre /\ ={that, rv, r0, m, m0, e1, _N,rho}); 1: by inline *; sim.
+sim => />. 
+transitivity {1}  { aT <- witness; aT <@ KSampler(XOF,O).sampleT(rho); }
+                 (={glob XOF, glob O, rho} ==> ={glob XOF, glob O, aT})
+                 ((pk{1}, m{1}) = (pk{2}, m{2}) /\ ={glob O, glob XOF} /\ ={that, rv, r0, m, m0, e1, aT, _N,rho}  ==> ={glob XOF, glob O, aT} ); 1,2 : smt().
++ by wp; call (good_smp); auto => /> //. 
+by inline {1} 2; sim.  
+qed.
 
-equiv enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
-   KyberS(G,KSampler(XOF),KPRF,O).dec ~ Kyber(G,XOF,KPRF,O).dec : ={arg} /\ ={glob O} ==> ={res} by proc;inline *;sim => /#.
+lemma enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
+  equiv [ KyberS(G,KSampler(XOF),KPRF,O).dec ~ Kyber(G,XOF,KPRF,O).dec : 
+     ={arg} /\ ={glob O} ==> ={res} ] by proc;inline *;sim => /#.
 
 (***************************************)
 
 section.
 
 declare module O <: RO.Oracle {-KPRF, -B1ROM, -B2ROM}.
-declare module S <: MLWE_SMP.Sampler {-KPRF, -O, -B1ROM, -B2ROM}.
+declare module S <: Sampler {-KPRF, -O, -B1ROM, -B2ROM}.
 declare module As <: KyberPKE.AdversaryRO {-O, -S, -KPRF, -B1ROM, -B2ROM}.
 
 lemma security_any_sampler &m :  
   islossless O.init =>
   islossless O.o =>
-  (forall (x : RO.in_t), is_lossless (RO.dout x)) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless S(O0).sample) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
-  Pr[MLWE_SMP.MLWE_SMP(B1ROM(As, S), S, O).main(false, false) @ &m : res] -
- Pr[MLWE_SMP.MLWE_SMP(B1ROM(As, S), S, O).main(false, true) @ &m : res] +
- Pr[MLWE_SMP.MLWE_SMP(B2ROM(As, S), S, O).main(true, false) @ &m : res] -
- Pr[MLWE_SMP.MLWE_SMP(B2ROM(As, S), S, O).main(true, true) @ &m : res].
-move => H H0 H1 H2 H3 H4.
+  Pr[MLWE_SMP(B1ROM(As, S), S, O).main(false, false) @ &m : res] -
+ Pr[MLWE_SMP(B1ROM(As, S), S, O).main(false, true) @ &m : res] +
+ Pr[MLWE_SMP(B2ROM(As, S), S, O).main(true, false) @ &m : res] -
+ Pr[MLWE_SMP(B2ROM(As, S), S, O).main(true, true) @ &m : res].
+move => H H0 H1 H2 H3.
 have  <- : 
     Pr[ PKE_.CPAGameROM(PKE_.CPA,MLWE_PKE(S(O)),As,O).main() @ &m : res] =
     Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,O).main() @ &m : res]; last by
-        apply (main_theorem_s O S As &m  H H0 H1 H2 H3 H4).
+        apply (main_theorem_s O S As &m  H H0 H1 H2 H3).
 byequiv => //.
 proc.
 inline {1} 2.
@@ -514,27 +553,35 @@ declare module O <: RO.Oracle {-KPRF, -B1ROM, -B2ROM}.
 declare module XOF <: XOF_t {-KPRF, -O, -B1ROM, -B2ROM}.
 declare module As <: KyberPKE.AdversaryRO {-O, -XOF, -KPRF, -B1ROM, -B2ROM}.
 
+(* This theorem yields security for any sampler and we can use
+   it to obtain security for the implementation in the standard 
+   model under the assumption that MLWE is secure when the matrix
+   is sampled how the implementation does it. 
+   We can't get any formal correctness bounds though, since
+   the distribution of the matrix is not well defined. *)
 lemma security_spec &m :  
   islossless O.init =>
   islossless O.o =>
-  (forall (x : RO.in_t), is_lossless (RO.dout x)) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
+ equiv [ KSampler(XOF,O).sample ~ KSampler(XOF,O).sampleT :
+       ={glob XOF, glob O, arg} ==> ={glob XOF, glob O} /\ res{2} = trmx res{1}] =>
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
-  Pr[MLWE_SMP.MLWE_SMP(B1ROM(As, KSampler(XOF)),  KSampler(XOF), O).main(false, false) @ &m : res] -
- Pr[MLWE_SMP.MLWE_SMP(B1ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(false, true) @ &m : res] +
- Pr[MLWE_SMP.MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, false) @ &m : res] -
- Pr[MLWE_SMP.MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, true) @ &m : res].
-move => Oill Ooll dout_ll XOF_ll Asgll Ascll.
-have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,KSampler(XOF),KPRF),As,O).main() @ &m : res]= Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,O).main() @ &m : res];
+  Pr[MLWE_SMP(B1ROM(As, KSampler(XOF)),  KSampler(XOF), O).main(false, false) @ &m : res] -
+ Pr[MLWE_SMP(B1ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(false, true) @ &m : res] +
+ Pr[MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, false) @ &m : res] -
+ Pr[MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, true) @ &m : res].
+move => Oill Ooll XOF_ll Asgll Ascll good_sampler.
+have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,KSampler(XOF),KPRF),As,O).main() @ &m : res]= 
+          Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,O).main() @ &m : res];
   last first.
-+ apply (security_any_sampler O (KSampler(XOF)) As &m Oill Ooll dout_ll _ Asgll Ascll).
++ apply (security_any_sampler O (KSampler(XOF)) As &m Oill Ooll  _ Asgll Ascll).
   by admit. (* Rejection sampling is lossless *)
 byequiv => //.
 proc; inline {1} 2; inline {2} 2.
 wp; call(_: ={glob O, glob XOF}); 1: by sim.
-call (enc_sampler_enc O XOF).
+call (enc_sampler_enc O XOF good_sampler).
 rnd.
 wp; call(_: ={glob O, glob XOF}); 1: by sim.
 call (kg_sampler_kg O XOF).
@@ -542,67 +589,242 @@ by call(_: true); auto => />.
 qed.
 
 end section.
+
+import MLWE_.SMP_vs_ROM_IND.
+
+import MLWE_.MLWE_ROM.MLWE_vs_MLWE_ROM.
+import MLWE_.MLWE_ROM.
+import MLWE_.
+
+(* This theorem yields security for any sampler that can be
+   proved indifferentiable from the RO that samples uniform 
+   matrices down to standard MLWE. *)
+
+section.
+
+module O = MLWE_.MLWE_ROM.RO_H.Lazy.LRO.
+module OS =RO.Lazy.LRO.
+
+declare module As <: KyberPKE.AdversaryRO {-O, -OS, -KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+declare module S <: Sampler {-As, -B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+declare module Sim <: Simulator_t {-S,-As,-B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+
+lemma security_any_sampler_indiff &m :  
+  (forall (x : RO.in_t), is_lossless (RO.dout x)) => 
+  (forall b,
+     Pr[ WIndfReal(D(B1ROM(As,S)),S,OS).main(false,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(B1ROM(As,S)),Sim,O).main(false,b) @ &m : res]) =>
+  (forall b,
+     Pr[ WIndfReal(D(B2ROM(As,S)),S,OS).main(true,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(B2ROM(As,S)),Sim,O).main(true,b) @ &m : res]) =>
+  (forall (O <: RO.Oracle), islossless O.o => islossless S(O).sample) =>
+  (forall (O <: RO.Oracle), islossless O.o => islossless As(O).guess) =>
+  (forall (O <: RO.Oracle), islossless O.o => islossless As(O).choose) =>
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,OS).main() @ &m : res] - 1%r/2%r = 
+    Pr[MLWE(B(BS(B1ROM(As,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res] -
+       Pr[MLWE(B(BS(B1ROM(As,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res] + 
+    Pr[MLWE(Bt(BS(B2ROM(As,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res]-
+       Pr[MLWE(Bt(BS(B2ROM(As,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res].
+move => H H0 H1 H2 H3 H4.
+have  <- : 
+    Pr[ PKE_.CPAGameROM(PKE_.CPA,MLWE_PKE(S(OS)),As,OS).main() @ &m : res] =
+    Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,OS).main() @ &m : res]; 
+     last by apply (main_theorem_ref As S Sim &m  H H0 H1 H2 H3 H4).
+byequiv => //.
+proc.
+inline {1} 2.
+inline {2} 2.
+wp;call(_: ={glob OS}); 1: by sim.
+call(_: ={glob S, glob OS}).
+(* ENCRYPTION IS EQUIVALENT: Write aux lemma.  *)
++ inline {2} 2.
+  wp;ecall{2}(sem_encode4 (compress_poly 4 v{2})).
+  wp;ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
+  wp;ecall{2}(sem_decode1 (m0{2})).
+  swap {1} 5 -3. 
+  wp;conseq />; 1:by smt().
+  admit. (* Hugo: follows from PRF hop and product of distributions,
+                  plus ntt properties *)
+
+rnd;call(_: ={glob OS}); 1: by sim.
+conseq />; 1: by smt().
+
+(* KEYGEN IS EQUIVALENT: Write aux lemma.  *)
+call(_: ={glob S, glob OS}).
+inline {2} 2. 
+wp;ecall{2}(sem_encode12_vec (toipolyvec s0{2})).
+wp;ecall{2}(sem_encode12_vec (toipolyvec t{2})).
+swap {1} 4 -2. 
+inline {2} 7.
+swap {2} [7..9] -4. 
+swap {2} 11 -5. 
+wp; conseq => />.
+
+admit. (* Hugo: follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
+                and product of distributions, plus ntt properties *)
+
+by inline *; conseq => />; sim.
+
+qed.
+
+end section.
+
+section.
+
+declare module As <: KyberPKE.AdversaryRO {-O, -OS, -KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+declare module XOF <: XOF_t {-As, -B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+declare module Sim <: Simulator_t {-XOF,-As,-B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+
+lemma security_spec_indiff &m :  
+  (forall (x : RO.in_t), is_lossless (RO.dout x)) => 
+  (forall b,
+     Pr[ WIndfReal(D(B1ROM(As,KSampler(XOF))),KSampler(XOF),OS).main(false,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(B1ROM(As,KSampler(XOF))),Sim,O).main(false,b) @ &m : res]) =>
+  (forall b,
+     Pr[ WIndfReal(D(B2ROM(As,KSampler(XOF))),KSampler(XOF),OS).main(true,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(B2ROM(As,KSampler(XOF))),Sim,O).main(true,b) @ &m : res]) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
+ equiv [ KSampler(XOF,OS).sample ~ KSampler(XOF,OS).sampleT :
+       ={glob XOF, glob OS, arg} ==> ={glob XOF, glob OS} /\ res{2} = trmx res{1}] =>
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,OS).main() @ &m : res] - 1%r/2%r = 
+    Pr[MLWE(B(BS(B1ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res] -
+       Pr[MLWE(B(BS(B1ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res] + 
+    Pr[MLWE(Bt(BS(B2ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res]-
+       Pr[MLWE(Bt(BS(B2ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res].
+move => Oill ind1 ind2  XOF_ll Asgll Ascll good_sampler.
+have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,KSampler(XOF),KPRF),As,OS).main() @ &m : res]= 
+          Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,OS).main() @ &m : res];
+  last first.
++ apply (security_any_sampler_indiff  As (KSampler(XOF)) Sim  &m Oill ind1 ind2 _ Asgll Ascll).
+  by admit. (* Rejection sampling is lossless *)
+byequiv => //.
+proc; inline {1} 2; inline {2} 2.
+wp; call(_: ={glob OS, glob XOF}); 1: by sim.
+call (enc_sampler_enc OS XOF good_sampler).
+rnd.
+wp; call(_: ={glob OS, glob XOF}); 1: by sim.
+call (kg_sampler_kg OS XOF).
+by inline *; auto.
+qed.
+
+end section.
+
+section.
+
+declare module A <: CAdversaryRO {-O,-OS}.
+declare module S <: Sampler {-A,-O,-OS}.
+declare module Sim <: Simulator_t {-S, -A,-O,-OS}.
+
+
+lemma correctness_any_sampler &m epsilon_hack fail_prob :
+  (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
+  (forall (O <: RO.POracle), islossless O.o => islossless A(O).find) =>
+      Pr[ WIndfReal(MLWEPKE.D(A),S,OS).main(witness) @ &m : res] = 
+     Pr[ WIndfIdeal(MLWEPKE.D(A),Sim,O).main(witness) @ &m : res] => 
+(* This jump is assumed to introduce no slack in the
+   Kyber proposal. 
+   We need to figure out how to bound it. *)
+  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
+     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack =>
+(* The following failure probability can be bounded as
+in the Python script for Kyber *)   
+  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
+  Pr[ KyberPKE.CorrectnessAdvROM(KyberS(G,S,KPRF),A,OS).main() @ &m : res]  >=
+  1%r - fail_prob - epsilon_hack.
+move => Sim_ll A_ll good_sampler eh nb.
+have <- : 
+Pr[PKE_.CGameROM(PKE_.CorrectnessAdv, MLWE_PKE(S(RO.Lazy.LRO)), A, RO.Lazy.LRO).main() @ &m : res] = 
+Pr[CorrectnessAdvROM(KyberS(G, S, KPRF), A, OS).main() @ &m : res]; 
+   last by apply (correctness_bound A S Sim &m epsilon_hack fail_prob Sim_ll A_ll good_sampler eh nb).
+byequiv => //.
+proc.
+inline {1} 2; inline {2} 2.
+wp;call(_: ={glob S, glob OS}).
+(* Decryption is EQUIVALENT: Write Aux Lemma *)
++ wp;ecall{2}(sem_encode1 (compress_poly 1 mp{2})).
+  wp;ecall{2}(sem_decode12_vec (sk{2})).
+  wp;ecall{2}(sem_decode4 (c2{2})).
+  wp;ecall{2}(sem_decode10_vec (c1{2})).
+  auto => /> *. 
+  rewrite /m_decode /c_decode; congr; congr => /=; congr.
+  admit. (* Hugo : bring in ntt properties *)
+
+call(_: ={glob S, glob OS}).
+(* ENCRYPTION IS EQUIVALENT: Write aux lemma.  *)
++ inline {2} 2.
+  wp;ecall{2}(sem_encode4 (compress_poly 4 v{2})).
+  wp;ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
+  wp;ecall{2}(sem_decode1 (m0{2})).
+  swap {1} 5 -3. 
+  wp;conseq />; 1:by smt().
+  admit. (* Hugo: follows from PRF hop and product of distributions,
+                  plus ntt properties *)
+
+call(_: ={glob OS}); 1: by sim.
+
+(* KEYGEN IS EQUIVALENT: Write aux lemma.  *)
+call(_: ={glob S, glob OS}).
+inline {2} 2. 
+wp;ecall{2}(sem_encode12_vec (toipolyvec s0{2})).
+wp;ecall{2}(sem_encode12_vec (toipolyvec t{2})).
+swap {1} 4 -2. 
+inline {2} 7.
+swap {2} [7..9] -4. 
+swap {2} 11 -5. 
+wp; conseq => />.
+
+admit. (* Hugo: follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
+                and product of distributions, plus ntt properties *)
+
+by inline *; conseq => />;  auto => />.
+qed. 
+
+end section.
+
+section.
+
+declare module A <: CAdversaryRO {-O,-OS}.
+declare module XOF <: XOF_t {-A,-O,-OS}.
+declare module Sim <: Simulator_t {-XOF, -A,-O,-OS}.
+
+
+lemma correctness_spec &m epsilon_hack fail_prob :
+  (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
+  (forall (O <: RO.POracle), islossless O.o => islossless A(O).find) =>
+      Pr[ WIndfReal(MLWEPKE.D(A),KSampler(XOF),OS).main(witness) @ &m : res] = 
+     Pr[ WIndfIdeal(MLWEPKE.D(A),Sim,O).main(witness) @ &m : res] => 
+ equiv [ KSampler(XOF,OS).sample ~ KSampler(XOF,OS).sampleT :
+       ={glob XOF, glob OS, arg} ==> ={glob XOF, glob OS} /\ res{2} = trmx res{1}] =>
+(* This jump is assumed to introduce no slack in the
+   Kyber proposal. 
+   We need to figure out how to bound it. *)
+  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
+     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack =>
+(* The following failure probability can be bounded as
+in the Python script for Kyber *)   
+  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
+  Pr[ KyberPKE.CorrectnessAdvROM(Kyber(G,XOF,KPRF),A,OS).main() @ &m : res]  >=
+  1%r - fail_prob - epsilon_hack.
+move => Sim_ll A_ll sampler_good1 sampler_good2 eh fp.
+have <-: Pr[CorrectnessAdvROM(KyberS(G, KSampler(XOF), KPRF), A, OS).main() @ &m : res] = 
+         Pr[CorrectnessAdvROM(Kyber(G, XOF, KPRF), A, OS).main() @ &m : res];
+  last by apply (correctness_any_sampler A (KSampler(XOF)) Sim &m).
+byequiv => //.
+proc. 
+inline {1} 2; inline {2} 2.
+wp; call(_: ={glob OS, glob XOF}); 1: by sim.
+call (enc_sampler_enc OS XOF sampler_good2).
+wp; call(_: ={glob OS}); 1: by sim.
+call (kg_sampler_kg OS XOF).
+by inline *; auto.
+qed.
+
+end section.
+
 end SpecProperties.
 
-theory SpecPropertiesLWE.
-
-(* We now get MLWE based security  and correctness theorems.
-   Clone spec properties with the correct RO type
-   to apply these theorems as above.  *)
-
-clone import SpecProperties with
-  type KyberSpec.KyberPKE.RO.in_t <- W8.t Array32.t,
-  type KyberSpec.KyberPKE.RO.out_t <- matrix. 
-
-import MLWEPKE.
-import MLWE_.
-import MLWE_ROM.
-import RO_H.
-
-lemma main_theorem_ro  (A  <:
-           MLWE_PKE_RO.PKEG.PKE_.AdversaryRO{ -Lazy.LRO, -MLWE_vs_MLWE_ROM.B, -MLWE_vs_MLWE_ROM.Bt, -SMP_vs_ROM.LazyEager.ERO, -MLWE_PKE_RO.PKEG.B1ROM, -MLWE_PKE_RO.PKEG.B2ROM}) &m:
-    (forall (x : in_t), is_lossless (dout x)) =>
-    (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
-    (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
-    Pr[ SpecProperties.KyberSpec.KyberPKE.CPAGameROM(SpecProperties.KyberSpec.KyberPKE.CPA,KyberS(G,SMP_vs_ROM.S,KPRF),A,Lazy.LRO).main() @ &m : res] -
-    1%r / 2%r =
-    Pr[MLWE(MLWE_vs_MLWE_ROM.B(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B1ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
-       (false) @ &m : res] -
-    Pr[MLWE(MLWE_vs_MLWE_ROM.B(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B1ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
-       (true) @ &m : res] +
-    Pr[MLWE(MLWE_vs_MLWE_ROM.Bt(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B2ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
-       (false) @ &m : res] -
-    Pr[MLWE(MLWE_vs_MLWE_ROM.Bt(SMP_vs_ROM.BS(MLWE_PKE_RO.PKEG.B2ROM(A, SMP_vs_ROM.S), SMP_vs_ROM.S), Lazy.LRO)).main
-       (true) @ &m : res].
-proof. 
-move => H H0 H1.
-move : (MLWEPKE.MLWE_PKE_RO.Security.main_theorem_ro A &m H H0 H1) => <-.
-have -> : 
-  Pr[KyberSpec.KyberPKE.CPAGameROM(KyberSpec.KyberPKE.CPA, KyberS(G, SMP_vs_ROM.S, KPRF), A, Lazy.LRO).main() @ &m : res] =
-  Pr[MLWE_PKE_RO.PKEG.PKE_.CPAGameROM(MLWE_PKE_RO.PKEG.PKE_.CPA, MLWE_PKE_RO.PKEG.MLWE_PKE(SMP_vs_ROM.S(Lazy.LRO)), A, Lazy.LRO).main
-   () @ &m : res]; last by ring.
-admitted. (* Hugo: should be straightforward equivalence proof *)
-
-lemma correctness_bound (A <: MLWE_PKE_RO.PKEG.PKE_.CAdversaryRO{ -Lazy.LRO}) &m fail_prob epsilon_hack:
-    (forall (O <: Oracle), islossless O.o => islossless A(O).find) =>
-`|Pr[MLWE_PKE_RO.Correctness.CorrectnessNoiseApprox.main() @ &m : res] -
-   Pr[MLWE_PKE_RO.Correctness.CorrectnessBound.main() @ &m : res]| <=
- fail_prob =>
- Pr[MLWE_PKE_RO.Correctness.CorrectnessBound.main() @ &m : res] <= epsilon_hack =>
-    1%r - fail_prob - epsilon_hack <=
-    Pr[SpecProperties.KyberSpec.KyberPKE.CGameROM(SpecProperties.KyberSpec.KyberPKE.CorrectnessAdv, KyberS(G,SMP_vs_ROM.S,KPRF), A, Lazy.LRO).main
-       () @ &m : res].
-proof.
-move => H H0 H1.
-move : (MLWEPKE.MLWE_PKE_RO.Correctness.correctness_bound A &m fail_prob epsilon_hack H H0 H1).
-have -> : 
-   Pr[MLWE_PKE_RO.PKEG.PKE_.CGameROM(MLWE_PKE_RO.PKEG.PKE_.CorrectnessAdv, MLWE_PKE_RO.PKEG.MLWE_PKE(SMP_vs_ROM.S(Lazy.LRO)), A, Lazy.LRO).main
-   () @ &m : res] = 
-   Pr[KyberSpec.KyberPKE.CGameROM(KyberSpec.KyberPKE.CorrectnessAdv, KyberS(G, SMP_vs_ROM.S, KPRF), A, Lazy.LRO).main
-   () @ &m : res]; last by smt().
-admitted. (* Hugo: should be straightforward equivalence proof *)
-
-end SpecPropertiesLWE.
 
 theory ImplementationProperties.
 
