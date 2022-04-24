@@ -147,30 +147,16 @@ module H : KyberPKE.RO.POracle = {
   proc o(x : KyberPKE.RO.in_t) : KyberPKE.RO.out_t = { return witness;  }
 }.
 
-module (G : G_t) = {
-  proc sample(inbuf : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = { 
-    var i,j,c;
+module (HS : HSF.PseudoRF) = {
+  include  HSF.PseudoRF[keygen]
+
+  proc f(inbuf : W8.t Array32.t, inp : unit) : W8.t Array64.t = { 
     var buf : W8.t Array64.t;
-    var publicseed : W8.t Array32.t;
-    var noiseseed  : W8.t Array32.t;
 
     buf <- witness;
-    publicseed <- witness;
-    noiseseed <- witness;
 
     buf <@ M._sha3512_32 (buf, inbuf);
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 32);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- buf.[(W64.to_uint i)];
-      publicseed.[(W64.to_uint i)] <- c;
-      c <- buf.[(W64.to_uint j)];
-      noiseseed.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
-    }
-    return (publicseed,noiseseed);
+    return buf;
   }
 }.
 
@@ -325,9 +311,25 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var skpv:W16.t Array768.t;
     var e:W16.t Array768.t;
     var pkpv:W16.t Array768.t;
+    var buf : W8.t Array64.t;
 
 
-    (publicseed,noiseseed) <@  G.sample(seed);
+    buf <@  HS.f(seed,());
+
+    publicseed <- witness;
+    noiseseed <- witness;
+
+    i <- (W64.of_int 0);
+    j <- (W64.of_int 32);
+    
+    while ((i \ult (W64.of_int 32))) {
+      c <- buf.[(W64.to_uint i)];
+      publicseed.[(W64.to_uint i)] <- c;
+      c <- buf.[(W64.to_uint j)];
+      noiseseed.[(W64.to_uint i)] <- c;
+      i <- (i + (W64.of_int 1));
+      j <- (j + (W64.of_int 1));
+    }
 
     a <- witness;
     a <@ __gen_matrix (publicseed,false);
@@ -1065,8 +1067,8 @@ swap {1} [11..13] -8.
 swap {1} 8 -5.
 swap {1} 10 -7.
 swap {1} [14..16] -6.
-seq 10 1 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
-+ inline G.sample;swap {1} [5..6] -3. 
+seq 10 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
++ inline HS.f. swap {1} [5..6] -3. swap {2} [4..5] 2.
   seq 3 1 : (#pre /\ ={inbuf}); last by sim.   
   conseq => />.
   while {1} (0<= to_uint i{1} <=32 /\ 
@@ -1196,7 +1198,7 @@ op touches2 (m m' : global_mem_t) (p1 : address) (len1 : int) (p2 : address) (le
 
 
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
-   equiv [ M.indcpa_keypair_jazz ~ Kyber(G,XOF,KPRF,H).kg_derand : 
+   equiv [ M.indcpa_keypair_jazz ~ Kyber(HS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
        seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
@@ -1232,8 +1234,25 @@ inline {1} 1; inline {2} 1.
 sp 2 0.
 
 swap {2} 7 -5.
-seq 2 2 : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
-+ by conseq => />; call (_: true); [ by sim | by auto => />]. 
+seq 7 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
++ inline{2} 2;wp.
+  seq 4 3 : (#pre /\ buf{1} = rhosig{2}). 
+  + wp;call(_:true); 1: by sim. 
+    by auto => />.
+  conseq => />.
+  while {1} (0<=to_uint i{1}<=32 /\ to_uint j{1} = to_uint i{1} + 32 /\ buf{1} = rhosig{2} /\
+              forall k, 0<=k<to_uint i{1} => publicseed{1}.[k] = rhosig{2}.[k] /\ noiseseed{1}.[k] = rhosig{2}.[k+32])
+              (32 - to_uint i{1}); last first.
+  + auto => /> &1 &2 ?????; split; 1:smt().
+    move => i j ns ps; rewrite ultE of_uintK /=; split; 1: by smt().
+    by move => ?????; split;  rewrite tP => k kb; rewrite initiE /#.
+  move => *. auto => /> &1; rewrite ultE of_uintK /= => ?????. 
+  rewrite !to_uintD_small /=; 1,2: smt().
+  do split; 1..3,5:smt().
+  move => k kbl kbh. 
+  case (k<to_uint i{1}). 
+  move => low;smt(Array32.set_neqiE). 
+  by move => high;rewrite !Array32.set_eqiE; smt(). 
 
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
@@ -1474,7 +1493,7 @@ qed.
 
 
 lemma kyber_correct_enc mem _coinsp _msgp _ctp _pkp : 
-   equiv [ M.indcpa_enc_jazz ~ Kyber(G,XOF,KPRF,H).enc_derand: 
+   equiv [ M.indcpa_enc_jazz ~ Kyber(HS,XOF,KPRF,H).enc_derand: 
      valid_ptr _coinsp 32 /\
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _msgp 32 /\
@@ -1804,7 +1823,7 @@ by auto =>/> /#.
 qed.
 
 lemma kyber_correct_dec mem _msgp _ctp _skp : 
-   equiv [ M.indcpa_dec_jazz ~ Kyber(G,XOF,KPRF,H).dec : 
+   equiv [ M.indcpa_dec_jazz ~ Kyber(HS,XOF,KPRF,H).dec : 
      valid_ptr _msgp 32 /\
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\

@@ -2,6 +2,8 @@ require import AllCore ZModP IntDiv Distr List DList PKE_Ext.
 from Jasmin require import JWord.
 require import Array32 Array64 Array128 Array168 Array256 Array384.
 require import Array768 Array960 Array1024 Array1152.
+require  PRF.
+
 
 (**************************************************)
 (* Aux stuff needed for compression/decompression *)
@@ -861,8 +863,27 @@ clone import PKE_Ext as KyberPKE with
   type plaintext = W8.t Array32.t,
   type ciphertext = W8.t Array960.t * W8.t Array128.t.
 
-module type G_t = {
-   proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t)
+(* PRF keys in encryption come directly from srand *)
+op [lossless]srand : W8.t Array32.t distr.
+
+(* G needs only to be entropy smoothing, which is
+   exactly a PRF without any input *)
+clone PRF as HS_DEFS with
+  type D <- unit,
+  type R <- W8.t Array64.t.
+
+clone import HS_DEFS.PseudoRF as HSF with
+  type K <- W8.t Array32.t, 
+  op dK <- srand.
+
+module G(HS: HSF.PseudoRF) = {
+  proc sample(s : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = {
+     var rhosig,rho,sig;
+     rhosig <@ HS.f(s,());
+     rho <- Array32.init (fun i => rhosig.[i]);
+     sig <- Array32.init (fun i => rhosig.[i + 32]);
+     return (rho,sig);
+  }
 }.
 
 (* We take some liberty to specify parse using a XOF that
@@ -897,11 +918,6 @@ module Parse(XOF : XOF_t, O : RO.POracle) = {
    }
 }.
 
-require  PRF.
-
-(* PRF keys in encryption come directly from srand *)
-op [lossless]srand : W8.t Array32.t distr.
-
 clone PRF as PRF_DEFS with
   type D <- W8.t,
   type R <- W8.t Array128.t.
@@ -932,7 +948,7 @@ module CBD2(PRF : PseudoRF) = {
    }
 }.
 
-module Kyber(G : G_t, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
+module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
@@ -945,7 +961,7 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
      s <- witness;
      sv <- witness;
      tv <- witness;
-     (rho,sig) <@ G.sample(seed);
+     (rho,sig) <@ G(HS).sample(seed);
      _N <- 0; 
      i <- 0;
      while (i < kvec) {
