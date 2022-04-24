@@ -324,11 +324,13 @@ import Lazy.
 
 (* --------------------------------------------------------------------------- *)
 module type Sampler(O : POracle) = {
-    proc sample(sd : seed) : matrix
+    proc sampleA(sd : seed) : matrix
+    proc sampleAT(sd : seed) : matrix
 }.
 
 module type PSampler = {
-    proc sample(sd : seed) : matrix
+    proc sampleA(sd : seed) : matrix
+    proc sampleAT(sd : seed) : matrix
 }.
 
 (* --------------------------------------------------------------------------- *)
@@ -346,12 +348,14 @@ module MLWE_SMP(Adv : SAdv_T, S: Sampler, O : Oracle) = {
 
     sd <$ dseed;
     t <$ duni;
-    Adv(O).interact(sd,t); (* Allow Adv to run the sampler *)
-    _A <@ S(O).sample(sd);
+    Adv(O).interact(sd,t); (* Allow Adv to create some O state *)
+
+    if (tr) { _A <@ S(O).sampleAT(sd); }
+    else    { _A <@ S(O).sampleA(sd);  }
 
     s <$ dshort;
     e <$ dshort;
-    u0 <- (if tr then m_transpose _A else _A) *^ s + e;
+    u0 <- _A *^ s + e;
     u1 <$ duni;
     
     e' <$ dshort_R;
@@ -366,7 +370,9 @@ module MLWE_SMP(Adv : SAdv_T, S: Sampler, O : Oracle) = {
 
 end MLWE_SMP.
 
-(* We can co back to MLWE with a trivial sampler and the RO proof *)
+(* We can go back to MLWE with a trivial sampler and the RO proof
+   but we need LazyEager here, and so the input type to the RO
+   feeding the sampler must be finite. *)
 theory SMP_vs_ROM.
 
 import MLWE_ROM.
@@ -378,10 +384,15 @@ import RO_H.
 import Lazy.
 
 module (S : Sampler) (O : POracle) = {
-  proc sample(sd : seed) : matrix = {
+  proc sampleA(sd : seed) : matrix = {
       var _A;
       _A <@ O.o(sd);
       return _A;
+  }
+  proc sampleAT(sd : seed) : matrix = {
+      var _A;
+      _A <@ O.o(sd);
+      return trmx _A;
   }
 }.
 
@@ -437,10 +448,11 @@ module DRightAux(A : SAdv_T)   (O : POracle) = {
         sd <$ dseed;
         t <$ duni;
         A(O).interact(sd, t);
-        _A <@ S(O).sample(sd);
+        if (tr) { _A <@ S(O).sampleAT(sd); }
+        else    { _A <@ S(O).sampleA(sd);  }
         s <$ dshort;
         e <$ dshort;
-        u0 <- (if tr then trmx _A else _A) *^ s + e;
+        u0 <- _A *^ s + e;
         u1 <$ duni;
         e' <$ dshort_R;
         v0 <- (t `<*>` s) &+ e';
@@ -521,7 +533,7 @@ move => ->.
           Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m0 : res] = 
           Pr[ Exp(LRO,DRight(A)).main(b) @ &m0 : res].
   + move => &m0; byequiv => //=; last by smt().
-    by proc; inline {2} 2; inline {2} 3; sim; inline *; auto => />.
+    by proc; inline {2} 2; inline {2} 3;sim; inline *; auto => />.
   have right : forall &m1,
              Pr[  MLWE_SMP(A,S,ERO).main(false,b) @ &m1 : res] = 
              Pr[ Exp(ERO,DRight(A)).main(b) @ &m1 : res].
@@ -565,7 +577,8 @@ proof.
 rewrite -(MLWE_RO_equiv b &m (BS(A,S))).
 rewrite (MLWE_SMP_equiv_lel false b &m A).
 rewrite (MLWE_SMP_equiv_ler false b &m A).
-byequiv =>//;proc.  
+byequiv =>//;proc.
+rcondf{2} 5; 1: by move => *; auto => />.  
 inline {1} 13. inline {2} 5.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
 swap {2} [8..9] -5. swap{2} 11 -6. swap{2} 12 -5. swap {2} 14 -6. swap {2} 10 -7.
@@ -579,15 +592,14 @@ by sim.
 qed.
 
 lemma MLWE_SMP_equiv_t b &m (A <: SAdv_T {-ERO,-LRO,-B,-Bt, -BS}):
-  (forall (x : in_t), is_lossless (dout x)) =>
   Pr[  MLWE(Bt(BS(A,S),LRO)).main(b) @ &m : res] =
   Pr[  MLWE_SMP(A,S,LRO).main(true,b) @ &m : res].
 proof.
-move => dout_ll.
 rewrite -(MLWE_RO_equiv_t b &m (BS(A,S))).
 rewrite (MLWE_SMP_equiv_lel true b &m A).
 rewrite (MLWE_SMP_equiv_ler true b &m A).
 byequiv =>//;proc.  
+rcondt{2} 5; 1: by move => *; auto => />.  
 inline {1} 13. inline {2} 5.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
 swap {2} [8..9] -5. swap{2} 11 -6. swap{2} 12 -5. swap {2} 14 -6. swap {2} 10 -7.
@@ -630,14 +642,11 @@ module WIndfReal(D : Distinguisher_t, S : Sampler, O : RO_SMP.Oracle) = {
 
 module WIndfIdeal(D : Distinguisher_t, Sim : Simulator_t, O : RO_H.Oracle) = {
 
-   module FakeS = {
-      proc sample = O.o
-   }
    proc main(tr b : bool) : bool = {
         var sd,b';
         O.init();
         sd <$ dseed;
-        b' <@ D(FakeS,Sim(O)).distinguish(tr, b,sd);
+        b' <@ D(SMP_vs_ROM.S(O),Sim(O)).distinguish(tr, b,sd);
         return b';
    }
 }.
@@ -661,10 +670,11 @@ module (D(A : SAdv_T) : Distinguisher_t) (S : PSampler, O : RO_SMP.POracle) = {
     var _A,t,s,e,u0,u1,e',v0,v1,b';        
     t <$ duni;
     A(O).interact(sd,t); 
-    _A <@ S.sample(sd);                
+    if (tr) { _A <@ S.sampleAT(sd); }
+    else    { _A <@ S.sampleA(sd);  }
     s <$ dshort;                                             
     e <$ dshort;                                              
-    u0 <- (if tr then trmx _A else _A) *^ s + e;            
+    u0 <- _A *^ s + e;            
     u1 <$ duni;                                               
     e' <$ dshort_R;                                          
     v0 <- (t `<*>` s) &+ e';                                    
@@ -719,10 +729,11 @@ module DRightAux(A : SAdv_T, Sim : Simulator_t)   (O : POracle) = {
         sd <$ dseed;
         t <$ duni;
         A(Sim(O)).interact(sd, t);
-        _A <@ O.o(sd);
+        if (tr) { _A <@ O.o(sd);  _A <- trmx _A; } 
+        else {  _A <@ O.o(sd); }
         s <$ dshort;
         e <$ dshort;
-        u0 <- (if tr then trmx _A else _A) *^ s + e;
+        u0 <- _A *^ s + e;
         u1 <$ duni;
         e' <$ dshort_R;
         v0 <- (t `<*>` s) &+ e';
@@ -804,12 +815,18 @@ move => ->.
           Pr[WIndfIdeal(D(A), Sim, O).main(false, b) @ &m0 : res] = 
           Pr[Exp(RO_H.Lazy.LRO,DRight(A,Sim)).main(b) @ &m0 : res].
   + move => &m0; byequiv => //=; last by smt().
-    by proc; inline *; sim; auto => />. 
+    proc; inline {1} 3; inline {2} 2; inline {2} 3.
+    rcondf{1} 8; 1: by move => *; call(_: true); auto => />.
+    rcondf{2} 8; 1: by move => *; call(_: true); auto => />.
+    by inline *;sim. 
   have right : forall &m1,
              Pr[ WIndfIdeal(D(A), Sim, ERO).main(false, b) @ &m1 : res] = 
              Pr[ Exp(ERO,DRight(A,Sim)).main(b) @ &m1 : res].
   + move => &m1; byequiv => //=; last by smt().
-    by proc; inline *; sim; auto => />; sim.
+    proc; inline {1} 3; inline {2} 2; inline {2} 3.
+    rcondf{1} 8; 1: by move => *; call(_: true); auto => />.
+    rcondf{2} 8; 1: by move => *; call(_: true); auto => />.
+    by inline *;sim. 
   have le : 
      equiv [ Exp(RO_H.Lazy.LRO, DRight(A,Sim)).main ~ Exp(ERO, DRight(A,Sim)).main : 
      ={glob DRight(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DRight(A,Sim)) _); smt(duni_matrix_ll).
@@ -824,12 +841,18 @@ have left : forall &m0,
       Pr[WIndfIdeal(D(A), Sim, O).main(true, b) @ &m0 : res] = 
       Pr[ Exp(RO_H.Lazy.LRO,DRightT(A,Sim)).main(b) @ &m0 : res].
   + move => &m0; byequiv => //=; last by smt().
-    by proc; inline *; sim; auto => />. 
+    proc; inline {1} 3; inline {2} 2; inline {2} 3.
+    rcondt{1} 8; 1: by move => *; call(_: true); auto => />.
+    rcondt{2} 8; 1: by move => *; call(_: true); auto => />.
+    by inline *;sim. 
   have right : forall &m1,
              Pr[ WIndfIdeal(D(A), Sim, ERO).main(true, b) @ &m1 : res] = 
              Pr[ Exp(ERO,DRightT(A,Sim)).main(b) @ &m1 : res].
   + move => &m1; byequiv => //=; last by smt().
-    by proc; inline *; sim; auto => />; sim.
+    proc; inline {1} 3; inline {2} 2; inline {2} 3.
+    rcondt{1} 8; 1: by move => *; call(_: true); auto => />.
+    rcondt{2} 8; 1: by move => *; call(_: true); auto => />.
+    by inline *;sim. 
   have le : 
      equiv [ Exp(RO_H.Lazy.LRO, DRightT(A,Sim)).main ~ Exp(ERO, DRightT(A,Sim)).main : 
      ={glob DRightT(A,Sim),arg} ==> ={res}] by apply (eq_eager_sampling (DRightT(A,Sim)) _); smt(duni_matrix_ll).
@@ -860,6 +883,7 @@ rewrite (MLWE_SMP_equiv_lel false _b &m A Sim).
 rewrite (MLWE_SMP_equiv_ler false _b &m A Sim).
 byequiv =>//;proc.  
 inline {1} 13. inline {2} 3.
+rcondf {2} 8; 1: by  move=> *; call(_: true); auto => />.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
 swap {2} 5 -2. swap {2} [9..10] -5. swap{2} 12 -6. swap{2} 13 -6. swap {2} 15 -7. swap {2} 11 -4. 
 swap {1} 1 9. swap {2} 1 10. 
@@ -890,14 +914,16 @@ rewrite (MLWE_SMP_equiv_lel true _b &m A Sim).
 rewrite (MLWE_SMP_equiv_ler true _b &m A Sim).
 byequiv =>//;proc.  
 inline {1} 13. inline {2} 3.
+rcondt {2} 8; 1: by  move=> *; call(_: true); auto => />.
 swap {1} [8..10] -3. swap{1} 12 -4. swap {1} 13 -10. swap {1} 14 -6. swap {1} 16 -4. 
 swap {2} 5 -2. swap {2} [9..10] -5. swap{2} 12 -6. swap{2} 13 -6. swap {2} 15 -7. swap {2} 11 -4. 
 swap {1} 1 9. swap {2} 1 10. 
 seq 9 10 : (tr{2} /\  ={tr,b,glob A,glob Sim,sd,sd0,t,s,e,u1,e',v1} /\ sd0{1} = sd{2} /\ t0{1} = t{2} /\ b0{2} = b{1} /\ tr0{2} = tr{1}); 
    1: by inline *; auto. 
 wp; call (_: ={glob ERO,glob Sim}); 1: by sim.
+inline {2} 3.
 wp;conseq (_: ={glob A, glob Sim, sd, sd0, t,b} /\  sd0{1} = sd{2} /\ t0{1} = t{2} /\ tr0{2} = tr{1} /\ b0{2} = b{1} 
-          ==> ={glob A, glob Sim, ERO.m} /\ t{2} = t0{1} /\ _A{1} = _A{2}); 1,2: by smt(). 
+          ==> ={glob A, glob Sim, ERO.m} /\ t{2} = t0{1} /\ _A{1} = _A0{2}); 1,2: by smt(). 
 by inline *; swap{1} 6 -2; sim; smt().
 qed.
 

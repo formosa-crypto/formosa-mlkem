@@ -288,7 +288,7 @@ module KPRF : PseudoRF.PseudoRF = {
 
 
 module (KSampler(XOF : XOF_t) : Sampler) (O : RO.POracle)  = {
-    proc sample(sd : W8.t Array32.t) : matrix = { 
+    proc sampleA(sd : W8.t Array32.t) : matrix = { 
      var i,j,c;
      var a : matrix;
      a <- witness;
@@ -306,7 +306,7 @@ module (KSampler(XOF : XOF_t) : Sampler) (O : RO.POracle)  = {
      return a;      
     }
 
-    proc sampleT(sd : W8.t Array32.t) : matrix = { 
+    proc sampleAT(sd : W8.t Array32.t) : matrix = { 
      var i,j,c;
      var a : matrix;
      a <- witness;
@@ -325,6 +325,54 @@ module (KSampler(XOF : XOF_t) : Sampler) (O : RO.POracle)  = {
     }
 
 }.
+
+lemma KSamplerA_ll (XOF <: XOF_t) (O <: RO.POracle) :
+   (islossless O.o) =>
+   (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).init) =>
+   (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+   (forall (O0 <: RO.POracle) (XOF0 <: XOF_t), 
+         islossless O0.o => 
+         islossless XOF0(O0).next_bytes => 
+         islossless Parse(XOF0,O0).sample) =>
+   islossless KSampler(XOF,O).sampleA.
+proof. 
+move => O_ll XOF_init_ll XOF_next_ll Parse_ll.
+proc.
+while(0 <= i <= kvec) (kvec-i); last by move => *;auto => /> /#.
+move => *; wp.
+while(#post /\ 0 <= j <= kvec) (kvec-j); last by move => *;auto => /> /#.
+move => *; wp.
+call (Parse_ll O XOF).
++ apply (XOF_next_ll O).
+apply (O_ll).
+conseq (_: ==> true); 1: by smt().
+call (XOF_init_ll O).
+by auto => />.
+qed.
+
+lemma KSamplerAT_ll (XOF <: XOF_t) (O <: RO.POracle) :
+   (islossless O.o) =>
+   (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).init) =>
+   (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+   (forall (O0 <: RO.POracle) (XOF0 <: XOF_t), 
+         islossless O0.o => islossless XOF0(O0).next_bytes => 
+         islossless Parse(XOF0,O0).sample) =>
+         islossless KSampler(XOF,O).sampleAT.
+proof. 
+move => O_ll XOF_init_ll XOF_next_ll Parse_ll.
+proc.
+while(0 <= i <= kvec) (kvec-i); last by move => *;auto => /> /#.
+move => *; wp.
+while(#post /\ 0 <= j <= kvec) (kvec-j); last by move => *;auto => /> /#.
+move => *; wp.
+call (Parse_ll O XOF).
++ apply (XOF_next_ll O).
+apply (O_ll).
+conseq (_: ==> true); 1: by smt().
+call (XOF_init_ll O).
+by auto => />.
+qed.
+
 
 (*************************************
 We define a version of Kyber spec that
@@ -347,7 +395,7 @@ module KyberS(G : G_t, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.POracle) : S
      tv <- witness;
      (rho,sig) <@ G.sample(seed);
      _N <- 0; 
-     a <@ S(O).sample(rho);     
+     a <@ S(O).sampleA(rho);     
      i <- 0;
      while (i < kvec) {
         c <@ CBD2(PRF).sample(sig,_N);
@@ -392,8 +440,7 @@ module KyberS(G : G_t, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.POracle) : S
       _N <- 0;
       thati <@ EncDec.decode12_vec(tv); 
       that <- ofipolyvec thati;
-      aT <@ S(O).sample(rho);    
-      aT <- trmx aT; 
+      aT <@ S(O).sampleAT(rho);    
       i <- 0;
       while (i < kvec) {
         c <@ CBD2(PRF).sample(r,_N);
@@ -444,6 +491,7 @@ module KyberS(G : G_t, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.POracle) : S
 
 }.
 
+(* We have that instantiating S with KSampler we get the Spec *)
 lemma kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t {-O}) :
   equiv [   KyberS(G,KSampler(XOF),KPRF,O).kg ~ Kyber(G,XOF,KPRF,O).kg : 
      ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
@@ -453,31 +501,16 @@ seq 12 11: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\
 by sim => />.
 qed.
 
-(* It so happens that Kyber specifies the rejection sampling 
-   of the transposed matrix in the most annoying way. 
-   Rather than fixing the indices in transposed order, it
-   computes the values in transposed order.
-   This means that we can only prove the sampler adequately
-   generates the transposed matrix after we have a concrete
-   XOF and a concrete RO. *)
 lemma enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t {-O}):
- equiv [ KSampler(XOF,O).sample ~ KSampler(XOF,O).sampleT :
-       ={glob XOF, glob O, arg} ==> ={glob XOF, glob O} /\ res{2} = trmx res{1}] =>
  equiv [
    KyberS(G,KSampler(XOF),KPRF,O).enc ~ Kyber(G,XOF,KPRF,O).enc : 
     ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
-move => good_smp.
 proc. 
 inline {1} 2; inline {2} 2. 
 swap {1} 5 8.
 swap {2} 5 8.
 seq 12 12: (#pre /\ ={that, rv, r0, m, m0, e1, _N,rho}); 1: by inline *; sim.
-sim => />. 
-transitivity {1}  { aT <- witness; aT <@ KSampler(XOF,O).sampleT(rho); }
-                 (={glob XOF, glob O, rho} ==> ={glob XOF, glob O, aT})
-                 ((pk{1}, m{1}) = (pk{2}, m{2}) /\ ={glob O, glob XOF} /\ ={that, rv, r0, m, m0, e1, aT, _N,rho}  ==> ={glob XOF, glob O, aT} ); 1,2 : smt().
-+ by wp; call (good_smp); auto => /> //. 
-by inline {1} 2; sim.  
+by inline *;sim => /#.
 qed.
 
 lemma enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
@@ -495,7 +528,8 @@ declare module As <: KyberPKE.AdversaryRO {-O, -S, -KPRF, -B1ROM, -B2ROM}.
 lemma security_any_sampler &m :  
   islossless O.init =>
   islossless O.o =>
-  (forall (O0 <: RO.Oracle), islossless O0.o => islossless S(O0).sample) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless S(O0).sampleA) =>
+  (forall (O0 <: RO.Oracle), islossless O0.o => islossless S(O0).sampleAT) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
@@ -503,11 +537,11 @@ lemma security_any_sampler &m :
  Pr[MLWE_SMP(B1ROM(As, S), S, O).main(false, true) @ &m : res] +
  Pr[MLWE_SMP(B2ROM(As, S), S, O).main(true, false) @ &m : res] -
  Pr[MLWE_SMP(B2ROM(As, S), S, O).main(true, true) @ &m : res].
-move => H H0 H1 H2 H3.
+move => H H0 H1 H2 H3 H4.
 have  <- : 
     Pr[ PKE_.CPAGameROM(PKE_.CPA,MLWE_PKE(S(O)),As,O).main() @ &m : res] =
     Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,O).main() @ &m : res]; last by
-        apply (main_theorem_s O S As &m  H H0 H1 H2 H3).
+        apply (main_theorem_s O S As &m  H H0 H1 H2 H3 H4).
 byequiv => //.
 proc.
 inline {1} 2.
@@ -562,26 +596,33 @@ declare module As <: KyberPKE.AdversaryRO {-O, -XOF, -KPRF, -B1ROM, -B2ROM}.
 lemma security_spec &m :  
   islossless O.init =>
   islossless O.o =>
-  (forall (O0 <: RO.Oracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+  (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).init) =>
+  (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+
+   (forall (O0 <: RO.POracle) (XOF0 <: XOF_t), 
+         islossless O0.o => 
+         islossless XOF0(O0).next_bytes => 
+         islossless Parse(XOF0,O0).sample) =>
+
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
- equiv [ KSampler(XOF,O).sample ~ KSampler(XOF,O).sampleT :
-       ={glob XOF, glob O, arg} ==> ={glob XOF, glob O} /\ res{2} = trmx res{1}] =>
+
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
   Pr[MLWE_SMP(B1ROM(As, KSampler(XOF)),  KSampler(XOF), O).main(false, false) @ &m : res] -
  Pr[MLWE_SMP(B1ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(false, true) @ &m : res] +
  Pr[MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, false) @ &m : res] -
  Pr[MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, true) @ &m : res].
-move => Oill Ooll XOF_ll Asgll Ascll good_sampler.
+move => Oill Ooll XOF_init_ll XOF_next_ll Parse_ll Asgll Ascll.
 have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,KSampler(XOF),KPRF),As,O).main() @ &m : res]= 
           Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,O).main() @ &m : res];
   last first.
-+ apply (security_any_sampler O (KSampler(XOF)) As &m Oill Ooll  _ Asgll Ascll).
-  by admit. (* Rejection sampling is lossless *)
++ apply (security_any_sampler O (KSampler(XOF)) As &m Oill Ooll  _ _ Asgll Ascll).
+  + by move => O O_ll; apply (KSamplerA_ll XOF O O_ll XOF_init_ll XOF_next_ll Parse_ll).
+  by move => O O_ll; apply (KSamplerAT_ll XOF O O_ll XOF_init_ll XOF_next_ll Parse_ll).
 byequiv => //.
 proc; inline {1} 2; inline {2} 2.
 wp; call(_: ={glob O, glob XOF}); 1: by sim.
-call (enc_sampler_enc O XOF good_sampler).
+call (enc_sampler_enc O XOF).
 rnd.
 wp; call(_: ={glob O, glob XOF}); 1: by sim.
 call (kg_sampler_kg O XOF).
@@ -611,15 +652,15 @@ declare module Sim <: Simulator_t {-S,-As,-B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, 
 
 lemma security_any_sampler_indiff &m :  
   (forall (x : RO.in_t), is_lossless (RO.dout x)) => 
-  (forall b,
-     Pr[ WIndfReal(D(B1ROM(As,S)),S,OS).main(false,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(B1ROM(As,S)),Sim,O).main(false,b) @ &m : res]) =>
-  (forall b,
-     Pr[ WIndfReal(D(B2ROM(As,S)),S,OS).main(true,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(B2ROM(As,S)),Sim,O).main(true,b) @ &m : res]) =>
-  (forall (O <: RO.Oracle), islossless O.o => islossless S(O).sample) =>
+  (forall (O <: RO.Oracle), islossless O.o => islossless S(O).sampleA) =>
+  (forall (O <: RO.Oracle), islossless O.o => islossless S(O).sampleAT) =>
   (forall (O <: RO.Oracle), islossless O.o => islossless As(O).guess) =>
   (forall (O <: RO.Oracle), islossless O.o => islossless As(O).choose) =>
+
+  (forall tr b (D0 <: Distinguisher_t {-S,-Sim,-O,-OS}),
+     Pr[ WIndfReal(D0,S,OS).main(tr,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,O).main(tr,b) @ &m : res]) =>
+
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,S,KPRF),As,OS).main() @ &m : res] - 1%r/2%r = 
     Pr[MLWE(B(BS(B1ROM(As,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res] -
        Pr[MLWE(B(BS(B1ROM(As,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res] + 
@@ -669,6 +710,22 @@ qed.
 
 end section.
 
+(* The following theorem is the strongest claim we can make
+   about the Kyber Spec. It comes with two assumptions on the
+   matrix sampling procedure:
+   1) that it converges (losslessness of Parse)
+      there is some hope of proving this when XOF is a ROM.
+   2) that it is indifferentiable (explainable) wrt to the
+      random oracle that simply samples uniform matrices.
+      this basically means that there must exist a simulator
+      that can produce a plausible XOF output for any 
+      given Matrix. Easy to claim in paper when XOF is a ROM: 
+      just rejection-sample a different matrix and program 
+      the coefficients with the ones you want to explain. 
+      No clue how to prove this in EC though.
+      But note that, in this case we get security down
+      to MLWE. *)
+
 section.
 
 declare module As <: KyberPKE.AdversaryRO {-O, -OS, -KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D, -LazyEager.ERO}.
@@ -677,32 +734,40 @@ declare module Sim <: Simulator_t {-XOF,-As,-B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS
 
 lemma security_spec_indiff &m :  
   (forall (x : RO.in_t), is_lossless (RO.dout x)) => 
-  (forall b,
-     Pr[ WIndfReal(D(B1ROM(As,KSampler(XOF))),KSampler(XOF),OS).main(false,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(B1ROM(As,KSampler(XOF))),Sim,O).main(false,b) @ &m : res]) =>
-  (forall b,
-     Pr[ WIndfReal(D(B2ROM(As,KSampler(XOF))),KSampler(XOF),OS).main(true,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(B2ROM(As,KSampler(XOF))),Sim,O).main(true,b) @ &m : res]) =>
-  (forall (O0 <: RO.Oracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+
+  (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).init) =>
+  (forall (O0 <: RO.POracle), islossless O0.o => islossless XOF(O0).next_bytes) =>
+
+   (forall (O0 <: RO.POracle) (XOF0 <: XOF_t), 
+         islossless O0.o => 
+         islossless XOF0(O0).next_bytes => 
+         islossless Parse(XOF0,O0).sample) =>
+
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
- equiv [ KSampler(XOF,OS).sample ~ KSampler(XOF,OS).sampleT :
-       ={glob XOF, glob OS, arg} ==> ={glob XOF, glob OS} /\ res{2} = trmx res{1}] =>
+
+  (forall tr b (D0 <: Distinguisher_t {-KSampler(XOF),-Sim,-O,-OS}),
+     Pr[ WIndfReal(D0,KSampler(XOF),OS).main(tr,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,O).main(tr,b) @ &m : res]) =>
+
+
   Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,OS).main() @ &m : res] - 1%r/2%r = 
     Pr[MLWE(B(BS(B1ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res] -
        Pr[MLWE(B(BS(B1ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res] + 
     Pr[MLWE(Bt(BS(B2ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res]-
        Pr[MLWE(Bt(BS(B2ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res].
-move => Oill ind1 ind2  XOF_ll Asgll Ascll good_sampler.
+
+move => Oill XOF_init_ll XOF_next_ll Parse_ll Asgll Ascll ind.
 have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(G,KSampler(XOF),KPRF),As,OS).main() @ &m : res]= 
           Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,KPRF),As,OS).main() @ &m : res];
   last first.
-+ apply (security_any_sampler_indiff  As (KSampler(XOF)) Sim  &m Oill ind1 ind2 _ Asgll Ascll).
-  by admit. (* Rejection sampling is lossless *)
++ apply (security_any_sampler_indiff  As (KSampler(XOF)) Sim  &m Oill _ _ Asgll Ascll ind).
+  + by move => O O_ll; apply (KSamplerA_ll XOF O O_ll XOF_init_ll XOF_next_ll Parse_ll).
+  by move => O O_ll; apply (KSamplerAT_ll XOF O O_ll XOF_init_ll XOF_next_ll Parse_ll).
 byequiv => //.
 proc; inline {1} 2; inline {2} 2.
 wp; call(_: ={glob OS, glob XOF}); 1: by sim.
-call (enc_sampler_enc OS XOF good_sampler).
+call (enc_sampler_enc OS XOF).
 rnd.
 wp; call(_: ={glob OS, glob XOF}); 1: by sim.
 call (kg_sampler_kg OS XOF).
@@ -710,6 +775,10 @@ by inline *; auto.
 qed.
 
 end section.
+
+(* The correctness bounds can only be computed when matrices are
+   uniform, so we jump directly to results where one can assume
+   that the sampler is indifferentiable from the nice RO *)
 
 section.
 
@@ -721,8 +790,11 @@ declare module Sim <: Simulator_t {-S, -A,-O,-OS}.
 lemma correctness_any_sampler &m epsilon_hack fail_prob :
   (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
   (forall (O <: RO.POracle), islossless O.o => islossless A(O).find) =>
-      Pr[ WIndfReal(MLWEPKE.D(A),S,OS).main(witness) @ &m : res] = 
-     Pr[ WIndfIdeal(MLWEPKE.D(A),Sim,O).main(witness) @ &m : res] => 
+
+  (forall trb (D0 <: Distinguisher_t {-S,-Sim,-SMP_vs_ROM_IND.O,-SMP_vs_ROM_IND.OS}),
+     Pr[ WIndfReal(D0,S,OS).main(trb) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,O).main(trb) @ &m : res]) =>
+
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
@@ -733,11 +805,11 @@ in the Python script for Kyber *)
   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
   Pr[ KyberPKE.CorrectnessAdvROM(KyberS(G,S,KPRF),A,OS).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack.
-move => Sim_ll A_ll good_sampler eh nb.
+move => Sim_ll A_ll ind eh nb.
 have <- : 
 Pr[PKE_.CGameROM(PKE_.CorrectnessAdv, MLWE_PKE(S(RO.Lazy.LRO)), A, RO.Lazy.LRO).main() @ &m : res] = 
 Pr[CorrectnessAdvROM(KyberS(G, S, KPRF), A, OS).main() @ &m : res]; 
-   last by apply (correctness_bound A S Sim &m epsilon_hack fail_prob Sim_ll A_ll good_sampler eh nb).
+   last by apply (correctness_bound A S Sim &m epsilon_hack fail_prob Sim_ll A_ll ind eh nb).
 byequiv => //.
 proc.
 inline {1} 2; inline {2} 2.
@@ -783,6 +855,9 @@ qed.
 
 end section.
 
+(* For the full spec we ge the following result, which does 
+   not require losslessness, but does require indifferentiability. *)
+
 section.
 
 declare module A <: CAdversaryRO {-O,-OS}.
@@ -793,10 +868,11 @@ declare module Sim <: Simulator_t {-XOF, -A,-O,-OS}.
 lemma correctness_spec &m epsilon_hack fail_prob :
   (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
   (forall (O <: RO.POracle), islossless O.o => islossless A(O).find) =>
-      Pr[ WIndfReal(MLWEPKE.D(A),KSampler(XOF),OS).main(witness) @ &m : res] = 
-     Pr[ WIndfIdeal(MLWEPKE.D(A),Sim,O).main(witness) @ &m : res] => 
- equiv [ KSampler(XOF,OS).sample ~ KSampler(XOF,OS).sampleT :
-       ={glob XOF, glob OS, arg} ==> ={glob XOF, glob OS} /\ res{2} = trmx res{1}] =>
+
+  (forall trb (D0 <: Distinguisher_t {-KSampler(XOF),-Sim,-SMP_vs_ROM_IND.O,-SMP_vs_ROM_IND.OS}),
+     Pr[ WIndfReal(D0,KSampler(XOF),OS).main(trb) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,O).main(trb) @ &m : res]) =>
+
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
@@ -807,7 +883,7 @@ in the Python script for Kyber *)
   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
   Pr[ KyberPKE.CorrectnessAdvROM(Kyber(G,XOF,KPRF),A,OS).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack.
-move => Sim_ll A_ll sampler_good1 sampler_good2 eh fp.
+move => Sim_ll A_ll ind eh fp.
 have <-: Pr[CorrectnessAdvROM(KyberS(G, KSampler(XOF), KPRF), A, OS).main() @ &m : res] = 
          Pr[CorrectnessAdvROM(Kyber(G, XOF, KPRF), A, OS).main() @ &m : res];
   last by apply (correctness_any_sampler A (KSampler(XOF)) Sim &m).
@@ -815,7 +891,7 @@ byequiv => //.
 proc. 
 inline {1} 2; inline {2} 2.
 wp; call(_: ={glob OS, glob XOF}); 1: by sim.
-call (enc_sampler_enc OS XOF sampler_good2).
+call (enc_sampler_enc OS XOF).
 wp; call(_: ={glob OS}); 1: by sim.
 call (kg_sampler_kg OS XOF).
 by inline *; auto.
