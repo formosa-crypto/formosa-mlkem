@@ -1,8 +1,8 @@
 require import AllCore List Int IntExtra IntDiv CoreMap.
 from Jasmin require import JModel.
-require import Array400 Array256 Array64 Array32 Array16p Array16 Array8 Array4 Array4p.
+require import Array400 Array256 Array64 Array32 Array16 Array8 Array4.
 require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
-require import Ops.
+require import AVX2_Ops.
 require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 require import KyberPoly_avx2_proof.
@@ -319,7 +319,7 @@ module Mvec = {
     return (a);
   }
 
-  proc poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+  proc _poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
     var aux: int;
 
     var x16p:W16.t Array16.t;
@@ -345,7 +345,7 @@ module Mvec = {
     i <- 0;
     while (i < aux) {
       f <-
-      OpsV.iVPBROADCAST_2u128(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      OpsV.iVPBROADCAST_2u128_32u8(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
       f <- OpsV.iVPSHUFB_256(f, shufbidx);
       f <- OpsV.ivpand16u16(f, mask);
       f <- OpsV.iVPMULL_16u16(f, shift);
@@ -788,8 +788,48 @@ proof.
   trivial.
 qed.
 
+equiv eq_poly_decompress:
+  Mavx2_prevec.poly_decompress ~ Mvec._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while(={rp, ap, i, aux, Glob.mem} /\ is16u16 q{1} q{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift{1} shift{2} /\ is32u8 shufbidx{1} shufbidx{2}).
+  wp.
+  call eq_iVPMULHRS_256; call eq_iVPMULL_16u16; call eq_ivpand16u16.
+  wp.
+  call eq_iVPSHUFB_256.
+  inline Ops.iload16u8.
+  sp.
+  call eq_iVPBROADCAST_2u128_32u8.
+  wp; skip; rewrite /is32u8 /is16u16 /is16u8 => />. move => &2 i_lb.
+  do split.
+    + rewrite /loadW128 /loadW8 /=.
+      apply W16u8.allP => //=.
+    move => p_eq res_l0.
+    split.
+    rewrite /f32u8_t16u16 initiE //=.
+    apply W32u8.allP => //=.
+    move => res_l0_eq res_l3.
+    apply Array256.ext_eq => x x_i />.
+    rewrite filliE 1:x_i initiE 1:x_i /= get16E.
+    (* HERE: rewrite pack16_bits16 => //. *)
+    admit.
+  do (wp; call eq_iVPBROADCAST_8u32).
+  wp; skip; auto => />. move => *.
+  do split.
+    + rewrite /is16u16 initiE /get256_direct /= => />.
+      apply W32u8.allP => />.
+    + rewrite /is16u16 /f8u32_t16u16 H initiE //=.
+      apply W8u32.allP => />.
+      do (rewrite pack2_bits16 //=).
+    + rewrite /is16u16 /f8u32_t16u16 H0 initiE //=.
+      apply W8u32.allP => />.
+      do (rewrite pack2_bits16 //=).
+    + rewrite /is32u8 initiE /get256_direct /= => />.
+      apply W32u8.allP => />.
+qed.
+
 equiv veceq_poly_add2 :
-  Mvec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
+  Mvec.poly_add2 ~ M._poly_add2: ={rp, bp} ==> ={res}.
 proof.
   proc.
   while (={rp, bp, i}).
@@ -800,7 +840,7 @@ qed.
 
 
 equiv veceq_poly_sub :
-  Mvec.poly_sub ~ M.poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mvec.poly_sub ~ M._poly_sub: ={rp, ap, bp} ==> ={res}.
 proof.
   proc.
   while (={rp, ap, bp, i}).
@@ -810,7 +850,7 @@ proof.
 qed.
 
 equiv veceq_poly_csubq :
-  Mvec.poly_csubq ~ M.poly_csubq: ={rp} ==> ={res}.
+  Mvec.poly_csubq ~ M._poly_csubq: ={rp} ==> ={res}.
 proof.
   proc.
   while (={rp, i, qx16}).
@@ -820,7 +860,7 @@ proof.
 qed.
 
 equiv veceq_poly_tomsg :
-  Mvec.poly_tomsg ~ M.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
+  Mvec.poly_tomsg ~ M._poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={i, rp, a, aux, hq, hhq} /\ 0 <= i{1}).
@@ -833,7 +873,7 @@ proof.
 qed.
 
 equiv veceq_poly_frommsg :
-  Mvec.poly_frommsg ~ M.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
+  Mvec.poly_frommsg ~ M._poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
   proc.
   while (={rp, ap, i, f, shift, idx, hqs, x16p}).
@@ -844,7 +884,7 @@ proof.
 qed.
 
 equiv veceq_red16x:
-  Mvec.red16x ~ M.red16x: ={r, qx16, vx16} ==> ={res}.
+  Mvec.red16x ~ M.__red16x: ={r, qx16, vx16} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -852,7 +892,7 @@ proof.
 qed.
 
 equiv veceq_poly_reduce:
-  Mvec.poly_reduce ~ M.poly_reduce: ={rp} ==> ={res}.
+  Mvec.poly_reduce ~ M.__poly_reduce: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16, vx16}).
@@ -862,7 +902,7 @@ proof.
 qed.
 
 equiv veceq_fqmulx16:
-  Mvec.fqmulx16 ~ M.fqmulx16: ={a, b, qx16, qinvx16} ==> ={res}.
+  Mvec.fqmulx16 ~ M.__fqmulx16: ={a, b, qx16, qinvx16} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -870,7 +910,7 @@ proof.
 qed.
 
 equiv veceq_poly_frommont:
-  Mvec.poly_frommont ~ M.poly_frommont: ={rp} ==> ={res}.
+  Mvec.poly_frommont ~ M._poly_frommont: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16, qinvx16, dmontx16, aux}).
@@ -879,8 +919,19 @@ proof.
   wp. skip. auto => />.
 qed.
 
+equiv veceq_poly_decompress:
+  Mvec._poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while(={rp, ap, i, aux, q, mask, shift, shufbidx, Glob.mem}).
+  inline *.
+  wp. skip. auto => />.
+  inline *.
+  wp. skip. auto => />.
+qed.
+
 equiv veceq_eq_poly_basemul:
-  Mvec.poly_basemul ~ M.poly_basemul: ={rp, ap, bp} ==> ={res}.
+  Mvec.poly_basemul ~ M._poly_basemul: ={rp, ap, bp} ==> ={res}.
 proof.
   admit.
   (*FIXME: takes too long (>1hr)
@@ -890,7 +941,7 @@ proof.
 qed.
 
 equiv prevec_eq_poly_add2:
-  Mavx2_prevec.poly_add2 ~ M.poly_add2: ={rp, bp} ==> ={res}.
+  Mavx2_prevec.poly_add2 ~ M._poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
 smt. trivial.
 apply eq_poly_add2.
@@ -898,7 +949,7 @@ apply veceq_poly_add2.
 qed.
 
 equiv prevec_eq_poly_sub:
-  Mavx2_prevec.poly_sub ~ M.poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mavx2_prevec.poly_sub ~ M._poly_sub: ={rp, ap, bp} ==> ={res}.
     transitivity Mvec.poly_sub (={rp, ap, bp} ==> ={res}) (={rp, ap, bp} ==> ={res}).
 smt. trivial.
 apply eq_poly_sub.
@@ -906,7 +957,7 @@ apply veceq_poly_sub.
 qed.
 
 equiv prevec_eq_poly_csubq:
-  Mavx2_prevec.poly_csubq ~ M.poly_csubq: ={rp} ==> ={res}.
+  Mavx2_prevec.poly_csubq ~ M._poly_csubq: ={rp} ==> ={res}.
     transitivity Mvec.poly_csubq (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_csubq.
@@ -914,7 +965,7 @@ apply veceq_poly_csubq.
 qed.
 
 equiv prevec_eq_poly_tomsg:
-  Mavx2_prevec.poly_tomsg ~ M.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
+  Mavx2_prevec.poly_tomsg ~ M._poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
     transitivity Mvec.poly_tomsg (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_tomsg.
@@ -922,7 +973,7 @@ apply veceq_poly_tomsg.
 qed.
 
 equiv prevec_eq_poly_frommsg:
-  Mavx2_prevec.poly_frommsg ~ M.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
+  Mavx2_prevec.poly_frommsg ~ M._poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
      transitivity Mvec.poly_frommsg (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_frommsg.
@@ -930,7 +981,7 @@ apply veceq_poly_frommsg.
 qed.
 
 equiv prevec_eq_red16x:
-  Mavx2_prevec.red16x ~ M.red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
+  Mavx2_prevec.red16x ~ M.__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
   transitivity Mvec.red16x (is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2})
                            (={r, qx16, vx16} ==> ={res}).
 smt. trivial.
@@ -939,7 +990,7 @@ apply veceq_red16x.
 qed.
 
 equiv prevec_eq_poly_reduce:
-  Mavx2_prevec.poly_reduce ~ M.poly_reduce: ={rp} ==> ={res}.
+  Mavx2_prevec.poly_reduce ~ M.__poly_reduce: ={rp} ==> ={res}.
     transitivity Mvec.poly_reduce (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_reduce.
@@ -947,7 +998,7 @@ apply veceq_poly_reduce.
 qed.
 
 equiv prevec_eq_fqmulx16:
-  Mavx2_prevec.fqmulx16 ~ M.fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
+  Mavx2_prevec.fqmulx16 ~ M.__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
     transitivity Mvec.fqmulx16 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2})
                                (={a, b, qx16, qinvx16} ==> ={res}).
 smt. trivial.
@@ -956,9 +1007,18 @@ apply veceq_fqmulx16.
 qed.
 
 equiv prevec_eq_poly_frommont:
-  Mavx2_prevec.poly_frommont ~ M.poly_frommont: ={rp} ==> ={res}.
+  Mavx2_prevec.poly_frommont ~ M._poly_frommont: ={rp} ==> ={res}.
     transitivity Mvec.poly_frommont (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_frommont.
 apply veceq_poly_frommont.
 qed.
+
+equiv prevec_eq_poly_decompress:
+  Mavx2_prevec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+    transitivity Mvec._poly_decompress (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
+smt. trivial.
+apply eq_poly_decompress.
+apply veceq_poly_decompress.
+qed.
+
