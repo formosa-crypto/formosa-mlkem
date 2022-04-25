@@ -3,7 +3,6 @@ from Jasmin require import JModel JWord.
 require import Fq Array16.
 require import W16extra WArray512 WArray32 WArray16.
 require import AVX2_Ops.
-require import List_hakyber.
 require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 require import Jindcpa.

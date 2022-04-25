@@ -105,34 +105,34 @@ module Mvec = {
     x16p <- witness;
     x16p <- hqx16_p1;
     hqs <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    shift <-
+    shift <@
     OpsV.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
-    idx <- OpsV.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
-    f <- OpsV.iload4u64(Glob.mem, ap);
+    idx <@ OpsV.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
+    f <@ OpsV.iload4u64(Glob.mem, ap);
     i <- 0;
     while (i < 4) {
-      g3 <- OpsV.iVPSHUFD_256(f, W8.of_int (85 * i));
-      g3 <- OpsV.iVPSLLV_8u32(g3, shift);
-      g3 <- OpsV.iVPSHUFB_256(g3, idx);
-      g0 <- OpsV.iVPSLL_16u16(g3, (W8.of_int 12));
-      g1 <- OpsV.iVPSLL_16u16(g3, (W8.of_int 8));
-      g2 <- OpsV.iVPSLL_16u16(g3, (W8.of_int 4));
-      g0 <- OpsV.iVPSRA_16u16(g0, (W8.of_int 15));
-      g1 <- OpsV.iVPSRA_16u16(g1, (W8.of_int 15));
-      g2 <- OpsV.iVPSRA_16u16(g2, (W8.of_int 15));
-      g3 <- OpsV.iVPSRA_16u16(g3, (W8.of_int 15));
-      g0 <- OpsV.ivpand16u16(g0, hqs);
-      g1 <- OpsV.ivpand16u16(g1, hqs);
-      g2 <- OpsV.ivpand16u16(g2, hqs);
-      g3 <- OpsV.ivpand16u16(g3, hqs);
-      h0 <- OpsV.iVPUNPCKL_4u64(g0, g1);
-      h2 <- OpsV.iVPUNPCKH_4u64(g0, g1);
-      h1 <- OpsV.iVPUNPCKL_4u64(g2, g3);
-      h3 <- OpsV.iVPUNPCKH_4u64(g2, g3);
-      g0 <- OpsV.iVPERM2I128(h0, h1, (W8.of_int 32));
-      g2 <- OpsV.iVPERM2I128(h0, h1, (W8.of_int 49));
-      g1 <- OpsV.iVPERM2I128(h2, h3, (W8.of_int 32));
-      g3 <- OpsV.iVPERM2I128(h2, h3, (W8.of_int 49));
+      g3 <@ OpsV.iVPSHUFD_256(f, W8.of_int (85 * i));
+      g3 <@ OpsV.iVPSLLV_8u32(g3, shift);
+      g3 <@ OpsV.iVPSHUFB_256(g3, idx);
+      g0 <@ OpsV.iVPSLL_16u16(g3, (W8.of_int 12));
+      g1 <@ OpsV.iVPSLL_16u16(g3, (W8.of_int 8));
+      g2 <@ OpsV.iVPSLL_16u16(g3, (W8.of_int 4));
+      g0 <@ OpsV.iVPSRA_16u16(g0, (W8.of_int 15));
+      g1 <@ OpsV.iVPSRA_16u16(g1, (W8.of_int 15));
+      g2 <@ OpsV.iVPSRA_16u16(g2, (W8.of_int 15));
+      g3 <@ OpsV.iVPSRA_16u16(g3, (W8.of_int 15));
+      g0 <@ OpsV.ivpand16u16(g0, hqs);
+      g1 <@ OpsV.ivpand16u16(g1, hqs);
+      g2 <@ OpsV.ivpand16u16(g2, hqs);
+      g3 <@ OpsV.ivpand16u16(g3, hqs);
+      h0 <@ OpsV.iVPUNPCKL_4u64(g0, g1);
+      h2 <@ OpsV.iVPUNPCKH_4u64(g0, g1);
+      h1 <@ OpsV.iVPUNPCKL_4u64(g2, g3);
+      h3 <@ OpsV.iVPUNPCKH_4u64(g2, g3);
+      g0 <@ OpsV.iVPERM2I128(h0, h1, (W8.of_int 32));
+      g2 <@ OpsV.iVPERM2I128(h0, h1, (W8.of_int 49));
+      g1 <@ OpsV.iVPERM2I128(h2, h3, (W8.of_int 32));
+      g3 <@ OpsV.iVPERM2I128(h2, h3, (W8.of_int 49));
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) (2 * i) g0));
@@ -156,11 +156,11 @@ module Mvec = {
     var rhi:W256.t;
     var rlo:W256.t;
 
-    rhi <- OpsV.iVPMULH_256(a, b);
-    rlo <- OpsV.iVPMULL_16u16(a, b);
-    rlo <- OpsV.iVPMULL_16u16(rlo, qinvx16);
-    rlo <- OpsV.iVPMULH_256(rlo, qx16);
-    rd <-  OpsV.ivsub16u256(rhi, rlo);
+    rhi <@ OpsV.iVPMULH_256(a, b);
+    rlo <@ OpsV.iVPMULL_16u16(a, b);
+    rlo <@ OpsV.iVPMULL_16u16(rlo, qinvx16);
+    rlo <@ OpsV.iVPMULH_256(rlo, qx16);
+    rd <@ OpsV.ivsub16u256(rhi, rlo);
     return (rd);
   }
 
@@ -187,17 +187,17 @@ module Mvec = {
     while (i < aux) {
       f0 <- (get256 (WArray512.init16 (fun i => a.[i])) (2 * i));
       f1 <- (get256 (WArray512.init16 (fun i => a.[i])) ((2 * i) + 1));
-      f0 <- OpsV.ivsub16u256(hq, f0);
-      f1 <- OpsV.ivsub16u256(hq, f1);
-      g0 <- OpsV.iVPSRA_16u16(f0, (W8.of_int 15));
-      g1 <- OpsV.iVPSRA_16u16(f1, (W8.of_int 15));
-      f0 <- OpsV.ilxor16u16(f0, g0);
-      f1 <- OpsV.ilxor16u16(f1, g1);
-      f0 <- OpsV.ivsub16u256(f0, hhq);
-      f1 <- OpsV.ivsub16u256(f1, hhq);
-      f0 <- OpsV.iVPACKSS_16u16(f0, f1);
-      f0 <- OpsV.iVPERMQ(f0, (W8.of_int 216));
-      c <-  OpsV.iVPMOVMSKB_u256_u32(f0);
+      f0 <@ OpsV.ivsub16u256(hq, f0);
+      f1 <@ OpsV.ivsub16u256(hq, f1);
+      g0 <@ OpsV.iVPSRA_16u16(f0, (W8.of_int 15));
+      g1 <@ OpsV.iVPSRA_16u16(f1, (W8.of_int 15));
+      f0 <@ OpsV.ilxor16u16(f0, g0);
+      f1 <@ OpsV.ilxor16u16(f1, g1);
+      f0 <@ OpsV.ivsub16u256(f0, hhq);
+      f1 <@ OpsV.ivsub16u256(f1, hhq);
+      f0 <@ OpsV.iVPACKSS_16u16(f0, f1);
+      f0 <@ OpsV.iVPERMQ(f0, (W8.of_int 216));
+      c <@ OpsV.iVPMOVMSKB_u256_u32(f0);
       Glob.mem <-
       storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
       i <- i + 1;
@@ -208,10 +208,10 @@ module Mvec = {
   proc  red16x (r:W256.t, qx16:W256.t, vx16:W256.t) : W256.t = {
     var x:W256.t;
 
-    x <- OpsV.iVPMULH_256(r, vx16);
-    x <- OpsV.iVPSRA_16u16(x, (W8.of_int 10));
-    x <- OpsV.iVPMULL_16u16(x, qx16);
-    r <- OpsV.ivsub16u256(r, x);
+    x <@ OpsV.iVPMULH_256(r, vx16);
+    x <@ OpsV.iVPSRA_16u16(x, (W8.of_int 10));
+    x <@ OpsV.iVPMULL_16u16(x, qx16);
+    r <@ OpsV.ivsub16u256(r, x);
     return (r);
   }
 
@@ -284,9 +284,9 @@ module Mvec = {
     a <@ poly_csubq (a);
     x16p <- jvx16;
     v <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    shift1 <- OpsV.iVPBROADCAST_16u16(pc_shift1_s);
-    mask <- OpsV.iVPBROADCAST_16u16(pc_mask_s);
-    shift2 <- OpsV.iVPBROADCAST_16u16(pc_shift2_s);
+    shift1 <@ OpsV.iVPBROADCAST_16u16(pc_shift1_s);
+    mask <@ OpsV.iVPBROADCAST_16u16(pc_mask_s);
+    shift2 <@ OpsV.iVPBROADCAST_16u16(pc_shift2_s);
     permidx <- (get256 (WArray32.init32 (fun i => pc_permidx_s.[i])) 0);
     aux <- (256 %/ 64);
     i <- 0;
@@ -295,25 +295,25 @@ module Mvec = {
       f1 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 1));
       f2 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 2));
       f3 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 3));
-      f0 <- OpsV.iVPMULH_256(f0, v);
-      f1 <- OpsV.iVPMULH_256(f1, v);
-      f2 <- OpsV.iVPMULH_256(f2, v);
-      f3 <- OpsV.iVPMULH_256(f3, v);
-      f0 <- OpsV.iVPMULHRS_256(f0, shift1);
-      f1 <- OpsV.iVPMULHRS_256(f1, shift1);
-      f2 <- OpsV.iVPMULHRS_256(f2, shift1);
-      f3 <- OpsV.iVPMULHRS_256(f3, shift1);
-      f0 <- OpsV.ivpand16u16(f0, mask);
-      f1 <- OpsV.ivpand16u16(f1, mask);
-      f2 <- OpsV.ivpand16u16(f2, mask);
-      f3 <- OpsV.ivpand16u16(f3, mask);
-      f0 <- OpsV.iVPACKUS_16u16(f0, f1);
-      f2 <- OpsV.iVPACKUS_16u16(f2, f3);
-      f0 <- OpsV.iVPMADDUBSW_256(f0, shift2);
-      f2 <- OpsV.iVPMADDUBSW_256(f2, shift2);
-      f0 <- OpsV.iVPACKUS_16u16(f0, f2);
-      f0 <- OpsV.iVPERMD(permidx, f0);
-      Glob.mem <- OpsV.istore32u8(Glob.mem, rp + (W64.of_int (32 * i)), f0);
+      f0 <@ OpsV.iVPMULH_256(f0, v);
+      f1 <@ OpsV.iVPMULH_256(f1, v);
+      f2 <@ OpsV.iVPMULH_256(f2, v);
+      f3 <@ OpsV.iVPMULH_256(f3, v);
+      f0 <@ OpsV.iVPMULHRS_256(f0, shift1);
+      f1 <@ OpsV.iVPMULHRS_256(f1, shift1);
+      f2 <@ OpsV.iVPMULHRS_256(f2, shift1);
+      f3 <@ OpsV.iVPMULHRS_256(f3, shift1);
+      f0 <@ OpsV.ivpand16u16(f0, mask);
+      f1 <@ OpsV.ivpand16u16(f1, mask);
+      f2 <@ OpsV.ivpand16u16(f2, mask);
+      f3 <@ OpsV.ivpand16u16(f3, mask);
+      f0 <@ OpsV.iVPACKUS_16u16(f0, f1);
+      f2 <@ OpsV.iVPACKUS_16u16(f2, f3);
+      f0 <@ OpsV.iVPMADDUBSW_256(f0, shift2);
+      f2 <@ OpsV.iVPMADDUBSW_256(f2, shift2);
+      f0 <@ OpsV.iVPACKUS_16u16(f0, f2);
+      f0 <@ OpsV.iVPERMD(permidx, f0);
+      Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int (32 * i)), f0);
       i <- i + 1;
     }
     return (a);
@@ -337,19 +337,19 @@ module Mvec = {
     q <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
     x32p <- pd_jshufbidx;
     shufbidx <- (get256 (WArray32.init8 (fun i => x32p.[i])) 0);
-    mask <- OpsV.iVPBROADCAST_8u32(pd_mask_s);
-    shift <- OpsV.iVPBROADCAST_8u32(pd_shift_s);
+    mask <@ OpsV.iVPBROADCAST_8u32(pd_mask_s);
+    shift <@ OpsV.iVPBROADCAST_8u32(pd_shift_s);
     t <- setw0_128 ;
     f <- setw0_256 ;
     aux <- (256 %/ 16);
     i <- 0;
     while (i < aux) {
-      f <-
+      f <@
       OpsV.iVPBROADCAST_2u128_32u8(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
-      f <- OpsV.iVPSHUFB_256(f, shufbidx);
-      f <- OpsV.ivpand16u16(f, mask);
-      f <- OpsV.iVPMULL_16u16(f, shift);
-      f <- OpsV.iVPMULHRS_256(f, q);
+      f <@ OpsV.iVPSHUFB_256(f, shufbidx);
+      f <@ OpsV.ivpand16u16(f, mask);
+      f <@ OpsV.iVPMULL_16u16(f, shift);
+      f <@ OpsV.iVPMULHRS_256(f, q);
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) i f));
@@ -394,36 +394,36 @@ module Mvec = {
     d <- (get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 1));
     a <- (get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 0));
     c <- (get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 0));
-    bdlo <- OpsV.iVPMULL_16u16(b, d);
-    bdhi <- OpsV.iVPMULH_256(b, d);
-    bclo <- OpsV.iVPMULL_16u16(b, c);
-    bchi <- OpsV.iVPMULH_256(b, c);
-    adlo <- OpsV.iVPMULL_16u16(a, d);
-    adhi <- OpsV.iVPMULH_256(a, d);
-    aclo <- OpsV.iVPMULL_16u16(a, c);
-    achi <- OpsV.iVPMULH_256(a, c);
-    bdlo <- OpsV.iVPMULL_16u16(bdlo, qinvx16);
-    bdlo <- OpsV.iVPMULH_256(bdlo, qx16);
-    bd <- OpsV.ivsub16u256(bdhi, bdlo);
-    rbdlo <- OpsV.iVPMULL_16u16(zeta_0, bd);
-    rbdhi <- OpsV.iVPMULH_256(zeta_0, bd);
-    bc0 <- OpsV.iVPUNPCKL_16u16(bclo, bchi);
-    bc1 <- OpsV.iVPUNPCKH_16u16(bclo, bchi);
-    ad0 <- OpsV.iVPUNPCKL_16u16(adlo, adhi);
-    ad1 <- OpsV.iVPUNPCKH_16u16(adlo, adhi);
-    ac0 <- OpsV.iVPUNPCKL_16u16(aclo, achi);
-    ac1 <- OpsV.iVPUNPCKH_16u16(aclo, achi);
-    rbd0 <- OpsV.iVPUNPCKL_16u16(rbdlo, rbdhi);
-    rbd1 <- OpsV.iVPUNPCKH_16u16(rbdlo, rbdhi);
+    bdlo <@ OpsV.iVPMULL_16u16(b, d);
+    bdhi <@ OpsV.iVPMULH_256(b, d);
+    bclo <@ OpsV.iVPMULL_16u16(b, c);
+    bchi <@ OpsV.iVPMULH_256(b, c);
+    adlo <@ OpsV.iVPMULL_16u16(a, d);
+    adhi <@ OpsV.iVPMULH_256(a, d);
+    aclo <@ OpsV.iVPMULL_16u16(a, c);
+    achi <@ OpsV.iVPMULH_256(a, c);
+    bdlo <@ OpsV.iVPMULL_16u16(bdlo, qinvx16);
+    bdlo <@ OpsV.iVPMULH_256(bdlo, qx16);
+    bd <@ OpsV.ivsub16u256(bdhi, bdlo);
+    rbdlo <@ OpsV.iVPMULL_16u16(zeta_0, bd);
+    rbdhi <@ OpsV.iVPMULH_256(zeta_0, bd);
+    bc0 <@ OpsV.iVPUNPCKL_16u16(bclo, bchi);
+    bc1 <@ OpsV.iVPUNPCKH_16u16(bclo, bchi);
+    ad0 <@ OpsV.iVPUNPCKL_16u16(adlo, adhi);
+    ad1 <@ OpsV.iVPUNPCKH_16u16(adlo, adhi);
+    ac0 <@ OpsV.iVPUNPCKL_16u16(aclo, achi);
+    ac1 <@ OpsV.iVPUNPCKH_16u16(aclo, achi);
+    rbd0 <@ OpsV.iVPUNPCKL_16u16(rbdlo, rbdhi);
+    rbd1 <@ OpsV.iVPUNPCKH_16u16(rbdlo, rbdhi);
     if ((sign = 0)) {
-      x0 <- OpsV.ivadd32u256(ac0, rbd0);
-      x1 <- OpsV.ivadd32u256(ac1, rbd1);
+      x0 <@ OpsV.ivadd32u256(ac0, rbd0);
+      x1 <@ OpsV.ivadd32u256(ac1, rbd1);
     } else {
-      x0 <- OpsV.ivsub32u256(ac0, rbd0);
-      x1 <- OpsV.ivsub32u256(ac1, rbd1);
+      x0 <@ OpsV.ivsub32u256(ac0, rbd0);
+      x1 <@ OpsV.ivsub32u256(ac1, rbd1);
     }
-    y0 <- OpsV.ivadd32u256(bc0, ad0);
-    y1 <- OpsV.ivadd32u256(bc1, ad1);
+    y0 <@ OpsV.ivadd32u256(bc0, ad0);
+    y1 <@ OpsV.ivadd32u256(bc1, ad1);
     return (x0, x1, y0, y1);
   }
 
@@ -436,24 +436,24 @@ module Mvec = {
     var x:W256.t;
 
     zero <- setw0_256 ;
-    y <- OpsV.iVPBLENDW_256(a0, zero, (W8.of_int 170));
-    z <- OpsV.iVPBLENDW_256(a1, zero, (W8.of_int 170));
-    a0 <- OpsV.iVPSRL_8u32(a0, (W8.of_int 16));
-    a1 <- OpsV.iVPSRL_8u32(a1, (W8.of_int 16));
-    z <- OpsV.iVPACKUS_8u32(y, z);
-    a0 <- OpsV.iVPACKUS_8u32(a0, a1);
-    y <- OpsV.iVPBLENDW_256(b0, zero, (W8.of_int 170));
-    x <- OpsV.iVPBLENDW_256(b1, zero, (W8.of_int 170));
-    b0 <- OpsV.iVPSRL_8u32(b0, (W8.of_int 16));
-    b1 <- OpsV.iVPSRL_8u32(b1, (W8.of_int 16));
-    y <- OpsV.iVPACKUS_8u32(y, x);
-    b0 <- OpsV.iVPACKUS_8u32(b0, b1);
-    z <- OpsV.iVPMULL_16u16(z, qinvx16);
-    y <- OpsV.iVPMULL_16u16(y, qinvx16);
-    z <- OpsV.iVPMULH_256(z, qx16);
-    y <- OpsV.iVPMULH_256(y, qx16);
-    a0 <- OpsV.ivsub16u256(a0, z);
-    b0 <- OpsV.ivsub16u256(b0, y);
+    y <@ OpsV.iVPBLENDW_256(a0, zero, (W8.of_int 170));
+    z <@ OpsV.iVPBLENDW_256(a1, zero, (W8.of_int 170));
+    a0 <@ OpsV.iVPSRL_8u32(a0, (W8.of_int 16));
+    a1 <@ OpsV.iVPSRL_8u32(a1, (W8.of_int 16));
+    z <@ OpsV.iVPACKUS_8u32(y, z);
+    a0 <@ OpsV.iVPACKUS_8u32(a0, a1);
+    y <@ OpsV.iVPBLENDW_256(b0, zero, (W8.of_int 170));
+    x <@ OpsV.iVPBLENDW_256(b1, zero, (W8.of_int 170));
+    b0 <@ OpsV.iVPSRL_8u32(b0, (W8.of_int 16));
+    b1 <@ OpsV.iVPSRL_8u32(b1, (W8.of_int 16));
+    y <@ OpsV.iVPACKUS_8u32(y, x);
+    b0 <@ OpsV.iVPACKUS_8u32(b0, b1);
+    z <@ OpsV.iVPMULL_16u16(z, qinvx16);
+    y <@ OpsV.iVPMULL_16u16(y, qinvx16);
+    z <@ OpsV.iVPMULH_256(z, qx16);
+    y <@ OpsV.iVPMULH_256(y, qx16);
+    a0 <@ OpsV.ivsub16u256(a0, z);
+    b0 <@ OpsV.ivsub16u256(b0, y);
     return (a0, b0);
   }
 

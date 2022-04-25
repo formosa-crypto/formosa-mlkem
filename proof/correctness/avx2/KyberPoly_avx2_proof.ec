@@ -3,7 +3,6 @@ from Jasmin require import JModel.
 require import Array400 Array256 Array128 Array32 Array16 Array4 Array8.
 require import W16extra WArray512 WArray32 WArray16.
 require import AVX2_Ops.
-require import List_hakyber Number_extra IntDiv_extra Ring_extra.
 require import Kyber_AVX2_cf.
 require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
