@@ -2,6 +2,8 @@ require import AllCore ZModP IntDiv Distr List DList PKE_Ext.
 from Jasmin require import JWord.
 require import Array32 Array64 Array128 Array168 Array256 Array384.
 require import Array768 Array960 Array1024 Array1152.
+require  PRF.
+
 
 (**************************************************)
 (* Aux stuff needed for compression/decompression *)
@@ -53,30 +55,11 @@ lemma round_tie (x : real) :
      by rewrite /round; smt(@Real).
 
 lemma round_add (x : real) (y : int) :
-    round (y%r + x) = y + round x by rewrite /round; smt(floor_shift @Real).
-(**************************************************)
-(**************************************************)
-(**************************************************)
-
-(* We will model the three usages of SHA3 family 
-   components as independent random oracles 
-
-G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
-XOF =
-fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
-fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> 
-    reg ptr u64[25], reg ptr u8[SHAKE128_RATE] => RATE is 168
-PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
-
-*)
-
-clone import PKE_Ext as KyberPKE with
-  type RO.in_t = (W8.t Array32.t option) * ((W8.t Array32.t * W8.t * W8.t * int) option) * ((W8.t Array32.t * W8.t) option),
-  type RO.out_t = W8.t Array64.t * W8.t Array168.t * W8.t Array128.t,
-  type pkey = W8.t Array1152.t * W8.t Array32.t,
-  type skey = W8.t Array1152.t,
-  type plaintext = W8.t Array32.t,
-  type ciphertext = W8.t Array960.t * W8.t Array128.t.
+    round (y%r + x) = y + round x.
+proof.
+rewrite /round -StdBigop.Bigreal.Num.Domain.addrA StdBigop.Bigreal.Num.Domain.addrC.
+by rewrite floor_shift; ring.
+qed.
 
 (****************************************************)
 (*               The finite field Zq/Fq             *)
@@ -184,7 +167,6 @@ lemma compress_alt_compress_large (c : Fq):
     compress_alt_large c = compress 10 c.
 admitted. (* alternative compress[10] expression : checked in Sage *)
 
-print decompress.
 (* This is the implementation of decompress d in C/Jasmin *)
 op decompress_alt(d : int, c : int) : Fq = 
     inFq (((c * q + 2^(d-1)) %/ 2^d)).
@@ -274,7 +256,7 @@ lemma duni_elem_fu : is_full duni_elem by
 (* Representations of polynomials in Zq[X]/(X^256+1) *)
 (*****************************************************)
 
-theory Poly.
+theory KPoly.
 
 (* Fixme: These definitions should come from a polynomial theory? *)
 
@@ -285,14 +267,12 @@ op one : poly = zero.[0<-Zq.one].
 
 (* Ring multiplication: schoolbook multiplication in this
    ring is essentially generating a square matrix of coefficient
-   multiplications and summing over the columns. 
-   Fix me: should we just pass the ntt base mul when we
-   instantiate MLWE? *)
+   multiplications and summing over the columns. *)
 op (&*) (pa pb : poly) : poly =
   Array256.init (fun (i : int) => foldr (fun (k : int) (ci : Fq) =>
      if (0 <= i - k) 
      then ci + pa.[k] * pb.[i - k] 
-     else ci - pa.[k] * pb.[256 - (i - k)]) 
+     else ci - pa.[k] * pb.[256 + (i - k)]) 
       Zq.zero (iota_ 0 256)).
 
 op (&+) (pa pb : poly) : poly = 
@@ -331,7 +311,7 @@ lemma duni_R_ll : is_lossless duni_R
  by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
 
 lemma duni_R_uni : is_uniform duni_R.
-  rewrite /Poly.duni_R => x y xin yin.
+  rewrite /KPoly.duni_R => x y xin yin.
   apply (dmap_uni_in_inj _ _ _) => //; last by
     apply dlist_uni; apply duni_elem_uni.
   move => x0 y0 inx iny; rewrite /of_list tP => H.
@@ -341,7 +321,7 @@ lemma duni_R_uni : is_uniform duni_R.
 qed.
 
 lemma duni_R_fu : is_full duni_R.
-  rewrite /is_full /Poly.duni_R => p.
+  rewrite /is_full /KPoly.duni_R => p.
   rewrite supp_dmap; exists (Array256.to_list p).
   split.
     rewrite supp_dlist //; split; first by rewrite size_to_list.
@@ -350,80 +330,8 @@ lemma duni_R_fu : is_full duni_R.
     by rewrite Array256.to_listK.
 qed.
 
-module type G_t(O : RO.POracle) = {
-   proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t)
-}.
-
-module type XOF_t(O : RO.POracle) = {
-   proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
-   proc next_bytes() : W8.t Array168.t
-}.
-
-(* We take some liberty to specify parse using a XOF that
-   returns 168 bytes at a time, which is what the Kyber
-   implementation does. *)
-module Parse(XOF : XOF_t, O : RO.POracle) = {
-   proc sample_real() : poly = {
-      var j, b168, bi, bi1, bi2, d1, d2,k;
-      var aa : poly;
-      aa <- witness;
-      j <- 0;
-      while (j < 256) {
-         b168 <@ XOF(O).next_bytes();
-         k <- 0;
-         while ((j < 256) && (k < 168)) {
-            bi  <- b168.[k];
-            bi1 <- b168.[k+1];
-            bi2 <- b168.[k+2];
-            k <- k + 3;
-            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
-            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
-            if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
-            if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
-         }
-      }
-      return aa;
-   }
-
-   proc sample_ideal() : poly = {
-      var aa;
-      aa <$ duni_R;
-      return aa;
-   }
-}.
-
-module type PRF_t(O : RO.POracle) = {
-   proc init(sig : W8.t Array32.t) : unit
-   proc next_bytes(_N : W8.t) : W8.t Array128.t
-}.
-
-module CBD2(PRF : PRF_t, O : RO.POracle) = {
-   proc sample_real(_N : int) : poly = {
-      var i,j,a,b,bytes;
-      var rr : poly;
-      rr <- witness;
-      bytes <@ PRF(O).next_bytes(W8.of_int _N);
-      i <- 0; j <- 0;
-      while (i < 128) { (* unroll loop body once to match code *)
-        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
-        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
-        rr.[j] <- inFq  (a - b);
-        j <- j + 1;
-        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
-        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
-        rr.[j] <- inFq  (a - b);
-        j <- j + 1;
-        i <- i + 1;
-      }
-      return rr;
-   }
-
-   proc sample_ideal() : poly = {
-      var rr;
-      rr <$ dshort_R;
-      return rr;
-   }
-}.
+(**************************************************)
+(**************************************************)
 
 (* The NTT operation over ring elements 
 
@@ -446,6 +354,7 @@ require (****) Bigalg.
       op  CR.([-]) <- Zq.([-]),
       op  CR.( * ) <- Zq.( * ),
       op  CR.invr  <- Zq.inv,
+      op  CR.ofint <- ZqRing.ofint,
     pred  CR.unit  <- Zq.unit
     proof CR.*.
 
@@ -464,17 +373,18 @@ require (****) Bigalg.
 
 op zroot = inFq 17.
 
-op br(i : int) = BitEncoding.BS2Int.bs2int (BitEncoding.BS2Int.int2bs 7 i).
+op br = BitEncoding.BitReverse.bsrev 7.
 
 op ntt(p : poly) = Array256.init (fun i => 
-   if i %% 2  = 0 
-   then let ii = i %/ 2     in BAdd.bigi predT (fun j => p.[2*j]   * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128
-   else let ii = (i-1) %/ 2 in BAdd.bigi predT (fun j => p.[2*j+1] * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128) axiomatized by nttE.
+   if i %% 2  = 0
+   then let ii = i %/ 2 in BAdd.bigi predT (fun j => p.[2*j]   * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128
+   else let ii = i %/ 2 in BAdd.bigi predT (fun j => p.[2*j+1] * ZqRing.exp zroot ((2 * br ii + 1) * j)) 0 128) axiomatized by nttE.
+
 
 op invntt(p : poly) = Array256.init (fun i => 
    if i %% 2  = 0 
-   then let ii = i %/ 2     in BAdd.bigi predT (fun j => (inv (inFq 128)) * p.[2*j] * ZqRing.exp zroot (-((2 * br ii + 1) * j))) 0 128
-   else let ii = (i-1) %/ 2 in BAdd.bigi predT (fun j => (inv (inFq 128)) * p.[2*j+1] * ZqRing.exp zroot (-((2 * br ii + 1) * j))) 0 128) axiomatized by invnttE.
+   then let ii = i %/ 2 in BAdd.bigi predT (fun j => inv (inFq 128) * p.[2*j]   * ZqRing.exp zroot (-((2 * br j + 1) * ii))) 0 128
+   else let ii = i %/ 2 in BAdd.bigi predT (fun j => inv (inFq 128) * p.[2*j+1] * ZqRing.exp zroot (-((2 * br j + 1) * ii))) 0 128) axiomatized by invnttE.
 
 (* This is multiplication of two degree-1 polynomials in Fq
     modulo X^2 - zroot.
@@ -497,15 +407,141 @@ op basemul(a b : poly) :  poly = Array256.init (fun i =>
    if i %% 2  = 0 
    then let ii = i %/ 2     in 
        (cmplx_mul (a.[2*ii],a.[2*ii+1]) (b.[2*ii],b.[2*ii+1]) (ZqRing.exp zroot ((2 * br ii + 1)))).`1
-   else let ii = (i-1) %/ 2 in 
+   else let ii = i %/ 2 in 
        (cmplx_mul (a.[2*ii],a.[2*ii+1]) (b.[2*ii],b.[2*ii+1]) (ZqRing.exp zroot ((2 * br ii + 1)))).`2).
 
 
 (* END: NTT *)
 
-end Poly.
 
-export Poly.
+(* We can now set-up the EC algebraic libraries *)
+
+(* Note that I have no way to pass the ring operations
+   to this theory because it takes the representation
+   to be that of the base ring of polynomials, which 
+   I never work with. *)
+
+require import PolyReduce.
+clone import PolyReduce as PolyR with
+   op n <- 256,
+   type BasePoly.coeff <- Fq,
+   op BasePoly.Coeff.(+) <- Zq.(+),
+   op BasePoly.Coeff.( *) <- Zq.( *),
+   op BasePoly.Coeff.zeror <- Zq.zero,
+   op BasePoly.Coeff.oner <- Zq.one,
+   op BasePoly.Coeff.([-]) <- Zq.([-]),
+   op BasePoly.Coeff.invr <- Zq.inv,
+   pred BasePoly.Coeff.unit <- Zq.unit
+   rename "polyXnD1" as "AlgR"
+   rename "poly" as "basepoly"
+   proof BasePoly.Coeff.addrA by apply ZqRing.addrA
+   proof BasePoly.Coeff.addrC by apply ZqRing.addrC
+   proof BasePoly.Coeff.add0r by apply ZqRing.add0r 
+   proof BasePoly.Coeff.addNr by apply ZqRing.addNr 
+   proof BasePoly.Coeff.oner_neq0 by apply ZqRing.oner_neq0
+   proof BasePoly.Coeff.mulrA by apply ZqRing.mulrA
+   proof BasePoly.Coeff.mulrC by apply ZqRing.mulrC 
+   proof BasePoly.Coeff.mul1r by apply ZqRing.mul1r 
+   proof BasePoly.Coeff.mulrDl by apply ZqRing.mulrDl 
+   proof BasePoly.Coeff.mulVr by apply ZqRing.mulVr
+   proof BasePoly.Coeff.unitP by apply ZqRing.unitP 
+   proof BasePoly.Coeff.unitout by apply ZqRing.unitout
+   proof gt0_n by auto. 
+
+op poly2polyr(p : poly) : AlgR = pi (oget (BasePoly.to_basepoly 
+                              (fun i => if 0<=i<256 then p.[i] else Zq.zero))).
+op polyr2poly(p : AlgR) : poly = Array256.init (fun i => p.[i]).
+
+lemma poly2polyrP i p :  0<=i<256 => (poly2polyr p).[i] = p.[i].
+move => ib.
+have H := (BasePoly.to_basepolyT (fun (i0 : int) => if 0 <= i0 && i0 < 256 then p.[i0] else Zq.zero) _); 1: by smt(BasePoly.IsPoly).
+rewrite /poly2polyr /"_.[_]".
+rewrite piK. 
++ rewrite reducedP /=; 1: by smt(BasePoly.deg_leP).
+by smt().
+qed.
+
+lemma polyr2polyP i p :  0<=i<256 => (polyr2poly p).[i] = p.[i].
+move => ib;rewrite /polyr2poly /"_.[_]" initiE //=.
+qed.
+
+
+lemma polyr2polyK : cancel poly2polyr polyr2poly.
+rewrite /cancel => x; apply Array256.tP => i ib.
+by rewrite polyr2polyP // poly2polyrP //=.
+qed.
+
+lemma poly2polyrK : cancel polyr2poly poly2polyr.
+rewrite /cancel => x;  apply AlgR_eqP => i ib.
+by rewrite poly2polyrP // polyr2polyP //=.
+qed.
+
+lemma add_lift a b : a &+ b = polyr2poly (poly2polyr a + poly2polyr b). 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // rcoeffD !poly2polyrP //.
+by rewrite /(&+) /= map2E /= initiE //=.
+qed.
+
+lemma sub_lift a : (&-) a = polyr2poly (- poly2polyr a). 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // -rcoeffN !poly2polyrP //.
+by rewrite /(&-) /= mapE /= initiE //=.
+qed.
+
+lemma mul_lift a b : a &* b = polyr2poly (poly2polyr a * poly2polyr b). 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // rcoeffM //. 
+rewrite /(&*) /= /BasePoly.BigCf.BCA.big filter_predT /range /= initiE  //= foldr_map /=.
+have : forall x, x \in (iota_ 0 256) => 0 <= x < 256 by smt(mem_iota).
+elim (iota_ 0 256).
++ by auto.
+move => x l H H1 /=.
+case (0 <= i - x).
+ + move => * /=.
+   rewrite (H _) /=; 1: by smt(). 
+   ring.
+   have -> : (poly2polyr b).[256 + i - x] = Zq.zero by smt(lt0_rcoeff gered_rcoeff).
+   rewrite poly2polyrP; 1: by smt(mem_head). 
+   rewrite poly2polyrP; 1: by smt().
+   by ring.
+move => * /=.
+rewrite (H _) /=; 1: by smt(). 
+ring.
+rewrite poly2polyrP; 1: smt().
+rewrite poly2polyrP; 1: by smt(mem_head). 
+   have -> : (poly2polyr b).[i - x] = Zq.zero by smt(lt0_rcoeff gered_rcoeff).
+   have -> : 256 + (i - x) = 256 + i - x by smt().
+   by ring.
+qed.
+
+lemma zero_lift : KPoly.zero = polyr2poly zeroXnD1. 
+apply Array256.tP => i ib.
+by rewrite polyr2polyP // /KPoly.zero /create initiE //= rcoeff0.
+qed.
+
+lemma one_lift : KPoly.one = polyr2poly oneXnD1. 
+apply Array256.tP => i ib.
+rewrite polyr2polyP // /KPoly.one /KPoly.zero /create.
+case (i = 0).
+move => *;rewrite set_eqiE //; smt(@PolyR).
+move => *; rewrite set_neqiE // initiE //=; smt(@PolyR).
+qed.
+
+op invr(p : poly) = polyr2poly (invr (poly2polyr p)).
+
+lemma polyr2poly_inj : injective polyr2poly.
+by apply (can_inj _ poly2polyr); apply poly2polyrK.
+qed.
+
+lemma poly2polyr_inj : injective poly2polyr.
+by apply (can_inj _ polyr2poly); apply polyr2polyK.
+qed.
+
+
+end KPoly.
+
+export KPoly.
+import PolyR.
 
 op kvec : int = 3. 
 (* axiom kvec_ge3 : 3 <= kvec. *)
@@ -513,26 +549,53 @@ op kvec : int = 3.
 require Matrix.
 clone import Matrix as KMatrix with
     op size <- kvec,
-    type ZR.t <- poly,
-    op ZR.zeror <- Poly.zero,
-    op ZR.oner <- Poly.one,
-    pred ZR.unit <- fun x => x = Poly.one,
-    op ZR.(+) <- Poly.(&+),
-    op ZR.([-]) <- Poly.(&-),
-    op ZR.( * ) <- Poly.(&*)
-    proof ZR.addrA by admit (* poly theory? *)
-    proof ZR.addrC by admit (* poly theory? *)
-    proof ZR.add0r by admit (* poly theory? *)
-    proof ZR.addNr by admit (* poly theory? *)
-    proof ZR.oner_neq0 by admit  (* poly theory? *)
-    proof ZR.mulrA by admit  (* poly theory? *)
-    proof ZR.mulrC by admit (* poly theory? *)
-    proof ZR.mul1r by admit (* poly theory? *)
-    proof ZR.mulrDl by admit  (* poly theory? *)
-    proof ZR.mulVr by admit (* poly theory? *)
-    proof ZR.unitP by admit (* poly theory? *)
-    proof ZR.unitout by admit (* poly theory? *)
-    proof ZR.mulf_eq0 by admit. (* poly theory? *)
+    type ZR.t = poly,
+    op ZR.zeror <- KPoly.zero,
+    op ZR.oner <- KPoly.one,
+    pred ZR.unit = fun x => unit (poly2polyr x),
+    op ZR.(+) <- KPoly.(&+),
+    op ZR.([-]) <- KPoly.(&-),
+    op ZR.( * ) <- KPoly.(&*),
+    op ZR.invr <- KPoly.invr
+    proof ZR.addrA by smt(add_lift  poly2polyrK ComRing.addrA)
+    proof ZR.addrC by smt(add_lift  poly2polyrK ComRing.addrC)
+    proof ZR.add0r by smt(zero_lift add_lift poly2polyrK ComRing.add0r polyr2polyK)
+    proof ZR.addNr by smt(zero_lift sub_lift add_lift poly2polyrK ComRing.addNr polyr2polyK)
+    proof ZR.oner_neq0 by smt(zero_lift  poly2polyrK one_lift ComRing.oner_neq0)
+    proof ZR.mulrA by smt(mul_lift  poly2polyrK ComRing.mulrA)
+    proof ZR.mulrC by smt(mul_lift  poly2polyrK ComRing.mulrC)
+    proof ZR.mul1r by smt(one_lift mul_lift poly2polyrK ComRing.mul1r polyr2polyK)
+    proof ZR.mulrDl by smt(add_lift mul_lift poly2polyrK ComRing.mulrDl polyr2polyK)
+    proof ZR.mulVr by smt(one_lift mul_lift poly2polyrK ComRing.mulVr PolyR.ComRing.unitr1 poly2polyrK)
+    proof ZR.unitP by smt(one_lift mul_lift polyr2poly_inj ComRing.unitP)
+    proof ZR.unitout by smt(unitout polyr2polyK)
+    proof ge0_size by auto.
+    (* to do: ZR.mulf_eq0: forall (x y : t), x &* y = KPoly.zero <=> x = KPoly.zero \/ y = KPoly.zero *)
+
+instance ring with R
+  op rzero = KPoly.zero
+  op rone  = KPoly.one
+  op add   = KPoly.(&+)
+  op opp   = KPoly.(&-)
+  op mul   = KPoly.(&*)
+  op expr  = ZR.exp
+  op ofint = ZR.ofint
+
+  proof oner_neq0 by apply ZR.oner_neq0
+  proof addrA     by apply ZR.addrA
+  proof addrC     by apply ZR.addrC
+  proof addr0     by apply ZR.addr0
+  proof addrN     by apply ZR.addrN
+  proof mulr1     by apply ZR.mulr1
+  proof mulrA     by apply ZR.mulrA
+  proof mulrC     by apply ZR.mulrC
+  proof mulrDl    by apply ZR.mulrDl
+  proof expr0     by apply ZR.expr0
+  proof ofint0    by apply ZR.ofint0
+  proof ofint1    by apply ZR.ofint1
+  proof exprS     by apply ZR.exprS
+  proof ofintS    by apply ZR.ofintS
+  proof ofintN    by apply ZR.ofintN.
 
 import Vector.
 
@@ -558,11 +621,11 @@ op ntt_mmul(m : matrix, v : vector) : vector =
 op ntt_dotp(v1 v2 : vector) : poly = 
    Big.BAdd.bigi predT (fun (i : int) => basemul v1.[i] v2.[i]) 0 kvec.
 
-(****************)
-(****************)
-(*  Encoding    *)
-(****************)
-(****************)
+(****************************************************************************)
+(****************************************************************************)
+(*  Encoding polys and vectors to and from byte arrays                      *)
+(****************************************************************************)
+(****************************************************************************)
 
 type ipoly = int Array256.t.
 op toipoly(p : poly) : ipoly = map asint p.
@@ -618,6 +681,7 @@ module EncDec = {
        }
        return r;
    }
+
    proc decode4(a : W8.t Array128.t) : ipoly = {
        var i;
        var r : ipoly;
@@ -650,26 +714,17 @@ module EncDec = {
        return r;
    }
 
-   (* To Do: this is defined in the spec as the inverse of
-      the above, so we can choose the implementation
-      that best suits us and prove equivalence. *)
-
    proc encode12(a : ipoly) : W8.t Array384.t = {
        var fi1,fi2,i,j;
        var r : W8.t Array384.t;
        r <- witness;
        i <- 0; j <- 0;
        while (i < 256) {
-          fi1 <- a.[i];
-          i <- i + 1;
-          fi2 <- a.[i];
-          i <- i + 1;
-          r.[j] <- W8.of_int fi1;
-          j <- j + 1;
-          r.[j] <- W8.of_int ((fi2 %% 2^4) * 2^4 + fi1 %/ 2^8);
-          j <- j + 1;
-          r.[j] <- W8.of_int (fi2 %/ 2^4);
-          j <- j + 1;
+          fi1 <- a.[i]; i <- i + 1;
+          fi2 <- a.[i]; i <- i + 1;
+          r.[j] <- W8.of_int fi1;                               j <- j + 1;
+          r.[j] <- W8.of_int ((fi2 %% 2^4) * 2^4 + fi1 %/ 2^8); j <- j + 1;
+          r.[j] <- W8.of_int (fi2 %/ 2^4);                      j <- j + 1;
        }
        return r;
    }
@@ -680,12 +735,9 @@ module EncDec = {
        r <- witness;
        i <- 0; j <- 0;
        while (i < 128) {
-          fi <- p.[j];
-          j <- j + 1;
-          fi1 <- p.[j];
-          j <- j + 1;
-          r.[i] <- W8.of_int (fi + fi1 * 2^4);
-          i <- i + 1;
+          fi <- p.[j]; j <- j + 1;
+          fi1 <- p.[j]; j <- j + 1; 
+          r.[i] <- W8.of_int (fi + fi1 * 2^4); i <- i + 1;
        }
        return r;
    }
@@ -720,16 +772,11 @@ module EncDec = {
          t1 <- u.[i + 1];
          t2 <- u.[i + 2];
          t3 <- u.[i + 3];
-         c.[j] <- W8.of_int t0;
-         j <- j + 1;
-         c.[j] <-  W8.of_int (t0 %/ 2^8 + t1 * 2^2);
-         j <- j + 1;
-         c.[j] <-  W8.of_int (t1 %/ 2^6 + t2 * 2^4);
-         j <- j + 1;
-         c.[j] <-  W8.of_int (t2 %/ 2^4 + t3 * 2^6);
-         j <- j + 1;
-         c.[j] <-  W8.of_int (t3 %/ 2^2);
-         j <- j + 1;
+         c.[j] <- W8.of_int t0; j <- j + 1;
+         c.[j] <-  W8.of_int (t0 %/ 2^8 + t1 * 2^2); j <- j + 1;
+         c.[j] <-  W8.of_int (t1 %/ 2^6 + t2 * 2^4); j <- j + 1;
+         c.[j] <-  W8.of_int (t2 %/ 2^4 + t3 * 2^6); j <- j + 1;
+         c.[j] <-  W8.of_int (t3 %/ 2^2); j <- j + 1;
          i <- i + 4;
       }
       return c;
@@ -749,19 +796,11 @@ module EncDec = {
       c <- witness;
       i <- 0; j <- 0;
       while (i < 768) {
-         t0 <- u.[j];
-         t1 <- u.[j + 1];
-         t2 <- u.[j + 2];
-         t3 <- u.[j + 3];
-         t4 <- u.[j + 4];
-         c.[i] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;
-         i <- i + 1;
-         c.[i] <-  to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6;
-         i <- i + 1;
-         c.[i] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4;
-         i <- i + 1;
-         c.[i] <-  to_uint t3 %/ 2^6 + (to_uint t4) * 2^2;
-         i <- i + 1;
+         t0 <- u.[j]; t1 <- u.[j + 1]; t2 <- u.[j + 2]; t3 <- u.[j + 3]; t4 <- u.[j + 4];
+         c.[i] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;         i <- i + 1;
+         c.[i] <-  to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6; i <- i + 1;
+         c.[i] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4; i <- i + 1;
+         c.[i] <-  to_uint t3 %/ 2^6 + (to_uint t4) * 2^2;        i <- i + 1;
          j <- j + 5;
       }
       return c;
@@ -783,9 +822,145 @@ module EncDec = {
 (****************)
 (****************)
 
+theory KyberSpec.
+
+(* We will model the three usages of SHA3 family 
+   components as different cryptographic primitives. 
+
+This will be an entropy smoothing hash function.
+
+G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
+
+This will be a XOF construction based on a random oracle that
+takes the input to absorb plus an integer to identify the
+output block.
+
+XOF =
+fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
+fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> 
+    reg ptr u64[25], reg ptr u8[SHAKE128_RATE] => RATE is 168
+
+This will be a PRF.
+
+PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
+
+We do not clone the ROM in fully specified form because
+we want to analyse the Spec in different ROM settings.
+
+clone import PKE_Ext as KyberPKE with
+  type RO.in_t = W8.t Array32.t * W8.t * W8.t * int,
+  type RO.out_t = W8.t Array168.t,
+  type pkey = W8.t Array1152.t * W8.t Array32.t,
+  type skey = W8.t Array1152.t,
+  type plaintext = W8.t Array32.t,
+  type ciphertext = W8.t Array960.t * W8.t Array128.t.
+
+************************************************)
+
+clone import PKE_Ext as KyberPKE with
+  type pkey = W8.t Array1152.t * W8.t Array32.t,
+  type skey = W8.t Array1152.t,
+  type plaintext = W8.t Array32.t,
+  type ciphertext = W8.t Array960.t * W8.t Array128.t.
+
+(* PRF keys in encryption come directly from srand *)
 op [lossless]srand : W8.t Array32.t distr.
 
-module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
+(* G needs only to be entropy smoothing, which is
+   exactly a PRF without any input *)
+
+
+clone PRF as HS_DEFS with
+  type D <- unit,
+  type R <- W8.t Array64.t.
+
+op SHA3_SMOOTH : W8.t Array32.t -> unit -> W8.t Array64.t.
+
+clone import HS_DEFS.PseudoRF as HSF with
+  type K <- W8.t Array32.t, 
+  op dK <- srand,
+  op F <- SHA3_SMOOTH.
+
+module KHS = HSF.PseudoRF.
+
+module G(HS: HSF.PseudoRF) = {
+  proc sample(s : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = {
+     var rhosig,rho,sig;
+     rhosig <@ HS.f(s,());
+     rho <- Array32.init (fun i => rhosig.[i]);
+     sig <- Array32.init (fun i => rhosig.[i + 32]);
+     return (rho,sig);
+  }
+}.
+
+(* We take some liberty to specify parse using a XOF that
+   returns 168 bytes at a time, which is what the Kyber
+   implementation does. *)
+module type XOF_t(O : RO.POracle) = {
+   proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
+   proc next_bytes() : W8.t Array168.t
+}.
+
+module Parse(XOF : XOF_t, O : RO.POracle) = {
+   proc sample() : poly = {
+      var j, b168, bi, bi1, bi2, d1, d2,k;
+      var aa : poly;
+      aa <- witness;
+      j <- 0;
+      while (j < 256) {
+         b168 <@ XOF(O).next_bytes();
+         k <- 0;
+         while ((j < 256) && (k < 168)) {
+            bi  <- b168.[k];
+            bi1 <- b168.[k+1];
+            bi2 <- b168.[k+2];
+            k <- k + 3;
+            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
+            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
+            if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
+            if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
+         }
+      }
+      return aa;
+   }
+}.
+
+clone PRF as PRF_DEFS with
+  type D <- W8.t,
+  type R <- W8.t Array128.t.
+
+op SHA3_PRF : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
+
+clone import PRF_DEFS.PseudoRF as PRF_ with
+  type K <- W8.t Array32.t, 
+  op dK <- srand,
+  op F <- SHA3_PRF.
+
+module KPRF = PRF_.PseudoRF.
+
+module CBD2(PRF : PseudoRF) = {
+   proc sample(sig : W8.t Array32.t, _N : int) : poly = {
+      var i,j,a,b,bytes;
+      var rr : poly;
+      rr <- witness;
+      bytes <@ PRF.f(sig, W8.of_int _N);
+      i <- 0; j <- 0;
+      while (i < 128) { (* unroll loop body once to match code *)
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
+        a <- b2i bytes.[i].[j %% 2 * 4 + 0] + b2i bytes.[i].[j %% 2 * 4 + 1];
+        b <- b2i bytes.[i].[j %% 2 * 4 + 2] + b2i bytes.[i].[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
+        i <- i + 1;
+      }
+      return rr;
+   }
+}.
+
+module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
@@ -798,30 +973,29 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
      s <- witness;
      sv <- witness;
      tv <- witness;
-     (rho,sig) <@ G(O).sample(seed);
+     (rho,sig) <@ G(HS).sample(seed);
      _N <- 0; 
      i <- 0;
      while (i < kvec) {
         j <- 0;
         while (j < kvec) {
            XOF(O).init(rho,W8.of_int j,W8.of_int i);
-           c <@ Parse(XOF,O).sample_real();
+           c <@ Parse(XOF,O).sample();
            a.[(i,j)] <- c;
            j <- j + 1;
         }
         i <- i + 1;
      }      
-     PRF(O).init(sig);
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(sig,_N);
         s <- set s i c;
         _N <- _N + 1;
         i <- i + 1;
      }         
      i <- 0;
      while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(sig,_N);
         e <- set e i c;
         _N <- _N + 1;
         i <- i + 1;
@@ -861,28 +1035,27 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
         j <- 0;
         while (j < kvec) {
            XOF(O).init(rho,W8.of_int i, W8.of_int j);
-           c <@ Parse(XOF,O).sample_real();
+           c <@ Parse(XOF,O).sample();
            aT.[(i,j)] <- c; (* this is the transposed matrix *)
            j <- j + 1;
         }
         i <- i + 1;
       } 
-      PRF(O).init(r);     
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(r,_N);
         rv <- set rv i c;
         _N <- _N + 1;
         i <- i + 1;
       }         
       i <- 0;
       while (i < kvec) {
-        c <@ CBD2(PRF,O).sample_real(_N);
+        c <@ CBD2(PRF).sample(r,_N);
         e1 <- set e1 i c;
         _N <- _N + 1;
         i <- i + 1;
       }      
-      e2 <@ CBD2(PRF,O).sample_real(_N);
+      e2 <@ CBD2(PRF).sample(r,_N);
       rhat <- nttv rv;
       u <- invnttv (ntt_mmul aT rhat) + e1;
       mp <@ EncDec.decode1(m);
@@ -918,634 +1091,4 @@ module Kyber(G : G_t, XOF : XOF_t, PRF : PRF_t, O : RO.POracle) : Scheme = {
 
 }.
 
-
-(**********************************)
-(**********************************)
-(**********************************)
-(* Now we instantiate the abstract
-   encryption scheme and prove 
-   equivalence                    *)
-(**********************************)
-(**********************************)
-(**********************************)
-
-require (***) MLWE_PKE.
-
-theory SpecProperties.
-
-type plaintext = bool Array256.t.
-type ciphertext = ipolyvec * ipoly.
-op m_encode(m : plaintext) : poly = Array256.map b_encode m.
-op m_decode(p : poly) : plaintext = Array256.map b_decode p. 
-op c_encode(c :  vector * poly) : ipolyvec * ipoly = 
-      (compress_polyvec 10 c.`1, compress_poly 4 c.`2).
-op c_decode(c : ipolyvec * ipoly) =
-      (decompress_polyvec 10 c.`1, decompress_poly 4 c.`2).
-op rnd_err_v = compress_poly_err 4. 
-op rnd_err_u = mapv (compress_poly_err 10). 
-op max_noise = q %/ 4.
-
-op pe_R = pe^256.
-op pv = pe_R^(kvec).
-op pm = pe_R^(kvec^2).
-
-op under_noise_bound (p : poly) (b : int) =
-     all (fun cc => `| as_sint cc| < b) p.
-
-op cv_bound : int = 104. (* this is the compress error bound for d = 4 *)
-op fail_prob : real. (* Need to compute exact value or replace
-                        with suitable bound *)
-
-op epsilon_hack : real. (* Assumed simplification loss *)
-
-clone import MLWE_PKE as MLWEPKE with 
-  type MLWE_.Matrix_.ZR.t <- poly,
-  op MLWE_.Matrix_.ZR.(+) <- Poly.(&+),
-  op MLWE_.Matrix_.ZR.([-]) <- Poly.(&-),
-  op MLWE_.Matrix_.ZR.zeror <- Poly.zero,
-  op MLWE_.Matrix_.ZR.oner <- Poly.one,
-  pred MLWE_.Matrix_.ZR.unit <- fun x => x = Poly.one,
-  op MLWE_.Matrix_.ZR.( * ) <- Poly.(&*),
-  op MLWE_.Matrix_.ZR.invr <- KMatrix.ZR.invr,
-  op MLWE_.Matrix_.size <- kvec,
-  type MLWE_.Matrix_.Matrix.matrix <- matrix,
-  type MLWE_.Matrix_.vector <- vector,
-  op MLWE_.Matrix_.Vector.prevector <- prevector,
-  op MLWE_.Matrix_.Vector.vclamp <- vclamp,
-  op MLWE_.Matrix_.Vector.tofunv <- tofunv,
-  op MLWE_.Matrix_.Vector.offunv <- offunv,
-  op MLWE_.Matrix_.Matrix.prematrix <- prematrix,
-  op MLWE_.Matrix_.Matrix.mclamp <- mclamp,
-  op MLWE_.Matrix_.Matrix.tofunm <- tofunm,
-  op MLWE_.Matrix_.Matrix.offunm <- offunm,
-  op MLWE_.duni_R <- duni_R,
-  op MLWE_.dshort_R <- dshort_R,
-  type MLWE_.seed <- W8.t Array32.t,
-  op MLWE_.dseed <- srand,
-  (*type MLWE_.RO.in_t <- W8.t Array32.t, *)
-  type plaintext <- plaintext,
-  type ciphertext <- ciphertext,
-  op m_encode <- m_encode,
-  op m_decode <- m_decode,
-  op c_encode <- c_encode,
-  op c_decode <- c_decode, 
-  op rnd_err_v <- rnd_err_v,
-  op rnd_err_u <- rnd_err_u,
-  op under_noise_bound <- under_noise_bound,
-  op max_noise <- max_noise,
-  op cv_bound <- cv_bound,
-  op fail_prob <- fail_prob,
-  op epsilon_hack <- epsilon_hack
-  proof MLWE_.dseed_ll by apply srand_ll
-  proof MLWE_.dshort_R_ll  by apply dshort_R_ll
-  proof MLWE_.duni_R_ll by apply duni_R_ll
-  proof MLWE_.duni_R_fu by apply duni_R_fu
-  proof MLWE_.Matrix_.ge0_size by smt()
-  proof MLWE_.Matrix_.ZR.addrA by apply KMatrix.ZR.addrA
-  proof MLWE_.Matrix_.ZR.addrC by apply KMatrix.ZR.addrC
-  proof MLWE_.Matrix_.ZR.add0r by apply KMatrix.ZR.add0r
-  proof MLWE_.Matrix_.ZR.addNr by apply KMatrix.ZR.addNr
-  proof MLWE_.Matrix_.ZR.oner_neq0 by apply KMatrix.ZR.oner_neq0
-  proof MLWE_.Matrix_.ZR.mulrA by apply KMatrix.ZR.mulrA
-  proof MLWE_.Matrix_.ZR.mulrC by apply KMatrix.ZR.mulrC
-  proof MLWE_.Matrix_.ZR.mul1r by apply KMatrix.ZR.mul1r
-  proof MLWE_.Matrix_.ZR.mulrDl by apply KMatrix.ZR.mulrDl
-  proof MLWE_.Matrix_.ZR.mulVr by apply KMatrix.ZR.mulVr
-  proof MLWE_.Matrix_.ZR.unitP by apply KMatrix.ZR.unitP
-  proof MLWE_.Matrix_.ZR.unitout by apply KMatrix.ZR.unitout
-  proof MLWE_.Matrix_.ZR.mulf_eq0 by apply KMatrix.ZR.mulf_eq0
-  proof MLWE_.Matrix_.Vector.tofunv_prevector by apply tofunv_prevector
-  proof MLWE_.Matrix_.Vector.tofunvK by apply tofunvK
-  proof MLWE_.Matrix_.Vector.offunvK by apply offunvK
-  proof MLWE_.Matrix_.Matrix.tofunm_prematrix by apply tofunm_prematrix
-  proof MLWE_.Matrix_.Matrix.tofunmK by apply tofunmK
-  proof MLWE_.Matrix_.Matrix.offunmK by apply offunmK
-  proof MLWE_.duni_R_uni by apply duni_R_uni
-  proof encode_noise
-  proof good_decode
-  proof cv_bound_valid
-  proof noise_commutes
-  proof correctness_hack
-  proof fail_prob.
-
-realize encode_noise.
-move => /> u v.
-rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v=> />.
-split; last  by rewrite round_poly_errE.
-rewrite /(+) /mapv /=.
-apply eq_vectorP => /> i il ih; rewrite !offunvE 1,2:/# /=.
-rewrite MLWE_.Matrix_.Vector.offunvE 1:/# /= /compress_poly_err /=.
-apply Array256.tP => k kb.
-rewrite /compress_polyvec /= /fromarray256 /= /Poly.(&+) /=.
-rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
-rewrite decompress_errE //; 1: smt(qE).
-by rewrite mapiE /#.
-qed.
-
-realize good_decode.
-rewrite /under_noise_bound /m_encode /m_decode /b_encode /b_decode /trueval /falseval  qE  => m n hgood.
-apply Array256.ext_eq => /> x h0x hx256.
-rewrite mapiE; first by smt().
-auto => />.
-rewrite /Poly.(&+) map2E => />. 
-rewrite initiE; first by smt().
-rewrite /as_sint => />.
-rewrite Zq.addE  qE => />.
-rewrite mapiE /=; first by smt().
-have ? : -832 < (if 1664 < asint n.[x] then asint n.[x] - 3329 else asint n.[x])< 832; last first. 
-+ case (m.[x]). move => * />. rewrite inFqK qE => />. 
-  case (1664 < asint n.[x]); smt().  
-  by move => *; case (1664 < asint n.[x]); smt(@Zq). 
-pose F := fun (cc : int) (c : Fq) => if `|cc| < `|as_sint c| then as_sint c else cc.
-move: hgood; rewrite allP  => *.
-rewrite /balasint; smt(qE).
-qed.
-
-realize cv_bound_valid.
-admitted. (* Rounding upper bound for one coefficient: compute in EC? *)
-
-realize noise_commutes.
-move => n n' b H H0.
-move : H H0; rewrite /under_noise_bound.
-rewrite !allP.
-move => Hn Hnp i ib.
-move : (Hn i ib). 
-move : (Hnp i ib) => /=. 
-rewrite /as_sint /Poly.(&+) /= map2E !initiE //= addE qE /=  !StdOrder.IntOrder.ltr_norml /= => Hni Hnpi.
-by smt().
-qed.
-
-realize correctness_hack.
-admitted. (* assumption: no one knows what this bound is *)
-
-
-realize fail_prob.
-move => &m;byphoare.
-proc.
-auto => />.
-rewrite /comp_distr /noise_exp_final /noise_exp_part /rdistr.
-rewrite /good_noise /cv_bound /noise_val.
-admitted. (* Probability of failure event in distribution: compute in EC? *)
-
-(* AT THIS POINT WE HAVE THE REFINED THEORETICAL ABSTRACTION
-   AND THE SPEC. The theoretical abstraction is still working
-   over arrays over Fq/bools, rather than byte encodings.
-   We can prove security and correctness of the spec via
-   a reduction, which is probably easier than defining operators
-   for the encoding/decoding functions and include them in
-   the refinement. *)
-
-(* We wrap the refined abstraction with encoding/decoding
-   algorithms first. *)
-
-module WrapUnwrap  = {
-
-  proc wrap_keys(trho : PKE_.pkey, s : PKE_.skey) : KyberPKE.pkey * KyberPKE.skey = {
-     var tv,sv : W8.t Array1152.t;
-     tv <- witness;
-     sv <- witness;
-     tv <@ EncDec.encode12_vec(toipolyvec trho.`1);
-     sv <@ EncDec.encode12_vec(toipolyvec s);
-     return ((tv,trho.`2),sv);
-  }
-
-  proc unwrap_keys(trho : KyberPKE.pkey, s : KyberPKE.skey) : PKE_.pkey * PKE_.skey = {
-     var tb,sb;
-     var tv,sv : vector;
-     tv <- witness;
-     sv <- witness;
-     tb <@ EncDec.decode12_vec(trho.`1);
-     tv <- ofipolyvec tb;
-     sb <@ EncDec.decode12_vec(s);
-     sv <- ofipolyvec sb;
-     return ((tv,trho.`2),sv);
-  }
-
-  proc wrap_sk(s : PKE_.skey) : KyberPKE.skey = {
-     var sv : W8.t Array1152.t;
-     sv <@ EncDec.encode12_vec(toipolyvec s);
-     return sv;
-  }
-
-  proc unwrap_sk(s : KyberPKE.skey) : PKE_.skey = {
-     var sb,sv;
-     sb <@ EncDec.decode12_vec(s);
-     sv <- ofipolyvec sb;
-     return sv;
-  }
-
-  proc wrap_pk(trho : PKE_.pkey) : KyberPKE.pkey = {
-     var tv : W8.t Array1152.t;
-     tv <@ EncDec.encode12_vec(toipolyvec trho.`1);
-     return (tv,trho.`2);
-  }
-
-  proc unwrap_pk(trho : KyberPKE.pkey) : PKE_.pkey = {
-     var tb;
-     var tv : vector;
-     tv <- witness;
-     tb <@ EncDec.decode12_vec(trho.`1);
-     tv <- ofipolyvec tb;
-     return (tv,trho.`2);
-  }
-
-  proc wrap_ciphertext(c : ciphertext) : KyberPKE.ciphertext = {
-      var u,v,c2;
-      var that : vector;
-      var a : matrix;
-      var c1 : W8.t Array960.t;
-      that <- witness;
-      a <- witness;
-      c1 <- witness;
-      (u,v) <- c;
-      c1 <@ EncDec.encode10_vec(u); 
-      c2 <@ EncDec.encode4(v);
-      return (c1,c2);
-  }
-
-  proc unwrap_ciphertext(c : KyberPKE.ciphertext) : ciphertext = {
-      var u,v,c2;
-      var that : W8.t Array1152.t;
-      var a : matrix;
-      var c1 : ipolyvec;
-      that <- witness;
-      a <- witness;
-      c1 <- witness;
-      (u,v) <- c;
-      c1 <@ EncDec.decode10_vec(u); 
-      c2 <@ EncDec.decode4(v);
-      return (c1,c2);
-  }
-
-  proc wrap_plaintext(m : plaintext option) : KyberPKE.plaintext option = {
-      var mp;
-      mp <@ EncDec.encode1(toipoly (m_encode (oget m)));
-      return if m = None then None else Some mp;
-  }
-
-  proc unwrap_plaintext(m : KyberPKE.plaintext) : plaintext = {
-      var mp;
-      mp <@ EncDec.decode1(m);
-      return m_decode (ofipoly mp);
-  }
-
-}.
-
-module (WrapMLWEPKE(XOF : XOF_t) : KyberPKE.SchemeRO) (O : KyberPKE.RO.POracle) = {
-  module H : MLWE_.RO.POracle = {
-      proc o(x : W8.t Array32.t) : matrix = { 
-          (* we just sample matrices as Kyber does and will
-             need to prove this is the same as generating a 
-             random matrix. Note that we need to invert
-             the NTT. *)
-          var i,j,c;
-          var a : matrix;
-          a <- witness;
-          i <- 0;
-          while (i < kvec) {
-            j <- 0;
-            while (j < kvec) {
-               XOF(O).init(x,W8.of_int i,W8.of_int j);
-               c <@ Parse(XOF,O).sample_real();
-               a.[(i,j)] <- c;
-               j <- j + 1;
-           }
-           i <- i + 1;
-          }      
-          return invnttm a; 
-      }
-  }
-
-  proc kg() : KyberPKE.pkey * KyberPKE.skey = {
-     var pk,sk,kp;
-     var tv,sv : W8.t Array1152.t;
-     kp <@ MLWEPKE.MLWE_PKE(H).kg();
-     (pk,sk) <@ WrapUnwrap.wrap_keys(kp);
-     return (pk,sk);
-  }
-
-  proc enc(pk : KyberPKE.pkey, m : KyberPKE.plaintext) : KyberPKE.ciphertext = {
-      var pks,c,cs,mp;
-      var that : vector;
-      var a : matrix;
-      var c1 : W8.t Array960.t;
-      pks <@ WrapUnwrap.unwrap_pk(pk);
-      mp <@ WrapUnwrap.unwrap_plaintext(m);
-      cs <@ MLWEPKE.MLWE_PKE(H).enc(pks,mp);
-      c <@ WrapUnwrap.wrap_ciphertext(cs);
-      return c;
-  }
-
-  proc dec(sk : KyberPKE.skey, cph : KyberPKE.ciphertext) : KyberPKE.plaintext option = {
-      var sks,cphs,m,mp;
-      var u,s : vector;
-      sks <@ WrapUnwrap.unwrap_sk(sk);
-      cphs <@ WrapUnwrap.unwrap_ciphertext(cph);
-      mp <@ MLWEPKE.MLWE_PKE(H).dec(sks,cphs);
-      m <@ WrapUnwrap.wrap_plaintext(mp);
-      return  m;
-  }
-
-}.
-
-(* We now specify the various components used by Kyber in the ROM *)
-
-module (G : G_t) (O : RO.POracle) = {
-   proc sample(seed : W8.t Array32.t) : (W8.t Array32.t) *  (W8.t Array32.t) = {
-        var bb;
-        var r1, r2 : W8.t Array32.t;
-        bb <@ O.o((Some seed, None, None));
-        r1 <- Array32.init (fun i => bb.`1.[i]);
-        r2 <- Array32.init (fun i => bb.`1.[i+32]);
-        return (r1,r2);
-   }
-}.
-
-module (XOF :  XOF_t) (O : RO.POracle) = {
-   var _rho : W8.t Array32.t
-   var _i, _j : W8.t
-   var count : int
-
-   proc init(rho :  W8.t Array32.t, i j : W8.t ) : unit = {
-      _rho <- rho;
-      _i <- i;
-      _j <- j;
-      count <- 0;
-   }
-   proc next_bytes() : W8.t Array168.t = {
-        var bb;
-        bb <@ O.o((None, Some (_rho,_i,_j,count), None));
-        return bb.`2;
-   }
-}.
-
-module (PRF : PRF_t) (O : RO.POracle) = {
-   var _sig : W8.t Array32.t
-
-   proc init(sig : W8.t Array32.t) : unit = {
-       _sig <- sig;
-   }
-   proc next_bytes(_N : W8.t) : W8.t Array128.t = {
-        var bb;
-        bb <@ O.o((None, None, Some (_sig,_N)));
-        return bb.`3;
-   }
-}.
-
-
-(* These modules are reductions. They just encode/decode things coming from the
-   refined game to the scheme adversary.  *)
-
-module KRO(O : PKE_.RO.POracle) : KyberPKE.RO.POracle = {
-    proc init(sd : W8.t Array32.t) : unit = {
-        var _A,pre_A;
-        RO.Lazy.LRO.init();
-        _A <@ O.o(sd);
-        pre_A <@ Parse(XOF,RO.Lazy.LRO).sample_real();
-        (* reprogram LRO so that it is consistent with _A *)
-    }
-    proc o(x : RO.in_t) : RO.out_t = { 
-       var y;
-       y <@ RO.Lazy.LRO.o(x);
-       return y;
-    }
-}.
-
-module (Bc(A : KyberPKE.CAdversaryRO) : MLWEPKE.PKE_.CAdversaryRO) (O : MLWE_.RO.POracle) = {
-   proc find(pk : PKE_.pkey, sk : PKE_.skey) : plaintext = {
-      var kpa, ma, m;
-      KRO(O).init(pk.`2);
-      kpa <@ WrapUnwrap.wrap_keys((pk,sk));
-      ma <@ A(KRO(O)).find(kpa);
-      m <@ WrapUnwrap.unwrap_plaintext(ma);
-      return m;
-   }
-}.
-
-module (Bs(A : KyberPKE.AdversaryRO) : MLWEPKE.PKE_.AdversaryRO) (O : MLWE_.RO.POracle) = {
-   proc choose(pk : PKE_.pkey) : plaintext * plaintext = {
-      var pka, m1m2, m1, m2;
-      KRO(O).init(pk.`2);
-      pka <@ WrapUnwrap.wrap_pk(pk);
-      m1m2 <@ A(KRO(O)).choose(pka);
-      m1 <@ WrapUnwrap.unwrap_plaintext(m1m2.`1);
-      m2 <@ WrapUnwrap.unwrap_plaintext(m1m2.`2);
-      return (m1,m2);
-   }
-
-   proc guess(c : ciphertext) : bool = {
-      var ca,b;
-      ca <@ WrapUnwrap.wrap_ciphertext(c);
-      b <@ A(KRO(O)).guess(ca);
-      return b;
-   }
-}.
-
-(******** RELATIONS BETWEEN THE RANDOM ORACLES *****)
-
-op RO_relation : 
-   W8.t Array32.t -> (* for the seed *)
-   (RO.in_t, RO.out_t) SmtMap.fmap -> 
-   (W8.t Array32.t, matrix) SmtMap.fmap -> bool.
-
-equiv rejection_sampling_vs_ideal _sd:
-   WrapMLWEPKE(XOF, RO.Lazy.LRO).H.o ~ MLWE_.RO.Lazy.LRO.o :
-     RO_relation _sd RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2} /\ ={arg, glob RO.Lazy.LRO} 
-      ==> 
-     ={res, glob RO.Lazy.LRO} /\ 
-     RO_relation _sd  RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}.
-admitted. (* matrix rejection sampling magic *)
-
-
-lemma RO_relation_empty _sd : RO_relation _sd SmtMap.empty SmtMap.empty.
-admitted. (* to do once RO_relation is fixed *)
-
-equiv lro_preserves_relation _sd:
-   RO.Lazy.LRO.o ~ RO.Lazy.LRO.o :
-     RO_relation _sd RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2} /\ ={arg, glob RO.Lazy.LRO} 
-      ==> 
-     ={res, glob RO.Lazy.LRO} /\ 
-     RO_relation _sd  RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}.
-admitted. (* calling LRO preserves relation *)
-
-(******* REIFICATION LAYER ********)
-
-op unwrap_plaintext : W8.t Array32.t -> bool Array256.t.
-lemma reify_unwrap_plaintext msg : 
-  phoare [ WrapUnwrap.unwrap_plaintext : m = msg ==> res = unwrap_plaintext msg] = 1%r.  
-admitted. (* reification *)
-
-op wrap_plaintext : (bool Array256.t) -> (W8.t Array32.t).
-lemma reify_wrap_plaintext msg : 
-  phoare [ WrapUnwrap.wrap_plaintext : m = msg ==> 
-          (msg =  None => res = None) /\
-          (msg <> None => res = Some (wrap_plaintext (oget msg)))] = 1%r. 
-admitted. (* reification *) 
-
-lemma wrap_unwrap_plaintext_op (_a : W8.t Array32.t ) : 
-    wrap_plaintext (unwrap_plaintext _a) = _a.
-admitted. (* reification *)
-
-op unwrap_ciphertext : W8.t Array960.t * W8.t Array128.t -> ipolyvec * ipoly.
-lemma reify_unwrap_ciphertext cph : 
-  phoare [ WrapUnwrap.unwrap_ciphertext : c = cph ==> res = unwrap_ciphertext cph] = 1%r.  
-admitted. (* reification *)
-
-op wrap_ciphertext : ipolyvec * ipoly-> W8.t Array960.t * W8.t Array128.t.
-lemma reify_wrap_ciphertext cph : 
-  phoare [ WrapUnwrap.wrap_ciphertext : c = cph ==> res = wrap_ciphertext cph] = 1%r.  
-admitted. (* reification *)
-
-lemma wrap_ciphertextK : cancel wrap_ciphertext unwrap_ciphertext.
-admitted. (* reification *)
-
-lemma wrap_plaintextK : cancel wrap_plaintext unwrap_plaintext.
-admitted. (* reification *)
-
-lemma unwrap_plaintextK : cancel unwrap_plaintext wrap_plaintext.
-admitted. (* reification *)
-
-print pkey.
-op wrap_keys : (vector * W8.t Array32.t) * vector -> (W8.t Array1152.t * W8.t Array32.t) * (W8.t Array1152.t).
-lemma reify_wrap_keys _kp : 
-  phoare [ WrapUnwrap.wrap_keys : (trho,s) = _kp ==> res = wrap_keys _kp] = 1%r.  
-admitted. (* reification *)
-
-op unwrap_pk : W8.t Array1152.t * W8.t Array32.t-> vector * W8.t Array32.t.
-lemma reify_unwrap_pk pk : 
-  phoare [ WrapUnwrap.unwrap_pk : pk = trho ==> res = unwrap_pk pk] = 1%r.  
-admitted. (* reification *)
-
-op unwrap_sk : W8.t Array1152.t -> vector.
-lemma reify_unwrap_sk sk : 
-  phoare [ WrapUnwrap.unwrap_sk : sk = s ==> res = unwrap_sk sk] = 1%r.  
-admitted. (* reification *)
-
-lemma unwrap_pkK kp : unwrap_pk (wrap_keys kp).`1 = kp.`1.
-admitted. (* reification *)
-
-lemma unwrap_skK kp : unwrap_sk (wrap_keys kp).`2 = kp.`2.
-admitted. (* reification *)
-
-(***************************************)
-
-
-(* The first proof goal shows that encoding/decoding and using rejection sampling
-   are irrelevant, so that our wrapper has the same correctness and security as
-   the refined abstract scheme.  *)
-
-section.
-
-declare module Ac <: KyberPKE.CAdversaryRO {-MLWE_.RO.Lazy.LRO,-RO.Lazy.LRO, -XOF}.
-declare module As <: KyberPKE.AdversaryRO {-MLWE_.RO.Lazy.LRO,-RO.Lazy.LRO, -XOF,-MLWE_.B, -MLWE_.Bt}.
-
-lemma wrap_correctness &m :  
-  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
-  Pr[ MLWEPKE.PKE_.CGameROM(MLWEPKE.PKE_.CorrectnessAdv,MLWEPKE.MLWE_PKE,Bc(Ac),MLWE_.RO.Lazy.LRO).main() @ &m : res].
-byequiv => //.
-proc => /=.
-
-inline CorrectnessAdv(WrapMLWEPKE(XOF, RO.Lazy.LRO), Ac(RO.Lazy.LRO)).main.
-inline PKE_.CorrectnessAdv(MLWE_PKE(MLWE_.RO.Lazy.LRO), Bc(Ac, MLWE_.RO.Lazy.LRO)).main.
-inline WrapMLWEPKE(XOF, RO.Lazy.LRO).kg.
-inline WrapMLWEPKE(XOF, RO.Lazy.LRO).enc.
-inline WrapMLWEPKE(XOF, RO.Lazy.LRO).dec.
-inline Bc(Ac, MLWE_.RO.Lazy.LRO).find.
-
-seq 2 5 : (={glob Ac, glob RO.Lazy.LRO} 
-          /\ RO_relation (kp{1}.`1.`2) RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}
-          /\ kp{1} = (pk,sk){2} 
-          /\ kp{1} = (pk0,sk0){2}).
-admit. (* hairy => programming a random oracle that gives rise to a matrix *)
-
-swap {1} 4 -1.
-swap {1} 6 -2.
-swap {1} 11 -6.
-swap {1} 13 -7.
-
-seq 6 1 : (#pre /\   (pk,sk){1} = kpa{2} /\ (pks,sks){1} = (pk,sk){2}).
-+ ecall {1} (reify_unwrap_sk sk1{1}).
-  wp;ecall {1} (reify_unwrap_pk pk1{1}).
-  wp;ecall {1} (reify_wrap_keys kp{1}).
-  wp;ecall {2} (reify_wrap_keys (pk0, sk0){2}).
-  by auto => />; smt(unwrap_pkK unwrap_skK).
-
-exists* kp{1}.`1.`2; elim * => _sd.
-
-wp; ecall {1} (reify_wrap_plaintext (mp0{1})).
-call(_: true); 1: by sim.
-wp; ecall {1} (reify_unwrap_ciphertext (cph{1})).
-wp; ecall {1} (reify_wrap_ciphertext (cs{1})).
-wp; call(_: ={glob RO.Lazy.LRO} /\ 
-             RO_relation  (_sd)  RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}); wp.
-+ seq 4 4 : (#pre /\ ={sd,t,r,e1,e2}); 1: by conseq />;sim. 
-    by call(rejection_sampling_vs_ideal _sd);auto => />. 
-wp; ecall {1} (reify_unwrap_plaintext (m0{1})).
-wp; ecall {2} (reify_unwrap_plaintext (ma{2})).
-call(_ : ={glob RO.Lazy.LRO} /\ 
-             RO_relation _sd RO.Lazy.LRO.m{1} MLWE_.RO.Lazy.LRO.m{2}).
-+ proc*; inline KRO(MLWE_.RO.Lazy.LRO).o.
-  by wp;call (lro_preserves_relation _sd); auto => />.
-
-auto => /> &1 &2 ? res0 *; do split. 
-+ apply wrap_ciphertextK.
-by smt(unwrap_plaintextK wrap_plaintextK).
-qed.
-
-lemma wrap_security &m :  
-  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
-  Pr[ MLWEPKE.PKE_.CPAGameROM(MLWEPKE.PKE_.CPA,MLWEPKE.MLWE_PKE,Bs(As),MLWE_.RO.Lazy.LRO).main() @ &m : res].
-admitted. (*  Wrapper inherits abstract spec security  *)
-
-(* The second proof goal is to show that the way in which the spec defines
-   the various operations of the schemes, e.g., using NTT and the likes  *)
-
-(* In the ROM there should be no PRF loss *)
-lemma wrap_equiv_corr &m :  
-  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,WrapMLWEPKE(XOF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
-  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,Kyber(G,XOF,PRF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res].
-proof.
-byequiv => //.
-proc.
-inline {1} 2.
-inline {2} 2.
-admitted. (* wrapped abstract spec equiv to spec: correctness *)
-
-lemma wrap_equiv_security &m :  
-  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,WrapMLWEPKE(XOF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] =
-  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,PRF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res].
-byequiv => //.
-proc.
-inline {1} 2.
-inline {2} 2.
-admitted. (* wrapped abstract spec equiv to spec: security *)
-
-(* The following are corollarys that give us Kyber correctness and security *)
-
-lemma KyberCorrectness &m : 
-  Pr[ KyberPKE.CGameROM(KyberPKE.CorrectnessAdv,Kyber(G,XOF,PRF),Ac,KyberPKE.RO.Lazy.LRO).main() @ &m : res] >=
-      1%r - fail_prob - epsilon_hack.
-proof.
-rewrite -wrap_equiv_corr.
-rewrite (wrap_correctness &m).
-apply (correctness_bound (Bc(Ac))&m). 
-admit. (* lossless *)
-qed.
-
-lemma KyberSecurity &m :
-  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(G,XOF,PRF),As,KyberPKE.RO.Lazy.LRO).main() @ &m : res] - 1%r / 2%r =
-      Pr[MLWE_.MLWE(MLWE_.B(B1ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(false) @ &m : res] -
-      Pr[MLWE_.MLWE(MLWE_.B(B1ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(true) @ &m : res] +
-      Pr[MLWE_.MLWE(MLWE_.Bt(B2ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(false) @ &m : res] -
-      Pr[MLWE_.MLWE(MLWE_.Bt(B2ROM(Bs(As)), MLWE_.RO.Lazy.LRO)).main(true) @ &m : res].
-rewrite -wrap_equiv_security.
-rewrite (wrap_security &m).
-apply (main_theorem_h (Bs(As))). 
-admit. (* lossless *)
-admit. (* lossless *)
-qed.
-
-end section.
-
-
-end SpecProperties.
+end KyberSpec.

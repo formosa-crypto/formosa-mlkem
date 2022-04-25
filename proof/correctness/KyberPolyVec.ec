@@ -35,7 +35,7 @@ lemma mulvec a b :
 proof.
 rewrite -!mul_comm_ntt !invnttK.
 rewrite /dotp => />. 
-rewrite /Big.BAdd.big /predT /kvec => />.
+rewrite /Big.BAdd.big /predT /kvec => /=.
 by ring.
 qed.
 
@@ -1132,7 +1132,7 @@ rewrite /(&+) map2E //=  !initiE => />.
 rewrite map2E //=  !initiE => />.
 rewrite map2E //=  !initiE => />.
 rewrite nttZero.
-rewrite /Poly.zero createE !initiE => />.
+rewrite /KPoly.zero createE !initiE => />.
 rewrite /basemul.
 by ring.
 qed.
@@ -1187,21 +1187,21 @@ split.
 
 move => k kbl kbh; move : (rval k _) => //; rewrite mapiE // => ->. 
 
-by move : (SREDCp_corr (to_sint polyi{hr}.[k] * (R * R %% q)) _ _); rewrite /R;smt(qE).
+by move : (SREDCp_corr (to_sint polyi{hr}.[k] * (Fq.SignedReductions.R * Fq.SignedReductions.R %% q)) _ _); rewrite /R;smt(qE).
 
 rewrite tP => k kb; rewrite mapiE //= (rval k kb) mapiE //.
 
-have [#] redbl redbh redv := (SREDCp_corr (to_sint polyi{hr}.[k] * (R * R %% q)) _ _); 1,2 : by rewrite /R;smt(qE).
+have [#] redbl redbh redv := (SREDCp_corr (to_sint polyi{hr}.[k] * (Fq.SignedReductions.R * Fq.SignedReductions.R %% q)) _ _); 1,2 : by rewrite /R;smt(qE).
 
-have -> : inFq (SREDC (to_sint polyi{hr}.[k] * (R * R %% q)))  = 
-          inFq (to_sint polyi{hr}.[k] * (R * R %% q)  * 169) by rewrite -eq_inFq; apply redv.
+have -> : inFq (SREDC (to_sint polyi{hr}.[k] * (Fq.SignedReductions.R * Fq.SignedReductions.R %% q)))  = 
+          inFq (to_sint polyi{hr}.[k] * (Fq.SignedReductions.R * Fq.SignedReductions.R %% q)  * 169) by rewrite -eq_inFq; apply redv.
 
 rewrite !inFqM;move : (H0 k kb); rewrite !mapiE //= => ->.
 
-have -> : inFq (R * R %% q)  = inFq R * inFq R; 1: by rewrite -inFqM -eq_inFq modz_mod. 
+have -> : inFq (Fq.SignedReductions.R * Fq.SignedReductions.R %% q)  = inFq Fq.SignedReductions.R * inFq Fq.SignedReductions.R; 1: by rewrite -inFqM -eq_inFq modz_mod. 
 
-have -> : (ntt (dotp va vb)).[k] * inFq 169 * (inFq R * inFq R) * inFq 169 = 
-          (ntt (dotp va vb)).[k] * (inFq R * inFq 169) * (inFq R * inFq 169) by ring.
+have -> : (ntt (dotp va vb)).[k] * inFq 169 * (inFq Fq.SignedReductions.R * inFq Fq.SignedReductions.R) * inFq 169 = 
+          (ntt (dotp va vb)).[k] * (inFq Fq.SignedReductions.R * inFq 169) * (inFq Fq.SignedReductions.R * inFq 169) by ring.
 
 by rewrite rrinvFq; ring.
 qed.

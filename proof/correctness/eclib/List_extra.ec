@@ -1,6 +1,5 @@
 require import AllCore StdOrder List Ring IntDiv.
 (*---*) import IntOrder.
-require import List_extra Ring_extra.
 
 
 (*-----------------------------------------------------------------------------*)

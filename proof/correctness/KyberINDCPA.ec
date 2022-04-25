@@ -6,6 +6,7 @@ require import Array960 Array1152 Array2304.
 
 require import Jindcpa.
 
+import KyberSpec.
 import KyberPoly KyberPolyVec.
 import KMatrix.
 import Vector.
@@ -146,30 +147,16 @@ module H : KyberPKE.RO.POracle = {
   proc o(x : KyberPKE.RO.in_t) : KyberPKE.RO.out_t = { return witness;  }
 }.
 
-module (G : G_t) (H : KyberPKE.RO.POracle) = {
-  proc sample(inbuf : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = { 
-    var i,j,c;
+module (HS : HSF.PseudoRF) = {
+  include  HSF.PseudoRF[keygen]
+
+  proc f(inbuf : W8.t Array32.t, inp : unit) : W8.t Array64.t = { 
     var buf : W8.t Array64.t;
-    var publicseed : W8.t Array32.t;
-    var noiseseed  : W8.t Array32.t;
 
     buf <- witness;
-    publicseed <- witness;
-    noiseseed <- witness;
 
     buf <@ M._sha3512_32 (buf, inbuf);
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 32);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- buf.[(W64.to_uint i)];
-      publicseed.[(W64.to_uint i)] <- c;
-      c <- buf.[(W64.to_uint j)];
-      noiseseed.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
-    }
-    return (publicseed,noiseseed);
+    return buf;
   }
 }.
 
@@ -190,10 +177,9 @@ module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
   }
 }.
 
-module (PRF : PRF_t) (O : KyberPKE.RO.POracle) = {
-  var key : W8.t Array32.t
-  proc init(sig : W8.t Array32.t) : unit = { key <- sig; }
-  proc next_bytes(_N : W8.t) : W8.t Array128.t = {
+module (KPRF :  PRF_.PseudoRF) = {
+  include  PRF_.PseudoRF[keygen]
+  proc f(key : W8.t Array32.t,_N : W8.t) : W8.t Array128.t = {
      var extseed : W8.t Array33.t;
      var buf;
      extseed <- Array33.init
@@ -219,7 +205,7 @@ proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
     while (j < kvec) {                
       XOF(H).init(seed, if trans then W8.of_int i else W8.of_int j, 
                         if trans then W8.of_int j else W8.of_int i);        
-      c <@ Parse(XOF, H).sample_real();
+      c <@ Parse(XOF, H).sample();
       a <- a.[i, j <- c];         
       j <- j + 1;                      
     }                                 
@@ -275,17 +261,16 @@ proc sample_noise2_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Arr
   noise1 <- witness;                     
   noise2 <- witness;                      
   _N <- 0;                      
-  PRF(H).init(noiseseed);                   
   i <- 0;                             
   while (i < kvec) {                 
-    c <@ CBD2(PRF, H).sample_real(_N);
+    c <@ CBD2(KPRF).sample(noiseseed,_N);
     noise1 <- set noise1 i c;                   
     _N <- _N + 1;                     
     i <- i + 1;                       
   }                                  
   i <- 0;                             
   while (i < kvec) {                 
-    c <@ CBD2(PRF, H).sample_real(_N);
+    c <@ CBD2(KPRF).sample(noiseseed,_N);
     noise2 <- set noise2 i c;                   
     _N <- _N + 1;                     
     i <- i + 1;                       
@@ -306,7 +291,7 @@ proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t A
 proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
   var e, s, _N,e2;
   (s,e,_N) <@ sample_noise2_spec(noiseseed);
-  e2 <@ CBD2(PRF, H).sample_real(_N);
+  e2 <@ CBD2(KPRF).sample(noiseseed,_N);
   return (s,e, unlift_poly e2);
 }
 
@@ -326,9 +311,25 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var skpv:W16.t Array768.t;
     var e:W16.t Array768.t;
     var pkpv:W16.t Array768.t;
+    var buf : W8.t Array64.t;
 
 
-    (publicseed,noiseseed) <@  G(H).sample(seed);
+    buf <@  HS.f(seed,());
+
+    publicseed <- witness;
+    noiseseed <- witness;
+
+    i <- (W64.of_int 0);
+    j <- (W64.of_int 32);
+    
+    while ((i \ult (W64.of_int 32))) {
+      c <- buf.[(W64.to_uint i)];
+      publicseed.[(W64.to_uint i)] <- c;
+      c <- buf.[(W64.to_uint j)];
+      noiseseed.[(W64.to_uint i)] <- c;
+      i <- (i + (W64.of_int 1));
+      j <- (j + (W64.of_int 1));
+    }
 
     a <- witness;
     a <@ __gen_matrix (publicseed,false);
@@ -554,7 +555,7 @@ equiv auxgenmatrix_good :
   M.__gen_matrix ~ AuxKyber.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
 proc => /=. 
-inline Parse(XOF, H).sample_real.
+inline Parse(XOF, H).sample.
 inline M.__rej_uniform.
 
 seq 6 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
@@ -906,17 +907,17 @@ by move : (mask85_sum a 2) => /= ->; move : (mask85_sum a 3) => /= ->.
 qed.
 
 equiv get_noise_sample_noise :
-   M._poly_getnoise ~ CBD2(PRF, H).sample_real :
-   arg{1}.`2 = PRF.key{2} /\ to_uint arg{1}.`3 = arg{2} 
+   M._poly_getnoise ~ CBD2(KPRF).sample :
+   arg{1}.`2 = arg{2}.`1 /\ to_uint arg{1}.`3 = arg{2}.`2
    ==> 
    lift_array256 res{1} = res{2} /\
    forall k, 0<=k<256 => -5 < to_sint res{1}.[k] < 5.
 proc => /=. 
 seq 8 2 : (buf{1} = bytes{2}).
-+ inline PRF(H).next_bytes.
++ inline KPRF.f.
   wp;call shake33_ignore;wp => /=.
-  while{1}(0<=k{1}<=32 /\ seed{1} = PRF.key{2} /\ 
-    forall i, 0<=i<k{1} => extseed{1}.[i] = PRF.key{2}.[i]) (32 - k{1}); last first.
+  while{1}(0<=k{1}<=32 /\ seed{1} = sig{2} /\
+    forall i, 0<=i<k{1} => extseed{1}.[i] = sig{2}.[i]) (32 - k{1}); last first.
   + auto => /> &1 &2 *; split; 1: smt().
     move => extseed kl *; split; 1: smt().
     move => *; rewrite Array33.tP => ii iib.
@@ -963,12 +964,10 @@ equiv sample_noise_good2 _key :
     _key = noiseseed{1} /\ ={noiseseed} 
     ==> res{1}.`1 = res{2}.`1 /\ 
                      res{1}.`2 = res{2}.`2 /\ 
-                     res{2}.`3 = 6 /\
-                     PRF.key{2} = _key.
+                     res{2}.`3 = 6.
 proc => /=.
-unroll for {2} 8; unroll for {2} 6.
-swap {2} 4 -3.
-inline PRF(H).init; seq 2 4 : (#pre /\ PRF.key{2} = noiseseed{1}); 1:by auto.
+unroll for {2} 7; unroll for {2} 5.
+seq 2 2 : (#pre); 1:by auto.
 seq 3 4 : (#pre /\ lift_array256 (subarray256 noise1{1} 0) = noise1{2}.[0] /\ _N{2}=0 /\ i{2} = 0 /\
               (forall k, 0<=k<256 => -5 < to_sint noise1{1}.[k] < 5)).
 wp; call (get_noise_sample_noise); auto => /> &1 &2 *; split.
@@ -1039,7 +1038,6 @@ by rewrite !mapiE //= !initiE //= !initiE //= /#.
 
 by auto => /> &1 H H0; rewrite /lift_vector /unlift_vector !tP /subarray256 /lift_array256;split;
   move => i ib; rewrite initiE //= offunvE 1:/# /= mapiE 1:/# /= initiE 1:/# /=;smt(inFq_to_sint qE).
-
 qed.
 
 equiv sample_noise_good3 :
@@ -1069,8 +1067,8 @@ swap {1} [11..13] -8.
 swap {1} 8 -5.
 swap {1} 10 -7.
 swap {1} [14..16] -6.
-seq 10 1 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
-+ inline G(H).sample;swap {1} [5..6] -3. 
+seq 10 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
++ inline HS.f. swap {1} [5..6] -3. swap {2} [4..5] 2.
   seq 3 1 : (#pre /\ ={inbuf}); last by sim.   
   conseq => />.
   while {1} (0<= to_uint i{1} <=32 /\ 
@@ -1200,7 +1198,7 @@ op touches2 (m m' : global_mem_t) (p1 : address) (len1 : int) (p2 : address) (le
 
 
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
-   equiv [ M.indcpa_keypair_jazz ~ Kyber(G,XOF,PRF,H).kg_derand : 
+   equiv [ M.indcpa_keypair_jazz ~ Kyber(HS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
        seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
@@ -1236,8 +1234,25 @@ inline {1} 1; inline {2} 1.
 sp 2 0.
 
 swap {2} 7 -5.
-seq 2 2 : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
-+ by conseq => />; call (_: true); [ by sim | by auto => />]. 
+seq 7 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
++ inline{2} 2;wp.
+  seq 4 3 : (#pre /\ buf{1} = rhosig{2}). 
+  + wp;call(_:true); 1: by sim. 
+    by auto => />.
+  conseq => />.
+  while {1} (0<=to_uint i{1}<=32 /\ to_uint j{1} = to_uint i{1} + 32 /\ buf{1} = rhosig{2} /\
+              forall k, 0<=k<to_uint i{1} => publicseed{1}.[k] = rhosig{2}.[k] /\ noiseseed{1}.[k] = rhosig{2}.[k+32])
+              (32 - to_uint i{1}); last first.
+  + auto => /> &1 &2 ?????; split; 1:smt().
+    move => i j ns ps; rewrite ultE of_uintK /=; split; 1: by smt().
+    by move => ?????; split;  rewrite tP => k kb; rewrite initiE /#.
+  move => *. auto => /> &1; rewrite ultE of_uintK /= => ?????. 
+  rewrite !to_uintD_small /=; 1,2: smt().
+  do split; 1..3,5:smt().
+  move => k kbl kbh. 
+  case (k<to_uint i{1}). 
+  move => low;smt(Array32.set_neqiE). 
+  by move => high;rewrite !Array32.set_eqiE; smt(). 
 
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
@@ -1255,13 +1270,13 @@ seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
   wp; call(_: ={arg} ==> ={XOF.state}); last by auto => /> &1 &2;  smt(offunmK). 
   by proc;call absorb_ignore; auto => />.
   
-swap {2} [5..10]  -2.
+swap {2} [5..9]  -2.
 swap {1} 1 1.
-seq 1 8 : (#pre /\ s{2} = lift_vector skpv{1} /\ e{2} = lift_vector e{1} /\
+seq 1 7 : (#pre /\ s{2} = lift_vector skpv{1} /\ e{2} = lift_vector e{1} /\
                 signed_bound768_cxq skpv{1} 0 768 1 /\
                 signed_bound768_cxq e{1} 0 768 1).
 + inline AuxKyber.sample_noise2_spec; conseq />. 
-  seq 9 8 : (noise1{1}=s{2} /\ noise2{1} = e{2}); 1: by sim; auto => />.
+  seq 8 7 : (noise1{1}=s{2} /\ noise2{1} = e{2}); 1: by sim; auto => />.
   by auto => />;  smt(vector_unlift).
 
 swap {1} 1 2; seq 0 2: #pre; 1: by auto.
@@ -1478,7 +1493,7 @@ qed.
 
 
 lemma kyber_correct_enc mem _coinsp _msgp _ctp _pkp : 
-   equiv [ M.indcpa_enc_jazz ~ Kyber(G,XOF,PRF,H).enc_derand: 
+   equiv [ M.indcpa_enc_jazz ~ Kyber(HS,XOF,KPRF,H).enc_derand: 
      valid_ptr _coinsp 32 /\
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _msgp 32 /\
@@ -1589,24 +1604,25 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
   wp; call(_: ={arg} ==> ={XOF.state}); last by auto => />;  smt(offunmK). 
   by proc;call absorb_ignore; auto => />.
 
-swap {2} 13 -12.
+swap {2} 12 -11.
 seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\
             signed_bound_cxq k{1} 0 256 1). 
 ecall (poly_frommsg_corr Glob.mem{1} _msgp m{2}); 1: by auto => /> /#.
 
-swap {2} [2..10] -1.
-seq 1 9 : (#pre /\ rv{2} = lift_vector sp_0{1} /\
+swap {2} [2..9] -1.
+seq 1 8 : (#pre /\ rv{2} = lift_vector sp_0{1} /\
     signed_bound768_cxq sp_0{1} 0 768 1 /\
      e1{2} = lift_vector ep{1} /\
     signed_bound768_cxq ep{1} 0 768 1 /\
     e2{2} = lift_array256 epp{1} /\
     signed_bound_cxq epp{1} 0 256 1).
 + inline AuxKyber.sample_noise3_spec AuxKyber.sample_noise2_spec. 
-  wp; call(_: ={PRF.key}); 1: by sim.
+  wp; call(_: true); 1: by sim.
   conseq />; 1: by smt().
-  seq 10 8 : (noise1{1}=rv{2} /\ noise2{1} = e1{2} /\ _N0{1} = _N{2} /\ 
-             ={PRF.key}); 1: by  sim; auto => />.
-  auto => />; smt(vector_unlift poly_unlift).
+  seq 9 8 : (noise1{1}=rv{2} /\ noise2{1} = e1{2} /\ _N0{1} = _N{2} /\ 
+             noiseseed0{1} = load_array32 Glob.mem{1} (to_uint coinsp{1})); 
+    1: by  sp 2 0; conseq />; sim; auto => />.
+  by auto => />; smt(vector_unlift poly_unlift).
 
 swap {2} 1 3.
 
@@ -1807,7 +1823,7 @@ by auto =>/> /#.
 qed.
 
 lemma kyber_correct_dec mem _msgp _ctp _skp : 
-   equiv [ M.indcpa_dec_jazz ~ Kyber(G,XOF,PRF,H).dec : 
+   equiv [ M.indcpa_dec_jazz ~ Kyber(HS,XOF,KPRF,H).dec : 
      valid_ptr _msgp 32 /\
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
