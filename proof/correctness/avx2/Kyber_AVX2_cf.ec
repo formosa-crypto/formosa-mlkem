@@ -42,4 +42,28 @@ module EncDec_AVX2 = {
        }
        return r;
    }
+
+   proc encode4(p : ipoly) : W8.t Array128.t = {
+       var fi,fi1,i,k;
+       var r : W8.t Array128.t;
+
+       r <- witness;
+       i <- 0;
+
+       while (i < 4) {
+         k <- 0;
+         while(k < 32) {
+          fi <- p.[64*i+2*k];
+          fi1 <- p.[64*i+2*k+1];
+
+          r.[32*i+k] <- W8.of_int (fi + fi1 * 2^4);
+
+          k <- k + 1;
+         }
+
+         i <- i + 1;
+       }
+
+       return r;
+   }
 }.
