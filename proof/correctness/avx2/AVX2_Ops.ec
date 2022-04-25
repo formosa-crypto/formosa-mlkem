@@ -2,7 +2,7 @@ require import List Int Ring IntExtra IntDiv CoreMap.
 import Ring.IntID.
 from Jasmin require import JModel JArray JWord_array.
 
-require import Array2p Array4p Array8p Array16p Array32p WArray128p WArray160p.
+require import Array2p Array4 Array8 Array16 Array32 WArray128 WArray160p.
 
 type t2u16 = W16.t Array2.t.
 type t8u32 = W32.t Array8.t.
@@ -107,44 +107,15 @@ module Ops = {
   proc iVPBROADCAST_16u16(v : W16.t) : t16u16 = {
     var r : t16u16;
 
-    r.[0] <- v;
-    r.[1] <- v;
-    r.[2] <- v;
-    r.[3] <- v;
-    r.[4] <- v;
-    r.[5] <- v;
-    r.[6] <- v;
-    r.[7] <- v;
-    r.[8] <- v;
-    r.[9] <- v;
-    r.[10] <- v;
-    r.[11] <- v;
-    r.[12] <- v;
-    r.[13] <- v;
-    r.[14] <- v;
-    r.[15] <- v;
+    r <- Array16.init (fun i => v);
 
     return r;
   }
 
   proc iVPMULH_256(x y: t16u16) : t16u16 = {
     var r : t16u16;
-    r.[0] <- wmulhs x.[0] y.[0];
-    r.[1] <- wmulhs x.[1] y.[1];
-    r.[2] <- wmulhs x.[2] y.[2];
-    r.[3] <- wmulhs x.[3] y.[3];
-    r.[4] <- wmulhs x.[4] y.[4];
-    r.[5] <- wmulhs x.[5] y.[5];
-    r.[6] <- wmulhs x.[6] y.[6];
-    r.[7] <- wmulhs x.[7] y.[7];
-    r.[8] <- wmulhs x.[8] y.[8];
-    r.[9] <- wmulhs x.[9] y.[9];
-    r.[10] <- wmulhs x.[10] y.[10];
-    r.[11] <- wmulhs x.[11] y.[11];
-    r.[12] <- wmulhs x.[12] y.[12];
-    r.[13] <- wmulhs x.[13] y.[13];
-    r.[14] <- wmulhs x.[14] y.[14];
-    r.[15] <- wmulhs x.[15] y.[15];
+
+    r <- Array16.init (fun i => wmulhs x.[i] y.[i]);
 
     return r;
   }
@@ -177,22 +148,7 @@ module Ops = {
   proc iVPMADDUBSW_256(x y: t32u8): t16u16 = {
     var r : t16u16;
 
-    r.[0] <- packssw ((W8.to_uint x.[0]) * (W8.to_sint y.[0]) + (W8.to_uint x.[1]) * (W8.to_sint y.[1]));
-    r.[1] <- packssw ((W8.to_uint x.[2]) * (W8.to_sint y.[2]) + (W8.to_uint x.[3]) * (W8.to_sint y.[3]));
-    r.[2] <- packssw ((W8.to_uint x.[4]) * (W8.to_sint y.[4]) + (W8.to_uint x.[5]) * (W8.to_sint y.[5]));
-    r.[3] <- packssw ((W8.to_uint x.[6]) * (W8.to_sint y.[6]) + (W8.to_uint x.[7]) * (W8.to_sint y.[7]));
-    r.[4] <- packssw ((W8.to_uint x.[8]) * (W8.to_sint y.[8]) + (W8.to_uint x.[9]) * (W8.to_sint y.[9]));
-    r.[5] <- packssw ((W8.to_uint x.[10]) * (W8.to_sint y.[10]) + (W8.to_uint x.[11]) * (W8.to_sint y.[11]));
-    r.[6] <- packssw ((W8.to_uint x.[12]) * (W8.to_sint y.[12]) + (W8.to_uint x.[13]) * (W8.to_sint y.[13]));
-    r.[7] <- packssw ((W8.to_uint x.[14]) * (W8.to_sint y.[14]) + (W8.to_uint x.[15]) * (W8.to_sint y.[15]));
-    r.[8] <- packssw ((W8.to_uint x.[16]) * (W8.to_sint y.[16]) + (W8.to_uint x.[17]) * (W8.to_sint y.[17]));
-    r.[9] <- packssw ((W8.to_uint x.[18]) * (W8.to_sint y.[18]) + (W8.to_uint x.[19]) * (W8.to_sint y.[19]));
-    r.[10] <- packssw ((W8.to_uint x.[20]) * (W8.to_sint y.[20]) + (W8.to_uint x.[21]) * (W8.to_sint y.[21]));
-    r.[11] <- packssw ((W8.to_uint x.[22]) * (W8.to_sint y.[22]) + (W8.to_uint x.[23]) * (W8.to_sint y.[23]));
-    r.[12] <- packssw ((W8.to_uint x.[24]) * (W8.to_sint y.[24]) + (W8.to_uint x.[25]) * (W8.to_sint y.[25]));
-    r.[13] <- packssw ((W8.to_uint x.[26]) * (W8.to_sint y.[26]) + (W8.to_uint x.[27]) * (W8.to_sint y.[27]));
-    r.[14] <- packssw ((W8.to_uint x.[28]) * (W8.to_sint y.[28]) + (W8.to_uint x.[29]) * (W8.to_sint y.[29]));
-    r.[15] <- packssw ((W8.to_uint x.[30]) * (W8.to_sint y.[30]) + (W8.to_uint x.[31]) * (W8.to_sint y.[31]));
+    r <- Array16.init (fun i => packssw ((W8.to_uint x.[2*i]) * (W8.to_sint y.[2*i]) + (W8.to_uint x.[2*i+1]) * (W8.to_sint y.[2*i+1])));
 
     return r;
   }
@@ -389,38 +345,7 @@ module Ops = {
   proc iVPACKUS_16u16(x y: t16u16) : t32u8 = {
     var r: t32u8;
 
-    r.[0] <- packus16 x.[0];
-    r.[1] <- packus16 x.[1];
-    r.[2] <- packus16 x.[2];
-    r.[3] <- packus16 x.[3];
-    r.[4] <- packus16 x.[4];
-    r.[5] <- packus16 x.[5];
-    r.[6] <- packus16 x.[6];
-    r.[7] <- packus16 x.[7];
-    r.[8] <- packus16 y.[0];
-    r.[9] <- packus16 y.[1];
-    r.[10] <- packus16 y.[2];
-    r.[11] <- packus16 y.[3];
-    r.[12] <- packus16 y.[4];
-    r.[13] <- packus16 y.[5];
-    r.[14] <- packus16 y.[6];
-    r.[15] <- packus16 y.[7];
-    r.[16] <- packus16 x.[8];
-    r.[17] <- packus16 x.[9];
-    r.[18] <- packus16 x.[10];
-    r.[19] <- packus16 x.[11];
-    r.[20] <- packus16 x.[12];
-    r.[21] <- packus16 x.[13];
-    r.[22] <- packus16 x.[14];
-    r.[23] <- packus16 x.[15];
-    r.[24] <- packus16 y.[8];
-    r.[25] <- packus16 y.[9];
-    r.[26] <- packus16 y.[10];
-    r.[27] <- packus16 y.[11];
-    r.[28] <- packus16 y.[12];
-    r.[29] <- packus16 y.[13];
-    r.[30] <- packus16 y.[14];
-    r.[31] <- packus16 y.[15];
+    r <- Array32.init (fun k => if (k %/ 8 %% 2 = 0) then packus16 x.[8 * (k %/ 16) + k %% 8] else packus16 y.[8 * (k %/ 16) + k %% 8]);
 
     return r;
   }
@@ -555,15 +480,7 @@ module Ops = {
   proc iVPERMD(x p: t8u32) : t8u32 = {
     var r : t8u32;
 
-    r <- witness;
-    r.[0] <- x.[ (to_uint p.[0]) %% 8 ];
-    r.[1] <- x.[ (to_uint p.[1]) %% 8 ];
-    r.[2] <- x.[ (to_uint p.[2]) %% 8 ];
-    r.[3] <- x.[ (to_uint p.[3]) %% 8 ];
-    r.[4] <- x.[ (to_uint p.[4]) %% 8 ];
-    r.[5] <- x.[ (to_uint p.[5]) %% 8 ];
-    r.[6] <- x.[ (to_uint p.[6]) %% 8 ];
-    r.[7] <- x.[ (to_uint p.[7]) %% 8 ];
+    r <- Array8.init (fun i => x.[(to_uint p.[i]) %% 8 ]);
 
     return r;
   }
@@ -1435,15 +1352,7 @@ qed.
 
 equiv eq_iVPBROADCAST_16u16 : Ops.iVPBROADCAST_16u16 ~ OpsV.iVPBROADCAST_16u16 : ={v} ==> is16u16 res{1} res{2}.
 proof.
-  proc => /=. wp. skip.
-  move => &1 &2 v_eq.
-  rewrite /is16u16 /VPBROADCAST_16u16 v_eq.
-  rewrite get_setE //=.
-  rewrite -createL.
-  apply W16u16.wordP => i i_bnds.
-  do rewrite -get_unpack16 //=.
-  rewrite createiE // get_of_list //.
-  smt(@List).
+  proc; by wp; skip; rewrite /is16u16 /VPBROADCAST_16u16 -iotaredE.
 qed.
 
 equiv eq_iload4u64: Ops.iload4u64 ~ OpsV.iload4u64 : ={mem, p} /\ to_uint p{1} + 32 <= W64.modulus ==> is4u64 res{1} res{2}.
@@ -1685,8 +1594,10 @@ qed.
 
 equiv eq_iVPERMD : Ops.iVPERMD ~ OpsV.iVPERMD : is8u32 x{1} x{2} /\ is8u32 p{1} p{2} ==> is8u32 res{1} res{2}.
 proof.
-  proc; wp; skip; rewrite /is8u32 => /> &1.
-  rewrite /VPERMD /permd /= !pack8_bits32 ?modz_cmp //.
+  proc; wp; skip; rewrite /is8u32 /VPERMD /permd //=.
+  move => &1 &2 [x_eq p_eq].
+  rewrite x_eq p_eq.
+  rewrite !pack8_bits32 ?modz_cmp //.
 qed.
 
 lemma lsr_2u64 (w1 w2:W64.t) (x:int) : 0 <= x <= 64 =>
@@ -1969,7 +1880,7 @@ move => &1 &2 [#] x_eq y_eq.
 rewrite x_eq y_eq.
 rewrite -get_unpack8 //=.
 rewrite /is16u16.
-do rewrite get_setE //=.
+do rewrite initiE 1://= /=.
 apply W16u16.wordP => /=.
 move => i i_i.
 rewrite -get_unpack16 //=.
