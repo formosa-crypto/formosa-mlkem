@@ -177,8 +177,8 @@ module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
   }
 }.
 
-module (KPRF :  PseudoRF.PseudoRF) = {
-  include  PseudoRF.PseudoRF[keygen]
+module (KPRF :  PRF_.PseudoRF) = {
+  include  PRF_.PseudoRF[keygen]
   proc f(key : W8.t Array32.t,_N : W8.t) : W8.t Array128.t = {
      var extseed : W8.t Array33.t;
      var buf;

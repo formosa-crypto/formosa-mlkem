@@ -868,13 +868,20 @@ op [lossless]srand : W8.t Array32.t distr.
 
 (* G needs only to be entropy smoothing, which is
    exactly a PRF without any input *)
+
+
 clone PRF as HS_DEFS with
   type D <- unit,
   type R <- W8.t Array64.t.
 
+op SHA3_SMOOTH : W8.t Array32.t -> unit -> W8.t Array64.t.
+
 clone import HS_DEFS.PseudoRF as HSF with
   type K <- W8.t Array32.t, 
-  op dK <- srand.
+  op dK <- srand,
+  op F <- SHA3_SMOOTH.
+
+module KHS = HSF.PseudoRF.
 
 module G(HS: HSF.PseudoRF) = {
   proc sample(s : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = {
@@ -922,9 +929,14 @@ clone PRF as PRF_DEFS with
   type D <- W8.t,
   type R <- W8.t Array128.t.
 
-clone import PRF_DEFS.PseudoRF with
+op SHA3_PRF : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
+
+clone import PRF_DEFS.PseudoRF as PRF_ with
   type K <- W8.t Array32.t, 
-  op dK <- srand.
+  op dK <- srand,
+  op F <- SHA3_PRF.
+
+module KPRF = PRF_.PseudoRF.
 
 module CBD2(PRF : PseudoRF) = {
    proc sample(sig : W8.t Array32.t, _N : int) : poly = {

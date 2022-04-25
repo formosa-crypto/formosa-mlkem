@@ -262,35 +262,6 @@ qed.
    are only in the sampling procedures. *)
 import MLWE_.MLWE_SMP.
 
-op SHA3_SMOOTH : W8.t Array32.t -> unit -> W8.t Array64.t.
-
-module KHS : HSF.PseudoRF = {
-  proc keygen() : W8.t Array32.t = {
-    var k : W8.t Array32.t;  
-    k <$ srand;
-    return k;
-  }
-  
-  proc f(k : W8.t Array32.t, x : unit) : W8.t Array64.t = {
-    return SHA3_SMOOTH k x;
-  }
-}.
-
-op SHA3_PRF : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
-
-module KPRF : PseudoRF.PseudoRF = {
-  proc keygen() : W8.t Array32.t = {
-    var k : W8.t Array32.t;  
-    k <$ srand;
-    return k;
-  }
-  
-  proc f(k : W8.t Array32.t, x : W8.t) : W8.t Array128.t = {
-    return SHA3_PRF k x;
-  }
-}.
-
-
 module (KSampler(XOF : XOF_t) : Sampler) (O : RO.POracle)  = {
     proc sampleA(sd : W8.t Array32.t) : matrix = { 
      var i,j,c;
@@ -380,16 +351,54 @@ qed.
 
 (*************************************
 We define a version of Kyber spec that
-uses a sampler. This is useful for 
-syntactic reasons.
+uses external samplers. This is useful for 
+syntactic reasons in the following proof
+steps.
 *************************************)
 
+module type NoiseSampler = {
+  proc sample2(noiseseed:W8.t Array32.t) : vector * vector * int
+  proc sample3(noiseseed:W8.t Array32.t) : vector * vector * poly
+}.
 
-module KyberS(HS : HSF.PseudoRF, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.POracle) : Scheme = {
+
+module KNS : NoiseSampler = {
+  proc sample2(noiseseed:W8.t Array32.t) : vector * vector * int= {
+    var noise1, noise2, _N,i,c;
+    noise1 <- witness;                     
+    noise2 <- witness;                      
+    _N <- 0;                      
+    i <- 0;                             
+    while (i < kvec) {                 
+      c <@ CBD2(KPRF).sample(noiseseed,_N);
+      noise1 <- set noise1 i c;                   
+      _N <- _N + 1;                     
+     i <- i + 1;                       
+    }                                  
+    i <- 0;                             
+    while (i < kvec) {                 
+      c <@ CBD2(KPRF).sample(noiseseed,_N);
+      noise2 <- set noise2 i c;                   
+      _N <- _N + 1;                     
+      i <- i + 1;                       
+    }                                  
+
+    return (noise1,noise2,_N);
+  }
+
+   proc sample3(noiseseed:W8.t Array32.t) : vector * vector * poly = {
+     var e, s, _N,e2;
+     (s,e,_N) <@ sample2(noiseseed);
+     e2 <@ CBD2(KPRF).sample(noiseseed,_N);
+     return (s,e, e2);
+  }
+}.
+
+module KyberS(HS : HSF.PseudoRF, S : Sampler, NS : NoiseSampler, PRF : PRF_.PseudoRF, O : RO.POracle) : Scheme = {
 
   (* Spec gives a derandomized enc that matches this code *)
-  proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
-     var rho, sig, i,  _N,c,t;
+  proc kg_derand(rho sig: W8.t Array32.t) : pkey * skey = {
+     var _N,t;
      var tv,sv : W8.t Array1152.t;
      var a : matrix;
      var s,e : vector;
@@ -397,23 +406,8 @@ module KyberS(HS : HSF.PseudoRF, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.PO
      s <- witness;
      sv <- witness;
      tv <- witness;
-     (rho,sig) <@ G(HS).sample(seed);
-     _N <- 0; 
      a <@ S(O).sampleA(rho);     
-     i <- 0;
-     while (i < kvec) {
-        c <@ CBD2(PRF).sample(sig,_N);
-        s <- set s i c;
-        _N <- _N + 1;
-        i <- i + 1;
-     }         
-     i <- 0;
-     while (i < kvec) {
-        c <@ CBD2(PRF).sample(sig,_N);
-        e <- set e i c;
-        _N <- _N + 1;
-        i <- i + 1;
-     }      
+     (s,e,_N) <@ NS.sample2(sig);
      s <- nttv s;
      e <- nttv e; 
      t <- ntt_mmul a s + e;
@@ -423,15 +417,16 @@ module KyberS(HS : HSF.PseudoRF, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.PO
   }
 
   proc kg() : pkey * skey = {
-     var s,kp;
-     s <$ srand;
-     kp <@ kg_derand(s);
+     var s,rho,sig,kp;
+     s <@ HS.keygen();
+     (rho,sig) <@ G(HS).sample(s);
+     kp <@ kg_derand(rho,sig);
      return kp;
   }
 
   (* Spec gives a derandomized enc that matches this code *)
   proc enc_derand(pk : pkey, m : plaintext, r : W8.t Array32.t) : ciphertext = {
-      var _N,i,c,tv,rho,rv,e1,e2,rhat,u,v,mp,c2,thati;
+      var tv,rho,rv,e1,e2,rhat,u,v,mp,c2,thati;
       var that : vector;
       var aT : matrix;
       var c1 : W8.t Array960.t;
@@ -441,25 +436,10 @@ module KyberS(HS : HSF.PseudoRF, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.PO
       rv <- witness;
       that <- witness;
       (tv,rho) <- pk;
-      _N <- 0;
       thati <@ EncDec.decode12_vec(tv); 
       that <- ofipolyvec thati;
       aT <@ S(O).sampleAT(rho);    
-      i <- 0;
-      while (i < kvec) {
-        c <@ CBD2(PRF).sample(r,_N);
-        rv <- set rv i c;
-        _N <- _N + 1;
-        i <- i + 1;
-      }         
-      i <- 0;
-      while (i < kvec) {
-        c <@ CBD2(PRF).sample(r,_N);
-        e1 <- set e1 i c;
-        _N <- _N + 1;
-        i <- i + 1;
-      }      
-      e2 <@ CBD2(PRF).sample(r,_N);
+      (rv,e1,e2) <@ NS.sample3(r);
       rhat <- nttv rv;
       u <- invnttv (ntt_mmul aT rhat) + e1;
       mp <@ EncDec.decode1(m);
@@ -471,7 +451,7 @@ module KyberS(HS : HSF.PseudoRF, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.PO
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
      var r,c;
-     r <$ srand;
+     r <@ PRF.keygen();
      c <@ enc_derand(pk,m,r);
      return c;
   }
@@ -497,29 +477,131 @@ module KyberS(HS : HSF.PseudoRF, S : Sampler, PRF : PseudoRF.PseudoRF, O : RO.PO
 
 (* We have that instantiating S with KSampler we get the Spec *)
 lemma kg_sampler_kg (O <: RO.POracle) (XOF <: XOF_t {-O}) :
-  equiv [   KyberS(KHS,KSampler(XOF),KPRF,O).kg ~ Kyber(KHS,XOF,KPRF,O).kg : 
+  equiv [   KyberS(KHS,KSampler(XOF),KNS,KPRF,O).kg ~ Kyber(KHS,XOF,KPRF,O).kg : 
      ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
-proc;inline*.
-seq 16 15: (#pre /\ ={sig} /\ ={s0} /\ ={rho} /\ ={e} /\ 
-            a0{1} = a{2} /\ ={_N} /\ sd{1} = rho{2}); 1: by auto.
-by sim => />.
+proc;inline*. swap{1} 24 -8. swap{2} [4..5] 12.
+seq 18 13: (#pre /\ sig1{1} = sig{2} /\ rho1{1} = rho{2}  /\ 
+            a0{1} = a{2} /\ _N0{1} = _N{2} /\ sd{1} = rho{2}); 1: by  auto.
+by sim => />; wp; sim />.
 qed.
 
 lemma enc_sampler_enc (O <: RO.POracle)  (XOF <: XOF_t {-O}):
  equiv [
-   KyberS(KHS,KSampler(XOF),KPRF,O).enc ~ Kyber(KHS,XOF,KPRF,O).enc : 
+   KyberS(KHS,KSampler(XOF),KNS,KPRF,O).enc ~ Kyber(KHS,XOF,KPRF,O).enc : 
     ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
 proc. 
 inline {1} 2; inline {2} 2. 
-swap {1} 5 8.
-swap {2} 5 8.
-seq 12 12: (#pre /\ ={that, rv, r0, m, m0, e1, _N,rho}); 1: by inline *; sim.
-by inline *;sim => /#.
+swap {2} 11 4. swap {2} [7..8] 6. swap{2} 5 5.
+seq 12 9: (#pre /\ ={that, r0, m, m0, rho}); 1: by inline *; sim.
+by inline *;sim />; wp; sim =>/> /#.
 qed.
 
 lemma enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
-  equiv [ KyberS(KHS,KSampler(XOF),KPRF,O).dec ~ Kyber(KHS,XOF,KPRF,O).dec : 
+  equiv [ KyberS(KHS,KSampler(XOF),KNS,KPRF,O).dec ~ Kyber(KHS,XOF,KPRF,O).dec : 
      ={arg} /\ ={glob O} ==> ={res} ] by proc;inline *;sim => /#.
+
+(*******************************************************************)
+(*    Entropy Smoothing and PRF hops  for Security                 *)
+(*******************************************************************)
+
+
+op [lossless funiform] dsmooth : W8.t Array64.t distr.
+clone import HS_DEFS.RF as IdealHSF with
+   op dR = fun (_: unit) => dsmooth
+   proof dR_ll by smt(dsmooth_ll).
+
+op [lossless funiform] dnbytes : W8.t Array128.t distr.
+clone import PRF_DEFS.RF as IdealPRF with
+   op dR = fun (_: W8.t) => dnbytes
+   proof dR_ll by smt(dnbytes_ll).
+
+module DummyHS(F : HS_DEFS.PRF_Oracles) = {
+   proc keygen() : W8.t Array32.t = { IdealHSF.RF.m <- SmtMap.empty; return witness;}
+   proc f(inp : W8.t Array32.t * unit) : W8.t Array64.t = { var out; out <@ F.f(); return out; }
+}.
+
+module (D_ES(S : Sampler, NS : NoiseSampler, PRF : PRF_.PseudoRF, O : RO.Oracle, As : KyberPKE.AdversaryRO) : HS_DEFS.Distinguisher) (F : HS_DEFS.PRF_Oracles)  = {
+
+    proc distinguish() : bool = {
+       var b;
+       b <@ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(DummyHS(F),S,KNS,KPRF),As,O).main();
+       return b;
+    } 
+}.
+
+module DummyPRF(F : PRF_DEFS.PRF_Oracles) = {
+   proc keygen() : W8.t Array32.t = { IdealHSF.RF.m <- SmtMap.empty; return witness;}
+   proc f(inp : W8.t Array32.t * W8.t) : W8.t Array128.t = { var out; out <@ F.f(inp.`2); return out; }
+}.
+
+module (D_PRF(S : Sampler, NS : NoiseSampler, O : RO.Oracle, As : KyberPKE.AdversaryRO) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
+
+    proc distinguish() : bool = {
+       var b;
+       b <@ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(DummyHS(IdealHSF.RF),S,KNS,DummyPRF(F)),As,O).main();
+       return b;
+    } 
+}.
+
+section.
+
+declare module O <: RO.Oracle {-IdealHSF.RF, -KPRF, -B1ROM, -B2ROM, -HSF.PRF}.
+declare module S <: Sampler {-KPRF, -O, -B1ROM, -B2ROM}.
+declare module As <: KyberPKE.AdversaryRO {-IdealHSF.RF, -HSF.PRF, -O, -S, -KPRF, -B1ROM, -B2ROM}.
+
+lemma ESHop &m :
+  Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KNS,KPRF),As,O).main() @ &m : res] -
+  Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF),As,O).main() @ &m : res] = 
+  Pr [ HS_DEFS.IND(HSF.PRF,D_ES(S,KNS,KPRF,O,As)).main() @ &m : res ] - 
+  Pr [ HS_DEFS.IND(IdealHSF.RF,D_ES(S,KNS,KPRF,O,As)).main() @ &m : res ].
+proof.
+have -> : Pr[CPAGameROM(CPA, KyberS(KHS, S, KNS, KPRF), As, O).main() @ &m : res]  = 
+          Pr[HS_DEFS.IND(HSF.PRF, D_ES(S, KNS, KPRF, O, As)).main() @ &m : res] .
++ byequiv => //.
+  proc. 
+  inline {1} 2; inline {2} 2. inline {2} 2. inline {2} 3.
+  wp; call(_: ={glob O}); 1: by sim.
+  wp; call(_: ={glob O, glob S}); 1: by sim.
+  rnd.
+  wp; call(_: ={glob O}); 1: by sim.
+  conseq (_: _ ==> ={pk, glob O,glob S}); 1: smt().
+  swap {2} 2 -1.
+  seq 1 1 : (={glob As, glob S, glob O}); 1: by sim.
+  inline {1} 1. inline {1} 1. inline {2} 2. inline {2} 1.
+  seq 3 3 : (#pre /\ ={rho,sig}); 1: by inline *; sim.
+  by sim.
+
++ have -> : 
+    Pr[CPAGameROM(CPA, KyberS(DummyHS(IdealHSF.RF), S, KNS, KPRF), As, O).main() @ &m : res] = 
+    Pr[HS_DEFS.IND(IdealHSF.RF, D_ES(S, KNS, KPRF, O, As)).main() @ &m : res].
++ byequiv => //.
+  proc. 
+  inline {1} 2; inline {2} 2. inline {2} 2. inline {2} 3.
+  wp; call(_: ={glob O}); 1: by sim.
+  wp; call(_: ={glob O, glob S}); 1: by sim.
+  rnd.
+  wp; call(_: ={glob O}); 1: by sim.
+  conseq (_: _ ==> ={pk, glob O,glob S}); 1: smt().
+  swap {2} 2 -1.
+  seq 1 1 : (={glob As, glob S, glob O}); 1: by sim.
+  inline {1} 1. inline {1} 1. inline {2} 2. inline {2} 1.
+  seq 3 3 : (#pre /\ ={rho,sig}). 
+  + inline *; sim.
+  by sim.
+done.
+qed.
+
+lemma PRFHop &m :
+  Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF),As,O).main() @ &m : res] -
+  Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(DummyHS(IdealHSF.RF),S,KNS,DummyPRF(IdealPRF.RF)),As,O).main() @ &m : res] = 
+  Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF(S,KNS,O,As)).main() @ &m : res ] - 
+  Pr [ PRF_DEFS.IND(IdealPRF.RF,D_PRF(S,KNS,O,As)).main() @ &m : res ].
+admitted.
+(* Need two hops *)
+
+end section.
+
+(*******************************************************************)
 
 (***************************************)
 
@@ -536,7 +618,7 @@ lemma security_any_sampler &m :
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless S(O0).sampleAT) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).guess) =>
   (forall (O0 <: RO.Oracle), islossless O0.o => islossless As(O0).choose) =>
-  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KNS,KPRF),As,O).main() @ &m : res] - 1%r/2%r = 
   Pr[MLWE_SMP(B1ROM(As, S), S, O).main(false, false) @ &m : res] -
  Pr[MLWE_SMP(B1ROM(As, S), S, O).main(false, true) @ &m : res] +
  Pr[MLWE_SMP(B2ROM(As, S), S, O).main(true, false) @ &m : res] -
@@ -544,7 +626,7 @@ lemma security_any_sampler &m :
 move => H H0 H1 H2 H3 H4.
 have  <- : 
     Pr[ PKE_.CPAGameROM(PKE_.CPA,MLWE_PKE(S(O)),As,O).main() @ &m : res] =
-    Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KPRF),As,O).main() @ &m : res]; last by
+    Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KNS,KPRF),As,O).main() @ &m : res]; last by
         apply (main_theorem_s O S As &m  H H0 H1 H2 H3 H4).
 byequiv => //.
 proc.
@@ -557,27 +639,17 @@ call(_: ={glob S, glob O}).
   wp;ecall{2}(sem_encode4 (compress_poly 4 v{2})).
   wp;ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
   wp;ecall{2}(sem_decode1 (m0{2})).
-  swap {1} 5 -3. 
-  wp;conseq />; 1:by smt().
-  admit. (* Hugo: follows from PRF hop and product of distributions,
-                  plus ntt properties *)
+  admit.
 
 rnd;call(_: ={glob O}); 1: by sim.
 conseq />; 1: by smt().
 
 (* KEYGEN IS EQUIVALENT: Write aux lemma.  *)
 call(_: ={glob S, glob O}).
-inline {2} 2. 
+inline {2} 3. inline {2} 2. 
 wp;ecall{2}(sem_encode12_vec (toipolyvec s0{2})).
 wp;ecall{2}(sem_encode12_vec (toipolyvec t{2})).
-swap {1} 4 -2. 
-inline {2} 7.
-swap {2} [7..11] -4. 
-swap {2} 13 -5. 
-wp; conseq => />.
-
-admit. (* Hugo: follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
-                and product of distributions, plus ntt properties *)
+admit.
 
 by inline *; conseq => />; sim.
 
@@ -617,7 +689,7 @@ lemma security_spec &m :
  Pr[MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, false) @ &m : res] -
  Pr[MLWE_SMP(B2ROM(As,  KSampler(XOF)),  KSampler(XOF), O).main(true, true) @ &m : res].
 move => Oill Ooll XOF_init_ll XOF_next_ll Parse_ll Asgll Ascll.
-have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,KSampler(XOF),KPRF),As,O).main() @ &m : res]= 
+have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,KSampler(XOF),KNS,KPRF),As,O).main() @ &m : res]= 
           Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(KHS,XOF,KPRF),As,O).main() @ &m : res];
   last first.
 + apply (security_any_sampler O (KSampler(XOF)) As &m Oill Ooll  _ _ Asgll Ascll).
@@ -665,7 +737,7 @@ lemma security_any_sampler_indiff &m :
      Pr[ WIndfReal(D0,S,OS).main(tr,b) @ &m : res] = 
      Pr[ WIndfIdeal(D0,Sim,O).main(tr,b) @ &m : res]) =>
 
-  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KPRF),As,OS).main() @ &m : res] - 1%r/2%r = 
+  Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KNS,KPRF),As,OS).main() @ &m : res] - 1%r/2%r = 
     Pr[MLWE(B(BS(B1ROM(As,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res] -
        Pr[MLWE(B(BS(B1ROM(As,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res] + 
     Pr[MLWE(Bt(BS(B2ROM(As,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res]-
@@ -673,7 +745,7 @@ lemma security_any_sampler_indiff &m :
 move => H H0 H1 H2 H3 H4.
 have  <- : 
     Pr[ PKE_.CPAGameROM(PKE_.CPA,MLWE_PKE(S(OS)),As,OS).main() @ &m : res] =
-    Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KPRF),As,OS).main() @ &m : res]; 
+    Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,S,KNS,KPRF),As,OS).main() @ &m : res]; 
      last by apply (main_theorem_ref As S Sim &m  H H0 H1 H2 H3 H4).
 byequiv => //.
 proc.
@@ -686,27 +758,17 @@ call(_: ={glob S, glob OS}).
   wp;ecall{2}(sem_encode4 (compress_poly 4 v{2})).
   wp;ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
   wp;ecall{2}(sem_decode1 (m0{2})).
-  swap {1} 5 -3. 
-  wp;conseq />; 1:by smt().
-  admit. (* Hugo: follows from PRF hop and product of distributions,
-                  plus ntt properties *)
+  admit.
 
 rnd;call(_: ={glob OS}); 1: by sim.
 conseq />; 1: by smt().
 
 (* KEYGEN IS EQUIVALENT: Write aux lemma.  *)
 call(_: ={glob S, glob OS}).
-inline {2} 2. 
+inline {2} 3. inline {2} 2.
 wp;ecall{2}(sem_encode12_vec (toipolyvec s0{2})).
 wp;ecall{2}(sem_encode12_vec (toipolyvec t{2})).
-swap {1} 4 -2. 
-inline {2} 7.
-swap {2} [7..11] -4. 
-swap {2} 13 -5. 
-wp; conseq => />.
-
-admit. (* Hugo: follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
-                and product of distributions, plus ntt properties *)
+admit.
 
 by inline *; conseq => />; sim.
 
@@ -762,7 +824,7 @@ lemma security_spec_indiff &m :
        Pr[MLWE(Bt(BS(B2ROM(As,KSampler(XOF)),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res].
 
 move => Oill XOF_init_ll XOF_next_ll Parse_ll Asgll Ascll ind.
-have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,KSampler(XOF),KPRF),As,OS).main() @ &m : res]= 
+have <- : Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(KHS,KSampler(XOF),KNS,KPRF),As,OS).main() @ &m : res]= 
           Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,Kyber(KHS,XOF,KPRF),As,OS).main() @ &m : res];
   last first.
 + apply (security_any_sampler_indiff  As (KSampler(XOF)) Sim  &m Oill _ _ Asgll Ascll ind).
@@ -807,12 +869,12 @@ lemma correctness_any_sampler &m epsilon_hack fail_prob :
 (* The following failure probability can be bounded as
 in the Python script for Kyber *)   
   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-  Pr[ KyberPKE.CorrectnessAdvROM(KyberS(KHS,S,KPRF),A,OS).main() @ &m : res]  >=
+  Pr[ KyberPKE.CorrectnessAdvROM(KyberS(KHS,S,KNS,KPRF),A,OS).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack.
 move => Sim_ll A_ll ind eh nb.
 have <- : 
 Pr[PKE_.CGameROM(PKE_.CorrectnessAdv, MLWE_PKE(S(RO.Lazy.LRO)), A, RO.Lazy.LRO).main() @ &m : res] = 
-Pr[CorrectnessAdvROM(KyberS(KHS, S, KPRF), A, OS).main() @ &m : res]; 
+Pr[CorrectnessAdvROM(KyberS(KHS, S, KNS,KPRF), A, OS).main() @ &m : res]; 
    last by apply (correctness_bound A S Sim &m epsilon_hack fail_prob Sim_ll A_ll ind eh nb).
 byequiv => //.
 proc.
@@ -832,27 +894,16 @@ call(_: ={glob S, glob OS}).
 + inline {2} 2.
   wp;ecall{2}(sem_encode4 (compress_poly 4 v{2})).
   wp;ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
-  wp;ecall{2}(sem_decode1 (m0{2})).
-  swap {1} 5 -3. 
-  wp;conseq />; 1:by smt().
-  admit. (* Hugo: follows from PRF hop and product of distributions,
-                  plus ntt properties *)
+  admit.
 
 call(_: ={glob OS}); 1: by sim.
 
 (* KEYGEN IS EQUIVALENT: Write aux lemma.  *)
 call(_: ={glob S, glob OS}).
-inline {2} 2. 
+inline {2} 3. inline {2} 2.
 wp;ecall{2}(sem_encode12_vec (toipolyvec s0{2})).
 wp;ecall{2}(sem_encode12_vec (toipolyvec t{2})).
-swap {1} 4 -2. 
-inline {2} 7.
-swap {2} [7..11] -4. 
-swap {2} 13 -5. 
-wp; conseq => />.
-
-admit. (* Hugo: follows from PRF hop, entropy smoothing of SHA3_SMOOTH 
-                and product of distributions, plus ntt properties *)
+admit. 
 
 by inline *; conseq => />;  auto => />.
 qed. 
@@ -888,7 +939,7 @@ in the Python script for Kyber *)
   Pr[ KyberPKE.CorrectnessAdvROM(Kyber(KHS,XOF,KPRF),A,OS).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack.
 move => Sim_ll A_ll ind eh fp.
-have <-: Pr[CorrectnessAdvROM(KyberS(KHS, KSampler(XOF), KPRF), A, OS).main() @ &m : res] = 
+have <-: Pr[CorrectnessAdvROM(KyberS(KHS, KSampler(XOF), KNS,KPRF), A, OS).main() @ &m : res] = 
          Pr[CorrectnessAdvROM(Kyber(KHS, XOF, KPRF), A, OS).main() @ &m : res];
   last by apply (correctness_any_sampler A (KSampler(XOF)) Sim &m).
 byequiv => //.
