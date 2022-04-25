@@ -319,7 +319,7 @@ module Mvec = {
     return (a);
   }
 
-  proc _poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+  proc poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
     var aux: int;
 
     var x16p:W16.t Array16.t;
@@ -789,7 +789,7 @@ proof.
 qed.
 
 equiv eq_poly_decompress:
-  Mavx2_prevec.poly_decompress ~ Mvec._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+  Mavx2_prevec.poly_decompress ~ Mvec.poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={rp, ap, i, aux, Glob.mem} /\ aux{1} = 16 /\ 0 <= i{1} /\ is16u16 q{1} q{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift{1} shift{2} /\ is32u8 shufbidx{1} shufbidx{2}).
@@ -829,6 +829,12 @@ proof.
       do (rewrite pack2_bits16 //=).
     + rewrite /is32u8 initiE /get256_direct /= => />.
       apply W32u8.allP => />.
+qed.
+
+equiv eq_poly_compress:
+  Mavx2_prevec.poly_compress ~ Mvec.poly_compress: ={rp, a, Glob.mem} ==> ={res}.
+proof.
+  admit.
 qed.
 
 equiv veceq_poly_add2 :
@@ -923,13 +929,26 @@ proof.
 qed.
 
 equiv veceq_poly_decompress:
-  Mvec._poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+  Mvec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={rp, ap, i, aux, q, mask, shift, shufbidx, Glob.mem}).
   inline *.
   wp. skip. auto => />.
   inline *.
+  wp. skip. auto => />.
+qed.
+
+equiv veceq_poly_compress:
+  Mvec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
+  inline *.
+  wp. skip. auto => />.
+  inline OpsV.iVPBROADCAST_16u16.
+  wp.
+  call veceq_poly_csubq.
   wp. skip. auto => />.
 qed.
 
@@ -1019,9 +1038,17 @@ qed.
 
 equiv prevec_eq_poly_decompress:
   Mavx2_prevec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
-    transitivity Mvec._poly_decompress (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
+    transitivity Mvec.poly_decompress (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_decompress.
 apply veceq_poly_decompress.
+qed.
+
+equiv prevec_eq_poly_compress:
+  Mavx2_prevec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res}.
+    transitivity Mvec.poly_compress (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
+smt. trivial.
+apply eq_poly_compress.
+apply veceq_poly_compress.
 qed.
 

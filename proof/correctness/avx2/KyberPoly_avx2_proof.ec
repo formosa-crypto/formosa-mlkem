@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
-require import Array400 Array256 Array128 Array32 Array32p Array16 Array16p Array4 Array4p Array8 Array8p.
+require import Array400 Array256 Array128 Array32 Array16 Array4 Array8.
 require import W16extra WArray512 WArray32 WArray16.
 require import AVX2_Ops.
 require import List_hakyber Number_extra IntDiv_extra Ring_extra.
@@ -147,6 +147,12 @@ proof. admit. (*
   split; first by rewrite tP => H *; rewrite -!lift_array256E // H //.
   by rewrite tP => H *; rewrite !lift_array256E // H //.
 *)qed.
+
+op touches (m m' : global_mem_t) (p : address) (len : int) =
+    forall i, !(0 <= i < len) => m'.[p + i] = m.[p + i]. (* FIXME: merge w/ KyberPoly *)
+
+op load_array32(m : global_mem_t, p : address) : W8.t Array32.t = 
+      Array32.init (fun i => m.[p + i]).
 
 lemma get_lift_array256_eq (p: W16.t Array256.t):
   let p_lift = lift_array256 p in
@@ -1379,24 +1385,30 @@ proof.
             + rewrite (_: pc_mask_s = (W16.of_int (2^4 - 1))). simplify. done.
               rewrite W16.and_mod 1://.
               rewrite /q.
-              pose b := to_uint (pack2_t ((W2u8.Pack.init (fun (_ : int) => mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 2 * (k %% 16) %/ 4])))).
+              pose b := pack2_t (W2u8.Pack.init (fun (_ : int) => mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 2 * (k %% 16) %/ 4])).
               rewrite of_intM of_sintK.
-              rewrite (_: W16.smod (b %% 2 ^ 4 * 2048 %% W16.modulus) = b %% 2 ^ 4 * 2048).
+              rewrite (_: W16.smod (to_uint b %% 2 ^ 4 * 2048 %% W16.modulus) = to_uint b %% 2 ^ 4 * 2048).
                 rewrite /smod /=.
                 smt(pmod_small @Int @IntDiv @Ring.IntID).
               do rewrite shr_shrw 1://=.
               rewrite shrDP 1://=.
               rewrite (pmod_small _ W32.modulus). by smt(@Int @IntDiv @Ring.IntID).
-              rewrite (_: ((b %% 2 ^ 4) * 2048 * 3329 %/ 2 ^ 14) = (b %% 2 ^ 4) * 3329 %/ 2 ^ 3). smt(@Int @IntDiv @Ring.IntID).
+              rewrite (_: ((to_uint b %% 2 ^ 4) * 2048 * 3329 %/ 2 ^ 14) = (to_uint b %% 2 ^ 4) * 3329 %/ 2 ^ 3). smt(@Int @IntDiv @Ring.IntID).
               rewrite -of_intD shrDP 1://= of_uintK.
               do (rewrite (pmod_small _ W32.modulus); first by smt(@Int @IntDiv @Ring.IntID)).
               rewrite (pmod_small _ W16.modulus); first by smt(@Int @IntDiv @Ring.IntID).
-              rewrite (_: (b %% 2 ^ 4 * 3329 %/ 2 ^ 3 + 1) %/ 2 ^ 1 = (8 + b %% 2 ^ 4 * 3329) %/ 2 ^ 4); first by smt(@Int @IntDiv @Ring.IntID).
-              rewrite (_: W16.smod ((8 + b %% 16 * 3329) %/ 2 ^ 4) = (8 + b %% 16 * 3329) %/ 2 ^ 4).
-                move : (modz_cmp b 16) => />.
+              rewrite (_: (to_uint b %% 2 ^ 4 * 3329 %/ 2 ^ 3 + 1) %/ 2 ^ 1 = (8 + to_uint b %% 2 ^ 4 * 3329) %/ 2 ^ 4); first by smt(@Int @IntDiv @Ring.IntID).
+              rewrite (_: W16.smod ((8 + to_uint b %% 16 * 3329) %/ 2 ^ 4) = (8 + to_uint b %% 16 * 3329) %/ 2 ^ 4).
+                move : (modz_cmp (to_uint b) 16) => />.
                 rewrite /smod.
                 smt(@Int @IntDiv @Ring.IntID).
-              rewrite (_: b %% 16 = to_uint mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 2 * (k %% 16) %/ 4] %% 16).
+              rewrite (_: to_uint b %% 16 = to_uint (b `&` (W16.of_int W8.max_uint)) %% 16).
+                rewrite W16.and_mod 1://=.
+                rewrite of_uintK (pmod_small _ W16.modulus) 1:/#.
+                smt(@Int @IntDiv).
+              rewrite -zeroext_truncateu8_and.
+              rewrite to_uint_zeroextu16.
+              rewrite (_: to_uint (truncateu8 b) = to_uint mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 2 * (k %% 16) %/ 4]).
                 admit. (* FIXME *)
               rewrite (_: 2 * (k %% 16) %/ 4 = k %% 16 %/ 2). smt(@IntDiv @Int).
               rewrite to_uintD of_uintK.
@@ -1527,6 +1539,32 @@ proof.
       move : (rp_eq_r k k_i) => /#.
 qed.
 
+lemma poly_compress_corr _a (_p : address) mem :
+    equiv [ Mavx2_prevec.poly_compress ~ EncDec_AVX2.encode4 :
+             pos_bound256_cxq a{1} 0 256 2 /\
+             lift_array256 a{1} = _a /\
+             p{2} = compress_poly 4 _a /\
+             valid_ptr _p 128 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             lift_array256 res{1} = _a /\
+             pos_bound256_cxq res{1} 0 256 1 /\
+             touches mem Glob.mem{1} _p 128 /\
+             load_array128 Glob.mem{1} _p = res{2}].
+proof.
+  admit. (* FIXME *)
+qed.
+
+(* FIXME: this seems too simple ???? *)
+lemma poly_compress_ll : islossless Mavx2_prevec.poly_compress.
+proc.
+auto => />.
+(*
+  cfold 5. wp; while(0 <= i <= 4) (4-i).
+    move => *; inline *; auto => />. smt().
+  inline Ops.iVPBROADCAST_16u16; wp; call poly_csubq_ll; auto => /> /#.
+*)
+qed.
 
 (* FIXME
 lemma poly_compress_round_corr_h ap :
@@ -2037,14 +2075,6 @@ proof. admit.
 qed. *)
 
 
-lemma poly_compress_ll : islossless Mavx2_prevec.poly_compress_round.
-proof. admit. (*
-  proc.
-  cfold 5. wp; while(0 <= i <= 4) (4-i).
-    move => *; inline *; auto => />. smt().
-  inline Ops.iVPBROADCAST_16u16; wp; call poly_csubq_ll; auto => /> /#.
-*)qed.
-
 (*
 lemma poly_compress_round_corr ap :
   phoare[Mavx2_prevec.poly_compress_round :
@@ -2063,13 +2093,16 @@ proof.
   move => m m_lb x0. smt(@Int @IntDiv).
 qed.
 
-lemma poly_tomsg_corr_h _a:
-   hoare[Mavx2_prevec.poly_tomsg_decode:
-         pos_bound256_cxq a 0 256 2 /\
-         lift_array256 a = _a ==>
-         map (fun x => x = W32.one) res = m_decode _a /\
-         forall k, 0 <= k && k < 256 =>
-           res.[k] <> W32.zero => res.[k] = W32.one].
+lemma poly_tomsg_corr _a (_p : address) mem : 
+  equiv [Mavx2_prevec.poly_tomsg ~ EncDec.encode1 :
+             pos_bound256_cxq a{1} 0 256 2 /\ 
+             lift_array256 a{1} = _a /\ a{2} = compress_poly 1 _a /\ 
+             valid_ptr _p 32 /\ Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             lift_array256 res{1} = _a /\
+             pos_bound256_cxq res{1} 0 256 1 /\
+             touches mem Glob.mem{1} _p 32 /\
+             load_array32 Glob.mem{1} _p = res{2}].
 proof. admit. (*
   proc.
   seq 1 : #pre; first by auto => />.
@@ -2529,13 +2562,6 @@ proc.
   inline *; wp; auto => /> /#.
 qed.
 
-lemma poly_tomsg_corr _a :
-    phoare[ Mavx2_prevec.poly_tomsg_decode :
-             pos_bound256_cxq a 0 256 2 /\
-             lift_array256 a = _a ==>
-             map (fun x => x = W32.one) res = m_decode _a] = 1%r
-  by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
-
 op lift_msg(bs: W256.t): bool Array256.t =
     Array256.init (fun i => bs.[i]).
 
@@ -2619,7 +2645,7 @@ proof.
   smt(@Int).
 qed.
 
-
+(*
 lemma poly_frommsg_corr_h _a:
       hoare[Mavx2_prevec.poly_frommsg_encode:
             lift_msg f = _a
@@ -3160,7 +3186,7 @@ lemma poly_frommsg_corr _a :
              pos_bound256_cxq res 0 256 1 /\
              lift_array256 res = m_encode _a] = 1%r
    by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
-
+*)
 
 
 end KyberPolyAVX.
