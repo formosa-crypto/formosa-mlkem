@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JWord.
-require import Fq Array16 Array16p.
+require import Fq Array16.
 require import W16extra WArray512 WArray32 WArray16.
 require import AVX2_Ops.
 require import List_hakyber.
