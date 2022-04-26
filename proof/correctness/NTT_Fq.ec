@@ -1053,7 +1053,6 @@ proof.
   by rewrite mem_range_addr mem_range_mull //= mem_y1_range /=; apply/(mem_range_mod _ 128).
 qed.
 
-(*TODO: the spec of ( &* ) is incorrect: some bitreverse required.*)
 lemma mul_comm_ntt (pa pb : poly):
   ntt (pa &* pb) = basemul (ntt pa) (ntt pb).
 proof.
