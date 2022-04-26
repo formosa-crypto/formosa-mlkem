@@ -834,7 +834,63 @@ qed.
 equiv eq_poly_compress:
   Mavx2_prevec.poly_compress ~ Mvec.poly_compress: ={rp, a, Glob.mem} ==> ={res}.
 proof.
-  admit.
+  proc.
+  while(={rp, a, i, aux, Glob.mem} /\ aux{1} = 4 /\ 0 <= i{1} /\ is16u16 v{1} v{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift1{1} shift1{2} /\
+        is16u16 shift2{1} shift2{2} /\ is8u32 permidx{1} permidx{2} /\ is32u8 shift2_b{1} shift2{2}).
+  wp.
+  call eq_istore32u8.
+  wp.
+  call eq_iVPERMD.
+  wp.
+  do (call eq_iVPMULH_256 || call eq_iVPMULHRS_256 || call eq_ivpand16u16 || call eq_iVPACKUS_16u16 || call eq_iVPMADDUBSW_256).
+  wp. skip. auto => />. rewrite /is16u16 /is8u32 /is32u8 => />. move => &1 &2 [#] i_lb shift_eq i_ub.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => a0_eq.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => a1_eq.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => a2_eq.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => a3_eq.
+  move => [#] res1_l. (* FIXME: naming *)
+  split.
+    apply W32u8.allP => />.
+  move => res1_eq res2_l.
+  split.
+    apply W32u8.allP => />.
+  move => res2l_eq.
+  move : i_lb => /#.
+  wp.
+  do call eq_iVPBROADCAST_16u16.
+  wp.
+  call eq_poly_csubq.
+  wp.
+  auto => />.
+  move => [#] res1_l res1_r res1_eq res2_l res2_r res2_eq res3_l res3_r res3_eq .
+  do split.
+    + rewrite /is16u16 initiE /get256_direct /= => />.
+      apply W32u8.allP => />.
+    + rewrite /is8u32 initiE /get256_direct /= => />.
+      apply W32u8.allP => />.
+    + rewrite /is32u8 /f16u16_t32u8 initiE //= res3_eq.
+      apply W16u16.allP => />.
+      do (rewrite pack2_bits8 //=).
 qed.
 
 equiv veceq_poly_add2 :

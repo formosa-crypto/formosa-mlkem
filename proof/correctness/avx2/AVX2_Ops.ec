@@ -18,8 +18,12 @@ type t2u128 = W128.t Array2.t.
 hint simplify W8.of_intwE @0.
 
 lemma pack2_bits32 (w: W64.t):
-   pack2 [w \bits32 0; w \bits32 1] = w.
+  pack2 [w \bits32 0; w \bits32 1] = w.
 proof. by apply W2u32.allP. qed.
+
+lemma pack4_bits8 (w: W32.t):
+  pack4 [w \bits8 0; w \bits8 1; w \bits8 2; w \bits8 3] = w.
+proof. by apply W4u8.allP. qed.
 
 lemma pack16_bits16 (w: W256.t):
     pack16 [w \bits16 0; w \bits16 1; w \bits16 2; w \bits16 3; w \bits16 4; w \bits16 5; w \bits16 6; w \bits16 7;
