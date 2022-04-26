@@ -150,6 +150,10 @@ lemma compress_err_bound c d :
 (*   well as defining rounding errors additively       *)
 (*******************************************************)
 
+lemma compress_alt_nice c d :
+    compress d c = (asint c * 2^d + (q %/ 2)) %/ q %% 2^d.
+admitted.
+
 (* This is the implementation of compress d in C/Jasmin for d = 1,4 *)
 op compress_alt(d : int, c : Fq) : int =
     (asint c * 2^d + ((q + 1) %/ 2)) * (2^28 %/ q) %/ 2^28 %% 2^d.
@@ -157,7 +161,26 @@ op compress_alt(d : int, c : Fq) : int =
 lemma compress_alt_compress c d :    
    1 <= d <=4 =>
       compress_alt d c = compress d c.
-admitted. (* alternative compress[1,2,4] expression: checked in sage *)
+proof.
+move => db; rewrite compress_alt_nice /compress_alt qE =>  /=.
+case (d = 1).
++ by move => ->;have ? : all
+     (fun x => (x * 2 + 1665) * 80635 %/ 268435456 %% 2 = (x * 2 + 1664) %/ 3329 %% 2) 
+        (iota_ 0 3229); [by rewrite -JUtils.iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
+move => *;case (d = 2).
++ by move => ->;have ? : all
+     (fun x => (x * 4 + 1665) * 80635 %/ 268435456 %% 4 = (x * 4 + 1664) %/ 3329 %% 4) 
+        (iota_ 0 3229); [by rewrite -JUtils.iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
+move => *;case (d = 3).
++ by move => ->;have ? : all
+     (fun x => (x * 8 + 1665) * 80635 %/ 268435456 %% 8 = (x * 8 + 1664) %/ 3329 %% 8) 
+        (iota_ 0 3229); [by rewrite -JUtils.iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
+move => *;case (d = 4).
++ by move => ->;have ? : all
+     (fun x => (x * 16 + 1665) * 80635 %/ 268435456 %% 16 = (x * 16 + 1664) %/ 3329 %% 16) 
+        (iota_ 0 3229); [by rewrite -JUtils.iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
+by smt().
+qed.
 
 (* This is the implementation of compress d in C/Jasmin for d = 10 *)
 op compress_alt_large (c : Fq) : int = 
@@ -165,7 +188,11 @@ op compress_alt_large (c : Fq) : int =
 
 lemma compress_alt_compress_large (c : Fq): 
     compress_alt_large c = compress 10 c.
-admitted. (* alternative compress[10] expression : checked in Sage *)
+rewrite compress_alt_nice /compress_alt_large qE =>  /=.
+by have ? : all
+     (fun x => (x * 1024 + 1665) * 1290167 %/ 4294967296 %% 1024 = (x * 1024 + 1664) %/ 3329 %% 1024) 
+        (iota_ 0 3229); [by rewrite -JUtils.iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
+qed.
 
 (* This is the implementation of decompress d in C/Jasmin *)
 op decompress_alt(d : int, c : int) : Fq = 

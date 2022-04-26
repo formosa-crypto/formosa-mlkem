@@ -874,6 +874,7 @@ seq 0 5 : #pre; 1: by inline *;auto.
 wp; conseq (_: _ ==> ={e} /\ s{1} = s0{2} /\ sd{1} = rho0{2} /\ nttm _A{1} = a{2}); 
   last first.
 + conseq (_: true ==> ={e} /\ s{1} = s0{2}); 1: smt(). 
+  inline {2} 3.
   admit. (* randomness product *)
 auto => /> &1 &2 e s; rewrite /pk_encode /sk_encode /=.
 by rewrite comm_nttv_add comm_nttv_mmul.
