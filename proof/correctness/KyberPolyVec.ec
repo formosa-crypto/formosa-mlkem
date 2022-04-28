@@ -16,28 +16,8 @@ import Zq.
 import KyberPoly.
 import KMatrix.
 
+import NTT_Properties.
 (* AUX *)
-
-lemma nttv_add (v1 v2 : vector) :
-   nttv (v1 + v2) = nttv v1 + nttv v2.
-proof.
-rewrite /nttv /mapv. 
-rewrite eq_vectorP => x H.
-rewrite !offunvE //= offunvK /vclamp H //= !offunvE //=. 
-by rewrite add_comm_ntt.
-qed.
-
-lemma mulvec a b :
-   dotp a b = 
-    invntt (basemul (ntt a.[0]) (ntt b.[0])) &+
-    invntt (basemul (ntt a.[1]) (ntt b.[1])) &+
-    invntt (basemul (ntt a.[2]) (ntt b.[2])).
-proof.
-rewrite -!mul_comm_ntt !invnttK.
-rewrite /dotp => />. 
-rewrite /Big.BAdd.big /predT /kvec => /=.
-by ring.
-qed.
 
 op lift_array768 (p : W16.t Array768.t) =
   Array768.map (fun x => inFq (W16.to_sint x)) p.

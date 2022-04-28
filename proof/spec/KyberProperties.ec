@@ -3,7 +3,7 @@ from Jasmin require import JWord.
 require import Array32 Array64 Array128 Array168 Array256 Array384.
 require import Array768 Array960 Array1024 Array1152.
 require import Kyber.
-
+import NTT_Properties.
 (* Aux *)
 import KMatrix.
 import Zq.
@@ -75,27 +75,6 @@ phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = sem_decode
 phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = sem_decode10_vec a ] = 1%r by admit. (* reify *)
 phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = sem_encode12_vec a ] = 1%r by admit. (* reify *)
 phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode10_vec a ] = 1%r by admit. (* reify *)
-
-(****** TO DO WE NEED THESE Lemmas HERE *********)
-
-axiom invnttK : cancel ntt invntt.
-axiom nttK : cancel invntt ntt.
-axiom nttvK : cancel invnttv nttv.
-axiom invnttvK : cancel nttv invnttv.
-axiom nttmK : cancel invnttm nttm.
-axiom invnttmK : cancel nttm invnttm.
-axiom mul_comm_ntt (pa pb : poly):
-  ntt (pa &* pb) = basemul (ntt pa) (ntt pb).
-axiom add_comm_ntt (pa pb : poly):
-  ntt (pa &+ pb) = (ntt pa) &+ (ntt pb).
-axiom add_comm_invntt (pa pb : poly) : 
-  invntt (pa &+ pb) = (invntt pa) &+ (invntt pb).
-axiom mul_comm_invntt(pa pb : poly) :
-  invntt (basemul pa  pb) = (invntt pa) &* (invntt pb).
-axiom nttZero : ntt KPoly.zero = KPoly.zero.
-
-(************************************************)
-
 
 (**************************************************************************
    MLWE_PKE is the theory where we prove an abstract PKE construction
@@ -850,11 +829,6 @@ section.
 
 declare module O <: RO.Oracle {-IdealHSF.RF,-RF,-IdealPRF1.RF}.
 declare module S <: Sampler {-IdealHSF.RF,-RF, -O, -IdealPRF1.RF}.
-
-lemma comm_nttv_add v1 v2:  nttv (v1 + v2)%Vector = nttv v1 + nttv v2 by admit.
-lemma comm_nttv_mmul a v: nttv (a *^ v) = ntt_mmul (nttm a) (nttv v) by admit.
-lemma comm_ntt_dotp (v1 v2 : vector): 
-     (MLWE_.(`<*>`) (invnttv v1) v2) = invntt (ntt_dotp v1 (nttv v2)) by admit.
 
 equiv keygen_eq : 
   MLWE_PKE(NTTSampler(S,O), O).kg ~ KyberSI(S,O).kg :
