@@ -2037,9 +2037,21 @@ rewrite /Vector.(+) /= Vector.eq_vectorP => i ib.
 by rewrite /nttv /mapv !offunvE //= !offunvE //= offunvK /vclamp /= ib /= add_comm_ntt.
 qed.
 
-lemma comm_nttv_mmul a v: nttv (a *^ v) = ntt_mmul (nttm a) (nttv v) by admit.
+lemma comm_nttv_mmul a v: nttv (a *^ v) = ntt_mmul (nttm a) (nttv v).
+proof.
+rewrite /nttv /ntt_mmul /nttm /mapv /mapm /= /kvec /( *^).
+rewrite /Big.BAdd.big /range /kvec -JUtils.iotaredE /predT => /=.
+rewrite !offunvE //= Vector.eq_vectorP => i ib.
+rewrite !offunvE //= offunvK /vclamp /= !offunmE //=.
+by rewrite -!mul_comm_ntt ib /= !add_comm_ntt nttZero. 
+qed.
 
-lemma comm_ntt_dotp (v1 v2 : vector):   dotp v1 v2 = invntt (ntt_dotp v1 (nttv v2)) by admit.
+lemma comm_ntt_dotp (v1 v2 : vector):   dotp (invnttv v1) v2 = invntt (ntt_dotp v1 (nttv v2)).
+rewrite /ntt_dotp /nttv /invnttv /mapv /dotp.
+rewrite /Big.BAdd.big /range /kvec -JUtils.iotaredE /predT => /=.
+rewrite !offunvE //=.
+by rewrite !add_comm_invntt !mul_comm_invntt -nttZero !invnttK nttZero. 
+qed.
 
 lemma dotpmm (a : matrix) (v : vector) r :
   0 <= r < 3 =>

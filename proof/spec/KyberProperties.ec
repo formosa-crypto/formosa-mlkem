@@ -108,7 +108,7 @@ op pk_encode(pk : vector * W8.t Array32.t) : pkey =
                                   (sem_encode12_vec (toipolyvec (nttv pk.`1)) ,pk.`2).
 op pk_decode(pk : pkey) = (invnttv (ofipolyvec (sem_decode12_vec (pk.`1))),pk.`2).
 op sk_encode(sk : vector) : skey = sem_encode12_vec (toipolyvec (nttv sk)).
-op sk_decode(sk : skey) = invnttv (ofipolyvec (sem_decode12_vec sk)).
+op sk_decode(sk : skey) =  invnttv (ofipolyvec (sem_decode12_vec sk)).
 op m_encode(m : plaintext) : poly = decompress_poly 1 (sem_decode1 m).
 op m_decode(p : poly) : plaintext = sem_encode1 (compress_poly 1 p). 
 op c_encode(c :  vector * poly) : ciphertext = 
@@ -144,6 +144,7 @@ clone import MLWE_PKE as MLWEPKE with
   op MLWE_.Matrix_.ZR.invr <- KPoly.invr,
   op MLWE_.Matrix_.size <- kvec,
   op MLWE_.Matrix_.Vector.(+) <- KMatrix.Vector.(+),
+  op MLWE_.Matrix_.Vector.dotp <- dotp,
   op MLWE_.Matrix_.Vector.prevector <- prevector,
   op MLWE_.Matrix_.Vector.vclamp <- vclamp,
   op MLWE_.Matrix_.Vector.tofunv <- tofunv,
@@ -204,6 +205,7 @@ clone import MLWE_PKE as MLWEPKE with
   proof good_decode
   proof cv_bound_valid
   proof noise_commutes.
+
 
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
