@@ -657,6 +657,28 @@ have -> : Pr[CPAGameROM(CPA, KyberS(KHS, S, KNS, KPRF,KPRF), As, O).main() @ &m 
 done.
 qed.
 
+module ArraySample = {
+   proc sL() = { 
+       var r,rho,k;
+       r <$ IdealHSF.dR (); 
+       rho <- Array32.init (fun (i : int) => r.[i]); 
+       k <- Array32.init (fun (i : int) => r.[i+32]); 
+       return (rho,k);
+  }
+
+   proc sR() = { 
+       var rho,k;
+       rho <$ srand; 
+       k <$ srand; 
+       return (rho,k);
+  }
+}.
+
+require import DProd.
+clone  ProdSampling with
+  type t1 <- W8.t Array32.t,
+  type t2 <- W8.t Array32.t.
+  
 lemma KyberS_KyberIdeal &m :
   Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As,O).main() @ &m : res] =
   Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As,O).main() @ &m : res].
@@ -679,9 +701,35 @@ proc.
   wp.
   conseq (_: _ ==> rho{2} = Array32.init (fun i => r{1}.[i]) /\ 
                    k{2} = Array32.init (fun i => r{1}.[i+32]));
-  1: by move => /> [#] &1 r; 
-       rewrite !SmtMap.get_set_sameE !oget_some.
   admit. (* Product of distributions *)
+  (*
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample2(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by inline *;wp;rnd;rnd;auto => />.
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by call ProdSampling.sample_sample2 => />.
+  inline *; wp; rnd (fun r => (Array32.init (fun i => r.[i]), Array32.init (fun i => r.[i+32])))%Array64
+      (fun (rhok : (W8.t Array32.t) * (W8.t Array32.t)) => 
+            (Array64.init (fun i => if 0<=i<32 then rhok.`1.[i] else rhok.`2.[i-32])))%Array32.
+  auto => /> &1; split. 
+  + move => rhok ?; have -> /= : rhok = (rhok.`1,rhok.`2) by smt().
+    rewrite !Array32.tP; split.
+    + by move => i ib; rewrite initiE //= initiE; smt().
+    move => i ib; rewrite initiE //= initiE //=; by smt(). 
+  move => H; split.   + ad mit. (* commented out *)
+  move => H1 r ?; split.
+  + ad mit. (* commented out *)
+  move => ?; rewrite tP => i ib.
+  rewrite initiE //=.
+  case (0<=i<32).
+  + by move => ibb; rewrite !initiE //=.
+  by move => ibb; rewrite !initiE /#.
+  *)
 qed.
 
 
@@ -1296,6 +1344,34 @@ proc.
   1: by move => /> [#] &1 r; 
        rewrite !SmtMap.get_set_sameE !oget_some.
   admit. (* Product of distributions *)
+  (*
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample2(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by inline *;wp;rnd;rnd;auto => />.
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by call ProdSampling.sample_sample2 => />.
+  inline *; wp; rnd (fun r => (Array32.init (fun i => r.[i]), Array32.init (fun i => r.[i+32])))%Array64
+      (fun (rhok : (W8.t Array32.t) * (W8.t Array32.t)) => 
+            (Array64.init (fun i => if 0<=i<32 then rhok.`1.[i] else rhok.`2.[i-32])))%Array32.
+  auto => /> &1; split. 
+  + move => rhok ?; have -> /= : rhok = (rhok.`1,rhok.`2) by smt().
+    rewrite !Array32.tP; split.
+    + by move => i ib; rewrite initiE //= initiE; smt().
+    move => i ib; rewrite initiE //= initiE //=; by smt(). 
+  move => H; split.   + ad mit. (* commented out *)
+  move => H1 r ?; split.
+  + ad mit. (* commented out *)
+  move => ?; rewrite tP => i ib.
+  rewrite initiE //=.
+  case (0<=i<32).
+  + by move => ibb; rewrite !initiE //=.
+  by move => ibb; rewrite !initiE /#.
+  *)
 qed.
 
 lemma PRFHop1C &m :
