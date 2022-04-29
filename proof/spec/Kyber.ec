@@ -313,8 +313,6 @@ lemma duni_elem_fu : is_full duni_elem by
 
 theory KPoly.
 
-(* Fixme: These definitions should come from a polynomial theory? *)
-
 type poly = Fq Array256.t.
 
 op zero : poly = Array256.create Zq.zero.
@@ -334,8 +332,6 @@ op (&+) (pa pb : poly) : poly =
   map2 (fun a b : Fq  => Zq.(+) a b) pa pb.
 
 op (&-) (p : poly) : poly =  map Zq.([-]) p.
-
-(* End Fixme *)
 
 (* Compression/decompression of polys *)
 
