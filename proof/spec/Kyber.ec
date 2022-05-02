@@ -1,65 +1,149 @@
-require import AllCore ZModP IntDiv Distr List DList PKE_Ext.
+require import AllCore IntDiv FloorCeil StdOrder RealExp List.
+require import ZModP Ring.
+require import Distr DList.
+require import PKE_Ext.
 from Jasmin require import JWord.
 require import Array32 Array64 Array128 Array168 Array256 Array384.
 require import Array768 Array960 Array1024 Array1152.
 require  PRF.
 
 
+(*---*) import RField RealOrder IntOrder IntID.
+
 (**************************************************)
 (* Aux stuff needed for compression/decompression *)
 (**************************************************)
+(**************************************************)
+(* MOVE THIS TO ECLIB!!!                          *)
+(**************************************************)
 
-lemma ceil_floor x : (ceil x)%r <> x => ceil x = floor x + 1.
-proof. smt(ceil_bound floor_bound). qed.
-
-lemma floor_ceil x : (floor x)%r <> x => floor x = ceil x - 1.
-proof. smt(ceil_bound floor_bound). qed.
-
-lemma ceilN x : (ceil x)%r <> x => ceil x = -(ceil (-x)) + 1.
-proof. smt(ceil_bound floor_bound). qed.
-
-lemma floorN x : (floor x)%r <> x => floor x = -(floor (-x)) - 1.
-proof. smt(ceil_bound floor_bound). qed.
-
-lemma ceil_floor_int(x : real) : (floor x)%r = x <=> (ceil x)%r = x by smt(@Real). 
-
-(* Are these needed? *)
-axiom notintS (x : real): (floor x)%r <> x => (floor (x + 1%r))%r <> x + 1%r.
-axiom floorS (x : real) : floor (x + 1%r) = floor x + 1. 
-
-lemma floor_shift (x : real) (y : int) : floor (x + y%r) = floor x + y. 
+lemma floorDz (x:int) y:
+ floor (x%r + y) = x + floor y.
 proof.
-have poscase : forall xx n , 
-   0 <= n =>  floor (xx + n%r) = floor xx + n 
-     by move => xx n;elim /natind:n;smt(@Real floorS).
-case (y < 0); last by smt().
-case ((floor x)%r = x); first by smt(@Real).
-move => notint yneg; rewrite floorN => //; first last. 
-+ have -> : -(x + y%r) = -x + ((-y)%r) by smt().
-  rewrite (poscase (-x) (-y)); 1 : smt().
-  rewrite floorN => //; smt(@Real).
-+ have -> : y%r = (-((-y)%r)); 1 : smt().
-have ynegpos : (0 <= -y); 1 : smt(). 
-move : ynegpos; elim /natind:(-y); smt(floorS).
+rewrite (floorE (x+floor y)) //.
+smt(floor_bound).
 qed.
 
-(* These could go somewhere in Real *)
+lemma divz_floor (x y: int):
+ 0 < y =>
+ x %/ y = floor (x%r / y%r).
+proof.
+move=> gt0.
+have ->: x%r / y%r = (x %/ y)%r + (x %% y)%r / y%r.
+ by rewrite {1}(divz_eq x y); field; smt(). 
+rewrite floorDz.
+have ?: 0%r <= (x %% y)%r / y%r < 1%r by smt().
+smt(floor_bound).
+qed.
+
+lemma modz_floor (x y: int):
+ 0 < y =>
+ x %% y = x - y * floor (x%r / y%r).
+proof.
+move=> gt0.
+rewrite -divz_floor //; smt(divz_eq).
+qed.
+
+
+op frac (x: real) = x - (floor x)%r.
+
+lemma frac_bound x: 0%r <= frac x < 1%r
+by smt(floor_bound).
+
+lemma fracDz x n: frac (n%r + x) = frac x
+by smt(floorDz).
+
+lemma floor_frac_eq x: x = (floor x)%r + frac x
+by smt().
+
+lemma frac0_dvdz (m n: int):
+ 0 < n =>
+ frac (m%r / n%r) = 0%r <=> n %| m.
+proof. by move=> ygt0; rewrite dvdzE modz_floor // /frac /#. qed.
+
+lemma from_int_frac n: frac n%r = 0%r
+by smt(from_int_floor).
+
+lemma frac_halfP x:
+ frac x = inv 2%r => frac (2%r*x) = 0%r.
+proof.
+move => E; rewrite floor_frac_eq mulrDr.
+by rewrite -fromintM fracDz E divrr // from_int_frac.
+qed.
+
+lemma frac_halfN x:
+ frac (2%r*x) <> 0%r => frac x <> inv 2%r
+by smt(frac_halfP).
+
+lemma frac_div_eq0 (m n: int):
+ 0 < n =>
+ frac (m%r / n%r) = 0%r
+ <=> n %| m.
+proof.
+move=> gt0.
+split => H.
+ have E: m%r / n%r = (m %/ n)%r.
+  rewrite (floor_frac_eq (m%r / n%r)) H/= divz_floor /#.
+ have : m%r = (m %/ n)%r * n%r + (m %% n)%r by smt(divz_eq).
+ by rewrite -E dvdzE /#.
+have : m%r = (m %/ n)%r * n%r + (m %% n)%r by smt(divz_eq).
+rewrite H /= => ->.
+rewrite /frac; smt(floorE).
+qed.
+
+lemma frac_inv_gt1 x: 1%r < x => frac (inv x) = inv x.
+proof. by move=> H; rewrite /frac; smt(floor_bound). qed.
+
+
 op round(x : real) : int = floor (x + inv 2%r).
 
-lemma round_notie (x : real) : 
-   floor (x + inv 2%r) <> ceil (x + inv 2%r)  => round x = -(round (-x))
-      by smt(floorN floor_shift @Real).
+lemma round_mono (x y: real):
+ x <= y => round x <= round y.
+proof. by rewrite /round; smt(floor_mono). qed.
 
-lemma round_tie (x : real) : 
-   floor (x + inv 2%r) = ceil (x + inv 2%r) => round x =  -(round (-x)) + 1
-     by rewrite /round; smt(@Real).
+require import Real RealExp StdRing.
+lemma roundDz (x:int) y:
+ round (x%r + y) = x + round y.
+proof. by rewrite /round -addrA floorDz. qed.
 
-lemma round_add (x : real) (y : int) :
-    round (y%r + x) = y + round x.
+lemma from_int_round n: round n%r = n.
+proof. by rewrite /round (floorE n) /#. qed. 
+
+lemma round_ge0 x: 0%r <= x => 0 <= round x
+by smt(floor_bound).
+
+lemma round_bound x:
+ x - inv(2%r) < (round x)%r <= x + inv(2%r)
+by smt(floor_bound).
+
+lemma roundN x:
+ frac x <> inv 2%r => round (-x) = -round x.
 proof.
-rewrite /round -StdBigop.Bigreal.Num.Domain.addrA StdBigop.Bigreal.Num.Domain.addrC.
-by rewrite floor_shift; ring.
+move => H.
+pose nn := round (-x).
+have <-:= floorE (round x) (-nn%r+inv 2%r).
+ have [??]:= round_bound (-x).
+ have ?: -nn%r < x + inv 2%r by smt().
+ have ?: x - inv 2%r <= -nn%r by smt().
+ have ?: x - inv 2%r < -nn%r.
+  have /#: x - inv 2%r <> -nn%r.
+  apply (contra _ (frac x = inv 2%r)).
+  move => E.
+  have ->: x = (-nn)%r + inv 2%r by smt().
+   by rewrite fracDz frac_inv_gt1 /#.
+  smt().
+ smt(round_bound). 
+by rewrite -fromintN floorDz; smt(floorE).
 qed.
+
+
+lemma normP (a epsilon: int):
+ `| a | <= epsilon <=> -epsilon <= a <= epsilon
+by smt().
+
+
+
+
 
 (****************************************************)
 (*               The finite field Zq/Fq             *)
@@ -105,20 +189,86 @@ realize CR.unitout by apply Zq.ZqRing.unitout.
 (* Signed representation: could go in Fq *)
 
 op as_sint(x : Fq) = if (q-1) %/ 2 < asint x then asint x - q else asint x.
+
+lemma as_sintN (x: Fq): as_sint (-x) = - as_sint x.
+proof. by rewrite /as_sint oppE; smt(@Zq). qed.
+
 lemma as_sint_range x :  - (q-1) %/2 <= as_sint x <= (q-1) %/2 by smt(rg_asint).
+
+lemma as_sint_bounded x y eps:
+`| asint x - asint y | <= eps
+ => `| as_sint (x-y) | <= eps.
+proof.
+rewrite !normP; move=> [Hl Hr].
+smt(@Zq).
+qed.
+
+
+op absZq (x: Fq): int = `| as_sint x |.
+
+lemma absZqB x y eps:
+ `| asint x - asint y | <= eps => absZq (x-y) <= eps
+by apply as_sint_bounded.
+
+(* Compress-error bound *)
+op Bq d = round (q%r / (2^(d+1))%r).
+
+lemma nosmt Bq_le_half d:
+ 0 < d =>
+ (q%r / (2^(d+1))%r) <= (q-1)%r/2%r.
+proof.
+move=> gt0; rewrite /Bq /round //.
+rewrite exprS 1:/# fromintM.
+have ?: q%r / (2 ^ d)%r + 1%r <= q%r - 1%r. 
+ smt(lt_pow expr_gt0).
+smt(@Real).
+qed.
+
+lemma dvdzN_q_2d (d: int):
+ 0 < d =>
+ q %% 2^d <> 0.
+proof.
+elim/natind: d; first smt().
+move=> d Hd IH _.
+case: (0<d) => HHd; last first.
+ by have ->/=/#: d=0 by smt(). 
+rewrite exprD_nneg // expr1.
+move: (IH HHd); apply contra.
+by rewrite -!dvdzE /#.
+qed.
+
+lemma Bq_noties d:
+ 0 < d =>
+ 2^d < q =>
+ frac (q%r / (2 ^ (d + 1))%r) <> inv 2%r.
+proof.
+move=> Hd0 Hd.
+rewrite exprS 1:/#.
+have ->: q%r / (2 * 2 ^ d)%r
+         = inv 2%r * q%r / (2 ^ d)%r by smt().
+apply frac_halfN.
+rewrite !mulrA divrr //= frac_div_eq0.
+ smt(expr_gt0).
+by apply dvdzN_q_2d.
+qed.
+
+
 
 (* Compression and decompression are used as operations between 
    polynomials over Fq, but we first define the basic operations 
    over coefficients. *)
-op compress(d : int, x : Fq) : int = round ((2^d)%r / q%r * (asint x)%r) %% 2^d.
-op decompress(d : int, x : int) : Fq = inFq (round (q%r / (2^d)%r * x%r)).
+abbrev comp (d: int, x: real): int = round (x * (2^d)%r / q%r).
+op compress(d : int, x : Fq) : int = comp d (asint x)%r %% 2^d.
+
+abbrev decomp (d: int, y: real): int = round (y * q%r / (2^d)%r).
+op decompress(d : int, x : int) : Fq = inFq (decomp d x%r).
 
 (* This, however, raises the issue of how to convert from Zq to
    the reals when computing the error bounds. 
    Compression seems to be robust to using either
    asint or assint as we prove below. Decompression *must* use
    asint, as it assumes an input between 0..2^d-1. *)
-
+(*
 axiom noties_s d x xr : (* Checked in Sage *)
    0 <= d => 2^d < q => x <> Zq.zero =>
         xr = ((2 ^ d)%r * (as_sint x)%r / q%r) =>
@@ -149,28 +299,186 @@ pose xr' := ((2 ^ d)%r * (asint x)%r / q%r).
 rewrite (round_notie xr' (noties_u d x xr' dlb dub H _)) => //.
 by rewrite modz_mod.
 qed.
-
+*)
 
 (* These operations introduce a rounding error, which we see additively *)
-op compress_err(d : int, c: Fq) : Fq =  (decompress d (compress d c)) + (-c).
+op compress_err(d : int, c: Fq) : Fq = decompress d (compress d c) - c.
 
 lemma decompress_errE c d : 
-   0 <= d => 2^d < q => decompress d (compress d c) = c + (compress_err d c)
-   by rewrite /compress_err => *; ring.
+   0 < d => 2^d < q => decompress d (compress d c) = c + (compress_err d c)
+by rewrite /compress_err => *; ring.
+
+lemma decompress0 d:
+ decompress d 0 = Zq.zero
+by rewrite /decompress /= from_int_round.
+
+lemma compress0 d x:
+ 0 < d =>
+ 2^d < q =>
+ q%r - q%r / (2^(d+1))%r <= (asint x)%r =>
+ compress d x = 0.
+proof.
+move=> Hd0 Hd Hx.
+rewrite /compress.
+have ->: round ((asint x)%r * (2 ^ d)%r / q%r) = 2^d.
+ rewrite /round; apply floorE. 
+ split.
+  apply (RealOrder.ler_trans ((2^d)%r / q%r * (q%r - q%r / (2^(d+1))%r) + inv(2%r))).
+   by rewrite exprS 1:/# fromintM /#.
+  rewrite exprS 1:/# fromintM.
+  have ?: 0%r < (2 ^ d)%r / q%r by smt(expr_gt0).
+  by move: Hx; rewrite exprS 1:/# fromintM => Hx /#.
+ move => H. 
+ move: Hx; rewrite !exprS 1:/# !fromintM => Hx.
+ by have ?/# := (rg_asint x).
+by rewrite modzz.
+qed.
+
+lemma compress_small d x:
+ 0 < d =>
+ 2^d < q =>
+ (asint x)%r < q%r - q%r / (2^(d+1))%r =>
+ compress d x = comp d (asint x)%r.
+proof.
+move=> Hd0 Hd Hx.
+rewrite /compress.
+rewrite modz_small 2:/#.
+split.
+ apply round_ge0; smt(rg_asint expr_gt0).
+move => _.
+have ?: (round ((2 ^ d)%r / q%r * (asint x)%r))%r < (2^d)%r; last by smt().
+apply (RealOrder.ler_lt_trans ((2 ^ d)%r / q%r * (asint x)%r + inv 2%r)).
+ smt(round_bound).
+apply (RealOrder.ltr_le_trans ((2 ^ d)%r / q%r * (q%r * (1%r - inv (2%r * (2 ^ d)%r))) + inv 2%r)).
+ apply RealOrder.ltr_add2r.
+ apply RealOrder.ltr_pmul2l.
+  smt(expr_gt0).
+ move: Hx; have ->?:2^(d+1) = 2*2^d by rewrite exprS/#.
+ smt().
+have ->:(2 ^ d)%r / q%r * (q%r * (1%r - inv (2%r * (2 ^ d)%r))) + inv 2%r = (2 ^ d)%r * (1%r - inv (2%r * (2 ^ d)%r)) + inv 2%r .
+ by field; smt(expr_gt0).
+rewrite mulrDr /=. 
+by have ?/#: (2 ^ d)%r * - inv (2%r * (2 ^ d)%r) + inv 2%r = 0%r by field;  smt(expr_gt0).
+qed.
+
+lemma decomp_bound d x:
+ 0 < d =>
+ 2^d < q =>
+ 0 <= x < 2^d =>
+ 0 <= decomp d x%r < q.
+proof. by move=> Hd0 Hd Hx; split; smt(round_bound). qed.
+
+
+lemma decomp_mono d (x y: real):
+ 0 < d =>
+ 2^d < q =>
+ x <= y =>
+ decomp d x <= decomp d y. 
+proof.
+move=> ???; rewrite /decomp.
+apply round_mono.
+rewrite -!mulrA ler_pmul2r // mulrC.
+smt(RealOrder.divr_gt0 expr_gt0).
+qed.
+
+lemma comp_bound d x:
+ 0 < d =>
+ 2^d < q =>
+ x * (2 ^ d)%r / q%r - inv 2%r
+ < (comp d x)%r <= x * (2 ^ d)%r / q%r + inv 2%r.
+proof. smt(round_bound). qed.
+
+
+
+lemma decomp_comp d x:
+ 0 < d =>
+ 2^d < q =>
+ x - Bq d <= decomp d (comp d x%r)%r <= x + Bq d.
+proof.
+move=> Hd0 Hd.
+have [Hl Hr]:= comp_bound d x%r Hd0 Hd.
+have Hl': x%r * (2 ^ d)%r / q%r - inv 2%r <= (comp d x%r)%r by smt().
+split.
+ move: (decomp_mono d _ _ Hd0 Hd Hl').
+ have ->: decomp d (x%r * (2 ^ d)%r / q%r - inv 2%r) = x - Bq d.
+  rewrite /decomp.
+  have ->: ((x%r * (2 ^ d)%r / q%r - inv 2%r) * q%r / (2 ^ d)%r) = x%r - q%r / (2 ^ (d+1))%r.
+   by field; smt(expr_gt0 exprS).
+  rewrite roundDz roundN.
+   by apply Bq_noties. 
+  smt().
+ smt().
+move=> _.
+move: (decomp_mono d _ _ Hd0 Hd Hr).
+have ->: decomp d (x%r * (2 ^ d)%r / q%r + inv 2%r) = x + Bq d.
+ rewrite /decomp.
+ have ->: ((x%r * (2 ^ d)%r / q%r + inv 2%r) * q%r / (2 ^ d)%r) = x%r + q%r / (2 ^ (d+1))%r. 
+  by field; smt(expr_gt0 exprS).
+ by rewrite roundDz /#.
+smt().
+qed.
 
 (* This lemma is stated in the Spec *)
-lemma compress_decompress x x' d : 
-   0 <= d => 2^d < q =>
-    x' = decompress d (compress d x) =>
-     `| as_sint (x' - x) | <= round (q%r / (2^(d+1))%r).
-(* The alternative using as_sint x' - as_sint x does not hold (checked in sage). *)
-admitted. (* compress and decompress max distance  (checked in sage). *)
+lemma compress_decompress d x:
+ 0 < d =>
+ 2^d < q =>
+ absZq (x - decompress d (compress d x)) <= Bq d.
+proof.
+move=> Hd0 Hd.
+case: ((asint x)%r < q%r - q%r / (2^(d+1))%r).
+ move=> Hx; rewrite compress_small //.
+ apply absZqB; apply normP.
+ have XX: forall (b x y: int), y-b <= x <= y+b => -b <= y-x <= b by smt().
+ apply XX. clear XX.
+ rewrite inFqK modz_small; last first.
+  by apply decomp_comp.
+ apply JUtils.bound_abs.
+ apply decomp_bound => //.
+ have [_ Hc]:= (comp_bound d (asint x)%r _ _) => //.
+ split.
+  by apply round_ge0; smt(expr_gt0 rg_asint).
+ move => _.
+ have /#: (comp d (asint x)%r)%r < (2^d)%r.
+ apply (RealOrder.ltr_le_trans ((q%r-q%r / (2 ^ (d + 1))%r) * (2 ^ d)%r / q%r + inv 2%r)) => //.
+  apply (RealOrder.ler_lt_trans ((asint x)%r * (2 ^ d)%r / q%r + inv 2%r)) => //.
+  apply RealOrder.ltr_add2r.
+  rewrite -!mulrA; apply RealOrder.ltr_pmul2r.
+   smt(expr_gt0).
+  smt().
+ rewrite exprS 1:/# fromintM. 
+ have ->: (q%r - q%r / (2%r * (2 ^ d)%r)) * (2 ^ d)%r / q%r = (2^d)%r - inv 2%r by field; smt(expr_gt0).
+ smt().
+move=> Hx.
+rewrite compress0 // 1:/# /absZq decompress0 /= ZqField.oppr0 ZqField.addr0.
+have ?:= Bq_le_half d.
+rewrite /as_sint.
+have ?: q%r - q%r / (2 ^ (d + 1))%r <= (asint x)%r by smt().
+have ->/=: (q - 1) %/ 2 < asint x.
+ rewrite -lerNgt in Hx.
+ rewrite divz_floor //.
+ have ?: (floor ((q - 1)%r / 2%r))%r < (asint x)%r; last by smt().
+ apply (RealOrder.ler_lt_trans ((q - 1)%r / 2%r)).
+  by apply floor_le.
+ smt().
+rewrite ltr0_norm.
+ smt(rg_asint).
+rewrite IntID.opprB. 
+smt(round_bound).
+qed.
 
 (* As a corollary we get a bound on the additive error term *)
-lemma compress_err_bound c d : 
-   0 <= d => 2^d < q =>
-     `| as_sint (compress_err d c) | <= round (q%r / (2^(d+1))%r)
-    by smt(compress_decompress).
+lemma compress_err_bound (c:Fq) d : 
+   0 < d => 2^d < q =>
+     `| as_sint (compress_err d c) | <= round (q%r / (2^(d+1))%r).
+proof.
+move => *.
+have ->: compress_err d c 
+         = -(c - decompress d (compress d c))%Zq.
+ by rewrite decompress_errE //; ring.
+rewrite as_sintN normrN.
+by apply compress_decompress.
+qed.
+
 
 (*******************************************************)
 (* This is an extension of the spec with alternative   *)
@@ -180,7 +488,15 @@ lemma compress_err_bound c d :
 
 lemma compress_alt_nice c d :
     compress d c = (asint c * 2^d + (q %/ 2)) %/ q %% 2^d.
-admitted.
+proof.
+move=> *.
+rewrite /compress /round ; congr; congr.
+have ->: (asint c * 2 ^ d + q %/ 2) %/ q
+ = (2*asint c * 2 ^ d + q) %/ (2*q)
+by smt().
+rewrite divz_floor 1:/#; congr.
+field; smt().
+qed.
 
 (* This is the implementation of compress d in C/Jasmin for d = 1,4 *)
 op compress_alt(d : int, c : Fq) : int =
@@ -229,7 +545,15 @@ op decompress_alt(d : int, c : int) : Fq =
 lemma decompress_alt_decompress c d : 
    0 < d => d<=10 =>
     decompress_alt d c = decompress d c.
-admitted. (* alternative decompress expression: checked in sage *)
+proof.
+move => *.
+rewrite /decompress_alt /decompress /round; congr.
+rewrite mulrC divz_floor; first smt(expr_gt0).
+congr; field; first 2 smt(expr_gt0).
+rewrite mulrC mulrA.
+have ->: 2 ^ d = 2^(d-1+1) by done.
+by rewrite exprS 1:/#; field.
+qed.
 
 (** End extension *)
 
@@ -1155,6 +1479,9 @@ proof. by rewrite ZqField.expr2 -inFqM. qed.
 lemma exp_neg1_2_ring :
   ZqRing.exp (inFq (-1)) 2 = Zq.one.
 proof. by rewrite ZqRing.expr2 -inFqM. qed.
+
+(* @jba: on my setting, the following lemmas appear to require this...*)
+hint simplify expr0.
 
 lemma exp_zroot_128 :
   ZqField.exp zroot 128 = inFq (-1).
