@@ -2,7 +2,9 @@
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
 require import List_extra IntDiv_extra Array256_extra For.
 require import Array128 Array256.
-require import Montgomery NTT_Fq.
+require import Montgomery NTT_Fq Kyber.
+import NTT_Properties.
+
 require Matrix.
 
 import IntOrder BitReverse.
@@ -2966,7 +2968,7 @@ theory NTTequiv.
     rewrite addrAC /= subrr add0r (BAdd.eq_big_int _ _ _ (f \o g)).
     + rewrite /f /g => {f g} i /mem_range mem_i_range /=.
       rewrite (IntID.mulrC _ 2) mulrA -exprD.
-      - by rewrite NTT_Fq.unit_zroot_ring.
+      - by rewrite unit_zroot_ring.
       rewrite -mulrDr /(\o) /= addrA; congr; last first.
       - by rewrite mulrDl -mulrA /= (exprS_range _ _ _ mem_kl_range).
       congr; congr; rewrite modz_small //; [by rewrite normrX -mem_range|].
@@ -3021,9 +3023,9 @@ theory NTTequiv.
         rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
         by rewrite ler_addl expr_ge0.
       rewrite mulrDr (exprS_range _ _ _ mem_kl_range) //= -addrA.
-      rewrite (IntID.mulrDl (_ ^ _)%IntID) exprD ?NTT_Fq.unit_zroot_ring //.
+      rewrite (IntID.mulrDl (_ ^ _)%IntID) exprD ?unit_zroot_ring //.
       rewrite -mulrA -{1}(mul1r (_ * _.[_]%Array256)%Zq); congr; rewrite eq_sym.
-      rewrite NTT_Fq.exp_zroot_ring; pose m:= (_ * bsrev _ _).
+      rewrite exp_zroot_ring; pose m:= (_ * bsrev _ _).
       move: (dvdzE 256 m) => [-> //=]; [rewrite /m => {m}|by move => _; rewrite /q].
       move: (dvdz_mul (2 ^ (kl + 1)) (2 ^ (7 - kl)) (2 ^ (kl + 1)) (bsrev 8 (i * 2)) _ _).
       - by rewrite dvdzz.
@@ -3040,9 +3042,9 @@ theory NTTequiv.
     rewrite addrAC /= subrr add0r BAdd.sumrN (BAdd.eq_big_int _ _ _ (f \o g)).
     + rewrite /f /g => {f g} i /mem_range mem_i_range /=.
       rewrite (IntID.mulrC _ 2) mulrA -exprD.
-      - by rewrite NTT_Fq.unit_zroot_ring.
-      rewrite -mulrDr /(\o) /= addrA -mulN1r -inFqN -NTT_Fq.exp_zroot_128_ring.
-      rewrite mulrA -ZqRing.exprD; [by rewrite NTT_Fq.unit_zroot_ring|].
+      - by rewrite unit_zroot_ring.
+      rewrite -mulrDr /(\o) /= addrA -mulN1r -inFqN -exp_zroot_128_ring.
+      rewrite mulrA -ZqRing.exprD; [by rewrite unit_zroot_ring|].
       congr; last first.
       - by rewrite mulrDl -mulrA /= (exprS_range _ _ _ mem_kl_range).
       rewrite modz_small //; [by rewrite normrX -mem_range|].
@@ -3061,12 +3063,12 @@ theory NTTequiv.
         by rewrite -mulNr mulzK.
       rewrite bsrev1 //= (divz_pow_add_range _ _ _ mem_kl_range) //=.
       rewrite (IntID.addrC (bsrev _ _)) -addrA (IntID.mulrDl (2 ^ _) (_ * _ + _)%Int).
-      rewrite exprD; [by rewrite NTT_Fq.unit_zroot_ring|].
-      rewrite exprD; [by rewrite NTT_Fq.unit_zroot_ring|]; congr.
-      rewrite mulrDr exprD; [by rewrite NTT_Fq.unit_zroot_ring|].
+      rewrite exprD; [by rewrite unit_zroot_ring|].
+      rewrite exprD; [by rewrite unit_zroot_ring|]; congr.
+      rewrite mulrDr exprD; [by rewrite unit_zroot_ring|].
       rewrite (exprD_nneg_add_sub_range _ _ _ mem_kl_range) //=.
       rewrite -{1}(mulr1 (ZqRing.exp _ _)); congr; rewrite eq_sym.
-      rewrite NTT_Fq.exp_ring (exp_mod _ _ 256); [by rewrite NTT_Fq.exp_zroot_256|].
+      rewrite exp_ring (exp_mod _ _ 256); [by rewrite exp_zroot_256|].
       move: (dvdzE 256 (2 ^ (kl + 1) * bsrev 8 (i * 2))) => [->]; [|by rewrite ZqField.expr0].
       move: (dvdz_mul (2 ^ (kl + 1)) (2 ^ (7 - kl)) (2 ^ (kl + 1)) (bsrev 8 (i * 2)) _ _).
       - by rewrite dvdzz.
@@ -3717,11 +3719,11 @@ theory NTTequiv.
     apply/invntt_eq_big_int_split => //=; [by rewrite expr_ge0| | |].
     + by rewrite -mulr2z intmulz (exprSr_range _ _ _ mem_kl_range).
     + move => x mem_x_range; rewrite -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //=; congr.
-      rewrite !NTT_Fq.exp_ring (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym.
+      rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
       congr; rewrite !(exprSr_sub_range _ _ _ mem_kl_range) //=.
       by rewrite (exprS_sub_range _ _ _ mem_kl_range).
     move => x mem_x_range; rewrite !mulrDl -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //= !addrA; congr.
-    rewrite !NTT_Fq.exp_ring (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym.
+    rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
     congr; rewrite !(exprSr_sub_range _ _ _ mem_kl_range) //= !(exprS_sub_range _ _ _ mem_kl_range) //=.
     by rewrite !mulrA -(IntID.mulrA x 2) (exprS_sub_range _ _ _ mem_kl_range).
   qed.
@@ -3757,8 +3759,8 @@ theory NTTequiv.
     apply/invntt_eq_big_int_split => //=; [by rewrite expr_ge0| | |].
     + by rewrite -mulr2z intmulz (exprSr_range _ _ _ mem_kl_range).
     + move => x mem_x_range; rewrite -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //= !mulrA; congr.
-      rewrite -exprD ?NTT_Fq.unit_zroot_ring //.
-      rewrite !NTT_Fq.exp_ring (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym.
+      rewrite -exprD ?unit_zroot_ring //.
+      rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
       congr; rewrite -!mulrA (IntID.mulrDl (lbsj * 2) 1) /= -!mulrA !(exprSr_sub_range _ _ _ mem_kl_range) //=.
       rewrite !(exprS_sub_range _ _ _ mem_kl_range) //=.
       rewrite (IntID.addrC (_ * _)%Int (2 ^ (7 - _))) (IntID.mulrC lbsj) bsrev_add.
@@ -3778,9 +3780,9 @@ theory NTTequiv.
     rewrite !(exprS_sub_range _ _ _ mem_kl_range) //= !(exprSr_sub_range _ _ _ mem_kl_range) //=.
     rewrite !(exprS_range _ _ _ mem_kl_range) //= !opprD /= -!mulNr !mulrA -!mulrDl.
     rewrite -{2}(IntID.mul1r (bsrev _ _)) -mulNr -mulrDl -{2}(IntID.mul1r (bsrev _ (_ + _)%Int)) -mulNr -mulrDl.
-    rewrite -(mul1r (exp zroot (_ - _)%Int)) -mulNr -inFqN -NTT_Fq.exp_zroot_128.
-    rewrite -!exprD ?NTT_Fq.unit_zroot_ring //.
-    rewrite !NTT_Fq.exp_ring (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym (exp_mod _ _ _ NTT_Fq.exp_zroot_256) eq_sym.
+    rewrite -(mul1r (exp zroot (_ - _)%Int)) -mulNr -inFqN -exp_zroot_128.
+    rewrite -!exprD ?unit_zroot_ring //.
+    rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
     congr; rewrite (IntID.addrC (_ * _)%Int (2 ^ (7 - _))) (IntID.mulrC lbsj) bsrev_add.
     + by rewrite le2_mem_range mem_range_subl; move: mem_kl_range; apply/mem_range_incl.
     + rewrite mem_range expr_ge0 //=; move: (exprS_sub_range _ _ _ mem_kl_range 2 7) => //= <-.
