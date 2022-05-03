@@ -2,7 +2,7 @@ require import AllCore IntDiv List.
 from Jasmin require import JModel.
 require import Fq Kyber KyberPoly KyberPolyVec W16extra NTT_Fq.
 require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
-require import Array960 Array1152 Array2304.
+require import Array960 Array1152 Array2304 Array1088.
 
 require import Jkem.
 
@@ -1763,6 +1763,21 @@ ecall{1}(poly_reduce_corr (lift_array256 v{1})).
 by auto =>/> /#. 
 
 qed.
+
+lemma kyber_correct_ienc mem _pkp : 
+   equiv [ M.__iindcpa_enc ~ Kyber(HS,XOF,KPRF,H).enc_derand: 
+     valid_ptr _pkp (384*3 + 32) /\
+     Glob.mem{1} = mem /\ 
+     msgp{1} = m{2} /\ 
+     to_uint pkp{1} = _pkp /\
+     noiseseed{1} = r{2} /\
+     pk{2}.`1 = load_array1152 mem _pkp /\
+     pk{2}.`2 = load_array32 mem (_pkp + 3*384)
+       ==> 
+     Glob.mem{1} = mem /\
+     res{1} = Array1088.init (fun i => if 0<=i<960 then res{2}.`1.[i] else res{2}.`2.[i-960])
+].
+admitted.
 
 lemma kyber_correct_dec mem _ctp _skp : 
    equiv [ M.__indcpa_dec ~ Kyber(HS,XOF,KPRF,H).dec : 
