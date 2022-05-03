@@ -1390,7 +1390,7 @@ case (x = to_uint j{1} + to_uint len{1}); last first.
 by move => ->; rewrite set_eqiE; smt().
 qed.
 
-
+import NTT_Properties.
 lemma invntt_correct _r  :
    phoare[ M._poly_invntt :
         _r = lift_array256 rp /\ signed_bound_cxq rp 0 256 2

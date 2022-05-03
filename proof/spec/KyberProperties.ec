@@ -3,7 +3,7 @@ from Jasmin require import JWord.
 require import Array32 Array64 Array128 Array168 Array256 Array384.
 require import Array768 Array960 Array1024 Array1152.
 require import Kyber.
-
+import NTT_Properties.
 (* Aux *)
 import KMatrix.
 import Zq.
@@ -76,27 +76,6 @@ phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = sem_decode
 phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = sem_encode12_vec a ] = 1%r by admit. (* reify *)
 phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode10_vec a ] = 1%r by admit. (* reify *)
 
-(****** TO DO WE NEED THESE Lemmas HERE *********)
-
-axiom invnttK : cancel ntt invntt.
-axiom nttK : cancel invntt ntt.
-axiom nttvK : cancel invnttv nttv.
-axiom invnttvK : cancel nttv invnttv.
-axiom nttmK : cancel invnttm nttm.
-axiom invnttmK : cancel nttm invnttm.
-axiom mul_comm_ntt (pa pb : poly):
-  ntt (pa &* pb) = basemul (ntt pa) (ntt pb).
-axiom add_comm_ntt (pa pb : poly):
-  ntt (pa &+ pb) = (ntt pa) &+ (ntt pb).
-axiom add_comm_invntt (pa pb : poly) : 
-  invntt (pa &+ pb) = (invntt pa) &+ (invntt pb).
-axiom mul_comm_invntt(pa pb : poly) :
-  invntt (basemul pa  pb) = (invntt pa) &* (invntt pb).
-axiom nttZero : ntt KPoly.zero = KPoly.zero.
-
-(************************************************)
-
-
 (**************************************************************************
    MLWE_PKE is the theory where we prove an abstract PKE construction
    that matches the algebraic basis of Kyber. This theory clones MLWE
@@ -129,7 +108,7 @@ op pk_encode(pk : vector * W8.t Array32.t) : pkey =
                                   (sem_encode12_vec (toipolyvec (nttv pk.`1)) ,pk.`2).
 op pk_decode(pk : pkey) = (invnttv (ofipolyvec (sem_decode12_vec (pk.`1))),pk.`2).
 op sk_encode(sk : vector) : skey = sem_encode12_vec (toipolyvec (nttv sk)).
-op sk_decode(sk : skey) = invnttv (ofipolyvec (sem_decode12_vec sk)).
+op sk_decode(sk : skey) =  invnttv (ofipolyvec (sem_decode12_vec sk)).
 op m_encode(m : plaintext) : poly = decompress_poly 1 (sem_decode1 m).
 op m_decode(p : poly) : plaintext = sem_encode1 (compress_poly 1 p). 
 op c_encode(c :  vector * poly) : ciphertext = 
@@ -165,6 +144,7 @@ clone import MLWE_PKE as MLWEPKE with
   op MLWE_.Matrix_.ZR.invr <- KPoly.invr,
   op MLWE_.Matrix_.size <- kvec,
   op MLWE_.Matrix_.Vector.(+) <- KMatrix.Vector.(+),
+  op MLWE_.Matrix_.Vector.dotp <- dotp,
   op MLWE_.Matrix_.Vector.prevector <- prevector,
   op MLWE_.Matrix_.Vector.vclamp <- vclamp,
   op MLWE_.Matrix_.Vector.tofunv <- tofunv,
@@ -225,6 +205,7 @@ clone import MLWE_PKE as MLWEPKE with
   proof good_decode
   proof cv_bound_valid
   proof noise_commutes.
+
 
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
@@ -676,6 +657,28 @@ have -> : Pr[CPAGameROM(CPA, KyberS(KHS, S, KNS, KPRF,KPRF), As, O).main() @ &m 
 done.
 qed.
 
+module ArraySample = {
+   proc sL() = { 
+       var r,rho,k;
+       r <$ IdealHSF.dR (); 
+       rho <- Array32.init (fun (i : int) => r.[i]); 
+       k <- Array32.init (fun (i : int) => r.[i+32]); 
+       return (rho,k);
+  }
+
+   proc sR() = { 
+       var rho,k;
+       rho <$ srand; 
+       k <$ srand; 
+       return (rho,k);
+  }
+}.
+
+require import DProd.
+clone  ProdSampling with
+  type t1 <- W8.t Array32.t,
+  type t2 <- W8.t Array32.t.
+  
 lemma KyberS_KyberIdeal &m :
   Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As,O).main() @ &m : res] =
   Pr [ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As,O).main() @ &m : res].
@@ -698,9 +701,35 @@ proc.
   wp.
   conseq (_: _ ==> rho{2} = Array32.init (fun i => r{1}.[i]) /\ 
                    k{2} = Array32.init (fun i => r{1}.[i+32]));
-  1: by move => /> [#] &1 r; 
-       rewrite !SmtMap.get_set_sameE !oget_some.
   admit. (* Product of distributions *)
+  (*
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample2(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by inline *;wp;rnd;rnd;auto => />.
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by call ProdSampling.sample_sample2 => />.
+  inline *; wp; rnd (fun r => (Array32.init (fun i => r.[i]), Array32.init (fun i => r.[i+32])))%Array64
+      (fun (rhok : (W8.t Array32.t) * (W8.t Array32.t)) => 
+            (Array64.init (fun i => if 0<=i<32 then rhok.`1.[i] else rhok.`2.[i-32])))%Array32.
+  auto => /> &1; split. 
+  + move => rhok ?; have -> /= : rhok = (rhok.`1,rhok.`2) by smt().
+    rewrite !Array32.tP; split.
+    + by move => i ib; rewrite initiE //= initiE; smt().
+    move => i ib; rewrite initiE //= initiE //=; by smt(). 
+  move => H; split.   + ad mit. (* commented out *)
+  move => H1 r ?; split.
+  + ad mit. (* commented out *)
+  move => ?; rewrite tP => i ib.
+  rewrite initiE //=.
+  case (0<=i<32).
+  + by move => ibb; rewrite !initiE //=.
+  by move => ibb; rewrite !initiE /#.
+  *)
 qed.
 
 
@@ -851,11 +880,6 @@ section.
 declare module O <: RO.Oracle {-IdealHSF.RF,-RF,-IdealPRF1.RF}.
 declare module S <: Sampler {-IdealHSF.RF,-RF, -O, -IdealPRF1.RF}.
 
-lemma comm_nttv_add v1 v2:  nttv (v1 + v2)%Vector = nttv v1 + nttv v2 by admit.
-lemma comm_nttv_mmul a v: nttv (a *^ v) = ntt_mmul (nttm a) (nttv v) by admit.
-lemma comm_ntt_dotp (v1 v2 : vector): 
-     (MLWE_.(`<*>`) (invnttv v1) v2) = invntt (ntt_dotp v1 (nttv v2)) by admit.
-
 equiv keygen_eq : 
   MLWE_PKE(NTTSampler(S,O), O).kg ~ KyberSI(S,O).kg :
    ={glob S, glob O} ==> ={res,glob S, glob O}.
@@ -874,6 +898,7 @@ seq 0 5 : #pre; 1: by inline *;auto.
 wp; conseq (_: _ ==> ={e} /\ s{1} = s0{2} /\ sd{1} = rho0{2} /\ nttm _A{1} = a{2}); 
   last first.
 + conseq (_: true ==> ={e} /\ s{1} = s0{2}); 1: smt(). 
+  inline {2} 3.
   admit. (* randomness product *)
 auto => /> &1 &2 e s; rewrite /pk_encode /sk_encode /=.
 by rewrite comm_nttv_add comm_nttv_mmul.
@@ -1319,6 +1344,34 @@ proc.
   1: by move => /> [#] &1 r; 
        rewrite !SmtMap.get_set_sameE !oget_some.
   admit. (* Product of distributions *)
+  (*
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample2(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by inline *;wp;rnd;rnd;auto => />.
+  transitivity {2} { (rho,k) <@ ProdSampling.S.sample(srand,srand); }
+                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
+                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
+                   (true ==> ={rho,k}) => //; last first.
+  + by call ProdSampling.sample_sample2 => />.
+  inline *; wp; rnd (fun r => (Array32.init (fun i => r.[i]), Array32.init (fun i => r.[i+32])))%Array64
+      (fun (rhok : (W8.t Array32.t) * (W8.t Array32.t)) => 
+            (Array64.init (fun i => if 0<=i<32 then rhok.`1.[i] else rhok.`2.[i-32])))%Array32.
+  auto => /> &1; split. 
+  + move => rhok ?; have -> /= : rhok = (rhok.`1,rhok.`2) by smt().
+    rewrite !Array32.tP; split.
+    + by move => i ib; rewrite initiE //= initiE; smt().
+    move => i ib; rewrite initiE //= initiE //=; by smt(). 
+  move => H; split.   + ad mit. (* commented out *)
+  move => H1 r ?; split.
+  + ad mit. (* commented out *)
+  move => ?; rewrite tP => i ib.
+  rewrite initiE //=.
+  case (0<=i<32).
+  + by move => ibb; rewrite !initiE //=.
+  by move => ibb; rewrite !initiE /#.
+  *)
 qed.
 
 lemma PRFHop1C &m :

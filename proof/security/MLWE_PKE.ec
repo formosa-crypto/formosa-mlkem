@@ -30,8 +30,9 @@ op sk_encode : raw_skey -> skey.
 op pk_decode : pkey -> raw_pkey.
 op sk_decode : skey -> raw_skey.
 
-axiom pk_encodeK : cancel pk_encode pk_decode. 
+axiom pk_encodeK : cancel pk_encode pk_decode.
 axiom sk_encodeK : cancel sk_encode sk_decode.
+
 
 (******************************************************************)
 (*    The Security Games                                          *)
