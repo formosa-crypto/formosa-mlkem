@@ -263,44 +263,6 @@ op compress(d : int, x : Fq) : int = comp d (asint x)%r %% 2^d.
 abbrev decomp (d: int, y: real): int = round (y * q%r / (2^d)%r).
 op decompress(d : int, x : int) : Fq = inFq (decomp d x%r).
 
-(* This, however, raises the issue of how to convert from Zq to
-   the reals when computing the error bounds. 
-   Compression seems to be robust to using either
-   asint or assint as we prove below. Decompression *must* use
-   asint, as it assumes an input between 0..2^d-1. *)
-(*
-axiom noties_s d x xr : (* Checked in Sage *)
-   0 <= d => 2^d < q => x <> Zq.zero =>
-        xr = ((2 ^ d)%r * (as_sint x)%r / q%r) =>
-          floor (xr + inv 2%r) <> ceil (xr + inv 2%r).
-
-axiom noties_u d x xr : (* Checked in Sage *)
-   0 <= d => 2^d < q => x <> Zq.zero =>
-        xr = ((2 ^ d)%r * (asint x)%r / q%r) =>
-          floor (xr + inv 2%r) <> ceil (xr + inv 2%r).
-
-lemma compress_sint x d : 
-   0 <= d => 2^d < q =>
-   compress d x = round ((2^d)%r / q%r * (as_sint x)%r) %% 2^d.
-proof.
-move => dlb dub;rewrite /compress => />.
-case ((q - 1) %/ 2 < asint x); last by rewrite /as_sint; auto => />. 
-case (x = Zq.zero); first by smt(@Zq).
-move => H H0. 
-pose xr := ((2 ^ d)%r * (as_sint x)%r / q%r).
-rewrite (round_notie xr (noties_s d x xr dlb dub H _)) => //.
-have -> : -xr =  (2 ^ d)%r - (2 ^ d)%r * (asint x)%r / q%r by rewrite /xr /as_sint; smt(@Real).
-rewrite round_add.
-have -> : - (2 ^ d + round (- (2 ^ d)%r * (asint x)%r / q%r)) = (- 2^d) + (- round (- (2 ^ d)%r * (asint x)%r / q%r)) by smt().
-rewrite -modzDm.
-have -> : (- 2 ^ d) %% 2 ^ d = 0 by smt(modzNm modz0). 
-simplify.
-pose xr' := ((2 ^ d)%r * (asint x)%r / q%r).
-rewrite (round_notie xr' (noties_u d x xr' dlb dub H _)) => //.
-by rewrite modz_mod.
-qed.
-*)
-
 (* These operations introduce a rounding error, which we see additively *)
 op compress_err(d : int, c: Fq) : Fq = decompress d (compress d c) - c.
 
@@ -387,8 +349,6 @@ lemma comp_bound d x:
  x * (2 ^ d)%r / q%r - inv 2%r
  < (comp d x)%r <= x * (2 ^ d)%r / q%r + inv 2%r.
 proof. smt(round_bound). qed.
-
-
 
 lemma decomp_comp d x:
  0 < d =>
@@ -1201,10 +1161,10 @@ module EncDec = {
 
 theory KyberSpec.
 
-(* We will model the three usages of SHA3 family 
+(* For the CPA component will model the three usages of SHA3 family 
    components as different cryptographic primitives. 
 
-This will be an entropy smoothing hash function.
+This will be an entropy smoothing hash function/prg.
 
 G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 
@@ -1467,6 +1427,85 @@ module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : S
   }
 
 }.
+
+(*********************************)
+(*********************************)
+(*********************************)
+(* IND CCA Component             *)
+(*********************************)
+(*********************************)
+
+clone PRF as HS_KEM_DEFS with
+  type D <- unit,
+  type R <- W8.t Array32.t.
+
+op SHA3_SMOOTH_KEM : W8.t Array32.t -> unit -> W8.t Array32.t.
+
+clone import HS_KEM_DEFS.PseudoRF as HSF_KEM with
+  type K <- W8.t Array32.t, 
+  op dK <- srand,
+  op F <- SHA3_SMOOTH_KEM.
+
+module KHS_KEM = HSF_KEM.PseudoRF.
+
+module type KEMHashes(O : RO.POracle) = {
+  proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t
+  proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t
+  proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t 
+  proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t
+}.
+
+module KemG(KemHS: HSF_KEM.PseudoRF) = {
+  proc sample(s : W8.t Array32.t) : W8.t Array32.t = {
+     var m;
+     m <@ KemHS.f(s,());
+     return m;
+  }
+}.
+
+import PRF_.
+module KyberKEM(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, 
+             KemHS : HSF_KEM.PseudoRF, KemH : KEMHashes, O : RO.POracle)  = {
+
+   proc kg_derand(seed : W8.t Array32.t * W8.t Array32.t) : 
+           pkey * (skey * pkey * W8.t Array32.t * W8.t Array32.t) = {
+       var kgs,z,pk,sk,hpk;
+       kgs <- seed.`1;
+       z <- seed.`2;
+       (pk,sk) <@ Kyber(HS,XOF,PRF,O).kg_derand(kgs);
+       hpk <@ KemH(O).pkH(pk);
+       return (pk, (sk,pk,hpk,z));
+       
+   }
+
+   proc enc_derand(pk : pkey, prem : W8.t Array32.t) : ciphertext * W8.t Array32.t = {
+       var m,hpk,_Kt,r,c,hc,_K;
+       m <@ KemG(KemHS).sample(prem); 
+       hpk <@ KemH(O).pkH(pk); 
+       (_Kt,r) <@ KemH(O).g(m,hpk);
+       c <@ Kyber(HS,XOF,PRF,O).enc_derand(pk,m,r);
+       hc <@ KemH(O).cH(c);
+       _K <@ KemH(O).kdf(_Kt,hc);
+       return (c,_K);
+   }
+
+   proc dec(cph : ciphertext, sk : skey * pkey * W8.t Array32.t * W8.t Array32.t) : W8.t Array32.t = {
+       var m,_Kt,r,skp,pk,hpk,z,c,hc,_K;
+       (skp,pk,hpk,z) <- sk;
+       m <@ Kyber(HS,XOF,PRF,O).dec(skp,cph);
+       (_Kt,r) <@ KemH(O).g(oget m,hpk);
+       c <@ Kyber(HS,XOF,PRF,O).enc_derand(pk,oget m,r);
+       hc <@ KemH(O).cH(c);
+       if (c = cph) {
+          _K <@ KemH(O).kdf(_Kt,hc);
+       }
+       else {
+         _K <@ KemH(O).kdf(z,hc);
+       }
+       return _K;
+   }
+}.
+
 
 end KyberSpec.
 

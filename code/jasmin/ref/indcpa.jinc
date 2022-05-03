@@ -118,9 +118,9 @@ fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[KYB
 
   k = _i_poly_frommsg(k, msgp);
 
-  s_noiseseed = noiseseed;
+  /* s_noiseseed = noiseseed; */
   aat = __gen_matrix(publicseed, 1);
-  noiseseed = s_noiseseed;
+  /* noiseseed = s_noiseseed; */
 
   nonce = 0;
   sp[0:KYBER_N] = _poly_getnoise(sp[0:KYBER_N], noiseseed, nonce);
@@ -191,9 +191,9 @@ fn __iindcpa_enc(reg ptr u8[KYBER_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
 
   k = _i_poly_frommsg(k, msgp);
 
-  s_noiseseed = noiseseed;
+  /* s_noiseseed = noiseseed; */
   aat = __gen_matrix(publicseed, 1);
-  noiseseed = s_noiseseed;
+  /* noiseseed = s_noiseseed; */
 
   nonce = 0;
   sp[0:KYBER_N] = _poly_getnoise(sp[0:KYBER_N], noiseseed, nonce);
