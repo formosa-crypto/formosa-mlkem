@@ -182,7 +182,7 @@ module Ops = {
 
   proc ivadd16u256(x y:t16u16) : t16u16 = {
     var r : t16u16;
-   
+
     r <- Array16.init (fun i => x.[i] + y.[i]);
 
     return r;
@@ -206,6 +206,14 @@ module Ops = {
     var r : t16u16;
 
     r <- Array16.init (fun i => x.[i] - y.[i]);
+
+    return r;
+  }
+
+  proc iload4u64_8u32 (mem:global_mem_t, p:W64.t) : t8u32 = {
+    var r : t8u32;
+
+    r <- Array8.init (fun i => loadW32 mem (to_uint p + 4*i));
 
     return r;
   }
@@ -239,38 +247,7 @@ module Ops = {
 
   proc istore32u8 (mem: global_mem_t, p: W64.t, w: t32u8): global_mem_t = {
 
-    mem <- storeW8 mem (to_uint p + 0) w.[0];
-    mem <- storeW8 mem (to_uint p + 1) w.[1];
-    mem <- storeW8 mem (to_uint p + 2) w.[2];
-    mem <- storeW8 mem (to_uint p + 3) w.[3];
-    mem <- storeW8 mem (to_uint p + 4) w.[4];
-    mem <- storeW8 mem (to_uint p + 5) w.[5];
-    mem <- storeW8 mem (to_uint p + 6) w.[6];
-    mem <- storeW8 mem (to_uint p + 7) w.[7];
-    mem <- storeW8 mem (to_uint p + 8) w.[8];
-    mem <- storeW8 mem (to_uint p + 9) w.[9];
-    mem <- storeW8 mem (to_uint p + 10) w.[10];
-    mem <- storeW8 mem (to_uint p + 11) w.[11];
-    mem <- storeW8 mem (to_uint p + 12) w.[12];
-    mem <- storeW8 mem (to_uint p + 13) w.[13];
-    mem <- storeW8 mem (to_uint p + 14) w.[14];
-    mem <- storeW8 mem (to_uint p + 15) w.[15];
-    mem <- storeW8 mem (to_uint p + 16) w.[16];
-    mem <- storeW8 mem (to_uint p + 17) w.[17];
-    mem <- storeW8 mem (to_uint p + 18) w.[18];
-    mem <- storeW8 mem (to_uint p + 19) w.[19];
-    mem <- storeW8 mem (to_uint p + 20) w.[20];
-    mem <- storeW8 mem (to_uint p + 21) w.[21];
-    mem <- storeW8 mem (to_uint p + 22) w.[22];
-    mem <- storeW8 mem (to_uint p + 23) w.[23];
-    mem <- storeW8 mem (to_uint p + 24) w.[24];
-    mem <- storeW8 mem (to_uint p + 25) w.[25];
-    mem <- storeW8 mem (to_uint p + 26) w.[26];
-    mem <- storeW8 mem (to_uint p + 27) w.[27];
-    mem <- storeW8 mem (to_uint p + 28) w.[28];
-    mem <- storeW8 mem (to_uint p + 29) w.[29];
-    mem <- storeW8 mem (to_uint p + 30) w.[30];
-    mem <- storeW8 mem (to_uint p + 31) w.[31];
+    mem <- stores mem (to_uint p) (to_list w);
 
     return mem;
   }
@@ -349,7 +326,12 @@ module Ops = {
   proc iVPACKUS_16u16(x y: t16u16) : t32u8 = {
     var r: t32u8;
 
-    r <- Array32.init (fun k => if (k %/ 8 %% 2 = 0) then packus16 x.[8 * (k %/ 16) + k %% 8] else packus16 y.[8 * (k %/ 16) + k %% 8]);
+    (* r <- Array32.init (fun k => if (k %/ 8 %% 2 = 0) then packus16 x.[8 * (k %/ 16) + k %% 8] else packus16 y.[8 * (k %/ 16) + k %% 8]); *)
+
+   r <- Array32.fill (fun i => packus16 x.[i %% 8]) 0 8 r;
+   r <- Array32.fill (fun i => packus16 y.[i %% 8]) 8 8 r;
+   r <- Array32.fill (fun i => packus16 x.[8 + i %% 8]) 16 8 r;
+   r <- Array32.fill (fun i => packus16 y.[8 + i %% 8]) 24 8 r;
 
     return r;
   }
@@ -427,7 +409,7 @@ module Ops = {
   proc iVPERM2I128_16u16(x y: t16u16, p: W8.t): t16u16 = {
     var r: t16u16;
 
-    r <- Array16.init(fun i => 
+    r <- Array16.init(fun i =>
                       let n = 4 * (i %/ 8) in
                       if p.[n + 3] then W16.zero
                       else
@@ -1015,6 +997,10 @@ module OpsV = {
     return VPSUB_16u16 x y;
   }
 
+  proc iload4u64_8u32 (mem: global_mem_t, p:W64.t) : vt8u32 = {
+    return loadW256 mem (to_uint p);
+  }
+
   proc iload4u64 (mem: global_mem_t, p:W64.t) : vt4u64 = {
     return loadW256 mem (to_uint p);
   }
@@ -1359,22 +1345,20 @@ proof.
   proc; by wp; skip; rewrite /is16u16 /VPBROADCAST_16u16 -iotaredE.
 qed.
 
+equiv eq_iload4u64_8u32: Ops.iload4u64_8u32 ~ OpsV.iload4u64_8u32: ={mem, p} /\ to_uint p{1} + 32 <= W64.modulus ==> is8u32 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is8u32 => /> &2 p_ub.
+  rewrite /loadW256 /loadW32.
+  apply W32u8.allP => />.
+qed.
+
+
 equiv eq_iload4u64: Ops.iload4u64 ~ OpsV.iload4u64 : ={mem, p} /\ to_uint p{1} + 32 <= W64.modulus ==> is4u64 res{1} res{2}.
 proof.
   proc; wp; skip; rewrite /is4u64 => /> &2 hp.
-  rewrite /loadW256 -(W32u8.unpack8K (W4u64.pack4 _));congr.
-  apply W32u8.Pack.packP => j hj.
-  rewrite initiE 1:// W32u8.get_unpack8 1:// /= get8_pack4u64 hj /=.
-  (* FIXME
-  have /= <- := W4u64.Pack.init_of_list (fun j => loadW64 mem{2} (to_uint (p{2} + W64.of_int (8 * j)))).
-  have ? : 0 <= j %/ 8 < 4 by rewrite ltz_divLR // lez_divRL.
-  have ? := modz_cmp j 8.
-  rewrite initiE 1:// /loadW64 /= pack8bE 1:// initiE 1:// /=.
-  have heq : to_uint (W64.of_int (8 * (j %/ 8))) = 8 * (j %/ 8).
-  + by rewrite of_uintK modz_small 2:// /= /#.
-  rewrite to_uintD_small heq 1:/#; smt (edivzP).
-  *)
-  admit.
+  rewrite /loadW256 /loadW64.
+  apply W32u8.allP => />.
+  do (rewrite to_uintD_small 1:/# of_uintK (pmod_small _ W64.modulus) 1://= //=).
 qed.
 
 equiv eq_istore32u8: Ops.istore32u8 ~ OpsV.istore32u8 : ={mem, p} /\ is32u8 w{1} w{2} ==> ={res}.
@@ -1383,11 +1367,13 @@ proof.
   wp. skip.
   simplify.
   move => &1 &2 [#] mem_eq p_eq w_eq.
-  rewrite /storeW256 /storeW8 /stores => />.
-  rewrite mem_eq p_eq w_eq.
-  do (rewrite -get_unpack8 1://=).
-  rewrite pack32K.
-  smt(@List @Int @W32u8).
+  rewrite storeW256E.
+  congr.
+  + rewrite p_eq //=.
+  + rewrite w_eq //=.
+    search Array32.to_list.
+    rewrite -of_listK.
+    smt(@List @Int @W32u8).
 qed.
 
 equiv eq_iload16u16: Ops.iload16u16 ~ OpsV.iload16u16 : ={mem, p} ==> is16u16 res{1} res{2}.
@@ -1549,7 +1535,7 @@ proof.
               x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 5];
               x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 6];
               x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 7]]] =
-      pack32 
+      pack32
          [x{1}.[8 * (to_uint p{2} %% 4)];
           x{1}.[8 * (to_uint p{2} %% 4) + 1];
           x{1}.[8 * (to_uint p{2} %% 4) + 2];

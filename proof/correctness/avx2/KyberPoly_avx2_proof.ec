@@ -118,6 +118,7 @@ import Fq.
 import SignedReductions.
 import Zq.
 import ZModP.
+import Fq_avx2.
 
 op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
   forall k, l <= k < u => b16 coefs.[k] (c*q).
@@ -1265,6 +1266,14 @@ proof.
   apply rp_eq_ap; by move : k_lb k_ub => /#.
 qed.
 
+lemma poly_frommont_ll : islossless  Mavx2_prevec.poly_frommont.
+proc.
+  auto => />.
+  cfold 4. wp; while (0 <= i <= 16) (16 - i).
+  + move => *; inline*; auto => />. smt().
+  + inline *; wp; auto => /> /#.
+qed.
+
 op load_array128(m : global_mem_t, p : address) : W8.t Array128.t = 
       Array128.init (fun i => m.[p + i]).
 
@@ -1551,7 +1560,318 @@ lemma poly_compress_corr _a (_p : address) mem :
              touches mem Glob.mem{1} _p 128 /\
              load_array128 Glob.mem{1} _p = res{2}].
 proof.
-  admit. (* FIXME *)
+  proc.
+  cfold{1} 8.
+  seq 1 1 : (#{~(pos_bound256_cxq a{1} 0 256 2)}pre /\
+           pos_bound256_cxq a{1} 0 256 1 /\ lift_array256 a{1} = _a).
+  wp; call{1} (poly_csubq_corr _a); auto => /#.
+  seq 7 1 : (#pre /\ i{1} = i{2} /\ i{1} = 0 /\
+             (forall k, 0 <= k < 16 => v{1}.[k] = W16.of_int 20159) /\
+             (forall k, 0 <= k < 16 => shift1{1}.[k] = W16.of_int (2^9)) /\
+             (forall k, 0 <= k < 16 => mask{1}.[k] = W16.of_int (2^4-1)) /\
+             (forall k, 0 <= k < 32 => shift2_b{1}.[k] = (W8.one `<<<` (4 * (k %% 2)))) /\
+             (forall k, 0 <= k < 8 => permidx{1}.[k] = W32.of_int (4 * (k %% 2) + (k %/ 2)))).
+  inline *; wp; skip.
+  auto => />.
+  move => &1 [#] rp_lb rp_ub pos_bound_a.
+  do split.
+    + move => k k_lb k_ub.
+      rewrite /(KyberCPA_avx2.jvx16) /=.
+      do (rewrite initiE 1:/# /=). smt(@Array16 @List).
+    + move => k k_lb k_ub.
+      rewrite initiE 1:/# //=.
+    + move => k k_lb k_ub.
+      rewrite initiE 1:/# //=.
+    + move => k k_lb k_ub.
+      rewrite /f16u16_t32u8 /=.
+      do (rewrite initiE 1:/# /=).
+      rewrite shlMP 1:/# /=.
+      rewrite /(KyberCPA_avx2.pc_shift2_s) /of_int.
+      apply W8.wordP => x x_i.
+      rewrite bits8E initiE 1:x_i /=.
+      rewrite /int2bs /= /mkseq -iotaredE /= /bits2w /=.
+      rewrite initiE 1:/# initiE 1:x_i.
+      do (rewrite (pmod_small _ 256)).
+        move : (modz_cmp k 2); rewrite exprM /=.
+        rewrite andabP  => /(mem_iota 0 2 (k %% 2)).
+        smt(@Int @List @IntDiv @Ring.IntID).
+      case (k %% 2 = 0) => k_even.
+        + rewrite k_even /=.
+          smt(@Int @List).
+        + have ->: (k %% 2 = 1). move : k_even => /#.    
+          simplify.
+          smt(@Int @List).
+    + move => k k_lb k_ub.
+      rewrite /(KyberCPA_avx2.pc_permidx_s) /=.
+      do (rewrite initiE 1:/# /=).
+      smt(@Int @List @IntDiv @Array8).
+    wp.
+    while (#{/~mem}{~i{1}=0}pre /\ i{1} = i{2} /\ 0 <= i{1} <= 4 /\
+           touches mem Glob.mem{1} _p (32*i{1}) /\
+           (forall k, 0 <= k < 32 * i{1} => loadW8 Glob.mem{1} (_p + k) = r{2}.[k])).
+    + auto => />.
+      move => &1 &2 [#] a_def p_def valid_p rp_def pos_bound_a _a_def i_eq v_def shift1_def mask1_def shift2_b_def permidx_def i1_eq_i2 i1_lb i1_ub mem_up mem_eq_res i1_tub i2_tub mem1 r1 [#] i2_n_lb i2_n_ub touch_memL mem1_eq_r i2_n i1_n />.
+      rewrite /i1_n /i2_n i1_eq_i2 -rp_def /=.
+      do split; first 4 by assumption.
+    + inline *; wp.
+      unroll for {2} 2.
+      auto => />.
+      move => &1 &2 [#] rp_lb rp_ub pos_bound_a v_def shift1_def mask1_def shift2_b_def permidx_def i_lb i_ub touch_mem_p mem_up i_tub />.
+      split; first by move : i_lb i_tub => /#.
+      split.
+        (* TODO: clean up *)
+        rewrite /touches /=.
+        move => j.
+        rewrite (mulzDr 32 i{2} 1) mulz1 => j_i.
+        rewrite get_storesE size_to_list.
+        rewrite to_uintD_small /=.
+          rewrite of_uintK.
+           move : rp_lb rp_ub i_tub => /#.
+        rewrite of_uintK.
+        rewrite (pmod_small _ W64.modulus); first by move : i_lb i_tub => /#.
+        case (32 * i{2} <= j < 32 * i{2} + 32) => j_si.
+        + have -> : ! (to_uint rp{1} + 32 * i{2} <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + 32 * i{2} + 32).
+            move : j_si => /#.
+          move : touch_mem_p => /#.
+        + rewrite andabP negb_and -ltzNge -lezNgt in j_si.
+          rewrite andabP negb_and -ltzNge -lezNgt in j_i.
+          case (j < 0) => j_lt0.
+            have -> : ! (to_uint rp{1} + 32 * i{2} <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + 32 * i{2} + 32).
+              move : j_lt0 => /#.
+            move : touch_mem_p => /#.
+          case (32 * i{2} + 32 <= j) => j_bts.
+            have -> : ! (to_uint rp{1} + 32 * i{2} <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + 32 * i{2} + 32).
+              move : j_bts => /#.
+            move : touch_mem_p => /#.
+          have j_ssi: 0 <= j < 32 * i{2}.
+            move : j_i j_lt0 j_si j_bts => /#.
+            have -> : ! (to_uint rp{1} + 32 * i{2} <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + 32 * i{2} + 32).
+              move : j_ssi => /#.
+            move : touch_mem_p => /#.
+      rewrite (mulzDr 32 i{2} 1) mulz1 => k k_lb k_ub.
+      rewrite /loadW8 get_storesE size_to_list.
+      rewrite to_uintD_small /=.
+        rewrite of_uintK.
+         move : rp_lb rp_ub i_tub => /#.
+      rewrite of_uintK.
+      rewrite (pmod_small _ W64.modulus); first by move : i_lb i_tub => /#.
+      case (k < 32 * i{2}) => k_tub.
+        have ->: !(to_uint rp{1} + 32 * i{2} <= to_uint rp{1} + k && to_uint rp{1} + k < to_uint rp{1} + 32 * i{2} + 32).
+          move : k_tub => /#.
+        move : (mem_up k) => />.
+        rewrite k_lb k_tub /=.
+        rewrite /loadW8 => ->.
+        do (rewrite set_neqiE 1..2:/#).
+        done.
+      move : k_tub; rewrite -lezNgt => k_tlb.
+      have ->: (to_uint rp{1} + 32 * i{2} <= to_uint rp{1} + k && to_uint rp{1} + k < to_uint rp{1} + 32 * i{2} + 32).
+          move : k_tlb k_ub => /#.
+      simplify.
+      rewrite (_: to_uint rp{1} + k - (to_uint rp{1} + 32 * i{2}) = k - 32 * i{2}).
+        smt(@Int).
+      rewrite -Array32.get_of_list.
+        move : k_tlb k_ub => /#.
+      rewrite to_listK.
+
+      rewrite (_: r{2}.[32 * i{2} <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2}] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 1] * 16))%W8].[
+        32 * i{2} + 1 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 2] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 3] * 16))%W8].[
+        32 * i{2} + 2 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 4] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 5] * 16))%W8].[
+        32 * i{2} + 3 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 6] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 7] * 16))%W8].[
+        32 * i{2} + 4 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 8] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 9] * 16))%W8].[
+        32 * i{2} + 5 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 10] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 11] * 16))%W8].[
+        32 * i{2} + 6 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 12] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 13] * 16))%W8].[
+        32 * i{2} + 7 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 14] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 15] * 16))%W8].[
+        32 * i{2} + 8 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 16] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 17] * 16))%W8].[
+        32 * i{2} + 9 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 18] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 19] * 16))%W8].[
+        32 * i{2} + 10 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 20] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 21] * 16))%W8].[
+        32 * i{2} + 11 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 22] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 23] * 16))%W8].[
+        32 * i{2} + 12 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 24] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 25] * 16))%W8].[
+        32 * i{2} + 13 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 26] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 27] * 16))%W8].[
+        32 * i{2} + 14 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 28] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 29] * 16))%W8].[
+        32 * i{2} + 15 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 30] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 31] * 16))%W8].[
+        32 * i{2} + 16 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 32] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 33] * 16))%W8].[
+        32 * i{2} + 17 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 34] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 35] * 16))%W8].[
+        32 * i{2} + 18 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 36] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 37] * 16))%W8].[
+        32 * i{2} + 19 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 38] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 39] * 16))%W8].[
+        32 * i{2} + 20 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 40] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 41] * 16))%W8].[
+        32 * i{2} + 21 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 42] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 43] * 16))%W8].[
+        32 * i{2} + 22 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 44] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 45] * 16))%W8].[
+        32 * i{2} + 23 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 46] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 47] * 16))%W8].[
+        32 * i{2} + 24 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 48] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 49] * 16))%W8].[
+        32 * i{2} + 25 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 50] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 51] * 16))%W8].[
+        32 * i{2} + 26 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 52] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 53] * 16))%W8].[
+        32 * i{2} + 27 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 54] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 55] * 16))%W8].[
+        32 * i{2} + 28 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 56] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 57] * 16))%W8].[
+        32 * i{2} + 29 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 58] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 59] * 16))%W8].[
+        32 * i{2} + 30 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 60] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 61] * 16))%W8].[
+        32 * i{2} + 31 <-
+        (of_int
+           ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 62] +
+            (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 63] * 16))%W8] =
+        (fill (fun j => W8.of_int ((compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 2*j] +
+                                   (compress_poly 4 (lift_array256 a{1})).[64 * i{2} + 2*j + 1] * 16)) (32 * i{2}) 32 r{2})).
+      apply Array128.ext_eq.
+      move => x x_i. rewrite filliE //=.
+      admit. (* FIXME *)
+    do rewrite initiE 1:/# /=.
+    rewrite filliE 1:/# /= k_ub k_tlb /=.
+    rewrite -get_unpack8 1:/# pack4K.
+    rewrite W4u8.Pack.initiE 1:/# /=.
+    rewrite permidx_def 1:/#.
+    rewrite of_uintK.
+    rewrite modz_dvd 1://=.
+    rewrite -(divz_mulp _ 4 2) 1..2://=.
+    rewrite (_: (4 * ((k - 32 * i{2}) %/ 4 %% 2) + (k - 32 * i{2}) %/ (4 * 2)) %% 8 =
+                k %% 8 - k %% 4 + k %/ 8 - 4 * i{2}).
+      rewrite -(modz_pow2_div 3 2 _) 1://=.
+      rewrite (mulzC 4 _) (divzE _ 4).
+      rewrite modz_dvd //=.
+      rewrite (_: (k - 32 * i{2}) %% 8 =  k %% 8). move : k_tlb k_ub; smt(@Int @IntDiv).
+      rewrite (_: (k - 32 * i{2}) %% 4 =  k %% 4). move : k_tlb k_ub; smt(@Int @IntDiv).
+      rewrite (pmod_small (k %% 8 - k %% 4 + (k - 32 * i{2}) %/ 8) 8). move : k_tlb k_ub; smt(@Int @IntDiv).
+      move : k_tlb k_ub; smt(@Int @IntDiv).
+    rewrite (_: (k - 32 * i{2}) %% 4 = k %% 4).
+      smt(@Int @IntDiv).
+    rewrite (_: 4 * (k %% 8 - k %% 4 + (k %/ 8) - 4 * i{2}) + k %% 4 =  4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8) - 16 * i{2}).
+      smt(@Int @IntDiv).
+    do (rewrite initiE 1:/# //=).
+    pose x := (8 * ((4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8) - 16 * i{2}) %/ 16) +
+               (4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8) - 16 * i{2}) %% 8).
+    rewrite (_: 2 * x %% 8 = (- 6 * k) %% 8).
+      rewrite (mulzDr 2 _).
+      rewrite -mulzA (mulzC _ 8) mulzA (mulzC 8 _) modzMDl.
+      rewrite modzMmr.
+      do rewrite (mulzDr 2 _) //=.
+      do (rewrite -mulzA //= (mulzC 8 _)).
+      do rewrite -addzA.
+      rewrite modzMDl.
+      rewrite (_: (k %/ 8 * 8 + 2 * - 16 * i{2}) = (k %/ 8 - 4 * i{2}) * 8). smt(@Int @IntDiv).
+      rewrite modzMDr.
+      smt(@Int @IntDiv mulz_modr modz_dvd).
+    rewrite (_: (2 * x %/ 16) = (4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8) - 16 * i{2}) %/ 16).
+      rewrite mulzDr.
+      rewrite -mulzA //= (mulzC 16 _) divzMDl 1://=.
+      rewrite (pdiv_small (2 * ((4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8) - 16 * i{2}) %% 8)) 16).
+        move : (modz_cmp (4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8) - 16 * i{2}) 8).
+        smt(@Int @IntDiv).
+      done.
+    rewrite (_: 2 * x %/ 8 %% 2 = ((k %% 8) + (k %/ 8) + (- 3 * (k %% 4)) %/ 4) %% 2).
+      rewrite (_ : 2 * x %/ 8 %% 2 = x %% 8 %/ 4). smt(@Int @IntDiv).
+      rewrite /x (mulzC 8 _) modzMDl.
+      rewrite modz_mod.
+      rewrite (_: (4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8) - 16 * i{2}) %% 8 = (((k %% 8) + (k %/ 8)) * 4 - 3 * (k %% 4)) %% 8).
+        smt(@Int @IntDiv).
+      rewrite (_: (((k %% 8) + (k %/ 8)) * 4 - 3 * (k %% 4)) %% 8 %/ 4 = (((k %% 8) + (k %/ 8)) * 4 - 3 * (k %% 4)) %/ 4 %% 2).
+        smt(@Int @IntDiv).
+      rewrite divzMDl 1://=.
+      done.     
+  skip.
+  auto => />.
+  move => &1 &2 [#]*.
+  split.
+    smt(@Logic).
+  move => memr i r i_tlb _ i_lb i_ub.
+  have ->: i = 4. move : i_ub i_tlb => /#.
+  move => /> mem_eq_memr memr_eq_r.
+  rewrite /load_array128 /=.
+  apply Array128.ext_eq => k k_i.
+  rewrite initiE 1:k_i /=.
+  move : (memr_eq_r k k_i).
+  rewrite /loadW8.
+  done.
 qed.
 
 (* FIXME: this seems too simple ???? *)
@@ -2073,19 +2393,6 @@ proof. admit.
   move : i_lb i_tub => /#.
 qed. *)
 
-
-(*
-lemma poly_compress_round_corr ap :
-  phoare[Mavx2_prevec.poly_compress_round :
-         ap = lift_array256 a /\
-         pos_bound256_cxq a 0 256 2
-         ==>
-         Array256.map Poly.roundc ap = lift_array256 res /\
-         forall k,
-          0 <= k < 256  => 0 <= to_sint res.[k] < 16] = 1%r.
-proof. admit. by conseq poly_compress_ll (poly_compress_round_corr_h ap). qed.
-*)
-
 (* TODO: move to IntDiv (again) *)
 lemma smod_red : forall m, 0 < m => forall x, -m <= x < 0 => x %% m = x + m.
 proof.
@@ -2093,7 +2400,7 @@ proof.
 qed.
 
 lemma poly_tomsg_corr _a (_p : address) mem : 
-  equiv [Mavx2_prevec.poly_tomsg ~ EncDec.encode1 :
+  equiv [Mavx2_prevec.poly_tomsg ~ EncDec_AVX2.encode1 :
              pos_bound256_cxq a{1} 0 256 2 /\ 
              lift_array256 a{1} = _a /\ a{2} = compress_poly 1 _a /\ 
              valid_ptr _p 32 /\ Glob.mem{1} = mem /\ to_uint rp{1} = _p
@@ -2102,458 +2409,324 @@ lemma poly_tomsg_corr _a (_p : address) mem :
              pos_bound256_cxq res{1} 0 256 1 /\
              touches mem Glob.mem{1} _p 32 /\
              load_array32 Glob.mem{1} _p = res{2}].
-proof. admit. (*
+proof.
   proc.
-  seq 1 : #pre; first by auto => />.
-  cfold 4.
-  seq 1: (pos_bound256_cxq a 0 256 1 /\ lift_array256 a = _a).
-  ecall (poly_csubq_corr_h _a) => />. smt(). auto => />. smt().
-  wp.
-  while(#pre /\
-      0 <= i <= 8 /\
-      (forall k, 0 <= k < 16 => hhq.[k] = W16.of_int 832) /\
-      (forall k, 0 <= k < 16 => hq.[k] = W16.of_int 1664) /\
-      (forall k, 0 <= k < 32 * i => (rp.[k] = W32.one) = s_decode _a.[k]) /\
-      (forall k, 0 <= k < 32 * i => rp.[k] <> W32.zero => rp.[k] = W32.one)).
-  sp.
-  inline *; wp; skip; simplify.
-  move => &hr [#] f0_def f1_def pos_bound_a _a_def i_lb i_ub hhq_def hq_def rp_eq_decode__a rp_def i_tub.
+  cfold{1} 4.
+  seq 1 1 : (#{~(pos_bound256_cxq a{1} 0 256 2)}pre /\
+           pos_bound256_cxq a{1} 0 256 1).
+  wp; call{1} (poly_csubq_corr _a); auto => /#.
+  seq 3 1 : (#pre /\ ={i} /\ i{1} = 0 /\
+             (forall k, 0 <= k < 16 => hq{1}.[k] = W16.of_int 1664) /\
+             (forall k, 0 <= k < 16 => hhq{1}.[k] = W16.of_int 832)).
+  wp; skip; auto => />.
+  move => &1 [#] rp_lb rp_ub pos_bound_a.
   split.
-   rewrite pos_bound_a _a_def //=.
-   + split.
-       move : i_lb i_tub => /#.
-   + split.
-     apply hhq_def.
-   + split.
-     apply hq_def.
-  rewrite f0_def f1_def.
-  have f0_eq: forall k, 0 <= k < 16 => (lift2poly (get256 ((init16 (fun j => a{hr}.[j])))%WArray512 (2 * i{hr}))).[k] = a{hr}.[32 * i{hr} + k].
-    move => k0 k0_i; rewrite -(lift2poly_iso a{hr} (2*i{hr})); move : i_lb i_tub => /#; rewrite -mulzA /=; smt(@Int); smt(@Int @IntDiv).
-  have f1_eq: forall k, 0 <= k < 16 => (lift2poly (get256 ((init16 (fun j => a{hr}.[j])))%WArray512 (2 * i{hr} + 1))).[k] = a{hr}.[32 * i{hr} + 16 + k].
-    move => k0 k0_i; rewrite -(lift2poly_iso a{hr} (2*i{hr} + 1)); move : i_lb i_tub => /#; rewrite -mulzA /=; smt(@Int); smt(@Int @IntDiv).
-  do rewrite f0_eq //.
-  do rewrite f1_eq //.
+    + move => k k_lb k_ub.
+      rewrite initiE 1:/# //=.
+      rewrite /(KyberCPA_avx2.hqx16_m1) initiE 1:/# //=.
+      smt(@List @Array16).
+    + move => k k_lb k_ub.
+      rewrite initiE 1:/# //=.
+      rewrite /(KyberCPA_avx2.hhqx16) initiE 1:/# //=.
+      smt(@List @Array16).
+  wp.
+  while (#{/~mem}{~i{1}=0}pre /\ 0 <= i{1} <= 8 /\
+         touches mem Glob.mem{1} _p (4*i{1}) /\
+         forall k, 0 <= k < 4*i{1} => loadW8 Glob.mem{1} (_p + k) = ra{2}.[k]).
+  auto => />.
+  move => &1 &2 [#] a1_def a2_def valid_p rp_def pos_bound_a i_eq hq_def hhq_def i1_lb i1_ub touch_mem _p_def i1_tub i2_tub c ra [#] i2n_lb i2n_ub touch_mem_c c_eq_ra i2_n mem1_def i1_n />.
+  rewrite /mem1_def -rp_def /i1_n /i2_n i_eq /=.
+  do split; first 4 by assumption.
+
+  inline *; wp.
+  unroll for {2} 2.
+  auto => />.
+  move => &1 &2 [#] rp_lb rp_ub pos_bound_a hq_def hhq_def i_lb i_ub touch_mem touch_mem_n i_tub />.
+  split; first by move : i_lb i_tub => /#.
   do (rewrite hq_def 1://=).
   do (rewrite hhq_def 1://=).
-  rewrite (_: r7{hr}.[0 <-
+  rewrite (_: r7{1}.[0 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 0]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 0] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 0]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 0] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[1 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 1]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 1] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 1]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 1] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[2 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 2]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 2] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 2]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 2] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[3 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 3]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 3] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 3]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 3] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[4 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 4]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 4] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 4]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 4] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[5 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 5]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 5] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 5]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 5] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[6 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 6]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 6] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 6]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 6] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[7 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 7]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 7] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 7]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 7] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[8 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 0]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 0] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 0]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 0] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[9 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 1]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 1] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 1]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 1] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[10 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 2]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 2] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 2]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 2] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[11 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 3]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 3] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 3]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 3] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[12 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 4]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 4] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 4]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 4] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[13 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 5]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 5] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 5]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 5] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[14 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 6]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 6] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 6]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 6] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[15 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 7]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 7] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 7]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 7] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[16 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 8]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 8] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 8]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 8] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[17 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 9]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 9] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 9]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 9] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[18 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 10]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 10] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 10]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 10] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[19 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 11]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 11] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 11]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 11] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[20 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 12]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 12] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 12]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 12] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[21 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 13]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 13] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 13]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 13] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[22 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 14]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 14] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 14]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 14] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[23 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 15]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 15] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 15]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 15] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[24 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 8]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 8] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 8]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 8] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[25 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 9]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 9] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 9]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 9] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[26 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 10]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 10] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 10]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 10] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[27 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 11]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 11] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 11]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 11] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[28 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 12]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 12] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 12]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 12] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[29 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 13]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 13] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 13]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 13] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[30 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 14]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 14] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 14]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 14] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))].[31 <-
           packss16
-            (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 15]) `^`
-             ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 + 15] `|>>`
+            (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 15]) `^`
+             ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 + 15] `|>>`
               (of_int 15)%W8) -
              (W16.of_int 832))] =
-      Array32.init (fun x => packss16 (((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 * ((x %/ 8) %% 2) + 8 * (x %/ 16) + x %% 8]) `^`
-                                       ((W16.of_int 1664) - a{hr}.[32 * i{hr} + 16 * ((x %/ 8) %% 2) + 8 * (x %/ 16) + x %% 8] `|>>`
+      Array32.init (fun x => packss16 (((W16.of_int 1664) - a{1}.[32 * i{2} + 16 * ((x %/ 8) %% 2) + 8 * (x %/ 16) + x %% 8]) `^`
+                                       ((W16.of_int 1664) - a{1}.[32 * i{2} + 16 * ((x %/ 8) %% 2) + 8 * (x %/ 16) + x %% 8] `|>>`
                                        (W8.of_int 15)) - (W16.of_int 832)))).
     apply Array32.ext_eq. move => x x_i. rewrite initiE //=.
-    do rewrite get_setE //.
+    do (rewrite get_setE 1://= //).
     smt(@Array32 @Int @IntDiv).
+  pose msg := W32.bits2w
+                 (mkseq
+                    (fun (i1 : int) =>
+                       msb
+                         ((init
+                             (fun (i2 : int) =>
+                                ((init
+                                    (fun (x10 : int) =>
+                                       packss16
+                                         (((of_int 1664)%W16 -
+                                           a{1}.[32 * i{2} + 16 * (x10 %/ 8 %% 2) +
+                                                 8 * (x10 %/ 16) + x10 %% 8]) `^`
+                                          ((of_int 1664)%W16 -
+                                           a{1}.[32 * i{2} + 16 * (x10 %/ 8 %% 2) +
+                                                 8 * (x10 %/ 16) + x10 %% 8] `|>>`
+                                           (of_int 15)%W8) -
+                                          (of_int 832)%W16))))%Array32.[8 *
+                                                                        (216 %/
+                                                                         4 ^
+                                                                         (i2 %/ 8) %%
+                                                                         4) +
+                                                                        i2 %% 8])))%Array32.[i1])
+                    32).
+  rewrite to_uintD_small.
+    rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+    move : rp_lb rp_ub => /#.
+  rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
   split.
-  move => k k_i.
-  rewrite mulzDr mulz1 in k_i.
+    rewrite /touches => j j_i.
+    rewrite /storeW32 /stores /=.
+    do (rewrite get_set_neqE_s; first by move : j_i => /#).
+    move : touch_mem => /#.
+  
+    rewrite mulzDr mulz1 => k k_lb k_ub.
+    rewrite /loadW8 /storeW32 get_storesE.
+    rewrite (_: size (W4u8.to_list msg) = 4); first by smt(W4u8.Pack.size_to_list).
+  rewrite (_: ra{2}.[4 * i{2} <-
+                (init
+                   (fun (j : int) =>
+                      (int_bit (compress_poly 1 (lift_array256 a{1})).[32 * i{2} + j] 0)%W8))%W8].[
+                4 * i{2} + 1 <-
+                (init
+                   (fun (j : int) =>
+                      (int_bit (compress_poly 1 (lift_array256 a{1})).[32 * i{2} + 8 + j] 0)%W8))%W8].[
+                4 * i{2} + 2 <-
+                (init
+                   (fun (j : int) =>
+                      (int_bit (compress_poly 1 (lift_array256 a{1})).[32 * i{2} + 16 + j]
+                         0)%W8))%W8].[4 * i{2} + 3 <-
+                (init
+                   (fun (j : int) =>
+                      (int_bit (compress_poly 1 (lift_array256 a{1})).[32 * i{2} + 24 + j]
+                         0)%W8))%W8] =
+              fill (fun k => W8.init (fun (j : int) =>
+                                      W8.int_bit (compress_poly 1 (lift_array256 a{1})).[32 * i{2} + 8 * (k %% 4) + j] 0)) (4*i{2}) 4 ra{2}).
+    apply Array32.ext_eq => x x_i.
+    do (rewrite filliE 1:/# //=).
+    case (4 * i{2} <= x && x < 4 * i{2} + 4) => x_si.
+      + do (rewrite get_setE 1:/#).
+        admit. (* FIXME: smt(@Int @IntDiv @Array32 @List @W8). *)
+      + do(rewrite set_neqiE 1..2:/# //=).
   rewrite filliE 1:/#.
-  case (32 * i{hr} <= k && k < 32 * i{hr} + 32); last first.
-    smt().
-  move => k_si.
-  rewrite /s_decode -lezNgt.
-  rewrite W32.get_bits2w 1:/# nth_mkseq 1:/# //=.
-  rewrite initiE 1:/# //=.
-  rewrite initiE 1:/# //=.
-  do (rewrite modz_dvd 1://=).
-  rewrite (mulzC 8 _).
-  rewrite modzMDl modz_mod //=.
-  rewrite {2 4}(_: 16 = 8 * 2). by trivial.
-  rewrite (_: (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 4 * 8 + k %% 8) %/ (8 * 2) =
-              (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 4 * 8 + k %% 8) %/ 8 %/ 2).
-    smt(@IntDiv @Int).
-  rewrite divzMDl 1://=.
-  rewrite (pdiv_small (k %% 8) 8) //=. by apply modz_cmp.
-  rewrite modz_dvd 1://=.
-  rewrite {2 4}(_: 2 = 2^1) 1://= {3 6}(_: 4 = 2^2) 1://=.
-  rewrite modz_pow2_div 1://= //=.
-  have ? : 32 * i{hr} + 16 * (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 2) +
-           8 * (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %/ 2 %% 2) + k %% 8 = k.
-    admit.
-  rewrite H.
-  rewrite qE (_: 3329 %/ 4 + 1 = 1 + 832) 1://=.
-  rewrite lez_add1r.
-  rewrite /balasint //=.
-  rewrite qE (_: 3329 %/ 2 = 1664) 1://=.
-  rewrite /packss16 //=.
-  do rewrite (fun_if W8.msb).
-  rewrite (_: _a.[k] = inFq (to_sint a{hr}.[k])).
-    move : _a_def. rewrite /lift_array256 Array256.tP => _a_def.
-    rewrite -_a_def 1:/# mapiE 1:/# //=.
-  rewrite inFqK (pmod_small _ q).
-    move : pos_bound_a => /#.
-
-  case ((W16.of_int 1664) \slt a{hr}.[k]) => a_gt_hq.
-    have hq_s_a_lt0: ((W16.of_int 1664) - a{hr}.[k]) \slt W16.zero.
-      move : a_gt_hq. rewrite /W16.(\slt).
-      rewrite to_sintB_small.
-       rewrite of_sintK /smod //=.
-       rewrite /pos_bound256_cxq in pos_bound_a.
-       move : (pos_bound_a  k).
-       rewrite (_: (0 <= k && k < 256) = true) //=. move : k_i k_si i_lb i_tub => /#.
-       smt().
-      do (rewrite of_sintK /smod //=).
-      smt(@Int @W16).
-    rewrite (_: (W16.of_int 1664) - a{hr}.[k] `|>>` (W8.of_int 15) = (W16.of_int 65535)).
-      move : hq_s_a_lt0.
-      smt(getsign).
-    have ->: 1664 < to_sint a{hr}.[k].
-      move : a_gt_hq. rewrite /W16.(\slt).
-      rewrite of_sintK /smod //=.
-    rewrite /msb //=.
-    rewrite W16.sltE W16.sleE -lezNgt -ltzNge.
-    do (rewrite of_sintK /smod //=).
-
-    rewrite (_: `|to_sint a{hr}.[k] - 3329| = 3329 - to_sint a{hr}.[k]).
-      rewrite normrP.
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      move : (pos_bound_a k) => /#.
-    rewrite (_: W16.of_int 65535 = W16.onew) . by rewrite /W16.onew //=.
-    rewrite xorw1 (_: invw ((W16.of_int 1664) - a{hr}.[k]) = -((W16.of_int 1664) - a{hr}.[k]) - W16.one).
-          move : (W16.twos_compl ((W16.of_int 1664) - a{hr}.[k])). smt(@W16 @Int).
-    do !(rewrite to_sintB_small || rewrite to_sintN || rewrite of_sintK /smod //=); first 15 by move : hq_s_a_lt0 a_gt_hq pos_bound_a => /#.
-    rewrite bits8_div 1://= //=.
-    do (rewrite to_uintD || rewrite to_uintN || rewrite to_uintK //= || rewrite of_uintK //=).
-    rewrite -to_sint_unsigned. by move : a_gt_hq => /#.
-    rewrite modz_dvd 1://= modzNm.
-    rewrite (smod_red 65536 _ (- to_sint a{hr}.[k])) 1://=.
-      move : a_gt_hq. rewrite sltE of_sintK /smod //=.
-      move : pos_bound_a => /#.
-    rewrite (_: (- (1664 + ((- to_sint a{hr}.[k]) + 65536))) %% 65536 =
-                (to_sint a{hr}.[k] - 1664) %% 65536).
-      smt(@Int @IntDiv).
-    rewrite (pmod_small (to_sint a{hr}.[k] - 1664) 65536).
-      move : a_gt_hq. rewrite sltE of_sintK /smod //=.
-      move : pos_bound_a => /#.
-    rewrite (_: - (1664 - to_sint a{hr}.[k]) - 833 =
-                to_sint a{hr}.[k] - 2497).
-      smt(@Int @IntDiv).
-    rewrite -subz_ge0 //= subz_ge0 -subz_lt0 //= subz_lt0.
-    move : a_gt_hq hq_s_a_lt0.
-    do (rewrite sltE || rewrite of_sintK /smod //=).
-    smt(@Int @W16 @W32 @IntDiv).
-
-    move : a_gt_hq.
-    rewrite /W16.(\slt) -lezNgt -/W16.(\sle) -W16.sleE => hq_gte_a.
-    have hq_s_a_gt0: W16.zero \sle ((W16.of_int 1664) - a{hr}.[k]).
-      move : hq_gte_a. rewrite /W16.(\sle).
-      rewrite to_sintB_small of_sintK /smod //=.
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      move : (pos_bound_a k).
-      smt(@W16 @W32 @Int).
-      do (rewrite of_sintK /smod //=).
-      smt(@Int @W16).
-    rewrite (_: (W16.of_int 1664) - a{hr}.[k] `|>>` (W8.of_int 15) = W16.zero).
-      move : hq_s_a_gt0.
-      smt(getsign).
-    simplify.
-    have ->: !1664 < to_sint a{hr}.[k].
-      move : hq_gte_a. rewrite /W16.(\sle).
-      rewrite of_sintK /smod //= lezNgt //=.
-    rewrite /msb //=.
-    rewrite of_sintK /smod //=.
-    rewrite W16.sleE -lezNgt -ltzNge.
-    rewrite to_sintB_small.
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      rewrite to_sintB_small.
-        + rewrite of_sintK /smod //=. move : (pos_bound_a k). smt(@Int @W16).
-      do (rewrite of_sintK /smod //=). move : (pos_bound_a k). smt(@Int @W16).
-    rewrite to_sintB_small.
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      rewrite of_sintK /smod //=. move : (pos_bound_a k). smt(@Int @W16).
-    do (rewrite of_sintK /smod //=).
-    rewrite (_: `|to_sint a{hr}.[k]| = to_sint a{hr}.[k]).
-      rewrite normrP.
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      move : (pos_bound_a k) => /#.
-    rewrite bits8_div 1://= //=.
-    rewrite to_uintD to_uintN to_uintD to_uintN //=.
-    rewrite -to_sint_unsigned.
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      move : (pos_bound_a k) => /#.
-    case (to_sint a{hr}.[k] = 0) => a_0.
-      rewrite a_0 //=.
-      smt(@W32).
-
-    rewrite (smod_red _ _ (- to_sint a{hr}.[k])) 1://=.
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      move : (pos_bound_a k).
-      rewrite /bpos16 qE //=.
-      smt(@Int @IntDiv).
-
-    rewrite addzA -{1}(mul1z 65536).
-    rewrite (modzMDr _ (1664 - to_sint a{hr}.[k]) 65536).
-
-    rewrite (pmod_small (1664 - to_sint a{hr}.[k]) 65536).
-      rewrite /pos_bound256_cxq in pos_bound_a.
-      move : (pos_bound_a k) hq_gte_a hq_s_a_gt0.
-      rewrite /bpos16 qE //=.
-      rewrite W16.sleE of_sintK /smod //=.
-      smt(@W16 @Int @IntDiv).
-
-    case (832 < to_sint a{hr}.[k]) => a_lb.
-      + have ->: 832 - to_sint a{hr}.[k] < 127. move : a_lb hq_gte_a => /#.
-        rewrite (pmod_small (1664 - to_sint a{hr}.[k] + 64704) 65536) //=.
-          move : a_lb hq_gte_a hq_s_a_gt0 => /#.
-        smt(@Int @IntDiv).
-      + move : a_lb. rewrite -lezNgt => a_ub.
-        have ->: -128 <= 832 - to_sint a{hr}.[k]. move : a_ub hq_gte_a => /#.
-        smt(@W32 @Int @IntDiv).
-
-  move => k k_i.
-  rewrite mulzDr mulz1 in k_i.
-  rewrite filliE 1:/#.
-  case (32 * i{hr} <= k && k < 32 * i{hr} + 32); last first.
-    smt().
-  move => k_si.
-  rewrite W32.get_bits2w 1:/# nth_mkseq 1:/# //=.
-  rewrite initiE 1:/# //=.
-  rewrite initiE 1:/# //=.
-  do (rewrite modz_dvd 1://=).
-  rewrite (mulzC 8 _).
-  rewrite modzMDl modz_mod //=.
-  rewrite {2 4}(_: 16 = 8 * 2). by trivial.
-  rewrite (_: (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 4 * 8 + k %% 8) %/ (8 * 2) =
-              (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 4 * 8 + k %% 8) %/ 8 %/ 2).
-    smt(@IntDiv @Int).
-  rewrite divzMDl 1://=.
-  rewrite (pdiv_small (k %% 8) 8) //=. by apply modz_cmp.
-  rewrite modz_dvd 1://=.
-  rewrite {2 4}(_: 2 = 2^1) 1://= {3 6}(_: 4 = 2^2) 1://=.
-  rewrite modz_pow2_div 1://= //=.
-  rewrite (_: 32 * i{hr} +
-              16 * (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 2) +
-              8 * (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %/ 2 %% 2) +
-              k %% 8 = k).
-    admit. (* FIXME *)
-   rewrite (_: 32 * i{hr} +
-                  16 * (216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 2) +
-                  8 * ((216 %/ (IntExtra.(^) 4 (k %% 32 %/ 8)) %% 4 * 8 + k %% 8) %/ 16) + k %% 8 = k).
-     admit. (* FIXME *)
-   smt(@W8 @W32).
+  case (4 * i{2} <= k && k < 4 * i{2} + 4) => k_si.
+    + have ->: to_uint rp{1} + 4 * i{2} <= to_uint rp{1} + k && to_uint rp{1} + k < to_uint rp{1} + 4 * i{2} + 4.
+        move : k_si => /#.
+      rewrite (_: to_uint rp{1} + k - (to_uint rp{1} + 4 * i{2}) = k %% 4). move : k_si; smt(@IntDiv @Int addzC addzA).
+      rewrite nth_to_list 1:/# /=.
+      rewrite bits8E /msg.
+      rewrite wordP => j j_i.
+      do (rewrite initiE 1:/# //=).
+      rewrite W32.get_bits2w 1:/# nth_mkseq 1:/# //=.
+      do (rewrite initiE 1:/# //=).
+      rewrite /int_bit.
+      rewrite /compress_poly mapiE 1:/# //=.
+      rewrite lift_array256E 1:/#.
+      rewrite (mulzC 8 _).
+      do (rewrite modzMDl divzMDl //=).
+      do (rewrite (pdiv_small _ 8) 1:j_i //= || rewrite (modz_small j 8) 1:j_i //=).
+      rewrite {2 4}(_: 16 = 8 * 2). by trivial.
+      rewrite modz_dvd 1://=.
+      rewrite (_: (216 %/ 4 ^ (k %% 4) %% 4 * 8 + j) %/ (8 * 2) =
+                  (216 %/ 4 ^ (k %% 4) %/ 2) %% 2).
+        rewrite divz_mulp 1..2://=.
+        rewrite divzMDl 1://= (pdiv_small j 8) 1:j_i //=.
+        rewrite {1}(_:2 = 2^1) 1://= {3}(_:4 = 2^2) 1://=.
+        rewrite modz_pow2_div 1://= //=.
+      rewrite (_: 32 * i{2} + 16 * (216 %/ 4 ^ (k %% 4) %% 2) +
+                    8 * (216 %/ 4 ^ (k %% 4) %/ 2 %% 2) = 32 * i{2} + 8 * (k %% 4)).
+        ring.
+        admit. (* FIXME *)
+      do rewrite modz_dvd 1://=.
+      rewrite compress_avx2_impl_small 1:pos_bound_a 1:/#.
+      rewrite b_decode_sem.
+      smt(@Int @IntDiv @Logic).
+    + have ->: !(to_uint rp{1} + 4 * i{2} <= to_uint rp{1} + k && to_uint rp{1} + k < to_uint rp{1} + 4 * i{2} + 4).
+        move : k_si k_ub => /#.
+      rewrite andabP negb_and -ltzNge -lezNgt in k_si.
+      move: (touch_mem_n k) => />.
+      rewrite k_lb /loadW8 => /#.
 
   wp.
   skip.
-  move => &hr [#] pos_bound_a _a_def hhq_def hq_def.
-  simplify.
+  auto => />.
+  move => &1 &2 [#] rp_lb rp_ub pos_bound_a hhq_def hq_def.
   do split.
-  apply pos_bound_a.
-  apply _a_def.
-
-  move => k k_i.
-  rewrite /hq_def.
-  rewrite /lift2poly //=.
-  rewrite initiE //.
-  rewrite /get256_direct //=.
-  rewrite k_i.
-  rewrite W32u8.Pack.initiE //=. move : k_i => /#.
-  rewrite W32u8.Pack.initiE //=. move : k_i => /#.
-  rewrite WArray32.initiE //=. move : k_i => /#.
-  rewrite WArray32.initiE //=. move : k_i => /#.
-  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2). by smt(@IntDiv).
-  rewrite (_: 2 * k %% 2 = 0). by smt(@IntDiv).
-  rewrite (_: (2 * k + 1) %% 2 = 1). by smt(@IntDiv).
-  rewrite pack2_bits8 /(KyberCPA_avx2.hhqx16) => />.
-  rewrite initiE => />. move : k_i => /#.
-  smt(@Array16).
-  move => k k_i.
-  rewrite /hq_def.
-  rewrite /lift2poly //=.
-  rewrite initiE //.
-  rewrite /get256_direct //=.
-  rewrite k_i.
-  rewrite W32u8.Pack.initiE //=. move : k_i => /#.
-  rewrite W32u8.Pack.initiE //=. move : k_i => /#.
-  rewrite WArray32.initiE //=. move : k_i => /#.
-  rewrite WArray32.initiE //=. move : k_i => /#.
-  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2). by smt(@IntDiv).
-  rewrite (_: 2 * k %% 2 = 0). by smt(@IntDiv).
-  rewrite (_: (2 * k + 1) %% 2 = 1). by smt(@IntDiv).
-  rewrite pack2_bits8 /(KyberCPA_avx2.hqx16_m1) => />.
-  rewrite initiE => />. move : k_i => /#.
-  smt(@Array16).
-
-  smt(@List).
-  smt(@List).
-
-  move => [#] i rp0 i_tlb [#] pos_bound_ad a_ddef i_lb i_ub hhq_ddef.
-  have ->: i = 8.
-    by move : i_tlb i_ub => /#.
-  simplify.
-  move => hq_ddef rp0_eq_decode__a rp0_def.
-  split.
-  apply Array256.ext_eq.
-  rewrite /m_decode.
-  move => x x_i.
-  rewrite mapiE //=.
-  rewrite mapiE //=.
-  rewrite /s_decode in rp0_eq_decode__a.
-  rewrite rp0_eq_decode__a //.
-  move => k k_i.
-  apply rp0_def.
-  rewrite k_i.
-*)
+  smt(@Logic).
+  move => mem1 i ra i_tlb _ i_lb i_ub.
+  have ->: (i = 8).
+    move : i_tlb i_ub => /#.
+  rewrite /load_array32 /loadW8 => /> mem1_eq_rp mem1_eq_ra.
+  apply Array32.ext_eq => x x_i.
+  rewrite initiE 1:x_i //= mem1_eq_ra 1:x_i //=.
 qed.
 
-lemma poly_tomsg_ll : islossless  Mavx2_prevec.poly_tomsg_decode.
+lemma poly_tomsg_ll : islossless  Mavx2_prevec.poly_tomsg.
 proc.
   cfold 5. wp; while (0 <= i <= 8) (8-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
   move => *.
@@ -2644,60 +2817,51 @@ proof.
   smt(@Int).
 qed.
 
-(*
-lemma poly_frommsg_corr_h _a:
-      hoare[Mavx2_prevec.poly_frommsg_encode:
-            lift_msg f = _a
-            ==>
-            pos_bound256_cxq res 0 256 1 /\
-            lift_array256 res = m_encode _a].
+lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t): 
+    equiv [ Mavx2_prevec.poly_frommsg ~ EncDec_AVX2.decode1 :
+             valid_ptr _p 32 /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array32 Glob.mem{1} _p = _m /\ a{2} = _m
+              ==>
+             Glob.mem{1} = mem /\
+             lift_array256 res{1} = decompress_poly 1 res{2} /\
+             pos_bound256_cxq res{1} 0 256 1 ].
 proof.
   proc.
-
-  seq 4 : (#pre /\
-           (forall k, 0 <= k < 256 => f.[k] = f_dw.[k %/ 32].[k %% 32]) /\
-           (forall k, 0 <= k < 16 => hqs.[k] = (W16.of_int 1665)) /\
-           (forall k, 0 <= k < 32 => idx.[k] = pfm_idx_s.[k %% 16]) /\
-           (forall k, 0 <= k < 8 => shift.[k] = W32.of_int (3 - k %% 4))).
+  seq 5 2:(#pre /\
+           ={i} /\ i{1} = 0 /\
+           (forall k, 0 <= k < 16 => hqs{1}.[k] = (W16.of_int 1665)) /\
+           (forall k, 0 <= k < 32 => idx{1}.[k] = pfm_idx_s.[k %% 16]) /\
+           (forall k, 0 <= k < 8 => shift{1}.[k] = W32.of_int (3 - k %% 4))).
   inline *.
-  wp. skip.
-  move => &hr [#] _a_def.
-  split; first by rewrite _a_def.
+  wp; skip; auto => />.
+  move => &1 [#] ap_lb ap_ub.
+  do split.
+    + move => k k_lb k_ub.
+      rewrite initiE 1:/# //=.
+      rewrite /(KyberCPA_avx2.hqx16_m1) initiE 1:/# //=.
+      smt(@List @Array16).
+    + move => k k_lb k_ub.
+      do (rewrite initiE 1:/# //=).
+    + move => k k_lb k_ub.
+      do (rewrite initiE 1:/# //=).
+      smt(@Int @IntDiv @Array4 @W32).
+  
+  while (#{~i{1}=0}pre /\ 0 <= i{1} <= 4 /\
+         (forall k, 0 <= k < i{1}*64 => inFq (to_sint rp{1}.[k]) = decompress 1 r{2}.[k]) /\
+         (forall k, 0 <= k < i{1}*64 => 0 <= to_sint rp{1}.[k] < q)).
+  auto => />.
+  move => &1 &2 [#] valid_p mem_eq ap_eq_p _p_def a_def i_eq hqs_def idx_def shift_def i_lb i_ub rp_def rp_bnd i1_tub i2_tub g0 g1 g2 g3 r [#] i2n_lb i2n_ub rpn_def rn_bnd i2_n rpn i1_n />.
+  rewrite /rpn /i1_n /i2_n i_eq /=.
+  do split; first 4 by assumption.
 
-  split.
-  move => k k_i.
-  rewrite initiE 1:/# //=.
-  rewrite bits32E initiE 1:/# /=.
-  rewrite -divz_eq //=.
+  admit.
+  (* FIXME:
 
-  split.
-  move => k k_i.
-  rewrite /lift2poly //=.
-  rewrite initiE //.
-  rewrite /get256_direct //=.
-  rewrite k_i.
-  do rewrite W32u8.Pack.initiE //= 1:/#.
-  do rewrite WArray32.initiE //= 1:/#.
-  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2). by smt(@IntDiv).
-  rewrite (_: 2 * k %% 2 = 0). by smt(@IntDiv).
-  rewrite (_: (2 * k + 1) %% 2 = 1). by smt(@IntDiv).
-  rewrite pack2_bits8 /(KyberCPA_avx2.hqx16_p1) => />.
-  rewrite initiE => />. move : k_i => /#.
-  smt(@Array16).
-
-  split.
-  move => k k_i.
-  rewrite Array32.initiE 1:/# //= Array16.initiE 1:/# //=.
-
-  move => k k_i.
-  rewrite Array8.initiE 1:/# //= Array4.initiE 1:/# //=.
-  rewrite /(KyberCPA_avx2.pfm_shift_s) initiE 1:/# //=.
-  smt(@IntDiv @Int @Array4).
-
-  while(#pre /\
-        0 <= i <= 4 /\
-        (forall k, 0 <= k < 32 * i => W16.to_sint rp.[k] = s_encode _a.[k]) /\
-        (forall k, 128 <= k < 128 + 32 * i => W16.to_sint rp.[k] = s_encode _a.[k])).
+  inline *; wp.
+  unroll for {2} 2.
+  auto => />.
+  move => &1 &2 [#] valid_p mem_eq ap_eq_p _p_def a_def i_eq hqs_def idx_def shift_def i_lb i_ub rp_def rp_bnd i1_tub i2_tub g0 g1 g2 g3 r [#] i2n_lb i2n_ub rpn_def rn_bnd i2_n rpn i1_n />.
 
   seq 16: (#pre /\
            (forall k, 0 <= k < 16 => W16.to_sint g0.[k] = s_encode _a.[32 * i + 128 * (k %/ 8) + 16 * (k %% 8 %/ 4) + (k %% 4)]) /\
@@ -2714,7 +2878,7 @@ proof.
   have idx_in_bound: forall k, 0 <= k < 32 => ! 128 <= to_uint idx{hr}.[k].
     move => k k_i.
     rewrite (pfm_idx_vdef k k_i).
-    rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(KyberCAP_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     smt(@Int @Array16 @IntDiv).
 
@@ -3126,7 +3290,9 @@ proof.
       smt(@Int @IntDiv @W16 @Array256 @Logic @List).
   apply rph_def.
   move : k_nsi k_si k_i => /#.
-
+  *)
+  admit.
+  (* FIXME:
   sp. skip. simplify.
   move => &hr [#] i_val _a_def f_def hqs_def pfm_idx_vdef pfm_shift_vdef.
   do split; first 5 by smt().
@@ -3165,27 +3331,16 @@ proof.
   do rewrite mapiE //=.
   rewrite /s_encode => ->.
   rewrite asintK //=.
+  *)
 qed.
 
-lemma poly_frommsg_ll : islossless  Mavx2_prevec.poly_frommsg_encode.
+lemma poly_frommsg_ll : islossless  Mavx2_prevec.poly_frommsg.
 proof.
-  proc.
-  wp; while (0 <= i <= 4) (4-i); last first.
-  inline *; wp; skip.
-  simplify.
-  move => * /#.
-  auto => />; inline *; wp; skip.
-  move => * /#.
+  proc; while (0 <= i <= 4) (4-i).
+  move => *.
+  inline *; wp; auto => /> /#.
+  inline *; auto => /> /#.
 qed.
-
-lemma poly_frommsg_corr _a :
-    phoare[ Mavx2_prevec.poly_frommsg_encode :
-             lift_msg f = _a
-              ==>
-             pos_bound256_cxq res 0 256 1 /\
-             lift_array256 res = m_encode _a] = 1%r
-   by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
-*)
 
 
 end KyberPolyAVX.
