@@ -21,7 +21,7 @@ clone import SignedReductions with
     proof RRinv by (rewrite /R qE  => />)
     proof qinv_bnd by (rewrite /R  => />).
 
-require import Jindcpa.
+require import Jkem.
 
 lemma smod_W16 a:
   smod a W16.modulus = W16.smod (a %% W16.modulus)
@@ -207,7 +207,7 @@ by smt(W16.to_uint_cmp pow2_16).
 qed.
 
 lemma fqmul_corr_h _a _b: 
-   hoare[ Jindcpa.M.__fqmul : 
+   hoare[ Jkem.M.__fqmul : 
      to_sint a = _a /\ to_sint b = _b ==> to_sint res = SREDC (_a * _b)].
 proof.
 proc; wp; skip  => &hr [#] /= H H0.

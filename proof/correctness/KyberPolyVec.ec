@@ -7,7 +7,7 @@ require import NTT_Fq.
 require import Kyber.
 
 
-require import Jindcpa.
+require import Jkem.
 
 theory KyberPolyVec.
 
