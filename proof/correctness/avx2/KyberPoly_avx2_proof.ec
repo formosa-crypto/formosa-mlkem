@@ -2817,60 +2817,51 @@ proof.
   smt(@Int).
 qed.
 
-(*
-lemma poly_frommsg_corr_h _a:
-      hoare[Mavx2_prevec.poly_frommsg_encode:
-            lift_msg f = _a
-            ==>
-            pos_bound256_cxq res 0 256 1 /\
-            lift_array256 res = m_encode _a].
+lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t): 
+    equiv [ Mavx2_prevec.poly_frommsg ~ EncDec_AVX2.decode1 :
+             valid_ptr _p 32 /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array32 Glob.mem{1} _p = _m /\ a{2} = _m
+              ==>
+             Glob.mem{1} = mem /\
+             lift_array256 res{1} = decompress_poly 1 res{2} /\
+             pos_bound256_cxq res{1} 0 256 1 ].
 proof.
   proc.
-
-  seq 4 : (#pre /\
-           (forall k, 0 <= k < 256 => f.[k] = f_dw.[k %/ 32].[k %% 32]) /\
-           (forall k, 0 <= k < 16 => hqs.[k] = (W16.of_int 1665)) /\
-           (forall k, 0 <= k < 32 => idx.[k] = pfm_idx_s.[k %% 16]) /\
-           (forall k, 0 <= k < 8 => shift.[k] = W32.of_int (3 - k %% 4))).
+  seq 5 2:(#pre /\
+           ={i} /\ i{1} = 0 /\
+           (forall k, 0 <= k < 16 => hqs{1}.[k] = (W16.of_int 1665)) /\
+           (forall k, 0 <= k < 32 => idx{1}.[k] = pfm_idx_s.[k %% 16]) /\
+           (forall k, 0 <= k < 8 => shift{1}.[k] = W32.of_int (3 - k %% 4))).
   inline *.
-  wp. skip.
-  move => &hr [#] _a_def.
-  split; first by rewrite _a_def.
+  wp; skip; auto => />.
+  move => &1 [#] ap_lb ap_ub.
+  do split.
+    + move => k k_lb k_ub.
+      rewrite initiE 1:/# //=.
+      rewrite /(KyberCPA_avx2.hqx16_m1) initiE 1:/# //=.
+      smt(@List @Array16).
+    + move => k k_lb k_ub.
+      do (rewrite initiE 1:/# //=).
+    + move => k k_lb k_ub.
+      do (rewrite initiE 1:/# //=).
+      smt(@Int @IntDiv @Array4 @W32).
+  
+  while (#{~i{1}=0}pre /\ 0 <= i{1} <= 4 /\
+         (forall k, 0 <= k < i{1}*64 => inFq (to_sint rp{1}.[k]) = decompress 1 r{2}.[k]) /\
+         (forall k, 0 <= k < i{1}*64 => 0 <= to_sint rp{1}.[k] < q)).
+  auto => />.
+  move => &1 &2 [#] valid_p mem_eq ap_eq_p _p_def a_def i_eq hqs_def idx_def shift_def i_lb i_ub rp_def rp_bnd i1_tub i2_tub g0 g1 g2 g3 r [#] i2n_lb i2n_ub rpn_def rn_bnd i2_n rpn i1_n />.
+  rewrite /rpn /i1_n /i2_n i_eq /=.
+  do split; first 4 by assumption.
 
-  split.
-  move => k k_i.
-  rewrite initiE 1:/# //=.
-  rewrite bits32E initiE 1:/# /=.
-  rewrite -divz_eq //=.
+  admit.
+  (* FIXME:
 
-  split.
-  move => k k_i.
-  rewrite /lift2poly //=.
-  rewrite initiE //.
-  rewrite /get256_direct //=.
-  rewrite k_i.
-  do rewrite W32u8.Pack.initiE //= 1:/#.
-  do rewrite WArray32.initiE //= 1:/#.
-  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2). by smt(@IntDiv).
-  rewrite (_: 2 * k %% 2 = 0). by smt(@IntDiv).
-  rewrite (_: (2 * k + 1) %% 2 = 1). by smt(@IntDiv).
-  rewrite pack2_bits8 /(KyberCPA_avx2.hqx16_p1) => />.
-  rewrite initiE => />. move : k_i => /#.
-  smt(@Array16).
-
-  split.
-  move => k k_i.
-  rewrite Array32.initiE 1:/# //= Array16.initiE 1:/# //=.
-
-  move => k k_i.
-  rewrite Array8.initiE 1:/# //= Array4.initiE 1:/# //=.
-  rewrite /(KyberCPA_avx2.pfm_shift_s) initiE 1:/# //=.
-  smt(@IntDiv @Int @Array4).
-
-  while(#pre /\
-        0 <= i <= 4 /\
-        (forall k, 0 <= k < 32 * i => W16.to_sint rp.[k] = s_encode _a.[k]) /\
-        (forall k, 128 <= k < 128 + 32 * i => W16.to_sint rp.[k] = s_encode _a.[k])).
+  inline *; wp.
+  unroll for {2} 2.
+  auto => />.
+  move => &1 &2 [#] valid_p mem_eq ap_eq_p _p_def a_def i_eq hqs_def idx_def shift_def i_lb i_ub rp_def rp_bnd i1_tub i2_tub g0 g1 g2 g3 r [#] i2n_lb i2n_ub rpn_def rn_bnd i2_n rpn i1_n />.
 
   seq 16: (#pre /\
            (forall k, 0 <= k < 16 => W16.to_sint g0.[k] = s_encode _a.[32 * i + 128 * (k %/ 8) + 16 * (k %% 8 %/ 4) + (k %% 4)]) /\
@@ -2887,7 +2878,7 @@ proof.
   have idx_in_bound: forall k, 0 <= k < 32 => ! 128 <= to_uint idx{hr}.[k].
     move => k k_i.
     rewrite (pfm_idx_vdef k k_i).
-    rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(KyberCAP_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     smt(@Int @Array16 @IntDiv).
 
@@ -3299,7 +3290,9 @@ proof.
       smt(@Int @IntDiv @W16 @Array256 @Logic @List).
   apply rph_def.
   move : k_nsi k_si k_i => /#.
-
+  *)
+  admit.
+  (* FIXME:
   sp. skip. simplify.
   move => &hr [#] i_val _a_def f_def hqs_def pfm_idx_vdef pfm_shift_vdef.
   do split; first 5 by smt().
@@ -3338,27 +3331,16 @@ proof.
   do rewrite mapiE //=.
   rewrite /s_encode => ->.
   rewrite asintK //=.
+  *)
 qed.
 
-lemma poly_frommsg_ll : islossless  Mavx2_prevec.poly_frommsg_encode.
+lemma poly_frommsg_ll : islossless  Mavx2_prevec.poly_frommsg.
 proof.
-  proc.
-  wp; while (0 <= i <= 4) (4-i); last first.
-  inline *; wp; skip.
-  simplify.
-  move => * /#.
-  auto => />; inline *; wp; skip.
-  move => * /#.
+  proc; while (0 <= i <= 4) (4-i).
+  move => *.
+  inline *; wp; auto => /> /#.
+  inline *; auto => /> /#.
 qed.
-
-lemma poly_frommsg_corr _a :
-    phoare[ Mavx2_prevec.poly_frommsg_encode :
-             lift_msg f = _a
-              ==>
-             pos_bound256_cxq res 0 256 1 /\
-             lift_array256 res = m_encode _a] = 1%r
-   by conseq poly_frommsg_ll (poly_frommsg_corr_h _a).
-*)
 
 
 end KyberPolyAVX.
