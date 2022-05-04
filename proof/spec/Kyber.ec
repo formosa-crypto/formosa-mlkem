@@ -359,8 +359,6 @@ lemma comp_bound d x:
  < (comp d x)%r <= x * (2 ^ d)%r / q%r + inv 2%r.
 proof. smt(round_bound). qed.
 
-
-
 lemma decomp_comp d x:
  0 < d =>
  2^d < q =>
@@ -1242,10 +1240,10 @@ module EncDec = {
 
 theory KyberSpec.
 
-(* We will model the three usages of SHA3 family 
+(* For the CPA component will model the three usages of SHA3 family 
    components as different cryptographic primitives. 
 
-This will be an entropy smoothing hash function.
+This will be an entropy smoothing hash function/prg.
 
 G = fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 
@@ -1508,6 +1506,85 @@ module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : S
   }
 
 }.
+
+(*********************************)
+(*********************************)
+(*********************************)
+(* IND CCA Component             *)
+(*********************************)
+(*********************************)
+
+clone PRF as HS_KEM_DEFS with
+  type D <- unit,
+  type R <- W8.t Array32.t.
+
+op SHA3_SMOOTH_KEM : W8.t Array32.t -> unit -> W8.t Array32.t.
+
+clone import HS_KEM_DEFS.PseudoRF as HSF_KEM with
+  type K <- W8.t Array32.t, 
+  op dK <- srand,
+  op F <- SHA3_SMOOTH_KEM.
+
+module KHS_KEM = HSF_KEM.PseudoRF.
+
+module type KEMHashes(O : RO.POracle) = {
+  proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t
+  proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t
+  proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t 
+  proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t
+}.
+
+module KemG(KemHS: HSF_KEM.PseudoRF) = {
+  proc sample(s : W8.t Array32.t) : W8.t Array32.t = {
+     var m;
+     m <@ KemHS.f(s,());
+     return m;
+  }
+}.
+
+import PRF_.
+module KyberKEM(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, 
+             KemHS : HSF_KEM.PseudoRF, KemH : KEMHashes, O : RO.POracle)  = {
+
+   proc kg_derand(seed : W8.t Array32.t * W8.t Array32.t) : 
+           pkey * (skey * pkey * W8.t Array32.t * W8.t Array32.t) = {
+       var kgs,z,pk,sk,hpk;
+       kgs <- seed.`1;
+       z <- seed.`2;
+       (pk,sk) <@ Kyber(HS,XOF,PRF,O).kg_derand(kgs);
+       hpk <@ KemH(O).pkH(pk);
+       return (pk, (sk,pk,hpk,z));
+       
+   }
+
+   proc enc_derand(pk : pkey, prem : W8.t Array32.t) : ciphertext * W8.t Array32.t = {
+       var m,hpk,_Kt,r,c,hc,_K;
+       m <@ KemG(KemHS).sample(prem); 
+       hpk <@ KemH(O).pkH(pk); 
+       (_Kt,r) <@ KemH(O).g(m,hpk);
+       c <@ Kyber(HS,XOF,PRF,O).enc_derand(pk,m,r);
+       hc <@ KemH(O).cH(c);
+       _K <@ KemH(O).kdf(_Kt,hc);
+       return (c,_K);
+   }
+
+   proc dec(cph : ciphertext, sk : skey * pkey * W8.t Array32.t * W8.t Array32.t) : W8.t Array32.t = {
+       var m,_Kt,r,skp,pk,hpk,z,c,hc,_K;
+       (skp,pk,hpk,z) <- sk;
+       m <@ Kyber(HS,XOF,PRF,O).dec(skp,cph);
+       (_Kt,r) <@ KemH(O).g(oget m,hpk);
+       c <@ Kyber(HS,XOF,PRF,O).enc_derand(pk,oget m,r);
+       hc <@ KemH(O).cH(c);
+       if (c = cph) {
+          _K <@ KemH(O).kdf(_Kt,hc);
+       }
+       else {
+         _K <@ KemH(O).kdf(z,hc);
+       }
+       return _K;
+   }
+}.
+
 
 end KyberSpec.
 

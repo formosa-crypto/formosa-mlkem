@@ -5,15 +5,19 @@ require import W16extra WArray512 WArray32 WArray16.
 require import AVX2_Ops.
 require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
+require import KyberPoly.
+require import NTT_Fq.
 require import Jindcpa.
 
 pragma +oldip.
 
 theory Fq_avx2.
 
+import Kyber.
+import KyberPoly.
 import Fq.
 import SignedReductions.
-import Kyber.
+import Zq.
 import ZModP.
 
 op lift_array16 (p: W16.t Array16.t) =
@@ -39,46 +43,7 @@ have jvx16_val : forall k, 0 <= k < 16 => jvx16.[k] = W16.of_int 20159.
 have jqx16_val : forall k, 0 <= k < 16 => jqx16.[k] = W16.of_int 3329.
   move => k0 k0_i. rewrite get_of_list => />. smt(@Array16).
 
-rewrite (_: r3{hr}.[0 <-
-    r{hr}.[0] -
-    (wmulhs r{hr}.[0] vx16{hr}.[0] `|>>` (of_int 10)%W8) * qx16{hr}.[0]].[1 <-
-    r{hr}.[1] -
-    (wmulhs r{hr}.[1] vx16{hr}.[1] `|>>` (of_int 10)%W8) * qx16{hr}.[1]].[2 <-
-    r{hr}.[2] -
-    (wmulhs r{hr}.[2] vx16{hr}.[2] `|>>` (of_int 10)%W8) * qx16{hr}.[2]].[3 <-
-    r{hr}.[3] -
-    (wmulhs r{hr}.[3] vx16{hr}.[3] `|>>` (of_int 10)%W8) * qx16{hr}.[3]].[4 <-
-    r{hr}.[4] -
-    (wmulhs r{hr}.[4] vx16{hr}.[4] `|>>` (of_int 10)%W8) * qx16{hr}.[4]].[5 <-
-    r{hr}.[5] -
-    (wmulhs r{hr}.[5] vx16{hr}.[5] `|>>` (of_int 10)%W8) * qx16{hr}.[5]].[6 <-
-    r{hr}.[6] -
-    (wmulhs r{hr}.[6] vx16{hr}.[6] `|>>` (of_int 10)%W8) * qx16{hr}.[6]].[7 <-
-    r{hr}.[7] -
-    (wmulhs r{hr}.[7] vx16{hr}.[7] `|>>` (of_int 10)%W8) * qx16{hr}.[7]].[8 <-
-    r{hr}.[8] -
-    (wmulhs r{hr}.[8] vx16{hr}.[8] `|>>` (of_int 10)%W8) * qx16{hr}.[8]].[9 <-
-    r{hr}.[9] -
-    (wmulhs r{hr}.[9] vx16{hr}.[9] `|>>` (of_int 10)%W8) * qx16{hr}.[9]].[10 <-
-    r{hr}.[10] -
-    (wmulhs r{hr}.[10] vx16{hr}.[10] `|>>` (of_int 10)%W8) * qx16{hr}.[10]].[11 <-
-    r{hr}.[11] -
-    (wmulhs r{hr}.[11] vx16{hr}.[11] `|>>` (of_int 10)%W8) * qx16{hr}.[11]].[12 <-
-    r{hr}.[12] -
-    (wmulhs r{hr}.[12] vx16{hr}.[12] `|>>` (of_int 10)%W8) * qx16{hr}.[12]].[13 <-
-    r{hr}.[13] -
-    (wmulhs r{hr}.[13] vx16{hr}.[13] `|>>` (of_int 10)%W8) * qx16{hr}.[13]].[14 <-
-    r{hr}.[14] -
-    (wmulhs r{hr}.[14] vx16{hr}.[14] `|>>` (of_int 10)%W8) * qx16{hr}.[14]].[15 <-
-    r{hr}.[15] -
-    (wmulhs r{hr}.[15] vx16{hr}.[15] `|>>` (of_int 10)%W8) * qx16{hr}.[15]] =
-    Array16.init (fun k => r{hr}.[k] - (wmulhs r{hr}.[k] vx16{hr}.[k] `|>>` (of_int 10)%W8) * qx16{hr}.[k])).
-  apply Array16.ext_eq => />. move => x4 x4_lb x4_ub.
-  do (rewrite get_setE => />).
-  do rewrite Array16.initiE => />.
-  smt(@Array16).
-
-rewrite initiE => />.
+do (rewrite initiE //=).
 rewrite a_def /lift_array16 /=.
 rewrite mapiE => />.
 rewrite /wmulhs /=.
@@ -239,46 +204,9 @@ wp; skip.
 move => &hr.
 simplify.
 move => [#] _a_def _b_def qx16_def qinvx16_def.
-rewrite (_: r3{hr}.[0 <- wmulhs a{hr}.[0] b{hr}.[0] -
-      wmulhs (a{hr}.[0] * b{hr}.[0] * qinvx16{hr}.[0]) qx16{hr}.[0]].[1 <-
-      wmulhs a{hr}.[1] b{hr}.[1] -
-      wmulhs (a{hr}.[1] * b{hr}.[1] * qinvx16{hr}.[1]) qx16{hr}.[1]].[2 <-
-      wmulhs a{hr}.[2] b{hr}.[2] -
-      wmulhs (a{hr}.[2] * b{hr}.[2] * qinvx16{hr}.[2]) qx16{hr}.[2]].[3 <-
-      wmulhs a{hr}.[3] b{hr}.[3] -
-      wmulhs (a{hr}.[3] * b{hr}.[3] * qinvx16{hr}.[3]) qx16{hr}.[3]].[4 <-
-      wmulhs a{hr}.[4] b{hr}.[4] -
-      wmulhs (a{hr}.[4] * b{hr}.[4] * qinvx16{hr}.[4]) qx16{hr}.[4]].[5 <-
-      wmulhs a{hr}.[5] b{hr}.[5] -
-      wmulhs (a{hr}.[5] * b{hr}.[5] * qinvx16{hr}.[5]) qx16{hr}.[5]].[6 <-
-      wmulhs a{hr}.[6] b{hr}.[6] -
-      wmulhs (a{hr}.[6] * b{hr}.[6] * qinvx16{hr}.[6]) qx16{hr}.[6]].[7 <-
-      wmulhs a{hr}.[7] b{hr}.[7] -
-      wmulhs (a{hr}.[7] * b{hr}.[7] * qinvx16{hr}.[7]) qx16{hr}.[7]].[8 <-
-      wmulhs a{hr}.[8] b{hr}.[8] -
-      wmulhs (a{hr}.[8] * b{hr}.[8] * qinvx16{hr}.[8]) qx16{hr}.[8]].[9 <-
-      wmulhs a{hr}.[9] b{hr}.[9] -
-      wmulhs (a{hr}.[9] * b{hr}.[9] * qinvx16{hr}.[9]) qx16{hr}.[9]].[10 <-
-      wmulhs a{hr}.[10] b{hr}.[10] -
-      wmulhs (a{hr}.[10] * b{hr}.[10] * qinvx16{hr}.[10]) qx16{hr}.[10]].[11 <-
-      wmulhs a{hr}.[11] b{hr}.[11] -
-      wmulhs (a{hr}.[11] * b{hr}.[11] * qinvx16{hr}.[11]) qx16{hr}.[11]].[12 <-
-      wmulhs a{hr}.[12] b{hr}.[12] -
-      wmulhs (a{hr}.[12] * b{hr}.[12] * qinvx16{hr}.[12]) qx16{hr}.[12]].[13 <-
-      wmulhs a{hr}.[13] b{hr}.[13] -
-      wmulhs (a{hr}.[13] * b{hr}.[13] * qinvx16{hr}.[13]) qx16{hr}.[13]].[14 <-
-      wmulhs a{hr}.[14] b{hr}.[14] -
-      wmulhs (a{hr}.[14] * b{hr}.[14] * qinvx16{hr}.[14]) qx16{hr}.[14]].[15 <-
-      wmulhs a{hr}.[15] b{hr}.[15] -
-      wmulhs (a{hr}.[15] * b{hr}.[15] * qinvx16{hr}.[15]) qx16{hr}.[15]] =
-      Array16.init (fun k => wmulhs a{hr}.[k] b{hr}.[k] - wmulhs (a{hr}.[k] * b{hr}.[k] * qinvx16{hr}.[k]) qx16{hr}.[k])).
-  apply Array16.ext_eq => />. move => x4 x4_lb x4_ub.
-  do (rewrite get_setE => />).
-  do rewrite Array16.initiE => />.
-  smt(@Array16).
 
 move => k k_bnds.
-rewrite initiE //=.
+do (rewrite initiE //=).
 
 pose _c := _a.[k] * _b.[k].
 rewrite /wmulhs.
@@ -363,5 +291,104 @@ lemma fqmulx16_corr _a _b :
           (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) ==>
           forall k, 0 <= k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])] = 1%r.
 proof. by conseq fqmulx16_ll (fqmulx16_corr_h _a _b). qed.
+
+(* *)
+lemma compress_avx2_impl_small (a: W16.t):
+  bpos16 a q =>
+  msb
+  (packss16
+     (((W16.of_int 1664) - a) `^` ((W16.of_int 1664) - a `|>>` (W8.of_int 15)) - (W16.of_int 832))) =
+  b_decode (inFq (W16.to_sint a)).
+proof.
+  rewrite /bpos16 qE => abnd.
+  rewrite /b_decode /=.
+  rewrite /as_sint //=.
+  rewrite qE (_: 3329 %/ 2 = 1664) 1://=.
+  rewrite /packss16 //=.
+  do rewrite (fun_if W8.msb).
+
+  rewrite inFqK (pmod_small _ q); first by rewrite qE abnd.
+
+  case ((W16.of_int 1664) \slt a) => a_gt_hq.
+    have hq_s_a_lt0: ((W16.of_int 1664) - a) \slt W16.zero.
+      move : a_gt_hq. rewrite /W16.(\slt).
+      rewrite to_sintB_small.
+       rewrite of_sintK /smod //=.
+       move : abnd => /#.
+      do (rewrite of_sintK /smod //=).
+      smt(@Int @W16).
+    rewrite getsignNeg 1:hq_s_a_lt0 1:/W16.onew //=.
+    have ->/=: 1664 < to_sint a.
+      move : a_gt_hq. rewrite /W16.(\slt).
+    do (rewrite of_sintK /smod //=).
+    rewrite /msb //=.
+    rewrite W16.sltE W16.sleE -lezNgt.
+    do (rewrite of_sintK /smod //=).
+
+    rewrite (_: `|to_sint a - 3329| = 3329 - to_sint a).
+      move : abnd => /#.
+    rewrite (_: W16.of_int 65535 = W16.onew) . by rewrite /W16.onew //=.
+    rewrite xorw1 (_: invw ((W16.of_int 1664) - a) = -((W16.of_int 1664) - a) - W16.one).
+          move : (W16.twos_compl ((W16.of_int 1664) - a)). smt(@W16 @Int).
+    do !(rewrite to_sintB_small || rewrite to_sintN || rewrite of_sintK /smod //=); first 15 by move : hq_s_a_lt0 a_gt_hq abnd => /#.
+    rewrite bits8_div 1://= //=.
+    do (rewrite to_uintD || rewrite to_uintN || rewrite to_uintK //= || rewrite of_uintK //=).
+    rewrite -to_sint_unsigned. by move : a_gt_hq => /#.
+    rewrite modzNm.
+    rewrite (_: (- to_sint a) %% 65536 = - to_sint a + 65536) 1://=.
+      move : a_gt_hq. rewrite sltE of_sintK /smod //=.
+      move : abnd => /#.
+    rewrite (_: (- (1664 + ((- to_sint a) + 65536))) %% 65536 =
+                (to_sint a - 1664) %% 65536).
+      smt(@Int @IntDiv modzNm modzDr).
+    rewrite (pmod_small (to_sint a - 1664) 65536).
+      move : a_gt_hq. rewrite sltE of_sintK /smod //=.
+      move : abnd => /#.
+    rewrite (_: - (1664 - to_sint a) - 833 =
+                to_sint a - 2497).
+      smt(@Int @IntDiv).
+    rewrite -subz_ge0 //= subz_ge0 -subz_lt0 //= subz_lt0.
+    move : a_gt_hq hq_s_a_lt0.
+    do (rewrite sltE || rewrite of_sintK /smod //=).
+    smt(@Int @W16 @W32 @IntDiv).
+
+  move : a_gt_hq.
+  rewrite /W16.(\slt) -lezNgt -/W16.(\sle) -W16.sleE => hq_gte_a.
+  have hq_s_a_gt0: W16.zero \sle ((W16.of_int 1664) - a).
+    move : hq_gte_a. rewrite /W16.(\sle).
+    rewrite to_sintB_small of_sintK /smod //=.
+    move : abnd.
+    smt(@W16 @W32 @Int).
+    do (rewrite of_sintK /smod //=).
+    smt(@Int @W16).
+  rewrite (_: (W16.of_int 1664) - a `|>>` (W8.of_int 15) = W16.zero).
+    move : hq_s_a_gt0.
+    smt(getsignPos).
+  simplify.
+  have ->: !1664 < to_sint a.
+    move : hq_gte_a. rewrite /W16.(\sle).
+    rewrite of_sintK /smod //= lezNgt //=.
+  rewrite /msb //=.
+  rewrite of_sintK /smod //=.
+  rewrite W16.sleE -lezNgt -ltzNge.
+  rewrite to_sintB_small.
+    rewrite to_sintB_small.
+      + rewrite of_sintK /smod //=. move : abnd. smt(@Int @W16).
+    do (rewrite of_sintK /smod //=). move : abnd. smt(@Int @W16).
+  rewrite to_sintB_small.
+    rewrite of_sintK /smod //=. move : abnd. smt(@Int @W16).
+  do (rewrite of_sintK /smod //=).
+  rewrite (_: `|to_sint a| = to_sint a).
+    move : abnd => /#.
+  rewrite bits8_div 1://= //=.
+  rewrite to_uintD to_uintN to_uintD to_uintN //=.
+  rewrite -to_sint_unsigned.
+    move : abnd => /#.
+  case (to_sint a = 0) => a_0.
+    rewrite a_0 //=.
+    smt(@W32).
+qed.
+
+
 
 end Fq_avx2.

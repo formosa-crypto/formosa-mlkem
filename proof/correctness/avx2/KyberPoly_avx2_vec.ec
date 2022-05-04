@@ -106,9 +106,9 @@ module Mvec = {
     x16p <- hqx16_p1;
     hqs <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
     shift <@
-    OpsV.iVPBROADCAST_2u128((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
-    idx <@ OpsV.iVPBROADCAST_2u128((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
-    f <@ OpsV.iload4u64(Glob.mem, ap);
+    OpsV.iVPBROADCAST_2u128_8u32((get128 (WArray16.init32 (fun i => pfm_shift_s.[i])) 0));
+    idx <@ OpsV.iVPBROADCAST_2u128_32u8((get128 (WArray16.init8 (fun i => pfm_idx_s.[i])) 0));
+    f <@ OpsV.iload4u64_8u32(Glob.mem, ap);
     i <- 0;
     while (i < 4) {
       g3 <@ OpsV.iVPSHUFD_256(f, W8.of_int (85 * i));
@@ -125,14 +125,14 @@ module Mvec = {
       g1 <@ OpsV.ivpand16u16(g1, hqs);
       g2 <@ OpsV.ivpand16u16(g2, hqs);
       g3 <@ OpsV.ivpand16u16(g3, hqs);
-      h0 <@ OpsV.iVPUNPCKL_4u64(g0, g1);
-      h2 <@ OpsV.iVPUNPCKH_4u64(g0, g1);
-      h1 <@ OpsV.iVPUNPCKL_4u64(g2, g3);
-      h3 <@ OpsV.iVPUNPCKH_4u64(g2, g3);
-      g0 <@ OpsV.iVPERM2I128(h0, h1, (W8.of_int 32));
-      g2 <@ OpsV.iVPERM2I128(h0, h1, (W8.of_int 49));
-      g1 <@ OpsV.iVPERM2I128(h2, h3, (W8.of_int 32));
-      g3 <@ OpsV.iVPERM2I128(h2, h3, (W8.of_int 49));
+      h0 <@ OpsV.iVPUNPCKL_4u64_16u16(g0, g1);
+      h2 <@ OpsV.iVPUNPCKH_4u64_16u16(g0, g1);
+      h1 <@ OpsV.iVPUNPCKL_4u64_16u16(g2, g3);
+      h3 <@ OpsV.iVPUNPCKH_4u64_16u16(g2, g3);
+      g0 <@ OpsV.iVPERM2I128_16u16(h0, h1, (W8.of_int 32));
+      g2 <@ OpsV.iVPERM2I128_16u16(h0, h1, (W8.of_int 49));
+      g1 <@ OpsV.iVPERM2I128_16u16(h2, h3, (W8.of_int 32));
+      g3 <@ OpsV.iVPERM2I128_16u16(h2, h3, (W8.of_int 49));
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i => rp.[i])) (2 * i) g0));
@@ -196,7 +196,7 @@ module Mvec = {
       f0 <@ OpsV.ivsub16u256(f0, hhq);
       f1 <@ OpsV.ivsub16u256(f1, hhq);
       f0 <@ OpsV.iVPACKSS_16u16(f0, f1);
-      f0 <@ OpsV.iVPERMQ(f0, (W8.of_int 216));
+      f0 <@ OpsV.iVPERMQ_32u8(f0, (W8.of_int 216));
       c <@ OpsV.iVPMOVMSKB_u256_u32(f0);
       Glob.mem <-
       storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
@@ -312,7 +312,7 @@ module Mvec = {
       f0 <@ OpsV.iVPMADDUBSW_256(f0, shift2);
       f2 <@ OpsV.iVPMADDUBSW_256(f2, shift2);
       f0 <@ OpsV.iVPACKUS_16u16(f0, f2);
-      f0 <@ OpsV.iVPERMD(permidx, f0);
+      f0 <@ OpsV.iVPERMD(f0, permidx); (* FIXME: extracted code has arguments swapped, which is wrong *)
       Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int (32 * i)), f0);
       i <- i + 1;
     }
@@ -529,6 +529,7 @@ module Mvec = {
   }
 }.
 
+import KyberPolyAVX.
 
 equiv eq_poly_add2:
   Mavx2_prevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.
@@ -634,64 +635,96 @@ equiv eq_poly_tomsg:
   Mavx2_prevec.poly_tomsg ~ Mvec.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
 proof.
   proc.
-  while(={i, rp, a, aux} /\ 0 <= i{1} /\ is16u16 hq{1} hq{2} /\ is16u16 hhq{1} hhq{2}).
+  while(={i, rp, a, aux, Glob.mem}  /\ aux{1} = 8 /\ 0 <= i{1} /\ is16u16 hq{1} hq{2} /\ is16u16 hhq{1} hhq{2}).
     wp.
     call eq_iVPMOVMSKB_u256_u32.
     wp.
-    call eq_iVPERMQ.
+    call eq_iVPERMQ_32u8.
     wp.
-    do !(call eq_iVPACKSS_16u16 || call eq_ivsub16u256 || call eq_ilxor16u16 || call eq_iVPSRA_16u16).
+    do (call eq_iVPACKSS_16u16 || call eq_ivsub16u256 || call eq_ilxor16u16 || call eq_iVPSRA_16u16).
     wp. skip. rewrite /is16u16 /is32u8 => />. move => &2 i_lb ii_ub.
-    rewrite /lift2poly /=.
-    do rewrite pack16_bits16 /=.
-    move => result_L7.
-    rewrite /is4u64 /f32u8_t4u64 /=.
-    move => result_L8 result_R result_r8_eq_l8.
     split.
-    rewrite result_r8_eq_l8.
-    rewrite -(pack8_bits8 (result_L8.[0])).
-    rewrite -(pack8_bits8 (result_L8.[1])).
-    rewrite -(pack8_bits8 (result_L8.[2])).
-    rewrite -(pack8_bits8 (result_L8.[3])).
-    simplify.
-    rewrite /f4u64_t32u8 //=.
-    rewrite result_r8_eq_l8.
-    rewrite -(pack8_bits8 (result_L8.[0])).
-    rewrite -(pack8_bits8 (result_L8.[1])).
-    rewrite -(pack8_bits8 (result_L8.[2])).
-    rewrite -(pack8_bits8 (result_L8.[3])).
-    simplify.
-    rewrite /f4u64_t32u8 //=.
-    move : i_lb => /#.
+      rewrite /get256_direct /= => />.
+      apply W32u8.allP => />.
+      do (rewrite initiE 1:/# /=).
+      smt(@Int @IntDiv @Array256 @W16).
+  move => a0_eq.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => a1_eq.
+  move : i_lb => /#.
   wp.
   call eq_poly_csubq.
-  wp. skip.
-  move => &1 &2 [rp1_eq_rp2 [a2_eq_a2 mem1_eq_mem2]].
-  rewrite a2_eq_a2 //=.
-  move => result_L result_R result_L_eq_R.
-  rewrite rp1_eq_rp2 result_L_eq_R /=.
-  rewrite /is16u16 /lift2poly.
-  rewrite initiE //=.
-  do rewrite pack16_bits16 //=.
+  wp; auto => />.
+  rewrite /is16u16 /get256_direct /= => />.
+  split; first 2 by apply W32u8.allP => />.
 qed.
 
 equiv eq_poly_frommsg:
-  Mavx2_prevec.poly_frommsg ~ Mvec.poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
+  Mavx2_prevec.poly_frommsg ~ Mvec.poly_frommsg: ={rp, ap, Glob.mem} /\ (valid_ptr (to_uint ap{1}) 32) ==> ={res}.
 proof.
-  admit.
-  (* FIXME
   proc.
-  while(={rp, ap, bp, i}).
+  while(={i, rp, ap, Glob.mem} /\ 0 <= i{1} /\ is16u16 hqs{1} hqs{2} /\ is8u32 f{1} f{2} /\
+        is32u8 idx{1} idx{2} /\ is8u32 shift{1} shift{2}).
   wp.
-  call eq_ivsub16u256.
-  wp. skip. rewrite /is16u16 => />. move => *. split.
-  rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
-  rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
-  wp; skip.
-  move => &1 &2 H.
-  split. simplify. split. smt. smt.
-  trivial.
-  *)
+  do (call eq_iVPSLL_16u16 || call eq_iVPSRA_16u16 || call eq_ivpand16u16 || call eq_iVPUNPCKL_4u64_16u16 ||
+      call eq_iVPUNPCKH_4u64_16u16 || call eq_iVPERM2I128_16u16).
+  wp.
+  call eq_iVPSHUFB_256.
+  wp.
+  call eq_iVPSLLV_8u32; call eq_iVPSHUFD_256.
+  wp; skip; rewrite /is32u8 /is16u16 /is8u32 => />. move => &2 i_lb i_ub g3_dw.
+  split.
+    rewrite /f8u32_t32u8 /=.
+    apply W8u32.allP => />.
+    do rewrite pack4_bits8 //=.
+  move => g3_dw_eq g3_b.
+  split.
+    rewrite /f32u8_t16u16 /=.
+    apply W32u8.allP => />.
+  move => g3_b_eq g0 g1 g2 g3.
+  split.
+    apply Array256.ext_eq => j j_i.
+    do (rewrite filliE 1:/# //= || rewrite initiE 1:/# //=).
+    do (rewrite set_get_def 1:/# //= initiE 1:/# //=).
+    do (rewrite mulzDr -(mulzA 16 _) //= || rewrite (addzC (32 * i{2}) _) //=).
+    apply if_congr.
+      done.
+      rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
+      smt(@List @Int @Array16).
+    apply if_congr.
+      done.
+      rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
+      smt(@List @Int @Array16).
+    apply if_congr.
+      done.
+      rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
+      smt(@List @Int @Array16).
+    rewrite set_get_def 1:/# //=.
+    rewrite -(mulzA 16 _) //= (addzC (32 * i{2}) _) //=.
+    rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
+    smt(@List @Int @Array16).
+  move : i_lb => /#.
+
+  wp.
+  call eq_iload4u64_8u32; call eq_iVPBROADCAST_2u128_32u8; call eq_iVPBROADCAST_2u128_8u32.
+  wp; skip; auto => />.
+  rewrite /is4u32 /get128_direct /get_256direct /is32u8 /is16u8 /is8u32 /is16u16 => />.
+  move => &2 ap_lb ap_ub.
+  split.
+    + apply W16u8.allP => />.
+  move => shift_eq />.
+  split.
+    + apply W16u8.allP => />.
+  move => idx_eq />.
+  split.
+    move : ap_ub => /#.
+  move => _.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
 qed.
 
 equiv eq_red16x:
