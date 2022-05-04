@@ -1,6 +1,6 @@
 require import AllCore IntDiv FloorCeil StdOrder RealExp List.
 require import ZModP Ring.
-require import Distr DList.
+require import Distr DList DistrExtra DMap DInterval.
 require import PKE_Ext.
 from Jasmin require import JWord.
 require import Array32 Array64 Array128 Array168 Array256 Array384.
@@ -190,6 +190,15 @@ realize CR.unitout by apply Zq.ZqRing.unitout.
 
 op as_sint(x : Fq) = if (q-1) %/ 2 < asint x then asint x - q else asint x.
 
+lemma as_sintK x:
+ inFq (as_sint x) = x.
+proof. by rewrite /as_sint; smt(@Zq). qed.
+
+lemma inFqK_sint_small n: 
+ - (q-1) %/ 2 <= n <= (q-1) %/ 2 =>
+ as_sint (inFq n) = n.
+proof. move=> H; rewrite /as_sint; smt(@Zq). qed.
+
 lemma as_sintN (x: Fq): as_sint (-x) = - as_sint x.
 proof. by rewrite /as_sint oppE; smt(@Zq). qed.
 
@@ -262,44 +271,6 @@ op compress(d : int, x : Fq) : int = comp d (asint x)%r %% 2^d.
 
 abbrev decomp (d: int, y: real): int = round (y * q%r / (2^d)%r).
 op decompress(d : int, x : int) : Fq = inFq (decomp d x%r).
-
-(* This, however, raises the issue of how to convert from Zq to
-   the reals when computing the error bounds. 
-   Compression seems to be robust to using either
-   asint or assint as we prove below. Decompression *must* use
-   asint, as it assumes an input between 0..2^d-1. *)
-(*
-axiom noties_s d x xr : (* Checked in Sage *)
-   0 <= d => 2^d < q => x <> Zq.zero =>
-        xr = ((2 ^ d)%r * (as_sint x)%r / q%r) =>
-          floor (xr + inv 2%r) <> ceil (xr + inv 2%r).
-
-axiom noties_u d x xr : (* Checked in Sage *)
-   0 <= d => 2^d < q => x <> Zq.zero =>
-        xr = ((2 ^ d)%r * (asint x)%r / q%r) =>
-          floor (xr + inv 2%r) <> ceil (xr + inv 2%r).
-
-lemma compress_sint x d : 
-   0 <= d => 2^d < q =>
-   compress d x = round ((2^d)%r / q%r * (as_sint x)%r) %% 2^d.
-proof.
-move => dlb dub;rewrite /compress => />.
-case ((q - 1) %/ 2 < asint x); last by rewrite /as_sint; auto => />. 
-case (x = Zq.zero); first by smt(@Zq).
-move => H H0. 
-pose xr := ((2 ^ d)%r * (as_sint x)%r / q%r).
-rewrite (round_notie xr (noties_s d x xr dlb dub H _)) => //.
-have -> : -xr =  (2 ^ d)%r - (2 ^ d)%r * (asint x)%r / q%r by rewrite /xr /as_sint; smt(@Real).
-rewrite round_add.
-have -> : - (2 ^ d + round (- (2 ^ d)%r * (asint x)%r / q%r)) = (- 2^d) + (- round (- (2 ^ d)%r * (asint x)%r / q%r)) by smt().
-rewrite -modzDm.
-have -> : (- 2 ^ d) %% 2 ^ d = 0 by smt(modzNm modz0). 
-simplify.
-pose xr' := ((2 ^ d)%r * (asint x)%r / q%r).
-rewrite (round_notie xr' (noties_u d x xr' dlb dub H _)) => //.
-by rewrite modz_mod.
-qed.
-*)
 
 (* These operations introduce a rounding error, which we see additively *)
 op compress_err(d : int, c: Fq) : Fq = decompress d (compress d c) - c.
@@ -597,33 +568,103 @@ by rewrite /b_decode -compress_alt_compress /compress_alt //=; smt(qE rg_asint).
 
 (* The binomial distribution over a field element *)
 
-op [lossless]dshort_elem : Fq distr. 
+op dshort_elem : Fq distr = dmap (dcbd 2) inFq.
+
+lemma dshort_elem_ll: is_lossless dshort_elem.
+proof.
+by apply dmap_ll; apply ll_dcbd.
+qed.
 
 (* Definition of the support *)
-axiom supp_dshort_elem x : 
-   x \in dshort_elem <=>
-    let xsi = if q %/2 <= asint x 
-               then asint x - q 
-               else asint x
-    in -2 <= xsi <= 2.
+lemma supp_dshort_elem x:
+ x \in dshort_elem <=> -2 <= as_sint x <= 2.
+proof.
+rewrite supp_dmap; split.
+ move=> [y []]; rewrite supp_dcbd.
+ smt.
+move=> H; exists (as_sint x); rewrite supp_dcbd.
+split => //.
+by rewrite as_sintK.
+qed.
 
 (* Probability of each value in the support *)
-axiom dshort_elem1E_2 : mu1 dshort_elem (inFq 2) = 1%r / 16%r.
-axiom dshort_elem1E_m2 : mu1 dshort_elem (inFq (q-2)) = 1%r / 16%r.
-axiom dshort_elem1E_1 : mu1 dshort_elem (inFq 1) = 1%r / 4%r.
-axiom dshort_elem1E_m1 : mu1 dshort_elem (inFq (q-1)) = 1%r / 4%r.
-axiom dshort_elem1E_0 : mu1 dshort_elem (inFq (0)) = 3%r / 8%r. 
+lemma dshort_elem1E_2 : mu1 dshort_elem (inFq 2) = 1%r / 16%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_2.
+qed.
+
+lemma dshort_elem1E_m2 : mu1 dshort_elem (inFq (-2)) = 1%r / 16%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_2N.
+qed.
+
+lemma dshort_elem1E_1 : mu1 dshort_elem (inFq 1) = 1%r / 4%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_1.
+qed.
+
+lemma dshort_elem1E_m1 : mu1 dshort_elem (inFq (-1)) = 1%r / 4%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_1N.
+qed.
+
+lemma dshort_elem1E_0 : mu1 dshort_elem (inFq 0) = 3%r / 8%r. 
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_0.
+qed.
+
 
 (* The uniform distribution over a field element *)
+op duni_elem : Fq distr = DZmodP.dunifin.
 
-op [lossless]duni_elem : Fq distr.
+lemma duni_elem_ll: is_lossless duni_elem
+ by exact DZmodP.dunifin_ll.
 
 (* Definition of the support *)
-axiom supp_duni_elem x : 0 <= asint x < q <=> x \in duni_elem.
+lemma supp_duni_elem x:
+ 0 <= asint x < q <=> x \in duni_elem.
+proof.
+rewrite /duni_elem DZmodP.dFqE supp_dmap; split.
+ move=> H; exists (asint x); split.
+  rewrite supp_dinter; smt(rg_asint).
+ by rewrite asintK.
+move=> [a []]; rewrite supp_dinter => ? ->.
+by rewrite inFqK /#.
+qed.
 
 (* The probability of each value in the support. *)
 op pe = 1%r /q%r.
-axiom duni_elem1E x : mu1 duni_elem x = pe.
+lemma duni_elem1E x: mu1 duni_elem x = pe.
+proof.
+rewrite duniform1E_uniq.
+ exact DZmodP.Support.enum_uniq.
+by rewrite DZmodP.Support.enumP size_map size_range /#.
+qed.
 
 lemma duni_elem_uni : is_uniform duni_elem 
    by rewrite /is_uniform => *; rewrite !duni_elem1E.
