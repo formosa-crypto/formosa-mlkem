@@ -825,6 +825,82 @@ move => *;  auto => /> &hr ??.
 by rewrite W64.ultE W64.to_uintD_small /#. 
 qed.
 
+lemma i_poly_compress_corr _a  : 
+    equiv [ M._i_poly_compress ~ EncDec.encode4 :
+             pos_bound256_cxq a{1} 0 256 2 /\
+             lift_array256 a{1} = _a /\
+             p{2} = compress_poly 4 _a
+              ==>
+             res{1}.`1 = res{2} /\
+             pos_bound256_cxq res{1}.`2 0 256 1].
+proc => /=.
+seq 3 3 : (#{/~a{1}}pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
+           to_uint j{1} = j{2} /\ j{2} = 0 /\
+           pos_bound256_cxq a{1} 0 256 1 /\ lift_array256 a{1} = _a).
+wp => /=;call{1} (poly_csubq_corr _a); 1: by auto => /#.
+
+while (#{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=128  /\ 
+       to_uint j{1} = j{2} /\ j{2} = 2* i{2} /\
+       forall k, 0<=k<i{2} => rp{1}.[k] = r{2}.[k]); last first.  
++ auto => /> &1 &2; rewrite ultE of_uintK  /= => 
+    bnd ??; split; 1: by smt().
+  move => i' j' ra'; rewrite ultE of_uintK  /= => rr exit _ ibl ibh jv  prev.
+  by rewrite tP => k kb /#.
+
+auto => /> &1 &2 ??; rewrite /pos_bound256_cxq /=.
+rewrite  ultE of_uintK /= => ?????. 
+rewrite !to_uintD_small /=; 1..3: smt().
+do split; 1..3: by smt(). 
++ move => k kbl kbh.
+  case (k = to_uint i{1}); last first.
+  + move => neq; rewrite set_neqiE; 1,2: by smt().
+    by rewrite set_neqiE // /#.
+  move => eq; rewrite set_eqiE; 1,2: by smt().
+  rewrite set_eqiE //.
+  have -> : W32.of_int 15 = W32.of_int (2^4 - 1) by auto.
+  rewrite /lift_array256 !mapiE /=; 1..4: smt().
+  rewrite -compress_impl_small //; 1: smt().
+  rewrite  -compress_impl_small //; 1:smt().
+  
+  case (k = to_uint i{1}); last by smt(Array128.set_neqiE).
+  move => iv; have -> : 15 = 2^4 - 1 by auto.
+  rewrite !and_mod //. 
+  pose x := (((zeroextu32 a{1}.[to_uint j{1}] `<<` (of_int 4)%W8) + 
+              (of_int 1665)%W32) * (of_int 80635)%W32 `>>`(of_int 28)%W8).
+  pose y := (((zeroextu32 a{1}.[to_uint j{1} + 1] `<<` (of_int 4)%W8) + 
+              (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8).
+  rewrite to_uint_eq to_uint_truncateu8 !of_uintK to_uint_orw_disjoint. 
+  + apply W32.ext_eq => i ib; rewrite /W32.(`&`) map2E initiE //=.
+    case (!(0 <= i < 4)).
+    + move => kbb; have -> : !((of_int (to_uint x %% 16)))%W32.[i]; last by smt().
+      rewrite get_to_uint ib /= of_uintK /= (modz_small _ 4294967296); 1: smt().
+      by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 4 i  _) => //; smt().
+  
+    move => kbb;have -> : !((of_int (to_uint y %% 16))%W32 `<<` (of_int 4)%W8).[i].
+    rewrite get_to_uint ib /=  to_uint_shl /= 1:/# of_uintK /=.
+    rewrite !(modz_small _ 4294967296); 1,2,3: smt().
+    rewrite  (_: 16 = 2^4) // divMr; 1: by apply  le_dvd_pow; smt(). 
+    rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
+    + have -> : 2 %| 2 ^ (4 - i) = 2^1 %| 2 ^ (4 - i) by auto.  
+      by apply le_dvd_pow; smt().
+    by smt().
+  
+  rewrite !of_uintK /= (modz_small _ 4294967296) 1:/#.
+  by rewrite to_uint_shl //= !of_uintK /= !(modz_small _ 4294967296) 1,2,3:/#.
+  
++ by rewrite ultE /= to_uintD_small; smt().
+
+by rewrite ultE /= to_uintD_small; smt().
+qed.
+
+lemma i_poly_compress_ll : islossless M._i_poly_compress.
+proc.
+while (0 <= to_uint i <= 128) (128-to_uint i); last 
+   by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
+move => *;  auto => /> &hr ??.
+by rewrite W64.ultE W64.to_uintD_small /#. 
+qed.
+
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
     equiv [ M._poly_decompress ~ EncDec.decode4 :
              valid_ptr _p 128 /\
