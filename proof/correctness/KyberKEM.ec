@@ -9,46 +9,30 @@ import RO.
 import KyberPoly.
 import KyberPolyVec.
 
-module KHS_KEM = HSF_KEM.PseudoRF.
-
-op SHA3_1184_32 : W8.t Array1184.t -> W8.t Array32.t.
-op SHA3_1088_32 : W8.t Array1088.t -> W8.t Array32.t.
-op SHA3_64_32   : W8.t Array64.t -> W8.t Array32.t.
-op SHAKE256_64_32 : W8.t Array64.t -> W8.t Array32.t.
-
-module (KemH : KEMHashes) (RO : POracle) = {
-  proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t = {
-         return SHA3_1184_32 (Array1184.init (fun k => if (k < 1152) then pk.`1.[k] else pk.`2.[k-1152]));
-  }
-  proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t = {
-         return SHA3_1088_32 (Array1088.init (fun k => if (k < 960) then c.`1.[k] else c.`2.[k]));
-
-  }
-  proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t  = {
-      var ktr;
-      ktr <- SHA3_64_32 (Array64.init (fun k => if (k < 32) then m.[k] else pkh.[k]));
-      return (Array32.init (fun i=> ktr.[i]), Array32.init (fun i => ktr.[i + 32]));
-  }
-  proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t = {
-         return SHAKE256_64_32 (Array64.init (fun k => if (k < 32) then kt.[k] else ch.[k]));
-  }
-
-}.
-
 axiom pkH_sha mem _ptr inp: 
     phoare [ M._isha3_256 :
           arg = (inp,W64.of_int _ptr,W64.of_int (3*384+32)) /\
           valid_ptr _ptr 1184 /\
           Glob.mem = mem
           ==> 
-          touches Glob.mem mem _ptr 1184 /\
-          res = SHA3_1184_32
+          Glob.mem = mem /\
+          res = SHA3_256_1184_32
             (Array1184.init (fun k =>  mem.[_ptr+k]))] = 1%r.
+
+axiom cH_sha mem _ptr inp: 
+    phoare [ M._isha3_256 :
+          arg = (inp,W64.of_int _ptr,W64.of_int (3*320+128)) /\
+          valid_ptr _ptr 1088 /\
+          Glob.mem = mem
+          ==> 
+          Glob.mem = mem /\
+          res = SHA3_256_1088_32
+            (Array1088.init (fun k =>  mem.[_ptr+k]))] = 1%r.
 
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
 lemma kyber_kem_correct_kg mem _pkp _skp _randomnessp : 
-   equiv [ M.__crypto_kem_keypair_jazz ~ KyberKEM(HS,XOF,KyberINDCPA.KPRF,KHS_KEM,KemH,H).kg_derand : 
+   equiv [ M.__crypto_kem_keypair_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
        seed{2} = (load_array32 Glob.mem{1} _randomnessp,
@@ -279,7 +263,7 @@ seq 4 1 :
   pk{2}.`1 = load_array1152 Glob.mem{1} _pkp /\ pk{2}.`2 = load_array32 Glob.mem{1} (_pkp + 1152)).
 
 ecall {1} (pkH_sha (Glob.mem{1}) (_pkp) (h_pk{1})).
-inline *; auto => /> &1 &2; rewrite /touches /touches2 /load_array1152 /load_array32 !tP => ????????????????????? pk1v pk2v touch.
+inline *; auto => /> &1 &2; rewrite /touches /touches2 /load_array1152 /load_array32 !tP => ????????????????????? pk1v pk2v .
 + move => i ib;congr; congr; rewrite tP => ii iib; rewrite !initiE /=; 1..2: smt(). 
   case (ii < 1152).
   + by move => iibb;move : (pk1v ii _); smt(Array1152.initiE).
@@ -338,6 +322,31 @@ move => *; split; 1: by smt().
 by rewrite tP => i ib; rewrite initiE //= /#.
 qed.
 
+axiom kdf_sha mem _ptr (inp : W8.t Array64.t): 
+    phoare [ M._shake256_64 :
+          arg = (W64.of_int _ptr,W64.of_int 32,inp) /\
+          valid_ptr _ptr 32 /\
+          Glob.mem = mem
+          ==> 
+          touches Glob.mem mem _ptr 32 /\
+          (Array32.init (fun k =>  Glob.mem.[_ptr+k])) = SHAKE256_64_32 inp] = 1%r.
+
+axiom sha_g buf inp: 
+    phoare [ M._sha3_512_64 :
+          arg = (inp,buf)
+          ==> 
+          res = SHA3_256_64_64 buf] = 1%r.
+
+axiom sha_khs mem _ptr inp: 
+    phoare [ M._isha3_256 :
+          arg = (inp,W64.of_int _ptr,W64.of_int 32) /\
+          valid_ptr _ptr 32 /\
+          Glob.mem = mem
+          ==> 
+          Glob.mem = mem /\
+          res = SHA3_256_32_32
+            (Array32.init (fun k =>  mem.[_ptr+k])) ()] = 1%r.
+
 lemma kyber_kem_correct_enc mem _ctp _pkp _rp _kp : 
    equiv [ M.__crypto_kem_enc_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
@@ -359,6 +368,19 @@ lemma kyber_kem_correct_enc mem _ctp _pkp _rp _kp :
      k = load_array32 Glob.mem{1} _kp
 ].
 proc.
+inline {2} 6. inline {2} 5. 
+wp;ecall {1} (kdf_sha Glob.mem{1} _kp kr{1}).
+wp;ecall {1} (cH_sha Glob.mem{1} _ctp (Array32.init (fun (i : int) => kr{1}.[32 + i]))).
+wp;call (kyber_correct_enc mem _ctp _pkp).
+inline {2} 3. 
+wp;ecall {1} (sha_g buf{1} kr{1}).
+inline {2} 2. 
+wp;ecall {1} (pkH_sha mem (_pkp) ((Array32.init (fun (i : int) => buf{1}.[32 + i])))).
+inline {2} 1. inline {2} 2.
+wp;ecall {1} (sha_khs mem (_rp) ((Array32.init (fun (i : int) => buf{1}.[0 + i])))).
+auto => />.
+
+
 admitted.
 
 lemma kyber_kem_correct_dec mem _ctp _skp _shkp : 

@@ -127,57 +127,34 @@ case(0<= to_sint a).
 qed.
 
 
-(*******)
+(***THESE ASSUMPTIONS MAP SHA OPERATORS FROM SPEC TO CODE IN
+    THE IMPLEMENTATION ****)
 
-(** DEFINING THE EXTERNAL COMPONENTS BASED ON THE SHA ALGORITHMS *)
+axiom sha3_512_32_64 buf seed : 
+   phoare [ M._sha3512_32 : 
+               arg = (buf,seed) ==>
+               res = SHA3_512_32_64 seed () ] = 1%r.
+
+axiom shake_absorb seed state : 
+   phoare [ M._shake128_absorb34 : 
+               arg = (state,seed) ==>
+               res = SHAKE128_ABSORB_34 seed ] = 1%r.
+
+axiom shake_squeeze buf state : 
+   phoare [ M._shake128_squeezeblock : 
+               arg = (state,buf) ==>
+               res = SHAKE128_SQUEEZE_168 state ] = 1%r.
+
+axiom shake256_128_33 buf seed : 
+   phoare [ M._shake256_128_33 : 
+               arg = (buf,seed) ==>
+               res = SHAKE256_128_33 (Array32.init (fun i => seed.[i])) seed.[32] ] = 1%r.
+
+(* THIS IS A DUMMY RANDOM ORACLE THAT THE IMPLEMENTATION OF COURSE DOESNT USE *)
 
 module H : KyberPKE.RO.POracle = {
   proc o(x : KyberPKE.RO.in_t) : KyberPKE.RO.out_t = { return witness;  }
 }.
-
-module (HS : HSF.PseudoRF) = {
-  include  HSF.PseudoRF[keygen]
-
-  proc f(inbuf : W8.t Array32.t, inp : unit) : W8.t Array64.t = { 
-    var buf : W8.t Array64.t;
-
-    buf <- witness;
-
-    buf <@ M._sha3512_32 (buf, inbuf);
-    return buf;
-  }
-}.
-
-module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
-  var state : W64.t Array25.t
-  proc init(rho : W8.t Array32.t, i j : W8.t) : unit = {
-       var extseed : W8.t Array34.t;
-       extseed <- Array34.init
-        (fun k => if k < 32 then rho.[k] else if k=32 then i else j);
-       state <- witness;
-       state <@ M._shake128_absorb34(state, extseed);
-  }
-  proc next_bytes() : W8.t Array168.t = { 
-       var buf;
-       buf <- witness;
-       (state, buf) <@ M._shake128_squeezeblock(state, buf);
-       return buf; 
-  }
-}.
-
-module (KPRF :  PRF_.PseudoRF) = {
-  include  PRF_.PseudoRF[keygen]
-  proc f(key : W8.t Array32.t,_N : W8.t) : W8.t Array128.t = {
-     var extseed : W8.t Array33.t;
-     var buf;
-     extseed <- Array33.init
-        (fun k => if k < 32 then key.[k] else  _N);
-     buf <- witness;
-     buf <@ M._shake256_128_33(buf, extseed);
-     return buf;
-  }
-}.
-
 
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
     MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
@@ -302,7 +279,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var buf : W8.t Array64.t;
 
 
-    buf <@  HS.f(seed,());
+    buf <@  HSF.PseudoRF.f(seed,());
 
     publicseed <- witness;
     noiseseed <- witness;
@@ -543,6 +520,7 @@ auto => /> *; split; 1: by smt().
 by move => *;rewrite tP => k kb; smt().
 qed. 
 
+(* 
 equiv absorb_ignore :
   M._shake128_absorb34 ~ M._shake128_absorb34 :
    arg{1}.`2 = arg{2}.`2 ==> ={res}.
@@ -574,7 +552,7 @@ while (={i,state} /\ 0<=i{1}<=128 /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.
   auto => /> *; split; 1: by smt().
   by move => *;rewrite tP => k kb; smt().
 qed. 
-
+*)
 lemma mergebytes b1 b2 :
   to_uint (zeroextu16 b1 `|` (zeroextu16 b2 `&` (of_int 15)%W16 `<<` (of_int 8)%W8)) =
   to_uint b1 + 256 * (to_uint b2 %% 16).
@@ -702,22 +680,29 @@ seq 3 1 : (
         inFq (to_sint r{1}.[k0]) /\ bpos16 r{1}.[k0] q) /\
    state{1} = XOF.state{2}).
 + inline XOF(H).init.
-  call absorb_ignore => /=; auto => /> &1 &2 *; split. 
+  ecall {1} (shake_absorb extseed{1} state{1}).
+  auto => /> &1 &2 *; split. 
   case(trans{2}).
   + by rewrite oner_neq0 //= /=.
-  move => * /=; split. 
-  + apply Array34.tP => k kb; rewrite initiE //=.
+  move => * /=; split => /=. 
+  + move => k kbl kbh.
     case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
     case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
     by move => *;rewrite set_eqiE /# .
-   by move => *;rewrite !set_neqiE /#.
-
-move => * /=; split. 
-+ apply Array34.tP => k kb; rewrite initiE //=.
+  congr; rewrite tP => k kb. rewrite initiE //=.
   case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
   case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
   by move => *;rewrite set_eqiE /# .
-by move => *;rewrite !set_neqiE /#.
+
+move => * /=; split. 
+ + move => k kbl kbh.
+  case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
+  case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
+  by move => *;rewrite set_eqiE /# .
+congr; rewrite tP => k kb. rewrite initiE //=.
+case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
+case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
+by move => *;rewrite set_eqiE /# .
 
 (* sampling loop *)
 
@@ -733,7 +718,8 @@ while(to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256 /\ state{1} = XOF.state{2} /\
 
 swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
 + inline XOF(H).next_bytes; conseq />.
-  by wp;call(squeezeblock_ignore); auto => />.
+  ecall {1} (shake_squeeze  buf{1} state{1}).
+  by auto => />. 
 
 wp; conseq />.
 while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{2} /\
@@ -980,14 +966,14 @@ equiv get_noise_sample_noise :
    forall k, 0<=k<256 => -5 < to_sint res{1}.[k] < 5.
 proc => /=. 
 seq 8 2 : (buf{1} = bytes{2}).
-+ inline KPRF.f.
-  wp;call shake33_ignore;wp => /=.
++ inline PRF_.PseudoRF.f.
+  ecall{1} (shake256_128_33 buf{1} extseed{1}); wp.
   while{1}(0<=k{1}<=32 /\ seed{1} = sig{2} /\
     forall i, 0<=i<k{1} => extseed{1}.[i] = sig{2}.[i]) (32 - k{1}); last first.
   + auto => /> &1 &2 *; split; 1: smt().
     move => extseed kl *; split; 1: smt().
-    move => *; rewrite Array33.tP => ii iib.
-    by case(ii < 32); move=> *; rewrite initiE //=; smt(Array33.set_eqiE Array33.set_neqiE).
+    move => *; congr;rewrite Array32.tP => ii iib.
+    by rewrite initiE //= set_neqiE //= /#.
   move => &m z; auto => /> &hr ????; do split; 1,2,4: smt().
   by move => i0 i0b; case(i0 < k{hr}); move=> *;  smt(Array33.set_eqiE Array33.set_neqiE).
 
@@ -1119,6 +1105,7 @@ rewrite !initiE //= !mapiE //=.
 by smt(inFq_to_sint).
 qed.
   
+
 equiv auxkg_good :
   M.__indcpa_keypair ~ AuxKyber.indcpa_keypair_jazz :
      ={Glob.mem} /\ arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = arg{2}.`2 /\ 
@@ -1134,8 +1121,11 @@ swap {1} 8 -5.
 swap {1} 10 -7.
 swap {1} [14..16] -6.
 seq 10 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
-+ inline HS.f. swap {1} [5..6] -3. swap {2} [4..5] 2.
-  seq 3 1 : (#pre /\ ={inbuf}); last by sim.   
++ inline HSF.PseudoRF.f. 
+  swap {1} [5..7] -2. swap {2} [4..5] 2.
+  
+  seq 5 3 : (#pre /\ ={buf}); last by sim; auto => />.   
+  wp;ecall {1} (sha3_512_32_64 buf{1} inbuf{1}).
   conseq => />.
   while {1} (0<= to_uint i{1} <=32 /\ 
               valid_ptr (to_uint randomnessp{1}) 32 /\
@@ -1146,7 +1136,7 @@ seq 10 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
     last first. 
   + auto => /> &1 &2 ??; split; 1: smt().
     move => il inbufl; rewrite !ultE /=; split; 1: smt().
-    move => ???H; rewrite tP => i ib; rewrite initiE //=.
+    move => ???H. congr;rewrite tP => i ib; rewrite  initiE //=.
     by move : (H i _); 1: smt(); rewrite initiE //=.
   move => *; auto => /> &hr ???; rewrite ultE /==> ?.
   rewrite !to_uintD_small /=; 1,2:smt(); move => *.
@@ -1155,7 +1145,6 @@ seq 10 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
   + by move => *; rewrite set_neqiE //= /#.
   move => *; rewrite set_eqiE //= 1:/#.
   by rewrite initiE //= /#.
-
 
 swap {1} [7..8] -5.
 seq 3 2 : (#pre /\ ={a}); 1: by call auxgenmatrix_good; auto => />.
@@ -1295,7 +1284,7 @@ op touches2 (m m' : global_mem_t) (p1 : address) (len1 : int) (p2 : address) (le
 
 
 lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
-   equiv [ M.__indcpa_keypair ~ Kyber(HS,XOF,KPRF,H).kg_derand : 
+   equiv [ M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
        seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
@@ -1334,7 +1323,7 @@ swap {2} 7 -5.
 seq 7 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
 + inline{2} 2;wp.
   seq 4 3 : (#pre /\ buf{1} = rhosig{2}). 
-  + wp;call(_:true); 1: by sim. 
+  + wp;call(_:true); 1: by auto => /> /#. 
     by auto => />.
   conseq => />.
   while {1} (0<=to_uint i{1}<=32 /\ to_uint j{1} = to_uint i{1} + 32 /\ buf{1} = rhosig{2} /\
@@ -1365,7 +1354,7 @@ seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
             by auto => />  /#.
   wp; call(_: ={XOF.state}); 1: by sim.
   wp; call(_: ={arg} ==> ={XOF.state}); last by auto => /> &1 &2;  smt(offunmK). 
-  by proc;call absorb_ignore; auto => />.
+  by sim.
   
 swap {2} [5..9]  -2.
 swap {1} 1 1.
@@ -1589,7 +1578,7 @@ qed.
 (***************************************************)
 
 lemma kyber_correct_enc mem _ctp _pkp : 
-   equiv [ M.__indcpa_enc ~ Kyber(HS,XOF,KPRF,H).enc_derand: 
+   equiv [ M.__indcpa_enc ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
      Glob.mem{1} = mem /\ 
@@ -1673,7 +1662,7 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
             by auto => />  /#.
   wp; call(_: ={XOF.state}); 1: by sim.
   wp; call(_: ={arg} ==> ={XOF.state}); last by auto => />;  smt(offunmK). 
-  by proc;call absorb_ignore; auto => />.
+  by sim.
 
 swap {2} 12 -11.
 seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\
@@ -1894,7 +1883,7 @@ by auto =>/> /#.
 qed.
 
 lemma kyber_correct_ienc mem _pkp : 
-   equiv [ M.__iindcpa_enc ~ Kyber(HS,XOF,KPRF,H).enc_derand: 
+   equiv [ M.__iindcpa_enc ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
@@ -1970,7 +1959,7 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
             by auto => />  /#.
   wp; call(_: ={XOF.state}); 1: by sim.
   wp; call(_: ={arg} ==> ={XOF.state}); last by auto => />;  smt(offunmK). 
-  by proc;call absorb_ignore; auto => />.
+  by sim.
 
 swap {2} 12 -11.
 seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\
@@ -2183,9 +2172,8 @@ by auto =>/> /#.
 
 qed.
 
-
 lemma kyber_correct_dec mem _ctp _skp : 
-   equiv [ M.__indcpa_dec ~ Kyber(HS,XOF,KPRF,H).dec : 
+   equiv [ M.__indcpa_dec ~ Kyber(KHS,XOF,KPRF,H).dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
      Glob.mem{1} = mem /\ 
