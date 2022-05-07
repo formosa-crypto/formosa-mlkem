@@ -2736,9 +2736,6 @@ proc.
   inline *; wp; auto => /> /#.
 qed.
 
-op lift_msg(bs: W256.t): bool Array256.t =
-    Array256.init (fun i => bs.[i]).
-
 (* TODO: move to spec/Kyber.ec *)
 op s_encode (b: bool): int =
   asint (b_encode b).
