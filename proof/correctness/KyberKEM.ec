@@ -378,15 +378,70 @@ inline {2} 2.
 wp;ecall {1} (pkH_sha mem (_pkp) ((Array32.init (fun (i : int) => buf{1}.[32 + i])))).
 inline {2} 1. inline {2} 2.
 wp;ecall {1} (sha_khs mem (_rp) ((Array32.init (fun (i : int) => buf{1}.[0 + i])))).
-auto => />.
+auto => /> &1 &2; rewrite /load_array1152 /load_array32 /load_array128 /load_array960 /touches2 /touches !tP.
+move => ????????? pkv1 pkv2.
+do split.
++ move => i ib; rewrite !initiE /= 1,2: /#.
+  have -> /= : !(32 <= i && i < 64) by smt().
+  by rewrite initiE /= 1:/# ib /=.
++ move => i ib; rewrite !initiE /= 1,2: /#.
+  congr; last by smt().
+  congr. 
+  rewrite tP => k kb; rewrite !initiE /= 1,2: /#.
+  case (0 <=k < 32).
+  + move => kbb.
+    have -> /= : !(32 <= k && k < 64) by smt().
+    by rewrite initiE /= 1:/# kbb /= /#.
+  move => kbb.  
+  have -> /= : (32 <= k && k < 64) by smt(). 
+  have -> /= : !(k < 32) by smt().
+  congr.
+  congr. 
+  rewrite tP => kk kkb; rewrite !initiE /= 1,2: /#.
+  case (kk < 1152).
+  + move => kkbb; move : (pkv1 kk _); 1: by smt().
+    by rewrite !initiE /=/#.
+  move => kkbb; move : (pkv2 (kk-1152) _); 1: by smt().
+  by rewrite !initiE /=/#.
 
+move => ?? [cR1 cR2] /= memR touch [-> ->] memL touchL ->; do split; 1: by smt().
++ rewrite tP => i ib; rewrite !initiE //=.
+  have -> :  to_uint ctp{1} + i = to_uint shkp{1} + (to_uint ctp{1} + i  - to_uint shkp{1}) by ring. 
+  by rewrite -touchL;  smt().
++ rewrite tP => i ib; rewrite !initiE //=.
+  have -> :  to_uint ctp{1} + 960 + i = to_uint shkp{1} + (to_uint ctp{1} + 960 + i - to_uint shkp{1}) by ring. 
+  by rewrite -touchL;  smt().
 
-admitted.
+congr.
+rewrite tP => k kb; rewrite !initiE //=.
+case (k < 32).
++ move => kbb /=; have -> /=: !(32 <= k && k < 64 ) by smt().
+  rewrite initiE //= 1: /#; congr; congr.
+  rewrite tP => kk kkb; rewrite !initiE //=.
+  case (kk < 32).
+  + move => kkbb /=; have -> /=: !(32 <= kk && kk < 64 ) by smt().
+    by rewrite initiE //= 1: /#.  
+  + move => kkbb /=; have -> /=: (32 <= kk && kk < 64 ) by smt().
+    congr;congr; rewrite tP => i ib. 
+    rewrite !initiE //=. 
+    case (i < 1152).
+    + move => ibb; move : (pkv1 i _); 1: by smt().
+      by rewrite !initiE /=/#.
+  move => ibb; move : (pkv2 (i-1152) _); 1: by smt().
+  by rewrite !initiE /=/#.
+      
+move => kbb /=; have -> /=: (32 <= k && k < 64 ) by smt().  
+congr;congr; rewrite tP => i ib. 
+rewrite !initiE //=. 
+case (i < 960).
++ by move => ibb; rewrite !initiE /=/#.
+by move => ibb; rewrite !initiE /=/#.
+qed.
 
 lemma kyber_kem_correct_dec mem _ctp _skp _shkp : 
    equiv [ M.__crypto_kem_dec_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).dec: 
      valid_ptr _ctp (3*320+128) /\
-     valid_ptr _skp 1152 /\
+     valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
      valid_ptr _shkp 32 /\
      Glob.mem{1} = mem /\ 
      to_uint shkp{1} = _shkp /\
@@ -404,4 +459,62 @@ lemma kyber_kem_correct_dec mem _ctp _skp _shkp :
      touches Glob.mem{1} mem _shkp 32 /\
      res{2} = load_array32 Glob.mem{1} _shkp
 ].
+proc => /=. sp 0 1. swap {1} [4..5] 12.
+
+seq 4 1 : (#pre /\ aux{1} = oget m{2}); 
+  1: by call (kyber_correct_dec mem _ctp _skp); 1: by auto => /> /#.
+
+swap {1} 7 1.
+seq 7 1 : (#pre /\ 
+           (forall k, 0<=k<32 => buf{1}.[k] = (oget m{2}).[k]) /\
+           (forall k, 0<=k<32 => kr{1}.[k] = _Kt{2}.[k]) /\
+           (forall k, 0<=k<32 => kr{1}.[k+32] = r{2}.[k])).
+inline {2} 1.
+ecall {1} (sha_g buf{1} kr{1}).
+wp; conseq (_: _ ==> 
+   (forall k, 0<=k<32 => buf{1}.[k] = (oget m{2}).[k]) /\
+   (forall k, 32<=k<64 => buf{1}.[k] = mem.[_skp + 2336 + k - 32]) /\
+   (forall k, 0<=k<32 => buf{1}.[k] = aux{1}.[k])).
++ auto => /> &1 &2; rewrite /load_array32 !tP => ?????????buf bvl bvh ; split.
+  + move => k kbl kbh; rewrite initiE //=; congr; congr.
+    rewrite tP => i ib; rewrite initiE //=.
+    case (i < 32); 1: by smt().
+    by move => ibb; rewrite initiE //= /#. 
+  move => k kbl kbh; rewrite initiE //=; congr; congr.
+  rewrite tP => i ib; rewrite initiE //=.
+  case (i < 32); 1: by smt().
+  by move => ibb; rewrite initiE //= /#. 
+  while {1} (0<=i{1}<=4 /\ aux_0{1} = 4  /\ to_uint hp{1} = _skp + 2336 /\ Glob.mem{1} = mem /\
+             valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
+             (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = mem.[_skp + 2336 + k - 32]) /\
+             forall (k : int), 0 <= k && k < 32 => buf{1}.[k] = aux{1}.[k]) (4 - i{1}); last first. 
+  + auto => /> &1 &2; rewrite /valid_ptr => ???????? /=.
+    have -> /= : cph{2} = (cph{2}.`1,cph{2}.`2) by smt().
+    rewrite /load_array960 /load_array128 !tP => [#] cph1v cph2v.
+    do split.
+    + by rewrite /(`|>>`) /(`<<`) /= to_uintD_small of_uintK /= /#. 
+    + by smt().
+    + by move => k kbl kbh; rewrite initiE /= /#.
+    by smt().
+  move => *; auto => /> &hr ????????; do split; 1..2,5: by smt().
+  + move => k kbl kbh; rewrite initiE //= 1:/#.
+    rewrite /storeW64 /loadW64 /stores  /=. 
+    rewrite WArray64.WArray64.get8_set64_directE 1..2:/#.
+    case (32 + 8 * i{hr} <= k && k < 32 + 8 * i{hr} + 8).
+    + by move => *; rewrite pack8bE 1:/# initiE /= 1:/# to_uintD_small /= of_uintK /= modz_small /#. 
+    by move => *; rewrite /WArray64.WArray64.get8 WArray64.WArray64.initiE /= /#.  
+  move => k kbl kbh; rewrite initiE /= 1:/# WArray64.WArray64.get8_set64_directE 1..2:/#. 
+  case (32 + 8 * i{hr} <= k && k < 32 + 8 * i{hr} + 8).
+  + by move => *; rewrite pack8bE 1:/# initiE /= 1:/# to_uintD_small /= of_uintK /= modz_small /#. 
+  by move => *; rewrite /WArray64.WArray64.get8 WArray64.WArray64.initiE /= /#.  
+    
+seq 4 1 : (#pre /\ ctpc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
++ wp;call (kyber_correct_ienc mem (_skp + 1152)).
+  auto => /> &1 &2 ???????; rewrite /load_array1152 /load_array32 /load_array960 !tP => ?????; do split; 1..2: by smt().
+  + by move => i ib; rewrite initiE /= /#.
+  + by rewrite /(`|>>`) /(`<<`) /= to_uintD_small of_uintK /= /#. 
+  + by move => i ib; rewrite initiE /= /#.
+  move => ? ? bufv ? krv c; rewrite tP => i ib.
+  by rewrite !initiE //=; smt().
+
 admitted.

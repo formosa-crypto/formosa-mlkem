@@ -1490,16 +1490,16 @@ module (KemH : KEMHashes) (RO : RO.POracle) = {
          return SHA3_256_1184_32 (Array1184.init (fun k => if (k < 1152) then pk.`1.[k] else pk.`2.[k-1152]));
   }
   proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t = {
-         return SHA3_256_1088_32 (Array1088.init (fun k => if (k < 960) then c.`1.[k] else c.`2.[k]));
+         return SHA3_256_1088_32 (Array1088.init (fun k => if (k < 960) then c.`1.[k] else c.`2.[k-960]));
 
   }
   proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t  = {
       var ktr;
-      ktr <- SHA3_256_64_64 (Array64.init (fun k => if (k < 32) then m.[k] else pkh.[k]));
+      ktr <- SHA3_256_64_64 (Array64.init (fun k => if (k < 32) then m.[k] else pkh.[k-32]));
       return (Array32.init (fun i=> ktr.[i]), Array32.init (fun i => ktr.[i + 32]));
   }
   proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t = {
-         return SHAKE256_64_32 (Array64.init (fun k => if (k < 32) then kt.[k] else ch.[k]));
+         return SHAKE256_64_32 (Array64.init (fun k => if (k < 32) then kt.[k] else ch.[k-32]));
   }
 
 }.
