@@ -549,11 +549,35 @@ sp 3 0; seq 1 0 : (#pre /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)); 1: smt(). 
    ecall {1} (verify_correct mem _ctp ctpc{1}).
    auto => /> &1 &2; rewrite /load_array960 /load_array128 !tP.
-   move  => ????????????rst Heq Hdiff.
+   move  => ????????cphv???rst Heq Hdiff.
+   rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) /= in cphv; 1: by smt().
+   move : cphv;rewrite !tP ; move => [cphv1 cphv2].
    split.
    + move => ceq; rewrite (Heq _); last by done.
      move => i0 ib; rewrite !initiE //=. 
-     admit. admit.
+     case (i0 < 960).
+     + by move => ibb; rewrite ceq cphv1 1: /# initiE /= /#.
+     by move => ibb; rewrite ceq cphv2 1: /# initiE /= /#. 
+   move => neq;rewrite Hdiff. 
+   have : exists i0, 0<= i0 < 1088 /\ 
+     (Array1088.init (fun (i1 : int) => loadW8 mem (to_uint s_ctp{1} + i1))).[i0] <>
+     (Array1088.init (fun (i1 : int) => if i1 < 960 then c{2}.`1.[i1] else c{2}.`2.[i1 - 960])).[i0]; last by smt().
+   case (c{2}.`1 <> cph{2}.`1).
+   + move => neq1. rewrite tP in neq1.   
+     have [k kb] : exists k, 0<=k<960 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt().
+     exists k; split; 1: by smt().
+     rewrite !initiE /= 1,2:/#. 
+     move : (cphv1 k _); 1: smt().
+     by rewrite initiE /= /#.
+   + move => eq1. 
+     have neq2 : c{2}.`2 <> cph{2}.`2 by smt().
+     rewrite tP in neq2.   
+     have [k kb] : exists k, 0<=k<128 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
+     exists (k + 960); split; 1: by smt().
+     rewrite !initiE /= 1,2:/#. 
+     move : (cphv2 k _); 1: smt().
+     by rewrite initiE /= /#.
+  done.
 
 seq 4 0: (#{/~aux{1}= oget m{2}}pre /\ 
    (c{2}  = cph{2} =>  aux{1} = _Kt{2}) /\
