@@ -1537,7 +1537,7 @@ module KyberKEM(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF,
        m <@ Kyber(HS,XOF,PRF,O).dec(skp,cph);
        (_Kt,r) <@ KemH(O).g(oget m,hpk);
        c <@ Kyber(HS,XOF,PRF,O).enc_derand(pk,oget m,r);
-       hc <@ KemH(O).cH(c);
+       hc <@ KemH(O).cH(cph);
        if (c = cph) {
           _K <@ KemH(O).kdf(_Kt,hc);
        }

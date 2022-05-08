@@ -438,6 +438,31 @@ case (i < 960).
 by move => ibb; rewrite !initiE /=/#.
 qed.
 
+lemma verify_correct_h mem (_ctp : int) ctp1 :
+  hoare [ M.__verify : 
+             Glob.mem = mem /\
+             to_uint ctp = _ctp /\ ctpc = ctp1 ==>
+             Glob.mem = mem /\
+             (Array1088.init (fun i => loadW8 mem (_ctp + i)) = ctp1 => 
+                       res = W64.of_int 0) /\
+             (Array1088.init (fun i => loadW8 mem (_ctp + i)) <> ctp1 => 
+                       res = W64.of_int 1)].
+admitted.
+
+lemma verify_ll : islossless M.__verify. admitted.
+
+lemma verify_correct mem (_ctp : int) ctp1 :
+  phoare [ M.__verify : 
+             Glob.mem = mem /\
+             to_uint ctp = _ctp /\ ctpc = ctp1 ==>
+             Glob.mem = mem /\
+             (Array1088.init (fun i => loadW8 mem (_ctp + i)) = ctp1 => 
+                       res = W64.of_int 0) /\
+             (Array1088.init (fun i => loadW8 mem (_ctp + i)) <> ctp1 => 
+                       res = W64.of_int 1)] = 1%r 
+   by conseq verify_ll (verify_correct_h mem _ctp ctp1).
+
+
 lemma kyber_kem_correct_dec mem _ctp _skp _shkp : 
    equiv [ M.__crypto_kem_dec_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).dec: 
      valid_ptr _ctp (3*320+128) /\
@@ -517,4 +542,57 @@ seq 4 1 : (#pre /\ ctpc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i
   move => ? ? bufv ? krv c; rewrite tP => i ib.
   by rewrite !initiE //=; smt().
 
-admitted.
+sp 3 0; seq 1 0 : (#pre /\ 
+                  (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
+                  (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)).
++  conseq (_: _ ==> (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
+                  (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)); 1: smt(). 
+   ecall {1} (verify_correct mem _ctp ctpc{1}).
+   auto => /> &1 &2; rewrite /load_array960 /load_array128 !tP.
+   move  => ????????????rst Heq Hdiff.
+   split.
+   + move => ceq; rewrite (Heq _); last by done.
+     move => i0 ib; rewrite !initiE //=. 
+     admit. admit.
+
+seq 4 0: (#{/~aux{1}= oget m{2}}pre /\ 
+   (c{2}  = cph{2} =>  aux{1} = _Kt{2}) /\
+   (c{2}  <> cph{2} =>  aux{1} = z{2})).
++ admit.
+
+wp;ecall {1} (kdf_sha Glob.mem{1} _shkp kr{1}).
+wp;ecall {1} (cH_sha Glob.mem{1} _ctp (Array32.init (fun (i : int) => kr{1}.[32 + i]))).
+
+inline *; wp; auto => /> &1 &2 ??????.
+rewrite /load_array1152 /load_array32 /load_array960 /load_array128 /touches !tP.
+move => ??cphv????? veq vdiff.
+rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) /= in cphv; 1: by smt().
+move : cphv;rewrite !tP ; move => [cphv1 cphv2].
+split.
++ move => eqc memL touch ->; congr; rewrite tP => k kb.
+  rewrite !initiE //=. 
+  case (k < 32).
+  + move => kbb; have -> /= : !(32 <= k && k < 64) by smt().
+    rewrite initiE /= 1: /#; have -> /=: (0<=k < 32) by smt().  
+    by rewrite (veq eqc) /#. 
+  + move => kbb; have -> /= : (32 <= k && k < 64) by smt().
+    congr;congr; rewrite tP => i ib.
+    rewrite initiE /= 1: /#.
+    case (i < 960).
+    + move => ibb; rewrite initiE /= 1: /#.
+      by rewrite cphv1 1:/# initiE /= /#.
+    + move => ibb; rewrite initiE /= 1: /#.
+      by rewrite cphv2 1:/# initiE /= /#.
+move => cneq mL touch ->; congr; rewrite tP => k kb.
+rewrite !initiE //=.
+case (k < 32).
++ move => kbb; have -> /= : !(32 <= k && k < 64) by smt().
+  rewrite initiE /= 1: /#; have -> /=: (0<=k < 32) by smt().  
+  by rewrite initiE /= 1: /# (vdiff cneq) 1: /# initiE /= 1: /#. 
+move => kbb; have -> /= : (32 <= k && k < 64) by smt().
+congr;congr; rewrite tP => i ib.
+rewrite !initiE /= 1,2: /#.
+case (i < 960). 
++ by move => ibb; rewrite cphv1 1:/# initiE /= /#.
+by move => ibb; rewrite cphv2 1:/# initiE /= /#.
+qed.
