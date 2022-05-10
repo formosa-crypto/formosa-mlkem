@@ -7,7 +7,7 @@ require import NTT_Fq.
 require import Kyber.
 
 
-require import Jindcpa.
+require import Jkem.
 
 theory KyberPolyVec.
 
@@ -271,6 +271,111 @@ do split; 1..5:by smt(get_set_neqE_s).
 
 by rewrite ultE /= to_uintD_small; smt().
 qed.
+
+lemma i_polyvec_compress_corr _a :
+    equiv [ M.__i_polyvec_compress ~ EncDec.encode10_vec :
+             pos_bound768_cxq a{1} 0 768 2 /\
+             lift_array768 a{1} = _a /\
+             u{2} = map (compress 10) _a
+              ==>
+             res{1} = res{2}
+              ].
+proof.
+proc.
+seq 5 3 : (#pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
+           to_uint j{1} = j{2} /\ j{2} = 0 /\
+           pos_bound768_cxq aa{1} 0 768 1 /\ lift_array768 aa{1} = _a).
+wp => /=.
+ecall{1} (polyvec_csubq_corr _a); 1: by auto => /#.
+
+while (#{/~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\ 
+       to_uint j{1} = j{2} /\ 4*j{2} = 5*i{2} /\ i{2} %% 4 = 0 /\ 
+       (forall k, 0<=k<j{2} => 
+         rp{1}.[k] = c{2}.[k])); last first.  
++ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
+    ? ?? baa vaa; split; 1: by smt().
+  move => i' j' ra'; rewrite ultE of_uintK  /= => rp exit _ ibl ibh jv  im0 prev.
+  by rewrite tP => k kb /#.
+
+unroll for {1} 2.
+auto => />.
+move =>  &1 &2 [#] ; rewrite /pos_bound768_cxq /lift_array768 !tP /=.
+rewrite  ultE of_uintK /= => ?? aav 7?. 
+rewrite !to_uintD_small /=; 1..9: smt().
+
+do split; 1..4:by smt(). 
+
++ move => k kb kbh.
+  case (k < to_uint j{1}).
+  + by move => neq; rewrite !set_neqiE;  smt().
+  case (k = to_uint j{1}).
+  + move => eq1 neq; do 4! (rewrite set_neqiE; 1,2: by smt()).
+    rewrite set_eqiE; 1,2: by smt().
+    do 4! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}) _) //. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -Fq.compress_impl_large //; 1: smt().
+    by apply truncation1.  
+
+  case (k = to_uint j{1} + 1).
+  + move => eq2 neq1 neq; do 3! (rewrite set_neqiE; 1,2: by smt()).
+    rewrite set_eqiE; 1,2: by smt().
+    do 3! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}) _) //. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 1) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  case (k = to_uint j{1} + 2).
+  + move => eq3 neq2 neq1 neq; do 2! (rewrite set_neqiE; 1,2: by smt()).
+    rewrite set_eqiE; 1,2: by smt().
+    do 2! (rewrite set_neqiE; 1,2:smt()).
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}+1) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 2) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  case (k = to_uint j{1} + 3).
+  + move => eq4 neq3 neq2 neq1 neq; rewrite set_neqiE; 1,2: by smt().
+    rewrite set_eqiE; 1,2: by smt().
+    rewrite set_neqiE; 1,2:smt().
+    rewrite set_eqiE; 1,2:smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1}+2) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite mapiE /=; 1: smt().
+    rewrite -(aav (to_uint i{1} + 3) _) 1:/#. 
+    rewrite mapiE /=; 1: smt().
+    rewrite -!Fq.compress_impl_large //; 1,2: smt().
+    by apply truncation2.  
+
+  move => neq4 neq3 neq2 neq1 neq.
+  rewrite set_eqiE; 1,2: by smt().
+  rewrite set_eqiE; 1,2:smt().
+  rewrite mapiE /=; 1: smt().
+  rewrite -(aav (to_uint i{1}+3) _) 1:/#. 
+  rewrite mapiE /=; 1: smt().
+  rewrite -!Fq.compress_impl_large //; 1: smt().
+  by apply truncation3.  
+
++ by rewrite ultE /= to_uintD_small; smt().
+
+by rewrite ultE /= to_uintD_small; smt().
+qed.
+
+
 
 lemma polyvec_add_corr_h _a _b ab bb :
       0 <= ab <= 6 => 0 <= bb <= 3 =>
