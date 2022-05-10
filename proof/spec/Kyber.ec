@@ -1341,6 +1341,70 @@ module Parse(XOF : XOF_t, O : RO.POracle) = {
    }
 }.
 
+module ParseRnd = {
+   proc sample_real() : poly = {
+      var j, bi, bi1, bi2, d1, d2,k;
+      var aa : poly;
+      aa <- witness;
+      j <- 0;
+      while (j < 256) {
+         k <- 0;
+         while ((j < 256) && (k < 168)) {
+            bi  <$ W8.dword;
+            bi1 <$ W8.dword;
+            bi2 <$ W8.dword;
+            k <- k + 3;
+            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
+            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
+            if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
+            if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
+         }
+      }
+      return aa;
+   }
+   proc sample_ideal() : poly = {
+     var p;
+     p <$ duni_R;
+     return p;
+   }
+}.
+
+equiv ParseRnd_equiv:
+ ParseRnd.sample_real ~ ParseRnd.sample_ideal:
+ true ==> ={res}.
+proof.
+proc.
+transitivity {1}
+ { aa <- witness;
+   j <- 0;
+   while (j < 256) {
+    k <- 0;
+    while (j<256 && k<168) {
+     d1 <$ dbits 12;
+     d2 <$ dbits 12;
+     if (d1 < q) {
+      aa <- aa.[j <- inFq d1];
+      j <- j+1;
+     }
+     if (d2 < q && j<256) {
+      aa <- aa.[j <- inFq d2];
+      j <- j+1;
+     }
+     k <- k+3;
+    }
+   }
+ }
+ ( true ==> ={aa} )
+ ( true ==> aa{1}=p{2} ).
+- done.
+- done.
+- while (={j,aa}); last by auto.
+  while (={j,aa,k}); last by auto.
+  swap {1} 4 4; sim.
+  admit (* 1 - dbits manipulation *).
+- admit (* 2 - async while *).
+qed.
+
 clone PRF as PRF_DEFS with
   type D <- W8.t,
   type R <- W8.t Array128.t.
@@ -1375,6 +1439,419 @@ module CBD2(PRF : PseudoRF) = {
       return rr;
    }
 }.
+
+module CBD2rnd = {
+   proc sample_real() : poly = {
+      var i,j,a,b,byte_i;
+      var rr : poly;
+      var l: Fq list;
+      rr <- witness;
+      i <- 0; j <- 0;
+      while (i < 128) {
+        byte_i <$ W8.dword;
+        a <- b2i byte_i.[j %% 2 * 4 + 0] + b2i byte_i.[j %% 2 * 4 + 1];
+        b <- b2i byte_i.[j %% 2 * 4 + 2] + b2i byte_i.[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
+        a <- b2i byte_i.[j %% 2 * 4 + 0] + b2i byte_i.[j %% 2 * 4 + 1];
+        b <- b2i byte_i.[j %% 2 * 4 + 2] + b2i byte_i.[j %% 2 * 4 + 3];
+        rr.[j] <- inFq  (a - b);
+        j <- j + 1;
+        i <- i + 1;
+      }
+      return rr;
+   }
+   proc sample_w8(): W8.t = {
+     var w;
+     w <$ W8.dword;
+     return w;
+   }
+   proc sample_w8_4(): W8.t = {
+     var l: bool list list;
+     l <$ dlist (dlist {0,1} 2) 4;
+     return W8.bits2w (flatten l);
+   }
+   proc sample_w8_4X(): W8.t = {
+     var a,b,c,d;
+     a <$ dlist {0,1} 2;
+     b <$ dlist {0,1} 2;
+     c <$ dlist {0,1} 2;
+     d <$ dlist {0,1} 2;
+     return W8.bits2w (a++b++c++d);
+   }
+   proc sample_idealloop2() : poly = {
+     var i, l, x, p;
+     i <- 0;
+     l <- [];
+     while ( i < 256 ) {
+       x <$ dshort_elem;
+       l <- rcons l x;
+       i <- i + 1;
+     }
+     p <- Array256.of_list witness l;
+     return p;
+   }
+   proc sample_idealloop() : poly = {
+     var i, l, x, p;
+     i <- 0;
+     l <- [];
+     while ( i < 256 ) {
+       x <$ dcbd 2;
+       l <- rcons l (inFq x);
+       i <- i + 1;
+     }
+     p <- Array256.of_list witness l;
+     return p;
+   }
+   proc sample_ideal() : poly = {
+     var p;
+     p <$ dshort_R;
+     return p;
+   }
+}.
+
+import BitEncoding BitChunking BS2Int.
+
+lemma W8all_words_uniq: uniq W8.all_words.
+proof.
+rewrite /W8.all_words map_inj_in_uniq.
+ move=> x y; rewrite !mem_iota => /= ?? H.
+ have: x %% W8.modulus = y %% W8.modulus.
+  by rewrite -!W8.of_uintK H.
+ by rewrite !modz_small /#.
+by apply iota_uniq.
+qed.
+
+lemma dword1E w:
+ mu1 W8.dword w = inv (W8.modulus%r).
+proof.
+have ?:= W8all_words_uniq.
+rewrite /W8.dword /duniform undup_id //.
+rewrite MRat.dratE count_uniq_mem //.
+rewrite W8.all_wordsP b2i1.
+rewrite /W8.all_words size_map size_iota /=.
+by rewrite ler_maxr.
+qed.
+
+lemma dword1E_bits w:
+ mu1 (dmap (dlist {0,1} W8.size) W8.bits2w) w = inv (W8.modulus)%r.
+proof.
+rewrite dmap1E /(\o) /=.
+rewrite (mu_eq_support _ _ (pred1 (w2bits w))).
+ move=> l; rewrite supp_dlist //=; move=> [E _].
+ rewrite /pred1.
+ apply eqboolP; split => H.
+  by rewrite -H W8.bits2wK.
+ by rewrite H W8.w2bitsK.
+rewrite dlist1E // W8.size_w2bits /=.
+rewrite (StdBigop.Bigreal.BRM.eq_bigr _ _ (fun _=>inv 2%r)).
+ by move=> i _ /=; rewrite DBool.dbool1E /#. 
+rewrite StdBigop.Bigreal.mulr_const.
+rewrite W8.size_w2bits.
+by rewrite RealOrder.Domain.exprVn // fromintXn //.
+qed.
+
+lemma dword_bits:
+ W8.dword = dmap (dlist {0,1} 8) W8.bits2w.
+proof.
+apply eq_distr => w.
+by rewrite dword1E dword1E_bits.
+qed.
+
+lemma dlist_bits_chunk (n k: int):
+ 0 <= n => 0 <= k =>
+ dlist {0,1} (n*k)
+ = dmap (dlist (dlist {0,1} k) n) flatten.
+proof.
+elim/natind: n k.
+ move=> n Hn0 k Hn Hk.
+ have ->/=: n=0 by smt().
+ by rewrite !dlist0 // dmap_dunit flatten_nil.
+move=> n Hn IH k _ Hk.
+rewrite dlistS // (_:(n+1)*k=k+n*k) 1:/# dlist_add // 1:/# IH // /dapply /= dmap_comp /(\o) /=.
+rewrite dmap_dprodR dmap_comp /(\o) /=.
+by apply eq_dmap => x /#.
+qed.
+
+require import DProd.
+clone ProdSampling as PSbits with
+ type t1 <- bool list,
+ type t2 <- bool list.
+
+
+equiv w8_4_eqX:
+ CBD2rnd.sample_w8 ~ CBD2rnd.sample_w8_4X:
+ true ==> ={res}.
+proof.
+proc.
+transitivity {2}
+ { a <$ dlist {0,1} 8; }
+ ( true ==> w{1} = W8.bits2w a{2} )
+ ( true ==> a{1} = (a{2} ++ b{2} ++ c{2} ++ d{2}) ) => //.
+ rnd W8.w2bits W8.bits2w; auto => />.
+ split.
+  move=> x; rewrite supp_dlist // => Hx.
+  by rewrite bits2wK /#.
+ move=> _; split.
+  move=> l; rewrite supp_dlist //; move => [H _].
+  rewrite dword_bits dmap1E.
+  apply mu_eq_support => x.
+  rewrite supp_dlist //; move => [E _].
+  rewrite /pred1 /(\o) /=.
+  apply eqboolP; split.
+   by move => ->.
+  move=> X.
+  by rewrite -(W8.bits2wK l) // -X W8.bits2wK.
+ move=> _ w _; rewrite supp_dlist //.
+ rewrite W8.size_w2bits /= allP => x _.
+ by apply DBool.supp_dbool.
+search dlist (++).
+print PSbits.S.
+transitivity {2}
+ { (a,b) <@ PSbits.S.sample(dlist {0,1} 6, dlist {0,1} 2); }
+ ( true ==> a{1} = a{2} ++ d{2} )
+ ( true ==> a{1} ++ d{1} = a{2} ++ b{2} ++ c{2} ++ d{2} ) => //.
+- inline*; wp. 
+  rnd (fun x=>(take 6 x, drop 6 x)) (fun x:_*_=>x.`1++x.`2). 
+  wp; skip => /> &2; split.
+   move=> x; rewrite supp_dprod !supp_dlist //.
+   move => /> E1 _ E2 _.
+   rewrite take_cat drop_cat !E1 take0 drop0 cats0 /#.
+  move=> _; split.
+   move=> [l1 l2]; rewrite supp_dprod /= !supp_dlist // => /> E1 _ E2 _.
+   rewrite dprod1E.
+   rewrite (_:8=6+2) 1:/# dlist_add // dmap1E.
+   admit.
+ admit.
+- done.
+rnd (fun w=>chunk 2 (W8.w2bits w)) (fun l => W8.bits2w (flatten l)) .
+skip => /> *.
+split.
+ move=> l; rewrite supp_dlist //; move=> [Hsize].
+ rewrite allP => H.
+
+ rewrite bits2wK. rewrite size_flatten.
+  have ->: map List.size l = [2;2;2;2].
+   admit.
+  smt().
+ rewrite flattenK //.
+ by move=> bs Hbs; move: (H bs Hbs); rewrite supp_dlist //.
+move=> _; split.
+ move=> l Hl.
+ admit.
+move=> _ w. rewrite /W8.dword => H.
+split.
+ rewrite supp_dlist //.
+ rewrite size_chunk //. split. smt().
+ rewrite allP => x Hx.
+ rewrite supp_dlist //.
+ split. admit.
+ rewrite allP => b Hb. smt.
+by rewrite chunkK //.
+qed.
+
+
+equiv w8_4_eq:
+ CBD2rnd.sample_w8 ~ CBD2rnd.sample_w8_4:
+ true ==> ={res}.
+proof.
+proc.
+print chunk.
+rnd (fun w=>chunk 2 (W8.w2bits w)) (fun l => W8.bits2w (flatten l)) .
+skip => /> *.
+split.
+ move=> l; rewrite supp_dlist //; move=> [Hsize].
+ rewrite allP => H.
+
+ rewrite bits2wK. rewrite size_flatten.
+  have ->: map List.size l = [2;2;2;2].
+   admit.
+  smt().
+ rewrite flattenK //.
+ by move=> bs Hbs; move: (H bs Hbs); rewrite supp_dlist //.
+move=> _; split.
+ move=> l Hl.
+ admit.
+move=> _ w. rewrite /W8.dword => H.
+split.
+ rewrite supp_dlist //.
+ rewrite size_chunk //. split. smt().
+ rewrite allP => x Hx.
+ rewrite supp_dlist //.
+ split. admit.
+ rewrite allP => b Hb. smt.
+by rewrite chunkK //.
+qed.
+
+clone DMapSampling as MS2 with
+ type t1 <- int*int,
+ type t2 <- int.
+
+clone DMapSampling as MSR with
+ type t1 <- Fq list,
+ type t2 <- poly.
+
+clone Program as LS with
+ type t <- Fq,
+ op d <- dshort_elem.
+
+require import DProd.
+clone ProdSampling as PS with
+ type t1 <- int,
+ type t2 <- int.
+
+equiv short_R_loop_eq:
+ CBD2rnd.sample_ideal ~ CBD2rnd.sample_idealloop:
+ true ==> ={res}.
+proof.
+proc.
+transitivity {1}
+ { p <@ MSR.S.sample(dlist dshort_elem 256, Array256.of_list witness); }
+ ( true ==> ={p} ) ( true ==> ={p} ) => //.
+ by inline*; wp; rnd; wp; auto.
+transitivity {1}
+ { p <@ MSR.S.map(dlist dshort_elem 256, Array256.of_list witness); }
+ ( true ==> ={p} ) ( true ==> ={p} ) => //.
+ by call MSR.sample. 
+inline*; swap {1} 2 1; wp.
+transitivity {1}
+ { r1 <@ LS.LoopSnoc.sample(256); }
+ ( true ==> ={r1} ) ( true ==> r1{1}=l{2} ) => //.
+ transitivity {2} { r1 <@ LS.Sample.sample(256); }
+  ( true ==> ={r1} ) (true ==> ={r1}) => //.
+  by inline*; auto.
+ by call LS.Sample_LoopSnoc_eq.
+inline*; wp; while (={i,l} /\ n{1}=256).
+ wp; rnd as_sint inFq; skip => /> &1 &2 *. 
+ split.
+  move=> x; rewrite supp_dcbd => Hx.
+  by rewrite inFqK_sint_small /#.
+ move=> _; split.
+  move=> x; rewrite supp_dcbd => Hx.
+  rewrite (dmap1E_can _ _ as_sint).
+   by move=> y; rewrite as_sintK //.
+  move=> y; rewrite supp_dcbd => Hy.
+  by rewrite inFqK_sint_small /#.
+ by rewrite inFqK_sint_small /#.
+ move=> _ x; rewrite supp_dshort_elem => Hx.
+ by rewrite !supp_dcbd as_sintK; smt(cats1).
+by auto.
+qed.
+
+
+
+
+op a256l ['a] (a:'a Array256.t) (l:'a list) k: bool = size l = k /\ 
+ forall i, 0 <= i < k => a.[i] = nth witness l i.
+
+lemma a256l_rcons ['a] a l (x:'a) k:
+ 0 <= k < 256 =>
+ a256l a l k => 
+ a256l a.[k <- x] (rcons l x) (k+1).
+proof.
+move=> Hk; rewrite /a256l; move=> [Hsize H].
+rewrite size_rcons Hsize; split => // i Hi.
+rewrite get_setE // nth_rcons Hsize.
+case: (i=k) => E.
+ by rewrite E.
+by rewrite H /#.
+qed.
+
+lemma a256l_of_list ['a] a (l: 'a list):
+ a256l a l 256 =>
+ a = Array256.of_list witness l.
+proof.
+move=> [Hsize H].
+apply Array256.ext_eq => i Hi.
+by rewrite H // get_of_list //.
+qed.
+
+equiv CBD2rnd_equiv:
+ CBD2rnd.sample_real ~ CBD2rnd.sample_ideal:
+ true ==> ={res}.
+proof.
+transitivity CBD2rnd.sample_idealloop
+ (true ==> ={res}) (true ==> ={res}) => //; last first.
+ by symmetry; conseq short_R_loop_eq.
+proc.
+transitivity {1}
+ { rr <- witness;
+   i <- 0;
+   while (i < 256) {
+    a <$ dmap (dlist {0,1} 2) hamming_weight;
+    b <$ dmap (dlist {0,1} 2) hamming_weight;
+    rr <- rr.[i <- inFq (a-b)];
+    i <- i+1;
+   }
+ }
+ ( true ==> ={rr} ) ( true ==> rr{1}=p{2} ) => //.
+ symmetry.
+ async while
+  [ (fun x => i < 2*x), i{2}+1 ]
+  [ (fun x => i < x), i{2}+1 ]
+  ( i{1}<256 /\ i{2}<128) (! i{2}<128)
+  : (={rr} /\ 0 <= i{1} /\ j{2}=2*i{2} /\ i{1}=j{2}).
+ + move=> /> &2 /#.
+ + move=> /> &2 /#.
+ + move=> /> &2 /#.
+ + move=> &2; wp; rnd; rnd; auto; smt().
+ + move=> /> &1; exfalso; smt().
+ + move=> v1 v2.
+   rcondt{1} 1; first by auto; smt().
+   rcondt{2} 1; first by auto; smt().
+   rcondt{1} 5; first by auto; smt().
+   rcondf{1} 9.
+    by move=> &m; wp; rnd; auto => /> &hr /#.
+   rcondf{2} 11.
+    by move=> &m; wp; rnd; auto => /> &hr /#.
+   wp 6 7.
+   admit (* W8.dword vs 4*dbits 2 *).
+ + by rcondf 1; auto; smt().
+ + by rcondf 1; auto; smt().
+ by wp; auto.
+wp; while (={i} /\ 0 <= i{1} <= 256 /\ a256l rr{1} l{2} i{1}); last first.
+  wp; skip => |> *; split; first smt().
+  move=> |> p i l ???; have ->:i=256 by smt().
+  by apply a256l_of_list.
+wp; simplify.
+transitivity {1} 
+ { a <@ MS2.S.map(dmap (dlist {0,1} 2) hamming_weight `*` dmap (dlist {0,1} 2)  hamming_weight, fun ab:int*int=>ab.`1 - ab.`2); }
+ ( ={i} /\ 0 <= i{1} < 256 /\ a256l rr{1} l{2} i{1} ==> ={i} /\ 0 <= i{1} < 256 /\ a256l rr{1}.[i{1}<-inFq (a{1}-b{1})] (rcons l{2} (inFq a{2})) (i{1}+1))
+ ( ={i,l} /\ 0 <= i{1} < 256 ==> ={i,l} /\ a{1}=x{2} ).
+- by move=> /> &1 &2 *; exists (size l{2}) l{2}; smt().
+- by move=> /> * /#.
+- inline*; swap {2} 2 1; wp.
+  transitivity {2}
+   { r1 <@ PS.S.sample2(dmap (dlist {0,1} 2) hamming_weight, dmap (dlist {0,1} 2) hamming_weight); }
+   ( ={i} /\ 0<=i{1}<256 /\ a256l rr{1} l{2} i{1} ==> ={i} /\ 0<=i{1}<256 /\ a256l rr{1}.[i{1} <- inFq (a{1} - b{1})] (rcons l{2} (inFq (r1{2}.`1-r1{2}.`2))) (i{1}+1))
+   ( ={i,l} /\ 0<=i{1}<256 ==> ={i,l,r1} ).
+  * move=> /> &1 &2 *; exists (size l{2}) l{2} => /#.
+  * smt().
+  * inline*; wp; rnd; rnd; wp; skip => |> *.
+    by apply a256l_rcons.
+  transitivity {1}
+   { r1 <@ PS.S.sample(dmap (dlist {0,1} 2) hamming_weight, dmap (dlist {0,1} 2) hamming_weight); }
+   ( ={i,l} /\ 0<=i{1}<256 ==> ={i,l,r1} /\ 0<=i{1}<256 )
+   ( ={i,l} /\ 0<=i{1}<256 ==> ={i,l,r1} ).
+  * move=> /> &1 &2 * /#. 
+  * smt().
+  * by symmetry; call PS.sample_sample2; auto.
+  by inline*; wp; rnd; wp; auto.
+transitivity {1}
+ { a <@ MS2.S.sample(dmap (dlist {0,1} 2) hamming_weight `*` dmap (dlist {0,1} 2)  hamming_weight, fun ab:int*int=>ab.`1 - ab.`2); }
+ ( ={i,l} /\ 0<=i{1}<256 ==> ={i,l,a} )
+ ( ={i,l} ==> ={i,l} /\ a{1} = x{2}).
+- by move=> /> &1 &2 *; exists i{1} l{1}.
+- done.
+- by symmetry; call MS2.sample.
+- inline*; wp; rnd; wp; skip => &1 &2 />.
+  rewrite dcbd_eq_sample //; split.
+   move=> x Hx.
+   rewrite dmap_dprod dmap_comp; congr.
+   by rewrite /(\o) /dcbd_sample.
+  move=> _ x; rewrite dmap_dprod dmap_comp.
+  by rewrite /(\o).
+qed.
 
 module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
 
