@@ -3,8 +3,8 @@ require import ZModP Ring.
 require import Distr DList DistrExtra DMap DInterval.
 require import PKE_Ext.
 from Jasmin require import JWord.
-require import Array32 Array64 Array128 Array168 Array256 Array384.
-require import Array768 Array960 Array1024 Array1152.
+require import Array25 Array32 Array34 Array64 Array128 Array168 Array256 Array384.
+require import Array768 Array960 Array1024 Array1088 Array1184 Array1152.
 require  PRF.
 
 
@@ -1263,15 +1263,23 @@ PRF = fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack
 We do not clone the ROM in fully specified form because
 we want to analyse the Spec in different ROM settings.
 
-clone import PKE_Ext as KyberPKE with
-  type RO.in_t = W8.t Array32.t * W8.t * W8.t * int,
-  type RO.out_t = W8.t Array168.t,
-  type pkey = W8.t Array1152.t * W8.t Array32.t,
-  type skey = W8.t Array1152.t,
-  type plaintext = W8.t Array32.t,
-  type ciphertext = W8.t Array960.t * W8.t Array128.t.
-
+Note that the following operators are used only for one purpose in the
+external algorithms, and they are all implicitly domain-separated
+due to either the use of different algorithms or different input lengths.
 ************************************************)
+
+op SHA3_256_32_32 : W8.t Array32.t -> unit -> W8.t Array32.t.
+op SHA3_256_64_64   : W8.t Array64.t -> W8.t Array64.t.
+op SHA3_256_1088_32 : W8.t Array1088.t -> W8.t Array32.t.
+op SHA3_256_1184_32 : W8.t Array1184.t -> W8.t Array32.t.
+
+op SHA3_512_32_64 : W8.t Array32.t -> unit -> W8.t Array64.t.
+
+op SHAKE128_ABSORB_34 : W8.t Array34.t ->  W64.t Array25.t.
+op SHAKE128_SQUEEZE_168 : W64.t Array25.t -> W64.t Array25.t *  W8.t Array168.t.
+
+op SHAKE256_64_32 : W8.t Array64.t -> W8.t Array32.t.
+op SHAKE256_128_33 : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
 
 clone import PKE_Ext as KyberPKE with
   type pkey = W8.t Array1152.t * W8.t Array32.t,
@@ -1285,17 +1293,14 @@ op [lossless]srand : W8.t Array32.t distr.
 (* G needs only to be entropy smoothing, which is
    exactly a PRF without any input *)
 
-
 clone PRF as HS_DEFS with
   type D <- unit,
   type R <- W8.t Array64.t.
 
-op SHA3_SMOOTH : W8.t Array32.t -> unit -> W8.t Array64.t.
-
 clone import HS_DEFS.PseudoRF as HSF with
   type K <- W8.t Array32.t, 
   op dK <- srand,
-  op F <- SHA3_SMOOTH.
+  op F <- SHA3_512_32_64.
 
 module KHS = HSF.PseudoRF.
 
@@ -1316,6 +1321,25 @@ module type XOF_t(O : RO.POracle) = {
    proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
    proc next_bytes() : W8.t Array168.t
 }.
+
+(* This is a concrete XOF that does not use the random oracle,
+   and that matches the Kyber spec and the implementation *)
+
+module (XOF : XOF_t) (O : KyberPKE.RO.POracle) = {
+  var state : W64.t Array25.t
+  proc init(rho : W8.t Array32.t, i j : W8.t) : unit = {
+       var extseed : W8.t Array34.t;
+       extseed <- Array34.init
+        (fun k => if k < 32 then rho.[k] else if k=32 then i else j);
+       state <- SHAKE128_ABSORB_34 extseed;
+  }
+  proc next_bytes() : W8.t Array168.t = { 
+       var buf;
+       (state,buf) <- SHAKE128_SQUEEZE_168 state;
+       return buf; 
+  }
+}.
+
 
 module Parse(XOF : XOF_t, O : RO.POracle) = {
    proc sample() : poly = {
@@ -1409,12 +1433,11 @@ clone PRF as PRF_DEFS with
   type D <- W8.t,
   type R <- W8.t Array128.t.
 
-op SHA3_PRF : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
 
 clone import PRF_DEFS.PseudoRF as PRF_ with
   type K <- W8.t Array32.t, 
   op dK <- srand,
-  op F <- SHA3_PRF.
+  op F <- SHAKE256_128_33.
 
 module KPRF = PRF_.PseudoRF.
 
@@ -1995,21 +2018,13 @@ clone PRF as HS_KEM_DEFS with
   type D <- unit,
   type R <- W8.t Array32.t.
 
-op SHA3_SMOOTH_KEM : W8.t Array32.t -> unit -> W8.t Array32.t.
 
 clone import HS_KEM_DEFS.PseudoRF as HSF_KEM with
   type K <- W8.t Array32.t, 
   op dK <- srand,
-  op F <- SHA3_SMOOTH_KEM.
+  op F <- SHA3_256_32_32.
 
 module KHS_KEM = HSF_KEM.PseudoRF.
-
-module type KEMHashes(O : RO.POracle) = {
-  proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t
-  proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t
-  proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t 
-  proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t
-}.
 
 module KemG(KemHS: HSF_KEM.PseudoRF) = {
   proc sample(s : W8.t Array32.t) : W8.t Array32.t = {
@@ -2018,6 +2033,33 @@ module KemG(KemHS: HSF_KEM.PseudoRF) = {
      return m;
   }
 }.
+
+module type KEMHashes(O : RO.POracle) = {
+  proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t
+  proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t
+  proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t 
+  proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t
+}.
+
+module (KemH : KEMHashes) (RO : RO.POracle) = {
+  proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t = {
+         return SHA3_256_1184_32 (Array1184.init (fun k => if (k < 1152) then pk.`1.[k] else pk.`2.[k-1152]));
+  }
+  proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t = {
+         return SHA3_256_1088_32 (Array1088.init (fun k => if (k < 960) then c.`1.[k] else c.`2.[k-960]));
+
+  }
+  proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t  = {
+      var ktr;
+      ktr <- SHA3_256_64_64 (Array64.init (fun k => if (k < 32) then m.[k] else pkh.[k-32]));
+      return (Array32.init (fun i=> ktr.[i]), Array32.init (fun i => ktr.[i + 32]));
+  }
+  proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t = {
+         return SHAKE256_64_32 (Array64.init (fun k => if (k < 32) then kt.[k] else ch.[k-32]));
+  }
+
+}.
+
 
 import PRF_.
 module KyberKEM(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, 
@@ -2051,7 +2093,7 @@ module KyberKEM(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF,
        m <@ Kyber(HS,XOF,PRF,O).dec(skp,cph);
        (_Kt,r) <@ KemH(O).g(oget m,hpk);
        c <@ Kyber(HS,XOF,PRF,O).enc_derand(pk,oget m,r);
-       hc <@ KemH(O).cH(c);
+       hc <@ KemH(O).cH(cph);
        if (c = cph) {
           _K <@ KemH(O).kdf(_Kt,hc);
        }

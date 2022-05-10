@@ -31,7 +31,6 @@ fn __cmov(reg ptr u8[KYBER_SYMBYTES] dst, reg u64 src cnd) -> reg ptr u8[KYBER_S
   inline int i;
 
   cnd = -cnd;
-  bcond = (8u)cnd;
 
   for i=0 to KYBER_SYMBYTES
   {

@@ -92,9 +92,18 @@ module EncDec_AVX2 = {
     i <- 0;
     while (i < 4) {
       j <- 0;
+      while(j < 4) {
+        r <- Array256.fill (fun k => b2i a.[k %/ 8].[k %% 8]) (32*i + j*8) 8 r;
+        j <- j + 1;
+      }
+
+      j <- 0;
+      while(j < 4) {
+        r <- Array256.fill (fun k => b2i a.[k %/ 8].[k %% 8]) (128 + 32*i + j*8) 8 r;
+        j <- j + 1;
+      }
+      (* TODO: prove equivalence ??
       while(j < 8){
-        r <- Array256.fill (fun k => b2i a.[k %/ 8].[k %% 8]) (i*64+j*8) 8 r;
-        (* TODO:
         r.[64*i+j*8+0] <- b2i a.[8*i+j].[0];
         r.[64*i+j*8+1] <- b2i a.[8*i+j].[1];
         r.[64*i+j*8+2] <- b2i a.[8*i+j].[2];
@@ -103,11 +112,11 @@ module EncDec_AVX2 = {
         r.[64*i+j*8+5] <- b2i a.[8*i+j].[5];
         r.[64*i+j*8+6] <- b2i a.[8*i+j].[6];
         r.[64*i+j*8+7] <- b2i a.[8*i+j].[7];
-        *)
-        j <- j + 1;
       }
+      *)
       i<-i+1;
     }
+
     return r;
   }
 }.

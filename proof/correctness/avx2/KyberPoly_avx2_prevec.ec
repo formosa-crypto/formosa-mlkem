@@ -32,67 +32,6 @@ op f16u16_t2u128 (t: t16u16): t2u128 = Array2.init (fun i => pack8_t (W8u16.Pack
 op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16 (i %% 8)).
 
 
-lemma f16u16_t8u32K: cancel f8u32_t16u16 f16u16_t8u32.
-proof.
-  move => w.
-  rewrite /f8u32_t16u16 /f16u16_t8u32 /=.
-  apply Array8.ext_eq => x x_b.
-  rewrite initiE //=.
-  have ->: W2u16.Pack.init (fun (j: int) =>
-                           (Array16.init (fun (i : int) => w.[i %/ 2] \bits16 i %% 2)).[2 * x + j]) =
-          W2u16.Pack.init (fun (j: int) => w.[x] \bits16 j).
-    apply W2u16.Pack.ext_eq. move => x0 x0_b. do rewrite initiE 1://=.
-    simplify. rewrite initiE 1:/# /=.
-    rewrite mulzC. rewrite emodz_eq 1:/#. rewrite divzMDl //.
-    smt(@IntDiv).
-  rewrite (_ : pack2_t ((W2u16.Pack.init (fun (j : int) => w.[x] \bits16 j))) =
-               pack2 [w.[x] \bits16 0; w.[x] \bits16 1]).
-    apply W2u16.allP. trivial.
-  apply pack2_bits16.
-qed.
-
-lemma f8u32_t16u16K: cancel f16u16_t8u32 f8u32_t16u16.
-proof.
-  move => w.
-  rewrite /f16u16_t8u32 /f8u32_t16u16 /=.
-  apply Array16.ext_eq => x x_b.
-  rewrite initiE //=.
-  rewrite -get_unpack16 1:/#.
-  do rewrite initiE 1:/# //=.
-  rewrite mulzC -(divz_eq x _) //.
-qed.
-
-lemma f32u8_t4u64K: cancel f4u64_t32u8 f32u8_t4u64.
-proof.
-  move => w.
-  rewrite /f4u64_t32u8 /f32u8_t4u64 /=.
-  apply Array4.ext_eq => x x_b.
-  rewrite initiE //=.
-  have ->: W8u8.Pack.init (fun (j: int) =>
-                           (Array32.init (fun (i : int) => w.[i %/ 8] \bits8 i %% 8)).[8 * x + j]) =
-          W8u8.Pack.init (fun (j: int) => w.[x] \bits8 j).
-    apply W8u8.Pack.ext_eq. move => x0 x0_b. do rewrite initiE 1://=.
-    simplify. rewrite initiE 1:/# /=.
-    rewrite mulzC. rewrite emodz_eq 1:/#. rewrite divzMDl //.
-    smt(@IntDiv).
-  rewrite (_ : pack8_t ((W8u8.Pack.init (fun (j : int) => w.[x] \bits8 j))) =
-               pack8 [w.[x] \bits8 0; w.[x] \bits8 1; w.[x] \bits8 2; w.[x] \bits8 3;
-                      w.[x] \bits8 4; w.[x] \bits8 5; w.[x] \bits8 6; w.[x] \bits8 7]).
-    apply W8u8.allP. trivial.
-  apply pack8_bits8.
-qed.
-
-lemma f4u64_t8u32K: cancel f32u8_t4u64 f4u64_t32u8.
-proof.
-  move => w.
-  rewrite /f32u8_t4u64 /f4u64_t32u8 /=.
-  apply Array32.ext_eq => x x_b.
-  rewrite initiE //=.
-  rewrite -get_unpack8 1:/#.
-  do rewrite initiE 1:/# //=.
-  rewrite mulzC -(divz_eq x _) //.
-qed.
-
 module Mavx2_prevec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
