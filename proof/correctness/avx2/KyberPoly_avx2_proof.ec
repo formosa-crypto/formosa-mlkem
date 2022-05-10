@@ -9,7 +9,7 @@ require import KyberPoly_avx2_prevec.
 require import Fq_avx2.
 require import Fq.
 require import NTT_Fq.
-require import Jindcpa.
+require import Jkem.
 require import KyberPoly.
 
 pragma +oldip. (* TODO: remove me *)
@@ -1292,7 +1292,7 @@ lemma poly_decompress_corr mem _p (_a : W8.t Array128.t):
              Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 4 res{2} /\
              pos_bound256_cxq res{1} 0 256 1].
-proof. admit. (*
+proof.
   proc.
   cfold{1} 7.
   wp.
@@ -1549,7 +1549,7 @@ proof. admit. (*
       move : (rp_eq_r x x_i) => /#.
     + move => k k_i.
       move : (rp_eq_r k k_i) => /#.
-*)qed.
+qed.
 
 lemma poly_compress_corr _a (_p : address) mem :
     equiv [ Mavx2_prevec.poly_compress ~ EncDec_AVX2.encode4 :
@@ -2136,7 +2136,8 @@ proof.
     do rewrite packusid.
     rewrite (_: (4 * (k %% 8) - 3 * (k %% 4) + 4 * (k %/ 8)) %% 16 %/ 8 = k %% 32 %/ 16).
       have ?: k \in (iota_ (32 * i{2}) 32); first by rewrite mem_iota k_ub k_tlb.
-      move : H.
+      have ?: i{2} \in (iota_ 0 4); first by rewrite mem_iota i_tub i_lb.
+      move : H0 H.
       smt().
     rewrite -(fun_if W8.of_int).
     congr.
@@ -2457,10 +2458,18 @@ proof.
     apply Array32.ext_eq => x x_i.
     rewrite filliE 1:x_i //=.
     case (4 * i{2} <= x && x < 4 * i{2} + 4) => x_si.
-      + do (rewrite get_setE; first by move : i_lb i_tub => /#).
-        admit. (* FIXME:
-        smt(@Int @IntDiv @Array32 @List @W8). *)
-      + do(rewrite set_neqiE 1..2:/# //=).
+      do (rewrite get_setE; first by move : x_si i_lb i_ub => /# //=).
+      (* FIXME: smt should solve *)
+      case (x = 4 * i{2} + 3) => x_3.
+        by have -> /=: (x %% 4) = 3; move : x_3 => /#.
+      case (x = 4 * i{2} + 2) => x_2.
+        by have -> /=: (x %% 4) = 2; move : x_2 => /#.
+      case (x = 4 * i{2} + 1) => x_1.
+        by have -> /=: (x %% 4) = 1; move : x_1 => /#.
+      have -> /=: (x %% 4) = 0; move : x_si x_1 x_2 x_3 => /#.
+    do (rewrite set_neqiE; first 2 by move : x_si i_lb i_tub => /#).
+    done.
+
   rewrite filliE 1:/#.
   case (4 * i{2} <= k && k < 4 * i{2} + 4) => k_si.
     + have ->: to_uint rp{1} + 4 * i{2} <= to_uint rp{1} + k && to_uint rp{1} + k < to_uint rp{1} + 4 * i{2} + 4.
@@ -2488,8 +2497,11 @@ proof.
         rewrite modz_pow2_div 1://= //=.
       rewrite (_: 32 * i{2} + 16 * (216 %/ 4 ^ (k %% 4) %% 2) +
                     8 * (216 %/ 4 ^ (k %% 4) %/ 2 %% 2) = 32 * i{2} + 8 * (k %% 4)).
-        ring.
+        have ?: i{2} \in (iota_ 0 8); first by rewrite mem_iota i_tub i_lb.
+        rewrite andabP -(mem_iota (4*i{2}) 4 k) in k_si.
+        move : H k_si.
         admit. (* FIXME *)
+
       do rewrite modz_dvd 1://=.
       rewrite compress_avx2_impl_small 1:pos_bound_a 1:/#.
       rewrite b_decode_sem.
@@ -3948,6 +3960,5 @@ proof.
   inline *; wp; auto => /> /#.
   inline *; auto => /> /#.
 qed.
-
 
 end KyberPolyAVX.

@@ -7,7 +7,6 @@ require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 require import KyberPoly_avx2_proof.
 
-pragma +oldip.
 
 module Mvec = {
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
@@ -538,7 +537,7 @@ proof.
   while(={rp, bp, i} /\ 0 <= i{1}).
   wp.
   call eq_ivadd16u256.
-  wp. skip. rewrite /is16u16 => />. move => *.
+  wp. skip. rewrite /is16u16 => />. move => &1 i_lb i_ub.
   do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
@@ -555,7 +554,7 @@ proof.
   rewrite pack16K.
   rewrite get_of_list //.
   smt(@Array16).
-  move : H => /#.
+  move : i_lb => /#.
   wp; skip.
   move => &1 &2 H.
   split.
@@ -570,7 +569,7 @@ proof.
   while(={rp, ap, bp, i} /\ 0 <= i{1}).
   wp.
   call eq_ivsub16u256.
-  wp. skip. rewrite /is16u16 => />. move => *.
+  wp. skip. rewrite /is16u16 => />. move => &1 i_lb i_ub.
   do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
@@ -587,7 +586,7 @@ proof.
   rewrite pack16K.
   rewrite get_of_list //.
   smt(@Array16).
-  move : H => /#.
+  move : i_lb => /#.
   wp; skip.
   move => &1 &2 H.
   split.
@@ -600,8 +599,8 @@ equiv eq_poly_csubq:
 proof.
   proc.
   while(={rp, i, qx16} /\ 0 <= i{1} /\ is16u16 _qx16{1} qx16{2}).
-    inline Mvec.csubq.
-    wp.
+    inline Mvec.csubq. 
+   wp.
     do !(call eq_ivadd16u256 || call eq_ivpand16u16 || call eq_iVPSRA_16u16 || call eq_ivsub16u256).
     wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
     rewrite /lift2poly; simplify; rewrite pack16_bits16 => //.
@@ -747,7 +746,7 @@ proof.
   do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
-  move => *.
+  move => rp_eq res2.
   do split.
   rewrite fillE.
   apply Array256.ext_eq.
@@ -760,7 +759,7 @@ proof.
   rewrite pack16K.
   rewrite get_of_list => //.
   smt(@Array16).
-  move : H => /#.
+  move : i_lb => /#.
   wp; skip.
   move => &1 &2 rp_eq qx16_R vx16_R qx16_L vx16_L.
   do split.
@@ -850,14 +849,14 @@ proof.
       smt(@Int @IntDiv @W16u16 @Array16 @Array256).
     + move : i_lb => /#.
   do (wp; call eq_iVPBROADCAST_8u32).
-  wp; skip; auto => />. move => *.
+  wp; skip; auto => />. move => resL resR resL_eq_resR resL0 resR0 resL0_eq_resR0.
   do split.
     + rewrite /is16u16 initiE /get256_direct /= => />.
       apply W32u8.allP => />.
-    + rewrite /is16u16 /f8u32_t16u16 H initiE //=.
+    + rewrite /is16u16 /f8u32_t16u16 resL_eq_resR initiE //=.
       apply W8u32.allP => />.
       do (rewrite pack2_bits16 //=).
-    + rewrite /is16u16 /f8u32_t16u16 H0 initiE //=.
+    + rewrite /is16u16 /f8u32_t16u16 resL0_eq_resR0 initiE //=.
       apply W8u32.allP => />.
       do (rewrite pack2_bits16 //=).
     + rewrite /is32u8 initiE /get256_direct /= => />.
@@ -925,6 +924,77 @@ proof.
       apply W16u16.allP => />.
       do (rewrite pack2_bits8 //=).
 qed.
+
+equiv eq_schoolbook:
+  Mavx2_prevec.schoolbook ~ Mvec.schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
+                                             is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==>
+                                             is16u16 res{1}.`1 res{2}.`1 /\ is16u16 res{1}.`2 res{2}.`2 /\
+                                             is16u16 res{1}.`3 res{2}.`3 /\ is16u16 res{1}.`4 res{2}.`4.
+proof.
+  proc.
+  wp.
+  do call eq_ivadd32u256.
+  seq 33 25 : (#pre /\
+               is8u32 ac0_dw{1} ac0{2} /\ is8u32 rbd0_dw{1} rbd0{2} /\
+               is8u32 ac1_dw{1} ac1{2} /\ is8u32 rbd1_dw{1} rbd1{2} /\
+               is8u32 bc0_dw{1} bc0{2} /\ is8u32 bc1_dw{1} bc1{2} /\
+               is8u32 ad0_dw{1} ad0{2} /\ is8u32 ad1_dw{1} ad1{2}).
+    wp.
+    do (call eq_iVPMULH_256 || call eq_iVPMULL_16u16 || call eq_iVPUNPCKH_16u16 || call eq_iVPUNPCKL_16u16 || call eq_ivsub16u256).
+    wp. auto => />.
+    move => &1 &2 [#] zeta_eq qx_eq qinvx_eq />.
+    do split.
+      + rewrite /get256_direct /= => />.
+        apply W32u8.allP => />.
+      + rewrite /get256_direct /= => />.
+        apply W32u8.allP => />.
+    move => b_eq d_eq res0_l res0_r res0_eq res1_l res1_r res1_eq />.
+    split.
+      + rewrite /get256_direct /= => />.
+        apply W32u8.allP => />.
+    move => c_eq res2l res2r res2_eq res3l res3r res3_eq />.
+    split.
+      + rewrite /get256_direct /= => />.
+        apply W32u8.allP => />.
+    move => a_eq />.
+    move => [#] res4l res4r res4_eq res5l res5r res5_eq res6l res6r res6_eq res7l res7r res7_eq
+                res8l res8r res8_eq res9l res9r res9_eq res10l res10r res10_eq res11l res11r res11_eq
+                res12l res12r res12_eq res13l res13r res13_eq res14l res14r res14_eq res15l res15r res15_eq
+                res16l res16r res16_eq res17l res17r res17_eq res18l res18r res18_eq res19l res19r res19_eq
+                res20l res20r res20_eq.
+    do split; first 8 by rewrite /is8u32 /f16u16_t8u32 initiE.
+  if{1}.
+    + rcondt{2} 1.
+      trivial.
+      do call eq_ivadd32u256.
+      skip; auto => />.
+      move => &1 &2 [#] zeta_eq qx_eq qinvx_eq ac0_eq rbd0_eq ac1_eq rbd1_eq bc0_eq bc1_eq ad0_eq ad1_eq
+                        res0_l res0_r res0_eq res1_l res1_r res1_eq res2_l res2_r res2_eq res3l res3r res3_eq />.
+      do split.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res0_eq.
+          apply W16u16.allP => />.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res1_eq.
+          apply W16u16.allP => />.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res2_eq.
+          apply W16u16.allP => />.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res3_eq.
+          apply W16u16.allP => />.
+    + rcondf{2} 1.
+      trivial.
+      do call eq_ivsub32u256.
+      skip; auto => />.
+      move => &1 &2 [#] zeta_eq qx_eq qinvx_eq ac0_eq rbd0_eq ac1_eq rbd1_eq bc0_eq bc1_eq ad0_eq ad1_eq sign_not_0
+                        res0_l res0_r res0_eq res1_l res1_r res1_eq res2_l res2_r res2_eq res3l res3r res3_eq />.
+      do split.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res0_eq.
+          apply W16u16.allP => />.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res1_eq.
+          apply W16u16.allP => />.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res2_eq.
+          apply W16u16.allP => />.
+        + rewrite /is16u16 /f8u32_t16u16 initiE //= res3_eq.
+          apply W16u16.allP => />.
+qed. 
 
 equiv veceq_poly_add2 :
   Mvec.poly_add2 ~ M._poly_add2: ={rp, bp} ==> ={res}.
@@ -1035,10 +1105,19 @@ proof.
   while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
   inline *.
   wp. skip. auto => />.
+  admit. (* FIXME: PERMD semantics in eclib *)
   inline OpsV.iVPBROADCAST_16u16.
   wp.
   call veceq_poly_csubq.
   wp. skip. auto => />.
+qed.
+
+equiv veceq_schoolbook:
+  Mvec.schoolbook ~ M.__schoolbook: ={ap, bp, sign, zeta_0, qx16, qinvx16} ==> ={res}.
+proof.
+  proc.
+  inline *.
+  wp; skip; auto => />.
 qed.
 
 equiv veceq_eq_poly_basemul:
@@ -1084,8 +1163,8 @@ apply veceq_poly_tomsg.
 qed.
 
 equiv prevec_eq_poly_frommsg:
-  Mavx2_prevec.poly_frommsg ~ M._poly_frommsg: ={rp, ap, Glob.mem} ==> ={res}.
-     transitivity Mvec.poly_frommsg (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
+  Mavx2_prevec.poly_frommsg ~ M._poly_frommsg: ={rp, ap, Glob.mem}  /\ (valid_ptr (to_uint ap{1}) 32)==> ={res}.
+     transitivity Mvec.poly_frommsg (={rp, ap, Glob.mem} /\ (valid_ptr (to_uint ap{1}) 32) ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_frommsg.
 apply veceq_poly_frommsg.
@@ -1141,3 +1220,18 @@ apply eq_poly_compress.
 apply veceq_poly_compress.
 qed.
 
+equiv prevec_eq_schoolbook:
+  Mavx2_prevec.schoolbook ~ M.__schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
+                                             is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==>
+                                             is16u16 res{1}.`1 res{2}.`1 /\ is16u16 res{1}.`2 res{2}.`2 /\
+                                             is16u16 res{1}.`3 res{2}.`3 /\ is16u16 res{1}.`4 res{2}.`4.
+proof.
+  transitivity Mvec.schoolbook (={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
+                                is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==>
+                                is16u16 res{1}.`1 res{2}.`1 /\ is16u16 res{1}.`2 res{2}.`2 /\
+                                is16u16 res{1}.`3 res{2}.`3 /\ is16u16 res{1}.`4 res{2}.`4)
+                               (={ap, bp, sign, zeta_0, qx16, qinvx16} ==> ={res}).
+  smt. trivial.
+  apply eq_schoolbook.
+  apply veceq_schoolbook.
+qed.

@@ -349,10 +349,10 @@ module Mavx2_prevec = {
     var rbd1_dw: t8u32;
 
 
-    b <- lift2poly(get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 1));
-    d <- lift2poly(get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 1));
-    a <- lift2poly(get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 0));
-    c <- lift2poly(get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 0));
+    b <- Array16.init (fun i => ap.[16 + i]);
+    d <- Array16.init (fun i => bp.[16 + i]);
+    a <- Array16.init (fun i => ap.[i]);
+    c <- Array16.init (fun i => bp.[i]);
     bdlo <@ Ops.iVPMULL_16u16(b, d);
     bdhi <@ Ops.iVPMULH_256(b, d);
     bclo <@ Ops.iVPMULL_16u16(b, c);

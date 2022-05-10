@@ -7,7 +7,7 @@ require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 require import KyberPoly.
 require import NTT_Fq.
-require import Jindcpa.
+require import Jkem.
 
 pragma +oldip.
 
