@@ -439,6 +439,9 @@ case (i < 960).
 by move => ibb; rewrite !initiE /=/#.
 qed.
 
+require import StdOrder. 
+import IntOrder.
+
 lemma verify_correct_h mem (_ctp : int) ctp1 :
   hoare [ M.__verify : 
              Glob.mem = mem /\ valid_ptr _ctp 1088 /\
@@ -448,9 +451,79 @@ lemma verify_correct_h mem (_ctp : int) ctp1 :
                        res = W64.of_int 0) /\
              (Array1088.init (fun i => loadW8 mem (_ctp + i)) <> ctp1 => 
                        res = W64.of_int 1)].
-admitted.
+proc => /=.
+wp; while (#pre /\ 0 <= i{hr} <= 1088 /\ aux{hr} = 1088 /\ 0<=to_uint cnd<256 /\
+           (to_uint cnd{hr} = 0 <=> 
+            forall k, 0 <= k < i{hr} => loadW8 mem (_ctp + k) = ctp1.[k])); last first.
++ auto => /> &hr ??; split; 1: by smt().
+  move => cnd i ????? [HL HR]; split. 
+  rewrite tP => H1.
+  rewrite /(`>>`) /= to_uint_eq to_uint_shr // to_uintNE /= (HR _); 2..: by smt(). 
+  + by move => k kb; rewrite -H1 1: /# initiE /= /#. 
+  rewrite tP /= => H.
+  have HH : to_uint cnd <> 0.
+  + have : exists k, 0 <= k < 1088 /\ 
+        (Array1088.init (fun (i1 : int) => loadW8 mem (to_uint ctp{hr} + i1))).[k] <> ctp1.[k] by smt().
+    by move => [k [kb]]; rewrite initiE //= /#.
+  rewrite /(`>>`) /= to_uint_eq to_uint_shr // to_uintNE /=.
+  by  smt(W64.to_uint_cmp pow2_64). 
 
-lemma verify_ll : islossless M.__verify. admitted.
+auto => /> &hr ?????? [HL HR] ?.
+
+pose x := 
+      ((WArray1088.WArray1088.get8 ((WArray1088.WArray1088.init8 ("_.[_]" ctp1))) i{hr}) `^`
+       loadW8 mem (to_uint (ctp{hr} + (of_int i{hr})%W64))).
+
+have H : 0 <= to_uint (cnd{hr} `|` zeroextu64 x) < 256.
++ split; 1: by smt(W64.to_uint_cmp).
+  move => *.
+  have -> : cnd{hr} `|` zeroextu64 x = zeroextu64 (truncateu8 cnd{hr} `|` x); last by
+     rewrite to_uint_zeroextu64; move :  W8.to_uint_cmp => /= /#.
+  rewrite wordP => k kb. rewrite zeroextu64_bit !orwE /= zeroextu64_bit /=. 
+  case (0 <= k && k < 8).
+  + by move => /= kbb; congr; rewrite !get_to_uint kb  kbb /= to_uint_truncateu8 /= /#.
+  move => /= *; rewrite get_to_uint kb /=. 
+  have : 256 = 2^8 by auto. print IntOrder.
+  move : (ler_weexpn2l 2 _ 8 k) => //=.
+  by smt(divz_small).
+
+do split; 1..4: by smt(W64.to_uint_cmp).
+
++ move => H0 k kbl kbh.
+
+  have H1 : to_uint cnd{hr} = 0. 
+  + have : cnd{hr} = W64.zero; last by rewrite to_uint_eq /=.
+    have : (cnd{hr} `|` zeroextu64 x) = W64.zero by rewrite to_uint_eq  H0 /=.
+    by rewrite !wordP; smt(orwE zerowE).
+
+  have H2 : x = W8.zero.
+  + have : (cnd{hr} `|` zeroextu64 x) = W64.zero by rewrite to_uint_eq  H0 /=. 
+    by rewrite !wordP; smt(orwE zerowE W8u8.zeroextu64_bit).
+
+  case (k < i{hr}); 1: by move => *; apply (HL _ _) => // /#. 
+
+  move : H2; rewrite /x W8.WRing.addr_eq0 /oppw /=. 
+  rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
+  by rewrite to_uintD_small /= of_uintK /= /#. 
+  
+move => H0.
+have -> : cnd{hr} = W64.zero by rewrite to_uint_eq /= /#.
+rewrite or0w;have -> : zeroextu64 x = W64.zero; last by auto.
+rewrite wordP => k kb; rewrite zerowE.
+case (8 <= k); 1: by smt(W8u8.zeroextu64_bit).
+move => kbb; rewrite W8u8.zeroextu64_bit.
+have -> /= : 0 <= k && k < 8 by smt().
+
+rewrite /x to_uintD_small /= of_uintK /= 1:/# modz_small /= 1:/#. 
+rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
+by rewrite -(H0 i{hr} _); 1: by smt().
+qed.
+
+lemma verify_ll : islossless M.__verify.
+proc.
+wp; while (0 <= i{hr} <= 1088 /\ aux{hr} = 1088) (1088 - i{hr}); last by auto => /> /#.
+by move => *; auto => /> /#. 
+qed.
 
 lemma verify_correct mem (_ctp : int) ctp1 :
   phoare [ M.__verify : 
@@ -472,14 +545,45 @@ lemma cmov_correct_h _dst _src _cnd mem:
              (_cnd = W64.of_int 1 => res = (Array32.init (fun i => loadW8 mem (_src + i)))) /\
              (_cnd = W64.of_int 0 => res = _dst)].
 proc => /=.
-(* redundant assignment to bcond *)
-seq 2 : (#{/~cnd}pre /\ (_cnd = W64.zero => truncateu8 cnd = W8.masklsb 0) /\
-                (_cnd = W64.one => truncateu8 cnd = W8.masklsb 8)).
-+ auto => /> &1 ?? /=. admit.
-admit.
+seq 1 : (#{/~cnd}pre /\ (_cnd = W64.zero => cnd = W64.zero) /\
+                (_cnd = W64.one => cnd = W64.onew));
+  1: by auto => /> &1 ?? /=; split; [ by ring | by rewrite W64.minus_one /=].
+
+while (#{/~dst{hr}=_dst}pre /\ 0 <= i{hr} <=32 /\ Glob.mem{hr} = mem /\
+           (forall k, i{hr} <=k <32 => dst.[k] = _dst.[k]) /\
+           (_cnd = W64.one => forall k, 0<=k<i{hr} => dst.[k] = loadW8 mem (_src + k)) /\
+           (_cnd = W64.zero =>forall k, 0<=k<i{hr} => dst.[k] = _dst.[k])); last first.
++ auto => />  &hr ? back case0 case1; split; 1: smt(). 
+  move => dst i???? case00 case11 ; split.
+  + move => cs; rewrite tP => k kb.
+    by rewrite initiE //= (case00 cs _) 1:/# /=.
+  move => cs; rewrite tP => k kb.
+  by rewrite (case11 cs _) 1:/# /=.
+
+auto => /> &hr ?? case0 case1 ?? back case00 case11 ?; do split; 1,2: by smt().
++ move => k kbl kbh; rewrite initiE /= 1:/#  WArray32.WArray32.get_set8E //.
+  have -> /= : k <> i{hr} by smt().
+  by rewrite /init8 /get8 /= WArray32.WArray32.initiE /= /#.
+
++ move => cs k kbl kbh; rewrite initiE  1:/#  WArray32.WArray32.get_set8E //.
+  case (k = i{hr}); last first.
+  + by move => *; rewrite /init8 /get8 /= WArray32.WArray32.initiE /= /#.
+  move => vk; rewrite vk /=. 
+  have -> : truncateu8 cnd{hr} = W8.onew 
+     by apply  W8.to_uint_eq; rewrite to_uint_truncateu8 /= (case1 cs) /= to_uint_onew W8.to_uint_onew /=. 
+  rewrite W8.andw1  xorwC -xorwA xorwK xorw0_s. 
+  by rewrite to_uintD_small /= of_uintK /= modz_small /#. 
+
++ move => cs k kbl kbh; rewrite initiE  1:/#  WArray32.WArray32.get_set8E //.
+  case (k = i{hr}); last first.
+  + by move => *; rewrite /init8 /get8 /= WArray32.WArray32.initiE /= /#.
+  move => vk; rewrite vk /=. 
+  have -> : truncateu8 cnd{hr} = W8.zero
+     by apply  W8.to_uint_eq; rewrite to_uint_truncateu8 /= (case0 cs) /=.
+  by rewrite W8.andw0 /=  /init8 /get8 /= WArray32.WArray32.initiE /= /#.
 qed.
 
-lemma cmov_ll : islossless M.__cmov. admitted.
+lemma cmov_ll : islossless M.__cmov by proc; unroll for 3; islossless.
 
 lemma cmov_correct _dst _src _cnd mem:
    phoare [ M.__cmov : 
