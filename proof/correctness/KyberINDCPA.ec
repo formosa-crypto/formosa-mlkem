@@ -1201,29 +1201,29 @@ equiv auxenc_good :
   M.__indcpa_enc ~ AuxKyber.indcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
-swap {1} 7 -6.
-swap {1} 12 -10.
+swap {1} 6 -5.
+swap {1} 10 -8.
 seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
 
-swap {1} 7 -6.
-swap {1} [11..13] -9.
+swap {1} 6 -5.
+swap {1} [9..11] -7.
 seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
 
-swap {1} 12 -10. 
+swap {1} 9 -7. 
 seq 2 3 : (#pre /\ aat{1}=at{2}); 1: by call auxgenmatrix_good;auto => />.
 
 swap {1} 4 -3.
-swap {1} 9 -7.
+swap {1} 7 -5.
 
 seq 2 2 : (#pre /\ ={k}); 1: by sim.
 
 swap {1} [2..3] -1.
-swap {1} 6 -5.
-swap {1} [8..29] -1.
-swap {1} 3 24.
-swap {1} 3 26.
+swap {1} 4 -3.
+swap {1} [6..27] -1.
+swap {1} 4 21.
+swap {1} 3 19.
 
-seq 27 1 : (#pre /\ ={sp_0,ep,epp}).
+seq 23 1 : (#pre /\ ={sp_0,ep,epp}).
 transitivity {1} {(sp_0,ep,epp) <@ AuxKyber.sample_noise3_jasmin(noiseseed);}
      (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} )
@@ -1232,8 +1232,6 @@ transitivity {1} {(sp_0,ep,epp) <@ AuxKyber.sample_noise3_jasmin(noiseseed);}
 + by inline  AuxKyber.sample_noise3_jasmin AuxKyber.sample_noise2_jasmin; sim.  
 + by conseq />; call sample_noise_good3; auto => />.
 
-swap {1} 1 8.
-swap {1} 1 1.
 by sim. 
 qed.
 
@@ -1241,39 +1239,39 @@ equiv auxienc_good :
   M.__iindcpa_enc ~ AuxKyber.iindcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
-swap {1} 7 -6.
-swap {1} 14 -12.
+swap {1} 6 -5.
+swap {1} 12 -10.
 swap {2} 1 29.
 seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
 
-swap {1} 7 -6.
-swap {1} [13..15] -11.
+swap {1} 6 -5.
+swap {1} [11..13] -9.
 seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
 
-swap {1} 14 -12. 
+swap {1} 11 -9. 
 seq 2 3 : (#pre /\ aat{1}=at{2}); 1: by call auxgenmatrix_good;auto => />.
 
 swap {1} 4 -3.
-swap {1} 11 -9.
+swap {1} 9 -7.
 
 seq 2 2 : (#pre /\ ={k}); 1: by sim.
 
 swap {1} [2..3] -1.
 swap {1} 5 -4.
-swap {1} [10..31] -1.
-swap {1} 3 26.
-swap {1} 3 29.
+swap {1} [8..27] -1.
+swap {1} 3 22.
+swap {1} 3 24.
 
-seq 29 1 : (#pre /\ ={sp_0,ep,epp}).
+seq 25 1 : (#pre /\ ={sp_0,ep,epp}).
 transitivity {1} {(sp_0,ep,epp) <@ AuxKyber.sample_noise3_jasmin(noiseseed);}
      (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ ctp{1} = ctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ ctp{1} = ctp{2} )
       (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = at{2} /\ ctp{1} = ctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp}  /\ aat{1} = at{2} /\ ctp{1} = ctp{2} ); 1,2:   smt(). 
-+ by inline  AuxKyber.sample_noise3_jasmin AuxKyber.sample_noise2_jasmin; sim; auto => />.
++ by  inline  AuxKyber.sample_noise3_jasmin AuxKyber.sample_noise2_jasmin; sim; auto => />.
 + by conseq />; call sample_noise_good3; auto => />.
 
-swap {1} 1 16.
+swap {1} 2 1.
 by sim. 
 qed.
 

@@ -29,6 +29,31 @@ axiom cH_sha mem _ptr inp:
           res = SHA3_256_1088_32
             (Array1088.init (fun k =>  mem.[_ptr+k]))] = 1%r.
 
+axiom kdf_sha mem _ptr (inp : W8.t Array64.t): 
+    phoare [ M._shake256_64 :
+          arg = (W64.of_int _ptr,W64.of_int 32,inp) /\
+          valid_ptr _ptr 32 /\
+          Glob.mem = mem
+          ==> 
+          touches Glob.mem mem _ptr 32 /\
+          (Array32.init (fun k =>  Glob.mem.[_ptr+k])) = SHAKE256_64_32 inp] = 1%r.
+
+axiom sha_g buf inp: 
+    phoare [ M._sha3_512_64 :
+          arg = (inp,buf)
+          ==> 
+          res = SHA3_256_64_64 buf] = 1%r.
+
+axiom sha_khs mem _ptr inp: 
+    phoare [ M._isha3_256 :
+          arg = (inp,W64.of_int _ptr,W64.of_int 32) /\
+          valid_ptr _ptr 32 /\
+          Glob.mem = mem
+          ==> 
+          Glob.mem = mem /\
+          res = SHA3_256_32_32
+            (Array32.init (fun k =>  mem.[_ptr+k])) ()] = 1%r.
+
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
 lemma kyber_kem_correct_kg mem _pkp _skp _randomnessp : 
@@ -322,30 +347,6 @@ move => *; split; 1: by smt().
 by rewrite tP => i ib; rewrite initiE //= /#.
 qed.
 
-axiom kdf_sha mem _ptr (inp : W8.t Array64.t): 
-    phoare [ M._shake256_64 :
-          arg = (W64.of_int _ptr,W64.of_int 32,inp) /\
-          valid_ptr _ptr 32 /\
-          Glob.mem = mem
-          ==> 
-          touches Glob.mem mem _ptr 32 /\
-          (Array32.init (fun k =>  Glob.mem.[_ptr+k])) = SHAKE256_64_32 inp] = 1%r.
-
-axiom sha_g buf inp: 
-    phoare [ M._sha3_512_64 :
-          arg = (inp,buf)
-          ==> 
-          res = SHA3_256_64_64 buf] = 1%r.
-
-axiom sha_khs mem _ptr inp: 
-    phoare [ M._isha3_256 :
-          arg = (inp,W64.of_int _ptr,W64.of_int 32) /\
-          valid_ptr _ptr 32 /\
-          Glob.mem = mem
-          ==> 
-          Glob.mem = mem /\
-          res = SHA3_256_32_32
-            (Array32.init (fun k =>  mem.[_ptr+k])) ()] = 1%r.
 
 lemma kyber_kem_correct_enc mem _ctp _pkp _rp _kp : 
    equiv [ M.__crypto_kem_enc_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).enc_derand: 
@@ -440,7 +441,7 @@ qed.
 
 lemma verify_correct_h mem (_ctp : int) ctp1 :
   hoare [ M.__verify : 
-             Glob.mem = mem /\
+             Glob.mem = mem /\ valid_ptr _ctp 1088 /\
              to_uint ctp = _ctp /\ ctpc = ctp1 ==>
              Glob.mem = mem /\
              (Array1088.init (fun i => loadW8 mem (_ctp + i)) = ctp1 => 
@@ -453,7 +454,7 @@ lemma verify_ll : islossless M.__verify. admitted.
 
 lemma verify_correct mem (_ctp : int) ctp1 :
   phoare [ M.__verify : 
-             Glob.mem = mem /\
+             Glob.mem = mem /\ valid_ptr _ctp 1088 /\
              to_uint ctp = _ctp /\ ctpc = ctp1 ==>
              Glob.mem = mem /\
              (Array1088.init (fun i => loadW8 mem (_ctp + i)) = ctp1 => 
@@ -462,6 +463,32 @@ lemma verify_correct mem (_ctp : int) ctp1 :
                        res = W64.of_int 1)] = 1%r 
    by conseq verify_ll (verify_correct_h mem _ctp ctp1).
 
+require import List.
+lemma cmov_correct_h _dst _src _cnd mem:
+   hoare [ M.__cmov : 
+             Glob.mem = mem /\ valid_ptr _src 32 /\
+             to_uint src = _src /\ cnd = _cnd /\ dst = _dst ==>
+             Glob.mem = mem /\
+             (_cnd = W64.of_int 1 => res = (Array32.init (fun i => loadW8 mem (_src + i)))) /\
+             (_cnd = W64.of_int 0 => res = _dst)].
+proc => /=.
+(* redundant assignment to bcond *)
+seq 2 : (#{/~cnd}pre /\ (_cnd = W64.zero => truncateu8 cnd = W8.masklsb 0) /\
+                (_cnd = W64.one => truncateu8 cnd = W8.masklsb 8)).
++ auto => /> &1 ?? /=. admit.
+admit.
+qed.
+
+lemma cmov_ll : islossless M.__cmov. admitted.
+
+lemma cmov_correct _dst _src _cnd mem:
+   phoare [ M.__cmov : 
+             Glob.mem = mem /\ valid_ptr _src 32 /\
+             to_uint src = _src /\ cnd = _cnd /\ dst = _dst ==>
+             Glob.mem = mem /\
+             (_cnd = W64.of_int 1 => res = (Array32.init (fun i => loadW8 mem (_src + i)))) /\
+             (_cnd = W64.of_int 0 => res = _dst)] = 1%r
+    by conseq cmov_ll (cmov_correct_h _dst _src _cnd mem).
 
 lemma kyber_kem_correct_dec mem _ctp _skp _shkp : 
    equiv [ M.__crypto_kem_dec_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).dec: 
@@ -533,7 +560,8 @@ wp; conseq (_: _ ==>
   + by move => *; rewrite pack8bE 1:/# initiE /= 1:/# to_uintD_small /= of_uintK /= modz_small /#. 
   by move => *; rewrite /WArray64.WArray64.get8 WArray64.WArray64.initiE /= /#.  
     
-seq 4 1 : (#pre /\ ctpc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
+seq 4 1 : (#pre /\ to_uint s_skp{1} = _skp /\ 
+           ctpc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
 + wp;call (kyber_correct_ienc mem (_skp + 1152)).
   auto => /> &1 &2 ???????; rewrite /load_array1152 /load_array32 /load_array960 !tP => ?????; do split; 1..2: by smt().
   + by move => i ib; rewrite initiE /= /#.
@@ -549,7 +577,7 @@ sp 3 0; seq 1 0 : (#pre /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)); 1: smt(). 
    ecall {1} (verify_correct mem _ctp ctpc{1}).
    auto => /> &1 &2; rewrite /load_array960 /load_array128 !tP.
-   move  => ????????cphv???rst Heq Hdiff.
+   move  => ????????cphv????rst Heq Hdiff.
    rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) /= in cphv; 1: by smt().
    move : cphv;rewrite !tP ; move => [cphv1 cphv2].
    split.
@@ -582,14 +610,23 @@ sp 3 0; seq 1 0 : (#pre /\
 seq 4 0: (#{/~aux{1}= oget m{2}}pre /\ 
    (c{2}  = cph{2} =>  aux{1} = _Kt{2}) /\
    (c{2}  <> cph{2} =>  aux{1} = z{2})).
-+ admit.
+conseq => />.
+ecall {1} (cmov_correct (Array32.init (fun (i_0 : int) => kr{1}.[0 + i_0])) (_skp + 2368) cnd{1} Glob.mem{1}).
++ auto => /> &1 &2 ???????; rewrite /load_array1152 /load_array32 !tP => ??????ceq cdif.
+do split; 1..2: by smt().
+  + by rewrite /(`|>>`) /(`<<`) /= to_uintD_small of_uintK /= /#. 
+  + move => ??? rst rstv0 rstv1; split. 
+    + move => H; rewrite (rstv1 (ceq H)) tP => k kb.
+      by rewrite initiE //= /#.
+    move => H; rewrite (rstv0 (cdif H)) tP => k kb.
+    by rewrite !initiE //= /#.
 
 wp;ecall {1} (kdf_sha Glob.mem{1} _shkp kr{1}).
 wp;ecall {1} (cH_sha Glob.mem{1} _ctp (Array32.init (fun (i : int) => kr{1}.[32 + i]))).
 
 inline *; wp; auto => /> &1 &2 ??????.
 rewrite /load_array1152 /load_array32 /load_array960 /load_array128 /touches !tP.
-move => ??cphv????? veq vdiff.
+move => ??cphv?????? veq vdiff.
 rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) /= in cphv; 1: by smt().
 move : cphv;rewrite !tP ; move => [cphv1 cphv2].
 split.

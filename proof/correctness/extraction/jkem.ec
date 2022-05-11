@@ -1856,9 +1856,7 @@ module M = {
     var c:W8.t;
     var publicseed:W8.t Array32.t;
     var k:W16.t Array256.t;
-    var s_noiseseed:W8.t Array32.t;
     var aat:W16.t Array2304.t;
-    var lnoiseseed:W8.t Array32.t;
     var nonce:W8.t;
     var sp_0:W16.t Array768.t;
     var ep:W16.t Array768.t;
@@ -1871,10 +1869,8 @@ module M = {
     ep <- witness;
     epp <- witness;
     k <- witness;
-    lnoiseseed <- witness;
     pkpv <- witness;
     publicseed <- witness;
-    s_noiseseed <- witness;
     sp_0 <- witness;
     v <- witness;
     pkpv <@ __polyvec_frombytes (pkp);
@@ -1888,44 +1884,42 @@ module M = {
       i <- (i + (W64.of_int 1));
     }
     k <@ _i_poly_frommsg (k, msgp);
-    s_noiseseed <- noiseseed;
     aat <@ __gen_matrix (publicseed, (W64.of_int 1));
-    lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 0);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[0 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else sp_0.[i]);
     nonce <- (W8.of_int 1);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[256 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i => if 256 <= i < 256 + 256 then aux.[i-256]
             else sp_0.[i]);
     nonce <- (W8.of_int 2);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[(2 * 256) + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i => if (2 * 256) <= i < (2 * 256) + 256
             then aux.[i-(2 * 256)] else sp_0.[i]);
     nonce <- (W8.of_int 3);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[0 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     ep <- Array768.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else ep.[i]);
     nonce <- (W8.of_int 4);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[256 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     ep <- Array768.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else ep.[i]);
     nonce <- (W8.of_int 5);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[(2 * 256) + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     ep <- Array768.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else ep.[i]);
     nonce <- (W8.of_int 6);
-    epp <@ _poly_getnoise (epp, lnoiseseed, nonce);
+    epp <@ _poly_getnoise (epp, noiseseed, nonce);
     sp_0 <@ __polyvec_ntt (sp_0);
     aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[0 + i_0])),
     sp_0);
@@ -1967,9 +1961,7 @@ module M = {
     var c:W8.t;
     var publicseed:W8.t Array32.t;
     var k:W16.t Array256.t;
-    var s_noiseseed:W8.t Array32.t;
     var aat:W16.t Array2304.t;
-    var lnoiseseed:W8.t Array32.t;
     var nonce:W8.t;
     var sp_0:W16.t Array768.t;
     var ep:W16.t Array768.t;
@@ -1981,10 +1973,8 @@ module M = {
     ep <- witness;
     epp <- witness;
     k <- witness;
-    lnoiseseed <- witness;
     pkpv <- witness;
     publicseed <- witness;
-    s_noiseseed <- witness;
     sctp <- witness;
     sp_0 <- witness;
     v <- witness;
@@ -2000,44 +1990,42 @@ module M = {
       i <- (i + (W64.of_int 1));
     }
     k <@ _i_poly_frommsg (k, msgp);
-    s_noiseseed <- noiseseed;
     aat <@ __gen_matrix (publicseed, (W64.of_int 1));
-    lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 0);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[0 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else sp_0.[i]);
     nonce <- (W8.of_int 1);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[256 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i => if 256 <= i < 256 + 256 then aux.[i-256]
             else sp_0.[i]);
     nonce <- (W8.of_int 2);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[(2 * 256) + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i => if (2 * 256) <= i < (2 * 256) + 256
             then aux.[i-(2 * 256)] else sp_0.[i]);
     nonce <- (W8.of_int 3);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[0 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     ep <- Array768.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else ep.[i]);
     nonce <- (W8.of_int 4);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[256 + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     ep <- Array768.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else ep.[i]);
     nonce <- (W8.of_int 5);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[(2 * 256) + i_0])),
-    lnoiseseed, nonce);
+    noiseseed, nonce);
     ep <- Array768.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else ep.[i]);
     nonce <- (W8.of_int 6);
-    epp <@ _poly_getnoise (epp, lnoiseseed, nonce);
+    epp <@ _poly_getnoise (epp, noiseseed, nonce);
     sp_0 <@ __polyvec_ntt (sp_0);
     aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[0 + i_0])),
     sp_0);
@@ -2128,13 +2116,11 @@ module M = {
   proc __cmov (dst:W8.t Array32.t, src:W64.t, cnd:W64.t) : W8.t Array32.t = {
     var aux: int;
     
-    var bcond:W8.t;
     var i:int;
     var t1:W8.t;
     var t2:W8.t;
     
     cnd <- (- cnd);
-    bcond <- (truncateu8 cnd);
     i <- 0;
     while (i < 32) {
       t1 <- (get8_direct (WArray32.init8 (fun i => dst.[i])) i);
