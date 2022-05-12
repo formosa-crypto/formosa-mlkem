@@ -127,7 +127,7 @@ module Ops = {
   proc iVPMULL_16u16(x y: t16u16) : t16u16 = {
     var r : t16u16;
 
-    r <- Array16.init (fun i => x.[i] * y.[i]);
+    r <- Array16.init (fun i => wmulls x.[i] y.[i]);
 
     return r;
   }
@@ -168,14 +168,8 @@ module Ops = {
 
   proc ivadd32u256(x y:t8u32) : t8u32 = {
     var r : t8u32;
-    r.[0] <- x.[0] + y.[0];
-    r.[1] <- x.[1] + y.[1];
-    r.[2] <- x.[2] + y.[2];
-    r.[3] <- x.[3] + y.[3];
-    r.[4] <- x.[4] + y.[4];
-    r.[5] <- x.[5] + y.[5];
-    r.[6] <- x.[6] + y.[6];
-    r.[7] <- x.[7] + y.[7];
+
+    r <- Array8.init (fun i => x.[i] + y.[i]);
 
     return r;
   }
@@ -190,14 +184,8 @@ module Ops = {
 
   proc ivsub32u256(x y: t8u32) : t8u32 = {
     var r : t8u32;
-    r.[0] <- x.[0] - y.[0];
-    r.[1] <- x.[1] - y.[1];
-    r.[2] <- x.[2] - y.[2];
-    r.[3] <- x.[3] - y.[3];
-    r.[4] <- x.[4] - y.[4];
-    r.[5] <- x.[5] - y.[5];
-    r.[6] <- x.[6] - y.[6];
-    r.[7] <- x.[7] - y.[7];
+
+    r <- Array8.init (fun i => x.[i] - y.[i]);
 
     return r;
   }
@@ -1259,7 +1247,7 @@ equiv eq_iVPMULH_256 : Ops.iVPMULH_256 ~ OpsV.iVPMULH_256: is16u16 x{1} x{2} /\ 
 proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed.
 
 equiv eq_iVPMULL_16u16 : Ops.iVPMULL_16u16 ~ OpsV.iVPMULL_16u16: is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed.
+proof. proc; by wp; skip; rewrite /is16u16 /VPMULL. qed.
 
 equiv eq_iVPMULU_256 : Ops.iVPMULU_256 ~ OpsV.iVPMULU_256 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is4u64 => /> &1; rewrite /VPMULU_256. qed.
