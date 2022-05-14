@@ -272,6 +272,10 @@ qed.
 op darray32 ['a] (d: 'a distr): ('a Array32.t) distr =
  dmap (dlist d 32) (Array32.of_list witness).
 
+lemma darray32_ll ['a] (d: 'a distr):
+ is_lossless d => is_lossless (darray32 d).
+admitted.
+
 op darray64 ['a] (d: 'a distr): ('a Array64.t) distr =
  dmap (dlist d 64) (Array64.of_list witness).
 
@@ -1484,6 +1488,8 @@ clone import PKE_Ext as KyberPKE with
 
 (* PRF keys in encryption come directly from srand *)
 abbrev srand = darray32 W8.dword.
+
+lemma srand_ll: is_lossless srand by smt(darray32_ll W8.dword_ll).
 
 (* G needs only to be entropy smoothing, which is
    exactly a PRF without any input *)
