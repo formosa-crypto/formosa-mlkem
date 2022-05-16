@@ -32,8 +32,9 @@ move=> gt0.
 have ->: x%r / y%r = (x %/ y)%r + (x %% y)%r / y%r.
  by rewrite {1}(divz_eq x y); field; smt(). 
 rewrite floorDz.
-have ?: 0%r <= (x %% y)%r / y%r < 1%r by smt().
-smt(floor_bound).
+have ?: 0%r <= (x %% y)%r / y%r < 1%r by
+  rewrite ltr_pdivr_mulr /=; smt().
+by smt(floor_bound).
 qed.
 
 lemma modz_floor (x y: int):
@@ -59,7 +60,14 @@ by smt().
 lemma frac0_dvdz (m n: int):
  0 < n =>
  frac (m%r / n%r) = 0%r <=> n %| m.
-proof. by move=> ygt0; rewrite dvdzE modz_floor // /frac /#. qed.
+proof. 
+move=> ygt0; rewrite dvdzE modz_floor // /frac. 
+split; 1: by smt().
+rewrite -divz_floor //. 
+move => H.
+have ->  /=: m = n*(m %/ n); 1: by smt().
+by ring; smt().
+qed.
 
 lemma from_int_frac n: frac n%r = 0%r
 by smt(from_int_floor).
@@ -283,16 +291,31 @@ proof.
 move=> Hd0 Hd Hx.
 rewrite /compress.
 have ->: round ((asint x)%r * (2 ^ d)%r / q%r) = 2^d.
- rewrite /round; apply floorE. 
- split.
-  apply (RealOrder.ler_trans ((2^d)%r / q%r * (q%r - q%r / (2^(d+1))%r) + inv(2%r))).
-   by rewrite exprS 1:/# fromintM /#.
-  rewrite exprS 1:/# fromintM.
-  have ?: 0%r < (2 ^ d)%r / q%r by smt(expr_gt0).
-  by move: Hx; rewrite exprS 1:/# fromintM => Hx /#.
- move => H. 
- move: Hx; rewrite !exprS 1:/# !fromintM => Hx.
- by have ?/# := (rg_asint x).
++ rewrite /round; apply floorE;split.
+  + apply (RealOrder.ler_trans ((2^d)%r / q%r * (q%r - q%r / (2^(d+1))%r) + inv(2%r))).
+    + rewrite exprS 1:/# fromintM /=. 
+       have -> : (2 ^ d)%r * (q%r - q%r / (2%r * (2 ^ d)%r)) / q%r = 
+               (2 ^ d)%r * (q%r / q%r) * (1%r - 1%r / (2%r * (2 ^ d)%r)) by ring.
+       rewrite RField.divrr /=; 1: by rewrite qE. 
+       have  ? : inv 2%r <= (1%r - 1%r / (2%r * (2 ^ d)%r)); last first.
+       + rewrite RField.mulrDr /= RField.mulrN invfM RField.mulrC. 
+         rewrite -RField.mulrA RField.divrr; last by smt().
+         by apply  RField.invr_neq0; smt(JUtils.gt0_pow2). 
+       by smt(exprn_egt1).
+    rewrite exprS 1:/# fromintM.
+    have ?: 0%r < (2 ^ d)%r / q%r by smt(expr_gt0).
+    move: Hx; rewrite exprS 1:/# fromintM => Hx. 
+    rewrite RealOrder.ler_add2 RField.mulrC -RField.mulrA. 
+    by apply RealOrder.ler_pmul2r; smt().
+  move => H. 
+  move: Hx; rewrite !exprS 1:/# !fromintM => Hx.
+  have ? := (rg_asint x). 
+  rewrite mulrC mulrA. 
+  pose xx := q - asint x.
+  have -> : (asint x)%r = q%r - xx%r by smt().
+  rewrite RField.mulrDr RField.divrr /=; 1: 
+      by apply  RField.invr_neq0; smt(JUtils.gt0_pow2). 
+  by smt().
 by rewrite modzz.
 qed.
 
@@ -328,7 +351,19 @@ lemma decomp_bound d x:
  2^d < q =>
  0 <= x < 2^d =>
  0 <= decomp d x%r < q.
-proof. by move=> Hd0 Hd Hx; split; smt(round_bound). qed.
+proof. 
+move=> Hd0 Hd Hx; split; 1: by smt(round_bound). 
+have H := (round_bound (x%r * q%r / (2 ^ d)%r)).  
+move => H0.
+have ? : x%r * q%r / (2 ^ d)%r + inv 2%r < q%r; last by smt().
+rewrite RField.mulrC RField.mulrA. 
+have : x%r * q%r + (2 ^ d)%r * inv 2%r < (2 ^ d)%r * q%r by smt().
+have -> : x%r * q%r + (2 ^ d)%r / 2%r =
+          (2 ^ d)%r  * (inv (2 ^ d)%r * x%r * q%r + inv 2%r).
+   by rewrite RField.mulrDr RField.mulrA RField.mulrA RField.divrr;  smt(JUtils.gt0_pow2). 
+apply RealOrder.ltr_pmul2l.
+  smt(expr_gt0).
+qed.
 
 
 lemma decomp_mono d (x y: real):
