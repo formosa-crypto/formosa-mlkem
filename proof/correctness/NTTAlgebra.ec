@@ -1,3 +1,19 @@
+(* Correction proof of the NTT *)
+
+(* This file contains the correction proof of the procedures NTT.ntt and NTT.invntt from NTT_Fq. *)
+(* The proof is made by game hopping, by proving that gradually less optimized versions of ntt and invntt are equivalent, *)
+(* and then by proving that the most naive version is equivalent to a high level spec, which itself implies the spec required by the other proofs in hakyber. *)
+(* The equivalence is as follows: *)
+(* NTT_Fq.NTT.(inv)ntt <=> NTT_opt.(inv)ntt <=> NTT_bsrev.(inv)ntt <=> NTT_naive.(inv)ntt *)
+(*                                                                 <=> (inv)ntt_spec <=> (inv)ntt *)
+(* Where the first line contains procedures and the second high level mathematical definitions. *)
+(* The jump from NTT_Fq.NTT to NTT_opt is a reverse inlining that splits the ntt into 3 auxiliary functions, and the invntt into 4, to make proofs more modular. *)
+(* The jump from NTT_opt to NTT_bsrev removes many easy to deal with optimizations, and NTT_bsrev only involves "for" loops, that are easier to deal with using For. *)
+(* The jump from NTT_bsrev to NTT_naive changes the order of the two innermost "for" loops to go from bitreverse ordering to normal ordering. *)
+(* The jump from NTT_naive to (inv)ntt_spec is the actual correction proof. *)
+(* The jump from (inv)ntt_spec to (inv)ntt proves that the high level specification implies the specification needed outside of this file. *)
+
+(* TODO: is NTT_Fq.NTT already abstract enough to deal with both the AVX2 and the standard implementation? If not what optimized AVX2 specification should I use? *)
 
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
 require import List_extra IntDiv_extra Array256_extra For.
@@ -9,6 +25,8 @@ require Matrix.
 
 import IntOrder BitReverse.
 
+
+(* Various clones needed *)
 abstract theory DFT.
   clone import Ring.IDomain as Domain.
 
@@ -139,7 +157,7 @@ theory NTTequiv.
       op  CR.invr  <- Zq.inv,
     pred  CR.unit  <- Zq.unit.
 
-
+  (* In order to keep the same names for the variables, all subsequent NTT modules will use these. *)
   module NTT_vars = {
     var r                       : Fq Array256.t
     var zetas, zetas_inv        : Fq Array128.t
@@ -147,6 +165,7 @@ theory NTTequiv.
     var t, zeta_                : Fq
   }.
 
+  (* Non inlined version of the NTT, where each while loop is separated into it's own function. *)
   module NTT_opt = {
 
     proc ntt_inner() = {
@@ -280,6 +299,9 @@ theory NTTequiv.
     [by wp; skip|by wp; skip].
   qed.
 
+  (* Less optimized version of the NTT: *)
+  (* - the value of NTT_vars.zetasctr is computed at every loop run, instead of being continuously updated *)
+  (* - NTT_vars.j is replaced by the stopping value of the loop of which it is the index after said loop *)
   module NTT_bsrev = {
 
     proc ntt_inner() = {
@@ -833,6 +855,7 @@ theory NTTequiv.
     by rewrite /R /Q_optimize_invntt => {R} _ [? ? [? ?]] /= [].
   qed.
 
+  (* Compared to NTT_bsrev, the order of the two innermost loops is bitreversed. *)
   module NTT_naive = {
 
     proc ntt_inner() = {
@@ -2623,6 +2646,7 @@ theory NTTequiv.
   op partial_ntt_spec (r p : Fq Array256.t, len start bsj : int) =
     r.[bsrev 8 (bsj * len + start)] = partial_ntt p len start bsj.
 
+  (* The spec of the ntt only used in this file. *)
   op ntt_spec r p =
     forall start bsj ,
       start \in range 0 128 =>
@@ -3288,6 +3312,7 @@ theory NTTequiv.
     let len' = if 0 < len then len * 2 else 1 in
     r.[bsrev 8 (hbsj * 128 + lbsj * len' + start)] = partial_invntt p len start lbsj hbsj.
 
+(* The spec of the invntt only used in this file. *)
   op invntt_spec (r p : Fq Array256.t) =
     forall lbsj hbsj ,
       lbsj \in range 0 128 =>
