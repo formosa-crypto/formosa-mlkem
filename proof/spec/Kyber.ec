@@ -1,6 +1,6 @@
 require import AllCore IntDiv FloorCeil StdOrder RealExp List.
 require import ZModP Ring.
-require import Distr DList.
+require import Distr DList DistrExtra DMap DInterval.
 require import PKE_Ext.
 from Jasmin require import JWord.
 require import Array25 Array32 Array34 Array64 Array128 Array168 Array256 Array384.
@@ -152,6 +152,199 @@ by smt().
 
 
 
+lemma flatten_rcons ['a] (l: 'a list list) x:
+ flatten (rcons l x) = flatten l ++ x.
+proof.
+elim: l => /=.
+ by rewrite flatten_cons !flatten_nil cats0.
+by move=> y l IH; rewrite !flatten_cons IH catA.
+qed.
+
+
+
+
+
+lemma dlist_mul ['a] (d: 'a distr) (k n: int):
+ 0 <= k => 0 <= n =>
+ dlist d (k*n) = dmap (dlist (dlist d k) n) flatten.
+proof.
+move=> Hk; elim/natind: n.
+ move=> n Hn0 Hn; have ->/=: n=0 by smt().
+ by rewrite !dlist0 // dmap_dunit flatten_nil.
+move=> n Hn IH _; have->: k*(n+1) = k + k*n by ring.
+rewrite dlist_add // 1:/# dlistS //.
+rewrite dmap_comp IH // dmap_dprodR dmap_comp /(\o) /=.
+apply eq_dmap; move => [xh xt] /=.
+by rewrite flatten_cons.
+qed.
+
+
+
+(* JASMIN ECLIB *)
+
+(* JWord.ec *)
+import BitEncoding BitChunking BS2Int.
+
+lemma W8all_words_uniq: uniq W8.all_words.
+proof.
+rewrite /W8.all_words map_inj_in_uniq.
+ move=> x y; rewrite !mem_iota => /= ?? H.
+ have: x %% W8.modulus = y %% W8.modulus.
+  by rewrite -!W8.of_uintK H.
+ by rewrite !modz_small /#.
+by apply iota_uniq.
+qed.
+
+lemma dword1E w:
+ mu1 W8.dword w = inv (W8.modulus%r).
+proof.
+have ?:= W8all_words_uniq.
+rewrite /W8.dword /duniform undup_id //.
+rewrite MRat.dratE count_uniq_mem //.
+rewrite W8.all_wordsP b2i1.
+rewrite /W8.all_words size_map size_iota /=.
+by rewrite ler_maxr.
+qed.
+
+lemma dword1E_bits w:
+ mu1 (dmap (dlist {0,1} W8.size) W8.bits2w) w = inv (W8.modulus)%r.
+proof.
+rewrite dmap1E /(\o) /=.
+rewrite (mu_eq_support _ _ (pred1 (w2bits w))).
+ move=> l; rewrite supp_dlist //=; move=> [E _].
+ rewrite /pred1.
+ apply eqboolP; split => H.
+  by rewrite -H W8.bits2wK.
+ by rewrite H W8.w2bitsK.
+rewrite dlist1E // W8.size_w2bits /=.
+rewrite (StdBigop.Bigreal.BRM.eq_bigr _ _ (fun _=>inv 2%r)).
+ by move=> i _ /=; rewrite DBool.dbool1E /#. 
+rewrite StdBigop.Bigreal.mulr_const.
+rewrite W8.size_w2bits.
+by rewrite RealOrder.Domain.exprVn // fromintXn //.
+qed.
+
+lemma dword_bits:
+ W8.dword = dmap (dlist {0,1} 8) W8.bits2w.
+proof.
+apply eq_distr => w.
+by rewrite dword1E dword1E_bits.
+qed.
+
+require import DInterval.
+lemma dword_ibits:
+ W8.dword = dmap (dbits 8) W8.of_int.
+proof.
+apply eq_distr => w.
+rewrite dword1E dmap1E /(\o) /=.
+rewrite (mu_eq_support _ _ (pred1 (to_uint w))).
+ move=> x; rewrite supp_dinter //= => E.
+ rewrite /pred1.
+ apply eqboolP; split => H.
+  by rewrite -H W8.of_uintK modz_small /#.
+ by rewrite H W8.to_uintK.
+rewrite dinter1E.
+rewrite (_: 0 <= to_uint w <= 255) //=.
+by move: (W8.to_uint_cmp w) => /= /#.
+qed.
+
+(* JArray.ec *)
+(* useful for loop-invariants: relating arrays and lists... *)
+op a256l ['a] (a:'a Array256.t) (l:'a list) k: bool = size l = k /\ 
+ forall i, 0 <= i < k => a.[i] = nth witness l i.
+
+lemma a256l_rcons ['a] a l (x:'a) k:
+ 0 <= k < 256 =>
+ a256l a l k => 
+ a256l a.[k <- x] (rcons l x) (k+1).
+proof.
+move=> Hk; rewrite /a256l; move=> [Hsize H].
+rewrite size_rcons Hsize; split => // i Hi.
+rewrite get_setE // nth_rcons Hsize.
+case: (i=k) => E.
+ by rewrite E.
+by rewrite H /#.
+qed.
+
+lemma a256l_of_list ['a] a (l: 'a list):
+ a256l a l 256 =>
+ a = Array256.of_list witness l.
+proof.
+move=> [Hsize H].
+apply Array256.ext_eq => i Hi.
+by rewrite H // get_of_list //.
+qed.
+
+
+
+op darray32 ['a] (d: 'a distr): ('a Array32.t) distr =
+ dmap (dlist d 32) (Array32.of_list witness).
+
+lemma darray32_ll ['a] (d: 'a distr):
+ is_lossless d => is_lossless (darray32 d).
+admitted.
+
+op darray64 ['a] (d: 'a distr): ('a Array64.t) distr =
+ dmap (dlist d 64) (Array64.of_list witness).
+
+
+op darray128 ['a] (d: 'a distr): ('a Array128.t) distr =
+ dmap (dlist d 128) (Array128.of_list witness).
+
+(* proof-templates (to be included in the DArray theory...) *)
+lemma darray128_ll ['a] (d: 'a distr):
+ is_lossless d => is_lossless (darray128 d).
+proof. by rewrite /darray128 => ?; apply dmap_ll; apply dlist_ll. qed.
+
+lemma supp_darray128 ['a] (d: 'a distr) a:
+ a \in darray128 d <=> all (support d) (Array128.to_list a).
+proof.
+rewrite /darray128 supp_dmap; split.
+ move=> [x]; rewrite supp_dlist // => /> *.
+ by rewrite Array128.of_listK // /#.
+move=> H; exists (to_list a); rewrite supp_dlist // H Array128.size_to_list /=.
+by rewrite Array128.to_listK.
+qed.
+
+lemma darray128_uni ['a] (d: 'a distr):
+ is_uniform d => is_uniform (darray128 d).
+proof.
+rewrite /darray128=> ?; apply dmap_uni_in_inj.
+ move=> x y; rewrite !supp_dlist //; move => [? _] [? _] H.
+ by rewrite -(Array128.of_listK witness x) // H of_listK.
+by apply dlist_uni.
+qed.
+
+lemma darray128_fu ['a] (d: 'a distr):
+ is_full d => is_full (darray128 d).
+proof.
+rewrite /darray128 => H; apply dmap_fu_in.
+move=> x; exists (to_list x); rewrite to_listK supp_dlist //=.
+rewrite Array128.size_to_list /= allP => *.
+by apply H.
+qed.
+
+
+op darray256 ['a] (d: 'a distr): ('a Array256.t) distr =
+ dmap (dlist d 256) (Array256.of_list witness).
+
+lemma darray256_ll ['a] (d: 'a distr):
+ is_lossless d => is_lossless (darray256 d).
+admitted.
+
+lemma supp_darray256 ['a] (d: 'a distr) a:
+ a \in darray256 d <=> all (support d) (Array256.to_list a).
+admitted.
+
+lemma darray256_uni ['a] (d: 'a distr):
+ is_uniform d => is_uniform (darray256 d).
+admitted.
+
+lemma darray256_fu ['a] (d: 'a distr):
+ is_full d => is_full (darray256 d).
+admitted.
+
+
 
 (****************************************************)
 (*               The finite field Zq/Fq             *)
@@ -198,6 +391,15 @@ realize CR.unitout by apply Zq.ZqRing.unitout.
 
 op as_sint(x : Fq) = if (q-1) %/ 2 < asint x then asint x - q else asint x.
 
+lemma as_sintK x:
+ inFq (as_sint x) = x.
+proof. by rewrite /as_sint; smt(@Zq). qed.
+
+lemma inFqK_sint_small n: 
+ - (q-1) %/ 2 <= n <= (q-1) %/ 2 =>
+ as_sint (inFq n) = n.
+proof. move=> H; rewrite /as_sint; smt(@Zq). qed.
+
 lemma as_sintN (x: Fq): as_sint (-x) = - as_sint x.
 proof. by rewrite /as_sint oppE; smt(@Zq). qed.
 
@@ -212,7 +414,7 @@ smt(@Zq).
 qed.
 
 
-op absZq (x: Fq): int = `| as_sint x |.
+abbrev absZq (x: Fq): int = `| as_sint x |.
 
 lemma absZqB x y eps:
  `| asint x - asint y | <= eps => absZq (x-y) <= eps
@@ -592,33 +794,103 @@ by rewrite /b_decode -compress_alt_compress /compress_alt //=; smt(qE rg_asint).
 
 (* The binomial distribution over a field element *)
 
-op [lossless]dshort_elem : Fq distr. 
+op dshort_elem : Fq distr = dmap (dcbd 2) inFq.
+
+lemma dshort_elem_ll: is_lossless dshort_elem.
+proof.
+by apply dmap_ll; apply ll_dcbd.
+qed.
 
 (* Definition of the support *)
-axiom supp_dshort_elem x : 
-   x \in dshort_elem <=>
-    let xsi = if q %/2 <= asint x 
-               then asint x - q 
-               else asint x
-    in -2 <= xsi <= 2.
+lemma supp_dshort_elem x:
+ x \in dshort_elem <=> -2 <= as_sint x <= 2.
+proof.
+rewrite supp_dmap; split.
+ move=> [y []]; rewrite supp_dcbd.
+ smt.
+move=> H; exists (as_sint x); rewrite supp_dcbd.
+split => //.
+by rewrite as_sintK.
+qed.
 
 (* Probability of each value in the support *)
-axiom dshort_elem1E_2 : mu1 dshort_elem (inFq 2) = 1%r / 16%r.
-axiom dshort_elem1E_m2 : mu1 dshort_elem (inFq (q-2)) = 1%r / 16%r.
-axiom dshort_elem1E_1 : mu1 dshort_elem (inFq 1) = 1%r / 4%r.
-axiom dshort_elem1E_m1 : mu1 dshort_elem (inFq (q-1)) = 1%r / 4%r.
-axiom dshort_elem1E_0 : mu1 dshort_elem (inFq (0)) = 3%r / 8%r. 
+lemma dshort_elem1E_2 : mu1 dshort_elem (inFq 2) = 1%r / 16%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_2.
+qed.
+
+lemma dshort_elem1E_m2 : mu1 dshort_elem (inFq (-2)) = 1%r / 16%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_2N.
+qed.
+
+lemma dshort_elem1E_1 : mu1 dshort_elem (inFq 1) = 1%r / 4%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_1.
+qed.
+
+lemma dshort_elem1E_m1 : mu1 dshort_elem (inFq (-1)) = 1%r / 4%r.
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_1N.
+qed.
+
+lemma dshort_elem1E_0 : mu1 dshort_elem (inFq 0) = 3%r / 8%r. 
+proof.
+rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
+  by rewrite as_sintK.
+ move=> y; rewrite supp_dcbd; move=> ? <-.
+ by rewrite inFqK_sint_small /#.
+rewrite inFqK_sint_small /q //=.
+by rewrite dcbd1E mcbd_2_0.
+qed.
+
 
 (* The uniform distribution over a field element *)
+op duni_elem : Fq distr = DZmodP.dunifin.
 
-op [lossless]duni_elem : Fq distr.
+lemma duni_elem_ll: is_lossless duni_elem
+ by exact DZmodP.dunifin_ll.
 
 (* Definition of the support *)
-axiom supp_duni_elem x : 0 <= asint x < q <=> x \in duni_elem.
+lemma supp_duni_elem x:
+ 0 <= asint x < q <=> x \in duni_elem.
+proof.
+rewrite /duni_elem DZmodP.dFqE supp_dmap; split.
+ move=> H; exists (asint x); split.
+  rewrite supp_dinter; smt(rg_asint).
+ by rewrite asintK.
+move=> [a []]; rewrite supp_dinter => ? ->.
+by rewrite inFqK /#.
+qed.
 
 (* The probability of each value in the support. *)
 op pe = 1%r /q%r.
-axiom duni_elem1E x : mu1 duni_elem x = pe.
+lemma duni_elem1E x: mu1 duni_elem x = pe.
+proof.
+rewrite duniform1E_uniq.
+ exact DZmodP.Support.enum_uniq.
+by rewrite DZmodP.Support.enumP size_map size_range /#.
+qed.
 
 lemma duni_elem_uni : is_uniform duni_elem 
    by rewrite /is_uniform => *; rewrite !duni_elem1E.
@@ -668,37 +940,43 @@ qed.
 
 (* The distribution of ring elements of small norm as an operator *)
 
-op dshort_R : poly distr =  dmap (dlist dshort_elem 256) (Array256.of_list witness).
+abbrev dR (d: Fq distr): poly distr = darray256 d.
+
+lemma dR_ll d:
+ is_lossless d => is_lossless (dR d)
+by exact darray256_ll.
+
+lemma supp_dR d p:
+ p \in dR d <=> all (support d) (Array256.to_list p)
+by exact supp_darray256.
+
+lemma dR_fu d:
+ is_full d => is_full (dR d)
+by exact darray256_fu.
+
+lemma dR_uni d:
+ is_uniform d => is_uniform (dR d)
+by exact darray256_uni.
+
+
+
+op dshort_R : poly distr = dR dshort_elem.
 
 lemma dshort_R_ll : is_lossless dshort_R
- by rewrite /dshort_R; apply dmap_ll; apply dlist_ll; apply dshort_elem_ll.
+by smt(dR_ll dshort_elem_ll).
 
 (* The uniform distribution of ring elements as an operator *)
 
-op duni_R : poly distr =  dmap (dlist duni_elem 256) (Array256.of_list witness).
+op duni_R : poly distr =  dR duni_elem.
 
 lemma duni_R_ll : is_lossless duni_R
- by rewrite /duni_R; apply dmap_ll; apply dlist_ll; apply duni_elem_ll.
+by smt(dR_ll duni_elem_ll).
 
-lemma duni_R_uni : is_uniform duni_R.
-  rewrite /KPoly.duni_R => x y xin yin.
-  apply (dmap_uni_in_inj _ _ _) => //; last by
-    apply dlist_uni; apply duni_elem_uni.
-  move => x0 y0 inx iny; rewrite /of_list tP => H.
-  apply (eq_from_nth witness); 1: by smt(supp_dlist_size).
-  move => i; have -> : size x0 = 256 by smt(supp_dlist_size).
-  by move => ib; move : (H i ib); rewrite !initiE /=.
-qed.
+lemma duni_R_uni : is_uniform duni_R
+by smt(dR_uni duni_elem_uni).
 
-lemma duni_R_fu : is_full duni_R.
-  rewrite /is_full /KPoly.duni_R => p.
-  rewrite supp_dmap; exists (Array256.to_list p).
-  split.
-    rewrite supp_dlist //; split; first by rewrite size_to_list.
-    rewrite allP => *. 
-    by rewrite -supp_duni_elem; smt(@Zq).
-    by rewrite Array256.to_listK.
-qed.
+lemma duni_R_fu : is_full duni_R
+by smt(dR_fu duni_elem_fu).
 
 (**************************************************)
 (**************************************************)
@@ -1244,7 +1522,9 @@ clone import PKE_Ext as KyberPKE with
   type ciphertext = W8.t Array960.t * W8.t Array128.t.
 
 (* PRF keys in encryption come directly from srand *)
-op [lossless]srand : W8.t Array32.t distr.
+abbrev srand = darray32 W8.dword.
+
+lemma srand_ll: is_lossless srand by smt(darray32_ll W8.dword_ll).
 
 (* G needs only to be entropy smoothing, which is
    exactly a PRF without any input *)
@@ -1321,6 +1601,82 @@ module Parse(XOF : XOF_t, O : RO.POracle) = {
    }
 }.
 
+module ParseRnd = {
+   proc sample_real() : poly = {
+      var j, bi, bi1, bi2, d1, d2,k;
+      var aa : poly;
+      aa <- witness;
+      j <- 0;
+      while (j < 256) {
+         k <- 0;
+         while ((j < 256) && (k < 168)) {
+            bi  <$ W8.dword;
+            bi1 <$ W8.dword;
+            bi2 <$ W8.dword;
+            k <- k + 3;
+            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
+            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
+            if (d1 < q)                { aa.[j] <- inFq d1; j <- j + 1; }
+            if ((d2 < q) && (j < 256)) { aa.[j] <- inFq d2; j <- j + 1; }
+         }
+      }
+      return aa;
+   }
+   proc sample_ideal() : poly = {
+     var p;
+     p <$ duni_R;
+     return p;
+   }
+}.
+
+equiv ParseRnd_equiv:
+ ParseRnd.sample_real ~ ParseRnd.sample_ideal:
+ true ==> ={res}.
+proof.
+proc.
+transitivity {1}
+ { aa <- witness;
+   j <- 0;
+   while (j < 256) {
+    k <- 0;
+    while (j<256 && k<168) {
+     d1 <$ dbits 12;
+     d2 <$ dbits 12;
+     if (d1 < q) {
+      aa <- aa.[j <- inFq d1];
+      j <- j+1;
+     }
+     if (d2 < q && j<256) {
+      aa <- aa.[j <- inFq d2];
+      j <- j+1;
+     }
+     k <- k+3;
+    }
+   }
+ }
+ ( true ==> ={aa} )
+ ( true ==> aa{1}=p{2} ).
+- done.
+- done.
+- while (={j,aa}); last by auto.
+  while (={j,aa,k}); last by auto.
+  swap {1} 4 4; sim.
+search W8.dword.
+  admit (* 1 - dbits manipulation 
+dbits 12 = dbits 8 + dbits 4 => x + 256*y
+dbits 12 = dbits 4 + dbits 8 => x + 16*y
+
+4 + 4 = 8 => (x%%16, x%/16)
+ 
+
+bbi <$ dbits 8;
+bbi1 <$ dbits 8;
+bbi2 <$ dbits 8;
+
+*).
+- admit (* 2 - async while *).
+qed.
+
 clone PRF as PRF_DEFS with
   type D <- W8.t,
   type R <- W8.t Array128.t.
@@ -1354,6 +1710,130 @@ module CBD2(PRF : PseudoRF) = {
       return rr;
    }
 }.
+
+
+op fcbd2 (w: W8.t) : Fq list =
+ [ inFq (b2i w.[0] + b2i w.[1] - b2i w.[2] - b2i w.[3])
+ ; inFq (b2i w.[4] + b2i w.[5] - b2i w.[6] - b2i w.[7]) ].
+
+(*
+lemma size_fcbd2 w: size (fcbd2 w) = 2 by done.
+
+op cbd2 l = flatten (List.map fcbd2 l).
+
+lemma size_cbd2 l: size (cbd2 l) = 2*size l.
+rewrite size_flatten -map_comp /(\o) /=.
+have ->: (fun (x : W8.t) => size (fcbd2 x)) = fun _=> 2.
+ apply fun_ext; smt(size_fcbd2).
+rewrite StdBigop.Bigint.sumzE StdBigop.Bigint.BIA.big_map /(\o) /= StdBigop.Bigint.big_constz.
+have ->: (fun (_ : W8.t) => predT 2) = predT by smt().
+by rewrite count_predT.
+qed.
+
+op noise_coefs: Fq list distr =
+ dmap (dlist W8.dword 128) (flatten \o List.map fcbd2).
+
+lemma noise_coefsE: noise_coefs = dmap (dlist (dmap W8.dword fcbd2) 128) flatten.
+by rewrite dlist_dmap dmap_comp.
+qed.
+*)
+
+clone DMapSampling as MSlw128 with
+ type t1 <- W8.t list,
+ type t2 <- W8.t Array128.t.
+
+module CBD2rnd = {
+   proc sample_real() : poly = {
+      var i,a,b,bytes;
+      var p : poly;
+      var l: Fq list;
+      bytes <@ MSlw128.S.sample(dlist W8.dword 128, Array128.of_list witness);
+      l <- [];
+      i <- 0;
+      while (i < 128) {
+        a <- b2i bytes.[i].[0] + b2i bytes.[i].[1];
+        b <- b2i bytes.[i].[2] + b2i bytes.[i].[3];
+        l <- rcons l (inFq  (a - b));
+        a <- b2i bytes.[i].[4] + b2i bytes.[i].[5];
+        b <- b2i bytes.[i].[6] + b2i bytes.[i].[7];
+        l <- rcons l (inFq  (a - b));
+        i <- i + 1;
+      }
+      p <- Array256.of_list witness l;
+      return p;
+   }
+   proc sample_ideal() : poly = {
+     var p;
+     p <$ dshort_R;
+     return p;
+   }
+}.
+
+lemma dshort_R_sample:
+ dshort_R 
+ = dmap (dlist W8.dword 128) (Array256.of_list witness \o flatten \o List.map fcbd2).
+proof.
+rewrite /dshort_R /darray256 /dshort_elem dcbd_eq_sample // (_:256=2*128) 1:/#.
+rewrite eq_sym -dmap_comp -dmap_comp dlist_mul //; congr; congr.
+rewrite -dlist_dmap; congr. 
+rewrite dlist_dmap /dcbd_sample.
+rewrite (_:2=1+1) 1:// dlistS // dlist1 /= dmap_dprodR dmap_dprod !dmap_comp .
+rewrite dword_bits (_:8=(2+2)+(2+2)) 1:/# !dlist_add // dmap_dprod !dmap_comp /(\o) /=.
+apply eq_dmap_in; move => [ [l1 l2] [l3 l4]] /=.
+rewrite !supp_dprod /= !supp_dlist // => /> Hl1 _ Hl2 _ Hl3 _ Hl4 _.
+move: l1 Hl1 => [|x11 [|x12 [|x xs]]] //=; last smt(size_ge0).
+move: l2 Hl2 => [|x21 [|x22 [|x xs]]] //=; last smt(size_ge0).
+move: l3 Hl3 => [|x31 [|x32 [|x xs]]] //=; last smt(size_ge0).
+move: l4 Hl4 => [|x41 [|x42 [|x xs]]] //=; last smt(size_ge0).
+rewrite /fcbd2 /= /#.
+qed.
+
+clone DMapSampling as MSlpoly with
+ type t1 <- W8.t list,
+ type t2 <- poly.
+
+equiv CBD2rnd_equiv:
+ CBD2rnd.sample_real ~ CBD2rnd.sample_ideal:
+ true ==> ={res}.
+proof.
+proc.
+transitivity {2}
+ { p <@ MSlpoly.S.sample(dlist W8.dword 128,
+                         Array256.of_list witness \o flatten \o List.map fcbd2); }
+ ( true ==> ={p} ) ( true ==> ={p} ) => //; last first.
+ inline*; wp; rnd; wp; auto => /> *; smt(dshort_R_sample).
+transitivity {2}
+ { p <@ MSlpoly.S.map(dlist W8.dword 128,
+                      Array256.of_list witness \o flatten \o List.map fcbd2); }
+ ( true ==> ={p} ) ( true ==> ={p} ) => //; last first.
+ by symmetry; call MSlpoly.sample.
+inline MSlpoly.S.map; swap{2} 2 1.
+seq 1 2: (to_list bytes{1} = r1{2}).
+ transitivity {1}
+  { bytes <@ MSlw128.S.map(dlist W8.dword 128,
+                           (of_list witness)%Array128); }
+  ( true ==> ={bytes} ) ( true ==> to_list bytes{1} = r1{2} ) => //.
+  by call MSlw128.sample.
+ inline*; wp; rnd; wp; auto => /> l; rewrite supp_dlist //.
+ by move=> [?_]; rewrite of_listK.
+wp; while {1} 
+     (0 <= i{1} <= 128 /\ 
+      to_list bytes{1} = r1{2} /\
+      l{1} = flatten (List.map fcbd2 (take i{1} r1{2})))
+     (128-i{1}).
+ move=> &m z.
+ wp; skip => /> &hr *; split; last smt().
+ split. smt().
+ rewrite (take_nth witness); first smt(Array128.size_to_list).
+ rewrite map_rcons flatten_rcons.
+ rewrite Array128.get_to_list -!cats1 -catA /=; congr. 
+ rewrite /fcbd2; congr; smt().
+wp; skip => /> &1; split.
+ by rewrite take0 /= flatten_nil.
+move=> i; split; first smt().
+move=> *; have ->: i = size (to_list bytes{1}) by smt(Array128.size_to_list).
+by rewrite /(\o) /= take_size.
+qed.
 
 module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
 

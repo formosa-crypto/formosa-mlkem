@@ -7,6 +7,7 @@ import NTT_Properties.
 (* Aux *)
 import KMatrix.
 import Zq.
+
 lemma ofipolyvecK_small (x : ipolyvec) :
     (forall k, 0 <= k < 768 => 0 <= x.[k] < q) =>  toipolyvec (ofipolyvec x) = x.
 move => bnd.
@@ -524,6 +525,26 @@ lemma enc_sampler_dec (O <: RO.POracle)  (XOF <: XOF_t) :
 
 
 op [lossless funiform] dsmooth : W8.t Array64.t distr.
+
+module Sample_64_2x32 = {
+ proc sample() = {
+  var w;
+  w <$ dsmooth;
+  return w;
+ }
+ proc sample2() = {
+  var w1, w2;
+  w1 <$ srand;
+  w2 <$ srand;
+  return (w1, w2);
+ }
+}.
+
+equiv sample_64_2x32_eq:
+ Sample_64_2x32.sample ~ Sample_64_2x32.sample2:
+ true ==> res{2}.`1 = Array32.init (fun i=>res{1}.[i]) /\ res{2}.`2 = Array32.init (fun i=>res{1}.[i+32]).
+admitted.
+
 clone import HS_DEFS.RF as IdealHSF with
    op dR = fun (_: unit) => dsmooth
    proof dR_ll by smt(dsmooth_ll).
@@ -700,36 +721,15 @@ proc.
   seq {1} 5 2 : (true); 1: by auto.
   wp.
   conseq (_: _ ==> rho{2} = Array32.init (fun i => r{1}.[i]) /\ 
-                   k{2} = Array32.init (fun i => r{1}.[i+32]));
-  admit. (* Product of distributions *)
-  (*
-  transitivity {2} { (rho,k) <@ ProdSampling.S.sample2(srand,srand); }
-                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
-                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
-                   (true ==> ={rho,k}) => //; last first.
-  + by inline *;wp;rnd;rnd;auto => />.
-  transitivity {2} { (rho,k) <@ ProdSampling.S.sample(srand,srand); }
-                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
-                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
-                   (true ==> ={rho,k}) => //; last first.
-  + by call ProdSampling.sample_sample2 => />.
-  inline *; wp; rnd (fun r => (Array32.init (fun i => r.[i]), Array32.init (fun i => r.[i+32])))%Array64
-      (fun (rhok : (W8.t Array32.t) * (W8.t Array32.t)) => 
-            (Array64.init (fun i => if 0<=i<32 then rhok.`1.[i] else rhok.`2.[i-32])))%Array32.
-  auto => /> &1; split. 
-  + move => rhok ?; have -> /= : rhok = (rhok.`1,rhok.`2) by smt().
-    rewrite !Array32.tP; split.
-    + by move => i ib; rewrite initiE //= initiE; smt().
-    move => i ib; rewrite initiE //= initiE //=; by smt(). 
-  move => H; split.   + ad mit. (* commented out *)
-  move => H1 r ?; split.
-  + ad mit. (* commented out *)
-  move => ?; rewrite tP => i ib.
-  rewrite initiE //=.
-  case (0<=i<32).
-  + by move => ibb; rewrite !initiE //=.
-  by move => ibb; rewrite !initiE /#.
-  *)
+                   k{2} = Array32.init (fun i => r{1}.[i+32])).
+   by move=> /> &1 *; rewrite SmtMap.get_set_sameE /=.
+  transitivity {1} { r <@ Sample_64_2x32.sample(); }
+   (true ==> ={r}) (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) => //.
+   by inline*; auto.
+  transitivity {2} { (rho, k) <@ Sample_64_2x32.sample2(); }
+   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) (true ==> ={rho,k})=> //.
+   by call sample_64_2x32_eq.
+  by inline*; auto.
 qed.
 
 
@@ -899,7 +899,37 @@ wp; conseq (_: _ ==> ={e} /\ s{1} = s0{2} /\ sd{1} = rho0{2} /\ nttm _A{1} = a{2
   last first.
 + conseq (_: true ==> ={e} /\ s{1} = s0{2}); 1: smt(). 
   inline {2} 3.
-  admit. (* randomness product *)
+inline*.
+print IdealPRF1.dR.
+  admit. (* randomness product
+pre = true
+
+s <$ MLWE_.dshort          ( 1--)  sig <@ DummyPRF1(IdealPRF1.RF).keygen()                   
+e <$ MLWE_.dshort          ( 2--)  sig0 <- sig                                               
+                           ( 3--)  noiseseed <- sig0                                         
+                           ( 4--)  noise1 <- witness                                         
+                           ( 5--)  noise2 <- witness                                         
+                           ( 6--)  _N <- 0                                                   
+                           ( 7--)  i <- 0                                                    
+                           ( 8--)  while (i < kvec) {                                        
+                           ( 8.1)    c <@ CBD2(DummyPRF1(IdealPRF1.RF)).sample(noiseseed, _N)
+                           ( 8.2)    noise1 <- set noise1 i c                                
+                           ( 8.3)    _N <- _N + 1                                            
+                           ( 8.4)    i <- i + 1                                              
+                           ( 8--)  }                                                         
+                           ( 9--)  i <- 0                                                    
+                           (10--)  while (i < kvec) {                                        
+                           (10.1)    c <@ CBD2(DummyPRF1(IdealPRF1.RF)).sample(noiseseed, _N)
+                           (10.2)    noise2 <- set noise2 i c                                
+                           (10.3)    _N <- _N + 1                                            
+                           (10.4)    i <- i + 1                                              
+                           (10--)  }                                                         
+                           (11--)  (s0, e) <- (noise1, noise2)                               
+
+post = ={e} /\ s{1} = s0{2}
+
+
+ *)
 auto => /> &1 &2 e s; rewrite /pk_encode /sk_encode /=.
 by rewrite comm_nttv_add comm_nttv_mmul.
 qed.
@@ -918,7 +948,20 @@ proof.
   swap {2} 14 -7.
   swap {2} [6..7] -2.
   seq 3 5 : (#pre /\ ={e1,e2} /\ r{1} = rv{2}).
-  admit. (* product of randomness *)
+inline*.
+  admit. (* product of randomness
+
+pre = (pk{1}, m{1}) = (pk{2}, m{2}) /\ ={glob S, glob O}
+
+r <$ MLWE_.dshort          (1)  e1 <- witness                                            
+e1 <$ MLWE_.dshort         (2)  rv <- witness                                            
+e2 <$ dshort_R             (3)  r <@ DummyPRF2(RF).keygen()                              
+                           (4)  r0 <- r                                                  
+                           (5)  (rv, e1, e2) <@                                          
+                           ( )    KNS(DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)).sample3(r0)
+
+post = ((pk{1}, m{1}) = (pk{2}, m{2}) /\ ={glob S, glob O}) /\ ={e1, e2} /\ r{1} = rv{2}
+ *)
   conseq />; 1: smt().
   inline {1} 2.
   swap {2} 3 -2. swap {2} 6 -3. swap {2} 9 -5.
@@ -1343,35 +1386,13 @@ proc.
                    k{2} = Array32.init (fun i => r{1}.[i+32]));
   1: by move => /> [#] &1 r; 
        rewrite !SmtMap.get_set_sameE !oget_some.
-  admit. (* Product of distributions *)
-  (*
-  transitivity {2} { (rho,k) <@ ProdSampling.S.sample2(srand,srand); }
-                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
-                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
-                   (true ==> ={rho,k}) => //; last first.
-  + by inline *;wp;rnd;rnd;auto => />.
-  transitivity {2} { (rho,k) <@ ProdSampling.S.sample(srand,srand); }
-                   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\
-                             k{2} = Array32.init (fun i =>  r{1}.[i+32]))
-                   (true ==> ={rho,k}) => //; last first.
-  + by call ProdSampling.sample_sample2 => />.
-  inline *; wp; rnd (fun r => (Array32.init (fun i => r.[i]), Array32.init (fun i => r.[i+32])))%Array64
-      (fun (rhok : (W8.t Array32.t) * (W8.t Array32.t)) => 
-            (Array64.init (fun i => if 0<=i<32 then rhok.`1.[i] else rhok.`2.[i-32])))%Array32.
-  auto => /> &1; split. 
-  + move => rhok ?; have -> /= : rhok = (rhok.`1,rhok.`2) by smt().
-    rewrite !Array32.tP; split.
-    + by move => i ib; rewrite initiE //= initiE; smt().
-    move => i ib; rewrite initiE //= initiE //=; by smt(). 
-  move => H; split.   + ad mit. (* commented out *)
-  move => H1 r ?; split.
-  + ad mit. (* commented out *)
-  move => ?; rewrite tP => i ib.
-  rewrite initiE //=.
-  case (0<=i<32).
-  + by move => ibb; rewrite !initiE //=.
-  by move => ibb; rewrite !initiE /#.
-  *)
+  transitivity {1} { r <@ Sample_64_2x32.sample(); }
+   (true ==> ={r}) (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) => //.
+   by inline*; auto.
+  transitivity {2} { (rho, k) <@ Sample_64_2x32.sample2(); }
+   (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) (true ==> ={rho,k})=> //.
+   by call sample_64_2x32_eq.
+  by inline*; auto.
 qed.
 
 lemma PRFHop1C &m :
