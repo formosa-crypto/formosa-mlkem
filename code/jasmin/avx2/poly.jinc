@@ -62,6 +62,7 @@ fn __schoolbook(reg ptr u16[32] ap bp, reg u256 zeta qx16 qinvx16, inline int si
   bdlo = #VPMULL_16u16(bdlo, qinvx16);
   bdlo = #VPMULH_16u16(bdlo, qx16);
   bd   = #VPSUB_16u16(bdhi, bdlo);
+  // could replace bd multiplications with: bd = __fqmulx16(b, d, qx16, qinvx16);
 
   rbdlo = #VPMULL_16u16(zeta, bd);
   rbdhi = #VPMULH_16u16(zeta, bd);
@@ -1285,6 +1286,8 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   jqx16_p = jqx16;
   qx16 = jqx16_p[u256 0];
 
+  a = _poly_csubq(a);
+
   for i = 0 to 2
   {
     t0 = a[u256 8*i];
@@ -1295,15 +1298,6 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
     t5 = a[u256 8*i + 5];
     t6 = a[u256 8*i + 6];
     t7 = a[u256 8*i + 7];
-
-    t0 = __csubq(t0, qx16);
-    t1 = __csubq(t1, qx16);
-    t2 = __csubq(t2, qx16);
-    t3 = __csubq(t3, qx16);
-    t4 = __csubq(t4, qx16);
-    t5 = __csubq(t5, qx16);
-    t6 = __csubq(t6, qx16);
-    t7 = __csubq(t7, qx16);
 
     tt = #VPSLL_16u16(t1, 12);
     tt |= t0;
