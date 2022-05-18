@@ -66,8 +66,10 @@ case: (0 <= x1 && x1 < 2 ^ k1) => Hx1.
   move=>_; rewrite exprD_nneg 1..2:/#.
   have ->: 2 ^ k1 * 2 ^ k2 = 2 ^ k2 * 2 ^ k1 by smt().
   have ?: x2 * 2 ^ k1 < 2 ^ k2 * 2 ^ k1 by smt(@IntOrder).
-  smt().
- split; smt(exprD_nneg expr_gt0).
+  have  : x2 * 2 ^ k1 + 1*2^k1 <= 2 ^ k2 * 2 ^ k1; last by smt().
+  by rewrite -Ring.IntID.mulrDl /#.
+ split; 1: by smt().
+ by move => *; smt(exprD_nneg expr_gt0).
 by rewrite !b2i0.
 qed.
 
@@ -710,7 +712,10 @@ transitivity WS.SampleE.sample
     smt(mem_range).
    rewrite eq_in_filter_predT.
     smt(mem_range).
-   rewrite size_range StdOrder.IntOrder.ler_maxr /#.
+   rewrite size_range StdOrder.IntOrder.ler_maxr 1: /#.
+   congr; pose a := (2 ^ i{m}.`2); pose b := i{m}.`1 . 
+   rewrite RField.mulrDr /= RField.mulrC -RField.mulrN -RField.mulrN1 
+           -RField.mulrA -(RField.mulrC a%r) (RField.mulrA a%r) RField.divrr 1:/# /=; by ring.
   move=> H x Hx.
   have HH: 0 <= x <= i{m}.`1.
    by move: Hx; rewrite supp_dinter /#.
