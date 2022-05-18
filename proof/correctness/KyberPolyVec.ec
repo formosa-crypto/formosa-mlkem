@@ -199,7 +199,9 @@ move =>  &1 &2 [#] ; rewrite /pos_bound768_cxq /lift_array768 /touches /storeW8 
 rewrite  ultE of_uintK /= => 4? aav 8?. 
 rewrite !to_uintD_small /=; 1..18: smt().
 
-do split; 1..5:by smt(get_set_neqE_s). 
+do split; 1..4:by smt(get_set_neqE_s). 
+
++ move => i0 i0b;rewrite !get_set_neqE_s /#. 
 
 + move => k kb kbh.
   case (k < to_uint j{1}).

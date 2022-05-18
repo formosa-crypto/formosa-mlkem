@@ -293,10 +293,32 @@ split;last first.
   have one : W16.one = W16.of_int (2^1-1) by smt().
   by rewrite /to_sint /smod /= to_uintM_small; rewrite one W16.to_uint_and_mod //=; smt(). 
 
-have ? : forall k, 0 <= k < 8 => 
+have H : forall k, 0 <= k < 8 => 
    inFq (to_sint (zeroextu16 (_m.[i{2}] `>>>` k) `&` W16.one * W16.of_int 1665)) =
-       decompress 1 (b2i _m.[i{2}].[k]); last 
-          by smt(Array256.set_neqiE Array256.set_eqiE).
+       decompress 1 (b2i _m.[i{2}].[k]); last first.
+       + case (k = i{2} * 8 + 7); 
+           1: by move => *; do 2!(rewrite Array256.set_eqiE 1,2:/#);smt().
+       + case (k = i{2} * 8 + 6); 
+           1: by move => *; do 2!(rewrite Array256.set_neqiE 1,2:/# Array256.set_eqiE 1,2:/#);smt().
+       + case (k = i{2} * 8 + 5); 
+           1: by move => *; do 2!(do 2!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#);smt().
+       + case (k = i{2} * 8 + 4); 
+           1: by move => *; do 2!(do 3!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#);smt().
+       + case (k = i{2} * 8 + 3); 
+           1: by move => *; do 2!(do 4!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#);smt().
+       + case (k = i{2} * 8 + 2); 
+           1: by move => *; do 2!(do 5!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#);smt().
+       + case (k = i{2} * 8 + 1); 
+           1: by move => *; do 2!(do 6!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#);smt().
+       + case (k = i{2} * 8); 
+           1: by move => *; do 2!(do 7!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#);smt().
+       by move => *;do 2!(do 8!(rewrite Array256.set_neqiE 1,2:/#));smt().
 
 move => kk kkb; rewrite -decompress_alt_decompress /decompress_alt //.
 congr; rewrite qE /=.
@@ -1051,7 +1073,6 @@ while (#{/~zetasctr1=zetasctr{1}}
        start{1} = to_uint start{2} /\
        0 <= start{1} <= 256 /\
        start{1} = 2*len{1}*(zetasctr{1} - zetasctr1) /\
-       start{1} <= 256 /\
        (* Nasty carry inv *)
        (exists l, 0 <= l <= 7 /\ len{1} = 2^l /\
           signed_bound_cxq  rp{2} 0 256 (9 - (l - 1)) /\
@@ -1087,7 +1108,7 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
           signed_bound_cxq  rp{2} (j{1} + len{1}) 256 (9 - l)
        )
        );last first. 
-+ auto => /> &1 &2; rewrite /signed_bound_cxq !uleE !ultE =>  5? lenpow2  3? l0 3?.
++ auto => /> &1 &2; rewrite /signed_bound_cxq !uleE !ultE =>  5? lenpow2  2? sval l0 3?.
   rewrite !to_uintD_small; 1..2: smt().
   move => cbdloose cbdtight 2? => />;split.
 
@@ -1105,8 +1126,10 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
   move => 8?l1; rewrite !to_uintD_small; 1: smt().  
   move => *.
   split; last by smt().
-  do split; 1,3..4: by smt().
-  + by have -> : to_uint jl = to_uint start{1} + to_uint len{1}; smt().
+  auto => />;do split; 1,3: by smt().
+  + move => *.
+    have : to_uint len{1} \in map (fun i => 2^i) (iota_ 0 8) by smt(mem_iota map_f). 
+    by rewrite -JUtils.iotaredE => /> /#.
   by exists l1; do split; smt().
 
 (* Preservation *)
@@ -1118,14 +1141,17 @@ move => l1 3? bnt bt 3? result rval.
 have l1lb : (1 <= l1) by move : lenlb ; rewrite (_: 2 = 2^1) //;
     smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l). 
 
+have : to_uint len{1} \in map (fun i => 2^i) (iota_ 0 8) by smt(mem_iota map_f). 
+rewrite -JUtils.iotaredE => /> lenvals.
+
 have  /= [#] redbl redbh redv := 
     (SREDCp_corr (to_sint rp{1}.[to_uint j{1} + to_uint len{1}] * to_sint zeta_0{1}) _ _); 1,2:
-     by rewrite /R /=; move : (bnt (to_uint j{1} + to_uint len{1}) _);smt().
+ by rewrite qE /R;move : (bnt (to_uint j{1} + to_uint len{1}) _); smt().
 
 do split; 2..3,5..6: smt(). 
 + apply Array256.ext_eq  => x xb.
   case (x = to_uint j{1}); last first.
-  + move => *; rewrite (set_neqiE);1,2 : smt().
+  + move => *; rewrite (set_neqiE); 1,2 : smt().
     case(x = to_uint j{1} + to_uint len{1}); last first.
     + move => *; rewrite !(set_neqiE);1,2 : smt().
       by rewrite !mapiE //= !(set_neqiE);  smt().
@@ -1374,6 +1400,11 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
   move : zetainv_bound; rewrite /minimum_residues /bpos16 => zb.
 
   rewrite !ultE //= !to_uintD_small;1,2:smt().
+
+  have : to_uint len{1} \in map (fun i => 2^i) (iota_ 1 8) by smt(mem_iota map_f). 
+  rewrite -JUtils.iotaredE => /> lenvals.
+
+
   do split; 1..3,5..6:smt().
   + move : zetas_invE; rewrite /array_mont_inv /lift_array128 tP => mnt.
     move : (mnt (to_uint zetasctr{1}) _); 1: smt().
@@ -1383,7 +1414,7 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
     by move => <-; rewrite -ZqField.mulrA rrinvFq; ring.
   by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
  
-by move => jl rpl; rewrite !ultE => 13?; rewrite !to_uintD_small; smt(). 
+by move => jl rpl; rewrite !ultE => 11?; rewrite !to_uintD_small; smt(). 
 
 (* Preservation *)
 
@@ -1409,6 +1440,9 @@ have  /= [#] redbl redbh redv :=
 
 move : redbl redbh; rewrite -rval0 => redbl redbh.
 move : bredbl bredbh; rewrite -rval => bredbl bredbh.
+
+have : to_uint len{1} \in map (fun i => 2^i) (iota_ 1 8) by smt(mem_iota map_f). 
+rewrite -JUtils.iotaredE => /> lenvals.
 
 do split; 4..: smt().
 

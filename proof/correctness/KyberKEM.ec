@@ -483,7 +483,7 @@ have H : 0 <= to_uint (cnd{hr} `|` zeroextu64 x) < 256.
   case (0 <= k && k < 8).
   + by move => /= kbb; congr; rewrite !get_to_uint kb  kbb /= to_uint_truncateu8 /= /#.
   move => /= *; rewrite get_to_uint kb /=. 
-  have : 256 = 2^8 by auto. print IntOrder.
+  have : 256 = 2^8 by auto. 
   move : (ler_weexpn2l 2 _ 8 k) => //=.
   by smt(divz_small).
 
@@ -702,7 +702,7 @@ sp 3 0; seq 1 0 : (#pre /\
      move : (cphv1 k _); 1: smt().
      by rewrite initiE /= /#.
    + move => eq1. 
-     have neq2 : c{2}.`2 <> cph{2}.`2 by smt().
+     have neq2 : c{2}.`2 <> cph{2}.`2 by move : neq eq1; smt().
      rewrite tP in neq2.   
      have [k kb] : exists k, 0<=k<128 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
      exists (k + 960); split; 1: by smt().

@@ -117,7 +117,10 @@ lemma smod_div x : smod (x * R) (R ^ 2) %/ R = smod x  R.
 proof.
 rewrite !smodE expr2 !(div_mulr _ _ _ dvd2R).  
 rewrite -!mulz_modl; first by apply gt0_R.
-case (R * (R %/ 2) <= x %% R * R ); 1: by smt(dvd2R gt0_R).
+case (R * (R %/ 2) <= x %% R * R ).
++ move => *.
+  have -> /= : R %/ 2 <= x %% R by smt(gt0_R).
+  by rewrite -Ring.IntID.mulNr -Ring.IntID.mulrDl mulzK; 1: by smt(gt0_R). 
 rewrite mulrC => H.
 by have -> : !(R %/ 2 <= x %% R); smt(ler_wpmul2r gt0_R).
 qed.
@@ -156,7 +159,7 @@ lemma nosmt BREDCp_corr a bits:
           0  <= BREDC a bits < 2 * q /\ BREDC a bits %% q = a %% q.
 proof.
 rewrite /BREDC /= /R /smod /=.
-move => ????.
+move => ??? bnd0.
 rewrite /barrett_pred /barrett_pred_low /barrett_pred_high /barrett_fun /barrett_fun_aux /= => H brt.
 move : (brt a H); move => [#] brtl brth.
 rewrite !modzDm.
@@ -178,8 +181,7 @@ pose d := -a;have -> : (a = -d); 1: by auto.
 rewrite !mulNr !modNz; 1..4: smt(gt2_k expr_gt0). 
 rewrite !(modz_small (-a * (2 ^ bits %/ SignedReductions.q + 1) - 1)).
 +  rewrite gtr0_norm; 1: by  smt(gt2_k expr_gt0).
-   split; 1: by smt().
-   by move => *; have ? : (- a * (2 ^ bits %/ SignedReductions.q + 1) <= 2^k*2^k); smt(expr2).
+   by split; rewrite -Ring.IntID.mulNr;  smt(ler_pmul expr2). 
 have -> /=: 2 ^ k ^ 2 %/ 2 <= 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1).
 + have -> : 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) = 
         2^k^2 - d * (2 ^ bits %/ SignedReductions.q + 1); 1: by rewrite /d;ring. 
@@ -210,21 +212,21 @@ lemma nosmt SREDCp_corr a:
        SREDC a %% q = (a * Rinv) %% q.
 proof.
 move => [#] H H0 [#] H1 H2.
-have albnd : (- R * R %/4 <= a); 1: by smt().
-have aubnd : (a < R* R %/4); 1: by smt().
+have albnd : (- R * R %/4 <= a). admit.
+have aubnd : (a < R* R %/4). admit.
 rewrite /SREDC /= (smod_div (a * qinv)).
 move : (smod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 
 move => inner_bnd.
 
-have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q); 1: by smt().
-have uubnd : (smod (a * qinv) R * q < R*R %/4); 1: by smt().
+have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q). admit. 
+have uubnd : (smod (a * qinv) R * q < R*R %/4). admit. 
 
 rewrite (smod_small ((a - smod (a * qinv)R * q))); 1 : by smt(gt0_R exprn_egt1).
 + by rewrite !expr2;smt().
 rewrite (smod_sq ((a - smod (a * qinv) R * q))).
-rewrite (smod_small ((a - smod (a * qinv) R * q) %/R)); first 2 by smt(). 
+rewrite (smod_small ((a - smod (a * qinv) R * q) %/R)); first  by smt(). admit.
 
-split; 1: by smt(). 
+split; 1: by admit. 
 
 (* Congruence proof *)
 move : (smod_exists (a * qinv) R) => kk0_exists.
