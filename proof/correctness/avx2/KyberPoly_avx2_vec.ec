@@ -9,6 +9,53 @@ require import KyberPoly_avx2_proof.
 
 
 module Mvec = {
+  proc __shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+    
+    var r0:W256.t;
+    var r1:W256.t;
+    
+    r0 <@ OpsV.iVPERM2I128(a, b, (W8.of_int 32));
+    r1 <@ OpsV.iVPERM2I128(a, b, (W8.of_int 49));
+    return (r0, r1);
+  }
+  
+  proc __shuffle4 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+    
+    var r0:W256.t;
+    var r1:W256.t;
+    
+    r0 <@ OpsV.iVPUNPCKL_4u64(a, b);
+    r1 <@ OpsV.iVPUNPCKH_4u64(a, b);
+    return (r0, r1);
+  }
+  
+  proc __shuffle2 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+    
+    var t0:W256.t;
+    var t1:W256.t;
+    
+    t0 <@ OpsV.iVMOVSLDUP_8u32(b);
+    t0 <@ OpsV.iVPBLEND_8u32(a, t0, (W8.of_int 170));
+    a  <@ OpsV.iVPSRL_4u64(a, (W8.of_int 32));
+    t1 <@ OpsV.iVPBLEND_8u32(a, b, (W8.of_int 170));
+    return (t0, t1);
+  }
+  
+  proc __shuffle1 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+    
+    var r0:W256.t;
+    var r1:W256.t;
+    var t0:W256.t;
+    var t1:W256.t;
+    
+    t0 <@ OpsV.iVPSLL_8u32(b, (W8.of_int 16));
+    r0 <@ OpsV.iVPBLEND_16u16(a, t0, (W8.of_int 170));
+    t1 <@ OpsV.iVPSRL_8u32(a, (W8.of_int 16));
+    r1 <@ OpsV.iVPBLEND_16u16(t1, b, (W8.of_int 170));
+
+    return (r0, r1);
+  }
+
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
     var a:W256.t;
@@ -20,7 +67,7 @@ module Mvec = {
     while (i < 16) {
       a <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
       b <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * i));
-      r <@ OpsV.ivadd16u256(a, b);
+      r <@ OpsV.iVPADD_16u16(a, b);
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
@@ -43,7 +90,7 @@ module Mvec = {
     while (i < 16) {
       a <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * i));
       b <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * i));
-      r <@ OpsV.ivsub16u256(a, b);
+      r <@ OpsV.iVPSUB_16u16(a, b);
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i) r));
@@ -55,10 +102,10 @@ module Mvec = {
   proc csubq (r:W256.t, qx16:W256.t) : W256.t = {
     var t:W256.t;
 
-    r <@ OpsV.ivsub16u256(r, qx16);
+    r <@ OpsV.iVPSUB_16u16(r, qx16);
     t <@ OpsV.iVPSRA_16u16(r, (W8.of_int 15));
-    t <@ OpsV.ivpand16u16(t,qx16);
-    r <@ OpsV.ivadd16u256(t, r);
+    t <@ OpsV.iVPAND_16u16(t,qx16);
+    r <@ OpsV.iVPADD_16u16(t, r);
 
     return (r);
   }
@@ -120,10 +167,10 @@ module Mvec = {
       g1 <@ OpsV.iVPSRA_16u16(g1, (W8.of_int 15));
       g2 <@ OpsV.iVPSRA_16u16(g2, (W8.of_int 15));
       g3 <@ OpsV.iVPSRA_16u16(g3, (W8.of_int 15));
-      g0 <@ OpsV.ivpand16u16(g0, hqs);
-      g1 <@ OpsV.ivpand16u16(g1, hqs);
-      g2 <@ OpsV.ivpand16u16(g2, hqs);
-      g3 <@ OpsV.ivpand16u16(g3, hqs);
+      g0 <@ OpsV.iVPAND_16u16(g0, hqs);
+      g1 <@ OpsV.iVPAND_16u16(g1, hqs);
+      g2 <@ OpsV.iVPAND_16u16(g2, hqs);
+      g3 <@ OpsV.iVPAND_16u16(g3, hqs);
       h0 <@ OpsV.iVPUNPCKL_4u64_16u16(g0, g1);
       h2 <@ OpsV.iVPUNPCKH_4u64_16u16(g0, g1);
       h1 <@ OpsV.iVPUNPCKL_4u64_16u16(g2, g3);
@@ -159,7 +206,7 @@ module Mvec = {
     rlo <@ OpsV.iVPMULL_16u16(a, b);
     rlo <@ OpsV.iVPMULL_16u16(rlo, qinvx16);
     rlo <@ OpsV.iVPMULH_256(rlo, qx16);
-    rd <@ OpsV.ivsub16u256(rhi, rlo);
+    rd <@ OpsV.iVPSUB_16u16(rhi, rlo);
     return (rd);
   }
 
@@ -186,14 +233,14 @@ module Mvec = {
     while (i < aux) {
       f0 <- (get256 (WArray512.init16 (fun i => a.[i])) (2 * i));
       f1 <- (get256 (WArray512.init16 (fun i => a.[i])) ((2 * i) + 1));
-      f0 <@ OpsV.ivsub16u256(hq, f0);
-      f1 <@ OpsV.ivsub16u256(hq, f1);
+      f0 <@ OpsV.iVPSUB_16u16(hq, f0);
+      f1 <@ OpsV.iVPSUB_16u16(hq, f1);
       g0 <@ OpsV.iVPSRA_16u16(f0, (W8.of_int 15));
       g1 <@ OpsV.iVPSRA_16u16(f1, (W8.of_int 15));
-      f0 <@ OpsV.ilxor16u16(f0, g0);
-      f1 <@ OpsV.ilxor16u16(f1, g1);
-      f0 <@ OpsV.ivsub16u256(f0, hhq);
-      f1 <@ OpsV.ivsub16u256(f1, hhq);
+      f0 <@ OpsV.iVPXOR_16u16(f0, g0);
+      f1 <@ OpsV.iVPXOR_16u16(f1, g1);
+      f0 <@ OpsV.iVPSUB_16u16(f0, hhq);
+      f1 <@ OpsV.iVPSUB_16u16(f1, hhq);
       f0 <@ OpsV.iVPACKSS_16u16(f0, f1);
       f0 <@ OpsV.iVPERMQ_32u8(f0, (W8.of_int 216));
       c <@ OpsV.iVPMOVMSKB_u256_u32(f0);
@@ -210,7 +257,7 @@ module Mvec = {
     x <@ OpsV.iVPMULH_256(r, vx16);
     x <@ OpsV.iVPSRA_16u16(x, (W8.of_int 10));
     x <@ OpsV.iVPMULL_16u16(x, qx16);
-    r <@ OpsV.ivsub16u256(r, x);
+    r <@ OpsV.iVPSUB_16u16(r, x);
     return (r);
   }
 
@@ -302,10 +349,10 @@ module Mvec = {
       f1 <@ OpsV.iVPMULHRS_256(f1, shift1);
       f2 <@ OpsV.iVPMULHRS_256(f2, shift1);
       f3 <@ OpsV.iVPMULHRS_256(f3, shift1);
-      f0 <@ OpsV.ivpand16u16(f0, mask);
-      f1 <@ OpsV.ivpand16u16(f1, mask);
-      f2 <@ OpsV.ivpand16u16(f2, mask);
-      f3 <@ OpsV.ivpand16u16(f3, mask);
+      f0 <@ OpsV.iVPAND_16u16(f0, mask);
+      f1 <@ OpsV.iVPAND_16u16(f1, mask);
+      f2 <@ OpsV.iVPAND_16u16(f2, mask);
+      f3 <@ OpsV.iVPAND_16u16(f3, mask);
       f0 <@ OpsV.iVPACKUS_16u16(f0, f1);
       f2 <@ OpsV.iVPACKUS_16u16(f2, f3);
       f0 <@ OpsV.iVPMADDUBSW_256(f0, shift2);
@@ -346,7 +393,7 @@ module Mvec = {
       f <@
       OpsV.iVPBROADCAST_2u128_32u8(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
       f <@ OpsV.iVPSHUFB_256(f, shufbidx);
-      f <@ OpsV.ivpand16u16(f, mask);
+      f <@ OpsV.iVPAND_16u16(f, mask);
       f <@ OpsV.iVPMULL_16u16(f, shift);
       f <@ OpsV.iVPMULHRS_256(f, q);
       rp <-
@@ -403,7 +450,7 @@ module Mvec = {
     achi <@ OpsV.iVPMULH_256(a, c);
     bdlo <@ OpsV.iVPMULL_16u16(bdlo, qinvx16);
     bdlo <@ OpsV.iVPMULH_256(bdlo, qx16);
-    bd <@ OpsV.ivsub16u256(bdhi, bdlo);
+    bd <@ OpsV.iVPSUB_16u16(bdhi, bdlo);
     rbdlo <@ OpsV.iVPMULL_16u16(zeta_0, bd);
     rbdhi <@ OpsV.iVPMULH_256(zeta_0, bd);
     bc0 <@ OpsV.iVPUNPCKL_16u16(bclo, bchi);
@@ -415,14 +462,14 @@ module Mvec = {
     rbd0 <@ OpsV.iVPUNPCKL_16u16(rbdlo, rbdhi);
     rbd1 <@ OpsV.iVPUNPCKH_16u16(rbdlo, rbdhi);
     if ((sign = 0)) {
-      x0 <@ OpsV.ivadd32u256(ac0, rbd0);
-      x1 <@ OpsV.ivadd32u256(ac1, rbd1);
+      x0 <@ OpsV.iVPADD_8u32(ac0, rbd0);
+      x1 <@ OpsV.iVPADD_8u32(ac1, rbd1);
     } else {
-      x0 <@ OpsV.ivsub32u256(ac0, rbd0);
-      x1 <@ OpsV.ivsub32u256(ac1, rbd1);
+      x0 <@ OpsV.iVPSUB_8u32(ac0, rbd0);
+      x1 <@ OpsV.iVPSUB_8u32(ac1, rbd1);
     }
-    y0 <@ OpsV.ivadd32u256(bc0, ad0);
-    y1 <@ OpsV.ivadd32u256(bc1, ad1);
+    y0 <@ OpsV.iVPADD_8u32(bc0, ad0);
+    y1 <@ OpsV.iVPADD_8u32(bc1, ad1);
     return (x0, x1, y0, y1);
   }
 
@@ -435,14 +482,14 @@ module Mvec = {
     var x:W256.t;
 
     zero <- setw0_256 ;
-    y <@ OpsV.iVPBLENDW_256(a0, zero, (W8.of_int 170));
-    z <@ OpsV.iVPBLENDW_256(a1, zero, (W8.of_int 170));
+    y <@ OpsV.iVPBLEND_16u16(a0, zero, (W8.of_int 170));
+    z <@ OpsV.iVPBLEND_16u16(a1, zero, (W8.of_int 170));
     a0 <@ OpsV.iVPSRL_8u32(a0, (W8.of_int 16));
     a1 <@ OpsV.iVPSRL_8u32(a1, (W8.of_int 16));
     z <@ OpsV.iVPACKUS_8u32(y, z);
     a0 <@ OpsV.iVPACKUS_8u32(a0, a1);
-    y <@ OpsV.iVPBLENDW_256(b0, zero, (W8.of_int 170));
-    x <@ OpsV.iVPBLENDW_256(b1, zero, (W8.of_int 170));
+    y <@ OpsV.iVPBLEND_16u16(b0, zero, (W8.of_int 170));
+    x <@ OpsV.iVPBLEND_16u16(b1, zero, (W8.of_int 170));
     b0 <@ OpsV.iVPSRL_8u32(b0, (W8.of_int 16));
     b1 <@ OpsV.iVPSRL_8u32(b1, (W8.of_int 16));
     y <@ OpsV.iVPACKUS_8u32(y, x);
@@ -451,8 +498,8 @@ module Mvec = {
     y <@ OpsV.iVPMULL_16u16(y, qinvx16);
     z <@ OpsV.iVPMULH_256(z, qx16);
     y <@ OpsV.iVPMULH_256(y, qx16);
-    a0 <@ OpsV.ivsub16u256(a0, z);
-    b0 <@ OpsV.ivsub16u256(b0, y);
+    a0 <@ OpsV.iVPSUB_16u16(a0, z);
+    b0 <@ OpsV.iVPSUB_16u16(b0, y);
     return (a0, b0);
   }
 
@@ -526,17 +573,92 @@ module Mvec = {
           (fun i => if 192 <= i < 192 + 64 then aux.[i-192] else rp.[i]);
     return (rp);
   }
+
+  proc _poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+    var aux: int;
+    
+    var jqx16_p:W16.t Array16.t;
+    var qx16:W256.t;
+    var i:int;
+    var t0:W256.t;
+    var t1:W256.t;
+    var t2:W256.t;
+    var t3:W256.t;
+    var t4:W256.t;
+    var t5:W256.t;
+    var t6:W256.t;
+    var t7:W256.t;
+    var tt:W256.t;
+    var ttt:W256.t;
+    jqx16_p <- witness;
+    jqx16_p <- jqx16;
+    qx16 <- (get256 (WArray32.init16 (fun i => jqx16_p.[i])) 0);
+    a <@ poly_csubq (a);
+    i <- 0;
+    while (i < 2) {
+      t0 <- (get256 (WArray512.init16 (fun i => a.[i])) (8 * i));
+      t1 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 1));
+      t2 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 2));
+      t3 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 3));
+      t4 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 4));
+      t5 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 5));
+      t6 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 6));
+      t7 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 7));
+      tt <- OpsV.iVPSLL_16u16(t1, (W8.of_int 12));
+      tt <- OpsV.iVPOR_16u16(tt, t0);
+      t0 <- OpsV.iVPSRL_16u16(t1, (W8.of_int 4));
+      t1 <- OpsV.iVPSLL_16u16(t2, (W8.of_int 8));
+      t0 <- OpsV.iVPOR_16u16(t0, t1);
+      t1 <- OpsV.iVPSRL_16u16(t2, (W8.of_int 8));
+      t2 <- OpsV.iVPSLL_16u16(t3, (W8.of_int 4));
+      t1 <- OpsV.iVPOR_16u16(t1, t2);
+      t2 <- OpsV.iVPSLL_16u16(t5, (W8.of_int 12));
+      t2 <- OpsV.iVPOR_16u16(t2, t4);
+      t3 <- OpsV.iVPSRL_16u16(t5, (W8.of_int 4));
+      t4 <- OpsV.iVPSLL_16u16(t6, (W8.of_int 8));
+      t3 <- OpsV.iVPOR_16u16(t3, t4);
+      t4 <- OpsV.iVPSRL_16u16(t6, (W8.of_int 8));
+      t5 <- OpsV.iVPSLL_16u16(t7, (W8.of_int 4));
+      t4 <- OpsV.iVPOR_16u16(t4, t5);
+      (ttt, t0) <@ __shuffle1 (tt, t0);
+      (tt, t2) <@ __shuffle1 (t1, t2);
+      (t1, t4) <@ __shuffle1 (t3, t4);
+      (t3, tt) <@ __shuffle2 (ttt, tt);
+      (ttt, t0) <@ __shuffle2 (t1, t0);
+      (t1, t4) <@ __shuffle2 (t2, t4);
+      (t2, ttt) <@ __shuffle4 (t3, ttt);
+      (t3, tt) <@ __shuffle4 (t1, tt);
+      (t1, t4) <@ __shuffle4 (t0, t4);
+      (t0, t3) <@ __shuffle8 (t2, t3);
+      (t2, ttt) <@ __shuffle8 (t1, ttt);
+      (t1, t4) <@ __shuffle8 (tt, t4);
+      Glob.mem <-
+      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int (192 * i)))) t0;
+      Glob.mem <-
+      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 32)))) t2;
+      Glob.mem <-
+      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 64)))) t1;
+      Glob.mem <-
+      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 96)))) t3;
+      Glob.mem <-
+      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 128)))) ttt;
+      Glob.mem <-
+      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 160)))) t4;
+      i <- i + 1;
+    }
+    return (a);
+  }
 }.
 
 import KyberPolyAVX.
 
 equiv eq_poly_add2:
-  Mavx2_prevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.
+  Mprevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.
 proof.
   proc.
   while(={rp, bp, i} /\ 0 <= i{1}).
   wp.
-  call eq_ivadd16u256.
+  call eq_iVPADD_16u16.
   wp. skip. rewrite /is16u16 => />. move => &1 i_lb i_ub.
   do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
@@ -563,12 +685,12 @@ proof.
 qed.
 
 equiv eq_poly_sub:
-  Mavx2_prevec.poly_sub ~ Mvec.poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mprevec.poly_sub ~ Mvec.poly_sub: ={rp, ap, bp} ==> ={res}.
 proof.
   proc.
   while(={rp, ap, bp, i} /\ 0 <= i{1}).
   wp.
-  call eq_ivsub16u256.
+  call eq_iVPSUB_16u16.
   wp. skip. rewrite /is16u16 => />. move => &1 i_lb i_ub.
   do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
@@ -595,13 +717,13 @@ proof.
 qed.
 
 equiv eq_poly_csubq:
-  Mavx2_prevec.poly_csubq ~ Mvec.poly_csubq: ={rp} ==> ={res}.
+  Mprevec.poly_csubq ~ Mvec.poly_csubq: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16} /\ 0 <= i{1} /\ is16u16 _qx16{1} qx16{2}).
     inline Mvec.csubq. 
    wp.
-    do !(call eq_ivadd16u256 || call eq_ivpand16u16 || call eq_iVPSRA_16u16 || call eq_ivsub16u256).
+    do !(call eq_iVPADD_16u16 || call eq_iVPAND_16u16 || call eq_iVPSRA_16u16 || call eq_iVPSUB_16u16).
     wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
     rewrite /lift2poly; simplify; rewrite pack16_bits16 => //.
     simplify.
@@ -631,7 +753,7 @@ proof.
 qed.
 
 equiv eq_poly_tomsg:
-  Mavx2_prevec.poly_tomsg ~ Mvec.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_tomsg ~ Mvec.poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={i, rp, a, aux, Glob.mem}  /\ aux{1} = 8 /\ 0 <= i{1} /\ is16u16 hq{1} hq{2} /\ is16u16 hhq{1} hhq{2}).
@@ -640,7 +762,7 @@ proof.
     wp.
     call eq_iVPERMQ_32u8.
     wp.
-    do (call eq_iVPACKSS_16u16 || call eq_ivsub16u256 || call eq_ilxor16u16 || call eq_iVPSRA_16u16).
+    do (call eq_iVPACKSS_16u16 || call eq_iVPSUB_16u16 || call eq_iVPXOR_16u16 || call eq_iVPSRA_16u16).
     wp. skip. rewrite /is16u16 /is32u8 => />. move => &2 i_lb ii_ub.
     split.
       rewrite /get256_direct /= => />.
@@ -663,13 +785,13 @@ proof.
 qed.
 
 equiv eq_poly_frommsg:
-  Mavx2_prevec.poly_frommsg ~ Mvec.poly_frommsg: ={rp, ap, Glob.mem} /\ (valid_ptr (to_uint ap{1}) 32) ==> ={res}.
+  Mprevec.poly_frommsg ~ Mvec.poly_frommsg: ={rp, ap, Glob.mem} /\ (valid_ptr (to_uint ap{1}) 32) ==> ={res}.
 proof.
   proc.
   while(={i, rp, ap, Glob.mem} /\ 0 <= i{1} /\ is16u16 hqs{1} hqs{2} /\ is8u32 f{1} f{2} /\
         is32u8 idx{1} idx{2} /\ is8u32 shift{1} shift{2}).
   wp.
-  do (call eq_iVPSLL_16u16 || call eq_iVPSRA_16u16 || call eq_ivpand16u16 || call eq_iVPUNPCKL_4u64_16u16 ||
+  do (call eq_iVPSLL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPAND_16u16 || call eq_iVPUNPCKL_4u64_16u16 ||
       call eq_iVPUNPCKH_4u64_16u16 || call eq_iVPERM2I128_16u16).
   wp.
   call eq_iVPSHUFB_256.
@@ -727,21 +849,21 @@ proof.
 qed.
 
 equiv eq_red16x:
-  Mavx2_prevec.red16x ~ Mvec.red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.red16x ~ Mvec.red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
 proof.
   proc.
-  do (call eq_ivsub16u256 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
+  do (call eq_iVPSUB_16u16 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
   trivial.
 qed.
 
 equiv eq_poly_reduce:
-  Mavx2_prevec.poly_reduce ~ Mvec.poly_reduce: ={rp} ==> ={res}.
+  Mprevec.poly_reduce ~ Mvec.poly_reduce: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2}).
-  inline Mavx2_prevec.red16x Mvec.red16x.
+  inline Mprevec.red16x Mvec.red16x.
   wp.
-  do !(call eq_ivsub16u256 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
+  do !(call eq_iVPSUB_16u16 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
   wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
   do split.
   rewrite /lift2poly; simplify; rewrite pack16_bits16; trivial.
@@ -774,21 +896,21 @@ proof.
 qed.
 
 equiv eq_fqmulx16:
-  Mavx2_prevec.fqmulx16 ~ Mvec.fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.fqmulx16 ~ Mvec.fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
 proof.
   proc.
-  do (call eq_ivsub16u256 || call eq_iVPMULH_256 || call eq_iVPMULL_16u16).
+  do (call eq_iVPSUB_16u16 || call eq_iVPMULH_256 || call eq_iVPMULL_16u16).
   trivial.
 qed.
 
 equiv eq_poly_frommont:
-  Mavx2_prevec.poly_frommont ~ Mvec.poly_frommont: ={rp} ==> ={res}.
+  Mprevec.poly_frommont ~ Mvec.poly_frommont: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, aux} /\ aux{1} = 16 /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} /\ is16u16 dmontx16{1} dmontx16{2}).
-  inline Mavx2_prevec.fqmulx16 Mvec.fqmulx16.
+  inline Mprevec.fqmulx16 Mvec.fqmulx16.
   wp.
-  do !(call eq_ivsub16u256 || call eq_iVPMULH_256 || call eq_iVPMULL_16u16).
+  do !(call eq_iVPSUB_16u16 || call eq_iVPMULH_256 || call eq_iVPMULL_16u16).
   wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
   do split.
   rewrite /lift2poly initiE => />.
@@ -821,12 +943,12 @@ proof.
 qed.
 
 equiv eq_poly_decompress:
-  Mavx2_prevec.poly_decompress ~ Mvec.poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+  Mprevec.poly_decompress ~ Mvec.poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={rp, ap, i, aux, Glob.mem} /\ aux{1} = 16 /\ 0 <= i{1} /\ is16u16 q{1} q{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift{1} shift{2} /\ is32u8 shufbidx{1} shufbidx{2}).
   wp.
-  call eq_iVPMULHRS_256; call eq_iVPMULL_16u16; call eq_ivpand16u16.
+  call eq_iVPMULHRS_256; call eq_iVPMULL_16u16; call eq_iVPAND_16u16.
   wp.
   call eq_iVPSHUFB_256.
   inline Ops.iload16u8.
@@ -864,7 +986,7 @@ proof.
 qed.
 
 equiv eq_poly_compress:
-  Mavx2_prevec.poly_compress ~ Mvec.poly_compress: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_compress ~ Mvec.poly_compress: ={rp, a, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={rp, a, i, aux, Glob.mem} /\ aux{1} = 4 /\ 0 <= i{1} /\ is16u16 v{1} v{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift1{1} shift1{2} /\
@@ -874,7 +996,7 @@ proof.
   wp.
   call eq_iVPERMD.
   wp.
-  do (call eq_iVPMULH_256 || call eq_iVPMULHRS_256 || call eq_ivpand16u16 || call eq_iVPACKUS_16u16 || call eq_iVPMADDUBSW_256).
+  do (call eq_iVPMULH_256 || call eq_iVPMULHRS_256 || call eq_iVPAND_16u16 || call eq_iVPACKUS_16u16 || call eq_iVPMADDUBSW_256).
   wp. skip. auto => />. rewrite /is16u16 /is8u32 /is32u8 => />. move => &1 &2 [#] i_lb shift_eq i_ub.
   split.
     rewrite /get256_direct /= => />.
@@ -926,21 +1048,21 @@ proof.
 qed.
 
 equiv eq_schoolbook:
-  Mavx2_prevec.schoolbook ~ Mvec.schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
+  Mprevec.schoolbook ~ Mvec.schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
                                              is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==>
                                              is16u16 res{1}.`1 res{2}.`1 /\ is16u16 res{1}.`2 res{2}.`2 /\
                                              is16u16 res{1}.`3 res{2}.`3 /\ is16u16 res{1}.`4 res{2}.`4.
 proof.
   proc.
   wp.
-  do call eq_ivadd32u256.
+  do call eq_iVPADD_8u32.
   seq 33 25 : (#pre /\
                is8u32 ac0_dw{1} ac0{2} /\ is8u32 rbd0_dw{1} rbd0{2} /\
                is8u32 ac1_dw{1} ac1{2} /\ is8u32 rbd1_dw{1} rbd1{2} /\
                is8u32 bc0_dw{1} bc0{2} /\ is8u32 bc1_dw{1} bc1{2} /\
                is8u32 ad0_dw{1} ad0{2} /\ is8u32 ad1_dw{1} ad1{2}).
     wp.
-    do (call eq_iVPMULH_256 || call eq_iVPMULL_16u16 || call eq_iVPUNPCKH_16u16 || call eq_iVPUNPCKL_16u16 || call eq_ivsub16u256).
+    do (call eq_iVPMULH_256 || call eq_iVPMULL_16u16 || call eq_iVPUNPCKH_16u16 || call eq_iVPUNPCKL_16u16 || call eq_iVPSUB_16u16).
     wp. auto => />.
     move => &1 &2 [#] zeta_eq qx_eq qinvx_eq />.
     do split.
@@ -966,7 +1088,7 @@ proof.
   if{1}.
     + rcondt{2} 1.
       trivial.
-      do call eq_ivadd32u256.
+      do call eq_iVPADD_8u32.
       skip; auto => />.
       move => &1 &2 [#] zeta_eq qx_eq qinvx_eq ac0_eq rbd0_eq ac1_eq rbd1_eq bc0_eq bc1_eq ad0_eq ad1_eq
                         res0_l res0_r res0_eq res1_l res1_r res1_eq res2_l res2_r res2_eq res3l res3r res3_eq />.
@@ -981,7 +1103,7 @@ proof.
           apply W16u16.allP => />.
     + rcondf{2} 1.
       trivial.
-      do call eq_ivsub32u256.
+      do call eq_iVPSUB_8u32.
       skip; auto => />.
       move => &1 &2 [#] zeta_eq qx_eq qinvx_eq ac0_eq rbd0_eq ac1_eq rbd1_eq bc0_eq bc1_eq ad0_eq ad1_eq sign_not_0
                         res0_l res0_r res0_eq res1_l res1_r res1_eq res2_l res2_r res2_eq res3l res3r res3_eq />.
@@ -1001,7 +1123,7 @@ equiv veceq_poly_add2 :
 proof.
   proc.
   while (={rp, bp, i}).
-    inline{1} OpsV.ivadd16u256.
+    inline{1} OpsV.iVPADD_16u16.
     wp. skip. auto => //.
   wp. skip. auto => //.
 qed.
@@ -1012,7 +1134,7 @@ equiv veceq_poly_sub :
 proof.
   proc.
   while (={rp, ap, bp, i}).
-    inline{1} OpsV.ivsub16u256.
+    inline{1} OpsV.iVPSUB_16u16.
     wp. skip. auto => //.
   wp. skip. auto => //.
 qed.
@@ -1131,7 +1253,7 @@ proof.
 qed.
 
 equiv prevec_eq_poly_add2:
-  Mavx2_prevec.poly_add2 ~ M._poly_add2: ={rp, bp} ==> ={res}.
+  Mprevec.poly_add2 ~ M._poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
 smt. trivial.
 apply eq_poly_add2.
@@ -1139,7 +1261,7 @@ apply veceq_poly_add2.
 qed.
 
 equiv prevec_eq_poly_sub:
-  Mavx2_prevec.poly_sub ~ M._poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mprevec.poly_sub ~ M._poly_sub: ={rp, ap, bp} ==> ={res}.
     transitivity Mvec.poly_sub (={rp, ap, bp} ==> ={res}) (={rp, ap, bp} ==> ={res}).
 smt. trivial.
 apply eq_poly_sub.
@@ -1147,7 +1269,7 @@ apply veceq_poly_sub.
 qed.
 
 equiv prevec_eq_poly_csubq:
-  Mavx2_prevec.poly_csubq ~ M._poly_csubq: ={rp} ==> ={res}.
+  Mprevec.poly_csubq ~ M._poly_csubq: ={rp} ==> ={res}.
     transitivity Mvec.poly_csubq (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_csubq.
@@ -1155,7 +1277,7 @@ apply veceq_poly_csubq.
 qed.
 
 equiv prevec_eq_poly_tomsg:
-  Mavx2_prevec.poly_tomsg ~ M._poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_tomsg ~ M._poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
     transitivity Mvec.poly_tomsg (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_tomsg.
@@ -1163,7 +1285,7 @@ apply veceq_poly_tomsg.
 qed.
 
 equiv prevec_eq_poly_frommsg:
-  Mavx2_prevec.poly_frommsg ~ M._poly_frommsg: ={rp, ap, Glob.mem}  /\ (valid_ptr (to_uint ap{1}) 32)==> ={res}.
+  Mprevec.poly_frommsg ~ M._poly_frommsg: ={rp, ap, Glob.mem}  /\ (valid_ptr (to_uint ap{1}) 32)==> ={res}.
      transitivity Mvec.poly_frommsg (={rp, ap, Glob.mem} /\ (valid_ptr (to_uint ap{1}) 32) ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_frommsg.
@@ -1171,7 +1293,7 @@ apply veceq_poly_frommsg.
 qed.
 
 equiv prevec_eq_red16x:
-  Mavx2_prevec.red16x ~ M.__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.red16x ~ M.__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
   transitivity Mvec.red16x (is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2})
                            (={r, qx16, vx16} ==> ={res}).
 smt. trivial.
@@ -1180,7 +1302,7 @@ apply veceq_red16x.
 qed.
 
 equiv prevec_eq_poly_reduce:
-  Mavx2_prevec.poly_reduce ~ M.__poly_reduce: ={rp} ==> ={res}.
+  Mprevec.poly_reduce ~ M.__poly_reduce: ={rp} ==> ={res}.
     transitivity Mvec.poly_reduce (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_reduce.
@@ -1188,7 +1310,7 @@ apply veceq_poly_reduce.
 qed.
 
 equiv prevec_eq_fqmulx16:
-  Mavx2_prevec.fqmulx16 ~ M.__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.fqmulx16 ~ M.__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
     transitivity Mvec.fqmulx16 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2})
                                (={a, b, qx16, qinvx16} ==> ={res}).
 smt. trivial.
@@ -1197,7 +1319,7 @@ apply veceq_fqmulx16.
 qed.
 
 equiv prevec_eq_poly_frommont:
-  Mavx2_prevec.poly_frommont ~ M._poly_frommont: ={rp} ==> ={res}.
+  Mprevec.poly_frommont ~ M._poly_frommont: ={rp} ==> ={res}.
     transitivity Mvec.poly_frommont (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt. trivial.
 apply eq_poly_frommont.
@@ -1205,7 +1327,7 @@ apply veceq_poly_frommont.
 qed.
 
 equiv prevec_eq_poly_decompress:
-  Mavx2_prevec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+  Mprevec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
     transitivity Mvec.poly_decompress (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_decompress.
@@ -1213,7 +1335,7 @@ apply veceq_poly_decompress.
 qed.
 
 equiv prevec_eq_poly_compress:
-  Mavx2_prevec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res}.
     transitivity Mvec.poly_compress (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
 smt. trivial.
 apply eq_poly_compress.
@@ -1221,7 +1343,7 @@ apply veceq_poly_compress.
 qed.
 
 equiv prevec_eq_schoolbook:
-  Mavx2_prevec.schoolbook ~ M.__schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
+  Mprevec.schoolbook ~ M.__schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
                                              is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==>
                                              is16u16 res{1}.`1 res{2}.`1 /\ is16u16 res{1}.`2 res{2}.`2 /\
                                              is16u16 res{1}.`3 res{2}.`3 /\ is16u16 res{1}.`4 res{2}.`4.
