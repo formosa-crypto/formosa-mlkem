@@ -212,21 +212,58 @@ lemma nosmt SREDCp_corr a:
        SREDC a %% q = (a * Rinv) %% q.
 proof.
 move => [#] H H0 [#] H1 H2.
-have albnd : (- R * R %/4 <= a). admit.
-have aubnd : (a < R* R %/4). admit.
+have H3 : (R * R %/ 4 = R %/ 2 * R %/2  ) by smt(dvd2R div_mulr).  
+have albnd : (- R * R %/4 <= a) by smt(dvd2R div_mulr).  
+have aubnd : (a < R* R %/4) by smt(ler_pmul dvd2R div_mulr).
 rewrite /SREDC /= (smod_div (a * qinv)).
 move : (smod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 
 move => inner_bnd.
 
-have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q). admit. 
-have uubnd : (smod (a * qinv) R * q < R*R %/4). admit. 
+have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q). 
++ case (0 <= smod (a * qinv) R);1 : by smt().
+  case (smod (a * qinv) R = -R %/2); 1: by move => -> *; smt(ler_pmul dvd2R div_mulr).
+  move => *.  
+  have :  -smod (a * qinv) R * q < R %/2 * R %/2; last by smt().
+  rewrite -Ring.IntID.mulNr div_mulr 1: dvd2R => *. 
+  by apply (ltr_pmul (- smod (a * qinv) R) (R %/2) q  (R %/2)); smt(ltr_pmul).
+
+have uubnd : (smod (a * qinv) R * q < R*R %/4).
++ case (smod (a * qinv) R < 0);1 : by smt().
+  move => *.  
+  have :  smod (a * qinv) R * q < R %/2 * R %/2; last by smt().
+  rewrite div_mulr 1: dvd2R => *. 
+  by apply (ltr_pmul (smod (a * qinv) R) (R %/2) q  (R %/2)); smt(ltr_pmul).
 
 rewrite (smod_small ((a - smod (a * qinv)R * q))); 1 : by smt(gt0_R exprn_egt1).
 + by rewrite !expr2;smt().
 rewrite (smod_sq ((a - smod (a * qinv) R * q))).
-rewrite (smod_small ((a - smod (a * qinv) R * q) %/R)); first  by smt(). admit.
+rewrite (smod_small ((a - smod (a * qinv) R * q) %/R)); first  by smt(). 
+have ? : (-R*R%/2<= (a - smod (a * qinv) R * SignedReductions.q) < R*R%/2) by smt(ler_lt_sub ltr_add).
+split; 1: by apply lez_divRL; smt(gt0_R). 
+by move => *; apply ltz_divLR; smt(gt0_R dvd2R). 
 
-split; 1: by admit. 
+split. 
++ have ? : (-SignedReductions.q) * R <= (a - smod (a * qinv) R * SignedReductions.q) < SignedReductions.q * R; last first.
+  + split; 1: by apply lez_divRL; smt(gt0_R). 
+    by have : ((a - smod (a * qinv) R * SignedReductions.q) %/R) * R < SignedReductions.q * R; smt().
+
+  have ulbndq : (-R%/2*q <= smod (a * qinv) R * q).  
+  + case (0 <= smod (a * qinv) R);1 : by smt(). 
+    case (smod (a * qinv) R = -R %/2); 1: by move => -> *; smt(ler_pmul dvd2R div_mulr).
+    move => *.  
+    have :  -smod (a * qinv) R * q < R %/2 * q; last by smt().
+    rewrite -Ring.IntID.mulNr => *.  
+    by apply (ltr_pmul2r q _ (- smod (a * qinv) R) (R %/2)); 1,2:  smt(ltr_pmul).
+
+  have uubndq : (smod (a * qinv) R * q < R%/2*q).
+  + case (smod (a * qinv) R < 0);1 : by smt().
+    move => *.  
+    have :  smod (a * qinv) R * q < R %/2 * q; last by smt().
+    by apply (ltr_pmul2r q _ (smod (a * qinv) R) (R %/2)); 1,2:  smt(ltr_pmul).
+
+  have ? : R %/ 2 * SignedReductions.q + R %/ 2 * SignedReductions.q = (q)*R by  smt(dvd2R).
+  have ? : - R %/ 2 * SignedReductions.q + - R %/ 2 * SignedReductions.q = (-q)*R by smt().
+  by smt(ler_lt_sub ltr_add).
 
 (* Congruence proof *)
 move : (smod_exists (a * qinv) R) => kk0_exists.
