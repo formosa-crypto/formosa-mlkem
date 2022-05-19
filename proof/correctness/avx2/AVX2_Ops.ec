@@ -772,6 +772,14 @@ module Ops = {
     return r;
   }
 
+  proc iVPBLEND_8u32_16u16(x y: t16u16, p: W8.t) : t16u16 = {
+    var r: t16u16;
+
+    r <- Array16.init (fun i => if p.[i %/ 2] then y.[i] else x.[i]);
+
+    return r;
+  }
+
   proc iVPBLEND_16u16(x y:t16u16, p : W8.t) : t16u16 = {
     var r : t16u16;
 
@@ -856,6 +864,14 @@ module Ops = {
     rb <- mkseq (fun i => W8.msb(x.[i])) 32;
 
     return W32.bits2w(rb);
+  }
+
+  proc iVMOVSLDUP_8u32_16u16(x: t16u16): t16u16 = {
+    var r: t16u16;
+
+    r <- Array16.init (fun i => x.[4 * (i %/ 4) + i %% 2]);
+
+    return r;
   }
 
   proc iVMOVSLDUP_8u32(x: t8u32): t8u32 = {
@@ -1127,6 +1143,10 @@ module OpsV = {
     return VPBLENDD_256 x y p;
   }
 
+  proc iVPBLEND_8u32_16u16(x y: vt16u16, p: W8.t) : vt16u16 = {
+    return VPBLENDD_256 x y p;
+  }
+
   proc iVPBLEND_8u32(x y:vt8u32, p : W8.t) :  vt8u32 = {
     return VPBLENDD_256 x y p;
   }
@@ -1154,6 +1174,10 @@ module OpsV = {
 
   proc iVPMOVMSKB_u256_u32(x: vt32u8): W32.t = {
     return VPMOVMSKB_u256_u32 x;
+  }
+
+  proc iVMOVSLDUP_8u32_16u16(x: vt16u16): vt16u16 = {
+    return VMOVSLDUP_8u32 x;
   }
 
   proc iVMOVSLDUP_8u32(x: vt8u32): vt8u32 = {
@@ -1663,6 +1687,9 @@ proof. by proc; wp; skip; rewrite /is8u32 /VPSLL_8u32. qed.
 equiv eq_iVPSLL_16u16: Ops.iVPSLL_16u16 ~ OpsV.iVPSLL_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is16u16 /VPSLL_16u16. qed.
 
+equiv eq_iVPSRL_16u16: Ops.iVPSRL_16u16 ~ OpsV.iVPSRL_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16 /VPSRL_16u16. qed.
+
 equiv eq_iVPSRL_8u32: Ops.iVPSRL_8u32 ~ OpsV.iVPSRL_8u32: is8u32 x{1} x{2} /\ ={y} ==> is8u32 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is8u32 /VPSRL_8u32. qed.
 
@@ -1723,6 +1750,31 @@ proof.
   split; 1: by case: ( p{2}.[4] = p{2}.[5]) => [->|]; case: (p{2}.[5]).
   split; 1: by case: (p{2}.[6] = p{2}.[7]); case: (p{2}.[6]).
   by case: (p{2}.[6] = p{2}.[7]) => [->|]; case: (p{2}.[7]).
+qed.
+
+equiv eq_iVPBLEND_8u32_16u16 : Ops.iVPBLEND_8u32_16u16 ~ OpsV.iVPBLEND_8u32_16u16 :
+  is16u16 x{1} x{2} /\ is16u16 y{1} y{2} /\ ={p}
+  ==>
+  is16u16 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is16u16 /VPBLENDD_256 => /> &1 &2 /=.
+  apply W16u16.allP => /=.
+  split; 1: by case (p{2}.[0]).
+  split; 1: by case (p{2}.[0]).
+  split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[2]).
+  split; 1: by case (p{2}.[2]).
+  split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[4]).
+  split; 1: by case (p{2}.[4]).
+  split; 1: by case (p{2}.[5]).
+  split; 1: by case (p{2}.[5]).
+  split; 1: by case (p{2}.[6]).
+  split; 1: by case (p{2}.[6]).
+  split; 1: by case (p{2}.[7]).
+  by case (p{2}.[7]).
 qed.
 
 equiv eq_iVPBLEND_8u32 : Ops.iVPBLEND_8u32 ~ OpsV.iVPBLEND_8u32 :
@@ -1888,6 +1940,16 @@ do rewrite get_bits2w //.
 rewrite nth_mkseq => />.
 rewrite /msb.
 smt(@List).
+qed.
+
+equiv eq_iVMOVSLDUP_8u32_16u16: Ops.iVMOVSLDUP_8u32_16u16 ~ OpsV.iVMOVSLDUP_8u32_16u16:
+ is16u16 x{1} x{2} ==> is16u16 res{1} res{2}.
+proof.
+proc; wp; skip.
+rewrite /is16u16 /VMOVSLDUP_256 /=.
+move => &1 &2 x_eq => />.
+rewrite x_eq.
+apply W16u16.allP => />.
 qed.
 
 equiv eq_iVMOVSLDUP_8u32: Ops.iVMOVSLDUP_8u32 ~ OpsV.iVMOVSLDUP_8u32:

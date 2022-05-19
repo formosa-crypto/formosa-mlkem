@@ -36,59 +36,65 @@ op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16
 
 
 module Mprevec = {
-  (* FIXME:
-  proc __shuffle8 (a:t2u128, b:t2u128) : t2u128 * t2u128 = {
+  proc shuffle8 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {
     
-    var r0:t2u128;
-    var r1:t2u128;
+    var r0:t16u16;
+    var r1:t16u16;
     
-    r0 <@ Ops.iVPERM2I128(a, b, (W8.of_int 32));
-    r1 <@ Ops.iVPERM2I128(a, b, (W8.of_int 49));
+    r0 <@ Ops.iVPERM2I128_16u16(a, b, (W8.of_int 32));
+    r1 <@ Ops.iVPERM2I128_16u16(a, b, (W8.of_int 49));
 
     return (r0, r1);
   }
   
-  proc __shuffle4 (a:t4u64, b:t4u64) : t4u64 * t4u64 = {
+  proc shuffle4 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {
     
-    var r0:t4u64;
-    var r1:t4u64;
+    var r0:t16u16;
+    var r1:t16u16;
     
-    r0 <@ Ops.iVPUNPCKL_4u64(a, b);
-    r1 <@ Ops.iVPUNPCKH_4u64(a, b);
+    r0 <@ Ops.iVPUNPCKL_4u64_16u16(a, b);
+    r1 <@ Ops.iVPUNPCKH_4u64_16u16(a, b);
 
     return (r0, r1);
   }
   
-  proc __shuffle2 (a:t8u32, b:t8u32) : t8u32 * t8u32 = {
+  proc shuffle2 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {
     
-    var t0:t8u32;
-    var t1:t8u32;
+    var t0:t16u16;
+    var t1:t16u16;
     var a_q: t4u64;
     
-    t0  <@ Ops.iVMOVSLDUP_8u32(b);
-    t0  <@ Ops.iVPBLEND_8u32(a, t0, (W8.of_int 170));
-    a_q <- f8u32_t4u64 a;
+    t0  <@ Ops.iVMOVSLDUP_8u32_16u16(b);
+    t0  <@ Ops.iVPBLEND_8u32_16u16(a, t0, (W8.of_int 170));
+    a_q <- f16u16_t4u64 a;
     a_q <@ Ops.iVPSRL_4u64(a_q, (W8.of_int 32));
-    a <- f4u64_t8u32 a_q;
-    t1 <@ Ops.iVPBLEND_8u32(a, b, (W8.of_int 170));
+    a <- f4u64_t16u16 a_q;
+    t1 <@ Ops.iVPBLEND_8u32_16u16(a, b, (W8.of_int 170));
     return (t0, t1);
   }
   
-  proc __shuffle1 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+  proc shuffle1 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {
     
-    var r0:W256.t;
-    var r1:W256.t;
-    var t0:W256.t;
-    var t1:W256.t;
-    
-    t0 <@ Ops.iVPSLL_8u32(b, (W8.of_int 16));
+    var r0:t16u16;
+    var r1:t16u16;
+    var t0:t16u16;
+    var t1:t16u16;
+    var t0_d:t8u32;
+    var t1_d:t8u32;
+    var a_d:t8u32;
+    var b_d:t8u32;
+
+    b_d <- f16u16_t8u32 b;
+    t0_d <@ Ops.iVPSLL_8u32(b_d, (W8.of_int 16));
+    t0 <- f8u32_t16u16 t0_d;
     r0 <@ Ops.iVPBLEND_16u16(a, t0, (W8.of_int 170));
-    t1 <@ Ops.iVPSRL_8u32(a, (W8.of_int 16));
+    a_d <- f16u16_t8u32 a;
+    t1_d <@ Ops.iVPSRL_8u32(a_d, (W8.of_int 16));
+    t1 <- f8u32_t16u16 t1_d;
     r1 <@ Ops.iVPBLEND_16u16(t1, b, (W8.of_int 170));
 
     return (r0, r1);
   }
-  *)
 
   proc poly_add2(rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
     var i:int;
@@ -729,6 +735,13 @@ module Mprevec = {
     var tt:t16u16;
     var ttt:t16u16;
 
+    var t0_b:t32u8;
+    var t2_b:t32u8;
+    var t1_b:t32u8;
+    var t3_b:t32u8;
+    var ttt_b:t32u8;
+    var t4_b:t32u8;
+
     qx16 <- Array16.init (fun i => jqx16.[i]);
     a <@ poly_csubq (a);
 
@@ -758,32 +771,32 @@ module Mprevec = {
       t4 <@ Ops.iVPSRL_16u16(t6, (W8.of_int 8));
       t5 <@ Ops.iVPSLL_16u16(t7, (W8.of_int 4));
       t4 <@ Ops.iVPOR_16u16(t4, t5);
-      (* FIXME:
-        (ttt, t0) <@ __shuffle1 (tt, t0);
-        (tt, t2) <@ __shuffle1 (t1, t2);
-        (t1, t4) <@ __shuffle1 (t3, t4);
-        (t3, tt) <@ __shuffle2 (ttt, tt);
-        (ttt, t0) <@ __shuffle2 (t1, t0);
-        (t1, t4) <@ __shuffle2 (t2, t4);
-        (t2, ttt) <@ __shuffle4 (t3, ttt);
-        (t3, tt) <@ __shuffle4 (t1, tt);
-        (t1, t4) <@ __shuffle4 (t0, t4);
-        (t0, t3) <@ __shuffle8 (t2, t3);
-        (t2, ttt) <@ __shuffle8 (t1, ttt);
-        (t1, t4) <@ __shuffle8 (tt, t4);
-        Glob.mem <-
-        storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int (192 * i)))) t0;
-        Glob.mem <-
-        storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 32)))) t2;
-        Glob.mem <-
-        storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 64)))) t1;
-        Glob.mem <-
-        storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 96)))) t3;
-        Glob.mem <-
-        storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 128)))) ttt;
-        Glob.mem <-
-        storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 160)))) t4;
-      *)
+      (ttt, t0) <@ shuffle1 (tt, t0);
+      (tt, t2) <@ shuffle1 (t1, t2);
+      (t1, t4) <@ shuffle1 (t3, t4);
+      (t3, tt) <@ shuffle2 (ttt, tt);
+      (ttt, t0) <@ shuffle2 (t1, t0);
+      (t1, t4) <@ shuffle2 (t2, t4);
+      (t2, ttt) <@ shuffle4 (t3, ttt);
+      (t3, tt) <@ shuffle4 (t1, tt);
+      (t1, t4) <@ shuffle4 (t0, t4);
+      (t0, t3) <@ shuffle8 (t2, t3);
+      (t2, ttt) <@ shuffle8 (t1, ttt);
+      (t1, t4) <@ shuffle8 (tt, t4);
+
+      t0_b <- f16u16_t32u8 t0;
+      t2_b <- f16u16_t32u8 t2;
+      t1_b <- f16u16_t32u8 t1;
+      t3_b <- f16u16_t32u8 t3;
+      ttt_b <- f16u16_t32u8 ttt;
+      t4_b <- f16u16_t32u8 t4;
+
+      Glob.mem <@ Ops.istore32u8(Glob.mem, rp + (W64.of_int (192 * i)), t0_b);
+      Glob.mem <@ Ops.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 32)), t2_b);
+      Glob.mem <@ Ops.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 64)), t1_b);
+      Glob.mem <@ Ops.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 96)), t3_b);
+      Glob.mem <@ Ops.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 128)), ttt_b);
+      Glob.mem <@ Ops.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 160)), t4_b);
       i <- i + 1;
     }
     return (a);

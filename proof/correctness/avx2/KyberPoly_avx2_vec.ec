@@ -7,41 +7,40 @@ require import KyberCPA_avx2.
 require import KyberPoly_avx2_prevec.
 require import KyberPoly_avx2_proof.
 
-
 module Mvec = {
-  proc __shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+  proc shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {
     
     var r0:W256.t;
     var r1:W256.t;
     
-    r0 <@ OpsV.iVPERM2I128(a, b, (W8.of_int 32));
-    r1 <@ OpsV.iVPERM2I128(a, b, (W8.of_int 49));
+    r0 <@ OpsV.iVPERM2I128_16u16(a, b, (W8.of_int 32));
+    r1 <@ OpsV.iVPERM2I128_16u16(a, b, (W8.of_int 49));
     return (r0, r1);
   }
   
-  proc __shuffle4 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+  proc shuffle4 (a:W256.t, b:W256.t) : W256.t * W256.t = {
     
     var r0:W256.t;
     var r1:W256.t;
     
-    r0 <@ OpsV.iVPUNPCKL_4u64(a, b);
-    r1 <@ OpsV.iVPUNPCKH_4u64(a, b);
+    r0 <@ OpsV.iVPUNPCKL_4u64_16u16(a, b);
+    r1 <@ OpsV.iVPUNPCKH_4u64_16u16(a, b);
     return (r0, r1);
   }
   
-  proc __shuffle2 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+  proc shuffle2 (a:W256.t, b:W256.t) : W256.t * W256.t = {
     
     var t0:W256.t;
     var t1:W256.t;
     
-    t0 <@ OpsV.iVMOVSLDUP_8u32(b);
-    t0 <@ OpsV.iVPBLEND_8u32(a, t0, (W8.of_int 170));
+    t0 <@ OpsV.iVMOVSLDUP_8u32_16u16(b);
+    t0 <@ OpsV.iVPBLEND_8u32_16u16(a, t0, (W8.of_int 170));
     a  <@ OpsV.iVPSRL_4u64(a, (W8.of_int 32));
-    t1 <@ OpsV.iVPBLEND_8u32(a, b, (W8.of_int 170));
+    t1 <@ OpsV.iVPBLEND_8u32_16u16(a, b, (W8.of_int 170));
     return (t0, t1);
   }
   
-  proc __shuffle1 (a:W256.t, b:W256.t) : W256.t * W256.t = {
+  proc shuffle1 (a:W256.t, b:W256.t) : W256.t * W256.t = {
     
     var r0:W256.t;
     var r1:W256.t;
@@ -574,7 +573,7 @@ module Mvec = {
     return (rp);
   }
 
-  proc _poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+  proc poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
     
     var jqx16_p:W16.t Array16.t;
@@ -604,46 +603,40 @@ module Mvec = {
       t5 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 5));
       t6 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 6));
       t7 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 7));
-      tt <- OpsV.iVPSLL_16u16(t1, (W8.of_int 12));
-      tt <- OpsV.iVPOR_16u16(tt, t0);
-      t0 <- OpsV.iVPSRL_16u16(t1, (W8.of_int 4));
-      t1 <- OpsV.iVPSLL_16u16(t2, (W8.of_int 8));
-      t0 <- OpsV.iVPOR_16u16(t0, t1);
-      t1 <- OpsV.iVPSRL_16u16(t2, (W8.of_int 8));
-      t2 <- OpsV.iVPSLL_16u16(t3, (W8.of_int 4));
-      t1 <- OpsV.iVPOR_16u16(t1, t2);
-      t2 <- OpsV.iVPSLL_16u16(t5, (W8.of_int 12));
-      t2 <- OpsV.iVPOR_16u16(t2, t4);
-      t3 <- OpsV.iVPSRL_16u16(t5, (W8.of_int 4));
-      t4 <- OpsV.iVPSLL_16u16(t6, (W8.of_int 8));
-      t3 <- OpsV.iVPOR_16u16(t3, t4);
-      t4 <- OpsV.iVPSRL_16u16(t6, (W8.of_int 8));
-      t5 <- OpsV.iVPSLL_16u16(t7, (W8.of_int 4));
-      t4 <- OpsV.iVPOR_16u16(t4, t5);
-      (ttt, t0) <@ __shuffle1 (tt, t0);
-      (tt, t2) <@ __shuffle1 (t1, t2);
-      (t1, t4) <@ __shuffle1 (t3, t4);
-      (t3, tt) <@ __shuffle2 (ttt, tt);
-      (ttt, t0) <@ __shuffle2 (t1, t0);
-      (t1, t4) <@ __shuffle2 (t2, t4);
-      (t2, ttt) <@ __shuffle4 (t3, ttt);
-      (t3, tt) <@ __shuffle4 (t1, tt);
-      (t1, t4) <@ __shuffle4 (t0, t4);
-      (t0, t3) <@ __shuffle8 (t2, t3);
-      (t2, ttt) <@ __shuffle8 (t1, ttt);
-      (t1, t4) <@ __shuffle8 (tt, t4);
-      Glob.mem <-
-      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int (192 * i)))) t0;
-      Glob.mem <-
-      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 32)))) t2;
-      Glob.mem <-
-      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 64)))) t1;
-      Glob.mem <-
-      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 96)))) t3;
-      Glob.mem <-
-      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 128)))) ttt;
-      Glob.mem <-
-      storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 160)))) t4;
+      tt <@ OpsV.iVPSLL_16u16(t1, (W8.of_int 12));
+      tt <@ OpsV.iVPOR_16u16(tt, t0);
+      t0 <@ OpsV.iVPSRL_16u16(t1, (W8.of_int 4));
+      t1 <@ OpsV.iVPSLL_16u16(t2, (W8.of_int 8));
+      t0 <@ OpsV.iVPOR_16u16(t0, t1);
+      t1 <@ OpsV.iVPSRL_16u16(t2, (W8.of_int 8));
+      t2 <@ OpsV.iVPSLL_16u16(t3, (W8.of_int 4));
+      t1 <@ OpsV.iVPOR_16u16(t1, t2);
+      t2 <@ OpsV.iVPSLL_16u16(t5, (W8.of_int 12));
+      t2 <@ OpsV.iVPOR_16u16(t2, t4);
+      t3 <@ OpsV.iVPSRL_16u16(t5, (W8.of_int 4));
+      t4 <@ OpsV.iVPSLL_16u16(t6, (W8.of_int 8));
+      t3 <@ OpsV.iVPOR_16u16(t3, t4);
+      t4 <@ OpsV.iVPSRL_16u16(t6, (W8.of_int 8));
+      t5 <@ OpsV.iVPSLL_16u16(t7, (W8.of_int 4));
+      t4 <@ OpsV.iVPOR_16u16(t4, t5);
+      (ttt, t0) <@ shuffle1 (tt, t0);
+      (tt, t2) <@ shuffle1 (t1, t2);
+      (t1, t4) <@ shuffle1 (t3, t4);
+      (t3, tt) <@ shuffle2 (ttt, tt);
+      (ttt, t0) <@ shuffle2 (t1, t0);
+      (t1, t4) <@ shuffle2 (t2, t4);
+      (t2, ttt) <@ shuffle4 (t3, ttt);
+      (t3, tt) <@ shuffle4 (t1, tt);
+      (t1, t4) <@ shuffle4 (t0, t4);
+      (t0, t3) <@ shuffle8 (t2, t3);
+      (t2, ttt) <@ shuffle8 (t1, ttt);
+      (t1, t4) <@ shuffle8 (tt, t4);
+      Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int (192 * i)), t0);
+      Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 32)), t2);
+      Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 64)), t1);
+      Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 96)), t3);
+      Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 128)), ttt);
+      Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int ((192 * i) + 160)), t4);
       i <- i + 1;
     }
     return (a);
@@ -1118,6 +1111,177 @@ proof.
           apply W16u16.allP => />.
 qed. 
 
+equiv eq_shuffle8:
+  Mprevec.shuffle8 ~ Mvec.shuffle8: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  proc.
+  do call eq_iVPERM2I128_16u16.
+  wp; skip; auto => />.
+qed.
+
+equiv eq_shuffle4:
+  Mprevec.shuffle4 ~ Mvec.shuffle4: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  proc.
+  call eq_iVPUNPCKH_4u64_16u16.
+  call eq_iVPUNPCKL_4u64_16u16.
+  inline *; wp; skip; auto => />.
+qed.
+
+equiv eq_shuffle2:
+  Mprevec.shuffle2 ~ Mvec.shuffle2: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  proc.
+  call eq_iVPBLEND_8u32_16u16.
+  wp.
+  call eq_iVPSRL_4u64.
+  wp.
+  call eq_iVPBLEND_8u32_16u16.
+  call eq_iVMOVSLDUP_8u32_16u16.
+  inline *; wp; skip; auto => />.
+  move => &1 &2 [#] a_eq b_eq resL resR res_eq resL0 resR0 res0_eq />.
+  split.
+    + by rewrite /is4u64 /f16u16_t4u64.
+    move => aq_eq resL1 resR1 res1_eq />.
+    + rewrite /is16u16 /f4u64_t16u16 res1_eq => />.
+      apply W16u16.allP => />.
+qed.
+
+equiv eq_shuffle1:
+  Mprevec.shuffle1 ~ Mvec.shuffle1: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  proc.
+  call eq_iVPBLEND_16u16.
+  wp.
+  call eq_iVPSRL_8u32.
+  wp.
+  call eq_iVPBLEND_16u16.
+  wp.
+  call eq_iVPSLL_8u32.
+  wp.
+  inline *; wp; skip; auto => />.
+  move => &1 &2 [#] a_eq b_eq.
+  split.
+    + by rewrite /is8u32 /f16u16_t8u32.
+    move => bd_eq resL resR res_eq.
+    split.
+    + rewrite /is16u16 /f8u32_t16u16 res_eq => />.
+      apply W16u16.allP => />.
+    move => resd_eq resL0 resR0 res0_eq />.
+    split.
+    + by rewrite /is8u32 /f16u16_t8u32.
+    move => ad_eq resL1 resR1 res1_eq.
+    + rewrite /is16u16 /f8u32_t16u16 res1_eq => />.
+      apply W16u16.allP => />.
+qed.
+
+equiv eq_poly_tobytes:
+  Mprevec.poly_tobytes ~ Mvec.poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while(={rp, a, i, Glob.mem} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2}).
+  wp.
+  do call eq_istore32u8.
+  wp.
+  do (call eq_shuffle8 || call eq_shuffle4 || call eq_shuffle2 || call eq_shuffle1).
+  do (call eq_iVPOR_16u16 || call eq_iVPSLL_16u16 || call eq_iVPSRL_16u16).
+  wp. skip; auto => />.
+  move => &1 &2 [#] i_lb qx16_eq i_tub />.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do (rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => a_eq resL resR res_eq />.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do (rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => a1_eq resL0 resR0 res0_eq resL1 resR1 res1_eq />.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do (rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => a2_eq resL2 resR2 res2_eq resL3 resR3 res3_eq resL4 resR4 res4_eq/>.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => a3_eq resL5 resR5 res5_eq resL6 resR6 res6_eq />.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => a4_eq resL7 resR7 res7_eq />.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => a5_eq resL8 resR8 res8_eq resL9 resR9 res9_eq />.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => a6_eq resL10 resR10 res10_eq resL11 resR11 res11_eq resL12 resR12 res12_eq />.
+  split.
+    + rewrite /is16u16 /get256_direct /= => />.
+      apply W16u16.allP => />.
+      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+  move => [#] a7_eq resL13 resR13 res13_eq resL14 resR14 res14_eq resL15 resR15 res15_eq_1 res15_eq_2
+                    resL16 resR16 res16_eq_1 res16_eq_2 resL17 resR17 res17_eq_1 res17_eq_2
+                    resL18 resR18 res18_eq_1 res18_eq_2 resL19 resR19 res19_eq_1 res19_eq_2
+                    resL20 resR20 res20_eq_1 res20_eq_2 resL21 resR21 res21_eq_1 res21_eq_2
+                    resL22 resR22 res22_eq_1 res22_eq_2 resL23 resR23 res23_eq_1 res23_eq_2
+                    resL24 resR24 res24_eq_1 res24_eq_2 resL25 resR25 res25_eq_1 res25_eq_2
+                    resL26 resR26 res26_eq_1 res26_eq_2 />.
+  split.
+    + rewrite /is32u8 /f16u16_t32u8 res24_eq_1.
+      apply W32u8.allP => />.
+  move => res24b_eq_1.
+  split.
+    + rewrite /is32u8 /f16u16_t32u8 res25_eq_1.
+      apply W32u8.allP => />.
+  move => res25b_eq_1.
+  split.
+    + rewrite /is32u8 /f16u16_t32u8 res26_eq_1.
+      apply W32u8.allP => />.
+  move => res26b_eq_1.
+  split.
+    + rewrite /is32u8 /f16u16_t32u8 res24_eq_2.
+      apply W32u8.allP => />.
+  move => res24b_eq_2.
+  split.
+    + rewrite /is32u8 /f16u16_t32u8 res25_eq_2.
+      apply W32u8.allP => />.
+  move => res25b_eq_2.
+  split.
+    + rewrite /is32u8 /f16u16_t32u8 res26_eq_2.
+      apply W32u8.allP => />.
+  move => res26b_eq_2.
+  move : i_lb => /#.
+  wp.
+  call eq_poly_csubq.
+  wp; skip; auto => />.
+  rewrite /is16u16 /get256_direct /= => />.
+  apply W32u8.allP => />.
+qed.
+
+
 equiv veceq_poly_add2 :
   Mvec.poly_add2 ~ M._poly_add2: ={rp, bp} ==> ={res}.
 proof.
@@ -1242,7 +1406,7 @@ proof.
   wp; skip; auto => />.
 qed.
 
-equiv veceq_eq_poly_basemul:
+equiv veceq_poly_basemul:
   Mvec.poly_basemul ~ M._poly_basemul: ={rp, ap, bp} ==> ={res}.
 proof.
   admit.
@@ -1250,6 +1414,45 @@ proof.
   proc.
   inline *.
   wp. skip. trivial. *)
+qed.
+
+equiv veceq_shuffle8:
+  Mvec.shuffle8 ~ M.__shuffle8: ={a, b} ==> ={res}.
+proof.
+  proc.
+  inline *; wp; skip; auto => />.
+qed.
+
+equiv veceq_shuffle4:
+  Mvec.shuffle4 ~ M.__shuffle4: ={a, b} ==> ={res}.
+proof.
+  proc.
+  inline *; wp; skip; auto => />.
+qed.
+
+equiv veceq_shuffle2:
+  Mvec.shuffle2 ~ M.__shuffle2: ={a, b} ==> ={res}.
+proof.
+  proc.
+  inline *; wp; skip; auto => />.
+qed.
+
+equiv veceq_shuffle1:
+  Mvec.shuffle1 ~ M.__shuffle1: ={a, b} ==> ={res}.
+proof.
+  proc.
+  inline *; wp; skip; auto => />.
+qed.
+
+equiv veceq_poly_tobytes:
+  Mvec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+proof.
+  proc.
+  while(={rp, a, i, qx16, Glob.mem}).
+  inline *; wp. skip. auto => />.
+  wp.
+  call veceq_poly_csubq.
+  wp. skip; auto => />.
 qed.
 
 equiv prevec_eq_poly_add2:
@@ -1356,4 +1559,71 @@ proof.
   smt. trivial.
   apply eq_schoolbook.
   apply veceq_schoolbook.
+qed.
+
+
+equiv prevec_eq_shuffle8:
+  Mprevec.shuffle8 ~ M.__shuffle8: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  transitivity Mvec.shuffle8 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                              is16u16 res{1}.`1 res{2}.`1 /\
+                              is16u16 res{1}.`2 res{2}.`2)
+                             (={a, b} ==> ={res}).
+  smt. trivial.
+  apply eq_shuffle8.
+  apply veceq_shuffle8.
+qed.
+
+equiv prevec_eq_shuffle4:
+  Mprevec.shuffle4 ~ M.__shuffle4: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  transitivity Mvec.shuffle4 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                              is16u16 res{1}.`1 res{2}.`1 /\
+                              is16u16 res{1}.`2 res{2}.`2)
+                             (={a, b} ==> ={res}).
+  smt. trivial.
+  apply eq_shuffle4.
+  apply veceq_shuffle4.
+qed.
+
+equiv prevec_eq_shuffle2:
+  Mprevec.shuffle2 ~ M.__shuffle2: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  transitivity Mvec.shuffle2 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                              is16u16 res{1}.`1 res{2}.`1 /\
+                              is16u16 res{1}.`2 res{2}.`2)
+                             (={a, b} ==> ={res}).
+  smt. trivial.
+  apply eq_shuffle2.
+  apply veceq_shuffle2.
+qed.
+
+equiv prevec_eq_shuffle1:
+  Mprevec.shuffle1 ~ M.__shuffle1: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                                    is16u16 res{1}.`1 res{2}.`1 /\
+                                    is16u16 res{1}.`2 res{2}.`2.
+proof.
+  transitivity Mvec.shuffle1 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+                              is16u16 res{1}.`1 res{2}.`1 /\
+                              is16u16 res{1}.`2 res{2}.`2)
+                             (={a, b} ==> ={res}).
+  smt. trivial.
+  apply eq_shuffle1.
+  apply veceq_shuffle1.
+qed.
+
+equiv prevec_eq_poly_tobytes:
+  Mprevec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+proof.
+  transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={res})
+                                 (={rp, a, Glob.mem} ==> ={res}).
+  smt. trivial.
+  apply eq_poly_tobytes.
+  apply veceq_poly_tobytes.
 qed.
