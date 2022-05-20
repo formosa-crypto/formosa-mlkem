@@ -801,4 +801,96 @@ module Mprevec = {
     }
     return (a);
   }
+
+  proc poly_frombytes (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+    var mask:t16u16;
+    var i:int;
+    var t0:t16u16;
+    var t1:t16u16;
+    var t2:t16u16;
+    var t3:t16u16;
+    var t4:t16u16;
+    var t5:t16u16;
+    var tt:t16u16;
+    var t6:t16u16;
+    var t7:t16u16;
+    var t8:t16u16;
+    var t9:t16u16;
+    var t10:t16u16;
+    var t11:t16u16;
+
+    var t0_b:t32u8;
+    var t1_b:t32u8;
+    var t2_b:t32u8;
+    var t3_b:t32u8;
+    var t4_b:t32u8;
+    var t5_b:t32u8;
+
+    mask <- Array16.init (fun i => maskx16.[i]);
+    i <- 0;
+
+    while (i < 2) {
+      t0_b <@ Ops.iload32u8(Glob.mem, ap + (W64.of_int (192 * i)));
+      t1_b <@ Ops.iload32u8(Glob.mem, ap + (W64.of_int ((192 * i) + 32)));
+      t2_b <@ Ops.iload32u8(Glob.mem, ap + (W64.of_int ((192 * i) + 64)));
+      t3_b <@ Ops.iload32u8(Glob.mem, ap + (W64.of_int ((192 * i) + 96)));
+      t4_b <@ Ops.iload32u8(Glob.mem, ap + (W64.of_int ((192 * i) + 128)));
+      t5_b <@ Ops.iload32u8(Glob.mem, ap + (W64.of_int ((192 * i) + 160)));
+
+      t0 <- f32u8_t16u16 t0_b;
+      t1 <- f32u8_t16u16 t1_b;
+      t2 <- f32u8_t16u16 t2_b;
+      t3 <- f32u8_t16u16 t3_b;
+      t4 <- f32u8_t16u16 t4_b;
+      t5 <- f32u8_t16u16 t5_b;
+
+      (tt, t3) <@ shuffle8 (t0, t3);
+      (t0, t4) <@ shuffle8 (t1, t4);
+      (t1, t5) <@ shuffle8 (t2, t5);
+      (t2, t4) <@ shuffle4 (tt, t4);
+      (tt, t1) <@ shuffle4 (t3, t1);
+      (t3, t5) <@ shuffle4 (t0, t5);
+      (t0, t1) <@ shuffle2 (t2, t1);
+      (t2, t3) <@ shuffle2 (t4, t3);
+      (t4, t5) <@ shuffle2 (tt, t5);
+      (t6, t3) <@ shuffle1 (t0, t3);
+      (t0, t4) <@ shuffle1 (t1, t4);
+      (t1, t5) <@ shuffle1 (t2, t5);
+
+      t7 <@ Ops.iVPSRL_16u16(t6, (W8.of_int 12));
+      t8 <@ Ops.iVPSLL_16u16(t3, (W8.of_int 4));
+      t7 <@ Ops.iVPOR_16u16(t7, t8);
+      t6 <@ Ops.iVPAND_16u16(mask, t6);
+      t7 <@ Ops.iVPAND_16u16(mask, t7);
+      t8 <@ Ops.iVPSRL_16u16(t3, (W8.of_int 8));
+      t9 <@ Ops.iVPSLL_16u16(t0, (W8.of_int 8));
+      t8 <@ Ops.iVPOR_16u16(t8, t9);
+      t8 <@ Ops.iVPAND_16u16(mask, t8);
+      t9 <@ Ops.iVPSRL_16u16(t0, (W8.of_int 4));
+      t9 <@ Ops.iVPAND_16u16(mask, t9);
+      t10 <@ Ops.iVPSRL_16u16(t4, (W8.of_int 12));
+      t11 <@ Ops.iVPSLL_16u16(t1, (W8.of_int 4));
+      t10 <@ Ops.iVPOR_16u16(t10, t11);
+      t4 <@ Ops.iVPAND_16u16(mask, t4);
+      t10 <@ Ops.iVPAND_16u16(mask, t10);
+      t11 <@ Ops.iVPSRL_16u16(t1, (W8.of_int 8));
+      tt <@ Ops.iVPSLL_16u16(t5, (W8.of_int 8));
+      t11 <@ Ops.iVPOR_16u16(t11, tt);
+      t11 <@ Ops.iVPAND_16u16(mask, t11);
+      tt <@ Ops.iVPSRL_16u16(t5, (W8.of_int 4));
+      tt <@ Ops.iVPAND_16u16(mask, tt);
+
+      rp <- Array256.fill (fun j => t6.[j %% 16]) (128 * i) 16 rp;
+      rp <- Array256.fill (fun j => t7.[j %% 16]) (128 * i + 16) 16 rp;
+      rp <- Array256.fill (fun j => t8.[j %% 16]) (128 * i + 32) 16 rp;
+      rp <- Array256.fill (fun j => t9.[j %% 16]) (128 * i + 48) 16 rp;
+      rp <- Array256.fill (fun j => t4.[j %% 16]) (128 * i + 64) 16 rp;
+      rp <- Array256.fill (fun j => t10.[j %% 16]) (128 * i + 80) 16 rp;
+      rp <- Array256.fill (fun j => t11.[j %% 16]) (128 * i + 96) 16 rp;
+      rp <- Array256.fill (fun j => tt.[j %% 16]) (128 * i + 112) 16 rp;
+
+      i <- i + 1;
+    }
+    return (rp);
+  }
 }.

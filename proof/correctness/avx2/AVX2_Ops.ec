@@ -242,6 +242,14 @@ module Ops = {
     return r;
   }
 
+  proc iload32u8 (mem: global_mem_t, p: W64.t) : t32u8 = {
+    var r: t32u8;
+
+    r <- Array32.init (fun i => loadW8 mem (to_uint p + i));
+
+    return r;
+  }
+
   proc istore32u8 (mem: global_mem_t, p: W64.t, w: t32u8): global_mem_t = {
 
     mem <- stores mem (to_uint p) (to_list w);
@@ -991,6 +999,10 @@ module OpsV = {
     return loadW128 mem (to_uint p);
   }
 
+  proc iload32u8 (mem: global_mem_t, p: W64.t) : vt32u8 = {
+    return loadW256 mem (to_uint p);
+  }
+
   proc istore32u8 (mem: global_mem_t, p: W64.t, w: vt32u8): global_mem_t = {
     return storeW256 mem (W64.to_uint p) w;
   }
@@ -1384,6 +1396,17 @@ proof.
     rewrite -of_listK.
     smt(@List @Int @W32u8).
   *)
+qed.
+
+equiv eq_iload32u8: Ops.iload32u8 ~ OpsV.iload32u8 : ={mem, p} ==> is32u8 res{1} res{2}.
+proof.
+  proc; wp; skip.
+  simplify.
+  move => &1 &2 [#] mem_eq p_eq.
+  rewrite /loadW256 /loadW8 => />.
+  rewrite mem_eq p_eq.
+  rewrite /is32u8 => />.
+  apply W32u8.allP => //=.
 qed.
 
 equiv eq_iload16u16: Ops.iload16u16 ~ OpsV.iload16u16 : ={mem, p} ==> is16u16 res{1} res{2}.
