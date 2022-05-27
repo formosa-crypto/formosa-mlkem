@@ -929,7 +929,7 @@ qed.
 
 end SMP_vs_ROM_IND.
 
-(* FIXME_PY: THESE HINTS MAKE RND IMPOSSIBLY SLOW *)
+(* FIXME: THESE HINTS MAKE RND IMPOSSIBLY SLOW *)
 (* add duni_R_ll, duni_R_uni, duni_R_fu *)
 (* FIXME: without adding the hint explicitely the hint are lost after cloning *)
 (* hint solve 0 random : duni_R_ll duni_R_uni duni_R_fu. *)
