@@ -24,6 +24,14 @@ rewrite (floorE (x+floor y)) //.
 smt(floor_bound).
 qed.
 
+lemma nosmt le_floorE n x:
+ (n <= floor x) = (n%r <= x)
+by smt(floor_bound).
+
+lemma nosmt floor_ltE x n:
+ (floor x < n) = (x < n%r)
+by smt(floor_bound).
+
 lemma divz_floor (x y: int):
  0 < y =>
  x %/ y = floor (x%r / y%r).
@@ -106,8 +114,18 @@ proof. by move=> H; rewrite /frac; smt(floor_bound). qed.
 op round(x : real) : int = floor (x + inv 2%r).
 
 lemma round_mono (x y: real):
- x <= y => round x <= round y.
-proof. by rewrite /round; smt(floor_mono). qed.
+ x <= y => round x <= round y
+by smt(floor_mono).
+
+lemma round_divz x y:
+ 0 < y => 
+ round (x%r / y%r) = (2*x+y) %/ (2*y).
+proof.
+move=> H; rewrite /round.
+have ->: x%r / y%r + inv 2%r = (2* x + y)%r / (2*y)%r.
+ rewrite fromintD !fromintM; field; smt().
+by rewrite divz_floor /#.
+qed.
 
 require import Real RealExp StdRing.
 lemma roundDz (x:int) y:
@@ -124,7 +142,16 @@ lemma round_bound x:
  x - inv(2%r) < (round x)%r <= x + inv(2%r)
 by smt(floor_bound).
 
-lemma roundN x:
+lemma nosmt le_roundE n x:
+ (n <= round x) = (n%r <= x + inv 2%r)
+by smt(le_floorE).
+
+lemma nosmt round_ltE x n:
+ (round x < n) = (x + inv 2%r < n%r)
+by smt(floor_ltE).
+
+
+lemma nosmt roundN x:
  frac x <> inv 2%r => round (-x) = -round x.
 proof.
 move => H.
@@ -287,6 +314,29 @@ admitted.
 op darray64 ['a] (d: 'a distr): ('a Array64.t) distr =
  dmap (dlist d 64) (Array64.of_list witness).
 
+lemma darray64_ll ['a] (d: 'a distr):
+ is_lossless d => is_lossless (darray64 d).
+admitted.
+
+module Sample_64_2x32 = {
+ proc sample(d: W8.t distr) = {
+  var w;
+  w <$ darray64 d;
+  return w;
+ }
+ proc sample2(d: W8.t distr) = {
+  var w1, w2;
+  w1 <$ darray32 d;
+  w2 <$ darray32 d;
+  return (w1, w2);
+ }
+}.
+
+equiv sample_64_2x32_eq:
+ Sample_64_2x32.sample ~ Sample_64_2x32.sample2:
+ ={d} ==> res{2}.`1 = Array32.init (fun i=>res{1}.[i]) /\ res{2}.`2 = Array32.init (fun i=>res{1}.[i+32]).
+admitted.
+
 
 op darray128 ['a] (d: 'a distr): ('a Array128.t) distr =
  dmap (dlist d 128) (Array128.of_list witness).
@@ -420,6 +470,11 @@ lemma absZqB x y eps:
  `| asint x - asint y | <= eps => absZq (x-y) <= eps
 by apply as_sint_bounded.
 
+lemma absZqP x eps:
+ absZq x <= eps 
+ <=> (asint x <= eps \/ q - eps <= asint x)
+by smt(rg_asint).
+
 (* Compress-error bound *)
 op Bq d = round (q%r / (2^(d+1))%r).
 
@@ -434,7 +489,7 @@ have ?: q%r / (2 ^ d)%r + 1%r <= q%r - 1%r.
 smt(@Real).
 qed.
 
-lemma dvdzN_q_2d (d: int):
+lemma nosmt dvdzN_q_2d (d: int):
  0 < d =>
  q %% 2^d <> 0.
 proof.
@@ -447,7 +502,7 @@ move: (IH HHd); apply contra.
 by rewrite -!dvdzE /#.
 qed.
 
-lemma Bq_noties d:
+lemma nosmt Bq_noties d:
  0 < d =>
  2^d < q =>
  frac (q%r / (2 ^ (d + 1))%r) <> inv 2%r.
@@ -462,7 +517,11 @@ rewrite !mulrA divrr //= frac_div_eq0.
 by apply dvdzN_q_2d.
 qed.
 
+lemma nosmt Bq1E: Bq 1 = 832
+by rewrite /Bq /= round_divz 1:// qE.
 
+lemma nosmt Bq4E: Bq 4 = 104
+by rewrite /Bq /= round_divz 1:// qE.
 
 (* Compression and decompression are used as operations between 
    polynomials over Fq, but we first define the basic operations 
@@ -470,58 +529,62 @@ qed.
 abbrev comp (d: int, x: real): int = round (x * (2^d)%r / q%r).
 op compress(d : int, x : Fq) : int = comp d (asint x)%r %% 2^d.
 
-abbrev decomp (d: int, y: real): int = round (y * q%r / (2^d)%r).
-op decompress(d : int, x : int) : Fq = inFq (decomp d x%r).
+lemma nosmt comp_bound d x:
+ 0 < d =>
+ 2^d < q =>
+ x * (2 ^ d)%r / q%r - inv 2%r
+ < (comp d x)%r <= x * (2 ^ d)%r / q%r + inv 2%r.
+proof. smt(round_bound). qed.
 
-(* These operations introduce a rounding error, which we see additively *)
-op compress_err(d : int, c: Fq) : Fq = decompress d (compress d c) - c.
+lemma nosmt comp_asint_bound d x:
+ 0 < d =>
+ 2^d < q =>
+ (asint x)%r * (2 ^ d)%r - q%r / 2%r < q%r * (comp d (asint x)%r)%r
+ && q%r * (comp d (asint x)%r)%r <= (asint x)%r * (2 ^ d)%r + q%r / 2%r.
+proof. smt(round_bound). qed.
 
-lemma decompress_errE c d : 
-   0 < d => 2^d < q => decompress d (compress d c) = c + (compress_err d c)
-by rewrite /compress_err => *; ring.
+lemma comp_asint_range d x:
+ 0 < d =>
+ 2^d < q =>
+ 0 <= comp d (asint x)%r <= 2^d.
+proof.
+move=> *; split.
+ rewrite -(from_int_round 0); apply round_mono.
+ smt(expr_gt0 rg_asint RealOrder.divr_ge0).
+move=> _.
+have /#: (comp d (asint x)%r)%r < q%r * (2^d)%r / q%r + inv 2%r.
+apply (RealOrder.ler_lt_trans ((asint x)%r*(2^d)%r/q%r+ inv 2%r)); first smt(comp_bound).
+by rewrite RealOrder.ltr_add2r RealOrder.ltr_pmul2r 1:/# RealOrder.ltr_pmul2r; smt(expr_gt0 rg_asint).
+qed.
 
-lemma decompress0 d:
- decompress d 0 = Zq.zero
-by rewrite /decompress /= from_int_round.
+lemma nosmt comp_over d x:
+ 0 < d =>
+ 2^d < q =>
+ comp d (asint x)%r = 2^d
+ <=> q%r - q%r / (2^(d+1))%r <= (asint x)%r.
+proof.
+move=> Hd0 Hd.
+have ->: (comp d (asint x)%r = 2^d) <=> (2^d <= comp d (asint x)%r) by smt(comp_asint_range).
+rewrite le_roundE -RealOrder.ler_subl_addr ler_pdivl_mulr 1:/# RField.mulrBl.
+rewrite -eqboolP eq_sym eqboolP.
+rewrite RealOrder.ler_subl_addl -RealOrder.ler_subl_addr ler_pdivl_mulr.
+ smt(expr_gt0).
+by rewrite exprD_nneg 1..2:/# /= fromintM /#.
+qed.
 
-lemma compress0 d x:
+lemma nosmt compress0L d x:
  0 < d =>
  2^d < q =>
  q%r - q%r / (2^(d+1))%r <= (asint x)%r =>
  compress d x = 0.
 proof.
-move=> Hd0 Hd Hx.
-rewrite /compress.
-have ->: round ((asint x)%r * (2 ^ d)%r / q%r) = 2^d.
-+ rewrite /round; apply floorE;split.
-  + apply (RealOrder.ler_trans ((2^d)%r / q%r * (q%r - q%r / (2^(d+1))%r) + inv(2%r))).
-    + rewrite exprS 1:/# fromintM /=. 
-       have -> : (2 ^ d)%r * (q%r - q%r / (2%r * (2 ^ d)%r)) / q%r = 
-               (2 ^ d)%r * (q%r / q%r) * (1%r - 1%r / (2%r * (2 ^ d)%r)) by ring.
-       rewrite RField.divrr /=; 1: by rewrite qE. 
-       have  ? : inv 2%r <= (1%r - 1%r / (2%r * (2 ^ d)%r)); last first.
-       + rewrite RField.mulrDr /= RField.mulrN invfM RField.mulrC. 
-         rewrite -RField.mulrA RField.divrr; last by smt().
-         by apply  RField.invr_neq0; smt(JUtils.gt0_pow2). 
-       by smt(exprn_egt1).
-    rewrite exprS 1:/# fromintM.
-    have ?: 0%r < (2 ^ d)%r / q%r by smt(expr_gt0).
-    move: Hx; rewrite exprS 1:/# fromintM => Hx. 
-    rewrite RealOrder.ler_add2 RField.mulrC -RField.mulrA. 
-    by apply RealOrder.ler_pmul2r; smt().
-  move => H. 
-  move: Hx; rewrite !exprS 1:/# !fromintM => Hx.
-  have ? := (rg_asint x). 
-  rewrite mulrC mulrA. 
-  pose xx := q - asint x.
-  have -> : (asint x)%r = q%r - xx%r by smt().
-  rewrite RField.mulrDr RField.divrr /=; 1: 
-      by apply  RField.invr_neq0; smt(JUtils.gt0_pow2). 
-  by smt().
+move=> Hd0 Hd Hx; rewrite /compress.
+have ->: comp d (asint x)%r = 2^d.
+ by rewrite comp_over // modzz.
 by rewrite modzz.
 qed.
 
-lemma compress_small d x:
+lemma nosmt compress_small d x:
  0 < d =>
  2^d < q =>
  (asint x)%r < q%r - q%r / (2^(d+1))%r =>
@@ -529,24 +592,32 @@ lemma compress_small d x:
 proof.
 move=> Hd0 Hd Hx.
 rewrite /compress.
-rewrite modz_small 2:/#.
-split.
- apply round_ge0; smt(rg_asint expr_gt0).
-move => _.
-have ?: (round ((2 ^ d)%r / q%r * (asint x)%r))%r < (2^d)%r; last by smt().
-apply (RealOrder.ler_lt_trans ((2 ^ d)%r / q%r * (asint x)%r + inv 2%r)).
- smt(round_bound).
-apply (RealOrder.ltr_le_trans ((2 ^ d)%r / q%r * (q%r * (1%r - inv (2%r * (2 ^ d)%r))) + inv 2%r)).
- apply RealOrder.ltr_add2r.
- apply RealOrder.ltr_pmul2l.
-  smt(expr_gt0).
- move: Hx; have ->?:2^(d+1) = 2*2^d by rewrite exprS/#.
- smt().
-have ->:(2 ^ d)%r / q%r * (q%r * (1%r - inv (2%r * (2 ^ d)%r))) + inv 2%r = (2 ^ d)%r * (1%r - inv (2%r * (2 ^ d)%r)) + inv 2%r .
- by field; smt(expr_gt0).
-rewrite mulrDr /=. 
-by have ?/#: (2 ^ d)%r * - inv (2%r * (2 ^ d)%r) + inv 2%r = 0%r by field;  smt(expr_gt0).
+rewrite modz_small 2:/# ger0_norm.
+ smt(expr_ge0).
+have ?: comp d (asint x)%r <> 2^d by rewrite comp_over // /#. 
+smt(comp_asint_range).
 qed.
+
+lemma nosmt compress1_is0 x:
+ compress 1 x = 0 <=> absZq x <= Bq 1.
+proof.
+have L: forall y m, 0 <= y <= m => y %% m = 0 <=> y=0 \/ y=m.
+ move=> y m H; case: (y=m) => E.
+  by rewrite E modzz /#.
+ by rewrite modz_small /#.
+rewrite Bq1E /compress L.
+ by apply comp_asint_range => //= /#.
+rewrite absZqP qE /= -fromintM round_divz 1:/# /=; congr.
+ smt.
+smt.
+qed.
+
+abbrev decomp (d: int, y: real): int = round (y * q%r / (2^d)%r).
+op decompress(d : int, x : int) : Fq = inFq (decomp d x%r).
+
+lemma decompress0 d:
+ decompress d 0 = Zq.zero
+by rewrite /decompress /= from_int_round.
 
 lemma decomp_bound d x:
  0 < d =>
@@ -567,7 +638,6 @@ apply RealOrder.ltr_pmul2l.
   smt(expr_gt0).
 qed.
 
-
 lemma decomp_mono d (x y: real):
  0 < d =>
  2^d < q =>
@@ -580,12 +650,12 @@ rewrite -!mulrA ler_pmul2r // mulrC.
 smt(RealOrder.divr_gt0 expr_gt0).
 qed.
 
-lemma comp_bound d x:
- 0 < d =>
- 2^d < q =>
- x * (2 ^ d)%r / q%r - inv 2%r
- < (comp d x)%r <= x * (2 ^ d)%r / q%r + inv 2%r.
-proof. smt(round_bound). qed.
+(* These operations introduce a rounding error, which we see additively *)
+op compress_err(d : int, c: Fq) : Fq = decompress d (compress d c) - c.
+
+lemma decompress_errE c d : 
+   0 < d => 2^d < q => decompress d (compress d c) = c + (compress_err d c)
+by rewrite /compress_err => *; ring.
 
 lemma decomp_comp d x:
  0 < d =>
@@ -646,7 +716,7 @@ case: ((asint x)%r < q%r - q%r / (2^(d+1))%r).
  have ->: (q%r - q%r / (2%r * (2 ^ d)%r)) * (2 ^ d)%r / q%r = (2^d)%r - inv 2%r by field; smt(expr_gt0).
  smt().
 move=> Hx.
-rewrite compress0 // 1:/# /absZq decompress0 /= ZqField.oppr0 ZqField.addr0.
+rewrite compress0L // 1:/# /absZq decompress0 /= ZqField.oppr0 ZqField.addr0.
 have ?:= Bq_le_half d.
 rewrite /as_sint.
 have ?: q%r - q%r / (2 ^ (d + 1))%r <= (asint x)%r by smt().
@@ -1661,7 +1731,7 @@ transitivity {1}
 - while (={j,aa}); last by auto.
   while (={j,aa,k}); last by auto.
   swap {1} 4 4; sim.
-search W8.dword.
+(*search W8.dword.*)
   admit (* 1 - dbits manipulation 
 dbits 12 = dbits 8 + dbits 4 => x + 256*y
 dbits 12 = dbits 4 + dbits 8 => x + 16*y
@@ -1743,7 +1813,7 @@ clone DMapSampling as MSlw128 with
  type t2 <- W8.t Array128.t.
 
 module CBD2rnd = {
-   proc sample_real() : poly = {
+   proc sampleL_real() : poly = {
       var i,a,b,bytes;
       var p : poly;
       var l: Fq list;
@@ -1762,10 +1832,55 @@ module CBD2rnd = {
       p <- Array256.of_list witness l;
       return p;
    }
+   proc sample_real() : poly = {
+      var i,a,b,bytes;
+      var p : poly;
+      p <- witness;
+      bytes <@ MSlw128.S.sample(dlist W8.dword 128, Array128.of_list witness);
+      i <- 0;
+      while (i < 128) {
+        a <- b2i bytes.[i].[0] + b2i bytes.[i].[1];
+        b <- b2i bytes.[i].[2] + b2i bytes.[i].[3];
+        p.[2*i] <- inFq  (a - b);
+        a <- b2i bytes.[i].[4] + b2i bytes.[i].[5];
+        b <- b2i bytes.[i].[6] + b2i bytes.[i].[7];
+        p.[2*i+1] <- inFq  (a - b);
+        i <- i + 1;
+      }
+      return p;
+   }
    proc sample_ideal() : poly = {
      var p;
      p <$ dshort_R;
      return p;
+   }
+   proc sampleL_vec_real() : vector = {
+     var i, l, p, v;
+     l <- [];
+     i <- 0;
+     while (i < kvec) {
+       p <@ sample_real();
+       l <- rcons l p;
+       i <- i + 1;
+     }
+     v <- offunv (nth witness l);
+     return v;
+   }
+   proc sample_vec_real() : vector = {
+     var i, p, v;
+     v <- witness;
+     i <- 0;
+     while (i < kvec) {
+       p <@ sample_real();
+       v <- set v i p;
+       i <- i + 1;
+     }
+     return v;
+   }
+   proc sample_vec_ideal() : vector = {
+     var v;
+     v <$ dvector dshort_R;
+     return v;
    }
 }.
 
@@ -1792,10 +1907,32 @@ clone DMapSampling as MSlpoly with
  type t1 <- W8.t list,
  type t2 <- poly.
 
+equiv CBD2rnd_sampleL_eq:
+ CBD2rnd.sample_real ~ CBD2rnd.sampleL_real:
+ true ==> ={res}.
+proof.
+proc.
+wp; while (={i,bytes} /\ (0 <= i{1} <= 128) /\ a256l p{1} l{2} (2*i{1})).
+ wp; skip => |> &1 &2 *.
+ split; first smt().
+ rewrite (_:2 * (i{2} + 1) = 2*i{2} + 1 + 1) 1:/#.
+ apply a256l_rcons; first smt().
+ apply a256l_rcons => //; smt().
+wp; call (_:true); first by auto.
+wp; skip => |> *.
+split; first smt().
+move => |> p i l ???.
+have ->: i=128 by smt().
+by apply a256l_of_list. 
+qed.
+
 equiv CBD2rnd_equiv:
  CBD2rnd.sample_real ~ CBD2rnd.sample_ideal:
  true ==> ={res}.
 proof.
+transitivity CBD2rnd.sampleL_real
+ (true ==> ={res}) (true ==> ={res}) => //.
+ by apply CBD2rnd_sampleL_eq.
 proc.
 transitivity {2}
  { p <@ MSlpoly.S.sample(dlist W8.dword 128,
@@ -1834,6 +1971,37 @@ move=> i; split; first smt().
 move=> *; have ->: i = size (to_list bytes{1}) by smt(Array128.size_to_list).
 by rewrite /(\o) /= take_size.
 qed.
+
+equiv CBD2rnd_sampleL_vec_eq:
+ CBD2rnd.sample_vec_real ~ CBD2rnd.sampleL_vec_real:
+ true ==> ={res}.
+proof.
+proc.
+wp; while (={i} /\ (0 <= i{1} <= kvec) /\ forall k, 0 <= k < i{1} => v{1}.[k] = nth witness l{2} k).
+ wp; call (_: true); first by sim.
+ skip => |> &1 &2 *.
+ split; first smt().
+ move=> k ??.
+ admit.
+wp; skip => |> *.
+split; first smt().
+move => |> v i l ???.
+have ->: i=kvec by smt().
+admit.
+qed.
+
+
+equiv CBD2rnd_vec_equiv:
+ CBD2rnd.sample_vec_real ~ CBD2rnd.sample_vec_ideal:
+ true ==> ={res}.
+proof.
+transitivity CBD2rnd.sampleL_vec_real
+ (true ==> ={res}) (true ==> ={res}) => //.
+ by apply CBD2rnd_sampleL_vec_eq.
+proc.
+admit.
+qed.
+
 
 module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
 
