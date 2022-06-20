@@ -616,3 +616,4 @@ hoare ntt_spec_avx_h _r :
       arg = (_r, zetas_unpack NTT_Fq.zetas) ==>
       ntt_pack res = ntt _r.
 admitted.
+

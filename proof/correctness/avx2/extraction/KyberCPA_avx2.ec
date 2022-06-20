@@ -3844,19 +3844,21 @@ module M = {
     var t6:W256.t;
     var t7:W256.t;
     
-    t0 <- VPMULL_16u16 zl0 rh0;
-    t1 <- VPMULH_16u16 zh0 rh0;
+    t0 <- VPMULL_16u16 zl0 rh0; (* 1st 16x2bytes on upper array low part of prod. zl0 contains zeta * qinv *)
+    t1 <- VPMULH_16u16 zh0 rh0; (* 1st 16x2bytes on upper array high part of prod. *)
     t2 <- VPMULL_16u16 zl0 rh1;
     t3 <- VPMULH_16u16 zh0 rh1;
     t4 <- VPMULL_16u16 zl1 rh2;
     t5 <- VPMULH_16u16 zh1 rh2;
     t6 <- VPMULL_16u16 zl1 rh3;
     t7 <- VPMULH_16u16 zh1 rh3;
+
     t0 <- VPMULH_16u16 t0 qx16;
     t2 <- VPMULH_16u16 t2 qx16;
     t4 <- VPMULH_16u16 t4 qx16;
-    t6 <- VPMULH_16u16 t6 qx16;
-    rh1 <- VPSUB_16u16 rl1 t3;
+    t6 <- VPMULH_16u16 t6 qx16; (* these contain the high part of u*q in fqmul *)
+
+    rh1 <- VPSUB_16u16 rl1 t3; (* subtraction of zeta*low *)
     rl1 <- VPADD_16u16 t3 rl1;
     rh0 <- VPSUB_16u16 rl0 t1;
     rl0 <- VPADD_16u16 t1 rl0;
@@ -3866,7 +3868,7 @@ module M = {
     rl2 <- VPADD_16u16 t5 rl2;
     rh0 <- VPADD_16u16 t0 rh0;
     rl0 <- VPSUB_16u16 rl0 t0;
-    rh1 <- VPADD_16u16 t2 rh1;
+    rh1 <- VPADD_16u16 t2 rh1; (* "subtraction" of montgomery term *)
     rl1 <- VPSUB_16u16 rl1 t2;
     rh2 <- VPADD_16u16 t4 rh2;
     rl2 <- VPSUB_16u16 rl2 t4;
