@@ -247,8 +247,8 @@ proc __ntt_level1t6(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t
     zeta0 <- Array16.init (fun i => zetasp.[136 + 196*j + i]);
     zeta1 <- Array16.init (fun i => zetasp.[168 + 196*j + i]);
 (*
-    zeta2 <- Array16.init (fun i => zetasp.[152 + 196*j + i]);
-    zeta3 <- Array16.init (fun i => zetasp.[184 + 196*j + i]);
+    zeta2 <- Array16.init (fun i => zetasp.[152 + 196*j + i]); (* I am betting these are used to prepare the reduction step *)
+    zeta3 <- Array16.init (fun i => zetasp.[184 + 196*j + i]); (* I am betting these are used to prepare the reduction step *)
 *)
     (r0, r4, r2, r6, r1, r5, r3, r7) <@ 
           __butterfly64x(r0, r4, r2, r6, r1, r5, r3, r7, zeta0, zeta1);
@@ -302,15 +302,23 @@ proc __ntt_level1t6(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t
 op zetas_unpack : Fq Array128.t -> Fq Array400.t.
 op ntt_pack : Fq Array256.t -> Fq Array256.t.
 
+pred zetas_level0 = forall (refz : Fq Array128.t),
+                           (zetas_unpack refz).[0] = refz.[1] /\
+                           (zetas_unpack refz).[1] = refz.[1] /\
+                           (zetas_unpack refz).[2] = refz.[1] /\
+                           (zetas_unpack refz).[3] = refz.[1].
+
 import NTTequiv.
 
 require import Array256_extra.
 
-equiv ntt_avx_ntt_opt : 
-     NTT_AVX.ntt ~ NTT_opt.ntt :
+lemma ntt_avx_ntt_opt : 
+     zetas_level0 =>
+     equiv [ NTT_AVX.ntt ~ NTT_opt.ntt :
           r{1} = NTT_vars.r{2} /\ zetas{1} = zetas_unpack NTT_vars.zetas{2}
           ==>
-          ntt_pack res{1} = res{2} .
+          ntt_pack res{1} = res{2}].
+move => zetasl0.
 proc. 
 inline {1} 1; unroll {2} ^while.
 rcondt {2} 3; 1: by move => *; auto.
@@ -355,6 +363,7 @@ seq 39 5 :
       move => Hk; rewrite -Hk set_neqiE 1:/#. 
       rewrite set_eqiE 1,2:/#.  
       by move : (Hold (k) _); smt().
+  (* Unrolled one level on the right *)
   auto => />.
   move => &2; split; 1 : by smt().
   move => j2 r2;split; 1: by smt().
@@ -362,75 +371,240 @@ seq 39 5 :
   + apply Array256.tP. move => i ib /=.
     rewrite filliE 1:ib /=. 
     case (240 <= i && i < 256).
-    + move => ibb.
-      rewrite initiE 1:/# /=. 
-      rewrite initiE 1:/# /=. 
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite initiE 1:/# /=. 
-      rewrite initiE 1:/# /=. 
-      rewrite filliE 1:/# /=. 
-      pose pp := (if i %% 16 %% 2 = 0 then (zetas_unpack NTT_vars.zetas{2}).[2] else (zetas_unpack NTT_vars.zetas{2}).[3]). rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite /pp.
+    + move => ibb; do 2!(rewrite initiE 1:/# /=); 
+                   do 8!(rewrite filliE 1:/# /= ifF 1: /#);
+                   rewrite initiE 1:/# initiE 1:/# /= filliE 1:/# /=. 
+      rewrite (ifF (176 <= i %% 16 + 240 && i %% 16 + 240 < 192)) 1: /#.
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      do 7!(rewrite filliE 1:/# /= ifF 1: /#).
       move : (Hrecent (i - 128) _) => /=;1: smt().
       move => [_ ->].
-      have -> :  ((zetas_unpack NTT_vars.zetas{2}).[2] = NTT_vars.zetas{2}.[1]) by admit.
-      have -> :  ((zetas_unpack NTT_vars.zetas{2}).[3] = NTT_vars.zetas{2}.[1]) by admit.
-      case (i %% 16 %% 2 = 0); 1: by move => H; smt(). 
-      move => H. 
-      have -> : i %% 16 + 112 = i - 128. smt(). 
-      ring.     
-      have -> : i %% 16 + 240 = i. smt(). 
-      ring.
+      rewrite /pp.
+      have -> : i %% 16 + 112 = i - 128 by smt(). 
+      have -> : i %% 16 + 240 = i by smt(). 
+     do 3!congr; smt().
     move => ibb.     
     rewrite filliE 1:/# /=. 
     case (224 <= i && i < 240).
-    + move => ibb1.
-      rewrite initiE 1:/# /=. 
-      rewrite initiE 1:/# /=. 
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite initiE 1:/# /=. 
-      rewrite initiE 1:/# /=. 
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      pose pp := (if i %% 16 %% 2 = 0 then (zetas_unpack NTT_vars.zetas{2}).[2] else (zetas_unpack NTT_vars.zetas{2}).[3]).     rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
+    + move => ibbb; do 2!(rewrite initiE 1:/# /=); 
+                    do 8!(rewrite filliE 1:/# /= ifF 1: /#);
+                    rewrite initiE 1:/# initiE 1:/# /= filliE 1:/# /=. 
+      rewrite (ifF (176 <= i %% 16 + 224 && i %% 16 + 224 < 192)) 1: /#.
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      do 7!(rewrite filliE 1:/# /= ifF 1: /#).
       move : (Hrecent (i - 128) _) => /=;1: smt().
       move => [_ ->].
-      rewrite filliE 1:/# /=. rewrite ifF 1: /#.
       rewrite /pp.
-      have -> :  ((zetas_unpack NTT_vars.zetas{2}).[2] = NTT_vars.zetas{2}.[1]) by admit.
-      have -> :  ((zetas_unpack NTT_vars.zetas{2}).[3] = NTT_vars.zetas{2}.[1]) by admit.
-      case (i %% 16 %% 2 = 0); 1: by move => H; smt(). 
-      move => H. 
-      have -> : i %% 16 + 96 = i - 128. smt().
-      ring.     
-      have -> : i %% 16 + 224 = i. smt(). 
-      ring.
-      admit.
+      have -> : i %% 16 + 96 = i - 128 by smt(). 
+      have -> : i %% 16 + 224 = i by smt(). 
+     do 3!congr; smt().
+    move => ibbb.     
+    rewrite filliE 1:/# /=. 
+    case (208 <= i && i < 224).
+    + move => ibbbb; do 2!(rewrite initiE 1:/# /=); 
+                     do 8!(rewrite filliE 1:/# /= ifF 1: /#);
+                     rewrite initiE 1:/# initiE 1:/# /= filliE 1:/# /=. 
+      rewrite (ifF (176 <= i %% 16 + 208 && i %% 16 + 208 < 192)) 1: /#.
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      do 7!(rewrite filliE 1:/# /= ifF 1: /#).
+      move : (Hrecent (i - 128) _) => /=;1: smt().
+      move => [_ ->].
+      rewrite /pp.
+      have -> : i %% 16 + 80 = i - 128 by smt(). 
+      have -> : i %% 16 + 208 = i by smt(). 
+     do 3!congr; smt().
+    move => ibbbb.     
+    rewrite filliE 1:/# /=. 
+    case (192 <= i && i < 208).
+    + move => ibb1; do 2!(rewrite initiE 1:/# /=); 
+                   do 8!(rewrite filliE 1:/# /= ifF 1: /#);
+                   rewrite initiE 1:/# initiE 1:/# /= filliE 1:/# /=. 
+      rewrite (ifF (176 <= i %% 16 + 192 && i %% 16 + 192 < 192)) 1: /#.
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      do 7!(rewrite filliE 1:/# /= ifF 1: /#).
+      move : (Hrecent (i - 128) _) => /=;1: smt().
+      move => [_ ->].
+      rewrite /pp.
+      have -> : i %% 16 + 64 = i - 128 by smt(). 
+      have -> : i %% 16 + 192 = i by smt(). 
+     do 3!congr; smt().
+    move => ibbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (112 <= i && i < 128).
+    + move => ibb1; do 2!(rewrite initiE 1:/# /=); 
+                   do 8!(rewrite filliE 1:/# /= ifF 1: /#);
+                   rewrite initiE 1:/# initiE 1:/# /= filliE 1:/# /=. 
+      rewrite (ifF (176 <= i %% 16 + 240 && i %% 16 + 240 < 192)) 1: /#.
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      do 7!(rewrite filliE 1:/# /= ifF 1: /#).
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 + 112 = i by smt(). 
+      have -> : i %% 16 + 240 = i + 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (96 <= i && i < 112).
+    + move => ibb1; do 2!(rewrite initiE 1:/# /=); 
+                   do 8!(rewrite filliE 1:/# /= ifF 1: /#);
+                   rewrite initiE 1:/# initiE 1:/# /= filliE 1:/# /=. 
+      rewrite (ifF (176 <= i %% 16 + 224 && i %% 16 + 224 < 192)) 1: /#.
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      do 7!(rewrite filliE 1:/# /= ifF 1: /#).
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 + 96 = i by smt(). 
+      have -> : i %% 16 + 224 = i + 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    do 2!(rewrite initiE 1:/# /=).
+    case (80 <= i && i < 96).
+    + move => ibb1; do 2!(rewrite initiE 1:/# /=); 
+                   do 8!(rewrite filliE 1:/# /= ifF 1: /#).
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      do 8!(rewrite filliE 1:/# /= ifF 1: /#).
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 + 80 = i by smt(). 
+      have -> : i %% 16 + 208 = i + 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (64 <= i && i < 80).
+    + move => ibb1; do 2!(rewrite initiE 1:/# /=); 
+                   do 8!(rewrite filliE 1:/# /= ifF 1: /#);
+                    do 2!(rewrite initiE 1:/# /=).
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      do 8!(rewrite filliE 1:/# /= ifF 1: /#).
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 + 64 = i by smt(). 
+      have -> : i %% 16 + 192 = i + 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (176 <= i && i < 192).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      move : (Hrecent (i - 128) _) => /=;1: smt().
+      move => [_ ->].
+      rewrite /pp.
+      have -> : i %% 16 + 48 = i - 128 by smt(). 
+      have -> : i %% 16 + 176 = i by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (160 <= i && i < 176).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      move : (Hrecent (i - 128) _) => /=;1: smt().
+      move => [_ ->].
+      rewrite /pp.
+      have -> : i %% 16 + 32 = i - 128 by smt(). 
+      have -> : i %% 16 + 160 = i by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (144 <= i && i < 160).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      move : (Hrecent (i - 128) _) => /=;1: smt().
+      move => [_ ->].
+      rewrite /pp.
+      have -> : i %% 16 + 16 = i - 128 by smt(). 
+      have -> : i %% 16 + 144 = i by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (128 <= i && i < 144).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      move : (Hrecent (i - 128) _) => /=;1: smt().
+      move => [_ ->].
+      rewrite /pp.
+      have -> : i %% 16 = i - 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (48 <= i && i < 64).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 + 48 = i by smt(). 
+      have -> : i %% 16 + 176 = i + 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (32 <= i && i < 48).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[2] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[3]). 
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 + 32 = i by smt(). 
+      have -> : i %% 16 + 160 = i + 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (16 <= i && i < 32).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 + 16 = i by smt(). 
+      have -> : i %% 16 + 144 = i + 128 by smt(). 
+     do 2!congr; smt().
+    move => ibbbbbbbbbbbbbbbb.     
+    rewrite filliE 1:/# /=. 
+    case (0 <= i && i < 16).
+    + move => ibb1; do 4!(rewrite initiE 1:/# /=). 
+      pose pp := (if i %% 16 %% 2 = 0 
+                  then (zetas_unpack NTT_vars.zetas{2}).[0] 
+                  else (zetas_unpack NTT_vars.zetas{2}).[1]). 
+      move : (Hrecent (i) _) => /=;1: smt().
+      move => [-> _].
+      rewrite /pp.
+      have -> : i %% 16 = i by smt(). 
+     do 2!congr; smt().
+     smt().
    smt().
 
 admit.
