@@ -50,7 +50,13 @@ r.[j + len] <- r.[j] + (-t);
 
 proc __ntt_level0(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t = {
 
-  var  zeta0, zeta1, r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
+  var  zeta0, zeta1 : Fq Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
+  var rp1,rp2,rp3,rp4,rp5,rp6,rp7,rp8 : Fq Array256.t;
+  var rp9,rp10,rp11,rp12,rp13,rp14,rp15,rp16 : Fq Array256.t;
 
   zeta0 <- initeo (fun i => zetasp.[0]) (fun i => zetasp.[1]);
   zeta1 <- initeo (fun i => zetasp.[2]) (fun i => zetasp.[3]);
@@ -64,40 +70,40 @@ proc __ntt_level0(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t =
   r6 <- Array16.init (fun i =>  rp.[i + 160]);
   r7 <- Array16.init (fun i =>  rp.[i + 176]);
 
-  (r0, r1, r2, r3, r4, r5, r6, r7) <@ 
+  (r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a) <@ 
       __butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta1);
 
-  rp <- Array256.fill (fun i => r0.[i %% 16])   0 16 rp;
-  rp <- Array256.fill (fun i => r1.[i %% 16])  16 16 rp;
-  rp <- Array256.fill (fun i => r2.[i %% 16])  32 16 rp;
-  rp <- Array256.fill (fun i => r3.[i %% 16])  48 16 rp;
-  rp <- Array256.fill (fun i => r4.[i %% 16]) 128 16 rp;
-  rp <- Array256.fill (fun i => r5.[i %% 16]) 144 16 rp;
-  rp <- Array256.fill (fun i => r6.[i %% 16]) 160 16 rp;
-  rp <- Array256.fill (fun i => r7.[i %% 16]) 176 16 rp;
+  rp1 <- Array256.fill (fun i => r0a.[i %% 16])   0 16 rp;
+  rp2 <- Array256.fill (fun i => r1a.[i %% 16])  16 16 rp1;
+  rp3 <- Array256.fill (fun i => r2a.[i %% 16])  32 16 rp2;
+  rp4 <- Array256.fill (fun i => r3a.[i %% 16])  48 16 rp3;
+  rp5 <- Array256.fill (fun i => r4a.[i %% 16]) 128 16 rp4;
+  rp6 <- Array256.fill (fun i => r5a.[i %% 16]) 144 16 rp5;
+  rp7 <- Array256.fill (fun i => r6a.[i %% 16]) 160 16 rp6;
+  rp8 <- Array256.fill (fun i => r7a.[i %% 16]) 176 16 rp7;
 
-  r0 <- Array16.init (fun i =>  rp.[i +  64]);
-  r1 <- Array16.init (fun i =>  rp.[i +  80]);
-  r2 <- Array16.init (fun i =>  rp.[i +  96]);
-  r3 <- Array16.init (fun i =>  rp.[i + 112]);
-  r4 <- Array16.init (fun i =>  rp.[i + 192]);
-  r5 <- Array16.init (fun i =>  rp.[i + 208]);
-  r6 <- Array16.init (fun i =>  rp.[i + 224]);
-  r7 <- Array16.init (fun i =>  rp.[i + 240]);
+  r0b <- Array16.init (fun i =>  rp.[i +  64]);
+  r1b <- Array16.init (fun i =>  rp.[i +  80]);
+  r2b <- Array16.init (fun i =>  rp.[i +  96]);
+  r3b <- Array16.init (fun i =>  rp.[i + 112]);
+  r4b <- Array16.init (fun i =>  rp.[i + 192]);
+  r5b <- Array16.init (fun i =>  rp.[i + 208]);
+  r6b <- Array16.init (fun i =>  rp.[i + 224]);
+  r7b <- Array16.init (fun i =>  rp.[i + 240]);
 
-  (r0, r1, r2, r3, r4, r5, r6, r7) <@ 
-      __butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta1);
+  (r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c) <@ 
+      __butterfly64x(r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b, zeta0, zeta1);
 
-  rp <- Array256.fill (fun i => r0.[i %% 16])  64 16 rp;
-  rp <- Array256.fill (fun i => r1.[i %% 16])  80 16 rp;
-  rp <- Array256.fill (fun i => r2.[i %% 16])  96 16 rp;
-  rp <- Array256.fill (fun i => r3.[i %% 16]) 112 16 rp;
-  rp <- Array256.fill (fun i => r4.[i %% 16]) 192 16 rp;
-  rp <- Array256.fill (fun i => r5.[i %% 16]) 208 16 rp;
-  rp <- Array256.fill (fun i => r6.[i %% 16]) 224 16 rp;
-  rp <- Array256.fill (fun i => r7.[i %% 16]) 240 16 rp;
+   rp9 <- Array256.fill (fun i => r0c.[i %% 16])  64 16 rp8;
+  rp10 <- Array256.fill (fun i => r1c.[i %% 16])  80 16 rp9;
+  rp11 <- Array256.fill (fun i => r2c.[i %% 16])  96 16 rp10;
+  rp12 <- Array256.fill (fun i => r3c.[i %% 16]) 112 16 rp11;
+  rp13 <- Array256.fill (fun i => r4c.[i %% 16]) 192 16 rp12;
+  rp14 <- Array256.fill (fun i => r5c.[i %% 16]) 208 16 rp13;
+  rp15 <- Array256.fill (fun i => r6c.[i %% 16]) 224 16 rp14;
+  rp16 <- Array256.fill (fun i => r7c.[i %% 16]) 240 16 rp15;
 
-  return rp;
+  return rp16;
 }
 
 proc __ntt_level1t6(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t = {
@@ -376,6 +382,61 @@ seq 39 5 :
   move => j2 r2;split; 1: by smt().
   move => Hexit Hl Hh Hold Hrecent; split;last by smt().
   apply Array256.tP => i /=.
+  do 16!(
+  move => *;
+  rewrite filliE 1:/# /=; 
+  apply ifsplit; 1: by
+    move => *; do 3!(rewrite initiE 1:/# /=);
+                 rewrite initeoE /= initiE 1:/# /=; smt()). 
+  by smt().
+(* Level 0 done *)
+inline {1} 1.
+
+seq 39 5 :
+  (rp0{1} = NTT_vars.r{2} /\ zetasp{1} = zetas_unpack NTT_vars.zetas{2} /\
+  NTT_vars.zetasctr{2} = 1 /\ NTT_vars.len{2} = 64).
++ inline *. 
+  unroll {2} ^while.
+  rcondt {2} 4; 1: by move => *; auto.
+  wp 78 9 ; conseq />.
+  while {2} (#post /\ NTT_vars.start{2} = 256 /\ NTT_vars.len{2} = 128) (NTT_vars.start{2}). 
+  + move => *; conseq />. 
+    wp; while (NTT_vars.start <= NTT_vars.j <= NTT_vars.start + NTT_vars.len) (NTT_vars.start + NTT_vars.len - NTT_vars.j);
+     by move => *; auto => /> /#. 
+  swap {2} 3 2.
+  wp 78 7; conseq />.
+  while {2} (zetas{1} = zetas_unpack NTT_vars.zetas{2} /\
+             NTT_vars.zetasctr{2} = 1 /\
+             NTT_vars.len{2} = 128 /\
+             NTT_vars.zeta_{2} = NTT_vars.zetas{2}.[1] /\
+             NTT_vars.start{2} = 0 /\
+             0 <= NTT_vars.j{2} <= 128 /\
+             (forall k, NTT_vars.j{2} <= k < 128 =>
+                 NTT_vars.r{2}.[k] = r{1}.[k] /\
+                 NTT_vars.r{2}.[k + 128] = r{1}.[k + 128]) /\
+             (forall k, 0 <= k < NTT_vars.j{2} => 
+                NTT_vars.r{2}.[k] = r{1}.[k] + NTT_vars.zetas{2}.[1]*r{1}.[k+128] /\
+                NTT_vars.r{2}.[k + 128] = r{1}.[k] + (- NTT_vars.zetas{2}.[1]*r{1}.[k+128])))
+             (128 - NTT_vars.j{2}).  
+  move => &1 ?; auto => /> &2 Hl Hh Hold Hnew ib; split; 2: by smt().
+  split; 1: by smt().
+  split; 1: by move => k kbl kbh; split; rewrite !set_neqiE 1..3:/#. 
+  + move => k kbl kbh; split.
+    + case (k = NTT_vars.j{2}); last first.
+      + by move => Hc;rewrite !set_neqiE 1..3:/#. 
+      move => Hk; rewrite -Hk set_eqiE 1..2:/#. 
+      rewrite set_neqiE 1:/#.  
+      by move : (Hold k _); smt().
+    + case (k = NTT_vars.j{2}); last first.
+      + by move => Hc;rewrite !set_neqiE 1..3:/#. 
+      move => Hk; rewrite -Hk set_neqiE 1:/#. 
+      rewrite set_eqiE 1,2:/#.  
+      by move : (Hold (k) _); smt().
+  (* Unrolled one level on the right *)
+  auto => /> &2; split; 1 : by smt().
+  move => j2 r2;split; 1: by smt().
+  move => Hexit Hl Hh Hold Hrecent; split;last by smt().
+  apply Array256.tP => i /=.
   do 8!(
   move => *;
   rewrite filliE 1:/# /=; 
@@ -393,6 +454,7 @@ seq 39 5 :
                    rewrite initeoE /= initiE 1:/# /=; smt()). 
   by smt().
 
+  
 admit.
 
 qed.  
