@@ -287,14 +287,14 @@ proc __ntt_level1t6(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t
     (r0j, r4j, r2j, r6j, r1j, r5j, r3j, r7j) <@ 
           __butterfly64x(r0i, r4i, r2i, r6i, r1i, r5i, r3i, r7i, zeta0i, zeta1i);
 
-    rp1 <- Array256.fill (fun i => r0.[i %% 16]) ( 64 + 128*0) 16 rp;
-    rp2 <- Array256.fill (fun i => r1.[i %% 16]) ( 80 + 128*0) 16 rp1;
-    rp3 <- Array256.fill (fun i => r2.[i %% 16]) ( 96 + 128*0) 16 rp2;
-    rp4 <- Array256.fill (fun i => r3.[i %% 16]) (112 + 128*0) 16 rp3;
-    rp5 <- Array256.fill (fun i => r4.[i %% 16]) (192 + 128*0) 16 rp4;
-    rp6 <- Array256.fill (fun i => r5.[i %% 16]) (208 + 128*0) 16 rp5;
-    rp7 <- Array256.fill (fun i => r6.[i %% 16]) (224 + 128*0) 16 rp6;
-    rp8 <- Array256.fill (fun i => r7.[i %% 16]) (240 + 128*0) 16 rp7;
+    rp1 <- Array256.fill (fun i => r0j.[i %% 16]) ( 64 + 128*0) 16 rp;
+    rp2 <- Array256.fill (fun i => r1j.[i %% 16]) ( 80 + 128*0) 16 rp1;
+    rp3 <- Array256.fill (fun i => r2j.[i %% 16]) ( 96 + 128*0) 16 rp2;
+    rp4 <- Array256.fill (fun i => r3j.[i %% 16]) (112 + 128*0) 16 rp3;
+    rp5 <- Array256.fill (fun i => r4j.[i %% 16]) (192 + 128*0) 16 rp4;
+    rp6 <- Array256.fill (fun i => r5j.[i %% 16]) (208 + 128*0) 16 rp5;
+    rp7 <- Array256.fill (fun i => r6j.[i %% 16]) (224 + 128*0) 16 rp6;
+    rp8 <- Array256.fill (fun i => r7j.[i %% 16]) (240 + 128*0) 16 rp7;
 
 (*
     j <- j + 1;
@@ -471,14 +471,14 @@ proc __ntt_level1t6(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t
     (r0u, r4u, r2u, r6u, r1u, r5u, r3u, r7u) <@ 
           __butterfly64x(r0t, r4t, r2t, r6t, r1t, r5t, r3t, r7t, zeta0t, zeta1t);
 
-    rp9 <- Array256.fill (fun i => r0.[i %% 16]) ( 64 + 128*1) 16 rp8;
-    rp10 <- Array256.fill (fun i => r1.[i %% 16]) ( 80 + 128*1) 16 rp9;
-    rp11 <- Array256.fill (fun i => r2.[i %% 16]) ( 96 + 128*1) 16 rp10;
-    rp12 <- Array256.fill (fun i => r3.[i %% 16]) (112 + 128*1) 16 rp11;
-    rp13 <- Array256.fill (fun i => r4.[i %% 16]) (192 + 128*1) 16 rp12;
-    rp14 <- Array256.fill (fun i => r5.[i %% 16]) (208 + 128*1) 16 rp13;
-    rp15 <- Array256.fill (fun i => r6.[i %% 16]) (224 + 128*1) 16 rp14;
-    rp16 <- Array256.fill (fun i => r7.[i %% 16]) (240 + 128*1) 16 rp15;
+    rp9  <- Array256.fill (fun i => r0u.[i %% 16]) ( 64 + 128*1) 16 rp8;
+    rp10 <- Array256.fill (fun i => r1u.[i %% 16]) ( 80 + 128*1) 16 rp9;
+    rp11 <- Array256.fill (fun i => r2u.[i %% 16]) ( 96 + 128*1) 16 rp10;
+    rp12 <- Array256.fill (fun i => r3u.[i %% 16]) (112 + 128*1) 16 rp11;
+    rp13 <- Array256.fill (fun i => r4u.[i %% 16]) (192 + 128*1) 16 rp12;
+    rp14 <- Array256.fill (fun i => r5u.[i %% 16]) (208 + 128*1) 16 rp13;
+    rp15 <- Array256.fill (fun i => r6u.[i %% 16]) (224 + 128*1) 16 rp14;
+    rp16 <- Array256.fill (fun i => r7u.[i %% 16]) (240 + 128*1) 16 rp15;
 
 (*
     j <- j + 1;
