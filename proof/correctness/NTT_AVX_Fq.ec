@@ -627,61 +627,9 @@ seq 24 3 :
    zetasp{1} = zetas_unpack NTT_vars.zetas{2} /\
   NTT_vars.zetasctr{2} = 2 /\ NTT_vars.len{2} = 32).
   inline *. wp 62 2.
-(*
-  while {2} (#post /\ NTT_vars.start{2} = 256 /\ NTT_vars.len{2} = 32) (NTT_vars.start{2}). 
-  + move => *; conseq />. 
-    wp; while (NTT_vars.start <= NTT_vars.j <= NTT_vars.start + NTT_vars.len) (NTT_vars.start + NTT_vars.len - NTT_vars.j);
-     by move => *; auto => /> /#. 
-  while {2} (zetas{1} = zetas_unpack NTT_vars.zetas{2} /\
-             NTT_vars.zetasctr{2} = 1 /\
-             NTT_vars.len{2} = 128 /\
-             NTT_vars.zeta_{2} = NTT_vars.zetas{2}.[1] /\
-             NTT_vars.start{2} = 0 /\
-             0 <= NTT_vars.j{2} <= 128 /\
-             (forall k, NTT_vars.j{2} <= k < 128 =>
-                 NTT_vars.r{2}.[k] = r{1}.[k] /\
-                 NTT_vars.r{2}.[k + 128] = r{1}.[k + 128]) /\
-             (forall k, 0 <= k < NTT_vars.j{2} => 
-                NTT_vars.r{2}.[k] = r{1}.[k] + NTT_vars.zetas{2}.[1]*r{1}.[k+128] /\
-                NTT_vars.r{2}.[k + 128] = r{1}.[k] + (- NTT_vars.zetas{2}.[1]*r{1}.[k+128])))
-             (128 - NTT_vars.j{2}).  
-  move => &1 ?; auto => /> &2 Hl Hh Hold Hnew ib; split; 2: by smt().
-  split; 1: by smt().
-  split; 1: by move => k kbl kbh; split; rewrite !set_neqiE 1..3:/#. 
-  + move => k kbl kbh; split.
-    + case (k = NTT_vars.j{2}); last first.
-      + by move => Hc;rewrite !set_neqiE 1..3:/#. 
-      move => Hk; rewrite -Hk set_eqiE 1..2:/#. 
-      rewrite set_neqiE 1:/#.  
-      by move : (Hold k _); smt().
-    + case (k = NTT_vars.j{2}); last first.
-      + by move => Hc;rewrite !set_neqiE 1..3:/#. 
-      move => Hk; rewrite -Hk set_neqiE 1:/#. 
-      rewrite set_eqiE 1,2:/#.  
-      by move : (Hold (k) _); smt().
-  (* Unrolled one level on the right *)
-  auto => /> &2; split; 1 : by smt().
-  move => j2 r2;split; 1: by smt().
-  move => Hexit Hl Hh Hold Hrecent; split;last by smt().
-  apply Array256.tP => i /=.
-  do 8!(
-  move => *;
-  rewrite filliE 1:/# /=; 
-  apply ifsplit; first by
-    move => *; do 2!(rewrite initiE 1:/# /=); 
-                 do 8!(rewrite filliE 1:/# /= ifF 1: /#);
-                 rewrite initiE 1:/# /= filliE 1:/# /= ifF 1: /#;
-                 do 7!(rewrite filliE 1:/# /= ifF 1: /#);
-                 rewrite initeoE /= initiE 1:/# /=; smt()). 
-  do 8!(
-  move => *;
-  rewrite filliE 1:/# /=; 
-  apply ifsplit; first by
-     move => *; do 3!(rewrite initiE 1:/# /=);
-                   rewrite initeoE /= initiE 1:/# /=; smt()). 
-  by smt().
-
-  *)
+  (* We need to have a simple way to transform the right-hand side
+     loop iterations into a functional spec. Could it be easier to
+     just prove this using hoare and a functional spec? @Antoine? *)
 admit.
 admit.
 
