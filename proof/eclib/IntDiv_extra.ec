@@ -4,7 +4,7 @@ require import Montgomery.
 
 
 (*-----------------------------------------------------------------------------*)
-
+(* p-adic value and lemmas linked to it. *)
 op vp (b x : int) = argmax ((^) b) (transpose (%|) x).
 
 abbrev vp_rem b x = x %/ (b ^ (vp b x)).
@@ -162,6 +162,7 @@ abort.
 
 
 (*-----------------------------------------------------------------------------*)
+(* Specific lemmas to deal with exponentials when the exponent is constrained to a range. *)
 
 lemma exprS_range min max k :
   k \in range min max =>

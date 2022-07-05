@@ -3,6 +3,8 @@ require import AllCore StdOrder List Ring IntDiv.
 
 
 (*-----------------------------------------------------------------------------*)
+(* All in range. *)
+(* TODO: possibly can be removed without any impact on the NTTAlgebra proof. *)
 
 abbrev all_range P (min max : int) = all P (range min max).
 

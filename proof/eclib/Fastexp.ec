@@ -1,3 +1,7 @@
+(* Fast exponentiation algorithm *)
+
+(* Fast exponentiation to use in proofs involving computation of exponentials that may take too long otherwise. *)
+
 require import AllCore StdOrder List Ring Int IntDiv IntMin BitEncoding RealExp.
 (*---*) import IntOrder BS2Int BitReverse.
 
@@ -14,9 +18,11 @@ abstract theory Fastexp.
         (em * (if b then ep else oner), ep * ep))
       (CR.oner, x) (rev (int2bs N n)).
 
+  (* Fast exponentitation when the exponent fits on n bits. *)
   op fastexp_nbits N x n =
     fst (fastexp_nbits_aux N x n).
 
+  (* Fast exponentiation for any exponent. *)
   op fastexp x n =
     if n < 0
     then invr (fastexp_nbits (ilog 2 (-n) + 1) x (-n))
