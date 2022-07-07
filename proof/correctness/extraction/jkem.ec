@@ -2257,7 +2257,7 @@ module M = {
     buf <- Array64.init
            (fun i => if 0 <= i < 0 + 32 then aux.[i-0] else buf.[i]);
     hp <- (skp + (W64.of_int 32));
-    hp <- (hp + (W64.of_int (((24 * 3) * 256)) `|>>` (W8.of_int 3)));
+    hp <- (hp + (W64.of_int (((24 * 3) * 256) `|>>` 3)));
     aux_0 <- (32 %/ 8);
     i <- 0;
     while (i < aux_0) {
@@ -2270,14 +2270,14 @@ module M = {
     s_skp <- skp;
     kr <@ _sha3_512_64 (kr, buf);
     pkp <- s_skp;
-    pkp <- (pkp + (W64.of_int (((12 * 3) * 256)) `|>>`(W8.of_int 3)));
+    pkp <- (pkp + (W64.of_int (((12 * 3) * 256) `|>>` 3)));
     ctpc <@ __iindcpa_enc (ctpc, (Array32.init (fun i_0 => buf.[0 + i_0])),
     pkp, (Array32.init (fun i_0 => kr.[32 + i_0])));
     ctp <- s_ctp;
     cnd <@ __verify (ctp, ctpc);
     zp <- s_skp;
     zp <- (zp + (W64.of_int 64));
-    zp <- (zp + (W64.of_int (((24 * 3) * 256)) `|>>` (W8.of_int 3)));
+    zp <- (zp + (W64.of_int (((24 * 3) * 256) `|>>` 3)));
     aux <@ __cmov ((Array32.init (fun i_0 => kr.[0 + i_0])), zp, cnd);
     kr <- Array64.init
           (fun i => if 0 <= i < 0 + 32 then aux.[i-0] else kr.[i]);
