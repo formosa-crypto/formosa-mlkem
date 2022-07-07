@@ -15,11 +15,10 @@ export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp
 {
   stack u16[KYBER_VECN] pkpv sp ep bp;
   stack u16[KYBER_K*KYBER_VECN] aat;
-  stack u16[KYBER_N] k poly epp v poly0 poly1 poly2;
+  stack u16[KYBER_N] k epp v;
   stack u8[KYBER_SYMBYTES] publicseed;
   stack u8[KYBER_SYMBYTES] noiseseed;
-  reg u64 i j;
-  reg u16 t;
+  reg u64 i;
   reg u8 c nonce;
   stack u64 sctp;
 
