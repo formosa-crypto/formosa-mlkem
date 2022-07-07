@@ -5,10 +5,9 @@ require "polyvec.jinc"
 
 export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_VECN] a;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[ap + 2*i];
@@ -25,10 +24,9 @@ export fn polyvec_tobytes_jazz(reg u64 rp, reg u64 ap)
 
 export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_VECN] r;
+  reg u16 t;
+  inline int i;
 
   r = __polyvec_decompress(ap);
 
@@ -41,10 +39,9 @@ export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap)
 
 export fn polyvec_compress_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_VECN] a;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[ap + 2*i];
@@ -57,10 +54,9 @@ export fn polyvec_compress_jazz(reg u64 rp, reg u64 ap)
 
 export fn polyvec_frombytes_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_VECN] r;
+  reg u16 t;
+  inline int i;
 
   r = __polyvec_frombytes(ap);
 
@@ -76,11 +72,11 @@ export fn polyvec_frombytes_jazz(reg u64 rp, reg u64 ap)
 
 export fn polyvec_add2_jazz(reg u64 rp, reg u64 bp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_VECN] a;
   stack u16[KYBER_VECN] b;
   stack u16[KYBER_VECN] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[rp + 2*i];
@@ -99,11 +95,11 @@ export fn polyvec_add2_jazz(reg u64 rp, reg u64 bp)
 
 export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_VECN] a;
   stack u16[KYBER_VECN] b;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[ap + 2*i];
@@ -132,9 +128,9 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
 export fn polyvec_ntt_jazz(reg u64 rp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_VECN] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[rp + 2*i];
@@ -155,9 +151,9 @@ export fn polyvec_ntt_jazz(reg u64 rp)
 
 export fn polyvec_invntt_jazz(reg u64 rp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_VECN] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[rp + 2*i];
@@ -178,9 +174,9 @@ export fn polyvec_invntt_jazz(reg u64 rp)
 
 export fn polyvec_csubq_jazz(reg u64 rp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_VECN] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[rp + 2*i];
@@ -197,9 +193,9 @@ export fn polyvec_csubq_jazz(reg u64 rp)
 
 export fn polyvec_reduce_jazz(reg u64 rp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_VECN] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_VECN {
     t = (u16)[rp + 2*i];

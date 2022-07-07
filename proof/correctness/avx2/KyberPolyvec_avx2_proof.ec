@@ -20,7 +20,7 @@ import KyberPolyAVX.
 import KyberPolyVec.
 
 lemma polvec_add_corr_h _a _b ab bb:
-      hoare[Mavx2_prevec.polyvec_add2:
+      hoare[Mprevec.polyvec_add2:
            (0 <= ab <= 6 /\ 0 <= bb <= 3) /\
            _a = lift_array768 r /\
            _b = lift_array768 b /\
@@ -85,7 +85,7 @@ qed.
 
 
 lemma polyvec_csubq_corr ap :
-  hoare[Mavx2_prevec.polyvec_csubq:
+  hoare[Mprevec.polyvec_csubq:
        ap = lift_array768 r /\
        pos_bound768_cxq r 0 768 2
        ==>
@@ -138,7 +138,7 @@ qed.
 
 
 lemma polyvec_reduce_corr _a:
-  hoare[Mavx2_prevec.polyvec_reduce:
+  hoare[Mprevec.polyvec_reduce:
        _a  = lift_array768 r ==>
        _a  = lift_array768 res /\
        forall k, 0 <= k < 768 => bpos16 res.[k] (2*Kyber_.q)].

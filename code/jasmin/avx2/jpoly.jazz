@@ -5,11 +5,9 @@ require "poly.jinc"
 
 export fn poly_compress_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_N] a;
-  stack u8[128] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[ap + 2*i];
@@ -21,11 +19,9 @@ export fn poly_compress_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_decompress_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_N] r;
-  stack u8[128] a;
+  reg u16 t;
+  inline int i;
 
   r = _poly_decompress(r, ap);
 
@@ -37,10 +33,9 @@ export fn poly_decompress_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_N] a;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[ap + 2*i];
@@ -53,10 +48,9 @@ export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   r = _poly_frombytes(r, ap);
 
@@ -70,11 +64,9 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_N] a;
-  stack u8[32] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[ap + 2*i];
@@ -86,10 +78,9 @@ export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 
 {
-  inline int i;
-  reg u16 t;
-  reg u8 c;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   r = _poly_frommsg(r, ap);
 
@@ -102,10 +93,10 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_add2_jazz(reg u64 rp,  reg u64 bp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] r;
   stack u16[KYBER_N] b;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[rp + 2*i];
@@ -124,11 +115,11 @@ export fn poly_add2_jazz(reg u64 rp,  reg u64 bp)
 
 export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] a;
   stack u16[KYBER_N] b;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[ap + 2*i];
@@ -147,9 +138,9 @@ export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
 export fn poly_ntt_jazz(reg u64 rp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[rp + 2*i];
@@ -168,9 +159,9 @@ export fn poly_ntt_jazz(reg u64 rp)
 
 export fn poly_invntt_jazz(reg u64 rp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[rp + 2*i];
@@ -189,11 +180,11 @@ export fn poly_invntt_jazz(reg u64 rp)
 
 export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] a;
   stack u16[KYBER_N] b;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[ap + 2*i];
@@ -217,9 +208,9 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
 export fn poly_frommont_jazz(reg u64 rp) 
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[rp + 2*i];
@@ -237,12 +228,12 @@ export fn poly_frommont_jazz(reg u64 rp)
 
 export fn poly_getnoise_eta1_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 {
-  reg u8 d;
-  reg u16 t;
   stack u16[4 * KYBER_N] r;
   stack u8[KYBER_SYMBYTES] seed;
-  inline int i;
   stack u64 srp;
+  reg u16 t;
+  reg u8 d;
+  inline int i;
 
   srp = rp;
 
@@ -262,12 +253,12 @@ export fn poly_getnoise_eta1_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 
 export fn poly_getnoise_eta1122_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 {
-  reg u8 d;
-  reg u16 t;
   stack u16[4 * KYBER_N] r;
   stack u8[KYBER_SYMBYTES] seed;
-  inline int i;
   stack u64 srp;
+  reg u16 t;
+  reg u8 d;
+  inline int i;
 
   srp = rp;
 
@@ -288,9 +279,9 @@ export fn poly_getnoise_eta1122_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 
 export fn poly_reduce_jazz(reg u64 rp)
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[rp + 2*i];
@@ -307,9 +298,9 @@ export fn poly_reduce_jazz(reg u64 rp)
 
 export fn poly_csubq_jazz(reg u64 rp)
 {
-  inline int i;
-  reg u16 t;
   stack u16[KYBER_N] r;
+  reg u16 t;
+  inline int i;
 
   for i = 0 to KYBER_N {
     t = (u16)[rp + 2*i];

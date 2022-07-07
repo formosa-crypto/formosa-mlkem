@@ -4197,6 +4197,7 @@ module M = {
     jqx16_p <- witness;
     jqx16_p <- jqx16;
     qx16 <- (get256 (WArray32.init16 (fun i => jqx16_p.[i])) 0);
+    a <@ _poly_csubq (a);
     i <- 0;
     while (i < 2) {
       t0 <- (get256 (WArray512.init16 (fun i => a.[i])) (8 * i));
@@ -4207,14 +4208,6 @@ module M = {
       t5 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 5));
       t6 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 6));
       t7 <- (get256 (WArray512.init16 (fun i => a.[i])) ((8 * i) + 7));
-      t0 <@ __csubq (t0, qx16);
-      t1 <@ __csubq (t1, qx16);
-      t2 <@ __csubq (t2, qx16);
-      t3 <@ __csubq (t3, qx16);
-      t4 <@ __csubq (t4, qx16);
-      t5 <@ __csubq (t5, qx16);
-      t6 <@ __csubq (t6, qx16);
-      t7 <@ __csubq (t7, qx16);
       tt <- VPSLL_16u16 t1 (W8.of_int 12);
       tt <- (tt `|` t0);
       t0 <- VPSRL_16u16 t1 (W8.of_int 4);
