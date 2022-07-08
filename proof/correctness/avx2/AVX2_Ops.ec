@@ -967,7 +967,7 @@ module OpsV = {
   }
 
   proc iVPMULH_256 (x y: vt16u16) : vt16u16 = {
-    return VPMULH_16u16 x y;
+    return JWord.W16u16.VPMULH_16u16 x y;
   }
 
   proc iVPMULL_16u16 (x y: vt16u16) : vt16u16 = {
