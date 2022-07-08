@@ -1,4 +1,4 @@
-require import AllCore List Int IntDiv StdOrder CoreMap Real Number LoopTransform.
+require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
 require import Array16 Array32 Array64 Array128 Array168 Array256 Array384.
@@ -111,7 +111,7 @@ module EncDec_AVX2 = {
   proc encode12(a : ipoly) : W8.t Array384.t = {
      var fi1,fi2,i,k;
      var r : W8.t Array384.t;
-
+     r <- witness;
      i <- 0;
      while (i < 2) {
        k <- 0;
@@ -134,7 +134,7 @@ module EncDec_AVX2 = {
     var fi1,fi2: int;
     var i;
     var r : W8.t Array384.t;
-
+     r <- witness;
     i <- 0;
     while (i < 2) {
 
@@ -198,7 +198,7 @@ module Kyber_AVX2_cf = {
     var i;
     var t: W16.t;
     var rd:W16.t Array16.t;
-
+    rd <- witness;
     i <- 0;
     while(i < 16) {
       t <@ M.__fqmul(a.[i], b.[i]);
@@ -268,6 +268,8 @@ qed.
 
 equiv eq_decode4:
   EncDec_AVX2.decode4 ~ EncDec.decode4: ={a} ==> ={res}.
+admitted.
+(*
 proof.
   proc.
   seq 2 2: (i{1} = 0 /\ ={a, r, i}) => //.
@@ -309,7 +311,7 @@ proof.
   (* TODO *)
   admit.
 qed.
-
+*)
 
 
 end AVX2_cf.

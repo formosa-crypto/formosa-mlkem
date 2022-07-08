@@ -1,9 +1,9 @@
-require import AllCore List Int IntExtra IntDiv CoreMap.
+require import AllCore List Int IntDiv CoreMap.
 from Jasmin require import JModel.
 require import Array16 Array32 Array128 Array256 Array400 Array768.
 require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
 require import AVX2_Ops.
-require import KyberCPA_avx2.
+require import Jkem_avx2.
 require import KyberPoly_avx2_vec.
 require import KyberPolyvec_avx2_prevec.
 

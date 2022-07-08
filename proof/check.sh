@@ -13,7 +13,7 @@ echo "##### CORRECTNESS #####"
 
 cd avx2
 echo "##### AVX2 #####"
-for f in *.ec;do echo $f;easycrypt compile $f -I ../../security -I ../ -I ../../spec -I ./extraction -I ../../eclib;done
+for f in *.ec;do echo $f;easycrypt compile $f -I ../../security -I ../ -I ../../spec -I ./extraction -I ../../eclib -I ../extraction;done
 
 cd ../../eclib
 echo "##### EXTRA #####"

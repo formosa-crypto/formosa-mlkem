@@ -4,7 +4,7 @@ require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array
 require import W16extra WArray512 WArray32 WArray16.
 require import AVX2_Ops.
 require import Kyber_AVX2_cf.
-require import KyberCPA_avx2.
+require import Jkem_avx2.
 require import KyberPoly_avx2_prevec.
 require import NTT_avx2.
 require import Fq_avx2.
@@ -4109,8 +4109,8 @@ lemma schoolbook_corr a b zetas isign:
         signed_bound32_cxq bp 0 32 2 /\
         zetas = zeta_0 /\
         isign = sign /\
-        (forall k, 0 <= k < 16 => qx16.[k] = KyberCPA_avx2.jqx16.[k]) /\
-        (forall k, 0 <= k < 16 => qinvx16.[k] = KyberCPA_avx2.jqx16.[k]) ==>
+        (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
+        (forall k, 0 <= k < 16 => qinvx16.[k] = jqx16.[k]) ==>
         res = (schoolbook_mul a b zetas isign)].
 proof. admit.
 (* FIXME
@@ -4382,6 +4382,8 @@ lemma poly_tobytes_corr _a (_p : address) mem :
              touches mem Glob.mem{1} _p 384 /\
              load_array384 Glob.mem{1} _p = res{2}].
 proof.
+admitted.
+(*
   proc.
   seq 3 1 : (#{/~a{1}}pre /\
              i{1} = i{2} /\ i{1} = 0 /\
@@ -5024,4 +5026,5 @@ proof.
     smt(@Int @IntDiv @Array384 @W16 @W8 @Ring.IntID @W32 @List).
 
 qed.
+*)
 end KyberPolyAVX.

@@ -1,11 +1,11 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
-require import Array400 Array256 Array64 Array32 Array16 Array8 Array4 Array2p.
+require import Array400 Array256 Array64 Array32 Array16 Array8 Array4 Array2.
 require import WArray800 WArray512 WArray128 WArray128 WArray64 WArray32 WArray16.
 require W16extra.
 require import Fq.
 require import AVX2_Ops.
-require import KyberCPA_avx2.
+require import Jkem_avx2.
 
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
@@ -33,7 +33,6 @@ op f2u128_t4u64 (t: t2u128): t4u64 = Array4.init (fun i => t.[i %/ 2] \bits64 (i
 
 op f16u16_t2u128 (t: t16u16): t2u128 = Array2.init (fun i => pack8_t (W8u16.Pack.init (fun j => t.[8*i + j]))).
 op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16 (i %% 8)).
-
 
 module Mprevec = {
   proc shuffle8 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {
@@ -163,7 +162,7 @@ module Mprevec = {
     var _r: W16.t Array16.t;
     var t: W16.t Array16.t;
 
-    qx16 <- (get256 (WArray32.init16 (fun i => KyberCPA_avx2.jqx16.[i])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
     _qx16 <- lift2poly(qx16);
     i <- 0;
     while (i < 16) {
@@ -268,8 +267,8 @@ module Mprevec = {
 
     hqs <- Array16.init (fun i => hqx16_p1.[i]);
     shift <@
-    Ops.iVPBROADCAST_2u128_8u32(Array4.init (fun i => KyberCPA_avx2.pfm_shift_s.[i]));
-    idx <@ Ops.iVPBROADCAST_2u128_32u8(Array16.init (fun i => KyberCPA_avx2.pfm_idx_s.[i]));
+    Ops.iVPBROADCAST_2u128_8u32(Array4.init (fun i => pfm_shift_s.[i]));
+    idx <@ Ops.iVPBROADCAST_2u128_32u8(Array16.init (fun i => pfm_idx_s.[i]));
     f <@ Ops.iload4u64_8u32(Glob.mem, ap);
     i <- 0;
 
@@ -335,8 +334,8 @@ module Mprevec = {
     var i:int;
     var r:W16.t Array16.t;
 
-    qx16 <- lift2poly (get256 (WArray32.init16 (fun i => KyberCPA_avx2.jqx16.[i])) 0);
-    vx16 <- lift2poly (get256 (WArray32.init16 (fun i => KyberCPA_avx2.jvx16.[i])) 0);
+    qx16 <- lift2poly (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
+    vx16 <- lift2poly (get256 (WArray32.init16 (fun i => jvx16.[i])) 0);
     i <- 0;
 
     while (i < 16) {
@@ -494,7 +493,7 @@ module Mprevec = {
     var z_dw: t8u32;
     var x_dw: t8u32;
 
-    zero <- lift2poly(setw0_256);
+    zero <- lift2poly(W256.zero);
     y <@ Ops.iVPBLEND_16u16(a0, zero, (W8.of_int 170));
     z <@ Ops.iVPBLEND_16u16(a1, zero, (W8.of_int 170));
 
