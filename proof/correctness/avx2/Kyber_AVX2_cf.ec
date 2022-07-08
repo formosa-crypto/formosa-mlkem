@@ -258,9 +258,6 @@ proof.
             have k_m_2: k %% 3 = 2. move : k_m k_m_1 (modz_cmp k 3) => /#.
               smt(@Array384 @Int @IntDiv @List).
   wp; skip; auto => />.
-  move => &1 &2 *.
-  split.
-    smt(@Logic).
     move => rL iR rR iR_tlb _ iR_lb iR_ub.
     have -> //=: iR = 2. move : iR_tlb iR_ub => /#.
     apply Array384.ext_eq.
@@ -315,3 +312,4 @@ qed.
 
 
 end AVX2_cf.
+ 

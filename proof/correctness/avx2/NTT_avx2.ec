@@ -54,20 +54,15 @@ lemma nttpackK: cancel nttpack nttunpack.
 proof.
   rewrite /cancel => x.
   rewrite /nttunpack /nttpack.
-  apply Array256.ext_eq => i i_bnds.
-  rewrite initiE 1:i_bnds /=.
-  rewrite initiE //=; first by rewrite /(nttunpack_idx) initiE 1:i_bnds //=; smt(@Array256 @Int).
-  rewrite initiE //=; first by rewrite /(nttpack_idx) initiE 1:i_bnds //=; smt(@Array256 @Int).
-  have Hi: i \in iota_ 0 256.
-    rewrite mem_iota -andabP //=.
-  move : Hi => /#.
-  smt().
-  admit.
+  print Array256.
+  rewrite -ext_eq_all /all_eq //=.
 qed.
 
 lemma nttunpackK: cancel nttunpack nttpack.
 proof.
-  admit.
+  rewrite /cancel => x.
+  rewrite /nttunpack /nttpack.
+  rewrite -ext_eq_all /all_eq //=.
 qed.
 
 end NTT_Avx2.
