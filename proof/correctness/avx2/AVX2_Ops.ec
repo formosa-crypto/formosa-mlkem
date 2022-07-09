@@ -49,11 +49,15 @@ proof. by apply W8u8.allP. qed.
 
 hint simplify pack2_bits32_red @0.
 
-(* MBB: TO REMOVE *)
-op wmulls : W16.t -> W16.t -> W16.t.
-op packus16 : W16.t -> W8.t.
-op packss16 : W16.t -> W8.t.
-(*****************)
+op packus16(w : W16.t) : W8.t = 
+  if w \slt W16.zero then W8.zero
+  else if (W16.of_int W8.max_uint) \sle w then (W8.of_int W8.max_uint)
+  else (w \bits8 0).
+
+op packss16(w : W16.t) : W8.t = 
+  if w \slt (W16.of_int W8.min_sint) then (W8.of_int W8.min_sint)
+  else if (W16.of_int W8.max_sint) \sle w then (W8.of_int W8.max_sint)
+  else (w \bits8 0).
 
 module Ops = {
   proc itruncate_4u64_2u64(t : t4u64) : t2u64 = {
@@ -136,7 +140,7 @@ module Ops = {
   proc iVPMULL_16u16(x y: t16u16) : t16u16 = {
     var r : t16u16;
 
-    r <- Array16.init (fun i => wmulls x.[i] y.[i]);
+    r <- Array16.init (fun i => ( *) x.[i] y.[i]);
 
     return r;
   }
@@ -925,9 +929,6 @@ type vt16u16 = W256.t.
 type vt32u8 = W256.t.
 type vt2u128 = W256.t.
 
-(* MBB: TO REMOVE *)
-op VPMULHRSW_256 : vt16u16 -> vt16u16 -> vt16u16.
-(*****************)
 
 module OpsV = {
   proc itruncate_4u64_2u64(t : vt4u64) : vt2u64 = {
@@ -979,7 +980,7 @@ module OpsV = {
   }
 
   proc iVPMULHRS_256(x y: vt16u16): vt16u16 = {
-    return VPMULHRSW_256 x y;
+    return VPMULHRS_16u16 x y;
   }
 
   proc iVPMADDWD_256(x y: vt16u16): vt8u32 = {
@@ -1242,9 +1243,7 @@ op is4u64 (x: t4u64) (xv: vt4u64) = xv = W4u64.pack4 [x.[0]; x.[1]; x.[2]; x.[3]
 op is2u128 (x: t2u128) (xv: vt2u128) = xv = W2u128.pack2 [x.[0]; x.[1]].
 
 
-(* TODO *)
-lemma iVPADD_16u16_spec x_ y_ : hoare[Ops.iVPADD_16u16 : x = x_ /\ y = y_ ==> forall i, res.[i] = x_.[i] + y_.[i]].
-admitted.
+lemma iVPADD_16u16_spec x_ y_ : hoare[Ops.iVPADD_16u16 : x = x_ /\ y = y_ ==> forall i, 0 <= i < 16 => res.[i] = x_.[i] + y_.[i]] by proc; auto => /> j Hjl Hjh; rewrite initiE /= //.
 
 equiv eq_itruncate_4u64_2u64 : Ops.itruncate_4u64_2u64 ~ OpsV.itruncate_4u64_2u64 : is4u64 t{1} t{2} ==> is2u64 res{1} res{2}.
 proof.
@@ -1309,19 +1308,16 @@ equiv eq_iVPADD_4u64: Ops.iVPADD_4u64 ~ OpsV.iVPADD_4u64 : is4u64 x{1} x{2} /\ i
 proof. by proc;wp;skip;rewrite /is4u64 /VPADD_4u64. qed.
 
 equiv eq_iVPMULH_256 : Ops.iVPMULH_256 ~ OpsV.iVPMULH_256: is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-(* proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed. *)
-admitted.
+proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed.
 
 equiv eq_iVPMULL_16u16 : Ops.iVPMULL_16u16 ~ OpsV.iVPMULL_16u16: is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-(* proof. proc; by wp; skip; rewrite /is16u16 /VPMULL. qed. *)
-admitted.
+proof. proc; by wp; skip; rewrite /is16u16 /VPMULL. qed.
 
 equiv eq_iVPMULU_256 : Ops.iVPMULU_256 ~ OpsV.iVPMULU_256 : is4u64 x{1} x{2} /\ is4u64 y{1} y{2} ==> is4u64 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is4u64 => /> &1; rewrite /VPMULU_256. qed.
 
 equiv eq_iVPMULHRS_256 : Ops.iVPMULHRS_256 ~ OpsV.iVPMULHRS_256 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-(* proof. by proc;wp;skip;rewrite /is16u16 => /> &1; rewrite /VPMULHRSW_256 /round_scalew. qed. *)
-admitted.
+proof. proc;wp;skip;rewrite /is16u16 => />. qed.
 
 equiv eq_iVPADD_8u32: Ops.iVPADD_8u32 ~ OpsV.iVPADD_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is8u32 res{1} res{2}.
 proof. by proc;wp;skip;rewrite /is8u32 /VPADD_8u32. qed.
@@ -1414,18 +1410,8 @@ qed.
 
 equiv eq_istore32u8: Ops.istore32u8 ~ OpsV.istore32u8 : ={mem, p} /\ is32u8 w{1} w{2} ==> ={res}.
 proof.
-  admit. (* FIXME:
-  proc.
-  wp. skip.
-  simplify.
-  move => &1 &2 [#] mem_eq p_eq w_eq.
-  rewrite storeW256E.
-  congr.
-  + rewrite p_eq //=.
-  + rewrite w_eq //=.
-    rewrite -of_listK.
-    smt(@List @Int @W32u8).
-  *)
+  proc; wp; skip  => &1 &2 /> @/is32u8 ->.
+  by rewrite storeW256E;congr;rewrite /to_list /mkseq /= !pack32bE //= -iotaredE /=. 
 qed.
 
 equiv eq_iload32u8: Ops.iload32u8 ~ OpsV.iload32u8 : ={mem, p} ==> is32u8 res{1} res{2}.
@@ -1462,24 +1448,16 @@ proof.
 qed.
 
 equiv eq_iVPACKUS_8u32 : Ops.iVPACKUS_8u32 ~ OpsV.iVPACKUS_8u32 : is8u32 x{1} x{2} /\ is8u32 y{1} y{2} ==> is16u16 res{1} res{2}.
-(* proof. proc; wp; skip; rewrite /is8u32 /VPACKUS_8u32 /packus_4u32 //=. qed. *)
-admitted.
+proof. proc; wp; skip => /> &1 &2 @/is8u32 -> -> @/VPACKUS_8u32 @/VPACKUS_4u32 @/packus_4u32 @/is16u16 //=. by rewrite -W2u128_W16u16.
+qed. 
 
 equiv eq_iVPACKUS_16u16 : Ops.iVPACKUS_16u16 ~ OpsV.iVPACKUS_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is32u8 res{1} res{2}.
-(*
-proof.
-proc; wp; skip; rewrite /is16u16 /VPACKUS_16u16 /packus_8u16 //=.
+proof. proc; wp; skip => /> &1 &2 @/is32u8 -> -> @/VPACKUS_16u16 @/VPACKUS_8u16 @/packus_8u16 //=. 
 qed.
-*)
-admitted.
 
 equiv eq_iVPACKSS_16u16 : Ops.iVPACKSS_16u16 ~ OpsV.iVPACKSS_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is32u8 res{1} res{2}.
-(* 
-proof.
-proc; wp; skip; rewrite /is16u16 /VPACKSS_16u16 /packss_8u16 /packss16 //=.
+proof. proc; wp; skip => /> &1 &2 @/is32u8 -> -> @/VPACKSS_16u16 @/VPACKSS_8u16 @/packss_8u16 //=. 
 qed.
-*)
-admitted.
 
 equiv eq_iVPERM2I128_4u64 : Ops.iVPERM2I128_4u64 ~ OpsV.iVPERM2I128_4u64 :
   is4u64 x{1} x{2} /\ is4u64 y{1} y{2} /\ ={p} ==> is4u64 res{1} res{2}.
@@ -1557,7 +1535,9 @@ lemma pack32_bits64 (x: t32u8) (i:int): 0 <= i < 4 =>
     = pack8 [x.[8 * i]; x.[8 * i + 1]; x.[8 * i + 2]; x.[8 * i + 3];
             x.[8 * i + 4]; x.[8 * i + 5]; x.[8 * i + 6]; x.[8 * i + 7]].
 proof.
-admit. (* FIXME: by have /= <- [#|] -> := mema_iota 0 8.*) qed.
+move => Hi. rewrite bits64_W32u8_red //=; congr;congr => /=. 
+by rewrite /of_list /= !initiE /= /#. 
+qed.
 
 equiv eq_iVPERMQ_32u8 : Ops.iVPERMQ_32u8 ~ OpsV.iVPERMQ_32u8 : is32u8 x{1} x{2} /\ ={p} ==> is32u8 res{1} res{2}.
 proof.
@@ -1725,10 +1705,14 @@ equiv eq_iVPUNPCKL_4u64_16u16: Ops.iVPUNPCKL_4u64_16u16 ~ OpsV.iVPUNPCKL_4u64_16
 proof. by proc; wp; skip; rewrite /is16u16 => &1 &2 />; cbv delta; apply W16u16.allP. qed.
 
 equiv eq_iVPUNPCKH_16u16: Ops.iVPUNPCKH_16u16 ~ OpsV.iVPUNPCKH_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-proof. proc; wp; skip; rewrite /is16u16 => />; cbv delta. admit. (* FIXME *) qed.
+proof. proc; wp; skip; rewrite /is16u16 => /> @/VPUNPCKH_16u16 /= @/VPUNPCKH_8u16 /= &1.
+by rewrite /interleave_gen /get_hi_2u64 /= W2u128_W16u16.
+qed.
 
 equiv eq_iVPUNPCKL_16u16: Ops.iVPUNPCKL_16u16 ~ OpsV.iVPUNPCKL_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-proof. proc; wp; skip; rewrite /is16u16 => />; cbv delta. admit. (* FIXME *) qed.
+proof. proc; wp; skip; rewrite /is16u16 => /> @/VPUNPCKL_16u16 /= @/VPUNPCKL_8u16 /= &1.
+by rewrite /interleave_gen /get_hi_2u64 /= W2u128_W16u16.
+ qed.
 
 equiv eq_iVEXTRACTI128: Ops.iVEXTRACTI128 ~ OpsV.iVEXTRACTI128 :
   is4u64 x{1} x{2} /\ ={p} ==> is2u64 res{1} res{2}.
@@ -1857,10 +1841,8 @@ equiv eq_iVPBLEND_16u16 : Ops.iVPBLEND_16u16 ~ OpsV.iVPBLEND_16u16 :
   is16u16 x{1} x{2} /\ is16u16 y{1} y{2} /\ ={p}
   ==>
   is16u16 res{1} res{2}.
-(*
 proof.
-  proc; wp; skip; rewrite /is16u16 /VPBLENDW_256 => /> &1 &2 /=.
-  apply W16u16.allP => /=.
+  proc; wp; skip; rewrite /is16u16 /= /VPBLENDW_256 => /> &1 &2 /=; congr; congr => /=.
   split; 1: by case (p{2}.[0]).
   split; 1: by case (p{2}.[1]).
   split; 1: by case (p{2}.[2]).
@@ -1868,7 +1850,7 @@ proof.
   split; 1: by case (p{2}.[4]).
   split; 1: by case (p{2}.[5]).
   split; 1: by case (p{2}.[6]).
-  split; 1: by case (p{2}.[7]).
+  split; 1: by case (p{2}.[7]). 
   split; 1: by case (p{2}.[0]).
   split; 1: by case (p{2}.[1]).
   split; 1: by case (p{2}.[2]).
@@ -1878,8 +1860,6 @@ proof.
   split; 1: by case (p{2}.[6]).
   by case (p{2}.[7]).
 qed.
-*)
-admitted.
 
 equiv eq_iVPBLENDW_128 : Ops.iVPBLENDW_128 ~ OpsV.iVPBLENDW_128 :
   is8u16 x{1} x{2} /\ is8u16 y{1} y{2} /\ ={p}

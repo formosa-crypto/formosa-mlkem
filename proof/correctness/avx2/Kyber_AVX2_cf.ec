@@ -5,18 +5,6 @@ require import Array16 Array32 Array64 Array128 Array168 Array256 Array384.
 require import Jkem.
 require import Kyber.
 
-(* TODO: prove equivalence w/ EncDec using LoopTransform
-
-clone import ExactIter as AVX2Wrapper with
-    type t <- int * W8.t Array128.t * ipoly,
-    op c <- 8,
-    op step <- 16
-    proof * by done.
-
-
-n.b: check libjc/proof/crypto_stream/chacha20/ChaCha20_pavx2_cf.ec
-*)
-
 module EncDec_AVX2 = {
    proc decode12(a : W8.t Array384.t) : ipoly = {
        var i;
@@ -265,50 +253,12 @@ qed.
 
 equiv eq_decode4:
   EncDec_AVX2.decode4 ~ EncDec.decode4: ={a} ==> ={res}.
-admitted.
-(*
-proof.
-  proc.
-  seq 2 2: (i{1} = 0 /\ ={a, r, i}) => //.
-  wp; skip; auto => />.
-  async while
-    [ (fun r => i < r), (i{1} + 1) ]
-    [ (fun r => i < 8 * r), (i{1} + 1) ]
-      (i{1} < 16 /\ i{2} < 16 * 8) (!(i{1} < 16))
-    :
-      (={r, a} /\ i{2} = 8 * i{1} /\ (0 <= i{2})) => //=.
-  + by move=> &1 &2 />; smt(@Int).
-  + by move=> &1 &2 />; smt(@Int).
-  + by move=> &1 &2 />; smt(@Int).
-  + by move=> &2 />; exfalso => &1; smt(@Int).
-  + by move=> &2 />; exfalso => &1; smt(@Int).
-  + move => v1 v2.
-    rcondt {1} 1; 1: by auto => /> /#.
-    rcondf {1} 4; 1: by auto; conseq (_: true); auto.
-    wp; while(={a, r}
-              /\ i{2} = 8 * i{1} + j{1}
-              /\ v1 = (i{1} + 1)
-              /\ 0 <= i{1} < 16
-              /\ 0 <= j{1} <= 8) => /=; last by auto; smt(@Int).
-    wp; skip => &1 &2 /= />.
-    move => i1_lb i1_tub j_lb j1_ub j1_tub si_ub si_tub />.
-    split.
-      split. smt(@Int).
-      smt(@Int).
-    split.
-      smt(@Int).
-      admit. (* FIXME *)
-    while true (16 - i) => //; auto => />.
-      unroll for 2.
-      wp. skip. trivial.
-    auto => /#.
-    while true (128 - i); last first.
-    wp; skip; auto => /#.
-    move => z; wp. auto => /#.
-  (* TODO *)
-  admit.
+proc.
+unroll for {1} ^while.
+do  16!(unroll for {1} ^while).
+unroll for {2} ^while.
+by auto => />.
 qed.
-*)
 
 
 end AVX2_cf.
