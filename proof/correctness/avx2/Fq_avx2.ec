@@ -9,7 +9,6 @@ require import Kyber_AVX2_cf.
 require import KyberPoly.
 require import NTT_Fq.
 require import Jkem.
-pragma +oldip.
 
 theory Fq_avx2.
 
@@ -163,27 +162,18 @@ proof.
 
     rewrite (_: w %% 4294967296 %/ 65536 %/ 1024 = w %% 4294967296 %/ 67108864) //=.
       smt(@Int @IntDiv).
-    (* rewrite W16.of_sintK /= /W16.smod /=.
-    have -> /=: !(32768 <= w %% 4294967296 %/ 67108864 %% 65536).  smt(@Int @IntDiv).
-    rewrite of_uintK.
-    rewrite (pmod_small _ W32.modulus).
-      smt(@Int @IntDiv).
-    rewrite (pmod_small _ W16.modulus).
-      smt(@Int @IntDiv).
-    rewrite of_uintK.
-    smt(@Int @IntDiv) *) admit.
+    rewrite W32.of_uintK /= /W16.smod /= /#.
   (*****)
-  move => r_lt0.
-    move : (W16.to_sint_cmp r{2}.[x]) => rs_bnds.
-    rewrite of_uintK.
-    (* TODO: move to IntDiv? *)
+  move =>  /= r_lt0.
+    move : (W16.to_sint_cmp r{2}.[x]) => /= rs_bnds.
+    rewrite of_uintK /=.
     have smod_red : forall m, 0 < m => forall x, -m <= x < 0 => x %% m = x + m.
       move => m m_lb x0. smt(@Int @IntDiv).
     have w_tub: to_sint r{2}.[x] * 2^15 <= w.
       rewrite /w. smt(@Int @IntDiv @W16).
-    have w'_sl16_lb: W16.min_sint < to_sint r{2}.[x] * 2^15 %/ W16.modulus.
+    have /= w'_sl16_lb: W16.min_sint < to_sint r{2}.[x] * 2^15 %/ W16.modulus.
       move : rs_bnds. simplify. smt(@Int @IntDiv @W16).
-    have w_sl16_lb: W16.min_sint < w %/ W16.modulus.
+    have /= w_sl16_lb: W16.min_sint < w %/ W16.modulus.
       move : rs_bnds. simplify. smt(@Int @IntDiv @W16).
 
     rewrite /smod /=.
@@ -198,45 +188,11 @@ proof.
       rewrite smod_red //=.
         by move : w_sl16_lb; simplify; smt(@Int @IntDiv @W16).
       apply lez_add2r. apply leq_div2r. apply w_tub. trivial.
-    rewrite -(modz_pow2_div 32 16) //=.
-    (* rewrite of_sintK.
-    have wdw_lb : W32.max_sint < (w %% 4294967296).
-      rewrite /w.
-      apply (ltz_trans (to_sint r{2}.[x] * 2^15 %% 4294967296) W32.max_sint _).
-      rewrite smod_red //=.
-        by move : w'_sl16_lb; simplify; smt(@Int @IntDiv @W32).
-      move : w'_sl16_lb. simplify. smt(@Int @IntDiv @W32).
-      rewrite smod_red //=.
-        by move : w'_sl16_lb; simplify; smt(@Int @IntDiv @W32).
-      rewrite smod_red //=.
-        by move : w_sl16_lb; simplify; smt(@Int @IntDiv @W32).
-      apply ltz_add2r. move : r_lt0 w_tub. rewrite -ltzNge /w /=.
-      smt(@Int @IntDiv @W16 @W32).
-    have w_sr_lb: -32 <= (w %% 4294967296 %/ 65536 - 65536) %/ 1024.
-      rewrite {2}(_: 65536 = 64 * 1024). by trivial.
-      have ->: (w %% 4294967296 %/ 65536 - 64 * 1024) %/ 1024 = w %% 4294967296 %/ 65536 %/ 1024 - 64.
-        smt(@Int @IntDiv).
-      have w_sr_tlb: 32 <= w %% 4294967296 %/ 65536 %/ 1024.
-        move : wdw_lb => /#.
-      move : w_sr_tlb => /#.
-    have ->: W16.smod ((w %% 4294967296 %/ 65536 - 65536) %/ 1024 %% W16.modulus) =
-             (w %% 4294967296 %/ 65536 - 65536) %/ 1024 %% W16.modulus - 65536.
-      rewrite /smod /=.
-      rewrite (smod_red 65536) 1://=.
-      move : w_sr_lb => /#.
-    have -> //=: 32768 <= (w %% 4294967296 %/ 65536 - 65536) %/ 1024 + 65536.
-      smt(@Int @IntDiv).
-    have w_sr_ub: (w %% 4294967296 %/ 65536 - 65536) %/ 1024 < 0.
-      rewrite {2}(_: 65536 = 64 * 1024). by trivial.
-      have ->: (w %% 4294967296 %/ 65536 - 64 * 1024) %/ 1024 = w %% 4294967296 %/ 65536 %/ 1024 - 64.
-        smt(@Int @IntDiv).
-      have w_sr_tub: w %% 4294967296 %/ 65536 %/ 1024 < 64.
-        move : wdw_lb => /#.
-      move : w_sr_tub => /#.
-    rewrite (smod_red 65536) 1://= //=. by move : w_sr_lb w_sr_ub => /#.
-    rewrite of_uintK.
-    done. *)
-    admit.
+    rewrite -(modz_pow2_div 32 16) //=. 
+    congr; congr. 
+
+    apply W16.to_uint_eq; rewrite !of_uintK /=.
+    smt().
 qed.
 
 lemma barret_red16x_ll:
@@ -378,59 +334,11 @@ proof.
   rewrite W16.of_sintK /(`<<`) /sigextu32 /truncateu16 /=.
   rewrite shlMP; first by smt().
   rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK /= /R /=.
-  admit.
-  (*
-  rewrite of_sintK.
-  rewrite of_sintK 1:/=.
-  rewrite (W16.of_sintK 3329) /= /(W16.smod 3329) /=.
-  rewrite /(W16.smod 62209) /=.
-  congr.
-  rewrite -(mulz_modl W16.modulus _ W16.modulus) 1://=.
-  do rewrite of_uintK.
-  do (rewrite modz_dvd 1://=).
-  rewrite (_: (W16.smod (to_sint a{2}.[x] * to_sint b{2}.[x] %% 65536) * - 3327) %% 65536 =
-              to_sint a{2}.[x] * to_sint b{2}.[x] %% 65536 * (-3327) %% 65536).
-    rewrite /smod.
-    case (2 ^ (16 - 1) <= to_sint a{2}.[x] * to_sint b{2}.[x] %% 65536) => lb.
-      rewrite mulzDl.
-      rewrite (_: (- W16.modulus) * -3327 = W16.modulus * 3327). by trivial.
-      smt(@Int @IntDiv).
-    trivial.
-  rewrite modzMml (pmod_small 3327 65536) 1://= -modzMmr //=.
-  have ->: W32.smod (to_sint a{2}.[x] * to_sint b{2}.[x] * 62209 %% 65536 * 65536) %/ 65536 =
-           W16.smod (to_sint a{2}.[x] * to_sint b{2}.[x] * 62209 %% 65536 * 65536 %/ 65536).
-    rewrite /smod /=.
-    case (2147483648 <= to_sint a{2}.[x] * to_sint b{2}.[x] * 62209 %% 65536 * 65536) => lb.
-      have -> /=: 32768 <= to_sint a{2}.[x] * to_sint b{2}.[x] * 62209 %% 65536 * 65536 %/ 65536.
-        move : lb => /#.
-      smt(@Int @IntDiv).
-      have -> //=: ! 32768 <= to_sint a{2}.[x] * to_sint b{2}.[x] * 62209 %% 65536 * 65536 %/ 65536.
-        move : lb => /#.
-
-  rewrite mulzK 1://=.
-  pose tmp := (to_sint a{2}.[x] * to_sint b{2}.[x] - (smod (to_sint a{2}.[x] * to_sint b{2}.[x] * 62209 %% 65536))%W16 * 3329) %% 4294967296.
-  rewrite (_: W32.smod tmp %/ 65536 = W16.smod (tmp %/ 65536)).
-    rewrite /smod /=.
-    case (2147483648 <= tmp) => lb.
-      have -> /=: 32768 <= tmp %/ 65536.
-        move : lb => /#.
-      smt(@Int @IntDiv).
-      have -> //=: !32768 <= tmp %/ 65536.
-        move : lb => /#.
-  rewrite /tmp.
-  rewrite (modz_pow2_div 32 16 _) 1://= //=.
-  move : tmp => _.
-  pose tmp := to_sint a{2}.[x] * to_sint b{2}.[x] * 62209 %% 65536.
-  have a_b_bns: -2^30 + 2^15 <= to_sint a{2}.[x] * to_sint b{2}.[x] <= 2^30.
-    move : (W16.to_sint_cmp a{2}.[x]) (W16.to_sint_cmp b{2}.[x]) => />.
-    smt(@Int @IntDiv).
-  admit.
-  (* FIXME:
-  case (2^16 <= to_sint a{2}.[x] * to_sint b{2}.[x]) => a_b_tlb.
-    have a_b_rep: forall d, 0 <= d => to_sint a{2}.[x] * to_sint b{2}.[x] = 2^16 + d.
-      move => d d_i.
-      move : a_b_tlb a_b_bns.
-  *)*)
+  apply W16.to_uint_eq; rewrite !of_uintK /=.
+  rewrite  /(W16.smod 3329) /= /(W16.smod 62209) /=.
+  rewrite -(mulz_modl W16.modulus _ W16.modulus) 1://= /=.
+  rewrite /(to_sint (a{2}.[x] * b{2}.[x] * (of_int 62209)%W16)) /= to_uintM /= modz_dvd //=.
+  admit. (* to do *)
 qed.
 
 lemma fqmulx16_ll:
@@ -461,8 +369,6 @@ proof.
   rewrite /as_sint //=.
   rewrite qE (_: 3329 %/ 2 = 1664) 1://=.
   rewrite /packss16 //=.
-  admit.
-  (*
   do rewrite (fun_if W8.msb).
 
   rewrite inFqK (pmod_small _ q); first by rewrite qE abnd.
@@ -544,7 +450,7 @@ proof.
     move : abnd => /#.
   case (to_sint a = 0) => a_0.
     rewrite a_0 //=.
-    smt(@W32). *)
+    smt(@W32). 
 qed.
 
 end Fq_avx2.
