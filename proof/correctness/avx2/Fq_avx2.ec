@@ -338,7 +338,17 @@ proof.
   rewrite  /(W16.smod 3329) /= /(W16.smod 62209) /=.
   rewrite -(mulz_modl W16.modulus _ W16.modulus) 1://= /=.
   rewrite /(to_sint (a{2}.[x] * b{2}.[x] * (of_int 62209)%W16)) /= to_uintM /= modz_dvd //=.
-  admit. (* to do *)
+
+  pose abx := to_sint a{2}.[x] * to_sint b{2}.[x].
+  pose abxu := W16.smod (to_uint (a{2}.[x] * b{2}.[x]) * 62209 %% 65536) * 3329.
+  pose abxs := W32.smod (abx * 62209 %% 65536 * 65536) %/ 65536 * 3329.
+  rewrite /smod /=.
+  case (2147483648 <= (abx - abxs) %% 4294967296); last first.
+  + move => *.
+    rewrite IntDiv.dvdz_mod_div //= modz_mod. 
+    rewrite -modzDm. 
+    admit.
+  admit.
 qed.
 
 lemma fqmulx16_ll:
@@ -352,9 +362,66 @@ lemma fqmulx16_corr _a _b:
           (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) ==>
           forall k, 0 <= k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])] = 1%r.
 proof.
-admit. (* FIXME:
-  conseq fqmulx16_ll. progress. (fqmulx16_corr_h _a _b). qed.
-*)
+bypr => &m [#] /= H H0 H1 H2.
+print Kyber_AVX2_cf.
+have -> : 1%r = 
+Pr[Kyber_AVX2_cf.__fqmul_x16(a{m}, b{m}) @ &m :
+   forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])]; last by  byequiv fqmulx16_corr_h => //=. 
+byphoare (_: a = a{m} /\ b = b{m} ==> forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k]))=> //=.
+proc; unroll for 3.
+wp; call (fqmul_corr _a.[15] _b.[15]).
+wp; call (fqmul_corr _a.[14] _b.[14]).
+wp; call (fqmul_corr _a.[13] _b.[13]).
+wp; call (fqmul_corr _a.[12] _b.[12]).
+wp; call (fqmul_corr _a.[11] _b.[11]).
+wp; call (fqmul_corr _a.[10] _b.[10]).
+wp; call (fqmul_corr _a.[9] _b.[9]).
+wp; call (fqmul_corr _a.[8] _b.[8]).
+wp; call (fqmul_corr _a.[7] _b.[7]).
+wp; call (fqmul_corr _a.[6] _b.[6]).
+wp; call (fqmul_corr _a.[5] _b.[5]).
+wp; call (fqmul_corr _a.[4] _b.[4]).
+wp; call (fqmul_corr _a.[3] _b.[3]).
+wp; call (fqmul_corr _a.[2] _b.[2]).
+wp; call (fqmul_corr _a.[1] _b.[1]).
+wp; call (fqmul_corr _a.[0] _b.[0]).
+auto => />. 
+rewrite /lift_array16 tP /= in H.
+rewrite /lift_array16 tP /= in H0.
+split; 1: by  move : (H 0 _) (H0 0 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 1 _) (H0 1 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 2 _) (H0 2 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 3 _) (H0 3 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 4 _) (H0 4 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 5 _) (H0 5 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 6 _) (H0 6 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 7 _) (H0 7 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 8 _) (H0 8 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 9 _) (H0 9 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 10 _) (H0 10 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 11 _) (H0 11 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 12 _) (H0 12 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 13 _) (H0 13 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 14 _) (H0 14 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????;split; 1: by  move : (H 15 _) (H0 15 _) => //; rewrite mapiE //= => -> -> /=. 
+move => ????k??. 
+case (k = 0); 1: by move => *; do 15!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 1); 1: by move => *; do 14!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 2); 1: by move => *; do 13!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 3); 1: by move => *; do 12!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 4); 1: by move => *; do 11!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 5); 1: by move => *; do 10!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 6); 1: by move => *; do 9!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 7); 1: by move => *; do 8!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 8); 1: by move => *; do 7!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 9); 1: by move => *; do 6!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 10); 1: by move => *; do 5!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 11); 1: by move => *; do 4!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 12); 1: by move => *; do 3!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 13); 1: by move => *; do 2!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 14); 1: by move => *; do 1!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 15); 1: by move => *; rewrite Array16.set_eqiE /#.
+by smt().
 qed.
 
 lemma compress_avx2_impl_small (a: W16.t):
