@@ -889,7 +889,7 @@ module Ops = {
     return r;
   }
 
-  proc iVPMOVMSKB_u256_u32(x: t32u8): W32.t = {
+  proc iVPMOVMSKB_u256u32(x: t32u8): W32.t = {
     var rb: bool list;
 
     rb <- mkseq (fun i => W8.msb(x.[i])) 32;
@@ -967,7 +967,7 @@ module OpsV = {
   }
 
   proc iVPMULH_256 (x y: vt16u16) : vt16u16 = {
-    return JWord.W16u16.VPMULH_16u16 x y;
+    return VPMULH_16u16 x y;
   }
 
   proc iVPMULL_16u16 (x y: vt16u16) : vt16u16 = {
@@ -1211,8 +1211,8 @@ module OpsV = {
     return VPSHUFB_256 x m;
   }
 
-  proc iVPMOVMSKB_u256_u32(x: vt32u8): W32.t = {
-    return VPMOVMSKB_u256_u32 x;
+  proc iVPMOVMSKB_u256u32(x: vt32u8): W32.t = {
+    return VPMOVMSKB_u256u32 x;
   }
 
   proc iVMOVSLDUP_8u32_16u16(x: vt16u16): vt16u16 = {
@@ -1988,11 +1988,11 @@ do 32?(rewrite x_lh_ls_get 1:modz_cmp 1:// || rewrite x_uh_ls_get 1:modz_cmp 1:/
 trivial.
 qed.
 
-equiv eq_iVPMOVMSKB_u256_u32 : Ops.iVPMOVMSKB_u256_u32 ~ OpsV.iVPMOVMSKB_u256_u32:
+equiv eq_iVPMOVMSKB_u256u32 : Ops.iVPMOVMSKB_u256u32 ~ OpsV.iVPMOVMSKB_u256u32:
   is32u8 x{1} x{2} ==> ={res}.
 proof.
 proc; wp; skip.
-rewrite /is32u8 /VPMOVMSKB_u256_u32 /=.
+rewrite /is32u8 /VPMOVMSKB_u256u32 /=.
 move => &1 &2 x_eq.
 rewrite x_eq.
 rewrite -get_unpack8 //=.

@@ -242,7 +242,7 @@ module Mvec = {
       f1 <@ OpsV.iVPSUB_16u16(f1, hhq);
       f0 <@ OpsV.iVPACKSS_16u16(f0, f1);
       f0 <@ OpsV.iVPERMQ_32u8(f0, (W8.of_int 216));
-      c <@ OpsV.iVPMOVMSKB_u256_u32(f0);
+      c <@ OpsV.iVPMOVMSKB_u256u32(f0);
       Glob.mem <-
       storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
       i <- i + 1;
@@ -847,7 +847,7 @@ proof.
   proc.
   while(={i, rp, a, aux, Glob.mem}  /\ aux{1} = 8 /\ 0 <= i{1} /\ is16u16 hq{1} hq{2} /\ is16u16 hhq{1} hhq{2}).
     wp.
-    call eq_iVPMOVMSKB_u256_u32.
+    call eq_iVPMOVMSKB_u256u32.
     wp.
     call eq_iVPERMQ_32u8.
     wp.

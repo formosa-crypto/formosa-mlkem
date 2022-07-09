@@ -54,7 +54,6 @@ lemma nttpackK: cancel nttpack nttunpack.
 proof.
   rewrite /cancel => x.
   rewrite /nttunpack /nttpack.
-  print Array256.
   rewrite -ext_eq_all /all_eq //=.
 qed.
 

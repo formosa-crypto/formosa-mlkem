@@ -233,7 +233,7 @@ module Mprevec = {
 
       f0_b <@ Ops.iVPERMQ_32u8(f0_b, (W8.of_int 216));
 
-      c <@ Ops.iVPMOVMSKB_u256_u32(f0_b);
+      c <@ Ops.iVPMOVMSKB_u256u32(f0_b);
 
       Glob.mem <-
       storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
