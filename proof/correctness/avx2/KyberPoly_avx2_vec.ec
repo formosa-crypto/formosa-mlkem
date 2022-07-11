@@ -357,7 +357,7 @@ module Mvec = {
       f0 <@ OpsV.iVPMADDUBSW_256(f0, shift2);
       f2 <@ OpsV.iVPMADDUBSW_256(f2, shift2);
       f0 <@ OpsV.iVPACKUS_16u16(f0, f2);
-      f0 <@ OpsV.iVPERMD(f0, permidx); (* FIXME: extracted code has arguments swapped, which is wrong *)
+      f0 <@ OpsV.iVPERMD(permidx,f0); 
       Glob.mem <@ OpsV.istore32u8(Glob.mem, rp + (W64.of_int (32 * i)), f0);
       i <- i + 1;
     }
@@ -1532,7 +1532,7 @@ proof.
   proc.
   while(={rp, ap, i, aux, q, mask, shift, shufbidx, Glob.mem}).
   inline *.
-  wp. skip.  auto => />. admit. 
+  wp. skip.  auto => />. 
   inline *.
   wp. skip. auto => />.
 qed.
@@ -1544,6 +1544,7 @@ proof.
   while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
   inline *.
   wp. skip. auto => />.
+  move => &2 H; congr. print VPERMD.
   admit. (* FIXME: PERMD semantics in eclib *)
   inline OpsV.iVPBROADCAST_16u16.
   wp.

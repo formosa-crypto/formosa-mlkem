@@ -11,10 +11,10 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   stack u8[64] buf;
   stack u8[KYBER_SYMBYTES] publicseed noiseseed;
   stack u8[32] inbuf;
-  reg u8 c;
+  reg u64 t64;
   reg u64 zero;
   reg u8 nonce;
-  reg u64 i, j;
+  inline int i;
 
   stack u64 spkp;
   stack u64 sskp;
@@ -22,26 +22,20 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   spkp = pkp;
   sskp = skp;
 
-  i = 0;
-  while (i < KYBER_SYMBYTES)
+  for i=0 to KYBER_SYMBYTES/8
   {
-    c = (u8)[randomnessp + i];
-    inbuf[(int) i] = c;
-    i += 1;
+    t64 = (u64)[randomnessp + 8*i];
+    inbuf[u64 i] = t64;
   }
 
   buf = _sha3512_32(buf, inbuf);
 
-  i = 0;
-  j = KYBER_SYMBYTES;
-  while (i < KYBER_SYMBYTES)
+  for i=0 to KYBER_SYMBYTES/8
   {
-    c = buf[(int)i];
-    publicseed[(int)i] = c;
-    c = buf[(int)j];
-    noiseseed[(int)i] = c;
-    i += 1;
-    j += 1;
+    t64 = buf[u64 i];
+    publicseed[u64 i] = t64;
+    t64 = buf[u64 i + KYBER_SYMBYTES/8];
+    noiseseed[u64 i] = t64;
   }
 
   zero = 0; 
@@ -80,14 +74,12 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
   __polyvec_tobytes(skp, skpv);
   __polyvec_tobytes(pkp, pkpv);
 
-  i = 0;
   pkp += KYBER_POLYVECBYTES; 
-  while (i < KYBER_SYMBYTES)
+  for i=0 to KYBER_SYMBYTES/8
   {
-    c = publicseed[(int)i];
-    (u8)[pkp] = c;
-    pkp += 1;
-    i += 1;
+    t64 = publicseed[u64 i];
+    (u64)[pkp] = t64;
+    pkp += 8;
   }
 }
 
@@ -98,20 +90,20 @@ fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[KYB
   stack u16[KYBER_K*KYBER_VECN] aat;
   stack u16[KYBER_N] k poly epp v poly0 poly1 poly2;
   stack u8[KYBER_SYMBYTES] publicseed;
-  reg u64 i j;
+  reg u64 i j t64;
   reg u64 ctp;
   reg u16 t;
-  reg u8 c nonce;
+  reg u8 nonce;
 
   pkpv = __polyvec_frombytes(pkp);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES;
-  while (i < KYBER_SYMBYTES)
+  while (i < KYBER_SYMBYTES/8)
   {
-    c = (u8)[pkp];
-    publicseed[(int)i] = c;
-    pkp += 1;
+    t64 = (u64)[pkp];
+    publicseed.[u64 8 * (int)i] = t64;
+    pkp += 8;
     i += 1;
   }
 
@@ -166,9 +158,9 @@ fn __iindcpa_enc(reg ptr u8[KYBER_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
   stack u16[KYBER_K*KYBER_VECN] aat;
   stack u16[KYBER_N] k poly epp v poly0 poly1 poly2;
   stack u8[KYBER_SYMBYTES] publicseed;
-  reg u64 i j;
+  reg u64 i j t64;
   reg u16 t;
-  reg u8 c nonce;
+  reg u8 nonce;
   stack ptr u8[KYBER_CT_LEN] sctp;
 
   sctp = ctp;
@@ -177,11 +169,11 @@ fn __iindcpa_enc(reg ptr u8[KYBER_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
 
   i = 0;
   pkp += KYBER_POLYVECBYTES;
-  while (i < KYBER_SYMBYTES)
+  while (i < KYBER_SYMBYTES/8)
   {
-    c = (u8)[pkp];
-    publicseed[(int)i] = c;
-    pkp += 1;
+    t64 = (u64)[pkp];
+    publicseed.[u64 8*(int)i] = t64;
+    pkp += 8;
     i += 1;
   }
 
