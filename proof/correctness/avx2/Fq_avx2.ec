@@ -198,14 +198,75 @@ qed.
 lemma barret_red16x_ll:
   islossless Mprevec.red16x by proc; islossless.
 
-lemma barret_red16x_corr a:
+lemma barret_red16x_corr _a:
   phoare [Mprevec.red16x:
-          a = lift_array16 r /\
+          _a = lift_array16 r /\
           (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
           (forall k, 0 <= k < 16 => vx16.[k] = jvx16.[k]) ==>
-          forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC a.[k] 26] = 1%r.
+          forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC _a.[k] 26] = 1%r.
 proof.
-admit. (* FIXME: by conseq barret_red16x_ll (barret_red16x_corr_h). *)
+bypr => &m [#] /= H H0 H1.
+have -> : 1%r = 
+Pr[Kyber_AVX2_cf.__red_x16(r{m}) @ &m :
+   forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = BREDC (_a.[k]) 26]; last first. 
++ byequiv barret_red16x_corr_h => //=; split. 
+  + by move => k kb; rewrite (H0 k kb) /= get_of_list // /= /#. 
+   by move => k kb; rewrite (H1 k kb) /= get_of_list // /= /#. 
+
+byphoare (_: r = r{m} ==> forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = BREDC (_a.[k]) 26)=> //=.
+proc; unroll for 2.
+wp; call (barrett_reduce_corr _a.[15]).
+wp; call (barrett_reduce_corr _a.[14]).
+wp; call (barrett_reduce_corr _a.[13]).
+wp; call (barrett_reduce_corr _a.[12]).
+wp; call (barrett_reduce_corr _a.[11]).
+wp; call (barrett_reduce_corr _a.[10]).
+wp; call (barrett_reduce_corr _a.[9]).
+wp; call (barrett_reduce_corr _a.[8]).
+wp; call (barrett_reduce_corr _a.[7]).
+wp; call (barrett_reduce_corr _a.[6]).
+wp; call (barrett_reduce_corr _a.[5]).
+wp; call (barrett_reduce_corr _a.[4]).
+wp; call (barrett_reduce_corr _a.[3]).
+wp; call (barrett_reduce_corr _a.[2]).
+wp; call (barrett_reduce_corr _a.[1]).
+wp; call (barrett_reduce_corr _a.[0]).
+auto => />. 
+rewrite /lift_array16 tP /= in H.
+split; 1: by  move : (H 0 _)  => //; rewrite mapiE //= => -> /=. 
+move => ???;split; 1: by  move : (H 1 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 2 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 3 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 4 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 5 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 6 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 7 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 8 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 9 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 10 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 11 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 12 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 13 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 14 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???;split; 1: by  move : (H 15 _)  => //; rewrite mapiE //= => ->  /=. 
+move => ???k??. 
+case (k = 0); 1: by move => *; do 15!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 1); 1: by move => *; do 14!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 2); 1: by move => *; do 13!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 3); 1: by move => *; do 12!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 4); 1: by move => *; do 11!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 5); 1: by move => *; do 10!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 6); 1: by move => *; do 9!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 7); 1: by move => *; do 8!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 8); 1: by move => *; do 7!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 9); 1: by move => *; do 6!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 10); 1: by move => *; do 5!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 11); 1: by move => *; do 4!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 12); 1: by move => *; do 3!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 13); 1: by move => *; do 2!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 14); 1: by move => *; do 1!(rewrite Array16.set_neqiE 1,2:/#); rewrite Array16.set_eqiE /#.
+case (k = 15); 1: by move => *; rewrite Array16.set_eqiE /#.
+by smt().
 qed.
 
 lemma fqmulx16_corr_h:
