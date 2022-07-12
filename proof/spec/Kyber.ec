@@ -309,34 +309,127 @@ op darray32 ['a] (d: 'a distr): ('a Array32.t) distr =
 
 lemma darray32_ll ['a] (d: 'a distr):
  is_lossless d => is_lossless (darray32 d).
-admitted.
+proof.  by rewrite /darray32 => ?; apply dmap_ll; apply dlist_ll. qed.
+
+(*
+module Sample_darray32 = {
+ proc sample(d: W8.t distr) = {
+  var w;
+  w <$ darray32 d;
+  return w;
+ }
+ proc sampleL(d: W8.t distr) = {
+  var l;
+   l <$ dlist d 32;
+   return Array32.of_list witness l;
+  }
+}.
+*)
+
+clone DMapSampling as MSa32 with
+ type t1 <- W8.t list,
+ type t2 <- W8.t Array32.t.
+
+clone DMapSampling as MSa64 with
+ type t1 <- W8.t list,
+ type t2 <- W8.t Array64.t.
+
+clone DProd.ProdSampling as PSlw with
+ type t1 <- W8.t list,
+ type t2 <- W8.t list.
+
+clone DMapSampling as MSll with
+ type t1 <- W8.t list * W8.t list,
+ type t2 <- W8.t list.
 
 op darray64 ['a] (d: 'a distr): ('a Array64.t) distr =
  dmap (dlist d 64) (Array64.of_list witness).
 
 lemma darray64_ll ['a] (d: 'a distr):
  is_lossless d => is_lossless (darray64 d).
-admitted.
+proof.  by rewrite /darray64 => ?; apply dmap_ll; apply dlist_ll. qed.
 
 module Sample_64_2x32 = {
- proc sample(d: W8.t distr) = {
+ proc sample() = {
   var w;
-  w <$ darray64 d;
+  w <$ darray64 W8.dword;
   return w;
  }
- proc sample2(d: W8.t distr) = {
+ proc sample2() = {
   var w1, w2;
-  w1 <$ darray32 d;
-  w2 <$ darray32 d;
+  w1 <$ darray32 W8.dword;
+  w2 <$ darray32 W8.dword;
   return (w1, w2);
  }
 }.
 
+lemma aux_64_32x32 (l1 l2: W8.t list) a:
+ size l1 = 32 => 
+ a = Array64.of_list witness (l1++l2) =>
+ Array32.init (fun i => a.[i]) = Array32.of_list witness l1 /\
+ Array32.init (fun i => a.[32+i]) = Array32.of_list witness l2.
+proof.
+move=> Hl1 ->.
+have X: forall (l: W8.t list), Array32.of_list witness l = Array32.init (fun i => nth witness l i).
+ move=> l; rewrite tP => i Hi.
+ by rewrite get_of_list // initE Hi.
+rewrite !X !tP.
+split => i Hi;  rewrite !initE !Hi /= get_of_list 1:/# nth_cat.
+ by have ->:i < size l1 by smt().
+by have ->/#:! 32+i < size l1 by smt().
+qed.
+
 equiv sample_64_2x32_eq:
  Sample_64_2x32.sample ~ Sample_64_2x32.sample2:
- ={d} ==> res{2}.`1 = Array32.init (fun i=>res{1}.[i]) /\ res{2}.`2 = Array32.init (fun i=>res{1}.[i+32]).
-admitted.
-
+ true ==> res{2}.`1 = Array32.init (fun i=>res{1}.[i]) /\ res{2}.`2 = Array32.init (fun i=>res{1}.[i+32]).
+proof.
+proc.
+transitivity {1} { w <@ MSa64.S.sample(dlist W8.dword 64, Array64.of_list witness); }
+ ( true ==> ={w} )
+ ( true ==> w1{2} = Array32.init (fun (i : int) => w{1}.[i]) /\
+            w2{2} = Array32.init (fun (i : int) => w{1}.[i+32]) ) => //=.
+- by inline*; auto.
+transitivity {1} { w <@ MSa64.S.map(dlist W8.dword 64, Array64.of_list witness); }
+ ( true ==> ={w} )
+ ( true ==> w1{2} = Array32.init (fun (i : int) => w{1}.[i]) /\
+            w2{2} = Array32.init (fun (i : int) => w{1}.[i+32]) ) => //=.
+- by call MSa64.sample.
+transitivity {2} 
+ { w1 <@ MSa32.S.sample(dlist W8.dword 32, Array32.of_list witness); 
+   w2 <@ MSa32.S.sample(dlist W8.dword 32, Array32.of_list witness); }
+ ( true ==> w1{2} = Array32.init (fun (i : int) => w{1}.[i]) /\
+            w2{2} = Array32.init (fun (i : int) => w{1}.[i+32]) )
+ ( true ==> ={w1, w2} ) => //=; last first.
+- by inline*; auto.
+transitivity {2} 
+ { w1 <@ MSa32.S.map(dlist W8.dword 32, Array32.of_list witness); 
+   w2 <@ MSa32.S.map(dlist W8.dword 32, Array32.of_list witness); }
+ ( true ==> w1{2} = Array32.init (fun (i : int) => w{1}.[i]) /\
+            w2{2} = Array32.init (fun (i : int) => w{1}.[i+32]) )
+ ( true ==> ={w1, w2} ) => //=; last first.
+- by symmetry; do 2! call MSa32.sample.
+inline*.
+swap{1} 2 1; swap {2} 6 1; swap {2} 2 1; swap {2} [3..4] 2; wp.
+conseq (_:_ ==> size r1{2}=32 /\ r1{1}=r1{2}++r10{2}).
+ move=> /> l1 l2 H.
+ move: (aux_64_32x32 l1 l2 (of_list witness (l1 ++ l2))%Array64 H).
+ by move => [<- <-] /#.
+transitivity {2} { (r1,r10) <@ PSlw.S.sample2(dlist W8.dword 32, dlist W8.dword 32); }
+ ( true ==> size r1{2} = 32 /\  r1{1} = r1{2} ++ r10{2} )
+ ( true ==> ={r1, r10} ) => //=; last by inline*; auto.
+transitivity {2} { (r1,r10) <@ PSlw.S.sample(dlist W8.dword 32, dlist W8.dword 32); }
+ ( true ==> size r1{2} = 32 /\  r1{1} = r1{2} ++ r10{2} )
+ ( true ==> ={r1, r10} ) => //=; last by call PSlw.sample_sample2.
+inline*; wp; simplify.
+transitivity {1} { r1 <@ MSll.S.sample(dlist W8.dword 32 `*` dlist W8.dword 32, fun ll:_*_=>ll.`1 ++ ll.`2); }
+ ( true ==> ={r1} )
+ ( true ==> size r{2}.`1 = 32 /\ r1{1} = r{2}.`1 ++ r{2}.`2 ) => //=.
+- by inline*; auto => />; rewrite (_:64=32+32) 1:/# dlist_add /#.
+transitivity {1} { r1 <@ MSll.S.map(dlist W8.dword 32 `*` dlist W8.dword 32, fun ll:_*_=>ll.`1 ++ ll.`2); }
+ ( true ==> ={r1} )
+ ( true ==> size r{2}.`1 = 32 /\ r1{1} = r{2}.`1 ++ r{2}.`2 ) => //=; first by call MSll.sample.
+by inline*; auto => /> ll; rewrite supp_dprod supp_dlist /#.
+qed.
 
 op darray128 ['a] (d: 'a distr): ('a Array128.t) distr =
  dmap (dlist d 128) (Array128.of_list witness).
@@ -380,20 +473,35 @@ op darray256 ['a] (d: 'a distr): ('a Array256.t) distr =
 
 lemma darray256_ll ['a] (d: 'a distr):
  is_lossless d => is_lossless (darray256 d).
-admitted.
+proof.  by rewrite /darray256 => ?; apply dmap_ll; apply dlist_ll. qed.
 
 lemma supp_darray256 ['a] (d: 'a distr) a:
  a \in darray256 d <=> all (support d) (Array256.to_list a).
-admitted.
+proof.
+rewrite /darray256 supp_dmap; split.
+ move=> [x]; rewrite supp_dlist // => /> *.
+ by rewrite Array256.of_listK // /#.
+move=> H; exists (to_list a); rewrite supp_dlist // H Array256.size_to_list /=.
+by rewrite Array256.to_listK.
+qed.
 
 lemma darray256_uni ['a] (d: 'a distr):
  is_uniform d => is_uniform (darray256 d).
-admitted.
+proof.
+rewrite /darray256=> ?; apply dmap_uni_in_inj.
+ move=> x y; rewrite !supp_dlist //; move => [? _] [? _] H.
+ by rewrite -(Array256.of_listK witness x) // H of_listK.
+by apply dlist_uni.
+qed.
 
 lemma darray256_fu ['a] (d: 'a distr):
  is_full d => is_full (darray256 d).
-admitted.
-
+proof.
+rewrite /darray256 => H; apply dmap_fu_in.
+move=> x; exists (to_list x); rewrite to_listK supp_dlist //=.
+rewrite Array256.size_to_list /= allP => *.
+by apply H.
+qed.
 
 
 (****************************************************)
@@ -1977,20 +2085,33 @@ equiv CBD2rnd_sampleL_vec_eq:
  true ==> ={res}.
 proof.
 proc.
-wp; while (={i} /\ (0 <= i{1} <= kvec) /\ forall k, 0 <= k < i{1} => v{1}.[k] = nth witness l{2} k).
+wp; while (={i} /\ (0 <= i{1} <= kvec) /\ 
+           size l{2}=i{2} /\ forall k, 0 <= k < i{1} => v{1}.[k] = nth witness l{2} k).
  wp; call (_: true); first by sim.
- skip => |> &1 &2 *.
+ skip => |> &1 &2 ?? H ??.
  split; first smt().
+ split; first by rewrite size_rcons.
  move=> k ??.
- admit.
+ rewrite /set offunvE 1:/# /=.
+ case: (size l{2}=k) => E.
+  by rewrite nth_rcons -E ltrr.
+ by rewrite nth_rcons (_:k < size l{2}) 1:/# /= -H /#.
 wp; skip => |> *.
 split; first smt().
-move => |> v i l ???.
-have ->: i=kvec by smt().
-admit.
+move => |> v p l ???.
+have H: size p=kvec by smt().
+by rewrite eq_vectorP => i Hi; rewrite offunvE /#.
 qed.
 
+clone DMapSampling as MSvkvec with
+ type t1 <- R list,
+ type t2 <- vector.
 
+clone Program as LSvec with
+ type t <- poly,
+ op d <- dshort_R.
+
+print LSvec.
 equiv CBD2rnd_vec_equiv:
  CBD2rnd.sample_vec_real ~ CBD2rnd.sample_vec_ideal:
  true ==> ={res}.
@@ -1999,9 +2120,40 @@ transitivity CBD2rnd.sampleL_vec_real
  (true ==> ={res}) (true ==> ={res}) => //.
  by apply CBD2rnd_sampleL_vec_eq.
 proc.
-admit.
+transitivity {1}
+ { l <- [];
+   i <- 0;
+   while (i<kvec) {
+    p <@ CBD2rnd.sample_ideal();
+    l <- rcons l p;
+    i <- i+1;
+   }
+   v <- offunv (nth witness l); }
+ ( true ==> ={v}) (true ==> ={v} ) => //=.
+- wp; while (={i,l} /\ 0 <= i{2} <= kvec).
+   by wp; call CBD2rnd_equiv; auto => /> /#.
+  by auto.
+transitivity {1}
+ { l <@ LSvec.LoopSnoc.sample(kvec);
+   v <- offunv (nth witness l); }
+ ( true ==> ={v}) (true ==> ={v} ) => //=.
+- inline*; wp.
+  while ((i,l){1}=(i0,l0){2} /\ n{2}=kvec /\ 0 <= i{1} <= kvec).
+   wp; rnd; auto; smt(cats1).
+  by auto.
+transitivity {1}
+ { l <@ LSvec.Sample.sample(kvec);
+   v <- offunv (nth witness l); }
+ ( true ==> ={v}) (true ==> ={v} ) => //=.
+- by symmetry; wp; call LSvec.Sample_LoopSnoc_eq; auto.
+transitivity {2} { v <@ MSvkvec.S.map(dlist dshort_R kvec, fun (l:R list) => offunv (nth witness l)); }
+ ( true ==> ={v}) (true ==> ={v} ) => //=.
+ by inline*; wp; rnd; auto. 
+transitivity {1} { v <@ MSvkvec.S.sample(dlist dshort_R kvec, fun (l:R list) => offunv (nth witness l)); }
+ ( true ==> ={v}) (true ==> ={v} ) => //=.
+ by symmetry; call MSvkvec.sample; auto.
+by inline*; wp; rnd; auto => />; rewrite /dvector -dlist_djoin /#.
 qed.
-
 
 module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO.POracle) : Scheme = {
 

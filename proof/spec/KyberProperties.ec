@@ -256,11 +256,11 @@ have: compress 1 (inFq 1665 + n.[x]) <> 0.
  rewrite (_:832=831+1) 1://. 
  move=> /absZqP [H|].
  rewrite absZqP negb_or; split.
-  smt.
+  smt(inFqK).
  rewrite qE /=. 
-  smt.
+  smt(inFqK).
  rewrite qE /=.
- smt.
+ smt(inFqK).
 by rewrite /compress /=; smt(ltz_pmod modz_ge0).
 qed.
 
@@ -558,7 +558,14 @@ clone import HS_DEFS.RF as IdealHSF with
    op dR = fun (_: unit) => dsmooth
    proof dR_ll by smt(dsmooth_ll).
 
-op [lossless funiform] dnbytes : W8.t Array128.t distr.
+abbrev dnbytes = darray128 W8.dword.
+
+lemma dnbytes_ll: is_lossless dnbytes.
+proof.
+apply darray128_ll.
+by apply W8.dword_ll.
+qed.
+
 clone import PRF_DEFS.RF as IdealPRF1 with
    op dR = fun (_: W8.t) => dnbytes
    proof dR_ll by smt(dnbytes_ll).
@@ -922,10 +929,86 @@ transitivity {1}
    inline*; wp; rnd.
    by wp; rnd; auto.
   by symmetry; do 2! call CBD2rnd_vec_equiv; auto.
-(*print SmtMap.*)
- seq 0 7: (forall (x:W8.t) , SmtMap.dom IdealPRF1.RF.m{2} x => 0 <= W8.to_uint x < 0).
- admit.
- admit.
+ seq 0 7: (_N{2} = 0 /\ forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
+  by wp; auto => /> *; smt(SmtMap.mem_empty).
+ seq 1 2: (s{1}=noise1{2} /\ _N{2} = 3 /\
+           forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (={i} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
+         (forall k, 0 <= k < i{2} => v{1}.[k]=noise1{2}.[k]) /\
+         forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 6.
+    move=> &m; wp; skip => &hr /> ??? Hm ?.
+    rewrite -implybF => H.
+    by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:5,7:]pre /\ ={i0, bytes} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom IdealPRF1.RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt().    
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i0{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i0{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2 ?????????; split.
+    split.
+     by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int i{2}) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i0 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 ??????; split; last smt().
+  by apply eq_vectorP => k kb /#.
+ wp; seq 2 2: (e{1}=noise2{2} /\ s{1}=noise1{2} /\ _N{2} = 6 /\
+           forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (={i} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ s{1}=noise1{2} /\
+         (forall k, 0 <= k < i{2} => v{1}.[k]=noise2{2}.[k]) /\
+         forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 6.
+    move=> &m; wp; skip => &hr /> ??? Hm ?.
+    rewrite -implybF => H.
+    by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:6,8:]pre /\ bytes{1}=bytes0{2} /\ i0{1}=i1{2} /\ 0 <= i1{2} <= 128 /\ j0{2} = i1{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom IdealPRF1.RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j0{2} => p0{1}.[k] = rr0{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt().    
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i1{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i1{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2 ?????????; split.
+    split.
+     by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int (3+i{2})) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i1 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; first smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 ??????; split; last smt().
+  by apply eq_vectorP => k kb /#.
+ by auto.
 auto => /> &1 &2 e s; rewrite /pk_encode /sk_encode /=.
 by rewrite comm_nttv_add comm_nttv_mmul.
 qed.
@@ -962,7 +1045,104 @@ seq 3 5 : (#pre /\ ={e1,e2} /\ r{1} = rv{2}).
    by wp; rnd; auto.
   symmetry; call CBD2rnd_equiv.
   by do 2! call CBD2rnd_vec_equiv; auto.
- admit.
+ seq 0 9: (={pk, m, glob S, glob O} /\ _N{2} = 0 /\ forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  by wp; auto => /> *; smt(SmtMap.mem_empty).
+ seq 1 2: (r{1}=noise1{2} /\ ={pk, m, glob S, glob O} /\ _N{2} = 3 /\ forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (={i, pk, m, glob S, glob O} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
+         (forall k, 0 <= k < i{2} => v0{1}.[k]=noise1{2}.[k]) /\
+         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 6.
+    move=> &m; wp; skip => &hr /> ??? Hm ?.
+    rewrite -implybF => H.
+    by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:9,11:]pre /\ ={i0, bytes} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt().    
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i0{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i0{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2 ?????????; split.
+    split.
+     by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int i{2}) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i0 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 ??????; split; last smt().
+  by apply eq_vectorP => k kb /#.
+ seq 1 2: (e1{1}=noise2{2} /\ r{1}=noise1{2} /\ ={pk, m, glob S, glob O} /\ _N{2} = 6 /\ forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (={i, pk, m, glob S, glob O} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ r{1}=noise1{2} /\
+         (forall k, 0 <= k < i{2} => v0{1}.[k]=noise2{2}.[k]) /\
+         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 6.
+    move=> &m; wp; skip => &hr /> ??? Hm ?.
+    rewrite -implybF => H.
+    by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:10,12:]pre /\ bytes{1}=bytes0{2} /\ i0{1}=i1{2} /\ 0 <= i1{2} <= 128 /\ j0{2} = i1{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j0{2} => p0{1}.[k] = rr0{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt().    
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i1{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i1{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2 ?????????; split.
+    split.
+     by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int (3+i{2})) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i1 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; first smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 ??????; split; last smt().
+  by apply eq_vectorP => k kb /#.
+ seq 1 12: (e2{1}=e20{2} /\ e1{1}=noise2{2} /\ r{1}=noise1{2} /\ ={pk, m, glob S, glob O}).
+  inline*; wp.
+  rcondt {2} 6.
+   move=> &m; wp; skip => &hr /> Hm. 
+   rewrite -implybF => H.
+   by move: (Hm _ H); rewrite implybF of_uintK /#.
+   while (#[/:-2]pre /\ bytes{1}=bytes1{2} /\ i{1}=i2{2} /\ 0 <= i2{2} <= 128 /\ j1{2} = i2{2}*2 /\
+          forall k, 0 <= k < j1{2} => p{1}.[k] = rr1{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt(). 
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i2{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i2{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2 ????; split.
+    by rewrite SmtMap.get_set_eqE //=.
+   move => p1 i1 p2 ????? H.
+   by apply Array256.tP => k kb; apply H; smt().
+ by auto.
 conseq />; 1: smt().
 inline {1} 2.
 swap {2} 3 -2. swap {2} 6 -3. swap {2} 9 -5.
@@ -975,7 +1155,7 @@ split; 1: by rewrite -comm_nttv_mmul invnttvK.
 congr. congr. congr. congr.
 by rewrite comm_ntt_dotp.
 qed.
- 
+
 equiv dec_eq : 
   MLWE_PKE(NTTSampler(S,O), O).dec ~ KyberSI(S,O).dec :
    ={arg,glob S, glob O} ==> ={res,glob S, glob O}.
