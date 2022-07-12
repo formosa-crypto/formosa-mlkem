@@ -584,6 +584,94 @@ theory RHL_FOR_INT_ADD_LT2.
 end RHL_FOR_INT_ADD_LT2.
 
 
+theory RHL_FOR_NAT_DIV_GE_INT_ADD_LT.
+  section.
+
+  declare type _state_t.
+  declare op c1, c2, i1, i2 , x1, x2 : int.
+  declare op P : bool.
+  declare op Q : int -> int -> int -> _state_t -> bool.
+  declare axiom _eq_out :
+    P =>
+    (((x1 < c1) \/ (1 < i1 /\ (0 < c1))) /\
+     (0 < i2) /\
+     ((if (x1 < c1) then 0 else ilog i1 (x1 %/ c1) + 1) =
+      (if c2 <= x2 then 0 else (c2 - x2) %\ i2))).
+
+  clone FOR_NAT_DIV_GE as FOR1_ with
+    type _state_t <- unit,
+    op c <- c1,
+    op i <- i1,
+    op x <- x1.
+
+  clone FOR_INT_ADD_LT as FOR2_ with
+    type _state_t <- unit,
+    op c <- c2,
+    op i <- i2,
+    op x <- x2.
+
+  clone include RHL_FOR with
+    theory FOR1 <- FOR1_,
+    theory FOR2 <- FOR2_,
+    type state_t <- _state_t,
+    op P <- P,
+    op Q <- Q
+  proof *.
+
+  realize eq_out.
+  proof.
+    move => P_; case: (_eq_out P_) => -> [-> ->] /=.
+    by exists (if c2 <= x2 then 0 else (c2 - x2) %\ i2).
+  qed.
+
+  end section.
+end RHL_FOR_NAT_DIV_GE_INT_ADD_LT.
+
+
+theory RHL_FOR_NAT_MUL_LE_INT_ADD_LT.
+  section.
+
+  declare type _state_t.
+  declare op c1, c2, i1, i2 , x1, x2 : int.
+  declare op P : bool.
+  declare op Q : int -> int -> int -> _state_t -> bool.
+  declare axiom _eq_out :
+    P =>
+    (((c1 < x1) \/ (1 < i1 /\ (0 < x1))) /\
+     (0 < i2) /\
+     ((if (c1 < x1) then 0 else ilog i1 (c1 %/ x1) + 1) =
+      (if c2 <= x2 then 0 else (c2 - x2) %\ i2))).
+
+  clone FOR_NAT_MUL_LE as FOR1_ with
+    type _state_t <- unit,
+    op c <- c1,
+    op i <- i1,
+    op x <- x1.
+
+  clone FOR_INT_ADD_LT as FOR2_ with
+    type _state_t <- unit,
+    op c <- c2,
+    op i <- i2,
+    op x <- x2.
+
+  clone include RHL_FOR with
+    theory FOR1 <- FOR1_,
+    theory FOR2 <- FOR2_,
+    type state_t <- _state_t,
+    op P <- P,
+    op Q <- Q
+  proof *.
+
+  realize eq_out.
+  proof.
+    move => P_; case: (_eq_out P_) => -> [-> ->] /=.
+    by exists (if c2 <= x2 then 0 else (c2 - x2) %\ i2).
+  qed.
+
+  end section.
+end RHL_FOR_NAT_MUL_LE_INT_ADD_LT.
+
+
 theory RHL_FOR_NAT_DIV_GE2.
   section.
 
