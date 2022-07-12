@@ -1544,8 +1544,6 @@ proof.
   while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
   inline *.
   wp. skip. auto => />.
-  move => &2 H; congr. print VPERMD.
-  admit. (* FIXME: PERMD semantics in eclib *)
   inline OpsV.iVPBROADCAST_16u16.
   wp.
   call veceq_poly_csubq.
@@ -1563,11 +1561,9 @@ qed.
 equiv veceq_poly_basemul:
   Mvec.poly_basemul ~ M._poly_basemul: ={rp, ap, bp} ==> ={res}.
 proof.
-  admit.
-  (*FIXME: takes too long (>1hr)
   proc.
   inline *.
-  wp. skip. trivial. *)
+  wp;skip;auto => />.
 qed.
 
 equiv veceq_shuffle8:
