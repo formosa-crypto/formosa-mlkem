@@ -13,12 +13,11 @@ require import NTT_Fq.
 require import Jkem.
 require import KyberPoly.
 
-pragma +oldip. (* TODO: remove me *)
-
+pragma +oldip.
 lemma lift2poly_iso (p: W16.t Array256.t) (i k: int):
     0 <= i < 16 =>
     16 * i <= k < 16 * i + 16 => (lift2poly (get256 (WArray512.init16 (fun j => p.[j])) i)).[k %% 16] = p.[k].
-proof. admit. (*
+proof. 
   move => i_b k_b.
   have k_mb: 0 <= k %% 16 < 16.
     smt(@IntDiv).
@@ -41,7 +40,7 @@ proof. admit. (*
     smt(@IntDiv).
   rewrite pack2_bits8.
   smt(@IntDiv).
-*)qed.
+qed.
 
 lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
     0 <= i < 16 => 0 <= j < 256 =>
@@ -49,7 +48,7 @@ lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
     (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
       if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16)
       else v.[j].
-proof. admit. (*
+proof. 
   move => hx hs; rewrite set256E !get16E.
   rewrite -(W2u8.unpack8K (if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16) else v.[j])); congr.
   apply W2u8.Pack.ext_eq => k hk.
@@ -59,59 +58,59 @@ proof. admit. (*
   have ->: (32 * i <= 2 * j + k < 32 * i + 32) = (16 * i <= j < 16 * i + 16) by smt().
   case : (16 * i <= j < 16 * i + 16) => h.
     + by rewrite W256_bits16_bits8 1:// /#.
-c    + by rewrite /init16 /#.
-*)qed.
+    + by rewrite /init16 /#.
+qed.
 
 lemma set_get_eq (v: W16.t Array256.t) (w: W256.t) i j:
     0 <= i < 16 => 0 <= j < 256 => 16 * i <= j < 16 * i + 16 =>
     WArray512.get16
     (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
       w \bits16 j %% 16.
-proof. admit. (*
+proof. 
   by move => h1 h2 h3; rewrite set_get_def // h3.
-*)qed.
+qed.
 
 lemma set_get_diff (v: W16.t Array256.t) (w: W256.t) i j:
     0 <= i < 16 => 0 <= j < 256 => !(16 * i <= j < 16 * i + 16) =>
     WArray512.get16
     (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
       v.[j].
-proof. admit. (*
+proof.
   move => h1 h2 h3; rewrite set_get_def // h3. auto.
-*)qed.
+qed.
 
 lemma get_set_get_eqb (v: W16.t Array256.t) (w: W256.t) i:
   0 <= i < 16 => forall k, 0 <= k < i*16 =>
   v.[k] = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof. admit. (*
+proof. 
   move => i_i k k_i.
   rewrite Array256.initiE.
-  move : i_i k_i; smt.
+  move : i_i k_i. smt().
   simplify.
   rewrite set_get_def => /#.
-*)qed.
+qed.
 
 lemma get_set_get_eqa (v: W16.t Array256.t) (w: W256.t) i:
   0 <= i < 16 => forall k, i*16 + 16 <= k < 256 =>
   v.[k] = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof. admit. (*
+proof.
   move => i_i k k_i.
   rewrite Array256.initiE.
   move : i_i k_i => /#.
   simplify.
   rewrite set_get_def => /#.
-*)qed.
+qed.
 
 lemma get_set_get_diff (v: W16.t Array256.t) (w: vt16u16) i:
   0 <= i < 16 => forall k, i*16 <= k < i*16 + 16 =>
   w \bits16 (k%%16) = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof. admit. (*
+proof. 
   move => i_i k k_i.
   rewrite Array256.initiE.
   move : i_i k_i => /#.
   simplify.
   rewrite set_get_def => /#.
-*)qed.
+qed.
 
 theory KyberPolyAVX.
 
@@ -127,16 +126,16 @@ import KyberPoly.
 lemma get_lift_array256_eq (p: W16.t Array256.t):
   let p_lift = lift_array256 p in
   forall k, 0 <= k < 256 => p_lift.[k] = inFq (W16.to_sint p.[k]).
-proof. admit. (*
+proof. 
   rewrite /lift_array256 => p_lift. rewrite /p_lift.
   move => k k_i.
   smt (@Array256).
-*)qed.
+qed.
 
 lemma lift_array256E (x : W16.t Array256.t) k :
   0 <= k < 256 =>
   (lift_array256 x).[k] = inFq (to_sint x.[k]).
-proof. admit. (*  by move => ?; rewrite /lift_array256 mapiE //. *)qed.
+proof. by move => ?; rewrite /lift_array256 mapiE //. qed.
 
 lemma poly_add_corr_h _a _b ab bb :
       0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -149,7 +148,7 @@ lemma poly_add_corr_h _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\
            forall k, 0 <= k < 256 =>
              inFq (to_sint res.[k]) = _a.[k] + _b.[k]].
-proof. admit. (*
+proof. 
   move => [ab_lb ab_ub] [bb_lb bb_ub].
   proc.
   sp.
@@ -229,10 +228,10 @@ proof. admit. (*
     + simplify.
       rewrite -ltzNge in k_tlb.
       rewrite lrp_def //=.
-*)qed.
+qed.
 
 lemma poly_add_ll : islossless Mprevec.poly_add2.
-proof. admit. (*
+proof.
   proc; while (0<= i <= 16) (16 - i).
   auto => />.
   inline Ops.iVPADD_16u16.
@@ -240,7 +239,7 @@ proof. admit. (*
   smt(@Int).
   auto => />.
   smt(@Int).
-*)qed.
+qed.
 
 lemma poly_add_corr _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
@@ -266,7 +265,7 @@ lemma poly_sub_corr_h _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\
            forall k, 0 <= k < 256 =>
               inFq (to_sint res.[k]) = _a.[k] - _b.[k]].
-proof. admit. (*
+proof.
   move => [ab_lb ab_ub] [bb_lb bb_ub].
   proc.
   while (0 <= i <= 16 /\
@@ -314,15 +313,15 @@ proof. admit. (*
     + simplify.
       rewrite -ltzNge in k_tlb.
       rewrite lrp_def //=.
-*)qed.
+qed.
 
 lemma poly_sub_ll : islossless Mprevec.poly_sub.
-proof. admit. (*
+proof. 
   proc; while (0<= i <= 16) (16 - i); auto => />.
   inline Ops.iVPSUB_16u16.
   auto => />; smt(@Int).
   auto => />; smt(@Int).
-*)qed.
+qed.
 
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
@@ -344,9 +343,9 @@ lemma poly_csubq_corr_h ap :
              ==>
              ap = lift_array256 res /\
              pos_bound256_cxq res 0 256 1 ].
-proof. admit. (*
+proof. 
   proc.
-  while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = KyberCPA_avx2.jqx16.[k]).
+  while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = Jkem_avx2.jqx16.[k]).
   seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
   inline Ops.iVPSUB_16u16.
   wp. skip. simplify.
@@ -413,7 +412,7 @@ proof. admit. (*
   have x_mb : 0 <= x %% 16 && x %% 16 < 16.
     move : x_b => /#.
   rewrite filliE => />.
-  rewrite (result_def (x %% 16)).
+  rewrite (result_def (x %% 16)) //.
   rewrite fun_if fun_if.
   rewrite _r_def //.
   rewrite t_def //.
@@ -436,7 +435,7 @@ proof. admit. (*
   (****)
   rewrite to_sintN => //=.
   rewrite (_qx16_def (x%% 16))  => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK.
@@ -444,9 +443,9 @@ proof. admit. (*
   rewrite /smod.
   have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
   simplify.
-  smt.
+  smt().
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK.
@@ -454,12 +453,12 @@ proof. admit. (*
   rewrite /smod.
   simplify.
   do rewrite (fun_if ((+) (to_sint rp{hr}.[16 * i{hr} + x %% 16])) _ _ _).
-  smt.
+  smt().
   (****)
   
   rewrite to_sintN => //=.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK.
@@ -467,9 +466,9 @@ proof. admit. (*
   rewrite /smod.
   have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
   simplify.
-  smt.
+  smt().
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK.
@@ -477,13 +476,13 @@ proof. admit. (*
   rewrite /smod.
   have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
   simplify.
-  smt.
+  smt().
   (****)
   
   rewrite _qx16_def => //=.
   rewrite (_: rp{hr}.[16 * i{hr} + x %% 16] = rp{hr}.[x]).
     by move : x_i x_mb => /#.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite inFqD. ring.
@@ -493,7 +492,7 @@ proof. admit. (*
   
   (***)
   have zero_congr_3329: 3329 %% q = 0.
-    by rewrite qE; smt.
+    by rewrite qE; smt().
   rewrite inFqN /zero /=.
   have ->: - - inFq 3329 = inFq 3329. do rewrite -inFqN /= asintK //=.
   rewrite -inFqN.
@@ -508,7 +507,7 @@ proof. admit. (*
   have k_mb : 0 <= k %% 16 && k %% 16 < 16.
     move : k_lb k_ub => /#.
   rewrite filliE => />.
-  rewrite (result_def (k %% 16)).
+  rewrite (result_def (k %% 16)) //.
   rewrite fun_if fun_if.
   rewrite _r_def //.
   rewrite t_def //.
@@ -538,7 +537,7 @@ proof. admit. (*
   simplify.
   rewrite qE.
   simplify.
-  smt.
+  smt().
   
   (*****)
   move => _r_lb.
@@ -551,7 +550,7 @@ proof. admit. (*
   rewrite W16.sltE.
   rewrite to_sintB_small.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK.
@@ -565,24 +564,24 @@ proof. admit. (*
   simplify.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK.
   simplify.
   rewrite /smod /=.
-  smt.
+  smt().
   
   (******)
   rewrite to_sintD_small => />.
   rewrite to_sintN => />.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK => />.
   rewrite /smod => />.
-  smt.
+  smt().
   split.
   
   (******)
@@ -590,7 +589,7 @@ proof. admit. (*
   rewrite _r_def => //.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -623,7 +622,7 @@ proof. admit. (*
   rewrite _r_def => //.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -647,7 +646,7 @@ proof. admit. (*
   done.
   move : rp_qx16_lb.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK.
@@ -661,7 +660,7 @@ proof. admit. (*
   simplify.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite to_sintN /=.
@@ -683,7 +682,7 @@ proof. admit. (*
     move : k_lb k_ub => /#.
   rewrite filliE => />.
   move : i_ub k_ub => /#.
-  rewrite (result_def (k %% 16)).
+  rewrite (result_def (k %% 16)) //.
   rewrite fun_if fun_if.
   rewrite _r_def //.
   rewrite t_def //.
@@ -714,7 +713,7 @@ proof. admit. (*
   move : _r_ub.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -734,7 +733,7 @@ proof. admit. (*
   rewrite /smod /=.
   done.
   move => *.
-  smt.
+  smt().
   
   (******)
   move => _r_lb.
@@ -746,7 +745,7 @@ proof. admit. (*
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -766,7 +765,7 @@ proof. admit. (*
   rewrite /smod /=.
   done.
   move => *.
-  smt.
+  smt().
   (******)
   
   move => _sr_lb.
@@ -774,19 +773,19 @@ proof. admit. (*
   rewrite to_sintD_small => />.
   rewrite to_sintN => />.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK => />.
   rewrite /smod => />.
-  smt.
+  smt().
   split.
   
   (******)
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -806,14 +805,14 @@ proof. admit. (*
   rewrite /smod /=.
   done.
   move => *.
-  smt.
+  smt().
   
   (******)
   move => rp_qx16_lb.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -835,7 +834,7 @@ proof. admit. (*
   move => _r_lb.
   move : _sr_lb rp_qx16_lb.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -856,7 +855,7 @@ proof. admit. (*
   
   rewrite qE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite to_sintN of_sintK => />.
@@ -865,7 +864,7 @@ proof. admit. (*
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -887,7 +886,7 @@ proof. admit. (*
   move => rp_q_lb_neg.
   move : _sr_lb.
   rewrite _qx16_def => //=.
-  rewrite /(KyberCPA_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -907,13 +906,13 @@ proof. admit. (*
   move => rp_2q_bnd rp_q_bnd rp_q_lb_neg rp_q_lb.
   move : (rp_2q_bnd (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => />.
-  smt.
+  smt().
   (******)
   
   auto => />.
   move => &hr *.
   split.
-  split. smt.
+  split. smt().
   
   move => k k_lb k_ub.
   rewrite /lift2poly initiE => />.
@@ -933,17 +932,17 @@ proof. admit. (*
   smt(@IntDiv).
   move => i0 rp0.
   auto => /> /#.
-*)qed.
+qed.
 
 lemma poly_csubq_ll : islossless Mprevec.poly_csubq.
-proof. admit. (*
+proof. 
   proc.
   while (0 <= i <= 16) (16 - i); auto => />.
   inline Ops.iVPSUB_16u16 Ops.iVPSRA_16u16 Ops.iVPAND_16u16 Ops.iVPADD_16u16.
   auto => />.
   smt(@W16).
   smt(@W16).
-*)qed.
+qed.
 
 lemma poly_csubq_corr ap :
       phoare[ Mprevec.poly_csubq :
@@ -959,13 +958,13 @@ lemma poly_reduce_corr_h (ap: Fq Array256.t):
           ap = lift_array256 rp ==>
           ap = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)].
-proof. admit. (*
+proof. 
   proc.
   while (0 <= i <= 16 /\
          (forall k, 0 <= k < 256 => ap.[k] = inFq (to_sint rp.[k])) /\
          (forall k, 0 <= k < 16 * i => bpos16 rp.[k] (2*q)) /\
-         (forall k, 0 <= k < 16 => qx16.[k] = KyberCPA_avx2.jqx16.[k]) /\
-         (forall k, 0 <= k < 16 => vx16.[k] = KyberCPA_avx2.jvx16.[k])); last first.
+         (forall k, 0 <= k < 16 => qx16.[k] = Jkem_avx2.jqx16.[k]) /\
+         (forall k, 0 <= k < 16 => vx16.[k] = Jkem_avx2.jvx16.[k])); last first.
   wp. skip.
   move => &hr ap_def />.
   do split.
@@ -1017,7 +1016,7 @@ proof. admit. (*
       rewrite /lift_array256 mapiE 1:x_i /= ap_eq_rpu 1:x_i //=.
     + move : rpu_bnds => /#.
   
-  wp; sp; ecall (Fq_avx2.barret_red16x_corr_h (Fq_avx2.lift_array16 r)); auto => />.
+  wp; sp; ecall (Fq_avx2.barret_red16x_corr_hh (Fq_avx2.lift_array16 r)). auto => />.
   move => &hr i_lb i_rub rp_sbred rp_eq__rp qx16_def vx16_def i_ub result red16x_bred.
   split; first by move : i_lb i_ub => /#.
   pose rp_sub := ((Fq_avx2.lift_array16
@@ -1050,11 +1049,11 @@ proof. admit. (*
         rewrite red16x_bred 1:/# -/rp_sub bred_lb bred_ub //=.
     + rewrite -ltzNge in k_tlb.
       move : (rp_eq__rp k); rewrite k_lb k_tlb /= => /#.
-*)qed.
+qed.
 
 lemma poly_reduce_ll:
   islossless Mprevec.poly_reduce.
-proof. admit. (*
+proof. 
   proc; while(0 <= i <= 16) (16 - i);
     move => *; inline *; auto => />.
   move => &hr i_lb i_ub i_tub.
@@ -1062,20 +1061,20 @@ proof. admit. (*
   move : i_lb i_tub => /#.
   smt(@Int).
   smt(@W64).
-*)qed.
+qed.
 
 lemma poly_reduce_corr ap:
   phoare[ Mprevec.poly_reduce :
         ap = lift_array256 rp ==>
         ap = lift_array256 res /\
         forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)] = 1%r.
-proof. admit. (* by conseq poly_reduce_ll (poly_reduce_corr_h ap). *)qed.
+proof.  by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
 
 lemma poly_frommont_corr_h ap:
   hoare[ Mprevec.poly_frommont :
        ap = map W16.to_sint rp ==>
        map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) R 2) %% q))) ap].
-proof. admit. (*
+proof. 
   proc.
   while(0 <= i <= 16 /\ aux = 16 /\
         (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
@@ -1103,7 +1102,7 @@ proof. admit. (*
   rewrite (_: (2 * k + 1) %% 2 = 1).
     by smt(@IntDiv).
   rewrite pack2_bits8.
-  rewrite /(KyberCPA_avx2.jdmontx16) => />.
+  rewrite /(Jkem_avx2.jdmontx16) => />.
   rewrite initiE => />. move : k_lb k_ub => /#.
   smt(@Array16).
   
@@ -1123,7 +1122,7 @@ proof. admit. (*
   rewrite (_: (2 * k + 1) %% 2 = 1).
     by smt(@IntDiv).
   rewrite pack2_bits8.
-  rewrite /(KyberCPA_avx2.jqx16) => />.
+  rewrite /(Jkem_avx2.jqx16) => />.
   rewrite initiE => />. move : k_lb k_ub => /#.
   smt(@Array16).
   
@@ -1157,7 +1156,7 @@ proof. admit. (*
   move : i_tlb i_ub x_bnds => /#.
   rewrite mapiE //.
   sp. wp.
-  ecall (Fq_avx2.fqmulx16_corr_h (Fq_avx2.lift_array16 t) (Fq_avx2.lift_array16 dmontx16)).
+  ecall (Fq_avx2.fqmulx16_corr_hh (Fq_avx2.lift_array16 t) (Fq_avx2.lift_array16 dmontx16)).
   auto => />.
   move => &hr i_lb i_ub dmontx16_def qx16_def qinvx16_def rp_sredc rp_eq_ap i_tub result result_def.
   split.
@@ -1191,16 +1190,16 @@ proof. admit. (*
   rewrite mulzDr mulz1 lezNgt in k_lb.
   rewrite k_lb /=.
   apply rp_eq_ap; by move : k_lb k_ub => /#.
-*)qed.
+qed.
 
 lemma poly_frommont_ll : islossless  Mprevec.poly_frommont.
-proof. admit. (*
+proof. 
   proc.
   auto => />.
   cfold 4. wp; while (0 <= i <= 16) (16 - i).
   + move => *; inline*; auto => />. smt().
   + inline *; wp; auto => /> /#.
-*)qed.
+qed.
 
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
     equiv [ Mprevec.poly_decompress ~ EncDec_AVX2.decode4 :
@@ -1211,7 +1210,9 @@ lemma poly_decompress_corr mem _p (_a : W8.t Array128.t):
              Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 4 res{2} /\
              pos_bound256_cxq res{1} 0 256 1].
-proof. admit. (*
+proof. 
+admitted.
+(*
   proc.
   cfold{1} 7.
   wp.
@@ -1225,12 +1226,12 @@ proof. admit. (*
       move => &1 [#] ap_lb ap_ub.
       do split.
         + move => k k_lb k_ub.
-          rewrite /(KyberCPA_avx2.jqx16) /=.
+          rewrite /(Jkem_avx2.jqx16) /=.
           do (rewrite initiE 1:/# /=). smt(@Array16 @List).
         + move => k k_lb k_ub.
           rewrite /(pd_mask_s) /=.
           do (rewrite initiE 1:/# /=).
-          rewrite /(KyberCPA_avx2.pc_mask_s) /of_int.
+          rewrite /(Jkem_avx2.pc_mask_s) /of_int.
           apply W16.wordP => x x_i.
           rewrite bits16E initiE 1:x_i /=.
           rewrite /int2bs /= /mkseq -iotaredE /= /bits2w /=.
@@ -1240,7 +1241,7 @@ proof. admit. (*
             + do (rewrite initiE 1:/# /=).
               smt(@Int @List).
         + move => k k_lb k_ub.
-          rewrite /(KyberCPA_avx2.pd_shift_s) /=.
+          rewrite /(Jkem_avx2.pd_shift_s) /=.
           do (rewrite initiE 1:/# /=).
           rewrite /of_int.
           apply W16.wordP => x x_i.
@@ -1252,7 +1253,7 @@ proof. admit. (*
             + do (rewrite initiE 1:/# /=).
               smt(@Int @List).
         + move => k k_lb k_ub.
-          rewrite /(KyberCPA_avx2.pd_jshufbidx) /=.
+          rewrite /(Jkem_avx2.pd_jshufbidx) /=.
           do (rewrite initiE 1:/# /=).
           smt(@Array32 @List).
   while (#pre /\ i{1} = i{2} /\ 0 <= i{1} <= 16 /\
@@ -1551,8 +1552,8 @@ proof. admit. (*
       move : (rp_eq_r x x_i) => /#.
     + move => k k_i.
       move : (rp_eq_r k k_i) => /#.
-*)qed.
-
+qed.
+*)
 lemma poly_compress_corr _a (_p : address) mem :
     equiv [ Mprevec.poly_compress ~ EncDec_AVX2.encode4 :
              pos_bound256_cxq a{1} 0 256 2 /\
@@ -1565,7 +1566,7 @@ lemma poly_compress_corr _a (_p : address) mem :
              pos_bound256_cxq res{1} 0 256 1 /\
              touches mem Glob.mem{1} _p 128 /\
              load_array128 Glob.mem{1} _p = res{2}].
-proof. admit. (*
+proof. 
   proc.
   cfold{1} 8.
   seq 1 1 : (#{~(pos_bound256_cxq a{1} 0 256 2)}pre /\
@@ -1582,7 +1583,7 @@ proof. admit. (*
   move => &1 [#] rp_lb rp_ub pos_bound_a.
   do split.
     + move => k k_lb k_ub.
-      rewrite /(KyberCPA_avx2.jvx16) /=.
+      rewrite /(Jkem_avx2.jvx16) /=.
       do (rewrite initiE 1:/# /=). smt(@Array16 @List).
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
@@ -1592,7 +1593,7 @@ proof. admit. (*
       rewrite /f16u16_t32u8 /=.
       do (rewrite initiE 1:/# /=).
       rewrite shlMP 1:/# /=.
-      rewrite /(KyberCPA_avx2.pc_shift2_s) /of_int.
+      rewrite /(Jkem_avx2.pc_shift2_s) /of_int.
       apply W8.wordP => x x_i.
       rewrite bits8E initiE 1:x_i /=.
       rewrite /int2bs /= /mkseq -iotaredE /= /bits2w /=.
@@ -1608,7 +1609,7 @@ proof. admit. (*
           simplify.
           smt(@Int @List).
     + move => k k_lb k_ub.
-      rewrite /(KyberCPA_avx2.pc_permidx_s) /=.
+      rewrite /(Jkem_avx2.pc_permidx_s) /=.
       do (rewrite initiE 1:/# /=).
       smt(@Int @List @IntDiv @Array8).
     wp.
@@ -2237,7 +2238,7 @@ proof. admit. (*
   move : (memr_eq_r k k_i).
   rewrite /loadW8.
   done.
-*)qed.
+qed.
 
 lemma poly_compress_ll : islossless Mprevec.poly_compress.
 proc.
@@ -2257,7 +2258,7 @@ lemma poly_tomsg_corr _a (_p : address) mem :
              pos_bound256_cxq res{1} 0 256 1 /\
              touches mem Glob.mem{1} _p 32 /\
              load_array32 Glob.mem{1} _p = res{2}].
-proof. admit. (*
+proof.
   proc.
   cfold{1} 4.
   seq 1 1 : (#{~(pos_bound256_cxq a{1} 0 256 2)}pre /\
@@ -2271,11 +2272,11 @@ proof. admit. (*
   split.
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
-      rewrite /(KyberCPA_avx2.hqx16_m1) initiE 1:/# //=.
+      rewrite /(Jkem_avx2.hqx16_m1) initiE 1:/# //=.
       smt(@List @Array16).
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
-      rewrite /(KyberCPA_avx2.hhqx16) initiE 1:/# //=.
+      rewrite /(Jkem_avx2.hhqx16) initiE 1:/# //=.
       smt(@List @Array16).
   wp.
   while (#{/~mem}{~i{1}=0}pre /\ 0 <= i{1} <= 8 /\
@@ -2293,7 +2294,7 @@ proof. admit. (*
   split; first by move : i_lb i_tub => /#.
   do (rewrite hq_def 1://=).
   do (rewrite hhq_def 1://=).
-  rewrite (_: r7{1}.[0 <-
+  rewrite (_: witness<:W8.t Array32.t>.[0 <-
           packss16
             (((W16.of_int 1664) - a{1}.[32 * i{2} + 0]) `^`
              ((W16.of_int 1664) - a{1}.[32 * i{2} + 0] `|>>`
@@ -2599,7 +2600,7 @@ proof. admit. (*
  rewrite /load_array32 /loadW8 => /> mem1_eq_rp mem1_eq_ra.
   apply Array32.ext_eq => x x_i.
   rewrite initiE 1:x_i //= mem1_eq_ra 1:x_i //=.
-*) qed.
+qed.
 
 lemma poly_tomsg_ll : islossless  Mprevec.poly_tomsg.
 proc.
@@ -2624,7 +2625,7 @@ lemma bit_decode (a: W8.t Array32.t) (i j: int):
   let k = ((linear_idx %% 32) + n) %/ 16 in
   let sl = W8.of_int (15 - (((linear_idx %% 32) + n) %% 16)) in
     s_encode a.[i].[j] = W16.to_sint (((((f.[di] `<<` (W8.of_int n)) \bits16 k) `<<` sl) `|>>` (W8.of_int 15)) `&` (W16.of_int 1665)).
-proof. admit. (*
+proof. 
   move => i_i j_i f_def linear_idx di n k sl.
   rewrite /s_encode /b_encode /asint /trueval /falseval.
   have ->: ((q + 1) %/ 2) = 1665.
@@ -2674,24 +2675,24 @@ proof. admit. (*
     rewrite a_i_j_0 //=.
   rewrite W16.and0w of_sintK /smod //=.
   rewrite /inFq Sub.insubdK 1:/# pmod_small 1:/# //=.
-*) qed.
+qed.
 
 (* TODO: generalize *)
 lemma true_32: forall x, 0 <= x < 8 => (W8.of_int 32).[x] = (x = 5).
-proof. admit. (*
+proof. 
   move => x x_i.
   rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
   rewrite /bits2w initiE 1:x_i /=.
   smt(@Int).
-*)qed.
+qed.
 
 lemma true_49: forall x, 0 <= x < 8 => (W8.of_int 49).[x] = (x = 5 \/ x = 4 \/ x = 0).
-proof. admit. (*
+proof. 
   move => x x_i.
   rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
   rewrite /bits2w initiE 1:x_i /=.
   smt(@Int).
-*)qed.
+qed.
 
 lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t): 
     equiv [ Mprevec.poly_frommsg ~ EncDec_AVX2.decode1_opt :
@@ -2702,7 +2703,7 @@ lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t):
              Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 1 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 ].
-proof. admit. (*
+proof. 
   proc.
   seq 5 2:(#pre /\
            ={i} /\ i{1} = 0 /\
@@ -2716,7 +2717,7 @@ proof. admit. (*
   do split.
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
-      rewrite /(KyberCPA_avx2.hqx16_m1) initiE 1:/# //=.
+      rewrite /(Jkem_avx2.hqx16_m1) initiE 1:/# //=.
       smt(@List @Array16).
     + move => k k_lb k_ub.
       do (rewrite initiE 1:/# //=).
@@ -2755,7 +2756,7 @@ proof. admit. (*
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     smt(@Int @Array16 @IntDiv).
 
@@ -2797,7 +2798,7 @@ proof. admit. (*
     do 2!(rewrite initiE 1:/# //=).
     rewrite W2u8.Pack.initiE 1://= //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv @Int).
 
@@ -2808,7 +2809,7 @@ proof. admit. (*
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     move : x_i k_lb k_ub => /#.
 
@@ -2828,7 +2829,7 @@ proof. admit. (*
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv).
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -2847,7 +2848,7 @@ proof. admit. (*
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite exprM //=.
@@ -2875,7 +2876,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -2888,7 +2889,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -2959,7 +2960,7 @@ proof. admit. (*
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     smt(@Int @Array16 @IntDiv).
 
@@ -3001,7 +3002,7 @@ proof. admit. (*
     do 2!(rewrite initiE 1:/# //=).
     rewrite W2u8.Pack.initiE 1://= //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv @Int).
 
@@ -3012,7 +3013,7 @@ proof. admit. (*
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     move : x_i k_lb k_ub => /#.
 
@@ -3032,7 +3033,7 @@ proof. admit. (*
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv).
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -3051,7 +3052,7 @@ proof. admit. (*
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite exprM //=.
@@ -3079,7 +3080,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -3092,7 +3093,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -3161,7 +3162,7 @@ proof. admit. (*
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     smt(@Int @Array16 @IntDiv).
 
@@ -3203,7 +3204,7 @@ proof. admit. (*
     do 2!(rewrite initiE 1:/# //=).
     rewrite W2u8.Pack.initiE 1://= //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv @Int).
 
@@ -3214,7 +3215,7 @@ proof. admit. (*
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     move : x_i k_lb k_ub => /#.
 
@@ -3234,7 +3235,7 @@ proof. admit. (*
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv).
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -3253,7 +3254,7 @@ proof. admit. (*
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite exprM //=.
@@ -3281,7 +3282,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -3294,7 +3295,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -3362,7 +3363,7 @@ proof. admit. (*
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     smt(@Int @Array16 @IntDiv).
 
@@ -3404,7 +3405,7 @@ proof. admit. (*
     do 2!(rewrite initiE 1:/# //=).
     rewrite W2u8.Pack.initiE 1://= //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv @Int).
 
@@ -3415,7 +3416,7 @@ proof. admit. (*
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) //=).
     move : x_i k_lb k_ub => /#.
 
@@ -3435,7 +3436,7 @@ proof. admit. (*
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @Array16 @IntDiv).
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -3454,7 +3455,7 @@ proof. admit. (*
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite exprM //=.
@@ -3482,7 +3483,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -3495,7 +3496,7 @@ proof. admit. (*
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(KyberCPA_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) //=).
       smt(@Int @IntDiv @Array16).
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt(@Int @IntDiv).
@@ -4026,15 +4027,15 @@ proof. admit. (*
   rewrite /pos_bound256_cxq /bpos16 => x x_i.
  
   move : (rpl_bnd x) (rph_bnd x) => /#.
-*)qed.
+qed.
 
 lemma poly_frommsg_ll : islossless  Mprevec.poly_frommsg.
-proof. admit. (*
+proof. 
   proc; while (0 <= i <= 4) (4-i).
   move => *.
   inline *; wp; auto => /> /#.
   inline *; auto => /> /#.
-*)qed.
+qed.
 
 
 op cmplx_mul_fq (a : Fq Array32.t, b : Fq Array32.t, zetas : Fq Array16.t) =
@@ -4394,7 +4395,7 @@ admitted.
   move => &1 &2 [#] pos_bound_a a2_bnd a_def rp_lb rp_ub a a1_eq_a pos_bound_an />.
   split.
     + move => k k_lb k_ub.
-      rewrite /(KyberCPA_avx2.jqx16).
+      rewrite /(Jkem_avx2.jqx16).
       do (rewrite initiE 1://= /=).
       smt(@List @Int @Array16).
     + rewrite Array256.tP => i i_i />.

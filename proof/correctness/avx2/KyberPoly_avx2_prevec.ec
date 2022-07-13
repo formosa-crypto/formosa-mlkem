@@ -708,7 +708,7 @@ module Mprevec = {
       f0_b <@ Ops.iVPACKUS_16u16(f0, f2);
 
       f0_dw <- f32u8_t8u32 f0_b;
-      f0_dw <@ Ops.iVPERMD(f0_dw, permidx);  (* FIXME: specific AVX2 op maybe ?? *)
+      f0_dw <@ Ops.iVPERMD(permidx, f0_dw);  
       f0_b <- f8u32_t32u8 f0_dw;
 
       Glob.mem <@ Ops.istore32u8(Glob.mem, rp + (W64.of_int (32 * i)), f0_b);

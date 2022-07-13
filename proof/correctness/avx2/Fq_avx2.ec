@@ -269,6 +269,27 @@ case (k = 15); 1: by move => *; rewrite Array16.set_eqiE /#.
 by smt().
 qed.
 
+lemma barret_red16x_corr_hh _a:
+  hoare [Mprevec.red16x:
+          _a = lift_array16 r /\
+          (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
+          (forall k, 0 <= k < 16 => vx16.[k] = jvx16.[k]) ==>
+          forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC _a.[k] 26].
+hoare.
+bypr. rewrite Pr[ mu_not] => &m [#] ???. 
+have -> : Pr[Mprevec.red16x(r{m}, qx16{m}, vx16{m}) @ &m :
+   forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = BREDC _a.[k] 26] = 1%r.
++ byphoare (_: _a = lift_array16 r /\
+          (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
+          (forall k, 0 <= k < 16 => vx16.[k] = jvx16.[k]) ==>
+          forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC _a.[k] 26) => //.
+  by apply barret_red16x_corr.
+
+have -> : Pr[Mprevec.red16x(r{m}, qx16{m}, vx16{m}) @ &m : true] = 1%r; last by auto.
+
+byphoare => //; apply barret_red16x_ll.
+qed.
+
 lemma fqmulx16_corr_h:
   equiv [Mprevec.fqmulx16 ~ Kyber_AVX2_cf.__fqmul_x16 :
          ={a, b} /\
@@ -530,6 +551,31 @@ case (k = 14); 1: by move => *; do 1!(rewrite Array16.set_neqiE 1,2:/#); rewrite
 case (k = 15); 1: by move => *; rewrite Array16.set_eqiE /#.
 by smt().
 qed.
+
+lemma fqmulx16_corr_hh _a _b:
+  hoare [Mprevec.fqmulx16 :
+          _a = lift_array16 a /\
+          _b = lift_array16 b /\
+          (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
+          (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) ==>
+          forall k, 0 <= k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])].
+hoare.
+bypr. rewrite Pr[ mu_not] => &m [#] ???H. 
+have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m :
+   forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])] = 1%r.
++ byphoare (_: _a = lift_array16 a /\
+          _b = lift_array16 b /\
+          (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
+          (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) ==>
+          forall k, 0 <= k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])) => //=.
+  + by apply fqmulx16_corr. 
+  do split; 1..3: by auto.
+  by move => k kb; rewrite H //.
+have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%r; last by auto.
+
+byphoare => //; apply fqmulx16_ll.
+qed.
+
 
 lemma compress_avx2_impl_small (a: W16.t):
   bpos16 a q =>

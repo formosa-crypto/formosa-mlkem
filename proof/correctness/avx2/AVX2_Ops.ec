@@ -478,7 +478,7 @@ module Ops = {
     return r;
   }
 
-  proc iVPERMD(x p: t8u32) : t8u32 = {
+  proc iVPERMD(p x: t8u32) : t8u32 = {
     var r : t8u32;
 
     r <- Array8.init (fun i => x.[(to_uint p.[i]) %% 8 ]);
@@ -1067,8 +1067,8 @@ module OpsV = {
     return VPERMQ x p;
   }
 
-  proc iVPERMD(x p: vt8u32) : vt8u32 = {
-    return VPERMD x p;
+  proc iVPERMD(p x: vt8u32) : vt8u32 = {
+    return VPERMD p x;
  }
 
   proc iVPSRLDQ_256(x:vt4u64, p : W8.t) : vt4u64 = {
@@ -1633,7 +1633,7 @@ qed.
 
 equiv eq_iVPERMD : Ops.iVPERMD ~ OpsV.iVPERMD : is8u32 x{1} x{2} /\ is8u32 p{1} p{2} ==> is8u32 res{1} res{2}.
 proof.
-  proc; wp; skip; rewrite /is8u32 /VPERMD /permd //=.
+  proc; wp; skip; rewrite /is8u32 /VPERMD /permd //=. 
   move => &1 &2 [x_eq p_eq].
   rewrite x_eq p_eq.
   rewrite !pack8_bits32 ?modz_cmp //.

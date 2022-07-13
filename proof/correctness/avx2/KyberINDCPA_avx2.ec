@@ -46,6 +46,8 @@ transitivity {1} { Jkem.M.__indcpa_keypair(pkp, skp, randomnessp);}
    last by call(kyber_correct_kg mem _pkp _skp _randomnessp); auto => />. 
 
 inline{1} 1; inline {2} 1.
+sim.
+
 admitted. (* We should change the axv2 indcpa file to remove useless differences to the ref *)
 
 
