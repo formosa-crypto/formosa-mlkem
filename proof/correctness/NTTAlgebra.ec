@@ -2644,10 +2644,10 @@ theory NTTequiv.
     r_bsrev_ntt zetas r (2 ^ (7 - k)).
 
   op r_avx2_invntt zetas_inv r k =
-    r_bsrev_invntt zetas_inv r (2 ^ k).
+    r_bsrev_invntt zetas_inv r (2 ^ (k + 1)).
 
   op r_avx2_invntt_post zetas_inv r =
-    r_bsrev_invntt_post zetas_inv r 256.
+    r_bsrev_invntt_post_foldl zetas_inv r 256.
 
   module NTT_avx2 = {
 
@@ -2848,6 +2848,208 @@ theory NTTequiv.
   qed.
 
   (*TODO: same for invntt.*)
+  op P_avx2_invntt (zetas1 zetas2 : Fq Array128.t) =
+    zetas1 = zetas2.
+
+  op Q_avx2_invntt (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+    s.`1 = s.`2.
+
+  op inv_avx2_invntt zetas1 zetas2 =
+    RHL_FOR_NAT_MUL_LE_INT_ADD_LT.inv
+    128 7 2 1 2 0
+    (P_avx2_invntt zetas1 zetas2)
+    Q_avx2_invntt.
+
+  op P_avx2_invntt_post (zetas_inv1 zetas_inv2 : Fq Array128.t) =
+    zetas_inv1 = zetas_inv2.
+
+  op Q_avx2_invntt_post zetas_inv1 r k (_ : int) (s : Fq Array256.t) =
+      s = r_bsrev_invntt_post_foldl zetas_inv1 r k.
+
+  op inv_avx2_invntt_post zetas_inv1 zetas_inv2 r =
+    HL_FOR_INT_ADD_LT.inv
+    256 1 0
+    ( P_avx2_invntt_post zetas_inv1 zetas_inv2 )
+    ( Q_avx2_invntt_post zetas_inv1 r ).
+
+  op P_avx2_invntt_outer zetas1 zetas2 =
+    RHL_FOR_NAT_MUL_LE_INT_ADD_LT.context
+    128 7 2 1 2 0
+    (P_avx2_invntt zetas1 zetas2).
+
+  op Q_avx2_invntt_outer
+    zetas1 (len1 : int) r k (_ : int) (s : Fq Array256.t) =
+    s = r_bsrev_invntt_outer_foldl zetas1 len1 r k.
+
+  op inv_avx2_invntt_outer zetas1 zetas2 len1 len2 r =
+    HL_FOR_INT_ADD_LT.inv
+      256 (len1 * 2) 0
+      ( P_avx2_invntt_outer zetas1 zetas2 len1 len2 )
+      ( Q_avx2_invntt_outer zetas1 len1 r ).
+
+  op P_avx2_invntt_inner
+    zetas1 zetas2 len1 len2 start1 (zeta_1 : Fq) =
+    HL_FOR_INT_ADD_LT.context
+      256 (len1 * 2) 0
+      ( P_avx2_invntt_outer zetas1 zetas2 len1 len2 )
+      start1 /\
+    zeta_1 = zetas1.[128 + ((-512) + start1) %/ (len1 * 2)].
+
+  op Q_avx2_invntt_inner
+    zetas1 (len1 start1 : int) r k (_ : int) (s : Fq Array256.t) =
+    s = r_bsrev_invntt_inner_foldl zetas1 len1 start1
+          (r_bsrev_invntt_outer_foldl zetas1 len1 r (start1 %/ (len1 * 2))) k.
+
+  op inv_avx2_invntt_inner
+    zetas1 zetas2 (len1 len2 start1 : int) zeta_1 r =
+    HL_FOR_INT_ADD_LT.inv
+      (start1 + len1) 1 start1
+      ( P_avx2_invntt_inner zetas1 zetas2 len1 len2 start1 zeta_1 )
+      ( Q_avx2_invntt_inner zetas1 len1 start1 r ).
+
+  equiv avx2_invntt :
+    NTT_bsrev.invntt ~ NTT_avx2.invntt :
+    NTT_vars.zetas_inv{1} = NTT_avx2.zetas_inv{2} /\
+    NTT_vars.r{1} = NTT_avx2.r{2} ==>
+    ={res}.
+  proof.
+    proc; inline NTT_bsrev.invntt_post; wp.
+    while{1} (
+      inv_avx2_invntt_post
+        NTT_vars.zetas_inv{1} NTT_avx2.zetas_inv{2}
+        NTT_avx2.r{2}
+        NTT_vars.j{1} NTT_vars.r{1} ) (256 - NTT_vars.j{1}).
+    + move => &2 ?; wp; skip => &1 [inv_post <<-] /=.
+      rewrite opprD addrA ltzE /=; move: inv_post.
+      rewrite /inv_avx2_invntt_post; apply/HL_FOR_INT_ADD_LT.inv_in.
+      move => ? ? /= <<- kj mem_kj_range -> /= ->.
+      rewrite /Q_avx2_invntt_post /r_bsrev_invntt_post_foldl rangeSr.
+      - by move: mem_kj_range; apply/mem_range_le.
+      rewrite foldl_rcons; pose r:= foldl _ _ _; move: r => r.
+      by rewrite /r_bsrev_invntt_post.
+    wp.
+    while (
+      inv_avx2_invntt
+        NTT_vars.zetas_inv{1} NTT_avx2.zetas_inv{2}
+        NTT_vars.len{1} NTT_avx2.k{2}
+        (NTT_vars.r{1}, NTT_avx2.r{2}) );
+    wp.
+    + inline*; wp.
+      while{1} (
+        inv_avx2_invntt_outer
+          NTT_vars.zetas_inv{1} NTT_avx2.zetas_inv{2}
+          NTT_vars.len{1} NTT_avx2.k{2}
+          NTT_avx2.r{2}
+          NTT_vars.start{1} NTT_vars.r{1} ) (256 - NTT_vars.start{1}).
+      - move => &2 v; wp.
+        while (
+          inv_avx2_invntt_inner
+            NTT_vars.zetas_inv NTT_avx2.zetas_inv{2}
+            NTT_vars.len NTT_avx2.k{2}
+            NTT_vars.start NTT_vars.zeta_ NTT_avx2.r{2}
+            NTT_vars.j NTT_vars.r ) (NTT_vars.start + NTT_vars.len - NTT_vars.j).
+        * move => {v} v; wp; skip => &1 /= [inv_j <<-].
+          rewrite opprD !addrA ltr_subl_addr ltzS /=.
+          move: inv_j; rewrite /inv_avx2_invntt_inner.
+          apply/HL_FOR_INT_ADD_LT.inv_in.
+          move => [] [] [_] /= [kl] [/mem_range mem_kl_range] [-> _].
+          rewrite (exprS_range _ _ _ mem_kl_range) //=.
+          rewrite (exprSr_add_range _ _ _ mem_kl_range) //= expr_gt0 //=.
+          rewrite (NdivzN_pow_add_range _ _ _ mem_kl_range) //=.
+          move => [ks] [/mem_range mem_ks_range ->] -> ? <<- kj.
+          rewrite -ler_subr_addl /= lerNgt expr_gt0 //= addrAC /=.
+          move => mem_kj_range ->; rewrite addrA /= => ->.
+          rewrite divzMDr; [by apply/gtr_eqF/expr_gt0|].
+          rewrite (exprSr_add_range _ _ _ mem_kl_range) //=.
+          rewrite mulzK; [by apply/gtr_eqF/expr_gt0|].
+          rewrite (divz_pow_add_range _ _ _ mem_kl_range) //= mulN1r addrA.
+          rewrite /Q_avx2_invntt_inner /r_bsrev_invntt_inner_foldl rangeSr.
+          + by move: mem_kj_range; apply/mem_range_le.
+          rewrite map_rcons foldl_rcons.
+          rewrite (exprSr_add_range _ _ _ mem_kl_range) //=.
+          rewrite mulzK; [by apply/gtr_eqF/expr_gt0|].
+          pose r:= foldl _ _ _; move: r => r; rewrite /r_bsrev_invntt_inner.
+          rewrite (exprSr_add_range _ _ _ mem_kl_range) //=.
+          rewrite divzMDr; [by apply/gtr_eqF/expr_gt0|].
+          by rewrite (divz_pow_add_range _ _ _ mem_kl_range) //= mulN1r addrA.
+        wp; skip => &1; rewrite /inv_avx2_invntt_outer => -[inv_start <<-] /=.
+        case/HL_FOR_INT_ADD_LT.invP: inv_start (inv_start) => -[<-] /=.
+        move => [kl] [/mem_range mem_kl_range [-> ->]].
+        rewrite (exprS_range _ _ _ mem_kl_range) //=.
+        rewrite (exprSr_add_range _ _ _ mem_kl_range) //= expr_gt0 //=.
+        rewrite (NdivzN_pow_add_range _ _ _ mem_kl_range) //=.
+        move => [ks] [/mem_range mem_ks_range] [-> ->] inv_start.
+        rewrite divzMDr; [by apply/gtr_eqF/expr_gt0|].
+        rewrite (divz_pow_add_range _ _ _ mem_kl_range) //= mulN1r addrA.
+        split.
+        * rewrite /inv_avx2_invntt_inner; apply/HL_FOR_INT_ADD_LT.inv_0 => //=.
+          + rewrite /P_avx2_invntt_inner (exprSr_add_range _ _ _ mem_kl_range) //=; split.
+            - by move/HL_FOR_INT_ADD_LT.inv_context: inv_start.
+            rewrite divzMDr; [by apply/gtr_eqF/expr_gt0|].
+            by rewrite (divz_pow_add_range _ _ _ mem_kl_range) //= mulN1r addrA.
+          rewrite /Q_avx2_invntt_inner.
+          rewrite (exprSr_add_range _ _ _ mem_kl_range) //=.
+          rewrite mulzK; [by apply/gtr_eqF/expr_gt0|].
+          by rewrite /r_bsrev_invntt_inner_foldl range_geq.
+        move => j r; split.
+        * by move => _; rewrite -lerNgt subr_le0.
+        move => Ncondj1 inv_j; rewrite opprD addrA -ltr_subr_addl /= oppr_lt0 expr_gt0 //=.
+        move: inv_start; apply/HL_FOR_INT_ADD_LT.inv_in => _ /=. 
+        rewrite (NdivzN_pow_add_range _ _ _ mem_kl_range) //= expr_gt0 //=.
+        move => ? <<- ? _; move: (IntID.mulIf (2 ^ (kl + 2)) _); [by apply/gtr_eqF/expr_gt0|].
+        move => inj_ /inj_ {inj_} <<-; rewrite mulrDl //= => _.
+        move: Ncondj1 inv_j; rewrite /inv_avx2_invntt_inner.
+        pose R (_ : int) s :=
+          Q_avx2_invntt_outer NTT_vars.zetas_inv{1} (2 ^ (kl + 1)) NTT_avx2.r{2} (ks + 1) (ks * 2 ^ (kl + 2) + 2 ^ (kl + 2)) s.
+        apply/(HL_FOR_INT_ADD_LT.inv_out _ _ _ _ _ R) => //=; rewrite /R => {R} _ rr.
+        rewrite -ler_subr_addl /= lerNgt expr_gt0 //= addrAC /= => ->.
+        rewrite /Q_avx2_invntt_outer /r_bsrev_invntt_outer_foldl rangeSr.
+        * by move: mem_ks_range; apply/mem_range_le.
+        rewrite map_rcons foldl_rcons {2}/r_bsrev_invntt_outer.
+        rewrite (exprSr_add_range _ _ _ mem_kl_range) //=.
+        by rewrite mulzK //; apply/gtr_eqF/expr_gt0.
+      wp; skip => &1 &2; rewrite {1}/inv_avx2_invntt => inv_len.
+      move: (RHL_FOR_NAT_MUL_LE_INT_ADD_LT.invP _ _ _ _ _ _ _ _ _ _ _ _ inv_len); [by trivial|].
+      move => and_; move: and_ inv_len => [<-] /= [kl] [/mem_range mem_kl_range] [->] [->] <-.
+      rewrite (exprS_range _ _ _ mem_kl_range) //= => inv_len; split.
+      - rewrite /inv_avx2_invntt_outer /HL_FOR_INT_ADD_LT.inv /=; split.
+        * by move: inv_len; rewrite /P_avx2_invntt_outer; apply/RHL_FOR_NAT_MUL_LE_INT_ADD_LT.inv_context.
+        rewrite (exprSr_add_range _ _ _ mem_kl_range) //=.
+        rewrite (NdivzN_pow_add_range _ _ _ mem_kl_range) //=.
+        rewrite expr_gt0 //=; exists 0 => //=; rewrite expr_ge0 //=; rewrite /Q_avx2_invntt_outer.
+        by rewrite /r_bsrev_invntt_outer_foldl range_geq.
+      move => r1 start1; split; [by move => _; rewrite subr_le0 lerNgt|].
+      rewrite /inv_avx2_invntt_outer /inv_avx2_invntt => Ncondstart1 inv_start.
+      move: inv_len; apply/RHL_FOR_NAT_MUL_LE_INT_ADD_LT.inv_in => //=.
+      move => _ ? <<- ? _ _ <<- /=.
+      rewrite (exprS_range _ _ _ mem_kl_range) //=.
+      rewrite (exprS_add_range _ _ _ mem_kl_range) //=.
+      rewrite (exprSr_add_range _ _ _ mem_kl_range) //= => _.
+      move: Ncondstart1 inv_start.
+      pose R (_ : int) s :=
+        Q_avx2_invntt (kl + 1) (2 ^ (kl + 2)) (kl + 1) (s, r_avx2_invntt NTT_vars.zetas_inv{1} NTT_vars.r{1} kl).
+      apply/(HL_FOR_INT_ADD_LT.inv_out _ _ _ _ _ R) => //=; rewrite /R => {R} ? r.
+      rewrite (exprSr_add_range _ _ _ mem_kl_range) //= expr_gt0 //=.
+      rewrite (NdivzN_pow_add_range _ _ _ mem_kl_range) //=.
+      rewrite (exprD_nneg_sub_add_range _ _ _ mem_kl_range) //=.
+      move => ->; rewrite /Q_avx2_invntt /=; rewrite /r_avx2_invntt /r_bsrev_invntt.
+      by rewrite (divz_pow_add_range _ _ _ mem_kl_range).
+    skip => &1 &2 [<<- <<-].
+    rewrite /inv_avx2_invntt; split.
+    + by rewrite RHL_FOR_NAT_MUL_LE_INT_ADD_LT.inv_0.
+    move => len1 r1 k2 r2 Ncondlen1 Ncondk2 inv_len.
+    rewrite /inv_avx2_invntt_post; split.
+    + apply/HL_FOR_INT_ADD_LT.inv_0 => //=; move: Ncondlen1 Ncondk2 inv_len.
+      pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+        Q_avx2_invntt_post NTT_vars.zetas_inv{1} s.`2 0 0 s.`1.
+      apply/(RHL_FOR_NAT_MUL_LE_INT_ADD_LT.inv_out _ _ _ _ _ _ _ _ _ R) => //=.
+      move => _ {r1 r2} [r1 r2] <-; rewrite /R /Q_avx2_invntt_post /= => {R}.
+      by rewrite /r_bsrev_invntt_post_foldl range_geq.
+    move => j1 r; rewrite subr_le0 lerNgt /=.
+    pose R (_ : int) (s : Fq Array256.t) :=
+      s = r_avx2_invntt_post NTT_vars.zetas_inv{1} r2.
+    by apply/(HL_FOR_INT_ADD_LT.inv_out _ _ _ _ _ R).
+  qed.
 
   op partial_ntt (p : Fq Array256.t, len start bsj : int) =
     BAdd.bigi
