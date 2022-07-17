@@ -2111,7 +2111,6 @@ clone Program as LSvec with
  type t <- poly,
  op d <- dshort_R.
 
-print LSvec.
 equiv CBD2rnd_vec_equiv:
  CBD2rnd.sample_vec_real ~ CBD2rnd.sample_vec_ideal:
  true ==> ={res}.

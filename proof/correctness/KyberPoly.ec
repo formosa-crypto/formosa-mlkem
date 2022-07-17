@@ -1718,8 +1718,8 @@ have  /= [#] redbl6 redbh6 redv6 :=
 
 have  /= [#] redbl7 redbh7 redv7 := 
     (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[to_uint i{hr} %/ 4 + 64])) _ _); 1: by rewrite /R /=; smt().
-+ rewrite /R /=; move : zeta_bound; rewrite /minimum_residues /bpos16 => zb. 
-  by rewrite to_sintN /= /#.
++ rewrite /R /=; move : zeta_bound; rewrite /minimum_residues /bpos16 => zb.
+  rewrite to_sintN /=; do split; smt().  
 
 have  /= [#] redbl8 redbh8 redv8 := 
     (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr}+2]) _ _); 1,2:

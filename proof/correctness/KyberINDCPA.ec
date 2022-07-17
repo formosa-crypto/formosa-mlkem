@@ -2,7 +2,7 @@ require import AllCore IntDiv List.
 from Jasmin require import JModel.
 require import Fq Kyber KyberPoly KyberPolyVec W16extra NTT_Fq.
 require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
-require import Array960 Array1152 Array2304 Array1088.
+require import Array960 Array1152 Array2304 Array1088 WArray32 WArray64.
 
 require import Jkem.
 
@@ -265,9 +265,8 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var _N : int;
     var spkp:W64.t;
     var sskp:W64.t;
-    var i:W64.t;
+    var i:int;
     var c:W8.t;
-    var j:W64.t;
     var publicseed:W8.t Array32.t;
     var noiseseed:W8.t Array32.t;
     var zero:W64.t;
@@ -277,6 +276,8 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var e:W16.t Array768.t;
     var pkpv:W16.t Array768.t;
     var buf : W8.t Array64.t;
+    var _aux : int;
+    var t64 : W64.t;
 
 
     buf <@  HSF.PseudoRF.f(seed,());
@@ -284,16 +285,18 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     publicseed <- witness;
     noiseseed <- witness;
 
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 32);
-    
-    while ((i \ult (W64.of_int 32))) {
-      c <- buf.[(W64.to_uint i)];
-      publicseed.[(W64.to_uint i)] <- c;
-      c <- buf.[(W64.to_uint j)];
-      noiseseed.[(W64.to_uint i)] <- c;
-      i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
+    _aux <- (32 %/ 8);
+    i <- 0;
+    while (i < _aux) {
+      t64 <- (get64 (WArray64.init8 (fun i => buf.[i])) i);
+      publicseed <-
+      Array32.init
+      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i => publicseed.[i])) i (t64)));
+      t64 <- (get64 (WArray64.init8 (fun i => buf.[i])) (i + (32 %/ 8)));
+      noiseseed <-
+      Array32.init
+      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i => noiseseed.[i])) i (t64)));
+      i <- i + 1;
     }
 
     a <- witness;
@@ -323,14 +326,16 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
     M.__polyvec_tobytes (skp, skpv);
     M.__polyvec_tobytes (pkp, pkpv);
-    i <- (W64.of_int 0);
     pkp <- (pkp + (W64.of_int (3 * 384)));
     
-    while ((i \ult (W64.of_int 32))) {
-      c <- publicseed.[(W64.to_uint i)];
-      Glob.mem <- storeW8 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))) c;
-      pkp <- (pkp + (W64.of_int 1));
-      i <- (i + (W64.of_int 1));
+    _aux <- (32 %/ 8);
+    i <- 0;
+    while (i < _aux) {
+      t64 <- (get64 (WArray32.init8 (fun i => publicseed.[i])) i);
+      Glob.mem <-
+      storeW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))) (t64);
+      pkp <- (pkp + (W64.of_int 8));
+      i <- i + 1;
     }
     return ();
   }
@@ -352,6 +357,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var epp:W16.t Array256.t;
     var bp:W16.t Array768.t;
     var v:W16.t Array256.t;
+    var t64 : W64.t;
 
     pkpv <- witness;
     pkpv <@ M.__polyvec_frombytes (pkp);
@@ -360,10 +366,12 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     i <- (W64.of_int 0);
     pkp <- (pkp + (W64.of_int (3 * 384)));
     
-    while ((i \ult (W64.of_int 32))) {
-      c <- (loadW8 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
-      publicseed.[(W64.to_uint i)] <- c;
-      pkp <- (pkp + (W64.of_int 1));
+    while ((i \ult (W64.of_int (32 %/ 8)))) {
+      t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
+      publicseed <-
+      Array32.init
+      (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i => publicseed.[i])) (8 * (W64.to_uint i)) (t64)));
+      pkp <- (pkp + (W64.of_int 8));
       i <- (i + (W64.of_int 1));
     }
 
@@ -436,6 +444,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var epp:W16.t Array256.t;
     var bp:W16.t Array768.t;
     var v:W16.t Array256.t;
+    var t64 : W64.t;
 
     sctp <- ctp;
 
@@ -446,10 +455,12 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     i <- (W64.of_int 0);
     pkp <- (pkp + (W64.of_int (3 * 384)));
     
-    while ((i \ult (W64.of_int 32))) {
-      c <- (loadW8 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
-      publicseed.[(W64.to_uint i)] <- c;
-      pkp <- (pkp + (W64.of_int 1));
+    while ((i \ult (W64.of_int (32 %/ 8)))) {
+      t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
+      publicseed <-
+      Array32.init
+      (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i => publicseed.[i])) (8 * (W64.to_uint i)) (t64)));
+      pkp <- (pkp + (W64.of_int 8));
       i <- (i + (W64.of_int 1));
     }
 
@@ -1116,35 +1127,40 @@ proc => /=.
 inline Aux.inner_product.
 swap {1} 4 -3.
 swap {1} 3 -1.
-swap {1} [11..13] -8.
-swap {1} 8 -5.
-swap {1} 10 -7.
-swap {1} [14..16] -6.
-seq 10 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
+swap {1} [11..14] -8.
+swap {1} 9 -6.
+swap {1} 11 -8.
+swap {1} [15..17] -6.
+seq 11 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
 + inline HSF.PseudoRF.f. 
-  swap {1} [5..7] -2. swap {2} [4..5] 2.
+  swap {1} [5..8] -2. swap {2} [4..5] 2.
   
-  seq 5 3 : (#pre /\ ={buf}); last by sim; auto => />.   
+  seq 6 3 : (#pre /\ ={buf}); last by sim; auto => />.   
   wp;ecall {1} (sha3_512_32_64 buf{1} inbuf{1}).
   conseq => />.
-  while {1} (0<= to_uint i{1} <=32 /\ 
+  while {1} (0<= i{1} <= aux{1} /\ aux{1} = 4 /\
               valid_ptr (to_uint randomnessp{1}) 32 /\
               seed{2} = (Array32.init (fun (i1 : int) => 
                   loadW8 Glob.mem{1} (to_uint randomnessp{1} + i1))) /\
-             forall k, 0<= k < to_uint i{1} =>
-                    inbuf{1}.[k] = seed{2}.[k]) (32-to_uint i{1});
+             forall k, 0<= k < i{1} * 8 =>
+                    inbuf{1}.[k] = seed{2}.[k]) (32- i{1} * 8);
     last first. 
   + auto => /> &1 &2 ??; split; 1: smt().
-    move => il inbufl; rewrite !ultE /=; split; 1: smt().
+    move => il inbufl /=; split; 1: smt().
     move => ???H. congr;rewrite tP => i ib; rewrite  initiE //=.
     by move : (H i _); 1: smt(); rewrite initiE //=.
-  move => *; auto => /> &hr ???; rewrite ultE /==> ?.
-  rewrite !to_uintD_small /=; 1,2:smt(); move => *.
+  move => *; auto => /> &hr ??? /==> *.
   split; 2: smt(); split; 1: smt().
-  move => k kb ?; case (k < to_uint i{hr}).
-  + by move => *; rewrite set_neqiE //= /#.
-  move => *; rewrite set_eqiE //= 1:/#.
-  by rewrite initiE //= /#.
+  move => k kb ?; case (k < i{hr} * 8).
+  + move => *; rewrite initiE /= 1:/# get8_set64_directE 1,2:/#. 
+    case (8 * i{hr} <= k && k < 8 * i{hr} + 8);
+     1: by move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= /#. 
+    by move => *; rewrite /get8 /init8 initiE /#.
+  move => *; rewrite !initiE 1,2:/# get8_set64_directE 1,2:/#.
+  case (8 * i{hr} <= k && k < 8 * i{hr} + 8).
+  + move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= 1:/#. 
+    by congr; rewrite to_uintD_small /= of_uintK /= /#.
+  by move => *; rewrite /get8 /init8 initiE /#.
 
 swap {1} [7..8] -5.
 seq 3 2 : (#pre /\ ={a}); 1: by call auxgenmatrix_good; auto => />.
@@ -1324,19 +1340,24 @@ seq 7 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
   + wp;call(_:true); 1: by auto => /> /#. 
     by auto => />.
   conseq => />.
-  while {1} (0<=to_uint i{1}<=32 /\ to_uint j{1} = to_uint i{1} + 32 /\ buf{1} = rhosig{2} /\
-              forall k, 0<=k<to_uint i{1} => publicseed{1}.[k] = rhosig{2}.[k] /\ noiseseed{1}.[k] = rhosig{2}.[k+32])
-              (32 - to_uint i{1}); last first.
+  while {1} (0<=i{1}<=_aux{1} /\ _aux{1} = 4 /\ buf{1} = rhosig{2} /\
+              forall k, 0<=k< i{1}*8 => publicseed{1}.[k] = rhosig{2}.[k] /\ noiseseed{1}.[k] = rhosig{2}.[k+32])
+              (4 - i{1}); last first.
   + auto => /> &1 &2 ?????; split; 1:smt().
-    move => i j ns ps; rewrite ultE of_uintK /=; split; 1: by smt().
-    by move => ?????; split;  rewrite tP => k kb; rewrite initiE /#.
-  move => *. auto => /> &1; rewrite ultE of_uintK /= => ?????. 
-  rewrite !to_uintD_small /=; 1,2: smt().
-  do split; 1..3,5:smt().
+    move => i ns ps /=; split; 1: by smt().
+    by move => ????; split;  rewrite tP => k kb; rewrite initiE /#.
+  move => *; auto => /> &1 /= => ????. 
+  do split; 1..2,4:smt().
   move => k kbl kbh. 
-  case (k<to_uint i{1}). 
-  move => low;smt(Array32.set_neqiE). 
-  by move => high;rewrite !Array32.set_eqiE; smt(). 
+  case (k<i{1}*8). 
+  + move => *; rewrite !initiE /= 1,2:/# !get8_set64_directE 1..4:/#. 
+    case (8 * i{1} <= k && k < 8 * i{1} + 8).
+    + by move => *; rewrite !get64E !pack8bE 1..2:/# !initiE 1..2:/# /= /init8 !initiE /#. 
+    by move => *; rewrite /get8 /init8 !initiE /#.
+  move => *; rewrite !initiE 1,2:/# !get8_set64_directE 1..4:/#.
+  case (8 * i{1} <= k && k < 8 * i{1} + 8); 
+   1: by move => *; rewrite !get64E !pack8bE 1..2:/# !initiE 1..2:/# /= /init8 !initiE /#.
+    by move => *; rewrite /get8 /init8 !initiE /#.
 
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
@@ -1346,9 +1367,9 @@ seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
          forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a0{1}.[ii,jj] = a{2}.[ii,jj]); last  first.
           auto => />; smt(eq_matrixP).
-  wp; while (i0{1} = i{2} /\ j0{1} = j{2} /\ 0<=i0{1}<kvec /\ 0<=j0{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
+  wp; while (i0{1} = i{2} /\ j{1} = j{2} /\ 0<=i0{1}<kvec /\ 0<=j{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
          (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => a0{1}.[ii,jj] = a{2}.[ii,jj]) /\
-         (forall jj, 0 <= jj <j0{1} => a0{1}.[i0{1},jj] = a{2}.[i0{1},jj])); last 
+         (forall jj, 0 <= jj <j{1} => a0{1}.[i0{1},jj] = a{2}.[i0{1},jj])); last 
             by auto => />  /#.
   wp; call(_: ={XOF.state}); 1: by sim.
   wp; call(_: ={arg} ==> ={XOF.state}); last by auto => /> &1 &2;  smt(offunmK). 
@@ -1372,32 +1393,33 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
                 pos_bound768_cxq skpv{1} 0 768 2
                 ); last first.
 
-+ while{1} (0<=to_uint i{1} <= 32 /\ 
-            to_uint pkp0{1} = _pkp + 3*384 + to_uint i{1} /\ 
++ while{1} (0<=i{1} <= _aux{1} /\ _aux{1} = 4 /\
+            to_uint pkp0{1} = _pkp + 3*384 + i{1} * 8 /\ 
             to_uint skp0{1} = _skp /\ rho{2} = publicseed{1} /\
             valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3) /\
             touches2 Glob.mem{1} mem _pkp (384 * 3 + 32) _skp (384 * 3) /\
                 sv{2} = load_array1152 Glob.mem{1} _skp /\
                 tv{2} = load_array1152 Glob.mem{1} _pkp /\ 
-                forall k, 0<=k<to_uint i{1} =>
+                forall k, 0<=k<i{1}*8 =>
                  rho{2}.[k] = loadW8 Glob.mem{1} (_pkp + 1152 + k)) 
-             (32 - to_uint i{1}).
+             (4 - i{1}).
 
 + move => *;
   auto => /> &hr ??; rewrite /loadW8 /storeW8 /valid_disj_reg /valid_ptr /=.
-  move  => ppk [#] reg1 reg2 reg3 reg4 reg5 touches2 loaded.
-  rewrite ultE /= to_uintD_small /= 1:/# => enter.
+  move  => ppk [#] reg1 reg2 reg3 reg4 reg5 touches2 loaded enter.
   rewrite to_uintD_small /= 1:/#.
   do split; 1..3,8:smt().
-  + by rewrite /touches2 /= => a ab1 ab2; rewrite get_set_neqE_s /#.
+  + by rewrite /touches2 /= => a ab1 ab2; rewrite /storeW64 /= /stores /=  !get_set_neqE_s /#.
   + rewrite /load_array1152 Array1152.tP => k kb.
-    by rewrite !initiE //=;  rewrite get_set_neqE_s; smt().
+    by rewrite !initiE //= /storeW64 /= /stores /=  !get_set_neqE_s /#.
   + rewrite /load_array1152 Array1152.tP => k kb.
-    by rewrite !initiE //=;  rewrite  get_set_neqE_s; smt().
+    by rewrite !initiE //=/storeW64 /= /stores /=  !get_set_neqE_s /#.
   move => k kbl kbh.
-  case (k <to_uint i{hr}).
-  + by move => *;rewrite get_set_neqE_s /#. 
-  by move => *;rewrite get_set_eqE_s /#. 
+  case (k <i{hr} * 8).
+  + by move => *;rewrite /storeW64 /= /stores /=  !get_set_neqE_s /#.
+  move => *.  rewrite /storeW64 /= /stores /=.
+  rewrite !get64E !pack8bE // !initiE //= /init8 !initiE 1..8: /#. 
+  by smt(get_set_neqE_s get_set_eqE_s).
 
   swap {2} 2 -1.
   wp; ecall(polyvec_tobytes_corr Glob.mem{1} (to_uint pkp{1}) (lift_array768 pkpv{1})). 
@@ -1436,7 +1458,7 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
     by have -> ->: to_uint pkp{1} + (to_uint skp{1} - to_uint pkp{1} + k) = to_uint skp{1} + k by ring.
   + by smt().
   
-  move => *; rewrite !ultE /=.
+  move => * /=.
   split; 1: by smt(). 
   by move => *;rewrite /load_array32 tP => k kb; rewrite initiE //= /#. 
 
@@ -1626,18 +1648,25 @@ wp; ecall(polyvec_frombytes_corr Glob.mem{1} _pkp).
   by rewrite eq_vectorP => i ib; rewrite !offunvE //= tP => k kb; rewrite !mapiE //= !initiE //= mapiE /#.
 
 seq 4 0 : (#{/~pkp{1}}pre /\ rho{2} = publicseed{1}). 
-while {1} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{1} = to_uint pkp0{1} /\ 
+while {1} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{1} * 8 = to_uint pkp0{1} /\ 
            mem = Glob.mem{1} /\ rho{2} = load_array32 mem (_pkp + 3*384) /\ 
-           0 <= to_uint i{1} <= 32 /\ 
-          forall k, 0 <= k < to_uint i{1} => rho{2}.[k] = publicseed{1}.[k]) (32 - to_uint i{1}).
+           0 <= to_uint i{1} <= 4 /\ 
+          forall k, 0 <= k < to_uint i{1} * 8 => rho{2}.[k] = publicseed{1}.[k]) (4 - to_uint i{1}).
 + move => &m ?; auto => /> &hr ?????; rewrite /load_array32 ultE /loadW8 /= => H?. 
   rewrite  !to_uintD_small /=; 1,2:smt(); move => *.
   do split; 1..3,5:smt().
   move => k kbl kbh.
-  case (0<=k <to_uint i{hr}).
+  case (0<=k <to_uint i{hr}*8).
   + move => *; move : (H k _); 1: smt().
-    by rewrite !initiE //= 1:/# set_neqiE /#. 
-  by move => *;rewrite initiE //= 1:/# set_eqiE /#.
+    rewrite !initiE 1,2:/# get8_set64_directE 1,2:/# /=.
+    case (8 * to_uint i{hr} <= k && k < 8 * to_uint i{hr} + 8).
+    + move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= /#. 
+    by move => *; rewrite /get8 /init8 initiE /#.
+  move => *;rewrite !initiE 1,2:/# get8_set64_directE 1,2:/# /=.
+  case (8 * to_uint i{hr} <= k && k < 8 * to_uint i{hr} + 8).
+  + move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= /#. 
+  by move => *; rewrite /get8 /init8 initiE /#.
+
 auto => /> &1 &2 ????; rewrite /load_array1152 /load_array32.
 rewrite !to_uintD_small 1:/#.
 move => *;split; 1: smt().
@@ -1923,18 +1952,25 @@ wp; ecall(polyvec_frombytes_corr Glob.mem{1} _pkp).
   by rewrite eq_vectorP => i ib; rewrite !offunvE //= tP => k kb; rewrite !mapiE //= !initiE //= mapiE /#.
 
 seq 4 0 : (#{/~pkp{1}}pre /\ rho{2} = publicseed{1}). 
-while {1} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{1} = to_uint pkp0{1} /\ 
+while {1} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{1} * 8 = to_uint pkp0{1} /\ 
            mem = Glob.mem{1} /\ rho{2} = load_array32 mem (_pkp + 3*384) /\ 
-           0 <= to_uint i{1} <= 32 /\ 
-          forall k, 0 <= k < to_uint i{1} => rho{2}.[k] = publicseed{1}.[k]) (32 - to_uint i{1}).
+           0 <= to_uint i{1} <= 4 /\ 
+          forall k, 0 <= k < to_uint i{1} * 8 => rho{2}.[k] = publicseed{1}.[k]) (4 - to_uint i{1}).
 + move => &m ?; auto => /> &hr ?????; rewrite /load_array32 ultE /loadW8 /= => H?. 
   rewrite  !to_uintD_small /=; 1,2:smt(); move => *.
   do split; 1..3,5:smt().
   move => k kbl kbh.
-  case (0<=k <to_uint i{hr}).
+  case (0<=k <to_uint i{hr}*8).
   + move => *; move : (H k _); 1: smt().
-    by rewrite !initiE //= 1:/# set_neqiE /#. 
-  by move => *;rewrite initiE //= 1:/# set_eqiE /#.
+    rewrite !initiE 1,2:/# get8_set64_directE 1,2:/# /=.
+    case (8 * to_uint i{hr} <= k && k < 8 * to_uint i{hr} + 8).
+    + move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= /#. 
+    by move => *; rewrite /get8 /init8 initiE /#.
+  move => *;rewrite !initiE 1,2:/# get8_set64_directE 1,2:/# /=.
+  case (8 * to_uint i{hr} <= k && k < 8 * to_uint i{hr} + 8).
+  + move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= /#. 
+  by move => *; rewrite /get8 /init8 initiE /#.
+
 auto => /> &1 &2 ??; rewrite /load_array1152 /load_array32.
 rewrite !to_uintD_small 1:/#.
 move => *;split; 1: smt().

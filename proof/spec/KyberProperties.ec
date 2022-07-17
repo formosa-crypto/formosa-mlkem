@@ -739,10 +739,10 @@ proc.
   conseq (_: _ ==> rho{2} = Array32.init (fun i => r{1}.[i]) /\ 
                    k{2} = Array32.init (fun i => r{1}.[i+32])).
    by move=> /> &1 *; rewrite SmtMap.get_set_sameE /=.
-  transitivity {1} { r <@ Sample_64_2x32.sample(W8.dword); }
+  transitivity {1} { r <@ Sample_64_2x32.sample(); }
    (true ==> ={r}) (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) => //.
    by inline*; auto.
-  transitivity {2} { (rho, k) <@ Sample_64_2x32.sample2(W8.dword); }
+  transitivity {2} { (rho, k) <@ Sample_64_2x32.sample2(); }
    (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) (true ==> ={rho,k})=> //.
    by call sample_64_2x32_eq.
   by inline*; auto.
@@ -1567,10 +1567,10 @@ proc.
                    k{2} = Array32.init (fun i => r{1}.[i+32]));
   1: by move => /> [#] &1 r; 
        rewrite !SmtMap.get_set_sameE !oget_some.
-  transitivity {1} { r <@ Sample_64_2x32.sample(W8.dword); }
+  transitivity {1} { r <@ Sample_64_2x32.sample(); }
    (true ==> ={r}) (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) => //.
    by inline*; auto.
-  transitivity {2} { (rho, k) <@ Sample_64_2x32.sample2(W8.dword); }
+  transitivity {2} { (rho, k) <@ Sample_64_2x32.sample2(); }
    (true ==> rho{2} = Array32.init (fun i =>  r{1}.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.[i+32])) (true ==> ={rho,k})=> //.
    by call sample_64_2x32_eq.
   by inline*; auto.
