@@ -146,6 +146,89 @@ do 17!(rewrite initiE /=; 1: by smt()). smt(). qed.
 op initeo(fe fo : int -> 'a) : 'a Array16.t = 
     Array16.init (fun i => if i %% 2 = 0 then fe i else fo i) axiomatized by initeoE.
 
+op perm8 (p : int list) (r : arrays8) : arrays8 =
+  to_arrays8 (Array128.init (fun i => (from_arrays8 r).[nth witness p i])).
+
+op perm256 (p : int list) (r : 'a Array256.t) : 'a Array256.t =
+  Array256.init (fun i => if 0 <= i < 128 then r.[nth witness p i] else r.[128+nth witness p (i%%128)] ).
+
+abbrev perm_ntt (p : int list) (r : arrays16) : Fq Array256.t =
+  perm256 p (from_arrays16 r).
+
+(* Auxiliary proofs on NTTAlgebra *)
+
+abbrev len_avx2S (k:int) = 128 %/ (2^k).
+abbrev len_avx2K (k:int) = nth witness [128;64;32;16;8;4;2] k.
+
+lemma len_avx2_equiv (k:int) : 0 <= k < 7 =>
+  len_avx2S k = len_avx2K k.
+rewrite -mem_range rangered => />.
+do 7!(move => Hk; case Hk => />). qed.
+
+abbrev zetasctr_avx2S (k:int) = foldl (fun c k => c + 128 %/ len_avx2S k) 0 (range 0 k).
+abbrev zetasctr_avx2K (k:int) = nth witness [0;1;3;7;15;31;63] k.
+
+lemma zetasctr_avx2_equiv (k:int) : 0 <= k < 7 =>
+  zetasctr_avx2S k = zetasctr_avx2K k.
+rewrite -mem_range rangered => />.
+do 7!(try (move => Hk; case Hk => />); first by rewrite rangered => />). qed.
+
+abbrev block_avx2S k = (128 %/ 2 ^ (7 - k)).
+abbrev block_avx2K k = nth witness [1;2;4;8;16;32;64] k.
+
+lemma block_avx2_equiv k : 0 <= k < 7 =>
+  block_avx2S k = block_avx2K k.
+  rewrite -mem_range rangered => />.
+  do 7!(move => Hk; case Hk => />). qed.
+
+lemma r_bsrev_ntt_inner_foldl_iE zetas len start r (k:int) :
+  0 <= start => start + len*2 <= 256 => 0 <= k <= len =>
+  forall i, (r_bsrev_ntt_inner_foldl zetas len start r k).[i] =
+  if start <= i < start + k then r.[i] + zetas.[(256 %/ len + start %/ len) %/ 2] * r.[i + len]
+  else if start + len <= i < start + len + k then r.[i-len] - zetas.[(256 %/ len + start %/ len) %/ 2] * r.[i]
+  else r.[i].  
+move => /> H1 H2. elim/natind:k => />.
+(*zero*)
+move => n *. rewrite /r_bsrev_ntt_inner_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
+(*succ*)
+move => n Hn Hrec Hk Hn2 i.
+rewrite /r_bsrev_ntt_inner_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
+rewrite /r_bsrev_ntt_inner_foldl foldl_map /r_bsrev_ntt_inner in Hrec => />.
+rewrite /r_bsrev_ntt_inner => />. rewrite get_set2_add_mulr_if => />; 1..3: by smt(mem_range).
+rewrite !Hrec => />; by smt(). qed.
+
+lemma r_bsrev_ntt_outer_foldl_iE zetas len r (k:int) :
+  0 <= k <= 128 %/ len =>
+  forall i, (r_bsrev_ntt_outer_foldl zetas len r k).[i] =
+  if 0 <= i < k*len*2 then
+  if i %/ len %% 2 = 0 then r.[i] + zetas.[(256 %/ len + (i %/ len)) %/ 2] * r.[i+len]
+  else r.[i-len] - zetas.[(256 %/ len + (i%/len-1)) %/ 2] * r.[i]
+  else r.[i].
+elim/natind:k => />.
+(*zero*)
+move => n *. rewrite /r_bsrev_ntt_outer_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
+(*succ*)
+move => n Hn1 Hrec Hn2 Hn3 i.
+rewrite /r_bsrev_ntt_outer_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
+rewrite /r_bsrev_ntt_outer_foldl foldl_map in Hrec => />.
+rewrite /r_bsrev_ntt_outer r_bsrev_ntt_inner_foldl_iE => />; 1..3: by smt(). 
+rewrite !Hrec => />; 1..3: by smt(). clear Hrec.
+case (0 <= i) => />Hi1. case (i < n * len * 2) => />Hi2. smt().
+case (i < n * (len * 2) + len) => />Hi3. rewrite (_:i %/ len = n*2) => />;1..2: by smt().
+case (i < n * (len * 2) + len + len) => />Hi4. rewrite (_:i%/len = n*2+1) => />; smt().
+smt(). smt(). qed.
+
+(* simpler definition that greatly speeds up proofs below *)
+lemma r_avx2_ntt_spec zetas r k : 0 <= k < 7 =>
+  r_avx2_ntt zetas r k = Array256.init (fun i =>
+    if (i %/ len_avx2K k) %% 2 = 0 then r.[i] + zetas.[zetasctr_avx2K k + i %/ (len_avx2K k*2) + 1]*r.[i+len_avx2K k] else r.[i-len_avx2K k] + (- zetas.[zetasctr_avx2K k + (i-len_avx2K k) %/ (len_avx2K k*2) + 1]*r.[i])
+  ).
+move => Hk. rewrite /r_avx2_ntt /r_bsrev_ntt tP => />i Hi1 Hi2.
+rewrite r_bsrev_ntt_outer_foldl_iE => />. rewrite block_avx2_equiv => />. smt().
+rewrite initiE Hi1 => />. 
+move :Hk. rewrite -mem_range rangered => />.
+do 8!(try (move => Hk; case Hk => />); first by smt()). qed.
+
 (* NTT AVX intermediate implementation *)
 
 theory NTT_AVX_Fq.
@@ -224,15 +307,6 @@ op perm_nttunpack128 : int list =
   6;14;22;30;38;46;54;62;70;78;86;94;102;110;118;126;
   7;15;23;31;39;47;55;63;71;79;87;95;103;111;119;127]
   axiomatized by perm_nttunpack128E.
-
-op perm8 (p : int list) (r : arrays8) : arrays8 =
-  to_arrays8 (Array128.init (fun i => (from_arrays8 r).[nth witness p i])).
-
-op perm256 (p : int list) (r : 'a Array256.t) : 'a Array256.t =
-  Array256.init (fun i => if 0 <= i < 128 then r.[nth witness p i] else r.[128+nth witness p (i%%128)] ).
-
-abbrev perm_ntt (p : int list) (r : arrays16) : Fq Array256.t =
-  perm256 p (from_arrays16 r).
 
 module NTT_AVX = {
 
@@ -801,11 +875,13 @@ proc __ntt_level1t6(rp : Fq Array256.t,  zetasp : Fq Array400.t) : Fq Array256.t
  
 }.
 
+(* pack consistent with packing permutation *)
 hoare __nttpack128_perm r :
   NTT_AVX.__nttpack128 : rs=r ==> res = perm8 perm_nttpack128 r.
   proc. inline *; wp; auto => />. rewrite prod8.
   do 8!(try split; first by apply Array16_extra.tP_red => i; simplify; rewrite !shuffle8E !shuffle4E !shuffle2E !shuffle1E !perm_nttpack128E => />; do 16!(move => Hi; case Hi => />)). qed.
 
+(* equivalence between full-inline-SSA and level-by-level ntt avx2 *)
 lemma ntt0t6_ntt : 
   equiv [ NTT_AVX.ntt ~ NTT_AVX.ntt0t6 : ={r,zetas} ==> ={res}].
 proc. seq 1 1: (rp0{1}=from_arrays16 rp0{2} /\ ={zetas}).
@@ -849,77 +925,6 @@ op perm_level4 : int list =
 
 op perm_level5 : int list =
   [0;16;32;48;64;80;96;112;1;17;33;49;65;81;97;113;2;18;34;50;66;82;98;114;3;19;35;51;67;83;99;115;4;20;36;52;68;84;100;116;5;21;37;53;69;85;101;117;6;22;38;54;70;86;102;118;7;23;39;55;71;87;103;119;8;24;40;56;72;88;104;120;9;25;41;57;73;89;105;121;10;26;42;58;74;90;106;122;11;27;43;59;75;91;107;123;12;28;44;60;76;92;108;124;13;29;45;61;77;93;109;125;14;30;46;62;78;94;110;126;15;31;47;63;79;95;111;127] axiomatized by perm_level5E.
-
-abbrev len_avx2S (k:int) = 128 %/ (2^k).
-abbrev len_avx2K (k:int) = nth witness [128;64;32;16;8;4;2] k.
-
-lemma len_avx2_equiv (k:int) : 0 <= k < 7 =>
-  len_avx2S k = len_avx2K k.
-rewrite -mem_range rangered => />.
-do 7!(move => Hk; case Hk => />). qed.
-
-abbrev zetasctr_avx2S (k:int) = foldl (fun c k => c + 128 %/ len_avx2S k) 0 (range 0 k).
-abbrev zetasctr_avx2K (k:int) = nth witness [0;1;3;7;15;31;63] k.
-
-lemma zetasctr_avx2_equiv (k:int) : 0 <= k < 7 =>
-  zetasctr_avx2S k = zetasctr_avx2K k.
-rewrite -mem_range rangered => />.
-do 7!(try (move => Hk; case Hk => />); first by rewrite rangered => />). qed.
-
-abbrev block_avx2S k = (128 %/ 2 ^ (7 - k)).
-abbrev block_avx2K k = nth witness [1;2;4;8;16;32;64] k.
-
-lemma block_avx2_equiv k : 0 <= k < 7 =>
-  block_avx2S k = block_avx2K k.
-  rewrite -mem_range rangered => />.
-  do 7!(move => Hk; case Hk => />). qed.
-
-lemma r_bsrev_ntt_inner_foldl_iE zetas len start r (k:int) :
-  0 <= start => start + len*2 <= 256 => 0 <= k <= len =>
-  forall i, (r_bsrev_ntt_inner_foldl zetas len start r k).[i] =
-  if start <= i < start + k then r.[i] + zetas.[(256 %/ len + start %/ len) %/ 2] * r.[i + len]
-  else if start + len <= i < start + len + k then r.[i-len] - zetas.[(256 %/ len + start %/ len) %/ 2] * r.[i]
-  else r.[i].  
-move => /> H1 H2. elim/natind:k => />.
-(*zero*)
-move => n *. rewrite /r_bsrev_ntt_inner_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
-(*succ*)
-move => n Hn Hrec Hk Hn2 i.
-rewrite /r_bsrev_ntt_inner_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
-rewrite /r_bsrev_ntt_inner_foldl foldl_map /r_bsrev_ntt_inner in Hrec => />.
-rewrite /r_bsrev_ntt_inner => />. rewrite get_set2_add_mulr_if => />; 1..3: by smt(mem_range).
-rewrite !Hrec => />; by smt(). qed.
-
-lemma r_bsrev_ntt_outer_foldl_iE zetas len r (k:int) :
-  0 <= k <= 128 %/ len =>
-  forall i, (r_bsrev_ntt_outer_foldl zetas len r k).[i] =
-  if 0 <= i < k*len*2 then
-  if i %/ len %% 2 = 0 then r.[i] + zetas.[(256 %/ len + (i %/ len)) %/ 2] * r.[i+len]
-  else r.[i-len] - zetas.[(256 %/ len + (i%/len-1)) %/ 2] * r.[i]
-  else r.[i].
-elim/natind:k => />.
-(*zero*)
-move => n *. rewrite /r_bsrev_ntt_outer_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
-(*succ*)
-move => n Hn1 Hrec Hn2 Hn3 i.
-rewrite /r_bsrev_ntt_outer_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
-rewrite /r_bsrev_ntt_outer_foldl foldl_map in Hrec => />.
-rewrite /r_bsrev_ntt_outer r_bsrev_ntt_inner_foldl_iE => />; 1..3: by smt(). 
-rewrite !Hrec => />; 1..3: by smt(). clear Hrec.
-case (0 <= i) => />Hi1. case (i < n * len * 2) => />Hi2. smt().
-case (i < n * (len * 2) + len) => />Hi3. rewrite (_:i %/ len = n*2) => />;1..2: by smt().
-case (i < n * (len * 2) + len + len) => />Hi4. rewrite (_:i%/len = n*2+1) => />; smt().
-smt(). smt(). qed.
-
-lemma r_avx2_ntt_spec zetas r k : 0 <= k < 7 =>
-  r_avx2_ntt zetas r k = Array256.init (fun i =>
-    if (i %/ len_avx2K k) %% 2 = 0 then r.[i] + zetas.[zetasctr_avx2K k + i %/ (len_avx2K k*2) + 1]*r.[i+len_avx2K k] else r.[i-len_avx2K k] + (- zetas.[zetasctr_avx2K k + (i-len_avx2K k) %/ (len_avx2K k*2) + 1]*r.[i])
-  ).
-move => Hk. rewrite /r_avx2_ntt /r_bsrev_ntt tP => />i Hi1 Hi2.
-rewrite r_bsrev_ntt_outer_foldl_iE => />. rewrite block_avx2_equiv => />. smt().
-rewrite initiE Hi1 => />. 
-move :Hk. rewrite -mem_range rangered => />.
-do 8!(try (move => Hk; case Hk => />); first by smt()). qed.
 
 lemma ntt_avx_0_ll : islossless NTT_AVX.___ntt_level0.
 islossless. qed.
@@ -1006,6 +1011,7 @@ lemma ntt_avx_6_pr r zetas :
   phoare [NTT_AVX.___ntt_level6 : perm_ntt perm_level5 rp = r /\ zetasp = zetas_unpack zetas ==> perm_ntt perm_nttpack128 res = r_avx2_ntt zetas r 6] = 1%r.
 conseq ntt_avx_6_ll (ntt_avx_6 r zetas) => />. qed.
 
+(** Main Theorem in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent **)
 lemma ntt_avx_equiv : 
      equiv [ NTT_AVX.ntt ~ NTT_avx2.ntt :
           r{1} = NTT_avx2.r{2} /\ zetas{1} = zetas_unpack NTT_avx2.zetas{2} 
