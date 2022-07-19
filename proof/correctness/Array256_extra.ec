@@ -4,6 +4,7 @@ require import Kyber.
 
 import Zq.
 
+from Jasmin require import JUtils.
 
 (*-----------------------------------------------------------------------------*)
 
@@ -258,3 +259,7 @@ proof.
     by rewrite set2_mul_addr_neqiE //; rewrite eq_sym.
   by rewrite set2_mul_addr_neqiE // set2_mul_addr_neqiE.
 qed.
+
+lemma tP_red (t1 t2: 'a Array256.t) :
+  (forall i, i \in iotared 0 256 => t1.[i] = t2.[i]) => t1 = t2.
+  rewrite tP => />H i Hi1 Hi2. smt(). qed.
