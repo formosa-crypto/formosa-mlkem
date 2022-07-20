@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require import Array32 Array128 Array768 Array960 Array1088 Array2304.
+require import Array32 Array128 Array256 Array768 Array960 Array1088 Array2304.
 require import KyberPoly  KyberPolyVec KyberINDCPA.
 require import KyberPoly_avx2_proof.
 require import KyberPolyvec_avx2_proof.
@@ -32,6 +32,25 @@ op packm(v : 'a Array2304.t) =
            then (packv (subarray768 v 1)).[i-768]
            else (packv (subarray768 v 2)).[i-2*768]).
 
+lemma pack_pred (v : 'a Array256.t) P i: 
+   (0 <= i < 256 => P ((pack v).[i])) <=>
+   (0 <= i < 256 => P (v.[i])).
+admitted.
+
+lemma unpack_pred (v : 'a Array256.t) P i: 
+   (0 <= i < 256 => P ((unpack v).[i])) <=>
+   (0 <= i < 256 => P (v.[i])).
+admitted.
+
+lemma packv_pred (v : 'a Array768.t) P i: 
+   (0 <= i < 256 => P ((packv v).[i])) <=>
+   (0 <= i < 256 => P (v.[i])).
+admitted.
+
+lemma unpackv_pred (v : 'a Array768.t) P i: 
+   (0 <= i < 256 => P ((unpackv v).[i])) <=>
+   (0 <= i < 256 => P (v.[i])).
+admitted.
 
 equiv genmatrixequiv b :
   Jkem_avx2.M.__gen_matrix ~  M.__gen_matrix :
@@ -150,14 +169,35 @@ do 3!(wp; call frommontequiv; wp; call pointwiseequiv); auto => />.
 
 move => &1 &2 *.
 do split. 
-+ admit.
-+ admit.
-+ admit.
-+ admit. 
-+ admit.
++ rewrite /unpackm /unpackv tP /= => k kb.
+  by rewrite !initiE // 1:/# /= kb /= initiE //=.
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
++ rewrite /signed_bound768_cxq => k kb; rewrite initiE //=. 
+  rewrite fun_if. 
+  case (0<=k<256).
+  + move => kbb;rewrite /subarray256. 
+    move : (unpack_pred (Array256.init (fun (k0 : int) => skpv{2}.[256 * 0 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q) k).
+    move => /= [H0 H1]. rewrite H1. move => *. rewrite initiE //=. smt(). smt().
+  case (256<=k<512).
+  + move => kbb;rewrite /subarray256. 
+    move : (unpack_pred (Array256.init (fun (k0 : int) => skpv{2}.[256 * 1 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q) (k-256)).
+    move => /= [H0 H1]. rewrite H1. move => *. rewrite initiE //=. smt(). smt(). done.
+  case (512<=k<768).
+  + move => kbb;rewrite /subarray256. 
+    move : (unpack_pred (Array256.init (fun (k0 : int) => skpv{2}.[256 * 2 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q) (k-512)).
+    move => /= [H0 H1]. rewrite H1. move => *. rewrite initiE //=. smt(). smt(). done.
+  by smt().
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
++ by smt().
 move => *.
 do split. 
-+ admit.
++ rewrite tP => k kb.
+  rewrite !initiE //= 1:/# kb /=.
+  rewrite initiE //=.
+  rewrite initiE //=. 
+  rewrite initiE //=. smt(). 
+  rewrite initiE //=. smt(). 
+  smt().
 move => *.
 do split.
 + admit.
