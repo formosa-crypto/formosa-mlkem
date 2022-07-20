@@ -5,6 +5,8 @@ require import Array16 Array32 Array64 Array128 Array168 Array256 Array384.
 require import Jkem.
 require import Kyber.
 
+(* TODO: prove equivalence w/ EncDec reification *)
+
 module EncDec_AVX2 = {
    proc decode12(a : W8.t Array384.t) : ipoly = {
        var i;
@@ -12,6 +14,40 @@ module EncDec_AVX2 = {
        r <- witness;
        i <- 0;
        while (i < 128) {
+          r.[i*2+0]  <- to_uint a.[3*i] + to_uint a.[3*i+1] %% 2^4 * 2^8;
+          r.[i*2+1]  <- to_uint a.[3*i+2] * 2^4 + to_uint a.[3*i+1] %/ 2^4;
+          i <- i + 1;
+       }
+       return r;
+   }
+
+
+  proc encode12_opt(a : ipoly) : W8.t Array384.t = {
+    var fi1,fi2: int;
+    var i;
+    var r : W8.t Array384.t;
+
+    i <- 0;
+    while (i < 2) {
+
+      r <- fill (fun k => let fi1 = a.[128*i + 2 * (k %% 192 %/ 3)] in
+                          let fi2 = a.[128*i + 2 * (k %% 192 %/ 3) + 1] in
+                          if (k %% 3 = 0) then W8.of_int fi1
+                          else if (k %% 3 = 1) then W8.of_int ((fi2 %% 2^4) * 2^4 + fi1 %/ 2^8)
+                          else W8.of_int (fi2 %/ 2^4))
+                (192*i) 192 r;
+
+      i <- i + 1;
+    }
+    return r;
+  }
+
+  proc decode12_opt(a : W8.t Array384.t) : ipoly = {
+     var i;
+       var r : ipoly;
+       r <- witness;
+       i <- 0;
+       while (i < 2) {
           r.[i*2+0]  <- to_uint a.[3*i] + to_uint a.[3*i+1] %% 2^4 * 2^8;
           r.[i*2+1]  <- to_uint a.[3*i+2] * 2^4 + to_uint a.[3*i+1] %/ 2^4;
           i <- i + 1;
@@ -78,18 +114,6 @@ module EncDec_AVX2 = {
         r <- Array256.fill (fun k => b2i a.[k %/ 8].[k %% 8]) (128 + 32*i + j*8) 8 r;
         j <- j + 1;
       }
-      (* TODO: prove equivalence ??
-      while(j < 8){
-        r.[64*i+j*8+0] <- b2i a.[8*i+j].[0];
-        r.[64*i+j*8+1] <- b2i a.[8*i+j].[1];
-        r.[64*i+j*8+2] <- b2i a.[8*i+j].[2];
-        r.[64*i+j*8+3] <- b2i a.[8*i+j].[3];
-        r.[64*i+j*8+4] <- b2i a.[8*i+j].[4];
-        r.[64*i+j*8+5] <- b2i a.[8*i+j].[5];
-        r.[64*i+j*8+6] <- b2i a.[8*i+j].[6];
-        r.[64*i+j*8+7] <- b2i a.[8*i+j].[7];
-      }
-      *)
       i<-i+1;
     }
 
