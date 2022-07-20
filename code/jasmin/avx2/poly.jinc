@@ -1305,6 +1305,8 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
     t5 = #VPSLL_16u16(t7, 4);
     t4 |= t5;
 
+encode.[i] = assign t0 t1 t2 t3 t4 t5 t6 t7.
+
     ttt, t0 = __shuffle1(tt, t0);
     tt, t2 = __shuffle1(t1, t2);
     t1, t4 = __shuffle1(t3, t4);

@@ -4371,6 +4371,24 @@ proof.
   smt(@Int).
 qed.
 
+lemma map_pack (p : 'a Array256.t) (f : 'a -> 'b) : nttpack (Array256.map f p) = map f (nttpack p).
+admitted.
+
+lemma map_unpack (p : 'a Array256.t) (f : 'a -> 'b) : nttunpack (Array256.map f p) = map f (nttunpack p).
+admitted.
+
+lemma pack_ext_eq (p q : 'a Array256.t):
+     nttpack p = nttpack q <=> p = q.
+admitted.
+
+lemma unpack_ext_eq (p q : 'a Array256.t) :
+     nttunpack p = nttunpack q <=> p = q.
+admitted.
+
+lemma pack_bounds (p : W16.t Array256.t)  i l h:
+     0 <= i < 256 => l <= to_sint p.[i] < h => l <= to_sint (nttpack p).[i] < h.
+admitted.
+
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ Mprevec.poly_tobytes ~ EncDec_AVX2.encode12_opt :
              pos_bound256_cxq a{1} 0 256 2 /\  lift_array256 (nttpack a{1}) = _a /\
@@ -4382,10 +4400,8 @@ lemma poly_tobytes_corr _a (_p : address) mem :
              touches mem Glob.mem{1} _p 384 /\
              load_array384 Glob.mem{1} _p = res{2}].
 proof.
-admitted.
-(*
   proc.
-  seq 3 1 : (#{/~a{1}}pre /\
+  seq 3 2 : (#{/~a{1}}pre /\
              i{1} = i{2} /\ i{1} = 0 /\
              (forall k, 0 <= k < 16 => qx16{1}.[k] = W16.of_int 3329) /\
              map W16.to_uint (nttpack a{1}) = a{2} /\
@@ -4398,13 +4414,23 @@ admitted.
       do (rewrite initiE 1://= /=).
       smt(@List @Int @Array16).
     + rewrite Array256.tP => i i_i />.
-      rewrite /lift_array256 Array256.tP in a1_eq_a.
+      rewrite -pack_ext_eq /lift_array256 Array256.tP  map_pack in a1_eq_a.
       rewrite /lift_array256 Array256.tP in a_def.
       move : (a1_eq_a i i_i).
       rewrite -a_def 1:i_i.
-      do rewrite mapiE 1:i_i /=.
-      rewrite -!eq_inFq (modz_small (to_sint a.[i])) 1:/#.
-      by rewrite -to_sint_unsigned /#.
+      do rewrite !mapiE 1,2:i_i /= map_pack.
+      rewrite !mapiE 1:i_i /=.
+      rewrite -!eq_inFq (modz_small (to_sint (nttpack a).[i])) qE /=.
+      move : pos_bound_an; rewrite /pos_bound256_cxq qE /= => H. apply pack_bounds; 1,2: smt(). 
+      rewrite modz_small; 1: by smt( qE). 
+      rewrite -to_sint_unsigned. 
+      move : (pack_bounds a i 0 q). 
+      by move : pos_bound_an; rewrite /pos_bound256_cxq qE /#.
+      by smt().
+admit.
+
+(*
+
   while (#{/~mem}{~i{1}=0}pre /\ i{1} = i{2} /\ 0 <= i{1} <= 2 /\
          touches mem Glob.mem{1} _p (192*i{1}) /\
          (forall k, 0 <= k < 192 * i{1} => loadW8 Glob.mem{1} (_p + k) = r{2}.[k])).
@@ -5024,7 +5050,6 @@ admitted.
     rewrite -iotaredE /=.
     case
     smt(@Int @IntDiv @Array384 @W16 @W8 @Ring.IntID @W32 @List).
-
-qed.
 *)
+qed.
 end KyberPolyAVX.
