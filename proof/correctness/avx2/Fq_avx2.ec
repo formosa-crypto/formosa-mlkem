@@ -491,7 +491,6 @@ lemma fqmulx16_corr _a _b:
           forall k, 0 <= k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])] = 1%r.
 proof.
 bypr => &m [#] /= H H0 H1 H2.
-print Kyber_AVX2_cf.
 have -> : 1%r = 
 Pr[Kyber_AVX2_cf.__fqmul_x16(a{m}, b{m}) @ &m :
    forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])]; last by  byequiv fqmulx16_corr_h => //=. 
