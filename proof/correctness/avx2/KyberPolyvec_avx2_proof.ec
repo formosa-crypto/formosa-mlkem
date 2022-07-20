@@ -338,10 +338,10 @@ lemma polyvec_reduce_corr _a :
 proc*. 
 transitivity {1} {r0 <@ Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})
-       (_a = lift_array768 r{2} /\ _a = lift_array768 (packv r{1})   ==> 
+       (_a = lift_array768 r{2} /\ _a = packv (lift_array768 r{1})   ==> 
       (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
   (forall (k : int), 0 <= k && k < 768 => bpos16 r0{2}.[k] (2 * q)) /\
-  lift_array768 r0{1} = lift_array768 (unpackv r0{2})); 1,2: by smt().
+  lift_array768 r0{1} = unpackv (lift_array768  r0{2})); 1,2: by smt().
   + symmetry. call prevec_eq_poly_reduce => //.
 have corr1 := (polvec_reduce_corr (unpackv _a)). call {1} corr1.
 have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
