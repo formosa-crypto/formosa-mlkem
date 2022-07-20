@@ -4113,7 +4113,7 @@ lemma schoolbook_corr a b zetas isign:
         (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
         (forall k, 0 <= k < 16 => qinvx16.[k] = jqx16.[k]) ==>
         res = (schoolbook_mul a b zetas isign)].
-proof. admit.
+admitted.
 (* FIXME
   proc.
     inline (3 4) Ops.iVPADD_8u32; wp.
@@ -4174,11 +4174,11 @@ proof. admit.
           rewrite /wmulls.
           do (rewrite qx16_def 1://= qinvx16_def 1://=).
           (* FIXME *)
-          admit.
+          ad mit.
         + rewrite of_int_bits16_div 1://=.
           do rewrite get_setE 1://=.
           rewrite /wmulhs.
-          admit.
+          ad mit.
           (* FIXME:
           rewrite (mulzC 8 _) (_: 8 = 4 * 2) 1://= -mulzA (mulzC (k %/ 4 * 4) 2) divzE.
           rewrite (mulzDr 2) //=.
@@ -4192,7 +4192,7 @@ proof. admit.
         + rewrite of_int_bits16_div 1://= expr0 divz1.
           do rewrite get_setE 1://=.
           rewrite /wmulls.
-          admit.
+          ad mit.
           (* FIXME:
           rewrite (mulzC 8 _) (_: 8 = 4 * 2) 1://= -mulzA (mulzC (k %/ 4 * 4) 2) divzE.
           rewrite (mulzDr 2) //=.
@@ -4201,7 +4201,7 @@ proof. admit.
         + rewrite of_int_bits16_div 1://=.
           do rewrite get_setE 1://=.
           rewrite /wmulhs.
-          admit.
+          ad mit.
           (* FIXME:
           rewrite (mulzC 8 _) (_: 8 = 4 * 2) 1://= -mulzA (mulzC (k %/ 4 * 4) 2) divzE.
           rewrite (mulzDr 2) //=.
@@ -4358,7 +4358,6 @@ proof. admit.
             rewrite (mulzDr 2) //=.
             smt(@Int @IntDiv @Array16 @W16 @Array256).
 *)
-qed.
 
 op load_array384(m : global_mem_t, p : address) : W8.t Array384.t = 
       Array384.init (fun i => m.[p + i]).

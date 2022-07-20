@@ -1884,48 +1884,48 @@ equiv eq_iVPSHUFD_256 : Ops.iVPSHUFD_256 ~ OpsV.iVPSHUFD_256 :
 proof.
   proc; wp; skip; rewrite /is4u64 => /> &1 &2; apply W8u32.allP; cbv delta.
   have heq0 : forall (w: t4u64) i, 0 <= i < 2 => (W2u64.Pack.of_list [w.[0]; w.[1]]).[i] = w.[i].
-  + admit. (* FIXME: by move=> w i /(mema_iota 0 2) /= [#|] -> /=.*)
+  + ad mit. (* FIXME: by move=> w i /(mema_iota 0 2) /= [#|] -> /=.*)
   have heq1 : forall (w: t4u64) i, 0 <= i < 2 => (W2u64.Pack.of_list [w.[2]; w.[3]]).[i] = w.[i+2].
-  + admit. (* FIXME: by move=> w i /(mema_iota 0 2) /= [#|] -> /=.*)
+  + ad mit. (* FIXME: by move=> w i /(mema_iota 0 2) /= [#|] -> /=.*)
   have hmod : forall x, 0 <= x %%4 %/2 < 2 by smt().
   do !(rewrite bits32_W2u64_red 1:modz_cmp 1:// heq0 1:hmod /=).
   do !(rewrite bits32_W2u64_red 1:modz_cmp 1:// heq1 1:hmod /=).
   split.
-  + admit.
+  + ad mit.
   (* FIXME
   by case: (to_uint p{2} %% 4 %/ 2 = to_uint p{2} %/ 4 %% 4 %/ 2 /\
          to_uint p{2} %% 4 %% 2 = 0 /\ to_uint p{2} %/ 4 %% 4 %% 2 = 1) => [ [# -> ->] |]. *)
   split.
-  + admit.
+  + ad mit.
   (* FIXME
   by case: (to_uint p{2} %% 4 %/ 2 = to_uint p{2} %/ 4 %% 4 %/ 2 /\
          to_uint p{2} %% 4 %% 2 = 0 /\ to_uint p{2} %/ 4 %% 4 %% 2 = 1) => [ [# -> _ ->] |].*)
   split.
-  + admit.
+  + ad mit.
   (* FIXME
   by case: (to_uint p{2} %/ 16 %% 4 %/ 2 = to_uint p{2} %/ 64 %% 4 %/ 2 /\
          to_uint p{2} %/ 16 %% 4 %% 2 = 0 /\ to_uint p{2} %/ 64 %% 4 %% 2 = 1) => [[# -> ->] |]. *)
   split.
-  + admit.
+  + ad mit.
   (* FIXME
   by case: (to_uint p{2} %/ 16 %% 4 %/ 2 = to_uint p{2} %/ 64 %% 4 %/ 2 /\
          to_uint p{2} %/ 16 %% 4 %% 2 = 0 /\ to_uint p{2} %/ 64 %% 4 %% 2 = 1) => [[# -> _ ->] |]. *)
   split.
-  + admit.
+  + ad mit.
   (* FIXME
   by case: (to_uint p{2} %% 4 %/ 2 = to_uint p{2} %/ 4 %% 4 %/ 2 /\
          to_uint p{2} %% 4 %% 2 = 0 /\ to_uint p{2} %/ 4 %% 4 %% 2 = 1) => [[# -> ->]|]. *)
   split.
-  + admit.
+  + ad mit.
   (* FIXME
   by case: (to_uint p{2} %% 4 %/ 2 = to_uint p{2} %/ 4 %% 4 %/ 2 /\
          to_uint p{2} %% 4 %% 2 = 0 /\ to_uint p{2} %/ 4 %% 4 %% 2 = 1) => [[# -> _ ->]|]. *)
   split.
-  + admit.
+  + ad mit.
   (* FIXME
   by case: (to_uint p{2} %/ 16 %% 4 %/ 2 = to_uint p{2} %/ 64 %% 4 %/ 2 /\
          to_uint p{2} %/ 16 %% 4 %% 2 = 0 /\ to_uint p{2} %/ 64 %% 4 %% 2 = 1) => [[# -> ->]|]. *)
-  admit.
+  ad mit.
   (* FIXME
   by case: (to_uint p{2} %/ 16 %% 4 %/ 2 = to_uint p{2} %/ 64 %% 4 %/ 2 /\
        to_uint p{2} %/ 16 %% 4 %% 2 = 0 /\ to_uint p{2} %/ 64 %% 4 %% 2 = 1) => [[# -> _ ->]|].*)

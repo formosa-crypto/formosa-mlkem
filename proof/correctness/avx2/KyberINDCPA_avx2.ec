@@ -36,7 +36,9 @@ op packm(v : 'a Array2304.t) =
 equiv genmatrixequiv b :
   Jkem_avx2.M.__gen_matrix ~  M.__gen_matrix :
     arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = b2i b /\ arg{2}.`2 =  W64.of_int (b2i b) ==>
-    res{2} = unpackm res{1}.
+    res{2} = unpackm res{1} /\
+    pos_bound2304_cxq res{1} 0 2304 2 /\
+    pos_bound2304_cxq res{2} 0 2304 2.
 admitted.
 
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
@@ -90,12 +92,21 @@ sp 3 3.
 
 seq 17 17  : (#pre /\ ={publicseed, noiseseed}); 1:  by conseq />; sim;  call( sha3equiv); conseq />; sim. 
 
-seq 1 2 : (#pre /\ a{2} = unpackm aa{1}); 1: by 
+seq 1 2 : (#pre /\ a{2} = unpackm aa{1} /\
+           pos_bound2304_cxq aa{1} 0 2304 2 /\
+           pos_bound2304_cxq a{2} 0 2304 2); 1: by 
    conseq />; call (genmatrixequiv false); auto => />.
 
 swap {1} [11..12] 2.
 
-seq 10 18 : (#pre /\ ={skpv,e}); 1: by admit. (* to do *)
+seq 10 18 : (#pre /\ ={skpv,e} /\
+    signed_bound768_cxq skpv{1} 0 768 1 /\
+    signed_bound768_cxq e{1} 0 768 1 /\
+    signed_bound768_cxq skpv{2} 0 768 1 /\
+    signed_bound768_cxq e{2} 0 768 1); 1: by admit. (* to do *)
+
+admitted.
+(* 
 
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
@@ -333,7 +344,7 @@ rewrite /lift_array768 mapiE 1:/# /=;move : (vs2 (512 + k) _); 1: by smt().
 by move => [#] _ _ ->; rewrite /ntt_mmul offunvE //=.
 qed.
 
-
+*)
 
 (***************************************************)
 
