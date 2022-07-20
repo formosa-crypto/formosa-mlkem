@@ -291,8 +291,9 @@ lemma polyvec_tobytes_corr :
     equiv [ Jkem_avx2.M.__polyvec_tobytes ~ Jkem.M.__polyvec_tobytes :
              pos_bound768_cxq a{1} 0 256 2 /\
              pos_bound768_cxq a{2} 0 256 2 /\
-             lift_array768 a{1} = lift_array768 (unpackv a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
+             lift_array768 a{1} = unpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
 admitted.
+
 
 lemma polyvec_add2_corr  (ab bb : int):
     0 <= ab && ab <= 6 =>
@@ -301,9 +302,9 @@ lemma polyvec_add2_corr  (ab bb : int):
     equiv [ Jkem_avx2.M.__polyvec_add2 ~ Jkem.M.__polyvec_add2 :
       _a = lift_array768 r{2} /\
       _b = lift_array768 b{2} /\ signed_bound768_cxq r{2} 0 768 ab /\ signed_bound768_cxq b{2} 0 768 bb /\
-      _a = lift_array768 (packv r{1}) /\
-      _b = lift_array768 (packv b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb
-           ==> lift_array768 res{1} = lift_array768  (unpackv res{2}) /\
+      _a = packv (lift_array768 r{1}) /\
+      _b = packv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb
+           ==> lift_array768 res{1} = unpackv (lift_array768  res{2}) /\
                signed_bound768_cxq res{1} 0 768 (ab + bb) /\
                signed_bound768_cxq res{2} 0 768 (ab + bb) 
               ].
@@ -315,25 +316,25 @@ transitivity {1} {r0 <@ Mprevec.polyvec_add2(r,b); }
   _b = lift_array768 b{2} /\
   signed_bound768_cxq r{2} 0 768 ab /\
   signed_bound768_cxq b{2} 0 768 bb /\
-  _a = lift_array768 (packv r{1}) /\
-  _b = lift_array768 (packv b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
-      lift_array768 r0{1} = lift_array768  (unpackv r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
+  _a = packv (lift_array768 r{1}) /\
+  _b = packv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
+      lift_array768 r0{1} = unpackv (lift_array768 r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
   + symmetry. call prevec_eq_poly_add2 => //.
 have corr1 := (polvec_add_corr (unpackv _a) (unpackv _b) ab bb abb bbb). call {1} corr1.
 have corr2 := (polyvec_add_corr _a _b ab bb abb bbb); call {2} corr2.
 
 auto => />. 
-move => &1 &2 ????->->?????; do split. admit. admit.
+move => &1 &2 ????->->?????; do split.  admit. admit.
 move => *.
 admit.
 qed.
 
 lemma polyvec_reduce_corr _a :
     equiv [ Jkem_avx2.M.__polyvec_reduce ~ Jkem.M.__polyvec_reduce :
-       _a  = lift_array768 r{2} /\  _a  = lift_array768 (packv r{1})  ==>
+       _a  = lift_array768 r{2} /\  _a  = packv (lift_array768 r{1})  ==>
        (forall k, 0 <= k < 768 => bpos16 res{1}.[k] (2*q)) /\
        (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
-              lift_array768 res{1} = lift_array768 (unpackv res{2}) ].
+              lift_array768 res{1} = unpackv (lift_array768 res{2}) ].
 proc*. 
 transitivity {1} {r0 <@ Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})

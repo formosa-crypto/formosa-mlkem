@@ -46,18 +46,18 @@ abbrev nttunpack_idx = Array256.of_list witness
    134; 142; 150; 158; 166; 174; 182; 190; 198; 206; 214; 222; 230; 238; 246; 254;
    135; 143; 151; 159; 167; 175; 183; 191; 199; 207; 215; 223; 231; 239; 247; 255].
 
-op nttpack (rp: W16.t Array256.t) : (W16.t Array256.t) = Array256.init (fun i => rp.[nttpack_idx.[i]]).
+op nttpack (rp : 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttpack_idx.[i]]).
 
-op nttunpack (rp: W16.t Array256.t) : (W16.t Array256.t) = Array256.init (fun i => rp.[nttunpack_idx.[i]]).
+op nttunpack (rp: 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttunpack_idx.[i]]).
 
-lemma nttpackK: cancel nttpack nttunpack.
+lemma nttpackK: cancel nttpack<:'a> nttunpack<:'a>.
 proof.
   rewrite /cancel => x.
   rewrite /nttunpack /nttpack.
   rewrite -ext_eq_all /all_eq //=.
 qed.
 
-lemma nttunpackK: cancel nttunpack nttpack.
+lemma nttunpackK: cancel nttunpack<:'a> nttpack<:'a>.
 proof.
   rewrite /cancel => x.
   rewrite /nttunpack /nttpack.
