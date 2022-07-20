@@ -1308,7 +1308,11 @@ equiv eq_iVPADD_4u64: Ops.iVPADD_4u64 ~ OpsV.iVPADD_4u64 : is4u64 x{1} x{2} /\ i
 proof. by proc;wp;skip;rewrite /is4u64 /VPADD_4u64. qed.
 
 equiv eq_iVPMULH_256 : Ops.iVPMULH_256 ~ OpsV.iVPMULH_256: is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
-proof. proc; by wp; skip; rewrite /is16u16 /VPMULH. qed.
+proof. proc; wp; skip; rewrite /is16u16 /VPMULH_16u16 /=.
+     move => &1 &2 [#] -> ->. 
+     congr;apply W16u16.Pack.packP => i ib. 
+     congr; congr; rewrite -!get_unpack16 //.
+qed.
 
 equiv eq_iVPMULL_16u16 : Ops.iVPMULL_16u16 ~ OpsV.iVPMULL_16u16: is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. proc; by wp; skip; rewrite /is16u16 /VPMULL. qed.
