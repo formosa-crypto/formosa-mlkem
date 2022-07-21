@@ -1211,7 +1211,7 @@ lemma poly_decompress_corr mem _p (_a : W8.t Array128.t):
              lift_array256 res{1} = decompress_poly 4 res{2} /\
              pos_bound256_cxq res{1} 0 256 1].
 proof. 
-admitted.
+admitted. (* Miguel *)
 (*
   proc.
   cfold{1} 7.
@@ -4113,7 +4113,7 @@ lemma schoolbook_corr a b zetas isign:
         (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
         (forall k, 0 <= k < 16 => qinvx16.[k] = jqx16.[k]) ==>
         res = (schoolbook_mul a b zetas isign)].
-admitted.
+admitted. (* Miguel *)
 (* FIXME
   proc.
     inline (3 4) Ops.iVPADD_8u32; wp.
@@ -4427,7 +4427,7 @@ proof.
       move : (pack_bounds a i 0 q). 
       by move : pos_bound_an; rewrite /pos_bound256_cxq qE /#.
       by smt().
-admit.
+admit. (* Miguel *)
 
 (*
 

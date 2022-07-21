@@ -292,7 +292,7 @@ lemma polyvec_tobytes_corr :
              pos_bound768_cxq a{1} 0 256 2 /\
              pos_bound768_cxq a{2} 0 256 2 /\
              lift_array768 a{1} = unpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
-admitted.
+admitted. (* Miguel *)
 
 
 lemma polyvec_add2_corr  (ab bb : int):

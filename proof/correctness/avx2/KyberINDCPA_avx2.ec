@@ -16,6 +16,17 @@ equiv sha3equiv :
  Jkem_avx2.M._sha3_512_32 ~ M._sha3512_32 : ={arg} ==> ={res}.
 admitted. 
 
+lemma all_iota P (v : 'a Array256.t) : 
+   Array256.all P v <=> all P (map (fun i => v.[i]) (iotared 0 256)).
+rewrite iotaredE all_map /= /preim /= /#.
+qed.
+
+lemma pack_bnd : 
+  all (fun x => 0 <= x < 256) nttpack_idx by rewrite all_iota /=.
+
+lemma unpack_bnd : 
+  all (fun x => 0 <= x < 256) nttunpack_idx by rewrite all_iota /=.
+
 op unpackm(v : 'a Array2304.t) = 
    Array2304.init (fun i =>
       if 0 <= i < 768 
@@ -32,19 +43,41 @@ op packm(v : 'a Array2304.t) =
            then (packv (subarray768 v 1)).[i-768]
            else (packv (subarray768 v 2)).[i-2*768]).
 
-lemma pack_pred (v : 'a Array256.t) P i: 
-   (0 <= i < 256 => P ((pack v).[i])) <=>
-   (0 <= i < 256 => P (v.[i])).
-admitted.
+lemma pack_pred (v : 'a Array256.t) P: 
+   (all P (pack v)) <=>
+   (all P v).
+rewrite /pack /=; split.
++ rewrite all_iota /=;smt(Array256.initiE Array256.allP).
+rewrite allP all_iota /= /#.
+qed.
 
-lemma unpack_pred (v : 'a Array256.t) P i: 
-   (0 <= i < 256 => P ((unpack v).[i])) <=>
-   (0 <= i < 256 => P (v.[i])).
-admitted.
+lemma unpack_pred (v : 'a Array256.t) P: 
+   (all P (unpack v)) <=>
+   (all P v).
+rewrite /unpack /=; split.
++ rewrite all_iota /=;smt(Array256.initiE Array256.allP).
+rewrite allP all_iota /= /#.
+qed.
+(*
+lemma packv_sub v P :
+   (all P (pack (subarray256 v 0 256)) /\
+    all P (pack (subarray256 v 256 256)) /\
+    all P (pack (subarray256 v 512 256))) <=>
+    app P (packv v).
+*)
+lemma packv_pred (v : 'a Array768.t) P: 
+   (all P (packv v)) <=>
+   (all P v).
+rewrite /packv !allP; split.
+move => H i ib. 
+case (0 <= i < 256).
++ move => ibb; move : (H (nttunpack_idx.[i]) _); 1: smt(Array256.allP unpack_bnd).
+  rewrite initiE //=; 1: smt(Array256.allP unpack_bnd). 
+  have -> /= : (0 <= nttunpack_idx.[i] && nttunpack_idx.[i] < 256) by smt(Array256.allP unpack_bnd).
+  rewrite /pack /subarray256 /= !initiE //=; 1: by smt(Array256.allP unpack_bnd).
+  rewrite initiE //=; 1: by smt(Array256.allP unpack_bnd pack_bnd).
 
-lemma packv_pred (v : 'a Array768.t) P i: 
-   (0 <= i < 256 => P ((packv v).[i])) <=>
-   (0 <= i < 256 => P (v.[i])).
+
 admitted.
 
 lemma unpackv_pred (v : 'a Array768.t) P i: 
@@ -154,7 +187,9 @@ seq 10 18 : (#pre /\ ={skpv,e} /\
     signed_bound768_cxq skpv{1} 0 768 1 /\
     signed_bound768_cxq e{1} 0 768 1 /\
     signed_bound768_cxq skpv{2} 0 768 1 /\
-    signed_bound768_cxq e{2} 0 768 1); 1: by admit. (* to do *)
+    signed_bound768_cxq e{2} 0 768 1). 
+conseq />.
+admit. (* to do *)
 
 seq 2 2 : (#{/~skpv{1}}{~e{1}}{~skpv{2}}{~e{2}}pre /\ 
            skpv{1} = unpackv skpv{2} /\
