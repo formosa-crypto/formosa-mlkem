@@ -103,6 +103,31 @@ do split.
 
 qed.
 
+equiv reduceequiv : 
+  Jkem_avx2.M.__poly_reduce ~   M.__poly_reduce :
+    arg{1} = nttunpack arg{2} ==> 
+    res{1} = nttunpack res{2} /\
+    pos_bound256_cxq res{1} 0 256 2 /\ 
+    pos_bound256_cxq res{2} 0 256 2.
+admitted.
+
+import Zq.
+
+lemma addequiv  (ab bb : int):
+    0 <= ab && ab <= 6 =>
+    0 <= bb && bb <= 3 =>
+  forall (_a _b : Fq Array256.t),
+    equiv [ Jkem_avx2.M._poly_add2 ~ Jkem.M._poly_add2 :
+      _a = lift_array256 rp{2} /\
+      _b = lift_array256 bp{2} /\ signed_bound_cxq rp{2} 0 256 ab /\ signed_bound_cxq bp{2} 0 256 bb /\
+      _a = nttpack (lift_array256 rp{1}) /\
+      _b = nttpack (lift_array256 bp{1}) /\ signed_bound_cxq rp{1} 0 256 ab /\ signed_bound_cxq bp{1} 0 256 bb
+           ==> lift_array256 res{1} = nttunpack (lift_array256  res{2}) /\
+               signed_bound_cxq res{1} 0 256 (ab + bb) /\
+               signed_bound_cxq res{2} 0 256 (ab + bb) 
+              ].
+admitted.
+
 equiv pointwiseequiv : 
   Jkem_avx2.M.__polyvec_pointwise_acc ~   M.__polyvec_pointwise_acc :
     arg{1}.`2 = nttunpackv arg{2}.`1 /\
@@ -115,6 +140,10 @@ equiv pointwiseequiv :
     res{1} = nttunpack res{2} /\
     signed_bound_cxq res{1} 0 768 2 /\ 
     signed_bound_cxq res{2} 0 768 2.
+proc. 
+call reduceequiv.
+move : (addequiv 2 2 _ _) => // H.
+ecall (H (lift_array256 r{1}) (lift_array256 t{1})).
 admitted.
 
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
