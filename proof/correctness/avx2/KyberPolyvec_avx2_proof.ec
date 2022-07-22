@@ -260,9 +260,70 @@ have corr1 := (polvec_add_corr (nttunpackv _a) (nttunpackv _b) ab bb abb bbb). c
 have corr2 := (polyvec_add_corr _a _b ab bb abb bbb); call {2} corr2.
 
 auto => />. 
-move => &1 &2 ????->->?????; do split.  admit. admit.
+move => &1 &2 ????->->??rr?rval; do split; 1,2: by rewrite packvK.  
+move => ??rr0?r0val.
+rewrite tP => k kb.
+rewrite /(lift_array768 rr0) mapiE //= r0val // !packvK.
+have  -> : lift_array768 rr = 
+   Array768.init (fun k => (nttpackv (lift_array768 r{1})).[k] + (nttpackv (lift_array768 b{1})).[k])
+ by rewrite tP => kk kkb; rewrite initiE //= /(lift_array768 rr) mapiE //= /#.
+rewrite /nttunpackv /nttpackv initiE //=.
+case (0<=k<256).
++ move => *.
+  rewrite /subarray256 initiE //= initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  pose a := nttunpack_idx.[k].
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  pose b := nttpack_idx.[a].
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite -/b.
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /b /a.
+  move : nttpack_idxK; rewrite allP. smt(mem_iota).  
+
+case (256<=k<512).
++ move => *.
+  rewrite /subarray256 initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  pose a := nttunpack_idx.[k - 256].
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite ifF. smt(nttunpack_bnd Array256.allP).
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  pose b := nttpack_idx.[a].
+  rewrite ifF. smt(nttunpack_bnd Array256.allP).
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /a.
+  move : nttpack_idxK; rewrite allP. smt(mem_iota).  
+
 move => *.
-admit.
+rewrite /subarray256 initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+pose a := nttunpack_idx.[k - 512].
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+pose b := nttpack_idx.[a].
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+rewrite /a.
+move : nttpack_idxK; rewrite allP. smt(mem_iota).  
 qed.
 
 lemma polyvec_reduce_corr _a :
@@ -283,9 +344,9 @@ have corr1 := (polvec_reduce_corr (nttunpackv _a)). call {1} corr1.
 have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
 
 auto => />. 
-move => &1 &2 ???->?; do split. admit. 
+move => &1 &2 ?????; do split. smt(packvK unpackvK). 
 move => ??<-?.
-admit.
+smt(packvK unpackvK). 
 qed.
 
 
