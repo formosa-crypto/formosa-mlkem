@@ -319,5 +319,52 @@ congr;congr.
 rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
 qed.
 
+lemma map_pack (p : 'a Array256.t) (f : 'a -> 'b) : nttpack (Array256.map f p) = map f (nttpack p).
+rewrite /nttpack !mapE.
+rewrite tP => k kb; rewrite !initiE //=.
+pose a:= nttpack_idx.[k].
+rewrite !initiE //=. smt(nttpack_bnd Array256.allP).
+qed.
+
+lemma map_unpack (p : 'a Array256.t) (f : 'a -> 'b) : nttunpack (Array256.map f p) = map f (nttunpack p).
+rewrite /nttunpack !mapE.
+rewrite tP => k kb; rewrite !initiE //=.
+pose a:= nttunpack_idx.[k].
+rewrite !initiE //=. smt(nttunpack_bnd Array256.allP).
+qed.
+
+lemma pack_ext_eq (p q : 'a Array256.t):
+     nttpack p = nttpack q <=> p = q.
+rewrite /nttpack; split;rewrite tP.
++ move => H. rewrite tP => k kb. 
+  move : (H (nttunpack_idx.[k]) _).  smt(nttunpack_bnd Array256.allP).
+  pose a:= nttunpack_idx.[k].
+  rewrite !initiE //=; 1,2: smt(nttunpack_bnd Array256.allP).
+  rewrite /a. move :nttpack_idxK. rewrite allP; smt( mem_iota).
+move => H. rewrite tP => k kb. 
+  move : (H (nttunpack_idx.[k]) _).  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1: smt(nttpack_bnd Array256.allP).
+qed.
+
+lemma unpack_ext_eq (p q : 'a Array256.t) :
+     nttunpack p = nttunpack q <=> p = q.
+rewrite /nttpack; split;rewrite tP.
++ move => H. rewrite tP => k kb. 
+  move : (H (nttpack_idx.[k]) _).  smt(nttpack_bnd Array256.allP).
+  pose a:= nttpack_idx.[k].
+  rewrite !initiE //=; 1,2: smt(nttpack_bnd Array256.allP).
+  rewrite /a. move :nttunpack_idxK. rewrite allP; smt( mem_iota).
+move => H. rewrite tP => k kb. 
+  move : (H (nttpack_idx.[k]) _).  smt(nttpack_bnd Array256.allP).
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+qed.
+
+lemma pack_bounds (p : W16.t Array256.t) l h:
+     (forall i, 0 <= i < 256 => l <= to_sint p.[i] < h) => (forall i, 0<=i<256 => l <= to_sint (nttpack p).[i] < h).
+move => Hi k.
+move : (nttpack_pred p (fun x => l <= W16.to_sint x < h)); rewrite !allP /= => H.
+move : H => [H1 H2]. 
+move : (H2 Hi). smt().
+qed.
 
 end NTT_Avx2.

@@ -1073,14 +1073,14 @@ proof.  by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
 lemma poly_frommont_corr_h ap:
   hoare[ Mprevec.poly_frommont :
        ap = map W16.to_sint rp ==>
-       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) R 2) %% q))) ap].
+       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap].
 proof. 
   proc.
   while(0 <= i <= 16 /\ aux = 16 /\
         (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
         (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
         (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) /\
-        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) R 2) %% q))) /\
+        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) /\
         (forall k, 16 * i <= k < 256 => W16.to_sint rp.[k] = ap.[k])); last first.
   auto => />.
   move => &hr.
@@ -4371,23 +4371,6 @@ proof.
   smt(@Int).
 qed.
 
-lemma map_pack (p : 'a Array256.t) (f : 'a -> 'b) : nttpack (Array256.map f p) = map f (nttpack p).
-admitted.
-
-lemma map_unpack (p : 'a Array256.t) (f : 'a -> 'b) : nttunpack (Array256.map f p) = map f (nttunpack p).
-admitted.
-
-lemma pack_ext_eq (p q : 'a Array256.t):
-     nttpack p = nttpack q <=> p = q.
-admitted.
-
-lemma unpack_ext_eq (p q : 'a Array256.t) :
-     nttunpack p = nttunpack q <=> p = q.
-admitted.
-
-lemma pack_bounds (p : W16.t Array256.t)  i l h:
-     0 <= i < 256 => l <= to_sint p.[i] < h => l <= to_sint (nttpack p).[i] < h.
-admitted.
 
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ Mprevec.poly_tobytes ~ EncDec_AVX2.encode12_opt :
@@ -4424,7 +4407,7 @@ proof.
       move : pos_bound_an; rewrite /pos_bound256_cxq qE /= => H. apply pack_bounds; 1,2: smt(). 
       rewrite modz_small; 1: by smt( qE). 
       rewrite -to_sint_unsigned. 
-      move : (pack_bounds a i 0 q). 
+      move : (pack_bounds a 0 q). 
       by move : pos_bound_an; rewrite /pos_bound256_cxq qE /#.
       by smt().
 admit. (* Miguel *)
