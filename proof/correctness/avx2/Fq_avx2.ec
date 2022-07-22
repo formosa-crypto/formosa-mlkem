@@ -438,7 +438,7 @@ proof.
   have -> : abxsexp = abxuexp.
   + rewrite /abxsexp /abxuexp /W16.smod /W32.smod /=; congr.
     case (2147483648 <= abxs * 62209 %% 65536 * 65536).
-    + move => H; have -> /= :  32768 <= abxu * 62209 %% 65536. admit.
+    + move => H; have -> /= :  32768 <= abxu * 62209 %% 65536. admit. (* painful*)
       have -> : 4294967296 = 65536 * 65536 by auto.
       rewrite divzMDl //=;congr.
       rewrite /abxu /abxs to_uintM /= modzMml -(modzMml _ 62209 _) -(modzMml (to_uint a{2}.[x] * to_uint b{2}.[x]) 62209 _). congr. congr. congr.
@@ -450,8 +450,8 @@ proof.
       + case(32768 <= to_uint a{2}.[x]).
         + by move => *; rewrite -modzMml  -modzDm -modzMmr /= modz_mod /= modzMmr modzMml. 
         by move => *; rewrite -modzMml  -modzMmr /=. 
-    move => H; have -> /= :  !(32768 <= abxu * 62209 %% 65536). admit.
-    rewrite /abxu /abxs to_uintM /= mulzK //=. 
+    move => H; have -> /= :  !(32768 <= abxu * 62209 %% 65536). admit.  (* painful*)
+    rewrite /abxu /abxs to_uintM /=  mulzK //=. 
     rewrite  modzMml -(modzMml _ 62209 _) -(modzMml (to_uint a{2}.[x] * to_uint b{2}.[x]) 62209 _). congr. congr. congr.
       rewrite /to_sint /smod /= fun_if fun_if/=. 
       case (32768 <= to_uint b{2}.[x]).
@@ -475,8 +475,8 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : (abxs - abxuexp) = -(abxuexp - abxs) by ring.
   rewrite modNz /=; 1, 2: by smt().
   rewrite -(modzDml _ (-1)) /= -(modzDmr _ (-1)) /= modzDml.
-  admit.
-admit.
+  admit. (* painful *)
+admit. (* painful *)
 qed.
 
 lemma fqmulx16_ll:
