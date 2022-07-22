@@ -3,6 +3,8 @@ from Jasmin require import JModel.
 require import Array32 Array128 Array256 Array768 Array960 Array1088 Array2304.
 require import KyberPoly  KyberPolyVec KyberINDCPA.
 require import KyberPoly_avx2_proof.
+require import KyberPoly_avx2_vec.
+require import KyberPoly_avx2_prevec.
 require import KyberPolyvec_avx2_proof.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2.
@@ -37,13 +39,69 @@ equiv nttequiv :
    pos_bound768_cxq res{2} 0 768 2.
 admitted.
 
+lemma to_sintInj : injective W16.to_sint. 
+rewrite /injective /to_sint /smod /=. 
+move => x y. move => HHH. have : to_uint x = to_uint y; last by smt(W16.to_uint_eq).
+move : HHH; move : (W16.to_uint_cmp x); move :  (W16.to_uint_cmp y) => /=. smt().
+qed.
+
 equiv frommontequiv : 
   Jkem_avx2.M._poly_frommont ~   M._poly_frommont :
     arg{1} = nttunpack arg{2} ==> 
     res{1} = nttunpack res{2} /\
-    signed_bound_cxq res{1} 0 768 2 /\ 
-    signed_bound_cxq res{2} 0 768 2.
-admitted.
+    signed_bound_cxq res{1} 0 256 2 /\ 
+    signed_bound_cxq res{2} 0 256 2.
+(* Move to poly *)
+proc*.  print prevec_eq_poly_frommont.
+transitivity {1} { r <@ Mprevec.poly_frommont(rp); }
+     (={rp} ==> ={r}) 
+     (rp{1} = nttunpack rp{2} ==> 
+    r{1} = nttunpack r{2} /\
+    signed_bound_cxq r{1} 0 256 2 /\ 
+    signed_bound_cxq r{2} 0 256 2). smt(). smt().
+symmetry. call prevec_eq_poly_frommont. auto => />.
+
+ecall{2} (poly_frommont_corr (map W16.to_sint rp{2})).
+ecall{1} (KyberPolyAVX.poly_frommont_corr (map W16.to_sint rp{1})).
+
+auto => />.
+move => &2 r H.
+split.  
++ by move => k kbl kbh ;rewrite mapE //= initiE //=.
+move => H1 _r0 H0.
+move : H; rewrite tP => H.
+do split. 
++ rewrite tP => k kb.
+  move : (H k kb); rewrite !mapiE //= => HH.
+  move : (H0 (nttunpack_idx.[k]) _). 
+  move : nttunpack_bnd; rewrite allP /#. 
+  pose a:= nttunpack_idx.[k].
+  rewrite !mapiE. move : nttunpack_bnd; rewrite allP /#.
+  move => HH0. 
+  move : HH.
+  have -> : (nttunpack rp{2}).[k] = rp{2}.[a] by rewrite /nttunpack initiE //=.
+  rewrite -HH0.
+  have -> : (nttunpack _r0).[k] = _r0.[a] by rewrite /nttunpack initiE //=.
+  by apply (inj_eq W16.to_sint to_sintInj).
++ rewrite /signed_bound_cxq /= => k kb.
+  move : (H k kb); rewrite !mapiE //= => HH.
+  move : (Fq.Fq.SignedReductions.SREDCp_corr (to_sint (nttunpack rp{2}).[k] * (Fq.Fq.SignedReductions.R * Fq.Fq.SignedReductions.R %% q))).
+  rewrite qE /Fq.Fq.SignedReductions.R /=. 
+  have -> : -109084672 <= to_sint (nttunpack rp{2}).[k] * 1353 && to_sint (nttunpack rp{2}).[k] * 1353 < 109084672. move : W16.to_sint_cmp => /=. smt(). 
+  move : HH. 
+  rewrite qE /Fq.Fq.SignedReductions.R /=. 
+  smt().
+
++ rewrite /signed_bound_cxq /= => k kb.
+  move : (H0 k kb); rewrite !mapiE //= => HH.
+  move : (Fq.Fq.SignedReductions.SREDCp_corr (to_sint (rp{2}).[k] * (Fq.Fq.SignedReductions.R * Fq.Fq.SignedReductions.R %% q))).
+  rewrite qE /Fq.Fq.SignedReductions.R /=. 
+  have -> : -109084672 <= to_sint ( rp{2}).[k] * 1353 && to_sint ( rp{2}).[k] * 1353 < 109084672. move : W16.to_sint_cmp => /=. smt(). 
+  move : HH. 
+  rewrite qE /Fq.Fq.SignedReductions.R /=. 
+  smt().
+
+qed.
 
 equiv pointwiseequiv : 
   Jkem_avx2.M.__polyvec_pointwise_acc ~   M.__polyvec_pointwise_acc :

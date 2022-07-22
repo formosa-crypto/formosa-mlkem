@@ -364,6 +364,12 @@ while (0 <= to_uint i <= 256) (256 - to_uint i).
 by auto => /> ???; rewrite ultE /#.
 qed.
 
+lemma poly_frommont_corr (_a : int Array256.t) : 
+    phoare[ M._poly_frommont :
+             forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
+             forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))]=1%r.
+admitted.
+
 lemma poly_sub_corr_h _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
       hoare[ M._poly_sub :
