@@ -1797,3 +1797,7 @@ proof.
   apply eq_poly_frombytes.
   apply veceq_poly_frombytes.
 qed.
+
+equiv prevec_eq_poly_basemul:
+  Mprevec.poly_basemul ~ M._poly_basemul: ={ap, bp} ==> ={res}.
+admitted.

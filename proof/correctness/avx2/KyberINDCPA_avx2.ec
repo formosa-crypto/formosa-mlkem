@@ -8,6 +8,7 @@ require import KyberPoly_avx2_prevec.
 require import KyberPolyvec_avx2_proof.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2.
+require import NTT_Fq.
 
 import Kyber.
 import KyberSpec.
@@ -121,7 +122,57 @@ equiv reduceequiv :
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     pos_bound256_cxq res{1} 0 256 2 /\ 
     pos_bound256_cxq res{2} 0 256 2.
-admitted.
+(* Move to poly *)
+proc*.  
+transitivity {1} { r <@ Mprevec.poly_reduce(rp); }
+     (={rp} ==> ={r}) 
+     (lift_array256 rp{1} = nttunpack (lift_array256 rp{2}) ==> 
+    lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
+    pos_bound256_cxq r{1} 0 256 2 /\ 
+    pos_bound256_cxq r{2} 0 256 2). smt(). smt().
+symmetry. call prevec_eq_poly_reduce. auto => />.
+
+ecall{2} (poly_reduce_corr (lift_array256 rp{2})).
+ecall{1} (KyberPolyAVX.poly_reduce_corr (lift_array256 rp{1})).
+
+auto => />.
+move => &1 &2; rewrite /lift_array256 tP => Hvals r1; rewrite tP => r1val r1rng r2; rewrite tP => r2val r2rng.
+
+rewrite tP => k kb ;rewrite mapE //= initiE //=.
+rewrite /nttunpack initiE //=.
+pose a:= nttunpack_idx.[k].
+rewrite !mapiE /=. move : nttunpack_bnd; rewrite allP /#.
+move : (Hvals k kb). rewrite mapiE //=.
+rewrite /nttunpack initiE //= -/a mapiE //=. move : nttunpack_bnd; rewrite allP /#.
+smt(Array256.mapiE nttunpack_bnd Array256.allP).
+qed.
+
+import Zq. 
+
+lemma poly_basemul_correct _ap _bp:
+   phoare[ M._poly_basemul :
+     _ap = lift_array256 ap /\ _bp = lift_array256 bp /\
+     signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
+     signed_bound_cxq res 0 256 3 /\ 
+     lift_array256 res = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r 
+  by conseq poly_basemul_ll (poly_basemul_corr _ap _bp). (* move to poly *)
+
+lemma poly_basemul_avx2_correct _ap _bp:
+   phoare[ Mprevec.poly_basemul :
+     _ap = (lift_array256 (nttpack ap)) /\ _bp = (lift_array256 (nttpack bp)) /\
+     signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
+     signed_bound_cxq res 0 256 3 /\ 
+     (lift_array256 (nttpack res)) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
+admitted. (* move to polyavx2proof *)
+
+lemma lift_nttpack v : lift_array256 (nttpack v) = nttpack (lift_array256 v).
+proof. 
+rewrite tP => k kb.
+rewrite /lift_array256 mapiE //=.
+rewrite /nttpack !initiE //=.
+pose a := nttpack_idx.[k].
+smt(Array256.mapiE nttpack_bnd Array256.allP).
+qed.
 
 equiv basemulequiv : 
   Jkem_avx2.M._poly_basemul ~   M._poly_basemul :
@@ -133,11 +184,33 @@ equiv basemulequiv :
     signed_bound_cxq bp{2} 0 256 2
                               ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
-    pos_bound256_cxq res{1} 0 256 3 /\ 
-    pos_bound256_cxq res{2} 0 256 3.
-admitted.
+    signed_bound_cxq res{1} 0 256 3 /\ 
+    signed_bound_cxq res{2} 0 256 3.
+(* Move to poly *)
+proc*.  
+transitivity {1} { r <@ Mprevec.poly_basemul(rp,ap,bp); }
+     (={ap,bp} ==> ={r}) 
+     (ap{1} = nttunpack ap{2} /\
+    bp{1} = nttunpack bp{2} /\
+    signed_bound_cxq ap{1} 0 256 2 /\  
+    signed_bound_cxq bp{1} 0 256 2 /\
+    signed_bound_cxq ap{2} 0 256 2 /\  
+    signed_bound_cxq bp{2} 0 256 2
+                              ==> 
+    lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
+    signed_bound_cxq r{1} 0 256 3 /\ 
+    signed_bound_cxq r{2} 0 256 3). smt(). smt().
+symmetry. call prevec_eq_poly_basemul. auto => />.
 
-import Zq.
+ecall{2} (poly_basemul_correct (lift_array256 ap{2}) (lift_array256 bp{2})).
+ecall{1} (poly_basemul_avx2_correct (lift_array256 (nttpack ap{1})) (lift_array256 (nttpack bp{1}))).
+
+auto => />.
+move => &2 H0 H1 H2 H3 r2 H4 H5 r1 H6 H7.
+rewrite !nttunpackK in H5.
+rewrite H7 -H5.
+by rewrite lift_nttpack nttpackK.
+qed.
 
 lemma addequiv  (ab bb : int):
     0 <= ab && ab <= 6 =>
@@ -167,6 +240,7 @@ equiv pointwiseequiv :
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     signed_bound_cxq res{1} 0 768 2 /\ 
     signed_bound_cxq res{2} 0 768 2.
+proc.
 admitted.
 
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
