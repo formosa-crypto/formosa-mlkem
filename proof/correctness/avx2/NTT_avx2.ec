@@ -367,4 +367,74 @@ move : H => [H1 H2].
 move : (H2 Hi). smt().
 qed.
 
+require import KyberPoly.
+import KyberPoly.
+lemma lift_nttpack v : lift_array256 (nttpack v) = nttpack (lift_array256 v).
+proof. 
+rewrite tP => k kb.
+rewrite /lift_array256 mapiE //=.
+rewrite /nttpack !initiE //=.
+pose a := nttpack_idx.[k].
+smt(Array256.mapiE nttpack_bnd Array256.allP).
+qed.
+
+lemma init_unpack (v : 'a Array768.t) :
+  Array256.init ("_.[_]" (nttunpackv v)) = nttunpack (Array256.init ("_.[_]" v)).
+rewrite /nttunpackv /nttunpack tP => k kb.
+rewrite !initiE //= 1: /# kb /=.
+pose a:= nttunpack_idx.[k].
+rewrite initiE //=.
+qed.
+
+lemma init_unpack1 (v : 'a Array768.t) :
+  Array256.init (fun (i : int) => (nttunpackv v).[256 + i]) = nttunpack (Array256.init (fun (i : int) => v.[256 + i])).
+rewrite /nttunpackv /nttunpack tP => k kb.
+rewrite initiE //=.
+rewrite initiE //=. smt().
+rewrite ifF 1:/#.
+rewrite ifT 1:/#.
+rewrite initiE //=.
+pose a:= nttunpack_idx.[k].
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=.
+rewrite -/a initiE //=.
+ smt(nttunpack_bnd Array256.allP).
+qed.
+
+lemma init_unpack2 (v : 'a Array768.t) :
+  Array256.init (fun (i : int) => (nttunpackv v).[512 + i]) = nttunpack (Array256.init (fun (i : int) => v.[512 + i])).
+rewrite /nttunpackv /nttunpack tP => k kb.
+rewrite initiE //=.
+rewrite initiE //=. smt().
+rewrite ifF 1:/#.
+rewrite ifF 1:/#.
+rewrite initiE //=.
+pose a:= nttunpack_idx.[k].
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=.
+rewrite -/a initiE //=.
+ smt(nttunpack_bnd Array256.allP).
+qed.
+
+lemma lift256_nttunpack v :
+  lift_array256 (nttunpack v) = nttunpack (lift_array256 v).
+rewrite /lift_array256 /nttunpack tP => k kb.
+rewrite mapiE //= initiE //=.
+pose a:= nttunpack_idx.[k].
+rewrite initiE //= mapiE //=. smt(nttunpack_bnd Array256.allP).
+qed.
+
+require import Jkem_avx2 Jkem.
+
+equiv nttequiv :
+ Jkem_avx2.M.__polyvec_ntt ~ M.__polyvec_ntt : 
+   ={arg} /\ 
+   signed_bound768_cxq arg{1} 0 768 2 /\ 
+   signed_bound768_cxq arg{2} 0 768 2 ==>
+   res{1} = nttunpackv res{2} /\ 
+   pos_bound768_cxq res{1} 0 768 2 /\ 
+   pos_bound768_cxq res{2} 0 768 2.
+admitted. (* ntt top level *)
+
+
 end NTT_Avx2.
