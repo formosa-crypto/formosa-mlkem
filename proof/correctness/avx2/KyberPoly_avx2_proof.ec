@@ -1205,7 +1205,7 @@ lemma poly_frommont_corr ap:
   phoare[ Mprevec.poly_frommont :
        ap = map W16.to_sint rp ==>
        map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap] = 1%r.
-admitted.
+admitted. (* frommont *)
 
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
     equiv [ Mprevec.poly_decompress ~ EncDec_AVX2.decode4 :

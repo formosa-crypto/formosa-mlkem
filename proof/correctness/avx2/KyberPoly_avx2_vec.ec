@@ -1800,4 +1800,4 @@ qed.
 
 equiv prevec_eq_poly_basemul:
   Mprevec.poly_basemul ~ M._poly_basemul: ={ap, bp} ==> ={res}.
-admitted.
+admitted. (* basemul *)
