@@ -413,7 +413,7 @@ proof.
   do (rewrite initiE 1:x_i //=).
   rewrite qx16_def 1:x_i qinvx16_def 1:x_i.
 
-  rewrite /wmulhs /wmulls //=.
+  rewrite /wmulhs //=.
   rewrite SAR_sem16 SAR_sem16 /=.
   rewrite W16.of_sintK /(`<<`) /sigextu32 /truncateu16 /=.
   rewrite shlMP; first by smt().
@@ -438,7 +438,12 @@ proof.
   have -> : abxsexp = abxuexp.
   + rewrite /abxsexp /abxuexp /W16.smod /W32.smod /=; congr.
     case (2147483648 <= abxs * 62209 %% 65536 * 65536).
-    + move => H; have -> /= :  32768 <= abxu * 62209 %% 65536. admit. (* painful*)
+    + move => H; have -> /= :  32768 <= abxu * 62209 %% 65536.
+      + have  : 32768 <= abxs * 62209 %% 65536. smt().
+        rewrite /abxs /abxu /to_sint /smod /=. 
+        case (32768 <= to_uint a{2}.[x]);
+         case (32768 <= to_uint b{2}.[x]);  
+           rewrite to_uintM /= /#.
       have -> : 4294967296 = 65536 * 65536 by auto.
       rewrite divzMDl //=;congr.
       rewrite /abxu /abxs to_uintM /= modzMml -(modzMml _ 62209 _) -(modzMml (to_uint a{2}.[x] * to_uint b{2}.[x]) 62209 _). congr. congr. congr.
@@ -450,7 +455,12 @@ proof.
       + case(32768 <= to_uint a{2}.[x]).
         + by move => *; rewrite -modzMml  -modzDm -modzMmr /= modz_mod /= modzMmr modzMml. 
         by move => *; rewrite -modzMml  -modzMmr /=. 
-    move => H; have -> /= :  !(32768 <= abxu * 62209 %% 65536). admit.  (* painful*)
+    move => H; have -> /= :  !(32768 <= abxu * 62209 %% 65536).
+      + have  : !(32768 <= abxs * 62209 %% 65536). smt().
+        rewrite /abxs /abxu /to_sint /smod /=. 
+        case (32768 <= to_uint a{2}.[x]);
+         case (32768 <= to_uint b{2}.[x]);  
+           rewrite to_uintM /= /#.
     rewrite /abxu /abxs to_uintM /=  mulzK //=. 
     rewrite  modzMml -(modzMml _ 62209 _) -(modzMml (to_uint a{2}.[x] * to_uint b{2}.[x]) 62209 _). congr. congr. congr.
       rewrite /to_sint /smod /= fun_if fun_if/=. 
@@ -475,8 +485,30 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : (abxs - abxuexp) = -(abxuexp - abxs) by ring.
   rewrite modNz /=; 1, 2: by smt().
   rewrite -(modzDml _ (-1)) /= -(modzDmr _ (-1)) /= modzDml.
-  admit. (* painful *)
-admit. (* painful *)
+  have -> := (modz_add_carry (abxuexp - abxs) 4294967295 4294967296 _ _ _);1..3: smt(@W16). 
+  have -> : 4294967295 - (abxuexp - abxs + 4294967295 - 4294967296) = 
+            abxs - abxuexp + 4294967296 by ring. 
+  have -> : 4294967296 = 65536*65536 by auto. rewrite divzMDr // modzDl.
+  admit. (* true? *)
+move => H.
+case (0 <= abxs - abxuexp). 
++ move => *. rewrite (modz_small _ 4294967296) /=. 
+  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
+  have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
+  + rewrite StdOrder.IntOrder.ger0_norm //=. smt(@W16).
+  move => *. admit. (* true? *)
+move => HH.
+have -> : abxs - abxuexp = -(abxuexp - abxs) by ring.
+rewrite modNz /= 1,2:/#. 
+  rewrite -(modzDml _ (-1)) /= -(modzDmr _ (-1)) /= modzDml.
+  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
+  have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
+  have -> := (modz_add_carry (abxuexp - abxs) 4294967295 4294967296 _ _ _). 
+    smt(@W16).  smt(). smt(). 
+  have -> : 4294967295 - (abxuexp - abxs + 4294967295 - 4294967296) = 
+            abxs - abxuexp + 4294967296 by ring. 
+  have -> : 4294967296 = 65536*65536 by auto. rewrite divzMDr // modzDl.
+admit. (* true? *)
 qed.
 
 lemma fqmulx16_ll:
