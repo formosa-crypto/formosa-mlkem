@@ -95,7 +95,7 @@ seq 10 18 : (#pre /\ ={skpv,e} /\
     signed_bound768_cxq skpv{2} 0 768 1 /\
     signed_bound768_cxq e{2} 0 768 1). 
 conseq />.
-admit. (* to do *)
+admit. (* noise samplings *)
 
 seq 2 2 : (#{/~skpv{1}}{~e{1}}{~skpv{2}}{~e{2}}pre /\ 
            skpv{1} = nttunpackv skpv{2} /\
