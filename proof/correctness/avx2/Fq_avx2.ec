@@ -290,6 +290,11 @@ have -> : Pr[Mprevec.red16x(r{m}, qx16{m}, vx16{m}) @ &m : true] = 1%r; last by 
 byphoare => //; apply barret_red16x_ll.
 qed.
 
+
+lemma mod16_div (a b : int) : (a - b) %/ 65536 %% 65536 = 
+                             (a %/ 65536 - b %/ 2^16) %% 65536.
+admitted.
+
 lemma fqmulx16_corr_h:
   equiv [Mprevec.fqmulx16 ~ Kyber_AVX2_cf.__fqmul_x16 :
          ={a, b} /\
@@ -489,14 +494,15 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : 4294967295 - (abxuexp - abxs + 4294967295 - 4294967296) = 
             abxs - abxuexp + 4294967296 by ring. 
   have -> : 4294967296 = 65536*65536 by auto. rewrite divzMDr // modzDl.
-  admit. (* true? *)
+  by rewrite -mod16_div.
 move => H.
 case (0 <= abxs - abxuexp). 
 + move => *. rewrite (modz_small _ 4294967296) /=. 
   have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
   have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
   + rewrite StdOrder.IntOrder.ger0_norm //=. smt(@W16).
-  move => *. admit. (* true? *)
+  move => *.   by rewrite -mod16_div.
+
 move => HH.
 have -> : abxs - abxuexp = -(abxuexp - abxs) by ring.
 rewrite modNz /= 1,2:/#. 
@@ -508,7 +514,8 @@ rewrite modNz /= 1,2:/#.
   have -> : 4294967295 - (abxuexp - abxs + 4294967295 - 4294967296) = 
             abxs - abxuexp + 4294967296 by ring. 
   have -> : 4294967296 = 65536*65536 by auto. rewrite divzMDr // modzDl.
-admit. (* true? *)
+  by rewrite -mod16_div.
+
 qed.
 
 lemma fqmulx16_ll:
