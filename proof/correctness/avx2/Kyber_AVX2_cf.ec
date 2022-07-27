@@ -22,26 +22,6 @@ module EncDec_AVX2 = {
    }
 
 
-  proc encode12_opt(a : ipoly) : W8.t Array384.t = {
-    var fi1,fi2: int;
-    var i;
-    var r : W8.t Array384.t;
-
-    i <- 0;
-    while (i < 2) {
-
-      r <- fill (fun k => let fi1 = a.[128*i + 2 * (k %% 192 %/ 3)] in
-                          let fi2 = a.[128*i + 2 * (k %% 192 %/ 3) + 1] in
-                          if (k %% 3 = 0) then W8.of_int fi1
-                          else if (k %% 3 = 1) then W8.of_int ((fi2 %% 2^4) * 2^4 + fi1 %/ 2^8)
-                          else W8.of_int (fi2 %/ 2^4))
-                (192*i) 192 r;
-
-      i <- i + 1;
-    }
-    return r;
-  }
-
   proc decode12_opt(a : W8.t Array384.t) : ipoly = {
      var i;
        var r : ipoly;
