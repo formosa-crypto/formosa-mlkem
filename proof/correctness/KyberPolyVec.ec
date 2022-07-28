@@ -391,7 +391,7 @@ lemma polyvec_add_corr_h _a _b ab bb :
            forall k, 0 <= k < 768 =>
               inFq (to_sint res.[k]) = _a.[k] + _b.[k]]. 
 proof.
-move => abb bbb;  move : (poly_add_corr_impl ab bb abb bbb) => H.
+move => abb bbb;  move : (poly_add_corr_impl_h ab bb abb bbb) => H.
 proc.
 wp;ecall (H (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i]))) (lift_array256 (Array256.init (fun i => b.[(2 * 256) + i])))).
 wp;ecall (H (lift_array256 (Array256.init (fun i => r.[256 + i]))) (lift_array256 (Array256.init (fun i => b.[256 + i])))).
@@ -958,9 +958,9 @@ lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : Fq 
 proof.
 move => _p0_def _p1_def _p2_def _r_def; proc.
 ecall (poly_reduce_corr_h (lift_array256 r)).
-have H:= (poly_add_corr_impl 6 3 _ _) => //; ecall (H (lift_array256 r) _p2); clear H.
+have H:= (poly_add_corr_impl_h 6 3 _ _) => //; ecall (H (lift_array256 r) _p2); clear H.
 call (poly_basemul_corr _a2 _b2).
-have H:= (poly_add_corr_impl 3 3 _ _) => //; ecall (H _p0 _p1); clear H.
+have H:= (poly_add_corr_impl_h 3 3 _ _) => //; ecall (H _p0 _p1); clear H.
 call (poly_basemul_corr _a1 _b1).
 call (poly_basemul_corr _a0 _b0).
 

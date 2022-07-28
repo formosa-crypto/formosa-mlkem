@@ -364,6 +364,12 @@ while (0 <= to_uint i <= 256) (256 - to_uint i).
 by auto => /> ???; rewrite ultE /#.
 qed.
 
+lemma poly_frommont_corr (_a : int Array256.t) : 
+    phoare[ M._poly_frommont :
+             forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
+             forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))]=1%r.
+admitted.
+
 lemma poly_sub_corr_h _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
       hoare[ M._poly_sub :
@@ -504,7 +510,7 @@ lemma poly_add_corr _a _b ab bb :
    by move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb). 
  
 
-lemma poly_add_corr_impl ab bb :
+lemma poly_add_corr_impl_h ab bb :
   0 <= ab <= 6 =>
   0 <= bb <= 3 =>
   forall _a _b,
@@ -545,6 +551,21 @@ split.
   move => i ib; move : (sumv i ib); rewrite !initiE //=.
   by rewrite  /(&+)/= map2E //= initiE //=. 
 qed.
+
+lemma poly_add_correct_impl ab bb :
+    0 <= ab <= 6 => 0 <= bb <= 3 =>  
+    forall _a _b,
+      phoare[ M._poly_add2 :
+           _a = lift_array256 rp /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq rp 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           forall k, 0 <= k < 256 =>
+              inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
+   by move => abb bbb _a _b; conseq poly_add_ll (poly_add_corr_impl_h ab bb abb bbb _a _b ). (* move to poly *)
+
 
 lemma poly_reduce_corr_h (_a : Fq Array256.t):
       hoare[ M.__poly_reduce :
@@ -1718,8 +1739,8 @@ have  /= [#] redbl6 redbh6 redv6 :=
 
 have  /= [#] redbl7 redbh7 redv7 := 
     (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[to_uint i{hr} %/ 4 + 64])) _ _); 1: by rewrite /R /=; smt().
-+ rewrite /R /=; move : zeta_bound; rewrite /minimum_residues /bpos16 => zb. 
-  by rewrite to_sintN /= /#.
++ rewrite /R /=; move : zeta_bound; rewrite /minimum_residues /bpos16 => zb.
+  rewrite to_sintN /=; do split; smt().  
 
 have  /= [#] redbl8 redbh8 redv8 := 
     (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr}+2]) _ _); 1,2:
@@ -1838,5 +1859,14 @@ have -> : i{hr} + W64.one - W64.one + (of_int 3)%W64 - W64.one +
   last by move => *; rewrite to_uintD_small /=; smt(to_uint_cmp pow2_64). 
 by ring.
 qed.
+
+
+lemma poly_basemul_correct _ap _bp:
+   phoare[ M._poly_basemul :
+     _ap = lift_array256 ap /\ _bp = lift_array256 bp /\
+     signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
+     signed_bound_cxq res 0 256 3 /\ 
+     lift_array256 res = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r 
+  by conseq poly_basemul_ll (poly_basemul_corr _ap _bp). 
 
 end KyberPoly.
