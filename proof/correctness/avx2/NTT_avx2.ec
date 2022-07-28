@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number Ring StdOrder BitEncoding.
 from Jasmin require import JModel.
-require import Array256 Array128 Array16.
+require import Array256 Array128 Array32 Array16.
 require import NTT_Fq.
 require import AVX2_Ops.
 import Kyber.
@@ -46,9 +46,53 @@ abbrev nttunpack_idx = Array256.of_list witness
    134; 142; 150; 158; 166; 174; 182; 190; 198; 206; 214; 222; 230; 238; 246; 254;
    135; 143; 151; 159; 167; 175; 183; 191; 199; 207; 215; 223; 231; 239; 247; 255].
 
+abbrev shuffle8_idx = Array32.of_list witness
+  [0; 1; 2; 3; 4; 5; 6; 7; 16; 17; 18; 19; 20; 21; 22; 23;
+   8; 9; 10; 11; 12; 13; 14; 15; 24; 25; 26; 27; 28; 29; 30; 31].
+
+abbrev shuffle4_idx = Array32.of_list witness
+  [0; 1; 2; 3; 16; 17; 18; 19; 8; 9; 10; 11; 24; 25; 26; 27;
+   4; 5; 6; 7; 20; 21; 22; 23; 12; 13; 14; 15; 28; 29; 30; 31].
+
+abbrev shuffle2_idx = Array32.of_list witness
+  [0; 1; 16; 17; 4; 5; 20; 21; 8; 9; 24; 25; 12; 13; 28; 29;
+   2; 3; 18; 19; 6; 7; 22; 23; 10; 11; 26; 27; 14; 15; 30; 31].
+
+abbrev shuffle1_idx = Array32.of_list witness
+  [0; 16; 2; 18; 4; 20; 6; 22; 8; 24; 10; 26; 12; 28; 14; 30;
+   1; 17; 3; 19; 5; 21; 7; 23; 9; 25; 11; 27; 13; 29; 15; 31].
+
 op nttpack (rp : 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttpack_idx.[i]]).
 
 op nttunpack (rp: 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttunpack_idx.[i]]).
+
+op shuf8 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
+  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
+  let cr = Array32.init (fun i => c.[shuffle8_idx.[i]]) in
+  let ar = Array16.init (fun i => cr.[i]) in
+  let br = Array16.init (fun i => cr.[i + 16]) in
+  (ar, br).
+
+op shuf4 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
+  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
+  let cr = Array32.init (fun i => c.[shuffle4_idx.[i]]) in
+  let ar = Array16.init (fun i => cr.[i]) in
+  let br = Array16.init (fun i => cr.[i + 16]) in
+  (ar, br).
+
+op shuf2 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
+  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
+  let cr = Array32.init (fun i => c.[shuffle2_idx.[i]]) in
+  let ar = Array16.init (fun i => cr.[i]) in
+  let br = Array16.init (fun i => cr.[i + 16]) in
+  (ar, br).
+
+op shuf1 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
+  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
+  let cr = Array32.init (fun i => c.[shuffle1_idx.[i]]) in
+  let ar = Array16.init (fun i => cr.[i]) in
+  let br = Array16.init (fun i => cr.[i + 16]) in
+  (ar, br).
 
 lemma nttpackK: cancel nttpack<:'a> nttunpack<:'a>.
 proof.

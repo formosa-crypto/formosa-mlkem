@@ -4408,6 +4408,139 @@ proof.
   admit. (* FIXME *)
 qed.
 
+lemma shuffle8_corr_h _a _b:
+      hoare[ Mprevec.shuffle8 :
+           _a = a /\ _b = b
+           ==>
+           res.`1 = (shuf8 _a _b).`1 /\
+           res.`2 = (shuf8 _a _b).`2].
+proof.
+  proc.
+  wp; inline *; auto => />.
+  split.
+    + rewrite /shuf8 => />.
+      rewrite -ext_eq_all /all_eq //=.
+    + rewrite /shuf8 => />.
+      rewrite -ext_eq_all /all_eq //=.
+qed.
+
+lemma shuffle8_ll: islossless Mprevec.shuffle8.
+proof.
+  proc.
+  inline *; auto => />.
+qed.
+
+lemma shuffle8_corr _a _b:
+      phoare[Mprevec.shuffle8:
+             _a = a /\ _b = b
+             ==>
+             res.`1 = (shuf8 _a _b).`1 /\
+             res.`2 = (shuf8 _a _b).`2] = 1%r
+  by conseq shuffle8_ll (shuffle8_corr_h _a _b).
+
+lemma shuffle4_corr_h _a _b:
+      hoare[ Mprevec.shuffle4 :
+           _a = a /\ _b = b
+           ==>
+           res.`1 = (shuf4 _a _b).`1 /\
+           res.`2 = (shuf4 _a _b).`2].
+proof.
+  proc.
+  wp; inline *; auto => />.
+  split.
+    + rewrite /shuf4 => />.
+      rewrite -ext_eq_all /all_eq //=.
+    + rewrite /shuf4 => />.
+      rewrite -ext_eq_all /all_eq //=.
+qed.
+
+lemma shuffle4_ll: islossless Mprevec.shuffle4.
+proof.
+  proc.
+  inline *; auto => />.
+qed.
+
+lemma shuffle4_corr _a _b:
+      phoare[Mprevec.shuffle4:
+             _a = a /\ _b = b
+             ==>
+             res.`1 = (shuf4 _a _b).`1 /\
+             res.`2 = (shuf4 _a _b).`2] = 1%r
+  by conseq shuffle4_ll (shuffle4_corr_h _a _b).
+
+
+lemma shuffle2_corr_h _a _b:
+      hoare[ Mprevec.shuffle2 :
+           _a = a /\ _b = b
+           ==>
+           res.`1 = (shuf2 _a _b).`1 /\
+           res.`2 = (shuf2 _a _b).`2].
+proof.
+  proc.
+  wp; inline *; auto => />.
+  split.
+    + rewrite /shuf2 => />.
+      rewrite -ext_eq_all /all_eq //=.
+    + rewrite /shuf2 /f16u16_t4u64 /f4u64_t16u16 /lift_array16 => />.
+      rewrite -ext_eq_all /all_eq => />.
+      have ->/=: !(W8.int_bit 170 0). by trivial.
+      have ->/=: !(W8.int_bit 170 2). by trivial.
+      have ->/=: !(W8.int_bit 170 4). by trivial.
+      have ->/=: !(W8.int_bit 170 6). by trivial.
+      rewrite shr_shrw 1://=.
+      rewrite wlsrE => />.
+      (* TODO *)
+      admit.
+qed.
+
+lemma shuffle2_ll: islossless Mprevec.shuffle2.
+proof.
+  proc.
+  inline *; auto => />.
+qed.
+
+lemma shuffle2_corr _a _b:
+      phoare[Mprevec.shuffle2:
+             _a = a /\ _b = b
+             ==>
+             res.`1 = (shuf2 _a _b).`1 /\
+             res.`2 = (shuf2 _a _b).`2] = 1%r
+  by conseq shuffle2_ll (shuffle2_corr_h _a _b).
+
+lemma shuffle1_corr_h _a _b:
+      hoare[ Mprevec.shuffle1 :
+           _a = a /\ _b = b
+           ==>
+           res.`1 = (shuf1 _a _b).`1 /\
+           res.`2 = (shuf1 _a _b).`2].
+proof.
+  proc.
+  wp; inline *; auto => />.
+  split.
+    + rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 /lift_array16 => />.
+      rewrite -ext_eq_all /all_eq //=.
+      (* TODO *)
+      admit.
+    + rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 => />.
+      rewrite -ext_eq_all /all_eq //=.
+      (* TODO *)
+      admit.
+qed.
+
+lemma shuffle1_ll: islossless Mprevec.shuffle1.
+proof.
+  proc.
+  inline *; auto => />.
+qed.
+
+lemma shuffle1_corr _a _b:
+      phoare[Mprevec.shuffle1:
+             _a = a /\ _b = b
+             ==>
+             res.`1 = (shuf1 _a _b).`1 /\
+             res.`2 = (shuf1 _a _b).`2] = 1%r
+  by conseq shuffle1_ll (shuffle1_corr_h _a _b).
+
 
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ Mprevec.poly_tobytes ~ EncDec_AVX2.encode12_opt :
@@ -4719,394 +4852,45 @@ proof.
         rewrite /(nttpack_idx) //= initiE 1:/# => /#.
 
   seq 18 1: (#{~tt{1}}{~t0{1}}{~t1{1}}{~t2{1}}{~t3{1}}{~t4{1}}pre /\
-             (forall k, 0 <= k < 32 => t0_b{1}.[k] = r{2}.[192 * i{1} + k]) /\
-             (forall k, 0 <= k < 32 => t2_b{1}.[k] = r{2}.[192 * i{1} + 32 + k]) /\
-             (forall k, 0 <= k < 32 => t1_b{1}.[k] = r{2}.[192 * i{1} + 64 + k]) /\
-             (forall k, 0 <= k < 32 => t3_b{1}.[k] = r{2}.[192 * i{1} + 80 + k]) /\
-             (forall k, 0 <= k < 32 => ttt_b{1}.[k] = r{2}.[192 * i{1} + 96 + k]) /\
-             (forall k, 0 <= k < 32 => t4_b{1}.[k] = r{2}.[192 * i{1} + 112 + k])).
-  inline *; wp; skip; auto => />.
+             (forall k, 0 <= k && k < 32 => t0_b{1}.[k] = r{2}.[192 * i{1} + k]) /\
+             (forall k, 0 <= k && k < 32 => t2_b{1}.[k] = r{2}.[192 * i{1} + 32 + k]) /\
+             (forall k, 0 <= k && k < 32 => t1_b{1}.[k] = r{2}.[192 * i{1} + 64 + k]) /\
+             (forall k, 0 <= k && k < 32 => t3_b{1}.[k] = r{2}.[192 * i{1} + 80 + k]) /\
+             (forall k, 0 <= k && k < 32 => ttt_b{1}.[k] = r{2}.[192 * i{1} + 96 + k]) /\
+             (forall k, 0 <= k && k < 32 => t4_b{1}.[k] = r{2}.[192 * i{1} + 112 + k])).
+  wp.
+  ecall{1} (shuffle8_corr tt{1} t4{1}).
+  ecall{1} (shuffle8_corr t1{1} ttt{1}).
+  ecall{1} (shuffle8_corr t2{1} t3{1}).
+  ecall{1} (shuffle4_corr t0{1} t4{1}).
+  ecall{1} (shuffle4_corr t1{1} tt{1}).
+  ecall{1} (shuffle4_corr t3{1} ttt{1}).
+  ecall{1} (shuffle2_corr t2{1} t4{1}).
+  ecall{1} (shuffle2_corr t1{1} t0{1}).
+  ecall{1} (shuffle2_corr ttt{1} tt{1}).
+  ecall{1} (shuffle1_corr t3{1} t4{1}).
+  ecall{1} (shuffle1_corr t1{1} t2{1}).
+  ecall{1} (shuffle1_corr tt{1} t0{1}).
+
+  skip; auto => />.
   move => &1 &2 [#] a1_bnd p_lb p_ub qx16_def pos_bound_a i_lb i_ub touch_mem_l r2_def i_tub tt_def t0_def t1_def t2_def t3_def t4_def />.
+  move => res0 -> -> res1 -> -> res2 -> -> res3 -> -> res4 -> -> res5 -> ->
+          res6 -> -> res7 -> -> res8 -> -> res9 res9_l res9_r res10 res10_l res10_r res11 res11_l res11_r />.
   do split.
     move => k k_lb k_ub.
     rewrite (r2_def k); first by rewrite k_lb k_ub.
-    rewrite filliE 1:/#.
+    rewrite filliE 1:/#. 
     rewrite lezNgt k_ub //=.
 
     move => k k_lb k_ub.
-    rewrite /f16u16_t32u8 /f8u32_t16u16 /f16u16_t8u32 /f4u64_t16u16 /f16u16_t4u64.
-    do (rewrite initiE 1:/# //= || rewrite mapiE 1:/# //=).
-    have ->: !W8.int_bit 32 (4 * (k %/ 2 %/ 8) + 3).
-      move : (true_32 (4 * (k %/ 2 %/ 8) + 3)).
-      rewrite of_intwE.
-      smt(@Int @IntDiv).
-    have -> //=: !W8.int_bit 32 (4 * (k %/ 2 %/ 8)).
-      move : (true_32 (4 * (k %/ 2 %/ 8))).
-      rewrite of_intwE.
-      smt(@Int @IntDiv).
-    have -> //=: (0 <= 4 * (k %/ 2 %/ 8) + 1 && 4 * (k %/ 2 %/ 8) + 1 < 8).
-      move : k_lb k_ub; smt(@Int @IntDiv).
-    rewrite (_ : W8.int_bit 32 (4 * (k %/ 2 %/ 8) + 1) = (k %/ 16 = 1)).
-      move : (true_32 (4 * (k %/ 2 %/ 8) + 1)).
-      rewrite of_intwE.
-      smt(@Int @IntDiv).
-    do rewrite fun_if2.
-    do (rewrite initiE 1:/# //= || rewrite mapiE 1:/# //=).
-    rewrite (pdiv_small (k %/ 2 %% 8) 8) 1:modz_cmp //=.
-    rewrite (pdiv_small (k %/ 2 %% 8 %% 4) 4) 1:modz_cmp //=.
-    do (rewrite (modz_cmp _ 8) 1://= //=).
-    do (rewrite (modz_dvd _ _ 4) 1://= || rewrite (modz_dvd _ _ 2) 1://=).
-    rewrite (pdiv_small (k %/ 2 %% 2) 2) 1:modz_cmp //=.
-    rewrite (pmod_small (k %/ 2 %% 4) 8) 1:/# //=.
-    rewrite (pmod_small (k %/ 2 %% 2) 8) 1:/# //=.
-    have -> //=: (0 <= k %/ 2 %% 4 %/ 2 && k %/ 2 %% 4 %/ 2 < 8). move : (modz_cmp (k %/ 2) 4) => /#.
-    rewrite (_: k %/ 2 %% 4 %/ 2 = k %/ 4 %% 2). smt(@Int @IntDiv modz_pow2_div).
-    rewrite (_: k %/ 2 %% 8 %/ 4 %% 2 = k %/ 8 %% 2). smt(@Int @IntDiv modz_pow2_div).
-    rewrite (_: W8.int_bit 170 (k %/ 4 %% 2) = (k %/ 4 %% 2 = 1)).
-      move : (true_170 (k %/ 4 %% 2)).
-      rewrite of_intwE.
-      smt(@Int @IntDiv).
-    rewrite (_: W8.int_bit 170 (k %/ 2 %% 2) = (k %/ 2 %% 2 = 1)).
-      move : (true_170 (k %/ 2 %% 2)).
-      rewrite of_intwE.
-      smt(@Int @IntDiv).
-    rewrite (_: W8.int_bit 170 (k %/ 2 %% 4) = (k %/ 2 %% 2 = 1)).
-      move : (true_170 (k %/ 2 %% 4)).
-      rewrite of_intwE.
-      smt(@Int @IntDiv).
-    rewrite filliE 1://#.
-    have -> //=: 192 * i{2} <= 192 * i{2} + k && 192 * i{2} + k < 192 * i{2} + 192.
-      move : k_ub k_lb => /#.
-  rewrite (_: (if k %/ 4 %% 2 = 1 then
-                 if k %/ 2 %% 2 = 1 then t4{1}.[k %/ 2 %% 2]
-                 else
-                   pack2_t ((init ("_.[_]" t3{1})))%W2u16.Pack `>>` (of_int 16)%W8 \bits16
-                   k %/ 2 %% 2
-               else
-                 if k %/ 2 %% 2 = 1 then t2{1}.[k %/ 2 %% 4]
-                 else
-                   pack2_t
-                     ((init (fun (j : int) => t1{1}.[2 * (k %/ 4 %% 2) + j])))%W2u16.Pack `>>`
-                   (of_int 16)%W8 \bits16 k %/ 2 %% 2) =
-              (if k %/ 4 %% 2 = 1 then
-                 if k %/ 2 %% 2 = 1 then t4{1}.[1]
-                 else
-                   pack2_t ((init ("_.[_]" t3{1})))%W2u16.Pack `>>` (of_int 16)%W8 \bits16 0
-               else
-                 if k %/ 2 %% 2 = 1 then t2{1}.[1]
-                 else
-                   pack2_t
-                     ((init (fun (j : int) => t1{1}.[j])))%W2u16.Pack `>>`
-                   (of_int 16)%W8 \bits16 0)).
-    case (k %/ 4 %% 2 = 1) => if_1_t.
-      + smt(@Logic).
-      + have ->: k %/ 4 %% 2 = 0. move : if_1_t (modz_cmp (k %/ 4) 2) => /#.
-        case (k %/ 2 %% 2 = 1) => if_2_t.
-          move : if_1_t if_2_t; smt(@Int @IntDiv).
-          have ->: k %/ 2 %% 2 = 0. move : if_2_t (modz_cmp (k %/ 2) 2) => /#.
-          trivial.
-  rewrite (_: (if k %/ 4 %% 2 = 1 then
-                 if k %/ 2 %% 2 = 1 then
-                   pack2_t
-                     ((init (fun (j : int) => t2{1}.[2 * (k %/ 4 %% 2) + j])))%W2u16.Pack `<<`
-                   (of_int 16)%W8 \bits16 k %/ 2 %% 2
-                 else t1{1}.[k %/ 2 %% 4]
-               else
-                 pack4_t
-                   ((init
-                       ("_.[_]"
-                          ((init
-                              (fun (i0 : int) =>
-                                 if (0 <= i0 %% 8 && i0 %% 8 < 8) /\
-                                    (int_bit 170 (i0 %% 8))%W8 then
-                                   ((init
-                                       (fun (i1 : int) =>
-                                          ((init
-                                              (fun (i2 : int) =>
-                                                 ((init
-                                                     (fun (i3 : int) =>
-                                                        pack2_t
-                                                          ((init
-                                                              (fun (j : int) =>
-                                                                 t0{1}.[2 * i3 + j])))%W2u16.Pack)))%Array8.[i2] `<<`
-                                                 (of_int 16)%W8)))%Array8.[i1 %/ 2] \bits16
-                                          i1 %% 2)))%Array16.[i0]
-                                 else tt{1}.[i0])))%Array16)))%W4u16.Pack `>>`
-                 (of_int 32)%W8 \bits16 k %/ 2 %% 4) =
-              (if k %/ 4 %% 2 = 1 then
-                 if k %/ 2 %% 2 = 1 then
-                   pack2_t
-                     ((init (fun (j : int) => t2{1}.[2 + j])))%W2u16.Pack `<<`
-                   (of_int 16)%W8 \bits16 1
-                 else t1{1}.[2]
-               else
-                 pack4_t
-                   ((init
-                       ("_.[_]"
-                          ((init
-                              (fun (i0 : int) =>
-                                 if (0 <= i0 %% 8 && i0 %% 8 < 8) /\
-                                    (int_bit 170 (i0 %% 8))%W8 then
-                                   ((init
-                                       (fun (i1 : int) =>
-                                          ((init
-                                              (fun (i2 : int) =>
-                                                 ((init
-                                                     (fun (i3 : int) =>
-                                                        pack2_t
-                                                          ((init
-                                                              (fun (j : int) =>
-                                                                 t0{1}.[2 * i3 + j])))%W2u16.Pack)))%Array8.[i2] `<<`
-                                                 (of_int 16)%W8)))%Array8.[i1 %/ 2] \bits16
-                                          i1 %% 2)))%Array16.[i0]
-                                 else tt{1}.[i0])))%Array16)))%W4u16.Pack `>>`
-                 (of_int 32)%W8 \bits16 k %/ 2 %% 4)).
-    case (k %/ 4 %% 2 = 1) => if_1_t.
-      + case (k %/ 2 %% 2 = 1) => if_2_t.
-          rewrite if_1_t if_2_t //=.
-          move : if_1_t if_2_t; smt(@Int @IntDiv).
-      + done.
-  do (rewrite (fun_if2 (W2u8.\bits8))).
-  do rewrite (mulzC 192 i{2}).
-  rewrite modzMDl.
-  do (rewrite mapiE 1:/# //=).
-  do (rewrite shl_shlw 1://= || rewrite shr_shrw 1://=).
-  pose t3_pack := pack2_t ((W2u16.Pack.init ("_.[_]" t3{1}))).
-  pose t1_pack := pack2_t ((W2u16.Pack.init ("_.[_]" t1{1}))).
-  pose t2_pack := pack2_t ((W2u16.Pack.init (fun (j : int) => t2{1}.[2 + j]))).
-  rewrite -(W32.to_uintK t3_pack) -(W32.to_uintK t1_pack) -(W32.to_uintK t2_pack).
-  rewrite shrDP 1://= (pmod_small _ W32.modulus) 1:W32.to_uint_cmp.
-  rewrite shrDP 1://= (pmod_small _ W32.modulus) 1:W32.to_uint_cmp.
-  rewrite (_: W16.modulus = 2 ^ (16 * 1)). by trivial.
-  do (rewrite of_int_bits16_div 1://=).
-  do (rewrite -divzMr 1..2://=).
-  rewrite -exprD_nneg 1..2://=.
-  do rewrite -(mulzDr 16 _ _).
-  do (rewrite -W2u16.of_int_bits16_div 1://=).
-  rewrite addz0 to_uintK -(W2u16.get_unpack16 _ 1) 1://= pack2K initiE 1://=.
-  rewrite to_uintK -(W2u16.get_unpack16 _ 1) 1://= pack2K initiE 1://=.
+    rewrite /f16u16_t32u8 filliE 1:/# /=.
+    have -> /=: 192 * i{2} <= 192 * i{2} + k && 192 * i{2} + k < 192 * i{2} + 192.
+      move : k_lb k_ub => /#.
+    rewrite initiE 1://= /=.
+    rewrite {2 4 5 6}(mulzC 192 i{2}) modzMDl (pmod_small k 192); first by move : k_lb k_ub => /#.
+    rewrite res9_l.
+    do 4? rewrite mapiE 1:/#.
+    rewrite -(fun_if W8.of_int) -(fun_if W8.of_int).
 
-  rewrite shlMP 1://=.
-  rewrite of_int_bits16_div 1://=.
-  rewrite (_: to_uint t2_pack * W16.modulus %/ 2 ^ (16 * 1) = to_uint t2_pack %/ 2 ^ (16 * 0)).
-    by rewrite expr0 mulzK 1://= divz1.
-  rewrite -W2u16.of_int_bits16_div 1://=.
-  rewrite to_uintK -(W2u16.get_unpack16 _ 0) 1://= pack2K initiE 1://= //=.
-  pose tt_t0_pack := pack4_t
-     ((W4u16.Pack.init
-         ("_.[_]"
-            ((init
-                (fun (i0 : int) =>
-                   if (0 <= i0 %% 8 && i0 %% 8 < 8) /\
-                      (int_bit 170 (i0 %% 8))%W8 then
-                     ((init
-                         (fun (i1 : int) =>
-                            ((init
-                                (fun (i2 : int) =>
-                                   ((init
-                                       (fun (i3 : int) =>
-                                          pack2_t
-                                            ((init
-                                                (fun (j : int) =>
-                                                   t0{1}.[2 * i3 + j])))%W2u16.Pack)))%Array8.[i2] `<<`
-                                   (of_int 16)%W8)))%Array8.[i1 %/ 2] \bits16
-                            i1 %% 2)))%Array16.[i0]
-                   else tt{1}.[i0])))%Array16))).
-  rewrite -(W64.to_uintK tt_t0_pack).  
-  rewrite shrDP 1://= (pmod_small _ W64.modulus) 1:W64.to_uint_cmp.
-  rewrite of_int_bits16_div 1:modz_cmp 1://=.
-  rewrite -divzMr 1://=. move : (modz_cmp k 4); smt(@Int @IntDiv @Ring.IntID).
-  rewrite -exprD_nneg 1://=. smt(@Int @IntDiv @Ring.IntID).
-  rewrite (_: 32 = 16 * 2) 1://= -(mulzDr 16 _ _).
-  rewrite (_: (if k %/ 8 %% 2 = 0 then
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then t4{1}.[1] \bits8 k %% 2
-                   else t3{1}.[1] \bits8 k %% 2
-                 else
-                   if k %/ 2 %% 2 = 1 then t2{1}.[1] \bits8 k %% 2
-                   else t1{1}.[1] \bits8 k %% 2
-               else
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then t2{1}.[2] \bits8 k %% 2
-                   else t1{1}.[2] \bits8 k %% 2
-                 else
-                  (of_int (to_uint tt_t0_pack %/ 2 ^ (16 * (2 + k %/ 2 %% 4))))%W16 \bits8
-                  k %% 2) =
-              (if k %/ 8 %% 2 = 0 then
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then t4{1}.[1] \bits8 k %% 2
-                   else t3{1}.[1] \bits8 k %% 2
-                 else
-                   if k %/ 2 %% 2 = 1 then t2{1}.[1] \bits8 k %% 2
-                   else t1{1}.[1] \bits8 k %% 2
-               else
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then t2{1}.[2] \bits8 k %% 2
-                   else t1{1}.[2] \bits8 k %% 2
-                 else
-                  (of_int (to_uint tt_t0_pack %/ 2 ^ (16 * (2 + k %/ 2 %% 2))))%W16 \bits8
-                  k %% 2)).
-    case (k %/ 8 %% 2 = 0) => />.
-      + move => if_1_f.
-        case (k %/ 4 %% 2 = 1) => />.
-          + move => if_2_f.
-            have if_1_fv: k %/ 8 %% 2 = 1. move : if_1_f (modz_cmp (k %/ 8) 2) => /#.
-            have if_2_fv: k %/ 4 %% 2 = 0. move : if_2_f (modz_cmp (k %/ 4) 2) => /#.
-            have ->: k %/ 2 %% 4 = k %/ 2 %% 2. move : if_2_fv if_1_fv; smt(@Int @IntDiv).
-            done.
-  rewrite -W4u16.of_int_bits16_div; first by move : (modz_cmp (k %/ 2) 2) => /#.
-  rewrite to_uintK -W4u16.get_unpack16 1:/# pack4K.
-  do (rewrite initiE 1:/# //=).
-  rewrite (modz_cmp _ 8) 1://= //=.
-  rewrite (_: 2 * ((2 + k %/ 2 %% 2) %/ 2) = 2).
-    rewrite -(mul1z 2) divzMDl //= (pdiv_small (k %/ 2 %% 2) 2) 1:modz_cmp //=.
-  rewrite (_: (2 + k %/ 2 %% 2) %% 2 = k %/ 2 %% 2). smt(@Int @IntDiv modz_mod).
-  pose t0_pack := pack2_t ((W2u16.Pack.init (fun (j : int) => t0{1}.[2 + j]))).
-  rewrite -(W32.to_uintK t0_pack).
-  rewrite shl_shlw 1://= shlMP 1://=.
-  rewrite of_int_bits16_div 1:/#.
-  rewrite (_: W16.modulus = 2 ^ (16 * 1)). by trivial.
-  rewrite (_: W8.int_bit 170 ((2 + k %/ 2 %% 2) %% 8) = (k %/ 2 %% 2 = 1)).
-    move : (true_170 ((2 + k %/ 2 %% 2) %% 8)).
-    rewrite of_intwE.
-    smt(@Int @IntDiv).
-  rewrite (fun_if2 (W2u8.\bits8)).
-  rewrite (_: (if k %/ 2 %% 2 = 1 then
-                 (W16.of_int (to_uint t0_pack * 2 ^ (16 * 1) %/ 2 ^ (16 * (k %/ 2 %% 2)))) \bits8 k%% 2
-               else tt{1}.[2 + k %/ 2 %% 2] \bits8 k %% 2) =
-              (if k %/ 2 %% 2 = 1 then
-                 (W16.of_int (to_uint t0_pack * 2 ^ (16 * 1) %/ 2 ^ (16 * 1))) \bits8 k%% 2
-               else tt{1}.[2] \bits8 k %% 2)).
-    case (k %/ 2 %% 2 = 1) => if_1_t.
-      rewrite if_1_t //=.
-      have -> //=: k %/ 2 %% 2 = 0. move : if_1_t => /#.
-  rewrite (_: to_uint t0_pack * W16.modulus %/ 2 ^ (16 * 1) = to_uint t0_pack %/ 2 ^ (16 * 0)).
-    by rewrite expr0 mulzK 1://= divz1.
-  rewrite -W2u16.of_int_bits16_div 1://=.
-  rewrite to_uintK -(W2u16.get_unpack16 _ 0) 1://= pack2K initiE 1://= //=.
-  do (rewrite bits8_div 1:/#).
-
-  rewrite (_: (if k %/ 8 %% 2 = 0 then
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int
-                        (to_uint
-                           (pack2_t ((W2u16.Pack.init ("_.[_]" t2{1}))) `<<<` 16 \bits16 k %/ 2 %% 2) %/
-                         2 ^ (8 * (k %% 2))))%W8
-                   else (of_int (to_uint t1{1}.[k %/ 2 %% 2] %/ 2 ^ (8 * (k %% 2))))%W8
-                 else
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int
-                        (to_uint
-                           (pack2_t
-                              ((init (fun (j : int) => t0{1}.[2 * (k %/ 4 %% 2) + j])))%W2u16.Pack `<<<`
-                            16 \bits16 k %/ 2 %% 2) %/
-                         2 ^ (8 * (k %% 2))))%W8
-                   else (of_int (to_uint tt{1}.[k %/ 2 %% 4] %/ 2 ^ (8 * (k %% 2))))%W8
-               else
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int (to_uint t0{1}.[k %/ 2 %% 2] %/ 2 ^ (8 * (k %% 2))))%W8
-                   else
-                     (of_int
-                        (to_uint
-                           (pack2_t ((init ("_.[_]" tt{1})))%W2u16.Pack `>>>` 16 \bits16
-                            k %/ 2 %% 2) %/
-                         2 ^ (8 * (k %% 2))))%W8
-                 else
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int
-                        (to_uint
-                           (pack2_t
-                              ((init (fun (j : int) => t4{1}.[2 * (k %/ 4 %% 2) + j])))%W2u16.Pack `<<<`
-                            16 \bits16 k %/ 2 %% 2) %/
-                         2 ^ (8 * (k %% 2))))%W8
-                   else (of_int (to_uint t3{1}.[k %/ 2 %% 4] %/ 2 ^ (8 * (k %% 2))))%W8) =
-              (if k %/ 8 %% 2 = 0 then
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int
-                        (to_uint
-                           (pack2_t ((W2u16.Pack.init ("_.[_]" t2{1}))) `<<<` 16 \bits16 1) %/ 2 ^ (8 * (k %% 2))))%W8
-                   else (of_int (to_uint t1{1}.[0] %/ 2 ^ (8 * (k %% 2))))%W8
-                 else
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int
-                        (to_uint
-                           (pack2_t
-                              ((W2u16.Pack.init (fun (j : int) => t0{1}.[j]))) `<<<` 16 \bits16 1) %/ 2 ^ (8 * (k %% 2))))%W8
-                   else (of_int (to_uint tt{1}.[0] %/ 2 ^ (8 * (k %% 2))))%W8
-               else
-                 if k %/ 4 %% 2 = 1 then
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int (to_uint t0{1}.[1] %/ 2 ^ (8 * (k %% 2))))%W8
-                   else
-                     (of_int
-                        (to_uint
-                           (pack2_t ((W2u16.Pack.init ("_.[_]" tt{1}))) `>>>` 16 \bits16 0) %/ 2 ^ (8 * (k %% 2))))%W8
-                 else
-                   if k %/ 2 %% 2 = 1 then
-                     (of_int
-                        (to_uint
-                           (pack2_t
-                              ((W2u16.Pack.init (fun (j : int) => t4{1}.[j]))) `<<<` 16 \bits16 1) %/ 2 ^ (8 * (k %% 2))))%W8
-                   else (of_int (to_uint t3{1}.[0] %/ 2 ^ (8 * (k %% 2))))%W8)).
-    case(k %/ 8 %% 2 = 0) => if_1_t.
-      case (k %/ 4 %% 2 = 1) => if_2_t.
-        + smt(@Logic @Int @IntDiv).
-        + have -> //=: k %/ 4 %% 2 = 0. move : if_2_t (modz_cmp (k %/ 4) 2 ) => /#.
-          have ->: k %/ 2 %% 4 = k %/ 2 %% 2. move : if_2_t if_1_t; smt(@Int @IntDiv).
-          smt(@Logic @Int @IntDiv).
-      case (k %/ 4 %% 2 = 1) => if_2_t.
-        + smt(@Logic @Int @IntDiv).
-        + have -> //=: k %/ 4 %% 2 = 0. move : if_2_t (modz_cmp (k %/ 4) 2 ) => /#.
-          have ->: k %/ 2 %% 4 = k %/ 2 %% 2. move : if_2_t if_1_t; smt(@Int @IntDiv).
-          smt(@Logic @Int @IntDiv).
-  move : t3_pack t1_pack t2_pack tt_t0_pack t0_pack => _ _ _ _ _.
-  pose t0_pack := pack2_t ((W2u16.Pack.init (fun (j : int) => t0{1}.[j]))).
-  pose t2_pack := pack2_t ((W2u16.Pack.init ("_.[_]" t2{1}))).
-  pose t4_pack := pack2_t ((W2u16.Pack.init (fun (j : int) => t4{1}.[j]))).
-  pose tt_pack := pack2_t ((W2u16.Pack.init ("_.[_]" tt{1}))).
-  rewrite -(W32.to_uintK t0_pack) -(W32.to_uintK t2_pack) -(W32.to_uintK t4_pack) -(W32.to_uintK tt_pack).
-  rewrite shrDP 1://= (pmod_small _ W32.modulus) 1:W32.to_uint_cmp.
-  do (rewrite shlMP 1://=).
-  rewrite (_: W16.modulus = 2 ^ (16 * 1)). by trivial.
-  do (rewrite of_int_bits16_div 1://=).
-  have H: forall (t: int), t * 2 ^ (16 * 1) %/ 2 ^ (16 * 1) = t %/ 2 ^ (16 * 0).
-    by move => t; rewrite expr0 mulzK 1://= divz1.
-  do rewrite H.
-  do (rewrite -divzMr 1..2://=).
-  rewrite -exprD_nneg 1..2://=.
-  do rewrite -(mulzDr 16 _ _).
-  do (rewrite -W2u16.of_int_bits16_div 1://=).
-  rewrite addz0.
-  rewrite (W32.to_uintK t2_pack) -(W2u16.get_unpack16 _ 0) 1://= pack2K initiE 1://=.
-  rewrite (W32.to_uintK t0_pack) -(W2u16.get_unpack16 _ 0) 1://= pack2K initiE 1://=.
-  rewrite (W32.to_uintK tt_pack) -(W2u16.get_unpack16 _ 1) 1://= pack2K initiE 1://=.
-  rewrite (W32.to_uintK t4_pack) -(W2u16.get_unpack16 _ 0) 1://= pack2K initiE 1://= //=.
-
-  (* HERE: repeat for other half *)
-  do (rewrite t4_def 1://= || rewrite t3_def 1://= || rewrite t2_def 1://= ||
-      rewrite t1_def 1://= || rewrite t0_def 1://= || rewrite tt_def 1://=).
-  have k_iota: k \in (iota_ 0 32); first by rewrite mem_iota k_lb k_ub.
-  rewrite (pmod_small k 192); first by move : k_lb k_ub => /#.
-  rewrite (_: i{2} * 192 = (i{2} * 64) * 3); first by ring.
-  rewrite (modzMDl _ _ 3).
-  do (rewrite mapiE; first by move : i_lb i_tub => /#).
-  rewrite /pos_bound256_cxq /bpos16 //= in pos_bound_a.
-  have pos_ubound_a: forall (k : int), 0 <= k && k < 256 => 0 <= to_uint a{1}.[k] && to_uint a{1}.[k] < q.
-    move => j j_i.
-    rewrite -to_sint_unsigned.
-    move : (pos_bound_a j j_i) => />.
-    apply (pos_bound_a j j_i).
-  do (rewrite inFqK (pmod_small _ q) 1:pos_ubound_a 1:/#).
-  case (k = 1) => k_1.
-    rewrite k_1 //=.
-    smt(@Int @IntDiv @Array384 @W16 @W8 @Ring.IntID @W32 @List @Logic).
-    move : H.
-    rewrite -iotaredE /=.
-    case
-    smt(@Int @IntDiv @Array384 @W16 @W8 @Ring.IntID @W32 @List).
-*)
 qed.
 end KyberPolyAVX.
