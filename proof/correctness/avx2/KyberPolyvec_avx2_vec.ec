@@ -175,7 +175,7 @@ equiv prevec_eq_poly_add2 :
   Mprevec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_add2 (={r, b} ==> ={res}) (={r, b} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_polyvec_add2.
 apply veceq_polyvec_add2.
 qed.
@@ -184,7 +184,7 @@ equiv prevec_eq_poly_csubq :
   Mprevec.polyvec_csubq ~ M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_csubq (={r} ==> ={res}) (={r} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_polyvec_csubq.
 apply veceq_polyvec_csubq.
 qed.
@@ -193,7 +193,7 @@ equiv prevec_eq_poly_reduce :
   Mprevec.polyvec_reduce ~ M.__polyvec_reduce: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_reduce (={r} ==> ={res}) (={r} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_polyvec_reduce.
 apply veceq_polyvec_reduce.
 qed.

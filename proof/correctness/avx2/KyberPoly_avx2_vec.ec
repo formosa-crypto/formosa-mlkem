@@ -1622,7 +1622,7 @@ qed.
 equiv prevec_eq_poly_add2:
   Mprevec.poly_add2 ~ M._poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_add2.
 apply veceq_poly_add2.
 qed.
@@ -1630,7 +1630,7 @@ qed.
 equiv prevec_eq_poly_sub:
   Mprevec.poly_sub ~ M._poly_sub: ={rp, ap, bp} ==> ={res}.
     transitivity Mvec.poly_sub (={rp, ap, bp} ==> ={res}) (={rp, ap, bp} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_sub.
 apply veceq_poly_sub.
 qed.
@@ -1638,7 +1638,7 @@ qed.
 equiv prevec_eq_poly_csubq:
   Mprevec.poly_csubq ~ M._poly_csubq: ={rp} ==> ={res}.
     transitivity Mvec.poly_csubq (={rp} ==> ={res}) (={rp} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_csubq.
 apply veceq_poly_csubq.
 qed.
@@ -1647,7 +1647,7 @@ qed.
 equiv prevec_eq_poly_tomsg:
   Mprevec.poly_tomsg ~ M._poly_tomsg: ={rp, a, Glob.mem} ==> ={res}.
     transitivity Mvec.poly_tomsg (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_tomsg.
 apply veceq_poly_tomsg.
 qed.
@@ -1655,7 +1655,7 @@ qed.
 equiv prevec_eq_poly_frommsg:
   Mprevec.poly_frommsg ~ M._poly_frommsg: ={rp, ap, Glob.mem}  /\ (valid_ptr (to_uint ap{1}) 32)==> ={res}.
      transitivity Mvec.poly_frommsg (={rp, ap, Glob.mem} /\ (valid_ptr (to_uint ap{1}) 32) ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_frommsg.
 apply veceq_poly_frommsg.
 qed.
@@ -1664,7 +1664,7 @@ equiv prevec_eq_red16x:
   Mprevec.red16x ~ M.__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
   transitivity Mvec.red16x (is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2})
                            (={r, qx16, vx16} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_red16x.
 apply veceq_red16x.
 qed.
@@ -1672,7 +1672,7 @@ qed.
 equiv prevec_eq_poly_reduce:
   Mprevec.poly_reduce ~ M.__poly_reduce: ={rp} ==> ={res}.
     transitivity Mvec.poly_reduce (={rp} ==> ={res}) (={rp} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_reduce.
 apply veceq_poly_reduce.
 qed.
@@ -1681,7 +1681,7 @@ equiv prevec_eq_fqmulx16:
   Mprevec.fqmulx16 ~ M.__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
     transitivity Mvec.fqmulx16 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2})
                                (={a, b, qx16, qinvx16} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_fqmulx16.
 apply veceq_fqmulx16.
 qed.
@@ -1689,7 +1689,7 @@ qed.
 equiv prevec_eq_poly_frommont:
   Mprevec.poly_frommont ~ M._poly_frommont: ={rp} ==> ={res}.
     transitivity Mvec.poly_frommont (={rp} ==> ={res}) (={rp} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_frommont.
 apply veceq_poly_frommont.
 qed.
@@ -1697,7 +1697,7 @@ qed.
 equiv prevec_eq_poly_decompress:
   Mprevec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
     transitivity Mvec.poly_decompress (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_decompress.
 apply veceq_poly_decompress.
 qed.
@@ -1705,7 +1705,7 @@ qed.
 equiv prevec_eq_poly_compress:
   Mprevec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res}.
     transitivity Mvec.poly_compress (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
-smt. trivial.
+smt(). trivial.
 apply eq_poly_compress.
 apply veceq_poly_compress.
 qed.
@@ -1721,7 +1721,7 @@ proof.
                                 is16u16 res{1}.`1 res{2}.`1 /\ is16u16 res{1}.`2 res{2}.`2 /\
                                 is16u16 res{1}.`3 res{2}.`3 /\ is16u16 res{1}.`4 res{2}.`4)
                                (={ap, bp, sign, zeta_0, qx16, qinvx16} ==> ={res}).
-  smt. trivial.
+  smt(). trivial.
   apply eq_schoolbook.
   apply veceq_schoolbook.
 qed.
@@ -1736,7 +1736,7 @@ proof.
                               is16u16 res{1}.`1 res{2}.`1 /\
                               is16u16 res{1}.`2 res{2}.`2)
                              (={a, b} ==> ={res}).
-  smt. trivial.
+  smt(). trivial.
   apply eq_shuffle8.
   apply veceq_shuffle8.
 qed.
@@ -1750,7 +1750,7 @@ proof.
                               is16u16 res{1}.`1 res{2}.`1 /\
                               is16u16 res{1}.`2 res{2}.`2)
                              (={a, b} ==> ={res}).
-  smt. trivial.
+  smt(). trivial.
   apply eq_shuffle4.
   apply veceq_shuffle4.
 qed.
@@ -1764,7 +1764,7 @@ proof.
                               is16u16 res{1}.`1 res{2}.`1 /\
                               is16u16 res{1}.`2 res{2}.`2)
                              (={a, b} ==> ={res}).
-  smt. trivial.
+  smt(). trivial.
   apply eq_shuffle2.
   apply veceq_shuffle2.
 qed.
@@ -1778,7 +1778,7 @@ proof.
                               is16u16 res{1}.`1 res{2}.`1 /\
                               is16u16 res{1}.`2 res{2}.`2)
                              (={a, b} ==> ={res}).
-  smt. trivial.
+  smt(). trivial.
   apply eq_shuffle1.
   apply veceq_shuffle1.
 qed.
@@ -1788,7 +1788,7 @@ equiv prevec_eq_poly_tobytes:
 proof.
   transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={res})
                                  (={rp, a, Glob.mem} ==> ={res}).
-  smt. trivial.
+  smt(). trivial.
   apply eq_poly_tobytes.
   apply veceq_poly_tobytes.
 qed.
@@ -1798,7 +1798,7 @@ equiv prevec_eq_poly_frombytes:
 proof.
   transitivity Mvec.poly_frombytes (={rp, ap, Glob.mem} ==> ={res})
                                  (={rp, ap, Glob.mem} ==> ={res}).
-  smt. trivial.
+  smt(). trivial.
   apply eq_poly_frombytes.
   apply veceq_poly_frombytes.
 qed.
@@ -1819,7 +1819,6 @@ equiv frommontequiv :
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     signed_bound_cxq res{1} 0 256 2 /\ 
     signed_bound_cxq res{2} 0 256 2.
-(* Move to poly *)
 proc*.  
 transitivity {1} { r <@ Mprevec.poly_frommont(rp); }
      (={rp} ==> ={r}) 
