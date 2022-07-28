@@ -1812,6 +1812,10 @@ equiv ParseRnd_equiv:
  true ==> ={res}.
 proof.
 proc.
+(*
+168 w8 -> 56 * 3w8 -> 112 w12 -> Fq list
+
+*)
 transitivity {1}
  { aa <- witness;
    j <- 0;
@@ -1852,7 +1856,32 @@ bbi1 <$ dbits 8;
 bbi2 <$ dbits 8;
 
 *).
-- admit (* 2 - async while *).
+- admit (* 2 - async while 
+
+pre = true
+
+aa <- witness                   (1------)  p <$ duni_R              
+j <- 0                          (2------)                           
+while (j < 256) {               (3------)                           
+  k <- 0                        (3.1----)                           
+  while (j < 256 && k < 168) {  (3.2----)                           
+    d1 <$ dbits 12              (3.2.1--)                           
+    d2 <$ dbits 12              (3.2.2--)                           
+    if (d1 < q) {               (3.2.3--)                           
+      aa <- aa.[j <- inFq d1]   (3.2.3.1)                           
+      j <- j + 1                (3.2.3.2)                           
+    }                           (3.2.3--)                           
+    if (d2 < q && j < 256) {    (3.2.4--)                           
+      aa <- aa.[j <- inFq d2]   (3.2.4.1)                           
+      j <- j + 1                (3.2.4.2)                           
+    }                           (3.2.4--)                           
+    k <- k + 3                  (3.2.5--)                           
+  }                             (3.2----)                           
+}                               (3------)                           
+
+post = aa{1} = p{2}
+
+*).
 qed.
 
 clone PRF as PRF_DEFS with
@@ -1888,33 +1917,6 @@ module CBD2(PRF : PseudoRF) = {
       return rr;
    }
 }.
-
-
-op fcbd2 (w: W8.t) : Fq list =
- [ inFq (b2i w.[0] + b2i w.[1] - b2i w.[2] - b2i w.[3])
- ; inFq (b2i w.[4] + b2i w.[5] - b2i w.[6] - b2i w.[7]) ].
-
-(*
-lemma size_fcbd2 w: size (fcbd2 w) = 2 by done.
-
-op cbd2 l = flatten (List.map fcbd2 l).
-
-lemma size_cbd2 l: size (cbd2 l) = 2*size l.
-rewrite size_flatten -map_comp /(\o) /=.
-have ->: (fun (x : W8.t) => size (fcbd2 x)) = fun _=> 2.
- apply fun_ext; smt(size_fcbd2).
-rewrite StdBigop.Bigint.sumzE StdBigop.Bigint.BIA.big_map /(\o) /= StdBigop.Bigint.big_constz.
-have ->: (fun (_ : W8.t) => predT 2) = predT by smt().
-by rewrite count_predT.
-qed.
-
-op noise_coefs: Fq list distr =
- dmap (dlist W8.dword 128) (flatten \o List.map fcbd2).
-
-lemma noise_coefsE: noise_coefs = dmap (dlist (dmap W8.dword fcbd2) 128) flatten.
-by rewrite dlist_dmap dmap_comp.
-qed.
-*)
 
 clone DMapSampling as MSlw128 with
  type t1 <- W8.t list,
@@ -1991,6 +1993,10 @@ module CBD2rnd = {
      return v;
    }
 }.
+
+op fcbd2 (w: W8.t) : Fq list =
+ [ inFq (b2i w.[0] + b2i w.[1] - b2i w.[2] - b2i w.[3])
+ ; inFq (b2i w.[4] + b2i w.[5] - b2i w.[6] - b2i w.[7]) ].
 
 lemma dshort_R_sample:
  dshort_R 
@@ -2111,7 +2117,6 @@ clone Program as LSvec with
  type t <- poly,
  op d <- dshort_R.
 
-print LSvec.
 equiv CBD2rnd_vec_equiv:
  CBD2rnd.sample_vec_real ~ CBD2rnd.sample_vec_ideal:
  true ==> ={res}.
