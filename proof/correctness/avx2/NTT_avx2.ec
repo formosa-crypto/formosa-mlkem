@@ -466,8 +466,50 @@ lemma polyvec_ntt_avx2_corr _r :
     nttv (lift_vector _r) = lift_vector (nttpackv res) /\
    pos_bound768_cxq res 0 768 2] = 1%r.
 proc. 
-admitted. (* mbb *)
- 
+wp;call (poly_ntt_avx2_corr (Array256.init (fun (i : int) => _r.[2 * 256 + i]))).
+wp;call (poly_ntt_avx2_corr (Array256.init (fun (i : int) => _r.[256 + i]))).
+wp;call (poly_ntt_avx2_corr (Array256.init (fun (i : int) => _r.[0 + i]))).
+auto => /> H; do split; 1:by smt(Array256.initiE).
+move => H0 r H1 H2; do split. 
++ by rewrite tP => k kb; rewrite !initiE //= !initiE //= /#.
++ rewrite /signed_bound_cxq => k kb; rewrite !initiE //= !initiE //= /#.
+move => H3 H4 r0 H5 H6. do split.
++ rewrite tP => k kb; rewrite !initiE //= initiE //= 1: /# ifF 1:/# initiE //= /#.
++ rewrite /signed_bound_cxq => k kb; rewrite !initiE //= initiE //= 1: /# ifF 1:/# initiE //= /#.
+move => H7 H8 r1 H9 H10. do split.
++ rewrite /nttv /lift_vector KMatrix.Vector.eq_vectorP => k kb.
+  rewrite /mapv !KMatrix.Vector.offunvE //= KMatrix.Vector.offunvK /vclamp kb /=.
+  rewrite /lift_array256 /subarray256 tP => i ib.
+  rewrite mapiE //= initiE //= /nttpackv initiE //= 1:/#.
+  move :nttunpack_bnd nttpack_bnd; rewrite !allP => pb upb.
+  case(k = 0).
+   + move => ->. rewrite ifT //= /nttpack /subarray256 initiE //=. 
+     pose a:=nttpack_idx.[i].
+     rewrite initiE //= 1:/# initiE //= 1:/# ifF 1:/# initiE //= 1:/#.
+     rewrite ifF 1:/# initiE //= 1:/# ifT 1:/#.
+     move : H1; rewrite /lift_array256 /nttpack tP => H1.
+     rewrite (H1 i ib) mapiE //= initiE /#.
+  case(k = 1).
+   + move => -> *. rewrite ifF 1:/# ifT 1:/# /nttpack /subarray256 initiE //=. 
+     pose a:=nttpack_idx.[i].
+     rewrite initiE //= 1:/# initiE //= 1:/# ifF 1:/# initiE //= 1:/#.
+     rewrite ifT 1:/#.
+     move : H5; rewrite /lift_array256 /nttpack tP => H5.
+     rewrite (H5 i ib) mapiE //= initiE /#.
+  move => *; have -> : k = 2 by smt().
+  rewrite ifF 1:/# ifF 1:/# /nttpack /subarray256 initiE //=. 
+  pose a:=nttpack_idx.[i].
+  rewrite initiE //= 1:/# initiE //= 1:/# ifT 1:/#.
+  move : H9; rewrite /lift_array256 /nttpack tP => H9.
+  rewrite (H9 i ib) mapiE //= initiE /#.  
+
+rewrite /pos_bound768_cxq => k kb; rewrite initiE //=.
+  case(512 <= k < 768). smt().
+  move => *;case(256 <= k < 512). 
+  + move => *; rewrite initiE //=. smt(). 
+  move => *; rewrite initiE //= ifF 1:/# initiE //= /#. 
+qed.
+
 
 equiv nttequiv :
  Jkem_avx2.M.__polyvec_ntt ~ M.__polyvec_ntt : 
@@ -481,34 +523,62 @@ proc *.
 ecall {2} (polyvec_ntt_corr r{2}) => /=.
 conseq />. smt().
 ecall {1} (polyvec_ntt_avx2_corr r{1}) => /=.
-auto => /> &1 &2 ??? r ?? r2 ??. 
-have  : lift_vector (nttpackv r) = lift_vector r2. admit. (* mbb *)
-rewrite /lift_vector /lift_array768 tP KMatrix.Vector.eq_vectorP => HH k kb. 
+auto => /> &1 &2 HH?? r H H0 r2 H1 H2. 
+have  : lift_vector (nttpackv r) = lift_vector r2.
++ rewrite -H1 -H;congr.
+  rewrite /lift_vector KMatrix.Vector.eq_vectorP => k kb.
+  rewrite !KMatrix.Vector.offunvE //=.
+  rewrite /lift_array768 tP in HH.
+  rewrite /subarray256 /lift_array256 tP => i ib.
+  move : (HH (k*256+i) _); 1: by smt().
+  rewrite !mapiE //= 1,2: /# !initiE //= /#.
+rewrite /lift_vector /lift_array768 tP KMatrix.Vector.eq_vectorP => H3 k kb. 
 rewrite !mapiE //=.
 case (0<=k<256).
-move => kbb.
-move : (HH 0 _) => //. rewrite !KMatrix.Vector.offunvE //=.
-rewrite /nttpacki1/nttunpackv. rewrite initiE//= kbb /=.
-rewrite /nttunpack.
-rewrite initiE//=.
-pose a := nttunpack_idx.[k].
-rewrite /subarray256 /lift_array256 /nttpackv tP => HHH.
-move : (HHH a _). smt(nttunpack_bnd Array256.allP).
-rewrite !mapiE //=; 1,2: smt(nttunpack_bnd Array256.allP).
-rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
-rewrite initiE//= . smt(nttunpack_bnd Array256.allP).
-rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
-rewrite initiE//=. smt(nttunpack_bnd nttpack_bnd Array256.allP).
-pose b := nttpack_idx.[a].
-rewrite ifT. smt(nttunpack_bnd Array256.allP).
-rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
-rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
-rewrite mapiE //=; 1: smt(nttunpack_bnd Array256.allP).
-rewrite /b /a.
-have -> : nttpack_idx.[nttunpack_idx.[k]] = k; last by done.
-move : nttpack_idxK; rewrite allP => Hidx.
-move : (Hidx k _)=>//. smt(mem_iota).
-admitted. (* mbb *)
++ move => kbb; move : (H3 0 _) => //; rewrite !KMatrix.Vector.offunvE //=.
+  rewrite /nttpackv /nttunpackv initiE//= kbb /= /nttunpack initiE//=.
+  pose a := nttunpack_idx.[k].
+  rewrite /subarray256 /lift_array256 /nttpackv tP => HHH.
+  move :nttunpack_bnd nttpack_bnd; rewrite !allP => pb upb.
+  move : (HHH a _); 1: smt(). 
+  rewrite !mapiE //= 1,2: /# initiE//= 1:/#  initiE//= 1:/#.
+  rewrite initiE//= 1:/# initiE//= 1:/#. 
+  pose b := nttpack_idx.[a].
+  rewrite ifT 1:/# initiE//= 1:/# initiE//= 1:/# mapiE //= 1:/#. 
+  move : nttpack_idxK; rewrite allP => Hidx.
+  move : (Hidx k _)=>//; smt(mem_iota).
 
+case (256 <= k < 512).
++ move => kbb ?; move : (H3 1 _) => //; rewrite !KMatrix.Vector.offunvE //=.
+  rewrite /nttpackv /nttunpackv /= /nttpack /nttunpack initiE//=.
+  rewrite /subarray256 /lift_array256 /nttpackv tP => HHH.
+  rewrite ifF //= ifT //= initiE //= 1:/#.
+  pose a := nttunpack_idx.[k-256].
+  move :nttunpack_bnd nttpack_bnd; rewrite !allP => pb upb.
+  rewrite initiE //= 1: /# !mapiE //= 1: /#. 
+  move : (HHH (a) _); 1: smt(). 
+  rewrite !mapiE //= 1,2: /# initiE//= 1:/#  initiE//= 1:/#.
+  rewrite ifF 1: /# initiE//= 1:/# initiE//= 1:/#. 
+  rewrite ifT 1: /#. 
+  pose b := nttpack_idx.[a].
+  rewrite initiE//=  1:/#. 
+  move : nttpack_idxK; rewrite allP => Hidx.
+  move : (Hidx (k-256) _)=>//; smt(mem_iota).
+
+move => *; move : (H3 2 _) => //; rewrite !KMatrix.Vector.offunvE //=.
+rewrite /nttpackv /nttunpackv /= /nttpack /nttunpack initiE//=.
+rewrite /subarray256 /lift_array256 /nttpackv tP => HHH.
+rewrite ifF //= ifF //= initiE //= 1:/#.
+pose a := nttunpack_idx.[k-512].
+move :nttunpack_bnd nttpack_bnd; rewrite !allP => pb upb.
+rewrite initiE //= 1: /# !mapiE //= 1: /#. 
+move : (HHH (a) _); 1: smt(). 
+rewrite !mapiE //= 1,2: /# initiE//= 1:/#  initiE//= 1:/#.
+rewrite ifF 1: /# ifF 1:/# initiE//= 1:/#. 
+pose b := nttpack_idx.[a].
+rewrite initiE//=  1:/# initiE//=  1:/#. 
+move : nttpack_idxK; rewrite allP => Hidx.
+move : (Hidx (k-512) _)=>//; smt(mem_iota).
+qed.
 
 end NTT_Avx2.

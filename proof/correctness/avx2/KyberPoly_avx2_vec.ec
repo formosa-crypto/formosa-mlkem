@@ -2136,7 +2136,7 @@ lemma poly_basemul_avx2_correct _ap _bp:
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
      signed_bound_cxq res 0 256 3 /\ 
      nttpack (lift_array256 res) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
-proc.
+proc. 
 admitted. (* basemul *)
 
 equiv basemulequiv : 
