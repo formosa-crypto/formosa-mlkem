@@ -426,6 +426,49 @@ qed.
 
 require import Jkem_avx2 Jkem.
 
+lemma poly_ntt_avx2_corr _r :
+  phoare [ Jkem_avx2.M._poly_ntt :
+     rp = _r /\ signed_bound_cxq rp 0 256 2==>
+    ntt (lift_array256 _r) = lift_array256 (nttpack res) /\
+   pos_bound256_cxq res 0 256 2] = 1%r.
+admitted. (* bacelar *)
+
+(* 
+lemma ntt_avx_equiv : 
+     equiv [ NTT_AVX.ntt ~ NTT_avx2.ntt :
+          r{1} = NTT_avx2.r{2} /\ zetas{1} = zetas_unpack NTT_avx2.zetas{2} 
+          ==> perm256 perm_nttpack128 res{1} = res{2}].
+
+  equiv avx2_ntt :
+    NTT_bsrev.ntt ~ NTT_avx2.ntt :
+    NTT_vars.zetas{1} = NTT_avx2.zetas{2} /\
+    NTT_vars.r{1} = NTT_avx2.r{2} ==>
+    ={res}.
+
+
+  hoare bsrev_ntt_spec (p : Fq Array256.t) :
+    NTT_bsrev.ntt :
+      NTT_vars.zetas = NTT_Fq.zetas /\
+      NTT_vars.r = p ==>
+      ntt_spec res p.
+
++ (* NTTAlgebra.NTTequiv.imp_ntt_spec *)
+| lemma imp_ntt_spec:
+|   forall (p r : Fq Array256.t),
+|     (ntt_spec r p)%NTTAlgebra.NTTequiv => r = ntt p.
+
+*)
+
+
+lemma polyvec_ntt_avx2_corr _r :
+  phoare [ Jkem_avx2.M.__polyvec_ntt :
+     r = _r /\ signed_bound768_cxq r 0 768 2==>
+    nttv (lift_vector _r) = lift_vector (nttpackv res) /\
+   pos_bound768_cxq res 0 768 2] = 1%r.
+proc. 
+admitted. (* mbb *)
+ 
+
 equiv nttequiv :
  Jkem_avx2.M.__polyvec_ntt ~ M.__polyvec_ntt : 
    lift_array768 arg{1} = lift_array768 arg{2} /\ 
@@ -434,7 +477,38 @@ equiv nttequiv :
    lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\ 
    pos_bound768_cxq res{1} 0 768 2 /\ 
    pos_bound768_cxq res{2} 0 768 2.
-admitted. (* NTT top level *)
+proc *. 
+ecall {2} (polyvec_ntt_corr r{2}) => /=.
+conseq />. smt().
+ecall {1} (polyvec_ntt_avx2_corr r{1}) => /=.
+auto => /> &1 &2 ??? r ?? r2 ??. 
+have  : lift_vector (nttpackv r) = lift_vector r2. admit. (* mbb *)
+rewrite /lift_vector /lift_array768 tP KMatrix.Vector.eq_vectorP => HH k kb. 
+rewrite !mapiE //=.
+case (0<=k<256).
+move => kbb.
+move : (HH 0 _) => //. rewrite !KMatrix.Vector.offunvE //=.
+rewrite /nttpacki1/nttunpackv. rewrite initiE//= kbb /=.
+rewrite /nttunpack.
+rewrite initiE//=.
+pose a := nttunpack_idx.[k].
+rewrite /subarray256 /lift_array256 /nttpackv tP => HHH.
+move : (HHH a _). smt(nttunpack_bnd Array256.allP).
+rewrite !mapiE //=; 1,2: smt(nttunpack_bnd Array256.allP).
+rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE//= . smt(nttunpack_bnd Array256.allP).
+rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE//=. smt(nttunpack_bnd nttpack_bnd Array256.allP).
+pose b := nttpack_idx.[a].
+rewrite ifT. smt(nttunpack_bnd Array256.allP).
+rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE//=. smt(nttunpack_bnd Array256.allP).
+rewrite mapiE //=; 1: smt(nttunpack_bnd Array256.allP).
+rewrite /b /a.
+have -> : nttpack_idx.[nttunpack_idx.[k]] = k; last by done.
+move : nttpack_idxK; rewrite allP => Hidx.
+move : (Hidx k _)=>//. smt(mem_iota).
+admitted. (* mbb *)
 
 
 end NTT_Avx2.
