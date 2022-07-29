@@ -1803,9 +1803,224 @@ proof.
   apply veceq_poly_frombytes.
 qed.
 
+
+
+equiv eq_basemulred:
+  Mprevec.basemul_red ~ Mvec.basemul_red: 
+   is16u16 a0{1} a0{2} /\ is16u16 a1{1} a1{2} /\
+   is16u16 b0{1} b0{2} /\ is16u16 b1{1} b1{2} /\
+   is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> 
+   is16u16 res.`1{1} res.`1{2} /\ is16u16 res.`2{1} res.`2{2}
+.
+proc.
+call eq_iVPSUB_16u16.
+call eq_iVPSUB_16u16.
+call eq_iVPMULH_256.
+call eq_iVPMULH_256.
+call eq_iVPMULL_16u16.
+call eq_iVPMULL_16u16.
+call eq_iVPACKUS_8u32.
+call eq_iVPACKUS_8u32.
+call eq_iVPSRL_8u32.
+call eq_iVPSRL_8u32.
+conseq />. smt().
+wp.
+call eq_iVPBLEND_16u16.
+call eq_iVPBLEND_16u16.
+call eq_iVPACKUS_8u32.
+call eq_iVPACKUS_8u32.
+call eq_iVPSRL_8u32.
+call eq_iVPSRL_8u32.
+conseq />. smt().
+wp.
+call eq_iVPBLEND_16u16.
+call eq_iVPBLEND_16u16.
+auto => />.
+move => &1 &2 ??????. do split.
++ by rewrite /is16u16 /lift2poly !initiE //= pack16_bits16 /=.
+move => H rl rr H0 rl0 rr0 H1; do split.
++ by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
+move => H2 rl1 rr1 H3. do split.
++ by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
+move => H4 rl2 rr2 H5. do split.
++ by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
++ by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
+move => H6 H7 rl3 rr3 H8 H9 H10 H11 rl4 rr4 H12 rl5 rr5 H13. do split.
++ by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
+move => *. do split.
++ by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
+move => *. do split.
++ by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
+by rewrite /is8u32 /f16u16_t8u32 !initiE //= pack16_bits16 /=.
+qed.
+
+lemma set_get_def128 (v : W16.t Array64.t) (w: W256.t) i j :
+    0 <= i < 4 => 0 <= j < 64 =>
+    WArray128.get16
+    (WArray128.set256 (WArray128.init16 (fun i => v.[i])) i w) j =
+      if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16)
+      else v.[j].
+proof. 
+  move => hx hs; rewrite set256E !get16E.
+  rewrite -(W2u8.unpack8K (if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16) else v.[j])); congr.
+  apply W2u8.Pack.ext_eq => k hk.
+  rewrite W2u8.get_unpack8 //= W2u8.Pack.initiE 1:/# /=.
+  rewrite initiE /=. move : hk hs => /#.
+  rewrite initiE /=. move : hk hs => /#.
+  have ->: (32 * i <= 2 * j + k < 32 * i + 32) = (16 * i <= j < 16 * i + 16) by smt().
+  case : (16 * i <= j < 16 * i + 16) => h.     
+    + by rewrite W256_bits16_bits8 1:// /#.
+    + by rewrite /init16 /#.
+qed.
+
+lemma set_get_eq128 (v: W16.t Array64.t) (w: W256.t) i j:
+    0 <= i < 4 => 0 <= j < 64 => 16 * i <= j < 16 * i + 16 =>
+    WArray128.get16
+    (WArray128.set256 (WArray128.init16 (fun i => v.[i])) i w) j =
+      w \bits16 j %% 16.
+proof. 
+  by move => h1 h2 h3; rewrite set_get_def128 // h3.
+qed.
+
+lemma set_get_diff128 (v: W16.t Array64.t) (w: W256.t) i j:
+    0 <= i < 4 => 0 <= j < 64 => !(16 * i <= j < 16 * i + 16) =>
+    WArray128.get16
+    (WArray128.set256 (WArray128.init16 (fun i => v.[i])) i w) j =
+      v.[j].
+proof.
+  move => h1 h2 h3; rewrite set_get_def128 // h3. auto.
+qed.
+
+lemma get_set_get_eqb128 (v: W16.t Array64.t) (w: W256.t) i:
+  0 <= i < 4 => forall k, 0 <= k < i*16 =>
+  v.[k] = (Array256.init (WArray128.get16 (WArray128.set256 (WArray128.init16 (fun j => v.[j])) i w))).[k].
+proof. 
+  move => i_i k k_i.
+  rewrite Array256.initiE.
+  move : i_i k_i. smt().
+  simplify.
+  rewrite set_get_def128 => /#.
+qed.
+
+lemma get_set_get_eqa128 (v: W16.t Array64.t) (w: W256.t) i:
+  0 <= i < 4 => forall k, i*16 + 16 <= k < 64 =>
+  v.[k] = (Array256.init (WArray128.get16 (WArray128.set256 (WArray128.init16 (fun j => v.[j])) i w))).[k].
+proof.
+  move => i_i k k_i.
+  rewrite Array256.initiE.
+  move : i_i k_i => /#.
+  simplify.
+  rewrite set_get_def128 => /#.
+qed.
+
+lemma get_set_get_diff128 (v: W16.t Array64.t) (w: vt16u16) i:
+  0 <= i < 4 => forall k, i*16 <= k < i*16 + 16 =>
+  w \bits16 (k%%16) = (Array256.init (WArray128.get16 (WArray128.set256 (WArray128.init16 (fun j => v.[j])) i w))).[k].
+proof. 
+  move => i_i k k_i.
+  rewrite Array256.initiE.
+  move : i_i k_i => /#.
+  simplify.
+  rewrite set_get_def128 => /#.
+qed.
+
+equiv eq_basemul32x :
+  Mprevec.basemul32x ~ Mvec.basemul32x : 
+     ={ap,bp} /\
+      qx16{1} = lift2poly qx16{2} /\
+      qinvx16{1} = lift2poly qinvx16{2} /\
+      zeta_0{1} = lift2poly zeta_0{2} ==> ={res}.
+proc.
+wp;call eq_basemulred.
+wp;call eq_schoolbook.
+wp;call eq_basemulred.
+wp;call eq_schoolbook.
+auto => />.
+move => &1 &2; do split. 
++ by rewrite /is16u16 /lift2poly !initiE //= pack16_bits16 /=.
++ by rewrite /is16u16 /lift2poly !initiE //= pack16_bits16 /=.
++ by rewrite /is16u16 /lift2poly !initiE //= pack16_bits16 /=.
+move => ??? rl rr ???? rrl rrr Hrr0 Hrr1 r0l r0r ???? r1l r1r H11 H12. 
+rewrite /fill tP => k kb.
+rewrite !initiE //.
+case (48 <= k && k < 64).
++ move => *. have -> : 96 = 32*3 by auto.
+  rewrite  set_get_eq128 //= ifT //. 
+  move : H12;rewrite /is16u16 => -> /=. 
+  rewrite pack16bE /=. smt(). 
+  rewrite of_listE initiE //= /#. 
+move => *. rewrite ifF //.
+rewrite !initiE //=.
+case (32 <= k && k < 48).
++ move => *. have -> : 96 = 32*3 by auto.
+  rewrite  set_get_diff128 //=. 
+  rewrite !initiE //=.
+  have -> : 64 = 32*2 by auto.
+  rewrite  set_get_eq128 //=. 
+  move : H11;rewrite /is16u16 => -> /=. 
+  rewrite pack16bE /=. smt(). 
+  rewrite of_listE initiE //= /#. 
+move => *. 
+rewrite !initiE //=.
+case (16 <= k && k < 32).
++ move => *. have -> : 96 = 32*3 by auto.
+  rewrite  set_get_diff128 //=. 
+  rewrite !initiE //=.
+  have -> : 64 = 32*2 by auto.
+  rewrite  set_get_diff128 //=. 
+  rewrite !initiE //=.
+  have -> : 32 = 32*1 by auto.
+  rewrite  set_get_eq128 //=. 
+  move : Hrr1;rewrite /is16u16 => -> /=. 
+  rewrite pack16bE /=. smt(). 
+  rewrite of_listE initiE //= /#. 
+move => *. 
+rewrite !initiE //= ifT 1:/#.
+move => *. have -> : 96 = 32*3 by auto.
+rewrite  set_get_diff128 //=. 
+rewrite !initiE //=.
+have -> : 64 = 32*2 by auto.
+rewrite  set_get_diff128 //=. 
+rewrite !initiE //=.
+have -> : 32 = 32*1 by auto.
+rewrite  set_get_diff128 //=. 
+rewrite !initiE //=.
+have -> : 0 = 32*0 by auto.
+rewrite  set_get_eq128 //=. smt().
+move : Hrr0;rewrite /is16u16 => -> /=. 
+rewrite pack16bE /=. smt(). 
+rewrite of_listE initiE //= /#. 
+qed.
+
+equiv eq_poly_basemul:
+  Mprevec.poly_basemul ~ Mvec.poly_basemul: ={ap, bp} ==> ={res}.
+proc. 
+wp. call eq_basemul32x.
+wp;call eq_basemul32x.
+wp;call eq_basemul32x.
+wp;call eq_basemul32x.
+auto => />.
+move => &1 &2 r r0 r1 r2.
+rewrite /fill tP /= => k kb.
+rewrite !initiE //=.
+case (192 <= k && k < 256); 1: by smt().
+move => *.
+rewrite !initiE //=.
+case (128 <= k && k < 192); 1: by smt().
+move => *.
+rewrite !initiE //=.
+case (64 <= k && k < 128); 1: by smt().
+rewrite !initiE //= /#.
+qed.
+
 equiv prevec_eq_poly_basemul:
   Mprevec.poly_basemul ~ M._poly_basemul: ={ap, bp} ==> ={res}.
-admitted. (* basemul *)
+transitivity Mvec.poly_basemul (={ap,bp} ==> ={res})
+                               (={rp,ap,bp} ==> ={res}).
+  smt(). trivial.
+  apply eq_poly_basemul.
+  apply veceq_poly_basemul.
+qed.
 
 lemma to_sintInj : injective W16.to_sint. 
 rewrite /injective /to_sint /smod /=. 
@@ -1921,6 +2136,7 @@ lemma poly_basemul_avx2_correct _ap _bp:
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
      signed_bound_cxq res 0 256 3 /\ 
      nttpack (lift_array256 res) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
+proc.
 admitted. (* basemul *)
 
 equiv basemulequiv : 
