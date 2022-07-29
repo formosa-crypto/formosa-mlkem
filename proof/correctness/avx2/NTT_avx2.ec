@@ -428,13 +428,13 @@ require import Jkem_avx2 Jkem.
 
 equiv nttequiv :
  Jkem_avx2.M.__polyvec_ntt ~ M.__polyvec_ntt : 
-   ={arg} /\ 
+   lift_array768 arg{1} = lift_array768 arg{2} /\ 
    signed_bound768_cxq arg{1} 0 768 2 /\ 
    signed_bound768_cxq arg{2} 0 768 2 ==>
-   res{1} = nttunpackv res{2} /\ 
+   lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\ 
    pos_bound768_cxq res{1} 0 768 2 /\ 
    pos_bound768_cxq res{2} 0 768 2.
-admitted. (* ntt top level *)
+admitted. (* NTT top level *)
 
 
 end NTT_Avx2.

@@ -1888,7 +1888,6 @@ equiv reduceequiv :
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     pos_bound256_cxq res{1} 0 256 2 /\ 
     pos_bound256_cxq res{2} 0 256 2.
-(* Move to poly *)
 proc*.  
 transitivity {1} { r <@ Mprevec.poly_reduce(rp); }
      (={rp} ==> ={r}) 
@@ -1918,16 +1917,16 @@ import Zq.
 
 lemma poly_basemul_avx2_correct _ap _bp:
    phoare[ Mprevec.poly_basemul :
-     _ap = (lift_array256 (nttpack ap)) /\ _bp = (lift_array256 (nttpack bp)) /\
+     _ap = nttpack (lift_array256 ap) /\ _bp = nttpack (lift_array256 bp) /\
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
      signed_bound_cxq res 0 256 3 /\ 
-     (lift_array256 (nttpack res)) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
-admitted. 
+     nttpack (lift_array256 res) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
+admitted. (* basemul *)
 
 equiv basemulequiv : 
   M._poly_basemul ~   Jkem.M._poly_basemul :
-    ap{1} = nttunpack ap{2} /\
-    bp{1} = nttunpack bp{2} /\
+    lift_array256 ap{1} = nttunpack (lift_array256 ap{2}) /\
+    lift_array256 bp{1} = nttunpack (lift_array256 bp{2}) /\
     signed_bound_cxq ap{1} 0 256 2 /\  
     signed_bound_cxq bp{1} 0 256 2 /\
     signed_bound_cxq ap{2} 0 256 2 /\  
@@ -1936,12 +1935,11 @@ equiv basemulequiv :
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     signed_bound_cxq res{1} 0 256 3 /\ 
     signed_bound_cxq res{2} 0 256 3.
-(* Move to poly *)
 proc*.  
 transitivity {1} { r <@ Mprevec.poly_basemul(rp,ap,bp); }
      (={ap,bp} ==> ={r}) 
-     (ap{1} = nttunpack ap{2} /\
-    bp{1} = nttunpack bp{2} /\
+    (lift_array256 ap{1} = nttunpack (lift_array256 ap{2}) /\
+    lift_array256 bp{1} = nttunpack (lift_array256 bp{2}) /\
     signed_bound_cxq ap{1} 0 256 2 /\  
     signed_bound_cxq bp{1} 0 256 2 /\
     signed_bound_cxq ap{2} 0 256 2 /\  
@@ -1953,13 +1951,12 @@ transitivity {1} { r <@ Mprevec.poly_basemul(rp,ap,bp); }
 symmetry. call prevec_eq_poly_basemul. auto => />.
 
 ecall{2} (poly_basemul_correct (lift_array256 ap{2}) (lift_array256 bp{2})).
-ecall{1} (poly_basemul_avx2_correct (lift_array256 (nttpack ap{1})) (lift_array256 (nttpack bp{1}))).
+ecall{1} (poly_basemul_avx2_correct (nttpack (lift_array256 ap{1})) (nttpack (lift_array256  bp{1}))).
 
 auto => />.
-move => &2 H0 H1 H2 H3 r2 H4 H5 r1 H6 H7.
-rewrite !nttunpackK in H5.
-rewrite H7 -H5.
-by rewrite lift_nttpack nttpackK.
+move => &1 &2 H0 H1 H2 H3 H4 H5 r2 H6 H7 r1 H8 H9.
+rewrite -(nttpackK (lift_array256 r2)) H7 H9 H0 H1. 
+by rewrite !nttunpackK.
 qed.
 
 
@@ -1977,7 +1974,6 @@ lemma poly_add_corr_avx_impl ab bb :
            forall k, 0 <= k < 256 =>
               inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
    by move => abb bbb _a _b; apply (KyberPolyAVX.poly_add_corr _a _b ab bb abb bbb).
-(* move to polyavxproof *)
 
 lemma addequiv  (ab bb : int):
     0 <= ab && ab <= 6 =>
@@ -1994,7 +1990,6 @@ lemma addequiv  (ab bb : int):
                signed_bound_cxq res{2} 0 256 (ab + bb) 
               ].
 move => abb bbb.
-(* Move to poly *)
 proc*.  
 transitivity {1} { r <@ Mprevec.poly_add2(rp,bp); }
      (={rp,bp} ==> ={r}) 
