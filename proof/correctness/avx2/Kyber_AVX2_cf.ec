@@ -9,31 +9,42 @@ require import Kyber.
 
 module EncDec_AVX2 = {
    proc decode12(a : W8.t Array384.t) : ipoly = {
-       var i;
+       var i,k;
        var r : ipoly;
        r <- witness;
        i <- 0;
-       while (i < 128) {
-          r.[i*2+0]  <- to_uint a.[3*i] + to_uint a.[3*i+1] %% 2^4 * 2^8;
-          r.[i*2+1]  <- to_uint a.[3*i+2] * 2^4 + to_uint a.[3*i+1] %/ 2^4;
-          i <- i + 1;
+
+       while (i < 2) {
+         k <- 0;
+
+         while (k < 64) {
+            r.[128*i + 2*k]  <- to_uint a.[192*i + 3*k] + to_uint a.[192*i + 3*k + 1] %% 2^4 * 2^8;
+            r.[128*i + 2*k + 1]  <- to_uint a.[192*i + 3*k + 2] * 2^4 + to_uint a.[192*i + 3*k + 1] %/ 2^4;
+            k <- k + 1;
+         }
+         i <- i + 1;
        }
+
        return r;
    }
-
 
   proc decode12_opt(a : W8.t Array384.t) : ipoly = {
-     var i;
-       var r : ipoly;
-       r <- witness;
-       i <- 0;
-       while (i < 2) {
-          r.[i*2+0]  <- to_uint a.[3*i] + to_uint a.[3*i+1] %% 2^4 * 2^8;
-          r.[i*2+1]  <- to_uint a.[3*i+2] * 2^4 + to_uint a.[3*i+1] %/ 2^4;
-          i <- i + 1;
-       }
-       return r;
-   }
+
+    var i;
+    var r : ipoly;
+    r <- witness;
+    i <- 0;
+    while (i < 2) {
+      r <- fill (fun k => let b1 = to_uint a.[3 * (k %/ 2) + k %% 2] in
+                          let b2 = to_uint a.[3 * (k %/ 2) + k %% 2 + 1] in
+                          if (k %% 2 = 0) then b1 + b2 %% 2^4 * 2^8
+                          else b2 * 2^4 + b1 %/ 2^4)
+                (128 * i) 128 r;
+
+      i <- i + 1;
+    }
+    return r;
+  }
 
    proc decode4(a : W8.t Array128.t) : ipoly = {
        var i, j;
@@ -253,6 +264,41 @@ proof.
     move => rL iR rR iR_tlb _ iR_lb iR_ub.
     have -> //=: iR = 2. move : iR_tlb iR_ub => /#.
     apply Array384.ext_eq.
+qed.
+
+equiv eq_decode12:
+  EncDec_AVX2.decode12_opt ~ EncDec_AVX2.decode12: ={a} ==> ={res}.
+proof.
+  proc.
+  while (#pre /\ i{1} = i{2} /\ 0 <= i{1} <= 2 /\
+         (forall k, 0 <= k < 128 * i{1} => r{1}.[k] = r{2}.[k])).
+    unroll for {2} 2.
+    wp; skip; auto => />.
+    move => &1 &2 [#] i_lb i_ub r1_eq_r2 i_tub />.
+    split.
+      + move : i_lb i_tub => /#.
+      + rewrite (mulzDr 128 _ _) mulz1.
+        move => k k_lb k_ub.
+        rewrite filliE 1:/# //=.
+        rewrite k_ub //=.
+        case (k < 128 * i{2}) => k_tub.
+          + have -> //=: !(128 * i{2} <= k). move : k_tub => /#.
+            rewrite r1_eq_r2; first by rewrite k_lb k_tub.
+            do (rewrite Array256.set_neqiE 1:/#; first by move : k_tub k_lb => /#).
+            done.
+          + move : k_tub => -/lezNgt k_tlb.
+            rewrite k_tlb //=.
+            do (rewrite Array256.get_setE 1:/#).
+            have k_iota: k \in iota_ (128 * i{2}) 128; first by rewrite mem_iota k_ub k_tlb.
+            move : k_iota.
+            case (k %% 2 = 0) => k_m.
+              smt(@Array256 @Int @IntDiv @List).
+            have k_m_1: k %% 2 = 1. move : k_m (modz_cmp k 2) => /#.
+              smt(@Array256 @Int @IntDiv @List).
+  wp; skip; auto => />.
+    move => rL iR rR iR_tlb _ iR_lb iR_ub.
+    have -> //=: iR = 2. move : iR_tlb iR_ub => /#.
+    apply Array256.ext_eq.
 qed.
 
 equiv eq_decode4:

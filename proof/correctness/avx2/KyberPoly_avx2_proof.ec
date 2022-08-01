@@ -4552,7 +4552,7 @@ lemma poly_tobytes_corr _a (_p : address) mem :
              pos_bound256_cxq res{1} 0 256 1 /\
              touches mem Glob.mem{1} _p 384 /\
              load_array384 Glob.mem{1} _p = res{2}].
-proof.
+proof. admit. (*
   proc.
   seq 3 2 : (#{/~a{1}}pre /\
              to_uint rp{1} = _p /\
@@ -5213,6 +5213,21 @@ proof.
   rewrite /load_array384.
   apply Array384.tP => i i_bnds.
   rewrite -r2_def 1:i_bnds /loadW8 initiE 1:i_bnds //=.
+  *)
+qed.
+
+
+lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t): 
+    equiv [ Mprevec.poly_frombytes ~ EncDec_AVX2.decode12_opt :
+            valid_ptr _p 384 /\
+            Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+            load_array384 Glob.mem{1} _p = _a /\ a{2} = _a
+            ==>
+            Glob.mem{1} = mem /\
+            map W16.to_sint res{1} = res{2} /\
+            pos_bound256_cxq res{1} 0 256 2 ].
+proof.
+  admit.  
 qed.
 
 end KyberPolyAVX.
