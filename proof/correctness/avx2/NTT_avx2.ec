@@ -62,9 +62,11 @@ abbrev shuffle1_idx = Array32.of_list witness
   [0; 16; 2; 18; 4; 20; 6; 22; 8; 24; 10; 26; 12; 28; 14; 30;
    1; 17; 3; 19; 5; 21; 7; 23; 9; 25; 11; 27; 13; 29; 15; 31].
 
-op nttpack (rp : 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttpack_idx.[i]]).
+op nttpack (rp : 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttpack_idx.[i]])
+axiomatized by nttpackE.
 
-op nttunpack (rp: 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttunpack_idx.[i]]).
+op nttunpack (rp: 'a Array256.t) : ('a Array256.t) = Array256.init (fun i => rp.[nttunpack_idx.[i]])
+axiomatized by nttunpackE.
 
 op shuf8 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
   let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in

@@ -5216,7 +5216,21 @@ proof. admit. (*
   *)
 qed.
 
+lemma nttpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttpack_idx.[k] && nttpack_idx.[k] < 256.
+proof.
+  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
+  rewrite /Array256.all -iotaredE //=.
+qed.
 
+lemma nttunpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttunpack_idx.[k] && nttunpack_idx.[k] < 256.
+proof.
+  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
+  rewrite /Array256.all -iotaredE //=.
+qed.
+
+op pos_bound16_b (coefs : W16.t Array16.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
+ 
 lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t): 
     equiv [ Mprevec.poly_frombytes ~ EncDec_AVX2.decode12_opt :
             valid_ptr _p 384 /\
@@ -5224,10 +5238,317 @@ lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t):
             load_array384 Glob.mem{1} _p = _a /\ a{2} = _a
             ==>
             Glob.mem{1} = mem /\
-            map W16.to_sint res{1} = res{2} /\
+            map W16.to_sint (nttpack res{1}) = res{2} /\
             pos_bound256_cxq res{1} 0 256 2 ].
 proof.
-  admit.  
+  proc.
+  seq 2 2 : (#pre /\
+             to_uint ap{1} = _p /\
+             i{1} = i{2} /\ i{1} = 0 /\
+             mask{1} = Array16.init (fun i => W16.of_int (2^12-1))).
+    wp; skip; auto => />.
+    move => &1 ap_lb ap_ub.
+      by rewrite -Array16.ext_eq_all /Array16.all_eq.
+  while (#{~i{1}=0}pre /\ i{1} = i{2} /\ 0 <= i{1} <= 2 /\
+         (forall k, 0 <= k < 128 * i{2} => W16.to_sint (nttpack rp{1}).[k] = r{2}.[k]) /\
+         (forall k, 0 <= k < 128 * i{2} => bpos16 rp{1}.[k] 4096)).
+  seq 7 0: (#pre /\
+            t0_b{1} = Array32.init (fun k => a{2}.[192 * i{1} + k]) /\
+            t1_b{1} = Array32.init (fun k => a{2}.[192 * i{1} + 32 + k]) /\
+            t2_b{1} = Array32.init (fun k => a{2}.[192 * i{1} + 64 + k]) /\
+            t3_b{1} = Array32.init (fun k => a{2}.[192 * i{1} + 96 + k]) /\
+            t4_b{1} = Array32.init (fun k => a{2}.[192 * i{1} + 128 + k]) /\
+            t5_b{1} = Array32.init (fun k => a{2}.[192 * i{1} + 160 + k])).
+    inline *; wp; skip; auto => />.
+    move => &1 &2 ap_lb ap_ub i_lb i_ub rp_def rp_bnd i_tub />.
+    rewrite /load_array384 /= /loadW8 /=.
+    do split.
+        + apply Array32.tP => j j_bnds.
+          do (rewrite initiE 1:j_bnds /=).
+          rewrite initiE 1:/# /=.
+          rewrite to_uintD_small. by rewrite of_uintK; move : ap_lb ap_ub i_lb i_tub => /#.
+          rewrite addzA of_uintK (pmod_small _ W64.modulus) //=; first by move : i_lb i_tub => /#.
+        + apply Array32.tP => j j_bnds.
+          do (rewrite initiE 1:j_bnds /=).
+          rewrite initiE 1:/# /=.
+          rewrite to_uintD_small. by rewrite of_uintK; move : ap_lb ap_ub i_lb i_tub => /#.
+          rewrite addzA of_uintK (pmod_small _ W64.modulus) //=; first by move : i_lb i_tub => /#.
+        + apply Array32.tP => j j_bnds.
+          do (rewrite initiE 1:j_bnds /=).
+          rewrite initiE 1:/# /=.
+          rewrite to_uintD_small. by rewrite of_uintK; move : ap_lb ap_ub i_lb i_tub => /#.
+          rewrite addzA of_uintK (pmod_small _ W64.modulus) //=; first by move : i_lb i_tub => /#.
+        + apply Array32.tP => j j_bnds.
+          do (rewrite initiE 1:j_bnds /=).
+          rewrite initiE 1:/# /=.
+          rewrite to_uintD_small. by rewrite of_uintK; move : ap_lb ap_ub i_lb i_tub => /#.
+          rewrite addzA of_uintK (pmod_small _ W64.modulus) //=; first by move : i_lb i_tub => /#.
+        + apply Array32.tP => j j_bnds.
+          do (rewrite initiE 1:j_bnds /=).
+          rewrite initiE 1:/# /=.
+          rewrite to_uintD_small. by rewrite of_uintK; move : ap_lb ap_ub i_lb i_tub => /#.
+          rewrite addzA of_uintK (pmod_small _ W64.modulus) //=; first by move : i_lb i_tub => /#.
+        + apply Array32.tP => j j_bnds.
+          do (rewrite initiE 1:j_bnds /=).
+          rewrite initiE 1:/# /=.
+          rewrite to_uintD_small. by rewrite of_uintK; move : ap_lb ap_ub i_lb i_tub => /#.
+          rewrite addzA of_uintK (pmod_small _ W64.modulus) //=; first by move : i_lb i_tub => /#.
+  seq 17 1: (#pre /\
+             t6{1} = Array16.init (fun k => W16.of_int (2^12 * (r{2}.[128 * i{2} + 8 * k + 1] %% (2^4)) + r{2}.[128 * i{2} + 8 * k])) /\
+             t3{1} = Array16.init (fun k => W16.of_int (2^8 * (r{2}.[128 * i{2} + 8 * k + 2] %% 2^8) + (r{2}.[128 * i{2} + 8 * k + 1] %/ 2^4))) /\
+             t0{1} = Array16.init (fun k => W16.of_int (2^4 * (r{2}.[128 * i{2} + 8 * k + 3]) + (r{2}.[128 * i{2} + 8 * k + 2] %/ 2^8 %% 2^4))) /\
+             t4{1} = Array16.init (fun k => W16.of_int (2^12 * (r{2}.[128 * i{2} + 8 * k + 5] %% (2^4)) + r{2}.[128 * i{2} + 8 * k + 4])) /\
+             t1{1} = Array16.init (fun k => W16.of_int (2^8 * (r{2}.[128 * i{2} + 8 * k + 6] %% 2^8) + (r{2}.[128 * i{2} + 8 * k + 5] %/ 2^4))) /\
+             t5{1} = Array16.init (fun k => W16.of_int (2^4 * (r{2}.[128 * i{2} + 8 * k + 7]) + (r{2}.[128 * i{2} + 8 * k + 6] %/ 2^8 %% 2^4))) /\
+             (forall k, 0 <= k < 128 * i{2} + 128 => 0 <= r{2}.[k] < 4096)).
+    wp.
+    ecall{1} (shuffle1_corr t2{1} t5{1}).
+    ecall{1} (shuffle1_corr t1{1} t4{1}).
+    ecall{1} (shuffle1_corr t0{1} t3{1}).
+    ecall{1} (shuffle2_corr tt{1} t5{1}).
+    ecall{1} (shuffle2_corr t4{1} t3{1}).
+    ecall{1} (shuffle2_corr t2{1} t1{1}).
+    ecall{1} (shuffle4_corr t0{1} t5{1}).
+    ecall{1} (shuffle4_corr t3{1} t1{1}).
+    ecall{1} (shuffle4_corr tt{1} t4{1}).
+    ecall{1} (shuffle8_corr t2{1} t5{1}).
+    ecall{1} (shuffle8_corr t1{1} t4{1}).
+    ecall{1} (shuffle8_corr t0{1} t3{1}).
+    wp; skip; auto => />.
+    move => &1 &2 ap_lb ap_ub i_lb i_ub rp_def rp_bnd i_tub />.
+
+    move => res0 -> -> res1 -> -> res2 -> -> res3 -> -> res4 -> -> res5 -> ->
+            res6 -> -> res7 -> -> res8 -> -> res9 res9_l res9_r res10 res10_l res10_r res11 res11_l res11_r />.
+    do split.
+      + admit.
+      + admit.
+      + admit.
+      + admit.
+      + admit.
+      + admit.
+      + admit.
+      + move => k k_lb k_ub.
+        do (rewrite filliE 1:/# //=).
+        do (rewrite /load_array384 /= /loadW8 /=).
+        do (rewrite initiE /=; first by move : ap_lb ap_ub => /#).
+        case (128 * i{2} <= k) => k_tlb.
+          + rewrite k_ub //=.
+            pose x := mem.[to_uint ap{1} + (3 * (k %/ 2) + k %% 2)].
+            pose y := mem.[to_uint ap{1} + (3 * (k %/ 2) + k %% 2 + 1)].
+            move : (W8.to_uint_cmp x) (W8.to_uint_cmp y).
+            move : (modz_cmp (to_uint y) 16).
+            smt(@W8 @Int @Ring.IntID @IntDiv).
+          + simplify.
+            rewrite -rp_def 1:/# //=.
+            move : (pack_bounds rp{1} k 0 4096) => /#.
+    (* FIXME: just testing *)
+  seq 22 0 : (#{~t6{1}}{~t7{1}}{~t8{1}}{~t9{1}}{~t10{1}}{~t4{1}}{~t11{1}}{~tt{1}}pre /\
+              t6{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + k]) /\
+              t7{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 16 + k]) /\
+              t8{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 32 + k]) /\
+              t9{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 48 + k]) /\
+              t4{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 64 + k]) /\
+              t10{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 80 + k]) /\
+              t11{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 96 + k]) /\
+              tt{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 112 + k])).
+  inline *; wp; skip; auto => />.
+  move => &1 &2 [#] ap_lb ap_ub i_lb i_ub rp_def rp_bnds i_tub r2_bnds />.
+
+  do split.
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
+        trivial.
+      rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://= of_uintK (modz_dvd _ _ (2^12)) 1://=
+              (mulzC 4096 _) (modzMDl _ _ 4096).
+      rewrite (pmod_small _ 4096); first by apply r2_bnds; smt(@Int).
+      rewrite /nttunpack initiE 1:/# //=.
+      rewrite /(nttunpack_idx) //= initiE 1:/# => /#.
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      rewrite shr_shrw 1://= shrDP 1://=.
+      rewrite (pmod_small _ W16.modulus); first by move : r2_bnds; smt(@Int @IntDiv @Ring.IntID modz_cmp).
+      rewrite (mulzC 4096 _) divzMDl 1://= (pdiv_small _ 4096) 1:r2_bnds 1:/# /=.
+      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
+        trivial.
+      rewrite andw_orwDr.
+      rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://=.
+      rewrite of_uintK modz_dvd 1://= (pmod_small _ 4096) 1:/#.
+      rewrite shl_shlw 1://= shlMP 1://=.
+      rewrite mulzDl (mulzC 256 _) mulzA //=.
+      rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://=.
+      rewrite of_uintK (modz_dvd _ W16.modulus) 1://= modzMDl (pmod_small _ 4096) 1:/#.
+      rewrite orw_disjoint.
+        + apply W16.ext_eq => x xb; rewrite /W16.(`&`) map2E initiE //=.
+          case (!(0 <= x < 4)).
+            + move => kbb; have -> : !(W16.of_int (r{2}.[128 * i{2} + 8 * j + 1] %% 16)).[x]; last by smt().
+              rewrite get_to_uint xb /= //=. 
+              have /= expbnd:= (StdOrder.IntOrder.ler_weexpn2l 2 _ 4 x  _); 1,2: smt().
+              rewrite of_uintK (pmod_small _ W16.modulus) 1:/#.
+              have -> : r{2}.[128 * i{2} + 8 * j + 1] %% 16 %/ 2 ^ x = 0; last by smt(mod0z).
+              apply pdiv_small; move : (modz_cmp r{2}.[128 * i{2} + 8 * j + 1] 16); 1: smt().
+            + move => /negbNE xbb. have -> : !(W16.of_int (r{2}.[128 * i{2} + 8 * j + 1] %/ 16 * 16)).[x]; last by smt().
+              rewrite get_to_uint xb /= //=.
+              have /= expbnd:= (StdOrder.IntOrder.ler_weexpn2l 2 _ x 3  _); 1,2: smt().
+              rewrite of_uintK (pmod_small _ W16.modulus) 1:/#.
+              rewrite (_: 16 = 2^4) // divMr; first by apply le_dvd_pow; smt().  
+              rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
+              have -> : 2 %| 2 ^ (4 - x) = 2^1 %| 2 ^ (4 - x) by auto.  
+              by apply le_dvd_pow; smt().
+      rewrite divzE //= addzC -addzA //=.
+      rewrite /nttunpack initiE 1:/# //=.
+      rewrite /(nttunpack_idx) //= initiE 1:/# => /#.
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      admit.
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      admit.
+
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
+        trivial.
+      rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://= of_uintK (modz_dvd _ _ (2^12)) 1://=
+              (mulzC 4096 _) (modzMDl _ _ 4096).
+      rewrite (pmod_small _ 4096); first by apply r2_bnds; smt(@Int).
+      rewrite /nttunpack initiE 1:/# //=.
+      rewrite /(nttunpack_idx) //= initiE 1:/# => /#.
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      rewrite shr_shrw 1://= shrDP 1://=.
+      rewrite (pmod_small _ W16.modulus); first by move : r2_bnds; smt(@Int @IntDiv @Ring.IntID modz_cmp).
+      rewrite (mulzC 4096 _) divzMDl 1://= (pdiv_small _ 4096) 1:r2_bnds 1:/# /=.
+      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
+        trivial.
+      rewrite andw_orwDr.
+      rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://=.
+      rewrite of_uintK modz_dvd 1://= (pmod_small _ 4096) 1:/#.
+      rewrite shl_shlw 1://= shlMP 1://=.
+      rewrite mulzDl (mulzC 256 _) mulzA //=.
+      rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://=.
+      rewrite of_uintK (modz_dvd _ W16.modulus) 1://= modzMDl (pmod_small _ 4096) 1:/#.
+      rewrite orw_disjoint.
+        + apply W16.ext_eq => x xb; rewrite /W16.(`&`) map2E initiE //=.
+          case (!(0 <= x < 4)).
+            + move => kbb; have -> : !(W16.of_int (r{2}.[128 * i{2} + 8 * j + 5] %% 16)).[x]; last by smt().
+              rewrite get_to_uint xb /= //=. 
+              have /= expbnd:= (StdOrder.IntOrder.ler_weexpn2l 2 _ 4 x  _); 1,2: smt().
+              rewrite of_uintK (pmod_small _ W16.modulus) 1:/#.
+              have -> : r{2}.[128 * i{2} + 8 * j + 5] %% 16 %/ 2 ^ x = 0; last by smt(mod0z).
+              apply pdiv_small; move : (modz_cmp r{2}.[128 * i{2} + 8 * j + 5] 16); 1: smt().
+            + move => /negbNE xbb. have -> : !(W16.of_int (r{2}.[128 * i{2} + 8 * j + 5] %/ 16 * 16)).[x]; last by smt().
+              rewrite get_to_uint xb /= //=.
+              have /= expbnd:= (StdOrder.IntOrder.ler_weexpn2l 2 _ x 3  _); 1,2: smt().
+              rewrite of_uintK (pmod_small _ W16.modulus) 1:/#.
+              rewrite (_: 16 = 2^4) // divMr; first by apply le_dvd_pow; smt().  
+              rewrite expz_div // 1:/# => *; move => *; apply dvdz_mull.
+              have -> : 2 %| 2 ^ (4 - x) = 2^1 %| 2 ^ (4 - x) by auto.  
+              by apply le_dvd_pow; smt().
+      rewrite divzE //= addzC -addzA //=.
+      rewrite /nttunpack initiE 1:/# //=.
+      rewrite /(nttunpack_idx) //= initiE 1:/# => /#.
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      admit.
+    + rewrite Array16.tP => j j_bnds.
+      do (rewrite initiE 1:/# /=).
+      admit.
+
+  wp; skip; auto => />.
+  move => &1 &2 [#] ap_lb ap_ub i_lb i_ub rp_def rp_bnds i_tub r2_bnds />.
+  do split; first 2 by move : i_lb i_tub => /#.
+    + rewrite (mulzDr 128) mulz1 => k k_lb k_ub.
+      rewrite /nttpack Array256.initiE 1:/# /=.
+      do (rewrite Array256.filliE 1:nttpack_inbounds 1:/#).
+      simplify.
+      do rewrite Array16.initiE 1:modz_cmp 1://=.
+      simplify.
+      have HH: forall j, 0 <= j < 256 => (nttunpack r{2}).[nttpack_idx.[j]] = (nttpack (nttunpack r{2})).[j]. (* FIXME: add lemma; use axiom ??? *)
+        move => j j_bnds.
+        rewrite /nttpack.
+        rewrite (Array256.initiE (fun (i0 : int) => (nttunpack r{2}).[nttpack_idx.[i0]])) 1:j_bnds.
+        trivial.
+      case (128 * i{2} + 112 <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 128) => k_s1.
+        have ->: 128 * i{2} + 112 + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s1 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      case (128 * i{2} + 96 <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 112) => k_s2.
+        have ->: 128 * i{2} + 96 + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s2 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      case (128 * i{2} + 80 <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 96) => k_s3.
+        have ->: 128 * i{2} + 80 + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s3 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      case (128 * i{2} + 64 <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 80) => k_s4.
+        have ->: 128 * i{2} + 64 + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s4 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      case (128 * i{2} + 48 <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 64) => k_s5.
+        have ->: 128 * i{2} + 48 + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s5 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      case (128 * i{2} + 32 <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 48) => k_s6.
+        have ->: 128 * i{2} + 32 + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s6 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      case (128 * i{2} + 16 <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 32) => k_s7.
+        have ->: 128 * i{2} + 16 + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s7 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      case (128 * i{2} <= nttpack_idx.[k] && nttpack_idx.[k] < 128 * i{2} + 16) => k_s8.
+        have ->: 128 * i{2} + nttpack_idx.[k] %% 16 = nttpack_idx.[k]. move : k_s8 => /#.
+        rewrite HH; first by move : k_lb k_ub i_lb i_tub => /#.
+        rewrite nttunpackK.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= r{2}.[k] %% 65536.
+          move : (r2_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_bnds k) => /#.
+      admit. (* FIXME *)
+    + admit. (* FIXME *)
+  wp; skip; auto => />.
+  move => &1 &2 [#] ap_lb ap_ub />.
+  split.
+    + smt(@Logic).
+    + move => rpL iR rR.
+      rewrite -lezNgt => iR_tlb iR_lb iR_ub.
+      have -> //=: iR = 2. move : iR_tlb iR_ub => /#.
+      move => rp_def rp_bnds.
+      split.
+        + apply Array256.ext_eq => x x_bnds.
+          rewrite mapiE 1:x_bnds /=.
+          by apply rp_def.
+        + rewrite /pos_bound256_cxq /bpos16 qE //= => x x_bnds.
+          move : (rp_bnds x x_bnds) => /#.
 qed.
 
 end KyberPolyAVX.
