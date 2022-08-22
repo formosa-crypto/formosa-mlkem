@@ -4408,6 +4408,80 @@ proof.
   admit. (* FIXME *)
 qed.
 
+lemma unpack_bounds (p : W16.t Array256.t)  i l h:
+     0 <= i < 256 => l <= to_sint p.[i] < h => l <= to_sint (nttunpack p).[i] < h.
+proof.
+  move => i_bnds p_bnds.
+  pose bposlh16 := (fun l h x => l <= W16.to_sint x && W16.to_sint x < h).
+  rewrite -/(bposlh16 l h ((nttunpack p).[i])).
+  apply (Array256.allP (nttunpack p) (fun x => bposlh16 l h x)); last by apply i_bnds.
+  rewrite /bposlh16 /Array256.all => />.
+  rewrite /nttunpack.
+  move : i_bnds p_bnds; rewrite andabP => -/(mem_iota 0 256 i) /=.
+  admit. (* FIXME *)
+qed.
+
+
+(* FIXME MERGE W/ PREVIOUS LEMMAS *)
+lemma pack_boundsi (p : ipoly)  i l h:
+     0 <= i < 256 => l <= p.[i] < h => l <= (nttpack p).[i] < h.
+proof.
+  move => i_bnds p_bnds.
+  pose bposlh16 := (fun (l h x: int) => l <= x && x < h).
+  rewrite -/(bposlh16 l h ((nttpack p).[i])).
+  apply (Array256.allP (nttpack p) (fun x => bposlh16 l h x)); last by apply i_bnds.
+  rewrite /bposlh16 /Array256.all => />.
+  rewrite /nttpack.
+  move : i_bnds p_bnds; rewrite andabP => -/(mem_iota 0 256 i) /=.
+  admit. (* FIXME *)
+qed.
+
+lemma unpack_boundsi (p : ipoly)  i l h:
+     0 <= i < 256 => l <= p.[i] < h => l <= (nttunpack p).[i] < h.
+proof.
+  move => i_bnds p_bnds.
+  pose bposlh16 := (fun (l h x: int) => l <= x && x < h).
+  rewrite -/(bposlh16 l h ((nttunpack p).[i])).
+  apply (Array256.allP (nttunpack p) (fun x => bposlh16 l h x)); last by apply i_bnds.
+  rewrite /bposlh16 /Array256.all => />.
+  rewrite /nttunpack.
+  move : i_bnds p_bnds; rewrite andabP => -/(mem_iota 0 256 i) /=.
+  admit. (* FIXME *)
+qed.
+
+lemma nttpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttpack_idx.[k] && nttpack_idx.[k] < 256.
+proof.
+  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
+  rewrite /Array256.all -iotaredE //=.
+qed.
+
+lemma nttunpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttunpack_idx.[k] && nttunpack_idx.[k] < 256.
+proof.
+  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
+  rewrite /Array256.all -iotaredE //=.
+qed.
+
+lemma nttpack128_bounds: forall k, 0 <= k < 256 => (k %/ 128) * 128 <= nttpack_idx.[k] && nttpack_idx.[k] < (k %/ 128) * 128 + 128.
+proof.
+  move => k.
+  rewrite andabP => /(mem_iota 0 256 k).
+  move : k.
+  rewrite -(List.allP (fun x => (x %/ 128) * 128 <= nttpack_idx.[x] && nttpack_idx.[x] < (x %/ 128) * 128 + 128) _).
+  rewrite -iotaredE //=.
+qed.
+
+
+lemma nttunpack128_bounds: forall k, 0 <= k < 256 => (k %/ 128) * 128 <= nttunpack_idx.[k] && nttunpack_idx.[k] < (k %/ 128) * 128 + 128.
+proof.
+  move => k.
+  rewrite andabP => /(mem_iota 0 256 k).
+  move : k.
+  rewrite -(List.allP (fun x => (x %/ 128) * 128 <= nttunpack_idx.[x] && nttunpack_idx.[x] < (x %/ 128) * 128 + 128) _).
+  rewrite -iotaredE //=.
+qed.
+
+
+
 lemma shuffle8_corr_h _a _b:
       hoare[ Mprevec.shuffle8 :
            _a = a /\ _b = b
@@ -5216,17 +5290,6 @@ proof. admit. (*
   *)
 qed.
 
-lemma nttpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttpack_idx.[k] && nttpack_idx.[k] < 256.
-proof.
-  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
-  rewrite /Array256.all -iotaredE //=.
-qed.
-
-lemma nttunpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttunpack_idx.[k] && nttunpack_idx.[k] < 256.
-proof.
-  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
-  rewrite /Array256.all -iotaredE //=.
-qed.
 
 op pos_bound16_b (coefs : W16.t Array16.t) (l u b : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] b.
@@ -5604,11 +5667,70 @@ proof.
         have -> //=: !32768 <= r{2}.[k] %% 65536.
           move : (r2_bnds k) => /#.
         rewrite pmod_small; by move : (r2_bnds k) => /#.
-        admit. (* HERE: case analysis
-        case (i{2} = 0) => i_0.
-          ...
-        *)
-    + admit. (* FIXME *)
+      case (i{2} = 0) => i_0.
+        + move : k_ub; rewrite i_0 /= => k_ub.
+          have kpck_tbnds: 0 <= nttpack_idx.[k] && nttpack_idx.[k] < 0.
+            move : (nttpack128_bounds k) k_s1 k_s2 k_s3 k_s4 k_s5 k_s6 k_s7 k_s8 => /#.
+          smt(@Logic).
+        + have i_1: i{2} = 1. by move : i_0 i_lb i_tub => /#.
+          move : k_ub; rewrite i_1 /= => k_ub.
+          have kpck_tbnds: 0 <= nttpack_idx.[k] && nttpack_idx.[k] < 128.
+            move : (nttpack128_bounds k) k_s1 k_s2 k_s3 k_s4 k_s5 k_s6 k_s7 k_s8 => /#.
+          rewrite -rp_def; first by move : (nttpack128_bounds k) => /#.
+          rewrite /nttpack (Array256.initiE  (fun (i0 : int) => rp{1}.[nttpack_idx.[i0]])) 1://= //=.
+    + rewrite (mulzDr 128) mulz1 => k k_lb k_ub.
+      do (rewrite Array256.filliE 1:/# //=).
+      do rewrite Array16.initiE 1:modz_cmp 1://=.
+      simplify.
+
+      have r2_unpack_bnds: forall (k : int), 0 <= k && k < 128 * i{2} + 128 => 0 <= (nttunpack r{2}).[k] && (nttunpack r{2}).[k] < 4096.
+        move => j j_bnds.
+        apply (unpack_boundsi r{2} j 0 4096).
+        move : j_bnds i_lb i_tub => /#. rewrite r2_bnds 1:j_bnds.
+
+      case (128 * i{2} + 112 <= k < 128 * i{2} + 128) => k_s1.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + 112 + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+      case (128 * i{2} + 96 <= k < 128 * i{2} + 112) => k_s2.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + 96 + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+      case (128 * i{2} + 80 <= k < 128 * i{2} + 96) => k_s3.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + 80 + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+      case (128 * i{2} + 64 <= k < 128 * i{2} + 80) => k_s4.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + 64 + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+      case (128 * i{2} + 48 <= k < 128 * i{2} + 64) => k_s5.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + 48 + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+      case (128 * i{2} + 32 <= k < 128 * i{2} + 48) => k_s6.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + 32 + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+      case (128 * i{2} + 16 <= k < 128 * i{2} + 32) => k_s7.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + 16 + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+      case (128 * i{2} <= k < 128 * i{2} + 16) => k_s8.
+        rewrite of_sintK /smod /=.
+        have -> //=: !32768 <= (nttunpack r{2}).[128 * i{2} + k %% 16] %% 65536.
+          move : (r2_unpack_bnds k) => /#.
+        rewrite pmod_small; by move : (r2_unpack_bnds k) => /#.
+     have k_tbnds: 0 <= k < 128 * i{2}.
+       move : k_s1 k_s2 k_s3 k_s4 k_s5 k_s6 k_s7 k_s8 => /#.
+     move : (rp_def k k_tbnds) => /#.
   wp; skip; auto => />.
   move => &1 &2 [#] ap_lb ap_ub />.
   split.

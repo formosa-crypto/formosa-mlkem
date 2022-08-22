@@ -180,11 +180,15 @@ def nttunpack(a):
 
     return a
 
-rp = list(range(0,256))
-rpp = nttpack(rp)
-rp = list(range(0,256))
-rpu = nttunpack(rp)
-for i in range(0, 256, 16):
-  print(rpp[i:i+16])
-for i in range(0, 256, 16):
-  print(rpu[i:i+16])
+def unpacksem(a):
+  b = []
+  for i in range(0, 256):
+    b.append(128 * (i // 128) + (i // 16 % 8) + (8 * (i % 16)))
+  return b
+  
+def packsem(a):
+  b = []
+  for i in range(0, 256):
+    b.append(128 * (i // 128) + 16 * (i % 8) + (i % 16 // 8) + 2 * (i % 128 // 16))
+  return b
+
