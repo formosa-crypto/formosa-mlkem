@@ -1075,12 +1075,13 @@ lemma poly_frommont_corr_h ap:
        ap = map W16.to_sint rp ==>
        map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) R 2) %% q))) ap].
 proof. admit. (* 
+>>>>>>> dffc231ca719ddbf5f562a4767ca86ef46ac77fa
   proc.
   while(0 <= i <= 16 /\ aux = 16 /\
         (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
         (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
         (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) /\
-        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) R 2) %% q))) /\
+        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) /\
         (forall k, 16 * i <= k < 256 => W16.to_sint rp.[k] = ap.[k])); last first.
   auto => />.
   move => &hr.
@@ -1200,6 +1201,12 @@ proof. admit. (*
   + move => *; inline*; auto => />. smt().
   + inline *; wp; auto => /> /#.
 *)qed.
+
+lemma poly_frommont_corr ap:
+  phoare[ Mprevec.poly_frommont :
+       ap = map W16.to_sint rp ==>
+       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap] = 1%r
+ by conseq poly_frommont_ll (poly_frommont_corr_h ap) => />.
 
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
     equiv [ Mprevec.poly_decompress ~ EncDec_AVX2.decode4 :
@@ -4370,118 +4377,6 @@ proof. admit. (*
   smt(@Int).
 *)qed.
 
-lemma map_pack (p : 'a Array256.t) (f : 'a -> 'b) : nttpack (Array256.map f p) = map f (nttpack p).
-proof.
-  rewrite /nttpack.
-  rewrite -ext_eq_all /all_eq //=.
-qed.
-
-
-lemma map_unpack (p : 'a Array256.t) (f : 'a -> 'b) : nttunpack (Array256.map f p) = map f (nttunpack p).
-  rewrite /nttunpack.
-  rewrite -ext_eq_all /all_eq //=.
-qed.
-
-
-lemma pack_ext_eq (p q : 'a Array256.t):
-     nttpack p = nttpack q <=> p = q.
-proof.
-  rewrite /nttpack.
-  rewrite -ext_eq_all /all_eq //=.
-  rewrite -ext_eq_all /all_eq //=.
-qed.
-
-lemma unpack_ext_eq (p q : 'a Array256.t) :
-     nttunpack p = nttunpack q <=> p = q.
-admitted.
-
-lemma pack_bounds (p : W16.t Array256.t)  i l h:
-     0 <= i < 256 => l <= to_sint p.[i] < h => l <= to_sint (nttpack p).[i] < h.
-proof.
-  move => i_bnds p_bnds.
-  pose bposlh16 := (fun l h x => l <= W16.to_sint x && W16.to_sint x < h).
-  rewrite -/(bposlh16 l h ((nttpack p).[i])).
-  apply (Array256.allP (nttpack p) (fun x => bposlh16 l h x)); last by apply i_bnds.
-  rewrite /bposlh16 /Array256.all => />.
-  rewrite /nttpack.
-  move : i_bnds p_bnds; rewrite andabP => -/(mem_iota 0 256 i) /=.
-  admit. (* FIXME *)
-qed.
-
-lemma unpack_bounds (p : W16.t Array256.t)  i l h:
-     0 <= i < 256 => l <= to_sint p.[i] < h => l <= to_sint (nttunpack p).[i] < h.
-proof.
-  move => i_bnds p_bnds.
-  pose bposlh16 := (fun l h x => l <= W16.to_sint x && W16.to_sint x < h).
-  rewrite -/(bposlh16 l h ((nttunpack p).[i])).
-  apply (Array256.allP (nttunpack p) (fun x => bposlh16 l h x)); last by apply i_bnds.
-  rewrite /bposlh16 /Array256.all => />.
-  rewrite /nttunpack.
-  move : i_bnds p_bnds; rewrite andabP => -/(mem_iota 0 256 i) /=.
-  admit. (* FIXME *)
-qed.
-
-
-(* FIXME MERGE W/ PREVIOUS LEMMAS *)
-lemma pack_boundsi (p : ipoly)  i l h:
-     0 <= i < 256 => l <= p.[i] < h => l <= (nttpack p).[i] < h.
-proof.
-  move => i_bnds p_bnds.
-  pose bposlh16 := (fun (l h x: int) => l <= x && x < h).
-  rewrite -/(bposlh16 l h ((nttpack p).[i])).
-  apply (Array256.allP (nttpack p) (fun x => bposlh16 l h x)); last by apply i_bnds.
-  rewrite /bposlh16 /Array256.all => />.
-  rewrite /nttpack.
-  move : i_bnds p_bnds; rewrite andabP => -/(mem_iota 0 256 i) /=.
-  admit. (* FIXME *)
-qed.
-
-lemma unpack_boundsi (p : ipoly)  i l h:
-     0 <= i < 256 => l <= p.[i] < h => l <= (nttunpack p).[i] < h.
-proof.
-  move => i_bnds p_bnds.
-  pose bposlh16 := (fun (l h x: int) => l <= x && x < h).
-  rewrite -/(bposlh16 l h ((nttunpack p).[i])).
-  apply (Array256.allP (nttunpack p) (fun x => bposlh16 l h x)); last by apply i_bnds.
-  rewrite /bposlh16 /Array256.all => />.
-  rewrite /nttunpack.
-  move : i_bnds p_bnds; rewrite andabP => -/(mem_iota 0 256 i) /=.
-  admit. (* FIXME *)
-qed.
-
-lemma nttpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttpack_idx.[k] && nttpack_idx.[k] < 256.
-proof.
-  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
-  rewrite /Array256.all -iotaredE //=.
-qed.
-
-lemma nttunpack_inbounds: forall k, 0 <= k < 256 => 0 <= nttunpack_idx.[k] && nttunpack_idx.[k] < 256.
-proof.
-  apply (Array256.allP _ (fun x => 0 <= x && x < 256)).
-  rewrite /Array256.all -iotaredE //=.
-qed.
-
-lemma nttpack128_bounds: forall k, 0 <= k < 256 => (k %/ 128) * 128 <= nttpack_idx.[k] && nttpack_idx.[k] < (k %/ 128) * 128 + 128.
-proof.
-  move => k.
-  rewrite andabP => /(mem_iota 0 256 k).
-  move : k.
-  rewrite -(List.allP (fun x => (x %/ 128) * 128 <= nttpack_idx.[x] && nttpack_idx.[x] < (x %/ 128) * 128 + 128) _).
-  rewrite -iotaredE //=.
-qed.
-
-
-lemma nttunpack128_bounds: forall k, 0 <= k < 256 => (k %/ 128) * 128 <= nttunpack_idx.[k] && nttunpack_idx.[k] < (k %/ 128) * 128 + 128.
-proof.
-  move => k.
-  rewrite andabP => /(mem_iota 0 256 k).
-  move : k.
-  rewrite -(List.allP (fun x => (x %/ 128) * 128 <= nttunpack_idx.[x] && nttunpack_idx.[x] < (x %/ 128) * 128 + 128) _).
-  rewrite -iotaredE //=.
-qed.
-
-
-
 lemma shuffle8_corr_h _a _b:
       hoare[ Mprevec.shuffle8 :
            _a = a /\ _b = b
@@ -4615,7 +4510,6 @@ lemma shuffle1_corr _a _b:
              res.`2 = (shuf1 _a _b).`2] = 1%r
   by conseq shuffle1_ll (shuffle1_corr_h _a _b).
 
-
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ Mprevec.poly_tobytes ~ EncDec_AVX2.encode12_opt :
              pos_bound256_cxq a{1} 0 256 2 /\  lift_array256 (nttpack a{1}) = _a /\
@@ -4652,7 +4546,7 @@ proof. admit. (*
       move : pos_bound_an; rewrite /pos_bound256_cxq qE /= => H. apply pack_bounds; 1,2: smt(). 
       rewrite modz_small; 1: by smt( qE). 
       rewrite -to_sint_unsigned. 
-      move : (pack_bounds a i 0 q). 
+      move : (pack_bounds a 0 q). 
       by move : pos_bound_an; rewrite /pos_bound256_cxq qE /#.
       by smt().
   while (#{/~mem}{~i{1}=0}pre /\ i{1} = i{2} /\ 0 <= i{1} <= 2 /\
@@ -5382,145 +5276,145 @@ proof.
 
     move => res0 -> -> res1 -> -> res2 -> -> res3 -> -> res4 -> -> res5 -> ->
             res6 -> -> res7 -> -> res8 -> -> res9 res9_l res9_r res10 res10_l res10_r res11 res11_l res11_r />.
-    split.
-      + move => k k_lb k_ub.
-        rewrite filliE 1:/# //= rp_def 1://=.
-        by move : k_ub => /ltzNge -> />.
       have idx_mod: forall k, 0 <= k < 128 => (128 * i{2} + k) %% 2 = k %% 2. smt(@Int @IntDiv).
       have idx_div: forall k, 0 <= k < 128 => (128 * i{2} + k) %/ 2 = 64 * i{2} + k %/ 2. smt(@Int @IntDiv).
-    do split.
-      + rewrite res9_l.
-        rewrite /f32u8_t16u16.
-        rewrite -ext_eq_all /all_eq //=.
-        rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-        (* do split. *)
-        do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
-        rewrite (_: 128 * i{2} %% 2 = 0). by smt(@Int @IntDiv).
-        rewrite (_: 128 * i{2} %/ 2 = 64 * i{2}). by smt(@Int @IntDiv).
-        do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
-        simplify.
-        rewrite -(mulzA 3 _ _) //=.
-        rewrite /load_array384 /= /loadW8 /=.
-        do (rewrite initiE 1:/#).
-        simplify.
-        do (rewrite modzMDl || (rewrite (pmod_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#) ||
-            rewrite (mulzC 4096) (_: 4096 = 16 * 256) 1://= -(mulzA _ 16 256) divzE).
-        admit. (* FIXME: apply following block 16 times ??
-        do split.
-        apply W2u8.allP => //=.
-          do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-          rewrite divzMDl 1://= divzMDr 1://=.
-          rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
-          do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-        *)
-      + rewrite res9_r.
-        rewrite /f32u8_t16u16.
-        rewrite -ext_eq_all /all_eq //=.
-        rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-        do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
-        do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
-        do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
-        rewrite /load_array384 /= /loadW8 //=.
-        do (rewrite initiE 1:/#).
-        simplify.
-        do (rewrite modzMDr || rewrite divzMDl 1://= || (rewrite (pdiv_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#)).
-        admit. (* FIXME: apply following block 16 times ??
-        do split.
-        apply W2u8.allP => //=.
-          do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-          rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
-          do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-        *)
-      + rewrite res10_l.
-        rewrite /f32u8_t16u16.
-        rewrite -ext_eq_all /all_eq //=.
-        rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-        do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
-        do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
-        do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
-        rewrite /load_array384 /= /loadW8 //=.
-        do (rewrite initiE 1:/#).
-        simplify.
-        do (rewrite (mulzDr 16 _ _) || rewrite (mulzA _ 16 16) //= || rewrite (mulzC 16 _) || rewrite divzMDr 1://= ||
-            rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp //= || rewrite divzE || rewrite (pmod_small (W8.to_uint _ %% 16) 16) 1:modz_cmp 1://=).
-        admit. (* FIXME: apply following block 16 times ??
-        apply W2u8.allP => //=.
-          do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-          rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
-          do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-        *)
-      + rewrite res10_r.
-        rewrite /f32u8_t16u16.
-        rewrite -ext_eq_all /all_eq //=.
-        rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-        (* do split. *)
-        do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
-        do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
-        simplify.
-        do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
-        rewrite /load_array384 /= /loadW8 /=.
-        do (rewrite initiE 1:/#).
-        simplify.
-        do (rewrite modzMDl || (rewrite (pmod_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#) ||
-            rewrite (mulzC 4096) (_: 4096 = 16 * 256) 1://= -(mulzA _ 16 256) divzE).
-        admit. (* FIXME: apply following block 16 times ??
-        do split.
-        apply W2u8.allP => //=.
-          do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-          rewrite divzMDl 1://= divzMDr 1://=.
-          rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
-          do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-        *)
-      + rewrite res11_l.
-        rewrite /f32u8_t16u16.
-        rewrite -ext_eq_all /all_eq //=.
-        rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-        do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
-        do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
-        do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
-        rewrite /load_array384 /= /loadW8 //=.
-        do (rewrite initiE 1:/#).
-        simplify.
-        do (rewrite modzMDr || rewrite divzMDl 1://= || (rewrite (pdiv_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#)).
-        admit. (* FIXME: apply following block 16 times ??
-        do split.
-        apply W2u8.allP => //=.
-          do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-          rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
-          do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-        *)
-      + rewrite res11_r.
-        rewrite /f32u8_t16u16.
-        rewrite -ext_eq_all /all_eq //=.
-        rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-        do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
-        do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
-        do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
-        rewrite /load_array384 /= /loadW8 //=.
-        do (rewrite initiE 1:/#).
-        simplify.
-        do (rewrite (mulzDr 16 _ _) || rewrite (mulzA _ 16 16) //= || rewrite (mulzC 16 _) || rewrite divzMDr 1://= ||
-            rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp //= || rewrite divzE || rewrite (pmod_small (W8.to_uint _ %% 16) 16) 1:modz_cmp 1://=).
-        admit. (* FIXME: apply following block 16 times ??
-        apply W2u8.allP => //=.
-          do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-          rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
-          do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-        *)
-      + move => k k_lb k_ub.
-        do (rewrite filliE 1:/# //=).
-        do (rewrite /load_array384 /= /loadW8 /=).
-        do (rewrite initiE /=; first by move : ap_lb ap_ub => /#).
-        case (128 * i{2} <= k) => k_tlb.
-          + rewrite k_ub //=.
-            pose x := mem.[to_uint ap{1} + (3 * (k %/ 2) + k %% 2)].
-            pose y := mem.[to_uint ap{1} + (3 * (k %/ 2) + k %% 2 + 1)].
-            move : (W8.to_uint_cmp x) (W8.to_uint_cmp y).
-            move : (modz_cmp (to_uint y) 16).
-            smt(@W8 @Int @Ring.IntID @IntDiv).
-          + simplify.
-            rewrite -rp_def 1:/# //=.
-            move : (pack_bounds rp{1} k 0 4096) => /#.
+      do split.
+        + move => k k_lb k_ub.
+          rewrite filliE 1:/# //= rp_def 1://=.
+          by move : k_ub => /ltzNge -> />.
+        + rewrite res9_l.
+          rewrite /f32u8_t16u16.
+          rewrite -ext_eq_all /all_eq //=.
+          rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
+          (* do split. *)
+          do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
+          rewrite (_: 128 * i{2} %% 2 = 0). by smt(@Int @IntDiv).
+          rewrite (_: 128 * i{2} %/ 2 = 64 * i{2}). by smt(@Int @IntDiv).
+          do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
+          simplify.
+          rewrite -(mulzA 3 _ _) //=.
+          rewrite /load_array384 /= /loadW8 /=.
+          do (rewrite initiE 1:/#).
+          simplify.
+          do (rewrite modzMDl || (rewrite (pmod_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#) ||
+              rewrite (mulzC 4096) (_: 4096 = 16 * 256) 1://= -(mulzA _ 16 256) divzE).
+          admit. (* FIXME: apply following block 16 times ??
+          do split.
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite divzMDl 1://= divzMDr 1://=.
+            rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          *)
+        + rewrite res9_r.
+          rewrite /f32u8_t16u16.
+          rewrite -ext_eq_all /all_eq //=.
+          rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
+          do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
+          do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
+          do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
+          rewrite /load_array384 /= /loadW8 //=.
+          do (rewrite initiE 1:/#).
+          simplify.
+          do (rewrite modzMDr || rewrite divzMDl 1://= || (rewrite (pdiv_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#)).
+          admit. (* FIXME: apply following block 16 times ??
+          do split.
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          *)
+        + rewrite res10_l.
+          rewrite /f32u8_t16u16.
+          rewrite -ext_eq_all /all_eq //=.
+          rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
+          do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
+          do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
+          do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
+          rewrite /load_array384 /= /loadW8 //=.
+          do (rewrite initiE 1:/#).
+          simplify.
+          do (rewrite (mulzDr 16 _ _) || rewrite (mulzA _ 16 16) //= || rewrite (mulzC 16 _) || rewrite divzMDr 1://= ||
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp //= || rewrite divzE || rewrite (pmod_small (W8.to_uint _ %% 16) 16) 1:modz_cmp 1://=).
+          admit. (* FIXME: apply following block 16 times ??
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          *)
+        + rewrite res10_r.
+          rewrite /f32u8_t16u16.
+          rewrite -ext_eq_all /all_eq //=.
+          rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
+          (* do split. *)
+          do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
+          do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
+          simplify.
+          do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
+          rewrite /load_array384 /= /loadW8 /=.
+          do (rewrite initiE 1:/#).
+          simplify.
+          do (rewrite modzMDl || (rewrite (pmod_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#) ||
+              rewrite (mulzC 4096) (_: 4096 = 16 * 256) 1://= -(mulzA _ 16 256) divzE).
+          admit. (* FIXME: apply following block 16 times ??
+          do split.
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite divzMDl 1://= divzMDr 1://=.
+            rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          *)
+        + rewrite res11_l.
+          rewrite /f32u8_t16u16.
+          rewrite -ext_eq_all /all_eq //=.
+          rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
+          do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
+          do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
+          do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
+          rewrite /load_array384 /= /loadW8 //=.
+          do (rewrite initiE 1:/#).
+          simplify.
+          do (rewrite modzMDr || rewrite divzMDl 1://= || (rewrite (pdiv_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#)).
+          admit. (* FIXME: apply following block 16 times ??
+          do split.
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          *)
+        + rewrite res11_r.
+          rewrite /f32u8_t16u16.
+          rewrite -ext_eq_all /all_eq //=.
+          rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
+          do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
+          do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
+          do (rewrite -(mulzA 3 _ _) || rewrite (mulzDr 3 _ _)).
+          rewrite /load_array384 /= /loadW8 //=.
+          do (rewrite initiE 1:/#).
+          simplify.
+          do (rewrite (mulzDr 16 _ _) || rewrite (mulzA _ 16 16) //= || rewrite (mulzC 16 _) || rewrite divzMDr 1://= ||
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp //= || rewrite divzE || rewrite (pmod_small (W8.to_uint _ %% 16) 16) 1:modz_cmp 1://=).
+          admit. (* FIXME: apply following block 16 times ??
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          *)
+        + move => k k_lb k_ub.
+          do (rewrite filliE 1:/# //=).
+          do (rewrite /load_array384 /= /loadW8 /=).
+          do (rewrite initiE /=; first by move : ap_lb ap_ub => /#).
+          case (128 * i{2} <= k) => k_tlb.
+            + rewrite k_ub //=.
+              pose x := mem.[to_uint ap{1} + (3 * (k %/ 2) + k %% 2)].
+              pose y := mem.[to_uint ap{1} + (3 * (k %/ 2) + k %% 2 + 1)].
+              move : (W8.to_uint_cmp x) (W8.to_uint_cmp y).
+              move : (modz_cmp (to_uint y) 16).
+              smt(@W8 @Int @Ring.IntID @IntDiv).
+            + simplify.
+              rewrite -rp_def 1:/# //=.
+              move : k_tlb => /ltzNge k_tub {k_ub}.
+              move : (pack128_bounds rp{1} i{2} 0 4096) => /#.
   seq 22 0 : (#{~t6{1}}{~t7{1}}{~t8{1}}{~t9{1}}{~t10{1}}{~t4{1}}{~t11{1}}{~tt{1}}pre /\
               t6{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + k]) /\
               t7{1} = Array16.init (fun k => W16.of_int (nttunpack r{2}).[128 * i{1} + 16 + k]) /\
@@ -5801,8 +5695,11 @@ proof.
 
       have r2_unpack_bnds: forall (k : int), 0 <= k && k < 128 * i{2} + 128 => 0 <= (nttunpack r{2}).[k] && (nttunpack r{2}).[k] < 4096.
         move => j j_bnds.
-        apply (unpack_boundsi r{2} j 0 4096).
-        move : j_bnds i_lb i_tub => /#. rewrite r2_bnds 1:j_bnds.
+        apply (unpack128_boundsi r{2} (i{2} + 1) 0 4096).
+        move : i_lb i_tub => /#.
+        rewrite mulzDr mulz1.
+        apply r2_bnds.
+        rewrite mulzDr mulz1 j_bnds.
 
       case (128 * i{2} + 112 <= k < 128 * i{2} + 128) => k_s1.
         rewrite of_sintK /smod /=.

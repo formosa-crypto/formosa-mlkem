@@ -9,6 +9,7 @@ require import KyberPoly_avx2_proof.
 require import Fq_avx2.
 require import KyberPolyVec.
 require import KyberPolyvec_avx2_vec.
+require import NTT_avx2.
 
 theory KyberPolyvecAVX.
 
@@ -20,6 +21,7 @@ import KyberPolyAVX.
 import KyberPolyVec.
 import KyberPoly.
 import KyberPoly.
+import NTT_Avx2.
 
 lemma polvec_add_corr_h _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
@@ -221,77 +223,11 @@ lemma polvec_reduce_corr _a:
 qed.
 
 
-abbrev nttpack_idx = Array256.of_list witness
-  [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113;
-   2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51; 67; 83; 99; 115;
-   4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117;
-   6; 22; 38; 54; 70; 86; 102; 118; 7; 23; 39; 55; 71; 87; 103; 119;
-   8; 24; 40; 56; 72; 88; 104; 120; 9; 25; 41; 57; 73; 89; 105; 121;
-   10; 26; 42; 58; 74; 90; 106; 122; 11; 27; 43; 59; 75; 91; 107; 123;
-   12; 28; 44; 60; 76; 92; 108; 124; 13; 29; 45; 61; 77; 93; 109; 125;
-   14; 30; 46; 62; 78; 94; 110; 126; 15; 31; 47; 63; 79; 95; 111; 127;
-   128; 144; 160; 176; 192; 208; 224; 240; 129; 145; 161; 177; 193; 209; 225; 241;
-   130; 146; 162; 178; 194; 210; 226; 242; 131; 147; 163; 179; 195; 211; 227; 243;
-   132; 148; 164; 180; 196; 212; 228; 244; 133; 149; 165; 181; 197; 213; 229; 245;
-   134; 150; 166; 182; 198; 214; 230; 246; 135; 151; 167; 183; 199; 215; 231; 247;
-   136; 152; 168; 184; 200; 216; 232; 248; 137; 153; 169; 185; 201; 217; 233; 249;
-   138; 154; 170; 186; 202; 218; 234; 250; 139; 155; 171; 187; 203; 219; 235; 251;
-   140; 156; 172; 188; 204; 220; 236; 252; 141; 157; 173; 189; 205; 221; 237; 253;
-   142; 158; 174; 190; 206; 222; 238; 254; 143; 159; 175; 191; 207; 223; 239; 255].
-
-abbrev nttunpack_idx = Array256.of_list witness
-  [0; 8; 16; 24; 32; 40; 48; 56; 64; 72; 80; 88; 96; 104; 112; 120;
-   1; 9; 17; 25; 33; 41; 49; 57; 65; 73; 81; 89; 97; 105; 113; 121;
-   2; 10; 18; 26; 34; 42; 50; 58; 66; 74; 82; 90; 98; 106; 114; 122;
-   3; 11; 19; 27; 35; 43; 51; 59; 67; 75; 83; 91; 99; 107; 115; 123;
-   4; 12; 20; 28; 36; 44; 52; 60; 68; 76; 84; 92; 100; 108; 116; 124;
-   5; 13; 21; 29; 37; 45; 53; 61; 69; 77; 85; 93; 101; 109; 117; 125;
-   6; 14; 22; 30; 38; 46; 54; 62; 70; 78; 86; 94; 102; 110; 118; 126;
-   7; 15; 23; 31; 39; 47; 55; 63; 71; 79; 87; 95; 103; 111; 119; 127;
-   128; 136; 144; 152; 160; 168; 176; 184; 192; 200; 208; 216; 224; 232; 240; 248;
-   129; 137; 145; 153; 161; 169; 177; 185; 193; 201; 209; 217; 225; 233; 241; 249;
-   130; 138; 146; 154; 162; 170; 178; 186; 194; 202; 210; 218; 226; 234; 242; 250;
-   131; 139; 147; 155; 163; 171; 179; 187; 195; 203; 211; 219; 227; 235; 243; 251;
-   132; 140; 148; 156; 164; 172; 180; 188; 196; 204; 212; 220; 228; 236; 244; 252;
-   133; 141; 149; 157; 165; 173; 181; 189; 197; 205; 213; 221; 229; 237; 245; 253;
-   134; 142; 150; 158; 166; 174; 182; 190; 198; 206; 214; 222; 230; 238; 246; 254;
-   135; 143; 151; 159; 167; 175; 183; 191; 199; 207; 215; 223; 231; 239; 247; 255].
-
-
-op unpack(a : 'a Array256.t) = 
-    Array256.init (fun i => a.[nttunpack_idx.[i]]).
-
-op pack(a : 'a Array256.t) = 
-    Array256.init (fun i => a.[nttpack_idx.[i]]).
-
-lemma packK : cancel pack<:'a> unpack<:'a>
-  by rewrite /cancel => x; apply Array256.all_eq_eq => @/unpack @/pack @/all_eq/=.
-
-lemma unpackK : cancel unpack<:'a> pack<:'a>
-  by rewrite /cancel => x; apply Array256.all_eq_eq => @/unpack @/pack @/all_eq/=.
-
-op unpackv(v : 'a Array768.t) = 
-   Array768.init (fun i =>
-      if 0 <= i < 256 
-      then (unpack (subarray256 v 0)).[i]
-      else if 256 <= i < 512
-           then (unpack (subarray256 v 1)).[i-256]
-           else (unpack (subarray256 v 2)).[i-512]).
-
-op packv(v : 'a Array768.t) = 
-   Array768.init (fun i =>
-      if 0 <= i < 256 
-      then (pack (subarray256 v 0)).[i]
-      else if 256 <= i < 512
-           then (pack (subarray256 v 1)).[i-256]
-           else (pack (subarray256 v 2)).[i-512]).
-
-
 lemma polyvec_tobytes_corr :
     equiv [ Jkem_avx2.M.__polyvec_tobytes ~ Jkem.M.__polyvec_tobytes :
              pos_bound768_cxq a{1} 0 256 2 /\
              pos_bound768_cxq a{2} 0 256 2 /\
-             lift_array768 a{1} = unpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
+             lift_array768 a{1} = nttunpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
 admitted. (* Miguel *)
 
 
@@ -302,9 +238,9 @@ lemma polyvec_add2_corr  (ab bb : int):
     equiv [ Jkem_avx2.M.__polyvec_add2 ~ Jkem.M.__polyvec_add2 :
       _a = lift_array768 r{2} /\
       _b = lift_array768 b{2} /\ signed_bound768_cxq r{2} 0 768 ab /\ signed_bound768_cxq b{2} 0 768 bb /\
-      _a = packv (lift_array768 r{1}) /\
-      _b = packv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb
-           ==> lift_array768 res{1} = unpackv (lift_array768  res{2}) /\
+      _a = nttpackv (lift_array768 r{1}) /\
+      _b = nttpackv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb
+           ==> lift_array768 res{1} = nttunpackv (lift_array768  res{2}) /\
                signed_bound768_cxq res{1} 0 768 (ab + bb) /\
                signed_bound768_cxq res{2} 0 768 (ab + bb) 
               ].
@@ -316,42 +252,232 @@ transitivity {1} {r0 <@ Mprevec.polyvec_add2(r,b); }
   _b = lift_array768 b{2} /\
   signed_bound768_cxq r{2} 0 768 ab /\
   signed_bound768_cxq b{2} 0 768 bb /\
-  _a = packv (lift_array768 r{1}) /\
-  _b = packv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
-      lift_array768 r0{1} = unpackv (lift_array768 r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
+  _a = nttpackv (lift_array768 r{1}) /\
+  _b = nttpackv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
+      lift_array768 r0{1} = nttunpackv (lift_array768 r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
   + symmetry. call prevec_eq_poly_add2 => //.
-have corr1 := (polvec_add_corr (unpackv _a) (unpackv _b) ab bb abb bbb). call {1} corr1.
+have corr1 := (polvec_add_corr (nttunpackv _a) (nttunpackv _b) ab bb abb bbb). call {1} corr1.
 have corr2 := (polyvec_add_corr _a _b ab bb abb bbb); call {2} corr2.
 
 auto => />. 
-move => &1 &2 ????->->?????; do split.  admit. admit.
+move => &1 &2 ????->->??rr?rval; do split; 1,2: by rewrite packvK.  
+move => ??rr0?r0val.
+rewrite tP => k kb.
+rewrite /(lift_array768 rr0) mapiE //= r0val // !packvK.
+have  -> : lift_array768 rr = 
+   Array768.init (fun k => (nttpackv (lift_array768 r{1})).[k] + (nttpackv (lift_array768 b{1})).[k])
+ by rewrite tP => kk kkb; rewrite initiE //= /(lift_array768 rr) mapiE //= /#.
+rewrite /nttunpackv /nttpackv initiE //=.
+case (0<=k<256).
++ move => *.
+  rewrite /subarray256 initiE //= initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  pose a := nttunpack_idx.[k].
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  pose b := nttpack_idx.[a].
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite -/b.
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /b /a.
+  move : nttpack_idxK; rewrite allP. smt(mem_iota).  
+
+case (256<=k<512).
++ move => *.
+  rewrite /subarray256 initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  pose a := nttunpack_idx.[k - 256].
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite ifF. smt(nttunpack_bnd Array256.allP).
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  pose b := nttpack_idx.[a].
+  rewrite ifF. smt(nttunpack_bnd Array256.allP).
+  rewrite ifT. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /a.
+  move : nttpack_idxK; rewrite allP. smt(mem_iota).  
+
 move => *.
-admit.
+rewrite /subarray256 initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+pose a := nttunpack_idx.[k - 512].
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+pose b := nttpack_idx.[a].
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite ifF. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
+rewrite /a.
+move : nttpack_idxK; rewrite allP. smt(mem_iota).  
 qed.
 
 lemma polyvec_reduce_corr _a :
     equiv [ Jkem_avx2.M.__polyvec_reduce ~ Jkem.M.__polyvec_reduce :
-       _a  = lift_array768 r{2} /\  _a  = packv (lift_array768 r{1})  ==>
+       _a  = lift_array768 r{2} /\  _a  = nttpackv (lift_array768 r{1})  ==>
        (forall k, 0 <= k < 768 => bpos16 res{1}.[k] (2*q)) /\
        (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
-              lift_array768 res{1} = unpackv (lift_array768 res{2}) ].
+              lift_array768 res{1} = nttunpackv (lift_array768 res{2}) ].
 proc*. 
 transitivity {1} {r0 <@ Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})
-       (_a = lift_array768 r{2} /\ _a = packv (lift_array768 r{1})   ==> 
+       (_a = lift_array768 r{2} /\ _a = nttpackv (lift_array768 r{1})   ==> 
       (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
   (forall (k : int), 0 <= k && k < 768 => bpos16 r0{2}.[k] (2 * q)) /\
-  lift_array768 r0{1} = unpackv (lift_array768  r0{2})); 1,2: by smt().
+  lift_array768 r0{1} = nttunpackv (lift_array768  r0{2})); 1,2: by smt().
   + symmetry. call prevec_eq_poly_reduce => //.
-have corr1 := (polvec_reduce_corr (unpackv _a)). call {1} corr1.
+have corr1 := (polvec_reduce_corr (nttunpackv _a)). call {1} corr1.
 have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
 
 auto => />. 
-move => &1 &2 ???->?; do split. admit. 
+move => &1 &2 ?????; do split. smt(packvK unpackvK). 
 move => ??<-?.
-admit.
+smt(packvK unpackvK). 
 qed.
 
+require import KyberPoly_avx2_vec.
+
+equiv pointwiseequiv : 
+  Jkem_avx2.M.__polyvec_pointwise_acc ~   M.__polyvec_pointwise_acc :
+    lift_array768 arg{1}.`2 = nttunpackv (lift_array768 arg{2}.`1) /\
+    lift_array768 arg{1}.`3 = nttunpackv (lift_array768 arg{2}.`2) /\
+    signed_bound768_cxq arg{1}.`2 0 768 2 /\
+    signed_bound768_cxq arg{1}.`3 0 768 2 /\
+    signed_bound768_cxq arg{2}.`1 0 768 2 /\
+    signed_bound768_cxq arg{2}.`2 0 768 2
+    ==> 
+    lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
+    signed_bound_cxq res{1} 0 256 2 /\ 
+    signed_bound_cxq res{2} 0 256 2.
+proc => /=.
+seq 2 3 :(#pre /\ 
+         lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
+         signed_bound_cxq r{1} 0 256 3 /\
+         signed_bound_cxq r{2} 0 256 3).
+ecall (basemulequiv). auto => />.
+move => &1 &2 H H0 H1 H2 H3 H4. do split. 
++ move : H; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H k kb.
+  move : (H k _); 1: smt(). rewrite !initiE//= 1:/# kb /=.
+  rewrite !mapiE //= 1:/# !initiE//=.
+  pose a := nttunpack_idx.[k].
+  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
+  move : (H0 k _); 1: smt(). rewrite !initiE//= 1:/# kb /=.
+  rewrite !mapiE //= 1:/# !initiE//=.
+  pose a := nttunpack_idx.[k].
+  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
+  move : (H1 k _); 1: smt(). rewrite !initiE//=.
+move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
+move : (H2 k _); 1: smt(). rewrite !initiE//=.
++ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
+  move : (H3 k _); 1: smt(). rewrite !initiE//=.
+move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
+move : (H4 k _); 1: smt(). rewrite !initiE//=.
+
+
+seq 1 1 :(#pre /\ 
+         lift_array256 t{1} = nttunpack (lift_array256 t{2}) /\
+         signed_bound_cxq t{1} 0 256 3 /\
+         signed_bound_cxq t{2} 0 256 3).
+ecall (basemulequiv). auto => />.
+move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split. 
++ move : H; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H k kb.
+  move : (H (256+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
+  rewrite ifF 1:/# !mapiE //= 1:/# ifT 1:/# !initiE//=. 
+  pose a := nttunpack_idx.[k].
+  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
+  move : (H0 (256+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
+  rewrite ifF 1:/# !mapiE //= 1:/# ifT 1:/# !initiE//=. 
+  pose a := nttunpack_idx.[k].
+  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
+  move : (H1 k _); 1: smt(). rewrite !initiE//=. smt().
+move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
+move : (H2 k _); 1: smt(). rewrite !initiE//=. smt().
++ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
+  move : (H3 k _); 1: smt(). rewrite !initiE//=. smt().
+move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
+move : (H4 k _); 1: smt(). rewrite !initiE//=. smt().
+
+seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\ 
+         lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
+         signed_bound_cxq r{1} 0 256 6 /\
+         signed_bound_cxq r{2} 0 256 6).
+have Hcall:= addequiv 3 3 _ _ => //.
+call Hcall.
+auto => />.
+move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10. do split. 
++ rewrite lift256_nttunpack. apply H5.
++ rewrite lift256_nttunpack. apply H8.
+move => ?? r2 r1 ???.
+rewrite -lift256_nttunpack. assumption.
+
+seq 1 1 :(#pre /\ 
+         lift_array256 t{1} = nttunpack (lift_array256 t{2}) /\
+         signed_bound_cxq t{1} 0 256 3 /\
+         signed_bound_cxq t{2} 0 256 3).
+ecall (basemulequiv). auto => />.
+move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split. 
++ move : H; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H k kb.
+  move : (H (512+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
+  rewrite ifF 1:/# !mapiE //= 1:/# ifF 1:/# !initiE//=. 
+  pose a := nttunpack_idx.[k].
+  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
+  move : (H0 (512+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
+  rewrite ifF 1:/# !mapiE //= 1:/# ifF 1:/# !initiE//=. 
+  pose a := nttunpack_idx.[k].
+  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
+  move : (H1 k _); 1: smt(). rewrite !initiE//=. smt().
+move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
+move : (H2 k _); 1: smt(). rewrite !initiE//=. smt().
++ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
+  move : (H3 k _); 1: smt(). rewrite !initiE//=. smt().
+move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
+move : (H4 k _); 1: smt(). rewrite !initiE//=. smt().
+
+
+seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\ 
+         lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
+         signed_bound_cxq r{1} 0 256 9 /\
+         signed_bound_cxq r{2} 0 256 9).
+have Hcall:= addequiv 6 3 _ _ => //.
+call Hcall.
+auto => />.
+move => &1 &2 ????????????. do split. 
++ rewrite lift256_nttunpack. assumption.
++ rewrite lift256_nttunpack. assumption.
+move => ?? r2 r1 ???.
+rewrite -lift256_nttunpack. assumption.
+
+call reduceequiv.
+auto => />.
+move => &1 &2 ????????? r1 r2 ?.
+rewrite /pos_bound256_cxq /signed_bound_cxq => H H0. smt().
+qed.
 
 end KyberPolyvecAVX.
 

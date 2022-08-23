@@ -3,127 +3,56 @@ from Jasmin require import JModel.
 require import Array32 Array128 Array256 Array768 Array960 Array1088 Array2304.
 require import KyberPoly  KyberPolyVec KyberINDCPA.
 require import KyberPoly_avx2_proof.
-require import KyberPolyvec_avx2_proof.
+require import KyberPoly_avx2_vec.
+require import KyberPoly_avx2_prevec.
+require import KyberPolyVec_avx2_proof.
 require import Jkem_avx2 Jkem.
+require import NTT_avx2.
+require import NTT_Fq.
 
 import Kyber.
 import KyberSpec.
 import KyberPoly.
 import KyberPolyVec.
 import KyberPolyvecAVX.
+import NTT_Avx2.
 
 equiv sha3equiv :
  Jkem_avx2.M._sha3_512_32 ~ M._sha3512_32 : ={arg} ==> ={res}.
 admitted. 
 
-lemma all_iota P (v : 'a Array256.t) : 
-   Array256.all P v <=> all P (map (fun i => v.[i]) (iotared 0 256)).
-rewrite iotaredE all_map /= /preim /= /#.
-qed.
-
-lemma pack_bnd : 
-  all (fun x => 0 <= x < 256) nttpack_idx by rewrite all_iota /=.
-
-lemma unpack_bnd : 
-  all (fun x => 0 <= x < 256) nttunpack_idx by rewrite all_iota /=.
-
-op unpackm(v : 'a Array2304.t) = 
-   Array2304.init (fun i =>
-      if 0 <= i < 768 
-      then (unpackv (subarray768 v 0)).[i]
-      else if 768 <= i < 2*768
-           then (unpackv (subarray768 v 1)).[i-768]
-           else (unpackv (subarray768 v 2)).[i-2*768]).
-
-op packm(v : 'a Array2304.t) = 
-   Array2304.init (fun i =>
-      if 0 <= i < 768 
-      then (packv (subarray768 v 0)).[i]
-      else if 768 <= i < 2*768
-           then (packv (subarray768 v 1)).[i-768]
-           else (packv (subarray768 v 2)).[i-2*768]).
-
-lemma pack_pred (v : 'a Array256.t) P: 
-   (all P (pack v)) <=>
-   (all P v).
-rewrite /pack /=; split.
-+ rewrite all_iota /=;smt(Array256.initiE Array256.allP).
-rewrite allP all_iota /= /#.
-qed.
-
-lemma unpack_pred (v : 'a Array256.t) P: 
-   (all P (unpack v)) <=>
-   (all P v).
-rewrite /unpack /=; split.
-+ rewrite all_iota /=;smt(Array256.initiE Array256.allP).
-rewrite allP all_iota /= /#.
-qed.
-(*
-lemma packv_sub v P :
-   (all P (pack (subarray256 v 0 256)) /\
-    all P (pack (subarray256 v 256 256)) /\
-    all P (pack (subarray256 v 512 256))) <=>
-    app P (packv v).
-*)
-lemma packv_pred (v : 'a Array768.t) P: 
-   (all P (packv v)) <=>
-   (all P v).
-rewrite /packv !allP; split.
-move => H i ib. 
-case (0 <= i < 256).
-+ move => ibb; move : (H (nttunpack_idx.[i]) _); 1: smt(Array256.allP unpack_bnd).
-  rewrite initiE //=; 1: smt(Array256.allP unpack_bnd). 
-  have -> /= : (0 <= nttunpack_idx.[i] && nttunpack_idx.[i] < 256) by smt(Array256.allP unpack_bnd).
-  rewrite /pack /subarray256 /= !initiE //=; 1: by smt(Array256.allP unpack_bnd).
-  rewrite initiE //=; 1: by smt(Array256.allP unpack_bnd pack_bnd).
-
-
-admitted.
-
-lemma unpackv_pred (v : 'a Array768.t) P i: 
-   (0 <= i < 256 => P ((unpackv v).[i])) <=>
-   (0 <= i < 256 => P (v.[i])).
-admitted.
-
+  
 equiv genmatrixequiv b :
   Jkem_avx2.M.__gen_matrix ~  M.__gen_matrix :
     arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = b2i b /\ arg{2}.`2 =  W64.of_int (b2i b) ==>
-    res{1} = unpackm res{2} /\
+    res{1} = nttunpackm res{2} /\
     pos_bound2304_cxq res{1} 0 2304 2 /\
     pos_bound2304_cxq res{2} 0 2304 2.
 admitted.
 
-equiv nttequiv :
- Jkem_avx2.M.__polyvec_ntt ~ M.__polyvec_ntt : 
-   ={arg} /\ 
-   signed_bound768_cxq arg{1} 0 768 2 /\ 
-   signed_bound768_cxq arg{2} 0 768 2 ==>
-   res{1} = unpackv res{2} /\ 
-   pos_bound768_cxq res{1} 0 768 2 /\ 
-   pos_bound768_cxq res{2} 0 768 2.
-admitted.
+lemma lift768_nttunpack (v : W16.t Array768.t):
+  lift_array768 (nttunpackv v) = nttunpackv (lift_array768 v).
+rewrite /lift_array768 /nttunpackv tP => k kb.
+rewrite mapiE //= !initiE //=.
+case (0<=k <256).
++ move => *; rewrite /subarray256 /nttunpack !initiE //=.
+  pose a:=nttunpack_idx.[k].
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite mapiE //=. smt(nttunpack_bnd Array256.allP).
+case (256<=k <512).
++ move => *; rewrite /subarray256 /nttunpack !initiE //=. smt(). smt().
+  pose a:=nttunpack_idx.[k-256].
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+  rewrite mapiE //=. smt(nttunpack_bnd Array256.allP).
+move => *; rewrite /subarray256 /nttunpack !initiE //=. smt(). smt().
+pose a:=nttunpack_idx.[k-512].
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
+rewrite mapiE //=. smt(nttunpack_bnd Array256.allP).
+qed.
 
-equiv frommontequiv : 
-  Jkem_avx2.M._poly_frommont ~   M._poly_frommont :
-    arg{1} = unpack arg{2} ==> 
-    res{1} = unpack res{2} /\
-    signed_bound_cxq res{1} 0 768 2 /\ 
-    signed_bound_cxq res{2} 0 768 2.
-admitted.
-
-equiv pointwiseequiv : 
-  Jkem_avx2.M.__polyvec_pointwise_acc ~   M.__polyvec_pointwise_acc :
-    arg{1}.`2 = unpackv arg{2}.`1 /\
-    arg{1}.`3 = unpackv arg{2}.`2 /\
-    signed_bound768_cxq arg{1}.`2 0 768 2 /\
-    signed_bound768_cxq arg{1}.`3 0 768 2 /\
-    signed_bound768_cxq arg{2}.`1 0 768 2 /\
-    signed_bound768_cxq arg{2}.`2 0 768 2
-    ==> 
-    res{1} = unpack res{2} /\
-    signed_bound_cxq res{1} 0 768 2 /\ 
-    signed_bound_cxq res{2} 0 768 2.
-admitted.
 
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
    equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
@@ -176,7 +105,7 @@ sp 3 3.
 
 seq 17 17  : (#pre /\ ={publicseed, noiseseed,sskp,spkp}); 1:  by conseq />; sim;  call( sha3equiv); conseq />; sim. 
 
-seq 1 2 : (#pre /\ aa{1} = unpackm a{2} /\
+seq 1 2 : (#pre /\ aa{1} = nttunpackm a{2} /\
            pos_bound2304_cxq aa{1} 0 2304 2 /\
            pos_bound2304_cxq a{2} 0 2304 2); 1: by 
    conseq />; call (genmatrixequiv false); auto => />.
@@ -189,85 +118,317 @@ seq 10 18 : (#pre /\ ={skpv,e} /\
     signed_bound768_cxq skpv{2} 0 768 1 /\
     signed_bound768_cxq e{2} 0 768 1). 
 conseq />.
-admit. (* to do *)
+admit. (* noise samplings *)
 
 seq 2 2 : (#{/~skpv{1}}{~e{1}}{~skpv{2}}{~e{2}}pre /\ 
-           skpv{1} = unpackv skpv{2} /\
-           e{1} = unpackv e{2} /\
+           lift_array768 skpv{1} = nttunpackv (lift_array768 skpv{2}) /\
+           lift_array768 e{1} = nttunpackv (lift_array768 e{2}) /\
            pos_bound768_cxq skpv{1} 0 768 2 /\
            pos_bound768_cxq skpv{2} 0 768 2 /\
            pos_bound768_cxq e{1} 0 768 2 /\
            pos_bound768_cxq e{2} 0 768 2); 1: 
  by  conseq />; call (nttequiv); call (nttequiv); auto => /> /#.
 
-do 3!(wp; call frommontequiv; wp; call pointwiseequiv); auto => />.
+(* First ip *)
 
-move => &1 &2 *.
-do split. 
-+ rewrite /unpackm /unpackv tP /= => k kb.
-  by rewrite !initiE // 1:/# /= kb /= initiE //=.
-+ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
+seq 8 4: (#pre /\ 
+              lift_array256 (subarray256 pkpv{1} 0) = nttunpack (lift_array256 (subarray256 pkpv{2} 0)) /\
+              signed_bound768_cxq pkpv{1} 0 256 2 /\
+              signed_bound768_cxq pkpv{2} 0 256 2 /\ i{1} = 1).
+wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
++ rewrite -lift768_nttunpack. congr.
+  rewrite /nttunpackm /nttunpackv tP /= => k kb.
+  rewrite !initiE // 1:/# /= kb /= initiE //=. 
 + rewrite /signed_bound768_cxq => k kb; rewrite initiE //=. 
++ rewrite /unpackm /unpackv /=.
+  rewrite !initiE // 1:/# /= kb /= initiE //=.
   rewrite fun_if. 
   case (0<=k<256).
   + move => kbb;rewrite /subarray256. 
-    move : (unpack_pred (Array256.init (fun (k0 : int) => skpv{2}.[256 * 0 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q) k).
-    move => /= [H0 H1]. rewrite H1. move => *. rewrite initiE //=. smt(). smt().
+    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray768 a{2} 0).[256 * 0 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
+    rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array768.initiE). smt().
   case (256<=k<512).
   + move => kbb;rewrite /subarray256. 
-    move : (unpack_pred (Array256.init (fun (k0 : int) => skpv{2}.[256 * 1 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q) (k-256)).
-    move => /= [H0 H1]. rewrite H1. move => *. rewrite initiE //=. smt(). smt(). done.
+    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray768 a{2} 0).[256 * 1 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
+    rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array768.initiE). smt(). auto.
   case (512<=k<768).
-  + move => kbb;rewrite /subarray256. 
-    move : (unpack_pred (Array256.init (fun (k0 : int) => skpv{2}.[256 * 2 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q) (k-512)).
-    move => /= [H0 H1]. rewrite H1. move => *. rewrite initiE //=. smt(). smt(). done.
+  + move => kbbb;rewrite /subarray256. 
+    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray768 a{2} 0).[256 * 2 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
+    rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array768.initiE). smt(). auto.
   by smt().
-+ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
-+ by smt().
-move => *.
-do split. 
-+ rewrite tP => k kb.
-  rewrite !initiE //= 1:/# kb /=.
-  rewrite initiE //=.
-  rewrite initiE //=. 
-  rewrite initiE //=. smt(). 
-  rewrite initiE //=. smt(). 
-  smt().
-move => *.
++ move : H10; rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
++ move : H8; rewrite /pos_bound768_cxq /signed_bound_768_cxq; smt(Array768.initiE).
++ move : H10; rewrite /pos_bound768_cxq /signed_bound_768_cxq; smt(Array768.initiE).
+
+move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
+  rewrite kb /=. 
+  have -> /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  move : H20; rewrite /lift_array256 tP => H20.
+  move : (H20 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=;smt(nttunpack_bnd Array256.allP).
+
+move => H23 r3 r4 H24 H25 H26;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite /subarray256 /=.
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite kb /=. 
+  have -> /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  move : H24; rewrite /lift_array256 tP => H24.
+  move : (H24 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=;smt(nttunpack_bnd Array256.allP).
+
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite kb /=. smt().
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite kb /=. smt().
+
+(* Second ip *)
+
+seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 1) = nttunpack (lift_array256 (subarray256 pkpv{2} 1)) /\
+              signed_bound768_cxq pkpv{1} 256 512 2 /\
+              signed_bound768_cxq pkpv{2} 256 512 2 /\ i{1} = 2).
+wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
++ rewrite -lift768_nttunpack. congr.
+  rewrite /nttunpackm /nttunpackv tP /= => k kb.
+  rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifT 1:/# initiE //=. 
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
+
+move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifT /=; 1,2: smt(nttunpack_bnd Array256.allP).
+  move : H23; rewrite /lift_array256 tP => H23.
+  move : (H23 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=;smt(nttunpack_bnd Array256.allP).
+
+move => H26 r3 r4 H27 H28 H29;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite /subarray256 /=.
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
+  move : (H15 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !ifF /=. smt(). 
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !ifF /=. smt(). 
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite /subarray256 /=.
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifT /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  move : H27; rewrite /lift_array256 /subarray256 tP => H27.
+  move : (H27 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=; smt(nttunpack_bnd Array256.allP).
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !initiE  //=. smt(). smt().
+
+(* Third ip *)
+
+seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 2) = nttunpack (lift_array256 (subarray256 pkpv{2} 2)) /\
+              signed_bound768_cxq pkpv{1} 512 768 2 /\
+              signed_bound768_cxq pkpv{2} 512 768 2).
+wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20; do split.
++ rewrite -lift768_nttunpack. congr.
+  rewrite /nttunpackm /nttunpackv tP /= => k kb.
+  rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# initiE //=. 
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
+
+move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifT /=; 1,2: smt(nttunpack_bnd Array256.allP).
+  move : H26; rewrite /lift_array256 tP => H26.
+  move : (H26 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=;smt(nttunpack_bnd Array256.allP).
+
+  move => H29 r3 r4 H30 H31 H32;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite /subarray256 /=.
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
+  move : (H15 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !ifF /=. smt(). 
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !ifF /=. smt(). 
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite /subarray256 /=.
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  move : H18; rewrite /lift_array256 /subarray256 tP => H18.
+  move : (H18 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !ifF /=. smt(). 
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !ifF /=. smt(). 
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite /subarray256 /=.
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
+  rewrite !ifT /=; 1..2: smt(nttunpack_bnd Array256.allP).
+  move : H30; rewrite /lift_array256 /subarray256 tP => H30.
+  move : (H30 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=; smt(nttunpack_bnd Array256.allP).
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !initiE  //=. smt(). smt().
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite !initiE  //=. smt(). smt().
+
+
+auto => />.
+
+move => &1 &2 ???????????????H1??H2??H3??. 
 do split.
-+ admit.
-+ admit. 
-+ admit. 
-move => *.
-do split. 
-+ admit. 
-move => *.
-do split. 
-+ admit.
-+ admit.
-+ admit.
-move => *.
-do split. 
-+ admit.
-move => *.
-do split. 
-+ admit.
 + smt().
-+ admit.
-+ admit.
-+ admit.
-+ admit.
-move => *.
-do split.
-+ admit.
-move => *; do split.
-+ admit.
-+ admit.
-+ admit.
++ smt(). 
++ rewrite /lift_array256 /subarray256 tP in H1.
+  rewrite /lift_array256 /subarray256 tP in H2.
+  rewrite /lift_array256 /subarray256 tP in H3.
+  rewrite /nttpackv tP => k kb.
+  rewrite initiE //=.
+  case (0 <= k && k < 256).
+  + move => kbb.
+    move : (H1 (nttpack_idx.[k]) _); 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+    pose a:=nttpack_idx.[k].
+    rewrite !mapiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite !initiE //=; 1..2: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    pose b:=nttunpack_idx.[a].
+    rewrite !mapiE //=; 1:  smt(nttpack_bnd nttunpack_bnd Array256.allP).
+    rewrite /lift_array768 /subarray256 /=.
+    pose c := nttpack_idx.[k].
+  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite !mapiE //=; 1:  smt(nttpack_bnd Array256.allP).
+  have -> : b = k. move : nttunpack_idxK; rewrite /b /a allP; smt(mem_iota).
+  smt().
+  case (256 <= k && k < 512).
+  + move => kbb ?.
+    move : (H2 (nttpack_idx.[k-256]) _); 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+    pose a:=nttpack_idx.[k-256].
+    rewrite !mapiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    pose b:=nttunpack_idx.[a].
+    rewrite !mapiE //=; 1:  smt(nttpack_bnd nttunpack_bnd Array256.allP).
+    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite /lift_array768 /subarray256 /=.
+    pose c := nttpack_idx.[k-256].
+  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite !mapiE //=; 1:  smt(nttpack_bnd Array256.allP).
+  have -> : b = k-256. move : nttunpack_idxK; rewrite /b /a allP; smt(mem_iota).
+  smt().
+
+  + move => *.
+    move : (H3 (nttpack_idx.[k-512]) _); 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+    pose a:=nttpack_idx.[k-512].
+    rewrite !mapiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    pose b:=nttunpack_idx.[a].
+    rewrite !mapiE //=; 1:  smt(nttpack_bnd nttunpack_bnd Array256.allP).
+    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite /lift_array768 /subarray256 /=.
+    pose c := nttpack_idx.[k-512].
+  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite !mapiE //=; 1:  smt(nttpack_bnd Array256.allP).
+  have -> : b = k-512. move : nttunpack_idxK; rewrite /b /a allP; smt(mem_iota).
+  smt().
+
++  smt(unpackvK).
++ smt().
++ smt().
 move => *.
 do split. 
++ smt(unpackvK).
+move => *.
+do split. 
++ smt().
 + smt().
 smt().
+
 qed.
 
 (***************************************************)
@@ -315,8 +476,7 @@ transitivity {1} { Jkem.M.__indcpa_enc(sctp,msgp,pkp,noiseseed);}
    last by call(kyber_correct_enc mem _ctp _pkp); auto => />. 
 
 inline{1} 1; inline {2} 1.
-admitted. (* We should change the axv2 indcpa file to remove useless differences to the ref *)
-
+admitted. 
 (***************************************************)
 
 lemma kyber_correct_enc_1_avx2 mem _pkp : 

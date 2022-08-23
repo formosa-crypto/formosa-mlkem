@@ -2,6 +2,7 @@ require import AllCore List StdBigop StdOrder IntDiv Distr.
 (*---*) import IntOrder Bigint MUniform Range.
 
 
+
 (* ? Distr.ec *)
 
 import Bigreal Bigreal.BRA.
@@ -16,6 +17,164 @@ rewrite dlet1E (RealSeries.sumE_fin _ s) //= => x.
 rewrite RField.unitrM; move=> [??].
 apply (H x); smt(ge0_mu1).
 qed.
+
+lemma take_rcons ['a] n (l: 'a list) x:
+ take n (rcons l x) = if n <= size l then take n l else rcons l x.
+proof.
+rewrite -cats1 take_cat.
+case: (n < size l) => C1.
+ by rewrite (_:n<=size l) 1:/#.
+case: (n=size l) => C2.
+ by rewrite (_:n-size l<=0) 1:/# (_:n<=size l) 1:/# /= C2 take_size cats0.
+by rewrite (_:!n-size l<=0) 1:/# (_:!n<=size l) 1:/#.
+qed.
+
+(* upgrade DList? *)
+require import DList.
+abstract theory ProgramDList.
+  type t.
+
+  module Sample = {
+    proc sample(d: t distr, n:int): t list = {
+      var r;
+
+      r <$ dlist d n;
+      return r;
+    }
+  }.
+
+  module SampleCons = {
+    proc sample(d: t distr, n:int): t list = {
+      var r, rs;
+
+      rs <$ dlist d (n - 1);
+      r  <$ d;
+      return r::rs;
+    }
+  }.
+
+  module Loop = {
+    proc sample(d: t distr, n:int): t list = {
+      var i, r, l;
+
+      i <- 0;
+      l <- [];
+      while (i < n) {
+        r <$ d;
+        l <- r :: l;
+        i <- i + 1;
+      }
+      return l;
+    }
+  }.
+
+  module LoopSnoc = {
+    proc sample(d: t distr, n:int): t list = {
+      var i, r, l;
+
+      i <- 0;
+      l <- [];
+      while (i < n) {
+        r <$ d;
+        l <- l ++ [r];
+        i <- i + 1;
+      }
+      return l;
+    }
+  }.
+
+lemma pr_Sample (_d: t distr) _n &m xs:
+ Pr[Sample.sample(_d,_n) @ &m: res = xs]
+ = mu (dlist _d _n) (pred1 xs).
+  proof. by byphoare (_: d = _d /\ n = _n ==> res = xs)=> //=; proc; rnd. qed.
+
+equiv Sample_SampleCons_eq:
+ Sample.sample ~ SampleCons.sample: 
+  0 < n{1} /\ ={d,n} ==> ={res}.
+proof.
+bypr (res{1}) (res{2})=> //= &1 &2 xs [lt0_n] [<- <-].
+rewrite (pr_Sample d{1} n{1} &1 xs); case (size xs = n{1})=> [En|].
+case xs En lt0_n=> [|x xs E lt0_n]; 1:smt().
+ rewrite -E dlistS1E.
+ byphoare (_: d=d{1} /\ n = size xs + 1 ==> x::xs = res)=> //=; last by smt().
+ proc; simplify.
+ seq 1: (rs = xs) (mu (dlist d{1} (size xs)) (pred1 xs)) (mu d (pred1 x)) _ 0%r.
+ + done.
+ + by rnd (pred1 xs); skip; smt().
+ + by rnd (pred1 x); skip; smt().
+ + by hoare; auto; smt().
+ + smt().
+move=> len_xs; rewrite dlist1E 1:/# (_: n{1} <> size xs) /= 1:/#.
+byphoare (_: n = n{1} ==> xs = res)=> //=; hoare.
+by proc; auto => /> &m l; rewrite supp_dlist /#.
+qed.
+
+equiv Sample_Loop_eq: Sample.sample ~ Loop.sample: ={d,n} ==> ={res}.
+proof.
+proc*; exists* n{1}; elim* => _n.
+move: (eq_refl _n); case (_n <= 0)=> //= h.
+ by inline *; rcondf{2} 5;auto;smt (supp_dlist0 weight_dlist0).
+have {h} h: 0 <= _n by smt ().
+call (_: _n = n{1} /\ ={d,n} ==> ={res})=> //=.
+elim _n h=> //= [|_n le0_n ih].
+ proc; rcondf{2} 3; auto => /> *; split.
+  smt(dlist0 dunit_ll).
+ smt(supp_dlist size_eq0).
+case (_n = 0)=> [-> | h].
+ proc; rcondt{2} 3; 1:(by auto); rcondf{2} 6; 1:by auto.
+ wp; rnd (fun x => head witness x) (fun x => [x]).
+ auto => /> &1; split => [ rR ? | _ rL ].
+  by rewrite dlist1E //= big_consT big_nil.
+ by rewrite supp_dlist //;case rL => //=; smt (size_eq0).
+transitivity SampleCons.sample
+             (={d,n} /\ 0 < n{1} ==> ={res})
+             (_n + 1 = n{1} /\ ={d,n} /\ 0 < n{1} ==> ={res})=> //=; 1:smt().
+ by conseq Sample_SampleCons_eq.
+proc; splitwhile{2} 3: (i < n - 1).
+rcondt{2} 4; 1:by auto; while (i < n); auto; smt().
+rcondf{2} 7; 1:by auto; while (i < n); auto; smt().
+wp; rnd; simplify.
+transitivity{1} { rs <@ Sample.sample(d, n - 1); }
+                (={d,n} /\ 0 < n{1} ==> ={d,rs})
+                (_n + 1 = n{1} /\ ={d,n} /\ 0 < n{1} ==> ={d} /\ rs{1} = l{2})=> //=; 1:smt().
+ by inline *; auto.
+transitivity{1} { rs <@ Loop.sample(d, n - 1); }
+                (_n + 1 = n{1} /\ ={d,n} /\ 0 < n{1} ==> ={d,rs})
+                (={d,n} /\ 0 < n{1} ==> ={d} /\ rs{1} = l{2})=> //=; 1:smt().
+ by call ih; auto; smt().
+inline *; wp; while (={i, d, n, l} /\ d0{1}=d{1} /\ n0{1} = n{1} - 1 /\ 0 < n{1}); auto; smt().
+qed.
+
+equiv Sample_LoopSnoc_eq: Sample.sample ~ LoopSnoc.sample: ={d,n} ==> ={res}.
+proof.
+proc*. transitivity{1} { r <@ Sample.sample(d,n);
+                         r <- rev r;            }
+                       (={d,n} ==> ={r})
+                       (={d,n} ==> ={r})=> //=; 1:smt().
+ inline *; wp; rnd rev; auto.
+ move=> /> &2; split=> /= [|t {t}]; 1:smt(revK).
+ split.
+  move=> r; rewrite -/(support _ _); case (0 <= n{2})=> sign_n.
+   rewrite supp_dlist 1://; move => [<-_].
+   rewrite -{2}size_rev.
+   apply dlist_perm_eq.
+   by apply perm_eq_rev.
+  rewrite dlist0 1:/# supp_dunit => -> /=.
+  by rewrite rev_nil !dunit1E.
+ by move=> H l*; rewrite revK /#.
+transitivity{1} { r <@ Loop.sample(d,n);
+                  r <- rev r;          }
+                (={d,n} ==> ={r})
+                (={d,n} ==> ={r})=> //=.
+  smt().
+ by wp; call Sample_Loop_eq.
+inline *; wp. while (={i, d0, n0} /\ rev l{1} = l{2}); auto.
+by move=> /> *; rewrite rev_cons cats1.
+qed.
+
+end ProgramDList.
+
+
 
 
 (* ? DBits.ec *)
@@ -83,7 +242,7 @@ rewrite dprod_dbits // dmap_comp /(\o) //=.
 by rewrite dmap_id_eq_in //=; smt(divz_eq).
 qed.
 
-require import BitEncoding DBool DList.
+require import BitEncoding DBool.
 from Jasmin require JUtils.
 
 import BitEncoding BitChunking BS2Int.
@@ -431,11 +590,6 @@ rewrite addrA binSn' 1:/# binSn' 1:/# addrC.
 by rewrite (_:k+n=k+n-1+1) 1:/# binSn' /#.
 qed.
 
-(*
-from Jasmin require import JWord JWord_array.
-
-import BitEncoding BitChunking BS2Int.
-*)
 
 abbrev hamming_weight l = count (fun x=>x) l.
 
@@ -532,22 +686,6 @@ module RejSampling = {
   }
   return x %% (max+1);
  }
-(*
- proc rsamplelist(k max n: int) = {
-  var x, j, y: int;
-  var l;
-  j <- 0;
-  l <- [];
-  while (j < n) {
-   x <$ dbits k;
-   if (x <= max) {
-    l <- rcons l x;
-    j <- j+1;
-   }
-  }
-  return l;
- }
-*)
  proc rsamplelist(k max n: int) = {
   var x, i, j, y: int;
   var l;
@@ -564,63 +702,18 @@ module RejSampling = {
   }
   return l;
  }
-(*
- proc rsamplelist3(k max n nchunk: int) = {
-  var x, i, j, y: int;
-  var xl, l;
-  i <- 0;
-  j <- 0;
-  xl <- [];
-  l <- [];
-  while (j < n) {
-   if (xl = []) xl <- nseq nchunk (dbits k);
-   x <$ head (dunit 0) xl;
-   xl <- behead xl;
-   if (x <= max) {
-    l <- rcons l x;
-    j <- j+1;
-   }
-   i <- i+1;
-  }
-  return l;
- }
-*)
  proc rsamplelist_chunked(k max n nchunk: int) = {
   var i, j, xn, x: int;
-  var xx, xl, l: int list;
-  var dxx: int distr;
-  i <- 0;
-  j <- 0;
-  l <- [];
-  while (j < n) {
-   xn <- 0;
-   while (xn < nchunk && j < n) {
-    x <$ dbits k;
-    if (x <= max ) {
-     l <- rcons l x;
-     j <- j + 1;
-    }
-    xn <- xn+1;
-   }
-   i <- i+1;
-  }
-  return l;
- }
-(*
- proc rsamplelist_chunked(k max n nchunk: int) = {
-  var i, j, xn, x: int;
-  var xx, xl, l: int list;
-  var dxx: int distr;
+  var xp, xl, l: int list;
   i <- 0;
   j <- 0;
   l <- [];
   while (j < n) {
    xl <$ dlist (dbits k) nchunk;
    xn <- 0;
-   while (xn < nchunk && j < n) {
-    x <- nth 0 xl xn;
-    if (x <= max ) {
-     l <- rcons l x;
+   while (xn < nchunk) {
+    if ((nth 0 xl xn) <= max && j < n) {
+     l <- rcons l (nth 0 xl xn);
      j <- j + 1;
     }
     xn <- xn+1;
@@ -629,53 +722,9 @@ module RejSampling = {
   }
   return l;
  }
- proc rsamplelist_chunked3(k max n nchunk: int) = {
-  var i, j: int;
-  var xx, xl, l: int list;
-  var dxx: int distr;
-  i <- 0;
-  j <- 0;
-  l <- [];
-  while (j < n) {
-   xx <$ dlist (dbits k) nchunk;
-   (*dxx <- nseq nchunk (dbits k);
-   xx <$ djoin dxx;*)
-   xl <- take (n-j) (filter (fun x=> x<=max) xx);
-   j <- j + size xl;
-   i <- i+1;
-  }
-  return l;
- }
-*)
 }.
 
-equiv rsample_chunked_eq:
- RejSampling.rsamplelist ~  RejSampling.rsamplelist_chunked
- : ={k,max,n} /\ 0 < nchunk{2} ==> ={res}.
-proc; simplify.
-exlim nchunk{2} => _N.
-async while
- [ (fun x => i < _N*x), i{2}+1 ]
- [ (fun x => i < x), i{2}+1 ]
- ( j{1}<n{1} /\ j{2}<n{2}) ( ! j{2}<n{2} )
- : (={k,max,n,j,l} /\ (n{1}<=j{1} \/ i{1}=_N*i{2}) /\ 0<=i{1} /\ _N=nchunk{2} /\ 0 < _N).
-+ by move=> /> &2 /#.
-+ by move=> /> &2 /#.
-+ by move=> /> &2 *. 
-+ by move=> &2; wp; rnd; auto.
-+ move=> /> &1; exfalso; smt().
-+ move=> v1 v2.
-  rcondt{2} 1; 1: by auto => /> /#.
-  rcondf{2} 4.
-   by move=> &m; wp; while true; auto.
-  exlim i{1} => i0.
-  wp; while (={k,max,n,k,j,l} /\ _N = nchunk{2} /\ 0<_N /\ (n{2}<=j{2} \/ i{1}=i{2}*_N+xn{2}) /\ xn{2}<=_N /\ 0<=i{1} /\ v1=i{2}+1 /\ v2=i{2}+1).
-   by wp; auto => /> &1 &2 /#. 
-  by wp; auto => /> /#. 
-+ by rcondf 1; auto; smt().
-+ by rcondf 1; auto; smt().
-by wp; auto.
-qed.
+
 
 require import Dexcepted.
 
@@ -771,57 +820,7 @@ transitivity {2} { x <@ RejSampling.rsample(k, rmax); }
 - by inline*; sim.
 qed.
 
-abstract theory ProgramDList.
-  type t.
-
-  module Sample = {
-    proc sample(d: t distr, n:int): t list = {
-      var r;
-
-      r <$ dlist d n;
-      return r;
-    }
-  }.
-
-  module SampleCons = {
-    proc sample(d: t distr, n:int): t list = {
-      var r, rs;
-
-      rs <$ dlist d (n - 1);
-      r  <$ d;
-      return r::rs;
-    }
-  }.
-
-lemma pr_Sample (_d: t distr) _n &m xs:
- Pr[Sample.sample(_d,_n) @ &m: res = xs]
- = mu (dlist _d _n) (pred1 xs).
-  proof. by byphoare (_: d = _d /\ n = _n ==> res = xs)=> //=; proc; rnd. qed.
-
-equiv Sample_SampleCons_eq:
- Sample.sample ~ SampleCons.sample: 
-  0 < n{1} /\ ={d,n} ==> ={res}.
-proof.
-bypr (res{1}) (res{2})=> //= &1 &2 xs [lt0_n] [<- <-].
-rewrite (pr_Sample d{1} n{1} &1 xs); case (size xs = n{1})=> [En|].
-case xs En lt0_n=> [|x xs E lt0_n]; 1:smt().
- rewrite -E dlistS1E.
- byphoare (_: d=d{1} /\ n = size xs + 1 ==> x::xs = res)=> //=; last by smt().
- proc; simplify.
- seq 1: (rs = xs) (mu (dlist d{1} (size xs)) (pred1 xs)) (mu d (pred1 x)) _ 0%r.
- + done.
- + by rnd (pred1 xs); skip; smt().
- + by rnd (pred1 x); skip; smt().
- + by hoare; auto; smt().
- + smt().
-move=> len_xs; rewrite dlist1E 1:/# (_: n{1} <> size xs) /= 1:/#.
-byphoare (_: n = n{1} ==> xs = res)=> //=; hoare.
-by proc; auto => /> &m l; rewrite supp_dlist /#.
-qed.
-
-end ProgramDList.
-
-clone ProgramDList as P with type t <- int.
+clone ProgramDList as LS with type t <- int.
 
 equiv rsamplelist_upto: 
  RejSampling.samplelist_upto ~ RejSampling.rsamplelist: 
@@ -835,18 +834,18 @@ exlim n{1} => N; elim/natind: N => [|N HN IH].
   by move=> &m; wp; skip; smt().
  wp; skip => /> &m *.
  by rewrite !dlist0 //; smt(dunit_ll supp_dunit).
-transitivity {1} { l <@ P.SampleCons.sample([0..max],n); }
+transitivity {1} { l <@ LS.SampleCons.sample([0..max],n); }
  ( 0 < n{1} /\ ={max,n} /\ 0 <= max{2} ==> ={l} )
  ( N+1 = n{1} /\ ={max,n} /\ 0 <= max{2} && max{2} < 2 ^ k{2} ==> ={l} ).
 - by move=> /> &m *; exists max{m} (N+1); auto; smt().
 - done.
-- transitivity {1} { l <@ P.Sample.sample([0..max], n); }
+- transitivity {1} { l <@ LS.Sample.sample([0..max], n); }
    ( 0 < n{1} /\ ={max,n} /\ 0 <= max{2} ==> ={l} )
    ( 0 < n{1} /\ ={max,n} /\ 0 <= max{2} ==> ={l} ).
   + by move=> /> &m *; exists max{m} n{m}; auto.
   + done.
   + by inline*; wp; rnd; wp; auto.
-  + by call P.Sample_SampleCons_eq; skip; smt().
+  + by call LS.Sample_SampleCons_eq; skip; smt().
   inline*.
   swap {1} 4 -1.
   transitivity {1}
@@ -922,309 +921,205 @@ transitivity {1} { l <@ P.SampleCons.sample([0..max],n); }
     by wp; skip => /> &1 &2 * /#.
 qed.
 
-(*
-
-
-
-module ParseShake128 = {
- (* shake128: blocksize=1600-2*128=1344bit=168byte
-    168 / 3 = 56 *)
- proc parse_real() = {
-  var j, i: int;
-  var x, xl, l;
-  l <- [];
-  j <- 0;
-  while (j < 256) {
-(* chunk <$ dbits (1344);
-   x <- spreadbits 12 112 chunk; *)
-   i <- 0;
-   xl <- [];
-   while (i < 112) {
-    x <$ dbits 12;
-    xl <- rcons xl x;
-    x <$ dbits 12;
-    xl <- rcons xl x;
-    i <- i + 2;
-   }
-   i <- 0;
-   while (i < 112) {
-    if (nth 0 xl i <= 3329 && j < 256) {
-     l <- rcons l (nth 0 xl i);
-     j <- j + 1;
-    }
-    if (nth 0 xl (i+1) <= 3329 && j < 256) {
-     l <- rcons l (nth 0 xl (i+1));
-     j <- j + 1;
-    }
-    i <- i + 2;
-   }
-  }
-  return l;
- }
- proc parse_ideal() = {
-  var l;
-  l <$ dlist [0..3328] 256;
-  return l;
- }
-}.
-
-equiv parse_dlist:
- RejSampling.samplelist_upto ~ ParseShake128.parse_real :
- max{1}=3328 /\ n{1}=256 ==> ={res}.
+equiv rsamplelist_chunked_upto: 
+ RejSampling.samplelist_upto ~ RejSampling.rsamplelist_chunked: 
+ ={max,n} /\ 0 <= n{2} /\ 0 <= max{2} < 2^k{2} /\ 0 < nchunk{2}
+ ==> ={res}.
 proof.
 transitivity RejSampling.rsamplelist
- (max{1}=3328 /\ n{1}=256 /\ ={max,n} /\ k{2}=12 ==> ={res})
- (max{1}=3328 /\ n{1}=256 /\ k{1}=12 ==> ={res}).
-- by move=> /> &m *; exists (12,max{m},n{m}).
-- done.
-- conseq rsamplelist_upto => /> *. admit.
-- proc; simplify.
-(*  fusion{2} 3.2@ 1, 2.*)
-  admit.
-
-(* possivel solução:
-rsample por chunks...
-
-split_bits (k:int) (n:int) (x:int): int list
-"split x in a n-list of k-bit integers"
-
-x <$ dbits (k*n)
-l <- split_bits k n x
-==
-l <$ dlist (dbits k) n
-===
-while... (passível de fusion...)
-
-
-
-
-l <- []
-while (0 < n)
- lchunk <$ dlist (dbits k) nchunk
- j <- 0
- l' <- filter R lchunk
- l <- l ++ take n l'
- n <- n - size l'
-
-deve dar jeito ter a caracterização de
-dbits vs. dlist dbits n 
-*)
+ ( ={max,n} /\ 0 <= max{2} < 2^k{2} ==> ={res} )
+ ( ={k,max,n} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={res} ) => //.
+  by move=> /> &1 &2 *; exists (k{2},max{1},n{1}); smt().
+ by conseq rsamplelist_upto.
+proc; simplify.
+(* hop 1: rearrange loop-structure in nchunked units *)
+transitivity {2}
+ {   i <- 0;
+  j <- 0;
+  l <- [];
+  while (j < n) {
+   xn <- 0;
+   while (xn < nchunk && j < n) {
+    x <$ dbits k;
+    if (x <= max ) {
+     l <- rcons l x;
+     j <- j + 1;
+    }
+    xn <- xn+1;
+   }
+   i <- i+1;
+  }
+ }
+ ( ={k,max,n} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={l} )
+ ( ={k,max,n,nchunk} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={l} ) => //.
+  by move=> /> &1 &2 *; exists k{1} max{1} n{1} nchunk{1}.
+ exlim nchunk{2} => _N.
+ async while
+  [ (fun x => i < _N*x), i{2}+1 ]
+  [ (fun x => i < x), i{2}+1 ]
+  ( j{1}<n{1} /\ j{2}<n{2}) ( ! j{2}<n{2} )
+  : (={k,max,n,j,l} /\ (n{1}<=j{1} \/ i{1}=_N*i{2}) /\ 0<=i{1} /\ _N=nchunk{2} /\ 0 < _N).
+ + by move=> /> &2 /#.
+ + by move=> /> &2 /#.
+ + by move=> /> &2 *. 
+ + by move=> &2; wp; rnd; auto.
+ + move=> /> &1; exfalso; smt().
+ + move=> v1 v2.
+   rcondt{2} 1; 1: by auto => /> /#.
+   rcondf{2} 4.
+    by move=> &m; wp; while true; auto.
+   exlim i{1} => i0.
+   wp; while (={k,max,n,k,j,l} /\ _N = nchunk{2} /\ 0<_N /\ (n{2}<=j{2} \/ i{1}=i{2}*_N+xn{2}) /\ xn{2}<=_N /\ 0<=i{1} /\ v1=i{2}+1 /\ v2=i{2}+1).
+    by wp; auto => /> &1 &2 /#. 
+   by wp; auto => /> /#. 
+ + by rcondf 1; auto; smt().
+ + by rcondf 1; auto; smt().
+ by wp; auto.
+(* hop 2: rearrange inner-loop *)
+transitivity {2}
+ { i <- 0;
+  j <- 0;
+  l <- [];
+  while (j < n) {
+   xl <- [];
+   xp <- [];
+   xn <- 0;
+   while (xn < nchunk ) {
+    x <$ dbits k;
+    xl <- rcons xl x;
+    if (x <= max && j < n) {
+     xp <- rcons xp x;
+     j <- j + 1;
+    }
+    xn <- xn+1;
+   }
+   l <- l ++ xp;
+   i <- i+1;
+  }
+ }
+ ( ={k,max,n,nchunk} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={l} )
+ ( ={k,max,n,nchunk} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={l} ) => //>.
+  by move=> /> &2 *; exists k{2} max{2} n{2} nchunk{2}.
+ while (={k,max,n,nchunk,j,l} /\ j{2} <= n{2}).
+  splitwhile {2} 4 :(j<n).
+  wp; while {2} (={k,max,n,nchunk,j} /\ l{1}=l{2}++xp{2} /\
+                 !(xn<nchunk /\ j<n){2}) (nchunk-xn){2}.
+   move=> &m z0.
+   rcondf 3; first by auto; smt().
+   auto => /> &2 *; split.
+    by rewrite dinter_ll; smt(expr_gt0).
+   by move=> _ x _; split; smt(). 
+  while (={k,max,n,nchunk,j,xn} /\ l{1}=l{2}++xp{2} /\ j{2} <= n{2}).
+   auto => />; smt(rcons_cat).
+  auto => /> *; smt(cats0).
+ by auto => /> *. 
+(* hop 3: pack sampling and functional rejection *)
+transitivity {2}
+ {   i <- 0;
+  j <- 0;
+  l <- [];
+  while (j < n) {
+   xl <$ dlist (dbits k) nchunk;
+   xp <- take (n-j) (filter (fun x => x<= max) xl);
+   l <- l ++ xp;
+   j <- j + size xp;
+   i <- i+1;
+  }
+ }
+ ( ={k,max,n,nchunk} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={l} )
+ ( ={k,max,n,nchunk} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={l} ) => //.
+  by move=> /> &2 *; exists k{2} max{2} n{2} nchunk{2}.
+ while (={k,max,n,nchunk,j,l} /\ j{2} <= n{2}); last by auto; smt().
+ transitivity {1}
+  { xl <@ LS.LoopSnoc.sample(dbits k, nchunk);
+    xp <- take (n - j) (filter (transpose Int.(<=) max) xl);
+    l <- l++xp;
+    j <- j+size xp;
+    i <- i+1;
+   }
+   ( ={k, max, n, nchunk, j, l} /\ j{2} < n{2} ==>
+     ={k, max, n, nchunk, j, l} /\ j{2} <= n{2} /\ (j{1} < n{1} <=> j{2} < n{2}) )
+   ( ={k, max, n, nchunk, j, l} /\ j{2} < n{2} ==>
+     ={k, max, n, nchunk, j, l} /\ j{2} <= n{2} /\ (j{1} < n{1} <=> j{2} < n{2}) ) => //=.
+   by move=> /> &2 *; exists j{2} k{2} l{2} max{2} n{2} nchunk{2}; smt().
+  inline*; wp.
+  exlim j{1} => j0.
+  while (={k,max,n,nchunk} /\ (d, n0, i0, l0){2}=(dbits k{2}, nchunk{2}, xn{1}, xl{1}) /\
+         j{2} = j0 /\ size xp{1} = j{1}-j0 /\
+         xp{1} = take (n{2}-j0) (filter (fun x=>x<=max{2}) l0{2})).
+   auto => /> &1&2 H0 ? x ?*; split.
+    move=> Hx Hj. 
+    split; first by rewrite cats1.
+    split; first by rewrite size_rcons H0 /#. 
+    rewrite cats1 filter_rcons /= Hx /=.
+    by rewrite take_rcons; smt(take_oversize size_take).
+   case: (x <= max{2}) => C1/=.
+    rewrite cats1 filter_rcons /= C1 /= => C2.
+    rewrite take_rcons.
+    have: n{2}-j0 <= size (filter (transpose Int.(<=) max{2}) xl{1}).
+     move: H0.
+     case: (0 <= n{2} - j0) => C3.
+      by rewrite size_take // /#.
+     by rewrite take_le0; smt(size_ge0).
+    smt().
+   by rewrite cats1 filter_rcons /= C1.
+  by auto => /> &2 *; smt(size_take).
+ transitivity {1}
+  { xl <@ LS.Sample.sample(dbits k, nchunk);
+    xp <- take (n - j) (filter (transpose Int.(<=) max) xl);
+    l <- l++xp;
+    j <- j+size xp;
+    i <- i+1;
+   }
+   ( ={k, max, n, nchunk, j, l} /\ j{2} <= n{2} /\ j{2} < n{2} ==>
+     ={k, max, n, nchunk, j, l} )
+   ( ={k, max, n, nchunk, j, l} /\ j{2} <= n{2} /\ j{2} < n{2} ==>
+     ={k, max, n, nchunk, j, l} /\ j{2} <= n{2} /\ (j{1} < n{1} <=> j{2} < n{2}) ) => //=.
+   by move=> /> &2 *; exists j{2} k{2} l{2} max{2} n{2} nchunk{2}; smt().
+  by symmetry; wp; call LS.Sample_LoopSnoc_eq; auto.
+ inline*; wp; rnd; auto => /> *.
+ by rewrite size_take /#.
+(* hop 4: rejection loop *)
+while (={k,max,n,nchunk,i,j,l} /\ size l{1}=j{1} /\
+       j{1} <= n{1} /\ 0 < nchunk{2}); last by auto.
+seq 1 1: (#pre /\ ={xl} /\ size xl{2}=nchunk{2}).
+ auto => /> *; smt(supp_dlist).
+wp.
+while {2} (#[/1:5,8,11,13:]pre /\ ={xl} /\
+           size xl{2}=nchunk{2} /\
+           0 <= xn{2} <= nchunk{2} /\
+           l{2} = l{1}++take (n{1}-j{1}) (filter (fun x => x <= max{2}) (take xn{2} xl{2})) /\
+           j{2} = size l{2}) (nchunk{2}-xn{2}).
+ move=> /> &1 z; auto => /> &2 Hn xnL _ xnR; split.
+  move => /> C; rewrite size_cat=> H1; split.
+   split; first smt().
+   split.
+    rewrite rcons_cat; congr.
+    rewrite (take_nth 0) 1:/# filter_rcons /= C /=.
+    have Hover: size (filter (transpose Int.(<=) max{1}) (take xn{2} xl{1})) <= n{1} - size l{1}.
+     apply ltrW; rewrite -(ltz_add2l (size l{1})).
+     by rewrite (addrC n{1}) addrA /=; smt(size_take).
+    rewrite !(take_oversize (n{1}-size l{1})) //. 
+    rewrite size_rcons -ltzE; smt(size_take).    
+   by rewrite size_rcons size_cat /#.
+  smt().
+ rewrite andaE negb_and; move => [C|C].
+  split; last smt().
+  split; first smt().
+  by congr; rewrite (take_nth 0) 1:/# filter_rcons /=C /#.
+ split; last smt().
+ split; first smt().
+ move: C; rewrite !size_cat => C.
+ congr. 
+ have HH: n{1} - size l{1} <= size (filter (transpose Int.(<=) max{1}) (take xn{2} xl{1})) by smt(size_take).
+ rewrite (take_nth 0); first smt(size_take).
+ rewrite filter_rcons /=.
+ case: (nth 0 xl{1} xn{2} <= max{1}) => E.
+  rewrite take_rcons; smt(size_take).
+ smt(size_take).
+auto => /> *.
+split; first by rewrite take0 /= cats0 /#.
+move => />*; split => /> *; first smt().
+by rewrite !size_cat; smt(size_take take_oversize).
 qed.
 
-op C1: int -> bool.
-op c1:int.
-op C2: int -> bool.
-op c2:int.
-op PRE: bool.
-op SYNC: bool.
-op LR: bool.
-
-equiv xxx: TT.t1 ~ TT.t2 : ={n} ==> ={res}.
-proc.
-conseq (: _ ==> ={l,j}); first by [].
-
-exlim n{1} => N.
-elim/natind: N.
- admit.
-move => n Hn IH.
-proc.
-
-exlim n{1} => N.
-
-splitwhile {1} 4 : (50 < x).
-unroll {2} 3.
-
-async while
- [ C1, c1 ]
- [ C2, c2 ]
- (={j})
- (j{1}<j{2})
- : (={j} => ={l}).
-- move=> &1 &2 Hl. admit (* INSYNC??
-cond{1} \/ cond{2} => SYNC => cond{1} /\ cond{2} /\ C1 c1 /\ C2 c2
-*).
-- move=> &1 &2 Hl. admit (* 
-cond{1} \/ cond{2} => !SYNC => LR => cond{1}
-*).
-- move=> &1 &2 Hl. admit (*
-cond{1} \/ cond{2} => !SYNC => !LR => cond{2}
-*).
-- move=> &m. admit (*
-Context : TT.t1
-
-pre = l = l{m} /\ j < n /\ !SYNC /\ LR
-
-(1--)  x <$ [0..100]            
-(2--)  if (x <= 50) {           
-(2.1)    l <- rcons l x         
-(2.2)    j <- j + 1             
-(2--)  }                        
-
-post = l = l{m}
-*).
-- move=> &m. admit (*
-Context : TT.t2
-
-pre = l{m} = l /\ j < n /\ !SYNC /\ !LR
-
-(1--)  x <$ [0..100]            
-(2--)  while (50 < x) {         
-(2.1)    x <$ [0..100]          
-(2--)  }                        
-(3--)  l <- rcons l x           
-(4--)  j <- j + 1               
-
-post = l{m} = l
-*).
-- move=> v1 v2. admit (*
-&1 (left ) : TT.t1
-&2 (right) : TT.t2
-
-pre = ={l} /\ (cond{1} \/ cond{2}) /\ SYNC /\ v1 = c1 /\ v2 = c2
-
-while (j < n /\ C1 v1) {   (1----)  while (j < n /\ C2 v2) { 
-  x <$ [0..100]            (1.1--)    x <$ [0..100]          
-  if (x <= 50) {           (1.2--)    while (50 < x) {       
-    l <- rcons l x         (1.2.1)      x <$ [0..100]        
-    j <- j + 1             (1.2.2)                           
-  }                        (1.2--)    }                      
-                           (1.3--)    l <- rcons l x         
-                           (1.4--)    j <- j + 1             
-}                          (1----)  }                        
-
-post = ={l}
-*).
-- admit (* LOSSLESS
-Context : TT.t1
-Bound   : [=] 1%r
-
-pre = l = l{2}
-
-(1----)  while (j < n /\ !Inv1 /\ Inv2) {
-(1.1--)    x <$ [0..100]                 
-(1.2--)    if (x <= 50) {                
-(1.2.1)      l <- rcons l x              
-(1.2.2)      j <- j + 1                  
-(1.2--)    }                             
-(1----)  }                               
-
-post = true
-*).
-- admit (* LOSSLESS
-Context : TT.t2
-Bound   : [=] 1%r
-
-pre = l{1} = l
-
-(1----)  while (j_1 < n_1 /\ !Inv1 /\ !Inv2) {
-(1.1--)    x <$ [0..100]                      
-(1.2--)    while (50 < x) {                   
-(1.2.1)      x <$ [0..100]                    
-(1.2--)    }                                  
-(1.3--)    l <- rcons l x                     
-(1.4--)    j <- j + 1                         
-(1----)  }                                    
-
-post = true
-*).
-- by auto.
-qed.
-
-async while
-  [ (fun r => r = (to_uint inlen0)%r), 
-    (to_uint inlen0{2})%r ]
-  [ (fun r => r = (to_uint inlen0)%r), 
-    (to_uint inlen0{1})%r ]
-    (to_uint inlen0{1} = to_uint inlen0{2}) 
-    (to_uint inlen0{2} <= to_uint inlen0{1})
-  :
-    (#{/~ ={in_0}}
-      {~(in_00{2} = in_0{2})}
-      {~(inlen0{1} = inlen{1})}
-      {~(inlen0{2} = inlen{2})}
-      {~(in_0{1} = in_00{2})}
-      {~={r}}
-      {~={h}}pre /\
-      (to_uint inlen{2} - to_uint inlen0{2}) %% 64 = 0 /\
-      (   (* in sync *)
-          (to_uint inlen0{1} = to_uint inlen0{2} /\
-           ={h,r} /\ in_0{1} = in_00{2}) \/
-          (* 3 ahead *)
-          (to_uint inlen0{1} - 3*16 = to_uint inlen0{2} /\
-           ={r} /\ 
-           ((((h{1} + load_block Glob.mem{1} in_0{1}) * r{1}
-              + load_block Glob.mem{1} (in_0{1} + W64.of_int 16)) * r{1})
-                + load_block Glob.mem{1} (in_0{1} + W64.of_int 32)) * r{1}
-                  = h{2} /\
-           in_0{1} + W64.of_int (3*16) = in_00{2}) \/
-          (* 2 ahead *)
-          (to_uint inlen0{1} - 2*16 = to_uint inlen0{2} /\
-           ={r} /\ 
-           (((h{1} + load_block Glob.mem{1} in_0{1}) * r{1}
-              + load_block Glob.mem{1} (in_0{1} + W64.of_int 16)) * r{1}
-                 = h{2})  /\
-           in_0{1} + W64.of_int (2*16) = in_00{2})  \/
-          (* 1 ahead *)
-          (to_uint inlen0{1} - 16 = to_uint inlen0{2} /\
-           ={r} /\ 
-           ((h{1} + load_block Glob.mem{1} in_0{1}) * r{1}
-               = h{2})  /\
-           in_0{1} + W64.of_int 16 = in_00{2})
-      )).
- (* inv3 => c1 \/ c2 => inv1 => c1 /\ c2 /\ f p /\ g q *)
- + by rewrite !ultE !uleE /#. 
- (* inv3 => c1 \/ c2 => !inv1 => inv2 => c1 *)
- + by rewrite !ultE !uleE /#. 
- (* inv3 => c1 \/ c2 => !inv1 => !inv2 => c2 *)
- + by rewrite !ultE !uleE /#. 
- (* {inv3 /\ c1 /\ !inv1 /\ inv2} Body1 {inv3} *)
- + move => *; wp; skip; rewrite !ultE !uleE => /> *.
-   by rewrite to_uintB ?uleE //= /#.
- (* { inv3 /\ c2 /\ !inv1 /\ !inv2} Body2 {inv3} *)
- + move => *; exfalso; smt().
- + move => *. 
-   while 
-     (#{/~inlen0{2}}
-              {~in_00{2}}
-              {~={in_0}}
-              {~={r}}
-              {~={h}}
-              {~v1_}
-              {~v2_}pre /\
-       (to_uint inlen{2} - to_uint inlen0{2}) %% 64 = 0 /\ 
-       (  (* in sync *)
-          (to_uint inlen0{1} = to_uint inlen0{2} /\
-           ={h,r} /\ in_0{1} = in_00{2} /\
-          v1_ = (to_uint inlen0{2})%r /\ v2_ = (to_uint inlen0{1})%r) \/
-          (* 3 ahead *)
-          (to_uint inlen0{1} - 3*16 = to_uint inlen0{2} /\
-           ={r} /\ 
-           ((((h{1} + load_block Glob.mem{1} in_0{1}) * r{1}
-              + load_block Glob.mem{1} (in_0{1} + W64.of_int 16)) * r{1})
-                + load_block Glob.mem{1} (in_0{1} + W64.of_int 32)) * r{1}
-                  = h{2} /\
-           in_0{1} + W64.of_int (3*16) = in_00{2} /\
-          v1_ = (to_uint inlen0{2})%r + 64%r /\ v2_ = (to_uint inlen0{1})%r + 16%r) 
-        )).
-    inline *; wp; skip; rewrite !ultE !uleE => /> ????; elim; progress;
-    [ 1,2,8,9: by rewrite ?uleE !to_uintB ?uleE /#
-    | 3,4,10,11: by move: H7 H9; rewrite ?uleE !to_uintB ?uleE /#
-    | 5..7,12..: by move: H7 H8; rewrite ?uleE !to_uintB ?uleE /#
-    ].
-    - skip; rewrite !ultE !uleE => /> ????; elim; progress; smt().
- (* inv3 ==> islossless while(c1 /\ !inv1 /\ inv2) Body1 *)
- + while true (W64.to_uint inlen0).
-    by move => *; wp; skip; progress => //=; rewrite to_uintB /#. 
-   by skip; progress; rewrite uleE /#.
- (* inv3 ==> islossless while(c1 /\ !inv1 /\ !inv2) Body2 *)
- + while (#pre) (W64.to_uint inlen0).
-    by move => *; wp; skip; rewrite !ultE !uleE => ? /> ??; elim; smt().
-   by skip; rewrite !ultE !uleE => ? /> ??; elim; smt().
- (* !c1 => !c2 => inv3 => #post *)
- + skip; rewrite !ultE => /> ????????.
-   rewrite !uleE of_uintK /= negb_and; move => [?|?] /> ??; elim; smt(@W64).
-qed.
-
-
-
-*)
