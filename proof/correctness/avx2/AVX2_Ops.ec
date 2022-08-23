@@ -1847,7 +1847,7 @@ equiv eq_iVPBLEND_16u16 : Ops.iVPBLEND_16u16 ~ OpsV.iVPBLEND_16u16 :
   is16u16 res{1} res{2}.
 proof.
   proc; wp; skip; rewrite /is16u16 /= /VPBLENDW_128 /VPBLENDW_256 /VPBLENDW_128 => /> &1 &2 /=. 
-  search pack2_t pack8_t. rewrite W2u128_W16u16 /=. congr => /=. congr => /=.
+  rewrite W2u128_W16u16 /=. congr => /=. congr => /=.
   split; 1: by case (p{2}.[0]).
   split; 1: by case (p{2}.[1]).
   split; 1: by case (p{2}.[2]).
