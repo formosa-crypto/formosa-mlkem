@@ -5278,6 +5278,7 @@ proof.
             res6 -> -> res7 -> -> res8 -> -> res9 res9_l res9_r res10 res10_l res10_r res11 res11_l res11_r />.
       have idx_mod: forall k, 0 <= k < 128 => (128 * i{2} + k) %% 2 = k %% 2. smt(@Int @IntDiv).
       have idx_div: forall k, 0 <= k < 128 => (128 * i{2} + k) %/ 2 = 64 * i{2} + k %/ 2. smt(@Int @IntDiv).
+
       do split.
         + move => k k_lb k_ub.
           rewrite filliE 1:/# //= rp_def 1://=.
@@ -5286,26 +5287,99 @@ proof.
           rewrite /f32u8_t16u16.
           rewrite -ext_eq_all /all_eq //=.
           rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-          (* do split. *)
           do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
           rewrite (_: 128 * i{2} %% 2 = 0). by smt(@Int @IntDiv).
           rewrite (_: 128 * i{2} %/ 2 = 64 * i{2}). by smt(@Int @IntDiv).
           do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
           simplify.
-          rewrite -(mulzA 3 _ _) //=.
+          do (rewrite (mulzDr 3 _ _) || rewrite -(mulzA 3 _ _) //=).
           rewrite /load_array384 /= /loadW8 /=.
           do (rewrite initiE 1:/#).
           simplify.
           do (rewrite modzMDl || (rewrite (pmod_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#) ||
               rewrite (mulzC 4096) (_: 4096 = 16 * 256) 1://= -(mulzA _ 16 256) divzE).
-          admit. (* FIXME: apply following block 16 times ??
           do split.
-          apply W2u8.allP => //=.
-            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-            rewrite divzMDl 1://= divzMDr 1://=.
-            rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
-            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-          *)
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+
         + rewrite res9_r.
           rewrite /f32u8_t16u16.
           rewrite -ext_eq_all /all_eq //=.
@@ -5317,13 +5391,72 @@ proof.
           do (rewrite initiE 1:/#).
           simplify.
           do (rewrite modzMDr || rewrite divzMDl 1://= || (rewrite (pdiv_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#)).
-          admit. (* FIXME: apply following block 16 times ??
-          do split.
+          do split. (* TODO: improve maybe ?? *)
           apply W2u8.allP => //=.
             do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
             rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
-            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-          *)
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+
         + rewrite res10_l.
           rewrite /f32u8_t16u16.
           rewrite -ext_eq_all /all_eq //=.
@@ -5336,17 +5469,76 @@ proof.
           simplify.
           do (rewrite (mulzDr 16 _ _) || rewrite (mulzA _ 16 16) //= || rewrite (mulzC 16 _) || rewrite divzMDr 1://= ||
               rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp //= || rewrite divzE || rewrite (pmod_small (W8.to_uint _ %% 16) 16) 1:modz_cmp 1://=).
-          admit. (* FIXME: apply following block 16 times ??
-          apply W2u8.allP => //=.
-            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-            rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
-            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-          *)
+          do split.
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+
         + rewrite res10_r.
           rewrite /f32u8_t16u16.
           rewrite -ext_eq_all /all_eq //=.
           rewrite /shuf8 /shuf4 /shuf2 /shuf1 => />.
-          (* do split. *)
           do (rewrite filliE 1:/# //= || rewrite idx_mod 1://= || rewrite idx_div 1://=).
           do (rewrite lez_addl || rewrite lez_add2l || rewrite ltz_add2l || rewrite ltz_addl).
           simplify.
@@ -5356,14 +5548,88 @@ proof.
           simplify.
           do (rewrite modzMDl || (rewrite (pmod_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#) ||
               rewrite (mulzC 4096) (_: 4096 = 16 * 256) 1://= -(mulzA _ 16 256) divzE).
-          admit. (* FIXME: apply following block 16 times ??
           do split.
-          apply W2u8.allP => //=.
-            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-            rewrite divzMDl 1://= divzMDr 1://=.
-            rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
-            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-          *)
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite divzMDl 1://= divzMDr 1://=.
+              rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+
         + rewrite res11_l.
           rewrite /f32u8_t16u16.
           rewrite -ext_eq_all /all_eq //=.
@@ -5375,13 +5641,72 @@ proof.
           do (rewrite initiE 1:/#).
           simplify.
           do (rewrite modzMDr || rewrite divzMDl 1://= || (rewrite (pdiv_small (W8.to_uint _ %/ 16) 16); first by move : W8.to_uint_cmp => /#)).
-          admit. (* FIXME: apply following block 16 times ??
-          do split.
+          do split. (* TODO: improve maybe ?? *)
           apply W2u8.allP => //=.
             do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
             rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
-            do split; first 2 by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-          *)
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+          apply W2u8.allP => //=.
+            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+            rewrite (mulzC 256 _) divzMDl 1://= (pdiv_small _ 256) 1:W8.to_uint_cmp (pmod_small _ 256) 1:W8.to_uint_cmp.
+            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+
         + rewrite res11_r.
           rewrite /f32u8_t16u16.
           rewrite -ext_eq_all /all_eq //=.
@@ -5394,12 +5719,72 @@ proof.
           simplify.
           do (rewrite (mulzDr 16 _ _) || rewrite (mulzA _ 16 16) //= || rewrite (mulzC 16 _) || rewrite divzMDr 1://= ||
               rewrite (pdiv_small _ 256) 1:W8.to_uint_cmp //= || rewrite divzE || rewrite (pmod_small (W8.to_uint _ %% 16) 16) 1:modz_cmp 1://=).
-          admit. (* FIXME: apply following block 16 times ??
-          apply W2u8.allP => //=.
-            do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
-            rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
-            do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
-          *)
+          do split.
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+            apply W2u8.allP => //=.
+              do (rewrite initiE 1:/# /= || rewrite of_int_bits8_div 1://= //=).
+              rewrite -addzA divzMDl 1://= -(addzA _ _ (W8.to_uint _ %% 16)) addNz addz0 (pdiv_small _ 256) 1:W8.to_uint_cmp.
+              do split; first by ring; smt(@Int @W8 @IntDiv @Ring.IntID).
+
         + move => k k_lb k_ub.
           do (rewrite filliE 1:/# //=).
           do (rewrite /load_array384 /= /loadW8 /=).
