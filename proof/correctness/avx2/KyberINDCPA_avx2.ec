@@ -163,7 +163,7 @@ move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
 
 move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split. 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
@@ -175,7 +175,7 @@ move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split.
 
 move => H23 r3 r4 H24 H25 H26;do split. 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite /subarray256 /=.
@@ -211,7 +211,7 @@ move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do 
 
 move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split. 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
@@ -223,7 +223,7 @@ move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split.
 
 move => H26 r3 r4 H27 H28 H29;do split. 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite /subarray256 /=.
@@ -246,7 +246,7 @@ move => H26 r3 r4 H27 H28 H29;do split.
   rewrite !initiE  //=. smt(). smt().
 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite /subarray256 /=.
@@ -280,7 +280,7 @@ move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 
 
 move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split. 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
@@ -292,7 +292,7 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
 
   move => H29 r3 r4 H30 H31 H32;do split. 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite /subarray256 /=.
@@ -315,7 +315,7 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
   rewrite !initiE  //=. smt(). smt().
 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite /subarray256 /=.
@@ -338,7 +338,7 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
   rewrite !initiE  //=. smt(). smt().
 
 + rewrite tP /= => k kb.
-  rewrite /lift_array256 !initiE //=. 
+  rewrite /lift_array256 /nttunpack !initiE //=. 
   pose a:=nttunpack_idx.[k].
   rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
   rewrite /subarray256 /=.
@@ -372,13 +372,14 @@ do split.
     move : (H1 (nttpack_idx.[k]) _); 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
     pose a:=nttpack_idx.[k].
     rewrite !mapiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
-    rewrite !initiE //=; 1..2: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite /nttunpack !initiE //=; 1..2: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
     pose b:=nttunpack_idx.[a].
     rewrite !mapiE //=; 1:  smt(nttpack_bnd nttunpack_bnd Array256.allP).
     rewrite /lift_array768 /subarray256 /=.
     pose c := nttpack_idx.[k].
-  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
-  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /nttunpack initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /nttpack initiE //=.
+  rewrite initiE //=. smt(nttpack_bnd nttunpack_bnd Array256.allP).
   rewrite !mapiE //=; 1:  smt(nttpack_bnd Array256.allP).
   have -> : b = k. move : nttunpack_idxK; rewrite /b /a allP; smt(mem_iota).
   smt().
@@ -388,13 +389,13 @@ do split.
     pose a:=nttpack_idx.[k-256].
     rewrite !mapiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
     rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
-    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite /nttunpack initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
     pose b:=nttunpack_idx.[a].
     rewrite !mapiE //=; 1:  smt(nttpack_bnd nttunpack_bnd Array256.allP).
     rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
     rewrite /lift_array768 /subarray256 /=.
     pose c := nttpack_idx.[k-256].
-  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /nttpack initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
   rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
   rewrite !mapiE //=; 1:  smt(nttpack_bnd Array256.allP).
   have -> : b = k-256. move : nttunpack_idxK; rewrite /b /a allP; smt(mem_iota).
@@ -405,13 +406,13 @@ do split.
     pose a:=nttpack_idx.[k-512].
     rewrite !mapiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
     rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
-    rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
+    rewrite /nttunpack initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
     pose b:=nttunpack_idx.[a].
     rewrite !mapiE //=; 1:  smt(nttpack_bnd nttunpack_bnd Array256.allP).
     rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP). 
     rewrite /lift_array768 /subarray256 /=.
     pose c := nttpack_idx.[k-512].
-  rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
+  rewrite /nttpack initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
   rewrite initiE //=; 1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
   rewrite !mapiE //=; 1:  smt(nttpack_bnd Array256.allP).
   have -> : b = k-512. move : nttunpack_idxK; rewrite /b /a allP; smt(mem_iota).

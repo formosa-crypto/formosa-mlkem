@@ -278,11 +278,11 @@ rewrite /nttpackv /nttunpackv.
 rewrite initiE //=.
 case (0 <= k && k < 256).
 + move =>*.
-  rewrite /subarray256 /nttunpack initiE //= initiE //=. smt(nttpack_bnd Array256.allP).
+  rewrite /subarray256 /nttpack initiE //= initiE //=. smt(nttpack_bnd Array256.allP).
   pose a := nttpack_idx.[k].
   rewrite initiE //=.  smt(nttpack_bnd Array256.allP).
   rewrite ifT. smt(nttpack_bnd Array256.allP).
-  rewrite /nttpack initiE //=. smt(nttpack_bnd Array256.allP).
+  rewrite /nttunpack initiE //=. smt(nttpack_bnd Array256.allP).
   pose b := nttunpack_idx.[a].
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
   move : nttunpack_idxK; rewrite allP /= => H.
@@ -290,10 +290,10 @@ case (0 <= k && k < 256).
 
 case (256 <= k && k < 512).
 + move =>*.
-  rewrite /subarray256 /nttunpack initiE //=. smt(nttpack_bnd Array256.allP).
+  rewrite /subarray256 /nttpack initiE //=. smt(nttpack_bnd Array256.allP).
   pose a := nttpack_idx.[k-256].
   rewrite initiE //=.  smt(nttpack_bnd Array256.allP).
-  rewrite /nttpack initiE //=. smt(nttpack_bnd Array256.allP).
+  rewrite /nttunpack initiE //=. smt(nttpack_bnd Array256.allP).
   rewrite ifF. smt(nttpack_bnd Array256.allP).
   rewrite ifT. smt(nttpack_bnd Array256.allP).
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
@@ -303,10 +303,10 @@ case (256 <= k && k < 512).
   rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 
 move =>*.
-rewrite /subarray256 /nttunpack initiE //=. smt(nttpack_bnd Array256.allP).
+rewrite /subarray256 /nttpack initiE //=. smt(nttpack_bnd Array256.allP).
 pose a := nttpack_idx.[k-512].
 rewrite initiE //=.  smt(nttpack_bnd Array256.allP).
-rewrite /nttpack initiE //=. smt(nttpack_bnd Array256.allP).
+rewrite /nttunpack initiE //=. smt(nttpack_bnd Array256.allP).
 rewrite ifF. smt(nttpack_bnd Array256.allP).
 rewrite ifF. smt(nttpack_bnd Array256.allP).
 rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
@@ -322,19 +322,19 @@ rewrite /nttpackv /lift_array768 /subarray256 tP => k kb.
 rewrite mapiE //= !initiE //=.
 case (0 <= k && k < 256).
 + move => kbb.
-  rewrite initiE //= initiE //=; 1: smt(Array256.allP nttpack_bnd).
+  rewrite /nttpack initiE //= initiE //=; 1: smt(Array256.allP nttpack_bnd).
   rewrite mapiE //=; 1: smt(Array256.allP nttpack_bnd).
   congr;congr. 
   rewrite /pack. smt(Array768.initiE Array256.initiE Array256.allP nttpack_bnd).
 move => *;case (256 <= k && k < 512).
 + move => kbb.
-  rewrite initiE //=; 1: smt(Array256.allP nttpack_bnd).
+  rewrite /nttpack initiE //=; 1: smt(Array256.allP nttpack_bnd).
   rewrite initiE //=; 1: smt(Array256.allP nttpack_bnd).
   rewrite mapiE //=; 1: smt(Array256.allP nttpack_bnd).
   congr;congr. 
   rewrite /pack. smt(Array768.initiE Array256.initiE Array256.allP nttpack_bnd).
 move => kbb.
-rewrite initiE //=; 1: smt(Array256.allP nttpack_bnd).
+rewrite /nttpack initiE //=; 1: smt(Array256.allP nttpack_bnd).
 rewrite initiE //=; 1: smt(Array256.allP nttpack_bnd).
 rewrite mapiE //=; 1: smt(Array256.allP nttpack_bnd).
 congr;congr. 
@@ -347,19 +347,19 @@ rewrite /nttunpackv /lift_array768 /subarray256 tP => k kb.
 rewrite mapiE //= !initiE //=.
 case (0 <= k && k < 256).
 + move => kbb.
-  rewrite initiE //= initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite /nttunpack initiE //= initiE //=; 1: smt(Array256.allP nttunpack_bnd).
   rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
   congr;congr. 
   rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
 move => *;case (256 <= k && k < 512).
 + move => kbb.
-  rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite /nttunpack initiE //=; 1: smt(Array256.allP nttunpack_bnd).
   rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
   rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
   congr;congr. 
   rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
 move => kbb.
-rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+rewrite /nttunpack initiE //=; 1: smt(Array256.allP nttunpack_bnd).
 rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
 rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
 congr;congr. 
@@ -399,11 +399,11 @@ rewrite /nttpack; split;rewrite tP.
 + move => H. rewrite tP => k kb. 
   move : (H (nttpack_idx.[k]) _).  smt(nttpack_bnd Array256.allP).
   pose a:= nttpack_idx.[k].
-  rewrite !initiE //=; 1,2: smt(nttpack_bnd Array256.allP).
+  rewrite /nttunpack !initiE //=; 1,2: smt(nttpack_bnd Array256.allP).
   rewrite /a. move :nttunpack_idxK. rewrite allP; smt( mem_iota).
 move => H. rewrite tP => k kb. 
   move : (H (nttpack_idx.[k]) _).  smt(nttpack_bnd Array256.allP).
-  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite /nttunpack !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
 qed.
 
 lemma pack_bounds (p : W16.t Array256.t) l h:
@@ -728,7 +728,7 @@ case (0<=k<256).
   rewrite !mapiE //= 1,2: /# initiE//= 1:/#  initiE//= 1:/#.
   rewrite initiE//= 1:/# initiE//= 1:/#. 
   pose b := nttpack_idx.[a].
-  rewrite ifT 1:/# initiE//= 1:/# initiE//= 1:/# mapiE //= 1:/#. 
+  rewrite ifT 1:/# /nttpack initiE//= 1:/# initiE//= 1:/# mapiE //= 1:/#. 
   move : nttpack_idxK; rewrite allP => Hidx.
   move : (Hidx k _)=>//; smt(mem_iota).
 
