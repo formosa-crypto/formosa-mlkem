@@ -192,7 +192,6 @@ clone import MLWE_PKE as MLWEPKE with
   proof MLWE_.Matrix_.ZR.mulVr by apply KMatrix.ZR.mulVr
   proof MLWE_.Matrix_.ZR.unitP by apply KMatrix.ZR.unitP
   proof MLWE_.Matrix_.ZR.unitout by apply KMatrix.ZR.unitout
-  proof MLWE_.Matrix_.ZR.mulf_eq0 by apply KMatrix.ZR.mulf_eq0
   proof MLWE_.Matrix_.Vector.tofunv_prevector by apply tofunv_prevector
   proof MLWE_.Matrix_.Vector.tofunvK by apply tofunvK
   proof MLWE_.Matrix_.Vector.offunvK by apply offunvK
