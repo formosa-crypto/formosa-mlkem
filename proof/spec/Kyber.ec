@@ -468,6 +468,12 @@ by apply H.
 qed.
 
 
+op darray168 ['a] (d: 'a distr): ('a Array168.t) distr =
+ dmap (dlist d 168) (Array168.of_list witness).
+
+(* ... *)
+
+
 op darray256 ['a] (d: 'a distr): ('a Array256.t) distr =
  dmap (dlist d 256) (Array256.of_list witness).
 
@@ -985,7 +991,7 @@ lemma supp_dshort_elem x:
 proof.
 rewrite supp_dmap; split.
  move=> [y []]; rewrite supp_dcbd.
- smt.
+ move=> H ->; rewrite inFqK_sint_small /#.
 move=> H; exists (as_sint x); rewrite supp_dcbd.
 split => //.
 by rewrite as_sintK.
@@ -1781,16 +1787,17 @@ module Parse(XOF : XOF_t, O : RO.POracle) = {
 
 module ParseRnd = {
    proc sample_real() : poly = {
-      var j, bi, bi1, bi2, d1, d2,k;
+      var a, j, bi, bi1, bi2, d1, d2,k;
       var aa : poly;
       aa <- witness;
       j <- 0;
       while (j < 256) {
+         a <$ darray168 W8.dword;
          k <- 0;
          while ((j < 256) && (k < 168)) {
-            bi  <$ W8.dword;
-            bi1 <$ W8.dword;
-            bi2 <$ W8.dword;
+            bi  <- a.[k];
+            bi1 <- a.[k+1];
+            bi2 <- a.[k+2];
             k <- k + 3;
             d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
             d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
@@ -1815,7 +1822,6 @@ proc.
 (*
 168 w8 -> 56 * 3w8 -> 112 w12 -> Fq list
 
-*)
 transitivity {1}
  { aa <- witness;
    j <- 0;
@@ -1882,6 +1888,7 @@ while (j < 256) {               (3------)
 post = aa{1} = p{2}
 
 *).
+*)admit.
 qed.
 
 clone PRF as PRF_DEFS with

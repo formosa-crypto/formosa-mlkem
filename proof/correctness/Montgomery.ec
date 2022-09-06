@@ -781,7 +781,7 @@ by move: aux_divR => /=; apply.
 qed.
 
 lemma nosmt REDCmul16_correct (x y: W16.t):
- sint_bnd y (- q %/ 2) (q %/ 2) =>
+ sint_bnd y (- q) (q) =>
  to_sint (REDCmul16 x y) %% q
  = to_sint x * to_sint y * Rinv %% q
  /\ sint_bnd (REDCmul16 x y) (-q) (q).
@@ -826,6 +826,5 @@ by rewrite -modzDmr -Domain.mulNr -modzMm modzz mod0z.
 qed.
 
 end Montgomery16.
-
 
 
