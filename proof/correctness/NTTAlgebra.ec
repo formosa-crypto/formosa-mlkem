@@ -25,7 +25,7 @@ require Matrix.
 
 import IntOrder BitReverse.
 
-
+(*
 (* Various clones needed *)
 abstract theory DFT.
   clone import Ring.IDomain as Domain.
@@ -140,6 +140,7 @@ abstract theory DFT.
   qed.
 
 end DFT.
+*)
 
 require import Kyber.
 import Zq.
