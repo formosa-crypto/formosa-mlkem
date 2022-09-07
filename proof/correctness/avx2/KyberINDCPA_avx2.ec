@@ -6,6 +6,7 @@ require import KyberPoly_avx2_proof.
 require import KyberPoly_avx2_vec.
 require import KyberPoly_avx2_prevec.
 require import KyberPolyVec_avx2_proof.
+require import KyberPolyvec_avx2_vec.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2.
 require import NTT_Fq.
@@ -22,7 +23,31 @@ equiv sha3equiv :
 admitted. (* is this in the sha3 paper? *)
 
 lemma sha3ll : islossless M._shake256_128_33.
-admitted. (* boring *)
+proc. 
+while (0<=i<=128) (128 - i);1 : by move => *; auto => /> /#.
+wp; call (_: true).
++ while (0<=to_uint rctr <= 192 /\ to_uint rctr %% 8 = 0) (192 - to_uint rctr); last by
+    auto => /> ?; rewrite ultE;  smt(W64.to_uint_cmp W64.to_uintD_small).
+  move => *; wp; conseq (_: _ ==> true); 1: by 
+    auto => /> &hr; rewrite ultE /= => [#] ???; rewrite !to_uintD_small /=;  smt(W64.to_uint_cmp).
+    call(_: true); 1: by islossless.
+    wp; call(_: true).
+    + by do 11!(unroll for ^while); islossless.
+    call(_: true).
+    + by do 7!(unroll for ^while); islossless.
+    call(_: true).
+    + while (0<=x<=5) (5 - x);last by auto => /> /#.
+      move => *;wp;  while (0<=y<=5) (5 - y);last by auto => /> /#.
+      move => *;inline 1;wp;sp => /=; conseq (_: _ ==> true); 1: by smt().
+      call(_: true). 
+    + by (unroll for ^while); islossless.
+    by auto => />.
+    call(_: true). 
+    + by do 13!(unroll for ^while); islossless.
+    by auto => />.
+conseq (_: true); 1: by smt().
+by inline *; do 2!(unroll for ^while); islossless.
+qed.
   
 equiv genmatrixequiv b :
   Jkem_avx2.M.__gen_matrix ~  M.__gen_matrix :
@@ -109,6 +134,48 @@ module GetNoiseAVX2 = {
                      then aux_2.[i_0-(2 * 256)] else e.[i_0]);
      return (skpv,e);
   }
+
+  proc samplenoise_enc(sp_0 ep bp : W16.t Array768.t, epp : W16.t Array256.t, noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array768.t * W16.t Array256.t  = {
+     var nonce : W8.t;
+     var aux_2, aux_1, aux_0, aux : W16.t Array256.t;
+                nonce <- (W8.of_int 0);
+                (aux_2, aux_1, aux_0,
+                aux) <@ _poly_getnoise_eta1_4x ((Array256.init (fun i_0 => sp_0.[0 + i_0])),
+                (Array256.init (fun i_0 => sp_0.[256 + i_0])),
+                (Array256.init (fun i_0 => sp_0.[(2 * 256) + i_0])),
+                (Array256.init (fun i_0 => ep.[0 + i_0])), noiseseed,
+                nonce);
+                sp_0 <- Array768.init
+                        (fun i_0 => if 0 <= i_0 < 0 + 256 then aux_2.[i_0-0]
+                        else sp_0.[i_0]);
+                sp_0 <- Array768.init
+                        (fun i_0 => if 256 <= i_0 < 256 + 256
+                        then aux_1.[i_0-256] else sp_0.[i_0]);
+                sp_0 <- Array768.init
+                        (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
+                        then aux_0.[i_0-(2 * 256)] else sp_0.[i_0]);
+                ep <- Array768.init
+                      (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0]
+                      else ep.[i_0]);
+                nonce <- (W8.of_int 4);
+                (aux_2, aux_1, aux_0,
+                aux) <@ _poly_getnoise_eta1_4x ((Array256.init (fun i_0 => ep.[256 + i_0])),
+                (Array256.init (fun i_0 => ep.[(2 * 256) + i_0])), epp,
+                (Array256.init (fun i_0 => bp.[0 + i_0])), noiseseed,
+                nonce);
+                ep <- Array768.init
+                      (fun i_0 => if 256 <= i_0 < 256 + 256
+                      then aux_2.[i_0-256] else ep.[i_0]);
+                ep <- Array768.init
+                      (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
+                      then aux_1.[i_0-(2 * 256)] else ep.[i_0]);
+                epp <- aux_0;
+                bp <- Array768.init
+                      (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0]
+                      else bp.[i_0]);
+                return (sp_0,ep,bp, epp);
+
+  }
 }.
 
 equiv getnoiseequiv_avx : 
@@ -146,7 +213,7 @@ conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
-
+(* 
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
    equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
@@ -584,6 +651,7 @@ do split.
 smt().
 
 qed.
+*)
 
 (***************************************************)
 
@@ -631,66 +699,103 @@ transitivity {1} { Jkem.M.__indcpa_enc(sctp,msgp,pkp,noiseseed);}
 
 inline{1} 1; inline {2} 1. wp.
 
+seq 49 57 : (={ctp,v,Glob.mem} /\
+     pos_bound256_cxq v{1} 0 256 2 /\
+     pos_bound256_cxq v{2} 0 256 2 /\
+    lift_array256 v{1} = nttunpack (lift_array256 v{2}) /\ 
+    valid_ptr (to_uint ctp{1}) 128); last by
+  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; call (compressequiv memm _p); auto.
 
-call KyberPolyAVX.poly_compress_corr.
-call KyberPolyvecAVX.polyvec_tobytes_corr.
+seq 47 55 : (={ctp,v,bp,Glob.mem} /\
+     pos_bound256_cxq v{1} 0 256 2 /\
+     pos_bound256_cxq v{2} 0 256 2 /\
+     pos_bound768_cxq bp{1} 0 768 2 /\
+     pos_bound768_cxq bp{2} 0 768 2 /\
+    lift_array256 v{1} = nttunpack (lift_array256 v{2}) /\ 
+    lift_array768 bp{1} = nttunpackv (lift_array768 bp{2}) /\ 
+    valid_ptr (to_uint ctp{1}) (128+3*320)); last by
+  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; wp;call (compressequivvec memm _p); auto => />;
+   move => *; rewrite !to_uintD_small /= /#.
+
 wp;conseq />.
-ecall (KyberPolyvecAVX.polyvec_reduce_corr (lift_array768 pkpv{2})).
+call (reduceequiv).
+ecall (KyberPolyvecAVX.polyvec_reduce_corr (lift_array768 bp{2})).
+
+call (addequiv 4 2 _ _) => //.
+call (addequiv 2 2 _ _) => //.
 
 have H := KyberPolyvecAVX.polyvec_add2_corr 2 2 _ _ => //.
-ecall (H (lift_array768 pkpv{2}) (lift_array768 e{2})); clear H.
-unroll for {1} 37.
+ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 
-sp 3 3.
 
-seq 17 17  : (#pre /\ ={publicseed, noiseseed,sskp,spkp,e,skpv,pkpv}).
-+ by conseq />; sim 14 14; call( sha3equiv); conseq />; sim. 
+unroll for {1} 38.
 
-seq 1 2 : (#pre /\ aa{1} = nttunpackm a{2} /\
-           pos_bound2304_cxq aa{1} 0 2304 2 /\
-           pos_bound2304_cxq a{2} 0 2304 2); 1: by 
-   conseq />; call (genmatrixequiv false); auto => />.
+sp 4 4.
+swap {1} 18 -1. (* avoid dealing with stack noise seed *)
 
-swap {1} [11..12] 2.
+seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
+           pos_bound256_cxq k{1} 0 256 1 /\
+           pos_bound256_cxq k{2} 0 256 1 /\
+           lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
+           pos_bound768_cxq pkpv{1} 0 768 2 /\
+           pos_bound768_cxq pkpv{2} 0 768 2 /\
+           aat{1} = nttunpackm aat{2} /\
+           pos_bound2304_cxq aat{1} 0 2304 2 /\
+           pos_bound2304_cxq aat{2} 0 2304 2). 
++ call (genmatrixequiv true).
+  admit.
 
-seq 10 18 : (#pre  /\
-    signed_bound768_cxq skpv{1} 0 768 1 /\
-    signed_bound768_cxq e{1} 0 768 1 /\
-    signed_bound768_cxq skpv{2} 0 768 1 /\
-    signed_bound768_cxq e{2} 0 768 1). 
+sp 2 0.
+(* swap {1} [11..12] 2. *)
+
+seq 12 20 : (#{/~bp{1}=bp{2}}pre  /\
+    signed_bound768_cxq sp_0{1} 0 768 1 /\
+    signed_bound768_cxq ep{1} 0 768 1 /\
+    signed_bound_cxq epp{1} 0 256 1 /\
+    signed_bound768_cxq sp_0{2} 0 768 1 /\
+    signed_bound768_cxq ep{2} 0 768 1 /\ 
+    signed_bound_cxq epp{1} 0 256 1).
 + conseq />.
-  transitivity {1} { (skpv,e) <@ GetNoiseAVX2.sample_noise_kg(skpv,pkpv,e,noiseseed);} (={noiseseed,skpv,pkpv,e} ==> ={skpv,e}) 
+  transitivity {1} { (sp_0,ep,bp,epp) <@ GetNoiseAVX2.samplenoise_enc(sp_0,ep,bp, epp,noiseseed);} (lnoiseseed{1} = noiseseed{2} /\ ={sp_0,ep,bp,epp} ==> ={sp_0,ep,epp}) 
    (
-   ((pkp0{2} = pkp{2} /\
-    skp0{2} = skp{2} /\
-    randomnessp0{2} = randomnessp{2} /\
-    pkp0{1} = pkp{1} /\
-    skp0{1} = skp{1} /\
-    randomnessp0{1} = randomnessp{1} /\
-    ={Glob.mem, pkp, skp, randomnessp} /\
-    Glob.mem{1} = mem /\
-    to_uint pkp{1} = _pkp /\
-    to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\
-    valid_ptr (to_uint randomnessp{1}) 32 /\ valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)) /\
-   ={publicseed, noiseseed, sskp, spkp, skpv, pkpv, e}) /\
-  aa{1} = nttunpackm a{2} /\ pos_bound2304_cxq aa{1} 0 2304 2 /\ pos_bound2304_cxq a{2} 0 2304 2
+   s_noiseseed{1} = noiseseed0{1} /\
+  lnoiseseed{1} = s_noiseseed{1} /\
+  (sctp0{2} = sctp{2} /\
+   msgp0{2} = msgp{2} /\
+   pkp0{2} = pkp{2} /\
+   noiseseed0{2} = noiseseed{2} /\
+   sctp0{1} = sctp{1} /\
+   msgp0{1} = msgp{1} /\
+   pkp0{1} = pkp{1} /\
+   noiseseed0{1} = noiseseed{1} /\
+   ={Glob.mem, msgp, pkp, noiseseed, sctp} /\
+   valid_ptr _pkp (384 * 3 + 32) /\
+   valid_ptr _ctp (3 * 320 + 128) /\ Glob.mem{1} = mem /\ to_uint sctp{1} = _ctp /\ to_uint pkp{1} = _pkp) /\
+  ={publicseed, bp, ep, epp, v, sp_0, k} /\
+  pos_bound256_cxq k{1} 0 256 1 /\
+  pos_bound256_cxq k{2} 0 256 1 /\
+  lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
+  pos_bound768_cxq pkpv{1} 0 768 2 /\
+  pos_bound768_cxq pkpv{2} 0 768 2 /\
+  aat{1} = nttunpackm aat{2} /\ pos_bound2304_cxq aat{1} 0 2304 2 /\ pos_bound2304_cxq aat{2} 0 2304 2
    ==> 
-    ={skpv, e} /\
-  signed_bound768_cxq skpv{1} 0 768 1 /\
-  signed_bound768_cxq e{1} 0 768 1 /\ signed_bound768_cxq skpv{2} 0 768 1 /\ signed_bound768_cxq e{2} 0 768 1
+    ={ep, epp, sp_0} /\
+  signed_bound768_cxq sp_0{1} 0 768 1 /\
+  signed_bound768_cxq ep{1} 0 768 1 /\
+  signed_bound_cxq epp{1} 0 256 1 /\
+  signed_bound768_cxq sp_0{2} 0 768 1 /\ signed_bound768_cxq ep{2} 0 768 1 /\ signed_bound_cxq epp{1} 0 256 1
   ); 1,2:smt().
   + by inline {2} 1;do 2!(wp; call getnoiseequiv_avx);auto => />. 
   inline {1} 1. inline GetNoiseAVX2._poly_getnoise_eta1_4x.
-  wp; do 2!(call{1} (_: true ==> true); 1: by apply polygetnoise_ll).
-  do 6!(wp; call  getnoiseequiv); auto => />.
-  move => &1 &2 ????????R?; split.
+  wp; call{1} (_: true ==> true); 1: by apply polygetnoise_ll.
+  do 7!(wp; call  getnoiseequiv); auto => />.
+  move => &1 &2 ??????????R?; split.
   + by rewrite tP => k kb; rewrite !initiE //= initiE /#.
   move => ?R0?; split.
   + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= /#.
   move => ?R1?????; split.
   + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
-  move => ?R2?; do split. 
+  move => ?R2???; do split.
   + rewrite /signed_bound768_cxq => x xb /=.
     rewrite !initiE //= fun_if. 
     case (512 <= x && x < 768); 1: by smt().
@@ -720,14 +825,11 @@ seq 10 18 : (#pre  /\
   move => *; rewrite !initiE //= fun_if. 
   by smt().
 
-seq 2 2 : (#{/~skpv{1}}{~e{1}}{~skpv{2}}{~e{2}}pre /\ 
-           lift_array768 skpv{1} = nttunpackv (lift_array768 skpv{2}) /\
-           lift_array768 e{1} = nttunpackv (lift_array768 e{2}) /\
-           pos_bound768_cxq skpv{1} 0 768 2 /\
-           pos_bound768_cxq skpv{2} 0 768 2 /\
-           pos_bound768_cxq e{1} 0 768 2 /\
-           pos_bound768_cxq e{2} 0 768 2); 1: 
- by  conseq />; call (nttequiv); call (nttequiv); auto => /> /#.
+seq 1 1 : (#{/~sp_0{1}}{~sp_0{2}}pre /\ 
+           lift_array768 sp_0{1} = nttunpackv (lift_array768 sp_0{2}) /\
+           pos_bound768_cxq sp_0{1} 0 768 2 /\
+           pos_bound768_cxq sp_0{2} 0 768 2); 1: 
+ by  conseq />; call (nttequiv); auto => /> /#.
 
 (* First ip *)
 

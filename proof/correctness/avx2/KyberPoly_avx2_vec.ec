@@ -2127,6 +2127,16 @@ rewrite /nttunpack initiE //= -/a mapiE //=. move : nttunpack_bnd; rewrite allP 
 smt(Array256.mapiE nttunpack_bnd Array256.allP).
 qed.
 
+equiv compressequiv mem _p : 
+  M._poly_compress ~   Jkem.M._poly_compress :
+     pos_bound256_cxq a{1} 0 256 2 /\
+     pos_bound256_cxq a{2} 0 256 2 /\
+    lift_array256 a{1} = nttunpack (lift_array256 a{2}) /\ 
+    ={Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p 128 /\ _p = to_uint rp{1}
+    ==> 
+    ={Glob.mem} /\  touches mem Glob.mem{1} _p 128.
+admitted.
+
 import Zq. 
 
 
