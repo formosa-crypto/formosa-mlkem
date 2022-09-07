@@ -223,15 +223,33 @@ lemma polvec_reduce_corr _a:
 qed.
 
 
-lemma polyvec_tobytes_corr :
+equiv compressequivvec mem _p : 
+  Jkem_avx2.M.__polyvec_compress ~   M.__polyvec_compress :
+     pos_bound768_cxq a{1} 0 768 2 /\
+     pos_bound768_cxq a{2} 0 768 2 /\
+    lift_array768 a{1} = lift_array768 a{2} /\ 
+    ={Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p (3*128) /\ _p = to_uint rp{1}
+    ==> 
+    ={Glob.mem} /\  touches mem Glob.mem{1} _p (3*128).
+admitted.
+
+lemma polyvec_frombytes_equiv :
+    equiv [ Jkem_avx2.M.__polyvec_frombytes ~ Jkem.M.__polyvec_frombytes :
+             ={Glob.mem,ap} ==>
+             lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\
+             pos_bound768_cxq res{1} 0 768 2 /\
+             pos_bound768_cxq res{2} 0 768 2 ].
+admitted. (* Miguel *)
+
+lemma polyvec_tobytes_equiv :
     equiv [ Jkem_avx2.M.__polyvec_tobytes ~ Jkem.M.__polyvec_tobytes :
-             pos_bound768_cxq a{1} 0 256 2 /\
-             pos_bound768_cxq a{2} 0 256 2 /\
+             pos_bound768_cxq a{1} 0 768 2 /\
+             pos_bound768_cxq a{2} 0 768 2 /\
              lift_array768 a{1} = nttunpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
 admitted. (* Miguel *)
 
 
-lemma polyvec_add2_corr  (ab bb : int):
+lemma polyvec_add2_equiv  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
   forall (_a _b : Fq Array768.t),
@@ -326,30 +344,59 @@ rewrite /a.
 move : nttpack_idxK; rewrite allP. smt(mem_iota).  
 qed.
 
-lemma polyvec_reduce_corr _a :
+lemma polyvec_add2_equiv_noperm  (ab bb : int):
+    0 <= ab && ab <= 6 =>
+    0 <= bb && bb <= 3 =>
+  forall (_a _b : Fq Array768.t),
+    equiv [ Jkem_avx2.M.__polyvec_add2 ~ Jkem.M.__polyvec_add2 :
+      _a = lift_array768 r{2} /\
+      _b = lift_array768 b{2} /\ signed_bound768_cxq r{2} 0 768 ab /\ signed_bound768_cxq b{2} 0 768 bb /\
+      _a = lift_array768 r{1} /\
+      _b = lift_array768 b{1} /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb
+           ==> lift_array768 res{1} = lift_array768  res{2} /\
+               signed_bound768_cxq res{1} 0 768 (ab + bb) /\
+               signed_bound768_cxq res{2} 0 768 (ab + bb) 
+              ].
+proof. 
+move => abb bbb _a _b;proc* => /=.
+transitivity {1} {r0 <@ Mprevec.polyvec_add2(r,b); }
+       (={r,b} ==> ={r0})
+       (_a = lift_array768 r{2} /\
+  _b = lift_array768 b{2} /\
+  signed_bound768_cxq r{2} 0 768 ab /\
+  signed_bound768_cxq b{2} 0 768 bb /\
+  _a =  (lift_array768 r{1}) /\
+  _b =  (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
+      lift_array768 r0{1} = (lift_array768 r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
+  + symmetry. call prevec_eq_poly_add2 => //.
+have corr1 := (polvec_add_corr ( _a) ( _b) ab bb abb bbb). call {1} corr1.
+have corr2 := (polyvec_add_corr _a _b ab bb abb bbb); call {2} corr2.
+
+auto => />.  
+move => &1 &2 ????????rr? H rval? H0. 
+move : H H0; rewrite /lift_array768 !tP => ? ? k kb. 
+rewrite !mapiE;smt(Array768.mapiE).
+qed.
+
+lemma polyvec_reduce_equiv_noperm _a :
     equiv [ Jkem_avx2.M.__polyvec_reduce ~ Jkem.M.__polyvec_reduce :
-       _a  = lift_array768 r{2} /\  _a  = nttpackv (lift_array768 r{1})  ==>
+       _a  = lift_array768 r{2} /\  _a  = lift_array768 r{1}  ==>
        (forall k, 0 <= k < 768 => bpos16 res{1}.[k] (2*q)) /\
        (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
-              lift_array768 res{1} = nttunpackv (lift_array768 res{2}) ].
+              lift_array768 res{1} =  lift_array768 res{2} ].
 proc*. 
 transitivity {1} {r0 <@ Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})
-       (_a = lift_array768 r{2} /\ _a = nttpackv (lift_array768 r{1})   ==> 
+       (_a = lift_array768 r{2} /\ _a = (lift_array768 r{1})   ==> 
       (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
   (forall (k : int), 0 <= k && k < 768 => bpos16 r0{2}.[k] (2 * q)) /\
-  lift_array768 r0{1} = nttunpackv (lift_array768  r0{2})); 1,2: by smt().
+  lift_array768 r0{1} =  (lift_array768  r0{2})); 1,2: by smt().
   + symmetry. call prevec_eq_poly_reduce => //.
-have corr1 := (polvec_reduce_corr (nttunpackv _a)). call {1} corr1.
+have corr1 := (polvec_reduce_corr ( _a)). call {1} corr1.
 have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
 
-auto => />. 
-move => &1 &2 ?????; do split. smt(packvK unpackvK). 
-move => ??<-?.
-smt(packvK unpackvK). 
+auto => /> /#. 
 qed.
-
-require import KyberPoly_avx2_vec.
 
 equiv pointwiseequiv : 
   Jkem_avx2.M.__polyvec_pointwise_acc ~   M.__polyvec_pointwise_acc :
@@ -478,6 +525,7 @@ auto => />.
 move => &1 &2 ????????? r1 r2 ?.
 rewrite /pos_bound256_cxq /signed_bound_cxq => H H0. smt().
 qed.
+
 
 end KyberPolyvecAVX.
 

@@ -198,15 +198,3 @@ apply eq_polyvec_reduce.
 apply veceq_polyvec_reduce.
 qed.
 
-require import KyberPolyVec NTT_avx2 KyberPoly. 
-import KyberPolyVec  NTT_Avx2 KyberPoly.
-
-equiv compressequivvec mem _p : 
-  M.__polyvec_compress ~   Jkem.M.__polyvec_compress :
-     pos_bound768_cxq a{1} 0 768 2 /\
-     pos_bound768_cxq a{2} 0 768 2 /\
-    lift_array768 a{1} = nttunpackv (lift_array768 a{2}) /\ 
-    ={Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p (3*128) /\ _p = to_uint rp{1}
-    ==> 
-    ={Glob.mem} /\  touches mem Glob.mem{1} _p (3*128).
-admitted.

@@ -2127,11 +2127,39 @@ rewrite /nttunpack initiE //= -/a mapiE //=. move : nttunpack_bnd; rewrite allP 
 smt(Array256.mapiE nttunpack_bnd Array256.allP).
 qed.
 
+equiv reduceequiv_noperm : 
+  M.__poly_reduce ~   Jkem.M.__poly_reduce :
+    lift_array256 arg{1} = lift_array256 arg{2} ==> 
+    lift_array256 res{1} = lift_array256 res{2} /\
+    pos_bound256_cxq res{1} 0 256 2 /\ 
+    pos_bound256_cxq res{2} 0 256 2.
+proc*.  
+transitivity {1} { r <@ Mprevec.poly_reduce(rp); }
+     (={rp} ==> ={r}) 
+     (lift_array256 rp{1} =  (lift_array256 rp{2}) ==> 
+    lift_array256 r{1} =  (lift_array256 r{2}) /\
+    pos_bound256_cxq r{1} 0 256 2 /\ 
+    pos_bound256_cxq r{2} 0 256 2). smt(). smt().
+symmetry. call prevec_eq_poly_reduce. auto => />.
+
+ecall{2} (poly_reduce_corr (lift_array256 rp{2})).
+ecall{1} (KyberPolyAVX.poly_reduce_corr (lift_array256 rp{1})).
+
+auto => />.
+move => &1 &2; rewrite /lift_array256 tP => Hvals r1; rewrite tP => r1val r1rng r2; rewrite tP => r2val r2rng.
+
+rewrite tP => k kb ;rewrite mapE //= initiE //=.
+rewrite !mapiE /=. smt().  
+move : (Hvals k kb). rewrite mapiE //=.
+rewrite  mapiE //=. 
+smt(Array256.mapiE).
+qed.
+
 equiv compressequiv mem _p : 
   M._poly_compress ~   Jkem.M._poly_compress :
      pos_bound256_cxq a{1} 0 256 2 /\
      pos_bound256_cxq a{2} 0 256 2 /\
-    lift_array256 a{1} = nttunpack (lift_array256 a{2}) /\ 
+    lift_array256 a{1} = lift_array256 a{2} /\ 
     ={Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p 128 /\ _p = to_uint rp{1}
     ==> 
     ={Glob.mem} /\  touches mem Glob.mem{1} _p 128.
@@ -2250,3 +2278,56 @@ move : (H0 k kb); rewrite !mapiE //=.
 move : (H1 k kb); rewrite !mapiE //=.
 smt(Array256.initiE).
 qed.
+
+lemma addequiv_noperm  (ab bb : int):
+    0 <= ab && ab <= 6 =>
+    0 <= bb && bb <= 3 =>
+    equiv [ M._poly_add2 ~ Jkem.M._poly_add2 :
+      lift_array256 rp{1} = lift_array256 ( rp{2}) /\
+      lift_array256 bp{1} = lift_array256 ( bp{2}) /\
+      signed_bound_cxq rp{2} 0 256 ab /\ 
+      signed_bound_cxq bp{2} 0 256 bb /\
+      signed_bound_cxq rp{1} 0 256 ab /\ 
+      signed_bound_cxq bp{1} 0 256 bb
+           ==> lift_array256 res{1} = lift_array256  ( res{2}) /\
+               signed_bound_cxq res{1} 0 256 (ab + bb) /\
+               signed_bound_cxq res{2} 0 256 (ab + bb) 
+              ].
+move => abb bbb.
+proc*.  
+transitivity {1} { r <@ Mprevec.poly_add2(rp,bp); }
+     (={rp,bp} ==> ={r}) 
+     (lift_array256 rp{1} = lift_array256 ( rp{2}) /\
+      lift_array256 bp{1} = lift_array256 ( bp{2}) /\
+    signed_bound_cxq rp{1} 0 256 ab /\  
+    signed_bound_cxq bp{1} 0 256 bb /\
+    signed_bound_cxq rp{2} 0 256 ab /\  
+    signed_bound_cxq bp{2} 0 256 bb
+                              ==> 
+    lift_array256 r{1} = lift_array256 ( r{2}) /\
+    signed_bound_cxq r{1} 0 256 (ab+bb) /\ 
+    signed_bound_cxq r{2} 0 256 (ab+bb)). smt(). smt().
+symmetry. call prevec_eq_poly_add2. auto => />.
+
+have Hright :=  (poly_add_correct_impl ab bb abb bbb).
+ecall{2} (Hright (lift_array256 rp{2}) (lift_array256 bp{2})).
+have Hleft :=  (poly_add_corr_avx_impl ab bb abb bbb).
+ecall{1} (Hleft (lift_array256 rp{1}) (lift_array256  bp{1})).
+
+auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 r2 H6 H7 r1 H8 H9.
+rewrite /lift_array256 tP => k kb.
+rewrite !mapiE //=.
+rewrite H7 // H9 /#.
+qed.
+
+equiv frommsgequiv_noperm  : 
+  M._poly_frommsg_1 ~   Jkem.M._i_poly_frommsg :
+    ={ap} ==> 
+    lift_array256 res{1} = lift_array256 res{2} /\
+    pos_bound256_cxq res{1} 0 256 1 /\ 
+    pos_bound256_cxq res{2} 0 256 1.
+admitted. (* MIGUEL: the frommsg procedures
+in prevec/vec do not match the implementation:
+now the load is carried out outside of the
+function *)
