@@ -2163,7 +2163,7 @@ equiv compressequiv mem _p :
     ={Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p 128 /\ _p = to_uint rp{1}
     ==> 
     ={Glob.mem} /\  touches mem Glob.mem{1} _p 128.
-admitted.
+admitted. (* Miguel *)
 
 import Zq. 
 

@@ -256,7 +256,7 @@ call KyberPolyvecAVX.polyvec_tobytes_equiv.
 wp;conseq />.
 ecall (KyberPolyvecAVX.polyvec_reduce_equiv (lift_array768 pkpv{2})).
 
-have H := KyberPolyvecAVX.polyvec_add2_corr 2 2 _ _ => //.
+have H := KyberPolyvecAVX.polyvec_add2_equiv 2 2 _ _ => //.
 ecall (H (lift_array768 pkpv{2}) (lift_array768 e{2})); clear H.
 unroll for {1} 37.
 
@@ -641,14 +641,7 @@ do split.
 + smt().
 + smt().
 move => *.
-do split. 
 + smt(unpackvK).
-move => *.
-do split. 
-+ smt().
-+ smt().
-smt().
-
 qed.
 
 (***************************************************)

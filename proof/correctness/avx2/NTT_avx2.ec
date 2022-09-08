@@ -773,7 +773,7 @@ equiv invnttequiv :
    lift_array768 res{1} = lift_array768 res{2} /\ 
    pos_bound768_cxq res{1} 0 768 2 /\ 
    pos_bound768_cxq res{2} 0 768 2.
-   admitted.
+   admitted. (* HUGO BACELAR *)
 
 equiv poly_invnttequiv :
  Jkem_avx2.M._poly_invntt ~ M._poly_invntt : 
@@ -783,6 +783,6 @@ equiv poly_invnttequiv :
    lift_array256 res{1} = lift_array256 res{2} /\ 
    pos_bound256_cxq res{1} 0 256 2 /\ 
    pos_bound256_cxq res{2} 0 256 2.
-   admitted.
+   admitted. (* HUGO BACELAR *)
 
 end NTT_Avx2.

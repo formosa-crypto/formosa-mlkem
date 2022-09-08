@@ -6,6 +6,7 @@ require import AVX2_Ops.
 require import Jkem_avx2 Jkem.
 require import KyberPolyvec_avx2_prevec.
 require import KyberPoly_avx2_proof.
+require import KyberPoly_avx2_vec.
 require import Fq_avx2.
 require import KyberPolyVec.
 require import KyberPolyvec_avx2_vec.
@@ -231,7 +232,7 @@ equiv compressequivvec mem _p :
     ={Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p (3*128) /\ _p = to_uint rp{1}
     ==> 
     ={Glob.mem} /\  touches mem Glob.mem{1} _p (3*128).
-admitted.
+admitted. (* Miguel *)
 
 lemma polyvec_frombytes_equiv :
     equiv [ Jkem_avx2.M.__polyvec_frombytes ~ Jkem.M.__polyvec_frombytes :
@@ -376,6 +377,29 @@ auto => />.
 move => &1 &2 ????????rr? H rval? H0. 
 move : H H0; rewrite /lift_array768 !tP => ? ? k kb. 
 rewrite !mapiE;smt(Array768.mapiE).
+qed.
+
+lemma polyvec_reduce_equiv _a :
+    equiv [ Jkem_avx2.M.__polyvec_reduce ~ Jkem.M.__polyvec_reduce :
+       _a  = lift_array768 r{2} /\  _a  = nttpackv (lift_array768 r{1})  ==>
+       (forall k, 0 <= k < 768 => bpos16 res{1}.[k] (2*q)) /\
+       (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
+              lift_array768 res{1} = nttunpackv (lift_array768 res{2}) ].
+proc*. 
+transitivity {1} {r0 <@ Mprevec.polyvec_reduce(r); }
+       (={r} ==> ={r0})
+       (_a = lift_array768 r{2} /\ _a = nttpackv (lift_array768 r{1})   ==> 
+      (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
+  (forall (k : int), 0 <= k && k < 768 => bpos16 r0{2}.[k] (2 * q)) /\
+  lift_array768 r0{1} = nttunpackv (lift_array768  r0{2})); 1,2: by smt().
+  + symmetry. call prevec_eq_poly_reduce => //.
+have corr1 := (polvec_reduce_corr (nttunpackv _a)). call {1} corr1.
+have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
+
+auto => />. 
+move => &1 &2 ?????; do split. smt(packvK unpackvK). 
+move => ??<-?.
+smt(packvK unpackvK). 
 qed.
 
 lemma polyvec_reduce_equiv_noperm _a :
