@@ -212,7 +212,7 @@ have HHH : equiv [  M._poly_getnoise ~ M._poly_getnoise : ={arg} ==> ={res} ] by
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
-(*
+
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
    equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
@@ -1025,7 +1025,7 @@ conseq />.  call(poly_invnttequiv). auto => />. smt().
 
 auto => /> /#.
 qed.
-*)
+
 
 (***************************************************)
 
