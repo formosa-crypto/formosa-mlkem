@@ -2165,6 +2165,17 @@ equiv compressequiv mem _p :
     ={Glob.mem} /\  touches mem Glob.mem{1} _p 128.
 admitted. (* Miguel *)
 
+equiv compressequiv_1 mem : 
+  M._poly_compress_1 ~   Jkem.M._i_poly_compress :
+     pos_bound256_cxq a{1} 0 256 2 /\
+     pos_bound256_cxq a{2} 0 256 2 /\
+    lift_array256 a{1} = lift_array256 a{2} /\ 
+    ={Glob.mem} /\ Glob.mem{1} = mem   
+    ==> 
+    ={Glob.mem} /\  Glob.mem{1} = mem /\
+    res.`1{1} = res.`1{2}.
+admitted. (* Miguel *)
+
 import Zq. 
 
 

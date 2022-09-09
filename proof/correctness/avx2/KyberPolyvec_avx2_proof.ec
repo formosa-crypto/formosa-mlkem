@@ -234,6 +234,16 @@ equiv compressequivvec mem _p :
     ={Glob.mem} /\  touches mem Glob.mem{1} _p (3*128).
 admitted. (* Miguel *)
 
+equiv compressequivvec_1 mem : 
+  Jkem_avx2.M.__polyvec_compress_1 ~   M.__i_polyvec_compress :
+     pos_bound768_cxq a{1} 0 768 2 /\
+     pos_bound768_cxq a{2} 0 768 2 /\
+    lift_array768 a{1} = lift_array768 a{2} /\ 
+    ={Glob.mem} /\ Glob.mem{1} = mem 
+    ==> 
+    ={Glob.mem,res} /\  Glob.mem{1} = mem.
+admitted. (* Miguel *)
+
 lemma polyvec_frombytes_equiv :
     equiv [ Jkem_avx2.M.__polyvec_frombytes ~ Jkem.M.__polyvec_frombytes :
              ={Glob.mem,ap} ==>

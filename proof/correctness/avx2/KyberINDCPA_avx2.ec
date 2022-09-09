@@ -212,7 +212,7 @@ have HHH : equiv [  M._poly_getnoise ~ M._poly_getnoise : ={arg} ==> ={res} ] by
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
-
+(*
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
    equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
@@ -1025,7 +1025,7 @@ conseq />.  call(poly_invnttequiv). auto => />. smt().
 
 auto => /> /#.
 qed.
-
+*)
 
 (***************************************************)
 
@@ -1045,8 +1045,8 @@ lemma kyber_correct_enc_1_avx2 mem _pkp :
      c2 = Array128.init (fun i => res{1}.[i+960])
 ].
 proc*.
-transitivity {1} { r <@ Jkem.M.__iindcpa_enc(witness,msgp,pkp,noiseseed);} 
-(={Glob.mem,msgp,pkp,noiseseed} /\
+transitivity {1} { r <@ Jkem.M.__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
+(={Glob.mem,ctp,msgp,pkp,noiseseed} /\
   valid_ptr _pkp (384 * 3 + 32) /\
   Glob.mem{1} = mem /\
   to_uint pkp{1} = _pkp 
@@ -1057,7 +1057,7 @@ transitivity {1} { r <@ Jkem.M.__iindcpa_enc(witness,msgp,pkp,noiseseed);}
   to_uint pkp{1} = _pkp /\
   noiseseed{1} = r{2} /\
   pk{2}.`1 = load_array1152 mem _pkp /\ 
-  pk{2}.`2 = load_array32 mem (_pkp + 3 * 384)
+  pk{2}.`2 = load_array32 mem (_pkp + 3 * 384) 
   ==>
   Glob.mem{1} = mem /\
   r{1} = (Array1088.init (fun (i : int) => if 0 <= i && i < 960 then r0{2}.`1.[i] else r0{2}.`2.[i - 960])));[ by smt() | | | by call(kyber_correct_ienc mem _pkp); auto => />].
@@ -1066,8 +1066,337 @@ transitivity {1} { r <@ Jkem.M.__iindcpa_enc(witness,msgp,pkp,noiseseed);}
     + by rewrite !initiE // 1:/# /= /#.
     by rewrite !initiE //= !initiE 1:/# /= /#.
 
-inline{1} 1; inline {2} 1.
-admitted. (* this proof should be almost identical to the prev one *)
+inline{1} 1; inline {2} 1. wp.
+
+seq 51 59 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
+     pos_bound256_cxq v{1} 0 256 2 /\
+     pos_bound256_cxq v{2} 0 256 2 /\
+    lift_array256 v{1} = lift_array256 v{2}); last by
+  exists *Glob.mem{1}; elim* => memm; call (compressequiv_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
+
+seq 49 57 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
+     pos_bound256_cxq v{1} 0 256 2 /\
+     pos_bound256_cxq v{2} 0 256 2 /\
+     pos_bound768_cxq bp{1} 0 768 2 /\
+     pos_bound768_cxq bp{2} 0 768 2 /\
+    lift_array256 v{1} = lift_array256 v{2} /\ 
+    lift_array768 bp{1} = lift_array768 bp{2}); last 
+  exists *Glob.mem{1}; elim* => memm; wp;call (KyberPolyvecAVX.compressequivvec_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
+
+wp;conseq />.
+call (reduceequiv_noperm).
+ecall (polyvec_reduce_equiv_noperm (lift_array768 bp{2})).
+call (addequiv_noperm 4 2 _ _) => //.
+call (addequiv_noperm 2 2 _ _) => //.
+
+have H := polyvec_add2_equiv_noperm 2 2 _ _ => //.
+ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
+
+
+unroll for {1} 40.
+
+swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0}); 1: by auto.
+sp 3 3.
+swap {1} 19 1. (* avoid dealing with stack noise seed *)
+
+seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
+           pos_bound256_cxq k{1} 0 256 1 /\
+           pos_bound256_cxq k{2} 0 256 1 /\
+           lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
+           pos_bound768_cxq pkpv{1} 0 768 2 /\
+           pos_bound768_cxq pkpv{2} 0 768 2 /\
+           aat{1} = nttunpackm aat{2} /\
+           pos_bound2304_cxq aat{1} 0 2304 2 /\
+           pos_bound2304_cxq aat{2} 0 2304 2). 
++ call (genmatrixequiv true).
+  wp;call frommsgequiv_noperm. conseq />. smt().
+  conseq (_: _ ==> lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
+       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,sctp,Glob.mem}).
+  auto => /> &2 ??????? rl rr H H0 H1 ?????. 
+  + rewrite tP => k kb.
+    move : H; rewrite /lift_array256 tP => H.
+    move : (H k kb); rewrite !mapiE //=. 
+    move : H0 H1; rewrite /pos_bound256_cxq /bpos16 /= => H0 H1.
+    move : (H0 k kb) (H1 k kb).
+    rewrite -Zq.eq_inFq /= qE. 
+    move => HH0 HH1; rewrite !modz_small; 1,2: smt( StdOrder.IntOrder.gtr0_norm).    
+    move : HH0 HH1; rewrite /to_sint /smod /= => HH0 HH1.
+    rewrite  ifF. smt(W16.to_uint_cmp). 
+    rewrite  ifF. smt(W16.to_uint_cmp). 
+    smt(W16.to_uint_eq).
+  seq 14 12 : (#{/~publicseed{2}}post /\ ={publicseed}).
+  wp;sp; conseq />.
+  call (polyvec_frombytes_equiv).
+  auto => />.
+  conseq />. sim.
+sp 2 0.
+(* swap {1} [11..12] 2. *)
+
+seq 12 20 : (#{/~bp{1}=bp{2}}pre  /\
+    signed_bound768_cxq sp_0{1} 0 768 1 /\
+    signed_bound768_cxq ep{1} 0 768 1 /\
+    signed_bound_cxq epp{1} 0 256 1 /\
+    signed_bound768_cxq sp_0{2} 0 768 1 /\
+    signed_bound768_cxq ep{2} 0 768 1 /\ 
+    signed_bound_cxq epp{1} 0 256 1).
++ conseq />.
+  transitivity {1} { (sp_0,ep,bp,epp) <@ GetNoiseAVX2.samplenoise_enc(sp_0,ep,bp, epp,noiseseed);} (lnoiseseed{1} = noiseseed{2} /\ ={sp_0,ep,bp,epp} ==> ={sp_0,ep,epp}) 
+   (
+   s_noiseseed{1} = noiseseed0{1} /\
+  lnoiseseed{1} = s_noiseseed{1} /\
+  (ctp0{2} = ctp{2} /\
+   msgp0{2} = msgp{2} /\
+   noiseseed0{2} = noiseseed{2} /\
+   ctp0{1} = ctp{1} /\
+   msgp0{1} = msgp{1} /\
+   noiseseed0{1} = noiseseed{1} /\
+   (={Glob.mem, msgp, pkp, noiseseed} /\ valid_ptr _pkp (384 * 3 + 32) /\ Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp) /\
+   ={pkp0}) /\
+  ={publicseed, bp, ep, epp, v, sp_0, k} /\
+  pos_bound256_cxq k{1} 0 256 1 /\
+  pos_bound256_cxq k{2} 0 256 1 /\
+  lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
+  pos_bound768_cxq pkpv{1} 0 768 2 /\
+  pos_bound768_cxq pkpv{2} 0 768 2 /\
+  aat{1} = nttunpackm aat{2} /\ pos_bound2304_cxq aat{1} 0 2304 2 /\ pos_bound2304_cxq aat{2} 0 2304 2
+   ==> 
+    ={ep, epp, sp_0} /\
+  signed_bound768_cxq sp_0{1} 0 768 1 /\
+  signed_bound768_cxq ep{1} 0 768 1 /\
+  signed_bound_cxq epp{1} 0 256 1 /\
+  signed_bound768_cxq sp_0{2} 0 768 1 /\ signed_bound768_cxq ep{2} 0 768 1 /\ signed_bound_cxq epp{1} 0 256 1
+  ); 1,2:smt().
+  + by inline {2} 1;do 2!(wp; call getnoiseequiv_avx);auto => />. 
+  inline {1} 1. inline GetNoiseAVX2._poly_getnoise_eta1_4x.
+  wp; call{1} (_: true ==> true); 1: by apply polygetnoise_ll.
+  do 7!(wp; call  getnoiseequiv); auto => />.
+  move => &1 &2 ????????R?; split.
+  + by rewrite tP => k kb; rewrite !initiE //= initiE /#.
+  move => ?R0?; split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= /#.
+  move => ?R1?????; split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+  move => ?R2???; do split.
+  + rewrite /signed_bound768_cxq => x xb /=.
+    rewrite !initiE //= fun_if. 
+    case (512 <= x && x < 768); 1: by smt().
+    move => *; rewrite !initiE //= fun_if. 
+    case (256 <= x && x < 512); 1: by smt().
+    move => *; rewrite !initiE //= fun_if. 
+    by smt().
+  + rewrite /signed_bound768_cxq => x xb /=.
+    rewrite !initiE //= fun_if. 
+    case (512 <= x && x < 768); 1: by smt().
+    move => *; rewrite !initiE //= fun_if. 
+    case (256 <= x && x < 512); 1: by smt().
+    move => *; rewrite !initiE //= fun_if. 
+    by smt().
+  + rewrite /signed_bound768_cxq => x xb /=.
+    rewrite !initiE //= fun_if. 
+    case (512 <= x && x < 768); 1: by smt().
+    move => *; rewrite !initiE //= fun_if. 
+    case (256 <= x && x < 512); 1: by smt().
+    move => *; rewrite !initiE //= fun_if. 
+    by smt().
+  rewrite /signed_bound768_cxq => x xb /=.
+  rewrite !initiE //= fun_if. 
+  case (512 <= x && x < 768); 1: by smt().
+  move => *; rewrite !initiE //= fun_if. 
+  case (256 <= x && x < 512); 1: by smt().
+  move => *; rewrite !initiE //= fun_if. 
+  by smt().
+
+seq 1 1 : (#{/~sp_0{1}}{~sp_0{2}}pre /\ 
+           lift_array768 sp_0{1} = nttunpackv (lift_array768 sp_0{2}) /\
+           pos_bound768_cxq sp_0{1} 0 768 2 /\
+           pos_bound768_cxq sp_0{2} 0 768 2); 1: 
+ by  conseq />; call (nttequiv); auto => /> /#.
+
+(* First ip *)
+
+seq 4 2 : (#pre /\ 
+              lift_array256 (subarray256 bp{1} 0) = nttunpack (lift_array256 (subarray256 bp{2} 0)) /\
+              signed_bound768_cxq bp{1} 0 256 2 /\
+              signed_bound768_cxq bp{2} 0 256 2 /\ w{1} = 1).
+wp; call pointwiseequiv; auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12; do split.
++ rewrite -lift768_nttunpack. congr.
+  rewrite /nttunpackm /nttunpackv tP /= => k kb.
+  rewrite !initiE // 1:/# /= kb /= initiE //=. 
++ rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
++ rewrite /signed_bound768_cxq => k kb; smt(). 
++ rewrite /signed_bound768_cxq => *; rewrite initiE //=; smt().
++ by smt().
+
+move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
+  rewrite kb /=. 
+  have -> /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  move : H20; rewrite /lift_array256 tP => H20.
+  move : (H20 k kb). 
+  rewrite /nttunpack initiE //= -/a !mapiE //=;smt(nttunpack_bnd Array256.allP).
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite kb /=. smt().
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=. smt().
+  rewrite kb /=. smt().
+
+(* Second ip *)
+
+seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 1) = nttunpack (lift_array256 (subarray256 bp{2} 1)) /\
+              signed_bound768_cxq bp{1} 256 512 2 /\
+              signed_bound768_cxq bp{2} 256 512 2 /\ w{1} = 2).
+wp; call pointwiseequiv; auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15; do split.
++ rewrite -lift768_nttunpack. congr.
+  rewrite /nttunpackm /nttunpackv tP /= => k kb.
+  rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifT 1:/# initiE //=. 
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
+
+move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
+  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  rewrite ifF 1: /# ifF 1: /# /=. 
+  move : H13; rewrite /lift_array256 /subarray256 tP => H13.
+  move : (H13 k kb). 
+  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=; smt().
+
++ rewrite /signed_bound768_cxq /= => i ib; rewrite !initiE  //=; smt().
+
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
+  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  rewrite ifT 1: /# ifT 1: /# /=. 
+  move : H23; rewrite /lift_array256 tP => H23.
+  move : (H23 k kb). 
+  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=; smt().
+
++ rewrite /signed_bound768_cxq /= => i ib; rewrite !initiE  //=; smt().
+
+(* Third ip *)
+
+seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 2) = nttunpack (lift_array256 (subarray256 bp{2} 2)) /\
+              signed_bound768_cxq bp{1} 512 768 2 /\
+              signed_bound768_cxq bp{2} 512 768 2).
+wp; call pointwiseequiv; auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18; do split.
++ rewrite -lift768_nttunpack. congr.
+  rewrite /nttunpackm /nttunpackv tP /= => k kb.
+  rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# initiE //=. 
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
++ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#. 
++ by rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
+
+move => H121 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split. 
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
+  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  rewrite ifF 1: /# ifF 1: /# /=. 
+  move : H13; rewrite /lift_array256 /subarray256 tP => H13.
+  move : (H13 k kb). 
+  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=; smt().
+
++ rewrite /signed_bound768_cxq /= => i ib; rewrite !initiE  //=; smt().
+
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
+  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  rewrite ifF 1: /# ifF 1: /# /=. 
+  move : H16; rewrite /lift_array256 tP => H16.
+  move : (H16 k kb). 
+  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=; smt().
+
++ rewrite /signed_bound768_cxq /= => i ib; rewrite !initiE  //=; smt().
+
++ rewrite tP /= => k kb.
+  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
+  pose a:=nttunpack_idx.[k].
+  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
+  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
+  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
+  rewrite ifT 1: /# ifT 1: /# /=. 
+  move : H26; rewrite /lift_array256 tP => H26.
+  move : (H26 k kb). 
+  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
+
++ rewrite /signed_bound768_cxq /= => k kb; rewrite !initiE  //=; smt().
+
++ rewrite /signed_bound768_cxq /= => i ib; rewrite !initiE  //=; smt().
+
+(* Fourth ip *)
+
+seq 1 1: (#{/~v{1}}pre /\ lift_array256 v{1} = nttunpack (lift_array256 v{2}) /\
+              signed_bound_cxq v{1} 0 256 2 /\
+              signed_bound_cxq v{2} 0 256 2).
+wp; call pointwiseequiv; auto => />.
+move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21; do split.
++ by rewrite /signed_bound768_cxq => k kb; smt(). 
++ by rewrite /signed_bound768_cxq => k kb; smt(). 
++ by rewrite /signed_bound768_cxq => k kb; smt(). 
++ by rewrite /signed_bound768_cxq => k kb; smt(). 
+
+(* INV NTT!!! *)
+seq 1 1 : (#{/~bp{2}}pre /\ lift_array768 bp{1} = lift_array768 bp{2} /\ signed_bound768_cxq bp{2} 0 768 2).
+conseq />.  call(invnttequiv). auto => />. move => &1 &2 ?????????????H1??H0??H?????; split.
++ do split; 2,3: by smt().
+  rewrite /nttunpackv.
+  rewrite tP => k kb; rewrite initiE //=.
+  move : H H0 H1; rewrite !tP => H H0 H1.
+  case (0 <= k < 256).
+  + move => kkb; move : (H1 k kkb). rewrite subliftsub //= => ->. 
+    congr;congr.
+    rewrite /lift_array256 /subarray256 /lift_array768 tP => i ib.
+    rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
+  case (256 <= k < 512).
+  + move => nkkb kkb. move : (H0 (k-256) _); 1: smt(). rewrite subliftsub //= 1: /# => ->. 
+    congr;congr.
+    rewrite /lift_array256 /subarray256 /lift_array768 tP => i ib.
+    rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
+  move => *.
+  move : (H (k-512) _); 1: smt(). rewrite subliftsub //= 1: /# => ->. 
+  congr;congr.
+  rewrite /lift_array256 /subarray256 /lift_array768 tP => i ib.
+  rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
+  smt().
+
+seq 1 1 : (#{/~v{2}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{2} 0 256 2).
+conseq />.  call(poly_invnttequiv). auto => />. smt().
+
+auto => /> /#.
+qed.
 
 
 lemma kyber_correct_dec mem _ctp _skp : 
