@@ -1,4 +1,4 @@
-require import AllCore IntDiv.
+require import AllCore IntDiv List.
 require import Jkem_avx2 Kyber KyberPoly KyberPolyVec KyberINDCPA KyberINDCPA_avx2.
 require import Array1152 Array32 Array960 Array1184 Array1088 Array64 Array128.
 from Jasmin require import JModel.
@@ -9,7 +9,7 @@ import RO.
 import KyberPoly.
 import KyberPolyVec.
 
-
+(*
 axiom pkH_sha_avx2 mem _ptr inp: 
     phoare [ M._isha3_256 :
           arg = (inp,W64.of_int _ptr,W64.of_int (3*384+32)) /\
@@ -440,7 +440,7 @@ case (i < 960).
 + by move => ibb; rewrite !initiE /=/#.
 by move => ibb; rewrite !initiE /=/#.
 qed.
-
+*)
 require import StdOrder. 
 import IntOrder.
 
@@ -453,85 +453,91 @@ lemma verify_correct_h mem (_ctp : int) ctp1 :
                        res = W64.of_int 0) /\
              (Array1088.init (fun i => loadW8 mem (_ctp + i)) <> ctp1 => 
                        res = W64.of_int 1)].
-admitted. (* Manuel: verify avx *)
-(*
 proc => /=.
-wp; while (#pre /\ 0 <= i{hr} <= 1088 /\ aux{hr} = 1088 /\ 0<=to_uint cnd<256 /\
-           (to_uint cnd{hr} = 0 <=> 
-            forall k, 0 <= k < i{hr} => loadW8 mem (_ctp + k) = ctp1.[k])); last first.
+seq 8 : (#post); last first.
+wp. conseq />. while(i=1088 /\ aux=1088 /\ #pre); 1: by auto => />. 
++ conseq />; 1: by smt(). 
+  auto => />.  
+  move => &hr H H1 _cnd H2 H3.
+  split. 
+  + by move => H4; move : (H2 H4) => -> /=; rewrite W64.WRingA.oppr0 to_uint_eq W64.shr_div_le //.
+  + move => H5; move : (H3 H5) => -> /=; rewrite W64.minus_one /= wordP => i ib.
+    by rewrite /(`>>`) shrwE ib /= /(W64.one) /= /bits2w /= initiE //= /int2bs /= /mkseq /= -iotaredE /= /#. 
+
+wp; while (#pre /\ 0 <= i{hr} <= 34 /\ aux{hr} = 34 /\ 0<=to_uint cnd<256 /\
+           (to_uint h{hr} = 0 <=> 
+            forall k, 0 <= k < i{hr}*32 => loadW8 mem (_ctp + k) = ctp1.[k])); last first.
 + auto => /> &hr ??; split; 1: by smt().
-  move => cnd i ????? [HL HR]; split. 
-  rewrite tP => H1.
-  rewrite /(`>>`) /= to_uint_eq to_uint_shr // to_uintNE /= (HR _); 2..: by smt(). 
-  + by move => k kb; rewrite -H1 1: /# initiE /= /#. 
-  rewrite tP /= => H.
-  have HH : to_uint cnd <> 0.
-  + have : exists k, 0 <= k < 1088 /\ 
-        (Array1088.init (fun (i1 : int) => loadW8 mem (to_uint ctp{hr} + i1))).[k] <> ctp1.[k] by smt().
-    by move => [k [kb]]; rewrite initiE //= /#.
-  rewrite /(`>>`) /= to_uint_eq to_uint_shr // to_uintNE /=.
-  by  smt(W64.to_uint_cmp pow2_64). 
+  move => h i ??? [HL HR]; split; last first.
+  + rewrite tP => H1.
+    rewrite /VPTEST_256 /= /ZF_of /= ifT //.
+    move : H1; rewrite negb_forall /= => [[k H]]. 
+    move : H; rewrite negb_imply  /= => [# H1 H2 H3].
+    rewrite initiE //= in H3.
+    rewrite implybE in HL; elim HL; smt(to_uint0). 
+
+  + rewrite tP => H1.
+    rewrite /VPTEST_256 /= /ZF_of /= ifF //.
+    rewrite implybE in HR; elim HR.
+    +  rewrite negb_forall /= => [[k H]].  
+       move : H; rewrite negb_imply  /= => [# H2 H3 H4].
+       smt(Array1088.initiE).
+    smt(W256.to_uint_eq W256.to_uint0).
 
 auto => /> &hr ?????? [HL HR] ?.
-
 pose x := 
-      ((WArray1088.WArray1088.get8 ((WArray1088.WArray1088.init8 ("_.[_]" ctp1))) i{hr}) `^`
-       loadW8 mem (to_uint (ctp{hr} + (of_int i{hr})%W64))).
-
-have H : 0 <= to_uint (cnd{hr} `|` zeroextu64 x) < 256.
-+ split; 1: by smt(W64.to_uint_cmp).
-  move => *.
-  have -> : cnd{hr} `|` zeroextu64 x = zeroextu64 (truncateu8 cnd{hr} `|` x); last by
-     rewrite to_uint_zeroextu64; move :  W8.to_uint_cmp => /= /#.
-  rewrite wordP => k kb. rewrite zeroextu64_bit !orwE /= zeroextu64_bit /=. 
-  case (0 <= k && k < 8).
-  + by move => /= kbb; congr; rewrite !get_to_uint kb  kbb /= to_uint_truncateu8 /= /#.
-  move => /= *; rewrite get_to_uint kb /=. 
-  have : 256 = 2^8 by auto. 
-  move : (ler_weexpn2l 2 _ 8 k) => //=.
-  by smt(divz_small).
-
-do split; 1..4: by smt(W64.to_uint_cmp).
-
+      ((WArray1088.WArray1088.get256 ((WArray1088.WArray1088.init8 ("_.[_]" ctp1)))%WArray1088.WArray1088 i{hr})) `^`
+        loadW256 mem (to_uint (ctp{hr} + (of_int (32 * i{hr}))%W64)).
+do split; 1..2: by smt().
 + move => H0 k kbl kbh.
 
-  have H1 : to_uint cnd{hr} = 0. 
-  + have : cnd{hr} = W64.zero; last by rewrite to_uint_eq /=.
-    have : (cnd{hr} `|` zeroextu64 x) = W64.zero by rewrite to_uint_eq  H0 /=.
+  have H1 : to_uint h{hr} = 0. 
+  + have : h{hr} = W256.zero; last by rewrite to_uint_eq /=.
+    have : (h{hr} `|` x) = W256.zero by rewrite to_uint_eq  H0 /=.
     by rewrite !wordP; smt(orwE zerowE).
 
-  have H2 : x = W8.zero.
-  + have : (cnd{hr} `|` zeroextu64 x) = W64.zero by rewrite to_uint_eq  H0 /=. 
-    by rewrite !wordP; smt(orwE zerowE W8u8.zeroextu64_bit).
+  have H2 : x = W256.zero.
+  + have : (h{hr} `|` x) = W256.zero by rewrite to_uint_eq  H0 /=. 
+    by rewrite !wordP; smt(orwE zerowE).
 
-  case (k < i{hr}); 1: by move => *; apply (HL _ _) => // /#. 
+  case (k < i{hr}*32); 1: by move => *; apply (HL _ _) => // /#. 
+ 
+  move => kv.
+  move : H2; rewrite /x W256.WRing.addr_eq0 /oppw /=. 
+  rewrite /init8 /loadW256 /loadW8 /get256_direct wordP => H2.
+  apply W8.wordP => j jb.
+  move : (H2 ((k - i{hr} * 32) * 8 + j) _). smt().
+  rewrite !pack32wE /=; 1,2: smt().
+  rewrite !initiE /=; 1,2: smt().
+  rewrite to_uintD_small /=; 1: by rewrite /= of_uintK /=; by smt(W64.to_uint_cmp).  
+  rewrite /= of_uintK /= (modz_small _  18446744073709551616) 1:/#.
+  rewrite WArray1088.WArray1088.initiE 1:/# /=. smt().
 
-  move : H2; rewrite /x W8.WRing.addr_eq0 /oppw /=. 
-  rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
-  by rewrite to_uintD_small /= of_uintK /= /#. 
-  
 move => H0.
-have -> : cnd{hr} = W64.zero by rewrite to_uint_eq /= /#.
-rewrite or0w;have -> : zeroextu64 x = W64.zero; last by auto.
-rewrite wordP => k kb; rewrite zerowE.
-case (8 <= k); 1: by smt(W8u8.zeroextu64_bit).
-move => kbb; rewrite W8u8.zeroextu64_bit.
-have -> /= : 0 <= k && k < 8 by smt().
-
-rewrite /x to_uintD_small /= of_uintK /= 1:/# modz_small /= 1:/#. 
-rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
-by rewrite -(H0 i{hr} _); 1: by smt().
+have -> : h{hr} = W256.zero by rewrite to_uint_eq /= /#.
+rewrite or0w;have -> : x = W256.zero; last by auto.
+rewrite wordP => k kb; rewrite zerowE /x.
+move : H0;rewrite /init8 /loadW256 /loadW8 /get256_direct => H0. 
+pose xx := pack32_t _.
+pose yy := pack32_t _.
+have -> : xx = yy; last by rewrite xorwK_s //.
+rewrite /xx /yy wordP => j jb.
+  rewrite !pack32wE /=; 1,2: smt().
+  rewrite !initiE /=; 1,2: smt().
+  rewrite to_uintD_small /=; 1: by rewrite /= of_uintK /=; by smt(W64.to_uint_cmp).  
+  rewrite /= of_uintK /= (modz_small _  18446744073709551616) 1:/#.
+  rewrite WArray1088.WArray1088.initiE 1:/# /=. smt().
 qed.
-*)
 
 lemma verify_ll : islossless M.__verify.
-admitted. (* Manuel: verify avx *)
-(*
 proc.
-wp; while (0 <= i{hr} <= 1088 /\ aux{hr} = 1088) (1088 - i{hr}); last by auto => /> /#.
-by move => *; auto => /> /#. 
+seq 8 : (#post) => //; last first.
+wp. conseq />. while(i=1088 /\ aux=1088 /\ #pre) (1088 - aux); 1,2:   by auto => />. 
+wp.
+while (0 <= i{hr} <= 34 /\ aux{hr} = 34) (34 - i{hr}).
+auto => /> /#.
+auto => /> /#. 
 qed.
-*)
 
 lemma verify_correct mem (_ctp : int) ctp1 :
   phoare [ M.__verify : 
@@ -544,7 +550,6 @@ lemma verify_correct mem (_ctp : int) ctp1 :
                        res = W64.of_int 1)] = 1%r 
    by conseq verify_ll (verify_correct_h mem _ctp ctp1).
 
-require import List.
 lemma cmov_correct_h _dst _src _cnd mem:
    hoare [ M.__cmov : 
              Glob.mem = mem /\ valid_ptr _src 32 /\
