@@ -9,7 +9,6 @@ import RO.
 import KyberPoly.
 import KyberPolyVec.
 
-(*
 axiom pkH_sha_avx2 mem _ptr inp: 
     phoare [ M._isha3_256 :
           arg = (inp,W64.of_int _ptr,W64.of_int (3*384+32)) /\
@@ -440,7 +439,7 @@ case (i < 960).
 + by move => ibb; rewrite !initiE /=/#.
 by move => ibb; rewrite !initiE /=/#.
 qed.
-*)
+
 require import StdOrder. 
 import IntOrder.
 
@@ -557,51 +556,59 @@ lemma cmov_correct_h _dst _src _cnd mem:
              Glob.mem = mem /\
              (_cnd = W64.of_int 1 => res = (Array32.init (fun i => loadW8 mem (_src + i)))) /\
              (_cnd = W64.of_int 0 => res = _dst)].
-admitted. (* Manuel: cmov avx *)
-(*
 proc => /=.
 seq 1 : (#{/~cnd}pre /\ (_cnd = W64.zero => cnd = W64.zero) /\
                 (_cnd = W64.one => cnd = W64.onew));
   1: by auto => /> &1 ?? /=; split; [ by ring | by rewrite W64.minus_one /=].
+seq 5 : (#post); last first.
++ by wp; conseq />; while(i=32 /\ #pre); auto => /> /#. 
 
-while (#{/~dst{hr}=_dst}pre /\ 0 <= i{hr} <=32 /\ Glob.mem{hr} = mem /\
-           (forall k, i{hr} <=k <32 => dst.[k] = _dst.[k]) /\
-           (_cnd = W64.one => forall k, 0<=k<i{hr} => dst.[k] = loadW8 mem (_src + k)) /\
-           (_cnd = W64.zero =>forall k, 0<=k<i{hr} => dst.[k] = _dst.[k])); last first.
-+ auto => />  &hr ? back case0 case1; split; 1: smt(). 
-  move => dst i???? case00 case11 ; split.
-  + move => cs; rewrite tP => k kb.
-    by rewrite initiE //= (case00 cs _) 1:/# /=.
-  move => cs; rewrite tP => k kb.
-  by rewrite (case11 cs _) 1:/# /=.
+unroll 5.
 
-auto => /> &hr ?? case0 case1 ?? back case00 case11 ?; do split; 1,2: by smt().
-+ move => k kbl kbh; rewrite initiE /= 1:/#  WArray32.WArray32.get_set8E //.
-  have -> /= : k <> i{hr} by smt().
-  by rewrite /init8 /get8 /= WArray32.WArray32.initiE /= /#.
+seq 5 : (#post /\ aux{hr}= 1 /\ i{hr}=1); last first.
++ wp; conseq />; while(i=1 /\ aux=1 /\ #pre); auto => /> /#. 
 
-+ move => cs k kbl kbh; rewrite initiE  1:/#  WArray32.WArray32.get_set8E //.
-  case (k = i{hr}); last first.
-  + by move => *; rewrite /init8 /get8 /= WArray32.WArray32.initiE /= /#.
-  move => vk; rewrite vk /=. 
-  have -> : truncateu8 cnd{hr} = W8.onew 
-     by apply  W8.to_uint_eq; rewrite to_uint_truncateu8 /= (case1 cs) /= to_uint_onew W8.to_uint_onew /=. 
-  rewrite W8.andw1  xorwC -xorwA xorwK xorw0_s. 
-  by rewrite to_uintD_small /= of_uintK /= modz_small /#. 
+rcondt 5; 1: by move => *; auto => />.
 
-+ move => cs k kbl kbh; rewrite initiE  1:/#  WArray32.WArray32.get_set8E //.
-  case (k = i{hr}); last first.
-  + by move => *; rewrite /init8 /get8 /= WArray32.WArray32.initiE /= /#.
-  move => vk; rewrite vk /=. 
-  have -> : truncateu8 cnd{hr} = W8.zero
-     by apply  W8.to_uint_eq; rewrite to_uint_truncateu8 /= (case0 cs) /=.
-  by rewrite W8.andw0 /=  /init8 /get8 /= WArray32.WArray32.initiE /= /#.
+auto => /> &hr H H0 H1 H2.
+
+have msb1 : forall i,  0 <= i < 8 => msb (W64.onew \bits8 i) = true.
++ move => i ib; rewrite /msb /=.
+  have -> : W64.onew \bits8 i = W8.onew.
+  + rewrite wordP => k kb.
+    rewrite onewE /= kb /= bits8iE //= /#.
+  by rewrite  to_uint_onew /=.
+
+have msb0 : forall i, 0 <= i <8 => msb (W64.zero \bits8 i) = false.
++ move => i ib; rewrite /msb /=.
+  have -> : W64.zero \bits8 i = W8.zero.
+  + rewrite wordP => k kb.
+    rewrite zerowE  /= bits8iE //= /#.
+  by rewrite to_uint0 /=.
+
+split. 
++ move =>cone; move : (H2 cone) => -> /=;rewrite tP => k kb.
+rewrite !initiE //= kb /= /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
+rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /= !msb1 //=  initiE //=.
+rewrite pack32E initiE /= 1:/# /of_list initiE /= /#.
+ 
++ move =>czero; move : (H1 czero) => -> /=;rewrite tP => k kb.
+rewrite !initiE //= kb /= /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
+rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /= !msb0 //=  initiE //=.
+rewrite pack32E initiE /= 1:/# /of_list initiE /= /#.
 qed.
-*)
 
 lemma cmov_ll : islossless M.__cmov.
-admitted. (* Manuel: cmov avx *)
-(* by proc; unroll for 3; islossless. *)
+proc => /=.
+seq 6 : (#post) => //; last first.
++ by wp; conseq />; while(i=32 /\ #pre) (32-i); auto => /> /#. 
+
+unroll 6.
+
++ wp; conseq />; while(i=1 /\ aux=1 /\ #pre) (1-i); auto => /> /#. 
+
+qed.
+
 
 lemma cmov_correct _dst _src _cnd mem:
    phoare [ M.__cmov : 
