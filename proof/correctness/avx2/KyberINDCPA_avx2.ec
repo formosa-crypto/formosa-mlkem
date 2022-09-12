@@ -212,7 +212,7 @@ have HHH : equiv [  M._poly_getnoise ~ M._poly_getnoise : ={arg} ==> ={res} ] by
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
-
+(*
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
    equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
@@ -1397,7 +1397,7 @@ conseq />.  call(poly_invnttequiv). auto => />. smt().
 
 auto => /> /#.
 qed.
-
+*)
 
 lemma kyber_correct_dec mem _ctp _skp : 
    equiv [ Jkem_avx2.M.__indcpa_dec_1 ~ Kyber(KHS,XOF,KPRF,H).dec : 
@@ -1438,4 +1438,20 @@ transitivity {1} { r <@ Jkem.M.__indcpa_dec(msgp,ctp,skp);}
    last by call(kyber_correct_dec mem _ctp _skp); auto => />. 
 
 inline{1} 1; inline {2} 1.
-admitted. (* this one is a lot easier *)
+wp; ecall (tomsgequiv_noperm).
+call (reduceequiv_noperm).
+call (subequiv_noperm 2 2 _ _) => //.
+call(polyinvnttequiv).
+call pointwiseequiv.
+call(nttequiv).
+call (polyvec_frombytes_equiv).
+ecall (poly_decompress_equiv mem (_ctp + 3*320)).
+wp; call (polyvec_decompress_equiv mem _ctp).
+auto => />.
+move => &2 ????; split; 1: smt().
+move => ????; do split; 1:smt(). 
++ by rewrite to_uintD_small /=; 1: smt().
+move => ??? r0 ? rl1 rr1 ???; do split; 1,2: smt().
+move => ? rl2 rr2 ???; do split; 1..4: smt().
+move => ???? rl3 rr3 ????????; do split; 1..4:smt().
+qed.

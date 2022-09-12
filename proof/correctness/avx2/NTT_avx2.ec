@@ -765,6 +765,16 @@ move : nttpack_idxK; rewrite allP => Hidx.
 move : (Hidx (k-512) _)=>//; smt(mem_iota).
 qed.
 
+equiv polyinvnttequiv :
+ Jkem_avx2.M._poly_invntt ~ M._poly_invntt : 
+   lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) /\ 
+   signed_bound_cxq arg{1} 0 256 2 /\ 
+   signed_bound_cxq arg{2} 0 256 2 ==>
+   lift_array256 res{1} = lift_array256 res{2} /\ 
+   pos_bound256_cxq res{1} 0 256 2 /\ 
+   pos_bound256_cxq res{2} 0 256 2.
+   admitted. (* HUGO BACELAR *)
+
 equiv invnttequiv :
  Jkem_avx2.M.__polyvec_invntt ~ M.__polyvec_invntt : 
    lift_array768 arg{1} = nttunpackv (lift_array768 arg{2}) /\ 

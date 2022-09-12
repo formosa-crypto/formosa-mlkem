@@ -2342,3 +2342,40 @@ admitted. (* MIGUEL: the frommsg procedures
 in prevec/vec do not match the implementation:
 now the load is carried out outside of the
 function *)
+
+equiv tomsgequiv_noperm  : 
+  M._poly_tomsg_1 ~   Jkem.M._i_poly_tomsg :
+    lift_array256 a{1} = lift_array256 a{2} /\
+    pos_bound256_cxq a{1} 0 256 2 /\ 
+    pos_bound256_cxq a{2} 0 256 2 ==>
+    ={res}.
+admitted. (* MIGUEL *)
+
+lemma subequiv_noperm  (ab bb : int):
+    0 <= ab && ab <= 6 =>
+    0 <= bb && bb <= 3 =>
+    equiv [ M._poly_sub ~ Jkem.M._poly_sub :
+      lift_array256 ap{1} = lift_array256 ( ap{2}) /\
+      lift_array256 bp{1} = lift_array256 ( bp{2}) /\
+      signed_bound_cxq ap{2} 0 256 ab /\ 
+      signed_bound_cxq bp{2} 0 256 bb /\
+      signed_bound_cxq ap{1} 0 256 ab /\ 
+      signed_bound_cxq bp{1} 0 256 bb
+           ==> lift_array256 res{1} = lift_array256  ( res{2}) /\
+               signed_bound_cxq res{1} 0 256 (ab + bb) /\
+               signed_bound_cxq res{2} 0 256 (ab + bb) 
+              ].
+    admitted. (* MIGUEL *)
+
+lemma poly_decompress_equiv mem _p : 
+    equiv [ M._poly_decompress ~   Jkem.M._poly_decompress  :
+             valid_ptr _p 128 /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             ={Glob.mem,ap}
+              ==>
+             ={Glob.mem,res} /\ Glob.mem{1} = mem /\
+             lift_array256 res{1} = lift_array256 res{2} /\
+             pos_bound256_cxq res{1} 0 256 1 /\
+             pos_bound256_cxq res{2} 0 256 1 ].
+admitted. (* MIGUEL *)
+
