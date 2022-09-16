@@ -1398,7 +1398,6 @@ clone import Matrix as KMatrix with
     proof ZR.unitP by smt(one_lift mul_lift polyr2poly_inj ComRing.unitP)
     proof ZR.unitout by smt(unitout polyr2polyK)
     proof ge0_size by auto.
-    (* to do: ZR.mulf_eq0: forall (x y : t), x &* y = KPoly.zero <=> x = KPoly.zero \/ y = KPoly.zero *)
 
 instance ring with R
   op rzero = KPoly.zero
