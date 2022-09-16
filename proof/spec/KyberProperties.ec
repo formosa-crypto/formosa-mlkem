@@ -30,52 +30,6 @@ apply Array256.tP => k kb.
 by rewrite mapiE //= initiE //= mapiE 1:/# initiE 1:/# /= asintK /#.
 qed.
 
-(**********************************)
-(**********************************)
-(**********************************)
-(* The following lifts are needed
-   to connect spec with security
-   and correctness proofs         *)
-(**********************************)
-(**********************************)
-(**********************************)
-
-op sem_decode12(a : W8.t Array384.t) : ipoly.
-op sem_decode4(a : W8.t Array128.t) : ipoly.
-op sem_decode1(a : W8.t Array32.t) : ipoly.
-op sem_encode12(a : ipoly) : W8.t Array384.t.
-op sem_encode4(p : ipoly) : W8.t Array128.t.
-op sem_encode1(a : ipoly) : W8.t Array32.t.
-op sem_encode10_vec(u : ipolyvec) : W8.t Array960.t.
-op sem_encode12_vec(a : ipolyvec) : W8.t Array1152.t.
-op sem_decode10_vec(u : W8.t Array960.t) : ipolyvec.
-op sem_decode12_vec(a : W8.t Array1152.t) : ipolyvec.
-
-lemma sem_decode12K : cancel sem_decode12 sem_encode12 by admit. (* to do *)
-lemma sem_encode12K : cancel sem_encode12 sem_decode12 by admit. (* to do *)
-lemma sem_decode4K  : cancel sem_decode4  sem_encode4  by admit. (* to do *)
-lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
-lemma sem_decode1K  : cancel sem_decode1  sem_encode1  by admit. (* to do *)
-lemma sem_encode1K  : cancel sem_encode1  sem_decode1  by admit. (* to do *)
-lemma sem_decode12_vecK  : cancel sem_decode12_vec  sem_encode12_vec  by admit. (* to do *)
-lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. (* to do *)
-lemma sem_decode10_vecK  : cancel sem_decode10_vec  sem_encode10_vec  by admit. (* to do *)
-lemma sem_encode10_vecK  : cancel sem_encode10_vec  sem_decode10_vec  by admit. (* to do *)
-
-lemma sem_decode1_bnd a k : 0<=k<256 => 0<= (sem_decode1 a).[k] < 2 by admit. (* to do *)
-
-
-phoare sem_decode12 a : [ EncDec.decode12 : arg = a ==>  res = sem_decode12 a ] = 1%r by admit. (* reify *)
-phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = sem_decode4  a ] = 1%r by admit. (* reify *)
-phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = sem_decode1  a ] = 1%r by admit. (* reify *)
-phoare sem_encode12 a : [ EncDec.encode12 : arg = a ==>  res = sem_encode12 a ] = 1%r by admit. (* reify *)
-phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = sem_encode4  a ] = 1%r by admit. (* reify *)
-phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = sem_encode1  a ] = 1%r by admit. (* reify *)
-
-phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = sem_decode12_vec a ] = 1%r by admit. (* reify *)
-phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = sem_decode10_vec a ] = 1%r by admit. (* reify *)
-phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = sem_encode12_vec a ] = 1%r by admit. (* reify *)
-phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode10_vec a ] = 1%r by admit. (* reify *)
 
 (**************************************************************************
    MLWE_PKE is the theory where we prove an abstract PKE construction

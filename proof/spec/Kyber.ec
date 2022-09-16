@@ -1643,6 +1643,63 @@ module EncDec = {
 
 }.
 
+op BytesToBits(bytes : W8.t list) : bool list = flatten (map W8.w2bits bytes).
+op decode(l i : int, bits : bool list) = StdBigop.Bigint.BIA.big predT (fun j =>  b2i (nth false bits (i*l+j)) * 2^j) (iota_ 0 l).
+
+(**********************************)
+(**********************************)
+(**********************************)
+(* The following lifts are needed
+   to connect spec with security
+   and correctness proofs         *)
+(**********************************)
+(**********************************)
+(**********************************)
+
+op sem_decode12(a : W8.t Array384.t) : ipoly = 
+   Array256.init (fun i => decode 12 i (BytesToBits (to_list a))).
+op sem_decode4(a : W8.t Array128.t) : ipoly = 
+   Array256.init (fun i => decode 4 i (BytesToBits (to_list a))).
+op sem_decode1(a : W8.t Array32.t) : ipoly = 
+   Array256.init (fun i => decode 1 i (BytesToBits (to_list a))).
+op sem_decode10_vec(a : W8.t Array960.t) : ipolyvec = 
+   Array768.init (fun i => decode 10 i (BytesToBits (to_list a))).
+op sem_decode12_vec(a : W8.t Array1152.t) : ipolyvec = 
+   Array768.init (fun i => decode 12 i (BytesToBits (to_list a))).
+
+(* These should come directly from the code. *)
+op sem_encode12(a : ipoly) : W8.t Array384.t.
+op sem_encode4(p : ipoly) : W8.t Array128.t.
+op sem_encode1(a : ipoly) : W8.t Array32.t.
+op sem_encode10_vec(u : ipolyvec) : W8.t Array960.t.
+op sem_encode12_vec(a : ipolyvec) : W8.t Array1152.t.
+
+lemma sem_decode12K : cancel sem_decode12 sem_encode12 by admit. (* to do *)
+lemma sem_encode12K : cancel sem_encode12 sem_decode12 by admit. (* to do *)
+lemma sem_decode4K  : cancel sem_decode4  sem_encode4  by admit. (* to do *)
+lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
+lemma sem_decode1K  : cancel sem_decode1  sem_encode1  by admit. (* to do *)
+lemma sem_encode1K  : cancel sem_encode1  sem_decode1  by admit. (* to do *)
+lemma sem_decode12_vecK  : cancel sem_decode12_vec  sem_encode12_vec  by admit. (* to do *)
+lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. (* to do *)
+lemma sem_decode10_vecK  : cancel sem_decode10_vec  sem_encode10_vec  by admit. (* to do *)
+lemma sem_encode10_vecK  : cancel sem_encode10_vec  sem_decode10_vec  by admit. (* to do *)
+
+lemma sem_decode1_bnd a k : 0<=k<256 => 0<= (sem_decode1 a).[k] < 2 by admit. (* to do *)
+
+phoare sem_decode12 a : [ EncDec.decode12 : arg = a ==>  res = sem_decode12 a ] = 1%r by admit. (* reify *)
+phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = sem_decode4  a ] = 1%r by admit. (* reify *)
+phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = sem_decode1  a ] = 1%r by admit. (* reify *)
+phoare sem_encode12 a : [ EncDec.encode12 : arg = a ==>  res = sem_encode12 a ] = 1%r by admit. (* reify *)
+phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = sem_encode4  a ] = 1%r by admit. (* reify *)
+phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = sem_encode1  a ] = 1%r by admit. (* reify *)
+
+phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = sem_decode12_vec a ] = 1%r by admit. (* reify *)
+phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = sem_decode10_vec a ] = 1%r by admit. (* reify *)
+phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = sem_encode12_vec a ] = 1%r by admit. (* reify *)
+phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode10_vec a ] = 1%r by admit. (* reify *)
+
+
 (****************)
 (****************)
 (* THE SPEC     *)
@@ -1896,6 +1953,22 @@ clone import PRF_DEFS.PseudoRF as PRF_ with
 module KPRF = PRF_.PseudoRF.
 
 module CBD2(PRF : PseudoRF) = {
+   proc sample_spec(sig : W8.t Array32.t, _N : int) : poly = {
+      var i,a,b,bytes,bits;
+      var rr : poly;
+      rr <- witness;
+      bytes <@ PRF.f(sig, W8.of_int _N);
+      bits <- BytesToBits (to_list bytes);
+      i <- 0;
+      while (i < 256) { 
+        a <- b2i (nth false bits (4*i)) + b2i (nth false bits (4*i+1));
+        b <- b2i (nth false bits (4*i+2)) + b2i (nth false bits (4*i+3));
+        rr.[i] <- inFq  (a - b);
+        i <- i + 1;
+      }
+      return rr;
+
+   }
    proc sample(sig : W8.t Array32.t, _N : int) : poly = {
       var i,j,a,b,bytes;
       var rr : poly;
@@ -1916,6 +1989,26 @@ module CBD2(PRF : PseudoRF) = {
       return rr;
    }
 }.
+
+equiv cbdspec_correct (PRF <: PseudoRF): 
+  CBD2(PRF).sample_spec ~ CBD2(PRF).sample :
+  ={glob PRF,sig,_N} ==> ={res}.
+proc => /=. 
+seq 2 2 : (#pre /\ ={rr,bytes}); 1: by sim.
+swap {2}1 1.
+unroll for {1} ^while;
+unroll for {2} ^while;
+sim; auto =>/> &2;
+have H : forall i, 0<=i<1024 => (nth false (BytesToBits (to_list bytes{2})) i) = 
+                   bytes{2}.[i%/8].[i%%8]; last by rewrite !H //=.
+move => i Hi. 
+rewrite /BytesToBits (nth_flatten false 8 (map W8.w2bits (to_list bytes{2})) _).
++ rewrite allP => k /=.
+  rewrite mapP=> [[x [Hx1 ->]]].
+  by rewrite W8.size_w2bits. print nth_map. 
+rewrite -get_to_list (nth_map  witness%W8); 1: smt(Array128.size_to_list).
+rewrite w2bitsE /= nth_mkseq /#.
+qed.
 
 clone DMapSampling as MSlw128 with
  type t1 <- W8.t list,
