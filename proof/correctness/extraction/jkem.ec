@@ -1200,7 +1200,6 @@ module M = {
   }
   
   proc _poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
-    
     var i:W64.t;
     var j:W64.t;
     var t0:W16.t;

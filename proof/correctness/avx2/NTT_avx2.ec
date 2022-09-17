@@ -366,6 +366,32 @@ congr;congr.
 rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
 qed.
 
+lemma nttunpackv_mapsint (v  :W16.t Array768.t) :
+   nttunpackv (map W16.to_sint v) = map W16.to_sint (nttunpackv v).
+rewrite /nttunpackv /subarray256 tP => k kb.
+rewrite mapiE //= !initiE //=.
+case (0 <= k && k < 256).
++ move => kbb.
+  rewrite /nttunpack initiE //= initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  congr. 
+  rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
+move => *;case (256 <= k && k < 512).
++ move => kbb.
+  rewrite /nttunpack initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  congr. 
+  rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
+move => kbb.
+rewrite /nttunpack initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
+congr. 
+rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
+qed.
+
+
 lemma map_pack (p : 'a Array256.t) (f : 'a -> 'b) : nttpack (Array256.map f p) = map f (nttpack p).
 rewrite /nttpack !mapE.
 rewrite tP => k kb; rewrite !initiE //=.

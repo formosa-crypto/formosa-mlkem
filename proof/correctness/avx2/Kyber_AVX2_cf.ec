@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
-require import Array16 Array32 Array64 Array128 Array168 Array256 Array384.
+require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array1152.
 require import Jkem.
 require import Kyber.
 
@@ -44,6 +44,14 @@ module EncDec_AVX2 = {
       i <- i + 1;
     }
     return r;
+  }
+
+  proc decode12_opt_vec(a : W8.t Array1152.t) : ipolyvec = {
+    var a1, a2, a3;
+    a1 <@ decode12_opt(subarray384 a 0);
+    a2 <@ decode12_opt(subarray384 a 1);
+    a3 <@ decode12_opt(subarray384 a 2);
+    return fromarray256 a1 a2 a3;
   }
 
    proc decode4(a : W8.t Array128.t) : ipoly = {
@@ -266,7 +274,17 @@ proof.
     apply Array384.ext_eq.
 qed.
 
-equiv eq_decode12:
+equiv decode12_avx2_corr:
+  EncDec_AVX2.decode12 ~ EncDec.decode12: ={a} ==> ={res}.
+proof.
+  proc.
+  unroll for {1} ^while.
+  do 2!(unroll for {1} ^while).
+  unroll for {2} ^while.
+  by auto => />.
+qed.
+
+equiv eq_decode12_opt:
   EncDec_AVX2.decode12_opt ~ EncDec_AVX2.decode12: ={a} ==> ={res}.
 proof.
   proc.
@@ -301,6 +319,25 @@ proof.
     apply Array256.ext_eq.
 qed.
 
+equiv decode12_opt_corr:
+  EncDec_AVX2.decode12_opt ~ EncDec.decode12: ={a} ==> ={res}.
+proof.
+  transitivity EncDec_AVX2.decode12 (={a} ==> ={res}) (={a} ==> ={res}).
+  smt(). trivial.
+  apply eq_decode12_opt.
+  apply decode12_avx2_corr.
+qed.
+
+equiv decode12_opt_vec_corr:
+  EncDec_AVX2.decode12_opt_vec ~ EncDec.decode12_vec: ={a} ==> ={res}.
+proof.
+  proc => /=.
+  wp; call decode12_opt_corr.
+  wp; call decode12_opt_corr.
+  wp; call decode12_opt_corr.
+  auto => />.
+qed.
+
 equiv eq_decode4:
   EncDec_AVX2.decode4 ~ EncDec.decode4: ={a} ==> ={res}.
 proc.
@@ -310,6 +347,4 @@ unroll for {2} ^while.
 by auto => />.
 qed.
 
-
 end AVX2_cf.
- 

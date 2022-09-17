@@ -5184,6 +5184,17 @@ proof. admit. (*
   *)
 qed.
 
+lemma poly_tobytes_ll: islossless Mprevec.poly_tobytes.
+proof.
+  proc.
+  while (0 <= i <= 2) (2-i).
+    move => *; inline *; auto => />.
+  move => &hr i_lb i_ub i_tub.
+  split.
+  move : i_lb i_tub => /#.
+  rewrite ltz_add2l; smt(@Int).
+  by wp; call (poly_csubq_ll); auto =>  /> /#.
+qed.
 
 op pos_bound16_b (coefs : W16.t Array16.t) (l u b : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] b.
@@ -5197,7 +5208,7 @@ lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t):
             Glob.mem{1} = mem /\
             map W16.to_sint (nttpack res{1}) = res{2} /\
             pos_bound256_cxq res{1} 0 256 2 ].
-proof.
+proof. admit. (*
   proc.
   seq 2 2 : (#pre /\
              to_uint ap{1} = _p /\
@@ -6143,6 +6154,15 @@ proof.
           by apply rp_def.
         + rewrite /pos_bound256_cxq /bpos16 qE //= => x x_bnds.
           move : (rp_bnds x x_bnds) => /#.
+*)
+qed.
+
+lemma poly_frombytes_ll : islossless  Mprevec.poly_frombytes.
+proof.
+proc.
+  while (0 <= i <= 2) (2-i).
+    move => *; inline *; auto => /> /#.
+  inline *; wp; auto => /> /#.
 qed.
 
 end KyberPolyAVX.
