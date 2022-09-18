@@ -493,46 +493,60 @@ proof.
                (pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{2}.[i] < q) /\
                 map inFq a{2} = lift_array768 (nttpackv a{1}) /\ valid_ptr (to_uint rp{1}) (3*384) /\
                 ={Glob.mem} ==>
-                touches mem Glob.mem{1} (to_uint rp{1}) (3*384) /\
-                load_array1152 Glob.mem{1} (to_uint rp{1}) = res{2})
+                ={Glob.mem})
                (pos_bound768_cxq a{2} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{1}.[i] < q) /\
                 map inFq a{1} = lift_array768 a{2} /\ valid_ptr (to_uint rp{2}) (3*384) /\
                 ={Glob.mem} ==> ={Glob.mem}).
-               auto => &1 &2 />.
-                 exists Glob.mem{2}.
-                   exists (load_array1152 Glob.mem{2} (to_uint ap{2})).
-                     + auto => />.
-                     + admit. (* FIXME: bound on ap in pre-condition ?? *)
-               auto => &1 &2 &m [#] H0 H1 H2 [#] H3 H4 H5 />.
-                 rewrite nttunpackv_lift /lift_array768 Array768.tP => i i_bnds.
-                 rewrite mapiE 1:i_bnds /= mapiE 1:i_bnds /=. congr.
-                 rewrite -mapiE 1:i_bnds -(Array768.mapiE W16.to_sint _) 1:i_bnds.
-                 move : i i_bnds. rewrite -tP.
-                 rewrite H0 H3.
-                 rewrite nttunpackv_mapsint //=.
+               auto => &1 &2 [#] pos_bound_al pos_bound_ar al_eq_ar mem_eq />.
+               exists Glob.mem{2}.
+                 exists (map W16.to_sint (nttpackv a{1})).
+                   rewrite pos_bound_al pos_bound_ar /=.
+                   do split.
+                   + move => i /andabP /(mem_iota 0 768 i).
+                     admit. (* FIXME
+                     rewrite -(Array768.allP (map W16.to_sint (nttpackv a{1})) (fun x => 0 <= x /\ (0 <= x => x < q))).
+                     *)
+                   + rewrite /lift_array768 tP => i i_b.
+                     rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
+                   + admit.
+                   + admit.
+                   + move => i /andabP /(mem_iota 0 768 i).
+                     admit. (* FIXME
+                     rewrite -(Array768.allP (map W16.to_sint (nttpackv a{1})) (fun x => 0 <= x /\ (0 <= x => x < q))).
+                     *)
+                   +  admit.
+                   + admit.
+                   + admit.
+               auto => &1 &m &2 [#] H0 H1 H2 />.
     + proc * => /=.
-      ecall (polyvec_frombytes_corr (Glob.mem{1}) (to_uint ap{1})) => //=.
+      ecall (polyvec_tobytes_corr (Glob.mem{1}) (to_uint rp{1}) (lift_array768 (nttpackv a{1}))) => //=.
+      auto => />.
+      admit.
   symmetry.
-  transitivity EncDec.decode12_vec
-               (valid_ptr (to_uint ap{1}) (3*384) /\ ={Glob.mem} /\ load_array1152 Glob.mem{1} (to_uint ap{1}) = a{2} ==>
-                map W16.to_sint res{1} = res{2}  /\
-                pos_bound768_cxq res{1} 0 768 2 /\
+  transitivity EncDec.encode12_vec
+               (pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{2}.[i] < q) /\
+                map inFq a{2} = lift_array768 a{1} /\ valid_ptr (to_uint rp{1}) (3*384) /\
+                ={Glob.mem} ==>
                 ={Glob.mem})
-                (={Glob.mem} /\ a{1} = a{2} ==>
-                res{1} = res{2} /\
-                ={Glob.mem}).
-               auto => &1 &2 [#] ap_bnds mem_eq load_def />.
+               ((forall i, 0<=i<768 => 0 <= a{1}.[i] < q) /\
+                a{1} = a{2} /\
+                ={Glob.mem} ==> ={Glob.mem, res}).
+               auto => &1 &2 [#] pos_bound_a a2_bnd a1_eq_a2 valid_p mem_eq />.
                exists Glob.mem{1}.
-               exists (load_array1152 Glob.mem{1} (to_uint ap{1})).
-               split.
-                 trivial.
-                 by rewrite mem_eq load_def.
+                 exists (arg{2}).
+                   split.
+                   + auto => />.
+                     rewrite valid_p 1:/= //=.
+                   + auto => />.
+                     move : mem_eq => />.
                auto => />.
     + proc * => /=.
-      ecall (KyberPolyVec.polyvec_frombytes_corr (Glob.mem{1}) (to_uint ap{1})) => //=.
+      ecall (KyberPolyVec.polyvec_tobytes_corr (Glob.mem{1}) (to_uint rp{1}) (lift_array768 a{1})) => //=.
+      auto => />.
+      admit.
   symmetry.
   proc * => /=.
-  call decode12_opt_vec_corr.
+  call encode12_opt_vec_corr.
   auto => />.
 qed.
 
