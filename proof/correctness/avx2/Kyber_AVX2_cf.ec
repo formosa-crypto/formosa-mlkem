@@ -161,6 +161,14 @@ module EncDec_AVX2 = {
     return r;
   }
 
+  proc encode12_opt_vec(a : ipolyvec) : W8.t Array1152.t = {
+    var a1, a2, a3;
+    a1 <@ encode12_opt(subarray256 a 0);
+    a2 <@ encode12_opt(subarray256 a 1);
+    a3 <@ encode12_opt(subarray256 a 2);
+    return fromarray384 a1 a2 a3;
+  }
+
    proc encode4(p : ipoly) : W8.t Array128.t = {
        var fi,fi1,i,k;
        var r : W8.t Array128.t;
@@ -237,7 +245,20 @@ module Kyber_AVX2_cf = {
 
 theory AVX2_cf.
 
-equiv eq_encode12:
+equiv encode12_avx2_corr:
+  EncDec_AVX2.encode12 ~ EncDec.encode12: ={a} ==> ={res}.
+proof.
+  proc.
+  unroll for {1} ^while.
+  do 2!(unroll for {1} ^while).
+  admit.
+(* FIXME:
+  unroll for {2} ^while.
+  by auto => />.
+*)
+qed.
+
+equiv eq_encode12_opt:
   EncDec_AVX2.encode12_opt ~ EncDec_AVX2.encode12: ={a} ==> ={res}.
 proof.
   proc.
@@ -272,6 +293,25 @@ proof.
     move => rL iR rR iR_tlb _ iR_lb iR_ub.
     have -> //=: iR = 2. move : iR_tlb iR_ub => /#.
     apply Array384.ext_eq.
+qed.
+
+equiv encode12_opt_corr:
+  EncDec_AVX2.encode12_opt ~ EncDec.encode12: ={a} ==> ={res}.
+proof.
+  transitivity EncDec_AVX2.encode12 (={a} ==> ={res}) (={a} ==> ={res}).
+  smt(). trivial.
+  apply eq_encode12_opt.
+  apply encode12_avx2_corr.
+qed.
+
+equiv encode12_opt_vec_corr:
+  EncDec_AVX2.encode12_opt_vec ~ EncDec.encode12_vec: ={a} ==> ={res}.
+proof.
+  proc => /=.
+  wp; call encode12_opt_corr.
+  wp; call encode12_opt_corr.
+  wp; call encode12_opt_corr.
+  auto => />.
 qed.
 
 equiv decode12_avx2_corr:

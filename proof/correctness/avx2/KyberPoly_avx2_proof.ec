@@ -4512,7 +4512,8 @@ lemma shuffle1_corr _a _b:
 
 lemma poly_tobytes_corr _a (_p : address) mem : 
     equiv [ Mprevec.poly_tobytes ~ EncDec_AVX2.encode12_opt :
-             pos_bound256_cxq a{1} 0 256 2 /\  lift_array256 (nttpack a{1}) = _a /\
+             pos_bound256_cxq a{1} 0 256 2 /\
+             lift_array256 (nttpack a{1}) = _a /\
              (forall i, 0 <= i < 256 => 0 <= a{2}.[i] < q) /\
              map inFq a{2} = _a /\ valid_ptr _p 384 /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p

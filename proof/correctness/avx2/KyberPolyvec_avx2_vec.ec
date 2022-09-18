@@ -203,6 +203,14 @@ proof.
   auto => />.
 qed.
 
+equiv eq_polyvec_tobytes:
+  Mprevec.polyvec_tobytes ~ Mvec.polyvec_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
+proof.
+  proc.
+  do 3!(wp; call eq_poly_tobytes).
+  auto => />.
+qed.
+
 equiv veceq_polyvec_add2 :
   Mvec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
@@ -232,6 +240,14 @@ equiv veceq_polyvec_frombytes :
 proof.
   proc.
   do 3!(wp; call veceq_poly_frombytes).
+  auto => />.
+qed.
+
+equiv veceq_polyvec_tobytes :
+  Mvec.polyvec_tobytes ~ M.__polyvec_tobytes: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+proof.
+  proc.
+  do 3!(wp; call veceq_poly_tobytes).
   auto => />.
 qed.
 
@@ -269,6 +285,15 @@ proof.
   smt(). trivial.
   apply eq_polyvec_frombytes.
   apply veceq_polyvec_frombytes.
+qed.
+
+equiv prevec_eq_polyvec_tobytes :
+  Mprevec.polyvec_tobytes ~ M.__polyvec_tobytes: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+proof.
+  transitivity Mvec.polyvec_tobytes (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, rp, a} ==> ={res, Glob.mem}).
+  smt(). trivial.
+  apply eq_polyvec_tobytes.
+  apply veceq_polyvec_tobytes.
 qed.
 
 end KyberPolyVecAVXVec.

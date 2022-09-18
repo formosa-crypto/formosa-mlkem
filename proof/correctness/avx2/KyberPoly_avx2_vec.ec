@@ -1290,7 +1290,7 @@ proof.
 qed.
 
 equiv eq_poly_tobytes:
-  Mprevec.poly_tobytes ~ Mvec.poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_tobytes ~ Mvec.poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
   while(={rp, a, i, Glob.mem} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2}).
@@ -1604,7 +1604,7 @@ proof.
 qed.
 
 equiv veceq_poly_tobytes:
-  Mvec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+  Mvec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
   while(={rp, a, i, qx16, Glob.mem}).
@@ -1788,10 +1788,10 @@ proof.
 qed.
 
 equiv prevec_eq_poly_tobytes:
-  Mprevec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
-  transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={res})
-                                 (={rp, a, Glob.mem} ==> ={res}).
+  transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={res, Glob.mem})
+                                 (={rp, a, Glob.mem} ==> ={res, Glob.mem}).
   smt(). trivial.
   apply eq_poly_tobytes.
   apply veceq_poly_tobytes.
