@@ -508,27 +508,47 @@ proof.
                 ={Glob.mem} ==>
                 touches Glob.mem{1} Glob.mem{2} _p (3*384) /\
                 load_array1152 Glob.mem{2} _p = res{1}).
-               auto => &1 &2 [#] valid_p pos_bound_al pos_bound_ar al_eq_ar p_eq />.
-               exists Glob.mem{2}.
-                 exists (map W16.to_sint (nttpackv a{1})).
-                   rewrite pos_bound_al pos_bound_ar /=.
-                   do split.
-                   + rewrite /lift_array768 tP => i i_b.
-                     rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
-                   + admit. (* FIXME: bound should be 2*q ?? *)
-                   + move : (W64.to_uint_cmp rp{1}) => //=.
-                   + rewrite /valid_ptr in valid_p. move : valid_p => //=.
-                   + admit. (* FIXME: bound should be 2*q ?? *)
-                   + rewrite (_: map inFq (map W16.to_sint (nttpackv a{1})) = lift_array768 (nttpackv a{1})).
-                       rewrite /lift_array768 tP => i ib.
-                       rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
-                     rewrite -nttpackv_lift al_eq_ar unpackvK //=.
-                   + rewrite p_eq //=.
-                   + move : (W64.to_uint_cmp rp{1}) => //=.
-                   + rewrite /valid_ptr in valid_p. move : valid_p => //=.
-               rewrite /touches; auto => &1 &m &2 [#] H0 H1 H2 />.
-               apply mem_eq_ext => j.
-               admit.
+    auto => &1 &2 [#] valid_p pos_bound_al pos_bound_ar al_eq_ar p_eq />.
+    exists Glob.mem{2}.
+      exists (map W16.to_sint (nttpackv a{1})).
+        rewrite pos_bound_al pos_bound_ar /=.
+        do split.
+        + rewrite /lift_array768 tP => i i_b.
+          rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
+        + admit. (* FIXME: bound should be 2*q ?? *)
+        + move : (W64.to_uint_cmp rp{1}) => //=.
+        + rewrite /valid_ptr in valid_p. move : valid_p => //=.
+        + admit. (* FIXME: bound should be 2*q ?? *)
+        + rewrite (_: map inFq (map W16.to_sint (nttpackv a{1})) = lift_array768 (nttpackv a{1})).
+          rewrite /lift_array768 tP => i ib.
+          rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
+          rewrite -nttpackv_lift al_eq_ar unpackvK //=.
+        + rewrite p_eq //=.
+        + move : (W64.to_uint_cmp rp{1}) => //=.
+        + rewrite /valid_ptr in valid_p. move : valid_p => //=.
+    rewrite /touches; auto => &1 &m &2 [#] H0 H1 [#] H2 H3 />.
+    apply mem_eq_ext => i.
+    have ->: forall (j: address), Glob.mem{1}.[j] = if _p + 0 <= j < _p + 1152 then res{m}.[j - _p]
+                                                      else Glob.mem{m}.[_p + (j - _p)].
+      move => j.
+      case (_p + 0 <= j < _p + 1152) => jbb.
+        + move : H1; rewrite /load_array1152 Array1152.tP => H1.
+          rewrite -H1. move : jbb; smt(@IntDiv @Int @List).
+          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
+          by move : jbb; smt(@IntDiv @Int @List).
+        + rewrite -H0. move : jbb; smt(@IntDiv @Int @List).
+          move : jbb => /#.
+    have ->: forall (j: address), Glob.mem{2}.[j] = if _p + 0 <= j < _p + 1152 then res{m}.[j - _p]
+                                                     else Glob.mem{m}.[_p + (j - _p)].
+      move => j.
+      case (_p + 0 <= j < _p + 1152) => jbb.
+        + move : H3; rewrite /load_array1152 Array1152.tP => H3.
+          rewrite -H3. move : jbb; smt(@IntDiv @Int @List).
+          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
+          by move : jbb; smt(@IntDiv @Int @List).
+        + rewrite -H2. move : jbb; smt(@IntDiv @Int @List).
+          move : jbb => /#.
+    trivial.
     + proc * => /=.
       ecall (polyvec_tobytes_corr (Glob.mem{1}) (to_uint rp{1}) (lift_array768 (nttpackv a{1}))) => //=.
   symmetry.
