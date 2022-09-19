@@ -510,19 +510,27 @@ proof.
                 load_array1152 Glob.mem{2} _p = res{1}).
     auto => &1 &2 [#] valid_p pos_bound_al pos_bound_ar al_eq_ar p_eq />.
     exists Glob.mem{2}.
-      exists (map W16.to_sint (nttpackv a{1})).
+      exists (map (fun x => (W16.to_sint x) %% q) (nttpackv a{1})).
         rewrite pos_bound_al pos_bound_ar /=.
         do split.
         + rewrite /lift_array768 tP => i i_b.
           rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
-        + admit. (* FIXME: bound should be 2*q ?? *)
+          rewrite -eq_inFq modz_mod => />.
+        + move => i i_b.
+          rewrite mapiE 1:i_b /=.
+          rewrite modz_cmp 1:qE //=.
         + move : (W64.to_uint_cmp rp{1}) => //=.
         + rewrite /valid_ptr in valid_p. move : valid_p => //=.
-        + admit. (* FIXME: bound should be 2*q ?? *)
-        + rewrite (_: map inFq (map W16.to_sint (nttpackv a{1})) = lift_array768 (nttpackv a{1})).
-          rewrite /lift_array768 tP => i ib.
+        + move => i i_b.
+          rewrite mapiE 1:i_b /=.
+          rewrite modz_cmp 1:qE //=.
+        + rewrite /lift_array768 tP => i i_b.
           rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
+          rewrite -eq_inFq modz_mod eq_inFq => />.
+          rewrite -(Array768.mapiE (fun x => inFq (W16.to_sint x))) 1:i_b.
+          rewrite (_: (map (fun x => inFq (W16.to_sint x)) (nttpackv a{1})) = lift_array768 (nttpackv a{1})) => />.
           rewrite -nttpackv_lift al_eq_ar unpackvK //=.
+          rewrite /lift_array768 mapiE 1:i_b //=.
         + rewrite p_eq //=.
         + move : (W64.to_uint_cmp rp{1}) => //=.
         + rewrite /valid_ptr in valid_p. move : valid_p => //=.
