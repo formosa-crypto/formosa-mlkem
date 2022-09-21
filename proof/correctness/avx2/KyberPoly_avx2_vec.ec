@@ -6,6 +6,7 @@ require import AVX2_Ops.
 require import Jkem Jkem_avx2.
 require import KyberPoly_avx2_prevec.
 require import KyberPoly_avx2_proof.
+require import Kyber_AVX2_cf.
 require import NTT_avx2.
 require import KyberINDCPA.
 import NTT_Avx2.
@@ -744,7 +745,10 @@ module Mvec = {
   }
 }.
 
+theory KyberPolyAVXVec.
+
 import KyberPolyAVX.
+import AVX2_cf.
 
 equiv eq_poly_add2:
   Mprevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.
@@ -1286,7 +1290,7 @@ proof.
 qed.
 
 equiv eq_poly_tobytes:
-  Mprevec.poly_tobytes ~ Mvec.poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_tobytes ~ Mvec.poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
   while(={rp, a, i, Glob.mem} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2}).
@@ -1600,7 +1604,7 @@ proof.
 qed.
 
 equiv veceq_poly_tobytes:
-  Mvec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+  Mvec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
   while(={rp, a, i, qx16, Glob.mem}).
@@ -1784,10 +1788,10 @@ proof.
 qed.
 
 equiv prevec_eq_poly_tobytes:
-  Mprevec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
-  transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={res})
-                                 (={rp, a, Glob.mem} ==> ={res}).
+  transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={res, Glob.mem})
+                                 (={rp, a, Glob.mem} ==> ={res, Glob.mem}).
   smt(). trivial.
   apply eq_poly_tobytes.
   apply veceq_poly_tobytes.
@@ -2225,6 +2229,37 @@ by rewrite !nttunpackK.
 qed.
 
 
+lemma tobytes_equiv :
+  equiv [M._poly_tobytes ~ Jkem.M._poly_tobytes :
+         ={rp, Glob.mem} /\
+         lift_array256 a{1} = nttunpack (lift_array256 a{2}) /\
+         pos_bound256_cxq a{1} 0 256 2 /\
+         pos_bound256_cxq a{2} 0 256 2 ==>
+         ={Glob.mem}].
+proof.
+  proc *.
+  transitivity {1} {r <@ Mprevec.poly_tobytes(rp, a); }
+                    (={rp, a, Glob.mem} ==> ={r, Glob.mem})
+                    (lift_array256 a{1} = nttunpack (lift_array256 a{2}) /\
+                     pos_bound256_cxq a{1} 0 256 2 /\
+                     pos_bound256_cxq a{2} 0 256 2 ==>
+                     ={Glob.mem}). smt(). smt().
+  symmetry.
+  call prevec_eq_poly_tobytes. auto => />. admit. (* FIXME *)
+
+  transitivity {1} { r <@ EncDec_AVX2.encode12_opt((map W16.to_sint (nttpack a))); }
+                    (valid_ptr (to_uint rp{1}) 384
+                     ==>
+                     (nttpack r{1}) = r{2} /\
+                     pos_bound256_cxq r{1} 0 256 2)
+                    (true ==> true).
+  
+
+  ecall{1} (KyberPolyAVX.poly_tobytes_corr (lift_array256 a{1}) (W64.to_uint rp{1})).
+  ecall{2} (KyberPoly.poly_tobytes_corr (lift_array256 a{2}) (W64.to_uint rp{2})).
+qed.
+
+
 
 lemma poly_add_corr_avx_impl ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 => 
@@ -2379,3 +2414,4 @@ lemma poly_decompress_equiv mem _p :
              pos_bound256_cxq res{2} 0 256 1 ].
 admitted. (* MIGUEL *)
 
+end KyberPolyAVXVec.
