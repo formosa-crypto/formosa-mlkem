@@ -41,7 +41,6 @@ lemma polvec_add_corr_h _a _b ab bb:
            forall k, 0 <= k < 768 =>
              inFq (to_sint res.[k]) = _a.[k] + _b.[k]].
 proof.
-  admit. (*
   move => abb bbb.
   proc.
   wp.
@@ -92,7 +91,7 @@ proof.
   rewrite /lift_array256.
   do rewrite initiE 1:/#.
   smt(@Array256 @Array768 @KyberPolyAVX @Int).
-*)
+
 qed.
 
 lemma polyvec_add_ll : islossless Mprevec.polyvec_add2
@@ -121,7 +120,7 @@ lemma polyvec_csubq_corr ap :
        ==>
        ap = lift_array768 res /\
        pos_bound768_cxq res 0 768 1].
-proof. admit. (*
+proof.
   proc; sp.
   wp.
   ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
@@ -167,7 +166,7 @@ proof. admit. (*
    rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_1.
    move : (pos_bound_res_3 (k - 512))  (pos_bound_res_2 (k - 256))  (pos_bound_res_1 k).
    smt(@Array256 @Array768).
-*)
+
 qed.
 
 
@@ -176,7 +175,7 @@ lemma polyvec_reduce_corr_h _a:
        _a  = lift_array768 r ==>
        _a  = lift_array768 res /\
        forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)].
-proof. admit. (*
+proof. 
   proc; sp.
   wp.
   ecall (KyberPolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
@@ -217,7 +216,7 @@ proof. admit. (*
    rewrite /bpos16 //=in res1_bound.
    move : (res3_bound (k - 512))  (res2_bound (k - 256))  (res1_bound k).
    smt(@Array256 @Array768).
-*)
+
 qed.
 
 lemma polyvec_reduce_ll : islossless Mprevec.polyvec_reduce
@@ -707,7 +706,7 @@ transitivity {1} {r0 <@ Mprevec.polyvec_add2(r,b); }
   _a =  (lift_array768 r{1}) /\
   _b =  (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
       lift_array768 r0{1} = (lift_array768 r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
-  + symmetry. call prevec_eq_poly_add2 => //.
+  + symmetry. call prevec_eq_polyvec_add2 => //.
 have corr1 := (polvec_add_corr ( _a) ( _b) ab bb abb bbb). call {1} corr1.
 have corr2 := (polyvec_add_corr _a _b ab bb abb bbb); call {2} corr2.
 
@@ -753,7 +752,7 @@ transitivity {1} {r0 <@ Mprevec.polyvec_reduce(r); }
       (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
   (forall (k : int), 0 <= k && k < 768 => bpos16 r0{2}.[k] (2 * q)) /\
   lift_array768 r0{1} =  (lift_array768  r0{2})); 1,2: by smt().
-  + symmetry. call prevec_eq_poly_reduce => //.
+  + symmetry. call prevec_eq_polyvec_reduce => //.
 have corr1 := (polvec_reduce_corr ( _a)). call {1} corr1.
 have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
 

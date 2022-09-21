@@ -13,6 +13,9 @@ import NTT_Avx2.
 import Kyber.
 import Zq.
 
+
+
+
 module Mvec = {
   proc shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {
     
@@ -1788,10 +1791,10 @@ proof.
 qed.
 
 equiv prevec_eq_poly_tobytes:
-  Mprevec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+  Mprevec.poly_tobytes ~ M._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
-  transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={res, Glob.mem})
-                                 (={rp, a, Glob.mem} ==> ={res, Glob.mem}).
+  transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={Glob.mem, res})
+                                 (={rp, a, Glob.mem} ==> ={Glob.mem,res}).
   smt(). trivial.
   apply eq_poly_tobytes.
   apply veceq_poly_tobytes.
@@ -2228,6 +2231,46 @@ rewrite -(nttpackK (lift_array256 r2)) H7 H9 H0 H1.
 by rewrite !nttunpackK.
 qed.
 
+(* 
+lemma phoare_left _a _p mem :
+   
+   phoare [ Mprevec.poly_tobytes :
+            pos_bound256_cxq a 0 256 2 /\
+            lift_array256 (nttpack a) = Array256.map inFq _a /\
+            (forall (i : int), 0 <= i && i < 256 => 0 <= _a.[i] && _a.[i] < q) /\
+            valid_ptr _p 384 /\ Glob.mem = mem /\ to_uint rp = _p ==>
+            pos_bound256_cxq res 0 256 1 /\
+            touches mem Glob.mem _p 384 /\
+            KyberPoly.load_array384 Glob.mem _p = sem_encode12 _a ] = 1%r.
+bypr => //= &m [#] H H0 H1 H2 H3 H4.
+have <- :  Pr [ EncDec.encode12(_a) @ &m : res = sem_encode12 _a] = 1%r 
+  by byphoare (_: arg = _a ==> res = sem_encode12 _a) => //;apply sem_encode12.
+have -> : Pr [ EncDec.encode12(_a) @ &m : res = sem_encode12 _a]  = 
+          Pr [ EncDec_AVX2.encode12_opt(_a) @ &m : res = sem_encode12 _a].
+byequiv => //. symmetry. proc* => //;call AVX2_cf.encode12_opt_corr. auto => />.
+byequiv => //;proc * => /=. 
+call (KyberPolyAVX.poly_tobytes_corr (Array256.map inFq _a) _p mem).
+auto => />.
+qed.
+
+
+lemma phoare_right _a _p mem :
+   
+   phoare [  Jkem.M._poly_tobytes :
+            pos_bound256_cxq a 0 256 2 /\
+            lift_array256 a = Array256.map inFq _a /\
+            (forall (i : int), 0 <= i && i < 256 => 0 <= _a.[i] && _a.[i] < q) /\
+            valid_ptr _p 384 /\ Glob.mem = mem /\ to_uint rp = _p ==>
+            pos_bound256_cxq res 0 256 1 /\
+            touches mem Glob.mem _p 384 /\
+            KyberPoly.load_array384 Glob.mem _p = sem_encode12 _a ] = 1%r.
+bypr => //= &m [#] H H0 H1 H2 H3 H4.
+have <- :  Pr [ EncDec.encode12(_a) @ &m : res = sem_encode12 _a] = 1%r 
+  by byphoare (_: arg = _a ==> res = sem_encode12 _a) => //;apply sem_encode12.
+byequiv => //;proc * => /=. 
+call (KyberPoly.poly_tobytes_corr (Array256.map inFq _a) _p mem).
+auto => />.
+qed.
 
 lemma tobytes_equiv :
   equiv [M._poly_tobytes ~ Jkem.M._poly_tobytes :
@@ -2245,20 +2288,16 @@ proof.
                      pos_bound256_cxq a{2} 0 256 2 ==>
                      ={Glob.mem}). smt(). smt().
   symmetry.
-  call prevec_eq_poly_tobytes. auto => />. admit. (* FIXME *)
+  call prevec_eq_poly_tobytes. auto => />. 
+  ecall {1} (phoare_left (Array256.map asint (lift_array256 a{1})) (to_uint rp{1})  Glob.mem{1}).
+  ecall {2} (phoare_right (Array256.map asint (lift_array256 a{2})) (to_uint rp{2})  Glob.mem{2}).
 
-  transitivity {1} { r <@ EncDec_AVX2.encode12_opt((map W16.to_sint (nttpack a))); }
-                    (valid_ptr (to_uint rp{1}) 384
-                     ==>
-                     (nttpack r{1}) = r{2} /\
-                     pos_bound256_cxq r{1} 0 256 2)
-                    (true ==> true).
-  
+auto => />. 
+move => &1 &2 ???. split. 
++ split; last by smt().
 
-  ecall{1} (KyberPolyAVX.poly_tobytes_corr (lift_array256 a{1}) (W64.to_uint rp{1})).
-  ecall{2} (KyberPoly.poly_tobytes_corr (lift_array256 a{2}) (W64.to_uint rp{2})).
 qed.
-
+*)
 
 
 lemma poly_add_corr_avx_impl ab bb :

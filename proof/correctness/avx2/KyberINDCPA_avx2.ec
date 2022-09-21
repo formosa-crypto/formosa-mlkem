@@ -5,7 +5,7 @@ require import KyberPoly  KyberPolyVec KyberINDCPA.
 require import KyberPoly_avx2_proof.
 require import KyberPoly_avx2_vec.
 require import KyberPoly_avx2_prevec.
-require import KyberPolyVec_avx2_proof.
+require import KyberPolyvec_avx2_proof.
 require import KyberPolyvec_avx2_vec.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2.
@@ -16,6 +16,7 @@ import KyberSpec.
 import KyberPoly.
 import KyberPolyVec.
 import KyberPolyvecAVX.
+import KyberPolyAVXVec.
 import NTT_Avx2.
 
 equiv sha3equiv :
@@ -212,7 +213,7 @@ have HHH : equiv [  M._poly_getnoise ~ M._poly_getnoise : ={arg} ==> ={res} ] by
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
-(*
+
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
    equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
@@ -251,9 +252,9 @@ transitivity {1} { Jkem.M.__indcpa_keypair(pkp, skp, randomnessp);}
 
 inline{1} 1; inline {2} 1. sim. 
 
-call KyberPolyvecAVX.polyvec_tobytes_equiv.
-call KyberPolyvecAVX.polyvec_tobytes_equiv.
-wp;conseq />.
+call (polyvec_tobytes_equiv _pkp).
+call (polyvec_tobytes_equiv _skp).
+wp;conseq />. smt().
 ecall (KyberPolyvecAVX.polyvec_reduce_equiv (lift_array768 pkpv{2})).
 
 have H := KyberPolyvecAVX.polyvec_add2_equiv 2 2 _ _ => //.
@@ -262,8 +263,8 @@ unroll for {1} 37.
 
 sp 3 3.
 
-seq 17 17  : (#pre /\ ={publicseed, noiseseed,sskp,spkp,e,skpv,pkpv}).
-+ by conseq />; sim 14 14; call( sha3equiv); conseq />; sim. 
+seq 17 17  : (#pre /\ ={publicseed, noiseseed,sskp,spkp,e,skpv,pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}); 1: by
+ sp; conseq />; sim 2 2; call( sha3equiv); conseq />; sim. 
 
 seq 1 2 : (#pre /\ aa{1} = nttunpackm a{2} /\
            pos_bound2304_cxq aa{1} 0 2304 2 /\
@@ -640,8 +641,7 @@ do split.
 +  smt(unpackvK).
 + smt().
 + smt().
-move => *.
-+ smt(unpackvK).
+by smt(unpackvK).
 qed.
 
 (***************************************************)
@@ -720,7 +720,7 @@ ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 
 unroll for {1} 38.
 
-swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0}); 1: by auto.
+swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2}=pkp{1}); 1: by auto.
 sp 3 3.
 swap {1} 18 -1. (* avoid dealing with stack noise seed *)
 
@@ -736,7 +736,7 @@ seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
 + call (genmatrixequiv true).
   call frommsgequiv_noperm. conseq />. smt().
   conseq (_: _ ==> lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
-       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,Glob.mem}).
+       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,Glob.mem} /\ pkp0{2} = pkp{1}).
   auto => /> &2 ????????? rl rr H H0 H1 ?????. 
   + rewrite tP => k kb.
     move : H; rewrite /lift_array256 tP => H.
@@ -752,7 +752,7 @@ seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
   seq 12 10 : (#{/~publicseed{2}}post /\ ={publicseed}).
   wp;sp; conseq />.
   call (polyvec_frombytes_equiv).
-  auto => />.
+  auto => />. smt(). 
   conseq />. sim.
 
 sp 2 0.
@@ -1095,7 +1095,7 @@ ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 
 unroll for {1} 40.
 
-swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0}); 1: by auto.
+swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2} = pkp{1}); 1: by auto.
 sp 3 3.
 swap {1} 19 1. (* avoid dealing with stack noise seed *)
 
@@ -1111,7 +1111,7 @@ seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
 + call (genmatrixequiv true).
   wp;call frommsgequiv_noperm. conseq />. smt().
   conseq (_: _ ==> lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
-       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,sctp,Glob.mem}).
+       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,sctp,Glob.mem} /\ pkp0{2} = pkp{1}).
   auto => /> &2 ??????? rl rr H H0 H1 ?????. 
   + rewrite tP => k kb.
     move : H; rewrite /lift_array256 tP => H.
@@ -1127,7 +1127,7 @@ seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
   seq 14 12 : (#{/~publicseed{2}}post /\ ={publicseed}).
   wp;sp; conseq />.
   call (polyvec_frombytes_equiv).
-  auto => />.
+  auto => />. smt().
   conseq />. sim.
 sp 2 0.
 (* swap {1} [11..12] 2. *)
@@ -1397,7 +1397,7 @@ conseq />.  call(poly_invnttequiv). auto => />. smt().
 
 auto => /> /#.
 qed.
-*)
+
 
 lemma kyber_correct_dec mem _ctp _skp : 
    equiv [ Jkem_avx2.M.__indcpa_dec_1 ~ Kyber(KHS,XOF,KPRF,H).dec : 
@@ -1451,7 +1451,7 @@ auto => />.
 move => &2 ????; split; 1: smt().
 move => ????; do split; 1:smt(). 
 + by rewrite to_uintD_small /=; 1: smt().
-move => ??? r0 ? rl1 rr1 ???; do split; 1,2: smt().
+move => ????? r0 ? rl1 rr1 ???; do split; 1,2: smt().
 move => ? rl2 rr2 ???; do split; 1..4: smt().
 move => ???? rl3 rr3 ????????; do split; 1..4:smt().
 qed.

@@ -2005,7 +2005,7 @@ move => i Hi.
 rewrite /BytesToBits (nth_flatten false 8 (map W8.w2bits (to_list bytes{2})) _).
 + rewrite allP => k /=.
   rewrite mapP=> [[x [Hx1 ->]]].
-  by rewrite W8.size_w2bits. print nth_map. 
+  by rewrite W8.size_w2bits.  
 rewrite -get_to_list (nth_map  witness%W8); 1: smt(Array128.size_to_list).
 rewrite w2bitsE /= nth_mkseq /#.
 qed.

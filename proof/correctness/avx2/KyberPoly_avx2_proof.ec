@@ -126,16 +126,18 @@ import KyberPoly.
 lemma get_lift_array256_eq (p: W16.t Array256.t):
   let p_lift = lift_array256 p in
   forall k, 0 <= k < 256 => p_lift.[k] = inFq (W16.to_sint p.[k]).
-proof. admit. (* 
+proof. 
   rewrite /lift_array256 => p_lift. rewrite /p_lift.
   move => k k_i.
   smt (@Array256).
-*)qed.
+qed.
 
 lemma lift_array256E (x : W16.t Array256.t) k :
   0 <= k < 256 =>
   (lift_array256 x).[k] = inFq (to_sint x.[k]).
-proof. admit. (* by move => ?; rewrite /lift_array256 mapiE //. *)qed.
+proof. 
+by move => ?; rewrite /lift_array256 mapiE //. 
+qed.
 
 lemma poly_add_corr_h _a _b ab bb :
       0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -148,7 +150,7 @@ lemma poly_add_corr_h _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\
            forall k, 0 <= k < 256 =>
              inFq (to_sint res.[k]) = _a.[k] + _b.[k]].
-proof. admit. (* 
+proof. 
   move => [ab_lb ab_ub] [bb_lb bb_ub].
   proc.
   sp.
@@ -228,10 +230,10 @@ proof. admit. (*
     + simplify.
       rewrite -ltzNge in k_tlb.
       rewrite lrp_def //=.
-*)qed.
+qed.
 
 lemma poly_add_ll : islossless Mprevec.poly_add2.
-proof. admit. (*
+proof. 
   proc; while (0<= i <= 16) (16 - i).
   auto => />.
   inline Ops.iVPADD_16u16.
@@ -239,7 +241,7 @@ proof. admit. (*
   smt(@Int).
   auto => />.
   smt(@Int).
-*)qed.
+qed.
 
 lemma poly_add_corr _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
@@ -265,7 +267,7 @@ lemma poly_sub_corr_h _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\
            forall k, 0 <= k < 256 =>
               inFq (to_sint res.[k]) = _a.[k] - _b.[k]].
-proof. admit. (*
+proof. 
   move => [ab_lb ab_ub] [bb_lb bb_ub].
   proc.
   while (0 <= i <= 16 /\
@@ -313,15 +315,15 @@ proof. admit. (*
     + simplify.
       rewrite -ltzNge in k_tlb.
       rewrite lrp_def //=.
-*)qed.
+qed.
 
 lemma poly_sub_ll : islossless Mprevec.poly_sub.
-proof. admit. (* 
+proof. 
   proc; while (0<= i <= 16) (16 - i); auto => />.
   inline Ops.iVPSUB_16u16.
   auto => />; smt(@Int).
   auto => />; smt(@Int).
-*)qed.
+qed.
 
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
@@ -343,7 +345,7 @@ lemma poly_csubq_corr_h ap :
              ==>
              ap = lift_array256 res /\
              pos_bound256_cxq res 0 256 1 ].
-proof. admit. (* 
+proof. 
   proc.
   while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = Jkem_avx2.jqx16.[k]).
   seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
@@ -932,17 +934,17 @@ proof. admit. (*
   smt(@IntDiv).
   move => i0 rp0.
   auto => /> /#.
-*)qed.
+qed.
 
 lemma poly_csubq_ll : islossless Mprevec.poly_csubq.
-proof. admit. (* 
+proof. 
   proc.
   while (0 <= i <= 16) (16 - i); auto => />.
   inline Ops.iVPSUB_16u16 Ops.iVPSRA_16u16 Ops.iVPAND_16u16 Ops.iVPADD_16u16.
   auto => />.
   smt(@W16).
   smt(@W16).
-*)qed.
+qed.
 
 lemma poly_csubq_corr ap :
       phoare[ Mprevec.poly_csubq :
@@ -958,7 +960,7 @@ lemma poly_reduce_corr_h (ap: Fq Array256.t):
           ap = lift_array256 rp ==>
           ap = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)].
-proof. admit. (* 
+proof. 
   proc.
   while (0 <= i <= 16 /\
          (forall k, 0 <= k < 256 => ap.[k] = inFq (to_sint rp.[k])) /\
@@ -1049,11 +1051,11 @@ proof. admit. (*
         rewrite red16x_bred 1:/# -/rp_sub bred_lb bred_ub //=.
     + rewrite -ltzNge in k_tlb.
       move : (rp_eq__rp k); rewrite k_lb k_tlb /= => /#.
-*)qed.
+qed.
 
 lemma poly_reduce_ll:
   islossless Mprevec.poly_reduce.
-proof. admit. (* 
+proof. 
   proc; while(0 <= i <= 16) (16 - i);
     move => *; inline *; auto => />.
   move => &hr i_lb i_ub i_tub.
@@ -1061,21 +1063,20 @@ proof. admit. (*
   move : i_lb i_tub => /#.
   smt(@Int).
   smt(@W64).
-*)qed.
+qed.
 
 lemma poly_reduce_corr ap:
   phoare[ Mprevec.poly_reduce :
         ap = lift_array256 rp ==>
         ap = lift_array256 res /\
         forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)] = 1%r.
-proof. admit. (*  by conseq poly_reduce_ll (poly_reduce_corr_h ap). *)qed.
+proof.  by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
 
 lemma poly_frommont_corr_h ap:
   hoare[ Mprevec.poly_frommont :
        ap = map W16.to_sint rp ==>
        map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) R 2) %% q))) ap].
-proof. admit. (* 
->>>>>>> dffc231ca719ddbf5f562a4767ca86ef46ac77fa
+proof. 
   proc.
   while(0 <= i <= 16 /\ aux = 16 /\
         (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
@@ -1191,16 +1192,16 @@ proof. admit. (*
   rewrite mulzDr mulz1 lezNgt in k_lb.
   rewrite k_lb /=.
   apply rp_eq_ap; by move : k_lb k_ub => /#.
-*)qed.
+qed.
 
 lemma poly_frommont_ll : islossless  Mprevec.poly_frommont.
-proof. admit. (* 
+proof. 
   proc.
   auto => />.
   cfold 4. wp; while (0 <= i <= 16) (16 - i).
   + move => *; inline*; auto => />. smt().
   + inline *; wp; auto => /> /#.
-*)qed.
+qed.
 
 lemma poly_frommont_corr ap:
   phoare[ Mprevec.poly_frommont :
@@ -1217,8 +1218,8 @@ lemma poly_decompress_corr mem _p (_a : W8.t Array128.t):
              Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 4 res{2} /\
              pos_bound256_cxq res{1} 0 256 1].
-proof. 
-admit. (* 
+proof. admit. (* @MIGUEL: Not compiling *)
+(*
   proc.
   cfold{1} 7.
   wp.
@@ -1558,7 +1559,8 @@ admit. (*
       move : (rp_eq_r x x_i) => /#.
     + move => k k_i.
       move : (rp_eq_r k k_i) => /#.
-*)qed.
+*)
+qed.
 
 lemma poly_compress_corr _a (_p : address) mem :
     equiv [ Mprevec.poly_compress ~ EncDec_AVX2.encode4 :
@@ -1572,7 +1574,7 @@ lemma poly_compress_corr _a (_p : address) mem :
              pos_bound256_cxq res{1} 0 256 1 /\
              touches mem Glob.mem{1} _p 128 /\
              load_array128 Glob.mem{1} _p = res{2}].
-proof. admit. (* 
+proof. 
   proc.
   cfold{1} 8.
   seq 1 1 : (#{~(pos_bound256_cxq a{1} 0 256 2)}pre /\
@@ -2244,7 +2246,7 @@ proof. admit. (*
   move : (memr_eq_r k k_i).
   rewrite /loadW8.
   done.
-*)qed.
+qed.
 
 lemma poly_compress_ll : islossless Mprevec.poly_compress.
 proc.
@@ -2264,7 +2266,7 @@ lemma poly_tomsg_corr _a (_p : address) mem :
              pos_bound256_cxq res{1} 0 256 1 /\
              touches mem Glob.mem{1} _p 32 /\
              load_array32 Glob.mem{1} _p = res{2}].
-proof. admit. (*
+proof.
   proc.
   cfold{1} 4.
   seq 1 1 : (#{~(pos_bound256_cxq a{1} 0 256 2)}pre /\
@@ -2606,7 +2608,7 @@ proof. admit. (*
  rewrite /load_array32 /loadW8 => /> mem1_eq_rp mem1_eq_ra.
   apply Array32.ext_eq => x x_i.
   rewrite initiE 1:x_i //= mem1_eq_ra 1:x_i //=.
-*)qed.
+qed.
 
 lemma poly_tomsg_ll : islossless  Mprevec.poly_tomsg.
 proc.
@@ -2631,7 +2633,7 @@ lemma bit_decode (a: W8.t Array32.t) (i j: int):
   let k = ((linear_idx %% 32) + n) %/ 16 in
   let sl = W8.of_int (15 - (((linear_idx %% 32) + n) %% 16)) in
     s_encode a.[i].[j] = W16.to_sint (((((f.[di] `<<` (W8.of_int n)) \bits16 k) `<<` sl) `|>>` (W8.of_int 15)) `&` (W16.of_int 1665)).
-proof. admit. (* 
+proof. 
   move => i_i j_i f_def linear_idx di n k sl.
   rewrite /s_encode /b_encode /asint /trueval /falseval.
   have ->: ((q + 1) %/ 2) = 1665.
@@ -2681,24 +2683,24 @@ proof. admit. (*
     rewrite a_i_j_0 //=.
   rewrite W16.and0w of_sintK /smod //=.
   rewrite /inFq Sub.insubdK 1:/# pmod_small 1:/# //=.
-*)qed.
+qed.
 
 (* TODO: generalize *)
 lemma true_32: forall x, 0 <= x < 8 => (W8.of_int 32).[x] = (x = 5).
-proof. admit. (* 
+proof.  
   move => x x_i.
   rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
   rewrite /bits2w initiE 1:x_i /=.
   smt(@Int).
-*)qed.
+qed.
 
 lemma true_49: forall x, 0 <= x < 8 => (W8.of_int 49).[x] = (x = 5 \/ x = 4 \/ x = 0).
-proof. admit. (* 
+proof.  
   move => x x_i.
   rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
   rewrite /bits2w initiE 1:x_i /=.
   smt(@Int).
-*)qed.
+qed.
 
 lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t): 
     equiv [ Mprevec.poly_frommsg ~ EncDec_AVX2.decode1_opt :
@@ -2709,7 +2711,7 @@ lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t):
              Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 1 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 ].
-proof. admit. (* 
+proof. 
   proc.
   seq 5 2:(#pre /\
            ={i} /\ i{1} = 0 /\
@@ -4033,15 +4035,15 @@ proof. admit. (*
   rewrite /pos_bound256_cxq /bpos16 => x x_i.
  
   move : (rpl_bnd x) (rph_bnd x) => /#.
-*)qed.
+qed.
 
 lemma poly_frommsg_ll : islossless  Mprevec.poly_frommsg.
-proof. admit. (* 
+proof. 
   proc; while (0 <= i <= 4) (4-i).
   move => *.
   inline *; wp; auto => /> /#.
   inline *; auto => /> /#.
-*)qed.
+qed.
 
 
 op cmplx_mul_fq (a : Fq Array32.t, b : Fq Array32.t, zetas : Fq Array16.t) =
@@ -4370,12 +4372,12 @@ op load_array384(m : global_mem_t, p : address) : W8.t Array384.t =
 
 
 lemma true_170: forall x, 0 <= x < 8 => (W8.of_int 170).[x] = (x %% 2 = 1).
-proof. admit. (*
+proof. 
   move => x x_i.
   rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
   rewrite /bits2w initiE 1:x_i /=.
   smt(@Int).
-*)qed.
+qed.
 
 lemma shuffle8_corr_h _a _b:
       hoare[ Mprevec.shuffle8 :
@@ -4521,7 +4523,7 @@ lemma poly_tobytes_corr _a (_p : address) mem :
              pos_bound256_cxq res{1} 0 256 1 /\
              touches mem Glob.mem{1} _p 384 /\
              load_array384 Glob.mem{1} _p = res{2}].
-proof. admit. (*
+proof. 
   proc.
   seq 3 2 : (#{/~a{1}}pre /\
              to_uint rp{1} = _p /\
@@ -5182,7 +5184,7 @@ proof. admit. (*
   rewrite /load_array384.
   apply Array384.tP => i i_bnds.
   rewrite -r2_def 1:i_bnds /loadW8 initiE 1:i_bnds //=.
-  *)
+  
 qed.
 
 lemma poly_tobytes_ll: islossless Mprevec.poly_tobytes.
@@ -5209,7 +5211,7 @@ lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t):
             Glob.mem{1} = mem /\
             map W16.to_sint (nttpack res{1}) = res{2} /\
             pos_bound256_cxq res{1} 0 256 2 ].
-proof. admit. (*
+proof. 
   proc.
   seq 2 2 : (#pre /\
              to_uint ap{1} = _p /\
@@ -6155,7 +6157,7 @@ proof. admit. (*
           by apply rp_def.
         + rewrite /pos_bound256_cxq /bpos16 qE //= => x x_bnds.
           move : (rp_bnds x x_bnds) => /#.
-*)
+
 qed.
 
 lemma poly_frombytes_ll : islossless  Mprevec.poly_frombytes.
