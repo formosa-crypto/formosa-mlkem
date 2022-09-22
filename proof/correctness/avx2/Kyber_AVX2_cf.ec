@@ -250,12 +250,13 @@ equiv encode12_avx2_corr:
 proof.
   proc.
   unroll for {1} ^while.
-  do 2!(unroll for {1} ^while).
-  admit.
-(* FIXME:
-  unroll for {2} ^while.
-  by auto => />.
-*)
+  splitwhile  {2} 4:  (i < 128).
+  wp. 
+  while (0<=k{1}<=64 /\ 128<=i{2}<=256 /\ i{2} = 2*k{1} + 128 /\ j{2} = 192 * i{1} + 3 * k{1} /\ i{1} = 1 /\ ={r,a}).
+  auto => /> /#. 
+  wp; while (0<=k{1}<=64 /\ 0<=i{2}<=128 /\ i{2} = 2*k{1} /\ j{2} = 192 * i{1} + 3 * k{1} /\ i{1} = 0 /\ ={r,a}).
+  auto => /> /#. 
+  auto => /> /#.
 qed.
 
 equiv eq_encode12_opt:

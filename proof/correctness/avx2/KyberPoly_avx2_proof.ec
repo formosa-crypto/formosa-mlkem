@@ -4110,6 +4110,7 @@ op signed_bound16_cxq (coefs : W16.t Array16.t) (l u c : int) :
   forall (k : int),
     l <= k && k < u => b16 (coefs.[k]) (c * q).
 
+(*
 lemma schoolbook_corr a b zetas isign:
   hoare[Mprevec.schoolbook :
         a = ap /\
@@ -4121,8 +4122,8 @@ lemma schoolbook_corr a b zetas isign:
         (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
         (forall k, 0 <= k < 16 => qinvx16.[k] = jqx16.[k]) ==>
         res = (schoolbook_mul a b zetas isign)].
-admitted. (* Miguel *)
-(* FIXME
+admitted. (* Bacelar/Hugo: prior proof by Miguel *)
+(* 
   proc.
     inline (3 4) Ops.iVPADD_8u32; wp.
     seq 33 : (#pre /\
