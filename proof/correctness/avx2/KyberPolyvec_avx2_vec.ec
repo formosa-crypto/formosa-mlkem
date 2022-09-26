@@ -62,6 +62,50 @@ module Mvec = {
     return (r);
   }
 
+  proc polyvec_frombytes (ap:W64.t) : W16.t Array768.t = {
+    var aux: W16.t Array256.t;
+    
+    var r:W16.t Array768.t;
+    var pp:W64.t;
+    r <- witness;
+    pp <- ap;
+    aux <@ KyberPoly_avx2_vec.Mvec.poly_frombytes ((Array256.init (fun i => r.[0 + i])), pp);
+    r <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else r.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_vec.Mvec.poly_frombytes ((Array256.init (fun i => r.[256 + i])), pp);
+    r <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else r.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_vec.Mvec.poly_frombytes ((Array256.init (fun i => r.[(2 * 256) + i])),
+    pp);
+    r <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else r.[i]);
+    return (r);
+  }
+
+  proc polyvec_tobytes (rp:W64.t, a:W16.t Array768.t) : unit = {
+    var aux: W16.t Array256.t;
+    
+    var pp:W64.t;
+    
+    pp <- rp;
+    aux <@ KyberPoly_avx2_vec.Mvec.poly_tobytes (pp, (Array256.init (fun i => a.[0 + i])));
+    a <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else a.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_vec.Mvec.poly_tobytes (pp, (Array256.init (fun i => a.[256 + i])));
+    a <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else a.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_vec.Mvec.poly_tobytes (pp, (Array256.init (fun i => a.[(2 * 256) + i])));
+    a <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else a.[i]);
+    return ();
+  }
+
   proc __polyvec_compress (rp:W64.t, a:W16.t Array768.t) : unit = {
     var aux: int;
 
@@ -123,6 +167,10 @@ module Mvec = {
   }
 }.
 
+theory KyberPolyVecAVXVec.
+
+import KyberPolyAVXVec.
+
 equiv eq_polyvec_add2 :
   Mprevec.polyvec_add2 ~ Mvec.polyvec_add2: ={r, b} ==> ={res}.
 proof.
@@ -144,6 +192,22 @@ equiv eq_polyvec_reduce :
 proof.
   proc.
   do 3!(wp; call eq_poly_reduce).
+  auto => />.
+qed.
+
+equiv eq_polyvec_frombytes:
+  Mprevec.polyvec_frombytes ~ Mvec.polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
+proof.
+  proc.
+  do 3!(wp; call eq_poly_frombytes).
+  auto => />.
+qed.
+
+equiv eq_polyvec_tobytes:
+  Mprevec.polyvec_tobytes ~ Mvec.polyvec_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
+proof.
+  proc.
+  do 3!(wp; call eq_poly_tobytes).
   auto => />.
 qed.
 
@@ -171,7 +235,23 @@ proof.
   auto => />.
 qed.
 
-equiv prevec_eq_poly_add2 :
+equiv veceq_polyvec_frombytes :
+  Mvec.polyvec_frombytes ~ M.__polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
+proof.
+  proc.
+  do 3!(wp; call veceq_poly_frombytes).
+  auto => />.
+qed.
+
+equiv veceq_polyvec_tobytes :
+  Mvec.polyvec_tobytes ~ M.__polyvec_tobytes: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+proof.
+  proc.
+  do 3!(wp; call veceq_poly_tobytes).
+  auto => />.
+qed.
+
+equiv prevec_eq_polyvec_add2 :
   Mprevec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_add2 (={r, b} ==> ={res}) (={r, b} ==> ={res}).
@@ -180,7 +260,7 @@ apply eq_polyvec_add2.
 apply veceq_polyvec_add2.
 qed.
 
-equiv prevec_eq_poly_csubq :
+equiv prevec_eq_polyvec_csubq :
   Mprevec.polyvec_csubq ~ M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_csubq (={r} ==> ={res}) (={r} ==> ={res}).
@@ -189,7 +269,7 @@ apply eq_polyvec_csubq.
 apply veceq_polyvec_csubq.
 qed.
 
-equiv prevec_eq_poly_reduce :
+equiv prevec_eq_polyvec_reduce :
   Mprevec.polyvec_reduce ~ M.__polyvec_reduce: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_reduce (={r} ==> ={res}) (={r} ==> ={res}).
@@ -197,3 +277,23 @@ smt(). trivial.
 apply eq_polyvec_reduce.
 apply veceq_polyvec_reduce.
 qed.
+
+equiv prevec_eq_polyvec_frombytes :
+  Mprevec.polyvec_frombytes ~ M.__polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
+proof.
+  transitivity Mvec.polyvec_frombytes (={Glob.mem, ap} ==> ={res}) (={Glob.mem, ap} ==> ={res}).
+  smt(). trivial.
+  apply eq_polyvec_frombytes.
+  apply veceq_polyvec_frombytes.
+qed.
+
+equiv prevec_eq_polyvec_tobytes :
+  Mprevec.polyvec_tobytes ~ M.__polyvec_tobytes: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+proof.
+  transitivity Mvec.polyvec_tobytes (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, rp, a} ==> ={res, Glob.mem}).
+  smt(). trivial.
+  apply eq_polyvec_tobytes.
+  apply veceq_polyvec_tobytes.
+qed.
+
+end KyberPolyVecAVXVec.

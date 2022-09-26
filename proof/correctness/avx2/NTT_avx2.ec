@@ -366,6 +366,32 @@ congr;congr.
 rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
 qed.
 
+lemma nttunpackv_mapsint (v  :W16.t Array768.t) :
+   nttunpackv (map W16.to_sint v) = map W16.to_sint (nttunpackv v).
+rewrite /nttunpackv /subarray256 tP => k kb.
+rewrite mapiE //= !initiE //=.
+case (0 <= k && k < 256).
++ move => kbb.
+  rewrite /nttunpack initiE //= initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  congr. 
+  rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
+move => *;case (256 <= k && k < 512).
++ move => kbb.
+  rewrite /nttunpack initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
+  congr. 
+  rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
+move => kbb.
+rewrite /nttunpack initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+rewrite initiE //=; 1: smt(Array256.allP nttunpack_bnd).
+rewrite mapiE //=; 1: smt(Array256.allP nttunpack_bnd).
+congr. 
+rewrite /unpack. smt(Array768.initiE Array256.initiE Array256.allP nttunpack_bnd).
+qed.
+
+
 lemma map_pack (p : 'a Array256.t) (f : 'a -> 'b) : nttpack (Array256.map f p) = map f (nttpack p).
 rewrite /nttpack !mapE.
 rewrite tP => k kb; rewrite !initiE //=.
@@ -812,5 +838,35 @@ rewrite initiE//=  1:/# initiE//=  1:/#.
 move : nttpack_idxK; rewrite allP => Hidx.
 move : (Hidx (k-512) _)=>//; smt(mem_iota).
 qed.
+
+equiv polyinvnttequiv :
+ Jkem_avx2.M._poly_invntt ~ M._poly_invntt : 
+   lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) /\ 
+   signed_bound_cxq arg{1} 0 256 2 /\ 
+   signed_bound_cxq arg{2} 0 256 2 ==>
+   lift_array256 res{1} = lift_array256 res{2} /\ 
+   pos_bound256_cxq res{1} 0 256 2 /\ 
+   pos_bound256_cxq res{2} 0 256 2.
+   admitted. (* HUGO BACELAR *)
+
+equiv invnttequiv :
+ Jkem_avx2.M.__polyvec_invntt ~ M.__polyvec_invntt : 
+   lift_array768 arg{1} = nttunpackv (lift_array768 arg{2}) /\ 
+   signed_bound768_cxq arg{1} 0 768 2 /\ 
+   signed_bound768_cxq arg{2} 0 768 2 ==>
+   lift_array768 res{1} = lift_array768 res{2} /\ 
+   pos_bound768_cxq res{1} 0 768 2 /\ 
+   pos_bound768_cxq res{2} 0 768 2.
+   admitted. (* HUGO BACELAR *)
+
+equiv poly_invnttequiv :
+ Jkem_avx2.M._poly_invntt ~ M._poly_invntt : 
+   lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) /\ 
+   signed_bound_cxq arg{1} 0 256 2 /\ 
+   signed_bound_cxq arg{2} 0 256 2 ==>
+   lift_array256 res{1} = lift_array256 res{2} /\ 
+   pos_bound256_cxq res{1} 0 256 2 /\ 
+   pos_bound256_cxq res{2} 0 256 2.
+   admitted. (* HUGO BACELAR *)
 
 end NTT_Avx2.

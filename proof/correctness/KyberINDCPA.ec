@@ -162,7 +162,8 @@ module H : KyberPKE.RO.POracle = {
 module AuxKyber= {
 
 proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
-  var a, i, j,c;
+  var a: matrix;
+  var i, j,c;
   a <- witness;                       
   i <- 0;                       
   while (i < kvec) {                  

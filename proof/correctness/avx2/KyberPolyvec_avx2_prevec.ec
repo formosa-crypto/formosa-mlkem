@@ -60,4 +60,48 @@ module Mprevec = {
          else r.[i]);
     return (r);
   }
+
+  proc polyvec_frombytes (ap:W64.t) : W16.t Array768.t = {
+    var aux: W16.t Array256.t;
+    
+    var r:W16.t Array768.t;
+    var pp:W64.t;
+    r <- witness;
+    pp <- ap;
+    aux <@ KyberPoly_avx2_prevec.Mprevec.poly_frombytes ((Array256.init (fun i => r.[0 + i])), pp);
+    r <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else r.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_prevec.Mprevec.poly_frombytes ((Array256.init (fun i => r.[256 + i])), pp);
+    r <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else r.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_prevec.Mprevec.poly_frombytes ((Array256.init (fun i => r.[(2 * 256) + i])),
+    pp);
+    r <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else r.[i]);
+    return (r);
+  }
+
+  proc polyvec_tobytes (rp:W64.t, a:W16.t Array768.t) : unit = {
+    var aux: W16.t Array256.t;
+    
+    var pp:W64.t;
+    
+    pp <- rp;
+    aux <@ KyberPoly_avx2_prevec.Mprevec.poly_tobytes (pp, (Array256.init (fun i => a.[0 + i])));
+    a <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else a.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_prevec.Mprevec.poly_tobytes (pp, (Array256.init (fun i => a.[256 + i])));
+    a <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else a.[i]);
+    pp <- (pp + (W64.of_int 384));
+    aux <@ KyberPoly_avx2_prevec.Mprevec.poly_tobytes (pp, (Array256.init (fun i => a.[(2 * 256) + i])));
+    a <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else a.[i]);
+    return ();
+  }
 }.

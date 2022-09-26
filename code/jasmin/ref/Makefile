@@ -1,6 +1,6 @@
-CC=/usr/bin/gcc
+CC?=/usr/bin/gcc
 CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
-JASMIN=jasminc
+JASMIN?=jasminc
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
