@@ -12,105 +12,10 @@ require import Fq.
 require import NTT_Fq.
 require import Jkem.
 require import KyberPoly.
+require import Kyber_AVX_AuxLemmas.
 
 pragma +oldip.
-lemma lift2poly_iso (p: W16.t Array256.t) (i k: int):
-    0 <= i < 16 =>
-    16 * i <= k < 16 * i + 16 => (lift2poly (get256 (WArray512.init16 (fun j => p.[j])) i)).[k %% 16] = p.[k].
-proof. 
-  move => i_b k_b.
-  have k_mb: 0 <= k %% 16 < 16.
-    smt(@IntDiv).
-  rewrite /x.
-  rewrite /lift2poly initiE => />.
-  rewrite get256E => />.
-  rewrite k_mb //=.
-  rewrite initiE. move : k_mb => /#.
-  rewrite initiE. move : k_mb => /#.
-  simplify.
-  rewrite /init16.
-  rewrite initiE. move : k_mb => /#.
-  rewrite initiE. move : k_mb => /#.
-  simplify.
-  rewrite (_: (32 * i + (2 * (k %% 16) + 1)) %/ 2 = (32 * i + 2 * (k %% 16)) %/ 2).
-    smt(@IntDiv).
-  rewrite (_: (32 * i + 2 * (k %% 16)) %% 2 = 0).
-    smt(@IntDiv).
-  rewrite (_: (32 * i + (2 * (k %% 16) + 1)) %% 2 = 1).
-    smt(@IntDiv).
-  rewrite pack2_bits8.
-  smt(@IntDiv).
-qed.
 
-lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
-    0 <= i < 16 => 0 <= j < 256 =>
-    WArray512.get16
-    (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
-      if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16)
-      else v.[j].
-proof. 
-  move => hx hs; rewrite set256E !get16E.
-  rewrite -(W2u8.unpack8K (if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16) else v.[j])); congr.
-  apply W2u8.Pack.ext_eq => k hk.
-  rewrite W2u8.get_unpack8 //= W2u8.Pack.initiE 1:/# /=.
-  rewrite initiE /=. move : hk hs => /#.
-  rewrite initiE /=. move : hk hs => /#.
-  have ->: (32 * i <= 2 * j + k < 32 * i + 32) = (16 * i <= j < 16 * i + 16) by smt().
-  case : (16 * i <= j < 16 * i + 16) => h.
-    + by rewrite W256_bits16_bits8 1:// /#.
-    + by rewrite /init16 /#.
-qed.
-
-lemma set_get_eq (v: W16.t Array256.t) (w: W256.t) i j:
-    0 <= i < 16 => 0 <= j < 256 => 16 * i <= j < 16 * i + 16 =>
-    WArray512.get16
-    (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
-      w \bits16 j %% 16.
-proof. 
-  by move => h1 h2 h3; rewrite set_get_def // h3.
-qed.
-
-lemma set_get_diff (v: W16.t Array256.t) (w: W256.t) i j:
-    0 <= i < 16 => 0 <= j < 256 => !(16 * i <= j < 16 * i + 16) =>
-    WArray512.get16
-    (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
-      v.[j].
-proof.
-  move => h1 h2 h3; rewrite set_get_def // h3. auto.
-qed.
-
-lemma get_set_get_eqb (v: W16.t Array256.t) (w: W256.t) i:
-  0 <= i < 16 => forall k, 0 <= k < i*16 =>
-  v.[k] = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof. 
-  move => i_i k k_i.
-  rewrite Array256.initiE.
-  move : i_i k_i. smt().
-  simplify.
-  rewrite set_get_def => /#.
-qed.
-
-lemma get_set_get_eqa (v: W16.t Array256.t) (w: W256.t) i:
-  0 <= i < 16 => forall k, i*16 + 16 <= k < 256 =>
-  v.[k] = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof.
-  move => i_i k k_i.
-  rewrite Array256.initiE.
-  move : i_i k_i => /#.
-  simplify.
-  rewrite set_get_def => /#.
-qed.
-
-lemma get_set_get_diff (v: W16.t Array256.t) (w: vt16u16) i:
-  0 <= i < 16 => forall k, i*16 <= k < i*16 + 16 =>
-  w \bits16 (k%%16) = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof. 
-  move => i_i k k_i.
-  rewrite Array256.initiE.
-  move : i_i k_i => /#.
-  simplify.
-  rewrite set_get_def => /#.
-qed.
 
 theory KyberPolyAVX.
 
@@ -122,22 +27,6 @@ import ZModP.
 import Fq_avx2.
 import NTT_Avx2.
 import KyberPoly.
-
-lemma get_lift_array256_eq (p: W16.t Array256.t):
-  let p_lift = lift_array256 p in
-  forall k, 0 <= k < 256 => p_lift.[k] = inFq (W16.to_sint p.[k]).
-proof. 
-  rewrite /lift_array256 => p_lift. rewrite /p_lift.
-  move => k k_i.
-  smt (@Array256).
-qed.
-
-lemma lift_array256E (x : W16.t Array256.t) k :
-  0 <= k < 256 =>
-  (lift_array256 x).[k] = inFq (to_sint x.[k]).
-proof. 
-by move => ?; rewrite /lift_array256 mapiE //. 
-qed.
 
 lemma poly_add_corr_h _a _b ab bb :
       0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -952,7 +841,7 @@ lemma poly_csubq_corr ap :
            pos_bound256_cxq rp 0 256 2
            ==>
            ap = lift_array256 res /\
-           pos_bound256_cxq res 0 256 1 ] = 1%r
+           pos_bound256_cxq res 0 256 1 ] = 1%r by 
   by conseq poly_csubq_ll (poly_csubq_corr_h ap).
 
 lemma poly_reduce_corr_h (ap: Fq Array256.t):
@@ -2256,16 +2145,14 @@ auto => />.
   inline Ops.iVPBROADCAST_16u16; wp; call poly_csubq_ll; auto => /> /#.
 qed.
 
-lemma poly_tomsg_corr _a (_p : address) mem : 
-  equiv [Mprevec.poly_tomsg ~ EncDec_AVX2.encode1 :
+lemma poly_tomsg_corr _a  : 
+  equiv [Mprevec.poly_tomsg_1 ~ EncDec_AVX2.encode1 :
              pos_bound256_cxq a{1} 0 256 2 /\ 
-             lift_array256 a{1} = _a /\ a{2} = compress_poly 1 _a /\ 
-             valid_ptr _p 32 /\ Glob.mem{1} = mem /\ to_uint rp{1} = _p
+             lift_array256 a{1} = _a /\ a{2} = compress_poly 1 _a 
               ==>
-             lift_array256 res{1} = _a /\
-             pos_bound256_cxq res{1} 0 256 1 /\
-             touches mem Glob.mem{1} _p 32 /\
-             load_array32 Glob.mem{1} _p = res{2}].
+             lift_array256 res{1}.`2 = _a /\
+             pos_bound256_cxq res{1}.`2 0 256 1 /\
+             res{1}.`1 = res{2}].
 proof.
   proc.
   cfold{1} 4.
@@ -2276,7 +2163,7 @@ proof.
              (forall k, 0 <= k < 16 => hq{1}.[k] = W16.of_int 1664) /\
              (forall k, 0 <= k < 16 => hhq{1}.[k] = W16.of_int 832)).
   wp; skip; auto => />.
-  move => &1 [#] rp_lb rp_ub pos_bound_a.
+  move => &1 [#] pos_bound_a.
   split.
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
@@ -2287,18 +2174,16 @@ proof.
       rewrite /(Jkem_avx2.hhqx16) initiE 1:/# //=.
       smt(@List @Array16).
   wp.
-  while (#{/~mem}{~i{1}=0}pre /\ 0 <= i{1} <= 8 /\
-         touches mem Glob.mem{1} _p (4*i{1}) /\
-         forall k, 0 <= k < 4*i{1} => loadW8 Glob.mem{1} (_p + k) = ra{2}.[k]).
+  while (#{~i{1}=0}pre /\ 0 <= i{1} <= 8 /\
+         forall k, 0 <= k < 4*i{1} => rp{1}.[k] = ra{2}.[k]).
   auto => />.
-  move => &1 &2 [#] a1_def a2_def valid_p rp_def pos_bound_a i_eq hq_def hhq_def i1_lb i1_ub touch_mem _p_def i1_tub i2_tub c ra [#] i2n_lb i2n_ub touch_mem_c c_eq_ra i2_n mem1_def i1_n />.
-  rewrite /mem1_def -rp_def /i1_n /i2_n i_eq /=.
-  do split; first 4 by assumption.
+  move => &1 &2 [#] a1_def a2_def rp_def pos_bound_a i_eq hq_def hhq_def i1_lb i1_ub  i1_tub i2_tub c ra [#] i2n_lb i2n_ub  c_eq_ra i2_n  i1_n />.
+  by smt().
 
   inline *; wp.
   unroll for {2} 2.
   auto => />.
-  move => &1 &2 [#] rp_lb rp_ub pos_bound_a hq_def hhq_def i_lb i_ub touch_mem touch_mem_n i_tub />.
+  move => &1 &2 [#]  pos_bound_a hq_def hhq_def i_lb i_ub rp_def i_tub />.
   split; first by move : i_lb i_tub => /#.
   do (rewrite hq_def 1://=).
   do (rewrite hhq_def 1://=).
@@ -2492,19 +2377,6 @@ proof.
                                                                          4) +
                                                                         i2 %% 8])))%Array32.[i1])
                     32).
-  rewrite to_uintD_small.
-    rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
-    move : rp_lb rp_ub => /#.
-  rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
-  split.
-    rewrite /touches => j j_i.
-    rewrite /storeW32 /stores /=.
-    do (rewrite get_set_neqE_s; first by move : j_i => /#).
-    move : touch_mem => /#.
-  
-    rewrite mulzDr mulz1 => k k_lb k_ub.
-    rewrite /loadW8 /storeW32 get_storesE.
-    rewrite (_: size (W4u8.to_list msg) = 4); first by smt(W4u8.Pack.size_to_list).
   rewrite (_: ra{2}.[4 * i{2} <-
                 (init
                    (fun (j : int) =>
@@ -2543,16 +2415,13 @@ proof.
     do (rewrite set_neqiE; first 2 by move : x_si i_lb i_tub => /#).
     done.
 
-  rewrite filliE 1:/#.
+  move => k kbl kbh.
+  rewrite filliE 1:/# initiE //= 1:/#.
   case (4 * i{2} <= k && k < 4 * i{2} + 4) => k_si.
-    + have ->: to_uint rp{1} + 4 * i{2} <= to_uint rp{1} + k && to_uint rp{1} + k < to_uint rp{1} + 4 * i{2} + 4.
-        move : k_si => /#.
-      rewrite (_: to_uint rp{1} + k - (to_uint rp{1} + 4 * i{2}) = k %% 4). move : k_si; smt(@IntDiv @Int addzC addzA).
-      rewrite nth_to_list 1:/# /=.
-      rewrite bits8E /msg.
+    + rewrite /msg.
       rewrite wordP => j j_i.
       do (rewrite initiE 1:/# //=).
-      rewrite W32.get_bits2w 1:/# nth_mkseq 1:/# //=.
+      rewrite get8_set32_directE 1,2:/# k_si /= bits8iE 1:/# W32.get_bits2w 1:/# nth_mkseq 1:/# //=.
       do (rewrite initiE 1:/# //=).
       rewrite /int_bit.
       rewrite /compress_poly mapiE 1:/# //=.
@@ -2561,56 +2430,46 @@ proof.
       do (rewrite modzMDl divzMDl //=).
       do (rewrite (pdiv_small _ 8) 1:j_i //= || rewrite (modz_small j 8) 1:j_i //=).
       rewrite {2 4}(_: 16 = 8 * 2). by trivial.
-      rewrite modz_dvd 1://=.
-      rewrite (_: (216 %/ 4 ^ (k %% 4) %% 4 * 8 + j) %/ (8 * 2) =
-                  (216 %/ 4 ^ (k %% 4) %/ 2) %% 2).
-        rewrite divz_mulp 1..2://=.
-        rewrite divzMDl 1://= (pdiv_small j 8) 1:j_i //=.
-        rewrite {1}(_:2 = 2^1) 1://= {3}(_:4 = 2^2) 1://=.
-        rewrite modz_pow2_div 1://= //=.
-      rewrite (_: 32 * i{2} + 16 * (216 %/ 4 ^ (k %% 4) %% 2) +
-                    8 * (216 %/ 4 ^ (k %% 4) %/ 2 %% 2) = 32 * i{2} + 8 * (k %% 4)).
-        ring.
-        (* TODO: smt should solve this
-        have Hi: i{2} \in (iota_ 0 8); first by rewrite mem_iota i_tub i_lb.
-        have Hk: (k %% 4) \in (iota_ 0 4); first by rewrite mem_iota -andabP (modz_cmp k 4).
-        smt(@Int @IntDiv @List @Ring.IntID).
-        *)
-        case (k %% 4 = 0) => k_0.
-          rewrite k_0 //=.
-        case (k %% 4 = 1) => k_1.
-          rewrite k_1 //=.
-        case (k %% 4 = 2) => k_2.
-          rewrite k_2 //=.
-        case (k %% 4 = 3) => k_3.
-          rewrite k_3 //=.
-        move : (modz_cmp k 4) => /#.
+      rewrite !modz_dvd 1,2://=.
+      have -> : 32 * i{2} + 8 * (k %% 4) + j = (8*(4*i{2} + k %% 4) + j) by ring.
+      have ->  /= : 216 %/ 4 ^ (k - 4 * i{2}) %% 2 = if 2<= (k - 4*i{2}) then 1 else 0.  
+          case (k - 4*i{2} = 0); 1:by move => -> /=.  
+          case (k - 4*i{2} = 1); 1:by move => -> /=.  
+          case (k - 4*i{2} = 2); 1:by move => -> /=.  
+          case (k - 4*i{2} = 3); 1:by move => -> /=.  
+          smt().
+      have ->  /= : 216 %/ 4 ^ (k - 4 * i{2}) %% 4 = if  (k - 4*i{2}) = 0 then 0 else if  (k - 4*i{2}) = 1 then 2 else if  (k - 4*i{2}) = 2 then 1 else 3. 
+          case (k - 4*i{2} = 0); 1:by move => -> /=.  
+          case (k - 4*i{2} = 1); 1: by move => -> /=.  
+          case (k - 4*i{2} = 2); 1:by move => -> /=.  
+          case (k - 4*i{2} = 3); 1:by move => -> /=.  
+          smt().
+      pose x := _ + j.
+      pose y := _ + j.
+      have -> : x = y; last first.
+      + rewrite compress_avx2_impl_small 1:pos_bound_a 1:/#.
+        by rewrite b_decode_sem;  smt(@Int @IntDiv @Logic).
+      case (k = 4*i{2}); 1: by  rewrite /x /y => -> /= /#.
+      case (k = 4*i{2} + 1); 1: by  rewrite /x /y => -> /= /#.
+      case (k = 4*i{2} + 2); 1: by  rewrite /x /y => -> /= /#.
+      case (k = 4*i{2} + 3); 1: by  rewrite /x /y => -> /= /#.
+      by smt().
 
-      do rewrite modz_dvd 1://=.
-      rewrite compress_avx2_impl_small 1:pos_bound_a 1:/#.
-      rewrite b_decode_sem.
-      smt(@Int @IntDiv @Logic).
-    + have ->: !(to_uint rp{1} + 4 * i{2} <= to_uint rp{1} + k && to_uint rp{1} + k < to_uint rp{1} + 4 * i{2} + 4).
-        move : k_si k_ub => /#.
-      rewrite andabP negb_and -ltzNge -lezNgt in k_si.
-      move: (touch_mem_n k) => />.
-      rewrite k_lb /loadW8 => /#.
+    + by rewrite get8_set32_directE 1,2:/# k_si /=; smt(@WArray32). 
 
   wp.
   skip.
   auto => />.
-  move => &1 &2 [#] rp_lb rp_ub pos_bound_a hhq_def hq_def.
+  move => &1 &2 [#]  pos_bound_a hhq_def hq_def.
   do split.
   smt(@Logic).
-  move => mem1 i ra i_tlb _ i_lb i_ub.
+  move =>  ra i i_tlb ? ? i_lb i_ub.
   have ->: (i = 8).
     move : i_tlb i_ub => /#. 
- rewrite /load_array32 /loadW8 => /> mem1_eq_rp mem1_eq_ra.
   apply Array32.ext_eq => x x_i.
-  rewrite initiE 1:x_i //= mem1_eq_ra 1:x_i //=.
 qed.
 
-lemma poly_tomsg_ll : islossless  Mprevec.poly_tomsg.
+lemma poly_tomsg_ll : islossless  Mprevec.poly_tomsg_1.
 proc.
   cfold 4. wp; while (0 <= i <= 8) (8-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
   move => *.
@@ -2702,13 +2561,10 @@ proof.
   smt(@Int).
 qed.
 
-lemma poly_frommsg_corr mem _p (_m : W8.t Array32.t): 
-    equiv [ Mprevec.poly_frommsg ~ EncDec_AVX2.decode1_opt :
-             valid_ptr _p 32 /\
-             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array32 Glob.mem{1} _p = _m /\ a{2} = _m
+lemma poly_frommsg_corr  (_m : W8.t Array32.t): 
+    equiv [ Mprevec.poly_frommsg_1 ~ EncDec_AVX2.decode1_opt :
+             ap{1} = _m /\ a{2} = _m
               ==>
-             Glob.mem{1} = mem /\
              lift_array256 res{1} = decompress_poly 1 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 ].
 proof. 
@@ -2721,7 +2577,6 @@ proof.
            (forall k, 0 <= k < 8 => f{1}.[k] = pack4_t (W4u8.Pack.init (fun i => a{2}.[4 * k + i])))).
   inline *.
   wp; skip; auto => />.
-  move => &1 [#] ap_lb ap_ub.
   do split.
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
@@ -2733,12 +2588,7 @@ proof.
       do (rewrite initiE 1:/# //=).
       smt(@Int @IntDiv @Array4 @W32).
     + move => k k_lb k_ub.
-      do (rewrite initiE 1://= /=).
-      apply W4u8.allP => />.
-      do (rewrite /load_array32 initiE /=; first by move : k_lb k_ub => /#).
-      rewrite /loadW32.
-      do (rewrite -get_unpack8 1://= pack4K initiE 1://= /=).
-      do rewrite addzA //=.
+      do (rewrite initiE 1:/# //=).
 
   while (#{~i{1}=0}pre /\ 0 <= i{1} <= 4 /\
          (forall k, 0 <= k < 32 * i{1} => inFq (to_sint rp{1}.[k]) = decompress 1 r{2}.[k]) /\
@@ -2746,7 +2596,9 @@ proof.
          (forall k, 0 <= k < 32 * i{1} => 0 <= to_sint rp{1}.[k] < q) /\
          (forall k, 128 <= k < 128 + 32 * i{1} => 0 <= to_sint rp{1}.[k] < q)).
   auto => />.
-  move => &1 &2 [#] valid_p mem_eq ap_eq_p _p_def a_def i_eq hqs_def idx_def shift_def f_def i_lb i_ub rpl_def rph_def rpl_bnd rph_bnd i1_tub i2_tub g0 g1 g2 g3 r [#] i2n_lb i2n_ub rpnl_def rpnh_def rpnl_bnd rpnh_bnd i2_n rpn i1_n />.
+  move => &1 &2 [#] ap_def a_def i_eq hqs_def idx_def shift_def f_def i_lb i_ub.
+  move =>  rpl_def rph_def rpl_bnd rph_bnd i1_tub i2_tub.
+  move => g0 g1 g2 g3 r [#] i2n_lb i2n_ub rpnl_def rpnh_def rpnl_bnd rpnh_bnd i2_n rpn i1_n />.
   rewrite /rpn /i1_n /i2_n i_eq /=.
   do split; first 6 by assumption.
 
@@ -2757,7 +2609,7 @@ proof.
            (forall k, 0 <= k < 16 => W16.to_sint g3{1}.[k] = s_encode a{2}.[4 * i{1} + 16 * (k %/ 8) + 2 * (k %% 8 %/ 4) + 1].[k %% 4 + 4])).
   inline *.
   wp; skip; auto => />.
-  move => &1 &2 [#] ap_lb ap_ub hqs_def idx_def shift_def f_def i_lb i_ub rpl_def rph_def rpl_bnd rph_bnd i_tub />.
+  move => &1 &2 [#]  hqs_def idx_def shift_def f_def i_lb i_ub rpl_def rph_def rpl_bnd rph_bnd i_tub />.
   split.
   move => k k_lb k_ub.
 
@@ -2770,7 +2622,6 @@ proof.
 
   rewrite /f8u32_t32u8 //=.
   do (rewrite initiE /=; first by rewrite k_lb k_ub /=).
-  rewrite initiE /=; first by move : i_lb i_tub k_lb k_ub => /#.
   rewrite (pmod_small _ 256).
     move : i_lb i_tub => /#.
 
@@ -2948,16 +2799,14 @@ proof.
   pose sl := W8.of_int (15 - (linear_idx %% 32 + n) %% 16).
 
   rewrite -W32.shl_shlw 1:/#.
-  move : (bit_decode (load_array32 mem (to_uint ap{1})) idx (k %% 4)).
+  move : (bit_decode _m idx (k %% 4)).
   have -> /=: (0 <= idx && idx < 32). by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   have -> /=: (0 <= k %% 4 && k %% 4 < 8). by move : (modz_cmp k 4) => /#.
-  have ->: (f32u8_t8u32 (load_array32 mem (to_uint ap{1}))) = f{1}.
+  have ->: (f32u8_t8u32 _m = f{1}).
     rewrite /f32u8_t8u32.
     apply Array8.ext_eq => x x_i.
-    rewrite f_def 1:x_i //= Array8.initiE 1:x_i /load_array32 //=.
+    rewrite f_def 1:x_i //= Array8.initiE 1:x_i  //=.
 
-  rewrite -/di -/n -/kb -/sl.
-  rewrite /load_array32 /= initiE /=; first by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   smt(@Logic).
 
 
@@ -2974,7 +2823,6 @@ proof.
 
   rewrite /f8u32_t32u8 //=.
   do (rewrite initiE /=; first by rewrite k_lb k_ub /=).
-  rewrite initiE /=; first by move : i_lb i_tub k_lb k_ub => /#.
   rewrite (pmod_small _ 256).
     move : i_lb i_tub => /#.
 
@@ -3152,16 +3000,14 @@ proof.
   pose sl := W8.of_int (15 - (linear_idx %% 32 + n) %% 16).
 
   rewrite -W32.shl_shlw 1:/#.
-  move : (bit_decode (load_array32 mem (to_uint ap{1})) idx (k %% 4 + 4)).
+  move : (bit_decode _m idx (k %% 4 + 4)).
   have -> /=: (0 <= idx && idx < 32). by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   have -> /=: (0 <= k %% 4 + 4 && k %% 4 + 4 < 8). by move : (modz_cmp k 4) => /#.
-  have ->: (f32u8_t8u32 (load_array32 mem (to_uint ap{1}))) = f{1}.
+  have ->: (f32u8_t8u32 _m) = f{1}.
     rewrite /f32u8_t8u32.
     apply Array8.ext_eq => x x_i.
-    rewrite f_def 1:x_i //= Array8.initiE 1:x_i /load_array32 //=.
+    rewrite f_def 1:x_i //= Array8.initiE 1:x_i  //=.
 
-  rewrite -/di -/n -/kb -/sl.
-  rewrite /load_array32 /= initiE /=; first by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   smt(@Logic).
 
   split.
@@ -3176,7 +3022,6 @@ proof.
 
   rewrite /f8u32_t32u8 //=.
   do (rewrite initiE /=; first by rewrite k_lb k_ub /=).
-  rewrite initiE /=; first by move : i_lb i_tub k_lb k_ub => /#.
   rewrite (pmod_small _ 256).
     move : i_lb i_tub => /#.
 
@@ -3354,16 +3199,14 @@ proof.
   pose sl := W8.of_int (15 - (linear_idx %% 32 + n) %% 16).
 
   rewrite -W32.shl_shlw 1:/#.
-  move : (bit_decode (load_array32 mem (to_uint ap{1})) idx (k %% 4)).
+  move : (bit_decode _m idx (k %% 4)).
   have -> /=: (0 <= idx && idx < 32). by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   have -> /=: (0 <= k %% 4 && k %% 4 < 8). by move : (modz_cmp k 4) => /#.
-  have ->: (f32u8_t8u32 (load_array32 mem (to_uint ap{1}))) = f{1}.
+  have ->: (f32u8_t8u32 _m) = f{1}.
     rewrite /f32u8_t8u32.
     apply Array8.ext_eq => x x_i.
     rewrite f_def 1:x_i //= Array8.initiE 1:x_i /load_array32 //=.
 
-  rewrite -/di -/n -/kb -/sl.
-  rewrite /load_array32 /= initiE /=; first by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   smt(@Logic).
 
   move => k k_lb k_ub.
@@ -3377,7 +3220,6 @@ proof.
 
   rewrite /f8u32_t32u8 //=.
   do (rewrite initiE /=; first by rewrite k_lb k_ub /=).
-  rewrite initiE /=; first by move : i_lb i_tub k_lb k_ub => /#.
   rewrite (pmod_small _ 256).
     move : i_lb i_tub => /#.
 
@@ -3556,18 +3398,17 @@ proof.
   have sl_0: sl = W8.zero. by smt(@Int @IntDiv).
 
   rewrite -W32.shl_shlw 1:/#.
-  move : (bit_decode (load_array32 mem (to_uint ap{1})) idx (k %% 4 + 4)).
+  move : (bit_decode _m idx (k %% 4 + 4)).
   have -> /=: (0 <= idx && idx < 32). by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   have -> /=: (0 <= k %% 4 + 4 && k %% 4 + 4 < 8). by move : (modz_cmp k 4) => /#.
-  have ->: (f32u8_t8u32 (load_array32 mem (to_uint ap{1}))) = f{1}.
+  have ->: (f32u8_t8u32 _m) = f{1}.
     rewrite /f32u8_t8u32.
     apply Array8.ext_eq => x x_i.
-    rewrite f_def 1:x_i //= Array8.initiE 1:x_i /load_array32 //=.
+    rewrite f_def 1:x_i //= Array8.initiE 1:x_i  //=.
 
   rewrite (addzA _ (k %% 4) 4).
 
   rewrite -/linear_idx -/di -/n -/kb -/sl.
-  rewrite /load_array32 /= initiE /=; first by rewrite /idx; move : i_lb i_tub k_lb k_ub => /#.
   rewrite sl_0 (W16.shl_shlw 0 _) 1://=.
   rewrite (_: (f{1}.[di] `<<` (of_int n)%W8 \bits16 kb) `<<<` 0 =
               (f{1}.[di] `<<` (of_int n)%W8 \bits16 kb)).
@@ -3582,53 +3423,27 @@ proof.
   unroll for {2} 4.
   unroll for {2} 2.
   auto => />.
-  move => &1 &2 [#] ap_lb ap_ub hqs_def idx_def shift_def f_def i_lb i_ub rpl_def rph_def rpl_bnd rph_bnd i_tub g0_def g1_def g2_def g3_def />.
+  move => &1 &2 [#] hqs_def idx_def shift_def f_def i_lb i_ub rpl_def rph_def rpl_bnd rph_bnd i_tub g0_def g1_def g2_def g3_def />.
 
   rewrite (_:
-              (fill
-                 (fun (k0 : int) =>
-                    b2i (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[k0 %% 8])
-                 (152 + 32 * i{2}) 8
-                 (fill
-                    (fun (k0 : int) =>
-                       b2i (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[k0 %% 8])
-                    (144 + 32 * i{2}) 8
-                    (fill
-                       (fun (k0 : int) =>
-                          b2i (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[k0 %% 8])
-                       (136 + 32 * i{2}) 8
-                       (fill
-                          (fun (k0 : int) =>
-                             b2i (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[k0 %% 8])
-                          (128 + 32 * i{2}) 8
-                          (fill
-                             (fun (k0 : int) =>
-                                b2i
-                                  (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[
-                                  k0 %% 8]) (32 * i{2} + 24) 8
-                             (fill
-                                (fun (k0 : int) =>
-                                   b2i
-                                     (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[
-                                     k0 %% 8]) (32 * i{2} + 16) 8
-                                (fill
-                                   (fun (k0 : int) =>
-                                      b2i
-                                        (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[
-                                        k0 %% 8]) (32 * i{2} + 8) 8
-                                   (fill
-                                      (fun (k0 : int) =>
-                                         b2i
-                                           (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[
-                                           k0 %% 8]) (32 * i{2}) 8 r{2})))))))) =
+              (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (152 + 32 * i{2}) 8
+        (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (144 + 32 * i{2}) 8
+           (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (136 + 32 * i{2}) 8
+              (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (128 + 32 * i{2}) 8
+                 (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (
+                    32 * i{2} + 24) 8
+                    (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (
+                       32 * i{2} + 16) 8
+                       (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (
+                          32 * i{2} + 8) 8 (fill (fun (k0 : int) => b2i _m.[k0 %/ 8].[k0 %% 8]) (32 * i{2}) 8 r{2})))))))) =
 
               (fill
                  (fun (k0 : int) =>
-                    b2i (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[k0 %% 8])
+                    b2i _m.[k0 %/ 8].[k0 %% 8])
                  (128 + 32 * i{2}) 32
                  (fill
                     (fun (k0 : int) =>
-                       b2i (load_array32 mem (to_uint ap{1})).[k0 %/ 8].[k0 %% 8])
+                       b2i _m.[k0 %/ 8].[k0 %% 8])
                     (32 * i{2}) 32 r{2}))).
     apply Array256.ext_eq.
     move => x x_i.
@@ -3716,7 +3531,6 @@ proof.
     by smt(@IntDiv @Int).
 
   rewrite /s_encode /load_array32.
-  do (rewrite initiE /=; first by move : i_lb i_tub => /#).
   do (rewrite (fun_if inFq) || rewrite asintK).
   do (rewrite b_encode_sem /b2i).
 
@@ -3804,7 +3618,6 @@ proof.
   rewrite modz_mod /=.
 
   rewrite /s_encode /load_array32.
-  do (rewrite initiE /=; first by move : i_lb i_tub => /#).
   do (rewrite (fun_if inFq) || rewrite asintK).
   do (rewrite b_encode_sem /b2i).
 
@@ -3931,7 +3744,6 @@ proof.
     by smt(@IntDiv @Int).
 
   rewrite /s_encode /load_array32.
-  do (rewrite initiE /=; first by move : i_lb i_tub => /#).
   rewrite /b_encode /trueval /falseval.
   do (rewrite (fun_if asint) || rewrite (fun_if inFq) || rewrite inFqK).
   do (rewrite (pmod_small _ q) 1:/#).
@@ -3997,7 +3809,6 @@ proof.
   rewrite modz_mod /=.
 
   rewrite /s_encode /load_array32.
-  do (rewrite initiE /=; first by move : i_lb i_tub => /#).
   rewrite /b_encode /trueval /falseval.
   do (rewrite (fun_if asint) || rewrite (fun_if inFq) || rewrite inFqK).
   do (rewrite (pmod_small _ q) 1:/#).
@@ -4015,7 +3826,7 @@ proof.
 
   sp. skip. simplify.
   auto => />.
-  move => &1 &2 [#] ap_lb ap_ub hqs_def idx_def shift_def f_def.
+  move => &1 &2 [#] hqs_def idx_def shift_def f_def.
   do split; first 4 by smt().
   move => rp i r.
   move => i_tlb _ i_lb i_ub.
@@ -4037,7 +3848,7 @@ proof.
   move : (rpl_bnd x) (rph_bnd x) => /#.
 qed.
 
-lemma poly_frommsg_ll : islossless  Mprevec.poly_frommsg.
+lemma poly_frommsg_ll : islossless  Mprevec.poly_frommsg_1.
 proof. 
   proc; while (0 <= i <= 4) (4-i).
   move => *.
@@ -4366,6 +4177,7 @@ admitted. (* Bacelar/Hugo: prior proof by Miguel *)
             rewrite (mulzC 8 _) (_: 8 = 4 * 2) 1://= -mulzA (mulzC (x %/ 2 %/ 4 * 4) 2) divzE.
             rewrite (mulzDr 2) //=.
             smt(@Int @IntDiv @Array16 @W16 @Array256).
+*) 
 *)
 
 op load_array384(m : global_mem_t, p : address) : W8.t Array384.t = 
@@ -4461,8 +4273,7 @@ proof.
       have ->/=: !(W8.int_bit 170 6). by trivial.
       rewrite shr_shrw 1://=.
       rewrite wlsrE => />.
-      (* TODO *)
-      admit.
+      admit. (* TODO MIGUEL *)
 qed.
 
 lemma shuffle2_ll: islossless Mprevec.shuffle2.
@@ -4491,12 +4302,10 @@ proof.
   split.
     + rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 /lift_array16 => />.
       rewrite -ext_eq_all /all_eq //=.
-      (* TODO *)
-      admit.
+      admit. (* TODO  MIGUEL *)
     + rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 => />.
       rewrite -ext_eq_all /all_eq //=.
-      (* TODO *)
-      admit.
+      admit. (* TODO  MIGUEL *)
 qed.
 
 lemma shuffle1_ll: islossless Mprevec.shuffle1.

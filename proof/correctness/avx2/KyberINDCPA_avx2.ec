@@ -10,7 +10,7 @@ require import KyberPolyvec_avx2_vec.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2.
 require import NTT_Fq.
-
+require import Kyber_AVX_ref_lowlevel_equivs.
 import Kyber.
 import KyberSpec.
 import KyberPoly.
@@ -18,6 +18,7 @@ import KyberPolyVec.
 import KyberPolyvecAVX.
 import KyberPolyAVXVec.
 import NTT_Avx2.
+
 
 equiv sha3equiv :
  Jkem_avx2.M._sha3_512_32 ~ M._sha3512_32 : ={arg} ==> ={res}.
@@ -255,9 +256,9 @@ inline{1} 1; inline {2} 1. sim.
 call (polyvec_tobytes_equiv _pkp).
 call (polyvec_tobytes_equiv _skp).
 wp;conseq />. smt().
-ecall (KyberPolyvecAVX.polyvec_reduce_equiv (lift_array768 pkpv{2})).
+ecall (polyvec_reduce_equiv (lift_array768 pkpv{2})).
 
-have H := KyberPolyvecAVX.polyvec_add2_equiv 2 2 _ _ => //.
+have H := polyvec_add2_equiv 2 2 _ _ => //.
 ecall (H (lift_array768 pkpv{2}) (lift_array768 e{2})); clear H.
 unroll for {1} 37.
 
@@ -705,7 +706,7 @@ seq 47 55 : (={ctp,Glob.mem} /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
     lift_array768 bp{1} = lift_array768 bp{2} /\ 
     valid_ptr (to_uint ctp{1}) (128+3*320)); last by
-  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; wp;call (KyberPolyvecAVX.compressequivvec memm _p); auto => />;
+  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; wp;call (compressequivvec memm _p); auto => />;
    move => *; rewrite !to_uintD_small /= /#.
 
 wp;conseq />.
@@ -1081,7 +1082,7 @@ seq 49 57 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
      pos_bound768_cxq bp{2} 0 768 2 /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
     lift_array768 bp{1} = lift_array768 bp{2}); last 
-  exists *Glob.mem{1}; elim* => memm; wp;call (KyberPolyvecAVX.compressequivvec_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
+  exists *Glob.mem{1}; elim* => memm; wp;call (compressequivvec_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
 
 wp;conseq />.
 call (reduceequiv_noperm).

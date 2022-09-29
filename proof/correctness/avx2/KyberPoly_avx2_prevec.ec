@@ -6,33 +6,7 @@ require W16extra.
 require import Fq.
 require import AVX2_Ops.
 require import Jkem_avx2.
-
-op lift2poly (p: W256.t): W16.t Array16.t =
-  Array16.init (fun (n : int) => p \bits16 n).
-
-op f16u16_t8u32 (t: t16u16): t8u32 = Array8.init (fun i => pack2_t (W2u16.Pack.init (fun j => t.[2*i + j]))).
-op f8u32_t16u16 (t: t8u32): t16u16 = Array16.init (fun i => t.[i %/ 2] \bits16 (i %% 2)).
-
-op f32u8_t16u16 (t: t32u8): t16u16 = Array16.init (fun i => pack2_t (W2u8.Pack.init (fun j => t.[2*i + j]))).
-op f16u16_t32u8 (t: t16u16): t32u8 = Array32.init (fun i => t.[i %/ 2] \bits8 (i %% 2)).
-
-op f8u32_t4u64 (t: t8u32): t4u64 = Array4.init (fun i => pack2_t (W2u32.Pack.init (fun j => t.[2*i + j]))).
-op f4u64_t8u32 (t: t4u64): t8u32 = Array8.init (fun i => t.[i %/ 2] \bits32 (i %% 2)).
-
-op f32u8_t4u64 (t: t32u8): t4u64 = Array4.init (fun i => pack8_t (W8u8.Pack.init (fun j => t.[8*i + j]))).
-op f4u64_t32u8 (t: t4u64): t32u8 = Array32.init (fun i => t.[i %/ 8] \bits8 (i %% 8)).
-
-op f32u8_t8u32 (t: t32u8): t8u32 = Array8.init (fun i => pack4_t (W4u8.Pack.init (fun j => t.[4*i + j]))).
-op f8u32_t32u8 (t: t8u32): t32u8 = Array32.init (fun i => t.[i %/ 4] \bits8 (i %% 4)).
-
-op f16u16_t4u64 (t: t16u16): t4u64 = Array4.init (fun i => pack4_t (W4u16.Pack.init (fun j => t.[4*i + j]))).
-op f4u64_t16u16 (t: t4u64): t16u16 = Array16.init (fun i => t.[i %/ 4] \bits16 (i %% 4)).
-
-op f4u64_t2u128 (t: t4u64): t2u128 = Array2.init (fun i => pack2_t (W2u64.Pack.init (fun j => t.[2*i + j]))).
-op f2u128_t4u64 (t: t2u128): t4u64 = Array4.init (fun i => t.[i %/ 2] \bits64 (i %% 2)).
-
-op f16u16_t2u128 (t: t16u16): t2u128 = Array2.init (fun i => pack8_t (W8u16.Pack.init (fun j => t.[8*i + j]))).
-op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16 (i %% 8)).
+require import Kyber_AVX_AuxLemmas.
 
 module Mprevec = {
   proc shuffle8 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {
@@ -197,7 +171,7 @@ module Mprevec = {
   }
 
   (*--------------------------------------------------------------------*)
-  proc poly_tomsg (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+  proc poly_tomsg_1 (rp:W8.t Array32.t,  a:W16.t Array256.t) : W8.t Array32.t * W16.t Array256.t = {
     var aux: int;
 
     var hq:W16.t Array16.t;
@@ -235,22 +209,23 @@ module Mprevec = {
 
       c <@ Ops.iVPMOVMSKB_u256u32(f0_b);
 
-      Glob.mem <-
-      storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int (4 * i)))) c;
+      rp <-
+      Array32.init
+      (WArray32.get8 (WArray32.set32 (WArray32.init8 (fun i_0 => rp.[i_0])) i (c)));
 
       i <- i + 1;
     }
-    return (a);
+    return (rp,a);
   }
 
 
-  proc poly_frommsg(rp: W16.t Array256.t, ap: W64.t): W16.t Array256.t = {
+  proc poly_frommsg_1(rp:W16.t Array256.t, ap:W8.t Array32.t): W16.t Array256.t = {
     var aux: int;
 
     var hqs: t16u16;
     var shift: t8u32;
     var idx: t32u8;
-    var f: t8u32;
+    var f;
     var i:int;
     var g3: t16u16;
     var g0: t16u16;
@@ -269,7 +244,7 @@ module Mprevec = {
     shift <@
     Ops.iVPBROADCAST_2u128_8u32(Array4.init (fun i => pfm_shift_s.[i]));
     idx <@ Ops.iVPBROADCAST_2u128_32u8(Array16.init (fun i => pfm_idx_s.[i]));
-    f <@ Ops.iload4u64_8u32(Glob.mem, ap);
+    f <- Array8.init (fun i => pack4_t (W4u8.Pack.init (fun j => ap.[4*i+j])));
     i <- 0;
 
     while (i < 4) {
