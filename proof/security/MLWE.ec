@@ -488,11 +488,11 @@ case (tr = false).
   have left : forall &m0,
            Pr[  MLWE_RO(BS(A,S),LRO).main(false, b) @ &m0 : res] = 
            Pr[  Exp(LRO,DLeft(A)).main(b) @ &m0 : res].
-  + move => &m0; byequiv => //; last by smt().  
+  + move => &m0; byequiv => //.  
     by proc; inline {2} 2;  inline {2} 3; sim; wp; conseq />;  sim.
   have right : forall &m1, Pr[  MLWE_RO(BS(A,S),ERO).main(false,b) @ &m1 : res] = 
                          Pr[  Exp(ERO,DLeft(A)).main(b) @ &m1 : res].
-  + move => &m0; byequiv => //; last by smt().  
+  + move => &m0; byequiv => //.  
     by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
   have le : 
      equiv [ Exp(LRO, DLeft(A)).main ~ Exp(ERO, DLeft(A)).main : 
@@ -507,11 +507,11 @@ move => *; have -> : tr by smt().
 have left : forall &m0,
          Pr[  MLWE_RO(BS(A,S),LRO).main(true, b) @ &m0 : res] = 
          Pr[  Exp(LRO,DLeftT(A)).main(b) @ &m0 : res].
-+ move => &m0; byequiv => //; last by smt().  
++ move => &m0; byequiv => //.  
   by proc; inline {2} 2;  inline {2} 3; sim; wp; conseq />;  sim.
 have right : forall &m1, Pr[  MLWE_RO(BS(A,S),ERO).main(true,b) @ &m1 : res] = 
                          Pr[  Exp(ERO,DLeftT(A)).main(b) @ &m1 : res].
-+ move => &m0; byequiv => //; last by smt().  
++ move => &m0; byequiv => //.  
   by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
 have le : 
    equiv [ Exp(LRO, DLeftT(A)).main ~ Exp(ERO, DLeftT(A)).main : 
@@ -532,12 +532,12 @@ move => ->.
 + have left : forall &m0,  
           Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m0 : res] = 
           Pr[ Exp(LRO,DRight(A)).main(b) @ &m0 : res].
-  + move => &m0; byequiv => //=; last by smt().
+  + move => &m0; byequiv => //=.
     by proc; inline {2} 2; inline {2} 3;sim; inline *; auto => />.
   have right : forall &m1,
              Pr[  MLWE_SMP(A,S,ERO).main(false,b) @ &m1 : res] = 
              Pr[ Exp(ERO,DRight(A)).main(b) @ &m1 : res].
-  + move => &m1; byequiv => //=; last by smt().
+  + move => &m1; byequiv => //=.
     by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />; sim.
   have le : 
      equiv [ Exp(LRO, DRight(A)).main ~ Exp(ERO, DRight(A)).main : 
@@ -552,12 +552,12 @@ move => *; have -> : tr by smt().
 have left : forall &m0,  
           Pr[  MLWE_SMP(A,S,LRO).main(true,b) @ &m0 : res] = 
           Pr[ Exp(LRO,DRightT(A)).main(b) @ &m0 : res].
-+ move => &m0; byequiv => //=; last by smt().
++ move => &m0; byequiv => //=.
   by proc; inline {2} 2; inline {2} 3; sim; inline *; auto => />.
 have right : forall &m1,
              Pr[  MLWE_SMP(A,S,ERO).main(true,b) @ &m1 : res] = 
              Pr[ Exp(ERO,DRightT(A)).main(b) @ &m1 : res].
-+ move => &m1; byequiv => //=; last by smt().
++ move => &m1; byequiv => //=.
   by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />; sim.
 have le : 
    equiv [ Exp(LRO, DRightT(A)).main ~ Exp(ERO, DRightT(A)).main : 
@@ -769,11 +769,11 @@ case (tr = false).
   have left : forall &m0,
            Pr[  MLWE_RO(BS(A,Sim),RO_H.Lazy.LRO).main(false, b) @ &m0 : res] = 
            Pr[  Exp(RO_H.Lazy.LRO,DLeft(A,Sim)).main(b) @ &m0 : res].
-  + move => &m0; byequiv => //; last by smt().  
+  + move => &m0; byequiv => //.  
     by proc; inline {2} 2;  inline {2} 3; sim; wp; conseq />;  sim.
   have right : forall &m1, Pr[  MLWE_RO(BS(A,Sim),ERO).main(false,b) @ &m1 : res] = 
                          Pr[  Exp(ERO,DLeft(A,Sim)).main(b) @ &m1 : res].
-  + move => &m0; byequiv => //; last by smt().  
+  + move => &m0; byequiv => //.  
     by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
   have le : 
      equiv [ Exp(RO_H.Lazy.LRO, DLeft(A,Sim)).main ~ Exp(ERO, DLeft(A,Sim)).main : 
@@ -788,11 +788,11 @@ move => *; have -> : tr by smt().
 have left : forall &m0,
          Pr[  MLWE_RO(BS(A,Sim),RO_H.Lazy.LRO).main(true, b) @ &m0 : res] = 
          Pr[  Exp(RO_H.Lazy.LRO,DLeftT(A,Sim)).main(b) @ &m0 : res].
-+ move => &m0; byequiv => //; last by smt().  
++ move => &m0; byequiv => //.  
   by proc; inline {2} 2;  inline {2} 3; sim; wp; conseq />;  sim.
 have right : forall &m1, Pr[  MLWE_RO(BS(A,Sim),ERO).main(true,b) @ &m1 : res] = 
                          Pr[  Exp(ERO,DLeftT(A,Sim)).main(b) @ &m1 : res].
-+ move => &m0; byequiv => //; last by smt().  
++ move => &m0; byequiv => //.  
   by proc; inline {2} 2; inline {2} 3; sim; wp; conseq />;  sim.
 have le : 
    equiv [ Exp(RO_H.Lazy.LRO, DLeftT(A,Sim)).main ~ Exp(ERO, DLeftT(A,Sim)).main : 
@@ -814,7 +814,7 @@ move => ->.
 + have left : forall &m0,  
           Pr[WIndfIdeal(D(A), Sim, O).main(false, b) @ &m0 : res] = 
           Pr[Exp(RO_H.Lazy.LRO,DRight(A,Sim)).main(b) @ &m0 : res].
-  + move => &m0; byequiv => //=; last by smt().
+  + move => &m0; byequiv => //=.
     proc; inline {1} 3; inline {2} 2; inline {2} 3.
     rcondf{1} 8; 1: by move => *; call(_: true); auto => />.
     rcondf{2} 8; 1: by move => *; call(_: true); auto => />.
@@ -822,7 +822,7 @@ move => ->.
   have right : forall &m1,
              Pr[ WIndfIdeal(D(A), Sim, ERO).main(false, b) @ &m1 : res] = 
              Pr[ Exp(ERO,DRight(A,Sim)).main(b) @ &m1 : res].
-  + move => &m1; byequiv => //=; last by smt().
+  + move => &m1; byequiv => //=.
     proc; inline {1} 3; inline {2} 2; inline {2} 3.
     rcondf{1} 8; 1: by move => *; call(_: true); auto => />.
     rcondf{2} 8; 1: by move => *; call(_: true); auto => />.
@@ -840,7 +840,7 @@ move => *; have -> : tr by smt().
 have left : forall &m0,  
       Pr[WIndfIdeal(D(A), Sim, O).main(true, b) @ &m0 : res] = 
       Pr[ Exp(RO_H.Lazy.LRO,DRightT(A,Sim)).main(b) @ &m0 : res].
-  + move => &m0; byequiv => //=; last by smt().
+  + move => &m0; byequiv => //=.
     proc; inline {1} 3; inline {2} 2; inline {2} 3.
     rcondt{1} 8; 1: by move => *; call(_: true); auto => />.
     rcondt{2} 8; 1: by move => *; call(_: true); auto => />.
@@ -848,7 +848,7 @@ have left : forall &m0,
   have right : forall &m1,
              Pr[ WIndfIdeal(D(A), Sim, ERO).main(true, b) @ &m1 : res] = 
              Pr[ Exp(ERO,DRightT(A,Sim)).main(b) @ &m1 : res].
-  + move => &m1; byequiv => //=; last by smt().
+  + move => &m1; byequiv => //=.
     proc; inline {1} 3; inline {2} 2; inline {2} 3.
     rcondt{1} 8; 1: by move => *; call(_: true); auto => />.
     rcondt{2} 8; 1: by move => *; call(_: true); auto => />.
