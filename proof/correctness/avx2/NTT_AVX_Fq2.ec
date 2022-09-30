@@ -61,9 +61,13 @@ rewrite -{-1}(W2u8.unpack8K w) unpack8E; congr.
 by apply W2u8.Pack.all_eq_eq; rewrite /all_eq.
 qed.
 
+(** DIFFERENT VIEWS ON POLYS *)
+
+(** Poly-to-chunks *)
 op pchunk ['a] (p: 'a Array256.t): ('a Array16.t) Array16.t =
  Array16.init (fun i=> Array16.init (fun j=> p.[i*16+j])).
 
+(** Chunks-to-poly *)
 op punchunk ['a] (c: ('a Array16.t) Array16.t): 'a Array256.t =
  Array256.init (fun i=>c.[i%/16].[i%%16]).
 
@@ -83,9 +87,11 @@ rewrite initiE //= tP => j Hj.
 by rewrite initiE //= initiE /#.
 qed.
 
+(** Chunk-to-reg *)
 op C2R (c: W16.t Array16.t): W256.t = 
  get256 (WArray32.init16 (fun i=>c.[i])) 0.
 
+(** Reg-to-chunk *)
 op R2C (r: W256.t): W16.t Array16.t =
  Array16.init (fun i=> r \bits16 i).
 
@@ -105,8 +111,10 @@ apply W256.all_eq_eq.
 by rewrite /all_eq /get256_direct /= !initiE //= !pack2_bits8.
 qed.
 
+(** poly-chunk-i *)
 op P2C ['a] (p: 'a Array256.t) (i:int): 'a Array16.t =
  (pchunk p).[i].
+(** poly-reg-i *)
 op P2R (p: W16.t Array256.t) (i: int): W256.t =
  C2R (P2C p i).
 
@@ -114,9 +122,11 @@ lemma P2R2C p i:
  R2C (P2R p i) = P2C p i.
 proof. by rewrite /P2R C2RK. qed.
 
+(** ChunkList-to-poly *)
 op CS2P ['a] (l: ('a Array16.t) list): 'a Array256.t =
  punchunk (Array16.of_list witness l).
 
+(** poly-to-chunkList *)
 lemma P2CS ['a] (p: 'a Array256.t):
  p = CS2P (map (P2C p) (iotared 0 16)).
 proof.
@@ -124,9 +134,11 @@ rewrite /CS2P -{1}pchunkK; congr.
 by apply Array16.all_eq_eq; rewrite /all_eq /#.
 qed.
 
+(** RegList-to-poly *)
 op RS2P (l: W256.t list): W16.t Array256.t =
  CS2P (map R2C l).
 
+(** Poly-to-regList *)
 lemma P2RS (p: W16.t Array256.t):
  p = RS2P (map (P2R p) (iotared 0 16)).
 proof.
@@ -137,6 +149,7 @@ have ->: (fun i=> R2C (P2R p i)) = P2C p.
 by apply Array16.all_eq_eq; rewrite /all_eq /#.
 qed.
 
+(** Poly-to-reg extracted code *)
 lemma P2RE (p: W16.t Array256.t) (i: int):
  0 <= i < 16 =>
  P2R p i
@@ -150,11 +163,14 @@ do ! (rewrite initiE 1:/# /=).
 smt().
 qed.
 
+(** Poly-update-chunk-i *)
 op PUC ['a] (p: 'a Array256.t) (i:int) (x: 'a Array16.t) =
  punchunk (pchunk p).[i <- x].
+(** Poly-update-reg-i *)
 op PUR (p: W16.t Array256.t) (i: int) (x: W256.t): W16.t Array256.t =
  PUC p i (R2C x).
 
+(** Poly-update-reg extracted code *)
 lemma PURE (p: W16.t Array256.t) i x:
  0 <= i < 16 =>
  PUR p i x =
@@ -187,6 +203,7 @@ qed.
 (*
 hint simplify P2C_i.
 *)
+
 lemma P2R_i rs k:
  0 <= k && k < 16 => size rs = 16 =>
  P2R (RS2P rs) k = (nth witness rs k).
@@ -198,6 +215,7 @@ qed.
 (*
 hint simplify P2R_i.
 *)
+
 (* "upd" is equivalent to "put", but intended to be evaluated *)
 op upd ['a] (xs: 'a list) n x =
  with xs = "[]" => "[]"
@@ -242,6 +260,7 @@ qed.
 (*
 hint simplify PUC_i.
 *)
+
 lemma PUR_i rs k x:
  0 <= k < 16 => size rs = 16 =>
  PUR (RS2P rs) k x = RS2P (upd rs k x).
