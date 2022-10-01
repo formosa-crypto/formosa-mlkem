@@ -68,7 +68,7 @@ rewrite tP /= => i ib.
 by rewrite !Array128.initiE /= /#.
 qed.
 
-lemma zetasE : array_mont NTT_Fq.zetas = 
+lemma zetas_montE : array_mont NTT_Fq.zetas = 
      Array128.map (fun x => inFq (W16.to_sint x)) jzetas.
 have := NTT_Fq.zetas_vals.
 rewrite /array128_mont  /array_mont /= => ->.
@@ -1135,7 +1135,7 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
 
   (* Initialization *) 
   + do split; 1..2,6: smt().
-      move : zetasE; rewrite /array_mont /lift_array128 tP => mnt.
+      move : zetas_montE; rewrite /array_mont /lift_array128 tP => mnt.
       + move : (mnt (to_uint zetasctr{1} + 1) _); 1: smt(); rewrite !mapiE /=; 1,2:smt().
         by move => <-; rewrite -ZqField.mulrA rrinvFq; ring.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
@@ -1767,7 +1767,7 @@ rewrite -r8val in redbl8;rewrite -r8val in redbh8;rewrite -r8val eq_inFq in redv
 rewrite -r9val in redbl9;rewrite -r9val in redbh9;rewrite -r9val eq_inFq in redv9.
 rewrite -r10val in redbl10;rewrite -r10val in redbh10;rewrite -r10val eq_inFq in redv10.
 
-move : zetasE; rewrite /array_mont /lift_array128 tP => zv.
+move : zetas_montE; rewrite /array_mont /lift_array128 tP => zv.
 move : (zv (to_uint i{hr} %/ 4 + 64) _); 1: smt().
 rewrite !mapiE /=; 1,2: smt() => <-.
 move => zv1. 
