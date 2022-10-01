@@ -21,8 +21,10 @@ proof. by rewrite /vp; apply/ge0_argmax. qed.
 
 lemma vp_pow_dvd b x : 1 < b => x <> 0 => (b ^ (vp b x)) %| x.
 proof.
-move => lt1b neqx0; rewrite /vp; apply/(argmaxP ((^) b) (transpose (%|) x) 0 `|x| _ _ _ _) => //=;
-[apply/normr_ge0|apply vp_bound].
+move => lt1b neqx0; rewrite /vp; apply/(argmaxP ((^) b) (transpose (%|) x) 0 `|x| _ _ _ _) => //=.
++ apply/normr_ge0. 
++ rewrite expr0 /= dvd1z /=. 
++ apply vp_bound.
 assumption.
 assumption.
 qed.
@@ -30,6 +32,7 @@ qed.
 lemma vp0 b x : 1 < b => x <> 0 => x %% b <> 0 => vp b x = 0.
 proof.
 rewrite -dvdzE /vp => lt1b neqx0 Ndvdbx; apply argmax_eq => //=.
+rewrite expr0 /= dvd1z /=. 
 by move=> j /ltzE /= le1j; move: Ndvdbx; apply/implybNN/dvdz_trans; move: (dvdz_exp2l b 1 j); rewrite expr1 le1j.
 qed.
 
