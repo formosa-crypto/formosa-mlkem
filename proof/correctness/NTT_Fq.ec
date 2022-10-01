@@ -287,37 +287,6 @@ op array128_mont (p : Fq Array128.t) =
 op zetas : Fq Array128.t = 
     Array128.init (fun k => ZqField.exp zroot (bsrev 8 (k * 2))).
 
-lemma zetasE:
- zetas = Array128.of_list witness
-          [inFq 1;
- (*l0*)    inFq 1729;
- (*l1_L*)  inFq 2580;
- (*l1_R*)  inFq 3289;
- (*l2_L*)  inFq 2642; inFq 630;
- (*l2_R*)  inFq 1897; inFq 848;
- (*l3_L*)  inFq 1062; inFq 1919; inFq 193; inFq 797;
- (*l3_R*)  inFq 2786; inFq 3260; inFq 569; inFq 1746;
- (*l4_L*)  inFq 296; inFq 2447; inFq 1339; inFq 1476; inFq 3046; inFq 56; inFq 2240; inFq 1333;
- (*l4_R*)  inFq 1426; inFq 2094; inFq 535; inFq 2882; inFq 2393; inFq 2879; inFq 1974; inFq 821;
- (*l5_L*)  inFq 289; inFq 331; inFq 3253; inFq 1756; inFq 1197; inFq 2304; inFq 2277; inFq 2055; inFq 650; inFq 1977; inFq 2513; inFq 632; inFq 2865; inFq 33; inFq 1320; inFq 1915;
- (*l5_R*)  inFq 2319; inFq 1435; inFq 807; inFq 452; inFq 1438; inFq 2868; inFq 1534; inFq 2402; inFq 2647; inFq 2617; inFq 1481; inFq 648; inFq 2474; inFq 3110; inFq 1227; inFq 910;
- (*l6_L*)  inFq 17; inFq 2761; inFq 583; inFq 2649; inFq 1637; inFq 723; inFq 2288; inFq 1100; inFq 1409; inFq 2662; inFq 3281; inFq 233; inFq 756; inFq 2156; inFq 3015; inFq 3050; 
-           inFq 1703; inFq 1651; inFq 2789; inFq 1789; inFq 1847; inFq 952; inFq 1461; inFq 2687; inFq 939; inFq 2308; inFq 2437; inFq 2388; inFq 733; inFq 2337; inFq 268; inFq 641;
- (*l6_R*)  inFq 1584; inFq 2298; inFq 2037; inFq 3220; inFq 375; inFq 2549; inFq 2090; inFq 1645; inFq 1063; inFq 319; inFq 2773; inFq 757; inFq 2099; inFq 561; inFq 2466; inFq 2594;
-           inFq 2804; inFq 1092; inFq 403; inFq 1026; inFq 1143; inFq 2150; inFq 2775; inFq 886; inFq 1722; inFq 1212; inFq 1874; inFq 1029; inFq 2110; inFq 2935; inFq 885; inFq 2154].
-proof.
-  apply/Array128.ext_eq => i /mem_range mem_i_range.
-  rewrite /zetas -?mem_range //.
-  rewrite initiE -?mem_range //; move: mem_i_range.
-  rewrite /= -(fastexp_nbitsP 8) ?bsrev_range //.
-  rewrite /fastexp_nbits int2bs_bsrev revK /R /Fq.SignedReductions.R.
-  do 8!(rewrite BS2Int.int2bs_rcons //= foldr_rcons /= /q /=).
-  rewrite BS2Int.int2bs0s /= ComRing.mul1r.
-  do 128!(rewrite range_ltn //=; move => [->> /=|];
-            [by rewrite -!inFqM_mod !inFqK /q|]).
-  by rewrite range_geq.
-qed.
-
 (* These are powers of roots of unit in Mont form and
    bitwise permuted indices  zetas inv above needs to be
    defined, this axiom discharged, and then used to
@@ -368,8 +337,18 @@ lemma zetas_vals : array128_mont zetas =
          inFq 991; inFq 958; inFq 1869; 
          inFq 1522; inFq 1628].
 proof.
-  rewrite zetasE /array128_mont Array128.mapE /R  /=.
-  by rewrite -Array128.ext_eq_all /all_eq /= -!inFqM_mod /q /=.
+  apply/Array128.ext_eq => i /mem_range mem_i_range.
+  rewrite /array128_mont /zetas Array128.mapiE -?mem_range //.
+  rewrite initiE -?mem_range //; move: mem_i_range.
+  rewrite /= -(fastexp_nbitsP 8) ?bsrev_range //.
+  rewrite /fastexp_nbits int2bs_bsrev revK /R /Fq.SignedReductions.R.
+  have inFqQ_mod : forall (a : int) , inFq (a * a %% q) = inFq a * inFq a.
+  + by move => ?; rewrite -inFqM_mod.
+  do 8!(rewrite BS2Int.int2bs_rcons //= foldr_rcons /= -!inFqQ_mod /q /=).
+  rewrite BS2Int.int2bs0s /= ComRing.mul1r => {inFqQ_mod}.
+  do 128!(rewrite range_ltn //=; move => [->> /=|];
+            [by rewrite -!inFqM_mod !inFqK /q|]).
+  by rewrite range_geq.
 qed.
 
 (* These properties is needed to show that ntt_inv is computing something

@@ -9,7 +9,7 @@ require import Kyber_AVX2_cf.
 require import KyberPoly.
 require import NTT_Fq.
 require import Jkem.
-
+require import Montgomery16.
 theory Fq_avx2.
 
 import Kyber.
@@ -492,13 +492,13 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   congr; congr. 
   have -> : abxs - abxuexp = abxs %/ 65536 * 65536 + abxs %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 by smt(divz_eq).
   have -> : abxs %% 65536 = abxuexp %% 65536; last by smt().
-  apply Montgomery.modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
+  apply modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
   have -> : W16.smod (to_uint (a{2}.[x] * b{2}.[x]) * 62209 %% 65536) =
              (to_sint (a{2}.[x] * b{2}.[x] * (of_int 62209)%W16))
      by rewrite /to_sint /=  (W16.to_uintM _ (W16.of_int 62209)) /=. 
-  rewrite -modzDm /= Montgomery.modzM_sint /=.
+  rewrite -modzDm /= modzM_sint /=.
   have -> : 3329 = -(to_sint (of_int (-3329)))%W16 by rewrite /to_sint /smod /=.
-  rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN Montgomery.modzM_sint /= to_uintM /= to_uintM /=.
+  rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN modzM_sint /= to_uintM /= to_uintM /=.
   smt().
 move => H.
 case (0 <= abxs - abxuexp). 
@@ -509,13 +509,13 @@ case (0 <= abxs - abxuexp).
   congr; congr. 
   have -> : abxs - abxuexp = abxs %/ 65536 * 65536 + abxs %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 by smt(divz_eq).
   have -> : abxs %% 65536 = abxuexp %% 65536; last by smt().
-  apply Montgomery.modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
+  apply modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
   have -> : W16.smod (to_uint (a{2}.[x] * b{2}.[x]) * 62209 %% 65536) =
              (to_sint (a{2}.[x] * b{2}.[x] * (of_int 62209)%W16))
      by rewrite /to_sint /=  (W16.to_uintM _ (W16.of_int 62209)) /=. 
-  rewrite -modzDm /= Montgomery.modzM_sint /=.
+  rewrite -modzDm /= modzM_sint /=.
   have -> : 3329 = -(to_sint (of_int (-3329)))%W16 by rewrite /to_sint /smod /=.
-  rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN Montgomery.modzM_sint /= to_uintM /= to_uintM /=.
+  rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN modzM_sint /= to_uintM /= to_uintM /=.
   smt().
 
 move => HH.
@@ -532,13 +532,13 @@ rewrite modNz /= 1,2:/#.
   congr; congr. 
   have -> : abxs - abxuexp = abxs %/ 65536 * 65536 + abxs %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 by smt(divz_eq).
   have -> : abxs %% 65536 = abxuexp %% 65536; last by smt().
-  apply Montgomery.modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
+  apply modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
   have -> : W16.smod (to_uint (a{2}.[x] * b{2}.[x]) * 62209 %% 65536) =
              (to_sint (a{2}.[x] * b{2}.[x] * (of_int 62209)%W16))
      by rewrite /to_sint /=  (W16.to_uintM _ (W16.of_int 62209)) /=. 
-  rewrite -modzDm /= Montgomery.modzM_sint /=.
+  rewrite -modzDm /= modzM_sint /=.
   have -> : 3329 = -(to_sint (of_int (-3329)))%W16 by rewrite /to_sint /smod /=.
-  rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN Montgomery.modzM_sint /= to_uintM /= to_uintM /=.
+  rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN modzM_sint /= to_uintM /= to_uintM /=.
   smt().
 
 qed.
@@ -676,8 +676,8 @@ proof.
       move : abnd => /#.
     rewrite (_: W16.of_int 65535 = W16.onew). by rewrite /W16.onew //=.
     rewrite xorw1 (_: invw ((W16.of_int 1664) - a) = -((W16.of_int 1664) - a) - W16.one).
-          move : (W16.twos_compl ((W16.of_int 1664) - a)). smt(@W16 @Int).
-    do !(rewrite to_sintB_small || rewrite to_sintN || rewrite of_sintK /smod //=); first 15 by move : hq_s_a_lt0 a_gt_hq abnd => /#.
+          move : (W16.twos_compl ((W16.of_int 1664) - a)). smt(@W16 @Int). 
+    do !(rewrite to_sintB_small || rewrite to_sintN || rewrite of_sintK /smod //=); first 7 by move : hq_s_a_lt0 a_gt_hq abnd => /#.
     rewrite bits8_div 1://= //=.
     do (rewrite to_uintD || rewrite to_uintN || rewrite to_uintK //= || rewrite of_uintK //=).
     rewrite -to_sint_unsigned. by move : a_gt_hq => /#.
@@ -691,15 +691,9 @@ proof.
     rewrite (pmod_small (to_sint a - 1664) 65536).
       move : a_gt_hq. rewrite sltE of_sintK /smod //=.
       move : abnd => /#.
-    rewrite (_: - (1664 - to_sint a) - 833 =
-                to_sint a - 2497).
       smt(@Int @IntDiv).
-    rewrite -subz_ge0 //= subz_ge0 -subz_lt0 //= subz_lt0.
-    move : a_gt_hq hq_s_a_lt0.
-    do (rewrite sltE || rewrite of_sintK /smod //=).
-    smt(@Int @W16 @W32 @IntDiv).
 
-  move : a_gt_hq.
+  move : a_gt_hq. 
   rewrite /W16.(\slt) -lezNgt -/W16.(\sle) -W16.sleE => hq_gte_a.
   have hq_s_a_gt0: W16.zero \sle ((W16.of_int 1664) - a).
     move : hq_gte_a. rewrite /W16.(\sle).

@@ -1022,7 +1022,7 @@ conseq />.  call(invnttequiv). auto => />. move => &1 &2 ???????????????H1??H0??
   smt().
 
 seq 1 1 : (#{/~v{2}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{2} 0 256 2).
-conseq />.  call(poly_invnttequiv). auto => />. smt().
+conseq />.  call(polyinvnttequiv). auto => />. smt().
 
 auto => /> /#.
 qed.
@@ -1394,7 +1394,7 @@ conseq />.  call(invnttequiv). auto => />. move => &1 &2 ?????????????H1??H0??H?
   smt().
 
 seq 1 1 : (#{/~v{2}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{2} 0 256 2).
-conseq />.  call(poly_invnttequiv). auto => />. smt().
+conseq />.  call(polyinvnttequiv). auto => />. smt().
 
 auto => /> /#.
 qed.

@@ -638,7 +638,7 @@ require import Jkem_avx2 Jkem.
 
 require import NTT_AVX_Fq.
 
-
+(*
 equiv _poly_ntt_eq:
  Jkem_avx2.M._poly_ntt ~ NTT_AVX.ntt :
  r{2}=lift_array256 rp{1} /\ signed_bound_cxq rp{1} 0 256 2 ==>
@@ -647,12 +647,16 @@ equiv _poly_ntt_eq:
 proof.
 admit.
 qed.
+*)
 
 lemma poly_ntt_avx2_corr _r :
   phoare [ Jkem_avx2.M._poly_ntt :
     rp = _r /\ signed_bound_cxq rp 0 256 2 ==>
     ntt (lift_array256 _r) = lift_array256 (nttpack res) /\
     pos_bound256_cxq res 0 256 2] = 1%r.
+admitted. (* Bacelar *)
+
+(*
 proof.
 proc.
 inline Jkem_avx2.M.__ntt_level0.
@@ -660,7 +664,7 @@ inline Jkem_avx2.M.__butterfly64x.
 bypr => &m [-> Hbnd].
 have <-: Pr[NTT_AVX.ntt(lift_array256 _r, witness) @ &m :
    ntt (lift_array256 _r) = (nttpack res)] = 1%r.
- admit.
+ adm it.
 byequiv _poly_ntt_eq.
 smt().
 
@@ -670,7 +674,7 @@ print ntt_avx_equiv.
 print NTT_AVX.
 print NTT_avx2.
 print r_avx2_ntt.
-admit (*
+adm it (*
 Context : {rp : W16.t Array256.t}
 Bound   : [=] 1%r
 
@@ -682,14 +686,13 @@ pre = rp = _r /\ signed_bound_cxq rp 0 256 2
 post = ntt (lift_array256 _r) = lift_array256 (nttpack rp) /\ pos_bound256_cxq rp 0 256 2
 *).
 
-
 lemma ntt_avx_equiv : 
      equiv [ NTT_AVX.ntt ~ NTT_avx2.ntt :
           r{1} = NTT_avx2.r{2} /\ zetas{1} = zetas_unpack NTT_avx2.zetas{2} 
           ==> perm256 perm_nttpack128 res{1} = res{2}].
 
 qed.
-
+*)
 
 (* 
 lemma ntt_avx_equiv : 
@@ -859,14 +862,5 @@ equiv invnttequiv :
    pos_bound768_cxq res{2} 0 768 2.
    admitted. (* HUGO BACELAR *)
 
-equiv poly_invnttequiv :
- Jkem_avx2.M._poly_invntt ~ M._poly_invntt : 
-   lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) /\ 
-   signed_bound_cxq arg{1} 0 256 2 /\ 
-   signed_bound_cxq arg{2} 0 256 2 ==>
-   lift_array256 res{1} = lift_array256 res{2} /\ 
-   pos_bound256_cxq res{1} 0 256 2 /\ 
-   pos_bound256_cxq res{2} 0 256 2.
-   admitted. (* HUGO BACELAR *)
-
 end NTT_Avx2.
+ 
