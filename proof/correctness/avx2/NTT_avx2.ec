@@ -635,6 +635,7 @@ rewrite initiE //= mapiE //=. smt(nttunpack_bnd Array256.allP).
 qed.
 
 require import Jkem_avx2 Jkem.
+(*
 
 require import NTT_AVX_Fq.
 
@@ -658,6 +659,8 @@ admitted. (* Bacelar *)
 
 (*
 proof.
+admitted.
+(*
 proc.
 inline Jkem_avx2.M.__ntt_level0.
 inline Jkem_avx2.M.__butterfly64x.
@@ -719,7 +722,7 @@ lemma ntt_avx_equiv :
 |     (ntt_spec r p)%NTTAlgebra.NTTequiv => r = ntt p.
 
 *)
-
+*)
 
 lemma polyvec_ntt_avx2_corr _r :
   phoare [ Jkem_avx2.M.__polyvec_ntt :
