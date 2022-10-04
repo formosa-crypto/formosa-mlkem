@@ -539,8 +539,8 @@ proc __ntt_level0 (rp : Fq Array256.t) : Fq Array256.t = {
   (r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c) <@ 
       __butterfly64x(r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b, zeta1, zeta1);
       
- return CS2P [r0a;r1a;r2a;r3a;r0c;r1c;r2c;r3c;r4a;r5a;r6a;r7a;r4c;r5c;r6c;r7c];
-
+  rp <- CS2P [r0a;r1a;r2a;r3a;r0c;r1c;r2c;r3c;r4a;r5a;r6a;r7a;r4c;r5c;r6c;r7c];
+  return rp;
 }
 
 proc __ntt_level1(rp : Fq Array256.t) : Fq Array256.t = {
@@ -567,7 +567,8 @@ proc __ntt_level1(rp : Fq Array256.t) : Fq Array256.t = {
   (r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l) <@ 
       __butterfly64x(r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k, zeta1k, zeta1k);
     
-  return CS2P [r0a;r1a;r2a;r3a;r4a;r5a;r6a;r7a;r0l;r1l;r2l;r3l;r4l;r5l;r6l;r7l];
+  rp <- CS2P [r0a;r1a;r2a;r3a;r4a;r5a;r6a;r7a;r0l;r1l;r2l;r3l;r4l;r5l;r6l;r7l];
+  return rp;
 }
 
 proc __ntt_level2(rp : Fq Array256.t) : Fq Array256.t = {
