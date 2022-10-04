@@ -106,7 +106,7 @@ module Mvec = {
     return ();
   }
 
-  proc __polyvec_compress (rp:W64.t, a:W16.t Array768.t) : unit = {
+  proc polyvec_compress (rp:W64.t, a:W16.t Array768.t) : unit = {
     var aux: int;
 
     var x16p:W16.t Array16.t;
@@ -211,6 +211,13 @@ proof.
   auto => />.
 qed.
 
+equiv eq_polyvec_compress:
+  Mprevec.polyvec_compress ~ Mvec.polyvec_compress: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
+proof.
+admit. (* MIGUEL/MBB *)
+qed.
+
+
 equiv veceq_polyvec_add2 :
   Mvec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
@@ -249,6 +256,12 @@ proof.
   proc.
   do 3!(wp; call veceq_poly_tobytes).
   auto => />.
+qed.
+
+equiv veceq_polyvec_compress :
+  Mvec.polyvec_compress ~ M.__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+proof.
+admit. (* MIGUEL/MBB *)
 qed.
 
 equiv prevec_eq_polyvec_add2 :
@@ -294,6 +307,15 @@ proof.
   smt(). trivial.
   apply eq_polyvec_tobytes.
   apply veceq_polyvec_tobytes.
+qed.
+
+equiv prevec_eq_polyvec_compress :
+  Mprevec.polyvec_compress ~ M.__polyvec_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+proof.
+  transitivity Mvec.polyvec_compress (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, rp, a} ==> ={res, Glob.mem}).
+  smt(). trivial.
+  apply eq_polyvec_compress.
+  apply veceq_polyvec_compress.
 qed.
 
 end KyberPolyVecAVXVec.
