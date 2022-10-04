@@ -165,6 +165,45 @@ module Mvec = {
     }
     return ();
   }
+
+  proc polyvec_decompress (rp:W64.t) : W16.t Array768.t = {
+    var aux: int;
+    
+    var r:W16.t Array768.t;
+    var q:W256.t;
+    var shufbidx:W256.t;
+    var sllvdidx:W256.t;
+    var mask:W256.t;
+    var i:int;
+    var k:int;
+    var f:W256.t;
+    r <- witness;
+    q <@ OpsV.iVPBROADCAST_8u32(pvd_q_s);
+    shufbidx <-
+    (get256 (WArray32.init8 (fun i_0 => pvd_shufbdidx_s.[i_0])) 0);
+    sllvdidx <@ OpsV.iVPBROADCAST_4u64(pvd_sllvdidx_s);
+    mask <@ OpsV.iVPBROADCAST_8u32(pvd_mask_s);
+    k <- 0;
+    while (k < 3) {
+      aux <- (256 %/ 16);
+      i <- 0;
+      while (i < aux) {
+        f <@ OpsV.iload32u8(Glob.mem, rp + (W64.of_int (320 * k + 20 * i)));
+        f <@ OpsV.iVPERMQ(f, (W8.of_int 148));
+        f <@ OpsV.iVPSHUFB_256(f, shufbidx);
+        f <@ OpsV.iVPSLLV_8u32(f, sllvdidx);
+        f <@ OpsV.iVPSRL_16u16(f, (W8.of_int 1));
+        f <@ OpsV.iVPAND_16u16(f, mask);
+        f <@ OpsV.iVPMULHRS_256(f, q);
+        r <-
+        Array768.init
+        (WArray1536.get16 (WArray1536.set256 (WArray1536.init16 (fun i_0 => r.[i_0])) ((16 * k) + i) (f)));
+        i <- i + 1;
+      }
+      k <- k + 1;
+    }
+    return (r);
+  }
 }.
 
 theory KyberPolyVecAVXVec.
@@ -217,6 +256,12 @@ proof.
 admit. (* MIGUEL/MBB *)
 qed.
 
+equiv eq_polyvec_decompress:
+  Mprevec.polyvec_decompress ~ Mvec.polyvec_decompress: ={rp, Glob.mem} ==> ={res}.
+proof.
+admit. (* MIGUEL/MBB *)
+qed.
+
 
 equiv veceq_polyvec_add2 :
   Mvec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
@@ -260,6 +305,12 @@ qed.
 
 equiv veceq_polyvec_compress :
   Mvec.polyvec_compress ~ M.__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+proof.
+admit. (* MIGUEL/MBB *)
+qed.
+
+equiv veceq_polyvec_decompress :
+  Mvec.polyvec_decompress ~ M.__polyvec_decompress: ={Glob.mem, rp} ==> ={res}.
 proof.
 admit. (* MIGUEL/MBB *)
 qed.
@@ -316,6 +367,15 @@ proof.
   smt(). trivial.
   apply eq_polyvec_compress.
   apply veceq_polyvec_compress.
+qed.
+
+equiv prevec_eq_polyvec_decompress :
+  Mprevec.polyvec_decompress ~ M.__polyvec_decompress: ={rp, Glob.mem} ==> ={res}.
+proof.
+  transitivity Mvec.polyvec_decompress (={rp, Glob.mem} ==> ={res}) (={Glob.mem, rp} ==> ={res}).
+  smt(). trivial.
+  apply eq_polyvec_decompress.
+  apply veceq_polyvec_decompress.
 qed.
 
 end KyberPolyVecAVXVec.

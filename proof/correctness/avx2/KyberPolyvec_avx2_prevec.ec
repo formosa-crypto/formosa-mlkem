@@ -182,4 +182,55 @@ module Mprevec = {
     }
     return ();
   }
+
+  proc polyvec_decompress (rp:W64.t) : W16.t Array768.t = {
+    var aux: int;
+    
+    var r:W16.t Array768.t;
+    var q: t16u16;
+    var q_d: t8u32;
+    var shufbidx:t32u8;
+    var sllvdidx:t8u32;
+    var sllvdidx_q:t4u64;
+    var mask:t16u16;
+    var mask_d:t8u32;
+    var i:int;
+    var k:int;
+    var f:t16u16;
+    var f_b:t32u8;
+    var f_d:t8u32;
+
+    q_d <@ Ops.iVPBROADCAST_8u32(pvd_q_s);
+    q <- f8u32_t16u16 q_d;
+
+    shufbidx <- pvd_shufbdidx_s;
+    sllvdidx_q <@ Ops.iVPBROADCAST_4u64(pvd_sllvdidx_s);
+    sllvdidx <- f4u64_t8u32 sllvdidx_q;
+
+    mask_d <@ Ops.iVPBROADCAST_8u32(pvd_mask_s);
+    mask <- f8u32_t16u16 mask_d;
+
+    k <- 0;
+    while (k < 3) {
+      aux <- (256 %/ 16);
+      i <- 0;
+      while (i < aux) {
+        f_b <@ Ops.iload32u8(Glob.mem, rp + (W64.of_int (320 * k + 20 * i)));
+        f_b <@ Ops.iVPERMQ_32u8(f_b, (W8.of_int 148));
+        f_b <@ Ops.iVPSHUFB_256(f_b, shufbidx);
+
+        f_d <- f32u8_t8u32 f_b;
+        f_d <@ Ops.iVPSLLV_8u32(f_d, sllvdidx);
+        f <- f8u32_t16u16 f_d;
+
+        f <@ Ops.iVPSRL_16u16(f, (W8.of_int 1));
+        f <@ Ops.iVPAND_16u16(f, mask);
+        f <@ Ops.iVPMULHRS_256(f, q);
+        r <- Array768.fill (fun j => f.[j %% 16]) (256 * k + 16 * i) 16 r;
+        i <- i + 1;
+      }
+      k <- k + 1;
+    }
+    return (r);
+  }
 }.
