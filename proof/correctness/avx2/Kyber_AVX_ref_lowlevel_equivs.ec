@@ -176,7 +176,7 @@ equiv compressequiv mem _p :
     ={Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p 128 /\ _p = to_uint rp{1}
     ==> 
     ={Glob.mem} /\  touches mem Glob.mem{1} _p 128.
-admitted. (* Miguel *)
+admitted. (* Miguel/MBB *)
 
 equiv compressequiv_1 mem : 
   M._poly_compress_1 ~   Jkem.M._i_poly_compress :
@@ -187,19 +187,10 @@ equiv compressequiv_1 mem :
     ==> 
     ={Glob.mem} /\  Glob.mem{1} = mem /\
     res.`1{1} = res.`1{2}.
-admitted. (* Miguel *)
+admitted. (* Miguel/MBB *)
 
 import Zq. 
 
-
-lemma poly_basemul_avx2_correct _ap _bp:
-   phoare[ Mprevec.poly_basemul :
-     _ap = nttpack (lift_array256 ap) /\ _bp = nttpack (lift_array256 bp) /\
-     signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
-     signed_bound_cxq res 0 256 3 /\ 
-     nttpack (lift_array256 res) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
-proc. 
-admitted. (* basemul: Hugo/Bacelar? *)
 
 equiv basemulequiv : 
   M._poly_basemul ~   Jkem.M._poly_basemul :
@@ -374,7 +365,7 @@ symmetry. proc*; call prevec_eq_poly_frommsg. auto => />.
     a{1} = ap{2} ==> 
     decompress_poly 1 res{1} = lift_array256 ( res{2}) /\
     pos_bound256_cxq res{2} 0 256 1);1,2: smt(). 
-    proc*. admit. (* Miguel" ecall (eq_decode1_opt). auto => />. *)
+    proc*. admit. (* Reify ecall (eq_decode1_opt). auto => />. *)
     
     symmetry; proc*; ecall  (KyberPoly.poly_frommsg_corr ap{1}); auto => />;smt().
 qed.
@@ -413,7 +404,7 @@ symmetry. proc*; call prevec_eq_poly_tomsg. auto => />.
     pos_bound256_cxq a{2} 0 256 2
                               ==> 
     res{2}.`1 = res{1});1,2: smt(). 
-    proc*. admit. (* Miguel" ecall (eq_encode1). auto => />. *)
+    proc*. admit. (* Reify ecall (eq_encode1). auto => />. *)
     
     symmetry; proc*; ecall  (KyberPoly.poly_tomsg_corr (lift_array256 a{1})); auto => />. 
 qed.
@@ -432,7 +423,7 @@ lemma subequiv_noperm  (ab bb : int):
                signed_bound_cxq res{1} 0 256 (ab + bb) /\
                signed_bound_cxq res{2} 0 256 (ab + bb) 
               ].
-    admitted. (* MIGUEL *)
+    admitted. (* MIGUEL/MBB *)
 
 lemma poly_decompress_equiv mem _p : 
     equiv [ M._poly_decompress ~   Jkem.M._poly_decompress  :
@@ -444,7 +435,7 @@ lemma poly_decompress_equiv mem _p :
              lift_array256 res{1} = lift_array256 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 /\
              pos_bound256_cxq res{2} 0 256 1 ].
-admitted. (* MIGUEL *)
+admitted. (* MIGUEL/MBB *)
 
 equiv compressequivvec mem _p : 
   M.__polyvec_compress ~   Jkem.M.__polyvec_compress :

@@ -638,17 +638,6 @@ require import Jkem_avx2 Jkem.
 
 require import NTT_AVX_Fq.
 
-(*
-equiv _poly_ntt_eq:
- Jkem_avx2.M._poly_ntt ~ NTT_AVX.ntt :
- r{2}=lift_array256 rp{1} /\ signed_bound_cxq rp{1} 0 256 2 ==>
- res{2}=lift_array256 res{1} /\
- pos_bound256_cxq res{1} 0 256 2.
-proof.
-admit.
-qed.
-*)
-
 lemma poly_ntt_avx2_corr _r :
   phoare [ Jkem_avx2.M._poly_ntt :
     rp = _r /\ signed_bound_cxq rp 0 256 2 ==>

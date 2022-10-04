@@ -29,6 +29,32 @@ import KyberPoly.
 import NTT_Avx2.
 import AVX2_cf.
 
+lemma polyvec_compress_corr _a (_p : address) mem :
+    equiv [ Mprevec.polyvec_compress ~ EncDec_AVX2.encode10 :
+             pos_bound768_cxq a{1} 0 768 2 /\
+             lift_array768 a{1} = _a /\
+             p{2} = compress_polyvec 10 _a /\
+             valid_ptr _p 384 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             lift_array768 res{1} = _a /\
+             pos_bound768_cxq res{1} 0 768 1 /\
+             touches mem Glob.mem{1} _p 384 /\
+             load_array384 Glob.mem{1} _p = res{2}].
+admitted.
+
+lemma polyvec_decompress_corr mem _p (_a : W8.t Array384.t): 
+    equiv [ Mprevec.polyvec_decompress ~ EncDec_AVX2.decode10 :
+             valid_ptr _p 384 /\
+             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+             load_array384 Glob.mem{1} _p = _a /\ a{2} = _a
+              ==>
+             Glob.mem{1} = mem /\
+             lift_array768 res{1} = decompress_poly 10 res{2} /\
+             pos_bound768_cxq res{1} 0 768 1].
+admitted.
+
+
 lemma polvec_add_corr_h _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
       hoare[Mprevec.polyvec_add2:
