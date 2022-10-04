@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
-require import Fq Array16 Array32 Array128 Array256 Array384 Array400 Array768 Array1152.
+require import Fq Array16 Array32 Array128 Array256 Array960 Array384 Array400 Array768 Array1152.
 require import W16extra WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
 require import AVX2_Ops.
 require import Jkem_avx2 Jkem.
@@ -41,11 +41,11 @@ lemma polyvec_compress_corr _a (_p : address) mem :
              load_array960 Glob.mem{1} _p = res{2}].
 admitted. (* Miguel *)
 
-lemma polyvec_decompress_corr mem _p (_a : W8.t Array384.t): 
+lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t): 
     equiv [ Mprevec.polyvec_decompress ~ EncDec_AVX2.decode10_opt_vec :
-             valid_ptr _p 320 /\
-             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array320 Glob.mem{1} _p = _a /\ a{2} = _a
+             valid_ptr _p 960 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p /\
+             load_array960 Glob.mem{1} _p = _a /\ a{2} = _a
               ==>
              Glob.mem{1} = mem /\
              lift_vector res{1} = decompress_polyvec 10 res{2} /\
