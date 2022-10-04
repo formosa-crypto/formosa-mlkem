@@ -1340,28 +1340,35 @@ proof.
 qed.
 
 equiv eq_itruncate_16u16_8u16 : Ops.itruncate_16u16_8u16 ~ OpsV.itruncate_16u16_8u16 : is16u16 t{1} t{2} ==> is16u8 res{1} res{2}.
-proof. admit. (* MIGUEL
-  proc; skip => &1 &2; rewrite /is2u64 /is4u64 => -> /=.
+proof.
+  proc; skip => &1 &2; rewrite /is16u8 /is16u16 => -> /=.
   apply (Core.can_inj _ _ W128.to_uintK).
   rewrite to_uint_truncateu128.
-  rewrite - (W128.to_uint_small (to_uint (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]) %% W128.modulus)).
+  rewrite - (W128.to_uint_small (to_uint (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]) %% W128.modulus)).
   + by apply modz_cmp.
   congr; apply W128.wordP => i hi.
-  rewrite W128.of_intwE hi W2u64.pack2wE 1:// /=.
+  rewrite W128.of_intwE hi W16u8.pack16wE 1:// /=.
   rewrite /int_bit /= modz_mod.
   have /= -> := modz_pow2_div 128 i; 1:smt().
   rewrite (modz_dvd_pow 1 (128 - i) _ 2) 1:/# /=.
-  have : (to_uint (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]) %/ (Ring.IntID.(^) 2 i) %% 2 <> 0) =
-            (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]).[i].
-  + rewrite -{2}(W256.to_uintK (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]])) W256.of_intwE /int_bit (modz_small _ W256.modulus) 2:/#.
-    by have /= := W256.to_uint_cmp  (pack4 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]]);rewrite /(`|_|).
-  rewrite W4u64.pack4wE 1:/#.
-  case: (i < 64) => hi'.
-    + rewrite (divz_small _ 64) 1:/# //=.
-  have -> // : i %/ 64 = 1.
-  have -> : i = (i -64) + 1 * 64 by done.
-  rewrite divzMDr 1://; smt(divz_small).
-*)
+  have ->: (to_uint (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]) %/ (Ring.IntID.(^) 2 i) %% 2 <> 0) =
+            (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]).[i].
+  + rewrite -{2}(W256.to_uintK (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]])) W256.of_intwE /int_bit (modz_small _ W256.modulus) 2:/#.
+    by have /= := W256.to_uint_cmp  (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]);rewrite /(`|_|).
+  rewrite W16u16.pack16wE 1:/#.
+  move : hi; rewrite andabP => /(mem_iota 0 128 i).
+  move : i.
+  rewrite -List.allP -iotaredE //=.
 qed.
 
 op is4u64_4 (x:t4u64 Array4.t) (xv:vt4u64 Array4.t) =
@@ -1520,10 +1527,9 @@ proof.
 qed.
 
 equiv eq_istore4u8: Ops.istore4u8 ~ OpsV.istore4u8 : ={mem, p} /\ is4u8 w{1} w{2} ==> ={res}.
-proof. admit. (* MIGUEL
+proof.
   proc; wp; skip  => &1 &2 /> @/is4u8 ->.
-  by rewrite storeW32E;congr;rewrite /to_list /mkseq /= !pack2bE //= -iotaredE /=.
-*)
+  by rewrite storeW32E;congr;rewrite /to_list /mkseq /= !pack4bE //= -iotaredE /=.
 qed.
 
 equiv eq_iload32u8: Ops.iload32u8 ~ OpsV.iload32u8 : ={mem, p} ==> is32u8 res{1} res{2}.
@@ -1835,17 +1841,19 @@ qed.
 
 equiv eq_iVEXTRACTI128_16u8: Ops.iVEXTRACTI128_16u8 ~ OpsV.iVEXTRACTI128_16u8 :
   is16u16 x{1} x{2} /\ ={p} ==> is16u8 res{1} res{2}.
-proof. admit. (* MIGUEL
-  proc; wp; skip;rewrite /is32u8 /is16u8 /VEXTRACTI128 => /> &1 &2.
-  by case: (p{2}.[0]) => ?; cbv delta.
-*)
+proof.
+  proc; wp; skip;rewrite /is16u16 /is16u8 /VEXTRACTI128 => /> &1 &2.
+  apply W128.wordP => i.
+  rewrite andabP => /(mem_iota 0 128 i).
+  move : i.
+  case: (p{2}.[0]) => ?; rewrite -List.allP -iotaredE //=.
 qed.
 
 equiv eq_iVPEXTR_64: Ops.iVPEXTR_64 ~ OpsV.iVPEXTR_64 : is2u64 x{1} x{2} /\ ={p} /\ (p{1} = W8.of_int 0 \/ p{2} = W8.of_int 1)==> res{1} = res{2}.
 proof. by proc; skip; rewrite /is2u64 /VPEXTR_64 => /> &1 &2 [] -> /=. qed.
 
 equiv eq_iVPEXTR_32: Ops.iVPEXTR_32 ~ OpsV.iVPEXTR_32 : is16u8 x{1} x{2} /\ ={p} /\ (p{1} = W8.of_int 0 \/ p{2} = W8.of_int 1) ==> is4u8 res{1} res{2}.
-proof. admit. (* MIGUEL by proc; skip; rewrite /is16u8 /is4u8 /VPEXTR_32 => /> &1 &2 [] -> /=. *) qed.
+proof. by proc; wp; skip; rewrite /is16u8 /is4u8 /VPEXTR_32 => /> &1 &2 [] -> /=. qed.
 
 equiv eq_iVPSLL_8u32: Ops.iVPSLL_8u32 ~ OpsV.iVPSLL_8u32: is8u32 x{1} x{2} /\ ={y} ==> is8u32 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is8u32 /VPSLL_8u32. qed.
@@ -2009,16 +2017,22 @@ equiv eq_iVPBLENDW_128_16u8 : Ops.iVPBLENDW_128_16u8 ~ OpsV.iVPBLENDW_128_16u8 :
 proof.
   proc; wp; skip; rewrite /is16u8 /VPBLENDW_128 => /> &1 &2 /=.
   apply W16u8.allP => /=.
-  admit. (* MIGUEL
+  split; 1: by case (p{2}.[0]).
   split; 1: by case (p{2}.[0]).
   split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[2]).
   split; 1: by case (p{2}.[2]).
   split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[4]).
   split; 1: by case (p{2}.[4]).
   split; 1: by case (p{2}.[5]).
+  split; 1: by case (p{2}.[5]).
   split; 1: by case (p{2}.[6]).
+  split; 1: by case (p{2}.[6]).
+  split; 1:by case (p{2}.[7]).
   by case (p{2}.[7]).
-*)
 qed.
 
 (*
