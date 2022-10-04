@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
-require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array1152.
+require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array1152 Array960.
 require import Jkem.
 require import Kyber.
 
@@ -52,6 +52,10 @@ module EncDec_AVX2 = {
     a2 <@ decode12_opt(subarray384 a 1);
     a3 <@ decode12_opt(subarray384 a 2);
     return fromarray256 a1 a2 a3;
+  }
+
+  proc decode10_opt_vec(a : W8.t Array960.t) : ipolyvec = {
+    return witness;
   }
 
    proc decode4(a : W8.t Array128.t) : ipoly = {
@@ -167,6 +171,11 @@ module EncDec_AVX2 = {
     a2 <@ encode12_opt(subarray256 a 1);
     a3 <@ encode12_opt(subarray256 a 2);
     return fromarray384 a1 a2 a3;
+  }
+
+
+  proc encode10_opt_vec(a : ipolyvec) : W8.t Array960.t = {
+    return witness;
   }
 
    proc encode4(p : ipoly) : W8.t Array128.t = {
