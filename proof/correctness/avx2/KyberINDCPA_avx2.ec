@@ -20,9 +20,9 @@ import KyberPolyAVXVec.
 import NTT_Avx2.
 
 
-equiv sha3equiv :
- Jkem_avx2.M._sha3_512_32 ~ M._sha3512_32 : ={arg} ==> ={res}.
-admitted. (* is this in the sha3 paper? *)
+axiom sha3equiv : 
+ equiv [ (* is this in the sha3 paper? *)
+ Jkem_avx2.M._sha3_512_32 ~ M._sha3512_32 : ={arg} ==> ={res}].
 
 lemma sha3ll : islossless M._shake256_128_33.
 proc. 
@@ -251,7 +251,7 @@ transitivity {1} { Jkem.M.__indcpa_keypair(pkp, skp, randomnessp);}
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt(); 
    last by call(kyber_correct_kg mem _pkp _skp _randomnessp); auto => />. 
 
-inline{1} 1; inline {2} 1. sim. 
+inline{1} 1; inline {2} 1;  sim 43 60. 
 
 call (polyvec_tobytes_equiv _pkp).
 call (polyvec_tobytes_equiv _skp).
