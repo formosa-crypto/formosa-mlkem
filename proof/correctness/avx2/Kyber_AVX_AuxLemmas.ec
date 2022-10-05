@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
-require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
-require import W16extra WArray512 WArray32 WArray16.
+require import Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
+require import W16extra WArray1536 WArray512 WArray32 WArray16.
 require import AVX2_Ops.
 require import KyberPoly.
 require import KyberINDCPA.
@@ -71,6 +71,25 @@ lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
       if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16)
       else v.[j].
 proof. 
+  move => hx hs; rewrite set256E !get16E.
+  rewrite -(W2u8.unpack8K (if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16) else v.[j])); congr.
+  apply W2u8.Pack.ext_eq => k hk.
+  rewrite W2u8.get_unpack8 //= W2u8.Pack.initiE 1:/# /=.
+  rewrite initiE /=. move : hk hs => /#.
+  rewrite initiE /=. move : hk hs => /#.
+  have ->: (32 * i <= 2 * j + k < 32 * i + 32) = (16 * i <= j < 16 * i + 16) by smt().
+  case : (16 * i <= j < 16 * i + 16) => h.
+    + by rewrite W256_bits16_bits8 1:// /#.
+    + by rewrite /init16 /#.
+qed.
+
+lemma set_get_def768 (v : W16.t Array768.t) (w: W256.t) i j :
+    0 <= i < 48 => 0 <= j < 768 =>
+    WArray1536.get16
+    (WArray1536.set256 (WArray1536.init16 (fun i => v.[i])) i w) j =
+      if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16)
+      else v.[j].
+proof.
   move => hx hs; rewrite set256E !get16E.
   rewrite -(W2u8.unpack8K (if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16) else v.[j])); congr.
   apply W2u8.Pack.ext_eq => k hk.
