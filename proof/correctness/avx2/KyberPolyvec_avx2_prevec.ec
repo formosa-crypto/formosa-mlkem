@@ -199,7 +199,7 @@ module Mprevec = {
     var f:t16u16;
     var f_b:t32u8;
     var f_d:t8u32;
-
+    r <- witness;
     q_d <@ Ops.iVPBROADCAST_8u32(pvd_q_s);
     q <- f8u32_t16u16 q_d;
 
