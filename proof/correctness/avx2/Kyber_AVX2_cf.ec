@@ -397,4 +397,7 @@ unroll for {2} ^while.
 by auto => />.
 qed.
 
+equiv eq_encode4:
+  EncDec_AVX2.encode4 ~ EncDec.encode4: ={p} ==> ={res}.
+admitted. (* MBB/MIGUEL  *)
 end AVX2_cf.
