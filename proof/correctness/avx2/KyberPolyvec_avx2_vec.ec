@@ -6,6 +6,7 @@ require import AVX2_Ops.
 require import Jkem_avx2.
 require import KyberPoly_avx2_vec.
 require import KyberPolyvec_avx2_prevec.
+require import Kyber_AVX_AuxLemmas.
 
 module Mvec = {
   proc polyvec_add2 (r:W16.t Array768.t, b:W16.t Array768.t) : W16.t Array768.t = {
@@ -191,7 +192,7 @@ module Mvec = {
       i <- 0;
       while (i < aux) {
         f <@ OpsV.iload32u8(Glob.mem, rp + (W64.of_int (320 * k + 20 * i)));
-        f <@ OpsV.iVPERMQ(f, (W8.of_int 148));
+        f <@ OpsV.iVPERMQ_32u8(f, (W8.of_int 148));
         f <@ OpsV.iVPSHUFB_256(f, shufbidx);
         f <@ OpsV.iVPSLLV_8u32(f, sllvdidx);
         f <@ OpsV.iVPSRL_16u16(f, (W8.of_int 1));
@@ -317,9 +318,49 @@ qed.
 equiv eq_polyvec_decompress:
   Mprevec.polyvec_decompress ~ Mvec.polyvec_decompress: ={rp, Glob.mem} ==> ={res}.
 proof.
-admit. (* MIGUEL/MBB *)
+  proc.
+  while(={Glob.mem, rp, k, r} /\ is16u16 q{1} q{2} /\ is32u8 shufbidx{1} shufbidx{2} /\
+        is8u32 sllvdidx{1} sllvdidx{2} /\ is16u16 mask{1} mask{2} /\ 0 <= k{1}).
+    wp.
+    while(#pre /\ ={i, aux} /\ 0 <= i{1} /\ aux{1} = 16).
+    wp; call eq_iVPMULHRS_256; call eq_iVPAND_16u16; call eq_iVPSRL_16u16.
+    wp; call eq_iVPSLLV_8u32.
+    wp; call eq_iVPSHUFB_256.
+    call eq_iVPERMQ_32u8; call eq_iload32u8.
+    wp; skip; auto => />.
+    rewrite /is16u16 /is8u32 /is32u8 => />. move => &2 k_lb k_tub i_lb i_tub resL1.
+    split.
+      + rewrite /f32u8_t8u32 /= => />.
+    move => resL1_eq resL2.
+    split.
+      + rewrite /f8u32_t16u16 /= => />.
+        apply W32u8.allP => />.
+    move => resL2_eq resL5.
+    split.
+    + apply Array768.ext_eq => x x_i />.
+      rewrite filliE 1:x_i initiE 1:x_i /=.
+      rewrite set_get_def768 1:/# 1:x_i.
+      rewrite pack16bE 1:/# get_of_list 1:/#.
+      smt(@Int @IntDiv @W16u16 @Array16 @Array256).
+    + move : i_lb => /#.
+  wp; skip; auto => /> /#.
+  move => *.
+  wp; call eq_iVPBROADCAST_8u32.
+  wp; call eq_iVPBROADCAST_4u64.
+  wp; call eq_iVPBROADCAST_8u32.
+  auto => />.
+  rewrite /is16u16 /is4u64 /is8u32 /is32u8 => />.
+  move => resL resL0 resL1.
+  do split.
+  + rewrite /f8u32_t16u16 /= => />.
+    apply W16u16.allP => />.
+  + rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+  + rewrite /f4u64_t8u32 /= => />.
+    apply W8u32.allP => />.
+  + rewrite /f8u32_t16u16 /= => />.
+    apply W16u16.allP => />.
 qed.
-
 
 equiv veceq_polyvec_add2 :
   Mvec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
@@ -365,8 +406,7 @@ equiv veceq_polyvec_compress :
   Mvec.polyvec_compress ~ M.__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
   proc.
-  while(={i, a, rp, Glob.mem, aux} /\ 0 <= i{1} /\ aux{1} = 48 /\ ={v} /\
-        ={v8} /\ ={off} /\ ={shift1} /\ ={mask} /\ ={shift2} /\ ={sllvdidx} /\ ={shufbidx}).
+  while(={i, a, rp, Glob.mem, aux, v, v8, off, shift1, mask, shift2, sllvdidx, shufbidx} /\ 0 <= i{1} /\ aux{1} = 48).
   inline *.
   wp. skip. auto => /> /#.
   inline OpsV.iVPBROADCAST_16u16 OpsV.iVPBROADCAST_4u64 OpsV.iVPSLL_16u16.
@@ -378,7 +418,15 @@ qed.
 equiv veceq_polyvec_decompress :
   Mvec.polyvec_decompress ~ M.__polyvec_decompress: ={Glob.mem, rp} ==> ={res}.
 proof.
-admit. (* MIGUEL/MBB *)
+  proc.
+  while(={Glob.mem, rp, q, shufbidx, sllvdidx, mask, k, r} /\ 0 <= k{1}).
+    wp.
+    while(#pre /\ ={i, aux} /\ 0 <= i{1} /\ aux{1} = 16).
+      inline OpsV.iVPMULHRS_256 OpsV.iVPAND_16u16 OpsV.iVPSRL_16u16 OpsV.iVPSLLV_8u32 OpsV.iVPSHUFB_256 OpsV.iVPERMQ_32u8 OpsV.iload32u8.
+      wp; skip; auto => /> /#.
+    wp; skip; auto => /> /#.
+  inline OpsV.iVPBROADCAST_8u32 OpsV.iVPBROADCAST_4u64.
+  wp; skip; auto => />.
 qed.
 
 equiv prevec_eq_polyvec_add2 :
