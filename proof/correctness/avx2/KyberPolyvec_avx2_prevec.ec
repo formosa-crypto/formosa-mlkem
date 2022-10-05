@@ -147,7 +147,7 @@ module Mprevec = {
     i <- 0;
 
     while (i < aux) {
-      f0 <- Array16.init (fun j => a.[i + j]);
+      f0 <- Array16.init (fun j => a.[16 * i + j]);
       f1 <@ Ops.iVPMULL_16u16(f0, v8);
       f2 <@ Ops.iVPADD_16u16(f0, off);
       f0 <@ Ops.iVPSLL_16u16(f0, (W8.of_int 3));

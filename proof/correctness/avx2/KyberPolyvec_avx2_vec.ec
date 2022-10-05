@@ -124,6 +124,7 @@ module Mvec = {
     var f2:W256.t;
     var t0:W128.t;
     var t1:W128.t;
+    var t0_d: W32.t;
     x16p <- witness;
     a <@ polyvec_csubq (a);
     x16p <- jvx16;
@@ -153,14 +154,15 @@ module Mvec = {
       f0 <@ OpsV.iVPSLLV_8u32(f0, sllvdidx);
       f0 <@ OpsV.iVPSRL_4u64(f0, (W8.of_int 12));
       f0 <@ OpsV.iVPSHUFB_256(f0, shufbidx);
-      t0 <- (truncateu128 f0);
-      t1 <@ OpsV.iVEXTRACTI128(f0, (W8.of_int 1));
-      t0 <@ OpsV.iVPBLENDW_128(t0, t1, (W8.of_int 224));
-      Glob.mem <-
-      storeW128 Glob.mem (W64.to_uint (rp + (W64.of_int (20 * i)))) t0;
-      Glob.mem <-
-      storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int ((20 * i) + 16)))) (VPEXTR_32 t1
-      (W8.of_int 0));
+      t0 <@ OpsV.itruncate_16u16_8u16(f0);
+      t1 <@ OpsV.iVEXTRACTI128_16u8(f0, (W8.of_int 1));
+      t0 <@ OpsV.iVPBLENDW_128_16u8(t0, t1, (W8.of_int 224));
+
+      Glob.mem <@ OpsV.istore16u8(Glob.mem, rp + W64.of_int (20 * i), t0);
+
+      t0_d <@ OpsV.iVPEXTR_32(t1, (W8.of_int 0));
+      Glob.mem <@ OpsV.istore4u8(Glob.mem, rp + (W64.of_int ((20 * i) + 16)), t0_d);
+
       i <- i + 1;
     }
     return ();
@@ -253,7 +255,63 @@ qed.
 equiv eq_polyvec_compress:
   Mprevec.polyvec_compress ~ Mvec.polyvec_compress: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
-admit. (* MIGUEL/MBB *)
+  proc.
+  while(={i, a, rp, Glob.mem, aux} /\ 0 <= i{1} /\ aux{1} = 48 /\ is16u16 v{1} v{2} /\
+        is16u16 v8{1} v8{2} /\ is16u16 off{1} off{2} /\ is16u16 shift1{1} shift1{2} /\
+        is16u16 mask{1} mask{2} /\ is16u16 shift2{1} shift2{2} /\ is8u32 sllvdidx{1} sllvdidx{2} /\
+        is32u8 shufbidx{1} shufbidx{2}).
+    wp.
+    call eq_istore4u8; wp.
+    call eq_iVPEXTR_32; call eq_istore16u8; call eq_iVPBLENDW_128_16u8; call eq_iVEXTRACTI128_16u8; call eq_itruncate_16u16_8u16.
+    wp; call eq_iVPSHUFB_256.
+    wp; call eq_iVPSRL_4u64.
+    wp.
+    call eq_iVPSLLV_8u32; call eq_iVPMADDWD_256; call eq_iVPAND_16u16; call eq_iVPMULHRS_256;
+    call eq_iVPSUB_16u16; call eq_iVPSRL_16u16; call eq_iVPANDN_16u16; call eq_iVPSUB_16u16;
+    call eq_iVPMULH_256; call eq_iVPSLL_16u16; call eq_iVPADD_16u16; call eq_iVPMULL_16u16.
+    wp; skip; auto => />.
+    rewrite /is16u16 /is8u32 /is32u8 /is4u64 /is16u8 /is4u8 => />. move => &2 i_lb i_tub.
+    split.
+      + rewrite /get256_direct /= => />.
+        apply W32u8.allP => />.
+        do (rewrite initiE 1:/# /=).
+        smt(@Int @IntDiv @Array256 @W8).
+   move => a_eq resL10 />.
+   split.
+      + rewrite /f8u32_t4u64 /= => />.
+   move => resL10_eq resL11 />.
+   split.
+      + rewrite /f4u64_t32u8 /= => />.
+        apply W4u64.allP => />.
+        do (rewrite pack8_bits8 => />).
+   move => resL11_eq resL12 />.
+   split.
+      + rewrite /f32u8_t16u16 /= => />.
+        apply W32u8.allP => />.
+   move => resL12_eq />.
+    move : i_lb => /#.
+  wp.
+  call eq_iVPBROADCAST_4u64.
+  wp.
+  call eq_iVPBROADCAST_4u64.
+  do (call eq_iVPBROADCAST_16u16).
+  call eq_iVPSLL_16u16.
+  wp.
+  call eq_polyvec_csubq.
+  auto => />.
+  rewrite /is16u16 /is4u64 /is8u32 /is32u8 => />.
+  do split.
+  + rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+  move => jv_eq resL4 resL5.
+  split.
+  + rewrite initiE /f4u64_t16u16 => />.
+    apply W16u16.allP => />.
+  split.
+  + rewrite /f4u64_t8u32 => />.
+    apply W8u32.allP => />.
+  + rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
 qed.
 
 equiv eq_polyvec_decompress:
@@ -306,7 +364,15 @@ qed.
 equiv veceq_polyvec_compress :
   Mvec.polyvec_compress ~ M.__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
-admit. (* MIGUEL/MBB *)
+  proc.
+  while(={i, a, rp, Glob.mem, aux} /\ 0 <= i{1} /\ aux{1} = 48 /\ ={v} /\
+        ={v8} /\ ={off} /\ ={shift1} /\ ={mask} /\ ={shift2} /\ ={sllvdidx} /\ ={shufbidx}).
+  inline *.
+  wp. skip. auto => /> /#.
+  inline OpsV.iVPBROADCAST_16u16 OpsV.iVPBROADCAST_4u64 OpsV.iVPSLL_16u16.
+  wp.
+  call veceq_polyvec_csubq.
+  wp. skip. auto => />.
 qed.
 
 equiv veceq_polyvec_decompress :
