@@ -256,7 +256,7 @@ equiv eq_polyvec_compress:
   Mprevec.polyvec_compress ~ Mvec.polyvec_compress: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
-  while(={i, a, rp, Glob.mem, aux} /\ 0 <= i{1} /\ aux{1} = 48 /\
+  while(={i, a, rp, Glob.mem, aux} /\ 0 <= i{1} /\ aux{1} = 48 /\ is16u16 v{1} v{2} /\
         is16u16 v8{1} v8{2} /\ is16u16 off{1} off{2} /\ is16u16 shift1{1} shift1{2} /\
         is16u16 mask{1} mask{2} /\ is16u16 shift2{1} shift2{2} /\ is8u32 sllvdidx{1} sllvdidx{2} /\
         is32u8 shufbidx{1} shufbidx{2}).
@@ -270,7 +270,26 @@ proof.
     call eq_iVPSUB_16u16; call eq_iVPSRL_16u16; call eq_iVPANDN_16u16; call eq_iVPSUB_16u16;
     call eq_iVPMULH_256; call eq_iVPSLL_16u16; call eq_iVPADD_16u16; call eq_iVPMULL_16u16.
     wp; skip; auto => />.
-    admit. (* FIXME *)
+    rewrite /is16u16 /is8u32 /is32u8 /is4u64 /is16u8 /is4u8 => />. move => &2 i_lb i_tub.
+    split.
+      + rewrite /get256_direct /= => />.
+        apply W32u8.allP => />.
+        do (rewrite initiE 1:/# /=).
+        smt(@Int @IntDiv @Array256 @W8).
+   move => a_eq resL10 />.
+   split.
+      + rewrite /f8u32_t4u64 /= => />.
+   move => resL10_eq resL11 />.
+   split.
+      + rewrite /f4u64_t32u8 /= => />.
+        apply W4u64.allP => />.
+        do (rewrite pack8_bits8 => />).
+   move => resL11_eq resL12 />.
+   split.
+      + rewrite /f32u8_t16u16 /= => />.
+        apply W32u8.allP => />.
+   move => resL12_eq />.
+    move : i_lb => /#.
   wp.
   call eq_iVPBROADCAST_4u64.
   wp.
@@ -345,7 +364,15 @@ qed.
 equiv veceq_polyvec_compress :
   Mvec.polyvec_compress ~ M.__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
-admit. (* MIGUEL/MBB *)
+  proc.
+  while(={i, a, rp, Glob.mem, aux} /\ 0 <= i{1} /\ aux{1} = 48 /\ ={v} /\
+        ={v8} /\ ={off} /\ ={shift1} /\ ={mask} /\ ={shift2} /\ ={sllvdidx} /\ ={shufbidx}).
+  inline *.
+  wp. skip. auto => /> /#.
+  inline OpsV.iVPBROADCAST_16u16 OpsV.iVPBROADCAST_4u64 OpsV.iVPSLL_16u16.
+  wp.
+  call veceq_polyvec_csubq.
+  wp. skip. auto => />.
 qed.
 
 equiv veceq_polyvec_decompress :
