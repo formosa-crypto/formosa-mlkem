@@ -4230,13 +4230,10 @@ proof.
       rewrite -ext_eq_all /all_eq //=.
     + rewrite /shuf2 /f16u16_t4u64 /f4u64_t16u16 /lift_array16 => />.
       rewrite -ext_eq_all /all_eq => />.
-      have ->/=: !(W8.int_bit 170 0). by trivial.
-      have ->/=: !(W8.int_bit 170 2). by trivial.
-      have ->/=: !(W8.int_bit 170 4). by trivial.
-      have ->/=: !(W8.int_bit 170 6). by trivial.
+      rewrite /W8.int_bit => />.
       rewrite shr_shrw 1://=.
       rewrite wlsrE => />.
-      admit. (* TODO MIGUEL *)
+      do split; first 8 by apply W16.all_eq_eq.
 qed.
 
 lemma shuffle2_ll: islossless Mprevec.shuffle2.
@@ -4262,13 +4259,12 @@ lemma shuffle1_corr_h _a _b:
 proof.
   proc.
   wp; inline *; auto => />.
-  split.
-    + rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 /lift_array16 => />.
-      rewrite -ext_eq_all /all_eq //=.
-      admit. (* TODO  MIGUEL *)
-    + rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 => />.
-      rewrite -ext_eq_all /all_eq //=.
-      admit. (* TODO  MIGUEL *)
+  rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 /lift_array16 => />.
+  do (rewrite -ext_eq_all /all_eq //=).
+  rewrite /W8.int_bit => />.
+  do (rewrite shl_shlw 1://=; rewrite wlslE => />).
+  do (rewrite shr_shrw 1://=; rewrite wlsrE => />).
+  do split; first 16 by apply W16.all_eq_eq.
 qed.
 
 lemma shuffle1_ll: islossless Mprevec.shuffle1.
