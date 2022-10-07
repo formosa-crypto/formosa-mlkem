@@ -1100,13 +1100,13 @@ lemma poly_frommont_corr ap:
 
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
     equiv [ Mprevec.poly_decompress ~ EncDec_AVX2.decode4 :
-             valid_ptr _p 128 /\
-             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array128 Glob.mem{1} _p = _a /\ a{2} = _a
-              ==>
-             Glob.mem{1} = mem /\
-             lift_array256 res{1} = decompress_poly 4 res{2} /\
-             pos_bound256_cxq res{1} 0 256 1].
+            valid_ptr _p 128 /\
+            Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+            load_array128 Glob.mem{1} _p = _a /\ a{2} = _a
+             ==>
+            Glob.mem{1} = mem /\
+            lift_array256 res{1} = decompress_poly 4 res{2} /\
+            pos_bound256_cxq res{1} 0 256 1].
 proof.
   proc.
   cfold{1} 7.
