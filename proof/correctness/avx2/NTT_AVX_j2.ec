@@ -248,7 +248,6 @@ qed.
 (* Barret reduction *)
 
 require import Fq.
-print Fq.SignedReductions.SREDC.
 
 (*
  op BREDC(a bits : int) =
@@ -689,7 +688,7 @@ proc; simplify.
 wp; skip => |> &m.
 rewrite /x16_spec => Hq Hv.
 rewrite -!iotaredE /VPSUB_16u16 /VPMULL_16u16 /VPMULH_16u16 /VPSRA_16u16 /R2C /= => |> *.
-smt(sbred_spec).
+smt(sbred16_spec).
 qed.
 
 phoare __red16x_ph x:
