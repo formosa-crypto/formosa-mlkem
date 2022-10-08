@@ -93,7 +93,7 @@ proof.
           rewrite -H1. move : jbb; smt(@IntDiv @Int @List).
           rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
           by move : jbb; smt(@IntDiv @Int @List).
-        + smt().
+        + move : (H0 (j - _p)) => /#.
     have ->: forall (j: address), Glob.mem{2}.[j] = if _p + 0 <= j < _p + 128 then res{m}.[j - _p]
                                                      else mem.[j].
       move => j.
@@ -102,7 +102,7 @@ proof.
           rewrite -H3. move : jbb; smt(@IntDiv @Int @List).
           rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
           by move : jbb; smt(@IntDiv @Int @List).
-        + smt().
+        + move : (H2 (j - _p)) => /#.
     trivial.
     + proc * => /=.
       ecall (poly_compress_corr (lift_array256 a{1}) _p  mem) => //=. 
