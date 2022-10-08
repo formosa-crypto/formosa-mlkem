@@ -706,7 +706,7 @@ seq 47 55 : (={ctp,Glob.mem} /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
     lift_array768 bp{1} = lift_array768 bp{2} /\ 
     valid_ptr (to_uint ctp{1}) (128+3*320)); last by
-  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; wp;call (compressequivvec memm _p); auto => />;
+  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; wp;call (polyvec_compress_equiv memm _p); auto => />;
    move => *; rewrite !to_uintD_small /= /#.
 
 wp;conseq />.
@@ -1082,7 +1082,7 @@ seq 49 57 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
      pos_bound768_cxq bp{2} 0 768 2 /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
     lift_array768 bp{1} = lift_array768 bp{2}); last 
-  exists *Glob.mem{1}; elim* => memm; wp;call (compressequivvec_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
+  exists *Glob.mem{1}; elim* => memm; wp;call (polyvec_compress_equiv_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
 
 wp;conseq />.
 call (reduceequiv_noperm).

@@ -401,3 +401,10 @@ equiv eq_encode4:
   EncDec_AVX2.encode4 ~ EncDec.encode4: ={p} ==> ={res}.
 admitted. (* MBB/MIGUEL  *)
 end AVX2_cf.
+
+
+equiv encode10_opt_corr:
+  EncDec_AVX2.encode10_opt_vec ~ EncDec.encode10_vec: a{1} = u{2} ==> ={res}.
+proof.
+  admit. (* MIGUEL/MBB*)
+qed.
