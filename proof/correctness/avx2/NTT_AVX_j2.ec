@@ -7,202 +7,6 @@ require import WArray512.
 
 require import NTT_AVX_Fq2.
 
-(*
-op c2r (c: W16.t Array16.t): W256.t = 
- get256 (WArray32.init16 (fun i=>c.[i])) 0.
-
-op r2c (r: W256.t): W16.t Array16.t =
- Array16.init (fun i=> r \bits16 i).
-
-lemma c2rK c:
- r2c (c2r c) = c.
-proof.
-rewrite /c2r /r2c.
-apply Array16.all_eq_eq.
-by rewrite /all_eq /get256_direct /= !initiE //= !pack2_bits8.
-qed.
-
-lemma r2cK r:
- c2r (r2c r) = r.
-proof.
-rewrite /c2r /r2c /=.
-apply W256.all_eq_eq.
-by rewrite /all_eq /get256_direct /= !initiE //= !pack2_bits8.
-qed.
-
-op p2c ['a] (p: 'a Array256.t) (i:int): 'a Array16.t =
- (pchunk p).[i].
-op p2r (p: W16.t Array256.t) (i: int): W256.t =
- c2r (p2c p i).
-
-lemma p2r2c p i:
- r2c (p2r p i) = p2c p i.
-proof. by rewrite /p2r c2rK. qed.
-
-op cs2p ['a] (l: ('a Array16.t) list): 'a Array256.t =
- punchunk (Array16.of_list witness l).
-
-lemma p2cs ['a] (p: 'a Array256.t):
- p = cs2p (map (p2c p) (iotared 0 16)).
-proof.
-rewrite /cs2p -{1}pchunkK; congr.
-by apply Array16.all_eq_eq; rewrite /all_eq /#.
-qed.
-
-op rs2p (l: W256.t list): W16.t Array256.t =
- cs2p (map r2c l).
-
-lemma p2rl (p: W16.t Array256.t):
- p = rs2p (map (p2r p) (iotared 0 16)).
-proof.
-rewrite /rs2p /cs2p -{1}pchunkK; congr.
-rewrite -map_comp /(\o).
-have ->: (fun i=> r2c (p2r p i)) = p2c p.
- by rewrite fun_ext => x; rewrite p2r2c.
-by apply Array16.all_eq_eq; rewrite /all_eq /#.
-qed.
-
-lemma p2rE (p: W16.t Array256.t) (i: int):
- 0 <= i < 16 =>
- p2r p i
- = get256_direct (WArray512.init16 (fun i => p.[i])) (32*i).
-proof.
-move=> Hi.
-rewrite /p2r /p2c /pchunk /c2r initiE //=.
-rewrite get256E /get256_direct /=; congr.
-apply W32u8.Pack.ext_eq => k Hk.
-do ! (rewrite initiE 1:/# /=). 
-smt().
-qed.
-
-op pUc ['a] (p: 'a Array256.t) (i:int) (x: 'a Array16.t) =
- punchunk (pchunk p).[i <- x].
-op pUr (p: W16.t Array256.t) (i: int) (x: W256.t): W16.t Array256.t =
- pUc p i (r2c x).
-
-lemma pUrE (p: W16.t Array256.t) i x:
- 0 <= i < 16 =>
- pUr p i x =
- Array256.init
-  (get16 (set256_direct (WArray512.init16 (fun i => p.[i])) (32*i) x)).
-proof.
-move=> Hi; rewrite /pUr /pUc /punchunk tP => j Hj.
-rewrite !initiE 1..2:/# /=.
-rewrite get_setE 1:// get16_set256E 1..2:/#.
-case: (j %/ 16 = i) => E.
- rewrite -E ifT 1:/#.
- have ->: j - 16 * (j %/ 16) = j %% 16
-  by smt(divz_eq).
- by rewrite /r2c initiE 1:/#.
-rewrite ifF 1:/# /pchunk initiE 1:/# /=.
-rewrite initiE 1:/# /=.
-have ->: j %/ 16 * 16 + j %% 16 = j by smt(divz_eq).
-by rewrite get16_init16 /#.
-qed.
-
-
-
-lemma p2c_i ['a] (cs: ('a Array16.t) list) k:
- 0 <= k && k < 16 => size cs = 16 =>
- p2c (cs2p cs) k = (nth witness cs k).
-proof.
-move=> Hk Hcs.
-by rewrite /cs2p /p2c punchunkK get_of_list //.
-qed.
-
-hint simplify p2c_i.
-
-lemma p2r_i rs k:
- 0 <= k && k < 16 => size rs = 16 =>
- p2r (rs2p rs) k = (nth witness rs k).
-proof.
-move=> Hk Hrs.
-rewrite /rs2p /p2r p2c_i //; first by rewrite size_map.
-by rewrite (nth_map witness) 1:/# r2cK.
-qed.
-
-hint simplify p2r_i.
-
-
-(* "upd" is equivalent to "put", but intended to be evaluated *)
-op upd ['a] (xs: 'a list) n x =
- with xs = "[]" => "[]"
- with xs = (::) y ys => if n=0 then x::ys else y::(upd ys (n-1) x).
-
-lemma nth_upd ['a] (xs: 'a list) d k x i:
- 0 <= k < size xs =>
- nth d (upd xs k x) i = if i=k then x else nth d xs i.
-proof.
-elim: xs k i => //=.
- smt().
-move=> y ys IH k i Hk.
-case: (i=k) => E.
- case: (k=0) => Ek.
-  smt().
- by rewrite ifF 1:/# IH 1:/# ifT 1:/#.
-case: (k=0) => Ek.
- smt().
-case: (i=0) => Ei //.
-by rewrite IH 1:/# ifF 1:/#.
-qed.
-
-lemma map_upd ['a 'b] (f: 'a -> 'b) xs k x:
- map f (upd xs k x) = upd (map f xs) k (f x).
-proof.
-elim: xs k => // y ys IH k /=.
-case: (k=0) => E //.
-by congr; apply IH.
-qed.
-
-lemma pUc_i ['a] cs k (x: 'a Array16.t):
- 0 <= k < 16 => size cs = 16 =>
- pUc (cs2p cs) k x = cs2p (upd cs k x).
-proof.
-move=> Hk Hcs.
-rewrite /xs2p /pUc /cs2p; congr.
-rewrite tP => i Hi.
-case: (i=k) => E.
- by rewrite set_eqiE // get_of_list // nth_upd 1:/# E.
-by rewrite set_neqiE // punchunkK !get_of_list // nth_upd 1:/# E.
-qed.
-
-hint simplify pUc_i.
-
-
-lemma pUr_i rs k x:
- 0 <= k < 16 => size rs = 16 =>
- pUr (rs2p rs) k x = rs2p (upd rs k x).
-proof.
-move=> Hk Hrs.
-rewrite /pUr /rs2p pUc_i //.
- by rewrite size_map.
-by congr; rewrite map_upd.
-qed.
-
-hint simplify pUr_i.
-
-
-
-(*
-require import Array400 WArray32 WArray800 WArray512.
-
-lemma wa32_xpd (a: WArray32.t):
- exists l,
-  size l = 32 /\ a = WArray32.of_list l.
-admitted.
-
-lemma wa32_t b:
- (get256 ((init16 (fun (i : int) => W16.one)))%WArray32 0) = b.
-pose a:= WArray32.init16 _.
-have []:= (wa32_xpd a).
-do 33! (move => [|?] //=).
-move=> ->.
-rewrite get256E /=.
-rewrite init_of_list /= -iotaredE /WArray32.of_list /= initiE //=.
-(* MAU!!! *)
-abort.
-*)
-*)
 (******* *)
 
 require import Kyber.
@@ -213,168 +17,175 @@ require import Jkem_avx2 Jkem.
 
 import IntOrder.
 
-abbrev inFqW16 (w: W16.t) : Fq = inFq (W16.to_sint w).
-
-(** Implementation relation (signed bounded) *)
-op ImplW16_sbnd (bnd: int) (x: Fq) (y: W16.t) =
- x = inFqW16 y /\ sint_bnd (-bnd) bnd y.
-
-(** Implementation relation (Montgomery form, signed bounded) *)
-op ImplW16M_sbnd (bnd: int) (x: Fq) (y: W16.t) =
- x * inFq W16.modulus = inFqW16 y /\ sint_bnd (-bnd) bnd y.
-
-(** Implementation relation over chunks *)
-(*
-abbrev Impl16W16 (x: Fq Array16.t) (y: W256.t) =
- x = map inFqW16 (r2c y).
-(*
- forall i, 0 <= i < 16 =>
-  x.[i] = inFqW16 (y \bits16 i)%JWord.W16u16.
-*)
-lemma Impl16W16P x y:
- Impl16W16 x y =>
- forall k,
- 0 <= k < 16 => x.[k] = inFqW16 (r2c y).[k].
+lemma allP_range (P: int -> bool) n:
+ (forall k, 0 <= k < n => P k) <=> all P (iota_ 0 n).
 proof.
-by move=> -> k Hk; rewrite mapiE //= /#.
+split.
+ move=> H; apply/List.allP.
+ by move=> k; rewrite mem_iota /#.
+move => /List.allP H k Hk.
+by apply H; rewrite mem_iota /#.
 qed.
-*)
+
+lemma bits64_shr32_bits16 (w: W256.t) (k i: int):
+ 0 <= k < 4 => 0 <= i < 2 =>
+ ((w \bits64 k)%W256 `>>` (W8.of_int 32))%W64 \bits16 i
+ = w \bits16 4*k+2+i.
+proof.
+move=> Hk Hi.
+admit.
+qed.
+ 
+lemma bits32_shl16_bits16H (w: W256.t) k:
+ 0 <= k < 8 => 
+ (w \bits32 k) `<<` W8.of_int 16 \bits16 1
+ = w \bits16 2*k.
+proof.
+move=> Hk.
+admit.
+qed.
+
+lemma bits32_shr16_bits16L (w: W256.t) k:
+ 0 <= k < 8 => 
+ (w \bits32 k) `>>` W8.of_int 16 \bits16 0
+ = w \bits16 2*k + 1.
+proof.
+move=> Hk.
+admit.
+qed.
+
+
+
+
+
 lemma R2C_pack16 f k:
+ 0 <= k < 16 =>
  (R2C (W16u16.pack16_t f)).[k] = f.[k].
-admitted.
+proof. by move=> Hk; rewrite /R2C initiE //= pack16bE. qed.
 
-op Impl16W16_ubnd (bnd:int) (x: Fq Array16.t) (y: W256.t) =
- x = map inFqW16 (R2C y)
- /\ all (sint_bnd 0 bnd) (R2C y).
-
-
-
-op Impl16W16_sbnd (bnd:int) (x: Fq Array16.t) (y: W256.t) =
- x = map inFqW16 (R2C y)
- /\ all (sint_bnd (-bnd) bnd) (R2C y).
-
-lemma Impl16W16_sbndP bnd  (x: Fq Array16.t) (y: JWord.W256.t):
- Impl16W16_sbnd bnd x y <=>
- forall k, 
+lemma R2C_map2 f x y k:
  0 <= k < 16 =>
- ImplW16_sbnd bnd x.[k] (R2C y).[k].
-proof.
-split.
- move=> [-> /Array16.allP H2] k Hk.
- by rewrite mapiE //= /#.
-move=> H; split.
- rewrite tP => i Hi /=.
- have [-> HH] := H i Hi.
- by rewrite mapiE //.
-apply/Array16.allP => i Hi /=.
-by have [_ ?] := H i Hi.
-qed.
+ (R2C (W16u16.map2 f x y)).[k] = f (R2C x).[k] (R2C y).[k].
+proof. by move: k; rewrite allP_range -iotaredE /R2C. qed.
 
-(** Implementation relation over chunks (Montgomery form) *)
-op Impl16W16M_sbnd (bnd:int) (x: Fq Array16.t) (y: JWord.W256.t) =
- map (( *) (inFq W16.modulus)) x = map inFqW16 (R2C y)
- /\ all (sint_bnd (-bnd) bnd) (R2C y).
-
-lemma Impl16W16M_sbndP bnd  (x: Fq Array16.t) (y: JWord.W256.t):
- Impl16W16M_sbnd bnd x y <=>
- forall k, 
- 0 <= k < 16 =>
- ImplW16M_sbnd bnd x.[k] (R2C y).[k].
-proof.
-split.
- move=> /Impl16W16_sbndP H k Hk; move: (H k Hk) => {H} [H1 H2]; split.
-  by rewrite -H1 mapiE 1://; ring.
- done.
-move=> H.
-apply/Impl16W16_sbndP => k Hk.
-rewrite mapiE 1://.
-by move: (H k Hk); rewrite /ImplW16M_sbnd /#.
-qed.
-
-lemma Impl16W16M_sbndPall bnd  (x: Fq Array16.t) (y: JWord.W256.t):
- Impl16W16M_sbnd bnd x y <=>
- all (fun k=> ImplW16M_sbnd bnd x.[k] (R2C y).[k]) (iotared 0 16).
-admitted.
+lemma sint_bnd_ltR bL bR x:
+ sint_bnd bL (bR-1) x <=> bL <= to_sint x < bR by smt().
 
 
 require import KyberPoly.
 import KyberPoly.
 
 
-op Impl256W16_sbnd (bnd:int) (x: Fq Array256.t) (y: W16.t Array256.t) =
- x = map inFqW16 y
- /\ all (sint_bnd (-bnd) bnd) y.
+(** IMPLEMENTATION RELATIONS
+  (obs: perhaps a nice use-case for type-classes...) *)
 
-lemma Impl256W16_sbndP bnd (x: Fq Array256.t) y:
- Impl256W16_sbnd bnd x y <=>
- forall k, 0 <= k < 16 => Impl16W16_sbnd bnd (P2C x k) (P2R y k).
+abbrev inFqW16 (w: W16.t) : Fq = inFq (W16.to_sint w).
+
+(** Implementation relation (signed bounded) *)
+op Iu16_sb (n: int) (y: W16.t) (x: Fq) =
+ x = inFqW16 y /\ sint_bnd (-n*q) (n*q-1) y.
+
+lemma Iu16_sbE n y x:
+ Iu16_sb n y x <=> x = inFqW16 y /\ (-n*q) <= to_sint y < (n*q).
+proof. rewrite /Iu16_sb; split => |> * /#. qed.
+
+(** Implementation relation (Montgomery form, signed bounded) *)
+abbrev Iu16M_sb (n: int) (y: W16.t) (x: Fq) =
+ Iu16_sb n y (x*inFq W16.modulus).
+
+(** Implementation relation (unsigned bounded) *)
+op Iu16_ub (n: int) (y: W16.t) (x: Fq) =
+ x = inFqW16 y /\ sint_bnd 0 (n*q-1) y.
+
+lemma Iu16_ubE n y x:
+ Iu16_ub n y x <=> x = inFqW16 y /\ 0 <= to_sint y < (n*q).
+proof. rewrite /Iu16_ub; split => |> * /#. qed.
+
+(** Implementation relation (Montgomery form, unsigned bounded) *)
+abbrev Iu16M_ub (n: int) (y: W16.t) (x: Fq) =
+ Iu16_ub n y (x*inFq W16.modulus).
+
+
+(** Implementation relation over chunks *)
+abbrev I16u16_sb (n:int) (y: W256.t) (x: Fq Array16.t) =
+ all (fun k=> Iu16_sb n (R2C y).[k] x.[k]) (iota_ 0 16).
+
+abbrev I16u16_ub (n:int) (y: W256.t) (x: Fq Array16.t) =
+ all (fun k=> Iu16_ub n (R2C y).[k] x.[k]) (iota_ 0 16).
+
+abbrev I16u16M_sb (n:int) (y: W256.t) (x: Fq Array16.t) =
+ all (fun k=> Iu16M_sb n (R2C y).[k] x.[k]) (iota_ 0 16).
+
+abbrev I16u16M_ub (n:int) (y: W256.t) (x: Fq Array16.t) =
+ all (fun k=> Iu16M_ub n (R2C y).[k] x.[k]) (iota_ 0 16).
+ 
+
+(** Implementation relation over polynomials *)
+abbrev I256u16_sb (n:int) (y: W16.t Array256.t ) (x: Fq Array256.t) =
+ all (fun k=> I16u16_sb n (P2R y k) (P2C x k)) (iota_ 0 16).
+
+lemma I256u16_sbP n y x:
+ I256u16_sb n y x
+ <=> all (fun k=> Iu16_sb n y.[k] x.[k]) (iota_ 0 256).
+proof. by rewrite -iotaredE /= !P2R2C /P2C /pchunk !initiE //=. qed.
+
+lemma I256u16_sbE n y x:
+ I256u16_sb n y x
+ <=>  x = lift_array256 y /\ signed_bound_cxq y 0 256 n.
 proof.
-admit.
+rewrite I256u16_sbP allP; split.
+ move => H; split.
+  rewrite tP /lift_array256 => k Hk.
+  have /=Hi:= H k _; first by rewrite mem_iota /= /#.
+  by rewrite mapiE 1:// /#.
+ rewrite /signed_bound_cxq => k Hk.
+ by have /=?/# := H k _; first by rewrite mem_iota /= /#.
+move=> [-> Hb] k; rewrite mem_iota /= /lift_array256 => Hk.
+by rewrite mapiE 1:/# /= /Iu16_sb sint_bnd_ltR /#.
 qed.
 
-lemma Impl256W16_sbndPall bnd x y:
-Impl256W16_sbnd bnd x y <=>
-all (fun i=> Impl16W16_sbnd bnd (P2C x i) (P2R y i)) (iotared 0 16).
-admitted.
+abbrev I256u16_ub (n:int) (y: W16.t Array256.t ) (x: Fq Array256.t) =
+ all (fun k=> I16u16_ub n (P2R y k) (P2C x k)) (iota_ 0 16).
 
+lemma I256u16_ubP n y x:
+ I256u16_ub n y x
+ <=> all (fun k=> Iu16_ub n y.[k] x.[k]) (iota_ 0 256).
+proof. by rewrite -iotaredE /= !P2R2C /P2C /pchunk !initiE //=. qed.
 
-
-lemma Impl256W16_sbndE nq (x: Fq Array256.t) y:
- Impl256W16_sbnd (nq * q) x y <=>
- x = lift_array256 y /\  signed_bound_cxq y 0 256 nq.
+lemma I256u16_ubE n y x:
+ I256u16_ub n y x
+ <=>  x = lift_array256 y /\ pos_bound256_cxq y 0 256 n.
 proof.
-split.
- move=> [-> /Array256.allP H2] k Hk. 
- move: (H2 k Hk) => /=.
- admit (* MISMATCH BETWEEN sint_bnd e W16extra.b16: -bnd <= x "<" bnd*).
-admit.
+rewrite I256u16_ubP allP; split.
+ move => H; split.
+  rewrite tP /lift_array256 => k Hk.
+  have /=Hi:= H k _; first by rewrite mem_iota /= /#.
+  by rewrite mapiE 1:// /#.
+ rewrite /pos_bound256_cxq => k Hk.
+ by have /=?/# := H k _; first by rewrite mem_iota /= /#.
+move=> [-> Hb] k; rewrite mem_iota /= /lift_array256 => Hk.
+by rewrite mapiE 1:/# /= /Iu16_sb /#.
 qed.
 
-op Impl256W16_ubnd (bnd:int) (x: Fq Array256.t) (y: W16.t Array256.t) =
- x = map inFqW16 y
- /\ all (sint_bnd 0 bnd) y.
+(* ?not needed?
+abbrev I256u16M_sb (n:int) (y: W16.t Array256.t ) (x: Fq Array256.t) =
+ all (fun k=> I16u16M_sb n (P2R y k) (P2C x k)) (iota_ 0 16).
 
-lemma Impl256W16_ubndP bnd (x: Fq Array256.t) y:
- Impl256W16_ubnd bnd x y <=>
- forall k, 0 <= k < 16 => Impl16W16_ubnd bnd (P2C x k) (P2R y k).
-proof.
-admit.
-qed.
+lemma I256u16M_sbP n y x:
+ I256u16M_sb n y x
+ <=> all (fun k=> Iu16M_sb n y.[k] x.[k]) (iota_ 0 256).
+proof. by rewrite -iotaredE /= !P2R2C /P2C /pchunk !initiE //=. qed.
 
-lemma Impl256W16_ubndPall bnd x y:
-Impl256W16_ubnd bnd x y <=>
-all (fun i=> Impl16W16_ubnd bnd (P2C x i) (P2R y i)) (iotared 0 16).
-admitted.
+abbrev I256u16M_ub (n:int) (y: W16.t Array256.t ) (x: Fq Array256.t) =
+ all (fun k=> I16u16M_ub n (P2R y k) (P2C x k)) (iota_ 0 16).
 
-
-
-lemma Impl256W16_ubndE nq (x: Fq Array256.t) y:
- Impl256W16_ubnd (nq * q) x y <=>
- x = lift_array256 y /\  pos_bound256_cxq y 0 256 nq.
-proof.
-split.
- move=> [-> /Array256.allP H2] k Hk. 
- move: (H2 k Hk) => /=.
- admit (* mismatch for bounds... *).
-admit.
-qed.
-
-
-(*
- forall i, 0 <= i < 16 =>
-  x.[i] * inFq W16.modulus = inFqW16 (y \bits16 i)%JWord.W16u16.
+lemma I256u16M_uP n y x:
+ I256u16M_ub n y x
+ <=> all (fun k=> Iu16M_ub n y.[k] x.[k]) (iota_ 0 256).
+proof. by rewrite -iotaredE /= !P2R2C /P2C /pchunk !initiE //=. qed.
 *)
-(*
- forall i, 0 <= i < 16 =>
-  x.[i] = inFqW16 (y \bits16 i)%JWord.W16u16 /\
-  sint_bnd (y \bits16 i)%JWord.W16u16 (-bnd) bnd.
-*)
-(*
-op ImplM16u16_qinv (x: Fq Array16.t) (y: JWord.W256.t) =
- forall i, 0 <= i < 16 =>
- x.[i] = inFqW16 (y \bits16 i)%JWord.W16u16 * inFq W16.modulus.
-*)
 
+(* precomputed multiplications between zetas and qinv *)
 op qinv16W16M (x y: JWord.W256.t) =
  forall i, 0 <= i < 16 =>
   (x \bits16 i)%JWord.W16u16
@@ -385,21 +196,185 @@ op x16_spec (n: int) (x: JWord.W256.t) =
  forall i, 0 <= i < 16 =>
   (x \bits16 i)%JWord.W16u16 = W16.of_int n.
 
-(*
-op vx16_spec (x: JWord.W256.t) =
- forall i, 0 <= i < 16 =>
-  (x \bits16 i)%JWord.W16u16 = W16.of_int 20159.
-*)
+lemma C2RbiE a k:
+ 0 <= k < 16 =>
+ C2R a \bits16 k = a.[k].
+proof. by move=> Hk; rewrite -{-1}(C2RK a) /R2C initiE. qed.
 
 lemma x16_from_C2R n a:
  x16_spec n (C2R a) <=> all (fun i=>a.[i]=W16.of_int n) (iotared 0 16).
- admitted.
+proof.
+rewrite iotaredE -allP_range /x16_spec.
+by split => H k Hk /=; move: (H k Hk) => <-; rewrite C2RbiE.
+qed.
+
+
+
+(* Handling expanded zetas table *)
+require import Array400 WArray800.
+op z2u32 (a: W16.t Array400.t) (i: int): W32.t =
+ get32_direct (WArray800.init16 (fun i => a.[i])) (2*i).
+
+lemma z2u32E a k:
+ 0 <= k && k < 399 =>
+ z2u32 a k = W2u16.pack2 [a.[k]; a.[k+1]].
+proof.
+move=> Hk.
+have ?: 0 <= 2*k && 2*k + 3 < 800 by smt().
+rewrite /z2u32 /get32_direct.
+rewrite -(pack2_bits8 a.[k]) -(pack2_bits8 a.[k+1]).
+rewrite W2u16_W4u8; congr.
+by apply W4u8.Pack.all_eq_eq; rewrite /all_eq /= /init16 !initiE /#.
+qed.
+
+op z2u256 (a: W16.t Array400.t) (i: int): W256.t =
+ get256_direct (WArray800.init16 (fun i => a.[i])) (2*i).
+
+lemma z2u256E a k:
+ 0 <= k < 384 =>
+ z2u256 a k = C2R (Array16.init (fun i => a.[k+i])).
+proof.
+move=> Hk.
+rewrite /z2u256 /C2R /get256_direct; congr.
+apply W32u8.Pack.ext_eq => /= i Hi.
+rewrite /init16 !initiE //=.
+rewrite WArray32.WArray32.initiE //=.
+rewrite !initiE 1..2:/# /=.
+congr.
+ by rewrite mulrC divzMDl.
+by rewrite mulrC modzMDl.
+qed.
+
+(* Barret reduction *)
+
+require import Fq.
+print Fq.SignedReductions.SREDC.
+
+(*
+ op BREDC(a bits : int) =
+   let t = smod (a * (2^bits %/ q + 1)) (R^2) %/ 2^bits * q in
+      smod (a %% R + (-t) %% R) R.
+*)
+
+op sbred16 (x: W16.t): W16.t =
+ x - (wmulhs x (W16.of_int 20159) `|>>` (W8.of_int 10)) * (W16.of_int q).
+
+import Fq.SignedReductions.
+
+(* a generalized version of [Montegomery.SignedReductions.smod_div] *)
+lemma smod_R2_R (x y: W16.t) :
+ smod (to_sint x * to_sint y) (R ^ 2) %/ R
+ = smod (to_sint x * to_sint y %/ R) R.
+proof.
+rewrite !smodE expr2.
+have ->: R * R %/ 2 <= to_sint x * to_sint y %% (R * R)
+         = R %/ 2 <= to_sint x * to_sint y %/ R %% R.
+ by rewrite /R -divz_mod_mul // /#.
+case: (R %/ 2 <= to_sint x * to_sint y %/ R %% R) => E.
+ rewrite divzDr.
+  by rewrite dvdzN dvdz_mulr dvdzz.
+ by rewrite divz_mod_mul /R /#.
+by rewrite divz_mod_mul /R /#.
+qed.
+
+(*
+lemma smod_to_sint_mod x:
+ W16.smod (W16.to_sint x %% W16.modulus) = to_sint x.
+proof.
+rewrite /to_sint /smod /=.
+by move: (W16.to_uint_cmp x); smt().
+qed.
+*)
+lemma to_sintN_cgr (x: W16.t):
+ W16.to_sint (-x) %% R = (- to_sint x) %% R.
+proof.
+rewrite /to_sint !to_uintN /smod /=.
+ by move: (W16.to_uint_cmp x); smt. (* FIXME *)
+qed.
+
+lemma smod_mod x:
+ W16.smod x %% R = x %% R.
+proof.
+rewrite /smod.
+case: ( 2 ^ (16 - 1) <= x) => ?//.
+by rewrite -modzDmr -modzNm modzz.
+qed.
+
+lemma to_sintH x y:
+ W16.to_sint (W16.wmulhs x y)
+ = W16.smod (to_sint x * to_sint y %/ R %% R).
+proof.
+rewrite to_sint_wmulhs /R /smod.
+case: (to_sint x * to_sint y %/ Montgomery16.R < 0) => E.
+ have ->: to_sint x * to_sint y %/ Montgomery16.R %% Montgomery16.R
+  = R + to_sint x * to_sint y %/ Montgomery16.R.
+  move: (W16.to_sint_cmp x) (W16.to_sint_cmp y). smt.
+ have ->: 2 ^ (16 - 1) <= R + to_sint x * to_sint y %/ Montgomery16.R.
+  move: (W16.to_sint_cmp x) (W16.to_sint_cmp y). smt.
+ by rewrite /R; smt().
+have ->: to_sint x * to_sint y %/ Montgomery16.R %% Montgomery16.R
+  = to_sint x * to_sint y %/ Montgomery16.R.
+ move: (W16.to_sint_cmp x) (W16.to_sint_cmp y). smt.
+have ->: !2 ^ (16 - 1) <= to_sint x * to_sint y %/ Montgomery16.R.
+ move: (W16.to_sint_cmp x) (W16.to_sint_cmp y). smt.
+rewrite /R; smt().
+qed.
+
+lemma to_sint_SAR (a : W16.t):
+ to_sint (a `|>>` (of_int 10)%W8)
+ = to_sint a %/ 2 ^ 10.
+proof.
+rewrite Fq.SAR_sem10 of_sintK /to_sint /smod /=.
+move: (W16.to_uint_cmp a); smt().
+qed.
+
+lemma sbred16_eq x:
+ Fq.SignedReductions.BREDC (W16.to_sint x) 26
+ = W16.to_sint (sbred16 x).
+proof.
+rewrite /Fq.SignedReductions.BREDC /Fq.SignedReductions.R /sbred16 /q /=.
+rewrite /= (_:67108864=2^10*65536) 1:// divzMl //.
+rewrite (_:4294967296=65536*65536) 1://.
+have E20159: 20159 = to_sint (W16.of_int 20159)
+ by rewrite of_sintK /smod /=.
+rewrite {1}E20159 smod_R2_R //.
+rewrite !Fq.smod_W16 {1}to_sintD; congr.
+rewrite -modzDm eq_sym -modzDm eq_sym; congr; congr => //; congr.
+ by rewrite !to_sint_mod; move: (W16.to_uint_cmp x); smt().
+rewrite -to_sintH.
+rewrite -!to_sint_SAR /=. 
+have E3329: 3329=to_sint (W16.of_int 3329).
+ by rewrite of_sintK /smod /=.
+rewrite {1}E3329 to_sintN_cgr modz_mod to_sintM.
+rewrite eq_sym -modzNm smod_mod modz_mod.
+by rewrite /R /#.
+qed.
+
+lemma sbred16_spec x y:
+  y = inFqW16 x =>
+  Iu16_ub 2 (sbred16 x) y.
+proof.
+move => ->. rewrite /Iu16_ub -sbred16_eq.
+move: (Fq.SignedReductions.BREDCp_corr (to_sint x) 26 _ _ _ _ _ _).
++ by rewrite /Fq.SignedReductions.R /q /=.
++ by rewrite /Fq.SignedReductions.R /q /=.
++ by rewrite /Fq.SignedReductions.R /q /=.
++ by rewrite /Fq.SignedReductions.R /q /=.
++ by move: (W16.to_sint_cmp x); rewrite /Fq.SignedReductions.R /q /= /#.
++ move=> n.
+  by rewrite /barrett_pred /barrett_pred_low /barrett_pred_high
+       /barrett_fun /barrett_fun_aux /q /Fq.SignedReductions.R /= /#.
+smt().
+qed.
+
+
+(** Butterfly *)
 
 lemma nosmt REDCmul16Fq (x y: W16.t):
- sint_bnd (- q) (q) y =>
+ sint_bnd 0 (q-1) y =>
  inFqW16 (Montgomery16.REDCmul16 x y)
  = inFqW16 x * inFqW16 y * inFq Montgomery16.Rinv
- /\ sint_bnd (-q) (q) (Montgomery16.REDCmul16 x y).
+ /\ sint_bnd (-(q-1)) (q-1) (Montgomery16.REDCmul16 x y).
 proof.
 move: (Montgomery16.REDCmul16_correct x y).
 rewrite /Montgomery16.q /q /Montgomery16.Rinv.
@@ -408,44 +383,50 @@ split => //.
 rewrite -(inFqM_mod (to_sint x)) -inFqM_mod /q modzMml -H1 /#.
 qed.
 
-lemma ImplW16_sbndD (b1 b2:int) x y rx ry:
- b1+b2 <= W16.max_sint =>
- ImplW16_sbnd b1 x rx =>
- ImplW16_sbnd b2 y ry =>
- ImplW16_sbnd (b1+b2) (x+y) (rx+ry).
+lemma Iu16_sbD (b1 b2:int) x y rx ry:
+ (b1+b2)*q <= W16.max_sint =>
+ Iu16_sb b1 rx x =>
+ Iu16_sb b2 ry y =>
+ Iu16_sb (b1+b2) (rx+ry) (x+y).
 proof.
 move => H [-> Hx] [-> Hy]; split.
- rewrite addE /ulift2 /=.
+ rewrite /Zq.(+) !inFqK -eq_inFq modzDm to_sintD_small //.
+ split.
+  admit.
  admit.
-have E: -(b1+b2) = -b1 + -b2 by ring.
-rewrite E; apply to_sintD_bnd => //.
-rewrite -E. 
+have E: -(b1+b2)*q = -b1*q + -b2*q by ring.
+rewrite E mulrDl -addrA; apply to_sintD_bnd => //.
+  smt(). 
+ have ->: (- b1 * q) - b2 * q = - (b1+b2)*q by ring.
+ have ?: -W16.max_sint <= -(b1+b2)*q by admit.
 apply (ler_trans (-W16.max_sint)).
- smt().
-by apply ler_opp2.
+  smt().
+ by apply ler_opp2.
+rewrite addrA -mulrDl. 
+apply (ler_trans ((b1 + b2) * q)) => //.
+by rewrite ler_subl_addr /#.
 qed.
 
-lemma butterflyD (bnd:int) xl xr z rxl rxr rzM rzMqinv rq:
- bnd + q <= W16.max_sint =>
+lemma butterflyD (c:int) xl xr z rxl rxr rzM rzMqinv rq:
+ c*q + q <= W16.max_sint =>
  rq = W16.of_int q =>
- ImplW16_sbnd bnd xl rxl =>
- ImplW16_sbnd bnd xr rxr =>
- ImplW16M_sbnd q z rzM =>
+ Iu16_sb c rxl xl =>
+ Iu16_sb c rxr xr =>
+ Iu16M_ub 1 rzM z =>
  rzMqinv = rzM * (W16.of_int 62209) =>
- ImplW16_sbnd (bnd+q) (xl+z*xr)
- (wmulhs rzM rxr + rxl - wmulhs (rzMqinv * rxr) rq).
+ Iu16_sb (c+1) 
+   (wmulhs rzM rxr + rxl - wmulhs (rzMqinv * rxr) rq)
+   (xl+z*xr).
 proof.
 move => Hbnd Hq [-> Hxl] [-> Hxr] [HzM HzBnd] ->.
 have ->: wmulhs rzM rxr + rxl - wmulhs (rzM * (of_int 62209)%W16 * rxr) rq
  = rxl + (wmulhs rzM rxr - wmulhs (rzM * (of_int 62209)%W16 * rxr) rq) by ring.
-apply ImplW16_sbndD => //.
+apply Iu16_sbD => //.
+ by rewrite mulrDl /=; apply Hbnd.
 admit.
 qed.
 
-lemma R2C_map2 f x y k:
- (R2C (W16u16.map2 f x y)).[k] = f (R2C x).[k] (R2C y).[k].
-admitted.
-
+(*
 lemma butterfly16x_rE (bnd:int) xl xr z rxl rxr rzM rzMqinv rq16x:
  bnd + q <= W16.max_sint =>
  Impl16W16_sbnd bnd xl rxl =>
@@ -496,215 +477,229 @@ sint_bnd
    ((rxl \bits16 i) - wmulhs (rzM \bits16 i) (rxr \bits16 i))) (-q) q
 *).
 qed.
+*)
 
-equiv butterfly64x_eq bnd:
+equiv butterfly64x_eq c:
  NTT_AVX.__butterfly64x ~ Jkem_avx2.M.__butterfly64x :
- bnd + q <= W16.max_sint /\
- Impl16W16_sbnd bnd rl0t{1} rl0{2} /\
- Impl16W16_sbnd bnd rl1t{1} rl1{2} /\
- Impl16W16_sbnd bnd rl2t{1} rl2{2} /\
- Impl16W16_sbnd bnd rl3t{1} rl3{2} /\
- Impl16W16_sbnd bnd rh0t{1} rh0{2} /\
- Impl16W16_sbnd bnd rh1t{1} rh1{2} /\
- Impl16W16_sbnd bnd rh2t{1} rh2{2} /\
- Impl16W16_sbnd bnd rh3t{1} rh3{2} /\
+ c*q + q <= W16.max_sint /\
+ I16u16_sb c rl0{2} rl0t{1} /\
+ I16u16_sb c rl1{2} rl1t{1} /\
+ I16u16_sb c rl2{2} rl2t{1} /\
+ I16u16_sb c rl3{2} rl3t{1} /\
+ I16u16_sb c rh0{2} rh0t{1} /\
+ I16u16_sb c rh1{2} rh1t{1} /\
+ I16u16_sb c rh2{2} rh2t{1} /\
+ I16u16_sb c rh3{2} rh3t{1} /\
  qinv16W16M zl0{2} zh0{2} /\
  qinv16W16M zl1{2} zh1{2} /\
- Impl16W16M_sbnd q z0{1} zh0{2} /\
- Impl16W16M_sbnd q z1{1} zh1{2} /\
+ I16u16M_sb 1 zh0{2} z0{1} /\
+ I16u16M_sb 1 zh1{2} z1{1} /\
  x16_spec q qx16{2}
  ==>
- Impl16W16_sbnd (bnd+q) res{1}.`1 res{2}.`1 /\
- Impl16W16_sbnd (bnd+q) res{1}.`2 res{2}.`2 /\
- Impl16W16_sbnd (bnd+q) res{1}.`3 res{2}.`3 /\
- Impl16W16_sbnd (bnd+q) res{1}.`4 res{2}.`4 /\
- Impl16W16_sbnd (bnd+q) res{1}.`5 res{2}.`5 /\
- Impl16W16_sbnd (bnd+q) res{1}.`6 res{2}.`6 /\
- Impl16W16_sbnd (bnd+q) res{1}.`7 res{2}.`7 /\
- Impl16W16_sbnd (bnd+q) res{1}.`8 res{2}.`8.
+ I16u16_sb (c+1) res{2}.`1 res{1}.`1 /\
+ I16u16_sb (c+1) res{2}.`2 res{1}.`2 /\
+ I16u16_sb (c+1) res{2}.`3 res{1}.`3 /\
+ I16u16_sb (c+1) res{2}.`4 res{1}.`4 /\
+ I16u16_sb (c+1) res{2}.`5 res{1}.`5 /\
+ I16u16_sb (c+1) res{2}.`6 res{1}.`6 /\
+ I16u16_sb (c+1) res{2}.`7 res{1}.`7 /\
+ I16u16_sb (c+1) res{2}.`8 res{1}.`8.
 proof.
+admit (*
 proc; sp 1 0; simplify.
 wp; skip => |> &1 &2 Hbnd H0 H1 H2 H3 H4 H5 H6 H7 Hqinv0 Hqinv1 Hq Hzl Hzh.
 do 4! (split; first by apply butterfly16x_rE => // /#).
 do 3! (split; first by apply butterfly16x_lE => //).
 by apply butterfly16x_lE => //.
+*).
 qed.
 
+(** SHUFFLE Ops *)
+
+lemma __shuffle8_ll: islossless Jkem_avx2.M.__shuffle8 by islossless.
+
+hoare __shuffle8_h n _a _b:
+ Jkem_avx2.M.__shuffle8:
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle8 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle8 _a _b).`2.
+proof.
+proc; simplify.
+wp; skip => |> &m Ha Hb.
+rewrite /VPERM2I128 /=.
+rewrite ifF.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite ifF.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite ifF.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite ifT.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite ifF.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite ifF.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite ifF.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite ifT.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+have ->: !((of_int 32))%W8.[0].
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+have ->: !((of_int 32))%W8.[4].
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+have ->: ((of_int 49))%W8.[0].
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+have ->: ((of_int 49))%W8.[4].
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+rewrite !b2i0 !b2i1 /shuffle8 /=.
+move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
+move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
+by rewrite -!iotaredE /= /#.
+qed.
+
+phoare __shuffle8_ph n _a _b:
+ [ Jkem_avx2.M.__shuffle8:
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle8 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle8 _a _b).`2 ] = 1%r.
+proof. by conseq __shuffle8_ll (__shuffle8_h n _a _b). qed.
+
+(* Do we need this?
 hoare __shuffle8_h _a _b:
  Jkem_avx2.M.__shuffle8:
  a = _a /\ b = _b ==>
  res = (C2R (shuffle8 (R2C _a) (R2C _b)).`1, C2R (shuffle8 (R2C _a) (R2C _b)).`2).
 admitted.
-
-lemma __shuffle8_ll: islossless Jkem_avx2.M.__shuffle8 by islossless.
-
-phoare __shuffle8_spec _a _b:
- [ Jkem_avx2.M.__shuffle8:
-   a = _a /\ b = _b ==>
-    res = (C2R (shuffle8 (R2C _a) (R2C _b)).`1, C2R (shuffle8 (R2C _a) (R2C _b)).`2) ] = 1%r. 
-admitted.
-
-lemma Impl16W16_shuffle8 bnd a ra b rb:
- Impl16W16_sbnd bnd a ra =>
- Impl16W16_sbnd bnd b rb =>
- Impl16W16_sbnd bnd (shuffle8 a b).`1 (C2R (shuffle8 (R2C ra) (R2C rb)).`1)
- /\ Impl16W16_sbnd bnd (shuffle8 a b).`2 (C2R (shuffle8 (R2C ra) (R2C rb)).`2).
-admitted.
-
-hoare __shuffle4_h _a _b:
- Jkem_avx2.M.__shuffle4:
- a = _a /\ b = _b ==>
- res = (C2R (shuffle4 (R2C _a) (R2C _b)).`1, C2R (shuffle4 (R2C _a) (R2C _b)).`2).
-admitted.
+*)
 
 lemma __shuffle4_ll: islossless Jkem_avx2.M.__shuffle4 by islossless.
 
-phoare __shuffle4_spec _a _b:
+hoare __shuffle4_h n _a _b:
+ Jkem_avx2.M.__shuffle4:
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle4 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle4 _a _b).`2.
+proof.
+proc; simplify.
+wp; skip => |> &m Ha Hb.
+rewrite /VPUNPCKL_4u64 /VPUNPCKH_4u64 /VPUNPCKL_2u64 /VPUNPCKH_2u64 /= /shuffle4 /= /interleave_gen /get_lo_2u64 /get_hi_2u64 /=.
+move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
+move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
+by rewrite -!iotaredE /= /#.
+qed.
+
+phoare __shuffle4_ph n _a _b:
  [ Jkem_avx2.M.__shuffle4:
-   a = _a /\ b = _b ==>
-   res = (C2R (shuffle4 (R2C _a) (R2C _b)).`1, C2R (shuffle4 (R2C _a) (R2C _b)).`2) ] = 1%r
-by conseq __shuffle4_ll (__shuffle4_h _a _b).
-
-lemma Impl16W16_shuffle4 bnd a ra b rb:
- Impl16W16_sbnd bnd a ra =>
- Impl16W16_sbnd bnd b rb =>
- Impl16W16_sbnd bnd (shuffle4 a b).`1 (C2R (shuffle4 (R2C ra) (R2C rb)).`1)
- /\ Impl16W16_sbnd bnd (shuffle4 a b).`2 (C2R (shuffle4 (R2C ra) (R2C rb)).`2).
-admitted.
-
-hoare __shuffle2_h _a _b:
- Jkem_avx2.M.__shuffle2:
- a = _a /\ b = _b ==>
- res = (C2R (shuffle2 (R2C _a) (R2C _b)).`1, C2R (shuffle2 (R2C _a) (R2C _b)).`2).
-admitted.
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle4 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle4 _a _b).`2 ] = 1%r.
+proof. by conseq __shuffle4_ll (__shuffle4_h n _a _b). qed.
 
 lemma __shuffle2_ll: islossless Jkem_avx2.M.__shuffle2 by islossless.
 
-phoare __shuffle2_spec _a _b:
+hoare __shuffle2_h n _a _b:
+ Jkem_avx2.M.__shuffle2:
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle2 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle2 _a _b).`2.
+proof.
+proc; simplify.
+wp; skip => |> &m Ha Hb.
+rewrite /VPBLENDD_256 /VMOVSLDUP_8u32 /VMOVSLDUP_4u32 /VPSRL_4u64 /shuffle2 /=.
+have ->: !((of_int 170))%W8.[0].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[1].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: !((of_int 170))%W8.[2].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[3].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: !((of_int 170))%W8.[4].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[5].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: !((of_int 170))%W8.[6].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[7].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
+move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
+rewrite -!iotaredE /= => |>.
+by rewrite !bits64_shr32_bits16 /= /#.
+qed.
+
+phoare __shuffle2_ph n _a _b:
  [ Jkem_avx2.M.__shuffle2:
-   a = _a /\ b = _b ==>
-   res = (C2R (shuffle2 (R2C _a) (R2C _b)).`1, C2R (shuffle2 (R2C _a) (R2C _b)).`2) ] = 1%r
-by conseq __shuffle2_ll (__shuffle2_h _a _b).
-
-lemma Impl16W16_shuffle2 bnd a ra b rb:
- Impl16W16_sbnd bnd a ra =>
- Impl16W16_sbnd bnd b rb =>
- Impl16W16_sbnd bnd (shuffle2 a b).`1 (C2R (shuffle2 (R2C ra) (R2C rb)).`1)
- /\ Impl16W16_sbnd bnd (shuffle2 a b).`2 (C2R (shuffle2 (R2C ra) (R2C rb)).`2).
-admitted.
-
-hoare __shuffle1_h _a _b:
- Jkem_avx2.M.__shuffle1:
- a = _a /\ b = _b ==>
- res = (C2R (shuffle1 (R2C _a) (R2C _b)).`1, C2R (shuffle1 (R2C _a) (R2C _b)).`2).
-admitted.
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle2 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle2 _a _b).`2 ] = 1%r.
+proof. by conseq __shuffle2_ll (__shuffle2_h n _a _b). qed.
 
 lemma __shuffle1_ll: islossless Jkem_avx2.M.__shuffle1 by islossless.
 
-phoare __shuffle1_spec _a _b:
- [ Jkem_avx2.M.__shuffle1:
-   a = _a /\ b = _b ==>
-   res = (C2R (shuffle1 (R2C _a) (R2C _b)).`1, C2R (shuffle1 (R2C _a) (R2C _b)).`2) ] = 1%r
-by conseq __shuffle1_ll (__shuffle1_h _a _b).
-
-lemma Impl16W16_shuffle1 bnd a ra b rb:
- Impl16W16_sbnd bnd a ra =>
- Impl16W16_sbnd bnd b rb =>
- Impl16W16_sbnd bnd (shuffle1 a b).`1 (C2R (shuffle1 (R2C ra) (R2C rb)).`1)
- /\ Impl16W16_sbnd bnd (shuffle1 a b).`2 (C2R (shuffle1 (R2C ra) (R2C rb)).`2).
-admitted.
-
-(* ZETAS!!! *)
-require import Array400 WArray800.
-op z2u32 (a: W16.t Array400.t) (i: int): W32.t =
- get32_direct (WArray800.init16 (fun i => a.[i])) (2*i).
-
-lemma z2u32E a k:
- z2u32 a k = W2u16.pack2 [a.[k]; a.[k+1]].
-admitted.
-
-op z2u256 (a: W16.t Array400.t) (i: int): W256.t =
- get256_direct (WArray800.init16 (fun i => a.[i])) (2*i).
-
-lemma z2u256E a k:
- z2u256 a k = C2R (Array16.init (fun i => a.[k+i])).
-admitted.
-
-
-(*op x32 x = 32*x.
-op p2r (a: W16.t Array256.t) (i: int): W256.t =
- get256_direct (WArray512.init16 (fun i => a.[i])) (32*i).
-op pUr (a: W16.t Array256.t) (i: int) (x: W256.t): W16.t Array256.t =
- Array256.init
-  (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => a.[i])) (32*i) x)).
-*)
-
-(*
-
-print nth.
-lemma xxx (x1 x2 x3 x4 x:int): nth witness [x1; x2; x3; x4] 2 = x.
-rewrite /=.
-abort.
-
-
-lemma xxx (x1 x2 x3 x4 y:int) x: upd [x1; x2; x3; x4] 2 y = x.
-rewrite /=.
-abort.
-
-op rs2p (rs: W256.t list): W16.t Array256.t =
- punchunk (Array16.of_list witness (map r2c rs)).
-
-lemma l2p_eq a:
- exists x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15,
-  a = rs2p [x0;x1;x2;x3;x4;x5;x6;x7;x8;x9;x10;x11;x12;x13;x14;x15].
-admitted.
-
-lemma p2r_i rs k:
- 0 <= k < 16 =>
- p2r (rs2p rs) k = (nth witness rs k).
-admitted.
-
-hint simplify p2r_i.
-
-lemma xxx x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x:
- p2r (rs2p [x0;x1;x2;x3;x4;x5;x6;x7;x8;x9;x10;x11;x12;x13;x14;x15]) 12 = x.
-rewrite /=.
-abort.
-
-lemma pUr_i rs k x:
- 0 <= k < 16 =>
- pUr (rs2p rs) k x = rs2p (upd rs k x).
-admitted.
-
-hint simplify pUr_i.
-
-op p2rs (p: W16.t Array256.t): W256.t list =
- map c2r (to_list (pchunk p)).
-
-lemma p2rs_eq p:
- p = rs2p (map (p2r p) (iotared 0 16)).
-admitted.
-
-(*
-lemma pUr_start p k x:
- 0 <= k < 16 =>
- pUr p k x = l2p (upd (map (p2r p) (iotared 0 16)) k x).
-by move=> *; rewrite {1}p2l_eq pUr_i.
+hoare __shuffle1_h n _a _b:
+ Jkem_avx2.M.__shuffle1:
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle1 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle1 _a _b).`2.
+proof.
+proc; simplify.
+wp; skip => |> &m Ha Hb.
+rewrite /VPBLENDW_256 /VPBLENDW_128 /VPSLL_8u32 /VPSRL_8u32 /shuffle1 /=.
+rewrite W2u128_W16u16.
+have ->: !((of_int 170))%W8.[0].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[1].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: !((of_int 170))%W8.[2].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[3].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: !((of_int 170))%W8.[4].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[5].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: !((of_int 170))%W8.[6].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+have ->: ((of_int 170))%W8.[7].
+ by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+rewrite /= !bits32_shl16_bits16H // !bits32_shr16_bits16L //=.
+move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
+move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
+by rewrite -!iotaredE /= => |>.
 qed.
-*)
 
-lemma xxx x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x y:
- pUr (rs2p [x0;x1;x2;x3;x4;x5;x6;x7;x8;x9;x10;x11;x12;x13;x14;x15]) 12 y = x.
-rewrite /=.
-abort.
+phoare __shuffle1_ph n _a _b:
+ [ Jkem_avx2.M.__shuffle1:
+   I16u16_sb n a _a /\ I16u16_sb n b _b
+   ==> I16u16_sb n res.`1 (shuffle1 _a _b).`1
+       /\ I16u16_sb n res.`2 (shuffle1 _a _b).`2 ] = 1%r.
+proof. by conseq __shuffle1_ll (__shuffle1_h n _a _b). qed.
 
+(* Poly reduction *)
+lemma __red16x_ll: islossless Jkem_avx2.M.__red16x by islossless.
 
-(*
-abbrev r2c (r: W256.t) (i: int): W16.t.
-op rUc (r: W256.t) (i: int) (x: W16.t) : W256.t.
-*)
-*)
+hoare __red16x_h y:
+ Jkem_avx2.M.__red16x :
+    x16_spec q qx16 /\
+    x16_spec 20159 vx16 /\
+    I16u16_sb 9 r y ==> I16u16_ub 2 res y.
+proof.
+proc; simplify.
+wp; skip => |> &m.
+rewrite /x16_spec => Hq Hv.
+rewrite -!iotaredE /VPSUB_16u16 /VPMULL_16u16 /VPMULH_16u16 /VPSRA_16u16 /R2C /= => |> *.
+smt(sbred_spec).
+qed.
 
+phoare __red16x_ph x:
+ [ Jkem_avx2.M.__red16x :
+    x16_spec q qx16 /\
+    x16_spec 20159 vx16 /\
+    I16u16_sb 9 r x ==> I16u16_ub 2 res x ] = 1%r.
+proof. by conseq __red16x_ll (__red16x_h x). qed.
+
+(* Preprocessed implementation to control the expansion of defs. *)
 module Tmp = {
   proc __ntt_level0 (rp:W16.t Array256.t) : W16.t Array256.t = {
     
@@ -921,536 +916,238 @@ while (0 <= i{2} /\ ={i,zetasp,qx16,rp}).
 by auto => />.
 qed.
 
-(*
-op lift_array256 (p : W16.t Array256.t) : Fq Array256.t = map (fun (x : W16.t) => inFq (to_sint x)) p.
-*)
-(*
-lemma pre_xpd rp1 rp2 k:
- rp1 = lift_array256 rp2
- /\ signed_bound_cxq rp2 0 256 k
- =>
- Impl16u16_sbnd (k*q) r0_1 r0_2
- /\ Impl16u16_sbnd (k*q) r1_1 r1_2
- *)
-
 equiv __ntt_level0_eq:
  NTT_AVX.__ntt_level0 ~ Jkem_avx2.M.__ntt_level0:
- rp{1}=lift_array256 rp{2} /\
- signed_bound_cxq rp{2} 0 256 2
- ==>
- res{1}=lift_array256 res{2} /\
- signed_bound_cxq res{2} 0 256 3.
+ I256u16_sb 2 rp{2} rp{1} ==> I256u16_sb 3 res{2} res{1}.
 proof.
 transitivity Tmp.__ntt_level0
- ( rp{1}=lift_array256 rp{2} /\
- signed_bound_cxq rp{2} 0 256 2 ==>
- res{1}=lift_array256 res{2} /\
- signed_bound_cxq res{2} 0 256 3 )
+ ( I256u16_sb 2 rp{2} rp{1} ==> I256u16_sb 3 res{2} res{1} )
  ( ={rp} ==> ={res} );
   last by symmetry; conseq __ntt_level0_eq_.
-  smt().
+  by move=> |> &1 &2 H; exists arg{2}. 
  done.
-conseq (_: Impl256W16_sbnd (2*q) arg{1} arg{2} ==> Impl256W16_sbnd (2*q+q) res{1} res{2}); first 2 by smt(Impl256W16_sbndE).
 proc; simplify.
-(*
-rp{1} = lift_array256 rp{2} /\ signed_bound_cxq rp{2} 0 256 2
-*)
 inline NTT_AVX.__ntt_level0.
-(*
-r0 <- (get256 ((init16 (fun (i : int) => rp.[i])))%WArray512.WArray512 0)%WArray512.WArray512
-*)
-seq 0 5: (#pre /\
- x16_spec q qx16{2} /\
- zeta0{2} = W16u16.pack16_t (W16u16.Pack.create (W16.of_int 31499)) /\
- zeta1{2} = W16u16.pack16_t (W16u16.Pack.create (W16.of_int 2571))).
- auto => &1 &2 ?; rewrite /= !z2u32E !initiE //= => |>.
- split; first by rewrite x16_from_C2R /q.
- split.
-  rewrite /VPBROADCAST_8u32 -iotaredE /=; congr.
-  by apply W16u16.Pack.all_eq_eq; rewrite /all_eq.
- rewrite /VPBROADCAST_8u32 -iotaredE /=; congr.
- by apply W16u16.Pack.all_eq_eq; rewrite /all_eq.
-seq 3 8: (Impl16W16_sbnd (2*q) r0{1} r0{2} /\
-          Impl16W16_sbnd (2*q) r1{1} r1{2} /\
-          Impl16W16_sbnd (2*q) r2{1} r2{2} /\
-          Impl16W16_sbnd (2*q) r3{1} r3{2} /\
-          Impl16W16_sbnd (2*q) r4{1} r4{2} /\
-          Impl16W16_sbnd (2*q) r5{1} r5{2} /\
-          Impl16W16_sbnd (2*q) r6{1} r6{2} /\
-          Impl16W16_sbnd (2*q) r7{1} r7{2} /\
-          Impl16W16_sbnd (2*q) r0b{1} (P2R rp{2} 4) /\
-          Impl16W16_sbnd (2*q) r1b{1} (P2R rp{2} 5) /\
-          Impl16W16_sbnd (2*q) r2b{1} (P2R rp{2} 6) /\
-          Impl16W16_sbnd (2*q) r3b{1} (P2R rp{2} 7) /\ 
-          Impl16W16_sbnd (2*q) r4b{1} (P2R rp{2} 12) /\
-          Impl16W16_sbnd (2*q) r5b{1} (P2R rp{2} 13) /\
-          Impl16W16_sbnd (2*q) r6b{1} (P2R rp{2} 14) /\
-          Impl16W16_sbnd (2*q) r7b{1} (P2R rp{2} 15) /\ 
-          Impl16W16M_sbnd q zeta1{1} zeta1{2} /\
-          qinv16W16M zeta0{2} zeta1{2} /\
-          x16_spec q qx16{2}).
- conseq |>.
- wp; skip => |> &1 &2 /Impl256W16_sbndPall /= |> *.
- split.
-  rewrite Impl16W16M_sbndP => k Hk.
-  by rewrite R2C_pack16 !initiE //= /ImplW16M_sbnd W16.of_sintK -inFqM_mod /q.
- by move => k Hk; rewrite !pack16bE // !initiE //= /#.
-(* alternativa:
- have L: forall a b, qinv16W16M a b = all (fun i=>(R2C a).[i]=(R2C b).[i]*W16.of_int 62209) (iotared 0 16). admit.
- by rewrite L /= R2C_pack16 !initiE //=.
-*)
-seq 1 1: (Impl16W16_sbnd (2*q+q) r0a{1} r0{2} /\
-          Impl16W16_sbnd (2*q+q) r1a{1} r1{2} /\
-          Impl16W16_sbnd (2*q+q) r2a{1} r2{2} /\
-          Impl16W16_sbnd (2*q+q) r3a{1} r3{2} /\
-          Impl16W16_sbnd (2*q+q) r4a{1} r4{2} /\
-          Impl16W16_sbnd (2*q+q) r5a{1} r5{2} /\
-          Impl16W16_sbnd (2*q+q) r6a{1} r6{2} /\
-          Impl16W16_sbnd (2*q+q) r7a{1} r7{2} /\ #[/9:]pre).
- wp; call (butterfly64x_eq (2*q)).
- by auto => |> * /#.
-seq 0 16: (Impl16W16_sbnd (2*q) r0b{1} r0{2} /\
-           Impl16W16_sbnd (2*q) r1b{1} r1{2} /\
-           Impl16W16_sbnd (2*q) r2b{1} r2{2} /\
-           Impl16W16_sbnd (2*q) r3b{1} r3{2} /\ 
-           Impl16W16_sbnd (2*q) r4b{1} r4{2} /\
-           Impl16W16_sbnd (2*q) r5b{1} r5{2} /\
-           Impl16W16_sbnd (2*q) r6b{1} r6{2} /\
-           Impl16W16_sbnd (2*q) r7b{1} r7{2} /\ 
-           Impl16W16_sbnd (2*q+q) r0a{1} (P2R rp{2} 0) /\
-           Impl16W16_sbnd (2*q+q) r1a{1} (P2R rp{2} 1) /\
-           Impl16W16_sbnd (2*q+q) r2a{1} (P2R rp{2} 2) /\
-           Impl16W16_sbnd (2*q+q) r3a{1} (P2R rp{2} 3) /\
-           Impl16W16_sbnd (2*q+q) r4a{1} (P2R rp{2} 8) /\
-           Impl16W16_sbnd (2*q+q) r5a{1} (P2R rp{2} 9) /\
-           Impl16W16_sbnd (2*q+q) r6a{1} (P2R rp{2} 10) /\
-           Impl16W16_sbnd (2*q+q) r7a{1} (P2R rp{2} 11) /\
-           #[/-3:]pre).
- auto => |> &1 &2 *.
- by rewrite (P2RS rp{2}) /= !PUR_i //= !P2R_i //=.
-seq 1 1 : (Impl16W16_sbnd (2*q+q) r0c{1} r0{2} /\
-           Impl16W16_sbnd (2*q+q) r1c{1} r1{2} /\
-           Impl16W16_sbnd (2*q+q) r2c{1} r2{2} /\
-           Impl16W16_sbnd (2*q+q) r3c{1} r3{2} /\ 
-           Impl16W16_sbnd (2*q+q) r4c{1} r4{2} /\
-           Impl16W16_sbnd (2*q+q) r5c{1} r5{2} /\
-           Impl16W16_sbnd (2*q+q) r6c{1} r6{2} /\
-           Impl16W16_sbnd (2*q+q) r7c{1} r7{2} /\
-           #[/9:]pre).
- wp; call (butterfly64x_eq (2*q)) => />.
- by auto => /#.
-auto => |> &1 &2 *.
-rewrite (P2RS rp{2}) /= !PUR_i //=.
-apply/Impl256W16_sbndPall => /=.
-by rewrite !P2C_i //= !P2R_i //=.
+wp; call (butterfly64x_eq 2); simplify.
+wp; call (butterfly64x_eq 2); simplify.
+wp; skip => &1 &2 Hpre zR qx16 z0R z1R z1L.
+have A1: 2 * q + q <= 32767 by smt().
+have A2: qinv16W16M z0R z1R.
+ admit.
+have A3: x16_spec q qx16.
+ admit.
+have A4: all (fun (k : int) => Iu16_sb 1 (R2C z1R).[k] (z1L.[k] * inFq 65536)) (iota_ 0 16).
+ admit.
+move: Hpre; rewrite !A1 !A2 !A3 !A4 -{2}iotaredE /= => |> *.
+rewrite (P2RS rp{2}) /= !PUR_i //= !P2R_i //= => |> *.
+rewrite (P2RS rp{2}) /= !PUR_i //= => |> *.
+by rewrite -{2}iotaredE /= !P2R_i //= !P2C_i //=.
 qed.
 
 equiv __ntt_level1t6_eq:
  NTT_AVX.__ntt_level1t6 ~ Jkem_avx2.M.__ntt_level1t6:
- rp{1}=lift_array256 rp{2} /\
- signed_bound_cxq rp{2} 0 256 3
- ==>
- res{1}=lift_array256 res{2} /\
- pos_bound256_cxq res{2} 0 256 2.
+ I256u16_sb 3 rp{2} rp{1} ==> I256u16_ub 2 res{2} res{1}.
 proof.
 transitivity Tmp.__ntt_level1t6
- ( rp{1}=lift_array256 rp{2} /\
-   signed_bound_cxq rp{2} 0 256 3 ==>
-   res{1}=lift_array256 res{2} /\
-   pos_bound256_cxq res{2} 0 256 2 )
+ ( I256u16_sb 3 rp{2} rp{1} ==> I256u16_ub 2 res{2} res{1} )
  ( ={rp} ==> ={res} );
   last by symmetry; conseq __ntt_level1t6_eq_.
-  smt().
+  move => &1 &2 *; exists arg{2}; smt().
  done.
-conseq (_: Impl256W16_sbnd (3*q) arg{1} arg{2} ==> Impl256W16_ubnd (2*q) res{1} res{2}).
-  smt(Impl256W16_sbndE).
- smt(Impl256W16_ubndE).
-proc; simplify.
+proc.
 unroll {2} 5; rcondt {2} 5.
  by move=> &m; wp;skip => /=.
-seq 9 14: (i{2}=0 /\ zetasp{2} = jzetas_exp /\ 
-  x16_spec q qx16{2} /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 8) (P2R rp{2} 8) /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 9) (P2R rp{2} 9) /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 10) (P2R rp{2} 10) /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 11) (P2R rp{2} 11) /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 12) (P2R rp{2} 12) /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 13) (P2R rp{2} 13) /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 14) (P2R rp{2} 14) /\
-  Impl16W16_sbnd (3*q) (P2C rp{1} 15) (P2R rp{2} 15) /\
-  Impl16W16M_sbnd q zeta1{1} zeta1{2} /\
-  qinv16W16M zeta0{2} zeta1{2} /\
-  Impl16W16_sbnd (3*q) r0{1} r0{2} /\
-  Impl16W16_sbnd (3*q) r1{1} r1{2} /\
-  Impl16W16_sbnd (3*q) r2{1} r2{2} /\
-  Impl16W16_sbnd (3*q) r3{1} r3{2} /\
-  Impl16W16_sbnd (3*q) r4{1} r4{2} /\
-  Impl16W16_sbnd (3*q) r5{1} r5{2} /\
-  Impl16W16_sbnd (3*q) r6{1} r6{2} /\
-  Impl16W16_sbnd (3*q) r7{1} r7{2}).
- wp; skip => &1 &2 |> H; rewrite !z2u32E !initiE //=. 
- move:H; rewrite Impl256W16_sbndPall /= => |> *.
- split; first by rewrite x16_from_C2R /q.
- split.
-  by rewrite Impl16W16M_sbndPall /VPBROADCAST_8u32 -iotaredE /=
-          R2C_pack16 !initiE //= /ImplW16M_sbnd W16.of_sintK -inFqM_mod /q.
- move => k Hk. 
-  rewrite /VPBROADCAST_8u32 -iotaredE /= !pack16bE //=.
- rewrite !initiE //=.
-  by apply W16u16.Pack.all_eq_eq; rewrite /all_eq.
-  
-seq 1 1 : (#[/:13]pre /\
-  Impl16W16_sbnd (3*q+q) r0a{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q) r1a{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q) r2a{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q) r3a{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q) r4a{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q) r5a{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q) r6a{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q) r7a{1} r7{2}).
- by call (butterfly64x_eq (3*q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  Impl16W16M_sbnd q zeta1b{1} zeta1{2} /\
-  qinv16W16M zeta0{2} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q) r0b{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q) r1b{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q) r2b{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q) r3b{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q) r4b{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q) r5b{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q) r6b{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q) r7b{1} r7{2}).
- ecall {2} (__shuffle8_spec r3{2} r7{2}).
- ecall {2} (__shuffle8_spec r2{2} r6{2}).
- ecall {2} (__shuffle8_spec r1{2} r5{2}).
- ecall {2} (__shuffle8_spec r0{2} r4{2}).
- wp; skip => |> *.
- split.
-search z2u256.
-  rewrite z2u256.
+seq 45 66: (i{2} = 1 /\ x16_spec q qx16{2} /\
+  I16u16_ub 2 (P2R rp{2} 0) (P2C rp8{1} 0) /\
+  I16u16_ub 2 (P2R rp{2} 1) (P2C rp8{1} 1) /\
+  I16u16_ub 2 (P2R rp{2} 2) (P2C rp8{1} 2) /\
+  I16u16_ub 2 (P2R rp{2} 3) (P2C rp8{1} 3) /\
+  I16u16_ub 2 (P2R rp{2} 4) (P2C rp8{1} 4) /\
+  I16u16_ub 2 (P2R rp{2} 5) (P2C rp8{1} 5) /\
+  I16u16_ub 2 (P2R rp{2} 6) (P2C rp8{1} 6) /\
+  I16u16_ub 2 (P2R rp{2} 7) (P2C rp8{1} 7) /\
+  I16u16_sb 3 (P2R rp{2} 8) (P2C rp{1} 8) /\
+  I16u16_sb 3 (P2R rp{2} 9) (P2C rp{1} 9) /\
+  I16u16_sb 3 (P2R rp{2} 10) (P2C rp{1} 10) /\
+  I16u16_sb 3 (P2R rp{2} 11) (P2C rp{1} 11) /\
+  I16u16_sb 3 (P2R rp{2} 12) (P2C rp{1} 12) /\
+  I16u16_sb 3 (P2R rp{2} 13) (P2C rp{1} 13) /\
+  I16u16_sb 3 (P2R rp{2} 14) (P2C rp{1} 14) /\
+  I16u16_sb 3 (P2R rp{2} 15) (P2C rp{1} 15) ).
+ (* first iteration (first 128 coefs) *)
+ wp.
+ ecall {2} (__red16x_ph r7j{1}).
+ ecall {2} (__red16x_ph r3j{1}).
+ ecall {2} (__red16x_ph r5j{1}).
+ ecall {2} (__red16x_ph r1j{1}).
+ ecall {2} (__red16x_ph r6j{1}).
+ ecall {2} (__red16x_ph r2j{1}).
+ ecall {2} (__red16x_ph r4j{1}).
+ ecall {2} (__red16x_ph r0j{1}).
+ wp; call (butterfly64x_eq 8).
+ wp; call (butterfly64x_eq 7).
+ ecall {2} (__shuffle1_ph 7 r3g{1} r7g{1}).
+ ecall {2} (__shuffle1_ph 7 r2g{1} r6g{1}).
+ ecall {2} (__shuffle1_ph 7 r1g{1} r5g{1}).
+ ecall {2} (__shuffle1_ph 7 r0g{1} r4g{1}).
+ wp; call (butterfly64x_eq 6); simplify.
+ ecall {2} (__shuffle2_ph 6 r6e{1} r7e{1}).
+ ecall {2} (__shuffle2_ph 6 r4e{1} r5e{1}).
+ ecall {2} (__shuffle2_ph 6 r2e{1} r3e{1}).
+ ecall {2} (__shuffle2_ph 6 r0e{1} r1e{1}).
+ wp; call (butterfly64x_eq 5); simplify.
+ ecall {2} (__shuffle4_ph 5 r5c{1} r7c{1}).
+ ecall {2} (__shuffle4_ph 5 r1c{1} r3c{1}).
+ ecall {2} (__shuffle4_ph 5 r4c{1} r6c{1}).
+ ecall {2} (__shuffle4_ph 5 r0c{1} r2c{1}).
+ wp; call (butterfly64x_eq 4); simplify.
+ ecall {2} (__shuffle8_ph 4 r3a{1} r7a{1}).
+ ecall {2} (__shuffle8_ph 4 r2a{1} r6a{1}).
+ ecall {2} (__shuffle8_ph 4 r1a{1} r5a{1}).
+ ecall {2} (__shuffle8_ph 4 r0a{1} r4a{1}).
+ wp; call (butterfly64x_eq 3); simplify.
+ wp; skip => &1 &2 Hpre Hzetas qx16 z0R z1R z1L.
+ have A1: 3 * q + q <= 32767 by smt().
+ have A2: qinv16W16M z0R z1R.
   admit.
- split.
+ have A3: x16_spec q qx16.
   admit.
- smt(Impl16W16_shuffle8).
-seq 1 1 : (#[/:13]pre /\
-  Impl16W16_sbnd (3*q+q+q) r0c{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q) r1c{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q) r2c{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q) r3c{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q) r4c{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q) r5c{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q) r6c{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q) r7c{1} r7{2}).
- by call (butterfly64x_eq (3*q+q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  Impl16W16M_sbnd q zeta1d{1} zeta1{2} /\
-  qinv16W16M zeta0{2} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q+q) r0d{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q) r1d{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q) r2d{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q) r3d{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q) r4d{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q) r5d{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q) r6d{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q) r7d{1} r7{2}).
- ecall {2} (__shuffle4_spec r5{2} r7{2}).
- ecall {2} (__shuffle4_spec r1{2} r3{2}).
- ecall {2} (__shuffle4_spec r4{2} r6{2}).
- ecall {2} (__shuffle4_spec r0{2} r2{2}).
- wp; skip => |> *.
+ have A4: all (fun (k : int) => Iu16_sb 1 (R2C z1R).[k] (z1L.[k] * inFq 65536)) (iota_ 0 16).
+  admit.
+ move: Hpre; rewrite !A1 !A2 !A3 !A4 -{2}iotaredE /= => |> *.
+ have A12: 4 * q + q <= 32767 by smt().
+ have A22: qinv16W16M (z2u256 Hzetas 8) (z2u256 Hzetas 24).
+  admit.
+ pose a4 := List.all _ _.
+ have A42: a4.
+  admit.
+ move => |> *.
+ have A13: 5 * q + q <= 32767 by smt().
+ have A23: qinv16W16M (z2u256 Hzetas 40) (z2u256 Hzetas 56).
+  admit.
+ pose a43 := List.all _ _.
+ have A43: a43.
+  admit.
+ move => |> *.
+ have A14: 6 * q + q <= 32767 by smt().
+ have A24: qinv16W16M (z2u256 Hzetas 72) (z2u256 Hzetas 88).
+  admit.
+ pose a44 := List.all _ _.
+ have A44: a44.
+  admit.
+ move => |> *.
+ have A15: 7 * q + q <= 32767 by smt().
+ have A25: qinv16W16M (z2u256 Hzetas 104) (z2u256 Hzetas 120).
+  admit.
+ pose a45 := List.all _ _.
+ have A45: a45.
+  admit.
+ move => |> *.
+ have A16: 8 * q + q <= 32767 by smt().
+ have A26a: qinv16W16M (z2u256 Hzetas 136) (z2u256 Hzetas 152).
+  admit.
+ have A26b: qinv16W16M (z2u256 Hzetas 168) (z2u256 Hzetas 184).
+  admit.
+ pose a46a := List.all _ _.
+ have A46: a46a.
+  admit.
+ pose a46b := List.all _ _.
+ have A46b: a46b.
+  admit.
+ move => |> *.
+ have Hvx16: x16_spec 20159 (C2R jvx16).
+  admit.
+ move => |> *.
+ rewrite (P2RS rp{2}) /= !PUR_i //= !P2R_i //= => |> *.
+ by rewrite (P2CS rp{1}) /= !PUC_i //= !P2C_i //= => |> *.
+unroll {2} 1; rcondt {2} 1.
+ by move=> &m; skip.
+rcondf {2} 63.
+ by move=> &m; inline*; wp; skip.
+(* second iteration *)
+wp.
+ecall {2} (__red16x_ph r7u{1}).
+ecall {2} (__red16x_ph r3u{1}).
+ecall {2} (__red16x_ph r5u{1}).
+ecall {2} (__red16x_ph r1u{1}).
+ecall {2} (__red16x_ph r6u{1}).
+ecall {2} (__red16x_ph r2u{1}).
+ecall {2} (__red16x_ph r4u{1}).
+ecall {2} (__red16x_ph r0u{1}).
+wp; call (butterfly64x_eq 8).
+wp; call (butterfly64x_eq 7).
+ecall {2} (__shuffle1_ph 7 r3r{1} r7r{1}).
+ecall {2} (__shuffle1_ph 7 r2r{1} r6r{1}).
+ecall {2} (__shuffle1_ph 7 r1r{1} r5r{1}).
+ecall {2} (__shuffle1_ph 7 r0r{1} r4r{1}).
+wp; call (butterfly64x_eq 6); simplify.
+ecall {2} (__shuffle2_ph 6 r6p{1} r7p{1}).
+ecall {2} (__shuffle2_ph 6 r4p{1} r5p{1}).
+ecall {2} (__shuffle2_ph 6 r2p{1} r3p{1}).
+ecall {2} (__shuffle2_ph 6 r0p{1} r1p{1}).
+wp; call (butterfly64x_eq 5); simplify.
+ecall {2} (__shuffle4_ph 5 r5n{1} r7n{1}).
+ecall {2} (__shuffle4_ph 5 r1n{1} r3n{1}).
+ecall {2} (__shuffle4_ph 5 r4n{1} r6n{1}).
+ecall {2} (__shuffle4_ph 5 r0n{1} r2n{1}).
+wp; call (butterfly64x_eq 4); simplify.
+ecall {2} (__shuffle8_ph 4 r3l{1} r7l{1}).
+ecall {2} (__shuffle8_ph 4 r2l{1} r6l{1}).
+ecall {2} (__shuffle8_ph 4 r1l{1} r5l{1}).
+ecall {2} (__shuffle8_ph 4 r0l{1} r4l{1}).
+wp; call (butterfly64x_eq 3); simplify.
+wp; skip => &1 &2 [-> Hpre] z0R z1R z1L.
+have A1: 3 * q + q <= 32767 by smt().
+have A2: qinv16W16M z0R z1R.
  admit.
-seq 1 1 : (#[/:13]pre /\
-  Impl16W16_sbnd (3*q+q+q+q) r0e{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r1e{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r2e{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r3e{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r4e{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r5e{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r6e{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r7e{1} r7{2}).
- by call (butterfly64x_eq (3*q+q+q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  Impl16W16M_sbnd q zeta1f{1} zeta1{2} /\
-  qinv16W16M zeta0{2} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r0f{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r1f{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r2f{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r3f{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r4f{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r5f{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r6f{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r7f{1} r7{2}).
- ecall {2} (__shuffle2_spec r6{2} r7{2}).
- ecall {2} (__shuffle2_spec r4{2} r5{2}).
- ecall {2} (__shuffle2_spec r2{2} r3{2}).
- ecall {2} (__shuffle2_spec r0{2} r1{2}).
- wp; skip => |> *.
+have A4: all (fun (k : int) => Iu16_sb 1 (R2C z1R).[k] (z1L.[k] * inFq 65536)) (iota_ 0 16).
  admit.
-seq 1 1 : (#[/:13]pre /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r0g{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r1g{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r2g{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r3g{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r4g{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r5g{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r6g{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r7g{1} r7{2}).
- by call (butterfly64x_eq (3*q+q+q+q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  Impl16W16M_sbnd q zeta1h{1} zeta1{2} /\
-  qinv16W16M zeta0{2} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r0h{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r1h{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r2h{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r3h{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r4h{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r5h{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r6h{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r7h{1} r7{2}).
- ecall {2} (__shuffle1_spec r3{2} r7{2}).
- ecall {2} (__shuffle1_spec r2{2} r6{2}).
- ecall {2} (__shuffle1_spec r1{2} r5{2}).
- ecall {2} (__shuffle1_spec r0{2} r4{2}).
- wp; skip => |> *.
+move: Hpre; rewrite !A1 !A2 !A4 => |> *.
+have A12: 4 * q + q <= 32767 by smt().
+have A22: qinv16W16M (z2u256 zetasp{2} 204) (z2u256 zetasp{2} 220).
  admit.
-seq 1 1 : (#[/:13]pre /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r0i{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r1i{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r2i{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r3i{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r4i{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r5i{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r6i{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r7i{1} r7{2}).
- by call (butterfly64x_eq (3*q+q+q+q+q)); skip => |> /= /#.
-seq 2 4: (#[/:11]pre /\
-  Impl16W16M_sbnd q zeta2i{1} zeta2{2} /\
-  qinv16W16M zeta0{2} zeta2{2} /\
-  Impl16W16M_sbnd q zeta3i{1} zeta3{2} /\
-  qinv16W16M zeta1{2} zeta3{2} /\ #[/-8:]pre).
+pose a4 := List.all _ _.
+have A42: a4.
  admit.
-seq 1 2: (#[/:13]pre /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r0j{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r1j{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r2j{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r3j{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r4j{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r5j{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r6j{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r7j{1} r7{2} /\
-  vx16_spec vx16{2}).
- wp; call (butterfly64x_eq (3*q+q+q+q+q+q)).
- skip => |> /= *.
- progress.
-  smt().
- admit (*vx16_spec (C2R jvx16)*).
-seq 0 8: (#[/:11]pre /\
-  Impl16W16_ubnd (2*q) r0j{1} r0{2} /\
-  Impl16W16_ubnd (2*q) r1j{1} r1{2} /\
-  Impl16W16_ubnd (2*q) r2j{1} r2{2} /\
-  Impl16W16_ubnd (2*q) r3j{1} r3{2} /\
-  Impl16W16_ubnd (2*q) r4j{1} r4{2} /\
-  Impl16W16_ubnd (2*q) r5j{1} r5{2} /\
-  Impl16W16_ubnd (2*q) r6j{1} r6{2} /\
-  Impl16W16_ubnd (2*q) r7j{1} r7{2}).
- admit (* red16x *).
-seq 8 9: (i{2}=1 /\ #[/2,3]pre /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 0) (P2R rp{2} 0) /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 1) (P2R rp{2} 1) /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 2) (P2R rp{2} 2) /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 3) (P2R rp{2} 3) /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 4) (P2R rp{2} 4) /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 5) (P2R rp{2} 5) /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 6) (P2R rp{2} 6) /\
-  Impl16W16_ubnd (2*q) (P2C rp8{1} 7) (P2R rp{2} 7) /\
-  #[/4:11]pre).
- wp; skip => |> &1 &2 *.
- by rewrite (P2CS rp{1}) /= !PUC_i //= !P2C_i //= (P2RS rp{2}) /= !PUR_i //= !P2R_i //=.
-unroll {2} 1; rcondt {2} 1; first by move=> &m; auto.
-seq 9 10: (#[/:11]pre /\
-  qinv16W16M zeta0{2} zeta1{2} /\  
-  Impl16W16M_sbnd q zeta1k{1} zeta1{2} /\
-  Impl16W16_sbnd (3*q) r0k{1} r0{2} /\
-  Impl16W16_sbnd (3*q) r1k{1} r1{2} /\
-  Impl16W16_sbnd (3*q) r2k{1} r2{2} /\
-  Impl16W16_sbnd (3*q) r3k{1} r3{2} /\
-  Impl16W16_sbnd (3*q) r4k{1} r4{2} /\
-  Impl16W16_sbnd (3*q) r5k{1} r5{2} /\
-  Impl16W16_sbnd (3*q) r6k{1} r6{2} /\
-  Impl16W16_sbnd (3*q) r7k{1} r7{2}).
+move => |> *.
+have A13: 5 * q + q <= 32767 by smt().
+have A23: qinv16W16M (z2u256 zetasp{2} 236) (z2u256 zetasp{2} 252).
+  admit.
+pose a43 := List.all _ _.
+have A43: a43.
  admit.
-seq 1 1: (#[/:11]pre /\
-  Impl16W16_sbnd (3*q+q) r0l{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q) r1l{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q) r2l{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q) r3l{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q) r4l{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q) r5l{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q) r6l{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q) r7l{1} r7{2}).
- by call (butterfly64x_eq (3*q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  qinv16W16M zeta0{2} zeta1{2} /\  
-  Impl16W16M_sbnd q zeta1m{1} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q) r0m{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q) r1m{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q) r2m{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q) r3m{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q) r4m{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q) r5m{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q) r6m{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q) r7m{1} r7{2}).
- ecall {2} (__shuffle8_spec r3{2} r7{2}).
- ecall {2} (__shuffle8_spec r2{2} r6{2}).
- ecall {2} (__shuffle8_spec r1{2} r5{2}).
- ecall {2} (__shuffle8_spec r0{2} r4{2}).
- wp; skip => |> *.
+move => |> *.
+have A14: 6 * q + q <= 32767 by smt().
+have A24: qinv16W16M (z2u256 zetasp{2} 268) (z2u256 zetasp{2} 284).
  admit.
-seq 1 1: (#[/:11]pre /\
-  Impl16W16_sbnd (3*q+q+q) r0n{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q) r1n{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q) r2n{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q) r3n{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q) r4n{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q) r5n{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q) r6n{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q) r7n{1} r7{2}).
- by call (butterfly64x_eq (3*q+q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  qinv16W16M zeta0{2} zeta1{2} /\  
-  Impl16W16M_sbnd q zeta1o{1} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q+q) r0o{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q) r1o{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q) r2o{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q) r3o{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q) r4o{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q) r5o{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q) r6o{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q) r7o{1} r7{2}).
- ecall {2} (__shuffle4_spec r5{2} r7{2}).
- ecall {2} (__shuffle4_spec r1{2} r3{2}).
- ecall {2} (__shuffle4_spec r4{2} r6{2}).
- ecall {2} (__shuffle4_spec r0{2} r2{2}).
- wp; skip => |> *.
+pose a44 := List.all _ _.
+have A44: a44.
  admit.
-seq 1 1: (#[/:11]pre /\
-  Impl16W16_sbnd (3*q+q+q+q) r0p{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r1p{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r2p{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r3p{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r4p{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r5p{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r6p{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r7p{1} r7{2}).
- by call (butterfly64x_eq (3*q+q+q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  qinv16W16M zeta0{2} zeta1{2} /\  
-  Impl16W16M_sbnd q zeta1q{1} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r0q{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r1q{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r2q{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r3q{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r4q{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r5q{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r6q{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q) r7q{1} r7{2}).
- ecall {2} (__shuffle2_spec r6{2} r7{2}).
- ecall {2} (__shuffle2_spec r4{2} r5{2}).
- ecall {2} (__shuffle2_spec r2{2} r3{2}).
- ecall {2} (__shuffle2_spec r0{2} r1{2}).
- wp; skip => |> *.
+move => |> *.
+have A15: 7 * q + q <= 32767 by smt().
+have A25: qinv16W16M (z2u256 zetasp{2} 300) (z2u256 zetasp{2} 316).
  admit.
-seq 1 1: (#[/:11]pre /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r0r{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r1r{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r2r{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r3r{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r4r{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r5r{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r6r{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r7r{1} r7{2}).
- by call (butterfly64x_eq (3*q+q+q+q)); skip => |> /= /#.
-seq 5 6: (#[/:11]pre /\
-  qinv16W16M zeta0{2} zeta1{2} /\  
-  Impl16W16M_sbnd q zeta1s{1} zeta1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r0s{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r1s{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r2s{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r3s{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r4s{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r5s{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r6s{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q) r7s{1} r7{2}).
- ecall {2} (__shuffle1_spec r3{2} r7{2}).
- ecall {2} (__shuffle1_spec r2{2} r6{2}).
- ecall {2} (__shuffle1_spec r1{2} r5{2}).
- ecall {2} (__shuffle1_spec r0{2} r4{2}).
- wp; skip => |> *.
+pose a45 := List.all _ _.
+have A45: a45.
  admit.
-seq 1 1: (#[/:11]pre /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r0t{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r1t{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r2t{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r3t{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r4t{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r5t{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r6t{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q) r7t{1} r7{2}).
- by call (butterfly64x_eq (3*q+q+q+q+q)); skip => |> /= /#.
-seq 2 4: (#[/:11]pre /\ #[/-8:]pre /\
-  qinv16W16M zeta0{2} zeta2{2} /\  
-  Impl16W16M_sbnd q zeta2t{1} zeta2{2} /\
-  qinv16W16M zeta1{2} zeta2{2} /\  
-  Impl16W16M_sbnd q zeta3t{1} zeta3{2}).
+move => |> *.
+have A16: 8 * q + q <= 32767 by smt().
+have A26a: qinv16W16M (z2u256 zetasp{2} 332) (z2u256 zetasp{2} 348).
  admit.
-seq 1 2: (#[/:11]pre /\ vx16_spec vx16{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r0u{1} r0{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r1u{1} r1{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r2u{1} r2{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r3u{1} r3{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r4u{1} r4{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r5u{1} r5{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r6u{1} r6{2} /\
-  Impl16W16_sbnd (3*q+q+q+q+q+q+q) r7u{1} r7{2}).
- wp; call (butterfly64x_eq (3*q+q+q+q+q*q)).
- auto => |> *.
+have A26b: qinv16W16M (z2u256 zetasp{2} 364) (z2u256 zetasp{2} 380).
  admit.
-seq 0 8: (#[/:11]pre /\
-  Impl16W16_ubnd (2*q) r0u{1} r0{2} /\
-  Impl16W16_ubnd (2*q) r1u{1} r1{2} /\
-  Impl16W16_ubnd (2*q) r2u{1} r2{2} /\
-  Impl16W16_ubnd (2*q) r3u{1} r3{2} /\
-  Impl16W16_ubnd (2*q) r4u{1} r4{2} /\
-  Impl16W16_ubnd (2*q) r5u{1} r5{2} /\
-  Impl16W16_ubnd (2*q) r6u{1} r6{2} /\
-  Impl16W16_ubnd (2*q) r7u{1} r7{2}).
- admit (* red16x *).
-seq 8 9: ( i{2} = 2 /\ Impl256W16_ubnd (2*q) rp16{1} rp{2} ).
-(*
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 0) (P2R rp{2} 0) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 1) (P2R rp{2} 1) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 2) (P2R rp{2} 2) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 3) (P2R rp{2} 3) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 4) (P2R rp{2} 4) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 5) (P2R rp{2} 5) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 6) (P2R rp{2} 6) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 7) (P2R rp{2} 7) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 8) (P2R rp{2} 8) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 9) (P2R rp{2} 9) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 10) (P2R rp{2} 10) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 11) (P2R rp{2} 11) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 12) (P2R rp{2} 12) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 13) (P2R rp{2} 13) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 14) (P2R rp{2} 14) /\
-  Impl16W16_ubnd (2*q) (P2C rp16{1} 15) (P2R rp{2} 15)).*)
- wp; skip => |> &1 &2 *.
- rewrite (P2CS rp8{1}) /= !PUC_i //= ?P2C_i //= (P2RS rp{2}) /= !PUR_i //= ?P2R_i //=.
- by rewrite Impl256W16_ubndPall /= !P2C_i //= !P2R_i //=.
-rcondf {2} 1; first by move=> &m; auto.
-by skip => |>.
+pose a46a := List.all _ _.
+have A46: a46a.
+ admit.
+pose a46b := List.all _ _.
+have A46b: a46b.
+ admit.
+move => |> *.
+have Hvx16: x16_spec 20159 (C2R jvx16).
+ admit.
+move => |> *.
+by rewrite (P2RS rp{2}) (P2CS rp8{1}) /= !PUR_i //= !PUC_i //= -{2}iotaredE /= !P2R_i //= !P2C_i //=.
 qed.
-
-
 
 
 equiv _poly_ntt_eq:
@@ -1459,239 +1156,11 @@ equiv _poly_ntt_eq:
  res{1}=lift_array256 res{2} /\
  pos_bound256_cxq res{2} 0 256 2.
 proof.
-proc; simplify.
+proc.
+conseq (_: I256u16_sb 2 rp{2} r{1} ==> I256u16_ub 2 rp{2} rp6{1} ).
+  by move=> &1 &2; rewrite I256u16_sbE.
+ by move => &1 &2 /= ???; rewrite -I256u16_ubE.
 call __ntt_level1t6_eq.
 by call __ntt_level0_eq.
 qed.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(*
-r0 <- (get256 ((init16 (fun (i : int) => rp.[i])))%WArray512.WArray512 0)%WArray512.WArray512
-*)
-
-proc; simplify.
-admit.
-qed.
-
-
-lemma wa32_xpd (a: WArray32.t):
- exists l,
-  size l = 32 /\ a = WArray32.of_list l.
-admitted.
-
-print iotared.
-lemma wa32_xpd2 (a: WArray32.t):
-  a = WArray32.of_list (map (fun i=>a.[i]) (iotared 0 32)).
-admitted.
-
-lemma wa32_t b:
- (get256 ((init16 (fun (i : int) => jqx16.[i])))%WArray32 0) = b.
-pose a:= WArray32.init16 _.
-have []:= (wa32_xpd a).
-do 33! (move => [|?] //=); last smt(size_ge0).
-move=> ->.
-rewrite get256E.
-rewrite init_of_list /= -iotaredE /WArray32.of_list /= initiE //=.
-abort.
-
-lemma wa32_t2 b:
- (get256 ((init16 (fun (i : int) => jqx16.[i])))%WArray32 0) = b.
-pose a:= WArray32.init16 _.
-have /= ->:= (wa32_xpd2 a).
-rewrite get256E.
-rewrite init_of_list /= -iotaredE /WArray32.of_list /= initiE //=.
-abort.
-
-lemma wa800_xpd (a: WArray800.t):
- exists l,
-  size l = 800 /\ a = WArray800.of_list l.
-admitted.
-
-lemma wa800_xpd2 (a: WArray800.t):
- a = WArray800.of_list (map (fun i=>a.[i]) (iotared 0 800)).
-proof.
-rewrite iotaredE tP => i Hi.
-by rewrite -init_of_list initiE.
-qed.
-
-lemma wa800_t b:
- (get256 ((init16 (fun (i : int) => jzetas_exp.[i])))%WArray800 0) = b.
-pose a:= WArray800.init16 _.
-have []:= (wa800_xpd a).
-time do 801! (move => [//|?]); last smt(size_ge0).
-move=> ->.
-rewrite get256E
- init_of_list /= -iotaredE /WArray800.of_list /= initiE //=.
-abort.
-
-lemma wa800_t2 b:
- (get256 ((init16 (fun (i : int) => jzetas_exp.[i])))%WArray800 6) = b.
-pose a:= WArray800.init16 _.
-time have /= ->:= (wa800_xpd2 a).
-rewrite get256E
- init_of_list /= -iotaredE /WArray800.of_list /= !initiE //=.
-(*rewrite /(\bits8) /=.*)
-abort.
-
-
-(*
-print W16u16.pack16_t.
-lemma xxx512 k (a: W16.t Array256.t):
- WArray512.WArray512.get256_direct (WArray512.WArray512.init16 (fun i => a.[i])) k
- = W16u16.pack16_t (W16u16.Pack.init (fun i => a.[k+i])).
-admitted.
-
-lemma xxx32 (a: W16.t Array16.t):
- WArray32.WArray32.get256_direct (WArray32.WArray32.init16 (fun i => a.[i])) 0
- = W16u16.pack16_t (W16u16.Pack.init (fun i => a.[i])).
-admitted.
-
-lemma fill16 (a: W16.t Array256.t) x k:
-Array256.init
-       (fun i =>                                  (WArray512.WArray512.get16 (WArray512.WArray512.set256 (WArray512.WArray512.init16 (fun i0 => a.[i0])) k x) i))
-= Array256.fill (fun i => x \bits16 i) (k*16) 16 a.
-admitted.
-
-require import WArray512.
-lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
-    0 <= i < 16 => 0 <= j < 256 =>
-    WArray512.get16
-    (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
-      if 16 * i <= j < 16 * i + 16 then w \bits16 (j %% 16)
-      else v.[j].
-admitted.
-
-lemma set_get_eq (v: W16.t Array256.t) (w: W256.t) i j:
-    0 <= i < 16 => 0 <= j < 256 => 16 * i <= j < 16 * i + 16 =>
-    WArray512.get16
-    (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
-      w \bits16 j %% 16.
-proof. 
-  by move => h1 h2 h3; rewrite set_get_def // h3.
-qed.
-
-lemma set_get_diff (v: W16.t Array256.t) (w: W256.t) i j:
-    0 <= i < 16 => 0 <= j < 256 => !(16 * i <= j < 16 * i + 16) =>
-    WArray512.get16
-    (WArray512.set256 (WArray512.init16 (fun i => v.[i])) i w) j =
-      v.[j].
-proof.
-  move => h1 h2 h3; rewrite set_get_def // h3. auto.
-qed.
-
-lemma get_set_get_eqb (v: W16.t Array256.t) (w: W256.t) i:
-  0 <= i < 16 => forall k, 0 <= k < i*16 =>
-  v.[k] = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof. 
-  move => i_i k k_i.
-  rewrite Array256.initiE.
-  move : i_i k_i. smt().
-  simplify.
-  rewrite set_get_def => /#.
-qed.
-
-lemma get_set_get_eqa (v: W16.t Array256.t) (w: W256.t) i:
-  0 <= i < 16 => forall k, i*16 + 16 <= k < 256 =>
-  v.[k] = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof.
-  move => i_i k k_i.
-  rewrite Array256.initiE.
-  move : i_i k_i => /#.
-  simplify.
-  rewrite set_get_def => /#.
-qed.
-
-lemma get_set_get_diff (v: W16.t Array256.t) (w: vt16u16) i:
-  0 <= i < 16 => forall k, i*16 <= k < i*16 + 16 =>
-  w \bits16 (k%%16) = (Array256.init (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun j => v.[j])) i w))).[k].
-proof. 
-  move => i_i k k_i.
-  rewrite Array256.initiE.
-  move : i_i k_i => /#.
-  simplify.
-  rewrite set_get_def => /#.
-qed.
-(*
-rp <- Array256.init
-       (fun i =>                                  (WArray512.WArray512.get16 (WArray512.WArray512.set256 (WArray512.WArray512.init16 (fun (i0 : int) => rp.[i0]) 15 r7) i))).
-*)
-*)
-
-print Array256.sub.
-op p2a ['a] (x: 'a Array256.t) (i: int): 'a Array16.t.
-
-print c2r.
- 
-
-
-(*
-proc __butterfly64x(rs : arrays8, z0 z1 z2 z3 : Fq Array16.t) : arrays8 = {
-
-
-XXXXX
-
-  proc __butterfly64x(rl0 : JWord.W256.t, rl1 : JWord.W256.t, rl2 : JWord.W256.t, rl3 : JWord.W256.t, rh0 : JWord.W256.t, rh1 : JWord.W256.t, rh2 : JWord.W256.t, rh3 : JWord.W256.t, zl0 : JWord.W256.t, zl1 : JWord.W256.t, zh0 : JWord.W256.t, zh1 : JWord.W256.t, qx16 : JWord.W256.t) :
-    JWord.W256.t * JWord.W256.t * JWord.W256.t * JWord.W256.t * JWord.W256.t * JWord.W256.t * JWord.W256.t *
-    JWord.W256.t = {
-
-  proc __ntt_level0(rp : JWord.W16.t Array256.t) : JWord.W16.t Array256.t = {
-
-  proc __ntt_level1t6(rp : JWord.W16.t Array256.t) : JWord.W16.t Array256.t = {
-
-
-zeta0 <-
-        (get256_direct ((init16 (fun (i_0 : int) => zetasp.[i_0])))%WArray800.WArray800 (208 + 392 * i))%WArray800.WArray800;
-
-(r0, r4) <@ Jkem_avx2.M.__shuffle1(r0, r4);
-
-Jkem_avx2.M.__butterfly64x(r0, r4, r2, r6, r1, r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
-_butterflyx64.
-
-equiv _poly_ntt_eq:
- Jkem_avx2.M._poly_ntt ~ NTT_AVX.ntt :
- r{2}=lift_array256 rp{1} /\ signed_bound_cxq rp{1} 0 256 2 ==>
- res{2}=lift_array256 res{1} /\
- pos_bound256_cxq res{1} 0 256 2.
-proof.
-admit.
-qed.
-
-op zetas400 : int Array400.t =
- Array400.of_list witness
-(*    L0 *)   [ 31499 ; 31499 ; 2571 ; 2571
-(*  L1_l *)   ; 14746 ; 14746 ; 2970 ; 2970
-(*  L2_l *)   ; 13525 ; 13525 ; 13525 ; 13525 ; 13525 ; 13525 ; 13525 ; 13525 ; 53134 ; 53134 ; 53134 ; 53134 ; 53134 ; 53134 ; 53134 ; 53134 ; 1493 ; 1493 ; 1493 ; 1493 ; 1493 ; 1493 ; 1493 ; 1493 ; 1422 ; 1422 ; 1422 ; 1422 ; 1422 ; 1422 ; 1422 ; 1422
-(*  L3_l *)   ; 44630 ; 44630 ; 44630 ; 44630 ; 27758 ; 27758 ; 27758 ; 27758 ; 61737 ; 61737 ; 61737 ; 61737 ; 49846 ; 49846 ; 49846 ; 49846 ; 3158 ; 3158 ; 3158 ; 3158 ; 622 ; 622 ; 622 ; 622 ; 1577 ; 1577 ; 1577 ; 1577 ; 182 ; 182 ; 182 ; 182
-(*  L4_l *)   ; 59709 ; 59709 ; 17364 ; 17364 ; 39176 ; 39176 ; 36479 ; 36479 ; 5572 ; 5572 ; 64434 ; 64434 ; 21439 ; 21439 ; 39295 ; 39295 ; 573 ; 573 ; 2004 ; 2004 ; 264 ; 264 ; 383 ; 383 ; 2500 ; 2500 ; 1458 ; 1458 ; 1727 ; 1727 ; 3199 ; 3199
-(*  L5_l *)   ; 59847 ; 59020 ; 1497 ; 30967 ; 41972 ; 20179 ; 20711 ; 25081 ; 52740 ; 26617 ; 16065 ; 53095 ; 9135 ; 64887 ; 39550 ; 27837 ; 1223 ; 652 ; 2777 ; 1015 ; 2036 ; 1491 ; 3047 ; 1785 ; 516 ; 3321 ; 3009 ; 2663 ; 1711 ; 2167 ; 126 ; 1469
-(*  L6_l *)   ; 65202 ; 54059 ; 33310 ; 20494 ; 37798 ; 945 ; 50654 ; 6182 ; 32011 ; 10631 ; 29176 ; 36775 ; 47051 ; 17561 ; 51106 ; 60261 ; 2226 ; 555 ; 2078 ; 1550 ; 422 ; 177 ; 3038 ; 1574 ; 3083 ; 1159 ; 2552 ; 2727 ; 1739 ; 2457 ; 418 ; 3173 ; 11182 ; 13387 ; 51303 ; 43881 ; 13131 ; 60950 ; 23093 ; 5493 ; 33034 ; 30318 ; 46795 ; 12639 ; 20100 ; 18525 ; 19529 ; 52918 ; 430 ; 843 ; 871 ; 105 ; 587 ; 3094 ; 2869 ; 1653 ; 778 ; 3182 ; 1483 ; 1119 ; 644 ; 349 ; 329 ; 3254
-(*  L1_r *)   ; 788 ; 788 ; 1812 ; 1812
-(*  L2_r *)   ; 28191 ; 28191 ; 28191 ; 28191 ; 28191 ; 28191 ; 28191 ; 28191 ; 48842 ; 48842 ; 48842 ; 48842 ; 48842 ; 48842 ; 48842 ; 48842 ; 287 ; 287 ; 287 ; 287 ; 287 ; 287 ; 287 ; 287 ; 202 ; 202 ; 202 ; 202 ; 202 ; 202 ; 202 ; 202
-(*  L3_r *)   ; 10690 ; 10690 ; 10690 ; 10690 ; 1359 ; 1359 ; 1359 ; 1359 ; 54335 ; 54335 ; 54335 ; 54335 ; 31164 ; 31164 ; 31164 ; 31164 ; 962 ; 962 ; 962 ; 962 ; 2127 ; 2127 ; 2127 ; 2127 ; 1855 ; 1855 ; 1855 ; 1855 ; 1468 ; 1468 ; 1468 ; 1468
-(*  L4_r *)   ; 37464 ; 37464 ; 24313 ; 24313 ; 55004 ; 55004 ; 8800 ; 8800 ; 18427 ; 18427 ; 8859 ; 8859 ; 26676 ; 26676 ; 49374 ; 49374 ; 2648 ; 2648 ; 1017 ; 1017 ; 732 ; 732 ; 608 ; 608 ; 1787 ; 1787 ; 411 ; 411 ; 3124 ; 3124 ; 1758 ; 1758
-(*  L5_r *)   ; 19884 ; 37287 ; 49650 ; 56638 ; 37227 ; 9076 ; 35338 ; 18250 ; 13427 ; 14017 ; 36381 ; 52780 ; 16832 ; 4312 ; 41381 ; 47622 ; 2476 ; 3239 ; 3058 ; 830 ; 107 ; 1908 ; 3082 ; 2378 ; 2931 ; 961 ; 1821 ; 2604 ; 448 ; 2264 ; 677 ; 2054
-(*  L6_r *)   ; 34353 ; 25435 ; 58154 ; 24392 ; 44610 ; 10946 ; 24215 ; 16990 ; 10336 ; 57603 ; 43035 ; 10907 ; 31637 ; 28644 ; 23998 ; 48114 ; 817 ; 603 ; 1322 ; 1864 ; 2114 ; 1218 ; 2455 ; 2142 ; 2144 ; 2051 ; 1819 ; 2459 ; 3221 ; 996 ; 958 ; 1522 ; 20297 ; 2146 ; 15356 ; 33152 ; 59257 ; 50634 ; 54492 ; 14470 ; 44039 ; 45338 ; 23211 ; 48094 ; 41677 ; 45279 ; 7757 ; 23132 ; 1097 ; 610 ; 2044 ; 384 ; 3193 ; 1994 ; 220 ; 1670 ; 1799 ; 794 ; 2475 ; 478 ; 3021 ; 991 ; 1869 ; 1628
-(* trail *)   ; 0 ; 0 ; 0 ; 0 ].
 
