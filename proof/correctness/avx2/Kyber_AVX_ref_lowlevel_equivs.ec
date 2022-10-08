@@ -158,6 +158,7 @@ equiv compressequivvec_1 mem :
     ={Glob.mem,res} /\  Glob.mem{1} = mem.
 admitted. (* Miguel/MBB: need to add to Mprevec *)
 
+
 lemma poly_decompress_equiv mem _p : 
     equiv [ M._poly_decompress ~   Jkem.M._poly_decompress  :
              valid_ptr _p 128 /\
@@ -168,8 +169,70 @@ lemma poly_decompress_equiv mem _p :
              lift_array256 res{1} = lift_array256 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 /\
              pos_bound256_cxq res{2} 0 256 1 ].
-admitted. (* MIGUEL/MBB *)
-
+proof.
+  transitivity KyberPoly_avx2_prevec.Mprevec.poly_decompress
+               (={ap, Glob.mem} /\ valid_ptr _p 128 /\ Glob.mem{1} = mem /\ _p = to_uint ap{1} ==> 
+                   ={res, Glob.mem})
+               (={ap, Glob.mem} /\ valid_ptr _p 128 /\ Glob.mem{1} = mem /\ _p = to_uint ap{2} ==>
+                ={res, Glob.mem} /\
+                Glob.mem{1} = mem /\
+                lift_array256 res{1} = lift_array256 res{2} /\
+                pos_bound256_cxq res{1} 0 256 1 /\
+                pos_bound256_cxq res{2} 0 256 1); 1,2: smt().
+    symmetry. proc * => /=. call prevec_eq_poly_decompress => //=.
+  transitivity EncDec_AVX2.decode4
+               (valid_ptr _p 128 /\ ={Glob.mem} /\
+                Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
+                load_array128 Glob.mem{1} _p = a{2} ==>
+                ={Glob.mem} /\ Glob.mem{1} = mem /\
+                lift_array256 res{1} = decompress_poly 4 res{2} /\
+                pos_bound256_cxq res{1} 0 256 1)
+               (valid_ptr _p 128 /\ ={Glob.mem} /\
+                Glob.mem{2} = mem /\ to_uint ap{2} = _p /\
+                load_array128 Glob.mem{2} _p = a{1} ==>
+                ={Glob.mem} /\ Glob.mem{2} = mem /\
+                lift_array256 res{2} = decompress_poly 4 res{1} /\
+                pos_bound256_cxq res{2} 0 256 1).
+    auto => &1 &2 [#] ap_eq mem_eq valid_p mem_def _p_def />.
+    exists mem.
+      exists (load_array128 mem _p).
+        rewrite valid_p -mem_eq -ap_eq mem_def ap_eq _p_def //=.
+        auto => &1 &m &2 [#] H0 H1 H2 H3 [#] H4 H5 H6 H7 />.
+        do split.
+        + rewrite /lift_array256 /decompress_poly /decompress Array256.tP in H2.
+          rewrite /pos_bound256_cxq /bpos16 in H3.
+          rewrite /pos_bound256_cxq /bpos16 in H7.
+          rewrite /lift_array256 /decompress_poly /decompress Array256.tP in H6.
+          apply Array256.ext_eq => x x_b.
+            rewrite to_uint_eq -to_sint_unsigned. by move : H3 => /#.
+            rewrite -to_sint_unsigned. by move : H7 => /#.
+            move : (H2 x x_b); rewrite mapiE 1:x_b mapiE 1:x_b /= -eq_inFq (pmod_small _ q) 1:H3 1:x_b => ->.
+            move : (H6 x x_b); rewrite mapiE 1:x_b mapiE 1:x_b /= -eq_inFq (pmod_small _ q) 1:H7 1:x_b => -> //=.
+        + by rewrite H0 H4.
+        + by rewrite H2 H6.
+        + proc * => /=.
+          ecall (poly_decompress_corr (Glob.mem{1}) (to_uint ap{1}) (load_array128 Glob.mem{1} _p)) => //=.
+  symmetry.
+  transitivity EncDec.decode4
+               (valid_ptr _p 128 /\
+                Glob.mem{1} = mem /\ _p = to_uint ap{1} /\
+                load_array128 Glob.mem{1} _p = a{2} ==>
+                Glob.mem{1} = mem /\
+                lift_array256 res{1} = decompress_poly 4 res{2} /\
+                pos_bound256_cxq res{1} 0 256 1)
+               (mem = Glob.mem{2} /\ a{1} = a{2} ==>
+                ={res} /\ mem = Glob.mem{2}).
+    auto => &1 &2 [#] H0 H1 H2 H3 H4 />.
+    exists (load_array128 Glob.mem{1} _p).
+        rewrite H0 H1 H4 H2 H3 //=.
+      auto => />.
+    proc * => /=.
+    ecall (KyberPoly.poly_decompress_corr mem (to_uint ap{1}) (load_array128 mem _p)) => //=.
+  symmetry.
+  proc * => /=.
+  call eq_decode4.
+  auto => />.
+qed.
 
 lemma polyvec_decompress_equiv mem _p : 
     equiv [ M.__polyvec_decompress ~   Jkem.M.__polyvec_decompress  :
@@ -252,7 +315,7 @@ proof.
           rewrite -H1. move : jbb; smt(@IntDiv @Int @List).
           rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
           by move : jbb; smt(@IntDiv @Int @List).
-        + smt().
+        + move : (H0 (j - _p)) => /#.
     have ->: forall (j: address), Glob.mem{2}.[j] = if _p + 0 <= j < _p + 128 then res{m}.[j - _p]
                                                      else mem.[j].
       move => j.
@@ -261,7 +324,7 @@ proof.
           rewrite -H3. move : jbb; smt(@IntDiv @Int @List).
           rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
           by move : jbb; smt(@IntDiv @Int @List).
-        + smt().
+        + move : (H2 (j - _p)) => /#.
     trivial.
     + proc * => /=.
       ecall (poly_compress_corr (lift_array256 a{1}) _p  mem) => //=. 

@@ -318,14 +318,31 @@ rewrite /=; apply modzB_eq0 => //.
 by move: aux_divR => /=; apply.
 qed.
 
+
 lemma nosmt REDCmul16_correct (x y: W16.t):
- sint_bnd (- q) (q) y =>
+ sint_bnd 0 (q-1) y =>
  to_sint (REDCmul16 x y) %% q
  = to_sint x * to_sint y * Rinv %% q
- /\ sint_bnd (-q) (q) (REDCmul16 x y).
+ /\ sint_bnd (-(q-1)) (q-1) (REDCmul16 x y).
 proof.
 pose m:= x * y * (W16.of_int qinv).
 (* Bounds *)
+rewrite /q /= => y_bnd.
+have := to_sint_bnd x.
+rewrite /= => x_bnd.
+have := to_sintH_bnd x y _ _ _ _ x_bnd y_bnd _ _ _ _ => //.
+rewrite /q /= => xyH_bnd.
+have := to_sint_bnd m.
+rewrite /= => m_bnd.
+have := to_sintPos_bnd q _ => //.
+rewrite /q /= => q_bnd.
+have := to_sintH_bnd _ _ _ _ _ _ m_bnd q_bnd _ _ _ _ => //. 
+rewrite /q /= => mqH_bnd.
+have := to_sintB_bnd _ _ _ _ _ _ xyH_bnd mqH_bnd _ _ => //.
+rewrite /q /= => t_bnd.
+split; last first.
+ by rewrite /REDCmul16 -/m /#.
+(*
 move => /=y_bnd.
 have /=x_bnd := to_sint_bnd x.
 have /=xyH_bnd := to_sintH_bnd x y _ _ _ _ x_bnd y_bnd _ _ _ _ =>//.
@@ -335,6 +352,7 @@ have /=mqH_bnd := to_sintH_bnd _ _ _ _ _ _ m_bnd q_bnd _ _ _ _ => //.
 have /=t_bnd := to_sintB_bnd _ _ _ _ _ _ xyH_bnd mqH_bnd.
 split; last first.
  by rewrite /REDCmul16 -/m /#.
+*)
 (* CORRECTNESS *)
 have ->: to_sint (REDCmul16 x y) %% q
          = ((to_sint x * to_sint y - to_sint m * q) %/ R) %% q.
