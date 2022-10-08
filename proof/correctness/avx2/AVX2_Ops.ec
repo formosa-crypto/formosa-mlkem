@@ -4,6 +4,7 @@ from Jasmin require import JModel JArray JWord_array.
 
 require import Array2 Array4 Array8 Array16 Array32 WArray128.
 
+type t4u8 = W8.t Array4.t.
 type t2u16 = W16.t Array2.t.
 type t8u32 = W32.t Array8.t.
 type t4u32 = W32.t Array4.t.
@@ -62,6 +63,10 @@ op packss16(w : W16.t) : W8.t =
 module Ops = {
   proc itruncate_4u64_2u64(t : t4u64) : t2u64 = {
        return Array2.of_list witness [ t.[0]; t.[1] ];
+  }
+
+  proc itruncate_16u16_8u16(t : t16u16) : t16u8 = {
+       return Array16.init (fun i => t.[i %/ 2] \bits8 i%%2);
   }
 
   proc get_128(vv : t4u64 Array4.t, i : int, o : int) : W64.t = {
@@ -270,6 +275,20 @@ module Ops = {
   }
 
   proc istore32u8 (mem: global_mem_t, p: W64.t, w: t32u8): global_mem_t = {
+
+    mem <- stores mem (to_uint p) (to_list w);
+
+    return mem;
+  }
+
+  proc istore16u8 (mem: global_mem_t, p: W64.t, w: t16u8): global_mem_t = {
+
+    mem <- stores mem (to_uint p) (to_list w);
+
+    return mem;
+  }
+
+  proc istore4u8 (mem: global_mem_t, p: W64.t, w: t4u8): global_mem_t = {
 
     mem <- stores mem (to_uint p) (to_list w);
 
@@ -611,8 +630,24 @@ module Ops = {
     return r;
   }
 
+  proc iVEXTRACTI128_16u8(x:t16u16, p : W8.t) : t16u8 = {
+    var r : t16u8;
+
+    r <- Array16.init (fun i => if p.[0] then x.[8 + i %/ 2] \bits8 (i %% 2) else x.[i %/ 2] \bits8 (i %% 2));
+
+    return r;
+  }
+
   proc iVPEXTR_64(x:t2u64, p : W8.t) : W64.t = {
     return x.[to_uint p];
+  }
+
+  proc iVPEXTR_32(x:t16u8, p : W8.t) : t4u8 = {
+    var r: t4u8;
+
+    r <- Array4.init (fun i => x.[4 * (to_uint p) + i]);
+
+    return r;
   }
 
   proc iVPSRA_16u16 (x: t16u16, y: W8.t) : t16u16 = {
@@ -831,6 +866,14 @@ module Ops = {
     return r;
   }
 
+  proc iVPBLENDW_128_16u8(x y:t16u8, p : W8.t) : t16u8 = {
+    var r : t16u8;
+
+    r <- Array16.init (fun i => if p.[i %/ 2] then y.[i] else x.[i]);
+
+    return r;
+  }
+
   (* FIXME:
   proc iVPSHUFD_256 (x :t4u64, p : W8.t) : t4u64 = {
     var r : t4u64;
@@ -918,6 +961,7 @@ module Ops = {
   }
 }.
 
+type vt4u8 = W32.t.
 type vt2u16 = W32.t.
 type vt2u64 = W128.t.
 type vt8u16 = W128.t.
@@ -932,6 +976,10 @@ type vt2u128 = W256.t.
 
 module OpsV = {
   proc itruncate_4u64_2u64(t : vt4u64) : vt2u64 = {
+       return truncateu128 t;
+  }
+
+  proc itruncate_16u16_8u16(t : vt16u16) : vt16u8 = {
        return truncateu128 t;
   }
 
@@ -1035,6 +1083,14 @@ module OpsV = {
     return storeW256 mem (W64.to_uint p) w;
   }
 
+  proc istore16u8 (mem: global_mem_t, p: W64.t, w: vt16u8): global_mem_t = {
+    return storeW128 mem (W64.to_uint p) w;
+  }
+
+  proc istore4u8 (mem: global_mem_t, p: W64.t, w: vt4u8): global_mem_t = {
+    return storeW32 mem (W64.to_uint p) w;
+  }
+
   proc iVPACKUS_8u32(x y: vt8u32) : vt16u16 = {
     return VPACKUS_8u32 x y;
   }
@@ -1103,13 +1159,22 @@ module OpsV = {
     return VEXTRACTI128 x p;
   }
 
+  proc iVEXTRACTI128_16u8(x:vt32u8, p : W8.t) : vt16u8 = {
+    return VEXTRACTI128 x p;
+  }
+
   proc iVPEXTR_64(x:vt2u64, p : W8.t) : W64.t = {
     return VPEXTR_64 x p;
+  }
+
+  proc iVPEXTR_32(x:vt16u8, p : W8.t) : vt4u8 = {
+    return VPEXTR_32 x p;
   }
 
   proc iVPSRA_16u16 (x: vt16u16, y: W8.t) : vt16u16 = {
     return VPSRA_16u16 x y;
   }
+
 
   proc iVPSLL_8u32 (x: vt8u32, y: W8.t) : vt8u32 = {
     return VPSLL_8u32 x y;
@@ -1198,6 +1263,10 @@ module OpsV = {
   proc iVPBLENDW_128(x y:vt8u16, p : W8.t) :  vt8u16 = {
     return VPBLENDW_128 x y p;
   }
+
+  proc iVPBLENDW_128_16u8(x y:vt16u8, p : W8.t) : vt16u8 = {
+    return VPBLENDW_128 x y p;
+  }
   (*
   proc iVPSHUFD_256 (x :vt4u64, p : W8.t) : vt4u64 = {
     return VPSHUFD_256 x p;
@@ -1225,6 +1294,7 @@ module OpsV = {
   }
 }.
 
+op is4u8 (x: t4u8) (xv: vt4u8) = xv = W4u8.pack4 [x.[0]; x.[1]; x.[2]; x.[3]].
 op is2u16 (x: t2u16) (xv: vt2u16) = xv = W2u16.pack2 [x.[0]; x.[1]].
 op is16u8 (x: t16u8) (xv: vt16u8) = xv = W16u8.pack16 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
   x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15]].
@@ -1267,6 +1337,38 @@ proof.
   have -> // : i %/ 64 = 1.
   have -> : i = (i -64) + 1 * 64 by done.
   rewrite divzMDr 1://; smt(divz_small).
+qed.
+
+equiv eq_itruncate_16u16_8u16 : Ops.itruncate_16u16_8u16 ~ OpsV.itruncate_16u16_8u16 : is16u16 t{1} t{2} ==> is16u8 res{1} res{2}.
+proof.
+  proc; skip => &1 &2; rewrite /is16u8 /is16u16 => -> /=.
+  apply (Core.can_inj _ _ W128.to_uintK).
+  rewrite to_uint_truncateu128.
+  rewrite - (W128.to_uint_small (to_uint (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]) %% W128.modulus)).
+  + by apply modz_cmp.
+  congr; apply W128.wordP => i hi.
+  rewrite W128.of_intwE hi W16u8.pack16wE 1:// /=.
+  rewrite /int_bit /= modz_mod.
+  have /= -> := modz_pow2_div 128 i; 1:smt().
+  rewrite (modz_dvd_pow 1 (128 - i) _ 2) 1:/# /=.
+  have ->: (to_uint (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]) %/ (Ring.IntID.(^) 2 i) %% 2 <> 0) =
+            (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]).[i].
+  + rewrite -{2}(W256.to_uintK (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]])) W256.of_intwE /int_bit (modz_small _ W256.modulus) 2:/#.
+    by have /= := W256.to_uint_cmp  (pack16 [t{1}.[0]; t{1}.[1]; t{1}.[2]; t{1}.[3]; t{1}.[4]; t{1}.[5]; t{1}.[6];
+                                                  t{1}.[7]; t{1}.[8]; t{1}.[9]; t{1}.[10]; t{1}.[11]; t{1}.[12];
+                                                  t{1}.[13]; t{1}.[14]; t{1}.[15]]);rewrite /(`|_|).
+  rewrite W16u16.pack16wE 1:/#.
+  move : hi; rewrite andabP => /(mem_iota 0 128 i).
+  move : i.
+  rewrite -List.allP -iotaredE //=.
 qed.
 
 op is4u64_4 (x:t4u64 Array4.t) (xv:vt4u64 Array4.t) =
@@ -1416,6 +1518,18 @@ equiv eq_istore32u8: Ops.istore32u8 ~ OpsV.istore32u8 : ={mem, p} /\ is32u8 w{1}
 proof.
   proc; wp; skip  => &1 &2 /> @/is32u8 ->.
   by rewrite storeW256E;congr;rewrite /to_list /mkseq /= !pack32bE //= -iotaredE /=. 
+qed.
+
+equiv eq_istore16u8: Ops.istore16u8 ~ OpsV.istore16u8 : ={mem, p} /\ is16u8 w{1} w{2} ==> ={res}.
+proof.
+  proc; wp; skip  => &1 &2 /> @/is16u8 ->.
+  by rewrite storeW128E;congr;rewrite /to_list /mkseq /= !pack16bE //= -iotaredE /=. 
+qed.
+
+equiv eq_istore4u8: Ops.istore4u8 ~ OpsV.istore4u8 : ={mem, p} /\ is4u8 w{1} w{2} ==> ={res}.
+proof.
+  proc; wp; skip  => &1 &2 /> @/is4u8 ->.
+  by rewrite storeW32E;congr;rewrite /to_list /mkseq /= !pack4bE //= -iotaredE /=.
 qed.
 
 equiv eq_iload32u8: Ops.iload32u8 ~ OpsV.iload32u8 : ={mem, p} ==> is32u8 res{1} res{2}.
@@ -1725,8 +1839,21 @@ proof.
   by case: (p{2}.[0]) => ?; cbv delta.
 qed.
 
+equiv eq_iVEXTRACTI128_16u8: Ops.iVEXTRACTI128_16u8 ~ OpsV.iVEXTRACTI128_16u8 :
+  is16u16 x{1} x{2} /\ ={p} ==> is16u8 res{1} res{2}.
+proof.
+  proc; wp; skip;rewrite /is16u16 /is16u8 /VEXTRACTI128 => /> &1 &2.
+  apply W128.wordP => i.
+  rewrite andabP => /(mem_iota 0 128 i).
+  move : i.
+  case: (p{2}.[0]) => ?; rewrite -List.allP -iotaredE //=.
+qed.
+
 equiv eq_iVPEXTR_64: Ops.iVPEXTR_64 ~ OpsV.iVPEXTR_64 : is2u64 x{1} x{2} /\ ={p} /\ (p{1} = W8.of_int 0 \/ p{2} = W8.of_int 1)==> res{1} = res{2}.
 proof. by proc; skip; rewrite /is2u64 /VPEXTR_64 => /> &1 &2 [] -> /=. qed.
+
+equiv eq_iVPEXTR_32: Ops.iVPEXTR_32 ~ OpsV.iVPEXTR_32 : is16u8 x{1} x{2} /\ ={p} /\ (p{1} = W8.of_int 0 \/ p{2} = W8.of_int 1) ==> is4u8 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u8 /is4u8 /VPEXTR_32 => /> &1 &2 [] -> /=. qed.
 
 equiv eq_iVPSLL_8u32: Ops.iVPSLL_8u32 ~ OpsV.iVPSLL_8u32: is8u32 x{1} x{2} /\ ={y} ==> is8u32 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is8u32 /VPSLL_8u32. qed.
@@ -1880,6 +2007,31 @@ proof.
   split; 1: by case (p{2}.[4]).
   split; 1: by case (p{2}.[5]).
   split; 1: by case (p{2}.[6]).
+  by case (p{2}.[7]).
+qed.
+
+equiv eq_iVPBLENDW_128_16u8 : Ops.iVPBLENDW_128_16u8 ~ OpsV.iVPBLENDW_128_16u8 :
+  is16u8 x{1} x{2} /\ is16u8 y{1} y{2} /\ ={p}
+  ==>
+  is16u8 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is16u8 /VPBLENDW_128 => /> &1 &2 /=.
+  apply W16u8.allP => /=.
+  split; 1: by case (p{2}.[0]).
+  split; 1: by case (p{2}.[0]).
+  split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[1]).
+  split; 1: by case (p{2}.[2]).
+  split; 1: by case (p{2}.[2]).
+  split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[3]).
+  split; 1: by case (p{2}.[4]).
+  split; 1: by case (p{2}.[4]).
+  split; 1: by case (p{2}.[5]).
+  split; 1: by case (p{2}.[5]).
+  split; 1: by case (p{2}.[6]).
+  split; 1: by case (p{2}.[6]).
+  split; 1:by case (p{2}.[7]).
   by case (p{2}.[7]).
 qed.
 

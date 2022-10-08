@@ -1037,10 +1037,12 @@ proof.
 qed.
 
 equiv eq_poly_decompress:
-  Mprevec.poly_decompress ~ Mvec.poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+  Mprevec.poly_decompress ~ Mvec.poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
-  while(={rp, ap, i, aux, Glob.mem} /\ aux{1} = 16 /\ 0 <= i{1} /\ is16u16 q{1} q{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift{1} shift{2} /\ is32u8 shufbidx{1} shufbidx{2}).
+  while(={ap, i, aux, Glob.mem} /\
+        (forall k, 0 <= k < 16 * i{1} => rp{1}.[k] = rp{2}.[k]) /\
+        aux{1} = 16 /\ 0 <= i{1} /\ i{1} <= 16 /\ is16u16 q{1} q{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift{1} shift{2} /\ is32u8 shufbidx{1} shufbidx{2}).
   wp.
   call eq_iVPMULHRS_256; call eq_iVPMULL_16u16; call eq_iVPAND_16u16.
   wp.
@@ -1048,7 +1050,7 @@ proof.
   inline Ops.iload16u8.
   sp.
   call eq_iVPBROADCAST_2u128_32u8.
-  wp; skip; rewrite /is32u8 /is16u16 /is16u8 => />. move => &2 i_lb i_ub.
+  wp; skip; rewrite /is32u8 /is16u16 /is16u8 => />. move => &1 &2 rp_l i_lb i_ub i_tub.
   split.
     + rewrite /loadW128 /loadW8 /=.
       apply W16u8.allP => //=.
@@ -1058,15 +1060,16 @@ proof.
       apply W32u8.allP => //=.
   move => res_l0_eq res_l3.
   split.
-    + apply Array256.ext_eq => x x_i />.
-      rewrite filliE 1:x_i initiE 1:x_i /=.
-      rewrite set_get_def 1:/# 1:x_i.
+    + rewrite mulzDr mulz1 => k k_lb k_ub.
+      rewrite filliE 1:/# initiE 1:/# /=.
+      rewrite set_get_def 1:/# 1:/#.
       rewrite pack16bE 1:/# get_of_list 1:/#.
       smt(@Int @IntDiv @W16u16 @Array16 @Array256).
     + move : i_lb => /#.
   do (wp; call eq_iVPBROADCAST_8u32).
-  wp; skip; auto => />. move => resL resR resL_eq_resR resL0 resR0 resL0_eq_resR0.
+  wp; skip; auto => />. move => &1 &2 resL resR resL_eq_resR resL0 resR0 resL0_eq_resR0.
   do split.
+    + smt(@Logic).
     + rewrite /is16u16 initiE /get256_direct /= => />.
       apply W32u8.allP => />.
     + rewrite /is16u16 /f8u32_t16u16 resL_eq_resR initiE //=.
@@ -1077,10 +1080,15 @@ proof.
       do (rewrite pack2_bits16 //=).
     + rewrite /is32u8 initiE /get256_direct /= => />.
       apply W32u8.allP => />.
+  auto => />.
+  move => rp_L i rp_R i_tlb rp_l i_lb i_ub _ _ _ _.
+  apply Array256.ext_eq.
+  move : rp_l.
+  have -> //=: i = 16. by move : i_ub i_tlb => /#.
 qed.
 
 equiv eq_poly_compress:
-  Mprevec.poly_compress ~ Mvec.poly_compress: ={rp, a, Glob.mem} ==> ={res}.
+  Mprevec.poly_compress ~ Mvec.poly_compress: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
 proof.
   proc.
   while(={rp, a, i, aux, Glob.mem} /\ aux{1} = 4 /\ 0 <= i{1} /\ is16u16 v{1} v{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift1{1} shift1{2} /\
@@ -1290,58 +1298,58 @@ proof.
   proc.
   while(={rp, a, i, Glob.mem} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2}).
   wp.
-  do call eq_istore32u8.
-  wp.
+  do call eq_istore32u8; wp; conseq />. 
   do (call eq_shuffle8 || call eq_shuffle4 || call eq_shuffle2 || call eq_shuffle1).
+  conseq />; 1: by smt().
   do (call eq_iVPOR_16u16 || call eq_iVPSLL_16u16 || call eq_iVPSRL_16u16).
-  wp. skip; auto => />.
+  wp; skip; auto => />.
   move => &1 &2 [#] i_lb qx16_eq i_tub />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do (rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do (rewrite initiE 1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => a_eq resL resR res_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do (rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do (rewrite initiE 1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => a1_eq resL0 resR0 res0_eq resL1 resR1 res1_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do (rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do (rewrite initiE  1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => a2_eq resL2 resR2 res2_eq resL3 resR3 res3_eq resL4 resR4 res4_eq/>.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do 32!(rewrite initiE 1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => a3_eq resL5 resR5 res5_eq resL6 resR6 res6_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do 32!(rewrite initiE 1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => a4_eq resL7 resR7 res7_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do 32!(rewrite initiE 1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => a5_eq resL8 resR8 res8_eq resL9 resR9 res9_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do 32!(rewrite initiE 1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => a6_eq resL10 resR10 res10_eq resL11 resR11 res11_eq resL12 resR12 res12_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
-      do 32!(rewrite initiE //=; first by move : i_tub i_lb => /#).
+      do 32!(rewrite initiE 1:/# /=).
       do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
   move => [#] a7_eq resL13 resR13 res13_eq resL14 resR14 res14_eq resL15 resR15 res15_eq_1 res15_eq_2
                     resL16 resR16 res16_eq_1 res16_eq_2 resL17 resR17 res17_eq_1 res17_eq_2
@@ -1529,18 +1537,35 @@ proof.
 qed.
 
 equiv veceq_poly_decompress:
-  Mvec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
+  Mvec.poly_decompress ~ M._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
-  while(={rp, ap, i, aux, q, mask, shift, shufbidx, Glob.mem}).
+  while(={ap, i, aux, q, mask, shift, shufbidx, Glob.mem} /\
+        aux{1} = 16 /\ 0 <= i{1} /\ i{1} <= 16 /\
+        (forall k, 0 <= k < 16 * i{1} => rp{1}.[k] = rp{2}.[k])).
   inline *.
-  wp. skip.  auto => />. 
+  wp. skip.  auto => />.
+  move => &1 &2 i_lb i_ub rp_l i_tub />.
+  do split; first 2 by smt(@Int).
+  rewrite mulzDr mulz1 => k k_lb k_ub.
+    rewrite initiE 1:/# /=.
+    rewrite initiE 1:/# /=.
+    rewrite set_get_def 1:/# 1:/#.
+    rewrite set_get_def 1:/# 1:/#.
+    smt(@Int @IntDiv @W16u16 @Array16 @Array256).
   inline *.
   wp. skip. auto => />.
+  move => &1 &2.
+  split.
+    + smt(@Logic).
+  move => rpL i rpR i_tlb _ i_lb i_ub rp_l.
+  apply Array256.ext_eq.
+  move : rp_l.
+  have -> //=: i = 16. by move : i_ub i_tlb => /#.
 qed.
 
 equiv veceq_poly_compress:
-  Mvec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res}.
+  Mvec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
   while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
@@ -1691,17 +1716,17 @@ apply veceq_poly_frommont.
 qed.
 
 equiv prevec_eq_poly_decompress:
-  Mprevec.poly_decompress ~ M._poly_decompress: ={rp, ap, Glob.mem} ==> ={res}.
-    transitivity Mvec.poly_decompress (={rp, ap, Glob.mem} ==> ={res}) (={rp, ap, Glob.mem} ==> ={res}).
+  Mprevec.poly_decompress ~ M._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
+    transitivity Mvec.poly_decompress (={ap, Glob.mem} ==> ={res, Glob.mem}) (={ap, Glob.mem} ==> ={res, Glob.mem}).
 smt(). trivial.
 apply eq_poly_decompress.
 apply veceq_poly_decompress.
 qed.
 
 equiv prevec_eq_poly_compress:
-  Mprevec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res}.
-    transitivity Mvec.poly_compress (={rp, a, Glob.mem} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
-smt(). trivial.
+  Mprevec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
+    transitivity Mvec.poly_compress (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={rp, a, Glob.mem} ==> ={res, Glob.mem}).
+smt(). smt().
 apply eq_poly_compress.
 apply veceq_poly_compress.
 qed.

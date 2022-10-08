@@ -1059,4 +1059,6 @@ seq 1 2 : (zetas0{1}=zetas_unpack NTT_avx2.zetas{2} /\ perm_ntt perm_nttpack128 
 exists* NTT_avx2.r{2}. exists* NTT_avx2.zetas{2}. elim*. move => zetas r.
 call{1} (ntt_avx_6_pr r zetas); auto => />.
 (*exit*)
-rcondf{2} 1; auto => />. qed.
+rcondf{2} 1; auto => />. 
+qed.
+
