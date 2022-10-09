@@ -54,8 +54,49 @@ module EncDec_AVX2 = {
     return fromarray256 a1 a2 a3;
   }
 
-  proc decode10_opt_vec(a : W8.t Array960.t) : ipolyvec = {
-    return witness;
+  proc decode10_vec(u : W8.t Array960.t) : ipolyvec = {
+    var c : ipolyvec;
+    var i,j,k,t0,t1,t2,t3,t4;
+
+    c <- witness;
+    i <- 0; j <- 0;
+    while (i < 3) {
+      k <- 0;
+      while(k < 64) {
+        t0 <- u.[j]; t1 <- u.[j + 1]; t2 <- u.[j + 2]; t3 <- u.[j + 3]; t4 <- u.[j + 4];
+        c.[256 * i + 4 * k] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;
+        c.[256 * i + 4 * k + 1] <-  to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6;
+        c.[256 * i + 4 * k + 2] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4;
+        c.[256 * i + 4 * k + 3] <-  to_uint t3 %/ 2^6 + (to_uint t4) * 2^2;
+        j <- j + 5;
+        k <- k + 1;
+      }
+      i <- i + 1;
+    }
+
+    return c;
+  }
+
+  proc decode10_opt_vec(u: W8.t Array960.t) : ipolyvec = {
+    var c : ipolyvec;
+    var i;
+
+    c <- witness;
+    i <- 0;
+    while (i < 3) {
+      c <- fill (fun k => let t0 = u.[5 * (k %/ 4)] in
+                          let t1 = u.[5 * (k %/ 4) + 1] in
+                          let t2 = u.[5 * (k %/ 4) + 2] in
+                          let t3 = u.[5 * (k %/ 4) + 3] in
+                          let t4 = u.[5 * (k %/ 4) + 4] in
+                          if (k %% 4 = 0) then to_uint t0 + (to_uint t1 %% 2^2) * 2^8
+                          else if (k %% 4 = 1) then to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6
+                          else if (k %% 4 = 2) then to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4
+                          else to_uint t3 %/ 2^6 + (to_uint t4) * 2^2) (256*i) 256 c;
+      i <- i + 1;
+    }
+
+    return c;
   }
 
    proc decode4(a : W8.t Array128.t) : ipoly = {
@@ -299,6 +340,58 @@ module Kyber_AVX2_cf = {
 
 theory AVX2_cf.
 
+equiv decode10_vec_corr:
+  EncDec_AVX2.decode10_vec ~ EncDec.decode10_vec: ={u} ==> ={res}.
+proof.
+  proc.
+  swap 2 1.
+  unroll for {1} ^while.
+  do 3!(unroll for {1} ^while).
+  unroll for {2} ^while.
+  by auto => />.
+qed.
+
+equiv eq_decode10_opt_vec:
+  EncDec_AVX2.decode10_opt_vec ~ EncDec_AVX2.decode10_vec: ={u} ==> ={res}.
+proof.
+  proc.
+  while (#pre /\ ={i} /\ 0 <= i{1} <= 3 /\ j{2} = 320*i{2} /\
+         (forall k, 0 <= k < 256*i{1} => c{1}.[k] = c{2}.[k])).
+    unroll for {2} 2.
+    wp; skip; auto => />.
+    move => &1 &2 [#] i_lb i_ub c_eq i_tub />.
+    rewrite (mulzDr 320 _ _) (mulzDr 256 _ _) mulz1 //=.
+    split.
+      + move : i_lb i_tub => /#.
+      + move => k k_lb k_ub.
+        rewrite filliE 1:/# //=.
+        rewrite k_ub //=.
+        case (k < 256 * i{2}) => k_tub.
+          + have -> /=: !(256 * i{2} <= k). by rewrite -ltzNge k_tub.
+            rewrite c_eq; first by rewrite k_lb k_tub.
+            do (rewrite Array768.set_neqiE 1:/#; first by move : k_tub k_lb => /#).
+            done.
+          + move : k_tub => /lezNgt k_tlb.
+            rewrite k_tlb /=.
+            have k_iota: k \in iota_ (256*i{2}) 256; first by rewrite mem_iota k_ub k_tlb.
+            move : k_iota.
+            do (rewrite Array768.get_setE 1:/#).
+            smt(@List @Array768 @Int).
+  auto => />.
+  move => cL cR i i_tlb _ i_lb i_ub.
+  have -> /=: i = 3. move : i_tlb i_ub => /#.
+  apply Array768.ext_eq.
+qed.
+
+equiv decode10_opt_vec_corr:
+  EncDec_AVX2.decode10_opt_vec ~ EncDec.decode10_vec: ={u} ==> ={res}.
+proof.
+  transitivity EncDec_AVX2.decode10_vec (={u} ==> ={res}) (={u} ==> ={res}).
+  smt(). trivial.
+  apply eq_decode10_opt_vec.
+  apply decode10_vec_corr.
+qed.
+
 equiv encode10_vec_corr:
   EncDec_AVX2.encode10_vec ~ EncDec.encode10_vec: a{1} = u{2} ==> ={res}.
 proof.
@@ -339,7 +432,7 @@ proof.
   auto => />.
   move => cL cR i i_tlb _ i_lb i_ub.
   have -> /=: i = 48. move : i_tlb i_ub => /#.
-  by rewrite Array960.tP.
+  apply Array960.ext_eq.
 qed.
 
 equiv encode10_opt_corr:
