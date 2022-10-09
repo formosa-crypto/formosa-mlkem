@@ -209,7 +209,7 @@ proof.
 by move=> /> *; rewrite to_sintD_small /#. 
 qed.
 
-lemma to_sintN_bnd (x y: W16.t) (xL xH: int):
+lemma to_sintN_bnd (x: W16.t) (xL xH: int):
  sint_bnd xL xH x =>
  W16.min_sint < xL =>
  sint_bnd (-xH) (-xL) (-x).

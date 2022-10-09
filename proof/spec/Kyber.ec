@@ -2017,6 +2017,11 @@ rewrite -get_to_list (nth_map  witness%W8); 1: smt(Array128.size_to_list).
 rewrite w2bitsE /= nth_mkseq /#.
 qed.
 
+(* TODO: understand the following
+search (_*_ = _*_)%Int.
+unknown symbol: PRF/20447404
+*)
+
 clone DMapSampling as MSlw128 with
  type t1 <- W8.t list,
  type t2 <- W8.t Array128.t.
@@ -3412,3 +3417,4 @@ lemma nttvecinv v i: 0 <= i < kvec => ntt (invnttv v).[i] = v.[i]
 
 
 end NTT_Properties.
+
