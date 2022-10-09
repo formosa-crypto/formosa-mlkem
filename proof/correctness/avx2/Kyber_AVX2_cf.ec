@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
-require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array1152 Array960.
+require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array768 Array960 Array1152.
 require import Jkem.
 require import Kyber.
 
@@ -173,9 +173,54 @@ module EncDec_AVX2 = {
     return fromarray384 a1 a2 a3;
   }
 
+  proc encode10_vec(a: ipolyvec) : W8.t Array960.t = {
+    var i,j,k,t0,t1,t2,t3;
+    var c : W8.t Array960.t;
+    c <- witness;
+    i <- 0; j <- 0;
+
+    while (i < 48) {
+      k <- 0;
+      while (k < 4) {
+        t0 <- a.[16*i + 4*k];
+        t1 <- a.[16*i + 4*k + 1];
+        t2 <- a.[16*i + 4*k + 2];
+        t3 <- a.[16*i + 4*k + 3];
+        c.[j] <- W8.of_int t0; j <- j + 1;
+        c.[j] <-  W8.of_int (t0 %/ 2^8 + t1 * 2^2); j <- j + 1;
+        c.[j] <-  W8.of_int (t1 %/ 2^6 + t2 * 2^4); j <- j + 1;
+        c.[j] <-  W8.of_int (t2 %/ 2^4 + t3 * 2^6); j <- j + 1;
+        c.[j] <-  W8.of_int (t3 %/ 2^2); j <- j + 1;
+        k <- k + 1;
+      }
+      i <- i + 1;
+    }
+
+    return c;
+  }
 
   proc encode10_opt_vec(a : ipolyvec) : W8.t Array960.t = {
-    return witness;
+    var c : W8.t Array960.t;
+    var i;
+
+    c <- witness;
+    i <- 0;
+
+    while (i < 48) {
+      c <- fill (fun k => let t0 = a.[16*i + 4 * (k %% 20 %/ 5)] in
+                          let t1 = a.[16*i + 4 * (k %% 20 %/ 5) + 1] in
+                          let t2 = a.[16*i + 4 * (k %% 20 %/ 5) + 2] in
+                          let t3 = a.[16*i + 4 * (k %% 20 %/ 5) + 3] in
+                          let t5 = a.[16*i + 4 * (k %% 20 %/ 5) + 4] in
+                          if (k %% 5 = 0) then W8.of_int t0
+                          else if (k %% 5 = 1) then W8.of_int (t0 %/ 2^8 + t1 * 2^2)
+                          else if (k %% 5 = 2) then W8.of_int (t1 %/ 2^6 + t2 * 2^4)
+                          else if (k %% 5 = 3) then W8.of_int (t2 %/ 2^4 + t3 * 2^6)
+                          else W8.of_int (t3 %/ 2^2))
+                (20*i) 20 c; (* FIXME *)
+      i <- i + 1;
+    }
+    return c;
   }
 
    proc encode4(p : ipoly) : W8.t Array128.t = {
@@ -253,6 +298,58 @@ module Kyber_AVX2_cf = {
 }.
 
 theory AVX2_cf.
+
+equiv encode10_vec_corr:
+  EncDec_AVX2.encode10_vec ~ EncDec.encode10_vec: a{1} = u{2} ==> ={res}.
+proof.
+  proc.
+  swap 2 1.
+  unroll for {1} ^while.
+  do 48!(unroll for {1} ^while).
+  unroll for {2} ^while.
+  by auto => />.
+qed.
+
+equiv eq_encode10_opt_vec:
+  EncDec_AVX2.encode10_opt_vec ~ EncDec_AVX2.encode10_vec: ={a} ==> ={res}.
+proof.
+  proc.
+  while (#pre /\ ={i} /\ 0 <= i{1} <= 48 /\ j{2} = 20*i{2} /\
+         (forall k, 0 <= k < 20*i{1} => c{1}.[k] = c{2}.[k])).
+    unroll for {2} 2.
+    wp; skip; auto => />.
+    move => &1 &2 [#] i_lb i_ub c_eq i_tub />.
+    rewrite (mulzDr 20 _ _) mulz1 //=.
+    split.
+      + move : i_lb i_tub => /#.
+      + move => k k_lb k_ub.
+        rewrite filliE 1:/# //=.
+        rewrite k_ub //=.
+        case (k < 20 * i{2}) => k_tub.
+          + have -> /=: !(20 * i{2} <= k). by rewrite -ltzNge k_tub.
+            rewrite c_eq; first by rewrite k_lb k_tub.
+            do (rewrite Array960.set_neqiE 1:/#; first by move : k_tub k_lb => /#).
+            done.
+          + move : k_tub => /lezNgt k_tlb.
+            rewrite k_tlb /=.
+            have k_iota: k \in iota_ (20*i{2}) 20; first by rewrite mem_iota k_ub k_tlb.
+            move : k_iota.
+            do (rewrite Array960.get_setE 1:/#).
+            smt(@List @Array960 @Int).
+  auto => />.
+  move => cL cR i i_tlb _ i_lb i_ub.
+  have -> /=: i = 48. move : i_tlb i_ub => /#.
+  by rewrite Array960.tP.
+qed.
+
+equiv encode10_opt_corr:
+  EncDec_AVX2.encode10_opt_vec ~ EncDec.encode10_vec: a{1} = u{2} ==> ={res}.
+proof.
+  transitivity EncDec_AVX2.encode10_vec (={a} ==> ={res}) (a{1} = u{2} ==> ={res}).
+  smt(). trivial.
+  apply eq_encode10_opt_vec.
+  apply encode10_vec_corr.
+qed.
 
 equiv encode12_avx2_corr:
   EncDec_AVX2.encode12 ~ EncDec.encode12: ={a} ==> ={res}.
@@ -401,10 +498,3 @@ equiv eq_encode4:
   EncDec_AVX2.encode4 ~ EncDec.encode4: ={p} ==> ={res}.
 admitted. (* MBB/MIGUEL  *)
 end AVX2_cf.
-
-
-equiv encode10_opt_corr:
-  EncDec_AVX2.encode10_opt_vec ~ EncDec.encode10_vec: a{1} = u{2} ==> ={res}.
-proof.
-  admit. (* MIGUEL/MBB*)
-qed.
