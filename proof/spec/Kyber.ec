@@ -1630,11 +1630,12 @@ module EncDec = {
       i <- 0; j <- 0;
       while (i < 768) {
          t0 <- u.[j]; t1 <- u.[j + 1]; t2 <- u.[j + 2]; t3 <- u.[j + 3]; t4 <- u.[j + 4];
-         c.[i] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;         i <- i + 1;
-         c.[i] <-  to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6; i <- i + 1;
-         c.[i] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4; i <- i + 1;
-         c.[i] <-  to_uint t3 %/ 2^6 + (to_uint t4) * 2^2;        i <- i + 1;
+         c.[i] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;
+         c.[i + 1] <-  to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6;
+         c.[i + 2] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4;
+         c.[i + 3] <-  to_uint t3 %/ 2^6 + (to_uint t4) * 2^2;
          j <- j + 5;
+         i <- i + 4;
       }
       return c;
    }
