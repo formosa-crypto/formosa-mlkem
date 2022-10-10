@@ -2,13 +2,11 @@ require import AllCore List IntDiv Ring StdOrder BitEncoding.
 
 require import Fq NTT_Fq NTTAlgebra.
 
-
 import Kyber.
 import NTT_Properties.
 
 import Zq IntOrder BitReverse.
 import NTTequiv.
-
 
 from Jasmin require import JModel.
 require import Array16 Array128  Array256 Array400.

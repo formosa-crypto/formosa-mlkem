@@ -5,7 +5,7 @@ from Jasmin require import JModel.
 require import Array256 Array16.
 require import WArray512.
 
-require import NTT_AVX_Fq2.
+require import NTT_AVX_Fq.
 
 (******* *)
 
