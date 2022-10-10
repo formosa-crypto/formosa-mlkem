@@ -99,7 +99,7 @@ proof.
           rewrite -H1. move : jbb; smt(@IntDiv @Int @List).
           rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
           by move : jbb; smt(@IntDiv @Int @List).
-        + smt().
+        + move : (H0 (j - _p)) => /#.
     have ->: forall (j: address), Glob.mem{2}.[j] = if _p + 0 <= j < _p + 960 then res{m}.[j - _p]
                                                      else mem.[j].
       move => j.
@@ -108,7 +108,7 @@ proof.
           rewrite -H3. move : jbb; smt(@IntDiv @Int @List).
           rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
           by move : jbb; smt(@IntDiv @Int @List).
-        + smt().
+        + move : (H2 (j - _p)) => /#.
     trivial.
     + proc * => /=.
       ecall (polyvec_compress_corr (lift_vector a{1}) _p  mem) => //=. 
@@ -145,7 +145,8 @@ proof.
           smt(@Array256).
   symmetry.
   proc * => /=.
-  (* call eq_encode10_vec. *) admit. (* MBB/MIGUEL : reify? *)
+  call encode10_opt_corr.
+  auto => />.
 qed.
 
 equiv compressequivvec_1 mem : 

@@ -45,7 +45,7 @@ lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t):
     equiv [ Mprevec.polyvec_decompress ~ EncDec_AVX2.decode10_opt_vec :
              valid_ptr _p 960 /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p /\
-             load_array960 Glob.mem{1} _p = _a /\ a{2} = _a
+             load_array960 Glob.mem{1} _p = _a /\ u{2} = _a
               ==>
              Glob.mem{1} = mem /\
              lift_vector res{1} = decompress_polyvec 10 res{2} /\
