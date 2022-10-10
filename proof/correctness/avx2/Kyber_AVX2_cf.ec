@@ -589,5 +589,13 @@ qed.
 
 equiv eq_encode4:
   EncDec_AVX2.encode4 ~ EncDec.encode4: ={p} ==> ={res}.
-admitted. (* MBB/MIGUEL  *)
+proof.
+  proc.
+  swap {2} 2 1.
+  unroll for {1} ^while.
+  do  4!(unroll for {1} ^while).
+  unroll for {2} ^while.
+  by auto => />.
+qed.
+
 end AVX2_cf.
