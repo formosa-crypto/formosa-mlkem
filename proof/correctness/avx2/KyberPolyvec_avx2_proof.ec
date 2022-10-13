@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
-require import Fq Array16 Array32 Array128 Array256 Array960 Array384 Array400 Array768 Array1152.
+require import Fq Array4 Array8 Array16 Array32 Array128 Array256 Array960 Array384 Array400 Array768 Array1152.
 require import W16extra WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
 require import AVX2_Ops.
 require import Jkem_avx2 Jkem.
@@ -13,6 +13,7 @@ require import KyberPolyVec.
 require import KyberPolyvec_avx2_vec.
 require import NTT_avx2.
 require import Kyber_AVX2_cf.
+require import KyberINDCPA.
 
 theory KyberPolyvecAVX.
 
@@ -28,30 +29,6 @@ import KyberPoly.
 import KyberPoly.
 import NTT_Avx2.
 import AVX2_cf.
-
-lemma polyvec_compress_corr _a (_p : address) mem :
-    equiv [ Mprevec.polyvec_compress ~ EncDec_AVX2.encode10_opt_vec :
-             pos_bound768_cxq a{1} 0 768 2 /\
-             lift_vector a{1} = _a /\
-             a{2} = compress_polyvec 10 _a /\
-             valid_ptr _p 960 /\
-             Glob.mem{1} = mem /\ to_uint rp{1} = _p
-              ==>
-             touches mem Glob.mem{1} _p 960 /\
-             load_array960 Glob.mem{1} _p = res{2}].
-admitted. (* Miguel *)
-
-lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t): 
-    equiv [ Mprevec.polyvec_decompress ~ EncDec_AVX2.decode10_opt_vec :
-             valid_ptr _p 960 /\
-             Glob.mem{1} = mem /\ to_uint rp{1} = _p /\
-             load_array960 Glob.mem{1} _p = _a /\ u{2} = _a
-              ==>
-             Glob.mem{1} = mem /\
-             lift_vector res{1} = decompress_polyvec 10 res{2} /\
-             pos_bound768_cxq res{1} 0 768 1].
-admitted. (* Miguel *)
-
 
 lemma polvec_add_corr_h _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
@@ -190,8 +167,179 @@ proof.
    rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_1.
    move : (pos_bound_res_3 (k - 512))  (pos_bound_res_2 (k - 256))  (pos_bound_res_1 k).
    smt(@Array256 @Array768).
-
 qed.
+
+lemma polyvec_compress_corr _a (_p : address) mem :
+    equiv [ Mprevec.polyvec_compress ~ EncDec_AVX2.encode10_opt_vec :
+             pos_bound768_cxq a{1} 0 768 2 /\
+             lift_vector a{1} = _a /\
+             a{2} = compress_polyvec 10 _a /\
+             valid_ptr _p 960 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+              ==>
+             touches mem Glob.mem{1} _p 960 /\
+             load_array960 Glob.mem{1} _p = res{2}].
+proof.
+  proc.
+  cfold{1} 12.
+  seq 12 2 : (#{/~a{1}}pre /\
+              lift_vector a{1} = _a /\
+              pos_bound768_cxq a{1} 0 768 1 /\
+              to_uint rp{1} = _p /\
+              v8{1} = Array16.init (fun i => W16.of_int (20159 * 2^3)) /\
+              off{1} = Array16.init (fun i => W16.of_int (2^4-1)) /\
+              shift1{1} = Array16.init (fun i => W16.of_int 2^12) /\
+              mask{1} = Array16.init (fun i => W16.of_int (2^10-1)) /\
+              shift2{1} = Array16.init (fun i => W16.of_int (2 ^ ((i %% 2) * 10))) /\
+              sllvdidx{1} = Array8.init (fun i => W32.of_int (((i + 1)%% 2) * (2^3 + 2^2))) /\
+              shufbidx{1} = pvc_shufbidx_s /\
+              ={i} /\ i{1} = 0).
+  inline Ops.iVPBROADCAST_4u64 Ops.iVPBROADCAST_16u16 Ops.iVPSLL_16u16; wp.
+  (* call{1} (polyvec_csubq_corr (lift_array768 (unlift_vector _a))). *)
+  admit.
+  wp.
+  while(#{/~mem}{~i{1}=0}pre /\ ={i} /\ 0 <= i{1} <= 48 /\
+        touches mem Glob.mem{1} _p (20*i{1}) /\
+        forall k, 0 <= k < 20*i{1} => loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]).
+    seq 21 1: (#pre /\ forall k, 0 <= k < 20*i{1} + 20 => if 0 <= k < 20*i{1} then loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]
+                                                  else if (20*i{1} <= k < 20*i{1} + 16) then t0{1}.[k %% 20] = c{2}.[k]
+                                                  else t1{1}.[k %% 4] = c{2}.[k]).
+    inline *; wp; skip; auto => />.
+    move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub />.
+    split.
+      move => k k_lb k_ub />.
+      rewrite filliE 1:/# /= lezNgt k_ub //=.
+      by apply mem_eq.
+
+      move => k k_lb k_ub.
+      rewrite filliE 1:/# //= k_ub /=.
+      case (k < 20 * i{2}) => k_tub.
+        rewrite lezNgt k_tub /= (mem_eq k) //=.
+      move : k_tub => -/lezNgt k_tlb.
+      case (k < 20 * i{2} + 16) => k_tub.
+        rewrite k_tlb /=.
+        rewrite /int_bit //=.
+        rewrite -(modz_dvd k 20 5) 1://=.
+        pose ki := k %% 20.
+        have rk_b: ki \in iota_ 0 16.
+          rewrite mem_iota /ki.
+          split; first by move : (modz_cmp k 20) => />.
+          move : k_tub => /#.
+        move : ki rk_b.
+        rewrite -List.allP.
+        rewrite -iotaredE //=.
+        split. (* REMOVE *)
+        rewrite /f4u64_t32u8 /f8u32_t4u64; do (rewrite initiE 1://= /=).
+        admit.
+        admit.
+      move : k_tub => -/lezNgt k_tlb1 />.
+        rewrite k_tlb /=.
+        rewrite /int_bit //=.
+        rewrite -(modz_dvd k 20 5) 1://=.
+        pose ki := k %% 20.
+        have rk_b: ki \in iota_ 16 4.
+          rewrite mem_iota /ki.
+          move : (modz_cmp k 20) k_tlb1 k_ub => /#.
+        move : ki rk_b.
+        rewrite -List.allP.
+        rewrite -iotaredE //=.
+        split. (* REMOVE *)
+        rewrite /f4u64_t32u8 /f8u32_t4u64; do (rewrite initiE 1://= /=).
+        admit.
+        admit.
+        admit.
+        admit.
+    (*     rewrite shr_shrw 1://=. *)
+    (*     rewrite k_tlb k_ub //=. *)
+    (*     pose tmp := (W2u32.pack2_t _). *)
+
+
+    (*     rewrite /pack2_t. *)
+    (*     rewrite /W64.(`>>>`) /(\bits8). *)
+
+    (*     rewrite -(W64.to_uintK tmp). *)
+    (*     rewrite shrDP 1://=. *)
+    (*     rewrite W8u8.of_int_bits8_div 1://= expr0 divz1. *)
+    (*     rewrite (_: 2^12 = 2^(8*1) * 2^4) 1://= (divzMr _ (2^(8*1)) (2^4)) 1..2://=. *)
+    (*     rewrite (pmod_small _ W64.modulus) 1:W64.to_uint_cmp. *)
+
+    inline *; wp; skip; auto => />.
+    move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub mem_all_eq />.
+    do split; first 2 by move : i_lb i_tub => /#.
+    + admit.
+    + move => k k_lb; rewrite (mulzDr 20 _ _) mulz1 => k_ub />.
+      case (k < 20 * i{2}) => k_tub.
+        rewrite /loadW8 get_storesE.
+        rewrite to_uintD_small.
+          rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+          move : p_ub k_tub i_tub => /#.
+        rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+        have -> /=: !(to_uint rp{1} + (20 * i{2} + 16) <= to_uint rp{1} + k). by rewrite -ltzNge; move : k_tub => /#.
+        rewrite get_storesE.
+        rewrite to_uintD_small.
+          rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+          move : p_ub k_tub i_tub => /#.
+        rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+        have -> /=: !(to_uint rp{1} + 20 * i{2} <= to_uint rp{1} + k). by rewrite -ltzNge; move : k_tub => /#.
+        rewrite /loadW8 in mem_eq.
+        by rewrite mem_eq.
+      move : k_tub; rewrite -lezNgt => k_tlb.
+      case (k < 20 * i{2} + 16) => k_tub.
+        rewrite /loadW8 get_storesE.
+        rewrite to_uintD_small.
+          rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+          move : p_ub k_tub i_tub => /#.
+        rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+        have -> /=: !(to_uint rp{1} + (20 * i{2} + 16) <= to_uint rp{1} + k). by rewrite -ltzNge; move : k_tub => /#.
+        rewrite get_storesE.
+        rewrite to_uintD_small.
+          rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+          move : p_ub k_tub i_tub => /#.
+        rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+        have -> /=: (to_uint rp{1} + 20 * i{2} <= to_uint rp{1} + k). by move : k_tlb => /#.
+        rewrite size_to_list.
+        have -> /=: (to_uint rp{1} + k < to_uint rp{1} + 20 * i{2} + 16). by move : k_tub => /#.
+        rewrite (_: to_uint rp{1} + k - (to_uint rp{1} + 20 * i{2}) = k %% 20). move : k_tlb k_tub k_ub => /#.
+        move : (mem_all_eq k); rewrite k_lb k_ub ltzNge k_tlb /= k_tub /=.
+        smt(@Array16 @List @Int).
+
+        move : k_tub => -/lezNgt k_ttlb.
+        rewrite /loadW8 get_storesE.
+        rewrite to_uintD_small.
+          rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+          move : p_ub k_ub k_tlb i_tub => /#.
+        rewrite of_uintK (pmod_small _ W64.modulus) 1:/#.
+        rewrite Array4.size_to_list.
+        rewrite lez_add2l -(addzA (to_uint rp{1}) _ 4) ltz_add2l /=.
+        rewrite k_ttlb k_ub /=.
+        rewrite (_: to_uint rp{1} + k - (to_uint rp{1} + (20 * i{2} + 16)) = k %% 4). move : k_ttlb k_ub => /#.
+        move : (mem_all_eq k). rewrite k_lb k_ub ltzNge k_tlb ltzNge k_ttlb /=.
+        smt(@Array16 @Array4 @List @Int).
+
+  skip; auto => />.
+  move => &1 &2 _p_lb _p_ub pos_bound_a />.
+    split; first by smt(@Logic).
+  move => memL c i i_tlb i_lb i_ub />.
+    have -> /=: i = 48. move : i_tlb i_ub => /#.
+    rewrite /loadW8.
+  move => mem_diff mem_eq />.
+    rewrite /load_array960 Array960.tP => j jb.
+    by rewrite initiE 1:jb /= mem_eq 1:jb.
+qed.
+  
+
+lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t): 
+    equiv [ Mprevec.polyvec_decompress ~ EncDec_AVX2.decode10_opt_vec :
+             valid_ptr _p 960 /\
+             Glob.mem{1} = mem /\ to_uint rp{1} = _p /\
+             load_array960 Glob.mem{1} _p = _a /\ u{2} = _a
+              ==>
+             Glob.mem{1} = mem /\
+             lift_vector res{1} = decompress_polyvec 10 res{2} /\
+             pos_bound768_cxq res{1} 0 768 1].
+admitted. (* Miguel *)
+
+
 
 
 lemma polyvec_reduce_corr_h _a:
