@@ -29,6 +29,7 @@ import KyberPoly.
 import KyberPoly.
 import NTT_Avx2.
 import AVX2_cf.
+import KMatrix.
 
 lemma polvec_add_corr_h _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
@@ -191,7 +192,7 @@ proof.
               shift1{1} = Array16.init (fun i => W16.of_int 2^12) /\
               mask{1} = Array16.init (fun i => W16.of_int (2^10-1)) /\
               shift2{1} = Array16.init (fun i => W16.of_int (2 ^ ((i %% 2) * 10))) /\
-              sllvdidx{1} = Array8.init (fun i => W32.of_int (((i + 1)%% 2) * (2^3 + 2^2))) /\
+              sllvdidx{1} = Array8.init (fun i => W32.of_int (((i + 1)%% 2) * 12)) /\
               shufbidx{1} = pvc_shufbidx_s /\
               ={i} /\ i{1} = 0).
   inline Ops.iVPBROADCAST_4u64 Ops.iVPBROADCAST_16u16 Ops.iVPSLL_16u16; wp.
@@ -201,18 +202,30 @@ proof.
   while(#{/~mem}{~i{1}=0}pre /\ ={i} /\ 0 <= i{1} <= 48 /\
         touches mem Glob.mem{1} _p (20*i{1}) /\
         forall k, 0 <= k < 20*i{1} => loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]).
-    seq 21 1: (#pre /\ forall k, 0 <= k < 20*i{1} + 20 => if 0 <= k < 20*i{1} then loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]
+    seq 11 0: (#pre /\ forall k, 0 <= k < 16 => f0{1}.[k] = W16.of_int (compress 10 _a.[16*i{1} %/ 256].[16*i{1} %% 256])).
+      inline *; wp; skip; auto => />.
+      move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub />.
+      move => k k_lb k_ub.
+      do (rewrite initiE 1://= /=).
+      rewrite /round_scalew /= /truncateu16 /= /wmulhs.
+      have ki: k \in iota_ 0 16.
+        by rewrite mem_iota.
+      move : k_lb k_ub => _ _.
+      move : k ki.
+      rewrite -List.allP -iotaredE //=.
+      admit. (* FIXME *)
+    seq 10 1: (#{~f0{1}}pre /\ forall k, 0 <= k < 20*i{1} + 20 => if 0 <= k < 20*i{1} then loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]
                                                   else if (20*i{1} <= k < 20*i{1} + 16) then t0{1}.[k %% 20] = c{2}.[k]
                                                   else t1{1}.[k %% 4] = c{2}.[k]).
     inline *; wp; skip; auto => />.
-    move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub />.
-    split.
+    move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub f0_def />.
+    do split.
       move => k k_lb k_ub />.
       rewrite filliE 1:/# /= lezNgt k_ub //=.
       by apply mem_eq.
 
       move => k k_lb k_ub.
-      rewrite filliE 1:/# //= k_ub /=.
+      rewrite filliE 1:/# /=.
       case (k < 20 * i{2}) => k_tub.
         rewrite lezNgt k_tub /= (mem_eq k) //=.
       move : k_tub => -/lezNgt k_tlb.
@@ -230,6 +243,7 @@ proof.
         rewrite -iotaredE //=.
         split. (* REMOVE *)
         rewrite /f4u64_t32u8 /f8u32_t4u64; do (rewrite initiE 1://= /=).
+        rewrite shr_shrw 1://=.
         admit.
         admit.
       move : k_tub => -/lezNgt k_tlb1 />.
@@ -249,19 +263,6 @@ proof.
         admit.
         admit.
         admit.
-    (*     rewrite shr_shrw 1://=. *)
-    (*     rewrite k_tlb k_ub //=. *)
-    (*     pose tmp := (W2u32.pack2_t _). *)
-
-
-    (*     rewrite /pack2_t. *)
-    (*     rewrite /W64.(`>>>`) /(\bits8). *)
-
-    (*     rewrite -(W64.to_uintK tmp). *)
-    (*     rewrite shrDP 1://=. *)
-    (*     rewrite W8u8.of_int_bits8_div 1://= expr0 divz1. *)
-    (*     rewrite (_: 2^12 = 2^(8*1) * 2^4) 1://= (divzMr _ (2^(8*1)) (2^4)) 1..2://=. *)
-    (*     rewrite (pmod_small _ W64.modulus) 1:W64.to_uint_cmp. *)
 
     inline *; wp; skip; auto => />.
     move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub mem_all_eq />.
