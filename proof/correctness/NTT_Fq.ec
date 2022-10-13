@@ -200,6 +200,47 @@ op zetas_inv : Fq Array128.t =
   let vv = Array128.init (fun k => ZqField.exp zroot (- (bsrev 8 (k * 2) + 1))) in
       vv.[127 <- scale127].
 
+lemma zetas_invE: zetas_inv = Array128.of_list witness 
+ [ inFq 1175 ; inFq 2444 ; inFq 394 ; inFq 1219 ; inFq 2300 ; inFq 1455
+ ; inFq 2117 ; inFq 1607 ; inFq 2443 ; inFq 554 ; inFq 1179 ; inFq 2186
+ ; inFq 2303 ; inFq 2926 ; inFq 2237 ; inFq 525 ; inFq 735 ; inFq 863
+ ; inFq 2768 ; inFq 1230 ; inFq 2572 ; inFq 556 ; inFq 3010 ; inFq 2266
+ ; inFq 1684 ; inFq 1239 ; inFq 780 ; inFq 2954 ; inFq 109 ; inFq 1292
+ ; inFq 1031 ; inFq 1745 ; inFq 2688 ; inFq 3061 ; inFq 992 ; inFq 2596
+ ; inFq 941 ; inFq 892 ; inFq 1021 ; inFq 2390 ; inFq 642 ; inFq 1868
+ ; inFq 2377 ; inFq 1482 ; inFq 1540 ; inFq 540 ; inFq 1678 ; inFq 1626
+ ; inFq 279 ; inFq 314 ; inFq 1173 ; inFq 2573 ; inFq 3096 ; inFq 48
+ ; inFq 667 ; inFq 1920 ; inFq 2229 ; inFq 1041 ; inFq 2606 ; inFq 1692
+ ; inFq 680 ; inFq 2746 ; inFq 568 ; inFq 3312 ; inFq 2419 ; inFq 2102
+ ; inFq 219 ; inFq 855 ; inFq 2681 ; inFq 1848 ; inFq 712 ; inFq 682
+ ; inFq 927 ; inFq 1795 ; inFq 461 ; inFq 1891 ; inFq 2877 ; inFq 2522
+ ; inFq 1894 ; inFq 1010 ; inFq 1414 ; inFq 2009 ; inFq 3296 ; inFq 464
+ ; inFq 2697 ; inFq 816 ; inFq 1352 ; inFq 2679 ; inFq 1274 ; inFq 1052
+ ; inFq 1025 ; inFq 2132 ; inFq 1573 ; inFq 76 ; inFq 2998 ; inFq 3040
+ ; inFq 2508 ; inFq 1355 ; inFq 450 ; inFq 936 ; inFq 447 ; inFq 2794
+ ; inFq 1235 ; inFq 1903 ; inFq 1996 ; inFq 1089 ; inFq 3273 ; inFq 283
+ ; inFq 1853 ; inFq 1990 ; inFq 882 ; inFq 3033 ; inFq 1583 ; inFq 2760
+ ; inFq 69 ; inFq 543 ; inFq 2532 ; inFq 3136 ; inFq 1410 ; inFq 2267
+ ; inFq 2481 ; inFq 1432 ; inFq 2699 ; inFq 687 ; inFq 40 ; inFq 749
+ ; inFq 1600 ; inFq 3303 ].
+proof.
+apply/Array128.ext_eq; move => i /mem_range mem_i_range.
+rewrite /zetas_inv /= Array128.get_set_if /= /scale127 {1 2}/R /Fq.SignedReductions.R /=.
+case: (i=127) => E.
+ by rewrite E initiE //= -eq_inFq /q /=.
+rewrite initiE /=; first by rewrite -mem_range.
+  rewrite -!ZqField.exprV inv_zroot.
+  rewrite ZqField.exprS; [by rewrite bsrev_ge0|].
+  rewrite -!(fastexp_nbitsP 8) ?bsrev_range //.
+  rewrite /fastexp_nbits !int2bs_bsrev !revK /zroot.
+  have inFqQ_mod : forall (a : int) , inFq (a * a %% q) = inFq a * inFq a.
+  + by move => ?; rewrite -inFqM_mod.
+  do 8!(rewrite BS2Int.int2bs_rcons //= foldr_rcons /= -!inFqQ_mod /q /=).
+  rewrite BS2Int.int2bs0s /= ComRing.mul1r => {inFqQ_mod}; move: i mem_i_range E.
+rewrite /range /=; apply/List.allP.
+by rewrite -JUtils.iotaredE /=  -!inFqM_mod /= !inFqK /q /=.
+qed.
+
 lemma scale127E :
   scale127 = inv (inFq 128).
 proof.

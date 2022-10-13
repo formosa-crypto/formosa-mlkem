@@ -1011,7 +1011,7 @@ proc __ntt_level1t6(rp : Fq Array256.t) : Fq Array256.t = {
     return rp16;
  }
 
- proc ntt(r : Fq Array256.t,  zetas : Fq Array400.t) : Fq Array256.t = {
+ proc ntt(r : Fq Array256.t) : Fq Array256.t = {
   var rp0,rp6 : Fq Array256.t;
   rp0 <@ __ntt_level0(r);
   rp6 <@ __ntt_level1t6(rp0);
@@ -1030,6 +1030,12 @@ proc __ntt_level1t6(rp : Fq Array256.t) : Fq Array256.t = {
   return rp6;
  }
 
+ proc ntt_bsrev(r : Fq Array256.t) : Fq Array256.t = {
+  NTT_vars.r <- r;
+  NTT_vars.zetas <- NTT_Fq.zetas;
+  r <@ NTT_bsrev.ntt();
+  return r;
+ }
 }.
 
 (* pack consistent with packing permutation *)
@@ -1204,17 +1210,25 @@ lemma ntt_avx_6_pr r:
   phoare [NTT_AVX.__ntt_level6 : perm_ntt perm_level5 rp = r ==> perm_ntt perm_nttpack128 res = r_avx2_ntt NTT_Fq.zetas r 6] = 1%r.
 conseq ntt_avx_6_ll (ntt_avx_6 r) => />. qed.
 
-(** Main Theorem in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent **)
+
+(** Main Theorems in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent **)
 lemma ntt_avx_equiv : 
-     equiv [ NTT_AVX.ntt ~ NTT_avx2.ntt :
-          r{1} = NTT_avx2.r{2} /\ NTT_avx2.zetas{2} = NTT_Fq.zetas 
-          ==> perm_ntt perm_nttpack128 res{1} = res{2}].
+     equiv [ NTT_AVX.ntt ~ NTT_AVX.ntt_bsrev:
+          ={r} ==> perm_ntt perm_nttpack128 res{1} = res{2}].
+proof.
+transitivity NTT_avx2.ntt
+  (r{1}=NTT_avx2.r{2} /\  NTT_avx2.zetas{2}=NTT_Fq.zetas ==> perm_ntt perm_nttpack128 res{1}=res{2})
+  (NTT_avx2.r{1}=r{2} /\ NTT_avx2.zetas{1}=NTT_Fq.zetas
+   (*/\ NTT_avx2.zetas{1}=NTT_Fq.zetas*) ==> ={res})=> //;
+ [ by ( move => /> &2; exists r{2} NTT_Fq.zetas)
+ | | by (symmetry; proc*; inline NTT_AVX.ntt_bsrev;
+         wp; call avx2_ntt; wp; skip => /> &1 &2)].
 proc*.
 transitivity{1} { r0 <@ NTT_AVX.ntt0t6(r); }
-  (={r,zetas} ==> ={r0})
+  (={r} ==> ={r0})
   (r{1} = NTT_avx2.r{2} /\ NTT_avx2.zetas{2}=NTT_Fq.zetas  ==> perm_ntt perm_nttpack128 r0{1}=r{2}) => //.
-  by move => /> &1 &2 /#. 
-call ntt0t6_ntt. auto => />.
+  by move => /> &1 /#. 
+ by call ntt0t6_ntt.
 inline NTT_AVX.ntt0t6 NTT_avx2.ntt.
 (*level 0*)
 rcondt{2} 2; auto => />.
@@ -1254,4 +1268,32 @@ seq 1 2 : (NTT_avx2.zetas{2}=NTT_Fq.zetas /\ perm_ntt perm_nttpack128 rp6{1}=NTT
 (*exit*)
 rcondf{2} 1; auto => />.
 qed.
+
+hoare ntt_bsrev_h _r: 
+   NTT_AVX.ntt_bsrev:
+    r = _r ==> res = ntt _r.
+proof.
+proc.
+ecall (bsrev_ntt_spec NTT_vars.r).
+wp; skip => /> rr.
+by apply imp_ntt_spec.
+qed.
+
+hoare ntt_avx_h _r:
+ NTT_AVX.ntt : r = _r ==> perm_ntt perm_nttpack128 res = ntt _r.
+proof.
+bypr => // &m ->.
+have <-: Pr[NTT_AVX.ntt_bsrev(_r) @ &m : res <> ntt _r] = 0%r.
+ byphoare (_:r=_r ==> _) => //; hoare => //.
+ by conseq (ntt_bsrev_h _r).
+byequiv => //.
+by conseq ntt_avx_equiv.
+qed.
+
+lemma ntt_avx_ll: islossless  NTT_AVX.ntt by islossless.
+
+phoare ntt_avx_spec _r:
+ [ NTT_AVX.ntt : r = _r ==> perm_ntt perm_nttpack128 res = ntt _r ] = 1%r.
+proof. by conseq ntt_avx_ll (ntt_avx_h _r). qed.
+
 
