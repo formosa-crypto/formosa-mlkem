@@ -384,6 +384,96 @@ move :Hk; rewrite -mem_range rangered => />.
 do 8!(try (move => Hk; case Hk => />); first by smt()). 
 qed.
 
+(* same for invntt *)
+
+abbrev len_inv_avx2S (k:int) = 128 %/ (2^(6-k)).
+abbrev len_inv_avx2K (k:int) = nth witness [2;4;8;16;32;64;128] k.
+
+lemma len_inv_avx2_equiv (k:int) : 0 <= k < 7 =>
+  len_inv_avx2S k = len_inv_avx2K k.
+rewrite -mem_range rangered => />.
+do 7!(move => Hk; case Hk => />). qed.
+
+abbrev zetasctr_inv_avx2S (k:int) = foldl (fun c k => c + 128 %/ len_inv_avx2S k) 0 (range 0 k).
+abbrev zetasctr_inv_avx2K (k:int) = nth witness [0;64;96;112;120;124;126] k.
+
+lemma zetasctr_inv_avx2_equiv (k:int) : 0 <= k < 7 =>
+  zetasctr_inv_avx2S k = zetasctr_inv_avx2K k.
+rewrite -mem_range rangered => />.
+do 7!(try (move => Hk; case Hk => />); first by rewrite rangered => />). qed.
+
+abbrev block_inv_avx2S k = (128 %/ 2 ^ (k+1)).
+abbrev block_inv_avx2K k = nth witness [64;32;16;8;4;2;1] k.
+
+lemma block_inv_avx2_equiv k : 0 <= k < 7 =>
+  block_inv_avx2S k = block_inv_avx2K k.
+  rewrite -mem_range rangered => />.
+  do 7!(move => Hk; case Hk => />). qed.
+
+lemma r_bsrev_invntt_inner_foldl_iE zetas len start r (k:int) :
+  0 <= start => start + len*2 <= 256 => 0 <= k <= len =>
+  forall i, (r_bsrev_invntt_inner_foldl zetas len start r k).[i] =
+  if start <= i < start + k then r.[i] + r.[i + len]
+  else if start + len <= i < start + len + k then zetas.[128 + ((-512) + start) %/ (len * 2)] * (r.[i-len] - r.[i])
+  else r.[i].  
+move => /> H1 H2. elim/natind:k => />.
+(*zero*)
+move => n *. rewrite /r_bsrev_invntt_inner_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
+(*succ*)
+move => n Hn Hrec Hk Hn2 i.
+rewrite /r_bsrev_invntt_inner_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
+rewrite /r_bsrev_invntt_inner_foldl foldl_map /r_bsrev_invntt_inner in Hrec => />.
+rewrite /r_bsrev_invntt_inner => />. rewrite get_set2_mul_addr_if => />; 1..3: by smt(mem_range).
+rewrite !Hrec => />; by smt(). qed.
+
+lemma r_bsrev_invntt_outer_foldl_iE zetas len r (k:int) :
+  0 < len =>
+  0 <= k <= 128 %/ len =>
+  forall i, (r_bsrev_invntt_outer_foldl zetas len r k).[i] =
+  if 0 <= i < k*len*2 then
+  if i %/ len %% 2 = 0 then r.[i] + r.[i + len]
+  else zetas.[128 + ((-512) + len*(i%/len-1)) %/ (len * 2)] * (r.[i - len] - r.[i])
+  else r.[i].
+move=> Hlen; elim/natind:k => />.
+(*zero*)
+move => n *. rewrite /r_bsrev_invntt_outer_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
+(*succ*)
+move => n Hn1 Hrec Hn2 Hn3 i.
+rewrite /r_bsrev_invntt_outer_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
+rewrite /r_bsrev_invntt_outer_foldl foldl_map in Hrec => />.
+rewrite /r_bsrev_invntt_outer r_bsrev_invntt_inner_foldl_iE => />; 1..3: by smt(). 
+rewrite !Hrec => />; 1..3: by smt(). clear Hrec.
+case (0 <= i) => />Hi1; last smt().
+case (i < n * len * 2) => />Hi2; first smt().
+case (i < n * (len*2)+len) => /> Hi3. 
+  rewrite (_:i %/ len = n*2) => />. smt(). smt().
+case (i < (n + 1) * len * 2) => />; last smt(). move => HH1.
+rewrite ifT. smt(). rewrite ifF. smt().
+rewrite (_:i%/len = (n*2+1)). smt(). smt(). qed.
+
+(* simpler definition that greatly speeds up proofs below *)
+lemma r_avx2_invntt_spec zetas r k : 0 <= k < 7 =>
+  r_avx2_invntt zetas r k = Array256.init (fun i =>
+    if (i %/ len_inv_avx2K k) %% 2 = 0 then r.[i] + r.[i + len_inv_avx2K k] else zetas.[zetasctr_inv_avx2K k + len_inv_avx2K k * (i%/len_inv_avx2K k - 1) %/ (len_inv_avx2K k*2)] * (r.[i - len_inv_avx2K k] - r.[i])
+  ).
+proof.
+move => Hk. rewrite /r_avx2_invntt /r_bsrev_invntt tP => />i Hi1 Hi2.
+rewrite r_bsrev_invntt_outer_foldl_iE => />.
+  smt(expr_gt0).
+ rewrite block_inv_avx2_equiv /#. 
+rewrite initiE Hi1 => />.
+move :Hk; rewrite -mem_range rangered => />.
+do 8!(try (move => Hk; case Hk => />); first by smt()). 
+qed.
+
+lemma r_avx2_invntt_post_spec zetas r :
+  r_avx2_invntt_post zetas r = Array256.init (fun i => r.[i] * zetas.[127]).
+proof.
+rewrite /r_avx2_invntt_post /r_bsrev_invntt_post_foldl /r_bsrev_invntt_post => />.
+pose upd := (fun (i:int) x => x * zetas.[127]).
+rewrite (_:(fun (i : int) => r.[i] * zetas.[127]) = (fun (i : int) => upd i r.[i]) ) => />. 
+rewrite -foldl_upd_range => />. qed.
+
 (* NTT AVX intermediate implementation *)
 
 (*theory NTT_AVX_Fq.*)
@@ -493,6 +583,36 @@ proc __nttpack128(r0 r1 r2 r3 r4 r5 r6 r7: Fq Array16.t): Fq Array16.t * Fq Arra
   (r6d, r7d) <- shuffle8 r6c r7c;
 
   return (r0d, r2d, r4d, r6d, r1d, r3d, r5d, r7d);
+}
+
+proc __nttunpack128(r0 r1 r2 r3 r4 r5 r6 r7: Fq Array16.t): Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
+  
+  var r0a,r1a,r2a,r3a,r4a,r5a,r6a,r7a : Fq Array16.t;
+  var r0b,r1b,r2b,r3b,r4b,r5b,r6b,r7b : Fq Array16.t;
+  var r0c,r1c,r2c,r3c,r4c,r5c,r6c,r7c : Fq Array16.t;
+  var r0d,r1d,r2d,r3d,r4d,r5d,r6d,r7d : Fq Array16.t;
+
+  (r0a, r4a) <- shuffle8 r0 r4;
+  (r1a, r5a) <- shuffle8 r1 r5;
+  (r2a, r6a) <- shuffle8 r2 r6;
+  (r3a, r7a) <- shuffle8 r3 r7;
+
+  (r0b, r2b) <- shuffle4 r0a r2a;
+  (r4b, r6b) <- shuffle4 r4a r6a;
+  (r1b, r3b) <- shuffle4 r1a r3a;
+  (r5b, r7b) <- shuffle4 r5a r7a;
+
+  (r0c, r1c) <- shuffle2 r0b r1b;
+  (r2c, r3c) <- shuffle2 r2b r3b;
+  (r4c, r5c) <- shuffle2 r4b r5b;
+  (r6c, r7c) <- shuffle2 r7b r7b;
+
+  (r0d, r4d) <- shuffle1 r0c r4c;
+  (r1d, r5d) <- shuffle1 r1c r5c;
+  (r2d, r6d) <- shuffle1 r2c r6c;
+  (r3d, r7d) <- shuffle1 r3c r7c;
+
+  return (r0d, r4d, r1d, r5d, r2d, r6d, r3d, r7d);
 }
 
 proc __butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: Fq Array16.t) : Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
@@ -1036,6 +1156,441 @@ proc __ntt_level1t6(rp : Fq Array256.t) : Fq Array256.t = {
   r <@ NTT_bsrev.ntt();
   return r;
  }
+
+proc __invntt___butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: Fq Array16.t) : Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
+
+  var rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
+
+  rh0 <- Array16.init (fun i => z0.[i] * (rl0t.[i] - rh0t.[i]));
+  rl0 <- Array16.init (fun i => rl0t.[i] + rh0t.[i]);
+  
+  rh1 <- Array16.init (fun i => z0.[i] * (rl1t.[i] - rh1t.[i]));
+  rl1 <- Array16.init (fun i => rl1t.[i] + rh1t.[i]);
+  
+  rh2 <- Array16.init (fun i => z1.[i] * (rl2t.[i] - rh2t.[i]));
+  rl2 <- Array16.init (fun i => rl2t.[i] + rh2t.[i]);
+  
+  rh3 <- Array16.init (fun i => z1.[i] * (rl3t.[i] - rh3t.[i]));
+  rl3 <- Array16.init (fun i => rl3t.[i] + rh3t.[i]);
+  
+  return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
+}
+
+proc __invntt_level0(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var zeta0, zeta1, zeta0k, zeta1k : Fq Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
+  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : Fq Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
+
+  zeta0 <- Array16.of_list witness [inFq 1175 ; inFq 394 ; inFq 2300 ; inFq 2117 ; inFq 2443 ; inFq 1179 ; inFq 2303 ; inFq 2237 ; inFq 735 ; inFq 2768 ; inFq 2572 ; inFq 3010; inFq 1684 ; inFq 780 ; inFq 109 ; inFq 1031];
+  zeta1 <- Array16.of_list witness [inFq 2444 ; inFq 1219 ; inFq 1455 ; inFq 1607 ; inFq 554 ; inFq 2186 ; inFq 2926 ; inFq 525 ; inFq 863 ; inFq 1230 ; inFq 556 ; inFq 2266 ; inFq 1239 ; inFq 2954 ; inFq 1292 ; inFq 1745];
+  
+  (r0,r1,r2,r3,r4,r5,r6,r7) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
+
+  (r0a, r1a, r4a, r5a, r2a, r3a, r6a, r7a) <@ __invntt___butterfly64x(r0, r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1);
+  
+  zeta0k <- Array16.of_list witness [inFq 2688 ; inFq 992; inFq 941; inFq 1021; inFq 642; inFq 2377; inFq 1540; inFq 1678; inFq 279; inFq 1173; inFq 3096; inFq 667; inFq 2229; inFq 2606; inFq 680; inFq 568 ];
+  zeta1k <- Array16.of_list witness [inFq 3061 ; inFq 2596 ; inFq 892 ; inFq 2390 ; inFq 1868 ; inFq 1482 ; inFq 540 ; inFq 1626; inFq 314 ; inFq 2573 ; inFq 48 ; inFq 1920 ; inFq 1041 ; inFq 1692 ; inFq 2746 ; inFq 3312 ];
+
+  (r0k,r1k,r2k,r3k,r4k,r5k,r6k,r7k) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
+
+  (r0l, r1l, r4l, r5l, r2l, r3l, r6l, r7l) <@ __invntt___butterfly64x(r0k, r1k, r4k, r5k, r2k, r3k, r6k, r7k, zeta0k, zeta1k);
+  
+  return CS2P [r0a;r1a;r4a;r5a;r2a;r3a;r6a;r7a;r0l;r1l;r4l;r5l;r2l;r3l;r6l;r7l];
+}
+
+proc __invntt_level1(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var zeta1a, zeta1l : Fq Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
+  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : Fq Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
+  
+  zeta1a <- Array16.of_list witness [ inFq 2419 ; inFq 2102 ; inFq 219 ; inFq 855 ; inFq 2681 ; inFq 1848 ; inFq 712 ; inFq 682 ; inFq 927 ; inFq 1795 ; inFq 461 ; inFq 1891 ; inFq 2877 ; inFq 2522 ; inFq 1894 ; inFq 1010 ];
+  
+  (r0a,r1a,r4a,r5a,r2a,r3a,r6a,r7a) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
+  (r0l,r1l,r4l,r5l,r2l,r3l,r6l,r7l) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
+
+  (r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b) <@ __invntt___butterfly64x(r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a, zeta1a, zeta1a);
+  
+  (r0c,r1c) <- shuffle1 r0b r1b;
+  (r2c,r3c) <- shuffle1 r2b r3b;
+  (r4c,r5c) <- shuffle1 r4b r5b;
+  (r6c,r7c) <- shuffle1 r6b r7b;
+  
+  zeta1l <- Array16.of_list witness
+             [ inFq 1414 ; inFq 2009 ; inFq 3296 ; inFq 464 ; inFq 2697 ; inFq 816 ; inFq 1352 ; inFq 2679 ; inFq 1274 ; inFq 1052 ; inFq 1025 ; inFq 2132 ; inFq 1573 ; inFq 76 ; inFq 2998 ; inFq 3040 ];
+
+  (r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m) <@ __invntt___butterfly64x(r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l, zeta1l, zeta1l);
+
+  (r0n,r1n) <- shuffle1 r0m r1m;
+  (r2n,r3n) <- shuffle1 r2m r3m;
+  (r4n,r5n) <- shuffle1 r4m r5m;
+  (r6n,r7n) <- shuffle1 r6m r7m;
+  
+  return CS2P [r0c;r1c;r2c;r3c;r4c;r5c;r6c;r7c;r0n;r1n;r2n;r3n;r4n;r5n;r6n;r7n];
+}
+
+proc __invntt_level2(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var zeta1c, zeta1n : Fq Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
+  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : Fq Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
+  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : Fq Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
+  
+  zeta1c <- Array16.of_list witness [ inFq 2508 ; inFq 2508; inFq 1355 ; inFq 1355; inFq 450 ; inFq 450; inFq 936; inFq 936 ; inFq 447; inFq 447 ; inFq 2794; inFq 2794 ; inFq 1235; inFq 1235 ; inFq 1903; inFq 1903 ];
+  
+  (r0c,r1c,r2c,r3c,r4c,r5c,r6c,r7c) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
+  (r0n,r1n,r2n,r3n,r4n,r5n,r6n,r7n) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
+
+  (r0d, r2d, r4d, r6d, r1d, r3d, r5d, r7d) <@ __invntt___butterfly64x(r0c, r2c, r4c, r6c, r1c, r3c, r5c, r7c, zeta1c, zeta1c);
+
+  (r0e,r2e) <- shuffle2 r0d r2d;
+  (r4e,r6e) <- shuffle2 r4d r6d;
+  (r1e,r3e) <- shuffle2 r1d r3d;
+  (r5e,r7e) <- shuffle2 r5d r7d;
+  
+  zeta1n <- Array16.of_list witness
+             [ inFq 1996 ; inFq 1996; inFq 1089 ; inFq 1089; inFq 3273 ; inFq 3273; inFq 283 ; inFq 283; inFq 1853 ; inFq 1853; inFq 1990 ; inFq 1990; inFq 882 ; inFq 882; inFq 3033; inFq 3033 ];
+
+  (r0o, r2o, r4o, r6o, r1o, r3o, r5o, r7o) <@ __invntt___butterfly64x(r0n, r2n, r4n, r6n, r1n, r3n, r5n, r7n, zeta1n, zeta1n);
+
+  (r0p,r2p) <- shuffle2 r0o r2o;
+  (r4p,r6p) <- shuffle2 r4o r6o;
+  (r1p,r3p) <- shuffle2 r1o r3o;
+  (r5p,r7p) <- shuffle2 r5o r7o;
+  
+  return CS2P [r0e;r2e;r4e;r6e;r1e;r3e;r5e;r7e;r0p;r2p;r4p;r6p;r1p;r3p;r5p;r7p];
+}
+
+proc __invntt_level3(rp : Fq Array256.t) : Fq Array256.t =
+{ 
+  var zeta1e, zeta1p : Fq Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
+  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : Fq Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
+  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : Fq Array16.t;  
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
+
+  zeta1e <- Array16.of_list witness [ inFq 1583; inFq 1583; inFq 1583; inFq 1583 ; inFq 2760; inFq 2760; inFq 2760; inFq 2760 ; inFq 69 ; inFq 69; inFq 69; inFq 69; inFq 543; inFq 543; inFq 543; inFq 543 ];
+  
+  (r0e,r2e,r4e,r6e,r1e,r3e,r5e,r7e) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
+  (r0p,r2p,r4p,r6p,r1p,r3p,r5p,r7p) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
+
+  (r0f, r4f, r1f, r5f, r2f, r6f, r3f, r7f) <@ __invntt___butterfly64x(r0e, r4e, r1e, r5e, r2e, r6e, r3e, r7e, zeta1e, zeta1e);
+
+  (r0g,r4g) <- shuffle4 r0f r4f;
+  (r1g,r5g) <- shuffle4 r1f r5f;
+  (r2g,r6g) <- shuffle4 r2f r6f;
+  (r3g,r7g) <- shuffle4 r3f r7f;
+  
+  zeta1p <- Array16.of_list witness
+             [ inFq 2532 ; inFq 2532; inFq 2532; inFq 2532; inFq 3136 ; inFq 3136; inFq 3136; inFq 3136; inFq 1410 ; inFq 1410; inFq 1410; inFq 1410; inFq 2267; inFq 2267; inFq 2267; inFq 2267 ];
+
+  (r0q, r4q, r1q, r5q, r2q, r6q, r3q, r7q) <@ __invntt___butterfly64x(r0p, r4p, r1p, r5p, r2p, r6p, r3p, r7p, zeta1p, zeta1p);
+
+  (r0r,r4r) <- shuffle4 r0q r4q;
+  (r1r,r5r) <- shuffle4 r1q r5q;
+  (r2r,r6r) <- shuffle4 r2q r6q;
+  (r3r,r7r) <- shuffle4 r3q r7q;
+  
+  return CS2P [r0g;r4g;r1g;r5g;r2g;r6g;r3g;r7g;r0r;r4r;r1r;r5r;r2r;r6r;r3r;r7r];
+}
+
+proc __invntt_level4(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var zeta1g, zeta1r : Fq Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
+  
+  zeta1g <- Array16.of_list witness [ inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481; inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432 ];
+  
+  (r0g,r4g,r1g,r5g,r2g,r6g,r3g,r7g) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
+  (r0r,r4r,r1r,r5r,r2r,r6r,r3r,r7r) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
+
+  (r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h) <@ __invntt___butterfly64x(r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g, zeta1g, zeta1g);
+
+  (r0i,r1i) <- shuffle8 r0h r1h;
+  (r2i,r3i) <- shuffle8 r2h r3h;
+  (r4i,r5i) <- shuffle8 r4h r5h;
+  (r6i,r7i) <- shuffle8 r6h r7h;
+  
+  zeta1r <- Array16.of_list witness
+             [ inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699 ; inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687 ];
+
+  (r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s) <@ __invntt___butterfly64x(r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r, zeta1r, zeta1r);
+
+  (r0t,r1t) <- shuffle8 r0s r1s;
+  (r2t,r3t) <- shuffle8 r2s r3s;
+  (r4t,r5t) <- shuffle8 r4s r5s;
+  (r6t,r7t) <- shuffle8 r6s r7s;
+  
+  return CS2P [r0i;r1i;r2i;r3i;r4i;r5i;r6i;r7i;r0t;r1t;r2t;r3t;r4t;r5t;r6t;r7t];
+}
+
+proc __invntt_level5(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var zeta1i, zeta1t : Fq Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
+  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : Fq Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
+  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : Fq Array16.t;
+
+  zeta1i <- Array16.init (fun i => inFq 40);
+  
+  (r0i,r1i,r2i,r3i,r4i,r5i,r6i,r7i) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
+  (r0t,r1t,r2t,r3t,r4t,r5t,r6t,r7t) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
+
+  (r0j, r2j, r4j, r6j, r1j, r3j, r5j, r7j) <@ __invntt___butterfly64x(r0i, r2i, r4i, r6i, r1i, r3i, r5i, r7i, zeta1i, zeta1i);
+  
+  zeta1t <- Array16.init (fun i => inFq 749);
+
+  (r0u, r2u, r4u, r6u, r1u, r3u, r5u, r7u) <@ __invntt___butterfly64x(r0t, r2t, r4t, r6t, r1t, r3t, r5t, r7t, zeta1t, zeta1t);
+  
+  return CS2P [r0j;r2j;r4j;r6j;r1j;r3j;r5j;r7j;r0u;r2u;r4u;r6u;r1u;r3u;r5u;r7u];
+}
+
+proc __invntt_level0t5(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var zeta0, zeta1, zeta0a, zeta1a, zeta0c, zeta1c, zeta0e, zeta1e, zeta0g, zeta1g, zeta0i, zeta1i, zeta0k, zeta1k, zeta0l, zeta1l, zeta0n, zeta1n, zeta0p, zeta1p, zeta0r, zeta1r, zeta0t, zeta1t : Fq Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
+  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : Fq Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
+  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : Fq Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
+  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : Fq Array16.t;
+  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : Fq Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
+  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : Fq Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
+  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : Fq Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
+  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : Fq Array16.t;
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
+  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : Fq Array16.t;
+  var rp1,rp2,rp3,rp4,rp5,rp6,rp7,rp8,rp9,rp10,rp11,rp12,rp13,rp14,rp15,rp16 : Fq Array256.t;
+
+  (**** LEFT-HALF*****)
+  
+    (* level 0 *)
+    zeta0 <- Array16.of_list witness [inFq 1175 ; inFq 394 ; inFq 2300 ; inFq 2117 ; inFq 2443 ; inFq 1179 ; inFq 2303 ; inFq 2237 ; inFq 735 ; inFq 2768 ; inFq 2572 ; inFq 3010; inFq 1684 ; inFq 780 ; inFq 109 ; inFq 1031];
+    zeta1 <- Array16.of_list witness [inFq 2444 ; inFq 1219 ; inFq 1455 ; inFq 1607 ; inFq 554 ; inFq 2186 ; inFq 2926 ; inFq 525 ; inFq 863 ; inFq 1230 ; inFq 556 ; inFq 2266 ; inFq 1239 ; inFq 2954 ; inFq 1292 ; inFq 1745];
+
+    r0 <- P2C rp 0;
+    r1 <- P2C rp 1;
+    r2 <- P2C rp 2;
+    r3 <- P2C rp 3;
+    r4 <- P2C rp 4;
+    r5 <- P2C rp 5;
+    r6 <- P2C rp 6;
+    r7 <- P2C rp 7;
+
+    (r0a, r1a, r4a, r5a, r2a, r3a, r6a, r7a) <@ __invntt___butterfly64x(r0, r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1);
+
+    (* level 1 *)
+    zeta1a <- Array16.of_list witness [ inFq 2419 ; inFq 2102 ; inFq 219 ; inFq 855 ; inFq 2681 ; inFq 1848 ; inFq 712 ; inFq 682 ; inFq 927 ; inFq 1795 ; inFq 461 ; inFq 1891 ; inFq 2877 ; inFq 2522 ; inFq 1894 ; inFq 1010 ];
+
+    (r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b) <@ __invntt___butterfly64x(r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a, zeta1a, zeta1a);
+    
+    (r0c,r1c) <- shuffle1 r0b r1b;
+    (r2c,r3c) <- shuffle1 r2b r3b;
+    (r4c,r5c) <- shuffle1 r4b r5b;
+    (r6c,r7c) <- shuffle1 r6b r7b;
+
+    (* level 2 *)
+    zeta1c <- Array16.of_list witness [ inFq 2508 ; inFq 2508; inFq 1355 ; inFq 1355; inFq 450 ; inFq 450; inFq 936; inFq 936 ; inFq 447; inFq 447 ; inFq 2794; inFq 2794 ; inFq 1235; inFq 1235 ; inFq 1903; inFq 1903 ];
+
+    (r0d, r2d, r4d, r6d, r1d, r3d, r5d, r7d) <@ __invntt___butterfly64x(r0c, r2c, r4c, r6c, r1c, r3c, r5c, r7c, zeta1c, zeta1c);
+
+    (r0e,r2e) <- shuffle2 r0d r2d;
+    (r4e,r6e) <- shuffle2 r4d r6d;
+    (r1e,r3e) <- shuffle2 r1d r3d;
+    (r5e,r7e) <- shuffle2 r5d r7d;
+
+    (* level 3 *)
+    zeta1e <- Array16.of_list witness [ inFq 1583; inFq 1583; inFq 1583; inFq 1583 ; inFq 2760; inFq 2760; inFq 2760; inFq 2760 ; inFq 69 ; inFq 69; inFq 69; inFq 69; inFq 543; inFq 543; inFq 543; inFq 543 ];
+
+    (r0f, r4f, r1f, r5f, r2f, r6f, r3f, r7f) <@ __invntt___butterfly64x(r0e, r4e, r1e, r5e, r2e, r6e, r3e, r7e, zeta1e, zeta1e);
+
+    (r0g,r4g) <- shuffle4 r0f r4f;
+    (r1g,r5g) <- shuffle4 r1f r5f;
+    (r2g,r6g) <- shuffle4 r2f r6f;
+    (r3g,r7g) <- shuffle4 r3f r7f;
+
+    (* level 4 *)
+    zeta1g <- Array16.of_list witness [ inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481; inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432 ];
+
+    (r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h) <@ __invntt___butterfly64x(r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g, zeta1g, zeta1g);
+
+    (r0i,r1i) <- shuffle8 r0h r1h;
+    (r2i,r3i) <- shuffle8 r2h r3h;
+    (r4i,r5i) <- shuffle8 r4h r5h;
+    (r6i,r7i) <- shuffle8 r6h r7h;
+
+    (* level 5 *)
+    zeta1i <- Array16.init (fun i => inFq 40);
+
+    (r0j, r2j, r4j, r6j, r1j, r3j, r5j, r7j) <@ __invntt___butterfly64x(r0i, r2i, r4i, r6i, r1i, r3i, r5i, r7i, zeta1i, zeta1i);
+
+    rp1 <- PUC rp  0 r0j;
+    rp2 <- PUC rp1 1 r2j;
+    rp3 <- PUC rp2 2 r4j;
+    rp4 <- PUC rp3 3 r6j;
+    rp5 <- PUC rp4 4 r1j;
+    rp6 <- PUC rp5 5 r3j;
+    rp7 <- PUC rp6 6 r5j;
+    rp8 <- PUC rp7 7 r7j;
+  
+  (**** RIGHT-HALF*****)
+  
+    (* level 0 *)
+    zeta0k <- Array16.of_list witness [inFq 2688 ; inFq 992; inFq 941; inFq 1021; inFq 642; inFq 2377; inFq 1540; inFq 1678; inFq 279; inFq 1173; inFq 3096; inFq 667; inFq 2229; inFq 2606; inFq 680; inFq 568 ];
+    zeta1k <- Array16.of_list witness [inFq 3061 ; inFq 2596 ; inFq 892 ; inFq 2390 ; inFq 1868 ; inFq 1482 ; inFq 540 ; inFq 1626; inFq 314 ; inFq 2573 ; inFq 48 ; inFq 1920 ; inFq 1041 ; inFq 1692 ; inFq 2746 ; inFq 3312 ];
+
+    r0k <- P2C rp 8;
+    r1k <- P2C rp 9;
+    r2k <- P2C rp 10;
+    r3k <- P2C rp 11;
+    r4k <- P2C rp 12;
+    r5k <- P2C rp 13;
+    r6k <- P2C rp 14;
+    r7k <- P2C rp 15;
+
+    (r0l, r1l, r4l, r5l, r2l, r3l, r6l, r7l) <@ __invntt___butterfly64x(r0k, r1k, r4k, r5k, r2k, r3k, r6k, r7k, zeta0k, zeta1k);
+
+    (* level 1 *)
+    zeta1l <-  Array16.of_list witness
+             [ inFq 1414 ; inFq 2009 ; inFq 3296 ; inFq 464 ; inFq 2697 ; inFq 816 ; inFq 1352 ; inFq 2679 ; inFq 1274 ; inFq 1052 ; inFq 1025 ; inFq 2132 ; inFq 1573 ; inFq 76 ; inFq 2998 ; inFq 3040 ];
+
+    (r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m) <@ __invntt___butterfly64x(r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l, zeta1l, zeta1l);
+    
+    (r0n,r1n) <- shuffle1 r0m r1m;
+    (r2n,r3n) <- shuffle1 r2m r3m;
+    (r4n,r5n) <- shuffle1 r4m r5m;
+    (r6n,r7n) <- shuffle1 r6m r7m;
+
+    (* level 2 *)
+    zeta1n <- Array16.of_list witness
+             [ inFq 1996 ; inFq 1996; inFq 1089 ; inFq 1089; inFq 3273 ; inFq 3273; inFq 283 ; inFq 283; inFq 1853 ; inFq 1853; inFq 1990 ; inFq 1990; inFq 882 ; inFq 882; inFq 3033; inFq 3033 ];
+
+    (r0o, r2o, r4o, r6o, r1o, r3o, r5o, r7o) <@ __invntt___butterfly64x(r0n, r2n, r4n, r6n, r1n, r3n, r5n, r7n, zeta1n, zeta1n);
+
+    (r0p,r2p) <- shuffle2 r0o r2o;
+    (r4p,r6p) <- shuffle2 r4o r6o;
+    (r1p,r3p) <- shuffle2 r1o r3o;
+    (r5p,r7p) <- shuffle2 r5o r7o;
+
+    (* level 3 *)
+    zeta1p <- Array16.of_list witness
+             [ inFq 2532 ; inFq 2532; inFq 2532; inFq 2532; inFq 3136 ; inFq 3136; inFq 3136; inFq 3136; inFq 1410 ; inFq 1410; inFq 1410; inFq 1410; inFq 2267; inFq 2267; inFq 2267; inFq 2267 ];
+
+    (r0q, r4q, r1q, r5q, r2q, r6q, r3q, r7q) <@ __invntt___butterfly64x(r0p, r4p, r1p, r5p, r2p, r6p, r3p, r7p, zeta1p, zeta1p);
+
+    (r0r,r4r) <- shuffle4 r0q r4q;
+    (r1r,r5r) <- shuffle4 r1q r5q;
+    (r2r,r6r) <- shuffle4 r2q r6q;
+    (r3r,r7r) <- shuffle4 r3q r7q;
+
+    (* level 4 *)
+    zeta1r <- Array16.of_list witness
+             [ inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699 ; inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687 ];
+
+    (r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s) <@ __invntt___butterfly64x(r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r, zeta1r, zeta1r);
+
+    (r0t,r1t) <- shuffle8 r0s r1s;
+    (r2t,r3t) <- shuffle8 r2s r3s;
+    (r4t,r5t) <- shuffle8 r4s r5s;
+    (r6t,r7t) <- shuffle8 r6s r7s;
+
+    (* level 5 *)
+    zeta1t <- Array16.init (fun i => inFq 749);
+
+    (r0u, r2u, r4u, r6u, r1u, r3u, r5u, r7u) <@ __invntt___butterfly64x(r0t, r2t, r4t, r6t, r1t, r3t, r5t, r7t, zeta1t, zeta1t);
+    
+    rp9  <- PUC rp8  8  r0u;
+    rp10 <- PUC rp9  9  r2u;
+    rp11 <- PUC rp10 10 r4u;
+    rp12 <- PUC rp11 11 r6u;
+    rp13 <- PUC rp12 12 r1u;
+    rp14 <- PUC rp13 13 r3u;
+    rp15 <- PUC rp14 14 r5u;
+    rp16 <- PUC rp15 15 r7u;
+
+    return rp16;
+}
+
+
+proc ___invntt_level6(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var zeta0 : Fq Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
+
+  zeta0 <- Array16.init (fun i => inFq 1600);
+  
+  (r0,r1,r2,r3,r0b,r1b,r2b,r3b) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
+  (r4,r5,r6,r7,r4b,r5b,r6b,r7b) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
+
+  (r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a) <@ __invntt___butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0);
+
+  (r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c) <@ __invntt___butterfly64x(r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b, zeta0, zeta0);
+
+  return CS2P [r0a;r1a;r2a;r3a;r0c;r1c;r2c;r3c;r4a;r5a;r6a;r7a;r4c;r5c;r6c;r7c];
+}
+
+proc __invntt_level6(rp : Fq Array256.t) : Fq Array256.t =
+{
+  var rp1,rp2 : Fq Array256.t;
+  rp1 <@ ___invntt_level6(rp);
+  rp2 <- Array256.init (fun i => rp1.[i] * inFq 3303 );
+  return rp2;
+}
+
+proc invntt(r : Fq Array256.t) : Fq Array256.t =
+{
+  var rp1,rp2 : Fq Array256.t;
+  rp1 <@ __invntt_level0t5(r);
+  rp2 <@ __invntt_level6(rp1);
+  return rp2;
+}
+
+proc invntt0t6(r : Fq Array256.t) : Fq Array256.t = {
+ var rp0,rp1,rp2,rp3,rp4,rp5,rp6;
+ rp0 <@ __invntt_level0(r);
+ rp1 <@ __invntt_level1(rp0);
+ rp2 <@ __invntt_level2(rp1);
+ rp3 <@ __invntt_level3(rp2);
+ rp4 <@ __invntt_level4(rp3);
+ rp5 <@ __invntt_level5(rp4);
+ rp6 <@ __invntt_level6(rp5);
+ return rp6;
+}
+
 }.
 
 (* pack consistent with packing permutation *)
@@ -1086,18 +1641,6 @@ inline *; auto => /> &1.
 by rewrite (P2CS rp{1}) !PUC_i.
 qed.
 
-op perm_level2 : int list =
-  [0;1;2;3;4;5;6;7;16;17;18;19;20;21;22;23;32;33;34;35;36;37;38;39;48;49;50;51;52;53;54;55;64;65;66;67;68;69;70;71;80;81;82;83;84;85;86;87;96;97;98;99;100;101;102;103;112;113;114;115;116;117;118;119;8;9;10;11;12;13;14;15;24;25;26;27;28;29;30;31;40;41;42;43;44;45;46;47;56;57;58;59;60;61;62;63;72;73;74;75;76;77;78;79;88;89;90;91;92;93;94;95;104;105;106;107;108;109;110;111;120;121;122;123;124;125;126;127] axiomatized by perm_level2E.
-
-op perm_level3 : int list =
-  [0;1;2;3;16;17;18;19;32;33;34;35;48;49;50;51;64;65;66;67;80;81;82;83;96;97;98;99;112;113;114;115;4;5;6;7;20;21;22;23;36;37;38;39;52;53;54;55;68;69;70;71;84;85;86;87;100;101;102;103;116;117;118;119;8;9;10;11;24;25;26;27;40;41;42;43;56;57;58;59;72;73;74;75;88;89;90;91;104;105;106;107;120;121;122;123;12;13;14;15;28;29;30;31;44;45;46;47;60;61;62;63;76;77;78;79;92;93;94;95;108;109;110;111;124;125;126;127] axiomatized by perm_level3E.
-
-op perm_level4 : int list =
-  [0;1;16;17;32;33;48;49;64;65;80;81;96;97;112;113;2;3;18;19;34;35;50;51;66;67;82;83;98;99;114;115;4;5;20;21;36;37;52;53;68;69;84;85;100;101;116;117;6;7;22;23;38;39;54;55;70;71;86;87;102;103;118;119;8;9;24;25;40;41;56;57;72;73;88;89;104;105;120;121;10;11;26;27;42;43;58;59;74;75;90;91;106;107;122;123;12;13;28;29;44;45;60;61;76;77;92;93;108;109;124;125;14;15;30;31;46;47;62;63;78;79;94;95;110;111;126;127] axiomatized by perm_level4E.
-
-op perm_level5 : int list =
-  [0;16;32;48;64;80;96;112;1;17;33;49;65;81;97;113;2;18;34;50;66;82;98;114;3;19;35;51;67;83;99;115;4;20;36;52;68;84;100;116;5;21;37;53;69;85;101;117;6;22;38;54;70;86;102;118;7;23;39;55;71;87;103;119;8;24;40;56;72;88;104;120;9;25;41;57;73;89;105;121;10;26;42;58;74;90;106;122;11;27;43;59;75;91;107;123;12;28;44;60;76;92;108;124;13;29;45;61;77;93;109;125;14;30;46;62;78;94;110;126;15;31;47;63;79;95;111;127] axiomatized by perm_level5E.
-
 lemma ntt_avx_0_ll : islossless NTT_AVX.__ntt_level0 by islossless.
 lemma ntt_avx_1_ll : islossless NTT_AVX.__ntt_level1 by islossless.
 lemma ntt_avx_2_ll : islossless NTT_AVX.__ntt_level2 by islossless.
@@ -1134,6 +1677,8 @@ lemma ntt_avx_1_pr r:
   phoare [NTT_AVX.__ntt_level1 : rp = r ==> res = r_avx2_ntt NTT_Fq.zetas r 1] = 1%r.
 conseq ntt_avx_1_ll (ntt_avx_1 r) => />. qed.
 
+op perm_level2 : int list =
+  [0;1;2;3;4;5;6;7;16;17;18;19;20;21;22;23;32;33;34;35;36;37;38;39;48;49;50;51;52;53;54;55;64;65;66;67;68;69;70;71;80;81;82;83;84;85;86;87;96;97;98;99;100;101;102;103;112;113;114;115;116;117;118;119;8;9;10;11;12;13;14;15;24;25;26;27;28;29;30;31;40;41;42;43;44;45;46;47;56;57;58;59;60;61;62;63;72;73;74;75;76;77;78;79;88;89;90;91;92;93;94;95;104;105;106;107;108;109;110;111;120;121;122;123;124;125;126;127] axiomatized by perm_level2E.
 
 hoare ntt_avx_2 r:
   NTT_AVX.__ntt_level2 : rp = r ==> perm_ntt perm_level2 res = r_avx2_ntt NTT_Fq.zetas r 2.
@@ -1150,6 +1695,9 @@ lemma ntt_avx_2_pr r:
   phoare [NTT_AVX.__ntt_level2 : rp = r ==> perm_ntt perm_level2 res = r_avx2_ntt NTT_Fq.zetas r 2] = 1%r.
 conseq ntt_avx_2_ll (ntt_avx_2 r) => />. qed.
 
+op perm_level3 : int list =
+  [0;1;2;3;16;17;18;19;32;33;34;35;48;49;50;51;64;65;66;67;80;81;82;83;96;97;98;99;112;113;114;115;4;5;6;7;20;21;22;23;36;37;38;39;52;53;54;55;68;69;70;71;84;85;86;87;100;101;102;103;116;117;118;119;8;9;10;11;24;25;26;27;40;41;42;43;56;57;58;59;72;73;74;75;88;89;90;91;104;105;106;107;120;121;122;123;12;13;14;15;28;29;30;31;44;45;46;47;60;61;62;63;76;77;78;79;92;93;94;95;108;109;110;111;124;125;126;127] axiomatized by perm_level3E.
+
 hoare ntt_avx_3 r:
   NTT_AVX.__ntt_level3 : perm_ntt perm_level2 rp = r ==> perm_ntt perm_level3 res = r_avx2_ntt NTT_Fq.zetas r 3.
 proof.
@@ -1165,6 +1713,9 @@ lemma ntt_avx_3_pr r:
   phoare [NTT_AVX.__ntt_level3 : perm_ntt perm_level2 rp = r ==> perm_ntt perm_level3 res = r_avx2_ntt NTT_Fq.zetas r 3] = 1%r.
 conseq ntt_avx_3_ll (ntt_avx_3 r) => />. qed.
 
+op perm_level4 : int list =
+  [0;1;16;17;32;33;48;49;64;65;80;81;96;97;112;113;2;3;18;19;34;35;50;51;66;67;82;83;98;99;114;115;4;5;20;21;36;37;52;53;68;69;84;85;100;101;116;117;6;7;22;23;38;39;54;55;70;71;86;87;102;103;118;119;8;9;24;25;40;41;56;57;72;73;88;89;104;105;120;121;10;11;26;27;42;43;58;59;74;75;90;91;106;107;122;123;12;13;28;29;44;45;60;61;76;77;92;93;108;109;124;125;14;15;30;31;46;47;62;63;78;79;94;95;110;111;126;127] axiomatized by perm_level4E.
+
 hoare ntt_avx_4 r:
   NTT_AVX.__ntt_level4 : perm_ntt perm_level3 rp = r ==> perm_ntt perm_level4 res = r_avx2_ntt NTT_Fq.zetas r 4.
 proof.
@@ -1179,6 +1730,9 @@ qed.
 lemma ntt_avx_4_pr r:
   phoare [NTT_AVX.__ntt_level4 : perm_ntt perm_level3 rp = r ==> perm_ntt perm_level4 res = r_avx2_ntt NTT_Fq.zetas r 4] = 1%r.
 conseq ntt_avx_4_ll (ntt_avx_4 r) => />. qed.
+
+op perm_level5 : int list =
+  [0;16;32;48;64;80;96;112;1;17;33;49;65;81;97;113;2;18;34;50;66;82;98;114;3;19;35;51;67;83;99;115;4;20;36;52;68;84;100;116;5;21;37;53;69;85;101;117;6;22;38;54;70;86;102;118;7;23;39;55;71;87;103;119;8;24;40;56;72;88;104;120;9;25;41;57;73;89;105;121;10;26;42;58;74;90;106;122;11;27;43;59;75;91;107;123;12;28;44;60;76;92;108;124;13;29;45;61;77;93;109;125;14;30;46;62;78;94;110;126;15;31;47;63;79;95;111;127] axiomatized by perm_level5E.
 
 hoare ntt_avx_5 r:
   NTT_AVX.__ntt_level5 : perm_ntt perm_level4 rp = r ==> perm_ntt perm_level5 res = r_avx2_ntt NTT_Fq.zetas r 5.
@@ -1218,8 +1772,7 @@ lemma ntt_avx_equiv :
 proof.
 transitivity NTT_avx2.ntt
   (r{1}=NTT_avx2.r{2} /\  NTT_avx2.zetas{2}=NTT_Fq.zetas ==> perm_ntt perm_nttpack128 res{1}=res{2})
-  (NTT_avx2.r{1}=r{2} /\ NTT_avx2.zetas{1}=NTT_Fq.zetas
-   (*/\ NTT_avx2.zetas{1}=NTT_Fq.zetas*) ==> ={res})=> //;
+  (NTT_avx2.r{1}=r{2} /\ NTT_avx2.zetas{1}=NTT_Fq.zetas ==> ={res})=> //;
  [ by ( move => /> &2; exists r{2} NTT_Fq.zetas)
  | | by (symmetry; proc*; inline NTT_AVX.ntt_bsrev;
          wp; call avx2_ntt; wp; skip => /> &1 &2)].
@@ -1234,7 +1787,7 @@ inline NTT_AVX.ntt0t6 NTT_avx2.ntt.
 rcondt{2} 2; auto => />.
 seq 2 3 : (NTT_avx2.zetas{2}=NTT_Fq.zetas /\ rp0{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=1 ).
 ecall {1} (ntt_avx_0_pr r1{1}).
- by auto => /> *; rewrite from_to_arrays16.
+ by auto => /> *. 
 (*level 1*)
 exlim NTT_avx2.r{2} => r0.
 rcondt{2} 1; auto => />.
@@ -1297,3 +1850,207 @@ phoare ntt_avx_spec _r:
 proof. by conseq ntt_avx_ll (ntt_avx_h _r). qed.
 
 
+(* equivalence between full-inline-SSA and level-by-level ntt avx2 (inverse) *)
+lemma invntt0t6_invntt : 
+  equiv [ NTT_AVX.invntt ~ NTT_AVX.invntt0t6 : ={r} ==> ={res}].
+proc; simplify. 
+inline{1} NTT_AVX.__invntt_level0t5.
+(* level 0 *) (* [loc(zeta0k)..loc(r0l)] - (loc(zeta0k)-loc(r0a)-1) *)
+swap{1} [47..57] -34.
+seq 23 1: (CS2P [r0a;r1a;r4a;r5a;r2a;r3a;r6a;r7a;r0l;r1l;r4l;r5l;r2l;r3l;r6l;r7l]{1} = rp0{2}).
+  by inline *; auto.
+(* level 1 *) (* [loc(zeta1l)..loc(r7n)] - (loc(zeta1l)-loc(r7c)-1) *)
+swap{1} [35..40] -28.
+seq 12 1: (CS2P [r0c;r1c;r2c;r3c;r4c;r5c;r6c;r7c;r0n;r1n;r2n;r3n;r4n;r5n;r6n;r7n]{1} = rp1{2}).
+  by inline *; auto => /> *; rewrite !P2C_i => />. 
+(* level 2 *) (* [loc(zeta1n)..loc(r7p)] - (loc(zeta1n)-loc(r7e)-1) *)
+swap{1} [29..34] -22.
+seq 12 1: (CS2P [r0e;r2e;r4e;r6e;r1e;r3e;r5e;r7e;r0p;r2p;r4p;r6p;r1p;r3p;r5p;r7p]{1} = rp2{2}).
+  by inline *; auto => />*; rewrite !P2C_i => />. 
+(* level 3 *) (* [loc(zeta1p)..loc(r7r)] - (loc(zeta1p)-loc(r7g)-1) *)
+swap{1} [23..28] -16.
+seq 12 1: (CS2P [r0g;r4g;r1g;r5g;r2g;r6g;r3g;r7g;r0r;r4r;r1r;r5r;r2r;r6r;r3r;r7r]{1} = rp3{2}).
+ inline *; auto => /> *; rewrite !P2C_i => />. 
+(* level 4 *) (* [loc(zeta1r)..loc(r7t)] - (loc(zeta1r)-loc(r7i)-1) *)
+swap{1} [17..22] -10.
+seq 12 1: (CS2P [r0i;r1i;r2i;r3i;r4i;r5i;r6i;r7i;r0t;r1t;r2t;r3t;r4t;r5t;r6t;r7t]{1} = rp4{2}).
+ by inline *; auto => /> *; rewrite !P2C_i => />.
+(* level 5 *)
+seq 21 1: (rp1{1} = rp5{2}).
+  by inline *; auto => />*; rewrite !P2C_i => />; rewrite P2CS !PUC_i => />. 
+inline *; auto => />*.
+qed.
+
+lemma invntt_avx_0_ll : islossless NTT_AVX.__invntt_level0 by islossless.
+lemma invntt_avx_1_ll : islossless NTT_AVX.__invntt_level1 by islossless.
+lemma invntt_avx_2_ll : islossless NTT_AVX.__invntt_level2 by islossless.
+lemma invntt_avx_3_ll : islossless NTT_AVX.__invntt_level3 by islossless.
+lemma invntt_avx_4_ll : islossless NTT_AVX.__invntt_level4 by islossless.
+lemma invntt_avx_5_ll : islossless NTT_AVX.__invntt_level5 by islossless.
+lemma _invntt_avx_6_ll : islossless NTT_AVX.___invntt_level6 by islossless.
+lemma invntt_avx_6_ll : islossless NTT_AVX.__invntt_level6 by islossless.
+
+op perm_inv_level0 : int list =
+  [0;16;64;80;32;48;96;112;1;17;65;81;33;49;97;113;2;18;66;82;34;50;98;114;3;19;67;83;35;51;99;115;4;20;68;84;36;52;100;116;5;21;69;85;37;53;101;117;6;22;70;86;38;54;102;118;7;23;71;87;39;55;103;119;8;24;72;88;40;56;104;120;9;25;73;89;41;57;105;121;10;26;74;90;42;58;106;122;11;27;75;91;43;59;107;123;12;28;76;92;44;60;108;124;13;29;77;93;45;61;109;125;14;30;78;94;46;62;110;126;15;31;79;95;47;63;111;127]
+ axiomatized by perm_inv_level0E.
+
+hoare invntt_avx_0 r:
+  NTT_AVX.__invntt_level0 : perm_ntt perm_nttpack128 rp = r ==> perm_ntt perm_inv_level0 res = r_avx2_invntt NTT_Fq.zetas_inv r 0.
+proof.
+proc; inline *; wp; auto => /> /= &hr.
+rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />. 
+apply tP_red => i /=.
+do 256!(try (move => Hi; case Hi => />); first by rewrite /CS2P !initiE /P2C /pchunk /punchunk /perm_nttpack128 /perm_inv_level0 => />).
+qed.
+
+lemma invntt_avx_0_pr r:
+  phoare [NTT_AVX.__invntt_level0 : perm_ntt perm_nttpack128 rp = r ==> perm_ntt perm_inv_level0 res = r_avx2_invntt NTT_Fq.zetas_inv r 0] = 1%r.
+proof. conseq invntt_avx_0_ll (invntt_avx_0 r) => />. qed.
+
+op perm_inv_level1 : int list =
+  [0;1;32;33;64;65;96;97;16;17;48;49;80;81;112;113;2;3;34;35;66;67;98;99;18;19;50;51;82;83;114;115;4;5;36;37;68;69;100;101;20;21;52;53;84;85;116;117;6;7;38;39;70;71;102;103;22;23;54;55;86;87;118;119;8;9;40;41;72;73;104;105;24;25;56;57;88;89;120;121;10;11;42;43;74;75;106;107;26;27;58;59;90;91;122;123;12;13;44;45;76;77;108;109;28;29;60;61;92;93;124;125;14;15;46;47;78;79;110;111;30;31;62;63;94;95;126;127]
+  axiomatized by perm_inv_level1E.
+
+hoare invntt_avx_1 r:
+  NTT_AVX.__invntt_level1 : perm_ntt perm_inv_level0 rp = r ==> perm_ntt perm_inv_level1 res = r_avx2_invntt NTT_Fq.zetas_inv r 1.
+proof.
+proc; inline *; wp; auto => /> &hr.
+rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
+apply tP_red => i /=.
+do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level0 /perm_inv_level1 /shuffle1 //=).
+qed.
+
+lemma invntt_avx_1_pr r:
+  phoare [NTT_AVX.__invntt_level1 : perm_ntt perm_inv_level0 rp = r ==> perm_ntt perm_inv_level1 res = r_avx2_invntt NTT_Fq.zetas_inv r 1] = 1%r.
+conseq invntt_avx_1_ll (invntt_avx_1 r) => />. qed.
+
+op perm_inv_level2 : int list =
+  [0;1;2;3;32;33;34;35;64;65;66;67;96;97;98;99;16;17;18;19;48;49;50;51;80;81;82;83;112;113;114;115;4;5;6;7;36;37;38;39;68;69;70;71;100;101;102;103;20;21;22;23;52;53;54;55;84;85;86;87;116;117;118;119;8;9;10;11;40;41;42;43;72;73;74;75;104;105;106;107;24;25;26;27;56;57;58;59;88;89;90;91;120;121;122;123;12;13;14;15;44;45;46;47;76;77;78;79;108;109;110;111;28;29;30;31;60;61;62;63;92;93;94;95;124;125;126;127]
+  axiomatized by perm_inv_level2E.
+
+hoare invntt_avx_2 r:
+  NTT_AVX.__invntt_level2 : perm_ntt perm_inv_level1 rp = r ==> perm_ntt perm_inv_level2 res = r_avx2_invntt NTT_Fq.zetas_inv r 2.
+proof.
+proc; inline *; wp; auto => /> &hr.
+rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
+apply tP_red => i /=.
+do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level1 /perm_inv_level2 /shuffle2 //=).
+qed.
+
+lemma invntt_avx_2_pr r:
+  phoare [NTT_AVX.__invntt_level2 : perm_ntt perm_inv_level1 rp = r ==> perm_ntt perm_inv_level2 res = r_avx2_invntt NTT_Fq.zetas_inv r 2] = 1%r.
+conseq invntt_avx_2_ll (invntt_avx_2 r) => />. qed.
+
+op perm_inv_level3 : int list =
+  [0;1;2;3;4;5;6;7;32;33;34;35;36;37;38;39;64;65;66;67;68;69;70;71;96;97;98;99;100;101;102;103;16;17;18;19;20;21;22;23;48;49;50;51;52;53;54;55;80;81;82;83;84;85;86;87;112;113;114;115;116;117;118;119;8;9;10;11;12;13;14;15;40;41;42;43;44;45;46;47;72;73;74;75;76;77;78;79;104;105;106;107;108;109;110;111;24;25;26;27;28;29;30;31;56;57;58;59;60;61;62;63;88;89;90;91;92;93;94;95;120;121;122;123;124;125;126;127]
+  axiomatized by perm_inv_level3E.
+
+hoare invntt_avx_3 r:
+  NTT_AVX.__invntt_level3 : perm_ntt perm_inv_level2 rp = r ==> perm_ntt perm_inv_level3 res = r_avx2_invntt NTT_Fq.zetas_inv r 3.
+proof.
+proc; inline *; wp; auto => /> &hr.
+rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
+apply tP_red => i /=.
+do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level2 /perm_inv_level3 /shuffle4 //=).
+qed.
+
+lemma invntt_avx_3_pr r:
+  phoare [NTT_AVX.__invntt_level3 : perm_ntt perm_inv_level2 rp = r ==> perm_ntt perm_inv_level3 res = r_avx2_invntt NTT_Fq.zetas_inv r 3] = 1%r.
+conseq invntt_avx_3_ll (invntt_avx_3 r) => />. qed.
+
+op perm_inv_level4 : int list =
+  [0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;96;97;98;99;100;101;102;103;104;105;106;107;108;109;110;111;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;112;113;114;115;116;117;118;119;120;121;122;123;124;125;126;127]
+  axiomatized by perm_inv_level4E.
+
+hoare invntt_avx_4 r:
+  NTT_AVX.__invntt_level4 : perm_ntt perm_inv_level3 rp = r ==> perm_ntt perm_inv_level4 res = r_avx2_invntt NTT_Fq.zetas_inv r 4.
+proof.
+proc; inline *; wp; auto => /> &hr.
+rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
+apply tP_red => i /=.
+do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level3 /perm_inv_level4 /shuffle8 //=).
+qed.
+
+lemma invntt_avx_4_pr r:
+  phoare [NTT_AVX.__invntt_level4 : perm_ntt perm_inv_level3 rp = r ==> perm_ntt perm_inv_level4 res = r_avx2_invntt NTT_Fq.zetas_inv r 4] = 1%r.
+conseq invntt_avx_4_ll (invntt_avx_4 r) => />. qed.
+
+hoare invntt_avx_5 r:
+  NTT_AVX.__invntt_level5 : perm_ntt perm_inv_level4 rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 5.
+proof.
+proc; inline *; wp; auto => /> &hr.
+rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
+apply tP_red => i /=.
+do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level4 //=).
+qed.
+
+lemma invntt_avx_5_pr r:
+  phoare [NTT_AVX.__invntt_level5 : perm_ntt perm_inv_level4 rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 5] = 1%r.
+conseq invntt_avx_5_ll (invntt_avx_5 r) => />. qed.
+
+hoare invntt_avx_6 r:
+  NTT_AVX.___invntt_level6 : rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 6.
+proof.
+proc; inline *; wp; auto => />. 
+rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
+apply tP_red => i /=.
+do 255!(move => Hi; case Hi => />).
+qed.
+
+lemma invntt_avx_6_pr r:
+  phoare [NTT_AVX.___invntt_level6 : rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 6] = 1%r.
+conseq _invntt_avx_6_ll (invntt_avx_6 r) => />. qed.
+
+(** Main Theorem in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent (inverse) **)
+lemma invntt_avx_equiv : 
+     equiv [ NTT_AVX.invntt ~ NTT_avx2.invntt :
+          perm_ntt perm_nttpack128 r{1} = NTT_avx2.r{2} /\ NTT_avx2.zetas_inv{2} = NTT_Fq.zetas_inv
+          ==> res{1} = res{2}].
+proc*.
+transitivity{1} { r0 <@ NTT_AVX.invntt0t6(r); }
+  (={r} ==> ={r0})
+  (perm_ntt perm_nttpack128 r{1} = NTT_avx2.r{2} /\ NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv  ==> r0{1}=r{2}) => //.
+  by move => /> &1 /#. 
+call invntt0t6_invntt. auto => />.
+inline NTT_AVX.invntt0t6 NTT_avx2.invntt.
+(*level 0*)
+rcondt{2} 2; auto => />.
+seq 2 3 : (NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv /\ perm_ntt perm_inv_level0 rp0{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=1 ). 
+ecall {1} (invntt_avx_0_pr (perm_ntt perm_nttpack128 r{1})).
+ by auto => /> *. 
+(*level 1*)
+exlim NTT_avx2.r{2} => r0.
+rcondt{2} 1; auto => />.
+seq 1 2 : (NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv /\ perm_ntt perm_inv_level1 rp1{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=2 ).
+ecall {1} (invntt_avx_1_pr r0); auto.
+(*level 2*)
+exlim NTT_avx2.r{2} => r1.
+rcondt{2} 1; auto => />.
+seq 1 2 : (NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv /\ perm_ntt perm_inv_level2 rp2{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=3 ).
+call{1} (invntt_avx_2_pr r1); auto.
+(*level 3*)
+exlim NTT_avx2.r{2} => r2.
+rcondt{2} 1; auto => />.
+seq 1 2 : (NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv /\ perm_ntt perm_inv_level3 rp3{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=4 ).
+call{1} (invntt_avx_3_pr r2); auto.
+(*level 4*)
+exlim NTT_avx2.r{2} => r3.
+rcondt{2} 1; auto => />.
+seq 1 2 : (NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv /\ perm_ntt perm_inv_level4 rp4{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=5 ).
+call{1} (invntt_avx_4_pr r3); auto.
+(*level 5*)
+exlim NTT_avx2.r{2} => r4.
+rcondt{2} 1; auto => />.
+seq 1 2 : (NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv /\ rp5{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=6 ).
+call{1} (invntt_avx_5_pr r4); auto.
+(*level 6*)
+exlim NTT_avx2.r{2} => r5.
+rcondt{2} 1; auto => />.
+inline{1} NTT_AVX.__invntt_level6.
+seq 2 2 : (NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv /\ rp10{1}=NTT_avx2.r{2} /\ NTT_avx2.k{2}=7 ).
+call{1} (invntt_avx_6_pr r5); auto.
+(*exit*)
+rcondf{2} 1; auto => /> &2.
+rewrite r_avx2_invntt_post_spec /NTT_Fq.zetas_inv tP => />i Hi1 Hi2.
+rewrite !initiE => />. congr. rewrite -eq_inFq /q //=.
+qed.
