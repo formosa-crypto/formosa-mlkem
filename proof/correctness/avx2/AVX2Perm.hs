@@ -176,8 +176,63 @@ lvl5 = r0i ++ r4i ++ r1i ++ r5i ++ r2i ++ r6i ++ r3i ++ r7i
 lvl6 = r0v ++ r4v ++ r1v ++ r5v ++ r2v ++ r6v ++ r3v ++ r7v
 
 
+-----------
 
+invperm128 :: L128 -> L128
+invperm128 = split128 . invperm . join128
 
+inv_start :: L128
+inv_start = nttpack $ split128 [0..127]
 
+inv_lvl0 :: L128 -> L128
+inv_lvl0 (r0,r1,r2,r3,r4,r5,r6,r7) = (r0,r1,r4,r5,r2,r3,r6,r7)
+
+perm_inv_level0 = join128 $ nttpack $ inv_lvl0 $ split128 [0..127]
+
+inv_lvl1 :: L128 -> L128
+inv_lvl1 (r0,r1,r4,r5,r2,r3,r6,r7) = (r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a)
+    where
+    (r0a,r1a) = s1(r0,r1)
+    (r2a,r3a) = s1(r2,r3)
+    (r4a,r5a) = s1(r4,r5)
+    (r6a,r7a) = s1(r6,r7)
+
+perm_inv_level1 = join128 $ nttpack $ inv_lvl0 $ inv_lvl1 $ split128 [0..127]
+perm_inv_level1' = join128 $ nttpack $ inv_lvl1 $ inv_lvl0 $ split128 [0..127]
+
+inv_lvl2 :: L128 -> L128
+inv_lvl2 (r0c,r1c,r2c,r3c,r4c,r5c,r6c,r7c) = (r0e,r2e,r4e,r6e,r1e,r3e,r5e,r7e)
+    where
+    (r0e,r2e) = s2(r0c,r2c)
+    (r4e,r6e) = s2(r4c,r6c)
+    (r1e,r3e) = s2(r1c,r3c)
+    (r5e,r7e) = s2(r5c,r7c)
+
+perm_inv_level2 = join128 $ nttpack $ invperm128 $ inv_lvl2 $ inv_lvl1 $ inv_lvl0 $ split128 [0..127]
+
+inv_lvl3 :: L128 -> L128
+inv_lvl3 (r0e,r2e,r4e,r6e,r1e,r3e,r5e,r7e) = (r0g,r4g,r1g,r5g,r2g,r6g,r3g,r7g)
+    where
+    (r0g,r4g) = s4(r0e,r4e)
+    (r1g,r5g) = s4(r1e,r5e)
+    (r2g,r6g) = s4(r2e,r6e)
+    (r3g,r7g) = s4(r3e,r7e)
+
+perm_inv_level3 = join128 $ nttpack $ invperm128 $ inv_lvl3 $ inv_lvl2 $ inv_lvl1 $ inv_lvl0 $ split128 [0..127]
+
+inv_lvl4 :: L128 -> L128
+inv_lvl4 (r0g,r4g,r1g,r5g,r2g,r6g,r3g,r7g) = (r0i,r1i,r2i,r3i,r4i,r5i,r6i,r7i)
+    where
+    (r0i,r1i) = s8(r0g,r1g)
+    (r2i,r3i) = s8(r2g,r3g)
+    (r4i,r5i) = s8(r4g,r5g)
+    (r6i,r7i) = s8(r6g,r7g)
+
+perm_inv_level4 = join128 $ nttpack $ invperm128 $ inv_lvl4 $ inv_lvl3 $ inv_lvl2 $ inv_lvl1 $ inv_lvl0 $ split128 [0..127]
+
+inv_lvl5 :: L128 -> L128
+inv_lvl5 (r0i,r1i,r2i,r3i,r4i,r5i,r6i,r7i) = (r0i,r2i,r4i,r6i,r1i,r3i,r5i,r7i)
+
+perm_inv_level5 = join128 $ nttpack $ invperm128 $ inv_lvl5 $ inv_lvl4 $ inv_lvl3 $ inv_lvl2 $ inv_lvl1 $ inv_lvl0 $ split128 [0..127]
 
 
