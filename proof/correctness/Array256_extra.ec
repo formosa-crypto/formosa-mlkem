@@ -263,3 +263,17 @@ qed.
 lemma tP_red (t1 t2: 'a Array256.t) :
   (forall i, i \in iotared 0 256 => t1.[i] = t2.[i]) => t1 = t2.
   rewrite tP => />H i Hi1 Hi2. smt(). qed.
+
+lemma foldl_upd_range_i (upd: int -> 'a -> 'a) (r:'a Array256.t) n : forall j, n <= 256 =>
+  (foldl (fun r i => r.[i <- upd i r.[i] ]) r (range 0 n)).[j] = if 0 <= j < n then upd j r.[j] else r.[j].
+proof.
+elim/natind: n => />.
+(*n=0*)
+move => n Hn1 j Hn2. rewrite range_geq => />. smt().
+(*n>0*)
+move => n Hn1 R j Hn2. rewrite rangeSr // foldl_rcons //=. rewrite R //. smt(). rewrite get_setE => />. smt(). rewrite R //. smt(). smt(). qed.
+
+lemma foldl_upd_range (upd: int -> 'a -> 'a) (r:'a Array256.t) : 
+  foldl (fun r i => r.[i <- upd i r.[i] ]) r (range 0 256) = init (fun i => upd i r.[i]).
+proof.
+rewrite tP => />i Hi1 Hi2. rewrite foldl_upd_range_i // initiE => />. rewrite ifT //. qed.

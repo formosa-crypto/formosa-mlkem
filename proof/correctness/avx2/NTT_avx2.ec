@@ -635,80 +635,31 @@ rewrite initiE //= mapiE //=. smt(nttunpack_bnd Array256.allP).
 qed.
 
 require import Jkem_avx2 Jkem.
+require import NTT_AVX_Fq NTT_AVX_j.
 
-require import NTT_AVX_Fq.
+lemma perm_ntt_nttpackE ['a] (p: 'a Array256.t):
+  perm_ntt NTT_AVX_Fq.perm_nttpack128 p = nttpack p.
+proof.
+by apply Array256.all_eq_eq; rewrite /all_eq 
+   /perm_ntt /perm_nttpack128 /nttpack /=.
+qed.
 
 lemma poly_ntt_avx2_corr _r :
   phoare [ Jkem_avx2.M._poly_ntt :
     rp = _r /\ signed_bound_cxq rp 0 256 2 ==>
     ntt (lift_array256 _r) = lift_array256 (nttpack res) /\
     pos_bound256_cxq res 0 256 2] = 1%r.
-admitted. (* Bacelar *)
-
-(*
 proof.
-proc.
-inline Jkem_avx2.M.__ntt_level0.
-inline Jkem_avx2.M.__butterfly64x.
-bypr => &m [-> Hbnd].
-have <-: Pr[NTT_AVX.ntt(lift_array256 _r, witness) @ &m :
-   ntt (lift_array256 _r) = (nttpack res)] = 1%r.
- adm it.
-byequiv _poly_ntt_eq.
-smt().
-
-proc.
-print nttpack.
-print ntt_avx_equiv.
-print NTT_AVX.
-print NTT_avx2.
-print r_avx2_ntt.
-adm it (*
-Context : {rp : W16.t Array256.t}
-Bound   : [=] 1%r
-
-pre = rp = _r /\ signed_bound_cxq rp 0 256 2
-
-(1)  rp <@ Jkem_avx2.M.__ntt_level0(rp)  
-(2)  rp <@ Jkem_avx2.M.__ntt_level1t6(rp)
-
-post = ntt (lift_array256 _r) = lift_array256 (nttpack rp) /\ pos_bound256_cxq rp 0 256 2
-*).
-
-lemma ntt_avx_equiv : 
-     equiv [ NTT_AVX.ntt ~ NTT_avx2.ntt :
-          r{1} = NTT_avx2.r{2} /\ zetas{1} = zetas_unpack NTT_avx2.zetas{2} 
-          ==> perm256 perm_nttpack128 res{1} = res{2}].
-
+bypr => // &m [-> H].
+have <-: Pr[NTT_AVX.ntt(lift_array256 _r) @ &m :
+      ntt (lift_array256 _r) = (nttpack res) ] = 1%r.
+ byphoare (_: r=lift_array256 _r ==> _) => //.
+ conseq (ntt_avx_spec (lift_array256 _r)) => />*.
+ by rewrite perm_ntt_nttpackE /#.
+byequiv => //.
+symmetry; conseq _poly_ntt_eq => /> *.
+by rewrite lift_nttpack //.
 qed.
-*)
-
-(* 
-lemma ntt_avx_equiv : 
-     equiv [ NTT_AVX.ntt ~ NTT_avx2.ntt :
-          r{1} = NTT_avx2.r{2} /\ zetas{1} = zetas_unpack NTT_avx2.zetas{2} 
-          ==> perm256 perm_nttpack128 res{1} = res{2}].
-
-  equiv avx2_ntt :
-    NTT_bsrev.ntt ~ NTT_avx2.ntt :
-    NTT_vars.zetas{1} = NTT_avx2.zetas{2} /\
-    NTT_vars.r{1} = NTT_avx2.r{2} ==>
-    ={res}.
-
-
-  hoare bsrev_ntt_spec (p : Fq Array256.t) :
-    NTT_bsrev.ntt :
-      NTT_vars.zetas = NTT_Fq.zetas /\
-      NTT_vars.r = p ==>
-      ntt_spec res p.
-
-+ (* NTTAlgebra.NTTequiv.imp_ntt_spec *)
-| lemma imp_ntt_spec:
-|   forall (p r : Fq Array256.t),
-|     (ntt_spec r p)%NTTAlgebra.NTTequiv => r = ntt p.
-
-*)
-
 
 lemma polyvec_ntt_avx2_corr _r :
   phoare [ Jkem_avx2.M.__polyvec_ntt :
