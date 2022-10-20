@@ -234,7 +234,7 @@ lemma poly_csubq_corr_h ap :
              ==>
              ap = lift_array256 res /\
              pos_bound256_cxq res 0 256 1 ].
-proof. 
+proof.
   proc.
   while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = Jkem_avx2.jqx16.[k]).
   seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
