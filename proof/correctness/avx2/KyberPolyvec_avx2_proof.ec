@@ -212,7 +212,7 @@ lemma shl_shlw_w8 (k: int) (w: W8.t):
 proof.
   move=> *; rewrite /(`<<`) of_uintK (modz_small (k %% W8.modulus)).
    smt(modz_cmp).
-  by rewrite modz_small //; smt(size_le_256).
+  by rewrite modz_small //; smt(@W8).
 qed.
 
 lemma shr_shrw_w8 (k: int) (w: W8.t):
@@ -221,7 +221,7 @@ lemma shr_shrw_w8 (k: int) (w: W8.t):
 proof.
   move=> *; rewrite /(`>>`) of_uintK (modz_small (k %% W8.modulus)).
    smt(modz_cmp).
-  by rewrite modz_small //; smt(size_le_256).
+  by rewrite pmod_small //; smt(@W8).
 qed.
 
 lemma sint_compress_rng a d :
