@@ -256,6 +256,7 @@ qed.
 op z2u256 (a: W16.t Array400.t) (i: int): W256.t =
  get256_direct (WArray800.init16 (fun i => a.[i])) (2*i).
 
+require import WArray32.
 lemma z2u256E a k:
  0 <= k < 384 =>
  z2u256 a k = C2R (Array16.init (fun i => a.[k+i])).
@@ -264,7 +265,7 @@ move=> Hk.
 rewrite /z2u256 /C2R /get256_direct; congr.
 apply W32u8.Pack.ext_eq => /= i Hi.
 rewrite /init16 !initiE //=.
-rewrite WArray32.WArray32.initiE //=.
+rewrite WArray32.initiE //=.
 rewrite !initiE 1..2:/# /=.
 congr.
  by rewrite mulrC divzMDl.
@@ -787,6 +788,7 @@ proof. by conseq __red16x_ll (__red16x_h x). qed.
  *)
 op zetas_op = jzetas_exp.
 op qx16_op = jqx16.
+op qinvx16_op = jqinvx16.
 op vx16_op = jvx16.
 op zetas_inv_op = jzetas_inv_exp.
 op flox16_op = jflox16.
@@ -1096,6 +1098,92 @@ module Tmp = {
     rp <@ __invntt_level6 (rp);
     return (rp);
   }
+
+  proc __schoolbookx16(are aim bre bim zetas zetasqinv qx16 qinvx16: W256.t, sign: int): W256.t*W256.t = {
+   return witness;
+  }
+  proc _poly_basemul (rp:W16.t Array256.t, ap:W16.t Array256.t,
+                      bp:W16.t Array256.t) : W16.t Array256.t = {
+    var qx16:W256.t;
+    var qinvx16:W256.t;
+    var zetas, zetasqinv:W256.t;
+    var are, aim, bre, bim;
+    
+    qx16 <- C2R qx16_op;
+    qinvx16 <- C2R qinvx16_op;
+
+    zetasqinv <- z2u256 zetas_op 136;
+    zetas <- z2u256 zetas_op 152;
+    are <- P2R ap 0;
+    aim <- P2R ap 1;
+    bre <- P2R ap 0;
+    bim <- P2R ap 1;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 0);
+    rp <- PUR rp 0 are;
+    rp <- PUR rp 1 aim;
+    are <- P2R ap 2;
+    aim <- P2R ap 3;
+    bre <- P2R ap 2;
+    bim <- P2R ap 3;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 1);
+    rp <- PUR rp 2 are;
+    rp <- PUR rp 3 aim;
+
+    zetasqinv <- z2u256 zetas_op 168;
+    zetas <- z2u256 zetas_op 184;
+    are <- P2R ap 4;
+    aim <- P2R ap 5;
+    bre <- P2R ap 4;
+    bim <- P2R ap 5;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 0);
+    rp <- PUR rp 4 are;
+    rp <- PUR rp 5 aim;
+    are <- P2R ap 6;
+    aim <- P2R ap 7;
+    bre <- P2R ap 6;
+    bim <- P2R ap 7;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 1);
+    rp <- PUR rp 6 are;
+    rp <- PUR rp 7 aim;
+
+
+    zetasqinv <- z2u256 zetas_op 332;
+    zetas <- z2u256 zetas_op 348;
+    are <- P2R ap 8;
+    aim <- P2R ap 9;
+    bre <- P2R ap 8;
+    bim <- P2R ap 9;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 0);
+    rp <- PUR rp 8 are;
+    rp <- PUR rp 9 aim;
+    are <- P2R ap 10;
+    aim <- P2R ap 11;
+    bre <- P2R ap 10;
+    bim <- P2R ap 11;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 1);
+    rp <- PUR rp 10 are;
+    rp <- PUR rp 11 aim;
+
+    zetasqinv <- z2u256 zetas_op 364;
+    zetas <- z2u256 zetas_op 380;
+    are <- P2R ap 12;
+    aim <- P2R ap 13;
+    bre <- P2R ap 12;
+    bim <- P2R ap 13;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 0);
+    rp <- PUR rp 12 are;
+    rp <- PUR rp 13 aim;
+    are <- P2R ap 14;
+    aim <- P2R ap 15;
+    bre <- P2R ap 14;
+    bim <- P2R ap 15;
+    (are, aim) <@ __schoolbookx16(are, aim, bre, bim, zetas, zetasqinv, qx16, qinvx16, 1);
+    rp <- PUR rp 14 are;
+    rp <- PUR rp 15 aim;
+
+    return rp;
+  }
+
 }.
 
 equiv __ntt_level0_eq_:
@@ -1816,4 +1904,5 @@ conseq (_: I256u16_sb 2 rp{2} r{1} ==> I256u16_ub 2 rp{2} rp6{1} ).
 call __ntt_level1t6_eq.
 by call __ntt_level0_eq.
 qed.
+
 

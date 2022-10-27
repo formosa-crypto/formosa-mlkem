@@ -446,10 +446,11 @@ rewrite !Hrec => />; 1..3: by smt(). clear Hrec.
 case (0 <= i) => />Hi1; last smt().
 case (i < n * len * 2) => />Hi2; first smt().
 case (i < n * (len*2)+len) => /> Hi3. 
-  rewrite (_:i %/ len = n*2) => />. smt(). smt().
-case (i < (n + 1) * len * 2) => />; last smt(). move => HH1.
-rewrite ifT. smt(). rewrite ifF. smt().
-rewrite (_:i%/len = (n*2+1)). smt(). smt(). qed.
+ rewrite (_:i %/ len = n*2) 2:/#.
+ by rewrite divz_eqP // /#.
+case (i < n * (len * 2) + len + len) => />Hi4; last smt().
+by rewrite (_:i%/len = n*2+1) => /> /#.
+qed.
 
 (* simpler definition that greatly speeds up proofs below *)
 lemma r_avx2_invntt_spec zetas r k : 0 <= k < 7 =>
@@ -1591,7 +1592,234 @@ proc invntt0t6(r : Fq Array256.t) : Fq Array256.t = {
  return rp6;
 }
 
+proc __cmplx_mulx16(are aim bre bim zetas: Fq Array16.t, sign: bool): Fq Array16.t * Fq Array16.t = {
+ var rre, rim;
+ rre <- Array16.init
+   (fun i => (cmplx_mul (are.[i],aim.[i]) (bre.[i],bim.[i]) ((if sign then inFq (-1) else inFq 1) * zetas.[i])).`1);
+ rim <- Array16.init
+   (fun i => (cmplx_mul (are.[i],aim.[i]) (bre.[i],bim.[i]) ((if sign then inFq (-1) else inFq 1) * zetas.[i])).`2);
+ return (rre,rim);
+}
+
+proc __basemul(a b: Fq Array256.t): Fq Array256.t = {
+ var are, aim, bre, bim, r, rre, rim, zetas;
+
+ r <- witness;
+ zetas <- Array16.of_list witness [ inFq 17; inFq 583; inFq 1637; inFq 2288; inFq 1409; inFq 3281; inFq 756; inFq 3015; inFq 1703; inFq 2789; inFq 1847; inFq 1461; inFq 939; inFq 2437; inFq 733; inFq 268 ];
+
+ are <- P2C a 0;
+ aim <- P2C a 1;
+ bre <- P2C b 0;
+ bim <- P2C b 1;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, false);
+ r <- PUC r 0 rre;
+ r <- PUC r 1 rim;
+ are <- P2C a 2;
+ aim <- P2C a 3;
+ bre <- P2C b 2;
+ bim <- P2C b 3;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, true);
+ r <- PUC r 2 rre;
+ r <- PUC r 3 rim;
+
+ zetas <- Array16.of_list witness [ inFq 2761; inFq 2649; inFq 723; inFq 1100; inFq 2662; inFq 233; inFq 2156; inFq 3050; inFq 1651; inFq 1789; inFq 952; inFq 2687; inFq 2308; inFq 2388; inFq 2337; inFq 641 ];
+
+ are <- P2C a 4;
+ aim <- P2C a 5;
+ bre <- P2C b 4;
+ bim <- P2C b 5;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, false);
+ r <- PUC r 4 rre;
+ r <- PUC r 5 rim;
+ are <- P2C a 6;
+ aim <- P2C a 7;
+ bre <- P2C b 6;
+ bim <- P2C b 7;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, true);
+ r <- PUC r 6 rre;
+ r <- PUC r 7 rim;
+
+ zetas <- Array16.of_list witness [ inFq 1584; inFq 2037; inFq 375; inFq 2090; inFq 1063; inFq 2773; inFq 2099; inFq 2466; inFq 2804; inFq 403; inFq 1143; inFq 2775; inFq 1722; inFq 1874; inFq 2110; inFq 885 ];
+
+ are <- P2C a 8;
+ aim <- P2C a 9;
+ bre <- P2C b 8;
+ bim <- P2C b 9;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, false);
+ r <- PUC r 8 rre;
+ r <- PUC r 9 rim;
+ are <- P2C a 10;
+ aim <- P2C a 11;
+ bre <- P2C b 10;
+ bim <- P2C b 11;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, true);
+ r <- PUC r 10 rre;
+ r <- PUC r 11 rim;
+
+ zetas <- Array16.of_list witness [ inFq 2298; inFq 3220; inFq 2549; inFq 1645; inFq 319; inFq 757; inFq 561; inFq 2594; inFq 1092; inFq 1026; inFq 2150; inFq 886; inFq 1212; inFq 1029; inFq 2935; inFq 2154 ];
+
+ are <- P2C a 12;
+ aim <- P2C a 13;
+ bre <- P2C b 12;
+ bim <- P2C b 13;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, false);
+ r <- PUC r 12 rre;
+ r <- PUC r 13 rim;
+ are <- P2C a 14;
+ aim <- P2C a 15;
+ bre <- P2C b 14;
+ bim <- P2C b 15;
+ (rre, rim) <@ __cmplx_mulx16(are, aim, bre, bim, zetas, true);
+ r <- PUC r 14 rre;
+ r <- PUC r 15 rim;
+
+ return r;
+}
 }.
+
+
+
+op basemul_avx2 (a b : poly): poly =
+ Array256.init
+  (fun i =>
+    let i_l = i %% 16 in
+    let i_z = i %/ 32 in
+    let i_off = 32 * i_z in
+    let zsign = ZqField.exp (inFq (-1)) (i_z %% 2) in
+    let zeta_i = 64 + (i_z %/ 2 %% 2) + i_z %/ 4 * 32 + 2 * i_l in  
+    if i = i_off + i_l
+    then (cmplx_mul (a.[i_off+i_l],a.[i_off+i_l+16])
+                    (b.[i_off+i_l],b.[i_off+i_l+16])
+                    (zsign * NTT_Fq.zetas.[zeta_i])).`1
+    else (cmplx_mul (a.[i_off+i_l],a.[i_off+i_l+16])
+                    (b.[i_off+i_l],b.[i_off+i_l+16])
+                    (zsign * NTT_Fq.zetas.[zeta_i])).`2).
+
+hoare __basemul_h _a _b:
+ NTT_AVX.__basemul: a =
+ _a /\ b = _b ==> res = basemul_avx2 _a _b.
+proof.
+proc; simplify.
+seq 16: (#pre /\ all (fun k => (basemul_avx2 _a _b).[k] = r.[k]) (iota_ 0 64)).
+ inline*; wp; skip => |> *.
+ rewrite (P2CS witness) !PUC_i //=.
+ by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE
+     /= ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+seq 15:(#pre /\ all (fun k => (basemul_avx2 _a _b).[k] = r.[k]) (iota_ 64 64)).
+ inline*; wp; skip => |> &m H; split.
+  move: H; rewrite (P2CS r{m}) !PUC_i //=.
+  by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+      ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+ rewrite (P2CS r{m}) !PUC_i //=.
+ by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+      ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+seq 15:(#pre /\ all (fun k => (basemul_avx2 _a _b).[k] = r.[k]) (iota_ 128 64)).
+ inline*; wp; skip => |> &m H1 H2; split.
+  split. 
+   move: H1; rewrite (P2CS r{m}) !PUC_i //=.
+   by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+        ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+  move: H2; rewrite (P2CS r{m}) !PUC_i //=.
+  by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+      ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+ rewrite (P2CS r{m}) !PUC_i //=.
+ by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+     ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+seq 15:(#pre /\ all (fun k => (basemul_avx2 _a _b).[k] = r.[k]) (iota_ 192 64)).
+ inline*; wp; skip => |> &m H1 H2 H3; split.
+  split.
+   split.
+    move: H1; rewrite (P2CS r{m}) !PUC_i //=.
+    by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+      ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+   move: H2; rewrite (P2CS r{m}) !PUC_i //=.
+   by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+        ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+  move: H3; rewrite (P2CS r{m}) !PUC_i //=.
+  by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+      ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+ rewrite (P2CS r{m}) !PUC_i //=.
+ by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE /=
+      ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
+skip => |> &m H0 H1 H2 H3.
+apply Array256.all_eq_eq; rewrite /all_eq iotaredE.
+rewrite (_:256=64+64+64+64) 1://.
+by rewrite !iota_add 1..7:// /= !all_cat /#. 
+qed.
+
+lemma __basemul_ll: islossless NTT_AVX.__basemul by islossless.
+
+phoare __basemul_ph _a _b:
+ [ NTT_AVX.__basemul: a =
+   _a /\ b = _b ==> res = basemul_avx2 _a _b ] = 1%r.
+proof. by conseq __basemul_ll (__basemul_h _a _b). qed.
+
+
+op basemul_zetas (a b : poly): poly =
+ Array256.init
+  (fun i => let ii = i %/ 2 in
+            let zsign = ZqField.exp (inFq (-1)) (ii %% 2) in
+            if i %% 2 = 0 then
+            (cmplx_mul (a.[2 * ii], a.[2 * ii + 1]) (b.[2 * ii], b.[2 * ii + 1]) (zsign*NTT_Fq.zetas.[64+ii%/2])).`1
+            else
+            (cmplx_mul (a.[2 * ii], a.[2 * ii + 1]) (b.[2 * ii], b.[2 * ii + 1]) (zsign*NTT_Fq.zetas.[64+ii%/2])).`2).
+
+
+lemma basemul_zetasE a b:
+ basemul a b = basemul_zetas a b.
+proof.
+rewrite /basemul /basemul_zetas tP => i Hi.
+rewrite !initiE //=.
+case: (i%%2=0) => RI.
+ congr; congr.
+ have ->: ZqRing.exp = ZqField.exp by done.
+ case: (i %/ 2 %% 2 = 0).
+  move=> E; rewrite E ZqField.expr0 ZqField.mul1r.
+  rewrite NTT_Fq.zetavals1' 1:/# //; congr; smt().
+ move=> E'; have E: i %/ 2 %% 2 = 1 by smt().
+ rewrite E ZqField.expr1.
+ rewrite NTT_Fq.zetavals2' 1:/# // Zq.inFqN  ZqField.mulN1r /#.
+congr; congr.
+have ->: ZqRing.exp = ZqField.exp by done.
+case: (i %/ 2 %% 2 = 0).
+ move=> E; rewrite E ZqField.expr0 ZqField.mul1r.
+ rewrite NTT_Fq.zetavals1' 1:/# //; congr. smt().
+move=> E'; have E: i %/ 2 %% 2 = 1 by smt().
+rewrite E ZqField.expr1 NTT_Fq.zetavals2' 1:/# // Zq.inFqN  ZqField.mulN1r /#.
+qed.
+
+(*
+lemma basemul_avx2E' (a b: poly):
+ perm_ntt perm_nttunpack128 (basemul_zetas a b)
+ = basemul_avx2 (perm_ntt perm_nttunpack128 a) (perm_ntt perm_nttunpack128 b).
+proof.
+by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /perm_nttpack128 /perm_nttunpack128 /perm_ntt /=. 
+qed.
+*)
+
+lemma basemul_avx2E (a b: poly):
+ perm_ntt perm_nttpack128 (basemul_avx2 a b)
+ = basemul (perm_ntt perm_nttpack128 a) (perm_ntt perm_nttpack128 b).
+proof.
+rewrite basemul_zetasE.
+by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /perm_nttpack128 /perm_nttunpack128 /perm_ntt /=. 
+qed.
+
+(*
+lemma poly_basemul_avx2_correct _ap _bp:
+   phoare[ Mprevec.poly_basemul :
+     _ap = nttpack (lift_array256 ap) /\ _bp = nttpack (lift_array256 bp) /\
+     signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
+     signed_bound_cxq res 0 256 3 /\ 
+     nttpack (lift_array256 res) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
+proc. 
+admitted. (* basemul: Hugo/Bacelar? *)
+*)
+
+
+
+
+
 
 (* pack consistent with packing permutation *)
 (*
