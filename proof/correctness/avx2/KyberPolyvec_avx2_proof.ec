@@ -29,6 +29,7 @@ import KyberPoly.
 import KyberPoly.
 import NTT_Avx2.
 import AVX2_cf.
+import KMatrix.
 
 lemma polvec_add_corr_h _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
@@ -114,7 +115,7 @@ lemma polvec_add_corr _a _b ab bb:
   by smt().
 qed.
 
-lemma polyvec_csubq_corr ap :
+lemma polyvec_csubq_corr_h ap :
   hoare[Mprevec.polyvec_csubq:
        ap = lift_array768 r /\
        pos_bound768_cxq r 0 768 2
@@ -169,6 +170,73 @@ proof.
    smt(@Array256 @Array768).
 qed.
 
+lemma polyvec_csubq_ll: islossless Mprevec.polyvec_csubq.
+  by proc; do 3!(wp; call KyberPolyAVX.poly_csubq_ll).
+qed.
+
+lemma polyvec_csubq_corr ap:
+  phoare[Mprevec.polyvec_csubq:
+       ap = lift_array768 r /\
+       pos_bound768_cxq r 0 768 2
+       ==>
+       ap = lift_array768 res /\
+       pos_bound768_cxq res 0 768 1] = 1%r.
+  conseq (polyvec_csubq_ll) (polyvec_csubq_corr_h ap).
+  by smt().
+qed.
+
+lemma shr_bits8:
+  forall (w: W64.t) (i: int),
+  0 <= i < 6 =>
+  w `>>` (W8.of_int 12) \bits8 i =
+  ((w \bits8 (i+2)) `&` (W8.of_int (2^4-1)) `<<` (W8.of_int 4)) +
+  (((w \bits8 (i+1)) `>>` (W8.of_int 4)) `&` (W8.of_int (2^4-1))).
+proof.
+  admit. (* FIXME *)
+qed.
+
+lemma shl_bits8:
+  forall (w: W32.t) (i: int),
+  1 <= i < 4 =>
+  w `<<` (W8.of_int 12) \bits8 i =
+  (((w \bits8 (i-2)) `>>` (W8.of_int 4)) `&` (W8.of_int (2^4-1))) +
+  ((w \bits8 (i-1)) `&` (W8.of_int (2^4-1)) `<<` (W8.of_int 4)).
+proof.
+  admit. (* FIXME *)
+qed.
+
+(* TODO: move to W8 theory ?? *)
+lemma shl_shlw_w8 (k: int) (w: W8.t):
+  0 <= k < W8.size =>
+  w `<<` W8.of_int k = w `<<<` k.
+proof.
+  move=> *; rewrite /(`<<`) of_uintK (modz_small (k %% W8.modulus)).
+   smt(modz_cmp).
+  by rewrite modz_small //; smt(@W8).
+qed.
+
+lemma shr_shrw_w8 (k: int) (w: W8.t):
+  0 <= k < W8.size =>
+  w `>>` W8.of_int k = w `>>>` k.
+proof.
+  move=> *; rewrite /(`>>`) of_uintK (modz_small (k %% W8.modulus)).
+   smt(modz_cmp).
+  by rewrite pmod_small //; smt(@W8).
+qed.
+
+lemma sint_compress_rng a d :
+   1 <= d < 12 =>
+   0 <= W16.to_sint (W16.of_int (compress d a)) < 2^d.
+proof.
+  move => drng.
+  rewrite of_sintK Montgomery16.smod_small.
+    move : drng (compress_rng a d drng).
+    rewrite andabP -(mem_iota 1 11 d).
+    move : d.
+    rewrite -List.allP -iotaredE //= => /#.
+  by apply compress_rng.
+qed.
+
 lemma polyvec_compress_corr _a (_p : address) mem :
     equiv [ Mprevec.polyvec_compress ~ EncDec_AVX2.encode10_opt_vec :
              pos_bound768_cxq a{1} 0 768 2 /\
@@ -186,38 +254,76 @@ proof.
               lift_vector a{1} = _a /\
               pos_bound768_cxq a{1} 0 768 1 /\
               to_uint rp{1} = _p /\
+              v{1} = Array16.init (fun i => W16.of_int 20159) /\
               v8{1} = Array16.init (fun i => W16.of_int (20159 * 2^3)) /\
-              off{1} = Array16.init (fun i => W16.of_int (2^4-1)) /\
-              shift1{1} = Array16.init (fun i => W16.of_int 2^12) /\
+              off{1} = Array16.init (fun i => W16.of_int (2^4 - 1)) /\
+              shift1{1} = Array16.init (fun i => W16.of_int (2^12)) /\
               mask{1} = Array16.init (fun i => W16.of_int (2^10-1)) /\
               shift2{1} = Array16.init (fun i => W16.of_int (2 ^ ((i %% 2) * 10))) /\
-              sllvdidx{1} = Array8.init (fun i => W32.of_int (((i + 1)%% 2) * (2^3 + 2^2))) /\
+              sllvdidx{1} = Array8.init (fun i => W32.of_int (((i + 1)%% 2) * 12)) /\
               shufbidx{1} = pvc_shufbidx_s /\
               ={i} /\ i{1} = 0).
   inline Ops.iVPBROADCAST_4u64 Ops.iVPBROADCAST_16u16 Ops.iVPSLL_16u16; wp.
-  (* call{1} (polyvec_csubq_corr (lift_array768 (unlift_vector _a))). *)
-  admit.
+  ecall {1} (polyvec_csubq_corr (lift_array768 a{1})).
+  skip; auto => />.
+  move => &1 pos_bound_a rp_lb rp_ub result a_eq_res pos_bound_res />.
+  do split.
+    + rewrite eq_vectorP => i ib.
+      rewrite tP => k kb.
+      rewrite liftarrayvector 1:ib 1:kb.
+      rewrite -a_eq_res.
+      by rewrite liftarrayvector 1:ib 1:kb.
+    + by rewrite -ext_eq_all /all_eq //=.
+    + by rewrite -ext_eq_all /all_eq //= shl_shlw 1://= shlMP 1://=.
+    + by rewrite /f4u64_t16u16 -ext_eq_all /all_eq //=.
+    + by rewrite /f4u64_t8u32 -ext_eq_all /all_eq //=.
   wp.
   while(#{/~mem}{~i{1}=0}pre /\ ={i} /\ 0 <= i{1} <= 48 /\
         touches mem Glob.mem{1} _p (20*i{1}) /\
         forall k, 0 <= k < 20*i{1} => loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]).
-    seq 21 1: (#pre /\ forall k, 0 <= k < 20*i{1} + 20 => if 0 <= k < 20*i{1} then loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]
+    seq 11 0: (#pre /\ forall k, 0 <= k < 16 => f0{1}.[k] = W16.of_int (compress 10 _a.[(16*i{1} + k) %/ 256].[(16*i{1} + k)%% 256])).
+      inline *; wp; skip; auto => />.
+      move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub />.
+      move => k k_lb k_ub.
+      do (rewrite initiE 1://= /=).
+      rewrite /round_scalew /= /truncateu16 /= /wmulhs.
+      rewrite of_sintK /= /(W16.smod 20159) /=.
+      rewrite of_sintK /= /(W16.smod 4096) /=.
+      rewrite (W16.and_mod 10 _) 1://=.
+      rewrite of_uintK (modz_dvd _ _ (2^10)) 1://=.
+      rewrite liftarrayvector 1..2:/# (mulzC 256 _) -(divz_eq _ 256) mapiE 1:/# /=.
+      rewrite /pos_bound768_cxq /bpos16 /= in pos_bound_a.
+      rewrite /compress inFqK (pmod_small _ q) 1:pos_bound_a 1:/# /=.
+      rewrite shl_shlw 1://= -(W16.to_uintK a{1}.[16 * i{2} + k]) shlMP 1://=.
+      rewrite (W16.of_intM _ 30200) -W16.of_intD -W16.of_intS.
+      rewrite /round.
+      rewrite of_sintK (Montgomery16.smod_small (to_uint a{1}.[16 * i{2} + k] * 2 ^ 3)).
+        rewrite -to_sint_unsigned; first by move : (pos_bound_a (16*i{2} + k)) => /#.
+        move : (pos_bound_a (16*i{2} + k)) => /#.
+      rewrite (W32.shr_shrw 14) 1://= -(W32.shlMP _ 12) 1://= W32.shlw_shrw_shrw 1://= /=.
+      rewrite andmask_shrw 1://= (_: W32.masklsb (20 - 2) = W32.of_int (2 ^ 18 - 1)) 1://=.
+      rewrite W32.and_mod 1://= -(W32.of_intD _ 1) shr_shrw 1://= (W32.shrDP _ 1) 1://=.
+      rewrite of_uintK modz_dvd 1://= (pmod_small _ W32.modulus).
+        pose tmp := W32.to_uint _.
+        move : (modz_cmp tmp (2^18 + 1)) => /#.
+      admit. (* FIXME *)
+    seq 10 1: (#{~f0{1}}pre /\ forall k, 0 <= k < 20*i{1} + 20 => if 0 <= k < 20*i{1} then loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]
                                                   else if (20*i{1} <= k < 20*i{1} + 16) then t0{1}.[k %% 20] = c{2}.[k]
                                                   else t1{1}.[k %% 4] = c{2}.[k]).
     inline *; wp; skip; auto => />.
-    move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub />.
-    split.
+    move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub f0_def />.
+    do split.
       move => k k_lb k_ub />.
       rewrite filliE 1:/# /= lezNgt k_ub //=.
       by apply mem_eq.
 
       move => k k_lb k_ub.
-      rewrite filliE 1:/# //= k_ub /=.
+      rewrite filliE 1:/# /=.
       case (k < 20 * i{2}) => k_tub.
         rewrite lezNgt k_tub /= (mem_eq k) //=.
       move : k_tub => -/lezNgt k_tlb.
       case (k < 20 * i{2} + 16) => k_tub.
-        rewrite k_tlb /=.
+        rewrite k_tlb k_ub /=.
         rewrite /int_bit //=.
         rewrite -(modz_dvd k 20 5) 1://=.
         pose ki := k %% 20.
@@ -225,48 +331,142 @@ proof.
           rewrite mem_iota /ki.
           split; first by move : (modz_cmp k 20) => />.
           move : k_tub => /#.
+        rewrite initiE /=; first by rewrite andabP -(mem_iota 0 16 ki).
+        have -> /=: 0 <= ki %/ 2 && ki %/ 2 < 8. by move : ki rk_b; rewrite -List.allP -iotaredE //=.
         move : ki rk_b.
         rewrite -List.allP.
         rewrite -iotaredE //=.
-        split. (* REMOVE *)
-        rewrite /f4u64_t32u8 /f8u32_t4u64; do (rewrite initiE 1://= /=).
-        admit.
-        admit.
+        do (rewrite initiE 1://= /= || rewrite /f32u8_t16u16 initiE 1://= /=).
+        split.
+          rewrite (shr_bits8 (W2u32.pack2_t _)) 1://= bits8_W2u32_red 1://=.
+          do (rewrite initiE 1://= //=).
+          rewrite shlMP 1://= of_int_bits8_div 1://=.
+          rewrite of_int_bits8_div 1://= mulz1.
+          rewrite (divzMr _ (2^12) (2^4)) 1..2://= mulzK 1://= (W8.and_mod 4) 1://=.
+          rewrite -divzpMr 1://= /=.
+          rewrite of_sintK (Montgomery16.smod_small 1) 1://= of_sintK (Montgomery16.smod_small 1024) 1://= mulz1.
+          rewrite (_: 1024 = 2^2 * 2^4 * 2^4) 1://= -mulzA -mulzA (divzMDr _ _ (2^4)) 1://=.
+          rewrite modz_dvd 1://= modzMDl.
+          rewrite (W8.and_mod 4) 1://=.
+          rewrite shr_shrw_w8 1://= shrDP 1://=.
+          rewrite mulzDl (mulzA _ 16 16) modzMDr.
+          rewrite -mulz_modl 1://= mulzK 1://=.
+          rewrite shl_shlw_w8 1://= shlMP 1://=.
+          rewrite -(modz_pow2_div 8 4 _) 1://=.
+          rewrite divzE modz_dvd 1://= //= -addzA //= modz_dvd 1://= modz_mod //=.
+          rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+            move : (KyberPoly.compress_rng ((lift_vector a{1}).[(16 * i{2} + 0) %/ 256].[(16 * i{2} + 0) %% 256]) 10) => /#.
+          rewrite -of_uintK to_uintK.
+          rewrite liftarrayvector 1..2:/#.
+          rewrite (mulzC 256 _) -divz_eq.
+          rewrite /compress_polyvec /fromarray256 mapiE 1:/# /=.
+          rewrite mapiE 1:/# /= initiE 1:/# /=.
+          case (0 <= 16 * i{2} && 16 * i{2} < 256) => r.
+            rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
+          case (256 <= 16 * i{2} && 16 * i{2} < 512) => r1.
+            rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=.
+            rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=.
+        admit. (* TODO: repeat 15 times ? *)
       move : k_tub => -/lezNgt k_tlb1 />.
-        rewrite k_tlb /=.
+        rewrite k_tlb k_ub /=.
         rewrite /int_bit //=.
         rewrite -(modz_dvd k 20 5) 1://=.
         pose ki := k %% 20.
         have rk_b: ki \in iota_ 16 4.
           rewrite mem_iota /ki.
           move : (modz_cmp k 20) k_tlb1 k_ub => /#.
+        have ->: k %% 4 = ki - 16.
+          move : k_tlb1 k_ub => /#.
+        rewrite initiE /=; first by move : ki rk_b; rewrite -List.allP -iotaredE //=.
         move : ki rk_b.
         rewrite -List.allP.
         rewrite -iotaredE //=.
-        split. (* REMOVE *)
-        rewrite /f4u64_t32u8 /f8u32_t4u64; do (rewrite initiE 1://= /=).
-        admit.
-        admit.
-        admit.
-        admit.
-    (*     rewrite shr_shrw 1://=. *)
-    (*     rewrite k_tlb k_ub //=. *)
-    (*     pose tmp := (W2u32.pack2_t _). *)
-
-
-    (*     rewrite /pack2_t. *)
-    (*     rewrite /W64.(`>>>`) /(\bits8). *)
-
-    (*     rewrite -(W64.to_uintK tmp). *)
-    (*     rewrite shrDP 1://=. *)
-    (*     rewrite W8u8.of_int_bits8_div 1://= expr0 divz1. *)
-    (*     rewrite (_: 2^12 = 2^(8*1) * 2^4) 1://= (divzMr _ (2^(8*1)) (2^4)) 1..2://=. *)
-    (*     rewrite (pmod_small _ W64.modulus) 1:W64.to_uint_cmp. *)
-
+        do (rewrite initiE 1://= /= || rewrite /f32u8_t16u16 initiE 1://= /=).
+        split.
+          rewrite (shr_bits8 (W2u32.pack2_t _)) 1://= bits8_W2u32_red 1://=.
+          do (rewrite initiE 1://= //=).
+          rewrite shlMP 1://= of_int_bits8_div 1://=.
+          rewrite of_int_bits8_div 1://=.
+          rewrite (divzMr _ (2^12) (2^4)) 1..2://= mulzK 1://= (W8.and_mod 4) 1://=.
+          rewrite (divzMr _ (2^12) (2^12)) 1..2://= mulzK 1://= (W8.and_mod 4) 1://=.
+          rewrite of_sintK (Montgomery16.smod_small 1) 1://= of_sintK (Montgomery16.smod_small 1024) 1://= mulz1.
+          rewrite (divzMr _ (2^10) (2^2)) 1..2://=.
+          rewrite (divzMDr _ _ (2^10)) 1://= (pdiv_small _ (2^10)).
+            rewrite f0_def 1://= (sint_compress_rng _ 10) 1://=.
+          rewrite addz0 of_uintK modz_dvd 1://=.
+          rewrite (_: 1024 = 2^2 * 2^4 * 2^4) 1://= -mulzA -mulzA (divzMDr _ _ (2^4)) 1://=.
+          rewrite shr_shrw_w8 1://= shrDP 1://=.
+          rewrite of_uintK //=.
+          rewrite shl_shlw_w8 1://= shlMP 1://=.
+          rewrite (modz_pow2_div 8 4 _) 1://= /=.
+          rewrite (divzMDl _ _ 16) 1://= -divzMr 1..2://= /=.
+          rewrite modz_dvd 1://= modz_mod //=.
+          rewrite -(pmod_small (to_sint f0{1}.[12] %/ 256) 4).
+            rewrite f0_def 1://=.
+            pose tmp := (lift_vector a{1}).[_].[_].
+            move : (sint_compress_rng tmp 10) => /#.
+          rewrite -(modzDml _ _ 16) -(mulz_modl 4 _ 4) 1://=.
+          rewrite (pmod_small (W16.to_sint _ %% 4 * 4 + _) 16).
+            pose x := (W16.to_sint _).
+            pose y := (W16.to_sint _ %/ 256).
+            move : (modz_cmp x 4) (modz_cmp y 4) => /> /#.
+          rewrite (pmod_small (to_sint f0{1}.[12] %/ 256) 4).
+            rewrite f0_def 1://=.
+            pose tmp := (lift_vector a{1}).[_].[_].
+            move : (sint_compress_rng tmp 10) => /#.
+          rewrite addrA addrC.
+          have ->: to_sint f0{1}.[13] %/ 4 %% 16 * 16 + to_sint f0{1}.[13] %% 4 * 4 = (to_sint f0{1}.[13] * 4 %% 256).
+            rewrite {2}(_: 16 = 4 * 4) 1://= -mulzA -(mulzDl _ _ 4).
+            rewrite -(modz_pow2_div 6 2 _) 1://= /=.
+            rewrite divzE modz_dvd 1://= -addzA //= mulz_modl 1://= //=.
+          rewrite of_intD.
+          rewrite -of_uintK.
+          rewrite f0_def 1://= of_sintK Montgomery16.smod_small.
+            move : (KyberPoly.compress_rng ((lift_vector a{1}).[(16 * i{2} + 12) %/ 256].[(16 * i{2} + 12) %% 256]) 10) => /#.
+          rewrite f0_def 1://= of_sintK Montgomery16.smod_small.
+            move : (KyberPoly.compress_rng ((lift_vector a{1}).[(16 * i{2} + 13) %/ 256].[(16 * i{2} + 13) %% 256]) 10) => /#.
+          rewrite to_uintK -of_intD.
+          rewrite liftarrayvector 1..2:/# liftarrayvector 1..2:/#.
+          rewrite (mulzC 256 _) -divz_eq (mulzC 256 _) -divz_eq.
+          rewrite mapiE 1:/# /= mapiE 1:/# /=.
+          rewrite /compress_polyvec /fromarray256.
+          rewrite mapiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+          case (0 <= 16 * i{2} + 12 && 16 * i{2} + 12 < 256) => r.
+              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
+            case (0 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 256) => r1.
+              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
+              smt(@W8 @Int @IntDiv @Ring.IntID).
+          case (256 <= 16 * i{2} + 12 && 16 * i{2} + 12 < 512) => r1.
+            rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=.
+            case (0 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 256) => r2.
+              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
+            case (256 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 512) => r3.
+              rewrite liftarrayvector 1://= /=; first by move : r3 => /#.
+              rewrite /lift_array768 mapiE 1:/# //=.
+              smt(@Int @IntDiv @Ring.IntID).
+            rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=.
+            case (0 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 256) => r2.
+              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
+            case (256 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 512) => r3.
+              rewrite liftarrayvector 1://= /=; first by move : r3 => /#.
+              rewrite /lift_array768 mapiE 1:/# //=.
+              rewrite liftarrayvector 1://= /=; first by move : r3 => /#.
+              rewrite /lift_array768 mapiE 1:/# //=.
+        admit. (* TODO: repeat 15 times ? *)
     inline *; wp; skip; auto => />.
     move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub mem_all_eq />.
     do split; first 2 by move : i_lb i_tub => /#.
-    + admit.
+    + rewrite /touches /= => j j_bnds.
+      do rewrite get_storesE size_to_list.
+      do ((rewrite to_uint_small; first by move : i_tub i_lb; smt(@W64 @Int)) || (rewrite to_uintD_small; first by rewrite of_uintK; move : p_ub i_tub i_lb; smt(@W64 @Int))).
+      have -> /=: !(to_uint rp{1} + (20 * i{2} + 16) <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + (20 * i{2} + 16) + 4).
+        rewrite mulzDr mulz1 in j_bnds.
+        move : j_bnds => /#.
+      have -> /=: !(to_uint rp{1} + 20 * i{2} <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + 20 * i{2} + 16).
+        rewrite mulzDr mulz1 in j_bnds.
+        move : j_bnds => /#.
+      rewrite /touches in mem_diff.
+      rewrite mem_diff //=; first by move : j_bnds => /#.
     + move => k k_lb; rewrite (mulzDr 20 _ _) mulz1 => k_ub />.
       case (k < 20 * i{2}) => k_tub.
         rewrite /loadW8 get_storesE.
@@ -326,7 +526,6 @@ proof.
     rewrite /load_array960 Array960.tP => j jb.
     by rewrite initiE 1:jb /= mem_eq 1:jb.
 qed.
-  
 
 lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t): 
     equiv [ Mprevec.polyvec_decompress ~ EncDec_AVX2.decode10_opt_vec :
@@ -338,8 +537,6 @@ lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t):
              lift_vector res{1} = decompress_polyvec 10 res{2} /\
              pos_bound768_cxq res{1} 0 768 1].
 admitted. (* Miguel *)
-
-
 
 
 lemma polyvec_reduce_corr_h _a:
