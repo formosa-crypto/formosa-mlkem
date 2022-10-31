@@ -644,12 +644,20 @@ by apply Array256.all_eq_eq; rewrite /all_eq
    /perm_ntt /perm_nttpack128 /nttpack /=.
 qed.
 
+print _poly_ntt_eq.
+lemma _poly_ntt_eq':
+  equiv[ Jkem_avx2.M._poly_ntt ~ NTT_AVX.ntt:
+          arg{2} = lift_array256 arg{1} /\ signed_bound_cxq arg{1} 0 256 2 ==>
+          res{2} = lift_array256 res{1} /\ pos_bound256_cxq res{1} 0 256 2].
+admitted.
+
 lemma poly_ntt_avx2_corr _r :
   phoare [ Jkem_avx2.M._poly_ntt :
     rp = _r /\ signed_bound_cxq rp 0 256 2 ==>
     ntt (lift_array256 _r) = lift_array256 (nttpack res) /\
     pos_bound256_cxq res 0 256 2] = 1%r.
 proof.
+conseq _poly_ntt_eq' (ntt_avx_spec (lift_array256 _r)).
 bypr => // &m [-> H].
 have <-: Pr[NTT_AVX.ntt(lift_array256 _r) @ &m :
       ntt (lift_array256 _r) = (nttpack res) ] = 1%r.

@@ -277,7 +277,7 @@ hint simplify PUR_i.
 (* misc utils *)
 lemma rangered (n m :int) :
   range n m = iotared n (m-n).
-  rewrite iotaredE /range => />. qed.
+proof. by rewrite iotaredE /range => />. qed.
 
 lemma ifsplit (b : bool) (t e r : 'a) :
    (b => (t = r)) => (!b => (e = r)) =>
@@ -286,11 +286,11 @@ lemma ifsplit (b : bool) (t e r : 'a) :
 
 lemma and_imply2 (p q r : bool) :
   p /\ (p => q => r) => ((p => q) => r).
-  smt(). qed.
+proof. smt(). qed.
 
 lemma falsify (p : bool) : 
   false => p.
-  auto. qed.
+proof. auto. qed.
 
 (*
 op perm128 ['a] (p: int list) (a: 'a Array128.t): 'a Array128.t =
@@ -308,24 +308,30 @@ abbrev len_avx2K (k:int) = nth witness [128;64;32;16;8;4;2] k.
 
 lemma len_avx2_equiv (k:int) : 0 <= k < 7 =>
   len_avx2S k = len_avx2K k.
+proof.
 rewrite -mem_range rangered => />.
-do 7!(move => Hk; case Hk => />). qed.
+do 7!(move => Hk; case Hk => />).
+qed.
 
 abbrev zetasctr_avx2S (k:int) = foldl (fun c k => c + 128 %/ len_avx2S k) 0 (range 0 k).
 abbrev zetasctr_avx2K (k:int) = nth witness [0;1;3;7;15;31;63] k.
 
 lemma zetasctr_avx2_equiv (k:int) : 0 <= k < 7 =>
   zetasctr_avx2S k = zetasctr_avx2K k.
+proof.
 rewrite -mem_range rangered => />.
-do 7!(try (move => Hk; case Hk => />); first by rewrite rangered => />). qed.
+do 7!(try (move => Hk; case Hk => />); first by rewrite rangered => />).
+qed.
 
 abbrev block_avx2S k = (128 %/ 2 ^ (7 - k)).
 abbrev block_avx2K k = nth witness [1;2;4;8;16;32;64] k.
 
 lemma block_avx2_equiv k : 0 <= k < 7 =>
   block_avx2S k = block_avx2K k.
+proof.
   rewrite -mem_range rangered => />.
-  do 7!(move => Hk; case Hk => />). qed.
+  do 7!(move => Hk; case Hk => />).
+qed.
 
 lemma r_bsrev_ntt_inner_foldl_iE zetas len start r (k:int) :
   0 <= start => start + len*2 <= 256 => 0 <= k <= len =>
@@ -333,6 +339,7 @@ lemma r_bsrev_ntt_inner_foldl_iE zetas len start r (k:int) :
   if start <= i < start + k then r.[i] + zetas.[(256 %/ len + start %/ len) %/ 2] * r.[i + len]
   else if start + len <= i < start + len + k then r.[i-len] - zetas.[(256 %/ len + start %/ len) %/ 2] * r.[i]
   else r.[i].  
+proof.
 move => /> H1 H2. elim/natind:k => />.
 (*zero*)
 move => n *. rewrite /r_bsrev_ntt_inner_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
@@ -341,7 +348,8 @@ move => n Hn Hrec Hk Hn2 i.
 rewrite /r_bsrev_ntt_inner_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
 rewrite /r_bsrev_ntt_inner_foldl foldl_map /r_bsrev_ntt_inner in Hrec => />.
 rewrite /r_bsrev_ntt_inner => />. rewrite get_set2_add_mulr_if => />; 1..3: by smt(mem_range).
-rewrite !Hrec => />; by smt(). qed.
+rewrite !Hrec => />; by smt().
+qed.
 
 lemma r_bsrev_ntt_outer_foldl_iE zetas len r (k:int) :
   0 < len =>
@@ -351,6 +359,7 @@ lemma r_bsrev_ntt_outer_foldl_iE zetas len r (k:int) :
   if i %/ len %% 2 = 0 then r.[i] + zetas.[(256 %/ len + (i %/ len)) %/ 2] * r.[i+len]
   else r.[i-len] - zetas.[(256 %/ len + (i%/len-1)) %/ 2] * r.[i]
   else r.[i].
+proof.
 move=> Hlen; elim/natind:k => />.
 (*zero*)
 move => n *. rewrite /r_bsrev_ntt_outer_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
@@ -391,31 +400,38 @@ abbrev len_inv_avx2K (k:int) = nth witness [2;4;8;16;32;64;128] k.
 
 lemma len_inv_avx2_equiv (k:int) : 0 <= k < 7 =>
   len_inv_avx2S k = len_inv_avx2K k.
+proof.
 rewrite -mem_range rangered => />.
-do 7!(move => Hk; case Hk => />). qed.
+do 7!(move => Hk; case Hk => />).
+qed.
 
 abbrev zetasctr_inv_avx2S (k:int) = foldl (fun c k => c + 128 %/ len_inv_avx2S k) 0 (range 0 k).
 abbrev zetasctr_inv_avx2K (k:int) = nth witness [0;64;96;112;120;124;126] k.
 
 lemma zetasctr_inv_avx2_equiv (k:int) : 0 <= k < 7 =>
   zetasctr_inv_avx2S k = zetasctr_inv_avx2K k.
+proof.
 rewrite -mem_range rangered => />.
-do 7!(try (move => Hk; case Hk => />); first by rewrite rangered => />). qed.
+do 7!(try (move => Hk; case Hk => />); first by rewrite rangered => />).
+qed.
 
 abbrev block_inv_avx2S k = (128 %/ 2 ^ (k+1)).
 abbrev block_inv_avx2K k = nth witness [64;32;16;8;4;2;1] k.
 
 lemma block_inv_avx2_equiv k : 0 <= k < 7 =>
   block_inv_avx2S k = block_inv_avx2K k.
+proof.
   rewrite -mem_range rangered => />.
-  do 7!(move => Hk; case Hk => />). qed.
+  do 7!(move => Hk; case Hk => />).
+qed.
 
 lemma r_bsrev_invntt_inner_foldl_iE zetas len start r (k:int) :
   0 <= start => start + len*2 <= 256 => 0 <= k <= len =>
   forall i, (r_bsrev_invntt_inner_foldl zetas len start r k).[i] =
   if start <= i < start + k then r.[i] + r.[i + len]
   else if start + len <= i < start + len + k then zetas.[128 + ((-512) + start) %/ (len * 2)] * (r.[i-len] - r.[i])
-  else r.[i].  
+  else r.[i].
+proof.
 move => /> H1 H2. elim/natind:k => />.
 (*zero*)
 move => n *. rewrite /r_bsrev_invntt_inner_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
@@ -424,7 +440,8 @@ move => n Hn Hrec Hk Hn2 i.
 rewrite /r_bsrev_invntt_inner_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
 rewrite /r_bsrev_invntt_inner_foldl foldl_map /r_bsrev_invntt_inner in Hrec => />.
 rewrite /r_bsrev_invntt_inner => />. rewrite get_set2_mul_addr_if => />; 1..3: by smt(mem_range).
-rewrite !Hrec => />; by smt(). qed.
+rewrite !Hrec => />; by smt().
+qed.
 
 lemma r_bsrev_invntt_outer_foldl_iE zetas len r (k:int) :
   0 < len =>
@@ -434,6 +451,7 @@ lemma r_bsrev_invntt_outer_foldl_iE zetas len r (k:int) :
   if i %/ len %% 2 = 0 then r.[i] + r.[i + len]
   else zetas.[128 + ((-512) + len*(i%/len-1)) %/ (len * 2)] * (r.[i - len] - r.[i])
   else r.[i].
+proof.
 move=> Hlen; elim/natind:k => />.
 (*zero*)
 move => n *. rewrite /r_bsrev_invntt_outer_foldl rangered => />. rewrite (_:n=0) => />; smt(). 
@@ -1677,8 +1695,6 @@ proc __basemul(a b: Fq Array256.t): Fq Array256.t = {
 }
 }.
 
-
-
 op basemul_avx2 (a b : poly): poly =
  Array256.init
   (fun i =>
@@ -1805,22 +1821,6 @@ rewrite basemul_zetasE.
 by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /perm_nttpack128 /perm_nttunpack128 /perm_ntt /=. 
 qed.
 
-(*
-lemma poly_basemul_avx2_correct _ap _bp:
-   phoare[ Mprevec.poly_basemul :
-     _ap = nttpack (lift_array256 ap) /\ _bp = nttpack (lift_array256 bp) /\
-     signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
-     signed_bound_cxq res 0 256 3 /\ 
-     nttpack (lift_array256 res) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
-proc. 
-admitted. (* basemul: Hugo/Bacelar? *)
-*)
-
-
-
-
-
-
 (* pack consistent with packing permutation *)
 (*
 require import Array8.
@@ -1836,6 +1836,7 @@ hoare __nttpack128_perm r :
 (* equivalence between full-inline-SSA and level-by-level ntt avx2 *)
 lemma ntt0t6_ntt : 
   equiv [ NTT_AVX.ntt ~ NTT_AVX.ntt0t6 : ={r} ==> ={res}].
+proof.
 proc; simplify.
 seq 1 1: (={rp0}).
  by inline *; auto. 
@@ -1903,7 +1904,7 @@ qed.
 
 lemma ntt_avx_1_pr r:
   phoare [NTT_AVX.__ntt_level1 : rp = r ==> res = r_avx2_ntt NTT_Fq.zetas r 1] = 1%r.
-conseq ntt_avx_1_ll (ntt_avx_1 r) => />. qed.
+proof. by conseq ntt_avx_1_ll (ntt_avx_1 r). qed.
 
 op perm_level2 : int list =
   [0;1;2;3;4;5;6;7;16;17;18;19;20;21;22;23;32;33;34;35;36;37;38;39;48;49;50;51;52;53;54;55;64;65;66;67;68;69;70;71;80;81;82;83;84;85;86;87;96;97;98;99;100;101;102;103;112;113;114;115;116;117;118;119;8;9;10;11;12;13;14;15;24;25;26;27;28;29;30;31;40;41;42;43;44;45;46;47;56;57;58;59;60;61;62;63;72;73;74;75;76;77;78;79;88;89;90;91;92;93;94;95;104;105;106;107;108;109;110;111;120;121;122;123;124;125;126;127] axiomatized by perm_level2E.
@@ -1921,7 +1922,7 @@ qed.
 
 lemma ntt_avx_2_pr r:
   phoare [NTT_AVX.__ntt_level2 : rp = r ==> perm_ntt perm_level2 res = r_avx2_ntt NTT_Fq.zetas r 2] = 1%r.
-conseq ntt_avx_2_ll (ntt_avx_2 r) => />. qed.
+proof. by conseq ntt_avx_2_ll (ntt_avx_2 r). qed.
 
 op perm_level3 : int list =
   [0;1;2;3;16;17;18;19;32;33;34;35;48;49;50;51;64;65;66;67;80;81;82;83;96;97;98;99;112;113;114;115;4;5;6;7;20;21;22;23;36;37;38;39;52;53;54;55;68;69;70;71;84;85;86;87;100;101;102;103;116;117;118;119;8;9;10;11;24;25;26;27;40;41;42;43;56;57;58;59;72;73;74;75;88;89;90;91;104;105;106;107;120;121;122;123;12;13;14;15;28;29;30;31;44;45;46;47;60;61;62;63;76;77;78;79;92;93;94;95;108;109;110;111;124;125;126;127] axiomatized by perm_level3E.
@@ -1939,7 +1940,7 @@ qed.
 
 lemma ntt_avx_3_pr r:
   phoare [NTT_AVX.__ntt_level3 : perm_ntt perm_level2 rp = r ==> perm_ntt perm_level3 res = r_avx2_ntt NTT_Fq.zetas r 3] = 1%r.
-conseq ntt_avx_3_ll (ntt_avx_3 r) => />. qed.
+proof. by conseq ntt_avx_3_ll (ntt_avx_3 r). qed.
 
 op perm_level4 : int list =
   [0;1;16;17;32;33;48;49;64;65;80;81;96;97;112;113;2;3;18;19;34;35;50;51;66;67;82;83;98;99;114;115;4;5;20;21;36;37;52;53;68;69;84;85;100;101;116;117;6;7;22;23;38;39;54;55;70;71;86;87;102;103;118;119;8;9;24;25;40;41;56;57;72;73;88;89;104;105;120;121;10;11;26;27;42;43;58;59;74;75;90;91;106;107;122;123;12;13;28;29;44;45;60;61;76;77;92;93;108;109;124;125;14;15;30;31;46;47;62;63;78;79;94;95;110;111;126;127] axiomatized by perm_level4E.
@@ -1957,7 +1958,7 @@ qed.
 
 lemma ntt_avx_4_pr r:
   phoare [NTT_AVX.__ntt_level4 : perm_ntt perm_level3 rp = r ==> perm_ntt perm_level4 res = r_avx2_ntt NTT_Fq.zetas r 4] = 1%r.
-conseq ntt_avx_4_ll (ntt_avx_4 r) => />. qed.
+proof. by conseq ntt_avx_4_ll (ntt_avx_4 r). qed.
 
 op perm_level5 : int list =
   [0;16;32;48;64;80;96;112;1;17;33;49;65;81;97;113;2;18;34;50;66;82;98;114;3;19;35;51;67;83;99;115;4;20;36;52;68;84;100;116;5;21;37;53;69;85;101;117;6;22;38;54;70;86;102;118;7;23;39;55;71;87;103;119;8;24;40;56;72;88;104;120;9;25;41;57;73;89;105;121;10;26;42;58;74;90;106;122;11;27;43;59;75;91;107;123;12;28;44;60;76;92;108;124;13;29;45;61;77;93;109;125;14;30;46;62;78;94;110;126;15;31;47;63;79;95;111;127] axiomatized by perm_level5E.
@@ -1975,7 +1976,7 @@ qed.
 
 lemma ntt_avx_5_pr r:
   phoare [NTT_AVX.__ntt_level5 : perm_ntt perm_level4 rp = r ==> perm_ntt perm_level5 res = r_avx2_ntt NTT_Fq.zetas r 5] = 1%r.
-conseq ntt_avx_5_ll (ntt_avx_5 r) => />. qed.
+proof. by conseq ntt_avx_5_ll (ntt_avx_5 r). qed.
 
 hoare ntt_avx_6 r:
   NTT_AVX.__ntt_level6 : perm_ntt perm_level5 rp = r ==> perm_ntt perm_nttpack128 res = r_avx2_ntt NTT_Fq.zetas r 6.
@@ -1990,7 +1991,7 @@ qed.
 
 lemma ntt_avx_6_pr r:
   phoare [NTT_AVX.__ntt_level6 : perm_ntt perm_level5 rp = r ==> perm_ntt perm_nttpack128 res = r_avx2_ntt NTT_Fq.zetas r 6] = 1%r.
-conseq ntt_avx_6_ll (ntt_avx_6 r) => />. qed.
+proof. by conseq ntt_avx_6_ll (ntt_avx_6 r). qed.
 
 
 (** Main Theorems in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent **)
@@ -2081,6 +2082,7 @@ proof. by conseq ntt_avx_ll (ntt_avx_h _r). qed.
 (* equivalence between full-inline-SSA and level-by-level ntt avx2 (inverse) *)
 lemma invntt0t6_invntt : 
   equiv [ NTT_AVX.invntt ~ NTT_AVX.invntt0t6 : ={r} ==> ={res}].
+proof.
 proc; simplify. 
 inline{1} NTT_AVX.__invntt_level0t5.
 (* level 0 *) (* [loc(zeta0k)..loc(r0l)] - (loc(zeta0k)-loc(r0a)-1) *)
@@ -2133,7 +2135,7 @@ qed.
 
 lemma invntt_avx_0_pr r:
   phoare [NTT_AVX.__invntt_level0 : perm_ntt perm_nttpack128 rp = r ==> perm_ntt perm_inv_level0 res = r_avx2_invntt NTT_Fq.zetas_inv r 0] = 1%r.
-proof. conseq invntt_avx_0_ll (invntt_avx_0 r) => />. qed.
+proof. by conseq invntt_avx_0_ll (invntt_avx_0 r). qed.
 
 op perm_inv_level1 : int list =
   [0;1;32;33;64;65;96;97;16;17;48;49;80;81;112;113;2;3;34;35;66;67;98;99;18;19;50;51;82;83;114;115;4;5;36;37;68;69;100;101;20;21;52;53;84;85;116;117;6;7;38;39;70;71;102;103;22;23;54;55;86;87;118;119;8;9;40;41;72;73;104;105;24;25;56;57;88;89;120;121;10;11;42;43;74;75;106;107;26;27;58;59;90;91;122;123;12;13;44;45;76;77;108;109;28;29;60;61;92;93;124;125;14;15;46;47;78;79;110;111;30;31;62;63;94;95;126;127]
@@ -2150,7 +2152,7 @@ qed.
 
 lemma invntt_avx_1_pr r:
   phoare [NTT_AVX.__invntt_level1 : perm_ntt perm_inv_level0 rp = r ==> perm_ntt perm_inv_level1 res = r_avx2_invntt NTT_Fq.zetas_inv r 1] = 1%r.
-conseq invntt_avx_1_ll (invntt_avx_1 r) => />. qed.
+proof. by conseq invntt_avx_1_ll (invntt_avx_1 r). qed.
 
 op perm_inv_level2 : int list =
   [0;1;2;3;32;33;34;35;64;65;66;67;96;97;98;99;16;17;18;19;48;49;50;51;80;81;82;83;112;113;114;115;4;5;6;7;36;37;38;39;68;69;70;71;100;101;102;103;20;21;22;23;52;53;54;55;84;85;86;87;116;117;118;119;8;9;10;11;40;41;42;43;72;73;74;75;104;105;106;107;24;25;26;27;56;57;58;59;88;89;90;91;120;121;122;123;12;13;14;15;44;45;46;47;76;77;78;79;108;109;110;111;28;29;30;31;60;61;62;63;92;93;94;95;124;125;126;127]
@@ -2167,7 +2169,7 @@ qed.
 
 lemma invntt_avx_2_pr r:
   phoare [NTT_AVX.__invntt_level2 : perm_ntt perm_inv_level1 rp = r ==> perm_ntt perm_inv_level2 res = r_avx2_invntt NTT_Fq.zetas_inv r 2] = 1%r.
-conseq invntt_avx_2_ll (invntt_avx_2 r) => />. qed.
+proof. by conseq invntt_avx_2_ll (invntt_avx_2 r). qed.
 
 op perm_inv_level3 : int list =
   [0;1;2;3;4;5;6;7;32;33;34;35;36;37;38;39;64;65;66;67;68;69;70;71;96;97;98;99;100;101;102;103;16;17;18;19;20;21;22;23;48;49;50;51;52;53;54;55;80;81;82;83;84;85;86;87;112;113;114;115;116;117;118;119;8;9;10;11;12;13;14;15;40;41;42;43;44;45;46;47;72;73;74;75;76;77;78;79;104;105;106;107;108;109;110;111;24;25;26;27;28;29;30;31;56;57;58;59;60;61;62;63;88;89;90;91;92;93;94;95;120;121;122;123;124;125;126;127]
@@ -2184,7 +2186,7 @@ qed.
 
 lemma invntt_avx_3_pr r:
   phoare [NTT_AVX.__invntt_level3 : perm_ntt perm_inv_level2 rp = r ==> perm_ntt perm_inv_level3 res = r_avx2_invntt NTT_Fq.zetas_inv r 3] = 1%r.
-conseq invntt_avx_3_ll (invntt_avx_3 r) => />. qed.
+proof. by conseq invntt_avx_3_ll (invntt_avx_3 r). qed.
 
 op perm_inv_level4 : int list =
   [0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;96;97;98;99;100;101;102;103;104;105;106;107;108;109;110;111;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;112;113;114;115;116;117;118;119;120;121;122;123;124;125;126;127]
@@ -2201,7 +2203,7 @@ qed.
 
 lemma invntt_avx_4_pr r:
   phoare [NTT_AVX.__invntt_level4 : perm_ntt perm_inv_level3 rp = r ==> perm_ntt perm_inv_level4 res = r_avx2_invntt NTT_Fq.zetas_inv r 4] = 1%r.
-conseq invntt_avx_4_ll (invntt_avx_4 r) => />. qed.
+proof. by conseq invntt_avx_4_ll (invntt_avx_4 r). qed.
 
 hoare invntt_avx_5 r:
   NTT_AVX.__invntt_level5 : perm_ntt perm_inv_level4 rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 5.
@@ -2214,7 +2216,7 @@ qed.
 
 lemma invntt_avx_5_pr r:
   phoare [NTT_AVX.__invntt_level5 : perm_ntt perm_inv_level4 rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 5] = 1%r.
-conseq invntt_avx_5_ll (invntt_avx_5 r) => />. qed.
+proof. by conseq invntt_avx_5_ll (invntt_avx_5 r). qed.
 
 hoare invntt_avx_6 r:
   NTT_AVX.___invntt_level6 : rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 6.
@@ -2227,13 +2229,14 @@ qed.
 
 lemma invntt_avx_6_pr r:
   phoare [NTT_AVX.___invntt_level6 : rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 6] = 1%r.
-conseq _invntt_avx_6_ll (invntt_avx_6 r) => />. qed.
+proof. by conseq _invntt_avx_6_ll (invntt_avx_6 r). qed.
 
 (** Main Theorem in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent (inverse) **)
 lemma invntt_avx_equiv : 
      equiv [ NTT_AVX.invntt ~ NTT_avx2.invntt :
           perm_ntt perm_nttpack128 r{1} = NTT_avx2.r{2} /\ NTT_avx2.zetas_inv{2} = NTT_Fq.zetas_inv
           ==> res{1} = res{2}].
+proof.
 proc*.
 transitivity{1} { r0 <@ NTT_AVX.invntt0t6(r); }
   (={r} ==> ={r0})
@@ -2282,3 +2285,4 @@ rcondf{2} 1; auto => /> &2.
 rewrite r_avx2_invntt_post_spec /NTT_Fq.zetas_inv tP => />i Hi1 Hi2.
 rewrite !initiE => />. congr. rewrite -eq_inFq /q //=.
 qed.
+
