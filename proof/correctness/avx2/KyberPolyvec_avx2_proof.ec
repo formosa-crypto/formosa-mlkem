@@ -670,6 +670,100 @@ proof.
     by rewrite initiE 1:jb /= mem_eq 1:jb.
 qed.
 
+
+lemma decompress_aux_1 (x: W32.t):
+           ((x `<<<` 4 \bits16 0) `>>` ru_ones_s) `&` (W16.of_int 8184)
+           = W16.of_int (((to_uint (x \bits8 (2*i - 1)) %/ 16) + (to_uint (x \bits8 2*i)) * 16 + (to_uint (x \bits8 (2*i + 1)) %% 16 * 2^12)) %/ 2).
+proof.
+  move => ib.
+  rewrite -(pmod_small (Int.(+) (Int.(+) _ _) _) 65536).
+    move : (modz_cmp (to_uint (x \bits8 2 * i + 1)) 16) (W8.to_uint_cmp (x \bits8 2 * i - 1)) (W8.to_uint_cmp (x \bits8 2 * i)).
+    smt(modz_cmp @W8 @W16 W8.to_uint_cmp).
+  (* rewrite -(W16.shrDP _ 1) 1://= -shr_shrw 1://=. *)
+  (* congr. *)
+  rewrite -{2}(addz0 (2*i)) -(W32_bits16_bits8 _ _ 0) 1://=.
+  rewrite -(W32_bits16_bits8 _ _ 1) 1://=.
+  rewrite W2u8.bits8_div 1://= W2u8.bits8_div 1://= expr0 divz1 of_uintK mulz1.
+  rewrite (mulz_modl (2^12) _ _) 1://= //=.
+  rewrite (pmod_small (_ %/ 256) 256). by move : (W16.to_uint_cmp (x \bits16 i)); smt(@Int @IntDiv).
+  rewrite modzDmr.
+  admit.
+qed.
+
+lemma decompress_aux_2 (x: W32.t):
+           ((x `<<<` 4 \bits16 1) `>>` ru_ones_s) `&` (W16.of_int (2^2*8184))
+           = W16.of_int (((to_uint (x \bits8 (2*i - 1)) %/ 16) + (to_uint (x \bits8 2*i)) * 16 + (to_uint (x \bits8 (2*i + 1)) %% 16 * 2^12)) %/ 2).
+proof.
+  move => ib.
+  rewrite -(pmod_small (Int.(+) (Int.(+) _ _) _) 65536).
+    move : (modz_cmp (to_uint (x \bits8 2 * i + 1)) 16) (W8.to_uint_cmp (x \bits8 2 * i - 1)) (W8.to_uint_cmp (x \bits8 2 * i)).
+    smt(modz_cmp @W8 @W16 W8.to_uint_cmp).
+  (* rewrite -(W16.shrDP _ 1) 1://= -shr_shrw 1://=. *)
+  (* congr. *)
+  rewrite -{2}(addz0 (2*i)) -(W32_bits16_bits8 _ _ 0) 1://=.
+  rewrite -(W32_bits16_bits8 _ _ 1) 1://=.
+  rewrite W2u8.bits8_div 1://= W2u8.bits8_div 1://= expr0 divz1 of_uintK mulz1.
+  rewrite (mulz_modl (2^12) _ _) 1://= //=.
+  rewrite (pmod_small (_ %/ 256) 256). by move : (W16.to_uint_cmp (x \bits16 i)); smt(@Int @IntDiv).
+  rewrite modzDmr.
+  admit.
+qed.
+
+lemma decompress_aux (x: W32.t) (i: int):
+           0 <= i < 2 =>
+           (x `<<<` 4 \bits16 i) `>>` ru_ones_s
+           = W16.of_int ((to_uint (x \bits8 (2*i+1)) %% 16 * W8.modulus + to_uint (x \bits8 2*i)) %% 2 ^ 12 * 2 ^ 3).
+proof.
+  rewrite andabP => /(mem_iota 0 2 i); move : i; rewrite -allP -iotaredE //=.
+  rewrite -{1 4}(W32.to_uintK x).
+  rewrite W32.shlMP 1://= of_int_bits16_div 1://= of_int_bits16_div 1://=.
+  rewrite shr_shrw 1://= shrDP 1://= shr_shrw 1://= shrDP 1://=.
+  rewrite (modz_pow2_div 16 1 _) 1://= (modz_pow2_div 16 1 _) 1://=.
+  rewrite (_: 2^4 = 2^3 * 2^1) 1://= -(mulzA _ (2^3) (2^1)) expr0 divz1 (mulzK _ (2^1)) 1://=.
+  rewrite -divzMr 1..2://= divzMpr 1://=.
+  rewrite {1}(_: 2^15 = 2^12 * 2^3) 1://=.
+  rewrite -(mulz_modl (2^3) _ _) 1://=.
+
+  rewrite (divz_eq (to_uint x) (2^8)).
+  rewrite -(modzDm _ _ (2^12)) (pmod_small (_ %% 2^8) (2^12)); first by move : (modz_cmp (to_uint x) (2^8)) => /#.
+  rewrite -(mulz_modl (2^8) _ (2^4)) 1://=.
+  rewrite -(modz_dvd _ W8.modulus 16) 1://= -{1}(mulz1 8).
+  rewrite -{2}(divz1 (to_uint x)) -{2}(Ring.IntID.expr0 2) -(Ring.IntID.mulr0 8).
+  rewrite -W8.of_uintK -W8.of_uintK.
+  (* rewrite -(W4u8.bits8_div _ 1) 1://= -(W4u8.bits8_div _ 0) 1://=. *)
+
+
+  (* rewrite (modz_pow2_div 16 1 _) 1://=. *)
+  (* rewrite -divz_mulp 2://=. *)
+  (*   move : ib; rewrite andabP => /(mem_iota 0 2 i); move : i; rewrite -allP -iotaredE //=. *)
+  (* rewrite (_: 2^4 = 2^3 * 2^1) 1://= -(mulzA _ (2^3) (2^1)) divzMpr 1://=. *)
+  (* rewrite {1}(divz_eq (to_uint x) (2^8)). *)
+
+  (* have ->: 16 - 1 = 15 + 16*i - 16*i. by ring. *)
+  (* rewrite -(modz_pow2_div _ (16*i) _) 1:/#. *)
+  (* have ->: 2 ^ (15 + 16 * i) = 2^(12 + 16 * i) * 2^3. *)
+  (*   rewrite -Ring.IntID.exprD_nneg 1..2:/# => //=. *)
+  (* rewrite -(mulz_modl (2^3) _ _) 1://=. *)
+  (* rewrite -(modzDm _ _ (2^(12 + 16*i))) (pmod_small (_ %% 2^8) (2^(12 + 16 * i))). *)
+  (*   move : ib; rewrite andabP => /(mem_iota 0 2 i); move : i; rewrite -allP -iotaredE //=. *)
+  (*   move : (modz_cmp (to_uint x) (2^8)) => /#. *)
+  (* rewrite (mulzC _ W8.modulus). *)
+  (* rewrite {1}(_: 2 ^ (12 + 16 * i) = 2^8 * 2^(4 + 16*i)). by rewrite -Ring.IntID.exprD_nneg 1..2:/#; ring. *)
+  (* rewrite -(mulz_modr (2^8) _ _) 1://=. *)
+  admit.
+  (* rewrite -(modzDm _ _ (2^12)) (pmod_small (_ %% 2^8) (2^12)); first by move : (modz_cmp (to_uint x) (2^8)) => /#. *)
+  (* rewrite -(mulz_modl (2^8) _ (2^4)) 1://=. *)
+  (* rewrite -(modz_dvd _ W8.modulus 16) 1://= -{1}(mulz1 8). *)
+  (* rewrite -{2}(divz1 (to_uint x)) -{2}(Ring.IntID.expr0 2) -(Ring.IntID.mulr0 8). *)
+  (* rewrite -W8.of_uintK -W8.of_uintK. *)
+  (* rewrite -(W4u8.bits8_div _ 1) 1://= -(W4u8.bits8_div _ 0) 1://=. *)
+  (* rewrite W4u8.pack4bE 1://= W4u8.pack4bE 1://=. *)
+  (* do (rewrite initiE 1:/# /=). *)
+  (* rewrite /loadW8. *)
+  (* do (rewrite to_uintD_small; first by rewrite of_uintK; move : rp_lb rp_ub k_lb k_ub => /#). *)
+  (* rewrite of_uintK (pmod_small _ W64.modulus); first by move : k_lb k_ub => /#. *)
+qed.
+
 lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t): 
     equiv [ Mprevec.polyvec_decompress ~ EncDec_AVX2.decode10_opt_vec :
              valid_ptr _p 960 /\
