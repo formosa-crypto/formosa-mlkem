@@ -311,9 +311,9 @@ proof.
   reflexivity.
 qed.
 
-lemma compress_truncate1 (a b c d: W16.t):
+lemma compress_truncate1 (a b: W16.t):
   W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 12) %/ 256) `>>>` 4) +
-  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint c + to_sint d * (2 ^ 10)) `<<<` 12) %/ 65536) `<<<` 4)
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 12) %/ 65536) `<<<` 4)
   =
   W16.to_sint a.
 proof.
@@ -332,18 +332,41 @@ proof.
   admit.
 qed.
 
-lemma compress_truncate2 (a b c d: W16.t):
+lemma compress_truncate2 (a b: W16.t):
   W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 12) %/ 65536) `>>>` 4) +
-  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint c + to_sint d * (2 ^ 10)) `<<<` 12) %/ 16777216) `<<<` 4)
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 12) %/ 16777216) `<<<` 4)
   =
-  W16.to_sint a.
+  W16.to_sint a %/ 256 + W16.to_sint b * 4.
 proof.
 admit.
 qed.
 
-(* lemma compress_truncate3 (a b c d: W16.t) (i j k: int): *)
+lemma compress_truncate3 (a b c d: W16.t):
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 12) %/ 16777216) `>>>` 4) +
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint c + to_sint d * (2 ^ 10)) `<<<` 0)) `<<<` 4)
+  =
+  W16.to_sint b %/ 64 + W16.to_sint c * 16.
+proof.
+admit.
+qed.
 
-(* lemma compress_truncate4 (a b c d: W16.t) (i j k: int): *)
+lemma compress_truncate4 (a b: W16.t):
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 0)) `>>>` 4) +
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 0) %/ 256) `<<<` 4)
+  =
+  W16.to_sint a %/ 16 + W16.to_sint b * 64.
+proof.
+admit.
+qed.
+
+lemma compress_truncate5 (a b: W16.t):
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 0) %/ 256) `>>>` 4) +
+  W8.to_uint (W8.of_int (W32.to_uint (W32.of_int (to_sint a + to_sint b * (2 ^ 10)) `<<<` 0) %/ 65536) `<<<` 4)
+  =
+  W16.to_sint b %/ 4.
+proof.
+admit.
+qed.
 
 lemma in_sub_trans: forall (x y z h l: int), h <= x < l => y <= h /\ l < z => y <= x < z.
 proof.
@@ -482,34 +505,115 @@ proof.
           + rewrite compress_truncate2.
             rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
               rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate3.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate4.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate5.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
             rewrite liftarrayvector 1..2:/#.
             rewrite (mulzC 256 _) -divz_eq.
-            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
-          (*   move : (KyberPoly.compress_rng ((lift_vector a{1}).[(16 * i{2} + 0) %/ 256].[(16 * i{2} + 0) %% 256]) 10) => /#. *)
-          (* rewrite -of_uintK to_uintK. *)
-          (* rewrite liftarrayvector 1..2:/#. *)
-          (* rewrite (mulzC 256 _) -divz_eq. *)
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
 
-          (* rewrite mapiE 1:/# /= initiE 1:/# /=. *)
-          (* case (0 <= 16 * i{2} && 16 * i{2} < 256) => r. *)
-          (*   rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=. *)
-          (* case (256 <= 16 * i{2} && 16 * i{2} < 512) => r1. *)
-          (*   rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=. *)
-          (*   rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=. *)
-        split.
-          rewrite shlMP 1://= of_uintK (modz_pow2_div 32 16 _) 1://= //=.
-          rewrite (_: 65536 = 2^(8*2)) 1://= (divzMr _ (2^12) (2^4)) 1..2://= mulzK 1://=.
-          rewrite shrDP 1://= of_uintK (modz_pow2_div 8 4 _) 1://= //=.
-          rewrite -divzMr 1..2://= //= (modz_pow2_div 32 12 _) 1://= //= mulzK 1://=.
-          rewrite (modz_dvd _ _ 16) 1://= (pmod_small _ 256); first by smt(modz_cmp).
-          rewrite shlMP 1://= of_uintK mulz_modl 1://=.
-          rewrite (_: 1024 = 2^2 * 2^4 * 2^4) 1://= -mulzA -mulzA (divzMDr _ _ (2^4)) 1://=.
-          rewrite modz_dvd 1://= modzMDr.
-          rewrite mulzDl (mulzA _ 16 16) modzMDl.
-          rewrite -mulz_modl 1://= -(modz_pow2_div 8 4 _) 1://=.
-          rewrite -(modz_dvd _ 256 16) 1://=.
-          rewrite addzC -divz_eq.
-        admit. (* TODO: repeat 15 times ? *)
+          + rewrite compress_truncate1.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/#.
+            rewrite (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate2.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate3.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate4.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate5.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/#.
+            rewrite (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+
+          + rewrite compress_truncate1.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/#.
+            rewrite (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate2.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate3.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate4.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate5.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/#.
+            rewrite (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+
+          + rewrite compress_truncate1.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/#.
+            rewrite (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+
       move : k_tub => -/lezNgt k_tlb1 />.
         rewrite k_tlb k_ub /=.
         rewrite /int_bit //=.
@@ -525,77 +629,42 @@ proof.
         rewrite -List.allP.
         rewrite -iotaredE //=.
         do (rewrite initiE 1://= /= || rewrite /f32u8_t16u16 initiE 1://= /=).
-        split.
-          rewrite (shr_bits8 (W2u32.pack2_t _)) 1://= bits8_W2u32_red 1://=.
-          do (rewrite initiE 1://= //=).
-          rewrite shlMP 1://= of_int_bits8_div 1://=.
-          rewrite of_int_bits8_div 1://=.
-          rewrite (divzMr _ (2^12) (2^4)) 1..2://= mulzK 1://= (W8.and_mod 4) 1://=.
-          rewrite (divzMr _ (2^12) (2^12)) 1..2://= mulzK 1://= (W8.and_mod 4) 1://=.
-          rewrite of_sintK (Montgomery16.smod_small 1) 1://= of_sintK (Montgomery16.smod_small 1024) 1://= mulz1.
-          rewrite (divzMr _ (2^10) (2^2)) 1..2://=.
-          rewrite (divzMDr _ _ (2^10)) 1://= (pdiv_small _ (2^10)).
-            rewrite f0_def 1://= (sint_compress_rng _ 10) 1://=.
-          rewrite addz0 of_uintK modz_dvd 1://=.
-          rewrite (_: 1024 = 2^2 * 2^4 * 2^4) 1://= -mulzA -mulzA (divzMDr _ _ (2^4)) 1://=.
-          rewrite shr_shrw_w8 1://= shrDP 1://=.
-          rewrite of_uintK //=.
-          rewrite shl_shlw_w8 1://= shlMP 1://=.
-          rewrite (modz_pow2_div 8 4 _) 1://= /=.
-          rewrite (divzMDl _ _ 16) 1://= -divzMr 1..2://= /=.
-          rewrite modz_dvd 1://= modz_mod //=.
-          rewrite -(pmod_small (to_sint f0{1}.[12] %/ 256) 4).
-            rewrite f0_def 1://=.
-            pose tmp := (lift_vector a{1}).[_].[_].
-            move : (sint_compress_rng tmp 10) => /#.
-          rewrite -(modzDml _ _ 16) -(mulz_modl 4 _ 4) 1://=.
-          rewrite (pmod_small (W16.to_sint _ %% 4 * 4 + _) 16).
-            pose x := (W16.to_sint _).
-            pose y := (W16.to_sint _ %/ 256).
-            move : (modz_cmp x 4) (modz_cmp y 4) => /> /#.
-          rewrite (pmod_small (to_sint f0{1}.[12] %/ 256) 4).
-            rewrite f0_def 1://=.
-            pose tmp := (lift_vector a{1}).[_].[_].
-            move : (sint_compress_rng tmp 10) => /#.
-          rewrite addrA addrC.
-          have ->: to_sint f0{1}.[13] %/ 4 %% 16 * 16 + to_sint f0{1}.[13] %% 4 * 4 = (to_sint f0{1}.[13] * 4 %% 256).
-            rewrite {2}(_: 16 = 4 * 4) 1://= -mulzA -(mulzDl _ _ 4).
-            rewrite -(modz_pow2_div 6 2 _) 1://= /=.
-            rewrite divzE modz_dvd 1://= -addzA //= mulz_modl 1://= //=.
-          rewrite of_intD.
-          rewrite -of_uintK.
-          rewrite f0_def 1://= of_sintK Montgomery16.smod_small.
-            move : (KyberPoly.compress_rng ((lift_vector a{1}).[(16 * i{2} + 12) %/ 256].[(16 * i{2} + 12) %% 256]) 10) => /#.
-          rewrite f0_def 1://= of_sintK Montgomery16.smod_small.
-            move : (KyberPoly.compress_rng ((lift_vector a{1}).[(16 * i{2} + 13) %/ 256].[(16 * i{2} + 13) %% 256]) 10) => /#.
-          rewrite to_uintK -of_intD.
-          rewrite liftarrayvector 1..2:/# liftarrayvector 1..2:/#.
-          rewrite (mulzC 256 _) -divz_eq (mulzC 256 _) -divz_eq.
-          rewrite mapiE 1:/# /= mapiE 1:/# /=.
-          rewrite /compress_polyvec /fromarray256.
-          rewrite mapiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-          case (0 <= 16 * i{2} + 12 && 16 * i{2} + 12 < 256) => r.
-              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
-            case (0 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 256) => r1.
-              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
-              smt(@W8 @Int @IntDiv @Ring.IntID).
-          case (256 <= 16 * i{2} + 12 && 16 * i{2} + 12 < 512) => r1.
-            rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=.
-            case (0 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 256) => r2.
-              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
-            case (256 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 512) => r3.
-              rewrite liftarrayvector 1://= /=; first by move : r3 => /#.
-              rewrite /lift_array768 mapiE 1:/# //=.
-              smt(@Int @IntDiv @Ring.IntID).
-            rewrite liftarrayvector 1://= 1:/# /= /lift_array768 mapiE 1:/# //=.
-            case (0 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 256) => r2.
-              rewrite liftarrayvector 1..2://= /= /lift_array768 mapiE 1:/# //=.
-            case (256 <= 16 * i{2} + 13 && 16 * i{2} + 13 < 512) => r3.
-              rewrite liftarrayvector 1://= /=; first by move : r3 => /#.
-              rewrite /lift_array768 mapiE 1:/# //=.
-              rewrite liftarrayvector 1://= /=; first by move : r3 => /#.
-              rewrite /lift_array768 mapiE 1:/# //=.
-        admit. (* TODO: repeat 15 times ? *)
+        have H: forall (l: W32.t Array8.t), W2u32.Pack.init ("_.[_]" l) = W2u32.Pack.init (fun j => l.[0 + j]); first by simplify.
+        do rewrite compress_aux_1 1://=.
+        do rewrite compress_aux_2 1..3://=.
+        simplify; trivial.
+        do split.
+          + rewrite compress_truncate2.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate3.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate4.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite liftarrayvector 1..2:/# (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+          + rewrite compress_truncate5.
+            rewrite f0_def 1://=  of_sintK Montgomery16.smod_small.
+              rewrite (in_sub_trans _ W16.min_sint (2^(16-1)) 0 (2^10)) 1:compress_rng 1..2://=.
+            rewrite liftarrayvector 1..2:/#.
+            rewrite (mulzC 256 _) -divz_eq.
+            rewrite unlift_compress_polyvec (Array768.mapiE (fun x => compress 10 x) _ _) 1:/# //=.
+
     inline *; wp; skip; auto => />.
     move => &1 &2 p_lb p_ub pos_bound_a i_lb i_ub mem_diff mem_eq i_tub mem_all_eq />.
     do split; first 2 by move : i_lb i_tub => /#.
