@@ -289,96 +289,83 @@ lemma q_qinv: (q*qinv) %% R = 1 by done.
 op Rinv = 169.
 lemma RRinv: (R * Rinv) %% q = 1 %% q by done.
 
-op REDCmul16 (x y: W16.t): W16.t =
- let m = x * y * W16.of_int qinv
- in (wmulhs x y) - (wmulhs m (W16.of_int q)).
+(** Montgomery reduction (args are Low/Hi-words to be reduced) *)
+op REDC16 (xyL xyH: W16.t): W16.t =
+ let m = xyL * W16.of_int qinv
+ in xyH - (wmulhs m (W16.of_int q)).
 
-lemma nosmt aux_divR (x y: W16.t):
- let m = x * y * W16.of_int qinv
- in (to_sint x * to_sint y - to_sint m * q) %% R = 0.
+(* general bounds... *)
+lemma nosmt REDC16_correct bL bR (xyL xyH: W16.t):
+ W16.min_sint + 1664 <= bL <= 0 =>
+ 0 <= bR <= W16.max_sint - 1665 =>
+ sint_bnd bL bR xyH =>
+ to_sint (REDC16 xyL xyH) %% q
+ = (to_sint xyH * R + to_uint xyL) * Rinv %% q
+ /\ sint_bnd (bL-1664) (bR+1665) (REDC16 xyL xyH).
 proof.
-rewrite /wmulls /= {3}/W16.to_sint !to_uintM
- of_uintK modzMm /smod -modzDm modzM_sint modzDm.
-case: (2 ^ (16 - 1) <= to_uint x * to_uint y * qinv %% R) => C.
- rewrite -modzDmr -modzNm modzDmr.
- have ->: (to_uint x * to_uint y * qinv %% R - R) * q %% R = to_uint x * to_uint y %% R. 
-  by rewrite mulzDl -modzDmr IntID.mulNr -modzNm
-       -(modzMml R) modzz /= modzMml mulzA
-       (mulzC qinv) -modzMmr q_qinv.
- smt().
-by rewrite -modzDmr -modzNm modzMml mulzA (mulzC qinv)
-  -modzMmr q_qinv /= modzNm modzDmr.
-qed.
-
-lemma nosmt aux_divR' (x y: W16.t):
- let m = x * y * W16.of_int qinv
- in to_sint x * to_sint y %% R = to_sint m * q %% R.
-proof.
-rewrite /=; apply modzB_eq0 => //.
-by move: aux_divR => /=; apply.
-qed.
-
-
-lemma nosmt REDCmul16_correct (x y: W16.t):
- sint_bnd 0 (q-1) y =>
- to_sint (REDCmul16 x y) %% q
- = to_sint x * to_sint y * Rinv %% q
- /\ sint_bnd (-(q-1)) (q-1) (REDCmul16 x y).
-proof.
-pose m:= x * y * (W16.of_int qinv).
-(* Bounds *)
-rewrite /q /= => y_bnd.
-have := to_sint_bnd x.
-rewrite /= => x_bnd.
-have := to_sintH_bnd x y _ _ _ _ x_bnd y_bnd _ _ _ _ => //.
-rewrite /q /= => xyH_bnd.
+(* BOUNDS *)
+move=> /= [HbL1 HbL2] [HbR1 HbR2] xyH_bnd.
+have := to_sint_bnd xyL.
+rewrite /= => xyL_bnd.
+pose m:= xyL * (W16.of_int qinv).
 have := to_sint_bnd m.
 rewrite /= => m_bnd.
 have := to_sintPos_bnd q _ => //.
 rewrite /q /= => q_bnd.
 have := to_sintH_bnd _ _ _ _ _ _ m_bnd q_bnd _ _ _ _ => //. 
 rewrite /q /= => mqH_bnd.
-have := to_sintB_bnd _ _ _ _ _ _ xyH_bnd mqH_bnd _ _ => //.
-rewrite /q /= => t_bnd.
-split; last first.
- by rewrite /REDCmul16 -/m /#.
-(*
-move => /=y_bnd.
-have /=x_bnd := to_sint_bnd x.
-have /=xyH_bnd := to_sintH_bnd x y _ _ _ _ x_bnd y_bnd _ _ _ _ =>//.
-have /=m_bnd := to_sint_bnd m.
-have /=q_bnd := to_sintPos_bnd q _ => //.
-have /=mqH_bnd := to_sintH_bnd _ _ _ _ _ _ m_bnd q_bnd _ _ _ _ => //.
-have /=t_bnd := to_sintB_bnd _ _ _ _ _ _ xyH_bnd mqH_bnd.
-split; last first.
- by rewrite /REDCmul16 -/m /#.
-*)
+have := to_sintB_bnd _ _ _ _ _ _ xyH_bnd mqH_bnd _ _; first 2 smt().
+move => t_bnd; split; last done.
 (* CORRECTNESS *)
-have ->: to_sint (REDCmul16 x y) %% q
-         = ((to_sint x * to_sint y - to_sint m * q) %/ R) %% q.
- have ->: to_sint x * to_sint y - to_sint m * q
-          = (to_sint (wmulhs x y) - to_sint (wmulhs m (W16.of_int q))) * R.
-  rewrite {1}(_:q = to_sint (W16.of_int q)).
-   by rewrite /to_sint of_uintK smod_small /#.
-  rewrite !wmulsE.
-  have H: to_uint (x * y) = to_uint (m * (of_int q)%W16).
-   move: (aux_divR' x y) => /= H.
-   rewrite 2!to_uintM -2!modzM_sint.
-   rewrite H /m -modzMm eq_sym -modzMm.
-   congr; congr => //.
-   congr; congr; congr => //. 
-   by rewrite of_sintK /q /= /smod /=.
-  by ring H.
- rewrite mulzK 1:// /REDCmul16 /=.
- rewrite to_sintB_small 1:/#.
- by congr; congr; congr; congr.
-pose t:= (to_sint x * to_sint y - to_sint m * q) %/ R.
-have tE: t*R = to_sint x * to_sint y - to_sint m * q.
- have:= (divz_eq (to_sint x * to_sint y - to_sint m * q) R).
- by rewrite aux_divR /= -/t => <-.
-rewrite -(mulz1 t) -modzMmr -RRinv modzMmr -mulzA tE.
-rewrite mulzDl Domain.mulNr (mulzA _ q) (mulzC q) -mulzA.
-by rewrite -modzDmr -Domain.mulNr -modzMm modzz mod0z.
+rewrite -(mulz1 (to_sint (REDC16 _ _)))
+ -modzMmr -RRinv modzMmr -mulzA.
+have ->:
+  to_sint (REDC16 xyL xyH) * R
+  = (to_sint xyH * R + to_uint xyL
+     - to_sint (xyL * (W16.of_int qinv)) * q).
+ rewrite /REDC16 /= to_sintB_small 1:/#.
+ rewrite mulrDl -addzA eq_sym; congr.
+ rewrite {1}(_:q=to_sint (W16.of_int q)).
+  by rewrite of_sintK /q /smod.
+ rewrite wmulsE -WRingA.mulrA !to_uintM. 
+ rewrite !of_uintK /qinv /q /= to_uint_mod.
+ by ring.
+rewrite -modzMml eq_sym -modzMml /q /=.
+congr; congr; congr.
+by rewrite eq_sym -modzDmr -Domain.mulNr -modzMm modzz mod0z.
+qed.
+
+(* useful specific case *)
+lemma nosmt REDC16_correct_q (xyL xyH: W16.t):
+ sint_bnd (-q%/2) (q%/2 - 1) xyH =>
+ to_sint (REDC16 xyL xyH) %% q
+ = (to_sint xyH * R + to_uint xyL) * Rinv %% q
+ /\ sint_bnd (-(q-1)) (q-1) (REDC16 xyL xyH).
+proof.
+move => Hbnd.
+have [H1 H2]:= REDC16_correct _ _ xyL xyH _ _ Hbnd; first 2 smt().
+split; first done.
+by apply (sint_bndW _ _ _ _ _ _ _ H2); smt().
+qed.
+
+(** Montgomery multiplication *)
+abbrev REDCmul16 (x y: W16.t): W16.t = REDC16 (x*y) (wmulhs x y).
+
+(* correctness result for multiplication, for
+ the specific case of a reduced argument *)
+lemma nosmt REDCmul16_correct (x y: W16.t):
+ sint_bnd 0 (q-1) y =>
+ to_sint (REDCmul16 x y) %% q
+ = to_sint x * to_sint y * Rinv %% q
+ /\ sint_bnd (-(q-1)) (q-1) (REDCmul16 x y).
+proof.
+rewrite /q /= => y_bnd.
+have := to_sint_bnd x.
+rewrite /= => x_bnd.
+have := to_sintH_bnd x y _ _ _ _ x_bnd y_bnd _ _ _ _ => //.
+rewrite /q /= => xyH_bnd.
+rewrite wmulsE.
+by apply (REDC16_correct_q (x*y) (wmulhs x y)). 
 qed.
 
 end Montgomery16.

@@ -408,30 +408,43 @@ qed.
 
 (* These properties is needed to show that ntt_inv is computing something
    that makes sense. Checked in sage. *)
+(*@bac: versions with simpler premisses*)
+lemma zetavals1'  k: 
+ 0 <= k < 128 => k %% 2 = 0 =>
+ ZqField.exp zroot (2 * br k + 1) = NTT_Fq.zetas.[k %/ 2 + 64].
+proof.
+rewrite -mem_range => mem_k_range /dvdzP [q ->>].
+move: mem_k_range; rewrite mem_range_mulr //= mulzK // (*-divzpMr //=*) /zetas => mem_q_range.
+rewrite initiE /=; [by apply/mem_range/mem_range_addr; move: mem_q_range; apply/mem_range_incl|].
+rewrite eq_sym /br mulrDl /= (bsrev_cat 7 8) //= divzDr //= divz_small /=; [by apply/mem_range/mem_range_mulr|].
+by rewrite bsrev1 //= (addzC 1) -bsrev_mod /= -modzDm /= !bsrev_mod.
+qed.
+
+lemma zetavals2' k : 0 <= k < 128 => k%%2 <> 0 => 
+ ZqField.exp zroot (2 * br k + 1) = -NTT_Fq.zetas.[k %/ 2 + 64].
+proof.
+rewrite -mem_range => mem_k_range eq_modz'.
+have eq_modz: k%%2 = 1 by smt().
+move: mem_k_range; rewrite (divz_eq k 2) eq_modz.
+move: {eq_modz eq_modz'} (k %/ 2) => q {k}; rewrite mem_range_addr mem_range_mulr //= => mem_q_range.
+rewrite divzMDl //= /zetas initiE /=; [by apply/mem_range/mem_range_addr; move: mem_q_range; apply/mem_range_incl|].
+rewrite eq_sym /br mulrDl /= (bsrev_cat 7 8) //= divzDr //= divz_small /=; [by apply/mem_range/mem_range_mulr|].
+rewrite bsrev1 //= (addzC 1) -bsrev_mod /= -modzDm /= !bsrev_mod.
+move: (bsrev_add 1 7 1 q); rewrite mem_range /= addrC mulrC => ->.
+rewrite -(bsrev_mulr_pow2 1 7 q) //= mulrDr bsrev1 // -addrA.
+rewrite (ZqField.exprD _ (_ * (_ ^ _)%IntID)%Int) /=; [by apply unit_zroot|].
+by rewrite exp_zroot_128 inFqN ZqField.mulNr ZqField.mul1r (mulzC _ 2).
+qed.
+
 lemma zetavals1  k : 0 <= k < 256 => k%%4 = 0 =>
      zetas.[k %/ 4 + 64] = ZqField.exp zroot (2 * br (k %/ 2) + 1).
-proof.
-  rewrite -mem_range -dvdzE => mem_k_range /dvdzP [q ->>].
-  move: mem_k_range; rewrite mem_range_mulr //= mulzK // -divzpMr //= /zetas => mem_q_range.
-  rewrite initiE /=; [by apply/mem_range/mem_range_addr; move: mem_q_range; apply/mem_range_incl|].
-  rewrite /br mulrDl /= (bsrev_cat 7 8) //= divzDr //= divz_small /=; [by apply/mem_range/mem_range_mulr|].
-  by rewrite bsrev1 //= (addrC 1) -bsrev_mod /= -modzDm /= !bsrev_mod.
-qed.
+proof. by move=> Hk H4; rewrite zetavals1' /#. qed. 
 
 lemma zetavals2 k : 0 <= k < 256 => k%%4 = 2 => 
      zetas.[k %/ 4 + 64] = (-ZqField.exp zroot (2 * br (k %/ 2) + 1)).
 proof.
-  rewrite -mem_range => mem_k_range eq_modz; move: mem_k_range; rewrite (divz_eq k 4) eq_modz.
-  move: {eq_modz} (k %/ 4) => q {k}; rewrite mem_range_addr mem_range_mulr //= => mem_q_range.
-  rewrite divzMDl //= divzDr //= -divzpMr //= /zetas.
-  rewrite initiE /=; [by apply/mem_range/mem_range_addr; move: mem_q_range; apply/mem_range_incl|].
-  rewrite /br mulrDl /= (bsrev_cat 7 8) //= divzDr //= divz_small /=; [by apply/mem_range/mem_range_mulr|].
-  rewrite bsrev1 //= (addrC 1) -bsrev_mod /= -modzDm /= !bsrev_mod.
-  move: (bsrev_add 1 7 1 q); rewrite mem_range /= addrC mulrC => ->.
-  rewrite -(bsrev_mulr_pow2 1 7 q) //= mulrDr bsrev1 // -addrA.
-  rewrite (ZqField.exprD _ (_ * (_ ^ _)%IntID)%Int) /=; [by apply unit_zroot|].
-  by rewrite exp_zroot_128 inFqN ZqField.mulNr ZqField.opprK ZqField.mul1r (mulrC _ 2).
+move=> Hk H4; rewrite zetavals2' 1..2:/#.
+by rewrite -divz_mulp 1..2:/# /= ; ring.
 qed.
-
 
 end NTT_Fq.
