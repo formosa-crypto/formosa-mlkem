@@ -643,8 +643,40 @@ proof.
 by apply Array256.all_eq_eq; rewrite /all_eq 
    /perm_ntt /perm_nttpack128 /nttpack /=.
 qed.
+(*
+lemma basemul_avx2E (a b: poly):
+ basemul_avx2 (nttpack a) (nttpack b)
+ = nttunpack (basemul a b).
+proof.
+rewrite basemul_zetasE.
+by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /nttpack /nttunpack /NTT_Fq.zetas /=. 
+qed.
+*)
 
-print _poly_ntt_eq.
+phoare _poly_basemul_avx2_ph _a _b:
+ [ Jkem_avx2.M._poly_basemul:
+    (lift_array256 ap) = nttunpack _a /\ signed_bound_cxq ap 0 256 2
+    /\ (lift_array256 bp) = nttunpack _b /\ signed_bound_cxq bp 0 256 2
+   ==>
+    (lift_array256 res)
+    = nttunpack (NTT_Properties.scale (basemul (_a) (_b)) (inFq 169))
+    /\ signed_bound_cxq res 0 256 1 ] = 1%r.
+proof. 
+conseq _poly_basemul_avx2_eq (__basemul_ph (nttunpack _a) (nttunpack _b)) => //.
+ move => /> &1 *.
+ exists ((lift_array256 rp{1}), (lift_array256 ap{1}), (lift_array256 bp{1})) => /=. done.
+(* by rewrite !nttunpackK.*)
+(*
+ by move => /> &1 *; exists (lift_array256 rp{1},lift_array256 ap{1},lift_array256 bp{1}) => /=.
+*)
+move=> /> &m <- Hb.
+move: (basemul_avx2E (nttunpack _a) (nttunpack _b)).
+rewrite !perm_ntt_nttpackE !nttunpackK => <-.
+by rewrite /scale -map_pack nttpackK.
+qed.
+
+
+
 lemma _poly_ntt_eq':
   equiv[ Jkem_avx2.M._poly_ntt ~ NTT_AVX.ntt:
           arg{2} = lift_array256 arg{1} /\ signed_bound_cxq arg{1} 0 256 2 ==>
@@ -658,6 +690,10 @@ lemma poly_ntt_avx2_corr _r :
     pos_bound256_cxq res 0 256 2] = 1%r.
 proof.
 conseq _poly_ntt_eq' (ntt_avx_spec (lift_array256 _r)).
+ by move => &1 [-> H] /#.
+move=> &1 &2 [-> H] <-.
+by rewrite lift_nttpack perm_ntt_nttpackE.
+(*
 bypr => // &m [-> H].
 have <-: Pr[NTT_AVX.ntt(lift_array256 _r) @ &m :
       ntt (lift_array256 _r) = (nttpack res) ] = 1%r.
@@ -667,6 +703,7 @@ have <-: Pr[NTT_AVX.ntt(lift_array256 _r) @ &m :
 byequiv => //.
 symmetry; conseq _poly_ntt_eq => /> *.
 by rewrite lift_nttpack //.
+*)
 qed.
 
 lemma polyvec_ntt_avx2_corr _r :

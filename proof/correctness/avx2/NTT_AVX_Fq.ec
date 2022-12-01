@@ -2058,10 +2058,9 @@ proc __cmplx_mulx16(are aim bre bim zetas: Fq Array16.t, sign: bool): Fq Array16
  return (rre,rim);
 }
 
-proc __basemul(a b: Fq Array256.t): Fq Array256.t = {
- var are, aim, bre, bim, r, rre, rim, zetas;
+proc __basemul(r a b: Fq Array256.t): Fq Array256.t = {
+ var are, aim, bre, bim, rre, rim, zetas;
 
- r <- witness;
  zetas <- Array16.of_list witness [ inFq 17; inFq 583; inFq 1637; inFq 2288; inFq 1409; inFq 3281; inFq 756; inFq 3015; inFq 1703; inFq 2789; inFq 1847; inFq 1461; inFq 939; inFq 2437; inFq 733; inFq 268 ];
 
  are <- P2C a 0;
@@ -2155,9 +2154,9 @@ hoare __basemul_h _a _b:
  _a /\ b = _b ==> res = basemul_avx2 _a _b.
 proof.
 proc; simplify.
-seq 16: (#pre /\ all (fun k => (basemul_avx2 _a _b).[k] = r.[k]) (iota_ 0 64)).
- inline*; wp; skip => |> *.
- rewrite (P2CS witness) !PUC_i //=.
+seq 15: (#pre /\ all (fun k => (basemul_avx2 _a _b).[k] = r.[k]) (iota_ 0 64)).
+ inline*; wp; skip => |> &1 *.
+ rewrite (P2CS r{1}) !PUC_i //=.
  by rewrite /basemul_avx2 /= NTT_Fq.zetasE -iotaredE
      /= ?ZqField.expr0 ?ZqField.expr1 !initiE //= /P2C /pchunk /=.
 seq 15:(#pre /\ all (fun k => (basemul_avx2 _a _b).[k] = r.[k]) (iota_ 64 64)).
@@ -2250,8 +2249,18 @@ lemma basemul_avx2E' (a b: poly):
 proof.
 by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /perm_nttpack128 /perm_nttunpack128 /perm_ntt /=. 
 qed.
+(*
+nttpack (nttavx2 a) = ntt a
+nttavx2 a = nttunpack (ntt a)
 *)
-
+lemma basemul_avx2E'' (a b: poly):
+ basemul a b
+ = perm_ntt perm_nttpack128 (basemul_avx2 (perm_ntt perm_nttunpack128 a) (perm_ntt perm_nttunpack128 b)).
+proof.
+rewrite basemul_zetasE.
+by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /perm_nttpack128 /perm_nttunpack128 /perm_ntt /=. 
+qed.
+*)
 lemma basemul_avx2E (a b: poly):
  perm_ntt perm_nttpack128 (basemul_avx2 a b)
  = basemul (perm_ntt perm_nttpack128 a) (perm_ntt perm_nttpack128 b).
@@ -2259,6 +2268,7 @@ proof.
 rewrite basemul_zetasE.
 by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /perm_nttpack128 /perm_nttunpack128 /perm_ntt /=. 
 qed.
+
 
 (* pack consistent with packing permutation *)
 (*

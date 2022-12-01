@@ -578,9 +578,10 @@ qed.
 
 import Zq. 
 
+require import NTT_AVX_j.
 
 equiv basemulequiv : 
-  M._poly_basemul ~   Jkem.M._poly_basemul :
+  M._poly_basemul ~ Jkem.M._poly_basemul :
     lift_array256 ap{1} = nttunpack (lift_array256 ap{2}) /\
     lift_array256 bp{1} = nttunpack (lift_array256 bp{2}) /\
     signed_bound_cxq ap{1} 0 256 2 /\  
@@ -589,30 +590,16 @@ equiv basemulequiv :
     signed_bound_cxq bp{2} 0 256 2
                               ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
-    signed_bound_cxq res{1} 0 256 3 /\ 
+    signed_bound_cxq res{1} 0 256 1 /\ 
     signed_bound_cxq res{2} 0 256 3.
-proc*.  
-transitivity {1} { r <@ Mprevec.poly_basemul(rp,ap,bp); }
-     (={ap,bp} ==> ={r}) 
-    (lift_array256 ap{1} = nttunpack (lift_array256 ap{2}) /\
-    lift_array256 bp{1} = nttunpack (lift_array256 bp{2}) /\
-    signed_bound_cxq ap{1} 0 256 2 /\  
-    signed_bound_cxq bp{1} 0 256 2 /\
-    signed_bound_cxq ap{2} 0 256 2 /\  
-    signed_bound_cxq bp{2} 0 256 2
-                              ==> 
-    lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
-    signed_bound_cxq r{1} 0 256 3 /\ 
-    signed_bound_cxq r{2} 0 256 3); 1,2: smt(). 
-symmetry. call prevec_eq_poly_basemul. auto => />.
-
+proof.
+proc*; simplify.
 ecall{2} (poly_basemul_correct (lift_array256 ap{2}) (lift_array256 bp{2})).
-ecall{1} (poly_basemul_avx2_correct (nttpack (lift_array256 ap{1})) (nttpack (lift_array256  bp{1}))).
-
+ecall{1} (_poly_basemul_avx2_ph (nttpack (lift_array256 ap{1})) (nttpack (lift_array256  bp{1}))).
 auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 r2 H6 H7 r1 H8 H9.
-rewrite -(nttpackK (lift_array256 r2)) H7 H9 H0 H1. 
-by rewrite !nttunpackK.
+move => &1 &2 /> E1 E2 *. 
+rewrite !nttpackK => /> r1 -> Hb1 r2 Hb2 ->.
+by rewrite E1 E2 !nttunpackK.
 qed.
 
 lemma poly_add_corr_avx_impl ab bb :
@@ -1076,9 +1063,10 @@ equiv pointwiseequiv :
     signed_bound768_cxq arg{2}.`2 0 768 2
     ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
-    signed_bound_cxq res{1} 0 256 2 /\ 
+    signed_bound_cxq res{1} 0 256 2 (*JBA: -> 4 *)/\ 
     signed_bound_cxq res{2} 0 256 2.
 proc => /=.
+admitted (*
 seq 2 3 :(#pre /\ 
          lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
          signed_bound_cxq r{1} 0 256 3 /\
@@ -1193,7 +1181,7 @@ auto => />.
 move => &1 &2 ????????? r1 r2 ?.
 rewrite /pos_bound256_cxq /signed_bound_cxq => H H0;1: smt().
 qed.
-
+*).
 
 equiv nttequiv :
  Jkem_avx2.M.__polyvec_ntt ~ Jkem.M.__polyvec_ntt : 
@@ -1270,8 +1258,8 @@ equiv polyinvnttequiv :
    signed_bound_cxq arg{1} 0 256 2 /\ 
    signed_bound_cxq arg{2} 0 256 2 ==>
    lift_array256 res{1} = lift_array256 res{2} /\ 
-   pos_bound256_cxq res{1} 0 256 2 /\ 
-   pos_bound256_cxq res{2} 0 256 2.
+   signed_bound_cxq res{1} 0 256 1 /\
+   signed_bound_cxq res{2} 0 256 1.
    admitted. (* MBB *)
 
 equiv invnttequiv :
@@ -1280,7 +1268,7 @@ equiv invnttequiv :
    signed_bound768_cxq arg{1} 0 768 2 /\ 
    signed_bound768_cxq arg{2} 0 768 2 ==>
    lift_array768 res{1} = lift_array768 res{2} /\ 
-   pos_bound768_cxq res{1} 0 768 2 /\ 
-   pos_bound768_cxq res{2} 0 768 2.
+   signed_bound768_cxq res{1} 0 768 1 /\ 
+   signed_bound768_cxq res{2} 0 768 1.
    admitted. (* MBB *)
 

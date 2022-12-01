@@ -1577,6 +1577,7 @@ proof.
   wp. skip. auto => />.
 qed.
 
+(*
 equiv veceq_schoolbook:
   Mvec.schoolbook ~ M.__schoolbook: ={ap, bp, sign, zeta_0, qx16, qinvx16} ==> ={res}.
 proof.
@@ -1592,7 +1593,7 @@ proof.
   inline *.
   wp;skip;auto => />.
 qed.
-
+*)
 equiv veceq_shuffle8:
   Mvec.shuffle8 ~ M.__shuffle8: ={a, b} ==> ={res}.
 proof.
@@ -1731,6 +1732,7 @@ apply eq_poly_compress.
 apply veceq_poly_compress.
 qed.
 
+(*
 equiv prevec_eq_schoolbook:
   Mprevec.schoolbook ~ M.__schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
                                              is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==>
@@ -1746,7 +1748,7 @@ proof.
   apply eq_schoolbook.
   apply veceq_schoolbook.
 qed.
-
+*)
 
 equiv prevec_eq_shuffle8:
   Mprevec.shuffle8 ~ M.__shuffle8: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
@@ -2032,6 +2034,7 @@ case (64 <= k && k < 128); 1: by smt().
 rewrite !initiE //= /#.
 qed.
 
+(*
 equiv prevec_eq_poly_basemul:
   Mprevec.poly_basemul ~ M._poly_basemul: ={ap, bp} ==> ={res}.
 transitivity Mvec.poly_basemul (={ap,bp} ==> ={res})
@@ -2040,7 +2043,7 @@ transitivity Mvec.poly_basemul (={ap,bp} ==> ={res})
   apply eq_poly_basemul.
   apply veceq_poly_basemul.
 qed.
-
+*)
 
 
 end KyberPolyAVXVec.
