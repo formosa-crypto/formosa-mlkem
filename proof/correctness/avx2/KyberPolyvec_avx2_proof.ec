@@ -936,10 +936,26 @@ proof.
           rewrite qE.
           do (rewrite -(and_impr (0 <= _) (_ < 3329)) decompress_bnds 1..3://= 1:/#).
           trivial.
+        smt(@Int).
     skip; auto => />.
-    move => &1 [#] *. (* c rp_lb rp_ub k_lb k_ub r_bnds r_def k_tub />. *)
+    move => &1 [#] rp_lb rp_ub k_lb k_ub r_def r_bnds k_tub />.
+    split.
       move => j j_lb j_ub; rewrite filliE 1:/#.
-      admit.
+      have -> /=: !(256 * k <= j). move : j_ub => /#.
+      rewrite (r_def j) => />.
+    move => [#] iL rL.
+      split.
+      move => [#] rL_def rl_bnds iL_lb iL_ub rL_ndef rL_nbnd iL_tlb.
+      move : iL_tlb => /#.
+    move => [#] iL_tlb rL_def rl_bnds iL_lb iL_ub.
+    have -> /=: iL = 16.
+      move : iL_tlb iL_ub => /#.
+    move => rL_ndef rL_nbnd.
+    do split; first 2 by move : k_lb k_tub => /#.
+      + move => j; rewrite mulzDr mulz1 => j_lb j_ub.
+        rewrite (rL_ndef j) 1..2://=.
+      + move => j; rewrite mulzDr mulz1 => j_lb j_ub.
+        rewrite -and_impr -andabP (rL_nbnd j) //=.
     skip; auto => />.
     move => &1 &2 rp_lb rp_ub.
     split.
