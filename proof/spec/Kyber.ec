@@ -40,8 +40,9 @@ move=> gt0.
 have ->: x%r / y%r = (x %/ y)%r + (x %% y)%r / y%r.
  by rewrite {1}(divz_eq x y); field; smt(). 
 rewrite floorDz.
-have ?: 0%r <= (x %% y)%r / y%r < 1%r by
-  rewrite ltr_pdivr_mulr /=; smt().
+have ?: 0%r <= (x %% y)%r / y%r < 1%r. 
+  rewrite ltr_pdivr_mulr /=; 1: smt().
+  split; smt(le_fromint RealOrder.divr_ge0).
 by smt(floor_bound).
 qed.
 
@@ -1562,6 +1563,22 @@ module EncDec = {
        return r;
    }
 
+   proc sem_encode12(a : ipoly) : W8.t Array384.t = {
+       var fi1,fi2,i,j;
+       var r : W8.t Array384.t;
+       r <- witness;
+       j <- 0; i <- 0; 
+       while (i < 256) {
+          fi1 <- a.[i];
+          fi2 <- a.[i+1];
+          r.[j] <- W8.of_int fi1;                               j <- j + 1;
+          r.[j] <- W8.of_int ((fi2 %% 2^4) * 2^4 + fi1 %/ 2^8); j <- j + 1;
+          r.[j] <- W8.of_int (fi2 %/ 2^4);                      j <- j + 1;
+          i <- i + 2;
+       }
+       return r;
+   }
+
    proc encode4(p : ipoly) : W8.t Array128.t = {
        var fi,fi1,i,j;
        var r : W8.t Array128.t;
@@ -1675,7 +1692,7 @@ op sem_decode12_vec(a : W8.t Array1152.t) : ipolyvec =
    Array768.init (fun i => decode 12 i (BytesToBits (to_list a))).
 
 (* These should come directly from the code. *)
-op sem_encode12(a : ipoly) : W8.t Array384.t.
+proc op sem_encode12 = EncDec.sem_encode12.
 op sem_encode4(p : ipoly) : W8.t Array128.t.
 op sem_encode1(a : ipoly) : W8.t Array32.t.
 op sem_encode10_vec(u : ipolyvec) : W8.t Array960.t.
