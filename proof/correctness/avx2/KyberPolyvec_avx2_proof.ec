@@ -713,31 +713,30 @@ lemma decompress_aux_3 (x: W32.t):
   ((x `<<<` 4 \bits16 1) `>>` ru_ones_s) `&` (W16.of_int 32736)
   = W16.of_int ((to_uint (x \bits8 2) %/ 4 + (to_uint (x \bits8 3)) %% 16 * 2^6)) `&` (W16.of_int 1023) `<<<` 5.
 proof.
-  rewrite -{1}W32.to_uintK shlMP 1://= of_int_bits16_div 1://=.
-  rewrite shr_shrw 1://= shrDP 1://=.
-  rewrite bits8_div 1://= bits8_div 1://= of_uintK of_uintK.
-  rewrite (modz_pow2_div 8 2 _) 1://= //=.
-  rewrite (_: 16777216 = 2^16*2^8) 1://= divzMr 1..2://= //=.
-  rewrite modz_dvd 1://=.
-  rewrite (_: 256 = 4 * 64) 1://= divzMr 1..2://= //=.
-  rewrite mulz_modl 1://= //=.
-  rewrite (_: pvc_mask_s = W16.of_int (2^10-1)) 1://= W16.and_mod 1://=.
-  rewrite of_uintK modz_dvd 1://= modzDmr.
-  rewrite addzC -divz_eq.
-  rewrite (modz_pow2_div 16 1 _) 1://= //=.
-  rewrite -(modz_dvd _ 65536 1024) 1://= -W16.of_uintK.
-  rewrite -(W16.and_mod 10 _) 1://= //=.
-  rewrite -W16.shlw_and shlMP 1://= shlMP 1://= //=.
-  rewrite -divzMr 1..2://= //= (_: 131072 = 2^13 * 2^4) 1://= divzMpr 1://=.
-  rewrite -divzMr 1..2://= //=.
-  admit.
+  apply W16.wordP => i ib.
+    rewrite /(`>>`) andwE shrwE shlwE //= of_intwE /int_bit //= ib => />.
+    rewrite of_intD bits8_div 1://= of_uintK bits8_div 1://= of_uintK -of_intD.
+    rewrite (pmod_small (_ %/ (2^24)) W8.modulus); first by move : (W32.to_uint_cmp x) => /#.
+    rewrite (modz_pow2_div 8 2) 1://= -divzMr 1..2://= /=.
+    rewrite of_intwE of_intwE /int_bit //=.
+    move : ib; rewrite andabP -(mem_iota 0 16 i).
+    move : i; rewrite -List.allP -iotaredE //=.
+      do split; first 10 by rewrite get_to_uint => /> /#.
 qed.
 
 lemma decompress_aux_4 (x: W32.t):
   ((x `<<<` 0 \bits16 1) `>>` ru_ones_s) `&` (W16.of_int 32736)
   = W16.of_int (to_uint (x \bits8 2) %/ 64 + (to_uint (x \bits8 3)) * 2^2) `&` (W16.of_int 1023) `<<<` 5.
 proof.
-  admit.
+  apply W16.wordP => i ib.
+    rewrite /(`>>`) andwE shrwE //= of_intwE /int_bit //= ib => />.
+    rewrite of_intD bits8_div 1://= of_uintK bits8_div 1://= of_uintK -of_intD.
+    rewrite (pmod_small (_ %/ (2^24)) W8.modulus); first by move : (W32.to_uint_cmp x) => /#.
+    rewrite (modz_pow2_div 8 6) 1://= -divzMr 1..2://= /=.
+    rewrite of_intwE of_intwE /int_bit //=.
+    move : ib; rewrite andabP -(mem_iota 0 16 i).
+    move : i; rewrite -List.allP -iotaredE //=.
+      do split; first 10 by rewrite get_to_uint => /> /#.
 qed.
 
 lemma decompress_decode (i j x y: int):
