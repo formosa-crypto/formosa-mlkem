@@ -662,51 +662,33 @@ lemma decompress_aux_1 (x: W32.t):
   ((x `<<<` 4 \bits16 0) `>>` ru_ones_s) `&` (W16.of_int 8184)
   = W16.of_int ((to_uint (x \bits8 0) + (to_uint (x \bits8 1)) %% 4 * 2^8)) `&` (W16.of_int 1023) `<<<` 3.
 proof.
-  rewrite -{1}W32.to_uintK shlMP 1://= of_int_bits16_div 1://= expr0 divz1.
-  rewrite shr_shrw 1://= shrDP 1://=.
-  rewrite (_: W16.modulus = 2^12*2^4) 1://= -(mulz_modl (2^4) _ (2^12)) 1://=.
-  rewrite (_: 2^4 = 2^3 * 2^1) 1://= -(mulzA _ (2^3) (2^1)) mulzK 1://=.
-  rewrite (_: 8184 = (2^10-1) * 2^3) 1://= -shlMP 1://= -shlMP 1://=.
-  rewrite W16.shlw_and W16.and_mod 1://= of_uintK modz_dvd 1://= modz_dvd 1://=.
-  rewrite (mulz_modl W8.modulus _ 4) 1://= //=.
-  rewrite bits8_div 1://= bits8_div 1://= of_uintK of_uintK divz1 //=.
-  rewrite (mulz_modl W8.modulus _ W8.modulus) 1://= //= modz_dvd 1://=.
-  rewrite (W16.and_mod 10 _)1://= of_uintK modz_dvd 1://=.
-  rewrite -modzDmr modz_dvd 1://= modzDmr.
-  rewrite addzC -divz_eq //=.
+  apply W16.wordP => i ib.
+    rewrite /(`>>`) andwE shrwE //= of_intwE /int_bit //= ib => />.
+    rewrite of_intD bits8_div 1://= of_uintK bits8_div 1://= of_uintK -of_intD.
+    rewrite modz_dvd 1://=.
+    rewrite of_intwE of_intwE /int_bit //=.
+    move : ib; rewrite andabP -(mem_iota 0 16 i).
+    move : i; rewrite -List.allP -iotaredE //=.
+      do split; first 10 by rewrite get_to_uint => /> /#.
 qed.
 
 lemma decompress_aux_2 (x: W32.t):
   ((x `<<<` 0 \bits16 0) `>>` ru_ones_s) `&` (W16.of_int 8184)
   = W16.of_int (to_uint (x \bits8 0) %/ 16 + (to_uint (x \bits8 1)) %% 64 * 2^4) `&` (W16.of_int 1023) `<<<` 3.
 proof.
-  rewrite -{1}W32.to_uintK shlMP 1://= expr0 mulz1 of_int_bits16_div 1://= expr0 divz1.
-  rewrite shr_shrw 1://= shrDP 1://=.
-  rewrite bits8_div 1://= bits8_div 1://= of_uintK of_uintK.
-  rewrite (modz_pow2_div 8 4 _) 1://= //=.
-  rewrite {1}(_: 256 = 16 * 16) 1://= divzMr 1..2://=.
-  rewrite -(modz_pow2_div 12 4 _) 1://= //=.
-  rewrite -(modz_dvd _ 4096 16); first by smt(modz_cmp).
-  rewrite mulz_modl 1://= //=.
-  rewrite (_: pvc_mask_s = W16.of_int (2^10-1)) 1://= W16.and_mod 1://=.
-  rewrite of_uintK modz_dvd 1://= modzDmr.
-  rewrite addzC -divz_eq.
-  rewrite -(modz_dvd _ 65536 1024) 1://= -(W16.of_uintK (_ %% 4096)) -(W16.and_mod 10 _) 1://= //=.
-  rewrite -(modz_pow2_div 16 4 _) 1://= //=.
-  rewrite -W16.shlw_and (W16.shlMP 1023 3) 1://= //=.
-  rewrite -(W16.shrDP _ 4) 1://=.
-  rewrite shrw_shlw_shrw 1://= /max //=.
-  have ->: invw pc_mask_s = W16.of_int ((2^15-2^3)*2).
-    rewrite /of_int /= /int2bs /= /mkseq -iotaredE /=.
-    rewrite /bits2w /invw /= W16.wordP.
-    move => i; rewrite andabP => /(mem_iota 0 16 i).
+  apply W16.wordP => i ib.
+    rewrite /(`>>`) andwE shrwE //= of_intwE /int_bit //= ib => />.
+    rewrite of_intD bits8_div 1://= of_uintK bits8_div 1://= of_uintK -of_intD.
+    rewrite modz_dvd 1://=.
+    rewrite (modz_pow2_div 8 4 _) 1://= //=.
+    rewrite of_intwE of_intwE /int_bit //=.
+    move : ib; rewrite andabP -(mem_iota 0 16 i).
     move : i; rewrite -List.allP -iotaredE //=.
-  rewrite -W16.shrw_and.
-  rewrite (W16.shrDP (_ * 2)) 1://= (pmod_small _ W16.modulus) 1://= expr1 mulzK 1://= //=.
-  rewrite shrDP 1://= /=.
-  rewrite (_: 32760 = (2^12-1) * 2^3) 1://= -shlMP 1://= {2}(_: 8184 = (2^10-1) * 2^3) 1://= -shlMP 1://=.
-  rewrite -andwA W16.shlw_and.
-  rewrite (W16.mask_and_mask 12 10) 1..2://= /min //= /max //= shlMP 1://= //=.
+      (* n.b.: w/o the following rewrites EC pattern matching doesn't  allow modz_pow2_div to be used *)
+      rewrite (_: 4 = 2^2) 1://= (_: 8 = 2^3) 1://= (_: 16 = 2^4) 1://= (_: 32 = 2^5) 1://= (_: 64 = 2^6) 1://=.
+      rewrite (_: 128 = 2^7) 1://= (_: 256 = 2^8) 1://= (_: 512 = 2^9) 1://=.
+      do (rewrite (modz_pow2_div 16 _ _) 1://= || rewrite modz_dvd 1://=).
+      do split; first 10 by rewrite get_to_uint //= => /#.
 qed.
 
 lemma decompress_aux_3 (x: W32.t):
