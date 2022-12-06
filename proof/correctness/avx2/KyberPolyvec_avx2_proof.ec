@@ -186,26 +186,6 @@ lemma polyvec_csubq_corr ap:
   by smt().
 qed.
 
-lemma shr_bits8:
-  forall (w: W64.t) (i: int),
-  0 <= i < 6 =>
-  w `>>` (W8.of_int 12) \bits8 i =
-  ((w \bits8 (i+2)) `&` (W8.of_int (2^4-1)) `<<` (W8.of_int 4)) +
-  (((w \bits8 (i+1)) `>>` (W8.of_int 4)) `&` (W8.of_int (2^4-1))).
-proof.
-  admit. (* FIXME *)
-qed.
-
-lemma shl_bits8:
-  forall (w: W32.t) (i: int),
-  1 <= i < 4 =>
-  w `<<` (W8.of_int 12) \bits8 i =
-  (((w \bits8 (i-2)) `>>` (W8.of_int 4)) `&` (W8.of_int (2^4-1))) +
-  ((w \bits8 (i-1)) `&` (W8.of_int (2^4-1)) `<<` (W8.of_int 4)).
-proof.
-  admit. (* FIXME *)
-qed.
-
 (* TODO: move to W8 theory ?? *)
 lemma shl_shlw_w8 (k: int) (w: W8.t):
   0 <= k < W8.size =>
