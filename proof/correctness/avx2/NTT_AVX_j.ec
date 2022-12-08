@@ -119,10 +119,13 @@ lemma Iu16_ub_of_int n:
  Iu16_ub 1 (W16.of_int n) (inFq n).
 proof. by move=> /> *; rewrite of_sintK smod_small /#. qed.
 
+(** Implementation relation (Scaled form, signed bounded) *)
+abbrev Iu16S_ub s (n: int) (y: W16.t) (x: Fq) =
+ Iu16_ub n y (x*s).
+
 (** Implementation relation (Montgomery form, unsigned bounded) *)
 abbrev Iu16M_ub (n: int) (y: W16.t) (x: Fq) =
- Iu16_ub n y (x*inFq W16.modulus).
-
+ Iu16S_ub (inFq W16.modulus) n y x.
 
 (** Implementation relation over chunks *)
 abbrev I16u16_sb (n:int) (y: W256.t) (x: Fq Array16.t) =
@@ -137,10 +140,12 @@ abbrev I16u16S_sb z (n:int) (y: W256.t) (x: Fq Array16.t) =
 abbrev I16u16M_sb (n:int) (y: W256.t) (x: Fq Array16.t) =
  all (fun k=> Iu16M_sb n (R2C y).[k] x.[k]) (iota_ 0 16).
 
+abbrev I16u16S_ub z (n:int) (y: W256.t) (x: Fq Array16.t) =
+ all (fun k=> Iu16S_ub z n (R2C y).[k] x.[k]) (iota_ 0 16).
+ 
 abbrev I16u16M_ub (n:int) (y: W256.t) (x: Fq Array16.t) =
  all (fun k=> Iu16M_ub n (R2C y).[k] x.[k]) (iota_ 0 16).
  
-
 (** Implementation relation over polynomials *)
 abbrev I256u16_sb (n:int) (y: W16.t Array256.t ) (x: Fq Array256.t) =
  all (fun k=> I16u16_sb n (P2R y k) (P2C x k)) (iota_ 0 16).
@@ -219,7 +224,7 @@ qed.
 abbrev I256u16M_ub (n:int) (y: W16.t Array256.t ) (x: Fq Array256.t) =
  all (fun k=> I16u16M_ub n (P2R y k) (P2C x k)) (iota_ 0 16).
 
-lemma I256u16M_uP n y x:
+lemma I256u16M_ubP n y x:
  I256u16M_ub n y x
  <=> all (fun k=> Iu16M_ub n y.[k] x.[k]) (iota_ 0 256).
 proof. by rewrite -iotaredE /= !P2R2C /P2C /pchunk !initiE //=. qed.
@@ -487,6 +492,7 @@ lemma butterfly_r (c:int) xl xr z rxl rxr rzM rzMqinv rq:
    (wmulhs rzM rxr + rxl - wmulhs (rzMqinv * rxr) rq)
    (xl+z*xr).
 proof.
+print Iu16S_ub.
 move => Hbnd Hq [-> Hxl] [-> Hxr] [HzM HzBnd] ->.
 have ->: wmulhs rzM rxr + rxl - wmulhs (rzM * (of_int 62209)%W16 * rxr) rq
  = rxl + (wmulhs rzM rxr - wmulhs (rzM * (of_int 62209)%W16 * rxr) rq) by ring.
@@ -943,6 +949,133 @@ module Tmp = {
     return (rp);
   }
   proc _invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
+    var zetasp: W16.t Array400.t;
+    var qx16, vx16, flox16, fhix16: W256.t;
+    var i: int;
+    var zeta0, zeta1, zeta2, zeta3: W256.t;
+    var r0, r1, r2, r3, r4, r5, r6, r7: W256.t;
+    zetasp <- zetas_inv_op;
+    qx16 <- C2R qx16_op;
+    i <- 0;
+    while (i < 2) {
+      zeta0 <- z2u256 zetasp (0 + (196 * i));
+      zeta2 <- z2u256 zetasp (16 + (196 * i));
+      zeta1 <- z2u256 zetasp (32 + (196 * i));
+      zeta3 <- z2u256 zetasp (48 + (196 * i));
+      r0 <- P2R rp (0+8*i);
+      r1 <- P2R rp (1+8*i);
+      r2 <- P2R rp (2+8*i);
+      r3 <- P2R rp (3+8*i);
+      r4 <- P2R rp (4+8*i);
+      r5 <- P2R rp (5+8*i);
+      r6 <- P2R rp (6+8*i);
+      r7 <- P2R rp (7+8*i);
+      (r0, r1, r4, r5, r2, r3, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
+      r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
+      (* 8 8 1 1 8 8 1 1 - 4 *)
+      vx16 <- C2R vx16_op;
+      zeta0 <- z2u256 zetasp (64 + (196 * i));
+      zeta1 <- z2u256 zetasp (80 + (196 * i));
+      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
+      r1 <@ Jkem_avx2.M.__red16x (r1, qx16, vx16);
+      r4 <@ Jkem_avx2.M.__red16x (r4, qx16, vx16);
+      r5 <@ Jkem_avx2.M.__red16x (r5, qx16, vx16);      
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
+      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      (* 4 4 2 2 1 1 1 1 - 0 *)
+      (r0, r1) <@ Jkem_avx2.M.__shuffle1 (r0, r1);
+      (r2, r3) <@ Jkem_avx2.M.__shuffle1 (r2, r3);
+      (r4, r5) <@ Jkem_avx2.M.__shuffle1 (r4, r5);
+      (r6, r7) <@ Jkem_avx2.M.__shuffle1 (r6, r7);
+      zeta0 <- z2u256 zetasp (96 + (196 * i));
+      zeta1 <- z2u256 zetasp (112 + (196 * i));
+      (r0, r2, r4, r6, r1, r3, r5, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r2,
+      r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      (* 8 1 4 1 2 1 2 1 - 1 *)
+      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
+      (r0, r2) <@ Jkem_avx2.M.__shuffle2 (r0, r2);
+      (r4, r6) <@ Jkem_avx2.M.__shuffle2 (r4, r6);
+      (r1, r3) <@ Jkem_avx2.M.__shuffle2 (r1, r3);
+      (r5, r7) <@ Jkem_avx2.M.__shuffle2 (r5, r7);
+      zeta0 <- z2u256 zetasp (128 + (196 * i));
+      zeta1 <- z2u256 zetasp (144 + (196 * i));
+      (r0, r4, r1, r5, r2, r6, r3, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r4,
+      r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      (* 8 2 1 1 4 2 1 1 - 1 *)
+      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
+      (r0, r4) <@ Jkem_avx2.M.__shuffle4 (r0, r4);
+      (r1, r5) <@ Jkem_avx2.M.__shuffle4 (r1, r5);
+      (r2, r6) <@ Jkem_avx2.M.__shuffle4 (r2, r6);
+      (r3, r7) <@ Jkem_avx2.M.__shuffle4 (r3, r7);
+      zeta0 <- z2u256 zetasp (160 + (196 * i));
+      zeta1 <- z2u256 zetasp (176 + (196 * i));
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
+      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      (* 8 4 2 2 1 1 1 1 - 1 *)
+      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
+      (r0, r1) <@ Jkem_avx2.M.__shuffle8 (r0, r1);
+      (r2, r3) <@ Jkem_avx2.M.__shuffle8 (r2, r3);
+      (r4, r5) <@ Jkem_avx2.M.__shuffle8 (r4, r5);
+      (r6, r7) <@ Jkem_avx2.M.__shuffle8 (r6, r7);
+      zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp (192 + (196 * i)));
+      zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp (194 + (196 * i)));
+      (r0, r2, r4, r6, r1, r3, r5, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r2,
+      r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      (* 8 1 4 1 2 1 2 1 - 1 *)
+      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
+      if (i = 0) {
+      rp <- PUR rp (0+8*i) r0; (* 2 *)
+      rp <- PUR rp (1+8*i) r2; (* 4 *)
+      rp <- PUR rp (2+8*i) r4; (* 2 *)
+      rp <- PUR rp (3+8*i) r6; (* 2 *)
+      }
+      rp <- PUR rp (4+8*i) r1; (* 1 *)
+      rp <- PUR rp (5+8*i) r3; (* 1 *)
+      rp <- PUR rp (6+8*i) r5; (* 1 *)
+      rp <- PUR rp (7+8*i) r7; (* 1 *)
+      i <- i + 1;
+    }
+    zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp 392);
+    zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp 394);
+    flox16 <- C2R flox16_op;
+    fhix16 <- C2R fhix16_op;
+    i <- 0;
+    while (i < 2) {
+      if (i = 0) {
+        r7 <- r6;
+        r6 <- r4;
+        r5 <- r2;
+        r4 <- r0;
+      } else {
+        r4 <- P2R rp (8+4*i); (* 2 *)
+        r5 <- P2R rp (9+4*i); (* 4 *)
+        r6 <- P2R rp (10+4*i); (* 2 *)
+        r7 <- P2R rp (11+4*i); (* 2 *)
+      }
+      r0 <- P2R rp (0+4*i); (* 2 *)
+      r1 <- P2R rp (1+4*i); (* 4 *)
+      r2 <- P2R rp (2+4*i); (* 2 *)
+      r3 <- P2R rp (3+4*i); (* 2 *)
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
+        r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      (* 4 8 4 4 1 1 1 1 *)
+      rp <- PUR rp (8+4*i) r4;
+      rp <- PUR rp (9+4*i) r5;
+      rp <- PUR rp (10+4*i) r6;
+      rp <- PUR rp (11+4*i) r7;
+      r0 <@ Jkem_avx2.M.__fqmulprecomp16x (r0, flox16, fhix16, qx16);
+      r1 <@ Jkem_avx2.M.__fqmulprecomp16x (r1, flox16, fhix16, qx16);
+      r2 <@ Jkem_avx2.M.__fqmulprecomp16x (r2, flox16, fhix16, qx16);
+      r3 <@ Jkem_avx2.M.__fqmulprecomp16x (r3, flox16, fhix16, qx16);
+      rp <- PUR rp (0+4*i) r0;
+      rp <- PUR rp (1+4*i) r1;
+      rp <- PUR rp (2+4*i) r2;
+      rp <- PUR rp (3+4*i) r3;
+      i <- i + 1;
+    }
+    return (rp);
+  }
+  proc _invntt2 (rp:W16.t Array256.t) : W16.t Array256.t = {
     var zetasp: W16.t Array400.t;
     var qx16, vx16, flox16, fhix16: W256.t;
     var i: int;
@@ -1554,11 +1687,11 @@ seq 6 6: (#pre /\ ={r0,r2,r4,r6,zeta0,zeta1,flox16,fhix16}).
    by conseq />; sim.
   seq 3 3: (#pre /\ ={vx16}).
    by auto => /> *; rewrite /z2u256 !mulrDr !mulrA /#.
-  seq 7 7: (#pre).
+  seq 9 9: (#pre).
    by conseq />; sim.
   seq 2 2: (#pre).
    by auto => /> *; rewrite /z2u256 !mulrDr !mulrA /#.
-  seq 5 5: (#pre).
+  seq 6 6: (#pre).
    by conseq />; sim.
   seq 2 2: (#pre).
    by auto => /> *; rewrite /z2u256 !mulrDr !mulrA /#.
@@ -1600,8 +1733,6 @@ proof. by rewrite tP => i Hi; rewrite !mapiE //=; ring. qed.
 
 abbrev mul1x256 (y: Fq): Fq Array256.t -> Fq Array256.t =
  Array256.map (( *) y). 
-
-print Array16.map2.
 
 abbrev mul16x16 = Array16.map2 Zq.( *).
 
@@ -1712,6 +1843,7 @@ phoare wmul_16u16_ph _a _b:
    y = _b
    ==> res = (WMULL_16u16 _a _b, WMULH_16u16 _a _b)
  ] = 1%r.
+proc.
 admitted.
 
 (*
@@ -1731,7 +1863,7 @@ phoare fq_mulprecomp16x_aux _n _r:
    x16_spec 1441 ah =>
    qinv16u16M al ah =>
    I16u16_sb _n b _r
-   ==> I16u16_sb q res (mul1x16 (inFq 3303) _r) ] = 1%r.
+   ==> I16u16S_sb (inFq 3303*inFq W16.modulus) 1 res _r ] = 1%r.
 admitted.
 
 (*
@@ -2356,14 +2488,22 @@ by apply (invbutterfly_r n1 n2); [assumption|by apply Hq|by apply Hl|
  by apply Hr| by apply Hz| by rewrite Hqinv].
 qed.
 
+lemma I16u16S_ub_mul1x16 z1 z2 n x y:
+ I16u16S_ub z1 n y (mul1x16 z2 x) = I16u16S_ub (z1*z2) n y x.
+proof.
+rewrite -iotaredE /Iu16_ub /=.
+do 15! (congr; first by (congr; congr; ring)).
+by (congr; congr; ring).
+qed.
+
 lemma invntt_butterfly16xE_last (n1 n2:int) xl xr z rxl rxr rzM rzMqinv rq16x:
  (n1+n2)*q <= W16.max_sint =>
  I16u16_sb n1 rxl xl =>
  I16u16_sb n2 rxr xr =>
  qinv16u16M rzMqinv rzM =>
- I16u16M_ub 1 rzM (mul1x16 (inFq 512) z) =>
+ I16u16S_ub (inFq 1441) 1 rzM z =>
  x16_spec q rq16x =>
- I16u16_sb 1
+ I16u16S_sb (inFq 3303 * inFq 65536) 1
   (VPSUB_16u16
     (VPMULH_16u16 
       rzM
@@ -2373,13 +2513,17 @@ lemma invntt_butterfly16xE_last (n1 n2:int) xl xr z rxl rxr rzM rzMqinv rq16x:
       (VPMULL_16u16 
         rzMqinv
         (VPSUB_16u16 rxl rxr))))
-  (mul1x16 (inFq 512) (Array16.init (fun i=>z.[i]*(xl.[i]-xr.[i])))).
+  (Array16.init (fun i=>z.[i]*(xl.[i]-xr.[i]))).
 proof.
-move => Hn Hxl Hxr Hzqinv Hz Hq.
+move => Hn Hxl Hxr Hzqinv.
+have ->: inFq 1441 = inFq W16.modulus * inFq 512.
+ by rewrite -inFqM_mod /q /=.
+rewrite -I16u16S_ub_mul1x16 => Hz Hq.
 move: (invntt_butterfly16xE _ _ _ _ (mul1x16 (inFq 512) z) _ _ _ _ _ Hn Hxl Hxr Hzqinv Hz Hq).
 move=> /List.allP H; apply/List.allP => x Hx /=.
 move: (H x Hx); rewrite /Iu16_sb; move => [<- ->] /=.
-by move: Hx; rewrite mem_iota => ?; rewrite !mapiE 1:/# !initiE 1..2:/# /= !mapiE 1:/# /=; ring.
+have ->: inFq 3303 * inFq 65536 = inFq 512 by rewrite -inFqM_mod /q /=.
+by move: Hx; rewrite mem_iota => ?; rewrite !initiE 1..2:/# /= !mapiE 1:/# /=; ring.
 qed.
 
 lemma invntt_butterfly16xE_l (n1 n2:int) rh rl h l:
@@ -2450,18 +2594,18 @@ equiv invntt_butterfly64x_eq_last c0 c1 c2 c3 c4 c5 c6 c7:
  I16u16_sb c7 rh3{2} rh3t{1} /\
  qinv16u16M zl0{2} zh0{2} /\
  qinv16u16M zl1{2} zh1{2} /\
- I16u16M_ub 1 zh0{2} (mul1x16 (inFq 512) z0{1}) /\
- I16u16M_ub 1 zh1{2} (mul1x16 (inFq 512) z1{1}) /\
+ I16u16S_ub (inFq 1441) 1 zh0{2} z0{1} /\
+ I16u16S_ub (inFq 1441) 1 zh1{2} z1{1} /\
  x16_spec q qx16{2}
  ==>
  I16u16_sb (c0+c4) res{2}.`1 res{1}.`1 /\
  I16u16_sb (c1+c5) res{2}.`2 res{1}.`2 /\
  I16u16_sb (c2+c6) res{2}.`3 res{1}.`3 /\
  I16u16_sb (c3+c7) res{2}.`4 res{1}.`4 /\
- I16u16_sb 1 res{2}.`5 (mul1x16 (inFq 512) res{1}.`5) /\
- I16u16_sb 1 res{2}.`6 (mul1x16 (inFq 512) res{1}.`6) /\
- I16u16_sb 1 res{2}.`7 (mul1x16 (inFq 512) res{1}.`7) /\
- I16u16_sb 1 res{2}.`8 (mul1x16 (inFq 512) res{1}.`8).
+ I16u16S_sb (inFq 3303 * inFq 65536) 1 res{2}.`5 res{1}.`5 /\
+ I16u16S_sb (inFq 3303 * inFq 65536) 1 res{2}.`6 res{1}.`6 /\
+ I16u16S_sb (inFq 3303 * inFq 65536) 1 res{2}.`7 res{1}.`7 /\
+ I16u16S_sb (inFq 3303 * inFq 65536) 1 res{2}.`8 res{1}.`8.
 proof.
 proc; sp 1 0; simplify.
 wp; skip => |> &1 &2 Hbnd H0 H1 H2 H3 H4 H5 H6 H7 Hqinv0 Hqinv1 Hzl Hzh Hq.
@@ -2472,38 +2616,54 @@ split; first by apply (invntt_butterfly16xE_last c2 c6); smt().
 by apply (invntt_butterfly16xE_last c3 c7); smt().
 qed.
 
+lemma P2C_map ['a] (f: 'a -> 'a) a k: 
+ P2C (Array256.map f a) k = map f (P2C a k).
+proof.
+admitted.
+
+lemma I16u16_sb_map n (z: Fq) x y:
+ I16u16_sb n y (Array16.map (( * ) z) x) = I16u16S_sb z n y x.
+proof.
+admitted.
+
+lemma I16u16S_sb_map n (z1 z2: Fq) x y:
+ I16u16S_sb z1 n y (Array16.map (( * ) z2) x) = I16u16S_sb (z2*z1) n y x.
+proof.
+admitted.
 
 equiv _poly_invntt_eq:
  NTT_AVX.invntt ~ Jkem_avx2.M._poly_invntt:
- rp{1}=lift_array256 rp{2} /\ signed_bound_cxq rp{2} 0 256 2 ==>
- res{1}=lift_array256 res{2} /\
+ rp{1}=lift_array256 rp{2} /\ signed_bound_cxq rp{2} 0 256 4 ==>
+ mul1x256 (inFq W16.modulus) res{1}=lift_array256 res{2} /\
  signed_bound_cxq res{2} 0 256 1.
 proof.
 transitivity Tmp._invntt
- ( I256u16_sb 2 rp{2} rp{1} ==> I256u16_sb 1 res{2} res{1} )
+ ( I256u16_sb 4 rp{2} rp{1} ==> I256u16S_sb (inFq W16.modulus) 1 res{2} res{1} )
  ( ={rp} ==> ={res} ); last by symmetry; conseq __invntt_eq_.
   by move=> |> &2 H; exists arg{2}; rewrite I256u16_sbE. 
- by move => &1 &m &2 /= ??; rewrite -I256u16_sbE /#.
+ move => &1 &m &2 /= H <-; rewrite -I256u16_sbE .
+ move: H; rewrite -{2 4}iotaredE => |> *.
+ by rewrite !P2C_map !I16u16_sb_map /#.
 proc.
 unroll{2} 4; rcondt{2} 4; first by auto.
 seq 11 16: (x16_spec q qx16{2} /\ zetasp{2}=zetas_inv_op  /\ i{2}=0 /\
-  I16u16_sb 2 (P2R rp{2} 8) (P2C rp{1} 8) /\
-  I16u16_sb 2 (P2R rp{2} 9) (P2C rp{1} 9) /\
-  I16u16_sb 2 (P2R rp{2} 10) (P2C rp{1} 10) /\
-  I16u16_sb 2 (P2R rp{2} 11) (P2C rp{1} 11) /\
-  I16u16_sb 2 (P2R rp{2} 12) (P2C rp{1} 12) /\
-  I16u16_sb 2 (P2R rp{2} 13) (P2C rp{1} 13) /\
-  I16u16_sb 2 (P2R rp{2} 14) (P2C rp{1} 14) /\
-  I16u16_sb 2 (P2R rp{2} 15) (P2C rp{1} 15) /\
-  I16u16_sb 4 r0{2} r0a{1} /\
-  I16u16_sb 4 r1{2} r1a{1} /\
+  I16u16_sb 4 (P2R rp{2} 8) (P2C rp{1} 8) /\
+  I16u16_sb 4 (P2R rp{2} 9) (P2C rp{1} 9) /\
+  I16u16_sb 4 (P2R rp{2} 10) (P2C rp{1} 10) /\
+  I16u16_sb 4 (P2R rp{2} 11) (P2C rp{1} 11) /\
+  I16u16_sb 4 (P2R rp{2} 12) (P2C rp{1} 12) /\
+  I16u16_sb 4 (P2R rp{2} 13) (P2C rp{1} 13) /\
+  I16u16_sb 4 (P2R rp{2} 14) (P2C rp{1} 14) /\
+  I16u16_sb 4 (P2R rp{2} 15) (P2C rp{1} 15) /\
+  I16u16_sb 8 r0{2} r0a{1} /\
+  I16u16_sb 8 r1{2} r1a{1} /\
   I16u16_sb 1 r2{2} r2a{1} /\
   I16u16_sb 1 r3{2} r3a{1} /\
-  I16u16_sb 4 r4{2} r4a{1} /\
-  I16u16_sb 4 r5{2} r5a{1} /\
+  I16u16_sb 8 r4{2} r4a{1} /\
+  I16u16_sb 8 r5{2} r5a{1} /\
   I16u16_sb 1 r6{2} r6a{1} /\
   I16u16_sb 1 r7{2} r7a{1}).
- call (invntt_butterfly64x_eq 2 2 2 2 2 2 2 2).
+ call (invntt_butterfly64x_eq 4 4 4 4 4 4 4 4).
  wp; skip => &1 &2.
  rewrite -{2}iotaredE /= => [#] |> *.
  pose z0R := z2u256 _ _.
@@ -2512,7 +2672,7 @@ seq 11 16: (x16_spec q qx16{2} /\ zetasp{2}=zetas_inv_op  /\ i{2}=0 /\
  pose z3R := z2u256 _ _.
  pose z1L := Array16.of_list _ _.
  pose z3L := Array16.of_list _ _.
- have ->: 4*q <= 32767 by smt().
+ have ->: 8*q <= 32767 by smt().
  have ->: qinv16u16M z0R z1R.
   rewrite /z0R /z1R !z2u256E 1..2:// /qinv16u16M -iotaredE.
   by rewrite /= !C2RK /zetas_inv_op !initiE //=.
@@ -2528,49 +2688,21 @@ seq 11 16: (x16_spec q qx16{2} /\ zetasp{2}=zetas_inv_op  /\ i{2}=0 /\
  have ->: x16_spec q (C2R qx16_op).
   by rewrite x16_spec_C2R /q /=.
  by clear xx z0R z1R z2R z3R z1L z3L => |>.
-seq 2 4: (#[/:11]pre /\ x16_spec 20159 vx16{2} /\
-  I16u16_sb 8 r0{2} r0b{1} /\ (* 8 => 2 *)
-  I16u16_sb 8 r1{2} r1b{1} /\ (* 8 => 2 *)
+seq 2 8: (#[/:11]pre /\ x16_spec 20159 vx16{2} /\
+  I16u16_sb 4 r0{2} r0b{1} /\
+  I16u16_sb 4 r1{2} r1b{1} /\
   I16u16_sb 2 r2{2} r2b{1} /\
   I16u16_sb 2 r3{2} r3b{1} /\
   I16u16_sb 1 r4{2} r4b{1} /\
   I16u16_sb 1 r5{2} r5b{1} /\
   I16u16_sb 1 r6{2} r6b{1} /\
   I16u16_sb 1 r7{2} r7b{1} ).
- call (invntt_butterfly64x_eq 4 4 1 1 4 4 1 1).
- wp; skip => |> &1 &2 *.
- pose z0R := z2u256 _ _.
- pose z1R := z2u256 _ _.
- pose z1L := Array16.of_list _ _.
- have ->: 8*q <= 32767 by smt().
- have ->: qinv16u16M z0R z1R.
-  rewrite /z0R /z1R !z2u256E 1..2:// /qinv16u16M -iotaredE.
-  by rewrite /= !C2RK /zetas_inv_op !initiE //=.
- pose xx := List.all _ _.
- have ->: xx.
-  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
- move => |> *.
- have ->: x16_spec 20159 (C2R vx16_op).
-  by rewrite x16_spec_C2R /q /=.
- done.
-seq 6 9: (#[/:12]pre /\
-  I16u16_sb 4 r0{2} r0d{1} /\
-  I16u16_sb 1 r1{2} r1d{1} /\
-  I16u16_sb 4 r2{2} r2d{1} /\
-  I16u16_sb 1 r3{2} r3d{1} /\
-  I16u16_sb 2 r4{2} r4d{1} /\
-  I16u16_sb 1 r5{2} r5d{1} /\
-  I16u16_sb 2 r6{2} r6d{1} /\
-  I16u16_sb 1 r7{2} r7d{1} ).
  call (invntt_butterfly64x_eq 2 2 1 1 2 2 1 1).
- wp; ecall {2} (__shuffle1_ph 1 1 r6b{1} r7b{1}).
- ecall {2} (__shuffle1_ph 1 1 r4b{1} r5b{1}).
- ecall {2} (__shuffle1_ph 2 2 r2b{1} r3b{1}).
- ecall {2} (__shuffle1_ph 2 2 r0b{1} r1b{1}).
- ecall {2} (red16x_aux 8 r1b{1}).
- ecall {2} (red16x_aux 8 r0b{1}).
- have Emax: forall x, max x x = x by done. 
- wp; skip => |> &1 &2; rewrite !Emax => |> *.
+ ecall {2} (red16x_aux 8 r5a{1}).
+ ecall {2} (red16x_aux 8 r4a{1}).
+ ecall {2} (red16x_aux 8 r1a{1}).
+ ecall {2} (red16x_aux 8 r0a{1}).
+ wp; skip => |> &1 &2 *.
  pose z0R := z2u256 _ _.
  pose z1R := z2u256 _ _.
  pose z1L := Array16.of_list _ _.
@@ -2581,9 +2713,39 @@ seq 6 9: (#[/:12]pre /\
  pose xx := List.all _ _.
  have ->: xx.
   by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
- by move => |> *.
+ move => |> *.
+ have ->: x16_spec 20159 (C2R vx16_op).
+  by rewrite x16_spec_C2R /q /=.
+ done.
 seq 6 7: (#[/:12]pre /\
-  I16u16_sb 8 r0{2} r0f{1} /\ (* 8 => 2 *)
+  I16u16_sb 8 r0{2} r0d{1} /\
+  I16u16_sb 1 r1{2} r1d{1} /\
+  I16u16_sb 4 r2{2} r2d{1} /\
+  I16u16_sb 1 r3{2} r3d{1} /\
+  I16u16_sb 2 r4{2} r4d{1} /\
+  I16u16_sb 1 r5{2} r5d{1} /\
+  I16u16_sb 2 r6{2} r6d{1} /\
+  I16u16_sb 1 r7{2} r7d{1} ).
+ call (invntt_butterfly64x_eq 4 2 1 1 4 2 1 1).
+ wp; ecall {2} (__shuffle1_ph 1 1 r6b{1} r7b{1}).
+ ecall {2} (__shuffle1_ph 1 1 r4b{1} r5b{1}).
+ ecall {2} (__shuffle1_ph 2 2 r2b{1} r3b{1}).
+ ecall {2} (__shuffle1_ph 4 4 r0b{1} r1b{1}).
+ have Emax: forall x, max x x = x by done. 
+ wp; skip => |> &1 &2; rewrite !Emax => |> *.
+ pose z0R := z2u256 _ _.
+ pose z1R := z2u256 _ _.
+ pose z1L := Array16.of_list _ _.
+ have ->: 8*q <= 32767 by smt().
+ have ->: qinv16u16M z0R z1R.
+  rewrite /z0R /z1R !z2u256E 1..2:// /qinv16u16M -iotaredE.
+  by rewrite /= !C2RK /zetas_inv_op !initiE //=.
+ pose xx := List.all _ _.
+ have ->: xx.
+  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
+ by move => |> *.
+seq 6 8: (#[/:12]pre /\
+  I16u16_sb 8 r0{2} r0f{1} /\
   I16u16_sb 2 r1{2} r1f{1} /\
   I16u16_sb 1 r2{2} r2f{1} /\
   I16u16_sb 1 r3{2} r3f{1} /\
@@ -2595,7 +2757,8 @@ seq 6 7: (#[/:12]pre /\
  wp; ecall {2} (__shuffle2_ph 1 1 r5d{1} r7d{1}).
  ecall {2} (__shuffle2_ph 1 1 r1d{1} r3d{1}).
  ecall {2} (__shuffle2_ph 2 2 r4d{1} r6d{1}).
- ecall {2} (__shuffle2_ph 4 4 r0d{1} r2d{1}).
+ ecall {2} (__shuffle2_ph 2 4 r0d{1} r2d{1}).
+ ecall {2} (red16x_aux 8 r0d{1}).
  have Emax: forall x, max x x = x by done. 
  wp; skip => |> &1 &2; rewrite !Emax => |> *.
  pose z0R := z2u256 _ _.
@@ -2610,7 +2773,7 @@ seq 6 7: (#[/:12]pre /\
   by rewrite /xx /z0R /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
 seq 6 8: (#[/:12]pre /\
-  I16u16_sb 8 r0{2} r0h{1} /\ (* 8 => 2 *)
+  I16u16_sb 8 r0{2} r0h{1} /\
   I16u16_sb 4 r1{2} r1h{1} /\
   I16u16_sb 2 r2{2} r2h{1} /\
   I16u16_sb 2 r3{2} r3h{1} /\
@@ -2637,7 +2800,7 @@ seq 6 8: (#[/:12]pre /\
   by rewrite /xx /z0R /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
 seq 6 8: (#[/:12]pre /\
-  I16u16_sb 8 r0{2} r0j{1} /\ (* 8 => 2 *)
+  I16u16_sb 8 r0{2} r0j{1} /\
   I16u16_sb 1 r1{2} r1j{1} /\
   I16u16_sb 4 r2{2} r2j{1} /\
   I16u16_sb 1 r3{2} r3j{1} /\
@@ -2673,15 +2836,15 @@ seq 19 23: (#[/:2]pre /\ i{2}=1 /\
    I16u16_sb 1 (P2R rp{2} 5) (P2C rp8{1} 5) /\
    I16u16_sb 1 (P2R rp{2} 6) (P2C rp8{1} 6) /\
    I16u16_sb 1 (P2R rp{2} 7) (P2C rp8{1} 7) /\
-   I16u16_sb 4 r0{2} r0l{1} /\
-   I16u16_sb 4 r1{2} r1l{1} /\
+   I16u16_sb 8 r0{2} r0l{1} /\
+   I16u16_sb 8 r1{2} r1l{1} /\
    I16u16_sb 1 r2{2} r2l{1} /\
    I16u16_sb 1 r3{2} r3l{1} /\
-   I16u16_sb 4 r4{2} r4l{1} /\
-   I16u16_sb 4 r5{2} r5l{1} /\
+   I16u16_sb 8 r4{2} r4l{1} /\
+   I16u16_sb 8 r5{2} r5l{1} /\
    I16u16_sb 1 r6{2} r6l{1} /\
    I16u16_sb 1 r7{2} r7l{1} ).
- call (invntt_butterfly64x_eq 2 2 2 2 2 2 2 2).
+ call (invntt_butterfly64x_eq 4 4 4 4 4 4 4 4).
  wp; ecall {2} (red16x_aux 8 r0j{1}).
  wp; skip => &1 &2 |> *.
  pose z0R := z2u256 _ _.
@@ -2690,7 +2853,7 @@ seq 19 23: (#[/:2]pre /\ i{2}=1 /\
  pose z3R := z2u256 _ _.
  pose z1L := Array16.of_list _ _.
  pose z3L := Array16.of_list _ _.
- have ->: 4*q <= 32767 by smt().
+ have ->: 8*q <= 32767 by smt().
  have ->: qinv16u16M z0R z1R.
   rewrite /z0R /z1R !z2u256E 1..2:// /qinv16u16M -iotaredE.
   by rewrite /= !C2RK /zetas_inv_op !initiE //=.
@@ -2705,49 +2868,21 @@ seq 19 23: (#[/:2]pre /\ i{2}=1 /\
  have ->: xx.
   by rewrite /xx /z3R /z3L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
-seq 2 4: (#[/:11]pre /\ x16_spec 20159 vx16{2} /\
-   I16u16_sb 8 r0{2} r0m{1} /\ (* 8 ==> 2 *)
-   I16u16_sb 8 r1{2} r1m{1} /\ (* 8 ==> 2 *)
+seq 2 8: (#[/:11]pre /\ x16_spec 20159 vx16{2} /\
+   I16u16_sb 4 r0{2} r0m{1} /\
+   I16u16_sb 4 r1{2} r1m{1} /\
    I16u16_sb 2 r2{2} r2m{1} /\
    I16u16_sb 2 r3{2} r3m{1} /\
    I16u16_sb 1 r4{2} r4m{1} /\
    I16u16_sb 1 r5{2} r5m{1} /\
    I16u16_sb 1 r6{2} r6m{1} /\
    I16u16_sb 1 r7{2} r7m{1} ).
- call (invntt_butterfly64x_eq 4 4 1 1 4 4 1 1).
- wp; skip => |> &1 &2 *.
- pose z0R := z2u256 _ _.
- pose z1R := z2u256 _ _.
- pose z1L := Array16.of_list _ _.
- have ->: 8*q <= 32767 by smt().
- have ->: qinv16u16M z0R z1R.
-  rewrite /z0R /z1R !z2u256E 1..2:// /qinv16u16M -iotaredE.
-  by rewrite /= !C2RK /zetas_inv_op !initiE //=.
- pose xx := List.all _ _.
- have ->: xx.
-  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
- move => |> *.
- have ->: x16_spec 20159 (C2R vx16_op).
-  by rewrite x16_spec_C2R /q /=.
- done.
-seq 6 9: (#[/:12]pre /\
-   I16u16_sb 4 r0{2} r0o{1} /\
-   I16u16_sb 1 r1{2} r1o{1} /\
-   I16u16_sb 4 r2{2} r2o{1} /\
-   I16u16_sb 1 r3{2} r3o{1} /\
-   I16u16_sb 2 r4{2} r4o{1} /\
-   I16u16_sb 1 r5{2} r5o{1} /\
-   I16u16_sb 2 r6{2} r6o{1} /\
-   I16u16_sb 1 r7{2} r7o{1} ).
  call (invntt_butterfly64x_eq 2 2 1 1 2 2 1 1).
- wp; ecall {2} (__shuffle1_ph 1 1 r6m{1} r7m{1}).
- ecall {2} (__shuffle1_ph 1 1 r4m{1} r5m{1}).
- ecall {2} (__shuffle1_ph 2 2 r2m{1} r3m{1}).
- ecall {2} (__shuffle1_ph 2 2 r0m{1} r1m{1}).
- ecall {2} (red16x_aux 8 r1m{1}).
- ecall {2} (red16x_aux 8 r0m{1}).
- have Emax: forall x, max x x = x by done. 
- wp; skip => |> &1 &2; rewrite !Emax => |> *.
+ ecall {2} (red16x_aux 8 r5l{1}).
+ ecall {2} (red16x_aux 8 r4l{1}).
+ ecall {2} (red16x_aux 8 r1l{1}).
+ ecall {2} (red16x_aux 8 r0l{1}).
+ wp; skip => |> &1 &2 *.
  pose z0R := z2u256 _ _.
  pose z1R := z2u256 _ _.
  pose z1L := Array16.of_list _ _.
@@ -2758,9 +2893,39 @@ seq 6 9: (#[/:12]pre /\
  pose xx := List.all _ _.
  have ->: xx.
   by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
- by move => |> *.
+ move => |> *.
+ have ->: x16_spec 20159 (C2R vx16_op).
+  by rewrite x16_spec_C2R /q /=.
+ done.
 seq 6 7: (#[/:12]pre /\
-   I16u16_sb 8 r0{2} r0q{1} /\ (* 8 => 2 *)
+   I16u16_sb 8 r0{2} r0o{1} /\
+   I16u16_sb 1 r1{2} r1o{1} /\
+   I16u16_sb 4 r2{2} r2o{1} /\
+   I16u16_sb 1 r3{2} r3o{1} /\
+   I16u16_sb 2 r4{2} r4o{1} /\
+   I16u16_sb 1 r5{2} r5o{1} /\
+   I16u16_sb 2 r6{2} r6o{1} /\
+   I16u16_sb 1 r7{2} r7o{1} ).
+ call (invntt_butterfly64x_eq 4 2 1 1 4 2 1 1).
+ wp; ecall {2} (__shuffle1_ph 1 1 r6m{1} r7m{1}).
+ ecall {2} (__shuffle1_ph 1 1 r4m{1} r5m{1}).
+ ecall {2} (__shuffle1_ph 2 2 r2m{1} r3m{1}).
+ ecall {2} (__shuffle1_ph 4 4 r0m{1} r1m{1}).
+ have Emax: forall x, max x x = x by done. 
+ wp; skip => |> &1 &2; rewrite !Emax => |> *.
+ pose z0R := z2u256 _ _.
+ pose z1R := z2u256 _ _.
+ pose z1L := Array16.of_list _ _.
+ have ->: 8*q <= 32767 by smt().
+ have ->: qinv16u16M z0R z1R.
+  rewrite /z0R /z1R !z2u256E 1..2:// /qinv16u16M -iotaredE.
+  by rewrite /= !C2RK /zetas_inv_op !initiE //=.
+ pose xx := List.all _ _.
+ have ->: xx.
+  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
+ by move => |> *.
+seq 6 8: (#[/:12]pre /\
+   I16u16_sb 8 r0{2} r0q{1} /\
    I16u16_sb 2 r1{2} r1q{1} /\
    I16u16_sb 1 r2{2} r2q{1} /\
    I16u16_sb 1 r3{2} r3q{1} /\
@@ -2772,7 +2937,8 @@ seq 6 7: (#[/:12]pre /\
  wp; ecall {2} (__shuffle2_ph 1 1 r5o{1} r7o{1}).
  ecall {2} (__shuffle2_ph 1 1 r1o{1} r3o{1}).
  ecall {2} (__shuffle2_ph 2 2 r4o{1} r6o{1}).
- ecall {2} (__shuffle2_ph 4 4 r0o{1} r2o{1}).
+ ecall {2} (__shuffle2_ph 2 4 r0o{1} r2o{1}).
+ ecall {2} (red16x_aux 8 r0o{1}).
  have Emax: forall x, max x x = x by done.
  wp; skip => |> &1 &2; rewrite !Emax => |> *.
  pose z0R := z2u256 _ _.
@@ -2787,7 +2953,7 @@ seq 6 7: (#[/:12]pre /\
   by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
 seq 6 8: (#[/:12]pre /\
-  I16u16_sb 8 r0{2} r0s{1} /\ (* 8 => 2 *)
+  I16u16_sb 8 r0{2} r0s{1} /\
   I16u16_sb 4 r1{2} r1s{1} /\
   I16u16_sb 2 r2{2} r2s{1} /\
   I16u16_sb 2 r3{2} r3s{1} /\
@@ -2814,7 +2980,7 @@ seq 6 8: (#[/:12]pre /\
   by rewrite /xx /z0R /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!inFqM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
 seq 6 8: (#[/:12]pre /\
-  I16u16_sb 8 r0{2} r0u{1} /\ (* 8 => 2 *)
+  I16u16_sb 8 r0{2} r0u{1} /\
   I16u16_sb 1 r1{2} r1u{1} /\
   I16u16_sb 4 r2{2} r2u{1} /\
   I16u16_sb 1 r3{2} r3u{1} /\
@@ -2843,91 +3009,76 @@ rcondf{2} 2; first by move=> *; inline*; auto.
 rcondf{2} 7; first by move=> *; inline*; auto.
 unroll{2} 12; rcondt{2} 12; first by move => *; inline*; auto.
 rcondt{2} 12; first by move => *; inline*; auto.
-admitted. (*
 seq 13 33: (#[/:2]pre /\ x16_spec (-10079) flox16{2} /\
             x16_spec 1441 fhix16{2} /\ i{2}=1 /\ 
-   I16u16_sb (1 * q) (P2R rp{2} 0) (mul1x16 (inFq 3303) r0a{1}) /\
-   I16u16_sb (1 * q) (P2R rp{2} 1) (mul1x16 r1a{1} (inFq 3303)) /\
-   I16u16_sb (1 * q) (P2R rp{2} 2) (mul1x16 r2a{1} (inFq 3303)) /\
-   I16u16_sb (1 * q) (P2R rp{2} 3) (mul1x16 r3a{1} (inFq 3303)) /\
-   I16u16_sb (1 * q) (P2R rp{2} 4) r0b{1} /\
-   I16u16_sb (1 * q) (P2R rp{2} 5) r1b{1} /\
-   I16u16_sb (1 * q) (P2R rp{2} 6) r2b{1} /\
-   I16u16_sb (1 * q) (P2R rp{2} 7) r3b{1} /\
-   I16u16_sb (1 * q) (P2R rp{2} 8) (mul1x16 r4a{1} (inFq 3303)) /\
-   I16u16_sb (1 * q) (P2R rp{2} 9) (mul1x16 r5a{1} (inFq 3303)) /\
-   I16u16_sb (1 * q) (P2R rp{2} 10) (mul1x16 r6a{1} (inFq 3303)) /\
-   I16u16_sb (1 * q) (P2R rp{2} 11) (mul1x16 r7a{1} (inFq 3303)) /\
-   I16u16_sb (1 * q) (P2R rp{2} 12) r4b{1} /\
-   I16u16_sb (1 * q) (P2R rp{2} 13) r5b{1} /\
-   I16u16_sb (1 * q) (P2R rp{2} 14) r6b{1} /\
-   I16u16_sb (1 * q) (P2R rp{2} 15) r7b{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 0) r0a{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 1) r1a{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 2) r2a{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 3) r3a{1} /\
+   I16u16_sb 1 (P2R rp{2} 4) r0b{1} /\
+   I16u16_sb 1 (P2R rp{2} 5) r1b{1} /\
+   I16u16_sb 1 (P2R rp{2} 6) r2b{1} /\
+   I16u16_sb 1 (P2R rp{2} 7) r3b{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 8) r4a{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 9) r5a{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 10) r6a{1} /\
+   I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 11) r7a{1} /\
+   I16u16_sb 1 (P2R rp{2} 12) r4b{1} /\
+   I16u16_sb 1 (P2R rp{2} 13) r5b{1} /\
+   I16u16_sb 1 (P2R rp{2} 14) r6b{1} /\
+   I16u16_sb 1 (P2R rp{2} 15) r7b{1} /\
    zeta0{2} = VPBROADCAST_8u32 (z2u32 zetas_inv_op 392) /\
    zeta1{2} = VPBROADCAST_8u32 (z2u32 zetas_inv_op 394) /\
    fhix16{2} = C2R fhix16_op /\
    flox16{2} = C2R flox16_op /\
    zeta0{1} = Array16.init (fun (_ : int) => inFq 1600) ).
  wp.
- ecall {2} (fq_mulprecomp16x_aux (4*q) r3a{1}).
- ecall {2} (fq_mulprecomp16x_aux (4*q) r2a{1}).
- ecall {2} (fq_mulprecomp16x_aux (8*q) r1a{1}).
- ecall {2} (fq_mulprecomp16x_aux (4*q) r0a{1}).
- wp; call (invntt_butterfly64x_eq_last (inFq 3303) (2*q) (4*q) (2*q) (2*q) (2*q) (4*q) (2*q) (2*q)).
- wp; ecall {2} (red16x_aux (8*q) r0u{1}).
- skip => |> &1 &2 *. (* rewrite !lez_maxl 1..3:/# => |> *.*)
+ ecall {2} (fq_mulprecomp16x_aux 4 r3a{1}).
+ ecall {2} (fq_mulprecomp16x_aux 4 r2a{1}).
+ ecall {2} (fq_mulprecomp16x_aux 8 r1a{1}).
+ ecall {2} (fq_mulprecomp16x_aux 4 r0a{1}).
+ wp; call (invntt_butterfly64x_eq_last 2 4 2 2 2 4 2 2).
+ wp; ecall {2} (red16x_aux 8 r0u{1}).
+ skip => |> &1 &2 *.
  pose z0R := VPBROADCAST_8u32 _.
  pose z1R := VPBROADCAST_8u32 _.
  pose z1L := Array16.init _.
-have : forall z, z0R = z.
- rewrite /z0R /VPBROADCAST_8u32 /zetas_inv_op z2u32E //=. admit(* 60300 *).
-have : forall z, z1R = z.
- rewrite /z1R /VPBROADCAST_8u32 /zetas_inv_op z2u32E //=. admit(* 1932 *).
- have ->: MAX (MAX (2*q+2*q) (4*q+4*q)) (2*q+2*q) <= 32767 by smt().
  rewrite (P2RS rp{2}) !PUR_i //= !P2R_i //= (P2CS rp8{1}) !PUC_i //= !P2C_i //= => |>.
+ have ->: 8*q <= 32767 by rewrite /q /=.
  have ->: qinv16u16M z0R z1R.
   by rewrite /z0R /z1R /zetas_inv_op !z2u32E //= /VPBROADCAST_8u32 /qinv16u16M -iotaredE /R2C /=.
  pose xx := List.all _ _.
  have ->: xx.
-  by rewrite /xx /z1L /z1R !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -!inFqM_mod !inFqK /q /= /zetas_inv_op !initiE //= !Iu16_ub_of_int /q /=.
+  by rewrite /xx /z1L /z1R !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -!inFqM_mod /q /= /zetas_inv_op !initiE //= !Iu16_ub_of_int /q /=.
  move => |> *.
  have ->: x16_spec 1441 (C2R fhix16_op).
   by rewrite x16_spec_C2R /=.
  have ->: x16_spec (-10079) (C2R flox16_op).
   by rewrite x16_spec_C2R /=.
- have ->: qinv16u16M (C2R flox16_op) (C2R fhix16_op).
-  by rewrite /flox16_op /fhix16_op /qinv16u16M !C2RK //= -iotaredE /=. 
- have <-: 2 * q + 2 * q = 4 * q by ring.
- have <-: 4 * q + 4 * q = 8 * q by ring.
  move => |> *.
  by rewrite !PUR_i //= !P2R_i //=.
 unroll{2} 1; rcondt{2} 1; first by auto.
 rcondf{2} 1; first by auto.
 rcondf{2} 23; first by move=> *; inline*; auto.
 wp.
-ecall {2} (fq_mulprecomp16x_aux (2*q) r3c{1}).
-ecall {2} (fq_mulprecomp16x_aux (2*q) r2c{1}).
-ecall {2} (fq_mulprecomp16x_aux (2*q) r1c{1}).
-ecall {2} (fq_mulprecomp16x_aux (2*q) r0c{1}).
-wp; call (invntt_butterfly64x_eq_last (inFq 3303) (1*q) (1*q) (1*q) (1*q) (1*q) (1*q) (1*q) (1*q)).
+ecall {2} (fq_mulprecomp16x_aux 2 r3c{1}).
+ecall {2} (fq_mulprecomp16x_aux 2 r2c{1}).
+ecall {2} (fq_mulprecomp16x_aux 2 r1c{1}).
+ecall {2} (fq_mulprecomp16x_aux 2 r0c{1}).
+wp; call (invntt_butterfly64x_eq_last 1 1 1 1 1 1 1 1).
 wp; skip => |> &1 &2 *.
 pose z0R := VPBROADCAST_8u32 _.
 pose z1R := VPBROADCAST_8u32 _.
 pose z1L := Array16.init _.
-have ->: q+q <= 32767 by smt().
+have ->: 2*q <= 32767 by smt().
 have ->: qinv16u16M z0R z1R.
  by rewrite /z0R /z1R /zetas_inv_op !z2u32E //= /VPBROADCAST_8u32 /qinv16u16M -iotaredE /R2C /=.
 pose xx := List.all _ _.
 have ->: xx.
- by rewrite /xx /z1L /z1R !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -!inFqM_mod !inFqK /q /= /zetas_inv_op !initiE //= !Iu16_ub_of_int /q /=.
-move => |> *.
-have ->: qinv16u16M (C2R flox16_op) (C2R fhix16_op).
- by rewrite /flox16_op /fhix16_op /qinv16u16M !C2RK //= -iotaredE /=. 
-move => |> *.
-have <-: q + q = 2 * q by ring.
+ by rewrite /xx /z1L /z1R !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -!inFqM_mod /q /= /zetas_inv_op !initiE //= !Iu16_ub_of_int /q /=.
 move => |> *.
 rewrite (P2RS rp{2}) !PUR_i //=.
-rewrite -{2}iotaredE /=. 
-by rewrite !P2R_i //= !P2C_mul16x1 //=.
+rewrite -{2}iotaredE /= !P2R_i //=.
+by rewrite !P2C_map !I16u16S_sb_map !P2C_i //=.
 qed.
 
-*)

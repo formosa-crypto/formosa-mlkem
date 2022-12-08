@@ -1836,7 +1836,7 @@ proc __invntt_level6(rp : Fq Array256.t) : Fq Array256.t =
 {
   var rp1,rp2 : Fq Array256.t;
   rp1 <@ ___invntt_level6(rp);
-  rp2 <- Array256.init (fun i => rp1.[i] * inFq 3303 );
+  rp2 <- Array256.map (( * ) (inFq 3303)) rp1;
   return rp2;
 }
 
@@ -2024,7 +2024,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c) <@ __invntt___butterfly64x(r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b, zeta0, zeta0);
     
     rp1 <- CS2P [r0a;r1a;r2a;r3a;r0c;r1c;r2c;r3c;r4a;r5a;r6a;r7a;r4c;r5c;r6c;r7c];
-    rp2 <- Array256.init (fun i => rp1.[i] * inFq 3303 );
+    rp2 <- Array256.map (( * ) (inFq 3303)) rp1;
     return rp2;
 }
 
@@ -2730,6 +2730,8 @@ call{1} (invntt_avx_6_pr r5); auto.
 (*exit*)
 rcondf{2} 1; auto => /> &2.
 rewrite r_avx2_invntt_post_spec /NTT_Fq.zetas_inv tP => />i Hi1 Hi2.
-by rewrite !initiE => />; congr; rewrite -eq_inFq /q //=.
+rewrite !initiE => />. 
+rewrite mapiE // ZqField.mulrC; congr.
+by rewrite -eq_inFq /q //=.
 qed.
 
