@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JMemory JWord.
-require import Array400 Array256 Array64 Array32 Array16 Array8 Array4 Array2.
+require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4 Array2.
 require import WArray800 WArray512 WArray128 WArray128 WArray64 WArray32 WArray16.
 require W16extra.
 require import Fq.
@@ -626,6 +626,74 @@ module Mprevec = {
   }
 
   (*--------------------------------------------------------------------*)
+  proc poly_compress_1 (rp:W8.t Array128.t, a:W16.t Array256.t) : W8.t Array128.t *
+                                                                   W16.t Array256.t = {
+    var aux: int;
+
+    var v: t16u16;
+    var shift1: t16u16;
+    var mask: t16u16;
+    var shift2: t16u16;
+    var permidx: t8u32;
+    var i: int;
+    var f0: t16u16;
+    var f1: t16u16;
+    var f2: t16u16;
+    var f3: t16u16;
+
+    var f0_dw: t8u32;
+    var f0_b: t32u8;
+    var f2_b: t32u8;
+    var shift2_b: t32u8;
+
+
+    a <@ poly_csubq (a);
+
+    v <- Array16.init (fun i => jvx16.[i]);
+    shift1 <@ Ops.iVPBROADCAST_16u16(pc_shift1_s);
+    mask <@ Ops.iVPBROADCAST_16u16(pc_mask_s);
+    shift2 <@ Ops.iVPBROADCAST_16u16(pc_shift2_s);
+    shift2_b <- f16u16_t32u8 shift2; (* FIXME: specific AVX2 op maybe ?? *)
+    permidx <- Array8.init (fun i => pc_permidx_s.[i]);
+
+    aux <- (256 %/ 64);
+    i <- 0;
+
+    while (i < aux) {
+      f0 <- Array16.init (fun j => a.[64*i+j]);
+      f1 <- Array16.init (fun j => a.[64*i+16+j]);
+      f2 <- Array16.init (fun j => a.[64*i+32+j]);
+      f3 <- Array16.init (fun j => a.[64*i+48+j]);
+      f0 <@ Ops.iVPMULH_256(f0, v);
+      f1 <@ Ops.iVPMULH_256(f1, v);
+      f2 <@ Ops.iVPMULH_256(f2, v);
+      f3 <@ Ops.iVPMULH_256(f3, v);
+      f0 <@ Ops.iVPMULHRS_256(f0, shift1);
+      f1 <@ Ops.iVPMULHRS_256(f1, shift1);
+      f2 <@ Ops.iVPMULHRS_256(f2, shift1);
+      f3 <@ Ops.iVPMULHRS_256(f3, shift1);
+      f0 <@ Ops.iVPAND_16u16(f0, mask);
+      f1 <@ Ops.iVPAND_16u16(f1, mask);
+      f2 <@ Ops.iVPAND_16u16(f2, mask);
+      f3 <@ Ops.iVPAND_16u16(f3, mask);
+
+      f0_b <@ Ops.iVPACKUS_16u16(f0, f1);
+      f2_b <@ Ops.iVPACKUS_16u16(f2, f3);
+      f0 <@ Ops.iVPMADDUBSW_256(f0_b, shift2_b);
+      f2 <@ Ops.iVPMADDUBSW_256(f2_b, shift2_b);
+      f0_b <@ Ops.iVPACKUS_16u16(f0, f2);
+
+      f0_dw <- f32u8_t8u32 f0_b;
+      f0_dw <@ Ops.iVPERMD(permidx, f0_dw);
+      f0_b <- f8u32_t32u8 f0_dw;
+
+      rp <- Array128.fill (fun k => f0_b.[k %% 32]) (32*i) 32 rp;
+
+      i <- i + 1;
+    }
+    return (rp, a);
+  }
+
   proc poly_compress (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
 
