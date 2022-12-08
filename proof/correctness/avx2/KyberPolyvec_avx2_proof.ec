@@ -14,6 +14,7 @@ require import KyberPolyvec_avx2_vec.
 require import NTT_avx2.
 require import Kyber_AVX2_cf.
 require import KyberINDCPA.
+require import Kyber_AVX_AuxLemmas.
 
 theory KyberPolyvecAVX.
 
@@ -94,7 +95,6 @@ proof.
   rewrite /lift_array256.
   do rewrite initiE 1:/#.
   smt(@Array256 @Array768 @KyberPolyAVX @Int).
-
 qed.
 
 lemma polyvec_add_ll : islossless Mprevec.polyvec_add2
@@ -283,8 +283,8 @@ proof.
   do (rewrite initiE 1:/# /=).
   rewrite (mulzC 2 (l + i %/ 4)).
   do (rewrite modzMl || rewrite modzMDl || rewrite mul0z).
-  rewrite expr0 (W16.of_sintK 1) mulz1 //=.
-  rewrite of_sintK (Montgomery16.smod_small 1024) 1://=.
+  rewrite expr0 mulz1 //=.
+  rewrite (Montgomery16.smod_small 1024) 1://=.
   rewrite of_uintK (pmod_small _ W32.modulus); first by smt(modz_cmp).
   rewrite bits8_div 1:/#.
   rewrite -(addzA l _ _) -(modzDml l _ 2) l_even add0z.
@@ -463,7 +463,7 @@ proof.
       do (rewrite initiE 1://= /=).
       rewrite /round_scalew /= /truncateu16 /= /wmulhs.
       rewrite of_sintK /= /(W16.smod 20159) /=.
-      rewrite of_sintK /= /(W16.smod 4096) /=.
+      rewrite /(W16.smod 4096) /=.
       rewrite (W16.and_mod 10 _) 1://=.
       rewrite of_uintK (modz_dvd _ _ (2^10)) 1://=.
       rewrite liftarrayvector 1..2:/# (mulzC 256 _) -(divz_eq _ 256) mapiE 1:/# /=.
@@ -484,25 +484,13 @@ proof.
        move : (modz_cmp tmp (2^18 + 1)) => /#.
       rewrite (to_sint_unsigned a{1}.[16 * i{2} + k]); first by move : (pos_bound_a (16*i{2} + k)) => /#.
       pose ai := to_uint a{1}.[_].
-      rewrite shrDP 1://=.
-      pose t := W16.invw _ `&` _.
-      have a_mul_ub: 0 <= to_sint ((W16.of_int (ai * 8 * 20159 %/ 65536))) <= 8192.
-        rewrite to_sint_unsigned.
-          rewrite of_sintK Montgomery16.smod_small.
-            rewrite /ai -to_sint_unsigned; first by move : (pos_bound_a (16*i{2} + k)) => /#.
-            move : (pos_bound_a (16*i{2} + k)) => /#.
-          smt(W16.to_uint_cmp @W16).
-        rewrite of_uintK /ai -to_sint_unsigned; first by move : (pos_bound_a (16*i{2} + k)) => /#.
+      have ai_bnds: 0 <= ai && ai < 3329.
+        rewrite /ai -to_sint_unsigned; first by move : (pos_bound_a (16*i{2} + k)) => /#.
         move : (pos_bound_a (16*i{2} + k)) => /#.
-      have t_rng: 0 <= W16.to_sint (t `>>` (W8.of_int 15)) <= 8192.
-          rewrite shr_shrw 1://= -to_uintK shrDP 1://=.
-          rewrite to_sint_unsigned.
-            rewrite of_sintK Montgomery16.smod_small.
-              move : (W16.to_uint_cmp t) => /#.
-            move : (W16.to_uint_cmp t) => /#.
-          rewrite of_uintK.
-          move : (W16.to_uint_cmp t) => /#.
-      admit. (* FIXME *)
+      rewrite shrDP 1://=.
+      move : (compress_comp_corr ai ai_bnds); rewrite /t1.
+      move => ->.
+      rewrite /t0 qE //=.
     seq 10 1: (#{~f0{1}}pre /\ forall k, 0 <= k < 20*i{1} + 20 => if 0 <= k < 20*i{1} then loadW8 Glob.mem{1} (_p + k ) = c{2}.[k]
                                                   else if (20*i{1} <= k < 20*i{1} + 16) then t0{1}.[k %% 20] = c{2}.[k]
                                                   else t1{1}.[k %% 4] = c{2}.[k]).
@@ -704,12 +692,11 @@ proof.
       do (rewrite initiE 1://= /=).
       rewrite /round_scalew /= /truncateu16 /= /wmulhs.
       rewrite of_sintK /= /(W16.smod 20159) /=.
-      rewrite of_sintK /= /(W16.smod 4096) /=.
+      rewrite /(W16.smod 4096) /=.
       rewrite (W16.and_mod 10 _) 1://=.
       rewrite of_uintK (modz_dvd _ _ (2^10)) 1://=.
       rewrite liftarrayvector 1..2:/# (mulzC 256 _) -(divz_eq _ 256) mapiE 1:/# /=.
       rewrite /pos_bound768_cxq /bpos16 /= in pos_bound_a.
-      (* rewrite compress_alt_nice. *)
       rewrite -compress_alt_compress_large /compress_alt_large /= qE.
       rewrite inFqK (pmod_small _ q) 1:pos_bound_a 1:/# /=.
       rewrite shl_shlw 1://= -(W16.to_uintK a{1}.[16 * i{2} + k]) shlMP 1://=.
@@ -726,25 +713,13 @@ proof.
        move : (modz_cmp tmp (2^18 + 1)) => /#.
       rewrite (to_sint_unsigned a{1}.[16 * i{2} + k]); first by move : (pos_bound_a (16*i{2} + k)) => /#.
       pose ai := to_uint a{1}.[_].
-      rewrite shrDP 1://=.
-      pose t := W16.invw _ `&` _.
-      have a_mul_ub: 0 <= to_sint ((W16.of_int (ai * 8 * 20159 %/ 65536))) <= 8192.
-        rewrite to_sint_unsigned.
-          rewrite of_sintK Montgomery16.smod_small.
-            rewrite /ai -to_sint_unsigned; first by move : (pos_bound_a (16*i{2} + k)) => /#.
-            move : (pos_bound_a (16*i{2} + k)) => /#.
-          smt(W16.to_uint_cmp @W16).
-        rewrite of_uintK /ai -to_sint_unsigned; first by move : (pos_bound_a (16*i{2} + k)) => /#.
+      have ai_bnds: 0 <= ai && ai < 3329.
+        rewrite /ai -to_sint_unsigned; first by move : (pos_bound_a (16*i{2} + k)) => /#.
         move : (pos_bound_a (16*i{2} + k)) => /#.
-      have t_rng: 0 <= W16.to_sint (t `>>` (W8.of_int 15)) <= 8192.
-          rewrite shr_shrw 1://= -to_uintK shrDP 1://=.
-          rewrite to_sint_unsigned.
-            rewrite of_sintK Montgomery16.smod_small.
-              move : (W16.to_uint_cmp t) => /#.
-            move : (W16.to_uint_cmp t) => /#.
-          rewrite of_uintK.
-          move : (W16.to_uint_cmp t) => /#.
-      admit. (* FIXME *)
+      rewrite shrDP 1://=.
+      move : (compress_comp_corr ai ai_bnds); rewrite /t1.
+      move => ->.
+      rewrite /t0 qE //=.
     seq 10 1: (#{~f0{1}}pre /\ forall k, 0 <= k < 20*i{1} + 20 => if 0 <= k < 20*i{1} then rp{1}.[k] = c{2}.[k]
                                                   else if (20*i{1} <= k < 20*i{1} + 16) then t0{1}.[k %% 20] = c{2}.[k]
                                                   else t1{1}.[k %% 4] = c{2}.[k]).
@@ -1050,8 +1025,8 @@ proof.
           rewrite of_uintK (pmod_small _ W64.modulus); first by move : k_lb k_ub => /#.
           do (rewrite (mulzDr 5 _ _) -(mulzA 5 _ _) -(mulzA 5 _ _) -(addzA (320 * k) (20 * i{1}) _) //=).
           do (rewrite -decompress_alt_decompress 1..2://= /decompress_alt /= qE).
-          do (rewrite (W16.of_sintK 3329) Montgomery16.smod_small 1://= (_: 3329 = 3329 * 2^(2*0)) 1://=).
-          do (rewrite (W16.of_sintK 13316) Montgomery16.smod_small 1://= (_: 13316 = 3329 * 2^(2*1)) 1://=).
+          rewrite /(W16.smod 3329) /(W16.smod 13316) /=.
+          rewrite (_: 3329 = 3329 * 2^(2*0)) 1://= (_: 13316 = 3329 * 2^(2*1)) 1://=.
           have H1: forall (x y: W8.t), 0 <= to_uint x + to_uint y %% 4 * 256 < 1024.
             move => x y.
             move : (W8.to_uint_cmp x) (modz_cmp (to_uint y) 4) => /#.
@@ -1091,8 +1066,8 @@ proof.
           rewrite /loadW8.
           do (rewrite to_uintD_small; first by rewrite of_uintK; move : rp_lb rp_ub k_lb k_ub => /#).
           rewrite of_uintK (pmod_small _ W64.modulus); first by move : k_lb k_ub => /#.
-          do (rewrite (W16.of_sintK 3329) Montgomery16.smod_small 1://= (_: 3329 = 3329 * 2^(2*0)) 1://=).
-          do (rewrite (W16.of_sintK 13316) Montgomery16.smod_small 1://= (_: 13316 = 3329 * 2^(2*1)) 1://=).
+          rewrite /(W16.smod 3329) /(W16.smod 13316) /=.
+          rewrite (_: 3329 = 3329 * 2^(2*0)) 1://= (_: 13316 = 3329 * 2^(2*1)) 1://=.
           have H1: forall (x y: W8.t), 0 <= to_uint x + to_uint y %% 4 * 256 < 1024.
             move => x y.
             move : (W8.to_uint_cmp x) (modz_cmp (to_uint y) 4) => /#.
@@ -1194,7 +1169,6 @@ proof.
    rewrite /bpos16 //=in res1_bound.
    move : (res3_bound (k - 512))  (res2_bound (k - 256))  (res1_bound k).
    smt(@Array256 @Array768).
-
 qed.
 
 lemma polyvec_reduce_ll : islossless Mprevec.polyvec_reduce
@@ -1208,7 +1182,6 @@ lemma polvec_reduce_corr _a:
   conseq (polyvec_reduce_ll) (polyvec_reduce_corr_h _a).
   by smt().
 qed.
-
 
 lemma polyvec_frombytes_corr mem _p:
     equiv [ Mprevec.polyvec_frombytes ~ EncDec_AVX2.decode12_opt_vec :
