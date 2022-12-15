@@ -8,6 +8,8 @@ require import KyberINDCPA.
 import Kyber.
 import KyberPoly.
 import Zq.
+import BitEncoding.
+import BS2Int.
 
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
@@ -168,3 +170,101 @@ lemma lift_array256E (x : W16.t Array256.t) k :
 proof. 
 by move => ?; rewrite /lift_array256 mapiE //. 
 qed.
+
+(*********************************************************************)
+(* TODO: CLEAN UP *)
+op [opaque] iota_red = iota_.
+print iota0.
+
+lemma iota_red0 n : iota_red n 0 = [].
+proof. by rewrite /iota_red iota0. qed.
+
+lemma iota_red_gt n i : 0 < i => iota_red n i = n :: iota_red (n+1) (i-1).
+proof. move=> hi; rewrite /iota_red -iotaS /#. qed.
+
+hint simplify iota_red0, iota_red_gt.
+
+lemma iota_iota_red n m : iota_ n m = iota_red n m.
+proof. by rewrite /iota_red. qed.
+
+(* hint simplify iotared0, iotaredS_minus. *)
+
+op t1 (x:int) =
+(W32.to_uint
+((W32.of_int
+(to_sint
+((W16.of_int (x * 8 * 20159 %/ 65536)) -
+(invw ((W16.of_int (x * 30200))) `&`
+(W16.of_int (x * 30200 - (x + 15))) `>>` (W8.of_int 15))) %%
+W32.modulus %/ 2 ^ 2))) %%
+2 ^ 18 + 1) %/
+2 ^ 1 %% 1024.
+
+op t1' (x:int) =
+(W32.to_uint
+((W32.of_int
+(to_sint
+((W16.of_int (x * 8 * 20159 %/ 65536)) -
+((((W16.of_int (-(x * 30200 + 1))))) `&`
+(W16.of_int (x * 30200 - (x + 15))) `>>` (W8.of_int 15))) %%
+W32.modulus %/ 2 ^ 2))) %%
+2 ^ 18 + 1) %/
+2 ^ 1 %% 1024.
+
+lemma foo (w1 w2: W16.t) :
+(w1 `&` w2) `>>>` 15 = W16.of_int (b2i (w1.[15] /\ w2.[15])).
+proof.
+  apply W16.all_eq_eq.
+  rewrite /all_eq /=.
+  cbv delta.
+  do rewrite of_intwE /int_bit.
+  simplify.
+  smt(@Int @W16). (* can be improved *)
+qed.
+
+
+lemma foo' (w1 w2: int) :
+(W16.of_int w1 `&` W16.of_int w2) `>>>` 15
+= W16.of_int (b2i ((W16.int_bit w1 15) /\ (W16.int_bit w2 15))).
+proof. by rewrite foo !W16.of_intwE. qed.
+
+lemma of_int_invw (x: int): invw (W16.of_int x) = W16.of_int (-(x + 1)).
+proof.
+  rewrite -of_intN' of_intD.
+  ring.
+  rewrite addrC addrA -twos_compl => />.
+  ring.
+qed.
+
+op t1'' (x:int) =
+(W32.to_uint
+((W32.of_int
+(to_sint
+((W16.of_int (x * 8 * 20159 %/ 65536)) -
+(let w1 = -(x * 30200 + 1) in
+let w2 = (x * 30200 - (x + 15)) in
+W16.of_int (b2i ((W16.int_bit w1 15) /\ (W16.int_bit w2 15))))
+) %%
+W32.modulus %/ 2 ^ 2))) %%
+2 ^ 18 + 1) %/
+2 ^ 1 %% 1024.
+
+(* op t0 i = ((1024*i + (Q-1)%/2)%/Q) %% 1024. *)
+op t0 (x:int) =
+(x * 1024 + (q + 1) %/ 2) * (W32.modulus %/ q) %/ W32.modulus %% 1024.
+
+hint simplify W16.of_sintK.
+
+lemma compress_comp_1 (x:int) : 0 <= x < 3329 => t0 x = t1'' x.
+move=> /mem_range; move: x; apply /List.allP; rewrite /range iota_iota_red.
+cbv delta; done.
+qed.
+
+lemma compress_comp_corr (x:int) : 0 <= x < 3329 => t1 x = t0 x.
+proof.
+  move => xb.
+  rewrite /t1 of_int_invw (W16.shr_shrw 15 _) 1://= foo'.
+  by rewrite compress_comp_1 1:xb /t1''.
+qed.
+(* TODO: CLEAN UP *)
+(*********************************************************************)

@@ -1,6 +1,6 @@
 require import AllCore List Int IntDiv CoreMap.
 from Jasmin require import JModel.
-require import Array400 Array256 Array64 Array32 Array16 Array8 Array4.
+require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4.
 require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
 require import Jkem Jkem_avx2.
@@ -312,6 +312,62 @@ module Mvec = {
       i <- i + 1;
     }
     return (rp);
+  }
+
+  proc poly_compress_1 (rp:W8.t Array128.t, a:W16.t Array256.t) : W8.t Array128.t *
+                                                                   W16.t Array256.t = {
+    var aux: int;
+
+    var x16p:W16.t Array16.t;
+    var v:W256.t;
+    var shift1:W256.t;
+    var mask:W256.t;
+    var shift2:W256.t;
+    var permidx:W256.t;
+    var i:int;
+    var f0:W256.t;
+    var f1:W256.t;
+    var f2:W256.t;
+    var f3:W256.t;
+    x16p <- witness;
+    a <@ poly_csubq (a);
+    x16p <- jvx16;
+    v <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
+    shift1 <@ OpsV.iVPBROADCAST_16u16(pc_shift1_s);
+    mask <@ OpsV.iVPBROADCAST_16u16(pc_mask_s);
+    shift2 <@ OpsV.iVPBROADCAST_16u16(pc_shift2_s);
+    permidx <- (get256 (WArray32.init32 (fun i => pc_permidx_s.[i])) 0);
+    aux <- (256 %/ 64);
+    i <- 0;
+    while (i < aux) {
+      f0 <- (get256 (WArray512.init16 (fun i => a.[i])) (4 * i));
+      f1 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 1));
+      f2 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 2));
+      f3 <- (get256 (WArray512.init16 (fun i => a.[i])) ((4 * i) + 3));
+      f0 <@ OpsV.iVPMULH_256(f0, v);
+      f1 <@ OpsV.iVPMULH_256(f1, v);
+      f2 <@ OpsV.iVPMULH_256(f2, v);
+      f3 <@ OpsV.iVPMULH_256(f3, v);
+      f0 <@ OpsV.iVPMULHRS_256(f0, shift1);
+      f1 <@ OpsV.iVPMULHRS_256(f1, shift1);
+      f2 <@ OpsV.iVPMULHRS_256(f2, shift1);
+      f3 <@ OpsV.iVPMULHRS_256(f3, shift1);
+      f0 <@ OpsV.iVPAND_16u16(f0, mask);
+      f1 <@ OpsV.iVPAND_16u16(f1, mask);
+      f2 <@ OpsV.iVPAND_16u16(f2, mask);
+      f3 <@ OpsV.iVPAND_16u16(f3, mask);
+      f0 <@ OpsV.iVPACKUS_16u16(f0, f1);
+      f2 <@ OpsV.iVPACKUS_16u16(f2, f3);
+      f0 <@ OpsV.iVPMADDUBSW_256(f0, shift2);
+      f2 <@ OpsV.iVPMADDUBSW_256(f2, shift2);
+      f0 <@ OpsV.iVPACKUS_16u16(f0, f2);
+      f0 <@ OpsV.iVPERMD(permidx,f0);
+      rp <-
+      Array128.init
+      (WArray128.get8 (WArray128.set256_direct (WArray128.init8 (fun i_0 => rp.[i_0])) (32 * i) (f0)));
+      i <- i + 1;
+    }
+    return (rp, a);
   }
 
   proc poly_compress (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
@@ -1087,6 +1143,92 @@ proof.
   have -> //=: i = 16. by move : i_ub i_tlb => /#.
 qed.
 
+lemma set_get8_def128 (v : W8.t Array128.t) (w: W256.t) i j :
+    0 <= i < 32 => 0 <= j < 128 =>
+    WArray128.get8
+    (WArray128.set256 (WArray128.init8 (fun k => v.[k])) i w) j =
+      if 32 * i <= j < 32 * i + 32 then w \bits8 (j %% 32)
+      else v.[j].
+proof.
+  move => hx hs; rewrite set256E /get8.
+  rewrite initiE 1:/# /=.
+  rewrite initiE 1: hs /=.
+  case : (32 * i <= j < 32 * i + 32) => h.
+    + by smt(@IntDiv).
+    + by reflexivity.
+qed.
+
+equiv eq_poly_compress_1:
+  Mprevec.poly_compress_1 ~ Mvec.poly_compress_1: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
+proof.
+  proc.
+  while(={rp, a, i, aux, Glob.mem} /\ aux{1} = 4 /\ 0 <= i{1} /\ is16u16 v{1} v{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift1{1} shift1{2} /\
+        is16u16 shift2{1} shift2{2} /\ is8u32 permidx{1} permidx{2} /\ is32u8 shift2_b{1} shift2{2}).
+  wp.
+  call eq_iVPERMD.
+  wp.
+  do (call eq_iVPMULH_256 || call eq_iVPMULHRS_256 || call eq_iVPAND_16u16 || call eq_iVPACKUS_16u16 || call eq_iVPMADDUBSW_256).
+  wp. skip. auto => />. rewrite /is16u16 /is8u32 /is32u8 => />. move => &1 &2 [#] i_lb _ i_ub.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => _.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => _.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => _.
+  split.
+    rewrite /get256_direct /= => />.
+    apply W32u8.allP => />.
+    do (rewrite initiE 1:/# /=).
+    smt(@Int @IntDiv @Array256 @W16).
+  move => _.
+  move => [#] res1_l. (* FIXME: naming *)
+  split.
+    apply W32u8.allP => />.
+  move => _ res2_l.
+  split.
+    apply Array128.ext_eq => j jb.
+    + rewrite filliE 1:/# initiE 1:/# /=.
+      have ->: WArray128.init8 ("_.[_]" rp{2}) = WArray128.init (fun k => rp{2}.[k]); first by simplify.
+      rewrite set_get8_def128 1..2:/#.
+      rewrite /f8u32_t32u8 initiE 1:modz_cmp //=.
+      case (32 * i{2} <= j && j < 32 * i{2} + 32) => j_sb.
+        + pose ji := j %% 32.
+          have rj_b: ji \in iota_ 0 32.
+            rewrite /ji mem_iota /= -andabP 1:modz_cmp 1://=.
+          move : ji rj_b.
+          rewrite -List.allP -iotaredE //=.
+        + reflexivity.
+  move : i_lb => /#.
+  wp.
+  do call eq_iVPBROADCAST_16u16.
+  wp.
+  call eq_poly_csubq.
+  wp.
+  auto => />.
+  move => [#] res1_l res1_r res1_eq res2_l res2_r res2_eq res3_l res3_r res3_eq .
+  do split.
+    + rewrite /is16u16 initiE /get256_direct /= => />.
+      apply W32u8.allP => />.
+    + rewrite /is8u32 initiE /get256_direct /= => />.
+      apply W32u8.allP => />.
+    + rewrite /is32u8 /f16u16_t32u8 initiE //= res3_eq.
+      apply W16u16.allP => />.
+      do (rewrite pack2_bits8 //=).
+qed.
+
+
 equiv eq_poly_compress:
   Mprevec.poly_compress ~ Mvec.poly_compress: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
 proof.
@@ -1564,6 +1706,21 @@ proof.
   have -> //=: i = 16. by move : i_ub i_tlb => /#.
 qed.
 
+
+equiv veceq_poly_compress_1:
+  Mvec.poly_compress_1 ~ M._poly_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+proof.
+  proc.
+  while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
+  inline *.
+  wp. skip. auto => />.
+  inline OpsV.iVPBROADCAST_16u16.
+  wp.
+  call veceq_poly_csubq.
+  wp. skip. auto => />.
+qed.
+
+
 equiv veceq_poly_compress:
   Mvec.poly_compress ~ M._poly_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
@@ -1722,6 +1879,14 @@ equiv prevec_eq_poly_decompress:
 smt(). trivial.
 apply eq_poly_decompress.
 apply veceq_poly_decompress.
+qed.
+
+equiv prevec_eq_poly_compress_1:
+  Mprevec.poly_compress_1 ~ M._poly_compress_1: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
+    transitivity Mvec.poly_compress_1 (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={rp, a, Glob.mem} ==> ={res, Glob.mem}).
+smt(). smt().
+apply eq_poly_compress_1.
+apply veceq_poly_compress_1.
 qed.
 
 equiv prevec_eq_poly_compress:
