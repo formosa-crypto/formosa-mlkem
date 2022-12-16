@@ -1552,21 +1552,6 @@ module EncDec = {
        var fi1,fi2,i,j;
        var r : W8.t Array384.t;
        r <- witness;
-       i <- 0; j <- 0;
-       while (i < 256) {
-          fi1 <- a.[i]; i <- i + 1;
-          fi2 <- a.[i]; i <- i + 1;
-          r.[j] <- W8.of_int fi1;                               j <- j + 1;
-          r.[j] <- W8.of_int ((fi2 %% 2^4) * 2^4 + fi1 %/ 2^8); j <- j + 1;
-          r.[j] <- W8.of_int (fi2 %/ 2^4);                      j <- j + 1;
-       }
-       return r;
-   }
-
-   proc sem_encode12(a : ipoly) : W8.t Array384.t = {
-       var fi1,fi2,i,j;
-       var r : W8.t Array384.t;
-       r <- witness;
        j <- 0; i <- 0; 
        while (i < 256) {
           fi1 <- a.[i];
@@ -1583,7 +1568,7 @@ module EncDec = {
        var fi,fi1,i,j;
        var r : W8.t Array128.t;
        r <- witness;
-       i <- 0; j <- 0;
+       j <- 0; i <- 0; 
        while (i < 128) {
           fi <- p.[j]; j <- j + 1;
           fi1 <- p.[j]; j <- j + 1; 
@@ -1616,7 +1601,7 @@ module EncDec = {
       var c : W8.t Array960.t;
       var i,j,t0,t1,t2,t3;
       c <- witness;
-      i <- 0; j <- 0;
+      j <- 0; i <- 0; 
       while (i < 768) {
          t0 <- u.[i];
          t1 <- u.[i + 1];
@@ -1692,15 +1677,29 @@ op sem_decode12_vec(a : W8.t Array1152.t) : ipolyvec =
    Array768.init (fun i => decode 12 i (BytesToBits (to_list a))).
 
 (* These should come directly from the code. *)
-proc op sem_encode12 = EncDec.sem_encode12.
-op sem_encode4(p : ipoly) : W8.t Array128.t.
-op sem_encode1(a : ipoly) : W8.t Array32.t.
-op sem_encode10_vec(u : ipolyvec) : W8.t Array960.t.
+proc op sem_encode12 = EncDec.encode12.
+proc op sem_encode4 = EncDec.encode4.
+proc op sem_encode1 = EncDec.encode1.
+proc op sem_encode10_vec = EncDec.encode10_vec.
 op sem_encode12_vec(a : ipolyvec) : W8.t Array1152.t.
 
-lemma sem_decode12K : cancel sem_decode12 sem_encode12 by admit. (* to do *)
-lemma sem_encode12K : cancel sem_encode12 sem_decode12 by admit. (* to do *)
-lemma sem_decode4K  : cancel sem_decode4  sem_encode4  by admit. (* to do *)
+lemma iteriS_rw ['a] (n : int) (opr : int -> 'a -> 'a) (x : 'a) :
+  0 < n => iteri n opr x = opr (n - 1) (iteri (n - 1) opr x).
+proof. smt(iteriS). qed.
+
+hint simplify iteri0, iteriS_rw.
+
+lemma sem_decode12K : cancel sem_decode12 sem_encode12.
+rewrite /cancel  /sem_encode12 => x /=.
+apply (inj_eq (Array384.to_list) Array384.to_list_inj).
+rewrite {1}/Array384.to_list  /= /mkseq -JUtils.iotaredE /=.
+qed.
+
+lemma sem_decode4K  : cancel sem_decode4  sem_encode4.
+rewrite /cancel /sem_decode4 /sem_encode4 => x /=.
+
+
+  by admit. (* to do *)
 lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
 lemma sem_decode1K  : cancel sem_decode1  sem_encode1  by admit. (* to do *)
 lemma sem_encode1K  : cancel sem_encode1  sem_decode1  by admit. (* to do *)
