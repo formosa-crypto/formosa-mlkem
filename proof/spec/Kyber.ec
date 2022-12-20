@@ -1629,7 +1629,7 @@ module EncDec = {
       var c : ipolyvec;
       var i,j,t0,t1,t2,t3,t4;
       c <- witness;
-      i <- 0; j <- 0;
+      j <- 0; i <- 0; 
       while (i < 768) {
          t0 <- u.[j]; t1 <- u.[j + 1]; t2 <- u.[j + 2]; t3 <- u.[j + 3]; t4 <- u.[j + 4];
          c.[i] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;
@@ -1652,64 +1652,243 @@ module EncDec = {
 
 }.
 
+require import BitEncoding.
+import BitChunking.
+
 op BytesToBits(bytes : W8.t list) : bool list = flatten (map W8.w2bits bytes).
-op decode(l i : int, bits : bool list) = StdBigop.Bigint.BIA.big predT (fun j =>  b2i (nth false bits (i*l+j)) * 2^j) (iota_ 0 l).
+op decode(l : int, bits : bool list) = map bs2int (chunk l (take (256*l) bits)).
+op decode_vec(l : int, bits : bool list) = map bs2int (chunk l (take (768*l) bits)).
 
-(**********************************)
-(**********************************)
-(**********************************)
-(* The following lifts are needed
-   to connect spec with security
-   and correctness proofs         *)
-(**********************************)
-(**********************************)
-(**********************************)
 
-op sem_decode12(a : W8.t Array384.t) : ipoly = 
-   Array256.init (fun i => decode 12 i (BytesToBits (to_list a))).
+(* Decode Operators as Defined in the Kyber Spec *)
+op sem_decode12(a : W8.t Array384.t) : ipoly =
+   Array256.of_list 0 (decode 12 (BytesToBits (to_list a))).
 op sem_decode4(a : W8.t Array128.t) : ipoly = 
-   Array256.init (fun i => decode 4 i (BytesToBits (to_list a))).
+   Array256.of_list 0 (decode 4 (BytesToBits (to_list a))).
 op sem_decode1(a : W8.t Array32.t) : ipoly = 
-   Array256.init (fun i => decode 1 i (BytesToBits (to_list a))).
+   Array256.of_list 0 (decode 1 (BytesToBits (to_list a))).
 op sem_decode10_vec(a : W8.t Array960.t) : ipolyvec = 
-   Array768.init (fun i => decode 10 i (BytesToBits (to_list a))).
+   Array768.of_list 0 (decode_vec 10 (BytesToBits (to_list a))).
 op sem_decode12_vec(a : W8.t Array1152.t) : ipolyvec = 
-   Array768.init (fun i => decode 12 i (BytesToBits (to_list a))).
+   Array768.of_list 0 (decode_vec 12 (BytesToBits (to_list a))).
 
-(* These should come directly from the code. *)
-proc op sem_encode12 = EncDec.encode12.
-proc op sem_encode4 = EncDec.encode4.
-proc op sem_encode1 = EncDec.encode1.
-proc op sem_encode10_vec = EncDec.encode10_vec.
-op sem_encode12_vec(a : ipolyvec) : W8.t Array1152.t.
+(* These come directly from the code. We need to show
+   that decode implements the same thing, and then show
+   that encode inverts them. *)
+proc op op_EncDec_encode12 = EncDec.encode12.
+proc op op_EncDec_encode4 = EncDec.encode4.
+proc op op_EncDec_encode1 = EncDec.encode1.
+proc op op_EncDec_encode10_vec = EncDec.encode10_vec.
 
+proc op op_EncDec_decode12 = EncDec.decode12.
+proc op op_EncDec_decode4 = EncDec.decode4.
+proc op op_EncDec_decode1 = EncDec.decode1.
+proc op op_EncDec_decode10_vec = EncDec.decode10_vec.
+
+(* These ones still require inlining *)
+op op_EncDec_encode12_vec(a : ipolyvec) : W8.t Array1152.t.
+op op_EncDec_decode12_vec(a : W8.t Array1152.t) : ipolyvec.
+
+(* FixMe: Move *)
 lemma iteriS_rw ['a] (n : int) (opr : int -> 'a -> 'a) (x : 'a) :
   0 < n => iteri n opr x = opr (n - 1) (iteri (n - 1) opr x).
 proof. smt(iteriS). qed.
 
-hint simplify iteri0, iteriS_rw.
-
-lemma sem_decode12K : cancel sem_decode12 sem_encode12.
-rewrite /cancel  /sem_encode12 => x /=.
-apply (inj_eq (Array384.to_list) Array384.to_list_inj).
-rewrite {1}/Array384.to_list  /= /mkseq -JUtils.iotaredE /=.
+lemma mkseqSr_rw ['a] (f : int -> 'a) (n : int) :
+  0 < n => mkseq f n = f 0 :: mkseq (fun i => f (i+1)) (n-1).
+proof. move => *. have H : exists i, n = i+1 by smt().
+elim H => i H0 /=; rewrite H0 /(\o) /=.
+have := mkseqSr f i _; 1: by smt().
+rewrite /(\o) => /= => - /#. 
 qed.
 
-lemma sem_decode4K  : cancel sem_decode4  sem_encode4.
-rewrite /cancel /sem_decode4 /sem_encode4 => x /=.
+lemma nth_nth_chunk ['a]  (r i j : int) (l : 'a list) x0 x1 x2 :
+   0 <= r =>
+   0 <= i < size l %/ r =>
+   0 <= j < r => nth x0 (nth x1 (chunk r l) i) j = nth x2 l (r*i+j).
+proof. 
+move => *.
+rewrite /chunk /= nth_mkseq 1:/# /= nth_take 1,2:/# /= nth_drop 1,2:/#. 
+by rewrite (nth_change_dfl x0 x2) /#.
+qed.
+
+lemma sem_decode1_corr : sem_decode1 = op_EncDec_decode1.
+proof.
+apply fun_ext => x.
+rewrite /op_EncDec_decode1 /sem_decode1 /=. 
+pose f := fun i j => bs2int (nth witness (chunk 1 (flatten (map W8.w2bits (to_list x)))) (8*i+j)).
+pose g := (fun (i : int) (r : ipoly) =>
+     r.[i * 8 <- f i 0].[i * 8 + 1 <- f i 1].[i * 8 + 2 <- f i 2].[i * 8 + 3 <- f i 3].[
+       i * 8 + 4 <- f i 4].[i * 8 + 5 <- f i 5].[i * 8 + 6 <- 
+       f i 6].[i * 8 + 7 <- f i 7]).
+rewrite (eq_iteri _ g  _ _).
++ move => i a ib /=. 
+  rewrite /g /= /f /=.
+  have H : forall j, 0<=j<8 => b2i x.[i].[j] = bs2int (nth witness (chunk 1 (flatten (map W8.w2bits (to_list x)))) (8 * i + j)); 
+   last by rewrite !H; first 8 by smt().
+  move => j jb.
+  have [H _]:= (size_eq1 ((nth witness (chunk 1 (flatten (map W8.w2bits (to_list x)))) (8 * i + j)))).
+  elim (H _).
+  + have  /= [_ ->] := (all_nthP (fun l => size l = 1) (chunk 1 (flatten (map W8.w2bits (to_list x)))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+  by rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#. 
+  move => b Hb; have : b = x.[i].[j]; last by  move => <-; rewrite Hb bs2int_cons bs2int_nil /=.
+  have ->  : (b = nth witness [b] 0) by auto.
+  rewrite -Hb. 
+  rewrite (nth_nth_chunk 1 (8 * i + j) 0 (flatten (map W8.w2bits (to_list x))) witness witness witness) /=; 
+        1,3: by smt().
+  + by rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+       rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+       rewrite !StdBigop.Bigint.big_constz /=;
+       rewrite !count_predT /= !size_iota /= /max /= /#.
+       rewrite (nth_flatten witness 8).
+  + rewrite allP => w /=; rewrite mapP => Hx. 
+    by elim Hx => ww [_ ->]; rewrite W8.size_w2bits. 
+  rewrite (nth_map witness); 1: by  rewrite Array32.size_to_list; smt(). 
+  rewrite get_to_list.
+  have -> : ((8*i+j) %/ 8) = i by smt().
+  have -> : ((8*i+j) %% 8) = j by smt().
+  rewrite -get_w2bits.
+  by rewrite (nth_change_dfl witness false) /#.
+
+rewrite /decode /BytesToBits /=.
+have -> : 256 = size (flatten (map W8.w2bits (to_list x))); 1:by
+ rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /=.
+rewrite take_size.
+rewrite tP /= => i ib.
+rewrite get_of_list 1:ib (nth_map (witness<:bool list>) 0);
+1: by  rewrite !size_chunk /=; [ by smt() | ];
+  rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= 1:ib. 
+  have /= [<- ]:= (Array256.tP (Array256.init (fun i => bs2int (nth witness (chunk 1 (flatten (map W8.w2bits (to_list x)))) i))) (iteri 32 g witness));[| by apply ib | by smt(Array256.initiE)].
+rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
+do 32!(rewrite iteriS_rw;1: by smt()). 
+by rewrite iteri0 /=.
+qed.
 
 
-  by admit. (* to do *)
-lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
+lemma sem_decode4_corr : sem_decode4 = op_EncDec_decode4.
+proof.
+apply fun_ext => x.
+rewrite /op_EncDec_decode4 /sem_decode4 /=. 
+pose f := fun i j => bs2int (nth witness (chunk 4 (flatten (map W8.w2bits (to_list x)))) (2*i+j)).
+pose g := (fun (i : int) (r : ipoly) => r.[i * 2 <- f i 0].[i * 2 + 1 <- f i 1]).
+rewrite (eq_iteri _ g  _ _).
++ move => i a ib /=. 
+  rewrite /g /= /f /=.
+  have H : to_uint x.[i] %% 16 = bs2int (nth witness (chunk 4 (flatten (map W8.w2bits (to_list x)))) (2 * i)) /\ to_uint x.[i] %/ 16 = bs2int (nth witness (chunk 4 (flatten (map W8.w2bits (to_list x)))) (2 * i + 1)); last by  move : H => [-> ->] //.  
+have //= <- := W8.bits_divmod (x.[i]) 0 4.
+have //= := W8.bits_divmod (x.[i]) 4 4; rewrite modz_small /=; 1: smt(W8.to_uint_cmp JUtils.pow2_8). move => <-.
+split.
++ congr; apply (eq_from_nth witness).
+  + rewrite size_bits //.
+      + have  /= [_ ->] := (all_nthP (fun l => size l = 4) (chunk 4 (flatten (map W8.w2bits (to_list x)))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+  by rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#. 
+    move => k; rewrite size_bits //= => kb.
+    rewrite (nth_nth_chunk 4 (2 * i) k (flatten (map W8.w2bits (to_list x))) witness witness witness) /=; 
+        1,3: by smt().
+  + by rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+       rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+       rewrite !StdBigop.Bigint.big_constz /=;
+       rewrite !count_predT /= !size_iota /= /max /= /#.
+       rewrite (nth_flatten witness 8).
+  + rewrite allP => w /=; rewrite mapP => Hx. 
+    by elim Hx => ww [_ ->]; rewrite W8.size_w2bits. 
+  rewrite (nth_map witness) => /=; 1: by  rewrite size_iota; smt(). 
+  rewrite (nth_iota _ _ _ _ kb) /=.
+  rewrite (nth_map witness) => /=; 1: by  rewrite size_to_list; smt(). 
+  have -> : ((4 * (2 * i) + k) %/ 8) = i by smt().
+  have -> : ((4 * (2 * i) + k)) %% 8 = k by smt().
+  rewrite -get_w2bits.
+  by rewrite (nth_change_dfl witness false) /#.
+        
++ congr. apply (eq_from_nth witness).
+  + rewrite size_bits //.
+      + have  /= [_ ->] := (all_nthP (fun l => size l = 4) (chunk 4 (flatten (map W8.w2bits (to_list x)))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+  by rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#. 
+
+    move => k; rewrite size_bits //= => kb.
+    case (k < 4); last first. 
+    + move => H; rewrite !nth_default. 
+      rewrite /size_bits; 1: smt().
+      rewrite size_chunk; 1: smt().
+      + by rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+           rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+           rewrite !StdBigop.Bigint.big_constz /=;
+           rewrite !count_predT /= !size_iota /= /max /= /#. 
+      by smt(). by smt().
+    move => *;rewrite (nth_nth_chunk 4 (2 * i + 1) k (flatten (map W8.w2bits (to_list x))) witness witness witness) /=;1,3: by smt().
+  + by rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+       rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+       rewrite !StdBigop.Bigint.big_constz /=;
+       rewrite !count_predT /= !size_iota /= /max /= /#.
+       rewrite (nth_flatten witness 8).
+  + rewrite allP => w /=; rewrite mapP => Hx. 
+    by elim Hx => ww [_ ->]; rewrite W8.size_w2bits. 
+  rewrite (nth_map witness) => /=; 1: by  rewrite size_iota; smt(). 
+  rewrite (nth_iota _ _ _ _ kb) /=.
+  rewrite (nth_map witness) => /=; 1: by  rewrite size_to_list; smt(). 
+  have -> : (4 * (2 * i + 1) + k) %/ 8 = i by smt().
+  have -> : (4 * (2 * i + 1) + k) %% 8 = 4 + k by smt().
+  rewrite -get_w2bits.
+  by rewrite (nth_change_dfl witness false) /#.
+
+rewrite /decode /BytesToBits /=.
+have -> : 1024 = size (flatten (map W8.w2bits (to_list x))); 1:by
+ rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /=.
+rewrite take_size.
+rewrite tP /= => i ib.
+rewrite get_of_list 1:ib (nth_map (witness<:bool list>) 0);
+1: by  rewrite !size_chunk /=; [ by smt() | ];
+  rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= 1:ib. print Array256.tP.
+  have /= [<- ]:= (Array256.tP (Array256.init (fun i => bs2int (nth witness (chunk 4 (flatten (map W8.w2bits (to_list x)))) i))) (iteri 128 g witness));[| by apply ib | by smt(Array256.initiE)].
+rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
+do 128!(rewrite iteriS_rw;1: by smt()). 
+by rewrite iteri0 /=.
+qed.
+
+
+
+lemma sem_decode4K : cancel op_EncDec_decode1 op_EncDec_encode1 by admit.
+lemma sem_decode12K : cancel sem_decode12 sem_encode12 by admit.
+lemma sem_decode4K  : cancel sem_decode4  sem_encode4 by admit.
 lemma sem_decode1K  : cancel sem_decode1  sem_encode1  by admit. (* to do *)
-lemma sem_encode1K  : cancel sem_encode1  sem_decode1  by admit. (* to do *)
 lemma sem_decode12_vecK  : cancel sem_decode12_vec  sem_encode12_vec  by admit. (* to do *)
-lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. (* to do *)
 lemma sem_decode10_vecK  : cancel sem_decode10_vec  sem_encode10_vec  by admit. (* to do *)
+
+(* These have missing preconditions; move to KyberProperties and fix. 
+lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
+lemma sem_encode1K  : cancel sem_encode1  sem_decode1  by admit. (* to do *)
+lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. (* to do *)
 lemma sem_encode10_vecK  : cancel sem_encode10_vec  sem_decode10_vec  by admit. (* to do *)
-
 lemma sem_decode1_bnd a k : 0<=k<256 => 0<= (sem_decode1 a).[k] < 2 by admit. (* to do *)
-
+*)
+(* These are all replaced by proc op 
 phoare sem_decode12 a : [ EncDec.decode12 : arg = a ==>  res = sem_decode12 a ] = 1%r by admit. (* reify *)
 phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = sem_decode4  a ] = 1%r by admit. (* reify *)
 phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = sem_decode1  a ] = 1%r by admit. (* reify *)
@@ -1721,7 +1900,7 @@ phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = sem_decode
 phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = sem_decode10_vec a ] = 1%r by admit. (* reify *)
 phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = sem_encode12_vec a ] = 1%r by admit. (* reify *)
 phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode10_vec a ] = 1%r by admit. (* reify *)
-
+*)
 
 (****************)
 (****************)
