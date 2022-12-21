@@ -1841,13 +1841,51 @@ proc.
 admitted.
 *)
 
+lemma mulR_inv (a b : Fq) :
+  (a * inFq Montgomery16.R = b) <=> (a = b * inFq Montgomery16.Rinv).
+have :=RRinv. rewrite /R /Rinv => />. rewrite -!Zq.ComRing.mulrA -!inFqM => />.
+rewrite inFq_mod => H. rewrite H -inFq_mod. rewrite Zq.ComRing.mulrC Zq.ComRing.mul1r //. rewrite Zq.ComRing.mulrC Zq.ComRing.mul1r //. qed.
+
+lemma fqmulprecomp16x_ll : islossless Jkem_avx2.M.__fqmulprecomp16x by islossless.
+
+hoare fqmulprecomp16x_h n _a _b: 
+ Jkem_avx2.M.__fqmulprecomp16x :
+   x16_spec q qx16 /\
+   qinv16u16M al ah /\
+   I16u16M_ub 1 ah _a /\
+   I16u16_sb n b _b
+   ==> I16u16_sb 1 res (mul16x16 _a _b).
+proof.
+proc;auto => |> &m. rewrite !x16_spec_bits16 /qinv16u16M !allP => |> Hq Hqinv Ha Hb.
+have : forall (i : int),0 <= i < 16 => (al{m} \bits16 i) = (ah{m} \bits16 i) * (W16.of_int 62209). move => i Hi. move :(Hqinv i). rewrite mem_iota /R2C /= !initiE 1..2:/#. move => H. rewrite H // 1:/#. move => Hqinv'.
+move => i. rewrite mem_iota => |>Hi1 Hi2.
+rewrite /Iu16_sb !initiE // /=. 
+rewrite (_: (VPSUB_16u16 (VPMULH_16u16 ah{m} b{m}) (VPMULH_16u16 (VPMULL_16u16 al{m} b{m}) qx16{m}) \bits16 i) = Montgomery16.REDCmul16 (b{m} \bits16 i) (ah{m} \bits16 i) ).  rewrite /VPMULH_16u16 /VPMULL_16u16 /VPSUB_16u16 /R2C /REDC16 => />. rewrite !bits16_W16u16 /=. rewrite ifT //. rewrite !Hq //. rewrite !Hqinv' //. rewrite W16u16.Pack.of_listE W16u16.Pack.initE /=. rewrite ifT //. smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move :(Ha i). rewrite mem_iota initiE 1:/#. rewrite Hi1 Hi2 /=. rewrite /Iu16_ub -andaE. rewrite mulR_inv. apply andaW => /= Ha1 Ha2.
+move :(Hb i). rewrite mem_iota initiE 1:/#. rewrite Hi1 Hi2 /=. rewrite /Iu16_sb -andaE. apply andaW => Hb1 Hb2.
+rewrite /map2 initiE // /=. rewrite Ha1 Hb1. 
+have := (Montgomery16.REDCmul16_correct (b{m} \bits16 i) (ah{m} \bits16 i)). rewrite (_:Montgomery16.q=q) 1:/#. rewrite Ha2 /=. 
+rewrite -andaE. rewrite eq_inFq. apply andaW => H1 H2. rewrite H1. split. rewrite !inFqM. rewrite -!Zq.ComRing.mulrA. smt(Zq.ComRing.mulrC Zq.ComRing.mulrA).
+rewrite (sint_bndW _ (-(q-1)) (q-1) _ _ ) /#. qed.
+
 phoare fqmulprecomp16x_ph n _a _b:
  [ Jkem_avx2.M.__fqmulprecomp16x :
-   qinv16u16M al ah =>
-   I16u16M_ub 1 ah _a =>
+   x16_spec q qx16 /\
+   qinv16u16M al ah /\
+   I16u16M_ub 1 ah _a /\
    I16u16_sb n b _b
    ==> I16u16_sb 1 res (mul16x16 _a _b) ] = 1%r.
-admitted.
+proof. by conseq fqmulprecomp16x_ll (fqmulprecomp16x_h n _a _b). qed.
+
+(*hoare fq_mulprecomp16x_aux_h _n _r:
+ Jkem_avx2.M.__fqmulprecomp16x :
+   x16_spec q qx16 /\
+   x16_spec 1441 ah /\
+   qinv16u16M al ah /\
+   I16u16_sb _n b _r
+   ==> I16u16S_sb (inFq 3303*inFq W16.modulus) 1 res _r.
+elim b.
+call (fqmulprecomp16x_ph _n b _r).*)
 
 phoare fq_mulprecomp16x_aux _n _r:
  [ Jkem_avx2.M.__fqmulprecomp16x :
@@ -1951,6 +1989,25 @@ have <-: (to_sint xh * Montgomery16.R + to_uint xl) %/ W16.modulus = to_sint xh.
 by apply int_bnd_div.
 qed.
 
+lemma mont_red_ll : islossless Jkem_avx2.M.__mont_red by islossless.
+
+hoare mont_red_h _lo _hi:
+ Jkem_avx2.M.__mont_red :
+   x16_spec q qx16 /\
+   x16_spec 62209 qinvx16 /\
+   hi = _hi /\
+   lo = _lo /\
+   all (fun k=> sint_bnd (-q%/2) (q%/2 - 1) (_hi \bits16 k)) (iota_ 0 16)
+   ==> I16u16_sb 1 res (Array16.init (fun k=> inFq ((to_sint (_hi \bits16 k) * W16.modulus + to_uint (_lo \bits16 k)) * Montgomery16.Rinv ))).
+proof.
+proc;auto => |> &m. rewrite !x16_spec_bits16 allP => Hq Hqinv Hb.
+apply/List.allP => i. rewrite mem_iota => Hi /=.
+rewrite /Iu16_sb !initiE /= 1..2:/#. 
+rewrite (_: (VPSUB_16u16 _hi (VPMULH_16u16 (VPMULL_16u16 _lo qinvx16{m}) qx16{m}) \bits16 i) = Montgomery16.REDC16 (_lo \bits16 i) (_hi \bits16 i) ). rewrite /VPMULH_16u16 /VPMULL_16u16 /VPSUB_16u16 /R2C /REDC16 => />. rewrite !bits16_W16u16 /=. rewrite ifT 1:/#. rewrite !Hqinv 1..16:/#. rewrite !Hq 1..16:/#. rewrite W16u16.Pack.of_listE W16u16.Pack.initE /#.
+have := Hb i. rewrite mem_iota Hi /= => Hbi. 
+rewrite -eq_inFq eq_sym.
+have := Montgomery16.REDC16_correct_q (_lo \bits16 i) (_hi \bits16 i). rewrite (_:Montgomery16.q=q) /#. qed.
+
 phoare mont_red_ph _lo _hi:
  [ Jkem_avx2.M.__mont_red:
    x16_spec q qx16 /\
@@ -1958,12 +2015,8 @@ phoare mont_red_ph _lo _hi:
    hi = _hi /\
    lo = _lo /\
    all (fun k=> sint_bnd (-q%/2) (q%/2 - 1) (_hi \bits16 k)) (iota_ 0 16)
-   ==> I16u16_sb 1 res (Array16.init (fun k=> inFq (to_sint (_hi \bits16 k) * W16.modulus + to_uint (_lo \bits16 k)))) ] = 1%r.
-proof.
-proc;auto => |> &m Hq Hqinv Hb.
-apply/List.allP => i Hi /=.
-admit.
-qed.
+   ==> I16u16_sb 1 res (Array16.init (fun k=> inFq ((to_sint (_hi \bits16 k) * W16.modulus + to_uint (_lo \bits16 k)) * Montgomery16.Rinv))) ] = 1%r.
+proof. by conseq  mont_red_ll ( mont_red_h _lo _hi). qed.
 
 (*
 zip_w256_u16_u32 (l h: W256.t): W256.t*W256.t

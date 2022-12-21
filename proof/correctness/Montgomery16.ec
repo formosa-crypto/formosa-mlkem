@@ -22,6 +22,20 @@ qed.
 from Jasmin require import JWord.
 import W16.
 
+lemma smod_id (w:int) :
+  !(2^(16-1) <= w) => W16.smod w = w.
+rewrite /smod => />. qed.
+
+lemma smod_d (w:int) :
+  (2^(16-1) <= w) => W16.smod w = w - W16.modulus.
+rewrite /smod => />. qed.
+
+lemma bits16_W16u16 ws i :
+  W16u16.pack16_t ws \bits16 i = if 0 <= i < 16 then ws.[i] else W16.zero.
+apply W16.wordP => j Hj.
+rewrite /pack16_t /(\bits16) initiE => />. rewrite initE => />.
+case (0 <= i < 16) => Hi. smt(). smt(). qed.
+
 lemma nosmt to_sint_mod x:
  W16.to_sint x %% W16.modulus = to_uint x.
 proof.
@@ -33,6 +47,10 @@ case: (2 ^ (16 - 1) <= to_uint x) => C.
 rewrite modz_small //.
 by apply JUtils.bound_abs; apply to_uint_cmp.
 qed.
+
+lemma to_sintK (w : W16.t) :
+  W16.of_int (W16.to_sint w) = w.
+rewrite -of_int_mod to_sint_mod to_uintK //. qed.
 
 lemma nosmt smod_small (x: int):
  -2^(16-1) <= x < 2^(16-1) => 
