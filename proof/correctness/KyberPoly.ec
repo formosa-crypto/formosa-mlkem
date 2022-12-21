@@ -1333,8 +1333,11 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
       + by move => k; split; move => kb;rewrite !mapiE 1:/# /= /#.
       + rewrite zvals; move : zetas_invE; rewrite /array_mont_inv /=. 
         rewrite tP => zzvals; move : (zzvals 127 _) => //.
-        rewrite set_eqiE //= /to_sint /smod /= => <-.
-        by rewrite -ZqField.mulrA rrinvFq; ring.
+        rewrite get_of_list 1://= //= /to_sint /smod /= => ->.
+        have ->: 1441 = 512 * SignedReductions.R %% 3329.
+          by cbv.
+        rewrite -qE inFqM_mod -ZqField.mulrA rrinvFq.
+        by rewrite -inFqM_mod /R qE //= ZqField.mulr1.
       + by rewrite zp /=.
     move => jl rl jr rpr; rewrite ultE /= => ??[#] *.
     split; last by smt().
@@ -1416,7 +1419,7 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
        start{1} <= j{1} <= start{1} + len{1}); last first.
 
 + auto => />  &1; rewrite !uleE /signed_bound_cxq.
-  move => 2? rep 3? lb ? rp ??????.
+  move => 2? rep zctr_lb zctr_ub ? lb ? rp ??????.
 
   move : zetainv_bound; rewrite /minimum_residues /bpos16 => zb.
 
@@ -1427,14 +1430,12 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
 
 
   do split; 1..3,5..6:smt().
-  + move : zetas_invE; rewrite /array_mont_inv /lift_array128 tP => mnt.
-    move : (mnt (to_uint zetasctr{1}) _); 1: smt().
-    + rewrite mapiE /=; 1: smt().
-      rewrite set_neqiE /=; 1,2: smt().
-      rewrite mapiE /=; 1: smt().
-    by move => <-; rewrite -ZqField.mulrA rrinvFq; ring.
+  + rewrite -(Array128.mapiE (fun x => inFq (W16.to_sint x))) 1:/#.
+    rewrite -zetas_invE /array_mont_inv //=.
+    rewrite set_neqiE /=; 1,2: smt().
+    rewrite mapiE /=; 1: smt().
+    by rewrite -ZqField.mulrA rrinvFq; ring.
   by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
- 
 by move => jl rpl; rewrite !ultE => 11?; rewrite !to_uintD_small; smt(). 
 
 (* Preservation *)
