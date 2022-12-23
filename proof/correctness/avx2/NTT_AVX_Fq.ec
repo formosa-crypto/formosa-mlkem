@@ -1617,6 +1617,13 @@ proc invntt0t6(r : Fq Array256.t) : Fq Array256.t = {
  return rp6;
 }
 
+proc invntt_bsrev(r : Fq Array256.t) : Fq Array256.t = {
+  NTT_vars.r <- r;
+  NTT_vars.zetas_inv <- NTT_Fq.zetas_inv;
+  r <@ NTT_bsrev.invntt();
+  return r;
+ }
+
 proc __cmplx_mulx16(are aim bre bim zetas: Fq Array16.t, sign: bool): Fq Array16.t * Fq Array16.t = {
  var rre, rim;
  rre <- Array16.init
@@ -2062,7 +2069,6 @@ phoare ntt_avx_spec _r:
  [ NTT_AVX.ntt : rp = _r ==> perm_ntt perm_nttpack128 res = ntt _r ] = 1%r.
 proof. by conseq ntt_avx_ll (ntt_avx_h _r). qed.
 
-
 (* equivalence between full-inline-SSA and level-by-level ntt avx2 (inverse) *)
 lemma invntt0t6_invntt : 
   equiv [ NTT_AVX.invntt ~ NTT_AVX.invntt0t6 : rp{1}=r{2} ==> ={res}].
@@ -2215,7 +2221,7 @@ lemma invntt_avx_6_pr r:
 proof. by conseq _invntt_avx_6_ll (invntt_avx_6 r). qed.
 
 (** Main Theorem in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent (inverse) **)
-lemma invntt_avx_equiv : 
+lemma invntt_avx2_equiv : 
      equiv [ NTT_AVX.invntt ~ NTT_avx2.invntt :
           perm_ntt perm_nttpack128 rp{1} = NTT_avx2.r{2} /\ NTT_avx2.zetas_inv{2} = NTT_Fq.zetas_inv
           ==> res{1} = res{2}].
@@ -2271,3 +2277,43 @@ rewrite mapiE // ZqField.mulrC; congr.
 by rewrite -eq_inFq /q //=.
 qed.
 
+lemma invntt_avx_equiv : 
+     equiv [ NTT_AVX.invntt ~ NTT_AVX.invntt_bsrev :
+          perm_ntt perm_nttpack128 rp{1} = r{2}
+          ==> res{1} = res{2}].
+proof.
+proc*.
+transitivity{1} { r <@ NTT_avx2.invntt(); }
+  (perm_ntt perm_nttpack128 rp{1}=NTT_avx2.r{2} /\ NTT_avx2.zetas_inv{2}=NTT_Fq.zetas_inv ==> ={r})
+  (NTT_avx2.r{1} = r{2} /\ NTT_avx2.zetas_inv{1}=NTT_Fq.zetas_inv ==> r{1}=r0{2}) => //.
+move => /> &1 /#. 
+call invntt_avx2_equiv; first by auto.
+inline NTT_AVX.invntt_bsrev; wp; sp => />. symmetry.
+call avx2_invntt; auto. qed.
+
+hoare invntt_bsrev_h _r: 
+   NTT_AVX.invntt_bsrev:
+    r = _r ==> res = invntt _r.
+proof.
+proc.
+ecall (bsrev_invntt_spec NTT_vars.r).
+wp; skip => /> rr.
+by apply imp_invntt_spec.
+qed.
+
+
+hoare invntt_avx_h _r:
+ NTT_AVX.invntt : perm_ntt perm_nttpack128 rp = _r ==> res = invntt _r.
+proof.
+bypr => // &m <-. clear _r. 
+have <-: Pr[NTT_AVX.invntt_bsrev(perm_ntt perm_nttpack128 arg{m}) @ &m : res <> invntt (perm_ntt perm_nttpack128 arg{m})] = 0%r.
+ byphoare (_:r=perm_ntt perm_nttpack128 arg{m} ==> _) => //. hoare => />.
+ conseq (invntt_bsrev_h (perm_ntt perm_nttpack128 arg{m})) => />.
+byequiv => //.
+conseq invntt_avx_equiv => />. qed.
+
+lemma invntt_avx_ll: islossless  NTT_AVX.invntt by islossless.
+
+phoare invntt_avx_spec _r:
+ [ NTT_AVX.invntt : perm_ntt perm_nttpack128 rp = _r ==>  res = invntt _r ] = 1%r.
+proof. conseq invntt_avx_ll (invntt_avx_h _r) => />. qed.
