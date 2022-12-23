@@ -724,5 +724,71 @@ rewrite /pos_bound768_cxq => k kb; rewrite initiE //=.
   move => *; rewrite initiE //= ifF 1:/# initiE //= /#. 
 qed.
 
+lemma poly_invntt_avx2_corr _r :
+  phoare [ Jkem_avx2.M._poly_invntt :
+    rp = _r /\ signed_bound_cxq rp 0 256 4 ==>
+(*    scale (invntt (lift_array256 _r)) (inFq R) *)
+    invntt (lift_array256 _r) = lift_array256 (nttpack res) /\
+    signed_bound_cxq res 0 256 1] = 1%r.
+proof.
+admit(*
+conseq poly_invntt_avx2_eq (ntt_avx_spec (lift_array256 _r)).
+ by move => &1 [-> H] /#.
+move=> &1 &2 [-> H] <-.
+by rewrite lift_nttpack perm_ntt_nttpackE.
+*).
+qed.
+
+lemma polyvec_invntt_avx2_corr _r :
+  phoare [ Jkem_avx2.M.__polyvec_invntt :
+     r = _r /\ signed_bound768_cxq r 0 768 2==>
+    invnttv (lift_vector _r) = lift_vector (nttpackv res) /\
+    signed_bound768_cxq res 0 768 1] = 1%r.
+proc. 
+wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[2 * 256 + i]))).
+wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[256 + i]))).
+wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[0 + i]))).
+auto => /> H; do split; 1:by smt(Array256.initiE).
+move => H0 r H1 H2; do split. 
++ by rewrite tP => k kb; rewrite !initiE //= !initiE //= /#.
++ rewrite /signed_bound_cxq => k kb; rewrite !initiE //= !initiE //= /#.
+move => H3 H4 r0 H5 H6. do split.
++ rewrite tP => k kb; rewrite !initiE //= initiE //= 1: /# ifF 1:/# initiE //= /#.
++ rewrite /signed_bound_cxq => k kb; rewrite !initiE //= initiE //= 1: /# ifF 1:/# initiE //= /#.
+move => H7 H8 r1 H9 H10. do split.
++ rewrite /nttv /lift_vector KMatrix.Vector.eq_vectorP => k kb.
+  rewrite /mapv !KMatrix.Vector.offunvE //= KMatrix.Vector.offunvK /vclamp kb /=.
+  rewrite /lift_array256 /subarray256 tP => i ib.
+  rewrite mapiE //= initiE //= /nttpackv initiE //= 1:/#.
+  move :nttunpack_bnd nttpack_bnd; rewrite !allP => pb upb.
+  case(k = 0).
+   + move => ->. rewrite ifT //= /nttpack /subarray256 initiE //=. 
+     pose a:=nttpack_idx.[i].
+     rewrite initiE //= 1:/# initiE //= 1:/# ifF 1:/# initiE //= 1:/#.
+     rewrite ifF 1:/# initiE //= 1:/# ifT 1:/#.
+     move : H1; rewrite /lift_array256 /nttpack tP => H1.
+     rewrite (H1 i ib) mapiE //= initiE /#.
+  case(k = 1).
+   + move => -> *. rewrite ifF 1:/# ifT 1:/# /nttpack /subarray256 initiE //=. 
+     pose a:=nttpack_idx.[i].
+     rewrite initiE //= 1:/# initiE //= 1:/# ifF 1:/# initiE //= 1:/#.
+     rewrite ifT 1:/#.
+     move : H5; rewrite /lift_array256 /nttpack tP => H5.
+     rewrite (H5 i ib) mapiE //= initiE /#.
+  move => *; have -> : k = 2 by smt().
+  rewrite ifF 1:/# ifF 1:/# /nttpack /subarray256 initiE //=. 
+  pose a:=nttpack_idx.[i].
+  rewrite initiE //= 1:/# initiE //= 1:/# ifT 1:/#.
+  move : H9; rewrite /lift_array256 /nttpack tP => H9.
+  rewrite (H9 i ib) mapiE //= initiE /#.
+
+rewrite /signed_bound768_cxq => k kb; rewrite initiE //=.
+  case(512 <= k < 768). smt().
+  move => *;case(256 <= k < 512). 
+  + move => *; rewrite initiE //=. smt(). 
+  move => *; rewrite initiE //= ifF 1:/# initiE //= /#. 
+qed.
+
+
 end NTT_Avx2.
  

@@ -12,6 +12,9 @@ require import NTT_AVX_Fq.
 require import Kyber.
 import Zq.
 
+require import KyberPoly.
+import KyberPoly.
+
 require import Montgomery16.
 require import Jkem_avx2 Jkem.
 
@@ -89,9 +92,6 @@ proof. by move: k; rewrite allP_range -iotaredE /R2C. qed.
 lemma sint_bnd_ltR bL bR x:
  sint_bnd bL (bR-1) x <=> bL <= to_sint x < bR by smt().
 
-
-require import KyberPoly.
-import KyberPoly.
 
 
 (** IMPLEMENTATION RELATIONS
@@ -251,7 +251,6 @@ rewrite I256u16S_sbP allP; split.
  rewrite /signed_bound_cxq => k Hk.
  by have /=?/# := H k _; first by rewrite mem_iota /= /#.
 move=> [E Hb] k; rewrite mem_iota /= /lift_array256 => Hk.
-print Iu16_sb.
 rewrite /Iu16_sb. 
 have ->: x.[k]*z = (NTT_Properties.scale x z).[k].
  by rewrite /NTT_Properties.scale mapiE /#.
@@ -638,11 +637,6 @@ proof.
 by move=> /> *; rewrite to_sint32B_small /#.
 qed.
 
-
-(*
-abbrev int_bnd (xL xH x: int) = xL <= x <= xH.
-*)
-
 lemma int_bnd_div xL xH x y:
  0 < y =>
  (xL <= x <= xH)%Int =>
@@ -668,10 +662,8 @@ lemma sint32_bnd_u16H bL bH (xh xl: W16.t) (x: W32.t):
 proof.
 move=> -> H.
 split.
- smt.
-move=> _.
-move: (W16.to_uint_cmp xl).
-smt.
+ by move: (W16.to_uint_cmp xl); smt().
+by move=> _; move: (W16.to_uint_cmp xl); smt().
 qed.
 
 lemma W32_shr16_bits16H (w: W32.t):
@@ -718,7 +710,7 @@ op packus_4u32_alt (w : W128.t) : W64.t =
            else W16.onew)
  in pack4 [pack 0; pack 1; pack 2; pack 3].
 
-require import AVX2_Ops.
+(* require import AVX2_Ops. *)
 
 lemma W32_unpack16E (x: W32.t):
  x = pack2 [x \bits16 0; x \bits16 1].
@@ -753,6 +745,10 @@ rewrite !bits16_div //=; congr.
 by rewrite of_uintK.
 qed.
 
+lemma to_sint_pack2 l h:
+ W32.to_sint (W2u16.pack2 [l;h])
+ = to_sint h*W16.modulus + to_uint l.
+proof. by rewrite to_sint32_bits16 pack2bE. qed.
 
 
 lemma packus_4u32E w:
@@ -834,67 +830,35 @@ move: k Hk; apply/List.allP; rewrite -iotaredE /=.
 by rewrite !packus_4u32_0H //.
 qed.
 
-(*require import AVX2_Ops.*)
-require import Array8.
-op R2D (r: W256.t): W32.t Array8.t =
- Array8.init (fun i => r\bits32 i).
+op I16u16LH_sb (b:int) (yl yh: W256.t) (x: Fq Array16.t) =
+ all (fun k=> x.[k] = inFq (to_sint (pack2 [yl \bits16 k; yh \bits16 k]))
+              /\ sint32_bnd (-b) b (pack2 [yl \bits16 k; yh \bits16 k]))
+     (iota_ 0 16).
 
-(*
-rL \b16 k
-= if k %/ 4 %% 2
-  then a0 \bits16 2*(k%%4) + 8*(k%/8)
-  else a1 \bits16 2*(k%%4) + 8*(k%/8)
+op I16u32AB_sb (b:int) (yA yB: W256.t) (x: Fq Array16.t) =
+ all (fun k=> let y = (if k%/4%%2=0 then yA else yB) \bits32 (k%%4) + 4*(k%/8)
+              in x.[k] = inFq (to_sint y)
+                 /\ sint32_bnd (-b) b y )
+     (iota_ 0 16).
 
-0 a0 0   a0 1
-1 a0 2   a0 3
-2 a0 4   a0 5
-3 a0 6   a0 7
-4 a1 0   a1 1
-5 a1 2   a1 3
-6 a1 4   a1 5
-7 a1 6   a1 7
-8 a0 8   a0 9
-9 a0 A   a0 B
-A a0 C   a0 D
-B a0 E   a0 F
-C a1 8   a1 9
-D a1 A   a1 B
-E a1 C   a1 D
-F a1 E   a1 F
-*)
-
-lemma sint32_bnd_bits16 bL bH (x:W256.t) k:
- sint32_bnd bL bH (x \bits32 k)
- = sint_bnd (bL %/ 65536) (bH %/ 65536) (x \bits16 2*k+1).
-proof.
-admitted.
-
-
-phoare deinterleave_u16_ph _bL _bH _a0 _a1:
+phoare deinterleave_u16_ph b _x:
  [ Jkem_avx2.M.__w256_deinterleave_u16:
    x16_spec 0 _zero /\
-   a0 = _a0 /\
-   a1 = _a1 /\
-   all (fun k => sint32_bnd _bL _bH (a0 \bits32 k) /\
-                 sint32_bnd _bL _bH (a1 \bits32 k) )
-       (iota_ 0 8)
-   ==> all (fun k =>
-             (res.`1 \bits16 k
-              = if (k %/ 4 %% 2 = 0)
-                then _a0 \bits16 2*(k%%4) + 8*(k%/8)
-                else _a1 \bits16 2*(k%%4) + 8*(k%/8)) /\
-             (res.`2 \bits16 k
-              = if (k %/ 4 %% 2 = 0)
-                then _a0 \bits16 1 + 2*(k%%4) + 8*(k%/8)
-                else _a1 \bits16 1 + 2*(k%%4) + 8*(k%/8)) /\
-              sint_bnd (_bL %/ W16.modulus) (_bH %/ W16.modulus) (res.`2 \bits16 k) )
-           (iota_ 0 16)
-  ] = 1%r.
+   I16u32AB_sb b a0 a1 _x
+   ==>
+   I16u16LH_sb b res.`1 res.`2 _x
+ ] = 1%r.
 proof.
 proc; auto.
 move=> &m |> /x16_spec_bits16 Hzero.
-rewrite -{1}iotaredE /= !sint32_bnd_bits16 /= => [#] *.
-rewrite -{1}iotaredE /= /VPACKUS_8u32 /VPACKUS_4u32 /=.
+rewrite /I16u32AB_sb /I16u16LH_sb -iotaredE /= /VPACKUS_8u32 /VPACKUS_4u32 /=.
+do 8!
+ (pose X:= a0{m} \bits32 _;
+  rewrite (W32_unpack16E X) /X W256_bits32_bits16 1:// /= => {X}).
+do 8!
+ (pose X:= a1{m} \bits32 _;
+  rewrite (W32_unpack16E X) /X W256_bits32_bits16 1:// /= => {X}).
+move=> |> *.
 do 15! (split; first by
  rewrite packus_4u32_0H 1:/# /= VPBLENDW_256_170 //= 1:/#
          packus_4u32_0H 1:/# W256_bits128_bits16 //= VPSRL_8u32_16 //= /#).
@@ -902,46 +866,204 @@ by  rewrite packus_4u32_0H 1:/# /= VPBLENDW_256_170 //= 1:/#
       packus_4u32_0H 1:/# W256_bits128_bits16 //= VPSRL_8u32_16 //= /#.
 qed.
 
-lemma to_sint_pack2 l h:
- W32.to_sint (W2u16.pack2 [l;h]) = to_sint h*W16.modulus + to_uint l.
-admitted.
-
-
-phoare interleave_u16_ph _al _ah:
+phoare interleave_u16_ph b _x:
  [ Jkem_avx2.M.__w256_interleave_u16:
-   al = _al /\
-   ah = _ah
-   ==> all (fun k=> 
-             res.`1 \bits32 k
-             = pack2 [_al \bits16 k+4*(k%/4); _ah \bits16 k+4*(k%/4)] /\
-             res.`2 \bits32 k
-             = pack2 [_al \bits16 4+k+4*(k%/4); _ah \bits16 4+k+4*(k%/4)] )
-           (iota_ 0 8)
-   ] = 1%r.
+   I16u16LH_sb b al ah _x
+   ==>
+   I16u32AB_sb b res.`1 res.`2 _x
+ ] = 1%r.
 proof.
 proc; wp; auto => &m |>.
-by rewrite -iotaredE /= => |> *.
+by rewrite /I16u32AB_sb /I16u16LH_sb -iotaredE /= => |> *.
 qed.
 
-require Montgomery16.
 op wmuls16 (x y: W16.t): W32.t =
  pack2 [x*y; wmulhs x y].
 
-phoare wmul_16u16_ph _x _y:
+lemma to_sint_wmuls16 x y:
+ to_sint (wmuls16 x y) = to_sint x * to_sint y.
+proof. by rewrite /wmuls16 to_sint_pack2 -wmulsE. qed.
+
+lemma wmuls16P n x y _x _y:
+ Iu16_sb n x _x =>
+ Iu16_sb n y _y =>
+ sint32_bnd (-n*n*q*q) (n*n*q*q) (wmuls16 x y).
+proof. by move => [??] [??]; rewrite to_sint_wmuls16 /#. qed.
+
+phoare wmul_16u16_ph n _x _y:
   [ Jkem_avx2.M.__wmul_16u16:
-    x = _x /\
-    y = _y
+    I16u16_sb n x _x /\
+    I16u16_sb n y _y
     ==>
-    all (fun k=>
-          res.`1 \bits32 k
-          = wmuls16 (_x \bits16 k+4*(k%/4)) (_y \bits16 k+4*(k%/4)) /\
-          res.`2 \bits32 k
-          = wmuls16 (_x \bits16 4+k+4*(k%/4)) (_y \bits16 4+k+4*(k%/4)) )
-        (iota_ 0 8) ] = 1%r.
+    I16u32AB_sb (n*n*q*q) res.`1 res.`2 (map2 Zq.( * ) _x _y)
+  ] = 1%r.
+proof.
 proc; simplify; auto.
-call (interleave_u16_ph (VPMULL_16u16 _x _y) (VPMULH_16u16 _x _y)).
-wp; auto => &m |> H.
-by rewrite -!iotaredE /=.
+call (interleave_u16_ph (n * n * q * q) (mul16x16 _x _y)).
+wp; auto => &m.
+rewrite /I16u16LH_sb  -!iotaredE /R2C /= !andaE => [#]
+ Hx0 Hx1 Hx2 Hx3 Hx4 Hx5 Hx6 Hx7 Hx8 Hx9 HxA HxB HxC HxD HxE HxF
+ Hy0 Hy1 Hy2 Hy3 Hy4 Hy5 Hy6 Hy7 Hy8 Hy9 HyA HyB HyC HyD HyE HyF.
+move: (wmuls16P _ _ _ _ _ Hx0 Hy0) => Hxy0.
+move: (wmuls16P _ _ _ _ _ Hx1 Hy1) => Hxy1.
+move: (wmuls16P _ _ _ _ _ Hx2 Hy2) => Hxy2.
+move: (wmuls16P _ _ _ _ _ Hx3 Hy3) => Hxy3.
+move: (wmuls16P _ _ _ _ _ Hx4 Hy4) => Hxy4.
+move: (wmuls16P _ _ _ _ _ Hx5 Hy5) => Hxy5.
+move: (wmuls16P _ _ _ _ _ Hx6 Hy6) => Hxy6.
+move: (wmuls16P _ _ _ _ _ Hx7 Hy7) => Hxy7.
+move: (wmuls16P _ _ _ _ _ Hx8 Hy8) => Hxy8.
+move: (wmuls16P _ _ _ _ _ Hx9 Hy9) => Hxy9.
+move: (wmuls16P _ _ _ _ _ HxA HyA) => HxyA.
+move: (wmuls16P _ _ _ _ _ HxB HyB) => HxyB.
+move: (wmuls16P _ _ _ _ _ HxC HyC) => HxyC.
+move: (wmuls16P _ _ _ _ _ HxD HyD) => HxyD.
+move: (wmuls16P _ _ _ _ _ HxE HyE) => HxyE.
+move: (wmuls16P _ _ _ _ _ HxF HyF) => HxyF.
+rewrite /VPMULL_16u16 /VPMULH_16u16 /= !to_sint_wmuls16 !inFqM.
+do 15!
+ (split; first by (split; [congr; smt() | rewrite -to_sint_wmuls16 /#])).
+by (split; [congr; smt() | rewrite -to_sint_wmuls16 /#]).
+qed.
+
+lemma add_16u32AB_sb b xA xB x yA yB y:
+ I16u32AB_sb b xA xB x =>
+ I16u32AB_sb b yA yB y =>
+ b+b <= W32.max_sint =>
+ I16u32AB_sb (b+b) (VPADD_8u32 xA yA) (VPADD_8u32 xB yB) (map2 Zq.(+) x y).
+proof.
+rewrite /I16u32AB_sb -iotaredE /VPADD_8u32 /= => |> *.
+have ?: W32.min_sint <= b+b <= W32.max_sint by smt().
+by rewrite !to_sint32D_small 1..16:/# !inFqD /#. 
+qed.
+
+lemma sub_16u32AB_sb b xA xB x yA yB y:
+ I16u32AB_sb b xA xB x =>
+ I16u32AB_sb b yA yB y =>
+ b+b <= W32.max_sint =>
+ I16u32AB_sb (b+b) (VPSUB_8u32 xA yA) (VPSUB_8u32 xB yB) (map2 Zq.(-) x y).
+proof.
+rewrite /I16u32AB_sb -iotaredE /VPSUB_8u32 /= => |> *.
+have ?: W32.min_sint <= b+b <= W32.max_sint by smt().
+by rewrite !to_sint32B_small 1..16:/# !inFqB /#. 
+qed.
+
+lemma fqmulprecomp16x_ll: 
+ islossless Jkem_avx2.M.__fqmulprecomp16x 
+by islossless.
+
+
+lemma mulR_inv (a b : Fq) :
+  (a * inFq Montgomery16.R = b) <=> (a = b * inFq Montgomery16.Rinv).
+proof.
+have := RRinv; rewrite /R /Rinv => />.
+rewrite -!Zq.ComRing.mulrA -!inFqM /= inFq_mod => ->.
+by rewrite -inFq_mod !ZqField.mulr1.
+qed.
+
+hoare fqmulprecomp16x_h n _a _b: 
+ Jkem_avx2.M.__fqmulprecomp16x :
+   x16_spec q qx16 /\
+   qinv16u16M al ah /\
+   I16u16M_ub 1 ah _a /\
+   I16u16_sb n b _b
+   ==> I16u16_sb 1 res (mul16x16 _a _b).
+proof.
+proc; auto => |> &m.
+rewrite !x16_spec_bits16 /qinv16u16M !allP => |> Hq Hqinv Ha Hb.
+have:  forall (i : int),0 <= i < 16 => (al{m} \bits16 i) = (ah{m} \bits16 i) * (W16.of_int 62209).
+ move => i Hi; move :(Hqinv i).
+ rewrite mem_iota /R2C /= !initiE /#.
+move => Hqinv' i; rewrite mem_iota => /> Hi1 Hi2.
+rewrite /Iu16_sb !initiE // /=.
+rewrite (_: (VPSUB_16u16 (VPMULH_16u16 ah{m} b{m}) (VPMULH_16u16 (VPMULL_16u16 al{m} b{m}) qx16{m}) \bits16 i) = Montgomery16.REDCmul16 (b{m} \bits16 i) (ah{m} \bits16 i) ).
+rewrite /VPMULH_16u16 /VPMULL_16u16 /VPSUB_16u16 /R2C /REDC16 => />.
+rewrite !bits16_W16u16 /=. 
+rewrite ifT //. 
+rewrite !Hq //. 
+rewrite !Hqinv' //. 
+rewrite W16u16.Pack.of_listE W16u16.Pack.initE /=. 
+rewrite ifT //. 
+smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move :(Ha i _); first smt(mem_iota).
+rewrite initiE 1:/#.
+rewrite /Iu16_ub -andaE. 
+rewrite mulR_inv. apply andaW => /= Ha1 Ha2.
+move :(Hb i). rewrite mem_iota initiE 1:/#. rewrite Hi1 Hi2 /=. rewrite /Iu16_sb -andaE. apply andaW => Hb1 Hb2.
+rewrite /map2 initiE // /=. rewrite Ha1 Hb1. 
+have := (Montgomery16.REDCmul16_correct (b{m} \bits16 i) (ah{m} \bits16 i)). rewrite (_:Montgomery16.q=q) 1:/#. rewrite Ha2 /=. 
+rewrite -andaE. rewrite eq_inFq. apply andaW => H1 H2. rewrite H1. split. rewrite !inFqM. rewrite -!Zq.ComRing.mulrA. smt(Zq.ComRing.mulrC Zq.ComRing.mulrA).
+smt().
+qed.
+
+phoare fqmulprecomp16x_ph n _a _b:
+ [ Jkem_avx2.M.__fqmulprecomp16x :
+   x16_spec q qx16 /\
+   qinv16u16M al ah /\
+   I16u16M_ub 1 ah _a /\
+   I16u16_sb n b _b
+   ==> I16u16_sb 1 res (mul16x16 _a _b) ] = 1%r.
+proof. by conseq fqmulprecomp16x_ll (fqmulprecomp16x_h n _a _b). qed.
+
+lemma mont_red_ll:
+ islossless Jkem_avx2.M.__mont_red
+by islossless.
+
+hoare mont_red_h _x:
+ Jkem_avx2.M.__mont_red:
+  x16_spec q qx16 /\
+  x16_spec 62209 qinvx16 /\
+  I16u16LH_sb 88657928 lo hi _x
+  ==>
+  I16u16S_sb (inFq 169) 1 res _x.
+proof.
+proc; simplify; auto.
+move => &m |>.
+rewrite /x16_spec /I16u16LH_sb /R2C !allP => Hq Hqinv H k Hk /=.
+move: Hk (Hq _ Hk) (Hqinv _ Hk) (H _ Hk).
+rewrite mem_iota /=; move => [Hk1 Hk2].
+rewrite !initiE //; move=> {Hq Hqinv H} Hq Hqinv [H1 H2].
+have:= sint_bnd_u32H _ _ _ (hi{m}\bits16 k) (lo{m}\bits16 k) _ H2.
+ by rewrite to_sint_pack2.
+rewrite /= => {H2} H2.
+move: (Montgomery16.REDC16_correct (-1353) 1352 (lo{m}\bits16 k) _ _ _ H2) => //=.
+rewrite /Iu16_sb /REDC16 /Montgomery16.qinv /= -andaE.
+rewrite /q /Montgomery16.Rinv /=; move => [HHA HHB].
+rewrite /VPSUB_16u16 /VPMULH_16u16 /VPMULL_16u16 /= !bits16_W16u16 Hk1 Hk2 //=.
+pose X:= W16u16.Pack.of_list _.
+have ->: X.[k] = (hi{m} \bits16 k) - wmulhs ((lo{m} \bits16 k) * (qinvx16{m} \bits16 k)) (qx16{m} \bits16 k).
+ have: k\in iota_ 0 16 by smt(mem_iota).
+ by move:(k); apply/List.allP; rewrite -iotaredE /X.
+clear X; rewrite Hq Hqinv /q /=; split.
+ rewrite H1 to_sint_pack2 /= inFq_mod (inFq_mod 169).
+ by rewrite -inFqM inFq_mod modzMm /q -HHA /#.
+smt().
+qed.
+
+phoare mont_red_ph _x:
+ [ Jkem_avx2.M.__mont_red:
+   x16_spec q qx16 /\
+   x16_spec 62209 qinvx16 /\
+   I16u16LH_sb 88657928 lo hi _x
+   ==>
+   I16u16S_sb (inFq 169) 1 res _x ] = 1%r.
+proof. by conseq mont_red_ll (mont_red_h _x). qed.
+
+
+lemma I16u32AB_sb_eqx b yA yB x1 x2:
+ I16u32AB_sb b yA yB x1 =>
+ x1=x2 =>
+ I16u32AB_sb b yA yB x2.
+proof. by move=> H <-. qed.
+
+lemma I16u16_sbW n1 n2 y x:
+ I16u16_sb n1 y x =>
+ n1 <= n2 =>
+ I16u16_sb n2 y x.
+proof.
+move=> /List.allP H Hn; apply/List.allP => k Hk /=.
+move: (H k Hk) => {H} [H1 H2]; split => //.
+by apply (sint_bndW _ _ _ _ _ _ _ H2); smt().
 qed.
 
 equiv cmpl_mulx16_eq:
@@ -960,152 +1082,48 @@ equiv cmpl_mulx16_eq:
  I16u16S_sb (inFq 169) 1 res{1}.`2 res{2}.`2.
 proof.
 proc; simplify.
-ecall {1} (mont_red_ph y0{1} y1{1}).
-ecall {1} (mont_red_ph x0{1} x1{1}).
-ecall {1} (deinterleave_u16_ph y0{1} y1{1}).
-ecall {1} (deinterleave_u16_ph x0{1} x1{1}).
+sp 0 2.
+ecall {1} (mont_red_ph rim{2}).
+ecall {1} (mont_red_ph rre{2}).
+ecall {1} (deinterleave_u16_ph 88657928 rim{2}).
+ecall {1} (deinterleave_u16_ph 88657928 rre{2}).
 wp.
-ecall {1} (wmul_16u16_ph zaim{1} bim{1}).
-ecall {1} (wmul_16u16_ph aim{1} bre{1}).
-ecall {1} (wmul_16u16_ph are{1} bim{1}).
-ecall {1} (wmul_16u16_ph are{1} bre{1}).
+ecall {1} (wmul_16u16_ph 2 (map2 Zq.( * ) zetas{2} aim{2}) bim{2}).
+ecall {1} (wmul_16u16_ph 2 aim{2} bre{2}).
+ecall {1} (wmul_16u16_ph 2 are{2} bim{2}).
+ecall {1} (wmul_16u16_ph 2 are{2} bre{2}).
 ecall {1} (fqmulprecomp16x_ph 2 zetas{2} aim{2}).
-auto => &1 &2 |> Hare Haim Hbre Hbim Hzinv Hz Hq Hqinv zaim Hzaim.
-move=> [ac0 ac1] /= /List.allP Hac.
-move=> [ad0 ad1] /= /List.allP Had.
-move=> [bc0 bc1] /= /List.allP Hbc.
-move=> [zbd0 zbd1] /= /List.allP Hzbd.
+auto; rewrite /q => &1 &2 |> Hare Haim Hbre Hbim Hzinv Hz Hq Hqinv zaim Hzaim.
+move=> [ac0 ac1] /= Hac.
+move=> [ad0 ad1] /= Had.
+move=> [bc0 bc1] /= Hbc.
+have ->/=: I16u16_sb 2 zaim (mul16x16 zetas{2} aim{2}).
+ by apply (I16u16_sbW _ _ _ _ Hzaim).
+move=> [zbd0 zbd1] /= Hzbd.
 have ->: x16_spec 0 W256.zero.
  by rewrite /x16_spec -iotaredE /R2C /= !W16u16.get_zero.
 move => |>; split.
- move=> [xrel xreh] /= /List.allP Hxre.
- have Bxrel: all (fun k=> int_bnd (-88644612) 88657928 (to_sint (xrel \bits32 k))) (iota_ 0 8).
-  admit.
- move=> [ximl ximh] /= /List.allP Hxim.
- pose Bxre:= all _ (iota_ 0 16).
- have ->: Bxre.
-  rewrite /Bxre.
-  apply/List.allP.
-  move => i; rewrite mem_iota /= => Hi.
-  case: (i < 8) => C.
-   move: (Hxre i _); first smt(mem_iota).
-   move=> /= {Hxre} [Hxre _].
-   have ->: to_sint (xreh \bits16 i) = to_sint (VPADD_8u32 ac0 zbd0 \bits32 i) %/ W16.modulus.
-    admit.
-   admit.
-  move: (Hxre (i-8) _); first smt(mem_iota).
-  move=> /= {Hxre} [_ Hxre].
-  have ->: to_sint (xreh \bits16 i) = to_sint (VPADD_8u32 ac1 zbd1 \bits32 i-8) %/ W16.modulus.
-   admit.
-  admit.
- pose Bxim:= all _ (iota_ 0 16).
- have ->: Bxim.
-  admit.
- move => |> rre Hrre rim Hrim.
- admit.
-move => Esign [xrel xreh] /= /List.allP Hxre.
-have Bxrel: all (fun k=> int_bnd (-88644612) 88657928 (to_sint (xrel \bits32 k))) (iota_ 0 8).
- admit.
-move=> [ximl ximh] /= /List.allP Hxim.
-pose Bxre:= all _ (iota_ 0 16).
-admit.
-qed.
-
-
-
-phoare interleave_u16_ph _bL _bH _al _ah:
- [ Jkem_avx2.M.__w256_interleave_u16:
-   al = _al /\
-   ah = _ah /\
-   all (fun k=> sint_bnd _bL _bH (_ah \bits16 k))
-       (iota_ 0 16)
-   ==> all (fun k=> 
-             res.`1 \bits32 k
-             = pack2 [_al \bits16 k+4*(k%/4); _ah \bits16 k+4*(k%/4)] /\
-             res.`2 \bits32 k
-             = pack2 [_al \bits16 4+k+4*(k%/4); _ah \bits16 4+k+4*(k%/4)] /\
-             sint32_bnd (_bL*W16.modulus) ((_bH+1)*W16.modulus-1) (res.`1 \bits32 k) /\
-             sint32_bnd (_bL*W16.modulus) ((_bH+1)*W16.modulus-1) (res.`2 \bits32 k))
-           (iota_ 0 8)
-   ] = 1%r.
-proof.
-proc; wp; auto => &m |> /List.allP H.
-apply/List.allP => k Hk /=.
-rewrite andbA -andaE; split.
- move: k Hk; apply/List.allP.
- move/List.allP: H; rewrite -iotaredE /= => |> *.
-move => |> -> ->.
-move/List.allP: H; rewrite -iotaredE /= => /> *.
-move: k Hk; apply/List.allP; rewrite -iotaredE /=.
-rewrite !to_sint_pack2 => />*.
-do 7! (split; first by (split;
-  pose X:= al{m} \bits16 _; split; move: (W16.to_uint_cmp X); smt())).
-split; pose X:= al{m} \bits16 _; split; move: (W16.to_uint_cmp X); smt().
-qed.
-(*
-phoare interleave_u16_ph _bL _bH _al _ah:
- [ Jkem_avx2.M.__w256_interleave_u16:
-   al = _al /\
-   ah = _ah /\
-   all (fun k=> sint_bnd _bL _bH (_ah \bits16 k))
-       (iota_ 0 16)
-   ==> all (fun k=> 
-             to_sint (res.`1 \bits32 k)
-             = to_sint (_ah \bits16 4*(k%/4)+k) * W16.modulus + to_uint (_al \bits16 4*(k%/4)+k)
-         /\  to_sint (res.`2 \bits32 k)
-             = to_sint (_ah \bits16 4+4*(k%/4)+k) * W16.modulus + to_uint (_al \bits16 4+4*(k%/4)+k)
-         /\ sint32_bnd (_bL*W16.modulus) ((_bH+1)*W16.modulus-1) (res.`1 \bits32 k)
-         /\ sint32_bnd (_bL*W16.modulus) ((_bH+1)*W16.modulus-1) (res.`2 \bits32 k))
-           (iota_ 0 8)
-   ] = 1%r.
-proof.
-proc; wp; auto => &m |> /List.allP H.
-apply/List.allP => k Hk /=.
-rewrite andbA -andaE; split.
- move: k Hk; apply/List.allP.
- move/List.allP: H; rewrite -iotaredE /= => |> *.
- rewrite /VPUNPCKL_16u16 /VPUNPCKL_8u16 /VPUNPCKH_16u16 /VPUNPCKH_8u16.
- by rewrite /interleave_gen /get_lo_2u64 /get_hi_2u64 /= !to_sint_pack2 /=.
-move=> [E1 E2]; split.
- apply (sint32_bnd_u16H _ _ _ _ _ E1).
- by apply H; smt(mem_iota).
-apply (sint32_bnd_u16H _ _ _ _ _ E2).
-by apply H; smt(mem_iota).
-qed.
-*)
-require Montgomery16.
-op wmuls16 (x y: W16.t): W32.t =
- pack2 [x*y; wmulhs x y].
-
-phoare wmul_16u16_ph _x _y:
-  [ Jkem_avx2.M.__wmul_16u16:
-    x = _x /\
-    y = _y /\
-    List.all (fun k => sint_bnd (-2*q) (2*q-1) (_x \bits16 k) /\
-                  sint_bnd (-2*q) (2*q-1) (_y \bits16 k))
-             (iota_ 0 16)
-    ==>
-    all (fun k=>
-          res.`1 \bits32 k
-          = wmuls16 (_x \bits16 k+4*(k%/4)) (_y \bits16 k+4*(k%/4)) /\
-          res.`2 \bits32 k
-          = wmuls16 (_x \bits16 4+k+4*(k%/4)) (_y \bits16 4+k+4*(k%/4)) )
-        (iota_ 0 8) ] = 1%r.
-proc; simplify; auto.
-call (interleave_u16_ph (-677) 676 (VPMULL_16u16 _x _y) (VPMULH_16u16 _x _y)).
-wp; auto => &m |> H.
-split.
- move: H; rewrite -{1}iotaredE /q /= => [[[Hx0 Hy0] [[Hx1 Hy1] [[Hx2 Hy2] [[Hx3 Hy3] [[Hx4 Hy4] [[Hx5 Hy5] [[Hx6 Hy6] [[Hx7 Hy7] [[Hx8 Hy8] [[Hx9 Hy9] [[HxA HyA] [[HxB HyB] [[HxC HyC] [[HxD HyD] [[HxE HyE] [HxF HyF]]]]]]]]]]]]]]]]].
- rewrite -iotaredE /= /VPMULH_16u16 /=.
- do 15! (split; first by(
-  pose X:= x{m} \bits16 _;
-  pose Y:= y{m} \bits16 _;
-  move: (to_sintH_bnd X Y (-6658) 6657 (-6658) 6657 _ _ _) => //)).
- pose X:= x{m} \bits16 _;
- pose Y:= y{m} \bits16 _;
- by move: (to_sintH_bnd X Y (-6658) 6657 (-6658) 6657 _ _ _) => //.
-rewrite -{1}iotaredE /= => [[H0 [H1 [H2 [H3 [H4 [H5 [H6 [H7 [H8 [H9 [HA [HB [HC [HD [HE Hf]]]]]]]]]]]]]]]] [r0 r1].
-by rewrite -iotaredE /= => |> *.
+ split.
+  move: (add_16u32AB_sb _ _ _ _ _ _ _ Hac Hzbd) => /= H.
+  apply (I16u32AB_sb_eqx _ _ _ _ _ H); rewrite tP => k Hk /=.
+  rewrite map2iE 1:// initiE 1:// /cmplx_mul /=.
+  by rewrite !map2iE 1..3:// ZqField.mul1r; ring.
+ move=> HriAB [riL riH] /= HriLH.
+ move: (add_16u32AB_sb _ _ _ _ _ _ _ Hbc Had) => /= H.
+ apply (I16u32AB_sb_eqx _ _ _ _ _ H); rewrite tP => k Hk /=.
+ rewrite map2iE 1:// initiE 1:// /cmplx_mul /=.
+ by rewrite !map2iE 1..2://; ring.
+move=> Hsign; split.
+ move: (sub_16u32AB_sb _ _ _ _ _ _ _ Hac Hzbd) => /= H.
+ apply (I16u32AB_sb_eqx _ _ _ _ _ H); rewrite tP => k Hk /=.
+ rewrite map2iE 1:// initiE 1:// /cmplx_mul /=.
+ rewrite !map2iE 1..3:// inFqN; ring. 
+ by rewrite ZqField.mulr1; ring.
+move=> HriAB [riL riH] /= HriLH.
+move: (add_16u32AB_sb _ _ _ _ _ _ _ Hbc Had) => /= H.
+apply (I16u32AB_sb_eqx _ _ _ _ _ H); rewrite tP => k Hk /=.
+rewrite map2iE 1:// initiE 1:// /cmplx_mul /=.
+by rewrite !map2iE 1..2://; ring.
 qed.
 
 
@@ -1282,33 +1300,26 @@ proc; simplify.
 wp; skip => |> &m Ha Hb.
 rewrite /VPERM2I128 /=.
 rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
 rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
 rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
 rewrite ifT.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
 rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
 rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
 rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
 rewrite ifT.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
-have ->: !((of_int 32))%W8.[0].
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
-have ->: !((of_int 32))%W8.[4].
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
-have ->: ((of_int 49))%W8.[0].
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
-have ->: ((of_int 49))%W8.[4].
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE /=.
-rewrite !b2i0 !b2i1 /shuffle8 /=.
+ by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
+rewrite /of_int /int2bs /mkseq -iotaredE /=
+    !b2i0 !b2i1 /shuffle8 /=.
 move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
 move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
-by rewrite -!iotaredE /= /#.
+smt().
 qed.
 
 phoare __shuffle8_ph' n _a _b:
@@ -1350,6 +1361,7 @@ proof. by conseq __shuffle4_ll (__shuffle4_h na nb _a _b). qed.
 
 lemma __shuffle2_ll: islossless Jkem_avx2.M.__shuffle2 by islossless.
 
+require import AVX2_Ops.
 hoare __shuffle2_h na nb _a _b:
  Jkem_avx2.M.__shuffle2:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
@@ -1358,23 +1370,7 @@ hoare __shuffle2_h na nb _a _b:
 proof.
 proc; simplify.
 wp; skip => |> &m Ha Hb.
-rewrite /VPBLENDD_256 /VMOVSLDUP_8u32 /VMOVSLDUP_4u32 /VPSRL_4u64 /shuffle2 /=.
-have ->: !((of_int 170))%W8.[0].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[1].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: !((of_int 170))%W8.[2].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[3].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: !((of_int 170))%W8.[4].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[5].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: !((of_int 170))%W8.[6].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[7].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+rewrite /VPBLENDD_256 /VMOVSLDUP_8u32 /VMOVSLDUP_4u32 /VPSRL_4u64 /shuffle2 /= /int_bit /=.
 move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
 move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
 rewrite -!iotaredE /= => |>.
@@ -1398,24 +1394,7 @@ hoare __shuffle1_h na nb _a _b:
 proof.
 proc; simplify.
 wp; skip => |> &m Ha Hb.
-rewrite /VPBLENDW_256 /VPBLENDW_128 /VPSLL_8u32 /VPSRL_8u32 /shuffle1 /=.
-rewrite W2u128_W16u16.
-have ->: !((of_int 170))%W8.[0].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[1].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: !((of_int 170))%W8.[2].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[3].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: !((of_int 170))%W8.[4].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[5].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: !((of_int 170))%W8.[6].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
-have ->: ((of_int 170))%W8.[7].
- by rewrite /W8.of_int /int2bs /mkseq -iotaredE.
+rewrite /VPBLENDW_256 /VPBLENDW_128 /VPSLL_8u32 /VPSRL_8u32 /shuffle1 /= W2u128_W16u16 /int_bit /=.
 rewrite /= !bits32_shl16_bits16H // !bits32_shr16_bits16L //=.
 move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
 move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
@@ -2379,420 +2358,6 @@ while (#[/2:]pre /\ 0 <= i{2}).
 by auto.
 qed.
 
-
-(*
-op WMULL_16u16 (x y: W256.t) =
- get256 (init32 (fun i => W32.of_int( to_sint (R2C x).[i]*to_sint (R2C y).[i])))%WArray32 0.
-
-lemma WMULL_16u16E x y k:
-  0 <= k < 8 =>
-  (WMULL_16u16 x y) \bits32 k
-  = W32.of_int (to_sint (x \bits16 k) * to_sint (y \bits16 k)).
-admitted.
-
-op WMULH_16u16 (x y: W256.t) =
- get256 (init32 (fun i => W32.of_int( to_sint (R2C x).[8+i]*to_sint (R2C y).[8+i])))%WArray32 0.
-
-lemma WMULH_16u16E x y k:
-  0 <= k < 8 =>
-  (WMULH_16u16 x y) \bits32 k
-  = W32.of_int (to_sint (x \bits16 (8+k)) * to_sint (y \bits16 (8+k))).
-admitted.
-
-phoare wmul_16u16_ph _a _b:
- [ Jkem_avx2.M.__wmul_16u16 :
-   x = _a => 
-   y = _b
-   ==> res = (WMULL_16u16 _a _b, WMULH_16u16 _a _b)
- ] = 1%r.
-proc.
-admitted.
-*)
-
-lemma mulR_inv (a b : Fq) :
-  (a * inFq Montgomery16.R = b) <=> (a = b * inFq Montgomery16.Rinv).
-have :=RRinv. rewrite /R /Rinv => />. rewrite -!Zq.ComRing.mulrA -!inFqM => />.
-rewrite inFq_mod => H. rewrite H -inFq_mod. rewrite Zq.ComRing.mulrC Zq.ComRing.mul1r //. rewrite Zq.ComRing.mulrC Zq.ComRing.mul1r //. qed.
-
-lemma fqmulprecomp16x_ll : islossless Jkem_avx2.M.__fqmulprecomp16x by islossless.
-
-hoare fqmulprecomp16x_h n _a _b: 
- Jkem_avx2.M.__fqmulprecomp16x :
-   x16_spec q qx16 /\
-   qinv16u16M al ah /\
-   I16u16M_ub 1 ah _a /\
-   I16u16_sb n b _b
-   ==> I16u16_sb 1 res (mul16x16 _a _b).
-proof.
-proc;auto => |> &m. rewrite !x16_spec_bits16 /qinv16u16M !allP => |> Hq Hqinv Ha Hb.
-have : forall (i : int),0 <= i < 16 => (al{m} \bits16 i) = (ah{m} \bits16 i) * (W16.of_int 62209). move => i Hi. move :(Hqinv i). rewrite mem_iota /R2C /= !initiE 1..2:/#. move => H. rewrite H // 1:/#. move => Hqinv'.
-move => i. rewrite mem_iota => |>Hi1 Hi2.
-rewrite /Iu16_sb !initiE // /=. 
-rewrite (_: (VPSUB_16u16 (VPMULH_16u16 ah{m} b{m}) (VPMULH_16u16 (VPMULL_16u16 al{m} b{m}) qx16{m}) \bits16 i) = Montgomery16.REDCmul16 (b{m} \bits16 i) (ah{m} \bits16 i) ).  rewrite /VPMULH_16u16 /VPMULL_16u16 /VPSUB_16u16 /R2C /REDC16 => />. rewrite !bits16_W16u16 /=. rewrite ifT //. rewrite !Hq //. rewrite !Hqinv' //. rewrite W16u16.Pack.of_listE W16u16.Pack.initE /=. rewrite ifT //. smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
-move :(Ha i). rewrite mem_iota initiE 1:/#. rewrite Hi1 Hi2 /=. rewrite /Iu16_ub -andaE. rewrite mulR_inv. apply andaW => /= Ha1 Ha2.
-move :(Hb i). rewrite mem_iota initiE 1:/#. rewrite Hi1 Hi2 /=. rewrite /Iu16_sb -andaE. apply andaW => Hb1 Hb2.
-rewrite /map2 initiE // /=. rewrite Ha1 Hb1. 
-have := (Montgomery16.REDCmul16_correct (b{m} \bits16 i) (ah{m} \bits16 i)). rewrite (_:Montgomery16.q=q) 1:/#. rewrite Ha2 /=. 
-rewrite -andaE. rewrite eq_inFq. apply andaW => H1 H2. rewrite H1. split. rewrite !inFqM. rewrite -!Zq.ComRing.mulrA. smt(Zq.ComRing.mulrC Zq.ComRing.mulrA).
-rewrite (sint_bndW _ (-(q-1)) (q-1) _ _ ) /#. qed.
-
-phoare fqmulprecomp16x_ph n _a _b:
- [ Jkem_avx2.M.__fqmulprecomp16x :
-   x16_spec q qx16 /\
-   qinv16u16M al ah /\
-   I16u16M_ub 1 ah _a /\
-   I16u16_sb n b _b
-   ==> I16u16_sb 1 res (mul16x16 _a _b) ] = 1%r.
-proof. by conseq fqmulprecomp16x_ll (fqmulprecomp16x_h n _a _b). qed.
-
-(*hoare fq_mulprecomp16x_aux_h _n _r:
- Jkem_avx2.M.__fqmulprecomp16x :
-   x16_spec q qx16 /\
-   x16_spec 1441 ah /\
-   qinv16u16M al ah /\
-   I16u16_sb _n b _r
-   ==> I16u16S_sb (inFq 3303*inFq W16.modulus) 1 res _r.
-elim b.
-call (fqmulprecomp16x_ph _n b _r).*)
-
-phoare fq_mulprecomp16x_aux _n _r:
- [ Jkem_avx2.M.__fqmulprecomp16x :
-   x16_spec q qx16 =>
-   x16_spec 1441 ah =>
-   qinv16u16M al ah =>
-   I16u16_sb _n b _r
-   ==> I16u16S_sb (inFq 3303*inFq W16.modulus) 1 res _r ] = 1%r.
-admitted.
-
-
-phoare deinterleave_u16_ph _bL _bH _a0 _a1:
- [ Jkem_avx2.M.__w256_deinterleave_u16:
-   x16_spec 0 _zero /\
-   a0 = _a0 /\
-   a1 = _a1 /\
-   all (sint32_bnd _bL _bH) (R2D a0) /\
-   all (sint32_bnd _bL _bH) (R2D a1) 
-   ==> all (fun k =>
-             _a0 \bits32 k
-             = W2u16.pack2 [ res.`1 \bits16 k+4*(k%/4)
-                           ; res.`2 \bits16 k+4*(k%/4) ]
-          /\ _a1 \bits32 k
-             = W2u16.pack2 [ res.`1 \bits16 4+k+4*(k%/4)
-                           ; res.`2 \bits16 4+4*(k%/4) ])
-           (iota_ 0 8)
-       /\ all (sint_bnd (_bL %/ W16.modulus) (_bH %/ W16.modulus)) (R2C res.`2)
-  ] = 1%r.
-proof.
-proc; auto.
-move=> &m |> /x16_spec_bits16 Hq /List.allP B32_0 /List.allP B32_1.
-rewrite -andaE; split.
- (* correctness *)
- rewrite -iotaredE /= /VPACKUS_8u32 /VPACKUS_4u32 /= => />.
-do 2! ((rewrite packus_4u32_0H 1:/# /=;
-         [by rewrite !VPBLENDW_256_170 //= Hq |];
-        rewrite packus_4u32_0H 1:/# /=; [by rewrite !VPSRL_8u32_16 //= |]);
-  rewrite !VPBLENDW_256_170 // !VPSRL_8u32_16 //=;
-        (pose W:= a0{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=; clear W);
- (rewrite packus_4u32_0H 1:/# /=;
-         [by rewrite !VPBLENDW_256_170 //= Hq |];
-        rewrite packus_4u32_0H 1:/# /=; [by rewrite !VPSRL_8u32_16 //= |]);
-  rewrite !VPBLENDW_256_170 // !VPSRL_8u32_16 //=;
-        (pose W:= a1{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=; clear W)).
-
-
-rewrite packus_4u32_0H 1:/# /=;
-         [by rewrite !VPBLENDW_256_170 //= Hq |];
-        rewrite packus_4u32_0H 1:/# /=; [by rewrite !VPSRL_8u32_16 //= |];
-        rewrite !VPBLENDW_256_170 // !VPSRL_8u32_16 //=;
-        (pose W:= a1{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=; clear W).
-
- rewrite packus_4u32_0H 1:/# /=;
-         [by rewrite !VPBLENDW_256_170 //= Hq |];
-        rewrite packus_4u32_0H 1:/# /=; [by rewrite !VPSRL_8u32_16 //= |];
-        rewrite !VPBLENDW_256_170 // !VPSRL_8u32_16 //=;
-        (pose W:= a0{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=; clear W);
-rewrite packus_4u32_0H 1:/# /=;
-         [by rewrite !VPBLENDW_256_170 //= Hq |];
-        rewrite packus_4u32_0H 1:/# /=; [by rewrite !VPSRL_8u32_16 //= |];
-        rewrite !VPBLENDW_256_170 // !VPSRL_8u32_16 //=;
-        (pose W:= a1{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=; clear W).
-
-
-
-rewrite packus_4u32_0H 1:/# /=.
-         by rewrite !VPBLENDW_256_170 //= Hq.
-
-        rewrite packus_4u32_0H 1:/# /=.
-by rewrite !VPSRL_8u32_16 //=.
-        rewrite !VPBLENDW_256_170 // !VPSRL_8u32_16 //=.
-        pose W:= a1{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=; clear W.
- do 8! (rewrite packus_4u32_0H 1:/# /=;
-         [by rewrite !VPBLENDW_256_170 //= Hq |];
-        rewrite packus_4u32_0H 1:/# /=; [by rewrite !VPSRL_8u32_16 //= |]);
-        rewrite !VPBLENDW_256_170 // !VPSRL_8u32_16 //=;
-        do ! (pose W:= a0{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=; clear W).
-(* bnds *)
-move=> /List.allP H.
-apply/Array16.allP.
-
-
-do 8! (pose W:= a0{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //= {W}).
-rewrite 
-
- !VPSRL_8u32_16 //=. ;
-pose W:= a0{m} \bits32 _; rewrite (W32_unpack16E W) !W256_bits32_bits16 //=).
-print W2u16.pack2_t.
-search W32.to_sint (\bits16).
-
-rewrite W256_bits128_bits16 //=.
- rewrite VPSRL_8u32_16 //.
- rewrite /=.
-print packus_4u32.
-proc; simplify.
-
-
-all (fun k=> 
-(* 001122338899AABB
-   44556677CCDDEEFF *)
-             to_sint (_a0 \bits32 k)
-             = to_sint (res.`2 \bits16 4*(k%/4)+k) * W16.modulus + to_uint (res.`1 \bits16 4*(k%/4)+k)
-         /\  to_sint (_a1 \bits32 k)
-             = to_sint (res.`2 \bits16 4+4*(k%/4)+k) * W16.modulus + to_uint (res.`1 \bits16 4+4*(k%/4)+k))
-           (iota_ 0 8)
-       /\ all (fun k => sint_bnd (_bL %/ W16.modulus) (_bH %/ W16.modulus) (res.`2 \bits16 k))
-              (iota_ 0 16)
-   ] = 1%r.
-proof.
-
-phoare deinterleave_u16_ph _bL _bH _a0 _a1:
- [ Jkem_avx2.M.__w256_deinterleave_u16:
-   x16_spec 0 _zero /\
-   a0 = _a0 /\
-   a1 = _a1 /\
-   all (fun k=> 
-         sint32_bnd _bL _bH (a0 \bits32 k)
-      /\ sint32_bnd _bL _bH (a1 \bits32 k))
-       (iota_ 0 8)
-   ==> all (fun k=> 
-(* 001122338899AABB
-   44556677CCDDEEFF *)
-             to_sint (_a0 \bits32 k)
-             = to_sint (res.`2 \bits16 4*(k%/4)+k) * W16.modulus + to_uint (res.`1 \bits16 4*(k%/4)+k)
-         /\  to_sint (_a1 \bits32 k)
-             = to_sint (res.`2 \bits16 4+4*(k%/4)+k) * W16.modulus + to_uint (res.`1 \bits16 4+4*(k%/4)+k))
-           (iota_ 0 8)
-       /\ all (fun k => sint_bnd (_bL %/ W16.modulus) (_bH %/ W16.modulus) (res.`2 \bits16 k))
-              (iota_ 0 16)
-   ] = 1%r.
-proof.
-proc; auto.
-move=> &m |> Hq /List.allP B32.
-rewrite -andaE; split.
- (* correctness *)
- rewrite -iotaredE /=.
-rewrite /VPACKUS_8u32 /VPACKUS_4u32 /=.
-rewrite packus_4u32_0H 1:/#.
- by rewrite W256_bits128_bits16 //= VPSRL_8u32_16 //.
-rewrite W256_bits128_bits16 //=.
- rewrite VPSRL_8u32_16 //.
- rewrite /=.
-print packus_4u32.
-search (\bits128) (\bits16).
-rewrite W256_bits128_bits16.
-
-(*
-(VPACKUS_8u32 (VPSRL_8u32 a0{m} ((of_int 16))%W8) (VPSRL_8u32 a1{m} ((of_int 16))%W8) \bits16 0)
-
-0123 0123 4567 4567
-aaaa bbbb aaaa bbbb
-
-VPACKUS_8u32 x y \bits16 k
-= if k%/4 %% 2 = 0
-  then sat_u16 
-*)
- rewrite /VPACKUS_8u32 /VPACKUS_4u32 /VPSRL_8u32 /VPBLENDW_256 /VPBLENDW_128.
-split.
-pose S:= W8.of_int 16.
-rewrite /of_int /int2bs /mkseq /= -iotaredE /=.
-search pack4_t (\bits16).
-print packus_4u32.
-rewrite bits16_W4u32.
-print packus_4u32.
- admit.
-(* bounds *)
-pose X0:= VPACKUS_8u32 _ _.
-pose X1:= VPACKUS_8u32 _ _.
-move=> /List.allP H.
-apply/List.allP => k Hk /=.
-case: (k < 8) => Ck.
- apply (sint_bnd_u32H _ _ (a0{m} \bits32 4*(k%/4)+k) _ (X1 \bits16 k)).
-  by move: (H k _)=> /=; smt(mem_iota).
- by move: (B32 k _)=> /=; smt(mem_iota).
-apply (sint_bnd_u32H _ _ (a1{m} \bits32 (k-8)) _ (X1 \bits16 k)).
- by move: (H (k-8) _)=> /=; smt(mem_iota).
-by move: (B32 (k-8) _)=> /=; smt(mem_iota).
-qed.
-
-lemma to_sint_pack2 l h:
- W32.to_sint (W2u16.pack2 [l;h]) = to_sint h*W16.modulus + to_uint l.
-admitted.
-
-print C2R.
-print pack16.
-lemma test_VPUNPCKL_16u16 (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15: W16.t) x:
- VPUNPCKL_16u16 (pack16 [a0;a1;a2;a3;a4;a5;a6;a7;a8;a9;a10;a11;a12;a13;a14;a15]) (pack16 [b0;b1;b2;b3;b4;b5;b6;b7;b8;b9;b10;b11;b12;b13;b14;b15]) = x.
-rewrite /VPUNPCKL_16u16 /VPUNPCKL_8u16 /interleave_gen /get_lo_2u64 /=.
-rewrite W2u128_W16u16 !pack4bE //=.
-admit.
-qed.
-
-
-phoare interleave_u16_ph _bL _bH _al _ah:
- [ Jkem_avx2.M.__w256_interleave_u16:
-   al = _al /\
-   ah = _ah /\
-   all (fun k=> 
-         sint_bnd _bL _bH (_ah \bits16 k))
-       (iota_ 0 16)
-   ==> all (fun k=> 
-             to_sint (res.`1 \bits32 k)
-             = to_sint (_ah \bits16 4*(k%/4)+k) * W16.modulus + to_uint (_al \bits16 4*(k%/4)+k)
-         /\  to_sint (res.`2 \bits32 k)
-             = to_sint (_ah \bits16 4+4*(k%/4)+k) * W16.modulus + to_uint (_al \bits16 4+4*(k%/4)+k)
-         /\ sint32_bnd (_bL*W16.modulus) ((_bH+1)*W16.modulus-1) (res.`1 \bits32 k)
-         /\ sint32_bnd (_bL*W16.modulus) ((_bH+1)*W16.modulus-1) (res.`2 \bits32 k))
-           (iota_ 0 8)
-   ] = 1%r.
-proof.
-proc; wp; auto => &m |> /List.allP H.
-apply/List.allP => k Hk /=.
-rewrite andbA -andaE; split.
- move: k Hk; apply/List.allP.
- move/List.allP: H; rewrite -iotaredE /= => |> *.
- rewrite /VPUNPCKL_16u16 /VPUNPCKL_8u16 /VPUNPCKH_16u16 /VPUNPCKH_8u16.
- by rewrite /interleave_gen /get_lo_2u64 /get_hi_2u64 /= !to_sint_pack2 /=.
-move=> [E1 E2]; split.
- apply (sint32_bnd_u16H _ _ _ _ _ E1).
- by apply H; smt(mem_iota).
-apply (sint32_bnd_u16H _ _ _ _ _ E2).
-by apply H; smt(mem_iota).
-qed.
-
-phoare wmul_16u16_ph n _x _y:
-  [ Jkem_avx2.M.__wmul_16u16:
-    x = _x /\
-    y = _y /\
-    all (fun k => sint_bnd (-n*q) (n*q-1) (_x \bits16 k) /\
-                  sint_bnd (-n*q) (n*q-1) (_y \bits16 k))
-(*
-    I16u16_sb 2 are{1} are{2}
-    int_bnd _bl _bh _x /\
-    int_bnd _bl _bh _y
-*)
-    ==>
-    all (fun k=>
-          to_sint (res.`1 \bits32 k)
-          = to_sint (_x \bits16 k) * to_sint (_y \bits16 k)
- (*      /\ sint32_bnd (res.`1 \bits32 k) *)
-       /\ to_sint (res.`2 \bits32 k)
-          = to_sint (_x \bits16 8+k) * to_sint (_y \bits16 8+k)) (iota_ 0 8) ] = 1%r.
-admitted.
-
-lemma to_sint32D_bnd (x y : W32.t) (xL xH yL yH : int):
-  sint32_bnd xL xH x =>
-  sint32_bnd yL yH y =>
-  W32.min_sint <= xL + yL =>
-  xH + yH <= W32.max_sint =>
-  sint32_bnd (xL + yL) (xH + yH) (x + y).
-proof.
-move=> *.
-have ->: to_sint (x+y) = to_sint x + to_sint y.
- rewrite to_sintE to_uintD_small. admit.
- admit.
-smt().
-qed.
-
-lemma to_sint32B_bnd (x y : W32.t) (xL xH yL yH : int):
-  sint32_bnd xL xH x =>
-  sint32_bnd yL yH y =>
-  W32.min_sint <= xL - yH =>
-  xH-yL <= W32.max_sint =>
-  sint32_bnd (xL-yH) (xH-yL) (x - y).
-proof.
-admit.
-qed.
-
-
-abbrev int_bnd (xL xH x: int) = xL <= x <= xH.
-
-lemma int_bnd_div xL xH x y:
- 0 < y =>
- int_bnd xL xH x => int_bnd (xL %/ y) (xH %/ y) (x %/ y)
-by smt(). 
-
-lemma u32_bndH bL bH (x: W32.t) (xh xl: W16.t):
- to_sint x = to_sint xh * W16.modulus + to_uint xl =>
- int_bnd bL bH (to_sint x) =>
- sint_bnd (bL %/ W16.modulus) (bH %/ W16.modulus) xh.
-proof.
-move=> -> H.
-have <-: (to_sint xh * Montgomery16.R + to_uint xl) %/ W16.modulus = to_sint xh.
- rewrite edivz_eq //.
- by move: (W16.to_uint_cmp xl); smt().
-by apply int_bnd_div.
-qed.
-
-lemma mont_red_ll : islossless Jkem_avx2.M.__mont_red by islossless.
-
-hoare mont_red_h _lo _hi:
- Jkem_avx2.M.__mont_red :
-   x16_spec q qx16 /\
-   x16_spec 62209 qinvx16 /\
-   hi = _hi /\
-   lo = _lo /\
-   all (fun k=> sint_bnd (-q%/2) (q%/2 - 1) (_hi \bits16 k)) (iota_ 0 16)
-   ==> I16u16_sb 1 res (Array16.init (fun k=> inFq ((to_sint (_hi \bits16 k) * W16.modulus + to_uint (_lo \bits16 k)) * Montgomery16.Rinv ))).
-proof.
-proc;auto => |> &m. rewrite !x16_spec_bits16 allP => Hq Hqinv Hb.
-apply/List.allP => i. rewrite mem_iota => Hi /=.
-rewrite /Iu16_sb !initiE /= 1..2:/#. 
-rewrite (_: (VPSUB_16u16 _hi (VPMULH_16u16 (VPMULL_16u16 _lo qinvx16{m}) qx16{m}) \bits16 i) = Montgomery16.REDC16 (_lo \bits16 i) (_hi \bits16 i) ). rewrite /VPMULH_16u16 /VPMULL_16u16 /VPSUB_16u16 /R2C /REDC16 => />. rewrite !bits16_W16u16 /=. rewrite ifT 1:/#. rewrite !Hqinv 1..16:/#. rewrite !Hq 1..16:/#. rewrite W16u16.Pack.of_listE W16u16.Pack.initE /#.
-have := Hb i. rewrite mem_iota Hi /= => Hbi. 
-rewrite -eq_inFq eq_sym.
-have := Montgomery16.REDC16_correct_q (_lo \bits16 i) (_hi \bits16 i). rewrite (_:Montgomery16.q=q) /#. qed.
-
-phoare mont_red_ph _lo _hi:
- [ Jkem_avx2.M.__mont_red:
-   x16_spec q qx16 /\
-   x16_spec 62209 qinvx16 /\
-   hi = _hi /\
-   lo = _lo /\
-   all (fun k=> sint_bnd (-q%/2) (q%/2 - 1) (_hi \bits16 k)) (iota_ 0 16)
-   ==> I16u16_sb 1 res (Array16.init (fun k=> inFq ((to_sint (_hi \bits16 k) * W16.modulus + to_uint (_lo \bits16 k)) * Montgomery16.Rinv))) ] = 1%r.
-proof. by conseq  mont_red_ll ( mont_red_h _lo _hi). qed.
-
-(*
-zip_w256_u16_u32 (l h: W256.t): W256.t*W256.t
-
-wmul (a b: W256.t): W256.t*W256.t
-
-unzip_w256_u32_u16 (lower upper: W256.t): W256.t*W256.t
-
-mred(lower upper: W256.t): W256.t
-
-phoare basemul_red_ph :
- [ Jkem_avx2.M.__basemul_red :
-   x16_spec q qx16 =>
-   x16_spec qinv qinvx16 =>
-   x16_spec 1441 ah =>
-   qinv16u16M al ah =>
-   I16u16_sb _n b _r
-   ==> I16u16_sb q res.`1 (witness) ] = 1%r.
-admitted.
-*)
-
-
-
 equiv poly_basemul_avx2_eq:
  Jkem_avx2.M._poly_basemul ~ NTT_AVX.__basemul:
  a{2}=lift_array256 ap{1} /\ signed_bound_cxq ap{1} 0 256 2
@@ -3498,6 +3063,38 @@ split; first by apply (invntt_butterfly16xE_last c0 c4); smt().
 split; first by apply (invntt_butterfly16xE_last c1 c5); smt().
 split; first by apply (invntt_butterfly16xE_last c2 c6); smt().
 by apply (invntt_butterfly16xE_last c3 c7); smt().
+qed.
+
+
+phoare fq_mulprecomp16x_aux _n _r:
+ [ Jkem_avx2.M.__fqmulprecomp16x :
+   x16_spec q qx16 /\
+   x16_spec 1441 ah /\
+   x16_spec (-10079) al /\
+   I16u16_sb _n b _r
+   ==> I16u16S_sb (inFq 3303*inFq W16.modulus) 1 res _r ] = 1%r.
+proof.
+conseq (fqmulprecomp16x_ph _n (Array16.create (inFq 512)) _r) => /> &m.
+ rewrite /x16_spec /qinv16u16M /R2C !allP => Hq Ha Hqinv Hb; split => k Hk /=.
+  move: (Hq _ Hk) (Ha _ Hk) (Hqinv _ Hk) (Hb _ Hk) => {Hq Ha Hqinv Hb} /=.
+  rewrite !initiE; first 4 smt(mem_iota).
+  move=> Hq -> -> Hb; smt().
+ move: (Hq _ Hk) (Ha _ Hk) (Hqinv _ Hk) (Hb _ Hk) => {Hq Ha Hqinv Hb} /=.
+ rewrite createE !initiE; first 5 smt(mem_iota).
+ move=> /= _ -> _ _.
+ rewrite -inFqM inFq_mod /q /=.
+ by apply Iu16_ub_of_int.
+move=> |> *; split.
+ rewrite !List.allP /R2C /= => H k Hk.
+ move: Hk (H _ Hk); rewrite mem_iota /= => {H} |> ??.
+ rewrite createE !initiE 1:/# /=.
+ rewrite -inFqM inFq_mod /q map2iE 1:/# /=.
+ by rewrite initiE 1:/# /= /#.
+rewrite !List.allP /R2C /= => H k Hk.
+move: Hk (H _ Hk); rewrite mem_iota /= => {H} |> ??.
+rewrite createE !initiE 1:/# /=.
+rewrite -inFqM inFq_mod /q map2iE 1:/# /=.
+by rewrite initiE 1:/# /= /#.
 qed.
 
 equiv poly_invntt_avx2_eq:
