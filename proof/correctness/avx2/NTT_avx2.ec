@@ -786,6 +786,7 @@ lemma polyvec_invntt_avx2_corr _r :
      nttpackv (lift_array768 r) = lift_array768 _r /\ signed_bound768_cxq r 0 768 4 ==>
     mul1x256v (inFq W16.modulus) (invnttv (lift_vector _r)) = lift_vector (res) /\
    signed_bound768_cxq res 0 768 1] = 1%r.
+
 proc. 
 wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[2 * 256 + i]))).
 wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[256 + i]))).
