@@ -191,18 +191,14 @@ proof.
       move => j.
       case (_p + 0 <= j < _p + 960) => jbb.
         + move : H1; rewrite /load_array960 Array960.tP => H1.
-          rewrite -H1. move : jbb; smt(@IntDiv @Int @List).
-          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
-          by move : jbb; smt(@IntDiv @Int @List).
+          rewrite -H1. smt(). rewrite initiE /= /#. 
         + move : (H0 (j - _p)) => /#.
     have ->: forall (j: address), Glob.mem{2}.[j] = if _p + 0 <= j < _p + 960 then res{m}.[j - _p]
                                                      else mem.[j].
       move => j.
       case (_p + 0 <= j < _p + 960) => jbb.
         + move : H3; rewrite /load_array960 Array960.tP => H3.
-          rewrite -H3. move : jbb; smt(@IntDiv @Int @List).
-          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
-          by move : jbb; smt(@IntDiv @Int @List).
+          rewrite -H3. smt(). rewrite initiE /= /#.
         + move : (H2 (j - _p)) => /#.
     trivial.
     + proc * => /=.
@@ -526,18 +522,14 @@ proof.
       move => j.
       case (_p + 0 <= j < _p + 128) => jbb.
         + move : H1; rewrite /load_array128 Array128.tP => H1.
-          rewrite -H1. move : jbb; smt(@IntDiv @Int @List).
-          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
-          by move : jbb; smt(@IntDiv @Int @List).
+          rewrite -H1. smt(). rewrite initiE /= /#.
         + move : (H0 (j - _p)) => /#.
     have ->: forall (j: address), Glob.mem{2}.[j] = if _p + 0 <= j < _p + 128 then res{m}.[j - _p]
                                                      else mem.[j].
       move => j.
       case (_p + 0 <= j < _p + 128) => jbb.
         + move : H3; rewrite /load_array128 Array128.tP => H3.
-          rewrite -H3. move : jbb; smt(@IntDiv @Int @List).
-          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
-          by move : jbb; smt(@IntDiv @Int @List).
+          rewrite -H3. smt(). rewrite initiE /= /#.
         + move : (H2 (j - _p)) => /#.
     trivial.
     + proc * => /=.
@@ -808,7 +800,7 @@ equiv basemulequiv :
 proof.
 proc*; simplify.
 ecall{2} (poly_basemul_correct (lift_array256 ap{2}) (lift_array256 bp{2})).
-ecall{1} (_poly_basemul_avx2_ph (nttpack (lift_array256 ap{1})) (nttpack (lift_array256  bp{1}))).
+ecall{1} (poly_basemul_avx2_ph (nttpack (lift_array256 ap{1})) (nttpack (lift_array256  bp{1}))).
 auto => />.
 move => &1 &2 /> E1 E2 *. 
 rewrite !nttpackK => /> r1 -> Hb1 r2 Hb2 ->.
@@ -1061,20 +1053,16 @@ proof.
       move => j.
       case (_p + 0 <= j < _p + 1152) => jbb.
         + move : H1; rewrite /load_array1152 Array1152.tP => H1.
-          rewrite -H1. move : jbb; smt(@IntDiv @Int @List).
-          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
-          by move : jbb; smt(@IntDiv @Int @List).
-        + rewrite -H0. move : jbb; smt(@IntDiv @Int @List).
+          rewrite -H1. smt(). rewrite initiE /= /#.
+        + rewrite -H0. smt().
           move : jbb => /#.
     have ->: forall (j: address), Glob.mem{2}.[j] = if _p + 0 <= j < _p + 1152 then res{m}.[j - _p]
                                                      else Glob.mem{m}.[_p + (j - _p)].
       move => j.
       case (_p + 0 <= j < _p + 1152) => jbb.
         + move : H3; rewrite /load_array1152 Array1152.tP => H3.
-          rewrite -H3. move : jbb; smt(@IntDiv @Int @List).
-          rewrite initiE /=; first by move : jbb; smt(@IntDiv @Int @List).
-          by move : jbb; smt(@IntDiv @Int @List).
-        + rewrite -H2. move : jbb; smt(@IntDiv @Int @List).
+          rewrite -H3. smt(). rewrite initiE /= /#.
+        + rewrite -H2. smt().
           move : jbb => /#.
     trivial.
     + proc * => /=.
@@ -1468,20 +1456,55 @@ qed.
 equiv polyinvnttequiv :
  Jkem_avx2.M._poly_invntt ~ Jkem.M._poly_invntt : 
    lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) /\ 
-   signed_bound_cxq arg{1} 0 256 2 /\ 
-   signed_bound_cxq arg{2} 0 256 2 ==>
+   signed_bound_cxq arg{1} 0 256 4 /\ 
+   signed_bound_cxq arg{2} 0 256 4 ==>
    lift_array256 res{1} = lift_array256 res{2} /\ 
    signed_bound_cxq res{1} 0 256 1 /\
    signed_bound_cxq res{2} 0 256 1.
-   admitted. (* MBB *)
+proc*.
+ecall{2} (invntt_correct (lift_array256 rp{2})) => /=.
+conseq />; 1:smt(). 
+ecall{1} (poly_invntt_avx2_corr rp{2}) => /=. 
+auto => /> &1 &2. rewrite lift_nttpack => -> H1 H2. rewrite nttunpackK //= => r <- H3. move => r0 <- H4. 
+rewrite /scale /map /lift_array256 /R tP => /> i Hi1 Hi2. rewrite !initiE //=. rewrite Zq.ComRing.mulrC //. qed.
+
+lemma signed_bound768_cxq_small r (i j:int) :
+  i <= j => signed_bound768_cxq r 0 768 i => signed_bound768_cxq r 0 768 j.
+rewrite /signed_bound768_cxq => />Hij H k Hk1 Hk2. move :(H k). rewrite Hk1 Hk2 => />. smt(). qed.
+
+lemma eq_vectorP3 :
+      forall (v1 v2 : KMatrix.vector),
+        (v1 = v2) <=> ((KMatrix.Vector."_.[_]" v1 0 = KMatrix.Vector."_.[_]" v2 0) /\ (KMatrix.Vector."_.[_]" v1 1 = KMatrix.Vector."_.[_]" v2 1) /\ (KMatrix.Vector."_.[_]" v1 2 = KMatrix.Vector."_.[_]" v2 2) ).
+smt(KMatrix.Vector.eq_vectorP). qed.
 
 equiv invnttequiv :
  Jkem_avx2.M.__polyvec_invntt ~ Jkem.M.__polyvec_invntt : 
    lift_array768 arg{1} = nttunpackv (lift_array768 arg{2}) /\ 
-   signed_bound768_cxq arg{1} 0 768 2 /\ 
-   signed_bound768_cxq arg{2} 0 768 2 ==>
+   signed_bound768_cxq arg{1} 0 768 4 /\ 
+   signed_bound768_cxq arg{2} 0 768 4 ==>
    lift_array768 res{1} = lift_array768 res{2} /\ 
    signed_bound768_cxq res{1} 0 768 1 /\ 
    signed_bound768_cxq res{2} 0 768 1.
-   admitted. (* MBB *)
-
+proc *.
+ecall {2} (polyvec_invntt_corr r{2}) => /=.
+conseq />;1: smt().
+ecall {1} (polyvec_invntt_avx2_corr r{2}) => /=. 
+auto => /> &1 &2 -> Hm1 Hm2. rewrite unpackvK //= => r Hr1 Hr2 s Hs1 Hs2.
+rewrite /lift_array768 /map tP => />j Hj1 Hj2. rewrite !initiE //=.
+move :Hr1. rewrite /mapv /lift_vector eq_vectorP3. rewrite !KMatrix.Vector.offunvE //=. rewrite /lift_array256 /subarray256 /map !tP -!andaE. apply andaW. move => Hr10. apply andaW. move => Hr11 Hr12. 
+move :Hs1. rewrite /scale_vector /lift_vector eq_vectorP3. rewrite !KMatrix.Vector.offunvE //=. rewrite /scale /lift_array256 /subarray256 /map !tP -!andaE. apply andaW. move => Hs10. apply andaW. move => Hs11 Hs12.
+case (0 <= j < 256) => Hj_0.
+ + move :(Hr10 j). rewrite Hj_0 !initiE //= !initiE //= => <-.
+ + move :(Hs10 j). rewrite Hj_0 !initiE //= !initiE //= => <-.
+ + rewrite /R Zq.ComRing.mulrC => />. 
+case (256 <= j < 512). move => Hj_1.
+ + have Hj_2: 0 <= j - 256 && j - 256 < 256. smt().
+ + move :(Hr11 (j-256)). rewrite Hj_2 !initiE //= !initiE //= => <-.
+ + move :(Hs11 (j-256)). rewrite Hj_2 !initiE //= !initiE //= => <-.
+ + rewrite /R Zq.ComRing.mulrC => />. 
+move => Hj_2.
+ + have Hj_3: 0 <= j - 512 && j - 512 < 256. smt().
+ + move :(Hr12 (j-512)). rewrite Hj_3 !initiE //= !initiE //= => <-.
+ + move :(Hs12 (j-512)). rewrite Hj_3 !initiE //= !initiE //= => <-.
+ + rewrite /R Zq.ComRing.mulrC => />. 
+qed.

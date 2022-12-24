@@ -1,7 +1,6 @@
 require import AllCore StdOrder List Ring IntDiv.
 (*---*) import IntOrder.
 
-
 (*-----------------------------------------------------------------------------*)
 (* All in range. *)
 (* TODO: possibly can be removed without any impact on the NTTAlgebra proof. *)

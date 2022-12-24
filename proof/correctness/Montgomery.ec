@@ -212,7 +212,7 @@ op SREDC (a: int) : int =
 lemma nosmt SREDCp_corr a:
    0 < q < R %/2 =>
    -R %/ 2 * q <= a < R %/2 * q =>
-   -q   <= SREDC a <= q /\
+   -q   <= SREDC a < q /\
        SREDC a %% q = (a * Rinv) %% q.
 proof.
 move => [#] H H0 [#] H1 H2.
