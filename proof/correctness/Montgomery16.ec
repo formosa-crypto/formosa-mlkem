@@ -1,6 +1,7 @@
-require import AllCore IntDiv Ring StdOrder.
+require import AllCore Int IntDiv Ring StdOrder List.
 import Ring.IntID IntOrder.
 
+from Jasmin require import JWord.
 
 (* @JBA: MOVE THIS *)
 
@@ -18,23 +19,38 @@ rewrite -dvdzE; move=>/dvdzP [k].
 case: (k < 0); smt().
 qed.
 
-(* JWord (here instantiated on W16) *)
-from Jasmin require import JWord.
+
+lemma bits16_W16u16 ws i :
+  W16u16.pack16_t ws \bits16 i = if 0 <= i < 16 then ws.[i] else W16.zero.
+proof.
+apply W16.wordP => j Hj.
+rewrite /pack16_t /(\bits16) initiE => />.
+rewrite initE => />.
+by case (0 <= i < 16) => Hi; smt().
+qed.
+
+
+
+(* JWord (here instantiated on W16)
+   Bounds on signed values...
+ *)
 import W16.
 
 lemma smod_id (w:int) :
   !(2^(16-1) <= w) => W16.smod w = w.
-rewrite /smod => />. qed.
+proof. by rewrite /smod => />. qed.
 
 lemma smod_d (w:int) :
   (2^(16-1) <= w) => W16.smod w = w - W16.modulus.
-rewrite /smod => />. qed.
+proof. by rewrite /smod => />. qed.
 
-lemma bits16_W16u16 ws i :
-  W16u16.pack16_t ws \bits16 i = if 0 <= i < 16 then ws.[i] else W16.zero.
-apply W16.wordP => j Hj.
-rewrite /pack16_t /(\bits16) initiE => />. rewrite initE => />.
-case (0 <= i < 16) => Hi. smt(). smt(). qed.
+lemma smod_mod x:
+ W16.smod x %% W16.modulus = x %% W16.modulus.
+proof.
+rewrite /smod.
+case: ( 2 ^ (16 - 1) <= x) => ?//.
+by rewrite -modzDmr -modzNm modzz.
+qed.
 
 lemma nosmt to_sint_mod x:
  W16.to_sint x %% W16.modulus = to_uint x.
@@ -118,6 +134,22 @@ proof.
 by rewrite {1}/W16.to_sint to_uintN modzN_sint.
 qed.
 
+lemma to_sintN_cgr (x: W16.t):
+ W16.to_sint (-x) %% W16.modulus = (- to_sint x) %% W16.modulus.
+proof.
+rewrite /to_sint !to_uintN /smod /=.
+case: (to_uint x = 0) => [->//|] E.
+case: (to_uint x = 32768) => [->//|] E2.
+have Eminus: (- to_uint x) %% 65536 = 65536 - to_uint x.
+ rewrite {1}(_:-to_uint x=(65536%%65536) - to_uint x) 1:modzz //.
+ by rewrite modzDml modz_small; move: (W16.to_uint_cmp x); smt().
+case: (32768 <= to_uint x) => C2.
+ have ->: !32768 <= (- to_uint x) %% 65536 by smt().
+ smt().
+have X: 32768 <= (- to_uint x) %% 65536 by smt().
+smt().
+qed.
+
 lemma nosmt modzB_sint (x y: W16.t):
  (to_sint x - to_sint y) %% W16.modulus
  = (to_uint x - to_uint y) %% W16.modulus.
@@ -155,8 +187,15 @@ rewrite divz_small //.
 move: (to_uint_cmp (x*y)); smt().
 qed.
 
+
+
+
 abbrev sint_bnd xL xH x =
  xL <= W16.to_sint x <= xH.
+
+lemma sint_bnd_ltR bL bR x:
+ sint_bnd bL (bR-1) x <=> bL <= to_sint x < bR
+by smt().
 
 lemma to_sint_bnd (x: W16.t):
  sint_bnd W16.min_sint W16.max_sint x
@@ -294,6 +333,207 @@ by rewrite to_sint_wmulhs /#.
 qed.
 
 
+lemma to_sintH (x y: W16.t):
+ to_sint (W16.wmulhs x y)
+ = W16.smod (to_sint x * to_sint y %/ W16.modulus %% W16.modulus).
+proof.
+rewrite to_sint_wmulhs /smod /=.
+case: (to_sint x * to_sint y %/ 65536 < 0) => E.
+ have ->: to_sint x * to_sint y %/ 65536 %% 65536
+  = 65536 + to_sint x * to_sint y %/ 65536.
+  move: (W16.to_sint_cmp x) (W16.to_sint_cmp y) => /= Bx By.
+  move:(to_sintH_bnd x y _ _ _ _ Bx By _ _ _ _) => //=.
+  rewrite to_sint_wmulhs /= => BxyH.  
+  by rewrite -modzDl modz_small /R /= /#.
+ have ->: 2 ^ (16 - 1) <= W16.modulus + to_sint x * to_sint y %/ W16.modulus.
+  move: (W16.to_sint_cmp x) (W16.to_sint_cmp y) => /= Bx By.
+  move:(to_sintH_bnd x y _ _ _ _ Bx By _ _ _ _) => //=.
+  by rewrite to_sint_wmulhs /= /#.
+ by smt().
+have ->: to_sint x * to_sint y %/ W16.modulus %% W16.modulus
+  = to_sint x * to_sint y %/ W16.modulus.
+ move: (W16.to_sint_cmp x) (W16.to_sint_cmp y) => /= Bx By.
+ move:(to_sintH_bnd x y _ _ _ _ Bx By _ _ _ _) => //=.
+ rewrite to_sint_wmulhs /= => BxyH.  
+ by rewrite modz_small /= /#.
+have ->: !2 ^ (16 - 1) <= to_sint x * to_sint y %/ W16.modulus.
+ move: (W16.to_sint_cmp x) (W16.to_sint_cmp y) => /= Bx By.
+ move:(to_sintH_bnd x y _ _ _ _ Bx By _ _ _ _) => //=.
+ by rewrite to_sint_wmulhs /= /#.
+by smt().
+qed.
+
+
+
+(* Some reinstanted instances for W32) *)
+
+abbrev sint32_bnd xL xH x =
+ xL <= W32.to_sint x <= xH.
+
+lemma nosmt modzD_sint32 (x y: W32.t):
+ (to_sint x + to_sint y) %% W32.modulus
+ = (to_uint x + to_uint y) %% W32.modulus.
+proof.
+rewrite /to_sint /smod.
+case: (2 ^ (32 - 1) <= to_uint x);
+ case: (2 ^ (32 - 1) <= to_uint y); smt().
+qed.
+
+lemma nosmt to_sint32D (x y: W32.t):
+ to_sint (x+y)
+ = W32.smod ((to_sint x + to_sint y)%%W32.modulus). 
+proof.
+by rewrite {1}/W32.to_sint to_uintD modzD_sint32.
+qed.
+
+lemma nosmt smod32_small (x: int):
+ -2^(32-1) <= x < 2^(32-1) => 
+ W32.smod (x %% W32.modulus) = x.
+proof.
+move => [/= Hl Hh]. 
+rewrite /smod; case: (x < 0) => C.
+ by have ->/#: 2 ^ (32 - 1) <= x %% W32.modulus by smt().
+by have ->/#: ! 2 ^ (32 - 1) <= x %% W32.modulus by smt().
+qed.
+
+lemma nosmt to_sint32D_small (x y: W32.t):
+ W32.min_sint <= to_sint x + to_sint y <= W32.max_sint =>
+ to_sint (x+y) = to_sint x + to_sint y.
+proof.
+move=> /=?; rewrite to_sint32D smod32_small /= /#.
+qed.
+
+lemma to_sint32D_bnd (x y : W32.t) (xL xH yL yH : int):
+  sint32_bnd xL xH x =>
+  sint32_bnd yL yH y =>
+  W32.min_sint <= xL + yL =>
+  xH + yH <= W32.max_sint =>
+  sint32_bnd (xL + yL) (xH + yH) (x + y).
+proof.
+by move=> /> *; rewrite to_sint32D_small /#. 
+qed.
+(*
+lemma nosmt modzN_sint32 (x: W32.t):
+ (- to_sint x) %% W32.modulus
+ = (- to_uint x) %% W32.modulus.
+proof.
+rewrite /to_sint /smod.
+case: (2 ^ (32 - 1) <= to_uint x); smt().
+qed.
+
+lemma nosmt to_sint32N (x: W32.t):
+ to_sint (-x)
+ = W32.smod ((-to_sint x) %% W32.modulus).
+proof.
+by rewrite {1}/W32.to_sint to_uintN modzN_sint32.
+qed.
+*)
+lemma nosmt modzB_sint32 (x y: W32.t):
+ (to_sint x - to_sint y) %% W32.modulus
+ = (to_uint x - to_uint y) %% W32.modulus.
+proof.
+rewrite /to_sint /smod.
+case: (2 ^ (32 - 1) <= to_uint x);
+ case: (2 ^ (32 - 1) <= to_uint y); smt().
+qed.
+
+lemma nosmt to_sint32B (x y: W32.t):
+ to_sint (x-y)
+ = W32.smod ((to_sint x - to_sint y)%%W32.modulus). 
+proof.
+rewrite {1}/W32.to_sint to_uintD to_uintN modzB_sint32 /#.
+qed.
+
+lemma to_sint32B_small (x y: W32.t):
+ W32.min_sint <= to_sint x - to_sint y <= W32.max_sint =>
+ to_sint (x-y) = to_sint x - to_sint y.
+proof.
+by move=> /= ?; rewrite to_sint32B smod32_small /= /#.
+qed.
+
+
+lemma to_sint32B_bnd (x y : W32.t) (xL xH yL yH : int):
+  sint32_bnd xL xH x =>
+  sint32_bnd yL yH y =>
+  W32.min_sint <= xL - yH =>
+  xH-yL <= W32.max_sint =>
+  sint32_bnd (xL-yH) (xH-yL) (x - y).
+proof.
+by move=> /> *; rewrite to_sint32B_small /#.
+qed.
+
+lemma int_bnd_div xL xH x y:
+ 0 < y =>
+ (xL <= x <= xH)%Int =>
+ (xL %/ y) <= (x %/ y) <= (xH %/ y)
+by smt(). 
+
+lemma sint_bnd_u32H bL bH (x: W32.t) (xh xl: W16.t):
+ to_sint x = to_sint xh * W16.modulus + to_uint xl =>
+ sint32_bnd bL bH x =>
+ sint_bnd (bL %/ W16.modulus) (bH %/ W16.modulus) xh.
+proof.
+move=> -> H.
+have <-: (to_sint xh * W16.modulus + to_uint xl) %/ W16.modulus = to_sint xh.
+ rewrite edivz_eq //.
+ by move: (W16.to_uint_cmp xl); smt().
+by apply int_bnd_div.
+qed.
+
+lemma sint32_bnd_u16H bL bH (xh xl: W16.t) (x: W32.t):
+ to_sint x = to_sint xh * W16.modulus + to_uint xl =>
+ sint_bnd bL bH xh =>
+ sint32_bnd (bL*W16.modulus) ((bH+1)*W16.modulus-1) x.
+proof.
+move=> -> H.
+split.
+ by move: (W16.to_uint_cmp xl); smt().
+by move=> _; move: (W16.to_uint_cmp xl); smt().
+qed.
+
+lemma W32_unpack16E (x: W32.t):
+ x = pack2 [x \bits16 0; x \bits16 1].
+proof.
+rewrite -{1}unpack16K /unpack16 /=; congr.
+by rewrite init_of_list -JUtils.iotaredE /=.
+qed.
+
+lemma nosmt modz_sint32 (x: W32.t):
+ (to_sint x) %% W16.modulus
+ = (to_uint x) %% W16.modulus.
+proof.
+rewrite /to_sint /smod.
+case: (2 ^ (32 - 1) <= to_uint x) => Cx.
+ have ->: W32.modulus = W16.modulus * W16.modulus by done.
+ by rewrite -modzDm -modzNm -modzMm modzz /= modz_mod.
+done.
+qed.
+
+lemma to_sint32_bits16 (x: W32.t):
+ to_sint x = W16.to_sint (x \bits16 1) * W16.modulus + W16.to_uint (x \bits16 0).
+proof.
+rewrite (divz_eq (to_sint x) W16.modulus) modz_sint32.
+rewrite !bits16_div //=; congr.
+ congr; rewrite !to_sintE !of_uintK modz_small /smod.
+  by move: (W32.to_uint_cmp x); smt().
+ case: (2^(32-1) <= to_uint x) => /= E.
+  have ->/=: 2^(16-1) <= to_uint x %/ 65536 by rewrite /= /#.
+  smt().
+ have ->/=: ! 32768 <= to_uint x %/ 65536 by rewrite /= /#.
+ done.
+by rewrite of_uintK.
+qed.
+
+lemma to_sint_pack2 l h:
+ W32.to_sint (W2u16.pack2 [l;h])
+ = to_sint h*W16.modulus + to_uint l.
+proof. by rewrite to_sint32_bits16 pack2bE. qed.
+
+
+
+
+(* Montgomery Reduction *)
+
 theory Montgomery16.
 from Jasmin require import JWord.
 import W16 ALU.
@@ -387,5 +627,62 @@ by apply (REDC16_correct_q (x*y) (wmulhs x y)).
 qed.
 
 end Montgomery16.
+
+
+
+(* Barret reduction *)
+
+require import Fq.
+import Fq.SignedReductions.
+
+op sbred16 (x: W16.t): W16.t =
+  x - (wmulhs x (W16.of_int 20159) `|>>` (W8.of_int 10)) * (W16.of_int 3329).
+
+
+(* a generalized version of [Montegomery.SignedReductions.smod_div] *)
+lemma smod_R2_R (x y: W16.t) :
+ smod (to_sint x * to_sint y) (R ^ 2) %/ R
+ = smod (to_sint x * to_sint y %/ R) R.
+proof.
+rewrite !smodE expr2.
+have ->: R * R %/ 2 <= to_sint x * to_sint y %% (R * R)
+         = R %/ 2 <= to_sint x * to_sint y %/ R %% R.
+ by rewrite /R -JUtils.divz_mod_mul // /#.
+case: (R %/ 2 <= to_sint x * to_sint y %/ R %% R) => E.
+ rewrite divzDr.
+  by rewrite dvdzN dvdz_mulr dvdzz.
+ by rewrite JUtils.divz_mod_mul /R /#.
+by rewrite JUtils.divz_mod_mul /R /#.
+qed.
+
+lemma to_sint_SAR (a : W16.t):
+ to_sint (a `|>>` (of_int 10)%W8)
+ = to_sint a %/ 2 ^ 10.
+proof.
+rewrite Fq.SAR_sem10 of_sintK /to_sint /smod /=.
+move: (W16.to_uint_cmp a); smt().
+qed.
+
+lemma sbred16_eq x:
+ Fq.SignedReductions.BREDC (W16.to_sint x) 26
+ = W16.to_sint (sbred16 x).
+proof.
+rewrite /Fq.SignedReductions.BREDC /Fq.SignedReductions.R /sbred16 /q /=.
+rewrite /= (_:67108864=2^10*65536) 1:// divzMl //.
+rewrite (_:4294967296=65536*65536) 1://.
+have E20159: 20159 = to_sint (W16.of_int 20159)
+ by rewrite of_sintK /smod /=.
+rewrite {1}E20159 smod_R2_R //.
+rewrite !Fq.smod_W16 {1}to_sintD; congr.
+rewrite -modzDm eq_sym -modzDm eq_sym; congr; congr => //; congr.
+ by rewrite !to_sint_mod; move: (W16.to_uint_cmp x); smt().
+rewrite -to_sintH.
+rewrite -!to_sint_SAR /=. 
+have E3329: 3329=to_sint (W16.of_int 3329).
+ by rewrite of_sintK /smod /=.
+rewrite {1}E3329 to_sintN_cgr modz_mod to_sintM.
+rewrite eq_sym -modzNm smod_mod modz_mod.
+by rewrite /R /#.
+qed.
 
 
