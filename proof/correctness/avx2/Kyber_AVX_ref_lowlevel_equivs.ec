@@ -944,10 +944,15 @@ symmetry. proc*; call prevec_eq_poly_frommsg. auto => />.
     a{1} = ap{2} ==> 
     decompress_poly 1 res{1} = lift_array256 ( res{2}) /\
     pos_bound256_cxq res{2} 0 256 1);1,2: smt(). 
-    proc*. admit. (* Reify ecall (eq_decode1_opt). auto => />. *)
+    proc*. ecall (eq_decode1_opt); auto => />. 
     
     symmetry; proc*; ecall  (KyberPoly.poly_frommsg_corr ap{1}); auto => />;smt().
 qed.
+
+lemma compress_poly_rng i xs :
+  1 <= i < 12 =>
+  all (fun (x : int) => 0 <= x < 2^i) (compress_poly i xs).
+rewrite /compress_poly /map allP => Hi j Hj. rewrite !initiE //=. rewrite compress_rng //. qed.
 
 equiv tomsgequiv_noperm  : 
   M._poly_tomsg_1 ~   Jkem.M._i_poly_tomsg :
@@ -977,13 +982,14 @@ symmetry. proc*; call prevec_eq_poly_tomsg. auto => />.
     res{2}.`1 = res{1});1,2: smt(). 
     proc*; ecall (poly_tomsg_corr (lift_array256 a{1})). auto => />.
     transitivity EncDec.encode1 
-      (={a} ==> ={res})
+      (={a} /\ Array256.all (fun x => 0 <= x < 2 ) a{1} ==> ={res})
                (
     a{1} = compress_poly 1 (lift_array256 a{2}) /\
     pos_bound256_cxq a{2} 0 256 2
                               ==> 
-    res{2}.`1 = res{1});1,2: smt(). 
-    proc*. admit. (* Reify ecall (eq_encode1). auto => />. *)
+    res{2}.`1 = res{1}).
+    auto => /> &1 &2. exists (compress_poly 1 (lift_array256 a{1})) => />. rewrite compress_poly_rng //. smt().
+    proc*. ecall (eq_encode1). auto => />. 
     
     symmetry; proc*; ecall  (KyberPoly.poly_tomsg_corr (lift_array256 a{1})); auto => />. 
 qed.

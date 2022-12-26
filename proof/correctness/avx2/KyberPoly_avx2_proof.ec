@@ -6566,7 +6566,7 @@ proc.
   inline *; wp; auto => /> /#.
 qed.
 
-lemma poly_basemul_avx2_correct _ap _bp:
+(*lemma poly_basemul_avx2_correct _ap _bp:
    phoare[ Mprevec.poly_basemul :
      _ap = nttpack (lift_array256 ap) /\ _bp = nttpack (lift_array256 bp) /\
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
@@ -6574,6 +6574,7 @@ lemma poly_basemul_avx2_correct _ap _bp:
      nttpack (lift_array256 res) = NTT_Properties.scale (basemul _ap _bp) (inFq 169)] =1%r.
 proc. 
 admitted. (* basemul: Hugo/Bacelar? *)
+*)
 
 
 end KyberPolyAVX.

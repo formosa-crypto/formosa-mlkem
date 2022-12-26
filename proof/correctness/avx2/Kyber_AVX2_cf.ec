@@ -2,6 +2,11 @@ require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
 require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array768 Array960 Array1152.
+require import Array256_extra Array32_extra.
+require import W8extra.
+require import List_extra.
+
+
 require import Jkem.
 require import Kyber.
 
@@ -339,6 +344,34 @@ module Kyber_AVX2_cf = {
 }.
 
 theory AVX2_cf.
+
+equiv eq_encode1 :
+  EncDec_AVX2.encode1 ~ EncDec.encode1 :
+    ={a} /\ all (fun (x : int) => 0 <= x && x < 2) a{1} ==> ={res}.
+proc. 
+unroll for {1} ^while.
+do 8!(unroll for {1} ^while).
+unroll for {2} ^while.
+do 32!(unroll for {2} ^while).
+auto => /> &m.
+rewrite (initSet _ (fun i => W8.init (fun (j : int) => W8.int_bit a{m}.[8*i + j] 0) )) //=.
+rewrite (initSet _ (fun i => W8.of_int (((((((a{m}.[8*i+0] %% 256 + a{m}.[8*i+1] * 2) %% 256 + a{m}.[8*i+2] * 4) %% 256 + a{m}.[8*i+3] * 8) %% 256 + a{m}.[8*i+4] * 16) %% 256 + a{m}.[8*i+5] * 32) %% 256 + a{m}.[8*i+6] * 64) %% 256 + a{m}.[8*i+7] * 128) )) //=.
+rewrite allP => H. rewrite tP => i Hi. rewrite !initiE //=. rewrite of_intE /bits2w /int2bs /mkseq /map /int_bit wordP => j Hj. rewrite !initiE //= nth_onth onth_map //=. rewrite (onth_nth witness) //=. rewrite size_iota //=. rewrite nth_iota //=.
+have Hjm: (0 <= j < 0 + 8). rewrite Hj => />. move :Hjm. rewrite -mema_iota -iotaredE => />.
+rewrite !modzDml -addrA !modzDml -!addrA !modzDml -!addrA !modzDml !modz_dvd //=.
+do 8!(try (move => Hjm; case Hjm => />); first by smt()). qed.
+
+equiv eq_decode1_opt :
+  EncDec_AVX2.decode1_opt ~ EncDec.decode1 : 
+    ={a} ==> ={res}.
+proc.
+unroll for {1} ^while.
+do 8!(unroll for {1} ^while).
+unroll for {2} ^while.
+auto => /> &m.
+apply Array256_extra.tP_red => i /=.
+do 255!(move => Hi; case Hi => |>).
+qed.
 
 equiv decode10_vec_corr:
   EncDec_AVX2.decode10_vec ~ EncDec.decode10_vec: ={u} ==> ={res}.
