@@ -821,39 +821,42 @@ lemma poly_add_corr_avx_impl ab bb :
               inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
    by move => abb bbb _a _b; apply (KyberPolyAVX.poly_add_corr _a _b ab bb abb bbb).
 
-lemma addequiv  (ab bb : int):
-    0 <= ab && ab <= 6 =>
-    0 <= bb && bb <= 3 =>
+lemma addequiv  (ab1 bb1 ab2 bb2 : int):
+    0 <= ab1 && ab1 <= 6 =>
+    0 <= ab2 && ab2 <= 6 =>
+    0 <= bb1 && bb1 <= 3 =>
+    0 <= bb2 && bb2 <= 3 =>
     equiv [ M._poly_add2 ~ Jkem.M._poly_add2 :
       lift_array256 rp{1} = lift_array256 (nttunpack rp{2}) /\
       lift_array256 bp{1} = lift_array256 (nttunpack bp{2}) /\
-      signed_bound_cxq rp{2} 0 256 ab /\ 
-      signed_bound_cxq bp{2} 0 256 bb /\
-      signed_bound_cxq rp{1} 0 256 ab /\ 
-      signed_bound_cxq bp{1} 0 256 bb
+      signed_bound_cxq rp{2} 0 256 ab2 /\ 
+      signed_bound_cxq bp{2} 0 256 bb2 /\
+      signed_bound_cxq rp{1} 0 256 ab1 /\ 
+      signed_bound_cxq bp{1} 0 256 bb1
            ==> lift_array256 res{1} = lift_array256  (nttunpack res{2}) /\
-               signed_bound_cxq res{1} 0 256 (ab + bb) /\
-               signed_bound_cxq res{2} 0 256 (ab + bb) 
+               signed_bound_cxq res{1} 0 256 (ab1 + bb1) /\
+               signed_bound_cxq res{2} 0 256 (ab2 + bb2) 
               ].
-move => abb bbb.
+proof.
+move => abb1 abb2 bbb1 bbb2.
 proc*.  
 transitivity {1} { r <@ Mprevec.poly_add2(rp,bp); }
      (={rp,bp} ==> ={r}) 
      (lift_array256 rp{1} = lift_array256 (nttunpack rp{2}) /\
       lift_array256 bp{1} = lift_array256 (nttunpack bp{2}) /\
-    signed_bound_cxq rp{1} 0 256 ab /\  
-    signed_bound_cxq bp{1} 0 256 bb /\
-    signed_bound_cxq rp{2} 0 256 ab /\  
-    signed_bound_cxq bp{2} 0 256 bb
+    signed_bound_cxq rp{1} 0 256 ab1 /\  
+    signed_bound_cxq bp{1} 0 256 bb1 /\
+    signed_bound_cxq rp{2} 0 256 ab2 /\  
+    signed_bound_cxq bp{2} 0 256 bb2
                               ==> 
     lift_array256 r{1} = lift_array256 (nttunpack r{2}) /\
-    signed_bound_cxq r{1} 0 256 (ab+bb) /\ 
-    signed_bound_cxq r{2} 0 256 (ab+bb)); 1,2: smt(). 
+    signed_bound_cxq r{1} 0 256 (ab1+bb1) /\ 
+    signed_bound_cxq r{2} 0 256 (ab2+bb2)); 1,2: smt(). 
 symmetry. call prevec_eq_poly_add2. auto => />.
 
-have Hright :=  (poly_add_correct_impl ab bb abb bbb).
+have Hright :=  (poly_add_correct_impl ab2 bb2 abb2 bbb2).
 ecall{2} (Hright (lift_array256 rp{2}) (lift_array256 bp{2})).
-have Hleft :=  (poly_add_corr_avx_impl ab bb abb bbb).
+have Hleft :=  (poly_add_corr_avx_impl ab1 bb1 abb1 bbb1).
 ecall{1} (Hleft (lift_array256 rp{1}) (lift_array256  bp{1})).
 
 auto => />.
@@ -1270,13 +1273,13 @@ equiv pointwiseequiv :
     signed_bound768_cxq arg{2}.`2 0 768 2
     ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
-    signed_bound_cxq res{1} 0 256 2 (*JBA: -> 4 *)/\ 
+    signed_bound_cxq res{1} 0 256 4 /\ 
     signed_bound_cxq res{2} 0 256 2.
+proof.
 proc => /=.
-admitted (*
 seq 2 3 :(#pre /\ 
          lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
-         signed_bound_cxq r{1} 0 256 3 /\
+         signed_bound_cxq r{1} 0 256 1 /\
          signed_bound_cxq r{2} 0 256 3).
 ecall (basemulequiv). auto => />.
 move => &1 &2 H H0 H1 H2 H3 H4. do split. 
@@ -1301,10 +1304,9 @@ move : (H2 k _); 1: smt(). rewrite !initiE//=.
 move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
 move : (H4 k _); 1: smt(). rewrite !initiE//=.
 
-
 seq 1 1 :(#pre /\ 
          lift_array256 t{1} = nttunpack (lift_array256 t{2}) /\
-         signed_bound_cxq t{1} 0 256 3 /\
+         signed_bound_cxq t{1} 0 256 1 /\
          signed_bound_cxq t{2} 0 256 3).
 ecall (basemulequiv). auto => />.
 move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split. 
@@ -1331,9 +1333,9 @@ move : (H4 k _); 1: smt(). rewrite !initiE//=;1:smt().
 
 seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\ 
          lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
-         signed_bound_cxq r{1} 0 256 6 /\
+         signed_bound_cxq r{1} 0 256 2 /\
          signed_bound_cxq r{2} 0 256 6).
-have Hcall:= addequiv 3 3 _ _ => //.
+have Hcall:= addequiv 1 1 3 3 _ _ => //.
 call Hcall.
 auto => />.
 move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10. do split. 
@@ -1344,7 +1346,7 @@ rewrite -lift256_nttunpack;1: assumption.
 
 seq 1 1 :(#pre /\ 
          lift_array256 t{1} = nttunpack (lift_array256 t{2}) /\
-         signed_bound_cxq t{1} 0 256 3 /\
+         signed_bound_cxq t{1} 0 256 1 /\
          signed_bound_cxq t{2} 0 256 3).
 ecall (basemulequiv). auto => />.
 move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split. 
@@ -1372,23 +1374,26 @@ move : (H4 k _); 1: smt(). rewrite !initiE//=;1: smt().
 
 seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\ 
          lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
-         signed_bound_cxq r{1} 0 256 9 /\
+         signed_bound_cxq r{1} 0 256 3 /\
          signed_bound_cxq r{2} 0 256 9).
-have Hcall:= addequiv 6 3 _ _ => //.
+print addequiv.
+have Hcall:= addequiv 2 1 6 3 _ _ => //.
 call Hcall.
 auto => />.
 move => &1 &2 ????????????. do split. 
 + rewrite lift256_nttunpack;1: assumption.
 + rewrite lift256_nttunpack;1: assumption.
-move => ?? r2 r1 ???.
+move => ?? r1 r2 ???.
 rewrite -lift256_nttunpack;1: assumption.
 
-call reduceequiv.
+ecall{2} (KyberPoly.poly_reduce_corr (lift_array256 r{2})).
 auto => />.
-move => &1 &2 ????????? r1 r2 ?.
-rewrite /pos_bound256_cxq /signed_bound_cxq => H H0;1: smt().
+move => &1 &2 ?????? H H1 ? rr.
+move: H; rewrite /lift_array256 => H H2 ?.
+split.
+ by rewrite H H2.
+smt().
 qed.
-*).
 
 equiv nttequiv :
  Jkem_avx2.M.__polyvec_ntt ~ Jkem.M.__polyvec_ntt : 
