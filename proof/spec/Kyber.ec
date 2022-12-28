@@ -2127,7 +2127,226 @@ do 8!(rewrite mkseqSr_rw //=); rewrite mkseq0 //=.
 do 8!(rewrite bs2int_cons /=); rewrite bs2int_nil //=.
 by ring.
 
-XXX
+have H2 : forall i j k (v : W8.t Array960.t), 0 <= i < 960 => i%%5 = 2 => k = i %/ 5 * 4 + 1 => j = i %/ 5 * 4 + 2 => 
+  v.[i <- W8.of_int ((sem_decode10_vec x).[k] %/ 64 + (sem_decode10_vec x).[j] * 16) ] = v.[i <- x.[i]]. 
++ move => i j k v ib imod kval jval. congr.
+  rewrite /sem_decode10_vec  to_uint_eq /= of_uintK /=.
+rewrite /decode_vec /BytesToBits !Array768.get_of_list /=; 1,2:smt().
+have -> : 7680 = size (flatten (map W8.w2bits (to_list x))); 1:by
+ rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /=.
+rewrite take_size /=.
+rewrite !(nth_map (witness<:bool list>) 0); 1,2:
+by  rewrite !size_chunk /=; [ by smt() | ];
+  rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= /#. 
+  rewrite /bs2int. 
+  have -> : (size (nth witness (chunk 10 (flatten (map W8.w2bits (to_list x)))) j)) = 10.
+    + have  /= [_ ->] := (all_nthP (fun l => size l = 10) (chunk 10 (flatten (map W8.w2bits (to_list x)))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+    by rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#.
+  have -> : (size (nth witness (chunk 10 (flatten (map W8.w2bits (to_list x)))) k)) = 10.
+    + have  /= [_ ->] := (all_nthP (fun l => size l = 10) (chunk 10 (flatten (map W8.w2bits (to_list x)))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+    by rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#.
+
+  rewrite (StdBigop.Bigint.BIA.eq_big_seq _ 
+     (fun (i0 : int) => 2^i0 * b2i (nth false (flatten (map W8.w2bits (to_list x))) (10*k+i0)))).
+  + move => kk kkb /=. 
+    rewrite (nth_nth_chunk 10 k kk (flatten (map W8.w2bits (to_list x))) false witness false) => //; last    by smt(mem_range).
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= /#.
+
+  rewrite (StdBigop.Bigint.BIA.eq_big_seq 
+     (fun (i0 : int) => 2 ^ i0 * b2i (nth false (nth witness (chunk 10 (flatten (map W8.w2bits (to_list x)))) j) i0))
+     (fun (i0 : int) => 2^i0 * b2i (nth false (flatten (map W8.w2bits (to_list x))) (10*j+i0)))).
+  + move => kk kkb //=.
+    rewrite (nth_nth_chunk 10 j kk (flatten (map W8.w2bits (to_list x))) false witness false) => //; last   by smt(mem_range).
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= /#.
+
+
+  do 10!(rewrite range_ltn /=;1 :smt()). rewrite range_geq //=. 
+    do 10!(rewrite StdBigop.Bigint.BIA.big_consT /=). rewrite !StdBigop.Bigint.BIA.big_nil /=. 
+    do 10!(rewrite StdBigop.Bigint.BIA.big_consT /=). rewrite !StdBigop.Bigint.BIA.big_nil /=. 
+  rewrite !(nth_flatten false 8) /=; first 20 by  rewrite allP => kk /=; smt(mapP W8.size_w2bits). 
+rewrite !(nth_map witness); first 40 by smt(size_iota Array960.size_to_list).
+rewrite !(nth_iota); first 20 by smt().
+rewrite !W8.get_w2bits /=.
+have ->  : 
+((b2i x.[10 * k %/ 8].[10 * k %% 8] +
+  (2 * b2i x.[(10 * k + 1) %/ 8].[(10 * k + 1) %% 8] +
+   (4 * b2i x.[(10 * k + 2) %/ 8].[(10 * k + 2) %% 8] +
+    (8 * b2i x.[(10 * k + 3) %/ 8].[(10 * k + 3) %% 8] +
+     (16 * b2i x.[(10 * k + 4) %/ 8].[(10 * k + 4) %% 8] +
+      (32 * b2i x.[(10 * k + 5) %/ 8].[(10 * k + 5) %% 8] +
+       (64 * b2i x.[(10 * k + 6) %/ 8].[(10 * k + 6) %% 8] +
+        (128 * b2i x.[(10 * k + 7) %/ 8].[(10 * k + 7) %% 8] +
+         (256 * b2i x.[(10 * k + 8) %/ 8].[(10 * k + 8) %% 8] + 512 * b2i x.[(10 * k + 9) %/ 8].[(10 * k + 9) %% 8])))))))))) %/
+ 64 = 
+b2i x.[(10 * k + 6) %/ 8].[(10 * k + 6) %% 8] +
+        2 * b2i x.[(10 * k + 7) %/ 8].[(10 * k + 7) %% 8] +
+4 * b2i x.[(10 * k + 8) %/ 8].[(10 * k + 8) %% 8] + 8 * b2i x.[(10 * k + 9) %/ 8].[(10 * k + 9) %% 8] by smt().
+have H : forall kk, 6<=kk<10 => (10*k + kk) %/8 = i by smt().
+do 4!(rewrite H //=). 
+have H1 : forall kk, 6<=kk<10 => (10*k + kk) %% 8 = kk - 6  by smt ().  
+do 4!(rewrite H1 //=).
+have H2 : forall kk, 0<=kk<4 => (10*j + kk) %/8 = i  by smt().
+do 3!(rewrite H2 //=).  move : (H2 0 _); 1: by smt(). move => //= ->.
+have H5 : forall kk, 0<=kk<4 => (10*j+kk) %%8 = kk + 4 by smt().  
+do 3!(rewrite H5 //=). move : (H5 0 _); 1: by smt(). move => //= ->.
+have H6 : forall kk, 4<=kk<10 => (10*j + kk) %/8 = i + 1  by smt().
+do 6!(rewrite H6 //=). 
+have H7 : forall kk, 4<=kk<10 => (10*j+kk) %%8 = kk - 4 by smt().  
+do 6!(rewrite H7 //=). 
+
+have -> : 
+(b2i x.[i ].[0] + 2 * b2i x.[i ].[1] + 4 * b2i x.[i ].[2] + 8 * b2i x.[i ].[3] +
+ (b2i x.[i ].[4] +
+  (2 * b2i x.[i ].[5] +
+   (4 * b2i x.[i ].[6] +
+    (8 * b2i x.[i ].[7] +
+     (16 * b2i x.[i + 1].[0] +
+      (32 * b2i x.[i + 1].[1] + (64 * b2i x.[i + 1].[2] + (128 * b2i x.[i + 1].[3] + (256 * b2i x.[i + 1].[4] + 512 * b2i x.[i + 1].[5]))))))))) *
+ 16) %%
+256  = 
+b2i x.[i ].[0] + 2 * b2i x.[i ].[1] + 4 * b2i x.[i].[2] + 8 * b2i x.[i].[3] +
+ 16*b2i x.[i ].[4] +
+  32 * b2i x.[i ].[5] +
+   64 * b2i x.[i].[6] +
+    128 * b2i x.[i ].[7] by smt().
+
+rewrite to_uintE /= /w2bits /=.
+do 8!(rewrite mkseqSr_rw //=); rewrite mkseq0 //=.
+do 8!(rewrite bs2int_cons /=); rewrite bs2int_nil //=.
+by ring.
+
+have H1 : forall i j k (v : W8.t Array960.t), 0 <= i < 960 => i%%5 = 1 => k = i %/ 5 * 4  => j = i %/ 5 * 4 + 1 => 
+  v.[i <- W8.of_int ((sem_decode10_vec x).[k] %/ 256 + (sem_decode10_vec x).[j] * 4) ] = v.[i <- x.[i]]. 
++ move => i j k v ib imod kval jval. congr.
+  rewrite /sem_decode10_vec  to_uint_eq /= of_uintK /=.
+rewrite /decode_vec /BytesToBits !Array768.get_of_list /=; 1,2:smt().
+have -> : 7680 = size (flatten (map W8.w2bits (to_list x))); 1:by
+ rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /=.
+rewrite take_size /=.
+rewrite !(nth_map (witness<:bool list>) 0); 1,2:
+by  rewrite !size_chunk /=; [ by smt() | ];
+  rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= /#. 
+  rewrite /bs2int. 
+  have -> : (size (nth witness (chunk 10 (flatten (map W8.w2bits (to_list x)))) j)) = 10.
+    + have  /= [_ ->] := (all_nthP (fun l => size l = 10) (chunk 10 (flatten (map W8.w2bits (to_list x)))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+    by rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#.
+  have -> : (size (nth witness (chunk 10 (flatten (map W8.w2bits (to_list x)))) k)) = 10.
+    + have  /= [_ ->] := (all_nthP (fun l => size l = 10) (chunk 10 (flatten (map W8.w2bits (to_list x)))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+    by rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#.
+
+  rewrite (StdBigop.Bigint.BIA.eq_big_seq _ 
+     (fun (i0 : int) => 2^i0 * b2i (nth false (flatten (map W8.w2bits (to_list x))) (10*k+i0)))).
+  + move => kk kkb /=. 
+    rewrite (nth_nth_chunk 10 k kk (flatten (map W8.w2bits (to_list x))) false witness false) => //; last    by smt(mem_range).
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= /#.
+
+  rewrite (StdBigop.Bigint.BIA.eq_big_seq 
+     (fun (i0 : int) => 2 ^ i0 * b2i (nth false (nth witness (chunk 10 (flatten (map W8.w2bits (to_list x)))) j) i0))
+     (fun (i0 : int) => 2^i0 * b2i (nth false (flatten (map W8.w2bits (to_list x))) (10*j+i0)))).
+  + move => kk kkb //=.
+    rewrite (nth_nth_chunk 10 j kk (flatten (map W8.w2bits (to_list x))) false witness false) => //; last   by smt(mem_range).
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max /= /#.
+
+
+  do 10!(rewrite range_ltn /=;1 :smt()). rewrite range_geq //=. 
+    do 10!(rewrite StdBigop.Bigint.BIA.big_consT /=). rewrite !StdBigop.Bigint.BIA.big_nil /=. 
+    do 10!(rewrite StdBigop.Bigint.BIA.big_consT /=). rewrite !StdBigop.Bigint.BIA.big_nil /=. 
+  rewrite !(nth_flatten false 8) /=; first 20 by  rewrite allP => kk /=; smt(mapP W8.size_w2bits). 
+rewrite !(nth_map witness); first 40 by smt(size_iota Array960.size_to_list).
+rewrite !(nth_iota); first 20 by smt().
+rewrite !W8.get_w2bits /=.
+have ->  : 
+((b2i x.[10 * k %/ 8].[10 * k %% 8] +
+  (2 * b2i x.[(10 * k + 1) %/ 8].[(10 * k + 1) %% 8] +
+   (4 * b2i x.[(10 * k + 2) %/ 8].[(10 * k + 2) %% 8] +
+    (8 * b2i x.[(10 * k + 3) %/ 8].[(10 * k + 3) %% 8] +
+     (16 * b2i x.[(10 * k + 4) %/ 8].[(10 * k + 4) %% 8] +
+      (32 * b2i x.[(10 * k + 5) %/ 8].[(10 * k + 5) %% 8] +
+       (64 * b2i x.[(10 * k + 6) %/ 8].[(10 * k + 6) %% 8] +
+        (128 * b2i x.[(10 * k + 7) %/ 8].[(10 * k + 7) %% 8] +
+         (256 * b2i x.[(10 * k + 8) %/ 8].[(10 * k + 8) %% 8] + 512 * b2i x.[(10 * k + 9) %/ 8].[(10 * k + 9) %% 8])))))))))) %/
+ 256 = 
+b2i x.[(10 * k + 8) %/ 8].[(10 * k + 8) %% 8] + 2 * b2i x.[(10 * k + 9) %/ 8].[(10 * k + 9) %% 8] by smt().
+have H : forall kk, 8<=kk<10 => (10*k + kk) %/8 = i by smt().
+do 2!(rewrite H //=). 
+have H1 : forall kk, 8<=kk<10 => (10*k + kk) %% 8 = kk-8  by smt ().  
+do 2!(rewrite H1 //=).
+have H5 : forall kk, 0<=kk<6 => (10*j + kk) %/8 = i  by smt().
+do 5!(rewrite H5 //=).  move : (H5 0 _); 1: by smt(). move => //= ->.
+have H6 : forall kk, 0<=kk<6 => (10*j+kk) %%8 = kk + 2 by smt().  
+do 5!(rewrite H6 //=). move : (H6 0 _); 1: by smt(). move => //= ->.
+have H7 : forall kk, 6<=kk<10 => (10*j + kk) %/8 = i + 1  by smt().
+do 4!(rewrite H7 //=). 
+have H8 : forall kk, 6<=kk<10 => (10*j+kk) %%8 = kk - 6 by smt().  
+do 4!(rewrite H8 //=). 
+
+have -> : 
+(b2i x.[i].[0] + 2 * b2i x.[i].[1] +
+ (b2i x.[i].[2] +
+  (2 * b2i x.[i].[3] +
+   (4 * b2i x.[i].[4] +
+    (8 * b2i x.[i].[5] +
+     (16 * b2i x.[i].[6] +
+      (32 * b2i x.[i].[7] +
+       (64 * b2i x.[i + 1].[0] + (128 * b2i x.[i + 1].[1] + (256 * b2i x.[i + 1].[2] + 512 * b2i x.[i + 1].[3]))))))))) *
+ 4) %%
+256 = 
+(b2i x.[i].[0] + 2 * b2i x.[i].[1] +
+ (4*b2i x.[i].[2] +
+  (8 * b2i x.[i].[3] +
+   (16 * b2i x.[i].[4] +
+    (32 * b2i x.[i].[5] +
+     (64 * b2i x.[i].[6] +
+      (128 * b2i x.[i].[7]))))))) by smt().
+
+rewrite to_uintE /= /w2bits /=.
+do 8!(rewrite mkseqSr_rw //=); rewrite mkseq0 //=.
+do 8!(rewrite bs2int_cons /=); rewrite bs2int_nil //=.
+by ring.
 
 have H0 : forall i j (v : W8.t Array960.t), 0 <= i < 768 => i%%4 = 0 => j = i %/ 4 * 5 => 
   v.[j <- W8.of_int (sem_decode10_vec x).[i]] = v.[j <- x.[j]].
@@ -2191,38 +2410,36 @@ have -> :
 256 by smt().
 have H : forall k, 0<=k<8 => (10*i + k) %/8 = j by smt().
 rewrite !H //=; move : (H 0 _); rewrite //= => ->.
-have H1 : forall k, 0<=k<8 => (10*i+k) %%8 = k by smt().
-rewrite !H1 //=; move : (H1 0 _); rewrite //= => ->.
+have H6 : forall k, 0<=k<8 => (10*i+k) %%8 = k by smt().
+rewrite !H6 //=; move : (H6 0 _); rewrite //= => ->.
 rewrite modz_small 1:/#.
 rewrite to_uintE /= /w2bits /=.
 do 8!(rewrite mkseqSr_rw //=); rewrite mkseq0 //=.
 do 8!(rewrite bs2int_cons /=); rewrite bs2int_nil //=.
 by ring.
 
+rewrite sem_decode10_vec_corr in H4.
+rewrite sem_decode10_vec_corr in H3.
+rewrite sem_decode10_vec_corr in H2.
+rewrite sem_decode10_vec_corr in H1.
+rewrite sem_decode10_vec_corr in H0.
 
 rewrite /cc; do 192!(rewrite iteriS_rw;1: by smt()); rewrite iteri0; 1: by smt().
-simplify.
-rewrite -sem_decode10_vec_corr.
 
+simplify.
+
+do 192!(rewrite H0 1..3:/#).
+do 192!(rewrite H1 1..4:/#).
+do 192!(rewrite H2 1..4:/#).
+do 192!(rewrite H3 1..4:/#).
+do 192!(rewrite H4 1..3:/#).
+simplify.
+
+  have  := (Array960.init_set witness (fun i => x.[i])). 
+  rewrite -JUtils.iotaredE /= => ->.
+  by rewrite tP => k kb; rewrite initiE //=.
 
 qed.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 lemma sem_decode1_corr : sem_decode1 = op_EncDec_decode1.
@@ -2612,7 +2829,7 @@ lemma sem_decode4K  : cancel op_EncDec_decode4  op_EncDec_encode4.
 rewrite /cancel /op_EncDec_encode4 /= => x. 
 do 128!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
 have H : forall i j, 0 <= i < 255 => i%%2 = 0 /\ j=i+1 => W8.of_int ((op_EncDec_decode4 x).[i] + (op_EncDec_decode4 x).[j]*16) = x.[i%/2]; last first.
-+ rewrite !H; first 256 by smt().  rewrite /=. search Array128.init.
++ rewrite !H; first 256 by smt().  rewrite /=. 
   have  := (Array128.init_set witness (fun i => x.[i])). 
   rewrite -JUtils.iotaredE /= => ->.
   by rewrite tP => k kb; rewrite initiE //=.
@@ -2685,7 +2902,6 @@ qed.
 (* To Do
 lemma sem_decode12K : cancel sem_decode12 sem_encode12 by admit.
 lemma sem_decode12_vecK  : cancel sem_decode12_vec  sem_encode12_vec  by admit. (* to do *)
-lemma sem_decode10_vecK  : cancel sem_decode10_vec  sem_encode10_vec  by admit. (* to do *)
 *)
 (* These have missing preconditions; move to KyberProperties and fix. 
 lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
