@@ -822,8 +822,7 @@ symmetry. proc*; call prevec_eq_poly_frommsg. auto => />.
     a{1} = ap{2} ==> 
     decompress_poly 1 res{1} = lift_array256 ( res{2}) /\
     pos_bound256_cxq res{2} 0 256 1);1,2: smt(). 
-    proc*. admit. (* Reify ecall (eq_decode1_opt). auto => />. *)
-    
+    apply AVX2_cf.decode1_corr.
     symmetry; proc*; ecall  (KyberPoly.poly_frommsg_corr ap{1}); auto => />;smt().
 qed.
 
@@ -853,16 +852,19 @@ symmetry. proc*; call prevec_eq_poly_tomsg. auto => />.
     pos_bound256_cxq a{2} 0 256 2
                               ==> 
     res{2}.`1 = res{1});1,2: smt(). 
-    proc*; ecall (poly_tomsg_corr (lift_array256 a{1})). auto => />.
+    proc*; ecall (poly_tomsg_corr (lift_array256 a{1})). by auto => />.
     transitivity EncDec.encode1 
-      (={a} ==> ={res})
+      (={a} /\ all (fun x => 0 <= x < 2) a{1}  ==> ={res})
                (
     a{1} = compress_poly 1 (lift_array256 a{2}) /\
     pos_bound256_cxq a{2} 0 256 2
                               ==> 
-    res{2}.`1 = res{1});1,2: smt(). 
-    proc*. admit. (* Reify ecall (eq_encode1). auto => />. *)
-    
+    res{2}.`1 = res{1});2: smt(). 
+    + auto => />.
+      + move => &2 H. exists (compress_poly 1 (lift_array256 a{2})) => /=.
+        by rewrite /compress_poly allP => k kb; rewrite mapiE //=; smt(b_decode_sem).
+      apply (AVX2_cf.encode1_corr). 
+
     symmetry; proc*; ecall  (KyberPoly.poly_tomsg_corr (lift_array256 a{1})); auto => />. 
 qed.
 
