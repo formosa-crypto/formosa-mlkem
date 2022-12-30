@@ -82,20 +82,15 @@ proc op op_EncDec_decode10_vec = EncDecAux.decode10_vec_aux.
 
 (* These ones still require inlining *)
 op op_EncDec_encode12_vec(a : ipolyvec) : W8.t Array1152.t =
-   Array1152.init (fun i => 
-        if 0<=i<384 
-        then (op_EncDec_encode12 (Array256.init (fun k => a.[k]))).[i]
-        else if 384<=i<768
-             then (op_EncDec_encode12 (Array256.init (fun k => a.[k+256]))).[i-384]
-             else (op_EncDec_encode12 (Array256.init (fun k => a.[k+512]))).[i-768]).
+   fromarray384 (op_EncDec_encode12 (subarray256 a 0))
+                (op_EncDec_encode12 (subarray256 a 1))
+                (op_EncDec_encode12 (subarray256 a 2)).
+
    
 op op_EncDec_decode12_vec(a : W8.t Array1152.t) : ipolyvec = 
-   Array768.init (fun i => 
-        if 0<=i<256 
-        then (op_EncDec_decode12 (Array384.init (fun k => a.[k]))).[i]
-        else if 256<=i<512
-             then (op_EncDec_decode12 (Array384.init (fun k => a.[k+384]))).[i-256]
-             else (op_EncDec_decode12 (Array384.init (fun k => a.[k+768]))).[i-512]).
+   fromarray256 (op_EncDec_decode12 (subarray384 a 0))
+                (op_EncDec_decode12 (subarray384 a 1))
+                (op_EncDec_decode12 (subarray384 a 2)).
 
 (* FixMe: Move *)
 lemma iteriS_rw ['a] (n : int) (opr : int -> 'a -> 'a) (x : 'a) :
@@ -121,6 +116,8 @@ by rewrite (nth_change_dfl x0 x2) /#.
 qed.
 
 lemma sem_decode12_corr : sem_decode12 = op_EncDec_decode12.
+admitted.
+(*
 proof.
 apply fun_ext => x.
 rewrite /op_EncDec_decode12 /sem_decode12 /=.
@@ -204,9 +201,11 @@ rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
 do 128!(rewrite iteriS_rw;1: by smt()). 
 by rewrite iteri0 /=.
 qed.
-
+*)
 
 lemma sem_decode12K  : cancel op_EncDec_decode12  op_EncDec_encode12.
+admitted.
+(*
 rewrite /cancel /op_EncDec_encode12 /= => x. 
 do 128!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
 
@@ -380,13 +379,11 @@ by  rewrite !size_chunk /=; [ by smt() | ];
   smt().
 
 qed.
-
+*)
 
 lemma size_take_le  ['a] (n : int) (s : 'a list):
    0 <= n => size (take n s) = if n <= size s then n else size s
   by smt(size_take).
-
-print size_drop.
 
 lemma size_drop_le ['a] (n : int) (s : 'a list): 
     0 <= n => 0 <= size s - n => size (drop n s) = if 0 <= size s - n then size s - n else 0
@@ -397,70 +394,57 @@ proof.
 apply fun_ext => x.
 rewrite /op_EncDec_decode12_vec /sem_decode12_vec /= /=.
 rewrite -sem_decode12_corr /sem_decode12 /= tP => k kb.
-rewrite eq_sym Array768.initiE /= 1:kb. 
-case (0 <= k && k < 256).
-+ move => kbb;rewrite !initiE 1,2:/# /= !(nth_map witness) /=. 
-  + rewrite size_chunk // size_take //=; split; 1: smt().
-    move => ?; rewrite ifF /BytesToBits /= size_flatten
-    /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-  rewrite !StdBigop.Bigint.big_constz /=;
-  rewrite !count_predT /= size_iota /max //= /#.
-  + rewrite size_iota /= size_take //=; split; 1: smt().
-    move => ?; rewrite ifF /BytesToBits /= size_flatten
-    /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-  rewrite !StdBigop.Bigint.big_constz /=;
-  rewrite !count_predT /= size_iota /max //= /#.
-  + rewrite size_chunk // size_take //=; split; 1: smt().
-    move => ?; rewrite ifF /BytesToBits /= size_flatten
-    /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-  rewrite !StdBigop.Bigint.big_constz /=;
-  rewrite !count_predT /= size_iota /max //= /#.
-  + rewrite size_iota /= size_take //=; split; 1: smt().
-    move => ?; rewrite ifF /BytesToBits /= size_flatten
-    /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-  rewrite !StdBigop.Bigint.big_constz /=;
-  rewrite !count_predT /= size_iota /max //= /# /=.
+have H : forall v idx, 0 <= v < 3 => 0 <= idx < 256 =>
+     nth 0 (decode_vec 12 (BytesToBits (to_list x))) (256*v + idx) =
+     nth 0 (decode 12 (BytesToBits (to_list (subarray384 x v)))) (idx);
+last first.
+rewrite (Array768.get_of_list _ _ _ kb) /=.
+have -> : k = 256 * (k %/ 256) + k %% 256  by smt().
+rewrite H 1..2: /# /fromarray256 initiE 1:/# /=.
+case (0 <= k < 256).
++ move => *;rewrite ifT 1:/# get_of_list /#.
+case (256 <= k < 512).
++ move => *;rewrite ifF 1:/# ifT 1:/# get_of_list /#.
+move => *;rewrite ifF 1:/# ifF 1:/# get_of_list /#.
 
-  congr => //=. 
-  have H3072 /= : (size (take 3072 (BytesToBits (to_list ((init ("_.[_]" x)))%Array384)))) =
-                3072  by 
-      rewrite size_take_le //=;
-     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-      rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-      rewrite !StdBigop.Bigint.big_constz /=;
-      rewrite !count_predT /= size_iota /max //= /#. 
-  have H9216 /= : (size (take 9216 (BytesToBits (to_list x)))) =
-                9216 by 
-      rewrite size_take_le //=;
-     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-      rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-      rewrite !StdBigop.Bigint.big_constz /=;
-      rewrite !count_predT /= size_iota /max //= /#. 
-    rewrite H3072 H9216 /=.
-   have -> /= : nth witness (iota_ 0 256) k = k by rewrite nth_iota /#. 
-   have -> /= : nth witness (iota_ 0 768) k = k by rewrite nth_iota /#. 
-  apply (eq_from_nth witness) => //=.
-  + rewrite !size_take_le //= !ifT; 1,2:
-      by rewrite size_drop_le /= 1:/# ?H3072 ?H9216 /#. 
-    by smt().
-    
-move => i ib.
-rewrite !nth_take //; 1,2: by smt(size_take).
-rewrite !nth_drop //; 1..4: by smt(). 
-rewrite !nth_take //; 1..2: by smt(size_take size_drop).
-rewrite /BytesToBits !(nth_flatten witness 8); last first.
-+ rewrite !(nth_map witness). admit. rewrite size_iota /=. admit. admit. rewrite size_iota /=. admit.
-rewrite !(nth_iota). admit. admit.
-congr;congr => /=; rewrite initiE //=. admit.
-admit.
-admit.
+move => v idx vb idxb.
+have S1 : size (take 9216 (BytesToBits (to_list x))) = 9216.
++ by rewrite size_take_le 1:/# /BytesToBits /= size_flatten
+    /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max //= /#.
+have S2 : size (take 3072 (BytesToBits (to_list (subarray384 x v)))) = 3072.
++ by rewrite size_take_le 1:/# /BytesToBits /= size_flatten
+    /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max //= /#.
+rewrite /decode /decode_vec !(nth_map witness) /=.
++ by rewrite size_chunk 1:/# S1 /#.
++ by rewrite size_iota 1:/# S2 /#.
++ by rewrite size_chunk 1:/# S2 /#.
++ by rewrite size_iota 1:/# S2 /#.
+congr => /=.
+rewrite S1 S2 /= !nth_iota 1,2:/# /=.
+apply (eq_from_nth witness); 1: by rewrite !size_take_le 1..2:/# !size_drop_le /#.
+move => i; rewrite size_take_le 1:/# size_drop_le 1..2:/#.
+move => [ibl ]; rewrite ifT.
++ by rewrite size_take_le 1:/# /BytesToBits /= size_flatten
+    /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+  rewrite !StdBigop.Bigint.big_constz /=;
+  rewrite !count_predT /= size_iota /max //= /#.
+move => ibh; rewrite !nth_take 1..4:/# !nth_drop 1..4:/# !nth_take 1..4:/#.
+rewrite !(nth_flatten witness 8) /=; 1..2:by smt(List.allP mapP size_flatten W8.size_w2bits).
 
+rewrite !(nth_map witness) /=; 1..4: smt(Array1152.size_to_list size_iota Array384.size_to_list).
+by rewrite !nth_iota 1..2:/# /= /subarray384 initiE 1:/# /= /#.
+qed. 
+
+lemma sem_decode10_vecK  : cancel op_EncDec_decode12_vec  op_EncDec_encode12_vec.
+rewrite /cancel /op_EncDec_encode12_vec /op_EncDec_decode12_vec /= => x.
 admitted.
-
 
 lemma sem_decode10_vec_corr : sem_decode10_vec = op_EncDec_decode10_vec.
 proof.
@@ -612,7 +596,7 @@ by rewrite iteri0 /=.
 qed.
 
 
-lemma sem_decode10K  : cancel op_EncDec_decode10_vec  op_EncDec_encode10_vec.
+lemma sem_decode10_vecK  : cancel op_EncDec_decode10_vec  op_EncDec_encode10_vec.
 rewrite /cancel /op_EncDec_encode10_vec /= => x.
 pose cc := iteri 192 _ _.
 have -> /= : cc = (cc.`1,cc.`2,cc.`3,cc.`4,cc.`5,cc.`6) by smt().
