@@ -86,11 +86,18 @@ op op_EncDec_encode12_vec(a : ipolyvec) : W8.t Array1152.t =
                 (op_EncDec_encode12 (subarray256 a 1))
                 (op_EncDec_encode12 (subarray256 a 2)).
 
+(* This should come from proc op *)
+lemma sem_op_EncDec_encode12_vec _a :
+  phoare [ EncDec.encode12_vec : arg = _a ==> res = op_EncDec_encode12_vec _a ] = 1%r by admit.
    
 op op_EncDec_decode12_vec(a : W8.t Array1152.t) : ipolyvec = 
    fromarray256 (op_EncDec_decode12 (subarray384 a 0))
                 (op_EncDec_decode12 (subarray384 a 1))
                 (op_EncDec_decode12 (subarray384 a 2)).
+
+(* This should come from proc op *)
+lemma sem_op_EncDec_decode12_vec _a :
+  phoare [ EncDec.decode12_vec : arg = _a ==> res = op_EncDec_decode12_vec _a ] = 1%r by admit.
 
 (* FixMe: Move *)
 lemma iteriS_rw ['a] (n : int) (opr : int -> 'a -> 'a) (x : 'a) :
@@ -116,8 +123,6 @@ by rewrite (nth_change_dfl x0 x2) /#.
 qed.
 
 lemma sem_decode12_corr : sem_decode12 = op_EncDec_decode12.
-admitted.
-(*
 proof.
 apply fun_ext => x.
 rewrite /op_EncDec_decode12 /sem_decode12 /=.
@@ -201,11 +206,9 @@ rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
 do 128!(rewrite iteriS_rw;1: by smt()). 
 by rewrite iteri0 /=.
 qed.
-*)
+
 
 lemma sem_decode12K  : cancel op_EncDec_decode12  op_EncDec_encode12.
-admitted.
-(*
 rewrite /cancel /op_EncDec_encode12 /= => x. 
 do 128!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
 
@@ -379,7 +382,7 @@ by  rewrite !size_chunk /=; [ by smt() | ];
   smt().
 
 qed.
-*)
+
 
 lemma size_take_le  ['a] (n : int) (s : 'a list):
    0 <= n => size (take n s) = if n <= size s then n else size s
@@ -442,9 +445,29 @@ rewrite !(nth_map witness) /=; 1..4: smt(Array1152.size_to_list size_iota Array3
 by rewrite !nth_iota 1..2:/# /= /subarray384 initiE 1:/# /= /#.
 qed. 
 
-lemma sem_decode10_vecK  : cancel op_EncDec_decode12_vec  op_EncDec_encode12_vec.
+lemma subarray256K ['a] (a b c : 'a Array256.t) :
+     subarray256 (fromarray256 a b c) 0 = a /\
+     subarray256 (fromarray256 a b c) 1 = b /\
+     subarray256 (fromarray256 a b c) 2 = c
+by rewrite /subarray256 /fromarray256; do split; rewrite tP => k kb; rewrite initiE 1:/# /= initiE 1:/# /=; [ rewrite ifT 1:/# /=| rewrite ifF 1:/# /= ifT 1:/# /= | rewrite ifF 1:/#  /= ifF 1: /# /=].
+
+lemma fromarray384K ['a] (x : 'a Array1152.t) :
+     fromarray384 (subarray384 x 0) 
+                  (subarray384 x 1)
+                  (subarray384 x 2) = x.
+ rewrite /fromarray384 /subarray384; rewrite tP => k kb; rewrite initiE 1:/# /=.
+ case(0<=k<384); 1: by move => *; rewrite initiE /#.
+ case(384<=k<768); by move => *; rewrite initiE /#.
+qed.
+
+
+lemma sem_decode12_vecK  : cancel op_EncDec_decode12_vec  op_EncDec_encode12_vec.
 rewrite /cancel /op_EncDec_encode12_vec /op_EncDec_decode12_vec /= => x.
-admitted.
+move : (subarray256K (op_EncDec_decode12 (subarray384 x 0)) (op_EncDec_decode12 (subarray384 x 1))
+           (op_EncDec_decode12 (subarray384 x 2))) => [->[->->]].
+rewrite !sem_decode12K.
+by apply fromarray384K.
+qed.
 
 lemma sem_decode10_vec_corr : sem_decode10_vec = op_EncDec_decode10_vec.
 proof.
@@ -1390,10 +1413,6 @@ by  rewrite !size_chunk /=; [ by smt() | ];
   by rewrite !get_w2bits.
 qed.
 
-(* To Do
-lemma sem_decode12K : cancel sem_decode12 sem_encode12 by admit.
-lemma sem_decode12_vecK  : cancel sem_decode12_vec  sem_encode12_vec  by admit. (* to do *)
-*)
 (* These have missing preconditions; move to KyberProperties and fix. 
 lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
 lemma sem_encode1K  : cancel sem_encode1  sem_decode1  by admit. (* to do *)
@@ -1401,6 +1420,7 @@ lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. 
 lemma sem_encode10_vecK  : cancel sem_encode10_vec  sem_decode10_vec  by admit. (* to do *)
 lemma sem_decode1_bnd a k : 0<=k<256 => 0<= (sem_decode1 a).[k] < 2 by admit. (* to do *)
 *)
+
 (* These are all replaced by proc op 
 phoare sem_decode12 a : [ EncDec.decode12 : arg = a ==>  res = sem_decode12 a ] = 1%r by admit. (* reify *)
 phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = sem_decode4  a ] = 1%r by admit. (* reify *)
