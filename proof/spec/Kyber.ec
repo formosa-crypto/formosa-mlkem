@@ -1617,27 +1617,6 @@ module EncDec = {
       return c;
    }
 
-  proc encode10_vec_aux(u : ipolyvec) : W8.t Array960.t = {
-      var c : W8.t Array960.t;
-      var i,j,t0,t1,t2,t3;
-      c <- witness;
-      i <- 0; 
-      while (i < 768) {
-         j <- i %/ 4 * 5;
-         t0 <- u.[i];
-         t1 <- u.[i + 1];
-         t2 <- u.[i + 2];
-         t3 <- u.[i + 3];
-         c.[j] <- W8.of_int t0; 
-         c.[j+1] <-  W8.of_int (t0 %/ 2^8 + t1 * 2^2); 
-         c.[j+2] <-  W8.of_int (t1 %/ 2^6 + t2 * 2^4); 
-         c.[j+3] <-  W8.of_int (t2 %/ 2^4 + t3 * 2^6); 
-         c.[j+4] <-  W8.of_int (t3 %/ 2^2);
-         i <- i + 4;
-      }
-      return c;
-   }
-
    proc encode12_vec(a : ipolyvec) : W8.t Array1152.t = {
       var a1, a2, a3;
       a1 <@ encode12(subarray256 a 0);
@@ -1663,22 +1642,6 @@ module EncDec = {
       return c;
    }
 
-   proc decode10_vec_aux(u : W8.t Array960.t) : ipolyvec = {
-      var c : ipolyvec;
-      var i,j,t0,t1,t2,t3,t4;
-      c <- witness;
-      i <- 0; 
-      while (i < 768) {
-         j <- i %/ 4 * 5;
-         t0 <- u.[j]; t1 <- u.[j + 1]; t2 <- u.[j + 2]; t3 <- u.[j + 3]; t4 <- u.[j + 4];
-         c.[i] <- to_uint t0 + (to_uint t1 %% 2^2) * 2^8;
-         c.[i + 1] <-  to_uint t1 %/ 2^2 + (to_uint t2 %% 2^4) * 2^6;
-         c.[i + 2] <-  to_uint t2 %/ 2^4 + (to_uint t3 %% 2^6) * 2^4;
-         c.[i + 3] <-  to_uint t3 %/ 2^6 + (to_uint t4) * 2^2;
-         i <- i + 4;
-      }
-      return c;
-   }
 
    proc decode12_vec(a : W8.t Array1152.t) : ipolyvec = {
       var a1, a2, a3;
@@ -1689,20 +1652,6 @@ module EncDec = {
    }
 
 }.
-
-equiv decode10_vec_aux : 
-   EncDec.decode10_vec ~ EncDec.decode10_vec_aux : ={arg} ==> ={res}.
-proc. 
-wp; while (={i,c,u} /\ 0 <= i{1} <= 768 /\ i{1} %% 4 = 0 /\ j{1} = i{1} %/ 4 * 5); last by auto => /> /#.
-by auto => /> /#. 
-qed.
-
-equiv encode10_vec_aux : 
-   EncDec.encode10_vec ~ EncDec.encode10_vec_aux : ={arg} ==> ={res}.
-proc. 
-wp; while (={i,c,u} /\ 0 <= i{1} <= 768 /\ i{1} %% 4 = 0 /\ j{1} = i{1} %/ 4 * 5); last by auto => /> /#.
-by auto => /> /#. 
-qed.
 
 require import BitEncoding.
 import BitChunking.
