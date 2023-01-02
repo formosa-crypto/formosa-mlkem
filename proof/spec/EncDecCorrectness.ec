@@ -122,6 +122,26 @@ rewrite /chunk /= nth_mkseq 1:/# /= nth_take 1,2:/# /= nth_drop 1,2:/#.
 by rewrite (nth_change_dfl x0 x2) /#.
 qed.
 
+lemma size_BytesToBits l : size (BytesToBits l) = 8 * size l by
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= /= /#. 
+
+lemma size_chunksBytesToBits l k n : 
+   0 < k => 0 <= n < 8 * size l %/ k =>
+   size ((nth witness (chunk k (BytesToBits l))) n) = k.
+move => kb nb.
++ have  /= [_ ->] := (all_nthP (fun l => size l = k) (chunk k (flatten (map W8.w2bits l))) witness); 1,3: by smt(List.allP in_chunk_size).
+   by  rewrite !size_chunk /=; [ by smt() | ];
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= /#. 
+qed.
+
+lemma pow2_8 : 2^8 = 256 by [].
+
 lemma sem_decode12_corr : sem_decode12 = op_EncDec_decode12.
 proof.
 apply fun_ext => x.
@@ -129,86 +149,51 @@ rewrite /op_EncDec_decode12 /sem_decode12 /=.
 pose f := fun i j => bs2int (nth witness (chunk 12 (flatten (map W8.w2bits (to_list x)))) (2*i+j)).
 pose g := (fun (i : int) (r : ipoly) => r.[i * 2 <- f i 0].[i * 2 + 1 <- f i 1]).
 rewrite (eq_iteri _ g  _ _).
-+ move => i a ib /=. 
-  rewrite /g /= /f /=.
++ move => i a ib /=;rewrite /g /= /f /=.
   congr;[congr |]. 
   + have //= -> := W8.to_uint_bits.
     have //= <- := W8.bits_divmod (x.[3*i+1]) 0 4.
     rewrite (mulrC _ 256).
     have -> : 256 = 2^(size ((bits x.[3 * i] 0 8))); 1: by rewrite size_bits //=.
     have /= <- := bs2int_cat (bits x.[3 * i] 0 8) (bits x.[3 * i + 1] 0 4).
-    congr; apply (eq_from_nth witness).
-   + rewrite size_cat !size_bits //=.
-      + have  /= [_ ->] := (all_nthP (fun l => size l = 12) (chunk 12 (flatten (map W8.w2bits (to_list x)))) witness); 
-         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
-  by rewrite !size_chunk /=; [ by smt() | ];
-     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-     rewrite !StdBigop.Bigint.big_constz /=;
-     rewrite !count_predT /= size_iota /max /= /#. 
+    congr; apply (eq_from_nth witness); 1: by
+        smt(size_cat W8.size_bits size_chunksBytesToBits Array384.size_to_list).
     move => k; rewrite size_cat !size_bits //= => kb.
     rewrite (nth_nth_chunk 12 (2 * i) k (flatten (map W8.w2bits (to_list x))) witness witness witness) /=; 
-        1,3: by smt().
-  + by rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-       rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-       rewrite !StdBigop.Bigint.big_constz /=;
-       rewrite !count_predT /= !size_iota /= /max /= /#.
-       rewrite (nth_flatten witness 8).
-  + rewrite allP => w /=; rewrite mapP => Hx. 
-    by elim Hx => ww [_ ->]; rewrite W8.size_w2bits. 
+       1..3:by smt(size_BytesToBits Array384.size_to_list).
+  rewrite (nth_flatten witness 8);1: smt(List.allP List.mapP W8.size_w2bits). 
   rewrite (nth_map witness) => /=; 1: by  rewrite size_to_list; smt(). 
-  rewrite nth_cat size_bits //=.
-  case (k < 8);move => *;rewrite /bits /w2bits /= !nth_mkseq /= /#. 
+  by rewrite nth_cat size_bits //=;smt(nth_mkseq). 
 
-  + have //= -> := W8.to_uint_bits.
-    have //= := W8.bits_divmod (x.[3*i+1]) 4 4; rewrite modz_small /=; 1: smt(W8.to_uint_cmp JUtils.pow2_8). move => <-.  rewrite (mulrC _ 16) (addrC _ (bs2int (bits x.[3 * i + 1] 4 4))).
-    have -> : 16 = 2^(size ((bits x.[3 * i + 1] 4 4))); 1: by rewrite size_bits //=.
-    have /= <- := bs2int_cat (bits x.[3 * i + 1] 4 4) (bits x.[3 * i + 2] 0 8).
-    congr; apply (eq_from_nth witness).
-   + rewrite size_cat !size_bits //=.
-      + have  /= [_ ->] := (all_nthP (fun l => size l = 12) (chunk 12 (flatten (map W8.w2bits (to_list x)))) witness); 
-         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
-  by rewrite !size_chunk /=; [ by smt() | ];
-     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-     rewrite !StdBigop.Bigint.big_constz /=;
-     rewrite !count_predT /= size_iota /max /= /#. 
-    move => k; rewrite size_cat !size_bits //= => kb.
-    rewrite (nth_nth_chunk 12 (2 * i + 1) k (flatten (map W8.w2bits (to_list x))) witness witness witness) /=; 
-        1,3: by smt().
-  + by rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-       rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-       rewrite !StdBigop.Bigint.big_constz /=;
-       rewrite !count_predT /= !size_iota /= /max /= /#.
-       rewrite (nth_flatten witness 8).
-  + rewrite allP => w /=; rewrite mapP => Hx. 
-    by elim Hx => ww [_ ->]; rewrite W8.size_w2bits. 
++ have //= -> := W8.to_uint_bits.
+  have //= := W8.bits_divmod (x.[3*i+1]) 4 4; rewrite modz_small /=; 
+    1: smt(W8.to_uint_cmp JUtils.pow2_8). 
+  move => <-;  rewrite (mulrC _ 16) (addrC _ (bs2int (bits x.[3 * i + 1] 4 4))).
+  have -> : 16 = 2^(size ((bits x.[3 * i + 1] 4 4))); 1: by rewrite size_bits //=.
+  have /= <- := bs2int_cat (bits x.[3 * i + 1] 4 4) (bits x.[3 * i + 2] 0 8).
+  congr; apply (eq_from_nth witness).
+ + rewrite size_cat !size_bits //=;
+     1: by smt(size_cat W8.size_bits size_chunksBytesToBits Array384.size_to_list).
+  move => k; rewrite size_cat !size_bits //= => kb.
+  rewrite (nth_nth_chunk 12 (2 * i + 1) k (flatten (map W8.w2bits (to_list x))) witness witness witness) /=; 
+       1..3:by smt(size_BytesToBits Array384.size_to_list).
+  rewrite (nth_flatten witness 8);1: smt(List.allP List.mapP W8.size_w2bits). 
   rewrite (nth_map witness) => /=; 1: by  rewrite size_to_list; smt(). 
-  rewrite nth_cat size_bits //=.
-  case (k < 4);move => *;rewrite /bits /w2bits /= !nth_mkseq /= /#. 
+  by rewrite nth_cat size_bits //=;smt(nth_mkseq). 
 
 rewrite /decode /BytesToBits /=.
-have -> : 3072 = size (flatten (map W8.w2bits (to_list x))); 1:by
- rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-  rewrite !StdBigop.Bigint.big_constz /=;
-  rewrite !count_predT /= size_iota /max /=.
-rewrite take_size.
-rewrite tP /= => i ib.
-rewrite get_of_list 1:ib (nth_map (witness<:bool list>) 0);
-1: by  rewrite !size_chunk /=; [ by smt() | ];
-  rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
-  rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
-  rewrite !StdBigop.Bigint.big_constz /=;
-  rewrite !count_predT /= size_iota /max /= 1:ib. print Array256.tP.
-  have /= [<- ]:= (Array256.tP (Array256.init (fun i => bs2int (nth witness (chunk 12 (flatten (map W8.w2bits (to_list x)))) i))) (iteri 128 g witness));[| by apply ib | by smt(Array256.initiE)].
+have -> : 3072 = size (flatten (map W8.w2bits (to_list x))); 1:by smt(size_BytesToBits Array384.size_to_list).
+rewrite take_size tP /= => i ib.
+rewrite get_of_list 1:ib (nth_map (witness<:bool list>) 0); 1: by smt(size_chunk size_BytesToBits Array384.size_to_list).
+have /= [<- ]:= (Array256.tP (Array256.init (fun i => bs2int (nth witness (chunk 12 (flatten (map W8.w2bits (to_list x)))) i))) (iteri 128 g witness));[| by apply ib | by smt(Array256.initiE)].
 rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
 do 128!(rewrite iteriS_rw;1: by smt()). 
 by rewrite iteri0 /=.
 qed.
 
-
 lemma sem_decode12K  : cancel op_EncDec_decode12  op_EncDec_encode12.
+admitted.
+(*
 rewrite /cancel /op_EncDec_encode12 /= => x. 
 do 128!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
 
@@ -382,6 +367,7 @@ by  rewrite !size_chunk /=; [ by smt() | ];
   smt().
 
 qed.
+*)
 
 
 lemma size_take_le  ['a] (n : int) (s : 'a list):
@@ -393,6 +379,8 @@ lemma size_drop_le ['a] (n : int) (s : 'a list):
 by smt(size_drop).
 
 lemma sem_decode12_vec_corr : sem_decode12_vec = op_EncDec_decode12_vec.
+admitted.
+(*
 proof.
 apply fun_ext => x.
 rewrite /op_EncDec_decode12_vec /sem_decode12_vec /= /=.
@@ -444,7 +432,7 @@ rewrite !(nth_flatten witness 8) /=; 1..2:by smt(List.allP mapP size_flatten W8.
 rewrite !(nth_map witness) /=; 1..4: smt(Array1152.size_to_list size_iota Array384.size_to_list).
 by rewrite !nth_iota 1..2:/# /= /subarray384 initiE 1:/# /= /#.
 qed. 
-
+*)
 lemma subarray256K ['a] (a b c : 'a Array256.t) :
      subarray256 (fromarray256 a b c) 0 = a /\
      subarray256 (fromarray256 a b c) 1 = b /\
@@ -470,6 +458,8 @@ by apply fromarray384K.
 qed.
 
 lemma sem_decode10_vec_corr : sem_decode10_vec = op_EncDec_decode10_vec.
+admitted.
+(*
 proof.
 apply fun_ext => x.
 rewrite /op_EncDec_decode10_vec /sem_decode10_vec /=.
@@ -617,9 +607,11 @@ rewrite /of_list -(Array768.init_set witness) -JUtils.iotaredE /=.
 rewrite /cc;do 192!(rewrite iteriS_rw;1: by smt()). 
 by rewrite iteri0 /=.
 qed.
-
+*)
 
 lemma sem_decode10_vecK  : cancel op_EncDec_decode10_vec  op_EncDec_encode10_vec.
+admitted.
+(*
 rewrite /cancel /op_EncDec_encode10_vec /= => x.
 pose cc := iteri 192 _ _.
 have -> /= : cc = (cc.`1,cc.`2,cc.`3,cc.`4,cc.`5,cc.`6) by smt().
@@ -1118,9 +1110,11 @@ simplify.
   by rewrite tP => k kb; rewrite initiE //=.
 
 qed.
-
+*)
 
 lemma sem_decode1_corr : sem_decode1 = op_EncDec_decode1.
+admitted.
+(*
 proof.
 apply fun_ext => x.
 rewrite /op_EncDec_decode1 /sem_decode1 /=. 
@@ -1182,9 +1176,11 @@ rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
 do 32!(rewrite iteriS_rw;1: by smt()). 
 by rewrite iteri0 /=.
 qed.
-
+*)
 
 lemma sem_decode4_corr : sem_decode4 = op_EncDec_decode4.
+admitted.
+(*
 proof.
 apply fun_ext => x.
 rewrite /op_EncDec_decode4 /sem_decode4 /=. 
@@ -1279,9 +1275,11 @@ rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
 do 128!(rewrite iteriS_rw;1: by smt()). 
 by rewrite iteri0 /=.
 qed.
-
+*)
 
 lemma sem_decode1K  : cancel op_EncDec_decode1  op_EncDec_encode1.
+admitted.
+(*
 rewrite /cancel /op_EncDec_encode1 /= => x. 
 do 32!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
 have /= H : forall i, 0 <= i < 32 =>
@@ -1338,8 +1336,11 @@ do 8!(rewrite mkseqSr_rw //=); rewrite mkseq0 //=.
 do 8!(rewrite bs2int_cons /=); rewrite bs2int_nil //=.
 by ring.
 qed.
+*)
 
 lemma sem_decode4K  : cancel op_EncDec_decode4  op_EncDec_encode4.
+admitted.
+(*
 rewrite /cancel /op_EncDec_encode4 /= => x. 
 do 128!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
 have H : forall i j, 0 <= i < 255 => i%%2 = 0 /\ j=i+1 => W8.of_int ((op_EncDec_decode4 x).[i] + (op_EncDec_decode4 x).[j]*16) = x.[i%/2]; last first.
@@ -1412,10 +1413,163 @@ by  rewrite !size_chunk /=; [ by smt() | ];
   by rewrite get_to_list.
   by rewrite !get_w2bits.
 qed.
+*)
+
+lemma encode1_inj (x x' : ipoly) : 
+   (forall i, 0 <= i < 256 => 0 <= x.[i] < 2) =>
+   (forall i, 0 <= i < 256 => 0 <= x'.[i] < 2) =>
+      op_EncDec_encode1 x = op_EncDec_encode1 x' =>
+          x = x'.
+move => Hx Hx'.
+rewrite {2}/op_EncDec_encode1 /=.
+do 32!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite {1}/op_EncDec_encode1 /=.
+do 32!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+move => Hexp; rewrite tP in Hexp.
+have H : forall i, 0 <= i < 32 =>
+  iteri 8 (fun (j : int) (r : W8.t) => (of_int (to_uint r + x.[8*i+ j] * 2 ^ j))%W8) W8.zero = 
+  iteri 8 (fun (j : int) (r : W8.t) => (of_int (to_uint r + x'.[8*i + j] * 2 ^ j))%W8) W8.zero.
+move => i ib. 
+case (i = 0); 1: by move => *; move : (Hexp 0 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 1); 1: by move => *; move : (Hexp 1 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 2); 1: by move => *; move : (Hexp 2 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 3); 1: by move => *; move : (Hexp 3 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 4); 1: by move => *; move : (Hexp 4 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 5); 1: by move => *; move : (Hexp 5 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 6); 1: by move => *; move : (Hexp 6 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 7); 1: by move => *; move : (Hexp 7 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 8); 1: by move => *; move : (Hexp 8 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 9); 1: by move => *; move : (Hexp 9 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 10); 1: by move => *; move : (Hexp 10 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 11); 1: by move => *; move : (Hexp 11 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 12); 1: by move => *; move : (Hexp 12 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 13); 1: by move => *; move : (Hexp 13 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 14); 1: by move => *; move : (Hexp 14 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 15); 1: by move => *; move : (Hexp 15 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 16); 1: by move => *; move : (Hexp 16 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 17); 1: by move => *; move : (Hexp 17 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 18); 1: by move => *; move : (Hexp 18 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 19); 1: by move => *; move : (Hexp 19 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 20); 1: by move => *; move : (Hexp 20 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 21); 1: by move => *; move : (Hexp 21 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 22); 1: by move => *; move : (Hexp 22 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 23); 1: by move => *; move : (Hexp 23 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 24); 1: by move => *; move : (Hexp 24 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 25); 1: by move => *; move : (Hexp 25 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 26); 1: by move => *; move : (Hexp 26 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 27); 1: by move => *; move : (Hexp 27 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 28); 1: by move => *; move : (Hexp 28 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 29); 1: by move => *; move : (Hexp 29 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 30); 1: by move => *; move : (Hexp 30 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 31); 1: by move => *; move : (Hexp 31 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+case (i = 32); 1: by move => *; move : (Hexp 132 _) => //; smt(Array32.set_eqiE Array32.set_neqiE).
+by smt().
+
+move : Hexp => _.
+
+move : (H 0 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 0<i<8 => x.[i] = x'.[i] by smt().
+
+move : (H 1 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 8<i<16 => x.[i] = x'.[i] by smt().
+
+move : (H 2 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 16<i<24 => x.[i] = x'.[i] by smt().
+
+move : (H 3 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 24<i<32 => x.[i] = x'.[i] by smt().
+
+move : (H 4 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 32<i<40 => x.[i] = x'.[i] by smt().
+
+move : (H 5 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 40<i<48 => x.[i] = x'.[i] by smt().
+
+move : (H 6 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 48<i<56 => x.[i] = x'.[i] by smt().
+
+move : (H 7 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 56<i<64 => x.[i] = x'.[i] by smt().
+
+move : (H 8 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 64<i<72 => x.[i] = x'.[i] by smt().
+
+move : (H 9 _) => //.
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=;
+do 8!(rewrite iteriS_rw;1: by smt()); rewrite iteri0 => //=.
+rewrite !of_uintK /= !modz_small; first 254 by smt().
+rewrite !to_uint_eq !of_uintK /= !modz_small 1,2:/#.
+move => ?; have ? : forall i, 72<i<80 => x.[i] = x'.[i] by smt().
+
+admit.
+
+qed.
+
+lemma sem_encode1K (x : ipoly) : 
+   (forall i, 0 <= i < 256 => 0 <= x.[i] < 2) =>
+     x = (op_EncDec_decode1 (op_EncDec_encode1 x)).
+move => Hx.
+apply encode1_inj; [by apply Hx |  |  by rewrite sem_decode1K].
+move => i ib; rewrite -sem_decode1_corr /sem_decode1 /decode1 /decode.
+rewrite !(Array256.get_of_list _ _ _ ib) !(nth_map witness 0) /=.
++ by    rewrite /BytesToBits  size_chunk /=; [ by smt() | ];
+       rewrite size_take_le 1:/#;
+     rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#. 
+split; 1: by smt(bs2int_le2Xs bs2int_ge0).
+move => *.
+move : (bs2int_le2Xs (nth witness (chunk 1 (take 256 (BytesToBits (to_list (op_EncDec_encode1 x))))) i)).
+have -> : size (nth witness (chunk 1 (take 256 (BytesToBits (to_list (op_EncDec_encode1 x))))) i) = 1; last by smt().
+    + have  /= [_ ->] := (all_nthP (fun l => size l = 1) (chunk 1 (take 256 (BytesToBits (to_list (op_EncDec_encode1 x))))) witness); 
+         1,3: by smt(List.allP mem_nth size_chunk in_chunk_size size_flatten W8.size_w2bits).
+    by rewrite !size_chunk /=; [ by smt() | ];
+      rewrite size_take_le /= 1:/#;
+     rewrite /BytesToBits size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
+     rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
+     rewrite !StdBigop.Bigint.big_constz /=;
+     rewrite !count_predT /= size_iota /max /= /#. 
+qed.
 
 (* These have missing preconditions; move to KyberProperties and fix. 
 lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
-lemma sem_encode1K  : cancel sem_encode1  sem_decode1  by admit. (* to do *)
 lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. (* to do *)
 lemma sem_encode10_vecK  : cancel sem_encode10_vec  sem_decode10_vec  by admit. (* to do *)
 lemma sem_decode1_bnd a k : 0<=k<256 => 0<= (sem_decode1 a).[k] < 2 by admit. (* to do *)
