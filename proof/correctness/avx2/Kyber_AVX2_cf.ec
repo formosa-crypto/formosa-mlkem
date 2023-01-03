@@ -2,6 +2,11 @@ require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
 require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array768 Array960 Array1152.
+require import Array256_extra Array32_extra.
+require import W8extra.
+require import List_extra.
+
+
 require import Jkem.
 require import Kyber.
 
@@ -340,242 +345,32 @@ module Kyber_AVX2_cf = {
 
 theory AVX2_cf.
 
-equiv decode1_corr:
-  EncDec_AVX2.decode1_opt ~ EncDec.decode1: ={a} ==> ={res}.
-proof.
-  proc.
-  unroll for {1} ^while.
-  unroll for {2} ^while.
-  do 8!(unroll for {1} ^while).
-  auto => /> &2.
-  search Array256.fill.
-  rewrite tP => k kb.
-  case (248 <= k < 256); 1: by
-    move => kkb; rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;smt(Array256.set_eqiE Array256.set_neqiE).
-  move => ?;case (240 <= k < 248); 1: by
-    move => kkb; rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=
-                 (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 8!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (232 <= k < 240); 1: by
-   move => kkb; do 2!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 16!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (224 <= k < 232); 1: by
-   move => kkb; do 3!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 24!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (120 <= k < 128); 1: by
-   move => kkb; do 4!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 128!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (112 <= k < 120); 1: by
-   move => kkb; do 5!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 136!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (104 <= k < 112); 1: by
-   move => kkb; do 6!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 144!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (96 <= k < 104); 1: by 
-   move => kkb; do 7!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 152!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (216 <= k < 224); 1: by
-   move => kkb; do 8!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 32!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (208 <= k < 216); 1: by
-   move => kkb; do 9!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 40!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (200 <= k < 208); 1: by
-   move => kkb; do 10!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 48!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (192 <= k < 200); 1: by
-   move => kkb; do 11!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 56!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (88 <= k < 96); 1: by
-   move => kkb; do 12!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 160!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (80 <= k < 88); 1: by
-   move => kkb; do 13!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 168!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (72 <= k < 80); 1: by
-   move => kkb; do 14!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 176!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (64 <= k < 72); 1: by
-   move => kkb; do 15!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 184!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (184 <= k < 192); 1: by
-   move => kkb; do 16!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 64!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (176 <= k < 184); 1: by
-   move => kkb; do 17!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 72!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (168 <= k < 176); 1: by
-   move => kkb; do 18!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 80!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (160 <= k < 168); 1: by
-   move => kkb; do 19!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 88!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
+equiv eq_encode1 :
+  EncDec_AVX2.encode1 ~ EncDec.encode1 :
+    ={a} /\ all (fun (x : int) => 0 <= x && x < 2) a{1} ==> ={res}.
+proc. 
+unroll for {1} ^while.
+do 8!(unroll for {1} ^while).
+unroll for {2} ^while.
+do 32!(unroll for {2} ^while).
+auto => /> &m.
+rewrite (initSet _ (fun i => W8.init (fun (j : int) => W8.int_bit a{m}.[8*i + j] 0) )) //=.
+rewrite (initSet _ (fun i => W8.of_int (((((((a{m}.[8*i+0] %% 256 + a{m}.[8*i+1] * 2) %% 256 + a{m}.[8*i+2] * 4) %% 256 + a{m}.[8*i+3] * 8) %% 256 + a{m}.[8*i+4] * 16) %% 256 + a{m}.[8*i+5] * 32) %% 256 + a{m}.[8*i+6] * 64) %% 256 + a{m}.[8*i+7] * 128) )) //=.
+rewrite allP => H. rewrite tP => i Hi. rewrite !initiE //=. rewrite of_intE /bits2w /int2bs /mkseq /map /int_bit wordP => j Hj. rewrite !initiE //= nth_onth onth_map //=. rewrite (onth_nth witness) //=. rewrite size_iota //=. rewrite nth_iota //=.
+have Hjm: (0 <= j < 0 + 8). rewrite Hj => />. move :Hjm. rewrite -mema_iota -iotaredE => />.
+rewrite !modzDml -addrA !modzDml -!addrA !modzDml -!addrA !modzDml !modz_dvd //=.
+do 8!(try (move => Hjm; case Hjm => />); first by smt()). qed.
 
-  move => *;case (56 <= k < 64); 1: by
-   move => kkb; do 20!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 192!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (48 <= k < 56); 1: by
-   move => kkb; do 21!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 200!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (40 <= k < 48); 1: by
-   move => kkb; do 22!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 208!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (32 <= k < 40); 1: by
-   move => kkb; do 23!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 216!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (152 <= k < 160); 1: by
-   move => kkb; do 24!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 96!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (144 <= k < 152); 1: by
-   move => kkb; do 25!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 104!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (136 <= k < 144); 1: by
-   move => kkb; do 26!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 112!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (128 <= k < 136); 1: by
-   move => kkb; do 27!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 120!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (24 <= k <32); 1: by
-   move => kkb; do 28!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 224!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (16 <= k <24); 1: by
-   move => kkb; do 29!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 232!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (8 <= k <16); 1: by
-   move => kkb; do 30!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 240!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-  move => *;case (0 <= k <8); 1: by
-   move => kkb; do 31!(rewrite (Array256.filliE _ _ _ _ _ kb) /= ifF 1:/# /=);
-                 rewrite (Array256.filliE _ _ _ _ _ kb) /= kkb /=;
-             do 248!(rewrite Array256.set_neqiE 1..2:/# /=);
-             smt(Array256.set_eqiE Array256.set_neqiE).
-by smt().
-qed.
-
-require import EncDecCorrectness.
-
-lemma encode1_corr :
-  equiv [
-  EncDec_AVX2.encode1 ~ EncDec.encode1: ={arg}  /\ (Array256.all (fun x => 0 <= x < 2) a{1})  ==> ={res}
-  ].
-proof.
-  proc.
-  unroll for {1} ^while.
-  unroll for {2} ^while.
-  do 8!(unroll for {1} ^while).
-  do 32!(unroll for {2} ^while).
-  auto => /> &2 Hp.
-
-  have H : forall ii j0 j1 j2 j3 j4 j5 j6 j7 k (v : W8.t Array32.t), 0 <= ii < 32 =>
-            j0 = 8*ii => j1 = 8*ii+1 => j2 = 8 * ii + 2 => j3 = 8 * ii + 3 => j4 = 8 * ii + 4 => j5 = 8*ii+5 => j6 = 8*ii+6 => j7 = 8*ii+7 => k = 8*ii =>
-            v.[ii <- W8.init (fun (j0 : int) => (int_bit a{2}.[k + j0] 0)%W8)] =
-            v.[ii <- W8.of_int
-     (((((((a{2}.[j0] %% 256 + a{2}.[j1] * 2) %% 256 + a{2}.[j2] * 4) %% 256 + a{2}.[j3] * 8) %% 256 + a{2}.[j4] * 16) %%
-        256 + a{2}.[j5] * 32) %%
-       256 + a{2}.[j6] * 64) %%
-      256 + a{2}.[j7] * 128)]; last first.
-  move : (H 0 0 1 2 3 4 5 6 7 0 witness  _ _ _ _ _ _ _ _ _) => //= <-.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 248) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 240) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 232) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 224) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 216) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 208) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 200) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 192) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 184) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 176) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 168) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 160) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 152) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 144) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 136) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 128) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 120) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 112) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 104) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 96) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 88) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 80) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 72) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 64) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 56) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 48) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 40) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 32) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 24) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 16) 1..10:/#.
-  rewrite -(H _ _ _ _ _ _ _ _ _ 8) 1..10:/#.
-  done.
-
-move => ii _ _ _ _ _ _ _ _ _ v ib -> -> -> -> -> -> -> -> ->.
-congr.
-rewrite /int_bit /=.
-rewrite allP in Hp.
-rewrite -(W8.to_uintK' (W8.init _)); congr.
-rewrite to_uintE /w2bits /=.
-do 8!(rewrite mkseqSr_rw //=); rewrite mkseq0 //=.
-do 8!(rewrite BitEncoding.BS2Int.bs2int_cons /=); rewrite BitEncoding.BS2Int.bs2int_nil //=.
-by smt().
+equiv eq_decode1_opt :
+  EncDec_AVX2.decode1_opt ~ EncDec.decode1 : 
+    ={a} ==> ={res}.
+proc.
+unroll for {1} ^while.
+do 8!(unroll for {1} ^while).
+unroll for {2} ^while.
+auto => /> &m.
+apply Array256_extra.tP_red => i /=.
+do 255!(move => Hi; case Hi => |>).
 qed.
 
 equiv decode10_vec_corr:
@@ -585,6 +380,7 @@ proof.
   swap 2 1.
   unroll for {1} ^while.
   do 3!(unroll for {1} ^while).
+  swap {2} 2 1.
   unroll for {2} ^while.
   by auto => />.
 qed.
@@ -637,6 +433,7 @@ proof.
   swap 2 1.
   unroll for {1} ^while.
   do 48!(unroll for {1} ^while).
+  swap {2} 2 1.
   unroll for {2} ^while.
   by auto => />.
 qed.
@@ -804,7 +601,7 @@ proof.
   smt(). trivial.
   apply eq_decode12_opt.
   apply decode12_avx2_corr.
-qed.
+ qed.
 
 equiv decode12_opt_vec_corr:
   EncDec_AVX2.decode12_opt_vec ~ EncDec.decode12_vec: ={a} ==> ={res}.
@@ -829,7 +626,6 @@ equiv eq_encode4:
   EncDec_AVX2.encode4 ~ EncDec.encode4: ={p} ==> ={res}.
 proof.
   proc.
-  swap {2} 2 1.
   unroll for {1} ^while.
   do  4!(unroll for {1} ^while).
   unroll for {2} ^while.

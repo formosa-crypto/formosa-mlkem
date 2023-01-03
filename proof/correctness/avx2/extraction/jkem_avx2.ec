@@ -3033,34 +3033,40 @@ module M = {
     return (rp);
   }
   
-  proc __basemul_red (a0:W256.t, a1:W256.t, b0:W256.t, b1:W256.t,
-                      qx16:W256.t, qinvx16:W256.t) : W256.t * W256.t = {
+  proc __w256_interleave_u16 (al:W256.t, ah:W256.t) : W256.t * W256.t = {
     
-    var zero:W256.t;
-    var y:W256.t;
-    var z:W256.t;
-    var x:W256.t;
+    var a0:W256.t;
+    var a1:W256.t;
     
-    zero <- set0_256 ;
-    y <- VPBLEND_16u16 a0 zero (W8.of_int 170);
-    z <- VPBLEND_16u16 a1 zero (W8.of_int 170);
+    a0 <- VPUNPCKL_16u16 al ah;
+    a1 <- VPUNPCKH_16u16 al ah;
+    return (a0, a1);
+  }
+  
+  proc __w256_deinterleave_u16 (_zero:W256.t, a0:W256.t, a1:W256.t) : 
+  W256.t * W256.t = {
+    
+    var al:W256.t;
+    var ah:W256.t;
+    
+    al <- VPBLEND_16u16 a0 _zero (W8.of_int 170);
+    ah <- VPBLEND_16u16 a1 _zero (W8.of_int 170);
+    al <- VPACKUS_8u32 al ah;
     a0 <- VPSRL_8u32 a0 (W8.of_int 16);
     a1 <- VPSRL_8u32 a1 (W8.of_int 16);
-    z <- VPACKUS_8u32 y z;
-    a0 <- VPACKUS_8u32 a0 a1;
-    y <- VPBLEND_16u16 b0 zero (W8.of_int 170);
-    x <- VPBLEND_16u16 b1 zero (W8.of_int 170);
-    b0 <- VPSRL_8u32 b0 (W8.of_int 16);
-    b1 <- VPSRL_8u32 b1 (W8.of_int 16);
-    y <- VPACKUS_8u32 y x;
-    b0 <- VPACKUS_8u32 b0 b1;
-    z <- VPMULL_16u16 z qinvx16;
-    y <- VPMULL_16u16 y qinvx16;
-    z <- VPMULH_16u16 z qx16;
-    y <- VPMULH_16u16 y qx16;
-    a0 <- VPSUB_16u16 a0 z;
-    b0 <- VPSUB_16u16 b0 y;
-    return (a0, b0);
+    ah <- VPACKUS_8u32 a0 a1;
+    return (al, ah);
+  }
+  
+  proc __mont_red (lo:W256.t, hi:W256.t, qx16:W256.t, qinvx16:W256.t) : 
+  W256.t = {
+    
+    var m:W256.t;
+    
+    m <- VPMULL_16u16 lo qinvx16;
+    m <- VPMULH_16u16 m qx16;
+    lo <- VPSUB_16u16 hi m;
+    return (lo);
   }
   
   proc __wmul_16u16 (x:W256.t, y:W256.t) : W256.t * W256.t = {
@@ -3072,8 +3078,7 @@ module M = {
     
     xyL <- VPMULL_16u16 x y;
     xyH <- VPMULH_16u16 x y;
-    xy0 <- VPUNPCKL_16u16 xyL xyH;
-    xy1 <- VPUNPCKH_16u16 xyL xyH;
+    (xy0, xy1) <@ __w256_interleave_u16 (xyL, xyH);
     return (xy0, xy1);
   }
   
@@ -3082,7 +3087,7 @@ module M = {
                         qinvx16:W256.t, sign:int) : W256.t * W256.t = {
     
     var x0:W256.t;
-    var x1:W256.t;
+    var y0:W256.t;
     var zaim:W256.t;
     var ac0:W256.t;
     var ac1:W256.t;
@@ -3092,8 +3097,9 @@ module M = {
     var bc1:W256.t;
     var zbd0:W256.t;
     var zbd1:W256.t;
-    var y0:W256.t;
+    var x1:W256.t;
     var y1:W256.t;
+    var _zero:W256.t;
     
     zaim <@ __fqmulprecomp16x (aim, zetaqinv, zeta_0, qx16);
     (ac0, ac1) <@ __wmul_16u16 (are, bre);
@@ -3109,8 +3115,12 @@ module M = {
     }
     y0 <- VPADD_8u32 bc0 ad0;
     y1 <- VPADD_8u32 bc1 ad1;
-    (x0, x1) <@ __basemul_red (x0, x1, y0, y1, qx16, qinvx16);
-    return (x0, x1);
+    _zero <- set0_256 ;
+    (x0, x1) <@ __w256_deinterleave_u16 (_zero, x0, x1);
+    (y0, y1) <@ __w256_deinterleave_u16 (_zero, y0, y1);
+    x0 <@ __mont_red (x0, x1, qx16, qinvx16);
+    y0 <@ __mont_red (y0, y1, qx16, qinvx16);
+    return (x0, y0);
   }
   
   proc _poly_basemul (rp:W16.t Array256.t, ap:W16.t Array256.t,
@@ -3915,12 +3925,12 @@ module M = {
       zeta0 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (0 + (392 * i)));
-      zeta2 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
-      (32 + (392 * i)));
       zeta1 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (64 + (392 * i)));
+      zeta2 <-
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (32 + (392 * i)));
       zeta3 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (96 + (392 * i)));
@@ -3957,10 +3967,12 @@ module M = {
       zeta1 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (160 + (392 * i)));
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
-      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       r0 <@ __red16x (r0, qx16, vx16);
       r1 <@ __red16x (r1, qx16, vx16);
+      r4 <@ __red16x (r4, qx16, vx16);
+      r5 <@ __red16x (r5, qx16, vx16);
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
+      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (r0, r1) <@ __shuffle1 (r0, r1);
       (r2, r3) <@ __shuffle1 (r2, r3);
       (r4, r5) <@ __shuffle1 (r4, r5);
@@ -3973,6 +3985,7 @@ module M = {
       (224 + (392 * i)));
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, r2,
       r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      r0 <@ __red16x (r0, qx16, vx16);
       (r0, r2) <@ __shuffle2 (r0, r2);
       (r4, r6) <@ __shuffle2 (r4, r6);
       (r1, r3) <@ __shuffle2 (r1, r3);
@@ -4847,7 +4860,6 @@ module M = {
     t <@ _poly_basemul (t, (Array256.init (fun i => a.[(2 * 256) + i])),
     (Array256.init (fun i => b.[(2 * 256) + i])));
     r <@ _poly_add2 (r, t);
-    r <@ __poly_reduce (r);
     return (r);
   }
   

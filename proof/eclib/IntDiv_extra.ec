@@ -2,7 +2,6 @@ require import AllCore StdOrder List Ring Int IntDiv IntMin.
 (*---*) import IntOrder.
 require import Montgomery.
 
-
 (*-----------------------------------------------------------------------------*)
 (* p-adic value and lemmas linked to it. *)
 op vp (b x : int) = argmax ((^) b) (transpose (%|) x).

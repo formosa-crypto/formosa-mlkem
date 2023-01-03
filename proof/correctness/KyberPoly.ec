@@ -1306,10 +1306,10 @@ qed.
 equiv invntt_correct_aux :
   NTT_Fq.NTT.invntt ~ M._poly_invntt : 
         r{1} = lift_array256 rp{2} /\ zetas_inv{1} = zetas_inv /\
-           signed_bound_cxq rp{2} 0 256 2
+           signed_bound_cxq rp{2} 0 256 4
           ==> 
             map (fun x => x * (inFq SignedReductions.R)) res{1} = lift_array256 res{2} /\
-            forall k, 0<=k<256 => b16 res{2}.[k] (q+1).
+            forall k, 0<=k<256 => b16 res{2}.[k] (q).
 proc.
 (* Final loop just reduces the range *)
 seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
@@ -1325,7 +1325,7 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
        zetas_inv.[127]{1} * inFq SignedReductions.R  = inFq (to_sint jzetas_inv.[127]) * inFq 169 /\
        zeta_0{2} = jzetas_inv.[127] /\
        signed_bound_cxq rp{2} 0 256 4 /\
-       (forall k, 0 <= k < j{1} => b16 rp{2}.[k] (q + 1))); last first. 
+       (forall k, 0 <= k < j{1} => b16 rp{2}.[k] (q))); last first. 
   + wp;skip; move => &1 &2 [#] ->. 
     rewrite /signed_bound_cxq => /= zp zvals zbnd.
     split.
@@ -1333,8 +1333,11 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
       + by move => k; split; move => kb;rewrite !mapiE 1:/# /= /#.
       + rewrite zvals; move : zetas_invE; rewrite /array_mont_inv /=. 
         rewrite tP => zzvals; move : (zzvals 127 _) => //.
-        rewrite set_eqiE //= /to_sint /smod /= => <-.
-        by rewrite -ZqField.mulrA rrinvFq; ring.
+        rewrite get_of_list 1://= //= /to_sint /smod /= => ->.
+        have ->: 1441 = 512 * SignedReductions.R %% 3329.
+          by cbv.
+        rewrite -qE inFqM_mod -ZqField.mulrA rrinvFq.
+        by rewrite -inFqM_mod /R qE //= ZqField.mulr1.
       + by rewrite zp /=.
     move => jl rl jr rpr; rewrite ultE /= => ??[#] *.
     split; last by smt().
@@ -1368,7 +1371,7 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
     by move => ->; rewrite !set_eqiE /#.
 
   move => k kb; case (k = to_uint j{2}); last by move => *;rewrite !set_neqiE /#. 
-  by move => ->; rewrite !set_eqiE /#.
+  move => ->; rewrite !set_eqiE //. move => ?. rewrite rval redbl //=.
 
 (* Outer loop *)
 while (
@@ -1381,9 +1384,7 @@ while (
    zetasctr{1} = to_uint zetasctr{2} /\
    zetasctr{1} * len{1} = 128 * (len{1} - 2) /\
    signed_bound_cxq rp{2} 0 256 4); last first.
-+ auto => /> &1 cbnd; split. 
-  + by exists (1); smt().
-  by move : cbnd; rewrite /signed_bound_cxq /#. 
++ auto => /> &1 cbnd. exists (1); smt().
 
 wp; exists* zetasctr{1}; elim* => zetasctr1 l.
 
@@ -1416,7 +1417,7 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
        start{1} <= j{1} <= start{1} + len{1}); last first.
 
 + auto => />  &1; rewrite !uleE /signed_bound_cxq.
-  move => 2? rep 3? lb ? rp ??????.
+  move => 2? rep zctr_lb zctr_ub ? lb ? rp ??????.
 
   move : zetainv_bound; rewrite /minimum_residues /bpos16 => zb.
 
@@ -1427,14 +1428,12 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
 
 
   do split; 1..3,5..6:smt().
-  + move : zetas_invE; rewrite /array_mont_inv /lift_array128 tP => mnt.
-    move : (mnt (to_uint zetasctr{1}) _); 1: smt().
-    + rewrite mapiE /=; 1: smt().
-      rewrite set_neqiE /=; 1,2: smt().
-      rewrite mapiE /=; 1: smt().
-    by move => <-; rewrite -ZqField.mulrA rrinvFq; ring.
+  + rewrite -(Array128.mapiE (fun x => inFq (W16.to_sint x))) 1:/#.
+    rewrite -zetas_invE /array_mont_inv //=.
+    rewrite set_neqiE /=; 1,2: smt().
+    rewrite mapiE /=; 1: smt().
+    by rewrite -ZqField.mulrA rrinvFq; ring.
   by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
- 
 by move => jl rpl; rewrite !ultE => 11?; rewrite !to_uintD_small; smt(). 
 
 (* Preservation *)
@@ -1509,10 +1508,10 @@ qed.
 import NTT_Properties.
 lemma invntt_correct _r  :
    phoare[ M._poly_invntt :
-        _r = lift_array256 rp /\ signed_bound_cxq rp 0 256 2
+        _r = lift_array256 rp /\ signed_bound_cxq rp 0 256 4
           ==> 
             scale (invntt _r) (inFq SignedReductions.R) = lift_array256 res /\
-            forall k, 0<=k<256 => b16 res.[k] (q+1)] = 1%r.
+            forall k, 0<=k<256 => b16 res.[k] (q)] = 1%r.
 proof.
 bypr;move => &m [#] H H1.
 apply (eq_trans _ (Pr[NTT.invntt( _r,zetas_inv) @ &m :  invntt _r = res])).
@@ -1520,7 +1519,7 @@ apply (eq_trans _ (Pr[NTT.invntt( _r,zetas_inv) @ &m :  invntt _r = res])).
 Pr[NTT.invntt(_r, zetas_inv) @ &m : invntt _r = res] = 
 Pr[M._poly_invntt(rp{m}) @ &m :
   invntt (map (fun x => x * (inFq SignedReductions.R)) _r) = lift_array256 res /\ 
-   forall (k : int), 0 <= k < 256 => b16 res.[k] (q+1)]); last by rewrite invntt_scale.
+   forall (k : int), 0 <= k < 256 => b16 res.[k] (q)]); last by rewrite invntt_scale.
 byequiv invntt_correct_aux; 1: by smt(). 
 + move => &1 &2;rewrite invntt_scale /scale /= /lift_array256 /= !tP/=.  
   move => [#] H2 H3;split.
@@ -1537,9 +1536,9 @@ qed.
 lemma invntt_correct_h (_r : Fq Array256.t):
       hoare[  M._poly_invntt :
              _r = lift_array256 arg /\
-             signed_bound_cxq arg 0 256 2 ==>
+             signed_bound_cxq arg 0 256 4 ==>
              scale (invntt _r) (inFq SignedReductions.R) = lift_array256 res /\
-             forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q + 1)]
+             forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q)]
 by conseq (invntt_correct _r). 
 
 lemma invntt_ll : islossless M._poly_invntt.

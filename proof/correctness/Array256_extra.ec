@@ -13,6 +13,9 @@ lemma nosmt set_neqiE (t : Fq Array256.t) x y a :
   y <> x => t.[x <- a].[y] = t.[y].
 proof. by rewrite get_set_if => /neqF ->. qed.
 
+lemma init_id (r : 'a Array256.t) :
+  init ("_.[_]" r) = r.
+rewrite tP => />i Hi1 Hi2. rewrite initiE //. qed.
 
 (*-----------------------------------------------------------------------------*)
 

@@ -853,10 +853,10 @@ by conseq polyvec_ntt_ll (polyvec_ntt_correct_h _r).
 lemma polyvec_invntt_correct_h _r:
    hoare[ M.__polyvec_invntt :
         _r = r /\
-        signed_bound768_cxq r 0 768 2
+        signed_bound768_cxq r 0 768 4
           ==> 
             scale_vector (invnttv (lift_vector _r)) (inFq Fq.SignedReductions.R) = lift_vector res /\
-            forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q + 1) ].
+            forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q) ].
 proof.
 proc.
 wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
@@ -865,7 +865,7 @@ wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[i])))).
 
 wp; skip; move => &hr; rewrite /signed_bound_cxq /signed_bound768_cxq => [ #_r_def signed_bound_r] * />.
 
-split; 1: by move => k kb kbl; rewrite initiE /#.
+split. move => k kb kbl; rewrite initiE /#.
 
 move => signed_bound_r1 res1 r_eq_res1 signed_bound_res1.
 
@@ -927,10 +927,10 @@ lemma polyvec_invntt_ll  :
 
 lemma polyvec_invntt_corr _r:
    phoare[ M.__polyvec_invntt :
-    _r = r /\ signed_bound768_cxq r 0 768 2
+    _r = r /\ signed_bound768_cxq r 0 768 4
       ==> 
      scale_vector (invnttv (lift_vector _r)) (inFq Fq.SignedReductions.R) = lift_vector res /\
-            forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q + 1) ]  = 1%r   
+            forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q) ]  = 1%r   
    by conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r).
 
 (******************************************************)

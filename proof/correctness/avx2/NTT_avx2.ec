@@ -2,6 +2,7 @@ require import AllCore List Int IntDiv CoreMap Real Number Ring StdOrder BitEnco
 from Jasmin require import JModel.
 require import Array256 Array128  Array16.
 require import Array256 Array128 Array32 Array16 Array768 Array2304.
+require import Array256_extra.
 require import KyberPolyVec.
 require import NTT_Fq.
 require import AVX2_Ops.
@@ -212,18 +213,27 @@ move : (H (i+512) _); 1: smt().
 rewrite initiE //= /#.
 qed.
 
+lemma all768 (P: 'a -> bool) (v : 'a Array768.t) :
+  all P (subarray256 v 0) /\ all P (subarray256 v 1) /\ all P (subarray256 v 2) <=> all P v.
+rewrite !allP /subarray256; split => />.
+move => H1 H2 H3 i Hi1 Hi2.
+ case (0 <= i < 256) => Hi3. move :(H1 i). rewrite initiE /= 1..2:/#. 
+ case (256 <= i < 512) => Hi4. move :(H2 (i-256)). rewrite initiE /= 1..2:/#. 
+ move :(H3 (i-512)). rewrite initiE /= /#. 
+move => H1. split. move => i Hi1 Hi2. rewrite initiE // H1 1:/#.
+split. move => i Hi1 Hi2. rewrite initiE => />. move :(H1 (256+i)). smt().
+move => i Hi1 Hi2. rewrite initiE => />. move :(H1 (512+i)). smt(). qed.
+
 lemma nttpackv_pred (v : 'a Array768.t) P: 
    (all P (nttpackv v)) <=>
    (all P v).
-rewrite -nttpackv_sub !nttpack_pred. 
-rewrite !allP /subarray256; smt(Array256.initiE).
+rewrite -nttpackv_sub !nttpack_pred. rewrite all768 //.
 qed.
 
 lemma nttunpackv_pred (v : 'a Array768.t) P: 
    (all P (nttunpackv v)) <=>
    (all P v).
-rewrite -nttunpackv_sub !nttunpack_pred. 
-rewrite !allP /subarray256; smt(Array256.initiE).
+rewrite -nttunpackv_sub !nttunpack_pred. rewrite all768 //.
 qed.
 
 lemma packvK : cancel nttpackv<:'a> nttunpackv.
@@ -588,6 +598,15 @@ pose a := nttpack_idx.[k].
 smt(Array256.mapiE nttpack_bnd Array256.allP).
 qed.
 
+lemma lift_nttunpack v : lift_array256 (nttunpack v) = nttunpack (lift_array256 v).
+proof. 
+rewrite tP => k kb.
+rewrite /lift_array256 mapiE //=.
+rewrite /nttunpack !initiE //=.
+pose a := nttunpack_idx.[k].
+smt(Array256.mapiE nttunpack_bnd Array256.allP).
+qed.
+
 lemma init_unpack (v : 'a Array768.t) :
   Array256.init ("_.[_]" (nttunpackv v)) = nttunpack (Array256.init ("_.[_]" v)).
 rewrite /nttunpackv /nttunpack tP => k kb.
@@ -643,17 +662,8 @@ proof.
 by apply Array256.all_eq_eq; rewrite /all_eq 
    /perm_ntt /perm_nttpack128 /nttpack /=.
 qed.
-(*
-lemma basemul_avx2E (a b: poly):
- basemul_avx2 (nttpack a) (nttpack b)
- = nttunpack (basemul a b).
-proof.
-rewrite basemul_zetasE.
-by apply Array256.all_eq_eq; rewrite /all_eq /basemul_zetas /basemul_avx2 /nttpack /nttunpack /NTT_Fq.zetas /=. 
-qed.
-*)
 
-phoare _poly_basemul_avx2_ph _a _b:
+phoare poly_basemul_avx2_ph _a _b:
  [ Jkem_avx2.M._poly_basemul:
     (lift_array256 ap) = nttunpack _a /\ signed_bound_cxq ap 0 256 2
     /\ (lift_array256 bp) = nttunpack _b /\ signed_bound_cxq bp 0 256 2
@@ -662,26 +672,14 @@ phoare _poly_basemul_avx2_ph _a _b:
     = nttunpack (NTT_Properties.scale (basemul (_a) (_b)) (inFq 169))
     /\ signed_bound_cxq res 0 256 1 ] = 1%r.
 proof. 
-conseq _poly_basemul_avx2_eq (__basemul_ph (nttunpack _a) (nttunpack _b)) => //.
+conseq poly_basemul_avx2_eq (__basemul_ph (nttunpack _a) (nttunpack _b)) => //.
  move => /> &1 *.
- exists ((lift_array256 rp{1}), (lift_array256 ap{1}), (lift_array256 bp{1})) => /=. done.
-(* by rewrite !nttunpackK.*)
-(*
- by move => /> &1 *; exists (lift_array256 rp{1},lift_array256 ap{1},lift_array256 bp{1}) => /=.
-*)
+ by exists ((lift_array256 rp{1}), (lift_array256 ap{1}), (lift_array256 bp{1})) => //=.
 move=> /> &m <- Hb.
 move: (basemul_avx2E (nttunpack _a) (nttunpack _b)).
 rewrite !perm_ntt_nttpackE !nttunpackK => <-.
 by rewrite /scale -map_pack nttpackK.
 qed.
-
-
-
-lemma _poly_ntt_eq':
-  equiv[ Jkem_avx2.M._poly_ntt ~ NTT_AVX.ntt:
-          arg{2} = lift_array256 arg{1} /\ signed_bound_cxq arg{1} 0 256 2 ==>
-          res{2} = lift_array256 res{1} /\ pos_bound256_cxq res{1} 0 256 2].
-admitted.
 
 lemma poly_ntt_avx2_corr _r :
   phoare [ Jkem_avx2.M._poly_ntt :
@@ -689,21 +687,10 @@ lemma poly_ntt_avx2_corr _r :
     ntt (lift_array256 _r) = lift_array256 (nttpack res) /\
     pos_bound256_cxq res 0 256 2] = 1%r.
 proof.
-conseq _poly_ntt_eq' (ntt_avx_spec (lift_array256 _r)).
+conseq poly_ntt_avx2_eq (ntt_avx_spec (lift_array256 _r)).
  by move => &1 [-> H] /#.
 move=> &1 &2 [-> H] <-.
 by rewrite lift_nttpack perm_ntt_nttpackE.
-(*
-bypr => // &m [-> H].
-have <-: Pr[NTT_AVX.ntt(lift_array256 _r) @ &m :
-      ntt (lift_array256 _r) = (nttpack res) ] = 1%r.
- byphoare (_: r=lift_array256 _r ==> _) => //.
- conseq (ntt_avx_spec (lift_array256 _r)) => />*.
- by rewrite perm_ntt_nttpackE /#.
-byequiv => //.
-symmetry; conseq _poly_ntt_eq => /> *.
-by rewrite lift_nttpack //.
-*)
 qed.
 
 lemma polyvec_ntt_avx2_corr _r :
@@ -754,6 +741,84 @@ rewrite /pos_bound768_cxq => k kb; rewrite initiE //=.
   move => *;case(256 <= k < 512). 
   + move => *; rewrite initiE //=. smt(). 
   move => *; rewrite initiE //= ifF 1:/# initiE //= /#. 
+qed.
+
+lemma poly_invntt_avx2_corr _r :
+  phoare [ Jkem_avx2.M._poly_invntt :
+    lift_array256 (nttpack rp) = lift_array256 _r /\ signed_bound_cxq rp 0 256 4 ==>
+    mul1x256 (inFq W16.modulus) (invntt (lift_array256 _r)) = (lift_array256 res) /\
+    signed_bound_cxq res 0 256 1] = 1%r.
+proof.
+conseq poly_invntt_avx2_eq (invntt_avx_spec (lift_array256 _r)).
+move => &1 [<- H]. exists (lift_array256 arg{1}) => />. rewrite lift_nttpack perm_ntt_nttpackE //.
+move => &1 &2 [<- H] -> /#. 
+qed.
+
+lemma nttpack_subarray768 (r : 'a Array768.t) :
+  nttpack (Array256.init ("_.[_]" r)) = Array256.init ("_.[_]" (nttpackv r)).
+rewrite /nttpack tP => />i Hi1 Hi2. rewrite !initiE /= 1..3:/#. rewrite ifT 1:/#.
+rewrite /nttpack. rewrite initiE /=. rewrite nttpack_inbounds //.
+rewrite eq_sym initiE /= 1:/#. rewrite /subarray256 initiE //. rewrite nttpack_inbounds //.
+qed.
+
+lemma nttpack_subarray768_k (r : 'a Array768.t) k :
+  k = 256 || k = 512 =>
+  nttpack (Array256.init (fun i => r.[k+i])) = Array256.init (fun i => (nttpackv r).[k+i]).
+move => Hk. rewrite /nttpack tP => /> i Hi1 Hi2. rewrite !initiE /= 1..2:/#. rewrite initiE //= /nttpack 1:/#. rewrite initiE //=. rewrite nttpack_inbounds //. pose a := nttpack_idx.[i].
+case Hk => />.
+ + rewrite ifF 1:/#. rewrite ifT 1:/#. rewrite /subarray256 initiE //= initiE //=. rewrite nttpack_inbounds //. 
+ + rewrite ifF 1:/#. rewrite ifF 1:/#. rewrite /subarray256 initiE //= initiE //=. rewrite nttpack_inbounds //. 
+qed.
+
+lemma lift_array_256_768 (r : W16.t Array768.t) :
+  lift_array256 (Array256.init ("_.[_]" r)) = Array256.init ("_.[_]" (lift_array768 r)).
+rewrite /lift_array256 /lift_array768 /map tP => />i Hi1 Hi2. rewrite !initiE //= 1:/#. rewrite initiE //=. qed.
+
+lemma lift_array_256_768_k (r : W16.t Array768.t) k :
+  0 <= k <= 512 =>
+  lift_array256 (Array256.init (fun (i : int) => r.[k+ i])) = (Array256.init (fun (i : int) => (lift_array768 r).[k + i])).
+move => Hk. rewrite /lift_array256 /lift_array768 /map tP => />i Hi1 Hi2. rewrite !initiE //=. rewrite initiE //= 1:/#. rewrite !initiE //=. qed.
+
+abbrev mul1x256v i v = mapv (mul1x256 i) v.
+
+lemma polyvec_invntt_avx2_corr _r :
+  phoare [ Jkem_avx2.M.__polyvec_invntt :
+     nttpackv (lift_array768 r) = lift_array768 _r /\ signed_bound768_cxq r 0 768 4 ==>
+    mul1x256v (inFq W16.modulus) (invnttv (lift_vector _r)) = lift_vector (res) /\
+   signed_bound768_cxq res 0 768 1] = 1%r.
+
+proc. 
+wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[2 * 256 + i]))).
+wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[256 + i]))).
+wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[0 + i]))).
+auto => /> &m H_r Hb. rewrite lift_array_256_768 -H_r -nttpack_subarray768 /=. split. move :Hb. rewrite /signed_bound_cxq /signed_bound768_cxq => Hb. rewrite lift_nttpack lift_array_256_768 //= => k Hk. move :(Hb k). rewrite !initiE //= /#. move => H1 H2 r.
+rewrite lift_nttpack => /> Hr H4. split. split.
+ + rewrite !lift_array_256_768_k 1..2:/#. rewrite -H_r. rewrite nttpack_subarray768_k //.
+ + rewrite tP => />i Hi1 Hi2. rewrite !initiE //=. rewrite /nttpackv /lift_array768 /map !initiE //= 1..2:/#. rewrite ifF 1:/#. rewrite ifT 1:/#. rewrite ifF 1:/#. rewrite ifT 1:/#. congr. congr. rewrite /subarray256 tP => />j Hj1 Hj2. rewrite !initiE //= initiE //= 1:/#. rewrite !initiE //= 1..2:/#. rewrite ifF //= 1:/#. 
+ + rewrite /signed_bound_cxq => i Hi. rewrite !initiE //= !initiE //= /#.
+move => H5 H6 r0 Hr0 H7. split. split.
+ + rewrite nttpack_subarray768_k //. rewrite !lift_array_256_768_k 1..2:/#. rewrite -H_r.
+ + rewrite tP => />i Hi1 Hi2. rewrite !initiE //=. rewrite /nttpackv /lift_array768 /map !initiE //= 1..2:/#. rewrite !initiE //= 1:/#. rewrite ifF 1:/#. rewrite ifF 1:/#. rewrite ifF 1:/#. rewrite ifF 1:/#. rewrite /subarray256 /nttpack !initiE //=. pose a:= nttpack_idx.[i]. rewrite !initiE //=. rewrite /a nttpack_inbounds //. rewrite /a nttpack_inbounds //. rewrite !initiE //=. smt(nttpack_inbounds). smt(nttpack_inbounds).
+ + rewrite ifF. smt(nttpack_inbounds). rewrite !initiE //=. smt(nttpack_inbounds). rewrite ifF //. smt(nttpack_inbounds). 
+ + rewrite /signed_bound_cxq => i Hi. rewrite !initiE //=  !initiE //= 1:/#. rewrite ifF 1:/#. rewrite !initiE //= 1:/#. rewrite ifF 1:/#. move :Hb. rewrite /signed_bound768_cxq => Hb. move :(Hb (512+i)). smt().
+move => H8 H9 r1 Hr1 H10. split.
+ + rewrite /lift_vector KMatrix.Vector.eq_vectorP => k Hk. rewrite !KMatrix.Vector.offunvE //= KMatrix.Vector.offunvK /vclamp Hk /=. rewrite /lift_array256 /subarray256 tP => i Hi.
+ + rewrite !mapiE //= initiE //= /nttpackv initiE //= 1:/#.  rewrite KMatrix.Vector.offunvK.
+ + case (k=0).
+  + move => ->. rewrite ifF 1:/#. rewrite initiE //= 1:/#. rewrite ifF 1:/#. rewrite initiE //= 1:/#. rewrite ifT //.
+  + move :Hr. rewrite /lift_array256 tP => /> Hr. move :(Hr i). rewrite Hi /map !initiE //=. move => H12. rewrite -H12. congr. congr. congr. rewrite /vclamp ifT => />.
+  + rewrite nttpack_subarray768 H_r. rewrite /lift_array768 /map tP => j Hj. rewrite !initiE //= 1:/#. rewrite !initiE //=.
+ + case (k=1).
+  + move => ->. rewrite ifF 1:/#. rewrite initiE //= 1:/#. rewrite ifT 1:/#. 
+  + move :Hr0. rewrite /lift_array256 tP => /> Hr0. move :(Hr0 i). rewrite Hi /map !initiE //=.
+ + move => *; have -> : k = 2 by smt().
+  + rewrite ifT 1:/#.
+  + move :Hr1. rewrite /lift_array256 tP => /> Hr1. move :(Hr1 i). rewrite Hi /map !initiE //=.
+  + rewrite /signed_bound768_cxq => k Hk; rewrite initiE //=.
+ + case(512 <= k < 768). smt().
+ + move => *;case(256 <= k < 512). 
+ + move => *; rewrite initiE //=. smt(). 
+ + move => *; rewrite initiE //= ifF 1:/# initiE //= /#. 
 qed.
 
 end NTT_Avx2.
