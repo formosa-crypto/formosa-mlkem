@@ -845,7 +845,7 @@ seq 1 1 : (#{/~sp_0{1}}{~sp_0{2}}pre /\
 
 seq 4 2 : (#pre /\ 
               lift_array256 (subarray256 bp{1} 0) = nttunpack (lift_array256 (subarray256 bp{2} 0)) /\
-              signed_bound768_cxq bp{1} 0 256 2 /\
+              signed_bound768_cxq bp{1} 0 256 4 /\
               signed_bound768_cxq bp{2} 0 256 2 /\ w{1} = 1).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
@@ -878,7 +878,7 @@ move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split.
 (* Second ip *)
 
 seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 1) = nttunpack (lift_array256 (subarray256 bp{2} 1)) /\
-              signed_bound768_cxq bp{1} 256 512 2 /\
+              signed_bound768_cxq bp{1} 256 512 4 /\
               signed_bound768_cxq bp{2} 256 512 2 /\ w{1} = 2).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
@@ -925,7 +925,7 @@ move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split.
 (* Third ip *)
 
 seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 2) = nttunpack (lift_array256 (subarray256 bp{2} 2)) /\
-              signed_bound768_cxq bp{1} 512 768 2 /\
+              signed_bound768_cxq bp{1} 512 768 4 /\
               signed_bound768_cxq bp{2} 512 768 2).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20; do split.
@@ -988,7 +988,7 @@ move => H121 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
 (* Fourth ip *)
 
 seq 1 1: (#{/~v{1}}pre /\ lift_array256 v{1} = nttunpack (lift_array256 v{2}) /\
-              signed_bound_cxq v{1} 0 256 2 /\
+              signed_bound_cxq v{1} 0 256 4 /\
               signed_bound_cxq v{2} 0 256 2).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23; do split.
@@ -998,7 +998,7 @@ move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 
 + by rewrite /signed_bound768_cxq => k kb; smt(). 
 
 (* INV NTT!!! *)
-seq 1 1 : (#{/~bp{2}}pre /\ lift_array768 bp{1} = lift_array768 bp{2} /\ signed_bound768_cxq bp{2} 0 768 2).
+seq 1 1 : (#{/~bp{2}}{~bp{1}}pre /\ lift_array768 bp{1} = lift_array768 bp{2} /\ signed_bound768_cxq bp{1} 0 768 2 /\ signed_bound768_cxq bp{2} 0 768 2).
 conseq />.  call(invnttequiv). auto => />. move => &1 &2 ???????????????H1??H0??H?????; split.
 + do split; 2,3: by smt().
   rewrite /nttunpackv.
@@ -1021,7 +1021,7 @@ conseq />.  call(invnttequiv). auto => />. move => &1 &2 ???????????????H1??H0??
   rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
   smt().
 
-seq 1 1 : (#{/~v{2}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{2} 0 256 2).
+seq 1 1 : (#{/~v{2}}{~v{1}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{1} 0 256 2 /\ signed_bound_cxq v{2} 0 256 2).
 conseq />.  call(polyinvnttequiv). auto => />. smt().
 
 auto => /> /#.
@@ -1217,7 +1217,7 @@ seq 1 1 : (#{/~sp_0{1}}{~sp_0{2}}pre /\
 
 seq 4 2 : (#pre /\ 
               lift_array256 (subarray256 bp{1} 0) = nttunpack (lift_array256 (subarray256 bp{2} 0)) /\
-              signed_bound768_cxq bp{1} 0 256 2 /\
+              signed_bound768_cxq bp{1} 0 256 4 /\
               signed_bound768_cxq bp{2} 0 256 2 /\ w{1} = 1).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12; do split.
@@ -1250,7 +1250,7 @@ move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split.
 (* Second ip *)
 
 seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 1) = nttunpack (lift_array256 (subarray256 bp{2} 1)) /\
-              signed_bound768_cxq bp{1} 256 512 2 /\
+              signed_bound768_cxq bp{1} 256 512 4 /\
               signed_bound768_cxq bp{2} 256 512 2 /\ w{1} = 2).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15; do split.
@@ -1297,7 +1297,7 @@ move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split.
 (* Third ip *)
 
 seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 2) = nttunpack (lift_array256 (subarray256 bp{2} 2)) /\
-              signed_bound768_cxq bp{1} 512 768 2 /\
+              signed_bound768_cxq bp{1} 512 768 4 /\
               signed_bound768_cxq bp{2} 512 768 2).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18; do split.
@@ -1360,7 +1360,7 @@ move => H121 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
 (* Fourth ip *)
 
 seq 1 1: (#{/~v{1}}pre /\ lift_array256 v{1} = nttunpack (lift_array256 v{2}) /\
-              signed_bound_cxq v{1} 0 256 2 /\
+              signed_bound_cxq v{1} 0 256 4 /\
               signed_bound_cxq v{2} 0 256 2).
 wp; call pointwiseequiv; auto => />.
 move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21; do split.
@@ -1370,7 +1370,7 @@ move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 
 + by rewrite /signed_bound768_cxq => k kb; smt(). 
 
 (* INV NTT!!! *)
-seq 1 1 : (#{/~bp{2}}pre /\ lift_array768 bp{1} = lift_array768 bp{2} /\ signed_bound768_cxq bp{2} 0 768 2).
+seq 1 1 : (#{/~bp{2}}{~bp{1}}pre /\ lift_array768 bp{1} = lift_array768 bp{2}  /\ signed_bound768_cxq bp{1} 0 768 2 /\ signed_bound768_cxq bp{2} 0 768 2).
 conseq />.  call(invnttequiv). auto => />. move => &1 &2 ?????????????H1??H0??H?????; split.
 + do split; 2,3: by smt().
   rewrite /nttunpackv.
@@ -1393,7 +1393,7 @@ conseq />.  call(invnttequiv). auto => />. move => &1 &2 ?????????????H1??H0??H?
   rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
   smt().
 
-seq 1 1 : (#{/~v{2}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{2} 0 256 2).
+seq 1 1 : (#{/~v{2}}{~v{1}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{1} 0 256 2 /\ signed_bound_cxq v{2} 0 256 2).
 conseq />.  call(polyinvnttequiv). auto => />. smt().
 
 auto => /> /#.
@@ -1454,5 +1454,5 @@ move => ????; do split; 1:smt().
 + by rewrite to_uintD_small /=; 1: smt().
 move => ????? r0 ? rl1 rr1 ???; do split; 1,2: smt().
 move => ? rl2 rr2 ???; do split; 1..4: smt().
-move => ???? rl3 rr3 ???. do split; 1..3:smt().
+move => ???? rl3 rr3 ???. do split; smt().
 qed.
