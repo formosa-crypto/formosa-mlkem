@@ -3037,15 +3037,13 @@ module M = {
     
     var a0:W256.t;
     var a1:W256.t;
-    var al_0:W256.t;
-    var ah_0:W256.t;
     
-    a0 <- VPUNPCKL_16u16 al_0 ah_0;
-    a1 <- VPUNPCKH_16u16 al_0 ah_0;
+    a0 <- VPUNPCKL_16u16 al ah;
+    a1 <- VPUNPCKH_16u16 al ah;
     return (a0, a1);
   }
   
-  proc __w256_deintereleave_u16 (_zero:W256.t, a0:W256.t, a1:W256.t) : 
+  proc __w256_deinterleave_u16 (_zero:W256.t, a0:W256.t, a1:W256.t) : 
   W256.t * W256.t = {
     
     var al:W256.t;
@@ -3118,8 +3116,8 @@ module M = {
     y0 <- VPADD_8u32 bc0 ad0;
     y1 <- VPADD_8u32 bc1 ad1;
     _zero <- set0_256 ;
-    (x0, x1) <@ __w256_deintereleave_u16 (_zero, x0, x1);
-    (y0, y1) <@ __w256_deintereleave_u16 (_zero, y0, y1);
+    (x0, x1) <@ __w256_deinterleave_u16 (_zero, x0, x1);
+    (y0, y1) <@ __w256_deinterleave_u16 (_zero, y0, y1);
     x0 <@ __mont_red (x0, x1, qx16, qinvx16);
     y0 <@ __mont_red (y0, y1, qx16, qinvx16);
     return (x0, y0);
@@ -4013,6 +4011,7 @@ module M = {
       (352 + (392 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+      r0 <@ __red16x (r0, qx16, vx16);
       (r0, r1) <@ __shuffle8 (r0, r1);
       (r2, r3) <@ __shuffle8 (r2, r3);
       (r4, r5) <@ __shuffle8 (r4, r5);
