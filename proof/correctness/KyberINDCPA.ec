@@ -1838,8 +1838,8 @@ seq 1 0 : (#{/~bp{1}}pre /\
          lift_vector bp{1} = invnttv (ntt_mmul aT{2} rhat{2}) /\
          signed_bound768_cxq bp{1} 0 768 2).
 + ecall {1} (polyvec_invntt_corr bp{1}).
-  auto => /> &1 &2 ???????????r1?r2?r3???result <-?.
-  split; last by smt(). 
+  auto => /> &1 &2 ???????????r1?r2?r3???;split;1:smt(). 
+  move => ?result <-?;  split; last by smt(). 
   rewrite /scale_vector /invnttv/mapv/=  eq_vectorP => i ib.
   rewrite !offunvE //= offunvK /vclamp ib /= -invntt_scale /=; congr.
   rewrite /scale tP => k kb; rewrite /(lift_vector bp{1}) offunvK /vclamp ib /=.
@@ -1861,8 +1861,8 @@ seq 1 0 : (#{/~v{1}}pre /\
          lift_array256 v{1} = invntt (ntt_dotp that{2} rhat{2}) /\
          signed_bound_cxq v{1} 0 256 2).
 + ecall {1} (invntt_correct (lift_array256 v{1})).
-  auto => /> &1 &2 ???????????rold???.
-  move => result <- rb; split; last by smt(). 
+  auto => /> &1 &2 ???????????rold???; split;1:by smt().
+  move=> ?result <- rb; split; last by smt(). 
   rewrite -invntt_scale; congr.
   rewrite /scale tP => k kb; rewrite mapiE //= rold // /scale mapiE //=.
   rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
@@ -2135,8 +2135,8 @@ seq 1 0 : (#{/~bp{1}}pre /\
          lift_vector bp{1} = invnttv (ntt_mmul aT{2} rhat{2}) /\
          signed_bound768_cxq bp{1} 0 768 2).
 + ecall {1} (polyvec_invntt_corr bp{1}).
-  auto => /> &1 &2 ?????????r1?r2?r3???result <-?.
-  split; last by smt(). 
+  auto => /> &1 &2 ?????????r1?r2?r3???; split; 1: by smt(). 
+  move => ?result <-?;   split; last by smt(). 
   rewrite /scale_vector /invnttv/mapv/=  eq_vectorP => i ib.
   rewrite !offunvE //= offunvK /vclamp ib /= -invntt_scale /=; congr.
   rewrite /scale tP => k kb; rewrite /(lift_vector bp{1}) offunvK /vclamp ib /=.
@@ -2158,8 +2158,8 @@ seq 1 0 : (#{/~v{1}}pre /\
          lift_array256 v{1} = invntt (ntt_dotp that{2} rhat{2}) /\
          signed_bound_cxq v{1} 0 256 2).
 + ecall {1} (invntt_correct (lift_array256 v{1})).
-  auto => /> &1 &2 ?????????rold???.
-  move => result <- rb; split; last by smt(). 
+  auto => /> &1 &2 ?????????rold???; split; 1: smt().
+  move => ?result <- rb; split; last by smt(). 
   rewrite -invntt_scale; congr.
   rewrite /scale tP => k kb; rewrite mapiE //= rold // /scale mapiE //=.
   rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
@@ -2272,8 +2272,8 @@ seq 1 0: (#{/~t{1}}pre /\
           lift_array256 t{1} = invntt (ntt_dotp s{2} (nttv u{2})) /\ 
           signed_bound_cxq t{1} 0 256 2).
 ecall {1} (invntt_correct (lift_array256 t{1})).
-+ auto => /> &1 &2 ????????->? result <-?.
-  split; last by smt().
++ auto => /> &1 &2 ????????->?; split; 1: smt(). 
+  move => ?result <-?;   split; last by smt().
   rewrite -invntt_scale; congr; rewrite /scale tP => k kp.
   rewrite !mapiE //=.
   by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  

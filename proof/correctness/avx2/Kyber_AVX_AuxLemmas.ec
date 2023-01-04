@@ -174,7 +174,6 @@ qed.
 (*********************************************************************)
 (* TODO: CLEAN UP *)
 op [opaque] iota_red = iota_.
-print iota0.
 
 lemma iota_red0 n : iota_red n 0 = [].
 proof. by rewrite /iota_red iota0. qed.

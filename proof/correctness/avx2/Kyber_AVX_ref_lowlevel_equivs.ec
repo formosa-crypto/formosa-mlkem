@@ -1374,7 +1374,6 @@ seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\
          lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
          signed_bound_cxq r{1} 0 256 3 /\
          signed_bound_cxq r{2} 0 256 9).
-print addequiv.
 have Hcall:= addequiv 2 1 6 3 _ _ => //.
 call Hcall.
 auto => />.

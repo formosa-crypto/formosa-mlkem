@@ -37,7 +37,7 @@ module Mprevec = {
     var t1:t16u16;
     var a_q: t4u64;
     
-    t0  <@ Ops.iVMOVSLDUP_8u32_16u16(b);
+    t0  <@ Ops.iVMOVSLDUP_256_16u16(b);
     t0  <@ Ops.iVPBLEND_8u32_16u16(a, t0, (W8.of_int 170));
     a_q <- f16u16_t4u64 a;
     a_q <@ Ops.iVPSRL_4u64(a_q, (W8.of_int 32));

@@ -35,7 +35,7 @@ module Mvec = {
     var t0:W256.t;
     var t1:W256.t;
     
-    t0 <@ OpsV.iVMOVSLDUP_8u32_16u16(b);
+    t0 <@ OpsV.iVMOVSLDUP_256_16u16(b);
     t0 <@ OpsV.iVPBLEND_8u32_16u16(a, t0, (W8.of_int 170));
     a  <@ OpsV.iVPSRL_4u64(a, (W8.of_int 32));
     t1 <@ OpsV.iVPBLEND_8u32_16u16(a, b, (W8.of_int 170));
@@ -1394,7 +1394,7 @@ proof.
   call eq_iVPSRL_4u64.
   wp.
   call eq_iVPBLEND_8u32_16u16.
-  call eq_iVMOVSLDUP_8u32_16u16.
+  call eq_iVMOVSLDUP_256_16u16.
   inline *; wp; skip; auto => />.
   move => &1 &2 [#] a_eq b_eq resL resR res_eq resL0 resR0 res0_eq />.
   split.

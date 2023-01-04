@@ -203,7 +203,7 @@ rewrite !scalepE &(eqvMl) &(eqv_trans q).
   - by rewrite mulr_ge0 // divz_ge0.
   - by rewrite modz_ge0 gtr_eqF.
 apply/eqvMr; rewrite -polyCX ?divz_ge0 // (IntID.mulrC _ n).
-by rewrite exprM eqvX polyCN eqv_Xn.
+rewrite exprM eqvX ?divz_ge0 //  polyCN eqv_Xn.
 qed.
 
 (* -------------------------------------------------------------------- *)

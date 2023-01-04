@@ -1199,7 +1199,7 @@ rewrite get_of_list 1:ib (nth_map (witness<:bool list>) 0);
   rewrite size_flatten /= StdBigop.Bigint.sumzE /= -map_comp /(\o) /=;
   rewrite !StdBigop.Bigint.BIA.big_mapT /= /(\o) /=;
   rewrite !StdBigop.Bigint.big_constz /=;
-  rewrite !count_predT /= size_iota /max /= 1:ib. print Array256.tP.
+  rewrite !count_predT /= size_iota /max /= 1:ib. 
   have /= [<- ]:= (Array256.tP (Array256.init (fun i => bs2int (nth witness (chunk 4 (flatten (map W8.w2bits (to_list x)))) i))) (iteri 128 g witness));[| by apply ib | by smt(Array256.initiE)].
 rewrite /of_list -(Array256.init_set witness) -JUtils.iotaredE /=.
 do 128!(rewrite iteriS_rw;1: by smt()). 
@@ -1345,6 +1345,53 @@ by  rewrite !size_chunk /=; [ by smt() | ];
 qed.
 *)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(*
 lemma encode1_inj (x x' : ipoly) : 
    (forall i, 0 <= i < 256 => 0 <= x.[i] < 2) =>
    (forall i, 0 <= i < 256 => 0 <= x'.[i] < 2) =>
@@ -1497,24 +1544,5 @@ have -> : size (nth witness (chunk 1 (take 256 (BytesToBits (to_list (op_EncDec_
      rewrite !StdBigop.Bigint.big_constz /=;
      rewrite !count_predT /= size_iota /max /= /#. 
 qed.
-
-(* These have missing preconditions; move to KyberProperties and fix. 
-lemma sem_encode4K  : cancel sem_encode4  sem_decode4  by admit. (* to do *)
-lemma sem_encode12_vecK  : cancel sem_encode12_vec  sem_decode12_vec  by admit. (* to do *)
-lemma sem_encode10_vecK  : cancel sem_encode10_vec  sem_decode10_vec  by admit. (* to do *)
-lemma sem_decode1_bnd a k : 0<=k<256 => 0<= (sem_decode1 a).[k] < 2 by admit. (* to do *)
 *)
 
-(* These are all replaced by proc op 
-phoare sem_decode12 a : [ EncDec.decode12 : arg = a ==>  res = sem_decode12 a ] = 1%r by admit. (* reify *)
-phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = sem_decode4  a ] = 1%r by admit. (* reify *)
-phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = sem_decode1  a ] = 1%r by admit. (* reify *)
-phoare sem_encode12 a : [ EncDec.encode12 : arg = a ==>  res = sem_encode12 a ] = 1%r by admit. (* reify *)
-phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = sem_encode4  a ] = 1%r by admit. (* reify *)
-phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = sem_encode1  a ] = 1%r by admit. (* reify *)
-
-phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = sem_decode12_vec a ] = 1%r by admit. (* reify *)
-phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = sem_decode10_vec a ] = 1%r by admit. (* reify *)
-phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = sem_encode12_vec a ] = 1%r by admit. (* reify *)
-phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = sem_encode10_vec a ] = 1%r by admit. (* reify *)
-*)

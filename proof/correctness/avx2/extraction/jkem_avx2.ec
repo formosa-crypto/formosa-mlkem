@@ -973,7 +973,7 @@ module M = {
     var t0:W256.t;
     var t1:W256.t;
     
-    t0 <- VMOVSLDUP_8u32 b;
+    t0 <- VMOVSLDUP_256 b;
     t0 <- VPBLEND_8u32 a t0 (W8.of_int 170);
     a <- VPSRL_4u64 a (W8.of_int 32);
     t1 <- VPBLEND_8u32 a b (W8.of_int 170);

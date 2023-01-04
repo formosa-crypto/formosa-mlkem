@@ -70,7 +70,7 @@ fn __basemul_red(reg u256 a0 a1 b0 b1 qx16 qinvx16) -> reg u256, reg u256
 
 inline
 fn __w256_interleave_u16(reg u256 al ah) -> reg u256, reg u256 {
- reg u256 al ah;
+ reg u256 al ah, a0, a1;
 
  a0  = #VPUNPCKL_16u16(al, ah);
  a1  = #VPUNPCKH_16u16(al, ah);
@@ -141,8 +141,8 @@ fn __schoolbook16x(reg u256 are aim bre bim zeta zetaqinv qx16 qinvx16, inline i
   _zero = #set0_256();
   x0, x1 = __w256_deintereleave_u16(_zero, x0, x1);
   y0, y1 = __w256_deintereleave_u16(_zero, y0, y1);
-  x0 = __mont_red(x0, x1, qx16, qinvx16)
-  y0 = __mont_red(y0, y1, qx16, qinvx16)
+  x0 = __mont_red(x0, x1, qx16, qinvx16);
+  y0 = __mont_red(y0, y1, qx16, qinvx16);
 
   return x0, y0;
 }

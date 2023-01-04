@@ -944,7 +944,7 @@ module Ops = {
     return W32.bits2w(rb);
   }
 
-  proc iVMOVSLDUP_8u32_16u16(x: t16u16): t16u16 = {
+  proc iVMOVSLDUP_256_16u16(x: t16u16): t16u16 = {
     var r: t16u16;
 
     r <- Array16.init (fun i => x.[4 * (i %/ 4) + i %% 2]);
@@ -952,7 +952,7 @@ module Ops = {
     return r;
   }
 
-  proc iVMOVSLDUP_8u32(x: t8u32): t8u32 = {
+  proc iVMOVSLDUP_256(x: t8u32): t8u32 = {
     var r: t8u32;
 
     r <- Array8.init (fun i => x.[2 * (i %/ 2)]);
@@ -1285,12 +1285,12 @@ module OpsV = {
     return VPMOVMSKB_u256u32 x;
   }
 
-  proc iVMOVSLDUP_8u32_16u16(x: vt16u16): vt16u16 = {
-    return VMOVSLDUP_8u32 x;
+  proc iVMOVSLDUP_256_16u16(x: vt16u16): vt16u16 = {
+    return VMOVSLDUP_256 x;
   }
 
-  proc iVMOVSLDUP_8u32(x: vt8u32): vt8u32 = {
-    return VMOVSLDUP_8u32 x;
+  proc iVMOVSLDUP_256(x: vt8u32): vt8u32 = {
+    return VMOVSLDUP_256 x;
   }
 }.
 
@@ -2141,7 +2141,7 @@ rewrite /msb.
 smt(@List).
 qed.
 
-equiv eq_iVMOVSLDUP_8u32_16u16: Ops.iVMOVSLDUP_8u32_16u16 ~ OpsV.iVMOVSLDUP_8u32_16u16:
+equiv eq_iVMOVSLDUP_256_16u16: Ops.iVMOVSLDUP_256_16u16 ~ OpsV.iVMOVSLDUP_256_16u16:
  is16u16 x{1} x{2} ==> is16u16 res{1} res{2}.
 proof.
 proc; wp; skip.
@@ -2151,7 +2151,7 @@ rewrite x_eq.
 apply W16u16.allP => />.
 qed.
 
-equiv eq_iVMOVSLDUP_8u32: Ops.iVMOVSLDUP_8u32 ~ OpsV.iVMOVSLDUP_8u32:
+equiv eq_iVMOVSLDUP_256: Ops.iVMOVSLDUP_256 ~ OpsV.iVMOVSLDUP_256:
  is8u32 x{1} x{2} ==> is8u32 res{1} res{2}.
 proof.
 proc; wp; skip.

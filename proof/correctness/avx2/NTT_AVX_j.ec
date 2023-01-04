@@ -2143,7 +2143,7 @@ hoare __shuffle2_h na nb _a _b:
 proof.
 proc; simplify.
 wp; skip => |> &m Ha Hb.
-rewrite /VPBLENDD_256 /VMOVSLDUP_8u32 /VMOVSLDUP_4u32 /VPSRL_4u64 /shuffle2 /= /int_bit /=.
+rewrite /VPBLENDD_256 /VMOVSLDUP_256 /VMOVSLDUP_4u32 /VPSRL_4u64 /shuffle2 /= /int_bit /=.
 move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
 move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
 rewrite -!iotaredE /= => |>.

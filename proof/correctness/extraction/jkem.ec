@@ -1,4 +1,4 @@
-require import AllCore IntDiv CoreMap List.
+require import AllCore IntDiv CoreMap List Distr.
 from Jasmin require import JModel.
 
 require import Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64
@@ -1201,6 +1201,7 @@ module M = {
   }
   
   proc _poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
+    
     var i:W64.t;
     var j:W64.t;
     var t0:W16.t;

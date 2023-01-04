@@ -1,4 +1,4 @@
-require import AllCore IntDiv CoreMap List.
+require import AllCore IntDiv CoreMap List Distr.
 from Jasmin require import JModel.
 
 require import Array4 Array5 Array8 Array16 Array24 Array25 Array32 Array33
@@ -3033,174 +3033,224 @@ module M = {
     return (rp);
   }
   
-  proc __schoolbook (ap:W16.t Array32.t, bp:W16.t Array32.t, zeta_0:W256.t,
-                     qx16:W256.t, qinvx16:W256.t, sign:int) : W256.t *
-                                                              W256.t *
-                                                              W256.t * W256.t = {
+  proc __w256_interleave_u16 (al:W256.t, ah:W256.t) : W256.t * W256.t = {
+    
+    var a0:W256.t;
+    var a1:W256.t;
+    var al_0:W256.t;
+    var ah_0:W256.t;
+    
+    a0 <- VPUNPCKL_16u16 al_0 ah_0;
+    a1 <- VPUNPCKH_16u16 al_0 ah_0;
+    return (a0, a1);
+  }
+  
+  proc __w256_deintereleave_u16 (_zero:W256.t, a0:W256.t, a1:W256.t) : 
+  W256.t * W256.t = {
+    
+    var al:W256.t;
+    var ah:W256.t;
+    
+    al <- VPBLEND_16u16 a0 _zero (W8.of_int 170);
+    ah <- VPBLEND_16u16 a1 _zero (W8.of_int 170);
+    al <- VPACKUS_8u32 al ah;
+    a0 <- VPSRL_8u32 a0 (W8.of_int 16);
+    a1 <- VPSRL_8u32 a1 (W8.of_int 16);
+    ah <- VPACKUS_8u32 a0 a1;
+    return (al, ah);
+  }
+  
+  proc __mont_red (lo:W256.t, hi:W256.t, qx16:W256.t, qinvx16:W256.t) : 
+  W256.t = {
+    
+    var m:W256.t;
+    
+    m <- VPMULL_16u16 lo qinvx16;
+    m <- VPMULH_16u16 m qx16;
+    lo <- VPSUB_16u16 hi m;
+    return (lo);
+  }
+  
+  proc __wmul_16u16 (x:W256.t, y:W256.t) : W256.t * W256.t = {
+    
+    var xy0:W256.t;
+    var xy1:W256.t;
+    var xyL:W256.t;
+    var xyH:W256.t;
+    
+    xyL <- VPMULL_16u16 x y;
+    xyH <- VPMULH_16u16 x y;
+    (xy0, xy1) <@ __w256_interleave_u16 (xyL, xyH);
+    return (xy0, xy1);
+  }
+  
+  proc __schoolbook16x (are:W256.t, aim:W256.t, bre:W256.t, bim:W256.t,
+                        zeta_0:W256.t, zetaqinv:W256.t, qx16:W256.t,
+                        qinvx16:W256.t, sign:int) : W256.t * W256.t = {
     
     var x0:W256.t;
-    var x1:W256.t;
     var y0:W256.t;
-    var y1:W256.t;
-    var b:W256.t;
-    var d:W256.t;
-    var a:W256.t;
-    var c:W256.t;
-    var bdlo:W256.t;
-    var bdhi:W256.t;
-    var bclo:W256.t;
-    var bchi:W256.t;
-    var adlo:W256.t;
-    var adhi:W256.t;
-    var aclo:W256.t;
-    var achi:W256.t;
-    var bd:W256.t;
-    var rbdlo:W256.t;
-    var rbdhi:W256.t;
-    var bc0:W256.t;
-    var bc1:W256.t;
-    var ad0:W256.t;
-    var ad1:W256.t;
+    var zaim:W256.t;
     var ac0:W256.t;
     var ac1:W256.t;
-    var rbd0:W256.t;
-    var rbd1:W256.t;
+    var ad0:W256.t;
+    var ad1:W256.t;
+    var bc0:W256.t;
+    var bc1:W256.t;
+    var zbd0:W256.t;
+    var zbd1:W256.t;
+    var x1:W256.t;
+    var y1:W256.t;
+    var _zero:W256.t;
     
-    b <- (get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 1));
-    d <- (get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 1));
-    a <- (get256_direct (WArray64.init16 (fun i => ap.[i])) (32 * 0));
-    c <- (get256_direct (WArray64.init16 (fun i => bp.[i])) (32 * 0));
-    bdlo <- VPMULL_16u16 b d;
-    bdhi <- VPMULH_16u16 b d;
-    bclo <- VPMULL_16u16 b c;
-    bchi <- VPMULH_16u16 b c;
-    adlo <- VPMULL_16u16 a d;
-    adhi <- VPMULH_16u16 a d;
-    aclo <- VPMULL_16u16 a c;
-    achi <- VPMULH_16u16 a c;
-    bdlo <- VPMULL_16u16 bdlo qinvx16;
-    bdlo <- VPMULH_16u16 bdlo qx16;
-    bd <- VPSUB_16u16 bdhi bdlo;
-    rbdlo <- VPMULL_16u16 zeta_0 bd;
-    rbdhi <- VPMULH_16u16 zeta_0 bd;
-    bc0 <- VPUNPCKL_16u16 bclo bchi;
-    bc1 <- VPUNPCKH_16u16 bclo bchi;
-    ad0 <- VPUNPCKL_16u16 adlo adhi;
-    ad1 <- VPUNPCKH_16u16 adlo adhi;
-    ac0 <- VPUNPCKL_16u16 aclo achi;
-    ac1 <- VPUNPCKH_16u16 aclo achi;
-    rbd0 <- VPUNPCKL_16u16 rbdlo rbdhi;
-    rbd1 <- VPUNPCKH_16u16 rbdlo rbdhi;
+    zaim <@ __fqmulprecomp16x (aim, zetaqinv, zeta_0, qx16);
+    (ac0, ac1) <@ __wmul_16u16 (are, bre);
+    (ad0, ad1) <@ __wmul_16u16 (are, bim);
+    (bc0, bc1) <@ __wmul_16u16 (aim, bre);
+    (zbd0, zbd1) <@ __wmul_16u16 (zaim, bim);
     if ((sign = 0)) {
-      x0 <- VPADD_8u32 ac0 rbd0;
-      x1 <- VPADD_8u32 ac1 rbd1;
+      x0 <- VPADD_8u32 ac0 zbd0;
+      x1 <- VPADD_8u32 ac1 zbd1;
     } else {
-      x0 <- VPSUB_8u32 ac0 rbd0;
-      x1 <- VPSUB_8u32 ac1 rbd1;
+      x0 <- VPSUB_8u32 ac0 zbd0;
+      x1 <- VPSUB_8u32 ac1 zbd1;
     }
     y0 <- VPADD_8u32 bc0 ad0;
     y1 <- VPADD_8u32 bc1 ad1;
-    return (x0, x1, y0, y1);
-  }
-  
-  proc __basemul_red (a0:W256.t, a1:W256.t, b0:W256.t, b1:W256.t,
-                      qx16:W256.t, qinvx16:W256.t) : W256.t * W256.t = {
-    
-    var zero:W256.t;
-    var y:W256.t;
-    var z:W256.t;
-    var x:W256.t;
-    
-    zero <- set0_256 ;
-    y <- VPBLEND_16u16 a0 zero (W8.of_int 170);
-    z <- VPBLEND_16u16 a1 zero (W8.of_int 170);
-    a0 <- VPSRL_8u32 a0 (W8.of_int 16);
-    a1 <- VPSRL_8u32 a1 (W8.of_int 16);
-    z <- VPACKUS_8u32 y z;
-    a0 <- VPACKUS_8u32 a0 a1;
-    y <- VPBLEND_16u16 b0 zero (W8.of_int 170);
-    x <- VPBLEND_16u16 b1 zero (W8.of_int 170);
-    b0 <- VPSRL_8u32 b0 (W8.of_int 16);
-    b1 <- VPSRL_8u32 b1 (W8.of_int 16);
-    y <- VPACKUS_8u32 y x;
-    b0 <- VPACKUS_8u32 b0 b1;
-    z <- VPMULL_16u16 z qinvx16;
-    y <- VPMULL_16u16 y qinvx16;
-    z <- VPMULH_16u16 z qx16;
-    y <- VPMULH_16u16 y qx16;
-    a0 <- VPSUB_16u16 a0 z;
-    b0 <- VPSUB_16u16 b0 y;
-    return (a0, b0);
-  }
-  
-  proc __basemul32x (rp:W16.t Array64.t, ap:W16.t Array64.t,
-                     bp:W16.t Array64.t, zeta_0:W256.t, qx16:W256.t,
-                     qinvx16:W256.t) : W16.t Array64.t = {
-    
-    var x0:W256.t;
-    var x1:W256.t;
-    var y0:W256.t;
-    var y1:W256.t;
-    
-    (x0, x1, y0, y1) <@ __schoolbook ((Array32.init (fun i => ap.[0 + i])),
-    (Array32.init (fun i => bp.[0 + i])), zeta_0, qx16, qinvx16, 0);
-    (x0, x1) <@ __basemul_red (x0, x1, y0, y1, qx16, qinvx16);
-    rp <-
-    Array64.init
-    (WArray128.get16 (WArray128.set256_direct (WArray128.init16 (fun i => rp.[i])) (32 * 0) (x0)));
-    rp <-
-    Array64.init
-    (WArray128.get16 (WArray128.set256_direct (WArray128.init16 (fun i => rp.[i])) (32 * 1) (x1)));
-    (x0, x1, y0, y1) <@ __schoolbook ((Array32.init (fun i => ap.[32 + i])),
-    (Array32.init (fun i => bp.[32 + i])), zeta_0, qx16, qinvx16, 1);
-    (x0, x1) <@ __basemul_red (x0, x1, y0, y1, qx16, qinvx16);
-    rp <-
-    Array64.init
-    (WArray128.get16 (WArray128.set256_direct (WArray128.init16 (fun i => rp.[i])) (32 * 2) (x0)));
-    rp <-
-    Array64.init
-    (WArray128.get16 (WArray128.set256_direct (WArray128.init16 (fun i => rp.[i])) (32 * 3) (x1)));
-    return (rp);
+    _zero <- set0_256 ;
+    (x0, x1) <@ __w256_deintereleave_u16 (_zero, x0, x1);
+    (y0, y1) <@ __w256_deintereleave_u16 (_zero, y0, y1);
+    x0 <@ __mont_red (x0, x1, qx16, qinvx16);
+    y0 <@ __mont_red (y0, y1, qx16, qinvx16);
+    return (x0, y0);
   }
   
   proc _poly_basemul (rp:W16.t Array256.t, ap:W16.t Array256.t,
                       bp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux: W16.t Array64.t;
     
     var qx16:W256.t;
     var qinvx16:W256.t;
+    var zetaqinv:W256.t;
     var zeta_0:W256.t;
+    var are:W256.t;
+    var aim:W256.t;
+    var bre:W256.t;
+    var bim:W256.t;
     
     qx16 <- (get256_direct (WArray32.init16 (fun i => jqx16.[i])) 0);
     qinvx16 <- (get256_direct (WArray32.init16 (fun i => jqinvx16.[i])) 0);
+    zetaqinv <-
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 272);
     zeta_0 <-
     (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 304);
-    aux <@ __basemul32x ((Array64.init (fun i => rp.[0 + i])),
-    (Array64.init (fun i => ap.[0 + i])),
-    (Array64.init (fun i => bp.[0 + i])), zeta_0, qx16, qinvx16);
-    rp <- Array256.init
-          (fun i => if 0 <= i < 0 + 64 then aux.[i-0] else rp.[i]);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 0));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 1));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 0));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 1));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 0);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 0) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 1) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 2));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 3));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 2));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 3));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 1);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 2) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 3) (aim)));
+    zetaqinv <-
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 336);
     zeta_0 <-
     (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 368);
-    aux <@ __basemul32x ((Array64.init (fun i => rp.[64 + i])),
-    (Array64.init (fun i => ap.[64 + i])),
-    (Array64.init (fun i => bp.[64 + i])), zeta_0, qx16, qinvx16);
-    rp <- Array256.init
-          (fun i => if 64 <= i < 64 + 64 then aux.[i-64] else rp.[i]);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 4));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 5));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 4));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 5));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 0);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 4) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 5) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 6));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 7));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 6));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 7));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 1);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 6) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 7) (aim)));
+    zetaqinv <-
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 664);
     zeta_0 <-
     (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 696);
-    aux <@ __basemul32x ((Array64.init (fun i => rp.[128 + i])),
-    (Array64.init (fun i => ap.[128 + i])),
-    (Array64.init (fun i => bp.[128 + i])), zeta_0, qx16, qinvx16);
-    rp <- Array256.init
-          (fun i => if 128 <= i < 128 + 64 then aux.[i-128] else rp.[i]);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 8));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 9));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 8));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 9));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 0);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 8) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 9) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 10));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 11));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 10));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 11));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 1);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 10) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 11) (aim)));
+    zetaqinv <-
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 728);
     zeta_0 <-
     (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 760);
-    aux <@ __basemul32x ((Array64.init (fun i => rp.[192 + i])),
-    (Array64.init (fun i => ap.[192 + i])),
-    (Array64.init (fun i => bp.[192 + i])), zeta_0, qx16, qinvx16);
-    rp <- Array256.init
-          (fun i => if 192 <= i < 192 + 64 then aux.[i-192] else rp.[i]);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 12));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 13));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 12));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 13));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 0);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 12) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 13) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 14));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 15));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 14));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 15));
+    (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
+    qx16, qinvx16, 1);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 14) (are)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 15) (aim)));
     return (rp);
   }
   
@@ -3848,7 +3898,7 @@ module M = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   
-  proc __invntt_levels0t5 (rp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
     
     var zetasp:W16.t Array400.t;
@@ -3867,6 +3917,8 @@ module M = {
     var r6:W256.t;
     var r7:W256.t;
     var vx16:W256.t;
+    var flox16:W256.t;
+    var fhix16:W256.t;
     zetasp <- witness;
     zetasp <- jzetas_inv_exp;
     qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
@@ -3910,12 +3962,17 @@ module M = {
       ((32 * 7) + (256 * i)));
       (r0, r1, r4, r5, r2, r3, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
+      vx16 <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
       zeta0 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (128 + (392 * i)));
       zeta1 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (160 + (392 * i)));
+      r0 <@ __red16x (r0, qx16, vx16);
+      r1 <@ __red16x (r1, qx16, vx16);
+      r4 <@ __red16x (r4, qx16, vx16);
+      r5 <@ __red16x (r5, qx16, vx16);
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (r0, r1) <@ __shuffle1 (r0, r1);
@@ -3928,7 +3985,6 @@ module M = {
       zeta1 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (224 + (392 * i)));
-      vx16 <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, r2,
       r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       r0 <@ __red16x (r0, qx16, vx16);
@@ -3957,7 +4013,6 @@ module M = {
       (352 + (392 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      r0 <@ __red16x (r0, qx16, vx16);
       (r0, r1) <@ __shuffle8 (r0, r1);
       (r2, r3) <@ __shuffle8 (r2, r3);
       (r4, r5) <@ __shuffle8 (r4, r5);
@@ -3973,18 +4028,22 @@ module M = {
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, r2,
       r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       r0 <@ __red16x (r0, qx16, vx16);
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 0) + (256 * i)) (r0)));
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 1) + (256 * i)) (r2)));
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 2) + (256 * i)) (r4)));
-      rp <-
-      Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 3) + (256 * i)) (r6)));
+      if ((i = 0)) {
+        rp <-
+        Array256.init
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 0) + (256 * i)) (r0)));
+        rp <-
+        Array256.init
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 1) + (256 * i)) (r2)));
+        rp <-
+        Array256.init
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 2) + (256 * i)) (r4)));
+        rp <-
+        Array256.init
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 3) + (256 * i)) (r6)));
+      } else {
+        
+      }
       rp <-
       Array256.init
       (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 4) + (256 * i)) (r1)));
@@ -3999,30 +4058,6 @@ module M = {
       (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 7) + (256 * i)) (r7)));
       i <- i + 1;
     }
-    return (rp);
-  }
-  
-  proc __invntt_level6 (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux: int;
-    
-    var zetasp:W16.t Array400.t;
-    var qx16:W256.t;
-    var zeta0:W256.t;
-    var zeta1:W256.t;
-    var i:int;
-    var r0:W256.t;
-    var r1:W256.t;
-    var r2:W256.t;
-    var r3:W256.t;
-    var r4:W256.t;
-    var r5:W256.t;
-    var r6:W256.t;
-    var r7:W256.t;
-    var flox16:W256.t;
-    var fhix16:W256.t;
-    zetasp <- witness;
-    zetasp <- jzetas_inv_exp;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     zeta0 <-
     VPBROADCAST_8u32 (get32_direct
                      (WArray800.init16 (fun i_0 => zetasp.[i_0])) 784);
@@ -4031,6 +4066,25 @@ module M = {
                      (WArray800.init16 (fun i_0 => zetasp.[i_0])) 788);
     i <- 0;
     while (i < 2) {
+      if ((i = 0)) {
+        r7 <- r6;
+        r6 <- r4;
+        r5 <- r2;
+        r4 <- r0;
+      } else {
+        r4 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 8) + (128 * i)));
+        r5 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 9) + (128 * i)));
+        r6 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 10) + (128 * i)));
+        r7 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 11) + (128 * i)));
+      }
       r0 <-
       (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 0) + (128 * i)));
@@ -4043,18 +4097,6 @@ module M = {
       r3 <-
       (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 3) + (128 * i)));
-      r4 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 8) + (128 * i)));
-      r5 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 9) + (128 * i)));
-      r6 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 10) + (128 * i)));
-      r7 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 11) + (128 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       flox16 <- (get256 (WArray32.init16 (fun i_0 => jflox16.[i_0])) 0);
@@ -4089,15 +4131,6 @@ module M = {
       (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 3) + (128 * i)) (r3)));
       i <- i + 1;
     }
-    return (rp);
-  }
-  
-  proc _poly_invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    
-    
-    
-    rp <@ __invntt_levels0t5 (rp);
-    rp <@ __invntt_level6 (rp);
     return (rp);
   }
   
@@ -4147,104 +4180,11 @@ module M = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   
-  proc __ntt_level0 (rp:W16.t Array256.t) : W16.t Array256.t = {
-    
-    var zetasp:W16.t Array400.t;
-    var qx16:W256.t;
-    var zeta0:W256.t;
-    var zeta1:W256.t;
-    var r0:W256.t;
-    var r1:W256.t;
-    var r2:W256.t;
-    var r3:W256.t;
-    var r4:W256.t;
-    var r5:W256.t;
-    var r6:W256.t;
-    var r7:W256.t;
-    zetasp <- witness;
-    zetasp <- jzetas_exp;
-    qx16 <- (get256 (WArray32.init16 (fun i => jqx16.[i])) 0);
-    zeta0 <-
-    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i => zetasp.[i])) 0);
-    zeta1 <-
-    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i => zetasp.[i])) 1);
-    r0 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 0));
-    r1 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 1));
-    r2 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 2));
-    r3 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 3));
-    r4 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 8));
-    r5 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 9));
-    r6 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 10));
-    r7 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 11));
-    (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
-    r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 0) (r0)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 1) (r1)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 2) (r2)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 3) (r3)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 8) (r4)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 9) (r5)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 10) (r6)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 11) (r7)));
-    r0 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 4));
-    r1 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 5));
-    r2 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 6));
-    r3 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 7));
-    r4 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 12));
-    r5 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 13));
-    r6 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 14));
-    r7 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 15));
-    (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
-    r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 4) (r0)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 5) (r1)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 6) (r2)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 7) (r3)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 12) (r4)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 13) (r5)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 14) (r6)));
-    rp <-
-    Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 15) (r7)));
-    return (rp);
-  }
-  
-  proc __ntt_level1t6 (rp:W16.t Array256.t) : W16.t Array256.t = {
+  proc _poly_ntt (rp:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
     
     var zetasp:W16.t Array400.t;
     var qx16:W256.t;
-    var i:int;
     var zeta0:W256.t;
     var zeta1:W256.t;
     var r0:W256.t;
@@ -4255,12 +4195,73 @@ module M = {
     var r5:W256.t;
     var r6:W256.t;
     var r7:W256.t;
+    var i:int;
     var zeta2:W256.t;
     var zeta3:W256.t;
     var vx16:W256.t;
     zetasp <- witness;
     zetasp <- jzetas_exp;
     qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
+    zeta0 <-
+    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 0);
+    zeta1 <-
+    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 1);
+    r0 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 0));
+    r1 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 1));
+    r2 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 2));
+    r3 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 3));
+    r4 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 8));
+    r5 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 9));
+    r6 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 10));
+    r7 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 11));
+    (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
+    r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 0) (r0)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 1) (r1)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 2) (r2)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 3) (r3)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 8) (r4)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 9) (r5)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 10) (r6)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 11) (r7)));
+    r0 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 4));
+    r1 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 5));
+    r2 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 6));
+    r3 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 7));
+    r4 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 12));
+    r5 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 13));
+    r6 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 14));
+    r7 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 15));
+    (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
+    r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 12) (r4)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 13) (r5)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 14) (r6)));
+    rp <-
+    Array256.init
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 15) (r7)));
     i <- 0;
     while (i < 2) {
       zeta0 <-
@@ -4271,6 +4272,25 @@ module M = {
       VPBROADCAST_8u32 (get32_direct
                        (WArray800.init16 (fun i_0 => zetasp.[i_0]))
                        (12 + (392 * i)));
+      if ((i = 0)) {
+        r4 <- r0;
+        r5 <- r1;
+        r6 <- r2;
+        r7 <- r3;
+      } else {
+        r4 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 4) + (256 * i)));
+        r5 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 5) + (256 * i)));
+        r6 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 6) + (256 * i)));
+        r7 <-
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
+        ((32 * 7) + (256 * i)));
+      }
       r0 <-
       (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 0) + (256 * i)));
@@ -4283,18 +4303,6 @@ module M = {
       r3 <-
       (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 3) + (256 * i)));
-      r4 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 4) + (256 * i)));
-      r5 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 5) + (256 * i)));
-      r6 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 6) + (256 * i)));
-      r7 <-
-      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((32 * 7) + (256 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
       r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
@@ -4348,12 +4356,12 @@ module M = {
       zeta0 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (272 + (392 * i)));
-      zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
-      (336 + (392 * i)));
       zeta2 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (304 + (392 * i)));
+      zeta1 <-
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (336 + (392 * i)));
       zeta3 <-
       (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (368 + (392 * i)));
@@ -4394,15 +4402,6 @@ module M = {
       (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 7) + (256 * i)) (r7)));
       i <- i + 1;
     }
-    return (rp);
-  }
-  
-  proc _poly_ntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    
-    
-    
-    rp <@ __ntt_level0 (rp);
-    rp <@ __ntt_level1t6 (rp);
     return (rp);
   }
   
@@ -4862,7 +4861,6 @@ module M = {
     t <@ _poly_basemul (t, (Array256.init (fun i => a.[(2 * 256) + i])),
     (Array256.init (fun i => b.[(2 * 256) + i])));
     r <@ _poly_add2 (r, t);
-    r <@ __poly_reduce (r);
     return (r);
   }
   
