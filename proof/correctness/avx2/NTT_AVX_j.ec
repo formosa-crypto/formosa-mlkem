@@ -18,6 +18,8 @@ import Zq.
 require import KyberPoly.
 import KyberPoly.
 
+
+require AVX2_Ops.
 require import Montgomery16.
 require import Jkem_avx2 Jkem.
 
@@ -601,8 +603,6 @@ module Tmp = {
     }
     zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp 392);
     zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp 394);
-    flox16 <- C2R flox16_op;
-    fhix16 <- C2R fhix16_op;
     i <- 0;
     while (i < 2) {
       if (i = 0) {
@@ -622,428 +622,6 @@ module Tmp = {
       r3 <- P2R rp (3+4*i); (* 2 *)
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
         r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 4 8 4 4 1 1 1 1 *)
-      rp <- PUR rp (8+4*i) r4;
-      rp <- PUR rp (9+4*i) r5;
-      rp <- PUR rp (10+4*i) r6;
-      rp <- PUR rp (11+4*i) r7;
-      r0 <@ Jkem_avx2.M.__fqmulprecomp16x (r0, flox16, fhix16, qx16);
-      r1 <@ Jkem_avx2.M.__fqmulprecomp16x (r1, flox16, fhix16, qx16);
-      r2 <@ Jkem_avx2.M.__fqmulprecomp16x (r2, flox16, fhix16, qx16);
-      r3 <@ Jkem_avx2.M.__fqmulprecomp16x (r3, flox16, fhix16, qx16);
-      rp <- PUR rp (0+4*i) r0;
-      rp <- PUR rp (1+4*i) r1;
-      rp <- PUR rp (2+4*i) r2;
-      rp <- PUR rp (3+4*i) r3;
-      i <- i + 1;
-    }
-    return (rp);
-  }
-  proc _invntt2 (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp: W16.t Array400.t;
-    var qx16, vx16, flox16, fhix16: W256.t;
-    var i: int;
-    var zeta0, zeta1, zeta2, zeta3: W256.t;
-    var r0, r1, r2, r3, r4, r5, r6, r7: W256.t;
-    zetasp <- zetas_inv_op;
-    qx16 <- C2R qx16_op;
-    i <- 0;
-    while (i < 2) {
-      zeta0 <- z2u256 zetasp (0 + (196 * i));
-      zeta2 <- z2u256 zetasp (16 + (196 * i));
-      zeta1 <- z2u256 zetasp (32 + (196 * i));
-      zeta3 <- z2u256 zetasp (48 + (196 * i));
-      r0 <- P2R rp (0+8*i);
-      r1 <- P2R rp (1+8*i);
-      r2 <- P2R rp (2+8*i);
-      r3 <- P2R rp (3+8*i);
-      r4 <- P2R rp (4+8*i);
-      r5 <- P2R rp (5+8*i);
-      r6 <- P2R rp (6+8*i);
-      r7 <- P2R rp (7+8*i);
-      (r0, r1, r4, r5, r2, r3, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-      r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
-      (* 4 4 1 1 4 4 1 1 *) (* 8 8 1 1 8 8 1 1 - 4 *)
-      vx16 <- C2R vx16_op;
-      zeta0 <- z2u256 zetasp (64 + (196 * i));
-      zeta1 <- z2u256 zetasp (80 + (196 * i));
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 8 2 2 1 1 1 1 *) (* 4 4 2 2 1 1 1 1 - 0 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      r1 <@ Jkem_avx2.M.__red16x (r1, qx16, vx16);      
-      (r0, r1) <@ Jkem_avx2.M.__shuffle1 (r0, r1);
-      (r2, r3) <@ Jkem_avx2.M.__shuffle1 (r2, r3);
-      (r4, r5) <@ Jkem_avx2.M.__shuffle1 (r4, r5);
-      (r6, r7) <@ Jkem_avx2.M.__shuffle1 (r6, r7);
-      zeta0 <- z2u256 zetasp (96 + (196 * i));
-      zeta1 <- z2u256 zetasp (112 + (196 * i));
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r2,
-      r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (*.4 1 4 1 2 1 2 1 *) (* 8 1 4 1 2 1 2 1 - 1 *)
-      (r0, r2) <@ Jkem_avx2.M.__shuffle2 (r0, r2);
-      (r4, r6) <@ Jkem_avx2.M.__shuffle2 (r4, r6);
-      (r1, r3) <@ Jkem_avx2.M.__shuffle2 (r1, r3);
-      (r5, r7) <@ Jkem_avx2.M.__shuffle2 (r5, r7);
-      zeta0 <- z2u256 zetasp (128 + (196 * i));
-      zeta1 <- z2u256 zetasp (144 + (196 * i));
-      (r0, r4, r1, r5, r2, r6, r3, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r4,
-      r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 2 1 1 4 2 1 1 *) (* 8 2 1 1 2 2 1 1 - 1 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      (r0, r4) <@ Jkem_avx2.M.__shuffle4 (r0, r4);
-      (r1, r5) <@ Jkem_avx2.M.__shuffle4 (r1, r5);
-      (r2, r6) <@ Jkem_avx2.M.__shuffle4 (r2, r6);
-      (r3, r7) <@ Jkem_avx2.M.__shuffle4 (r3, r7);
-      zeta0 <- z2u256 zetasp (160 + (196 * i));
-      zeta1 <- z2u256 zetasp (176 + (196 * i));
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 4 2 2 1 1 1 1 *) (* 4 4 2 2 1 1 1 1 - 0 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      (r0, r1) <@ Jkem_avx2.M.__shuffle8 (r0, r1);
-      (r2, r3) <@ Jkem_avx2.M.__shuffle8 (r2, r3);
-      (r4, r5) <@ Jkem_avx2.M.__shuffle8 (r4, r5);
-      (r6, r7) <@ Jkem_avx2.M.__shuffle8 (r6, r7);
-      zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp (192 + (196 * i)));
-      zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp (194 + (196 * i)));
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r2,
-      r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 1 4 1 2 1 2 1 *) (* 8 1 4 1 2 1 2 1 - 1 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      if (i = 0) {
-      rp <- PUR rp (0+8*i) r0; (* 2 *)
-      rp <- PUR rp (1+8*i) r2; (* 4 *)
-      rp <- PUR rp (2+8*i) r4; (* 2 *)
-      rp <- PUR rp (3+8*i) r6; (* 2 *)
-      }
-      rp <- PUR rp (4+8*i) r1; (* 1 *)
-      rp <- PUR rp (5+8*i) r3; (* 1 *)
-      rp <- PUR rp (6+8*i) r5; (* 1 *)
-      rp <- PUR rp (7+8*i) r7; (* 1 *)
-      i <- i + 1;
-    }
-    zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp 392);
-    zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp 394);
-    flox16 <- C2R flox16_op;
-    fhix16 <- C2R fhix16_op;
-    i <- 0;
-    while (i < 2) {
-      if (i = 0) {
-        r7 <- r6;
-        r6 <- r4;
-        r5 <- r2;
-        r4 <- r0;
-      } else {
-        r4 <- P2R rp (8+4*i); (* 2 *)
-        r5 <- P2R rp (9+4*i); (* 4 *)
-        r6 <- P2R rp (10+4*i); (* 2 *)
-        r7 <- P2R rp (11+4*i); (* 2 *)
-      }
-      r0 <- P2R rp (0+4*i); (* 2 *)
-      r1 <- P2R rp (1+4*i); (* 4 *)
-      r2 <- P2R rp (2+4*i); (* 2 *)
-      r3 <- P2R rp (3+4*i); (* 2 *)
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-        r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 4 8 4 4 1 1 1 1 *)
-      rp <- PUR rp (8+4*i) r4;
-      rp <- PUR rp (9+4*i) r5;
-      rp <- PUR rp (10+4*i) r6;
-      rp <- PUR rp (11+4*i) r7;
-      r0 <@ Jkem_avx2.M.__fqmulprecomp16x (r0, flox16, fhix16, qx16);
-      r1 <@ Jkem_avx2.M.__fqmulprecomp16x (r1, flox16, fhix16, qx16);
-      r2 <@ Jkem_avx2.M.__fqmulprecomp16x (r2, flox16, fhix16, qx16);
-      r3 <@ Jkem_avx2.M.__fqmulprecomp16x (r3, flox16, fhix16, qx16);
-      rp <- PUR rp (0+4*i) r0;
-      rp <- PUR rp (1+4*i) r1;
-      rp <- PUR rp (2+4*i) r2;
-      rp <- PUR rp (3+4*i) r3;
-      i <- i + 1;
-    }
-    return (rp);
-  }
-  proc __ntt_level0 (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp:W16.t Array400.t;
-    var qx16:W256.t;
-    var zeta0:W256.t;
-    var zeta1:W256.t;
-    var r0:W256.t;
-    var r1:W256.t;
-    var r2:W256.t;
-    var r3:W256.t;
-    var r4:W256.t;
-    var r5:W256.t;
-    var r6:W256.t;
-    var r7:W256.t;
-    zetasp <- witness;
-    zetasp <- zetas_op;
-    qx16 <- C2R qx16_op;
-    zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp 0);
-    zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp 2);
-    r0 <- P2R rp 0;
-    r1 <- P2R rp 1;
-    r2 <- P2R rp 2;
-    r3 <- P2R rp 3;
-    r4 <- P2R rp 8;
-    r5 <- P2R rp 9;
-    r6 <- P2R rp 10;
-    r7 <- P2R rp 11;
-    (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
-    r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-    rp <- PUR rp 0 r0;
-    rp <- PUR rp 1 r1;
-    rp <- PUR rp 2 r2;
-    rp <- PUR rp 3 r3;
-    rp <- PUR rp 8 r4;
-    rp <- PUR rp 9 r5;
-    rp <- PUR rp 10 r6;
-    rp <- PUR rp 11 r7;
-    r0 <- P2R rp 4;
-    r1 <- P2R rp 5;
-    r2 <- P2R rp 6;
-    r3 <- P2R rp 7;
-    r4 <- P2R rp 12;
-    r5 <- P2R rp 13;
-    r6 <- P2R rp 14;
-    r7 <- P2R rp 15;
-    (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
-    r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-    rp <- PUR rp 4 r0;
-    rp <- PUR rp 5 r1;
-    rp <- PUR rp 6 r2;
-    rp <- PUR rp 7 r3;
-    rp <- PUR rp 12 r4;
-    rp <- PUR rp 13 r5;
-    rp <- PUR rp 14 r6;
-    rp <- PUR rp 15 r7;
-    return (rp);
-  }
-  proc __ntt_level1t6 (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp:W16.t Array400.t;
-    var qx16:W256.t;
-    var i:int;
-    var zeta0:W256.t;
-    var zeta1:W256.t;
-    var r0:W256.t;
-    var r1:W256.t;
-    var r2:W256.t;
-    var r3:W256.t;
-    var r4:W256.t;
-    var r5:W256.t;
-    var r6:W256.t;
-    var r7:W256.t;
-    var zeta2:W256.t;
-    var zeta3:W256.t;
-    var vx16:W256.t;
-    zetasp <- witness;
-    zetasp <- zetas_op;
-    qx16 <- C2R qx16_op;
-    i <- 0;
-    while (i < 2) {
-      zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp (4+196*i));
-      zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp (6+196*i));
-      r0 <- P2R rp (0+8*i);
-      r1 <- P2R rp (1+8*i);
-      r2 <- P2R rp (2+8*i);
-      r3 <- P2R rp (3+8*i);
-      r4 <- P2R rp (4+8*i);
-      r5 <- P2R rp (5+8*i);
-      r6 <- P2R rp (6+8*i);
-      r7 <- P2R rp (7+8*i);
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
-      r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      zeta0 <- z2u256 zetasp (8+196*i);
-      zeta1 <- z2u256 zetasp (24+196*i);
-      (r0, r4) <@ Jkem_avx2.M.__shuffle8 (r0, r4);
-      (r1, r5) <@ Jkem_avx2.M.__shuffle8 (r1, r5);
-      (r2, r6) <@ Jkem_avx2.M.__shuffle8 (r2, r6);
-      (r3, r7) <@ Jkem_avx2.M.__shuffle8 (r3, r7);
-      (r0, r4, r1, r5, r2, r6, r3, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r4, r1, r5, r2,
-      r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      zeta0 <- z2u256 zetasp (40+196*i);
-      zeta1 <- z2u256 zetasp (56+196*i);
-      (r0, r2) <@ Jkem_avx2.M.__shuffle4 (r0, r2);
-      (r4, r6) <@ Jkem_avx2.M.__shuffle4 (r4, r6);
-      (r1, r3) <@ Jkem_avx2.M.__shuffle4 (r1, r3);
-      (r5, r7) <@ Jkem_avx2.M.__shuffle4 (r5, r7);
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r2, r4, r6, r1,
-      r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      zeta0 <- z2u256 zetasp (72+196*i);
-      zeta1 <- z2u256 zetasp (88+196*i);
-      (r0, r1) <@ Jkem_avx2.M.__shuffle2 (r0, r1);
-      (r2, r3) <@ Jkem_avx2.M.__shuffle2 (r2, r3);
-      (r4, r5) <@ Jkem_avx2.M.__shuffle2 (r4, r5);
-      (r6, r7) <@ Jkem_avx2.M.__shuffle2 (r6, r7);
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
-      r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      zeta0 <- z2u256 zetasp (104+196*i);
-      zeta1 <- z2u256 zetasp (120+196*i);
-      (r0, r4) <@ Jkem_avx2.M.__shuffle1 (r0, r4);
-      (r1, r5) <@ Jkem_avx2.M.__shuffle1 (r1, r5);
-      (r2, r6) <@ Jkem_avx2.M.__shuffle1 (r2, r6);
-      (r3, r7) <@ Jkem_avx2.M.__shuffle1 (r3, r7);
-      (r0, r4, r1, r5, r2, r6, r3, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r4, r1, r5, r2,
-      r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      zeta0 <- z2u256 zetasp (136+196*i);
-      zeta1 <- z2u256 zetasp (168+196*i);
-      zeta2 <- z2u256 zetasp (152+196*i);
-      zeta3 <- z2u256 zetasp (184+196*i);
-      (r0, r4, r2, r6, r1, r5, r3, r7) <@ Jkem_avx2.M.__butterfly64x (r0, r4, r2, r6, r1,
-      r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
-      vx16 <- C2R vx16_op;
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      r4 <@ Jkem_avx2.M.__red16x (r4, qx16, vx16);
-      r2 <@ Jkem_avx2.M.__red16x (r2, qx16, vx16);
-      r6 <@ Jkem_avx2.M.__red16x (r6, qx16, vx16);
-      r1 <@ Jkem_avx2.M.__red16x (r1, qx16, vx16);
-      r5 <@ Jkem_avx2.M.__red16x (r5, qx16, vx16);
-      r3 <@ Jkem_avx2.M.__red16x (r3, qx16, vx16);
-      r7 <@ Jkem_avx2.M.__red16x (r7, qx16, vx16);
-      rp <- PUR rp (0+8*i) r0;
-      rp <- PUR rp (1+8*i) r4;
-      rp <- PUR rp (2+8*i) r1;
-      rp <- PUR rp (3+8*i) r5;
-      rp <- PUR rp (4+8*i) r2;
-      rp <- PUR rp (5+8*i) r6;
-      rp <- PUR rp (6+8*i) r3;
-      rp <- PUR rp (7+8*i) r7;
-      i <- i + 1;
-    }
-    return (rp);
-  }
-  proc __invntt_levels0t5 (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp:W16.t Array400.t;
-    var qx16:W256.t;
-    var i:int;
-    var zeta0:W256.t;
-    var zeta1:W256.t;
-    var zeta2:W256.t;
-    var zeta3:W256.t;
-    var r0:W256.t;
-    var r1:W256.t;
-    var r2:W256.t;
-    var r3:W256.t;
-    var r4:W256.t;
-    var r5:W256.t;
-    var r6:W256.t;
-    var r7:W256.t;
-    var vx16:W256.t;
-    zetasp <- witness;
-    zetasp <- zetas_inv_op;
-    qx16 <- C2R qx16_op;
-    vx16 <- C2R vx16_op;
-    i <- 0;
-    while (i < 2) {
-      zeta0 <- z2u256 zetasp (0 + (196 * i));
-      zeta1 <- z2u256 zetasp (32 + (196 * i));
-      zeta2 <- z2u256 zetasp (16 + (196 * i));
-      zeta3 <- z2u256 zetasp (48 + (196 * i));
-      r0 <- P2R rp (0+8*i);
-      r1 <- P2R rp (1+8*i);
-      r2 <- P2R rp (2+8*i);
-      r3 <- P2R rp (3+8*i);
-      r4 <- P2R rp (4+8*i);
-      r5 <- P2R rp (5+8*i);
-      r6 <- P2R rp (6+8*i);
-      r7 <- P2R rp (7+8*i);
-      (r0, r1, r4, r5, r2, r3, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-      r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
-      (* 4 4 1 1 4 4 1 1 *)
-      zeta0 <- z2u256 zetasp (64 + (196 * i));
-      zeta1 <- z2u256 zetasp (80 + (196 * i));
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 8 2 2 1 1 1 1 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      r1 <@ Jkem_avx2.M.__red16x (r1, qx16, vx16);      
-      (r0, r1) <@ Jkem_avx2.M.__shuffle1 (r0, r1);
-      (r2, r3) <@ Jkem_avx2.M.__shuffle1 (r2, r3);
-      (r4, r5) <@ Jkem_avx2.M.__shuffle1 (r4, r5);
-      (r6, r7) <@ Jkem_avx2.M.__shuffle1 (r6, r7);
-      zeta0 <- z2u256 zetasp (96 + (196 * i));
-      zeta1 <- z2u256 zetasp (112 + (196 * i));
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r2,
-      r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (*.4 1 4 1 2 1 2 1 *)
-      (r0, r2) <@ Jkem_avx2.M.__shuffle2 (r0, r2);
-      (r4, r6) <@ Jkem_avx2.M.__shuffle2 (r4, r6);
-      (r1, r3) <@ Jkem_avx2.M.__shuffle2 (r1, r3);
-      (r5, r7) <@ Jkem_avx2.M.__shuffle2 (r5, r7);
-      zeta0 <- z2u256 zetasp (128 + (196 * i));
-      zeta1 <- z2u256 zetasp (144 + (196 * i));
-      (r0, r4, r1, r5, r2, r6, r3, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r4,
-      r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 2 1 1 4 2 1 1 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      (r0, r4) <@ Jkem_avx2.M.__shuffle4 (r0, r4);
-      (r1, r5) <@ Jkem_avx2.M.__shuffle4 (r1, r5);
-      (r2, r6) <@ Jkem_avx2.M.__shuffle4 (r2, r6);
-      (r3, r7) <@ Jkem_avx2.M.__shuffle4 (r3, r7);
-      zeta0 <- z2u256 zetasp (160 + (196 * i));
-      zeta1 <- z2u256 zetasp (176 + (196 * i));
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 4 2 2 1 1 1 1 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      (r0, r1) <@ Jkem_avx2.M.__shuffle8 (r0, r1);
-      (r2, r3) <@ Jkem_avx2.M.__shuffle8 (r2, r3);
-      (r4, r5) <@ Jkem_avx2.M.__shuffle8 (r4, r5);
-      (r6, r7) <@ Jkem_avx2.M.__shuffle8 (r6, r7);
-      zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp (192 + (196 * i)));
-      zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp (194 + (196 * i)));
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r2,
-      r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      (* 8 1 4 1 2 1 2 1 *)
-      r0 <@ Jkem_avx2.M.__red16x (r0, qx16, vx16);
-      rp <- PUR rp (0+8*i) r0; (* 2 *)
-      rp <- PUR rp (1+8*i) r2; (* 4 *)
-      rp <- PUR rp (2+8*i) r4; (* 2 *)
-      rp <- PUR rp (3+8*i) r6; (* 2 *)
-      rp <- PUR rp (4+8*i) r1; (* 1 *)
-      rp <- PUR rp (5+8*i) r3; (* 1 *)
-      rp <- PUR rp (6+8*i) r5; (* 1 *)
-      rp <- PUR rp (7+8*i) r7; (* 1 *)
-      i <- i + 1;
-    }
-    return (rp);
-  }
-  
-  proc __invntt_level6 (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux: int;
-    
-    var zetasp:W16.t Array400.t;
-    var qx16:W256.t;
-    var zeta0:W256.t;
-    var zeta1:W256.t;
-    var i:int;
-    var r0:W256.t;
-    var r1:W256.t;
-    var r2:W256.t;
-    var r3:W256.t;
-    var r4:W256.t;
-    var r5:W256.t;
-    var r6:W256.t;
-    var r7:W256.t;
-    var flox16:W256.t;
-    var fhix16:W256.t;
-    zetasp <- witness;
-    zetasp <- zetas_inv_op;
-    qx16 <- C2R qx16_op;
-    zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp 392);
-    zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp 394);
-    i <- 0;
-    while (i < 2) {
-      r0 <- P2R rp (0+4*i); (* 2 *)
-      r1 <- P2R rp (1+4*i); (* 4 *)
-      r2 <- P2R rp (2+4*i); (* 2 *)
-      r3 <- P2R rp (3+4*i); (* 2 *)
-      r4 <- P2R rp (8+4*i); (* 2 *)
-      r5 <- P2R rp (9+4*i); (* 4 *)
-      r6 <- P2R rp (10+4*i); (* 2 *)
-      r7 <- P2R rp (11+4*i); (* 2 *)
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@ Jkem_avx2.M.__invntt___butterfly64x (r0, r1,
-      r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (* 4 8 4 4 1 1 1 1 *)
       flox16 <- C2R flox16_op;
       fhix16 <- C2R fhix16_op;
@@ -1063,7 +641,6 @@ module Tmp = {
     }
     return (rp);
   }
-
   proc _poly_basemul (rp:W16.t Array256.t, ap:W16.t Array256.t,
                       bp:W16.t Array256.t) : W16.t Array256.t = {
     var qx16:W256.t;
@@ -1247,7 +824,7 @@ proof.
 proc.
 seq 4 3: (i{2}=0 /\ ={i,rp,zetasp,qx16}).
  by wp; skip; rewrite /C2R //.
-seq 6 6: (#pre /\ ={r0,r2,r4,r6,zeta0,zeta1,flox16,fhix16}).
+seq 4 4: (#pre /\ ={r0,r2,r4,r6,zeta0,zeta1}).
  wp; while (0 <= i{2} /\ #[/2:]pre /\ (i{2}=0 \/ ={r0,r2,r4,r6})).
   seq 12 12: (i{2} < 2 /\ #[/:5]pre /\ ={r0,r1,r2,r3,r4,r5,r6,r7,zeta0,zeta1,zeta2,zeta3}).
    by auto => /> *; rewrite /z2u256 !mulrDr !mulrA !P2RE /#.
@@ -1284,7 +861,7 @@ while (#[/2:]pre /\ 0 <= i{2}).
   by wp; skip => /> *; rewrite !P2RE /#. 
  seq 1 1: (#pre).   
   by conseq />; sim.
- seq 4 4: (#pre).
+ seq 6 6: (#pre /\ ={flox16,fhix16}).
   by wp; skip => /> *; rewrite /C2R !PURE /#. 
  seq 4 4: (#pre).   
   by conseq />; sim.
@@ -1327,7 +904,7 @@ lemma VPBLENDW_256_170 x1 x2 k:
 proof.
 move=> Hk; have: k \in iota_ 0 16 by smt(mem_iota).
 move: {Hk} k; apply/List.allP; rewrite -iotaredE /=.
-by rewrite /VPBLENDW_256 /VPBLENDW_128 /= /W8.of_int /int2bs /mkseq -iotaredE /=.
+by rewrite /VPBLENDW_256 /VPBLENDW_128 /=. 
 qed.
 
 (* Simpler definition for [packus_4u32] *)
@@ -1340,9 +917,6 @@ op packus_4u32_alt (w : W128.t) : W64.t =
            then W16.zero
            else W16.onew)
  in pack4 [pack 0; pack 1; pack 2; pack 3].
-
-(* require import AVX2_Ops. *)
-
 
 lemma packus_4u32E w:
  packus_4u32 w = packus_4u32_alt w.
@@ -2072,27 +1646,10 @@ proof.
 proc; simplify.
 wp; skip => |> &m Ha Hb.
 rewrite /VPERM2I128 /=.
-rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite ifT.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite ifF.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite ifT.
- by rewrite /W8.of_int /= /int2bs /mkseq -iotaredE.
-rewrite /of_int /int2bs /mkseq -iotaredE /=
-    !b2i0 !b2i1 /shuffle8 /=.
+rewrite ifF /int_bit //=.
 move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
 move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
-smt().
+by rewrite -iotaredE /= !b2i0 !b2i1 /shuffle8 /= /#.
 qed.
 
 phoare __shuffle8_ph' n _a _b:
@@ -2134,7 +1691,6 @@ proof. by conseq __shuffle4_ll (__shuffle4_h na nb _a _b). qed.
 
 lemma __shuffle2_ll: islossless Jkem_avx2.M.__shuffle2 by islossless.
 
-require AVX2_Ops.
 hoare __shuffle2_h na nb _a _b:
  Jkem_avx2.M.__shuffle2:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
@@ -2143,7 +1699,7 @@ hoare __shuffle2_h na nb _a _b:
 proof.
 proc; simplify.
 wp; skip => |> &m Ha Hb.
-rewrite /VPBLENDD_256 /VMOVSLDUP_256 /VMOVSLDUP_4u32 /VPSRL_4u64 /shuffle2 /= /int_bit /=.
+rewrite /VPBLENDD_256 /VMOVSLDUP_256 /VMOVSLDUP_128 /VPSRL_4u64 /shuffle2 /= /int_bit /=.
 move: Ha; rewrite -{1}iotaredE /R2C /= => |> *.
 move: Hb; rewrite -{1}iotaredE /R2C /= => |> *.
 rewrite -!iotaredE /= => |>.
@@ -3173,8 +2729,8 @@ seq 6 8: (#[/:12]pre /\
  by move => |> *.
 rcondf{2} 2; first by move=> *; inline*; auto.
 rcondf{2} 7; first by move=> *; inline*; auto.
-unroll{2} 12; rcondt{2} 12; first by move => *; inline*; auto.
-rcondt{2} 12; first by move => *; inline*; auto.
+unroll{2} 10; rcondt{2} 10; first by move => *; inline*; auto.
+rcondt{2} 10; first by move => *; inline*; auto.
 seq 13 33: (#[/:2]pre /\ x16_spec (-10079) flox16{2} /\
             x16_spec 1441 fhix16{2} /\ i{2}=1 /\ 
    I16u16S_sb (inFq 3303*inFq W16.modulus) 1 (P2R rp{2} 0) r0a{1} /\
@@ -3225,7 +2781,7 @@ seq 13 33: (#[/:2]pre /\ x16_spec (-10079) flox16{2} /\
  by rewrite !PUR_i //= !P2R_i //=.
 unroll{2} 1; rcondt{2} 1; first by auto.
 rcondf{2} 1; first by auto.
-rcondf{2} 23; first by move=> *; inline*; auto.
+rcondf{2} 25; first by move=> *; inline*; auto.
 wp.
 ecall {2} (fq_mulprecomp16x_aux 2 r3c{1}).
 ecall {2} (fq_mulprecomp16x_aux 2 r2c{1}).
