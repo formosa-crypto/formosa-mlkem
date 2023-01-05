@@ -329,22 +329,18 @@ proof.
   rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
+  rewrite of_sintK /= /smod.
   have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
   simplify.
-  smt().
+  smt(@Int @W16).
   rewrite _qx16_def => //=.
   rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
+  rewrite of_sintK /= /smod /=.
   simplify.
   do rewrite (fun_if ((+) (to_sint rp{hr}.[16 * i{hr} + x %% 16])) _ _ _).
-  smt().
+  smt(@Int @W16).
   (****)
   
   rewrite to_sintN => //=.
@@ -352,22 +348,16 @@ proof.
   rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
-  simplify.
-  smt().
+  rewrite of_sintK /= /smod.
+  have -> /=: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt(@Ring.IntID @Int @Logic).
+  smt(@Int @W16).
   rewrite _qx16_def => //=.
   rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  have ->: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt().
-  simplify.
-  smt().
+  rewrite of_sintK /= /smod.
+  have -> /=: Ring.IntID.(^) 2 (16 - 1) <= 3329 <=> false. smt(@Ring.IntID @Int @Logic).
+  smt(@Int @W16).
   (****)
   
   rewrite _qx16_def => //=.
@@ -424,12 +414,9 @@ proof.
   rewrite -to_sint_unsigned.
   done.
   move : (H (16 * i{hr} + k %% 16)).
-  rewrite idx_bounds.
-  simplify.
-  rewrite qE.
-  simplify.
-  smt().
-  
+  rewrite idx_bounds /= qE /=.
+  smt(@Int @W16).
+
   (*****)
   move => _r_lb.
   auto => />.
@@ -449,19 +436,15 @@ proof.
   rewrite /smod.
   simplify.
   move : (H (16 * i{hr} + k %% 16)).
-  rewrite idx_bounds.
-  simplify.
-  rewrite qE.
-  simplify.
-  smt().
+  rewrite idx_bounds /= qE /=.
+  smt(@Int @W16).
   rewrite _qx16_def => //=.
   rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK.
-  simplify.
   rewrite /smod /=.
-  smt().
+  smt(@Int @W16).
   
   (******)
   rewrite to_sintD_small => />.
@@ -472,7 +455,7 @@ proof.
   do rewrite fun_if.
   do rewrite of_sintK => />.
   rewrite /smod => />.
-  smt().
+  smt(@Int @W16).
   split.
   
   (******)
@@ -484,26 +467,19 @@ proof.
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite of_sintK /= /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds.
   simplify.
   rewrite qE.
   simplify.
-  smt().
+  smt(@Int @W16).
   do rewrite fun_if.
   rewrite of_sintK /=.
   rewrite /smod /=.
-  have ->: to_sint W16.zero = 0.
-  rewrite to_sintE.
-  rewrite to_uint0.
-  rewrite /smod /=.
-  done.
+  rewrite to_sintE /=.
   move => *.
-  smt().
+  smt(@Int @W16).
   (******)
   
   move => rp_qx16_lb.
@@ -526,45 +502,26 @@ proof.
   simplify.
   rewrite qE.
   simplify.
-  smt().
+  smt(@Int @W16).
   do rewrite fun_if.
   rewrite of_sintK /=.
   rewrite /smod /=.
-  have ->: to_sint W16.zero = 0.
   rewrite to_sintE.
-  rewrite to_uint0.
-  rewrite /smod /=.
-  done.
-  move : rp_qx16_lb.
-  rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
-  rewrite get_of_list => />.
-  do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
   move : (H (16 * i{hr} + k %% 16)).
-  rewrite idx_bounds.
-  simplify.
-  rewrite qE.
-  simplify.
-  smt().
+  rewrite idx_bounds /= qE /=.
+  smt(@Int @W16).
+
   rewrite _qx16_def => //=.
   rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite to_sintN /=.
-    rewrite of_sintK. simplify. rewrite /smod => />.
-  rewrite of_sintK /=.
+    rewrite /smod => />.
   rewrite /smod /=.
   move => rp_q_lb.
   move : (H (16 * i{hr} + k %% 16)).
-  rewrite idx_bounds.
-  simplify.
-  rewrite qE.
-  simplify.
-  smt().
+  rewrite idx_bounds /= qE /=.
+  smt(@Int @W16).
   
   (******)
   split; last by smt(@W64).
@@ -594,9 +551,7 @@ proof.
   rewrite (_: rp{hr}.[16 * i{hr} + k %% 16] - _qx16{hr}.[k %% 16] + _qx16{hr}.[k %% 16] =  (rp{hr}.[16 * i{hr} + k %% 16])); first by ring.
   split.
   move : (H (16 * i{hr} + k %% 16)).
-  rewrite idx_bounds.
-  simplify.
-  trivial.
+  rewrite idx_bounds //=.
   
   (******)
   move => rp_lb.
@@ -609,22 +564,17 @@ proof.
   rewrite to_sintB_small.
   do rewrite fun_if.
   rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
-  smt(@W64).
+  smt(@Int @W64).
   do rewrite fun_if.
   rewrite of_sintK /=.
   rewrite /smod /=.
-  have ->: to_sint W16.zero = 0.
-  rewrite to_sintE.
-  rewrite to_uint0.
+  rewrite to_sintE /=.
   rewrite /smod /=.
-  done.
   move => *.
-  smt().
+  smt(@Int @W16).
   
   (******)
   move => _r_lb.
@@ -640,23 +590,15 @@ proof.
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite of_sintK /= /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
   smt(@W64).
   do rewrite fun_if.
-  rewrite of_sintK /=.
-  rewrite /smod /=.
-  have ->: to_sint W16.zero = 0.
-  rewrite to_sintE.
-  rewrite to_uint0.
-  rewrite /smod /=.
-  done.
+  rewrite of_sintK /= /smod /=.
+  rewrite to_sintE /= /smod /=.
   move => *.
-  smt().
+  smt(@Int @W16).
   (******)
   
   move => _sr_lb.
@@ -669,7 +611,7 @@ proof.
   do rewrite fun_if.
   rewrite of_sintK => />.
   rewrite /smod => />.
-  smt().
+  smt(@Int @W16).
   split.
   
   (******)
@@ -680,23 +622,15 @@ proof.
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite of_sintK /= /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
   smt(@W64).
   do rewrite fun_if.
-  rewrite of_sintK /=.
-  rewrite /smod /=.
-  have ->: to_sint W16.zero = 0.
-  rewrite to_sintE.
-  rewrite to_uint0.
-  rewrite /smod /=.
-  done.
+  rewrite of_sintK /= /smod /=.
+  rewrite to_sintE /smod /=.
   move => *.
-  smt().
+  smt(@Int @W16).
   
   (******)
   move => rp_qx16_lb.
@@ -707,38 +641,23 @@ proof.
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite of_sintK /= /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
   smt(@W64).
-  do rewrite fun_if.
-  rewrite of_sintK /=.
-  rewrite /smod /=.
-  have ->: to_sint W16.zero = 0.
-  rewrite to_sintE.
-  rewrite to_uint0.
-  rewrite /smod /=.
-  done.
-  move => _r_lb.
+
   move : _sr_lb rp_qx16_lb.
   rewrite _qx16_def => //=.
   rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite of_sintK /= /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
   smt(@W64).
   do rewrite fun_if.
-  rewrite of_sintK /=.
-  rewrite /smod /=.
+  rewrite of_sintK /= /smod /=.
   move => rp_qx16_lb_0 rp_qx16_lb_word.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
@@ -759,21 +678,11 @@ proof.
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite of_sintK /= /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
   smt(@W64).
-  do rewrite fun_if.
-  rewrite of_sintK /=.
-  rewrite /smod /=.
-  have ->: to_sint W16.zero = 0.
-  rewrite to_sintE.
-  rewrite to_uint0.
-  rewrite /smod /=.
-  done.
+
   move => rp_q_lb_neg.
   move : _sr_lb.
   rewrite _qx16_def => //=.
@@ -781,23 +690,19 @@ proof.
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
-  rewrite of_sintK.
-  simplify.
-  rewrite /smod.
-  simplify.
+  rewrite of_sintK /= /smod /=.
   move : (H (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => /> *.
   smt(@W64).
   do rewrite fun_if.
-  rewrite of_sintK /=.
-  rewrite /smod /=.
+  rewrite of_sintK /= /smod /=.
   move => rp_q_lb.
   move : H H0 rp_q_lb_neg rp_q_lb; rewrite qE => />.
   trivial.
   move => rp_2q_bnd rp_q_bnd rp_q_lb_neg rp_q_lb.
   move : (rp_2q_bnd (16 * i{hr} + k %% 16)).
   rewrite idx_bounds => />.
-  smt().
+  smt(@Int @W16).
   (******)
   
   auto => />.
