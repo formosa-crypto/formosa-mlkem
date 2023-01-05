@@ -1123,11 +1123,10 @@ proof.
               rewrite /q.
               rewrite to_sintM_small.
                 rewrite (W16.of_sintK 2048) //= /(W16.smod 2048) //=.
-                rewrite of_sintK //=.
                 rewrite (Montgomery16.smod_small (to_uint b %% 16)). by move : (modz_cmp (to_uint b) 16) => /#.
                 by move : (modz_cmp (to_uint b) 16) => /#.
               rewrite (W16.of_sintK (W16.to_uint b %% 2^4)) //= (Montgomery16.smod_small (to_uint b %% 16)). by move : (modz_cmp (to_uint b) 16) => /#.
-              rewrite (W16.of_sintK 2048) //= /(W16.smod 2048) //=.
+              rewrite /(W16.smod 2048) //=.
               do rewrite shr_shrw 1://=.
               rewrite shrDP 1://=.
               rewrite (pmod_small _ W32.modulus). by smt(@Int @IntDiv @Ring.IntID).
@@ -1135,7 +1134,6 @@ proof.
               rewrite -of_intD shrDP 1://= of_uintK.
               do (rewrite (pmod_small _ W32.modulus); first by smt(@Int @IntDiv @Ring.IntID)).
               rewrite (_: (to_uint b %% 2 ^ 4 * 3329 %/ 2 ^ 3 + 1) %/ 2 ^ 1 = (8 + to_uint b %% 2 ^ 4 * 3329) %/ 2 ^ 4); first by smt(@Int @IntDiv @Ring.IntID).
-              rewrite of_sintK //=.
               rewrite (pmod_small _ W16.modulus); first by smt(@Int @IntDiv @Ring.IntID).
               rewrite (_: W16.smod ((8 + to_uint b %% 16 * 3329) %/ 2 ^ 4) = (8 + to_uint b %% 16 * 3329) %/ 2 ^ 4).
                 move : (modz_cmp (to_uint b) 16) => />.
@@ -1174,13 +1172,13 @@ proof.
               rewrite /q.
               rewrite shlMP 1://=.
               rewrite to_sintM_small.
-                rewrite (W16.of_sintK 128) /smod //= of_sintK.
-                rewrite (_: W16.smod (to_uint (b `>>>` 4) %% 2 ^ 4 * 2^4 %% W16.modulus) = to_uint (b `>>>` 4) %% 2 ^ 4 * 2^4).
+                rewrite (W16.of_sintK 128) /smod //=.
+                rewrite (Montgomery16.smod_small (to_uint (b `>>>` 4) %% 2 ^ 4 * 2^4)).
                   rewrite /smod /=.
                   smt(pmod_small @Int @IntDiv @Ring.IntID).
                 smt(pmod_small @Int @IntDiv @Ring.IntID).
-              rewrite (W16.of_sintK 128) /smod //= of_sintK.
-              rewrite (W16.of_sintK (to_uint (b `>>>` 4) %% 16 * 16)) //= (Montgomery16.smod_small (to_uint (b `>>>` 4) %% 16 * 16)). by move : (modz_cmp (W16.to_uint (b `>>>` 4)) 16) => /#.
+              rewrite (W16.of_sintK 128) (Montgomery16.smod_small 128). smt(@Ring.IntID @W16).
+              rewrite of_sintK (Montgomery16.smod_small (to_uint (b `>>>` 4) %% 16 * 16)). by move : (modz_cmp (W16.to_uint (b `>>>` 4)) 16) => /#.
               rewrite (mulzA _ (2^4) 128) //=.
               do rewrite shr_shrw 1://=.
               rewrite shrDP 1://=.
@@ -1222,7 +1220,7 @@ proof.
         rewrite to_uintD.
         rewrite of_uintK (pmod_small _ W64.modulus). by move : ap_lb ap_ub i_lb i_ub => /#.
         rewrite shift_def 1:/# q_def 1:/# mask_def 1:/# modz_dvd //.
-        rewrite (W16.of_sintK 3329) /(W16.smod 3329) //= of_sintK.
+        rewrite (W16.of_sintK 3329) /(W16.smod 3329) //=.
           rewrite (pmod_small _ W64.modulus). by move : i_lb i_ub => /#.
         pose b := pack2_t ((W2u8.Pack.init (fun (_ : int) => mem.[to_uint ap{1} + 8 * i{2} + 2 * (k %% 16) %/ 4]))).
         case ((k %% 2) = 0) => k_even.
@@ -1231,11 +1229,10 @@ proof.
               rewrite /q.
               rewrite to_sintM_small.
                 rewrite (W16.of_sintK 2048) //= /(W16.smod 2048) //=.
-                rewrite of_sintK //=.
                 rewrite (Montgomery16.smod_small (to_uint b %% 16)). by move : (modz_cmp (to_uint b) 16) => /#.
                 by move : (modz_cmp (to_uint b) 16) => /#.
               rewrite (W16.of_sintK (W16.to_uint b %% 2^4)) //= (Montgomery16.smod_small (to_uint b %% 16)). by move : (modz_cmp (to_uint b) 16) => /#.
-              rewrite (W16.of_sintK 2048) //= /(W16.smod 2048) //=.
+              rewrite /(W16.smod 2048) //=.
               rewrite /(W16.smod 3329) //=.
               do rewrite shr_shrw 1://=.
               rewrite shrDP 1://=.
@@ -1270,13 +1267,13 @@ proof.
               rewrite /q.
               rewrite shlMP 1://=.
               rewrite to_sintM_small.
-                rewrite (W16.of_sintK 128) /smod //= of_sintK.
+                rewrite (W16.of_sintK 128) /smod //=.
                 rewrite (_: W16.smod (to_uint (b `>>>` 4) %% 2 ^ 4 * 2^4 %% W16.modulus) = to_uint (b `>>>` 4) %% 2 ^ 4 * 2^4).
                   rewrite /smod /=.
                   smt(pmod_small @Int @IntDiv @Ring.IntID).
                 smt(pmod_small @Int @IntDiv @Ring.IntID).
               rewrite (W16.of_sintK 128) /(W16.smod 128) //=.
-              rewrite (W16.of_sintK (to_uint (b `>>>` 4) %% 16 * 16)) //= (Montgomery16.smod_small (to_uint (b `>>>` 4) %% 16 * 16)). by move : (modz_cmp (W16.to_uint (b `>>>` 4)) 16) => /#.
+              rewrite (Montgomery16.smod_small (to_uint (b `>>>` 4) %% 16 * 16)). by move : (modz_cmp (W16.to_uint (b `>>>` 4)) 16) => /#.
               rewrite /(W16.smod 3329) //=.
               rewrite (mulzA _ (2^4) 128) //=.
               do rewrite shr_shrw 1://=.
