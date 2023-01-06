@@ -4,7 +4,7 @@
 //
 
 #ifndef RUNS
-#define RUNS 10
+#define RUNS 11
 #endif
 
 #ifndef LOOPS
@@ -12,7 +12,7 @@
 #endif
 
 #ifndef TIMINGS
-#define TIMINGS 1000
+#define TIMINGS 10000
 #endif
 
 //
