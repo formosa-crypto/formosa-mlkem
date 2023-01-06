@@ -29,8 +29,8 @@ int jade_kem_kyber_kyber768_amd64_ref_keypair(
   uint8_t *secret_key
 )
 {
-  uint8_t randomness[KYBER_SYMBYTES];
-  randombytes(randomness, KYBER_SYMBYTES);
+  uint8_t randomness[KYBER_SYMBYTES*2];
+  randombytes(randomness, KYBER_SYMBYTES*2);
   crypto_kem_keypair_jazz(public_key, secret_key, randomness);
   return 0;
 }

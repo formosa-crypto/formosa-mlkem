@@ -1,4 +1,4 @@
-# TODO: cleanup / improve depen.
+# TODO: cleanup / improve depen. / generic
 
 # --------------------------------------------------------------------
 CC ?= gcc
