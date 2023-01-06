@@ -53,3 +53,22 @@ Should print (the contents correspond to line 6 --- `*.out` files are sorted):
 
 And then redirect/c&p to anywhere you want.
 
+# Running some tests:
+
+Running:
+
+```
+make run-tests
+```
+
+should print the following:
+
+```
+8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730
+8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730
+8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730
+8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730
+8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730
+```
+
+These correspond to `checksumbig` from supercop. All being equal means that its OK. This was done mostly to ensure that `avx2r` was OK.
