@@ -10,7 +10,7 @@ KECCAK4X=$(KECCAK4XDIR)/$(KECCAK4XOBJ)
 CFLAGS=-mavx2 -mbmi2 -mpopcnt -O3 -Wall -Wextra -Wpedantic -Werror \
           -Wmissing-prototypes -Wredundant-decls \
           -Wpointer-arith -Wshadow \
-          -std=c99 -I../../common $(EXTRAFLAGS)
+          -std=c99 -I../../randombytes $(EXTRAFLAGS)
 
 all: $(LIB)
 
