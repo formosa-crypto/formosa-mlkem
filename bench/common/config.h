@@ -4,7 +4,7 @@
 //
 
 #ifndef RUNS
-#define RUNS 10 // TODO CHANGE TO 1K
+#define RUNS 10
 #endif
 
 #ifndef LOOPS
@@ -12,7 +12,7 @@
 #endif
 
 #ifndef TIMINGS
-#define TIMINGS 1000 // TODO CHANGE TO 10K
+#define TIMINGS 1000
 #endif
 
 //
