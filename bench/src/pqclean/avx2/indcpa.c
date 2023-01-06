@@ -5,7 +5,7 @@
 #include "params.h"
 #include "poly.h"
 #include "polyvec.h"
-#include "randombytes.h"
+#include "randombytes1.h"
 #include "rejsample.h"
 #include "symmetric.h"
 #include <immintrin.h>

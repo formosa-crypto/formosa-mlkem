@@ -1,7 +1,7 @@
 #include "indcpa.h"
 #include "kem.h"
 #include "params.h"
-#include "randombytes.h"
+#include "randombytes1.h"
 #include "symmetric.h"
 #include "verify.h"
 #include <stddef.h>
