@@ -112,8 +112,7 @@ proof.
   rewrite /wmulls /wmulhs //=.
   rewrite SAR_sem10 /=.
   rewrite SAR_sem26 /=.
-  rewrite (W16.of_sintK 20159) //= /(W16.smod 20159) //=.
-  rewrite (* (W16.of_sintK 3329) //= *) /(W16.smod 3329) //=.
+  rewrite /(W16.smod 20159) //=.
   rewrite /sigextu32 /truncateu16 /=.
   rewrite of_sintK.
   rewrite (_: 67108864 = 2^16 * 2^10). by trivial.
@@ -127,7 +126,7 @@ proof.
       smt(@Int @IntDiv).
       have -> //=: ! 32768 <= to_sint r{2}.[x] * 20159 %% 4294967296 %/ 65536.
         move : lb => /#.
-  rewrite (W16.of_sintK (to_sint r{2}.[x] * 20159 %/ 65536)).
+  (* rewrite (W16.of_sintK (to_sint r{2}.[x] * 20159 %/ 65536)). *)
   rewrite (modz_pow2_div 32 16 _) 1://= //=.
   pose w := to_sint r{2}.[x] * 20159.
 
