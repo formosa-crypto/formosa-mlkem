@@ -8,9 +8,13 @@ cpu=$2 # sk hw cl etc...
 
 # bench_pqclean_clean.out -> cref_op_gen_cc
 # bench_pqclean_avx2.out  -> cavx_op_gen_cc
+
+# bench_crystals_ref.out   -> cref_op_gen_cc
+# bench_crystals_avx2.out  -> cavx_op_gen_cc
+
 # bench_jasmin_ref.out    -> jref_op_gen_cc
-# bench_jasmin_avx2.out   -> javx_op_gen_cc
-# bench_jasmin_avx2r.out  -> jopt_op_gen_cc
+# bench_jasmin_avx2.out   -> jopt_op_gen_cc
+# bench_jasmin_avx2r.out  -> javx_op_gen_cc
 
 get()
 {
@@ -26,7 +30,7 @@ get()
   echo "\newcommand{\\${tag}dec${cpu}cc}{${dec}}"
 }
 
-for t in pqclean_clean,cref pqclean_avx2,cavx jasmin_ref,jref jasmin_avx2,javx jasmin_avx2r,jopt;
+for t in crystals_ref,cref crystals_avx2,cavx jasmin_ref,jref jasmin_avx2,jopt jasmin_avx2r,javx;
 do IFS=','
   set -- $t
   get "${dir}/bench_${1}.out" "${2}" "${cpu}"
