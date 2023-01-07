@@ -9,14 +9,18 @@ $(BIN)/bench_pqclean_clean \
 $(BIN)/bench_pqclean_avx2 \
 $(BIN)/bench_jasmin_ref \
 $(BIN)/bench_jasmin_avx2 \
-$(BIN)/bench_jasmin_avx2r
+$(BIN)/bench_jasmin_avx2r \
+$(BIN)/bench_crystals_ref \
+$(BIN)/bench_crystals_avx2
 
 TTARGETS ?= \
 $(BIN)/test_pqclean_clean \
 $(BIN)/test_pqclean_avx2 \
 $(BIN)/test_jasmin_ref \
 $(BIN)/test_jasmin_avx2 \
-$(BIN)/test_jasmin_avx2r
+$(BIN)/test_jasmin_avx2r \
+$(BIN)/test_crystals_ref \
+$(BIN)/test_crystals_avx2
 
 
 # --------------------------------------------------------------------
@@ -38,6 +42,14 @@ $(BIN)/bench_jasmin_avx2: rnd libj_avx2 | $(BIN)
 $(BIN)/bench_jasmin_avx2r: rnd libj_avx2r | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/avx2r/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER768_AMD64_AVX2R -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber768_amd64_avx2r ./common/crypto_kem.c ./src/jasmin/avx2r/libkyber768_avx2r.a ./src/randombytes/librandombytes1.a
 
+#--
+$(BIN)/bench_crystals_ref: rnd libcry_ref | $(BIN)
+	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/pq-crystals/ref/ -D__HAKYBER__ -DJADE_NAMESPACE=PQCRYSTALS_KYBER768_REF -DJADE_NAMESPACE_LC=pqcrystals_kyber768_ref ./common/crypto_kem.c ./src/pq-crystals/ref/libpqcrystals_kyber768_ref.so ./src/pq-crystals/ref/libpqcrystals_fips202_ref.so ./src/randombytes/librandombytes1.a
+
+$(BIN)/bench_crystals_avx2: rnd libcry_avx2 | $(BIN)
+	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/pq-crystals/avx2/ -D__HAKYBER__ -DJADE_NAMESPACE=PQCRYSTALS_KYBER768_AVX2 -DJADE_NAMESPACE_LC=pqcrystals_kyber768_avx2 ./common/crypto_kem.c ./src/pq-crystals/avx2/libpqcrystals_kyber768_avx2.so ./src/pq-crystals/avx2/libpqcrystals_fips202_ref.so ./src/pq-crystals/avx2/libpqcrystals_fips202x4_avx2.so ./src/randombytes/librandombytes1.a
+
+
 # --------------------------------------------------------------------
 .PHONY: all $(TTARGETS)
 all-tests: $(TTARGETS)
@@ -56,6 +68,13 @@ $(BIN)/test_jasmin_avx2: libj_avx2 | $(BIN)
 
 $(BIN)/test_jasmin_avx2r: libj_avx2r | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/jasmin/avx2r/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER768_AMD64_AVX2R -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber768_amd64_avx2r ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/avx2r/libkyber768_avx2r.a
+
+#--
+$(BIN)/test_crystals_ref: libcry_ref | $(BIN)
+	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/pq-crystals/ref/ -D__HAKYBER__ -DJADE_NAMESPACE=PQCRYSTALS_KYBER768_REF -DJADE_NAMESPACE_LC=pqcrystals_kyber768_ref ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/pq-crystals/ref/libpqcrystals_kyber768_ref.so ./src/pq-crystals/ref/libpqcrystals_fips202_ref.so
+
+$(BIN)/test_crystals_avx2: libcry_avx2 | $(BIN)
+	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/pq-crystals/avx2/ -D__HAKYBER__ -DJADE_NAMESPACE=PQCRYSTALS_KYBER768_AVX2 -DJADE_NAMESPACE_LC=pqcrystals_kyber768_avx2 ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/pq-crystals/avx2/libpqcrystals_kyber768_avx2.so ./src/pq-crystals/avx2/libpqcrystals_fips202_ref.so ./src/pq-crystals/avx2/libpqcrystals_fips202x4_avx2.so
 
 # --------------------------------------------------------------------
 
@@ -82,6 +101,15 @@ libj_avx2:
 libj_avx2r:
 	make -C ./src/jasmin/avx2r/
 
+# --
+libcry_ref:
+	make -C ./src/pq-crystals/ref/ libpqcrystals_kyber768_ref.so
+	make -C ./src/pq-crystals/ref/ libpqcrystals_fips202_ref.so
+
+libcry_avx2:
+	make -C ./src/pq-crystals/avx2/ libpqcrystals_kyber768_avx2.so
+	make -C ./src/pq-crystals/avx2/ libpqcrystals_fips202_ref.so libpqcrystals_fips202x4_avx2.so
+
 # --------------------------------------------------------------------
 run: $(TARGETS)
 	for d in $(TARGETS); do (./$$d > $$d.out); done
@@ -99,6 +127,8 @@ libs-clean:
 	make -C ./src/jasmin/ref/ clean
 	make -C ./src/jasmin/avx2/ clean
 	make -C ./src/jasmin/avx2r/ clean
+	make -C ./src/pq-crystals/ref/ clean
+	make -C ./src/pq-crystals/avx2/ clean
 
 clean: libs-clean
 	rm -fr $(BIN)
