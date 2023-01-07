@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 
 # example:
-# ./benchmacros.sh results/skylake-i6500u/ sk
+# ./benchmacros.sh results/skylake-i76500u/ sk
 
 dir=$1 # results/*
 cpu=$2 # sk hw cl etc...
-
-# bench_pqclean_clean.out -> cref_op_gen_cc
-# bench_pqclean_avx2.out  -> cavx_op_gen_cc
 
 # bench_crystals_ref.out   -> cref_op_gen_cc
 # bench_crystals_avx2.out  -> cavx_op_gen_cc
