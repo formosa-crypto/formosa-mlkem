@@ -414,7 +414,7 @@ proof.
 
   rewrite /wmulhs //=.
   rewrite SAR_sem16 SAR_sem16 /=.
-  rewrite W16.of_sintK /(`<<`) /sigextu32 /truncateu16 /=.
+  rewrite /(`<<`) /sigextu32 /truncateu16 /=.
   rewrite shlMP; first by smt().
   rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK /= /R /=.
 
@@ -676,7 +676,7 @@ proof.
     rewrite (_: W16.of_int 65535 = W16.onew). by rewrite /W16.onew //=.
     rewrite xorw1 (_: invw ((W16.of_int 1664) - a) = -((W16.of_int 1664) - a) - W16.one).
           move : (W16.twos_compl ((W16.of_int 1664) - a)). smt(@W16 @Int). 
-    do !(rewrite to_sintB_small || rewrite to_sintN || rewrite of_sintK /smod //=); first 7 by move : hq_s_a_lt0 a_gt_hq abnd => /#.
+    do !(rewrite to_sintB_small || rewrite to_sintN || rewrite /smod //=); first 7 by move : hq_s_a_lt0 a_gt_hq abnd => /#.
     rewrite bits8_div 1://= //=.
     do (rewrite to_uintD || rewrite to_uintN || rewrite to_uintK //= || rewrite of_uintK //=).
     rewrite -to_sint_unsigned. by move : a_gt_hq => /#.
@@ -699,7 +699,7 @@ proof.
     rewrite to_sintB_small of_sintK /smod //=.
     move : abnd.
     smt(@W16 @W32 @Int).
-    do (rewrite of_sintK /smod //=).
+    do (rewrite /smod //=).
     smt(@Int @W16).
   rewrite (_: (W16.of_int 1664) - a `|>>` (W8.of_int 15) = W16.zero).
     move : hq_s_a_gt0.
@@ -709,15 +709,15 @@ proof.
     move : hq_gte_a. rewrite /W16.(\sle).
     rewrite of_sintK /smod //= lezNgt //=.
   rewrite /msb //=.
-  rewrite of_sintK /smod //=.
+  rewrite /smod //=.
   rewrite W16.sleE -lezNgt -ltzNge.
   rewrite to_sintB_small.
     rewrite to_sintB_small.
       + rewrite of_sintK /smod //=. move : abnd. smt(@Int @W16).
-    do (rewrite of_sintK /smod //=). move : abnd. smt(@Int @W16).
+    do (rewrite  /smod //=). move : abnd. smt(@Int @W16).
   rewrite to_sintB_small.
     rewrite of_sintK /smod //=. move : abnd. smt(@Int @W16).
-  do (rewrite of_sintK /smod //=).
+  do (rewrite /smod //=).
   rewrite (_: `|to_sint a| = to_sint a).
     move : abnd => /#.
   rewrite bits8_div 1://= //=.
