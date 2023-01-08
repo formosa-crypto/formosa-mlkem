@@ -711,7 +711,7 @@ module RejSampling = {
   while (j < n) {
    xl <$ dlist (dbits k) nchunk;
    xn <- 0;
-   while (xn < nchunk) {
+   while (j < n && xn < nchunk) {
     if ((nth 0 xl xn) <= max && j < n) {
      l <- rcons l (nth 0 xl xn);
      j <- j + 1;
@@ -1080,17 +1080,56 @@ transitivity {2}
  inline*; wp; rnd; auto => /> *.
  by rewrite size_take /#.
 (* hop 4: rejection loop *)
+transitivity {2}
+ { i <- 0;
+   j <- 0;
+   l <- [];
+   while (j < n) {
+    xl <$ dlist (dbits k) nchunk;
+    xn <- 0;
+    while (xn < nchunk) {
+     if (nth 0 xl xn <= max && j < n) {
+      l <- rcons l (nth 0 xl xn);
+      j <- j+1;
+     }
+     xn <- xn + 1;
+    }
+    i <- i + 1;
+   }
+ }
+ ( ={k, max, n, nchunk} /\ 0 <= n{2} /\ 0 < nchunk{2}
+   ==> ={l} )
+ ( ={k,max,n,nchunk} /\ 0 <= n{2} /\ 0 < nchunk{2} ==> ={l} ); 1..2:smt(); first last.
+ while (={k,max,n,nchunk,i,j,l} /\ 
+        j{1} <= n{1} /\ 0 < nchunk{2}); last by auto.
+ seq 1 1: (#pre /\ ={xl} /\ size xl{2}=nchunk{2}).
+  by auto => /> *; smt(supp_dlist).
+ splitwhile {1} 2: (j<n).
+ swap {1} 4 -1.
+ seq 3 3: (#[/1:9,12:]pre /\ ={xn} /\ (!xn{1} < nchunk{1} \/ !j{1} < n{1})).
+  wp;
+  while (={k,max,n,nchunk,i,j,l,xl,xn} /\ j{1} <= n{1} /\ (j{1} < n{1} <=> j{2} < n{2})).
+   by auto => /> * /#.
+  by auto => /> /#.
+ case: (j{1} < n{1}).
+  by rcondf{1} 1; auto => /> /#.
+ exlim j{1} => j1.
+ while {1} (#[/:12,14:]pre) (nchunk{1}-xn{1}).
+  move=> &m z.
+  by auto => /> /#.
+ by auto => /> /#.
 while (={k,max,n,nchunk,i,j,l} /\ size l{1}=j{1} /\
        j{1} <= n{1} /\ 0 < nchunk{2}); last by auto.
 seq 1 1: (#pre /\ ={xl} /\ size xl{2}=nchunk{2}).
  auto => /> *; smt(supp_dlist).
 wp.
-while {2} (#[/1:5,8,11,13:]pre /\ ={xl} /\
+while {2} (#[/1:5,8,9,13:]pre /\ ={xl} /\
            size xl{2}=nchunk{2} /\
            0 <= xn{2} <= nchunk{2} /\
            l{2} = l{1}++take (n{1}-j{1}) (filter (fun x => x <= max{2}) (take xn{2} xl{2})) /\
            j{2} = size l{2}) (nchunk{2}-xn{2}).
- move=> /> &1 z; auto => /> &2 Hn xnL _ xnR; split.
+ move=> /> &1 z.
+ auto => /> &2 Hn xnL _ xnR; split.
   move => /> C; rewrite size_cat=> H1; split.
    split; first smt().
    split.
@@ -1117,7 +1156,7 @@ while {2} (#[/1:5,8,11,13:]pre /\ ={xl} /\
  case: (nth 0 xl{1} xn{2} <= max{1}) => E.
   rewrite take_rcons; smt(size_take).
  smt(size_take).
-auto => /> *.
+auto => /> &2 *.
 split; first by rewrite take0 /= cats0 /#.
 move => />*; split => /> *; first smt().
 by rewrite !size_cat; smt(size_take take_oversize).
