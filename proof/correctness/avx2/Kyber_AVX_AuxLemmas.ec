@@ -256,7 +256,7 @@ hint simplify W16.of_sintK.
 
 lemma compress_comp_1 (x:int) : 0 <= x < 3329 => t0 x = t1'' x.
 move=> /mem_range; move: x; apply /List.allP; rewrite /range iota_iota_red.
-cbv delta; done.
+cbv delta; rewrite qE //=.
 qed.
 
 lemma compress_comp_corr (x:int) : 0 <= x < 3329 => t1 x = t0 x.

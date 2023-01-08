@@ -1,0 +1,129 @@
+require "params.jinc"
+require "consts.jinc"
+require "shuffle.jinc"
+require "fips202.jinc"
+
+param int GENMATRIX_NBLOCKS = 3;
+param int REJ_UNIFORM_BUFLEN = GENMATRIX_NBLOCKS * SHAKE128_RATE;
+
+inline
+fn __rej_uniform_old(stack u16[KYBER_N] rp, reg u64 offset, stack u8[REJ_UNIFORM_BUFLEN] buf, inline int buflen) ->  reg u64, stack u16[KYBER_N]
+{
+  reg u16 val0 val1;
+  reg u16 t;
+  reg u64 pos ctr;
+  reg u8 fl1 fl2;
+  reg bool cf zf b;
+
+  ctr = offset;
+  pos = 0;
+
+  _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 1);
+  fl1 = #SETcc(cf || zf); //SETBE
+
+  _, cf, _, _, zf = #CMP_64(pos, buflen - 3);
+  fl2 = #SETcc(cf || zf);  //SETBE
+
+  _, _, _, _, b = #TEST_8(fl1, fl2);
+
+  while(!b)
+  {
+    val0 = (16u)buf[(int)pos];
+    pos += 1;
+
+    t   = (16u)buf[(int)pos];
+    val1 = t;
+    val1 >>= 4;
+
+    t &= 0x0F;
+    t <<= 8;
+    val0 |= t;
+    pos += 1;
+
+    t   = (16u)buf[(int)pos];
+    t <<= 4;
+    val1 |= t;
+    pos += 1;
+
+    if(val0 < KYBER_Q)
+    {
+      rp[(int)ctr] = val0;
+      ctr += 1;
+    }
+
+    if(ctr < KYBER_N)
+    {
+      if(val1 < KYBER_Q)
+      {
+        rp[(int)ctr] = val1;
+        ctr += 1;
+      }
+    }
+
+    _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 1);
+    fl1 = #SETcc(cf || zf); //SETBE
+
+    _, cf, _, _, zf = #CMP_64(pos, buflen - 3);
+    fl2 = #SETcc(cf || zf);  //SETBE
+
+    _, _, _, _, b = #TEST_8(fl1, fl2);
+  }
+
+  return ctr, rp;
+}
+
+inline
+fn __gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16[KYBER_K*KYBER_VECN]
+{
+  stack u8[34] extseed;
+  stack u8[REJ_UNIFORM_BUFLEN] buf;
+  stack u8[REJ_UNIFORM_BUFLEN] buf;
+  stack u8[REJ_UNIFORM_BUFLEN] buf;
+  stack u8[REJ_UNIFORM_BUFLEN] buf;
+  stack u64[25] state;
+  stack u16[KYBER_K*KYBER_VECN] rr;
+
+  reg u64 t64;
+  stack u64 t64_s;
+  inline int i, j, k;
+
+  for j = 0 to 4
+  {
+    t64 = seed[u64 j];
+    extseed[u64 j] = t64;
+  }
+
+  for i = 0 to KYBER_K
+  {
+    for j = 0 to KYBER_K
+    {
+      if(transposed == 0)
+      {
+        extseed[KYBER_SYMBYTES] = j;
+        extseed[KYBER_SYMBYTES+1] = i;
+      }
+      else
+      {
+        extseed[KYBER_SYMBYTES] = i;
+        extseed[KYBER_SYMBYTES+1] = j;
+      }
+
+      state = _shake128_absorb34(state, extseed);
+
+      state, buf = __shake128_squeezenblocks(state, buf);
+      t64 = 0;
+      t64, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = __rej_uniform_old(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], t64, buf, REJ_UNIFORM_BUFLEN);
+      
+      while (t64 < KYBER_N)
+      {
+        t64_s = t64;
+        state, buf[0:SHAKE128_RATE] = _shake128_squeezeblock(state, buf[0:SHAKE128_RATE]);
+        t64 = t64_s;
+        t64, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = __rej_uniform_old(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], t64, buf, SHAKE128_RATE);
+      }
+      rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = _nttunpack(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N]);
+    }
+  }
+
+  return rr;
+}
