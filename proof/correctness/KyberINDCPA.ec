@@ -145,10 +145,10 @@ axiom shake_squeeze buf state :
                arg = (state,buf) ==>
                res = SHAKE128_SQUEEZE_168 state ] = 1%r.
 
-axiom shake256_128_33 buf seed : 
+axiom shake256_33_128 buf seed : 
    phoare [ M._shake256_128_33 : 
                arg = (buf,seed) ==>
-               res = SHAKE256_128_33 (Array32.init (fun i => seed.[i])) seed.[32] ] = 1%r.
+               res = SHAKE256_33_128 (Array32.init (fun i => seed.[i])) seed.[32] ] = 1%r.
 
 (* THIS IS A DUMMY RANDOM ORACLE THAT THE IMPLEMENTATION OF COURSE DOESNT USE *)
 
@@ -546,7 +546,7 @@ by move => *;rewrite tP => k kb; smt().
 qed. 
 
 equiv shake33_ignore :
-  M._shake256_128_33 ~ M._shake256_128_33 :
+  M._shake256_33_128 ~ M._shake256_33_128 :
    arg{1}.`2 = arg{2}.`2 ==> ={res}.
 proof.
 proc=> /=. 
@@ -979,7 +979,7 @@ equiv get_noise_sample_noise :
 proc => /=. 
 seq 8 2 : (buf{1} = bytes{2}).
 + inline PRF_.PseudoRF.f.
-  ecall{1} (shake256_128_33 buf{1} extseed{1}); wp.
+  ecall{1} (shake256_33_128 buf{1} extseed{1}); wp.
   while{1}(0<=k{1}<=32 /\ seed{1} = sig{2} /\
     forall i, 0<=i<k{1} => extseed{1}.[i] = sig{2}.[i]) (32 - k{1}); last first.
   + auto => /> &1 &2 *; split; 1: smt().
