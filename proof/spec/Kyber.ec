@@ -1734,7 +1734,7 @@ op SHAKE128_ABSORB_34 : W8.t Array34.t ->  W64.t Array25.t.
 op SHAKE128_SQUEEZE_168 : W64.t Array25.t -> W64.t Array25.t *  W8.t Array168.t.
 
 op SHAKE256_64_32 : W8.t Array64.t -> W8.t Array32.t.
-op SHAKE256_128_33 : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
+op SHAKE256_33_128 : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
 
 clone import PKE_Ext as KyberPKE with
   type pkey = W8.t Array1152.t * W8.t Array32.t,
@@ -2151,7 +2151,7 @@ clone PRF as PRF_DEFS with
 clone import PRF_DEFS.PseudoRF as PRF_ with
   type K <- W8.t Array32.t, 
   op dK <- srand,
-  op F <- SHAKE256_128_33.
+  op F <- SHAKE256_33_128.
 
 module KPRF = PRF_.PseudoRF.
 
