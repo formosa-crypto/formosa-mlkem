@@ -8,7 +8,7 @@ jkem.ec : ../jkem.jazz
 	jasminc ../jkem.jazz -oec jkem.ec -ec crypto_kem_keypair_jazz -ec crypto_kem_enc_jazz -ec crypto_kem_dec_jazz
 
 jkemr.ec : ../jkemr.jazz
-	jasminc ../jkemr.jazz -oec jkem.ec -ec crypto_kem_keypair_jazz -ec crypto_kem_enc_jazz -ec crypto_kem_dec_jazz
+	jasminc ../jkemr.jazz -oec jkemr.ec -ec crypto_kem_keypair_jazz -ec crypto_kem_enc_jazz -ec crypto_kem_dec_jazz
 
 clean:
 	rm *.ec 
