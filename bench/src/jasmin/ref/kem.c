@@ -1,5 +1,5 @@
 #include "api.h"
-#include "randombytes1.h"
+//#include "randombytes1.h"
 
 extern void crypto_kem_keypair_jazz(
   uint8_t *public_key,
@@ -30,7 +30,7 @@ int jade_kem_kyber_kyber768_amd64_ref_keypair(
 )
 {
   uint8_t randomness[KYBER_SYMBYTES*2];
-  randombytes(randomness, KYBER_SYMBYTES*2);
+  //randombytes(randomness, KYBER_SYMBYTES*2);
   crypto_kem_keypair_jazz(public_key, secret_key, randomness);
   return 0;
 }
@@ -42,7 +42,7 @@ int jade_kem_kyber_kyber768_amd64_ref_enc(
 )
 {
   uint8_t randomness[KYBER_SYMBYTES];
-  randombytes(randomness, KYBER_SYMBYTES);
+  //randombytes(randomness, KYBER_SYMBYTES);
   crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomness);
   return 0;
 }

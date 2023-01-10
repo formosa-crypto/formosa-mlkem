@@ -1,0 +1,59 @@
+require "kem.jinc"
+
+inline fn __randombytes64(reg u64 randomnessp)
+{
+  inline int i;
+  stack u8[64] r;
+  reg ptr u8[64] rp;
+  reg u64 t64;
+
+  rp = r;
+  rp = #randombytes(rp);
+
+  for i=0 to (64/8)
+  { t64 = rp[u64 i];
+    (u64)[randomnessp + 8*i] = t64;
+  }
+}
+
+inline fn __randombytes32(reg u64 randomnessp)
+{
+  inline int i;
+  stack u8[32] r;
+  reg ptr u8[32] rp;
+  reg u64 t64;
+
+  rp = r;
+  rp = #randombytes(rp);
+
+  for i=0 to (32/8)
+  { t64 = rp[u64 i];
+    (u64)[randomnessp + 8*i] = t64;
+  }
+}
+
+export fn crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+{
+  pkp = pkp;
+  skp = skp;
+  randomnessp = randomnessp;
+  __randombytes64(randomnessp);
+  __crypto_kem_keypair_jazz(pkp, skp, randomnessp);
+}
+
+
+export fn crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg u64 randomnessp)
+{
+  ctp = ctp;
+  shkp = shkp;
+  pkp = pkp;
+  randomnessp = randomnessp;
+  __randombytes32(randomnessp);
+  __crypto_kem_enc_jazz(ctp, shkp, pkp, randomnessp);
+}
+
+
+export fn crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
+{
+  __crypto_kem_dec_jazz(shkp, ctp, skp);
+}
