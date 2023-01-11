@@ -680,6 +680,7 @@ fn __poly_cbd_eta2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf
   return rp;
 }
 
+/*
 #[returnaddress="stack"]
 fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
@@ -756,6 +757,7 @@ fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg 
 
   return rp;
 }
+*/
 
 inline
 fn __shake256_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[NOISE_NBLOCKS * SHAKE256_RATE] buf0 buf1 buf2 buf3) -> reg ptr u256[25], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE]
