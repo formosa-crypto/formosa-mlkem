@@ -1,1 +1,1 @@
-require "../../../../code/jasmin/avx2/jkemr.jazz"
+require "../../../../code/jasmin/avx2/jkem.jazz"

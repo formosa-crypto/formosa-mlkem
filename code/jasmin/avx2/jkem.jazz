@@ -1,18 +1,42 @@
 require "kem.jinc"
 
-export fn crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+export fn jade_kem_kyber_kyber768_amd64_avx2_keypair(reg u64 public_key secret_key) -> reg u64
 {
-  __crypto_kem_keypair_jazz(pkp, skp, randomnessp);
+  reg u64 r;
+  stack u8[KYBER_SYMBYTES*2] randomness;
+  reg ptr u8[KYBER_SYMBYTES*2] randomnessp;
+
+  public_key = public_key;
+  secret_key = secret_key;
+
+  randomnessp = randomness;
+  randomnessp = #randombytes(randomnessp);
+  __crypto_kem_keypair_jazz(public_key, secret_key, randomnessp);
+  ?{}, r = #set0();
+  return r;
 }
 
-
-export fn crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg u64 randomnessp)
+export fn jade_kem_kyber_kyber768_amd64_avx2_enc(reg u64 ciphertext shared_secret public_key) -> reg u64
 {
-  __crypto_kem_enc_jazz(ctp, shkp, pkp, randomnessp);
+  reg u64 r;
+  stack u8[KYBER_SYMBYTES] randomness;
+  reg ptr u8[KYBER_SYMBYTES] randomnessp;
+
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+
+  randomnessp = randomness;
+  randomnessp = #randombytes(randomnessp);
+  __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomnessp);
+  ?{}, r = #set0();
+  return r;
 }
 
-
-export fn crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
+export fn jade_kem_kyber_kyber768_amd64_avx2_dec(reg u64 shared_secret ciphertext secret_key) -> reg u64
 {
-  __crypto_kem_dec_jazz(shkp, ctp, skp);
+  reg u64 r;
+  __crypto_kem_dec_jazz(shared_secret, ciphertext, secret_key);
+  ?{}, r = #set0();
+  return r;
 }
