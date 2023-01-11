@@ -63,7 +63,8 @@ proof.
   + rewrite !tP;do split; move => *; rewrite !initiE; smt(@Array256 @Array768).
   move => [#] ???sgnd_bnd_bp_2 result_2 [#] sgnd_bnd_res_2 res_2_def.
   split.
-  + rewrite !tP;do split; move => *; rewrite !initiE /= // ?mapiE //; smt(@Array256 @Array768).
+  + rewrite !tP;do split; move => *; rewrite !initiE /= // ?mapiE //=;
+     by  smt(Array256.initiE Array768.initiE Array768.set_eqiE Array768.set_neqiE).
   move => [#] ??? sgnd_bnd_bp_3 result_3 [#] sgnd_bnd_res_3 res_3_def.
   split.
   rewrite /signed_bound768_cxq.
@@ -137,7 +138,7 @@ proof.
    move => [r_eq_r_1 pos_bound_r_1 res1 [r_eq_res_1 pos_bound_res_1] res_1_def]; split.
    split; trivial => k kb @/res_1_def; rewrite !initiE //=; smt(@Array768 @Array256 qE).
    move => [r_eq_r_2 pos_bound_r_2 res2 [r_eq_res_2 pos_bound_res_2] res_2_def]; split.
-   split; trivial => k kb @/res_2_def; rewrite !initiE //=; smt(@Array768 @Array256 qE).
+   split; trivial => k kb @/res_2_def; rewrite !initiE //=; smt(Array768.initiE qE).
    move => [r_eq_r_3 pos_bound_r_3 res3 [r_eq_res_3 pos_bound_res_3] res_3_def]; split.
    rewrite /res_3_def /res_2_def /res_1_def /=.
    rewrite tP => k kb; rewrite ap_def // !mapiE //= initiE //=.
@@ -1241,7 +1242,7 @@ proof.
 qed.
 
 lemma polyvec_frombytes_equiv :
-    equiv [ Jkem_avx2.M.__polyvec_frombytes ~ Jkem.M.__polyvec_frombytes :
+    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_frombytes ~Jkem.M(Jkem.Syscall).__polyvec_frombytes :
              valid_ptr (W64.to_uint ap{1}) (3*384) /\
              ={Glob.mem,ap} ==>
              lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\

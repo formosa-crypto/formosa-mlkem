@@ -10,7 +10,7 @@ import KyberPoly.
 import KyberPolyVec.
 
 axiom pkH_sha_avx2 mem _ptr inp: 
-    phoare [ M._isha3_256 :
+    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._isha3_256 :
           arg = (inp,W64.of_int _ptr,W64.of_int (3*384+32)) /\
           valid_ptr _ptr 1184 /\
           Glob.mem = mem
@@ -20,7 +20,7 @@ axiom pkH_sha_avx2 mem _ptr inp:
             (Array1184.init (fun k =>  mem.[_ptr+k]))] = 1%r.
 
 axiom cH_sha_avx2 mem _ptr inp: 
-    phoare [ M._isha3_256 :
+    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._isha3_256 :
           arg = (inp,W64.of_int _ptr,W64.of_int (3*320+128)) /\
           valid_ptr _ptr 1088 /\
           Glob.mem = mem
@@ -30,7 +30,7 @@ axiom cH_sha_avx2 mem _ptr inp:
             (Array1088.init (fun k =>  mem.[_ptr+k]))] = 1%r.
 
 axiom kdf_sha_avx2 mem _ptr (inp : W8.t Array64.t): 
-    phoare [ M._shake256_64 :
+    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_64 :
           arg = (W64.of_int _ptr,W64.of_int 32,inp) /\
           valid_ptr _ptr 32 /\
           Glob.mem = mem
@@ -39,13 +39,13 @@ axiom kdf_sha_avx2 mem _ptr (inp : W8.t Array64.t):
           (Array32.init (fun k =>  Glob.mem.[_ptr+k])) = SHAKE256_64_32 inp] = 1%r.
 
 axiom sha_g_avx2 buf inp: 
-    phoare [ M._sha3_512_64 :
+    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512_64 :
           arg = (inp,buf)
           ==> 
           res = SHA3_256_64_64 buf] = 1%r.
 
 axiom sha_khs_avx2 mem _ptr inp: 
-    phoare [ M._isha3_256 :
+    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._isha3_256 :
           arg = (inp,W64.of_int _ptr,W64.of_int 32) /\
           valid_ptr _ptr 32 /\
           Glob.mem = mem
@@ -58,7 +58,7 @@ axiom sha_khs_avx2 mem _ptr inp:
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
 lemma kyber_kem_correct_kg mem _pkp _skp _randomnessp : 
-   equiv [ M.__crypto_kem_keypair_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).kg_derand : 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__crypto_kem_keypair_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
        seed{2} = (load_array32 Glob.mem{1} _randomnessp,
@@ -350,7 +350,7 @@ qed.
 
 
 lemma kyber_kem_correct_enc mem _ctp _pkp _rp _kp : 
-   equiv [ M.__crypto_kem_enc_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).enc_derand: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__crypto_kem_enc_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _rp (32) /\
      valid_disj_reg _ctp (3*320+128) _kp (32) /\
@@ -444,7 +444,7 @@ require import StdOrder.
 import IntOrder.
 
 lemma verify_correct_h mem (_ctp : int) ctp1 :
-  hoare [ M.__verify : 
+  hoare [Jkem_avx2.M(Jkem_avx2.Syscall).__verify : 
              Glob.mem = mem /\ valid_ptr _ctp 1088 /\
              to_uint ctp = _ctp /\ ctpc = ctp1 ==>
              Glob.mem = mem /\
@@ -528,7 +528,7 @@ rewrite /xx /yy wordP => j jb.
   rewrite WArray1088.WArray1088.initiE 1:/# /=. smt().
 qed.
 
-lemma verify_ll : islossless M.__verify.
+lemma verify_ll : islossless Jkem_avx2.M(Jkem_avx2.Syscall).__verify.
 proc.
 seq 8 : (#post) => //; last first.
 wp. conseq />. while(i=1088 /\ aux=1088 /\ #pre) (1088 - aux); 1,2:   by auto => />. 
@@ -539,7 +539,7 @@ auto => /> /#.
 qed.
 
 lemma verify_correct mem (_ctp : int) ctp1 :
-  phoare [ M.__verify : 
+  phoare [Jkem_avx2.M(Jkem_avx2.Syscall).__verify : 
              Glob.mem = mem /\ valid_ptr _ctp 1088 /\
              to_uint ctp = _ctp /\ ctpc = ctp1 ==>
              Glob.mem = mem /\
@@ -550,7 +550,7 @@ lemma verify_correct mem (_ctp : int) ctp1 :
    by conseq verify_ll (verify_correct_h mem _ctp ctp1).
 
 lemma cmov_correct_h _dst _src _cnd mem:
-   hoare [ M.__cmov : 
+   hoare [Jkem_avx2.M(Jkem_avx2.Syscall).__cmov : 
              Glob.mem = mem /\ valid_ptr _src 32 /\
              to_uint src = _src /\ cnd = _cnd /\ dst = _dst ==>
              Glob.mem = mem /\
@@ -598,7 +598,7 @@ rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /
 rewrite pack32E initiE /= 1:/# /of_list initiE /= /#.
 qed.
 
-lemma cmov_ll : islossless M.__cmov.
+lemma cmov_ll : islossless Jkem_avx2.M(Jkem_avx2.Syscall).__cmov.
 proc => /=.
 seq 6 : (#post) => //; last first.
 + by wp; conseq />; while(i=32 /\ #pre) (32-i); auto => /> /#. 
@@ -611,7 +611,7 @@ qed.
 
 
 lemma cmov_correct _dst _src _cnd mem:
-   phoare [ M.__cmov : 
+   phoare [Jkem_avx2.M(Jkem_avx2.Syscall).__cmov : 
              Glob.mem = mem /\ valid_ptr _src 32 /\
              to_uint src = _src /\ cnd = _cnd /\ dst = _dst ==>
              Glob.mem = mem /\
@@ -620,7 +620,7 @@ lemma cmov_correct _dst _src _cnd mem:
     by conseq cmov_ll (cmov_correct_h _dst _src _cnd mem).
 
 lemma kyber_kem_correct_dec mem _ctp _skp _shkp : 
-   equiv [ M.__crypto_kem_dec_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).dec: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__crypto_kem_dec_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).dec: 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
      valid_ptr _shkp 32 /\

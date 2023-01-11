@@ -91,7 +91,26 @@ W64.of_int (-9223372034707259263); W64.of_int (-9223372036854742912);
 W64.of_int 2147483649; W64.of_int (-9223372034707259384)].
 
 
-module M = {
+module type Syscall_t = {
+  proc randombytes_32(_:W8.t Array32.t) : W8.t Array32.t
+  proc randombytes_64(_:W8.t Array64.t) : W8.t Array64.t
+}.
+
+module Syscall : Syscall_t = {
+  proc randombytes_32(a:W8.t Array32.t) : W8.t Array32.t = {
+    a <$ dmap WArray32.darray
+         (fun a => Array32.init (fun i => WArray32.get8 a i));
+    return a;
+  }
+  
+  proc randombytes_64(a:W8.t Array64.t) : W8.t Array64.t = {
+    a <$ dmap WArray64.darray
+         (fun a => Array64.init (fun i => WArray64.get8 a i));
+    return a;
+  }
+}.
+
+module M(SC:Syscall_t) = {
   proc __fqmul (a:W16.t, b:W16.t) : W16.t = {
     
     var r:W16.t;
@@ -2318,10 +2337,58 @@ module M = {
     return ();
   }
   
+  proc __randombytes64 (randomnessp:W64.t) : unit = {
+    var aux: int;
+    
+    var r:W8.t Array64.t;
+    var rp:W8.t Array64.t;
+    var i:int;
+    var t64:W64.t;
+    r <- witness;
+    rp <- witness;
+    rp <- r;
+    rp <@ SC.randombytes_64 (rp);
+    aux <- (64 %/ 8);
+    i <- 0;
+    while (i < aux) {
+      t64 <- (get64 (WArray64.init8 (fun i_0 => rp.[i_0])) i);
+      Glob.mem <-
+      storeW64 Glob.mem (W64.to_uint (randomnessp + (W64.of_int (8 * i)))) (t64);
+      i <- i + 1;
+    }
+    return ();
+  }
+  
+  proc __randombytes32 (randomnessp:W64.t) : unit = {
+    var aux: int;
+    
+    var r:W8.t Array32.t;
+    var rp:W8.t Array32.t;
+    var i:int;
+    var t64:W64.t;
+    r <- witness;
+    rp <- witness;
+    rp <- r;
+    rp <@ SC.randombytes_32 (rp);
+    aux <- (32 %/ 8);
+    i <- 0;
+    while (i < aux) {
+      t64 <- (get64 (WArray32.init8 (fun i_0 => rp.[i_0])) i);
+      Glob.mem <-
+      storeW64 Glob.mem (W64.to_uint (randomnessp + (W64.of_int (8 * i)))) (t64);
+      i <- i + 1;
+    }
+    return ();
+  }
+  
   proc crypto_kem_keypair_jazz (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
     
     
     
+    pkp <- pkp;
+    skp <- skp;
+    randomnessp <- randomnessp;
+    __randombytes64 (randomnessp);
     __crypto_kem_keypair_jazz (pkp, skp, randomnessp);
     return ();
   }
@@ -2331,6 +2398,11 @@ module M = {
     
     
     
+    ctp <- ctp;
+    shkp <- shkp;
+    pkp <- pkp;
+    randomnessp <- randomnessp;
+    __randombytes32 (randomnessp);
     __crypto_kem_enc_jazz (ctp, shkp, pkp, randomnessp);
     return ();
   }

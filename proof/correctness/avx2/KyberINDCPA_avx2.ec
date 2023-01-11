@@ -22,9 +22,9 @@ import NTT_Avx2.
 
 axiom sha3equiv : 
  equiv [ (* is this in the sha3 paper? *)
- Jkem_avx2.M._sha3_512_32 ~ M._sha3512_32 : ={arg} ==> ={res}].
+Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512_32 ~Jkem.M(Jkem.Syscall)._sha3512_32 : ={arg} ==> ={res}].
 
-lemma sha3ll : islossless M._shake256_128_33.
+lemma sha3ll : islossless Jkem.M(Jkem.Syscall)._shake256_128_33.
 proc. 
 while (0<=i<=128) (128 - i);1 : by move => *; auto => /> /#.
 wp; call (_: true).
@@ -52,7 +52,7 @@ by inline *; do 2!(unroll for ^while); islossless.
 qed.
   
 equiv genmatrixequiv b :
-  Jkem_avx2.M.__gen_matrix ~  M.__gen_matrix :
+ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix ~ Jkem.M(Jkem.Syscall).__gen_matrix :
     arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = b2i b /\ arg{2}.`2 =  W64.of_int (b2i b) ==>
     res{1} = nttunpackm res{2} /\
     pos_bound2304_cxq res{1} 0 2304 2 /\
@@ -93,10 +93,10 @@ module GetNoiseAVX2 = {
       n1 <- nonce + W8.of_int 2;
       n2 <- nonce + W8.of_int 1;
       n3 <- nonce;
-      aux_3 <@ M._poly_getnoise(aux3,noiseseed,n3);
-      aux_2 <@ M._poly_getnoise(aux2,noiseseed,n2);
-      aux_1 <@ M._poly_getnoise(aux1,noiseseed,n1);
-      aux_0 <@ M._poly_getnoise(aux0,noiseseed,n0);
+      aux_3 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux3,noiseseed,n3);
+      aux_2 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux2,noiseseed,n2);
+      aux_1 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux1,noiseseed,n1);
+      aux_0 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux0,noiseseed,n0);
       return (aux_3, aux_2, aux_1, aux_0);
   }
 
@@ -181,10 +181,10 @@ module GetNoiseAVX2 = {
 }.
 
 equiv getnoiseequiv_avx : 
-   Jkem_avx2.M._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
+  Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
 admitted. (* this is the poly noisegen equiv *)
 
-lemma polygetnoise_ll : islossless M._poly_getnoise.
+lemma polygetnoise_ll : islossless Jkem.M(Jkem.Syscall)._poly_getnoise.
 proc. 
 while (0 <= to_uint i <= 128) (128 - to_uint i);
   1: by move => z; auto => />;rewrite  ultE /= => &hr ???; rewrite !to_uintD_small /=; smt(to_uint_cmp).
@@ -194,29 +194,29 @@ by move => *; rewrite ultE /=; smt().
 qed.
 
 equiv getnoiseequiv : 
-   M._poly_getnoise ~ M._poly_getnoise :
+  Jkem.M(Jkem.Syscall)._poly_getnoise ~Jkem.M(Jkem.Syscall)._poly_getnoise :
    ={arg} ==> ={res} /\
    signed_bound_cxq res{1} 0 256 1.
 have H : forall &m a,
-   Pr[ M._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
+   Pr[Jkem.M(Jkem.Syscall)._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
 + move => &m a.
   have -> : 1%r = Pr [ CBD2(KPRF).sample(a.`2,to_uint a.`3) @ &m : true].
   + byphoare => //.
     proc; inline *; while (0<=i<=128) (128-i); 1: by move => z; auto => /> /#. 
     by auto => /> /#.
   by byequiv get_noise_sample_noise => //.
-have HH0 : hoare [ M._poly_getnoise : true ==> forall k, 0<=k<256 => -5 < to_sint res.[k] < 5].
+have HH0 : hoare [Jkem.M(Jkem.Syscall)._poly_getnoise : true ==> forall k, 0<=k<256 => -5 < to_sint res.[k] < 5].
 + hoare; bypr => //= &m; rewrite Pr[mu_not].
-  have -> : Pr[M._poly_getnoise(rp{m}, seed{m}, nonce{m}) @ &m : true] = 1%r.
+  have -> : Pr[Jkem.M(Jkem.Syscall)._poly_getnoise(rp{m}, seed{m}, nonce{m}) @ &m : true] = 1%r.
   + by byphoare => //; apply polygetnoise_ll.
   smt().
-have HHH : equiv [  M._poly_getnoise ~ M._poly_getnoise : ={arg} ==> ={res} ] by sim.
+have HHH : equiv [ Jkem.M(Jkem.Syscall)._poly_getnoise ~Jkem.M(Jkem.Syscall)._poly_getnoise : ={arg} ==> ={res} ] by sim.
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
 lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
-   equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        to_uint randomnessp{1} = _randomnessp /\
        seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
@@ -229,7 +229,7 @@ lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp :
          t = load_array1152 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc*.
-transitivity {1} { Jkem.M.__indcpa_keypair(pkp, skp, randomnessp);} 
+transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);} 
 (={Glob.mem,pkp,skp,randomnessp} /\ 
   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
@@ -648,7 +648,7 @@ qed.
 (***************************************************)
 
 lemma kyber_correct_enc_0_avx2 mem _ctp _pkp : 
-   equiv [ Jkem_avx2.M.__indcpa_enc_0 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_0 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
      Glob.mem{1} = mem /\ 
@@ -665,7 +665,7 @@ lemma kyber_correct_enc_0_avx2 mem _ctp _pkp :
      c2 = load_array128 Glob.mem{1} (_ctp + 960)
 ].
 proc*.
-transitivity {1} { Jkem.M.__indcpa_enc(sctp,msgp,pkp,noiseseed);} 
+transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_enc(sctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,msgp,pkp,noiseseed,sctp} /\
   valid_ptr _pkp (384 * 3 + 32) /\
   valid_ptr _ctp (3 * 320 + 128) /\
@@ -1031,7 +1031,7 @@ qed.
 (***************************************************)
 
 lemma kyber_correct_enc_1_avx2 mem _pkp : 
-   equiv [ Jkem_avx2.M.__indcpa_enc_1 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_1 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
@@ -1046,7 +1046,7 @@ lemma kyber_correct_enc_1_avx2 mem _pkp :
      c2 = Array128.init (fun i => res{1}.[i+960])
 ].
 proc*.
-transitivity {1} { r <@ Jkem.M.__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
+transitivity {1} { r <@Jkem.M(Jkem.Syscall).__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,ctp,msgp,pkp,noiseseed} /\
   valid_ptr _pkp (384 * 3 + 32) /\
   Glob.mem{1} = mem /\
@@ -1401,7 +1401,7 @@ qed.
 
 
 lemma kyber_correct_dec mem _ctp _skp : 
-   equiv [ Jkem_avx2.M.__indcpa_dec_1 ~ Kyber(KHS,XOF,KPRF,H).dec : 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_dec_1 ~ Kyber(KHS,XOF,KPRF,H).dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
      Glob.mem{1} = mem /\ 
@@ -1416,7 +1416,7 @@ lemma kyber_correct_dec mem _ctp _skp :
      res{1} = oget res{2}
 ].
 proc*.
-transitivity {1} { r <@ Jkem.M.__indcpa_dec(msgp,ctp,skp);} 
+transitivity {1} { r <@Jkem.M(Jkem.Syscall).__indcpa_dec(msgp,ctp,skp);} 
 (={Glob.mem,ctp,skp} /\
   valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
