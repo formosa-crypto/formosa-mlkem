@@ -1120,9 +1120,7 @@ qed.
 
 equiv auxkg_good :
  Jkem.M(Jkem.Syscall).__indcpa_keypair ~ AuxKyber.indcpa_keypair_jazz :
-     ={Glob.mem} /\ arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = arg{2}.`2 /\ 
-     valid_ptr (to_uint arg{1}.`3) 32 /\ 
-      arg{2}.`3 = Array32.init (fun i => loadW8 Glob.mem{1} (to_uint arg{1}.`3 + i))
+     ={Glob.mem} /\ ={arg}
      ==> ={Glob.mem,res}. 
 proc => /=. 
 inline Aux.inner_product.
@@ -1132,7 +1130,7 @@ swap {1} [11..14] -8.
 swap {1} 9 -6.
 swap {1} 11 -8.
 swap {1} [15..17] -6.
-seq 11 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
+seq 11 6 : (#pre /\ ={publicseed, noiseseed}).
 + inline HSF.PseudoRF.f. 
   swap {1} [5..8] -2. swap {2} [4..5] 2.
   
@@ -1140,28 +1138,27 @@ seq 11 6 : (#{/~randomnessp{1}}pre /\ ={publicseed, noiseseed}).
   wp;ecall {1} (sha3_512_32_64 buf{1} inbuf{1}).
   conseq => />.
   while {1} (0<= i{1} <= aux{1} /\ aux{1} = 4 /\
-              valid_ptr (to_uint randomnessp{1}) 32 /\
-              seed{2} = (Array32.init (fun (i1 : int) => 
-                  loadW8 Glob.mem{1} (to_uint randomnessp{1} + i1))) /\
+              seed{2} = randomnessp{1} /\
              forall k, 0<= k < i{1} * 8 =>
                     inbuf{1}.[k] = seed{2}.[k]) (32- i{1} * 8);
     last first. 
-  + auto => /> &1 &2 ??; split; 1: smt().
+  + auto => /> &1 ; split; 1: smt().
     move => il inbufl /=; split; 1: smt().
-    move => ???H. congr;rewrite tP => i ib; rewrite  initiE //=.
-    by move : (H i _); 1: smt(); rewrite initiE //=.
+    move => ???H;  congr;rewrite tP => i ib => /#. 
   move => *; auto => /> &hr ??? /==> *.
   split; 2: smt(); split; 1: smt().
   move => k kb ?; case (k < i{hr} * 8).
   + move => *; rewrite initiE /= 1:/# get8_set64_directE 1,2:/#. 
-    case (8 * i{hr} <= k && k < 8 * i{hr} + 8);
-     1: by move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= /#. 
+    case (8 * i{hr} <= k && k < 8 * i{hr} + 8); 1: by smt().
     by move => *; rewrite /get8 /init8 initiE /#.
-  move => *; rewrite !initiE 1,2:/# get8_set64_directE 1,2:/#.
+  move => *; rewrite /get8 /init8 initiE 1: /# /=.
+  case (k < i{hr} * 8). 
+  + move => *; rewrite set64E initiE /= /#.
   case (8 * i{hr} <= k && k < 8 * i{hr} + 8).
-  + move => *; rewrite /loadW8 /loadW64 pack8bE 1:/# !initiE /= 1:/#. 
-    by congr; rewrite to_uintD_small /= of_uintK /= /#.
-  by move => *; rewrite /get8 /init8 initiE /#.
+  move => *. rewrite set64E initiE /= 1:/#.
+  rewrite ifT 1:/# get64E !pack8bE 1:/# !initiE 1:/# /= /init8 !initiE /#. 
+  move => *. rewrite set64E initiE /= 1:/#.
+  rewrite ifF 1:/#  !initiE /#. 
 
 swap {1} [7..8] -5.
 seq 3 2 : (#pre /\ ={a}); 1: by call auxgenmatrix_good; auto => />.
@@ -1170,7 +1167,7 @@ swap {1} [6..23] -2.
 swap {1} 2 24.
 swap {2} 1 8.
 
-seq 20 1 : (#pre /\ ={skpv,e}).
+seq 20 1 : (#{/~randomnessp{1}=seed{2}}pre /\ ={skpv,e}).
 transitivity {1} {(skpv,e) <@ AuxKyber.sample_noise2_jasmin(noiseseed);}
      (={Glob.mem,pkp,skp,publicseed,noiseseed,a} ==> 
           ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e})
@@ -1298,12 +1295,10 @@ op touches2 (m m' : global_mem_t) (p1 : address) (len1 : int) (p2 : address) (le
   forall (a : int), ! (p1 <=  a < p1+len1) =>  ! (p2 <=  a < p2+len2) => m'.[a] = m.[a].
 
 
-lemma kyber_correct_kg mem _pkp _skp _randomnessp : 
+lemma kyber_correct_kg mem _pkp _skp  : 
    equiv [Jkem.M(Jkem.Syscall).__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       to_uint randomnessp{1} = _randomnessp /\
-       seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
-       valid_ptr (to_uint randomnessp{1}) 32 /\
+       randomnessp{1} = seed{2} /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
        touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
@@ -1312,14 +1307,12 @@ lemma kyber_correct_kg mem _pkp _skp _randomnessp :
          t = load_array1152 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc*.
-transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, 
-             Array32.init(fun i=> loadW8 Glob.mem (to_uint randomnessp  + i)));} 
-(={Glob.mem,pkp,skp,randomnessp} /\ valid_ptr (to_uint randomnessp{1}) 32 ==> ={Glob.mem,r}) 
+transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, randomnessp);} 
+(={Glob.mem,pkp,skp,randomnessp} ==> ={Glob.mem,r}) 
 (   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\ 
-    seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i))  /\
+    randomnessp{1} = seed{2}  /\
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)
     ==> 
     touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\

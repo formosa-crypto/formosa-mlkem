@@ -1565,6 +1565,44 @@ module M(SC:Syscall_t) = {
     return ();
   }
   
+  proc _isha3_256_32 (out:W8.t Array32.t, in_0:W8.t Array32.t) : W8.t Array32.t = {
+    var aux: int;
+    
+    var s_out:W8.t Array32.t;
+    var state:W64.t Array25.t;
+    var i:int;
+    var t64:W64.t;
+    s_out <- witness;
+    state <- witness;
+    s_out <- out;
+    state <@ __st0 (state);
+    aux <- (32 %/ 8);
+    i <- 0;
+    while (i < aux) {
+      t64 <- (get64 (WArray32.init8 (fun i_0 => in_0.[i_0])) i);
+      state.[i] <- t64;
+      i <- i + 1;
+    }
+    state <-
+    Array25.init
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) 32 ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) 32) `^` (W8.of_int 6)))));
+    state <-
+    Array25.init
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (136 - 1) ((W8.of_int 128))));
+    state <@ _keccakf1600_scalar (state);
+    out <- s_out;
+    i <- 0;
+    while (i < 4) {
+      t64 <- state.[i];
+      out <-
+      Array32.init
+      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => out.[i_0])) i (t64)));
+      i <- i + 1;
+    }
+    return (out);
+  }
+  
   proc _sha3_512_64 (out:W8.t Array64.t, in_0:W8.t Array64.t) : W8.t Array64.t = {
     var aux: int;
     
@@ -5884,7 +5922,8 @@ module M(SC:Syscall_t) = {
                           i <- i + 1;
                         }
                       return (rr); }
-              proc __indcpa_keypair (pkp:W64.t, skp:W64.t, randomnessp:W64.t) : unit = {
+              proc __indcpa_keypair (pkp:W64.t, skp:W64.t,
+                                     randomnessp:W8.t Array32.t) : unit = {
                 var aux: int;
                 var aux_3: W16.t Array256.t;
                 var aux_2: W16.t Array256.t;
@@ -5918,7 +5957,7 @@ module M(SC:Syscall_t) = {
                 i <- 0;
                 while (i < aux) {
                   t64 <-
-                  (loadW64 Glob.mem (W64.to_uint (randomnessp + (W64.of_int (8 * i)))));
+                  (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
                   inbuf <-
                   Array32.init
                   (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => inbuf.[i_0])) i (t64)));
@@ -6378,23 +6417,27 @@ module M(SC:Syscall_t) = {
                 return (dst);
               }
               proc __crypto_kem_keypair_jazz (pkp:W64.t, skp:W64.t,
-                                              randomnessp:W64.t) : unit = {
+                                              randomnessp:W8.t Array64.t) : unit = {
                 var aux: int;
                 
-                var s_randomnessp:W64.t;
+                var s_randomnessp:W8.t Array64.t;
                 var s_pkp:W64.t;
                 var s_skp:W64.t;
+                var randomnessp1:W8.t Array32.t;
                 var i:int;
                 var t64:W64.t;
                 var h_pk:W8.t Array32.t;
+                var randomnessp2:W8.t Array32.t;
                 h_pk <- witness;
+                randomnessp1 <- witness;
+                randomnessp2 <- witness;
+                s_randomnessp <- witness;
                 s_randomnessp <- randomnessp;
                 s_pkp <- pkp;
                 s_skp <- skp;
-                __indcpa_keypair (pkp, skp, randomnessp);
-                randomnessp <- s_randomnessp;
-                randomnessp <- (randomnessp + (W64.of_int 32));
-                s_randomnessp <- randomnessp;
+                randomnessp1 <-
+                (Array32.init (fun i_0 => randomnessp.[0 + i_0]));
+                __indcpa_keypair (pkp, skp, randomnessp1);
                 skp <- s_skp;
                 skp <- (skp + (W64.of_int (3 * 384)));
                 pkp <- s_pkp;
@@ -6422,11 +6465,13 @@ module M(SC:Syscall_t) = {
                   i <- i + 1;
                 }
                 randomnessp <- s_randomnessp;
+                randomnessp2 <-
+                (Array32.init (fun i_0 => randomnessp.[32 + i_0]));
                 aux <- (32 %/ 8);
                 i <- 0;
                 while (i < aux) {
                   t64 <-
-                  (loadW64 Glob.mem (W64.to_uint (randomnessp + (W64.of_int (8 * i)))));
+                  (get64 (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) i);
                   Glob.mem <-
                   storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) (t64);
                   skp <- (skp + (W64.of_int 8));
@@ -6435,46 +6480,57 @@ module M(SC:Syscall_t) = {
                 return ();
               }
               proc __crypto_kem_enc_jazz (ctp:W64.t, shkp:W64.t, pkp:W64.t,
-                                          randomnessp:W64.t) : unit = {
-                var aux: W8.t Array32.t;
+                                          randomnessp:W8.t Array32.t) : unit = {
+                var aux: int;
+                var aux_0: W8.t Array32.t;
                 
                 var s_pkp:W64.t;
                 var s_ctp:W64.t;
                 var s_shkp:W64.t;
+                var i:int;
                 var t64:W64.t;
-                var buf:W8.t Array64.t;
-                var s_randomnessp:W64.t;
                 var kr:W8.t Array64.t;
+                var buf:W8.t Array64.t;
                 buf <- witness;
                 kr <- witness;
                 s_pkp <- pkp;
                 s_ctp <- ctp;
                 s_shkp <- shkp;
+                aux <- (32 %/ 8);
+                i <- 0;
+                while (i < aux) {
+                  t64 <-
+                  (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
+                  kr <-
+                  Array64.init
+                  (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => kr.[i_0])) i (t64)));
+                  i <- i + 1;
+                }
                 t64 <- (W64.of_int 32);
-                aux <@ _isha3_256 ((Array32.init (fun i => buf.[0 + i])),
-                randomnessp, t64);
+                aux_0 <@ _isha3_256_32 ((Array32.init (fun i_0 => buf.[0 + i_0])),
+                (Array32.init (fun i_0 => kr.[0 + i_0])));
                 buf <- Array64.init
-                       (fun i => if 0 <= i < 0 + 32 then aux.[i-0]
-                       else buf.[i]);
-                s_randomnessp <- randomnessp;
+                       (fun i_0 => if 0 <= i_0 < 0 + 32 then aux_0.[i_0-0]
+                       else buf.[i_0]);
                 pkp <- s_pkp;
                 t64 <- (W64.of_int ((3 * 384) + 32));
-                aux <@ _isha3_256 ((Array32.init (fun i => buf.[32 + i])),
+                aux_0 <@ _isha3_256 ((Array32.init (fun i_0 => buf.[32 + i_0])),
                 pkp, t64);
                 buf <- Array64.init
-                       (fun i => if 32 <= i < 32 + 32 then aux.[i-32]
-                       else buf.[i]);
+                       (fun i_0 => if 32 <= i_0 < 32 + 32 then aux_0.[i_0-32]
+                       else buf.[i_0]);
                 kr <@ _sha3_512_64 (kr, buf);
                 pkp <- s_pkp;
-                __indcpa_enc_0 (s_ctp, (Array32.init (fun i => buf.[0 + i])),
-                pkp, (Array32.init (fun i => kr.[32 + i])));
+                __indcpa_enc_0 (s_ctp,
+                (Array32.init (fun i_0 => buf.[0 + i_0])), pkp,
+                (Array32.init (fun i_0 => kr.[32 + i_0])));
                 ctp <- s_ctp;
                 t64 <- (W64.of_int ((3 * 320) + 128));
-                aux <@ _isha3_256 ((Array32.init (fun i => kr.[32 + i])),
+                aux_0 <@ _isha3_256 ((Array32.init (fun i_0 => kr.[32 + i_0])),
                 ctp, t64);
                 kr <- Array64.init
-                      (fun i => if 32 <= i < 32 + 32 then aux.[i-32]
-                      else kr.[i]);
+                      (fun i_0 => if 32 <= i_0 < 32 + 32 then aux_0.[i_0-32]
+                      else kr.[i_0]);
                 shkp <- s_shkp;
                 t64 <- (W64.of_int 32);
                 _shake256_64 (shkp, t64, kr);
@@ -6546,78 +6602,69 @@ module M(SC:Syscall_t) = {
                 _shake256_64 (shkp, t64, kr);
                 return ();
               }
-              proc __randombytes64 (randomnessp:W64.t) : unit = {
-                var aux: int;
+              proc jade_kem_kyber_kyber768_amd64_avx2_keypair (public_key:W64.t,
+                                                               secret_key:W64.t) : 
+              W64.t = {
                 
-                var r:W8.t Array64.t;
-                var rp:W8.t Array64.t;
-                var i:int;
-                var t64:W64.t;
-                r <- witness;
-                rp <- witness;
-                rp <- r;
-                rp <@ SC.randombytes_64 (rp);
-                aux <- (64 %/ 8);
-                i <- 0;
-                while (i < aux) {
-                  t64 <- (get64 (WArray64.init8 (fun i_0 => rp.[i_0])) i);
-                  Glob.mem <-
-                  storeW64 Glob.mem (W64.to_uint (randomnessp + (W64.of_int (8 * i)))) (t64);
-                  i <- i + 1;
-                }
-                return ();
+                var r:W64.t;
+                var randomness:W8.t Array64.t;
+                var randomnessp:W8.t Array64.t;
+                var _of_:bool;
+                var _cf_:bool;
+                var _sf_:bool;
+                var _zf_:bool;
+                var  _0:bool;
+                randomness <- witness;
+                randomnessp <- witness;
+                public_key <- public_key;
+                secret_key <- secret_key;
+                randomnessp <- randomness;
+                randomnessp <@ SC.randombytes_64 (randomnessp);
+                __crypto_kem_keypair_jazz (public_key, secret_key,
+                randomnessp);
+                (_of_, _cf_, _sf_,  _0, _zf_, r) <- set0_64 ;
+                return (r);
               }
-              proc __randombytes32 (randomnessp:W64.t) : unit = {
-                var aux: int;
+              proc jade_kem_kyber_kyber768_amd64_avx2_enc (ciphertext:W64.t,
+                                                           shared_secret:W64.t,
+                                                           public_key:W64.t) : 
+              W64.t = {
                 
-                var r:W8.t Array32.t;
-                var rp:W8.t Array32.t;
-                var i:int;
-                var t64:W64.t;
-                r <- witness;
-                rp <- witness;
-                rp <- r;
-                rp <@ SC.randombytes_32 (rp);
-                aux <- (32 %/ 8);
-                i <- 0;
-                while (i < aux) {
-                  t64 <- (get64 (WArray32.init8 (fun i_0 => rp.[i_0])) i);
-                  Glob.mem <-
-                  storeW64 Glob.mem (W64.to_uint (randomnessp + (W64.of_int (8 * i)))) (t64);
-                  i <- i + 1;
-                }
-                return ();
+                var r:W64.t;
+                var randomness:W8.t Array32.t;
+                var randomnessp:W8.t Array32.t;
+                var _of_:bool;
+                var _cf_:bool;
+                var _sf_:bool;
+                var _zf_:bool;
+                var  _0:bool;
+                randomness <- witness;
+                randomnessp <- witness;
+                ciphertext <- ciphertext;
+                shared_secret <- shared_secret;
+                public_key <- public_key;
+                randomnessp <- randomness;
+                randomnessp <@ SC.randombytes_32 (randomnessp);
+                __crypto_kem_enc_jazz (ciphertext, shared_secret, public_key,
+                randomnessp);
+                (_of_, _cf_, _sf_,  _0, _zf_, r) <- set0_64 ;
+                return (r);
               }
-              proc crypto_kem_keypair_jazz (pkp:W64.t, skp:W64.t,
-                                            randomnessp:W64.t) : unit = {
+              proc jade_kem_kyber_kyber768_amd64_avx2_dec (shared_secret:W64.t,
+                                                           ciphertext:W64.t,
+                                                           secret_key:W64.t) : 
+              W64.t = {
                 
+                var r:W64.t;
+                var _of_:bool;
+                var _cf_:bool;
+                var _sf_:bool;
+                var _zf_:bool;
+                var  _0:bool;
                 
-                
-                pkp <- pkp;
-                skp <- skp;
-                randomnessp <- randomnessp;
-                __randombytes64 (randomnessp);
-                __crypto_kem_keypair_jazz (pkp, skp, randomnessp);
-                return ();
-              }
-              proc crypto_kem_enc_jazz (ctp:W64.t, shkp:W64.t, pkp:W64.t,
-                                        randomnessp:W64.t) : unit = {
-                
-                
-                
-                ctp <- ctp;
-                shkp <- shkp;
-                pkp <- pkp;
-                randomnessp <- randomnessp;
-                __randombytes32 (randomnessp);
-                __crypto_kem_enc_jazz (ctp, shkp, pkp, randomnessp);
-                return ();
-              }
-              proc crypto_kem_dec_jazz (shkp:W64.t, ctp:W64.t, skp:W64.t) : unit = {
-                
-                
-                
-                __crypto_kem_dec_jazz (shkp, ctp, skp);
-                return ();
+                __crypto_kem_dec_jazz (shared_secret, ciphertext,
+                secret_key);
+                (_of_, _cf_, _sf_,  _0, _zf_, r) <- set0_64 ;
+                return (r);
               }
              }. 
