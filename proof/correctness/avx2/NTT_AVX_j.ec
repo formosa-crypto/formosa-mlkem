@@ -1767,8 +1767,8 @@ proc; simplify.
 wp; skip => |> &m.
 rewrite !x16_spec_bits16 => Hq Hv.
 rewrite -!iotaredE /VPSUB_16u16 /VPMULL_16u16 /VPMULH_16u16 /VPSRA_16u16 /R2C /= => |> *.
-move: (sbred16_spec).
-smt(sbred16_spec).
+move : (sbred16_spec).
+smt().
 qed.
 
 phoare __red16x_ph n x:
