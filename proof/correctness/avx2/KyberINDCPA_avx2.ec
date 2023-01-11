@@ -215,12 +215,10 @@ conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
-lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
+lemma kyber_correct_kg_avx2 mem _pkp _skp  : 
    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       to_uint randomnessp{1} = _randomnessp /\
-       seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
-       valid_ptr (to_uint randomnessp{1}) 32 /\
+       randomnessp{1} = seed{2}  /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
        touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
@@ -234,13 +232,10 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);}
   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\ 
-       valid_ptr (to_uint randomnessp{1}) 32 /\
+    randomnessp{1} = randomnessp{2} /\
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3) ==> ={Glob.mem}) 
 (   Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       to_uint randomnessp{1} = _randomnessp /\
-       seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
-       valid_ptr (to_uint randomnessp{1}) 32 /\
+       randomnessp{1} = seed{2} /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
     ==> 
     touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
@@ -249,7 +244,7 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);}
         sk = load_array1152 Glob.mem{1} _skp /\
         t = load_array1152 Glob.mem{1} _pkp /\ 
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt(); 
-   last by call(kyber_correct_kg mem _pkp _skp _randomnessp); auto => />. 
+   last by call(kyber_correct_kg mem _pkp _skp); auto => />. 
 
 inline{1} 1; inline {2} 1;  sim 43 60. 
 
@@ -292,8 +287,7 @@ seq 10 18 : (#pre  /\
     Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\
-    valid_ptr (to_uint randomnessp{1}) 32 /\ valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)) /\
+     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)) /\
    ={publicseed, noiseseed, sskp, spkp, skpv, pkpv, e}) /\
   aa{1} = nttunpackm a{2} /\ pos_bound2304_cxq aa{1} 0 2304 2 /\ pos_bound2304_cxq a{2} 0 2304 2
    ==> 
@@ -305,7 +299,7 @@ seq 10 18 : (#pre  /\
   inline {1} 1. inline GetNoiseAVX2._poly_getnoise_eta1_4x.
   wp; do 2!(call{1} (_: true ==> true); 1: by apply polygetnoise_ll).
   do 6!(wp; call  getnoiseequiv); auto => />.
-  move => &1 &2 ????????R?; split.
+  move => &1 &2 ??????R?; split.
   + by rewrite tP => k kb; rewrite !initiE //= initiE /#.
   move => ?R0?; split.
   + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= /#.
@@ -357,7 +351,7 @@ seq 8 4: (#{/~pkpv{2}}pre /\
               signed_bound768_cxq pkpv{1} 0 256 2 /\
               signed_bound768_cxq pkpv{2} 0 256 2 /\ i{1} = 1).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
 + rewrite -lift768_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE // 1:/# /= kb /= initiE //=. 
@@ -421,7 +415,7 @@ seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 1) = nttunpack (lif
               signed_bound768_cxq pkpv{1} 256 512 2 /\
               signed_bound768_cxq pkpv{2} 256 512 2 /\ i{1} = 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
 + rewrite -lift768_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifT 1:/# initiE //=. 
@@ -490,7 +484,7 @@ seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 2) = nttunpack (lif
               signed_bound768_cxq pkpv{1} 512 768 2 /\
               signed_bound768_cxq pkpv{2} 512 768 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20; do split.
 + rewrite -lift768_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# initiE //=. 
@@ -579,7 +573,7 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
 
 auto => />.
 
-move => &1 &2 ???????????????H1??H2??H3??. 
+move => &1 &2 ?????????????H1??H2??H3??. 
 do split.
 + smt().
 + smt(). 

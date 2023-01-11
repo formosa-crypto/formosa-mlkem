@@ -1503,14 +1503,15 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ????????.
+  move => ???????H.
   do split; 1,2,4: smt(nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
   rewrite /lift_array2304 /lift_vector /lift_array256  !tP =>  ?val.
   split.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
-    by rewrite (_: !(256 <= k && k < 512)) /# /=.
+    rewrite (_: !(256 <= k && k < 512)) 1:/# /=.
+    by move : (H k); smt(). 
   move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= ; do split; 1,2:smt().
   move : (val (k-256) _);1:smt(); rewrite mapiE 1:/# => ->.
   rewrite /ntt_mmul offunvE //= /dotp /kvec /=.
@@ -1530,16 +1531,19 @@ wp; ecall{1} (innerprod_corr
      (invnttv (lift_vector skpv{1}))).
 
 + auto => /> &1 &2.
-  move => ?????????.
+  move => ???????H H0.
   do split; 1,2,4: smt(nttvK).
   + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
   rewrite /lift_array2304 /lift_vector /lift_array256  !tP =>  ?val.
   do split.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
-    by rewrite (_: !(512 <= k && k < 768)) /# /=.
+    rewrite (_: !(512 <= k && k < 768)) 1:/# /=.
+    move : (H k _); smt().
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
-    by rewrite (_: !(512 <= k && k < 768)) /# /=.
+    rewrite (_: !(512 <= k && k < 768))1: /# /=.
+    move : (H0 k _); smt().
+
   move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= ; do split; 1,2:smt().
   move : (val (k-512) _);1:smt(); rewrite mapiE 1:/# => ->.
   rewrite /ntt_mmul offunvE //= /dotp /kvec /=.
