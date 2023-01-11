@@ -4,7 +4,7 @@ require "polyvec.jinc"
 require "gen_matrix.jinc"
 
 inline
-fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomnessp)
 {
   stack u64 spkp sskp;
   stack u16[KYBER_K*KYBER_VECN] aa;
@@ -21,7 +21,7 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 
   for i=0 to KYBER_SYMBYTES/8
   {
-    t64 = (u64)[randomnessp + 8*i];
+    t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
   }
 
