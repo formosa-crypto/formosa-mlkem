@@ -44,15 +44,11 @@ axiom sha_g buf inp:
           ==> 
           res = SHA3_256_64_64 buf] = 1%r.
 
-axiom sha_khs mem _ptr inp: 
-    phoare [Jkem.M(Jkem.Syscall)._isha3_256 :
-          arg = (inp,W64.of_int _ptr,W64.of_int 32) /\
-          valid_ptr _ptr 32 /\
-          Glob.mem = mem
+axiom sha_khs buf inp: 
+    phoare [Jkem.M(Jkem.Syscall)._isha3_256_32 :
+          arg = (inp,buf) 
           ==> 
-          Glob.mem = mem /\
-          res = SHA3_256_32_32
-            (Array32.init (fun k =>  mem.[_ptr+k])) ()] = 1%r.
+          res = SHA3_256_32_32 buf ()] = 1%r.
 
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
@@ -328,17 +324,15 @@ by rewrite tP => i ib; rewrite initiE //= /#.
 qed.
 
 
-lemma kyber_kem_correct_enc mem _ctp _pkp _rp _kp : 
+lemma kyber_kem_correct_enc mem _ctp _pkp _kp : 
    equiv [Jkem.M(Jkem.Syscall).__crypto_kem_enc_jazz ~ KyberKEM(KHS,XOF,KPRF,KHS_KEM,KemH,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
-     valid_ptr _rp (32) /\
      valid_disj_reg _ctp (3*320+128) _kp (32) /\
      Glob.mem{1} = mem /\ 
      to_uint ctp{1} = _ctp /\ 
      to_uint pkp{1} = _pkp /\
-     to_uint randomnessp{1} = _rp /\
+     randomnessp{1} = prem{2} /\
      to_uint shkp{1} = _kp /\
-     prem{2} = load_array32 mem _rp /\
      pk{2}.`1 = load_array1152 mem _pkp /\
      pk{2}.`2 = load_array32 mem (_pkp + 3*384)
        ==> 
@@ -358,10 +352,11 @@ wp;ecall {1} (sha_g buf{1} kr{1}).
 inline {2} 2. 
 wp;ecall {1} (pkH_sha mem (_pkp) ((Array32.init (fun (i : int) => buf{1}.[32 + i])))).
 inline {2} 1. inline {2} 2.
-wp;ecall {1} (sha_khs mem (_rp) ((Array32.init (fun (i : int) => buf{1}.[0 + i])))).
+wp;ecall {1} (sha_khs ((Array32.init (fun (i : int) => kr{1}.[0 + i]))) ((Array32.init (fun (i : int) => buf{1}.[0 + i])))).
+seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1} /\ randomnessp{1} = Array32.init (fun i => kr{1}.[i])); 1: by admit. 
 auto => /> &1 &2; rewrite /load_array1152 /load_array32 /load_array128 /load_array960 /touches2 /touches !tP.
-move => ????????? pkv1 pkv2.
-do split.
+move => ??????? pkv1 pkv2.
+do split. 
 + move => i ib; rewrite !initiE /= 1,2: /#.
   have -> /= : !(32 <= i && i < 64) by smt().
   by rewrite initiE /= 1:/# ib /=.
