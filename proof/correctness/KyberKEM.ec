@@ -353,7 +353,22 @@ inline {2} 2.
 wp;ecall {1} (pkH_sha mem (_pkp) ((Array32.init (fun (i : int) => buf{1}.[32 + i])))).
 inline {2} 1. inline {2} 2.
 wp;ecall {1} (sha_khs ((Array32.init (fun (i : int) => kr{1}.[0 + i]))) ((Array32.init (fun (i : int) => buf{1}.[0 + i])))).
-seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1} /\ randomnessp{1} = Array32.init (fun i => kr{1}.[i])); 1: by admit. 
+seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1} /\ randomnessp{1} = Array32.init (fun i => kr{1}.[i])).
++ sp ; conseq />.
+  while {1} (0<=i{1}<=aux{1} /\ aux{1} = 4 /\ randomnessp{1} = prem{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = kr{1}.[k])) (aux{1} - i{1}); last first.
+  + auto => /> &1 &2 *; split; 1: by smt().  
+    move => i1 kr1; split; 1: smt(). 
+    by move => *; rewrite tP => k kn; rewrite initiE //= /#. 
+  move => &2 ?; auto => /> &1 il ih premv ihh; do split; 1,2,4:smt().
+  move => k kl kh; rewrite initiE 1:/# /=.
+  rewrite WArray64.WArray64.get8_set64_directE 1..2:/#.
+  case (8 * i{1} <= k && k < 8 * i{1} + 8).
+  + move => *. 
+     rewrite WArray32.WArray32.get64E pack8bE 1:/# !initiE 1:/# /= /init8.  
+     by rewrite !WArray32.WArray32.initiE /#.
+  move => *; rewrite /get8; rewrite WArray64.WArray64.initiE /#.
+   
+
 auto => /> &1 &2; rewrite /load_array1152 /load_array32 /load_array128 /load_array960 /touches2 /touches !tP.
 move => ??????? pkv1 pkv2.
 do split. 

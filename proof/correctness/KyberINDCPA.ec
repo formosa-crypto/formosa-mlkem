@@ -1511,7 +1511,7 @@ wp; ecall{1} (innerprod_corr
   split.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
     rewrite (_: !(256 <= k && k < 512)) 1:/# /=.
-    by move : (H k); smt(). 
+    move : (H k _); 1: smt(). move => [_ ->]. smt().
   move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= ; do split; 1,2:smt().
   move : (val (k-256) _);1:smt(); rewrite mapiE 1:/# => ->.
   rewrite /ntt_mmul offunvE //= /dotp /kvec /=.
