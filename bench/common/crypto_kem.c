@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 //
 
@@ -42,17 +43,19 @@ int main(int argc, char**argv)
   uint8_t *_ps, *ps, *p; // CRYPTO_PUBLICKEYBYTES
   uint8_t *_ss, *ss, *s; // CRYPTO_SECRETKEYBYTES
   uint8_t *_k, *k; // CRYPTO_BYTES
-  uint8_t *_c, *c; // CRYPTO_CIPHERTEXTBYTES
+  uint8_t *_cs, *cs, *c; // CRYPTO_CIPHERTEXTBYTES
   uint8_t *_t, *t; // CRYPTO_BYTES
-  size_t plen, slen;
+  size_t plen, slen, clen;
 
   plen = alignedcalloc_step(CRYPTO_PUBLICKEYBYTES);
   slen = alignedcalloc_step(CRYPTO_SECRETKEYBYTES);
+  clen = alignedcalloc_step(CRYPTO_CIPHERTEXTBYTES);
 
   ps = alignedcalloc(&_ps, plen * TIMINGS);
   ss = alignedcalloc(&_ss, slen * TIMINGS);
+  cs = alignedcalloc(&_cs, clen * TIMINGS);
+
   k = alignedcalloc(&_k, CRYPTO_BYTES);
-  c = alignedcalloc(&_c, CRYPTO_CIPHERTEXTBYTES);
   t = alignedcalloc(&_t, CRYPTO_BYTES);
 
   for(run = 0; run < RUNS; run++)
@@ -68,14 +71,16 @@ int main(int argc, char**argv)
 
       // enc
       p = ps;
-      for (i = 0; i < TIMINGS; i++, p += plen)
+      c = cs;
+      for (i = 0; i < TIMINGS; i++, p += plen, c += clen)
       { cycles[i] = cpucycles();
         crypto_kem_enc(c, k, p); }
       results[1][loop] = cpucycles_median(cycles, TIMINGS);
 
       // dec
       s = ss;
-      for (i = 0; i < TIMINGS; i++, s += slen)
+      c = cs;
+      for (i = 0; i < TIMINGS; i++, s += slen, c += clen)
       { cycles[i] = cpucycles();
         crypto_kem_dec(t, c, s); }
       results[2][loop] = cpucycles_median(cycles, TIMINGS);
@@ -102,8 +107,8 @@ int main(int argc, char**argv)
 
   free(_ps);
   free(_ss);
+  free(_cs);
   free(_k);
-  free(_c);
   free(_t);
 
   return 0;

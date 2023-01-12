@@ -1,0 +1,118 @@
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex fromcompiler crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE try.c /usr/bin/ld: warning: jkem.o: missing .note.GNU-stack section implies executable stack
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex fromcompiler crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE try.c /usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex fromcompiler crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE try.c /usr/bin/ld: warning: jkem.o: missing .note.GNU-stack section implies executable stack
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex fromcompiler crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE try.c /usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex try 100111b2408ad9ce7cd924984a8807c1a209e62d912fc151882f487d069c46d3/2878e3a56e03c86d0a6981b4e334336e332a0868bddb72c70af5c55c61f5492c ok 108252 42935700 3491650000 crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 168018 7880 1560 try
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 188 0 0 jasmin_syscall.o
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 144902 7007 0 jkem.o
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex fromcompiler crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE measure.c /usr/bin/ld: warning: jkem.o: missing .note.GNU-stack section implies executable stack
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex fromcompiler crypto_kem/kyber768/libjade_ravx2 clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE measure.c /usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex implementation crypto_kem/kyber768/libjade_ravx2 -
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex publickeybytes 1184
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex secretkeybytes 2400
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex outputbytes 32
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex ciphertextbytes 1088
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex cpuid GenuineIntel-000306c3-bfebfbff_
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex cpucycles_persecond 3491652000
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex cpucycles_implementation amd64cpuinfo
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex compiler clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE Debian_Clang_14.0.6
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48176
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59708
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47820
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48144
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59668
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47832
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48128
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59752
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47980
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48160
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59768
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47932
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48144
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59696
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47852
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48164
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59724
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47956
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48148
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59700
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47832
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48148
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59760
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47968
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48188
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59800
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47920
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48160
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59676
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47912
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 48156
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 59884
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 47920
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 sandor amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
