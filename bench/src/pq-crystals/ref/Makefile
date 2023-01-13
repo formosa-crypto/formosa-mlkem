@@ -1,7 +1,9 @@
+
 #CC ?= /usr/bin/cc
 #CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
 #  -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer
 
+#flags changed to match SUPERCOP
 CC = clang-14
 CFLAGS = -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE
 
@@ -56,6 +58,10 @@ shared: \
   libpqcrystals_aes256ctr_ref.so \
   libpqcrystals_sha2_ref.so
 
+libpqcrystals_kyber768_ref.a: $(SOURCES) $(SOURCESKECCAK) $(HEADERS) symmetric-shake.c
+	$(CC) $(CFLAGS) -DKYBER_K=3 -c $(SOURCES) $(SOURCESKECCAK) symmetric-shake.c
+	$(AR) -r $@ *.o
+
 libpqcrystals_fips202_ref.so: fips202.c fips202.h
 	$(CC) -shared -fPIC $(CFLAGS) fips202.c -o libpqcrystals_fips202_ref.so
 
@@ -70,10 +76,6 @@ libpqcrystals_kyber512_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 
 libpqcrystals_kyber768_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=3 $(SOURCES) symmetric-shake.c -o libpqcrystals_kyber768_ref.so
-
-libpqcrystals_kyber768_ref.a: $(SOURCES) $(SOURCESKECCAK) $(HEADERS) symmetric-shake.c
-	$(CC) $(CFLAGS) -DKYBER_K=3 -c $(SOURCES) $(SOURCESKECCAK) symmetric-shake.c
-	$(AR) -r $@ *.o
 
 libpqcrystals_kyber1024_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=4 $(SOURCES) symmetric-shake.c -o libpqcrystals_kyber1024_ref.so
@@ -178,7 +180,7 @@ PQCgenKAT_kem1024-90s: $(SOURCESNINETIES) $(HEADERSNINETIES) PQCgenKAT_kem.c rng
 	$(CC) $(NISTFLAGS) -DKYBER_K=4 -DKYBER_90S -o $@ $(SOURCESNINETIES) rng.c PQCgenKAT_kem.c $(LDFLAGS) -lcrypto
 
 clean:
-	-$(RM) -rf *.gcno *.gcda *.lcov *.o *.so
+	-$(RM) -rf *.gcno *.gcda *.lcov *.o *.so *.a
 	-$(RM) -rf test_kyber512
 	-$(RM) -rf test_kyber768
 	-$(RM) -rf test_kyber1024
