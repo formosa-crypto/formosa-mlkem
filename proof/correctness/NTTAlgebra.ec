@@ -14,7 +14,7 @@
 (* The jump from (inv)ntt_spec to (inv)ntt proves that the high level specification implies the specification needed outside of this file. *)
 
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
-require import List_extra IntDiv_extra Array256_extra For.
+require import IntDiv_extra Array256_extra For.
 require import Array128 Array256.
 require import Montgomery NTT_Fq Kyber.
 import NTT_Properties.

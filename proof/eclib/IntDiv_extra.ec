@@ -121,7 +121,6 @@ proof.
   rewrite exprS ?normr_ge0 // -pow_normr.
   move => /dvdzP [q]; rewrite mulrA eqz_mul ?dvdzz; first by apply/gtr_eqF/expr_gt0/ltzE/ltzW.
   rewrite divzz neq_ltz expr_gt0; first by apply/ltzE/ltzW.
-  (*TODO: any way to make q an exists again?*)
   move => Heq; move: (dvdzP b 1) => [_ dvd1b]; move: (dvd1b _).
   + by exists q; rewrite -Heq /=.
   by rewrite dvdz1 eqr_norml /= negb_or; split; apply/gtr_eqF => //; apply/ltzE/ltzW/ltzE/ltzW.
