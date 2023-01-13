@@ -66,7 +66,20 @@ qed.
 
 lemma to_sintK (w : W16.t) :
   W16.of_int (W16.to_sint w) = w.
-rewrite -of_int_mod to_sint_mod to_uintK //. qed.
+proof. by rewrite -of_int_mod to_sint_mod to_uintK //. qed.
+
+lemma nosmt to_sint_eq (w1 w2: W16.t):
+ to_sint w1 = to_sint w2 <=> w1=w2.
+proof.
+rewrite !to_sintE /smod /=.
+case: (32768 <= to_uint w1) => ? /=.
+ case: (32768 <= to_uint w2) => ? /=.
+  rewrite to_uint_eq /#.
+ move: (W16.to_uint_cmp w1) (W16.to_uint_cmp w2); smt().
+case: (32768 <= to_uint w2) => CB /=.
+ move: (W16.to_uint_cmp w1) (W16.to_uint_cmp w2); smt().
+by rewrite to_uint_eq.
+qed.
 
 lemma nosmt smod_small (x: int):
  -2^(16-1) <= x < 2^(16-1) => 
