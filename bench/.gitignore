@@ -1,1 +1,3 @@
 bin/
+supercop-*
+!supercop-patch

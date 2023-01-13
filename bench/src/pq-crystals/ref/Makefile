@@ -1,6 +1,10 @@
-CC ?= /usr/bin/cc
-CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
-  -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer
+#CC ?= /usr/bin/cc
+#CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
+#  -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer
+
+CC = clang-14
+CFLAGS = -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE
+
 NISTFLAGS += -Wno-unused-result -O3 -fomit-frame-pointer
 RM = /bin/rm
 
@@ -66,6 +70,10 @@ libpqcrystals_kyber512_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 
 libpqcrystals_kyber768_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=3 $(SOURCES) symmetric-shake.c -o libpqcrystals_kyber768_ref.so
+
+libpqcrystals_kyber768_ref.a: $(SOURCES) $(SOURCESKECCAK) $(HEADERS) symmetric-shake.c
+	$(CC) $(CFLAGS) -DKYBER_K=3 -c $(SOURCES) $(SOURCESKECCAK) symmetric-shake.c
+	$(AR) -r $@ *.o
 
 libpqcrystals_kyber1024_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=4 $(SOURCES) symmetric-shake.c -o libpqcrystals_kyber1024_ref.so

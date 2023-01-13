@@ -1,0 +1,48 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[top=50pt,bottom=50pt,left=50pt,right=50pt]{geometry}
+
+\input{macros}
+\begin{document}
+
+\begin{table}
+\caption{benchmark results - (own / supercop) - clang-14 - haswell-i74770k / skylake-i76500u / cannonlake-i710700k / alderlake-i71260p }
+\label{table1}
+\begin{tabular}{l l r r r r}
+\hline
+\textbf{imp} & \textbf{op} & \textbf{haswell}             & \textbf{skylake}              & \textbf{cannonlake}          & \textbf{alderlake} \\
+\hline
+C ref             & key    & \crefgenhwcc / \crefgenhwccs & \crefgenskcc / \crefgenskccs  & \crefgenclcc / \crefgenclccs & \crefgenalcc / \crefgenalccs \\ 
+                  & enc    & \crefenchwcc / \crefenchwccs & \crefencskcc / \crefencskccs  & \crefencclcc / \crefencclccs & \crefencalcc / \crefencalccs \\
+                  & dec    & \crefdechwcc / \crefdechwccs & \crefdecskcc / \crefdecskccs  & \crefdecclcc / \crefdecclccs & \crefdecalcc / \crefdecalccs \\ \hline
+jasmin ref        & key    & \jrefgenhwcc / \jrefgenhwccs & \jrefgenskcc / \jrefgenskccs  & \jrefgenclcc / \jrefgenclccs & \jrefgenalcc / \jrefgenalccs \\
+                  & enc    & \jrefenchwcc / \jrefenchwccs & \jrefencskcc / \jrefencskccs  & \jrefencclcc / \jrefencclccs & \jrefencalcc / \jrefencalccs \\
+                  & dec    & \jrefdechwcc / \jrefdechwccs & \jrefdecskcc / \jrefdecskccs  & \jrefdecclcc / \jrefdecclccs & \jrefdecalcc / \jrefdecalccs \\ \hline
+C/asm AVX2        & key    & \cavxgenhwcc / \cavxgenhwccs & \cavxgenskcc / \cavxgenskccs  & \cavxgenclcc / \cavxgenclccs & \cavxgenalcc / \cavxgenalccs \\
+                  & enc    & \cavxenchwcc / \cavxenchwccs & \cavxencskcc / \cavxencskccs  & \cavxencclcc / \cavxencclccs & \cavxencalcc / \cavxencalccs \\
+                  & dec    & \cavxdechwcc / \cavxdechwccs & \cavxdecskcc / \cavxdecskccs  & \cavxdecclcc / \cavxdecclccs & \cavxdecalcc / \cavxdecalccs \\ \hline
+jasmin AVX2       & key    & \javxgenhwcc / \javxgenhwccs & \javxgenskcc / \javxgenskccs  & \javxgenclcc / \javxgenclccs & \javxgenalcc / \javxgenalccs \\
+(fully verified)  & enc    & \javxenchwcc / \javxenchwccs & \javxencskcc / \javxencskccs  & \javxencclcc / \javxencclccs & \javxencalcc / \javxencalccs \\
+                  & dec    & \javxdechwcc / \javxdechwccs & \javxdecskcc / \javxdecskccs  & \javxdecclcc / \javxdecclccs & \javxdecalcc / \javxdecalccs \\ \hline
+jasmin AVX2       & key    & \joptgenhwcc / \joptgenhwccs & \joptgenskcc / \joptgenskccs  & \joptgenclcc / \joptgenclccs & \joptgenalcc / \joptgenalccs \\
+(fully optimized) & enc    & \joptenchwcc / \joptenchwccs & \joptencskcc / \joptencskccs  & \joptencclcc / \joptencclccs & \joptencalcc / \joptencalccs \\
+                  & dec    & \joptdechwcc / \joptdechwccs & \joptdecskcc / \joptdecskccs  & \joptdecclcc / \joptdecclccs & \joptdecalcc / \joptdecalccs \\ \hline
+libjade ref       & key    & \lrefgenhwcc / \lrefgenhwccs & \lrefgenskcc / \lrefgenskccs  & \lrefgenclcc / \lrefgenclccs & \lrefgenalcc / \lrefgenalccs \\
+                  & enc    & \lrefenchwcc / \lrefenchwccs & \lrefencskcc / \lrefencskccs  & \lrefencclcc / \lrefencclccs & \lrefencalcc / \lrefencalccs \\
+                  & dec    & \lrefdechwcc / \lrefdechwccs & \lrefdecskcc / \lrefdecskccs  & \lrefdecclcc / \lrefdecclccs & \lrefdecalcc / \lrefdecalccs \\ \hline
+libjade AVX2      & key    & \lavxgenhwcc / \lavxgenhwccs & \lavxgenskcc / \lavxgenskccs  & \lavxgenclcc / \lavxgenclccs & \lavxgenalcc / \lavxgenalccs \\
+                  & enc    & \lavxenchwcc / \lavxenchwccs & \lavxencskcc / \lavxencskccs  & \lavxencclcc / \lavxencclccs & \lavxencalcc / \lavxencalccs \\
+                  & dec    & \lavxdechwcc / \lavxdechwccs & \lavxdecskcc / \lavxdecskccs  & \lavxdecclcc / \lavxdecclccs & \lavxdecalcc / \lavxdecalccs \\ \hline \hline
+libjade ref       & key    &            - / \rrefgenhwccs &            - / \rrefgenskccs  &           -  / \rrefgenclccs &           -  / \rrefgenalccs \\
+(own rdn)         & enc    &            - / \rrefenchwccs &            - / \rrefencskccs  &           -  / \rrefencclccs &           -  / \rrefencalccs \\
+                  & dec    &            - / \rrefdechwccs &            - / \rrefdecskccs  &           -  / \rrefdecclccs &           -  / \rrefdecalccs \\ \hline
+libjade AVX2      & key    &            - / \ravxgenhwccs &            - / \ravxgenskccs  &           -  / \ravxgenclccs &           -  / \ravxgenalccs \\
+(own rdn)         & enc    &            - / \ravxenchwccs &            - / \ravxencskccs  &           -  / \ravxencclccs &           -  / \ravxencalccs \\
+                  & dec    &            - / \ravxdechwccs &            - / \ravxdecskccs  &           -  / \ravxdecclccs &           -  / \ravxdecalccs \\ \hline
+
+
+\end{tabular}
+\end{table}
+
+\end{document}

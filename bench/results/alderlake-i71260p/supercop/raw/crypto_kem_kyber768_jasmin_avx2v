@@ -1,0 +1,112 @@
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex try 456bb24a767160dcca466adde267b87f359de6e827d31b5b23512d227d8bbfaa/8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730 ok 189971 77097528 1200000000 crypto_kem/kyber768/jasmin_avx2v clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/jasmin_avx2v clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 130662 4576 1640 try
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/jasmin_avx2v clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 70 0 0 jasmin_syscall.o
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/jasmin_avx2v clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 108062 3764 0 jkem.o
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex implementation crypto_kem/kyber768/jasmin_avx2v -
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex publickeybytes 1184
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex secretkeybytes 2400
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex outputbytes 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex ciphertextbytes 1088
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex cpuid GenuineIntel-000906a3-bfebfbff_
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex cpucycles_persecond 1200000000
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex cpucycles_implementation amd64cpuinfo
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex compiler clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE Ubuntu_Clang_14.0.0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107327
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 99874
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 88278
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107262
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 99673
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 88440
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107337
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 100360
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 88678
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107309
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 100278
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 88567
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107294
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 100423
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 88484
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107311
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 101310
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 90376
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107277
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 100189
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 89505
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107031
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 100792
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 89469
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107378
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 100295
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 89141
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107414
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 101993
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 90275
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 107259
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 99454
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 88735
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 t14 amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
