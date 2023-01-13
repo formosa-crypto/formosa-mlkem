@@ -4,7 +4,7 @@ import Ring.IntID IntOrder.
 (***** TO MOVE *****)
 
 lemma div_pow x n m : 0 <= m <= n => 0 < x => x^n %/ x^m = x^(n - m).
-proof. (* FIXME: move *)
+proof.
 move=> le_0mn gt0_x; rewrite eq_sym eqz_div.
 + by apply/gtr_eqF/expr_gt0.  
 + by apply/dvdzP; exists (x^(n - m)); rewrite -exprD_nneg /#.
@@ -20,28 +20,28 @@ lemma pow_div2 b k :
 proof. by move=> *; rewrite -div_pow //#. qed.
 
 lemma div_mulr p q m : m %| q => (p * q) %/ m = p * (q %/ m).
-proof. (* FIXME: move *)
+proof.
 case: (m = 0) => [->>//|nz_m /dvdzE z_mq].
 by rewrite {1}(divz_eq q m) z_mq /= mulrCA mulrA mulzK // mulrC.
 qed.
 
 lemma div_mull p q m : m %| p => (p * q) %/ m = (p %/ m) * q.
-proof. (* FIXME: move *)
+proof.
 by move=> dvd_mp; rewrite mulrC div_mulr // mulrC.
 qed.
 
 lemma dvdNz (m n : int) : ((-m) %| n) = (m %| n).
-proof. (* FIXME: move *) by rewrite !dvdzE modzN. qed.
+proof. by rewrite !dvdzE modzN. qed.
 
 lemma div_mul p m n : 0 <= m => m %| p => p %/ (m * n) = p %/ m %/ n.
-proof. (* FIXME: move *)
+proof.
 rewrite ler_eqVlt => -[<-//|gt0_m /dvdzE z_pm].
 by rewrite {1}(divz_eq p m) z_pm /= (mulrC m n) divzMpr.
 qed.
 
 lemma divM_mul p q m n :
   0 <= m => m %| p => n %| q => (p * q) %/ (m * n) = (p %/ m) * (q %/ n).
-proof. (* FIXME: move *)
+proof.
 move=> ge0_m dvd_mp dvd_nq; rewrite div_mul // 1:dvdz_mulr //.
 by rewrite div_mull // div_mulr.
 qed.
@@ -112,7 +112,22 @@ lemma wd_bnd x : 0 <= x  %% (R*R) %/ R < `| R |
 lemma smod_small x y:
    1 < y =>
    -y %/ 2 <= x < y %/2 =>
-   smod x y = x by smt().
+   smod x y = x.
+proof.
+move=> lt1y [le_x ltx_]; rewrite /smod.
+case: (0 <= x) => [le0x|/ltrNge ltx0].
++ have ->/=: !(y %/ 2 <= x %% y).
+  - apply/ltrNge; rewrite modzE; apply/(ler_lt_trans x) => //.
+    apply/ler_subl_addl/ler_subl_addr => /=.
+    apply/mulr_ge0; [|by apply/ltzW/(ler_lt_trans _ _ _ _ lt1y)].
+    by rewrite divz_ge0 //; apply/(ler_lt_trans _ _ _ _ lt1y).
+  rewrite modz_small // le0x /= gtr0_norm; [by apply/(ler_lt_trans _ _ _ _ lt1y)|].
+  apply/(ltr_le_trans _ _ _ ltx_)/leq_div => //.
+  by apply/ltzW/(ler_lt_trans _ _ _ _ lt1y).
+have ->/=: (y %/ 2 <= x %% y).
++ smt.
+smt.
+qed.
 
 lemma smod_div x : smod (x * R) (R ^ 2) %/ R = smod x  R.
 proof.
@@ -225,8 +240,15 @@ move => inner_bnd.
 
 have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q). 
 + case (0 <= smod (a * qinv) R);1 : by smt().
-  case (smod (a * qinv) R = -R %/2); 1: by move => -> *; smt(ler_pmul dvd2R div_mulr).
-  move => *.  
+  case (smod (a * qinv) R = -R %/2).
+  - move => -> /ltrNge /oppr_lt0 lt0_.
+    rewrite mulNr ler_opp2; apply/(ler_trans ((R %/ 2) * (R %/ 2))). admit.
+    rewrite {3 4}(divz_eq R 2) mulrDl !mulrDr /= !mulrA (mulrAC _ 2).
+    rewrite -!mulrA /= !mulrA (mulrAC _ 2) !addrA -(addrA (_ * 4)).
+    rewrite (mulrC (_ %% _)) -mulrDr /= -mulrDl divzMDl // -addrA.
+    rewrite ler_addl addr_ge0; [by apply/mulr_ge0; [apply/ltzW|apply/modz_ge0]|].
+    by apply/divz_ge0 => //; apply/mulr_ge0; apply/modz_ge0.
+  move => *.
   have :  -smod (a * qinv) R * q < R %/2 * R %/2; last by smt().
   rewrite -Ring.IntID.mulNr div_mulr 1: dvd2R => *. 
   by apply (ltr_pmul (- smod (a * qinv) R) (R %/2) q  (R %/2)); smt(ltr_pmul).
@@ -463,5 +485,4 @@ by smt().
 qed.
 
 end MontgomeryLimbs.
-
 

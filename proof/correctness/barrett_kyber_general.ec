@@ -8,7 +8,7 @@ lemma ceilP a b :
   a <= b * (ceil a b) < a + b.
 proof.
   move => ltz0b.
-  rewrite /ceil mulrN. (*FIXME*)
+  rewrite /ceil mulrN.
   split.
   + rewrite - subz_le0 oppzK addrC - (oppzK a) subz_le0 oppzK mulrC.
     apply lez_floor.
@@ -64,7 +64,7 @@ lemma barrett_seq_increasing pp ppqe:
   barrett_seq pp ppqe a <= barrett_seq pp ppqe b.
 proof.
   move => ltz0pp ltz0ppqe a b lezab.
-  rewrite /barrett_seq /ceil - subz_ge0 opprK addzC subz_ge0. (*FIXME*)
+  rewrite /barrett_seq /ceil - subr_ge0 opprK addzC subr_ge0.
   apply leq_div2r.
   - by rewrite - subz_ge0 opprK addzC subz_ge0 ler_pmul2l.
   - apply lez_eqVlt.
@@ -77,7 +77,7 @@ lemma barrett_seq_eq a pp ppqe m :
   barrett_seq pp ppqe m <= a < barrett_seq pp ppqe (m+1) <=>
   barrett_fun_aux a pp ppqe = m.
 proof.
-  rewrite /barrett_seq /barrett_fun_aux. (*FIXME*)
+  rewrite /barrett_seq /barrett_fun_aux.
   move => ltz0pp ltz0ppqe.
   split.
   + move => [leza ltza].
@@ -127,7 +127,7 @@ lemma barrett_fun_increasing pp q ppqe :
   barrett_fun a pp q ppqe <= barrett_fun b pp q ppqe.
 proof.
   move => m a b ltz0pp ltz0ppqe [[lez_seq_a lez_a_b] ltz_b_seq].
-  rewrite /barrett_fun. (*FIXME*)
+  rewrite /barrett_fun.
   case (barrett_seq_eq a pp ppqe m ltz0pp ltz0ppqe) => eq_barrett_a_m _.
   rewrite eq_barrett_a_m ; [by split ; [ |move => _ ; rewrite - lez_add1r ; apply (lez_trans (1+b)) ; [rewrite lez_add2l|rewrite lez_add1r]] | ].
   case (barrett_seq_eq b pp ppqe m ltz0pp ltz0ppqe) => eq_barrett_b_m _.
@@ -182,9 +182,9 @@ lemma barrett_seq_label_min_min amin pp ppqe :
 proof.
   move => m ltz0pp ltz0ppqe.
   split ; [move => lez_amin_seq | move => lez_label_m].
-  + rewrite /barrett_seq_label_min addzC lez_add1r - (ltr_pmul2r pp) // - lez_add1r. (*FIXME*)
-    apply (lez_trans (1 + ((amin - 1) * ppqe))).
-    - rewrite lez_add2l.
+  + rewrite /barrett_seq_label_min addzC lez_add1r - (ltr_pmul2r pp) // - lez_add1r.
+    apply (ler_trans (1 + ((amin - 1) * ppqe))).
+    - rewrite ler_add2l.
       apply lez_floor.
       rewrite neq_ltz.
       by right.
@@ -192,7 +192,7 @@ proof.
       * by rewrite - addzA lez_add2l mulzDl mulNr /= lez_add2r ler_pmul2r.
       * rewrite - addzA lez_add1r - (ltz_add2r ppqe) - addzA /= (mulzC m) (mulzC _ ppqe).
         by case (ceilP (pp*m) ppqe ltz0ppqe).
-  + rewrite /barrett_seq. (*FIXME*)
+  + rewrite /barrett_seq.
     rewrite  - (subrK amin 1) addzC lez_add1r - (ltr_pmul2l ppqe) - lez_add1r ; [by rewrite lez_add1r|].
     apply (lez_trans (pp*m)).
     apply (lez_trans (((ppqe * (amin - 1)) %/ pp + 1) * pp)).
@@ -210,7 +210,7 @@ lemma barrett_seq_label_max_max amax pp ppqe :
 proof.
   move => m ltz0pp ltz0ppqe.
   apply iff_negb.
-  by split ; [move => lez_amin_seq | move => lez_label_m] ; apply lezNgt ; rewrite /barrett_seq_label_max ; apply barrett_seq_label_min_min => // ; apply lezNgt. (*FIXME*)
+  by split ; [move => lez_amin_seq | move => lez_label_m] ; apply lezNgt ; rewrite /barrett_seq_label_max ; apply barrett_seq_label_min_min => // ; apply lezNgt.
 qed.
 
 lemma barrett_fun_seq pp q ppqe :
@@ -222,12 +222,12 @@ lemma barrett_fun_seq pp q ppqe :
 proof.
   move => m ltz0pp ltz0ppqe lezppqepp.
   case (barrett_seq_eq (barrett_seq pp ppqe m) pp ppqe m ltz0pp ltz0ppqe) => eq_aux _.
-  rewrite /barrett_fun. (*FIXME*)
+  rewrite /barrett_fun.
   rewrite eq_aux.
   + split => //.
     move => ineq.
-    rewrite /barrett_seq. (*FIXME*)
-    rewrite /ceil. (*FIXME*)
+    rewrite /barrett_seq.
+    rewrite /ceil.
     rewrite - subr_gt0 opprK addzC subr_gt0 - mulNr mulzDr mulNr /=.
     apply ltz_divLR => //.
     rewrite - lez_add1r.
@@ -235,7 +235,7 @@ proof.
     - by rewrite lez_add2l lez_add2l - subr_ge0 opprK addzC subr_ge0.
     - rewrite lez_add1r - (ltz_add2r ppqe) - addzA /= - (mul1r ppqe) - mulzA - mulzDl /=.
       by apply ltz_ceil.
-  + rewrite /barrett_seq /ceil. (*FIXME*)
+  + rewrite /barrett_seq /ceil.
     rewrite - (mulNr (pp - ppqe * q)) opprB mulzDl mulzA (mulzC ppqe) divzMDl.
     - apply neq_ltz.
       by right.
@@ -251,12 +251,12 @@ lemma barrett_fun_seq_decr pp q ppqe :
 proof.
   move => m ltz0pp ltz0ppqe lezppqepp.
   case (barrett_seq_eq ((barrett_seq pp ppqe (m+1)) - 1) pp ppqe m ltz0pp ltz0ppqe) => eq_aux _.
-  rewrite /barrett_fun. (*FIXME*)
+  rewrite /barrett_fun.
   rewrite eq_aux.
   split => //.
   + rewrite (addzC _ (-1)) - (lez_add2l 1) addzA /= lez_add1r.
-    rewrite /barrett_seq. (*FIXME*)
-    rewrite /ceil. (*FIXME*)
+    rewrite /barrett_seq.
+    rewrite /ceil.
     rewrite - subr_gt0 opprK addzC subr_gt0 - mulNr mulzDr mulNr /=.
     apply ltz_divLR => //.
     rewrite - lez_add1r.
@@ -266,7 +266,7 @@ proof.
       by apply ltz_ceil.
   + move => lez_seq.
     by rewrite (addzC _ (-1)) - lez_add1r addzA /=.
-  + rewrite /barrett_seq /ceil. (*FIXME*)
+  + rewrite /barrett_seq /ceil.
     rewrite - opprD - opprD.
     congr.
     rewrite opprD opprD - mulNr - mulNr opprD opprK opprK mulzDr /= - addzA addzC - divzMDr.
@@ -302,7 +302,7 @@ lemma barrett_fun_seq_decreasing pp q ppqe :
   barrett_fun (barrett_seq pp ppqe b) pp q ppqe <= barrett_fun (barrett_seq pp ppqe a) pp q ppqe.
 proof.
   move => a b ltz0pp ltz0ppqe lezppqepp lezc lezab.
-  rewrite barrett_fun_seq // barrett_fun_seq // /ceil - subz_ge0 opprK addzC subz_ge0. (*FIXME*)
+  rewrite barrett_fun_seq // barrett_fun_seq // /ceil - subr_ge0 opprK addrC subr_ge0.
   apply leq_div2r.
   + rewrite - mulNr opprD opprK (addzC (-pp)) - mulNr opprD opprK (addzC (-pp)) ler_pmul2l //.
     by rewrite - subz_lt0 opprD opprK /= addzC.
@@ -349,7 +349,7 @@ lemma barrett_fun_seq_decr_decreasing pp q ppqe :
   barrett_fun ((barrett_seq pp ppqe (b+1)) - 1) pp q ppqe <= barrett_fun ((barrett_seq pp ppqe (a+1)) - 1) pp q ppqe.
 proof.
   move => a b ltz0pp ltz0ppqe lezppqepp lezc lezab.
-  rewrite barrett_fun_seq_decr // barrett_fun_seq_decr // /ceil - subz_ge0 opprK addzC subz_ge0. (*FIXME*)
+  rewrite barrett_fun_seq_decr // barrett_fun_seq_decr // /ceil - subr_ge0 opprK addrC subr_ge0.
   apply leq_div2r.
   + rewrite - subz_ge0 opprK addzC subz_ge0 lez_add2r - (mulrNN _ a) opprD opprK (addzC (-pp)) - (mulrNN _ b) opprD opprK (addzC (-pp)) ler_pmul2l.
     - by rewrite - subz_lt0 opprD opprK /= addzC.
@@ -393,7 +393,7 @@ lemma barrett_seq_label_min_increasing pp ppqe :
   barrett_seq_label_min amin pp ppqe <= barrett_seq_label_min bmin pp ppqe.
 proof.
   move => ltz0pp ltz0ppqe amin bmin lezabmin.
-  rewrite /barrett_seq_label_min. (*FIXME*)
+  rewrite /barrett_seq_label_min.
   rewrite lez_add2r leq_div2r //.
   + by rewrite ler_pmul2r // lez_add2r.
   + apply lez_eqVlt.
@@ -408,7 +408,7 @@ lemma barrett_seq_label_max_increasing pp ppqe :
   barrett_seq_label_max amax pp ppqe <= barrett_seq_label_max bmax pp ppqe.
 proof.
   move => ltz0pp ltz0ppqe amax bmax lezabmax.
-  rewrite /barrett_seq_label_max. (*FIXME*)
+  rewrite /barrett_seq_label_max.
   by apply barrett_seq_label_min_increasing.
 qed.
 
@@ -452,14 +452,14 @@ proof.
       by split ; [apply barrett_seq_label_min_min|].
   + move => [pred_amin pred_labelmin] a [lezamina ltzaamax].
     case : ( a < barrett_seq pp ppqe (barrett_seq_label_min amin pp ppqe)) => ltza.
-    - rewrite /barrett_pred_low. (*FIXME*)
+    - rewrite /barrett_pred_low.
       apply (lez_trans (barrett_fun amin pp q ppqe)) => //.
       apply (barrett_fun_increasing pp q ppqe ((barrett_seq_label_min amin pp ppqe)-1)) => //.
       split ; [split|].
       * rewrite - (lez_add2l 1) lez_add1r.
         apply barrett_seq_label_max_max => //.
         rewrite (addzC _ (-1)) - (ltz_add2l 1) addzA /=.
-        rewrite /barrett_seq_label_max. (*FIXME*)
+        rewrite /barrett_seq_label_max.
         rewrite - lez_add1r lez_add2l.
         apply barrett_seq_label_min_increasing => //.
         by rewrite - (add0r amin) addzA lez_add2r.
