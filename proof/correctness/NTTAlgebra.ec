@@ -13,8 +13,6 @@
 (* The jump from NTT_naive to (inv)ntt_spec is the actual correction proof. *)
 (* The jump from (inv)ntt_spec to (inv)ntt proves that the high level specification implies the specification needed outside of this file. *)
 
-(* TODO: is NTT_Fq.NTT already abstract enough to deal with both the AVX2 and the standard implementation? If not what optimized AVX2 specification should I use? *)
-
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
 require import List_extra IntDiv_extra Array256_extra For.
 require import Array128 Array256.
@@ -2848,7 +2846,6 @@ theory NTTequiv.
     by apply/(RHL_FOR_NAT_DIV_GE_INT_ADD_LT.inv_out _ _ _ _ _ _ _ _ _ R).
   qed.
 
-  (*TODO: same for invntt.*)
   op P_avx2_invntt (zetas1 zetas2 : Fq Array128.t) =
     zetas1 = zetas2.
 
@@ -4750,3 +4747,4 @@ lemma invntt_spec _r:
    phoare[NTT_Fq.NTT.invntt :
      arg=(_r,NTT_Fq.zetas_inv) ==> res = invntt _r ] = 1%r
   by conseq NTT_Fq.invntt_spec_ll (invntt_spec_h _r); done.
+
