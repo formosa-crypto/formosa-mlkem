@@ -5,7 +5,7 @@
 
 
 jkem_avx2.ec : ../jkem.jazz
-	jasminc ../jkem.jazz -oec jkem_avx2.ec -ec jade_kem_kyber_kyber768_amd64_avx2r_keypair -ec jade_kem_kyber_kyber768_amd64_avx2r_enc -ec jade_kem_kyber_kyber768_amd64_avx2r_dec
+	jasminc ../jkem.jazz -oec jkem_avx2.ec -ec jade_kem_kyber_kyber768_amd64_avx2v_keypair -ec jade_kem_kyber_kyber768_amd64_avx2v_enc -ec jade_kem_kyber_kyber768_amd64_avx2v_dec
 	
 clean: 
 	rm *.ec

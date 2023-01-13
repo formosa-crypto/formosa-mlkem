@@ -5167,7 +5167,7 @@ module M(SC:Syscall_t) = {
     return ();
   }
   
-  proc jade_kem_kyber_kyber768_amd64_avx2r_keypair (public_key:W64.t,
+  proc jade_kem_kyber_kyber768_amd64_avx2v_keypair (public_key:W64.t,
                                                     secret_key:W64.t) : 
   W64.t = {
     
@@ -5190,7 +5190,7 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc jade_kem_kyber_kyber768_amd64_avx2r_enc (ciphertext:W64.t,
+  proc jade_kem_kyber_kyber768_amd64_avx2v_enc (ciphertext:W64.t,
                                                 shared_secret:W64.t,
                                                 public_key:W64.t) : W64.t = {
     
@@ -5215,7 +5215,7 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc jade_kem_kyber_kyber768_amd64_avx2r_dec (shared_secret:W64.t,
+  proc jade_kem_kyber_kyber768_amd64_avx2v_dec (shared_secret:W64.t,
                                                 ciphertext:W64.t,
                                                 secret_key:W64.t) : W64.t = {
     
