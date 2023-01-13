@@ -5246,6 +5246,8 @@ qed.
 op pos_bound16_b (coefs : W16.t Array16.t) (l u b : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] b.
  
+abbrev ru_mask_s = W16.of_int 4095.
+
 lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t): 
     equiv [ Mprevec.poly_frombytes ~ EncDec_AVX2.decode12_opt :
             valid_ptr _p 384 /\
