@@ -1,6 +1,7 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require import Array32 Array128 Array256 Array768 Array960 Array1088 Array2304.
+require import Array25 Array32 Array33 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
+require import List_extra.
 require import KyberPoly  KyberPolyVec KyberINDCPA.
 require import KyberPoly_avx2_proof.
 require import KyberPoly_avx2_vec.
@@ -9,8 +10,9 @@ require import KyberPolyvec_avx2_proof.
 require import KyberPolyvec_avx2_vec.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2.
-require import NTT_Fq.
+require import NTT_Fq NTT_AVX_Fq.
 require import Kyber_AVX_ref_lowlevel_equivs.
+require import Montgomery16.
 import Kyber.
 import KyberSpec.
 import KyberPoly.
@@ -18,7 +20,45 @@ import KyberPolyVec.
 import KyberPolyvecAVX.
 import KyberPolyAVXVec.
 import NTT_Avx2.
+import WArray136 WArray32.
 
+(* move somewhere else *)
+
+lemma bits8_W32u8 ws i :
+  W32u8.pack32_t ws \bits8 i = if 0 <= i < 32 then ws.[i] else W8.zero.
+apply W8.wordP => j hj.
+case (0 <= i < 32) => hi. rewrite  W32u8.pack32bE //. rewrite get_out //. qed.
+
+lemma ianda a b c : a => (b => c) => ((a => b) => c). smt(). qed.
+
+lemma if_eq (a:bool) (b c d:'a) : (a => (b=d)) => (!a => (c=d)) => (if a then b else c) = d.
+move => T F. case a => />. qed.
+
+(* shake assumptions *)
+
+op SHAKE256_ABSORB4x_33 : W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W256.t Array25.t.
+op SHAKE256_SQUEEZENBLOCKS4x : W256.t Array25.t -> W256.t Array25.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t.
+
+axiom shake_absorb4x state seed1 seed2 seed3 seed4 : 
+   phoare [ Jkem_avx2.M._shake256_absorb4x_33 : 
+               arg = (state,seed1,seed2,seed3,seed4) ==>
+               res = SHAKE256_ABSORB4x_33 seed1 seed2 seed3 seed4 ] = 1%r.
+
+axiom shake_squeezenblocks4x state buf1 buf2 buf3 buf4 : 
+   phoare [ Jkem_avx2.M.__shake256_squeezenblocks4x : 
+               arg = (state,buf1,buf2,buf3,buf4) ==>
+               res = SHAKE256_SQUEEZENBLOCKS4x state ] = 1%r.
+
+axiom shake4x_equiv (sn1 sn2 sn3 sn4: W8.t Array33.t) (s1 s2 s3 s4 : W8.t Array32.t) n1 n2 n3 n4 :
+  s1 = Array32.init (fun i => sn1.[i]) =>
+  s2 = Array32.init (fun i => sn2.[i]) =>
+  s3 = Array32.init (fun i => sn3.[i]) =>
+  s4 = Array32.init (fun i => sn4.[i]) =>
+  n1 = sn1.[32] => n2 = sn2.[32] => n3 = sn3.[32] => n4 = sn4.[32] =>
+  Array128.init ("_.[_]" (SHAKE256_SQUEEZENBLOCKS4x (SHAKE256_ABSORB4x_33 sn1 sn2 sn3 sn4)).`2) = SHAKE256_33_128 s1 n1 /\
+  Array128.init ("_.[_]" (SHAKE256_SQUEEZENBLOCKS4x (SHAKE256_ABSORB4x_33 sn1 sn2 sn3 sn4)).`3) = SHAKE256_33_128 s2 n2 /\
+  Array128.init ("_.[_]" (SHAKE256_SQUEEZENBLOCKS4x (SHAKE256_ABSORB4x_33 sn1 sn2 sn3 sn4)).`4) = SHAKE256_33_128 s3 n3 /\
+  Array128.init ("_.[_]" (SHAKE256_SQUEEZENBLOCKS4x (SHAKE256_ABSORB4x_33 sn1 sn2 sn3 sn4)).`5) = SHAKE256_33_128 s4 n4.
 
 axiom sha3equiv : 
  equiv [ (* is this in the sha3 paper? *)
@@ -178,11 +218,172 @@ module GetNoiseAVX2 = {
                 return (sp_0,ep,bp, epp);
 
   }
+
+  proc __poly_getnoise (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
+    var i,j:W64.t;
+    var a,b,c:W8.t;
+    var t:W16.t;
+
+    i <- (W64.of_int 0);
+    j <- (W64.of_int 0);
+    while ((i \ult (W64.of_int 128))) {
+      c <- buf.[(W64.to_uint i)];
+      a <- c;
+      a <- (a `&` (W8.of_int 85));
+      c <- (c `>>` (W8.of_int 1));
+      c <- (c `&` (W8.of_int 85));
+      c <- (c + a);
+      a <- c;
+      a <- (a `&` (W8.of_int 3));
+      b <- c;
+      b <- (b `>>` (W8.of_int 2));
+      b <- (b `&` (W8.of_int 3));
+      a <- (a - b);
+      t <- (sigextu16 a);
+      rp.[(W64.to_uint j)] <- t;
+      a <- c;
+      a <- (a `>>` (W8.of_int 4));
+      a <- (a `&` (W8.of_int 3));
+      b <- (c `>>` (W8.of_int 6));
+      b <- (b `&` (W8.of_int 3));
+      a <- (a - b);
+      t <- (sigextu16 a);
+      j <- (j + (W64.of_int 1));
+      rp.[(W64.to_uint j)] <- t;
+      i <- (i + (W64.of_int 1));
+      j <- (j + (W64.of_int 1));
+    }
+    return (rp);
+  }
+  proc _poly_getnoise (rp:W16.t Array256.t, seed:W8.t Array32.t,nonce:W8.t) : W16.t Array256.t = {
+    var buf:W8.t Array128.t;
+    var r;
+
+    buf <- witness;
+    buf <@ M._shake256_128_33 (buf,Array33.init (fun i => if i=32 then nonce else seed.[i]));
+    r <@ __poly_getnoise(rp,buf);
+    return r;
+  }
+  proc __poly_getnoise_eta1_4x(aux3 aux2 aux1 aux0 : W16.t Array256.t,
+                               noiseseed : W8.t Array32.t, 
+                               nonce : W8.t) : 
+      W16.t Array256.t * W16.t Array256.t * W16.t Array256.t * W16.t Array256.t = {
+      var n3, n2, n1, n0 : W8.t;
+      var aux_3, aux_2, aux_1, aux_0 : W16.t Array256.t;
+      n0 <- nonce + W8.of_int 3;
+      n1 <- nonce + W8.of_int 2;
+      n2 <- nonce + W8.of_int 1;
+      n3 <- nonce;
+      aux_3 <@ _poly_getnoise(aux3,noiseseed,n3);
+      aux_2 <@ _poly_getnoise(aux2,noiseseed,n2);
+      aux_1 <@ _poly_getnoise(aux1,noiseseed,n1);
+      aux_0 <@ _poly_getnoise(aux0,noiseseed,n0);
+      return (aux_3, aux_2, aux_1, aux_0);
+  }
 }.
+
+equiv getnoise_split : 
+  M._poly_getnoise ~ GetNoiseAVX2._poly_getnoise : ={arg} ==> ={res}.
+proc; wp; sp => />. 
+seq 2 0 : (srp{1}=rp{1} /\ ={buf,rp,seed,nonce} /\ extseed{1}=Array33.init (fun i => if i=32 then nonce{1} else seed{1}.[i]) ).
+wp. while{1} (0 <= k{1} <= 32 /\ (forall i, 0 <= i < k{1} => extseed{1}.[i]=seed{1}.[i])) (32-k{1}).
+auto => /> &m H1 H2 H3 H4. split. split. smt(). move => i Hi1 Hi2. rewrite get_setE 1:/#. smt(). smt().
+auto => /> &m. split. move => i Hi1 Hi2. rewrite !get_out /#. move => extseed k. split. smt(). move => H1 H2 H3 H4. rewrite tP => i Hi. rewrite !initiE 1:/# => />. rewrite get_setE 1:/#. smt().
+seq 1 1 : (#pre).
+call (_:true). auto => />. sim. auto => />.  
+inline *. sim. qed.
+
+abbrev noise_evens (buf:W8.t Array128.t) (i:W64.t) = (sigextu16 (((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `&` (W8.of_int 3)) - (((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 2)) `&` (W8.of_int 3)))).
+
+abbrev noise_odds (buf:W8.t Array128.t) (i:W64.t) = (sigextu16 ((((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 4)) `&` (W8.of_int 3)) - (((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 6)) `&` (W8.of_int 3)))).
+
+equiv getnoise_1x_equiv_avx :
+  Jkem_avx2.M.__poly_cbd_eta1 ~ GetNoiseAVX2.__poly_getnoise : ={arg} ==> ={res}.
+proc; wp => />. rcondt{1} 1. auto => />. inline *; wp; sp => />. 
+async while
+  [ (fun x => i < x), i{1} + 1 ]
+  [ (fun x => W64.to_uint i < 32*x), i{1} + 1 ]
+  (i{1} < 4 /\ W64.to_uint i{2} < 128) (!(i{1} < 4))
+  :( aux{1}=4 /\ 0 <= i{1} /\ buf0{1} = (Array128.init (fun i => buf{1}.[i])) /\ mask55_s{1} = (W32.of_int 1431655765) /\ mask33_s{1} = (W32.of_int 858993459) /\ mask03_s{1} = (W32.of_int 50529027) /\ mask0F_s{1} = (W32.of_int 252645135) /\ mask55{1} = VPBROADCAST_8u32 mask55_s{1} /\ mask33{1} = VPBROADCAST_8u32 mask33_s{1} /\ mask03{1} = VPBROADCAST_8u32 mask03_s{1} /\ mask0F{1} = VPBROADCAST_8u32 mask0F_s{1}
+  /\ j{2} = W64.of_int 2 * i{2}
+  /\ ={buf} /\ W64.to_uint i{2}= 32 * i{1} /\ (forall k, 0 <= k < i{1} * 64 => rp0{1}.[k] = rp{2}.[k])
+  ) => //=.
+(*invariants*)
+move => /> &1 &2 H1 H2 H3 H4 H5 H6. rewrite ultE of_uintK //= H6 //=. smt().
+move => /> &1 &2 H1 H2 H3 H4 H5. case H4 => />. rewrite ultE of_uintK //=. smt(). 
+move => /> &1 &2 H1 H2 H3 H4 H5 H6. rewrite ultE of_uintK //= H2. smt().
+move => &2. auto => />. 
+move => &1. auto => /> &m H1 H2 H3 H4 H5 H6. split. smt(). split. smt(). move => k Hk1 Hk2. rewrite H3 //=. rewrite !set_neqiE /#.
+(*inner*)
+move => v1 v2. conseq (_:_ ==> aux{1} = 4 /\ 0 <= i{1} /\ j{2} = (of_int 2)%W64 * i{2} /\ ={buf} /\ to_uint i{2} = 32 * i{1} /\ forall (k : int), 0 <= k && k < i{1} * 64 => rp0{1}.[k] = rp{2}.[k]). auto => />.
+rcondt{1} 1. auto => /> &hr H1 H2 H3 H4. smt(). 
+rcondf{1} 31. auto => />.
+seq 30 0 : ( aux{1} = 4 /\ 0 <= i{1}-1 < 4 /\ j{2} = (of_int 2)%W64 * i{2} /\ ={buf} /\ to_uint i{2} = 32 * (i{1}-1) /\ (forall (k : int), 0 <= k && k < (i{1}-1) * 64 => rp0{1}.[k] = rp{2}.[k]) /\ v2 = i{1} /\ (forall k, 0 <= k < 32 => rp0{1}.[(i{1}-1)*64+k*2]=noise_evens buf{1} (W64.of_int ((i{1}-1)*32+k)) /\ rp0{1}.[(i{1}-1)*64+k*2+1]=noise_odds buf{1} (W64.of_int ((i{1}-1)*32+k))) ).
+(* avx2 (64 bits) vs ori (32 * 2 bits) equiv *)
+auto => /> &1 &2. rewrite !ultE of_uintK => /> H1 H2 H3 H4 H5 H6. split.
+move => k Hk1 Hk2. rewrite initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/# initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/# initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/# initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/#. rewrite H3 //=.
+admit. (*move => k Hk1 Hk2. rewrite !initiE //= 1..2:/#. rewrite !get16_set256E //= 1..4:/#. rewrite !bits16_W16u16. 
+
+split.
++ rewrite !initiE //= 1:/#. rewrite !get16_set256E //= 1..2:/#. progress.
+  apply if_eq => />. move => K1 K2. rewrite bits16_W16u16. rewrite ifT 1:/#. rewrite get_of_list 1:/#. rewrite nth_onth onth_map (onth_nth witness) //= 1:/#. 
+
+rewrite wordP => i Hi. rewrite bits16iE 1:/#. rewrite pack16wE 1:/#.
+
+
+apply bits16_W16u8.*)
+(*while*)
+while{2}
+  (v2 = i{1} /\ ={buf} /\ 0 <= i{1}-1 < 4 /\ 32 * (i{1}-1) <= W64.to_uint i{2} /\ i{2} \ule W64.of_int 32 * W64.of_int i{1} /\ j{2} = W64.of_int 2 * i{2} /\ (forall k, (0 <= k && k < W64.to_uint j{2}) => rp0{1}.[k] = rp{2}.[k]) /\ (forall k, 0 <= k < 32 => rp0{1}.[(i{1}-1)*64+k*2]=noise_evens buf{1} (W64.of_int ((i{1}-1)*32+k)) /\ rp0{1}.[(i{1}-1)*64+k*2+1]=noise_odds buf{1} (W64.of_int ((i{1}-1)*32+k))) )
+  (128 - W64.to_uint i{2}).
+move => /> &m z. auto => /> &m2. rewrite !uleE ultE !of_uintK //= => H1 H2 H3 H4 H5 H6 H7 H8. rewrite to_uintM_small !of_uintK //= 1:/#. rewrite !to_uintD_small !of_uintK //= 1:/#. rewrite to_uintM_small !of_uintK //= 1..2:/#. rewrite to_uintM_small !of_uintK //= 1..2:/#. split. split. smt(). split. smt(). split. rewrite W64.WRingA.mulrDr //=. move => k Hk1. rewrite to_uintM_small !of_uintK 1:/# //= => Hk2.
+case (k < 2 * W64.to_uint i{m2}) => /> Hk3.
+ rewrite !set_neqiE 1..4:/#. rewrite H5 //=. rewrite to_uintM_small !of_uintK //= 1:/#.
+case (k=2 * to_uint i{m2} + 1) => />.
+ rewrite set_eqiE //= 1:/#. move :(H6 (W64.to_uint i{m2} - 32*(i{m}-1))). apply ianda. smt(). rewrite (_: (i{m}-1) * 64 + (to_uint i{m2} - 32 * (i{m}-1)) * 2 = 2 * to_uint i{m2}). smt(). move => /> H9 H10. rewrite H10 //. rewrite (_: ((W64.of_int ((i{m}-1) * 32 + (to_uint i{m2} - 32 * (i{m}-1))))) = i{m2}) //=. rewrite mulrC addrCA subrr addr0 to_uintK //.
+ move => Hk4. have ->: k = 2* to_uint i{m2}. smt(). rewrite set_neqiE //= 1..2:/#. rewrite set_eqiE //= 1:/#. move :(H6 (W64.to_uint i{m2} - 32*(i{m}-1))). apply ianda. smt(). rewrite (_: (i{m}-1) * 64 + (to_uint i{m2} - 32 * (i{m}-1)) * 2 = 2 * to_uint i{m2}). smt(). rewrite (_: (W64.of_int ((i{m}-1) * 32 + (to_uint i{m2} - 32 * (i{m}-1)))) = i{m2} ) //=. rewrite mulrC addrCA subrr addr0 to_uintK //. smt().
+auto => /> &1 &2. rewrite !uleE !of_uintK //= => H1 H2 H3 H4 H5. split. split. smt(). split. smt(). move => k Hk1. rewrite to_uintM_small !of_uintK //= 1:/#. move => Hk2. rewrite H4 //. smt(). move => iR rpR. split. rewrite !uleE !ultE of_uintK //= => R1 R2 R3 R4. smt(). rewrite negb_and uleE ultE !of_uintK //= => R5 R6 R7 R8. split. smt(). split. smt(). move => k Hk1 Hk2. rewrite R8 //=. rewrite to_uintM_small !of_uintK //= 1..2:/#. 
+(*lossless*)
+rcondf 1; auto => /> &1 H1 H2 H3. smt().
+rcondf 1; auto => /> &2 H1 H2 H3. smt().
+(*end*)
+auto => /> iL rp0L iR rpR H1 H2 H3 H4 H5. rewrite tP => k Hk. rewrite H5 //= /#.
+qed.
+
+equiv getnoise_4x_split : 
+  GetNoiseAVX2._poly_getnoise_eta1_4x ~ GetNoiseAVX2.__poly_getnoise_eta1_4x : ={arg} ==> ={res}.
+proc; wp; sp => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. auto => />. qed.
 
 equiv getnoiseequiv_avx : 
    Jkem_avx2.M._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
-admitted. (* this is the poly noisegen equiv *)
+proc*. 
+transitivity{2} { r <@ GetNoiseAVX2.__poly_getnoise_eta1_4x(aux3,aux2,aux1,aux0,noiseseed,nonce); } ((r0{1}, r1{1}, r2{1}, r3{1}, seed{1}, nonce{1}) = (aux3{2}, aux2{2}, aux1{2}, aux0{2}, noiseseed{2}, nonce{2}) ==> ={r}) (={aux3,aux2,aux1,aux0,noiseseed,nonce} ==> ={r}); last first.
+symmetry. call getnoise_4x_split => />. auto => />. smt(). smt().
+(*main proof*)
+inline Jkem_avx2.M._poly_getnoise_eta1_4x GetNoiseAVX2.__poly_getnoise_eta1_4x GetNoiseAVX2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
+seq 25 30 : (
+    r00{1}=rp{2}  /\ Array128.init (fun (i : int) => buf0{1}.[i]) =buf{2}
+ /\ r10{1}=rp0{2} /\ Array128.init (fun (i : int) => buf1{1}.[i]) =buf0{2}
+ /\ r20{1}=rp1{2} /\ Array128.init (fun (i : int) => buf2{1}.[i]) =buf1{2}
+ /\ r30{1}=rp2{2} /\ Array128.init (fun (i : int) => buf3{1}.[i]) =buf2{2}
+).
+sp => />.
+ecall{2} (shake256_33_128 buf2{2} (Array33.init (fun i => if i = 32 then nonce4{2} else seed2{2}.[i]))); wp => />.
+ecall{2} (shake256_33_128 buf1{2} (Array33.init (fun i => if i = 32 then nonce3{2} else seed1{2}.[i]))); wp => />.
+ecall{2} (shake256_33_128 buf0{2} (Array33.init (fun i => if i = 32 then nonce2{2} else seed0{2}.[i]))); wp => />.
+ecall{2} (shake256_33_128 buf{2} (Array33.init (fun i=> if i = 32 then nonce1{2} else seed{2}.[i]))); wp => />.
+ecall{1} (shake_squeezenblocks4x state{1} buf0{1} buf1{1} buf2{1} buf3{1}); wp => />.
+ecall{1} (shake_absorb4x state{1} (Array33.init (fun i => buf0{1}.[i])) (Array33.init (fun i => buf1{1}.[i])) (Array33.init (fun i => buf2{1}.[i])) (Array33.init (fun i => buf3{1}.[i])) ); wp => />.
+auto => /> &2. rewrite shake4x_equiv => />.
+rewrite tP => k Hk; rewrite !initiE //= 1..3:/#; rewrite ifF 1:/#; rewrite /get8 /init8 set_neqiE 1..2:/#; rewrite initiE //= 1:/#; rewrite initiE //= 1:/#; rewrite set256E initiE //= 1:/#; rewrite ifT //; rewrite /get256_direct bits8_W32u8 //=; rewrite ifT //; rewrite initiE //=; rewrite initiE //=.
+rewrite tP => k Hk; rewrite !initiE //= 1..3:/#; rewrite ifF 1:/#; rewrite /get8 /init8 set_neqiE 1..2:/#; rewrite initiE //= 1:/#; rewrite initiE //= 1:/#; rewrite set256E initiE //= 1:/#; rewrite ifT //; rewrite /get256_direct bits8_W32u8 //=; rewrite ifT //; rewrite initiE //=; rewrite initiE //=.
+rewrite tP => k Hk; rewrite !initiE //= 1..3:/#; rewrite ifF 1:/#; rewrite /get8 /init8 set_neqiE 1..2:/#; rewrite initiE //= 1:/#; rewrite initiE //= 1:/#; rewrite set256E initiE //= 1:/#; rewrite ifT //; rewrite /get256_direct bits8_W32u8 //=; rewrite ifT //; rewrite initiE //=; rewrite initiE //=.
+rewrite tP => k Hk; rewrite !initiE //= 1..3:/#; rewrite ifF 1:/#; rewrite /get8 /init8 set_neqiE 1..2:/#; rewrite initiE //= 1:/#; rewrite initiE //= 1:/#; rewrite set256E initiE //= 1:/#; rewrite ifT //; rewrite /get256_direct bits8_W32u8 //=; rewrite ifT //; rewrite initiE //=; rewrite initiE //=.
+wp. call getnoise_1x_equiv_avx => />.
+wp. call getnoise_1x_equiv_avx => />.
+wp. call getnoise_1x_equiv_avx => />.
+wp. call getnoise_1x_equiv_avx => />.
+auto => />. qed.
 
 lemma polygetnoise_ll : islossless M._poly_getnoise.
 proc. 
