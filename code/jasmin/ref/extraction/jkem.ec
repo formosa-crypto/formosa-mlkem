@@ -1380,7 +1380,7 @@ module M(SC:Syscall_t) = {
     j <- (W64.of_int 0);
     aa <@ __polyvec_csubq (a);
     
-    while ((i \ult (W64.of_int 768))) {
+    while ((i \ult (W64.of_int (3 * 256)))) {
       k <- 0;
       while (k < 4) {
         t.[k] <- (zeroextu64 aa.[(W64.to_uint i)]);
@@ -1442,7 +1442,7 @@ module M(SC:Syscall_t) = {
     j <- (W64.of_int 0);
     aa <@ __polyvec_csubq (a);
     
-    while ((i \ult (W64.of_int 768))) {
+    while ((i \ult (W64.of_int (3 * 256)))) {
       k <- 0;
       while (k < 4) {
         t.[k] <- (zeroextu64 aa.[(W64.to_uint i)]);
@@ -1500,7 +1500,7 @@ module M(SC:Syscall_t) = {
     i <- (W64.of_int 0);
     j <- (W64.of_int 0);
     
-    while ((i \ult (W64.of_int 768))) {
+    while ((i \ult (W64.of_int (3 * 256)))) {
       k <- 0;
       while (k < 5) {
         t.[k] <- (zeroextu32 (loadW8 Glob.mem (W64.to_uint (ap + j))));
@@ -1764,7 +1764,7 @@ module M(SC:Syscall_t) = {
           (ctr, poly) <@ __rej_uniform (poly, ctr, buf);
         }
         k <- (W64.of_int 0);
-        l <- (W64.of_int ((i * 768) + (j * 256)));
+        l <- (W64.of_int ((i * (3 * 256)) + (j * 256)));
         
         while ((k \ult (W64.of_int 256))) {
           t <- poly.[(W64.to_uint k)];
@@ -1878,7 +1878,7 @@ module M(SC:Syscall_t) = {
     pkpv <- Array768.init
             (fun i_0 => if 0 <= i_0 < 0 + 256 then aux_0.[i_0-0]
             else pkpv.[i_0]);
-    aux_0 <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => a.[768 + i_0])),
+    aux_0 <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => a.[(3 * 256) + i_0])),
     skpv);
     pkpv <- Array768.init
             (fun i_0 => if 256 <= i_0 < 256 + 256 then aux_0.[i_0-256]
@@ -1887,7 +1887,7 @@ module M(SC:Syscall_t) = {
     pkpv <- Array768.init
             (fun i_0 => if 256 <= i_0 < 256 + 256 then aux_0.[i_0-256]
             else pkpv.[i_0]);
-    aux_0 <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => a.[(2 * 768) + i_0])),
+    aux_0 <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => a.[(2 * (3 * 256)) + i_0])),
     skpv);
     pkpv <- Array768.init
             (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
@@ -1997,12 +1997,12 @@ module M(SC:Syscall_t) = {
     sp_0);
     bp <- Array768.init
           (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0] else bp.[i_0]);
-    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[768 + i_0])),
+    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[(3 * 256) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i_0 => if 256 <= i_0 < 256 + 256 then aux.[i_0-256]
           else bp.[i_0]);
-    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[(2 * 768) + i_0])),
+    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[(2 * (3 * 256)) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
@@ -2108,12 +2108,12 @@ module M(SC:Syscall_t) = {
     sp_0);
     bp <- Array768.init
           (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0] else bp.[i_0]);
-    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[768 + i_0])),
+    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[(3 * 256) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i_0 => if 256 <= i_0 < 256 + 256 then aux.[i_0-256]
           else bp.[i_0]);
-    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[(2 * 768) + i_0])),
+    aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[(2 * (3 * 256)) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256

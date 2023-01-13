@@ -312,9 +312,9 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
     aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[0 + i_0])),skpv);
     pkpv <- Array768.init (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else pkpv.[i]);
-    aux <@ Aux.inner_product((Array768.init (fun i_0 => a.[768 + i_0])),skpv);
+    aux <@ Aux.inner_product((Array768.init (fun i_0 => a.[3*256 + i_0])),skpv);
     pkpv <- Array768.init (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else pkpv.[i]);
-    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[(2 * 768) + i_0])), skpv);
+    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[(2 * (3 * 256)) + i_0])), skpv);
     pkpv <- Array768.init (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)] else pkpv.[i]);
 
     pkpv <@Jkem.M(Jkem.Syscall).__polyvec_add2 (pkpv,e);
@@ -393,11 +393,11 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     sp_0);
     bp <- Array768.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[768 + i_0])),
+    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[3*256 + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * 768) + i_0])),
+    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
@@ -482,11 +482,11 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     sp_0);
     bp <- Array768.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[768 + i_0])),
+    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[3*256 + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * 768) + i_0])),
+    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256

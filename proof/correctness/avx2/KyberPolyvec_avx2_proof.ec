@@ -827,6 +827,7 @@ proof.
     apply Array960.ext_eq.
 qed.
 
+abbrev ru_ones_s = W8.of_int 1.
 lemma decompress_aux_1 (x: W32.t):
   ((x `<<<` 4 \bits16 0) `>>` ru_ones_s) `&` (W16.of_int 8184)
   = W16.of_int ((to_uint (x \bits8 0) + (to_uint (x \bits8 1)) %% 4 * 2^8)) `&` (W16.of_int 1023) `<<<` 3.

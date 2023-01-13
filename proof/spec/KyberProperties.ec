@@ -35,16 +35,16 @@ qed.
 (* These are a pain but need to be done. See EncDecCorrectness. *) 
 lemma sem_encode1K (x : ipoly) : 
    (forall i, 0 <= i < 256 => 0 <= x.[i] < 2) =>
-     x = (op_EncDec_decode1 (op_EncDec_encode1 x)) by admit.
+     x = (decode1 (encode1 x)) by admit.
 lemma sem_encode4K (x : ipoly) : 
    (forall i, 0 <= i < 256 => 0 <= x.[i] < 16) =>
-     x =  op_EncDec_decode4 (op_EncDec_encode4 x)  by admit. 
+     x =  decode4 (encode4 x)  by admit. 
 lemma sem_encode10_vecK (x : ipolyvec) : 
    (forall i, 0 <= i < 768 => 0 <= x.[i] < 1024) =>
-     x =  op_EncDec_decode10_vec (op_EncDec_encode10_vec x)  by admit. 
+     x =  decode10_vec_aux (encode10_vec_aux x)  by admit. 
 lemma sem_encode12_vecK (x : ipolyvec) : 
    (forall i, 0 <= i < 768 => 0 <= x.[i] < 4096) =>
-     x =  op_EncDec_decode12_vec (op_EncDec_encode12_vec x)  by admit. 
+     x =  decode12_vec_aux (encode12_vec_aux x)  by admit. 
 
 require import BitEncoding.  
 import BS2Int BitChunking.
@@ -98,9 +98,9 @@ op pk_decode(pk : pkey) = (invnttv (ofipolyvec (sem_decode12_vec (pk.`1))),pk.`2
 op sk_encode(sk : vector) : skey = op_EncDec_encode12_vec (toipolyvec (nttv sk)).
 op sk_decode(sk : skey) =  invnttv (ofipolyvec (sem_decode12_vec sk)).
 op m_encode(m : plaintext) : poly = decompress_poly 1 (sem_decode1 m).
-op m_decode(p : poly) : plaintext = op_EncDec_encode1 (compress_poly 1 p). 
+op m_decode(p : poly) : plaintext = encode1 (compress_poly 1 p). 
 op c_encode(c :  vector * poly) : ciphertext = 
-      (op_EncDec_encode10_vec (compress_polyvec 10 c.`1), op_EncDec_encode4 (compress_poly 4 c.`2)).
+      (encode10_vec_aux (compress_polyvec 10 c.`1), encode4 (compress_poly 4 c.`2)).
 op c_decode(c : ciphertext) =
       (decompress_polyvec 10 (sem_decode10_vec c.`1), decompress_poly 4 (sem_decode4 c.`2)).
 op rnd_err_v = compress_poly_err 4. 
@@ -230,8 +230,8 @@ rewrite /under_noise_bound /m_encode /m_decode /compress_poly
         /decompress_poly /max_noise qE /= => m n.
 rewrite allP  => /=  hgood.
 rewrite sem_decode1_corr.
-have : op_EncDec_decode1 (op_EncDec_encode1 (map (compress 1) (map (decompress 1) (op_EncDec_decode1 m) &+ n))) = 
-       (op_EncDec_decode1 m); last by smt(sem_decode1K).
+have : decode1 (encode1 (map (compress 1) (map (decompress 1) (decode1 m) &+ n))) = 
+       (decode1 m); last by smt(sem_decode1K).
 apply Array256.ext_eq => /> x h0x hx256. 
 rewrite -sem_encode1K. 
 + move => i ib; rewrite !mapiE /= 1:ib /compress /= /#.
@@ -889,15 +889,15 @@ module (NTTSampler(S : Sampler) : Sampler) (O : RO.POracle) = {
 }.
 
 (* These are all replaced by proc op *)
-phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = op_EncDec_decode1  a ] = 1%r by admit. (* reify *)
-phoare sem_encode12 a : [ EncDec.encode12 : arg = a ==>  res = op_EncDec_encode12 a ] = 1%r by admit. (* reify *)
-phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = op_EncDec_encode1  a ] = 1%r by admit. (* reify *)
-phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = op_EncDec_encode4  a ] = 1%r by admit. (* reify *)
-phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = op_EncDec_decode4  a ] = 1%r by admit. (* reify *)
-phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = op_EncDec_encode10_vec a ] = 1%r by admit. (* reify *)
-phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = op_EncDec_decode10_vec a ] = 1%r by admit. (* reify *)
-phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = op_EncDec_encode12_vec a ] = 1%r by admit. (* reify *)
-phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = op_EncDec_decode12_vec a ] = 1%r by admit. (* reify *)
+phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = decode1  a ] = 1%r by admit. (* reify *)
+phoare sem_encode12 a : [ EncDec.encode12 : arg = a ==>  res = encode12_aux a ] = 1%r by admit. (* reify *)
+phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = encode1  a ] = 1%r by admit. (* reify *)
+phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = encode4  a ] = 1%r by admit. (* reify *)
+phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = decode4  a ] = 1%r by admit. (* reify *)
+phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = encode10_vec_aux a ] = 1%r by admit. (* reify *)
+phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = decode10_vec_aux a ] = 1%r by admit. (* reify *)
+phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = encode12_vec_aux a ] = 1%r by admit. (* reify *)
+phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = decode12_vec_aux a ] = 1%r by admit. (* reify *)
 
 
 section.

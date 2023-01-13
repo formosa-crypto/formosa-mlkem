@@ -1,0 +1,4 @@
+report.pdf
+macros.tex
+*.aux
+*.log

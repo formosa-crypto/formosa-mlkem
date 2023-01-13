@@ -1,4 +1,4 @@
-.PHONY: libkyber768_ref.a clean
+.PHONY: libkyber768_ref.a clean distclean
 
 libkyber768_ref.a:
 	jasminc -nowarning -lea jkem.jazz -o jkem.s
@@ -7,4 +7,7 @@ libkyber768_ref.a:
 
 
 clean:
-	rm -f *.o *.a *.s
+	rm -f *.o *.a
+
+distclean: clean
+	rm -f *.s
