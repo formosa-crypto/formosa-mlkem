@@ -242,7 +242,7 @@ have ulbnd : (-R*R %/4 <= smod (a * qinv) R * q).
 + case (0 <= smod (a * qinv) R);1 : by smt().
   case (smod (a * qinv) R = -R %/2).
   - move => -> /ltrNge /oppr_lt0 lt0_.
-    rewrite mulNr ler_opp2; apply/(ler_trans ((R %/ 2) * (R %/ 2))). admit.
+    rewrite mulNr ler_opp2; apply/(ler_trans ((R %/ 2) * (R %/ 2)));1:smt().
     rewrite {3 4}(divz_eq R 2) mulrDl !mulrDr /= !mulrA (mulrAC _ 2).
     rewrite -!mulrA /= !mulrA (mulrAC _ 2) !addrA -(addrA (_ * 4)).
     rewrite (mulrC (_ %% _)) -mulrDr /= -mulrDl divzMDl // -addrA.
