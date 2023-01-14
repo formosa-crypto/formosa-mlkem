@@ -95,7 +95,6 @@ sim (M(Syscall)._shake128_absorb34 ~ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_ab
      Jkem.M(Jkem.Syscall).__gen_matrix : true).
 apply shake128_equiv_absorb.
 apply shake128_equiv_squeezeblock.
-print nttunpackm.
 while {2} (0 <= i{2} <= 3 /\ 
   (forall ki,
       0 <= ki < i{2}*768 => r{2}.[ki] = 
@@ -308,11 +307,8 @@ module GetNoiseAVX2 = {
 op noise_coef (bytes: W8.t Array128.t) (j: int): int =
  let b = bytes.[j%/2] in b2i b.[j%%2*4] + b2i b.[j%%2*4+1] - (b2i b.[j%%2*4+2] + b2i b.[j%%2*4+3]).
 
-(* bytes-to-reg *)
 import WArray128.
-(*
-print WArray128.get256.
-*)
+
 op B2Ri (bytes: W8.t Array128.t) (j: int): W256.t =
  get256 (WArray128.init8 (fun i => bytes.[i])) j.
 
@@ -339,66 +335,169 @@ abbrev mask33u8 = W8.of_int 51. (* 51 = 0x33 *)
 abbrev mask03u8 = W8.of_int 3. (* 3 = 0x03 *)
 abbrev mask0Fu8 = W8.of_int 15. (* 15 = 0x0F *)
 
-lemma mask55_bits8 k:
- 0 <= k < 32 =>
- mask55u256 \bits8 k = mask55u8.
-admitted.
-
 lemma mask55_bits16 k:
  0 <= k < 16 =>
  mask55u256 \bits16 k = mask55u16.
-admitted.
+proof.
+move=> Hk.
+rewrite /VPBROADCAST_8u32.
+rewrite bits16_W8u32 Hk //= get_of_list 1:/# /=. 
+rewrite (nth_map 0) /=; first smt(size_iota).
+have: (k%%2 \in iota_ 0 2) by smt(mem_iota).
+by move: (k%%2); rewrite -allP -iotaredE /= W2u16.bits16_div //.
+qed.
+
+lemma mask55_bits8 k:
+ 0 <= k < 32 =>
+ mask55u256 \bits8 k = mask55u8.
+proof.
+move=> Hk.
+rewrite /VPBROADCAST_8u32.
+rewrite bits8_W8u32 Hk //= get_of_list 1:/# /=. 
+rewrite (nth_map 0) /=; first smt(size_iota).
+have: (k%%4 \in iota_ 0 4) by smt(mem_iota).
+by move: (k%%4); rewrite -allP -iotaredE /= W4u8.bits8_div //.
+qed.
 
 lemma mask33_bits16 k:
  0 <= k < 16 =>
  mask33u256 \bits16 k = mask33u16.
-admitted.
+proof.
+move=> Hk.
+rewrite /VPBROADCAST_8u32.
+rewrite bits16_W8u32 Hk //= get_of_list 1:/# /=. 
+rewrite (nth_map 0) /=; first smt(size_iota).
+have: (k%%2 \in iota_ 0 2) by smt(mem_iota).
+by move: (k%%2); rewrite -allP -iotaredE /= W2u16.bits16_div //.
+qed.
 
 lemma mask33_bits8 k:
  0 <= k < 32 =>
  mask33u256 \bits8 k = mask33u8.
-admitted.
+proof.
+move=> Hk.
+rewrite /VPBROADCAST_8u32.
+rewrite bits8_W8u32 Hk //= get_of_list 1:/# /=. 
+rewrite (nth_map 0) /=; first smt(size_iota).
+have: (k%%4 \in iota_ 0 4) by smt(mem_iota).
+by move: (k%%4); rewrite -allP -iotaredE /= W4u8.bits8_div //.
+qed.
 
 lemma mask03_bits8 k:
  0 <= k < 32 =>
  mask03u256 \bits8 k = mask03u8.
-admitted.
+proof.
+move=> Hk.
+rewrite /VPBROADCAST_8u32.
+rewrite bits8_W8u32 Hk //= get_of_list 1:/# /=. 
+rewrite (nth_map 0) /=; first smt(size_iota).
+have: (k%%4 \in iota_ 0 4) by smt(mem_iota).
+by move: (k%%4); rewrite -allP -iotaredE /= W4u8.bits8_div //.
+qed.
 
 lemma mask0F_bits16 k:
  0 <= k < 16 =>
  mask0Fu256 \bits16 k = mask0Fu16.
-admitted.
+proof.
+move=> Hk.
+rewrite /VPBROADCAST_8u32.
+rewrite bits16_W8u32 Hk //= get_of_list 1:/# /=. 
+rewrite (nth_map 0) /=; first smt(size_iota).
+have: (k%%2 \in iota_ 0 2) by smt(mem_iota).
+by move: (k%%2); rewrite -allP -iotaredE /= W2u16.bits16_div //.
+qed.
 
 lemma mask0F_bits8 k:
  0 <= k < 32 =>
  mask0Fu256 \bits8 k = mask0Fu8.
-admitted.
+proof.
+move=> Hk.
+rewrite /VPBROADCAST_8u32.
+rewrite bits8_W8u32 Hk //= get_of_list 1:/# /=. 
+rewrite (nth_map 0) /=; first smt(size_iota).
+have: (k%%4 \in iota_ 0 4) by smt(mem_iota).
+by move: (k%%4); rewrite -allP -iotaredE /= W4u8.bits8_div //.
+qed.
+
+lemma VPSRL1_ANDmask55 w k:
+ 0 <= k < 32 =>
+ mask55u256 `&` (VPSRL_16u16 w (W8.of_int 1)) \bits8 k
+ = mask55u8 `&` ((w \bits8 k) `>>` (W8.of_int 1)).
+proof.
+move=> Hk.
+rewrite {1}(_:k=2*(k%/2) + (k%%2)); first smt(divz_eq).
+rewrite -W256_bits16_bits8 1:/# andb16E /VPSRL_16u16 mapbE 1:/# /=.
+rewrite W256_bits16_bits8 1:/# mask55_bits8 1:/#.
+apply W8extra.wordP_red. rewrite -allP /=.
+have: (k\in iota_ 0 32) by smt(mem_iota).
+by move: {Hk} k; rewrite -allP -iotaredE /= !W16.shrwE !W8.shrwE /int_bit /=.
+qed.
 
 lemma VPSRL2_ANDmask33 w k:
  0 <= k < 32 =>
- VPAND_256 mask33u256 (VPSRL_16u16 w (W8.of_int 2)) \bits8 k
- = (w \bits8 k) `>>` (W8.of_int 2) `&` mask33u8.
-admitted.
+ mask33u256 `&` (VPSRL_16u16 w (W8.of_int 2)) \bits8 k
+ = mask33u8 `&` ((w \bits8 k) `>>` (W8.of_int 2)).
+proof.
+move=> Hk.
+rewrite {1}(_:k=2*(k%/2) + (k%%2)); first smt(divz_eq).
+rewrite -W256_bits16_bits8 1:/# andb16E /VPSRL_16u16 mapbE 1:/# /=.
+rewrite W256_bits16_bits8 1:/# mask33_bits8 1:/#.
+apply W8extra.wordP_red. rewrite -allP /=.
+have: (k\in iota_ 0 32) by smt(mem_iota).
+by move: {Hk} k; rewrite -allP -iotaredE /= !W16.shrwE !W8.shrwE /int_bit /=.
+qed.
 
 lemma VPSRL4_ANDmask0F w k:
  0 <= k < 32 =>
  VPAND_256 mask0Fu256 (VPSRL_16u16 w (W8.of_int 4)) \bits8 k
- = ((w \bits8 k) `>>` (W8.of_int 4)) `&` mask0Fu8.
-admitted.
+ = mask0Fu8 `&` ((w \bits8 k) `>>` (W8.of_int 4)).
+proof.
+move=> Hk.
+rewrite {1}(_:k=2*(k%/2) + (k%%2)); first smt(divz_eq).
+rewrite -W256_bits16_bits8 1:/# andb16E /VPSRL_16u16 mapbE 1:/# /=.
+rewrite W256_bits16_bits8 1:/# mask0F_bits8 1:/#.
+apply W8extra.wordP_red. rewrite -allP /=.
+have: (k\in iota_ 0 32) by smt(mem_iota).
+by move: {Hk} k; rewrite -allP -iotaredE /= !W16.shrwE !W8.shrwE /int_bit /=.
+qed.
 
-lemma to_sint8B_small (x y: W8.t):
- W8.min_sint <= to_sint x - to_sint y <= W8.max_sint =>
- to_sint (x-y) = to_sint x - to_sint y.
-admitted.
+(*
+mask0Fu8 `&`
+(mask33u8 `&` 
+  (mask55u8 `&` buf{m}.[k %/ 2] + (buf{m}.[k %/ 2] `>>` ru_ones_s) `&` mask55u8)
++ mask33u8 -
+  (mask55u8 `&` buf{m}.[k %/ 2] + (buf{m}.[k %/ 2] `>>` ru_ones_s) `&` mask55u8 `>>` (of_int 2)%W8)
+ `&` mask33u8) -
+mask03u8 = (of_int (noise_coef buf{m} k))%W8
+
+está assim:
+ noise_coef bytes j
+ = let b = bytes.[j%/2] in
+   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
+   let y = x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8 in
+   if j%%2 = 0
+   then to_sint (y `&` mask0Fu8 - mask03u8)
+   else to_sint ((y `>>` (W8.of_int 4)) `&` mask0Fu8 - mask03u8).
+
+queria:
+ noise_coef bytes j
+ = let b = bytes.[j%/2] in
+   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
+   let y = mask33u8 `&` x + mask33u8 - mask33u8 `&` (x `>>` (W8.of_int 2)) in
+   if j%%2 = 0
+   then to_sint (mask0Fu8 `&` y - mask03u8)
+   else to_sint (mask0Fu8 `&` (y `>>` (W8.of_int 4)) - mask03u8).
+
+*)
 
 lemma to_uint_mask33 (w:W8.t):
- to_uint (w `&` mask33u8)
+ to_uint (mask33u8 `&` w)
  = to_uint w %% 4 + to_uint w %/ 16 %% 4 * 16.
 proof.
 have ->: mask33u8 = (mask03u8 `<<<` 4) `|` mask03u8.
  apply W8.wordP => k; rewrite -mem_range /range /=. 
  by move: k; apply/List.allP; rewrite -iotaredE /int_bit /=.
-rewrite andw_orwDr orw_disjoint.
+rewrite andwC andw_orwDr orw_disjoint.
  apply W8.wordP => k; rewrite -mem_range /range /=. 
  by move: k; apply/List.allP; rewrite -iotaredE /int_bit /=.
 have ->: w `&` (mask03u8 `<<<` 4)
@@ -419,18 +518,18 @@ by rewrite E1 E2 /#.
 qed.
 
 lemma aux_coef_pos b:
- to_uint ((b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8) `&` mask33u8)
+ to_uint (mask33u8 `&` (mask55u8 `&` b  + mask55u8 `&` (b `>>` ru_ones_s)))
  = b2i b.[0] + b2i b.[1] + 16 * (b2i b.[4] + b2i b.[5]).
 proof.
-rewrite addrC -(mask85_sum b 0) // -(mask85_sum b 2) //=.
+rewrite addrC -(mask85_sum b 0) // -(mask85_sum b 2) //= !(W8.andwC mask55u8).
 by rewrite to_uint_mask33 /(`>>`) to_uint_shr //= to_uint_shr //= /#.
 qed.
 
 lemma aux_coef_neg b:
- to_uint (((b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8) `>>` W8.of_int 2) `&` mask33u8)
+ to_uint (mask33u8 `&` ((mask55u8 `&` b + mask55u8 `&` (b `>>` ru_ones_s)) `>>` W8.of_int 2))
  = b2i b.[2] + b2i b.[3] + 16 * (b2i b.[6] + b2i b.[7]).
 proof.
-rewrite to_uint_mask33 to_uint_shr // -divz_mul //=.
+rewrite to_uint_mask33 to_uint_shr // -divz_mul //= !(W8.andwC mask55u8).
 rewrite {1}(_:4=2^2) // (_:64=2^6) // -(mask85_sum b 1) // -(mask85_sum b 3) //=. 
 by rewrite to_uint_shr //= to_uint_shr //= /#.
 qed.
@@ -438,8 +537,8 @@ qed.
 lemma noise_coef_avx2_aux bytes j:
  3 + noise_coef bytes j
  = let b = bytes.[j%/2] in
-   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
-   let y = x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8 in
+   let x = mask55u8 `&` b + mask55u8 `&` (b `>>` W8.one) in
+   let y = mask33u8 `&` x + mask33u8 - mask33u8 `&` (x `>>` (W8.of_int 2))in
    to_uint y %/ 2^(j%%2*4) %% 16.
 proof.
 have LL1: forall (x y z:int), (x + z*y) %% z = x %% z.
@@ -448,12 +547,12 @@ have LL2: forall (x y z:int), (x - z*y) %% z = x %% z.
  by move=> x1 x2 x3; rewrite -modzDm -modzNm modzMr /= modz_mod.
 move=> /=.
 pose b:= bytes.[j %/ 2].
-pose x:= b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8.
+pose x:= mask55u8 `&` b  + mask55u8 `&` (b `>>` ru_ones_s).
 case: (j %% 2 = 0) => C.
  rewrite C /=. 
  rewrite -addrA to_uintD /= modz_dvd 1:/#.
  rewrite aux_coef_pos W8.to_uintB.
-  by rewrite andwC ule_andw.
+  by rewrite ule_andw.
  rewrite -modzDm LL1 modzDm aux_coef_neg.
  rewrite Ring.IntID.opprD !addzA LL2 /=.
  by rewrite -modzDml -(modzDmr _ 51) /= modzDml modz_small /#. 
@@ -461,7 +560,7 @@ have ->/=: j%%2 = 1 by smt().
 rewrite -addrA to_uintD.
 rewrite (_:16=2^4) // modz_pow_div //= modz_mod.
 rewrite aux_coef_pos W8.to_uintB.
- by rewrite andwC ule_andw.
+ by rewrite ule_andw.
 rewrite aux_coef_neg /= (divz_eq 51 16).
 pose X:= (b2i _ + _ + _ + _)%W8.
 have /=->: X 
@@ -474,13 +573,12 @@ qed.
 lemma noise_coef_avx2 bytes j:
  noise_coef bytes j
  = let b = bytes.[j%/2] in
-   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
-   let y = x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8 in
+   let x = mask55u8 `&` b + mask55u8 `&` (b `>>` W8.one) in
+   let y = mask33u8 `&` x + mask33u8 - mask33u8 `&` (x `>>` (W8.of_int 2)) in
    if j%%2 = 0
-   then to_sint (y `&` mask0Fu8 - mask03u8)
-   else to_sint ((y `>>` (W8.of_int 4)) `&` mask0Fu8 - mask03u8).
+   then to_sint (mask0Fu8 `&` y - mask03u8)
+   else to_sint (mask0Fu8 `&` (y `>>` (W8.of_int 4)) - mask03u8).
 proof.
-search W16.to_sint W16.to_uint.
 have L1: forall x, W8.to_uint x < 128 => W8.to_sint x = to_uint x. 
  by move=> x; rewrite to_sintE /smod /= /#.
 rewrite /noise_coef /=.
@@ -488,29 +586,156 @@ pose b:= bytes.[j %/ 2].
 pose x:= b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8.
 pose y:= x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8.
 case: (j %% 2 = 0) => C.
- rewrite C /= to_sint8B_small.
+ rewrite C /= andwC W8_to_sintB_small.
   by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod //= /#.
  rewrite L1 (W8.to_uint_and_mod 4) //= /smod /= 1:/#.
  move: (noise_coef_avx2_aux bytes j) => /=.
  by rewrite C to_sintE /smod => <- /#. 
 have C': j %% 2 = 1 by smt().
-rewrite C' /= to_sint8B_small.
+rewrite C' /= andwC W8_to_sintB_small.
  by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod //= /#.
 rewrite L1 (W8.to_uint_and_mod 4) //= /smod /= 1:/#.
 move: (noise_coef_avx2_aux bytes j) => /=.
-rewrite /noise_coef C' to_sintE /smod to_uint_shr //= => <- /#.
+by rewrite /noise_coef C' to_sintE /smod to_uint_shr //= => <- /#.
 qed.
 
+lemma nosmt to_sint8_mod x:
+ W8.to_sint x %% W8.modulus = to_uint x.
+proof.
+rewrite /to_sint /smod.
+case: (2 ^ (8 - 1) <= to_uint x) => C.
+ rewrite -modzDm -modzNm modzz /= modz_mod.
+ rewrite modz_small //.
+ by apply JUtils.bound_abs; apply W8.to_uint_cmp.
+rewrite modz_small //.
+by apply JUtils.bound_abs; apply W8.to_uint_cmp.
+qed.
+
+lemma to_sint8K (x:W8.t): W8.of_int (to_sint x) = x.
+proof. by rewrite -of_int_mod to_sint8_mod to_uintK. qed.
+
+lemma truncateu128_bits128 (w:W256.t):
+ truncateu128 w = w \bits128 0.
+proof. by rewrite /truncateu128 to_uint_eq of_uintK bits128_div // of_uintK. qed.
 
 hoare cbd2_avx2_h _bytes:
  Jkem_avx2.M(Jkem_avx2.Syscall).__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
 proof.
 proc.
 sp; simplify.
-while (0 <= i < 4 /\ #{~i}pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (64*i))).
- admit.
+while (0 <= i <= 4 /\ #{~i}pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (64*i))).
+ seq 15: (#pre /\ 
+          all (fun k=> if k%%2 = 0
+                       then to_sint (f0 \bits8 (k %/ 2)) = noise_coef _bytes (64*i+k)
+                       else to_sint (f1 \bits8 (k %/ 2)) = noise_coef _bytes (64*i+k))
+              (iota_ 0 64)).
+  auto => &m |> ?_ /List.allP H ?; apply/List.allP => k; rewrite mem_iota /= => *.
+  case: (k%%2=0) => C1.
+   move: (noise_coef_avx2 buf{m} (64*i{m}+k)).
+   have ->: (64 * i{m} + k) %% 2 = 0 by smt().
+   rewrite /= => ->.
+   have:= (bytes_getR buf{m} ((64*i{m}+k)%/2) _); first smt().
+   rewrite /B2Ri /= -!divz_mul //=. 
+   have ->: (64 * i{m} + k) %/ 64 = i{m}.
+    by rewrite (mulzC 64) divzMDl // (divz_small _ 64) 1:/# /=.
+   have ->: (64 * i{m} + k) %/ 2 %% 32 = k %/ 2.
+    rewrite -(modz_pow_div 2 6 1) //=.
+    by rewrite (mulzC 64) modzMDl modz_small /#.
+   move => Eb.
+   rewrite map2bE 1:/# /= mask0F_bits8 1:/# /=.
+   rewrite map2bE 1:/#. beta. 
+   rewrite VPSRL2_ANDmask33 1:/#.
+   rewrite map2bE 1:/#; beta.
+   rewrite map2bE 1:/#; beta.
+   rewrite VPSRL1_ANDmask55 1:/#.
+   rewrite mask33_bits8 1:/# /=.
+   rewrite map2bE 1:/#; beta.
+   rewrite VPSRL1_ANDmask55 1:/#.
+   rewrite mask33_bits8 1:/# /=.
+   rewrite mask55_bits8 1:/# /=.
+   rewrite mask03_bits8 1:/# -!Eb.
+   by congr.
+  have C2: k %% 2 = 1 by smt().
+  move: (noise_coef_avx2 buf{m} (64*i{m}+k)).
+  have ->: (64 * i{m} + k) %% 2 = 1 by smt().
+  rewrite /= => ->.
+  have:= (bytes_getR buf{m} ((64*i{m}+k)%/2) _); first smt().
+  rewrite /B2Ri /= -!divz_mul //=. 
+  have ->: (64 * i{m} + k) %/ 64 = i{m}.
+   by rewrite (mulzC 64) divzMDl // (divz_small _ 64) 1:/# /=.
+  have ->: (64 * i{m} + k) %/ 2 %% 32 = k %/ 2.
+   rewrite -(modz_pow_div 2 6 1) //=.
+   by rewrite (mulzC 64) modzMDl modz_small /#.
+  move => Eb.
+  rewrite map2bE 1:/#; beta.
+  rewrite VPSRL4_ANDmask0F 1:/#.
+  rewrite map2bE 1:/#; beta.
+  rewrite map2bE 1:/#; beta.
+  rewrite VPSRL2_ANDmask33 1:/#.
+  rewrite map2bE 1:/#; beta.
+  rewrite VPSRL1_ANDmask55 1:/#.
+  rewrite mask33_bits8 1:/# /=.
+  rewrite map2bE 1:/#; beta.
+  rewrite VPSRL1_ANDmask55 1:/#.
+  rewrite mask33_bits8 1:/# /=.
+  rewrite mask55_bits8 1:/# /=.
+  rewrite mask03_bits8 1:/# -!Eb.
+  by congr.
+ seq 10: (#[/:-2]pre /\
+          all (fun (k : int) =>
+                if k %/ 16 = 0 
+                then f0 \bits16 k%%16 = W16.of_int (noise_coef _bytes (64*i+k))
+                else if k %/ 16 = 1
+                then f2 \bits16 k%%16 = W16.of_int (noise_coef _bytes (64*i+k))
+                else if k %/ 16 = 2
+                then f1 \bits16 k%%16 = W16.of_int (noise_coef _bytes (64*i+k))
+                else f3 \bits16 k%%16 = W16.of_int (noise_coef _bytes (64*i+k)))
+              (iota_ 0 64)).
+  auto => &m |> ?_ /List.allP IH ?.
+  rewrite -{1}iotaredE /= => |> *.
+  rewrite -iotaredE /=.
+  do 32! (split; first by 
+   rewrite /VPMOVSX_16u8_16u16 /VPUNPCKL_32u8 /VPUNPCKL_16u8 /VPUNPCKH_32u8 /VPUNPCKH_16u8 /MOVSX_u16s8 truncateu128_bits128 /interleave_gen /get_lo_2u64 /get_hi_2u64 /= /#).
+  do 31! (split; first by
+   rewrite /VPMOVSX_16u8_16u16 /VPUNPCKL_32u8 /VPUNPCKL_16u8 /VPUNPCKH_32u8 /VPUNPCKH_16u8 /MOVSX_u16s8 /VEXTRACTI128 /interleave_gen /get_lo_2u64 /get_hi_2u64 /b2i /= /int_bit /= /#).
+  by rewrite /VPMOVSX_16u8_16u16 /VPUNPCKL_32u8 /VPUNPCKL_16u8 /VPUNPCKH_32u8 /VPUNPCKH_16u8 /MOVSX_u16s8 /VEXTRACTI128 /interleave_gen /get_lo_2u64 /get_hi_2u64 /b2i /= /int_bit /= /#.
+ auto => |> &m ? _ /List.allP IH ? /List.allP H.
+ split; first smt().
+ rewrite -!NTT_AVX_Fq.PURE 1..4:/#. 
+ apply/List.allP => k; rewrite mem_iota /= => |> *.
+ rewrite !NTT_AVX_Fq.PUR_get 1..8:/#.
+ case: (k %/ 16 = 4 * i{m} + 3) => C1.
+  move: (H (k %% 64) _) => /=; first smt(mem_iota).
+  rewrite (modz_pow_div 2 6 4) //= C1 (mulzC 4) modzMDl /=.
+  rewrite (modz_dvd_pow 4 6 _ 2) //.
+  have ->: 64 * i{m} + k %% 64 = k by smt().
+  by rewrite /R2C /= Array16.Array16.initiE /#.
+ case: (k %/ 16 = 4 * i{m} + 2) => C2.
+  move: (H (k %% 64) _) => /=; first smt(mem_iota).
+  rewrite (modz_pow_div 2 6 4) //= C2 (mulzC 4) modzMDl /=.
+  rewrite (modz_dvd_pow 4 6 _ 2) //.
+  have ->: 64 * i{m} + k %% 64 = k by smt().
+  by rewrite /R2C /= Array16.Array16.initiE /#.
+ case: (k %/ 16 = 4 * i{m} + 1) => C3.
+  move: (H (k %% 64) _) => /=; first smt(mem_iota).
+  rewrite (modz_pow_div 2 6 4) //= C3 (mulzC 4) modzMDl /=.
+  rewrite (modz_dvd_pow 4 6 _ 2) //.
+  have ->: 64 * i{m} + k %% 64 = k by smt().
+  by rewrite /R2C /= Array16.Array16.initiE /#.
+ case: (k %/ 16 = 4 * i{m}) => C4.
+  move: (H (k %% 64) _) => /=; first smt(mem_iota).
+  rewrite (modz_pow_div 2 6 4) //= C4 modzMr. 
+  rewrite (modz_dvd_pow 4 6 _ 2) //.
+  have ->: 64 * i{m} + k %% 64 = k by smt().
+  by rewrite /R2C /= Array16.Array16.initiE /#.
+ have ?: k < 64*i{m} by smt().   
+ by move: (IH k _) => /=; first smt(mem_iota).
 auto => &m |> *.
-by rewrite iota0.
+split; first by rewrite iota0.
+move => i rp ???; rewrite (_:i=4) 1:/# /=.
+move => /List.allP H.
+rewrite tP => k Hk; rewrite (H k _); first smt(mem_iota).
+by rewrite initiE /#.
 qed.
 
 module AuxKyberAvx2 = {

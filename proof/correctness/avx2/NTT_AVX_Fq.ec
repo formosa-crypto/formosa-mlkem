@@ -189,7 +189,18 @@ have ->: j %/ 16 * 16 + j %% 16 = j by smt(divz_eq).
 by rewrite get16_init16 /#.
 qed.
 
-
+lemma PUR_get p i x k:
+  0 <= i < 16 =>
+  0 <= k < 256 =>
+ (PUR p i x).[k] = if k %/ 16 = i then (R2C x).[k%%16] else p.[k].
+proof.
+move => |> ????; rewrite /PUR/PUC/pchunk/punchunk /R2C initiE 1:/# /=.
+rewrite initiE 1:/# /=.
+rewrite get_setE 1://.
+case: (k %/ 16 = i) => C.
+ by rewrite initiE 1:/# /=.
+rewrite initiE 1:/# /= initiE 1:/# /= /#.
+qed.
 
 lemma P2C_i ['a] (cs: ('a Array16.t) list) k:
  0 <= k && k < 16 => size cs = 16 =>
