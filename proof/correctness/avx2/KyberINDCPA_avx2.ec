@@ -137,7 +137,7 @@ lemma pack16x8K (w:('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*(
   unpack16x8 (pack16x8 w) = w.
 rewrite pack16x8E unpack16x8E => />. rewrite (_:w=(w.`1,w.`2,w.`3,w.`4,w.`5,w.`6,w.`7,w.`8)) => />. smt(). progress.
 rewrite tP => i Hi. rewrite !initiE //= /#. 
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
+rewrite tP => i Hi; rewrite !initiE //= !initiE //= /#.
 rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
 rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
 rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
@@ -447,7 +447,7 @@ rewrite mapiE //=. smt(nttunpack_bnd Array256.allP).
 qed.
 
 module GetNoiseAVX2 = {
-   proc _poly_getnoise_eta1_4x(aux3 aux2 aux1 aux0 : W16.t Array256.t,
+  proc _poly_getnoise_eta1_4x(aux3 aux2 aux1 aux0 : W16.t Array256.t,
                                noiseseed : W8.t Array32.t, 
                                nonce : W8.t) : 
       W16.t Array256.t * W16.t Array256.t * W16.t Array256.t * W16.t Array256.t = {
@@ -542,14 +542,235 @@ module GetNoiseAVX2 = {
                 return (sp_0,ep,bp, epp);
 
   }
+}.
 
-  proc __poly_getnoise (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
-    var i,j:W64.t;
-    var a,b,c:W8.t;
-    var t:W16.t;
+(* int value of jth noise coeficient *)
+op noise_coef (bytes: W8.t Array128.t) (j: int): int =
+ let b = bytes.[j%/2] in b2i b.[j%%2*4] + b2i b.[j%%2*4+1] - (b2i b.[j%%2*4+2] + b2i b.[j%%2*4+3]).
 
+(* bytes-to-reg *)
+import WArray128.
+(*
+print WArray128.get256.
+*)
+op B2Ri (bytes: W8.t Array128.t) (j: int): W256.t =
+ get256 (WArray128.init8 (fun i => bytes.[i])) j.
+
+lemma bytes_getR (bytes: W8.t Array128.t) (k: int):
+ 0 <= k && k < 128 =>
+ bytes.[k] = B2Ri bytes (k %/ 32) \bits8 (k %% 32).
+proof.
+move=> Hk; rewrite /B2Ri /get256_direct pack32bE 1:/# initiE 1:/# /=.
+by rewrite mulrC -divz_eq /init8 initiE.
+qed.
+
+abbrev mask55u256 = VPBROADCAST_8u32 (W32.of_int 1431655765).
+abbrev mask33u256 = VPBROADCAST_8u32 (W32.of_int 858993459).
+abbrev mask03u256 = VPBROADCAST_8u32 (W32.of_int 50529027).
+abbrev mask0Fu256 = VPBROADCAST_8u32 (W32.of_int 252645135).
+
+abbrev mask55u16 = W16.of_int 21845. (* 21845 = 0x5555 *)
+abbrev mask33u16 = W16.of_int 13107. (* 13107 = 0x3333 *)
+abbrev mask03u16 = W16.of_int 771. (* 771 = 0x0303 *)
+abbrev mask0Fu16 = W16.of_int 3855. (* 3855 = 0x0F0F *)
+
+abbrev mask55u8 = W8.of_int 85. (* 85 = 0x55 *)
+abbrev mask33u8 = W8.of_int 51. (* 51 = 0x33 *)
+abbrev mask03u8 = W8.of_int 3. (* 3 = 0x03 *)
+abbrev mask0Fu8 = W8.of_int 15. (* 15 = 0x0F *)
+
+lemma mask55_bits8 k:
+ 0 <= k < 32 =>
+ mask55u256 \bits8 k = mask55u8.
+admitted.
+
+lemma mask55_bits16 k:
+ 0 <= k < 16 =>
+ mask55u256 \bits16 k = mask55u16.
+admitted.
+
+lemma mask33_bits16 k:
+ 0 <= k < 16 =>
+ mask33u256 \bits16 k = mask33u16.
+admitted.
+
+lemma mask33_bits8 k:
+ 0 <= k < 32 =>
+ mask33u256 \bits8 k = mask33u8.
+admitted.
+
+lemma mask03_bits8 k:
+ 0 <= k < 32 =>
+ mask03u256 \bits8 k = mask03u8.
+admitted.
+
+lemma mask0F_bits16 k:
+ 0 <= k < 16 =>
+ mask0Fu256 \bits16 k = mask0Fu16.
+admitted.
+
+lemma mask0F_bits8 k:
+ 0 <= k < 32 =>
+ mask0Fu256 \bits8 k = mask0Fu8.
+admitted.
+
+lemma VPSRL2_ANDmask33 w k:
+ 0 <= k < 32 =>
+ VPAND_256 mask33u256 (VPSRL_16u16 w (W8.of_int 2)) \bits8 k
+ = (w \bits8 k) `>>` (W8.of_int 2) `&` mask33u8.
+admitted.
+
+lemma VPSRL4_ANDmask0F w k:
+ 0 <= k < 32 =>
+ VPAND_256 mask0Fu256 (VPSRL_16u16 w (W8.of_int 4)) \bits8 k
+ = ((w \bits8 k) `>>` (W8.of_int 4)) `&` mask0Fu8.
+admitted.
+
+lemma to_sint8B_small (x y: W8.t):
+ W8.min_sint <= to_sint x - to_sint y <= W8.max_sint =>
+ to_sint (x-y) = to_sint x - to_sint y.
+admitted.
+
+lemma to_uint_mask33 (w:W8.t):
+ to_uint (w `&` mask33u8)
+ = to_uint w %% 4 + to_uint w %/ 16 %% 4 * 16.
+proof.
+have ->: mask33u8 = (mask03u8 `<<<` 4) `|` mask03u8.
+ apply W8.wordP => k; rewrite -mem_range /range /=. 
+ by move: k; apply/List.allP; rewrite -iotaredE /int_bit /=.
+rewrite andw_orwDr orw_disjoint.
+ apply W8.wordP => k; rewrite -mem_range /range /=. 
+ by move: k; apply/List.allP; rewrite -iotaredE /int_bit /=.
+have ->: w `&` (mask03u8 `<<<` 4)
+        = ((w `>>>` 4) `&` W8.masklsb (6-4)) `<<<` 4.
+rewrite -shlw_andmask // shrl_andmaskN // -andwA /=.
+congr.
+rewrite /max /=.
+ apply W8.wordP => k; rewrite -mem_range /range /=. 
+ by move: k; apply/List.allP; rewrite -iotaredE /int_bit /=.
+have E1: to_uint (w `&` mask03u8) = to_uint w %% 4.
+ by rewrite (W8.to_uint_and_mod 2) //.
+have /= E2: to_uint ((w `>>>` 4) `&` (masklsb (6-4))%W8 `<<<` 4) = to_uint w %/ 16 %% 4 * 16.
+ rewrite /max /= to_uint_shl // (W8.to_uint_and_mod 2) //.
+ by rewrite to_uint_shr //= modz_small /#.
+rewrite to_uintD_small /=.
+ by rewrite E1 E2 /#.
+by rewrite E1 E2 /#.
+qed.
+
+lemma aux_coef_pos b:
+ to_uint ((b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8) `&` mask33u8)
+ = b2i b.[0] + b2i b.[1] + 16 * (b2i b.[4] + b2i b.[5]).
+proof.
+rewrite addrC -(mask85_sum b 0) // -(mask85_sum b 2) //=.
+by rewrite to_uint_mask33 /(`>>`) to_uint_shr //= to_uint_shr //= /#.
+qed.
+
+lemma aux_coef_neg b:
+ to_uint (((b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8) `>>` W8.of_int 2) `&` mask33u8)
+ = b2i b.[2] + b2i b.[3] + 16 * (b2i b.[6] + b2i b.[7]).
+proof.
+rewrite to_uint_mask33 to_uint_shr // -divz_mul //=.
+rewrite {1}(_:4=2^2) // (_:64=2^6) // -(mask85_sum b 1) // -(mask85_sum b 3) //=. 
+by rewrite to_uint_shr //= to_uint_shr //= /#.
+qed.
+
+lemma noise_coef_avx2_aux bytes j:
+ 3 + noise_coef bytes j
+ = let b = bytes.[j%/2] in
+   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
+   let y = x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8 in
+   to_uint y %/ 2^(j%%2*4) %% 16.
+proof.
+have LL1: forall (x y z:int), (x + z*y) %% z = x %% z.
+ by move=> x1 x2 x3; rewrite -modzDm modzMr /= modz_mod.
+have LL2: forall (x y z:int), (x - z*y) %% z = x %% z.
+ by move=> x1 x2 x3; rewrite -modzDm -modzNm modzMr /= modz_mod.
+move=> /=.
+pose b:= bytes.[j %/ 2].
+pose x:= b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8.
+case: (j %% 2 = 0) => C.
+ rewrite C /=. 
+ rewrite -addrA to_uintD /= modz_dvd 1:/#.
+ rewrite aux_coef_pos W8.to_uintB.
+  by rewrite andwC ule_andw.
+ rewrite -modzDm LL1 modzDm aux_coef_neg.
+ rewrite Ring.IntID.opprD !addzA LL2 /=.
+ by rewrite -modzDml -(modzDmr _ 51) /= modzDml modz_small /#. 
+have ->/=: j%%2 = 1 by smt().
+rewrite -addrA to_uintD.
+rewrite (_:16=2^4) // modz_pow_div //= modz_mod.
+rewrite aux_coef_pos W8.to_uintB.
+ by rewrite andwC ule_andw.
+rewrite aux_coef_neg /= (divz_eq 51 16).
+pose X:= (b2i _ + _ + _ + _)%W8.
+have /=->: X 
+   = b2i b.[0] + b2i b.[1] + (51 %% 16) - (b2i b.[2] + b2i b.[3]) 
+     + 16 * (b2i b.[4] + b2i b.[5] + (51 %/ 16) - (b2i b.[6] + b2i b.[7])).
+ by rewrite /X /=; ring.
+by rewrite mulzC divzMDr // divz_small //= /#.
+qed.
+
+lemma noise_coef_avx2 bytes j:
+ noise_coef bytes j
+ = let b = bytes.[j%/2] in
+   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
+   let y = x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8 in
+   if j%%2 = 0
+   then to_sint (y `&` mask0Fu8 - mask03u8)
+   else to_sint ((y `>>` (W8.of_int 4)) `&` mask0Fu8 - mask03u8).
+proof.
+search W16.to_sint W16.to_uint.
+have L1: forall x, W8.to_uint x < 128 => W8.to_sint x = to_uint x. 
+ by move=> x; rewrite to_sintE /smod /= /#.
+rewrite /noise_coef /=.
+pose b:= bytes.[j %/ 2].
+pose x:= b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8.
+pose y:= x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8.
+case: (j %% 2 = 0) => C.
+ rewrite C /= to_sint8B_small.
+  by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod //= /#.
+ rewrite L1 (W8.to_uint_and_mod 4) //= /smod /= 1:/#.
+ move: (noise_coef_avx2_aux bytes j) => /=.
+ by rewrite C to_sintE /smod => <- /#. 
+have C': j %% 2 = 1 by smt().
+rewrite C' /= to_sint8B_small.
+ by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod //= /#.
+rewrite L1 (W8.to_uint_and_mod 4) //= /smod /= 1:/#.
+move: (noise_coef_avx2_aux bytes j) => /=.
+rewrite /noise_coef C' to_sintE /smod to_uint_shr //= => <- /#.
+qed.
+
+
+hoare cbd2_avx2_h _bytes:
+ Jkem_avx2.M(Jkem_avx2.Syscall).__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
+proof.
+proc.
+sp; simplify.
+while (0 <= i < 4 /\ #{~i}pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (64*i))).
+ admit.
+auto => &m |> *.
+by rewrite iota0.
+qed.
+
+lemma cbd2_ll : islossless Jkem_avx2.M(Jkem_avx2.Syscall).__cbd2.
+proc. inline *. sp; wp. while (true) (4-i). move => z.
+auto => /> &hr H. smt().
+auto => />i. smt(). qed. 
+
+phoare cbd2_avx2_ph _bytes:
+ [Jkem_avx2.M(Jkem_avx2.Syscall).__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
+conseq cbd2_ll (cbd2_avx2_h _bytes) => />. qed.
+
+module AuxKyberAvx2 = {
+  proc cbd2_ref (rp:W16.t Array256.t,buf:W8.t Array128.t) : W16.t Array256.t = {
+    var k: int;
+    var a, b, c: W8.t;
+    var i, j: W64.t;
+    var t: W16.t;
     i <- (W64.of_int 0);
     j <- (W64.of_int 0);
+    
     while ((i \ult (W64.of_int 128))) {
       c <- buf.[(W64.to_uint i)];
       a <- c;
@@ -585,7 +806,7 @@ module GetNoiseAVX2 = {
 
     buf <- witness;
     buf <@ M(Syscall)._shake256_128_33 (buf,Array33.init (fun i => if i=32 then nonce else seed.[i]));
-    r <@ __poly_getnoise(rp,buf);
+    r <@ cbd2_ref(rp,buf);
     return r;
   }
   proc __poly_getnoise_eta1_4x(aux3 aux2 aux1 aux0 : W16.t Array256.t,
@@ -606,8 +827,51 @@ module GetNoiseAVX2 = {
   }
 }.
 
+hoare cbd2_ref_h _bytes:
+ AuxKyberAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
+proof.
+proc.
+while (to_uint i <= 128 /\ to_uint j=2*to_uint i /\ #pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (to_uint j))).
+ auto => &m |>; rewrite /(\ult) => _ Hj /List.allP IH /= Hi.
+ rewrite !to_uintD_small /= 1..3:/#.
+ split; first smt().
+ split; first smt().
+ apply/List.allP => k; rewrite mem_iota /=; move => [? Hk].
+ case: (k = to_uint j{m}) => C1.
+  rewrite /noise_coef !get_setE 1..2:/# C1 /= ifF 1:/#.
+  have ->/=: to_uint j{m} %/ 2 = to_uint i{m} by smt().
+  rewrite -to_sint_eq sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
+  have ->  /= : to_uint j{m} %% 2 = 0 by smt().
+  by rewrite -parallel_noisesum_low smod_small // /#.
+ case: (k = to_uint j{m}+1) => C2.
+  rewrite /noise_coef !get_setE 1..2:/# C2 /=.
+  have ->/=: (to_uint j{m} + 1) %/ 2 = to_uint i{m} by smt().
+  rewrite -to_sint_eq sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
+  have ->  /= : (to_uint j{m}+1) %% 2 = 1 by smt().
+  by rewrite -parallel_noisesum_high smod_small // /#.
+ rewrite !get_setE 1..2:/# C1 C2 /=; apply IH.
+ smt(mem_iota).
+auto => &m |> *.
+split; first by rewrite iota0.
+move=> i j rp; rewrite /(\ult) => |> ?? ->.
+have ->/=: to_uint i = 128 by smt().
+rewrite tP => /List.allP H k Hk.
+rewrite (H k _) /=.
+ smt(mem_iota).
+by rewrite initiE //.
+qed.
+
+lemma cbd2_ref_ll : islossless AuxKyberAvx2.cbd2_ref.
+proc. inline*. sp; wp. while (true) (128 - W64.to_uint i). move => z.
+auto => /> &hr. rewrite ultE of_uintK //= => H. rewrite to_uintD_small //= /#.
+auto => />i H. rewrite ultE of_uintK //= 1:/#. qed.
+
+phoare cbd2_ref_ph _bytes:
+ [AuxKyberAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
+conseq cbd2_ref_ll (cbd2_ref_h _bytes) => />. qed.
+
 equiv getnoise_split : 
-  M(Syscall)._poly_getnoise ~ GetNoiseAVX2._poly_getnoise : ={arg} ==> ={res}.
+  M(Syscall)._poly_getnoise ~ AuxKyberAvx2._poly_getnoise : ={arg} ==> ={res}.
 proc; wp; sp => />. 
 seq 2 0 : (srp{1}=rp{1} /\ ={buf,rp,seed,nonce} /\ extseed{1}=Array33.init (fun i => if i=32 then nonce{1} else seed{1}.[i]) ).
 wp. while{1} (0 <= k{1} <= 32 /\ (forall i, 0 <= i < k{1} => extseed{1}.[i]=seed{1}.[i])) (32-k{1}).
@@ -617,74 +881,24 @@ seq 1 1 : (#pre).
 call (_:true). auto => />. sim. auto => />.  
 inline *. sim. qed.
 
-abbrev noise_evens (buf:W8.t Array128.t) (i:W64.t) = (sigextu16 (((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `&` (W8.of_int 3)) - (((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 2)) `&` (W8.of_int 3)))).
-
-abbrev noise_odds (buf:W8.t Array128.t) (i:W64.t) = (sigextu16 ((((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 4)) `&` (W8.of_int 3)) - (((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 6)) `&` (W8.of_int 3)))).
-
 equiv getnoise_1x_equiv_avx :
-  Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1 ~ GetNoiseAVX2.__poly_getnoise : ={arg} ==> ={res}.
-proc; wp => />. rcondt{1} 1. auto => />. inline *; wp; sp => />. 
-async while
-  [ (fun x => i < x), i{1} + 1 ]
-  [ (fun x => W64.to_uint i < 32*x), i{1} + 1 ]
-  (i{1} < 4 /\ W64.to_uint i{2} < 128) (!(i{1} < 4))
-  :( aux{1}=4 /\ 0 <= i{1} /\ buf0{1} = (Array128.init (fun i => buf{1}.[i])) /\ mask55_s{1} = (W32.of_int 1431655765) /\ mask33_s{1} = (W32.of_int 858993459) /\ mask03_s{1} = (W32.of_int 50529027) /\ mask0F_s{1} = (W32.of_int 252645135) /\ mask55{1} = VPBROADCAST_8u32 mask55_s{1} /\ mask33{1} = VPBROADCAST_8u32 mask33_s{1} /\ mask03{1} = VPBROADCAST_8u32 mask03_s{1} /\ mask0F{1} = VPBROADCAST_8u32 mask0F_s{1}
-  /\ j{2} = W64.of_int 2 * i{2}
-  /\ ={buf} /\ W64.to_uint i{2}= 32 * i{1} /\ (forall k, 0 <= k < i{1} * 64 => rp0{1}.[k] = rp{2}.[k])
-  ) => //=.
-(*invariants*)
-move => /> &1 &2 H1 H2 H3 H4 H5 H6. rewrite ultE of_uintK //= H6 //=. smt().
-move => /> &1 &2 H1 H2 H3 H4 H5. case H4 => />. rewrite ultE of_uintK //=. smt(). 
-move => /> &1 &2 H1 H2 H3 H4 H5 H6. rewrite ultE of_uintK //= H2. smt().
-move => &2. auto => />. 
-move => &1. auto => /> &m H1 H2 H3 H4 H5 H6. split. smt(). split. smt(). move => k Hk1 Hk2. rewrite H3 //=. rewrite !set_neqiE /#.
-(*inner*)
-move => v1 v2. conseq (_:_ ==> aux{1} = 4 /\ 0 <= i{1} /\ j{2} = (of_int 2)%W64 * i{2} /\ ={buf} /\ to_uint i{2} = 32 * i{1} /\ forall (k : int), 0 <= k && k < i{1} * 64 => rp0{1}.[k] = rp{2}.[k]). auto => />.
-rcondt{1} 1. auto => /> &hr H1 H2 H3 H4. smt(). 
-rcondf{1} 31. auto => />.
-seq 30 0 : ( aux{1} = 4 /\ 0 <= i{1}-1 < 4 /\ j{2} = (of_int 2)%W64 * i{2} /\ ={buf} /\ to_uint i{2} = 32 * (i{1}-1) /\ (forall (k : int), 0 <= k && k < (i{1}-1) * 64 => rp0{1}.[k] = rp{2}.[k]) /\ v2 = i{1} /\ (forall k, 0 <= k < 32 => rp0{1}.[(i{1}-1)*64+k*2]=noise_evens buf{1} (W64.of_int ((i{1}-1)*32+k)) /\ rp0{1}.[(i{1}-1)*64+k*2+1]=noise_odds buf{1} (W64.of_int ((i{1}-1)*32+k))) ).
-(* avx2 (64 bits) vs ori (32 * 2 bits) equiv *)
-auto => /> &1 &2. rewrite !ultE of_uintK => /> H1 H2 H3 H4 H5 H6. split.
-move => k Hk1 Hk2. rewrite initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/# initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/# initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/# initiE //= 1:/#. rewrite get16_set256E 1..2:/# ifF 1:/#. rewrite get16_init16 1:/#. rewrite H3 //=.
-admit. (*move => k Hk1 Hk2. rewrite !initiE //= 1..2:/#. rewrite !get16_set256E //= 1..4:/#. rewrite !bits16_W16u16. 
-
-split.
-+ rewrite !initiE //= 1:/#. rewrite !get16_set256E //= 1..2:/#. progress.
-  apply if_eq => />. move => K1 K2. rewrite bits16_W16u16. rewrite ifT 1:/#. rewrite get_of_list 1:/#. rewrite nth_onth onth_map (onth_nth witness) //= 1:/#. 
-
-rewrite wordP => i Hi. rewrite bits16iE 1:/#. rewrite pack16wE 1:/#.
-
-
-apply bits16_W16u8.*)
-(*while*)
-while{2}
-  (v2 = i{1} /\ ={buf} /\ 0 <= i{1}-1 < 4 /\ 32 * (i{1}-1) <= W64.to_uint i{2} /\ i{2} \ule W64.of_int 32 * W64.of_int i{1} /\ j{2} = W64.of_int 2 * i{2} /\ (forall k, (0 <= k && k < W64.to_uint j{2}) => rp0{1}.[k] = rp{2}.[k]) /\ (forall k, 0 <= k < 32 => rp0{1}.[(i{1}-1)*64+k*2]=noise_evens buf{1} (W64.of_int ((i{1}-1)*32+k)) /\ rp0{1}.[(i{1}-1)*64+k*2+1]=noise_odds buf{1} (W64.of_int ((i{1}-1)*32+k))) )
-  (128 - W64.to_uint i{2}).
-move => /> &m z. auto => /> &m2. rewrite !uleE ultE !of_uintK //= => H1 H2 H3 H4 H5 H6 H7 H8. rewrite to_uintM_small !of_uintK //= 1:/#. rewrite !to_uintD_small !of_uintK //= 1:/#. rewrite to_uintM_small !of_uintK //= 1..2:/#. rewrite to_uintM_small !of_uintK //= 1..2:/#. split. split. smt(). split. smt(). split. rewrite W64.WRingA.mulrDr //=. move => k Hk1. rewrite to_uintM_small !of_uintK 1:/# //= => Hk2.
-case (k < 2 * W64.to_uint i{m2}) => /> Hk3.
- rewrite !set_neqiE 1..4:/#. rewrite H5 //=. rewrite to_uintM_small !of_uintK //= 1:/#.
-case (k=2 * to_uint i{m2} + 1) => />.
- rewrite set_eqiE //= 1:/#. move :(H6 (W64.to_uint i{m2} - 32*(i{m}-1))). apply ianda. smt(). rewrite (_: (i{m}-1) * 64 + (to_uint i{m2} - 32 * (i{m}-1)) * 2 = 2 * to_uint i{m2}). smt(). move => /> H9 H10. rewrite H10 //. rewrite (_: ((W64.of_int ((i{m}-1) * 32 + (to_uint i{m2} - 32 * (i{m}-1))))) = i{m2}) //=. rewrite mulrC addrCA subrr addr0 to_uintK //.
- move => Hk4. have ->: k = 2* to_uint i{m2}. smt(). rewrite set_neqiE //= 1..2:/#. rewrite set_eqiE //= 1:/#. move :(H6 (W64.to_uint i{m2} - 32*(i{m}-1))). apply ianda. smt(). rewrite (_: (i{m}-1) * 64 + (to_uint i{m2} - 32 * (i{m}-1)) * 2 = 2 * to_uint i{m2}). smt(). rewrite (_: (W64.of_int ((i{m}-1) * 32 + (to_uint i{m2} - 32 * (i{m}-1)))) = i{m2} ) //=. rewrite mulrC addrCA subrr addr0 to_uintK //. smt().
-auto => /> &1 &2. rewrite !uleE !of_uintK //= => H1 H2 H3 H4 H5. split. split. smt(). split. smt(). move => k Hk1. rewrite to_uintM_small !of_uintK //= 1:/#. move => Hk2. rewrite H4 //. smt(). move => iR rpR. split. rewrite !uleE !ultE of_uintK //= => R1 R2 R3 R4. smt(). rewrite negb_and uleE ultE !of_uintK //= => R5 R6 R7 R8. split. smt(). split. smt(). move => k Hk1 Hk2. rewrite R8 //=. rewrite to_uintM_small !of_uintK //= 1..2:/#. 
-(*lossless*)
-rcondf 1; auto => /> &1 H1 H2 H3. smt().
-rcondf 1; auto => /> &2 H1 H2 H3. smt().
-(*end*)
-auto => /> iL rp0L iR rpR H1 H2 H3 H4 H5. rewrite tP => k Hk. rewrite H5 //= /#.
-qed.
+  Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1 ~ AuxKyberAvx2.cbd2_ref : ={arg} ==> ={res}.
+proc*. inline Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1. rcondt{1} 3. auto => />. sp;wp.
+ecall{1} (cbd2_avx2_ph buf{1}) => />.
+ecall{2} (cbd2_ref_ph buf{2}) => />.
+auto => /> &2. rewrite tP => i Hi. rewrite initiE //=. qed.
 
 equiv getnoise_4x_split : 
-  GetNoiseAVX2._poly_getnoise_eta1_4x ~ GetNoiseAVX2.__poly_getnoise_eta1_4x : ={arg} ==> ={res}.
+  GetNoiseAVX2._poly_getnoise_eta1_4x ~ AuxKyberAvx2.__poly_getnoise_eta1_4x : ={arg} ==> ={res}.
 proc; wp; sp => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. auto => />. qed.
 
 equiv getnoiseequiv_avx : 
    Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
 proc*. 
-transitivity{2} { r <@ GetNoiseAVX2.__poly_getnoise_eta1_4x(aux3,aux2,aux1,aux0,noiseseed,nonce); } ((r0{1}, r1{1}, r2{1}, r3{1}, seed{1}, nonce{1}) = (aux3{2}, aux2{2}, aux1{2}, aux0{2}, noiseseed{2}, nonce{2}) ==> ={r}) (={aux3,aux2,aux1,aux0,noiseseed,nonce} ==> ={r}); last first.
+transitivity{2} { r <@ AuxKyberAvx2.__poly_getnoise_eta1_4x(aux3,aux2,aux1,aux0,noiseseed,nonce); } ((r0{1}, r1{1}, r2{1}, r3{1}, seed{1}, nonce{1}) = (aux3{2}, aux2{2}, aux1{2}, aux0{2}, noiseseed{2}, nonce{2}) ==> ={r}) (={aux3,aux2,aux1,aux0,noiseseed,nonce} ==> ={r}); last first.
 symmetry. call getnoise_4x_split => />. auto => />. smt(). smt().
 (*main proof*)
-inline Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x GetNoiseAVX2.__poly_getnoise_eta1_4x GetNoiseAVX2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
+inline Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x AuxKyberAvx2.__poly_getnoise_eta1_4x AuxKyberAvx2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
 seq 25 30 : (
     r00{1}=rp{2}  /\ Array128.init (fun (i : int) => buf0{1}.[i]) =buf{2}
  /\ r10{1}=rp0{2} /\ Array128.init (fun (i : int) => buf1{1}.[i]) =buf0{2}

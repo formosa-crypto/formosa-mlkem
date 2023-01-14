@@ -3,7 +3,6 @@ require import AllCore StdOrder List Ring IntDiv.
 
 (*-----------------------------------------------------------------------------*)
 (* All in range. *)
-(* TODO: possibly can be removed without any impact on the NTTAlgebra proof. *)
 
 lemma onth_map (f:'a->'b) (xs:'a list) :
   forall i, onth (map f xs) i = omap f (onth xs i).

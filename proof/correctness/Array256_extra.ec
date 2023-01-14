@@ -8,7 +8,6 @@ from Jasmin require import JUtils.
 
 (*-----------------------------------------------------------------------------*)
 
-(*TODO: this lemma's version in Jasmin has a useless hypothesis.*)
 lemma nosmt set_neqiE (t : Fq Array256.t) x y a :
   y <> x => t.[x <- a].[y] = t.[y].
 proof. by rewrite get_set_if => /neqF ->. qed.
