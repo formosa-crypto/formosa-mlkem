@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
-uint8_t* __jasmin_syscall_randombytes__(uint8_t* x, uint64_t xlen);
+uint8_t* __jasmin_syscall_randombytes__(uint8_t* x, uint64_t xlen)
+  __asm("__jasmin_syscall_randombytes__");
 
 #endif
