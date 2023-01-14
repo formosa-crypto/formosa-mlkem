@@ -1929,6 +1929,12 @@ proof.
   apply veceq_shuffle8.
 qed.
 
+equiv prevec_eq_shuffle8_sym :
+  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8 ~ Mprevec.shuffle8 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+                                    is16u16 res{2}.`1 res{1}.`1 /\
+                                    is16u16 res{2}.`2 res{1}.`2.
+symmetry. conseq prevec_eq_shuffle8 => />. qed.
+
 equiv prevec_eq_shuffle4:
   Mprevec.shuffle4 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
@@ -1942,6 +1948,12 @@ proof.
   apply eq_shuffle4.
   apply veceq_shuffle4.
 qed.
+
+equiv prevec_eq_shuffle4_sym:
+  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4 ~ Mprevec.shuffle4: is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+                                    is16u16 res{2}.`1 res{1}.`1 /\
+                                    is16u16 res{2}.`2 res{1}.`2.
+symmetry. conseq prevec_eq_shuffle4 => />. qed.
 
 equiv prevec_eq_shuffle2:
   Mprevec.shuffle2 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
@@ -1957,6 +1969,12 @@ proof.
   apply veceq_shuffle2.
 qed.
 
+equiv prevec_eq_shuffle2_sym:
+  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2 ~ Mprevec.shuffle2 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+                                    is16u16 res{2}.`1 res{1}.`1 /\
+                                    is16u16 res{2}.`2 res{1}.`2.
+symmetry. conseq prevec_eq_shuffle2 => />. qed.
+
 equiv prevec_eq_shuffle1:
   Mprevec.shuffle1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
@@ -1970,6 +1988,91 @@ proof.
   apply eq_shuffle1.
   apply veceq_shuffle1.
 qed.
+
+equiv prevec_eq_shuffle1_sym:
+  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1 ~ Mprevec.shuffle1 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+                                    is16u16 res{2}.`1 res{1}.`1 /\
+                                    is16u16 res{2}.`2 res{1}.`2.
+symmetry. conseq prevec_eq_shuffle1 => />. qed.
+
+require import NTT_avx2 NTT_AVX_j.
+require import KyberPoly_avx2_proof.
+
+lemma list_arr16 (x:'a Array16.t):
+  [x.[0];x.[1];x.[2];x.[3];x.[4];x.[5];x.[6];x.[7];x.[8];x.[9];x.[10];x.[11];x.[12];x.[13];x.[14];x.[15]] = to_list x.
+rewrite /to_list /mkseq -iotaredE => />. qed.
+
+lemma avx2_shuffle8_corr_h (_a _b : t16u16) :
+      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf8 _a _b).`2 res.`2].
+conseq prevec_eq_shuffle8_sym (KyberPolyAVX.shuffle8_corr_h _a _b) => />.
+auto => /> &1 -> ->. exists ((_a,_b)) => />.
+auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
+
+lemma avx2_shuffle8_corr (_a _b : t16u16) :
+      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf8 _a _b).`2 res.`2] = 1%r.
+conseq __shuffle8_ll (avx2_shuffle8_corr_h _a _b) => />. qed.
+
+lemma avx2_shuffle4_corr_h (_a _b : t16u16) :
+      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf4 _a _b).`2 res.`2].
+conseq prevec_eq_shuffle4_sym (KyberPolyAVX.shuffle4_corr_h _a _b) => />.
+auto => /> &1 -> ->. exists ((_a,_b)) => />.
+auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
+
+lemma avx2_shuffle4_corr (_a _b : t16u16) :
+      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf4 _a _b).`2 res.`2] = 1%r.
+conseq __shuffle4_ll (avx2_shuffle4_corr_h _a _b) => />. qed.
+
+lemma avx2_shuffle2_corr_h (_a _b : t16u16) :
+      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf2 _a _b).`2 res.`2].
+conseq prevec_eq_shuffle2_sym (KyberPolyAVX.shuffle2_corr_h _a _b) => />.
+auto => /> &1 -> ->. exists ((_a,_b)) => />.
+auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
+
+lemma avx2_shuffle2_corr (_a _b : t16u16) :
+      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf2 _a _b).`2 res.`2] = 1%r.
+conseq __shuffle2_ll (avx2_shuffle2_corr_h _a _b) => />. qed.
+
+lemma avx2_shuffle1_corr_h (_a _b : t16u16) :
+      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf1 _a _b).`2 res.`2].
+conseq prevec_eq_shuffle1_sym (KyberPolyAVX.shuffle1_corr_h _a _b) => />.
+auto => /> &1 -> ->. exists ((_a,_b)) => />.
+auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
+
+lemma avx2_shuffle1_corr (_a _b : t16u16) :
+      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1 :
+             is16u16 _a a /\ is16u16 _b b
+             ==>
+             is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\
+             is16u16 (NTT_Avx2.shuf1 _a _b).`2 res.`2] = 1%r.
+conseq __shuffle1_ll (avx2_shuffle1_corr_h _a _b) => />. qed.
 
 equiv prevec_eq_poly_tobytes:
   Mprevec.poly_tobytes ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.

@@ -448,3 +448,4 @@ by rewrite -divz_mulp 1..2:/# /= ; ring.
 qed.
 
 end NTT_Fq.
+
