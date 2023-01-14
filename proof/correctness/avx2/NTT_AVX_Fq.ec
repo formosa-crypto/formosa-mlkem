@@ -15,7 +15,15 @@ require import Array128_extra.
 require import Array256_extra.
 require import Array400 WArray32 WArray800 WArray512.
 
+lemma bits8_W2u8 ws i :
+  W2u8.pack2_t ws \bits8 i = if 0 <= i < 2 then ws.[i] else W8.zero.
+rewrite wordP => j Hj. rewrite W2u8.bits8iE //. case (0 <= i < 2) => Hi.
+rewrite pack2wE /#. rewrite get_out /#. qed.
 
+lemma bits16_W16u16 ws i :
+  W16u16.pack16_t ws \bits16 i = if 0 <= i < 16 then ws.[i] else W16.zero.
+rewrite wordP => j Hj. rewrite W16u16.bits16iE //. case (0 <= i < 16) => Hi.
+rewrite pack16wE /#. rewrite get_out /#. qed.
 
 (* MOVE TO: JWord_array.ec *)
 lemma get16_set256E t x y w :
@@ -38,6 +46,11 @@ rewrite -W2u8.Pack.all_eqP /all_eq /= -/WArray512.get8
 by rewrite  Hy /= get16E pack2bE // ifF /#. 
 qed.
 
+lemma set256_directE (t:t) (i:int) (w:W256.t) :
+  i %% 32 = 0 => 
+  set256_direct t i w = set256 t (i%/32) w.
+  smt(). qed.
+
 lemma get16_init16 f i:
  0 <= 2*i < 512 =>
  get16 (WArray512.init16 f) i
@@ -49,8 +62,6 @@ rewrite -(W2u8.unpack8K (f i)) /unpack8K; congr.
 by rewrite -W2u8.Pack.all_eqP /all_eq /= !initiE /#.
 qed.
 (* END MOVE *)
-
-
 
 lemma pack2_bits8 (w: W16.t):
  pack2 [w \bits8 0; w \bits8 1] = w.
@@ -292,10 +303,8 @@ lemma falsify (p : bool) :
   false => p.
 proof. auto. qed.
 
-(*
 op perm128 ['a] (p: int list) (a: 'a Array128.t): 'a Array128.t =
  Array128.init (fun i=> a.[nth witness p i]).
-*)
 
 op perm_ntt ['a] (p: int list) (a: 'a Array256.t): 'a Array256.t =
   Array256.init (fun i => if i < 128 then a.[nth witness p i] else a.[128 + nth witness p (i-128)]). 
@@ -560,6 +569,8 @@ op perm_nttpack128 : int list =
    14; 30; 46; 62; 78; 94; 110; 126; 15; 31; 47; 63; 79; 95; 111; 127]
   axiomatized by perm_nttpack128E.
 
+op nttpack128 ['a] (rp : 'a Array128.t) : 'a Array128.t = perm128 perm_nttpack128 rp.
+
 (* permutation that nttunpack128 applies to the input indexes *)
 op perm_nttunpack128 : int list =
   [0;8;16;24;32;40;48;56;64;72;80;88;96;104;112;120;
@@ -572,9 +583,11 @@ op perm_nttunpack128 : int list =
   7;15;23;31;39;47;55;63;71;79;87;95;103;111;119;127]
   axiomatized by perm_nttunpack128E.
 
+op nttunpack128 ['a] (rp : 'a Array128.t) : 'a Array128.t = perm128 perm_nttunpack128 rp.
+
 module NTT_AVX = {
 
-proc __nttpack128(r0 r1 r2 r3 r4 r5 r6 r7: Fq Array16.t): Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
+(*proc __nttpack128(r0 r1 r2 r3 r4 r5 r6 r7: Fq Array16.t): Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
   
   var r0a,r1a,r2a,r3a,r4a,r5a,r6a,r7a : Fq Array16.t;
   var r0b,r1b,r2b,r3b,r4b,r5b,r6b,r7b : Fq Array16.t;
@@ -632,7 +645,7 @@ proc __nttunpack128(r0 r1 r2 r3 r4 r5 r6 r7: Fq Array16.t): Fq Array16.t * Fq Ar
   (r3d, r7d) <- shuffle1 r3c r7c;
 
   return (r0d, r4d, r1d, r5d, r2d, r6d, r3d, r7d);
-}
+}*)
 
 proc __butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: Fq Array16.t) : Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
 

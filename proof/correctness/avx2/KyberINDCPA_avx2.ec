@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require import Array25 Array32 Array33 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
+require import Array16 Array25 Array32 Array33 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
 require import List_extra.
 require import KyberPoly  KyberPolyVec KyberINDCPA.
 require import KyberPoly_avx2_proof.
@@ -9,10 +9,11 @@ require import KyberPoly_avx2_prevec.
 require import KyberPolyvec_avx2_proof.
 require import KyberPolyvec_avx2_vec.
 require import Jkem_avx2 Jkem.
-require import NTT_avx2.
+require import NTT_avx2 NTT_AVX_j.
 require import NTT_Fq NTT_AVX_Fq.
 require import Kyber_AVX_ref_lowlevel_equivs.
 require import Montgomery16.
+require import AVX2_Ops.
 import Kyber.
 import KyberSpec.
 import KyberPoly.
@@ -21,8 +22,12 @@ import KyberPolyvecAVX.
 import KyberPolyAVXVec.
 import NTT_Avx2.
 import WArray136 WArray32.
+import WArray512 WArray512.
 
 (* move somewhere else *)
+
+lemma prod (x:'a*'b) :
+ x = (x.`1,x.`2). smt(). qed.
 
 lemma bits8_W32u8 ws i :
   W32u8.pack32_t ws \bits8 i = if 0 <= i < 32 then ws.[i] else W8.zero.
@@ -40,12 +45,12 @@ op SHAKE256_ABSORB4x_33 : W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> 
 op SHAKE256_SQUEEZENBLOCKS4x : W256.t Array25.t -> W256.t Array25.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t.
 
 axiom shake_absorb4x state seed1 seed2 seed3 seed4 : 
-   phoare [ Jkem_avx2.M._shake256_absorb4x_33 : 
+   phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_absorb4x_33 : 
                arg = (state,seed1,seed2,seed3,seed4) ==>
                res = SHAKE256_ABSORB4x_33 seed1 seed2 seed3 seed4 ] = 1%r.
 
 axiom shake_squeezenblocks4x state buf1 buf2 buf3 buf4 : 
-   phoare [ Jkem_avx2.M.__shake256_squeezenblocks4x : 
+   phoare [ Jkem_avx2.M(Jkem_avx2.Syscall).__shake256_squeezenblocks4x : 
                arg = (state,buf1,buf2,buf3,buf4) ==>
                res = SHAKE256_SQUEEZENBLOCKS4x state ] = 1%r.
 
@@ -62,9 +67,9 @@ axiom shake4x_equiv (sn1 sn2 sn3 sn4: W8.t Array33.t) (s1 s2 s3 s4 : W8.t Array3
 
 axiom sha3equiv : 
  equiv [ (* is this in the sha3 paper? *)
- Jkem_avx2.M._sha3_512_32 ~ M._sha3512_32 : ={arg} ==> ={res}].
+Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512_32 ~Jkem.M(Jkem.Syscall)._sha3512_32 : ={arg} ==> ={res}].
 
-lemma sha3ll : islossless M._shake256_128_33.
+lemma sha3ll : islossless Jkem.M(Jkem.Syscall)._shake256_128_33.
 proc. 
 while (0<=i<=128) (128 - i);1 : by move => *; auto => /> /#.
 wp; call (_: true).
@@ -91,13 +96,332 @@ conseq (_: true); 1: by smt().
 by inline *; do 2!(unroll for ^while); islossless.
 qed.
   
+axiom shake128_equiv_absorb : equiv [ M(Syscall)._shake128_absorb34 ~ 
+   Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb34   :
+      ={state, in_0} ==> ={res}].
+
+axiom shake128_equiv_squeezeblock : equiv [  M(Syscall)._shake128_squeezeblock ~
+     Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeezeblock  :
+      ={state, out} ==> ={res}].
+
+lemma rng_iotared i n :
+  (0 <= i < n) = (i \in iotared 0 n).
+rewrite iotaredE mem_iota //= andaE //. qed.
+
+op pack16x8 (x:('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)) : 'a Array128.t = Array128.init (fun i =>
+ if 0 <= i < 16 then x.`1.[i%%16]
+ else if 16 <= i < 32 then x.`2.[i%%16]
+ else if 32 <= i < 48 then x.`3.[i%%16]
+ else if 48 <= i < 64 then x.`4.[i%%16]
+ else if 64 <= i < 80 then x.`5.[i%%16]
+ else if 80 <= i < 96 then x.`6.[i%%16]
+ else if 96 <= i < 112 then x.`7.[i%%16]
+ else x.`8.[i%%16]) axiomatized by pack16x8E.
+
+op unpack16x8 (x:'a Array128.t) : ('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t) =
+ (Array16.init (fun i => x.[i+16*0])
+ ,Array16.init (fun i => x.[i+16*1])
+ ,Array16.init (fun i => x.[i+16*2])
+ ,Array16.init (fun i => x.[i+16*3])
+ ,Array16.init (fun i => x.[i+16*4])
+ ,Array16.init (fun i => x.[i+16*5])
+ ,Array16.init (fun i => x.[i+16*6])
+ ,Array16.init (fun i => x.[i+16*7])) axiomatized by unpack16x8E.
+
+lemma unpack16x8K (w:'a Array128.t) :
+  pack16x8 (unpack16x8 w) = w.
+rewrite pack16x8E unpack16x8E tP => i Hi. rewrite !initiE //=. rewrite !initiE //= 1..8:/#.
+smt(). qed.
+
+lemma pack16x8K (w:('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)) :
+  unpack16x8 (pack16x8 w) = w.
+rewrite pack16x8E unpack16x8E => />. rewrite (_:w=(w.`1,w.`2,w.`3,w.`4,w.`5,w.`6,w.`7,w.`8)) => />. smt(). progress.
+rewrite tP => i Hi. rewrite !initiE //= /#. 
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#.
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#.
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#.
+qed.
+
+op pack128x2 (x:'a Array128.t * 'a Array128.t) : 'a Array256.t = Array256.init (fun i =>
+  if 0 <= i < 128 then x.`1.[i%%128]
+  else x.`2.[i%%128]) axiomatized by pack128x2E.
+
+op unpack128x2 (x:'a Array256.t) : ('a Array128.t * 'a Array128.t) =
+ (Array128.init (fun i => x.[i+128*0])
+ ,Array128.init (fun i => x.[i+128*1])) axiomatized by unpack128x2E.
+
+lemma unpack128x2K (w:'a Array256.t) :
+  pack128x2 (unpack128x2 w) = w.
+rewrite pack128x2E unpack128x2E tP => i Hi. rewrite !initiE //=. rewrite !initiE //= 1..2:/#.
+smt(). qed.
+
+lemma pack128x2K (w:('a Array128.t)*('a Array128.t)) :
+  unpack128x2 (pack128x2 w) = w.
+rewrite pack128x2E unpack128x2E => />. rewrite (_:w=(w.`1,w.`2)) => />. smt(). progress.
+rewrite tP => i Hi. rewrite !initiE //= /#. 
+rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
+qed.
+
+abbrev is16u16x8 (x:t16u16*t16u16*t16u16*t16u16*t16u16*t16u16*t16u16*t16u16) (y:vt16u16*vt16u16*vt16u16*vt16u16*vt16u16*vt16u16*vt16u16*vt16u16) = is16u16 x.`1 y.`1 /\ is16u16 x.`2 y.`2 /\ is16u16 x.`3 y.`3 /\ is16u16 x.`4 y.`4 /\ is16u16 x.`5 y.`5 /\ is16u16 x.`6 y.`6 /\ is16u16 x.`7 y.`7 /\ is16u16 x.`8 y.`8.
+
+abbrev nttunpack128x16 ['a] (x:('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)) = unpack16x8 (nttunpack128 (pack16x8 x)).
+
+lemma rng_perm_nttunpack128 i :
+  0 <= i < 128 => 
+  0 <= nth witness perm_nttunpack128 i < 128.
+move => *. rewrite perm_nttunpack128E => />. smt(). qed.
+
+lemma nttunpack128x2 (w:'a Array256.t) :
+  unpack128x2 (nttunpack w) = (nttunpack128 (unpack128x2 w).`1,nttunpack128 (unpack128x2 w).`2).
+rewrite !unpack128x2E /nttunpack128 //=. split.
++ rewrite tP => i Hi. rewrite !initiE //=. rewrite !initiE //=. rewrite rng_perm_nttunpack128 //.
+rewrite /nttunpack /perm_nttunpack128 initiE //= 1:/#.
+move:Hi. rewrite rng_iotared => />. do 128!(try (move => Hi; case Hi => />)). 
++ rewrite tP => i Hi. rewrite !initiE //=. rewrite !initiE //=. rewrite rng_perm_nttunpack128 //.
+rewrite /nttunpack /perm_nttunpack128 initiE //= 1:/#.
+move:Hi. rewrite rng_iotared => />. do 128!(try (move => Hi; case Hi => />)). 
+qed.
+
+lemma inj_unpack16x8 (x y : 'a Array128.t) :
+  (unpack16x8 x = unpack16x8 y) => (x = y).
+rewrite -(unpack16x8K x) -(unpack16x8K y). rewrite !pack16x8K => ->. rewrite unpack16x8K //. qed.
+
+lemma inj_unpack128x2 (x y : 'a Array256.t) :
+  (unpack128x2 x = unpack128x2 y) => (x = y).
+rewrite -(unpack128x2K x) -(unpack128x2K y). rewrite !pack128x2K => ->. rewrite unpack128x2K //. qed.
+
+lemma nttunpack128_corr_h a :
+ hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__nttunpack128 :
+   is16u16x8 a arg ==> is16u16x8 (nttunpack128x16 a) res].
+proc.
+(*shuffle8*)
+pose r0_8 := (shuf8 a.`1 a.`5).`1.
+pose r1_8 := (shuf8 a.`2 a.`6).`1.
+pose r2_8 := (shuf8 a.`3 a.`7).`1.
+pose r3_8 := (shuf8 a.`4 a.`8).`1.
+pose r4_8 := (shuf8 a.`1 a.`5).`2.
+pose r5_8 := (shuf8 a.`2 a.`6).`2.
+pose r6_8 := (shuf8 a.`3 a.`7).`2.
+pose r7_8 := (shuf8 a.`4 a.`8).`2.
+seq 1 : (is16u16x8 (r0_8,a.`2,a.`3,a.`4,r4_8,a.`6,a.`7,a.`8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`1 a.`5) => />. auto => />. 
+seq 1 : (is16u16x8 (r0_8,r1_8,a.`3,a.`4,r4_8,r5_8,a.`7,a.`8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`2 a.`6) => />. auto => />.
+seq 1 : (is16u16x8 (r0_8,r1_8,r2_8,a.`4,r4_8,r5_8,r6_8,a.`8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`3 a.`7) => />. auto => />.
+seq 1 : (is16u16x8 (r0_8,r1_8,r2_8,r3_8,r4_8,r5_8,r6_8,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`4 a.`8) => />. auto => />.
+(*shuffle4*)
+pose r0_4 := (shuf4 r0_8 r2_8).`1.
+pose r1_4 := (shuf4 r1_8 r3_8).`1.
+pose r2_4 := (shuf4 r0_8 r2_8).`2.
+pose r3_4 := (shuf4 r1_8 r3_8).`2.
+pose r4_4 := (shuf4 r4_8 r6_8).`1.
+pose r5_4 := (shuf4 r5_8 r7_8).`1.
+pose r6_4 := (shuf4 r4_8 r6_8).`2.
+pose r7_4 := (shuf4 r5_8 r7_8).`2.
+seq 1 : (is16u16x8 (r0_4,r1_8,r2_4,r3_8,r4_8,r5_8,r6_8,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r0_8 r2_8) => />. auto => />.
+seq 1 : (is16u16x8 (r0_4,r1_8,r2_4,r3_8,r4_4,r5_8,r6_4,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r4_8 r6_8) => />. auto => />.
+seq 1 : (is16u16x8 (r0_4,r1_4,r2_4,r3_4,r4_4,r5_8,r6_4,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r1_8 r3_8) => />. auto => />.
+seq 1 : (is16u16x8 (r0_4,r1_4,r2_4,r3_4,r4_4,r5_4,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r5_8 r7_8) => />. auto => />.
+(*shuffle2*)
+pose r0_2 := (shuf2 r0_4 r1_4).`1.
+pose r1_2 := (shuf2 r0_4 r1_4).`2.
+pose r2_2 := (shuf2 r2_4 r3_4).`1.
+pose r3_2 := (shuf2 r2_4 r3_4).`2.
+pose r4_2 := (shuf2 r4_4 r5_4).`1.
+pose r5_2 := (shuf2 r4_4 r5_4).`2.
+pose r6_2 := (shuf2 r6_4 r7_4).`1.
+pose r7_2 := (shuf2 r6_4 r7_4).`2.
+seq 1 : (is16u16x8 (r0_2,r1_2,r2_4,r3_4,r4_4,r5_4,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r0_4 r1_4) => />. auto => />.
+seq 1 : (is16u16x8 (r0_2,r1_2,r2_2,r3_2,r4_4,r5_4,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r2_4 r3_4) => />. auto => />.
+seq 1 : (is16u16x8 (r0_2,r1_2,r2_2,r3_2,r4_2,r5_2,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r4_4 r5_4) => />. auto => />.
+seq 1 : (is16u16x8 (r0_2,r1_2,r2_2,r3_2,r4_2,r5_2,r6_2,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r6_4 r7_4) => />. auto => />.
+(*shuffle1*)
+pose r0_1 := (shuf1 r0_2 r4_2).`1.
+pose r1_1 := (shuf1 r1_2 r5_2).`1.
+pose r2_1 := (shuf1 r2_2 r6_2).`1.
+pose r3_1 := (shuf1 r3_2 r7_2).`1.
+pose r4_1 := (shuf1 r0_2 r4_2).`2.
+pose r5_1 := (shuf1 r1_2 r5_2).`2.
+pose r6_1 := (shuf1 r2_2 r6_2).`2.
+pose r7_1 := (shuf1 r3_2 r7_2).`2.
+seq 1 : (is16u16x8 (r0_1,r1_2,r2_2,r3_2,r4_1,r5_2,r6_2,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r0_2 r4_2) => />. auto => />.
+seq 1 : (is16u16x8 (r0_1,r1_1,r2_2,r3_2,r4_1,r5_1,r6_2,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r1_2 r5_2) => />. auto => />.
+seq 1 : (is16u16x8 (r0_1,r1_1,r2_1,r3_2,r4_1,r5_1,r6_1,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r2_2 r6_2) => />. auto => />.
+seq 1 : (is16u16x8 (r0_1,r1_1,r2_1,r3_1,r4_1,r5_1,r6_1,r7_1) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r3_2 r7_2) => />. auto => />.
+(*end*)
+auto => /> &m -> -> -> -> -> -> -> ->. 
+do 8!(try split; first by
+ apply W16u16.wordP => i Hi; rewrite !bits16_W16u16 // Hi //= !of_listE !list_arr16 !initiE //=; rewrite /to_list !nth_mkseq //=; move:Hi; rewrite rng_iotared => />;
+ do 16!(try(move => Hi; case Hi => />); first by rewrite /nttunpack128 /perm_nttunpack128 unpack16x8E pack16x8E => />)).
+qed.
+
+lemma __nttunpack128_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).__nttunpack128 by islossless.
+
+phoare nttunpack128_corr a :
+ [ Jkem_avx2.M(Jkem_avx2.Syscall).__nttunpack128 :
+   is16u16x8 a arg ==> is16u16x8 (nttunpack128x16 a) res] = 1%r.
+conseq __nttunpack128_ll (nttunpack128_corr_h a) => />. qed.
+
+lemma nttunpack_corr_h a :
+ hoare[ Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a].
+proc. sp. 
+seq 1 : (rp=a /\ is16u16x8 (nttunpack128x16 (unpack16x8 (unpack128x2 a).`1)) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (nttunpack128_corr_h (unpack16x8 (unpack128x2 a).`1)) => />. auto => />.
+do 8!(try split; first by
+ apply W16u16.wordP => i Hi; rewrite bits16_W16u16 // Hi //=; rewrite /get256_direct bits16_W32u8 Hi //=; rewrite unpack16x8E unpack128x2E //=; move :Hi; rewrite rng_iotared;
+ do 16!(try (move => Hi; case Hi => />); first by rewrite !initiE //= pack2_bits8 //)).
+seq 8 : ((unpack128x2 rp).`2 = (unpack128x2 a).`2 /\ (unpack128x2 rp).`1 = (unpack128x2 (nttunpack a)).`1 ).
+wp. skip => /> &m -> -> -> -> -> -> -> ->. rewrite nttunpack128x2. rewrite !unpack128x2E => />. split.
++ rewrite tP => j Hj. rewrite !initiE //=. rewrite !initiE //= 1:/#. rewrite !list_arr16.
+  do 8!(rewrite set256_directE 1:/#; rewrite get16_set256E //=; rewrite ifF 1:/#; rewrite get16_init16 1:/#; try(rewrite !initiE //=1:/#)). trivial.
++ rewrite tP => j Hj. rewrite !initiE //= 1:/#. rewrite !list_arr16.
+  do 7!(rewrite set256_directE 1:/#; rewrite get16_set256E //=; rewrite get16_init16 1:/#; rewrite initiE //= 1:/#).
+  rewrite set256_directE 1:/#. rewrite get16_set256E //=. rewrite get16_init16 1:/#. 
+  rewrite !bits16_W16u16. rewrite !unpack16x8K. rewrite !of_listE !initE //= /to_list !nth_mkseq_if //=. rewrite rng_perm_nttunpack128 //=. rewrite !unpack16x8E //=. rewrite !initE //=. rewrite /nttunpack128 !initE //=. rewrite !initE //=. rewrite !rng_perm_nttunpack128 //=. smt().
+sp. 
+seq 1 : ((unpack128x2 rp).`2 = (unpack128x2 a).`2 /\ (unpack128x2 rp).`1 = (unpack128x2 (nttunpack a)).`1 /\ is16u16x8 (nttunpack128x16 (unpack16x8 (unpack128x2 a).`2)) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (nttunpack128_corr_h (unpack16x8 (unpack128x2 a).`2)) => />. auto => /> &m <- H2.
+do 8!(try split; first by
+ apply W16u16.wordP => i Hi; rewrite bits16_W16u16 // Hi //=; rewrite /get256_direct bits16_W32u8 Hi //=; rewrite unpack16x8E unpack128x2E //=; move :Hi; rewrite rng_iotared => />;
+ do 16!(try (move => Hi; case Hi => />); first by rewrite !initiE //= pack2_bits8 //)).
+auto => /> &m H1 H2 -> -> -> -> -> -> -> ->.
+apply inj_unpack128x2 => />. rewrite -(unpack128x2K rp{m}) (prod (unpack128x2 rp{m})). rewrite (prod (unpack128x2 (nttunpack a))). 
+move :H1 H2. move => -> ->.
+rewrite nttunpack128x2 !unpack16x8K !list_arr16 !unpack128x2E !pack128x2E => />. split.
++ rewrite tP => i Hi.
+  rewrite !initiE //= 1:/#. rewrite !initiE //=. rewrite rng_perm_nttunpack128 //.
+  do 8!(rewrite set256_directE 1:/# get16_set256E //=; rewrite ifF 1:/#; rewrite get16_init16 1:/#; rewrite !initiE //= 1:/#).
+  rewrite ifT //=. rewrite /nttunpack128 !initiE //= 1:/#. rewrite !initiE //=. rewrite rng_perm_nttunpack128 1:/#. smt().
++ rewrite tP => i Hi. rewrite !initiE //=. rewrite !initiE //= 1:/#. rewrite rng_perm_nttunpack128 //.
+  do 8!(rewrite set256_directE 1:/# get16_set256E //=; rewrite get16_init16 1:/#; rewrite !initiE //= 1:/#).
+  rewrite !bits16_W16u16. rewrite !of_listE !initE //= /to_list !nth_mkseq_if //=. rewrite !unpack16x8E //=. rewrite !initE //=. rewrite /nttunpack128 !initE //=. rewrite !initE //=. rewrite !rng_perm_nttunpack128 //= 1..2:/#.
+qed.
+
+lemma _nttunpack_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack by islossless.
+
+phoare nttunpack_corr a :
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a] = 1%r.
+conseq _nttunpack_ll (nttunpack_corr_h a) => />. qed.
+
+hoare matrix_bound_aux : 
+    AuxKyber.__gen_matrix : true ==> pos_bound2304_cxq res 0 2304 2.
+proc. seq 3 : true; 1: by auto.
+auto => /> &hr.
+rewrite /unlift_matrix /pos_bound2304_cxq => k kb.
+rewrite initiE 1:/# /=. rewrite /smod /=; smt(qE Zq.rg_asint).
+qed.
+
+hoare matrix_bound : 
+    M(Syscall).__gen_matrix : 0 <= to_uint transposed <2  ==> pos_bound2304_cxq res 0 2304 2.
+conseq auxgenmatrix_good matrix_bound_aux.
+move => /> &1 H H0; exists (seed{1},transposed{1} = W64.one); 1: by smt(@W64).
+by smt().
+qed.
+
 equiv genmatrixequiv b :
-  Jkem_avx2.M.__gen_matrix ~  M.__gen_matrix :
-    arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = b2i b /\ arg{2}.`2 =  W64.of_int (b2i b) ==>
+ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix ~ Jkem.M(Jkem.Syscall).__gen_matrix :
+    arg{1}.`1 = arg{2}.`1 /\ arg{1}.`2 = (W64.of_int (b2i b)) /\ arg{2}.`2 =  (W64.of_int (b2i b))  ==>
     res{1} = nttunpackm res{2} /\
     pos_bound2304_cxq res{1} 0 2304 2 /\
     pos_bound2304_cxq res{2} 0 2304 2.
-admitted. (* this is the gen_matrix avx2 equiv *)
+symmetry.
+have H : equiv [
+ Jkem.M(Jkem.Syscall).__gen_matrix ~ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix  :
+   ={arg} ==> res{2} = nttunpackm res{1}].
+proc. seq 10 10 : (={r}). 
+sim (M(Syscall)._shake128_absorb34 ~ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb34  : true)
+    (M(Syscall)._shake128_squeezeblock ~ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeezeblock : true)
+     (Jkem_avx2.M(Jkem_avx2.Syscall).__rej_uniform ~ 
+     Jkem.M(Jkem.Syscall).__gen_matrix : true).
+apply shake128_equiv_absorb.
+apply shake128_equiv_squeezeblock.
+print nttunpackm.
+while {2} (0 <= i{2} <= 3 /\ 
+  (forall ki,
+      0 <= ki < i{2}*768 => r{2}.[ki] = 
+               (nttunpackm r{1}).[ki]) /\
+  (forall ki,
+      i{2}*768 <= ki < 3*768 => r{2}.[ki] = r{1}.[ki])) (3-i{2});
+last by auto => />; smt(Array2304.tP).
+move => &1 ?;wp.
+while (0 <= j <= 3 /\ 0<=i<3 /\
+  (forall ki,
+      0 <= ki < i*768 + j*256  => r.[ki] = 
+               (nttunpackm r{1}).[ki]) /\
+  (forall ki,
+      i*768 + j*256 <= ki < 3*768 => r.[ki] = r{1}.[ki])) (3 - j);
+last by auto => />; smt(Array2304.tP).
+move => ?; wp.
+exists* r, i, j; elim *=>  _r _i _j.
+call (nttunpack_corr (Array256.init (fun (i_0 : int) => _r.[_i * (3 * 256) + _j * 256 + i_0]))).
+auto => />???????. do split; 1,2:smt().
++ move => ki kibl kibh; rewrite initiE 1:/# /=.
+  case (_i * 768 + _j * 256 <= ki && ki < _i * 768 + _j * 256 + 256);
+      last by smt().
+  move => *; rewrite initiE 1:/# /=.
+  case (0<= ki < 768).
+  + move => *; rewrite /nttunpackv  initiE 1:/# /=.
+    case (0<= ki < 256).
+    + move => *; rewrite /subarray256 /subarray768.
+      congr; last by smt().
+      congr; rewrite tP => k kb.
+      by rewrite !initiE 1,2:/# /= initiE /#.
+    case (256<= ki < 512).
+    + move => *; rewrite /subarray256 /subarray768.
+      congr; last by smt().
+      congr; rewrite tP => k kb.
+      by rewrite !initiE 1,2:/# /= initiE /#.
+    move => *; rewrite /subarray256 /subarray768.
+    congr; last by smt().
+    congr; rewrite tP => k kb.
+    by rewrite !initiE 1,2:/# /= initiE /#.
+  case (768<= ki < 1536).
+  + move => /= *; rewrite /nttunpackv  initiE 1:/# /=.
+    case (0<= ki -768 < 256).
+    + move => *; rewrite /subarray256 /subarray768.
+      congr; last by smt().
+      congr; rewrite tP => k kb.
+      by rewrite !initiE 1,2:/# /= initiE /#.
+    case (256<= ki - 768 < 512).
+    + move => *; rewrite /subarray256 /subarray768.
+      congr; last by smt().
+      congr; rewrite tP => k kb.
+      by rewrite !initiE 1,2:/# /= initiE /#.
+    move => *; rewrite /subarray256 /subarray768.
+    congr; last by smt().
+    congr; rewrite tP => k kb.
+    by rewrite !initiE 1,2:/# /= initiE /#.
+  + move => /= *; rewrite /nttunpackv  initiE 1:/# /=.
+    case (0<= ki -1536 < 256).
+    + move => *; rewrite /subarray256 /subarray768.
+      congr; last by smt().
+      congr; rewrite tP => k kb.
+      by rewrite !initiE 1,2:/# /= initiE /#.
+    case (256<= ki - 1536 < 512).
+    + move => *; rewrite /subarray256 /subarray768.
+      congr; last by smt().
+      congr; rewrite tP => k kb.
+      by rewrite !initiE 1,2:/# /= initiE /#.
+    move => *; rewrite /subarray256 /subarray768.
+    congr; last by smt().
+    congr; rewrite tP => k kb.
+    by rewrite !initiE 1,2:/# /= initiE /#.
++ by smt(Array768.initiE Array2304.initiE).
+by smt().
+conseq (: _ ==> res{2} = nttunpackm res{1} /\ pos_bound2304_cxq res{1} 0 2304 2). 
++ move => [#] &1 &2  H1 r1 r2 [-> H5]; do split => //.
+  rewrite /pos_bound2304_cxq /nttunpackm => k kb.
+  rewrite initiE 1:/# /=.
+  case (0<=k<768); 1: by
+   move => ?;  
+    move : (nttunpackv_pred (subarray768 r1 0) (fun a => W16extra.bpos16 a (2*q))); rewrite !allP /=; smt(Array768.initiE).
+  case (768<=k<1536); 1: by
+   move => ?;  
+    move : (nttunpackv_pred (subarray768 r1 1) (fun a => W16extra.bpos16 a (2*q))); rewrite !allP /=; smt(Array768.initiE).
+   move => ?;  
+    move : (nttunpackv_pred (subarray768 r1 2) (fun a => W16extra.bpos16 a (2*q))); rewrite !allP /=; smt(Array768.initiE).
+conseq H matrix_bound => //=. smt(@W64). 
+qed.
 
 lemma lift768_nttunpack (v : W16.t Array768.t):
   lift_array768 (nttunpackv v) = nttunpackv (lift_array768 v).
@@ -133,10 +457,10 @@ module GetNoiseAVX2 = {
       n1 <- nonce + W8.of_int 2;
       n2 <- nonce + W8.of_int 1;
       n3 <- nonce;
-      aux_3 <@ M._poly_getnoise(aux3,noiseseed,n3);
-      aux_2 <@ M._poly_getnoise(aux2,noiseseed,n2);
-      aux_1 <@ M._poly_getnoise(aux1,noiseseed,n1);
-      aux_0 <@ M._poly_getnoise(aux0,noiseseed,n0);
+      aux_3 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux3,noiseseed,n3);
+      aux_2 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux2,noiseseed,n2);
+      aux_1 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux1,noiseseed,n1);
+      aux_0 <@Jkem.M(Jkem.Syscall)._poly_getnoise(aux0,noiseseed,n0);
       return (aux_3, aux_2, aux_1, aux_0);
   }
 
@@ -260,7 +584,7 @@ module GetNoiseAVX2 = {
     var r;
 
     buf <- witness;
-    buf <@ M._shake256_128_33 (buf,Array33.init (fun i => if i=32 then nonce else seed.[i]));
+    buf <@ M(Syscall)._shake256_128_33 (buf,Array33.init (fun i => if i=32 then nonce else seed.[i]));
     r <@ __poly_getnoise(rp,buf);
     return r;
   }
@@ -283,7 +607,7 @@ module GetNoiseAVX2 = {
 }.
 
 equiv getnoise_split : 
-  M._poly_getnoise ~ GetNoiseAVX2._poly_getnoise : ={arg} ==> ={res}.
+  M(Syscall)._poly_getnoise ~ GetNoiseAVX2._poly_getnoise : ={arg} ==> ={res}.
 proc; wp; sp => />. 
 seq 2 0 : (srp{1}=rp{1} /\ ={buf,rp,seed,nonce} /\ extseed{1}=Array33.init (fun i => if i=32 then nonce{1} else seed{1}.[i]) ).
 wp. while{1} (0 <= k{1} <= 32 /\ (forall i, 0 <= i < k{1} => extseed{1}.[i]=seed{1}.[i])) (32-k{1}).
@@ -298,7 +622,7 @@ abbrev noise_evens (buf:W8.t Array128.t) (i:W64.t) = (sigextu16 (((((buf.[(W64.t
 abbrev noise_odds (buf:W8.t Array128.t) (i:W64.t) = (sigextu16 ((((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 4)) `&` (W8.of_int 3)) - (((((buf.[(W64.to_uint i)] `>>` (W8.of_int 1)) `&` (W8.of_int 85)) + (buf.[(W64.to_uint i)] `&` (W8.of_int 85))) `>>` (W8.of_int 6)) `&` (W8.of_int 3)))).
 
 equiv getnoise_1x_equiv_avx :
-  Jkem_avx2.M.__poly_cbd_eta1 ~ GetNoiseAVX2.__poly_getnoise : ={arg} ==> ={res}.
+  Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1 ~ GetNoiseAVX2.__poly_getnoise : ={arg} ==> ={res}.
 proc; wp => />. rcondt{1} 1. auto => />. inline *; wp; sp => />. 
 async while
   [ (fun x => i < x), i{1} + 1 ]
@@ -355,12 +679,12 @@ equiv getnoise_4x_split :
 proc; wp; sp => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. auto => />. qed.
 
 equiv getnoiseequiv_avx : 
-   Jkem_avx2.M._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
+   Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
 proc*. 
 transitivity{2} { r <@ GetNoiseAVX2.__poly_getnoise_eta1_4x(aux3,aux2,aux1,aux0,noiseseed,nonce); } ((r0{1}, r1{1}, r2{1}, r3{1}, seed{1}, nonce{1}) = (aux3{2}, aux2{2}, aux1{2}, aux0{2}, noiseseed{2}, nonce{2}) ==> ={r}) (={aux3,aux2,aux1,aux0,noiseseed,nonce} ==> ={r}); last first.
 symmetry. call getnoise_4x_split => />. auto => />. smt(). smt().
 (*main proof*)
-inline Jkem_avx2.M._poly_getnoise_eta1_4x GetNoiseAVX2.__poly_getnoise_eta1_4x GetNoiseAVX2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
+inline Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x GetNoiseAVX2.__poly_getnoise_eta1_4x GetNoiseAVX2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
 seq 25 30 : (
     r00{1}=rp{2}  /\ Array128.init (fun (i : int) => buf0{1}.[i]) =buf{2}
  /\ r10{1}=rp0{2} /\ Array128.init (fun (i : int) => buf1{1}.[i]) =buf0{2}
@@ -385,7 +709,7 @@ wp. call getnoise_1x_equiv_avx => />.
 wp. call getnoise_1x_equiv_avx => />.
 auto => />. qed.
 
-lemma polygetnoise_ll : islossless M._poly_getnoise.
+lemma polygetnoise_ll : islossless Jkem.M(Jkem.Syscall)._poly_getnoise.
 proc. 
 while (0 <= to_uint i <= 128) (128 - to_uint i);
   1: by move => z; auto => />;rewrite  ultE /= => &hr ???; rewrite !to_uintD_small /=; smt(to_uint_cmp).
@@ -395,33 +719,31 @@ by move => *; rewrite ultE /=; smt().
 qed.
 
 equiv getnoiseequiv : 
-   M._poly_getnoise ~ M._poly_getnoise :
+  Jkem.M(Jkem.Syscall)._poly_getnoise ~Jkem.M(Jkem.Syscall)._poly_getnoise :
    ={arg} ==> ={res} /\
    signed_bound_cxq res{1} 0 256 1.
 have H : forall &m a,
-   Pr[ M._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
+   Pr[Jkem.M(Jkem.Syscall)._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
 + move => &m a.
   have -> : 1%r = Pr [ CBD2(KPRF).sample(a.`2,to_uint a.`3) @ &m : true].
   + byphoare => //.
     proc; inline *; while (0<=i<=128) (128-i); 1: by move => z; auto => /> /#. 
     by auto => /> /#.
   by byequiv get_noise_sample_noise => //.
-have HH0 : hoare [ M._poly_getnoise : true ==> forall k, 0<=k<256 => -5 < to_sint res.[k] < 5].
+have HH0 : hoare [Jkem.M(Jkem.Syscall)._poly_getnoise : true ==> forall k, 0<=k<256 => -5 < to_sint res.[k] < 5].
 + hoare; bypr => //= &m; rewrite Pr[mu_not].
-  have -> : Pr[M._poly_getnoise(rp{m}, seed{m}, nonce{m}) @ &m : true] = 1%r.
+  have -> : Pr[Jkem.M(Jkem.Syscall)._poly_getnoise(rp{m}, seed{m}, nonce{m}) @ &m : true] = 1%r.
   + by byphoare => //; apply polygetnoise_ll.
   smt().
-have HHH : equiv [  M._poly_getnoise ~ M._poly_getnoise : ={arg} ==> ={res} ] by sim.
+have HHH : equiv [ Jkem.M(Jkem.Syscall)._poly_getnoise ~Jkem.M(Jkem.Syscall)._poly_getnoise : ={arg} ==> ={res} ] by sim.
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
-lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp : 
-   equiv [ Jkem_avx2.M.__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
+lemma kyber_correct_kg_avx2 mem _pkp _skp  : 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       to_uint randomnessp{1} = _randomnessp /\
-       seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
-       valid_ptr (to_uint randomnessp{1}) 32 /\
+       randomnessp{1} = seed{2}  /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
        touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
@@ -430,18 +752,15 @@ lemma kyber_correct_kg_avx2 mem _pkp _skp _randomnessp :
          t = load_array1152 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc*.
-transitivity {1} { Jkem.M.__indcpa_keypair(pkp, skp, randomnessp);} 
+transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);} 
 (={Glob.mem,pkp,skp,randomnessp} /\ 
   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\ 
-       valid_ptr (to_uint randomnessp{1}) 32 /\
+    randomnessp{1} = randomnessp{2} /\
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3) ==> ={Glob.mem}) 
 (   Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       to_uint randomnessp{1} = _randomnessp /\
-       seed{2} = Array32.init(fun i=> loadW8 Glob.mem{1} (to_uint randomnessp{1}  + i)) /\
-       valid_ptr (to_uint randomnessp{1}) 32 /\
+       randomnessp{1} = seed{2} /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
     ==> 
     touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
@@ -450,7 +769,7 @@ transitivity {1} { Jkem.M.__indcpa_keypair(pkp, skp, randomnessp);}
         sk = load_array1152 Glob.mem{1} _skp /\
         t = load_array1152 Glob.mem{1} _pkp /\ 
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt(); 
-   last by call(kyber_correct_kg mem _pkp _skp _randomnessp); auto => />. 
+   last by call(kyber_correct_kg mem _pkp _skp); auto => />. 
 
 inline{1} 1; inline {2} 1;  sim 43 60. 
 
@@ -493,8 +812,7 @@ seq 10 18 : (#pre  /\
     Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
     to_uint skp{1} = _skp /\
-    to_uint randomnessp{1} = _randomnessp /\
-    valid_ptr (to_uint randomnessp{1}) 32 /\ valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)) /\
+     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)) /\
    ={publicseed, noiseseed, sskp, spkp, skpv, pkpv, e}) /\
   aa{1} = nttunpackm a{2} /\ pos_bound2304_cxq aa{1} 0 2304 2 /\ pos_bound2304_cxq a{2} 0 2304 2
    ==> 
@@ -506,7 +824,7 @@ seq 10 18 : (#pre  /\
   inline {1} 1. inline GetNoiseAVX2._poly_getnoise_eta1_4x.
   wp; do 2!(call{1} (_: true ==> true); 1: by apply polygetnoise_ll).
   do 6!(wp; call  getnoiseequiv); auto => />.
-  move => &1 &2 ????????R?; split.
+  move => &1 &2 ??????R?; split.
   + by rewrite tP => k kb; rewrite !initiE //= initiE /#.
   move => ?R0?; split.
   + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= /#.
@@ -558,7 +876,7 @@ seq 8 4: (#{/~pkpv{2}}pre /\
               signed_bound768_cxq pkpv{1} 0 256 2 /\
               signed_bound768_cxq pkpv{2} 0 256 2 /\ i{1} = 1).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
 + rewrite -lift768_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE // 1:/# /= kb /= initiE //=. 
@@ -622,7 +940,7 @@ seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 1) = nttunpack (lif
               signed_bound768_cxq pkpv{1} 256 512 2 /\
               signed_bound768_cxq pkpv{2} 256 512 2 /\ i{1} = 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
 + rewrite -lift768_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifT 1:/# initiE //=. 
@@ -691,7 +1009,7 @@ seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 2) = nttunpack (lif
               signed_bound768_cxq pkpv{1} 512 768 2 /\
               signed_bound768_cxq pkpv{2} 512 768 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20; do split.
 + rewrite -lift768_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# initiE //=. 
@@ -780,7 +1098,7 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
 
 auto => />.
 
-move => &1 &2 ???????????????H1??H2??H3??. 
+move => &1 &2 ?????????????H1??H2??H3??. 
 do split.
 + smt().
 + smt(). 
@@ -849,7 +1167,7 @@ qed.
 (***************************************************)
 
 lemma kyber_correct_enc_0_avx2 mem _ctp _pkp : 
-   equiv [ Jkem_avx2.M.__indcpa_enc_0 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_0 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
      Glob.mem{1} = mem /\ 
@@ -866,7 +1184,7 @@ lemma kyber_correct_enc_0_avx2 mem _ctp _pkp :
      c2 = load_array128 Glob.mem{1} (_ctp + 960)
 ].
 proc*.
-transitivity {1} { Jkem.M.__indcpa_enc(sctp,msgp,pkp,noiseseed);} 
+transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_enc(sctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,msgp,pkp,noiseseed,sctp} /\
   valid_ptr _pkp (384 * 3 + 32) /\
   valid_ptr _ctp (3 * 320 + 128) /\
@@ -939,7 +1257,7 @@ seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
   call frommsgequiv_noperm. conseq />. smt().
   conseq (_: _ ==> lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
        pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,Glob.mem} /\ pkp0{2} = pkp{1}).
-  auto => /> &2 ????????? rl rr H H0 H1 ?????. 
+  auto => /> &2 ????????? rl rr H H0 H1 ????. 
   + rewrite tP => k kb.
     move : H; rewrite /lift_array256 tP => H.
     move : (H k kb); rewrite !mapiE //=. 
@@ -1232,7 +1550,7 @@ qed.
 (***************************************************)
 
 lemma kyber_correct_enc_1_avx2 mem _pkp : 
-   equiv [ Jkem_avx2.M.__indcpa_enc_1 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_1 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
@@ -1247,7 +1565,7 @@ lemma kyber_correct_enc_1_avx2 mem _pkp :
      c2 = Array128.init (fun i => res{1}.[i+960])
 ].
 proc*.
-transitivity {1} { r <@ Jkem.M.__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
+transitivity {1} { r <@Jkem.M(Jkem.Syscall).__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,ctp,msgp,pkp,noiseseed} /\
   valid_ptr _pkp (384 * 3 + 32) /\
   Glob.mem{1} = mem /\
@@ -1314,7 +1632,7 @@ seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
   wp;call frommsgequiv_noperm. conseq />. smt().
   conseq (_: _ ==> lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
        pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,sctp,Glob.mem} /\ pkp0{2} = pkp{1}).
-  auto => /> &2 ??????? rl rr H H0 H1 ?????. 
+  auto => /> &2 ??????? rl rr H H0 H1 ????. 
   + rewrite tP => k kb.
     move : H; rewrite /lift_array256 tP => H.
     move : (H k kb); rewrite !mapiE //=. 
@@ -1602,7 +1920,7 @@ qed.
 
 
 lemma kyber_correct_dec mem _ctp _skp : 
-   equiv [ Jkem_avx2.M.__indcpa_dec_1 ~ Kyber(KHS,XOF,KPRF,H).dec : 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_dec_1 ~ Kyber(KHS,XOF,KPRF,H).dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
      Glob.mem{1} = mem /\ 
@@ -1617,7 +1935,7 @@ lemma kyber_correct_dec mem _ctp _skp :
      res{1} = oget res{2}
 ].
 proc*.
-transitivity {1} { r <@ Jkem.M.__indcpa_dec(msgp,ctp,skp);} 
+transitivity {1} { r <@Jkem.M(Jkem.Syscall).__indcpa_dec(msgp,ctp,skp);} 
 (={Glob.mem,ctp,skp} /\
   valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\

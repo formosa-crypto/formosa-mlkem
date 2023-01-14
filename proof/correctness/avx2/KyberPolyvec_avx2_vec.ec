@@ -533,7 +533,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_add2 :
-  Mvec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
+  Mvec.polyvec_add2 ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   proc.
   do 3!(wp; call veceq_poly_add2).
@@ -541,7 +541,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_csubq :
-  Mvec.polyvec_csubq ~ M.__polyvec_csubq: ={r} ==> ={res}.
+  Mvec.polyvec_csubq ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_csubq: ={r} ==> ={res}.
 proof.
   proc.
   do 3!(wp; call veceq_poly_csubq).
@@ -549,7 +549,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_reduce :
-  Mvec.polyvec_reduce ~ M.__polyvec_reduce: ={r} ==> ={res}.
+  Mvec.polyvec_reduce ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce: ={r} ==> ={res}.
 proof.
   proc.
   do 3!(wp; call veceq_poly_reduce).
@@ -557,7 +557,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_frombytes :
-  Mvec.polyvec_frombytes ~ M.__polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
+  Mvec.polyvec_frombytes ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
 proof.
   proc.
   do 3!(wp; call veceq_poly_frombytes).
@@ -565,7 +565,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_tobytes :
-  Mvec.polyvec_tobytes ~ M.__polyvec_tobytes: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+  Mvec.polyvec_tobytes ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_tobytes: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
   proc.
   do 3!(wp; call veceq_poly_tobytes).
@@ -573,7 +573,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_compress_1 :
-  Mvec.polyvec_compress_1 ~ M.__polyvec_compress_1: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+  Mvec.polyvec_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress_1: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
   proc.
   while(={i, a, rp, Glob.mem, aux, v, v8, off, shift1, mask, shift2, sllvdidx, shufbidx} /\ 0 <= i{1} /\ aux{1} = 48).
@@ -586,7 +586,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_compress :
-  Mvec.polyvec_compress ~ M.__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+  Mvec.polyvec_compress ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
   proc.
   while(={i, a, rp, Glob.mem, aux, v, v8, off, shift1, mask, shift2, sllvdidx, shufbidx} /\ 0 <= i{1} /\ aux{1} = 48).
@@ -599,7 +599,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_decompress :
-  Mvec.polyvec_decompress ~ M.__polyvec_decompress: ={Glob.mem, rp} ==> ={res}.
+  Mvec.polyvec_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_decompress: ={Glob.mem, rp} ==> ={res}.
 proof.
   proc.
   while(={Glob.mem, rp, q, shufbidx, sllvdidx, mask, k, r} /\ 0 <= k{1}).
@@ -613,7 +613,7 @@ proof.
 qed.
 
 equiv prevec_eq_polyvec_add2 :
-  Mprevec.polyvec_add2 ~ M.__polyvec_add2: ={r, b} ==> ={res}.
+  Mprevec.polyvec_add2 ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_add2 (={r, b} ==> ={res}) (={r, b} ==> ={res}).
 smt(). trivial.
@@ -622,7 +622,7 @@ apply veceq_polyvec_add2.
 qed.
 
 equiv prevec_eq_polyvec_csubq :
-  Mprevec.polyvec_csubq ~ M.__polyvec_csubq: ={r} ==> ={res}.
+  Mprevec.polyvec_csubq ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_csubq: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_csubq (={r} ==> ={res}) (={r} ==> ={res}).
 smt(). trivial.
@@ -631,7 +631,7 @@ apply veceq_polyvec_csubq.
 qed.
 
 equiv prevec_eq_polyvec_reduce :
-  Mprevec.polyvec_reduce ~ M.__polyvec_reduce: ={r} ==> ={res}.
+  Mprevec.polyvec_reduce ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_reduce (={r} ==> ={res}) (={r} ==> ={res}).
 smt(). trivial.
@@ -640,7 +640,7 @@ apply veceq_polyvec_reduce.
 qed.
 
 equiv prevec_eq_polyvec_frombytes :
-  Mprevec.polyvec_frombytes ~ M.__polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
+  Mprevec.polyvec_frombytes ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_frombytes (={Glob.mem, ap} ==> ={res}) (={Glob.mem, ap} ==> ={res}).
   smt(). trivial.
@@ -649,7 +649,7 @@ proof.
 qed.
 
 equiv prevec_eq_polyvec_tobytes :
-  Mprevec.polyvec_tobytes ~ M.__polyvec_tobytes: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+  Mprevec.polyvec_tobytes ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_tobytes: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   transitivity Mvec.polyvec_tobytes (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, rp, a} ==> ={res, Glob.mem}).
   smt(). trivial.
@@ -658,7 +658,7 @@ proof.
 qed.
 
 equiv prevec_eq_polyvec_compress_1 :
-  Mprevec.polyvec_compress_1 ~ M.__polyvec_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+  Mprevec.polyvec_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   transitivity Mvec.polyvec_compress_1 (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, rp, a} ==> ={Glob.mem, res}).
   smt(). trivial.
@@ -667,7 +667,7 @@ proof.
 qed.
 
 equiv prevec_eq_polyvec_compress :
-  Mprevec.polyvec_compress ~ M.__polyvec_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+  Mprevec.polyvec_compress ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   transitivity Mvec.polyvec_compress (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, rp, a} ==> ={res, Glob.mem}).
   smt(). trivial.
@@ -676,7 +676,7 @@ proof.
 qed.
 
 equiv prevec_eq_polyvec_decompress :
-  Mprevec.polyvec_decompress ~ M.__polyvec_decompress: ={rp, Glob.mem} ==> ={res}.
+  Mprevec.polyvec_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_decompress: ={rp, Glob.mem} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_decompress (={rp, Glob.mem} ==> ={res}) (={Glob.mem, rp} ==> ={res}).
   smt(). trivial.

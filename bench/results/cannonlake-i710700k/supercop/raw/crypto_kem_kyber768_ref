@@ -1,0 +1,120 @@
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex try 456bb24a767160dcca466adde267b87f359de6e827d31b5b23512d227d8bbfaa/8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730 ok 477872 157777422 3800000000 crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 103135 816 1640 try
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 3413 0 0 cbd.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 10469 0 0 fips202.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 2325 0 0 indcpa.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 1470 0 0 kem.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 4451 0 0 ntt.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 22180 0 0 poly.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 34877 0 0 polyvec.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 125 0 0 reduce.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 158 0 0 symmetric-shake.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex objsize crypto_kem/kyber768/ref clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE 1117 0 0 verify.o
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex implementation crypto_kem/kyber768/ref -
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex publickeybytes 1184
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex secretkeybytes 2400
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex outputbytes 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex ciphertextbytes 1088
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex cpuid GenuineIntel-000a0655-bfebfbff_
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex cpucycles_persecond 3800000000
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex cpucycles_implementation amd64cpuinfo
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex compiler clang-14_-march=native_-O3_-fomit-frame-pointer_-fwrapv_-Qunused-arguments_-fPIC_-fPIE Debian_Clang_14.0.6
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182640
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 220214
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 256948
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182640
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 219878
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 256598
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182640
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 220040
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 256676
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182642
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 220000
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 256838
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182662
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 221320
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 258072
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182644
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 221528
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 258242
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182640
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 221678
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 258422
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182668
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 219894
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 256610
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182686
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 220014
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 256764
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182668
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 221684
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 258490
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_cycles - 182644
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randombytes - 64
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex keypair_randomcalls - 2
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_cycles - 220154
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randombytes - 32
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex enc_randomcalls - 1
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_cycles - 256808
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randombytes - 0
+20221122 debian amd64 20230112 crypto_kem kyber768/constbranchindex dec_randomcalls - 0

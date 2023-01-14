@@ -320,7 +320,7 @@ module Kyber_AVX2_cf = {
     rd <- witness;
     i <- 0;
     while(i < 16) {
-      t <@ M.__fqmul(a.[i], b.[i]);
+      t <@Jkem.M(Jkem.Syscall).__fqmul(a.[i], b.[i]);
       rd.[i] <- t;
       i <- i + 1;
     }
@@ -334,7 +334,7 @@ module Kyber_AVX2_cf = {
 
     i <- 0;
     while(i < 16) {
-      t <@ M.__barrett_reduce(r.[i]);
+      t <@Jkem.M(Jkem.Syscall).__barrett_reduce(r.[i]);
       r.[i] <- t;
       i <- i + 1;
     }

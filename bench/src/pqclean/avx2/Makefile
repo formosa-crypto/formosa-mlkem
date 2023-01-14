@@ -7,10 +7,12 @@ KECCAK4XDIR=./keccak4x
 KECCAK4XOBJ=KeccakP-1600-times4-SIMD256.o
 KECCAK4X=$(KECCAK4XDIR)/$(KECCAK4XOBJ)
 
-CFLAGS=-mavx2 -mbmi2 -mpopcnt -O3 -Wall -Wextra -Wpedantic -Werror \
-          -Wmissing-prototypes -Wredundant-decls \
-          -Wpointer-arith -Wshadow \
-          -std=c99 -I../../randombytes $(EXTRAFLAGS)
+CC = clang-14
+CFLAGS = -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE -I../../randombytes $(EXTRAFLAGS)
+#CFLAGS=-mavx2 -mbmi2 -mpopcnt -O3 -Wall -Wextra -Wpedantic -Werror \
+#          -Wmissing-prototypes -Wredundant-decls \
+#          -Wpointer-arith -Wshadow \
+#          -std=c99 -I../../randombytes $(EXTRAFLAGS)
 
 all: $(LIB)
 

@@ -207,7 +207,7 @@ by smt(W16.to_uint_cmp pow2_16).
 qed.
 
 lemma fqmul_corr_h _a _b: 
-   hoare[ Jkem.M.__fqmul : 
+   hoare[Jkem.M(Jkem.Syscall).__fqmul : 
      to_sint a = _a /\ to_sint b = _b ==> to_sint res = SREDC (_a * _b)].
 proof.
 proc; wp; skip  => &hr [#] /= H H0.
@@ -217,10 +217,10 @@ rewrite shlMP; first by smt().
 by rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK qE /= !modz_dvd /R /=; smt().
 qed.
 
-lemma fqmul_ll : islossless M.__fqmul by proc; islossless.
+lemma fqmul_ll : islossless Jkem.M(Jkem.Syscall).__fqmul by proc; islossless.
 
 lemma fqmul_corr _a _b :
-  phoare [ M.__fqmul : 
+  phoare [Jkem.M(Jkem.Syscall).__fqmul : 
      W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
          W16.to_sint res = SREDC (_a * _b)] = 1%r.
 proof. by conseq fqmul_ll (fqmul_corr_h _a _b). qed.
@@ -322,7 +322,7 @@ qed.
 
 
 lemma barrett_reduce_corr_h _a :
-  hoare [ M.__barrett_reduce : 
+  hoare [Jkem.M(Jkem.Syscall).__barrett_reduce : 
      W16.to_sint a = _a  ==> 
          W16.to_sint res = BREDC _a 26].
 proof.
@@ -344,10 +344,10 @@ have ->: to_uint a{hr} - 65536 = to_uint a{hr} + (-1) * 65536; 1: by ring.
 by rewrite modzMDr; smt(W16.to_uint_cmp pow2_16).
 qed.
 
-lemma barrett_reduce_ll :  islossless M.__barrett_reduce by proc; islossless.
+lemma barrett_reduce_ll :  islossless Jkem.M(Jkem.Syscall).__barrett_reduce by proc; islossless.
 
 lemma barrett_reduce_corr _a :
-  phoare [ M.__barrett_reduce : 
+  phoare [Jkem.M(Jkem.Syscall).__barrett_reduce : 
      W16.to_sint a = _a  ==> 
          W16.to_sint res = BREDC _a 26] = 1%r.
 proof. by conseq barrett_reduce_ll (barrett_reduce_corr_h _a). qed.

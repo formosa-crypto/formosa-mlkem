@@ -1,7 +1,11 @@
-CC ?= /usr/bin/cc
-CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
-  -Wshadow -Wpointer-arith -mavx2 -mbmi2 -mpopcnt -maes \
-  -march=native -mtune=native -O3 -fomit-frame-pointer
+#CC ?= /usr/bin/cc
+#CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
+#  -Wshadow -Wpointer-arith -mavx2 -mbmi2 -mpopcnt -maes \
+#  -march=native -mtune=native -O3 -fomit-frame-pointer
+
+CC= clang-14
+CFLAGS= -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE
+
 NISTFLAGS += -Wno-unused-result -mavx2 -mbmi2 -mpopcnt -maes \
   -march=native -mtune=native -O3 -fomit-frame-pointer
 RM = /bin/rm
@@ -89,6 +93,10 @@ libpqcrystals_kyber512_avx2.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 libpqcrystals_kyber768_avx2.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 	$(CC) -shared -fpic $(CFLAGS) -DKYBER_K=3 $(SOURCES) \
 	  symmetric-shake.c -o libpqcrystals_kyber768_avx2.so
+
+libpqcrystals_kyber768_avx2.a: $(SOURCES) $(SOURCESKECCAK) $(HEADERS) symmetric-shake.c
+	$(CC) $(CFLAGS) -DKYBER_K=3 -c $(SOURCES) $(SOURCESKECCAK) symmetric-shake.c
+	$(AR) -r $@ *.o keccak4x/KeccakP-1600-times4-SIMD256.o
 
 libpqcrystals_kyber1024_avx2.so: $(SOURCES) $(HEADERS) symmetric-shake.c
 	$(CC) -shared -fpic $(CFLAGS) -DKYBER_K=4 $(SOURCES) \

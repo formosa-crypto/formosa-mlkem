@@ -71,4 +71,19 @@ should print the following:
 8004a42f34a4125acb4f88628139576882cdf9502a77937003e34f52d217a730
 ```
 
-These correspond to `checksumbig` from supercop. All being equal means that its OK. This was done mostly to ensure that `avx2r` was OK.
+These correspond to `checksumbig` from supercop. All being equal means that its OK. This was done mostly to ensure that `avx2v` was OK.
+
+# SUPERCOP
+
+I didn't commit (yet) the SUPERCOP changes that are required to replicate the results. Run `git blame` on this file and reach me out.
+
+After the setup of SUPERCOP, run:
+
+```
+./supercop.sh
+mkdir -p results/skylake-i76500u/supercop/raw 
+mv bin/* results/skylake-i76500u/supercop/raw/
+./benchmacros-supercop.sh results/skylake-i76500u/supercop/raw sk > results/skylake-i76500u/supercop/macros.tex
+```
+
+
