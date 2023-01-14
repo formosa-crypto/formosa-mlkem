@@ -701,35 +701,6 @@ have: (k\in iota_ 0 32) by smt(mem_iota).
 by move: {Hk} k; rewrite -allP -iotaredE /= !W16.shrwE !W8.shrwE /int_bit /=.
 qed.
 
-(*
-mask0Fu8 `&`
-(mask33u8 `&` 
-  (mask55u8 `&` buf{m}.[k %/ 2] + (buf{m}.[k %/ 2] `>>` ru_ones_s) `&` mask55u8)
-+ mask33u8 -
-  (mask55u8 `&` buf{m}.[k %/ 2] + (buf{m}.[k %/ 2] `>>` ru_ones_s) `&` mask55u8 `>>` (of_int 2)%W8)
- `&` mask33u8) -
-mask03u8 = (of_int (noise_coef buf{m} k))%W8
-
-está assim:
- noise_coef bytes j
- = let b = bytes.[j%/2] in
-   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
-   let y = x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8 in
-   if j%%2 = 0
-   then to_sint (y `&` mask0Fu8 - mask03u8)
-   else to_sint ((y `>>` (W8.of_int 4)) `&` mask0Fu8 - mask03u8).
-
-queria:
- noise_coef bytes j
- = let b = bytes.[j%/2] in
-   let x = b `&` mask55u8 + (b `>>` W8.one) `&` mask55u8 in
-   let y = mask33u8 `&` x + mask33u8 - mask33u8 `&` (x `>>` (W8.of_int 2)) in
-   if j%%2 = 0
-   then to_sint (mask0Fu8 `&` y - mask03u8)
-   else to_sint (mask0Fu8 `&` (y `>>` (W8.of_int 4)) - mask03u8).
-
-*)
-
 lemma to_uint_mask33 (w:W8.t):
  to_uint (mask33u8 `&` w)
  = to_uint w %% 4 + to_uint w %/ 16 %% 4 * 16.
@@ -949,25 +920,25 @@ while (0 <= i <= 4 /\ #{~i}pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_co
   rewrite (modz_pow_div 2 6 4) //= C1 (mulzC 4) modzMDl /=.
   rewrite (modz_dvd_pow 4 6 _ 2) //.
   have ->: 64 * i{m} + k %% 64 = k by smt().
-  by rewrite /R2C /= Array16.Array16.initiE /#.
+  by rewrite /R2C /= Array16.initiE /#.
  case: (k %/ 16 = 4 * i{m} + 2) => C2.
   move: (H (k %% 64) _) => /=; first smt(mem_iota).
   rewrite (modz_pow_div 2 6 4) //= C2 (mulzC 4) modzMDl /=.
   rewrite (modz_dvd_pow 4 6 _ 2) //.
   have ->: 64 * i{m} + k %% 64 = k by smt().
-  by rewrite /R2C /= Array16.Array16.initiE /#.
+  by rewrite /R2C /= Array16.initiE /#.
  case: (k %/ 16 = 4 * i{m} + 1) => C3.
   move: (H (k %% 64) _) => /=; first smt(mem_iota).
   rewrite (modz_pow_div 2 6 4) //= C3 (mulzC 4) modzMDl /=.
   rewrite (modz_dvd_pow 4 6 _ 2) //.
   have ->: 64 * i{m} + k %% 64 = k by smt().
-  by rewrite /R2C /= Array16.Array16.initiE /#.
+  by rewrite /R2C /= Array16.initiE /#.
  case: (k %/ 16 = 4 * i{m}) => C4.
   move: (H (k %% 64) _) => /=; first smt(mem_iota).
   rewrite (modz_pow_div 2 6 4) //= C4 modzMr. 
   rewrite (modz_dvd_pow 4 6 _ 2) //.
   have ->: 64 * i{m} + k %% 64 = k by smt().
-  by rewrite /R2C /= Array16.Array16.initiE /#.
+  by rewrite /R2C /= Array16.initiE /#.
  have ?: k < 64*i{m} by smt().   
  by move: (IH k _) => /=; first smt(mem_iota).
 auto => &m |> *.
