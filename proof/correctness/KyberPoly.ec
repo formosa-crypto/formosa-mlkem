@@ -591,7 +591,8 @@ auto => /> &hr ??.
 rewrite qE /R ultE /= => av ab inl r rval. 
 rewrite !to_uintD_small /=; 1: by smt(W64.to_uint_cmp pow2_64).
 have bred := (BREDCp_corr (to_sint rp{hr}.[to_uint j{hr}]) 26 _ _ _ _ _ _); 
-     1..4,6: smt(qE pow2_16).
+     1..4: smt(qE pow2_16).
++ rewrite /R /=; move: (W16.to_sint_cmp rp{hr}.[to_uint j{hr}]); smt().
 + by rewrite /R /=; move : W16.to_sint_cmp => /= /#.
 do split; 1, 2: by smt(). 
 + move => k kbl kbh; case (k = to_uint j{hr}); last by smt(Array256.set_neqiE).
@@ -1140,7 +1141,9 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
         by move => <-; rewrite -ZqField.mulrA rrinvFq; ring.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
-    by exists (l0); do split; smt(). 
+    exists (l0); do split; first 4 smt().
+     by move=> *; split; smt().
+    smt().
 
   (* Termination *)
   move => jl jr rpr; rewrite !ultE to_uintD_small; 1: smt(). 

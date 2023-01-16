@@ -443,7 +443,8 @@ lemma verify_correct_h mem (_ctp : int) ctp1 :
 proc => /=.
 seq 8 : (#post); last first.
 wp. conseq />. while(i=1088 /\ aux=1088 /\ #pre); 1: by auto => />. 
-+ conseq />; 1: by smt(). 
++ (*conseq />; 1: by smt(). *)
+  conseq />; first by move => /> *; split; smt().
   auto => />.  
   move => &hr H H1 _cnd H2 H3.
   split. 

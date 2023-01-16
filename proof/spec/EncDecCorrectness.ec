@@ -195,7 +195,8 @@ lemma nth_nth_chunk ['a]  (r i j : int) (l : 'a list) x0 x1 x2 :
 proof. 
 move => *.
 rewrite /chunk /= nth_mkseq 1:/# /= nth_take 1,2:/# /= nth_drop 1,2:/#. 
-by rewrite (nth_change_dfl x0 x2) /#.
+rewrite (nth_change_dfl x0 x2) //.
+split; smt(JUtils.divz_cmp size_ge0).
 qed.
 
 lemma size_BytesToBits l : size (BytesToBits l) = 8 * size l by
