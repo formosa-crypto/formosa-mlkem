@@ -614,7 +614,7 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 
   i = 0;
   j = 0;
-  while (i < KYBER_N)
+  while (i < KYBER_N - 1)
   {
     t0 = a[(int)i]; 
     i += 1;
