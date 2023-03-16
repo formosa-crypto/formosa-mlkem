@@ -25,7 +25,7 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomn
     inbuf[u64 i] = t64;
   }
 
-  buf = _sha3_512_32(buf, inbuf);
+  buf = __sha3_512_32_avx2(buf, inbuf);
 
   for i=0 to KYBER_SYMBYTES/8
   {

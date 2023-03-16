@@ -4,3 +4,41 @@ param int SHA3_256_RATE = 136;
 param int SHA3_512_RATE = 72;
 
 u64[4] shake_sep = {9223372036854775808, 9223372036854775808, 9223372036854775808, 9223372036854775808};
+
+
+inline fn __index(inline int x y) -> inline int
+{
+  inline int r;
+  r = (x % 5) + 5 * (y % 5);
+  return r;
+}
+
+inline fn __keccak_rho_offsets(inline int i) -> inline int
+{
+  inline int r x y z t;
+
+  r = 0;
+  x = 1;
+  y = 0;
+
+  for t = 0 to 24 {
+    if (i == x + 5 * y) {
+      r = ((t + 1) * (t + 2) / 2) % 64;
+    }
+    z = (2 * x + 3 * y) % 5;
+    x = y;
+    y = z;
+  }
+
+  return r;
+}
+
+inline fn __rhotates(inline int x y) -> inline int
+{
+  inline int i r;
+  i = __index(x, y);
+  r = __keccak_rho_offsets(i);
+  return r;
+}
+
+

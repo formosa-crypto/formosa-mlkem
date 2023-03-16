@@ -33,7 +33,7 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES
   s_skp = skp;
   pkp = s_pkp;
   t64 = KYBER_PUBLICKEYBYTES;
-  h_pk = _isha3_256(h_pk, pkp, t64);
+  h_pk = _sha3_256_avx2(h_pk, pkp, t64);
   skp = s_skp;
 
   for i=0 to 4
@@ -73,14 +73,14 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[KYBE
   }
 
   t64 = KYBER_SYMBYTES;
-  buf[0:KYBER_SYMBYTES] = _isha3_256_32(buf[0:KYBER_SYMBYTES], kr[0:KYBER_SYMBYTES]);
+  buf[0:KYBER_SYMBYTES] = _sha3_256_32_avx2(buf[0:KYBER_SYMBYTES], kr[0:KYBER_SYMBYTES]);
 
   pkp = s_pkp;
 
   t64 = KYBER_PUBLICKEYBYTES;
-  buf[KYBER_SYMBYTES:KYBER_SYMBYTES] = _isha3_256(buf[KYBER_SYMBYTES:KYBER_SYMBYTES], pkp, t64);
+  buf[KYBER_SYMBYTES:KYBER_SYMBYTES] = _sha3_256_avx2(buf[KYBER_SYMBYTES:KYBER_SYMBYTES], pkp, t64);
 
-  kr = _sha3_512_64(kr, buf);
+  kr = __sha3_512_64_avx2(kr, buf);
 
   pkp = s_pkp;
 
@@ -88,11 +88,12 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[KYBE
 
   ctp = s_ctp;
   t64 = KYBER_INDCPA_CIPHERTEXTBYTES;
-  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _isha3_256(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
+  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _sha3_256_avx2(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
 
   shkp = s_shkp;
-  t64 = KYBER_SSBYTES;
-  _shake256_64(shkp, t64, kr);
+  //t64 = KYBER_SSBYTES;
+  //_shake256_64(shkp, t64, kr);
+  _shake256_m32_64_avx2(shkp, kr);
 }
 
 inline
@@ -120,7 +121,7 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 
   s_skp = skp;
 
-  kr = _sha3_512_64(kr, buf);
+  kr = __sha3_512_64_avx2(kr, buf);
 
   pkp = s_skp;
   pkp += 12 * KYBER_K * KYBER_N>>3;
@@ -136,9 +137,10 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   kr[0:KYBER_SYMBYTES] = __cmov(kr[0:KYBER_SYMBYTES], zp, cnd);
 
   t64 = KYBER_INDCPA_CIPHERTEXTBYTES;
-  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _isha3_256(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
+  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _sha3_256_avx2(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
 
   shkp = s_shkp;
-  t64 = KYBER_SSBYTES;
-  _shake256_64(shkp, t64, kr);
+  //t64 = KYBER_SSBYTES;
+  //_shake256_64(shkp, t64, kr);
+  _shake256_m32_64_avx2(shkp, kr);
 }
