@@ -711,7 +711,7 @@ fn __gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u
 
 /** 
   // USING keccak_4x...
-
+*/
   if(transposed == 1) {
     e0 = 0x0000;
     e1 = 0x0100;
@@ -745,11 +745,10 @@ fn __gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u
   rr[8*KYBER_N:KYBER_N]
   = _gen_entry1x(rr[8*KYBER_N:KYBER_N], seed, e0);
 
-*/
+/* end USING keccak_4x */
 
 /** 
-  // USING keccak_avx2...
-*/
+  // USING ONLY keccak_avx2...
 
   for i = 0 to KYBER_K {
     for j = 0 to KYBER_K {
@@ -761,6 +760,7 @@ fn __gen_matrix(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u
       rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = _gen_entry1x(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], seed, entry);
     }
   }
+*/
 
   for i = 0 to KYBER_K {
     for j = 0 to KYBER_K {
