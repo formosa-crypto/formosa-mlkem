@@ -1,3 +1,4 @@
+require "params.jinc"
 require "fips202.jinc"
 
 export fn shake256_128_33_jazz(reg u64 outp inp) 
