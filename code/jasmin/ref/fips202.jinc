@@ -156,6 +156,7 @@ fn __keccakf1600_ref(reg ptr u64[25] state) -> reg ptr u64[25] {
   constptr = roundconstants;
   rctr = 0;
 
+  #bounded
   while (rctr < 192) {
     state = __theta(state);
     state = __rho(state);
@@ -504,6 +505,7 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
   r8 = SHA3_256_RATE;
   ilen = inlen;
 
+  #bounded
   while(ilen >= r8)
   {
     state, in, ilen = __add_full_block(state, in, ilen, r8);
