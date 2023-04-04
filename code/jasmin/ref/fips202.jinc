@@ -538,7 +538,7 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
 }
 
 #[returnaddress="stack"]
-fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[KYBER_SYMBYTES] in) -> reg ptr u8[32]
+fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[32] in) -> reg ptr u8[32]
 {
   stack u64[25] state;
   stack ptr u8[32] s_out;
@@ -549,13 +549,13 @@ fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[KYBER_SYMBYTES] in) -> reg ptr u
 
   state = __st0(state);
 
-  for i=0 to KYBER_SYMBYTES/8
+  for i=0 to 32/8
   {
     t64 = in[u64 i];
     state[u64 i] = t64;
   }
 
-  state[u8 KYBER_SYMBYTES] ^= 0x06;
+  state[u8 32] ^= 0x06;
   state[u8 SHA3_256_RATE - 1] = 0x80;
 
   state = __keccakf1600_ref(state);
