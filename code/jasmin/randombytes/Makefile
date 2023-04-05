@@ -1,5 +1,5 @@
 CC?=/usr/bin/gcc
-CFLAGS = -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE
+CFLAGS = -march=native -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
 
 default: randombytes.a
 
