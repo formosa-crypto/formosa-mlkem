@@ -5,6 +5,7 @@ JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips203.s jindcpa.s jkem.s
+.PHONY: clean rnd
 
 default: test speed
 
@@ -56,14 +57,16 @@ POLYVECHEADERS = polyvec.jinc \
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c \
 
-test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
+RNDLIB = ../randombytes/randombytes.a
 
-test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $<
+test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o rnd
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(RNDLIB) jindcpa.o $<
 
-test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
+test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o rnd
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(RNDLIB) jkem.o $<
+
+test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o rnd
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(RNDLIB) jindcpa.o $<
 
 test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jfips202.s $<
@@ -77,8 +80,8 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 %.s: %.jazz
 	$(JASMIN) -o $@ $(JFLAGS) $^ 
 
-
-.PHONY: clean
+rnd:
+	make -C ./../randombytes
 
 clean:
 	-rm -f *.s
