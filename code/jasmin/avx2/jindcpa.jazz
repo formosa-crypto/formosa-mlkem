@@ -7,7 +7,20 @@ require "gen_matrix.jinc"
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
-  __indcpa_keypair(pkp, skp, randomnessp);
+  stack u8[KYBER_SYMBYTES] rand;
+  reg ptr u8[KYBER_SYMBYTES] randp;
+  reg u64 t;
+  inline int i;
+
+  randp = rand;
+
+  for i=0 to KYBER_SYMBYTES/8
+  {
+    t = (u64)[randomnessp + 8*i];
+    randp[u64 i] = t;
+  }
+
+  __indcpa_keypair(pkp, skp, randp);
 }
 
 

@@ -1,5 +1,6 @@
 require "keccakf1600.jinc"
 require "fips202_common.jinc"
+require "params.jinc"
 
 inline
 fn __st0(reg ptr u64[25] state) -> reg ptr u64[25]

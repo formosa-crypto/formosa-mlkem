@@ -66,7 +66,7 @@ test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o rnd
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $< $(RNDLIB)
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o rnd
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(RNDLIB) jindcpa.o $<
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $< $(RNDLIB)
 
 test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jfips202.s $<

@@ -16,19 +16,17 @@ void crypto_kem_dec(unsigned char *m,
                 const unsigned char *c,
                 const unsigned char *sk);
 
+void jade_kem_kyber_kyber768_amd64_avx2_keypair(unsigned char *pk,
+                                                unsigned char *sk);
 
-void crypto_kem_keypair_jazz(unsigned char *pk,
-                         unsigned char *sk,
-                         const unsigned char *randomness);
+void jade_kem_kyber_kyber768_amd64_avx2_enc(unsigned char *c,
+                                            const unsigned char *m,
+                                            const unsigned char *pk);
 
-void crypto_kem_enc_jazz(unsigned char *c,
-                     const unsigned char *m,
-                     const unsigned char *pk,
-                     const unsigned char *coins);
+void jade_kem_kyber_kyber768_amd64_avx2_dec(unsigned char *m,
+                                            const unsigned char *c,
+                                            const unsigned char *sk);
 
-void crypto_kem_dec_jazz(unsigned char *m,
-                     const unsigned char *c,
-                     const unsigned char *sk);
-
+void randombytes(uint8_t* x, uint64_t xlen);
 
 #endif
