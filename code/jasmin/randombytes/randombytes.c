@@ -1,4 +1,4 @@
-#include "randombytes1.h"
+#include "randombytes.h"
 #include "jasmin_syscall.h"
 
 #include <inttypes.h>
