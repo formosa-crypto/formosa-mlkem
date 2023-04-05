@@ -28,5 +28,7 @@ void jade_kem_kyber_kyber768_amd64_ref_dec(unsigned char *m,
                      const unsigned char *c,
                      const unsigned char *sk);
 
+void randombytes(uint8_t* x, uint64_t xlen);
+
 
 #endif

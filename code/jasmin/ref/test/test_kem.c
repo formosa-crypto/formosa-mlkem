@@ -18,11 +18,9 @@ int main(void)
 
   unsigned char randomness0[2*KYBER_SYMBYTES];
   unsigned char randomness1[2*KYBER_SYMBYTES];
-  
-  FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, 2*KYBER_SYMBYTES, 1, urandom);
-  fread(randomness1, 2*KYBER_SYMBYTES, 1, urandom);
-  fclose(urandom);
+
+  randombytes(randomness0, 2*KYBER_SYMBYTES);
+  randombytes(randomness1, 2*KYBER_SYMBYTES);
 
   /* TEST KEYPAIR */
   jade_kem_kyber_kyber768_amd64_ref_keypair(pk1, sk1);
