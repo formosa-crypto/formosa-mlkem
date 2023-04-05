@@ -60,10 +60,10 @@ SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c in
 RNDLIB = ../randombytes/randombytes.a
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o rnd
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(RNDLIB) jindcpa.o $<
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $< $(RNDLIB)
 
 test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o rnd
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(RNDLIB) jkem.o $<
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $< $(RNDLIB)
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o rnd
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(RNDLIB) jindcpa.o $<
@@ -119,3 +119,4 @@ clean:
 ifeq ($(OS),Darwin)
 	-rm -rf test/*.dSYM
 endif
+	make -C ../randombytes/ clean
