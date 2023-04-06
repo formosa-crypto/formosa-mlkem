@@ -4,7 +4,7 @@ require "shuffle.jinc"
 require "fips202.jinc"
 
 param int GENMATRIX_NBLOCKS = 3;
-param int REJ_UNIFORM_BUFLEN = GENMATRIX_NBLOCKS * SHAKE128_RATE;
+param int REJ_UNIFORM_BUFLEN = SHAKE128_RATE;
 
 inline
 fn __rej_uniform_old(stack u16[KYBER_N] rp, reg u64 offset, stack u8[REJ_UNIFORM_BUFLEN] buf, inline int buflen) ->  reg u64, stack u16[KYBER_N]
@@ -77,9 +77,6 @@ fn __gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> sta
 {
   stack u8[34] extseed;
   stack u8[REJ_UNIFORM_BUFLEN] buf;
-  stack u8[REJ_UNIFORM_BUFLEN] buf;
-  stack u8[REJ_UNIFORM_BUFLEN] buf;
-  stack u8[REJ_UNIFORM_BUFLEN] buf;
   stack u64[25] state;
   stack u16[KYBER_K*KYBER_VECN] rr;
 
@@ -110,7 +107,7 @@ fn __gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> sta
 
       state = _shake128_absorb34(state, extseed);
 
-      state, buf = __shake128_squeezenblocks(state, buf);
+      state, buf = _shake128_squeezeblock(state, buf);
       t64 = 0;
       t64, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = __rej_uniform_old(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], t64, buf, REJ_UNIFORM_BUFLEN);
       

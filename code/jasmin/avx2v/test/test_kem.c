@@ -16,16 +16,15 @@ int main(void)
   unsigned char shk0[KYBER_SSBYTES];
   unsigned char shk1[KYBER_SSBYTES];
 
+
   unsigned char randomness0[2*KYBER_SYMBYTES];
   unsigned char randomness1[2*KYBER_SYMBYTES];
-  
-  FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, 2*KYBER_SYMBYTES, 1, urandom);
-  fread(randomness1, 2*KYBER_SYMBYTES, 1, urandom);
-  fclose(urandom);
+
+  randombytes(randomness0, 2*KYBER_SYMBYTES);
+  randombytes(randomness1, 2*KYBER_SYMBYTES);
 
   /* TEST KEYPAIR */
-  crypto_kem_keypair_jazz(pk1, sk1, randomness0);
+  jade_kem_kyber_kyber768_amd64_avx2v_keypair(pk1, sk1);
   crypto_kem_keypair(pk0, sk0, randomness0);
 
   for(int i=0;i<KYBER_SECRETKEYBYTES;i++)
@@ -36,7 +35,7 @@ int main(void)
 
   /* TEST ENCAPSULATION */
   crypto_kem_enc(ct0, shk0, pk0, randomness1);
-  crypto_kem_enc_jazz(ct1, shk1, pk1, randomness1);
+  jade_kem_kyber_kyber768_amd64_avx2v_enc(ct1, shk1, pk1);
 
   for(int i=0;i<KYBER_CIPHERTEXTBYTES;i++)
     if(ct0[i] != ct1[i]) printf("error crypto_kem_enc ct: %d\n", i);
@@ -49,7 +48,7 @@ int main(void)
   memset(shk1, 0, KYBER_SSBYTES);
 
   crypto_kem_dec(shk0, ct0, sk0);
-  crypto_kem_dec_jazz(shk1, ct1, sk1);
+  jade_kem_kyber_kyber768_amd64_avx2v_dec(shk1, ct1, sk1);
 
   for(int i=0;i<KYBER_SSBYTES;i++)
     if(shk0[i] != shk1[i]) printf("error crypto_kem_dec (suc): %d %d %d\n", i, shk0[i], shk1[i]);
@@ -62,7 +61,7 @@ int main(void)
   ct1[0] = ct0[0];
 
   crypto_kem_dec(shk0, ct0, sk0);
-  crypto_kem_dec_jazz(shk1, ct1, sk1);
+  jade_kem_kyber_kyber768_amd64_avx2v_dec(shk1, ct1, sk1);
 
   for(int i=0;i<KYBER_SSBYTES;i++)
     if(shk0[i] != shk1[i]) printf("error crypto_kem_dec (fail): %d %d %d\n", i, shk0[i], shk1[i]);

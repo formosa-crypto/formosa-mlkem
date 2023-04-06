@@ -101,13 +101,6 @@ int main(void)
   }
   print_results("gen_matrix: ", t, NRUNS);
 
-  /* Test get_noise */
-  for(i=0;i<NRUNS;i++)
-  {
-    t[i] = cpucycles();
-    poly_getnoise_jazz(&ap, seed, 0);
-  }
-
   /* Test get_noise_4x */
   for(i=0;i<NRUNS;i++)
   {

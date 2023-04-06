@@ -1,4 +1,5 @@
 require "fips202.jinc"
+require "shuffle.jinc"
 require "params.jinc"
 
 inline
