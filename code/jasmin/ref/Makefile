@@ -4,7 +4,7 @@ JASMIN?=jasminc
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
-.SECONDARY: jpoly.s jpolyvec.s jfips203.s jindcpa.s jkem.s
+.SECONDARY: jpoly.s jpolyvec.s jfips203.s jindcpa.s jkem_keypair.s jkem_encaps.s jkem_decaps.s
 .PHONY: clean rnd
 
 default: test speed
@@ -62,8 +62,8 @@ RNDLIB = ../randombytes/randombytes.a
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o rnd
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $< $(RNDLIB)
 
-test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o rnd
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $< $(RNDLIB)
+test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem_keypair.o jkem_encaps.o jkem_decaps.o rnd
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem_keypair.o jkem_encaps.o jkem_decaps.o $< $(RNDLIB)
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o rnd
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $< $(RNDLIB)
@@ -86,7 +86,9 @@ rnd:
 clean:
 	-rm -f *.s
 	-rm -f jindcpa.o
-	-rm -f jkem.o
+	-rm -f jkem_keypair.o
+	-rm -f jkem_encaps.o
+	-rm -f jkem_decaps.o
 	-rm -f test/test_poly_compress
 	-rm -f test/test_poly_decompress
 	-rm -f test/test_poly_tobytes

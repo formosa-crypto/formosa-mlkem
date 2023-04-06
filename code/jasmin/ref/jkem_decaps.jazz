@@ -1,0 +1,10 @@
+require "kem.jinc"
+
+export fn jade_kem_kyber_kyber768_amd64_ref_dec(reg u64 shared_secret ciphertext secret_key) -> reg u64
+{
+  reg u64 r;
+  __crypto_kem_dec_jazz(shared_secret, ciphertext, secret_key);
+  ?{}, r = #set0();
+  return r;
+}
+
