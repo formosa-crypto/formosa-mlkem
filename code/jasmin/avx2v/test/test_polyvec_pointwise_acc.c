@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../ntt.h"
 #include "../polyvec.h"
+#include "../poly.h"
 
 void polyvec_setrandom(polyvec *r)
 {
@@ -23,6 +24,7 @@ int main(void)
   
   polyvec_pointwise_acc(&r0, &a, &b);
   polyvec_pointwise_acc_jazz(&r1, &a, &b);
+  poly_reduce(&r1);
 
     for(int j=0;j<KYBER_N;j++)
       if(r0.coeffs[j] != r1.coeffs[j])
