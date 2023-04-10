@@ -109,7 +109,8 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   buf[0:KYBER_MSGBYTES] = __indcpa_dec(buf[0:KYBER_MSGBYTES], ctp, skp);
 
   hp = skp + 32;
-  hp += 24 * KYBER_K * KYBER_N>>3;
+  //hp += 24 * KYBER_K * KYBER_N>>3;
+  hp += 3 * KYBER_K * KYBER_N;
 
   for i=0 to KYBER_SYMBYTES/8
   {
@@ -122,7 +123,8 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   kr = _sha3_512_64(kr, buf);
 
   pkp = s_skp;
-  pkp += 12 * KYBER_K * KYBER_N>>3;
+  //pkp += 12 * KYBER_K * KYBER_N>>3;
+  pkp += 12 * KYBER_K * 32;
 
   ctpc = __iindcpa_enc(ctpc, buf[0:KYBER_SYMBYTES], pkp, kr[KYBER_SYMBYTES:KYBER_SYMBYTES]);
 
@@ -131,7 +133,8 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 
   zp = s_skp;
   zp += 64;
-  zp += 24 * KYBER_K * KYBER_N>>3;
+  //zp += 24 * KYBER_K * KYBER_N>>3;
+  zp += 3 * KYBER_K * KYBER_N;
   kr[0:KYBER_SYMBYTES] = __cmov(kr[0:KYBER_SYMBYTES], zp, cnd);
 
   t64 = KYBER_CT_LEN;
