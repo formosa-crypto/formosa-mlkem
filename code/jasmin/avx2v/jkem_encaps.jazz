@@ -1,0 +1,18 @@
+require "kem.jinc"
+
+export fn jade_kem_kyber_kyber768_amd64_avx2v_enc(reg u64 ciphertext shared_secret public_key) -> reg u64
+{
+  reg u64 r;
+  stack u8[KYBER_SYMBYTES] randomness;
+  reg ptr u8[KYBER_SYMBYTES] randomnessp;
+
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+
+  randomnessp = randomness;
+  randomnessp = #randombytes(randomnessp);
+  __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomnessp);
+  ?{}, r = #set0();
+  return r;
+}
