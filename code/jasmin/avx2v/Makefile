@@ -5,7 +5,7 @@ JASMIN?=jasminc
 JFLAGS=-lea ${JADDFLAGS}
 OS = $(shell uname -s)
 
-.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jkem.s
+.SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jkem_keypair.s jkem_encaps.s jkem_decaps.s
 
 .PHONY: clean rnd
 
@@ -71,8 +71,8 @@ RNDLIB = ../randombytes/randombytes.a
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o rnd
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $< $(RNDLIB)
 
-test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o rnd
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $< $(RNDLIB)
+test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem_keypair.o jkem_encaps.o jkem_decaps.o rnd
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem_keypair.o jkem_encaps.o jkem_decaps.o $< $(RNDLIB)
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o rnd
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $< $(RNDLIB)
@@ -102,7 +102,9 @@ clean:
 	-rm -f *.o
 	-rm -f gen_matrix.s
 	-rm -f jindcpa.s
-	-rm -f jkem.s
+	-rm -f jkem_keypair.s
+	-rm -f jkem_encaps.s
+	-rm -f jkem_decaps.s
 	-rm -f jfips202.s
 	-rm -f jpoly.s
 	-rm -f jpolyvec.s

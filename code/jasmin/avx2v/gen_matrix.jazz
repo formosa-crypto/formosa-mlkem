@@ -1,7 +1,6 @@
 require "gen_matrix.jinc"
 require "gen_matrix_old.jinc"
 
-/*
 export fn gen_matrix_old_jazz(reg u64 ap, reg u64 seedp)
 {
   stack u16[KYBER_K*KYBER_VECN] aa;
@@ -29,7 +28,6 @@ export fn gen_matrix_old_jazz(reg u64 ap, reg u64 seedp)
     (u16)[ap + 2*i] = t;
   }
 }
-*/
 
 export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
 {
