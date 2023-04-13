@@ -175,6 +175,7 @@ fn _keccakf1600_scalar(reg ptr u64[25] a) -> reg ptr u64[25]
 
   round = 0;
 
+  #bounded
   while(round < 24)
   {
     iota = iotas_p[(int) round];
