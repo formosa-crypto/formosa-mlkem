@@ -335,7 +335,7 @@ module M(SC:Syscall_t) = {
     constptr <- roundconstants;
     rctr <- (W64.of_int 0);
     
-    while ((rctr \ult (W64.of_int 192))) {
+    while ((rctr \ult (W64.of_int 185))) {
       state <@ __theta (state);
       state <@ __rho (state);
       state <@ __pi (state);
@@ -1660,18 +1660,46 @@ module M(SC:Syscall_t) = {
     
     var ctr:W64.t;
     var pos:W64.t;
-    var exit:W64.t;
     var val1:W16.t;
     var t:W16.t;
     var val2:W16.t;
-    var cnd0:W64.t;
-    var cnd1:W64.t;
     
     ctr <- offset;
     pos <- (W64.of_int 0);
-    exit <- (W64.of_int 0);
-    
-    while ((exit = (W64.of_int 0))) {
+    val1 <- (zeroextu16 buf.[(W64.to_uint pos)]);
+    pos <- (pos + (W64.of_int 1));
+    t <- (zeroextu16 buf.[(W64.to_uint pos)]);
+    val2 <- t;
+    val2 <- (val2 `>>` (W8.of_int 4));
+    t <- (t `&` (W16.of_int 15));
+    t <- (t `<<` (W8.of_int 8));
+    val1 <- (val1 `|` t);
+    pos <- (pos + (W64.of_int 1));
+    t <- (zeroextu16 buf.[(W64.to_uint pos)]);
+    t <- (t `<<` (W8.of_int 4));
+    val2 <- (val2 `|` t);
+    pos <- (pos + (W64.of_int 1));
+    if ((val1 \ult (W16.of_int 3329))) {
+      if ((ctr \ult (W64.of_int 256))) {
+        rp.[(W64.to_uint ctr)] <- val1;
+        ctr <- (ctr + (W64.of_int 1));
+      } else {
+        
+      }
+    } else {
+      
+    }
+    if ((val2 \ult (W16.of_int 3329))) {
+      if ((ctr \ult (W64.of_int 256))) {
+        rp.[(W64.to_uint ctr)] <- val2;
+        ctr <- (ctr + (W64.of_int 1));
+      } else {
+        
+      }
+    } else {
+      
+    }
+    while ((pos \ult (W64.of_int (168 - 2)))) {
       val1 <- (zeroextu16 buf.[(W64.to_uint pos)]);
       pos <- (pos + (W64.of_int 1));
       t <- (zeroextu16 buf.[(W64.to_uint pos)]);
@@ -1686,8 +1714,12 @@ module M(SC:Syscall_t) = {
       val2 <- (val2 `|` t);
       pos <- (pos + (W64.of_int 1));
       if ((val1 \ult (W16.of_int 3329))) {
-        rp.[(W64.to_uint ctr)] <- val1;
-        ctr <- (ctr + (W64.of_int 1));
+        if ((ctr \ult (W64.of_int 256))) {
+          rp.[(W64.to_uint ctr)] <- val1;
+          ctr <- (ctr + (W64.of_int 1));
+        } else {
+          
+        }
       } else {
         
       }
@@ -1701,14 +1733,6 @@ module M(SC:Syscall_t) = {
       } else {
         
       }
-      cnd0 <- (W64.of_int 256);
-      cnd0 <- (cnd0 - ctr);
-      cnd0 <- (cnd0 - (W64.of_int 1));
-      cnd1 <- (W64.of_int 168);
-      cnd1 <- (cnd1 - pos);
-      cnd1 <- (cnd1 - (W64.of_int 3));
-      exit <- (cnd0 `|` cnd1);
-      exit <- (exit `>>` (W8.of_int 63));
     }
     return (ctr, rp);
   }
@@ -1724,9 +1748,9 @@ module M(SC:Syscall_t) = {
     var i:int;
     var state:W64.t Array25.t;
     var ctr:W64.t;
+    var poly:W16.t Array256.t;
     var sctr:W64.t;
     var buf:W8.t Array168.t;
-    var poly:W16.t Array256.t;
     var k:W64.t;
     var l:W64.t;
     var t:W16.t;
@@ -1755,6 +1779,14 @@ module M(SC:Syscall_t) = {
           extseed.[(32 + 1)] <- (W8.of_int j);
         }
         state <@ _shake128_absorb34 (state, extseed);
+        ctr <- (W64.of_int 0);
+        
+        while ((ctr \ult (W64.of_int (256 %/ 4)))) {
+          poly <-
+          Array256.init
+          (WArray512.get16 (WArray512.set64 (WArray512.init16 (fun i_0 => poly.[i_0])) (W64.to_uint ctr) ((W64.of_int 0))));
+          ctr <- (ctr + (W64.of_int 1));
+        }
         ctr <- (W64.of_int 0);
         
         while ((ctr \ult (W64.of_int 256))) {
@@ -2391,25 +2423,18 @@ module M(SC:Syscall_t) = {
     return ();
   }
   
-  proc jade_kem_kyber_kyber768_amd64_ref_keypair (public_key:W64.t,
-                                                  secret_key:W64.t) : 
-  W64.t = {
+  proc jade_kem_kyber_kyber768_amd64_ref_dec (shared_secret:W64.t,
+                                              ciphertext:W64.t,
+                                              secret_key:W64.t) : W64.t = {
     
     var r:W64.t;
-    var randomness:W8.t Array64.t;
-    var randomnessp:W8.t Array64.t;
     var _of_:bool;
     var _cf_:bool;
     var _sf_:bool;
     var _zf_:bool;
     var  _0:bool;
-    randomness <- witness;
-    randomnessp <- witness;
-    public_key <- public_key;
-    secret_key <- secret_key;
-    randomnessp <- randomness;
-    randomnessp <@ SC.randombytes_64 (randomnessp);
-    __crypto_kem_keypair_jazz (public_key, secret_key, randomnessp);
+    
+    __crypto_kem_dec_jazz (shared_secret, ciphertext, secret_key);
     (_of_, _cf_, _sf_,  _0, _zf_, r) <- set0_64 ;
     return (r);
   }
@@ -2439,18 +2464,25 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc jade_kem_kyber_kyber768_amd64_ref_dec (shared_secret:W64.t,
-                                              ciphertext:W64.t,
-                                              secret_key:W64.t) : W64.t = {
+  proc jade_kem_kyber_kyber768_amd64_ref_keypair (public_key:W64.t,
+                                                  secret_key:W64.t) : 
+  W64.t = {
     
     var r:W64.t;
+    var randomness:W8.t Array64.t;
+    var randomnessp:W8.t Array64.t;
     var _of_:bool;
     var _cf_:bool;
     var _sf_:bool;
     var _zf_:bool;
     var  _0:bool;
-    
-    __crypto_kem_dec_jazz (shared_secret, ciphertext, secret_key);
+    randomness <- witness;
+    randomnessp <- witness;
+    public_key <- public_key;
+    secret_key <- secret_key;
+    randomnessp <- randomness;
+    randomnessp <@ SC.randombytes_64 (randomnessp);
+    __crypto_kem_keypair_jazz (public_key, secret_key, randomnessp);
     (_of_, _cf_, _sf_,  _0, _zf_, r) <- set0_64 ;
     return (r);
   }
