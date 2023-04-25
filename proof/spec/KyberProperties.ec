@@ -31,20 +31,298 @@ apply Array256.tP => k kb.
 by rewrite mapiE //= initiE //= mapiE 1:/# initiE 1:/# /= asintK /#.
 qed.
 
-
-(* These are a pain but need to be done. See EncDecCorrectness. *) 
 lemma sem_encode1K (x : ipoly) : 
    (forall i, 0 <= i < 256 => 0 <= x.[i] < 2) =>
-     x = (decode1 (encode1 x)) by admit.
+     x = (decode1 (encode1 x)).
+move => H. 
+rewrite /decode1 /=. 
+do 32!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+have Hpos : forall i j, 0 <= i < 32 => 0<= j < 8 => 
+          b2i (encode1 x).[i].[j] = x.[i*8+j]; last first.
++ rewrite !Hpos //=.
+  have := Array256.init_set witness (fun i => x.[i]).
+  rewrite -JUtils.iotaredE /= => ->. 
+  by rewrite tP => k kb; rewrite initiE /#.
+
+move => i j ib jb.
+rewrite /encode1 /=.
+do 32!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+have := Array32.init_set witness (fun i => 
+    iteri 8 (fun (j0 : int) (r : W8.t) => (of_int (to_uint r + x.[8*i+j0] * 2 ^ j0))%W8) W8.zero).
+rewrite -JUtils.iotaredE /= => ->. 
+rewrite initiE /= 1:/#.
+do 8!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+rewrite !of_uintK /= !modz_small 1..127:/#.
+rewrite b2i_get 1:/# /= of_uintK /=.
+case (j = 0); 1: by  move => ->; auto => /> /#.
+case (j = 1); 1: by  move => ->; auto => /> /#.
+case (j = 2); 1: by  move => ->; auto => /> /#.
+case (j = 3); 1: by  move => ->; auto => /> /#.
+case (j = 4); 1: by  move => ->; auto => /> /#.
+case (j = 5); 1: by  move => ->; auto => /> /#.
+case (j = 6); 1: by  move => ->; auto => /> /#.
+case (j = 7); 1: by  move => ->; auto => /> /#.
+by smt().
+qed.
+
 lemma sem_encode4K (x : ipoly) : 
    (forall i, 0 <= i < 256 => 0 <= x.[i] < 16) =>
-     x =  decode4 (encode4 x)  by admit. 
+     x =  decode4 (encode4 x).
+move => H. 
+rewrite /decode4 /=. 
+do 128!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+have Hpose : forall i, 0 <= i < 128 => 
+  to_uint (encode4 x).[i] %% 16 = x.[i * 2]; last first.
+have Hposo : forall i, 0 <= i < 128 => 
+  to_uint (encode4 x).[i] %/ 16 = x.[i * 2 + 1]; last first.
+
++ rewrite !Hpose //= !Hposo //=.
+  have := Array256.init_set witness (fun i => x.[i]).
+  rewrite -JUtils.iotaredE /= => ->. 
+  by rewrite tP => k kb; rewrite initiE /#.
+
+move => i ib.
+rewrite /encode4 /=.
+do 128!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+have := Array128.init_set witness (fun i => 
+    (of_int (x.[2*i] + x.[2*i+1] * 16))%W8).
+rewrite -JUtils.iotaredE /= => ->. 
+rewrite initiE /= 1:/#.
+by rewrite !of_uintK /= !modz_small /#.
+
+move => i ib.
+rewrite /encode4 /=.
+do 128!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+have := Array128.init_set witness (fun i => 
+    (of_int (x.[2*i] + x.[2*i+1] * 16))%W8).
+rewrite -JUtils.iotaredE /= => ->. 
+rewrite initiE /= 1:/#.
+by rewrite !of_uintK /= /#.
+
+qed.
+
 lemma sem_encode10_vecK (x : ipolyvec) : 
    (forall i, 0 <= i < 768 => 0 <= x.[i] < 1024) =>
-     x =  decode10_vec_aux (encode10_vec_aux x)  by admit. 
+     x =  decode10_vec_aux (encode10_vec_aux x).
+move => H.
+rewrite /decode10_vec_aux /=.
+do 192!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have Hpos0 : forall i j, 0 <= i => i %% 5 = 0 => j = i + 1 => 
+  let k = i %/ 5 * 4 + i %% 5 in 0 <= k < 767 =>  k %% 4 = 0 =>
+  to_uint (encode10_vec_aux x).[i] + to_uint (encode10_vec_aux x).[j] %% 4 * 256 = x.[k]; last first.
+have Hpos1 : forall i j, j = i + 1 => 
+  let k = i %/ 5 * 4 + i %% 5 in 0 <= k < 768 =>  k %% 4 = 1 =>
+  to_uint (encode10_vec_aux x).[i] %/ 4 + to_uint (encode10_vec_aux x).[j] %% 16 * 64 = x.[k]; last first.
+have Hpos2 : forall i j, j = i + 1 => 
+  let k = i %/ 5 * 4 + i %% 5 in 0 <= k < 768 =>  k %% 4 = 2 =>
+  to_uint (encode10_vec_aux x).[i] %/ 16 + to_uint (encode10_vec_aux x).[j] %% 64 * 16 = x.[k]; last first.
+have Hpos3 : forall i j, j = i + 1 => 
+  let k = i %/ 5 * 4 + i %% 5 in 0 <= k < 768 =>  k %% 4 = 3 =>
+  to_uint (encode10_vec_aux x).[i] %/ 64 + to_uint (encode10_vec_aux x).[j] * 4 = x.[k]; last first.
+
++ do 192!(rewrite Hpos0 1..5:/#);
+  do 192!(rewrite Hpos1 1..3:/#);
+  do 192!(rewrite Hpos2 1..3:/#);
+  do 192!(rewrite Hpos3 1..3:/#);
+  simplify.
+
+  have := Array768.init_set witness (fun i => x.[i]).
+  rewrite -JUtils.iotaredE /= => ->. 
+  by rewrite tP => k kb; rewrite initiE /#.
+
+move => /= i j -> ib Hi.
+rewrite /encode10_vec_aux /=.
+do 192!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have := Array960.init_set witness (fun i => 
+   if i %% 5 = 0 
+   then (of_int x.[i %/ 5 * 4])%W8
+   else if i %% 5 = 1
+        then (of_int (x.[i %/ 5 * 4] %/ 256 + x.[ i %/ 5 * 4 + 1 ] * 4))%W8
+        else if i %% 5 = 2
+             then (of_int (x.[i %/ 5 * 4 + 1] %/ 64 + x.[i %/ 5 * 4 + 2] * 16))%W8  
+             else if i %% 5 = 3
+                  then (of_int (x.[i %/ 5 * 4 + 2] %/ 16 + x.[i %/ 5 * 4 + 3] * 64))%W8    
+                  else (of_int (x.[i %/ 5 * 4 + 3] %/ 4))%W8).
+
+rewrite -JUtils.iotaredE /=  => ->. 
+rewrite initiE /= 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifT 1:/#.
+rewrite initiE /= 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/#.
+rewrite !of_uintK /= /#.
+
+move => /= i j -> ib Hi.
+rewrite /encode10_vec_aux /=.
+do 192!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have := Array960.init_set witness (fun i => 
+   if i %% 5 = 0 
+   then (of_int x.[i %/ 5 * 4])%W8
+   else if i %% 5 = 1
+        then (of_int (x.[i %/ 5 * 4] %/ 256 + x.[ i %/ 5 * 4 + 1 ] * 4))%W8
+        else if i %% 5 = 2
+             then (of_int (x.[i %/ 5 * 4 + 1] %/ 64 + x.[i %/ 5 * 4 + 2] * 16))%W8  
+             else if i %% 5 = 3
+                  then (of_int (x.[i %/ 5 * 4 + 2] %/ 16 + x.[i %/ 5 * 4 + 3] * 64))%W8    
+                  else (of_int (x.[i %/ 5 * 4 + 3] %/ 4))%W8).
+
+rewrite -JUtils.iotaredE /=  => ->. 
+rewrite initiE /= 1:/# ifF 1:/# ifF 1:/# ifT 1:/#.
+rewrite initiE /= 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifT 1:/#.
+rewrite !of_uintK /= /#.
+
+move => /= i j -> ib Hi.
+rewrite /encode10_vec_aux /=.
+do 192!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have := Array960.init_set witness (fun i => 
+   if i %% 5 = 0 
+   then (of_int x.[i %/ 5 * 4])%W8
+   else if i %% 5 = 1
+        then (of_int (x.[i %/ 5 * 4] %/ 256 + x.[ i %/ 5 * 4 + 1 ] * 4))%W8
+        else if i %% 5 = 2
+             then (of_int (x.[i %/ 5 * 4 + 1] %/ 64 + x.[i %/ 5 * 4 + 2] * 16))%W8  
+             else if i %% 5 = 3
+                  then (of_int (x.[i %/ 5 * 4 + 2] %/ 16 + x.[i %/ 5 * 4 + 3] * 64))%W8    
+                  else (of_int (x.[i %/ 5 * 4 + 3] %/ 4))%W8).
+
+rewrite -JUtils.iotaredE /=  => ->. 
+rewrite initiE /= 1:/# ifF 1:/# ifT 1:/#.
+rewrite initiE /= 1:/# ifF 1:/# ifF 1:/# ifT 1:/#.
+rewrite !of_uintK /= /#.
+
+move => /= i j ib ibb -> ibbb Hi.
+rewrite /encode10_vec_aux /=.
+do 192!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have := Array960.init_set witness (fun i => 
+   if i %% 5 = 0 
+   then (of_int x.[i %/ 5 * 4])%W8
+   else if i %% 5 = 1
+        then (of_int (x.[i %/ 5 * 4] %/ 256 + x.[ i %/ 5 * 4 + 1 ] * 4))%W8
+        else if i %% 5 = 2
+             then (of_int (x.[i %/ 5 * 4 + 1] %/ 64 + x.[i %/ 5 * 4 + 2] * 16))%W8  
+             else if i %% 5 = 3
+                  then (of_int (x.[i %/ 5 * 4 + 2] %/ 16 + x.[i %/ 5 * 4 + 3] * 64))%W8    
+                  else (of_int (x.[i %/ 5 * 4 + 3] %/ 4))%W8).
+
+rewrite -JUtils.iotaredE /=  => ->.  
+rewrite initiE /= 1:/#. 
+rewrite initiE /= 1:/#. 
+rewrite ifT 1:/# ifF 1:/# ifT 1:/#.
+rewrite !of_uintK /= /#.
+
+qed.
+
+lemma subarray384K0 (a b c : W8.t Array384.t):
+   subarray384
+        (fromarray384 a b c) 0 = a.
+proof.
+rewrite /subarray384 /fromarray384 tP => k kb.
+by rewrite initiE 1:/# /= initiE 1:/# /= /= kb /=.
+qed.
+
+lemma subarray384K1 (a b c : W8.t Array384.t):
+   subarray384
+        (fromarray384 a b c) 1 = b.
+proof.
+rewrite /subarray384 /fromarray384 tP => k kb.
+by rewrite initiE 1:/# /= initiE 1:/# /= /= ifF /#. 
+qed.
+
+lemma subarray384K2 (a b c : W8.t Array384.t):
+   subarray384
+        (fromarray384 a b c) 2 = c.
+proof.
+rewrite /subarray384 /fromarray384 tP => k kb.
+by rewrite initiE 1:/# /= initiE 1:/# /= /= ifF /#. 
+qed.
+
+lemma fromarray256K ['a] (x : 'a Array768.t) :
+     fromarray256 (subarray256 x 0) 
+                  (subarray256 x 1)
+                  (subarray256 x 2) = x.
+ rewrite /fromarray256 /subarray256; rewrite tP => k kb; rewrite initiE 1:/# /=.
+ case(0<=k<256); 1: by move => *; rewrite initiE /#.
+ case(256<=k<512); by move => *; rewrite initiE /#.
+qed.
+
+
+
 lemma sem_encode12_vecK (x : ipolyvec) : 
    (forall i, 0 <= i < 768 => 0 <= x.[i] < 4096) =>
-     x =  decode12_vec_aux (encode12_vec_aux x)  by admit. 
+     x =  decode12_vec_aux (encode12_vec_aux x).
+move => H. 
+rewrite /decode12_vec_aux /encode12_vec_aux /=.
+rewrite subarray384K0 subarray384K1 subarray384K2.
+have Hxi : forall (xi : ipoly), 
+  (forall i, 0<=i<256 => 0<= xi.[i] < 4096) =>
+  decode12_aux (encode12_aux xi) = xi; last first.
++ rewrite !Hxi; 1,2,3: by  move => k kb; rewrite /subarray256 !initiE /#.
+  by rewrite fromarray256K.
+
+move => xi Hxi.
+rewrite /decode12_aux /=.
+do 128!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have Hpose : forall i j, 0 <= i < 384 => j = i + 1 => i %% 3 = 0 =>
+  to_uint (encode12_aux xi).[i] + to_uint (encode12_aux xi).[j] %% 16 * 256 = xi.[i %/ 3 * 2]; last first.
+have Hposo : forall i j, 0 <= i < 384 => j = i + 1 => i %% 3 = 1 =>
+  to_uint (encode12_aux xi).[j] * 16 + to_uint (encode12_aux xi).[i] %/ 16 = xi.[i %/ 3 * 2 + 1]; last first.
+
++ rewrite !Hpose //= !Hposo //=.
+  have := Array256.init_set witness (fun i => xi.[i]).
+  rewrite -JUtils.iotaredE /= => ->. 
+  by rewrite tP => k kb; rewrite initiE /#.
+
+move => i j ib -> Hi.
+rewrite /encode12_aux /=.
+do 128!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have := Array384.init_set witness (fun i => 
+   if i %% 3 = 0 
+   then (of_int xi.[i %/ 3 * 2])%W8
+   else if i %% 3 = 1
+        then (of_int (xi.[i %/3 * 2 + 1] %% 16 * 16 + xi.[i %/3 * 2] %/ 256))%W8
+        else  (of_int (xi.[i %/3 * 2 + 1] %/ 16))%W8).
+rewrite -JUtils.iotaredE /=  => ->. 
+rewrite !initiE /= 1,2:/# Hi /= !ifF 1,2:/#.
+rewrite !of_uintK /=.
+have -> : (i + 1) %/ 3 * 2 + 1 = i %/ 3 * 2 + 1 by smt().
+rewrite dvdz_mod_div 1..3:/# /= divzMDl 1:/# /=.
+have -> : xi.[i %/ 3 * 2] %/ 256 %/ 16 = 0 by smt().
+by smt().
+
+move => i j ib -> Hi.
+rewrite /encode12_aux /=.
+do 128!(rewrite iteriS_rw 1: /# /=). 
+rewrite iteri0 1: /# /=.
+
+have := Array384.init_set witness (fun i => 
+   if i %% 3 = 0 
+   then (of_int xi.[i %/ 3 * 2])%W8
+   else if i %% 3 = 1
+        then (of_int (xi.[i %/3 * 2 + 1] %% 16 * 16 + xi.[i %/3 * 2] %/ 256))%W8
+        else  (of_int (xi.[i %/3 * 2 + 1] %/ 16))%W8).
+rewrite -JUtils.iotaredE /=  => ->. 
+rewrite !initiE /= 1,2:/# Hi /= ifF 1:/# ifT 1:/#.
+rewrite !of_uintK /=.
+have -> : (i + 1) %/ 3 * 2 + 1 = i %/ 3 * 2 + 1 by smt().
+by smt().
+qed.
 
 require import BitEncoding.  
 import BS2Int BitChunking.
