@@ -162,20 +162,25 @@ clone import FullRO as RO_H with
   type d_in_t  = bool,
   type d_out_t = bool.
 
-module type RO_t = {
+module type RO_ti = {
+  proc init() : unit
   proc h(_: seed) : matrix
+}.
+
+module type RO_t = {
+   include RO_ti [h]
+}.
+
+module H(Hfu : RO_H.RO) = {
+  proc init = Hfu.init
+  proc h = Hfu.get
 }.
 
 module type ROAdv_T(O : RO_t) = {
    proc guess(sd : seed, t : vector, uv : vector * R) : bool
 }.
 
-module MLWE_RO(Adv : ROAdv_T,Hfu : RO_H.RO) = {
-
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
+module MLWE_RO(Adv : ROAdv_T,H : RO_ti) = {
 
   proc main(tr : bool, b : bool) : bool = {
     var sd, s, e, _A, u0, u1, t, e', v0, v1, b';
@@ -202,7 +207,7 @@ module MLWE_RO(Adv : ROAdv_T,Hfu : RO_H.RO) = {
 
 theory MLWE_vs_MLWE_ROM.
 
-module B(A : ROAdv_T, H : RO_H.RO) : Adv_T = {
+module B(A : ROAdv_T, H : RO_ti) : Adv_T = {
   var _sd : seed
   var __A : matrix
 
@@ -211,7 +216,7 @@ module B(A : ROAdv_T, H : RO_H.RO) : Adv_T = {
            var _Ares;
            _Ares <- __A;
            if (sd <> _sd) {
-              _Ares <@ H.get(sd);
+              _Ares <@ H.h(sd);
            }
            return _Ares;
       }
@@ -229,7 +234,7 @@ module B(A : ROAdv_T, H : RO_H.RO) : Adv_T = {
 
 }.
 
-module Bt(A : ROAdv_T, H : RO_H.RO) : Adv_T = {
+module Bt(A : ROAdv_T, H : RO_ti) : Adv_T = {
   var _sd : seed
   var __A : matrix
 
@@ -238,7 +243,7 @@ module Bt(A : ROAdv_T, H : RO_H.RO) : Adv_T = {
            var _Ares;
            _Ares <- __A;
            if (sd <> _sd) {
-              _Ares <@ H.get(sd);
+              _Ares <@ H.h(sd);
            }
            return _Ares;
       }
@@ -257,11 +262,11 @@ module Bt(A : ROAdv_T, H : RO_H.RO) : Adv_T = {
 }.
 
 lemma MLWE_RO_equiv b &m (A <: ROAdv_T {-LRO,-B}):
-  Pr[  MLWE_RO(A,LRO).main(false,b) @ &m : res ] =
-  Pr[  MLWE(B(A,LRO)).main(b) @ &m : res].
+  Pr[  MLWE_RO(A,H(LRO)).main(false,b) @ &m : res ] =
+  Pr[  MLWE(B(A,H(LRO))).main(b) @ &m : res].
 proof.
 byequiv => //.
-proc; inline B(A,LRO).guess.
+proc; inline B(A,H(LRO)).guess.
 swap {2} 16 -15.
 swap {2} 11 -8.
 swap {2} 14 -13.
@@ -284,11 +289,11 @@ by auto => />.
 qed.
 
 lemma MLWE_RO_equiv_t b &m (A <: ROAdv_T {-LRO,-Bt}):
-  Pr[  MLWE_RO(A,LRO).main(true,b) @ &m : res ] =
-  Pr[  MLWE(Bt(A,LRO)).main(b) @ &m : res].
+  Pr[  MLWE_RO(A,H(LRO)).main(true,b) @ &m : res ] =
+  Pr[  MLWE(Bt(A,H(LRO))).main(b) @ &m : res].
 proof.
 byequiv => //.
-proc; inline Bt(A,LRO).guess.
+proc; inline Bt(A,H(LRO)).guess.
 swap {2} 16 -15.
 swap {2} 11 -8.
 swap {2} 14 -13.
@@ -327,13 +332,22 @@ theory MLWE_SMP.
 
 clone import FullRO as RO_SMP.
 
-module type RO_t = {
+module type RO_ti = {
+  proc init() : unit
   proc h(_: in_t) : out_t
 }.
 
+module type RO_t = {
+  include RO_ti [h]
+}.
+
+module H(Hfu : RO_SMP.RO) = {
+  proc init = Hfu.init
+  proc h = Hfu.get
+}.
 
 (* --------------------------------------------------------------------------- *)
-module type Sampler(O : RO_SMP.RO) = {
+module type Sampler(O : RO_t) = {
     proc sampleA(sd : seed) : matrix
     proc sampleAT(sd : seed) : matrix
 }.
@@ -350,12 +364,7 @@ module type SAdv_T(O : RO_t) = {
    proc guess(uv : vector * R) : bool
 }.
 
-module MLWE_SMP(Adv : SAdv_T, S: Sampler, Hfu : RO_SMP.RO) = {
-
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
+module MLWE_SMP(Adv : SAdv_T, S: Sampler, H : RO_ti) = {
 
   proc main(tr : bool, b : bool) : bool = {
     var sd, s, e, _A, u0, u1, t, e', v0, v1, b';
@@ -366,8 +375,8 @@ module MLWE_SMP(Adv : SAdv_T, S: Sampler, Hfu : RO_SMP.RO) = {
     t <$ duni;
     Adv(H).interact(sd,t); (* Allow Adv to create some O state *)
 
-    if (tr) { _A <@ S(Hfu).sampleAT(sd); }
-    else    { _A <@ S(Hfu).sampleA(sd);  }
+    if (tr) { _A <@ S(H).sampleAT(sd); }
+    else    { _A <@ S(H).sampleA(sd);  }
 
     s <$ dshort;
     e <$ dshort;
@@ -396,15 +405,15 @@ clone import MLWE_SMP with
 
 import RO_H.
 
-module (S : Sampler) (H : RO_H.RO) = {
+module (S : Sampler) (H : RO_t) = {
   proc sampleA(sd : seed) : matrix = {
       var _A;
-      _A <@ H.get(sd);
+      _A <@ H.h(sd);
       return _A;
   }
   proc sampleAT(sd : seed) : matrix = {
       var _A;
-      _A <@ H.get(sd);
+      _A <@ H.h(sd);
       return trmx _A;
   }
 }.
@@ -437,8 +446,8 @@ module MLWE_SMPs(Adv : SAdv_T, S: Sampler, Hfu : RO_H.RO) = {
     Hfu.sample(sd);
     Adv(H).interact(sd,t); (* Allow Adv to create some O state *)
 
-    if (tr) { _A <@ S(Hfu).sampleAT(sd); }
-    else    { _A <@ S(Hfu).sampleA(sd);  }
+    if (tr) { _A <@ S(H).sampleAT(sd); }
+    else    { _A <@ S(H).sampleA(sd);  }
 
     s <$ dshort;
     e <$ dshort;
@@ -539,8 +548,8 @@ module DRightAux(A : SAdv_T)   (Hfu : RO) = {
         t <$ duni;
         Hfu.sample(sd);
         A(H).interact(sd, t);
-        if (tr) { _A <@ S(Hfu).sampleAT(sd); }
-        else    { _A <@ S(Hfu).sampleA(sd);  }
+        if (tr) { _A <@ S(H).sampleAT(sd); }
+        else    { _A <@ S(H).sampleA(sd);  }
         s <$ dshort;
         e <$ dshort;
         u0 <- _A *^ s + e;
@@ -663,14 +672,14 @@ by smt().
 qed.
 
 lemma MLWE_SMP_equiv b &m (A <: SAdv_T {-RO,-LRO,-FRO,-B,-Bt, -BS}):
-  Pr[  MLWE(B(BS(A,S),LRO)).main(b) @ &m : res] =
-  Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m : res].
+  Pr[  MLWE(B(BS(A,S),MLWE_ROM.H(LRO))).main(b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,H(LRO)).main(false,b) @ &m : res].
 proof.
-have -> : Pr[  MLWE_SMP(A,S,LRO).main(false,b) @ &m : res] = 
+have -> : Pr[  MLWE_SMP(A,S,H(LRO)).main(false,b) @ &m : res] = 
           Pr[  MLWE_SMPs(A,S,LRO).main(false,b) @ &m : res]
-  by byequiv => //=;proc;inline *;sim.
+  by byequiv => //=;proc;inline *;sim. 
 rewrite -(MLWE_RO_equiv b &m (BS(A,S))).
-have -> : Pr[MLWE_RO(BS(A, S), LRO).main(false, b) @ &m : res] = 
+have -> : Pr[MLWE_RO(BS(A, S), MLWE_ROM.H(LRO)).main(false, b) @ &m : res] = 
           Pr[MLWE_ROs(BS(A, S), LRO).main(false, b) @ &m : res]
   by byequiv => //=;proc;inline *;sim.
 rewrite (MLWE_SMP_equiv_lel false b &m A).
@@ -699,14 +708,14 @@ by auto => />.
 qed.
 
 lemma MLWE_SMP_equiv_t b &m (A <: SAdv_T {-RO,-LRO,-FRO,-B,-Bt, -BS}):
-  Pr[  MLWE(Bt(BS(A,S),LRO)).main(b) @ &m : res] =
-  Pr[  MLWE_SMP(A,S,LRO).main(true,b) @ &m : res].
+  Pr[  MLWE(Bt(BS(A,S),MLWE_ROM.H(LRO))).main(b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,H(LRO)).main(true,b) @ &m : res].
 proof.
-have -> : Pr[  MLWE_SMP(A,S,LRO).main(true,b) @ &m : res] = 
+have -> : Pr[  MLWE_SMP(A,S,H(LRO)).main(true,b) @ &m : res] = 
           Pr[  MLWE_SMPs(A,S,LRO).main(true,b) @ &m : res]
   by byequiv => //=;proc;inline *;sim.
 rewrite -(MLWE_RO_equiv_t b &m (BS(A,S))).
-have -> : Pr[MLWE_RO(BS(A, S), LRO).main(true, b) @ &m : res] = 
+have -> : Pr[MLWE_RO(BS(A, S), MLWE_ROM.H(LRO)).main(true, b) @ &m : res] = 
           Pr[MLWE_ROs(BS(A, S), LRO).main(true, b) @ &m : res]
   by byequiv => //=;proc;inline *;sim.
 rewrite (MLWE_SMP_equiv_lel true b &m A).
@@ -752,33 +761,23 @@ module type Distinguisher_t(S : PSampler, O : RO_t) = {
    proc distinguish(tr b : bool, sd : seed) : bool 
 }.
 
-module WIndfReal(D : Distinguisher_t, S : Sampler, Hfu : RO_SMP.RO) = {
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
-
+module WIndfReal(D : Distinguisher_t, S : Sampler, H : RO_ti) = {
    proc main(tr b : bool) : bool = {
         var sd,b';
         H.init();
         sd <$ dseed;
-        b' <@ D(S(Hfu),H).distinguish(tr, b ,sd);
+        b' <@ D(S(H),H).distinguish(tr, b ,sd);
         return b';
    }
 }.
 
-module WIndfIdeal(D : Distinguisher_t, Sim : Simulator_t, Hfu : RO_H.RO) = {
-
-   module H = {
-      proc init = Hfu.init
-      proc h = Hfu.get
-   }
+module WIndfIdeal(D : Distinguisher_t, Sim : Simulator_t, H : MLWE_ROM.RO_ti) = {
 
    proc main(tr b : bool) : bool = {
         var sd,b';
         H.init();
         sd <$ dseed;
-        b' <@ D(SMP_vs_ROM.S(Hfu),Sim(H)).distinguish(tr, b,sd);
+        b' <@ D(SMP_vs_ROM.S(H),Sim(H)).distinguish(tr, b,sd);
         return b';
    }
 }.
@@ -945,7 +944,7 @@ module WIndfIdeals(D : Distinguisher_t, Sim : Simulator_t, Hfu : RO_H.RO) = {
         H.init();
         sd <$ dseed;
         Hfu.sample(sd);
-        b' <@ D(SMP_vs_ROM.S(Hfu),Sim(H)).distinguish(tr, b,sd);
+        b' <@ D(SMP_vs_ROM.S(H),Sim(H)).distinguish(tr, b,sd);
         return b';
    }
 }.
@@ -1059,22 +1058,22 @@ qed.
 lemma MLWE_SMP_equiv _b &m  (S <: Sampler {-LRO, -RO, -FRO, -RO_SMP.LRO, -D}) 
        (A <: SAdv_T {-RO,-LRO, -FRO, -RO_SMP.LRO, -B, -S, -D}) 
        (Sim <: Simulator_t {-RO, -LRO, -FRO,-B,-Bt, -BS, -A, -D}):
-  Pr[ WIndfReal(D(A),S,RO_SMP.LRO).main(false,_b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(A),Sim,LRO).main(false,_b) @ &m : res] =>
-  Pr[  MLWE(B(BS(A,Sim),LRO)).main(_b) @ &m : res] =
-  Pr[  MLWE_SMP(A,S,RO_SMP.LRO).main(false,_b) @ &m : res].
+  Pr[ WIndfReal(D(A),S,H(RO_SMP.LRO)).main(false,_b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(A),Sim,MLWE_ROM.H(LRO)).main(false,_b) @ &m : res] =>
+  Pr[  MLWE(B(BS(A,Sim),MLWE_ROM.H(LRO))).main(_b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,H(RO_SMP.LRO)).main(false,_b) @ &m : res].
 proof.
 move => HSIM.
 rewrite -(MLWE_RO_equiv _b &m (BS(A,Sim))).
 have -> : 
-    Pr[MLWE_SMP(A, S, RO_SMP.LRO).main(false, _b) @ &m : res] = 
-    Pr[ WIndfReal(D(A),S,RO_SMP.LRO).main(false,_b) @ &m : res] 
+    Pr[MLWE_SMP(A, S, H(RO_SMP.LRO)).main(false, _b) @ &m : res] = 
+    Pr[ WIndfReal(D(A),S,H(RO_SMP.LRO)).main(false,_b) @ &m : res] 
  by byequiv => //; proc; inline {2} 3;sim.
 rewrite HSIM.
-have -> : Pr[MLWE_RO(BS(A, Sim), LRO).main(false, _b) @ &m : res] = 
+have -> : Pr[MLWE_RO(BS(A, Sim), MLWE_ROM.H(LRO)).main(false, _b) @ &m : res] = 
           Pr[MLWE_ROs(BS(A, Sim), LRO).main(false, _b) @ &m : res] by
    byequiv => //; proc; inline *; sim.
-have -> : Pr[WIndfIdeal(D(A), Sim, LRO).main(false, _b) @ &m : res] = 
+have -> : Pr[WIndfIdeal(D(A), Sim, MLWE_ROM.H(LRO)).main(false, _b) @ &m : res] = 
           Pr[WIndfIdeals(D(A), Sim, LRO).main(false, _b) @ &m : res] by
    byequiv => //; proc; inline *; sim.
 rewrite (MLWE_SMP_equiv_lel false _b &m A Sim).
@@ -1105,22 +1104,22 @@ qed.
 lemma MLWE_SMP_equiv_t _b &m  (S <: Sampler {-LRO, -RO, -FRO, -RO_SMP.LRO, -D}) 
        (A <: SAdv_T {-RO,-LRO, -FRO, -RO_SMP.LRO, -B, -S, -D}) 
        (Sim <: Simulator_t  {-RO, -LRO, -FRO,-B,-Bt, -BS, -A, -D}):
-     Pr[ WIndfReal(D(A),S,RO_SMP.LRO).main(true,_b) @ &m : res] = 
-     Pr[ WIndfIdeal(D(A),Sim,LRO).main(true,_b) @ &m : res] =>
-  Pr[  MLWE(Bt(BS(A,Sim),LRO)).main(_b) @ &m : res] =
-  Pr[  MLWE_SMP(A,S,RO_SMP.LRO).main(true,_b) @ &m : res].
+     Pr[ WIndfReal(D(A),S,H(RO_SMP.LRO)).main(true,_b) @ &m : res] = 
+     Pr[ WIndfIdeal(D(A),Sim,MLWE_ROM.H(LRO)).main(true,_b) @ &m : res] =>
+  Pr[  MLWE(Bt(BS(A,Sim),MLWE_ROM.H(LRO))).main(_b) @ &m : res] =
+  Pr[  MLWE_SMP(A,S,H(RO_SMP.LRO)).main(true,_b) @ &m : res].
 proof.
 move => HSIM.
 rewrite -(MLWE_RO_equiv_t _b &m (BS(A,Sim))).
 have -> : 
-    Pr[MLWE_SMP(A, S, RO_SMP.LRO).main(true, _b) @ &m : res] = 
-    Pr[ WIndfReal(D(A),S,RO_SMP.LRO).main(true,_b) @ &m : res] by
+    Pr[MLWE_SMP(A, S, H(RO_SMP.LRO)).main(true, _b) @ &m : res] = 
+    Pr[ WIndfReal(D(A),S,H(RO_SMP.LRO)).main(true,_b) @ &m : res] by
  byequiv => //; proc; inline {2} 3;  sim.
 rewrite HSIM.
-have -> : Pr[MLWE_RO(BS(A, Sim), LRO).main(true, _b) @ &m : res] = 
+have -> : Pr[MLWE_RO(BS(A, Sim), MLWE_ROM.H(LRO)).main(true, _b) @ &m : res] = 
           Pr[MLWE_ROs(BS(A, Sim), LRO).main(true, _b) @ &m : res] by
    byequiv => //; proc; inline *; sim.
-have -> : Pr[WIndfIdeal(D(A), Sim, LRO).main(true, _b) @ &m : res] = 
+have -> : Pr[WIndfIdeal(D(A), Sim, MLWE_ROM.H(LRO)).main(true, _b) @ &m : res] = 
           Pr[WIndfIdeals(D(A), Sim, LRO).main(true, _b) @ &m : res] by
    byequiv => //; proc; inline *; sim.
 rewrite (MLWE_SMP_equiv_lel true _b &m A Sim).

@@ -25,13 +25,19 @@ module CorrectnessAdv(S : Scheme, A : CAdversary) = {
 
 clone import FullRO as RO.
 
-module type SchemeRO(H : RO) = {
-  include Scheme
+module type RO_ti = {
+  proc init() : unit
+  proc h(_: in_t) : out_t
 }.
 
 module type RO_t = {
-  proc h(_: in_t) : out_t
+  include RO_ti [h]
 }.
+
+module type SchemeRO(H : RO_t) = {
+  include Scheme
+}.
+
 
 module type AdversaryRO(H : RO_t) = {
   include Adversary
@@ -45,16 +51,11 @@ module type CPAGame(S: Scheme, A : Adversary) = {
    proc main() : bool
 }.
 
-module CPAGameROM(G : CPAGame, S : SchemeRO, A : AdversaryRO, Hfu : RO) = {
-   module H = {
-      proc init = Hfu.init
-      proc h = Hfu.get
-   }  
-
+module CPAGameROM(G : CPAGame, S : SchemeRO, A : AdversaryRO, H : RO_ti) = {
    proc main() : bool = {
      var b;
      H.init();
-     b <@ G(S(Hfu),A(H)).main();
+     b <@ G(S(H),A(H)).main();
      return b;
    }
 }.
@@ -67,15 +68,11 @@ module type CGame(S: Scheme, A : CAdversary) = {
    proc main() : bool
 }.
 
-module CGameROM(G : CGame, S : SchemeRO, A : CAdversaryRO, Hfu : RO) = {
-   module H = {
-      proc init = Hfu.init
-      proc h = Hfu.get
-   }  
+module CGameROM(G : CGame, S : SchemeRO, A : CAdversaryRO, H : RO_ti) = {
    proc main() : bool = {
      var b;
      H.init();
-     b <@ G(S(Hfu),A(H)).main();
+     b <@ G(S(H),A(H)).main();
      return b;
    }
 }.

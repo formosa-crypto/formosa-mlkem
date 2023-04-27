@@ -44,7 +44,7 @@ clone import PKE_Ext as PKE_ with
   type plaintext <- plaintext,
   type ciphertext <- ciphertext.
 
-import RO_SMP Lazy.
+import RO_SMP.
 
 (******************************************************************)
 (*                    The Encryption Scheme                       *)
@@ -53,13 +53,13 @@ import RO_SMP Lazy.
    This PKE does not use the POracle directly but may
    do so via H *)
 
-module MLWE_PKE(H: PSampler, O : POracle) : Scheme = {
+module MLWE_PKE(S: PSampler, H : RO_t) : Scheme = {
   proc kg() : pkey * skey = {
     var sd,s,e,_A,t;
     sd <$ dseed;
     s  <$ dshort;
     e  <$ dshort;
-    _A <@ H.sampleA(sd);
+    _A <@ S.sampleA(sd);
     t  <- _A *^ s + e;
     return (pk_encode (t,sd),sk_encode s);
   }
@@ -70,7 +70,7 @@ module MLWE_PKE(H: PSampler, O : POracle) : Scheme = {
     r  <$ dshort;
     e1 <$ dshort;
     e2 <$ dshort_R;
-    _A <@ H.sampleAT(sd);
+    _A <@ S.sampleAT(sd);
     u  <- _A *^ r + e1;
     v  <- (t `<*>` r) &+ e2 &+ (m_encode m);
     return (c_encode (u,v));
@@ -90,12 +90,14 @@ module MLWE_PKE(H: PSampler, O : POracle) : Scheme = {
 module HS : PSampler = { 
       proc sampleA(sd : seed) = { return H sd; } 
       proc sampleAT(sd : seed) = { return trmx (H sd); } }.
-module NULL : POracle = { proc o(x : in_t) : out_t = { return witness; } }.
+module NULL : RO_ti = { proc init() = {} 
+                proc h(x : in_t) : out_t = { return witness; } 
+              }.
 module MLWE_PKE_H = MLWE_PKE(HS,NULL).
 
 (* Hop 1 *)
 
-module MLWE_PKE1(S : PSampler, O : POracle) = {
+module MLWE_PKE1(S : PSampler, H : RO_t) = {
   proc kg() : pkey * skey = {
     var _A,sd,s,t;
     sd <$ dseed;
@@ -105,7 +107,7 @@ module MLWE_PKE1(S : PSampler, O : POracle) = {
     return (pk_encode (t,sd),sk_encode s);
   }
 
-  include MLWE_PKE(S,O) [-kg]
+  include MLWE_PKE(S,H) [-kg]
 
 }.
 
@@ -157,7 +159,7 @@ end section.
 
 (* Hop 2 *)
 
-module MLWE_PKE2(S : PSampler, O : POracle) = {
+module MLWE_PKE2(S : PSampler, H : RO_t) = {
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
     var _A,u, v;
@@ -167,7 +169,7 @@ module MLWE_PKE2(S : PSampler, O : POracle) = {
     return (c_encode (u,v &+ m_encode m));
   }
 
-  include MLWE_PKE1(S,O) [-enc]
+  include MLWE_PKE1(S,H) [-enc]
 
 }.
 
@@ -308,7 +310,7 @@ module MLWE_PKE_RO(S : PSampler) = MLWE_PKE(S).
 
 (* Hop 1 *)
 
-module (B1ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (O : POracle) = {
+module (B1ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (H : RO_t) = {
   var sd : seed
   var t  : vector
   
@@ -317,17 +319,17 @@ module (B1ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (O : POracle) = {
   proc guess(uv : vector * R) : bool = {
     var pk,  m0, m1, c, b, b';
     pk <- (uv.`1,sd);
-    (m0, m1) <@ A(O).choose(pk_encode pk);
+    (m0, m1) <@ A(H).choose(pk_encode pk);
     b <$ {0,1};
-    c <@ MLWE_PKE(S(O),O).enc(pk_encode pk, if b then m1 else m0);
-    b' <@ A(O).guess(c);
+    c <@ MLWE_PKE(S(H),H).enc(pk_encode pk, if b then m1 else m0);
+    b' <@ A(H).guess(c);
     return b' = b;
   }
 }.
 
 section.
 
-declare module O <: Oracle {-B1ROM}.
+declare module O <: RO_ti {-B1ROM}.
 declare module S <: Sampler {-O,-B1ROM}.
 declare module A <: AdversaryRO {-O,-B1ROM,-S}.
 
@@ -372,7 +374,7 @@ qed.
 
 end section.
 
-module (B2ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (O : POracle) = {
+module (B2ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (O : RO_t) = {
   var pk : pkey
   var m0, m1 : plaintext
 
@@ -399,7 +401,7 @@ module (B2ROM(A : AdversaryRO, S : Sampler) : SAdv_T) (O : POracle) = {
 
 section.
 
-declare module O <: Oracle {-B2ROM}.
+declare module O <: RO_ti {-B2ROM}.
 declare module S <: Sampler {-O,-B2ROM}.
 declare module A <: AdversaryRO {-O,-B2ROM, -S}.
 
@@ -450,7 +452,7 @@ end section.
 
 section.
 
-declare module O <: Oracle {-B1ROM, -B2ROM}.
+declare module O <: RO_ti {-B1ROM, -B2ROM}.
 declare module S <: Sampler {-O, -B1ROM, -B2ROM}.
 declare module A <: AdversaryRO {-O, -B1ROM, -B2ROM, -S}.
 
@@ -497,11 +499,11 @@ qed.
 
 local lemma game2_prob_s &m :
   islossless O.init =>
-  islossless O.o =>
-  (forall (O <: Oracle), islossless O.o => islossless S(O).sampleA) =>   
-  (forall (O <: Oracle), islossless O.o => islossless S(O).sampleAT) =>   
-  (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
-  (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
+  islossless O.h =>
+  (forall (O <: RO_t), islossless O.h => islossless S(O).sampleA) =>   
+  (forall (O <: RO_t), islossless O.h => islossless S(O).sampleAT) =>   
+  (forall (O <: RO_t), islossless O.h => islossless A(O).guess) =>
+  (forall (O <: RO_t), islossless O.h => islossless A(O).choose) =>
   Pr[Game2RO(A).main() @ &m : res] = 1%r / 2%r.
 proof.
 move => O_init_ll O__o_ll SA_ll SAT_ll A_guess_ll A_choose_ll.
@@ -522,11 +524,11 @@ qed.
 
 lemma main_theorem_s &m :
   islossless O.init =>
-  islossless O.o =>
-  (forall (O <: Oracle), islossless O.o => islossless S(O).sampleA) =>   
-  (forall (O <: Oracle), islossless O.o => islossless S(O).sampleAT) =>   
-  (forall (O <: Oracle), islossless O.o => islossless A(O).guess) =>
-  (forall (O <: Oracle), islossless O.o => islossless A(O).choose) =>
+  islossless O.h =>
+  (forall (O <: RO_t), islossless O.h => islossless S(O).sampleA) =>   
+  (forall (O <: RO_t), islossless O.h => islossless S(O).sampleAT) =>   
+  (forall (O <: RO_t), islossless O.h => islossless A(O).guess) =>
+  (forall (O <: RO_t), islossless O.h => islossless A(O).choose) =>
   Pr[CPAROM(MLWE_PKE(S(O)),A,O).main() @ &m : res] -  1%r / 2%r =
     Pr[MLWE_SMP(B1ROM(A,S),S,O).main(false,false) @ &m : res] -
        Pr[MLWE_SMP(B1ROM(A,S),S,O).main(false,true) @ &m : res] + 
@@ -556,32 +558,34 @@ import MLWE_ROM.
 
 section. 
 
-declare module A <: AdversaryRO {-B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
-declare module S <: Sampler {-A, -B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
-declare module Sim <: Simulator_t {-S,-A,-B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+declare module A <: AdversaryRO {-B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
+declare module S <: Sampler {-A, -B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
+declare module Sim <: Simulator_t {-S,-A,-B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
 
 lemma main_theorem_ref &m :
   (forall (x : RO_SMP.in_t), is_lossless (RO_SMP.dout x)) => 
-  (forall (O <: RO_SMP.Oracle), islossless O.o => islossless S(O).sampleA) =>
-  (forall (O <: RO_SMP.Oracle), islossless O.o => islossless S(O).sampleAT) =>
-  (forall (O <: RO_SMP.Oracle), islossless O.o => islossless A(O).guess) =>
-  (forall (O <: RO_SMP.Oracle), islossless O.o => islossless A(O).choose) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless S(O).sampleA) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless S(O).sampleAT) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless A(O).guess) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless A(O).choose) =>
   (* We need indiff from the nice ROM *)
-  (forall tr b (D0 <: Distinguisher_t {-S,-O, -OS, -Sim}),
-     Pr[ WIndfReal(D0,S,OS).main(tr,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D0,Sim,O).main(tr,b) @ &m : res]) =>
-  Pr[CPAROM(MLWE_PKE(S(RO_SMP.Lazy.LRO)),A,RO_SMP.Lazy.LRO).main() @ &m : res] -  1%r / 2%r =
-    Pr[MLWE(B(BS(B1ROM(A,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res] -
-       Pr[MLWE(B(BS(B1ROM(A,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res] + 
-    Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res]-
-       Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res].
+  (forall tr b (D0 <: Distinguisher_t {-S,-LRO, -RO, -RO_H.LRO, -RO_H.RO, -Sim}),
+     Pr[ WIndfReal(D0,S,MLWE_.MLWE_SMP.H(LRO)).main(tr,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,H(RO_H.LRO)).main(tr,b) @ &m : res]) =>
+  Pr[CPAROM(MLWE_PKE(S(MLWE_.MLWE_SMP.H(LRO))),A,MLWE_.MLWE_SMP.H(LRO)).main() @ &m : res] -  1%r / 2%r =
+    Pr[MLWE(B(BS(B1ROM(A,S),Sim),H(RO_H.LRO))).main(false) @ &m : res] -
+       Pr[MLWE(B(BS(B1ROM(A,S),Sim),H(RO_H.LRO))).main(true) @ &m : res] + 
+    Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),H(RO_H.LRO))).main(false) @ &m : res]-
+       Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),H(RO_H.LRO))).main(true) @ &m : res].
 proof.
 move => dout_ll  SA_ll SAT_ll A_guess_ll A_choose_ll ind.
-have -> := (main_theorem_s RO_SMP.Lazy.LRO S A &m _ _ _  _ A_guess_ll A_choose_ll). 
+have -> := (main_theorem_s (MLWE_.MLWE_SMP.H(LRO)) S A &m _ _ _  _ _ _). 
 + by move => *; islossless.
-+ by apply RO_SMP.Lazy.LRO_o_ll.
-+ by apply SA_ll. 
-by apply SAT_ll. 
++ by apply RO_SMP.RO_get_ll.
++ by move => O H; apply (SA_ll O H).
++ by move => O H; apply (SAT_ll O H).
++ by move => O H; apply (A_guess_ll O H).
++ by move => O H; apply (A_choose_ll O H).
 rewrite (MLWE_SMP_equiv false &m S (B1ROM(A,S)) Sim  (ind false false (D(B1ROM(A,S))))).
 rewrite (MLWE_SMP_equiv true &m S (B1ROM(A,S)) Sim  (ind false true (D(B1ROM(A,S))))).
 rewrite (MLWE_SMP_equiv_t false &m S (B2ROM(A,S)) Sim (ind true false (D(B2ROM(A,S))))).
@@ -657,12 +661,12 @@ axiom good_decode m n :
 
 (* We now rewrite the correctness game in terms of noise and move
    to the RO that directly samples a uniform matrix *)
-module CorrectnessAdvNoise(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.Oracle) = {
+module CorrectnessAdvNoise(Sim : Simulator_t,A : CAdversaryRO, O : RO_ti) = {
   proc main() = {
     var sd,s,e,_A,r,e1,e2,m,n;
     O.init();
     sd <$ dseed;
-    _A <@ O.o(sd);
+    _A <@ O.h(sd);
     r <$ dshort;
     s <$ dshort;
     e <$ dshort;
@@ -676,11 +680,11 @@ module CorrectnessAdvNoise(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.Oracle) 
 
 section.
 
-declare module A <: CAdversaryRO {-O,-OS}.
-declare module S <: Sampler {-A,-O,-OS}.
-declare module Sim <: Simulator_t {-S, -A,-O,-OS}.
+declare module A <: CAdversaryRO {-LRO,-RO, -RO_H.RO, -RO_H.LRO}.
+declare module S <: Sampler {-A,-LRO,-RO, -RO_H.RO, -RO_H.LRO}.
+declare module Sim <: Simulator_t {-S, -A,-LRO,-RO, -RO_H.RO, -RO_H.LRO}.
 
-module (D(A : CAdversaryRO) : Distinguisher_t) (S : PSampler, O : POracle) = {
+module (D(A : CAdversaryRO) : Distinguisher_t) (S : PSampler, O : MLWE_.MLWE_SMP.RO_t) = {
    proc distinguish(tr b : bool, sd : seed) : bool = {
      var t,r,e1,e2,u,v,c,u0,v0,m',b',s,e,_A, pk, sk, m;
      s <$ dshort;                                     
@@ -705,26 +709,26 @@ module (D(A : CAdversaryRO) : Distinguisher_t) (S : PSampler, O : POracle) = {
 }.
 
 lemma correctness &m :
-  (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
-  (forall (O <: POracle), islossless O.o => islossless A(O).find) =>
+  (forall (O <: RO_t), islossless O.h => islossless Sim(O).h) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
-  (forall trb (D0 <: Distinguisher_t {-S,-O, -OS, -Sim}),
-     Pr[ WIndfReal(D0,S,OS).main(trb) @ &m : res] = 
-     Pr[ WIndfIdeal(D0,Sim,O).main(trb) @ &m : res]) =>
-  Pr[ CorrectnessAdvROM(MLWE_PKE(S(Lazy.LRO)),A,OS).main() @ &m : res]  >=
-  1%r - Pr[ CorrectnessAdvNoise(Sim,A,O).main() @ &m : res].
+  (forall trb (D0 <: Distinguisher_t {-S,-LRO, -RO, -RO_H.LRO,-RO_H.RO, -Sim}),
+     Pr[ WIndfReal(D0,S,MLWE_.MLWE_SMP.H(LRO)).main(trb) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,H(RO_H.LRO)).main(trb) @ &m : res]) =>
+  Pr[ CorrectnessAdvROM(MLWE_PKE(S(MLWE_.MLWE_SMP.H(LRO))),A,MLWE_.MLWE_SMP.H(LRO)).main() @ &m : res]  >=
+  1%r - Pr[ CorrectnessAdvNoise(Sim,A,H(RO_H.LRO)).main() @ &m : res].
 proof.
 move => Sim_ll A_ll HIND.
-have -> : 1%r - Pr[ CorrectnessAdvNoise(Sim,A,O).main() @ &m : res] =
-   Pr[ CorrectnessAdvNoise(Sim,A,O).main() @ &m : !res].
+have -> : 1%r - Pr[ CorrectnessAdvNoise(Sim,A,H(RO_H.LRO)).main() @ &m : res] =
+   Pr[ CorrectnessAdvNoise(Sim,A,H(RO_H.LRO)).main() @ &m : !res].
 rewrite Pr[mu_not]; congr => //. 
 + byphoare => //.
   islossless; 2..6: smt(duni_matrix_ll dshort_ll). 
-  by apply (A_ll (Sim(O))); apply (Sim_ll O); apply RO_H.Lazy.LRO_o_ll; smt(duni_matrix_ll). 
-have -> : Pr[CorrectnessAdvROM(MLWE_PKE(S(LRO)), A, OS).main() @ &m : res] = 
-          Pr[ WIndfReal(D(A),S,OS).main(witness) @ &m : res].
+  apply (A_ll (Sim(H(RO_H.LRO)))); apply (Sim_ll (H(RO_H.LRO))); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
+have -> : Pr[CorrectnessAdvROM(MLWE_PKE(S(MLWE_.MLWE_SMP.H(LRO))), A, MLWE_.MLWE_SMP.H(LRO)).main() @ &m : res] = 
+          Pr[ WIndfReal(D(A),S,MLWE_.MLWE_SMP.H(LRO)).main(witness) @ &m : res].
 + byequiv => //; proc. inline {1} 2. inline {1} 5. inline {1} 4. inline {1} 2. inline {2} 3. 
-  by sim.
+  by sim. 
 rewrite (HIND witness (D(A))).
 byequiv => //.
 proc.  inline {2} 3. 
@@ -733,42 +737,42 @@ swap {2} 8 -4.
 swap {2} [13..15] -8.
 swap {2} [10..11] -4.
 seq 9 14 : ( 
-           ={RO_H.Lazy.LRO.m,e2,e1,r,s,e,sd,m,glob Sim} /\
+           ={RO_H.RO.m,e2,e1,r,s,e,sd,m,glob Sim} /\
            sd0{2} = sd{2} /\
            (pk_decode pk{2}).`2 = sd{2} /\
            (pk_decode pk{2}).`1 = t{2} /\
            sk_decode sk{2} = s{2} /\
            t{2} = _A{2} *^ s{2} + e{2} /\
-           (pk_decode pk{2}).`2 \in RO_H.Lazy.LRO.m{2} /\
+           (pk_decode pk{2}).`2 \in RO_H.RO.m{2} /\
            _A{2} = _A{1} /\
-           oget RO_H.Lazy.LRO.m{2}.[(pk_decode pk{2}).`2] = _A{2}); last first.
-+ inline *. auto => />. move => &2  -> ?; split; 1: by smt(duni_matrix_ll). 
+           oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2] = _A{2}); last first.
++ inline *. auto => />. move => &2  ->?; split; 1: by smt(duni_matrix_ll). 
   move => *;rewrite  encode_noise.
   rewrite (_: 
-     (((oget RO_H.Lazy.LRO.m{2}.[(pk_decode pk{2}).`2] *^ (sk_decode sk){2} + e{2}) `<*>` r{2}) &+
+     (((oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2] *^ (sk_decode sk){2} + e{2}) `<*>` r{2}) &+
      e2{2} &+ m_encode m{2} &+
      rnd_err_v
-       (((oget RO_H.Lazy.LRO.m{2}.[(pk_decode pk{2}).`2] *^ (sk_decode sk){2}  + e{2}) `<*>` r{2}) &+
+       (((oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2] *^ (sk_decode sk){2}  + e{2}) `<*>` r{2}) &+
         e2{2} &+ m_encode m{2}) &-
      ((sk_decode sk){2}  `<*>`
-      (m_transpose (oget RO_H.Lazy.LRO.m{2}.[(pk_decode pk{2}).`2]) *^ r{2} + e1{2} +
-       rnd_err_u (m_transpose (oget RO_H.Lazy.LRO.m{2}.[(pk_decode pk{2}).`2]) *^ r{2} + e1{2})))) = 
-  m_encode m{2} &+ noise_exp (oget RO_H.Lazy.LRO.m{2}.[(pk_decode pk{2}).`2]) (sk_decode sk){2}  e{2} r{2} e1{2}
+      (m_transpose (oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2]) *^ r{2} + e1{2} +
+       rnd_err_u (m_transpose (oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2]) *^ r{2} + e1{2})))) = 
+  m_encode m{2} &+ noise_exp (oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2]) (sk_decode sk){2}  e{2} r{2} e1{2}
                      e2{2} m{2}); last by apply good_decode. 
   by rewrite noise_exp_val /= matrix_props1 matrix_props2; ring.
 
 auto => /=. 
 seq 8 13 : ( #pre /\
-           ={RO_H.Lazy.LRO.m,r,s,e,e1,e2,sd,_A} /\
+           ={RO_H.RO.m,r,s,e,e1,e2,sd,_A} /\
            sd0{2} = sd{1} /\
            pk{2} = pk_encode (t,sd){2} /\
            sk{2} = sk_encode s{2} /\
            t{2} = _A{2} *^ s{2} + e{2} /\
-           sd{2} \in RO_H.Lazy.LRO.m{2} /\
-           oget RO_H.Lazy.LRO.m{2}.[sd{2}] = _A{2}); last first.
+           sd{2} \in RO_H.RO.m{2} /\
+           oget RO_H.RO.m{2}.[sd{2}] = _A{2}); last first.
 + exlim _A{2}, sd{2} => _A sd.
-  call(_: ={glob RO_H.Lazy.LRO, glob Sim} /\ oget RO_H.Lazy.LRO.m{2}.[sd] = _A /\ sd \in RO_H.Lazy.LRO.m{2} ). 
-  + proc *;call(_: ={glob RO_H.Lazy.LRO}  /\ oget RO_H.Lazy.LRO.m{2}.[sd] = _A /\ sd \in RO_H.Lazy.LRO.m{2} ).
+  call(_: ={glob RO_H.RO, glob Sim} /\ oget RO_H.RO.m{2}.[sd] = _A /\ sd \in RO_H.RO.m{2} ). 
+  + proc *;call(_: ={glob RO_H.RO}  /\ oget RO_H.RO.m{2}.[sd] = _A /\ sd \in RO_H.RO.m{2} ).
     + by proc; auto => />; smt(get_setE).
     by auto => />; smt(get_setE sk_encodeK pk_encodeK).
   by auto => />; smt(sk_encodeK get_setE pk_encodeK).
@@ -821,14 +825,14 @@ module CorrectnessNoiseApprox = {
 
 section.
 
-declare module A <: CAdversaryRO {-O,-OS}.
-declare module S <: Sampler {-A,-O,-OS}.
-declare module Sim <: Simulator_t {-S, -A,-O,-OS}.
+declare module A <: CAdversaryRO {-LRO,-RO, -RO_H.RO}.
+declare module S <: Sampler {-A,-LRO,-RO, -RO_H.RO}.
+declare module Sim <: Simulator_t {-S, -A,-LRO,-RO, -RO_H.RO}.
 
 lemma correctness_slack &m :
-  (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
-  (forall (O <: POracle), islossless O.o => islossless A(O).find) =>
-  Pr[ CorrectnessAdvNoise(Sim,A,O).main() @ &m : res]<=
+  (forall (O <: RO_t), islossless O.h => islossless Sim(O).h) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless A(O).find) =>
+  Pr[ CorrectnessAdvNoise(Sim,A,H(RO_H.LRO)).main() @ &m : res]<=
   Pr[ CorrectnessNoiseApprox.main() @ &m : res].
 proof.
 move => Sim_ll A_ll.
@@ -842,18 +846,18 @@ seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
            e2{2} \in dshort_R ).
 + inline *; auto => />; smt(get_setE mem_empty).
 wp;call {1} (_: true ==> true). 
-+ by apply (A_ll (Sim(O))); apply (Sim_ll O); apply RO_H.Lazy.LRO_o_ll; smt(duni_matrix_ll).
++ by apply (A_ll (Sim(H(RO_H.LRO)))); apply (Sim_ll (H(RO_H.LRO))); apply RO_H.RO_get_ll; smt(duni_matrix_ll).
 by skip;auto => />; smt (noise_exp_val noise_commutes cv_bound_valid).
 qed.
 
 lemma correctness_approx &m :
-  (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
-  (forall (O <: POracle), islossless O.o => islossless A(O).find) =>
+  (forall (O <: RO_t), islossless O.h => islossless Sim(O).h) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
-  (forall trb (D0 <: Distinguisher_t {-S,-O, -OS, -Sim}),
-     Pr[ WIndfReal(D0,S,OS).main(trb) @ &m : res] = 
-     Pr[ WIndfIdeal(D0,Sim,O).main(trb) @ &m : res]) =>
-  Pr[ CorrectnessAdvROM(MLWE_PKE(S(LRO)),A,LRO).main() @ &m : res]  >=
+  (forall trb (D0 <: Distinguisher_t {-S,-LRO,-RO,-RO_H.LRO,-RO_H.RO,  -Sim}),
+     Pr[ WIndfReal(D0,S,MLWE_.MLWE_SMP.H(LRO)).main(trb) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,H(RO_H.LRO)).main(trb) @ &m : res]) =>
+  Pr[ CorrectnessAdvROM(MLWE_PKE(S(MLWE_.MLWE_SMP.H(LRO))),A,MLWE_.MLWE_SMP.H(LRO)).main() @ &m : res]  >=
   1%r - Pr[ CorrectnessNoiseApprox.main() @ &m : res]
  by move => S_ll A_ll ind; move : (correctness A S Sim &m S_ll A_ll ind) (correctness_slack &m S_ll A_ll) => /#.
 
@@ -880,12 +884,12 @@ module CorrectnessBound = {
 }.
 
 lemma correctness_bound &m epsilon_hack fail_prob :
-  (forall (O <: RO_H.POracle), islossless O.o => islossless Sim(O).o) =>
-  (forall (O <: POracle), islossless O.o => islossless A(O).find) =>
+  (forall (O <: RO_t), islossless O.h => islossless Sim(O).h) =>
+  (forall (O <: MLWE_.MLWE_SMP.RO_t), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
-  (forall trb (D0 <: Distinguisher_t {-S,-O, -OS, -Sim}),
-     Pr[ WIndfReal(D0,S,OS).main(trb) @ &m : res] = 
-     Pr[ WIndfIdeal(D0,Sim,O).main(trb) @ &m : res]) =>
+  (forall trb (D0 <: Distinguisher_t {-S,-LRO,-RO,-RO_H.LRO,-RO_H.RO,  -Sim}),
+     Pr[ WIndfReal(D0,S,MLWE_.MLWE_SMP.H(LRO)).main(trb) @ &m : res] = 
+     Pr[ WIndfIdeal(D0,Sim,H(RO_H.LRO)).main(trb) @ &m : res]) =>
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
@@ -894,7 +898,7 @@ lemma correctness_bound &m epsilon_hack fail_prob :
 (* The following failure probability can be bounded as
 in the Python script for Kyber *)   
   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-  Pr[ CorrectnessAdvROM(MLWE_PKE(S(LRO)),A,LRO).main() @ &m : res]  >=
+  Pr[ CorrectnessAdvROM(MLWE_PKE(S(MLWE_.MLWE_SMP.H(LRO))),A,MLWE_.MLWE_SMP.H(LRO)).main() @ &m : res] >=
   1%r - fail_prob - epsilon_hack
 by move => S_ll A_ll ind fail_probability correctness_hack;move:  (correctness_approx &m S_ll A_ll ind) => /#.
 
@@ -921,39 +925,43 @@ import SMP_vs_ROM_IND.
 import MLWE_ROM.
 import MLWE_vs_MLWE_ROM.
 
-module (Sim : Simulator_t) (O : RO_SMP.POracle) = {
-  proc o = S(O).sampleA
+module (Sim : Simulator_t) (O : RO_t) = {
+  proc h = S(O).sampleA
 }.
 
-lemma good_sim tr b (D <: Distinguisher_t {-S,-O, -OS, -Sim}) &m : 
-     Pr[ WIndfReal(D,S,OS).main(tr,b) @ &m : res] = 
-     Pr[ WIndfIdeal(D,Sim,O).main(tr,b) @ &m : res].
+
+lemma good_sim tr b (D <: Distinguisher_t {-S,-RO_SMP.RO, -RO_SMP.LRO,  -RO_H.RO, -RO_H.LRO, -Sim}) &m : 
+     Pr[ WIndfReal(D,S,MLWE_.MLWE_SMP.H(RO_SMP.LRO)).main(tr,b) @ &m : res] = 
+     Pr[ WIndfIdeal(D,Sim, H(RO_H.LRO)).main(tr,b) @ &m : res].
 byequiv => //; proc.
-call(_: (glob OS){1} = (glob O){2}).
+call(_: (glob RO_SMP.RO){1} = (glob RO_H.RO){2}). 
 + by proc; inline *; auto => />.
 + by proc; inline *; auto => />.
 + by proc; inline *; auto => />.
 by inline *; auto => />.
 qed.
 
+
 import PKE_.
 section.
 
-declare module A <: AdversaryRO {-B1ROM, -B2ROM, -OS, -O, -B,-Bt, -BS, -D, -LazyEager.ERO}.
+declare module A <: AdversaryRO {-B1ROM, -B2ROM, -RO_H.LRO,-RO_H.RO, -RO_H.FRO, -RO_SMP.LRO,  -B,-Bt, -BS, -D}.
 
 lemma main_theorem &m :
-  (forall (O <: RO_SMP.Oracle), islossless O.o => islossless A(O).guess) =>
-  (forall (O <: RO_SMP.Oracle), islossless O.o => islossless A(O).choose) =>
-  Pr[CPAROM(MLWE_PKE(S(RO_SMP.Lazy.LRO)),A,RO_SMP.Lazy.LRO).main() @ &m : res] -  1%r / 2%r =
-    Pr[MLWE(B(BS(B1ROM(A,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res] -
-       Pr[MLWE(B(BS(B1ROM(A,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res] + 
-    Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),RO_H.Lazy.LRO)).main(false) @ &m : res]-
-       Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),RO_H.Lazy.LRO)).main(true) @ &m : res].
-move => A_ll_guess A_ll_choose.
-apply (main_theorem_ref A S Sim &m _ _ _ A_ll_guess A_ll_choose).
+  (forall (O <: RO_t), islossless O.h => islossless A(O).guess) =>
+  (forall (O <: RO_t), islossless O.h => islossless A(O).choose) =>
+  Pr[CPAROM(MLWE_PKE(S(MLWE_.MLWE_SMP.H(RO_SMP.LRO))),A,MLWE_.MLWE_SMP.H(RO_SMP.LRO)).main() @ &m : res] -  1%r / 2%r =
+    Pr[MLWE(B(BS(B1ROM(A,S),Sim),H(RO_H.LRO))).main(false) @ &m : res] -
+       Pr[MLWE(B(BS(B1ROM(A,S),Sim),H(RO_H.LRO))).main(true) @ &m : res] + 
+    Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),H(RO_H.LRO))).main(false) @ &m : res]-
+       Pr[MLWE(Bt(BS(B2ROM(A,S),Sim),H(RO_H.LRO))).main(true) @ &m : res].
+move => A_ll_guess A_ll_choose. print main_theorem_ref.
+apply (main_theorem_ref A S Sim &m _ _ _ _ _).
 + by smt(duni_matrix_ll).
 + by move => *; islossless.
 + by move => *; islossless.
++ by move => O H; apply (A_ll_guess O H).
++ by move => O H; apply (A_ll_choose O H). print good_sim.
 by move => tr b D0; apply (good_sim tr b D0).
 qed.
 
@@ -961,10 +969,10 @@ end section.
 
 section.
 
-declare module A <: CAdversaryRO {-O,-OS}.
+declare module A <: CAdversaryRO {-RO_H.LRO,-RO_H.RO, -RO_H.FRO, -RO_SMP.LRO}.
 
 lemma correctness_bound &m epsilon_hack fail_prob :
-  (forall (O <: RO_SMP.POracle), islossless O.o => islossless A(O).find) =>
+  (forall (O <: RO_t), islossless O.h => islossless A(O).find) =>
 (* This jump is assumed to introduce no slack in the
    Kyber proposal. 
    We need to figure out how to bound it. *)
@@ -973,11 +981,12 @@ lemma correctness_bound &m epsilon_hack fail_prob :
 (* The following failure probability can be bounded as
 in the Python script for Kyber *)   
   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-  Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.Lazy.LRO)),A,RO_SMP.Lazy.LRO).main() @ &m : res]  >=
+  Pr[ CorrectnessAdvROM(MLWE_PKE(S(MLWE_.MLWE_SMP.H(RO_SMP.LRO))),A,MLWE_.MLWE_SMP.H(RO_SMP.LRO)).main() @ &m : res]  >=
   1%r - fail_prob - epsilon_hack.
 move => A_ll fail_probability correctness_hack.
-apply (correctness_bound A S Sim &m epsilon_hack fail_prob _ A_ll _ fail_probability correctness_hack).
+apply (correctness_bound A S Sim &m epsilon_hack fail_prob _ _ _ fail_probability correctness_hack).
 + by move => *; islossless.
++ by move => O H; apply (A_ll O H).
 move => trb D0; have -> : trb = (trb.`1,trb.`2) by smt().
 by apply (good_sim (trb.`1) (trb.`2) D0).
 qed.
