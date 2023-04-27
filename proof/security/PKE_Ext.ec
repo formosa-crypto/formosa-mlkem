@@ -1,4 +1,5 @@
-require PKE ROM.
+require import PROM.
+require PKE.
 
 clone include PKE.
 
@@ -22,17 +23,21 @@ module CorrectnessAdv(S : Scheme, A : CAdversary) = {
 
 (* Extensions to ROM *)
 
-clone import ROM as RO.
+clone import FullRO as RO.
 
-module type SchemeRO(H : POracle) = {
+module type SchemeRO(H : RO) = {
   include Scheme
 }.
 
-module type AdversaryRO(H : POracle) = {
+module type RO_t = {
+  proc h(_: in_t) : out_t
+}.
+
+module type AdversaryRO(H : RO_t) = {
   include Adversary
 }.
 
-module type CAdversaryRO(H : POracle) = {
+module type CAdversaryRO(H : RO_t) = {
   include CAdversary
 }.
 
@@ -40,11 +45,16 @@ module type CPAGame(S: Scheme, A : Adversary) = {
    proc main() : bool
 }.
 
-module CPAGameROM(G : CPAGame, S : SchemeRO, A : AdversaryRO, O : Oracle) = {
+module CPAGameROM(G : CPAGame, S : SchemeRO, A : AdversaryRO, Hfu : RO) = {
+   module H = {
+      proc init = Hfu.init
+      proc h = Hfu.get
+   }  
+
    proc main() : bool = {
      var b;
-     O.init();
-     b <@ G(S(O),A(O)).main();
+     H.init();
+     b <@ G(S(Hfu),A(H)).main();
      return b;
    }
 }.
@@ -57,11 +67,15 @@ module type CGame(S: Scheme, A : CAdversary) = {
    proc main() : bool
 }.
 
-module CGameROM(G : CGame, S : SchemeRO, A : CAdversaryRO, O : Oracle) = {
+module CGameROM(G : CGame, S : SchemeRO, A : CAdversaryRO, Hfu : RO) = {
+   module H = {
+      proc init = Hfu.init
+      proc h = Hfu.get
+   }  
    proc main() : bool = {
      var b;
-     O.init();
-     b <@ G(S(O),A(O)).main();
+     H.init();
+     b <@ G(S(Hfu),A(H)).main();
      return b;
    }
 }.
