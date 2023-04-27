@@ -431,23 +431,18 @@ import MLWE_vs_MLWE_ROM.
 
 module MLWE_SMPs(Adv : SAdv_T, S: Sampler, Hfu : RO_H.RO) = {
 
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
-
   proc main(tr : bool, b : bool) : bool = {
     var sd, s, e, _A, u0, u1, t, e', v0, v1, b';
     
-    H.init();
+    Hfu.init();
 
     sd <$ dseed;
     t <$ duni;
     Hfu.sample(sd);
-    Adv(H).interact(sd,t); (* Allow Adv to create some O state *)
+    Adv(H(Hfu)).interact(sd,t); (* Allow Adv to create some O state *)
 
-    if (tr) { _A <@ S(H).sampleAT(sd); }
-    else    { _A <@ S(H).sampleA(sd);  }
+    if (tr) { _A <@ S(H(Hfu)).sampleAT(sd); }
+    else    { _A <@ S(H(Hfu)).sampleA(sd);  }
 
     s <$ dshort;
     e <$ dshort;
@@ -458,7 +453,7 @@ module MLWE_SMPs(Adv : SAdv_T, S: Sampler, Hfu : RO_H.RO) = {
     v0 <- (t `<*>` s) &+ e';
     v1 <$ duni_R;
     
-    b' <@ Adv(H).guess(if b then (u1,v1) else (u0,v0));
+    b' <@ Adv(H(Hfu)).guess(if b then (u1,v1) else (u0,v0));
     return b';
    }
 
@@ -466,20 +461,15 @@ module MLWE_SMPs(Adv : SAdv_T, S: Sampler, Hfu : RO_H.RO) = {
 
 module MLWE_ROs(Adv : ROAdv_T,Hfu : RO_H.RO) = {
 
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
-
   proc main(tr : bool, b : bool) : bool = {
     var sd, s, e, _A, u0, u1, t, e', v0, v1, b';
     
-    H.init();
+    Hfu.init();
     sd <$ dseed;
     s <$ dshort;
     e <$ dshort;
     Hfu.sample(sd);
-    _A <@ H.h(sd);
+    _A <@ Hfu.get(sd);
     _A <- if tr then m_transpose _A else _A;
     u0 <- _A *^ s + e;
     u1 <$ duni;
@@ -489,25 +479,20 @@ module MLWE_ROs(Adv : ROAdv_T,Hfu : RO_H.RO) = {
     v0 <- (t `<*>` s) &+ e';
     v1 <$ duni_R;
     
-    b' <@ Adv(H).guess(sd, t, if b then (u1,v1) else (u0,v0));
+    b' <@ Adv(H(Hfu)).guess(sd, t, if b then (u1,v1) else (u0,v0));
     return b';
    }
 
 }.
 
 module DLeftAux(A : SAdv_T)  (Hfu : RO) = {
-      module H = {
-        proc init = Hfu.init
-        proc h = Hfu.get
-     }
-
      proc run(tr : bool,b : bool) : bool = {
         var sd,t,_A,s,e,u0,u1,e',v0,v1,b';     
         sd <$ dseed;
         s <$ dshort;
         e <$ dshort;
         Hfu.sample(sd);
-        _A <@ H.h(sd);
+        _A <@ Hfu.get(sd);
         _A <- if tr then trmx _A else _A;
         u0 <- _A *^ s + e;
         u1 <$ duni;
@@ -515,7 +500,7 @@ module DLeftAux(A : SAdv_T)  (Hfu : RO) = {
         e' <$ dshort_R;
         v0 <- (t `<*>` s) &+ e';
         v1 <$ duni_R;
-        b' <@ BS(A, S, H).guess(sd, t,if b then (u1, v1) else (u0, v0)); 
+        b' <@ BS(A, S, H(Hfu)).guess(sd, t,if b then (u1, v1) else (u0, v0)); 
         return b';
      }
 }.
@@ -537,19 +522,14 @@ module (DLeftT(A : SAdv_T) : RO_Distinguisher)  (Hfu : RO) = {
 }.
 
 module DRightAux(A : SAdv_T)   (Hfu : RO) = {
-     module H = {
-        proc init = Hfu.init
-        proc h = Hfu.get
-     }
-
      proc run(tr : bool, b : bool) : bool = {
         var sd,t,_A,s,e,u0,u1,e',v0,v1,b';
         sd <$ dseed;
         t <$ duni;
         Hfu.sample(sd);
-        A(H).interact(sd, t);
-        if (tr) { _A <@ S(H).sampleAT(sd); }
-        else    { _A <@ S(H).sampleA(sd);  }
+        A(H(Hfu)).interact(sd, t);
+        if (tr) { _A <@ S(H(Hfu)).sampleAT(sd); }
+        else    { _A <@ S(H(Hfu)).sampleA(sd);  }
         s <$ dshort;
         e <$ dshort;
         u0 <- _A *^ s + e;
@@ -557,7 +537,7 @@ module DRightAux(A : SAdv_T)   (Hfu : RO) = {
         e' <$ dshort_R;
         v0 <- (t `<*>` s) &+ e';
         v1 <$ duni_R;
-        b' <@ A(H).guess(if b then (u1, v1) else (u0, v0));
+        b' <@ A(H(Hfu)).guess(if b then (u1, v1) else (u0, v0));
         return b';
      }
 }.
@@ -820,18 +800,13 @@ import RO_H.
 import FullEager.
 
 module DLeftAux(A : SAdv_T, Sim : Simulator_t)  (Hfu : RO) = {
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
-
      proc run(tr : bool,b : bool) : bool = {
         var sd,t,_A,s,e,u0,u1,e',v0,v1,b';     
         sd <$ dseed;
         s <$ dshort;
         e <$ dshort;
         Hfu.sample(sd);
-        _A <@ H.h(sd);
+        _A <@ Hfu.get(sd);
         _A <- if tr then trmx _A else _A;
         u0 <- _A *^ s + e;
         u1 <$ duni;
@@ -839,7 +814,7 @@ module DLeftAux(A : SAdv_T, Sim : Simulator_t)  (Hfu : RO) = {
         e' <$ dshort_R;
         v0 <- (t `<*>` s) &+ e';
         v1 <$ duni_R;
-        b' <@ BS(A, Sim, H).guess(sd, t,if b then (u1, v1) else (u0, v0)); 
+        b' <@ BS(A, Sim, MLWE_ROM.H(Hfu)).guess(sd, t,if b then (u1, v1) else (u0, v0)); 
         return b';
      }
 }.
@@ -861,19 +836,14 @@ module (DLeftT(A : SAdv_T, Sim : Simulator_t) : RO_Distinguisher)  (Hfu : RO) = 
 }.
 
 module DRightAux(A : SAdv_T, Sim : Simulator_t)   (Hfu : RO) = {
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
-
      proc run(tr : bool, b : bool) : bool = {
         var sd,t,_A,s,e,u0,u1,e',v0,v1,b';
         sd <$ dseed;
         t <$ duni;
         Hfu.sample(sd);
-        A(Sim(H)).interact(sd, t);
-        if (tr) { _A <@ H.h(sd);  _A <- trmx _A; } 
-        else {  _A <@ H.h(sd); }
+        A(Sim(MLWE_ROM.H(Hfu))).interact(sd, t);
+        if (tr) { _A <@ Hfu.get(sd);  _A <- trmx _A; } 
+        else {  _A <@ Hfu.get(sd); }
         s <$ dshort;
         e <$ dshort;
         u0 <- _A *^ s + e;
@@ -881,7 +851,7 @@ module DRightAux(A : SAdv_T, Sim : Simulator_t)   (Hfu : RO) = {
         e' <$ dshort_R;
         v0 <- (t `<*>` s) &+ e';
         v1 <$ duni_R;
-        b' <@ A(Sim(H)).guess(if b then (u1, v1) else (u0, v0));
+        b' <@ A(Sim(MLWE_ROM.H(Hfu))).guess(if b then (u1, v1) else (u0, v0));
         return b';
      }
 }.
@@ -904,20 +874,15 @@ module (DRightT(A : SAdv_T, Sim : Simulator_t) : RO_Distinguisher)  (Hfu : RO) =
 
 module MLWE_ROs(Adv : ROAdv_T,Hfu : RO) = {
 
-  module H = {
-    proc init = Hfu.init
-    proc h = Hfu.get
-  }
-
   proc main(tr : bool, b : bool) : bool = {
     var sd, s, e, _A, u0, u1, t, e', v0, v1, b';
     
-    H.init();
+    Hfu.init();
     sd <$ dseed;
     s <$ dshort;
     e <$ dshort;
     Hfu.sample(sd);
-    _A <@ H.h(sd);
+    _A <@ Hfu.get(sd);
     _A <- if tr then m_transpose _A else _A;
     u0 <- _A *^ s + e;
     u1 <$ duni;
@@ -926,7 +891,7 @@ module MLWE_ROs(Adv : ROAdv_T,Hfu : RO) = {
     e' <$ dshort_R;
     v0 <- (t `<*>` s) &+ e';
     v1 <$ duni_R;
-    b' <@ Adv(H).guess(sd, t,if b then (u1, v1) else (u0, v0)); 
+    b' <@ Adv(MLWE_ROM.H(Hfu)).guess(sd, t,if b then (u1, v1) else (u0, v0)); 
     return b';
    }
 
@@ -934,17 +899,12 @@ module MLWE_ROs(Adv : ROAdv_T,Hfu : RO) = {
 
 module WIndfIdeals(D : Distinguisher_t, Sim : Simulator_t, Hfu : RO_H.RO) = {
 
-   module H = {
-      proc init = Hfu.init
-      proc h = Hfu.get
-   }
-
    proc main(tr b : bool) : bool = {
         var sd,b';
-        H.init();
+        Hfu.init();
         sd <$ dseed;
         Hfu.sample(sd);
-        b' <@ D(SMP_vs_ROM.S(H),Sim(H)).distinguish(tr, b,sd);
+        b' <@ D(SMP_vs_ROM.S(MLWE_ROM.H(Hfu)),Sim(MLWE_ROM.H(Hfu))).distinguish(tr, b,sd);
         return b';
    }
 }.
@@ -1098,7 +1058,8 @@ seq 4 0 : (#pre /\ (_A = oget RO.m.[sd]){1}); 1:
 seq 1 1 : #pre; last by auto => /> &1 ?; rewrite /dout duni_matrix_ll.
 exists* _A{1}, sd{1}; elim * => _A1 sd1.
 call(: ={RO.m, glob Sim} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by auto => />.
-admit. (* WTF? *)
+proc*;call(: ={RO.m} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by auto => />.
+by proc; inline *; auto => />; smt(@SmtMap).
 qed.
 
 lemma MLWE_SMP_equiv_t _b &m  (S <: Sampler {-LRO, -RO, -FRO, -RO_SMP.LRO, -D}) 
@@ -1145,7 +1106,8 @@ seq 4 0 : (#pre /\ (_A = oget RO.m.[sd]){1}); 1:
 seq 1 1 : #pre; last by auto => /> &1 ?; rewrite /dout duni_matrix_ll.
 exists* _A{1}, sd{1}; elim * => _A1 sd1.
 call(: ={RO.m, glob Sim} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by auto => />.
-admit. (* WTF? *)
+proc*;call(: ={RO.m} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by auto => />.
+by proc; inline *; auto => />; smt(@SmtMap).
 qed.
 
 end SMP_vs_ROM_IND.
