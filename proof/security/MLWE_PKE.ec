@@ -49,8 +49,8 @@ import RO_SMP.
 (******************************************************************)
 (*                    The Encryption Scheme                       *)
 
-(* Encryption schemes in the ROM always take POracle.
-   This PKE does not use the POracle directly but may
+(* Encryption schemes in the ROM always take RO_t.
+   This PKE does not use the RO_t directly but may
    do so via H *)
 
 module MLWE_PKE(S: PSampler, H : RO_t) : Scheme = {
