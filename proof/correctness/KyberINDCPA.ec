@@ -152,7 +152,7 @@ axiom shake256_33_128 buf seed :
 
 (* THIS IS A DUMMY RANDOM ORACLE THAT THE IMPLEMENTATION OF COURSE DOESNT USE *)
 
-module H : KyberPKE.RO_t = {
+module H : KyberPKE.RO.ROpub = {
   proc h(x : KyberPKE.RO.in_t) : KyberPKE.RO.out_t = { return witness;  }
 }.
 

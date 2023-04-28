@@ -1244,6 +1244,7 @@ clone import PKE_Ext as KyberPKE with
   type skey = W8.t Array1152.t,
   type plaintext = W8.t Array32.t,
   type ciphertext = W8.t Array960.t * W8.t Array128.t.
+import RO.
 
 (* PRF keys in encryption come directly from srand *)
 abbrev srand = darray32 W8.dword.
@@ -1277,7 +1278,8 @@ module G(HS: HSF.PseudoRF) = {
 (* We take some liberty to specify parse using a XOF that
    returns 168 bytes at a time, which is what the Kyber
    implementation does. *)
-module type XOF_t(O : RO_t) = {
+
+module type XOF_t(O : ROpub) = {
    proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
    proc next_bytes() : W8.t Array168.t
 }.
@@ -1285,7 +1287,7 @@ module type XOF_t(O : RO_t) = {
 (* This is a concrete XOF that does not use the random oracle,
    and that matches the Kyber spec and the implementation *)
 
-module (XOF : XOF_t) (O : RO_t) = {
+module (XOF : XOF_t) (O : ROpub) = {
   var state : W64.t Array25.t
   proc init(rho : W8.t Array32.t, i j : W8.t) : unit = {
        var extseed : W8.t Array34.t;
@@ -1301,7 +1303,7 @@ module (XOF : XOF_t) (O : RO_t) = {
 }.
 
 
-module Parse(XOF : XOF_t, O : RO_t) = {
+module Parse(XOF : XOF_t, O : ROpub) = {
    proc sample() : poly = {
       var j, b168, bi, bi1, bi2, d1, d2,k;
       var aa : poly;
@@ -1398,7 +1400,7 @@ qed.
 
 
 
-module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : RO_t) : Scheme = {
+module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : ROpub) : Scheme = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
@@ -1556,14 +1558,14 @@ module KemG(KemHS: HSF_KEM.PseudoRF) = {
   }
 }.
 
-module type KEMHashes(O : RO_t) = {
+module type KEMHashes(O : ROpub) = {
   proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t
   proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t
   proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t 
   proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t
 }.
 
-module (KemH : KEMHashes) (RO : RO_t) = {
+module (KemH : KEMHashes) (RO : ROpub) = {
   proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t = {
          return SHA3_256_1184_32 (Array1184.init (fun k => if (k < 1152) then pk.`1.[k] else pk.`2.[k-1152]));
   }
@@ -1585,7 +1587,7 @@ module (KemH : KEMHashes) (RO : RO_t) = {
 
 import PRF_.
 module KyberKEM(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, 
-             KemHS : HSF_KEM.PseudoRF, KemH : KEMHashes, O : RO_t)  = {
+             KemHS : HSF_KEM.PseudoRF, KemH : KEMHashes, O : ROpub)  = {
 
    proc kg_derand(seed : W8.t Array32.t * W8.t Array32.t) : 
            pkey * (skey * pkey * W8.t Array32.t * W8.t Array32.t) = {
