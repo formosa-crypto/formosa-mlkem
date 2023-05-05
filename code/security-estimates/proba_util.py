@@ -64,15 +64,6 @@ def mod_centered(x, q):
         return a
     return a - q
 
-def worst_mod_switching_error(q,rq):
-    e = 0
-    for x in range(q):
-        y = mod_switch(x, q, rq)
-        z = mod_switch(y, rq, q)
-        d = abs(mod_centered(x - z, q))
-        if d > e:
-            e = d
-    return e
 
 def build_mod_switching_error_law(q, rq):
     """ Construct Error law: law of the difference introduced by switching from and back a uniform value mod q

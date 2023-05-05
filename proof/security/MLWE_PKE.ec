@@ -819,9 +819,7 @@ op noise_exp_part3 _A s e r e2 m =
 
 lemma parts_work _A s e r e1 e2 m :
   noise_exp _A s e r e1 e2 m =
-  noise_exp_part1 s e r e1 e2 &+ (ZR.([-]) (noise_exp_part2 _A s r e1)) &+ noise_exp_part3 _A s e r e2 m 
-by
-rewrite noise_exp_val /noise_exp_simpl /noise_exp_part1 /noise_exp_part2 /noise_exp_part3; smt(@ZR).
+  noise_exp_part1 s e r e1 e2 &+ (ZR.([-]) (noise_exp_part2 _A s r e1)) &+ noise_exp_part3 _A s e r e2 m by rewrite noise_exp_val /noise_exp_simpl /noise_exp_part1 /noise_exp_part2 /noise_exp_part3 /=; ring. 
 
 module CB(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.RO) = {
   module H = RO_H.Pub(O)
@@ -922,34 +920,104 @@ rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty).
 by auto => /> /#.
 qed.
 
-module CB2 = {
+(*
+  let u = m_transpose _A *^ r + e1 in
+  let cu = rnd_err_u u in
+    (s `<*>` cu).
+
+*)
+
+module CB2pre = {
   proc main(cu_bound : int) = {
-     var _A, r, s, e, e1, e2, n;
+     var _A, r, s, e1, n;
     _A <$ duni_matrix;
     r <$ dshort;
     s <$ dshort;
-    e <$ dshort;
     e1 <$ dshort;
-    e2 <$ dshort_R;
     n <- noise_exp_part2 _A s r e1;
     return !under_noise_bound n cu_bound;
   }
 }.
 
+module CB2 = {
+  proc main(cu_bound : int) = {
+     var s, u, cu, n;
+    s <$ dshort;
+    u <$ duni; 
+    cu <- rnd_err_u u;
+    n <- (s `<*>` cu);
+    return !under_noise_bound n cu_bound;
+  }
+}.
 
-lemma cb2 &m cu_bound: 
+
+lemma cb2pre &m cu_bound: 
   (forall (x : RO_H.in_t), is_lossless (RO_H.dout x)) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
         !under_noise_bound CB.n2 cu_bound] =
-  Pr[ CB2.main(cu_bound) @ &m : res].
+  Pr[ CB2pre.main(cu_bound) @ &m : res].
 move => dout_ll S_ll A_ll.
 byequiv => //; proc; inline *.
 wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LROpub))));  apply (S_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
-rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty). print SmtMap.
-by auto => />;smt(get_set_sameE).
+rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty). 
+by rnd{1};rnd;rnd{1};auto => />; smt(dshort_R_ll dshort_ll get_set_sameE).
 qed.
+
+module Bcb2 : MLWE_.Adv_T = {
+  var cu_bound : int
+  proc guess(_A : matrix, t : vector, uv : vector * R) : bool = {
+    var u,s,cu,n;
+    s <$ dshort;
+    u <- uv.`1; 
+    cu <- rnd_err_u u;
+    n <- (s `<*>` cu);
+    return !under_noise_bound n cu_bound;
+  }
+}.
+
+lemma cb2_mlwe_left &m cu_bound :
+  (glob Bcb2){m} = cu_bound =>
+  Pr[CB2pre.main(cu_bound) @ &m : res] =
+  Pr[MLWE(Bcb2).main(false) @ &m : res].
+proof.
+move => cub_val.
+byequiv => //; rewrite cub_val.
+proc; inline *. 
+wp. swap {2} 13 -10;wp;rnd{2};wp;rnd{2};wp;rnd{2};rnd{2};wp;rnd;rnd;rnd;rnd (fun _A => trmx _A);auto => />.
+move => *; split; 1: by move => *; rewrite trmxK. 
+move => *; split. 
++ move => *; rewrite !mu1_uni /=; 1,2: smt(duni_matrix_uni).
+  by rewrite !duni_matrix_fu /=.
+move => *; split; 1: by rewrite duni_matrix_fu. 
+move => *; split; 1: by move => *; rewrite trmxK. 
+by move => *; rewrite duni_ll /= => *.
+qed.
+
+lemma cb2_mlwe_right &m cu_bound :
+  (glob Bcb2){m} = cu_bound =>
+  Pr[CB2.main(cu_bound) @ &m : res] =
+  Pr[MLWE(Bcb2).main(true) @ &m : res].
+proof.
+move => cub_val.
+byequiv => //; rewrite cub_val.
+proc; inline *. 
+swap {2} 13 -12. 
+wp;rnd{2};wp;rnd{2};rnd{2};rnd;wp;rnd{2};rnd{2};rnd{2};rnd;auto => />.
+move => *; rewrite duni_matrix_ll /=.
+move => *;rewrite dshort_ll /=.
+by move => *; rewrite duni_ll.
+qed.
+
+
+(*
+  let t = _A *^ s + e in
+  let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
+  let cv = rnd_err_v v in
+  cv.
+
+*)
 
 module CB3(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.RO) = {
   module H = RO_H.Pub(O)
@@ -985,6 +1053,7 @@ qed.
 
 
 lemma correctness_split &m cu_bound cv_bound epsilon failprob1 failprob2 failprob3 :
+  (glob Bcb2){m} = cu_bound =>
   (forall (x : RO_H.in_t), is_lossless (RO_H.dout x)) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
@@ -998,13 +1067,18 @@ lemma correctness_split &m cu_bound cv_bound epsilon failprob1 failprob2 failpro
   Pr[ CB3(Sim,A,RO_H.LRO).main(cv_bound) @ &m : res] <= failprob3 =>
 
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
-  1%r - failprob1 - failprob2 - failprob3 - epsilon.
-move => dout_ll S_ll A_ll ind fp1 fp2 fp3.
+  1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
+      - failprob1 - failprob2 - failprob3 - epsilon.
+move => cb2_val dout_ll S_ll A_ll ind fp1 fp2 fp3.
 have := (correctness A S Sim &m epsilon  S_ll A_ll ind).
 rewrite -(cb1 &m cu_bound cv_bound dout_ll S_ll A_ll) in fp1.
-rewrite -(cb2 &m cu_bound dout_ll S_ll A_ll) in fp2.
+rewrite -(cb2_mlwe_right &m cu_bound cb2_val).
+rewrite -(cb2_mlwe_left &m cu_bound cb2_val).
 rewrite -(cb3 &m cv_bound) in fp3.
-by have := (correctness_split_aux &m cu_bound cv_bound failprob1 failprob2 failprob3 S_ll A_ll fp1 fp2 fp3) => /#.
+have := (correctness_split_aux &m cu_bound cv_bound failprob1 (`|Pr[CB2pre.main(cu_bound) @ &m : res] - Pr[CB2.main(cu_bound) @ &m : res] |  + failprob2) failprob3 S_ll A_ll fp1 _ fp3). 
+rewrite -(cb2pre &m cu_bound dout_ll S_ll A_ll).
+smt().
+smt().
 qed.
 
 (** OVER ESTIMATE THE LAST TERM **)
@@ -1030,6 +1104,7 @@ by auto => />; smt(get_set_sameE cv_bound_valid).
 qed.
 
 lemma correctness_max &m cu_bound epsilon failprob1 failprob2 :
+  (glob Bcb2){m} = cu_bound =>
   (forall (x : RO_H.in_t), is_lossless (RO_H.dout x)) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
@@ -1042,9 +1117,10 @@ lemma correctness_max &m cu_bound epsilon failprob1 failprob2 :
   Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
 
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
-  1%r - failprob1 - failprob2 -  epsilon.
-move => dout_ll S_ll A_ll ind fp1 fp2.
-have := (correctness_split &m cu_bound cv_bound_max epsilon  failprob1 failprob2 0%r dout_ll S_ll A_ll ind fp1 fp2 _).
+  1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
+      - failprob1 - failprob2  - epsilon.
+move => cb2_val dout_ll S_ll A_ll ind fp1 fp2.
+have := (correctness_split &m cu_bound cv_bound_max epsilon  failprob1 failprob2 0%r cb2_val dout_ll S_ll A_ll ind fp1 fp2 _).
 + by have := cb3_max &m; smt().
 by smt().
 qed.
@@ -1119,6 +1195,7 @@ section.
 declare module A <: CAdversaryRO {-RO_H.LRO,-RO_H.RO, -RO_H.FRO, -RO_SMP.LRO, -CB}.
 
 lemma correctness_max &m cu_bound failprob1 failprob2 :
+  (glob Bcb2){m} = cu_bound =>
   (forall (x : RO_H.in_t), is_lossless (RO_H.dout x)) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
@@ -1127,9 +1204,10 @@ lemma correctness_max &m cu_bound failprob1 failprob2 :
   Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
 
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
-  1%r - failprob1 - failprob2.
-move => dout_ll S_ll A_ll fp1 fp2.
-have := (correctness_max A S Sim &m cu_bound 0%r failprob1 failprob2 dout_ll S_ll A_ll _ fp1 fp2 ).
+  1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
+      - failprob1 - failprob2.
+move => cb2_val dout_ll S_ll A_ll fp1 fp2.
+have := (correctness_max A S Sim &m cu_bound 0%r failprob1 failprob2 cb2_val dout_ll S_ll A_ll _ fp1 fp2 ).
 move => trb D0; have -> : trb = (trb.`1,trb.`2) by smt().
 by have := (good_sim (trb.`1) (trb.`2) D0) => /#.
 by smt().
