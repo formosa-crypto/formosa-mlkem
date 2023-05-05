@@ -159,7 +159,8 @@ clone import MLWE_PKE as MLWEPKE with
   proof encode_noise
   proof good_decode
   proof cv_bound_valid
-  proof noise_commutes.
+  proof noise_commutes
+  proof noise_preserved.
 
 
 realize pk_encodeK.
@@ -238,7 +239,7 @@ by move: (compress_err_bound v.[i] 4 _ _) => //= /#.
 qed.
 
 realize noise_commutes.
-move => n n' b H H0.
+move => n n' maxn b H H0.
 move : H H0; rewrite /under_noise_bound.
 rewrite !allP.
 move => Hn Hnp i ib.
@@ -246,6 +247,19 @@ move : (Hn i ib).
 move : (Hnp i ib) => /=. 
 rewrite /as_sint /KPoly.(&+) /= map2E !initiE //= Zq.addE qE /= !StdOrder.IntOrder.ler_norml /= => Hni Hnpi.
 by smt().
+qed.
+
+realize noise_preserved.
+move => n maxn. 
+rewrite /under_noise_bound.
+rewrite !allP. 
+rewrite eq_iff; split => /=. 
+move => H i ib; move : (H i ib).
+rewrite /(&-) mapiE 1:/#.
+rewrite as_sintN /= /#. 
+move => H i ib; move : (H i ib).
+rewrite /(&-) mapiE 1:/#.
+rewrite as_sintN /= /#. 
 qed.
 
 (* We now specify the various components used by Kyber spec so that 
