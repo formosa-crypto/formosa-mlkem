@@ -4,29 +4,33 @@ from math import sqrt, log
 import sys
 from proba_util import *
 
+#  (e `<*>` r) &- (s `<*>` (e1 &- cu)) &+ e2 &+ cv.
+
+
+
 def p2_cyclotomic_final_error_distribution(ps):
     """ construct the final error distribution in our encryption scheme
     :param ps: parameter set (ParameterSet)
     """
-    chis = build_centered_binomial_law(ps.ks)           # LWE error law for the key
-    chie = build_centered_binomial_law(ps.ke_ct)        # LWE error law for the ciphertext
-    chie_pk = build_centered_binomial_law(ps.ke)
-    Rk = build_mod_switching_error_law(ps.q, ps.rqk)    # Rounding error public key
-    Rc = build_mod_switching_error_law(ps.q, ps.rqc)    # rounding error first ciphertext
-    chiRs = law_convolution(chis, Rk)                   # LWE+Rounding error key
-    chiRe = law_convolution(chie, Rc)                   # LWE + rounding error ciphertext
+    chis = build_centered_binomial_law(ps.ks)           # s, r
+    chie = build_centered_binomial_law(ps.ke_ct)        # e1, e2
+    chie_pk = build_centered_binomial_law(ps.ke)        # e
+    #Rk = build_mod_switching_error_law(ps.q, ps.rqk)   # 0
+    Rc = build_mod_switching_error_law(ps.q, ps.rqc)    # cu
+    #chiRs = law_convolution(chis, Rk)                  # LWE+Rounding error key
+    chiRe = law_convolution(chie, Rc)                   # e1 - cu
 
-    B1 = law_product(chie_pk, chiRs)                       # (LWE+Rounding error) * LWE (as in a E*S product)
-    B2 = law_product(chis, chiRe)
+    B1 = law_product(chie_pk, chis)                     # e <*> r (1 coefficient)
+    B2 = law_product(chis, chiRe)                       # s <*> (e1 - cu) (1 coefficient)
 
-    C1 = iter_law_convolution(B1, ps.m * ps.n)
-    C2 = iter_law_convolution(B2, ps.m * ps.n)
+    C1 = iter_law_convolution(B1, ps.m * ps.n)          # e <*> r
+    C2 = iter_law_convolution(B2, ps.m * ps.n)          # s <*> (e1 - cu) 
 
-    C=law_convolution(C1, C2)
+    C=law_convolution(C1, C2)                           # e <*> r + s <*> (e1 - cu) 
 
-    R2 = build_mod_switching_error_law(ps.q, ps.rq2)    # Rounding2 (in the ciphertext mask part)
-    F = law_convolution(R2, chie)                       # LWE+Rounding2 error
-    D = law_convolution(C, F)                           # Final error
+    R2 = build_mod_switching_error_law(ps.q, ps.rq2)    # cv
+    F = law_convolution(R2, chie)                       # e2 + cv
+    D = law_convolution(C, F)                           # full exp
     return D
 
 
@@ -34,3 +38,68 @@ def p2_cyclotomic_error_probability(ps):
     F = p2_cyclotomic_final_error_distribution(ps)
     proba = tail_probability(F, ps.q/4)
     return F, ps.n*proba
+
+# op noise_exp_part1 s e r e1 e2 = 
+#   ((e `<*>` r) &- (s `<*>` e1) &+ e2 ).
+
+def p2_cyclotomic_final_error_distribution1(ps):
+    """ construct the final error distribution in our encryption scheme
+    :param ps: parameter set (ParameterSet)
+    """
+    chis = build_centered_binomial_law(ps.ks)           # s, r
+    chie = build_centered_binomial_law(ps.ke_ct)        # e1, e2
+    chie_pk = build_centered_binomial_law(ps.ke)        # e
+
+    B1 = law_product(chie_pk, chis)          # e <*> r (1 coefficient)
+    B2 = law_product(chis, chie)             # s <*> e1 (1 coefficient)
+
+    C1 = iter_law_convolution(B1, ps.m * ps.n)       # e <*> r
+    C2 = iter_law_convolution(B2, ps.m * ps.n)        # s <*> e1
+
+    C=law_convolution(C1, C2)                        # e <*> r + s <*> e1
+
+    D = law_convolution(C, chie)              # Final error
+    return D
+
+
+def p2_cyclotomic_error_probability1(ps):
+    F = p2_cyclotomic_final_error_distribution1(ps)
+    proba = tail_probability(F, ps.q/4 - 404)
+    return F, ps.n*proba
+
+#op noise_exp_part2 _A s r e1 =
+#  let u = m_transpose _A *^ r + e1 in
+#  let cu = rnd_err_u u in
+#    (s `<*>` cu).
+
+def p2_cyclotomic_final_error_distribution2(ps):
+    """ construct the final error distribution in our encryption scheme
+    :param ps: parameter set (ParameterSet)
+    """
+    chis = build_centered_binomial_law(ps.ks)           # s
+    Rc = build_mod_switching_error_law(ps.q, ps.rqc)    # cu
+    B = law_product(chis, Rc)                   # s <*> cu (1 coeff)
+
+    C = iter_law_convolution(B, ps.m * ps.n)       # s <*> cu
+
+    return C
+
+def p2_cyclotomic_error_probability2(ps):
+    F = p2_cyclotomic_final_error_distribution2(ps)
+    proba = tail_probability(F, 300)
+    return F, ps.n*proba
+
+def p2_cyclotomic_final_error_distribution3(ps):
+    """ construct the final error distribution in our encryption scheme
+    :param ps: parameter set (ParameterSet)
+    """
+    R2 = build_mod_switching_error_law(ps.q, ps.rq2)    # cv
+    return R2
+
+
+def p2_cyclotomic_error_probability3(ps):
+    F = p2_cyclotomic_final_error_distribution3(ps)
+    proba = tail_probability(F, 104)
+    return F, ps.n*proba
+
+

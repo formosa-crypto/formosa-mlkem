@@ -83,7 +83,52 @@ op pm = pe_R^(kvec^2).
 op under_noise_bound (p : poly) (b : int) =
      all (fun cc => `| as_sint cc| <= b) p.
 
-op cv_bound : int = 104. (* this is the compress error bound for d = 4 *)
+
+lemma cv_bound_tight v m b : 
+  under_noise_bound (compress_poly_err 4 v) (b - 1) => 
+    under_noise_bound (compress_poly_err 4 (v &+ m_encode m)) b.
+proof. 
+rewrite /under_noise_bound.
+print all_map.
+rewrite !allP => H i ib /=; move : (H i ib); rewrite /(&+) !mapiE //= => HH.
+rewrite map2iE //= /m_encode /decompress_poly mapiE //=.
+have Henc : decompress 1 (sem_decode1 m).[i] = inFq ((q + 1) %/ 2) \/
+            decompress 1 (sem_decode1 m).[i] = inFq 0. 
++ have := sem_decode1_bnd m i ib; rewrite !sem_decode1_corr => Hb.
+  have -> : decompress 1 (decode1 m).[i] = 
+            decompress 1 (if (decode1 m).[i] = 1 then 1 else 0) by smt().
+  by rewrite -b_encode_sem /b_encode /trueval /falseval qE /= /#. 
+elim Henc; last by  move => -> /=; rewrite ZqRing.addr0 // /#.
+rewrite qE /= => ->.
+have : forall k,
+   k \in iota_ 0 3329 =>
+absZq (decompress_alt 4 (compress_alt 4 (inFq (k + 1665))) - (inFq (k + 1665)))%PolyR.BasePoly.Coeff <=
+absZq (decompress_alt 4 (compress_alt 4 (inFq k)) - inFq k)%PolyR.BasePoly.Coeff + 1; last first.
++ move => Hi; move : (Hi (asint v.[i])).
+  rewrite !compress_alt_compress // !decompress_alt_decompress // mem_iota /=. 
+  by smt(@Zq).
+
+rewrite /decompress_alt /compress_alt !qE /=.  
+
+have ? : forall k, k \in iota_ 0 3329 => inFq (((asint (inFq (k + 1665)) * 16 + 1665) * 80635 %/ 268435456 %% 16 * 3329 + 8) %/ 16) - inFq (k + 1665) = 
+    inFq (((((k + 1665) %% 3329 * 16 + 1665) * 80635 %/ 268435456 %% 16 * 3329 + 8) %/ 16) - (k + 1665)).
++ move => *; smt(@Zq).
+
+have ? :  forall k, k \in iota_ 0 3329 => 
+   inFq (((asint (inFq k) * 16 + 1665) * 80635 %/ 268435456 %% 16 * 3329 + 8) %/ 16) - inFq k = 
+   inFq ((((asint (inFq k) * 16 + 1665) * 80635 %/ 268435456 %% 16 * 3329 + 8) %/ 16) - k).
++ move => *; smt(@Zq).
+
+
+have ? : 
+  forall (k : int),
+  k \in iota_ 0 3329 =>
+  absZq ( inFq (((((k + 1665) %% 3329 * 16 + 1665) * 80635 %/ 268435456 %% 16 * 3329 + 8) %/ 16) - (k + 1665))) <= 
+  absZq (inFq ((((asint (inFq k) * 16 + 1665) * 80635 %/ 268435456 %% 16 * 3329 + 8) %/ 16) - k)) + 1; last by smt().
+
+rewrite -allP -JUtils.iotaredE /=; do split; rewrite /as_sint /= !inFqK /= !qE /= /#.
+qed.
+
 
 clone import MLWE_PKE as MLWEPKE with 
   theory MLWE_.MLWE_SMP.RO_SMP <- RO,
@@ -128,8 +173,7 @@ clone import MLWE_PKE as MLWEPKE with
   op rnd_err_v <- rnd_err_v,
   op rnd_err_u <- rnd_err_u,
   op under_noise_bound <- under_noise_bound,
-  op max_noise <- max_noise,
-  op cv_bound <- cv_bound
+  op max_noise <- max_noise
   proof MLWE_.dseed_ll by (apply srand_ll)
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
@@ -158,10 +202,9 @@ clone import MLWE_PKE as MLWEPKE with
   proof sk_encodeK
   proof encode_noise
   proof good_decode
-  proof cv_bound_valid
   proof noise_commutes
-  proof noise_preserved.
-
+  proof noise_preserved
+  proof noise_adv_impact.
 
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
@@ -230,14 +273,6 @@ have: compress 1 (inFq 1665 + n.[x]) <> 0.
 by rewrite /compress /=; smt(ltz_pmod modz_ge0).
 qed.
 
-realize cv_bound_valid.
-move=> A s e r e2 m ????? t v.
-rewrite /under_noise_bound /rnd_err_v /compress_poly_err /cv_bound.
-rewrite allP /compress_err => i Hi /=.
-rewrite mapiE //= -Bq4E.
-by move: (compress_err_bound v.[i] 4 _ _) => //= /#.
-qed.
-
 realize noise_commutes.
 move => n n' maxn b H H0.
 move : H H0; rewrite /under_noise_bound.
@@ -261,6 +296,9 @@ move => H i ib; move : (H i ib).
 rewrite /(&-) mapiE 1:/#.
 rewrite as_sintN /= /#. 
 qed.
+
+realize noise_adv_impact by smt(cv_bound_tight).
+ 
 
 (* We now specify the various components used by Kyber spec so that 
    we can relate it to the abstract construction. The differences

@@ -1,5 +1,5 @@
 from math import log
-from Kyber_failure import p2_cyclotomic_error_probability
+from Kyber_failure import p2_cyclotomic_error_probability1, p2_cyclotomic_error_probability2, p2_cyclotomic_error_probability3
 from MLWE_security import MLWE_summarize_attacks, MLWEParameterSet
 from proba_util import build_mod_switching_error_law
 
@@ -44,8 +44,12 @@ def communication_costs(ps):
 
 def summarize(ps):
     print ("params: ", ps.__dict__)
-    print ("com costs: ", communication_costs(ps))
-    F, f = p2_cyclotomic_error_probability(ps)
+    #print ("com costs: ", communication_costs(ps))
+    F, f = p2_cyclotomic_error_probability1(ps)
+    print ("failure: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    F, f = p2_cyclotomic_error_probability2(ps)
+    print ("failure: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    F, f = p2_cyclotomic_error_probability3(ps)
     print ("failure: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
 
 
@@ -59,20 +63,20 @@ if __name__ == "__main__":
     print ("Kyber512 (light):")
     print ("--------------------")
     print ("security:")
-    MLWE_summarize_attacks(Kyber_to_MLWE(ps_light))
+    #MLWE_summarize_attacks(Kyber_to_MLWE(ps_light))
     summarize(ps_light)
     print ()
 
     print ("Kyber768 (recommended):")
     print ("--------------------")
     print ("security:")
-    MLWE_summarize_attacks(Kyber_to_MLWE(ps_recommended))
+    #MLWE_summarize_attacks(Kyber_to_MLWE(ps_recommended))
     summarize(ps_recommended)
     print ()
 
     print ("Kyber1024 (paranoid):")
     print ("--------------------")
     print ("security:")
-    MLWE_summarize_attacks(Kyber_to_MLWE(ps_paranoid))
+    #MLWE_summarize_attacks(Kyber_to_MLWE(ps_paranoid))
     summarize(ps_paranoid)
     print ()
