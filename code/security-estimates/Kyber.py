@@ -1,5 +1,11 @@
 from math import log
-from Kyber_failure import p2_cyclotomic_error_probability1, p2_cyclotomic_error_probability2, p2_cyclotomic_error_probability3
+from Kyber_failure import p2_cyclotomic_error_probability, \
+                          p2_cyclotomic_error_probability1, \
+                          p2_cyclotomic_error_probability2, \
+                          p2_cyclotomic_error_probability3,\
+                          p2_cyclotomic_error_probability4,\
+                          p2_cyclotomic_error_probability5
+
 from MLWE_security import MLWE_summarize_attacks, MLWEParameterSet
 from proba_util import build_mod_switching_error_law
 
@@ -42,15 +48,22 @@ def communication_costs(ps):
     return (int(round(A_space))/8., int(round(B_space))/8.)
 
 
-def summarize(ps):
+def summarize(ps, cu_bound, cv_bound):
     print ("params: ", ps.__dict__)
-    #print ("com costs: ", communication_costs(ps))
-    F, f = p2_cyclotomic_error_probability1(ps)
-    print ("failure: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
-    F, f = p2_cyclotomic_error_probability2(ps)
-    print ("failure: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
-    F, f = p2_cyclotomic_error_probability3(ps)
-    print ("failure: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    F, f = p2_cyclotomic_error_probability(ps)
+    print ("failure Leo: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    print ("cu_bound: ", str(cu_bound))
+    print ("cv_bound: ", str(cv_bound))
+    F, f = p2_cyclotomic_error_probability1(ps, cu_bound, cv_bound)
+    print ("failure part1: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    F, f = p2_cyclotomic_error_probability2(ps, cu_bound)
+    print ("failure part2: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    F, f = p2_cyclotomic_error_probability3(ps, cv_bound)
+    print ("failure part3: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    F, f = p2_cyclotomic_error_probability4(ps, cu_bound, cv_bound)
+    print ("failure part4: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
+    F, f = p2_cyclotomic_error_probability5(ps, cu_bound)
+    print ("failure part5: %.1f = 2^%.1f"%(f, log(f + 2.**(-300))/log(2)))
 
 
 if __name__ == "__main__":
@@ -59,24 +72,21 @@ if __name__ == "__main__":
     ps_recommended = KyberParameterSet(256, 3, 2, 2, 3329, 2**12, 2**10, 2**4)
     ps_paranoid = KyberParameterSet(256, 4, 2, 2, 3329, 2**12, 2**11, 2**5)
 
+    cu_bound = 424
+    cv_bound = 104
+
     # Analyses
     print ("Kyber512 (light):")
     print ("--------------------")
-    print ("security:")
-    #MLWE_summarize_attacks(Kyber_to_MLWE(ps_light))
-    summarize(ps_light)
+    summarize(ps_light, cu_bound, cv_bound)
     print ()
 
     print ("Kyber768 (recommended):")
     print ("--------------------")
-    print ("security:")
-    #MLWE_summarize_attacks(Kyber_to_MLWE(ps_recommended))
-    summarize(ps_recommended)
+    summarize(ps_recommended, cu_bound, cv_bound)
     print ()
 
     print ("Kyber1024 (paranoid):")
     print ("--------------------")
-    print ("security:")
-    #MLWE_summarize_attacks(Kyber_to_MLWE(ps_paranoid))
-    summarize(ps_paranoid)
+    summarize(ps_paranoid, cu_bound, cv_bound)
     print ()
