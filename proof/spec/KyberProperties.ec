@@ -83,7 +83,7 @@ op pm = pe_R^(kvec^2).
 op under_noise_bound (p : poly) (b : int) =
      all (fun cc => `| as_sint cc| <= b) p.
 
-op cv_bound : int = 104. (* this is the compress error bound for d = 4 *)
+op cv_bound_max : int = 104. (* this is the compress error bound for d = 4 *)
 
 clone import MLWE_PKE as MLWEPKE with 
   theory MLWE_.MLWE_SMP.RO_SMP <- RO,
@@ -129,7 +129,7 @@ clone import MLWE_PKE as MLWEPKE with
   op rnd_err_u <- rnd_err_u,
   op under_noise_bound <- under_noise_bound,
   op max_noise <- max_noise,
-  op cv_bound <- cv_bound
+  op cv_bound_max <- cv_bound_max
   proof MLWE_.dseed_ll by (apply srand_ll)
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
@@ -159,7 +159,8 @@ clone import MLWE_PKE as MLWEPKE with
   proof encode_noise
   proof good_decode
   proof cv_bound_valid
-  proof noise_commutes.
+  proof noise_commutes
+  proof noise_preserved.
 
 
 realize pk_encodeK.
@@ -238,7 +239,7 @@ by move: (compress_err_bound v.[i] 4 _ _) => //= /#.
 qed.
 
 realize noise_commutes.
-move => n n' b H H0.
+move => n n' maxn b H H0.
 move : H H0; rewrite /under_noise_bound.
 rewrite !allP.
 move => Hn Hnp i ib.
@@ -246,6 +247,19 @@ move : (Hn i ib).
 move : (Hnp i ib) => /=. 
 rewrite /as_sint /KPoly.(&+) /= map2E !initiE //= Zq.addE qE /= !StdOrder.IntOrder.ler_norml /= => Hni Hnpi.
 by smt().
+qed.
+
+realize noise_preserved.
+move => n maxn. 
+rewrite /under_noise_bound.
+rewrite !allP. 
+rewrite eq_iff; split => /=. 
+move => H i ib; move : (H i ib).
+rewrite /(&-) mapiE 1:/#.
+rewrite as_sintN /= /#. 
+move => H i ib; move : (H i ib).
+rewrite /(&-) mapiE 1:/#.
+rewrite as_sintN /= /#. 
 qed.
 
 (* We now specify the various components used by Kyber spec so that 
@@ -1413,13 +1427,14 @@ end section.
 
 section.
 
-declare module A <: CAdversaryRO {-IdealPRF1.RF,-IdealHSF.RF,-LRO,-RO_H.LRO}.
-declare module S <: Sampler {-IdealPRF1.RF,-IdealHSF.RF,-A,-LRO,-RO_H.LRO}.
-declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S, -A,-LRO,-RO_H.LRO}.
+declare module A <: CAdversaryRO {-IdealPRF1.RF,-IdealHSF.RF,-LRO,-RO_H.LRO, -CB}.
+declare module S <: Sampler {-IdealPRF1.RF,-IdealHSF.RF,-A,-LRO,-RO_H.LRO, -CB}.
+declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S, -A,-LRO,-RO_H.LRO, -CB}.
 
 
-lemma correctness_any_sampler &m epsilon_hack fail_prob epsilon  :
-  0%r <= epsilon => 
+lemma correctness_any_sampler &m cu_bound failprob1 failprob2 epsilon  :
+  (glob Bcb2){m} = cu_bound =>
+
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: ROpub), islossless O.h => islossless A(O).find) =>
 
@@ -1427,21 +1442,16 @@ lemma correctness_any_sampler &m epsilon_hack fail_prob epsilon  :
      `| Pr[ WIndfReal(D0,NTTSampler(S),LRO).main(trb) @ &m : res] - 
          Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(trb) @ &m : res] | <= epsilon) =>
 
-(* This jump is assumed to introduce no slack in the
-   Kyber proposal. 
-   We need to figure out how to bound it. *)
-  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack =>
-(* The following failure probability can be bounded as
-in the Python script for Kyber *)   
-  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
+  Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
+  Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
+
   Pr[ KyberPKE.CorrectnessAdvROM(KyberSI(S),A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob - epsilon_hack - epsilon.
-move => eps_ge0 Sim_ll A_ll ind eh nb.
+  1%r - `|Pr[MLWE(Bcb2).main(false) @ &m : res] -
+    Pr[MLWE(Bcb2).main(true) @ &m : res]| - failprob1 - failprob2 - epsilon.
+move => initmem Sim_ll A_ll ind fp1 fp2.
 have <- : 
 Pr[PKE_.CGameROM(PKE_.CorrectnessAdv, MLWE_PKE(NTTSampler(S,LROpub)), A,LRO).main() @ &m : res] = 
-Pr[CorrectnessAdvROM(KyberSI(S), A, LRO).main() @ &m : res]; 
-   last by apply (correctness_bound A (NTTSampler(S)) Sim &m epsilon_hack fail_prob epsilon eps_ge0 Sim_ll A_ll ind eh nb).
+Pr[CorrectnessAdvROM(KyberSI(S), A, LRO).main() @ &m : res]; last by   apply (correctness_max A (NTTSampler(S)) Sim &m cu_bound epsilon failprob1 failprob2 initmem Sim_ll A_ll ind fp1 fp2).
 byequiv => //.
 proc.
 inline {1} 2; inline {2} 2.
@@ -1684,13 +1694,13 @@ section.
 
 
 
-declare module A <: CAdversaryRO {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -LRO,-RO_H.LRO}.
-declare module XOF <: XOF_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -A,-LRO,-RO_H.LRO}.
-declare module Sim <: Simulator_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -XOF, -A,-LRO,-RO_H.LRO}.
+declare module A <: CAdversaryRO {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -LRO,-RO_H.LRO,-CB}.
+declare module XOF <: XOF_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -A,-LRO,-RO_H.LRO,-CB}.
+declare module Sim <: Simulator_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -XOF, -A,-LRO,-RO_H.LRO,-CB}.
 
 
-lemma correctness_spec &m epsilon_hack fail_prob epsilon :
-  0%r <= epsilon =>
+lemma correctness_spec &m cu_bound failprob1 failprob2 epsilon  :
+  (glob Bcb2){m} = cu_bound =>
 
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: ROpub), islossless O.h => islossless A(O).find) =>
@@ -1699,23 +1709,19 @@ lemma correctness_spec &m epsilon_hack fail_prob epsilon :
     `| Pr[ WIndfReal(D0,NTTSampler(KSampler(XOF)),LRO).main(trb) @ &m : res] -
        Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(trb) @ &m : res] | <= epsilon) =>
 
-(* This jump is assumed to introduce no slack in the
-   Kyber proposal. 
-   We need to figure out how to bound it. *)
-  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack =>
-(* The following failure probability can be bounded as
-in the Python script for Kyber *)   
-  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
+  Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
+  Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
+
   Pr[ KyberPKE.CorrectnessAdvROM(Kyber(KHS,XOF,KPRF),A,LRO).main() @ &m : res]  >=
-  1%r - fail_prob - epsilon_hack - epsilon -
+  1%r - `|Pr[MLWE(Bcb2).main(false) @ &m : res] -
+          Pr[MLWE(Bcb2).main(true) @ &m : res]| - failprob1 - failprob2 - epsilon -
   (`|Pr [ HS_DEFS.IND(HSF.PRF,DC_ES(KSampler(XOF),LRO,A)).main() @ &m : res ] - 
   Pr [ HS_DEFS.IND(IdealHSF.RF,DC_ES(KSampler(XOF),LRO,A)).main() @ &m : res ]|) -
   (`|Pr [ PRF_DEFS.IND(PRF_.PRF,DC_PRF1(KSampler(XOF),LRO,A)).main() @ &m : res ] - 
   Pr [ PRF_DEFS.IND(IdealPRF1.RF,DC_PRF1(KSampler(XOF),LRO,A)).main() @ &m : res ]|) -
   (`|Pr [ PRF_DEFS.IND(PRF_.PRF,DC_PRF2(KSampler(XOF),LRO,A)).main() @ &m : res ] - 
   Pr [ PRF_DEFS.IND(IdealPRF2.RF,DC_PRF2(KSampler(XOF),LRO,A)).main() @ &m : res ]|).
-move => eps_ge0 Sim_ll A_ll ind eh fp.
+move => meminit Sim_ll A_ll ind fp1 fp2.
 have <-: Pr[CorrectnessAdvROM(KyberS(KHS, KSampler(XOF), KNS,KPRF,KPRF), A, LRO).main() @ &m : res] = 
          Pr[CorrectnessAdvROM(Kyber(KHS, XOF, KPRF), A, LRO).main() @ &m : res].
 + byequiv => //.
@@ -1727,7 +1733,7 @@ have <-: Pr[CorrectnessAdvROM(KyberS(KHS, KSampler(XOF), KNS,KPRF,KPRF), A, LRO)
   call (kg_sampler_kg LROpub XOF).
   by inline *; auto.
 
-move : (correctness_any_sampler A (KSampler(XOF)) Sim &m epsilon_hack fail_prob epsilon eps_ge0 Sim_ll A_ll ind eh fp).
+move : (correctness_any_sampler A (KSampler(XOF)) Sim &m cu_bound failprob1 failprob2 epsilon meminit Sim_ll A_ll ind fp1 fp2).
 
 have <- := (ESHopC LRO (KSampler(XOF)) A).
 have <- := (PRFHop1C LRO (KSampler(XOF)) A).

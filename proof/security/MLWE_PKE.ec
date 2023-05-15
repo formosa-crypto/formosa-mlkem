@@ -716,8 +716,7 @@ module (D(A : CAdversaryRO) : Distinguisher_t) (S : PSampler, H : RO_SMP.ROpub) 
    }
 }.
 
-lemma correctness &m epsilon :
-  0%r <= epsilon =>
+lemma correctness &m epsilon:
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
@@ -727,7 +726,7 @@ lemma correctness &m epsilon :
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
   1%r - Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : res] - epsilon.
 proof.
-move => eps_ge0 Sim_ll A_ll HIND.
+move => Sim_ll A_ll HIND.
 have -> : 1%r - Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : res] =
    Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : !res].
 rewrite Pr[mu_not]; congr => //. 
@@ -794,9 +793,71 @@ qed.
 
 end section.
 
-(* Now we shift things to make the upper bound computable as 
-   based on a max over all messages. *)
-op cv_bound : int.
+axiom noise_commutes n n' maxn (b : int) : 
+  under_noise_bound n' b =>
+  under_noise_bound n (maxn - b) =>
+  under_noise_bound (n &+ n') maxn.
+
+axiom noise_preserved n maxn :
+  under_noise_bound n maxn = 
+  under_noise_bound (ZR.([-]) n) maxn.
+
+op noise_exp_part1 s e r e1 e2 = 
+  ((e `<*>` r) &- (s `<*>` e1) &+ e2 ).
+
+op noise_exp_part2 _A s r e1 =
+  let u = m_transpose _A *^ r + e1 in
+  let cu = rnd_err_u u in
+    (s `<*>` cu).
+
+op noise_exp_part3 _A s e r e2 m =
+  let t = _A *^ s + e in
+  let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
+  let cv = rnd_err_v v in
+  cv.
+
+
+lemma parts_work _A s e r e1 e2 m :
+  noise_exp _A s e r e1 e2 m =
+  noise_exp_part1 s e r e1 e2 &+ (ZR.([-]) (noise_exp_part2 _A s r e1)) &+ noise_exp_part3 _A s e r e2 m by rewrite noise_exp_val /noise_exp_simpl /noise_exp_part1 /noise_exp_part2 /noise_exp_part3 /=; ring. 
+
+module CB(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.RO) = {
+  module H = RO_H.Pub(O)
+
+  var s : vector
+  var e : vector
+  var _A : matrix
+  var r : vector
+  var e1 : vector
+  var e2 : R
+  var n1 : R
+  var n2 : R
+  var n3 : R
+  var u : vector
+  var cu : vector
+  var m : plaintext
+
+
+  proc main() = {
+    var sd;
+    O.init();
+    sd <$ dseed;
+    _A <@ H.h(sd);
+    r <$ dshort;
+    s <$ dshort;
+    e <$ dshort;
+    e1 <$ dshort;
+    e2 <$ dshort_R;
+    m <@ A(Sim(H)).find(pk_encode (_A *^ s + e,sd),sk_encode s);
+    n1 <- noise_exp_part1 s e r e1 e2;
+    n2 <- noise_exp_part2 _A s r e1;
+    n3 <- noise_exp_part3 _A s e r e2 m;
+  }
+}.
+
+(** OVER ESTIMATE THE LAST TERM **)
+
+op cv_bound_max : int.
 axiom cv_bound_valid _A s e r e2 m :
   s \in dshort =>
   e \in dshort =>
@@ -805,127 +866,262 @@ axiom cv_bound_valid _A s e r e2 m :
   e2 \in dshort_R =>
   let t = _A *^ s + e in
   let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
-  under_noise_bound (rnd_err_v v) cv_bound.
+  under_noise_bound (rnd_err_v v) cv_bound_max.
 
-axiom noise_commutes n n' (b : int) : 
-  under_noise_bound n' b =>
-  under_noise_bound n (max_noise - b) =>
-  under_noise_bound (n &+ n') max_noise.
 
-op noise_exp_part_simpl cu s e r e1 e2 = 
-  ((e `<*>` r) &- (s `<*>` e1) &- (s `<*>` cu) &+ e2 ).
+section.
 
-op noise_exp_part _A s e r e1 e2 = 
-  let u = m_transpose _A *^ r + e1 in
-  let cu = rnd_err_u u in 
-  noise_exp_part_simpl cu s e r e1 e2.
+declare module A <: CAdversaryRO {-LRO,-RO, -RO_H.RO, -CB}.
+declare module S <: Sampler {-A,-LRO,-RO, -RO_H.RO, -CB}.
+declare module Sim <: Simulator_t {-S, -A,-LRO,-RO, -RO_H.RO, -CB}.
 
-module CorrectnessNoiseApprox = {
-  proc main() = {
-    var s,e,_A,r,e1,e2,n,u,cu;
-    _A <$ duni_matrix;
+lemma correctness_split_aux &m cu_bound cv_bound failprob1 failprob2 failprob3:
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
+  Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
+        !under_noise_bound CB.n1 (max_noise - cu_bound - cv_bound)] <= failprob1 =>
+  Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
+        !under_noise_bound CB.n2 (cu_bound)] <= failprob2 =>
+  Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
+        !under_noise_bound CB.n3 (cv_bound)] <= failprob3 =>
+
+  Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : res] <=
+       failprob1 + failprob2 + failprob3.
+proof.
+move => Sim_ll A_ll bd1 bd2 bd3.
+have  : Pr[CorrectnessAdvNoise(Sim, A, RO_H.LRO).main() @ &m : res] <=
+  Pr[CB(Sim, A, RO_H.LRO).main() @ &m : 
+        ! under_noise_bound CB.n1 (max_noise - cu_bound - cv_bound) \/
+        ! under_noise_bound CB.n2 cu_bound \/
+        ! under_noise_bound CB.n3 cv_bound ]; last by rewrite Pr[mu_or] Pr[mu_or];smt(mu_bounded).
+byequiv => //.
+proc; inline *.
+rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty).
+rcondt{2}5; 1: by move => *; auto => />;smt(mem_empty).
+wp;call(_: ={glob RO_H.RO, glob Sim});1: by sim. 
+auto => /> sd _ _A _ r _ s _ e _ e1 _ e2 _ m.
+by smt(parts_work noise_commutes noise_preserved).
+qed.
+
+(*******)
+
+module CB1 = {
+
+  proc main(cu_bound cv_bound : int) = {
+    var r,s,e,e1,e2,n;
     r <$ dshort;
     s <$ dshort;
     e <$ dshort;
     e1 <$ dshort;
     e2 <$ dshort_R;
-    u <- m_transpose _A *^ r + e1;
-    cu <- rnd_err_u u;
-    n <- noise_exp_part_simpl cu s e r e1 e2;
-    return (!under_noise_bound n (max_noise - cv_bound));
+    n <- noise_exp_part1 s e r e1 e2;
+    return !under_noise_bound n (max_noise - cu_bound - cv_bound);
   }
 }.
 
-section.
-
-declare module A <: CAdversaryRO {-LRO,-RO, -RO_H.RO}.
-declare module S <: Sampler {-A,-LRO,-RO, -RO_H.RO}.
-declare module Sim <: Simulator_t {-S, -A,-LRO,-RO, -RO_H.RO}.
-
-lemma correctness_slack &m :
+lemma cb1 &m cu_bound cv_bound : 
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
-  Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : res]<=
-  Pr[ CorrectnessNoiseApprox.main() @ &m : res].
-proof.
-move => Sim_ll A_ll.
-byequiv => //.
-proc.
-seq 8 6 : (#pre /\ ={s,e,_A,r,e1,e2} /\
-            s{2} \in dshort /\
-            e{2} \in dshort /\
-           _A{2} \in duni_matrix /\
-           r{2} \in dshort /\
-           e2{2} \in dshort_R ).
-+ inline *; auto => />; smt(get_setE mem_empty).
-wp;call {1} (_: true ==> true). 
-+ by apply (A_ll (Sim(RO_H.LROpub))); apply (Sim_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll).
-by skip;auto => />; smt (noise_exp_val noise_commutes cv_bound_valid).
+  Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
+        !under_noise_bound CB.n1 (max_noise - cu_bound - cv_bound)] =
+  Pr[ CB1.main(cu_bound,cv_bound) @ &m : res].
+move => S_ll A_ll.
+byequiv => //; proc; inline *.
+wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LROpub))));  apply (S_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
+rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty).
+by auto => />;smt(duni_matrix_ll).
 qed.
 
-lemma correctness_approx &m epsilon :
-  0%r <= epsilon =>
+(*
+  let u = m_transpose _A *^ r + e1 in
+  let cu = rnd_err_u u in
+    (s `<*>` cu).
+
+*)
+
+module CB2pre = {
+  proc main(cu_bound : int) = {
+     var _A, r, s, e1, n;
+    _A <$ duni_matrix;
+    r <$ dshort;
+    s <$ dshort;
+    e1 <$ dshort;
+    n <- noise_exp_part2 _A s r e1;
+    return !under_noise_bound n cu_bound;
+  }
+}.
+
+module CB2 = {
+  proc main(cu_bound : int) = {
+     var s, u, cu, n;
+    s <$ dshort;
+    u <$ duni; 
+    cu <- rnd_err_u u;
+    n <- (s `<*>` cu);
+    return !under_noise_bound n cu_bound;
+  }
+}.
+
+
+lemma cb2pre &m cu_bound: 
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
+  Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
+        !under_noise_bound CB.n2 cu_bound] =
+  Pr[ CB2pre.main(cu_bound) @ &m : res].
+move => S_ll A_ll.
+byequiv => //; proc; inline *.
+wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LROpub))));  apply (S_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
+rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty). 
+by rnd{1};rnd;rnd{1};auto => />; smt(dshort_R_ll dshort_ll get_set_sameE).
+qed.
+
+module Bcb2 : MLWE_.Adv_T = {
+  var cu_bound : int
+  proc guess(_A : matrix, t : vector, uv : vector * R) : bool = {
+    var u,s,cu,n;
+    s <$ dshort;
+    u <- uv.`1; 
+    cu <- rnd_err_u u;
+    n <- (s `<*>` cu);
+    return !under_noise_bound n cu_bound;
+  }
+}.
+
+lemma cb2_mlwe_left &m cu_bound :
+  (glob Bcb2){m} = cu_bound =>
+  Pr[CB2pre.main(cu_bound) @ &m : res] =
+  Pr[MLWE(Bcb2).main(false) @ &m : res].
+proof.
+move => cub_val.
+byequiv => //; rewrite cub_val.
+proc; inline *. 
+wp. swap {2} 13 -10;wp;rnd{2};wp;rnd{2};wp;rnd{2};rnd{2};wp;rnd;rnd;rnd;rnd (fun _A => trmx _A);auto => />.
+move => *; split; 1: by move => *; rewrite trmxK. 
+move => *; split. 
++ move => *; rewrite !mu1_uni /=; 1,2: smt(duni_matrix_uni).
+  by rewrite !duni_matrix_fu /=.
+move => *; split; 1: by rewrite duni_matrix_fu. 
+move => *; split; 1: by move => *; rewrite trmxK. 
+by move => *; rewrite duni_ll /= => *.
+qed.
+
+lemma cb2_mlwe_right &m cu_bound :
+  (glob Bcb2){m} = cu_bound =>
+  Pr[CB2.main(cu_bound) @ &m : res] =
+  Pr[MLWE(Bcb2).main(true) @ &m : res].
+proof.
+move => cub_val.
+byequiv => //; rewrite cub_val.
+proc; inline *. 
+swap {2} 13 -12. 
+wp;rnd{2};wp;rnd{2};rnd{2};rnd;wp;rnd{2};rnd{2};rnd{2};rnd;auto => />.
+move => *; rewrite duni_matrix_ll /=.
+move => *;rewrite dshort_ll /=.
+by move => *; rewrite duni_ll.
+qed.
+
+
+(*
+  let t = _A *^ s + e in
+  let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
+  let cv = rnd_err_v v in
+  cv.
+
+*)
+
+module CB3(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.RO) = {
+  module H = RO_H.Pub(O)
+
+  proc main(cv_bound : int) = {
+    var sd,_A,r,s,e,e1,e2,m,n;
+    O.init();
+    sd <$ dseed;
+    _A <@ H.h(sd);
+    r <$ dshort;
+    s <$ dshort;
+    e <$ dshort;
+    e1 <$ dshort;
+    e2 <$ dshort_R;
+    m <@ A(Sim(H)).find(pk_encode (_A *^ s + e,sd),sk_encode s);
+    n <- noise_exp_part3 _A s e r e2 m;
+    return !under_noise_bound n cv_bound;
+  }
+}.
+
+lemma cb3 &m cv_bound : 
+  Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
+        !under_noise_bound CB.n3 cv_bound] =
+  Pr[ CB3(Sim,A,RO_H.LRO).main(cv_bound) @ &m : res].
+byequiv => //; proc; inline *.
+wp;call(_: ={glob RO_H.RO, glob Sim}); 1: by sim.
+rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty). 
+rcondt{2}5; 1: by move => *; auto => />;smt(mem_empty). 
+by auto => />;smt(get_set_sameE).
+qed.
+
+(*******)
+
+
+lemma correctness_split &m cu_bound cv_bound epsilon failprob1 failprob2 failprob3 :
+  (glob Bcb2){m} = cu_bound =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
   (forall trb (D0 <: Distinguisher_t {-S,-LRO,-RO,-RO_H.LRO,-RO_H.RO,  -Sim}),
      `| Pr[ WIndfReal(D0,S,RO_SMP.LRO).main(trb) @ &m : res] - 
         Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(trb) @ &m : res] | <= epsilon) =>
+
+  Pr[ CB1.main(cu_bound, cv_bound) @ &m : res] <= failprob1 =>
+  Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
+  Pr[ CB3(Sim,A,RO_H.LRO).main(cv_bound) @ &m : res] <= failprob3 =>
+
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
-  1%r - Pr[ CorrectnessNoiseApprox.main() @ &m : res] - epsilon.
-move => eps_ge0 S_ll A_ll ind.
-have := (correctness A S Sim &m epsilon eps_ge0  S_ll A_ll ind).
-by have := (correctness_slack &m S_ll A_ll) => /#.
+  1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
+      - failprob1 - failprob2 - failprob3 - epsilon.
+move => meminit S_ll A_ll ind fp1 fp2 fp3.
+have := (correctness A S Sim &m epsilon  S_ll A_ll ind).
+rewrite -(cb1 &m cu_bound cv_bound S_ll A_ll) in fp1.
+rewrite -(cb2_mlwe_right &m cu_bound meminit).
+rewrite -(cb2_mlwe_left &m cu_bound meminit).
+rewrite -(cb3 &m cv_bound) in fp3.
+have := (correctness_split_aux &m cu_bound cv_bound failprob1 (`|Pr[CB2pre.main(cu_bound) @ &m : res] - Pr[CB2.main(cu_bound) @ &m : res] |  + failprob2) failprob3 S_ll A_ll fp1 _ fp3). 
+rewrite -(cb2pre &m cu_bound S_ll A_ll).
+smt().
+smt().
 qed.
 
+lemma cb3_max &m : 
+  Pr[ CB3(Sim,A,RO_H.LRO).main(cv_bound_max) @ &m : res] = 0%r.
+byphoare (_: cv_bound = cv_bound_max ==> res) => //.
+hoare; proc; inline *.
+wp;call(_: true); 1: by auto.
+rcondt 5; 1: by move => *; auto => />;smt(mem_empty). 
+by auto => />; smt(get_set_sameE cv_bound_valid).
+qed.
 
-(* Finally we just need to compute a concrete probability *)
-(* Which we will bound in simplified form *)
-
-
-(* We will jump to this game where instead of the real
-   distribution of u and r, we use an idealized one where
-   they are independent. *)
-module CorrectnessBound = {
-  proc main() = {
-    var s,e,u,r,e1,e2,n,cu;
-    s <$ dshort;
-    e <$ dshort;
-    u <$ duni;
-    r <$ dshort;
-    e1 <$ dshort;
-    e2 <$ dshort_R;
-    cu <- rnd_err_u u;
-    n <- noise_exp_part_simpl cu s e r e1 e2;
-    return (!under_noise_bound n (max_noise - cv_bound));
-  }
-}.
-
-lemma correctness_bound &m epsilon_hack fail_prob epsilon :
-  0%r <= epsilon =>
+lemma correctness_max &m cu_bound epsilon failprob1 failprob2 :
+  (glob Bcb2){m} = cu_bound =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
   (forall trb (D0 <: Distinguisher_t {-S,-LRO,-RO,-RO_H.LRO,-RO_H.RO,  -Sim}),
-     `| Pr[ WIndfReal(D0,S,RO_SMP.LRO).main(trb) @ &m : res] -
+     `| Pr[ WIndfReal(D0,S,RO_SMP.LRO).main(trb) @ &m : res] - 
         Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(trb) @ &m : res] | <= epsilon) =>
-(* This jump is assumed to introduce no slack in the
-   Kyber proposal. 
-   We need to figure out how to bound it. *)
-  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack =>
-(* The following failure probability can be bounded as
-in the Python script for Kyber *)   
-  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-  Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res] >=
-  1%r - fail_prob - epsilon_hack - epsilon.
-move => eps_ge0 S_ll A_ll ind fail_probability correctness_hack. 
-have := correctness_approx &m epsilon eps_ge0 S_ll A_ll ind. 
+
+  Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
+  Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
+
+  Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
+  1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
+      - failprob1 - failprob2  - epsilon.
+move => meminit S_ll A_ll ind fp1 fp2.
+have := (correctness_split &m cu_bound cv_bound_max epsilon  failprob1 failprob2 0%r meminit S_ll A_ll ind fp1 fp2 _).
++ by have := cb3_max &m; smt().
 by smt().
 qed.
 
 end section.
-
 end MLWE_PKE.
 
 (* Sanity check to see if indiff instantiation works for trivial simulator 
@@ -992,30 +1188,27 @@ end section.
 
 section.
 
-declare module A <: CAdversaryRO {-RO_H.LRO,-RO_H.RO, -RO_H.FRO, -RO_SMP.LRO}.
+declare module A <: CAdversaryRO {-RO_H.LRO,-RO_H.RO, -RO_H.FRO, -RO_SMP.LRO, -CB}.
 
-lemma correctness_bound &m epsilon_hack fail_prob :
-  (forall (O <: RO_H.ROpub), islossless O.h => islossless A(O).find) =>
-(* This jump is assumed to introduce no slack in the
-   Kyber proposal. 
-   We need to figure out how to bound it. *)
-  `| Pr[CorrectnessNoiseApprox.main() @ &m : res] - 
-     Pr[CorrectnessBound.main() @ &m : res] | <= epsilon_hack =>
-(* The following failure probability can be bounded as
-in the Python script for Kyber *)   
-  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
+lemma correctness_max &m cu_bound failprob1 failprob2 :
+  (glob Bcb2){m} = cu_bound =>
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
+
+  Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
+  Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
+
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
-  1%r - fail_prob - epsilon_hack.
-move => A_ll eps_hack correctness_hack.
-have := (correctness_bound A S Sim &m epsilon_hack fail_prob 0%r _ _ _ _ _ correctness_hack); 1: by smt().
-+ by move => *; islossless.
-+ by move => O H; apply (A_ll O H).
+  1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
+      - failprob1 - failprob2.
+move => cb2_val S_ll A_ll fp1 fp2.
+have := (correctness_max A S Sim &m cu_bound 0%r failprob1 failprob2 cb2_val S_ll A_ll _ fp1 fp2 ).
 move => trb D0; have -> : trb = (trb.`1,trb.`2) by smt().
 by have := (good_sim (trb.`1) (trb.`2) D0) => /#.
-by apply eps_hack.
 by smt().
 qed.
 
 end section.
 
 end MLWE_PKE_TRIVIAL.
+

@@ -3,9 +3,6 @@ require (****) Matrix.
 
 clone import Matrix as Matrix_.
 
-(***************************************************)
-(* FIXME: THIS INSTANCE SHOULD COME FROM MATRIX    *)
-
 instance ring with R
   op rzero = ZR.zeror
   op rone  = ZR.oner
