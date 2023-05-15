@@ -6,6 +6,7 @@ require import Array2 Array4 Array8 Array16 Array32 WArray128.
 
 type t4u8 = W8.t Array4.t.
 type t2u16 = W16.t Array2.t.
+type t8u8 = W8.t Array8.t.
 type t8u32 = W32.t Array8.t.
 type t4u32 = W32.t Array4.t.
 type t16u16 = W16.t Array16.t.
@@ -67,6 +68,14 @@ module Ops = {
 
   proc itruncate_16u16_8u16(t : t16u16) : t16u8 = {
        return Array16.init (fun i => t.[i %/ 2] \bits8 i%%2);
+  }
+
+  proc zeroextu128_t8u8(t: t8u8) : t16u8 = {
+    return Array16.of_list witness [t.[0]; t.[1]; t.[2]; t.[3];
+                                    t.[4]; t.[5]; t.[6]; t.[7];
+                                    W8.zero; W8.zero; W8.zero; W8.zero;
+                                    W8.zero; W8.zero; W8.zero; W8.zero];
+
   }
 
   proc get_128(vv : t4u64 Array4.t, i : int, o : int) : W64.t = {
@@ -225,6 +234,14 @@ module Ops = {
     var r : t16u16;
 
     r <- Array16.init (fun i => x.[i] - y.[i]);
+
+    return r;
+  }
+
+  proc iload8u8(mem:global_mem_t, p:W64.t) : t8u8 = {
+    var r: t8u8;
+
+    r <- Array8.init (fun i => loadW8 mem (to_uint p + i));
 
     return r;
   }
@@ -963,6 +980,7 @@ module Ops = {
 
 type vt4u8 = W32.t.
 type vt2u16 = W32.t.
+type vt8u8 = W64.t.
 type vt2u64 = W128.t.
 type vt8u16 = W128.t.
 type vt4u32 = W128.t.
@@ -981,6 +999,10 @@ module OpsV = {
 
   proc itruncate_16u16_8u16(t : vt16u16) : vt16u8 = {
        return truncateu128 t;
+  }
+
+  proc zeroextu128_t8u8(t: vt8u8) : vt16u8 = {
+    return zeroextu128 t;
   }
 
   proc get_128(vv : vt4u64 Array4.t, i : int, o : int) : W64.t = {
@@ -1057,6 +1079,10 @@ module OpsV = {
 
   proc iVPSUB_16u16(x y: vt16u16) : vt16u16 = {
     return VPSUB_16u16 x y;
+  }
+
+  proc iload8u8(mem:global_mem_t, p:W64.t) : vt8u8 = {
+    return loadW64 mem (to_uint p);
   }
 
   proc iload4u64_8u32 (mem: global_mem_t, p:W64.t) : vt8u32 = {
@@ -1296,6 +1322,7 @@ module OpsV = {
 
 op is4u8 (x: t4u8) (xv: vt4u8) = xv = W4u8.pack4 [x.[0]; x.[1]; x.[2]; x.[3]].
 op is2u16 (x: t2u16) (xv: vt2u16) = xv = W2u16.pack2 [x.[0]; x.[1]].
+op is8u8 (x: t8u8) (xv: vt8u8) = xv = W8u8.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
 op is16u8 (x: t16u8) (xv: vt16u8) = xv = W16u8.pack16 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7];
   x.[8]; x.[9]; x.[10]; x.[11]; x.[12]; x.[13]; x.[14]; x.[15]].
 op is8u16 (x: t8u16) (xv: vt8u16) = xv = W8u16.pack8 [x.[0]; x.[1]; x.[2]; x.[3]; x.[4]; x.[5]; x.[6]; x.[7]].
@@ -1369,6 +1396,16 @@ proof.
   move : hi; rewrite andabP => /(mem_iota 0 128 i).
   move : i.
   rewrite -List.allP -iotaredE //=.
+qed.
+
+equiv eq_zeroextu128_t8u8: Ops.zeroextu128_t8u8 ~ OpsV.zeroextu128_t8u8: is8u8 t{1} t{2} ==> is16u8 res{1} res{2}.
+proof.
+  proc; skip => &1 &2; rewrite /is16u8 /is8u8 => />.
+  apply W128.wordP => i hi.
+  rewrite zeroextu128_bit //=.
+  move : hi; rewrite andabP => /(mem_iota 0 128 i).
+  move : i.
+  by rewrite -List.allP -iotaredE.
 qed.
 
 op is4u64_4 (x:t4u64 Array4.t) (xv:vt4u64 Array4.t) =
@@ -1496,6 +1533,13 @@ qed.
 equiv eq_iVPBROADCAST_16u16 : Ops.iVPBROADCAST_16u16 ~ OpsV.iVPBROADCAST_16u16 : ={v} ==> is16u16 res{1} res{2}.
 proof.
   proc; by wp; skip; rewrite /is16u16 /VPBROADCAST_16u16 -iotaredE.
+qed.
+
+equiv eq_iload8u8: Ops.iload8u8 ~ OpsV.iload8u8: ={mem, p} ==> is8u8 res{1} res{2}.
+proof.
+  proc; wp; skip; rewrite /is8u8 => /> &2.
+  rewrite /loadW64 /loadW8.
+  apply W8u8.allP => />.
 qed.
 
 equiv eq_iload4u64_8u32: Ops.iload4u64_8u32 ~ OpsV.iload4u64_8u32: ={mem, p} /\ to_uint p{1} + 32 <= W64.modulus ==> is8u32 res{1} res{2}.
