@@ -435,6 +435,8 @@ module Mvec = {
     var t:W128.t;
     var f:W256.t;
     var i:int;
+    var h:W128.t;
+    var t64: W64.t;
     x16p <- witness;
     x32p <- witness;
     x16p <- jqx16;
@@ -448,8 +450,9 @@ module Mvec = {
     aux <- (256 %/ 16);
     i <- 0;
     while (i < aux) {
-      f <@
-      OpsV.iVPBROADCAST_2u128_32u8(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      t64 <@ OpsV.iload8u8(Glob.mem, ap + (W64.of_int (8 * i)));
+      h <@ OpsV.zeroextu128_t8u8(t64);
+      f <@ OpsV.iVPBROADCAST_2u128_32u8(h);
       f <@ OpsV.iVPSHUFB_256(f, shufbidx);
       f <@ OpsV.iVPAND_16u16(f, mask);
       f <@ OpsV.iVPMULL_16u16(f, shift);
@@ -1092,29 +1095,57 @@ proof.
   trivial.
 qed.
 
+equiv eq_poly_decompress_oob:
+  Mprevec.poly_decompress_oob ~ Mprevec.poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
+proof.
+  proc.
+  while(={ap, i, aux, Glob.mem, q, mask, shift, shufbidx} /\
+        (forall k, 0 <= k < 16 * i{1} => rp{1}.[k] = rp{2}.[k]) /\
+        aux{1} = 16 /\ 0 <= i{1} <= 16 /\
+        shufbidx{1} = Jkem_avx2.pd_jshufbidx).
+  seq 4 5 : (#pre /\ ={f}).
+    + inline *; wp; auto => />.
+      move => &1 &2 [#] rp_eql i_lb i_ub i_tub />.
+      congr.
+      apply Array32.all_eq_eq => />.
+    + inline *; wp; auto => />.
+      move => &1 &2 rp_eql i_lb i_ub i_tub />.
+      split; last by move : i_lb i_ub => /#.
+      move => k k_lb; rewrite mulzDr mulz1 => k_ub.
+      do (rewrite filliE 1:/#).
+      case (16 * i{2} <= k && k < 16 * i{2} + 16) => k_sb.
+        + reflexivity.
+        + rewrite (rp_eql k _) //=; first by move : k_sb k_lb => /#.
+  inline *; wp; auto => />.
+  move => &1 &2 />.
+  do split; first by smt().
+  apply Array32.all_eq_eq => />.
+  move => rpL i rpR i_tlb rp_ext_eq i_lb i_ub _.
+  move : rp_ext_eq.
+  have -> //=: i = 16.
+    move : i_lb i_ub i_tlb => /#.
+  apply Array256.ext_eq.
+qed.
+
 equiv eq_poly_decompress:
   Mprevec.poly_decompress ~ Mvec.poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
   while(={ap, i, aux, Glob.mem} /\
         (forall k, 0 <= k < 16 * i{1} => rp{1}.[k] = rp{2}.[k]) /\
-        aux{1} = 16 /\ 0 <= i{1} /\ i{1} <= 16 /\ is16u16 q{1} q{2} /\ is16u16 mask{1} mask{2} /\ is16u16 shift{1} shift{2} /\ is32u8 shufbidx{1} shufbidx{2}).
+         aux{1} = 16 /\ 0 <= i{1} /\ i{1} <= 16 /\ is16u16 q{1} q{2} /\
+         is16u16 mask{1} mask{2} /\ is16u16 shift{1} shift{2} /\ is32u8 shufbidx{1} shufbidx{2}).
   wp.
   call eq_iVPMULHRS_256; call eq_iVPMULL_16u16; call eq_iVPAND_16u16.
   wp.
   call eq_iVPSHUFB_256.
-  inline Ops.iload16u8.
-  sp.
-  call eq_iVPBROADCAST_2u128_32u8.
-  wp; skip; rewrite /is32u8 /is16u16 /is16u8 => />. move => &1 &2 rp_l i_lb i_ub i_tub.
-  split.
-    + rewrite /loadW128 /loadW8 /=.
-      apply W16u8.allP => //=.
-  move => p_eq res_l0.
+  call eq_iVPBROADCAST_2u128_32u8; call eq_zeroextu128_t8u8; call eq_iload8u8.
+  wp; skip; rewrite /is32u8 /is16u16 /is16u8 /is8u8 => />. move => &1 &2 rp_l i_lb i_ub i_tub.
+  move => resl0.
   split.
     + rewrite /f32u8_t16u16 initiE //=.
       apply W32u8.allP => //=.
-  move => res_l0_eq res_l3.
+  move => resl0_eq resl1.
   split.
     + rewrite mulzDr mulz1 => k k_lb k_ub.
       rewrite filliE 1:/# initiE 1:/# /=.
@@ -1557,7 +1588,7 @@ proof.
     + rewrite /is16u16 /f32u8_t16u16 res1_eq.
       apply W32u8.allP => />.
     + rewrite /is16u16 /f32u8_t16u16 res4_eq.
-      apply W32u8.allP => />.
+      apply W32u8.allP => />. 
   move => res1w_eq res4w_eq resL7 resR7 res7_eq_1 res7_eq_2 />.
   do split.
     + rewrite /is16u16 /f32u8_t16u16 res2_eq.
@@ -1705,7 +1736,6 @@ proof.
   move : rp_l.
   have -> //=: i = 16. by move : i_ub i_tlb => /#.
 qed.
-
 
 equiv veceq_poly_compress_1:
   Mvec.poly_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
@@ -1874,11 +1904,15 @@ apply veceq_poly_frommont.
 qed.
 
 equiv prevec_eq_poly_decompress:
-  Mprevec.poly_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
-    transitivity Mvec.poly_decompress (={ap, Glob.mem} ==> ={res, Glob.mem}) (={ap, Glob.mem} ==> ={res, Glob.mem}).
-smt(). trivial.
-apply eq_poly_decompress.
-apply veceq_poly_decompress.
+  Mprevec.poly_decompress_oob ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
+proof.
+  transitivity Mprevec.poly_decompress (={ap, Glob.mem} ==> ={res, Glob.mem}) (={ap, Glob.mem} ==> ={res, Glob.mem}).
+    smt(). trivial.
+    apply eq_poly_decompress_oob.
+  transitivity Mvec.poly_decompress (={ap, Glob.mem} ==> ={res, Glob.mem}) (={ap, Glob.mem} ==> ={res, Glob.mem}).
+    smt(). trivial.
+    apply eq_poly_decompress.
+  apply veceq_poly_decompress.
 qed.
 
 equiv prevec_eq_poly_compress_1:

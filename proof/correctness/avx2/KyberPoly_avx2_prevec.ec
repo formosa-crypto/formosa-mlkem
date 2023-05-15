@@ -592,6 +592,53 @@ module Mprevec = {
     var f_b:t32u8;
     var f:t16u16;
     var t:t16u8;
+    var t64: t8u8;
+    var h: t16u8;
+    var i:int;
+
+    q <- Array16.init (fun i => jqx16.[i]);
+
+    shufbidx <- Array32.init (fun i => pd_jshufbidx.[i]);
+
+    mask_d <@ Ops.iVPBROADCAST_8u32(pd_mask_s);
+    mask <- f8u32_t16u16 mask_d;
+
+    shift_d <@ Ops.iVPBROADCAST_8u32(pd_shift_s);
+    shift <- f8u32_t16u16 shift_d;
+
+    aux <- (256 %/ 16);
+    i <- 0;
+
+    while (i < aux) {
+      t64 <@ Ops.iload8u8(Glob.mem, ap + (W64.of_int (8 * i)));
+      h <@ Ops.zeroextu128_t8u8(t64);
+      f_b <@ Ops.iVPBROADCAST_2u128_32u8(h);
+      f_b <@ Ops.iVPSHUFB_256(f_b, shufbidx);
+      f <- f32u8_t16u16 f_b;
+      f <@ Ops.iVPAND_16u16(f, mask);
+      f <@ Ops.iVPMULL_16u16(f, shift);
+      f <@ Ops.iVPMULHRS_256(f, q);
+
+      rp <- fill (fun k => f.[k %% 16]) (16*i) 16 rp;
+      i <- i + 1;
+    }
+
+    return (rp);
+  }
+
+
+  proc poly_decompress_oob (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
+    var aux: int;
+
+    var q:t16u16;
+    var shufbidx:t32u8;
+    var mask_d: t8u32;
+    var mask:t16u16;
+    var shift_d: t8u32;
+    var shift:t16u16;
+    var f_b:t32u8;
+    var f:t16u16;
+    var t:t16u8;
     var i:int;
 
     q <- Array16.init (fun i => jqx16.[i]);
@@ -624,6 +671,8 @@ module Mprevec = {
 
     return (rp);
   }
+
+
 
   (*--------------------------------------------------------------------*)
   proc poly_compress_1 (rp:W8.t Array128.t, a:W16.t Array256.t) : W8.t Array128.t *
