@@ -804,7 +804,7 @@ op polyr2poly(p : AlgR) : poly = Array256.init (fun i => p.[i]).
 
 lemma poly2polyrP i p :  0<=i<256 => (poly2polyr p).[i] = p.[i].
 move => ib.
-have H := (BasePoly.to_basepolyT (fun (i0 : int) => if 0 <= i0 && i0 < 256 then p.[i0] else Zq.zero) _); 1: by smt(BasePoly.IsPoly).
+have H := (BasePoly.to_basepolyT (fun (i0 : int) => if 0 <= i0 && i0 < 256 then p.[i0] else Zq.zero) _); 1: by smt().
 rewrite /poly2polyr /"_.[_]".
 rewrite piK. 
 + rewrite reducedP /=; 1: by smt(BasePoly.deg_leP).

@@ -1,3 +1,6 @@
 [submodule "jasmin"]
 	path = jasmin
 	url = https://github.com/jasmin-lang/jasmin.git
+[submodule "sha3"]
+	path = sha3
+	url = git@gitlab.com:easycrypt/sha3.git

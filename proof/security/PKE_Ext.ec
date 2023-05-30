@@ -1,4 +1,5 @@
 require import AllCore List Distr DBool PROM_Ext.
+require (****) IRO.
 
 require LorR. 
 clone import LorR as LorR' with
@@ -232,3 +233,56 @@ module CGameROM(G : CGame, S : SchemeRO, A : CAdversaryRO, O : RO) = {
 module CorrectnessAdvROM = CGameROM(CorrectnessAdv).
 
 
+(* Infinite RO *)
+
+clone import IRO as InfRO.
+
+print InfRO.
+
+module type IROpub = {
+  include IRO [f]
+}.
+
+module type SchemeIRO(H : IROpub) = {
+  include Scheme
+}.
+
+
+module type AdversaryIRO(H : IROpub) = {
+  include Adversary
+}.
+
+module type CAdversaryIRO(H : IROpub) = {
+  include CAdversary
+}.
+
+module IPub(O : IRO) : IROpub = {
+  include O [f]
+}.
+
+module CPAGameIROM(G : CPAGame, S : SchemeIRO, A : AdversaryIRO, O : IRO) = {
+   module H = IPub(O)
+   proc main() : bool = {
+     var b;
+     O.init();
+     b <@ G(S(H),A(H)).main();
+     return b;
+   }
+}.
+
+module CPAIROM = CPAGameIROM(CPA).
+module CPA_L_IROM = CPAGameIROM(CPA_L).
+module CPA_R_IROM = CPAGameIROM(CPA_R).
+
+
+module CGameIROM(G : CGame, S : SchemeIRO, A : CAdversaryIRO, O : IRO) = {
+   module H = IPub(O)
+   proc main() : bool = {
+     var b;
+     O.init();
+     b <@ G(S(H),A(H)).main();
+     return b;
+   }
+}.
+
+module CorrectnessAdvIROM = CGameIROM(CorrectnessAdv).
