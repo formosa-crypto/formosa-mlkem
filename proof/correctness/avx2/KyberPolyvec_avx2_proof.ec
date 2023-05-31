@@ -1163,7 +1163,7 @@ proof.
    do rewrite initiE 1:/# //=. smt().  
    rewrite /lift_array256 tP in r_eq_res1; move : (r_eq_res1 (k) _);  1:by smt().
    rewrite !mapiE 1,2:/# /= => <-.
-   do rewrite initiE 1:/# //=.   
+   do rewrite initiE 1:/# //=. smt().
    move => k k_i.
    do rewrite initiE //=.
    rewrite /bpos16 //=in res3_bound.

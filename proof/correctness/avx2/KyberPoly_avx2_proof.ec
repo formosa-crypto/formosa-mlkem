@@ -1004,7 +1004,7 @@ lemma poly_frommont_corr ap:
  by conseq poly_frommont_ll (poly_frommont_corr_h ap) => />.
 
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
-    equiv [ Mprevec.poly_decompress_oob ~ EncDec_AVX2.decode4 :
+    equiv [ Mprevec.poly_decompress ~ EncDec_AVX2.decode4 :
             valid_ptr _p 128 /\
             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
             load_array128 Glob.mem{1} _p = _a /\ a{2} = _a
@@ -5246,8 +5246,6 @@ qed.
 op pos_bound16_b (coefs : W16.t Array16.t) (l u b : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] b.
  
-abbrev ru_mask_s = W16.of_int 4095.
-
 lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t): 
     equiv [ Mprevec.poly_frombytes ~ EncDec_AVX2.decode12_opt :
             valid_ptr _p 384 /\
