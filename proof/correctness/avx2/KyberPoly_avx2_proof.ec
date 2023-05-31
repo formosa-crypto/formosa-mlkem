@@ -5872,9 +5872,7 @@ proof.
 
   do split.
     + rewrite Array16.tP => j j_bnds.
-      do (rewrite initiE 1:/# /=).
-      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
-        trivial.
+      do (rewrite initiE 1:/# /=). 
       rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://= of_uintK (modz_dvd _ _ (2^12)) 1://=
               (mulzC 4096 _) (modzMDl _ _ 4096).
       rewrite (pmod_small _ 4096); first by apply r2_bnds; smt(@Int).
@@ -5885,8 +5883,6 @@ proof.
       rewrite shr_shrw 1://= shrDP 1://=.
       rewrite (pmod_small _ W16.modulus); first by move : r2_bnds; smt(@Int @IntDiv @Ring.IntID modz_cmp).
       rewrite (mulzC 4096 _) divzMDl 1://= (pdiv_small _ 4096) 1:r2_bnds 1:/# /=.
-      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
-        trivial.
       rewrite andw_orwDr.
       rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://=.
       rewrite of_uintK modz_dvd 1://= (pmod_small _ 4096) 1:/#.
@@ -5958,8 +5954,6 @@ proof.
       rewrite /(nttunpack_idx) //= initiE 1:/# => /#.
     + rewrite Array16.tP => j j_bnds.
       do (rewrite initiE 1:/# /=).
-      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
-        trivial.
       rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://= of_uintK (modz_dvd _ _ (2^12)) 1://=
               (mulzC 4096 _) (modzMDl _ _ 4096).
       rewrite (pmod_small _ 4096); first by apply r2_bnds; smt(@Int).
@@ -5970,8 +5964,6 @@ proof.
       rewrite shr_shrw 1://= shrDP 1://=.
       rewrite (pmod_small _ W16.modulus); first by move : r2_bnds; smt(@Int @IntDiv @Ring.IntID modz_cmp).
       rewrite (mulzC 4096 _) divzMDl 1://= (pdiv_small _ 4096) 1:r2_bnds 1:/# /=.
-      have ->: ru_mask_s = W16.of_int (2 ^ 12 - 1).
-        trivial.
       rewrite andw_orwDr.
       rewrite (W16.andwC (W16.of_int (2^12 - 1)) _) and_mod 1://=.
       rewrite of_uintK modz_dvd 1://= (pmod_small _ 4096) 1:/#.
