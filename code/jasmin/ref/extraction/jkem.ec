@@ -1,5 +1,6 @@
 require import AllCore IntDiv CoreMap List Distr.
-from Jasmin require import JModel.
+from Jasmin require import JModel_x86.
+
 
 require import Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64
                Array128 Array168 Array256 Array768 Array960 Array1088
