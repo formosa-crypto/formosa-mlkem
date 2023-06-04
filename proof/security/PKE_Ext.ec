@@ -1,5 +1,5 @@
 require import AllCore List Distr DBool PROM_Ext.
-require (****) IRO.
+require (****) IRO PRP.
 
 require LorR. 
 clone import LorR as LorR' with
@@ -237,8 +237,6 @@ module CorrectnessAdvROM = CGameROM(CorrectnessAdv).
 
 clone import IRO as InfRO.
 
-print InfRO.
-
 module type IROpub = {
   include IRO [f]
 }.
@@ -286,3 +284,61 @@ module CGameIROM(G : CGame, S : SchemeIRO, A : CAdversaryIRO, O : IRO) = {
 }.
 
 module CorrectnessAdvIROM = CGameIROM(CorrectnessAdv).
+
+(* Perm Oracle *)
+
+clone export PRP as PRPt
+  rename
+    [module type] "PRP" as "PRIMITIVE".
+
+clone export StrongPRP as PRPSec.
+
+clone export RP as Perm 
+    rename
+       [module] "RP" as "Perm".
+
+module type PermPub = {
+  include PRIMITIVE [f]
+}.
+
+module type SchemePerm(Pi : PermPub) = {
+  include Scheme
+}.
+
+
+module type AdversaryPerm(H : PermPub) = {
+  include Adversary
+}.
+
+module type CAdversaryPerm(H : PermPub) = {
+  include CAdversary
+}.
+
+module PPub(O : PRIMITIVE) : PermPub = {
+  include O [f]
+}.
+
+module CPAGamePerm(G : CPAGame, S : SchemePerm, A : AdversaryPerm, O : PRIMITIVE) = {
+   module Pi = PPub(O)
+   proc main() : bool = {
+     var b;
+     O.init();
+     b <@ G(S(Pi),A(Pi)).main();
+     return b;
+   }
+}.
+
+module CPAPerm = CPAGamePerm(CPA).
+module CPA_L_Perm = CPAGamePerm(CPA_L).
+module CPA_R_Perm = CPAGamePerm(CPA_R).
+
+
+module CGamePerm(G : CGame, S : SchemePerm, A : CAdversaryPerm, O : PRIMITIVE) = {
+   module Pi = PPub(O)
+   proc main() : bool = {
+     var b;
+     O.init();
+     b <@ G(S(Pi),A(Pi)).main();
+     return b;
+   }
+}.
