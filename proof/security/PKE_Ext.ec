@@ -298,7 +298,7 @@ clone export RP as Perm
        [module] "RP" as "Perm".
 
 module type PermPub = {
-  include PRIMITIVE [f]
+  include PRIMITIVE [f, fi]
 }.
 
 module type SchemePerm(Pi : PermPub) = {
@@ -315,7 +315,7 @@ module type CAdversaryPerm(H : PermPub) = {
 }.
 
 module PPub(O : PRIMITIVE) : PermPub = {
-  include O [f]
+  include O [f, fi]
 }.
 
 module CPAGamePerm(G : CPAGame, S : SchemePerm, A : AdversaryPerm, O : PRIMITIVE) = {
