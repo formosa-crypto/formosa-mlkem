@@ -1,7 +1,7 @@
 .PHONY: libkyber768_ref.a clean distclean
 
-libkyber768_ref.a:
-	jasminc -nowarning -lea jkem.jpp -o jkem.s
+libkyber768_ref.a: jkem.jpp
+	jasminc -nowarning jkem.jpp -o jkem.s
 	$(CC) $(CFLAGS) -c jkem.s
 	$(AR) -r $@ jkem.o
 

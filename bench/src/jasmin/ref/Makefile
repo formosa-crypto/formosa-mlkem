@@ -1,6 +1,6 @@
 .PHONY: libkyber768_ref.a clean distclean
 
-libkyber768_ref.a:
+libkyber768_ref.a: jkem.s
 	$(CC) $(CFLAGS) -c jkem.s
 	$(AR) -r $@ jkem.o
 
