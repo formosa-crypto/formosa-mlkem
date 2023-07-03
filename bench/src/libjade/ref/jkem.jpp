@@ -1,32 +1,115 @@
-param int KYBER_K = 3;
+// Note1: This file was imported from hakyber, to ensure that the parameters that are defined
+// accordingly to their usage in the correctness proof. An alternative version of this file exists
+// in crypto_kem/kyber/kyber768/common/params.jinc and these will be merged once hakyber avx2 is
+// integrated into libjade.
 
 param int KYBER_Q = 3329;
 param int KYBER_N = 256;
-param int KYBER_VECN = KYBER_K * KYBER_N;
+param int KYBER_K = 3;
+param int KYBER_VECN =  KYBER_K * KYBER_N;
 
 param int KYBER_SYMBYTES = 32;
-param int KYBER_SSBYTES = 32;
-
-param int KYBER_ETA1 = 2;
-param int KYBER_ETA2 = 2;
-
+param int KYBER_ETA = 2;
 param int KYBER_POLYBYTES = 384;
 param int KYBER_POLYVECBYTES = (KYBER_K * KYBER_POLYBYTES);
-
 param int KYBER_POLYCOMPRESSEDBYTES = 128;
 param int KYBER_POLYVECCOMPRESSEDBYTES = (KYBER_K * 320);
-
-param int KYBER_INDCPA_MSGBYTES = KYBER_SYMBYTES;
+param int KYBER_MSGBYTES = KYBER_SYMBYTES;
+param int KYBER_CT_LEN = KYBER_POLYVECCOMPRESSEDBYTES + KYBER_POLYCOMPRESSEDBYTES;
 param int KYBER_INDCPA_PUBLICKEYBYTES = KYBER_POLYVECBYTES + KYBER_SYMBYTES;
-param int KYBER_INDCPA_SECRETKEYBYTES = KYBER_POLYVECBYTES;
-param int KYBER_INDCPA_BYTES = KYBER_POLYVECCOMPRESSEDBYTES + KYBER_POLYCOMPRESSEDBYTES;
-
 param int KYBER_PUBLICKEYBYTES = KYBER_INDCPA_PUBLICKEYBYTES;
-param int KYBER_SECRETKEYBYTES = KYBER_INDCPA_SECRETKEYBYTES + KYBER_INDCPA_PUBLICKEYBYTES + 2*KYBER_SYMBYTES;
-param int KYBER_CIPHERTEXTBYTES = KYBER_INDCPA_BYTES;
+param int KYBER_SSBYTES = 32;
 
-param int KECCAK_ROUNDS=24;
+// from Jade require "crypto_kem/kyber/kyber768/common/params.jinc" // TODO: when hakyber avx2
 
+
+// from Jade require "crypto_kem/kyber/kyber768/common/params.jinc" // TODO: when hakyber avx2
+
+// Note1: the previous kyber768/amd64/ref libjade implementation used the generic version of this
+// file, defined in crypto_kem/kyber/common/amd64/ref/poly.jinc. This file was imported from
+// hakyber and the main differences are: 1) the usage of KYBER_INDCPA_MSGBYTES (this file does
+// not); 2) get_noise;
+
+// Note2: although the standard practice in libjade is to require files within the same folder as
+// `require "file"`, the following `require` statement does not follow that rule to make explicit
+// the fact that we are including a `params.jinc` file that is not under a `common` folder. Other
+// instances of such cases exist in this folder.
+
+// from Jade require "crypto_kem/kyber/kyber768/common/params.jinc" // TODO: when hakyber avx2
+
+param int QINV    = 62209;     /* q^(-1) mod 2^16 */
+param int MONT    = 2285;      /* 2^16 % Q */
+param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
+
+
+/*
+// previous version (proven correct)
+inline
+fn __fqmul(reg u16 a, reg u16 b) -> reg u16
+{
+  reg u32 ad;
+  reg u32 bd;
+  reg u32 c;
+  reg u32 t;
+  reg u16 r;
+  reg u32 u;
+
+  ad = (32s)a;
+  bd = (32s)b;
+
+  c = ad * bd;
+
+  u = c * QINV;
+  u <<= 16;
+  u >>s= 16;
+
+  t = u * KYBER_Q;
+  t = c - t;
+  t >>s= 16;
+  r = t;
+  return r;
+}
+*/
+
+inline fn __fqmul(reg u16 a b) -> reg u16
+{
+  reg u32 ad bd c t u;
+  reg u16 r;
+
+  ad = (32s) a;
+  bd = (32s) b;
+  c = ad * bd;
+
+  u = c * (QINV << 16); // merge multiplication of u (<<16)
+  u >>s= 16;
+
+  t = u * -KYBER_Q; // replace sub by add
+  t += c;
+  t >>s= 16;
+  r = t;
+
+  return r;
+}
+
+inline
+fn __barrett_reduce(reg u16 a) -> reg u16
+{
+  reg u32 t;
+  reg u16 r;
+  t = (32s)a;
+  t = t * BARR;
+  //t = #SAR_32(t, 26);
+  t >>s= 26;
+  t *= KYBER_Q;
+  r = t;
+  r = a;
+  r -= t;
+  return r;
+}
+param int SHAKE128_RATE = 168;
+param int SHAKE256_RATE = 136;
+param int SHA3_256_RATE = 136;
+param int SHA3_512_RATE = 72;
 param int KECCAK_ROUNDS=24;
 
 
@@ -58,7 +141,7 @@ u64[24] KECCAK1600_RC =
 };
 
 
-inline fn __index(inline int x y) -> inline int
+inline fn __index_spec(inline int x y) -> inline int
 {
   inline int r;
   r = (x % 5) + 5 * (y % 5);
@@ -66,7 +149,7 @@ inline fn __index(inline int x y) -> inline int
 }
 
 
-inline fn __keccak_rho_offsets(inline int i) -> inline int
+inline fn __keccak_rho_offsets_spec(inline int i) -> inline int
 {
   inline int r x y z t;
 
@@ -87,11 +170,11 @@ inline fn __keccak_rho_offsets(inline int i) -> inline int
 }
 
 
-inline fn __rhotates(inline int x y) -> inline int
+inline fn __rhotates_spec(inline int x y) -> inline int
 {
   inline int i r;
-  i = __index(x, y);
-  r = __keccak_rho_offsets(i);
+  i = __index_spec(x, y);
+  r = __keccak_rho_offsets_spec(i);
   return r;
 }
 
@@ -130,8 +213,8 @@ inline fn __rho_spec(stack u64[25] a) -> stack u64[25]
 
   for x = 0 to 5 {
     for y = 0 to 5 {
-      i = __index(x, y);
-      z = __keccak_rho_offsets(i);
+      i = __index_spec(x, y);
+      z = __keccak_rho_offsets_spec(i);
       _, _, a[i] = #ROL_64(a[i], z);
     }
   }
@@ -152,7 +235,7 @@ inline fn __pi_spec(stack u64[25] a) -> stack u64[25]
   for x = 0 to 5 {
     for y = 0 to 5 {
       t = b[x + 5 * y];
-      i = __index(y, 2 * x + 3 * y);
+      i = __index_spec(y, 2 * x + 3 * y);
       a[i] = t;
     }
   }
@@ -167,12 +250,12 @@ inline fn __chi_spec(stack u64[25] a) -> stack u64[25]
 
   for y = 0 to 5 {
     for x = 0 to 5 {
-      i = __index(x + 1, y);
+      i = __index_spec(x + 1, y);
       c[x] = a[i];
       c[x] = !c[x];
-      i = __index(x + 2, y);
+      i = __index_spec(x + 2, y);
       c[x] &= a[i];
-      i = __index(x, y);
+      i = __index_spec(x, y);
       c[x] ^= a[i];
     }
     for x = 0 to 5 {
@@ -279,7 +362,7 @@ inline fn __rol_sum_ref1(
   {
     x_ = (x + 3*y) % 5;
     y_ = x;
-    r = __rhotates(x_, y_);
+    r = __rhotates_spec(x_, y_);
 
     // B[x] = A[x',y']
     b[x] = a[x_ + y_*5];
@@ -313,7 +396,10 @@ inline fn __set_row_ref1(
   { 
     x1 = (x + 1) % 5;
     x2 = (x + 2) % 5;
-    t  = !b[x1] & b[x2];
+
+    //t  = !b[x1] & b[x2];
+    t = b[x1]; t = !t; t &= b[x2];
+
     t ^= b[x];
     if( x==0 && y==0 ){ t ^= s_rc; }
     e[x + y*5] = t;
@@ -354,7 +440,7 @@ inline fn __keccakf1600_ref1(reg ptr u64[25] a) -> reg ptr u64[25]
   e = s_e;
 
   c = 0;
-  while
+  while (c < KECCAK_ROUNDS - 1)
   {
     s_c = c;
 
@@ -370,7 +456,7 @@ inline fn __keccakf1600_ref1(reg ptr u64[25] a) -> reg ptr u64[25]
 
     c = s_c;
     c += 2;
-  } (c < KECCAK_ROUNDS)
+  }
 
   return a;
 }
@@ -384,18 +470,25 @@ fn _keccakf1600_ref1(reg ptr u64[25] a) -> reg ptr u64[25]
 }
 
 
-
-inline fn __keccak_init_ref1() -> stack u64[25]
+inline fn _keccakf1600_ref1_(reg ptr u64[25] a) -> reg ptr u64[25]
 {
-  stack u64[25] state;
-  reg u64 i t;
+  a = a;
+  a = _keccakf1600_ref1(a);
+  a = a;
+  return a;
+}
 
-  _,_,_,_,_, t = #set0();
-  i = 0;
-  while (i < 25)
-  { state[(int)i] = t;
-    i += 1;
-  }
+
+
+
+inline fn __keccak_init_ref1(reg ptr u64[25] state) -> reg ptr u64[25]
+{
+  inline int i;
+  reg u64 t;
+
+  ?{}, t = #set0();
+  for i=0 to 25
+  { state[i] = t; }
 
   return state;
 }
@@ -605,8 +698,8 @@ inline fn __keccak1600_ref1(reg u64 out outlen in inlen, reg u8 trail_byte, reg 
   s_outlen = outlen;
   s_trail_byte = trail_byte;
 
-  _state = __keccak_init_ref1();
   state = _state;
+  state = __keccak_init_ref1(state);
 
   // absorb
   state, rate = __absorb_ref1(state, in, inlen, s_trail_byte, rate);
@@ -624,22 +717,20 @@ fn _keccak1600_ref1(reg u64 out outlen in inlen, reg u8 trail_byte, reg u64 rate
 }
 
 
-param int SHAKE128_RATE = 168;
-param int SHAKE256_RATE = 136;
-param int SHA3_256_RATE = 136;
-param int SHA3_512_RATE = 72;
 
 #[returnaddress="stack"]
 fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 {
   stack ptr u8[128] s_out;
-  stack u64[25] state;
+  stack u64[25] _state;
+  reg ptr u64[25] state;
   reg u8 c;
   inline int i;
 
   s_out = out;
 
-  state =  __keccak_init_ref1();
+  state = _state;
+  state =  __keccak_init_ref1(state);
 
   for i = 0 to 33 {
     c = in[i];
@@ -648,7 +739,7 @@ fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[12
   state[u8 33] ^= 0x1f;
   state[u8 SHAKE256_RATE-1] ^= 0x80;
 
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   out = s_out;
   
@@ -663,13 +754,15 @@ fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[12
 fn _shake256_192_33(reg ptr u8[192] out, reg const ptr u8[33] in) -> stack u8[192]
 {
   stack ptr u8[192] s_out;
-  stack u64[25] state;
+  stack u64[25] _state;
+  reg ptr u64[25] state;
   reg u8 c;
   inline int i;
 
   s_out = out;
 
-  state =  __keccak_init_ref1();
+  state = _state;
+  state =  __keccak_init_ref1(state);
 
   for i = 0 to 33 {
     c = in[i];
@@ -678,7 +771,7 @@ fn _shake256_192_33(reg ptr u8[192] out, reg const ptr u8[33] in) -> stack u8[19
   state[u8 33] ^= 0x1f;
   state[u8 SHAKE256_RATE-1] ^= 0x80;
 
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   out = s_out;
   
@@ -689,7 +782,7 @@ fn _shake256_192_33(reg ptr u8[192] out, reg const ptr u8[33] in) -> stack u8[19
 
   s_out = out;
 
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   out = s_out;
   
@@ -702,16 +795,18 @@ fn _shake256_192_33(reg ptr u8[192] out, reg const ptr u8[33] in) -> stack u8[19
 }
 
 #[returnaddress="stack"]
-fn _isha3_512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
+fn _sha3_512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 {
   stack ptr u8[64] s_out;
-  stack u64[25] state;
+  stack u64[25] _state;
+  reg ptr u64[25] state;
   reg u8 c;
   inline int i;
 
   s_out = out;
 
-  state = __keccak_init_ref1();
+  state = _state;
+  state = __keccak_init_ref1(state);
 
   for i = 0 to 32 {
     c = in[i];
@@ -720,7 +815,7 @@ fn _isha3_512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
   state[u8 32] ^= 0x06;
   state[u8 SHA3_512_RATE-1] ^= 0x80;
 
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   out = s_out;
 
@@ -731,13 +826,13 @@ fn _isha3_512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
   return out;
 }
 
-inline
-fn __shake128_absorb34(stack u64[25] state, reg const ptr u8[34] in) -> stack u64[25]
+#[returnaddress="stack"]
+fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> stack u64[25]
 {
   reg u8 c;
   inline int i;
 
-  state = __keccak_init_ref1();
+  state = __keccak_init_ref1(state);
 
   for i = 0 to 34 {
     c = in[i];
@@ -749,8 +844,8 @@ fn __shake128_absorb34(stack u64[25] state, reg const ptr u8[34] in) -> stack u6
   return state;
 }
 
-inline
-fn __shake128_squeezeblock(stack u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> stack u64[25], reg ptr u8[SHAKE128_RATE]
+#[returnaddress="stack"]
+fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> stack u64[25], reg ptr u8[SHAKE128_RATE]
 {
   stack ptr u8[SHAKE128_RATE] s_out;
   reg u8 c;
@@ -758,7 +853,7 @@ fn __shake128_squeezeblock(stack u64[25] state, reg ptr u8[SHAKE128_RATE] out) -
 
   s_out = out;
   
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   out = s_out;
 
@@ -771,9 +866,10 @@ fn __shake128_squeezeblock(stack u64[25] state, reg ptr u8[SHAKE128_RATE] out) -
 }
 
 #[returnaddress="stack"]
-fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
+fn _sha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
 {
-  stack u64[25] state;
+  stack u64[25] _state;
+  reg ptr u64[25] state;
   stack ptr u8[32] s_out;
   stack u64 s_in s_ilen s_r8;
   reg u64 ilen r8 t64;
@@ -782,11 +878,13 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
 
   s_out = out;
 
-  state = __keccak_init_ref1();
+  state = _state;
+  state = __keccak_init_ref1(state);
 
   r8 = SHA3_256_RATE;
   ilen = inlen;
 
+  #bounded
   while(ilen >= r8)
   {
     state, in, ilen = __add_full_block_ref1(state, in, ilen, r8);
@@ -795,7 +893,7 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
     s_ilen = ilen;
     s_r8 = r8;
 
-    state = __keccakf1600_ref1(state);
+    state = _keccakf1600_ref1(state);
 
     in = s_in;
     ilen = s_ilen;
@@ -805,7 +903,7 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
   t8 = 0x06;
   state = __add_final_block_ref1(state, in, ilen, t8, r8);
 
- state = __keccakf1600_ref1(state);
+ state = _keccakf1600_ref1(state);
 
   out = s_out;
 
@@ -819,16 +917,18 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
 }
 
 #[returnaddress="stack"]
-fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[KYBER_SYMBYTES] in) -> reg ptr u8[32]
+fn _sha3_256_32(reg ptr u8[32] out, reg ptr u8[KYBER_SYMBYTES] in) -> reg ptr u8[32]
 {
-  stack u64[25] state;
+  stack u64[25] _state;
+  reg ptr u64[25] state;
   stack ptr u8[32] s_out;
   reg u64 t64;
   inline int i;
 
   s_out = out;
 
-  state = __keccak_init_ref1();
+  state = _state;
+  state = __keccak_init_ref1(state);
 
   for i=0 to KYBER_SYMBYTES/8
   {
@@ -839,7 +939,7 @@ fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[KYBER_SYMBYTES] in) -> reg ptr u
   state[u8 KYBER_SYMBYTES] ^= 0x06;
   state[u8 SHA3_256_RATE - 1] = 0x80;
 
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   out = s_out;
 
@@ -853,16 +953,18 @@ fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[KYBER_SYMBYTES] in) -> reg ptr u
 }
 
 #[returnaddress="stack"]
-fn _isha3_512_64(reg ptr u8[64] out, reg const ptr u8[64] in) -> stack u8[64]
+fn _sha3_512_64(reg ptr u8[64] out, reg const ptr u8[64] in) -> stack u8[64]
 {
-  stack u64[25] state;
+  stack u64[25] _state;
+  reg ptr u64[25] state;
   stack ptr u8[64] out_s;
   reg u64 t64;
   inline int i;
 
   out_s = out;
 
-  state = __keccak_init_ref1();
+  state = _state;
+  state = __keccak_init_ref1(state);
 
   for i = 0 to 8
   {
@@ -873,7 +975,7 @@ fn _isha3_512_64(reg ptr u8[64] out, reg const ptr u8[64] in) -> stack u8[64]
   state[u8 64] ^= 0x06;
   state[u8 SHA3_512_RATE - 1] ^= 0x80;
 
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   out = out_s;
 
@@ -891,14 +993,16 @@ fn _shake256_64(reg u64 out outlen, reg const ptr u8[64] in)
 {
   reg u64 t64 j;
   reg u8 c;
-  stack u64[25] state;
+  stack u64[25] _state;
+  reg ptr u64[25] state;
   stack u64 s_out s_outlen;
   inline int i;
 
   s_out = out;
   s_outlen = outlen;
 
-  state = __keccak_init_ref1();
+  state = _state;
+  state = __keccak_init_ref1(state);
 
   for i = 0 to 8 {
     t64 = in[u64 i];
@@ -908,7 +1012,7 @@ fn _shake256_64(reg u64 out outlen, reg const ptr u8[64] in)
   state[u8 64] ^= 0x1f;
   state[u8 SHAKE256_RATE-1] ^= 0x80;
 
-  state = __keccakf1600_ref1(state);
+  state = _keccakf1600_ref1(state);
 
   outlen = s_outlen;
   out = s_out;
@@ -927,7 +1031,7 @@ fn _shake256_64(reg u64 out outlen, reg const ptr u8[64] in)
     s_out = out;
     s_outlen = outlen;
 
-    state = __keccakf1600_ref1(state);
+    state = _keccakf1600_ref1(state);
 
     outlen = s_outlen;
     out = s_out;
@@ -971,53 +1075,6 @@ u16[128] jzetas_inv = {1701, 1807, 1460, 2371, 2338, 2333, 308, 108, 2851, 870, 
                        1860, 3203, 1162, 1618, 666, 320, 8, 2813, 1544, 282, 1838, 1293, 2314, 552, 2677, 2106, 
                        1571, 205, 2918, 1542, 2721, 2597, 2312, 681, 130, 1602, 1871, 829, 2946, 3065, 1325, 2756, 
                        1861, 1474, 1202, 2367, 3147, 1752, 2707, 171, 3127, 3042, 1907, 1836, 1517, 359, 758, 1441};
-param int QINV    = 62209;     /* q^(-1) mod 2^16 */
-param int MONT    = 2285;      /* 2^16 % Q */
-param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
-
-inline
-fn __fqmul(reg u16 a, reg u16 b) -> reg u16
-{
-  reg u32 ad;
-  reg u32 bd;
-  reg u32 c;
-  reg u32 t;
-  reg u16 r;
-  reg u32 u;
-
-  ad = (32s)a;
-  bd = (32s)b;
-
-  c = ad * bd;
-
-  u = c * QINV;
-  u <<= 16;
-  //u = #SAR_32(u, 16);
-  u >>s= 16;
-  t = u * KYBER_Q;
-  t = c - t;
-  //t = #SAR_32(t, 16);
-  t >>s= 16;
-  r = t;
-  return r;
-}
-
-inline
-fn __barrett_reduce(reg u16 a) -> reg u16
-{
-  reg u32 t;
-  reg u16 r;
-  t = (32s)a;
-  t = t * BARR;
-  //t = #SAR_32(t, 26);
-  t >>s= 26;
-  t *= KYBER_Q;
-  r = t;
-  r = a;
-  r -= t;
-  return r;
-}
-
 
 fn _poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
 {
@@ -1028,6 +1085,7 @@ fn _poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
 
   i = 0;
 
+  #bounded
   while (i < KYBER_N) {
     a = rp[(int)i];
     b = bp[(int)i];
@@ -1045,6 +1103,7 @@ fn _poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   reg u16 b;
 
   i = 0;
+  #bounded
   while (i < KYBER_N)
   {
     t = rp[(int)i];
@@ -1081,6 +1140,7 @@ fn _poly_basemul(reg ptr u16[KYBER_N] rp, reg const ptr u16[KYBER_N] ap bp) -> r
   zetasctr = 64;
   i = 0;
 
+  #bounded
   while(i < KYBER_N)
   {
     zetasp = jzetas;
@@ -1146,6 +1206,7 @@ fn __poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   reg u64 j; 
   reg u16 t;
   j = 0;
+  #bounded
   while (j < KYBER_N) 
   {
     t = rp[(int)j];
@@ -1166,6 +1227,7 @@ fn _poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 
   i = 0;
   j = 0;
+  #bounded
   while(i < 128)
   {
     t  = a[(int)j];
@@ -1202,6 +1264,7 @@ fn _i_poly_compress(reg ptr u8[KYBER_POLYCOMPRESSEDBYTES] rp, reg ptr u16[KYBER_
 
   i = 0;
   j = 0;
+  #bounded
   while(i < 128)
   {
     t  = a[(int)j];
@@ -1238,6 +1301,7 @@ fn _poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   i = 0;
   j = 0;
 
+  #bounded
   while (i < 128) {
     t  = (u8)[ap+i];
     d0 = (16u)t;
@@ -1297,6 +1361,7 @@ fn _poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   dmont = DMONT;
   
   i = 0;
+  #bounded
   while (i < KYBER_N)
   {
     r = rp[(int)i];
@@ -1314,7 +1379,7 @@ fn _poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
   inline int i;
   inline int j;
 
-  for i = 0 to KYBER_INDCPA_MSGBYTES
+  for i = 0 to 32
   {
     c = (u8)[ap + i];
 
@@ -1370,14 +1435,14 @@ fn _poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 }
 
 
-fn _i_poly_frommsg(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_INDCPA_MSGBYTES] ap) -> stack u16[KYBER_N]
+fn _i_poly_frommsg(reg ptr u16[KYBER_N] rp, reg ptr u8[32] ap) -> stack u16[KYBER_N]
 {
   reg u8 c;
   reg u16 t;
   inline int i;
   inline int j;
 
-  for i = 0 to KYBER_INDCPA_MSGBYTES
+  for i = 0 to 32
   {
     c = ap[i];
 
@@ -1432,17 +1497,36 @@ fn _i_poly_frommsg(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_INDCPA_MSGBYTES] ap
   return rp;
 }
 
-
-inline
-fn __cbd2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf) -> reg ptr u16[KYBER_N]
+#[returnaddress=stack]
+fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
 {
+  stack u8[33] extseed;   /* 33 = KYBER_SYMBYTES +1 */
+  stack u8[128] buf;      /* 128 = KYBER_ETA*KYBER_N/4 */
+  reg u64 outlen;
   reg u8 c,a,b;
   reg u16 t;
   reg u64 i j;
+  inline int k;
+
+  stack ptr u16[KYBER_N] srp;
+
+  srp = rp;
+  
+  for k = 0 to KYBER_SYMBYTES
+  {
+    c = seed[k];
+    extseed[k] = c;
+  }
+  extseed[KYBER_SYMBYTES] = nonce;
+
+  buf = _shake256_128_33(buf, extseed);
+
+  rp = srp;
 
   i = 0;
   j = 0;
-  while (i < KYBER_ETA2*KYBER_N/4) {
+  #bounded
+  while (i < 128) {
     c = buf[(int)i];
     a = c;
     a &= 0x55;
@@ -1471,165 +1555,9 @@ fn __cbd2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf) -> reg 
     i += 1;
     j += 1;
   }
-
-  return rp;
-}
-
-
-inline
-fn __load24(reg ptr u8[KYBER_ETA1*KYBER_N/4] buf, reg u64 i) -> reg u32
-{
-  reg u32 r t;
-
-  r = (32u)buf[(int)i];
-
-  t = (32u)buf[(int)i+1];
-  t <<= 8;
-  r |= t;
-
-  t = (32u)buf[(int)i+2];
-  t <<= 16;
-  r |= t;
-
-  t &= 0x00FFFFFF;
-
-  return r;
-}
-
-
-inline
-fn __cbd3(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA1*KYBER_N/4] buf) -> reg ptr u16[KYBER_N]{
-  reg u64 i j t;
-  reg u32 t0 t1 t2;
-  reg u16 r;
-  reg u8 a, b;
-  inline int k;
-
-  i = 0;
-  j = 0;
-  while(i < KYBER_N/4)
-  {
-    t = 3*i;
-    t0 = __load24(buf, t);
-
-    t1 = t0;
-    t1 &= 0x00249249;
-
-    t0 >>= 1;
-    t2 = t0;
-    t2 &= 0x00249249;
-    t1 += t2;
-
-    t0 >>= 1;
-    t0 &= 0x00249249;
-    t0 += t1;
-
-    for k=0 to 4
-    {
-      a = t0;
-      a &= 0x7;
-
-      b = t0;
-      b >>= 3;
-      b &= 0x7;
-
-      a -= b;
-      r = (16s)a;
-      rp[(int)j] = r;
-
-      t0 >>= 6;
-      j += 1;
-    }
-
-    i += 1;
-  }
-
-  return rp;
-}
-
-inline
-fn __poly_cbd_eta1(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA1*KYBER_N/4] buf) -> reg ptr u16[KYBER_N]
-{
-  if(KYBER_ETA1 == 2) { // resolved at compile-time
-    rp = __cbd2(rp, buf[0:KYBER_ETA2*KYBER_N/4]);
-  } else {
-    rp = __cbd3(rp, buf);
-  }
-
-  return rp;
-}
-
-inline
-fn __poly_cbd_eta2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf) -> reg ptr u16[KYBER_N]
-{
-  if(KYBER_ETA2 == 2) {
-    rp = __cbd2(rp, buf);
-  }
-  return rp;
-}
-
-
-fn _poly_getnoise_eta1(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
-{
-  stack ptr u16[KYBER_N] s_rp;
-  stack u8[KYBER_SYMBYTES+1] extseed;
-  /* FIXME (DIRTY HACK): currently allocates 64 more bytes (than necessary) for buf in Kyber768
-   *                     to prevent code duplication because _shake256_192_33 expects 192 bytes (instead of 128)
-   *                     even though it is only called in Kyber 512
-   */
-  stack u8[KYBER_ETA1*KYBER_N/4 + (3 - KYBER_ETA1)*64] buf;  
-  reg u8 c;
-  inline int k;
-
-  s_rp = rp;
   
-  for k = 0 to KYBER_SYMBYTES
-  {
-    c = seed[k];
-    extseed[k] = c;
-  }
-  extseed[KYBER_SYMBYTES] = nonce;
-
-  if(KYBER_ETA1 == 2)
-  {
-    buf[0:KYBER_ETA2*KYBER_N/4] = _shake256_128_33(buf[0:KYBER_ETA2*KYBER_N/4], extseed);
-  } else {
-    buf = _shake256_192_33(buf, extseed);
-  }
-
-  rp = s_rp;
-  rp = __poly_cbd_eta1(rp, buf[0:KYBER_ETA1*KYBER_N/4]);
-
   return rp;
 }
-
-
-fn _poly_getnoise_eta2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
-{
-  stack ptr u16[KYBER_N] s_rp;
-  stack u8[KYBER_SYMBYTES+1] extseed;
-  stack u8[KYBER_ETA2*KYBER_N/4] buf;
-  reg u8 c;
-  inline int k;
-
-  s_rp = rp;
-  
-  for k = 0 to KYBER_SYMBYTES
-  {
-    c = seed[k];
-    extseed[k] = c;
-  }
-  extseed[KYBER_SYMBYTES] = nonce;
-
-  buf = _shake256_128_33(buf, extseed);
-
-  rp = s_rp;
-  rp =__poly_cbd_eta2(rp, buf);
-
-  return rp;
-}
-
-
 
 fn _poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 {
@@ -1651,22 +1579,25 @@ fn _poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   zetasctr = 0;
 
   len = 2;
+  #bounded
   while (len <= 128)
   {
     start = 0;
+    #bounded
     while (start < 256)
     {
       zeta = zetasp[(int)zetasctr];
       zetasctr += 1;
 
       j = start;
-      cmp = #LEA(start + len); //cmp = start + len;
+      cmp = #LEA(start + len); // avoid -lea
+      #bounded
       while (j < cmp)
       {
-        offset = #LEA(j + len); //offset = j + len;
+        offset = #LEA(j + len); // avoid -lea
         s = rp[(int)offset];
         t = rp[(int)j];
-        m = s; m += t; //m = s + t; //this is not LEA to avoid it for 16-bit (valgrind);
+        m = s; m += t; // valgrind 16 bit lea not implemented
         m = __barrett_reduce(m);
         rp[(int)j] = m;
         t -= s;
@@ -1674,13 +1605,14 @@ fn _poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
         rp[(int)offset] = t;
         j += 1;
       }
-      start = #LEA(j + len); //start = j + len;
+      start = #LEA(j + len); // avoid -lea
     }
     len <<= 1;
   }
 
   zeta = zetasp[127];
   j = 0;
+  #bounded
   while (j < KYBER_N) 
   {
     t = rp[(int)j];
@@ -1710,18 +1642,21 @@ fn _poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   zetasp = jzetas;
   zetasctr = 0;
   len = 128;
+  #bounded
   while (len >= 2)
   {
     start = 0;
+    #bounded
     while (start < 256)
     {
       zetasctr += 1;
       zeta = zetasp[(int)zetasctr];
       j = start;
-      cmp = #LEA(start + len); // cmp = start + len;
+      cmp = #LEA(start + len);
+      #bounded
       while (j < cmp)
       {
-        offset = #LEA(j + len); // offset = j + len;
+        offset = #LEA(j + len);
         t = rp[(int)offset];
         t = __fqmul(t, zeta);
         s = rp[(int)j];
@@ -1732,7 +1667,7 @@ fn _poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
         rp[(int)j] = t;
         j += 1;
       }
-      start = #LEA(j + len); // start = j + len;
+      start = #LEA(j + len);
     }
     len >>= 1;
   }
@@ -1750,6 +1685,7 @@ fn _poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
   reg u64 i;
 
   i = 0;
+  #bounded
   while (i < KYBER_N) {
     a = ap[(int)i];
     b = bp[(int)i];
@@ -1769,6 +1705,7 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 
   i = 0;
   j = 0;
+  #bounded
   while (i < KYBER_N)
   {
     t0 = a[(int)i]; 
@@ -1802,7 +1739,7 @@ fn _poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
 
   a = _poly_csubq(a); 
 
-  for i = 0 to KYBER_INDCPA_MSGBYTES
+  for i = 0 to 32
   {
     r = 0;
     for j = 0 to 8
@@ -1823,7 +1760,7 @@ fn _poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   return a;
 }
 
-fn _i_poly_tomsg(reg ptr u8[KYBER_INDCPA_MSGBYTES] rp, reg ptr u16[KYBER_N] a) -> reg ptr u8[KYBER_INDCPA_MSGBYTES], reg ptr u16[KYBER_N]
+fn _i_poly_tomsg(reg ptr u8[KYBER_N/8] rp, reg ptr u16[KYBER_N] a) -> reg ptr u8[KYBER_N/8], reg ptr u16[KYBER_N]
 {
   reg u16 t;
   reg u8 r;
@@ -1832,7 +1769,7 @@ fn _i_poly_tomsg(reg ptr u8[KYBER_INDCPA_MSGBYTES] rp, reg ptr u16[KYBER_N] a) -
 
   a = _poly_csubq(a); 
 
-  for i = 0 to KYBER_INDCPA_MSGBYTES
+  for i = 0 to 32
   {
     r = 0;
     for j = 0 to 8
@@ -1857,12 +1794,9 @@ fn _i_poly_tomsg(reg ptr u8[KYBER_INDCPA_MSGBYTES] rp, reg ptr u16[KYBER_N] a) -
 inline
 fn __polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
 {
-  inline int i;
-
-  for i=0 to KYBER_K
-  {
-    r[i*KYBER_N:KYBER_N] = _poly_add2(r[i*KYBER_N:KYBER_N], b[i*KYBER_N:KYBER_N]);
-  }
+  r[0:KYBER_N] = _poly_add2(r[0:KYBER_N], b[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = _poly_add2(r[KYBER_N:KYBER_N], b[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = _poly_add2(r[2*KYBER_N:KYBER_N], b[2*KYBER_N:KYBER_N]);
 
   return r;
 }
@@ -1870,12 +1804,9 @@ fn __polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16
 inline
 fn __polyvec_csubq(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-  inline int i;
-
-  for i=0 to KYBER_K
-  {
-    r[i*KYBER_N:KYBER_N] = _poly_csubq(r[i*KYBER_N:KYBER_N]);    
-  }
+  r[0:KYBER_N] = _poly_csubq(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = _poly_csubq(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = _poly_csubq(r[2*KYBER_N:KYBER_N]);
 
   return r;
 }
@@ -1895,6 +1826,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
   
   aa = __polyvec_csubq(a);
 
+  #bounded
   while (i < KYBER_VECN)
   {
     for k = 0 to 4
@@ -1959,6 +1891,7 @@ fn __i_polyvec_compress(reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES] rp, stack u16[K
   
   aa = __polyvec_csubq(a);
 
+  #bounded
   while (i < KYBER_VECN)
   {
     for k = 0 to 4
@@ -2022,6 +1955,7 @@ fn __polyvec_decompress(reg u64 ap) -> stack u16[KYBER_VECN]
   i = 0;
   j = 0;
   
+  #bounded
   while (i < KYBER_VECN)
   {
     for k = 0 to 5
@@ -2069,15 +2003,13 @@ fn __polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
 {
   stack u16[KYBER_VECN] r;
   reg u64 pp;
-  inline int i;
 
   pp = ap;
-
-  for i=0 to KYBER_K
-  {
-      r[i*KYBER_N:KYBER_N] = _poly_frombytes(r[i*KYBER_N:KYBER_N], pp);
-      pp += KYBER_POLYBYTES;
-  }
+  r[0:KYBER_N] = _poly_frombytes(r[0:KYBER_N], pp);
+  pp += KYBER_POLYBYTES;
+  r[KYBER_N:KYBER_N] = _poly_frombytes(r[KYBER_N:KYBER_N], pp);
+  pp += KYBER_POLYBYTES;
+  r[2*KYBER_N:KYBER_N] = _poly_frombytes(r[2*KYBER_N:KYBER_N], pp);
 
   return r;
 }
@@ -2085,12 +2017,9 @@ fn __polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
 inline
 fn __polyvec_invntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-  inline int i;
-
-  for i=0 to KYBER_K
-  {
-    r[i*KYBER_N:KYBER_N] = _poly_invntt(r[i*KYBER_N:KYBER_N]);
-  }
+  r[0:KYBER_N] = _poly_invntt(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = _poly_invntt(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = _poly_invntt(r[2*KYBER_N:KYBER_N]);
 
   return r;
 }
@@ -2098,12 +2027,9 @@ fn __polyvec_invntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 inline
 fn __polyvec_ntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-  inline int i;
-
-  for i=0 to KYBER_K
-  {
-    r[i*KYBER_N:KYBER_N] = _poly_ntt(r[i*KYBER_N:KYBER_N]);
-  }
+  r[0:KYBER_N] = _poly_ntt(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = _poly_ntt(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = _poly_ntt(r[2*KYBER_N:KYBER_N]);
 
   return r;
 }
@@ -2114,15 +2040,12 @@ fn __polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> 
 {
   stack u16[KYBER_N] t;
   stack u16[KYBER_N] r;
-  inline int i;
 
   r = _poly_basemul(r, a[0:KYBER_N], b[0:KYBER_N]);
-
-  for i=1 to KYBER_K
-  {
-    t = _poly_basemul(t, a[i*KYBER_N:KYBER_N], b[i*KYBER_N:KYBER_N]);
-    r = _poly_add2(r, t);
-  }
+  t = _poly_basemul(t, a[KYBER_N:KYBER_N], b[KYBER_N:KYBER_N]);
+  r = _poly_add2(r, t);
+  t = _poly_basemul(t, a[2*KYBER_N:KYBER_N], b[2*KYBER_N:KYBER_N]);
+  r = _poly_add2(r, t);
 
   r = __poly_reduce(r);
 
@@ -2132,12 +2055,9 @@ fn __polyvec_pointwise_acc(stack u16[KYBER_VECN] a, stack u16[KYBER_VECN] b) -> 
 inline
 fn __polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
 {
-  inline int i;
-
-  for i=0 to KYBER_K
-  {
-    r[i*KYBER_N:KYBER_N] = __poly_reduce(r[i*KYBER_N:KYBER_N]);
-  }
+  r[0:KYBER_N] = __poly_reduce(r[0:KYBER_N]);
+  r[KYBER_N:KYBER_N] = __poly_reduce(r[KYBER_N:KYBER_N]);
+  r[2*KYBER_N:KYBER_N] = __poly_reduce(r[2*KYBER_N:KYBER_N]);
 
   return r;
 }
@@ -2146,14 +2066,13 @@ inline
 fn __polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
 {
   reg u64 pp;
-  inline int i;
 
   pp = rp;
-  for i=0 to KYBER_K
-  {
-    a[i*KYBER_N:KYBER_N] = _poly_tobytes(pp, a[i*KYBER_N:KYBER_N]);
-    pp += KYBER_POLYBYTES;
-  }
+  a[0:KYBER_N] = _poly_tobytes(pp, a[0:KYBER_N]);
+  pp += KYBER_POLYBYTES;
+  a[KYBER_N:KYBER_N] = _poly_tobytes(pp, a[KYBER_N:KYBER_N]);
+  pp += KYBER_POLYBYTES;
+  a[2*KYBER_N:KYBER_N] = _poly_tobytes(pp, a[2*KYBER_N:KYBER_N]);
 }
 
 inline
@@ -2162,15 +2081,12 @@ fn __rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] 
   reg u16 val1 val2;
   reg u16 t;
   reg u64 pos ctr;
-  reg u64 cnd0 cnd1 exit;
 
 
   ctr = offset;
   pos = 0;
-  exit = 0;
 
-  while(exit == 0)
-  {
+  while {
     val1 = (16u)buf[(int)pos];
     pos += 1;
     t   = (16u)buf[(int)pos];
@@ -2188,8 +2104,10 @@ fn __rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] 
 
     if(val1 < KYBER_Q)
     {
-      rp[(int)ctr] = val1;
-      ctr += 1;
+        if(ctr < KYBER_N) {
+            rp[(int)ctr] = val1;
+            ctr += 1;
+        }
     }
 
     if(val2 < KYBER_Q)
@@ -2201,16 +2119,8 @@ fn __rej_uniform(stack u16[KYBER_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] 
       }
     }
 
-    // Check if we should exit the loop
-    cnd0  = KYBER_N;
-    cnd0 -= ctr;
-    cnd0 -= 1;
-    cnd1  = SHAKE128_RATE;
-    cnd1 -= pos;
-    cnd1 -= 3; //TODO: (potentially) wasting 2 'good' bytes
-    exit  = cnd0 | cnd1;
-    exit >>= 63;
-  }
+  //TODO: (potentially) wasting 2 'good' bytes
+  } (pos < SHAKE128_RATE - 2)
 
   return ctr, rp;
 }
@@ -2255,19 +2165,29 @@ fn __gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[
         extseed[KYBER_SYMBYTES+1] = j;
       }
 
-      state = __shake128_absorb34(state, extseed);
+      state = _shake128_absorb34(state, extseed);
+
+      // Initialize the poly array
+      ctr = 0;
+      #bounded
+      while (ctr < KYBER_N / 4) {
+        poly[u64 (int) ctr] = ctr;
+        ctr += 1;
+      }
 
       ctr = 0;
+      #no_termination_check
       while (ctr < KYBER_N)
       {
         sctr = ctr;
-        state, buf = __shake128_squeezeblock(state, buf);
+        state, buf = _shake128_squeezeblock(state, buf);
         ctr = sctr;
         ctr, poly  = __rej_uniform(poly, ctr, buf);
       }
 
       k = 0;
       l = i * KYBER_VECN + j * KYBER_N;
+      #bounded
       while (k < KYBER_N)
       {
         t = poly[(int) k];
@@ -2281,73 +2201,66 @@ fn __gen_matrix(stack u8[KYBER_SYMBYTES] seed, reg u64 transposed) -> stack u16[
 }
 
 inline
-fn __indcpa_keypair(reg u64 pkp, reg u64 skp)
+fn __indcpa_keypair_derand(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomnessp)
 {
-  stack u64 spkp sskp;
-  stack u8[KYBER_SYMBYTES] rb;
   stack u16[KYBER_K * KYBER_VECN] a;
   stack u16[KYBER_VECN] e pkpv skpv;
   stack u8[64] buf;
   stack u8[KYBER_SYMBYTES] publicseed noiseseed;
   stack u8[32] inbuf;
-  reg u64 i, j;
+  reg u64 t64;
   reg u64 zero;
   reg u8 nonce;
-  reg u8 c;
-  inline int k;
+  inline int i;
+
+  stack u64 spkp;
+  stack u64 sskp;
 
   spkp = pkp;
   sskp = skp;
 
-  rb = #randombytes(rb);
-
-  i = 0;
-  while (i < KYBER_SYMBYTES)
+  for i=0 to KYBER_SYMBYTES/8
   {
-    c = rb[(int) i];
-    inbuf[(int) i] = c;
-    i += 1;
+    t64 = randomnessp[u64 i];
+    inbuf[u64 i] = t64;
   }
 
-  buf = _isha3_512_32(buf, inbuf);
+  buf = _sha3_512_32(buf, inbuf);
 
-  i = 0;
-  j = KYBER_SYMBYTES;
-  while (i < KYBER_SYMBYTES)
+  for i=0 to KYBER_SYMBYTES/8
   {
-    c = buf[(int)i];
-    publicseed[(int)i] = c;
-    c = buf[(int)j];
-    noiseseed[(int)i] = c;
-    i += 1;
-    j += 1;
+    t64 = buf[u64 i];
+    publicseed[u64 i] = t64;
+    t64 = buf[u64 i + KYBER_SYMBYTES/8];
+    noiseseed[u64 i] = t64;
   }
 
   zero = 0; 
   a = __gen_matrix(publicseed, zero);
 
   nonce = 0;
-  skpv[0:KYBER_N] = _poly_getnoise_eta1(skpv[0:KYBER_N], noiseseed, nonce);
+  skpv[0:KYBER_N] = _poly_getnoise(skpv[0:KYBER_N], noiseseed, nonce);
   nonce = 1;
-  skpv[KYBER_N:KYBER_N] = _poly_getnoise_eta1(skpv[KYBER_N:KYBER_N], noiseseed, nonce);
+  skpv[KYBER_N:KYBER_N] = _poly_getnoise(skpv[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 2;
-  skpv[2*KYBER_N:KYBER_N] = _poly_getnoise_eta1(skpv[2*KYBER_N:KYBER_N], noiseseed, nonce);
+  skpv[2*KYBER_N:KYBER_N] = _poly_getnoise(skpv[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
   nonce = 3;
-  e[0:KYBER_N] = _poly_getnoise_eta1(e[0:KYBER_N], noiseseed, nonce);
+  e[0:KYBER_N] = _poly_getnoise(e[0:KYBER_N], noiseseed, nonce);
   nonce = 4;
-  e[KYBER_N:KYBER_N] = _poly_getnoise_eta1(e[KYBER_N:KYBER_N], noiseseed, nonce);
+  e[KYBER_N:KYBER_N] = _poly_getnoise(e[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 5;
-  e[2*KYBER_N:KYBER_N] = _poly_getnoise_eta1(e[2*KYBER_N:KYBER_N], noiseseed, nonce);
+  e[2*KYBER_N:KYBER_N] = _poly_getnoise(e[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
   skpv = __polyvec_ntt(skpv);
   e    = __polyvec_ntt(e);
 
-  for k=0 to KYBER_K
-  {
-    pkpv[k*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(a[k*KYBER_VECN:KYBER_VECN], skpv);
-    pkpv[k*KYBER_N:KYBER_N] = _poly_frommont(pkpv[k*KYBER_N:KYBER_N]);
-  }
+  pkpv[0:KYBER_N] = __polyvec_pointwise_acc(a[0:KYBER_VECN], skpv);
+  pkpv[0:KYBER_N] = _poly_frommont(pkpv[0:KYBER_N]);
+  pkpv[KYBER_N:KYBER_N] = __polyvec_pointwise_acc(a[KYBER_VECN:KYBER_VECN], skpv);
+  pkpv[KYBER_N:KYBER_N] = _poly_frommont(pkpv[KYBER_N:KYBER_N]);
+  pkpv[2*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(a[2*KYBER_VECN:KYBER_VECN], skpv);
+  pkpv[2*KYBER_N:KYBER_N] = _poly_frommont(pkpv[2*KYBER_N:KYBER_N]);
 
   pkpv = __polyvec_add2(pkpv, e);
   pkpv = __polyvec_reduce(pkpv);
@@ -2358,43 +2271,37 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp)
   __polyvec_tobytes(skp, skpv);
   __polyvec_tobytes(pkp, pkpv);
 
-  i = 0;
   pkp += KYBER_POLYVECBYTES; 
-  while (i < KYBER_SYMBYTES)
+  for i=0 to KYBER_SYMBYTES/8
   {
-    c = publicseed[(int)i];
-    (u8)[pkp] = c;
-    pkp += 1;
-    i += 1;
+    t64 = publicseed[u64 i];
+    (u64)[pkp] = t64;
+    pkp += 8;
   }
 }
 
 inline
-fn __indcpa_enc_0(stack u64 s_ctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[KYBER_SYMBYTES] noiseseed)
+fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[KYBER_SYMBYTES] noiseseed)
 {
-  stack ptr u8[KYBER_SYMBYTES] s_seed;
   stack u16[KYBER_VECN] pkpv sp ep bp;
   stack u16[KYBER_K*KYBER_VECN] aat;
-  stack u16[KYBER_N] k epp v;
+  stack u16[KYBER_N] k poly epp v poly0 poly1 poly2;
   stack u8[KYBER_SYMBYTES] publicseed;
-  reg ptr u8[KYBER_SYMBYTES] lseed;
-  reg u64 i;
+  reg u64 i j t64;
   reg u64 ctp;
   reg u16 t;
-  reg u8 c nonce;
-  inline int j;
-
-  lseed = noiseseed;
+  reg u8 nonce;
 
   pkpv = __polyvec_frombytes(pkp);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES;
-  while (i < KYBER_SYMBYTES)
+  #bounded
+  while (i < KYBER_SYMBYTES/8)
   {
-    c = (u8)[pkp];
-    publicseed[(int)i] = c;
-    pkp += 1;
+    t64 = (u64)[pkp];
+    publicseed.[u64 8 * (int)i] = t64;
+    pkp += 8;
     i += 1;
   }
 
@@ -2402,36 +2309,28 @@ fn __indcpa_enc_0(stack u64 s_ctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[
 
   aat = __gen_matrix(publicseed, 1);
 
-  s_seed = lseed;
   nonce = 0;
-  sp[0:KYBER_N] = _poly_getnoise_eta1(sp[0:KYBER_N], lseed, nonce);
-  lseed = s_seed;
+  sp[0:KYBER_N] = _poly_getnoise(sp[0:KYBER_N], noiseseed, nonce);
   nonce = 1;
-  sp[KYBER_N:KYBER_N] = _poly_getnoise_eta1(sp[KYBER_N:KYBER_N], lseed, nonce);
-  lseed = s_seed;
+  sp[KYBER_N:KYBER_N] = _poly_getnoise(sp[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 2;
-  sp[2*KYBER_N:KYBER_N] = _poly_getnoise_eta1(sp[2*KYBER_N:KYBER_N], lseed, nonce);
+  sp[2*KYBER_N:KYBER_N] = _poly_getnoise(sp[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
-  lseed = s_seed;
   nonce = 3;
-  ep[0:KYBER_N] = _poly_getnoise_eta1(ep[0:KYBER_N], lseed, nonce);
-  lseed = s_seed;
+  ep[0:KYBER_N] = _poly_getnoise(ep[0:KYBER_N], noiseseed, nonce);
   nonce = 4;
-  ep[KYBER_N:KYBER_N] = _poly_getnoise_eta1(ep[KYBER_N:KYBER_N], lseed, nonce);
-  lseed = s_seed;
+  ep[KYBER_N:KYBER_N] = _poly_getnoise(ep[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 5;
-  ep[2*KYBER_N:KYBER_N] = _poly_getnoise_eta1(ep[2*KYBER_N:KYBER_N], lseed, nonce);
+  ep[2*KYBER_N:KYBER_N] = _poly_getnoise(ep[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
-  lseed = s_seed;
   nonce = 6;
-  epp = _poly_getnoise_eta1(epp, lseed, nonce);
+  epp = _poly_getnoise(epp, noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
     
-  for j=0 to KYBER_K
-  {
-    bp[j*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(aat[j*KYBER_VECN:KYBER_VECN], sp);
-  }
+  bp[0:KYBER_N] = __polyvec_pointwise_acc(aat[0:KYBER_VECN], sp);
+  bp[KYBER_N:KYBER_N]= __polyvec_pointwise_acc(aat[KYBER_VECN:KYBER_VECN], sp);
+  bp[2*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(aat[2*KYBER_VECN:KYBER_VECN], sp);
   
   v = __polyvec_pointwise_acc(pkpv, sp);
 
@@ -2444,39 +2343,36 @@ fn __indcpa_enc_0(stack u64 s_ctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[
   bp = __polyvec_reduce(bp);
   v  = __poly_reduce(v);
 
-  ctp = s_ctp;
+  ctp = sctp;
   __polyvec_compress(ctp, bp);
   ctp += KYBER_POLYVECCOMPRESSEDBYTES;
   v = _poly_compress(ctp, v);
 }
 
 inline
-fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_BYTES] ctp, reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u64 pkp, reg ptr u8[KYBER_SYMBYTES] noiseseed) -> reg ptr u8[KYBER_INDCPA_BYTES]
+fn __iindcpa_enc(reg ptr u8[KYBER_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[KYBER_SYMBYTES] noiseseed) -> reg ptr u8[KYBER_CT_LEN]
 {
-  stack ptr u8[KYBER_INDCPA_BYTES] s_ctp;
-  stack ptr u8[KYBER_SYMBYTES] s_seed;
   stack u16[KYBER_VECN] pkpv sp ep bp;
   stack u16[KYBER_K*KYBER_VECN] aat;
-  stack u16[KYBER_N] k poly epp v;
+  stack u16[KYBER_N] k poly epp v poly0 poly1 poly2;
   stack u8[KYBER_SYMBYTES] publicseed;
-  reg ptr u8[KYBER_SYMBYTES] lseed;
-  reg u64 i;
+  reg u64 i j t64;
   reg u16 t;
-  reg u8 c nonce;
-  inline int j;
+  reg u8 nonce;
+  stack ptr u8[KYBER_CT_LEN] sctp;
 
-  s_ctp = ctp;
-  lseed = noiseseed;
+  sctp = ctp;
 
   pkpv = __polyvec_frombytes(pkp);
 
   i = 0;
   pkp += KYBER_POLYVECBYTES;
-  while (i < KYBER_SYMBYTES)
+  #bounded
+  while (i < KYBER_SYMBYTES/8)
   {
-    c = (u8)[pkp];
-    publicseed[(int)i] = c;
-    pkp += 1;
+    t64 = (u64)[pkp];
+    publicseed.[u64 8*(int)i] = t64;
+    pkp += 8;
     i += 1;
   }
 
@@ -2484,36 +2380,28 @@ fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_BYTES] ctp, reg ptr u8[KYBER_INDCPA_MS
 
   aat = __gen_matrix(publicseed, 1);
 
-  s_seed = lseed;
   nonce = 0;
-  sp[0:KYBER_N] = _poly_getnoise_eta1(sp[0:KYBER_N], s_seed, nonce);
-  lseed = s_seed;
+  sp[0:KYBER_N] = _poly_getnoise(sp[0:KYBER_N], noiseseed, nonce);
   nonce = 1;
-  sp[KYBER_N:KYBER_N] = _poly_getnoise_eta1(sp[KYBER_N:KYBER_N], s_seed, nonce);
-  lseed = s_seed;
+  sp[KYBER_N:KYBER_N] = _poly_getnoise(sp[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 2;
-  sp[2*KYBER_N:KYBER_N] = _poly_getnoise_eta1(sp[2*KYBER_N:KYBER_N], lseed, nonce);
+  sp[2*KYBER_N:KYBER_N] = _poly_getnoise(sp[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
-  lseed = s_seed;
   nonce = 3;
-  ep[0:KYBER_N] = _poly_getnoise_eta1(ep[0:KYBER_N], lseed, nonce);
-  lseed = s_seed;
+  ep[0:KYBER_N] = _poly_getnoise(ep[0:KYBER_N], noiseseed, nonce);
   nonce = 4;
-  ep[KYBER_N:KYBER_N] = _poly_getnoise_eta1(ep[KYBER_N:KYBER_N], lseed, nonce);
-  lseed = s_seed;
+  ep[KYBER_N:KYBER_N] = _poly_getnoise(ep[KYBER_N:KYBER_N], noiseseed, nonce);
   nonce = 5;
-  ep[2*KYBER_N:KYBER_N] = _poly_getnoise_eta1(ep[2*KYBER_N:KYBER_N], lseed, nonce);
+  ep[2*KYBER_N:KYBER_N] = _poly_getnoise(ep[2*KYBER_N:KYBER_N], noiseseed, nonce);
 
-  lseed = s_seed;
   nonce = 6;
-  epp = _poly_getnoise_eta1(epp, lseed, nonce);
+  epp = _poly_getnoise(epp, noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
     
-  for j=0 to KYBER_K
-  {
-    bp[j*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(aat[j*KYBER_VECN:KYBER_VECN], sp);
-  }
+  bp[0:KYBER_N] = __polyvec_pointwise_acc(aat[0:KYBER_VECN], sp);
+  bp[KYBER_N:KYBER_N]= __polyvec_pointwise_acc(aat[KYBER_VECN:KYBER_VECN], sp);
+  bp[2*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(aat[2*KYBER_VECN:KYBER_VECN], sp);
   
   v = __polyvec_pointwise_acc(pkpv, sp);
 
@@ -2526,7 +2414,7 @@ fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_BYTES] ctp, reg ptr u8[KYBER_INDCPA_MS
   bp = __polyvec_reduce(bp);
   v  = __poly_reduce(v);
 
-  ctp = s_ctp;
+  ctp = sctp;
   ctp[0:KYBER_POLYVECCOMPRESSEDBYTES] = __i_polyvec_compress(ctp[0:KYBER_POLYVECCOMPRESSEDBYTES], bp);
   ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v = _i_poly_compress(ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v);
 
@@ -2535,7 +2423,7 @@ fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_BYTES] ctp, reg ptr u8[KYBER_INDCPA_MS
 
 
 inline
-fn __indcpa_dec(reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u64 ctp, reg u64 skp) -> reg ptr u8[KYBER_INDCPA_MSGBYTES]
+fn __indcpa_dec(reg ptr u8[KYBER_MSGBYTES] msgp, reg u64 ctp, reg u64 skp) -> reg ptr u8[KYBER_N/8]
 {
   stack u16[KYBER_N] t v mp;
   stack u16[KYBER_VECN] bp skpv;
@@ -2557,8 +2445,12 @@ fn __indcpa_dec(reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u64 ctp, reg u64 skp
 
   return msgp;
 }
+// Note1: KYBER_INDCPA_BYTES vs KYBER_CT_LEN
+
+// from Jade require "crypto_kem/kyber/kyber768/common/params.jinc" // TODO: when hakyber avx2
+
 inline 
-fn __verify(reg u64 ctp, reg ptr u8[KYBER_INDCPA_BYTES] ctpc) -> reg u64
+fn __verify(reg u64 ctp, reg ptr u8[KYBER_CT_LEN] ctpc) -> reg u64
 {
   reg u64 cnd t64;
   reg u8 t1 t2;
@@ -2566,7 +2458,7 @@ fn __verify(reg u64 ctp, reg ptr u8[KYBER_INDCPA_BYTES] ctpc) -> reg u64
 
   cnd = 0;
 
-  for i=0 to KYBER_INDCPA_BYTES
+  for i=0 to KYBER_CT_LEN
   {
     t1 = ctpc.[i];
     t2 = (u8)[ctp + i];
@@ -2602,19 +2494,23 @@ fn __cmov(reg ptr u8[KYBER_SYMBYTES] dst, reg u64 src cnd) -> reg ptr u8[KYBER_S
   return dst;
 }
 
-inline
-fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp)
+#[returnaddress="stack"]
+fn _crypto_kem_keypair_derand_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES*2] randomnessp)
 {
+  stack ptr u8[KYBER_SYMBYTES*2] s_randomnessp;
+  reg ptr u8[KYBER_SYMBYTES] randomnessp1 randomnessp2;
+
   stack u8[32] h_pk;
-  stack u8[KYBER_SYMBYTES] rb;
   stack u64 s_skp s_pkp;
   reg u64 t64;
   inline int i;
 
+  s_randomnessp = randomnessp;
   s_pkp = pkp;
   s_skp = skp;
 
-  __indcpa_keypair(pkp, skp);
+  randomnessp1 = randomnessp[0:KYBER_SYMBYTES];
+  __indcpa_keypair_derand(pkp, skp, randomnessp1);
 
   skp = s_skp;
   skp += KYBER_POLYVECBYTES;
@@ -2629,8 +2525,8 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp)
 
   s_skp = skp;
   pkp = s_pkp;
-  t64 = KYBER_INDCPA_PUBLICKEYBYTES;
-  h_pk = _isha3_256(h_pk, pkp, t64);
+  t64 = KYBER_POLYVECBYTES + KYBER_SYMBYTES;
+  h_pk = _sha3_256(h_pk, pkp, t64);
   skp = s_skp;
 
   for i=0 to 4
@@ -2640,53 +2536,51 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp)
     skp += 8;
   }
 
-  rb = #randombytes(rb);
-
+  randomnessp = s_randomnessp;
+  randomnessp2 = randomnessp[KYBER_SYMBYTES:KYBER_SYMBYTES];
   for i=0 to KYBER_SYMBYTES/8
   {
-    t64 = rb[u64 i];
+    t64 = randomnessp2[u64 i];
     (u64)[skp] = t64;
     skp += 8;
   }
 }
 
-inline
-fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp)
+#[returnaddress="stack"]
+fn _crypto_kem_enc_derand_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[KYBER_SYMBYTES] randomnessp)
 {
+  inline int i;
+
   stack u8[KYBER_SYMBYTES * 2] buf kr;
-  stack u8[KYBER_SYMBYTES] rb;
   stack u64 s_pkp s_ctp s_shkp;
   reg u64 t64;
-  inline int i;
 
   s_pkp = pkp;
   s_ctp = ctp;
   s_shkp = shkp;
 
-  rb = #randombytes(rb);
-
   for i=0 to KYBER_SYMBYTES/8
   {
-    t64 = rb[u64 i];
+    t64 = randomnessp[u64 i];
     kr[u64 i] = t64;
   }
-  
-  buf[0:32] = _isha3_256_32(buf[0:32], kr[0:KYBER_SYMBYTES]);
+
+  buf[0:KYBER_SYMBYTES] = _sha3_256_32(buf[0:KYBER_SYMBYTES], kr[0:KYBER_SYMBYTES]);
 
   pkp = s_pkp;
 
   t64 = KYBER_PUBLICKEYBYTES;
-  buf[KYBER_SYMBYTES:32] = _isha3_256(buf[KYBER_SYMBYTES:32], pkp, t64);
+  buf[KYBER_SYMBYTES:KYBER_SYMBYTES] = _sha3_256(buf[KYBER_SYMBYTES:KYBER_SYMBYTES], pkp, t64);
 
-  kr = _isha3_512_64(kr, buf);
+  kr = _sha3_512_64(kr, buf);
 
   pkp = s_pkp;
 
-  __indcpa_enc_0(s_ctp, buf[0:KYBER_INDCPA_MSGBYTES], pkp, kr[KYBER_SYMBYTES:KYBER_SYMBYTES]);
+  __indcpa_enc(s_ctp, buf[0:KYBER_SYMBYTES], pkp, kr[KYBER_SYMBYTES:KYBER_SYMBYTES]);
 
   ctp = s_ctp;
-  t64 = KYBER_INDCPA_BYTES;
-  kr[KYBER_SYMBYTES:32] = _isha3_256(kr[KYBER_SYMBYTES:32], ctp, t64);
+  t64 = KYBER_CT_LEN;
+  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _sha3_256(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
 
   shkp = s_shkp;
   t64 = KYBER_SSBYTES;
@@ -2696,7 +2590,7 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp)
 inline
 fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 {
-  stack u8[KYBER_INDCPA_BYTES] ctpc;
+  stack u8[KYBER_CT_LEN] ctpc;
   stack u8[2*KYBER_SYMBYTES] kr buf;
   stack u64 s_skp s_ctp s_shkp;
   reg u64 pkp hp zp t64 cnd;
@@ -2705,10 +2599,11 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   s_shkp = shkp;
   s_ctp = ctp;
 
-  buf[0:KYBER_INDCPA_MSGBYTES] = __indcpa_dec(buf[0:KYBER_INDCPA_MSGBYTES], ctp, skp);
+  buf[0:KYBER_MSGBYTES] = __indcpa_dec(buf[0:KYBER_MSGBYTES], ctp, skp);
 
-  hp = #LEA(skp + 32); // hp = skp + 32;
-  hp += 24 * KYBER_K * KYBER_N>>3;
+  hp = #LEA(skp + 32); // avoid -lea
+  //hp += 24 * KYBER_K * KYBER_N>>3;
+  hp += 3 * KYBER_K * KYBER_N;
 
   for i=0 to KYBER_SYMBYTES/8
   {
@@ -2718,33 +2613,109 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 
   s_skp = skp;
 
-  kr = _isha3_512_64(kr, buf);
+  kr = _sha3_512_64(kr, buf);
 
   pkp = s_skp;
-  pkp += 12 * KYBER_K * KYBER_N>>3;
+  //pkp += 12 * KYBER_K * KYBER_N>>3;
+  pkp += 12 * KYBER_K * 32;
 
-  ctpc = __indcpa_enc_1(ctpc, buf[0:KYBER_INDCPA_MSGBYTES], pkp, kr[KYBER_SYMBYTES:KYBER_SYMBYTES]);
+  ctpc = __iindcpa_enc(ctpc, buf[0:KYBER_SYMBYTES], pkp, kr[KYBER_SYMBYTES:KYBER_SYMBYTES]);
 
   ctp = s_ctp;
   cnd = __verify(ctp, ctpc);
 
   zp = s_skp;
   zp += 64;
-  zp += 24 * KYBER_K * KYBER_N>>3;
+  //zp += 24 * KYBER_K * KYBER_N>>3;
+  zp += 3 * KYBER_K * KYBER_N;
   kr[0:KYBER_SYMBYTES] = __cmov(kr[0:KYBER_SYMBYTES], zp, cnd);
 
-  t64 = KYBER_INDCPA_BYTES;
-  kr[KYBER_SYMBYTES:32] = _isha3_256(kr[KYBER_SYMBYTES:32], ctp, t64);
+  t64 = KYBER_CT_LEN;
+  kr[KYBER_SYMBYTES:KYBER_SYMBYTES] = _sha3_256(kr[KYBER_SYMBYTES:KYBER_SYMBYTES], ctp, t64);
 
   shkp = s_shkp;
   t64 = KYBER_SSBYTES;
   _shake256_64(shkp, t64, kr);
 }
 
+inline 
+fn __tostack64u8(reg ptr u8[64] out, reg u64 inp) -> reg ptr u8[64] 
+{
+  reg u8 t;
+  inline int i;
+
+  for i=0 to 64 
+  {
+    t = (u8)[inp + i];
+    out[i] = t;
+  }
+  return out;
+}
+
+inline 
+fn __tostack32u8(reg ptr u8[32] out, reg u64 inp) -> reg ptr u8[32] 
+{
+  reg u8 t;
+  inline int i;
+
+  for i=0 to 32
+  {
+    t = (u8)[inp + i];
+    out[i] = t;
+  }
+  return out;
+}
+
+
+inline 
+fn __fromstack32u8(reg u64 outp, reg ptr u8[32] in)
+{
+  reg u8 t;
+  inline int i;
+
+  for i=0 to 32
+  {
+    t = in[i];
+    (u8)[outp + i] = t;
+  }
+}
+
+export fn jade_kem_kyber_kyber768_amd64_ref_keypair_derand(reg u64 public_key secret_key coins) -> reg u64
+{
+  reg u64 r;
+  stack u8[2*KYBER_SYMBYTES] stack_coins;
+
+  public_key = public_key;
+  secret_key = secret_key;
+  stack_coins = __tostack64u8(stack_coins, coins);
+  _crypto_kem_keypair_derand_jazz(public_key, secret_key, stack_coins);
+  ?{}, r = #set0();
+  return r;
+}
+
 export fn jade_kem_kyber_kyber768_amd64_ref_keypair(reg u64 public_key secret_key) -> reg u64
 {
   reg u64 r;
-  __crypto_kem_keypair_jazz(public_key, secret_key);
+  stack u8[2*KYBER_SYMBYTES] stack_coins;
+
+  public_key = public_key;
+  secret_key = secret_key;
+  stack_coins = #randombytes(stack_coins);
+  _crypto_kem_keypair_derand_jazz(public_key, secret_key, stack_coins);
+  ?{}, r = #set0();
+  return r;
+}
+
+export fn jade_kem_kyber_kyber768_amd64_ref_enc_derand(reg u64 ciphertext shared_secret public_key coins) -> reg u64
+{
+  reg u64 r;
+  stack u8[KYBER_SYMBYTES] stack_coins;
+  
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+  stack_coins = __tostack32u8(stack_coins, coins);
+  _crypto_kem_enc_derand_jazz(ciphertext, shared_secret, public_key, stack_coins);
   ?{}, r = #set0();
   return r;
 }
@@ -2752,7 +2723,13 @@ export fn jade_kem_kyber_kyber768_amd64_ref_keypair(reg u64 public_key secret_ke
 export fn jade_kem_kyber_kyber768_amd64_ref_enc(reg u64 ciphertext shared_secret public_key) -> reg u64
 {
   reg u64 r;
-  __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key);
+  stack u8[KYBER_SYMBYTES] stack_coins;
+
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+  stack_coins = #randombytes(stack_coins);
+  _crypto_kem_enc_derand_jazz(ciphertext, shared_secret, public_key, stack_coins);
   ?{}, r = #set0();
   return r;
 }
@@ -2764,3 +2741,4 @@ export fn jade_kem_kyber_kyber768_amd64_ref_dec(reg u64 shared_secret ciphertext
   ?{}, r = #set0();
   return r;
 }
+
