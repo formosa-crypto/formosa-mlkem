@@ -197,7 +197,7 @@ op array128_mont_inv (p : Fq Array128.t) =
   (Array128.map (fun x => x * R) p).[127 <- p.[127] * R * R].
 
 op zetas_inv : Fq Array128.t =
-  let vv = Array128.init (fun k => ZqField.exp zroot (- (bsrev 8 (k * 2) + 1))) in
+  let vv = Array128.init (fun k => Zq.exp zroot (- (bsrev 8 (k * 2) + 1))) in
       vv.[127 <- scale127].
 
 lemma zetas_invE: zetas_inv = Array128.of_list witness 
@@ -319,7 +319,7 @@ op array128_mont (p : Fq Array128.t) =
   Array128.map (fun x => x * R) p.
 
 op zetas : Fq Array128.t = 
-    Array128.init (fun k => ZqField.exp zroot (bsrev 8 (k * 2))).
+    Array128.init (fun k => Zq.exp zroot (bsrev 8 (k * 2))).
 
 lemma zetasE:
  zetas = Array128.of_list witness
@@ -411,7 +411,7 @@ qed.
 (*@bac: versions with simpler premisses*)
 lemma zetavals1'  k: 
  0 <= k < 128 => k %% 2 = 0 =>
- ZqField.exp zroot (2 * br k + 1) = NTT_Fq.zetas.[k %/ 2 + 64].
+ Zq.exp zroot (2 * br k + 1) = NTT_Fq.zetas.[k %/ 2 + 64].
 proof.
 rewrite -mem_range => mem_k_range /dvdzP [q ->>].
 move: mem_k_range; rewrite mem_range_mulr //= mulzK // (*-divzpMr //=*) /zetas => mem_q_range.
@@ -421,7 +421,7 @@ by rewrite bsrev1 //= (addzC 1) -bsrev_mod /= -modzDm /= !bsrev_mod.
 qed.
 
 lemma zetavals2' k : 0 <= k < 128 => k%%2 <> 0 => 
- ZqField.exp zroot (2 * br k + 1) = -NTT_Fq.zetas.[k %/ 2 + 64].
+ Zq.exp zroot (2 * br k + 1) = -NTT_Fq.zetas.[k %/ 2 + 64].
 proof.
 rewrite -mem_range => mem_k_range eq_modz'.
 have eq_modz: k%%2 = 1 by smt().
@@ -437,11 +437,11 @@ by rewrite exp_zroot_128 inFqN ZqField.mulNr ZqField.mul1r (mulzC _ 2).
 qed.
 
 lemma zetavals1  k : 0 <= k < 256 => k%%4 = 0 =>
-     zetas.[k %/ 4 + 64] = ZqField.exp zroot (2 * br (k %/ 2) + 1).
+     zetas.[k %/ 4 + 64] = Zq.exp zroot (2 * br (k %/ 2) + 1).
 proof. by move=> Hk H4; rewrite zetavals1' /#. qed. 
 
 lemma zetavals2 k : 0 <= k < 256 => k%%4 = 2 => 
-     zetas.[k %/ 4 + 64] = (-ZqField.exp zroot (2 * br (k %/ 2) + 1)).
+     zetas.[k %/ 4 + 64] = (-Zq.exp zroot (2 * br (k %/ 2) + 1)).
 proof.
 move=> Hk H4; rewrite zetavals2' 1..2:/#.
 by rewrite -divz_mulp 1..2:/# /= ; ring.

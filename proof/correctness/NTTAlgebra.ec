@@ -142,7 +142,6 @@ end DFT.
 
 require import Kyber.
 import Zq.
-import ZqRing.
 
 theory NTTequiv.
 
@@ -3399,14 +3398,14 @@ theory NTTequiv.
       rewrite modz_small //; apply/mem_range; rewrite normrX.
       move: mem_i_range; apply/mem_range_incl => //.
       rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
-      by rewrite ler_addl expr_ge0.
-    rewrite eq_sym addrC -subr_eq eq_sym (BAdd.big_cat_int (2 ^ kl) 0 (2 ^ (kl + 1))).
+      by rewrite ler_addl expr_ge0. print eq_sym.
+    rewrite eq_sym ZqRing.addrC -(ZqRing.subr_eq) eq_sym (BAdd.big_cat_int (2 ^ kl) 0 (2 ^ (kl + 1))).
     + by rewrite expr_ge0.
     + rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
       by rewrite ler_addl expr_ge0.
-    rewrite addrAC /= subrr add0r (BAdd.eq_big_int _ _ _ (f \o g)).
+    rewrite ZqRing.addrAC /= ZqRing.subrr ZqRing.add0r (BAdd.eq_big_int _ _ _ (f \o g)).
     + rewrite /f /g => {f g} i /mem_range mem_i_range /=.
-      rewrite (IntID.mulrC _ 2) mulrA -exprD.
+      rewrite (IntID.mulrC _ 2) ZqRing.mulrA -ZqRing.exprD.
       - by rewrite unit_zroot_ring.
       rewrite -mulrDr /(\o) /= addrA; congr; last first.
       - by rewrite mulrDl -mulrA /= (exprS_range _ _ _ mem_kl_range).
@@ -3462,8 +3461,8 @@ theory NTTequiv.
         rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
         by rewrite ler_addl expr_ge0.
       rewrite mulrDr (exprS_range _ _ _ mem_kl_range) //= -addrA.
-      rewrite (IntID.mulrDl (_ ^ _)%IntID) exprD ?unit_zroot_ring //.
-      rewrite -mulrA -{1}(mul1r (_ * _.[_]%Array256)%Zq); congr; rewrite eq_sym.
+      rewrite (IntID.mulrDl (_ ^ _)%IntID) ZqRing.exprD ?unit_zroot_ring //.
+      rewrite -ZqRing.mulrA -{1}(ZqRing.mul1r (_ * _.[_]%Array256)%Zq); congr; rewrite eq_sym.
       rewrite exp_zroot_ring; pose m:= (_ * bsrev _ _).
       move: (dvdzE 256 m) => [-> //=]; [rewrite /m => {m}|by move => _; rewrite /q].
       move: (dvdz_mul (2 ^ (kl + 1)) (2 ^ (7 - kl)) (2 ^ (kl + 1)) (bsrev 8 (i * 2)) _ _).
@@ -3474,16 +3473,16 @@ theory NTTequiv.
         rewrite -(exprSr_range _ _ _ mem_kl_range) //=.
         by rewrite -mulNr mulzK.
       by rewrite (exprD_nneg_add_sub_range _ _ _ mem_kl_range).
-    rewrite eq_sym addrC -subr_eq eq_sym (BAdd.big_cat_int (2 ^ kl) 0 (2 ^ (kl + 1))).
+    rewrite eq_sym ZqRing.addrC -ZqRing.subr_eq eq_sym (BAdd.big_cat_int (2 ^ kl) 0 (2 ^ (kl + 1))).
     + by rewrite expr_ge0.
     + rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
       by rewrite ler_addl expr_ge0.
-    rewrite addrAC /= subrr add0r BAdd.sumrN (BAdd.eq_big_int _ _ _ (f \o g)).
+    rewrite ZqRing.addrAC /= ZqRing.subrr ZqRing.add0r BAdd.sumrN (BAdd.eq_big_int _ _ _ (f \o g)).
     + rewrite /f /g => {f g} i /mem_range mem_i_range /=.
-      rewrite (IntID.mulrC _ 2) mulrA -exprD.
+      rewrite (IntID.mulrC _ 2) ZqRing.mulrA -ZqRing.exprD.
       - by rewrite unit_zroot_ring.
-      rewrite -mulrDr /(\o) /= addrA -mulN1r -inFqN -exp_zroot_128_ring.
-      rewrite mulrA -ZqRing.exprD; [by rewrite unit_zroot_ring|].
+      rewrite -mulrDr /(\o) /= addrA -ZqRing.mulN1r -inFqN -exp_zroot_128_ring.
+      rewrite ZqRing.mulrA -ZqRing.exprD; [by rewrite unit_zroot_ring|].
       congr; last first.
       - by rewrite mulrDl -mulrA /= (exprS_range _ _ _ mem_kl_range).
       rewrite modz_small //; [by rewrite normrX -mem_range|].
@@ -3502,12 +3501,12 @@ theory NTTequiv.
         by rewrite -mulNr mulzK.
       rewrite bsrev1 //= (divz_pow_add_range _ _ _ mem_kl_range) //=.
       rewrite (IntID.addrC (bsrev _ _)) -addrA (IntID.mulrDl (2 ^ _) (_ * _ + _)%Int).
-      rewrite exprD; [by rewrite unit_zroot_ring|].
-      rewrite exprD; [by rewrite unit_zroot_ring|]; congr.
-      rewrite mulrDr exprD; [by rewrite unit_zroot_ring|].
+      rewrite ZqRing.exprD; [by rewrite unit_zroot_ring|].
+      rewrite ZqRing.exprD; [by rewrite unit_zroot_ring|]; congr.
+      rewrite mulrDr ZqRing.exprD; [by rewrite unit_zroot_ring|].
       rewrite (exprD_nneg_add_sub_range _ _ _ mem_kl_range) //=.
-      rewrite -{1}(mulr1 (ZqRing.exp _ _)); congr; rewrite eq_sym.
-      rewrite exp_ring (exp_mod _ _ 256); [by rewrite exp_zroot_256|].
+      rewrite -{1}(ZqRing.mulr1 (ZqRing.exp _ _)); congr; rewrite eq_sym.
+      rewrite (exp_mod _ _ 256); [by rewrite exp_zroot_256|].
       move: (dvdzE 256 (2 ^ (kl + 1) * bsrev 8 (i * 2))) => [->]; [|by rewrite ZqField.expr0].
       move: (dvdz_mul (2 ^ (kl + 1)) (2 ^ (7 - kl)) (2 ^ (kl + 1)) (bsrev 8 (i * 2)) _ _).
       - by rewrite dvdzz.
@@ -3737,7 +3736,7 @@ theory NTTequiv.
       move => start bsj /=; rewrite range_ltn // range_geq //= => ->>.
       move => mem_bsj_range; rewrite /partial_ntt_spec /partial_ntt /=.
       rewrite range_ltn // range_geq //= BAdd.big_consT BAdd.big_nil /=.
-      by rewrite addr0 bsrev0 expr0 mul1r.
+      by rewrite ZqRing.addr0 bsrev0 ZqRing.expr0 ZqRing.mul1r.
     apply/HL_FOR_NAT_MUL_LE.inv_out => _ r /= Q_ start bsj mem_start_range mem_bsj_range.
     by rewrite Q_.
   qed.
@@ -4189,11 +4188,11 @@ theory NTTequiv.
     apply/invntt_eq_big_int_split => //=; [by rewrite expr_ge0| | |].
     + by rewrite -mulr2z intmulz (exprSr_range _ _ _ mem_kl_range).
     + move => x mem_x_range; rewrite -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //=; congr.
-      rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
+      rewrite (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
       congr; rewrite !(exprSr_sub_range _ _ _ mem_kl_range) //=.
       by rewrite (exprS_sub_range _ _ _ mem_kl_range).
     move => x mem_x_range; rewrite !mulrDl -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //= !addrA; congr.
-    rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
+    rewrite (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
     congr; rewrite !(exprSr_sub_range _ _ _ mem_kl_range) //= !(exprS_sub_range _ _ _ mem_kl_range) //=.
     by rewrite !mulrA -(IntID.mulrA x 2) (exprS_sub_range _ _ _ mem_kl_range).
   qed.
@@ -4225,13 +4224,13 @@ theory NTTequiv.
     rewrite (exprSr_sub_range _ _ _ mem_kl_range) //=.
     rewrite (divz_pow_sub_range _ _ _ mem_kl_range) //=.
     rewrite pow_if // (divz_pow_sub_range _ _ _ mem_kl_range) //=.
-    rewrite mulrDr mulrN -mulNr !BAdd.mulr_sumr.
+    rewrite ZqRing.mulrDr ZqRing.mulrN -ZqRing.mulNr !BAdd.mulr_sumr.
     apply/invntt_eq_big_int_split => //=; [by rewrite expr_ge0| | |].
     + by rewrite -mulr2z intmulz (exprSr_range _ _ _ mem_kl_range).
-    + move => x mem_x_range; rewrite -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //= !mulrA; congr.
-      rewrite -exprD ?unit_zroot_ring //.
-      rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
-      congr; rewrite -!mulrA (IntID.mulrDl (lbsj * 2) 1) /= -!mulrA !(exprSr_sub_range _ _ _ mem_kl_range) //=.
+    + move => x mem_x_range; rewrite -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //= !ZqRing.mulrA; congr.
+      rewrite -ZqRing.exprD ?unit_zroot_ring //.
+      rewrite (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
+      congr; rewrite (* -!ZqRing.mulrA*) (IntID.mulrDl (lbsj * 2) 1) /= -!mulrA !(exprSr_sub_range _ _ _ mem_kl_range) //=.
       rewrite !(exprS_sub_range _ _ _ mem_kl_range) //=.
       rewrite (IntID.addrC (_ * _)%Int (2 ^ (7 - _))) (IntID.mulrC lbsj) bsrev_add.
       - by rewrite le2_mem_range mem_range_subl; move: mem_kl_range; apply/mem_range_incl.
@@ -4245,14 +4244,14 @@ theory NTTequiv.
       rewrite !mulrDl /= -!mulrA (exprS_range _ _ _ mem_kl_range) //=.
       rewrite !(exprD_nneg_sub_add_range _ _ _ mem_kl_range) //= !opprD -!mulNr.
       by rewrite -!addrA modzMDl -modzDm eq_sym -modzDm.
-    move => x mem_x_range; rewrite !mulrDl -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //= !addrA !mulrA; congr.
+    move => x mem_x_range; rewrite !mulrDl -!mulrA (exprS_sub_range _ _ _ mem_kl_range) //= !addrA !mulrA !ZqRing.mulrA; congr.
     rewrite -!(IntID.mulrA ks) -!(IntID.mulrA x) -!(IntID.mulrA lbsj) !(exprSr_sub_range _ _ _ mem_kl_range) //=.
     rewrite !(exprS_sub_range _ _ _ mem_kl_range) //= !(exprSr_sub_range _ _ _ mem_kl_range) //=.
     rewrite !(exprS_range _ _ _ mem_kl_range) //= !opprD /= -!mulNr !mulrA -!mulrDl.
     rewrite -{2}(IntID.mul1r (bsrev _ _)) -mulNr -mulrDl -{2}(IntID.mul1r (bsrev _ (_ + _)%Int)) -mulNr -mulrDl.
-    rewrite -(mul1r (exp zroot (_ - _)%Int)) -mulNr -inFqN -exp_zroot_128.
-    rewrite -!exprD ?unit_zroot_ring //.
-    rewrite !exp_ring (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
+    rewrite -(ZqRing.mul1r (exp zroot (_ - _)%Int)) -ZqRing.mulNr -inFqN -exp_zroot_128.
+    rewrite -!ZqRing.exprD ?unit_zroot_ring //.
+    rewrite (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
     congr; rewrite (IntID.addrC (_ * _)%Int (2 ^ (7 - _))) (IntID.mulrC lbsj) bsrev_add.
     + by rewrite le2_mem_range mem_range_subl; move: mem_kl_range; apply/mem_range_incl.
     + rewrite mem_range expr_ge0 //=; move: (exprS_sub_range _ _ _ mem_kl_range 2 7) => //= <-.
@@ -4396,7 +4395,7 @@ theory NTTequiv.
             rewrite ltzE /=; apply/ler_weexpn2l => //; rewrite -ler_subl_addl /=.
             by move: mem_kl_range; apply/mem_range_le.
           by rewrite (exprD_nneg_sub_add_range _ _ _ mem_kl_range).
-        rewrite -exp_ring bsrev_involutive //.
+        rewrite bsrev_involutive //.
         * move: (mem_range_add_mul _ _ (2 ^ (kl + 1)) (2 ^ kl - 1) _ _ mem_ks_range) => /=.
           + apply/mem_range; split => [|_]; [by rewrite -ltzS /= expr_gt0|].
             rewrite ltzE /=; apply/ler_weexpn2l => //; rewrite -ler_subl_addl /=.
@@ -4514,12 +4513,12 @@ theory NTTequiv.
       rewrite mem_rcons /= Array256.get_set_if -mem_range.
       rewrite (bsrev_range 8) /=.
       case: (i = k) => [->>|neqik] /=.
-      - by rewrite mem_range /= mulr1 => ->.
+      - by rewrite mem_range /= ZqRing.mulr1 => ->.
       case: (bsrev 8 i = bsrev 8 k) => // eq_bsrev.
       by move: (bsrev_injective _ _ _ _ _ _ eq_bsrev) => // ->>.
     move => [-> <<-]; split.
     + rewrite /inv_naive_invntt_post; apply/HL_FOR_INT_ADD_LT.inv_0 => //.
-      by move => j mem_j_range /=; rewrite range_geq //= mulr1.
+      by move => j mem_j_range /=; rewrite range_geq //= ZqRing.mulr1.
     apply/HL_FOR_INT_ADD_LT.inv_out => _ r /= Q_.
     apply/Array256.tP => i /mem_range mem_i_range.
     move: Q_ => /(_ (bsrev 8 i) _); [by apply (bsrev_range 8)|].
@@ -4555,7 +4554,7 @@ theory NTTequiv.
       move => mem_hbsj_range mem_lbsj_range; rewrite range_ltn // range_geq //= => ->.
       move => len'; rewrite /len' => {len'} /=.
       rewrite /partial_invntt /= range_ltn // range_geq //= BAdd.big_consT BAdd.big_nil /=.
-      by rewrite bsrev0 /= expr0 mul1r addr0.
+      by rewrite bsrev0 /= ZqRing.expr0 ZqRing.mul1r ZqRing.addr0.
     apply/HL_FOR_NAT_DIV_GE.inv_out => _ r /= Q_; split; [|by trivial].
     apply/Array256.tP => i /mem_range mem_i_range; rewrite /p' => {p'}.
     rewrite Array256.initiE /=; [by apply/mem_range|].
@@ -4588,7 +4587,7 @@ theory NTTequiv.
         * by rewrite bsrev_involutive //= (bsrev_range 7).
         by rewrite (bsrev_range 7).
       rewrite BAdd.big_mapT; apply BigDom.BAdd.eq_big_int => j /mem_range mem_j_range; rewrite /(\o) /=.
-      rewrite mulrC; congr; congr; [|congr].
+      rewrite ZqRing.mulrC; congr; congr; [|congr].
       - by rewrite bsrev2_ge //= modz_small //; apply/mem_range.
       - congr; congr; rewrite /br; rewrite -(bsrev_involutive 8 (bsrev 7 _)) //=.
         * by move: (bsrev_range 7 (i %/ 2)); apply/mem_range_incl.
@@ -4611,7 +4610,7 @@ theory NTTequiv.
       - by rewrite bsrev_involutive //= (bsrev_range 7).
       by rewrite (bsrev_range 7).
     rewrite BAdd.big_mapT; apply BigDom.BAdd.eq_big_int => j /mem_range mem_j_range; rewrite /(\o) /=.
-    rewrite divzMDl //= mulrC; congr; congr; [|congr].
+    rewrite divzMDl //= ZqRing.mulrC; congr; congr; [|congr].
     + rewrite addrC (bsrev_add 7 8 _ 1) //.
       - by apply/(bsrev_range 7).
       by rewrite bsrev1 //= bsrev2_ge //= modz_small //; apply/mem_range.
@@ -4646,7 +4645,7 @@ theory NTTequiv.
         by rewrite (bsrev_range 7).
       rewrite BAdd.big_mapT BAdd.mulr_suml.
       apply BigDom.BAdd.eq_big_int => j /mem_range mem_j_range; rewrite /(\o) /=.
-      rewrite mulrC mulrA eq_sym mulrAC eq_sym; congr; last first.
+      rewrite ZqRing.mulrC ZqRing.mulrA eq_sym ZqRing.mulrAC eq_sym; congr; last first.
       - by rewrite bsrev2_ge //= modz_small //; apply/mem_range.
       rewrite /br !(IntID.mulrC _ 2) (bsrev_mulr_pow2 1) //= bsrev_involutive //.
       - by rewrite mem_range_mull // range_div_range.
@@ -4667,7 +4666,7 @@ theory NTTequiv.
       by rewrite (bsrev_range 7).
     rewrite BAdd.big_mapT BAdd.mulr_suml.
     apply BigDom.BAdd.eq_big_int => j /mem_range mem_j_range; rewrite /(\o) /=.
-    rewrite mulrC mulrA eq_sym mulrAC eq_sym divzMDl //=; congr; last first.
+    rewrite ZqRing.mulrC ZqRing.mulrA eq_sym ZqRing.mulrAC eq_sym divzMDl //=; congr; last first.
     + rewrite addrC (bsrev_add 7 8 _ 1) //.
       - by apply/(bsrev_range 7).
       by rewrite bsrev1 //= bsrev2_ge //= modz_small //; apply/mem_range.

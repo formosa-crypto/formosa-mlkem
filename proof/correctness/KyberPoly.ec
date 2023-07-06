@@ -1643,7 +1643,7 @@ case (i %% 4 = 0).
   rewrite /cmplx_mul_169 /cmplx_mul /= => [#] -> ? three four.
   move : (zetavals1 i _ case1); 1: smt(). 
   rewrite /zetas /= initiE 1:/# /= => ->.
-  have -> : ZqField.exp = ZqRing.exp by smt().
+  have -> : Zq.exp = ZqRing.exp by smt().
   by ring.
 
 case (i %% 4 = 1).
@@ -1663,7 +1663,7 @@ case (i %% 4 = 2).
   rewrite /= /cmplx_mul_169 /cmplx_mul /= => [#] ??->?.
   move : (zetavals2 i _ case3); 1: smt(). 
   rewrite /zetas /= initiE 1:/# /= => ->.
-  have -> : ZqField.exp = ZqRing.exp by smt().
+  have -> : Zq.exp = ZqRing.exp by smt().
   by ring.
 
 case (i %% 4 = 3).

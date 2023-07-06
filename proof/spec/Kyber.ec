@@ -37,7 +37,7 @@ clone include Fastexp with
   op CR.([ - ]) <- Zq.([-]),
   op CR.( * ) <- Zq.( * ),
   op CR.invr  <- Zq.inv,
-  op CR.exp  <- ZqField.exp,
+  op CR.exp  <- Zq.exp,
   op CR.ofint <- ZqField.ofint,
   pred CR.unit  <- Zq.unit
 proof *.
@@ -1189,6 +1189,17 @@ module EncDec = {
 }.
 
 (* EncDec procedures are proved correct in file EncDecCorrectness *)
+proc op encode4 = EncDec.encode4.
+proc op encode1 = EncDec.encode1.
+proc op encode10_vec = EncDec.encode10_vec.
+proc op encode12 = EncDec.encode12.
+proc op encode12_vec = EncDec.encode12_vec.
+
+proc op decode4 = EncDec.decode4.
+proc op decode1 = EncDec.decode1.
+proc op decode10_vec = EncDec.decode10_vec.
+proc op decode12 = EncDec.decode12.
+proc op decode12_vec = EncDec.decode12_vec.
 
 (****************************)
 (****************************)
@@ -2228,7 +2239,7 @@ end KyberSpec.
 theory NTT_Properties.
 
 lemma exp_neg1_2 :
-  ZqField.exp (inFq (-1)) 2 = Zq.one.
+  Zq.exp (inFq (-1)) 2 = Zq.one.
 proof. by rewrite ZqField.expr2 -inFqM. qed.
 
 lemma exp_neg1_2_ring :
@@ -2239,11 +2250,11 @@ proof. by rewrite ZqRing.expr2 -inFqM. qed.
 hint simplify expr0.
 
 lemma exp_zroot_128 :
-  ZqField.exp zroot 128 = inFq (-1).
+  Zq.exp zroot 128 = inFq (-1).
 proof. by rewrite exp_inFq /= inFq_mod eq_sym inFq_mod /q. qed.
 
 lemma exp_zroot_256 :
-  ZqField.exp zroot 256 = inFq 1.
+  Zq.exp zroot 256 = inFq 1.
 proof. by rewrite exp_inFq /= inFq_mod /q. qed.
 
 lemma unit_zroot :
@@ -2259,13 +2270,9 @@ proof.
 qed.
 
 lemma exp_zroot n :
-  ZqField.exp zroot n =
+  Zq.exp zroot n =
   inFq (exp 17 (n %% 256) %% q).
 proof. by rewrite -!inFq_mod (exp_mod _ _ _ exp_zroot_256) exp_inFq modz_ge0. qed.
-
-lemma exp_ring z n :
-  ZqRing.exp z n = ZqField.exp z n.
-proof. by rewrite /ZqRing.exp /ZqField.exp; case: (n < 0) => //=. qed.
 
 lemma unit_zroot_ring :
   unit zroot.
@@ -2273,16 +2280,16 @@ proof. by exists (inFq 1175); rewrite -inFqM_mod /q. qed.
 
 lemma exp_zroot_128_ring :
   ZqRing.exp zroot 128 = inFq (-1).
-proof. by rewrite exp_ring exp_zroot_128. qed.
+proof. by rewrite exp_zroot_128. qed.
 
 lemma exp_zroot_256_ring :
   ZqRing.exp zroot 256 = inFq 1.
-proof. by rewrite exp_ring exp_zroot_256. qed.
+proof. by rewrite exp_zroot_256. qed.
 
 lemma exp_zroot_ring n :
   ZqRing.exp zroot n =
   inFq (exp 17 (n %% 256) %% q).
-proof. by rewrite exp_ring exp_zroot. qed.
+proof. by rewrite exp_zroot. qed.
 
 lemma eq_exp_zroot_one n :
   ZqRing.exp zroot n = Zq.one <=> n %% 256 = 0.
@@ -2434,8 +2441,8 @@ proof.
         rewrite modz_small // -mem_range mem_range_subr; move: mem_j_range; apply/mem_range_incl => //=.
         by rewrite -ler_subl_addl lez_divRL //; move: mem_i_range; apply/mem_range_le.
       case: (j - i %/ 2 = 0) => [->|]; [by rewrite ZqRing.expr0 ZqRing.mulr1|].
-      rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /= (exp_ring _ (256 * _)).
-      by rewrite (exp_mod _ _ _ exp_zroot_256) // modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
+      rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
     rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
     - by move: (eq_inFq 128 0); rewrite /Zq.zero /q.
     by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
@@ -2496,9 +2503,9 @@ proof.
       rewrite modz_small // -mem_range mem_range_subr; move: mem_j_range; apply/mem_range_incl => //=.
       by rewrite -ler_subl_addl lez_divRL //; move: mem_i_range; apply/mem_range_le.
     case: (j - i %/ 2 = 0) => [->|]; [by rewrite ZqRing.expr0 ZqRing.mulr1|].
-    rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /= (exp_ring _ (256 * _)).
-    by rewrite (exp_mod _ _ _ exp_zroot_256) // modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
-  rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
+    rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.  
+     rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
   + by move: (eq_inFq 128 0); rewrite /Zq.zero /q.
   by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
 qed.
@@ -2566,8 +2573,8 @@ proof.
         + by move: mem_j_range; apply/mem_range_gt.
         by rewrite -ler_subl_addl; move: mem_i_range; apply/mem_range_le.
       case: (br (i %/ 2) - br j = 0) => [//|].
-      rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /= (exp_ring _ (256 * _)).
-      by rewrite (exp_mod _ _ _ exp_zroot_256) // modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
+      rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
     rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
     - by move: (eq_inFq 128 0); rewrite /Zq.zero /q.
     by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
@@ -2629,8 +2636,8 @@ proof.
       * by move: mem_j_range; apply/mem_range_gt.
       by rewrite -ler_subl_addl; move: mem_i_range; apply/mem_range_le.
     case: (br (i %/ 2) - br j = 0) => [//|].
-    rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /= (exp_ring _ (256 * _)).
-    by rewrite (exp_mod _ _ _ exp_zroot_256) // modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
+    rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
   rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
   + by move: (eq_inFq 128 0); rewrite /Zq.zero /q.
   by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
@@ -2931,7 +2938,7 @@ proof.
       rewrite mulrDr !mulrA mulrAC (Ring.IntID.mulrDl _ _ 128) /= mulrAC /= (Ring.IntID.mulrDl _ 128).
       rewrite !ZqRing.exprD ?unit_zroot_ring //; congr.
       rewrite -mulrA ZqRing.exprM exp_zroot_256_ring ZqRing.expr1z ZqRing.mul1r.
-      rewrite ZqRing.exprM exp_zroot_128_ring !exp_ring.
+      rewrite ZqRing.exprM exp_zroot_128_ring.
       rewrite (exp_mod _ _ _ exp_neg1_2) eq_sym (exp_mod _ _ _ exp_neg1_2) eq_sym; congr.
       move: (mem_range_add2 _ _ _ _ _ _ mem_x1_range mem_x2_range) => /=.
       move => /(mem_range_addr 1 256 (x1 + x2) 1); rewrite (range_cat 128) //.
@@ -2959,7 +2966,7 @@ proof.
     rewrite mulrDr !mulrA mulrAC (Ring.IntID.mulrDl _ _ 128) /= mulrAC /= (Ring.IntID.mulrDl _ 128).
     rewrite !ZqRing.exprD ?unit_zroot_ring //; congr.
     rewrite -mulrA ZqRing.exprM exp_zroot_256_ring ZqRing.expr1z ZqRing.mul1r.
-    rewrite ZqRing.exprM exp_zroot_128_ring !exp_ring.
+    rewrite ZqRing.exprM exp_zroot_128_ring.
     rewrite (exp_mod _ _ _ exp_neg1_2) eq_sym (exp_mod _ _ _ exp_neg1_2) eq_sym; congr.
     move: (mem_range_add2 _ _ _ _ _ _ mem_x1_range mem_x2_range) => /=.
     rewrite (range_cat 128) //.
@@ -2999,7 +3006,7 @@ proof.
     rewrite mulrDr !mulrA mulrAC (Ring.IntID.mulrDl _ _ 128) /= mulrAC /= (Ring.IntID.mulrDl _ 128).
     rewrite !ZqRing.exprD ?unit_zroot_ring //; congr.
     rewrite -mulrA ZqRing.exprM exp_zroot_256_ring ZqRing.expr1z ZqRing.mul1r.
-    rewrite ZqRing.exprM exp_zroot_128_ring !exp_ring.
+    rewrite ZqRing.exprM exp_zroot_128_ring.
     rewrite (exp_mod _ _ _ exp_neg1_2) eq_sym (exp_mod _ _ _ exp_neg1_2) eq_sym; congr.
     move: (mem_range_add2 _ _ _ _ _ _ mem_x1_range mem_x2_range) => /=.
     rewrite (range_cat 128) //.
@@ -3027,7 +3034,7 @@ proof.
   rewrite mulrDr !mulrA mulrAC (Ring.IntID.mulrDl _ _ 128) /= mulrAC /= (Ring.IntID.mulrDl _ 128).
   rewrite !ZqRing.exprD ?unit_zroot_ring //; congr.
   rewrite -mulrA ZqRing.exprM exp_zroot_256_ring ZqRing.expr1z ZqRing.mul1r.
-  rewrite ZqRing.exprM exp_zroot_128_ring !exp_ring.
+  rewrite ZqRing.exprM exp_zroot_128_ring.
   rewrite (exp_mod _ _ _ exp_neg1_2) eq_sym (exp_mod _ _ _ exp_neg1_2) eq_sym; congr.
   move: (mem_range_add2 _ _ _ _ _ _ mem_x1_range mem_x2_range) => /=.
   rewrite (range_cat 128) //.

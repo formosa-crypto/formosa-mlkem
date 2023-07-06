@@ -1738,7 +1738,7 @@ op basemul_avx2 (a b : poly): poly =
     let i_l = i %% 16 in
     let i_z = i %/ 32 in
     let i_off = 32 * i_z in
-    let zsign = ZqField.exp (inFq (-1)) (i_z %% 2) in
+    let zsign = Zq.exp (inFq (-1)) (i_z %% 2) in
     let zeta_i = 64 + (i_z %/ 2 %% 2) + i_z %/ 4 * 32 + 2 * i_l in  
     if i = i_off + i_l
     then (cmplx_mul (a.[i_off+i_l],a.[i_off+i_l+16])
@@ -1811,7 +1811,7 @@ proof. by conseq __basemul_ll (__basemul_h _a _b). qed.
 op basemul_zetas (a b : poly): poly =
  Array256.init
   (fun i => let ii = i %/ 2 in
-            let zsign = ZqField.exp (inFq (-1)) (ii %% 2) in
+            let zsign = Zq.exp (inFq (-1)) (ii %% 2) in
             if i %% 2 = 0 then
             (cmplx_mul (a.[2 * ii], a.[2 * ii + 1]) (b.[2 * ii], b.[2 * ii + 1]) (zsign*NTT_Fq.zetas.[64+ii%/2])).`1
             else
@@ -1825,7 +1825,7 @@ rewrite /basemul /basemul_zetas tP => i Hi.
 rewrite !initiE //=.
 case: (i%%2=0) => RI.
  congr; congr.
- have ->: ZqRing.exp = ZqField.exp by done.
+ have ->: ZqRing.exp = Zq.exp by done.
  case: (i %/ 2 %% 2 = 0).
   move=> E; rewrite E ZqField.expr0 ZqField.mul1r.
   rewrite NTT_Fq.zetavals1' 1:/# //; congr; smt().
@@ -1833,7 +1833,7 @@ case: (i%%2=0) => RI.
  rewrite E ZqField.expr1.
  rewrite NTT_Fq.zetavals2' 1:/# // Zq.inFqN  ZqField.mulN1r /#.
 congr; congr.
-have ->: ZqRing.exp = ZqField.exp by done.
+have ->: ZqRing.exp = Zq.exp by done.
 case: (i %/ 2 %% 2 = 0).
  move=> E; rewrite E ZqField.expr0 ZqField.mul1r.
  rewrite NTT_Fq.zetavals1' 1:/# //; congr. smt().

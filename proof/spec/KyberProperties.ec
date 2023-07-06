@@ -61,9 +61,9 @@ type pkey = W8.t Array1152.t * W8.t Array32.t.
 type skey = W8.t Array1152.t.  
 
 op pk_encode(pk : vector * W8.t Array32.t) : pkey = 
-                                  (op_EncDec_encode12_vec (toipolyvec (nttv pk.`1)) ,pk.`2).
+                                  (encode12_vec (toipolyvec (nttv pk.`1)) ,pk.`2).
 op pk_decode(pk : pkey) = (invnttv (ofipolyvec (sem_decode12_vec (pk.`1))),pk.`2).
-op sk_encode(sk : vector) : skey = op_EncDec_encode12_vec (toipolyvec (nttv sk)).
+op sk_encode(sk : vector) : skey = encode12_vec (toipolyvec (nttv sk)).
 op sk_decode(sk : skey) =  invnttv (ofipolyvec (sem_decode12_vec sk)).
 op m_encode(m : plaintext) : poly = decompress_poly 1 (sem_decode1 m).
 op m_decode(p : poly) : plaintext = encode1 (compress_poly 1 p). 
@@ -872,17 +872,38 @@ module (NTTSampler(S : Sampler) : Sampler) (O : ROpub) = {
 
 }.
 
-(* These are all replaced by proc op *)
-phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = decode1  a ] = 1%r by admit. (* reify *)
-phoare sem_encode12 a : [ EncDec.encode12 : arg = a ==>  res = encode12_aux a ] = 1%r by admit. (* reify *)
-phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = encode1  a ] = 1%r by admit. (* reify *)
-phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = encode4  a ] = 1%r by admit. (* reify *)
-phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = decode4  a ] = 1%r by admit. (* reify *)
-phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = encode10_vec_aux a ] = 1%r by admit. (* reify *)
-phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = decode10_vec_aux a ] = 1%r by admit. (* reify *)
-phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = encode12_vec_aux a ] = 1%r by admit. (* reify *)
-phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = decode12_vec_aux a ] = 1%r by admit. (* reify *)
+phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = decode1  a ] = 1%r
+ by bypr => &m ->; have /= := (decode1_opsem &m (decode1 a) a).
+phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = encode1  a ] = 1%r
+ by bypr => &m ->; have /= := (encode1_opsem &m (encode1 a) a).
+phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = encode4  a ] = 1%r
+ by bypr => &m ->; have /= := (encode4_opsem &m (encode4 a) a).
+phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = decode4  a ] = 1%r
+ by bypr => &m ->; have /= := (decode4_opsem &m (decode4 a) a).
 
+phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = encode10_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (encode10_vec_aux_opsem &m (encode10_vec_aux a) a).
+ by byequiv (encode10_vec_aux) => //.
+qed.
+
+phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = decode10_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (decode10_vec_aux_opsem &m (decode10_vec_aux a) a).
+ by byequiv (decode10_vec_aux) => //.
+qed.
+
+phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = encode12_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (encode12_vec_aux_opsem &m (encode12_vec_aux a) a).
+ by byequiv (encode12_vec_aux) => //.
+qed.
+
+phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = decode12_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (decode12_vec_aux_opsem &m (decode12_vec_aux a) a).
+ by byequiv (decode12_vec_aux) => //.
+qed.
 
 section.
 

@@ -140,40 +140,15 @@ equiv decode12_vec_aux :
 equiv encode12_vec_aux : 
    EncDec.encode12_vec ~ EncDecAux.encode12_vec_aux : ={arg} ==> ={res} by sim.
 
-(* These come directly from the code. We need to show
-   that decode implements the same thing, and then show
-   that encode inverts them. *)
-proc op encode4 = EncDec.encode4.
-proc op encode1 = EncDec.encode1.
+
 proc op encode10_vec_aux = EncDecAux.encode10_vec_aux.
-proc op encode12_aux = EncDec.encode12.
+proc op encode12_aux = EncDecAux.encode12_aux.
 proc op encode12_vec_aux = EncDecAux.encode12_vec_aux.
 
-proc op decode4 = EncDec.decode4.
-proc op decode1 = EncDec.decode1.
 proc op decode10_vec_aux = EncDecAux.decode10_vec_aux.
 proc op decode12_aux = EncDecAux.decode12_aux.
 proc op decode12_vec_aux = EncDecAux.decode12_vec_aux.
 
-(* These ones still require inlining *)
-op op_EncDec_encode12_vec(a : ipolyvec) : W8.t Array1152.t =
-   fromarray384 (encode12_aux (subarray256 a 0))
-                (encode12_aux (subarray256 a 1))
-                (encode12_aux (subarray256 a 2)).
-
-lemma sem_op_EncDec_encode12_vec _a :
-  encode12_vec_aux _a = op_EncDec_encode12_vec _a
-     by rewrite /encode12_vec_aux /op_EncDec_encode12_vec /=.
-   
-
-op op_EncDec_decode12_vec(a : W8.t Array1152.t) : ipolyvec = 
-   fromarray256 (decode12_aux (subarray384 a 0))
-                (decode12_aux (subarray384 a 1))
-                (decode12_aux (subarray384 a 2)).
-
-lemma sem_op_EncDec_decode12_vec _a :
-  decode12_vec_aux _a = op_EncDec_decode12_vec _a
-     by rewrite /decode12_vec_aux /op_EncDec_decode12_vec /=.
 
 (* FixMe: Move *)
 lemma iteriS_rw ['a] (n : int) (opr : int -> 'a -> 'a) (x : 'a) :
