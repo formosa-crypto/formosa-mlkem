@@ -1,7 +1,7 @@
-require import AllCore Distr FinType List SmtMap Kyber.
+require import AllCore Distr FinType List SmtMap Kyber IntDiv.
 require (****) KyberProperties IRO.
 from Jasmin require import JModel.
-require import Array32 Array168 WArray168.
+require import Array32 Array256 Array168 WArray168.
 require import SHA3Indiff.
 import Sponge BIRO Common Perm.
 
@@ -19,7 +19,8 @@ clone import KyberProperties as KP with
   type SpecProperties.KyberSpec.KyberPKE.RO.out_t <- W8.t Array168.t,
   op SpecProperties.KyberSpec.KyberPKE.RO.dout <- fun _ => dblock.
 
-import SpecProperties KyberSpec KyberPKE RO.
+import SpecProperties KyberSpec KyberPKE RO Kyber KPoly KMatrix Zq.
+
 
 (* THIS IS A XOF THAT USES AS IDEAL OBJECT A RANDOM ORACLE
    OVER AN INFINITE TYPE. WE CAN SHOW THAT KSAMPLER USING THIS
@@ -40,11 +41,83 @@ module (XOF1B : XOF_t) (H : ROpub) = {
  }
 }.
 
-(* THIS IS DESCRIBED IN THE MANUSCRIPT. ANNOYING PROOF. *)
+(* THIS IS DESCRIBED IN THE MANUSCRIPT: NEEDS TO BE CHECKED.*)
 module (Sim : MLWEPKE.MLWE_.SMP_vs_ROM_IND.Simulator_t) (O : MLWEPKE.MLWE_.MLWE_ROM.RO_H.ROpub) = {
-   proc init() : unit = { }
+   var state : ((W8.t Array32.t * W8.t * W8.t) * int, W8.t Array168.t) fmap
+
+   module FakeXOF = {
+      var seed : W8.t Array32.t * W8.t * W8.t
+      var idx : int
+
+      proc init(rho : W8.t Array32.t, i j : W8.t) : unit = {
+        seed <- (rho,i,j);
+        idx <- 0;
+      }
+
+   proc next_bytes() : W8.t Array168.t = {
+      var block;
+      block <$ dblock;
+      idx <- idx + 1;
+      return block; 
+   }
+
+   proc set_bytes(b168 : W8.t Array168.t) : unit = {
+      state.[(seed,idx-1)] <- b168;
+   }
+
+  }
+
+  proc sampleP(aa : poly) : poly = {
+      var j, b168, bi, bi1, bi2, d1, d2,k;
+      j <- 0;
+      while (j < 256) {
+         b168 <@ FakeXOF.next_bytes();
+         k <- 0;
+         while ((j < 256) && (k < 168)) {
+            bi  <- b168.[k];
+            bi1 <- b168.[k+1];
+            bi2 <- b168.[k+2];
+            k <- k + 3;
+            d1 <- to_uint bi        + 256 * (to_uint bi1 %% 16);
+            d2 <- to_uint bi1 %/ 16 + 16  * to_uint bi2;
+            if (d1 < q)                { d1 <- asint aa.[j]; j <- j + 1; }
+            if ((d2 < q) && (j < 256)) { d2 <- asint aa.[j]; j <- j + 1; }
+            b168.[k-3] <- W8.of_int d1;
+            b168.[k-3+1] <- W8.of_int (d2 %% 16 * 16 + d1 %/ 256);
+            b168.[k-3+2] <- W8.of_int (d2 %/16);
+            FakeXOF.set_bytes(b168);
+         }
+      }
+      return aa;
+   }
+  
+
+   proc sampleM(sd : W8.t Array32.t, _A : KMatrix.Matrix.matrix) : KMatrix.Matrix.matrix = {
+    var i : int;
+    var j : int;
+    
+    i <- 0;
+    while (i < kvec){
+      j <- 0;
+      while (j < kvec){
+        FakeXOF.init(sd, (of_int j)%W8, (of_int i)%W8);
+        sampleP(_A.[(i,j)]);
+        j <- j + 1;
+      }
+      i <- i + 1;
+    }
+    
+    return _A;
+  }
+
+   proc init() : unit = { state <- empty; }
    proc h(x : (W8.t Array32.t * W8.t * W8.t) * int) : W8.t Array168.t = {
-     return witness;
+     var _A;
+     if (x \notin state) {
+        _A <@ O.h(x.`1.`1);
+        sampleM(x.`1.`1,_A);
+     }
+     return (oget (state.[x]));
    }
 }.
 
@@ -60,7 +133,7 @@ admitted.
 (* From here we get *)
 section.
 
-declare module As <: KyberPKE.AdversaryRO {-LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B}.
+declare module As <: KyberPKE.AdversaryRO {-LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B,-Sim}.
 
 lemma hop1 &m:
     (forall (O0 <: ROpub), islossless O0.h => islossless As(O0).guess) =>
@@ -82,6 +155,7 @@ lemma hop1 &m:
          (true) @ &m : res]|.
 proof. 
 move => Aguess_ll Achoose_ll.
+print security_spec_indiff.
 have := (security_spec_indiff As XOF1B Sim &m (0%r) _ _ _ _ _ _ _ _); last by smt().
 + by smt().
 + by move => *; rewrite /dblock dmap_ll /darray dmap_ll DList.dlist_ll dword_ll. 
@@ -203,7 +277,7 @@ module (Wrap(A : KyberPKE.AdversaryIRO) : KyberPKE.AdversaryRO) (O : ROpub) = {
 section.
 
 declare module As <: KyberPKE.AdversaryPerm {-Common.Perm.Perm, -SLCommon.F.RO, -SLCommon.F.FRO, -SLCommon.Redo, -SLCommon.C, -Gconcl.S, -BlockSponge.BIRO.IRO, -BlockSponge.C, -IRO, -Gconcl_list.BIRO2.IRO, -Gconcl_list.F2.RO, -Gconcl_list.F2.FRO, -Gconcl_list.SimLast(Gconcl.S), -Gconcl_list.Simulator, -Simulator, -Cntr,
--LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B
+-LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B, -Sim
 }.
 
 lemma sha3_indiff_hop &m :
