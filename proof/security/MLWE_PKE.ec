@@ -673,6 +673,7 @@ module CorrectnessAdvNoise(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.RO) = {
   proc main() = {
     var sd,s,e,_A,r,e1,e2,m,n;
     O.init();
+    Sim(H).init();
     sd <$ dseed;
     _A <@ H.h(sd);
     r <$ dshort;
@@ -717,6 +718,7 @@ module (D(A : CAdversaryRO) : Distinguisher_t) (S : PSampler, H : RO_SMP.ROpub) 
 }.
 
 lemma correctness &m epsilon:
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
@@ -726,13 +728,14 @@ lemma correctness &m epsilon:
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
   1%r - Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : res] - epsilon.
 proof.
-move => Sim_ll A_ll HIND.
+move => Sim_init_ll Sim_h_ll A_ll HIND.
 have -> : 1%r - Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : res] =
    Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : !res].
 rewrite Pr[mu_not]; congr => //. 
 + byphoare => //.
   islossless; 2..6: smt(duni_matrix_ll dshort_ll). 
-  apply (A_ll (Sim(RO_H.LROpub))); apply (Sim_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
+  + by apply (A_ll (Sim(RO_H.LROpub))); apply (Sim_h_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
+  by apply (Sim_init_ll (RO_H.LROpub));apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
 have -> : Pr[CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)), A, RO_SMP.LRO).main() @ &m : res] = 
           Pr[ WIndfReal(D(A),S,RO_SMP.LRO).main(witness) @ &m : res].
 + byequiv => //; proc. inline {1} 2. inline {1} 5. inline {1} 4. inline {1} 2. inline {2} 3. 
@@ -743,12 +746,13 @@ have ? : Pr[CorrectnessAdvNoise(Sim, A, RO_H.LRO).main() @ &m : !res] <=
           Pr[WIndfIdeal(D(A), Sim, RO_H.LRO).main(witness) @ &m : res]; last by smt().
 
 byequiv => //.
-proc.  inline {2} 3. 
-swap {2} 5 -2.
-swap {2} 8 -4.
-swap {2} [13..15] -8.
-swap {2} [10..11] -4.
-seq 9 14 : ( 
+proc.  
+inline {2} 4. 
+swap {2} 6 -2.
+swap {2} 9 -4.
+swap {2} [14..16] -8.
+swap {2} [11..12] -4.
+seq 10 15 : ( 
            ={RO_H.RO.m,e2,e1,r,s,e,sd,m,glob Sim} /\
            sd0{2} = sd{2} /\
            (pk_decode pk{2}).`2 = sd{2} /\
@@ -758,7 +762,7 @@ seq 9 14 : (
            (pk_decode pk{2}).`2 \in RO_H.RO.m{2} /\
            _A{2} = _A{1} /\
            oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2] = _A{2}); last first.
-+ inline *. auto => />. move => &2  ->?; split; 1: by smt(duni_matrix_ll). 
++ inline *; auto => />; move => &2  ->?; split; 1: by smt(duni_matrix_ll). 
   move => *;rewrite  encode_noise.
   rewrite (_: 
      (((oget RO_H.RO.m{2}.[(pk_decode pk{2}).`2] *^ (sk_decode sk){2} + e{2}) `<*>` r{2}) &+
@@ -773,9 +777,8 @@ seq 9 14 : (
                      e2{2} m{2}); last by apply good_decode. 
   by rewrite noise_exp_val /= matrix_props1 matrix_props2; ring.
 
-auto => /=. 
-seq 8 13 : ( #pre /\
-           ={RO_H.RO.m,r,s,e,e1,e2,sd,_A} /\
+seq 9 14 : ((tr{2}, b{2}) = witness /\
+           ={RO_H.RO.m,r,s,e,e1,e2,sd,_A,glob Sim, glob A} /\
            sd0{2} = sd{1} /\
            pk{2} = pk_encode (t,sd){2} /\
            sk{2} = sk_encode s{2} /\
@@ -788,7 +791,9 @@ seq 8 13 : ( #pre /\
     + by proc; auto => />; smt(get_setE).
     by auto => />; smt(get_setE sk_encodeK pk_encodeK).
   by auto => />; smt(sk_encodeK get_setE pk_encodeK).
-by inline *; auto => />; smt(sk_encodeK get_setE pk_encodeK).
+
+inline *; auto => />;1:by smt(sk_encodeK get_setE pk_encodeK).
+by call(_: true); auto => />; smt(get_set_eqE).
 qed.
 
 end section.
@@ -841,6 +846,7 @@ module CB(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.RO) = {
   proc main() = {
     var sd;
     O.init();
+    Sim(H).init();
     sd <$ dseed;
     _A <@ H.h(sd);
     r <$ dshort;
@@ -876,7 +882,6 @@ declare module S <: Sampler {-A,-LRO,-RO, -RO_H.RO, -CB}.
 declare module Sim <: Simulator_t {-S, -A,-LRO,-RO, -RO_H.RO, -CB}.
 
 lemma correctness_split_aux &m cu_bound cv_bound failprob1 failprob2 failprob3:
-  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
         !under_noise_bound CB.n1 (max_noise - cu_bound - cv_bound)] <= failprob1 =>
@@ -888,7 +893,7 @@ lemma correctness_split_aux &m cu_bound cv_bound failprob1 failprob2 failprob3:
   Pr[ CorrectnessAdvNoise(Sim,A,RO_H.LRO).main() @ &m : res] <=
        failprob1 + failprob2 + failprob3.
 proof.
-move => Sim_ll A_ll bd1 bd2 bd3.
+move =>  A_ll bd1 bd2 bd3.
 have  : Pr[CorrectnessAdvNoise(Sim, A, RO_H.LRO).main() @ &m : res] <=
   Pr[CB(Sim, A, RO_H.LRO).main() @ &m : 
         ! under_noise_bound CB.n1 (max_noise - cu_bound - cv_bound) \/
@@ -896,11 +901,12 @@ have  : Pr[CorrectnessAdvNoise(Sim, A, RO_H.LRO).main() @ &m : res] <=
         ! under_noise_bound CB.n3 cv_bound ]; last by rewrite Pr[mu_or] Pr[mu_or];smt(mu_bounded).
 byequiv => //.
 proc; inline *.
-rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty).
-rcondt{2}5; 1: by move => *; auto => />;smt(mem_empty).
-wp;call(_: ={glob RO_H.RO, glob Sim});1: by sim. 
-auto => /> sd _ _A _ r _ s _ e _ e1 _ e2 _ m.
-by smt(parts_work noise_commutes noise_preserved).
+rcondt{1}6; 1: by move => *; auto;call(_: true); auto => />;smt(mem_empty).
+rcondt{2}6; 1: by move => *; auto;call(_: true); auto => />;smt(mem_empty).
+wp;call(_: ={glob RO_H.RO, glob Sim});1: by sim.
+conseq />;1:by smt(). 
+auto => />; 1: by smt(parts_work noise_commutes noise_preserved).
+by call(_: true); auto => />;  smt(parts_work noise_commutes noise_preserved).
 qed.
 
 (*******)
@@ -920,15 +926,17 @@ module CB1 = {
 }.
 
 lemma cb1 &m cu_bound cv_bound : 
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
         !under_noise_bound CB.n1 (max_noise - cu_bound - cv_bound)] =
   Pr[ CB1.main(cu_bound,cv_bound) @ &m : res].
-move => S_ll A_ll.
+move => S_i_ll S_h_ll A_ll.
 byequiv => //; proc; inline *.
-wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LROpub))));  apply (S_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
-rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty).
+wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LROpub))));  apply (S_h_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
+rcondt{1}6; 1: by move => *; auto => />;call(_: true);auto => />;smt(mem_empty).
+auto => />;call {1} (_: true ==> true); 1: by  apply (S_i_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll).  
 by auto => />;smt(duni_matrix_ll).
 qed.
 
@@ -964,16 +972,20 @@ module CB2 = {
 
 
 lemma cb2pre &m cu_bound: 
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   Pr[ CB(Sim,A,RO_H.LRO).main() @ &m : 
         !under_noise_bound CB.n2 cu_bound] =
   Pr[ CB2pre.main(cu_bound) @ &m : res].
-move => S_ll A_ll.
+move => S_i_ll S_h_ll A_ll.
 byequiv => //; proc; inline *.
-wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LROpub))));  apply (S_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
-rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty). 
-by rnd{1};rnd;rnd{1};auto => />; smt(dshort_R_ll dshort_ll get_set_sameE).
+wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LROpub))));  apply (S_h_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
+rcondt{1}6; 1: by move => *; auto => />;call(_: true);auto => />; smt(mem_empty).
+rnd{1};rnd;rnd{1}.
+auto => />; 1: by smt(). 
+call {1} (_: true ==> true); 1: by  apply (S_i_ll (RO_H.LROpub)); apply RO_H.RO_get_ll; smt(duni_matrix_ll).  
+by auto => />;smt(dshort_R_ll dshort_ll get_set_sameE).
 qed.
 
 module Bcb2 : MLWE_.Adv_T = {
@@ -1036,6 +1048,7 @@ module CB3(Sim : Simulator_t,A : CAdversaryRO, O : RO_H.RO) = {
   proc main(cv_bound : int) = {
     var sd,_A,r,s,e,e1,e2,m,n;
     O.init();
+    Sim(H).init();
     sd <$ dseed;
     _A <@ H.h(sd);
     r <$ dshort;
@@ -1055,9 +1068,10 @@ lemma cb3 &m cv_bound :
   Pr[ CB3(Sim,A,RO_H.LRO).main(cv_bound) @ &m : res].
 byequiv => //; proc; inline *.
 wp;call(_: ={glob RO_H.RO, glob Sim}); 1: by sim.
-rcondt{1}5; 1: by move => *; auto => />;smt(mem_empty). 
-rcondt{2}5; 1: by move => *; auto => />;smt(mem_empty). 
-by auto => />;smt(get_set_sameE).
+rcondt{1}6; 1: by move => *; auto => />;call(_: true); auto => />;smt(mem_empty). 
+rcondt{2}6; 1: by move => *; auto => />;call(_: true); auto => />;smt(mem_empty). 
+auto => />;1: by smt(). 
+by call(_: true); auto => />;smt(get_set_sameE).
 qed.
 
 (*******)
@@ -1065,6 +1079,7 @@ qed.
 
 lemma correctness_split &m cu_bound cv_bound epsilon failprob1 failprob2 failprob3 :
   (glob Bcb2){m} = cu_bound =>
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
@@ -1079,14 +1094,14 @@ lemma correctness_split &m cu_bound cv_bound epsilon failprob1 failprob2 failpro
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
   1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
       - failprob1 - failprob2 - failprob3 - epsilon.
-move => meminit S_ll A_ll ind fp1 fp2 fp3.
-have := (correctness A S Sim &m epsilon  S_ll A_ll ind).
-rewrite -(cb1 &m cu_bound cv_bound S_ll A_ll) in fp1.
+move => meminit S_i_ll S_h_ll A_ll ind fp1 fp2 fp3.
+have := (correctness A S Sim &m epsilon  S_i_ll S_h_ll A_ll ind).
+rewrite -(cb1 &m cu_bound cv_bound S_i_ll S_h_ll A_ll) in fp1.
 rewrite -(cb2_mlwe_right &m cu_bound meminit).
 rewrite -(cb2_mlwe_left &m cu_bound meminit).
 rewrite -(cb3 &m cv_bound) in fp3.
-have := (correctness_split_aux &m cu_bound cv_bound failprob1 (`|Pr[CB2pre.main(cu_bound) @ &m : res] - Pr[CB2.main(cu_bound) @ &m : res] |  + failprob2) failprob3 S_ll A_ll fp1 _ fp3). 
-rewrite -(cb2pre &m cu_bound S_ll A_ll).
+have := (correctness_split_aux &m cu_bound cv_bound failprob1 (`|Pr[CB2pre.main(cu_bound) @ &m : res] - Pr[CB2.main(cu_bound) @ &m : res] |  + failprob2) failprob3  A_ll fp1 _ fp3). 
+rewrite -(cb2pre &m cu_bound S_i_ll S_h_ll A_ll).
 smt().
 smt().
 qed.
@@ -1096,12 +1111,13 @@ lemma cb3_max &m :
 byphoare (_: cv_bound = cv_bound_max ==> res) => //.
 hoare; proc; inline *.
 wp;call(_: true); 1: by auto.
-rcondt 5; 1: by move => *; auto => />;smt(mem_empty). 
-by auto => />; smt(get_set_sameE cv_bound_valid).
+rcondt 6; 1: by move => *; auto => />;call(_: true); auto => />;smt(mem_empty). 
+by auto => />; call(_: true); auto => />;smt(get_set_sameE cv_bound_valid).
 qed.
 
 lemma correctness_max &m cu_bound epsilon failprob1 failprob2 :
   (glob Bcb2){m} = cu_bound =>
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
   (* We need indiff from the nice ROM *)
@@ -1115,8 +1131,8 @@ lemma correctness_max &m cu_bound epsilon failprob1 failprob2 :
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
   1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
       - failprob1 - failprob2  - epsilon.
-move => meminit S_ll A_ll ind fp1 fp2.
-have := (correctness_split &m cu_bound cv_bound_max epsilon  failprob1 failprob2 0%r meminit S_ll A_ll ind fp1 fp2 _).
+move => meminit S_i_ll S_h_ll A_ll ind fp1 fp2.
+have := (correctness_split &m cu_bound cv_bound_max epsilon  failprob1 failprob2 0%r meminit S_i_ll S_h_ll A_ll ind fp1 fp2 _).
 + by have := cb3_max &m; smt().
 by smt().
 qed.
@@ -1144,6 +1160,7 @@ import MLWE_ROM.
 import MLWE_vs_MLWE_ROM.
 
 module (Sim : Simulator_t) (O : RO_H.ROpub) = {
+  proc init() = {}
   proc h = S(O).sampleA
 }.
 
@@ -1192,6 +1209,7 @@ declare module A <: CAdversaryRO {-RO_H.LRO,-RO_H.RO, -RO_H.FRO, -RO_SMP.LRO, -C
 
 lemma correctness_max &m cu_bound failprob1 failprob2 :
   (glob Bcb2){m} = cu_bound =>
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
 
@@ -1201,8 +1219,8 @@ lemma correctness_max &m cu_bound failprob1 failprob2 :
   Pr[ CorrectnessAdvROM(MLWE_PKE(S(RO_SMP.LROpub)),A,RO_SMP.LRO).main() @ &m : res]  >=
   1%r - `| Pr[MLWE(Bcb2).main(false) @ &m : res] - Pr[MLWE(Bcb2).main(true) @ &m : res]| 
       - failprob1 - failprob2.
-move => cb2_val S_ll A_ll fp1 fp2.
-have := (correctness_max A S Sim &m cu_bound 0%r failprob1 failprob2 cb2_val S_ll A_ll _ fp1 fp2 ).
+move => cb2_val S_i_ll S_h_ll A_ll fp1 fp2.
+have := (correctness_max A S Sim &m cu_bound 0%r failprob1 failprob2 cb2_val S_i_ll S_h_ll A_ll _ fp1 fp2 ).
 move => trb D0; have -> : trb = (trb.`1,trb.`2) by smt().
 by have := (good_sim (trb.`1) (trb.`2) D0) => /#.
 by smt().

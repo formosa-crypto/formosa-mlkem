@@ -42,6 +42,7 @@ module (XOF1B : XOF_t) (H : ROpub) = {
 
 (* THIS IS DESCRIBED IN THE MANUSCRIPT. ANNOYING PROOF. *)
 module (Sim : MLWEPKE.MLWE_.SMP_vs_ROM_IND.Simulator_t) (O : MLWEPKE.MLWE_.MLWE_ROM.RO_H.ROpub) = {
+   proc init() : unit = { }
    proc h(x : (W8.t Array32.t * W8.t * W8.t) * int) : W8.t Array168.t = {
      return witness;
    }

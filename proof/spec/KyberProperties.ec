@@ -1456,6 +1456,7 @@ declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S, -A,-LRO,-RO_H.
 lemma correctness_any_sampler &m cu_bound failprob1 failprob2 epsilon  :
   (glob Bcb2){m} = cu_bound =>
 
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: ROpub), islossless O.h => islossless A(O).find) =>
 
@@ -1469,10 +1470,10 @@ lemma correctness_any_sampler &m cu_bound failprob1 failprob2 epsilon  :
   Pr[ KyberPKE.CorrectnessAdvROM(KyberSI(S),A,LRO).main() @ &m : res]  >=
   1%r - `|Pr[MLWE(Bcb2).main(false) @ &m : res] -
     Pr[MLWE(Bcb2).main(true) @ &m : res]| - failprob1 - failprob2 - epsilon.
-move => initmem Sim_ll A_ll ind fp1 fp2.
+move => initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2.
 have <- : 
 Pr[PKE_.CGameROM(PKE_.CorrectnessAdv, MLWE_PKE(NTTSampler(S,LROpub)), A,LRO).main() @ &m : res] = 
-Pr[CorrectnessAdvROM(KyberSI(S), A, LRO).main() @ &m : res]; last by   apply (correctness_max A (NTTSampler(S)) Sim &m cu_bound epsilon failprob1 failprob2 initmem Sim_ll A_ll ind fp1 fp2).
+Pr[CorrectnessAdvROM(KyberSI(S), A, LRO).main() @ &m : res]; last by   apply (correctness_max A (NTTSampler(S)) Sim &m cu_bound epsilon failprob1 failprob2 initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2).
 byequiv => //.
 proc.
 inline {1} 2; inline {2} 2.
@@ -1723,6 +1724,7 @@ declare module Sim <: Simulator_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -
 lemma correctness_spec &m cu_bound failprob1 failprob2 epsilon  :
   (glob Bcb2){m} = cu_bound =>
 
+  (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
   (forall (O <: ROpub), islossless O.h => islossless A(O).find) =>
 
@@ -1742,7 +1744,7 @@ lemma correctness_spec &m cu_bound failprob1 failprob2 epsilon  :
   Pr [ PRF_DEFS.IND(IdealPRF1.RF,DC_PRF1(KSampler(XOF),LRO,A)).main() @ &m : res ]|) -
   (`|Pr [ PRF_DEFS.IND(PRF_.PRF,DC_PRF2(KSampler(XOF),LRO,A)).main() @ &m : res ] - 
   Pr [ PRF_DEFS.IND(IdealPRF2.RF,DC_PRF2(KSampler(XOF),LRO,A)).main() @ &m : res ]|).
-move => meminit Sim_ll A_ll ind fp1 fp2.
+move => meminit Sim_i_ll Sim_h_ll A_ll ind fp1 fp2.
 have <-: Pr[CorrectnessAdvROM(KyberS(KHS, KSampler(XOF), KNS,KPRF,KPRF), A, LRO).main() @ &m : res] = 
          Pr[CorrectnessAdvROM(Kyber(KHS, XOF, KPRF), A, LRO).main() @ &m : res].
 + byequiv => //.
@@ -1754,7 +1756,7 @@ have <-: Pr[CorrectnessAdvROM(KyberS(KHS, KSampler(XOF), KNS,KPRF,KPRF), A, LRO)
   call (kg_sampler_kg LROpub XOF).
   by inline *; auto.
 
-move : (correctness_any_sampler A (KSampler(XOF)) Sim &m cu_bound failprob1 failprob2 epsilon meminit Sim_ll A_ll ind fp1 fp2).
+move : (correctness_any_sampler A (KSampler(XOF)) Sim &m cu_bound failprob1 failprob2 epsilon meminit Sim_i_ll Sim_h_ll A_ll ind fp1 fp2).
 
 have <- := (ESHopC LRO (KSampler(XOF)) A).
 have <- := (PRFHop1C LRO (KSampler(XOF)) A).
