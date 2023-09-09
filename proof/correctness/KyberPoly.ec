@@ -284,11 +284,34 @@ have -> : zeroextu16 _m.[i{2}] `&` W16.one =
         congr; congr; rewrite /(`>>>`) /=; apply  W8.ext_eq => i ib; rewrite W8.initiE //.  
 
 split;last first.
-+ case(k < i{2} * 8); 1: by smt(Array256.set_neqiE).
++ case(k < i{2} * 8); 1: by move => klow; do 8!(rewrite Array256.set_neqiE 1,2:/#); smt().
   move => khigh.
   have ? : forall k, 0 <= k < 8 => 
-     0 <= to_sint (zeroextu16 (_m.[i{2}] `>>>` k) `&` W16.one * W16.of_int 1665) < q; last 
-        by smt(Array256.set_neqiE Array256.set_eqiE).
+     0 <= to_sint (zeroextu16 (_m.[i{2}] `>>>` k) `&` W16.one * W16.of_int 1665) < q; last first.
+       + case (k = i{2} * 8 + 7); 
+           1: by move => *; rewrite Array256.set_eqiE 1,2:/#;smt().
+       + case (k = i{2} * 8 + 6); 
+           1: by move => *; rewrite Array256.set_neqiE 1,2:/# Array256.set_eqiE 1,2:/#;smt().
+       + case (k = i{2} * 8 + 5); 
+           1: by move => *; do 2!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#;smt().
+       + case (k = i{2} * 8 + 4); 
+           1: by move => *; do 3!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#;smt().
+       + case (k = i{2} * 8 + 3); 
+           1: by move => *; do 4!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#;smt().
+       + case (k = i{2} * 8 + 2); 
+           1: by move => *; do 5!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#;smt().
+       + case (k = i{2} * 8 + 1); 
+           1: by move => *; do 6!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#;smt().
+       + case (k = i{2} * 8); 
+           1: by move => *; do 7!(rewrite Array256.set_neqiE 1,2:/#); 
+                                  rewrite  Array256.set_eqiE 1,2:/#;smt().
+       by move => *;do 8!(rewrite Array256.set_neqiE 1,2:/#);smt().
+     
   move => j jb.
   have one : W16.one = W16.of_int (2^1-1) by smt().
   by rewrite /to_sint /smod /= to_uintM_small; rewrite one W16.to_uint_and_mod //=; smt(). 
@@ -1130,9 +1153,9 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
           signed_bound_cxq  rp{2} (j{1} + len{1}) 256 (9 - l)
        )
        );last first. 
-+ auto => /> &1 &2; rewrite /signed_bound_cxq !uleE !ultE =>  5? lenpow2  2? sval l0 3?.
++ auto => /> &1 &2; rewrite /signed_bound_cxq !uleE !ultE =>  5? lenpow2  2? sval l0 l0l l0h l0v.
   rewrite !to_uintD_small; 1..2: smt().
-  move => cbdloose cbdtight 2? => />;split.
+  move => cbdloose cbdtight /= HH HHH => />;split.
 
   (* Initialization *) 
   + do split; 1..2,6: smt().
@@ -1141,9 +1164,8 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
         by move => <-; rewrite -ZqField.mulrA rrinvFq; ring.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
-    exists (l0); do split; first 4 smt().
-     by move=> *; split; smt().
-    smt().
+    exists (l0); do split; 1..4,6..: smt().
+     move=> k [kbl kbh]; have : to_uint start{1} + to_uint len{1} <= 256; by smt().
 
   (* Termination *)
   move => jl jr rpr; rewrite !ultE to_uintD_small; 1: smt(). 
@@ -1151,9 +1173,10 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
   move => *.
   split; last by smt().
   auto => />;do split; 1,3: by smt().
-  + move => *.
-    have : to_uint len{1} \in map (fun i => 2^i) (iota_ 0 8) by smt(mem_iota map_f). 
-    by rewrite -JUtils.iotaredE => /> /#.
+  + have : (2^l0) \in map (fun i => 2^i) (iota_ 0 8); 
+      last by rewrite -JUtils.iotaredE => /> /#.
+     have -> : 2^l0 = ((fun x => 2^x) l0) by auto. 
+     by rewrite (map_f (fun x => 2^x)) mem_iota /#.
   by exists l1; do split; smt().
 
 (* Preservation *)

@@ -862,10 +862,23 @@ while (#[/2:]pre /\ 0 <= i{2}).
  seq 1 1: (#pre).   
   by conseq />; sim.
  seq 6 6: (#pre /\ ={flox16,fhix16}).
-  by wp; skip => /> *; rewrite /C2R !PURE /#. 
+  wp; skip => /> *; rewrite /C2R !PURE 1..4:/#.
+  rewrite tP => k kb.
+  rewrite !initiE 1,2: /# /=.
+  congr. congr. 
+  rewrite tP => kk kkb.
+  rewrite !initiE 1,2: /# /=;smt().
+  by smt(). 
  seq 4 4: (#pre).   
   by conseq />; sim.
- by wp; skip => /> *; rewrite !PURE /#. 
+ wp; skip => /> *; rewrite !PURE 1..4:/#.
+  do split; last by smt(). 
+  rewrite tP; move  => k kb.
+  rewrite !initiE 1,2: /# /=.
+  congr. congr. 
+  rewrite tP => kk kkb.
+  rewrite !initiE 1,2: /# /=;smt().
+  by smt(). 
 by auto.
 qed.
 
@@ -1151,7 +1164,22 @@ rewrite !Hq //.
 rewrite !Hqinv' //. 
 rewrite W16u16.Pack.of_listE W16u16.Pack.initE /=. 
 rewrite ifT //. 
-smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+case (i=0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-1 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-2 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-3 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-4 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-5 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-6 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-7 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-8 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-9 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-10 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-11 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-12 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-13 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-14 = 0); 1: smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
+move => *; case(i-15 = 0);  smt(W16.WRingA.mulrC W16.WRingA.mulrAC). 
 move :(Ha i _); first smt(mem_iota).
 rewrite initiE 1:/#.
 rewrite /Iu16_ub -andaE. 
@@ -1800,7 +1828,7 @@ transitivity Tmp._ntt
  ( I256u16_sb 2 rp{2} rp{1} ==> I256u16_ub 2 res{2} res{1} )
  ( ={rp} ==> ={res} ); last by symmetry; conseq ntt_avx2_eq_.
   by move=> |> &2 H; exists arg{2}; rewrite I256u16_sbE. 
- by move => &1 &m &2 /= ??; rewrite -I256u16_ubE /#.
+  by move => &1 &m &2 /= H HH; rewrite -I256u16_ubE  -HH H. 
 proc.
 seq 6 35: (x16_spec q qx16{2} /\ zetasp{2}=zetas_op  /\ i{2}=0 /\
   I16u16_sb 3 (P2R rp{2} 8) (P2C rp{1} 8) /\

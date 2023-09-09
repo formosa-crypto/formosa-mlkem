@@ -1511,7 +1511,10 @@ wp; ecall{1} (innerprod_corr
   split.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
     rewrite (_: !(256 <= k && k < 512)) 1:/# /=.
-    move : (H k _); 1: smt(). move => [_ ->]. smt().
+    move : (H k _); 1: smt(). move => [_ ->]. 
+    congr;congr;congr. 
+    + by rewrite /lift_matrix; congr => /= /#. 
+    by rewrite /lift_vector;congr => /= /#.
   move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= ; do split; 1,2:smt().
   move : (val (k-256) _);1:smt(); rewrite mapiE 1:/# => ->.
   rewrite /ntt_mmul offunvE //= /dotp /kvec /=.
@@ -1539,11 +1542,18 @@ wp; ecall{1} (innerprod_corr
   do split.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
     rewrite (_: !(512 <= k && k < 768)) 1:/# /=.
-    move : (H k _); smt().
+    move : (H k _); 1:  smt().
+    move => [_ ->]. 
+    congr;congr;congr. 
+    + by rewrite /lift_matrix; congr => /= /#. 
+    by rewrite /lift_vector;congr => /= /#.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
     rewrite (_: !(512 <= k && k < 768))1: /# /=.
-    move : (H0 k _); smt().
-
+    move : (H0 k _); 1: smt().
+    move => [_ ->]. 
+    congr;congr;congr. 
+    + by rewrite /lift_matrix; congr => /= /#. 
+    by rewrite /lift_vector;congr => /= /#.
   move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= ; do split; 1,2:smt().
   move : (val (k-512) _);1:smt(); rewrite mapiE 1:/# => ->.
   rewrite /ntt_mmul offunvE //= /dotp /kvec /=.

@@ -232,7 +232,7 @@ lemma nosmt SREDCp_corr a:
 proof.
 move => [#] H H0 [#] H1 H2.
 have H3 : (R * R %/ 4 = R %/ 2 * R %/2  ) by smt(dvd2R div_mulr).  
-have albnd : (- R * R %/4 <= a) by smt(dvd2R div_mulr).  
+have albnd : (- R * R %/4 <= a) by rewrite (div_mulr _ _ _ dvd4R);  smt(div_mulr dvd4R).  
 have aubnd : (a < R* R %/4) by smt(ler_pmul dvd2R div_mulr).
 rewrite /SREDC /= (smod_div (a * qinv)).
 move : (smod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 

@@ -1442,7 +1442,10 @@ proof.
   wp.
   do call eq_istore32u8; wp; conseq />. 
   do (call eq_shuffle8 || call eq_shuffle4 || call eq_shuffle2 || call eq_shuffle1).
-  conseq />; 1: by smt().
+  conseq />. 
+  + move => &1 &2 [#] *.
+    do 5!( move => *; do split; 1,2: by smt()). 
+    by smt().
   do (call eq_iVPOR_16u16 || call eq_iVPSLL_16u16 || call eq_iVPSRL_16u16).
   wp; skip; auto => />.
   move => &1 &2 [#] i_lb qx16_eq i_tub />.
