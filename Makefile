@@ -10,6 +10,8 @@ CHECKS ?= kyber
 default: check
 
 check:
+	make -C code/jasmin/ref/extraction
+	make -C code/jasmin/avx2v/extraction
 	easycrypt runtest $(ECCONF) $(CHECKS)
 
 clean_eco:
