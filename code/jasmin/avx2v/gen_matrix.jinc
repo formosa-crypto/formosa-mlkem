@@ -1,3 +1,5 @@
+require "params.jinc"
+require "shuffle.jinc"
 require "fips202.jinc"
 require "params.jinc"
 

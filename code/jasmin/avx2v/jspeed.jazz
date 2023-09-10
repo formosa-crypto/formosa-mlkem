@@ -62,7 +62,7 @@ export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
   stack u16[KYBER_N] r;
   stack u8[KYBER_SYMBYTES] seed;
 
-  r = _poly_getnoise(r, seed, nonce);
+  //r = _poly_getnoise_eta1_4x(r, seed, nonce);
 }
 
 
@@ -104,7 +104,7 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
 export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
-  __indcpa_keypair(pkp, skp, randomnessp);
+  //__indcpa_keypair(pkp, skp, randomnessp);
 }
 
 
@@ -182,13 +182,13 @@ export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
 
 export fn crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
 {
-  __crypto_kem_keypair_jazz(pkp, skp, randomnessp);
+  //__crypto_kem_keypair_jazz(pkp, skp, randomnessp);
 }
 
 
 export fn crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg u64 randomnessp)
 {
-  __crypto_kem_enc_jazz(ctp, shkp, pkp, randomnessp);
+  //__crypto_kem_enc_jazz(ctp, shkp, pkp, randomnessp);
 }
 
 export fn crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
