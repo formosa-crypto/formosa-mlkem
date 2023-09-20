@@ -5,5 +5,5 @@
                 (pre "../spec"), (pre "../../sha3/proof/"),
             (pre "../../code/jasmin/ref/extraction"), 
             (pre "../../code/jasmin/avx2v/extraction"), 
-             (pre "../security"), (pre "../eclib"), 
+             (pre "../security"), (pre "../eclib")
              )))))))
