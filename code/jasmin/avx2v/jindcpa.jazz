@@ -5,8 +5,16 @@ require "polyvec.jinc"
 require "gen_matrix.jinc"
 
 
-export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 coins)
 {
+  stack u8[KYBER_SYMBYTES] randomness;
+  reg ptr u8[KYBER_SYMBYTES] randomnessp;
+  inline int i;
+
+  randomnessp = randomness;
+  for i = 0 to KYBER_SYMBYTES {
+    randomnessp[i] = (u8)[coins + i];
+  }
   __indcpa_keypair(pkp, skp, randomnessp);
 }
 
