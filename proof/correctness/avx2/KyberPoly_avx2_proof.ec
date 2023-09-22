@@ -377,7 +377,8 @@ proof.
   rewrite inFqN /zero /=.
   have ->: - - inFq 3329 = inFq 3329. do rewrite -inFqN /= asintK //=.
   rewrite -inFqN.
-  do rewrite -(fun_if inFq _ _ _).
+  do rewrite -(fun_if inFq _ _ _). 
+  have -> : NTTAlgebra.NTTequiv.BigFq.CR.ofint 0 = inFq 0 by rewrite /ofint /intmul /= /iterop /= iteri0 //=.
   rewrite -eq_inFq.
   move : zero_congr_3329 x_mb => /#.
   
