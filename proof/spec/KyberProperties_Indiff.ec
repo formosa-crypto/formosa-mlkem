@@ -125,19 +125,19 @@ import MLWEPKE.
 import MLWE_.
 import SMP_vs_ROM_IND.
 
-lemma perfect_indif tr b  (D <:  MLWEPKE.MLWE_.SMP_vs_ROM_IND.Distinguisher_t {-LRO, -MLWEPKE.MLWE_.MLWE_ROM.RO_H.LRO, -Sim, -KSampler}) &m:
-   Pr[MLWEPKE.MLWE_.SMP_vs_ROM_IND.WIndfReal(D, NTTSampler(KSampler(XOF1B)), LRO).main(tr, b) @ &m : res] =
+lemma perfect_indif tr b  (D <:  MLWEPKE.MLWE_.SMP_vs_ROM_IND.Distinguisher_t {-MLWEPKE.MLWE_.MLWE_ROM.RO_H.LRO,-MLWE_SMP.RO_SMP.LRO, -Sim, -KSampler}) &m:
+   Pr[MLWEPKE.MLWE_.SMP_vs_ROM_IND.WIndfReal(D, NTTSampler(KSampler(XOF1B)), MLWE_SMP.RO_SMP.LRO).main(tr, b) @ &m : res] =
          Pr[MLWEPKE.MLWE_.SMP_vs_ROM_IND.WIndfIdeal(D, Sim, MLWEPKE.MLWE_.MLWE_ROM.RO_H.LRO).main(tr, b) @ &m : res].
 admitted.
 
 (* From here we get *)
 section.
 
-declare module As <: KyberPKE.AdversaryRO {-LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B,-Sim}.
+declare module As <: KyberPKE.AdversaryRO {-LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -MLWE_SMP.RO_SMP.LRO,  -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B,-Sim}.
 
 lemma hop1 &m:
-    (forall (O0 <: ROpub), islossless O0.h => islossless As(O0).guess) =>
-    (forall (O0 <: ROpub), islossless O0.h => islossless As(O0).choose) =>
+    (forall (O0 <: MLWE_SMP.RO_SMP.ROpub), islossless O0.h => islossless As(O0).guess) =>
+    (forall (O0 <: MLWE_SMP.RO_SMP.ROpub), islossless O0.h => islossless As(O0).choose) =>
     `|Pr[CPAGameROM(CPA, Kyber(HSF.PseudoRF, XOF1B, PRF_.PseudoRF), As, LRO).main() @ &m : res] - 1%r / 2%r| <=
     `|Pr[HS_DEFS.IND(HSF.PRF, D_ES(KSampler(XOF1B), LRO, As)).main() @ &m : res] -
       Pr[HS_DEFS.IND(IdealHSF.RF, D_ES(KSampler(XOF1B), LRO, As)).main() @ &m : res]| +
@@ -164,7 +164,9 @@ have := (security_spec_indiff As XOF1B Sim &m (0%r) _ _ _ _ _ _ _ _); last by sm
 + admit. (* matrix sampling lossless *)
 + by apply Aguess_ll.
 + by apply Achoose_ll.
-by move => tr b D; have := (perfect_indif tr b D &m); smt().
+move => tr b D.
+print perfect_indif.
+have <-  := (perfect_indif tr b D &m). smt().
 qed.
 
 end section.
@@ -277,7 +279,7 @@ module (Wrap(A : KyberPKE.AdversaryIRO) : KyberPKE.AdversaryRO) (O : ROpub) = {
 section.
 
 declare module As <: KyberPKE.AdversaryPerm {-Common.Perm.Perm, -SLCommon.F.RO, -SLCommon.F.FRO, -SLCommon.Redo, -SLCommon.C, -Gconcl.S, -BlockSponge.BIRO.IRO, -BlockSponge.C, -IRO, -Gconcl_list.BIRO2.IRO, -Gconcl_list.F2.RO, -Gconcl_list.F2.FRO, -Gconcl_list.SimLast(Gconcl.S), -Gconcl_list.Simulator, -Simulator, -Cntr,
--LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B, -Sim
+-LRO, -HSF.PRF, -PRF_.PRF, -MLWE_ROM.RO_H.RO, -MLWE_ROM.RO_H.LRO, -MLWE_ROM.RO_H.FRO,-MLWE_SMP.RO_SMP.LRO, -MLWE_ROM.MLWE_vs_MLWE_ROM.B, -MLWE_ROM.MLWE_vs_MLWE_ROM.Bt, -BS, -D, -B1ROM, -B2ROM, -IdealHSF.RF, -IdealPRF1.RF, -IdealPRF2.RF, -KPRF, -XOF1B, -Sim
 }.
 
 lemma sha3_indiff_hop &m :

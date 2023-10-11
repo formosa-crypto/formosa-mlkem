@@ -1,5 +1,5 @@
-require import AllCore List Distr DBool PROM_Ext.
-require (****) IRO PRP.
+require import AllCore List Distr DBool PROM.
+require (****)  FullRO_Ext IRO PRP.
 
 require LorR. 
 clone import LorR as LorR' with
@@ -183,7 +183,7 @@ module CorrectnessAdv(S : Scheme, A : CAdversary) = {
 
 (* Extensions to ROM *)
 
-clone import FullRO as RO.
+clone import FullRO_Ext as RO.
 
 module type SchemeRO(H : ROpub) = {
   include Scheme

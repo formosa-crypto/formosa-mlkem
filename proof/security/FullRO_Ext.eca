@@ -1,0 +1,21 @@
+require import PROM.
+
+clone include FullRO.
+
+module type ROpub = {
+  proc h (x : in_t) : out_t
+}.
+
+module Pub(O : RO) : ROpub = {
+  proc h = O.get
+}.
+
+module LROpub = Pub(LRO).
+
+module Dum(O : ROpub) : RO = {
+  proc init() = {}
+  proc get = O.h
+  proc set(x : in_t, y : out_t) : unit = {}
+  proc rem(x : in_t) : unit = {}
+  proc sample(x : in_t) : unit = {}
+}.

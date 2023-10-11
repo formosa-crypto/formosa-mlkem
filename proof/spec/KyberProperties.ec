@@ -86,7 +86,11 @@ op under_noise_bound (p : poly) (b : int) =
 op cv_bound_max : int = 104. (* this is the compress error bound for d = 4 *)
 
 clone import MLWE_PKE as MLWEPKE with 
-  theory MLWE_.MLWE_SMP.RO_SMP <- RO,
+  type MLWE_.MLWE_SMP.RO_SMP.in_t    = RO.in_t,
+  type MLWE_.MLWE_SMP.RO_SMP.out_t   = RO.out_t,  
+  op   MLWE_.MLWE_SMP.RO_SMP.dout    = RO.dout,  
+  type MLWE_.MLWE_SMP.RO_SMP.d_in_t  = RO.d_in_t, 
+  type MLWE_.MLWE_SMP.RO_SMP.d_out_t = RO.d_out_t,   
   type MLWE_.Matrix_.R = poly,
   type MLWE_.Matrix_.Matrix.matrix <- matrix,
   type MLWE_.Matrix_.vector <- vector,
@@ -911,7 +915,7 @@ declare module O <: RO {-IdealHSF.RF,-RF,-IdealPRF1.RF}.
 declare module S <: Sampler {-IdealHSF.RF,-RF, -O, -IdealPRF1.RF}.
 
 equiv keygen_eq : 
-  MLWE_PKE(NTTSampler(S,Pub(O)), Pub(O)).kg ~ KyberSI(S,Pub(O)).kg :
+  MLWE_PKE(NTTSampler(S,Pub(O)), PKE_.RO.Pub(O)).kg ~ KyberSI(S,Pub(O)).kg :
    ={glob S, glob O} ==> ={res,glob S, glob O}.
 proof.
 proc.
@@ -1027,8 +1031,9 @@ auto => /> &1 &2 e s; rewrite /pk_encode /sk_encode /=.
 by rewrite comm_nttv_add comm_nttv_mmul.
 qed.
 
+
 equiv enc_eq : 
-  MLWE_PKE(NTTSampler(S,Pub(O)), Pub(O)).enc ~ KyberSI(S,Pub(O)).enc :
+  MLWE_PKE(NTTSampler(S,Pub(O)), PKE_.RO.Pub(O)).enc ~ KyberSI(S,Pub(O)).enc :
    ={arg,glob S, glob O} ==> ={res,glob S, glob O}.
 proof.
 proc.
@@ -1172,7 +1177,7 @@ by rewrite sem_decode1_corr.
 qed.
 
 equiv dec_eq : 
-  MLWE_PKE(NTTSampler(S,Pub(O)), Pub(O)).dec ~ KyberSI(S,Pub(O)).dec :
+  MLWE_PKE(NTTSampler(S,Pub(O)), PKE_.RO.Pub(O)).dec ~ KyberSI(S,Pub(O)).dec :
    ={arg,glob S, glob O} ==> ={res,glob S, glob O}.
 proof.
 proc.
@@ -1213,11 +1218,12 @@ move => H H0 H1 H2 H3 H4.
 have  <- : 
     Pr[ PKE_.CPAGameROM(PKE_.CPA,MLWE_PKE(NTTSampler(S,Pub(O))),As,O).main() @ &m : res] =
     Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberSI(S),As,O).main() @ &m : res]; last first.
-+ apply (main_theorem_s O (NTTSampler(S)) As &m  H H0 _ _ _ _).
++ have <- := (main_theorem_s O (NTTSampler(S)) As &m  H H0 _ _ _ _).
   + by move => O0 HH; islossless; apply (H1 O0 HH).
   + by move => O0 HH; islossless; apply (H2 O0 HH). 
   + by move => O0 HH; apply (H3 O0 HH).
   + by move => O0 HH; apply (H4 O0 HH).
+  by congr => //=;byequiv => //;sim.
 byequiv => //.
 proc.
 inline {1} 2.
@@ -1311,22 +1317,22 @@ import MLWE_.
 
 section.
 
-declare module As <: KyberPKE.AdversaryRO {-IdealPRF1.RF,-IdealHSF.RF,-RF,-LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO,-KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
-declare module S <: Sampler {-IdealPRF1.RF,-IdealHSF.RF,-RF,-As, -B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
-declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S,-As,-B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
+declare module As <: KyberPKE.AdversaryRO {-IdealPRF1.RF,-IdealHSF.RF,-RF,-LRO,-RO_SMP.LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO,-KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
+declare module S <: Sampler {-IdealPRF1.RF,-IdealHSF.RF,-RF,-As, -B1ROM, -B2ROM, -LRO, -RO_SMP.LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
+declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S,-As,-B1ROM, -B2ROM, -LRO, -RO_SMP.LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
 
 print Sampler.
 
 lemma security_any_sampler_indiff &m epsilon :
   0%r <= epsilon =>  
   (forall (x : in_t), is_lossless (dout x)) => 
-  (forall (O <: ROpub), islossless O.h => islossless S(O).sampleA) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless S(O).sampleA) =>
   (forall (O <: ROpub), islossless O.h => islossless S(O).sampleAT) =>
-  (forall (O <: ROpub), islossless O.h => islossless As(O).guess) =>
-  (forall (O <: ROpub), islossless O.h => islossless As(O).choose) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless As(O).guess) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless As(O).choose) =>
 
-  (forall tr b (D0 <: Distinguisher_t {-S,-Sim,-LRO,-RO_H.LRO}),
-     `| Pr[ WIndfReal(D0,NTTSampler(S),LRO).main(tr,b) @ &m : res]  -
+  (forall tr b (D0 <: Distinguisher_t {-S,-Sim,-RO_H.LRO, -RO_SMP.RO, -RO_SMP.LRO, -NTTSampler(S)}),
+     `| Pr[ WIndfReal(D0,NTTSampler(S),RO_SMP.LRO).main(tr,b) @ &m : res]  -
         Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(tr,b) @ &m : res] | <= epsilon) =>
 
   `| Pr[ KyberPKE.CPAGameROM(KyberPKE.CPA,KyberSI(S),As,LRO).main() @ &m : res] - 1%r/2%r | <= 
@@ -1349,9 +1355,16 @@ have  <- :
   call (keygen_eq LRO S).
   by conseq />; sim.
 
-apply (main_theorem_ref As (NTTSampler(S)) Sim &m epsilon eps_ge0 H _ _ H2 H3 H4).
+move : (main_theorem_ref As (NTTSampler(S)) Sim &m epsilon eps_ge0 H _ _ H2 H3 H4).
 + by move => O0 HH; islossless; apply (H0 O0 HH).
 by move => O0 HH; islossless; apply (H1 O0 HH).
+have -> : Pr[PKE_.CPAROM(MLWE_PKE(NTTSampler(S, RO_SMP.LROpub)), As, RO_SMP.LRO).main() @ &m : res] = Pr[PKE_.CPAGameROM(PKE_.CPA, MLWE_PKE(NTTSampler(S, LROpub)), As, LRO).main() @ &m : res]; last by auto.
+ + byequiv => //;proc;inline *.
+   wp; call(_: RO_SMP.RO.m{1} = RO.m{2}); 1: by proc;inline *; sim;auto.
+   wp; call(_: RO_SMP.RO.m{1} = RO.m{2}); 1: by proc;inline *; sim;auto.
+   auto;call(_: RO_SMP.RO.m{1} = RO.m{2}); 1: by proc;inline *; sim;auto.
+   wp; call(_: RO_SMP.RO.m{1} = RO.m{2}); 1: by proc;inline *; sim;auto.
+   by auto => />.   
 qed.
 
 end section.
@@ -1374,9 +1387,9 @@ end section.
 
 section.
 
-declare module As <: KyberPKE.AdversaryRO {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
-declare module XOF <: XOF_t {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-As, -B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
-declare module Sim <: Simulator_t {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-XOF,-As,-B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
+declare module As <: KyberPKE.AdversaryRO {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -RO_SMP.LRO, -KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
+declare module XOF <: XOF_t {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-As, -B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -RO_SMP.LRO, -B,-Bt, -BS, -D}.
+declare module Sim <: Simulator_t {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-XOF,-As,-B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -RO_SMP.LRO, -B,-Bt, -BS, -D}.
 
 lemma security_spec_indiff &m epsilon:
   0%r <= epsilon =>
@@ -1391,11 +1404,11 @@ lemma security_spec_indiff &m epsilon:
          islossless XOF0(O0).next_bytes => 
          islossless Parse(XOF0,O0).sample) =>
 
-  (forall (O0 <: ROpub), islossless O0.h => islossless As(O0).guess) =>
-  (forall (O0 <: ROpub), islossless O0.h => islossless As(O0).choose) =>
+  (forall (O0 <: RO_SMP.ROpub), islossless O0.h => islossless As(O0).guess) =>
+  (forall (O0 <: RO_SMP.ROpub), islossless O0.h => islossless As(O0).choose) =>
 
-  (forall tr b (D0 <: Distinguisher_t {-KSampler(XOF),-Sim,-LRO,-RO_H.LRO}),
-     `| Pr[ WIndfReal(D0,NTTSampler(KSampler(XOF)),LRO).main(tr,b) @ &m : res] -
+  (forall tr b (D0 <: Distinguisher_t {-KSampler(XOF),-Sim, -RO_H.LRO, -RO_SMP.RO, -RO_SMP.LRO,  -KSampler(XOF)}),
+     `| Pr[ WIndfReal(D0,NTTSampler(KSampler(XOF)),RO_SMP.LRO).main(tr,b) @ &m : res] -
         Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(tr,b) @ &m : res] | <= epsilon) =>
 
 
@@ -1448,9 +1461,9 @@ end section.
 
 section.
 
-declare module A <: CAdversaryRO {-IdealPRF1.RF,-IdealHSF.RF,-LRO,-RO_H.LRO, -CB}.
-declare module S <: Sampler {-IdealPRF1.RF,-IdealHSF.RF,-A,-LRO,-RO_H.LRO, -CB}.
-declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S, -A,-LRO,-RO_H.LRO, -CB}.
+declare module A <: CAdversaryRO {-IdealPRF1.RF,-IdealHSF.RF,-LRO,-RO_H.LRO, -RO_SMP.RO, -RO_SMP.LRO, -CB}.
+declare module S <: Sampler {-IdealPRF1.RF,-IdealHSF.RF,-A,-LRO,-RO_H.LRO, -RO_SMP.RO, -RO_SMP.LRO, -CB}.
+declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S, -A,-LRO,-RO_H.LRO, -RO_SMP.RO, -RO_SMP.LRO, -CB}.
 
 
 lemma correctness_any_sampler &m cu_bound failprob1 failprob2 epsilon  :
@@ -1458,10 +1471,10 @@ lemma correctness_any_sampler &m cu_bound failprob1 failprob2 epsilon  :
 
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
-  (forall (O <: ROpub), islossless O.h => islossless A(O).find) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
 
-  (forall trb (D0 <: Distinguisher_t {-S,-LRO, -RO_H.LRO, -RO, -RO_H.RO, -Sim, -NTTSampler(S),-Sim}),
-     `| Pr[ WIndfReal(D0,NTTSampler(S),LRO).main(trb) @ &m : res] - 
+  (forall trb (D0 <: Distinguisher_t {-S,-RO_H.RO, -RO_H.LRO, -RO_SMP.RO, -RO_SMP.LRO,  -NTTSampler(S),-Sim}),
+     `| Pr[ WIndfReal(D0,NTTSampler(S),RO_SMP.LRO).main(trb) @ &m : res] - 
          Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(trb) @ &m : res] | <= epsilon) =>
 
   Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
@@ -1471,9 +1484,18 @@ lemma correctness_any_sampler &m cu_bound failprob1 failprob2 epsilon  :
   1%r - `|Pr[MLWE(Bcb2).main(false) @ &m : res] -
     Pr[MLWE(Bcb2).main(true) @ &m : res]| - failprob1 - failprob2 - epsilon.
 move => initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2.
+
+print correctness_max.
 have <- : 
-Pr[PKE_.CGameROM(PKE_.CorrectnessAdv, MLWE_PKE(NTTSampler(S,LROpub)), A,LRO).main() @ &m : res] = 
-Pr[CorrectnessAdvROM(KyberSI(S), A, LRO).main() @ &m : res]; last by   apply (correctness_max A (NTTSampler(S)) Sim &m cu_bound epsilon failprob1 failprob2 initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2).
+Pr[PKE_.CorrectnessAdvROM(MLWE_PKE(NTTSampler(S, RO_SMP.LROpub)), A, RO_SMP.LRO).main() @ &m : res] = 
+Pr[CorrectnessAdvROM(KyberSI(S), A, LRO).main() @ &m : res]; last by  apply (correctness_max A (NTTSampler(S)) Sim &m cu_bound epsilon failprob1 failprob2 initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2).
+have <-: Pr[PKE_.CGameROM(PKE_.CorrectnessAdv, MLWE_PKE(NTTSampler(S,LROpub)), A,LRO).main() @ &m : res] = Pr[PKE_.CorrectnessAdvROM(MLWE_PKE(NTTSampler(S, RO_SMP.LROpub)), A, RO_SMP.LRO).main() @ &m : res].
++ byequiv => //; proc;inline *.
+   wp; call(_: RO_SMP.RO.m{2} = RO.m{1}); 1: by proc;inline *; sim;auto.
+   auto => />; 1: by smt().
+   wp; call(_: RO_SMP.RO.m{2} = RO.m{1}); 1: by proc;inline *; sim;auto.
+   wp; call(_: RO_SMP.RO.m{2} = RO.m{1}); 1: by proc;inline *; sim;auto.
+   by auto => />.
 byequiv => //.
 proc.
 inline {1} 2; inline {2} 2.
@@ -1716,9 +1738,9 @@ section.
 
 
 
-declare module A <: CAdversaryRO {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -LRO,-RO_H.LRO,-CB}.
-declare module XOF <: XOF_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -A,-LRO,-RO_H.LRO,-CB}.
-declare module Sim <: Simulator_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -XOF, -A,-LRO,-RO_H.LRO,-CB}.
+declare module A <: CAdversaryRO {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -LRO,-RO_H.LRO,-RO_SMP.RO, -RO_SMP.LRO, -CB}.
+declare module XOF <: XOF_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -A,-LRO,-RO_H.LRO,-RO_SMP.RO, -RO_SMP.LRO, -CB}.
+declare module Sim <: Simulator_t {-HSF.PRF, -PRF_.PRF, -B1ROM, -B2ROM, -KPRF, -RF,-IdealHSF.RF, -IdealPRF1.RF, -XOF, -A,-LRO,-RO_H.LRO,-RO_SMP.RO, -RO_SMP.LRO, -CB}.
 
 
 lemma correctness_spec &m cu_bound failprob1 failprob2 epsilon  :
@@ -1726,10 +1748,10 @@ lemma correctness_spec &m cu_bound failprob1 failprob2 epsilon  :
 
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).init) =>
   (forall (O <: RO_H.ROpub), islossless O.h => islossless Sim(O).h) =>
-  (forall (O <: ROpub), islossless O.h => islossless A(O).find) =>
+  (forall (O <: RO_SMP.ROpub), islossless O.h => islossless A(O).find) =>
 
-  (forall trb (D0 <: Distinguisher_t {-KSampler(XOF),-Sim,-RO, -LRO, -RO_H.RO, -RO_H.LRO}),
-    `| Pr[ WIndfReal(D0,NTTSampler(KSampler(XOF)),LRO).main(trb) @ &m : res] -
+  (forall trb (D0 <: Distinguisher_t {-KSampler(XOF),-Sim, -RO_H.RO, -RO_H.LRO, -RO_SMP.RO, -RO_SMP.LRO}),
+    `| Pr[ WIndfReal(D0,NTTSampler(KSampler(XOF)),RO_SMP.LRO).main(trb) @ &m : res] -
        Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(trb) @ &m : res] | <= epsilon) =>
 
   Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
@@ -1756,6 +1778,7 @@ have <-: Pr[CorrectnessAdvROM(KyberS(KHS, KSampler(XOF), KNS,KPRF,KPRF), A, LRO)
   call (kg_sampler_kg LROpub XOF).
   by inline *; auto.
 
+print correctness_any_sampler.
 move : (correctness_any_sampler A (KSampler(XOF)) Sim &m cu_bound failprob1 failprob2 epsilon meminit Sim_i_ll Sim_h_ll A_ll ind fp1 fp2).
 
 have <- := (ESHopC LRO (KSampler(XOF)) A).

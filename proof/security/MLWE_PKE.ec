@@ -38,7 +38,11 @@ axiom sk_encodeK : cancel sk_encode sk_decode.
 (*    The Security Games                                          *)
 
 clone import PKE_Ext as PKE_ with 
-  theory RO <- RO_SMP,
+  type RO.in_t    = RO_SMP.in_t,
+  type RO.out_t   = RO_SMP.out_t,  
+  op   RO.dout    = RO_SMP.dout,  
+  type RO.d_in_t  = RO_SMP.d_in_t, 
+  type RO.d_out_t = RO_SMP.d_out_t,
   type pkey <- pkey,
   type skey <- skey,
   type plaintext <- plaintext,

@@ -1,5 +1,5 @@
-require import AllCore Ring SmtMap Distr PROM_Ext.
-require (****) Matrix.
+require import AllCore Ring SmtMap Distr PROM.
+require (****) Matrix FullRO_Ext.
 
 clone import Matrix as Matrix_.
 
@@ -152,7 +152,7 @@ module MLWE_H(Adv : HAdv_T) = {
 
 theory MLWE_ROM.
 
-clone import FullRO as RO_H with
+clone import FullRO_Ext as RO_H with
   type in_t    = seed,
   type out_t   = matrix,
   op   dout    = fun (sd : seed) => duni_matrix, 
@@ -315,7 +315,7 @@ end MLWE_ROM.
 
 theory MLWE_SMP.
 
-clone import FullRO as RO_SMP.
+clone import FullRO_Ext as RO_SMP.
 
 (* --------------------------------------------------------------------------- *)
 module type Sampler(O : ROpub) = {
@@ -373,7 +373,11 @@ theory SMP_vs_ROM.
 import MLWE_ROM.
 
 clone import MLWE_SMP with
-  theory RO_SMP <- RO_H.
+  type RO_SMP.in_t    = seed,
+  type RO_SMP.out_t   = matrix,
+  op   RO_SMP.dout    = fun (sd : seed) => duni_matrix, 
+  type RO_SMP.d_in_t  = bool,
+  type RO_SMP.d_out_t = bool.
 
 import RO_H.
 
@@ -1137,12 +1141,3 @@ qed.
 
 end SMP_vs_ROM_IND.
 
-(* FIXME: THESE HINTS MAKE RND IMPOSSIBLY SLOW *)
-(* add duni_R_ll, duni_R_uni, duni_R_fu *)
-(* FIXME: without adding the hint explicitely the hint are lost after cloning *)
-(* hint solve 0 random : duni_R_ll duni_R_uni duni_R_fu. *)
-(* hint solve 0 random : dshort_R_ll. *)
-(* add dshort_R_ll *)
-(* hint solve 0 random : duni_ll duni_fu duni_uni duni_funi. *)
-(* hint solve 0 random : dshort_ll. *)
-(* hint solve 0 random : duni_matrix_ll duni_matrix_fu duni_matrix_uni duni_matrix_funi. *)
