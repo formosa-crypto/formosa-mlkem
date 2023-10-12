@@ -1,5 +1,5 @@
-require import AllCore Distr List SmtMap Dexcepted.
-require (****) RndExcept StdOrder PKE_Ext MLWE.
+require import AllCore Distr List SmtMap Dexcepted PKE_ROM.
+require (****) RndExcept StdOrder MLWE.
 
 theory MLWE_PKE_Basic.
 
@@ -22,7 +22,7 @@ type skey  = vector.
 (******************************************************************)
 (*    The Security Games                                          *)
 
-clone import PKE_Ext as PKE_ with 
+clone import PKE  with 
   type pkey <- pkey,
   type skey <- skey,
   type plaintext <- plaintext,
@@ -335,22 +335,14 @@ module CorrectnessBound = {
 
 section.
 
-declare module A <: CAdversary.
+declare module A <: CORR_ADV.
 
 lemma correctness_noise &m :
   islossless A.find =>
-  Pr[CorrectnessAdv(MLWE_PKE_BASIC, A).main() @ &m : res] >=
-  1%r - Pr[CorrectnessBound.main() @ &m : res].
+  Pr[Correctness_Adv(MLWE_PKE_BASIC, A).main() @ &m : res] <=
+    Pr[CorrectnessBound.main() @ &m : res].
 proof. 
 move => A_ll.
-have -> : Pr[CorrectnessAdv(MLWE_PKE_BASIC, A).main() @ &m : res] = 
-    1%r - Pr[CorrectnessAdv(MLWE_PKE_BASIC, A).main() @ &m : !res].
-+ rewrite Pr[mu_not].
-  have -> :  Pr[CorrectnessAdv(MLWE_PKE_BASIC, A).main() @ &m : true]  = 1%r; last by ring.
-  byphoare => //; islossless; smt(dshort_ll duni_matrix_ll).
-
-have : Pr[CorrectnessAdv(MLWE_PKE_BASIC, A).main() @ &m : !res] <= 
-      Pr[CorrectnessBound.main() @ &m : res]; last by smt().
 byequiv => //.
 proc;inline *;swap {1} 8 4; swap {1} 6 5.
 wp;call{1}(_: true ==> true).
@@ -365,7 +357,7 @@ qed.
 lemma correctness_theorem &m fail_prob :
  islossless A.find =>
    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-     Pr[ CorrectnessAdv(MLWE_PKE_BASIC,A).main() @ &m : res] >= 1%r - fail_prob
+     Pr[ Correctness_Adv(MLWE_PKE_BASIC,A).main() @ &m : res] <= fail_prob
  by smt(correctness_noise). 
 
 end section.
