@@ -1,7 +1,7 @@
 require import AllCore IntDiv FloorCeil StdOrder RealExp List.
 require import ZModP Ring.
 require import Distr DList DistrExtra DMap DInterval.
-require import PKE_Ext.
+require import PKE_ROM.
 from Jasmin require import JWord JUtils.
 require import Array25 Array32 Array34 Array64 Array128 Array168 Array256 Array384.
 require import Array768 Array960 Array1024 Array1088 Array1184 Array1152.
@@ -1250,7 +1250,7 @@ op SHAKE128_SQUEEZE_168 : W64.t Array25.t -> W64.t Array25.t *  W8.t Array168.t.
 op SHAKE256_64_32 : W8.t Array64.t -> W8.t Array32.t.
 op SHAKE256_33_128 : W8.t Array32.t -> W8.t ->  W8.t Array128.t.
 
-clone import PKE_Ext as KyberPKE with
+clone import PKE_ROM as KyberPKE with
   type pkey = W8.t Array1152.t * W8.t Array32.t,
   type skey = W8.t Array1152.t,
   type plaintext = W8.t Array32.t,
@@ -1290,7 +1290,7 @@ module G(HS: HSF.PseudoRF) = {
    returns 168 bytes at a time, which is what the Kyber
    implementation does. *)
 
-module type XOF_t(O : ROpub) = {
+module type XOF_t(O : POracle) = {
    proc init(rho :  W8.t Array32.t, i j : W8.t) : unit
    proc next_bytes() : W8.t Array168.t
 }.
@@ -1298,7 +1298,7 @@ module type XOF_t(O : ROpub) = {
 (* This is a concrete XOF that does not use the random oracle,
    and that matches the Kyber spec and the implementation *)
 
-module (XOF : XOF_t) (O : ROpub) = {
+module (XOF : XOF_t) (O : POracle) = {
   var state : W64.t Array25.t
   proc init(rho : W8.t Array32.t, i j : W8.t) : unit = {
        var extseed : W8.t Array34.t;
@@ -1314,7 +1314,7 @@ module (XOF : XOF_t) (O : ROpub) = {
 }.
 
 
-module Parse(XOF : XOF_t, O : ROpub) = {
+module Parse(XOF : XOF_t, O : POracle) = {
    proc sample() : poly = {
       var j, b168, bi, bi1, bi2, d1, d2,k;
       var aa : poly;
@@ -1411,7 +1411,7 @@ qed.
 
 
 
-module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : ROpub) : Scheme = {
+module Kyber(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, O : POracle) (* : Scheme *) = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(seed: W8.t Array32.t) : pkey * skey = {
@@ -1569,14 +1569,14 @@ module KemG(KemHS: HSF_KEM.PseudoRF) = {
   }
 }.
 
-module type KEMHashes(O : ROpub) = {
+module type KEMHashes(O : POracle) = {
   proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t
   proc cH(c : W8.t Array960.t * W8.t Array128.t) : W8.t Array32.t
   proc g(m : W8.t Array32.t, pkh : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t 
   proc kdf(kt : W8.t Array32.t, ch : W8.t Array32.t) : W8.t Array32.t
 }.
 
-module (KemH : KEMHashes) (RO : ROpub) = {
+module (KemH : KEMHashes) (RO : POracle) = {
   proc pkH(pk : W8.t Array1152.t * W8.t Array32.t) : W8.t Array32.t = {
          return SHA3_256_1184_32 (Array1184.init (fun k => if (k < 1152) then pk.`1.[k] else pk.`2.[k-1152]));
   }
@@ -1598,7 +1598,7 @@ module (KemH : KEMHashes) (RO : ROpub) = {
 
 import PRF_.
 module KyberKEM(HS : HSF.PseudoRF, XOF : XOF_t, PRF : PseudoRF, 
-             KemHS : HSF_KEM.PseudoRF, KemH : KEMHashes, O : ROpub)  = {
+             KemHS : HSF_KEM.PseudoRF, KemH : KEMHashes, O : POracle)  = {
 
    proc kg_derand(seed : W8.t Array32.t * W8.t Array32.t) : 
            pkey * (skey * pkey * W8.t Array32.t * W8.t Array32.t) = {
