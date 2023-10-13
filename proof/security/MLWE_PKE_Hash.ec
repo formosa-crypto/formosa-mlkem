@@ -29,19 +29,83 @@ clone import PKE with
   type ciphertext <- ciphertext.
 
 (******************************************************************)
-(*                The Basic Encryption Scheme                     *)
+(*                The Hashed Encryption Scheme                     *)
 
-type coins.
+type randomness.
 
-op [uniform full lossless]dcoins : coins distr.
-op prg_enc : coins -> vector * vector * R.
-axiom prg_coins_correct : 
-   dmap dcoins prg_enc = 
+op [uniform full lossless]drand : randomness distr.
+
+op prg_kg : randomness -> seed * vector * vector.
+
+axiom prg_kg_correct : 
+   dmap drand prg_kg = 
+     dlet dseed
+       (fun (sd : seed) => 
+          dlet dshort (fun (s : vector) => 
+               dmap dshort (fun (e : vector) => (sd, s, e)))).
+
+op prg_enc : randomness -> vector * vector * R.
+
+axiom prg_enc_correct : 
+   dmap drand prg_enc = 
      dlet dshort
-       (fun (r : vector) => dlet dshort (fun (e1 : vector) => 
-         dmap dshort_R (fun (e2 : R) => (r, e1, e2)))).
+       (fun (r : vector) => 
+          dlet dshort (fun (e1 : vector) => 
+               dmap dshort_R (fun (e2 : R) => (r, e1, e2)))).
+
+op kg(r : randomness) : pkey * skey = 
+   let (sd,s,e) = prg_kg r in
+   let t =  (H sd) *^ s + e in
+       ((sd,t),s).
+
+op enc(rr : randomness, pk : pkey, m : plaintext) : ciphertext = 
+    let (sd,t) = pk in
+    let (r,e1,e2) = prg_enc rr in
+    let u = m_transpose (H sd) *^ r + e1 in
+    let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
+        (u,v).
+
+op dec(sk : skey, c : ciphertext) : plaintext option =
+    let (u,v) = c in
+       Some (m_decode (v &- (sk `<*>` u))).
 
 module MLWE_PKE_HASH : Scheme = {
+
+  proc kg() : pkey * skey = {
+     var r,pk,sk;
+     r <$ drand;
+     (pk,sk) <- kg r;
+     return (pk,sk);
+  }
+
+  proc enc(pk : pkey, m : plaintext) : ciphertext = {
+     var rr,c;
+     rr <$ drand;
+     c <- enc rr pk m;
+     return c;
+  }
+
+  proc dec(sk : skey, c : ciphertext) : plaintext option = {
+    var mo;
+    mo <- dec sk c;
+    return mo;
+  }
+}.
+
+(******************************************************************)
+(*       Equivalences between imperative and functional           *)
+(******************************************************************)
+
+module MLWE_PKE_HASH_PROC : Scheme = {
+
+  proc kg_bridge() : pkey * skey = {
+     var r,sd,s,e,t;
+     r <$ drand;
+     (sd,s,e) <- prg_kg r;
+     t <-  (H sd) *^ s + e;
+     return ((sd,t),s);
+  }
+
   proc kg() : pkey * skey = {
     var sd,s,e,t;
     sd <$ dseed;
@@ -51,19 +115,17 @@ module MLWE_PKE_HASH : Scheme = {
     return ((sd,t),s);
   }
   
-  (* derandomized version for FO transform *)
-  proc enc(pk : pkey, m : plaintext) : ciphertext = {
-    var sd, t,coins,noise,u,v;
-    (sd,t) <- pk;
-    coins <$ dcoins;
-    noise <- prg_enc coins;
-    u  <- m_transpose (H sd) *^ noise.`1 + noise.`2;
-    v  <- (t `<*>` noise.`1) &+ noise.`3 &+ (m_encode m);
-    return(u,v);
+  proc enc_bridge(pk : pkey, m : plaintext) : ciphertext = {
+     var sd,t,rr,r,e1,e2,u,v;
+     (sd,t) <- pk;
+     rr <$ drand;
+     (r,e1,e2) <- prg_enc rr;
+     u <- m_transpose (H sd) *^ r + e1;
+     v <- (t `<*>` r) &+ e2 &+ (m_encode m);
+     return (u,v);
   }
 
-  (* the version we use in this proof *)
-  proc enc_nice(pk : pkey, m : plaintext) : ciphertext = {
+  proc enc(pk : pkey, m : plaintext) : ciphertext = {
     var sd, t,r,e1,e2,u,v;
     (sd,t) <- pk;
     r  <$ dshort;
@@ -77,53 +139,87 @@ module MLWE_PKE_HASH : Scheme = {
   proc dec(sk : skey, c : ciphertext) : plaintext option = {
     var u,v;
     (u,v) <- c;
-    return Some (m_decode (v &- (sk `<*>` u)));
+    return (Some (m_decode (v &- (sk `<*>` u))));
   }
 }.
+(* FIXME : weird parser accepts var (u,v) *)
 
-equiv enc_enc_nice : MLWE_PKE_HASH.enc ~ MLWE_PKE_HASH.enc_nice : ={arg} ==> ={res}.
-proc; sp; wp 2 3.
-conseq (_: true ==> noise{1} = (r{2},e1{2},e2{2})); 1: by smt(). 
+equiv kg_proc : MLWE_PKE_HASH.kg ~ MLWE_PKE_HASH_PROC.kg : ={arg} ==> ={res}.
+proc.
+transitivity {1} { (pk,sk) <@ MLWE_PKE_HASH_PROC.kg_bridge(); }
+              (true ==> ={pk,sk} )
+              (true ==> pk{1} = (sd{2},t{2}) /\ sk{1} = s{2} ); 1,2:smt().
++ by inline*; auto; rewrite /kg /= /#.
+inline *. wp 2 3.
+conseq (_: true ==> ={sd,s,e}); 1: by smt(). 
 rndsem{1} 0.
 rndsem{2} 0.
-(* FIXME: This should not be needed, as post does not mention coins *)
-transitivity {1} { noise <$ dmap dcoins prg_enc; }
-    (true ==> ={noise})
-    (true ==> noise{1} =  (r{2}, e1{2}, e2{2}));1,2:smt().
+(* FIXME: This should not be needed, as post does not mention r0 *)
+transitivity {1} { (sd,s,e) <$ dmap drand prg_kg; }
+    (true ==> ={sd,s,e})
+    (true ==> ={sd,s,e});1,2:smt().
 + admit.
-by rnd;auto => />;rewrite -prg_coins_correct /#.
+by rnd;auto => />;rewrite -prg_kg_correct /#.
 qed.
 
-(******************************************************************)
-(*       Game Hopping Security                                    *)
-(******************************************************************)
-
-(* Hop 0 *)
-
-module MLWE_PKE_HASH0 = {
-
-  proc enc = MLWE_PKE_HASH.enc_nice
-
-  include MLWE_PKE_HASH [-enc]
-
-}.
+equiv enc_proc : MLWE_PKE_HASH.enc ~ MLWE_PKE_HASH_PROC.enc : ={arg} ==> ={res}.
+proc.
+transitivity {1} { c <@ MLWE_PKE_HASH_PROC.enc_bridge(pk,m); }
+              (={pk,m} ==> ={c} )
+              (={pk,m} ==> c{1} = (u{2},v{2})); 1,2:smt().
++ by inline*; auto; smt(). 
+inline *; sp;wp 2 3.
+conseq (_: ={pk,m} ==> ={r,e1,e2}); 1,2: by smt(). 
+rndsem{1} 0.
+rndsem{2} 0.
+(* FIXME: This should not be needed, as post does not mention rr0 *)
+transitivity {1} { (r,e1,e2) <$ dmap drand prg_enc; }
+    (={pk,m} ==> ={r,e1,e2})
+    (={pk,m} ==> ={r,e1,e2}); 1,2:smt().
++ admit.
+by rnd;auto => />;rewrite -prg_enc_correct /#.
+qed.
 
 section.
 
 declare module A <: Adversary.
 
-lemma hop0 &m : 
+lemma cpa_proc &m : 
   Pr[CPA(MLWE_PKE_HASH,A).main() @ &m : res] =
-   Pr[CPA(MLWE_PKE_HASH0,A).main() @ &m : res].
+   Pr[CPA(MLWE_PKE_HASH_PROC,A).main() @ &m : res].
 proof. 
 byequiv => //.
 proc;call(_: true).
-call(enc_enc_nice);rnd.
-call(_: true);auto => />.
-call(_: true);[by sim | by auto].
+call(enc_proc);rnd.
+call(_: true).
+call(kg_proc).
+by auto.
 qed.
 
 end section.
+
+section.
+
+declare module A <: CORR_ADV.
+
+lemma corr_proc &m :
+    Pr[Correctness_Adv(MLWE_PKE_HASH, A).main() @ &m : res] =
+       Pr[Correctness_Adv(MLWE_PKE_HASH_PROC, A).main() @ &m : res].
+byequiv => //.
+proc;call(_: true); 1: by auto;rewrite /dec /#.
+call(enc_proc).
+call(_: true).
+call(kg_proc).
+by auto.
+qed.
+
+end section.
+
+
+(******************************************************************)
+(*       Game Hopping Security                                    *)
+(******************************************************************)
+
 
 (* Hop 1 *)
 
@@ -136,7 +232,7 @@ module MLWE_PKE_HASH1 = {
     return ((sd,t),s);
   }
 
-  include MLWE_PKE_HASH0 [-kg]
+  include MLWE_PKE_HASH_PROC [-kg]
 
 }.
 
@@ -162,7 +258,7 @@ section.
 declare module A <: Adversary.
 
 lemma hop1_left &m: 
-  Pr[CPA(MLWE_PKE_HASH0,A).main() @ &m : res] =
+  Pr[CPA(MLWE_PKE_HASH_PROC,A).main() @ &m : res] =
   Pr[MLWE_H(B1(A)).main(false,false) @ &m : res].
 proof.
 byequiv => //. 
@@ -319,7 +415,7 @@ lemma main_theorem &m :
        Pr[MLWE_H(B2(A)).main(true,true) @ &m : res].
 proof.
 move => A_guess_ll A_choose_ll.
-rewrite (hop0 A &m).
+rewrite (cpa_proc A &m).
 rewrite (hop1_left A &m).
 rewrite (hop1_right A &m).
 rewrite (hop2_left A &m).
@@ -403,14 +499,7 @@ lemma correctness_noise &m :
     Pr[CorrectnessBound.main() @ &m : res].
 proof. 
 move => A_ll.
-have -> : Pr[Correctness_Adv(MLWE_PKE_HASH, A).main() @ &m : res] =
-          Pr[Correctness_Adv(MLWE_PKE_HASH0, A).main() @ &m : res].
-+ byequiv => //.
-  proc;call(_: true); 1: by auto.
-  call(enc_enc_nice).
-  call(_: true);auto => />.
-  call(_: true);[by sim | by auto].
-
+rewrite (corr_proc A &m).
 byequiv => //.
 proc;inline *;swap {1} 8 4; swap {1} 6 5.
 wp;call{1}(_: true ==> true).
