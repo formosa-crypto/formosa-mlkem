@@ -1083,6 +1083,8 @@ proof.
   inline *; auto => />; smt(get_setE).
 qed.
     
+(* FIXME: This should be talking about the correctness
+   of the underlying scheme *)
 local lemma G2_correctness &m : 
   Pr[G2.main() @ &m : Gm.bad_corr <> None] <= 
   Pr[ Correctness_Adv(RO.RO,TT,AdvCorr(A)).main() @ &m : res ].
