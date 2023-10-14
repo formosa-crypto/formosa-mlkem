@@ -272,9 +272,12 @@ local lemma Corr_Adv_queryA :
     size Correctness_Adv1.log <= qHC /\
     uniq Correctness_Adv1.log /\
     perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
+    (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j <= qHC) /\
+    (Correctness_Adv1.xx <> None <=> Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
     (Correctness_Adv1.xx <> None => 
           let m = oget Correctness_Adv1.xx in
-             (m \in unzip1 Correctness_Adv1.log /\
+             (Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
+             m \in unzip1 Correctness_Adv1.log /\
              Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
              Correctness_Adv1.wini = (Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m))))){1}
     ].
@@ -285,6 +288,8 @@ proof.
             size Correctness_Adv1.log <= Correctness_Adv1.counter /\
             uniq Correctness_Adv1.log /\
             perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
+            (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j < Correctness_Adv1.counter) /\
+            (!Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
             Correctness_Adv1.xx = None){1} 
                ==> 
             ={res} /\ ={glob A, RO.RO.m, glob Correctness_Adv1}/\ 
@@ -292,13 +297,16 @@ proof.
             size Correctness_Adv1.log <= Correctness_Adv1.counter  /\
             uniq Correctness_Adv1.log /\
             perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
+            (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j < Correctness_Adv1.counter) /\
+            (Correctness_Adv1.xx <> None <=> Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
             (Correctness_Adv1.xx <> None => 
           let m = oget Correctness_Adv1.xx in
              (m \in unzip1 Correctness_Adv1.log /\
              Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
              Correctness_Adv1.wini = (Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m))))){1})
-         (A_count (<:RO.RO)) => />. 
+         (A_count (<:RO.RO)) => />.
   + by rewrite fdom0 fcards0 elems_fset0 /perm_eq /=.
+  + by smt().
   + by smt().
  
   proc ( ={RO.RO.m, glob Correctness_Adv1}/\ 
@@ -306,11 +314,13 @@ proof.
             size Correctness_Adv1.log <= Correctness_Adv1.counter /\
             uniq Correctness_Adv1.log /\
             perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
+            (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j < Correctness_Adv1.counter) /\ 
+            (Correctness_Adv1.xx <> None <=> Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
             (Correctness_Adv1.xx <> None => 
               let m = oget Correctness_Adv1.xx in
              (m \in unzip1 Correctness_Adv1.log /\
-             Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
-             Correctness_Adv1.wini = (Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m))))){1}) => //.
+              Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
+             Correctness_Adv1.wini = (Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m))))){1}) => //; 1: by smt(). 
   + proc.  
     if; 1: by auto.
     + if; 1: by auto.
@@ -319,7 +329,7 @@ proof.
         + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
         rcondt{2} 4.
         + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-        auto => /> &2 ?????H??;split.
+        auto => /> &2 ???????H??;split.
         + rewrite cardE fdom_set setUE /= elems_fset1 /=.
          move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
          rewrite undup_id; 1: by 
@@ -328,17 +338,18 @@ proof.
         do split.
           + by smt().
           + by apply (assoc_get_mem_false _ _ _ H).
-          rewrite fdom_set setUE /= elems_fset1 /=.
-          move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
-          rewrite undup_id; 1: by 
-           smt(cat_uniq uniq_elems perm_eq_mem memE mem_fdom).
-           by smt(perm_eq_trans perm_catC perm_cons perm_eq_sym). 
+          + rewrite fdom_set setUE /= elems_fset1 /=.
+            move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
+            rewrite undup_id; 1: by 
+                smt(cat_uniq uniq_elems perm_eq_mem memE mem_fdom).
+            by smt(perm_eq_trans perm_catC perm_cons perm_eq_sym). 
+          + by smt(@List).
       + inline *. 
         rcondt{1} 3.
         + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
         rcondt{2} 3.
         + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-        auto => /> &2 ????Hnone H???;split.
+        auto => /> &2 ?????Hnone0 Hnone H???;split.
         + rewrite cardE fdom_set setUE /= elems_fset1 /=.
          move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
          rewrite undup_id; 1: by 
@@ -352,11 +363,17 @@ proof.
             rewrite undup_id; 1: by 
                smt(cat_uniq uniq_elems perm_eq_mem memE mem_fdom).
             by smt(perm_eq_trans perm_catC perm_cons perm_eq_sym). 
-          move => Hnone1. 
-          move : (Hnone Hnone1) => [#] *.  
-          do split; 1: by smt(). 
-          + by rewrite assoc_cons  /#.
-          + by rewrite get_setE /#.
+          + by smt(@List).
+          + move => *;right;smt().
+          + by smt().
+          + move => Hnone1. 
+            move : (Hnone Hnone1) => [#] *.
+            have Hx2 : (x{2} <>  oget Correctness_Adv1.xx{2}).
+            move : Hnone0 H; rewrite Hnone1 /=. smt(@List).
+            do split.  
+            + by smt().
+            + by rewrite assoc_cons /#.
+            + by rewrite get_setE /#.
 
   inline *. 
   rcondf{1} 3.
@@ -365,6 +382,19 @@ proof.
   + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
   by auto => /> /#.
 qed.
+
+lemma corr_pnp &m : 
+ (forall (RO<:POracle{ -A }), 
+  hoare [Correctness_Adv1(A).A.find : 
+       Correctness_Adv1.counter = 0  ==> 
+         Correctness_Adv1.counter <= qHC]) =>
+
+  (forall (H0 <: POracle { -A }),
+     islossless H0.get => islossless A(H0).find) =>
+
+  Pr[Correctness_Adv1(A).main() @ &m : Correctness_Adv1.m' <> Some Correctness_Adv1.m] <=
+    (qHC+1)%r * Pr[Correctness_Adv1(A).main() @ &m : Correctness_Adv1.m' <> Some Correctness_Adv1.m /\ Some Correctness_Adv1.m = Correctness_Adv1.xx ].
+
 
 lemma correctness &m : 
  (forall (RO<:POracle{ -A }), 
@@ -375,8 +405,8 @@ lemma correctness &m :
   (forall (H0 <: POracle { -A }),
      islossless H0.get => islossless A(H0).find) =>
 
-  Pr[Correctness_Adv(RO.RO,TT,A).main() @ &m : res] <=
-  (qHC)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A)).main() @ &m : res].
+  Pr[Correctness_Adv1(RO.RO,TT,A).main() @ &m : res] <=
+  (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A)).main() @ &m : res].
 proof.
   move => A_count A_ll.
   rewrite corr1.
