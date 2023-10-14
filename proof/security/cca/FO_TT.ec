@@ -94,11 +94,8 @@ module Correctness_Adv1(A : CORR_ADV) = {
   var counter : int
   var log : (plaintext * int) list
   var m  : plaintext
-  var c  : ciphertext
-  var m' : plaintext option
   var i  : int
   var xx : plaintext option
-  var wini : bool
   
   module O1 = {
     proc get(x : plaintext) : randomness = {
@@ -107,7 +104,6 @@ module Correctness_Adv1(A : CORR_ADV) = {
            if (counter = i) {
               xx <- Some x;
               y <@ RO.RO.get(x);
-              wini <- Some x <> dec sk.`2 (enc y pk x);
            }
            else {
               y <@ RO.RO.get(x);
@@ -125,7 +121,6 @@ module Correctness_Adv1(A : CORR_ADV) = {
   module A = A(O1)
 
   proc main() : unit = {
-    var y;
     log <- [];
     counter <- 0;
     xx <- None;
@@ -133,9 +128,7 @@ module Correctness_Adv1(A : CORR_ADV) = {
     RO.RO.init();
     (pk, sk) <@ TT(O1).kg();
     m <@ A.find(pk, sk);
-    y <@ O1.get(m);
-    c <- enc y pk m;
-    m' <- dec sk.`2 c;
+    O1.get(m);
   }
 
 }.
@@ -195,10 +188,12 @@ section.
 
 declare module A <: PKEROM.CORR_ADV {-RO.RO, -Correctness_Adv1}.
 
+
 local lemma corr1 &m : 
  Pr [ Correctness_Adv(RO.RO,TT,A).main() @ &m : res ] <=
  Pr [ Correctness_Adv1(A).main() @ &m : 
-   Correctness_Adv1.m' <> Some Correctness_Adv1.m  ].
+    exists m, m \in elems (fdom RO.RO.m) /\
+        Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m)].
 proof.
 byequiv => //.
 proc. 
@@ -210,16 +205,19 @@ seq 3 7 : (={glob A, RO.RO.m} /\
   + proc; inline *; do 2!(if{2}; 2: by inline *; auto).
     by auto.
   by inline *;auto => />;apply drange_ll;smt(gt0_qHC).
-seq 1 2 : (#pre /\ c{1} = Correctness_Adv1.c{2} /\
+seq 1 1 : (#pre /\ 
            m{1} \in RO.RO.m{1} /\
+           m{1} \in unzip1 Correctness_Adv1.log{2} /\
            c{1} = enc (oget RO.RO.m{1}.[m{1}])  pk{1} m{1}). 
 + inline *;sp;do 2!(if{2};2: by inline *;auto =>/>; smt(get_setE)).
   by auto =>/>; smt(get_setE).
 inline *; wp; conseq />.
-sp; case(m'0{1} = None); 1: by rcondf{1} 1; by auto => /#.
+sp; case(m'0{1} = None); 1: by rcondf{1} 1; auto => />; smt(mem_fdom). 
 rcondt{1} 1; 1: by auto.
-by auto => /> /#.
+by auto => /> ; smt(mem_fdom). 
 qed.
+
+(* Now do a hybrid and, for each step, try to match rand to cpa game *)
 
 local clone import PlugAndPray as PAPC with
   type tval <- int,
