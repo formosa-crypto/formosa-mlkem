@@ -88,93 +88,68 @@ module (TT : PKEROM.Scheme) (H : POracle) = {
 const qHC : { int | 0 < qHC } as gt0_qHC. 
 const qH : { int | 0 < qH } as gt0_qH. 
 
-module Correctness_Adv1(A : CORR_ADV) = {
+module CO1(O : RO.RO) : POracle = {
   var pk : pkey
   var sk : skey
   var counter : int
-  var log : (plaintext * int) list
-  var m  : plaintext
   var i  : int
-  var xx : plaintext option
-  
-  module O1 = {
-    proc get(x : plaintext) : randomness = {
-       var y;
-       if ((!x \in unzip1 log)) {
-           if (counter = i) {
-              xx <- Some x;
-              y <@ RO.RO.get(x);
-           }
-           else {
-              y <@ RO.RO.get(x);
-           }
-           log <- (x,counter)::log;
+  var queried : plaintext list
+
+  proc get(x : plaintext) : randomness = {
+       var y <- witness;
+       if (!x \in queried) {
+          if (size queried = i) {
+              O.sample(x); (* We will move this *)
+          }
+          else {
+              y <@ O.get(x);
+          }
+          queried <- queried ++ [x];
        }
        else {
-          y <@ RO.RO.get(x);
+          if(!find (pred1 x) queried = i) { 
+              (* x may be repeat due to use of sample
+                 and we want to make sure we don't 
+                 sample it. *)
+              y <@ O.get(x);
+          } 
        }
        counter <- counter + 1;
        return y;
-      }
+  }
+}.
+
+module Correctness_Adv1(O : RO.RO, A : PKEROM.CORR_ADV) = {
+  
+  module A = A(CO1(O))
+
+  proc main'(pk : pkey, sk : skey, i : int) : unit = {
+    var m;
+    CO1.i <- i;
+    O.init();
+    CO1.counter <- 0;
+    CO1.pk <- pk;
+    CO1.sk <- sk;
+    CO1.queried <- [];
+    m <@ A.find(CO1.pk, CO1.sk);
+    CO1(O).get(m);
   }
 
-  module A = A(O1)
-
   proc main() : unit = {
-    log <- [];
-    counter <- 0;
-    xx <- None;
-    i <$ [0..qHC];
-    RO.RO.init();
-    (pk, sk) <@ TT(O1).kg();
-    m <@ A.find(pk, sk);
-    O1.get(m);
+    var pk,sk;
+    (pk, sk) <@ TT(CO1(O)).kg();
+   main'(pk,sk,-1);
   }
 
 }.
 
-
-module B(A : PKEROM.CORR_ADV) : PKE.CORR_ADV = {
-  var i : int
-  var xx : plaintext
-  
-  module O1 = {
-    proc get(x : plaintext) : randomness = {
-       var y;
-       if ((!x \in unzip1 Correctness_Adv1.log)) {
-           if (i = Correctness_Adv1.counter) {
-              y <$ randd; (* I do not need to give it 
-                             the correct r, as I have m *)
-              xx <- x;
-              RO.RO.m <- RO.RO.m.[x <- y];
-           }
-           else {
-              y <@ RO.RO.get(x);
-           }
-           Correctness_Adv1.log <- (x,Correctness_Adv1.counter)::Correctness_Adv1.log;
-       } else {
-           y <@ RO.RO.get(x);
-       }
-       Correctness_Adv1.counter <- Correctness_Adv1.counter + 1;
-       return y;
-      }
-  }
-
-  module A = A(O1)
+module B(O : RO.RO, A : PKEROM.CORR_ADV) : PKE.CORR_ADV = {
+  var i: int
 
   proc find(pk : pkey, sk : PKE.skey) : plaintext = {
-    var rd : randomness;
-    var m : plaintext;
-    
-    Correctness_Adv1.log <- [];
-    Correctness_Adv1.counter <- 0;
     i <$ [0..qHC];
-    RO.RO.init();
-    m <@ A.find(pk, (pk,sk));
-    rd <@ O1.get(m);
-    
-    return xx;
-    (* Correctness game samples r at this point! *)
+    Correctness_Adv1(O,A).main'(pk,(pk,sk),i);   
+    return (nth witness CO1.queried i);
   }
 
 }.
@@ -184,35 +159,62 @@ module B(A : PKEROM.CORR_ADV) : PKE.CORR_ADV = {
 
 section.
 
-declare module A <: PKEROM.CORR_ADV {-RO.RO, -Correctness_Adv1}.
+lemma perm_eq_set ['a,'b,'c]  (m : ('a,'b) fmap) (l : 'a list) x y : 
+     perm_eq l (elems (fdom m)) => 
+       !(x \in l) => 
+        perm_eq (l ++ [x]) (elems (fdom (m.[x <- y]))).
+admitted. 
+
+
+declare module A <: PKEROM.CORR_ADV {-RO.RO, -Correctness_Adv1, -B}.
 
 
 local lemma corr1 &m : 
  Pr [ Correctness_Adv(RO.RO,TT,A).main() @ &m : res ] <=
- Pr [ Correctness_Adv1(A).main() @ &m : 
-    exists m, m \in elems (fdom RO.RO.m) /\
-        Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m)].
+ Pr [ Correctness_Adv1(RO.RO,A).main() @ &m : 
+    exists m, m \in CO1.queried /\
+        Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)].
 proof.
 byequiv => //.
-proc. 
-seq 3 7 : (={glob A, RO.RO.m} /\
-           (pk,sk){1} = (Correctness_Adv1.pk, Correctness_Adv1.sk){2} /\
-           m{1} = Correctness_Adv1.m{2} /\
-           sk{1}.`1 = Correctness_Adv1.pk{2}).
-+ call(_: ={RO.RO.m}). 
-  + proc; inline *; do 2!(if{2}; 2: by inline *; auto).
-    by auto.
-  by inline *;auto => />;apply drange_ll;smt(gt0_qHC).
+proc; inline{1} 1;inline {2} 2;swap {2} [4..6] -3; sp 0 2.
+seq 3 9 : (={glob A, RO.RO.m, m} /\
+           (pk,sk){1} = (CO1.pk, CO1.sk){2} /\
+           sk{1}.`1 = CO1.pk{2} /\
+            CO1.i{2} = -1 /\ 
+            perm_eq CO1.queried{2} 
+                    (elems (fdom RO.RO.m{2}))).
++ wp;call(_: ={RO.RO.m} /\ CO1.i{2} = -1 /\ 
+             perm_eq CO1.queried{2} 
+                    (elems (fdom RO.RO.m{2}))). 
+  + proc;inline *. 
+    sp;if{2}; last first. 
+    + rcondt{2} 1; 1: by auto;smt(find_ge0).
+      rcondf{1} 2; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+      by auto => />;smt(memE mem_fdom perm_eq_mem).  
+    + rcondf{2} 1; 1: by auto;smt(size_ge0).
+      rcondt{1} 2; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+      rcondt{2} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+      by auto; smt(perm_eq_set).  
+  by inline *;auto => />;rewrite fdom0 elems_fset0 perm_eq_refl_eq => //.
 seq 1 1 : (#pre /\ 
            m{1} \in RO.RO.m{1} /\
-           m{1} \in unzip1 Correctness_Adv1.log{2} /\
            c{1} = enc (oget RO.RO.m{1}.[m{1}])  pk{1} m{1}). 
-+ inline *;sp;do 2!(if{2};2: by inline *;auto =>/>; smt(get_setE)).
-  by auto =>/>; smt(get_setE).
++ inline *;sp.
+  + if{2}; last first. 
+    + rcondt{2} 1; 1: by auto;smt(find_ge0).
+      rcondf{1} 2; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+      rcondf{2} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+      by auto => />; smt(perm_eq_mem mem_fdom).  
+    rcondf{2} 1; 1: by auto;smt(size_ge0).
+    rcondt{1} 2; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+    rcondt{2} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+    by auto => />;  smt(perm_eq_set mem_set).  
+      
 inline *; wp; conseq />.
-sp; case(m'0{1} = None); 1: by rcondf{1} 1; auto => />; smt(mem_fdom). 
+sp; case(m'0{1} = None);
+  1: by rcondf{1} 1; auto => />; smt(perm_eq_mem mem_fdom). 
 rcondt{1} 1; 1: by auto.
-by auto => /> ; smt(mem_fdom). 
+by auto => /> ; smt(perm_eq_mem mem_fdom). 
 qed.
 
 local clone import PlugAndPray as PAPC with
@@ -234,176 +236,149 @@ proof.
 qed.
 *)
 
+(* 
 lemma assoc_get_mem_false ['a, 'b] 
    (xs : ('a * 'b) list) (k : 'a) (x : 'b):
      !(k \in unzip1 xs) => !((k, x) \in xs) by elim xs => /#. 
 
 lemma perm_eq_unzip1 ['a,'b,'c]  (m : ('a,'b) fmap) (l : ('a * 'b) list) x : 
      perm_eq (elems (fdom m)) (unzip1 l) => 
-      x \in unzip1 l <=> x \in m by smt(perm_eq_mem memE mem_fdom). 
+      x \in unzip1 l <=> x \in m by smt(perm_eq_mem memE mem_fdom). *)
+
+lemma card_set_bnd ['a, 'b] (m : ('a,'b) fmap) x y : 
+  card (fdom m.[x <- y]) <= card (fdom m) + 1
+  by rewrite  fdom_set fcardU fcard1 /= !cardE;smt(size_ge0).
 
 local lemma Corr_Adv_queryA :
- (forall (RO<:POracle{ -A }), 
-  hoare [Correctness_Adv1(A).A.find : 
-       Correctness_Adv1.counter = 0  ==> 
-         Correctness_Adv1.counter <= qHC]) =>
+ (forall (RO<:RO.RO{ -A }), 
+  hoare [Correctness_Adv1(RO,A).A.find : 
+       CO1.counter = 0  ==> 
+         CO1.counter <= qHC]) =>
 
   (forall (H0 <: POracle { -A }),
      islossless H0.get => islossless A(H0).find) =>
 
   equiv [
-  Correctness_Adv1(A).A.find ~ Correctness_Adv1(A).A.find : 
+  Correctness_Adv1(RO.RO,A).A.find ~ Correctness_Adv1(RO.RO,A).A.find : 
   ={arg} /\ ={glob A, RO.RO.m, glob Correctness_Adv1} /\ 
-    Correctness_Adv1.pk{1} = arg{2}.`1 /\ 
-    Correctness_Adv1.sk{1} = arg{2}.`2 /\ 
-    (Correctness_Adv1.counter = 0 /\ 
-    Correctness_Adv1.log = [] /\
+    (CO1.counter = 0 /\ 
     RO.RO.m = empty /\
-    Correctness_Adv1.xx = None){1} ==> 
+    CO1.queried = []){1} ==> 
   ={res} /\ ={glob A, RO.RO.m, glob Correctness_Adv1} /\
-    (Correctness_Adv1.counter <= qHC /\ 
-    card (fdom RO.RO.m) <= qHC /\ 
-    size Correctness_Adv1.log <= qHC /\
-    uniq Correctness_Adv1.log /\
-    perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
-    (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j <= qHC) /\
-    (Correctness_Adv1.xx <> None <=> Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
-    (Correctness_Adv1.xx <> None => 
-          let m = oget Correctness_Adv1.xx in
-             (Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
-             m \in unzip1 Correctness_Adv1.log /\
-             Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m)))){1}
-    ].
+    (CO1.counter <= qHC /\ 
+    card (fdom RO.RO.m) <= qHC /\
+    perm_eq CO1.queried (elems (fdom RO.RO.m))){1}    ].
 proof.
   move => A_count A_ll.
-  conseq (: ={arg} /\ ={glob A, RO.RO.m, glob Correctness_Adv1}/\ 
-            (card (fdom RO.RO.m) <= Correctness_Adv1.counter /\
-            size Correctness_Adv1.log <= Correctness_Adv1.counter /\
-            uniq Correctness_Adv1.log /\
-            perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
-            (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j < Correctness_Adv1.counter) /\
-            (!Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
-            Correctness_Adv1.xx = None){1} 
+  conseq (: ={arg} /\ ={glob A, RO.RO.m, glob CO1}/\ 
+            (card (fdom RO.RO.m) <= CO1.counter /\
+            perm_eq CO1.queried (elems (fdom RO.RO.m))){1} 
                ==> 
-            ={res} /\ ={glob A, RO.RO.m, glob Correctness_Adv1}/\ 
-            (card (fdom RO.RO.m) <= Correctness_Adv1.counter /\
-            size Correctness_Adv1.log <= Correctness_Adv1.counter  /\
-            uniq Correctness_Adv1.log /\
-            perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
-            (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j < Correctness_Adv1.counter) /\
-            (Correctness_Adv1.xx <> None <=> Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
-            (Correctness_Adv1.xx <> None => 
-          let m = oget Correctness_Adv1.xx in
-             (m \in unzip1 Correctness_Adv1.log /\
-             Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m)))){1})
+            ={res} /\ ={glob A, RO.RO.m, glob CO1} /\ 
+            (card (fdom RO.RO.m) <= CO1.counter /\
+            perm_eq CO1.queried (elems (fdom RO.RO.m))){1})
          (A_count (<:RO.RO)) => />.
-  + by rewrite fdom0 fcards0 elems_fset0 /perm_eq /=.
-  + by smt().
+  + by rewrite fdom0 fcards0 elems_fset0 /=; smt(perm_eq_mem).    
   + by smt().
  
-  proc ( ={RO.RO.m, glob Correctness_Adv1}/\ 
-            (card (fdom RO.RO.m) <= Correctness_Adv1.counter /\
-            size Correctness_Adv1.log <= Correctness_Adv1.counter /\
-            uniq Correctness_Adv1.log /\
-            perm_eq (elems (fdom RO.RO.m)) (unzip1 Correctness_Adv1.log) /\
-            (forall j, j \in unzip2 Correctness_Adv1.log => 0 <= j < Correctness_Adv1.counter) /\ 
-            (Correctness_Adv1.xx <> None <=> Correctness_Adv1.i \in unzip2 Correctness_Adv1.log) /\ 
-            (Correctness_Adv1.xx <> None => 
-              let m = oget Correctness_Adv1.xx in
-             (m \in unzip1 Correctness_Adv1.log /\
-              Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m)))){1}) => //; 1: by smt(). 
+  proc ( ={RO.RO.m, glob CO1} /\ 
+       (card (fdom RO.RO.m) <= CO1.counter){1} /\
+       perm_eq CO1.queried{1} (elems (fdom RO.RO.m{1}))); 
+        1,2: by smt(memE mem_fdom perm_eq_mem).    
   + proc.  
-    if; 1: by auto.
-    + if; 1: by auto.
+    sp;if; 1: by auto.
+    + if; 1: by auto. 
       + inline *. 
-        rcondt{1} 4.
-        + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-        rcondt{2} 4.
-        + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-        auto => /> &2 ???????H??;split.
-        + rewrite cardE fdom_set setUE /= elems_fset1 /=.
-         move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
-         rewrite undup_id; 1: by 
-            smt(cat_uniq uniq_elems perm_eq_mem memE mem_fdom).
-          by smt(perm_eq_size perm_eq_trans perm_catC perm_cons perm_eq_sym). 
-        do split.
-          + by smt().
-          + by apply (assoc_get_mem_false _ _ _ H).
-          + rewrite fdom_set setUE /= elems_fset1 /=.
-            move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
-            rewrite undup_id; 1: by 
-                smt(cat_uniq uniq_elems perm_eq_mem memE mem_fdom).
-            by smt(perm_eq_trans perm_catC perm_cons perm_eq_sym). 
-          + by smt(@List).
-      + inline *. 
-        rcondt{1} 3.
-        + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-        rcondt{2} 3.
-        + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-        auto => /> &2 ?????Hnone0 Hnone H???;split.
-        + rewrite cardE fdom_set setUE /= elems_fset1 /=.
-         move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
-         rewrite undup_id; 1: by 
-            smt(cat_uniq uniq_elems perm_eq_mem memE mem_fdom).
-          by smt(perm_eq_size perm_eq_trans perm_catC perm_cons perm_eq_sym). 
-        do split.
-          + by smt().
-          + by apply (assoc_get_mem_false _ _ _ H).
-          + rewrite fdom_set setUE /= elems_fset1 /=.
-            move : (oflistK (elems (fdom RO.RO.m{2}) ++ [x{2}])).
-            rewrite undup_id; 1: by 
-               smt(cat_uniq uniq_elems perm_eq_mem memE mem_fdom).
-            by smt(perm_eq_trans perm_catC perm_cons perm_eq_sym). 
-          + by smt(@List).
-          + move => *;right;smt().
-          + by smt().
-          + move => Hnone1. 
-            move : (Hnone Hnone1) => [#] *.
-            have Hx2 : (x{2} <>  oget Correctness_Adv1.xx{2}).
-            move : Hnone0 H; rewrite Hnone1 /=. smt(@List).
-            do split.  
-            + by smt().
-            + by rewrite assoc_cons /#.
-
+        rcondt{1} 4; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+        rcondt{2} 4; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+        by auto => />;smt(perm_eq_set card_set_bnd).      
+      inline *. 
+      rcondt{1} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+      rcondt{2} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+      by auto => />;smt(perm_eq_set card_set_bnd).      
   inline *. 
-  rcondf{1} 3.
-  + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-  rcondf{2} 3.
-  + by move => &m;auto => />; smt(perm_eq_mem memE mem_fdom).
-  by auto => /> /#.
+  sp;if; 1: by auto.
+  + rcondf{1} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
+    rcondf{2} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).
+    by auto => />;smt(perm_eq_set card_set_bnd).      
+
+ by auto => />;smt(perm_eq_set card_set_bnd).      
 qed.
 
+(* When Adv1 is run inside Guess, sample is never called.
+   When it is run inside B, sample is called on the ith call,
+   but A gets a wrong answer.
+   However, if we use an eager RO, then at least the samplings
+   are aligned and we should have the same output!
+*)
+
+local lemma corr_pre0 &m :
+Pr[Guess(Correctness_Adv1(RO.RO, A)).main() @ &m :
+   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   res.`1 = if 0 <= find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried &&
+      find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried < qHC + 1
+     then find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried
+   else 0] =
+Pr[PKE.Correctness_Adv(BasePKE, B(RO.RO, A)).main() @ &m : 
+   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   B.i = find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
+byequiv => //.
+proc.
+swap {1} 2 -1; inline {1} 2.
+inline {2} 2; swap {2} 4 -3.
+seq 3 2 : (={glob A,pk} /\ sk{1}.`1  = pk{2} /\ sk{1}.`2 = sk{2} /\ i{1} = B.i{2}); 1: by  inline *;wp;rnd;auto => />.
+sp.
+seq 1 1 : #post; 2: by inline *; auto => />.
+inline {1} 1; inline {2} 1.
+admitted.
+
+local lemma corr_pre1 &m :
+Pr[PKE.Correctness_Adv(BasePKE, B(RO.RO, A)).main() @ &m : 
+   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   B.i = find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried] = 
+Pr[PKE.Correctness_Adv(BasePKE, B(RO.LRO, A)).main() @ &m : 
+   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   B.i = find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
+admitted.
+
 lemma corr_pnp &m : 
- (forall (RO<:POracle{ -A }), 
-  hoare [Correctness_Adv1(A).A.find : 
-       Correctness_Adv1.counter = 0  ==> 
-         Correctness_Adv1.counter <= qHC]) =>
+ (forall (RO<:RO.RO{ -A }), 
+  hoare [Correctness_Adv1(RO,A).A.find : 
+       CO1.counter = 0  ==> 
+         CO1.counter <= qHC]) =>
 
   (forall (H0 <: POracle { -A }),
      islossless H0.get => islossless A(H0).find) =>
 
-  Pr[Correctness_Adv1(A).main() @ &m : 
-      exists m, m \in elems (fdom RO.RO.m) /\
-        Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m)] <=
-    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A)).main() @ &m : res]. 
+  Pr[Correctness_Adv1(RO.RO,A).main() @ &m : 
+      exists m, m \in CO1.queried /\
+        Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)] <=
+    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(RO.LRO,A)).main() @ &m : res]. 
   move => A_count A_ll.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (gt0_qHC).
-print glob Correctness_Adv1(A).
-  pose phi := fun (g: (glob Correctness_Adv1(A))) (_:unit) => 
-      exists m, m \in elems (fdom g.`8) /\
-        Some m <> dec g.`2.`2 (enc (oget g.`8.[m]) g.`3 m).
-
-print find.
-  pose psi := fun (g: (glob Correctness_Adv1(A))) (_:unit) => 
-    let i = find (fun m => Some m <> dec g.`2.`2 (enc (oget g.`8.[m]) g.`3 m)) (elems (fdom g.`8)) in
-    if 0 <= i < qHC + 1 then i else 0.
-  have := PAPC.PBound (Correctness_Adv1(A)) phi psi tt &m _.
+print glob Correctness_Adv1(RO.RO,A).
+  pose phi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
+      exists m, m \in g.`1 /\
+        Some m <> dec g.`2.`2 (enc (oget g.`6.[m]) g.`3 m).
+  pose psi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
+    let i = find 
+      (fun m => Some m <> dec g.`2.`2 (enc (oget g.`6.[m]) g.`3 m)) g.`1
+    in if 0 <= i < qHC + 1 then i else 0.
+  have := PAPC.PBound (Correctness_Adv1(RO.RO,A)) phi psi tt &m _.
   + smt (gt0_qHC mem_iota).
   rewrite undup_id 1:iota_uniq size_iota /=.
   have -> : max 0 (qHC + 1) = qHC + 1 by smt (gt0_qHC).
-  rewrite /phi /psi /==> ->.
-  byequiv => //; rewrite /phi /psi /=.
+  rewrite /phi /psi /= => ->.
+  rewrite corr_pre0 corr_pre1.
+  byequiv => //.
   proc.
+  inline {1} 4; inline {1} 3; inline {1} 2.
+  inline {2} 4; inline {2} 3; inline {2} 2.
+  wp;rnd;wp => />; 1: smt().
+  conseq (_: _ ==> ={glob CO1, glob B,pk1,sk1,pk,sk,glob RO.RO} /\ 
+                    sk1{2} = sk{1} /\ pk1{2} = pk{1} /\
+                    CO1.sk{2}.`2 = sk{1} /\ CO1.pk{2} = pk{1}). 
+  auto => /> *.   smt.
   inline{2} 2.
   swap {1} 2 -1.
   swap {2} 6 -5.
