@@ -134,8 +134,6 @@ module Correctness_Adv1(A : CORR_ADV) = {
 }.
 
 
-
-(* 
 module B(A : PKEROM.CORR_ADV) : PKE.CORR_ADV = {
   var i : int
   var xx : plaintext
@@ -180,7 +178,7 @@ module B(A : PKEROM.CORR_ADV) : PKE.CORR_ADV = {
   }
 
 }.
-*)
+
 (*********************************)
 
 
@@ -217,11 +215,9 @@ rcondt{1} 1; 1: by auto.
 by auto => /> ; smt(mem_fdom). 
 qed.
 
-(* Now do a hybrid and, for each step, try to match rand to cpa game *)
-
 local clone import PlugAndPray as PAPC with
   type tval <- int,
-  op indices <-  iota_ 0 (qHC), 
+  op indices <-  iota_ 0 (qHC + 1), 
   type tin <- unit, 
   type tres <- unit
   proof *.
@@ -276,8 +272,7 @@ local lemma Corr_Adv_queryA :
           let m = oget Correctness_Adv1.xx in
              (Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
              m \in unzip1 Correctness_Adv1.log /\
-             Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
-             Correctness_Adv1.wini = (Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m))))){1}
+             Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m)))){1}
     ].
 proof.
   move => A_count A_ll.
@@ -300,8 +295,7 @@ proof.
             (Correctness_Adv1.xx <> None => 
           let m = oget Correctness_Adv1.xx in
              (m \in unzip1 Correctness_Adv1.log /\
-             Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
-             Correctness_Adv1.wini = (Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m))))){1})
+             Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m)))){1})
          (A_count (<:RO.RO)) => />.
   + by rewrite fdom0 fcards0 elems_fset0 /perm_eq /=.
   + by smt().
@@ -317,8 +311,7 @@ proof.
             (Correctness_Adv1.xx <> None => 
               let m = oget Correctness_Adv1.xx in
              (m \in unzip1 Correctness_Adv1.log /\
-              Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m) /\
-             Correctness_Adv1.wini = (Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m))))){1}) => //; 1: by smt(). 
+              Correctness_Adv1.i = oget (assoc Correctness_Adv1.log m)))){1}) => //; 1: by smt(). 
   + proc.  
     if; 1: by auto.
     + if; 1: by auto.
@@ -371,7 +364,6 @@ proof.
             do split.  
             + by smt().
             + by rewrite assoc_cons /#.
-            + by rewrite get_setE /#.
 
   inline *. 
   rcondf{1} 3.
@@ -390,38 +382,26 @@ lemma corr_pnp &m :
   (forall (H0 <: POracle { -A }),
      islossless H0.get => islossless A(H0).find) =>
 
-  Pr[Correctness_Adv1(A).main() @ &m : Correctness_Adv1.m' <> Some Correctness_Adv1.m] <=
-    (qHC+1)%r * Pr[Correctness_Adv1(A).main() @ &m : Correctness_Adv1.m' <> Some Correctness_Adv1.m /\ Some Correctness_Adv1.m = Correctness_Adv1.xx ].
-
-
-lemma correctness &m : 
- (forall (RO<:POracle{ -A }), 
-  hoare [Correctness_Adv1(A).A.find : 
-       Correctness_Adv1.counter = 0  ==> 
-         Correctness_Adv1.counter <= qHC]) =>
-
-  (forall (H0 <: POracle { -A }),
-     islossless H0.get => islossless A(H0).find) =>
-
-  Pr[Correctness_Adv1(RO.RO,TT,A).main() @ &m : res] <=
-  (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A)).main() @ &m : res].
-proof.
+  Pr[Correctness_Adv1(A).main() @ &m : 
+      exists m, m \in elems (fdom RO.RO.m) /\
+        Some m <> dec Correctness_Adv1.sk.`2 (enc (oget RO.RO.m.[m]) Correctness_Adv1.pk m)] <=
+    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A)).main() @ &m : res]. 
   move => A_count A_ll.
-  rewrite corr1.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (gt0_qHC).
-  pose phi := fun (g: plaintext option * plaintext * skey * pkey * int * (plaintext * int) list *
-  (plaintext, randomness) fmap * (glob A)) (_:unit) => 
-      g.`1 <> Some g.`2.
+print glob Correctness_Adv1(A).
+  pose phi := fun (g: (glob Correctness_Adv1(A))) (_:unit) => 
+      exists m, m \in elems (fdom g.`8) /\
+        Some m <> dec g.`2.`2 (enc (oget g.`8.[m]) g.`3 m).
 
-  pose psi := fun (g:plaintext option * plaintext * skey * pkey * int * (plaintext * int) list *
-  (plaintext, randomness) fmap * (glob A) ) (_:unit) => 
-    let i = find (pred1 g.`2) (unzip1 g.`6) in
-    if 0 <= i < qHC then i else 0.
-  have := PAPC.PBound (Correctness_Adv1(A)) phi psi tt &m _. 
+print find.
+  pose psi := fun (g: (glob Correctness_Adv1(A))) (_:unit) => 
+    let i = find (fun m => Some m <> dec g.`2.`2 (enc (oget g.`8.[m]) g.`3 m)) (elems (fdom g.`8)) in
+    if 0 <= i < qHC + 1 then i else 0.
+  have := PAPC.PBound (Correctness_Adv1(A)) phi psi tt &m _.
   + smt (gt0_qHC mem_iota).
-  rewrite undup_id 1:iota_uniq size_iota.
-  have -> : max 0 (qHC) = qHC by smt (gt0_qHC).
-  rewrite (RField.mulrC (1%r/_)) RField.mulrA /= /phi /psi /==> ->.
+  rewrite undup_id 1:iota_uniq size_iota /=.
+  have -> : max 0 (qHC + 1) = qHC + 1 by smt (gt0_qHC).
+  rewrite /phi /psi /==> ->.
   byequiv => //; rewrite /phi /psi /=.
   proc.
   inline{2} 2.
