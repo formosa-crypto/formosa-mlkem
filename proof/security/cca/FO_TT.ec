@@ -123,7 +123,7 @@ module Correctness_Adv1(O : RO.RO, A : PKEROM.CORR_ADV) = {
   
   module A = A(CO1(O))
 
-  proc main'(pk : pkey, sk : skey, i : int) : unit = {
+  proc main'(pk : pkey, sk : skey, i : int) : plaintext = {
     var m;
     CO1.i <- i;
     O.init();
@@ -132,13 +132,14 @@ module Correctness_Adv1(O : RO.RO, A : PKEROM.CORR_ADV) = {
     CO1.sk <- sk;
     CO1.queried <- [];
     m <@ A.find(CO1.pk, CO1.sk);
-    CO1(O).get(m);
+    return m;
   }
 
   proc main() : unit = {
-    var pk,sk;
+    var pk,sk,m;
     (pk, sk) <@ TT(CO1(O)).kg();
-   main'(pk,sk,-1);
+    m <@ main'(pk,sk,-1);
+    CO1(O).get(m);
   }
 
 }.
@@ -147,8 +148,10 @@ module B(O : RO.RO, A : PKEROM.CORR_ADV) : PKE.CORR_ADV = {
   var i: int
 
   proc find(pk : pkey, sk : PKE.skey) : plaintext = {
+    var m;
     i <$ [0..qHC];
-    Correctness_Adv1(O,A).main'(pk,(pk,sk),i);   
+    m <@ Correctness_Adv1(O,A).main'(pk,(pk,sk),i);   
+    O.sample(m);
     return (nth witness CO1.queried i);
   }
 
@@ -172,12 +175,12 @@ declare module A <: PKEROM.CORR_ADV {-RO.RO, -Correctness_Adv1, -B}.
 local lemma corr1 &m : 
  Pr [ Correctness_Adv(RO.RO,TT,A).main() @ &m : res ] <=
  Pr [ Correctness_Adv1(RO.RO,A).main() @ &m : 
-    exists m, m \in CO1.queried /\
-        Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)].
+    has (fun m => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m))
+       CO1.queried].
 proof.
 byequiv => //.
 proc; inline{1} 1;inline {2} 2;swap {2} [4..6] -3; sp 0 2.
-seq 3 9 : (={glob A, RO.RO.m, m} /\
+seq 3 10 : (={glob A, RO.RO.m, m} /\
            (pk,sk){1} = (CO1.pk, CO1.sk){2} /\
            sk{1}.`1 = CO1.pk{2} /\
             CO1.i{2} = -1 /\ 
@@ -212,9 +215,9 @@ seq 1 1 : (#pre /\
       
 inline *; wp; conseq />.
 sp; case(m'0{1} = None);
-  1: by rcondf{1} 1; auto => />; smt(perm_eq_mem mem_fdom). 
+  1: by rcondf{1} 1; auto; smt(hasPn perm_eq_mem mem_fdom). 
 rcondt{1} 1; 1: by auto.
-by auto => /> ; smt(perm_eq_mem mem_fdom). 
+by auto => /> *; do split; move => *; smt(hasPn perm_eq_mem mem_fdom).
 qed.
 
 local clone import PlugAndPray as PAPC with
@@ -314,13 +317,15 @@ qed.
 
 local lemma corr_pre0 &m :
 Pr[Guess(Correctness_Adv1(RO.RO, A)).main() @ &m :
-   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   (has (fun m => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m))
+       CO1.queried) /\
    res.`1 = if 0 <= find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried &&
       find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried < qHC + 1
      then find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried
    else 0] =
 Pr[PKE.Correctness_Adv(BasePKE, B(RO.RO, A)).main() @ &m : 
-   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   (has (fun m => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m))
+       CO1.queried) /\
    B.i = find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
 byequiv => //.
 proc.
@@ -328,17 +333,21 @@ swap {1} 2 -1; inline {1} 2.
 inline {2} 2; swap {2} 4 -3.
 seq 3 2 : (={glob A,pk} /\ sk{1}.`1  = pk{2} /\ sk{1}.`2 = sk{2} /\ i{1} = B.i{2}); 1: by  inline *;wp;rnd;auto => />.
 sp.
-seq 1 1 : #post; 2: by inline *; auto => />.
+seq 2 2 : #post; 2: by inline *; auto => />.
 inline {1} 1; inline {2} 1.
+(* Deal with the fact that after adv puts mi in then all bets are off *)
 admitted.
 
 local lemma corr_pre1 &m :
 Pr[PKE.Correctness_Adv(BasePKE, B(RO.RO, A)).main() @ &m : 
-   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   (has (fun m => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m))
+       CO1.queried) /\
    B.i = find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried] = 
 Pr[PKE.Correctness_Adv(BasePKE, B(RO.LRO, A)).main() @ &m : 
-   (exists (m : plaintext), (m \in CO1.queried) /\ Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) /\
+   (has (fun m => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m))
+       CO1.queried) /\
    B.i = find (fun (m : plaintext) => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
+(* Lazy eager: with lazy we know that mi was never sampled! *)
 admitted.
 
 lemma corr_pnp &m : 
@@ -351,18 +360,18 @@ lemma corr_pnp &m :
      islossless H0.get => islossless A(H0).find) =>
 
   Pr[Correctness_Adv1(RO.RO,A).main() @ &m : 
-      exists m, m \in CO1.queried /\
-        Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m)] <=
+      (has (fun m => Some m <> dec CO1.sk.`2 (enc (oget RO.RO.m.[m]) CO1.pk m))
+       CO1.queried)] <=
     (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(RO.LRO,A)).main() @ &m : res]. 
   move => A_count A_ll.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (gt0_qHC).
 print glob Correctness_Adv1(RO.RO,A).
   pose phi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
-      exists m, m \in g.`1 /\
-        Some m <> dec g.`2.`2 (enc (oget g.`6.[m]) g.`3 m).
+      has (fun m =>
+        Some m <> dec g.`1.`2 (enc (oget g.`6.[m]) g.`2 m)) g.`5.
   pose psi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
     let i = find 
-      (fun m => Some m <> dec g.`2.`2 (enc (oget g.`6.[m]) g.`3 m)) g.`1
+      (fun m => Some m <> dec g.`1.`2 (enc (oget g.`6.[m]) g.`2 m)) g.`5
     in if 0 <= i < qHC + 1 then i else 0.
   have := PAPC.PBound (Correctness_Adv1(RO.RO,A)) phi psi tt &m _.
   + smt (gt0_qHC mem_iota).
@@ -372,13 +381,14 @@ print glob Correctness_Adv1(RO.RO,A).
   rewrite corr_pre0 corr_pre1.
   byequiv => //.
   proc.
-  inline {1} 4; inline {1} 3; inline {1} 2.
-  inline {2} 4; inline {2} 3; inline {2} 2.
-  wp;rnd;wp => />; 1: smt().
+  inline {1} 4; inline {1} 3; inline {1} 2; inline {1} 6.
+  inline {2} 4; inline {2} 3; inline {2} 2; inline {2} 6.
+  wp;rnd;wp => /=.
   conseq (_: _ ==> ={glob CO1, glob B,pk1,sk1,pk,sk,glob RO.RO} /\ 
                     sk1{2} = sk{1} /\ pk1{2} = pk{1} /\
                     CO1.sk{2}.`2 = sk{1} /\ CO1.pk{2} = pk{1}). 
-  auto => /> *.   smt.
+  move => &1 &2 ? il cl i_l pk_l ql sk_l ml pk1l pk1_l skl sk1l ir cr i_r pk_r qr sk_r m_r pkr pk1_r skr sk1r [#] ->> ->> ->> ->> ->> ->> -> -> ????? -> -> -> ?? -> -> r H. rewrite H /=. move => [#] H0 H1. print nth_find.
+    move : (nth_find witness (fun (m2 : plaintext) => Some m2 <> dec skr (enc (oget m_r.[m2]) pkr m2)) qr H0) => /=. smt.
   inline{2} 2.
   swap {1} 2 -1.
   swap {2} 6 -5.
