@@ -394,37 +394,37 @@ admitted. (* deal with this annoying thing of =glob B precondition. *)
 
 (* something fishy in these one-sided invariants *)
 lemma preserve_left &2:
-  hoare [ CO1(RO.RO).get :
-   (CO1.counter = CO1.counter{2} /\ CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
-  (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
-  CO1.i = -1 /\
-  take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
-  uniq CO1.queried /\
-  uniq CO1.queried{2} /\
-  size CO1.queried <= CO1.counter /\
-  size CO1.queried{2} <= CO1.counter{2} /\
-  (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
-  (forall (x0 : plaintext), x0 \in CO1.queried{2} <=> x0 \in RO.RO.m{2}) /\
-  forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x0] = RO.RO.m{2}.[x0]
-   ==>
-  (CO1.counter = CO1.counter{2} /\ CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
-  (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
-  CO1.i = -1 /\
-  take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
-  uniq CO1.queried /\
-  uniq CO1.queried{2} /\
-  size CO1.queried <= CO1.counter /\
-  size CO1.queried{2} <= CO1.counter{2} /\
-  (forall (x : plaintext), x \in CO1.queried <=> x \in RO.RO.m) /\
-  (forall (x : plaintext), x \in CO1.queried{2} <=> x \in RO.RO.m{2}) /\
-  forall (x : plaintext), x \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x] = RO.RO.m{2}.[x]
+  ! size CO1.queried{2} < CO1.i{2} =>
+  hoare[ CO1(RO.RO).get :
+           (CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
+           (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
+           CO1.i = -1 /\
+           take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
+           uniq CO1.queried /\
+           uniq CO1.queried{2} /\
+           size CO1.queried <= CO1.counter /\
+           size CO1.queried{2} <= CO1.counter{2} /\
+           (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
+           (forall (x0 : plaintext), x0 \in CO1.queried{2} <=> x0 \in RO.RO.m{2}) /\
+           forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x0] = RO.RO.m{2}.[x0] ==>
+           (CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
+           (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
+           CO1.i = -1 /\
+           take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
+           uniq CO1.queried /\
+           uniq CO1.queried{2} /\
+           size CO1.queried <= CO1.counter /\
+           size CO1.queried{2} <= CO1.counter{2} /\
+           (forall (x : plaintext), x \in CO1.queried <=> x \in RO.RO.m) /\
+           (forall (x : plaintext), x \in CO1.queried{2} <=> x \in RO.RO.m{2}) /\
+           forall (x : plaintext), x \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x] = RO.RO.m{2}.[x]
     ].
 admitted. 
 
 lemma preserve_right &1:
     hoare [ CO1(RO.RO).get :
            ! size CO1.queried < CO1.i /\
-           (CO1.counter{1} = CO1.counter /\ CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
+           (CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
            (0 <= CO1.i && CO1.i <= qHC) /\
            CO1.i{1} = -1 /\
            take (CO1.i + 1) CO1.queried{1} = take (CO1.i + 1) CO1.queried /\
@@ -436,7 +436,7 @@ lemma preserve_right &1:
            (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
            forall (x0 : plaintext), x0 \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x0] = RO.RO.m.[x0] ==>
            ! size CO1.queried < CO1.i /\
-           (CO1.counter{1} = CO1.counter /\ CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
+           (CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
            (0 <= CO1.i && CO1.i <= qHC) /\
            CO1.i{1} = -1 /\
            take (CO1.i + 1) CO1.queried{1} = take (CO1.i + 1) CO1.queried /\
@@ -446,7 +446,8 @@ lemma preserve_right &1:
            size CO1.queried <= CO1.counter /\
            (forall (x : plaintext), x \in CO1.queried{1} <=> x \in RO.RO.m{1}) /\
            (forall (x : plaintext), x \in CO1.queried <=> x \in RO.RO.m) /\
-           forall (x : plaintext), x \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x] = RO.RO.m.[x]].
+           forall (x : plaintext), x \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x] = RO.RO.m.[x] 
+].
 admitted. 
 
 lemma CO1_lossless : islossless CO1(RO.RO).get by islossless.
@@ -465,7 +466,7 @@ local lemma Corr_Adv_queryB :
   ={arg} /\ ={glob A, RO.RO.m, CO1.counter, CO1.pk, CO1.sk, CO1.queried} /\
   (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
   CO1.i{1} = -1 /\ CO1.queried{1} = [] /\ RO.RO.m{1} = empty /\ CO1.counter{1} = 0  ==> 
-  ={CO1.counter,CO1.pk,CO1.sk} /\ 
+  ={CO1.pk,CO1.sk} /\ 
            0<=CO1.i{2}<=qHC /\ CO1.i{1} = -1 /\
            take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
             uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
@@ -489,18 +490,18 @@ proof.
                       RO.RO.m{1}.[x] = RO.RO.m{2}.[x]) /\
             (size CO1.queried{2} <= CO1.i{2} => ={CO1.queried})
                ==> 
-            ={CO1.counter,CO1.pk,CO1.sk} /\ 
+            ={CO1.pk,CO1.sk} /\ 
            0<=CO1.i{2}<=qHC /\ CO1.i{1} = -1 /\
            take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
             uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
-            size CO1.queried{1} <= CO1.counter{2} /\ size CO1.queried{2} <= CO1.counter{2} /\ 
+            size CO1.queried{1} <= CO1.counter{1} /\ size CO1.queried{2} <= CO1.counter{2} /\ 
             (forall x, x \in CO1.queried{1} <=> x \in RO.RO.m{1}) /\
             (forall x, x \in CO1.queried{2} <=> x \in RO.RO.m{2}) /\
             (forall x, x \in take (CO1.i{2} + 1) CO1.queried{2} => 
                       RO.RO.m{1}.[x] = RO.RO.m{2}.[x]) /\
             (size CO1.queried{2} <= CO1.i{2} => ={CO1.queried}) /\
             (size CO1.queried{2} < CO1.i{2} => ={res}))
-         (A_count (<:RO.RO)) => />; 1,2,3: smt(mem_empty).
+         (A_count (<:RO.RO)) (A_count (<:RO.RO)) => />; 1,2,3: smt(mem_empty).
   
   proc *.
   call (: !size CO1.queried < CO1.i,
@@ -514,7 +515,7 @@ proof.
             (forall x, x \in take (CO1.i{2} + 1) CO1.queried{2} => 
                       RO.RO.m{1}.[x] = RO.RO.m{2}.[x]) /\
             ={CO1.queried},
-         ={CO1.counter,CO1.pk,CO1.sk} /\ 
+         ={CO1.pk,CO1.sk} /\ 
            0<=CO1.i{2}<=qHC /\ CO1.i{1} = -1 /\
            take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
             uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
@@ -541,11 +542,11 @@ proof.
          have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.  
          by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
     (* propagate bad left *)
-    + move => &2 Hbad; by conseq CO1_lossless (preserve_left &2).
+    + move => &2 Hbad; by conseq CO1_lossless (preserve_left &2 Hbad).
     (* propagate bad right *)
     + move => &1; by conseq CO1_lossless (preserve_right &1).
       
-    by auto => />;smt(take_oversize size_take).  
+    by auto => /> *;smt(take_oversize size_take).  
 qed.
 
 local lemma corr_pre0 &m :
@@ -576,7 +577,7 @@ seq 12 13 : (={glob A,glob RO.RO,CO1.counter,CO1.pk,CO1.sk,CO1.queried} /\
            0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
            CO1.queried{1} = [] /\ RO.RO.m{1} = empty /\ CO1.counter{1} = 0); 
     1: by inline ;auto;smt(supp_drange).
-seq 1 1 : (={CO1.counter,CO1.pk,CO1.sk} /\ 
+seq 1 1 : (={CO1.pk,CO1.sk} /\ 
            0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
            take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
             uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
@@ -589,7 +590,7 @@ seq 1 1 : (={CO1.counter,CO1.pk,CO1.sk} /\
             (size CO1.queried{2} < CO1.i{2} => m0{1} = m1{2}));
    1: by call Corr_Adv_queryB; auto => />;smt(). 
 
-seq 2 2 : (={CO1.counter,CO1.pk,CO1.sk} /\ 
+seq 2 2 : (={CO1.pk,CO1.sk} /\ 
            0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
            take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
             uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
