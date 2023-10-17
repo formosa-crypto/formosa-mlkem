@@ -392,6 +392,65 @@ proc*.
 call (RO.FullEager.RO_LRO_D DC _); 1: by rewrite (randd_ll).
 admitted. (* deal with this annoying thing of =glob B precondition. *)
 
+(* something fishy in these one-sided invariants *)
+lemma preserve_left &2:
+  hoare [ CO1(RO.RO).get :
+   (CO1.counter = CO1.counter{2} /\ CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
+  (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
+  CO1.i = -1 /\
+  take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
+  uniq CO1.queried /\
+  uniq CO1.queried{2} /\
+  size CO1.queried <= CO1.counter /\
+  size CO1.queried{2} <= CO1.counter{2} /\
+  (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
+  (forall (x0 : plaintext), x0 \in CO1.queried{2} <=> x0 \in RO.RO.m{2}) /\
+  forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x0] = RO.RO.m{2}.[x0]
+   ==>
+  (CO1.counter = CO1.counter{2} /\ CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
+  (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
+  CO1.i = -1 /\
+  take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
+  uniq CO1.queried /\
+  uniq CO1.queried{2} /\
+  size CO1.queried <= CO1.counter /\
+  size CO1.queried{2} <= CO1.counter{2} /\
+  (forall (x : plaintext), x \in CO1.queried <=> x \in RO.RO.m) /\
+  (forall (x : plaintext), x \in CO1.queried{2} <=> x \in RO.RO.m{2}) /\
+  forall (x : plaintext), x \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x] = RO.RO.m{2}.[x]
+    ].
+admitted. 
+
+lemma preserve_right &1:
+    hoare [ CO1(RO.RO).get :
+           ! size CO1.queried < CO1.i /\
+           (CO1.counter{1} = CO1.counter /\ CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
+           (0 <= CO1.i && CO1.i <= qHC) /\
+           CO1.i{1} = -1 /\
+           take (CO1.i + 1) CO1.queried{1} = take (CO1.i + 1) CO1.queried /\
+           uniq CO1.queried{1} /\
+           uniq CO1.queried /\
+           size CO1.queried{1} <= CO1.counter{1} /\
+           size CO1.queried <= CO1.counter /\
+           (forall (x0 : plaintext), x0 \in CO1.queried{1} <=> x0 \in RO.RO.m{1}) /\
+           (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
+           forall (x0 : plaintext), x0 \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x0] = RO.RO.m.[x0] ==>
+           ! size CO1.queried < CO1.i /\
+           (CO1.counter{1} = CO1.counter /\ CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
+           (0 <= CO1.i && CO1.i <= qHC) /\
+           CO1.i{1} = -1 /\
+           take (CO1.i + 1) CO1.queried{1} = take (CO1.i + 1) CO1.queried /\
+           uniq CO1.queried{1} /\
+           uniq CO1.queried /\
+           size CO1.queried{1} <= CO1.counter{1} /\
+           size CO1.queried <= CO1.counter /\
+           (forall (x : plaintext), x \in CO1.queried{1} <=> x \in RO.RO.m{1}) /\
+           (forall (x : plaintext), x \in CO1.queried <=> x \in RO.RO.m) /\
+           forall (x : plaintext), x \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x] = RO.RO.m.[x]].
+admitted. 
+
+lemma CO1_lossless : islossless CO1(RO.RO).get by islossless.
+
 local lemma Corr_Adv_queryB :
  (forall (RO<:RO.RO{ -A }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
@@ -415,7 +474,7 @@ local lemma Corr_Adv_queryB :
             (forall x, x \in CO1.queried{2} <=> x \in RO.RO.m{2}) /\
             (forall x, x \in take (CO1.i{2} + 1) CO1.queried{2} => 
                       RO.RO.m{1}.[x] = RO.RO.m{2}.[x]) /\
-            (size CO1.queried{2} < CO1.i{2} => ={CO1.queried}) /\
+            (size CO1.queried{2} <= CO1.i{2} => ={CO1.queried}) /\
             (size CO1.queried{2} < CO1.i{2} => ={res})].
 proof. 
   move => A_count A_ll.
@@ -473,69 +532,21 @@ proof.
          rcondf{2} 1; 1: by auto => />;smt(size_ge0). 
          inline *; auto => /> &1 &2 *. 
          have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.  
-           move => *; do split.  
-             move => *; do split. 
-             move => *; do split.
-             move => *; do split.  smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).  smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).   move => x2;rewrite !get_setE. rewrite take_oversize. smt. rewrite mem_cat. smt(@List @SmtMap).  
-             move => *; do split.  smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).  smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).    move => x2;rewrite !get_setE. rewrite take_oversize. smt. rewrite mem_cat. 
-move => H; elim H; smt(@List @SmtMap).   
-             move => *; do split.
-             move => *; do split.  smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).  smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).   move => x2;rewrite !get_setE. rewrite take_oversize. smt. rewrite mem_cat. 
-move => H; elim H.  smt(@List @SmtMap).  smt(@List @SmtMap).    
-             move => *; do split.  smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).  smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).   move => x2;rewrite !get_setE. rewrite take_oversize. smt. rewrite mem_cat. 
-move => H; elim H.  smt(@List @SmtMap).  smt(@List @SmtMap).    
-             move => *; do split.  smt(@List @SmtMap). smt(@List @SmtMap). 
-         inline *; auto => />. move => &1 &2 *.  smt(@List @SmtMap).
-         
-      + (* we have a repeart query *)
-         rcondt{1} 1; 1: by auto => />;smt(@List). 
-         rcondt{2} 1; 1: by auto => />;smt(@List). 
+         by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
+      + (* we have a repeart query *) 
+         rcondt{1} 1; 1: by auto => />; smt(find_size find_ge0). 
+         rcondt{2} 1; 1: by auto => />; smt(find_size find_ge0). 
          inline *; auto => /> &1 &2 *. 
          have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.  
-           move => *; do split.  
-             move => *; do split. 
-             move => *; do split.  smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).  smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).   move => x2;rewrite !get_setE. rewrite take_oversize. smt.
-             move => *; do split.  smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).  smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).  smt(@List @SmtMap).
+         have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.  
+         by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
     (* propagate bad left *)
-    + admit.
+    + move => &2 Hbad; by conseq CO1_lossless (preserve_left &2).
     (* propagate bad right *)
-    + admit.
-    auto => />. smt(@List @SmtMap).
+    + move => &1; by conseq CO1_lossless (preserve_right &1).
+      
+    by auto => />;smt(take_oversize size_take).  
 qed.
-
-(* NEEDED TO ADD CONDITION ON LIST EQUALITY  NEED TO PROPAGATE BELOW 
-  proc; wp; seq 1 1 : (#pre /\ ={y}); 1: by auto.
-  (* if we did not diverge yet *)
-  case (size CO1.queried{2} <= CO1.i{2}). 
-  + if; 1: by auto => /#.  
-    + (* we have a new query *)
-      rcondf{1} 1; 1: by auto => />;smt(size_ge0). 
-      if{2}.
-      (* we diverge now *)
-      + inline *; auto => /> &1 &2 *;do split.
-           move => *; do split.  
-             move => *; do split.  smt(take_size cat_uniq size_cat get_setE mem_cat). 
-      (* we keep in synch *)
-      by inline *; auto => />;smt(take_size cat_uniq size_cat get_setE mem_cat).
-    (* Repeat query. *)
-    rcondf{1} 1; 1: by auto => />;smt(size_ge0). 
-    by if{2};
-       inline *; auto => />;smt(take_size cat_uniq size_cat get_setE mem_cat).
-  (* we diverged before *)
-  + if{1}.
-    + (* new query on the left *)
-      rcondf{1} 1; 1: by auto => />;smt(size_ge0). 
-      if{2}.
-      rcondf{2} 1. smt(@List).  1: by auto => />;smt(size_take). 
-      + (* new query on the right *)
-      by inline *; auto => />;smt(take_size cat_uniq size_cat get_setE mem_cat).
-    (* Repeat query. *)
-    rcondf{1} 1; 1: by auto => />;smt(size_ge0). 
-    by if{2};
-       inline *; auto => />;smt(take_size cat_uniq size_cat get_setE mem_cat).
-
-  admit. 
-*)
 
 local lemma corr_pre0 &m :
  (forall (RO<:RO.RO{ -A }), 
@@ -575,8 +586,8 @@ seq 1 1 : (={CO1.counter,CO1.pk,CO1.sk} /\
             (forall x, x \in take (CO1.i{2} + 1) CO1.queried{2} => 
                       RO.RO.m{1}.[x] = RO.RO.m{2}.[x]) /\
             (size CO1.queried{2} < CO1.i{2} => ={CO1.queried}) /\
-            (size CO1.queried{2} < CO1.i{2} => m0{1} = m1{2})); 
-  1: by call Corr_Adv_queryB. 
+            (size CO1.queried{2} < CO1.i{2} => m0{1} = m1{2}));
+   1: by call Corr_Adv_queryB; auto => />;smt(). 
 
 seq 2 2 : (={CO1.counter,CO1.pk,CO1.sk} /\ 
            0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
