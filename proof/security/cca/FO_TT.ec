@@ -280,50 +280,56 @@ local lemma Corr_Adv_queryA :
      islossless H0.get => islossless A(H0).find) =>
 
   equiv [
-  Correctness_Adv1(RO.RO,A).A.find ~ Correctness_Adv1(RO.RO,A).A.find : 
-  ={arg} /\ ={glob A, RO.RO.m, glob Correctness_Adv1} /\ 
+  Correctness_Adv1(RO.LRO,A).A.find ~ Correctness_Adv1(RO.LRO,A).A.find : 
+  ={arg} /\ ={glob A, RO.RO.m, glob CO1} /\ 
     (CO1.counter = 0 /\ 
     RO.RO.m = empty /\
     CO1.queried = []){1} ==> 
-  ={res} /\ ={glob A, RO.RO.m, glob Correctness_Adv1} /\
+  ={res} /\ ={glob A, RO.RO.m, glob CO1} /\
     (CO1.counter <= qHC /\ 
-    card (fdom RO.RO.m) <= qHC /\
-    perm_eq CO1.queried (elems (fdom RO.RO.m))){1}    ].
+     size CO1.queried <= qHC /\ uniq CO1.queried /\
+     (0 <= CO1.i && CO1.i < size CO1.queried => 
+         (nth witness CO1.queried CO1.i \in CO1.queried /\ 
+           nth witness CO1.queried CO1.i \notin RO.RO.m)) /\
+          (!(0 <= CO1.i && CO1.i < size CO1.queried) => 
+             (forall x, x \in RO.RO.m => x \in CO1.queried))){1}].
 proof.
   move => A_count A_ll.
-  conseq (: ={arg} /\ ={glob A, RO.RO.m, glob CO1}/\ 
-            (card (fdom RO.RO.m) <= CO1.counter /\
-            perm_eq CO1.queried (elems (fdom RO.RO.m))){1} 
+  conseq (: ={arg} /\ ={glob A, RO.RO.m, glob CO1} /\
+    (size CO1.queried <= CO1.counter /\ uniq CO1.queried /\
+     (0 <= CO1.i && CO1.i < size CO1.queried => 
+         (nth witness CO1.queried CO1.i \in CO1.queried /\ 
+           nth witness CO1.queried CO1.i \notin RO.RO.m)) /\
+          (!(0 <= CO1.i && CO1.i < size CO1.queried) => 
+             (forall x, x \in RO.RO.m => x \in CO1.queried))){1}
                ==> 
-            ={res} /\ ={glob A, RO.RO.m, glob CO1} /\ 
-            (card (fdom RO.RO.m) <= CO1.counter /\
-            perm_eq CO1.queried (elems (fdom RO.RO.m))){1})
-         (A_count (<:RO.RO)) => />.
-  + by rewrite fdom0 fcards0 elems_fset0 /=; smt(perm_eq_mem).    
+            ={res} /\ ={glob A, RO.RO.m, glob CO1} /\
+    (size CO1.queried <= CO1.counter /\ uniq CO1.queried /\
+     (0 <= CO1.i && CO1.i < size CO1.queried => 
+         (nth witness CO1.queried CO1.i \in CO1.queried /\ 
+           nth witness CO1.queried CO1.i \notin RO.RO.m)) /\
+          (!(0 <= CO1.i && CO1.i < size CO1.queried) => 
+             (forall x, x \in RO.RO.m => x \in CO1.queried))){1})
+         (A_count (<:RO.LRO)) => />.
+  + by smt(mem_empty).  
   + by smt().
  
-  proc ( ={RO.RO.m, glob CO1} /\ 
-       (card (fdom RO.RO.m) <= CO1.counter){1} /\
-       perm_eq CO1.queried{1} (elems (fdom RO.RO.m{1}))); 
-        1,2: by smt(memE mem_fdom perm_eq_mem).    
-  + proc.  
-    sp;if; 1: by auto.
-    + if; 1: by auto. 
-      + inline *. 
-        rcondt{1} 4; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
-        rcondt{2} 4; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
-        by auto => />;smt(perm_eq_set card_set_bnd).      
-      inline *. 
-      rcondt{1} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
-      rcondt{2} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
-      by auto => />;smt(perm_eq_set card_set_bnd).      
-  inline *. 
-  sp;if; 1: by auto.
-  + rcondf{1} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).    
-    rcondf{2} 3; 1: by auto;smt(memE mem_fdom perm_eq_mem).
-    by auto => />;smt(perm_eq_set card_set_bnd).      
-
- by auto => />;smt(perm_eq_set card_set_bnd).      
+  proc ( ={RO.RO.m, glob CO1} /\
+    (size CO1.queried <= CO1.counter /\ uniq CO1.queried /\
+     (0 <= CO1.i && CO1.i < size CO1.queried => 
+         (nth witness CO1.queried CO1.i \in CO1.queried /\ 
+           nth witness CO1.queried CO1.i \notin RO.RO.m)) /\
+          (!(0 <= CO1.i && CO1.i < size CO1.queried) => 
+             (forall x, x \in RO.RO.m => x \in CO1.queried))){1}); 
+        1,2: by smt().    
+  proc;inline *; sp;wp. 
+  if;1:by auto.
+  + if; 1:by auto. 
+    + auto => />;smt(size_cat cat_uniq mem_cat nth_cat). 
+    auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
+  if; 1:by auto. 
+  + auto => />;smt(size_cat cat_uniq mem_cat nth_cat index_uniq get_setE). 
+  auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
 qed.
       
 (* When Adv1 is run inside Guess, sample is never called.
@@ -334,8 +340,18 @@ qed.
 *)
 
 local lemma corr_base_ro &m : 
+ (forall (RO<:RO.RO{ -A }), 
+  hoare [Correctness_Adv1(RO,A).A.find : 
+       CO1.counter = 0  ==> 
+         CO1.counter <= qHC]) =>
+
+  (forall (H0 <: POracle { -A }),
+     islossless H0.get => islossless A(H0).find) =>
+
   Pr[B(A,RO.LRO).main() @ &m : res ] =
     Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res ].
+proof. 
+move => A_count A_ll.
 byequiv => //.
 proc. 
 call(_: true); 1: by sim.
@@ -370,51 +386,16 @@ seq 1 1 : (={RO.RO.m,glob CO1} /\ pk{2} = CO1.pk{1} /\ sk{2} = CO1.sk{1} /\ m0{1
           (!(0 <= CO1.i{1} && CO1.i{1} < size CO1.queried{1}) => 
                 (forall x, x \in RO.RO.m{1} => x \in CO1.queried{1}))); last first.
 
-inline *; sp;wp. 
-if;1:by auto.
-+ if; 1:by auto. 
-  + by auto => />;smt.
-  + auto => />*; do split . 
-move => *; do split. smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).
-move => *; do split. smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap).
-+ if; 1:by auto. 
-  + auto => />*; do split . 
-move => *; do split. smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap). smt(@List @SmtMap). 
-  + auto => />*;  smt(@List @SmtMap). 
-admit. (* ammend theorem above 
-call(: ={RO.RO.m,glob CO1} /\ uniq CO1.queried{1} /\
-  (0 <= CO1.i{2} => CO1.i{2} < size CO1.queried{1} =>
-        (nth witness CO1.queried{1} CO1.i{2} \in CO1.queried{1}) /\ 
-           (nth witness CO1.queried{1} CO1.i{2} \notin RO.RO.m{1})) /\
-  (! (0 <= CO1.i{2} && CO1.i{2} < size CO1.queried{1}) => 
-        forall (x : plaintext), x \in RO.RO.m{1} => x \in CO1.queried{1})); 
-          last by  auto;smt(mem_empty).
-proc.
-sp;if;1:by auto.
-+ sp;if;1:by auto.
-  + inline *;auto => /> *;do split; 1: by smt(@List).
-    + move => *; do split. 
-      + smt(@SmtMap @List).
-      + smt(@SmtMap @List).
-    + move => *. 
-      + smt(@SmtMap @List).
-  inline *;auto => /> *;do split.
-  + move => *; do split. 
-    + smt(@SmtMap @List).
-    + smt(@SmtMap @List).
-    + smt(@SmtMap @List).
-  + move => *; do split. 
-    + smt(@SmtMap @List).
-    + smt(@SmtMap @List).
-    + smt(@SmtMap @List).
-+ sp;if;1:by auto.
-  + inline *;auto => /> &2 *;split.
-    + move => *; do split. 
-      + smt(@SmtMap @List).
-      + smt(@SmtMap @List).
-      + smt(@SmtMap @List).
-    + move => *. 
-auto => />. *)
++ inline *; sp;wp. 
+  if;1:by auto.
+  + if; 1:by auto. 
+    + auto => />;smt(size_cat cat_uniq mem_cat nth_cat). 
+    auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
+  if; 1:by auto. 
+  + auto => />;smt(size_cat cat_uniq mem_cat nth_cat index_uniq get_setE). 
+  auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
+
+by inline *;wp;call (Corr_Adv_queryA);auto => />.
 qed.
 
 module D(O : RO.RO) = {
@@ -429,7 +410,41 @@ proc*.
 call (RO.FullEager.RO_LRO_D D _); 1: by rewrite (randd_ll).
 admitted. (* deal with this annoying thing of =glob B precondition. *)
 
+local lemma Corr_Adv_queryB :
+ (forall (RO<:RO.RO{ -A }), 
+  hoare [Correctness_Adv1(RO,A).A.find : 
+       CO1.counter = 0  ==> 
+         CO1.counter <= qHC]) =>
+
+  (forall (H0 <: POracle { -A }),
+     islossless H0.get => islossless A(H0).find) =>
+
+  equiv [
+  Correctness_Adv1(RO.RO,A).A.find ~ Correctness_Adv1(RO.RO,A).A.find : 
+  ={arg} /\ ={glob A, RO.RO.m, CO1.counter, CO1.pk, CO1.sk, CO1.queried} /\
+  (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
+  CO1.i{1} = -1 /\ CO1.queried{1} = [] /\ RO.RO.m{1} = empty /\ CO1.counter{1} = 0  ==> 
+  ={CO1.counter,CO1.pk,CO1.sk} /\ 
+           0<=CO1.i{2}<=qHC /\ CO1.i{1} = -1 /\
+           take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
+            uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
+            size CO1.queried{1} <= qHC /\ size CO1.queried{2} <= qHC /\ 
+            (forall x, x \in CO1.queried{1} => x \in RO.RO.m{1}) /\
+            (forall x, x \in CO1.queried{2} => x \in RO.RO.m{2}) /\
+            (forall x, x \in take (CO1.i{2} + 1) CO1.queried{2} => 
+                      RO.RO.m{1}.[x] = RO.RO.m{2}.[x]) /\
+            size CO1.queried{2} < CO1.i{2} => ={res}].
+admitted.
+
 local lemma corr_pre0 &m :
+ (forall (RO<:RO.RO{ -A }), 
+  hoare [Correctness_Adv1(RO,A).A.find : 
+       CO1.counter = 0  ==> 
+         CO1.counter <= qHC]) =>
+
+  (forall (H0 <: POracle { -A }),
+     islossless H0.get => islossless A(H0).find) =>
+
 Pr[Guess(Correctness_Adv1(RO.RO, A)).main() @ &m :
    (has (fun m => Some m <> dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m))
        CO1.queried) /\
@@ -438,20 +453,40 @@ Pr[Guess(Correctness_Adv1(RO.RO, A)).main() @ &m :
      then find (fun (m : plaintext) => Some m <> dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried
    else 0] <=
      Pr[B(A,RO.RO).main() @ &m : res ].
+proof.
+move => A_count A_ll.
 byequiv => //.
 proc.
-swap {1} 2 -1; inline {1} 2.
-inline {2} 2; swap {2} 4 -3.
-seq 3 2 : (={glob A,CO1.pk,CO1.sk}  /\ i{1} = CO1.i{2}); 1: by  inline *;wp;rnd;auto => />.
-sp.
-seq 2 2 :(={CO1.i, CO1.sk, CO1.pk} /\ 0 <= CO1.i{1} <= qHC  /\ i{1} = CO1.i{2} /\
-           (take (CO1.i+1) CO1.queried){1} = (take (CO1.i+1) CO1.queried){2} /\
+swap {1} 2 -1.
+inline {1} 2; inline {2} 2; swap {2} 4 -3.
+inline {1} 4; inline {2} 5.
+seq 12 13 : (={glob A,glob RO.RO,CO1.counter,CO1.pk,CO1.sk,CO1.queried} /\ 
+           0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
+           CO1.queried{1} = [] /\ RO.RO.m{1} = empty /\ CO1.counter{1} = 0); 
+    1: by inline ;auto;smt(supp_drange).
+seq 1 1 : (={CO1.counter,CO1.pk,CO1.sk} /\ 
+           0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
+           take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
+            uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
+            size CO1.queried{1} <= qHC /\ size CO1.queried{2} <= qHC /\ 
+            (forall x, x \in CO1.queried{1} => x \in RO.RO.m{1}) /\
+            (forall x, x \in CO1.queried{2} => x \in RO.RO.m{2}) /\
+            (forall x, x \in take (CO1.i{2} + 1) CO1.queried{2} => 
+                      RO.RO.m{1}.[x] = RO.RO.m{2}.[x]) /\
+            size CO1.queried{2} < CO1.i{2} => m0{1} = m1{2}); 
+  1: by call Corr_Adv_queryB. 
+
+seq 2 2 : (={CO1.counter,CO1.pk,CO1.sk} /\ 
+           0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
+           take (CO1.i{2} + 1) CO1.queried{1} = take (CO1.i{2} + 1) CO1.queried{2} /\
             uniq CO1.queried{1} /\ uniq CO1.queried{2} /\
             size CO1.queried{1} <= qHC + 1 /\ size CO1.queried{2} <= qHC + 1 /\ 
             (forall x, x \in CO1.queried{1} => x \in RO.RO.m{1}) /\
             (forall x, x \in CO1.queried{2} => x \in RO.RO.m{2}) /\
-            (forall x, x \in take (CO1.i{1}+1) CO1.queried{1} => 
-                      RO.RO.m{1}.[x] = RO.RO.m{2}.[x])); last first.
+            (forall x, x \in take (CO1.i{2} + 1) CO1.queried{2} => 
+                      RO.RO.m{1}.[x] = RO.RO.m{2}.[x])).
++ admit. 
+
 inline *.
 case (0 <= CO1.i{2} && CO1.i{2} < size CO1.queried{2}); last first. 
 +  wp;rnd{2};wp;skip;move => &1 &2 [#] ->> ->> ->> ?? ->> ?? ?? ???? ?? /= r _.
@@ -491,27 +526,7 @@ have /= := nth_find witness (fun (m1 : plaintext) => Some m1 <> dec CO1.sk{2} (e
       rewrite -(cat_take_drop (CO1.i{2} +1) CO1.queried{1}).
       rewrite -(cat_take_drop (CO1.i{2} +1) CO1.queried{2}).
        smt(@SmtMap @List).
-
-seq 1 1 : 
-(={CO1.i, CO1.sk, CO1.pk} /\
-  (0 <= CO1.i{1} && CO1.i{1} <= qHC) /\
-  i{1} = CO1.i{2} /\
-  take (CO1.i{1}) CO1.queried{1} = take (CO1.i{2}) CO1.queried{2} /\
-  uniq CO1.queried{1} /\
-  uniq CO1.queried{2} /\
-  size CO1.queried{1} <= qHC /\
-  size CO1.queried{2} <= qHC /\
-  (forall (x0 : plaintext), x0 \in CO1.queried{1} => x0 \in RO.RO.m{1}) /\
-  (forall (x0 : plaintext), x0 \in CO1.queried{2} => x0 \in RO.RO.m{2}) /\
-  (forall (x0 : plaintext), x0 \in take (CO1.i{1}) CO1.queried{1} => 
-        RO.RO.m{1}.[x0] = RO.RO.m{2}.[x0]) /\
-  (size CO1.queried{2} <= CO1.i{2} => m{1} = m0{2})); last first. 
-+ inline *;sp.
-  case(CO1.i{2} < size CO1.queried{2}); last first. 
-  admit. 
-  admit. 
-(* Deal with the fact that after adv puts mi in then all bets are off *)
-admitted.
+qed.
 
 lemma corr_pnp &m : 
  (forall (RO<:RO.RO{ -A }), 
@@ -616,20 +631,6 @@ lemma find_map ['a, 'b]:
 lemma findP_Some ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap) a b: 
   find f m = Some (a, b) =>
   m.[a] = Some b /\ f a b. 
-proof.
-rewrite /find /=. 
-pose bs := map (fun (a0 : 'a) => (a0, oget m.[a0])) (elems (fdom m)).
-rewrite -has_find /= => H.
-have  H1 : has (fun (p : 'a * 'b) => f p.`1 p.`2) bs by smt().
-move : H; rewrite H1 /=.
-rewrite /bs (nth_map witness _) /=; 1: by smt(@List).
-move : H1; rewrite /bs has_map /= /preim /= => H1.
-rewrite !find_map. 
-pose pos := nth witness (elems (fdom m))
-  (find (fun (x : 'a) => (fun (p : 'a * 'b) => f p.`1 p.`2) 
-    ((fun (a0 : 'a) => (a0, oget m.[a0])) x)) (elems (fdom m))).
-move => [# <<- <<-].
-split. 
 admitted.
 
 lemma findP_None ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap): 
