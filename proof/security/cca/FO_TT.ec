@@ -392,7 +392,7 @@ proc*.
 call (RO.FullEager.RO_LRO_D DC _); 1: by rewrite (randd_ll).
 admitted. (* deal with this annoying thing of =glob B precondition. *)
 
-(* something fishy in these one-sided invariants *)
+(* bad needs to be refined to moment of divergence *)
 lemma preserve_left &2:
   ! size CO1.queried{2} < CO1.i{2} =>
   hoare[ CO1(RO.RO).get :
@@ -419,7 +419,7 @@ lemma preserve_left &2:
            (forall (x : plaintext), x \in CO1.queried{2} <=> x \in RO.RO.m{2}) /\
            forall (x : plaintext), x \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x] = RO.RO.m{2}.[x]
     ].
-admitted. 
+admitted.
 
 lemma preserve_right &1:
     hoare [ CO1(RO.RO).get :
