@@ -387,115 +387,16 @@ module DC(O : RO.RO) = {
    proc distinguish = B(A,O).main
 }.
 
+
 local lemma corr_base_le &m : 
     Pr[B(A, RO.RO).main() @ &m : res ] =
     Pr[B(A, RO.LRO).main() @ &m : res ].
-byequiv => //.
+byequiv (_: ={glob B} /\ ={glob A} /\ ={glob RO.RO} ==> ={res}) => //.
 proc*. 
-call (RO.FullEager.RO_LRO_D DC _); 1: by rewrite (randd_ll).
-admitted. (* deal with this annoying thing of =glob B precondition. *)
-
-(* bad needs to be refined to moment of divergence *)
-lemma preserve_left &2:
-  CO1.bad{2} =>
-  hoare[ CO1(RO.RO).get :
-           (CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
-           CO1.i{2} < size CO1.queried{2} /\
-           (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
-           (size CO1.queried <= CO1.i{2} <=> size CO1.queried{2} <= CO1.i{2}) /\
-           (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
-           CO1.i = -1 /\
-           take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
-           uniq CO1.queried /\
-           uniq CO1.queried{2} /\
-           size CO1.queried <= CO1.counter /\
-           size CO1.queried{2} <= CO1.counter{2} /\
-           (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
-           (forall (x0 : plaintext), x0 \in CO1.queried{2} <=> x0 \in RO.RO.m{2}) /\
-           forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x0] = RO.RO.m{2}.[x0] ==>
-           (CO1.pk = CO1.pk{2} /\ CO1.sk = CO1.sk{2}) /\
-           CO1.i{2} < size CO1.queried{2} /\
-           (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
-           (size CO1.queried <= CO1.i{2} <=> size CO1.queried{2} <= CO1.i{2}) /\
-           (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
-           CO1.i = -1 /\
-           take (CO1.i{2} + 1) CO1.queried = take (CO1.i{2} + 1) CO1.queried{2} /\
-           uniq CO1.queried /\
-           uniq CO1.queried{2} /\
-           size CO1.queried <= CO1.counter /\
-           size CO1.queried{2} <= CO1.counter{2} /\
-           (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
-           (forall (x0 : plaintext), x0 \in CO1.queried{2} <=> x0 \in RO.RO.m{2}) /\
-           forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x0] = RO.RO.m{2}.[x0]
-    ].
-move => bad. 
-proc. 
-wp;sp; if.
-rcondf 1; 1: by move => *;auto => /> /#.
-inline *; auto => /> *; do split;move => *. 
- do split; smt(@List @SmtMap).
- do split; smt(@List @SmtMap).
-if.
-inline *; auto => /> *; do split;move => *. 
- do split; smt(@List @SmtMap).
-  smt(@List @SmtMap).
-auto => /> *;smt(@List @SmtMap).
+by call (RO.FullEager.RO_LRO_D DC _); 1: by rewrite (randd_ll).
 qed.
-
-
-lemma preserve_right &1:
-  hoare[ CO1(RO.RO).get :
-           CO1.bad /\
-           (CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
-           CO1.i < size CO1.queried /\
-           (0 <= CO1.i && CO1.i <= qHC) /\
-           (size CO1.queried{1} <= CO1.i <=> size CO1.queried <= CO1.i) /\
-           (0 <= CO1.i && CO1.i <= qHC) /\
-           CO1.i{1} = -1 /\
-           take (CO1.i + 1) CO1.queried{1} = take (CO1.i + 1) CO1.queried /\
-           uniq CO1.queried{1} /\
-           uniq CO1.queried /\
-           size CO1.queried{1} <= CO1.counter{1} /\
-           size CO1.queried <= CO1.counter /\
-           (forall (x0 : plaintext), x0 \in CO1.queried{1} <=> x0 \in RO.RO.m{1}) /\
-           (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
-           forall (x0 : plaintext), x0 \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x0] = RO.RO.m.[x0] ==>
-           CO1.bad /\
-           (CO1.pk{1} = CO1.pk /\ CO1.sk{1} = CO1.sk) /\
-           CO1.i < size CO1.queried /\
-           (0 <= CO1.i && CO1.i <= qHC) /\
-           (size CO1.queried{1} <= CO1.i <=> size CO1.queried <= CO1.i) /\
-           (0 <= CO1.i && CO1.i <= qHC) /\
-           CO1.i{1} = -1 /\
-           take (CO1.i + 1) CO1.queried{1} = take (CO1.i + 1) CO1.queried /\
-           uniq CO1.queried{1} /\
-           uniq CO1.queried /\
-           size CO1.queried{1} <= CO1.counter{1} /\
-           size CO1.queried <= CO1.counter /\
-           (forall (x0 : plaintext), x0 \in CO1.queried{1} <=> x0 \in RO.RO.m{1}) /\
-           (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
-           forall (x0 : plaintext), x0 \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x0] = RO.RO.m.[x0]
-].
-proc. 
-wp;sp; if.
-rcondf 1; 1: by move => *;auto => /> /#.
-inline *; auto => /> *; do split;move => *. 
- do split; smt(@List @SmtMap).
- do split; smt(@List @SmtMap).
-if.
-inline *; auto => /> *; do split;move => *. 
- do split; smt(@List @SmtMap).
-  smt(@List @SmtMap).
-auto => /> *;smt(@List @SmtMap).
-qed.
-
 
 lemma CO1_lossless : islossless CO1(RO.RO).get by islossless.
-
-lemma size_matters ['a] (l1 l2 : 'a list) (i : int) : 0 <= i =>
-  take (i+1) l1 = take (i + 1) l2 =>
-     (size l1 <= i <=> size l2 <= i) =>
-       size l1 <= i => l1 = l2 by smt(take_oversize).
 
 local lemma Corr_Adv_queryB :
  (forall (RO<:RO.RO{ -A }), 
@@ -591,27 +492,25 @@ proof.
          rcondt{1} 1; 1: by auto => />; smt(find_size find_ge0). 
          if{2};last first.
          + inline *; auto => /> &2.
-           have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.
-           move => *. do split. move =>*. do split.   
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize find_size).
-             move =>*. do split. by smt. by smt. by smt.
+           by smt(cat_uniq size_cat get_setE mem_cat take_oversize has_find hasPn). 
          + inline *; auto => /> &2.
            have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.  
            by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
     (* propagate bad left *)
-    + move => &2 Hbad; by conseq CO1_lossless (preserve_left &2 Hbad). 
+    + move => &2 _.
+      proc;wp;sp; if.
+      + rcondf 1; 1: by move => *;auto => /#.
+         by inline *; auto => />; smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
+      by if;inline *; auto => />;smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
+
     (* propagate bad right *)
-    + move => &1; by conseq CO1_lossless (preserve_right &1).
+    + move => &1.
+      proc;wp;sp; if.
+      + rcondf 1; 1: by move => *;auto => /#.
+         by inline *; auto => />; smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
+      by if;inline *; auto => />;smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
       
-    auto => *.  split.  rewrite ifF. smt. do split. smt(). smt(). smt(). smt.   smt(). smt(). smt(). smt(). smt(). smt(). smt(). 
-    smt(). smt(). smt().  smt(). smt(). smt(). smt(). smt(). smt(). smt().  smt().  smt(). smt(). 
-   move => *; do split. smt. 
-   move => *; smt. smt. smt. smt. smt. smt. smt. smt. smt. smt. smt.  smt(). smt(). smt(). smt(). smt(). smt(). 
+    by auto => /> /#.
 qed.
 
 local lemma corr_pre0 &m :
@@ -665,148 +564,8 @@ seq 2 2 : (={CO1.pk,CO1.sk} /\ i{1} = CO1.i{2} /\
            (forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => 
                        RO.RO.m{1}.[x0] = RO.RO.m{2}.[x0])).
 + inline {1} 2; inline {2} 2.
-  case(size CO1.queried{2} < CO1.i{2}).
-  + sp;if;1: by auto => />;smt(size_matters).
-    rcondf{1} 1; 1: by auto => />;smt(size_ge0).
-    rcondf{2} 1; 1: by auto => /> /#.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-     move => x. case (x = m1{2}). smt(@SmtMap @List). move => H H1; have : x \in CO1.queried{2};  by smt(@SmtMap @List). 
-     smt(@SmtMap @List).
-    do split;move => *. smt(@SmtMap @List). smt(@SmtMap @List).
-
-    inline*;auto => />. move => &1 &2 *.
-    do split;move => *. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List).
-    rcondt{1} 1; 1: by auto => />;smt.
-    rcondt{2} 1; 1: by auto => />;smt.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).
-
-  case(size CO1.queried{2} = CO1.i{2}).
-  + sp;if;1: by auto => />;smt(@List @Map).
-    rcondf{1} 1; 1: by auto => />;smt(size_ge0).
-    rcondt{2} 1; 1: by auto => /#.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-     move => x. case (x = m1{2}). smt(@SmtMap @List). move => H H1; have : x \in CO1.queried{2};  by smt(@SmtMap @List). 
-     smt(@SmtMap @List).
-    do split;move => *. smt(@SmtMap @List). smt(@SmtMap @List). 
-
-    inline*;auto => />. move => &1 &2 *.
-    do split;move => *. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List). 
-    rcondt{1} 1; 1: by auto => />;smt.
-    rcondt{2} 1; 1: by auto => />;smt.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).
-
-    inline*;auto => />. move => &1 &2 *.
-    do split;move => *. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List).
-
-  + sp;if{1};if{2}.
-    sp;if{1};if{2}.
-    by inline*;auto => /> &1 &2 *.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-     move => x. case (x = m1{2}). smt(@SmtMap @List). move => H H1; have : x \in CO1.queried{2};  by smt(@SmtMap @List). 
-     smt(@SmtMap @List).
-    do split;move => *. smt(@SmtMap @List). smt(@SmtMap @List). 
-
-    by inline*;auto => /> &1 &2 *.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-     move => x. case (x = m1{2}). smt(@SmtMap @List). move => H H1; have : x \in CO1.queried{2};  by smt(@SmtMap @List). 
-     smt(@SmtMap @List).
-    do split;move => *. smt(@SmtMap @List). smt(@SmtMap @List). 
-
-    sp;if{1};if{2}.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-
-    do split;move => *. 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  
-
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-    do split. smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List).  
-
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). smt(@SmtMap @List).  
-    do split;move => *.
-    do split. smt(@SmtMap @List).  smt(@SmtMap @List size_matters). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). 
-
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). 
-
-    sp;if{1};if{2}.
-    by inline*;auto => /> &1 &2 *.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). 
-    do split;move => *. 
-    smt(@SmtMap @List). smt(@SmtMap @List).  
-      smt(@SmtMap @List size_matters). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). smt(@SmtMap @List). 
-    by inline*;auto => /> &1 &2 *.
-
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). 
-    smt(@SmtMap @List). smt(@SmtMap @List).  
-      smt(@SmtMap @List size_matters). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).  smt(@SmtMap @List). 
-
-    sp;if{1};if{2}.
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). 
-    do split;move => *. 
-    smt(@SmtMap @List). smt(@SmtMap @List).  
-      smt(@SmtMap @List size_matters). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).  smt(@SmtMap @List).
-
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). 
-    smt(@SmtMap @List). smt(@SmtMap @List).  
-      smt(@SmtMap @List size_matters). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).
-
-
-    inline*;auto => /> &1 &2 *.
-    do split;move => *. 
-    do split;move => *. 
-    smt(@SmtMap @List). 
-    smt(@SmtMap @List). smt(@SmtMap @List).  
-      smt(@SmtMap @List size_matters). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List). smt(@SmtMap @List).
-
-    inline*;auto => /> &1 &2 *.
-    do split. smt(@SmtMap @List). 
-    smt(@SmtMap @List). smt(@SmtMap @List).  
-      smt(@SmtMap @List size_matters). smt(@SmtMap @List). smt(@SmtMap @List). 
-
-
+  by sp;if{1};if{1};if{2};if{2}; 
+      inline*;auto => />; smt(cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
 
 inline *.
 case (0 <= CO1.i{2} && CO1.i{2} < size CO1.queried{2}); last 
@@ -851,7 +610,31 @@ print glob Correctness_Adv1(RO.RO,A).
   by apply corr_pre0.
 qed.
 
+lemma correctness &m : 
+ (forall (RO<:RO.RO{ -A }), 
+  hoare [Correctness_Adv1(RO,A).A.find : 
+       CO1.counter = 0  ==> 
+         CO1.counter <= qHC]) =>
 
+  (forall (H0 <: POracle { -A }),
+     islossless H0.get => islossless A(H0).find) =>
+
+  Pr [ Correctness_Adv(RO.RO,TT,A).main() @ &m : res ] <=
+    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res]. 
+proof.
+move => A_count A_ll.
+have := corr_pnp &m A_count A_ll.
+have <- := corr_base_ro &m A_count A_ll.
+have <- := corr_base_le &m.
+have := corr1 &m.
+pose a:=Pr[Correctness_Adv(RO.RO, TT, A).main() @ &m : res].
+pose b := Pr[Correctness_Adv1(RO.RO, A).main() @ &m :
+   has (fun (m : plaintext) => Some m <> dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
+pose c := Pr[B(A, RO.RO).main() @ &m : res].
+by smt(gt0_qHC mu_bounded).
+qed.
+
+end section.
 (* Security proof *)
 
 op gamma_spread : real.
@@ -987,7 +770,7 @@ module AdvOW_query (A:PCVA_ADV) = {
 
 section. 
 
-declare module A <: PCVA_ADV { -OW_PCVA, -RO.RO, -RO.FRO, -CountO, -Gm, -O_AdvOW}.
+declare module A <: PCVA_ADV { -OW_PCVA, -RO.RO, -RO.FRO, -CountO, -Gm, -O_AdvOW, -Correctness_Adv1, -B}.
 
 local module PCO(RO:RO.RO) = {
   import var OW_PCVA
@@ -1948,7 +1731,7 @@ print glob G3.
   by rewrite has_pred1 -memE mem_fdom hin.
 qed.
 
-lemma conclusion &m :
+lemma pre_conclusion &m :
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
   hoare [A(CountH(RO), CountO(O)).find : 
        CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
@@ -1966,6 +1749,29 @@ proof.
   move => A_count A_ll.
   move: (OW_PCVA_gamma &m A_count A_ll) (G1_G2 &m A_ll) (G2_correctness &m) (G2_G3 &m  A_ll)
      (G3_OW_CPA &m) (G3_OW_CPA_query &m  A_count A_ll) => /#.
+qed.
+
+lemma pre_conclusion &m :
+ qH + qP  = qHC =>
+
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
+  hoare [A(CountH(RO), CountO(O)).find : 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
+       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+
+  (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
+  islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
+
+  Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
+      Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
+    + (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res]
+    + (qH + qP + 1)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.LRO)).main() @ &m : res ]
+    + qV%r * gamma_spread.
+proof.
+  move => counts A_count A_ll.
+  move: (pre_conclusion &m A_count A_ll).
+  move: (correctness (AdvCorr(A)) &m _ _). admit. admit.
+  by smt().
 qed.
 
 (*
