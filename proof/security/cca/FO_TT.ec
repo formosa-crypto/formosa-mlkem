@@ -629,7 +629,8 @@ have <- := corr_base_le &m.
 have := corr1 &m.
 pose a:=Pr[Correctness_Adv(RO.RO, TT, A).main() @ &m : res].
 pose b := Pr[Correctness_Adv1(RO.RO, A).main() @ &m :
-   has (fun (m : plaintext) => Some m <> dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
+   has (fun (m : plaintext) => Some m <> 
+      dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
 pose c := Pr[B(A, RO.RO).main() @ &m : res].
 by smt(gt0_qHC mu_bounded).
 qed.
@@ -1751,7 +1752,7 @@ proof.
      (G3_OW_CPA &m) (G3_OW_CPA_query &m  A_count A_ll) => /#.
 qed.
 
-lemma pre_conclusion &m :
+lemma conclusion &m :
  qH + qP  = qHC =>
 
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
@@ -1770,7 +1771,12 @@ lemma pre_conclusion &m :
 proof.
   move => counts A_count A_ll.
   move: (pre_conclusion &m A_count A_ll).
-  move: (correctness (AdvCorr(A)) &m _ _). admit. admit.
+  move: (correctness (AdvCorr(A)) &m _ _). 
+  + move => RO; proc;wp. 
+    (* call (A_count (H(CO1(RO))) (G2_O(CO1(RO)))). *)
+     admit.
+  move => H0 H0_ll;proc;inline *;wp.
+  by call(_: true); islossless. 
   by smt().
 qed.
 
