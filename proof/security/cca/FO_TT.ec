@@ -428,7 +428,20 @@ lemma preserve_left &2:
            (forall (x0 : plaintext), x0 \in CO1.queried{2} <=> x0 \in RO.RO.m{2}) /\
            forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => RO.RO.m.[x0] = RO.RO.m{2}.[x0]
     ].
-admitted.
+move => bad. 
+proc. 
+wp;sp; if.
+rcondf 1; 1: by move => *;auto => /> /#.
+inline *; auto => /> *; do split;move => *. 
+ do split; smt(@List @SmtMap).
+ do split; smt(@List @SmtMap).
+if.
+inline *; auto => /> *; do split;move => *. 
+ do split; smt(@List @SmtMap).
+  smt(@List @SmtMap).
+auto => /> *;smt(@List @SmtMap).
+qed.
+
 
 lemma preserve_right &1:
   hoare[ CO1(RO.RO).get :
@@ -463,7 +476,19 @@ lemma preserve_right &1:
            (forall (x0 : plaintext), x0 \in CO1.queried <=> x0 \in RO.RO.m) /\
            forall (x0 : plaintext), x0 \in take (CO1.i + 1) CO1.queried => RO.RO.m{1}.[x0] = RO.RO.m.[x0]
 ].
-admitted. 
+proc. 
+wp;sp; if.
+rcondf 1; 1: by move => *;auto => /> /#.
+inline *; auto => /> *; do split;move => *. 
+ do split; smt(@List @SmtMap).
+ do split; smt(@List @SmtMap).
+if.
+inline *; auto => /> *; do split;move => *. 
+ do split; smt(@List @SmtMap).
+  smt(@List @SmtMap).
+auto => /> *;smt(@List @SmtMap).
+qed.
+
 
 lemma CO1_lossless : islossless CO1(RO.RO).get by islossless.
 
@@ -483,10 +508,10 @@ local lemma Corr_Adv_queryB :
 
   equiv [
   Correctness_Adv1(RO.RO,A).A.find ~ Correctness_Adv1(RO.RO,A).A.find : 
-            ={arg} /\ ={glob A, RO.RO.m, CO1.counter, CO1.pk, CO1.sk,CO1.queried,CO1.bad} /\
-            (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\
+            ={arg} /\ ={glob A, RO.RO.m, CO1.counter, CO1.pk, CO1.sk,CO1.queried} /\
+            (0 <= CO1.i{2} && CO1.i{2} <= qHC) /\ CO1.bad{2} = false /\
             CO1.i{1} = -1 /\ CO1.queried{1} = [] /\ 
-            RO.RO.m{1} = empty /\ CO1.counter{1} = 0 /\ CO1.bad{1} = false
+            RO.RO.m{1} = empty /\ CO1.counter{1} = 0 
             ==>
            ={CO1.pk, CO1.sk} /\
            (size CO1.queried{1} <= CO1.i{2} <=> size CO1.queried{2} <= CO1.i{2}) /\
@@ -614,7 +639,7 @@ swap {1} 2 -1.
 inline {1} 2; inline {2} 2; swap {2} 4 -3.
 inline {1} 4; inline {2} 5.
 seq 13 14 : (={glob A,glob RO.RO,CO1.counter,CO1.pk,CO1.sk,CO1.queried} /\ 
-           0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\
+           0<=CO1.i{2}<=qHC /\ i{1} = CO1.i{2} /\ CO1.i{1} = -1 /\ CO1.bad{2} = false /\
            CO1.queried{1} = [] /\ RO.RO.m{1} = empty /\ CO1.counter{1} = 0); 
     1: by inline ;auto;smt(supp_drange).
 seq 1 1 : (={CO1.pk,CO1.sk} /\ i{1} = CO1.i{2} /\ 
