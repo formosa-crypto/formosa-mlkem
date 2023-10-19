@@ -519,4 +519,78 @@ lemma correctness_theorem &m fail_prob :
 
 end section.
 
+(*************************************************************)
+(**************************** FO_TT **************************)
+(*************************************************************)
+
+require FO_TT.
+clone import FO_TT with
+  type PKE.pkey <- MLWE_PKE_Hash.pkey,
+  type PKE.skey <- MLWE_PKE_Hash.skey,
+  type PKE.ciphertext <- MLWE_PKE_Hash.ciphertext,
+  op PKE.dplaintext <- MLWE_PKE_Hash.PKE.dplaintext,
+  type plaintext <- MLWE_PKE_Hash.plaintext,
+  type randomness <- MLWE_PKE_Hash.randomness,
+  op kg = dmap drand kg,
+  op enc <- enc,
+  op dec <- dec,
+  op randd <- drand
+  proof PKE.dplaintext_ll by apply dplaintext_ll
+  proof kg_ll by (apply dmap_ll;apply drand_ll)
+  proof randd_ll by apply drand_ll.
+
+
+(* remaining axioms
+gt0_qHC: 0 < FO_TT.qHC
+ gt0_qH: 0 < FO_TT.qH
+ qHC_small: FO_TT.qHC < MUFP.FinT.card - 1
+ gamma_spread_ok: forall (pk : pkey) (sk : skey) (m : PKE.plaintext) (c : ciphertext),
+                    (pk, sk) \in FO_TT.kg =>
+                    mu drand (fun (r : MLWE_PKE_Hash.randomness) => enc r pk m = c) <= FO_TT.gamma_spread
+ ge0_gamma_spread: 0%r <= FO_TT.gamma_spread
+ gt0_qV: 0 < FO_TT.qV
+ gt0_qP: 0 < FO_TT.qP
+*)
+
+section. 
+
+import PKEROM.
+declare module A <:
+          PCVA_ADV{-RO.RO, -RO.FRO, -OW_PCVA, -B, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, -BOWp, -Bow}.
+
+lemma conclusion &m :
+ qH + qP + 1 = qHC =>
+
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC {-CountO, -A}), 
+  hoare [A(CountH(RO), CountO(O)).find : 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
+       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+
+  (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
+  islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
+
+  Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
+      Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
+    + (qH + qP)%r * 
+        `| Pr[PKE.CPA(BasePKE,Bow(AdvOW_query(A))).main() @ &m : res] - 1%r/2%r | 
+    + 2%r * (qH + qP + 2)%r * Pr[ CorrectnessBound.main() @ &m : res]
+    + 2%r * (qH + qP)%r * mu1 dplaintext witness
+    + qV%r * gamma_spread.
+proof.
+move => qvals A_count A_ll.
+print conclusion.
+have H := (conclusion A &m qvals A_count A_ll). print ow_ind.
+have H0 := ow_ind BasePKE (AdvOW_query(A)) &m _ _ _ _;1..3:by islossless.
++ proc; islossless.
+  + proc*;call (A_ll (CountH(RO.RO)) (CountO(O_AdvOW)));islossless.
+    by apply drange_ll; smt(gt0_qH gt0_qP).
+have H1 := correctness_noise (BOWp(BasePKE, AdvOW_query(A))) &m _; 1: by islossless.
+have H2 := correctness_noise (B(AdvCorr(A), RO.LRO)) &m _.
++ proc;islossless.
+  + proc*;call (A_ll (CountH(H(CO1(RO.LRO)))) (CountO(G2_O(CO1(RO.LRO)))));islossless.
+    by apply drange_ll; smt(gt0_qH gt0_qP).
+admitted. 
+
+end section.
 end MLWE_PKE_Hash.
+

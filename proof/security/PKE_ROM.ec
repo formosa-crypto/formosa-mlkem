@@ -121,9 +121,23 @@ module type OW_CPA_ADV = {
   proc find(pk : pkey, c:ciphertext) : plaintext 
 }.
 
-op [lossless] dplaintext : plaintext distr.
+op [lossless full uniform] dplaintext : plaintext distr.
 
 module OW_CPA (S:Scheme, A: OW_CPA_ADV) = {
+
+  proc main_perfect() = {
+    var pk : pkey;
+    var m, m' : plaintext;
+    var cc : ciphertext;
+    var sk : skey;
+
+    (pk, sk) <@ S.kg();
+    m        <$ dplaintext;
+    cc       <@ S.enc(pk, m);
+    m'       <@ A.find(pk,cc);
+    return (m' = m);
+
+  }
 
   module O = {
     proc pco(sk, m : plaintext, c : ciphertext) : bool = {
@@ -148,6 +162,220 @@ module OW_CPA (S:Scheme, A: OW_CPA_ADV) = {
     return b;
   }
 }.
+
+module BOWp(S : Scheme, A :  OW_CPA_ADV) : CORR_ADV = {
+   var m  : plaintext
+   var m' : plaintext
+   var m'' : plaintext option
+   var cc  : ciphertext
+
+   proc find(pk : pkey, sk : skey) : plaintext = {
+       m  <$ dplaintext;
+    return m;
+   }
+
+   proc main() : bool = {
+    var pk,sk;
+    (pk, sk) <@ S.kg();
+    find(pk,sk);
+    cc        <@ S.enc(pk, m);
+    m'        <@ A.find(pk,cc);
+    m''       <@ S.dec(sk, cc);
+    return (m'' <> Some m);
+   }
+}.
+
+
+section.
+
+declare module S <: Scheme { -BOWp }.
+declare module A <: OW_CPA_ADV { -S, -BOWp }.
+
+lemma ow_perfect &m : 
+   islossless A.find =>
+   islossless S.enc =>
+   islossless S.dec =>
+   `| Pr [ OW_CPA (S, A).main() @ &m : res ] -
+        Pr [ OW_CPA (S, A).main_perfect() @ &m : res ] | <=
+             Pr[ Correctness_Adv(S,BOWp(S,A)).main() @ &m : res ].
+proof. 
+move => A_ll Senc_ll Sdec_ll.
+have -> : 
+  Pr[OW_CPA(S, A).main_perfect() @ &m : res] = 
+    Pr[ BOWp(S,A).main() @ &m : BOWp.m = BOWp.m' ].
++ byequiv => //.
+  proc;inline *; seq 4 6 : #post; last by  conseq />;islossless.
+  conseq  (_: _ ==> m{1} = BOWp.m{2} /\ m'{1} = BOWp.m'{2}); 1: by smt().
+  by sim.
+
+have -> : 
+  Pr[OW_CPA(S, A).main() @ &m : res] = 
+    Pr[ BOWp(S,A).main() @ &m : Some BOWp.m' = BOWp.m'' ].
++ byequiv => //.
+  proc;inline *. seq 9 7 : #post; last by conseq />; islossless. 
+  wp; conseq (: m'0{1} = BOWp.m''{2} /\ m0{1} = BOWp.m'{2}); 1: smt().
+  by sim.
+
+have -> : 
+  Pr[Correctness_Adv(S, BOWp(S, A)).main() @ &m : res] = 
+    Pr[ BOWp(S,A).main() @ &m : res ].
++ byequiv => //.
+  proc;inline *. swap {2} 6 1. call{2}(:true ==> true). 
+  wp; conseq (: m'{1} = BOWp.m''{2} /\ m{1} = BOWp.m{2} ); 1: smt().
+  by sim.
+
+byequiv : (res) => //.
+proc;inline *. 
+by do 3!(call(:true));rnd;wp;call(:true);auto => />.
+qed.
+
+end section.
+
+(* Ind implies ow for large message spaces *)
+
+module Bow(A :  OW_CPA_ADV) : Adversary = {
+   var m0, m1, m : plaintext
+   var pk : pkey
+   proc choose(_pk : pkey) : plaintext * plaintext = {
+     pk <- _pk;
+     m0 <$ dplaintext;
+     m1 <$ dplaintext;
+     return (m0,m1);
+   }
+
+   proc guess(c : ciphertext) : bool = {
+      var b;
+      b <$ {0,1};
+      m <@ A.find(pk,c);
+      return if (m = m0) 
+             then false 
+             else if (m = m1) 
+                  then true 
+                  else b;
+   }
+}.
+
+section.
+
+
+declare module S <: Scheme {-Bow, -BOWp}.
+declare module A <: OW_CPA_ADV {-S, -Bow, -BOWp}.
+
+local module Aux = {
+  proc main0() : bool = {
+   var pk,sk,c,b;
+   (pk, sk) <@ S.kg();                                                
+   Bow.pk <- pk;                                                       
+   Bow.m0 <$ dplaintext;                                                
+   Bow.m1 <$ dplaintext;                                               
+   c <@ S.enc(pk, Bow.m0);                                                
+   b <$ {0,1};                                                        
+   Bow.m <@ A.find(Bow.pk, c);                                           
+   return if Bow.m = Bow.m0 then false else if Bow.m = Bow.m1 then true else b;
+  }
+
+  proc main1() : bool = {
+   var pk,sk,c,b;
+   (pk, sk) <@ S.kg();                                                
+   Bow.pk <- pk;                                                       
+   Bow.m0 <$ dplaintext;                                                
+   Bow.m1 <$ dplaintext;                                               
+   c <@ S.enc(pk, Bow.m1);                                                
+   b <$ {0,1};                                                        
+   Bow.m <@ A.find(Bow.pk, c);                                           
+   return if Bow.m = Bow.m0 then false else if Bow.m = Bow.m1 then true else b;
+  }
+
+}.
+
+lemma ow_ind &m : 
+   islossless S.kg => 
+   islossless S.enc =>
+   islossless S.dec =>
+   islossless A.find => 
+
+   Pr[ OW_CPA(S,A).main() @ &m : res ] <=
+      2%r * (mu1 dplaintext witness + 
+        `| Pr[CPA(S,Bow(A)).main() @ &m : res] - 1%r/2%r |) + 
+             Pr[ Correctness_Adv(S,BOWp(S,A)).main() @ &m : res ].
+proof. 
+move => kg_ll enc_ll dec_ll A_ll. 
+have : Pr[ OW_CPA(S,A).main_perfect() @ &m : res ] <=
+      2%r * (mu1 dplaintext witness + 
+        `| Pr[CPA(S,Bow(A)).main() @ &m : res] - 1%r/2%r |); last 
+ by move : (ow_perfect  S A &m A_ll enc_ll dec_ll);smt().
+
+rewrite RField.mulrDr -(pr_CPA_LR S (Bow(A)) &m kg_ll enc_ll); 1,2: by islossless.
+have -> : 
+  Pr[CPA_L(S, Bow(A)).main() @ &m : res] = 
+  Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] + 
+  Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ !(Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)]
+by rewrite Pr[mu_split (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] => /#.
+
+have -> : 
+  Pr[CPA_R(S, Bow(A)).main() @ &m : res] = 
+  Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] + 
+  Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ !(Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)]
+by rewrite Pr[mu_split (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] => /#.
+
+have ->  /=: 
+  Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] =
+  Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)].
++ byequiv (: _ ==> (res /\ (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)){1} <=>
+                   (res /\ (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)){2}) => //.
+  proc. 
+  seq 2 2 : (={glob A, glob S, pk,sk, Bow.pk} /\ 
+             Bow.m0{1} = Bow.m1{2} /\ Bow.m1{1} = Bow.m0{2} /\ Bow.pk{1} = pk{1} /\
+             Bow.m0{1} = m0{1} /\ Bow.m1{1} = m1{1} /\
+             Bow.m0{2} = m0{2} /\ Bow.m1{2} = m1{2});
+     1: by inline *;swap {1} 4 1;auto;call(_: true); auto.
+  by inline *;wp;call(_: true);rnd;wp;call(_:true);auto => />.
+
+have : 
+   Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] <= mu1 dplaintext witness.
++ have -> : Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] = 
+            Pr[Aux.main0() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)]
+   by byequiv => //;proc;inline *;wp;conseq />; sim. 
+  byphoare => //. 
+  proc;inline *; swap 4 3.
+  conseq (: _ ==> Bow.m = Bow.m1); 1: by smt().
+  seq 6 : true  (1%r)  (mu1 dplaintext witness) (0%r) (0%r).
+  + by trivial.
+  + by trivial. 
+  + rnd; skip => />. admit. 
+  + by hoare; trivial. 
+  by trivial.
+  
+have : 
+  `| Pr[OW_CPA(S, A).main_perfect() @ &m : res] - 
+      Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)]| <= 
+         mu1 dplaintext witness.
++ have -> : Pr[OW_CPA(S, A).main_perfect() @ &m : res] = 
+            Pr[Aux.main1()           @ &m : Bow.m = Bow.m1].
+     by byequiv => //;proc;inline*;wp;call(_: true);rnd{2};
+        call(:true);rnd;rnd{2};wp;call(_: true);auto => />.
+
+  have -> : Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] = 
+            Pr[Aux.main1()           @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)];
+     1: by byequiv => //;proc;inline*;wp;conseq />;sim.
+  have <- : Pr[Aux.main1() @ &m : !res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] = 
+            mu1 dplaintext witness.
+  + byphoare => //. 
+    proc;inline *;swap 3 4.
+    conseq (: _ ==> Bow.m = Bow.m0); 1: by smt().
+    seq 6 : true  (1%r)  (mu1 dplaintext witness) (0%r) (0%r).
+    + by trivial.
+    + by islossless. 
+    + rnd; skip => />. admit. 
+    + by hoare; trivial. 
+    by trivial.
+  byequiv : (!res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)) => //. 
+  + proc;inline *.
+    by call(:true);rnd;call(:true);rnd;rnd;wp;call(:true);auto => />.
+    
+by smt().
+qed.
+end section.
 
 end PKE.
 
