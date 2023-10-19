@@ -193,7 +193,7 @@ qed.
 
 declare module A <: PKEROM.CORR_ADV {-RO.RO, -RO.FRO, -Correctness_Adv1, -B}.
 
-local lemma corr1 &m : 
+local lemma corr_generalize &m : 
  Pr [ Correctness_Adv(RO.RO,TT,A).main() @ &m : res ] <=
  Pr [ Correctness_Adv1(RO.RO,A).main() @ &m : 
     has (fun m => Some m <> dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m))
@@ -256,7 +256,7 @@ lemma card_set_bnd ['a, 'b] (m : ('a,'b) fmap) x y :
   by rewrite  fdom_set fcardU fcard1 /= !cardE;smt(size_ge0).
 
 local lemma Corr_Adv_queryA :
- (forall (RO<:RO.RO{ -A }), 
+ (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
          CO1.counter <= qHC]) =>
@@ -324,8 +324,8 @@ qed.
    are aligned and we should have the same output!
 *)
 
-local lemma corr_base_ro &m : 
- (forall (RO<:RO.RO{ -A }), 
+local lemma corr_movetob_lro &m : 
+ (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
          CO1.counter <= qHC]) =>
@@ -388,7 +388,7 @@ module DC(O : RO.RO) = {
 }.
 
 
-local lemma corr_base_le &m : 
+local lemma corr_movetob_ro &m : 
     Pr[B(A, RO.RO).main() @ &m : res ] =
     Pr[B(A, RO.LRO).main() @ &m : res ].
 byequiv (_: ={glob B} /\ ={glob A} /\ ={glob RO.RO} ==> ={res}) => //.
@@ -399,7 +399,7 @@ qed.
 lemma CO1_lossless : islossless CO1(RO.RO).get by islossless.
 
 local lemma Corr_Adv_queryB :
- (forall (RO<:RO.RO{ -A }), 
+ (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
          CO1.counter <= qHC]) =>
@@ -513,8 +513,8 @@ proof.
     by auto => /> /#.
 qed.
 
-local lemma corr_pre0 &m :
- (forall (RO<:RO.RO{ -A }), 
+local lemma corr_preparepnp &m :
+ (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
          CO1.counter <= qHC]) =>
@@ -579,7 +579,7 @@ by smt(nth_find nth_take mem_nth size_take).
 qed.
 
 lemma corr_pnp &m : 
- (forall (RO<:RO.RO{ -A }), 
+ (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
          CO1.counter <= qHC]) =>
@@ -606,12 +606,12 @@ print glob Correctness_Adv1(RO.RO,A).
   rewrite undup_id 1:iota_uniq size_iota /=.
   have -> : max 0 (qHC + 1) = qHC + 1 by smt (gt0_qHC).
   rewrite /phi /psi /= => ->.
-  rewrite -(corr_base_ro &m A_count A_ll) -corr_base_le.
-  by apply corr_pre0.
+  rewrite -(corr_movetob_lro &m A_count A_ll) -corr_movetob_ro.
+  by apply corr_preparepnp.
 qed.
 
 lemma correctness &m : 
- (forall (RO<:RO.RO{ -A }), 
+ (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
          CO1.counter <= qHC]) =>
@@ -624,14 +624,11 @@ lemma correctness &m :
 proof.
 move => A_count A_ll.
 have := corr_pnp &m A_count A_ll.
-have <- := corr_base_ro &m A_count A_ll.
-have <- := corr_base_le &m.
-have := corr1 &m.
+have := corr_generalize &m.
 pose a:=Pr[Correctness_Adv(RO.RO, TT, A).main() @ &m : res].
 pose b := Pr[Correctness_Adv1(RO.RO, A).main() @ &m :
    has (fun (m : plaintext) => Some m <> 
       dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
-pose c := Pr[B(A, RO.RO).main() @ &m : res].
 by smt(gt0_qHC mu_bounded).
 qed.
 
@@ -1732,10 +1729,35 @@ print glob G3.
   by rewrite has_pred1 -memE mem_fdom hin.
 qed.
 
+lemma corr_red_count (RO <: RO.RO {-CountO, -A, -CO1, -Gm, -OW_PCVA}):
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
+  hoare [A(CountH(RO), CountO(O)).find : 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0    ==> 
+       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+ hoare [
+   AdvCorr(A, CO1(RO)).A.find : CO1.counter = 1 /\ CountO.c_h = 0 /\ CountO.c_cvo = 0 /\
+       CountO.c_pco = 0 ==> CO1.counter <= 1 + qH + qP].
+move => A_count.
+conseq(:CO1.counter <= CountO.c_pco + CountO.c_h + 1 ==> CO1.counter <= CountO.c_pco + CountO.c_h + 1) 
+   (A_count (H(CO1(RO))) (G2_O(CO1(RO)))); 1,2: smt().
++ proc(CO1.counter <= CountO.c_pco + CountO.c_h + 1);1,2:smt().
++ by proc;inline *;auto => />.
++ proc;inline *;sp;if;last by auto => /#.
+  sp;if;sp;if; 1: by wp;call(_: true);auto => /#.
+  by wp;call(_: true);auto => /#.
+  by wp;call(_: true);auto => /#.
+  by auto => /#.
++ proc;inline *;sp;if;last by auto => /#.
+  sp;if;sp;if; 1: by wp;call(_: true);auto => /#.
+  by wp;call(_: true);auto => /#.
+  by wp;call(_: true);auto => /#.
+  by auto => /#.
+qed.
+
 lemma pre_conclusion &m :
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
   hoare [A(CountH(RO), CountO(O)).find : 
-       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0  ==> 
        CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
 
   (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
@@ -1752,10 +1774,14 @@ proof.
      (G3_OW_CPA &m) (G3_OW_CPA_query &m  A_count A_ll) => /#.
 qed.
 
-lemma conclusion &m :
- qH + qP  = qHC =>
+(* +2 could be reduced to +1 because we know the message
+   output by our adv is always in the ROM table.
+   +1 comes from the pre-fetch of Gm.r. *)
 
- (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
+lemma conclusion &m :
+ qH + qP + 1 = qHC =>
+
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC {-CountO, -A}), 
   hoare [A(CountH(RO), CountO(O)).find : 
        CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
        CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
@@ -1766,21 +1792,27 @@ lemma conclusion &m :
   Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
       Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
     + (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res]
-    + (qH + qP + 1)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.LRO)).main() @ &m : res ]
+    + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.LRO)).main() @ &m : res ]
     + qV%r * gamma_spread.
 proof.
   move => counts A_count A_ll.
   move: (pre_conclusion &m A_count A_ll).
   move: (correctness (AdvCorr(A)) &m _ _). 
-  + move => RO; proc;wp. 
-    (* call (A_count (H(CO1(RO))) (G2_O(CO1(RO)))). *)
-     admit.
+  + move => RO; proc;wp.
+    call (corr_red_count RO).
+    inline *;wp;conseq />.
+    seq 6 : #pre; 1: by auto.
+    if;if. 
+    + wp;call(_:true);auto => /#.
+    + wp;call(_:true);auto => /#.
+    + wp;call(_:true);auto => /#.
+    auto => /#.
   move => H0 H0_ll;proc;inline *;wp.
   by call(_: true); islossless. 
   by smt().
 qed.
 
-(*
+(* Benjamin's original notes.
 (* Final lemma will be *)
 lemma conclusion &m :
   Pr[OW_PCVA(RO.RO, TT, A).main() @ &m : res] <=
