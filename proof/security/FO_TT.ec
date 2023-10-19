@@ -701,14 +701,13 @@ lemma find_map ['a, 'b]:
 
 lemma findP_Some ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap) a b: 
   find f m = Some (a, b) =>
-  m.[a] = Some b /\ f a b. 
-admitted.
+  m.[a] = Some b /\ f a b by 
+   smt(mem_nth has_find find_ge0 List.mem_map fdomP mapP nth_find).
 
 lemma findP_None ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap): 
   find f m = None =>
-  forall a b, m.[a] = Some b => !f a b.
-proof.
-admitted.
+  forall a b, m.[a] = Some b => !f a b
+ by smt(all_predC   has_find  List.mem_map fdomP mapP  allP).
 
 module O_AdvOW = {
   var pk : pkey
