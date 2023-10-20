@@ -9,7 +9,9 @@ clone import MUniFinFun as MUFP with
 op M = FinT.card. (* size of message space *)
 
 clone import PKE_ROM.PKE as PKE with
-  type plaintext = plaintext.
+  type plaintext <- plaintext,
+  op MFinT.enum <- FinT.enum
+  proof MFinT.enum_spec by apply MUFP.FinT.enum_spec.
 
 op [lossless] kg : (pkey * skey) distr.
 

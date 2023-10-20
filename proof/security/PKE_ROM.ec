@@ -1,4 +1,4 @@
-require import AllCore List Distr DBool PROM.  
+require import AllCore List Distr DBool PROM FinType.  
 require (****) LorR.
 
 abstract theory PKE.
@@ -121,7 +121,21 @@ module type OW_CPA_ADV = {
   proc find(pk : pkey, c:ciphertext) : plaintext 
 }.
 
+clone FinType as MFinT with
+  type t <- plaintext.
+
 op [lossless full uniform] dplaintext : plaintext distr.
+
+op eps_msg = 1%r / MFinT.card%r.
+
+lemma eps_msgE x : mu1 dplaintext x = eps_msg.
+proof.  
+have : support dplaintext = predT; last 
+  by smt(dplaintext_fu MFinT.perm_eq_enum_to_seq perm_eq_size
+         mu1_uni_ll dplaintext_uni dplaintext_ll).
+by apply fun_ext => y; rewrite /predT /= dplaintext_fu.
+qed.
+
 
 module OW_CPA (S:Scheme, A: OW_CPA_ADV) = {
 
@@ -295,13 +309,13 @@ lemma ow_ind &m :
    islossless A.find => 
 
    Pr[ OW_CPA(S,A).main() @ &m : res ] <=
-      2%r * (mu1 dplaintext witness + 
+      2%r * (eps_msg + 
         `| Pr[CPA(S,Bow(A)).main() @ &m : res] - 1%r/2%r |) + 
              Pr[ Correctness_Adv(S,BOWp(S,A)).main() @ &m : res ].
 proof. 
 move => kg_ll enc_ll dec_ll A_ll. 
 have : Pr[ OW_CPA(S,A).main_perfect() @ &m : res ] <=
-      2%r * (mu1 dplaintext witness + 
+      2%r * (eps_msg + 
         `| Pr[CPA(S,Bow(A)).main() @ &m : res] - 1%r/2%r |); last 
  by move : (ow_perfect  S A &m A_ll enc_ll dec_ll);smt().
 
@@ -332,24 +346,24 @@ have ->  /=:
   by inline *;wp;call(_: true);rnd;wp;call(_:true);auto => />.
 
 have : 
-   Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] <= mu1 dplaintext witness.
+   Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] <= eps_msg.
 + have -> : Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] = 
             Pr[Aux.main0() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)]
    by byequiv => //;proc;inline *;wp;conseq />; sim. 
   byphoare => //. 
   proc;inline *; swap 4 3.
-  conseq (: _ ==> Bow.m = Bow.m1); 1: by smt().
-  seq 6 : true  (1%r)  (mu1 dplaintext witness) (0%r) (0%r).
+  conseq (: _ ==> Bow.m1 = Bow.m); 1: by smt().
+  seq 6 : true  (1%r)  (eps_msg) (0%r) (0%r).
   + by trivial.
   + by trivial. 
-  + rnd; skip => />. admit. 
-  + by hoare; trivial. 
+  + by rnd; skip => /> *;rewrite eps_msgE /#.
+  + by hoare; trivial.
   by trivial.
   
 have : 
   `| Pr[OW_CPA(S, A).main_perfect() @ &m : res] - 
       Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)]| <= 
-         mu1 dplaintext witness.
+         eps_msg.
 + have -> : Pr[OW_CPA(S, A).main_perfect() @ &m : res] = 
             Pr[Aux.main1()           @ &m : Bow.m = Bow.m1].
      by byequiv => //;proc;inline*;wp;call(_: true);rnd{2};
@@ -359,14 +373,14 @@ have :
             Pr[Aux.main1()           @ &m : res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)];
      1: by byequiv => //;proc;inline*;wp;conseq />;sim.
   have <- : Pr[Aux.main1() @ &m : !res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)] = 
-            mu1 dplaintext witness.
+            eps_msg.
   + byphoare => //. 
     proc;inline *;swap 3 4.
-    conseq (: _ ==> Bow.m = Bow.m0); 1: by smt().
-    seq 6 : true  (1%r)  (mu1 dplaintext witness) (0%r) (0%r).
+    conseq (: _ ==> Bow.m0 = Bow.m); 1: by smt().
+    seq 6 : true  (1%r)  (eps_msg) (0%r) (0%r).
     + by trivial.
     + by islossless. 
-    + rnd; skip => />. admit. 
+    + by rnd; skip => /> *;rewrite eps_msgE /#.
     + by hoare; trivial. 
     by trivial.
   byequiv : (!res /\ ! (Bow.m <> Bow.m0 /\ Bow.m <> Bow.m1)) => //. 
@@ -375,6 +389,7 @@ have :
     
 by smt().
 qed.
+
 end section.
 
 end PKE.
