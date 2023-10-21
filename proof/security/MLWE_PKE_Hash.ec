@@ -88,19 +88,14 @@ clone import FO_TT with
 import PKE.
 
 (* remaining axioms
- MUFP.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
+MUFP.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
  PKE.dplaintext_ll: is_lossless dplaintext
  PKE.dplaintext_uni: is_uniform dplaintext
  PKE.dplaintext_fu: is_full dplaintext
- gt0_qHC: 0 < qHC
  gt0_qH: 0 < qH
- qHC_small: qHC < MUFP.FinT.card - 1
- gamma_spread_ok: forall (pk : pkey) (sk : skey) (m : PKE.plaintext) (c : ciphertext),
-                    (pk, sk) \in FO_TT.kg => mu drand (fun (r : randomness) => enc r pk m = c) <= gamma_spread
- ge0_gamma_spread: 0%r <= gamma_spread
  gt0_qV: 0 < qV
- gt0_qP: 0 < qP*)
-
+ gt0_qP: 0 < qP
+ gt0_qHC: 0 < qHC *)
 
 module MLWE_PKE_HASH : Scheme = {
 
@@ -563,9 +558,12 @@ local equiv kg_same :
   BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
 admitted.
 
-
-lemma conclusion &m fail_prob :
+lemma conclusion &m gamma_spread fail_prob :
  qH + qP + 1 = qHC =>
+
+ qHC < MUFP.FinT.card - 1 =>
+ 
+ gamma_spread_ok gamma_spread =>
 
  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
 
@@ -585,7 +583,7 @@ lemma conclusion &m fail_prob :
     + 2%r * (qH + qP)%r * eps_msg
     + qV%r * gamma_spread.
 proof.
-move => qvals fail_probE A_count A_ll.
+move => qvals qhcsmall gs_ok fail_probE A_count A_ll.
 have <- : 
    Pr[PKE.OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res] = 
     Pr[PKE.OW_CPA(MLWE_PKE_HASH, AdvOW(A)).main() @ &m : res].
@@ -600,7 +598,7 @@ have <- :
   by inline *;sim.
 
 
-have := (conclusion A &m qvals A_count A_ll). 
+have := (conclusion A &m gamma_spread qvals qhcsmall gs_ok A_count A_ll). 
 
 have  : (qH + qP)%r * Pr[PKE.OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res] +
 (qH + qP + 2)%r * Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.LRO)).main() @ &m : res]  <=

@@ -56,6 +56,20 @@ clone import PKE_ROM.PKE_ROM as PKEROM with
    type RO.d_out_t <- bool
    proof *.
 
+(******* Query Bounds ******)
+
+(* Max number of calls to RO in OW attack on TT *)  
+const qH : { int | 0 < qH } as gt0_qH. 
+(* Maximum number of calls to cvo in OW attack on TT *) 
+const qV : { int | 0 < qV } as gt0_qV.
+(* Max number of calls to pco in OW attack on TT*) 
+const qP : { int | 0 < qP } as gt0_qP. 
+(* Max number of calls to RO in Correctness attack to BasePKE *)  
+const qHC : { int | 0 < qHC } as gt0_qHC. 
+
+(***************************************)
+
+
 
 module (TT : PKEROM.Scheme) (H : POracle) = {
   proc kg() : pkey * skey = {
@@ -87,11 +101,6 @@ module (TT : PKEROM.Scheme) (H : POracle) = {
 
 (* Correctness proof *)
 
-const qHC : { int | 0 < qHC } as gt0_qHC. 
-const qH : { int | 0 < qH } as gt0_qH. 
-(* there must be some element left after all
-   the queries *)
-axiom qHC_small : qHC < FinT.card - 1. 
 
 module CO1(O : RO.RO) : POracle = {
   var pk : pkey
@@ -326,7 +335,9 @@ qed.
    are aligned and we should have the same output!
 *)
 
-local lemma corr_movetob_lro &m : 
+local lemma corr_movetob_lro &m :
+ qHC < FinT.card - 1 =>  
+
  (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
@@ -338,7 +349,7 @@ local lemma corr_movetob_lro &m :
   Pr[B(A,RO.LRO).main() @ &m : res ] =
     Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res ].
 proof. 
-move => A_count A_ll.
+move => qHC_small A_count A_ll.
 byequiv => //.
 proc. 
 call(_: true); 1: by sim.
@@ -362,7 +373,7 @@ seq 5 5 : (={RO.RO.m,glob CO1} /\ pk{2} = CO1.pk{1} /\ sk{2} = CO1.sk{1} /\
   have : count (mem CO1.queried{2}) FinT.enum <  size FinT.enum; last 
     by smt(). 
   rewrite (count_swap _ _ Hu FinT.enum_uniq). 
-  by smt(count_size qHC_small).
+  by smt(count_size).
   
 sp;seq 1 1 : (#pre /\ ={CO1.i}); 1: by auto.
 seq 1 1 : (={RO.RO.m,glob CO1} /\ pk{2} = CO1.pk{1} /\ sk{2} = CO1.sk{1} /\ m0{1} = m1{2} /\
@@ -581,6 +592,8 @@ by smt(nth_find nth_take mem_nth size_take).
 qed.
 
 lemma corr_pnp &m : 
+ qHC < FinT.card - 1 =>
+
  (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
@@ -593,7 +606,7 @@ lemma corr_pnp &m :
       (has (fun m => Some m <> dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m))
        CO1.queried)] <=
     (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res]. 
-  move => A_count A_ll.
+  move => qHC_small A_count A_ll.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (gt0_qHC).
 print glob Correctness_Adv1(RO.RO,A).
   pose phi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
@@ -608,11 +621,13 @@ print glob Correctness_Adv1(RO.RO,A).
   rewrite undup_id 1:iota_uniq size_iota /=.
   have -> : max 0 (qHC + 1) = qHC + 1 by smt (gt0_qHC).
   rewrite /phi /psi /= => ->.
-  rewrite -(corr_movetob_lro &m A_count A_ll) -corr_movetob_ro.
+  rewrite -(corr_movetob_lro &m qHC_small A_count A_ll) -corr_movetob_ro.
   by apply corr_preparepnp.
 qed.
 
-lemma correctness &m : 
+lemma correctness &m :
+ qHC < FinT.card - 1 =>
+ 
  (forall (RO<:RO.RO{ -A, -CO1 }), 
   hoare [Correctness_Adv1(RO,A).A.find : 
        CO1.counter = 0  ==> 
@@ -624,8 +639,8 @@ lemma correctness &m :
   Pr [ Correctness_Adv(RO.RO,TT,A).main() @ &m : res ] <=
     (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res]. 
 proof.
-move => A_count A_ll.
-have := corr_pnp &m A_count A_ll.
+move => qHC_small A_count A_ll.
+have := corr_pnp &m qHC_small A_count A_ll.
 have := corr_generalize &m.
 pose a:=Pr[Correctness_Adv(RO.RO, TT, A).main() @ &m : res].
 pose b := Pr[Correctness_Adv1(RO.RO, A).main() @ &m :
@@ -636,20 +651,6 @@ qed.
 
 end section.
 (* Security proof *)
-
-op gamma_spread : real.
-
-axiom gamma_spread_ok pk sk m c : 
- (pk, sk) \in kg =>
-   mu randd (fun r => enc r pk m = c) <= gamma_spread.
-
-(* This should be provable since kg is lossless *) 
-axiom ge0_gamma_spread : 0%r <= gamma_spread.
-  
-(* Maximal number of calls to cvo *) 
-const qV : { int | 0 < qV } as gt0_qV.
-(* Maximal number of calls to pco *) 
-const qP : { int | 0 < qP } as gt0_qP.
 
 module CountO (O : VA_ORC) = {
   var c_cvo : int
@@ -1333,23 +1334,43 @@ proof.
   auto => />; smt(get_setE mem_empty supp_dinter).
 qed.
 
+pred gamma_spread_ok(gamma_spread : real) = 
+ forall pk sk m c, (pk, sk) \in kg =>
+   mu randd (fun r => enc r pk m = c) <= gamma_spread.
+
+local lemma ge0_gamma_spread gamma_spread :
+  gamma_spread_ok gamma_spread => 0%r <= gamma_spread.
+proof.
+rewrite /gamma_spread_ok => gOK.
+have := witness_support predT kg; rewrite kg_ll /= => pkskH.
+have := witness_support predT randd; rewrite randd_ll /= => rH.
+elim pkskH => pksk pkskin. 
+elim rH => r rin. 
+have :=  gOK pksk.`1 pksk.`2 witness (enc r pksk.`1 witness) _;1 :by smt().
+by smt(witness_support).
+qed.
+
 (* Now we can trivially bound the probability of Orcl1.bad using fel *)
-local lemma H_bad_gamma_spread &m : 
+local lemma H_bad_gamma_spread &m gamma_spread: 
+  gamma_spread_ok gamma_spread => 
   Pr[H_bad_(HybGame(G0), Orclb1').main() @ &m : Orclb1.bad /\ H_bad_.c <= 1] <=
     gamma_spread.
 proof.
+  rewrite /gamma_spread_ok;move => gs_ok.
   fel 2 H_bad_.c (fun _, gamma_spread) 1 Orclb1.bad []=> //.
   + by rewrite StdBigop.Bigreal.BRA.big_int1.
   + by auto.
   + proc; wp; if; wp.
     + rnd; skip => /> &1 _ _ _; case: (sk{1}) => pk sk hsk.
-      by apply (gamma_spread_ok pk sk m{1} c{1} hsk).
+      by apply (gs_ok pk sk m{1} c{1} hsk).
     conseq (: _ ==> false : = 0%r) => />; 2: by auto.
-    by move=> &1 _ _ _ _; apply ge0_gamma_spread.
+    by move=> &1 _ _ _ _; apply (ge0_gamma_spread gamma_spread gs_ok).
   move=> c; proc; if; auto => /> /#.
 qed.
 
-local lemma OW_PCVA_gamma &m : 
+local lemma OW_PCVA_gamma &m gamma_spread:
+ gamma_spread_ok gamma_spread =>
+ 
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
   hoare [A(CountH(RO), CountO(O)).find : 
        CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
@@ -1361,7 +1382,7 @@ local lemma OW_PCVA_gamma &m :
   Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <= 
      Pr[Rn(Orclb,G0).main() @ &m : res] + qV%r * gamma_spread.
 proof.
-  move => A_count A_ll.
+  move => gs_ok A_count A_ll.
   have := (OW_PCVA_G_PCO &m).
   rewrite (PCO_PCO2 &m) (G_PCO2_G0 &m).
   move: (G0_G1_1 &m A_count A_ll) (H_bad_Orclb1' &m) (H_bad_gamma_spread &m) gt0_qV. 
@@ -1755,7 +1776,9 @@ conseq(:CO1.counter <= CountO.c_pco + CountO.c_h + 1 ==> CO1.counter <= CountO.c
   by auto => /#.
 qed.
 
-lemma pre_conclusion &m :
+lemma pre_conclusion &m gamma_spread :
+ gamma_spread_ok gamma_spread =>
+
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
   hoare [A(CountH(RO), CountO(O)).find : 
        CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0  ==> 
@@ -1770,8 +1793,8 @@ lemma pre_conclusion &m :
     + Pr[ Correctness_Adv(RO.RO,TT,AdvCorr(A)).main() @ &m : res ]
     + qV%r * gamma_spread.
 proof.
-  move => A_count A_ll.
-  move: (OW_PCVA_gamma &m A_count A_ll) (G1_G2 &m A_ll) (G2_correctness &m) (G2_G3 &m  A_ll)
+  move => gs_ok A_count A_ll.
+  by move: (OW_PCVA_gamma &m gamma_spread gs_ok A_count A_ll) (G1_G2 &m A_ll) (G2_correctness &m) (G2_G3 &m  A_ll)
      (G3_OW_CPA &m) (G3_OW_CPA_query &m  A_count A_ll) => /#.
 qed.
 
@@ -1779,8 +1802,12 @@ qed.
    output by our adv is always in the ROM table.
    +1 comes from the pre-fetch of Gm.r. *)
 
-lemma conclusion &m :
+lemma conclusion &m gamma_spread :
  qH + qP + 1 = qHC =>
+
+ qHC < FinT.card -1 =>
+
+ gamma_spread_ok gamma_spread =>
 
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC {-CountO, -A}), 
   hoare [A(CountH(RO), CountO(O)).find : 
@@ -1796,9 +1823,9 @@ lemma conclusion &m :
     + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.LRO)).main() @ &m : res ]
     + qV%r * gamma_spread.
 proof.
-  move => counts A_count A_ll.
-  move: (pre_conclusion &m A_count A_ll).
-  move: (correctness (AdvCorr(A)) &m _ _). 
+  move => counts qhc_small gs_ok A_count A_ll.
+  move: (pre_conclusion &m gamma_spread gs_ok A_count A_ll).
+  move: (correctness (AdvCorr(A)) &m qhc_small _ _). 
   + move => RO; proc;wp.
     call (corr_red_count RO).
     inline *;wp;conseq />.
