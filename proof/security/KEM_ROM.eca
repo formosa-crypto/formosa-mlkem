@@ -6,8 +6,7 @@ type skey.
 type key.
 type ciphertext.
 
-op dkey : key distr.
-axiom dkey_ll: is_lossless dkey.
+op [lossless uniform full]dkey : key distr.
 
 module type Scheme = {
   proc kg() : pkey * skey

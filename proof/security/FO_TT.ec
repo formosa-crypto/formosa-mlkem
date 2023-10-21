@@ -1,17 +1,22 @@
-require import AllCore Distr List Real SmtMap FSet DInterval.
+require import AllCore Distr List Real SmtMap FSet DInterval FinType.
 require (****) PKE_ROM PlugAndPray Hybrid FelTactic. 
 
 type plaintext.
 
-clone import MUniFinFun as MUFP with
-  type t <- plaintext.   (* Assume that the type of plaintext is finite *)
+op [full lossless uniform]dplaintext : plaintext distr.
 
-op M = FinT.card. (* size of message space *)
+clone import FinType as FinT with 
+   type t <- plaintext.
 
 clone import PKE_ROM.PKE as PKE with
   type plaintext <- plaintext,
+  op dplaintext <- dplaintext,
   op MFinT.enum <- FinT.enum
-  proof MFinT.enum_spec by apply MUFP.FinT.enum_spec.
+  proof MFinT.enum_spec by apply FinT.enum_spec
+  proof dplaintext_ll by apply dplaintext_ll
+  proof dplaintext_uni by apply dplaintext_uni
+  proof dplaintext_fu by apply dplaintext_fu
+  proof *.
 
 op [lossless] kg : (pkey * skey) distr.
 
@@ -46,7 +51,7 @@ clone import PKE_ROM.PKE_ROM as PKEROM with
    type pkey <- pkey,
    type skey = pkey * skey,
    type plaintext <- plaintext,
-   op   dplaintext <- PKE.dplaintext,
+   op   dplaintext <- dplaintext,
    lemma dplaintext_ll <- PKE.dplaintext_ll,
    type ciphertext <- ciphertext,
    type RO.in_t <- plaintext,
