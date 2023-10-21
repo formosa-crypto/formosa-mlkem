@@ -64,13 +64,13 @@ clone import PKE_ROM.PKE_ROM as PKEROM with
 (******* Query Bounds ******)
 
 (* Max number of calls to RO in OW attack on TT *)  
-const qH : { int | 0 < qH } as gt0_qH. 
+const qH : { int | 0 <= qH } as ge0_qH. 
 (* Maximum number of calls to cvo in OW attack on TT *) 
-const qV : { int | 0 < qV } as gt0_qV.
+const qV : { int | 0 <= qV } as ge0_qV.
 (* Max number of calls to pco in OW attack on TT*) 
-const qP : { int | 0 < qP } as gt0_qP. 
+const qP : { int | 0 <= qP } as ge0_qP. 
 (* Max number of calls to RO in Correctness attack to BasePKE *)  
-const qHC : { int | 0 < qHC } as gt0_qHC. 
+const qHC : { int | 0 <= qHC } as ge0_qHC. 
 
 (***************************************)
 
@@ -265,7 +265,7 @@ local clone import PlugAndPray as PAPC with
   proof *.
 
 realize indices_not_nil by
- smt(uniq_size_uniq iota_uniq size_iota size_eq0 gt0_qHC).
+ smt(uniq_size_uniq iota_uniq size_iota size_eq0 ge0_qHC).
 
 lemma card_set_bnd ['a, 'b] (m : ('a,'b) fmap) x y : 
   card (fdom m.[x <- y]) <= card (fdom m) + 1
@@ -612,7 +612,7 @@ lemma corr_pnp &m :
        CO1.queried)] <=
     (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res]. 
   move => qHC_small A_count A_ll.
-  rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (gt0_qHC).
+  rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (ge0_qHC).
 print glob Correctness_Adv1(RO.RO,A).
   pose phi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
       has (fun m =>
@@ -622,9 +622,9 @@ print glob Correctness_Adv1(RO.RO,A).
       (fun m => Some m <> dec g.`1 (enc (oget g.`7.[m]) g.`2 m)) g.`6
     in if 0 <= i < qHC + 1 then i else 0.
   have := PAPC.PBound (Correctness_Adv1(RO.RO,A)) phi psi tt &m _.
-  + smt (gt0_qHC mem_iota).
+  + smt (ge0_qHC mem_iota).
   rewrite undup_id 1:iota_uniq size_iota /=.
-  have -> : max 0 (qHC + 1) = qHC + 1 by smt (gt0_qHC).
+  have -> : max 0 (qHC + 1) = qHC + 1 by smt (ge0_qHC).
   rewrite /phi /psi /= => ->.
   rewrite -(corr_movetob_lro &m qHC_small A_count A_ll) -corr_movetob_ro.
   by apply corr_preparepnp.
@@ -651,7 +651,7 @@ pose a:=Pr[Correctness_Adv(RO.RO, TT, A).main() @ &m : res].
 pose b := Pr[Correctness_Adv1(RO.RO, A).main() @ &m :
    has (fun (m : plaintext) => Some m <> 
       dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m)) CO1.queried].
-by smt(gt0_qHC mu_bounded).
+by smt(ge0_qHC mu_bounded).
 qed.
 
 end section.
@@ -953,7 +953,7 @@ type inleaks  = plaintext option,
 type outleaks = randomness option,
 type outputA <- bool,
 op q  <- qV
-proof q_ge0 by smt(gt0_qV) 
+proof q_ge0 by smt(ge0_qV) 
 proof *. (* This line allow to be sure that no remaining axiom are still present *)
 
 local module Orclb_ (RO:RO.RO) : Orclb = {
@@ -1261,12 +1261,14 @@ local lemma G0_G1_1 &m :
 proof.
   move => A_count A_ll.
   have -> := G0_G1 &m A_count A_ll.
+  case(qV = 0);1: by smt().
+  move => qVn0.
   apply StdOrder.RealOrder.ler_add => //.
-  apply StdOrder.RealOrder.ler_pmul2l; 1: smt (gt0_qV).
+  apply StdOrder.RealOrder.ler_pmul2l; 1: smt (ge0_qV).
   have /# := HA_bad1 (HybGame(G0)) &m _.
   move=> Ob O orcl_ll leaks_ll orclL_ll orclR_ll; islossless.
   + apply (A_ll (<:CountH(G0(Ob, HybOrcl(Ob, O)).H)) (<:CountO(G0(Ob, HybOrcl(Ob, O)).O))); islossless.
-  smt (dinter_ll gt0_qV).
+  smt (dinter_ll ge0_qV).
 qed.
 
 (* Now we focus on 
@@ -1390,7 +1392,7 @@ proof.
   move => gs_ok A_count A_ll.
   have := (OW_PCVA_G_PCO &m).
   rewrite (PCO_PCO2 &m) (G_PCO2_G0 &m).
-  move: (G0_G1_1 &m A_count A_ll) (H_bad_Orclb1' &m) (H_bad_gamma_spread &m) gt0_qV. 
+  move: (G0_G1_1 &m A_count A_ll) (H_bad_Orclb1' &m) (H_bad_gamma_spread &m) ge0_qV. 
   by smt().
 qed.
 
@@ -1558,8 +1560,6 @@ proof.
   inline *; auto => />; smt(get_setE).
 qed.
     
-(* FIXME: This should be talking about the correctness
-   of the underlying scheme *)
 local lemma G2_correctness &m : 
   Pr[G2.main() @ &m : Gm.bad_corr <> None] <= 
   Pr[ Correctness_Adv(RO.RO,TT,AdvCorr(A)).main() @ &m : res ].
@@ -1670,13 +1670,13 @@ qed.
 
 local clone import PlugAndPray as PAP1 with
   type tval <- int,
-  op indices <-  iota_ 0 (qH + qP), 
+  op indices <-  iota_ 0 (max 1 (qH + qP)), 
   type tin <- unit, 
   type tres <- bool
   proof *.
 
 realize indices_not_nil by
- smt(uniq_size_uniq iota_uniq size_iota size_eq0 gt0_qH gt0_qP).
+ smt(uniq_size_uniq iota_uniq size_iota size_eq0 ge0_qH ge0_qP).
 
 local equiv RO_count c : RO.RO.get ~ RO.RO.get : 
   ={x, RO.RO.m} /\ card (fdom RO.RO.m{1}) = c ==>
@@ -1716,6 +1716,49 @@ proof.
   proc; wp;  ecall (RO_count (card (fdom RO.RO.m{1}))); auto => /> /#.
 qed.
 
+local lemma count0 :
+ qH = 0 => qP = 0 =>
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
+  hoare [A(CountH(RO), CountO(O)).find : 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
+       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+
+hoare [
+  G3.A.find : 
+  CountO.c_h = 0 /\ CountO.c_pco = 0 /\ CountO.c_cvo = 0 /\ RO.RO.m = empty==>
+  RO.RO.m = empty].
+proof.
+move => qH0 qP0 A_count.
+conseq (:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco  ==>
+         card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco) 
+                (A_count  (<:RO.RO) (<:O_AdvOW));1,2:
+                 smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
+proc (card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco);
+       1,2:smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
+
++ by proc;wp;call(:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco);auto. 
++ proc; wp. call(_:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco ==>
+                   card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco + 1).
+  proc;inline *; auto.  move => &hr ? r _ /=. 
+      case(m{hr} \notin RO.RO.m{hr}); 2:smt().
+      move => *.
+      rewrite fdom_set setUE /= elems_fset1 /=.
+      have := oflistK (elems (fdom RO.RO.m{hr}) ++ [m{hr}]); rewrite undup_id;
+       1: smt(undup_id cat_uniq uniq_elems memE mem_fdom).
+      admit.    
+   by auto;smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
++ proc; wp. call(_:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco ==>
+                   card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco + 1).
+  proc;inline *; auto.  move => &hr ? r _ /=. 
+      case(x{hr} \notin RO.RO.m{hr}); 2:smt().
+      move => *.
+      rewrite fdom_set setUE /= elems_fset1 /=.
+      have := oflistK (elems (fdom RO.RO.m{hr}) ++ [x{hr}]); rewrite undup_id;
+       1: smt(undup_id cat_uniq uniq_elems memE mem_fdom).
+      admit. 
+   by auto;smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
+qed.
+
 local lemma G3_OW_CPA_query &m : 
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
   hoare [A(CountH(RO), CountO(O)).find : 
@@ -1729,16 +1772,25 @@ local lemma G3_OW_CPA_query &m :
   (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res].
 proof.
   move => A_count A_ll.
-  rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (gt0_qH gt0_qP).
+  case (qH = 0 /\ qP = 0). 
+  + move => [#] qH0 qP0; rewrite qH0 qP0 /=.
+    byphoare => //;hoare.
+    conseq (_: _ ==> RO.RO.m = empty); 1: by smt(mem_empty).
+    proc;wp;seq 6 : (CountO.c_h = 0 /\ CountO.c_pco = 0 /\ CountO.c_cvo = 0 /\
+                      RO.RO.m = empty); 1: by inline*;auto.
+    by call count0.
+       
+  move => qHPn0.
+  rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (ge0_qH ge0_qP).
 print glob G3.
   pose phi := fun (g:glob G3) (b:bool) => dec g.`7.`2 g.`8 = Some g.`2 /\ g.`2 \in g.`9.
   pose psi := fun (g:glob G3) (_:bool) => 
     let i = find (pred1 g.`2) (elems (fdom g.`9)) in
     if 0 <= i < qH + qP then i else 0.
   have := PAP1.PBound G3 phi psi tt &m _. 
-  + smt (gt0_qH gt0_qP mem_iota).
+  + smt (ge0_qH ge0_qP mem_iota).
   rewrite undup_id 1:iota_uniq size_iota.
-  have -> : max 0 (qH + qP) = qH + qP by smt (gt0_qH gt0_qP).
+  have -> : max 0 (max 1 (qH  + qP)) = qH + qP by smt (ge0_qH ge0_qP).
   rewrite (RField.mulrC (1%r/_)) RField.mulrA /= => ->.
   byequiv => //; rewrite /phi /psi /=.
   proc.
@@ -1746,7 +1798,10 @@ print glob G3.
   inline{2} 6; inline{1} 1; wp.
   call G3_Adv_queryA; inline *; auto => />.
   move=> [pk sk] hpk m hm r hr c_cvo c_h c_pco ro 3?.
-  rewrite cardE => hs _ i _ _ -> hin ->>.
+  rewrite cardE => hs. 
+  have -> /= : max 1 (qH + qP) = qH + qP; 1: by smt(ge0_qH ge0_qP).
+  split; 1: by smt().
+  move  => /> _ i _ _ -> hin ->>.
   have -> /= : 0 <= find (pred1 m) (elems (fdom ro)) && find (pred1 m) (elems (fdom ro)) < qH + qP.
   + rewrite find_ge0.
     have := has_find (pred1 m) (elems (fdom ro)).
