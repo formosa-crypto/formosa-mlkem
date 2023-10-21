@@ -207,6 +207,15 @@ have := oflistK (elems (fdom m) ++ [x]); rewrite undup_id;
 by smt(oflistK perm_eq_trans perm_eq_sym perm_cat2r).
 qed.
 
+lemma card_set ['a 'b] (m : ('a,'b)  fmap) x y n :
+  card (fdom m) = n => card (fdom (m.[x <- y])) <= n + 1. 
+proof. 
+move => cardn;rewrite /card /= in cardn.
+rewrite fdom_set setUE /= elems_fset1 /=.
+have -> : n + 1 = size (elems (fdom m) ++ [x]) by smt(size_cat).
+by apply fcard_oflist.
+qed.
+
 declare module A <: PKEROM.CORR_ADV {-RO.RO, -RO.FRO, -Correctness_Adv1, -B}.
 
 local lemma corr_generalize &m : 
@@ -1737,25 +1746,13 @@ proc (card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco);
        1,2:smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
 
 + by proc;wp;call(:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco);auto. 
++ proc; wp;call(_:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco ==>
+                   card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco + 1).
+  + by proc;inline *; auto; move => &hr ? r _ /=;smt(card_set).   
+  by auto;smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
 + proc; wp. call(_:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco ==>
                    card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco + 1).
-  proc;inline *; auto.  move => &hr ? r _ /=. 
-      case(m{hr} \notin RO.RO.m{hr}); 2:smt().
-      move => *.
-      rewrite fdom_set setUE /= elems_fset1 /=.
-      have := oflistK (elems (fdom RO.RO.m{hr}) ++ [m{hr}]); rewrite undup_id;
-       1: smt(undup_id cat_uniq uniq_elems memE mem_fdom).
-      admit.    
-   by auto;smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
-+ proc; wp. call(_:card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco ==>
-                   card (fdom RO.RO.m) <= CountO.c_h + CountO.c_pco + 1).
-  proc;inline *; auto.  move => &hr ? r _ /=. 
-      case(x{hr} \notin RO.RO.m{hr}); 2:smt().
-      move => *.
-      rewrite fdom_set setUE /= elems_fset1 /=.
-      have := oflistK (elems (fdom RO.RO.m{hr}) ++ [x{hr}]); rewrite undup_id;
-       1: smt(undup_id cat_uniq uniq_elems memE mem_fdom).
-      admit. 
+  proc;inline *; auto.  move => &hr ? r _ /=; smt(card_set). 
    by auto;smt(fdom0 fcards0 fdom_eq0 fcard_ge0 fcard_eq0).
 qed.
 
