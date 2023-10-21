@@ -1,6 +1,8 @@
 require import AllCore List Distr DBool PROM.
 require (****) LorR.
 
+abstract theory KEM.
+
 type pkey.
 type skey.
 type key.
@@ -12,6 +14,22 @@ module type Scheme = {
   proc kg() : pkey * skey
   proc enc(pk:pkey)  : ciphertext * key
   proc dec(sk:skey, c:ciphertext) : key option
+}.
+
+module Correctness(S:Scheme) = {
+  proc main() : bool = {
+    var pk : pkey;
+    var sk : skey;
+    var c  : ciphertext;
+    var k  : key;
+    var k' : key option; 
+
+    (pk, sk) <@ S.kg();
+    (c,k)    <@ S.enc(pk);
+    k'       <@ S.dec(sk,c);
+    return (k' <> Some k);
+
+  }
 }.
 
 module type Adversary = {
@@ -139,21 +157,17 @@ module CCA (S:Scheme, A:CCA_ADV) = {
   }
 }.
 
-module Correctness (S:Scheme) = {
-  proc main() : bool = {
-    var pk : pkey;
-    var sk : skey;
-    var ck  : ciphertext * key;
-    var k' : key option;
-
-    (pk, sk) <@ S.kg();
-    ck        <@ S.enc(pk);
-    k'       <@ S.dec(sk, ck.`1);
-    return (k' <> Some ck.`2); (* There's a typo in HHK *)
-  }
-}.
+end KEM.
 
 (* Security definition in the ROM *)
+abstract theory KEM_ROM.
+
+type pkey.
+type skey.
+type key.
+type ciphertext.
+
+op [lossless uniform full]dkey : key distr.
 
 clone import FullRO as RO.
 
@@ -165,11 +179,39 @@ module type POracle = {
   include FRO [get]
 }.
 
-module type CCA_ADV_RO (H : POracle, O:CCA_ORC) = {
+
+module type Scheme(O : POracle) = {
+  proc kg() : pkey * skey
+  proc enc(pk:pkey)  : ciphertext * key
+  proc dec(sk:skey, c:ciphertext) : key option
+}.
+
+module Correctness(H : Oracle, S:Scheme) = {
+  proc main() : bool = {
+    var pk : pkey;
+    var sk : skey;
+    var c  : ciphertext;
+    var k  : key;
+    var k' : key option; 
+
+    H.init();
+    (pk, sk) <@ S(H).kg();
+    (c,k)    <@ S(H).enc(pk);
+    k'       <@ S(H).dec(sk,c);
+    return (k' <> Some k);
+
+  }
+}.
+
+module type CCA_ORC = {
+  proc dec(c:ciphertext) : key option
+}.
+
+module type CCA_ADV (H : POracle, O:CCA_ORC) = {
   proc guess(pk : pkey, c:ciphertext, k : key) : bool {O.dec}
 }.
 
-module CCA_RO (H : Oracle, S:Scheme, A:CCA_ADV_RO) = {
+module CCA(H : Oracle, S:Scheme, A:CCA_ADV) = {
   var cstar : ciphertext option
   var sk : skey
 
@@ -179,7 +221,7 @@ module CCA_RO (H : Oracle, S:Scheme, A:CCA_ADV_RO) = {
 
       k <- None;
       if (Some c <> cstar) {
-        k  <@ S.dec(sk, c);
+        k  <@ S(H).dec(sk, c);
       }
       return k;
     }
@@ -196,12 +238,14 @@ module CCA_RO (H : Oracle, S:Scheme, A:CCA_ADV_RO) = {
 
     H.init();
     cstar    <- None;
-    (pk, sk) <@ S.kg();
+    (pk, sk) <@ S(H).kg();
     k1 <$ dkey;
     b        <$ {0,1};
-    ck0        <@ S.enc(pk);
+    ck0        <@ S(H).enc(pk);
     cstar    <- Some ck0.`1;
     b'       <@ A.guess(pk, ck0.`1, if b then k1 else ck0.`2);
     return (b' = b);
   }
 }.
+
+end KEM_ROM.
