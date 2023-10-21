@@ -564,8 +564,10 @@ local equiv kg_same :
 admitted.
 
 
-lemma conclusion &m :
+lemma conclusion &m fail_prob :
  qH + qP + 1 = qHC =>
+
+ Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
 
  (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC {-CountO, -A}), 
   hoare [A(CountH(RO), CountO(O)).find : 
@@ -579,11 +581,11 @@ lemma conclusion &m :
       Pr[PKE.OW_CPA(MLWE_PKE_HASH, AdvOW(A)).main() @ &m : res]
     + 2%r * (qH + qP)%r * 
         `| Pr[PKE.CPA(MLWE_PKE_HASH,Bow(AdvOW_query(A))).main() @ &m : res] - 1%r/2%r | 
-    + (2 * (qH + qP) + 2)%r * Pr[ CorrectnessBound.main() @ &m : res]
+    + (2 * (qH + qP) + 2)%r * fail_prob
     + 2%r * (qH + qP)%r * eps_msg
     + qV%r * gamma_spread.
 proof.
-move => qvals A_count A_ll.
+move => qvals fail_probE A_count A_ll.
 have <- : 
    Pr[PKE.OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res] = 
     Pr[PKE.OW_CPA(MLWE_PKE_HASH, AdvOW(A)).main() @ &m : res].
@@ -603,21 +605,20 @@ have := (conclusion A &m qvals A_count A_ll).
 have  : (qH + qP)%r * Pr[PKE.OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res] +
 (qH + qP + 2)%r * Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.LRO)).main() @ &m : res]  <=
    2%r * (qH + qP)%r * `|Pr[PKE.CPA(BasePKE, Bow(AdvOW_query(A))).main() @ &m : res] - 1%r / 2%r| +
-(2 * (qH + qP) + 2)%r  * Pr[CorrectnessBound.main() @ &m : res] + 2%r * (qH + qP)%r * eps_msg; last by smt().
+(2 * (qH + qP) + 2)%r  * fail_prob + 2%r * (qH + qP)%r * eps_msg; last by smt().
 
-have H0 := ow_ind BasePKE (AdvOW_query(A)) &m _ _ _ _;1..3:by islossless.
+have := ow_ind BasePKE (AdvOW_query(A)) &m _ _ _ _;1..3:by islossless.
 + proc; islossless.
   + proc*;call (A_ll (CountH(RO.RO)) (CountO(O_AdvOW)));islossless.
     by apply drange_ll; smt(gt0_qH gt0_qP).
 
-have := correctness_noise (BOWp(BasePKE, AdvOW_query(A))) &m _; 1: by islossless.
+have := correctness_theorem (BOWp(BasePKE, AdvOW_query(A))) &m fail_prob _; 1: by islossless.
 
 have <- : 
     Pr[PKE.Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query(A))).main() @ &m : res] = Pr[PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(BasePKE, AdvOW_query(A))).main() @ &m : res].
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
-move => H1.
 
 have := correctness_noise (B(AdvCorr(A), RO.LRO)) &m _.
 + proc;islossless.
@@ -630,9 +631,8 @@ have <- :
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
-move => H2.
 
-smt. (* fix me *)
+by smt(gt0_qH gt0_qP). 
 qed.
 
 
