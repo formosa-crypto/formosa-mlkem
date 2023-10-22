@@ -1,6 +1,60 @@
 require import AllCore Distr List Real SmtMap FSet DInterval FinType.
 require (****) PKE_ROM PlugAndPray Hybrid FelTactic. 
 
+(******************************************************************)
+(* FIXME: Where should these live.                                *)
+
+lemma perm_eq_set ['a,'b,'c]  (m : ('a,'b) fmap) (l : 'a list) x y : 
+     perm_eq l (elems (fdom m)) => 
+       !(x \in l) => 
+        perm_eq (l ++ [x]) (elems (fdom (m.[x <- y]))).
+proof. 
+move => H H0.
+rewrite fdom_set setUE /= elems_fset1 /=. 
+have := oflistK (elems (fdom m) ++ [x]); rewrite undup_id;
+  1:  by smt(uniq_elems perm_eq_mem cat_uniq). 
+by smt(oflistK perm_eq_trans perm_eq_sym perm_cat2r).
+qed.
+
+lemma card_set ['a 'b] (m : ('a,'b)  fmap) x y n :
+  card (fdom m) = n => card (fdom (m.[x <- y])) <= n + 1. 
+proof. 
+move => cardn;rewrite /card /= in cardn.
+rewrite fdom_set setUE /= elems_fset1 /=.
+have -> : n + 1 = size (elems (fdom m) ++ [x]) by smt(size_cat).
+by apply fcard_oflist.
+qed.
+
+lemma card_set_bnd ['a, 'b] (m : ('a,'b) fmap) x y : 
+  card (fdom m.[x <- y]) <= card (fdom m) + 1
+  by rewrite  fdom_set fcardU fcard1 /= !cardE;smt(size_ge0).
+
+(* TODO : move this in SmtMap *)
+
+op find ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap) : ('a * 'b) option = 
+  let bindings = map (fun a => (a, oget m.[a])) (elems (fdom m)) in
+  let n = find (fun (p: _ * _) => f p.`1 p.`2) bindings in
+  if n < size bindings then Some (nth witness bindings n)
+  else None.
+
+lemma find_map ['a, 'b]:
+  forall (l : 'a list) (f : 'a -> 'b) (P : 'b -> bool),
+    find P (map f l) = find (fun (x : 'a) => P (f x)) l
+  by move => l f p; elim l;smt().
+
+lemma findP_Some ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap) a b: 
+  find f m = Some (a, b) =>
+  m.[a] = Some b /\ f a b by 
+   smt(mem_nth has_find find_ge0 List.mem_map fdomP mapP nth_find).
+
+lemma findP_None ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap): 
+  find f m = None =>
+  forall a b, m.[a] = Some b => !f a b
+ by smt(all_predC   has_find  List.mem_map fdomP mapP  allP).
+
+(******************************************************************)
+
+
 type plaintext.
 
 op [full lossless uniform]dplaintext : plaintext distr.
@@ -106,7 +160,6 @@ module (TT : PKEROM.Scheme) (H : POracle) = {
 
 (* Correctness proof *)
 
-
 module CO1(O : RO.RO) : POracle = {
   var pk : pkey
   var sk : PKE.skey
@@ -195,27 +248,6 @@ module B(A : PKEROM.CORR_ADV, O : RO.RO) : PKE.CORR_ADV = {
 
 section.
 
-lemma perm_eq_set ['a,'b,'c]  (m : ('a,'b) fmap) (l : 'a list) x y : 
-     perm_eq l (elems (fdom m)) => 
-       !(x \in l) => 
-        perm_eq (l ++ [x]) (elems (fdom (m.[x <- y]))).
-proof. 
-move => H H0.
-rewrite fdom_set setUE /= elems_fset1 /=. 
-have := oflistK (elems (fdom m) ++ [x]); rewrite undup_id;
-  1:  by smt(uniq_elems perm_eq_mem cat_uniq). 
-by smt(oflistK perm_eq_trans perm_eq_sym perm_cat2r).
-qed.
-
-lemma card_set ['a 'b] (m : ('a,'b)  fmap) x y n :
-  card (fdom m) = n => card (fdom (m.[x <- y])) <= n + 1. 
-proof. 
-move => cardn;rewrite /card /= in cardn.
-rewrite fdom_set setUE /= elems_fset1 /=.
-have -> : n + 1 = size (elems (fdom m) ++ [x]) by smt(size_cat).
-by apply fcard_oflist.
-qed.
-
 declare module A <: PKEROM.CORR_ADV {-RO.RO, -RO.FRO, -Correctness_Adv1, -B}.
 
 local lemma corr_generalize &m : 
@@ -275,10 +307,6 @@ local clone import PlugAndPray as PAPC with
 
 realize indices_not_nil by
  smt(uniq_size_uniq iota_uniq size_iota size_eq0 ge0_qHC).
-
-lemma card_set_bnd ['a, 'b] (m : ('a,'b) fmap) x y : 
-  card (fdom m.[x <- y]) <= card (fdom m) + 1
-  by rewrite  fdom_set fcardU fcard1 /= !cardE;smt(size_ge0).
 
 local lemma Corr_Adv_queryA :
  (forall (RO<:RO.RO{ -A, -CO1 }), 
@@ -702,29 +730,6 @@ module Gm = {
   var log : (plaintext, randomness) fmap
   var bad_corr : plaintext option
 }.
-
-(* TODO : move this in SmtMap *)
-
-op find ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap) : ('a * 'b) option = 
-  let bindings = map (fun a => (a, oget m.[a])) (elems (fdom m)) in
-  let n = find (fun (p: _ * _) => f p.`1 p.`2) bindings in
-  if n < size bindings then Some (nth witness bindings n)
-  else None.
-
-lemma find_map ['a, 'b]:
-  forall (l : 'a list) (f : 'a -> 'b) (P : 'b -> bool),
-    find P (map f l) = find (fun (x : 'a) => P (f x)) l
-  by move => l f p; elim l;smt().
-
-lemma findP_Some ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap) a b: 
-  find f m = Some (a, b) =>
-  m.[a] = Some b /\ f a b by 
-   smt(mem_nth has_find find_ge0 List.mem_map fdomP mapP nth_find).
-
-lemma findP_None ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap): 
-  find f m = None =>
-  forall a b, m.[a] = Some b => !f a b
- by smt(all_predC   has_find  List.mem_map fdomP mapP  allP).
 
 module O_AdvOW = {
   var pk : pkey

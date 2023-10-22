@@ -525,7 +525,7 @@ module type CCA_ORC = {
 }.
 
 module type CCA_ADV (H : POracle, O:CCA_ORC) = {
-  proc choose(pk:pkey)     : plaintext * plaintext {O.dec}
+  proc choose(pk:pkey)     : plaintext * plaintext 
   proc guess(c:ciphertext) : bool {O.dec}
 }.
 
