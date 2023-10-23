@@ -119,7 +119,7 @@ module (B_UC : PKEROM.CORR_ADV)  (HT : PKEROM.POracle)= {
 }.
 
 lemma correctness &m : 
-   Pr [ KEMROMx2.Correctness(KEMROMx2.RO_x2,UU).main() @ &m : res ] <=
+   Pr [ KEMROMx2.Correctness(RO_x2(RO1.RO,RO2.RO),UU).main() @ &m : res ] <=
      Pr [ PKEROM.Correctness_Adv(PKEROM.RO.RO,TT,B_UC).main() @ &m : res ].
 proof.
 byequiv => //.
@@ -235,7 +235,7 @@ module Gm1(H : Oracle_x2, A : CCA_ADV) = {
 }.
 
 module D(A : CCA_ADV, PRFO : PRF_Oracles) = {
-   proc distinguish = Gm1P(RO_x2,A,PRFO).main'
+   proc distinguish = Gm1P(RO_x2(RO1.RO,RO2.RO),A,PRFO).main'
 }.
 
 (********************************************************)
@@ -247,18 +247,12 @@ module D(A : CCA_ADV, PRFO : PRF_Oracles) = {
 (********************************************************)
 
 
-clone import KEMROMx2.RO1.FinEager as RO1E.
+clone import KEMROMx2.RO1.FinEager as RO1E
+   with op FinFrom.enum = FinT.enum
+   proof FinFrom.enum_spec by apply FinT.enum_spec
+   proof *.
 
-module RO_x2E : Oracle_x2 = {
-  proc init() : unit = {
-     RO1E.FunRO.init();
-     RO2.RO.init();
-  }
-  proc get1 = RO1E.FunRO.get
-  proc get2 = RO2.RO.get
-}.
-
-
+module RO_x2E = RO_x2(RO1E.FunRO,RO2.RO).
 (* Now we proceed with the HHK proof.                         
    We simulate decryption without using SK and just keeping
    track of what happens in H *)
@@ -370,17 +364,17 @@ module Gm2(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
 
 section.
 
-declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO2.RO, -PRF, -RF, -UU2, 
+declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
                     -RO1E.FunRO, -Gm2} .
 
 
 lemma Gm0_Gm1 &m : 
-   Pr[ KEMROMx2.CCA(RO_x2, UU, A).main() @ &m : res ] -
-     Pr [ Gm1(RO_x2,A).main() @ &m : res ] =
+   Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] -
+     Pr [ Gm1(RO_x2(RO1.RO,RO2.RO),A).main() @ &m : res ] =
        Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
          Pr [ J.IND(RF, D(A)).main() @ &m : res ].
 proof. 
-have -> : Pr[ KEMROMx2.CCA(RO_x2, UU, A).main() @ &m : res ] =
+have -> : Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] =
           Pr [ J.IND(PRF,D(A)).main() @ &m : res ].
 + byequiv => //.
   proc;inline {2} 2;inline {2} 1; inline {1} 3.
@@ -406,7 +400,7 @@ have -> : Pr[ KEMROMx2.CCA(RO_x2, UU, A).main() @ &m : res ] =
   + by inline *;conseq/>;sim.
   by inline *;auto => />.
 
-have -> : Pr[ Gm1(RO_x2,A).main() @ &m : res ] =
+have -> : Pr[ Gm1(RO_x2(RO1.RO,RO2.RO),A).main() @ &m : res ] =
           Pr [ J.IND(RF,D(A)).main() @ &m : res ].
 + byequiv => //.
   proc;inline {2} 2;inline {2} 1;inline {1} 2; inline {1} 1.
@@ -429,12 +423,29 @@ have -> : Pr[ Gm1(RO_x2,A).main() @ &m : res ] =
 done.
 qed.
 
+local module (DG1  : RO1E.FinRO_Distinguisher) (G : RO1.RO) = {
+    proc distinguish() = {
+        var b;
+        b <@ Gm1(RO_x2(G,RO2.RO),A).main();
+        return b;
+    }
+}.
 
 lemma uu_goal_eager &m: 
-    Pr[Gm1(RO_x2,A).main() @ &m : res]  =
+    Pr[Gm1(RO_x2(RO1.RO,RO2.RO),A).main() @ &m :res]  =
        Pr[Gm1(RO_x2E,A).main() @ &m : res].
-admitted. (* to do *)
-
+proof.  
+have -> : Pr[Gm1(RO_x2(RO1.RO,RO2.RO),A).main() @ &m : res] = 
+          Pr[RO1.MainD(DG1,RO1.RO).distinguish() @ &m : res]
+    by byequiv => //;proc;inline *;sim.
+have -> : Pr[Gm1(RO_x2E,A).main() @ &m : res] = 
+          Pr[RO1.MainD(DG1,RO1E.FunRO).distinguish() @ &m : idfun res]
+   by rewrite /idfun /=;byequiv => //;proc;inline *;sim;
+   auto => />; apply MUniFinFun.dfun_ll;smt(randd_ll).
+have := RO1E.pr_FinRO_FunRO_D _ DG1 &m () idfun; 1: by smt(randd_ll).
+have := RO1E.pr_RO_FinRO_D _ DG1 &m () idfun; 1: by smt(randd_ll).
+by smt().
+qed.
 
 (*
 REDUCTION TO CORRECTNESS SEEMS STRAIGHTFORWARD.
@@ -595,7 +606,7 @@ declare module A <: PKEROM.PCVA_ADV.
 lemma tt_conclusion_eager &m: 
   (*   (forall (H <: PKEROM.POracle{-A} ) (O <: PKEROM.VA_ORC{-A} ),
        islossless O.cvo => islossless O.pco => islossless H.get => islossless A(H, O).find) => *)
-    Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, A).main() @ &m : res]  =
+    Pr[PKEROM.OW_PCVA(PKEROM.RO.RO, TT, A).main() @ &m : res]  =
        Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, A).main() @ &m : res].
 admitted. (* to do *)
 

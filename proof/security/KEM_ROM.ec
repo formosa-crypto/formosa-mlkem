@@ -273,13 +273,13 @@ module type POracle_x2 = {
   include Oracle_x2 [get1,get2]
 }.
 
-module RO_x2 : Oracle_x2 = {
+module RO_x2(H1 : RO1.RO, H2 : RO2.RO): Oracle_x2 = {
   proc init() : unit = {
-     RO1.RO.init();
-     RO2.RO.init();
+     H1.init();
+     H2.init();
   }
-  proc get1 = RO1.RO.get
-  proc get2 = RO2.RO.get
+  proc get1 = H1.get
+  proc get2 = H2.get
 }.
 
 module type Scheme(O : POracle_x2) = {

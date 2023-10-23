@@ -789,7 +789,8 @@ module AdvOW_query (A:PCVA_ADV) = {
 
 section. 
 
-declare module A <: PCVA_ADV { -OW_PCVA, -RO.RO, -RO.FRO, -CountO, -Gm, -O_AdvOW, -Correctness_Adv1, -B}.
+declare module A <: PCVA_ADV { -OW_PCVA, -RO.RO, -RO.FRO, 
+               -CountO, -Gm, -O_AdvOW, -Correctness_Adv1, -B}.
 
 local module PCO(RO:RO.RO) = {
   import var OW_PCVA
