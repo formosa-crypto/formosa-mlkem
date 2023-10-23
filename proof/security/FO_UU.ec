@@ -291,13 +291,14 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
 
   module H1 : POracle_x2 = {
      var bad : bool
+     proc init() = {}
      proc get1 = RO_x2E.get1
      proc get2(m : plaintext) : key = {
        var k,cm;
+       cm <- enc (RO1E.FunRO.f m) CCA.sk.`1.`1 m;
+       bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else bad;
        k <$ dkey;
        if (m \notin RO2.RO.m) {
-         cm <- enc (RO1E.FunRO.f m) CCA.sk.`1.`1 m;
-         bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else bad;
          RO2.RO.m.[m] <- k;
        }
        return oget RO2.RO.m.[m];
@@ -305,15 +306,16 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
   }.
 
   module H2 : POracle_x2 = {
+     proc init() = {}
      proc get1 = RO_x2E.get1
      proc get2(m : plaintext) : key = {
        var k,cm;
+       cm <- enc (RO1E.FunRO.f m) CCA.sk.`1.`1 m;
+       (* INCONSISTENCY TO GM1 IF DEC (ENC M) <> SOME M
+          CAN BE REDUCED TO CORRECTNESS. *)
+       H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
        k <$ dkey;
        if (m \notin RO2.RO.m) {
-         cm <- enc (RO1E.FunRO.f m) CCA.sk.`1.`1 m;
-        (* INCONSISTENCY TO GM1 IF DEC (ENC M) <> SOME M
-           CAN BE REDUCED TO CORRECTNESS. *)
-         H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
          if (assoc UU2.lD cm <> None) {
              k <- oget (assoc UU2.lD cm);
          }
@@ -327,7 +329,7 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
   }.
 
 
-module Gm2(H : POracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
+module Gm2(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
 
   module O = {
     proc dec(c : ciphertext) : key option = {
@@ -359,7 +361,7 @@ module Gm2(H : POracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     b <$ {0,1};
     ck0 <@ UU2(H).enc(pk);
     CCA.cstar <- Some ck0.`1;
-    b' <@ CCA(RO_x2E, S, A).A.guess(pk, ck0.`1, if b then k1 else ck0.`2);
+    b' <@ CCA(H, S, A).A.guess(pk, ck0.`1, if b then k1 else ck0.`2);
     
     return b' = b;
   }
@@ -463,7 +465,14 @@ c) we sample a value that is also sampled on the left,
 
 *)
 
+op c2m(c : ciphertext, sk : PKEROM.skey) : plaintext option = dec sk.`2 c.
 
+op oc2m(c : ciphertext, sk : PKEROM.skey) : plaintext = oget (dec sk.`2 c).
+
+op m2c(m : plaintext, sk : PKEROM.skey, f : plaintext -> randomness) : ciphertext = enc (f m) sk.`1 m.
+
+op goodc(c : ciphertext, sk : PKEROM.skey, f : plaintext -> randomness) = 
+          c2m c sk <> None /\ m2c (oc2m c sk) sk f = c.
 
 local lemma G1_G2 &m :
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
@@ -485,58 +494,95 @@ have -> : Pr[Gm1(RO_x2E,A).main() @ &m : res]  =  Pr[ Gm2(H1,UU1(RF),A).main() @
 byequiv : H1.bad => //.
 proc.
 seq 8 8 : (
-    (={glob A,glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA,glob H1,k1,pk,b} /\ 
-    (* case a *)
+    ={glob A,glob RO1E.FunRO, glob CCA,glob H1,k1,pk,b}  /\  uniq (unzip1 UU2.lD{2}) /\
+    (* case a: all occuring badc accounted for *)
+    (forall c, c \in UU2.lD{2} => !goodc c.`1 CCA.sk{2}.`1 RO1E.FunRO.f{2} => 
+                                  c.`1 \in RF.m{1}) /\
+    (* case a: all PRF inputs are occurring badcs *)
     (forall c, c \in RF.m{1} => assoc UU2.lD{2} c = RF.m{1}.[c]) /\
-    (* case b *)
+    (* case b: all occurring goodc accounted for *)
+    (forall c, c \in UU2.lD{2} => goodc c.`1 CCA.sk{2}.`1 RO1E.FunRO.f{2} => 
+                                  oc2m c.`1 CCA.sk{2}.`1 \in RO2.RO.m{1}) /\
+    (* case b: all RO2 inputs with an occurrence  *)
     (forall m, m \in RO2.RO.m{2} => 
-        assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) <> None =>
-            assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) = RO2.RO.m{2}.[m]) /\
-    (* case c *)
-    (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} =>
-         assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) <> None =>
-            assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) = RO2.RO.m{1}.[m]) /\  
+        (assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) <> None /\
+            assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{2}.[m] /\ 
+                 RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m])) /\
+    (* case c: RO2 inconsistency for entries not added by dec oracle *)
+    (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} => 
+               assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{1}.[m]) /\  
                  RO2.RO.m{2} = empty /\ 
                  UU2.lD{2} = [] /\
-                 !H1.bad{2})); 1: by
+                 !H1.bad{2}); 1: by
       inline *; auto => />; smt(mem_empty).
-seq 2 2 : (
-   !H1.bad{2} =>
-  (={glob A,glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA,glob H1,k1,pk,b} /\ 
-    (* case a *)
+seq 2 2 : (={H1.bad,b} /\
+   (!H1.bad{2} => (
+    ={glob A,glob RO1E.FunRO, glob CCA,k1,pk,ck0} /\  uniq (unzip1 UU2.lD{2}) /\
+    (* case a: all occuring badc accounted for *)
+    (forall c, c \in UU2.lD{2} => !goodc c.`1 CCA.sk{2}.`1 RO1E.FunRO.f{2} => 
+                                  c.`1 \in RF.m{1}) /\
+    (* case a: all PRF inputs are occurring badcs *)
     (forall c, c \in RF.m{1} => assoc UU2.lD{2} c = RF.m{1}.[c]) /\
-    (* case b *)
+    (* case b: all occurring goodc accounted for *)
+    (forall c, c \in UU2.lD{2} => goodc c.`1 CCA.sk{2}.`1 RO1E.FunRO.f{2} => 
+                                  oc2m c.`1 CCA.sk{2}.`1 \in RO2.RO.m{1}) /\
+    (* case b: all RO2 inputs with an occurrence  *)
     (forall m, m \in RO2.RO.m{2} => 
-        assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) <> None =>
-            assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) = RO2.RO.m{2}.[m]) /\
-    (* case c *)
-    (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} =>
-         assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) <> None =>
-            assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) = RO2.RO.m{1}.[m]))
-  );1: by wp;conseq />;[smt() | inline *;auto => />;smt(mem_empty get_setE)].
+        (assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) <> None /\
+            assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{2}.[m] /\ 
+                 RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m])) /\
+    (* case c: RO2 inconsistency for entries not added by dec oracle *)
+    (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} => 
+               assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{1}.[m]))
+     ));1: by wp;conseq />;[smt() | inline *;auto => />;smt(mem_empty get_setE)].
 call(:H1.bad,
-     ={glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA,glob H1} /\ 
-    (* case a *)
+     ={glob RO1E.FunRO, glob CCA, H1.bad} /\ uniq (unzip1 UU2.lD{2}) /\
+    (* case a: all occuring badc accounted for *)
+    (forall c, c \in UU2.lD{2} => !goodc c.`1 CCA.sk{2}.`1 RO1E.FunRO.f{2} => 
+                                  c.`1 \in RF.m{1}) /\
+    (* case a: all PRF inputs are occurring badcs *)
     (forall c, c \in RF.m{1} => assoc UU2.lD{2} c = RF.m{1}.[c]) /\
-    (* case b *)
+    (* case b: all occurring goodc accounted for *)
+    (forall c, c \in UU2.lD{2} => goodc c.`1 CCA.sk{2}.`1 RO1E.FunRO.f{2} => 
+                                  oc2m c.`1 CCA.sk{2}.`1 \in RO2.RO.m{1}) /\
+    (* case b: all RO2 inputs with an occurrence  *)
     (forall m, m \in RO2.RO.m{2} => 
-        assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) <> None =>
-            assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) = RO2.RO.m{2}.[m]) /\
-    (* case c *)
-    (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} =>
-         assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) <> None =>
-            assoc UU2.lD{2} (enc (RO1E.FunRO.f{2} m) CCA.sk{2}.`1.`1 m) = RO2.RO.m{1}.[m]),true).
-+ by admit.
-+ by move => *;islossless.
+        (assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) <> None /\
+            assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{2}.[m] /\ 
+                 RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m])) /\
+    (* case c: RO2 inconsistency for entries not added by dec oracle *)
+    (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} => 
+               assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{1}.[m]),={H1.bad}).
++ proc;sp;if;1,3: by auto.
+  inline *;sp;if{2}.
+  (* repeat ciphertext *)
+  + if{1}; last  by auto => />;smt(assoc_none).
+    (* badc *) 
+    rcondf {1} 2; 1: by auto => />; smt(assoc_none).
+    by auto => />;smt(assoc_none).
+  (* new ciphertext *)
+  if{1}.
+  (* badc *) 
+  + rcondt {1} 2; 1: by auto => />; smt(assoc_none).
+    by auto => />;smt(get_setE assoc_none assoc_cons mapP).
+  (* good c *)
+  + rcondt {1} 5; 1: by auto => />; smt(assoc_none).
+    by auto => />;smt(get_setE assoc_none assoc_cons mapP).
++ move => *;proc;inline *;auto => />; 
+  sp;if{1};2:by auto => /> /#.
+  sp;if{1}; 2: by auto => />  *;smt(dkey_ll). 
+  by sp;if{1};auto => />  *;smt(dkey_ll). 
 + by move => *;proc;inline *;conseq />;islossless.
 + by proc;inline*;auto => />.
-+ by move => *;islossless.
-+ by move => *;proc;inline *;conseq />;islossless.
-+ by admit.
 + by move => *;proc;inline *;conseq />;islossless.
 + by move => *;proc;inline *;conseq />;islossless.
-+ admit. (* check this first *)
-
++ proc;inline *. 
+  swap {1} 3 -2; swap {2} 3 -2;seq 1 1 : (#pre /\ ={k}); 1: by auto.
+  sp 2 2;if{2};last by auto => /#.
+  by if{1}; auto => />;smt(get_setE assoc_none assoc_cons mapP).
++ by move => *;proc;inline *;auto => />;smt(dkey_ll). 
++ by move => *;proc;inline *;auto => />;smt(dkey_ll). 
++ by auto => /> /#. 
 by smt().
 qed.
   
