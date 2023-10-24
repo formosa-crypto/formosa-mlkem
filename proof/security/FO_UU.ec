@@ -406,7 +406,8 @@ module (BUUC(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
 }.
 
 module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
-
+  var m : plaintext option
+  var m0 : plaintext
   module O = {
     proc dec(c : ciphertext) : key option = {
       var k : key option;
@@ -422,10 +423,10 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
   proc main() : bool = {
     var pk : pkey;
     var k1, k2 : key;
-    var ck0 : ciphertext * key;
-    var cstar : ciphertext option;
     var b : bool;
     var b' : bool;
+    var r : randomness;
+    var cm : ciphertext;
     
     H1.bad <- false;
     H2.merr <- None;
@@ -438,9 +439,18 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     (pk, CCA.sk) <@ S(H).kg();
     k1 <$ dkey; k2 <$ dkey;
     b <$ {0,1};
-    ck0 <@ UU2(H).enc(pk);
-    CCA.cstar <- Some ck0.`1;
-    b' <@ CCA(H, S, A).A.guess(pk, ck0.`1, if b then k1 else k2);
+    m0 <$ dplaintext;
+    r <@ H.get1(m0);
+    cm <- enc r pk m0;
+    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m0 then true else H1.bad;
+    H2.merr <- if H2.merr = None && H1.bad then Some m0 else H2.merr;
+    H2.invert <- if CCA.cstar <> None && dec CCA.sk.`1.`2 (oget CCA.cstar) = Some m0 then true else H2.invert;
+    H2.mpre <- if H2.mpre = None && H2.invert then Some m0 else H2.mpre;
+    UU2.lD <- (cm,k2) :: UU2.lD;
+    RO2.RO.m.[m0] <- witness;
+    CCA.cstar <- Some cm;
+    m <- dec CCA.sk.`1.`2 (oget CCA.cstar);
+    b' <@ CCA(H, S, A).A.guess(pk, cm, if b then k1 else k2);
     
     return b' = b;
   }
@@ -450,7 +460,7 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
 section.
 
 declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
-                    -RO1E.FunRO, -Gm2, -H2} .
+                    -RO1E.FunRO, -Gm2, -H2, -Gm3} .
 
 
 lemma Gm0_Gm1 &m : 
@@ -708,7 +718,8 @@ qed.
 
 local lemma G2_G3 &m :
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
-  islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A(H0, O).guess) =>
+  islossless O.dec => islossless H0.get1 => 
+  islossless H0.get2 => islossless A(H0, O).guess) =>
 
   `| Pr[ Gm2(H2,UU2,A).main() @ &m : res] - 
        Pr[ Gm3(H2,UU2,A).main() @ &m : res] |
@@ -717,8 +728,56 @@ proof.
 move => A_ll.
 byequiv : H2.invert => //.
 proc.
-admitted.
+inline *.
+rcondt{1} 29; 1: by auto => />;smt(mem_empty).
+rcondf{1} 29; 1: by auto => />;smt().
+swap{1} 12 -11;swap {1} 28 -26.
+swap{2} [12..13] -11.
+seq 2 2 : (={glob A,k1} /\ k0{1} = k2{2}); 1: by auto.
+call(: H2.invert, CCA.cstar{2} <> None /\ Gm3.m{2} = dec CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) /\
+     ={CCA.sk,CCA.cstar, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
+      fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\
+     (forall m, Some m <> Gm3.m{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]), ={H2.invert}).
++ proc;sp;if;1:by auto.
+  inline {1} 1;inline {2} 1.
+  sp;if;by auto => />;smt(assoc_cons). 
+  by auto => />.
++ move => *; proc.
+  sp;if;2: by auto => />.
+  inline 1.
+  sp;if; 1: by auto => />.
+  by auto => />; smt(dkey_ll).
++ move => *; proc.
+  sp;if;2: by auto => />.
+  inline 1.
+  sp;if; 1: by auto => />.
+  by auto => />; smt(dkey_ll).
++ by proc;auto.
++ by move => *;proc;auto.
++ by move => *; proc;auto.
++ move => *; proc;auto => /> &1 &2 *;do split.
+  move => *; do split. 
+  move => *; do split. 
+  move => *; do split. 
+  smt(get_setE).    
+ move => *; do split; smt(@SmtMap). 
+ move => *; do split; smt(@SmtMap). 
+ move => *; do split; smt(@SmtMap). 
+ move => *; do split. 
+ move => *; do split. 
+smt(@SmtMap). 
+smt(@SmtMap). 
+move => *. split. smt(@SmtMap). smt(@SmtMap).
++ by move => *;proc;auto => />; smt(dkey_ll).
++ by move => *;proc;auto => />; smt(dkey_ll).
++ auto => />. 
+  move => *;do split.  smt(@SmtMap get_setE mem_empty).
 
+ smt(@SmtMap get_setE mem_empty).
+move => *; rewrite !get_setE /=.
+smt(@SmtMap get_setE mem_empty). 
+by smt().
+qed.
 
 end section.
 
