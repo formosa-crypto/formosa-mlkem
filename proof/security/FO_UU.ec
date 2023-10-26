@@ -303,18 +303,20 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
   module H2 : POracle_x2 = {
      var merr : plaintext option
      var invert : bool
+     var mtgt : plaintext
      var mpre : plaintext option
      
      proc init() = {}
      proc get1 = RO_x2E.get1
      proc get2(m : plaintext) : key = {
        var k,cm;
+       mtgt <- if CCA.cstar = None then m else mtgt; 
        cm <- enc (RO1E.FunRO.f m) CCA.sk.`1.`1 m;
        (* INCONSISTENCY TO GM1 IF DEC (ENC M) <> SOME M
           CAN BE REDUCED TO CORRECTNESS. *)
        H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
        H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
-       H2.invert <- if CCA.cstar <> None && dec CCA.sk.`1.`2 (oget CCA.cstar) = Some m 
+       H2.invert <- if CCA.cstar <> None &&  m = mtgt 
                     then true else H2.invert;
        H2.mpre <- if H2.mpre = None && H2.invert then Some m else H2.mpre;
        k <$ dkey;
@@ -325,9 +327,9 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
          else {
              UU2.lD <- (cm,k) :: UU2.lD;
          }
-         RO2.RO.m <- if H1.bad then RO2.RO.m else RO2.RO.m.[m <- k];
+         RO2.RO.m <- RO2.RO.m.[m <- k];
        }
-       return if H1.bad then witness else oget RO2.RO.m.[m];
+       return oget (RO2.RO.m.[m]);
      }
   }.
 
@@ -407,7 +409,6 @@ module (BUUC(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
 }.
 
 module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
-  var m : plaintext
   module O = {
     proc dec(c : ciphertext) : key option = {
       var k : key option;
@@ -439,20 +440,55 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     (pk, CCA.sk) <@ S(H).kg();
     k1 <$ dkey; k2 <$ dkey;
     b <$ {0,1};
-    m <$ dplaintext;
-    r <@ H.get1(m);
-    cm <- enc r pk m;
-    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
-    H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
-    H2.invert <- if CCA.cstar <> None && dec CCA.sk.`1.`2 (oget CCA.cstar) = Some m 
-                 then true else H2.invert;
-    H2.mpre <- if H2.mpre = None && H2.invert then Some m else H2.mpre;
+    H2.mtgt <$ dplaintext;
+    r <@ H.get1(H2.mtgt);
+    cm <- enc r pk H2.mtgt;
+    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some H2.mtgt then true else H1.bad;
+    H2.merr <- if H2.merr = None && H1.bad then Some H2.mtgt else H2.merr;
     UU2.lD <- (cm,k2) :: UU2.lD;
-    RO2.RO.m <- if !H1.bad then RO2.RO.m.[m<-witness] else RO2.RO.m;
+    RO2.RO.m.[H2.mtgt] <- witness;
     CCA.cstar <- Some cm;
-    b' <@ CCA(H, S, A).A.guess(pk, cm, if b then k1 else if H1.bad then witness else k2);
+    b' <@ CCA(H, S, A).A.guess(pk, cm, if b then k1 else k2);
     return b' = b;
   }
+}.
+
+module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA_ORC) = {
+
+   module H2B = {
+      include H2 [-get1]
+      proc get1= H.get
+   }
+
+   proc find(pk : pkey, c : ciphertext) : plaintext = {
+    var k1, k2 : key;
+    var b : bool;
+    var b' : bool;
+    var r : randomness;
+    var cm : ciphertext;
+    
+    H1.bad <- false;
+    H2.merr <- None;
+    H2.invert <- false;
+    H2.mpre <- None;
+    RF.init();
+    RO_x2E.init();
+    UU2.lD <- [];
+    CCA.cstar <- None;
+    CCA.sk <- witness;
+    k1 <$ dkey; k2 <$ dkey;
+    b <$ {0,1};
+    H2.mtgt <$ dplaintext;
+    r <@ H2B.get1(H2.mtgt);
+    cm <- enc r pk H2.mtgt;
+    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some H2.mtgt then true else H1.bad;
+    H2.merr <- if H2.merr = None && H1.bad then Some H2.mtgt else H2.merr;
+    UU2.lD <- (cm,k2) :: UU2.lD;
+    RO2.RO.m.[H2.mtgt] <- witness;
+    CCA.cstar <- Some cm;
+    b' <@ CCA(H2B, UU2, A).A.guess(pk, cm, if b then k1 else k2);
+    return (oget H2.mpre);  
+   } 
 }.
 
 
@@ -682,8 +718,8 @@ wp;call(:H1.bad,
 + by move => *;proc;inline *;conseq />;islossless.
 + by move => *;proc;inline *;conseq />;islossless.
 + proc;inline *. 
-  swap {1} 3 -2; swap {2} 6 -5;seq 1 1 : (#pre /\ ={k}); 1: by auto.
-  sp 2 5;if{2};last by auto => /#.
+  swap {1} 3 -2; swap {2} 7 -6;seq 1 1 : (#pre /\ ={k}); 1: by auto.
+  sp 2 6;if{2};last by auto => /#.
   by if{1}; auto => />;smt(get_setE assoc_none assoc_cons mapP).
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
@@ -696,11 +732,11 @@ lemma bound_bad &m :
 byequiv => //.
 proc;inline*;wp.
 conseq(: _ ==> (H2.merr{2} <> None <=> H1.bad{1}) /\
-               (H1.bad{1} => (H2.merr{2} <> None /\
-               dec sk{2}.`2 (enc (FunRO.f{2} (oget H2.merr{2})) pk{2} (oget H2.merr{2})) <> H2.merr{2} )));1 :smt().
+               (H1.bad{1} => 
+               dec sk{2}.`2 (enc (FunRO.f{2} (oget H2.merr{2})) pk{2} (oget H2.merr{2})) <> H2.merr{2} ));1 :smt().
 call(: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} /\ (H2.merr{2} <> None <=> H1.bad{1}) /\
-               (H1.bad{1} => (H2.merr{2} <> None /\
-               dec CCA.sk{2}.`1.`2 (enc (FunRO.f{2} (oget H2.merr{2})) CCA.sk.`1.`1{2} (oget H2.merr{2})) <> H2.merr{2} ))).
+               (H1.bad{1} => 
+               dec CCA.sk{2}.`1.`2 (enc (FunRO.f{2} (oget H2.merr{2})) CCA.sk.`1.`1{2} (oget H2.merr{2})) <> H2.merr{2} )).
 + proc;inline *; conseq />.
   sp;if;1,3: by auto => /> /#.
   sp;if;1,3: by auto => /> /#.
@@ -710,8 +746,9 @@ call(: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob
 + proc;inline *; conseq />.
   by auto => /> /#. 
 swap {1} 4 -3.
-by auto => /> /#.
+by auto => /> /#. 
 qed.
+
 
 (* If bad2 occurs, message should be ignored so as not to disturb
    the proof. Invert should not depend on bad2. *)
@@ -728,42 +765,28 @@ move => A_ll.
 byequiv : H2.invert  => //.
 proc.
 inline *.
-rcondt{1} 29; 1: by auto => />;smt(mem_empty).
-rcondf{1} 29; 1: by auto => />;smt().
-swap{1} 12 -11;swap {1} 28 -26.
+rcondt{1} 30; 1: by auto => />;smt(mem_empty).
+rcondf{1} 30; 1: by auto => />;smt().
+swap{1} 12 -11;swap {1} 29 -27.
 swap{2} [12..13] -11.
 seq 2 2 : (={glob A,k1} /\ k0{1} = k2{2}); 1: by auto.
-seq 31 23 : (={glob A,k1,pk,b,cm} /\ !H2.invert{2} /\ ck0{1}.`1 = cm {2} /\
-      CCA.cstar{2} = Some(m2c Gm3.m{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\
-      ={CCA.sk,CCA.cstar, H2.invert, H1.bad, H2.merr, 
-      H2.invert, RO1E.FunRO.f, UU2.lD} /\ (H1.bad{2} => ={RO2.RO.m} /\
-                                           ck0{1}.`2 = witness) /\
+seq 32 21 : (={glob A,k1,pk,b,cm} /\ !H2.invert{2} /\ ck0{1}.`1 = cm {2} /\
+      CCA.cstar{2} = Some(m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\
+      ={CCA.sk,CCA.cstar, H2.invert, H2.mtgt, H1.bad, H2.merr, 
+      H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
       fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\ k0{1} = k2{2} /\  
-     (!H1.bad{2} => ck0{1} = (cm{2},k2{2}) /\  Gm3.m{2} \in RO2.RO.m{2} /\
-         (forall m, m <> Gm3.m{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
-                   Some Gm3.m{2} = c2m (oget CCA.cstar{2}) CCA.sk{2}.`1));
+       ck0{1} = (cm{2},k2{2}) /\  H2.mtgt{2} \in RO2.RO.m{2} /\
+       (forall m, m <> H2.mtgt{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
+     (!H1.bad{2} => 
+                   Some H2.mtgt{2} = c2m (oget CCA.cstar{2}) CCA.sk{2}.`1));
   1: by auto => />; smt(mem_empty get_setE fdom_set).
  
-case(H1.bad{2}).
-+ conseq (: _ ==> ={b,b',H2.invert}); 1: by auto => /> /#.
-  call(: H1.bad{2} /\
-      CCA.cstar{2} = Some(m2c Gm3.m{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\
-      ={CCA.sk,CCA.cstar, H2.invert, H1.bad, H2.merr, 
-      H2.invert, RO1E.FunRO.f, UU2.lD, RO2.RO.m}).
-+ proc;inline*.
-  sp;if;1,3: by auto => />.
-  by sp;if;auto => />.
-+ by proc;inline*;auto => />.
-+ by proc;inline*;auto => />.
-by auto => /> /#.
-
 wp;call(: H2.invert, 
-              CCA.cstar{2} = Some(m2c Gm3.m{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\ 
-     ={CCA.sk,CCA.cstar, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
+              CCA.cstar{2} = Some(m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\ 
+     ={CCA.sk,CCA.cstar, H2.mtgt, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
       fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\
-       (Gm3.m{2} \in RO2.RO.m{2} /\
-         ((forall m, m <> Gm3.m{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
-                   Some Gm3.m{2} = c2m (oget CCA.cstar{2}) CCA.sk{2}.`1)),
+       H2.mtgt{2} \in RO2.RO.m{2} /\
+         (forall m, m <> H2.mtgt{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]),
           ={H2.invert}); last by auto => />;smt(get_setE mem_empty). 
 + proc;sp;if;1:by auto.
   inline {1} 1;inline {2} 1.
@@ -782,11 +805,34 @@ wp;call(: H2.invert,
 + by proc;auto.
 + by move => *;proc;auto.
 + by move => *; proc;auto.
-+ by proc;auto => />;smt(fdomP fdom_set get_setE).
++ by proc;auto => />;smt(fdomP fdom_set get_setE). 
 + by move => *;proc;auto => />; smt(dkey_ll). 
 + by move => *;proc;auto => />; smt(dkey_ll). 
 by smt().
 qed.
+
+lemma bound_invert &m :
+  Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ] <=
+    Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
+byequiv => //.
+proc;inline*;wp.
+conseq(: _ ==> (H2.mpre{2} <> None <=> H2.invert{1}) /\
+               (H2.invert{1} => (enc (FunRO.f{2} (oget H2.mpre{2})) pk{2} (oget H2.mpre{2})) = PKEROM.OW_PCVA.cc{2})). move => /> *;do split. move => *.
+call(: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} /\ (H2.merr{2} <> None <=> H1.bad{1}) /\
+               (H1.bad{1} => (H2.merr{2} <> None /\
+               dec CCA.sk{2}.`1.`2 (enc (FunRO.f{2} (oget H2.merr{2})) CCA.sk.`1.`1{2} (oget H2.merr{2})) <> H2.merr{2} ))).
++ proc;inline *; conseq />.
+  sp;if;1,3: by auto => /> /#.
+  sp;if;1,3: by auto => /> /#.
+  by auto => /> /#.
++ proc;inline *; conseq />.
+  by auto => /> /#.
++ proc;inline *; conseq />.
+  by auto => /> /#. 
+swap {1} 4 -3.
+by auto => /> /#. 
+qed.
+
 
 end section.
 
