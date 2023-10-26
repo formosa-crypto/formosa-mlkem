@@ -316,7 +316,8 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
           CAN BE REDUCED TO CORRECTNESS. *)
        H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
        H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
-       H2.invert <- if CCA.cstar <> None &&  m = mtgt 
+       H2.invert <- if CCA.cstar <> None &&  m = mtgt &&
+                       dec CCA.sk.`1.`2 (oget CCA.cstar) = Some mtgt
                     then true else H2.invert;
        H2.mpre <- if H2.mpre = None && H2.invert then Some m else H2.mpre;
        k <$ dkey;
@@ -771,7 +772,7 @@ local lemma G2_G3 &m :
      <= Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ].
 proof. 
 move => A_ll.
-byequiv : H2.invert  => //.
+byequiv : (H2.invert)  => //.
 proc.
 inline *.
 rcondt{1} 30; 1: by auto => />;smt(mem_empty).
@@ -786,14 +787,29 @@ seq 32 21 : (={glob A,k1,pk,b,cm} /\ !H2.invert{2} /\ ck0{1}.`1 = cm {2} /\
       fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\ k0{1} = k2{2} /\  
        ck0{1} = (cm{2},k2{2}) /\  H2.mtgt{2} \in RO2.RO.m{2} /\
        (forall m, m <> H2.mtgt{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
-     (!H1.bad{2} => 
-                   Some H2.mtgt{2} = c2m (oget CCA.cstar{2}) CCA.sk{2}.`1));
+     (!H1.bad{2} <=> 
+                   Some H2.mtgt{2} = dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2})));
   1: by auto => />; smt(mem_empty get_setE fdom_set).
+
+case (H1.bad{1}). print c2m.
+rnd;wp;call(:H1.bad,false,CCA.cstar{2} <> None /\ 
+                Some H2.mtgt{2} <> dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) /\ 
+                ={H1.bad,H2.invert,H2.mtgt, CCA.sk,CCA.cstar} /\ H1.bad{1}).
++ by auto => />. 
++ by move => *;auto => />;islossless.
++ by move => *;auto => />;islossless.
++ by move => *;auto => />. 
++ by move => *;auto => />;islossless.
++ by move => *;auto => />;islossless.
++ by move => *;auto => />;islossless.
++ by move => *;proc;auto => />;smt(dkey_ll).
++ by move => *;proc;auto => />;smt(dkey_ll).
+by auto => /> /#.  
 
 rnd;wp;call(: H2.invert, 
               CCA.cstar{2} = Some(m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\ 
      ={CCA.sk,CCA.cstar, H2.mtgt, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
-      fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\
+      fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\ Some H2.mtgt{2} = dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) /\
        H2.mtgt{2} \in RO2.RO.m{2} /\
          (forall m, m <> H2.mtgt{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]),
           ={H2.invert}); last by auto => />;smt(get_setE mem_empty). 
