@@ -472,34 +472,27 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
       proc get1= H.get
    }
 
-   proc find(pk : pkey, c : ciphertext) : plaintext = {
+   proc find(pk : pkey, cm : ciphertext) : plaintext = {
     var k1, k2 : key;
     var b : bool;
     var b' : bool;
     var r : randomness;
-    var cm : ciphertext;
     
     H1.bad <- false;
     H2.merr <- None;
     H2.invert <- false;
     H2.mpre <- None;
     RF.init();
-    RO_x2E.init();
+    RO2.RO.init();
     UU2.lD <- [];
     CCA.cstar <- None;
-    CCA.sk <- witness;
+    CCA.sk <- ((pk,witness),witness);
     k1 <$ dkey; k2 <$ dkey;
     b <$ {0,1};
-    H2.mtgt <$ dplaintext;
-    r <@ H2B.get1(H2.mtgt);
-    cm <- enc r pk H2.mtgt;
-    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some H2.mtgt then true else H1.bad;
-    H2.merr <- if H2.merr = None && H1.bad then Some H2.mtgt else H2.merr;
     UU2.lD <- (cm,k2) :: UU2.lD;
-    RO2.RO.m.[H2.mtgt] <- witness;
     CCA.cstar <- Some cm;
     b' <@ CCA(H2B, UU2, A).A.guess(pk, cm, if b then k1 else k2);
-    return (oget H2.mpre);  
+    return head witness (filter (fun m0 => enc (RO1E.FunRO.f m0) pk m0 = cm) (elems (fdom RO2.RO.m))); 
    } 
 }.
 
@@ -507,7 +500,7 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
 section.
 
 declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
-                    -RO1E.FunRO, -Gm2, -H2, -Gm3} .
+                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA} .
 
 
 lemma Gm0_Gm1 &m : 
@@ -841,21 +834,45 @@ lemma bound_invert &m :
     Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
 byequiv => //.
 proc;inline*;wp.
-conseq(: _ ==> (H2.mpre{2} <> None <=> H2.invert{1}) /\
-               (H2.invert{1} => (enc (FunRO.f{2} (oget H2.mpre{2})) pk{2} (oget H2.mpre{2})) = PKEROM.OW_PCVA.cc{2})). move => /> *;do split. move => *.
-call(: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} /\ (H2.merr{2} <> None <=> H1.bad{1}) /\
-               (H1.bad{1} => (H2.merr{2} <> None /\
-               dec CCA.sk{2}.`1.`2 (enc (FunRO.f{2} (oget H2.merr{2})) CCA.sk.`1.`1{2} (oget H2.merr{2})) <> H2.merr{2} ))).
-+ proc;inline *; conseq />.
-  sp;if;1,3: by auto => /> /#.
-  sp;if;1,3: by auto => /> /#.
-  by auto => /> /#.
-+ proc;inline *; conseq />.
-  by auto => /> /#.
-+ proc;inline *; conseq />.
-  by auto => /> /#. 
-swap {1} 4 -3.
-by auto => /> /#. 
+
+wp;rnd{1};wp. 
+
+conseq(: H2.mtgt{1} = m{2} /\ pk{2} = pk1{2} /\
+         enc (RO1E.FunRO.f{2} m{2}) PKEROM.OW_PCVA.sk{2}.`1 m{2} = PKEROM.OW_PCVA.cc{2} /\ 
+  (H2.invert{1} =>
+     (dec PKEROM.OW_PCVA.sk{2}.`2 PKEROM.OW_PCVA.cc{2} = Some m{2} /\
+     m{2} = (head witness (filter (fun (m0 : plaintext) => enc (RO1E.FunRO.f{2} m0) pk{2} m0 = cm{2})
+                (elems (fdom RO2.RO.m{2}))))))); 1: by auto => /> /#. 
+
+swap {1} 15 -4.
+seq 23 26 : (={glob A,cm,k1,k2,RO1E.FunRO.f, pk,UU2.lD,CCA.cstar,RF.m, H2.mpre} /\ 
+        H2.mtgt{1} = m{2} /\ pk{1} = pk1{2} /\
+        b{1} = b0{2} /\ H2.mpre{1} = None /\ !H2.invert{1} /\
+        CCA.sk{1}.`1.`1 = CCA.sk{2}.`1.`1 /\ CCA.sk{1}.`1.`1 = PKEROM.OW_PCVA.sk{2}.`1 /\ 
+        (forall m0, m0<>m{2} => RO2.RO.m{1}.[m0] = RO2.RO.m{2}.[m0]) /\ 
+         CCA.cstar{1} <> None /\ PKEROM.OW_PCVA.cc{2} = oget CCA.cstar{1} /\  
+         enc (FunRO.f{2} m{2}) PKEROM.OW_PCVA.sk{2}.`1 m{2} = oget CCA.cstar{1}); 
+   1: by auto => />;smt(get_setE).
+
+call(: ={RO1E.FunRO.f, UU2.lD,CCA.cstar,RF.m,H2.mpre} /\ 
+      (forall m0, m0<>H2.mtgt{1} => RO2.RO.m{1}.[m0] = RO2.RO.m{2}.[m0]) /\ 
+       CCA.sk{1}.`1.`1 = CCA.sk{2}.`1.`1 /\ CCA.sk{1}.`1.`1 = PKEROM.OW_PCVA.sk{2}.`1 /\ 
+       PKEROM.OW_PCVA.cc{2} = oget CCA.cstar{1} /\ CCA.cstar{1} <> None /\
+       (H2.mpre{1} <> None <=> H2.invert{1}) /\ 
+       enc (RO1E.FunRO.f{1} H2.mtgt{1}) PKEROM.OW_PCVA.sk{2}.`1 H2.mtgt{1} = 
+        PKEROM.OW_PCVA.cc{2} /\
+       (H2.invert{1} => 
+         (dec PKEROM.OW_PCVA.sk{2}.`2 PKEROM.OW_PCVA.cc{2}= Some H2.mtgt{1} /\ 
+        H2.mpre{1} <> None /\
+               oget H2.mpre{1} = H2.mtgt{1}))); last by auto. 
++ proc;inline *;sp;if;1,3:by auto => />.
+  sp;if;by auto => />.
++ by proc;inline *;auto.
++ proc. auto => /> &1 &2 *; split. 
+  move => *;do split. 
+  move => *;do split. 
+  move => *;do split. 
+  move => *;do split. smt(@SmtMap). smt(@SmtMap).
 qed.
 
 
