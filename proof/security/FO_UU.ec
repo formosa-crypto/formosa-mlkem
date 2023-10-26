@@ -314,7 +314,8 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
           CAN BE REDUCED TO CORRECTNESS. *)
        H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
        H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
-       H2.invert <- if CCA.cstar <> None && dec CCA.sk.`1.`2 (oget CCA.cstar) = Some m then true else H2.invert;
+       H2.invert <- if CCA.cstar <> None && dec CCA.sk.`1.`2 (oget CCA.cstar) = Some m 
+                    then true else H2.invert;
        H2.mpre <- if H2.mpre = None && H2.invert then Some m else H2.mpre;
        k <$ dkey;
        if (m \notin RO2.RO.m) {
@@ -324,9 +325,9 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
          else {
              UU2.lD <- (cm,k) :: UU2.lD;
          }
-         RO2.RO.m.[m] <- k;
+         RO2.RO.m <- if H1.bad then RO2.RO.m else RO2.RO.m.[m <- k];
        }
-       return oget RO2.RO.m.[m];
+       return if H1.bad then witness else oget RO2.RO.m.[m];
      }
   }.
 
@@ -406,8 +407,7 @@ module (BUUC(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
 }.
 
 module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
-  var m : plaintext option
-  var m0 : plaintext
+  var m : plaintext
   module O = {
     proc dec(c : ciphertext) : key option = {
       var k : key option;
@@ -439,19 +439,18 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     (pk, CCA.sk) <@ S(H).kg();
     k1 <$ dkey; k2 <$ dkey;
     b <$ {0,1};
-    m0 <$ dplaintext;
-    r <@ H.get1(m0);
-    cm <- enc r pk m0;
-    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m0 then true else H1.bad;
-    H2.merr <- if H2.merr = None && H1.bad then Some m0 else H2.merr;
-    H2.invert <- if CCA.cstar <> None && dec CCA.sk.`1.`2 (oget CCA.cstar) = Some m0 then true else H2.invert;
-    H2.mpre <- if H2.mpre = None && H2.invert then Some m0 else H2.mpre;
+    m <$ dplaintext;
+    r <@ H.get1(m);
+    cm <- enc r pk m;
+    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
+    H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
+    H2.invert <- if CCA.cstar <> None && dec CCA.sk.`1.`2 (oget CCA.cstar) = Some m 
+                 then true else H2.invert;
+    H2.mpre <- if H2.mpre = None && H2.invert then Some m else H2.mpre;
     UU2.lD <- (cm,k2) :: UU2.lD;
-    RO2.RO.m.[m0] <- witness;
+    RO2.RO.m <- if !H1.bad then RO2.RO.m.[m<-witness] else RO2.RO.m;
     CCA.cstar <- Some cm;
-    m <- dec CCA.sk.`1.`2 (oget CCA.cstar);
-    b' <@ CCA(H, S, A).A.guess(pk, cm, if b then k1 else k2);
-    
+    b' <@ CCA(H, S, A).A.guess(pk, cm, if b then k1 else if H1.bad then witness else k2);
     return b' = b;
   }
 }.
@@ -584,7 +583,7 @@ local lemma G1_G2 &m :
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A(H0, O).guess) =>
 
-  `| Pr[Gm1(RO_x2E,A).main() @ &m : res] -  Pr[ Gm2(H2,UU2,A).main() @ &m : res] |
+  `| Pr[Gm1(RO_x2E,A).main() @ &m : res] -  Pr[ Gm2(H2,UU2,A).main() @ &m : res /\ !H1.bad] |
      <= Pr[ Gm2(H2,UU2,A).main() @ &m : H1.bad ].
 proof. 
 move => A_ll.
@@ -641,7 +640,7 @@ seq 2 2 : (={H1.bad,b} /\
     (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} => 
                assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{1}.[m]))
      ));1: by wp;conseq />;[smt() | inline *;auto => />;smt(mem_empty get_setE)].
-call(:H1.bad,
+wp;call(:H1.bad,
      ={glob RO1E.FunRO, glob CCA, H1.bad} /\ uniq (unzip1 UU2.lD{2}) /\
     (* case a: all occuring badc accounted for *)
     (forall c, c \in UU2.lD{2} => !goodc c.`1 CCA.sk{2}.`1 RO1E.FunRO.f{2} => 
@@ -689,7 +688,6 @@ call(:H1.bad,
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by auto => /> /#. 
-by smt().
 qed.
 
 lemma bound_bad &m :
@@ -711,11 +709,12 @@ call(: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob
   by auto => /> /#.
 + proc;inline *; conseq />.
   by auto => /> /#. 
-
-  swap {1} 4 -3.
-  by auto => /> /#.
+swap {1} 4 -3.
+by auto => /> /#.
 qed.
 
+(* If bad2 occurs, message should be ignored so as not to disturb
+   the proof. Invert should not depend on bad2. *)
 local lemma G2_G3 &m :
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => islossless H0.get1 => 
@@ -726,7 +725,7 @@ local lemma G2_G3 &m :
      <= Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ].
 proof. 
 move => A_ll.
-byequiv : H2.invert => //.
+byequiv : H2.invert  => //.
 proc.
 inline *.
 rcondt{1} 29; 1: by auto => />;smt(mem_empty).
@@ -734,10 +733,38 @@ rcondf{1} 29; 1: by auto => />;smt().
 swap{1} 12 -11;swap {1} 28 -26.
 swap{2} [12..13] -11.
 seq 2 2 : (={glob A,k1} /\ k0{1} = k2{2}); 1: by auto.
-call(: H2.invert, CCA.cstar{2} <> None /\ Gm3.m{2} = dec CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) /\
+seq 31 23 : (={glob A,k1,pk,b,cm} /\ !H2.invert{2} /\ ck0{1}.`1 = cm {2} /\
+      CCA.cstar{2} = Some(m2c Gm3.m{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\
+      ={CCA.sk,CCA.cstar, H2.invert, H1.bad, H2.merr, 
+      H2.invert, RO1E.FunRO.f, UU2.lD} /\ (H1.bad{2} => ={RO2.RO.m} /\
+                                           ck0{1}.`2 = witness) /\
+      fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\ k0{1} = k2{2} /\  
+     (!H1.bad{2} => ck0{1} = (cm{2},k2{2}) /\  Gm3.m{2} \in RO2.RO.m{2} /\
+         (forall m, m <> Gm3.m{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
+                   Some Gm3.m{2} = c2m (oget CCA.cstar{2}) CCA.sk{2}.`1));
+  1: by auto => />; smt(mem_empty get_setE fdom_set).
+ 
+case(H1.bad{2}).
++ conseq (: _ ==> ={b,b',H2.invert}); 1: by auto => /> /#.
+  call(: H1.bad{2} /\
+      CCA.cstar{2} = Some(m2c Gm3.m{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\
+      ={CCA.sk,CCA.cstar, H2.invert, H1.bad, H2.merr, 
+      H2.invert, RO1E.FunRO.f, UU2.lD, RO2.RO.m}).
++ proc;inline*.
+  sp;if;1,3: by auto => />.
+  by sp;if;auto => />.
++ by proc;inline*;auto => />.
++ by proc;inline*;auto => />.
+by auto => /> /#.
+
+wp;call(: H2.invert, 
+              CCA.cstar{2} = Some(m2c Gm3.m{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\ 
      ={CCA.sk,CCA.cstar, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
       fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\
-     (forall m, Some m <> Gm3.m{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]), ={H2.invert}).
+       (Gm3.m{2} \in RO2.RO.m{2} /\
+         ((forall m, m <> Gm3.m{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
+                   Some Gm3.m{2} = c2m (oget CCA.cstar{2}) CCA.sk{2}.`1)),
+          ={H2.invert}); last by auto => />;smt(get_setE mem_empty). 
 + proc;sp;if;1:by auto.
   inline {1} 1;inline {2} 1.
   sp;if;by auto => />;smt(assoc_cons). 
@@ -755,27 +782,9 @@ call(: H2.invert, CCA.cstar{2} <> None /\ Gm3.m{2} = dec CCA.sk{2}.`1.`2 (oget C
 + by proc;auto.
 + by move => *;proc;auto.
 + by move => *; proc;auto.
-+ move => *; proc;auto => /> &1 &2 *;do split.
-  move => *; do split. 
-  move => *; do split. 
-  move => *; do split. 
-  smt(get_setE).    
- move => *; do split; smt(@SmtMap). 
- move => *; do split; smt(@SmtMap). 
- move => *; do split; smt(@SmtMap). 
- move => *; do split. 
- move => *; do split. 
-smt(@SmtMap). 
-smt(@SmtMap). 
-move => *. split. smt(@SmtMap). smt(@SmtMap).
-+ by move => *;proc;auto => />; smt(dkey_ll).
-+ by move => *;proc;auto => />; smt(dkey_ll).
-+ auto => />. 
-  move => *;do split.  smt(@SmtMap get_setE mem_empty).
-
- smt(@SmtMap get_setE mem_empty).
-move => *; rewrite !get_setE /=.
-smt(@SmtMap get_setE mem_empty). 
++ by proc;auto => />;smt(fdomP fdom_set get_setE).
++ by move => *;proc;auto => />; smt(dkey_ll). 
++ by move => *;proc;auto => />; smt(dkey_ll). 
 by smt().
 qed.
 
