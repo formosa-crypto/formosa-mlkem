@@ -348,7 +348,7 @@ module Gm2(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     }
   }
 
-  proc main() : bool = {
+  proc main2() : bool = {
     var pk : pkey;
     var k1 : key;
     var ck0 : ciphertext * key;
@@ -373,6 +373,14 @@ module Gm2(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     
     return b' = b;
   }
+
+  proc main() : bool = {
+    var win,nobias;
+    win <@ main2(); 
+    nobias <$ {0,1};
+    return (if H1.bad then nobias else win);
+  }
+
 }.
 
 module (BUUC(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
@@ -428,6 +436,7 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     var b' : bool;
     var r : randomness;
     var cm : ciphertext;
+    var nobias : bool;
     
     H1.bad <- false;
     H2.merr <- None;
@@ -449,8 +458,10 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     RO2.RO.m.[H2.mtgt] <- witness;
     CCA.cstar <- Some cm;
     b' <@ CCA(H, S, A).A.guess(pk, cm, if b then k1 else k2);
-    return b' = b;
+    nobias <$ {0,1};
+    return (if H1.bad then nobias else (b' = b));
   }
+
 }.
 
 module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA_ORC) = {
@@ -623,7 +634,7 @@ local lemma G1_G2 &m :
      <= Pr[ Gm2(H2,UU2,A).main() @ &m : H1.bad ].
 proof. 
 move => A_ll.
-have -> : Pr[Gm1(RO_x2E,A).main() @ &m : res]  =  Pr[ Gm2(H1,UU1(RF),A).main() @ &m : res].
+have -> : Pr[Gm1(RO_x2E,A).main() @ &m : res]  =  Pr[ Gm2(H1,UU1(RF),A).main2() @ &m : res].
 + byequiv => //.
   proc; inline {1} 2; sp; wp.
   call(_: ={glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA}).
@@ -633,7 +644,7 @@ have -> : Pr[Gm1(RO_x2E,A).main() @ &m : res]  =  Pr[ Gm2(H1,UU1(RF),A).main() @
   by conseq />;[by smt() | by sim].
 
 byequiv : H1.bad => //.
-proc.
+proc;rnd{2};inline {2} 1;wp.
 seq 11 11 : (
     ={glob A,glob RO1E.FunRO, glob CCA,glob H1,k1,pk,b}  /\  uniq (unzip1 UU2.lD{2}) /\
     (* case a: all occuring badc accounted for *)
@@ -730,7 +741,7 @@ lemma bound_bad &m :
   Pr[ Gm2(H2,UU2,A).main() @ &m : H1.bad ] <=
     Pr[PKEROM.Correctness_Adv(RO1E.FunRO, TT, BUUC(A)).main() @ &m : res].
 byequiv => //.
-proc;inline*;wp.
+proc;inline*;wp;rnd{1};wp.
 conseq(: _ ==> (H2.merr{2} <> None <=> H1.bad{1}) /\
                (H1.bad{1} => 
                dec sk{2}.`2 (enc (FunRO.f{2} (oget H2.merr{2})) pk{2} (oget H2.merr{2})) <> H2.merr{2} ));1 :smt().
@@ -750,8 +761,6 @@ by auto => /> /#.
 qed.
 
 
-(* If bad2 occurs, message should be ignored so as not to disturb
-   the proof. Invert should not depend on bad2. *)
 local lemma G2_G3 &m :
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => islossless H0.get1 => 
@@ -780,8 +789,8 @@ seq 32 21 : (={glob A,k1,pk,b,cm} /\ !H2.invert{2} /\ ck0{1}.`1 = cm {2} /\
      (!H1.bad{2} => 
                    Some H2.mtgt{2} = c2m (oget CCA.cstar{2}) CCA.sk{2}.`1));
   1: by auto => />; smt(mem_empty get_setE fdom_set).
- 
-wp;call(: H2.invert, 
+
+rnd;wp;call(: H2.invert, 
               CCA.cstar{2} = Some(m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\ 
      ={CCA.sk,CCA.cstar, H2.mtgt, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
       fdom RO2.RO.m{1} = fdom RO2.RO.m{2} /\
