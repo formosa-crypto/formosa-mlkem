@@ -371,7 +371,6 @@ module Gm2(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     ck0 <@ UU2(H).enc(pk);
     CCA.cstar <- Some ck0.`1;
     b' <@ CCA(H, S, A).A.guess(pk, ck0.`1, if b then k1 else ck0.`2);
-    
     return b' = b;
   }
 
@@ -832,7 +831,13 @@ rnd;wp;call(: H2.invert,
 by smt().
 qed.
 
-print PKEROM.OW_PCVA.
+(* WE NEED ANOTHER CORRECTNESS HOP TO SAY THAT 
+   `| Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res] -
+      Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res /\ !bad] <= 
+      Correctness bound 
+
+*)
+
 
 lemma bound_invert &m :
   Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ] <=
