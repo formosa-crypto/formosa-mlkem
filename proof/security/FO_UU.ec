@@ -315,7 +315,7 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
           CAN BE REDUCED TO CORRECTNESS. *)
        H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
        H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
-       H2.invert <- if CCA.cstar <> None &&  m = mtgt &&
+       H2.invert <- if CCA.cstar <> None &&  m = mtgt && !H1.bad &&
                        dec CCA.sk.`1.`2 (oget CCA.cstar) = Some mtgt
                     then true else H2.invert;
        k <$ dkey;
@@ -324,11 +324,11 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
              k <- oget (assoc UU2.lD cm);
          }
          else {
-             UU2.lD <- (cm,k) :: UU2.lD;
+             UU2.lD <- if H1.bad then UU2.lD else (cm,k) :: UU2.lD;
          }
-         RO2.RO.m <- RO2.RO.m.[m <- k];
+         RO2.RO.m <- if H1.bad then RO2.RO.m else RO2.RO.m.[m <- k];
        }
-       return oget (RO2.RO.m.[m]);
+       return if H1.bad then witness else oget (RO2.RO.m.[m]);
      }
   }.
 
@@ -445,11 +445,12 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     k1 <$ dkey; k2 <$ dkey;
     b <$ {0,1};
     H2.mtgt <$ dplaintext;
+    (* Open up Enc to puncture the key *)
     r <@ H.get1(H2.mtgt);
     cm <- enc r pk H2.mtgt;
     H1.bad <- if dec CCA.sk.`1.`2 cm <> Some H2.mtgt then true else H1.bad;
     H2.merr <- if H2.merr = None && H1.bad then Some H2.mtgt else H2.merr;
-    UU2.lD <- (cm,k2) :: UU2.lD;
+    UU2.lD <- (cm,witness) :: UU2.lD;
     CCA.cstar <- Some cm;
     b' <@ CCA(H, S, A).A.guess(pk, cm, if b then k1 else k2);
     nobias <$ {0,1};
@@ -458,14 +459,37 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
 
 }.
 
-print FO_TT.find.
+  (* The observable behaviour does not depend on sk *)
+  module H2BOW : POracle_x2 = {
+     proc init() = {}
+     proc get1 = RO_x2E.get1
+     proc get2(m : plaintext) : key = {
+       var k,cm;
+       cm <- enc (RO1E.FunRO.f m) CCA.sk.`1.`1 m;
+       H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
+       H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
+       H2.invert <- if CCA.cstar <> None &&  m = H2.mtgt && !H1.bad &&
+                       dec CCA.sk.`1.`2 (oget CCA.cstar) = Some H2.mtgt
+                    then true else H2.invert;
+       k <$ dkey;
+       if (m \notin RO2.RO.m) {
+         if (assoc UU2.lD cm <> None) {
+             k <- oget (assoc UU2.lD cm);
+         }
+         else {
+             UU2.lD <- (cm,k) :: UU2.lD;
+         }
+         RO2.RO.m <- RO2.RO.m.[m <- k];
+       }
+       return  oget (RO2.RO.m.[m]);
+     }
+  }.
 
-search fset1.
 
 module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA_ORC) = {
 
    module H2B = {
-      include H2 [-get1]
+      include H2BOW [-get1]
       proc get1= H.get
    }
 
@@ -485,7 +509,7 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
     CCA.sk <- ((pk,witness),witness);
     k1 <$ dkey; k2 <$ dkey;
     b <$ {0,1};
-    UU2.lD <- (cm,k2) :: UU2.lD;
+    UU2.lD <- (cm,witness) :: UU2.lD;
     CCA.cstar <- Some cm;
     b' <@ CCA(H2B, UU2, A).A.guess(pk, cm, if b then k1 else k2);
     return head witness (elems (filter (fun m0 => enc (FunRO.f m0) pk m0 = 
@@ -621,7 +645,7 @@ local lemma G1_G2 &m :
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A(H0, O).guess) =>
 
-  `| Pr[Gm1(RO_x2E,A).main() @ &m : res] -  Pr[ Gm2(H2,UU2,A).main() @ &m : res /\ !H1.bad] |
+  `| Pr[Gm1(RO_x2E,A).main() @ &m : res] -  Pr[ Gm2(H2,UU2,A).main() @ &m : res ] |
      <= Pr[ Gm2(H2,UU2,A).main() @ &m : H1.bad ].
 proof. 
 move => A_ll.
@@ -726,6 +750,7 @@ wp;call(:H1.bad,
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by auto => /> /#. 
+by smt().
 qed.
 
 lemma bound_bad &m :
@@ -751,14 +776,13 @@ swap {1} 4 -3.
 by auto => /> /#. 
 qed.
 
-
 local lemma G2_G3 &m :
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => islossless H0.get1 => 
   islossless H0.get2 => islossless A(H0, O).guess) =>
 
-  `| Pr[ Gm2(H2,UU2,A).main() @ &m : res] - 
-       Pr[ Gm3(H2,UU2,A).main() @ &m : res] |
+  `| Pr[ Gm2(H2,UU2,A).main() @ &m : res ] - 
+       Pr[ Gm3(H2,UU2,A).main() @ &m : res  ] |
      <= Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ].
 proof. 
 move => A_ll.
@@ -773,15 +797,18 @@ seq 2 2 : (={glob A,k1} /\ k0{1} = k2{2}); 1: by auto.
 seq 30 19 : (={glob A,k1,pk,b,cm} /\ !H2.invert{2} /\ ck0{1}.`1 = cm {2} /\
       CCA.cstar{2} = Some(m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\
       ={CCA.sk,CCA.cstar, H2.invert, H2.mtgt, H1.bad, H2.merr, 
-      H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
-      fdom RO2.RO.m{2} `|` fset1 H2.mtgt{1} = fdom RO2.RO.m{1} /\ k0{1} = k2{2} /\  
-       ck0{1} = (cm{2},k2{2}) /\  
+      H2.invert, RO1E.FunRO.f} /\ 
+      (forall c, Some c <> CCA.cstar{2} => assoc UU2.lD{1} c = assoc UU2.lD{2} c) /\
+       k0{1} = k2{2} /\  
+       fdom RO2.RO.m{2} = fset0 /\
        (forall m, m <> H2.mtgt{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
      (!H1.bad{2} <=> 
-             Some H2.mtgt{2} = dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2})));
-  1: by auto => />; smt(mem_empty get_setE fdom_set).
+             Some H2.mtgt{2} = dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2})) /\
+     (fdom RO2.RO.m{1} = if H1.bad{2} then fset0 else  fset1 H2.mtgt{1}) /\
+     (ck0{1} = (cm{2},if H1.bad{2} then witness else k2{2})));
+    1: by auto => />; smt(mem_empty get_setE fdom_set @SmtMap @FSet @List).
 
-case (H1.bad{1}). print c2m.
+case (H1.bad{1}).
 rnd;wp;call(:H1.bad,false,CCA.cstar{2} <> None /\ 
                 Some H2.mtgt{2} <> dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) /\ 
                 ={H1.bad,H2.invert,H2.mtgt, CCA.sk,CCA.cstar} /\ H1.bad{1}).
@@ -798,11 +825,13 @@ by auto => /> /#.
 
 rnd;wp;call(: H2.invert, 
       CCA.cstar{2} = Some(m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2})  /\ 
-     ={CCA.sk,CCA.cstar, H2.mtgt, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f, UU2.lD} /\ 
+     ={CCA.sk,CCA.cstar, H2.mtgt, H2.invert, H1.bad, H2.merr, H2.invert, RO1E.FunRO.f} /\
+      (forall c, Some c <> CCA.cstar{2} => assoc UU2.lD{1} c = assoc UU2.lD{2} c) /\ 
       fdom RO2.RO.m{2} `|` fset1 H2.mtgt{1} = fdom RO2.RO.m{1} 
       /\ Some H2.mtgt{2} = dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) /\
          (forall m, m <> H2.mtgt{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]),
-          ={H2.invert}); last by auto => />;smt(get_setE mem_empty). 
+          ={H2.invert}); last first. 
+auto => />.   by auto => />;smt(get_setE mem_empty @FSet @List). 
 + proc;sp;if;1:by auto.
   inline {1} 1;inline {2} 1.
   sp;if;by auto => />;smt(assoc_cons). 
@@ -824,120 +853,172 @@ rnd;wp;call(: H2.invert,
     move => *. do split.
     move => *. do split. 
     move => *. do split. 
-    move => *. do split. smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
-    move => *. do split. smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
     move => *. do split. 
     move => *. do split. 
- smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
-    move => *. do split. 
- smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
+
+smt(@SmtMap @FSet fdomP fdom_set get_setE @List).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
+    move => *. do split.  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). smt(@SmtMap @FSet fdomP fdom_set get_setE). 
+    move => *. do split. smt(@SmtMap @FSet fdomP fdom_set get_setE @List). smt(@SmtMap @FSet fdomP fdom_set get_setE @List). 
+ smt(@SmtMap @FSet fdomP fdom_set get_setE).  
+    move => *. do split.
+    move => *. do split.
+ smt(@SmtMap @FSet fdomP fdom_set get_setE). 
+    move => *. do split.
+ smt(@SmtMap @FSet fdomP fdom_set get_setE). 
+ smt(@List @SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
     move => *. 
  smt(@SmtMap @FSet fdomP fdom_set get_setE).
     move => *. do split.
-    move => *. do split. 
-    move => *. do split. 
-     smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
-    move => *. do split. smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
- smt(@SmtMap @FSet fdomP fdom_set get_setE).  
+    move => *. smt(@SmtMap @FSet fdomP fdom_set get_setE).
     move => *. 
- smt(@SmtMap @FSet fdomP fdom_set get_setE). 
-
+     smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE). 
+    move => *. do split. smt(@SmtMap @FSet fdomP fdom_set get_setE).  smt(@SmtMap @FSet fdomP fdom_set get_setE).
 + by move => *;proc;auto => />; smt(dkey_ll). 
 + by move => *;proc;auto => />; smt(dkey_ll). 
 by smt().
 qed.
 
-(* WE NEED ANOTHER CORRECTNESS HOP TO SAY THAT 
-   `| Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res] -
-      Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res /\ !bad] <= 
-      Correctness bound 
-
-*)
-
-
 lemma bound_invert &m :
-  Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert /\ !H1.bad] <=
+  (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
+  islossless O.dec => 
+  islossless H0.get1 => 
+  islossless H0.get2 => islossless A(H0, O).guess) =>
+
+  Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ] <=
     Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
+proof. 
+move => A_ll.
+have -> :  Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res] =
+   Pr[ Gm3(H2BOW,UU2,A).main() @ &m : CCA.cstar <> None /\
+     (dec CCA.sk.`1.`2 (oget CCA.cstar)) <> None /\
+     oget CCA.cstar =
+     enc (RO1E.FunRO.f (oget (dec CCA.sk.`1.`2 (oget CCA.cstar)))) CCA.sk.`1.`1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) /\
+     oget (dec CCA.sk.`1.`2 (oget CCA.cstar)) = 
+       head witness (elems (filter (fun m0 => enc (FunRO.f m0) CCA.sk.`1.`1 m0 = 
+                 oget CCA.cstar) (fdom RO2.RO.m))) ].
++ byequiv => //.
+  proc;inline *;wp;rnd{2}.
+  conseq (: _ ==> ={FunRO.f, CCA.cstar, RO2.RO.m} /\ 
+     CCA.cstar{2} <> None /\
+     pk1{1} = CCA.sk{2}.`1.`1 /\
+     PKEROM.OW_PCVA.sk{1} = CCA.sk{2}.`1 /\ 
+     PKEROM.OW_PCVA.cc{1} = oget CCA.cstar{1}); 
+      1: by auto => /> /#. 
+
+   call(_: ={RO2.RO.m, RO1E.FunRO.f, CCA.cstar, UU2.lD} /\
+     CCA.sk{1}.`1.`1 = CCA.sk{2}.`1.`1 /\
+     PKEROM.OW_PCVA.sk{1} = CCA.sk{2}.`1 /\ 
+     PKEROM.OW_PCVA.cc{1} = oget CCA.cstar{1}); last by
+    swap {2} 14 -4; (* H2.mtgt *) auto => />/#.
+   + by proc; inline *; auto => />; sim.  
+   + by proc; inline *; auto => />; sim.  
+   by proc; inline *; auto => /> /#. 
+
 byequiv => //.
 proc;inline*;wp.
+wp;rnd;wp.
 
-wp;rnd{1};wp.
-
-conseq(: H2.mtgt{1} = m{2} /\ pk{2} = pk1{2} /\
-         enc (RO1E.FunRO.f{2} m{2}) PKEROM.OW_PCVA.sk{2}.`1 m{2} = PKEROM.OW_PCVA.cc{2} /\ 
-  (!H1.bad{1} => dec PKEROM.OW_PCVA.sk{2}.`2 PKEROM.OW_PCVA.cc{2} = Some m{2}) /\
-  (!H1.bad{1} => H2.invert{1} =>
-     fset1 m{2} = filter (fun m0 => enc (FunRO.f{2} m0) pk{2} m0 = 
-                 oget CCA.cstar{2}) (fdom RO2.RO.m{2})));  
+conseq(: ={H2.mtgt,CCA.cstar, CCA.sk, RO1E.FunRO.f} /\ CCA.cstar{2} <> None /\
+         enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2} = oget CCA.cstar{2} /\ 
+  (H2.invert{1} =>
+     (dec CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) = Some H2.mtgt{2} /\
+     fset1 H2.mtgt{2} = filter (fun m0 => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1 m0 = 
+                 oget CCA.cstar{2}) (fdom RO2.RO.m{2}))));  
     1: by auto => />; smt(elems_fset1).
 
-swap {1} 14 -4. (* H2.mtgt *)
-
-
-seq 21 25 : (={glob A,cm,k1,k2,RO1E.FunRO.f, pk,UU2.lD,CCA.cstar,RF.m, RO2.RO.m} /\ 
-        H2.mtgt{1} = m{2} /\ 
-        pk{1} = pk1{2} /\ 
-        CCA.sk{1}.`1.`1 = pk{2} /\
-        CCA.sk{1}.`1.`1 = CCA.sk{2}.`1.`1 /\ 
-        CCA.sk{1}.`1    = PKEROM.OW_PCVA.sk{2} /\ 
-        CCA.cstar{1}    = Some cm{2} /\
+seq 21 21 : (={glob A,b,cm,k1,k2,RO1E.FunRO.f, pk,UU2.lD,CCA.sk,CCA.cstar,RF.m, RO2.RO.m, H2.mtgt,H2.invert} /\ 
         CCA.cstar{1} <> None /\ 
         (filter (fun m0 => enc (FunRO.f{2} m0) pk{2} m0 = 
                  oget CCA.cstar{2}) ( (fdom RO2.RO.m{2}))) = fset0 /\
-        PKEROM.OW_PCVA.cc{2} = oget CCA.cstar{1} /\  
-        enc (FunRO.f{2} m{2}) PKEROM.OW_PCVA.sk{2}.`1 m{2} = oget CCA.cstar{1} /\
-        b{1} = b0{2} /\ 
         !H2.invert{1} /\ 
         (!H1.bad{1} => Some H2.mtgt{1} =  (dec CCA.sk{1}.`1.`2 (oget CCA.cstar{1}))) /\
-        enc (FunRO.f{2} m{2}) PKEROM.OW_PCVA.sk{2}.`1 m{2} = oget CCA.cstar{1} ); 
-          1: by auto => />;smt(fdom0 filter0 get_setE). 
+        enc (FunRO.f{2} H2.mtgt{1}) CCA.sk{2}.`1.`1 H2.mtgt{2} = oget CCA.cstar{1} );
+ 1:  by auto => />;smt(fdom0 filter0 get_setE). 
 
-exists*m{2}; elim * => _m2.
-
-call(: ={RO1E.FunRO.f, UU2.lD,CCA.cstar,RF.m,RO2.RO.m} /\ 
-  H2.mtgt{1} = _m2 /\ 
-  CCA.sk{1}.`1.`1 = CCA.sk{2}.`1.`1 /\ 
-  CCA.sk{1}.`1    = PKEROM.OW_PCVA.sk{2} /\ 
-  CCA.cstar{1} <> None /\ 
-  PKEROM.OW_PCVA.cc{2} = oget CCA.cstar{1} /\  
-  enc (FunRO.f{2} _m2) PKEROM.OW_PCVA.sk{2}.`1 _m2 = oget CCA.cstar{1} /\
-  (!H1.bad{1} => Some H2.mtgt{1} =  dec PKEROM.OW_PCVA.sk{2}.`2 PKEROM.OW_PCVA.cc{2}) /\
-  (!H1.bad{1} => H2.invert{1} =>
-     fset1 _m2 = ((filter (fun m0 => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1  m0 = 
-                 oget CCA.cstar{2}) (fdom RO2.RO.m{2})))) /\
-  (!H1.bad{1} => !H2.invert{1} =>
-     fset0 = ((filter (fun m0 => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1  m0 = 
-                 oget CCA.cstar{2}) (fdom RO2.RO.m{2}))))
-     ); last by auto  => /> &1 &2  -> *;smt(). 
-
+call(:H1.bad,
+     ={RO1E.FunRO.f, UU2.lD,CCA.sk,CCA.cstar,RF.m, RO2.RO.m, H2.mtgt} /\ 
+     CCA.cstar{2} <> None /\
+         enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2} = oget CCA.cstar{2} /\ 
+  (H2.invert{1} =>
+     (dec CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) = Some H2.mtgt{2} /\
+     fset1 H2.mtgt{2} = filter (fun m0 => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1 m0 = 
+                 oget CCA.cstar{2}) (fdom RO2.RO.m{2}))),
+      ={H2.mtgt,CCA.cstar, CCA.sk, RO1E.FunRO.f} /\ CCA.cstar{2} <> None /\
+         enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2} = oget CCA.cstar{2} /\ 
+  (H2.invert{1} =>
+     (dec CCA.sk{2}.`1.`2 (oget CCA.cstar{2}) = Some H2.mtgt{2} /\
+     fset1 H2.mtgt{2} = filter (fun m0 => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1 m0 = 
+                 oget CCA.cstar{2}) (fdom RO2.RO.m{2})))).
 + proc;inline *;sp;if;1,3:by auto => />.
   sp;if;by auto => />.
-+ by proc;inline *;auto.
-+ proc.
-  case (m{2} = _m2); last by 
-    auto => /> &1 &2 *; split; smt(get_setE fdom_set filterU filter1 fsetU0).
-  auto => /> *. split.
-  + move => *; split.
-  + move => *; split; first
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
++ by move => *;proc;inline *;auto => />;islossless.
++ by move => *;proc;inline *;auto => />;islossless.
++ by move => *;proc;inline *;auto => />.
++ by move => *;proc;inline *;auto => />.
++ by move => *;proc;inline *;auto => />.
++ proc;inline *. auto => />. 
+  move => *. do split. 
+  move => *. do split. 
+  move => *. do split. 
+  move => *. do split. 
+ smt(@SmtMap @List @FSet).
+  admit. 
+  move => *. do split. 
+  admit. 
+  admit. 
+   move => *. do split. 
+smt(@SmtMap @List @FSet).
+admit. 
+  move => *. do split. 
+  move => *. do split. 
+  move => *.  
+ smt(@SmtMap @List @FSet).
+  admit. 
+  move => *. do split. 
+  admit. 
+  admit. 
+   move => *.  
+admit. 
+  move => *. do split. 
+ smt(@SmtMap @List @FSet).
+   admit. 
+   move => *. do split. 
+admit. 
+  move => *. do split. 
+ smt(@SmtMap @List @FSet).
+ admit. 
+admitted. 
 
-move => *; do split. 
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
-  
-move => *; do split. 
-  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).
+ (*  by smt(get_setE fdom_set filterU filter1 fset0U fsetUid).*)
 
-move => *. smt(@SmtMap @FSet). 
-move => *. smt(@SmtMap @FSet). 
+lemma G3adv &m :
+   Pr[Gm3(H2, UU2, A).main() @ &m : res] = 1%r/2%r. 
+byphoare => //.  
+admitted. 
+
+lemma conclusion &m : 
+  (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
+  islossless O.dec => 
+  islossless H0.get1 => 
+  islossless H0.get2 => islossless A(H0, O).guess) =>
+
+  `| Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] - 1%r/2%r | <=
+     `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
+         Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
+        Pr[PKEROM.Correctness_Adv(RO1E.FunRO, TT, BUUC(A)).main() @ &m : res] +
+         Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
+  move => A_ll. 
+  have hop1 := (Gm0_Gm1 &m).
+  have  := G1_G2 &m A_ll.
+  have <- := uu_goal_eager &m.  
+  move => hop2.
+  have bd := bound_bad &m.
+  have inv := bound_invert &m A_ll. 
+  have  :=  G2_G3 &m A_ll. 
+  have nowin := G3adv &m.  
+  by smt().
 qed.
-
-
+   
 end section.
 
 section.
