@@ -871,19 +871,20 @@ lemma bound_invert &m :
   islossless H0.get1 => 
   islossless H0.get2 => islossless A(H0, O).guess) =>
 
-  Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ] <=
-    Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
+  `| Pr[ Gm3(H2,UU2,A).main() @ &m : H2.invert ] -
+    Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res] |
+     <= Pr[ Gm3(H2,UU2,A).main() @ &m : H1.bad ]. 
 proof. 
 move => A_ll.
-have  :  
+have <- :  
    Pr[ Gm3(H2BOW,UU2,A).main() @ &m : CCA.cstar <> None /\
      (dec CCA.sk.`1.`2 (oget CCA.cstar)) <> None /\
      oget CCA.cstar =
      enc (RO1E.FunRO.f (oget (dec CCA.sk.`1.`2 (oget CCA.cstar)))) 
              CCA.sk.`1.`1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) /\
-     fset1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) = 
-         (filter (fun m0 => enc (FunRO.f m0) CCA.sk.`1.`1 m0 = 
-             oget CCA.cstar) (fdom RO2.RO.m)) ] <= 
+      (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) = 
+        head witness (elems (filter (fun m0 => enc (FunRO.f m0) CCA.sk.`1.`1 m0 = 
+             oget CCA.cstar) (fdom RO2.RO.m))) ] = 
         Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
 + byequiv => //.
   proc;inline *;wp;rnd{1}.
@@ -903,25 +904,6 @@ have  :
    + by proc; inline *; auto => />; sim.  
    by proc; inline *; auto => /> /#. 
 
-have : Pr[Gm3(H2, UU2, A).main() @ &m : H2.invert] <= 
-  Pr[ Gm3(H2BOW,UU2,A).main() @ &m : CCA.cstar <> None /\
-     (dec CCA.sk.`1.`2 (oget CCA.cstar)) <> None /\
-     oget CCA.cstar =
-     enc (RO1E.FunRO.f (oget (dec CCA.sk.`1.`2 (oget CCA.cstar)))) 
-             CCA.sk.`1.`1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) /\
-     fset1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) = 
-         (filter (fun m0 => enc (FunRO.f m0) CCA.sk.`1.`1 m0 = 
-             oget CCA.cstar) (fdom RO2.RO.m)) ]; last first.
-pose a := Pr[Gm3(H2, UU2, A).main() @ &m : H2.invert].
-pose b:= Pr[ Gm3(H2BOW,UU2,A).main() @ &m : CCA.cstar <> None /\
-     (dec CCA.sk.`1.`2 (oget CCA.cstar)) <> None /\
-     oget CCA.cstar =
-     enc (RO1E.FunRO.f (oget (dec CCA.sk.`1.`2 (oget CCA.cstar)))) 
-             CCA.sk.`1.`1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) /\
-     fset1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) = 
-         (filter (fun m0 => enc (FunRO.f m0) CCA.sk.`1.`1 m0 = 
-             oget CCA.cstar) (fdom RO2.RO.m)) ].
-   by smt().
 admit. 
 qed.
 
@@ -950,7 +932,7 @@ lemma conclusion &m :
   have inv := bound_invert &m A_ll. 
   have  :=  G2_G3 &m A_ll. 
   have nowin := G3adv &m.  
-  by smt().
+  by admit.
 qed.
    
 end section.
