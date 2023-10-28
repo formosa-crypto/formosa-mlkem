@@ -377,7 +377,33 @@ qed.
    are aligned and we should have the same output!
 *)
 
-local lemma corr_movetob_lro &m :
+module DC0(O : RO.RO) = {
+   proc distinguish = PKE.Correctness_Adv(BasePKE, B(A,O)).main
+}.
+
+
+local lemma corr_movetopke_ro &m : 
+    Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.RO)).main() @ &m : res ] =
+    Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res ].
+byequiv (_: ={glob B} /\ ={glob A} /\ ={glob RO.RO} ==> ={res}) => //.
+proc*. 
+by call (RO.FullEager.RO_LRO_D DC0 _); 1: by rewrite (randd_ll).
+qed.
+
+module DC1(O : RO.RO) = {
+   proc distinguish = B(A,O).main
+}.
+
+
+local lemma corr_movetob_ro &m : 
+    Pr[B(A, RO.RO).main() @ &m : res ] =
+    Pr[B(A, RO.LRO).main() @ &m : res ].
+byequiv (_: ={glob B} /\ ={glob A} /\ ={glob RO.RO} ==> ={res}) => //.
+proc*. 
+by call (RO.FullEager.RO_LRO_D DC1 _); 1: by rewrite (randd_ll).
+qed.
+
+local lemma corr_movetob &m :
  qHC < FinT.card - 1 =>  
 
  (forall (RO<:RO.RO{ -A, -CO1 }), 
@@ -388,10 +414,11 @@ local lemma corr_movetob_lro &m :
   (forall (H0 <: POracle { -A }),
      islossless H0.get => islossless A(H0).find) =>
 
-  Pr[B(A,RO.LRO).main() @ &m : res ] =
-    Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res ].
+  Pr[B(A,RO.RO).main() @ &m : res ] =
+    Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.RO)).main() @ &m : res ].
 proof. 
 move => qHC_small A_count A_ll.
+rewrite corr_movetob_ro corr_movetopke_ro.
 byequiv => //.
 proc. 
 call(_: true); 1: by sim.
@@ -438,18 +465,6 @@ seq 1 1 : (={RO.RO.m,glob CO1} /\ pk{2} = CO1.pk{1} /\ sk{2} = CO1.sk{1} /\ m0{1
 by inline *;wp;call (Corr_Adv_queryA);auto => />.
 qed.
 
-module DC(O : RO.RO) = {
-   proc distinguish = B(A,O).main
-}.
-
-
-local lemma corr_movetob_ro &m : 
-    Pr[B(A, RO.RO).main() @ &m : res ] =
-    Pr[B(A, RO.LRO).main() @ &m : res ].
-byequiv (_: ={glob B} /\ ={glob A} /\ ={glob RO.RO} ==> ={res}) => //.
-proc*. 
-by call (RO.FullEager.RO_LRO_D DC _); 1: by rewrite (randd_ll).
-qed.
 
 lemma CO1_lossless : islossless CO1(RO.RO).get by islossless.
 
@@ -647,7 +662,7 @@ lemma corr_pnp &m :
   Pr[Correctness_Adv1(RO.RO,A).main() @ &m : 
       (has (fun m => Some m <> dec CO1.sk (enc (oget RO.RO.m.[m]) CO1.pk m))
        CO1.queried)] <=
-    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res]. 
+    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.RO)).main() @ &m : res]. 
   move => qHC_small A_count A_ll.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (ge0_qHC).
 print glob Correctness_Adv1(RO.RO,A).
@@ -663,7 +678,7 @@ print glob Correctness_Adv1(RO.RO,A).
   rewrite undup_id 1:iota_uniq size_iota /=.
   have -> : max 0 (qHC + 1) = qHC + 1 by smt (ge0_qHC).
   rewrite /phi /psi /= => ->.
-  rewrite -(corr_movetob_lro &m qHC_small A_count A_ll) -corr_movetob_ro.
+  rewrite -(corr_movetob &m qHC_small A_count A_ll).
   by apply corr_preparepnp.
 qed.
 
@@ -679,7 +694,7 @@ lemma correctness &m :
      islossless H0.get => islossless A(H0).find) =>
 
   Pr [ Correctness_Adv(RO.RO,TT,A).main() @ &m : res ] <=
-    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.LRO)).main() @ &m : res]. 
+    (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.RO)).main() @ &m : res]. 
 proof.
 move => qHC_small A_count A_ll.
 have := corr_pnp &m qHC_small A_count A_ll.
@@ -1884,7 +1899,7 @@ lemma conclusion &m gamma_spread :
   Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
       Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
     + (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res]
-    + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.LRO)).main() @ &m : res ]
+    + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.RO)).main() @ &m : res ]
     + qV%r * gamma_spread.
 proof.
   move => counts qhc_small gs_ok A_count A_ll.
