@@ -925,17 +925,16 @@ seq 21 21 : (
            dec CCA.sk{2}.`1.`2 (enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2}) = Some H2.mtgt{2}));
    1: by auto.
 wp;call(:H1.bad,
-     ={H1.bad, H2.merr, H2.invert, RF.m, FunRO.f,
-    RO2.RO.m,UU2.lD,CCA.cstar,CCA.sk,H2.mtgt} /\
+     ={H1.bad, H2.merr, H2.invert, RF.m, FunRO.f,RO2.RO.m,UU2.lD,CCA.cstar,CCA.sk,H2.mtgt} /\
    CCA.cstar{2} <> None /\
    CCA.cstar{2} = Some (m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2}) /\
   dec CCA.sk{2}.`1.`2 (enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2}) = Some H2.mtgt{2} /\
-     card
-        (filter
+     (card (filter
            (fun (m0 : plaintext) => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1 m0 = m2c H2.mtgt{2} CCA.sk{2}.`1 FunRO.f{2})
-           (fdom RO2.RO.m{1})) <= 1 /\
+               (fdom RO2.RO.m{1})) <> 0 => fset1 H2.mtgt{2} = filter (fun (m0 : plaintext) => enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = oget CCA.cstar{1})
+             (fdom RO2.RO.m{1})) /\
    (H2.invert{2} <=> fset1 H2.mtgt{2} = 
-    filter (fun (m0 : plaintext) => enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = oget CCA.cstar{1})
+         filter (fun (m0 : plaintext) => enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = oget CCA.cstar{1})
              (fdom RO2.RO.m{1})),
      ={H1.bad}).
 + proc;sp;if;1,3: by auto.
@@ -945,7 +944,7 @@ wp;call(:H1.bad,
 + by proc;inline*;auto => />.
 + by move => *;proc;inline *;conseq />;islossless.
 + by move => *;proc;inline *;conseq />;islossless.
-+ admit. (* need some more info in the invariant *)
++ admit.
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 auto => /> &2 *; do split; 1:smt(fdom0  filter0 fcard_eq0 fcard1).
