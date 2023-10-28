@@ -577,11 +577,11 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
        H2.invert <- if CCA.cstar <> None &&  m = H2.mtgt && 
                        dec CCA.sk.`1.`2 (oget CCA.cstar) = Some H2.mtgt
                     then true else H2.invert;
-       crd <- crd + b2i (Some cm = CCA.cstar);
-       mf <- if Some cm = CCA.cstar then Some m else mf;
-
        k <$ dkey;
        if (m \notin RO2.RO.m) {
+         crd <- crd + b2i (Some cm = CCA.cstar);
+         mf <- if Some cm = CCA.cstar then Some m else mf;
+
          if (assoc UU2.lD cm <> None) {
              k <- oget (assoc UU2.lD cm);
          }
@@ -1147,7 +1147,8 @@ have -> :
    Pr[Gm3(H2(RO1E.FunRO), UU2, A).main_0adv() @ &m : res].
 + byequiv => //.  
   proc. swap {1} [9..10] 8. swap {1} 9 7. swap {2} 9 7. swap {2} 19 -3.
-  rnd;call(_: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} ).
+  rnd;call(_: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, 
+                glob RO2.RO, glob CCA, glob UU2} ).
   + proc;inline *; conseq />.
     sp;if;1,3: by auto => /> /#.
     sp;if;1,3: by auto => /> /#.
@@ -1155,7 +1156,8 @@ have -> :
   + by proc;auto => /> /#.
   + by proc;inline *;auto => /> /#.
   inline *. 
-  seq 19 19 : (={b, pk, cm, glob A, glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} ); 1: by auto => />.  
+  seq 19 19 : (={b, pk, cm, glob A, glob H1, glob H2, glob RF, 
+                 glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} ); 1: by auto => />.  
   conseq (_: k{2} = if b{2} then k1{1} else k2{1}); 1: smt().
   case (b{1}); last by auto => />.
   by swap {1} 1 1; auto => />.
@@ -1224,13 +1226,52 @@ local module (DG4  : RO1E.FinRO_Distinguisher) (G : RO1.RO) = {
     proc distinguish = PKEROM.OW_PCVA(G, TT, BUUOWMod(A)).main
 }.
 
+lemma owmod &m :
+  Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res] =
+           Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOWMod(A)).main() @ &m : res].
+proof.
+byequiv => //.
+proc;inline *;wp. 
+conseq (_: _==> ={glob PKEROM.OW_PCVA,RO1E.FunRO.f,RO2.RO.m,glob CCA} /\
+    H2BOWMod.crd{2} = card (filter 
+      (fun (m0_0 : plaintext) => enc (FunRO.f{1} m0_0) pk1{1} m0_0 = 
+             oget CCA.cstar{1}) (fdom RO2.RO.m{1})) /\
+    (H2BOWMod.crd{2} = 1 =>
+    H2BOWMod.mf{2} = 
+        Some (head witness (elems (filter 
+      (fun (m0_0 : plaintext) => enc (FunRO.f{1} m0_0) pk1{1} m0_0 = 
+         oget CCA.cstar{1}) (fdom RO2.RO.m{1})))))); 1: by auto => /> /#.
+call(: ={glob PKEROM.OW_PCVA,RO1E.FunRO.f,RO2.RO.m,glob CCA,UU2.lD} /\ 
+     CCA.cstar{2} <> None /\
+    H2BOWMod.crd{2} = card (filter 
+      (fun (m0_0 : plaintext) => enc (FunRO.f{1} m0_0) CCA.sk{2}.`1.`1 m0_0 = 
+             oget CCA.cstar{1}) (fdom RO2.RO.m{1})) /\
+    (H2BOWMod.crd{2} = 1 =>
+    H2BOWMod.mf{2} = 
+        Some (head witness (elems (filter 
+      (fun (m0_0 : plaintext) => enc (FunRO.f{1} m0_0) CCA.sk{2}.`1.`1 m0_0 = 
+         oget CCA.cstar{1}) (fdom RO2.RO.m{1}))))));
+    last by auto => />; smt(fdom0 filter0 fcards0).
++ proc;inline *;sp;if;1,3: by auto => />.
+  by sp;if;auto.
++ by proc;auto.
+
+proc;inline *; 
+  case (m{1} \notin RO2.RO.m{1}).
++ rcondt{1} 8;1 : by auto.
+  rcondt{2} 8;1 : by auto.
+  auto => /> &2;rewrite /b2i => *; 
+      smt(disjointP fcardUI_indep in_filter in_fset0 fcard_ge0 fcard_eq0 setUE elems_fset0 elems_fset1 set1E elems_fset1 fcardU  fcardI in_filter in_fset0 mem_fdom filter1 fcardU fset0U fdom_set   filterU fdom0  filter0 fcard_eq0 fcard1 fsetUid fsetU0).
+  + rcondf{1} 8;1 : by auto.
+    rcondf{2} 8;1 : by auto.
+    by auto => />.
+qed.
+
 lemma corr_goal_eagerOW &m: 
     Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res]  =
      Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
 proof. 
-have -> :  Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res] =
-           Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOWMod(A)).main() @ &m : res].
-+ admit.
+rewrite (owmod &m).
 have -> :Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res]  = 
           Pr[RO1.MainD(DG4,RO1.RO).distinguish() @ &m : res] 
   by byequiv => //;proc;inline *;wp 40 42;sim.
