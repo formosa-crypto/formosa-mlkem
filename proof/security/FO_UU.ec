@@ -464,6 +464,38 @@ module Gm3(H : Oracle_x2, S : KEMROMx2.Scheme, A : CCA_ADV) = {
     return (if H1.bad then nobias else (b' = b));
   }
 
+  proc main_0adv() : bool = {
+    var pk : pkey;
+    var k : key;
+    var b : bool;
+    var b' : bool;
+    var r : randomness;
+    var cm : ciphertext;
+    var nobias : bool;
+    
+    H1.bad <- false;
+    H2.merr <- None;
+    H2.invert <- false;
+    RF.init();
+    RO_x2E.init();
+    UU2.lD <- [];
+    CCA.cstar <- None;
+    (pk, CCA.sk) <@ S(H).kg();
+    k <$ dkey;
+    H2.mtgt <$ dplaintext;
+    (* Open up Enc to puncture the key *)
+    r <@ H.get1(H2.mtgt);
+    cm <- enc r pk H2.mtgt;
+    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some H2.mtgt then true else H1.bad;
+    H2.merr <- if H2.merr = None && H1.bad then Some H2.mtgt else H2.merr;
+    UU2.lD <- (cm,witness) :: UU2.lD;
+    CCA.cstar <- Some cm;
+    b' <@ CCA(H, S, A).A.guess(pk, cm, k);
+    nobias <$ {0,1};
+    b <$ {0,1};
+    return (if H1.bad then nobias else (b' = b));
+  }
+
 }.
 
   (* The observable behaviour does not depend on sk *)
@@ -1034,13 +1066,53 @@ call(: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob
 + by proc;auto => /> /#.
 qed.
 
-
+local module X = CCA(H2, UU2, A).O. (* FIX ME *)
 lemma G3adv &m :
-   Pr[Gm3(H2, UU2, A).main() @ &m : res] = 1%r/2%r. 
-byphoare => //.  
-admitted. 
+  (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
+  islossless O.dec => 
+  islossless H0.get1 => 
+  islossless H0.get2 => islossless A(H0, O).guess) =>
 
-lemma conclusion &m : 
+   Pr[Gm3(H2, UU2, A).main() @ &m : res] = 1%r/2%r. 
+proof.
+move => A_ll.
+have -> : 
+   Pr[Gm3(H2, UU2, A).main() @ &m : res] = 
+   Pr[Gm3(H2, UU2, A).main_0adv() @ &m : res].
++ byequiv => //.  
+  proc. swap {1} [9..10] 8. swap {1} 9 7. swap {2} 9 7. swap {2} 19 -3.
+  rnd;call(_: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} ).
+  + proc;inline *; conseq />.
+    sp;if;1,3: by auto => /> /#.
+    sp;if;1,3: by auto => /> /#.
+    by auto => /> /#.
+  + by proc;auto => /> /#.
+  + by proc;auto => /> /#.
+  inline *. 
+  seq 19 19 : (={b, pk, cm, glob A, glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} ); 1: by auto => />.  
+  conseq (_: k{2} = if b{2} then k1{1} else k2{1}); 1: smt().
+  case (b{1}); last by auto => />.
+  by swap {1} 1 1; auto => />.
+
+byphoare => //.
+proc. 
+  seq 17 : true  (1%r)  (1%r/2%r) (0%r) (0%r).
+  + by trivial.
+  + islossless; last by smt(MUniFinFun.dfun_ll randd_ll). 
+    apply (A_ll H2 X).
+    + by islossless.
+    + by islossless.
+    + by islossless.
+  + case (H1.bad). search ({0,1}).
+    + conseq(:nobias); 1: smt().
+      by rnd;rnd;auto => /> *;rewrite DBool.dbool_ll /=;smt(DBool.dbool1E).
+    conseq(: b' = b); 1:smt(). 
+    by rnd;rnd;auto => /> *;rewrite DBool.dbool_ll /=;smt(DBool.dbool1E).
+  + by hoare; trivial.
+by done.
+qed.
+  
+lemma conclusion_cca_pre &m : 
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => 
   islossless H0.get1 => 
@@ -1061,10 +1133,10 @@ lemma conclusion &m :
   have hop3 :=  G2_G3 &m A_ll. 
   have inv := bound_invert &m A_ll. 
   have bd2 := bound_bad2 &m.
-  have nowin := G3adv &m.  
-  smt().
+  have nowin := G3adv &m A_ll. 
+  by smt().
 qed.
-   
+
 end section.
 
 section.
