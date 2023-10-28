@@ -500,7 +500,7 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
       proc get1= H.get
    }
 
-   proc find(pk : pkey, cm : ciphertext) : plaintext = {
+   proc find(pk : pkey, cm : ciphertext) : plaintext option = {
     var k1, k2 : key;
     var b : bool;
     var b' : bool;
@@ -519,8 +519,10 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
     UU2.lD <- (cm,witness) :: UU2.lD;
     CCA.cstar <- Some cm;
     b' <@ CCA(H2B, UU2, A).A.guess(pk, cm, if b then k1 else k2);
-    return head witness (elems (filter (fun m0 => enc (FunRO.f m0) pk m0 = 
-                 oget CCA.cstar) (fdom RO2.RO.m)));
+    return if card (filter (fun m0 => enc (FunRO.f m0) pk m0 = 
+                 oget CCA.cstar)  (fdom RO2.RO.m)) = 1 then 
+        Some (head witness (elems (filter (fun m0 => enc (FunRO.f m0) pk m0 = 
+                 oget CCA.cstar) (fdom RO2.RO.m)))) else None;
    } 
 }.
 
@@ -884,6 +886,8 @@ have <- :
      oget CCA.cstar =
      enc (RO1E.FunRO.f (oget (dec CCA.sk.`1.`2 (oget CCA.cstar)))) 
              CCA.sk.`1.`1 (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) /\
+      card (filter (fun m0 => enc (FunRO.f m0) CCA.sk.`1.`1 m0 = 
+             oget CCA.cstar) (fdom RO2.RO.m)) = 1 /\
       (oget (dec CCA.sk.`1.`2 (oget CCA.cstar))) = 
         head witness (elems (filter (fun m0 => enc (FunRO.f m0) CCA.sk.`1.`1 m0 = 
              oget CCA.cstar) (fdom RO2.RO.m))) ] = 
@@ -926,10 +930,10 @@ wp;call(:H1.bad,
    CCA.cstar{2} <> None /\
    CCA.cstar{2} = Some (m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2}) /\
   dec CCA.sk{2}.`1.`2 (enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2}) = Some H2.mtgt{2} /\
-   size ((elems
+     card
         (filter
            (fun (m0 : plaintext) => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1 m0 = m2c H2.mtgt{2} CCA.sk{2}.`1 FunRO.f{2})
-           (fdom RO2.RO.m{1})))) <= 1 /\
+           (fdom RO2.RO.m{1})) <= 1 /\
    (H2.invert{2} <=> fset1 H2.mtgt{2} = 
     filter (fun (m0 : plaintext) => enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = oget CCA.cstar{1})
              (fdom RO2.RO.m{1})),
@@ -944,16 +948,11 @@ wp;call(:H1.bad,
 + admit. (* need some more info in the invariant *)
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
-auto => /> &2 ninv H; do split.  
-move => nob;do split;1,2,3:smt(fdom0  filter0 fcard_eq0 fcard1).
-case (H2.mtgt{2} <> witness). 
-move => hcase H0 resl resr al badl invl merrl idl ml ar br ir merrr mtr ldr mr H2 nb _ ;do split. smt(). smt().
-move => notb ;do split.
-move => *.  
-move : H2;rewrite notb /= => [#] ???????->>????. 
-smt(@List @FSet). 
-smt(@List @FSet).
- admit. (* B must be able to abort *)
+auto => /> &2 *; do split; 1:smt(fdom0  filter0 fcard_eq0 fcard1).
+move => 16?H *;do split;1,2: smt(). 
+by move => notb ;do split => *; move : H;rewrite notb /= => [#] 7?->>3?;
+           [ rewrite subset_cardP; [ smt(fcard1)| smt( sub1set mem_filter)] |
+               smt(subset_cardP sub1set mem_filter fcard1 elems_fset1)].
 qed.
 
 lemma bound_bad2 &m :
