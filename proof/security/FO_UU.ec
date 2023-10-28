@@ -561,10 +561,44 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
 
 }.
 
+  (* Using OO1 as a black-box. *)
+  module H2BOWMod(OO1 : PKEROM.POracle) : POracle_x2 = {
+    var crd : int
+    var mf : plaintext option
+
+     proc init() = {}
+     proc get1 = RO_x2E.get1
+     proc get2(m : plaintext) : key = {
+       var k,cm, r;
+       r <@ OO1.get(m);
+       cm <- enc r CCA.sk.`1.`1 m;
+       H1.bad <- if dec CCA.sk.`1.`2 cm <> Some m then true else H1.bad;
+       H2.merr <- if H2.merr = None && H1.bad then Some m else H2.merr;
+       H2.invert <- if CCA.cstar <> None &&  m = H2.mtgt && 
+                       dec CCA.sk.`1.`2 (oget CCA.cstar) = Some H2.mtgt
+                    then true else H2.invert;
+       crd <- crd + b2i (Some cm = CCA.cstar);
+       mf <- if Some cm = CCA.cstar then Some m else mf;
+
+       k <$ dkey;
+       if (m \notin RO2.RO.m) {
+         if (assoc UU2.lD cm <> None) {
+             k <- oget (assoc UU2.lD cm);
+         }
+         else {
+             UU2.lD <- (cm,k) :: UU2.lD;
+         }
+         RO2.RO.m <- RO2.RO.m.[m <- k];
+       }
+       return  oget (RO2.RO.m.[m]);
+     }
+  }.
+
+
 module (BUUOWMod(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA_ORC) = {
 
    module H2B = {
-      include H2BOW(H) [-get1]
+      include H2BOWMod(H) [-get1]
       proc get1= H.get
    }
 
@@ -572,11 +606,6 @@ module (BUUOWMod(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM
     var k1, k2 : key;
     var b : bool;
     var b' : bool;
-    var crd : int;
-    var ms : plaintext list;
-    var m0 : plaintext;
-    var r  : randomness;
-    var mf : plaintext option;
     
     H1.bad <- false;
     H2.merr <- None;
@@ -590,19 +619,10 @@ module (BUUOWMod(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM
     b <$ {0,1};
     UU2.lD <- (cm,witness) :: UU2.lD;
     CCA.cstar <- Some cm;
+    H2BOWMod.crd <- 0;
+    H2BOWMod.mf <- None;
     b' <@ CCA(H2B, UU2, A).A.guess(pk, cm, if b then k1 else k2);
-    ms <- elems (fdom RO2.RO.m);
-    crd <- 0; mf <- None;
-    while (ms <> []) {
-       m0 <- head witness ms;
-       r <@ H.get(m0);
-       if (enc r pk m0 = oget CCA.cstar) {
-           mf <- Some m0;
-           crd <- crd + 1;
-       }
-       ms <- behead ms;
-    }
-    return if crd = 1 then mf else None;
+    return if H2BOWMod.crd = 1 then  H2BOWMod.mf else None;
    } 
 
 }.
@@ -649,7 +669,7 @@ module (BUUCI(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
 section.
 
 declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
-                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA} .
+                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod} .
 
 
 lemma Gm0_Gm1 &m : 
@@ -1212,17 +1232,16 @@ have -> :  Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res] =
            Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOWMod(A)).main() @ &m : res].
 + admit.
 have -> :Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res]  = 
-          Pr[RO1.MainD(DG4,RO1.RO).distinguish() @ &m : res]
-  by  byequiv => //;proc;inline *;  wp 41 43; sim.
+          Pr[RO1.MainD(DG4,RO1.RO).distinguish() @ &m : res] 
+  by byequiv => //;proc;inline *;wp 40 42;sim.
 have -> : Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOWMod(A)).main() @ &m : res] = 
           Pr[RO1.MainD(DG4,RO1E.FunRO).distinguish() @ &m : idfun res]
-    by rewrite /idfun /=;byequiv => //;proc;inline *; wp 39 41; sim;
+    by rewrite /idfun /=;byequiv => //;proc;inline *; wp 38 40; sim;
      auto => />; apply MUniFinFun.dfun_ll;smt(randd_ll).
 have := RO1E.pr_FinRO_FunRO_D _ DG4 &m () idfun; 1: by smt(randd_ll).
 have := RO1E.pr_RO_FinRO_D _ DG4 &m () idfun; 1: by smt(randd_ll).
 by smt().
 qed.
-
 
 (* End Remove Eager                         *)
   
