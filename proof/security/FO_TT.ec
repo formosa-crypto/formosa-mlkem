@@ -754,8 +754,8 @@ module AdvOW (A:PCVA_ADV) = {
 
   module A = A(CountH(RO.RO), CountO(O_AdvOW))
 
-  proc find(pk0:pkey, c:ciphertext) : plaintext = {
-    var m' : plaintext;
+  proc find(pk0:pkey, c:ciphertext) : plaintext option = {
+    var m' : plaintext option;
     pk <- pk0; 
     RO.RO.init();
     cc       <- c; 
@@ -771,7 +771,7 @@ module AdvOW_query (A:PCVA_ADV) = {
   module A = A(CountH(RO.RO), CountO(O_AdvOW))
 
   proc main(pk0:pkey, c:ciphertext) : unit = {
-    var m' : plaintext;
+    var m' : plaintext option;
     pk <- pk0; 
     RO.RO.init();
     cc       <- c; 
@@ -779,11 +779,11 @@ module AdvOW_query (A:PCVA_ADV) = {
     m'       <@ A.find(pk,cc);
   }
 
-  proc find(pk0:pkey, c:ciphertext) : plaintext = {
+  proc find(pk0:pkey, c:ciphertext) : plaintext option = {
     var i : int;
     main(pk0, c);
     i        <$ [0 .. qH + qP - 1];
-    return nth witness (elems (fdom RO.RO.m)) i;
+    return Some (nth witness (elems (fdom RO.RO.m)) i);
   }
 }.
 
@@ -839,7 +839,8 @@ local module G (PCO:PCOT) (RO:RO.RO) = {
   proc distinguish() : bool = {
     var pk : pkey;
     var r : randomness;
-    var m, m' : plaintext;
+    var m : plaintext;
+    var m' : plaintext option;
     var b;
     RO.init();
     (pk, sk) <@ TT(RO).kg();
@@ -847,7 +848,7 @@ local module G (PCO:PCOT) (RO:RO.RO) = {
     r        <@ RO.get(m);
     cc       <- enc r pk m; 
     m'       <@ A.find(pk,cc);
-    b        <- dec sk.`2 cc = Some m';
+    b        <- m' <> None /\ dec sk.`2 cc = m';
     return b; 
   }
 }.
@@ -1067,7 +1068,7 @@ local module G0 (Ob:Orclb) (Oh:Orcl) = {
 
   proc main() : bool = {
     var pk : pkey;
-    var m' : plaintext;
+    var m' : plaintext option;
     var b;
     RO.init();
     (pk, sk) <@ TT(RO).kg();
@@ -1077,7 +1078,7 @@ local module G0 (Ob:Orclb) (Oh:Orcl) = {
 
     CountO(O).init();
     m'       <@ A.find(pk,cc);
-    b        <- dec sk.`2 cc = Some m';
+    b        <- m' <> None /\ dec sk.`2 cc = m';
     return b; 
   }
 
@@ -1465,7 +1466,7 @@ local module G2 = {
 
   proc main() : bool = {
     var pk : pkey;
-    var m' : plaintext;
+    var m' : plaintext option;
     var b;
     RO.RO.init(); Gm.log <- empty; bad_corr <- None;
     (pk, sk) <@ TT(RO.RO).kg();
@@ -1475,8 +1476,8 @@ local module G2 = {
 
     CountO(O).init();
     m'       <@ A.find(pk,cc);
-    b        <- dec sk.`2 cc = Some m' /\ m = m';
-    bad_corr <- if dec sk.`2 cc = Some m' /\ m <> m' then Some m else bad_corr;
+    b        <- dec sk.`2 cc = m' /\ Some m = m';
+    bad_corr <- if dec sk.`2 cc = m' /\ Some m <> m' then Some m else bad_corr;
     return b; 
   }
 
@@ -1540,7 +1541,7 @@ module AdvCorr (A:PCVA_ADV) (RO:POracle) = {
   module A = A(CountH(H), CountO(O))
 
   proc find(pk:pkey, sk:skey) : plaintext = {
-    var m' : plaintext;
+    var m' : plaintext option;
     OW_PCVA.sk <- sk;
     Gm.log <- empty; bad_corr <- None;
     m        <$ dplaintext;
@@ -1549,7 +1550,7 @@ module AdvCorr (A:PCVA_ADV) (RO:POracle) = {
 
     CountO(O).init();
     m'       <@ A.find(pk,cc);
-    bad_corr <- if dec sk.`2 cc = Some m' /\ m <> m' then Some m else bad_corr;
+    bad_corr <- if dec sk.`2 cc = m' /\ Some m <> m' then Some m else bad_corr;
     return oget Gm.bad_corr; 
   }
 }.
@@ -1615,7 +1616,7 @@ local module G3 = {
   module A = A(CountH(RO.RO), CountO(O_AdvOW))
 
   proc main() : bool = {
-    var m' : plaintext;
+    var m' : plaintext option;
     var b;
     RO.RO.init();
     (pk, sk) <@ TT(RO.RO).kg();
@@ -1625,7 +1626,7 @@ local module G3 = {
 
     CountO(O_AdvOW).init();
     m'       <@ A.find(pk,cc);
-    b        <- dec sk.`2 cc = Some m' /\ m = m';
+    b        <- dec sk.`2 cc = m' /\ Some m = m';
     return b; 
   }
 }.
@@ -1680,7 +1681,7 @@ proof.
   inline{2} OW_CPA(BasePKE, AdvOW(A)).O.pco AdvOW(A).find BasePKE.dec; wp.
   swap{2} 7 -6.
   call (: ={glob RO.RO, OW_PCVA.cc, O_AdvOW.pk}); 1..3: by sim.  
-  inline *; auto.
+  inline *; auto => /#.
 qed.
 
 local clone import PlugAndPray as PAP1 with
