@@ -526,6 +526,44 @@ module (BUUOW(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM.VA
    } 
 }.
 
+module (BUUCI(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
+
+   module H2B = {
+      include H2 [-get1]
+      proc get1= H.get
+   }
+
+   proc find(pk : pkey, sk : PKEROM.skey) : plaintext = {
+    var k1, k2 : key;
+    var b : bool;
+    var b' : bool;
+    var r : randomness;
+    var cm : ciphertext;
+    var nobias : bool;
+    
+    H1.bad <- false;
+    H2.merr <- None;
+    H2.invert <- false;
+    RF.init();
+    RO_x2E.init();
+    UU2.lD <- [];
+    CCA.cstar <- None;
+    CCA.sk <- (sk,witness);
+    k1 <$ dkey; k2 <$ dkey;
+    b <$ {0,1};
+    H2.mtgt <$ dplaintext;
+    (* Open up Enc to puncture the key *)
+    r <@ H2B.get1(H2.mtgt);
+    cm <- enc r pk H2.mtgt;
+    H1.bad <- if dec CCA.sk.`1.`2 cm <> Some H2.mtgt then true else H1.bad;
+    H2.merr <- if H2.merr = None && H1.bad then Some H2.mtgt else H2.merr;
+    UU2.lD <- (cm,witness) :: UU2.lD;
+    CCA.cstar <- Some cm;
+    b' <@ CCA(H2B, UU2, A).A.guess(pk, cm, if b then k1 else k2);
+    return (oget H2.merr);
+   } 
+}.
+
 
 section.
 
@@ -922,20 +960,27 @@ seq 21 21 : (
         RO2.RO.m{2} = empty /\ 
         UU2.lD{2} = [(oget CCA.cstar{2},witness)] /\
         (!H1.bad{2} => 
-           dec CCA.sk{2}.`1.`2 (enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2}) = Some H2.mtgt{2}));
+           dec CCA.sk{2}.`1.`2 
+             (enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2}) = 
+                 Some H2.mtgt{2}));
    1: by auto.
 wp;call(:H1.bad,
      ={H1.bad, H2.merr, H2.invert, RF.m, FunRO.f,RO2.RO.m,UU2.lD,CCA.cstar,CCA.sk,H2.mtgt} /\
    CCA.cstar{2} <> None /\
    CCA.cstar{2} = Some (m2c H2.mtgt{2} CCA.sk{2}.`1 RO1E.FunRO.f{2}) /\
-  dec CCA.sk{2}.`1.`2 (enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2}) = Some H2.mtgt{2} /\
-     (card (filter
-           (fun (m0 : plaintext) => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1 m0 = m2c H2.mtgt{2} CCA.sk{2}.`1 FunRO.f{2})
-               (fdom RO2.RO.m{1})) <> 0 => fset1 H2.mtgt{2} = filter (fun (m0 : plaintext) => enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = oget CCA.cstar{1})
-             (fdom RO2.RO.m{1})) /\
+   dec CCA.sk{2}.`1.`2 
+      (enc (RO1E.FunRO.f{2} H2.mtgt{2}) CCA.sk{2}.`1.`1 H2.mtgt{2}) = 
+         Some H2.mtgt{2} /\
+  (card (filter
+    (fun (m0 : plaintext) => enc (FunRO.f{2} m0) CCA.sk{2}.`1.`1 m0 = 
+       m2c H2.mtgt{2} CCA.sk{2}.`1 FunRO.f{2})
+         (fdom RO2.RO.m{1})) <> 0 => 
+           fset1 H2.mtgt{2} = 
+             filter (fun (m0 : plaintext) => enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = 
+                 oget CCA.cstar{1}) (fdom RO2.RO.m{1})) /\
    (H2.invert{2} <=> fset1 H2.mtgt{2} = 
-         filter (fun (m0 : plaintext) => enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = oget CCA.cstar{1})
-             (fdom RO2.RO.m{1})),
+      filter (fun (m0 : plaintext) => 
+        enc (FunRO.f{1} m0) CCA.sk{1}.`1.`1 m0 = oget CCA.cstar{1}) (fdom RO2.RO.m{1})),
      ={H1.bad}).
 + proc;sp;if;1,3: by auto.
   by inline *;sp;if;auto => />.
@@ -944,7 +989,18 @@ wp;call(:H1.bad,
 + by proc;inline*;auto => />.
 + by move => *;proc;inline *;conseq />;islossless.
 + by move => *;proc;inline *;conseq />;islossless.
-+ admit.
++ proc. 
+  case (m{1} \notin RO2.RO.m{1}).
+  + rcondt{1} 6;1 : by auto.
+    rcondt{2} 7;1 : by auto.
+    by auto => />;
+      smt(in_filter in_fset0 mem_fdom filter1 fcardU fset0U fdom_set 
+          filterU fdom0  filter0 fcard_eq0 fcard1 fsetUid fsetU0).
+  + rcondf{1} 6;1 : by auto.
+    rcondf{2} 7;1 : by auto.
+    by auto => />;
+      smt(in_filter in_fset0 mem_fdom filter1 fcardU fset0U fdom_set 
+          filterU fdom0  filter0 fcard_eq0 fcard1 fsetUid fsetU0).
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 auto => /> &2 *; do split; 1:smt(fdom0  filter0 fcard_eq0 fcard1).
@@ -956,8 +1012,27 @@ qed.
 
 lemma bound_bad2 &m :
   Pr[ Gm3(H2,UU2,A).main() @ &m : H1.bad ] <=
-    Pr[PKEROM.Correctness_Adv(RO1E.FunRO, TT, BUUC(A)).main() @ &m : res].
-admitted. 
+    Pr[PKEROM.Correctness_Adv(RO1E.FunRO, TT, BUUCI(A)).main() @ &m : res].
+byequiv => //.
+proc;inline*;wp;rnd{1};wp.
+conseq(: _ ==> (H2.merr{2} <> None <=> H1.bad{1}) /\
+  (H1.bad{1} => 
+     dec sk{2}.`2 
+      (enc (FunRO.f{2} (oget H2.merr{2})) pk{2} (oget H2.merr{2})) <> H2.merr{2} ));1 :smt().
+swap {1} 9 -5.
+call(: ={glob H1, glob H2, glob RF, glob RO1E.FunRO, glob RO2.RO, glob CCA, glob UU2} /\ 
+   (H2.merr{2} <> None <=> H1.bad{1}) /\
+    (H1.bad{1} => 
+      dec CCA.sk{2}.`1.`2 
+        (enc (FunRO.f{2} (oget H2.merr{2})) CCA.sk.`1.`1{2} (oget H2.merr{2})) <> 
+           H2.merr{2} )); last by auto => />;smt(MUniFinFun.dfun_ll randd_ll).
++ proc;inline *; conseq />.
+  sp;if;1,3: by auto => /> /#.
+  sp;if;1,3: by auto => /> /#.
+  by auto => /> /#.
++ by proc;auto => /> /#.
++ by proc;auto => /> /#.
+qed.
 
 
 lemma G3adv &m :
@@ -974,7 +1049,8 @@ lemma conclusion &m :
   `| Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] - 1%r/2%r | <=
      `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
          Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
-        2%r * Pr[PKEROM.Correctness_Adv(RO1E.FunRO, TT, BUUC(A)).main() @ &m : res] +
+           Pr[PKEROM.Correctness_Adv(RO1E.FunRO, TT, BUUC(A)).main() @ &m : res] +
+           Pr[PKEROM.Correctness_Adv(RO1E.FunRO, TT, BUUCI(A)).main() @ &m : res] +
          Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOW(A)).main() @ &m : res].
   move => A_ll. 
   have hop1 := (Gm0_Gm1 &m).
