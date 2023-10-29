@@ -1364,7 +1364,8 @@ section.
 declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
                     -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, 
                      -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B,
-                     -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm} .
+                     -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, 
+                     -BOWp, -Bow, -BasePKE} .
 
 lemma conclusion &m : 
   qH = qHU + 1 =>
@@ -1383,9 +1384,11 @@ lemma conclusion &m :
          Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
-               Pr[OW_CPA(BasePKE, AdvOW(BUUOWMod(A))).main() @ &m : res] +
+           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
+                         Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
+              2%r * `|Pr[CPA(BasePKE, Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
                  (qHU + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(A))).main() @ &m : res] +
-                 (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res]. 
+                   2%r * eps_msg. 
   proof.
   move => qhval qv0 qp0 qhphc qhcb A_ll.
   have concuu:= conclusion_cca_pre A &m A_ll.
@@ -1399,19 +1402,24 @@ lemma conclusion &m :
   + admit. (*gamma trivial*) 
   + admit. (*count*)
   + admit. (*lossless*)
+  have ow2ind := ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
+  + admit. (*lossless*)
+ 
   rewrite qv0 /= in owcca. 
 
   have ? : Pr[PKEROM.Correctness_Adv(RO1.RO, TT, BUUC(A)).main() @ &m : res] =
-            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUC(A)).main() @ &m : res] .
-     admit.
+            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUC(A)).main() @ &m : res] 
+    by byequiv => //;proc;inline *;sim.
 
   have ? : Pr[PKEROM.Correctness_Adv(RO1.RO, TT, BUUCI(A)).main() @ &m : res] =
-            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUCI(A)).main() @ &m : res] .
-     admit.
+            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUCI(A)).main() @ &m : res] 
+    by byequiv => //;proc;inline *;sim.
 
   have ? : Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res] = 
-           Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, BUUOWMod(A)).main() @ &m : res]. 
-     admit.
+           Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, BUUOWMod(A)).main() @ &m : res]
+    by byequiv => //;proc;inline *;sim.
+
+
    smt().
 qed.
 
