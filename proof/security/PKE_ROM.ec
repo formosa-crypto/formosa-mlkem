@@ -1,4 +1,4 @@
-require import AllCore List Distr DBool PROM FinType SmtMap.  
+require import AllCore List Distr DBool PROM FinType SmtMap FSet.  
 require (****) LorR.
 
 abstract theory PKE.
@@ -456,7 +456,6 @@ module BowROM(A :  OW_CPA_ADV) : Adversary = {
 
    proc choose(_pk : pkey) : plaintext * plaintext = {
      pk <- _pk;
-     RO.init();
      m0 <$ dplaintext;
      m1 <$ dplaintext;
      return (m0,m1);
@@ -478,7 +477,7 @@ section.
 
 
 declare module S <: Scheme {-BowROM, -BOWp, -OW_CPA}.
-declare module A <: OW_CPA_ADV {-S,  -BOWp, -OW_CPA}.
+declare module A <: OW_CPA_ADV {-S,  -BOWp, -OW_CPA, -BowROM}.
 
 local module Aux = {
   proc main0() : bool = {
@@ -515,73 +514,69 @@ local module Aux = {
 
 }.
 
-lemma ow_ind_ro &m : 
+lemma ow_ind_ro &m MAX : 
    islossless S.kg =>
    islossless S.enc =>
    islossless S.dec =>
    islossless A.find =>
 
+   hoare [ A.find : true ==> card (fdom RO.m) <= MAX ] =>
+
    Pr[ OW_CPA(S,A).main() @ &m :   OW_CPA.m \in RO.m] <=
-      2%r * (eps_msg + 
-        `| Pr[CPA(S,BowROM(A)).main() @ &m : res] - 1%r/2%r |) + 
-             Pr[ Correctness_Adv(S,BOWp(S,A)).main() @ &m : res ].   
-admitted. 
-(* 
+      2%r * (MAX%r * eps_msg + eps_msg +
+        `| Pr[CPA(S,BowROM(A)).main() @ &m : res] - 1%r/2%r |).   
 proof. 
-move => kg_ll enc_ll dec_ll A_ll. 
-have : Pr[ OW_CPA(S,A).main_perfect() @ &m : res ] <=
-      2%r * (eps_msg + 
-        `| Pr[CPA(S,Bow(A)).main() @ &m : res] - 1%r/2%r |); last 
- by move : (ow_perfect  S A &m A_ll enc_ll dec_ll);smt().
-
-rewrite RField.mulrDr -(pr_CPA_LR S (Bow(A)) &m kg_ll enc_ll); 1,2: by islossless.
+move => kg_ll enc_ll dec_ll A_ll maxsize. 
+rewrite RField.mulrDr -(pr_CPA_LR S (BowROM(A)) &m kg_ll enc_ll); 1,2: by islossless.
 have -> : 
-  Pr[CPA_L(S, Bow(A)).main() @ &m : res] = 
-  Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))] + 
-  Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ !(Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))]
-by rewrite Pr[mu_split (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))] => /#.
+  Pr[CPA_L(S, BowROM(A)).main() @ &m : res] = 
+  Pr[CPA_L(S, BowROM(A)).main() @ &m : res /\ (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)] + 
+  Pr[CPA_L(S, BowROM(A)).main() @ &m : res /\ !(BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)]
+by rewrite Pr[mu_split (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)] => /#.
 
 have -> : 
-  Pr[CPA_R(S, Bow(A)).main() @ &m : res] = 
-  Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))] + 
-  Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ !(Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))]
-by rewrite Pr[mu_split (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))] => /#.
+  Pr[CPA_R(S, BowROM(A)).main() @ &m : res] = 
+  Pr[CPA_R(S, BowROM(A)).main() @ &m : res /\ (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)] + 
+  Pr[CPA_R(S, BowROM(A)).main() @ &m : res /\ !(BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)]
+by rewrite Pr[mu_split (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)] => /#.
 
 have ->  /=: 
-  Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))] =
-  Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))].
-+ byequiv (: _ ==> (res /\ (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))){1} <=>
-                   (res /\ (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))){2}) => //.
+  Pr[CPA_L(S, BowROM(A)).main() @ &m : res /\ (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)] =
+  Pr[CPA_R(S, BowROM(A)).main() @ &m : res /\ (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)].
++ byequiv (: ={glob A,glob S, RO.m} ==> (res /\ (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)){1} <=>
+                   (res /\ (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)){2}) => //.
   proc. 
-  seq 2 2 : (={glob A, glob S, pk,sk, Bow.pk} /\ 
-             Bow.m0{1} = Bow.m1{2} /\ Bow.m1{1} = Bow.m0{2} /\ Bow.pk{1} = pk{1} /\
-             Bow.m0{1} = m0{1} /\ Bow.m1{1} = m1{1} /\
-             Bow.m0{2} = m0{2} /\ Bow.m1{2} = m1{2});
-     1: by inline *;swap {1} 4 1;auto;call(_: true); auto.
-  by inline *;wp;call(_: true);rnd;wp;call(_:true);auto => /> /#.
+  seq 2 2 : (={glob A, glob S, pk,sk, BowROM.pk,RO.m} /\ 
+         BowROM.m0{1} = BowROM.m1{2} /\ BowROM.m1{1} = BowROM.m0{2} /\ 
+         BowROM.pk{1} = pk{1} /\
+             BowROM.m0{1} = m0{1} /\ BowROM.m1{1} = m1{1} /\
+             BowROM.m0{2} = m0{2} /\ BowROM.m1{2} = m1{2});
+     1: by inline *; swap {1} 4 1;auto;call(_: true); auto. 
+   by inline *;wp;call(_: true);rnd;wp;call(_:true);auto => /> /#.
 
 have : 
-   Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ ! (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))] <= eps_msg.
-+ have -> : Pr[CPA_L(S, Bow(A)).main() @ &m : res /\ ! (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))] = 
-            Pr[Aux.main0() @ &m : res /\ ! (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))]
-   by byequiv => //;proc;inline *;wp;conseq />; sim. 
+   Pr[CPA_L(S, BowROM(A)).main() @ &m : res /\ ! (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)] <= MAX%r * eps_msg.
++ have -> : Pr[CPA_L(S, BowROM(A)).main() @ &m : res /\ ! (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)] = 
+     Pr[Aux.main0() @ &m : res /\ !(BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)].
+   byequiv (: ={glob A,glob S, RO.m} ==> _) => //. 
+   by proc;inline *;wp;conseq (_: _ ==> ={BowROM.m1, BowROM.m0, RO.m,b});[ by smt() | by sim ]. 
+
+  have -> : Pr[Aux.main0() @ &m : res /\ (BowROM.m0 \in RO.m) <> (BowROM.m1 \in RO.m)] =
+      Pr[Aux.main0() @ &m : res /\ size (elems (fdom RO.m)) <= MAX /\ (BowROM.m0 \in RO.m) <> (BowROM.m1 \in RO.m)]
+    by admit.
   byphoare => //. 
   proc;inline *; swap 4 3.
-  conseq (: _ ==> Some Bow.m1 = Bow.m); 1: by smt().
-  seq 6 : true  (1%r)  (eps_msg) (0%r) (0%r).
+  conseq (: _ ==> size (elems (fdom RO.m)) <= MAX /\ BowROM.m1 \in RO.m); 1: by smt().
+  seq 6 : true  (1%r)  (MAX%r * eps_msg) (0%r) (0%r).
   + by trivial.
   + by trivial. 
-  + rnd; skip => /> &hr.  
-    case(Bow.m{hr} = None); 1: by move => -> /=; rewrite mu0;smt(MFinT.card_gt0).
-    move => nnone.
-    have -> : (fun (x : plaintext) => Some x = Bow.m{hr})  = pred1 (oget Bow.m{hr}) by apply fun_ext => x;smt().
-    by smt(eps_msgE).
-     + by hoare; trivial.
+  + rnd; skip => /> &hr.  admit. 
+  + by hoare; trivial.
   by trivial.
   
 have : 
-  `| Pr[OW_CPA(S, A).main_perfect() @ &m : res] - 
-      Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ ! (Bow.m = None \/ (Bow.m <> Some Bow.m0 /\ Bow.m <> Some Bow.m1))]| <= 
+  `| Pr[OW_CPA(S, A).main() @ &m : OW_CPA.m \in RO.m] - 
+      Pr[CPA_R(S, BowROM(A)).main() @ &m : res /\ (BowROM.m0 \in RO.m = BowROM.m1 \in RO.m)]| <= 
          eps_msg; last by smt().
 
 have -> : Pr[OW_CPA(S, A).main_perfect() @ &m : res] = 
@@ -613,7 +608,7 @@ have -> : Pr[CPA_R(S, Bow(A)).main() @ &m : res /\ ! (Bow.m = None \/ (Bow.m <> 
     by call(:true);rnd;call(:true);rnd;rnd;wp;call(:true);auto => /> /#.
     
 qed.
-*)
+
 
 end section.
 
