@@ -27,7 +27,6 @@ op [lossless uniform full]dkey : key distr.
 (*  A PRF *)
 
 require PRF.
-print PRF.
 clone import PRF as J with
    type D <- ciphertext,
    type R <- key.
@@ -1312,6 +1311,109 @@ lemma conclusion_cca_pre &m :
   by smt().
 qed.
 
+(* Instantiation *)
+
+(* lemma correctness:
+  forall (A0(H0 : PKEROM.POracle) <:
+           PKEROM.CORR_ADV{+all mem, -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B} [find : {H0.get} ]) &m,
+    qHC < FinT.card - 1 =>
+    (forall (RO <: PKEROM.RO.RO{+all mem, -CO1, -A0} ),
+       hoare[ Correctness_Adv1(RO, A0).A.find : CO1.counter = 0 ==> CO1.counter <= qHC]) =>
+    (forall (H0 <: PKEROM.POracle{+all mem, -A0} ), islossless H0.get => islossless A0(H0).find) =>
+    Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, A0).main() @ &m : res] <=
+    (qHC + 1)%r * Pr[Correctness_Adv(BasePKE, B(A0, PKEROM.RO.RO)).main() @ &m : res]. *)
+
+(* 
+lemma conclusion:
+  forall (A0(H0 : PKEROM.POracle, O : PKEROM.VA_ORC) <:
+           PKEROM.PCVA_ADV{+all mem, -PKEROM.RO.RO, -PKEROM.RO.FRO, -PKEROM.OW_PCVA, -Correctness_Adv1, -B, -CountO, -O_AdvOW, -Gm}
+             [find : {O.cvo, O.pco, H0.get} ]) &m (gamma_spread : real),
+    qH + qP + 1 = qHC =>
+    qHC < FinT.card - 1 =>
+    gamma_spread_ok gamma_spread =>
+    (forall (RO <: PKEROM.POracle{+all mem, -CountO, -A0} ) (O <: PKEROM.VA_ORC{+all mem, -CountO, -A0} ),
+       hoare[ A0(CountH(RO), CountO(O)).find :
+               CountO.c_h = 0 /\ CountO.c_cvo = 0 /\ CountO.c_pco = 0 ==>
+               CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+    (forall (H0 <: PKEROM.POracle{+all mem, -A0} ) (O <: PKEROM.VA_ORC{+all mem, -A0} ),
+       islossless O.cvo => islossless O.pco => islossless H0.get => islossless A0(H0, O).find) =>
+    Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, A0).main() @ &m : res] <=
+    Pr[OW_CPA(BasePKE, AdvOW(A0)).main() @ &m : res] +
+    (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A0)).main() @ &m : res] +
+    (qH + qP + 2)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(A0), PKEROM.RO.RO)).main() @ &m : res] +
+    qV%r * gamma_spread.
+*)
+
+(*
+lemma ow_ind &m : 
+   islossless S.kg => 
+   islossless S.enc =>
+   islossless S.dec =>
+   islossless A.find => 
+
+   Pr[ OW_CPA(S,A).main() @ &m : res ] <=
+      2%r * (eps_msg + 
+        `| Pr[CPA(S,Bow(A)).main() @ &m : res] - 1%r/2%r |) + 
+             Pr[ Correctness_Adv(S,BOWp(S,A)).main() @ &m : res ].
+*)
+
+end section.
+
+section.
+
+declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
+                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, 
+                     -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B,
+                     -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm} .
+
+lemma conclusion &m : 
+  qH = qHU + 1 =>
+  qV = 0 =>
+  qP = 0 =>
+  qH + 1 = qHC =>
+  qHC < FinT.card - 1 =>
+
+  (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
+  islossless O.dec => 
+  islossless H0.get1 => 
+  islossless H0.get2 => islossless A(H0, O).guess) =>
+
+  `| Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] - 1%r/2%r | <=
+     `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
+         Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
+           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
+           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
+               Pr[OW_CPA(BasePKE, AdvOW(BUUOWMod(A))).main() @ &m : res] +
+                 (qHU + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(A))).main() @ &m : res] +
+                 (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res]. 
+  proof.
+  move => qhval qv0 qp0 qhphc qhcb A_ll.
+  have concuu:= conclusion_cca_pre A &m A_ll.
+  have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. 
+  + admit. (*count*)
+  + admit. (*lossless*)
+  have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
+  + admit. (*count*)
+  + admit. (*lossless*)
+  have owcca := Top.TT.conclusion (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
+  + admit. (*gamma trivial*) 
+  + admit. (*count*)
+  + admit. (*lossless*)
+  rewrite qv0 /= in owcca. 
+
+  have ? : Pr[PKEROM.Correctness_Adv(RO1.RO, TT, BUUC(A)).main() @ &m : res] =
+            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUC(A)).main() @ &m : res] .
+     admit.
+
+  have ? : Pr[PKEROM.Correctness_Adv(RO1.RO, TT, BUUCI(A)).main() @ &m : res] =
+            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUCI(A)).main() @ &m : res] .
+     admit.
+
+  have ? : Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res] = 
+           Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, BUUOWMod(A)).main() @ &m : res]. 
+     admit.
+   smt().
+qed.
 
 end section.
 
