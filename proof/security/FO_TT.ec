@@ -62,8 +62,13 @@ op [full lossless uniform]dplaintext : plaintext distr.
 clone import FinType as FinT with 
    type t <- plaintext.
 
+type randomness.
+op [lossless] randd : randomness distr.
+
 clone import PKE_ROM.PKE as PKE with
   type plaintext <- plaintext,
+  type OWvsIND_RO.RO.out_t <- randomness,
+  op OWvsIND_RO.RO.dout <- fun _ => randd,
   op dplaintext <- dplaintext,
   op MFinT.enum <- FinT.enum
   proof MFinT.enum_spec by apply FinT.enum_spec
@@ -74,12 +79,8 @@ clone import PKE_ROM.PKE as PKE with
 
 op [lossless] kg : (pkey * skey) distr.
 
-type randomness.
-
 op enc : randomness -> pkey -> plaintext -> ciphertext.
 op dec : skey -> ciphertext -> plaintext option.
-
-op [lossless] randd : randomness distr.
 
 module BasePKE : PKE.Scheme = {
   proc kg() : pkey * skey = {
@@ -802,10 +803,60 @@ module AdvOW_query (A:PCVA_ADV) = {
   }
 }.
 
+(******************************************************)
+(**** MODULES REQUIRED FOR TIGHT IND-CPA***************)
+(******************************************************)
+
+
+module O_AdvOW_MERGE = {
+  var pk : pkey
+  proc pco(m : plaintext, c : ciphertext) : bool = {
+    var r, c';
+    r  <@ OWvsIND_RO.RO.RO.get(m);
+    c' <- enc r pk m;
+    return c = c';
+  }
+  
+  proc cvo(c:ciphertext) : bool = {
+    var rv; 
+    rv <- false; 
+    if (c <> OW_PCVA.cc) 
+      rv <- find (fun m r => c = enc r pk m) OWvsIND_RO.RO.RO.m <> None;
+    return rv;
+  }
+}.
+
+module AdvOW_query_MERGE (A:PCVA_ADV) = {
+  import var OW_PCVA O_AdvOW_MERGE
+
+  module A = A(CountH(OWvsIND_RO.RO.RO), CountO(O_AdvOW_MERGE))
+
+  proc main(pk0:pkey, c:ciphertext) : unit = {
+    var m' : plaintext option;
+    pk <- pk0; 
+    OWvsIND_RO.RO.RO.init();
+    cc       <- c; 
+    CountO(O_AdvOW_MERGE).init();
+    m'       <@ A.find(pk,cc);
+  }
+
+  proc find(pk0:pkey, c:ciphertext) : plaintext option = {
+    var i : int;
+    main(pk0, c);
+    i        <$ [0 .. qH + qP - 1];
+    return Some (nth witness (elems (fdom OWvsIND_RO.RO.RO.m)) i);
+  }
+}.
+
+(******************************************************)
+(**** END MODULES REQUIRED FOR TIGHT IND-CPA************)
+(******************************************************)
+
 section. 
 
-declare module A <: PCVA_ADV { -OW_PCVA, -RO.RO, -RO.FRO, 
-               -CountO, -Gm, -O_AdvOW, -Correctness_Adv1, -B}.
+declare module A <: PCVA_ADV { -RO.RO, -OW_PCVA, -RO.RO, -RO.FRO, -OW_CPA,
+               -CountO, -Gm, -O_AdvOW, -Correctness_Adv1, -B, -BOWp, 
+               - OWvsIND_RO.RO.RO, -AdvOW_query_MERGE}.
 
 local module PCO(RO:RO.RO) = {
   import var OW_PCVA
@@ -1936,6 +1987,109 @@ lemma conclusion &m :
     + (qH) %r * Pr[ Correctness_Adv(BasePKE,AdvCorr(A)).main() @ &m : res ]
     + (qV + qP)%r * gamma_spread.
 *)
+
+(********** TIGHT REDUCTION TO IND-CPA ***************)
+
+
+local lemma G3_CPA_query &m : 
+
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
+  hoare [A(CountH(RO), CountO(O)).find : 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
+       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+
+  (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
+  islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
+
+  Pr[G3.main() @ &m : dec OW_PCVA.sk.`2 OW_PCVA.cc = Some Gm.m /\ Gm.m \in RO.RO.m] <=
+     2%r * (eps_msg + 
+        `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r |) + 
+             Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ].
+proof.
+move => A_count All.
+case(qH = 0). admit.
+move => *.
+  have : Pr[G3.main() @ &m :Gm.m \in RO.RO.m] <=
+     2%r * (eps_msg + 
+        `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r |) + 
+             Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ]; last
+      by rewrite Pr[mu_split dec OW_PCVA.sk.`2 OW_PCVA.cc = Some Gm.m]; smt(mu_bounded).
+  have := OWvsIND_RO.ow_ind_ro BasePKE (AdvOW_query_MERGE(A)) &m _ _ _ _;1..3:by islossless.
+  + admit. (* lossless *)
+  have  -> : Pr[OW_CPA(BasePKE, AdvOW_query_MERGE(A)).main() @ &m : OW_CPA.m \in OWvsIND_RO.RO.RO.m] =
+             Pr[G3.main() @ &m : Gm.m \in RO.RO.m]; last by done.
+  
+  byequiv (_: _ ==> OWvsIND_RO.RO.RO.m{1} = RO.RO.m{2} /\ OW_CPA.m{1} = Gm.m{2} /\ O_AdvOW_MERGE.pk{1} = O_AdvOW.pk{2}) => //.
+  proc;inline *;wp;rnd{1};call(_: ={OW_PCVA.cc} /\ OWvsIND_RO.RO.RO.m{1} = RO.RO.m{2} /\ OW_CPA.m{1} = Gm.m{2} /\ O_AdvOW_MERGE.pk{1} = O_AdvOW.pk{2}).
+  + by sim.
+  + by sim.
+  + by sim.
+  by auto => />;smt(drange_ll ge0_qH ge0_qP).
+qed.
+
+lemma pre_conclusion_cpa &m gamma_spread :
+ gamma_spread_ok gamma_spread =>
+
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC { -CountO, -A }), 
+  hoare [A(CountH(RO), CountO(O)).find : 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0  ==> 
+       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+
+  (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
+  islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
+
+  Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
+      Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
+    + 2%r * `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r | 
+    + Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ]
+    + Pr[ Correctness_Adv(RO.RO,TT,AdvCorr(A)).main() @ &m : res ]
+    + qV%r * gamma_spread + 2%r * eps_msg.
+proof.
+  move => gs_ok A_count A_ll.
+  by move: (OW_PCVA_gamma &m gamma_spread gs_ok A_count A_ll) (G1_G2 &m A_ll) (G2_correctness &m) (G2_G3 &m  A_ll)
+     (G3_OW_CPA &m) (G3_CPA_query &m  A_count A_ll)  => /#.
+qed.
+
+lemma conclusion_cpa &m gamma_spread :
+ qH + qP + 1 = qHC =>
+
+ qHC < FinT.card -1 =>
+
+ gamma_spread_ok gamma_spread =>
+
+ (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC {-CountO, -A}), 
+  hoare [A(CountH(RO), CountO(O)).find : 
+       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
+       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+
+  (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
+  islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
+
+  Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
+      Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
+    + 2%r * `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r | 
+    + Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ]
+    + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.RO)).main() @ &m : res ]
+    + qV%r * gamma_spread + 2%r * eps_msg.
+proof.
+  move => counts qhc_small gs_ok A_count A_ll.
+  move: (pre_conclusion_cpa &m gamma_spread gs_ok A_count A_ll).
+  move: (correctness (AdvCorr(A)) &m qhc_small _ _). 
+  + move => RO; proc;wp.
+    call (corr_red_count RO).
+    inline *;wp;conseq />.
+    seq 6 : #pre; 1: by auto.
+    if;if. 
+    + wp;call(_:true);auto => /#.
+    + wp;call(_:true);auto => /#.
+    + wp;call(_:true);auto => /#.
+    auto => /#.
+  move => H0 H0_ll;proc;inline *;wp.
+  by call(_: true); islossless. 
+  by smt().
+qed.
+
+
 
 end section.
 

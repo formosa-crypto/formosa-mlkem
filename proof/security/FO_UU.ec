@@ -1361,11 +1361,11 @@ end section.
 
 section.
 
-declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
+declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, -OW_CPA,
                     -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, 
                      -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B,
                      -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, 
-                     -BOWp, -Bow, -BasePKE} .
+                     -BOWp, -OWvsIND.Bow, -BasePKE, -AdvOW_query_MERGE, -OWvsIND_RO.RO.RO}.
 
 lemma conclusion &m : 
   qH = qHU + 1 =>
@@ -1386,7 +1386,7 @@ lemma conclusion &m :
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
-              2%r * `|Pr[CPA(BasePKE, Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
+              2%r * `|Pr[CPA(BasePKE, OWvsIND.Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
                  (qHU + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(A))).main() @ &m : res] +
                    2%r * eps_msg. 
   proof.
@@ -1397,12 +1397,12 @@ lemma conclusion &m :
   + admit. (*lossless*)
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
   + admit. (*count*)
-  + admit. (*lossless*)
+  + admit. (*lossless*) print Top.TT.conclusion.
   have owcca := Top.TT.conclusion (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
   + admit. (*gamma trivial*) 
   + admit. (*count*)
   + admit. (*lossless*)
-  have ow2ind := ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
+  have ow2ind := OWvsIND.ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
   + admit. (*lossless*)
  
   rewrite qv0 /= in owcca. 
@@ -1419,9 +1419,65 @@ lemma conclusion &m :
            Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, BUUOWMod(A)).main() @ &m : res]
     by byequiv => //;proc;inline *;sim.
 
+   smt().
+qed.
+
+lemma conclusion_cpa &m : 
+  qH = qHU + 1 =>
+  qV = 0 =>
+  qP = 0 =>
+  qH + 1 = qHC =>
+  qHC < FinT.card - 1 =>
+
+  (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
+  islossless O.dec => 
+  islossless H0.get1 => 
+  islossless H0.get2 => islossless A(H0, O).guess) =>
+
+  `| Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] - 1%r/2%r | <=
+     `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
+         Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
+           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
+           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
+           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
+                         Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
+                         Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] +
+              2%r * `|Pr[CPA(BasePKE, OWvsIND.Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
+              2%r * `|Pr[CPA(BasePKE, OWvsIND_RO.BowROM(AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
+                   4%r * eps_msg. 
+  proof.
+  move => qhval qv0 qp0 qhphc qhcb A_ll.
+  have concuu:= conclusion_cca_pre A &m A_ll.
+  have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. 
+  + admit. (*count*)
+  + admit. (*lossless*)
+  have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
+  + admit. (*count*)
+  + admit. (*lossless*) print Top.TT.conclusion.
+  have owcca := Top.TT.conclusion_cpa (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
+  + admit. (*gamma trivial*) 
+  + admit. (*count*)
+  + admit. (*lossless*) print conclusion.
+  have ow2ind := OWvsIND.ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
+  + admit. (*lossless*)
+ 
+  rewrite qv0 /= in owcca. 
+
+  have ? : Pr[PKEROM.Correctness_Adv(RO1.RO, TT, BUUC(A)).main() @ &m : res] =
+            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUC(A)).main() @ &m : res] 
+    by byequiv => //;proc;inline *;sim.
+
+  have ? : Pr[PKEROM.Correctness_Adv(RO1.RO, TT, BUUCI(A)).main() @ &m : res] =
+            Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUCI(A)).main() @ &m : res] 
+    by byequiv => //;proc;inline *;sim.
+
+  have ? : Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res] = 
+           Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, BUUOWMod(A)).main() @ &m : res]
+    by byequiv => //;proc;inline *;sim.
 
    smt().
 qed.
+
 
 end section.
 
