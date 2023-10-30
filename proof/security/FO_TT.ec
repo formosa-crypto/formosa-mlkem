@@ -855,8 +855,8 @@ module AdvOW_query_MERGE (A:PCVA_ADV) = {
 section. 
 
 declare module A <: PCVA_ADV { -RO.RO, -OW_PCVA, -RO.RO, -RO.FRO, -OW_CPA,
-               -CountO, -Gm, -O_AdvOW, -Correctness_Adv1, -B, -BOWp, 
-               - OWvsIND_RO.RO.RO, -AdvOW_query_MERGE}.
+               -CountO, -Gm, -O_AdvOW, -Correctness_Adv1, -B, -BOWp, -OWvsIND.Bow,
+               - OWvsIND_RO.RO.RO, -AdvOW_query_MERGE, -OWvsIND_RO.RO.RO.m}.
 
 local module PCO(RO:RO.RO) = {
   import var OW_PCVA
@@ -2002,20 +2002,31 @@ local lemma G3_CPA_query &m :
   islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
 
   Pr[G3.main() @ &m : dec OW_PCVA.sk.`2 OW_PCVA.cc = Some Gm.m /\ Gm.m \in RO.RO.m] <=
-     2%r * (eps_msg + 
-        `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r |) + 
-             Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ].
+     2%r * ((qH + qP)%r * eps_msg + 
+        `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r |).
 proof.
 move => A_count All.
-case(qH = 0). admit.
+case (qH = 0 /\ qP = 0). 
++  move => [#] qH0 qP0. 
+   have : Pr[G3.main() @ &m : dec OW_PCVA.sk.`2 OW_PCVA.cc = Some Gm.m /\ (Gm.m \in RO.RO.m)] = 0%r; 
+    last by smt(mu_bounded MFinT.card_gt0).
+   byphoare => //;hoare.
+   conseq (_: _ ==> RO.RO.m = empty); 1: by smt(mem_empty).
+   proc;wp;seq 6 : (CountO.c_h = 0 /\ CountO.c_pco = 0 /\ CountO.c_cvo = 0 /\
+                      RO.RO.m = empty); 1: by inline*;auto.
+   by call count0.
+
 move => *.
   have : Pr[G3.main() @ &m :Gm.m \in RO.RO.m] <=
-     2%r * (eps_msg + 
-        `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r |) + 
-             Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ]; last
+     2%r * ((qH + qP)%r * eps_msg + 
+        `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r |); last
       by rewrite Pr[mu_split dec OW_PCVA.sk.`2 OW_PCVA.cc = Some Gm.m]; smt(mu_bounded).
+  (* PROBLEM INSTANTIATING: THIS PROOF WILL NEED TO BE DONE HERE UNLESS I CAN FIND A SOLUTION 
+     TO THE MODULE RESTRICTIONS.
   have := OWvsIND_RO.ow_ind_ro BasePKE (AdvOW_query_MERGE(A)) &m _ _ _ _;1..3:by islossless.
-  + admit. (* lossless *)
+  +  (* lossless *) *)
+  have  : Pr[OW_CPA(BasePKE, AdvOW_query_MERGE(A)).main() @ &m : OW_CPA.m \in OWvsIND_RO.RO.RO.m] <=
+    2%r * ((qH + qP)%r * eps_msg + `|Pr[PKE.CPA(BasePKE, OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r / 2%r|) by admit. (* this goes away if instantiation possible *)
   have  -> : Pr[OW_CPA(BasePKE, AdvOW_query_MERGE(A)).main() @ &m : OW_CPA.m \in OWvsIND_RO.RO.RO.m] =
              Pr[G3.main() @ &m : Gm.m \in RO.RO.m]; last by done.
   
@@ -2039,15 +2050,24 @@ lemma pre_conclusion_cpa &m gamma_spread :
   islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
 
   Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
-      Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
+      2%r * `|Pr[PKE.CPA(BasePKE, OWvsIND.Bow(AdvOW(A))).main() @ &m : res] - 1%r / 2%r| 
     + 2%r * `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r | 
     + Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ]
+    + Pr[ PKE.Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(A))).main() @ &m : res]
     + Pr[ Correctness_Adv(RO.RO,TT,AdvCorr(A)).main() @ &m : res ]
-    + qV%r * gamma_spread + 2%r * eps_msg.
+    + qV%r * gamma_spread + 2%r * (qH + qP + 1)%r * eps_msg.
 proof.
   move => gs_ok A_count A_ll.
-  by move: (OW_PCVA_gamma &m gamma_spread gs_ok A_count A_ll) (G1_G2 &m A_ll) (G2_correctness &m) (G2_G3 &m  A_ll)
-     (G3_OW_CPA &m) (G3_CPA_query &m  A_count A_ll)  => /#.
+   move: (OW_PCVA_gamma &m gamma_spread gs_ok A_count A_ll) (G1_G2 &m A_ll) (G2_correctness &m) (G2_G3 &m  A_ll)
+     (G3_OW_CPA &m) (G3_CPA_query &m  A_count A_ll).  
+   have ow2ind := OWvsIND.ow_ind BasePKE (AdvOW(A)) &m _ _ _ _; 1..3: by islossless.
+   + islossless.
+     apply (A_ll (CountH(RO.RO)) (CountO(O_AdvOW))).
+     + by islossless. 
+     + by islossless. 
+     by islossless. 
+
+   by smt(MFinT.card_gt0 ge0_qH ge0_qP mu_bounded).
 qed.
 
 lemma conclusion_cpa &m gamma_spread :
@@ -2066,11 +2086,12 @@ lemma conclusion_cpa &m gamma_spread :
   islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
 
   Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
-      Pr[OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res]
+      2%r * `|Pr[PKE.CPA(BasePKE, OWvsIND.Bow(AdvOW(A))).main() @ &m : res] - 1%r / 2%r| 
     + 2%r * `| Pr[PKE.CPA(BasePKE,OWvsIND_RO.BowROM(AdvOW_query_MERGE(A))).main() @ &m : res] - 1%r/2%r | 
     + Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query_MERGE(A))).main() @ &m : res ]
+    + Pr[ PKE.Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(A))).main() @ &m : res]
     + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.RO)).main() @ &m : res ]
-    + qV%r * gamma_spread + 2%r * eps_msg.
+    + qV%r * gamma_spread + 2%r * (qH + qP + 1)%r * eps_msg.
 proof.
   move => counts qhc_small gs_ok A_count A_ll.
   move: (pre_conclusion_cpa &m gamma_spread gs_ok A_count A_ll).

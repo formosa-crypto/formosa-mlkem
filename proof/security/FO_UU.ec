@@ -1422,6 +1422,8 @@ lemma conclusion &m :
    smt().
 qed.
 
+module X(O : PKEROM.POracle) =  BUUC(A, O).H2B.
+module XI(O : PKEROM.POracle) =  BUUCI(A, O).H2B.
 lemma conclusion_cpa &m : 
   qH = qHU + 1 =>
   qV = 0 =>
@@ -1444,22 +1446,23 @@ lemma conclusion_cpa &m :
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] +
               2%r * `|Pr[CPA(BasePKE, OWvsIND.Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
               2%r * `|Pr[CPA(BasePKE, OWvsIND_RO.BowROM(AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
-                   4%r * eps_msg. 
+                  2%r * (qH + qP + 1)%r * eps_msg. 
   proof.
   move => qhval qv0 qp0 qhphc qhcb A_ll.
   have concuu:= conclusion_cca_pre A &m A_ll.
-  have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. 
-  + admit. (*count*)
-  + admit. (*lossless*)
+  have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. (* FIXME: TOP *)
+  + admit.
+  + move => H0 H0ll;islossless.
+    + admit. (* FIXME + have := (A_ll (X(H0)) (CCA(X(H0)))). *)
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
   + admit. (*count*)
-  + admit. (*lossless*) print Top.TT.conclusion.
+  + move => H0 H0ll; islossless.
+    + admit. (* FIXME: + have := (A_ll (XI(H0)) (CCA(XI(H0)))). *)
   have owcca := Top.TT.conclusion_cpa (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
-  + admit. (*gamma trivial*) 
+  + by smt(mu_bounded). 
   + admit. (*count*)
-  + admit. (*lossless*) print conclusion.
-  have ow2ind := OWvsIND.ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
-  + admit. (*lossless*)
+  + move => H0 *;islossless.
+    + admit. (* FIXME: lossless *) 
  
   rewrite qv0 /= in owcca. 
 
