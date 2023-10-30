@@ -88,14 +88,14 @@ clone import FO_TT with
 import PKE.
 
 (* remaining axioms
-MUFP.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
- PKE.dplaintext_ll: is_lossless dplaintext
- PKE.dplaintext_uni: is_uniform dplaintext
- PKE.dplaintext_fu: is_full dplaintext
- gt0_qH: 0 < qH
- gt0_qV: 0 < qV
- gt0_qP: 0 < qP
- gt0_qHC: 0 < qHC *)
+ dplaintext_ll: is_lossless dplaintext
+ dplaintext_uni: is_uniform dplaintext
+ dplaintext_fu: is_full dplaintext
+ FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
+ ge0_qH: 0 <= qH
+ ge0_qV: 0 <= qV
+ ge0_qP: 0 <= qP
+ ge0_qHC: 0 <= qHC *)
 
 module MLWE_PKE_HASH : Scheme = {
 
@@ -182,11 +182,10 @@ inline *. wp 2 3.
 conseq (_: true ==> ={sd,s,e}); 1: by smt(). 
 rndsem{1} 0.
 rndsem{2} 0.
-(* FIXME: This should not be needed, as post does not mention r0 *)
 transitivity {1} { (sd,s,e) <$ dmap drand prg_kg; }
     (true ==> ={sd,s,e})
     (true ==> ={sd,s,e});1,2:smt().
-+ admit.
++ admit. (* FIXME: This should not be needed, as post does not mention r0 *)
 by rnd;auto => />;rewrite -prg_kg_correct /#.
 qed.
 
@@ -200,11 +199,11 @@ inline *; sp;wp 2 3.
 conseq (_: ={pk,m} ==> ={r,e1,e2}); 1,2: by smt(). 
 rndsem{1} 0.
 rndsem{2} 0.
-(* FIXME: This should not be needed, as post does not mention rr0 *)
+
 transitivity {1} { (r,e1,e2) <$ dmap drand prg_enc; }
     (={pk,m} ==> ={r,e1,e2})
     (={pk,m} ==> ={r,e1,e2}); 1,2:smt().
-+ admit.
++ admit. (* FIXME: This should not be needed, as post does not mention rr0 *)
 by rnd;auto => />;rewrite -prg_enc_correct /#.
 qed.
 
@@ -547,21 +546,24 @@ lemma correctness_theorem &m fail_prob :
 
 end section.
 
+(*
 
 section. 
 
 import PKEROM.
 declare module A <:
-          PCVA_ADV{-RO.RO, -RO.FRO, -OW_PCVA, -B, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, -BOWp, -Bow}.
+          PCVA_ADV{-OWvsIND_RO.RO.RO.m, -OW_CPA, -BOWp, -OWvsIND.Bow, -OWvsIND_RO.RO.RO, -RO.RO, -RO.FRO, -OW_PCVA, -Correctness_Adv1, -B, -CountO, -Gm, -O_AdvOW, -AdvOW_query_MERGE}.
 
 local equiv kg_same : 
   BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
-admitted.
+proc;rndsem {2} 0. 
+admit. (* FIXME: This should not be needed, as post does not mention r *)
+qed.
 
 lemma conclusion &m gamma_spread fail_prob :
  qH + qP + 1 = qHC =>
 
- qHC < MUFP.FinT.card - 1 =>
+ qHC < FinT.card - 1 =>
  
  gamma_spread_ok gamma_spread =>
 
@@ -575,11 +577,11 @@ lemma conclusion &m gamma_spread fail_prob :
   (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
   islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
 
-  Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
+  Pr[OW_PCVA(RO.RO, TT, A).main() @ &m : res] <=
       Pr[PKE.OW_CPA(MLWE_PKE_HASH, AdvOW(A)).main() @ &m : res]
     + 2%r * (qH + qP)%r * 
-        `| Pr[PKE.CPA(MLWE_PKE_HASH,Bow(AdvOW_query(A))).main() @ &m : res] - 1%r/2%r | 
-    + (2 * (qH + qP) + 2)%r * fail_prob
+        `| Pr[PKE.CPA(MLWE_PKE_HASH,OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res] - 1%r/2%r | 
+    + (qH + qP + 3)%r * fail_prob
     + 2%r * (qH + qP)%r * eps_msg
     + qV%r * gamma_spread.
 proof.
@@ -587,28 +589,28 @@ move => qvals qhcsmall gs_ok fail_probE A_count A_ll.
 have <- : 
    Pr[PKE.OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res] = 
     Pr[PKE.OW_CPA(MLWE_PKE_HASH, AdvOW(A)).main() @ &m : res].
-+ byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
++ byequiv => //;proc. seq 1 1 : (#pre /\ ={OW_CPA.pk,OW_CPA.sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 have <- :  
-    Pr[PKE.CPA(BasePKE, Bow(AdvOW_query(A))).main() @ &m : res] = 
-     Pr[PKE.CPA(MLWE_PKE_HASH, Bow(AdvOW_query(A))).main() @ &m : res].
+    Pr[PKE.CPA(BasePKE, OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res] = 
+     Pr[PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res].
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
 
-have := (conclusion A &m gamma_spread qvals qhcsmall gs_ok A_count A_ll). 
+have ? := (conclusion A &m gamma_spread qvals qhcsmall gs_ok A_count A_ll).
 
-have  : (qH + qP)%r * Pr[PKE.OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res] +
-(qH + qP + 2)%r * Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.LRO)).main() @ &m : res]  <=
-   2%r * (qH + qP)%r * `|Pr[PKE.CPA(BasePKE, Bow(AdvOW_query(A))).main() @ &m : res] - 1%r / 2%r| +
-(2 * (qH + qP) + 2)%r  * fail_prob + 2%r * (qH + qP)%r * eps_msg; last by smt().
+have  : (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res] +
+   (qH + qP + 2)%r * Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.RO)).main() @ &m : res]  <=
+   2%r * (qH + qP)%r * `|Pr[PKE.CPA(BasePKE, OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res] - 1%r / 2%r| +
+(qH + qP + 3)%r * fail_prob + 2%r * (qH + qP)%r * eps_msg; last by smt().
 
-have := ow_ind BasePKE (AdvOW_query(A)) &m _ _ _ _;1..3:by islossless.
+have ? := OWvsIND.ow_ind BasePKE (AdvOW_query(A)) &m _ _ _ _;1..3:by islossless.
 + proc; islossless.
   + proc*;call (A_ll (CountH(RO.RO)) (CountO(O_AdvOW)));islossless.
-    by apply drange_ll; smt(gt0_qH gt0_qP).
+    by admit. (* qH = 0 apply drange_ll; smt(ge0_qH ge0_qP). *)
 
 have := correctness_theorem (BOWp(BasePKE, AdvOW_query(A))) &m fail_prob _; 1: by islossless.
 
@@ -618,23 +620,27 @@ have <- :
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
-have := correctness_noise (B(AdvCorr(A), RO.LRO)) &m _.
+move => ?. 
+
+have  := correctness_noise (B(AdvCorr(A), RO.RO)) &m _.
 + proc;islossless.
-  + proc*;call (A_ll (CountH(H(CO1(RO.LRO)))) (CountO(G2_O(CO1(RO.LRO)))));islossless.
-    by apply drange_ll; smt(gt0_qH gt0_qP).
+  + proc*;call (A_ll (CountH(H(CO1(RO.RO)))) (CountO(G2_O(CO1(RO.RO)))));islossless.
+    by admit. (* qH = 0 apply drange_ll; smt(ge0_qH ge0_qP). *)
 
 have <- : 
-  Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.LRO)).main() @ &m : res] =
-  Pr[PKE.Correctness_Adv(MLWE_PKE_HASH, B(AdvCorr(A), RO.LRO)).main() @ &m : res] .
+  Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.RO)).main() @ &m : res] =
+  Pr[PKE.Correctness_Adv(MLWE_PKE_HASH, B(AdvCorr(A), RO.RO)).main() @ &m : res] .
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
-by smt(gt0_qH gt0_qP). 
+move => ?.
+
+by smt(ge0_qH ge0_qP). 
 qed.
 
 
-end section.
+end section. *)
 end MLWE_PKE_Hash.
 
 

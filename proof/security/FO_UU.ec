@@ -1446,12 +1446,12 @@ lemma conclusion_cpa &m :
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] +
               2%r * `|Pr[CPA(BasePKE, OWvsIND.Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
               2%r * `|Pr[CPA(BasePKE, OWvsIND_RO.BowROM(AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
-                  2%r * (qH + qP + 1)%r * eps_msg. 
+                  2%r * (qHU + 2)%r * eps_msg. 
   proof.
   move => qhval qv0 qp0 qhphc qhcb A_ll.
   have concuu:= conclusion_cca_pre A &m A_ll.
   have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. (* FIXME: TOP *)
-  + admit.
+  + admit. (* count *)
   + move => H0 H0ll;islossless.
     + admit. (* FIXME + have := (A_ll (X(H0)) (CCA(X(H0)))). *)
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
