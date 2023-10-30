@@ -1313,48 +1313,15 @@ qed.
 
 (* Instantiation *)
 
-(* lemma correctness:
-  forall (A0(H0 : PKEROM.POracle) <:
-           PKEROM.CORR_ADV{+all mem, -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B} [find : {H0.get} ]) &m,
-    qHC < FinT.card - 1 =>
-    (forall (RO <: PKEROM.RO.RO{+all mem, -CO1, -A0} ),
-       hoare[ Correctness_Adv1(RO, A0).A.find : CO1.counter = 0 ==> CO1.counter <= qHC]) =>
-    (forall (H0 <: PKEROM.POracle{+all mem, -A0} ), islossless H0.get => islossless A0(H0).find) =>
-    Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, A0).main() @ &m : res] <=
-    (qHC + 1)%r * Pr[Correctness_Adv(BasePKE, B(A0, PKEROM.RO.RO)).main() @ &m : res]. *)
-
 (* 
-lemma conclusion:
-  forall (A0(H0 : PKEROM.POracle, O : PKEROM.VA_ORC) <:
-           PKEROM.PCVA_ADV{+all mem, -PKEROM.RO.RO, -PKEROM.RO.FRO, -PKEROM.OW_PCVA, -Correctness_Adv1, -B, -CountO, -O_AdvOW, -Gm}
-             [find : {O.cvo, O.pco, H0.get} ]) &m (gamma_spread : real),
-    qH + qP + 1 = qHC =>
-    qHC < FinT.card - 1 =>
-    gamma_spread_ok gamma_spread =>
-    (forall (RO <: PKEROM.POracle{+all mem, -CountO, -A0} ) (O <: PKEROM.VA_ORC{+all mem, -CountO, -A0} ),
-       hoare[ A0(CountH(RO), CountO(O)).find :
-               CountO.c_h = 0 /\ CountO.c_cvo = 0 /\ CountO.c_pco = 0 ==>
-               CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
-    (forall (H0 <: PKEROM.POracle{+all mem, -A0} ) (O <: PKEROM.VA_ORC{+all mem, -A0} ),
-       islossless O.cvo => islossless O.pco => islossless H0.get => islossless A0(H0, O).find) =>
-    Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, A0).main() @ &m : res] <=
-    Pr[OW_CPA(BasePKE, AdvOW(A0)).main() @ &m : res] +
-    (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A0)).main() @ &m : res] +
-    (qH + qP + 2)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(A0), PKEROM.RO.RO)).main() @ &m : res] +
-    qV%r * gamma_spread.
-*)
+  Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
+      2%r * `| Pr[PKE.CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(A)))).main() @ &m : res] - 1%r / 2%r| 
+    + 2%r * `| Pr[PKE.CPA(BasePKE, OWvsIND.Bowl(AdvOWL_query(A))).main() @ &m : res] - 1%r/2%r | 
+    + Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query(A))).main() @ &m : res ]
+    + Pr[ PKE.Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(A))).main() @ &m : res]
+    + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.RO)).main() @ &m : res ]
+    + qV%r * gamma_spread + 2%r * (qH + qP + 1)%r * eps_msg.
 
-(*
-lemma ow_ind &m : 
-   islossless S.kg => 
-   islossless S.enc =>
-   islossless S.dec =>
-   islossless A.find => 
-
-   Pr[ OW_CPA(S,A).main() @ &m : res ] <=
-      2%r * (eps_msg + 
-        `| Pr[CPA(S,Bow(A)).main() @ &m : res] - 1%r/2%r |) + 
-             Pr[ Correctness_Adv(S,BOWp(S,A)).main() @ &m : res ].
 *)
 
 end section.
@@ -1362,10 +1329,10 @@ end section.
 section.
 
 declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, -OW_CPA,
-                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, 
+                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, -OWL_CPA,
                      -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B,
                      -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, 
-                     -BOWp, -OWvsIND.Bow, -BasePKE, -AdvOW_query_MERGE, -OWvsIND_RO.RO.RO}.
+                     -BOWp, -OWvsIND.Bowl, -BasePKE}.
 
 lemma conclusion &m : 
   qH = qHU + 1 =>
@@ -1386,7 +1353,7 @@ lemma conclusion &m :
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
-              2%r * `|Pr[CPA(BasePKE, OWvsIND.Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
+              2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(BUUOWMod(A))))).main() @ &m : res] - 1%r / 2%r| +
                  (qHU + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(A))).main() @ &m : res] +
                    2%r * eps_msg. 
   proof.
@@ -1438,15 +1405,15 @@ lemma conclusion_cpa &m :
   islossless H0.get2 => islossless A(H0, O).guess) =>
 
   `| Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] - 1%r/2%r | <=
-     `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
-         Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
+      2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(BUUOWMod(A))))).main() @ &m : res] - 1%r / 2%r| +
+      2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(AdvOWL_query(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
            (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
-                         Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] +
-              2%r * `|Pr[CPA(BasePKE, OWvsIND.Bow(AdvOW(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
-              2%r * `|Pr[CPA(BasePKE, OWvsIND_RO.BowROM(AdvOW_query_MERGE(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
+                         Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query(BUUOWMod(A)))).main() @ &m : res] +
+           `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
+               Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
                   2%r * (qHU + 2)%r * eps_msg. 
   proof.
   move => qhval qv0 qp0 qhphc qhcb A_ll.
@@ -1478,7 +1445,7 @@ lemma conclusion_cpa &m :
   have ? : Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res] = 
            Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, BUUOWMod(A)).main() @ &m : res]
     by byequiv => //;proc;inline *;sim.
-
+move => *.
    smt().
 qed.
 
