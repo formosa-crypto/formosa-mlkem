@@ -1415,6 +1415,7 @@ lemma conclusion &m :
             Pr[PKEROM.Correctness_Adv(PKEROM.RO.RO, TT, BUUCI(A)).main() @ &m : res] 
     by byequiv => //;proc;inline *;sim.
 
+  (* FIXME: MOVE TO TT? FOLLOWS FROM NOT USING SAMPLE *)
   have ? : Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res] = 
            Pr[PKEROM.OW_PCVA(PKEROM.RO.LRO, TT, BUUOWMod(A)).main() @ &m : res]
     by byequiv => //;proc;inline *;sim.
