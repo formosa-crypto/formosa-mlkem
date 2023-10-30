@@ -1361,16 +1361,16 @@ lemma conclusion &m :
   have concuu:= conclusion_cca_pre A &m A_ll.
   have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. 
   + admit. (*count*)
-  + admit. (*lossless*)
+  + by move => H Hl;proc;inline *; call(:true);islossless.  
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
   + admit. (*count*)
-  + admit. (*lossless*) print Top.TT.conclusion.
+  + by move => H Hl;proc;inline *; call(:true);islossless.  
   have owcca := Top.TT.conclusion (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
-  + admit. (*gamma trivial*) 
+  + by smt(mu_bounded).
   + admit. (*count*)
-  + admit. (*lossless*)
+  + by move => H Hl1 Hl2 Hl3 Hl4;proc;inline *; call(:true);islossless.  
   have ow2ind := OWvsIND.ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
-  + admit. (*lossless*)
+  + by proc;inline *;wp;call(:true); islossless.  
  
   rewrite qv0 /= in owcca. 
 
