@@ -64,7 +64,7 @@ op dec(sk : skey, c : ciphertext) : plaintext option =
 (******************************************************************)
 (*    The Security Games                                          *)
 
-(* We noe get them from the PKE theory for the TT transformation.
+(* We noe get them from the PKE theory for the UU+TT transformation.
 clone import PKE with 
   type pkey <- pkey,
   type skey <- skey,
@@ -72,30 +72,36 @@ clone import PKE with
   type ciphertext <- ciphertext.
 *)
 
-require FO_TT.
-clone import FO_TT with
-  type PKE.pkey <- MLWE_PKE_Hash.pkey,
-  type PKE.skey <- MLWE_PKE_Hash.skey,
-  type PKE.ciphertext <- MLWE_PKE_Hash.ciphertext,
-  type plaintext <- MLWE_PKE_Hash.plaintext,
-  type randomness <- MLWE_PKE_Hash.randomness,
-  op kg = dmap drand kg,
-  op enc <- enc,
-  op dec <- dec,
-  op randd <- drand
-  proof kg_ll by (apply dmap_ll;apply drand_ll)
-  proof randd_ll by apply drand_ll.
-import PKE.
+require FO_UU.
+clone import FO_UU with
+  type TT.PKE.pkey <- MLWE_PKE_Hash.pkey,
+  type TT.PKE.skey <- MLWE_PKE_Hash.skey,
+  type TT.PKE.ciphertext <- MLWE_PKE_Hash.ciphertext,
+  type TT.plaintext <- MLWE_PKE_Hash.plaintext,
+  type TT.randomness <- MLWE_PKE_Hash.randomness,
+  op TT.kg = dmap drand kg,
+  op TT.enc <- enc,
+  op TT.dec <- dec,
+  op TT.randd <- drand
+  proof TT.kg_ll by (apply dmap_ll;apply drand_ll)
+  proof TT.randd_ll by apply drand_ll. 
+import TT.PKE.
 
 (* remaining axioms
- dplaintext_ll: is_lossless dplaintext
- dplaintext_uni: is_uniform dplaintext
- dplaintext_fu: is_full dplaintext
- FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
- ge0_qH: 0 <= qH
- ge0_qV: 0 <= qV
- ge0_qP: 0 <= qP
- ge0_qHC: 0 <= qHC *)
+ TT.dplaintext_ll: is_lossless dplaintext
+ TT.dplaintext_uni: is_uniform dplaintext
+ TT.dplaintext_fu: is_full dplaintext
+ TT.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
+ TT.ge0_qH: 0 <= qH
+ TT.ge0_qV: 0 <= qV
+ TT.ge0_qP: 0 <= qP
+ TT.ge0_qHC: 0 <= qHC
+ dkey_ll: is_lossless dkey
+ dkey_uni: is_uniform dkey
+ dkey_fu: is_full dkey
+ PseudoRF.dK_ll: is_lossless dK
+ ge0_qHU: 0 <= qHU
+ ge0_qD: 0 <= qD *)
 
 module MLWE_PKE_HASH : Scheme = {
 
@@ -546,101 +552,149 @@ lemma correctness_theorem &m fail_prob :
 
 end section.
 
-(*
-
 section. 
 
-import PKEROM.
+import TT.PKEROM.
 declare module A <:
-          PCVA_ADV{-OWvsIND_RO.RO.RO.m, -OW_CPA, -BOWp, -OWvsIND.Bow, -OWvsIND_RO.RO.RO, -RO.RO, -RO.FRO, -OW_PCVA, -Correctness_Adv1, -B, -CountO, -Gm, -O_AdvOW, -AdvOW_query_MERGE}.
+       KEMROMx2.CCA_ADV{ -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.Correctness_Adv1, -TT.B, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.CCA, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3}.
 
 local equiv kg_same : 
-  BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
+  TT.BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
 proc;rndsem {2} 0. 
 admit. (* FIXME: This should not be needed, as post does not mention r *)
 qed.
 
-lemma conclusion &m gamma_spread fail_prob :
- qH + qP + 1 = qHC =>
-
- qHC < FinT.card - 1 =>
+(* 
+print conclusion_cpa.
+lemma conclusion_cpa:
+  forall (A0(H : KEMROMx2.POracle_x2, O : KEMROMx2.CCA_ORC) <:
+           KEMROMx2.CCA_ADV{+all mem, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.Correctness_Adv1, -TT.B, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.CCA, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3}
+             [guess : {O.dec, H.get1, H.get2} ]) &m,
+    TT.qH = qHU + 1 =>
+    TT.qV = 0 =>
+    TT.qP = 0 =>
+    TT.qH + 1 = TT.qHC =>
+    TT.qHC < TT.FinT.card - 1 =>
+    (forall (H0 <: KEMROMx2.POracle_x2{+all mem, -A0} ) (O <: KEMROMx2.CCA_ORC{+all mem, -A0} ),
+       islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A0(H0, O).guess) =>
+    `|Pr[KEMROMx2.CCA(KEMROMx2.RO_x2(KEMROMx2.RO1.RO, KEMROMx2.RO2.RO), UU, A0).main() @ &m : res] - 1%r / 2%r| <=
+    2%r * `|Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A0))))).main() @ &m : res] - 1%r / 2%r| +
+    2%r * `|Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A0)))).main() @ &m : res] - 1%r / 2%r| +
+    (qHU + 3)%r * Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUC(A0), RO.RO)).main() @ &m : res] +
+    (qHU + 3)%r * Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUCI(A0), RO.RO)).main() @ &m : res] +
+    (qHU + 3)%r * Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(TT.AdvCorr(BUUOWMod(A0)), RO.RO)).main() @ &m : res] +
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A0)))).main() @ &m : res] +
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A0)))).main() @ &m : res] +
+    `|Pr[J.IND(PseudoRF.PRF, D(A0)).main() @ &m : res] - Pr[J.IND(RF.RF, D(A0)).main() @ &m : res]| +
+    2%r * (qHU + 2)%r * eps_msg.
+*)
+lemma conclusion &m fail_prob :
+    TT.qH = qHU + 1 =>
+    TT.qV = 0 =>
+    TT.qP = 0 =>
+    TT.qH + 1 = TT.qHC =>
+    TT.qHC < TT.FinT.card - 1 =>
  
- gamma_spread_ok gamma_spread =>
-
+    
  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
 
- (forall (RO<:POracle{ -CountO, -A })(O<:VA_ORC {-CountO, -A}), 
-  hoare [A(CountH(RO), CountO(O)).find : 
-       CountO.c_h = 0   /\ CountO.c_cvo = 0   /\ CountO.c_pco = 0 ==> 
-       CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP]) =>
+(* TO DO
+ (forall (RO<:POracle{ -TT.CountO, -A })(O<:VA_ORC {-TT.CountO, -A}), 
+  hoare [A(TT.CountH(RO), TT.CountO(O)).find : 
+       TT.CountO.c_h = 0   /\ TT.CountO.c_cvo = 0   /\ TT.CountO.c_pco = 0 ==> 
+       TT.CountO.c_h <= TT.qH /\ TT.CountO.c_cvo <= TT.qV /\ TT.CountO.c_pco <= TT.qP]) =>*)
 
-  (forall (H0 <: POracle { -A }) (O <: VA_ORC { -A }),
-  islossless O.cvo => islossless O.pco => islossless H0.get => islossless A(H0, O).find) =>
+    (forall (H0 <: KEMROMx2.POracle_x2{ -A} ) (O <: KEMROMx2.CCA_ORC{ -A} ),
+       islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A(H0, O).guess) =>
 
-  Pr[OW_PCVA(RO.RO, TT, A).main() @ &m : res] <=
-      Pr[PKE.OW_CPA(MLWE_PKE_HASH, AdvOW(A)).main() @ &m : res]
-    + 2%r * (qH + qP)%r * 
-        `| Pr[PKE.CPA(MLWE_PKE_HASH,OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res] - 1%r/2%r | 
-    + (qH + qP + 3)%r * fail_prob
-    + 2%r * (qH + qP)%r * eps_msg
-    + qV%r * gamma_spread.
+    `|Pr[KEMROMx2.CCA(KEMROMx2.RO_x2(KEMROMx2.RO1.RO, KEMROMx2.RO2.RO), UU, A).main() @ &m : res] - 1%r / 2%r| <=
+    2%r * `| Pr[MLWE_H(B1(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(false, false) @ &m : res] -
+             Pr[MLWE_H(B1(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(false, true) @ &m : res] +
+             Pr[MLWE_H(B2(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(true, false) @ &m : res] -
+             Pr[MLWE_H(B2(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(true, true) @ &m : res] | +
+    2%r * `| Pr[MLWE_H(B1(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(false, false) @ &m : res] -
+             Pr[MLWE_H(B1(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(false, true) @ &m : res] +
+             Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(true, false) @ &m : res] -
+             Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(true, true) @ &m : res]| +
+    (3%r * (qHU + 3)%r + 2%r) * fail_prob +
+    `|Pr[J.IND(PseudoRF.PRF, D(A)).main() @ &m : res] - Pr[J.IND(RF.RF, D(A)).main() @ &m : res]| +
+    2%r * (qHU + 2)%r * eps_msg.
 proof.
-move => qvals qhcsmall gs_ok fail_probE A_count A_ll.
-have <- : 
-   Pr[PKE.OW_CPA(BasePKE, AdvOW(A)).main() @ &m : res] = 
-    Pr[PKE.OW_CPA(MLWE_PKE_HASH, AdvOW(A)).main() @ &m : res].
-+ byequiv => //;proc. seq 1 1 : (#pre /\ ={OW_CPA.pk,OW_CPA.sk});
+move => qvals qv0 qp0 qhv qhcsmall fail_probE A_ll.
+
+have := (conclusion_cpa A &m qvals qv0 qp0 qhv qhcsmall A_ll).
+
+have -> : 
+   Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))).main() @ &m : res] = 
+    Pr[TT.PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))).main() @ &m : res].
++ byequiv => //;proc; seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
-have <- :  
-    Pr[PKE.CPA(BasePKE, OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res] = 
-     Pr[PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res].
+have -> :  
+    Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))).main() @ &m : res]  = 
+     Pr[TT.PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))).main() @ &m : res] .
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
-
-have ? := (conclusion A &m gamma_spread qvals qhcsmall gs_ok A_count A_ll).
-
-have  : (qH + qP)%r * Pr[OW_CPA(BasePKE, AdvOW_query(A)).main() @ &m : res] +
-   (qH + qP + 2)%r * Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.RO)).main() @ &m : res]  <=
-   2%r * (qH + qP)%r * `|Pr[PKE.CPA(BasePKE, OWvsIND.Bow(AdvOW_query(A))).main() @ &m : res] - 1%r / 2%r| +
-(qH + qP + 3)%r * fail_prob + 2%r * (qH + qP)%r * eps_msg; last by smt().
-
-have ? := OWvsIND.ow_ind BasePKE (AdvOW_query(A)) &m _ _ _ _;1..3:by islossless.
-+ proc; islossless.
-  + proc*;call (A_ll (CountH(RO.RO)) (CountO(O_AdvOW)));islossless.
-    by admit. (* qH = 0 apply drange_ll; smt(ge0_qH ge0_qP). *)
-
-have := correctness_theorem (BOWp(BasePKE, AdvOW_query(A))) &m fail_prob _; 1: by islossless.
-
+have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A)))) &m fail_prob _; 1: by islossless.
 have <- : 
-    Pr[PKE.Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query(A))).main() @ &m : res] = Pr[PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(BasePKE, AdvOW_query(A))).main() @ &m : res].
-+ byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
-   1: by conseq />;call kg_same;auto => />.
-  by inline *;sim.
-
-move => ?. 
-
-have  := correctness_noise (B(AdvCorr(A), RO.RO)) &m _.
-+ proc;islossless.
-  + proc*;call (A_ll (CountH(H(CO1(RO.RO)))) (CountO(G2_O(CO1(RO.RO)))));islossless.
-    by admit. (* qH = 0 apply drange_ll; smt(ge0_qH ge0_qP). *)
-
-have <- : 
-  Pr[PKE.Correctness_Adv(BasePKE, B(AdvCorr(A), RO.RO)).main() @ &m : res] =
-  Pr[PKE.Correctness_Adv(MLWE_PKE_HASH, B(AdvCorr(A), RO.RO)).main() @ &m : res] .
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A)))).main() @ &m : res] = 
+   Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A)))).main() @ &m : res].
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
 move => ?.
 
-by smt(ge0_qH ge0_qP). 
+have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A)))) &m fail_prob _; 1: by islossless.
+have <- : 
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A)))).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A)))).main() @ &m : res].
++ byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
+   1: by conseq />;call kg_same;auto => />.
+  by inline *;sim.
+
+move => ?. 
+
+have := correctness_theorem (TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)) &m fail_prob _; 1: by admit. (* islossless. *)
+have <- : 
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)).main() @ &m : res].
+ + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
+   1: by conseq />;call kg_same;auto => />.
+  by inline *;sim.
+
+move => ?. 
+
+have := correctness_theorem (TT.B(BUUCI(A), RO.RO)) &m fail_prob _; 1: by admit. (*lossless *)
+have <- : 
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUCI(A), RO.RO)).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUCI(A), RO.RO)).main() @ &m : res].
++ byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
+   1: by conseq />;call kg_same;auto => />.
+  by inline *;sim.
+
+move => ?. 
+
+have := correctness_theorem (TT.B(BUUC(A), RO.RO)) &m fail_prob _; 1: by admit. (*lossless *)
+have <- : 
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUC(A), RO.RO)).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUC(A), RO.RO)).main() @ &m : res].
++ byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
+   1: by conseq />;call kg_same;auto => />.
+  by inline *;sim.
+
+move => ?.
+
+have := main_theorem (OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))) &m _ _; 1,2: by admit. (* lossless *)
+have := main_theorem (OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))) &m _ _; 1,2: by admit. (* lossless *)
+
+by smt(ge0_qHU). 
 qed.
 
 
-end section. *)
+end section. 
 end MLWE_PKE_Hash.
 
 

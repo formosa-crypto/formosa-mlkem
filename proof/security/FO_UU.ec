@@ -1361,14 +1361,14 @@ lemma conclusion &m :
   have concuu:= conclusion_cca_pre A &m A_ll.
   have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. 
   + admit. (*count*)
-  + by move => H Hl;proc;inline *; call(:true);islossless.  
+  + by move => *;proc;inline *; call(:true);islossless.  
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
   + admit. (*count*)
-  + by move => H Hl;proc;inline *; call(:true);islossless.  
+  + by move => *;proc;inline *; call(:true);islossless.  
   have owcca := Top.TT.conclusion (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
   + by smt(mu_bounded).
   + admit. (*count*)
-  + by move => H Hl1 Hl2 Hl3 Hl4;proc;inline *; call(:true);islossless.  
+  + by move => *;proc;inline *; call(:true);islossless.  
   have ow2ind := OWvsIND.ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
   + by proc;inline *;wp;call(:true); islossless.  
  
@@ -1420,17 +1420,14 @@ lemma conclusion_cpa &m :
   have concuu:= conclusion_cca_pre A &m A_ll.
   have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. (* FIXME: TOP *)
   + admit. (* count *)
-  + move => H0 H0ll;islossless.
-    + admit. (* FIXME + have := (A_ll (X(H0)) (CCA(X(H0)))). *)
+  + by move => *;proc;inline *; call(:true);islossless.  
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
   + admit. (*count*)
-  + move => H0 H0ll; islossless.
-    + admit. (* FIXME: + have := (A_ll (XI(H0)) (CCA(XI(H0)))). *)
+  + by move => *;proc;inline *; call(:true);islossless.  
   have owcca := Top.TT.conclusion_cpa (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
   + by smt(mu_bounded). 
   + admit. (*count*)
-  + move => H0 *;islossless.
-    + admit. (* FIXME: lossless *) 
+  + by move => *;proc;inline *; call(:true);islossless.  
  
   rewrite qv0 /= in owcca. 
 
