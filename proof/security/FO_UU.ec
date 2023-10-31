@@ -671,7 +671,7 @@ module (BUUCI(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
 
 section.
 
-declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, 
+declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, -CO1,
                     -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, -CountCCAO} .
 
 
@@ -1288,6 +1288,39 @@ by smt().
 qed.
 
 (* End Remove Eager                         *)
+
+(* Counting queries *)
+lemma count_buuc (H1 <: PKEROM.RO.RO{ -CO1, -BUUC(A)} ):
+  qHT + qHU + 2 <= qHC =>
+
+ (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+  hoare [A(CountHx2(RO), O).guess : 
+       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
+       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
+
+  hoare[ Correctness_Adv1(H1, BUUC(A)).A.find : CO1.counter = 0 ==> CO1.counter <= qHC].
+proof. 
+move => qbounds A_count;proc.
+call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ CO1.counter <= 2 ==> 
+       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU /\ CO1.counter <= qHC).   
++ conseq  (: CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 2   ==> 
+             CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 2) 
+     (A_count (<:BUUC(A, CO1(H1)).H2B) (<:CCA(CountHx2(BUUC(A, CO1(H1)).H2B), UU2, A).O));1..2: smt(ge0_qHT).
+  proc(CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 2);1,2:smt().
+  + by proc;inline *;auto => />;trivial.
+  + proc;inline *. 
+    sp;if;if;wp;1..3: by call(_:true);auto => /> /#.
+    by auto => /> /#.
+  + proc;inline *;sp;if;if;wp;auto => />;1..3: 
+    by call(_:true);auto => /> /#.
+    by auto => /> /#.
+  inline 13; wp; conseq (: CO1.counter <=2); 1: by smt(). 
+  seq 10 : #pre; 1: by auto =>  />. 
+  inline *;swap 17 9;swap 8 17;wp;conseq(:true); 1: by smt().
+  by  auto => />. 
+qed.
+
+(* End counting *)
   
 lemma conclusion_cca_pre &m : 
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
@@ -1340,18 +1373,18 @@ declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2,
 
 print CountCCAO.
 lemma conclusion &m : 
-  qH = (* qHT + *) qHU + 1 =>
+  qH = qHT + qHU + 1 =>
   qV = 0 =>
   qP = 0 =>
   qH + 1 = qHC =>
   qHC < FinT.card - 1 =>
 
-(*
+
  (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
   hoare [A(CountHx2(RO), O).guess : 
        CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
        CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
-*)
+
 
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => 
@@ -1361,48 +1394,18 @@ lemma conclusion &m :
   `| Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] - 1%r/2%r | <=
      `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
          Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
-           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
-           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
-           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
+           (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
+           (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
+           (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
               2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(BUUOWMod(A))))).main() @ &m : res] - 1%r / 2%r| +
-                 (qHU + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(A))).main() @ &m : res] +
+                 (qHT + qHU + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(A))).main() @ &m : res] +
                    2%r * eps_msg. 
   proof.
-  move => qhval qv0 qp0 qhphc qhcb (* A_count *) A_ll.
+  move => qhval qv0 qp0 qhphc qhcb  A_count  A_ll.
   have concuu:= conclusion_cca_pre A &m A_ll.
-  have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. 
-  admit. (* 
-  + move => O; proc.
-    call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ CO1.counter = 1 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU /\ CO1.counter <= qHC).   
-      conseq  (: CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 1   ==> 
-                 CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 1) 
-          (A_count (<:BUUC(A, CO1(O)).H2B) (<:CCA(CountHx2(BUUC(A, CO1(O)).H2B), UU2, A).O)); 1,2: smt(ge0_qHT).
-       + proc(CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 1);1,2:smt().
-         + by proc;inline *;auto => />;trivial.
-         + proc;inline *. 
-           sp;if;if;wp;1..3: by call(_:true);auto => /> /#.
-           + by auto => /> /#.
-         + proc;inline *. 
-           sp;if;if;wp;auto => />;1:call(_:true);auto => />.
-           + by auto => /> /#.
-           call(_:true);auto => />.
-           by auto => /> /#.
-           call(_:true);auto => />.
-           by auto => /> /#.
-           by auto => /> /#.
-        inline *; seq 16:#pre; 1: by auto.
-        if;if;wp;sp;rnd;wp.
-         + seq 1 : #pre; 1: by call(:true);auto.
-            sp;if;if;wp;sp.
-             + call(_:true). auto => />. smt.  
-             + call(_:true). auto => />. smt.  
-          
-   + call(_:true). auto => />. smt. 
-
-        auto => /
-       *)
+  have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _.  
+  + by move => O;apply (count_buuc A O); [ smt() | apply A_count]. 
   + by move => *;proc;inline *; call(:true);islossless.  
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
   + admit. (*count*)
@@ -1435,11 +1438,16 @@ qed.
 module X(O : PKEROM.POracle) =  BUUC(A, O).H2B.
 module XI(O : PKEROM.POracle) =  BUUCI(A, O).H2B.
 lemma conclusion_cpa &m : 
-  qH = qHU + 1 =>
+  qH = qHT + qHU + 1 =>
   qV = 0 =>
   qP = 0 =>
   qH + 1 = qHC =>
   qHC < FinT.card - 1 =>
+
+ (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+  hoare [A(CountHx2(RO), O).guess : 
+       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
+       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
 
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => 
@@ -1449,19 +1457,19 @@ lemma conclusion_cpa &m :
   `| Pr[ KEMROMx2.CCA(RO_x2(RO1.RO,RO2.RO), UU, A).main() @ &m : res ] - 1%r/2%r | <=
       2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(BUUOWMod(A))))).main() @ &m : res] - 1%r / 2%r| +
       2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(AdvOWL_query(BUUOWMod(A)))).main() @ &m : res] - 1%r / 2%r| +
-           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
-           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
-           (qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
+           (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(A), PKEROM.RO.RO)).main() @ &m : res] +
+           (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
+           (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query(BUUOWMod(A)))).main() @ &m : res] +
            `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
                Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
-                  2%r * (qHU + 2)%r * eps_msg. 
+                  2%r * (qHT + qHU + 2)%r * eps_msg. 
   proof.
-  move => qhval qv0 qp0 qhphc qhcb A_ll.
+  move => qhval qv0 qp0 qhphc qhcb A_count A_ll.
   have concuu:= conclusion_cca_pre A &m A_ll.
   have corruu1 := Top.TT.correctness (BUUC(A)) &m qhcb _ _. (* FIXME: TOP *)
-  + admit. (* count *)
+  + by move => O;apply (count_buuc A O); [ smt() | apply A_count]. 
   + by move => *;proc;inline *; call(:true);islossless.  
   have corruu2 := Top.TT.correctness (BUUCI(A)) &m qhcb _ _. 
   + admit. (*count*)
