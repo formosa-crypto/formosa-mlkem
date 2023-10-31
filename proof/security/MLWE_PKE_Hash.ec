@@ -556,7 +556,7 @@ section.
 
 import TT.PKEROM.
 declare module A <:
-       KEMROMx2.CCA_ADV{ -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.Correctness_Adv1, -TT.B, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.CCA, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3}.
+       KEMROMx2.CCA_ADV{-OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.Correctness_Adv1, -TT.B, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.CCA, -CountCCAO, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3}.
 
 local equiv kg_same : 
   TT.BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
@@ -564,32 +564,8 @@ proc;rndsem {2} 0.
 admit. (* FIXME: This should not be needed, as post does not mention r *)
 qed.
 
-(* 
-print conclusion_cpa.
-lemma conclusion_cpa:
-  forall (A0(H : KEMROMx2.POracle_x2, O : KEMROMx2.CCA_ORC) <:
-           KEMROMx2.CCA_ADV{+all mem, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.Correctness_Adv1, -TT.B, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.CCA, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3}
-             [guess : {O.dec, H.get1, H.get2} ]) &m,
-    TT.qH = qHU + 1 =>
-    TT.qV = 0 =>
-    TT.qP = 0 =>
-    TT.qH + 1 = TT.qHC =>
-    TT.qHC < TT.FinT.card - 1 =>
-    (forall (H0 <: KEMROMx2.POracle_x2{+all mem, -A0} ) (O <: KEMROMx2.CCA_ORC{+all mem, -A0} ),
-       islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A0(H0, O).guess) =>
-    `|Pr[KEMROMx2.CCA(KEMROMx2.RO_x2(KEMROMx2.RO1.RO, KEMROMx2.RO2.RO), UU, A0).main() @ &m : res] - 1%r / 2%r| <=
-    2%r * `|Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A0))))).main() @ &m : res] - 1%r / 2%r| +
-    2%r * `|Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A0)))).main() @ &m : res] - 1%r / 2%r| +
-    (qHU + 3)%r * Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUC(A0), RO.RO)).main() @ &m : res] +
-    (qHU + 3)%r * Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUCI(A0), RO.RO)).main() @ &m : res] +
-    (qHU + 3)%r * Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(TT.AdvCorr(BUUOWMod(A0)), RO.RO)).main() @ &m : res] +
-    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A0)))).main() @ &m : res] +
-    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A0)))).main() @ &m : res] +
-    `|Pr[J.IND(PseudoRF.PRF, D(A0)).main() @ &m : res] - Pr[J.IND(RF.RF, D(A0)).main() @ &m : res]| +
-    2%r * (qHU + 2)%r * eps_msg.
-*)
 lemma conclusion &m fail_prob :
-    TT.qH = qHU + 1 =>
+    TT.qH = qHT + qHU + 1 =>
     TT.qV = 0 =>
     TT.qP = 0 =>
     TT.qH + 1 = TT.qHC =>
@@ -598,11 +574,11 @@ lemma conclusion &m fail_prob :
     
  Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
 
-(* TO DO
- (forall (RO<:POracle{ -TT.CountO, -A })(O<:VA_ORC {-TT.CountO, -A}), 
-  hoare [A(TT.CountH(RO), TT.CountO(O)).find : 
-       TT.CountO.c_h = 0   /\ TT.CountO.c_cvo = 0   /\ TT.CountO.c_pco = 0 ==> 
-       TT.CountO.c_h <= TT.qH /\ TT.CountO.c_cvo <= TT.qV /\ TT.CountO.c_pco <= TT.qP]) =>*)
+    (forall (RO <: KEMROMx2.POracle_x2{ -CountCCAO, -A} )
+       (O <: KEMROMx2.CCA_ORC{ -CountCCAO, -A} ),
+       hoare[ A(CountHx2(RO), O).guess :
+               CountCCAO.c_ht = 0 /\ CountCCAO.c_hu = 0 /\ CountCCAO.c_dec = 0 ==>
+               CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU]) =>
 
     (forall (H0 <: KEMROMx2.POracle_x2{ -A} ) (O <: KEMROMx2.CCA_ORC{ -A} ),
        islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A(H0, O).guess) =>
@@ -616,13 +592,13 @@ lemma conclusion &m fail_prob :
              Pr[MLWE_H(B1(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(false, true) @ &m : res] +
              Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(true, false) @ &m : res] -
              Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(true, true) @ &m : res]| +
-    (3%r * (qHU + 3)%r + 2%r) * fail_prob +
+    (3%r * (qHT + qHU + 3)%r + 2%r) * fail_prob +
     `|Pr[J.IND(PseudoRF.PRF, D(A)).main() @ &m : res] - Pr[J.IND(RF.RF, D(A)).main() @ &m : res]| +
-    2%r * (qHU + 2)%r * eps_msg.
+    2%r * (qHT + qHU + 2)%r * eps_msg.
 proof.
-move => qvals qv0 qp0 qhv qhcsmall fail_probE A_ll.
+move => qvals qv0 qp0 qhv qhcsmall fail_probE A_count A_ll.
 
-have := (conclusion_cpa A &m qvals qv0 qp0 qhv qhcsmall A_ll).
+have := (conclusion_cpa A &m qvals qv0 qp0 qhv qhcsmall A_count A_ll).
 
 have -> : 
    Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))).main() @ &m : res] = 
@@ -689,8 +665,7 @@ move => ?.
 
 have := main_theorem (OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))) &m _ _; 1,2: by admit. (* lossless *)
 have := main_theorem (OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))) &m _ _; 1,2: by admit. (* lossless *)
-
-by smt(ge0_qHU). 
+by smt(ge0_qHU ge0_qHT). 
 qed.
 
 
