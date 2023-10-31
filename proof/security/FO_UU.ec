@@ -624,7 +624,8 @@ module (BUUOWMod(A : CCA_ADV) : PKEROM.PCVA_ADV) (H : PKEROM.POracle, O : PKEROM
     CCA.cstar <- Some cm;
     H2BOWMod.crd <- 0;
     H2BOWMod.mf <- None;
-    b' <@ CCA(H2B, UU2, A).A.guess(pk, cm, if b then k1 else k2);
+    CountHx2(H2B).init();    
+    b' <@ CCA(CountHx2(H2B), UU2, A).A.guess(pk, cm, if b then k1 else k2);
     return if H2BOWMod.crd = 1 then  H2BOWMod.mf else None;
    } 
 
@@ -672,7 +673,7 @@ module (BUUCI(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
 
 section.
 
-declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, -CO1,
+declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, -CO1, -CountO,
                     -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, -CountCCAO} .
 
 
@@ -1258,16 +1259,19 @@ call(: ={glob PKEROM.OW_PCVA,RO1E.FunRO.f,RO2.RO.m,glob CCA,UU2.lD} /\
     last by auto => />; smt(fdom0 filter0 fcards0).
 + proc;inline *;sp;if;1,3: by auto => />.
   by sp;if;auto.
-+ by proc;auto.
++ by proc;inline*;auto.
 
 proc;inline *; 
   case (m{1} \notin RO2.RO.m{1}).
 + rcondt{1} 8;1 : by auto.
-  rcondt{2} 8;1 : by auto.
+  rcondt{2} 9;1 : by auto.
   auto => /> &2;rewrite /b2i => *; 
-      smt(disjointP fcardUI_indep in_filter in_fset0 fcard_ge0 fcard_eq0 setUE elems_fset0 elems_fset1 set1E elems_fset1 fcardU  fcardI in_filter in_fset0 mem_fdom filter1 fcardU fset0U fdom_set   filterU fdom0  filter0 fcard_eq0 fcard1 fsetUid fsetU0).
+      smt(disjointP fcardUI_indep in_filter in_fset0 fcard_ge0 fcard_eq0 setUE 
+          elems_fset0 elems_fset1 set1E elems_fset1 fcardU  fcardI in_filter 
+          in_fset0 mem_fdom filter1 fcardU fset0U fdom_set   filterU fdom0  
+          filter0 fcard_eq0 fcard1 fsetUid fsetU0).
   + rcondf{1} 8;1 : by auto.
-    rcondf{2} 8;1 : by auto.
+    rcondf{2} 9;1 : by auto.
     by auto => />.
 qed.
 
@@ -1278,10 +1282,10 @@ proof.
 rewrite (owmod &m).
 have -> :Pr[PKEROM.OW_PCVA(RO1.RO, TT, BUUOWMod(A)).main() @ &m : res]  = 
           Pr[RO1.MainD(DG4,RO1.RO).distinguish() @ &m : res] 
-  by byequiv => //;proc;inline *;wp 40 42;sim.
+  by byequiv => //;proc;inline *;wp 42 44;sim.
 have -> : Pr[PKEROM.OW_PCVA(RO1E.FunRO, TT, BUUOWMod(A)).main() @ &m : res] = 
           Pr[RO1.MainD(DG4,RO1E.FunRO).distinguish() @ &m : idfun res]
-    by rewrite /idfun /=;byequiv => //;proc;inline *; wp 38 40; sim;
+    by rewrite /idfun /=;byequiv => //;proc;inline *; wp 40 42; sim;
      auto => />; apply MUniFinFun.dfun_ll;smt(randd_ll).
 have := RO1E.pr_FinRO_FunRO_D _ DG4 &m () idfun; 1: by smt(randd_ll).
 have := RO1E.pr_RO_FinRO_D _ DG4 &m () idfun; 1: by smt(randd_ll).
@@ -1309,16 +1313,9 @@ call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ CO
      (A_count (<:BUUC(A, CO1(H1)).H2B) (<:CCA(CountHx2(BUUC(A, CO1(H1)).H2B), UU2, A).O));1..2: smt(ge0_qHT).
   proc(CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 2);1,2:smt().
   + by proc;inline *;auto => />;trivial.
-  + proc;inline *. 
-    sp;if;if;wp;1..3: by call(_:true);auto => /> /#.
-    by auto => /> /#.
-  + proc;inline *;sp;if;if;wp;auto => />;1..3: 
-    by call(_:true);auto => /> /#.
-    by auto => /> /#.
-  inline 13; wp; conseq (: CO1.counter <=2); 1: by smt(). 
-  seq 10 : #pre; 1: by auto =>  />. 
-  inline *;swap 17 9;swap 8 17;wp;conseq(:true); 1: by smt().
-  by  auto => />. 
+  + by proc;inline *;wp;conseq(:true);[smt() | trivial].
+  + by proc;inline *;swap 6 9;wp;conseq(:true);[smt() | trivial]. 
+  by inline *;swap 27 9;swap 18 17;wp;conseq(:true); [by smt()| trivial].
 qed.
 
 lemma count_buuci (H1 <: PKEROM.RO.RO{ -CO1, -BUUCI(A)} ):
@@ -1339,16 +1336,36 @@ call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ CO
      (A_count (<:BUUCI(A, CO1(H1)).H2B) (<:CCA(CountHx2(BUUCI(A, CO1(H1)).H2B), UU2, A).O));1..2: smt(ge0_qHT).
   proc(CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 1);1,2:smt().
   + by proc;inline *;auto => />;trivial.
-  + proc;inline *. 
-    sp;if;if;wp;1..3: by call(_:true);auto => /> /#.
-    by auto => /> /#.
-  + proc;inline *;sp;if;if;wp;auto => />;1..3: 
-    by call(_:true);auto => /> /#.
-    by auto => /> /#.
-  inline 19; wp; conseq (: CO1.counter <=1); 1: by smt(). 
-  seq 12 : #pre; 1: by auto =>  />. 
-  inline *;wp;conseq(:true); 1: by smt().
-  by  auto => />. 
+  + by proc;inline *;wp;conseq(:true);[smt() | trivial].
+  + by proc;inline *;swap 6 9;wp;conseq(:true);[smt() | trivial]. 
+  by inline *;wp;conseq(:true); [by smt()| trivial].
+qed.
+
+lemma count_buuowmod (RO <: PKEROM.POracle{-CountO, -BUUOWMod(A)} ) (O <: PKEROM.VA_ORC{-CountO, -BUUOWMod(A)} ):
+  qP = 0 =>
+  qV = 0 =>
+  qHT + qHU + 1 <= qH =>
+
+ (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+  hoare [A(CountHx2(RO), O).guess : 
+       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
+       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
+
+  hoare[ BUUOWMod(A, CountH(RO), CountO(O)).find :
+          CountO.c_h = 0 /\ CountO.c_cvo = 0 /\ CountO.c_pco = 0 ==>
+          CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP].
+move => qP0 qV0 qbounds A_count;proc.
+call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ 
+       CountO.c_h <= 1 /\ CountO.c_cvo = 0 /\ CountO.c_pco = 0 ==> 
+       CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= qH).   
++ conseq  (: CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountCCAO.c_ht + CountCCAO.c_hu + 1   ==> 
+             CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountCCAO.c_ht + CountCCAO.c_hu + 1 ) 
+     (A_count (<:BUUOWMod(A, CountH(RO), CountO(O)).H2B) (<:CCA(CountHx2(BUUOWMod(A, CountH(RO), CountO(O)).H2B), UU2, A).O));1..2: smt(ge0_qHT).
+  proc(CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountCCAO.c_ht + CountCCAO.c_hu + 1 );1,2:smt().
+  + by proc;inline *;auto => />;trivial.
+  + by proc;inline *;wp;call(_:true);auto => /> /#.
+  + by proc;inline *;swap 4 9;wp;conseq(:true);[ smt() | trivial].
+  by inline *; auto => /> /#. 
 qed.
 
 (* End counting *)
@@ -1385,7 +1402,7 @@ section.
 
 declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, -OW_CPA,
                     -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, -OWL_CPA,
-                     -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B,
+                     -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B, -CountO,
                      -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, 
                      -BOWp, -OWvsIND.Bowl, -BasePKE, -CountCCAO}.
 
@@ -1429,8 +1446,8 @@ lemma conclusion &m :
   + by move => O;apply (count_buuci A O); [ smt() | apply A_count]. 
   + by move => *;proc;inline *; call(:true);islossless.  
   have owcca := Top.TT.conclusion (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
-  + by smt(mu_bounded).
-  + admit. (*count*)
+  + by smt(mu_bounded). print count_buuowmod.
+  + by move => OA OB;apply(count_buuowmod A OA OB);[ smt() | smt() | smt() | apply A_count].
   + by move => *;proc;inline *; call(:true);islossless.  
   have ow2ind := OWvsIND.ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
   + by proc;inline *;wp;call(:true); islossless.  
@@ -1494,7 +1511,7 @@ lemma conclusion_cpa &m :
   + by move => *;proc;inline *; call(:true);islossless.  
   have owcca := Top.TT.conclusion_cpa (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
   + by smt(mu_bounded). 
-  + admit. (*count*)
+  + by move => OA OB;apply(count_buuowmod A OA OB);[ smt() | smt() | smt() | apply A_count].
   + by move => *;proc;inline *; call(:true);islossless.  
  
   rewrite qv0 /= in owcca. 
