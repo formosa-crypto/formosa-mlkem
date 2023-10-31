@@ -664,7 +664,7 @@ lemma corr_pnp &m :
     (qHC+1)%r * Pr[PKE.Correctness_Adv(BasePKE, B(A,RO.RO)).main() @ &m : res]. 
   move => qHC_small A_count A_ll.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (ge0_qHC).
-print glob Correctness_Adv1(RO.RO,A).
+(* print glob Correctness_Adv1(RO.RO,A). *)
   pose phi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
       has (fun m =>
         Some m <> dec g.`1 (enc (oget g.`7.[m]) g.`2 m)) g.`6.
@@ -1814,7 +1814,7 @@ proof.
        
   move => qHPn0.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (ge0_qH ge0_qP).
-print glob G3.
+(* print glob G3. *)
   pose phi := fun (g:glob G3) (b:bool) => dec g.`7.`2 g.`8 = Some g.`2 /\ g.`2 \in g.`9.
   pose psi := fun (g:glob G3) (_:bool) => 
     let i = find (pred1 g.`2) (elems (fdom g.`9)) in

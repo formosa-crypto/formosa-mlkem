@@ -1406,7 +1406,6 @@ declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2,
                      -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, 
                      -BOWp, -OWvsIND.Bowl, -BasePKE, -CountCCAO}.
 
-print CountCCAO.
 lemma conclusion &m : 
   qH = qHT + qHU + 1 =>
   qV = 0 =>

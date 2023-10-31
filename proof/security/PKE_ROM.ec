@@ -350,7 +350,6 @@ by have : (fun (x : plaintext) => size l <= MAX /\ (x \in l)) =
           (mem l); smt(MFinT.card_gt0).
 qed.
 
-print glob Bowl.
 pred bad(gB : glob Bowl) = (gB.`2 \in gB.`1 = gB.`3 \in gB.`1).
 lemma ow_ind_l &m MAX : 
    0 <= MAX =>
