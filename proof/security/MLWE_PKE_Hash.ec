@@ -564,6 +564,16 @@ proc;rndsem {2} 0.
 admit. (* FIXME: This should not be needed, as post does not mention r *)
 qed.
 
+module BUOOOWMod_Hx2 = CountHx2(BUUOWMod(A, TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B).
+module BUOOOWMod_dec = 
+KEMROMx2.CCA(CountHx2(BUUOWMod(A, TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), UU2, A).O.
+module BUOOOWModCPA_Hx2 = CountHx2(BUUOWMod(A, TT.CountH(RO.RO), TT.CountO(TT.O_AdvOW)).H2B).
+module BUOOOWModCPA_dec = KEMROMx2.CCA(CountHx2(BUUOWMod(A, TT.CountH(RO.RO), TT.CountO(TT.O_AdvOW)).H2B), UU2, A).O.
+module BUUCI_Hx2 = CountHx2(BUUCI(A, TT.CO1(RO.RO)).H2B).
+module BUUCI_dec =  KEMROMx2.CCA(CountHx2(BUUCI(A, TT.CO1(RO.RO)).H2B), UU2, A).O.
+module BUUC_Hx2 = CountHx2(BUUC(A, TT.CO1(RO.RO)).H2B).
+module BUUC_dec =  KEMROMx2.CCA(CountHx2(BUUC(A, TT.CO1(RO.RO)).H2B), UU2, A).O.
+
 lemma conclusion &m fail_prob :
     TT.qH = qHT + qHU + 1 =>
     TT.qV = 0 =>
@@ -633,7 +643,10 @@ have <- :
 
 move => ?. 
 
-have := correctness_theorem (TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)) &m fail_prob _; 1: by admit. (* islossless. *)
+have := correctness_theorem (TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)) &m fail_prob _.
++  islossless; last by smt(drange_ll TT.ge0_qH).
+   by apply(A_ll BUOOOWMod_Hx2 BUOOOWMod_dec);islossless.
+
 have <- : 
     Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)).main() @ &m : res] = 
     Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)).main() @ &m : res].
@@ -643,7 +656,9 @@ have <- :
 
 move => ?. 
 
-have := correctness_theorem (TT.B(BUUCI(A), RO.RO)) &m fail_prob _; 1: by admit. (*lossless *)
+have := correctness_theorem (TT.B(BUUCI(A), RO.RO)) &m fail_prob _.
++  islossless; last by smt(drange_ll TT.ge0_qH).
+   by apply(A_ll BUUCI_Hx2 BUUCI_dec);islossless.
 have <- : 
     Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUCI(A), RO.RO)).main() @ &m : res] = 
     Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUCI(A), RO.RO)).main() @ &m : res].
@@ -653,7 +668,10 @@ have <- :
 
 move => ?. 
 
-have := correctness_theorem (TT.B(BUUC(A), RO.RO)) &m fail_prob _; 1: by admit. (*lossless *)
+have := correctness_theorem (TT.B(BUUC(A), RO.RO)) &m fail_prob _.
++  islossless; last by smt(drange_ll TT.ge0_qH).
+   by apply(A_ll BUUC_Hx2 BUUC_dec);islossless.
+
 have <- : 
     Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUC(A), RO.RO)).main() @ &m : res] = 
     Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUC(A), RO.RO)).main() @ &m : res].
@@ -663,8 +681,16 @@ have <- :
 
 move => ?.
 
-have := main_theorem (OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))) &m _ _; 1,2: by admit. (* lossless *)
-have := main_theorem (OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))) &m _ _; 1,2: by admit. (* lossless *)
+have := main_theorem (OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))) &m _ _.
++ islossless.
+   by apply(A_ll BUOOOWModCPA_Hx2 BUOOOWModCPA_dec);islossless.
++ by islossless.
+have := main_theorem (OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))) &m _ _.
+search drange.
++ islossless; last by smt(drange_ll ge0_qHT ge0_qHU) .
+   by apply(A_ll BUOOOWModCPA_Hx2 BUOOOWModCPA_dec);islossless.
++ by islossless.
+
 by smt(ge0_qHU ge0_qHT). 
 qed.
 

@@ -1446,7 +1446,7 @@ lemma conclusion &m :
   + by move => O;apply (count_buuci A O); [ smt() | apply A_count]. 
   + by move => *;proc;inline *; call(:true);islossless.  
   have owcca := Top.TT.conclusion (BUUOWMod(A)) &m 1%r _ qhcb _ _ _;1: smt().
-  + by smt(mu_bounded). print count_buuowmod.
+  + by smt(mu_bounded). 
   + by move => OA OB;apply(count_buuowmod A OA OB);[ smt() | smt() | smt() | apply A_count].
   + by move => *;proc;inline *; call(:true);islossless.  
   have ow2ind := OWvsIND.ow_ind BasePKE(AdvOW(BUUOWMod(A))) &m _ _ _ _; 1..3: by islossless.
