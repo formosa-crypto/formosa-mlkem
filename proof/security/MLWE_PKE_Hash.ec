@@ -73,35 +73,40 @@ clone import PKE with
 *)
 
 require FO_Kyber.
-clone import FO_K with
-  type TT.PKE.pkey <- MLWE_PKE_Hash.pkey,
-  type TT.PKE.skey <- MLWE_PKE_Hash.skey,
-  type TT.PKE.ciphertext <- MLWE_PKE_Hash.ciphertext,
-  type TT.plaintext <- MLWE_PKE_Hash.plaintext,
-  type TT.randomness <- MLWE_PKE_Hash.randomness,
-  op TT.kg = dmap drand kg,
-  op TT.enc <- enc,
-  op TT.dec <- dec,
-  op TT.randd <- drand
-  proof TT.kg_ll by (apply dmap_ll;apply drand_ll)
-  proof TT.randd_ll by apply drand_ll. 
-import TT.PKE.
+clone import FO_Kyber with
+  type UU.TT.PKE.pkey <- MLWE_PKE_Hash.pkey,
+  type UU.TT.PKE.skey <- MLWE_PKE_Hash.skey,
+  type UU.TT.PKE.ciphertext <- MLWE_PKE_Hash.ciphertext,
+  type UU.TT.plaintext <- MLWE_PKE_Hash.plaintext,
+  type UU.TT.randomness <- MLWE_PKE_Hash.randomness,
+  op UU.TT.kg = dmap drand kg,
+  op UU.TT.enc <- enc,
+  op UU.TT.dec <- dec,
+  op UU.TT.randd <- drand
+  proof UU.TT.kg_ll by (apply dmap_ll;apply drand_ll)
+  proof UU.TT.randd_ll by apply drand_ll. 
+import UU.TT.PKE.
 
 (* remaining axioms
- TT.dplaintext_ll: is_lossless dplaintext
- TT.dplaintext_uni: is_uniform dplaintext
- TT.dplaintext_fu: is_full dplaintext
- TT.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
- TT.ge0_qH: 0 <= qH
- TT.ge0_qV: 0 <= qV
- TT.ge0_qP: 0 <= qP
- TT.ge0_qHC: 0 <= qHC
- dkey_ll: is_lossless dkey
- dkey_uni: is_uniform dkey
- dkey_fu: is_full dkey
- PseudoRF.dK_ll: is_lossless dK
- ge0_qHU: 0 <= qHU
- ge0_qD: 0 <= qD *)
+ UU.TT.dplaintext_ll: is_lossless dplaintext
+ UU.TT.dplaintext_uni: is_uniform dplaintext
+ UU.TT.dplaintext_fu: is_full dplaintext
+ UU.TT.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
+ UU.TT.ge0_qH: 0 <= qH
+ UU.TT.ge0_qV: 0 <= qV
+ UU.TT.ge0_qP: 0 <= qP
+ UU.TT.ge0_qHC: 0 <= qHC
+ UU.dkey_ll: is_lossless dkey
+ UU.dkey_uni: is_uniform dkey
+ UU.dkey_fu: is_full dkey
+ UU.PseudoRF.dK_ll: is_lossless dK
+ UU.ge0_qHT: 0 <= qHT
+ UU.ge0_qHU: 0 <= qHU
+ UU.ge0_qD: 0 <= qD
+ KEMROM.dkey_ll: is_lossless UU.dkey
+ KEMROM.dkey_uni: is_uniform UU.dkey
+ KEMROM.dkey_fu: is_full UU.dkey
+ ge0_qHK: 0 <= qHK *)
 
 module MLWE_PKE_HASH : Scheme = {
 
@@ -554,9 +559,11 @@ end section.
 
 section. 
 
-import TT.PKEROM.
+import UU.TT.PKEROM.
+import UU.
+print conclusion.
 declare module A <:
-       KEMROMx2.CCA_ADV{-OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.Correctness_Adv1, -TT.B, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.CCA, -CountCCAO, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3}.
+    KEMROM.CCA_ADV{ -KEMROM.RO.RO.m, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.B, -TT.Correctness_Adv1, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.RO2.FRO, -KEMROMx2.CCA, -CountHx2, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3, -KEMROM.CCA, -B1x2}.
 
 local equiv kg_same : 
   TT.BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
@@ -564,128 +571,130 @@ proc;rndsem {2} 0.
 admit. (* FIXME: This should not be needed, as post does not mention r *)
 qed.
 
-module BUOOOWMod_Hx2 = CountHx2(BUUOWMod(A, TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B).
-module BUOOOWMod_dec = 
-KEMROMx2.CCA(CountHx2(BUUOWMod(A, TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), UU2, A).O.
-module BUOOOWModCPA_Hx2 = CountHx2(BUUOWMod(A, TT.CountH(RO.RO), TT.CountO(TT.O_AdvOW)).H2B).
-module BUOOOWModCPA_dec = KEMROMx2.CCA(CountHx2(BUUOWMod(A, TT.CountH(RO.RO), TT.CountO(TT.O_AdvOW)).H2B), UU2, A).O.
-module BUUCI_Hx2 = CountHx2(BUUCI(A, TT.CO1(RO.RO)).H2B).
-module BUUCI_dec =  KEMROMx2.CCA(CountHx2(BUUCI(A, TT.CO1(RO.RO)).H2B), UU2, A).O.
-module BUUC_Hx2 = CountHx2(BUUC(A, TT.CO1(RO.RO)).H2B).
-module BUUC_dec =  KEMROMx2.CCA(CountHx2(BUUC(A, TT.CO1(RO.RO)).H2B), UU2, A).O.
+module BUOOOWMod_Hx2 = CountH(B1x2(A, CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), KEMROMx2.CCA(CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), UU2, B1x2(A)).O).BH).
+module BUOOOWMod_dec = KEMROMx2.CCA(CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), UU2, B1x2(A)).O.
+
+module BUOOOWModCPA_Hx2 = CountH(B1x2(A, CountHx2(BUUOWMod(B1x2(A), TT.CountH(RO.RO), TT.CountO(TT.O_AdvOW)).H2B), KEMROMx2.CCA(CountHx2(BUUOWMod(B1x2(A), TT.CountH(RO.RO), TT.CountO(TT.O_AdvOW)).H2B), UU2, B1x2(A)).O).BH).
+module BUOOOWModCPA_dec = KEMROMx2.CCA(CountHx2(BUUOWMod(B1x2(A), TT.CountH(RO.RO), TT.CountO(TT.O_AdvOW)).H2B), UU2, B1x2(A)).O.
+
+module BUUCI_Hx2 = CountH(B1x2(A, CountHx2(BUUCI(B1x2(A), TT.CO1(RO.RO)).H2B), KEMROMx2.CCA(CountHx2(BUUCI(B1x2(A), TT.CO1(RO.RO)).H2B), UU2, B1x2(A)).O).BH).
+module BUUCI_dec = KEMROMx2.CCA(CountHx2(BUUCI(B1x2(A), TT.CO1(RO.RO)).H2B), UU2, B1x2(A)).O.
+
+module BUUC_Hx2 = CountH(B1x2(A, CountHx2(BUUC(B1x2(A), TT.CO1(RO.RO)).H2B), KEMROMx2.CCA(CountHx2(BUUC(B1x2(A), TT.CO1(RO.RO)).H2B), UU2, B1x2(A)).O).BH).
+module BUUC_dec =  KEMROMx2.CCA(CountHx2(BUUC(B1x2(A), TT.CO1(RO.RO)).H2B), UU2, B1x2(A)).O.
+
 
 lemma conclusion &m fail_prob :
+    
+    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
+
+    qHT = qHK =>
+    qHU = qHK =>
     TT.qH = qHT + qHU + 1 =>
     TT.qV = 0 =>
     TT.qP = 0 =>
     TT.qH + 1 = TT.qHC =>
     TT.qHC < TT.FinT.card - 1 =>
- 
-    
- Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
 
-    (forall (RO <: KEMROMx2.POracle_x2{ -CountCCAO, -A} )
-       (O <: KEMROMx2.CCA_ORC{ -CountCCAO, -A} ),
-       hoare[ A(CountHx2(RO), O).guess :
-               CountCCAO.c_ht = 0 /\ CountCCAO.c_hu = 0 /\ CountCCAO.c_dec = 0 ==>
-               CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU]) =>
+    (forall (RO0 <: KEMROM.POracle{-CountH, -A} ) (O0 <: KEMROM.CCA_ORC{-CountH, -A} ),
+       hoare[ A(CountH(RO0), O0).guess : CountH.c_h = 0 ==> CountH.c_h <= qHK]) =>
 
-    (forall (H0 <: KEMROMx2.POracle_x2{ -A} ) (O <: KEMROMx2.CCA_ORC{ -A} ),
-       islossless O.dec => islossless H0.get1 => islossless H0.get2 => islossless A(H0, O).guess) =>
+    (forall (H0 <: KEMROM.POracle{-A} ) (O <: KEMROMx2.CCA_ORC{-A} ),
+       islossless O.dec => islossless H0.get => islossless A(H0, O).guess) =>
 
-    `|Pr[KEMROMx2.CCA(KEMROMx2.RO_x2(KEMROMx2.RO1.RO, KEMROMx2.RO2.RO), UU, A).main() @ &m : res] - 1%r / 2%r| <=
-    2%r * `| Pr[MLWE_H(B1(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(false, false) @ &m : res] -
-             Pr[MLWE_H(B1(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(false, true) @ &m : res] +
-             Pr[MLWE_H(B2(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(true, false) @ &m : res] -
-             Pr[MLWE_H(B2(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A))))).main(true, true) @ &m : res] | +
-    2%r * `| Pr[MLWE_H(B1(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(false, false) @ &m : res] -
-             Pr[MLWE_H(B1(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(false, true) @ &m : res] +
-             Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(true, false) @ &m : res] -
-             Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A)))))).main(true, true) @ &m : res]| +
-    (3%r * (qHT + qHU + 3)%r + 2%r) * fail_prob +
-    `|Pr[J.IND(PseudoRF.PRF, D(A)).main() @ &m : res] - Pr[J.IND(RF.RF, D(A)).main() @ &m : res]| +
-    2%r * (qHT + qHU + 2)%r * eps_msg.
+    `|Pr[KEMROM.CCA(KEMROM.RO.RO, FO_K, A).main() @ &m : res] - 1%r / 2%r| <=
+    2%r * `| Pr[MLWE_H(B1(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A)))))).main(false, false) @ &m : res] -
+             Pr[MLWE_H(B1(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A)))))).main(false, true) @ &m : res] +
+             Pr[MLWE_H(B2(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A)))))).main(true, false) @ &m : res] -
+             Pr[MLWE_H(B2(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A)))))).main(true, true) @ &m : res] | +
+    2%r * `| Pr[MLWE_H(B1(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A))))))).main(false, false) @ &m : res] -
+             Pr[MLWE_H(B1(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A))))))).main(false, true) @ &m : res] +
+             Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A))))))).main(true, false) @ &m : res] -
+             Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A))))))).main(true, true) @ &m : res]| +
+    (3%r * (2*qHK + 3)%r + 2%r) * fail_prob +
+    `|Pr[J.IND(PseudoRF.PRF, D(B1x2(A))).main() @ &m : res] - Pr[J.IND(RF.RF, D(B1x2(A))).main() @ &m : res]| +
+    2%r * (2*qHK + 2)%r * eps_msg.
 proof.
-move => qvals qv0 qp0 qhv qhcsmall fail_probE A_count A_ll.
+move => fail_probE qhthk qhuhk qvals qv0 qp0 qhv qhcsmall A_count A_ll.
 
-have := (conclusion_cpa A &m qvals qv0 qp0 qhv qhcsmall A_count A_ll).
+have := conclusion_fo_kyber A &m qhthk qhuhk qvals qv0 qp0 qhv qhcsmall A_count A_ll.
 
 have -> : 
-   Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))).main() @ &m : res] = 
-    Pr[TT.PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))).main() @ &m : res].
+   Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A)))))).main() @ &m : res] = 
+    Pr[TT.PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A)))))).main() @ &m : res].
 + byequiv => //;proc; seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 have -> :  
-    Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))).main() @ &m : res]  = 
-     Pr[TT.PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))).main() @ &m : res] .
+    Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A))))).main() @ &m : res]  = 
+     Pr[TT.PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A))))).main() @ &m : res] .
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
-have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A)))) &m fail_prob _; 1: by islossless.
+have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(B1x2(A))))) &m fail_prob _; 1: by islossless.
 have <- : 
-    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A)))).main() @ &m : res] = 
-   Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(A)))).main() @ &m : res].
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(B1x2(A))))).main() @ &m : res] = 
+   Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(B1x2(A))))).main() @ &m : res].
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
 move => ?.
 
-have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A)))) &m fail_prob _; 1: by islossless.
+have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(B1x2(A))))) &m fail_prob _; 1: by islossless.
 have <- : 
-    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A)))).main() @ &m : res] = 
-    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(A)))).main() @ &m : res].
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(B1x2(A))))).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(B1x2(A))))).main() @ &m : res].
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
 move => ?. 
 
-have := correctness_theorem (TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)) &m fail_prob _.
+have := correctness_theorem (TT.B(TT.AdvCorr(BUUOWMod(B1x2(A))), RO.RO)) &m fail_prob _.
 +  islossless; last by smt(drange_ll TT.ge0_qH).
    by apply(A_ll BUOOOWMod_Hx2 BUOOOWMod_dec);islossless.
 
 have <- : 
-    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)).main() @ &m : res] = 
-    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(TT.AdvCorr(BUUOWMod(A)), RO.RO)).main() @ &m : res].
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(TT.AdvCorr(BUUOWMod(B1x2(A))), RO.RO)).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(TT.AdvCorr(BUUOWMod(B1x2(A))), RO.RO)).main() @ &m : res].
  + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
 move => ?. 
 
-have := correctness_theorem (TT.B(BUUCI(A), RO.RO)) &m fail_prob _.
+have := correctness_theorem (TT.B(BUUCI(B1x2(A)), RO.RO)) &m fail_prob _.
 +  islossless; last by smt(drange_ll TT.ge0_qH).
    by apply(A_ll BUUCI_Hx2 BUUCI_dec);islossless.
 have <- : 
-    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUCI(A), RO.RO)).main() @ &m : res] = 
-    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUCI(A), RO.RO)).main() @ &m : res].
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUCI(B1x2(A)), RO.RO)).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUCI(B1x2(A)), RO.RO)).main() @ &m : res].
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
 move => ?. 
 
-have := correctness_theorem (TT.B(BUUC(A), RO.RO)) &m fail_prob _.
+have := correctness_theorem (TT.B(BUUC(B1x2(A)), RO.RO)) &m fail_prob _.
 +  islossless; last by smt(drange_ll TT.ge0_qH).
    by apply(A_ll BUUC_Hx2 BUUC_dec);islossless.
 
 have <- : 
-    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUC(A), RO.RO)).main() @ &m : res] = 
-    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUC(A), RO.RO)).main() @ &m : res].
+    Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(BUUC(B1x2(A)), RO.RO)).main() @ &m : res] = 
+    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(BUUC(B1x2(A)), RO.RO)).main() @ &m : res].
 + byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
 move => ?.
 
-have := main_theorem (OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(A))))) &m _ _.
+have := main_theorem (OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A)))))) &m _ _.
 + islossless.
    by apply(A_ll BUOOOWModCPA_Hx2 BUOOOWModCPA_dec);islossless.
 + by islossless.
-have := main_theorem (OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(A)))) &m _ _.
+have := main_theorem (OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A))))) &m _ _.
 search drange.
 + islossless; last by smt(drange_ll ge0_qHT ge0_qHU) .
    by apply(A_ll BUOOOWModCPA_Hx2 BUOOOWModCPA_dec);islossless.

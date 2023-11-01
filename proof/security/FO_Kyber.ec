@@ -372,7 +372,8 @@ proc(CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h); 1,2: by smt().
     by trivial.
 qed.
 
-lemma conclusion &m:
+print conclusion_cpa.
+lemma conclusion_fo_kyber &m:
     qHT = qHK =>
     qHU = qHK =>
     qH = qHT + qHU + 1 =>
@@ -386,18 +387,20 @@ lemma conclusion &m:
 
     (forall (H0 <: POracle{-A} ) (O <: KEMROMx2.CCA_ORC{-A} ),
        islossless O.dec => islossless H0.get =>  islossless A(H0, O).guess) =>
+
     `|Pr[CCA(RO.RO,FO_K,A).main() @ &m : res] - 1%r / 2%r| <=
-    `|Pr[J.IND(PRF, D(B1x2(A))).main() @ &m : res] - Pr[J.IND(RF, D(B1x2(A))).main() @ &m : res]| +
+    2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(BUUOWMod(B1x2(A)))))).main() @ &m : res] - 1%r / 2%r| +
+    2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(AdvOWL_query(BUUOWMod(B1x2(A))))).main() @ &m : res] - 1%r / 2%r| +
     (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(B1x2(A)), PKEROM.RO.RO)).main() @ &m : res] +
     (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(B1x2(A)), PKEROM.RO.RO)).main() @ &m : res] +
     (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(B1x2(A))), PKEROM.RO.RO)).main() @ &m : res] +
     Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(B1x2(A))))).main() @ &m : res] +
-    2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(BUUOWMod(B1x2(A)))))).main() @ &m : res] - 1%r / 2%r| +
-    (2*qHK + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(B1x2(A)))).main() @ &m : res] + 
-    2%r * eps_msg.
+    Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query(BUUOWMod(B1x2(A))))).main() @ &m : res] +
+    `|Pr[J.IND(PRF, D(B1x2(A))).main() @ &m : res] - Pr[J.IND(RF, D(B1x2(A))).main() @ &m : res]| +
+    2%r * (2*qHK + 2)%r * eps_msg.
 proof. 
 move => qHTHK qHUHK qHv qV0 qP0 qHCv pHCsmall A_count A_ll.
-have := Top.UU.conclusion (B1x2(A)) &m qHv qV0 qP0 qHCv pHCsmall _ _; last by rewrite same_scheme;smt().
+have := Top.UU.conclusion_cpa (B1x2(A)) &m qHv qV0 qP0 qHCv pHCsmall _ _; last by rewrite same_scheme;smt().
 + by move => RO O;apply (countB1x2 RO O qHTHK qHUHK A_count) => //.
 + move => H O Odec_ll Hget1_ll Hget2_ll.
   proc;call(:true).
