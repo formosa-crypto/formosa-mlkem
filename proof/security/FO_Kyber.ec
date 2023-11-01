@@ -372,7 +372,6 @@ proc(CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h); 1,2: by smt().
     by trivial.
 qed.
 
-print conclusion_cpa.
 lemma conclusion_fo_kyber &m:
     qHT = qHK =>
     qHU = qHK =>

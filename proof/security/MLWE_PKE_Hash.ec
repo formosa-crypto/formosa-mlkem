@@ -561,7 +561,6 @@ section.
 
 import UU.TT.PKEROM.
 import UU.
-print conclusion.
 declare module A <:
     KEMROM.CCA_ADV{ -KEMROM.RO.RO.m, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.B, -TT.Correctness_Adv1, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.RO2.FRO, -KEMROMx2.CCA, -CountHx2, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3, -KEMROM.CCA, -B1x2}.
 
