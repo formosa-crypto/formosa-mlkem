@@ -145,33 +145,22 @@ qed.
 
 (* Security proof *)
 
-module CountCCAO (O : CCA_ORC) = {
-  var c_dec : int
+module CountHx2(H : KEMROMx2.POracle_x2) = {
   var c_hu   : int
   var c_ht   : int
-  proc init () = { c_ht <- 0; c_hu <- 0; c_dec <- 0;  }
- 
-  proc dec(c : ciphertext) : key option = {
-    var k;    
-    k <@ O.dec(c);
-    c_dec <- c_dec + 1;
-    return k;
-  }
-  
-}.
 
-module CountHx2(H : KEMROMx2.POracle_x2) = {
-  proc init () = { CountCCAO.c_ht <- 0; CountCCAO.c_hu <- 0; CountCCAO.c_dec <- 0;  }  
+  proc init () = { c_ht <- 0; c_hu <- 0;   }
+
   proc get1(x:plaintext) = {
     var r;
     r <@ H.get1(x);
-    CountCCAO.c_ht <- CountCCAO.c_ht + 1;
+    c_ht <- c_ht + 1;
     return r;
   }  
   proc get2(x:plaintext) = {
     var r;
     r <@ H.get2(x);
-    CountCCAO.c_hu <- CountCCAO.c_hu + 1;
+    c_hu <- c_hu + 1;
     return r;
   }  
 }.
@@ -275,7 +264,8 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
         k <$ dkey;
         ko <- Some k;
         (* HHK SAYS INCONSISTENCY IF DEC C <> NONE && ENC (DEC C) <> C 
-           HOWEVER, THIS CAN NEVER HAPPEN WHEN DEALING WITH THE FO_TT TRANSFORM *)
+           HOWEVER, THIS CAN NEVER HAPPEN WHEN DEALING WITH THE 
+           FO_TT TRANSFORM *)
         lD <- (c,k) :: lD;
      }
      return ko;
@@ -674,7 +664,7 @@ module (BUUCI(A : CCA_ADV) : PKEROM.CORR_ADV) (H : PKEROM.POracle) = {
 section.
 
 declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2, -CO1, -CountO,
-                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, -CountCCAO} .
+                    -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, -CountHx2} .
 
 
 lemma Gm0_Gm1 &m : 
@@ -1298,20 +1288,20 @@ qed.
 lemma count_buuc (H1 <: PKEROM.RO.RO{ -CO1, -BUUC(A)} ):
   qHT + qHU + 2 <= qHC =>
 
- (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+ (forall (RO<:POracle_x2{ -CountHx2, -A })(O<:CCA_ORC { -CountHx2, -A }), 
   hoare [A(CountHx2(RO), O).guess : 
-       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
+       CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0   ==> 
+       CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU ]) =>
 
   hoare[ Correctness_Adv1(H1, BUUC(A)).A.find : CO1.counter = 0 ==> CO1.counter <= qHC].
 proof. 
 move => qbounds A_count;proc.
-call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ CO1.counter <= 2 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU /\ CO1.counter <= qHC).   
-+ conseq  (: CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 2   ==> 
-             CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 2) 
+call(: CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0   /\  CO1.counter <= 2 ==> 
+       CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU /\ CO1.counter <= qHC).   
++ conseq  (: CO1.counter <= CountHx2.c_ht + CountHx2.c_hu + 2   ==> 
+             CO1.counter <= CountHx2.c_ht + CountHx2.c_hu + 2) 
      (A_count (<:BUUC(A, CO1(H1)).H2B) (<:CCA(CountHx2(BUUC(A, CO1(H1)).H2B), UU2, A).O));1..2: smt(ge0_qHT).
-  proc(CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 2);1,2:smt().
+  proc(CO1.counter <= CountHx2.c_ht + CountHx2.c_hu + 2);1,2:smt().
   + by proc;inline *;auto => />;trivial.
   + by proc;inline *;wp;conseq(:true);[smt() | trivial].
   + by proc;inline *;swap 6 9;wp;conseq(:true);[smt() | trivial]. 
@@ -1321,20 +1311,20 @@ qed.
 lemma count_buuci (H1 <: PKEROM.RO.RO{ -CO1, -BUUCI(A)} ):
   qHT + qHU + 1 <= qHC =>
 
- (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+ (forall (RO<:POracle_x2{ -CountHx2, -A })(O<:CCA_ORC { -CountHx2, -A }), 
   hoare [A(CountHx2(RO), O).guess : 
-       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
+       CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0  ==> 
+       CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU ]) =>
 
   hoare[ Correctness_Adv1(H1, BUUCI(A)).A.find : CO1.counter = 0 ==> CO1.counter <= qHC].
 proof. 
 move => qbounds A_count;proc.
-call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ CO1.counter <= 1 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU /\ CO1.counter <= qHC).   
-+ conseq  (: CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 1   ==> 
-             CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 1) 
+call(: CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0   /\  CO1.counter <= 1 ==> 
+       CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU /\ CO1.counter <= qHC).   
++ conseq  (: CO1.counter <= CountHx2.c_ht + CountHx2.c_hu + 1   ==> 
+             CO1.counter <= CountHx2.c_ht + CountHx2.c_hu + 1) 
      (A_count (<:BUUCI(A, CO1(H1)).H2B) (<:CCA(CountHx2(BUUCI(A, CO1(H1)).H2B), UU2, A).O));1..2: smt(ge0_qHT).
-  proc(CO1.counter <= CountCCAO.c_ht + CountCCAO.c_hu + 1);1,2:smt().
+  proc(CO1.counter <= CountHx2.c_ht + CountHx2.c_hu + 1);1,2:smt().
   + by proc;inline *;auto => />;trivial.
   + by proc;inline *;wp;conseq(:true);[smt() | trivial].
   + by proc;inline *;swap 6 9;wp;conseq(:true);[smt() | trivial]. 
@@ -1346,22 +1336,22 @@ lemma count_buuowmod (RO <: PKEROM.POracle{-CountO, -BUUOWMod(A)} ) (O <: PKEROM
   qV = 0 =>
   qHT + qHU + 1 <= qH =>
 
- (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+ (forall (RO<:POracle_x2{ -CountHx2, -A })(O<:CCA_ORC { -CountHx2, -A }), 
   hoare [A(CountHx2(RO), O).guess : 
-       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
+       CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0   ==> 
+       CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU ]) =>
 
   hoare[ BUUOWMod(A, CountH(RO), CountO(O)).find :
           CountO.c_h = 0 /\ CountO.c_cvo = 0 /\ CountO.c_pco = 0 ==>
           CountO.c_h <= qH /\ CountO.c_cvo <= qV /\ CountO.c_pco <= qP].
 move => qP0 qV0 qbounds A_count;proc.
-call(: CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 /\ 
+call(: CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0   /\  
        CountO.c_h <= 1 /\ CountO.c_cvo = 0 /\ CountO.c_pco = 0 ==> 
        CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= qH).   
-+ conseq  (: CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountCCAO.c_ht + CountCCAO.c_hu + 1   ==> 
-             CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountCCAO.c_ht + CountCCAO.c_hu + 1 ) 
++ conseq  (: CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountHx2.c_ht + CountHx2.c_hu + 1   ==> 
+             CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountHx2.c_ht + CountHx2.c_hu + 1 ) 
      (A_count (<:BUUOWMod(A, CountH(RO), CountO(O)).H2B) (<:CCA(CountHx2(BUUOWMod(A, CountH(RO), CountO(O)).H2B), UU2, A).O));1..2: smt(ge0_qHT).
-  proc(CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountCCAO.c_ht + CountCCAO.c_hu + 1 );1,2:smt().
+  proc(CountO.c_cvo = 0 /\ CountO.c_pco = 0 /\ CountO.c_h <= CountHx2.c_ht + CountHx2.c_hu + 1 );1,2:smt().
   + by proc;inline *;auto => />;trivial.
   + by proc;inline *;wp;call(_:true);auto => /> /#.
   + by proc;inline *;swap 4 9;wp;conseq(:true);[ smt() | trivial].
@@ -1404,7 +1394,7 @@ declare module A <: CCA_ADV  {-CCA, -RO1.RO, -RO1.FRO, -RO2.RO, -PRF, -RF, -UU2,
                     -RO1E.FunRO, -Gm2, -H2, -Gm3, -PKEROM.OW_PCVA, -H2BOWMod, -OWL_CPA,
                      -PKEROM.RO.RO, -PKEROM.RO.FRO, -Correctness_Adv1, -B, -CountO,
                      -PKEROM.OW_PCVA, -Correctness_Adv1, -CountO, -O_AdvOW, -Gm, 
-                     -BOWp, -OWvsIND.Bowl, -BasePKE, -CountCCAO}.
+                     -BOWp, -OWvsIND.Bowl, -BasePKE, -CountHx2}.
 
 lemma conclusion &m : 
   qH = qHT + qHU + 1 =>
@@ -1414,10 +1404,10 @@ lemma conclusion &m :
   qHC < FinT.card - 1 =>
 
 
- (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+ (forall (RO<:POracle_x2{ -CountHx2, -A })(O<:CCA_ORC { -CountHx2, -A }), 
   hoare [A(CountHx2(RO), O).guess : 
-       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
+       CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0  ==> 
+       CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU ]) =>
 
 
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
@@ -1478,10 +1468,10 @@ lemma conclusion_cpa &m :
   qH + 1 = qHC =>
   qHC < FinT.card - 1 =>
 
- (forall (RO<:POracle_x2{ -CountCCAO, -A })(O<:CCA_ORC { -CountCCAO, -A }), 
+ (forall (RO<:POracle_x2{ -CountHx2, -A })(O<:CCA_ORC { -CountHx2, -A }), 
   hoare [A(CountHx2(RO), O).guess : 
-       CountCCAO.c_ht = 0   /\ CountCCAO.c_hu = 0   /\ CountCCAO.c_dec = 0 ==> 
-       CountCCAO.c_ht <= qHT /\ CountCCAO.c_hu <= qHU ]) =>
+       CountHx2.c_ht = 0   /\ CountHx2.c_hu = 0  ==> 
+       CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU ]) =>
 
   (forall (H0 <: POracle_x2{-A} ) (O <: CCA_ORC{ -A} ),
   islossless O.dec => 
@@ -1533,3 +1523,10 @@ qed.
 
 end section.
 
+(* Note that bound does not depend on qD, the number of queries to
+   the decryption oracle. This is because the Gm1 Gm2 hop in this proof
+   fully decouples the oracle calls from the secret key down to a bad
+   event that depends only on the number of hash calls. Difference 
+   to HHK bound comes from the fact that we know we are using the TT
+   transform scheme underneath, which makes some additional checks:
+   see comment above. *)
