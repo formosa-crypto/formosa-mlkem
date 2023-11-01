@@ -178,6 +178,7 @@ module (B1x2(A : KEMROM.CCA_ADV) : KEMROMx2.CCA_ADV) (H2x : KEMROMx2.POracle_x2,
    proc guess(pk : pkey, c : ciphertext, k : key) : bool = {
      var b;
      _pk <- pk;
+     CountH(RO.RO).init();
      RO.RO.init();
      b <@ A(CountH(BH),DO).guess(pk,c,k);
      return b;
@@ -339,40 +340,70 @@ swap {1} 14 -13. swap {1} 20 -18. swap {2} 11 -10.
 by auto => />;smt(mem_set get_setE mem_empty). 
 qed.
 
-lemma countB1x2  (RO <: POracle_x2{-CountHx2, -B1x2(A)} ) (O <: KEMROMx2.CCA_ORC{-CountHx2, -B1x2(A)} ):
-  hoare[ B1x2(A, CountHx2(RO), O).guess :
-          CountHx2.c_ht = 0 /\ CountHx2.c_hu = 0 ==> CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU].
+lemma countB1x2 (RO <: POracle_x2{-CountHx2, -B1x2(A)} ) 
+                (O <: KEMROMx2.CCA_ORC{-CountHx2, -B1x2(A)} ):
+  qHT = qHK =>
+  qHU = qHK =>
 
+  (forall (RO <: POracle{-CountH, -A} ) (O <: CCA_ORC{-CountH, -A} ),
+    hoare[ A(CountH(RO), O).guess :
+           CountH.c_h = 0  ==> CountH.c_h <= qHK ]) => 
+
+hoare[ B1x2(A, CountHx2(RO), O).guess :
+          CountHx2.c_ht = 0 /\ CountHx2.c_hu = 0 ==> 
+            CountHx2.c_ht <= qHT /\ CountHx2.c_hu <= qHU].
+proof.
+move => qHTv qHUv A_count.
+proc;inline *;sp.
+call(: CountH.c_h = 0 /\ CountHx2.c_ht = 0 /\ CountHx2.c_hu = 0 ==>
+         CountH.c_h <= qHK /\ CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h); last by  auto => /> /#. 
+conseq(: CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h ==>
+         CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h)
+         (A_count (<:B1x2(A, CountHx2(RO), O).BH) (<:O));1,2: smt().
+proc(CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h); 1,2: by smt().
++ by conseq />;trivial.
++ proc;inline *.
+  case(x.`1 = pkh B1x2._pk).
+  + rcondt 6; 1: by auto.
+    swap 12 3;swap 8 7;wp;conseq(:true);1:smt().
+    by trivial.
+  + rcondf 6; 1: by auto.
+    wp;conseq(:true);1:smt().
+    by trivial.
+qed.
 
 lemma conclusion &m:
+    qHT = qHK =>
+    qHU = qHK =>
     qH = qHT + qHU + 1 =>
     qV = 0 =>
     qP = 0 =>
     qH + 1 = qHC =>
     qHC < FinT.card - 1 =>
 
-    (forall (RO <: POracle_x2{-CountH, -A} ) (O <: KEMROMx2.CCA_ORC{-CountH, -A} ),
-       hoare[ A(CountH(KEMROM.RO.RO), O).guess :
-               CountH.c_h = 0  ==> CountH.c_h <= qHK ]) => 
+    (forall (RO0 <: POracle{-CountH, -A} ) (O0 <: CCA_ORC{-CountH, -A} ),
+       hoare[ A(CountH(RO0), O0).guess : CountH.c_h = 0 ==> CountH.c_h <= qHK]) => 
 
     (forall (H0 <: POracle{-A} ) (O <: KEMROMx2.CCA_ORC{-A} ),
        islossless O.dec => islossless H0.get =>  islossless A(H0, O).guess) =>
     `|Pr[CCA(RO.RO,FO_K,A).main() @ &m : res] - 1%r / 2%r| <=
     `|Pr[J.IND(PRF, D(B1x2(A))).main() @ &m : res] - Pr[J.IND(RF, D(B1x2(A))).main() @ &m : res]| +
-    (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(B1x2(A)), PKEROM.RO.RO)).main() @ &m : res] +
-    (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(B1x2(A)), PKEROM.RO.RO)).main() @ &m : res] +
-    (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(B1x2(A))), PKEROM.RO.RO)).main() @ &m : res] +
+    (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUC(B1x2(A)), PKEROM.RO.RO)).main() @ &m : res] +
+    (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(B1x2(A)), PKEROM.RO.RO)).main() @ &m : res] +
+    (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(B1x2(A))), PKEROM.RO.RO)).main() @ &m : res] +
     Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(B1x2(A))))).main() @ &m : res] +
     2%r * `|Pr[CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(BUUOWMod(B1x2(A)))))).main() @ &m : res] - 1%r / 2%r| +
-    (qHT + qHU + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(B1x2(A)))).main() @ &m : res] + 
+    (2*qHK + 1)%r * Pr[OW_CPA(BasePKE, AdvOW_query(BUUOWMod(B1x2(A)))).main() @ &m : res] + 
     2%r * eps_msg.
 proof. 
-move => qHv qV0 qP0 qHCv pHCsmall A_count A_ll.
-have := Top.UU.conclusion (B1x2(A)) &m qHv qV0 qP0 qHCv pHCsmall _ _; last by rewrite same_scheme.
-+ 
+move => qHTHK qHUHK qHv qV0 qP0 qHCv pHCsmall A_count A_ll.
+have := Top.UU.conclusion (B1x2(A)) &m qHv qV0 qP0 qHCv pHCsmall _ _; last by rewrite same_scheme;smt().
++ by move => RO O;apply (countB1x2 RO O qHTHK qHUHK A_count) => //.
 + move => H O Odec_ll Hget1_ll Hget2_ll.
   proc;call(:true).
   + by move => HH OO; apply (A_ll HH OO).
   + by islossless.
   by islossless.
 qed.
+
+end section.

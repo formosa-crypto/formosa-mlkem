@@ -72,8 +72,8 @@ clone import PKE with
   type ciphertext <- ciphertext.
 *)
 
-require FO_UU.
-clone import FO_UU with
+require FO_Kyber.
+clone import FO_K with
   type TT.PKE.pkey <- MLWE_PKE_Hash.pkey,
   type TT.PKE.skey <- MLWE_PKE_Hash.skey,
   type TT.PKE.ciphertext <- MLWE_PKE_Hash.ciphertext,
