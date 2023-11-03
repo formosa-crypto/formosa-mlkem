@@ -119,7 +119,7 @@ module (B_UC : PKEROM.CORR_ADV)  (HT : PKEROM.POracle)= {
    }
 }.
 
-lemma correctness &m : 
+lemma correctness_rel &m : 
    Pr [ KEMROMx2.Correctness(RO_x2(RO1.RO,RO2.RO),UU).main() @ &m : res ] <=
      Pr [ PKEROM.Correctness_Adv(PKEROM.RO.RO,TT,B_UC).main() @ &m : res ].
 proof.
@@ -141,6 +141,21 @@ inline {1} 2;sp.
 seq 1 1 : (#pre /\ m'{1} = m'{2}); 
   1: by inline *;wp;conseq />;sim;auto => /#.
 by inline *;if{1};inline *;auto => />;smt(get_setE).
+qed.
+
+(* FIXME: THIS FACTOR OF 2 IS TO AVOID A LOSSLESS GOAL IN THE TOP LEVEL 
+   INSTANTIATION DUE TO THE RANGE SAMPLING OF THE TT REDUCTION.
+   THIS ALSO IMPACTS CARD BY 1 *)
+lemma correctness &m : 
+   qHC = 1 => 
+   2<FinT.card =>
+   Pr[ KEMROMx2.Correctness(RO_x2(RO1.RO,RO2.RO),UU).main() @ &m : res ] <=
+   2%r * Pr[ Correctness_Adv(BasePKE, B(B_UC, PKEROM.RO.RO)).main() @ &m : res].
+move => qHC_0 card2.
+have := correctness B_UC &m _ _ _;  1: by smt(). 
++ by move => *; proc; auto => /#.
+by move => *;islossless.
+by smt(correctness_rel).
 qed.
 
 (* Security proof *)

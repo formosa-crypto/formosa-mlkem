@@ -96,6 +96,8 @@ module (FO_K : KEMROM.Scheme) (H : POracle) = {
   }
 }.
 
+(* A modular version of the UU construction for moving samples *)
+
 module UU_L(H1 : RO1.RO, H2 : RO2.RO) = {
   include UU(RO_x2(H1,H2)) [kg, enc] 
   proc dec(sk : skey, c : ciphertext) : key option = {
@@ -122,6 +124,157 @@ module UU_L(H1 : RO1.RO, H2 : RO2.RO) = {
     return Some k;
    }
 }.
+
+(* CORRECTNESS PROOF *)
+
+module Correctness_L(H1 : RO1.RO, H2 : RO2.RO) = {
+  proc main() : bool = {
+    var pk : pkey;
+    var sk : KEMROMx2.skey;
+    var c : ciphertext;
+    var k : key;
+    var k' : key option;
+    
+    H1.init();
+    H2.init();
+    (pk, sk) <@ UU_L(H1,H2).kg();
+    (c, k) <@ UU_L(H1,H2).enc(pk);
+    k' <@ UU_L(H1,H2).dec(sk, c);
+    
+    return k' <> Some k;
+  }
+}.
+
+lemma go_parametric_corr_lro &m :
+ Pr[KEMROMx2.Correctness(RO_x2(RO1.RO, RO2.RO), UU).main() @ &m : res] =
+ Pr[Correctness_L(RO1.LRO, RO2.LRO).main() @ &m : res].
+proof.
+byequiv => //.
+proc. 
+conseq (: ={k,k'}); 1: by smt().
+seq 1 2 : (={RO1.RO.m,RO2.RO.m}); 1: by inline *;sim.
+seq 1 1 : (#pre /\ ={pk,sk}); 1: by sim.
+seq 1 1 : (#pre /\ ={c,k}); 1: by sim.
+inline {1} 1; inline {2} 1; inline {2} 5; inline {2} 6.
+inline {1} 4;sp;if;1:by auto.
++ seq 1 1 : (#pre /\ ={r}); 1: by inline *;auto => />.
+  by sp;if;[by auto | |];inline *;auto => /> /#.
+by sp;if;[by auto | |];inline *;auto => /> /#.
+qed.
+
+
+module (DC1 : KEMROMx2.RO1.RO_Distinguisher) (G1 : RO1.RO) = {
+   proc distinguish = Correctness_L(G1, RO2.LRO).main
+}.
+
+module (DC2 : KEMROMx2.RO2.RO_Distinguisher) (G2 : RO2.RO) = {
+   proc distinguish = Correctness_L(RO1.RO, G2).main
+}.
+
+lemma go_parametric_corr &m : 
+  Pr[KEMROMx2.Correctness(RO_x2(RO1.RO, RO2.RO), UU).main() @ &m : res] =
+ Pr[Correctness_L(RO1.RO, RO2.RO).main() @ &m : res].
+proof.
+rewrite go_parametric_corr_lro.
+have -> : Pr[Correctness_L(RO1.LRO, RO2.LRO).main() @ &m : res] = 
+          Pr[KEMROMx2.RO1.MainD(DC1,RO1.LRO).distinguish() @ &m : res]
+  by  byequiv => //;proc; inline {2} 2;wp;conseq />;inline *;sim.
+
+have -> : Pr[Correctness_L(RO1.RO, RO2.RO).main() @ &m : res] = 
+          Pr[KEMROMx2.RO2.MainD(DC2,RO2.RO).distinguish() @ &m : res]
+  by  byequiv => //;proc; inline {2} 2;wp;conseq />;inline *;sim.
+
+have -> : Pr[KEMROMx2.RO2.MainD(DC2,RO2.RO).distinguish() @ &m : res] =
+          Pr[KEMROMx2.RO2.MainD(DC2,RO2.LRO).distinguish() @ &m : res].
+  byequiv (: ={RO1.RO.m, arg} ==> ={res, RO1.RO.m}) => //.
+  apply(RO2.FullEager.RO_LRO (DC2) _).
+  by move => *;rewrite dkey_ll.
+
+have <- : Pr[KEMROMx2.RO1.MainD(DC1,RO1.RO).distinguish() @ &m : res] =
+          Pr[KEMROMx2.RO1.MainD(DC1,RO1.LRO).distinguish() @ &m : res].
++ byequiv (: ={RO2.RO.m, arg} ==> ={res, RO2.RO.m}) => //.
+  apply(RO1.FullEager.RO_LRO (DC1) _).
+  by move => *;rewrite randd_ll.
+
+byequiv => //;proc;inline {1} 2; inline {2} 2. 
+by sim.
+qed.
+
+(* FIXME: THIS FACTOR OF 2 IS TO AVOID A LOSSLESS GOAL IN THE TOP LEVEL 
+   INSTANTIATION DUE TO THE RANGE SAMPLING OF THE TT REDUCTION.
+   THIS ALSO IMPACTS CARD BY 1 *)
+lemma correctness_fo_k &m : 
+   qHC = 1 => 
+   2<FinT.card =>
+   Pr[ KEMROM.Correctness(RO.RO,FO_K).main() @ &m : res ] <=
+   2%r * Pr[ Correctness_Adv(BasePKE, B(B_UC, PKEROM.RO.RO)).main() @ &m : res].
+move => qHC_0 card2.
+have := Top.UU.correctness &m qHC_0 card2.  
+have -> : Pr[KEMROMx2.Correctness(RO_x2(RO1.RO, RO2.RO), UU).main() @ &m : res] = 
+   Pr[Correctness(RO.RO, FO_K).main() @ &m : res]; last by smt().
+rewrite go_parametric_corr.
+byequiv => //.
+proc. 
+inline {1} 4; inline {2} 3.
+swap {1} [3..5] -2; swap {2} [2..4] -1.
+seq 3 3 : (={pk,sk,m,pk0} /\ pk0{1} = pk{2} 
+           /\ sk{1}.`1.`1 = pk{2}); 1 : by inline *;auto.
+inline {1} 3; inline {2} 2.
+swap {1} 8 -2.
+seq 6 5 : (#pre /\ m0{1} = m{2} /\ pk1{1} = pk0{2} /\ 
+           m{1} \in RO1.RO.m{1} /\ ={r,k0} /\
+           m{1} \in RO2.RO.m{1} /\
+           (pkh pk{2},m{2}) \in RO.RO.m{2}  /\
+           oget RO.RO.m{2}.[(pkh pk{2},m{2})] = 
+               (oget RO1.RO.m{1}.[m{1}],oget RO2.RO.m{1}.[m{1}]) /\
+           r{1} = oget RO1.RO.m{1}.[m{1}] /\
+           k0{1} = oget RO2.RO.m{1}.[m{1}] /\
+           (r{2},k0{2}) = oget RO.RO.m{2}.[(pkh pk{2},m{2})] /\
+           fdom RO1.RO.m{1} = fset1 m{1} /\
+           fdom RO2.RO.m{1} = fset1 m{1} /\
+           fdom RO.RO.m{2} = fset1 (pkh pk{2}, m{2})).
++ inline *; swap {1} 6 -5; swap {1} 10 -8; swap {2} 3 -2.
+  seq 2 1 : (#pre /\ r0{1} = r0{2}.`1 /\ r1{1} = r0{2}.`2).
+  + conseq />;rndsem{1} 0;rnd;auto => />.
+    have -> : (dlet randd (fun (r1_0 : randomness) => dmap dkey 
+       (fun (r0_0 : key) => (r1_0, r0_0)))) = randd `*` dkey; last by smt().
+    rewrite dprod_dlet; congr;apply fun_ext => r.
+    by rewrite dlet_dunit.
+  by auto => />;smt(get_setE mem_set mem_empty @SmtMap @FSet).
+
+seq 1 1 : (#pre /\ c1{1} = c0{2}); 1: by auto => /#.
+
+sp;inline {1} 1; inline {2} 1;sp.
+inline {1} 2; inline {1} 1;inline {1} 4; inline {1} 2;inline {2} 1.
+swap {1} 3 -2; swap {1} 7 -5; swap {2} 2 -1.
+  seq 2 1 : (#pre /\ r2{1} = r2{2}.`1 /\ r1{1} = r2{2}.`2).
+  + conseq />;rndsem{1} 0;rnd;auto => />.
+    have -> : (dlet randd (fun (r1_0 : randomness) => dmap dkey 
+       (fun (r0_0 : key) => (r1_0, r0_0)))) = randd `*` dkey; last by smt().
+    rewrite dprod_dlet; congr;apply fun_ext => r.
+    by rewrite dlet_dunit.
+
+case (m'{1} = None).
++ rcondf{1} 7; 1: by auto.
+  rcondt{1} 7; 1: by auto.
+  by auto => /> /#.
+
+rcondt{1} 7; 1: by auto.
+inline {1} 7.
+rcondf{1} 9; 1: by auto => />;smt(mem_set).
+swap {1} 8 -7; seq 1 0 : #pre; 1: by auto.
+swap {2} 4 1.
+
+seq 9 4 : (={c',sk0,m',k} /\ c2{1} = c1{2} /\ m'{1} <> None /\
+              RO2.RO.m{1}.[oget m'{1}] = Some ks{2}); last 
+   by inline *;sp;if{1};auto => /> /#.
+
+
+by auto => />;smt(mem_fdom  in_fset1 get_setE).
+qed.
+
+
+(* SECURITY PROOF *)
 
 module CCAL(H1 : RO1.RO, H2 : RO2.RO, A : KEMROMx2.CCA_ADV) = {
   module O = {

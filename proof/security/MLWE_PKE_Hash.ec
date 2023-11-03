@@ -557,18 +557,50 @@ lemma correctness_theorem &m fail_prob :
 
 end section.
 
-section. 
+
+(* INSTANTIATION OF THE FO_K TRANSFORM *)
 
 import UU.TT.PKEROM.
 import UU.
-declare module A <:
-    KEMROM.CCA_ADV{ -KEMROM.RO.RO.m, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.B, -TT.Correctness_Adv1, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.RO2.FRO, -KEMROMx2.CCA, -CountHx2, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3, -KEMROM.CCA, -B1x2}.
 
-local equiv kg_same : 
+equiv kg_same : 
   TT.BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
 proc;rndsem {2} 0. 
 admit. (* FIXME: This should not be needed, as post does not mention r *)
 qed.
+
+(* correctness *)
+
+(* FIXME: THIS FACTOR OF 2 IS TO AVOID A LOSSLESS GOAL IN THE TOP LEVEL 
+   INSTANTIATION DUE TO THE RANGE SAMPLING OF THE TT REDUCTION.
+   THIS ALSO IMPACTS CARD BY 1 *)
+lemma correctness &m fail_prob :
+    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
+    TT.qHC = 1 =>
+    2 < TT.FinT.card =>
+    
+Pr[KEMROM.Correctness(KEMROM.RO.RO, FO_K).main() @ &m : res] <= 2%r * fail_prob.
+proof.
+move => cb qHC0 msp2.
+have := (correctness_fo_k &m qHC0 msp2).
+have -> : Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(B_UC, RO.RO)).main() @ &m : res] =
+          Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, TT.B(B_UC, RO.RO)).main() @ &m : res].
++ byequiv => //;proc;seq 1 1 : (#pre /\ ={pk,sk});
+   1: by conseq />;call kg_same;auto => />.
+  by inline *;sim.
+
+have := correctness_theorem (TT.B(B_UC, RO.RO)) &m fail_prob _ cb. 
++ by islossless;smt(drange_ll).
+by smt().
+qed.
+
+(* security *)
+
+section. 
+
+declare module A <:
+    KEMROM.CCA_ADV{ -KEMROM.RO.RO.m, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.B, -TT.Correctness_Adv1, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.RO2.FRO, -KEMROMx2.CCA, -CountHx2, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3, -KEMROM.CCA, -B1x2}.
+
 
 module BUOOOWMod_Hx2 = CountH(B1x2(A, CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), KEMROMx2.CCA(CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), UU2, B1x2(A)).O).BH).
 module BUOOOWMod_dec = KEMROMx2.CCA(CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), UU2, B1x2(A)).O.
