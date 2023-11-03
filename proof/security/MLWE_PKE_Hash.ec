@@ -571,15 +571,12 @@ qed.
 
 (* correctness *)
 
-(* FIXME: THIS FACTOR OF 2 IS TO AVOID A LOSSLESS GOAL IN THE TOP LEVEL 
-   INSTANTIATION DUE TO THE RANGE SAMPLING OF THE TT REDUCTION.
-   THIS ALSO IMPACTS CARD BY 1 *)
 lemma correctness &m fail_prob :
     Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-    TT.qHC = 1 =>
-    2 < TT.FinT.card =>
+    TT.qHC = 0 =>
+    1 < TT.FinT.card =>
     
-Pr[KEMROM.Correctness(KEMROM.RO.RO, FO_K).main() @ &m : res] <= 2%r * fail_prob.
+Pr[KEMROM.Correctness(KEMROM.RO.RO, FO_K).main() @ &m : res] <= fail_prob.
 proof.
 move => cb qHC0 msp2.
 have := (correctness_fo_k &m qHC0 msp2).

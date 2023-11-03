@@ -221,7 +221,7 @@ module Correctness_Adv1(O : RO.RO, A : PKEROM.CORR_ADV) = {
 module B(A : PKEROM.CORR_ADV, O : RO.RO) : PKE.CORR_ADV = {
   proc find(pk : pkey, sk : PKE.skey) : plaintext = {
     var m;
-    CO1.i <$ [0..qHC];
+    CO1.i <$ [0..qHC]; (* there's the odd case where it doesn't query! *)
     m <@ Correctness_Adv1(O,A).main'(pk,sk,CO1.i);   
     CO1(O).get(m);
     return if (0 <= CO1.i < size CO1.queried) 

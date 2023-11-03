@@ -200,14 +200,11 @@ byequiv => //;proc;inline {1} 2; inline {2} 2.
 by sim.
 qed.
 
-(* FIXME: THIS FACTOR OF 2 IS TO AVOID A LOSSLESS GOAL IN THE TOP LEVEL 
-   INSTANTIATION DUE TO THE RANGE SAMPLING OF THE TT REDUCTION.
-   THIS ALSO IMPACTS CARD BY 1 *)
 lemma correctness_fo_k &m : 
-   qHC = 1 => 
-   2<FinT.card =>
+   qHC = 0 => 
+   1<FinT.card =>
    Pr[ KEMROM.Correctness(RO.RO,FO_K).main() @ &m : res ] <=
-   2%r * Pr[ Correctness_Adv(BasePKE, B(B_UC, PKEROM.RO.RO)).main() @ &m : res].
+      Pr[ Correctness_Adv(BasePKE, B(B_UC, PKEROM.RO.RO)).main() @ &m : res].
 move => qHC_0 card2.
 have := Top.UU.correctness &m qHC_0 card2.  
 have -> : Pr[KEMROMx2.Correctness(RO_x2(RO1.RO, RO2.RO), UU).main() @ &m : res] = 
