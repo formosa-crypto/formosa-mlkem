@@ -3,13 +3,17 @@ from Jasmin require import JModel.
 require import Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
 require import W16extra WArray1536 WArray512 WArray32 WArray16.
 require import AVX2_Ops.
+require import GFq KyberPoly.
+import KyberPoly.
+import Zq.
+(* 
 require import KyberPoly.
 require import KyberINDCPA.
 import Kyber.
 import KyberPoly.
 import Zq.
 import BitEncoding.
-import BS2Int.
+import BS2Int.*)
 
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).
@@ -44,7 +48,7 @@ lemma lift2poly_iso (p: W16.t Array256.t) (i k: int):
 proof. 
   move => i_b k_b.
   have k_mb: 0 <= k %% 16 < 16.
-    smt(@IntDiv).
+    smt().
   rewrite /x.
   rewrite /lift2poly initiE => />.
   rewrite get256E => />.
@@ -57,13 +61,13 @@ proof.
   rewrite initiE. move : k_mb => /#.
   simplify.
   rewrite (_: (32 * i + (2 * (k %% 16) + 1)) %/ 2 = (32 * i + 2 * (k %% 16)) %/ 2).
-    smt(@IntDiv).
+    smt().
   rewrite (_: (32 * i + 2 * (k %% 16)) %% 2 = 0).
-    smt(@IntDiv).
+    smt().
   rewrite (_: (32 * i + (2 * (k %% 16) + 1)) %% 2 = 1).
-    smt(@IntDiv).
+    smt().
   rewrite pack2_bits8.
-  smt(@IntDiv).
+  smt().
 qed.
 
 lemma set_get_def (v : W16.t Array256.t) (w: W256.t) i j :
@@ -157,16 +161,16 @@ qed.
 
 lemma get_lift_array256_eq (p: W16.t Array256.t):
   let p_lift = lift_array256 p in
-  forall k, 0 <= k < 256 => p_lift.[k] = inFq (W16.to_sint p.[k]).
+  forall k, 0 <= k < 256 => p_lift.[k] = incoeff (W16.to_sint p.[k]).
 proof. 
   rewrite /lift_array256 => p_lift. rewrite /p_lift.
   move => k k_i.
-  smt (@Array256).
+  rewrite mapiE /#. 
 qed.
 
 lemma lift_array256E (x : W16.t Array256.t) k :
   0 <= k < 256 =>
-  (lift_array256 x).[k] = inFq (to_sint x.[k]).
+  (lift_array256 x).[k] = incoeff (to_sint x.[k]).
 proof. 
 by move => ?; rewrite /lift_array256 mapiE //. 
 qed.
@@ -213,12 +217,9 @@ W32.modulus %/ 2 ^ 2))) %%
 lemma foo (w1 w2: W16.t) :
 (w1 `&` w2) `>>>` 15 = W16.of_int (b2i (w1.[15] /\ w2.[15])).
 proof.
-  apply W16.all_eq_eq.
+  apply W16.all_eq_eq;
   rewrite /all_eq /=.
-  cbv delta.
-  do rewrite of_intwE /int_bit.
-  simplify.
-  smt(@Int @W16). (* can be improved *)
+  by do rewrite of_intwE /int_bit;smt( W16.get_out).
 qed.
 
 
@@ -265,5 +266,4 @@ proof.
   rewrite /t1 of_int_invw (W16.shr_shrw 15 _) 1://= foo'.
   by rewrite compress_comp_1 1:xb /t1''.
 qed.
-(* TODO: CLEAN UP *)
 (*********************************************************************)

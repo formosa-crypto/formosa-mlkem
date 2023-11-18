@@ -16,8 +16,7 @@
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
 require import IntDiv_extra Array256_extra For.
 require import Array128 Array256.
-require import Montgomery NTT_Fq Kyber.
-import NTT_Properties.
+require import Montgomery NTT_Fq GFq Rq Correctness.
 
 require Matrix.
 
@@ -146,7 +145,7 @@ import Zq.
 theory NTTequiv.
 
   clone import Bigalg.BigComRing as BigFq with
-    type  CR.t        <- Fq,
+    type  CR.t        <- coeff,
       op  CR.zeror <- Zq.zero,
       op  CR.oner  <- Zq.one,
       op  CR.(+)   <- Zq.(+),
@@ -157,10 +156,10 @@ theory NTTequiv.
 
   (* In order to keep the same names for the variables, all subsequent NTT modules will use these. *)
   module NTT_vars = {
-    var r                       : Fq Array256.t
-    var zetas, zetas_inv        : Fq Array128.t
+    var r                       : coeff Array256.t
+    var zetas, zetas_inv        : coeff Array128.t
     var len, start, j, zetasctr : int
-    var t, zeta_                : Fq
+    var t, zeta_                : coeff
   }.
 
   (* Non inlined version of the NTT, where each while loop is separated into it's own function. *)
@@ -372,10 +371,10 @@ theory NTTequiv.
 
   }.
 
-  op P_optimize_ntt (zetas1 zetas2 : Fq Array128.t) =
+  op P_optimize_ntt (zetas1 zetas2 : coeff Array128.t) =
     zetas1 = zetas2 .
 
-  op Q_optimize_ntt (_ : int) l1 (_ : int) (s : int * int * (Fq Array256.t * Fq Array256.t)) =
+  op Q_optimize_ntt (_ : int) l1 (_ : int) (s : int * int * (coeff Array256.t * coeff Array256.t)) =
     ( l1 < 128 => s.`1 = s.`2 ) /\
     s.`1 + 1 = 256 %/ (l1 * 2) /\
     s.`3.`1 = s.`3.`2.
@@ -392,7 +391,7 @@ theory NTTequiv.
     ( P_optimize_ntt zetas1 zetas2 ).
 
   op Q_optimize_ntt_outer
-    len1 (_ : int) s1 (_ : int) (s : int * int * (Fq Array256.t * Fq Array256.t)) =
+    len1 (_ : int) s1 (_ : int) (s : int * int * (coeff Array256.t * coeff Array256.t)) =
     ( len1 < 128 \/ 0 < s1 => s.`1 = s.`2 ) /\
     s.`1 + 1 = (256 + s1) %/ (len1 * 2) /\
     s.`3.`1 = s.`3.`2.
@@ -404,7 +403,7 @@ theory NTTequiv.
       ( Q_optimize_ntt_outer len1 ).
 
   op P_optimize_ntt_inner
-    zetas1 zetas2 len1 len2 start1 start2 (zetasctr1 zetasctr2 : int) (zeta_1 zeta_2 : Fq) =
+    zetas1 zetas2 len1 len2 start1 start2 (zetasctr1 zetasctr2 : int) (zeta_1 zeta_2 : coeff) =
     RHL_FOR_INT_ADD_LT2.context
       256 256 (len1 * 2) (len2 * 2) 0 0
       ( P_optimize_ntt_outer zetas1 zetas2 len1 len2 )
@@ -413,7 +412,7 @@ theory NTTequiv.
     zetasctr1 = (256 + start1) %/ (len1 * 2) /\
     zeta_1 = zeta_2.
 
-  op Q_optimize_ntt_inner (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_optimize_ntt_inner (_ _ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     s.`1 = s.`2.
 
   op inv_optimize_ntt_inner
@@ -477,7 +476,7 @@ theory NTTequiv.
         by rewrite (exprSr_sub_range _ _ _ mem_kl_range) //= expr_gt0.
       by rewrite zetas_spec eq_zetasctr.
     move => j1 r1 j2 r2 /=; rewrite /inv_optimize_ntt_inner.
-    pose R (j1 _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (j1 _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       inv_optimize_ntt_outer
         NTT_vars.zetas{1} NTT_vars.zetas{2} (2 ^ (7 - kl)) (2 ^ (7 - kl))
         (j1 + 2 ^ (7 - kl)) (ks * (2 ^ (7 - kl) * 2) + 2 ^ (7 - kl) * 2)
@@ -576,16 +575,16 @@ theory NTTequiv.
     rewrite /inv_optimize_ntt; split.
     + by rewrite RHL_FOR_NAT_DIV_GE2.inv_0.
     move => len1 r1 zetasctr1 len2 r2 zetasctr2.
-    pose R (_ _ : int) (s : int * int * (Fq Array256.t * Fq Array256.t)) :=
+    pose R (_ _ : int) (s : int * int * (coeff Array256.t * coeff Array256.t)) :=
       (s.`3.`1 = s.`3.`2).
     apply/(RHL_FOR_NAT_DIV_GE2.inv_out _ _ _ _ _ _ _ _ _ R) => //=.
     by rewrite /R /Q_optimize_ntt => {R} _ [? ? [? ?]] /= [_] [_].
   qed.
 
-  op P_optimize_invntt (zetas_inv1 zetas_inv2 : Fq Array128.t) =
+  op P_optimize_invntt (zetas_inv1 zetas_inv2 : coeff Array128.t) =
     zetas_inv1 = zetas_inv2.
 
-  op Q_optimize_invntt (k : int) l1 (_ : int) (s : int * int * (Fq Array256.t * Fq Array256.t)) =
+  op Q_optimize_invntt (k : int) l1 (_ : int) (s : int * int * (coeff Array256.t * coeff Array256.t)) =
     ( 2 < l1 => s.`1 - 1 = s.`2 ) /\
     s.`1 = 128 + (-512) %/ (l1 * 2) /\
     s.`3.`1 = s.`3.`2.
@@ -602,7 +601,7 @@ theory NTTequiv.
     ( P_optimize_invntt zetas_inv1 zetas_inv2 ).
 
   op Q_optimize_invntt_outer
-    len1 (_ : int) s1 (_ : int) (s : int * int * (Fq Array256.t * Fq Array256.t)) =
+    len1 (_ : int) s1 (_ : int) (s : int * int * (coeff Array256.t * coeff Array256.t)) =
     ( 2 < len1 \/ 0 < s1 => s.`1 - 1 = s.`2 ) /\
     s.`1 = 128 + (-512 + s1) %/ (len1 * 2) /\
     s.`3.`1 = s.`3.`2.
@@ -614,7 +613,7 @@ theory NTTequiv.
       ( Q_optimize_invntt_outer len1 ).
 
   op P_optimize_invntt_inner
-    zetas_inv1 zetas_inv2 len1 len2 start1 start2 (zetasctr1 zetasctr2 : int) (zeta_1 zeta_2 : Fq) =
+    zetas_inv1 zetas_inv2 len1 len2 start1 start2 (zetasctr1 zetasctr2 : int) (zeta_1 zeta_2 : coeff) =
     RHL_FOR_INT_ADD_LT2.context
       256 256 (len1 * 2) (len2 * 2) 0 0
       ( P_optimize_invntt_outer zetas_inv1 zetas_inv2 len1 len2 )
@@ -623,7 +622,7 @@ theory NTTequiv.
     zetasctr1 = 128 + (-512 + start1) %/ (len1 * 2) + 1 /\
     zeta_1 = zeta_2.
 
-  op Q_optimize_invntt_inner (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_optimize_invntt_inner (_ _ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     s.`1 = s.`2.
 
   op inv_optimize_invntt_inner
@@ -633,10 +632,10 @@ theory NTTequiv.
       ( P_optimize_invntt_inner zetas_inv1 zetas_inv2 len1 len2 start1 start2 zetasctr1 zetasctr2 zeta_1 zeta_2 )
       Q_optimize_invntt_inner.
 
-  op P_optimize_invntt_post (zetas_inv1 zetas_inv2 : Fq Array128.t) =
+  op P_optimize_invntt_post (zetas_inv1 zetas_inv2 : coeff Array128.t) =
     zetas_inv1 = zetas_inv2.
 
-  op Q_optimize_invntt_post (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_optimize_invntt_post (_ _ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     s.`1 = s.`2.
 
   op inv_optimize_invntt_post zetas_inv1 zetas_inv2 =
@@ -699,7 +698,7 @@ theory NTTequiv.
         by rewrite (exprSr_add_range _ _ _ mem_kl_range) //= expr_gt0.
       by rewrite zetas_inv_spec /NTT_Fq.zetas_inv eq_zetasctr.
     move => j1 r1 j2 r2 /=; rewrite /inv_optimize_invntt_inner.
-    pose R (j1 _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (j1 _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       inv_optimize_invntt_outer
         NTT_vars.zetas_inv{1} NTT_vars.zetas_inv{2} (2 ^ (kl + 1)) (2 ^ (kl + 1))
         (j1 + 2 ^ (kl + 1)) (ks * (2 ^ (kl + 1) * 2) + 2 ^ (kl + 1) * 2)
@@ -797,7 +796,7 @@ theory NTTequiv.
     wp; skip => &1 &2 [<<- ->>]; rewrite /inv_optimize_invntt_post /=; split.
     + by apply/RHL_FOR_INT_ADD_LT2.inv_0_inv.
     move => j1 r1 j2 r2.
-    pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       (s.`1 = s.`2).
     by apply/(RHL_FOR_INT_ADD_LT2.inv_out _ _ _ _ _ _ _ _ _ R).
   qed.
@@ -821,7 +820,7 @@ theory NTTequiv.
     rewrite /inv_optimize_invntt; split.
     + by apply/RHL_FOR_NAT_MUL_LE2.inv_0.
     move => len1 r1 zetasctr1 len2 r2 zetasctr2 /=.
-    pose R (_ _ : int) (s : int * int * (Fq Array256.t * Fq Array256.t)) :=
+    pose R (_ _ : int) (s : int * int * (coeff Array256.t * coeff Array256.t)) :=
       (s.`3.`1 = s.`3.`2).
     apply/(RHL_FOR_NAT_MUL_LE2.inv_out _ _ _ _ _ _ _ _ _ R) => //=.
     by rewrite /R /Q_optimize_invntt => {R} _ [? ? [? ?]] /= [].
@@ -908,12 +907,12 @@ theory NTTequiv.
 
   }.
 
-  op r_bsrev_ntt_inner (zetas : Fq Array128.t) len start r j =
+  op r_bsrev_ntt_inner (zetas : coeff Array128.t) len start r j =
     set2_add_mulr r
       zetas.[((256 %/ len) + (start %/ len)) %/ 2]
       j (j + len).
 
-  op r_naive_ntt_inner (zetas : Fq Array128.t) len start (r : Fq Array256.t) j =
+  op r_naive_ntt_inner (zetas : coeff Array128.t) len start (r : coeff Array256.t) j =
     perm (bsrev 8)
       ( set2_add_mulr (Array256_extra.perm (bsrev 8) r)
           zetas.[bsrev 8 ((start * 2 + 1) * (128 %/ len))]
@@ -943,10 +942,10 @@ theory NTTequiv.
   op r_naive_ntt zetas r len =
     r_naive_ntt_outer_foldl zetas len r len.
 
-  op P_bsrev_ntt (zetas1 zetas2 : Fq Array128.t) =
+  op P_bsrev_ntt (zetas1 zetas2 : coeff Array128.t) =
     zetas1 = zetas2.
 
-  op Q_bsrev_ntt (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_bsrev_ntt (_ _ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     s.`1 = s.`2.
 
   op inv_bsrev_ntt zetas1 zetas2 =
@@ -961,7 +960,7 @@ theory NTTequiv.
     (P_bsrev_ntt zetas1 zetas2).
 
   op Q_bsrev_ntt_outer
-    zetas1 zetas2 (len1 len2 : int) k (_ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+    zetas1 zetas2 (len1 len2 : int) k (_ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     exists r ,
       s.`1 = r_bsrev_ntt_outer_foldl zetas1 len1 r k  /\
       s.`2 = r_naive_ntt_outer_foldl zetas2 len2 r k.
@@ -973,7 +972,7 @@ theory NTTequiv.
       ( Q_bsrev_ntt_outer zetas1 zetas2 len1 len2 ).
 
   op P_bsrev_ntt_inner
-    zetas1 zetas2 len1 len2 start1 start2 (zeta_1 zeta_2 : Fq) =
+    zetas1 zetas2 len1 len2 start1 start2 (zeta_1 zeta_2 : coeff) =
     RHL_FOR_INT_ADD_LT2.context
       256 len2 (len1 * 2) 1 0 0
       ( P_bsrev_ntt_outer zetas1 zetas2 len1 len2 )
@@ -982,7 +981,7 @@ theory NTTequiv.
     zeta_2 = zetas2.[bsrev 8 ((start2 * 2 + 1) * (128 %/ len2))].
 
   op Q_bsrev_ntt_inner
-    zetas1 zetas2 (len1 len2 start1 start2 : int) k (_ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+    zetas1 zetas2 (len1 len2 start1 start2 : int) k (_ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     exists r ,
       s.`1 = r_bsrev_ntt_inner_foldl zetas1 len1 start1
                (r_bsrev_ntt_outer_foldl zetas1 len1 r (start1 %/ (len1 * 2))) k /\
@@ -1669,7 +1668,7 @@ theory NTTequiv.
       exists r => //=; rewrite /r_bsrev_ntt_inner_foldl /r_naive_ntt_inner_foldl range_geq //=.
       by rewrite (exprSr_sub_range _ _ _ mem_kl_range) //= mulzK // gtr_eqF // expr_gt0.
     move => j1 r1 j2 r2 /=; rewrite /inv_bsrev_ntt_inner.
-    pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       inv_bsrev_ntt_outer
         NTT_vars.zetas{1} NTT_vars.zetas{1}
         (2 ^ (7 - kl)) (2 ^ kl)
@@ -1775,17 +1774,17 @@ theory NTTequiv.
     rewrite /inv_bsrev_ntt; split.
     + by rewrite RHL_FOR_NAT_DIV_GE_MUL_LE.inv_0.
     move => len1 r1 len2 r2.
-    pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       (s.`1 = s.`2).
     by apply/(RHL_FOR_NAT_DIV_GE_MUL_LE.inv_out _ _ _ _ _ _ _ _ _ R).
   qed.
 
-  op r_bsrev_invntt_inner (zetas_inv : Fq Array128.t) len start r j =
+  op r_bsrev_invntt_inner (zetas_inv : coeff Array128.t) len start r j =
     set2_mul_addr r
       zetas_inv.[128 + ((-512) + start) %/ (len * 2)]
       j (j + len).
 
-  op r_naive_invntt_inner (zetas_inv : Fq Array128.t) len start (r : Fq Array256.t) j =
+  op r_naive_invntt_inner (zetas_inv : coeff Array128.t) len start (r : coeff Array256.t) j =
     perm (bsrev 8)
       ( set2_mul_addr (Array256_extra.perm (bsrev 8) r)
           zetas_inv.[bsrev 8 ((start * 2 + 1) * (128 %/ len) - 2)]
@@ -1809,10 +1808,10 @@ theory NTTequiv.
   op r_naive_invntt_outer_foldl zetas_inv len r k =
     foldl (r_naive_invntt_outer zetas_inv len) r (range 0 k).
 
-  op r_bsrev_invntt_post (zetas_inv : Fq Array128.t) (r : Fq Array256.t) j =
+  op r_bsrev_invntt_post (zetas_inv : coeff Array128.t) (r : coeff Array256.t) j =
     r.[j <- r.[j] * zetas_inv.[127]].
 
-  op r_naive_invntt_post (zetas_inv : Fq Array128.t) (r : Fq Array256.t) j =
+  op r_naive_invntt_post (zetas_inv : coeff Array128.t) (r : coeff Array256.t) j =
     perm (bsrev 8) ((perm (bsrev 8) r).[j <- (perm (bsrev 8) r).[j] * zetas_inv.[127]]).
 
   op r_bsrev_invntt_post_foldl zetas_inv r k =
@@ -1827,10 +1826,10 @@ theory NTTequiv.
   op r_naive_invntt zetas_inv r len =
     r_naive_invntt_outer_foldl zetas_inv len r len.
 
-  op P_bsrev_invntt (zetas_inv1 zetas_inv2 : Fq Array128.t) =
+  op P_bsrev_invntt (zetas_inv1 zetas_inv2 : coeff Array128.t) =
     zetas_inv1 = zetas_inv2.
 
-  op Q_bsrev_invntt (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_bsrev_invntt (_ _ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     s.`1 = s.`2.
 
   op inv_bsrev_invntt zetas_inv1 zetas_inv2 =
@@ -1839,10 +1838,10 @@ theory NTTequiv.
     ( P_bsrev_invntt zetas_inv1 zetas_inv2 )
     Q_bsrev_invntt.
 
-  op P_bsrev_invntt_post (zetas_inv1 zetas_inv2 : Fq Array128.t) =
+  op P_bsrev_invntt_post (zetas_inv1 zetas_inv2 : coeff Array128.t) =
     zetas_inv1 = zetas_inv2.
 
-  op Q_bsrev_invntt_post zetas_inv1 zetas_inv2 k (_ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_bsrev_invntt_post zetas_inv1 zetas_inv2 k (_ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     exists r ,
       s.`1 = r_bsrev_invntt_post_foldl zetas_inv1 r k /\
       s.`2 = r_naive_invntt_post_foldl zetas_inv2 r k.
@@ -1859,7 +1858,7 @@ theory NTTequiv.
     ( P_bsrev_invntt zetas_inv1 zetas_inv2 ).
 
   op Q_bsrev_invntt_outer
-    zetas_inv1 zetas_inv2 (len1 len2 : int) k (_ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+    zetas_inv1 zetas_inv2 (len1 len2 : int) k (_ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     exists r ,
       s.`1 = r_bsrev_invntt_outer_foldl zetas_inv1 len1 r k  /\
       s.`2 = r_naive_invntt_outer_foldl zetas_inv2 len2 r k.
@@ -1871,7 +1870,7 @@ theory NTTequiv.
       ( Q_bsrev_invntt_outer zetas_inv1 zetas_inv2 len1 len2 ).
 
   op P_bsrev_invntt_inner
-    zetas_inv1 zetas_inv2 len1 len2 start1 start2 (zeta_1 zeta_2 : Fq) =
+    zetas_inv1 zetas_inv2 len1 len2 start1 start2 (zeta_1 zeta_2 : coeff) =
     RHL_FOR_INT_ADD_LT2.context
       256 len2 (len1 * 2) 1 0 0
       ( P_bsrev_invntt_outer zetas_inv1 zetas_inv2 len1 len2 )
@@ -1879,7 +1878,7 @@ theory NTTequiv.
     zeta_1 = zetas_inv1.[128 + ((-512) + start1) %/ (len1 * 2)] /\
     zeta_2 = zetas_inv2.[bsrev 8 ((start2 * 2 + 1) * (128 %/ len2) - 2)].
 
-  op Q_bsrev_invntt_inner zetas_inv1 zetas_inv2 (len1 len2 start1 start2 : int) k (_ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_bsrev_invntt_inner zetas_inv1 zetas_inv2 (len1 len2 start1 start2 : int) k (_ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     exists r ,
       s.`1 = r_bsrev_invntt_inner_foldl zetas_inv1 len1 start1 (r_bsrev_invntt_outer_foldl zetas_inv1 len1 r (start1 %/ (len1 * 2))) k /\
       s.`2 = r_naive_invntt_inner_foldl zetas_inv2 len2 start2 (r_naive_invntt_outer_foldl zetas_inv2 len2 r start2) k.
@@ -2482,7 +2481,7 @@ theory NTTequiv.
       exists r => //=; rewrite /r_bsrev_invntt_inner_foldl /r_naive_invntt_inner_foldl range_geq //=.
       by rewrite (exprSr_add_range _ _ _ mem_kl_range) //= mulzK // gtr_eqF // expr_gt0.
     move => j1 r1 j2 r2 /=; rewrite /inv_bsrev_invntt_inner.
-    pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       inv_bsrev_invntt_outer
         NTT_vars.zetas_inv{1} NTT_vars.zetas_inv{1}
         (2 ^ (kl + 1)) (2 ^ (6 - kl))
@@ -2608,7 +2607,7 @@ theory NTTequiv.
       rewrite /r_bsrev_invntt_post_foldl /r_naive_invntt_post_foldl /=.
       by rewrite range_geq.
     move => j1 r1 j2 r2.
-    pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       (s.`1 = s.`2).
     apply/(RHL_FOR_INT_ADD_LT2.inv_out _ _ _ _ _ _ _ _ _ R) => //=.
     move => _ {r1 r2} [r1 r2] [r] /= [->> ->>]; rewrite /R => {R} /=.
@@ -2631,7 +2630,7 @@ theory NTTequiv.
     rewrite /inv_bsrev_invntt; split.
     + by rewrite RHL_FOR_NAT_MUL_LE_DIV_GE.inv_0.
     move => len1 r1 len2 r2.
-    pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       (s.`1 = s.`2).
     by apply/(RHL_FOR_NAT_MUL_LE_DIV_GE.inv_out _ _ _ _ _ _ _ _ _ R).
   qed.
@@ -2649,8 +2648,8 @@ theory NTTequiv.
 
   module NTT_avx2 = {
 
-    var zetas, zetas_inv : Fq Array128.t
-    var r : Fq Array256.t
+    var zetas, zetas_inv : coeff Array128.t
+    var r : coeff Array256.t
     var k : int
 
     proc ntt() = {
@@ -2674,10 +2673,10 @@ theory NTTequiv.
 
   }.
 
-  op P_avx2_ntt (zetas1 zetas2 : Fq Array128.t) =
+  op P_avx2_ntt (zetas1 zetas2 : coeff Array128.t) =
     zetas1 = zetas2.
 
-  op Q_avx2_ntt (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_avx2_ntt (_ _ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     s.`1 = s.`2.
 
   op inv_avx2_ntt zetas1 zetas2 =
@@ -2692,7 +2691,7 @@ theory NTTequiv.
     (P_avx2_ntt zetas1 zetas2).
 
   op Q_avx2_ntt_outer
-    zetas1 (len1 : int) r k (_ : int) (s : Fq Array256.t) =
+    zetas1 (len1 : int) r k (_ : int) (s : coeff Array256.t) =
     s = r_bsrev_ntt_outer_foldl zetas1 len1 r k.
 
   op inv_avx2_ntt_outer zetas1 zetas2 len1 len2 r =
@@ -2702,7 +2701,7 @@ theory NTTequiv.
       ( Q_avx2_ntt_outer zetas1 len1 r ).
 
   op P_avx2_ntt_inner
-    zetas1 zetas2 len1 len2 start1 (zeta_1 : Fq) =
+    zetas1 zetas2 len1 len2 start1 (zeta_1 : coeff) =
     HL_FOR_INT_ADD_LT.context
       256 (len1 * 2) 0
       ( P_avx2_ntt_outer zetas1 zetas2 len1 len2 )
@@ -2710,7 +2709,7 @@ theory NTTequiv.
     zeta_1 = zetas1.[(256 + start1) %/ (len1 * 2)].
 
   op Q_avx2_ntt_inner
-    zetas1 (len1 start1 : int) r k (_ : int) (s : Fq Array256.t) =
+    zetas1 (len1 start1 : int) r k (_ : int) (s : coeff Array256.t) =
     s = r_bsrev_ntt_inner_foldl zetas1 len1 start1
           (r_bsrev_ntt_outer_foldl zetas1 len1 r (start1 %/ (len1 * 2))) k.
 
@@ -2840,15 +2839,15 @@ theory NTTequiv.
     rewrite /inv_avx2_ntt; split.
     + by rewrite RHL_FOR_NAT_DIV_GE_INT_ADD_LT.inv_0.
     move => len1 r1 k2 r2.
-    pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+    pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
       (s.`1 = s.`2).
     by apply/(RHL_FOR_NAT_DIV_GE_INT_ADD_LT.inv_out _ _ _ _ _ _ _ _ _ R).
   qed.
 
-  op P_avx2_invntt (zetas1 zetas2 : Fq Array128.t) =
+  op P_avx2_invntt (zetas1 zetas2 : coeff Array128.t) =
     zetas1 = zetas2.
 
-  op Q_avx2_invntt (_ _ _ : int) (s : Fq Array256.t * Fq Array256.t) =
+  op Q_avx2_invntt (_ _ _ : int) (s : coeff Array256.t * coeff Array256.t) =
     s.`1 = s.`2.
 
   op inv_avx2_invntt zetas1 zetas2 =
@@ -2857,10 +2856,10 @@ theory NTTequiv.
     (P_avx2_invntt zetas1 zetas2)
     Q_avx2_invntt.
 
-  op P_avx2_invntt_post (zetas_inv1 zetas_inv2 : Fq Array128.t) =
+  op P_avx2_invntt_post (zetas_inv1 zetas_inv2 : coeff Array128.t) =
     zetas_inv1 = zetas_inv2.
 
-  op Q_avx2_invntt_post zetas_inv1 r k (_ : int) (s : Fq Array256.t) =
+  op Q_avx2_invntt_post zetas_inv1 r k (_ : int) (s : coeff Array256.t) =
       s = r_bsrev_invntt_post_foldl zetas_inv1 r k.
 
   op inv_avx2_invntt_post zetas_inv1 zetas_inv2 r =
@@ -2875,7 +2874,7 @@ theory NTTequiv.
     (P_avx2_invntt zetas1 zetas2).
 
   op Q_avx2_invntt_outer
-    zetas1 (len1 : int) r k (_ : int) (s : Fq Array256.t) =
+    zetas1 (len1 : int) r k (_ : int) (s : coeff Array256.t) =
     s = r_bsrev_invntt_outer_foldl zetas1 len1 r k.
 
   op inv_avx2_invntt_outer zetas1 zetas2 len1 len2 r =
@@ -2885,7 +2884,7 @@ theory NTTequiv.
       ( Q_avx2_invntt_outer zetas1 len1 r ).
 
   op P_avx2_invntt_inner
-    zetas1 zetas2 len1 len2 start1 (zeta_1 : Fq) =
+    zetas1 zetas2 len1 len2 start1 (zeta_1 : coeff) =
     HL_FOR_INT_ADD_LT.context
       256 (len1 * 2) 0
       ( P_avx2_invntt_outer zetas1 zetas2 len1 len2 )
@@ -2893,7 +2892,7 @@ theory NTTequiv.
     zeta_1 = zetas1.[128 + ((-512) + start1) %/ (len1 * 2)].
 
   op Q_avx2_invntt_inner
-    zetas1 (len1 start1 : int) r k (_ : int) (s : Fq Array256.t) =
+    zetas1 (len1 start1 : int) r k (_ : int) (s : coeff Array256.t) =
     s = r_bsrev_invntt_inner_foldl zetas1 len1 start1
           (r_bsrev_invntt_outer_foldl zetas1 len1 r (start1 %/ (len1 * 2))) k.
 
@@ -3037,18 +3036,18 @@ theory NTTequiv.
     move => len1 r1 k2 r2 Ncondlen1 Ncondk2 inv_len.
     rewrite /inv_avx2_invntt_post; split.
     + apply/HL_FOR_INT_ADD_LT.inv_0 => //=; move: Ncondlen1 Ncondk2 inv_len.
-      pose R (_ _ : int) (s : Fq Array256.t * Fq Array256.t) :=
+      pose R (_ _ : int) (s : coeff Array256.t * coeff Array256.t) :=
         Q_avx2_invntt_post NTT_vars.zetas_inv{1} s.`2 0 0 s.`1.
       apply/(RHL_FOR_NAT_MUL_LE_INT_ADD_LT.inv_out _ _ _ _ _ _ _ _ _ R) => //=.
       move => _ {r1 r2} [r1 r2] <-; rewrite /R /Q_avx2_invntt_post /= => {R}.
       by rewrite /r_bsrev_invntt_post_foldl range_geq.
     move => j1 r; rewrite subr_le0 lerNgt /=.
-    pose R (_ : int) (s : Fq Array256.t) :=
+    pose R (_ : int) (s : coeff Array256.t) :=
       s = r_avx2_invntt_post NTT_vars.zetas_inv{1} r2.
     by apply/(HL_FOR_INT_ADD_LT.inv_out _ _ _ _ _ R).
   qed.
 
-  op partial_ntt (p : Fq Array256.t, len start bsj : int) =
+  op partial_ntt (p : coeff Array256.t, len start bsj : int) =
     BAdd.bigi
       predT
       (fun s =>
@@ -3056,7 +3055,7 @@ theory NTTequiv.
         p.[bsrev 8 (bsj * len + s)])
       0 len.
 
-  op partial_ntt_spec (r p : Fq Array256.t, len start bsj : int) =
+  op partial_ntt_spec (r p : coeff Array256.t, len start bsj : int) =
     r.[bsrev 8 (bsj * len + start)] = partial_ntt p len start bsj.
 
   (* The spec of the ntt only used in this file. *)
@@ -3481,7 +3480,7 @@ theory NTTequiv.
     + rewrite /f /g => {f g} i /mem_range mem_i_range /=.
       rewrite (IntID.mulrC _ 2) ZqRing.mulrA -ZqRing.exprD.
       - by rewrite unit_zroot_ring.
-      rewrite -mulrDr /(\o) /= addrA -ZqRing.mulN1r -inFqN -exp_zroot_128_ring.
+      rewrite -mulrDr /(\o) /= addrA -ZqRing.mulN1r -incoeffN -exp_zroot_128_ring.
       rewrite ZqRing.mulrA -ZqRing.exprD; [by rewrite unit_zroot_ring|].
       congr; last first.
       - by rewrite mulrDl -mulrA /= (exprS_range _ _ _ mem_kl_range).
@@ -3722,7 +3721,7 @@ theory NTTequiv.
     by case: (start_disj k start _ _) => // [<-|<-].
   qed.
 
-  hoare naive_ntt (p : Fq Array256.t) :
+  hoare naive_ntt (p : coeff Array256.t) :
     NTT_naive.ntt :
       NTT_vars.zetas = NTT_Fq.zetas /\
       NTT_vars.r = p ==>
@@ -3741,7 +3740,7 @@ theory NTTequiv.
     by rewrite Q_.
   qed.
 
-  op partial_invntt (p : Fq Array256.t, len start lbsj hbsj : int) =
+  op partial_invntt (p : coeff Array256.t, len start lbsj hbsj : int) =
     let len' = if 0 < len then len * 2 else 1 in
     BAdd.bigi
       predT
@@ -3750,12 +3749,12 @@ theory NTTequiv.
         p.[bsrev 8 (hbsj * 128 + lb * len' + start)])
       0 (128 %/ len').
 
-  op partial_invntt_spec (r p : Fq Array256.t, len start lbsj hbsj : int) =
+  op partial_invntt_spec (r p : coeff Array256.t, len start lbsj hbsj : int) =
     let len' = if 0 < len then len * 2 else 1 in
     r.[bsrev 8 (hbsj * 128 + lbsj * len' + start)] = partial_invntt p len start lbsj hbsj.
 
 (* The spec of the invntt only used in this file. *)
-  op invntt_spec (r p : Fq Array256.t) =
+  op invntt_spec (r p : coeff Array256.t) =
     forall lbsj hbsj ,
       lbsj \in range 0 128 =>
       hbsj \in range 0 2 =>
@@ -3781,7 +3780,7 @@ theory NTTequiv.
   op P_naive_invntt_post zetas_inv =
     zetas_inv = NTT_Fq.zetas_inv.
 
-  op Q_naive_invntt_post (p : Fq Array256.t) (_ : int) j (s : Fq Array256.t) =
+  op Q_naive_invntt_post (p : coeff Array256.t) (_ : int) j (s : coeff Array256.t) =
     forall bsj ,
       bsj \in range 0 256 =>
       s.[bsrev 8 bsj] =
@@ -4249,7 +4248,7 @@ theory NTTequiv.
     rewrite !(exprS_sub_range _ _ _ mem_kl_range) //= !(exprSr_sub_range _ _ _ mem_kl_range) //=.
     rewrite !(exprS_range _ _ _ mem_kl_range) //= !opprD /= -!mulNr !mulrA -!mulrDl.
     rewrite -{2}(IntID.mul1r (bsrev _ _)) -mulNr -mulrDl -{2}(IntID.mul1r (bsrev _ (_ + _)%Int)) -mulNr -mulrDl.
-    rewrite -(ZqRing.mul1r (exp zroot (_ - _)%Int)) -ZqRing.mulNr -inFqN -exp_zroot_128.
+    rewrite -(ZqRing.mul1r (exp zroot (_ - _)%Int)) -ZqRing.mulNr -incoeffN -exp_zroot_128.
     rewrite -!ZqRing.exprD ?unit_zroot_ring //.
     rewrite (exp_mod _ _ _ exp_zroot_256) eq_sym (exp_mod _ _ _ exp_zroot_256) eq_sym.
     congr; rewrite (IntID.addrC (_ * _)%Int (2 ^ (7 - _))) (IntID.mulrC lbsj) bsrev_add.
@@ -4499,7 +4498,7 @@ theory NTTequiv.
     by move: Q_ => /(_ hbsj start lbsj _ _) //=; move: mem_start_range => /mem_range [_ ->] /= ->.
   qed.
 
-  hoare naive_invntt_post (p : Fq Array256.t) :
+  hoare naive_invntt_post (p : coeff Array256.t) :
     NTT_naive.invntt_post :
       NTT_vars.zetas_inv = NTT_Fq.zetas_inv /\
       NTT_vars.r = p ==>
@@ -4527,7 +4526,7 @@ theory NTTequiv.
     by rewrite (bsrev_range 8).
   qed.
 
-  hoare naive_invntt (p : Fq Array256.t) :
+  hoare naive_invntt (p : coeff Array256.t) :
     NTT_naive.invntt :
       NTT_vars.zetas_inv = NTT_Fq.zetas_inv /\
       NTT_vars.r = p ==>
@@ -4675,41 +4674,41 @@ theory NTTequiv.
     by rewrite mulKz // NTT_Fq.scale127E.
   qed.
 
-  hoare bsrev_ntt_spec (p : Fq Array256.t) :
+  hoare bsrev_ntt_spec (p : coeff Array256.t) :
     NTT_bsrev.ntt :
       NTT_vars.zetas = NTT_Fq.zetas /\
       NTT_vars.r = p ==>
       ntt_spec res p.
   proof. by conseq bsrev_ntt (naive_ntt p) => /#. qed.
 
-  hoare opt_ntt_spec (p : Fq Array256.t) :
+  hoare opt_ntt_spec (p : coeff Array256.t) :
     NTT_opt.ntt :
       NTT_vars.zetas = NTT_Fq.zetas /\
       NTT_vars.r = p ==>
       ntt_spec res p.
   proof. by conseq optimize_ntt (bsrev_ntt_spec p) => /#. qed.
 
-  hoare ntt_spec (p : Fq Array256.t) :
+  hoare ntt_spec (p : coeff Array256.t) :
     NTT_Fq.NTT.ntt :
       arg =(p, NTT_Fq.zetas) ==>
       ntt_spec res p.
   proof. by conseq inline_ntt (opt_ntt_spec p) => /#. qed.
 
-  hoare bsrev_invntt_spec (p : Fq Array256.t) :
+  hoare bsrev_invntt_spec (p : coeff Array256.t) :
     NTT_bsrev.invntt :
       NTT_vars.zetas_inv = NTT_Fq.zetas_inv /\
       NTT_vars.r = p ==>
       invntt_spec res p.
   proof. by conseq bsrev_invntt (naive_invntt p) => /#. qed.
 
-  hoare opt_invntt_spec (p : Fq Array256.t) :
+  hoare opt_invntt_spec (p : coeff Array256.t) :
     NTT_opt.invntt :
       NTT_vars.zetas_inv = NTT_Fq.zetas_inv /\
       NTT_vars.r = p ==>
       invntt_spec res p.
   proof. by conseq optimize_invntt (bsrev_invntt_spec p) => /#. qed.
 
-  hoare invntt_spec (p : Fq Array256.t) :
+  hoare invntt_spec (p : coeff Array256.t) :
     NTT_Fq.NTT.invntt :
       arg =(p, NTT_Fq.zetas_inv) ==>
       invntt_spec res p.

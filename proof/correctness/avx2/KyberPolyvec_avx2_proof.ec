@@ -13,15 +13,16 @@ require import KyberPolyVec.
 require import KyberPolyvec_avx2_vec.
 require import NTT_avx2.
 require import Kyber_AVX2_cf.
-require import KyberINDCPA.
+(* require import KyberINDCPA.*)
 require import Kyber_AVX_AuxLemmas.
+
+require import GFq Rq VecMat Serialization Correctness.
 
 theory KyberPolyvecAVX.
 
 import Fq.
 import SignedReductions.
 import Kyber.
-import KyberSpec.
 import Zq.
 import KyberPolyAVX.
 import KyberPolyAVXVec.
@@ -43,7 +44,7 @@ lemma polvec_add_corr_h _a _b ab bb:
            ==>
            signed_bound768_cxq res 0 768 (ab + bb) /\
            forall k, 0 <= k < 768 =>
-             inFq (to_sint res.[k]) = _a.[k] + _b.[k]].
+             incoeff (to_sint res.[k]) = _a.[k] + _b.[k]].
 proof.
   move => abb bbb.
   proc.
@@ -111,7 +112,7 @@ lemma polvec_add_corr _a _b ab bb:
            ==>
            signed_bound768_cxq res 0 768 (ab + bb) /\
            forall k, 0 <= k < 768 =>
-             inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r.
+             incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r.
   move => abb bbb.
   conseq (polyvec_add_ll) (polvec_add_corr_h _a _b ab bb abb bbb).
   by smt().
@@ -400,8 +401,9 @@ proof.
   move => x y z h l [#] H0 H1 [#] H2 H3 /#.
 qed.
 
+
 lemma unlift_compress_polyvec (a: W16.t Array768.t) (d: int):
-  compress_polyvec d (lift_vector a) = Array768.map (compress d) (lift_array768 a).
+  compress_polyvec d (lift_polyvec a) = Array768.map (compress d) (lift_array768 a).
 proof.
   apply Array768.tP => i ib.
   rewrite /compress_polyvec /fromarray256 mapiE 1:ib /=.
@@ -470,7 +472,7 @@ proof.
       rewrite liftarrayvector 1..2:/# (mulzC 256 _) -(divz_eq _ 256) mapiE 1:/# /=.
       rewrite /pos_bound768_cxq /bpos16 /= in pos_bound_a.
       rewrite -compress_alt_compress_large /compress_alt_large /= qE.
-      rewrite inFqK (pmod_small _ q) 1:pos_bound_a 1:/# /=.
+      rewrite incoeffK (pmod_small _ q) 1:pos_bound_a 1:/# /=.
       rewrite shl_shlw 1://= -(W16.to_uintK a{1}.[16 * i{2} + k]) shlMP 1://=.
       rewrite (W16.of_intM _ 30200) -W16.of_intD -W16.of_intS.
       rewrite /round.
@@ -699,7 +701,7 @@ proof.
       rewrite liftarrayvector 1..2:/# (mulzC 256 _) -(divz_eq _ 256) mapiE 1:/# /=.
       rewrite /pos_bound768_cxq /bpos16 /= in pos_bound_a.
       rewrite -compress_alt_compress_large /compress_alt_large /= qE.
-      rewrite inFqK (pmod_small _ q) 1:pos_bound_a 1:/# /=.
+      rewrite incoeffK (pmod_small _ q) 1:pos_bound_a 1:/# /=.
       rewrite shl_shlw 1://= -(W16.to_uintK a{1}.[16 * i{2} + k]) shlMP 1://=.
       rewrite (W16.of_intM _ 30200) -W16.of_intD -W16.of_intS.
       rewrite /round.
@@ -976,11 +978,11 @@ proof.
       + by rewrite /f4u64_t8u32 -ext_eq_all /all_eq //=.
       + by rewrite /f8u32_t16u16 -ext_eq_all /all_eq //=.
   while(#{~k{1}=0}pre /\ 0 <= k{1} <= 3 /\
-        (forall j, 0 <= j < 256 * k{1} => inFq (to_sint r{1}.[j]) = decompress 10 c{2}.[j]) /\
+        (forall j, 0 <= j < 256 * k{1} => incoeff (to_sint r{1}.[j]) = decompress 10 c{2}.[j]) /\
         (forall j, 0 <= j < 256 * k{1} => bpos16 r{1}.[j] q)).
     sp; elim * => k c2; wp.
     while {1} (#{~i{1}=0}pre /\ 0 <= i{1} <= 16 /\
-               (forall j, 0 <= j < 256 * k{1} + 16 * i{1} => inFq (to_sint r{1}.[j]) = decompress 10 c{2}.[j]) /\
+               (forall j, 0 <= j < 256 * k{1} + 16 * i{1} => incoeff (to_sint r{1}.[j]) = decompress 10 c{2}.[j]) /\
                (forall j, 0 <= j < 256 * k{1} + 16 * i{1} => bpos16 r{1}.[j] q)) (16 - i{1}).
       move => &m z.
 
@@ -1308,7 +1310,7 @@ lemma polyvec_tobytes_corr mem _p _a:
             pos_bound768_cxq a{1} 0 768 2 /\
             lift_array768 (nttpackv a{1}) = _a /\
             (forall i, 0<=i<768 => 0 <= a{2}.[i] <q) /\
-            map inFq a{2} = _a /\  valid_ptr _p (3*384) /\
+            map incoeff a{2} = _a /\  valid_ptr _p (3*384) /\
             Glob.mem{1} = mem /\ to_uint rp{1} = _p
              ==>
             touches mem Glob.mem{1} _p (3*384) /\

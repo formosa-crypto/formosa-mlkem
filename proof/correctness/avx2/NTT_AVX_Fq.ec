@@ -2,17 +2,14 @@ require import AllCore List IntDiv Ring StdOrder BitEncoding.
 
 require import Fq NTT_Fq NTTAlgebra.
 
-import Kyber.
-import NTT_Properties.
+import GFq Rq Correctness.
 
 import Zq IntOrder BitReverse.
 import NTTequiv.
 
 from Jasmin require import JModel.
 require import Array16 Array128  Array256 Array400.
-require import Array16_extra.
-require import Array128_extra.
-require import Array256_extra.
+require import Array_extra.
 require import Array400 WArray32 WArray800 WArray512.
 
 lemma bits8_W2u8 ws i :
@@ -658,7 +655,7 @@ proc __nttunpack128(r0 r1 r2 r3 r4 r5 r6 r7: Fq Array16.t): Fq Array16.t * Fq Ar
   return (r0d, r4d, r1d, r5d, r2d, r6d, r3d, r7d);
 }*)
 
-proc __butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: Fq Array16.t) : Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
+proc __butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: coeff Array16.t) : coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t = {
 
   var rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
 
@@ -681,18 +678,18 @@ proc __butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: Fq Array16.t)
    of the 256-position array. For all the other rounds, the implementation does
    roughly the same process on each 128 position half. See loop *)
 
-proc __ntt_level0 (rp : Fq Array256.t) : Fq Array256.t = {
+proc __ntt_level0 (rp : coeff Array256.t) : coeff Array256.t = {
 
-  var  zeta1 : Fq Array16.t;
-  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
+  var  zeta1 : coeff Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : coeff Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : coeff Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
 
   (r0,r1,r2,r3,r0b,r1b,r2b,r3b) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r4,r5,r6,r7,r4b,r5b,r6b,r7b) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
 
-  zeta1 <- Array16.init (fun i => inFq 1729);
+  zeta1 <- Array16.init (fun i => incoeff 1729);
 
   (r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a) <@ 
       __butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta1, zeta1);
@@ -704,26 +701,26 @@ proc __ntt_level0 (rp : Fq Array256.t) : Fq Array256.t = {
   return rp;
 }
 
-proc __ntt_level1(rp : Fq Array256.t) : Fq Array256.t = {
+proc __ntt_level1(rp : coeff Array256.t) : coeff Array256.t = {
 
-  var zeta1,zeta1k : Fq Array16.t; 
-  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : Fq Array16.t;
-  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
+  var zeta1,zeta1k : coeff Array16.t; 
+  var r0, r1, r2, r3, r4, r5, r6, r7 : coeff Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : coeff Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : coeff Array16.t;
 
   (r0,r1,r2,r3,r4,r5,r6,r7) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r0k,r1k,r2k,r3k,r4k,r5k,r6k,r7k) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
 
   (* first 128 *)
-  zeta1 <- Array16.init (fun i => inFq 2580);
+  zeta1 <- Array16.init (fun i => incoeff 2580);
 
   (r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a) <@ 
        __butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta1, zeta1);
        
   (* second 128 *)
        
-  zeta1k <- Array16.init (fun i => inFq 3289);
+  zeta1k <- Array16.init (fun i => incoeff 3289);
 
   (r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l) <@ 
       __butterfly64x(r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k, zeta1k, zeta1k);
@@ -732,22 +729,22 @@ proc __ntt_level1(rp : Fq Array256.t) : Fq Array256.t = {
   return rp;
 }
 
-proc __ntt_level2(rp : Fq Array256.t) : Fq Array256.t = {
+proc __ntt_level2(rp : coeff Array256.t) : coeff Array256.t = {
 
-  var zeta1b, zeta1m : Fq Array16.t; 
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
-  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
-  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : Fq Array16.t;
-  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
+  var zeta1b, zeta1m : coeff Array16.t; 
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : coeff Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : coeff Array16.t;
+  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : coeff Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : coeff Array16.t;
 
   (r0a,r1a,r2a,r3a,r4a,r5a,r6a,r7a) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r0l,r1l,r2l,r3l,r4l,r5l,r6l,r7l) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
 
   zeta1b <- Array16.of_list witness
-             [ inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642;
-               inFq 630; inFq 630; inFq 630; inFq 630; inFq 630; inFq 630; inFq 630; inFq 630 ];
+             [ incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642;
+               incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630 ];
 
   (r0b,r4b) <- shuffle8 r0a r4a;
   (r1b,r5b) <- shuffle8 r1a r5a;
@@ -758,8 +755,8 @@ proc __ntt_level2(rp : Fq Array256.t) : Fq Array256.t = {
       __butterfly64x(r0b, r4b, r1b, r5b, r2b, r6b, r3b, r7b, zeta1b, zeta1b);
   
   zeta1m <- Array16.of_list witness
-             [ inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; 
-               inFq 848; inFq 848; inFq 848; inFq 848; inFq 848; inFq 848; inFq 848; inFq 848 ];
+             [ incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; 
+               incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848 ];
 
   (r0m,r4m) <- shuffle8 r0l r4l;
   (r1m,r5m) <- shuffle8 r1l r5l;
@@ -773,24 +770,24 @@ proc __ntt_level2(rp : Fq Array256.t) : Fq Array256.t = {
 
 }
   
-proc __ntt_level3(rp : Fq Array256.t) : Fq Array256.t = {
-  var zeta1d, zeta1o : Fq Array16.t; 
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
-  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : Fq Array16.t;
-  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
-  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
-  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : Fq Array16.t;
-  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
-  var r1_,r2_,r3_,r4_,r5_,r6_,r7_,r8_,r9_,r10_,r11_,r12_,r13_,r14_,r15_,r16_ : Fq Array16.t;
+proc __ntt_level3(rp : coeff Array256.t) : coeff Array256.t = {
+  var zeta1d, zeta1o : coeff Array16.t; 
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
+  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : coeff Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : coeff Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : coeff Array16.t;
+  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : coeff Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : coeff Array16.t;
+  var r1_,r2_,r3_,r4_,r5_,r6_,r7_,r8_,r9_,r10_,r11_,r12_,r13_,r14_,r15_,r16_ : coeff Array16.t;
 
   (r0c, r4c, r1c, r5c, r2c, r6c, r3c, r7c) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r0n, r4n, r1n, r5n, r2n, r6n, r3n, r7n) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
   
   zeta1d <- Array16.of_list witness
-             [ inFq 1062; inFq 1062; inFq 1062; inFq 1062; 
-               inFq 1919; inFq 1919; inFq 1919; inFq 1919; 
-               inFq 193; inFq 193; inFq 193; inFq 193; 
-               inFq 797; inFq 797; inFq 797; inFq 797 ];
+             [ incoeff 1062; incoeff 1062; incoeff 1062; incoeff 1062; 
+               incoeff 1919; incoeff 1919; incoeff 1919; incoeff 1919; 
+               incoeff 193; incoeff 193; incoeff 193; incoeff 193; 
+               incoeff 797; incoeff 797; incoeff 797; incoeff 797 ];
 
   (r0d,r2d) <- shuffle4 r0c r2c;
   (r4d,r6d) <- shuffle4 r4c r6c;
@@ -801,10 +798,10 @@ proc __ntt_level3(rp : Fq Array256.t) : Fq Array256.t = {
        __butterfly64x(r0d, r2d, r4d, r6d, r1d, r3d, r5d, r7d, zeta1d, zeta1d);
 
   zeta1o <- Array16.of_list witness
-             [ inFq 2786; inFq 2786; inFq 2786; inFq 2786; 
-               inFq 3260; inFq 3260; inFq 3260; inFq 3260; 
-               inFq 569; inFq 569; inFq 569; inFq 569; 
-               inFq 1746; inFq 1746; inFq 1746; inFq 1746 ];
+             [ incoeff 2786; incoeff 2786; incoeff 2786; incoeff 2786; 
+               incoeff 3260; incoeff 3260; incoeff 3260; incoeff 3260; 
+               incoeff 569; incoeff 569; incoeff 569; incoeff 569; 
+               incoeff 1746; incoeff 1746; incoeff 1746; incoeff 1746 ];
 
   (r0o,r2o) <- shuffle4 r0n r2n;
   (r4o,r6o) <- shuffle4 r4n r6n;
@@ -817,25 +814,25 @@ proc __ntt_level3(rp : Fq Array256.t) : Fq Array256.t = {
   return CS2P [r0e;r2e;r4e;r6e;r1e;r3e;r5e;r7e;r0p;r2p;r4p;r6p;r1p;r3p;r5p;r7p];      
 }
 
-proc __ntt_level4(rp : Fq Array256.t) : Fq Array256.t = {
+proc __ntt_level4(rp : coeff Array256.t) : coeff Array256.t = {
 
-  var zeta1f, zeta1q : Fq Array16.t; 
-  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
-  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : Fq Array16.t;
-  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
-  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
-  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : Fq Array16.t;
-  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
-  var rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8 : Fq Array256.t;
+  var zeta1f, zeta1q : coeff Array16.t; 
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : coeff Array16.t;
+  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : coeff Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : coeff Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : coeff Array16.t;
+  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : coeff Array16.t;
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : coeff Array16.t;
+  var rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8 : coeff Array256.t;
 
   (r0e,r2e,r4e,r6e,r1e,r3e,r5e,r7e) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r0p,r2p,r4p,r6p,r1p,r3p,r5p,r7p) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
   
   zeta1f <- Array16.of_list witness
-             [ inFq 296; inFq 296; inFq 2447; inFq 2447; 
-               inFq 1339; inFq 1339; inFq 1476; inFq 1476; 
-               inFq 3046; inFq 3046; inFq 56; inFq 56; 
-               inFq 2240; inFq 2240; inFq 1333; inFq 1333 ];
+             [ incoeff 296; incoeff 296; incoeff 2447; incoeff 2447; 
+               incoeff 1339; incoeff 1339; incoeff 1476; incoeff 1476; 
+               incoeff 3046; incoeff 3046; incoeff 56; incoeff 56; 
+               incoeff 2240; incoeff 2240; incoeff 1333; incoeff 1333 ];
 
   (r0f, r1f) <- shuffle2 r0e r1e;
   (r2f, r3f) <- shuffle2 r2e r3e;
@@ -846,10 +843,10 @@ proc __ntt_level4(rp : Fq Array256.t) : Fq Array256.t = {
          __butterfly64x(r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f, zeta1f, zeta1f);
   
   zeta1q <- Array16.of_list witness
-             [ inFq 1426; inFq 1426; inFq 2094; inFq 2094; 
-               inFq 535; inFq 535; inFq 2882; inFq 2882; 
-               inFq 2393; inFq 2393; inFq 2879; inFq 2879; 
-               inFq 1974; inFq 1974; inFq 821; inFq 821 ];
+             [ incoeff 1426; incoeff 1426; incoeff 2094; incoeff 2094; 
+               incoeff 535; incoeff 535; incoeff 2882; incoeff 2882; 
+               incoeff 2393; incoeff 2393; incoeff 2879; incoeff 2879; 
+               incoeff 1974; incoeff 1974; incoeff 821; incoeff 821 ];
 
   (r0q, r1q) <- shuffle2 r0p r1p;
   (r2q, r3q) <- shuffle2 r2p r3p;
@@ -863,23 +860,23 @@ proc __ntt_level4(rp : Fq Array256.t) : Fq Array256.t = {
 
 }
 
-proc __ntt_level5(rp : Fq Array256.t) : Fq Array256.t = {
+proc __ntt_level5(rp : coeff Array256.t) : coeff Array256.t = {
 
-  var zeta1h, zeta1s : Fq Array16.t; 
+  var zeta1h, zeta1s : coeff Array16.t; 
   
-  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
-  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
-  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
-  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
-  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
-  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
-  var rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8 : Fq Array256.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : coeff Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : coeff Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : coeff Array16.t;
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : coeff Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : coeff Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : coeff Array16.t;
+  var rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8 : coeff Array256.t;
 
   (r0g,r1g,r2g,r3g,r4g,r5g,r6g,r7g) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r0r,r1r,r2r,r3r,r4r,r5r,r6r,r7r) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
  
   zeta1h <- Array16.of_list witness
-             [ inFq 289; inFq 331; inFq 3253; inFq 1756; inFq 1197; inFq 2304; inFq 2277; inFq 2055; inFq 650; inFq 1977; inFq 2513; inFq 632; inFq 2865; inFq 33; inFq 1320; inFq 1915 ];
+             [ incoeff 289; incoeff 331; incoeff 3253; incoeff 1756; incoeff 1197; incoeff 2304; incoeff 2277; incoeff 2055; incoeff 650; incoeff 1977; incoeff 2513; incoeff 632; incoeff 2865; incoeff 33; incoeff 1320; incoeff 1915 ];
 
   (r0h,r4h) <- shuffle1 r0g r4g;
   (r1h,r5h) <- shuffle1 r1g r5g;
@@ -890,7 +887,7 @@ proc __ntt_level5(rp : Fq Array256.t) : Fq Array256.t = {
        __butterfly64x(r0h, r4h, r1h, r5h, r2h, r6h, r3h, r7h, zeta1h, zeta1h);
   
   zeta1s <- Array16.of_list witness
-             [ inFq 2319; inFq 1435; inFq 807; inFq 452; inFq 1438; inFq 2868; inFq 1534; inFq 2402; inFq 2647; inFq 2617; inFq 1481; inFq 648; inFq 2474; inFq 3110; inFq 1227; inFq 910 ];
+             [ incoeff 2319; incoeff 1435; incoeff 807; incoeff 452; incoeff 1438; incoeff 2868; incoeff 1534; incoeff 2402; incoeff 2647; incoeff 2617; incoeff 1481; incoeff 648; incoeff 2474; incoeff 3110; incoeff 1227; incoeff 910 ];
 
   (r0s,r4s) <- shuffle1 r0r r4r;
   (r1s,r5s) <- shuffle1 r1r r5r;
@@ -903,74 +900,74 @@ proc __ntt_level5(rp : Fq Array256.t) : Fq Array256.t = {
   return CS2P [r0i;r4i;r1i;r5i;r2i;r6i;r3i;r7i;r0t;r4t;r1t;r5t;r2t;r6t;r3t;r7t];
 }
   
-proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
+proc __ntt_level6(rp : coeff Array256.t) : coeff Array256.t = {
 
-  var zeta2i, zeta3i, zeta2t, zeta3t : Fq Array16.t; 
-  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
-  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : Fq Array16.t;
-  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
-  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : Fq Array16.t;
+  var zeta2i, zeta3i, zeta2t, zeta3t : coeff Array16.t; 
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : coeff Array16.t;
+  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : coeff Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : coeff Array16.t;
+  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : coeff Array16.t;
   
   (r0i,r4i,r1i,r5i,r2i,r6i,r3i,r7i) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r0t,r4t,r1t,r5t,r2t,r6t,r3t,r7t) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
   
   zeta2i <- Array16.of_list witness
-             [ inFq 17; inFq 583; inFq 1637; inFq 2288; inFq 1409; inFq 3281; inFq 756; inFq 3015; 
-               inFq 1703; inFq 2789; inFq 1847; inFq 1461; inFq 939; inFq 2437; inFq 733; inFq 268 ];
+             [ incoeff 17; incoeff 583; incoeff 1637; incoeff 2288; incoeff 1409; incoeff 3281; incoeff 756; incoeff 3015; 
+               incoeff 1703; incoeff 2789; incoeff 1847; incoeff 1461; incoeff 939; incoeff 2437; incoeff 733; incoeff 268 ];
   zeta3i <- Array16.of_list witness
-             [ inFq 2761; inFq 2649; inFq 723; inFq 1100; inFq 2662; inFq 233; inFq 2156; inFq 3050; 
-               inFq 1651; inFq 1789; inFq 952; inFq 2687; inFq 2308; inFq 2388; inFq 2337; inFq 641 ];
+             [ incoeff 2761; incoeff 2649; incoeff 723; incoeff 1100; incoeff 2662; incoeff 233; incoeff 2156; incoeff 3050; 
+               incoeff 1651; incoeff 1789; incoeff 952; incoeff 2687; incoeff 2308; incoeff 2388; incoeff 2337; incoeff 641 ];
            
   (r0j, r4j, r2j, r6j, r1j, r5j, r3j, r7j) <@ 
         __butterfly64x(r0i, r4i, r2i, r6i, r1i, r5i, r3i, r7i, zeta2i, zeta3i);
 
   zeta2t <- Array16.of_list witness
-             [ inFq 1584; inFq 2037; inFq 375; inFq 2090; inFq 1063; inFq 2773; inFq 2099; inFq 2466;
-               inFq 2804; inFq 403; inFq 1143; inFq 2775; inFq 1722; inFq 1874; inFq 2110; inFq 885 ];
+             [ incoeff 1584; incoeff 2037; incoeff 375; incoeff 2090; incoeff 1063; incoeff 2773; incoeff 2099; incoeff 2466;
+               incoeff 2804; incoeff 403; incoeff 1143; incoeff 2775; incoeff 1722; incoeff 1874; incoeff 2110; incoeff 885 ];
   zeta3t <- Array16.of_list witness
-             [ inFq 2298; inFq 3220; inFq 2549; inFq 1645; inFq 319; inFq 757; inFq 561; inFq 2594;
-               inFq 1092; inFq 1026; inFq 2150; inFq 886; inFq 1212; inFq 1029; inFq 2935; inFq 2154 ];
+             [ incoeff 2298; incoeff 3220; incoeff 2549; incoeff 1645; incoeff 319; incoeff 757; incoeff 561; incoeff 2594;
+               incoeff 1092; incoeff 1026; incoeff 2150; incoeff 886; incoeff 1212; incoeff 1029; incoeff 2935; incoeff 2154 ];
 
   (r0u, r4u, r2u, r6u, r1u, r5u, r3u, r7u) <@ 
         __butterfly64x(r0t, r4t, r2t, r6t, r1t, r5t, r3t, r7t, zeta2t, zeta3t);
   
   return CS2P [r0j;r4j;r1j;r5j;r2j;r6j;r3j;r7j;r0u;r4u;r1u;r5u;r2u;r6u;r3u;r7u];
 }
- proc ntt(rp : Fq Array256.t) : Fq Array256.t = {
-  var zeta1, zeta1b, zeta1d : Fq Array16.t; 
-  var zeta1f, zeta1h, zeta2i, zeta3i : Fq Array16.t; 
-  var zeta1k, zeta1m, zeta1o : Fq Array16.t; 
-  var zeta1q, zeta1s, zeta2t, zeta3t : Fq Array16.t; 
-  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
-  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : Fq Array16.t;
-  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
-  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : Fq Array16.t;
-  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
-  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
-  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
-  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : Fq Array16.t;
-  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : Fq Array16.t;
-  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
-  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : Fq Array16.t;
-  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
-  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : Fq Array16.t;
-  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
-  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : Fq Array16.t;
-  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
-  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
-  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
-  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : Fq Array16.t;
-  var r0x, r1x, r2x, r3x, r4x, r5x, r6x, r7x : Fq Array16.t;
-  var rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8 : Fq Array256.t;
-  var rp9, rp10, rp11, rp12, rp13, rp14, rp15, rp16 : Fq Array256.t;
+ proc ntt(rp : coeff Array256.t) : coeff Array256.t = {
+  var zeta1, zeta1b, zeta1d : coeff Array16.t; 
+  var zeta1f, zeta1h, zeta2i, zeta3i : coeff Array16.t; 
+  var zeta1k, zeta1m, zeta1o : coeff Array16.t; 
+  var zeta1q, zeta1s, zeta2t, zeta3t : coeff Array16.t; 
+  var r0, r1, r2, r3, r4, r5, r6, r7 : coeff Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : coeff Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
+  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : coeff Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : coeff Array16.t;
+  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : coeff Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : coeff Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : coeff Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : coeff Array16.t;
+  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : coeff Array16.t;
+  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : coeff Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : coeff Array16.t;
+  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : coeff Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : coeff Array16.t;
+  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : coeff Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : coeff Array16.t;
+  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : coeff Array16.t;
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : coeff Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : coeff Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : coeff Array16.t;
+  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : coeff Array16.t;
+  var r0x, r1x, r2x, r3x, r4x, r5x, r6x, r7x : coeff Array16.t;
+  var rp1, rp2, rp3, rp4, rp5, rp6, rp7, rp8 : coeff Array256.t;
+  var rp9, rp10, rp11, rp12, rp13, rp14, rp15, rp16 : coeff Array256.t;
 
   (r0,r1,r2,r3,r0b,r1b,r2b,r3b) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r4,r5,r6,r7,r4b,r5b,r6b,r7b) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
 
-  zeta1 <- Array16.init (fun i => inFq 1729);
+  zeta1 <- Array16.init (fun i => incoeff 1729);
 
   (r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a) <@ 
       __butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta1, zeta1);
@@ -984,7 +981,7 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
 
   (* level 1 *)
 
-   zeta1 <- Array16.init (fun i => inFq 2580);
+   zeta1 <- Array16.init (fun i => incoeff 2580);
 
     r0 <- P2C rp 0;
     r1 <- P2C rp 1;
@@ -1001,8 +998,8 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 2 *)
 
   zeta1b <- Array16.of_list witness
-             [ inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642; inFq 2642;
-               inFq 630; inFq 630; inFq 630; inFq 630; inFq 630; inFq 630; inFq 630; inFq 630 ];
+             [ incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642; incoeff 2642;
+               incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630; incoeff 630 ];
 
 
     (r0b,r4b) <- shuffle8 r0a r4a;
@@ -1016,10 +1013,10 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 3 *)
 
   zeta1d <- Array16.of_list witness
-             [ inFq 1062; inFq 1062; inFq 1062; inFq 1062; 
-               inFq 1919; inFq 1919; inFq 1919; inFq 1919; 
-               inFq 193; inFq 193; inFq 193; inFq 193; 
-               inFq 797; inFq 797; inFq 797; inFq 797 ];
+             [ incoeff 1062; incoeff 1062; incoeff 1062; incoeff 1062; 
+               incoeff 1919; incoeff 1919; incoeff 1919; incoeff 1919; 
+               incoeff 193; incoeff 193; incoeff 193; incoeff 193; 
+               incoeff 797; incoeff 797; incoeff 797; incoeff 797 ];
 
     (r0d,r2d) <- shuffle4 r0c r2c;
     (r4d,r6d) <- shuffle4 r4c r6c;
@@ -1032,10 +1029,10 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 4 *)
 
   zeta1f <- Array16.of_list witness
-             [ inFq 296; inFq 296; inFq 2447; inFq 2447; 
-               inFq 1339; inFq 1339; inFq 1476; inFq 1476; 
-               inFq 3046; inFq 3046; inFq 56; inFq 56; 
-               inFq 2240; inFq 2240; inFq 1333; inFq 1333 ];
+             [ incoeff 296; incoeff 296; incoeff 2447; incoeff 2447; 
+               incoeff 1339; incoeff 1339; incoeff 1476; incoeff 1476; 
+               incoeff 3046; incoeff 3046; incoeff 56; incoeff 56; 
+               incoeff 2240; incoeff 2240; incoeff 1333; incoeff 1333 ];
 
 
     (r0f, r1f) <- shuffle2 r0e r1e;
@@ -1049,7 +1046,7 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 5 *)
 
   zeta1h <- Array16.of_list witness
-             [ inFq 289; inFq 331; inFq 3253; inFq 1756; inFq 1197; inFq 2304; inFq 2277; inFq 2055; inFq 650; inFq 1977; inFq 2513; inFq 632; inFq 2865; inFq 33; inFq 1320; inFq 1915 ];
+             [ incoeff 289; incoeff 331; incoeff 3253; incoeff 1756; incoeff 1197; incoeff 2304; incoeff 2277; incoeff 2055; incoeff 650; incoeff 1977; incoeff 2513; incoeff 632; incoeff 2865; incoeff 33; incoeff 1320; incoeff 1915 ];
 
 
     (r0h,r4h) <- shuffle1 r0g r4g;
@@ -1063,11 +1060,11 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 6 *)
 
   zeta2i <- Array16.of_list witness
-             [ inFq 17; inFq 583; inFq 1637; inFq 2288; inFq 1409; inFq 3281; inFq 756; inFq 3015; 
-               inFq 1703; inFq 2789; inFq 1847; inFq 1461; inFq 939; inFq 2437; inFq 733; inFq 268 ];
+             [ incoeff 17; incoeff 583; incoeff 1637; incoeff 2288; incoeff 1409; incoeff 3281; incoeff 756; incoeff 3015; 
+               incoeff 1703; incoeff 2789; incoeff 1847; incoeff 1461; incoeff 939; incoeff 2437; incoeff 733; incoeff 268 ];
   zeta3i <- Array16.of_list witness
-             [ inFq 2761; inFq 2649; inFq 723; inFq 1100; inFq 2662; inFq 233; inFq 2156; inFq 3050; 
-               inFq 1651; inFq 1789; inFq 952; inFq 2687; inFq 2308; inFq 2388; inFq 2337; inFq 641 ];
+             [ incoeff 2761; incoeff 2649; incoeff 723; incoeff 1100; incoeff 2662; incoeff 233; incoeff 2156; incoeff 3050; 
+               incoeff 1651; incoeff 1789; incoeff 952; incoeff 2687; incoeff 2308; incoeff 2388; incoeff 2337; incoeff 641 ];
 
 
     (r0j, r4j, r2j, r6j, r1j, r5j, r3j, r7j) <@ 
@@ -1087,7 +1084,7 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
 
   (* level 1 *)
 
-  zeta1k <- Array16.init (fun i => inFq 3289);
+  zeta1k <- Array16.init (fun i => incoeff 3289);
 
     r0k <- P2C rp 8;
     r1k <- P2C rp 9;
@@ -1104,8 +1101,8 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 2 *)
 
   zeta1m <- Array16.of_list witness
-             [ inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; inFq 1897; 
-               inFq 848; inFq 848; inFq 848; inFq 848; inFq 848; inFq 848; inFq 848; inFq 848 ];
+             [ incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; incoeff 1897; 
+               incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848; incoeff 848 ];
 
     (r0m,r4m) <- shuffle8 r0l r4l;
     (r1m,r5m) <- shuffle8 r1l r5l;
@@ -1118,10 +1115,10 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 3 *)
 
   zeta1o <- Array16.of_list witness
-             [ inFq 2786; inFq 2786; inFq 2786; inFq 2786; 
-               inFq 3260; inFq 3260; inFq 3260; inFq 3260; 
-               inFq 569; inFq 569; inFq 569; inFq 569; 
-               inFq 1746; inFq 1746; inFq 1746; inFq 1746 ];
+             [ incoeff 2786; incoeff 2786; incoeff 2786; incoeff 2786; 
+               incoeff 3260; incoeff 3260; incoeff 3260; incoeff 3260; 
+               incoeff 569; incoeff 569; incoeff 569; incoeff 569; 
+               incoeff 1746; incoeff 1746; incoeff 1746; incoeff 1746 ];
 
 
     (r0o,r2o) <- shuffle4 r0n r2n;
@@ -1135,10 +1132,10 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 4 *)
 
   zeta1q <- Array16.of_list witness
-             [ inFq 1426; inFq 1426; inFq 2094; inFq 2094; 
-               inFq 535; inFq 535; inFq 2882; inFq 2882; 
-               inFq 2393; inFq 2393; inFq 2879; inFq 2879; 
-               inFq 1974; inFq 1974; inFq 821; inFq 821 ];
+             [ incoeff 1426; incoeff 1426; incoeff 2094; incoeff 2094; 
+               incoeff 535; incoeff 535; incoeff 2882; incoeff 2882; 
+               incoeff 2393; incoeff 2393; incoeff 2879; incoeff 2879; 
+               incoeff 1974; incoeff 1974; incoeff 821; incoeff 821 ];
 
     (r0q, r1q) <- shuffle2 r0p r1p;
     (r2q, r3q) <- shuffle2 r2p r3p;
@@ -1151,7 +1148,7 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 5 *)
 
   zeta1s <- Array16.of_list witness
-             [ inFq 2319; inFq 1435; inFq 807; inFq 452; inFq 1438; inFq 2868; inFq 1534; inFq 2402; inFq 2647; inFq 2617; inFq 1481; inFq 648; inFq 2474; inFq 3110; inFq 1227; inFq 910 ];
+             [ incoeff 2319; incoeff 1435; incoeff 807; incoeff 452; incoeff 1438; incoeff 2868; incoeff 1534; incoeff 2402; incoeff 2647; incoeff 2617; incoeff 1481; incoeff 648; incoeff 2474; incoeff 3110; incoeff 1227; incoeff 910 ];
 
     (r0s,r4s) <- shuffle1 r0r r4r;
     (r1s,r5s) <- shuffle1 r1r r5r;
@@ -1164,11 +1161,11 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     (* level 6 *)
 
   zeta2t <- Array16.of_list witness
-             [ inFq 1584; inFq 2037; inFq 375; inFq 2090; inFq 1063; inFq 2773; inFq 2099; inFq 2466;
-               inFq 2804; inFq 403; inFq 1143; inFq 2775; inFq 1722; inFq 1874; inFq 2110; inFq 885 ];
+             [ incoeff 1584; incoeff 2037; incoeff 375; incoeff 2090; incoeff 1063; incoeff 2773; incoeff 2099; incoeff 2466;
+               incoeff 2804; incoeff 403; incoeff 1143; incoeff 2775; incoeff 1722; incoeff 1874; incoeff 2110; incoeff 885 ];
   zeta3t <- Array16.of_list witness
-             [ inFq 2298; inFq 3220; inFq 2549; inFq 1645; inFq 319; inFq 757; inFq 561; inFq 2594;
-               inFq 1092; inFq 1026; inFq 2150; inFq 886; inFq 1212; inFq 1029; inFq 2935; inFq 2154 ];
+             [ incoeff 2298; incoeff 3220; incoeff 2549; incoeff 1645; incoeff 319; incoeff 757; incoeff 561; incoeff 2594;
+               incoeff 1092; incoeff 1026; incoeff 2150; incoeff 886; incoeff 1212; incoeff 1029; incoeff 2935; incoeff 2154 ];
 
     (r0u, r4u, r2u, r6u, r1u, r5u, r3u, r7u) <@ 
           __butterfly64x(r0t, r4t, r2t, r6t, r1t, r5t, r3t, r7t, zeta2t, zeta3t);
@@ -1185,7 +1182,7 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
     return rp16;
  }
 
- proc ntt0t6(r : Fq Array256.t) : Fq Array256.t = {
+ proc ntt0t6(r : coeff Array256.t) : coeff Array256.t = {
   var rp0,rp1,rp2,rp3,rp4,rp5,rp6;
   rp0 <@ __ntt_level0(r);
   rp1 <@ __ntt_level1(rp0);
@@ -1197,14 +1194,14 @@ proc __ntt_level6(rp : Fq Array256.t) : Fq Array256.t = {
   return rp6;
  }
 
- proc ntt_bsrev(r : Fq Array256.t) : Fq Array256.t = {
+ proc ntt_bsrev(r : coeff Array256.t) : coeff Array256.t = {
   NTT_vars.r <- r;
   NTT_vars.zetas <- NTT_Fq.zetas;
   r <@ NTT_bsrev.ntt();
   return r;
  }
 
-proc __invntt___butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: Fq Array16.t) : Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t * Fq Array16.t = {
+proc __invntt___butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: coeff Array16.t) : coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t * coeff Array16.t = {
 
   var rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
 
@@ -1223,23 +1220,23 @@ proc __invntt___butterfly64x(rl0t rl1t rl2t rl3t rh0t rh1t rh2t rh3t z0 z1: Fq A
   return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
 }
 
-proc __invntt_level0(rp : Fq Array256.t) : Fq Array256.t =
+proc __invntt_level0(rp : coeff Array256.t) : coeff Array256.t =
 {
-  var zeta0, zeta1, zeta0k, zeta1k : Fq Array16.t;
-  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : Fq Array16.t;
-  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
+  var zeta0, zeta1, zeta0k, zeta1k : coeff Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : coeff Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : coeff Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : coeff Array16.t;
 
-  zeta0 <- Array16.of_list witness [inFq 1175 ; inFq 394 ; inFq 2300 ; inFq 2117 ; inFq 2443 ; inFq 1179 ; inFq 2303 ; inFq 2237 ; inFq 735 ; inFq 2768 ; inFq 2572 ; inFq 3010; inFq 1684 ; inFq 780 ; inFq 109 ; inFq 1031];
-  zeta1 <- Array16.of_list witness [inFq 2444 ; inFq 1219 ; inFq 1455 ; inFq 1607 ; inFq 554 ; inFq 2186 ; inFq 2926 ; inFq 525 ; inFq 863 ; inFq 1230 ; inFq 556 ; inFq 2266 ; inFq 1239 ; inFq 2954 ; inFq 1292 ; inFq 1745];
+  zeta0 <- Array16.of_list witness [incoeff 1175 ; incoeff 394 ; incoeff 2300 ; incoeff 2117 ; incoeff 2443 ; incoeff 1179 ; incoeff 2303 ; incoeff 2237 ; incoeff 735 ; incoeff 2768 ; incoeff 2572 ; incoeff 3010; incoeff 1684 ; incoeff 780 ; incoeff 109 ; incoeff 1031];
+  zeta1 <- Array16.of_list witness [incoeff 2444 ; incoeff 1219 ; incoeff 1455 ; incoeff 1607 ; incoeff 554 ; incoeff 2186 ; incoeff 2926 ; incoeff 525 ; incoeff 863 ; incoeff 1230 ; incoeff 556 ; incoeff 2266 ; incoeff 1239 ; incoeff 2954 ; incoeff 1292 ; incoeff 1745];
   
   (r0,r1,r2,r3,r4,r5,r6,r7) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
 
   (r0a, r1a, r4a, r5a, r2a, r3a, r6a, r7a) <@ __invntt___butterfly64x(r0, r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1);
   
-  zeta0k <- Array16.of_list witness [inFq 2688 ; inFq 992; inFq 941; inFq 1021; inFq 642; inFq 2377; inFq 1540; inFq 1678; inFq 279; inFq 1173; inFq 3096; inFq 667; inFq 2229; inFq 2606; inFq 680; inFq 568 ];
-  zeta1k <- Array16.of_list witness [inFq 3061 ; inFq 2596 ; inFq 892 ; inFq 2390 ; inFq 1868 ; inFq 1482 ; inFq 540 ; inFq 1626; inFq 314 ; inFq 2573 ; inFq 48 ; inFq 1920 ; inFq 1041 ; inFq 1692 ; inFq 2746 ; inFq 3312 ];
+  zeta0k <- Array16.of_list witness [incoeff 2688 ; incoeff 992; incoeff 941; incoeff 1021; incoeff 642; incoeff 2377; incoeff 1540; incoeff 1678; incoeff 279; incoeff 1173; incoeff 3096; incoeff 667; incoeff 2229; incoeff 2606; incoeff 680; incoeff 568 ];
+  zeta1k <- Array16.of_list witness [incoeff 3061 ; incoeff 2596 ; incoeff 892 ; incoeff 2390 ; incoeff 1868 ; incoeff 1482 ; incoeff 540 ; incoeff 1626; incoeff 314 ; incoeff 2573 ; incoeff 48 ; incoeff 1920 ; incoeff 1041 ; incoeff 1692 ; incoeff 2746 ; incoeff 3312 ];
 
   (r0k,r1k,r2k,r3k,r4k,r5k,r6k,r7k) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
 
@@ -1248,18 +1245,18 @@ proc __invntt_level0(rp : Fq Array256.t) : Fq Array256.t =
   return CS2P [r0a;r1a;r4a;r5a;r2a;r3a;r6a;r7a;r0l;r1l;r4l;r5l;r2l;r3l;r6l;r7l];
 }
 
-proc __invntt_level1(rp : Fq Array256.t) : Fq Array256.t =
+proc __invntt_level1(rp : coeff Array256.t) : coeff Array256.t =
 {
-  var zeta1a, zeta1l : Fq Array16.t;
-  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
-  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
-  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : Fq Array16.t;
-  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
+  var zeta1a, zeta1l : coeff Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : coeff Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : coeff Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : coeff Array16.t;
+  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : coeff Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : coeff Array16.t;
   
-  zeta1a <- Array16.of_list witness [ inFq 2419 ; inFq 2102 ; inFq 219 ; inFq 855 ; inFq 2681 ; inFq 1848 ; inFq 712 ; inFq 682 ; inFq 927 ; inFq 1795 ; inFq 461 ; inFq 1891 ; inFq 2877 ; inFq 2522 ; inFq 1894 ; inFq 1010 ];
+  zeta1a <- Array16.of_list witness [ incoeff 2419 ; incoeff 2102 ; incoeff 219 ; incoeff 855 ; incoeff 2681 ; incoeff 1848 ; incoeff 712 ; incoeff 682 ; incoeff 927 ; incoeff 1795 ; incoeff 461 ; incoeff 1891 ; incoeff 2877 ; incoeff 2522 ; incoeff 1894 ; incoeff 1010 ];
   
   (r0a,r1a,r4a,r5a,r2a,r3a,r6a,r7a) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
   (r0l,r1l,r4l,r5l,r2l,r3l,r6l,r7l) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
@@ -1272,7 +1269,7 @@ proc __invntt_level1(rp : Fq Array256.t) : Fq Array256.t =
   (r6c,r7c) <- shuffle1 r6b r7b;
   
   zeta1l <- Array16.of_list witness
-             [ inFq 1414 ; inFq 2009 ; inFq 3296 ; inFq 464 ; inFq 2697 ; inFq 816 ; inFq 1352 ; inFq 2679 ; inFq 1274 ; inFq 1052 ; inFq 1025 ; inFq 2132 ; inFq 1573 ; inFq 76 ; inFq 2998 ; inFq 3040 ];
+             [ incoeff 1414 ; incoeff 2009 ; incoeff 3296 ; incoeff 464 ; incoeff 2697 ; incoeff 816 ; incoeff 1352 ; incoeff 2679 ; incoeff 1274 ; incoeff 1052 ; incoeff 1025 ; incoeff 2132 ; incoeff 1573 ; incoeff 76 ; incoeff 2998 ; incoeff 3040 ];
 
   (r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m) <@ __invntt___butterfly64x(r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l, zeta1l, zeta1l);
 
@@ -1284,17 +1281,17 @@ proc __invntt_level1(rp : Fq Array256.t) : Fq Array256.t =
   return CS2P [r0c;r1c;r2c;r3c;r4c;r5c;r6c;r7c;r0n;r1n;r2n;r3n;r4n;r5n;r6n;r7n];
 }
 
-proc __invntt_level2(rp : Fq Array256.t) : Fq Array256.t =
+proc __invntt_level2(rp : coeff Array256.t) : coeff Array256.t =
 {
-  var zeta1c, zeta1n : Fq Array16.t;
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
-  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : Fq Array16.t;
-  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
-  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
-  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : Fq Array16.t;
-  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
+  var zeta1c, zeta1n : coeff Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
+  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : coeff Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : coeff Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : coeff Array16.t;
+  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : coeff Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : coeff Array16.t;
   
-  zeta1c <- Array16.of_list witness [ inFq 2508 ; inFq 2508; inFq 1355 ; inFq 1355; inFq 450 ; inFq 450; inFq 936; inFq 936 ; inFq 447; inFq 447 ; inFq 2794; inFq 2794 ; inFq 1235; inFq 1235 ; inFq 1903; inFq 1903 ];
+  zeta1c <- Array16.of_list witness [ incoeff 2508 ; incoeff 2508; incoeff 1355 ; incoeff 1355; incoeff 450 ; incoeff 450; incoeff 936; incoeff 936 ; incoeff 447; incoeff 447 ; incoeff 2794; incoeff 2794 ; incoeff 1235; incoeff 1235 ; incoeff 1903; incoeff 1903 ];
   
   (r0c,r1c,r2c,r3c,r4c,r5c,r6c,r7c) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
   (r0n,r1n,r2n,r3n,r4n,r5n,r6n,r7n) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
@@ -1307,7 +1304,7 @@ proc __invntt_level2(rp : Fq Array256.t) : Fq Array256.t =
   (r5e,r7e) <- shuffle2 r5d r7d;
   
   zeta1n <- Array16.of_list witness
-             [ inFq 1996 ; inFq 1996; inFq 1089 ; inFq 1089; inFq 3273 ; inFq 3273; inFq 283 ; inFq 283; inFq 1853 ; inFq 1853; inFq 1990 ; inFq 1990; inFq 882 ; inFq 882; inFq 3033; inFq 3033 ];
+             [ incoeff 1996 ; incoeff 1996; incoeff 1089 ; incoeff 1089; incoeff 3273 ; incoeff 3273; incoeff 283 ; incoeff 283; incoeff 1853 ; incoeff 1853; incoeff 1990 ; incoeff 1990; incoeff 882 ; incoeff 882; incoeff 3033; incoeff 3033 ];
 
   (r0o, r2o, r4o, r6o, r1o, r3o, r5o, r7o) <@ __invntt___butterfly64x(r0n, r2n, r4n, r6n, r1n, r3n, r5n, r7n, zeta1n, zeta1n);
 
@@ -1319,17 +1316,17 @@ proc __invntt_level2(rp : Fq Array256.t) : Fq Array256.t =
   return CS2P [r0e;r2e;r4e;r6e;r1e;r3e;r5e;r7e;r0p;r2p;r4p;r6p;r1p;r3p;r5p;r7p];
 }
 
-proc __invntt_level3(rp : Fq Array256.t) : Fq Array256.t =
+proc __invntt_level3(rp : coeff Array256.t) : coeff Array256.t =
 { 
-  var zeta1e, zeta1p : Fq Array16.t;
-  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
-  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : Fq Array16.t;
-  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
-  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
-  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : Fq Array16.t;  
-  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
+  var zeta1e, zeta1p : coeff Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : coeff Array16.t;
+  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : coeff Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : coeff Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : coeff Array16.t;
+  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : coeff Array16.t;  
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : coeff Array16.t;
 
-  zeta1e <- Array16.of_list witness [ inFq 1583; inFq 1583; inFq 1583; inFq 1583 ; inFq 2760; inFq 2760; inFq 2760; inFq 2760 ; inFq 69 ; inFq 69; inFq 69; inFq 69; inFq 543; inFq 543; inFq 543; inFq 543 ];
+  zeta1e <- Array16.of_list witness [ incoeff 1583; incoeff 1583; incoeff 1583; incoeff 1583 ; incoeff 2760; incoeff 2760; incoeff 2760; incoeff 2760 ; incoeff 69 ; incoeff 69; incoeff 69; incoeff 69; incoeff 543; incoeff 543; incoeff 543; incoeff 543 ];
   
   (r0e,r2e,r4e,r6e,r1e,r3e,r5e,r7e) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
   (r0p,r2p,r4p,r6p,r1p,r3p,r5p,r7p) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
@@ -1342,7 +1339,7 @@ proc __invntt_level3(rp : Fq Array256.t) : Fq Array256.t =
   (r3g,r7g) <- shuffle4 r3f r7f;
   
   zeta1p <- Array16.of_list witness
-             [ inFq 2532 ; inFq 2532; inFq 2532; inFq 2532; inFq 3136 ; inFq 3136; inFq 3136; inFq 3136; inFq 1410 ; inFq 1410; inFq 1410; inFq 1410; inFq 2267; inFq 2267; inFq 2267; inFq 2267 ];
+             [ incoeff 2532 ; incoeff 2532; incoeff 2532; incoeff 2532; incoeff 3136 ; incoeff 3136; incoeff 3136; incoeff 3136; incoeff 1410 ; incoeff 1410; incoeff 1410; incoeff 1410; incoeff 2267; incoeff 2267; incoeff 2267; incoeff 2267 ];
 
   (r0q, r4q, r1q, r5q, r2q, r6q, r3q, r7q) <@ __invntt___butterfly64x(r0p, r4p, r1p, r5p, r2p, r6p, r3p, r7p, zeta1p, zeta1p);
 
@@ -1354,17 +1351,17 @@ proc __invntt_level3(rp : Fq Array256.t) : Fq Array256.t =
   return CS2P [r0g;r4g;r1g;r5g;r2g;r6g;r3g;r7g;r0r;r4r;r1r;r5r;r2r;r6r;r3r;r7r];
 }
 
-proc __invntt_level4(rp : Fq Array256.t) : Fq Array256.t =
+proc __invntt_level4(rp : coeff Array256.t) : coeff Array256.t =
 {
-  var zeta1g, zeta1r : Fq Array16.t;
-  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
-  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
-  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
-  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
-  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
-  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
+  var zeta1g, zeta1r : coeff Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : coeff Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : coeff Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : coeff Array16.t;
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : coeff Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : coeff Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : coeff Array16.t;
   
-  zeta1g <- Array16.of_list witness [ inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481; inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432 ];
+  zeta1g <- Array16.of_list witness [ incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481; incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432 ];
   
   (r0g,r4g,r1g,r5g,r2g,r6g,r3g,r7g) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
   (r0r,r4r,r1r,r5r,r2r,r6r,r3r,r7r) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
@@ -1377,7 +1374,7 @@ proc __invntt_level4(rp : Fq Array256.t) : Fq Array256.t =
   (r6i,r7i) <- shuffle8 r6h r7h;
   
   zeta1r <- Array16.of_list witness
-             [ inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699 ; inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687 ];
+             [ incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699 ; incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687 ];
 
   (r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s) <@ __invntt___butterfly64x(r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r, zeta1r, zeta1r);
 
@@ -1389,39 +1386,39 @@ proc __invntt_level4(rp : Fq Array256.t) : Fq Array256.t =
   return CS2P [r0i;r1i;r2i;r3i;r4i;r5i;r6i;r7i;r0t;r1t;r2t;r3t;r4t;r5t;r6t;r7t];
 }
 
-proc __invntt_level5(rp : Fq Array256.t) : Fq Array256.t =
+proc __invntt_level5(rp : coeff Array256.t) : coeff Array256.t =
 {
-  var zeta1i, zeta1t : Fq Array16.t;
-  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
-  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
-  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : Fq Array16.t;
-  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
-  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
-  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : Fq Array16.t;
+  var zeta1i, zeta1t : coeff Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : coeff Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : coeff Array16.t;
+  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : coeff Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : coeff Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : coeff Array16.t;
+  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : coeff Array16.t;
 
-  zeta1i <- Array16.init (fun i => inFq 40);
+  zeta1i <- Array16.init (fun i => incoeff 40);
   
   (r0i,r1i,r2i,r3i,r4i,r5i,r6i,r7i) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
   (r0t,r1t,r2t,r3t,r4t,r5t,r6t,r7t) <- (P2C rp 8,P2C rp 9,P2C rp 10,P2C rp 11,P2C rp 12,P2C rp 13,P2C rp 14,P2C rp 15);
 
   (r0j, r2j, r4j, r6j, r1j, r3j, r5j, r7j) <@ __invntt___butterfly64x(r0i, r2i, r4i, r6i, r1i, r3i, r5i, r7i, zeta1i, zeta1i);
   
-  zeta1t <- Array16.init (fun i => inFq 749);
+  zeta1t <- Array16.init (fun i => incoeff 749);
 
   (r0u, r2u, r4u, r6u, r1u, r3u, r5u, r7u) <@ __invntt___butterfly64x(r0t, r2t, r4t, r6t, r1t, r3t, r5t, r7t, zeta1t, zeta1t);
   
   return CS2P [r0j;r2j;r4j;r6j;r1j;r3j;r5j;r7j;r0u;r2u;r4u;r6u;r1u;r3u;r5u;r7u];
 }
 
-proc ___invntt_level6(rp : Fq Array256.t) : Fq Array256.t =
+proc ___invntt_level6(rp : coeff Array256.t) : coeff Array256.t =
 {
-  var zeta0 : Fq Array16.t;
-  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
+  var zeta0 : coeff Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : coeff Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : coeff Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
 
-  zeta0 <- Array16.init (fun i => inFq 1600);
+  zeta0 <- Array16.init (fun i => incoeff 1600);
   
   (r0,r1,r2,r3,r0b,r1b,r2b,r3b) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
   (r4,r5,r6,r7,r4b,r5b,r6b,r7b) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
@@ -1433,45 +1430,45 @@ proc ___invntt_level6(rp : Fq Array256.t) : Fq Array256.t =
   return CS2P [r0a;r1a;r2a;r3a;r0c;r1c;r2c;r3c;r4a;r5a;r6a;r7a;r4c;r5c;r6c;r7c];
 }
 
-proc __invntt_level6(rp : Fq Array256.t) : Fq Array256.t =
+proc __invntt_level6(rp : coeff Array256.t) : coeff Array256.t =
 {
-  var rp1,rp2 : Fq Array256.t;
+  var rp1,rp2 : coeff Array256.t;
   rp1 <@ ___invntt_level6(rp);
-  rp2 <- Array256.map (( * ) (inFq 3303)) rp1;
+  rp2 <- Array256.map (( * ) (incoeff 3303)) rp1;
   return rp2;
 }
 
-proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
-  var zeta0, zeta1, zeta0a, zeta1a, zeta0c, zeta1c, zeta0e, zeta1e, zeta0g, zeta1g, zeta0i, zeta1i, zeta0k, zeta1k, zeta0l, zeta1l, zeta0n, zeta1n, zeta0p, zeta1p, zeta0r, zeta1r, zeta0t, zeta1t : Fq Array16.t;
-  var r0, r1, r2, r3, r4, r5, r6, r7 : Fq Array16.t;
-  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : Fq Array16.t;
-  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : Fq Array16.t;
-  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : Fq Array16.t;
-  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : Fq Array16.t;
-  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : Fq Array16.t;
-  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : Fq Array16.t;
-  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : Fq Array16.t;
-  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : Fq Array16.t;
-  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : Fq Array16.t;
-  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : Fq Array16.t;
-  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : Fq Array16.t;
-  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : Fq Array16.t;
-  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : Fq Array16.t;
-  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : Fq Array16.t;
-  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : Fq Array16.t;
-  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : Fq Array16.t;
-  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : Fq Array16.t;
-  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : Fq Array16.t;
-  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : Fq Array16.t;
-  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : Fq Array16.t;
-  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : Fq Array16.t;
-  var rp1,rp2,rp3,rp4,rp5,rp6,rp7,rp8,rp9,rp10,rp11,rp12,rp13,rp14,rp15,rp16 : Fq Array256.t;
+proc invntt(rp : coeff Array256.t) : coeff Array256.t = {
+  var zeta0, zeta1, zeta0a, zeta1a, zeta0c, zeta1c, zeta0e, zeta1e, zeta0g, zeta1g, zeta0i, zeta1i, zeta0k, zeta1k, zeta0l, zeta1l, zeta0n, zeta1n, zeta0p, zeta1p, zeta0r, zeta1r, zeta0t, zeta1t : coeff Array16.t;
+  var r0, r1, r2, r3, r4, r5, r6, r7 : coeff Array16.t;
+  var r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a : coeff Array16.t;
+  var r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b : coeff Array16.t;
+  var r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c : coeff Array16.t;
+  var r0d, r1d, r2d, r3d, r4d, r5d, r6d, r7d : coeff Array16.t;
+  var r0e, r1e, r2e, r3e, r4e, r5e, r6e, r7e : coeff Array16.t;
+  var r0f, r1f, r2f, r3f, r4f, r5f, r6f, r7f : coeff Array16.t;
+  var r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g : coeff Array16.t;
+  var r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h : coeff Array16.t;
+  var r0i, r1i, r2i, r3i, r4i, r5i, r6i, r7i : coeff Array16.t;
+  var r0j, r1j, r2j, r3j, r4j, r5j, r6j, r7j : coeff Array16.t;
+  var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : coeff Array16.t;
+  var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : coeff Array16.t;
+  var r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m : coeff Array16.t;
+  var r0n, r1n, r2n, r3n, r4n, r5n, r6n, r7n : coeff Array16.t;
+  var r0o, r1o, r2o, r3o, r4o, r5o, r6o, r7o : coeff Array16.t;
+  var r0p, r1p, r2p, r3p, r4p, r5p, r6p, r7p : coeff Array16.t;
+  var r0q, r1q, r2q, r3q, r4q, r5q, r6q, r7q : coeff Array16.t;
+  var r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r : coeff Array16.t;
+  var r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s : coeff Array16.t;
+  var r0t, r1t, r2t, r3t, r4t, r5t, r6t, r7t : coeff Array16.t;
+  var r0u, r1u, r2u, r3u, r4u, r5u, r6u, r7u : coeff Array16.t;
+  var rp1,rp2,rp3,rp4,rp5,rp6,rp7,rp8,rp9,rp10,rp11,rp12,rp13,rp14,rp15,rp16 : coeff Array256.t;
 
   (**** LEFT-HALF*****)
   
     (* level 0 *)
-    zeta0 <- Array16.of_list witness [inFq 1175 ; inFq 394 ; inFq 2300 ; inFq 2117 ; inFq 2443 ; inFq 1179 ; inFq 2303 ; inFq 2237 ; inFq 735 ; inFq 2768 ; inFq 2572 ; inFq 3010; inFq 1684 ; inFq 780 ; inFq 109 ; inFq 1031];
-    zeta1 <- Array16.of_list witness [inFq 2444 ; inFq 1219 ; inFq 1455 ; inFq 1607 ; inFq 554 ; inFq 2186 ; inFq 2926 ; inFq 525 ; inFq 863 ; inFq 1230 ; inFq 556 ; inFq 2266 ; inFq 1239 ; inFq 2954 ; inFq 1292 ; inFq 1745];
+    zeta0 <- Array16.of_list witness [incoeff 1175 ; incoeff 394 ; incoeff 2300 ; incoeff 2117 ; incoeff 2443 ; incoeff 1179 ; incoeff 2303 ; incoeff 2237 ; incoeff 735 ; incoeff 2768 ; incoeff 2572 ; incoeff 3010; incoeff 1684 ; incoeff 780 ; incoeff 109 ; incoeff 1031];
+    zeta1 <- Array16.of_list witness [incoeff 2444 ; incoeff 1219 ; incoeff 1455 ; incoeff 1607 ; incoeff 554 ; incoeff 2186 ; incoeff 2926 ; incoeff 525 ; incoeff 863 ; incoeff 1230 ; incoeff 556 ; incoeff 2266 ; incoeff 1239 ; incoeff 2954 ; incoeff 1292 ; incoeff 1745];
 
     r0 <- P2C rp 0;
     r1 <- P2C rp 1;
@@ -1485,7 +1482,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r0a, r1a, r4a, r5a, r2a, r3a, r6a, r7a) <@ __invntt___butterfly64x(r0, r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1);
 
     (* level 1 *)
-    zeta1a <- Array16.of_list witness [ inFq 2419 ; inFq 2102 ; inFq 219 ; inFq 855 ; inFq 2681 ; inFq 1848 ; inFq 712 ; inFq 682 ; inFq 927 ; inFq 1795 ; inFq 461 ; inFq 1891 ; inFq 2877 ; inFq 2522 ; inFq 1894 ; inFq 1010 ];
+    zeta1a <- Array16.of_list witness [ incoeff 2419 ; incoeff 2102 ; incoeff 219 ; incoeff 855 ; incoeff 2681 ; incoeff 1848 ; incoeff 712 ; incoeff 682 ; incoeff 927 ; incoeff 1795 ; incoeff 461 ; incoeff 1891 ; incoeff 2877 ; incoeff 2522 ; incoeff 1894 ; incoeff 1010 ];
 
     (r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b) <@ __invntt___butterfly64x(r0a, r1a, r2a, r3a, r4a, r5a, r6a, r7a, zeta1a, zeta1a);
     
@@ -1495,7 +1492,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r6c,r7c) <- shuffle1 r6b r7b;
 
     (* level 2 *)
-    zeta1c <- Array16.of_list witness [ inFq 2508 ; inFq 2508; inFq 1355 ; inFq 1355; inFq 450 ; inFq 450; inFq 936; inFq 936 ; inFq 447; inFq 447 ; inFq 2794; inFq 2794 ; inFq 1235; inFq 1235 ; inFq 1903; inFq 1903 ];
+    zeta1c <- Array16.of_list witness [ incoeff 2508 ; incoeff 2508; incoeff 1355 ; incoeff 1355; incoeff 450 ; incoeff 450; incoeff 936; incoeff 936 ; incoeff 447; incoeff 447 ; incoeff 2794; incoeff 2794 ; incoeff 1235; incoeff 1235 ; incoeff 1903; incoeff 1903 ];
 
     (r0d, r2d, r4d, r6d, r1d, r3d, r5d, r7d) <@ __invntt___butterfly64x(r0c, r2c, r4c, r6c, r1c, r3c, r5c, r7c, zeta1c, zeta1c);
 
@@ -1505,7 +1502,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r5e,r7e) <- shuffle2 r5d r7d;
 
     (* level 3 *)
-    zeta1e <- Array16.of_list witness [ inFq 1583; inFq 1583; inFq 1583; inFq 1583 ; inFq 2760; inFq 2760; inFq 2760; inFq 2760 ; inFq 69 ; inFq 69; inFq 69; inFq 69; inFq 543; inFq 543; inFq 543; inFq 543 ];
+    zeta1e <- Array16.of_list witness [ incoeff 1583; incoeff 1583; incoeff 1583; incoeff 1583 ; incoeff 2760; incoeff 2760; incoeff 2760; incoeff 2760 ; incoeff 69 ; incoeff 69; incoeff 69; incoeff 69; incoeff 543; incoeff 543; incoeff 543; incoeff 543 ];
 
     (r0f, r4f, r1f, r5f, r2f, r6f, r3f, r7f) <@ __invntt___butterfly64x(r0e, r4e, r1e, r5e, r2e, r6e, r3e, r7e, zeta1e, zeta1e);
 
@@ -1515,7 +1512,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r3g,r7g) <- shuffle4 r3f r7f;
 
     (* level 4 *)
-    zeta1g <- Array16.of_list witness [ inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481;inFq 2481; inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432;inFq 1432 ];
+    zeta1g <- Array16.of_list witness [ incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481;incoeff 2481; incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432;incoeff 1432 ];
 
     (r0h, r1h, r2h, r3h, r4h, r5h, r6h, r7h) <@ __invntt___butterfly64x(r0g, r1g, r2g, r3g, r4g, r5g, r6g, r7g, zeta1g, zeta1g);
 
@@ -1525,7 +1522,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r6i,r7i) <- shuffle8 r6h r7h;
 
     (* level 5 *)
-    zeta1i <- Array16.init (fun i => inFq 40);
+    zeta1i <- Array16.init (fun i => incoeff 40);
 
     (r0j, r2j, r4j, r6j, r1j, r3j, r5j, r7j) <@ __invntt___butterfly64x(r0i, r2i, r4i, r6i, r1i, r3i, r5i, r7i, zeta1i, zeta1i);
 
@@ -1541,8 +1538,8 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
   (**** RIGHT-HALF*****)
   
     (* level 0 *)
-    zeta0k <- Array16.of_list witness [inFq 2688 ; inFq 992; inFq 941; inFq 1021; inFq 642; inFq 2377; inFq 1540; inFq 1678; inFq 279; inFq 1173; inFq 3096; inFq 667; inFq 2229; inFq 2606; inFq 680; inFq 568 ];
-    zeta1k <- Array16.of_list witness [inFq 3061 ; inFq 2596 ; inFq 892 ; inFq 2390 ; inFq 1868 ; inFq 1482 ; inFq 540 ; inFq 1626; inFq 314 ; inFq 2573 ; inFq 48 ; inFq 1920 ; inFq 1041 ; inFq 1692 ; inFq 2746 ; inFq 3312 ];
+    zeta0k <- Array16.of_list witness [incoeff 2688 ; incoeff 992; incoeff 941; incoeff 1021; incoeff 642; incoeff 2377; incoeff 1540; incoeff 1678; incoeff 279; incoeff 1173; incoeff 3096; incoeff 667; incoeff 2229; incoeff 2606; incoeff 680; incoeff 568 ];
+    zeta1k <- Array16.of_list witness [incoeff 3061 ; incoeff 2596 ; incoeff 892 ; incoeff 2390 ; incoeff 1868 ; incoeff 1482 ; incoeff 540 ; incoeff 1626; incoeff 314 ; incoeff 2573 ; incoeff 48 ; incoeff 1920 ; incoeff 1041 ; incoeff 1692 ; incoeff 2746 ; incoeff 3312 ];
 
     r0k <- P2C rp 8;
     r1k <- P2C rp 9;
@@ -1557,7 +1554,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
 
     (* level 1 *)
     zeta1l <-  Array16.of_list witness
-             [ inFq 1414 ; inFq 2009 ; inFq 3296 ; inFq 464 ; inFq 2697 ; inFq 816 ; inFq 1352 ; inFq 2679 ; inFq 1274 ; inFq 1052 ; inFq 1025 ; inFq 2132 ; inFq 1573 ; inFq 76 ; inFq 2998 ; inFq 3040 ];
+             [ incoeff 1414 ; incoeff 2009 ; incoeff 3296 ; incoeff 464 ; incoeff 2697 ; incoeff 816 ; incoeff 1352 ; incoeff 2679 ; incoeff 1274 ; incoeff 1052 ; incoeff 1025 ; incoeff 2132 ; incoeff 1573 ; incoeff 76 ; incoeff 2998 ; incoeff 3040 ];
 
     (r0m, r1m, r2m, r3m, r4m, r5m, r6m, r7m) <@ __invntt___butterfly64x(r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l, zeta1l, zeta1l);
     
@@ -1568,7 +1565,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
 
     (* level 2 *)
     zeta1n <- Array16.of_list witness
-             [ inFq 1996 ; inFq 1996; inFq 1089 ; inFq 1089; inFq 3273 ; inFq 3273; inFq 283 ; inFq 283; inFq 1853 ; inFq 1853; inFq 1990 ; inFq 1990; inFq 882 ; inFq 882; inFq 3033; inFq 3033 ];
+             [ incoeff 1996 ; incoeff 1996; incoeff 1089 ; incoeff 1089; incoeff 3273 ; incoeff 3273; incoeff 283 ; incoeff 283; incoeff 1853 ; incoeff 1853; incoeff 1990 ; incoeff 1990; incoeff 882 ; incoeff 882; incoeff 3033; incoeff 3033 ];
 
     (r0o, r2o, r4o, r6o, r1o, r3o, r5o, r7o) <@ __invntt___butterfly64x(r0n, r2n, r4n, r6n, r1n, r3n, r5n, r7n, zeta1n, zeta1n);
 
@@ -1579,7 +1576,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
 
     (* level 3 *)
     zeta1p <- Array16.of_list witness
-             [ inFq 2532 ; inFq 2532; inFq 2532; inFq 2532; inFq 3136 ; inFq 3136; inFq 3136; inFq 3136; inFq 1410 ; inFq 1410; inFq 1410; inFq 1410; inFq 2267; inFq 2267; inFq 2267; inFq 2267 ];
+             [ incoeff 2532 ; incoeff 2532; incoeff 2532; incoeff 2532; incoeff 3136 ; incoeff 3136; incoeff 3136; incoeff 3136; incoeff 1410 ; incoeff 1410; incoeff 1410; incoeff 1410; incoeff 2267; incoeff 2267; incoeff 2267; incoeff 2267 ];
 
     (r0q, r4q, r1q, r5q, r2q, r6q, r3q, r7q) <@ __invntt___butterfly64x(r0p, r4p, r1p, r5p, r2p, r6p, r3p, r7p, zeta1p, zeta1p);
 
@@ -1590,7 +1587,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
 
     (* level 4 *)
     zeta1r <- Array16.of_list witness
-             [ inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699;inFq 2699 ; inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687;inFq 687 ];
+             [ incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699;incoeff 2699 ; incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687;incoeff 687 ];
 
     (r0s, r1s, r2s, r3s, r4s, r5s, r6s, r7s) <@ __invntt___butterfly64x(r0r, r1r, r2r, r3r, r4r, r5r, r6r, r7r, zeta1r, zeta1r);
 
@@ -1600,7 +1597,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r6t,r7t) <- shuffle8 r6s r7s;
 
     (* level 5 *)
-    zeta1t <- Array16.init (fun i => inFq 749);
+    zeta1t <- Array16.init (fun i => incoeff 749);
 
     (r0u, r2u, r4u, r6u, r1u, r3u, r5u, r7u) <@ __invntt___butterfly64x(r0t, r2t, r4t, r6t, r1t, r3t, r5t, r7t, zeta1t, zeta1t);
     
@@ -1615,7 +1612,7 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
 
     (* level 6 *)
     rp <- rp16;
-    zeta0 <- Array16.init (fun i => inFq 1600);
+    zeta0 <- Array16.init (fun i => incoeff 1600);
   
     (r0,r1,r2,r3,r0b,r1b,r2b,r3b) <- (P2C rp 0, P2C rp 1, P2C rp 2, P2C rp 3, P2C rp 4, P2C rp 5, P2C rp 6, P2C rp 7);
     (r4,r5,r6,r7,r4b,r5b,r6b,r7b) <- (P2C rp 8, P2C rp 9, P2C rp 10, P2C rp 11, P2C rp 12, P2C rp 13, P2C rp 14, P2C rp 15);
@@ -1625,11 +1622,11 @@ proc invntt(rp : Fq Array256.t) : Fq Array256.t = {
     (r0c, r1c, r2c, r3c, r4c, r5c, r6c, r7c) <@ __invntt___butterfly64x(r0b, r1b, r2b, r3b, r4b, r5b, r6b, r7b, zeta0, zeta0);
     
     rp1 <- CS2P [r0a;r1a;r2a;r3a;r0c;r1c;r2c;r3c;r4a;r5a;r6a;r7a;r4c;r5c;r6c;r7c];
-    rp2 <- Array256.map (( * ) (inFq 3303)) rp1;
+    rp2 <- Array256.map (( * ) (incoeff 3303)) rp1;
     return rp2;
 }
 
-proc invntt0t6(r : Fq Array256.t) : Fq Array256.t = {
+proc invntt0t6(r : coeff Array256.t) : coeff Array256.t = {
  var rp0,rp1,rp2,rp3,rp4,rp5,rp6;
  rp0 <@ __invntt_level0(r);
  rp1 <@ __invntt_level1(rp0);
@@ -1641,26 +1638,26 @@ proc invntt0t6(r : Fq Array256.t) : Fq Array256.t = {
  return rp6;
 }
 
-proc invntt_bsrev(r : Fq Array256.t) : Fq Array256.t = {
+proc invntt_bsrev(r : coeff Array256.t) : coeff Array256.t = {
   NTT_vars.r <- r;
   NTT_vars.zetas_inv <- NTT_Fq.zetas_inv;
   r <@ NTT_bsrev.invntt();
   return r;
  }
 
-proc __cmplx_mulx16(are aim bre bim zetas: Fq Array16.t, sign: bool): Fq Array16.t * Fq Array16.t = {
+proc __cmplx_mulx16(are aim bre bim zetas: coeff Array16.t, sign: bool): coeff Array16.t * coeff Array16.t = {
  var rre, rim;
  rre <- Array16.init
-   (fun i => (cmplx_mul (are.[i],aim.[i]) (bre.[i],bim.[i]) ((if sign then inFq (-1) else inFq 1) * zetas.[i])).`1);
+   (fun i => (cmplx_mul (are.[i],aim.[i]) (bre.[i],bim.[i]) ((if sign then incoeff (-1) else incoeff 1) * zetas.[i])).`1);
  rim <- Array16.init
-   (fun i => (cmplx_mul (are.[i],aim.[i]) (bre.[i],bim.[i]) ((if sign then inFq (-1) else inFq 1) * zetas.[i])).`2);
+   (fun i => (cmplx_mul (are.[i],aim.[i]) (bre.[i],bim.[i]) ((if sign then incoeff (-1) else incoeff 1) * zetas.[i])).`2);
  return (rre,rim);
 }
 
-proc __basemul(r a b: Fq Array256.t): Fq Array256.t = {
+proc __basemul(r a b: coeff Array256.t): coeff Array256.t = {
  var are, aim, bre, bim, rre, rim, zetas;
 
- zetas <- Array16.of_list witness [ inFq 17; inFq 583; inFq 1637; inFq 2288; inFq 1409; inFq 3281; inFq 756; inFq 3015; inFq 1703; inFq 2789; inFq 1847; inFq 1461; inFq 939; inFq 2437; inFq 733; inFq 268 ];
+ zetas <- Array16.of_list witness [ incoeff 17; incoeff 583; incoeff 1637; incoeff 2288; incoeff 1409; incoeff 3281; incoeff 756; incoeff 3015; incoeff 1703; incoeff 2789; incoeff 1847; incoeff 1461; incoeff 939; incoeff 2437; incoeff 733; incoeff 268 ];
 
  are <- P2C a 0;
  aim <- P2C a 1;
@@ -1677,7 +1674,7 @@ proc __basemul(r a b: Fq Array256.t): Fq Array256.t = {
  r <- PUC r 2 rre;
  r <- PUC r 3 rim;
 
- zetas <- Array16.of_list witness [ inFq 2761; inFq 2649; inFq 723; inFq 1100; inFq 2662; inFq 233; inFq 2156; inFq 3050; inFq 1651; inFq 1789; inFq 952; inFq 2687; inFq 2308; inFq 2388; inFq 2337; inFq 641 ];
+ zetas <- Array16.of_list witness [ incoeff 2761; incoeff 2649; incoeff 723; incoeff 1100; incoeff 2662; incoeff 233; incoeff 2156; incoeff 3050; incoeff 1651; incoeff 1789; incoeff 952; incoeff 2687; incoeff 2308; incoeff 2388; incoeff 2337; incoeff 641 ];
 
  are <- P2C a 4;
  aim <- P2C a 5;
@@ -1694,7 +1691,7 @@ proc __basemul(r a b: Fq Array256.t): Fq Array256.t = {
  r <- PUC r 6 rre;
  r <- PUC r 7 rim;
 
- zetas <- Array16.of_list witness [ inFq 1584; inFq 2037; inFq 375; inFq 2090; inFq 1063; inFq 2773; inFq 2099; inFq 2466; inFq 2804; inFq 403; inFq 1143; inFq 2775; inFq 1722; inFq 1874; inFq 2110; inFq 885 ];
+ zetas <- Array16.of_list witness [ incoeff 1584; incoeff 2037; incoeff 375; incoeff 2090; incoeff 1063; incoeff 2773; incoeff 2099; incoeff 2466; incoeff 2804; incoeff 403; incoeff 1143; incoeff 2775; incoeff 1722; incoeff 1874; incoeff 2110; incoeff 885 ];
 
  are <- P2C a 8;
  aim <- P2C a 9;
@@ -1711,7 +1708,7 @@ proc __basemul(r a b: Fq Array256.t): Fq Array256.t = {
  r <- PUC r 10 rre;
  r <- PUC r 11 rim;
 
- zetas <- Array16.of_list witness [ inFq 2298; inFq 3220; inFq 2549; inFq 1645; inFq 319; inFq 757; inFq 561; inFq 2594; inFq 1092; inFq 1026; inFq 2150; inFq 886; inFq 1212; inFq 1029; inFq 2935; inFq 2154 ];
+ zetas <- Array16.of_list witness [ incoeff 2298; incoeff 3220; incoeff 2549; incoeff 1645; incoeff 319; incoeff 757; incoeff 561; incoeff 2594; incoeff 1092; incoeff 1026; incoeff 2150; incoeff 886; incoeff 1212; incoeff 1029; incoeff 2935; incoeff 2154 ];
 
  are <- P2C a 12;
  aim <- P2C a 13;
@@ -1738,7 +1735,7 @@ op basemul_avx2 (a b : poly): poly =
     let i_l = i %% 16 in
     let i_z = i %/ 32 in
     let i_off = 32 * i_z in
-    let zsign = Zq.exp (inFq (-1)) (i_z %% 2) in
+    let zsign = Zq.exp (incoeff (-1)) (i_z %% 2) in
     let zeta_i = 64 + (i_z %/ 2 %% 2) + i_z %/ 4 * 32 + 2 * i_l in  
     if i = i_off + i_l
     then (cmplx_mul (a.[i_off+i_l],a.[i_off+i_l+16])
@@ -1811,7 +1808,7 @@ proof. by conseq __basemul_ll (__basemul_h _a _b). qed.
 op basemul_zetas (a b : poly): poly =
  Array256.init
   (fun i => let ii = i %/ 2 in
-            let zsign = Zq.exp (inFq (-1)) (ii %% 2) in
+            let zsign = Zq.exp (incoeff (-1)) (ii %% 2) in
             if i %% 2 = 0 then
             (cmplx_mul (a.[2 * ii], a.[2 * ii + 1]) (b.[2 * ii], b.[2 * ii + 1]) (zsign*NTT_Fq.zetas.[64+ii%/2])).`1
             else
@@ -1831,14 +1828,14 @@ case: (i%%2=0) => RI.
   rewrite NTT_Fq.zetavals1' 1:/# //; congr; smt().
  move=> E'; have E: i %/ 2 %% 2 = 1 by smt().
  rewrite E ZqField.expr1.
- rewrite NTT_Fq.zetavals2' 1:/# // Zq.inFqN  ZqField.mulN1r /#.
+ rewrite NTT_Fq.zetavals2' 1:/# // Zq.incoeffN  ZqField.mulN1r /#.
 congr; congr.
 have ->: ZqRing.exp = Zq.exp by done.
 case: (i %/ 2 %% 2 = 0).
  move=> E; rewrite E ZqField.expr0 ZqField.mul1r.
  rewrite NTT_Fq.zetavals1' 1:/# //; congr. smt().
 move=> E'; have E: i %/ 2 %% 2 = 1 by smt().
-rewrite E ZqField.expr1 NTT_Fq.zetavals2' 1:/# // Zq.inFqN  ZqField.mulN1r /#.
+rewrite E ZqField.expr1 NTT_Fq.zetavals2' 1:/# // Zq.incoeffN  ZqField.mulN1r /#.
 qed.
 
 lemma basemul_avx2E (a b: poly):
@@ -1898,7 +1895,7 @@ hoare ntt_avx_0 r:
 proof.
 proc; inline *; wp; auto => /> /=.
 rewrite NTT_Fq.zetasE r_avx2_ntt_spec => />. 
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255! (move => Hi; case Hi; first done).
 by move=> ->; rewrite !initiE.
 qed.
@@ -1912,7 +1909,7 @@ hoare ntt_avx_1 r:
 proof.
 proc; inline *; wp; auto => />.
 rewrite NTT_Fq.zetasE r_avx2_ntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255! (move => Hi; case Hi; first done).
 by move=> ->; rewrite !initiE.
 qed.
@@ -1929,7 +1926,7 @@ hoare ntt_avx_2 r:
 proof.
 proc; inline *; wp; auto => />.
 rewrite NTT_Fq.zetasE r_avx2_ntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255! (move => [->|];
 first by (rewrite /perm_ntt /perm_level2 initiE 1:// /= /CS2P initiE 1:// /= !shuffle8E /P2C /pchunk /=)).
 by move=> ->; rewrite !perm_level2E !shuffle8E !initiE.
@@ -1947,7 +1944,7 @@ hoare ntt_avx_3 r:
 proof.
 proc; inline *; wp; auto => /> &1. 
 rewrite NTT_Fq.zetasE r_avx2_ntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255! (move => [->|];
 first by (rewrite /perm_ntt /perm_level2 /perm_level3 initiE 1:// /= /CS2P initiE 1:// /= !shuffle4E /P2C /pchunk /=)).
 by move=> ->; rewrite /perm_level2 /perm_level3 !shuffle4E !initiE.
@@ -1965,7 +1962,7 @@ hoare ntt_avx_4 r:
 proof.
 proc; inline *; wp; auto => /> &1. 
 rewrite NTT_Fq.zetasE r_avx2_ntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255! (move => [->|];
 first by (rewrite /perm_ntt /perm_level3 /perm_level4 initiE 1:// /= /CS2P initiE 1:// /= /shuffle2 /P2C /pchunk /=)).
 by move=> ->; rewrite /perm_level3 /perm_level4 /shuffle2 !initiE.
@@ -1983,7 +1980,7 @@ hoare ntt_avx_5 r:
 proof.
 proc; inline *; wp; auto => /> &1. 
 rewrite NTT_Fq.zetasE r_avx2_ntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255! (move => [->|];
 first by (rewrite /perm_ntt /perm_level4 /perm_level5 initiE 1:// /= /CS2P initiE 1:// /= /shuffle1 /P2C /pchunk /=)).
 by move=> ->; rewrite /perm_level4 /perm_level5 /shuffle1 !initiE.
@@ -1998,7 +1995,7 @@ hoare ntt_avx_6 r:
 proof.
 proc; inline *; wp; auto => /> &1. 
 rewrite NTT_Fq.zetasE r_avx2_ntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255! (move => [->|];
 first by (rewrite /perm_ntt /perm_level5 /perm_nttpack128 initiE 1:// /= /CS2P initiE 1:// /= /P2C /pchunk /=)).
 by move=> ->; rewrite /perm_level5 /perm_nttpack128 !initiE.
@@ -2009,7 +2006,7 @@ lemma ntt_avx_6_pr r:
 proof. by conseq ntt_avx_6_ll (ntt_avx_6 r). qed.
 
 
-(** Main Theorems in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent **)
+(** Main Theorems in this module: abstract coeff-based AVX implementation and original NTT specification are equivalent **)
 lemma ntt_avx_equiv : 
      equiv [ NTT_AVX.ntt ~ NTT_AVX.ntt_bsrev:
           rp{1}=r{2} ==> perm_ntt perm_nttpack128 res{1} = res{2}].
@@ -2142,7 +2139,7 @@ hoare invntt_avx_0 r:
 proof.
 proc; inline *; wp; auto => /> /= &hr.
 rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />. 
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 256!(try (move => Hi; case Hi => />); first by rewrite /CS2P !initiE /P2C /pchunk /punchunk /perm_nttpack128 /perm_inv_level0 => />).
 qed.
 
@@ -2159,7 +2156,7 @@ hoare invntt_avx_1 r:
 proof.
 proc; inline *; wp; auto => /> &hr.
 rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level0 /perm_inv_level1 /shuffle1 //=).
 qed.
 
@@ -2176,7 +2173,7 @@ hoare invntt_avx_2 r:
 proof.
 proc; inline *; wp; auto => /> &hr.
 rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level1 /perm_inv_level2 /shuffle2 //=).
 qed.
 
@@ -2193,7 +2190,7 @@ hoare invntt_avx_3 r:
 proof.
 proc; inline *; wp; auto => /> &hr.
 rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level2 /perm_inv_level3 /shuffle4 //=).
 qed.
 
@@ -2210,7 +2207,7 @@ hoare invntt_avx_4 r:
 proof.
 proc; inline *; wp; auto => /> &hr.
 rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level3 /perm_inv_level4 /shuffle8 //=).
 qed.
 
@@ -2223,7 +2220,7 @@ hoare invntt_avx_5 r:
 proof.
 proc; inline *; wp; auto => /> &hr.
 rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 256!(try (move => Hi; case Hi => />); first by rewrite /perm_inv_level4 //=).
 qed.
 
@@ -2236,7 +2233,7 @@ hoare invntt_avx_6 r:
 proof.
 proc; inline *; wp; auto => />. 
 rewrite NTT_Fq.zetas_invE r_avx2_invntt_spec => />.
-apply tP_red => i /=.
+apply tP_red256 => i /=.
 do 255!(move => Hi; case Hi => />).
 qed.
 
@@ -2244,7 +2241,7 @@ lemma invntt_avx_6_pr r:
   phoare [NTT_AVX.___invntt_level6 : rp = r ==> res = r_avx2_invntt NTT_Fq.zetas_inv r 6] = 1%r.
 proof. by conseq _invntt_avx_6_ll (invntt_avx_6 r). qed.
 
-(** Main Theorem in this module: abstract Fq-based AVX implementation and original NTT specification are equivalent (inverse) **)
+(** Main Theorem in this module: abstract coeff-based AVX implementation and original NTT specification are equivalent (inverse) **)
 lemma invntt_avx2_equiv : 
      equiv [ NTT_AVX.invntt ~ NTT_avx2.invntt :
           perm_ntt perm_nttpack128 rp{1} = NTT_avx2.r{2} /\ NTT_avx2.zetas_inv{2} = NTT_Fq.zetas_inv
@@ -2298,7 +2295,7 @@ rcondf{2} 1; auto => /> &2.
 rewrite r_avx2_invntt_post_spec /NTT_Fq.zetas_inv tP => />i Hi1 Hi2.
 rewrite !initiE => />. 
 rewrite mapiE // ZqField.mulrC; congr.
-by rewrite -eq_inFq /q //=.
+by rewrite -eq_incoeff /q //=.
 qed.
 
 lemma invntt_avx_equiv : 

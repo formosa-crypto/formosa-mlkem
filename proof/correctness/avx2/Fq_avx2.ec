@@ -1,23 +1,30 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JWord.
-require import Fq Array16.
-require import W16extra WArray512 WArray32 WArray16.
-require import AVX2_Ops.
-require import Jkem_avx2.
-require import KyberPoly_avx2_prevec.
-require import Kyber_AVX2_cf.
-require import KyberPoly.
-require import NTT_Fq.
-require import Jkem.
+require import Array16 W16extra WArray512 WArray32 WArray16.
+
+require import Fq KyberPoly.
+require import AVX2_Ops KyberPoly_avx2_prevec.
 require import Montgomery16.
+
+(* require import NTT_Fq.
+require import Jkem. *)
+
+import Fq KyberPoly.
+import SignedReductions.
+
 theory Fq_avx2.
 
+require import Kyber_AVX2_cf.
+
+require import Jkem_avx2.
+
+(*
 import Kyber.
 import KyberPoly.
 import Fq.
-import SignedReductions.
 import Zq.
 import ZModP.
+*)
 
 op lift_array16 (p: W16.t Array16.t) =
   Array16.map (fun x => (W16.to_sint x)) p.
@@ -104,7 +111,7 @@ proof.
     apply Array16.ext_eq => x x_i.
     do (rewrite get_setE 1://= //=).
     rewrite initiE 1:x_i //=.
-    smt(@Array16 @List @Int).
+    smt().
 
   apply Array16.ext_eq => x x_i.
   do (rewrite initiE 1:x_i //=).
@@ -122,8 +129,7 @@ proof.
     rewrite /smod /=.
     case (2147483648 <= to_sint r{2}.[x] * 20159 %% 4294967296) => lb.
       have -> /=: 32768 <= to_sint r{2}.[x] * 20159 %% 4294967296 %/ 65536.
-        move : lb => /#.
-      smt(@Int @IntDiv).
+        move : lb => /#. smt().
       have -> //=: ! 32768 <= to_sint r{2}.[x] * 20159 %% 4294967296 %/ 65536.
         move : lb => /#.
   (* rewrite (W16.of_sintK (to_sint r{2}.[x] * 20159 %/ 65536)). *)
@@ -136,56 +142,55 @@ proof.
     move : (W16.to_sint_cmp r{2}.[x]) => rs_bnds.
 
     have w_tub: w <= to_sint r{2}.[x] * 2^15.
-      rewrite /w. smt(@Int @IntDiv @W16).
+      rewrite /w. smt(). 
     have ww_dub: to_sint r{2}.[x] * 2^15 %/ 65536 %% 65536 = to_sint r{2}.[x] * 2^15 %/ 65536.
-      rewrite pmod_small. move : rs_bnds. smt(@Int @IntDiv @W16). trivial.
+      rewrite pmod_small. move : rs_bnds. smt(). trivial.
 
     have ww_ub : (w %/ 65536 %% 65536) <= W16.max_sint.
-      rewrite /w. rewrite pmod_small. move : w_tub ww_dub. smt(@Int @IntDiv).
+      rewrite /w. rewrite pmod_small. move : w_tub ww_dub. smt().
       apply (lez_trans (to_sint r{2}.[x] * 2^15 %/ 65536) _ W16.max_sint).
-      move : w_tub. smt(@Int @IntDiv). move : rs_bnds. smt(@Int @IntDiv @W16).
+      move : w_tub. smt(). move : rs_bnds. smt().
 
     rewrite /W16.smod /=.
     rewrite (_: 32768 <= (w %/ 65536 %% 65536) = false) /=.
-      move : ww_ub. smt(@W16 @Int).
+      move : ww_ub. smt().
     rewrite -(modz_pow2_div 32 16) //=.
 
     have wdw_dub: to_sint r{2}.[x] * 2^15 %% 4294967296 = to_sint r{2}.[x] * 2^15.
-    rewrite pmod_small. move : rs_bnds. smt(@Int @IntDiv @W32). trivial.
+    rewrite pmod_small. move : rs_bnds. smt(). trivial.
 
     have wdw_ub : (w %% 4294967296) <= W32.max_sint.
-      rewrite /w. rewrite pmod_small. move : w_tub wdw_dub. smt(@Int @IntDiv).
+      rewrite /w. rewrite pmod_small. move : w_tub wdw_dub. smt().
       apply (lez_trans (to_sint r{2}.[x] * 2^15) _ W32.max_sint).
-      apply w_tub. move : rs_bnds. smt(@Int @IntDiv @W16).
-     (* move : wdw_ub. smt(@W32 @W16 @Int). *)
+      apply w_tub. move : rs_bnds. smt().
 
     rewrite (_: w %% 4294967296 %/ 65536 %/ 1024 = w %% 4294967296 %/ 67108864) //=.
-      smt(@Int @IntDiv).
+      smt().
     rewrite W32.of_uintK /= /W16.smod /= /#.
   (*****)
   move =>  /= r_lt0.
     move : (W16.to_sint_cmp r{2}.[x]) => /= rs_bnds.
     rewrite of_uintK /=.
     have smod_red : forall m, 0 < m => forall x, -m <= x < 0 => x %% m = x + m.
-      move => m m_lb x0. smt(@Int @IntDiv).
+      move => m m_lb x0. smt().
     have w_tub: to_sint r{2}.[x] * 2^15 <= w.
-      rewrite /w. smt(@Int @IntDiv @W16).
+      rewrite /w. smt().
     have /= w'_sl16_lb: W16.min_sint < to_sint r{2}.[x] * 2^15 %/ W16.modulus.
-      move : rs_bnds. simplify. smt(@Int @IntDiv @W16).
+      move : rs_bnds. simplify. smt().
     have /= w_sl16_lb: W16.min_sint < w %/ W16.modulus.
-      move : rs_bnds. simplify. smt(@Int @IntDiv @W16).
+      move : rs_bnds. simplify. smt().
 
     rewrite /smod /=.
     have -> //=: 32768 <= (w %/ 65536 %% 65536).
       rewrite /w.
       apply (lez_trans (to_sint r{2}.[x] * 2^15 %/ 65536 %% 65536) 32768 _).
       rewrite smod_red //=.
-        by move : w'_sl16_lb; simplify; smt(@Int @IntDiv @W16).
-      move : w'_sl16_lb. simplify. smt(@Int @IntDiv @W16).
+        by move : w'_sl16_lb; simplify; smt().
+      move : w'_sl16_lb. simplify. smt().
       rewrite smod_red //=.
-        by move : w'_sl16_lb; simplify; smt(@Int @IntDiv @W16).
+        by move : w'_sl16_lb; simplify; smt().
       rewrite smod_red //=.
-        by move : w_sl16_lb; simplify; smt(@Int @IntDiv @W16).
+        by move : w_sl16_lb; simplify; smt().
       apply lez_add2r. apply leq_div2r. apply w_tub. trivial.
     rewrite -(modz_pow2_div 32 16) //=. 
     congr; congr. 
@@ -405,7 +410,7 @@ proof.
     apply Array16.ext_eq => x x_i.
     do (rewrite get_setE 1://= //=).
     rewrite initiE 1:x_i //=.
-    smt(@Array16 @List @Int).
+    smt().
 
 
   apply Array16.ext_eq => x x_i.
@@ -484,7 +489,7 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : (abxs - abxuexp) = -(abxuexp - abxs) by ring.
   rewrite modNz /=; 1, 2: by smt().
   rewrite -(modzDml _ (-1)) /= -(modzDmr _ (-1)) /= modzDml.
-  have -> := (modz_add_carry (abxuexp - abxs) 4294967295 4294967296 _ _ _);1..3: smt(@W16). 
+  have -> := (modz_add_carry (abxuexp - abxs) 4294967295 4294967296 _ _ _);1..3: smt(). 
   have -> : 4294967295 - (abxuexp - abxs + 4294967295 - 4294967296) = 
             abxs - abxuexp + 4294967296 by ring. 
   have -> : 4294967296 = 65536*65536 by auto. rewrite divzMDr // modzDl.
@@ -504,7 +509,7 @@ case (0 <= abxs - abxuexp).
 + move => *. rewrite (modz_small _ 4294967296) /=. 
   have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
   have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
-  + rewrite StdOrder.IntOrder.ger0_norm //=. smt(@W16).
+  + rewrite StdOrder.IntOrder.ger0_norm //=. smt().
   congr; congr. 
   have -> : abxs - abxuexp = abxs %/ 65536 * 65536 + abxs %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 by smt(divz_eq).
   have -> : abxs %% 65536 = abxuexp %% 65536; last by smt().
@@ -524,7 +529,7 @@ rewrite modNz /= 1,2:/#.
   have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
   have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
   have -> := (modz_add_carry (abxuexp - abxs) 4294967295 4294967296 _ _ _). 
-    smt(@W16).  smt(). smt(). 
+    smt().  smt(). smt(). 
   have -> : 4294967295 - (abxuexp - abxs + 4294967295 - 4294967296) = 
             abxs - abxuexp + 4294967296 by ring. 
   have -> : 4294967296 = 65536*65536 by auto. rewrite divzMDr // modzDl.
@@ -638,13 +643,13 @@ have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%
 byphoare => //; apply fqmulx16_ll.
 qed.
 
-
+require import GFq Correctness. import Zq.
 lemma compress_avx2_impl_small (a: W16.t):
   bpos16 a q =>
   msb
   (packss16
      (((W16.of_int 1664) - a) `^` ((W16.of_int 1664) - a `|>>` (W8.of_int 15)) - (W16.of_int 832))) =
-  b_decode (inFq (W16.to_sint a)).
+  b_decode (incoeff (W16.to_sint a)).
 proof.
   rewrite /bpos16 qE => abnd.
   rewrite /b_decode /=.
@@ -653,7 +658,7 @@ proof.
   rewrite /packss16 //=.
   do rewrite (fun_if W8.msb).
 
-  rewrite inFqK (pmod_small _ q); first by rewrite qE abnd.
+  rewrite incoeffK (pmod_small _ q); first by rewrite qE abnd.
 
   case ((W16.of_int 1664) \slt a) => a_gt_hq.
     have hq_s_a_lt0: ((W16.of_int 1664) - a) \slt W16.zero.
@@ -662,7 +667,7 @@ proof.
        rewrite of_sintK /smod //=.
        move : abnd => /#.
       do (rewrite of_sintK /smod //=).
-      smt(@Int @W16).
+      rewrite /to_sint /smod /= /#.
     rewrite getsignNeg 1:hq_s_a_lt0 1:/W16.onew //=.
     have ->/=: 1664 < to_sint a.
       move : a_gt_hq. rewrite /W16.(\slt).
@@ -675,7 +680,8 @@ proof.
       move : abnd => /#.
     rewrite (_: W16.of_int 65535 = W16.onew). by rewrite /W16.onew //=.
     rewrite xorw1 (_: invw ((W16.of_int 1664) - a) = -((W16.of_int 1664) - a) - W16.one).
-          move : (W16.twos_compl ((W16.of_int 1664) - a)). smt(@W16 @Int). 
+          move : (W16.twos_compl ((W16.of_int 1664) - a)). 
+          by move => ->;ring.
     do !(rewrite to_sintB_small || rewrite to_sintN || rewrite /smod //=); first 7 by move : hq_s_a_lt0 a_gt_hq abnd => /#.
     rewrite bits8_div 1://= //=.
     do (rewrite to_uintD || rewrite to_uintN || rewrite to_uintK //= || rewrite of_uintK //=).
@@ -686,11 +692,11 @@ proof.
       move : abnd => /#.
     rewrite (_: (- (1664 + ((- to_sint a) + 65536))) %% 65536 =
                 (to_sint a - 1664) %% 65536).
-      smt(@Int @IntDiv modzNm modzDr).
+      smt(modzNm modzDr).
     rewrite (pmod_small (to_sint a - 1664) 65536).
       move : a_gt_hq. rewrite sltE of_sintK /smod //=.
       move : abnd => /#.
-      smt(@Int @IntDiv).
+      smt().
 
   move : a_gt_hq. 
   rewrite /W16.(\slt) -lezNgt -/W16.(\sle) -W16.sleE => hq_gte_a.
@@ -698,9 +704,9 @@ proof.
     move : hq_gte_a. rewrite /W16.(\sle).
     rewrite to_sintB_small of_sintK /smod //=.
     move : abnd.
-    smt(@W16 @W32 @Int).
+    smt().
     do (rewrite /smod //=).
-    smt(@Int @W16).
+    smt().
   rewrite (_: (W16.of_int 1664) - a `|>>` (W8.of_int 15) = W16.zero).
     move : hq_s_a_gt0.
     smt(getsignPos).
@@ -713,10 +719,10 @@ proof.
   rewrite W16.sleE -lezNgt -ltzNge.
   rewrite to_sintB_small.
     rewrite to_sintB_small.
-      + rewrite of_sintK /smod //=. move : abnd. smt(@Int @W16).
-    do (rewrite  /smod //=). move : abnd. smt(@Int @W16).
+      + rewrite of_sintK /smod //=. move : abnd. smt().
+    do (rewrite  /smod //=). move : abnd. smt().
   rewrite to_sintB_small.
-    rewrite of_sintK /smod //=. move : abnd. smt(@Int @W16).
+    rewrite of_sintK /smod //=. move : abnd. smt().
   do (rewrite /smod //=).
   rewrite (_: `|to_sint a| = to_sint a).
     move : abnd => /#.
@@ -726,7 +732,7 @@ proof.
     move : abnd => /#.
   case (to_sint a = 0) => a_0.
     rewrite a_0 //=.
-    smt(@W32). 
+    smt(). 
 qed.
 
 end Fq_avx2.

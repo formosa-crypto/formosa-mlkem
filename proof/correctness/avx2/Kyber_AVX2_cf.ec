@@ -2,15 +2,14 @@ require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
 require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array768 Array960 Array1152.
-require import Array256_extra Array32_extra.
+require import Array_extra.
 require import W8extra.
 require import List_extra.
 
 
 require import Jkem.
-require import Kyber.
+require import GFq Rq Serialization.
 
-(* TODO: prove equivalence w/ EncDec reification *)
 
 module EncDec_AVX2 = {
    proc decode12(a : W8.t Array384.t) : ipoly = {
@@ -369,8 +368,9 @@ unroll for {1} ^while.
 do 8!(unroll for {1} ^while).
 unroll for {2} ^while.
 auto => /> &m.
-apply Array256_extra.tP_red => i /=.
-do 255!(move => Hi; case Hi => |>).
+apply tP_red256.
+move => i. 
+(* FIXME: TOO LONG  => *) do 255!(move => Hi; case Hi => |>). 
 qed.
 
 equiv decode10_vec_corr:
@@ -410,7 +410,7 @@ proof.
             have j_iota: j \in iota_ (256*k{2}) 256; first by rewrite mem_iota j_ub j_tlb.
             move : j_iota.
             do (rewrite Array768.get_setE 1:/#).
-            smt(@List @Array768 @Int).
+            smt(mem_iota).
   auto => />.
   move => cL cR k k_tlb _ k_lb k_ub.
   have -> /=: k = 3. move : k_tlb k_ub => /#.
@@ -463,7 +463,7 @@ proof.
             have k_iota: k \in iota_ (20*i{2}) 20; first by rewrite mem_iota k_ub k_tlb.
             move : k_iota.
             do (rewrite Array960.get_setE 1:/#).
-            smt(@List @Array960 @Int).
+            smt(mem_iota).
   auto => />.
   move => cL cR i i_tlb _ i_lb i_ub.
   have -> /=: i = 48. move : i_tlb i_ub => /#.
@@ -519,11 +519,11 @@ proof.
             have k_iota: k \in iota_ (192 * i{2}) 192; first by rewrite mem_iota k_ub k_tlb.
             move : k_iota.
             case (k %% 3 = 0) => k_m.
-              smt(@Array384 @Int @IntDiv @List).
+              smt(mem_iota).
             case (k %% 3 = 1) => k_m_1.
-              smt(@Array384 @Int @IntDiv @List).
+              smt(mem_iota).
             have k_m_2: k %% 3 = 2. move : k_m k_m_1 (modz_cmp k 3) => /#.
-              smt(@Array384 @Int @IntDiv @List).
+              smt(mem_iota).
   wp; skip; auto => />.
     move => rL iR rR iR_tlb _ iR_lb iR_ub.
     have -> //=: iR = 2. move : iR_tlb iR_ub => /#.
@@ -585,9 +585,9 @@ proof.
             have k_iota: k \in iota_ (128 * i{2}) 128; first by rewrite mem_iota k_ub k_tlb.
             move : k_iota.
             case (k %% 2 = 0) => k_m.
-              smt(@Array256 @Int @IntDiv @List).
+              smt(mem_iota).
             have k_m_1: k %% 2 = 1. move : k_m (modz_cmp k 2) => /#.
-              smt(@Array256 @Int @IntDiv @List).
+              smt(mem_iota).
   wp; skip; auto => />.
     move => rL iR rR iR_tlb _ iR_lb iR_ub.
     have -> //=: iR = 2. move : iR_tlb iR_ub => /#.

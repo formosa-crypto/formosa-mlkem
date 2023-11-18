@@ -819,13 +819,13 @@ proof.
   apply Array256.ext_eq.
   move => x x_i.
   have x_mb: 0 <= x %% 16 < 16.
-    by smt(@IntDiv).
+    by smt().
   do rewrite initiE //=.
   rewrite set_get_def //=.
   rewrite -get_unpack16 //.
   rewrite pack16K.
   rewrite get_of_list //.
-  smt(@Array16).
+  smt().
   move : i_lb => /#.
   wp; skip.
   move => &1 &2 H.
@@ -851,13 +851,13 @@ proof.
   apply Array256.ext_eq.
   move => x x_i.
   have x_mb: 0 <= x %% 16 < 16.
-    by smt(@IntDiv).
+    by smt().
   do rewrite initiE //=.
   rewrite set_get_def //=.
   rewrite -get_unpack16 //.
   rewrite pack16K.
   rewrite get_of_list //.
-  smt(@Array16).
+  smt().
   move : i_lb => /#.
   wp; skip.
   move => &1 &2 H.
@@ -889,7 +889,7 @@ proof.
     rewrite -get_unpack16 => //.
     rewrite pack16K.
     rewrite get_of_list => //.
-    smt(@Array16).
+    smt().
     move : i_lb => /#.
   wp; skip.
   move => &1 &2 H.
@@ -918,13 +918,13 @@ proof.
       rewrite /get256_direct /= => />.
       apply W32u8.allP => />.
       do (rewrite initiE 1:/# /=).
-      smt(@Int @IntDiv @Array256 @W16).
+      smt().
   move => a0_eq.
   split.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => a1_eq.
   move : i_lb => /#.
   wp.
@@ -965,19 +965,19 @@ proof.
     apply if_congr.
       done.
       rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
-      smt(@List @Int @Array16).
+      smt().
     apply if_congr.
       done.
       rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
-      smt(@List @Int @Array16).
+      smt().
     apply if_congr.
       done.
       rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
-      smt(@List @Int @Array16).
+      smt().
     rewrite set_get_def 1:/# //=.
     rewrite -(mulzA 16 _) //= (addzC (32 * i{2}) _) //=.
     rewrite -get_unpack16 1:/# /= get_of_list 1:/# /=.
-    smt(@List @Int @Array16).
+    smt().
   move : i_lb => /#.
 
   wp.
@@ -1030,7 +1030,7 @@ proof.
   rewrite -get_unpack16 => //.
   rewrite pack16K.
   rewrite get_of_list => //.
-  smt(@Array16).
+  smt().
   move : i_lb => /#.
   wp; skip.
   move => &1 &2 rp_eq qx16_R vx16_R qx16_L vx16_L.
@@ -1078,7 +1078,7 @@ proof.
   rewrite -get_unpack16 => //.
   rewrite pack16K.
   rewrite get_of_list => //.
-  smt(@Array16).
+  smt().
   move : i_lb => /#.
   wp; skip.
   move => &1 &2 rp_eq qx16_R qinvx16_R dmontx16_R aux_R qx16_L qinvx16_L dmontx16_L aux_L.
@@ -1120,12 +1120,12 @@ proof.
       rewrite filliE 1:/# initiE 1:/# /=.
       rewrite set_get_def 1:/# 1:/#.
       rewrite pack16bE 1:/# get_of_list 1:/#.
-      smt(@Int @IntDiv @W16u16 @Array16 @Array256).
+      smt().
     + move : i_lb => /#.
   do (wp; call eq_iVPBROADCAST_8u32).
   wp; skip; auto => />. move => &1 &2 resL resR resL_eq_resR resL0 resR0 resL0_eq_resR0.
   do split.
-    + smt(@Logic).
+    + smt().
     + rewrite /is16u16 initiE /get256_direct /= => />.
       apply W32u8.allP => />.
     + rewrite /is16u16 /f8u32_t16u16 resL_eq_resR initiE //=.
@@ -1154,7 +1154,7 @@ proof.
   rewrite initiE 1:/# /=.
   rewrite initiE 1: hs /=.
   case : (32 * i <= j < 32 * i + 32) => h.
-    + by smt(@IntDiv).
+    + by smt().
     + by reflexivity.
 qed.
 
@@ -1173,25 +1173,25 @@ proof.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => _.
   split.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => _.
   split.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => _.
   split.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => _.
   move => [#] res1_l. (* FIXME: naming *)
   split.
@@ -1246,25 +1246,25 @@ proof.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => a0_eq.
   split.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => a1_eq.
   split.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => a2_eq.
   split.
     rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
     do (rewrite initiE 1:/# /=).
-    smt(@Int @IntDiv @Array256 @W16).
+    smt().
   move => a3_eq.
   move => [#] res1_l. (* FIXME: naming *)
   split.
@@ -1453,49 +1453,49 @@ proof.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do (rewrite initiE 1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => a_eq resL resR res_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do (rewrite initiE 1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => a1_eq resL0 resR0 res0_eq resL1 resR1 res1_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do (rewrite initiE  1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => a2_eq resL2 resR2 res2_eq resL3 resR3 res3_eq resL4 resR4 res4_eq/>.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do 32!(rewrite initiE 1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => a3_eq resL5 resR5 res5_eq resL6 resR6 res6_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do 32!(rewrite initiE 1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => a4_eq resL7 resR7 res7_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do 32!(rewrite initiE 1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => a5_eq resL8 resR8 res8_eq resL9 resR9 res9_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do 32!(rewrite initiE 1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => a6_eq resL10 resR10 res10_eq resL11 resR11 res11_eq resL12 resR12 res12_eq />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
       do 32!(rewrite initiE 1:/# /=).
-      do split; first 16 by apply W2u8.allP => />; smt(@Int @IntDiv).
+      do split; first 16 by apply W2u8.allP => />; smt().
   move => [#] a7_eq resL13 resR13 res13_eq resL14 resR14 res14_eq resL15 resR15 res15_eq_1 res15_eq_2
                     resL16 resR16 res16_eq_1 res16_eq_2 resL17 resR17 res17_eq_1 res17_eq_2
                     resL18 resR18 res18_eq_1 res18_eq_2 resL19 resR19 res19_eq_1 res19_eq_2
@@ -1584,7 +1584,7 @@ proof.
     rewrite res39_eq res37_eq res33_eq res32_eq res28_eq res26_eq res22_eq res21_eq.
     do rewrite (mulzDr 16 _ _) -(mulzA 16 _ _) //=.
     do (rewrite pack16bE 1:/# get_of_list 1:/#).
-    smt(@Int @IntDiv @W16u16 @Array16 @Array256 @List).
+    smt().
   wp; skip; auto => />.
   + rewrite /is16u16 /get256_direct /= => />.
     apply W32u8.allP => />.
@@ -1628,7 +1628,7 @@ proof.
   while(={i, rp, a, aux, hq, hhq} /\ 0 <= i{1}).
     inline *.
     wp. skip. auto => />.
-    smt(@Int).
+    smt().
     wp.
     call veceq_poly_csubq.
     wp. skip. auto => />.
@@ -1691,18 +1691,18 @@ proof.
   inline *.
   wp. skip.  auto => />.
   move => &1 &2 i_lb i_ub rp_l i_tub />.
-  do split; first 2 by smt(@Int).
+  do split; first 2 by smt().
   rewrite mulzDr mulz1 => k k_lb k_ub.
     rewrite initiE 1:/# /=.
     rewrite initiE 1:/# /=.
     rewrite set_get_def 1:/# 1:/#.
     rewrite set_get_def 1:/# 1:/#.
-    smt(@Int @IntDiv @W16u16 @Array16 @Array256).
+    smt().
   inline *.
   wp. skip. auto => />.
   move => &1 &2.
   split.
-    + smt(@Logic).
+    + smt().
   move => rpL i rpR i_tlb _ i_lb i_ub rp_l.
   apply Array256.ext_eq.
   move : rp_l.

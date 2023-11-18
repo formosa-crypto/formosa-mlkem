@@ -4,7 +4,11 @@ from Jasmin require import JWord JModel.
 require import Montgomery.
 require import W16extra.
 require import Array32.
-require import Kyber.
+
+require import GFq.
+require import Correctness.
+
+import Zq.
 
 theory Fq.
 
@@ -359,13 +363,13 @@ lemma exp_max a b :
    0 <= a => 0 <= b => 2^a <= 2^(max a b) /\ 2^b <= 2^(max a b) 
   by smt(StdOrder.IntOrder.ler_weexpn2l).
 
-lemma add_corr (a b : W16.t) (a' b' : Fq) (asz bsz : int): 
+lemma add_corr (a b : W16.t) (a' b' : coeff) (asz bsz : int): 
    0 <= asz < 15 => 0 <= bsz < 15 =>
-   a' = inFq (W16.to_sint a) =>
-   b' = inFq (W16.to_sint b) =>
+   a' = incoeff (W16.to_sint a) =>
+   b' = incoeff (W16.to_sint b) =>
    bw16 a asz => 
    bw16 b bsz =>
-     inFq (W16.to_sint (a + b)) = a' + b' /\
+     incoeff (W16.to_sint (a + b)) = a' + b' /\
            bw16 (a + b) (max asz bsz + 1).
 proof.
 pose aszb := 2^asz.
@@ -378,28 +382,28 @@ have /= bounds_bsz : 0 < bszb <= 2^14
  by split; [ apply gt0_pow2
            | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
 rewrite !to_sintD_small => />; first  by smt().
-split; 1: by smt(inFqD).
+split; 1: by smt(incoeffD).
 rewrite (Ring.IntID.exprS 2 (max asz bsz)); 1: by smt().
 by smt(exp_max).
 qed.
 
-lemma add_corr_qv (a b : W16.t) (a' b' : Fq) (asz bsz : int): 
+lemma add_corr_qv (a b : W16.t) (a' b' : coeff) (asz bsz : int): 
    1 <= asz <= 6 => 1 <= bsz <= 3 =>
-   a' = inFq (W16.to_sint a) =>
-   b' = inFq (W16.to_sint b) =>
+   a' = incoeff (W16.to_sint a) =>
+   b' = incoeff (W16.to_sint b) =>
    -asz*q <= (W16.to_sint a) < asz*q =>
    -bsz*q <= (W16.to_sint b) < bsz*q =>
-     inFq (W16.to_sint (a + b)) = a' + b' /\
+     incoeff (W16.to_sint (a + b)) = a' + b' /\
       -(asz+bsz)*q <= (W16.to_sint b) < (asz+bsz)*q
-  by move => *; rewrite !to_sintD_small => />; by smt(inFqD to_sintD_small qE).
+  by move => *; rewrite !to_sintD_small => />; by smt(incoeffD to_sintD_small qE).
 
-lemma sub_corr (a b : W16.t) (a' b' : Fq) (asz bsz : int): 
+lemma sub_corr (a b : W16.t) (a' b' : coeff) (asz bsz : int): 
    0 <= asz < 15 => 0 <= bsz < 15 =>
-   a' = inFq (W16.to_sint a) =>
-   b' = inFq (W16.to_sint b) =>
+   a' = incoeff (W16.to_sint a) =>
+   b' = incoeff (W16.to_sint b) =>
    bw16 a asz => 
    bw16 b bsz =>
-     inFq (W16.to_sint (a - b)) = a' - b' /\
+     incoeff (W16.to_sint (a - b)) = a' - b' /\
            bw16 (a - b) (max asz bsz + 1).
 proof.
 pose aszb := 2^asz.
@@ -412,7 +416,7 @@ have /= bounds_bsz : 0 < bszb <= 2^14
  by split; [ apply gt0_pow2
            | move => *; rewrite  /bszb; apply StdOrder.IntOrder.ler_weexpn2l => /> /#].
 rewrite !to_sintB_small => />; first  by smt().
-split; 1: by smt(inFqB).
+split; 1: by smt(incoeffB).
 rewrite (Ring.IntID.exprS 2 (max asz bsz)); 1: by smt().
 by smt(exp_max).
 qed.
@@ -422,7 +426,7 @@ lemma compress_impl_small (a : W16.t) (d : int):
   bpos16 a q =>
   (to_uint (((zeroextu32 a `<<` W8.of_int d) + 
      W32.of_int 1665) * W32.of_int 80635 `>>` W8.of_int 28)) %% 2^d=
-       compress d (inFq (to_sint a)).
+       compress d (incoeff (to_sint a)).
 proof.
 move => drng.
 have /= dpow : 2^1<=2^d <= 2^4 
@@ -432,7 +436,7 @@ move => au; rewrite -compress_alt_compress; 1: by smt().
 rewrite /zeroextu32 /truncateu8 /compress_alt qE => /= *.
 rewrite  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
 rewrite W32.to_uint_shr; 1: by smt().
-rewrite inFqK to_sintE /max /= !W32.of_uintK /= qE /=.
+rewrite incoeffK to_sintE /max /= !W32.of_uintK /= qE /=.
 rewrite !(modz_small _ 32) /=; 1: smt().
 rewrite !(modz_small _ 256) /=; 1: smt().
 rewrite !(modz_small _ 3329) /=; 1: smt().
@@ -449,14 +453,14 @@ qed.
 lemma compress_impl_large (a : W16.t) :
   bpos16 a q =>
   (to_uint (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-           (of_int 32)%W8)) %% 1024 = compress 10 (inFq (to_sint a)).
+           (of_int 32)%W8)) %% 1024 = compress 10 (incoeff (to_sint a)).
 rewrite /bpos16 qE;move => abnd.
 move : (to_sint_unsigned a _); 1: by smt().
 move => au; rewrite -compress_alt_compress_large. 
 rewrite /zeroextu64 /compress_alt_large qE => /= *.
 rewrite  /(`<<`) /(`>>`) W64.shlMP; 1: by smt().
 rewrite W64.to_uint_shr; 1: by smt().
-rewrite inFqK to_sintE /max /= !W64.of_uintK /= qE /=.
+rewrite incoeffK to_sintE /max /= !W64.of_uintK /= qE /=.
 rewrite !(modz_small _ 3329) /=; 1: smt().
 have ->: W16.smod (to_uint a) = to_uint a by
   move : abnd; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
