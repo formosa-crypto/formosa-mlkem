@@ -7,7 +7,7 @@ require import WArray512.
 require import Array400 WArray800.
 
 
-require import NTT_AVX_Fq.
+require import NTT_AVX_Fq KyberFCLib.
 
 (******* *)
 

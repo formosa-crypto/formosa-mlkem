@@ -2,6 +2,7 @@ require import AllCore Int IntDiv Ring StdOrder List.
 import Ring.IntID IntOrder.
 
 from Jasmin require import JWord.
+require import KyberFCLib.
 
 (* @JBA: MOVE THIS *)
 
@@ -672,7 +673,7 @@ lemma to_sint_SAR (a : W16.t):
  to_sint (a `|>>` (of_int 10)%W8)
  = to_sint a %/ 2 ^ 10.
 proof.
-rewrite Fq.SAR_sem10 of_sintK /to_sint /smod /=.
+rewrite SAR_sem10 of_sintK /to_sint /smod /=.
 move: (W16.to_uint_cmp a); smt().
 qed.
 

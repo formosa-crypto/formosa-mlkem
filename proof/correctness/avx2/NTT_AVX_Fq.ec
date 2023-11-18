@@ -9,63 +9,9 @@ import NTTequiv.
 
 from Jasmin require import JModel.
 require import Array16 Array128  Array256 Array400.
-require import Array_extra.
+require import KyberFCLib.
 require import Array400 WArray32 WArray800 WArray512.
 
-lemma bits8_W2u8 ws i :
-  W2u8.pack2_t ws \bits8 i = if 0 <= i < 2 then ws.[i] else W8.zero.
-rewrite wordP => j Hj. rewrite W2u8.bits8iE //. case (0 <= i < 2) => Hi.
-rewrite pack2wE /#. rewrite get_out /#. qed.
-
-lemma bits16_W16u16 ws i :
-  W16u16.pack16_t ws \bits16 i = if 0 <= i < 16 then ws.[i] else W16.zero.
-rewrite wordP => j Hj. rewrite W16u16.bits16iE //. case (0 <= i < 16) => Hi.
-rewrite pack16wE /#. rewrite get_out /#. qed.
-
-(* MOVE TO: JWord_array.ec *)
-lemma get16_set256E t x y w :
- 0 <= x => 32*(x + 1) <= 512 =>
- get16 (WArray512.set256 t x w) y
- = if 32*x <= 2*y < 32*(x+1)
-   then w \bits16 (y - 16*x)
-   else get16 t y.
-proof.        
-move=> hx hs; rewrite get16E.
-case: ( 32*x <= 2*y < 32*(x+1) ). 
- rewrite mulrDr /= => Hy.
- rewrite -(W2u8.unpack8K (w \bits16 (y-16*x))) unpack8E; congr.
- by rewrite -W2u8.Pack.all_eqP /all_eq /= -/WArray512.get8
-      !get8_set256_directE 1..4:/# Hy /= /#.
-rewrite mulrDr /= => Hy.
-rewrite -(W2u8.unpack8K (get16 t y)) unpack8E; congr.
-rewrite -W2u8.Pack.all_eqP /all_eq /= -/WArray512.get8
-      !get8_set256_directE 1..4:/#.
-by rewrite  Hy /= get16E pack2bE // ifF /#. 
-qed.
-
-lemma set256_directE (t:t) (i:int) (w:W256.t) :
-  i %% 32 = 0 => 
-  set256_direct t i w = set256 t (i%/32) w.
-  smt(). qed.
-
-lemma get16_init16 f i:
- 0 <= 2*i < 512 =>
- get16 (WArray512.init16 f) i
- = f i.
-proof.
-move => Hi.
-rewrite get16E /init16 /=.
-rewrite -(W2u8.unpack8K (f i)) /unpack8K; congr.
-by rewrite -W2u8.Pack.all_eqP /all_eq /= !initiE /#.
-qed.
-(* END MOVE *)
-
-lemma pack2_bits8 (w: W16.t):
- pack2 [w \bits8 0; w \bits8 1] = w.
-proof.
-rewrite -{-1}(W2u8.unpack8K w) unpack8E; congr.
-by apply W2u8.Pack.all_eq_eq; rewrite /all_eq.
-qed.
 
 (** DIFFERENT VIEWS ON POLYS *)
 

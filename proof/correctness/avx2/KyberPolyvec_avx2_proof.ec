@@ -13,7 +13,7 @@ require import KyberPolyVec.
 require import KyberPolyvec_avx2_vec.
 require import NTT_avx2.
 require import Kyber_AVX2_cf.
-(* require import KyberINDCPA.*)
+require import KyberFCLib.
 require import Kyber_AVX_AuxLemmas.
 
 require import GFq Rq VecMat Serialization Correctness.
@@ -409,16 +409,16 @@ proof.
   rewrite /compress_polyvec /fromarray256 mapiE 1:ib /=.
   rewrite mapiE 1:ib /= initiE 1:ib /=.
   case (0 <= i && i < 256) => r.
-    by rewrite liftarrayvector 1..2://=.
+    by rewrite getvE liftarrayvector 1..2://=.
   case (256 <= i && i < 512) => r1.
-    by rewrite liftarrayvector 1://= 1:/#.
-    by rewrite liftarrayvector 1://= 1:/#.
+    by rewrite getvE liftarrayvector 1://= 1:/#.
+    by rewrite getvE liftarrayvector 1://= 1:/#.
 qed.
 
 lemma polyvec_compress_corr _a (_p : address) mem :
     equiv [ Mprevec.polyvec_compress ~ EncDec_AVX2.encode10_opt_vec :
              pos_bound768_cxq a{1} 0 768 2 /\
-             lift_vector a{1} = _a /\
+             lift_polyvec a{1} = _a /\
              a{2} = compress_polyvec 10 _a /\
              valid_ptr _p 960 /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p
@@ -429,7 +429,7 @@ proof.
   proc.
   cfold{1} 12.
   seq 12 2 : (#{/~a{1}}pre /\
-              lift_vector a{1} = _a /\
+              lift_polyvec a{1} = _a /\
               pos_bound768_cxq a{1} 0 768 1 /\
               to_uint rp{1} = _p /\
               v{1} = Array16.init (fun i => W16.of_int 20159) /\
@@ -512,13 +512,13 @@ proof.
       have uint_fdef: forall j, 0 <= j < 16 => W16.to_sint f0{1}.[j] = W16.to_uint f0{1}.[j].
         move => j jb.
         rewrite (f0_def j jb).
-        pose ai := (lift_vector a{1}).[_].[_].
+        pose ai := (lift_polyvec a{1}).[_].[_].
         rewrite to_sint_unsigned; first by move : (sint_compress_rng ai 10) => />.
         done.
       have fdef_bnd: forall j, 0 <= j < 16 => 0 <= W16.to_uint f0{1}.[j] < 2^10.
         move => j jb.
         rewrite (f0_def j jb).
-        pose ai := (lift_vector a{1}).[_].[_].
+        pose ai := (lift_polyvec a{1}).[_].[_].
         rewrite W16.of_uintK (pmod_small _ W16.modulus); first by rewrite (in_sub_trans _ 0 W16.modulus 0 (2^10)) 1:compress_rng 1..2://=.
         by apply compress_rng.
       case (k < 20 * i{2} + 16) => k_tub.
@@ -650,7 +650,7 @@ qed.
 lemma polyvec_compress_1_corr _a mem :
     equiv [ Mprevec.polyvec_compress_1 ~ EncDec_AVX2.encode10_opt_vec :
              pos_bound768_cxq a{1} 0 768 2 /\
-             lift_vector a{1} = _a /\
+             lift_polyvec a{1} = _a /\
              a{2} = compress_polyvec 10 _a /\
              Glob.mem{1} = mem
               ==>
@@ -660,7 +660,7 @@ proof.
   proc.
   cfold{1} 12.
   seq 12 2 : (#{/~a{1}}pre /\
-              lift_vector a{1} = _a /\
+              lift_polyvec a{1} = _a /\
               pos_bound768_cxq a{1} 0 768 1 /\
               v{1} = Array16.init (fun i => W16.of_int 20159) /\
               v8{1} = Array16.init (fun i => W16.of_int (20159 * 2^3)) /\
@@ -741,13 +741,13 @@ proof.
       have uint_fdef: forall j, 0 <= j < 16 => W16.to_sint f0{1}.[j] = W16.to_uint f0{1}.[j].
         move => j jb.
         rewrite (f0_def j jb).
-        pose ai := (lift_vector a{1}).[_].[_].
+        pose ai := (lift_polyvec a{1}).[_].[_].
         rewrite to_sint_unsigned; first by move : (sint_compress_rng ai 10) => />.
         done.
       have fdef_bnd: forall j, 0 <= j < 16 => 0 <= W16.to_uint f0{1}.[j] < 2^10.
         move => j jb.
         rewrite (f0_def j jb).
-        pose ai := (lift_vector a{1}).[_].[_].
+        pose ai := (lift_polyvec a{1}).[_].[_].
         rewrite W16.of_uintK (pmod_small _ W16.modulus); first by rewrite (in_sub_trans _ 0 W16.modulus 0 (2^10)) 1:compress_rng 1..2://=.
         by apply compress_rng.
       case (k < 20 * i{2} + 16) => k_tub.
@@ -960,7 +960,7 @@ lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t):
              load_array960 Glob.mem{1} _p = _a /\ u{2} = _a
               ==>
              Glob.mem{1} = mem /\
-             lift_vector res{1} = decompress_polyvec 10 res{2} /\
+             lift_polyvec res{1} = decompress_polyvec 10 res{2} /\
              pos_bound768_cxq res{1} 0 768 1].
 proof.
   proc.

@@ -4,10 +4,7 @@ require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4.
 require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
 require import Jkem Jkem_avx2.
-require import KyberPoly_avx2_prevec.
-require import Kyber_AVX2_cf.
-
-require import Kyber_AVX_AuxLemmas.
+require import KyberPoly_avx2_prevec Kyber_AVX2_cf Kyber_AVX_AuxLemmas KyberFCLib.
 
 module Mvec = {
   proc shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {

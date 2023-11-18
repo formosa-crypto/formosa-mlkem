@@ -2,7 +2,7 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 require import Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
 require import W16extra WArray1536 WArray512 WArray32 WArray16.
-require import AVX2_Ops.
+require import AVX2_Ops KyberFCLib.
 require import GFq KyberPoly.
 import KyberPoly.
 import Zq.

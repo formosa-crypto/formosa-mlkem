@@ -2,7 +2,7 @@ require import AllCore List IntDiv CoreMap IntDiv Real Number Ring StdOrder.
 
 from Jasmin require  import JModel JMemory.
 require import IntDiv_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
-require import GFq Rq Serialization Kyber Correctness Fq NTT_Fq NTTAlgebra.
+require import GFq Rq Serialization Kyber Correctness Fq NTT_Fq NTTAlgebra KyberFCLib.
 
 hint simplify range_ltn, range_geq.
 
@@ -12,50 +12,11 @@ import Fq Zq IntOrder.
 
 import SignedReductions.
 
-op lift_array256 (p : W16.t Array256.t) =
-  Array256.map (fun x => incoeff (W16.to_sint x)) p.
-
-op lift_array128 (p : W16.t Array128.t) =
-  Array128.map (fun x => incoeff (W16.to_sint x)) p.
-op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
-   forall k, l <= k < u => b16 coefs.[k] (c*q).
-
-op minimum_residues(zetas : W16.t Array128.t) : bool =
-   forall k, 0 <= k < 128 => bpos16  zetas.[k] q.
-
-op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
-  forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
-
-op pos_bound256_b (coefs : W16.t Array256.t) (l u b : int) : bool =
-  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
-
-op touches (m m' : global_mem_t) (p : address) (len : int) =
-    forall i, !(0 <= i < len) => m'.[p + i] = m.[p + i].
-
-op load_array32(m : global_mem_t, p : address) : W8.t Array32.t = 
-      Array32.init (fun i => m.[p + i]).
-
-op load_array128(m : global_mem_t, p : address) : W8.t Array128.t = 
-      Array128.init (fun i => m.[p + i]).
-
-op load_array320(m : global_mem_t, p : address) : W8.t Array320.t = 
-      Array320.init (fun i => m.[p + i]).
-
-op load_array384(m : global_mem_t, p : address) : W8.t Array384.t = 
-      Array384.init (fun i => m.[p + i]).
-
-op valid_ptr(p : int, o : int) = 0 <= o => 0 <= p /\ p + o < W64.modulus.
 
 require import Jkem.
 
 (* jzetas values are correct *)
 
-op array_mont (p : coeff Array128.t) =
-  Array128.map (fun x => x *  (incoeff Fq.SignedReductions.R)) p.
-
-op array_mont_inv (p : coeff Array128.t) =
-  let vv = Array128.map (fun x => x *  (incoeff Fq.SignedReductions.R)) p in
-      vv.[127 <- p.[127] * (incoeff Fq.SignedReductions.R) * (incoeff Fq.SignedReductions.R)].
 
 lemma zetas_invE : array_mont_inv NTT_Fq.zetas_inv = 
      Array128.map (fun x => incoeff (W16.to_sint x)) jzetas_inv.

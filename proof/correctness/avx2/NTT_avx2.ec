@@ -2,7 +2,7 @@ require import AllCore List Int IntDiv CoreMap Real Number Ring StdOrder BitEnco
 from Jasmin require import JModel.
 require import Array256 Array128  Array16.
 require import Array256 Array128 Array32 Array16 Array768 Array2304.
-require import Array256_extra.
+require import KyberFCLib.
 require import KyberPolyVec.
 require import NTT_Fq.
 require import AVX2_Ops.

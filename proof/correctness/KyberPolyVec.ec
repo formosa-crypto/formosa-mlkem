@@ -1,7 +1,7 @@
 require import AllCore List IntDiv CoreMap.
 from Jasmin require  import JModel JMemory.
 require import W16extra Array1152 Array960 Array256 Array384 Array128 Array768.
-require import GFq Rq Serialization VecMat Kyber Correctness Fq KyberPoly NTT_Fq NTTAlgebra.
+require import GFq Rq Serialization VecMat Kyber Correctness Fq KyberPoly NTT_Fq NTTAlgebra  KyberFCLib.
 
 
 require import Jkem.
@@ -15,41 +15,6 @@ import KyberPoly.
 import KMatrix.
 import PolyVec.
 import PolyMat.
-
-(* AUX *)
-
-op lift_array768 (p : W16.t Array768.t) =
-  Array768.map (fun x => incoeff (W16.to_sint x)) p.
-
-op lift_polyvec(vec: W16.t Array768.t) : polyvec =
-    Vector.offunv (fun i => lift_array256 (subarray256 vec i)).
-
-op scale_polyvec(v : polyvec, c : coeff) : polyvec = 
-   Vector.offunv (fun i => (scale ((Vector.tofunv v) i) c)).
-
-op signed_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
-  forall (k : int), l <= k < u => b16 coefs.[k] (c * q).
-
-op pos_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
-  forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
-
-op pos_bound768_b (coefs : W16.t Array768.t) (l u b : int) : bool =
-  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
-
-lemma lift_array256_incoeff (a : W16.t Array256.t) k :
-  0 <= k < 256 =>
-  incoeff (to_sint a.[k]) = (lift_array256 a).[k].
-proof. by move => H; rewrite /lift_array256 mapE /= initE H. qed.
-
-op load_array960 (m : global_mem_t) (p : address) : W8.t Array960.t = 
-  (Array960.init (fun (i : int) => m.[p + i])).
-
-op load_array1152 (m : global_mem_t) (p : address) : W8.t Array1152.t = 
-  (Array1152.init (fun (i : int) => m.[p + i])).
-
-(* TODO: write aux lemma to deal w/ subarrays cleanly *)
-
-(* END AUX *)
 
 lemma polyvec_csubq_corr_h ap :
       hoare[Jkem.M(Jkem.Syscall).__polyvec_csubq :
@@ -1302,24 +1267,6 @@ lemma innerprod_corr va vb:
     signed_bound_cxq res 0 256 2 /\
     lift_array256  res = ntt (dotp va vb)  ]  = 1%r by
 move => *;conseq inner_product_ll (innerprod_corr_h va vb) => //.
-
-(* OPERATIONS OVER MATRICES *)
-
-require import Array2304.
-
-op lift_array2304 (p : W16.t Array2304.t) =
-  Array2304.map (fun x => incoeff (W16.to_sint x)) p.
-
-op [a] subarray768(x: 'a Array2304.t, i : int) : 'a Array768.t =
-    Array768.init (fun (k : int) => x.[768 * i + k]).
-
-
-op lift_matrix( a : W16.t Array2304.t) : polymat =
-   Matrix.offunm (fun i j => subarray256 (subarray768 (lift_array2304 a) i) j).
-
-
-op pos_bound2304_cxq (coefs : W16.t Array2304.t) (l u c : int) : bool =
-  forall (k : int), l <= k && k < u => bpos16 coefs.[k] (c * q).
 
 end KyberPolyVec.
 

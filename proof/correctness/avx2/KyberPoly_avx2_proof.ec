@@ -2,18 +2,10 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
 require import W16extra WArray512 WArray32 WArray16.
-require import AVX2_Ops.
-require import Kyber_AVX2_cf.
-require import Jkem_avx2.
-require import KyberPoly_avx2_prevec.
-require import NTT_avx2.
-require import Fq_avx2.
-require import Fq.
-require import NTT_Fq.
-require import Jkem.
-require import KyberPoly.
-require import Kyber_AVX_AuxLemmas.
-require import GFq Rq Serialization VecMat Correctness.
+require import AVX2_Ops Kyber_AVX2_cf KyberPoly_avx2_prevec NTT_avx2 Fq_avx2 Kyber_AVX_AuxLemmas.
+require import Jkem_avx2 Jkem.
+require import Fq NTT_Fq KyberPoly.
+require import GFq Rq Serialization VecMat Correctness KyberFCLib.
 
 theory KyberPolyAVX.
 

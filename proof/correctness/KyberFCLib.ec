@@ -1,10 +1,190 @@
-require import AllCore List.
-require import Array32.
-require import GFq.
+require import AllCore List IntDiv.
+require import Array128 Array256 Array32 Array16 Array768 Array2304 Array320 Array384 Array960 Array1152 WArray512 WArray128.
+require import GFq Serialization.
+from Jasmin require import JModel.
+require import GFq Rq VecMat Correctness.
+import PolyVec PolyMat KMatrix.
+require import W16extra Montgomery.
 
 import Zq.
 
-from Jasmin require import JUtils.
+from Jasmin require import JModel.
+
+lemma aux16_0 x :
+  16 <= x < 32 =>
+   (W32.of_int 4294901760).[x] = true.
+proof.
+rewrite of_intwE => />. 
+rewrite /int_bit => />.
+case (x = 16); first by move =>  -> />. 
+move => *;case (x = 17); first by move =>  -> />. 
+move => *;case (x = 18); first by move =>  -> />. 
+move => *;case (x = 19); first by move =>  -> />. 
+move => *;case (x = 20); first by move =>  -> />. 
+move => *;case (x = 21); first by move =>  -> />. 
+move => *;case (x = 22); first by move =>  -> />. 
+move => *;case (x = 23); first by move =>  -> />. 
+move => *;case (x = 24); first by move =>  -> />. 
+move => *;case (x = 25); first by move =>  -> />. 
+move => *;case (x = 26); first by move =>  -> />. 
+move => *;case (x = 27); first by move =>  -> />. 
+move => *;case (x = 28); first by move =>  -> />. 
+move => *;case (x = 29); first by move =>  -> />. 
+move => *;case (x = 30); first by move =>  -> />. 
+move => *;case (x = 31); first by move =>  -> />. 
+by smt().
+qed.
+
+lemma aux16_1 x :
+  0 <= x < 16 =>
+   (W32.of_int 4294901760).[x] = false.
+proof.
+rewrite of_intwE => />. 
+rewrite /int_bit => />. 
+case (x = 0); first by move =>  -> />. 
+move => *;case (x = 1); first by move =>  -> />. 
+move => *;case (x = 2); first by move =>  -> />. 
+move => *;case (x = 3); first by move =>  -> />. 
+move => *;case (x = 4); first by move =>  -> />. 
+move => *;case (x = 5); first by move =>  -> />. 
+move => *;case (x = 6); first by move =>  -> />. 
+move => *;case (x = 7); first by move =>  -> />. 
+move => *;case (x = 8); first by move =>  -> />. 
+move => *;case (x = 9); first by move =>  -> />. 
+move => *;case (x = 10); first by move =>  -> />. 
+move => *;case (x = 11); first by move =>  -> />. 
+move => *;case (x = 12); first by move =>  -> />. 
+move => *;case (x = 13); first by move =>  -> />. 
+move => *;case (x = 14); first by move =>  -> />. 
+move => *;case (x = 15); first by move =>  -> />. 
+by smt().
+qed.
+
+lemma aux16_2 (a : W32.t) :
+  (a `>>>` 16) + (of_int 4294901760)%W32
+              = (a `>>>` 16) `|` (of_int 4294901760)%W32.
+proof. 
+rewrite orw_xpnd.
+have -> : (a `>>>` 16) `&` (of_int 4294901760)%W32 = W32.of_int 0.
++ have ? : (0 <= to_uint (a `>>>` 16) < 65536) by 
+    rewrite to_uint_shr => />; smt(divz_ge0 ltz_divLR pow2_32 W32.to_uint_cmp).
+  apply W32.ext_eq =>  x xbnd.
+  case (0 <= x < 16); 1: by move => smallx; rewrite andwE aux16_1 => /> /#.
+  move => largex; rewrite /(`>>>`) /of_int /bits2w /= /int2bs /= /mkseq /= !initiE //=. 
+  rewrite !(nth_map 0 false _ x (iota_ 0 32)); 1, 2: by smt(size_iota).
+  by rewrite !nth_iota //=; smt(W32.get_out).
+by ring.
+qed.
+
+(* FIX ME: Generalize and move to JWord *)
+lemma SAR_sem16 (a : W32.t) : a `|>>` W8.of_int 16 = W32.of_int (to_sint a %/ 2^16).
+proof.
+rewrite /(`|>>`) to_sintE /smod sarE.
+rewrite W8.of_uintK; apply W32.ext_eq => x x_b; rewrite initiE => />.
+case (2147483648 <= to_uint a); last first. (* positive numbers *)
++ move => ab; rewrite W32.of_intwE x_b /= /int_bit /=. 
+  rewrite /min  /= get_to_uint /= (modz_small _ 4294967296); 1: smt(W32.to_uint_cmp).
+  case (31 < x + 16). (*high bits*)
+  + move => hb /=;rewrite pdiv_small; 1: by smt(W32.to_uint_cmp).
+    rewrite mod0z /=.
+    have -> : to_uint a %/ 65536 %/ 2 ^ x = 0; last by smt(mod0z). 
+    apply  (divz_eq0 (to_uint a %/ 65536) (2^x)); 1: by smt(gt0_pow2). 
+    split; 1: by smt(divz_ge0 W32.to_uint_cmp).
+    have /= ? : 2^15 <= 2^x by  apply StdOrder.IntOrder.ler_weexpn2l=> // /#.
+    by smt(leq_div2r).
+ move => /= lb.
+ have -> : to_uint a %/ 2 ^ (x + 16) = to_uint a %/ 65536 %/ 2 ^ x; last by smt().
+ rewrite -pow2_16 {1}(divz_eq (to_uint a) (2^16)) exprD_nneg //; 1: smt().  
+ by smt(divmod_mul gt0_pow2). 
+
+move => neg.
+rewrite divzDr //= -pow2_16 -to_uint_shr //=.
+rewrite of_intS to_uintK /W32.([-]) /ulift1  aux16_2 orwE /=.
+case (31 < x + 16); last by  move => x_tub; rewrite aux16_1 /= /#.
+move => x_tlb; rewrite /min x_tlb aux16_0 /=; 1: by smt().
+rewrite get_to_uint => />.
+by smt(W32.to_uint_cmp pow2_32).
+qed.
+
+lemma aux10_0 x :
+  6 <= x < 16 =>
+   (W16.of_int 65472).[x] = true.
+proof.
+rewrite of_intwE /= /int_bit => />.
+case (x = 6); first by move =>  -> />.
+move => *;case (x = 7); first by move =>  -> />.
+move => *;case (x = 8); first by move =>  -> />.
+move => *;case (x = 9); first by move =>  -> />.
+move => *;case (x = 10); first by move =>  -> />.
+move => *;case (x = 11); first by move =>  -> />.
+move => *;case (x = 12); first by move =>  -> />.
+move => *;case (x = 13); first by move =>  -> />.
+move => *;case (x = 14); first by move =>  -> />.
+move => *;case (x = 15); first by move =>  -> />.
+by smt().
+qed.
+
+lemma aux10_1 x :
+  0 <= x < 6 =>
+   (W16.of_int 65472).[x] = false.
+proof.
+rewrite of_intwE /= /int_bit => />.
+case (x = 0); first by move =>  -> />.
+move => *;case (x = 1); first by move =>  -> />.
+move => *;case (x = 2); first by move =>  -> />.
+move => *;case (x = 3); first by move =>  -> />.
+move => *;case (x = 4); first by move =>  -> />.
+move => *;case (x = 5); first by move =>  -> />.
+by smt().
+qed.
+
+lemma aux10_2 (a : W16.t) :
+  (a `>>>` 10) + (of_int 65472)%W16
+              = (a `>>>` 10) `|` (of_int 65472)%W16.
+proof.
+rewrite orw_xpnd.
+have -> : (a `>>>` 10) `&` (of_int 65472)%W16 = W16.of_int 0.
++ have ? : (0 <= to_uint (a `>>>` 10) < 1024) by
+    rewrite to_uint_shr => />; smt(divz_ge0 ltz_divLR pow2_16 W16.to_uint_cmp).
+  apply W16.ext_eq =>  x xb.
+  case (0 <= x < 6); 1: by move => smallx; rewrite andwE aux10_1 => /> /#.
+  move => largex; rewrite /(`>>>`) /of_int /bits2w /= /int2bs /= /mkseq /= !initiE //=. 
+  rewrite !(nth_map 0 false _ x (iota_ 0 16)); 1, 2: by smt(size_iota).
+  by rewrite !nth_iota //=; smt(W16.get_out).
+by ring.
+qed.
+
+(* FIX ME: Generalize and move to JWord *)
+lemma SAR_sem10 (a : W16.t) :
+   a `|>>` W8.of_int 10 = W16.of_int (to_sint a %/ 2^10).
+proof.
+rewrite /(`|>>`) to_sintE /smod sarE.
+rewrite W8.of_uintK; apply W16.ext_eq => x x_b; rewrite initiE => />.
+case (32768 <= to_uint a); last first. (* positive numbers *)
++ move => ab; rewrite W16.of_intwE x_b /= /int_bit /=. 
+  rewrite /min  /= get_to_uint /= (modz_small _ 65536); 1: smt(W16.to_uint_cmp).
+  case (15 < x + 10). (*high bits*)
+  + move => hb /=;rewrite pdiv_small; 1: by smt(W16.to_uint_cmp).
+    rewrite mod0z /=.
+    have -> : to_uint a %/ 1024 %/ 2 ^ x = 0; last by smt(mod0z). 
+    apply  (divz_eq0 (to_uint a %/ 1024) (2^x)); 1: by smt(gt0_pow2). 
+    split; 1: by smt(divz_ge0 W16.to_uint_cmp).
+    have /= ? : 2^6 <= 2^x by  apply StdOrder.IntOrder.ler_weexpn2l=> // /#.
+    by smt(leq_div2r).
+ move => /= lb.
+ have -> : to_uint a %/ 2 ^ (x + 10) = to_uint a %/ 1024 %/ 2 ^ x; last by smt().
+ rewrite (_: 1024 = 2^10) // {1}(divz_eq (to_uint a) (2^10)) exprD_nneg //; 1: smt().  
+ by smt(divmod_mul gt0_pow2). 
+
+move => neg.
+rewrite divzDr //= (_: 1024 = 2^10) // -to_uint_shr //=.
+rewrite of_intS to_uintK /W16.([-]) /ulift1  aux10_2 orwE /=.
+case (15 < x + 10); last by  move => x_tub; rewrite aux10_1 /= /#.
+move => x_tlb; rewrite /min x_tlb aux10_0 /=; 1: by smt().
+rewrite get_to_uint => />.
+by smt(W16.to_uint_cmp pow2_16).
+qed.
+
 
 lemma tP_red32 (t1 t2: 'a Array32.t) :
   (forall i, i \in iotared 0 32 => t1.[i] = t2.[i]) => t1 = t2.
@@ -19,7 +199,7 @@ lemma initEq32 (f g: int -> 'a) :
 
 lemma initSet (r : 'a Array32.t) (f : int -> 'a) f0 f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 f11 f12 f13 f14 f15 f16 f17 f18 f19 f20 f21 f22 f23 f24 f25 f26 f27 f28 f29 f30 f31 :
   f0 = f 0 => f1 = f 1 => f2 = f 2 => f3 = f 3 => f4 = f 4 => f5 = f 5 => f6 = f 6 => f7 = f 7 => f8 = f 8 => f9 = f 9 => f10 = f 10 => f11 = f 11 => f12 = f 12 => f13 = f 13 => f14 = f 14 => f15 = f 15 => f16 = f 16 => f17 = f 17 => f18 = f 18 => f19 = f 19 => f20 = f 20 => f21 = f 21 => f22 = f 22 => f23 = f 23 => f24 = f 24 => f25 = f 25 => f26 = f 26 => f27 = f 27 => f28 = f 28 => f29 = f 29 => f30 = f 30 => f31 = f 31 =>
-  r.[0 <- f0].[1 <- f1].[2 <- f2].[3 <- f3].[4 <- f4].[5 <- f5].[6 <- f6].[7 <- f7].[8 <- f8].[9 <- f9].[10 <- f10].[11 <- f11].[12 <- f12].[13 <- f13].[14 <- f14].[15 <- f15].[16 <- f16].[17 <- f17].[18 <- f18].[19 <- f19].[20 <- f20].[21 <- f21].[22 <- f22].[23 <- f23].[24 <- f24].[25 <- f25].[26 <- f26].[27 <- f27].[28 <- f28].[29 <- f29].[30 <- f30].[31 <- f31] = init f.
+  r.[0 <- f0].[1 <- f1].[2 <- f2].[3 <- f3].[4 <- f4].[5 <- f5].[6 <- f6].[7 <- f7].[8 <- f8].[9 <- f9].[10 <- f10].[11 <- f11].[12 <- f12].[13 <- f13].[14 <- f14].[15 <- f15].[16 <- f16].[17 <- f17].[18 <- f18].[19 <- f19].[20 <- f20].[21 <- f21].[22 <- f22].[23 <- f23].[24 <- f24].[25 <- f25].[26 <- f26].[27 <- f27].[28 <- f28].[29 <- f29].[30 <- f30].[31 <- f31] = Array32.init f.
 move => -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->. apply tP_red32 => /> i.
 do 31!(move => Hi; case Hi => |>). qed.
 
@@ -47,7 +227,7 @@ lemma nosmt set_neqiE (t : coeff Array256.t) x y a :
 proof. by rewrite get_set_if => /neqF ->. qed.
 
 lemma init_id (r : 'a Array256.t) :
-  init ("_.[_]" r) = r.
+  Array256.init ("_.[_]" r) = r.
 rewrite tP => />i Hi1 Hi2. rewrite initiE //. qed.
 
 (*-----------------------------------------------------------------------------*)
@@ -296,12 +476,12 @@ proof.
   by rewrite set2_mul_addr_neqiE // set2_mul_addr_neqiE.
 qed.
 
-lemma tP_red236 (t1 t2: 'a Array256.t) :
+lemma tP_red256 (t1 t2: 'a Array256.t) :
   (forall i, i \in iotared 0 256 => t1.[i] = t2.[i]) => t1 = t2.
   rewrite tP => />H i Hi1 Hi2. smt(). qed.
 
 lemma foldl_upd_range_i (upd: int -> 'a -> 'a) (r:'a Array256.t) n : forall j, n <= 256 =>
-  (foldl (fun r i => r.[i <- upd i r.[i] ]) r (range 0 n)).[j] = if 0 <= j < n then upd j r.[j] else r.[j].
+  (foldl (fun r i => r.[i <- upd i (r.[i])%Array256 ]) r (range 0 n)).[j] = if 0 <= j < n then upd j r.[j] else r.[j].
 proof.
 elim/natind: n => />.
 (*n=0*)
@@ -310,10 +490,23 @@ move => n Hn1 j Hn2. rewrite range_geq => />. smt().
 move => n Hn1 R j Hn2. rewrite rangeSr // foldl_rcons //=. rewrite R //. smt(). rewrite get_setE => />. smt(). rewrite R //. smt(). smt(). qed.
 
 lemma foldl_upd_range (upd: int -> 'a -> 'a) (r:'a Array256.t) : 
-  foldl (fun r i => r.[i <- upd i r.[i] ]) r (range 0 256) = init (fun i => upd i r.[i]).
+  foldl (fun r i => r.[i <- upd i (r.[i])%Array256 ]) r (range 0 256) = Array256.init (fun i => upd i r.[i]).
 proof.
 rewrite tP => />i Hi1 Hi2. rewrite foldl_upd_range_i // initiE => />. rewrite ifT //. qed.
 
+op lift_array2304 (p : W16.t Array2304.t) =
+  Array2304.map (fun x => incoeff (W16.to_sint x)) p.
+
+op [a] subarray768(x: 'a Array2304.t, i : int) : 'a Array768.t =
+    Array768.init (fun (k : int) => x.[768 * i + k]).
+
+
+op lift_matrix( a : W16.t Array2304.t) : polymat =
+   Matrix.offunm (fun i j => subarray256 (subarray768 (lift_array2304 a) i) j).
+
+
+op pos_bound2304_cxq (coefs : W16.t Array2304.t) (l u c : int) : bool =
+  forall (k : int), l <= k && k < u => bpos16 coefs.[k] (c * q).
 
 lemma matrixcols (m : 'a Array2304.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3 =>
     Array256.map f (subarray256 ((Array768.init ((fun (i_0 : int) => m.[j*768 + i_0])))) i) =
@@ -321,6 +514,83 @@ lemma matrixcols (m : 'a Array2304.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3
 move => ib jb;rewrite /subarray256 /subarray768 tP => k kb.
 by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
 qed. 
+
+op lift_array256 (p : W16.t Array256.t) =
+  Array256.map (fun x => incoeff (W16.to_sint x)) p.
+
+op lift_array128 (p : W16.t Array128.t) =
+  Array128.map (fun x => incoeff (W16.to_sint x)) p.
+op signed_bound_cxq(coefs : W16.t Array256.t, l u c : int) : bool =
+   forall k, l <= k < u => b16 coefs.[k] (c*q).
+
+op minimum_residues(zetas : W16.t Array128.t) : bool =
+   forall k, 0 <= k < 128 => bpos16  zetas.[k] q.
+
+op pos_bound256_cxq (coefs : W16.t Array256.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
+
+op pos_bound256_b (coefs : W16.t Array256.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
+
+op touches (m m' : global_mem_t) (p : address) (len : int) =
+    forall i, !(0 <= i < len) => m'.[p + i] = m.[p + i].
+
+op load_array32(m : global_mem_t, p : address) : W8.t Array32.t = 
+      Array32.init (fun i => m.[p + i]).
+
+op load_array128(m : global_mem_t, p : address) : W8.t Array128.t = 
+      Array128.init (fun i => m.[p + i]).
+
+op load_array320(m : global_mem_t, p : address) : W8.t Array320.t = 
+      Array320.init (fun i => m.[p + i]).
+
+op load_array384(m : global_mem_t, p : address) : W8.t Array384.t = 
+      Array384.init (fun i => m.[p + i]).
+
+op valid_ptr(p : int, o : int) = 0 <= o => 0 <= p /\ p + o < W64.modulus.
+
+op array_mont (p : coeff Array128.t) =
+  Array128.map (fun x => x *  (incoeff W16.modulus)) p.
+
+op array_mont_inv (p : coeff Array128.t) =
+  let vv = Array128.map (fun x => x *  (incoeff W16.modulus)) p in
+      vv.[127 <- p.[127] * (incoeff W16.modulus) * (incoeff W16.modulus)].
+
+
+(* AUX *)
+
+op lift_array768 (p : W16.t Array768.t) =
+  Array768.map (fun x => incoeff (W16.to_sint x)) p.
+
+op lift_polyvec(vec: W16.t Array768.t) : polyvec =
+    Vector.offunv (fun i => lift_array256 (subarray256 vec i)).
+
+op scale_polyvec(v : polyvec, c : coeff) : polyvec = 
+   Vector.offunv (fun i => (scale ((Vector.tofunv v) i) c)).
+
+op signed_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => b16 coefs.[k] (c * q).
+
+op pos_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
+
+op pos_bound768_b (coefs : W16.t Array768.t) (l u b : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] b.
+
+lemma lift_array256_incoeff (a : W16.t Array256.t) k :
+  0 <= k < 256 =>
+  incoeff (to_sint a.[k]) = (lift_array256 a).[k].
+proof. by move => H; rewrite /lift_array256 mapE /= initE H. qed.
+
+op load_array960 (m : global_mem_t) (p : address) : W8.t Array960.t = 
+  (Array960.init (fun (i : int) => m.[p + i])).
+
+op load_array1152 (m : global_mem_t) (p : address) : W8.t Array1152.t = 
+  (Array1152.init (fun (i : int) => m.[p + i])).
+
+(* TODO: write aux lemma to deal w/ subarrays cleanly *)
+
+(* END AUX *)
 
 lemma subliftsub (a : W16.t Array768.t) i k: 0<=i <3 => 0<=k<256 =>
     (lift_array256 (subarray256 a i)).[k] = (lift_array768 a).[256*i+k].
@@ -337,13 +607,13 @@ by rewrite !mapiE 1:/# /= !initiE 1,2:/# /= !initiE 1:/# /= mapiE /#.
 qed.
 
 lemma liftarrayvector a i k : 0<=i<3 => 0<=k<256 =>
-         (lift_vector a).[i].[k] = (lift_array768 a).[256*i+k].
+         ((lift_polyvec a).[i])%Vector.[k] = (lift_array768 a).[256*i+k].
 move => ib lb; rewrite /lift_vector /lift_array768 offunvE // mapiE 1:/# /=.
 by rewrite /lift_array256 /subarray256 mapiE //= initiE //=.
 qed.
 
-op unlift_matrix(a : matrix) = Array2304.init 
-   (fun i => W16.of_int (asint a.[i %/ 768,i %% 768 %/ 256].[i %% 256])).
+op unlift_matrix(a : polymat) = Array2304.init 
+   (fun i => W16.of_int (asint (a.[i %/ 768,i %% 768 %/ 256].[i %% 256]))%Matrix).
 
 lemma matrix_unlift a : 
     lift_matrix (unlift_matrix a) = a /\
@@ -366,15 +636,15 @@ rewrite of_uintK /= modz_small; 1: by smt(rg_asint).
   by rewrite /smod /=; smt(rg_asint qE).
 qed.
 
-op unlift_vector(a : vector) = 
-   Array768.init (fun i => W16.of_int (as_sint a.[i %/ 256].[i%%256])).
+op unlift_polyvec(a : polyvec) = 
+   Array768.init (fun i => W16.of_int (as_sint (a.[i %/ 256])%Vector.[i%%256])).
 
 lemma vector_unlift a : 
-    lift_vector (unlift_vector a) = a /\
-    signed_bound768_cxq (unlift_vector a) 0 768 1.
+    lift_polyvec (unlift_polyvec a) = a /\
+    signed_bound768_cxq (unlift_polyvec a) 0 768 1.
 proof.
 split. 
-+ rewrite /lift_vector /unlift_vector eq_vectorP => i ib.
++ rewrite /lift_vector /unlift_polyvec eq_vectorP => i ib.
   rewrite offunvE //= /subarray256 /lift_array256 /= tP => k kb.
   rewrite mapiE //= initiE //= initiE //= 1:/# /to_sint /smod /=.
   rewrite !of_uintK /=; rewrite /as_sint qE /=.
@@ -404,10 +674,10 @@ qed.
 
 lemma inFq_to_sint (a : W16.t) :
   -(q-1)%/ 2 < to_sint a < (q-1)%/ 2 =>
-  a = (W16.of_int (as_sint (inFq (to_sint a)))).
+  a = (W16.of_int (as_sint (incoeff (to_sint a)))).
 proof.
 rewrite qE /=; move => [#] bndl bndh.
-rewrite /as_sint fun_if /= !inFqK qE /=.
+rewrite /as_sint fun_if /= !incoeffK qE /=.
 case(0<= to_sint a).
 + move => ?; rewrite !modz_small 1:/#.
   have -> : !(1664 < to_sint a) by smt().
@@ -420,5 +690,60 @@ case(0<= to_sint a).
   rewrite /to_sint /smod fun_if /= of_intS to_uintK.
   case(32768 <= to_uint a); 2:auto.
   by move => *; ring.
+qed.
+
+lemma bits8_W2u8 ws i :
+  W2u8.pack2_t ws \bits8 i = if 0 <= i < 2 then ws.[i] else W8.zero.
+rewrite wordP => j Hj. rewrite W2u8.bits8iE //. case (0 <= i < 2) => Hi.
+rewrite pack2wE /#. rewrite get_out /#. qed.
+
+lemma bits16_W16u16 ws i :
+  W16u16.pack16_t ws \bits16 i = if 0 <= i < 16 then ws.[i] else W16.zero.
+rewrite wordP => j Hj. rewrite W16u16.bits16iE //. case (0 <= i < 16) => Hi.
+rewrite pack16wE /#. rewrite get_out /#. qed.
+
+(* MOVE TO: JWord_array.ec *)
+lemma get16_set256E t x y w :
+ 0 <= x => 32*(x + 1) <= 512 =>
+ get16 (WArray512.set256 t x w) y
+ = if 32*x <= 2*y < 32*(x+1)
+   then w \bits16 (y - 16*x)
+   else get16 t y.
+proof.        
+move=> hx hs; rewrite get16E.
+case: ( 32*x <= 2*y < 32*(x+1) ). 
+ rewrite mulrDr /= => Hy.
+ rewrite -(W2u8.unpack8K (w \bits16 (y-16*x))) unpack8E; congr.
+ by rewrite -W2u8.Pack.all_eqP /all_eq /= -/WArray512.get8
+      !get8_set256_directE 1..4:/# Hy /= /#.
+rewrite mulrDr /= => Hy.
+rewrite -(W2u8.unpack8K (get16 t y)) unpack8E; congr.
+rewrite -W2u8.Pack.all_eqP /all_eq /= -/WArray512.get8
+      !get8_set256_directE 1..4:/#.
+by rewrite  Hy /= get16E pack2bE // ifF /#. 
+qed.
+
+lemma set256_directE (t:WArray128.t) (i:int) (w:W256.t) :
+  i %% 32 = 0 => 
+  set256_direct t i w = set256 t (i%/32) w.
+  smt(). qed.
+
+lemma get16_init16 f i:
+ 0 <= 2*i < 512 =>
+ get16 (WArray512.init16 f) i
+ = f i.
+proof.
+move => Hi.
+rewrite get16E /init16 /=.
+rewrite -(W2u8.unpack8K (f i)) /unpack8K; congr.
+by rewrite -W2u8.Pack.all_eqP /all_eq /= !initiE /#.
+qed.
+(* END MOVE *)
+
+lemma pack2_bits8 (w: W16.t):
+ pack2 [w \bits8 0; w \bits8 1] = w.
+proof.
+rewrite -{-1}(W2u8.unpack8K w) unpack8E; congr.
+by apply W2u8.Pack.all_eq_eq; rewrite /all_eq.
 qed.
 

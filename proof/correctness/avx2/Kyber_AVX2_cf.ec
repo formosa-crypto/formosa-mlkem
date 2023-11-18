@@ -2,9 +2,7 @@ require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
 require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array768 Array960 Array1152.
-require import Array_extra.
-require import W8extra.
-require import List_extra.
+require import KyberFCLib W8extra List_extra.
 
 
 require import Jkem.

@@ -2,7 +2,7 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JWord.
 require import Array16 W16extra WArray512 WArray32 WArray16.
 
-require import Fq KyberPoly.
+require import Fq KyberPoly KyberFCLib.
 require import AVX2_Ops KyberPoly_avx2_prevec.
 require import Montgomery16.
 

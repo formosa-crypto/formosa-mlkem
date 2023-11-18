@@ -14,9 +14,9 @@
 (* The jump from (inv)ntt_spec to (inv)ntt proves that the high level specification implies the specification needed outside of this file. *)
 
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
-require import IntDiv_extra Array256_extra For.
+require import IntDiv_extra For.
 require import Array128 Array256.
-require import Montgomery NTT_Fq GFq Rq Correctness.
+require import Montgomery NTT_Fq GFq Rq Correctness KyberFCLib.
 
 require Matrix.
 
@@ -914,7 +914,7 @@ theory NTTequiv.
 
   op r_naive_ntt_inner (zetas : coeff Array128.t) len start (r : coeff Array256.t) j =
     perm (bsrev 8)
-      ( set2_add_mulr (Array256_extra.perm (bsrev 8) r)
+      ( set2_add_mulr (perm (bsrev 8) r)
           zetas.[bsrev 8 ((start * 2 + 1) * (128 %/ len))]
           (j + start) (j + len + start)).
 
@@ -996,7 +996,7 @@ theory NTTequiv.
       ( Q_bsrev_ntt_inner zetas1 zetas2 len1 len2 start1 start2 ).
 
   lemma is_perm_bsrev_8 :
-    Array256_extra.is_perm (bsrev 8).
+    is_perm (bsrev 8).
   proof.
     move: (bsrev_range_pow2_perm_eq 8 8) => /=.
     rewrite (eq_map (( * ) 1) idfun) => [? //=|].
@@ -1349,12 +1349,12 @@ theory NTTequiv.
     pose r':= (perm _ r); move: r' => {r} r.
     pose set2r1:= (set2_add_mulr r _ _ _).
     pose set2r2:= (set2_add_mulr r _ _ _).
-    move: (Array256_extra.perm_perm (bsrev 8) (bsrev 8) set2r1).
-    move: (Array256_extra.perm_perm (bsrev 8) (bsrev 8) set2r2).
+    move: (perm_perm (bsrev 8) (bsrev 8) set2r1).
+    move: (perm_perm (bsrev 8) (bsrev 8) set2r2).
     rewrite /(\o) /= => -> // -> //.
-    rewrite (Array256_extra.perm_id _ set2r1).
+    rewrite (perm_id _ set2r1).
     + by move => x /mem_range ? /=; rewrite bsrev_involutive.
-    rewrite (Array256_extra.perm_id _ set2r2).
+    rewrite (perm_id _ set2r2).
     + by move => x /mem_range ? /=; rewrite bsrev_involutive.
     rewrite /set2r1 /set2r2  /(\o) /= => {set2r1 set2r2}; rewrite bsrev_pow2.
     + by rewrite mem_range_subl; move: mem_kl_range; apply mem_range_incl.
@@ -1483,11 +1483,11 @@ theory NTTequiv.
     r_naive_ntt_inner zetas (bsrev 8 (2 ^ (7 - kl))) (bsrev 8 (ks * 2 ^ (8 - kl))) r (bsrev 8 kj).
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range; rewrite /r_bsrev_ntt_inner /r_naive_ntt_inner.
-    rewrite Array256_extra.set2_add_mulr_permiE; [by rewrite is_perm_bsrev_8| | |].
+    rewrite set2_add_mulr_permiE; [by rewrite is_perm_bsrev_8| | |].
     + by rewrite add_j_start //; pose n:= (_ + _)%Int; move: (bsrev_range 8 n).
     + by rewrite add_j_len_start //; pose n:= (_ + _ + _)%Int; move: (bsrev_range 8 n).
     pose r1:= set2_add_mulr _ _ _ _; pose r2:= set2_add_mulr _ _ _ _.
-    move: (Array256_extra.perm_perm (bsrev 8) (bsrev 8) r2 is_perm_bsrev_8).
+    move: (perm_perm (bsrev 8) (bsrev 8) r2 is_perm_bsrev_8).
     rewrite /(\o) /= => ->; rewrite perm_id //.
     + by move => x /mem_range mem_x_range /=; rewrite bsrev_involutive.
     rewrite /r1 /r2 => {r1 r2}.
@@ -1637,8 +1637,8 @@ theory NTTequiv.
       - by apply mem_add_j_start_range.
       - by apply mem_add_j_len_start_range.
       pose r':= set2_add_mulr _ _ _ _.
-      move: (Array256_extra.perm_perm _ (bsrev 8) r' is_perm_bsrev_8).
-      rewrite /(\o) => -> /=; rewrite Array256_extra.perm_id //=.
+      move: (perm_perm _ (bsrev 8) r' is_perm_bsrev_8).
+      rewrite /(\o) => -> /=; rewrite perm_id //=.
       by move => x /mem_range mem_x_range /=; rewrite bsrev_involutive.
     skip => &1 &2; rewrite {1}/inv_bsrev_ntt_outer => inv_start.
     move: (RHL_FOR_INT_ADD_LT2.invP _ _ _ _ _ _ _ _ _ _ _ _ inv_start).
@@ -1786,7 +1786,7 @@ theory NTTequiv.
 
   op r_naive_invntt_inner (zetas_inv : coeff Array128.t) len start (r : coeff Array256.t) j =
     perm (bsrev 8)
-      ( set2_mul_addr (Array256_extra.perm (bsrev 8) r)
+      ( set2_mul_addr (perm (bsrev 8) r)
           zetas_inv.[bsrev 8 ((start * 2 + 1) * (128 %/ len) - 2)]
           (j + start) (j + len + start)).
 
@@ -2119,12 +2119,12 @@ theory NTTequiv.
     pose r':= (perm _ r); move: r' => {r} r.
     pose set2r1:= (set2_mul_addr r _ _ _).
     pose set2r2:= (set2_mul_addr r _ _ _).
-    move: (Array256_extra.perm_perm (bsrev 8) (bsrev 8) set2r1).
-    move: (Array256_extra.perm_perm (bsrev 8) (bsrev 8) set2r2).
+    move: (perm_perm (bsrev 8) (bsrev 8) set2r1).
+    move: (perm_perm (bsrev 8) (bsrev 8) set2r2).
     rewrite /(\o) /= => -> // -> //.
-    rewrite (Array256_extra.perm_id _ set2r1).
+    rewrite (perm_id _ set2r1).
     + by move => x /mem_range ? /=; rewrite bsrev_involutive.
-    rewrite (Array256_extra.perm_id _ set2r2).
+    rewrite (perm_id _ set2r2).
     + by move => x /mem_range ? /=; rewrite bsrev_involutive.
     rewrite /set2r1 /set2r2  /(\o) /= => {set2r1 set2r2}; rewrite bsrev_pow2.
     + by rewrite mem_range_addr; move: mem_kl_range; apply mem_range_incl.
@@ -2250,11 +2250,11 @@ theory NTTequiv.
   proof.
     move => y z mem_y_range mem_z_range; rewrite /r_naive_invntt_post.
     congr; pose rr:= perm _ r; move: rr => {r} r.
-    rewrite !Array256_extra.set_permiE ?is_perm_bsrev_8 // -?mem_range //.
+    rewrite !set_permiE ?is_perm_bsrev_8 // -?mem_range //.
     + by rewrite (bsrev_range 8).
     + by rewrite (bsrev_range 8).
-    do 4!(move: (Array256_extra.perm_perm); rewrite /(\o) => ->; [by rewrite is_perm_bsrev_8|]).
-    do 4!(rewrite Array256_extra.perm_id; [by move => x /mem_range mem_x_range /=; rewrite bsrev_involutive|]).
+    do 4!(move: (perm_perm); rewrite /(\o) => ->; [by rewrite is_perm_bsrev_8|]).
+    do 4!(rewrite perm_id; [by move => x /mem_range mem_x_range /=; rewrite bsrev_involutive|]).
     rewrite !bsrev_involutive //; case: (y = z) => [->> //|neqyz].
     rewrite !set_neqiE -?mem_range //; [by rewrite eq_sym|].
     by rewrite set_set_swap.
@@ -2269,11 +2269,11 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range.
     rewrite /r_bsrev_invntt_inner /r_naive_invntt_inner.
-    rewrite Array256_extra.set2_mul_addr_permiE; [by rewrite is_perm_bsrev_8| | |].
+    rewrite set2_mul_addr_permiE; [by rewrite is_perm_bsrev_8| | |].
     + by rewrite add_j_start_invntt //; pose n:= (_ + _)%Int; move: (bsrev_range 8 n).
     + by rewrite add_j_len_start_invntt //; pose n:= (_ + _ + _)%Int; move: (bsrev_range 8 n).
     pose r1:= set2_mul_addr _ _ _ _; pose r2:= set2_mul_addr _ _ _ _.
-    move: (Array256_extra.perm_perm (bsrev 8) (bsrev 8) r2 is_perm_bsrev_8).
+    move: (perm_perm (bsrev 8) (bsrev 8) r2 is_perm_bsrev_8).
     rewrite /(\o) /= => ->; rewrite perm_id //.
     + by move => x /mem_range mem_x_range /=; rewrite bsrev_involutive.
     rewrite /r1 /r2 => {r1 r2}.
@@ -2369,14 +2369,14 @@ theory NTTequiv.
     + by apply/perm_eq_post.
     rewrite /r_bsrev_invntt_post /r_naive_invntt_post.
     rewrite foldl_map; apply eq_in_foldl => //.
-    move => {r} r x mem_x_range /=; rewrite Array256_extra.get_permiE.
+    move => {r} r x mem_x_range /=; rewrite get_permiE.
     + by apply/mem_range/(bsrev_range 8).
-    rewrite bsrev_involutive // Array256_extra.set_permiE.
+    rewrite bsrev_involutive // set_permiE.
     + by apply is_perm_bsrev_8.
     + by apply/mem_range/(bsrev_range 8).
-    rewrite bsrev_involutive //; move: Array256_extra.perm_perm; rewrite /(\o) => ->.
+    rewrite bsrev_involutive //; move: perm_perm; rewrite /(\o) => ->.
     + by apply is_perm_bsrev_8.
-    by rewrite Array256_extra.perm_id // => y /mem_range mem_y_range /=; rewrite bsrev_involutive.
+    by rewrite perm_id // => y /mem_range mem_y_range /=; rewrite bsrev_involutive.
   qed.
 
   equiv bsrev_invntt_inner :
@@ -2440,8 +2440,8 @@ theory NTTequiv.
       - by apply mem_add_j_start_range_invntt.
       - by apply mem_add_j_len_start_range_invntt.
       pose r':= set2_mul_addr _ _ _ _.
-      move: (Array256_extra.perm_perm _ (bsrev 8) r' is_perm_bsrev_8).
-      rewrite /(\o) /= => -> /=; rewrite Array256_extra.perm_id //.
+      move: (perm_perm _ (bsrev 8) r' is_perm_bsrev_8).
+      rewrite /(\o) /= => -> /=; rewrite perm_id //.
       by move => x /mem_range mem_x_range /=; rewrite bsrev_involutive.
     skip => &1 &2; rewrite {1}/inv_bsrev_invntt_outer => inv_start.
     move: (RHL_FOR_INT_ADD_LT2.invP _ _ _ _ _ _ _ _ _ _ _ _ inv_start).
@@ -2596,11 +2596,11 @@ theory NTTequiv.
       exists r => /=; rewrite /r_bsrev_invntt_post_foldl /r_naive_invntt_post_foldl.
       rewrite rangeSr; [by move: mem_k_range; apply mem_range_le|].
       rewrite !foldl_rcons /= {3}/r_bsrev_invntt_post /= {3}/r_naive_invntt_post.
-      rewrite Array256_extra.get_permiE; [by apply/mem_range|].
-      pose r':= foldl _ _ _; rewrite Array256_extra.set_permE; [by rewrite is_perm_bsrev_8|].
+      rewrite get_permiE; [by apply/mem_range|].
+      pose r':= foldl _ _ _; rewrite set_permE; [by rewrite is_perm_bsrev_8|].
       rewrite -mem_range mem_k_range /=; pose r'':= _.[_ <- _]%Array256.
-      move: (Array256_extra.perm_perm (bsrev 8) (bsrev 8) r'').
-      rewrite is_perm_bsrev_8 /(\o) /= => ->; rewrite Array256_extra.perm_id //.
+      move: (perm_perm (bsrev 8) (bsrev 8) r'').
+      rewrite is_perm_bsrev_8 /(\o) /= => ->; rewrite perm_id //.
       by move => x /mem_range mem_x_range /=; rewrite (bsrev_involutive 8).
     move => [<<- <<-]; split; rewrite/inv_bsrev_invntt_post.
     + apply/RHL_FOR_INT_ADD_LT2.inv_0 => //=; exists NTT_vars.r{1}.
@@ -3339,7 +3339,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range mem_start_range mem_bsj_range or_neq.
     rewrite /partial_ntt_spec => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_add_mulr_neqiE //.
+    rewrite set2_add_mulr_neqiE //.
     + by apply neq_bsrev00.
     by apply neq_bsrev01.
   qed.
@@ -3361,7 +3361,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range mem_start_range mem_bsj_range or_neq.
     rewrite /partial_ntt_spec => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_add_mulr_neqiE //.
+    rewrite set2_add_mulr_neqiE //.
     + by rewrite addrA; apply neq_bsrev10.
     by rewrite addrA; apply neq_bsrev11.
   qed.
@@ -3380,7 +3380,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range.
     rewrite /partial_ntt_spec => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_add_mulr_eq1iE //.
+    rewrite set2_add_mulr_eq1iE //.
     + by apply neq_bsrev01.
     + by apply/(bsrev_range 8).
     rewrite -mulrA {1}(exprS_range _ _ _ mem_kl_range) //= in eq_r_1.
@@ -3440,7 +3440,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range.
     rewrite /partial_ntt_spec => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_add_mulr_eq2iE //.
+    rewrite set2_add_mulr_eq2iE //.
     + by apply neq_bsrev01.
     + by apply/(bsrev_range 8).
     + by rewrite !addrA.
@@ -3535,7 +3535,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range mem_bsj_range neq.
     rewrite /partial_ntt_spec => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_add_mulr_neqiE //.
+    rewrite set2_add_mulr_neqiE //.
     + by rewrite -mulrA (exprS_range _ _ _ mem_kl_range) //=; apply neq_bsrev00.
     by rewrite -mulrA (exprS_range _ _ _ mem_kl_range) //=; apply neq_bsrev01.
   qed.
@@ -3556,7 +3556,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range mem_bsj_range neq.
     rewrite /partial_ntt_spec => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_add_mulr_neqiE //.
+    rewrite set2_add_mulr_neqiE //.
     + by rewrite mulrDl -mulrA (exprS_range _ _ _ mem_kl_range) //=; apply neq_bsrev10.
     by rewrite mulrDl -mulrA (exprS_range _ _ _ mem_kl_range) //=; apply neq_bsrev11.
   qed.
@@ -3576,7 +3576,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range mem_start_range mem_bsj_range or_neq.
     rewrite /partial_ntt_spec => eq_r.
-    rewrite Array256_extra.set2_add_mulr_neqiE //.
+    rewrite set2_add_mulr_neqiE //.
     + by apply neq_bsrev0 => //; case: or_neq => [?|[? _]]; [left|right].
     by apply neq_bsrev1 => //; case: or_neq => [?|[_ ?]]; [left|right].
   qed.
@@ -4029,7 +4029,7 @@ theory NTTequiv.
   proof.
     move => mem_kl_range mem_ks_range mem_kj_range mem_hbsjnge mem_start_range mem_lbsj_range.
     rewrite /partial_invntt_spec pow_if // => /= eq_r.
-    rewrite Array256_extra.set2_mul_addr_neqiE //.
+    rewrite set2_mul_addr_neqiE //.
     + by apply invntt_neq_bsrev0 => //=; case: eq_r => [-> //|[->]].
     by apply invntt_neq_bsrev1 => //=; case: eq_r => [-> //|[_ ->]].
   qed.
@@ -4177,7 +4177,7 @@ theory NTTequiv.
     rewrite addrA mulrDl => eq_r_1 eq_r_2.
     rewrite -mulrA (exprD_nneg_sub_range _ _ _ mem_kl_range) //=.
     rewrite -mulrA (exprS_sub_range _ _ _ mem_kl_range) //=.
-    rewrite Array256_extra.set2_mul_addr_eq1iE //.
+    rewrite set2_mul_addr_eq1iE //.
     + by apply/invntt_neq_bsrev.
     + by apply/(bsrev_range 8).
     rewrite eq_r_1 eq_r_2 /partial_invntt expr_gt0 //=.
@@ -4216,7 +4216,7 @@ theory NTTequiv.
     rewrite -mulrA (exprD_nneg_sub_range _ _ _ mem_kl_range) //=.
     rewrite (IntID.mulrDl (lbsj * 2) 1) /= !addrA.
     rewrite -mulrA (exprS_sub_range _ _ _ mem_kl_range) //=.
-    rewrite Array256_extra.set2_mul_addr_eq2iE //.
+    rewrite set2_mul_addr_eq2iE //.
     + by apply/invntt_neq_bsrev.
     + by apply/(bsrev_range 8).
     rewrite eq_r_1 eq_r_2 /partial_invntt expr_gt0 //=.
@@ -4285,7 +4285,7 @@ theory NTTequiv.
     move => mem_kl_range mem_ks_range mem_kj_range mem_hbsj_range mem_start_range mem_lbsj_range or_neq.
     rewrite /partial_invntt_spec => eq_r_1 eq_r_2 len'; rewrite /len' => {len'}.
     move: eq_r_1 eq_r_2; rewrite expr_gt0 //= (exprSr_sub_range _ _ _ mem_kl_range) //= => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_mul_addr_neqiE //.
+    rewrite set2_mul_addr_neqiE //.
     + by apply/invntt_neq_bsrev00.
     by apply/invntt_neq_bsrev01.
   qed.
@@ -4309,7 +4309,7 @@ theory NTTequiv.
     move => mem_kl_range mem_ks_range mem_kj_range mem_hbsj_range mem_start_range mem_lbsj_range or_neq.
     rewrite /partial_invntt_spec => eq_r_1 eq_r_2 len'; rewrite /len' => {len'}.
     move: eq_r_1 eq_r_2; rewrite expr_gt0 //= (exprSr_sub_range _ _ _ mem_kl_range) //= => eq_r_1 eq_r_2.
-    rewrite Array256_extra.set2_mul_addr_neqiE //.
+    rewrite set2_mul_addr_neqiE //.
     + by rewrite addrA; apply invntt_neq_bsrev10.
     by rewrite addrA; apply invntt_neq_bsrev11.
   qed.
