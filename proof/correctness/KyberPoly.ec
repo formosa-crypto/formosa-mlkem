@@ -1112,7 +1112,7 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
           signed_bound_cxq  rp{2} (j{1} + len{1}) 256 (9 - l)
        )
        );last first. 
-+ auto => /> &1 &2; rewrite /signed_bound_cxq !uleE !ultE =>  5? lenpow2  2? sval l0 l0l l0h l0v.
++ auto => /> &1 &2; rewrite /signed_bound_cxq !uleE !ultE /= =>  5? lenpow2  2? sval l0 l0l l0h l0v.
   rewrite !to_uintD_small; 1..2: smt().
   move => cbdloose cbdtight /= HH HHH => />;split.
 
@@ -1124,7 +1124,8 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
     exists (l0); do split; 1..4,6..: smt().
-     move=> k [kbl kbh]; have : to_uint start{1} + to_uint len{1} <= 256; by smt().
+     move=> k [kbl kb].
+     have : to_uint start{1} + to_uint len{1} < 256;  by smt().
 
   (* Termination *)
   move => jl jr rpr; rewrite !ultE to_uintD_small; 1: smt(). 
@@ -1157,9 +1158,9 @@ have  /= [#] redbl redbh redv :=
 do split; 2..3,5..6: smt(). 
 + apply Array256.ext_eq  => x xb.
   case (x = to_uint j{1}); last first.
-  + move => *; rewrite (set_neqiE); 1,2 : smt().
+  + move => *; rewrite set_neqiE; 1 : smt().
     case(x = to_uint j{1} + to_uint len{1}); last first.
-    + move => *; rewrite !(set_neqiE);1,2 : smt().
+    + move => *; rewrite set_neqiE;1 : smt().
       by rewrite !mapiE //= !(set_neqiE);  smt().
     move => ->; rewrite !(set_eqiE); 1,2: smt().
     rewrite !mapiE //=; 1..3: smt().
@@ -1168,7 +1169,7 @@ do split; 2..3,5..6: smt().
     rewrite to_sintB_small /= 1:/# incoeffB; congr;congr.
     by apply eq_incoeff; rewrite rval redv mulrC -incoeffM -mulrA mul_congr.
   move => ->; rewrite set_eqiE; 1,2: smt().
-  rewrite (set_neqiE); 1..2:  smt().
+  rewrite (set_neqiE); 1:  smt().
   rewrite !mapiE //=; 1..3: smt().
   rewrite (set_eqiE); 1..2:  smt().
   rewrite to_sintD_small /= 1:/# incoeffD ZqField.addrC; congr.
@@ -1453,9 +1454,9 @@ do split; 4..: smt().
 
 + apply Array256.ext_eq  => x xb.
   case (x = to_uint j{1} + to_uint len{1}); last first.
-  + move => *; rewrite (set_neqiE);1 ,2: smt().
+  + move => *; rewrite (set_neqiE);1: smt().
     case(x = to_uint j{1}); last first.
-    + move => *; rewrite !(set_neqiE);1,2 : smt().
+    + move => *; rewrite set_neqiE;1 : smt().
       by rewrite !mapiE //= !(set_neqiE);  smt().
     move => ->; rewrite !(set_eqiE); 1,2: smt().
     rewrite !mapiE //=; 1..3: smt().
@@ -1465,7 +1466,7 @@ do split; 4..: smt().
     by rewrite to_sintD_small /=; smt(qE).
   move => ->; rewrite set_eqiE; 1,2: smt().
   rewrite (set_eqiE); 1..2:  smt().
-  rewrite (set_neqiE); 1..2:  smt().
+  rewrite (set_neqiE); 1:  smt().
   rewrite !mapiE //=; 1..3: smt().
   rewrite (set_eqiE); 1..2:  smt().
   rewrite -incoeffB; apply eq_incoeff; rewrite rval0 redv !incoeffK. 

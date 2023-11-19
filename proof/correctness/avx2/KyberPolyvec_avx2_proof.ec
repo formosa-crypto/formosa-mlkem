@@ -57,11 +57,11 @@ proof.
   wp. skip.
   move => /= &hr; rewrite /lift_array768 /lift_array256 !tP => [#] _a_def _b_def sgnd_bnd_rp sgnd_bnd_bp.
   split.
-  + do split => /=; smt(@Array768 @Array256). 
+  + do split => /=; smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
     
   move => [#] ??? sgnd_bnd_bp_1 result_1 [#]  sgnd_bnd_res_1 res_1_def.
   split.
-  + rewrite !tP;do split; move => *; rewrite !initiE; smt(@Array256 @Array768).
+  + rewrite !tP;do split; move => *; rewrite !initiE; smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
   move => [#] ???sgnd_bnd_bp_2 result_2 [#] sgnd_bnd_res_2 res_2_def.
   split.
   + rewrite !tP;do split; move => *; rewrite !initiE /= // ?mapiE //=;
@@ -75,19 +75,19 @@ proof.
   move => k k_i.
   do rewrite initiE //=.
   move : (sgnd_bnd_res_1 k) (sgnd_bnd_res_2 (k - 256)) (sgnd_bnd_res_3 (k - 512)).
-  smt(@Array768 @Array256 @Int).
+  smt().
   move => k [#] k_lb k_ub.
   do rewrite initiE //=.
   case (0 <= k < 256) => k_si.
   move : (res_1_def k k_si).
   move : _a_def _b_def.
-  smt(@Array256 @Array768 @KyberPolyAVX @Int).
+  smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
   case (k < 512) => k_ssi.
   move : (res_2_def (k - 256)).
   rewrite (_: (0 <= k - 256 && k - 256 < 256) = true). move : k_si k_ub k_ssi => /#.
   simplify.
   move : _a_def _b_def.
-  smt(@Array256 @Array768 @KyberPolyAVX @Int).
+  smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
   move : (res_3_def (k - 512)).
   rewrite (_: (0 <= k - 512 && k - 512 < 256) = true). move : k_si k_ub k_ssi => /#.
   simplify.
@@ -96,7 +96,7 @@ proof.
   rewrite k_ub k_ssi //=.
   rewrite /lift_array256.
   do rewrite initiE 1:/#.
-  smt(@Array256 @Array768 @KyberPolyAVX @Int).
+  smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
 qed.
 
 lemma polyvec_add_ll : islossless Mprevec.polyvec_add2
@@ -135,9 +135,10 @@ proof.
   ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
    wp. skip.
    rewrite /lift_array768 /lift_array256 /pos_bound256_cxq !tP;move => &hr [ap_def pos_bound_r]; split.
-   split; trivial; smt(@Array256).
+   split; trivial; smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
    move => [r_eq_r_1 pos_bound_r_1 res1 [r_eq_res_1 pos_bound_res_1] res_1_def]; split.
-   split; trivial => k kb @/res_1_def; rewrite !initiE //=; smt(@Array768 @Array256 qE).
+   split; trivial => k kb @/res_1_def; rewrite !initiE //=.
+   smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE).  
    move => [r_eq_r_2 pos_bound_r_2 res2 [r_eq_res_2 pos_bound_res_2] res_2_def]; split.
    split; trivial => k kb @/res_2_def; rewrite !initiE //=; smt(Array768.initiE qE).
    move => [r_eq_r_3 pos_bound_r_3 res3 [r_eq_res_3 pos_bound_res_3] res_3_def]; split.
@@ -170,7 +171,7 @@ proof.
    rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_2.
    rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_1.
    move : (pos_bound_res_3 (k - 512))  (pos_bound_res_2 (k - 256))  (pos_bound_res_1 k).
-   smt(@Array256 @Array768).
+   smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE).    
 qed.
 
 lemma polyvec_csubq_ll: islossless Mprevec.polyvec_csubq.
@@ -195,7 +196,7 @@ lemma shl_shlw_w8 (k: int) (w: W8.t):
 proof.
   move=> *; rewrite /(`<<`) of_uintK (modz_small (k %% W8.modulus)).
    smt(modz_cmp).
-  by rewrite modz_small //; smt(@W8).
+  by rewrite modz_small //; smt().
 qed.
 
 lemma shr_shrw_w8 (k: int) (w: W8.t):
@@ -204,7 +205,7 @@ lemma shr_shrw_w8 (k: int) (w: W8.t):
 proof.
   move=> *; rewrite /(`>>`) of_uintK (modz_small (k %% W8.modulus)).
    smt(modz_cmp).
-  by rewrite pmod_small //; smt(@W8).
+  by rewrite pmod_small //; smt().
 qed.
 
 lemma sint_compress_rng a d :
@@ -578,7 +579,7 @@ proof.
     do split; first 2 by move : i_lb i_tub => /#.
     + rewrite /touches /= => j j_bnds.
       do rewrite get_storesE size_to_list.
-      do ((rewrite to_uint_small; first by move : i_tub i_lb; smt(@W64 @Int)) || (rewrite to_uintD_small; first by rewrite of_uintK; move : p_ub i_tub i_lb; smt(@W64 @Int))).
+      do ((rewrite to_uint_small; first by move : i_tub i_lb; smt()) || (rewrite to_uintD_small; first by rewrite of_uintK; move : p_ub i_tub i_lb; smt())).
       have -> /=: !(to_uint rp{1} + (20 * i{2} + 16) <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + (20 * i{2} + 16) + 4).
         rewrite mulzDr mulz1 in j_bnds.
         move : j_bnds => /#.
@@ -620,8 +621,8 @@ proof.
         rewrite size_to_list.
         have -> /=: (to_uint rp{1} + k < to_uint rp{1} + 20 * i{2} + 16). by move : k_tub => /#.
         rewrite (_: to_uint rp{1} + k - (to_uint rp{1} + 20 * i{2}) = k %% 20). move : k_tlb k_tub k_ub => /#.
-        move : (mem_all_eq k); rewrite k_lb k_ub ltzNge k_tlb /= k_tub /=.
-        smt(@Array16 @List @Int).
+        move : (mem_all_eq k); rewrite k_lb k_ub ltzNge k_tlb /= k_tub /= => <-.
+        rewrite -get_to_list (nth_change_dfl W8.zero witness);smt(Array16.size_to_list).
 
         move : k_tub => -/lezNgt k_ttlb.
         rewrite /loadW8 get_storesE.
@@ -633,12 +634,13 @@ proof.
         rewrite lez_add2l -(addzA (to_uint rp{1}) _ 4) ltz_add2l /=.
         rewrite k_ttlb k_ub /=.
         rewrite (_: to_uint rp{1} + k - (to_uint rp{1} + (20 * i{2} + 16)) = k %% 4). move : k_ttlb k_ub => /#.
-        move : (mem_all_eq k). rewrite k_lb k_ub ltzNge k_tlb ltzNge k_ttlb /=.
-        smt(@Array16 @Array4 @List @Int).
+        move : (mem_all_eq k). rewrite k_lb k_ub ltzNge k_tlb ltzNge k_ttlb /= => <-.
+        rewrite (nth_change_dfl witness W8.zero); 1 :smt(Array4.size_to_list).
+        rewrite -Array4.get_of_list 1:/# Array4.to_listK initiE /#.
 
   skip; auto => />.
   move => &1 &2 _p_lb _p_ub pos_bound_a />.
-    split; first by smt(@Logic).
+    split; first by smt().
   move => memL c i i_tlb i_lb i_ub />.
     have -> /=: i = 48. move : i_tlb i_ub => /#.
     rewrite /loadW8.
@@ -823,7 +825,7 @@ proof.
 
   skip; auto => />.
   move => &1 &2 pos_bound_a />.
-    split; first by smt(@Logic).
+    split; first by smt().
   move => rpL c i i_tlb i_lb i_ub />.
     have -> /=: i = 48. move : i_tlb i_ub => /#.
     apply Array960.ext_eq.
@@ -1121,8 +1123,15 @@ proof.
       rewrite tP => j jb.
       rewrite liftarrayvector 1:ib 1:jb.
       rewrite /decompress_polyvec mapiE 1:/# /=.
-      rewrite KMatrix.Vector.offunvE 1:ib /= mapiE 1:jb /subarray256 initiE 1:/# /=.
-      by rewrite (r_def (256 * i + j)); first by move : ib jb => /#.
+      rewrite !setvE KMatrix.Vector.offunvE 1:ib /= !offunvK /vclamp /=.
+      have -> /= : 0 <= i && i < kvec by smt().
+      case (2 = i); 1: by move => -> /=;  rewrite mapiE 1:jb /subarray256 initiE 1:/# /=;
+                      rewrite (r_def (256 * i + j)); first by move : ib jb => /#.
+      case (1 = i); 1: by move => -> /=;  rewrite mapiE 1:jb /subarray256 initiE 1:/# /=;
+                      rewrite (r_def (256 * i + j)); first by move : ib jb => /#.
+      move => *; rewrite ifT 1:/# /=. 
+      rewrite mapiE 1:jb /subarray256 initiE 1:/# /=.
+      rewrite (r_def (256 * i + j)) /#. 
     + apply r_bnds.
 qed.
 
