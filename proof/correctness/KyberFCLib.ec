@@ -747,3 +747,49 @@ rewrite -{-1}(W2u8.unpack8K w) unpack8E; congr.
 by apply W2u8.Pack.all_eq_eq; rewrite /all_eq.
 qed.
 
+
+(** Aux *)
+op valid_disj_reg(p1 : address, l1 : int, p2 : address, l2 : int) =
+      valid_ptr p1 l1 /\ valid_ptr p2 l2 /\ ((p1 + l1) <= p2  || (p2 + l2) <= p1).
+
+lemma mergebytes b1 b2 :
+  to_uint (zeroextu16 b1 `|` (zeroextu16 b2 `&` (of_int 15)%W16 `<<` (of_int 8)%W8)) =
+  to_uint b1 + 256 * (to_uint b2 %% 16).
+proof.
+rewrite (_:15 = 2^4-1) // !W16.and_mod //= /(`<<`) /=.
+rewrite orw_disjoint. 
++ rewrite /W16.(`&`); apply W16.ext_eq => k kb.
+  rewrite !map2iE // zerowE.
+  rewrite to_uint_zeroextu16.
+  case (!(8 <= k < 16)); first by smt(W16.get_out).
+  move => /= ?; rewrite !get_to_uint kb /= (_: 0 <= k - 8 && k - 8 < 16) 1:/# /=.  
+  rewrite !of_uintK /= (modz_small _ 65536) /=; 1:smt(W8.to_uint_cmp pow2_8).
+  rewrite (modz_small _ 65536) 1:/# /=.
+  move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 8 k _) => //= ;1:smt().
+  move => *;rewrite divz_small; 1: by smt(pow2_8 W8.to_uint_cmp). 
+  by smt(mod0z).
+rewrite !to_uint_zeroextu16 /= to_uintD_small /= to_uint_zeroextu16 to_uint_shl //=.
++ rewrite of_uintK /= (modz_small (to_uint b2 %% 16) 65536); 1: smt().
+  by rewrite (modz_small _ 65536);  smt(W8.to_uint_cmp pow2_8).
+rewrite of_uintK /= (modz_small (to_uint b2 %% 16) 65536); 1: smt().
+by rewrite (modz_small _ 65536);  smt(W8.to_uint_cmp pow2_8).
+qed.
+
+lemma mergebytes2 b1 b2 :
+to_uint ((zeroextu16 b1 `>>` (of_int 4)%W8) `|` (zeroextu16 b2 `<<` (of_int 4)%W8)) =
+to_uint b1 %/ 16 + 16 * to_uint b2.
+proof.
+rewrite /(`<<`) /(`>>`) /=.
+rewrite orw_disjoint. 
++ rewrite /W16.(`&`); apply W16.ext_eq => k kb.
+  by rewrite !map2iE // zerowE /(`>>>`) /(`<<<`) !initiE //= !zeroextu16_bit /#.
+by rewrite to_uintD_small /= to_uint_shl //= to_uint_shr //= 
+    !to_uint_zeroextu16 /=;smt(W8.to_uint_cmp pow2_8).
+qed.
+
+lemma extract_msb  (x : W64.t): (x `>>` W8.of_int 63 = W64.zero) =  !x.[63].
+proof.
+rewrite /(`>>`) /= wordP /=.  
+have -> : (forall (i0 : int), 0 <= i0 && i0 < 64 => ((0 <= i0 && i0 < 64) && x.[i0 + 63]) = false) = ((x.[0 + 63] = false)  /\ (forall (i0 : int), 1 <= i0 && i0 < 64 => x.[i0 + 63] = false)); 1: by smt().
+by have ? : (forall (i0 : int), 1 <= i0 && i0 < 64 => (x.[i0 + 63] = false)); smt(W64.get_out).
+qed.

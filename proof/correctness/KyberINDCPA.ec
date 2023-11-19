@@ -1,36 +1,34 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require import Fq Kyber KyberPoly KyberPolyVec W16extra NTT_Fq.
+require import GFq Rq Serialization Symmetric VecMat Sampling InnerPKE KyberPoly KyberPolyVec W16extra NTT_Fq.
 require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
 require import Array960 Array1152 Array2304 Array1088 WArray32 WArray64.
 
 require import Jkem.
 
-import KyberSpec.
+require import Correctness KyberFCLib.
+import PolyVec PolyMat.
 import KyberPoly KyberPolyVec.
+
 import KMatrix.
 import Vector.
-import Fq.
 import Zq.
-
-(** Aux *)
-op valid_disj_reg(p1 : address, l1 : int, p2 : address, l2 : int) =
-      valid_ptr p1 l1 /\ valid_ptr p2 l2 /\ ((p1 + l1) <= p2  || (p2 + l2) <= p1).
-
-
 
 (***THESE ASSUMPTIONS MAP SHA OPERATORS FROM SPEC TO CODE IN
     THE IMPLEMENTATION ****)
 
+print Symmetric.
 axiom sha3_512_32_64 buf seed : 
    phoare [Jkem.M(Jkem.Syscall)._sha3512_32 : 
                arg = (buf,seed) ==>
-               res = SHA3_512_32_64 seed () ] = 1%r.
+               Array32.init(fun i => res.[i]) = (SHA3_512_32_64 seed).`1 /\
+               Array32.init(fun i => res.[32 + i]) = (SHA3_512_32_64 seed).`2  ] = 1%r.
 
-axiom shake_absorb seed state : 
+axiom shake_absorb (seed : W8.t Array34.t) state : 
    phoare [Jkem.M(Jkem.Syscall)._shake128_absorb34 : 
                arg = (state,seed) ==>
-               res = SHAKE128_ABSORB_34 seed ] = 1%r.
+               res = SHAKE128_ABSORB_34 
+                         (Array32.init (fun k => seed.[k])) (seed.[32]) (seed.[33]) ] = 1%r.
 
 axiom shake_squeeze buf state : 
    phoare [Jkem.M(Jkem.Syscall)._shake128_squeezeblock : 
@@ -42,28 +40,21 @@ axiom shake256_33_128 buf seed :
                arg = (buf,seed) ==>
                res = SHAKE256_33_128 (Array32.init (fun i => seed.[i])) seed.[32] ] = 1%r.
 
-(* THIS IS A DUMMY RANDOM ORACLE THAT THE IMPLEMENTATION OF COURSE DOESNT USE *)
-
-module H : KyberPKE.POracle = {
-  proc get(x : KyberPKE.RO.in_t) : KyberPKE.RO.out_t = { return witness;  }
-}.
-
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
     MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
-
 module AuxKyber= {
 
 proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
-  var a: matrix;
+  var a: polymat;
   var i, j,c;
   a <- witness;                       
   i <- 0;                       
   while (i < kvec) {                  
     j <- 0;                          
     while (j < kvec) {                
-      XOF(H).init(seed, if trans then W8.of_int i else W8.of_int j, 
-                        if trans then W8.of_int j else W8.of_int i);        
-      c <@ Parse(XOF, H).sample();
+      XOF.init(seed, if trans then i else j, 
+                        if trans then j else i);        
+      c <@ Parse(XOF).sample();
       a <- (a.[i, j <- c])%Kyber;         
       j <- j + 1;                      
     }                                 
@@ -115,26 +106,28 @@ proc sample_noise2_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t A
 }
 
 proc sample_noise2_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * int= {
-  var noise1, noise2, _N,i,c;
+  var noise1, noise2, _N,i,c, bytes;
   noise1 <- witness;                     
   noise2 <- witness;                      
   _N <- 0;                      
   i <- 0;                             
-  while (i < kvec) {                 
-    c <@ CBD2(KPRF).sample(noiseseed,_N);
-    noise1 <- set noise1 i c;                   
+  while (i < kvec) {  
+    bytes <- PRF noiseseed (W8.of_int _N);         
+    c <@ CBD2.sample(bytes);
+    noise1 <- (noise1.[i<-c])%PolyVec;                   
     _N <- _N + 1;                     
     i <- i + 1;                       
   }                                  
   i <- 0;                             
   while (i < kvec) {                 
-    c <@ CBD2(KPRF).sample(noiseseed,_N);
-    noise2 <- set noise2 i c;                   
+    bytes <- PRF noiseseed (W8.of_int _N);         
+    c <@ CBD2.sample(bytes);
+    noise2 <- (noise2.[i<-c])%PolyVec;                   
     _N <- _N + 1;                     
     i <- i + 1;                       
   }                                  
 
-  return (unlift_vector noise1,unlift_vector noise2,_N);
+  return (unlift_polyvec noise1,unlift_polyvec noise2,_N);
 }
 
 proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
@@ -147,9 +140,10 @@ proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t A
 }
 
 proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
-  var e, s, _N,e2;
+  var e, s, _N,e2, bytes;
   (s,e,_N) <@ sample_noise2_spec(noiseseed);
-  e2 <@ CBD2(KPRF).sample(noiseseed,_N);
+  bytes <- PRF noiseseed (W8.of_int _N);         
+  e2 <@ CBD2.sample(bytes);
   return (s,e, unlift_poly e2);
 }
 
@@ -168,12 +162,12 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var skpv:W16.t Array768.t;
     var e:W16.t Array768.t;
     var pkpv:W16.t Array768.t;
-    var buf : W8.t Array64.t;
+    var buf : W8.t Array32.t * W8.t Array32.t;
     var _aux : int;
     var t64 : W64.t;
 
 
-    buf <@  HSF.PseudoRF.f(seed,());
+    buf <- G_coins seed;
 
     publicseed <- witness;
     noiseseed <- witness;
@@ -181,11 +175,11 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     _aux <- (32 %/ 8);
     i <- 0;
     while (i < _aux) {
-      t64 <- (get64 (WArray64.init8 (fun i => buf.[i])) i);
+      t64 <- (get64 (WArray64.init8 (fun i => buf.`1.[i])) i);
       publicseed <-
       Array32.init
       (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i => publicseed.[i])) i (t64)));
-      t64 <- (get64 (WArray64.init8 (fun i => buf.[i])) (i + (32 %/ 8)));
+      t64 <- (get64 (WArray64.init8 (fun i => buf.`2.[i])) (i));
       noiseseed <-
       Array32.init
       (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i => noiseseed.[i])) i (t64)));
@@ -457,53 +451,13 @@ while (={i,state} /\ 0<=i{1}<=128 /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.
   by move => *;rewrite tP => k kb; smt().
 qed. 
 *)
-lemma mergebytes b1 b2 :
-  to_uint (zeroextu16 b1 `|` (zeroextu16 b2 `&` (of_int 15)%W16 `<<` (of_int 8)%W8)) =
-  to_uint b1 + 256 * (to_uint b2 %% 16).
-proof.
-rewrite (_:15 = 2^4-1) // !W16.and_mod //= /(`<<`) /=.
-rewrite orw_disjoint. 
-+ rewrite /W16.(`&`); apply W16.ext_eq => k kb.
-  rewrite !map2iE // zerowE.
-  rewrite to_uint_zeroextu16.
-  case (!(8 <= k < 16)); first by smt(W16.get_out).
-  move => /= ?; rewrite !get_to_uint kb /= (_: 0 <= k - 8 && k - 8 < 16) 1:/# /=.  
-  rewrite !of_uintK /= (modz_small _ 65536) /=; 1:smt(W8.to_uint_cmp pow2_8).
-  rewrite (modz_small _ 65536) 1:/# /=.
-  move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 8 k _) => //= ;1:smt().
-  move => *;rewrite divz_small; 1: by smt(pow2_8 W8.to_uint_cmp). 
-  by smt(mod0z).
-rewrite !to_uint_zeroextu16 /= to_uintD_small /= to_uint_zeroextu16 to_uint_shl //=.
-+ rewrite of_uintK /= (modz_small (to_uint b2 %% 16) 65536); 1: smt().
-  by rewrite (modz_small _ 65536);  smt(W8.to_uint_cmp pow2_8).
-rewrite of_uintK /= (modz_small (to_uint b2 %% 16) 65536); 1: smt().
-by rewrite (modz_small _ 65536);  smt(W8.to_uint_cmp pow2_8).
-qed.
 
-lemma mergebytes2 b1 b2 :
-to_uint ((zeroextu16 b1 `>>` (of_int 4)%W8) `|` (zeroextu16 b2 `<<` (of_int 4)%W8)) =
-to_uint b1 %/ 16 + 16 * to_uint b2.
-proof.
-rewrite /(`<<`) /(`>>`) /=.
-rewrite orw_disjoint. 
-+ rewrite /W16.(`&`); apply W16.ext_eq => k kb.
-  by rewrite !map2iE // zerowE /(`>>>`) /(`<<<`) !initiE //= !zeroextu16_bit /#.
-by rewrite to_uintD_small /= to_uint_shl //= to_uint_shr //= 
-    !to_uint_zeroextu16 /=;smt(W8.to_uint_cmp pow2_8).
-qed.
-
-lemma extract_msb  (x : W64.t): (x `>>` W8.of_int 63 = W64.zero) =  !x.[63].
-proof.
-rewrite /(`>>`) /= wordP /=.  
-have -> : (forall (i0 : int), 0 <= i0 && i0 < 64 => ((0 <= i0 && i0 < 64) && x.[i0 + 63]) = false) = ((x.[0 + 63] = false)  /\ (forall (i0 : int), 1 <= i0 && i0 < 64 => x.[i0 + 63] = false)); 1: by smt().
-by have ? : (forall (i0 : int), 1 <= i0 && i0 < 64 => (x.[i0 + 63] = false)); smt(W64.get_out).
-qed.
 
 equiv auxgenmatrix_good :
  Jkem.M(Jkem.Syscall).__gen_matrix ~ AuxKyber.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
 proc => /=. 
-inline Parse(XOF, H).sample.
+inline Parse(XOF).sample.
 inline Jkem.M(Jkem.Syscall).__rej_uniform.
 
 seq 6 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
@@ -519,18 +473,18 @@ seq 2 0 : (#pre /\ forall k, 0<=k<32 => extseed {1}.[k] = seed{2}.[k]).
 
 while(#pre /\ ={i} /\ 0<=i{1}<=3 /\ 
    forall k, 0 <= k < i{1}*768 => 
-         a{2}.[k %/ 768,k %% 768 %/ 256].[k %% 256] = inFq (to_sint r{1}.[k]) /\
+         (a{2}.[k %/ 768,k %% 768 %/ 256])%Matrix.[k %% 256] = incoeff (to_sint r{1}.[k]) /\
          bpos16 r{1}.[k] q); last first.
 + auto => /> &1 &2 ?; rewrite /kvec;split; 1: smt().
   move => extseed r1 a2 i ?????;rewrite  /unlift_matrix tP => H k kb.
   rewrite initiE //=;move : (H k _); 1:smt(); move => [#] ->??.
-  by rewrite inFqK modz_small 1:/# to_sint_unsigned 1: /# to_uintK. 
+  by rewrite incoeffK modz_small 1:/# to_sint_unsigned 1: /# to_uintK. 
 
 wp;while(stransposed{1} = (if trans{2} then W64.one else W64.zero) /\
          (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
          ={i,j} /\ 0<=i{2}<=3 /\ 0<=j{2}<=3  /\ i{1} < 3 /\
    forall k, 0 <= k < i{2}*768 + j{2}*256 => 
-         a{2}.[k %/ 768,k %% 768 %/ 256].[k %% 256] = inFq (to_sint r{1}.[k]) /\
+         (a{2}.[k %/ 768,k %% 768 %/ 256])%Matrix.[k %% 256] = incoeff (to_sint r{1}.[k]) /\
          bpos16 r{1}.[k] q); last by auto => /> /#.
 
 seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
@@ -542,7 +496,7 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
     0 <= to_uint k{1} <= 256 /\ to_uint l{1} = i{2} * 768 + j{2} * 256 + to_uint k{1} /\
     0 <= j{2} < 3 /\ 0 <= i{2} < 3 /\
     (forall (k0 : int), 0 <= k0  < i{2} * 768 + j{2} * 256 =>
-        a{2}.[k0 %/ 768, k0 %% 768 %/ 256].[k0 %% 256] = inFq (to_sint r{1}.[k0]) /\
+        (a{2}.[k0 %/ 768, k0 %% 768 %/ 256])%Matrix.[k0 %% 256] = incoeff (to_sint r{1}.[k0]) /\
         0 <= to_sint r{1}.[k0] < q) /\
     (forall (k0 : int),
         i{2} * 768 + j{2} * 256  <= k0  < i{2} * 768 + j{2} * 256 + to_uint k{1} =>
@@ -555,7 +509,7 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
     + by rewrite of_uintK /= modz_small /#.
     move => kl ll rl; rewrite ultE /=; split; 1:  smt(). 
     move => *;do split; 1,2: smt(). 
-    move => k0 k0bl k0bh;rewrite /("_.[_<-_]")%Kyber /= offunmE /= 1:/#. 
+    move => k0 k0bl k0bh;rewrite setmE /= offunmE /= 1:/#. 
     case (k0 < i{2} * 768 + j{2} * 256); 1: smt().
     move => *.
     have -> :  k0 %/ 768 = i{2} by smt().
@@ -580,40 +534,33 @@ seq 3 1 : (
    (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
    (forall (k0 : int),
      0 <= k0 && k0 < i{2} * 768 + j{2} * 256 =>
-     a{2}.[k0 %/ 768, k0 %% 768 %/ 256].[k0 %% 256] = 
-        inFq (to_sint r{1}.[k0]) /\ bpos16 r{1}.[k0] q) /\
+     (a{2}.[k0 %/ 768, k0 %% 768 %/ 256])%Matrix.[k0 %% 256] = 
+        incoeff (to_sint r{1}.[k0]) /\ bpos16 r{1}.[k0] q) /\
    state{1} = XOF.state{2}).
-+ inline XOF(H).init.
++ inline XOF.init.
   ecall {1} (shake_absorb extseed{1} state{1}).
   auto => /> &1 &2 *; split. 
   case(trans{2}).
   + by rewrite oner_neq0 //= /=.
   move => * /=; split => /=. 
-  + move => k kbl kbh.
-    case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
-    case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
-    by move => *;rewrite set_eqiE /# .
-  congr; rewrite tP => k kb. rewrite initiE //=.
-  case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
-  case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
-  by move => *;rewrite set_eqiE /# .
+  by move => *;rewrite !set_neqiE /#.
+  congr; rewrite tP => k kb; rewrite initiE //=.
+  by rewrite !set_neqiE /#. 
 
-move => * /=; split. 
- + move => k kbl kbh.
-  case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
-  case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
-  by move => *;rewrite set_eqiE /# .
-congr; rewrite tP => k kb. rewrite initiE //=.
-case (0<=k<32); 1: by move => *;rewrite !set_neqiE /#.
-case (k=32); 1: by move => *;rewrite set_neqiE 1,2:/# set_eqiE /#.
-by move => *;rewrite set_eqiE /# .
+  case(trans{2}).
+  move => * /=; split => /=. 
+  by move => *;rewrite !set_neqiE /#.
+  congr; rewrite tP => k kb; rewrite initiE //=.
+  by rewrite !set_neqiE /#. 
+
+  by smt().
 
 (* sampling loop *)
 
 while(to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256 /\ state{1} = XOF.state{2} /\
   (forall (k0 : int), 0 <= k0 => k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
   (forall (k0 : int),
-    0 <= k0 => k0 < j0{2} => inFq (to_sint poly{1}.[k0]) = aa{2}.[k0]) /\ 
+    0 <= k0 => k0 < j0{2} => incoeff (to_sint poly{1}.[k0]) = aa{2}.[k0]) /\ 
   (forall (k0 : int),
     0 <= k0 => k0 < j0{2} => 0 <= to_sint poly{1}.[k0] /\ to_sint poly{1}.[k0] < q)); last first.
 + auto => /> &1 &2??????; do split; 1..3: by smt().
@@ -621,7 +568,7 @@ while(to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256 /\ state{1} = XOF.state{2} /\
   by rewrite /lift_array256 tP => k kb; rewrite mapiE //= /#.
 
 swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
-+ inline XOF(H).next_bytes; conseq />.
++ inline XOF.next_bytes; conseq />.
   ecall {1} (shake_squeeze  buf{1} state{1}).
   by auto => />. 
 
@@ -630,7 +577,7 @@ while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{
     to_uint pos{1} = k{2} /\ k{2} %% 3 = 0 /\
    (forall (k0 : int), 
            0 <=  k0 < j0{2} => 
-              inFq (to_sint rp{1}.[k0]) = aa{2}.[k0]) /\
+              incoeff (to_sint rp{1}.[k0]) = aa{2}.[k0]) /\
    (forall (k0 : int), 
         0 <= k0 < j0{2} => 
             0 <= to_sint rp{1}.[k0] /\ to_sint rp{1}.[k0] < q));
@@ -659,13 +606,9 @@ seq 2 2 : (to_uint ctr0{1} = j0{2} /\
       + rewrite to_uintD_small /= /#.
       + rewrite to_uintD_small /= /#.
       + move => k0 ??; rewrite to_uintD_small /= 1:/#.
-        case (k0 < to_uint ctrl); 1: by move => *; rewrite !set_neqiE /#.
-        move => *; case (k0 = to_uint ctrl). 
-        + move => *; do 2! (rewrite set_neqiE 1,2:/# set_eqiE 1,2:/#).
+        case (k0 < to_uint ctrl); 1: by move => *; rewrite !set_neqiE /#.        move => *;rewrite !get_setE 1..4:/#.
           by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
-        move => *;have -> : (k0 = to_uint ctrl + 1) by smt(). 
-        rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
-        by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+
       move => k0 ??; rewrite to_uintD_small /= 1:/#.
       case (k0 < to_uint ctrl); 1: by move => *; rewrite !set_neqiE /#.
       move => *; case (k0 = to_uint ctrl). 
@@ -883,7 +826,7 @@ seq 8 2 : (buf{1} = bytes{2}).
 
 while(#pre /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ 0 <= i{2} <= 128 /\ j{2} = 2*i{2} /\
        (forall k, 0<=k<2*i{2} =>
-          inFq (to_sint rp{1}.[k]) = rr{2}.[k]) /\
+          incoeff (to_sint rp{1}.[k]) = rr{2}.[k]) /\
        (forall k, 0<=k<j{2} =>
           -5 < to_sint rp{1}.[k] < 5)); last first.
    auto => /> &1 &2 *; split; 1: smt().
@@ -993,7 +936,7 @@ move => *; have -> /= : 2 = r by smt().
 by rewrite !mapiE //= !initiE //= !initiE //= /#. 
 
 by auto => /> &1 H H0; rewrite /lift_vector /unlift_vector !tP /subarray256 /lift_array256;split;
-  move => i ib; rewrite initiE //= offunvE 1:/# /= mapiE 1:/# /= initiE 1:/# /=;smt(inFq_to_sint qE).
+  move => i ib; rewrite initiE //= offunvE 1:/# /= mapiE 1:/# /= initiE 1:/# /=;smt(incoeff_to_sint qE).
 qed.
 
 equiv sample_noise_good3 :
@@ -1006,7 +949,7 @@ auto => /> resl resr ???; split; 1: smt().
 move => ? resl0.
 rewrite /unlift_poly /lift_array256 tP /= => bd k kbnd.
 rewrite !initiE //= !mapiE //=. 
-by smt(inFq_to_sint).
+by smt(incoeff_to_sint).
 qed.
   
 
@@ -1364,7 +1307,7 @@ seq 1 1 : (#{/~signed_bound768_cxq e{1} 0 768 1}pre /\
 seq 3 0 : (#pre /\
     forall k, 0 <= k < 256 =>
          b16 pkpv{1}.[k]  (2*q)  /\ 
-    inFq (to_sint pkpv{1}.[k]) = (ntt_mmul a{2} s{2}).[0].[k]).
+    incoeff (to_sint pkpv{1}.[k]) = (ntt_mmul a{2} s{2}).[0].[k]).
 
 wp; ecall{1} (innerprod_corr 
      (invnttv (lift_vector (Array768.init (fun (i_0 : int) => a{1}.[0 + i_0]))))
@@ -1387,7 +1330,7 @@ wp; ecall{1} (innerprod_corr
 seq 2 0 : (#pre /\
         (forall k, 256 <= k < 512 =>
          b16 pkpv{1}.[k]  (2*q)  /\ 
-    inFq (to_sint pkpv{1}.[k]) = (ntt_mmul a{2} s{2}).[1].[k-256])
+    incoeff (to_sint pkpv{1}.[k]) = (ntt_mmul a{2} s{2}).[1].[k-256])
 ).
 
 wp; ecall{1} (innerprod_corr 
@@ -1418,7 +1361,7 @@ wp; ecall{1} (innerprod_corr
 seq 2 0 : (#pre /\
         (forall k, 512 <= k < 768 =>
          b16 pkpv{1}.[k]  (2*q)  /\ 
-    inFq (to_sint pkpv{1}.[k]) = (ntt_mmul a{2} s{2}).[2].[k-512])
+    incoeff (to_sint pkpv{1}.[k]) = (ntt_mmul a{2} s{2}).[2].[k-512])
 ).
 
 wp; ecall{1} (innerprod_corr 
@@ -1650,7 +1593,7 @@ seq 1 1 : (#{/~signed_bound768_cxq sp_0{1} 0 768 1}
 
 seq 3 0 : (#pre /\
      (forall k, 0 <= k < 256 =>
-         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[0]) (inFq 169)).[k]) /\
+         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[0]) (incoeff 169)).[k]) /\
           signed_bound768_cxq bp{1} 0 256 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[0,i]))) (invnttv rhat{2})).
@@ -1670,7 +1613,7 @@ do split; 2,4: smt(nttvK).
 
 seq 2 0 : (#pre /\
      (forall k, 256 <= k < 512 =>
-         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[1]) (inFq 169)).[k-256]) /\
+         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[1]) (incoeff 169)).[k-256]) /\
           signed_bound768_cxq bp{1} 0 512 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[1,i]))) (invnttv rhat{2})).
@@ -1694,7 +1637,7 @@ do split; 2,4: smt(nttvK).
 
 seq 2 0 : (#pre /\
      (forall k, 512 <= k <768 =>
-         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[2]) (inFq 169)).[k-512]) /\
+         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[2]) (incoeff 169)).[k-512]) /\
           signed_bound768_cxq bp{1} 0 768 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[2,i]))) (invnttv rhat{2})).
@@ -1721,7 +1664,7 @@ do split; 2,4: smt(nttvK).
 
 seq 2 0 : (#pre /\
      (forall k, 0 <= k < 256 =>
-         (lift_array256 v{1}).[k] = ((scale (ntt (dotp (invnttv that{2}) (invnttv rhat{2}))) (inFq 169))).[k]) /\
+         (lift_array256 v{1}).[k] = ((scale (ntt (dotp (invnttv that{2}) (invnttv rhat{2}))) (incoeff 169))).[k]) /\
           signed_bound_cxq v{1} 0 256 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv that{2}) (invnttv rhat{2})).
@@ -1746,15 +1689,15 @@ seq 1 0 : (#{/~bp{1}}pre /\
   case (i = 0).
   + move => i0; move : (r1 k kb); rewrite /lift_array768 mapiE// 1:/# /= i0 /= => ->.
     rewrite /scale mapiE 1:/# /=.
-    by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+    by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   case (i = 1).
   + move => i1 noi0; move : (r2 (256 + k) _); 1:smt(); rewrite /lift_array768 mapiE// 1:/# /= i1 /= => ->.
     rewrite /scale mapiE 1:/# /=.
-    by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+    by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   case (i = 2); last by smt().
   move => i2 noi1 noi0; move : (r3 (512 + k) _); 1:smt(); rewrite /lift_array768 mapiE// 1:/# /= i2 /= => ->.
   rewrite /scale mapiE 1:/# /=.
-  by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+  by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
 
 seq 1 0 : (#{/~v{1}}pre /\ 
          lift_array256 v{1} = invntt (ntt_dotp that{2} rhat{2}) /\
@@ -1764,7 +1707,7 @@ seq 1 0 : (#{/~v{1}}pre /\
   move=> ?result <- rb; split; last by smt(). 
   rewrite -invntt_scale; congr.
   rewrite /scale tP => k kb; rewrite mapiE //= rold // /scale mapiE //=.
-  rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+  rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   rewrite /ntt_dotp /dotp /kvec /=.
   rewrite !Big.BAdd.big_consT /= !Big.BAdd.big_nil => />. 
   rewrite !add_comm_ntt !mul_comm_ntt. 
@@ -1947,7 +1890,7 @@ seq 1 1 : (#{/~signed_bound768_cxq sp_0{1} 0 768 1}
 
 seq 3 0 : (#pre /\
      (forall k, 0 <= k < 256 =>
-         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[0]) (inFq 169)).[k]) /\
+         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[0]) (incoeff 169)).[k]) /\
           signed_bound768_cxq bp{1} 0 256 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[0,i]))) (invnttv rhat{2})).
@@ -1967,7 +1910,7 @@ do split; 2,4: smt(nttvK).
 
 seq 2 0 : (#pre /\
      (forall k, 256 <= k < 512 =>
-         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[1]) (inFq 169)).[k-256]) /\
+         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[1]) (incoeff 169)).[k-256]) /\
           signed_bound768_cxq bp{1} 0 512 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[1,i]))) (invnttv rhat{2})).
@@ -1991,7 +1934,7 @@ do split; 2,4: smt(nttvK).
 
 seq 2 0 : (#pre /\
      (forall k, 512 <= k <768 =>
-         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[2]) (inFq 169)).[k-512]) /\
+         (lift_array768 bp{1}).[k] = ((scale (ntt_mmul aT{2} rhat{2}).[2]) (incoeff 169)).[k-512]) /\
           signed_bound768_cxq bp{1} 0 768 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => aT{2}.[2,i]))) (invnttv rhat{2})).
@@ -2018,7 +1961,7 @@ do split; 2,4: smt(nttvK).
 
 seq 2 0 : (#pre /\
      (forall k, 0 <= k < 256 =>
-         (lift_array256 v{1}).[k] = ((scale (ntt (dotp (invnttv that{2}) (invnttv rhat{2}))) (inFq 169))).[k]) /\
+         (lift_array256 v{1}).[k] = ((scale (ntt (dotp (invnttv that{2}) (invnttv rhat{2}))) (incoeff 169))).[k]) /\
           signed_bound_cxq v{1} 0 256 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv that{2}) (invnttv rhat{2})).
@@ -2043,15 +1986,15 @@ seq 1 0 : (#{/~bp{1}}pre /\
   case (i = 0).
   + move => i0; move : (r1 k kb); rewrite /lift_array768 mapiE// 1:/# /= i0 /= => ->.
     rewrite /scale mapiE 1:/# /=.
-    by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+    by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   case (i = 1).
   + move => i1 noi0; move : (r2 (256 + k) _); 1:smt(); rewrite /lift_array768 mapiE// 1:/# /= i1 /= => ->.
     rewrite /scale mapiE 1:/# /=.
-    by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+    by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   case (i = 2); last by smt().
   move => i2 noi1 noi0; move : (r3 (512 + k) _); 1:smt(); rewrite /lift_array768 mapiE// 1:/# /= i2 /= => ->.
   rewrite /scale mapiE 1:/# /=.
-  by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+  by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
 
 seq 1 0 : (#{/~v{1}}pre /\ 
          lift_array256 v{1} = invntt (ntt_dotp that{2} rhat{2}) /\
@@ -2061,7 +2004,7 @@ seq 1 0 : (#{/~v{1}}pre /\
   move => ?result <- rb; split; last by smt(). 
   rewrite -invntt_scale; congr.
   rewrite /scale tP => k kb; rewrite mapiE //= rold // /scale mapiE //=.
-  rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+  rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   rewrite /ntt_dotp /dotp /kvec /=.
   rewrite !Big.BAdd.big_consT /= !Big.BAdd.big_nil => />. 
   rewrite !add_comm_ntt !mul_comm_ntt. 
@@ -2155,7 +2098,7 @@ seq 1 0 : (#{/~u{2} = lift_vector bp{1}}pre /\
 
 swap {1} 1 3.
 seq 2 0: (#pre /\ 
-          lift_array256 t{1} = scale (ntt_dotp s{2} (nttv u{2})) (inFq 169) /\ 
+          lift_array256 t{1} = scale (ntt_dotp s{2} (nttv u{2})) (incoeff 169) /\ 
           signed_bound_cxq t{1} 0 256 2).
 ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv s{2}) (u{2})).
 + auto => /> &1 &2 ????????.
@@ -2175,7 +2118,7 @@ ecall {1} (invntt_correct (lift_array256 t{1})).
   move => ?result <-?;   split; last by smt().
   rewrite -invntt_scale; congr; rewrite /scale tP => k kp.
   rewrite !mapiE //=.
-  by rewrite -ZqField.mulrA (ZqField.mulrC (inFq 169)) rrinvFq ZqField.mulrC ZqField.mul1r.  
+  by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
 
 seq 2 0 : (#pre /\
            lift_array256 mp{1} =  v{2} &+ (&-) (invntt (ntt_dotp s{2} (nttv u{2}))) /\ 

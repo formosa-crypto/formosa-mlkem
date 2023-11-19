@@ -5181,12 +5181,12 @@ proof.
     + move : i_lb => /#.
     + move : i_tub => /#.
     + rewrite /touches /= => j j_bnds.
-      do rewrite get_storesE size_to_list.
-      do (rewrite to_uint_small; first by move : i_tub i_lb; smt()).
+      do rewrite get_storesE size_to_list /=. 
       have out_bnds: forall k, 0 <= k <= 160 => !(to_uint rp{1} + (192 * i{2} + k) <= to_uint rp{1} + j && to_uint rp{1} + j < to_uint rp{1} + (192 * i{2} + k) + 32).
         move => k k_bnds.
         rewrite mulzDr mulz1 in j_bnds.
         move : j_bnds => /#.
+      rewrite !to_uintD_small /= !of_uintK 1..6:/# /= !modz_small 1..6:/#. 
       rewrite -(addz0 (to_uint rp{1} + 192 * i{2})) -(addzA _ (192 * i{2}) 0).
       do (rewrite out_bnds 1://=).
       simplify.
@@ -5194,7 +5194,7 @@ proof.
     + rewrite mulzDr mulz1 => k k_lb k_ub.
       rewrite /loadW8.
       do rewrite /stores size_to_list.
-      do (rewrite to_uint_small; first by move : i_tub i_lb; smt()).
+      rewrite !to_uintD_small /= !of_uintK 1..6:/# /= !modz_small 1..6:/#. 
       rewrite /to_list /mkseq -iotaredE /=. (* TODO: find or write lemma *)
       do (rewrite initiE 1://=).
       simplify.

@@ -914,14 +914,14 @@ proof.
     move : (modz_cmp (x+y) 1024) => />.
     move : ib; rewrite andabP => /(mem_iota 0 2 i).
     move : i; rewrite -List.allP -iotaredE //=.
-    smt(@Int @Ring.IntID @IntDiv).
+    smt().
   rewrite shr_shrw 1://= shr_shrw 1://= shrDP 1://=.
   rewrite -W32.of_intD.
   rewrite (pmod_small _ W32.modulus).
     move : (modz_cmp (x+y) 1024) => />.
     move : ib; rewrite andabP => /(mem_iota 0 2 i).
     move : i; rewrite -List.allP -iotaredE //=.
-    smt(@Int @Ring.IntID @IntDiv).
+    smt().
   rewrite (mulzC 3329 (2^(2 * ((i + 1) %% 2)))) (mulzA _ (2^(3 + 2*i)) _) -(mulzA (2^(3 + 2*i)) _ 3329).
   rewrite -(Ring.IntID.exprD_nneg 2 _ _) 1..2:/# (mulzC _ 3329) -mulzA.
   have ->: 2 ^ (3 + 2 * i + 2 * ((i + 1) %% 2)) = 2^5.
@@ -1048,7 +1048,7 @@ proof.
           rewrite (_: 3 = 3 + 2*0) 1://=.
           rewrite (_: 5 = 3 + 2*1) 1://=.
           do (rewrite decompress_decode 1..3://= 1:/#).
-          smt(@Int).
+          smt().
       + rewrite (mulzDr 16) mulz1 addzA.
         move => j j_lb j_ub.
         rewrite filliE 1:/# /=.
@@ -1091,7 +1091,7 @@ proof.
           rewrite qE.
           do (rewrite -(and_impr (0 <= _) (_ < 3329)) decompress_bnds 1..3://= 1:/#).
           trivial.
-        smt(@Int).
+        smt().
     skip; auto => />.
     move => &1 [#] rp_lb rp_ub k_lb k_ub r_def r_bnds k_tub />.
     split.
@@ -1114,7 +1114,7 @@ proof.
     skip; auto => />.
     move => &1 &2 rp_lb rp_ub.
     split.
-      smt(@Logic).
+      smt().
     move => r c k k_tlb _ k_lb k_ub.
     have -> /=: k = 3. move : k_tlb k_ub => /#.
     move => r_def r_bnds.
@@ -1181,7 +1181,7 @@ proof.
    rewrite /bpos16 //=in res2_bound.
    rewrite /bpos16 //=in res1_bound.
    move : (res3_bound (k - 512))  (res2_bound (k - 256))  (res1_bound k).
-   smt(@Array256 @Array768).
+   smt().
 qed.
 
 lemma polyvec_reduce_ll : islossless Mprevec.polyvec_reduce
