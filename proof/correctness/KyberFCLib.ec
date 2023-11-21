@@ -723,7 +723,7 @@ rewrite -W2u8.Pack.all_eqP /all_eq /= -/WArray512.get8
 by rewrite  Hy /= get16E pack2bE // ifF /#. 
 qed.
 
-lemma set256_directE (t:WArray128.t) (i:int) (w:W256.t) :
+lemma set256_directE (t:WArray512.t) (i:int) (w:W256.t) :
   i %% 32 = 0 => 
   set256_direct t i w = set256 t (i%/32) w.
   smt(). qed.

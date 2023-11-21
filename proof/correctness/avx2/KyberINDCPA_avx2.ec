@@ -8,21 +8,24 @@ require import KyberPoly_avx2_vec.
 require import KyberPoly_avx2_prevec.
 require import KyberPolyvec_avx2_proof.
 require import KyberPolyvec_avx2_vec.
+require import KyberFCLib.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2 NTT_AVX_j.
 require import NTT_Fq NTT_AVX_Fq.
 require import Kyber_AVX_ref_lowlevel_equivs.
 require import Montgomery16.
 require import AVX2_Ops.
-import Kyber.
-import KyberSpec.
+
+
+import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE Kyber Fq Correctness.
+
 import KyberPoly.
 import KyberPolyVec.
 import KyberPolyvecAVX.
 import KyberPolyAVXVec.
 import NTT_Avx2.
-import WArray136 WArray32.
-import WArray512 WArray512.
+import WArray136 WArray32 WArray128.
+import WArray512 WArray256.
 
 (* move somewhere else *)
 
@@ -273,7 +276,7 @@ do 8!(try split; first by
  do 16!(try (move => Hi; case Hi => />); first by rewrite !initiE //= pack2_bits8 //)).
 seq 8 : ((unpack128x2 rp).`2 = (unpack128x2 a).`2 /\ (unpack128x2 rp).`1 = (unpack128x2 (nttunpack a)).`1 ).
 wp. skip => /> &m -> -> -> -> -> -> -> ->. rewrite nttunpack128x2. rewrite !unpack128x2E => />. split.
-+ rewrite tP => j Hj. rewrite !initiE //=. rewrite !initiE //= 1:/#. rewrite !list_arr16.
++ rewrite tP => j Hj. rewrite !initiE //=. rewrite !initiE //= 1:/#. rewrite !list_arr16 /=.
   do 8!(rewrite set256_directE 1:/#; rewrite get16_set256E //=; rewrite ifF 1:/#; rewrite get16_init16 1:/#; try(rewrite !initiE //=1:/#)). trivial.
 + rewrite tP => j Hj. rewrite !initiE //= 1:/#. rewrite !list_arr16.
   do 7!(rewrite set256_directE 1:/#; rewrite get16_set256E //=; rewrite get16_init16 1:/#; rewrite initiE //= 1:/#).
@@ -1135,7 +1138,7 @@ equiv getnoiseequiv :
 have H : forall &m a,
    Pr[Jkem.M(Jkem.Syscall)._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
 + move => &m a.
-  have -> : 1%r = Pr [ CBD2(KPRF).sample(a.`2,to_uint a.`3) @ &m : true].
+  have -> : 1%r = Pr [ CBD2.sample(PRF a.`2 a.`3) @ &m : true].
   + byphoare => //.
     proc; inline *; while (0<=i<=128) (128-i); 1: by move => z; auto => /> /#. 
     by auto => /> /#.
@@ -1150,10 +1153,11 @@ conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
+import InnerPKE.
 lemma kyber_correct_kg_avx2 mem _pkp _skp  : 
-   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_keypair ~ Kyber(KHS,XOF,KPRF,H).kg_derand : 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_keypair ~ InnerPKE.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       randomnessp{1} = seed{2}  /\
+       randomnessp{1} = coins{2}  /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
        touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
@@ -1170,7 +1174,7 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);}
     randomnessp{1} = randomnessp{2} /\
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3) ==> ={Glob.mem}) 
 (   Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       randomnessp{1} = seed{2} /\
+       randomnessp{1} = coins{2} /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
     ==> 
     touches2 Glob.mem{1} mem _pkp (384*3+32) _skp (384*3) /\
@@ -1280,7 +1284,6 @@ seq 2 2 : (#{/~skpv{1}}{~e{1}}{~skpv{2}}{~e{2}}pre /\
  by  conseq />; call (nttequiv); call (nttequiv); auto => /> /#.
 
 (* First ip *)
-
 seq 8 4: (#{/~pkpv{2}}pre /\ 
               lift_array256 (subarray256 pkpv{1} 0) = nttunpack (lift_array256 (subarray256 pkpv{2} 0)) /\
               signed_bound768_cxq pkpv{1} 0 256 2 /\
@@ -1577,14 +1580,14 @@ qed.
 (***************************************************)
 
 lemma kyber_correct_enc_0_avx2 mem _ctp _pkp : 
-   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_0 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_0 ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
      to_uint sctp{1} = _ctp /\ 
      to_uint pkp{1} = _pkp /\
-     noiseseed{1} = r{2} /\
+     noiseseed{1} = coins{2} /\
      pk{2}.`1 = load_array1152 mem _pkp /\
      pk{2}.`2 = load_array32 mem (_pkp + 3*384)
        ==> 
@@ -1608,12 +1611,12 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_enc(sctp,msgp,pkp,noiseseed);}
   msgp{1} = m{2} /\
   to_uint sctp{1} = _ctp /\
   to_uint pkp{1} = _pkp /\
-  noiseseed{1} = r{2} /\
+  noiseseed{1} = coins{2} /\
   pk{2}.`1 = load_array1152 mem _pkp /\ 
   pk{2}.`2 = load_array32 mem (_pkp + 3 * 384)
   ==>
   touches Glob.mem{1} mem _ctp (3*320+128) /\
-  let (c1, c2) = r0{2} in 
+  let (c1, c2) = r{2} in 
       c1 = load_array960 Glob.mem{1} _ctp /\ 
       c2 = load_array128 Glob.mem{1} (_ctp + 960)); 1,2: smt();  
    last by call(kyber_correct_enc mem _ctp _pkp); auto => />. 
@@ -1673,7 +1676,7 @@ seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
     move : (H k kb); rewrite !mapiE //=. 
     move : H0 H1; rewrite /pos_bound256_cxq /bpos16 /= => H0 H1.
     move : (H0 k kb) (H1 k kb).
-    rewrite -Zq.eq_inFq /= qE. 
+    rewrite -Zq.eq_incoeff /= qE. 
     move => HH0 HH1; rewrite !modz_small; 1,2: smt( StdOrder.IntOrder.gtr0_norm).    
     move : HH0 HH1; rewrite /to_sint /smod /= => HH0 HH1.
     rewrite  ifF. smt(W16.to_uint_cmp). 
@@ -1960,12 +1963,12 @@ qed.
 (***************************************************)
 
 lemma kyber_correct_enc_1_avx2 mem _pkp : 
-   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_1 ~ Kyber(KHS,XOF,KPRF,H).enc_derand: 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_1 ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
      to_uint pkp{1} = _pkp /\
-     noiseseed{1} = r{2} /\
+     noiseseed{1} = coins{2} /\
      pk{2}.`1 = load_array1152 mem _pkp /\
      pk{2}.`2 = load_array32 mem (_pkp + 3*384)
        ==> 
@@ -1985,12 +1988,12 @@ transitivity {1} { r <@Jkem.M(Jkem.Syscall).__iindcpa_enc(ctp,msgp,pkp,noiseseed
   Glob.mem{1} = mem /\
   msgp{1} = m{2} /\
   to_uint pkp{1} = _pkp /\
-  noiseseed{1} = r{2} /\
+  noiseseed{1} = coins{2} /\
   pk{2}.`1 = load_array1152 mem _pkp /\ 
   pk{2}.`2 = load_array32 mem (_pkp + 3 * 384) 
   ==>
   Glob.mem{1} = mem /\
-  r{1} = (Array1088.init (fun (i : int) => if 0 <= i && i < 960 then r0{2}.`1.[i] else r0{2}.`2.[i - 960])));[ by smt() | | | by call(kyber_correct_ienc mem _pkp); auto => />].
+  r{1} = (Array1088.init (fun (i : int) => if 0 <= i && i < 960 then r{2}.`1.[i] else r{2}.`2.[i - 960])));[ by smt() | | | by call(kyber_correct_ienc mem _pkp); auto => />].
   + move => /> c1 c2. 
     rewrite !tP;split;move => *.
     + by rewrite !initiE // 1:/# /= /#.
@@ -2048,7 +2051,7 @@ seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
     move : (H k kb); rewrite !mapiE //=. 
     move : H0 H1; rewrite /pos_bound256_cxq /bpos16 /= => H0 H1.
     move : (H0 k kb) (H1 k kb).
-    rewrite -Zq.eq_inFq /= qE. 
+    rewrite -Zq.eq_incoeff /= qE. 
     move => HH0 HH1; rewrite !modz_small; 1,2: smt( StdOrder.IntOrder.gtr0_norm).    
     move : HH0 HH1; rewrite /to_sint /smod /= => HH0 HH1.
     rewrite  ifF. smt(W16.to_uint_cmp). 
@@ -2330,7 +2333,7 @@ qed.
 
 
 lemma kyber_correct_dec mem _ctp _skp : 
-   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_dec_1 ~ Kyber(KHS,XOF,KPRF,H).dec : 
+   equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_dec_1 ~ InnerPKE.dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
      Glob.mem{1} = mem /\ 
@@ -2342,7 +2345,7 @@ lemma kyber_correct_dec mem _ctp _skp :
        c2 = load_array128 Glob.mem{1} (_ctp + 960)
        ==> 
      Glob.mem{1} = mem /\
-     res{1} = oget res{2}
+     res{1} = res{2}
 ].
 proc*.
 transitivity {1} { r <@Jkem.M(Jkem.Syscall).__indcpa_dec(msgp,ctp,skp);} 
@@ -2364,7 +2367,7 @@ transitivity {1} { r <@Jkem.M(Jkem.Syscall).__indcpa_dec(msgp,ctp,skp);}
        c2 = load_array128 Glob.mem{1} (_ctp + 960)
        ==> 
      Glob.mem{1} = mem /\
-     r{1} = oget r{2}); 1,2: smt();  
+     r{1} = r{2}); 1,2: smt();  
    last by call(kyber_correct_dec mem _ctp _skp); auto => />. 
 
 inline{1} 1; inline {2} 1.

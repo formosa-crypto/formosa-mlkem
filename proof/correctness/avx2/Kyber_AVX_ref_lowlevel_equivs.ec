@@ -20,10 +20,10 @@ require import KyberPolyvec_avx2_proof.
 require import KyberPoly_avx2_vec.
 require import KyberPolyvec_avx2_vec.
 require import KyberINDCPA.
+require import KyberFCLib.
 
-import Kyber.
-import Fq.
-import SignedReductions.
+import GFq Rq Symmetric Serialization Sampling VecMat InnerPKE Kyber Correctness Fq SignedReductions.
+
 import Zq.
 import ZModP.
 import Fq_avx2.
@@ -67,14 +67,14 @@ proof.
                 ==>
                 ={Glob.mem} /\ Glob.mem{1} = mem /\
                 pos_bound768_cxq res{1} 0 768 1 /\
-                lift_vector res{1} = decompress_polyvec 10 res{2})
+                lift_polyvec res{1} = decompress_polyvec 10 res{2})
                (W64.to_uint ap{2} = _p /\ valid_ptr _p 960 /\
                 load_array960 Glob.mem{2} _p = u{1} /\
                 ={Glob.mem} /\ Glob.mem{2} = mem
                  ==>
                 ={Glob.mem} /\ Glob.mem{2} = mem /\
                 pos_bound768_cxq res{2} 0 768 1 /\
-                lift_vector res{2} = decompress_polyvec 10 res{1}).
+                lift_polyvec res{2} = decompress_polyvec 10 res{1}).
     auto => &1 &2 [#] mem_eq arg_eq mem_def valid_p p_eq />.
     exists mem.
       exists (load_array960 mem _p).
@@ -95,7 +95,7 @@ proof.
         move : (H9 (k %% 256)); rewrite (modz_cmp k 256) //=.
         rewrite subliftsub 1..2:/# subliftsub 1..2:/# mulzC -divz_eq.
         rewrite /lift_array768 mapiE 1:kb mapiE 1:kb /=.
-        rewrite -eq_inFq (pmod_small _ q) 1:H2 1:kb (pmod_small _ q) 1:H6 1:kb.
+        rewrite -eq_incoeff (pmod_small _ q) 1:H2 1:kb (pmod_small _ q) 1:H6 1:kb.
         rewrite to_sint_unsigned. move : (H2 k kb) => />.
         rewrite to_sint_unsigned. move : (H6 k kb) => />.
         by rewrite -W16.to_uint_eq => />.
@@ -114,7 +114,7 @@ proof.
                  ==>
                 ={Glob.mem} /\ Glob.mem{1} = mem /\
                 pos_bound768_cxq res{1} 0 768 1 /\
-                lift_vector res{1} = decompress_polyvec 10 res{2})
+                lift_polyvec res{1} = decompress_polyvec 10 res{2})
                (={u, Glob.mem}
                  ==>
                 ={Glob.mem, res}).
@@ -151,32 +151,32 @@ proof.
                 ={Glob.mem}  /\  touches mem Glob.mem{1} _p (3*320)); 1,2: smt().  
     + symmetry. proc * => /=. call prevec_eq_polyvec_compress => //=.
   transitivity EncDec_AVX2.encode10_opt_vec
-               (a{2} = compress_polyvec 10  (lift_vector a{1}) /\
+               (a{2} = compress_polyvec 10  (lift_polyvec a{1}) /\
                 pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{2}.[i] < q) /\
                 to_uint rp{1} = _p /\ valid_ptr _p (3*320) /\ Glob.mem{1} = mem /\
                 ={Glob.mem} ==>
                 touches mem Glob.mem{1} _p (3*320) /\
                 load_array960 Glob.mem{1} _p = res{2})
                (pos_bound768_cxq a{2} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{1}.[i] < q) /\
-                a{1} = compress_polyvec 10 (lift_vector a{2}) /\
+                a{1} = compress_polyvec 10 (lift_polyvec a{2}) /\
                 to_uint rp{2} = _p /\ valid_ptr _p 960 /\ Glob.mem{2} = mem /\
                 ={Glob.mem} ==>
                 touches mem Glob.mem{2} _p 960 /\
                 load_array960 Glob.mem{2} _p = res{1}).
     auto => &1 &2 [#] valid_p pos_bound_al pos_bound_ar al_eq_ar p_eq />.
     exists Glob.mem{2}.
-      exists (compress_polyvec 10 (lift_vector a{1})).
+      exists (compress_polyvec 10 (lift_polyvec a{1})).
         rewrite pos_bound_al pos_bound_ar /=.
         do split.
-        + move => i ib; rewrite /compress_polyvec /lift_vector !mapiE //=. 
+        + move => i ib; rewrite /compress_polyvec /lift_polyvec !mapiE //=. 
           pose x := fromarray256 _ _ _.
           move : (compress_rng x.[i] 10 _) => //=; smt (qE).
         + smt().
         + rewrite /valid_ptr in valid_p. move : valid_p => //=.
-        + move => i ib; rewrite /compress_polyvec /lift_vector !mapiE //=. 
+        + move => i ib; rewrite /compress_polyvec /lift_polyvec !mapiE //=. 
           pose x := fromarray256 _ _ _.
           move : (compress_rng x.[i] 10 _) => //=; smt (qE).
-        + congr; rewrite /lift_vector KMatrix.Vector.eq_vectorP => i ib /=.
+        + congr; rewrite /lift_polyvec KMatrix.Vector.eq_vectorP => i ib /=.
           rewrite !KMatrix.Vector.offunvE /kvec //=.
           rewrite /lift_array768 /subarray256 /lift_array256 tP => k kb.
           rewrite !mapiE //= !initiE //=.
@@ -202,10 +202,10 @@ proof.
         + move : (H2 (j - _p)) => /#.
     trivial.
     + proc * => /=.
-      ecall (polyvec_compress_corr (lift_vector a{1}) _p  mem) => //=. 
+      ecall (polyvec_compress_corr (lift_polyvec a{1}) _p  mem) => //=. 
   symmetry.
   transitivity EncDec.encode10_vec
-               (u{2} = compress_polyvec 10 (lift_vector a{1}) /\
+               (u{2} = compress_polyvec 10 (lift_polyvec a{1}) /\
                 pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= u{2}.[i] < q) /\
                 to_uint rp{1} = _p /\ valid_ptr _p 960 /\ Glob.mem{1} = mem /\
                 ={Glob.mem} ==>
@@ -216,12 +216,12 @@ proof.
                 ={Glob.mem} ==> ={Glob.mem, res}). 
                auto => &1 &2 [#] pos_bound_a a2_bnd a1_eq_a2 _p_eq_urp valid_p />.
                exists Glob.mem{1}.
-                 exists (compress_polyvec 10 (lift_vector a{1})).
+                 exists (compress_polyvec 10 (lift_polyvec a{1})).
                    auto => />;do split.
-                   + move => i ibl ibh; rewrite /compress_polyvec /lift_vector !mapiE //=. 
+                   + move => i ibl ibh; rewrite /compress_polyvec /lift_polyvec !mapiE //=. 
                      pose x := fromarray256 _ _ _.
                      move : (compress_rng x.[i] 10 _) => //=; smt (qE).
-                   + move => i ibl ibh; rewrite /compress_polyvec /lift_vector !mapiE //=. 
+                   + move => i ibl ibh; rewrite /compress_polyvec /lift_polyvec !mapiE //=. 
                      pose x := fromarray256 _ _ _.
                      move : (compress_rng x.[i] 10 _) => //=; smt (qE).
                    + smt().
@@ -230,8 +230,8 @@ proof.
       ecall (KyberPolyVec.polyvec_compress_corr mem _p (lift_array768 a{1})) => //=.
       auto => /> &1 H H0 H1 H2.
         + rewrite /compress_polyvec; congr. 
-          rewrite /fromarray256 /lift_vector /lift_array768 tP => i ib /=.
-          rewrite !initiE //= !mapiE //= !KMatrix.Vector.offunvE //=.
+          rewrite /fromarray256 /lift_polyvec /lift_array768 tP => i ib /=.
+          rewrite !initiE //= !mapiE //= !getvE !KMatrix.Vector.offunvE //=.
           rewrite /subarray256 /lift_array256 /=.
           smt(@Array256).
   symmetry.
@@ -258,38 +258,38 @@ proof.
                 ={Glob.mem, res} /\ Glob.mem{2} = mem); 1,2: smt().
     + symmetry. proc * => /=. call prevec_eq_polyvec_compress_1 => //=.
   transitivity EncDec_AVX2.encode10_opt_vec
-               (a{2} = compress_polyvec 10  (lift_vector a{1}) /\
+               (a{2} = compress_polyvec 10  (lift_polyvec a{1}) /\
                 pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{2}.[i] < q) /\
                 Glob.mem{1} = mem /\ ={Glob.mem} ==>
                 Glob.mem{1} = mem /\
                 ={res})
                (pos_bound768_cxq a{2} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{1}.[i] < q) /\
-                a{1} = compress_polyvec 10 (lift_vector a{2}) /\
+                a{1} = compress_polyvec 10 (lift_polyvec a{2}) /\
                 Glob.mem{2} = mem /\ ={Glob.mem} ==>
                 Glob.mem{2} = mem /\
                 ={res}).
     auto => &1 &2 [#] pos_bound_al pos_bound_ar al_eq_ar />.
     exists Glob.mem{2}.
-      exists (compress_polyvec 10 (lift_vector a{1})).
+      exists (compress_polyvec 10 (lift_polyvec a{1})).
         rewrite pos_bound_al pos_bound_ar /=.
         do split.
-        + move => i ib; rewrite /compress_polyvec /lift_vector !mapiE //=.
+        + move => i ib; rewrite /compress_polyvec /lift_polyvec !mapiE //=.
           pose x := fromarray256 _ _ _.
           move : (compress_rng x.[i] 10 _) => //=; smt (qE).
-        + move => i ib; rewrite /compress_polyvec /lift_vector !mapiE //=.
+        + move => i ib; rewrite /compress_polyvec /lift_polyvec !mapiE //=.
           pose x := fromarray256 _ _ _.
           move : (compress_rng x.[i] 10 _) => //=; smt (qE).
-        + congr; rewrite /lift_vector KMatrix.Vector.eq_vectorP => i ib /=.
+        + congr; rewrite /lift_polyvec KMatrix.Vector.eq_vectorP => i ib /=.
           rewrite !KMatrix.Vector.offunvE /kvec //=.
           rewrite /lift_array768 /subarray256 /lift_array256 tP => k kb.
           rewrite !mapiE //= !initiE //=.
           smt(@Array768).
         + smt().
     + proc * => /=.
-      ecall (polyvec_compress_1_corr (lift_vector a{1})  mem) => //=.
+      ecall (polyvec_compress_1_corr (lift_polyvec a{1})  mem) => //=.
   symmetry.
   transitivity EncDec.encode10_vec
-               (u{2} = compress_polyvec 10 (lift_vector a{1}) /\
+               (u{2} = compress_polyvec 10 (lift_polyvec a{1}) /\
                 pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= u{2}.[i] < q) /\
                 Glob.mem{1} = mem /\ ={Glob.mem} ==>
                 Glob.mem{1} = mem /\ ={res})
@@ -298,12 +298,12 @@ proof.
                 ={Glob.mem} ==> ={Glob.mem, res}).
                auto => &1 &2 [#] pos_bound_a a2_bnd a1_eq_a2 mem_eq />.
                exists Glob.mem{1}.
-                 exists (compress_polyvec 10 (lift_vector a{1})).
+                 exists (compress_polyvec 10 (lift_polyvec a{1})).
                    auto => />;do split.
-                   + move => i ibl ibh; rewrite /compress_polyvec /lift_vector !mapiE //=.
+                   + move => i ibl ibh; rewrite /compress_polyvec /lift_polyvec !mapiE //=.
                      pose x := fromarray256 _ _ _.
                      move : (compress_rng x.[i] 10 _) => //=; smt (qE).
-                   + move => i ibl ibh; rewrite /compress_polyvec /lift_vector !mapiE //=.
+                   + move => i ibl ibh; rewrite /compress_polyvec /lift_polyvec !mapiE //=.
                      pose x := fromarray256 _ _ _.
                      move : (compress_rng x.[i] 10 _) => //=; smt (qE).
                    + smt().
@@ -312,8 +312,8 @@ proof.
       ecall (KyberPolyVec.i_polyvec_compress_corr (lift_array768 a{1})) => //=.
       auto => /> &1 H H0.
         + rewrite /compress_polyvec; congr.
-          rewrite /fromarray256 /lift_vector /lift_array768 tP => i ib /=.
-          rewrite !initiE //= !mapiE //= !KMatrix.Vector.offunvE //=.
+          rewrite /fromarray256 /lift_polyvec /lift_array768 tP => i ib /=.
+          rewrite !initiE //= !mapiE //= !getvE !KMatrix.Vector.offunvE //=.
           rewrite /subarray256 /lift_array256 /=.
           smt(@Array256).
   symmetry.
@@ -369,8 +369,8 @@ proof.
           apply Array256.ext_eq => x x_b.
             rewrite to_uint_eq -to_sint_unsigned. by move : H3 => /#.
             rewrite -to_sint_unsigned. by move : H7 => /#.
-            move : (H2 x x_b); rewrite mapiE 1:x_b mapiE 1:x_b /= -eq_inFq (pmod_small _ q) 1:H3 1:x_b => ->.
-            move : (H6 x x_b); rewrite mapiE 1:x_b mapiE 1:x_b /= -eq_inFq (pmod_small _ q) 1:H7 1:x_b => -> //=.
+            move : (H2 x x_b); rewrite mapiE 1:x_b mapiE 1:x_b /= -eq_incoeff (pmod_small _ q) 1:H3 1:x_b => ->.
+            move : (H6 x x_b); rewrite mapiE 1:x_b mapiE 1:x_b /= -eq_incoeff (pmod_small _ q) 1:H7 1:x_b => -> //=.
         + by rewrite H0 H4.
         + by rewrite H2 H6.
         + proc * => /=.
@@ -431,10 +431,10 @@ proof.
         rewrite pos_bound_al pos_bound_ar /=.
         do split.
         + move => i ib; rewrite /compress_poly /lift_array256 !mapiE //=.
-          move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+          move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
         + smt().
         + move => i ib; rewrite /compress_poly /lift_array256 !mapiE //=.
-          move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+          move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
         + smt().
         + smt().
         + smt().
@@ -455,9 +455,9 @@ proof.
                  exists (compress_poly 4 (lift_array256 a{1})).
                    auto => />;do split.
                    + move => i ibl ibh; rewrite /load_array256 !mapiE //=.
-                     move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+                     move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
                    + move => i ibl ibh; rewrite /load_array256 !mapiE //=.
-                     move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+                     move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
                    + by rewrite a1_eq_a2.
                smt().
     + proc * => /=.
@@ -506,11 +506,11 @@ proof.
         rewrite pos_bound_al pos_bound_ar /=.
         do split.
         + move => i ib; rewrite /compress_poly /lift_array256 !mapiE //=. 
-          move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+          move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
         + smt().
         + rewrite /valid_ptr in valid_p. move : valid_p => //=.
         + move => i ib; rewrite /compress_poly /lift_array256 !mapiE //=. 
-          move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+          move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
         + smt().
         + smt().
         + smt().
@@ -550,9 +550,9 @@ proof.
                  exists (compress_poly 4 (lift_array256 a{1})).
                    auto => />;do split.
                    + move => i ibl ibh; rewrite /load_array256 !mapiE //=.
-                     move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+                     move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
                    + move => i ibl ibh; rewrite /load_array256 !mapiE //=.
-                     move : (compress_rng (inFq (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
+                     move : (compress_rng (incoeff (to_sint a{1}.[i])) 4 _) => //=; smt (qE).
                    + smt().
                smt().
     + proc * => /=.
@@ -610,7 +610,7 @@ while {1} (#pre /\ 0<= i{1} <= 16 /\ forall k, 0<=k<16*i{1} => rp{1}.[k] = _ap1.
    move : H H0; rewrite /lift_array256 !tP => H H0.
    move : (H k _); 1: smt(); rewrite !mapiE //=.  
    move : (H0 k _); 1: smt(); rewrite !mapiE //=.  
-   rewrite -!eq_inFq /#.
+   rewrite -!eq_incoeff /#.
 
 move => &1 ?; auto => /> => &2 ??????????; do split; 1,2,4: smt().
 
@@ -703,7 +703,7 @@ do split.
   rewrite /lift_array256 /= mapiE //= /nttunpack initiE //=.
   rewrite -/a.
   rewrite !mapiE /=. move : nttunpack_bnd; rewrite allP /#.
-  rewrite -!Zq.eq_inFq /= /#.
+  rewrite -!Zq.eq_incoeff /= /#.
 
 + rewrite /signed_bound_cxq /= => k kb.
   move : (H k kb); rewrite !mapiE //= => HH.
@@ -818,7 +818,7 @@ lemma poly_add_corr_avx_impl ab bb :
            ==>
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
-              inFq (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
+              incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
    by move => abb bbb _a _b; apply (KyberPolyAVX.poly_add_corr _a _b ab bb abb bbb).
 
 lemma addequiv  (ab1 bb1 ab2 bb2 : int):
@@ -1015,14 +1015,14 @@ proof.
                 ={Glob.mem}); first 2 by smt().
     + symmetry. proc * => /=. call prevec_eq_polyvec_tobytes => //=.
   transitivity EncDec_AVX2.encode12_opt_vec
-               (map inFq a{2} = lift_array768 (nttpackv a{1}) /\
+               (map incoeff a{2} = lift_array768 (nttpackv a{1}) /\
                 pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{2}.[i] < q) /\
                 to_uint rp{1} = _p /\ valid_ptr _p (3*384) /\
                 ={Glob.mem} ==>
                 touches Glob.mem{2} Glob.mem{1} _p (3*384) /\
                 load_array1152 Glob.mem{1} _p = res{2})
                (pos_bound768_cxq a{2} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{1}.[i] < q) /\
-                map inFq a{1} = lift_array768 a{2} /\
+                map incoeff a{1} = lift_array768 a{2} /\
                 to_uint rp{2} = _p /\ valid_ptr _p (3*384) /\
                 ={Glob.mem} ==>
                 touches Glob.mem{1} Glob.mem{2} _p (3*384) /\
@@ -1034,7 +1034,7 @@ proof.
         do split.
         + rewrite /lift_array768 tP => i i_b.
           rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
-          rewrite -eq_inFq modz_mod => />.
+          rewrite -eq_incoeff modz_mod => />.
         + move => i i_b.
           rewrite mapiE 1:i_b /=.
           rewrite modz_cmp 1:qE //=.
@@ -1045,9 +1045,9 @@ proof.
           rewrite modz_cmp 1:qE //=.
         + rewrite /lift_array768 tP => i i_b.
           rewrite mapiE 1://= mapiE 1://= mapiE 1://= //=.
-          rewrite -eq_inFq modz_mod eq_inFq => />.
-          rewrite -(Array768.mapiE (fun x => inFq (W16.to_sint x))) 1:i_b.
-          rewrite (_: (map (fun x => inFq (W16.to_sint x)) (nttpackv a{1})) = lift_array768 (nttpackv a{1})) => />.
+          rewrite -eq_incoeff modz_mod eq_incoeff => />.
+          rewrite -(Array768.mapiE (fun x => incoeff (W16.to_sint x))) 1:i_b.
+          rewrite (_: (map (fun x => incoeff (W16.to_sint x)) (nttpackv a{1})) = lift_array768 (nttpackv a{1})) => />.
           rewrite -nttpackv_lift al_eq_ar unpackvK //=.
           rewrite /lift_array768 mapiE 1:i_b //=.
         + rewrite p_eq //=.
@@ -1077,7 +1077,7 @@ proof.
   symmetry.
   transitivity EncDec.encode12_vec
                (pos_bound768_cxq a{1} 0 768 2 /\ (forall i, 0<=i<768 => 0 <= a{2}.[i] < q) /\
-                map inFq a{2} = lift_array768 a{1} /\
+                map incoeff a{2} = lift_array768 a{1} /\
                 to_uint rp{1} = _p /\ valid_ptr _p (3*384) /\
                 ={Glob.mem} ==>
                 touches Glob.mem{2} Glob.mem{1} _p (3*384) /\
@@ -1106,7 +1106,7 @@ qed.
 lemma polyvec_add2_equiv  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-  forall (_a _b : Fq Array768.t),
+  forall (_a _b : coeff Array768.t),
     equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_add2 ~Jkem.M(Jkem.Syscall).__polyvec_add2 :
       _a = lift_array768 r{2} /\
       _b = lift_array768 b{2} /\ signed_bound768_cxq r{2} 0 768 ab /\ signed_bound768_cxq b{2} 0 768 bb /\
@@ -1187,7 +1187,7 @@ qed.
 lemma polyvec_add2_equiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-  forall (_a _b : Fq Array768.t),
+  forall (_a _b : coeff Array768.t),
     equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_add2 ~Jkem.M(Jkem.Syscall).__polyvec_add2 :
       _a = lift_array768 r{2} /\
       _b = lift_array768 b{2} /\ signed_bound768_cxq r{2} 0 768 ab /\ signed_bound768_cxq b{2} 0 768 bb /\
@@ -1405,15 +1405,15 @@ ecall {2} (polyvec_ntt_corr r{2}) => /=.
 conseq />;1: smt().
 ecall {1} (polyvec_ntt_avx2_corr r{1}) => /=.
 auto => /> &1 &2 HH?? r H H0 r2 H1 H2. 
-have  : lift_vector (nttpackv r) = lift_vector r2.
+have  : lift_polyvec (nttpackv r) = lift_polyvec r2.
 + rewrite -H1 -H;congr.
-  rewrite /lift_vector KMatrix.Vector.eq_vectorP => k kb.
+  rewrite /lift_polyvec KMatrix.Vector.eq_vectorP => k kb.
   rewrite !KMatrix.Vector.offunvE //=.
   rewrite /lift_array768 tP in HH.
   rewrite /subarray256 /lift_array256 tP => i ib.
   move : (HH (k*256+i) _); 1: by smt().
   rewrite !mapiE //= 1,2: /# !initiE //= /#.
-rewrite /lift_vector /lift_array768 tP KMatrix.Vector.eq_vectorP => H3 k kb. 
+rewrite /lift_polyvec /lift_array768 tP KMatrix.Vector.eq_vectorP => H3 k kb. 
 rewrite !mapiE //=.
 case (0<=k<256).
 + move => kbb; move : (H3 0 _) => //; rewrite !KMatrix.Vector.offunvE //=.
@@ -1481,7 +1481,7 @@ lemma signed_bound768_cxq_small r (i j:int) :
 rewrite /signed_bound768_cxq => />Hij H k Hk1 Hk2. move :(H k). rewrite Hk1 Hk2 => />. smt(). qed.
 
 lemma eq_vectorP3 :
-      forall (v1 v2 : KMatrix.vector),
+      forall (v1 v2 : PolyVec.polyvec),
         (v1 = v2) <=> ((KMatrix.Vector."_.[_]" v1 0 = KMatrix.Vector."_.[_]" v2 0) /\ (KMatrix.Vector."_.[_]" v1 1 = KMatrix.Vector."_.[_]" v2 1) /\ (KMatrix.Vector."_.[_]" v1 2 = KMatrix.Vector."_.[_]" v2 2) ).
 smt(KMatrix.Vector.eq_vectorP). qed.
 
@@ -1499,8 +1499,8 @@ conseq />;1: smt().
 ecall {1} (polyvec_invntt_avx2_corr r{2}) => /=. 
 auto => /> &1 &2 -> Hm1 Hm2. rewrite unpackvK //= => r Hr1 Hr2 s Hs1 Hs2.
 rewrite /lift_array768 /map tP => />j Hj1 Hj2. rewrite !initiE //=.
-move :Hr1. rewrite /mapv /lift_vector eq_vectorP3. rewrite !KMatrix.Vector.offunvE //=. rewrite /lift_array256 /subarray256 /map !tP -!andaE. apply andaW. move => Hr10. apply andaW. move => Hr11 Hr12. 
-move :Hs1. rewrite /scale_vector /lift_vector eq_vectorP3. rewrite !KMatrix.Vector.offunvE //=. rewrite /scale /lift_array256 /subarray256 /map !tP -!andaE. apply andaW. move => Hs10. apply andaW. move => Hs11 Hs12.
+move :Hr1. rewrite !mapvE /lift_polyvec eq_vectorP3. rewrite !KMatrix.Vector.offunvE //=. rewrite /lift_array256 /subarray256 /map !tP -!andaE. apply andaW. move => Hr10. apply andaW. move => Hr11 Hr12. 
+move :Hs1. rewrite /scale_vector /lift_polyvec eq_vectorP3. rewrite !KMatrix.Vector.offunvE //=. rewrite /scale /lift_array256 /subarray256 /map !tP -!andaE. apply andaW. move => Hs10. apply andaW. move => Hs11 Hs12.
 case (0 <= j < 256) => Hj_0.
  + move :(Hr10 j). rewrite Hj_0 !initiE //= !initiE //= => <-.
  + move :(Hs10 j). rewrite Hj_0 !initiE //= !initiE //= => <-.
