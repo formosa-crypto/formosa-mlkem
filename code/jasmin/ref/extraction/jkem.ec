@@ -125,11 +125,10 @@ module M(SC:Syscall_t) = {
     ad <- (sigextu32 a);
     bd <- (sigextu32 b);
     c <- (ad * bd);
-    u <- (c * (W32.of_int 62209));
-    u <- (u `<<` (W8.of_int 16));
+    u <- (c * (W32.of_int (62209 `<<` 16)));
     u <- (u `|>>` (W8.of_int 16));
-    t <- (u * (W32.of_int 3329));
-    t <- (c - t);
+    t <- (u * (W32.of_int (- 3329)));
+    t <- (t + c);
     t <- (t `|>>` (W8.of_int 16));
     r <- (truncateu16 t);
     return (r);

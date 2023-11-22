@@ -43,7 +43,6 @@ proof.
 proc; wp; skip  => &hr [#] /= H H0.
 rewrite /SREDC SAR_sem16 SAR_sem16 /=. 
 rewrite smod_W32 smod_W32 smod_W16 W16.of_sintK /(`<<`) /sigextu32 /truncateu16 /=  H H0.
-rewrite shlMP; first by smt().  
 by rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK qE /= !modz_dvd /R /=; smt().
 qed.
 
