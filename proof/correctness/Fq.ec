@@ -35,6 +35,39 @@ lemma smod_W32 a:
   smod a W32.modulus = W32.smod (a %% W32.modulus)
   by rewrite smodE /W32.smod /=.
   
+module FQMUL_AVX = {
+  proc __fqmul (a:W16.t, b:W16.t) : W16.t = {
+    
+    var r:W16.t;
+    var ad:W32.t;
+    var bd:W32.t;
+    var c:W32.t;
+    var u:W32.t;
+    var t:W32.t;
+    
+    ad <- (sigextu32 a);
+    bd <- (sigextu32 b);
+    c <- (ad * bd);
+    u <- (c * (W32.of_int (62209 `<<` 16)));
+    u <- (u `|>>` (W8.of_int 16));
+    t <- (u * (W32.of_int (- 3329)));
+    t <- (t + c);
+    t <- (t `|>>` (W8.of_int 16));
+    r <- (truncateu16 t);
+    return (r);
+    }
+  }.
+
+lemma fqmul_old_corr_h _a _b: 
+   hoare[FQMUL_AVX.__fqmul : 
+     to_sint a = _a /\ to_sint b = _b ==> to_sint res = SREDC (_a * _b)].
+proof.
+proc; wp; skip  => &hr [#] /= H H0.
+rewrite /SREDC SAR_sem16 SAR_sem16 /=. 
+rewrite smod_W32 smod_W32 smod_W16 W16.of_sintK /(`<<`) /sigextu32 /truncateu16 /=  H H0.
+by rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK qE /= !modz_dvd /R /=; smt().
+qed.
+
 
 lemma fqmul_corr_h _a _b: 
    hoare[Jkem.M(Jkem.Syscall).__fqmul : 
