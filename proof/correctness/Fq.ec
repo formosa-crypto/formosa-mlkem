@@ -48,15 +48,15 @@ module FQMUL_AVX = {
     ad <- (sigextu32 a);
     bd <- (sigextu32 b);
     c <- (ad * bd);
-    u <- (c * (W32.of_int (62209 `<<` 16)));
+    u <- (c * (W32.of_int 62209));
+    u <- (u `<<` (W8.of_int 16));
     u <- (u `|>>` (W8.of_int 16));
-    t <- (u * (W32.of_int (- 3329)));
-    t <- (t + c);
+    t <- (u * (W32.of_int 3329));
+    t <- (c - t);
     t <- (t `|>>` (W8.of_int 16));
     r <- (truncateu16 t);
     return (r);
-    }
-  }.
+  }  }.
 
 lemma fqmul_old_corr_h _a _b: 
    hoare[FQMUL_AVX.__fqmul : 
@@ -65,8 +65,17 @@ proof.
 proc; wp; skip  => &hr [#] /= H H0.
 rewrite /SREDC SAR_sem16 SAR_sem16 /=. 
 rewrite smod_W32 smod_W32 smod_W16 W16.of_sintK /(`<<`) /sigextu32 /truncateu16 /=  H H0.
+rewrite shlMP; first by smt(). 
 by rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK qE /= !modz_dvd /R /=; smt().
 qed.
+
+lemma fqmul_old_ll : islossless FQMUL_AVX.__fqmul by proc; islossless.
+
+lemma fqmul_old_corr _a _b :
+  phoare [FQMUL_AVX.__fqmul : 
+     W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
+         W16.to_sint res = SREDC (_a * _b)] = 1%r.
+proof. by conseq fqmul_old_ll (fqmul_old_corr_h _a _b). qed.
 
 
 lemma fqmul_corr_h _a _b: 

@@ -564,22 +564,22 @@ Pr[Kyber_AVX2_cf.__fqmul_x16(a{m}, b{m}) @ &m :
    forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])]; last by  byequiv fqmulx16_corr_h => //=. 
 byphoare (_: a = a{m} /\ b = b{m} ==> forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k]))=> //=.
 proc; unroll for 3.
-wp; call (fqmul_corr _a.[15] _b.[15]).
-wp; call (fqmul_corr _a.[14] _b.[14]).
-wp; call (fqmul_corr _a.[13] _b.[13]).
-wp; call (fqmul_corr _a.[12] _b.[12]).
-wp; call (fqmul_corr _a.[11] _b.[11]).
-wp; call (fqmul_corr _a.[10] _b.[10]).
-wp; call (fqmul_corr _a.[9] _b.[9]).
-wp; call (fqmul_corr _a.[8] _b.[8]).
-wp; call (fqmul_corr _a.[7] _b.[7]).
-wp; call (fqmul_corr _a.[6] _b.[6]).
-wp; call (fqmul_corr _a.[5] _b.[5]).
-wp; call (fqmul_corr _a.[4] _b.[4]).
-wp; call (fqmul_corr _a.[3] _b.[3]).
-wp; call (fqmul_corr _a.[2] _b.[2]).
-wp; call (fqmul_corr _a.[1] _b.[1]).
-wp; call (fqmul_corr _a.[0] _b.[0]).
+wp; call (fqmul_old_corr _a.[15] _b.[15]).
+wp; call (fqmul_old_corr _a.[14] _b.[14]).
+wp; call (fqmul_old_corr _a.[13] _b.[13]).
+wp; call (fqmul_old_corr _a.[12] _b.[12]).
+wp; call (fqmul_old_corr _a.[11] _b.[11]).
+wp; call (fqmul_old_corr _a.[10] _b.[10]).
+wp; call (fqmul_old_corr _a.[9] _b.[9]).
+wp; call (fqmul_old_corr _a.[8] _b.[8]).
+wp; call (fqmul_old_corr _a.[7] _b.[7]).
+wp; call (fqmul_old_corr _a.[6] _b.[6]).
+wp; call (fqmul_old_corr _a.[5] _b.[5]).
+wp; call (fqmul_old_corr _a.[4] _b.[4]).
+wp; call (fqmul_old_corr _a.[3] _b.[3]).
+wp; call (fqmul_old_corr _a.[2] _b.[2]).
+wp; call (fqmul_old_corr _a.[1] _b.[1]).
+wp; call (fqmul_old_corr _a.[0] _b.[0]).
 auto => />. 
 rewrite /lift_array16 tP /= in H.
 rewrite /lift_array16 tP /= in H0.

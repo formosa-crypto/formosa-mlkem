@@ -2,7 +2,7 @@ require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
 require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array768 Array960 Array1152.
-require import KyberFCLib W8extra List_extra.
+require import Fq KyberFCLib W8extra List_extra.
 
 
 require import Jkem.
@@ -317,7 +317,7 @@ module Kyber_AVX2_cf = {
     rd <- witness;
     i <- 0;
     while(i < 16) {
-      t <@Jkem.M(Jkem.Syscall).__fqmul(a.[i], b.[i]);
+      t <@ Fq.FQMUL_AVX.__fqmul(a.[i], b.[i]);
       rd.[i] <- t;
       i <- i + 1;
     }
