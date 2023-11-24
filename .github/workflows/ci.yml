@@ -24,7 +24,7 @@ jobs:
       name: Checkout EasyCrypt
       with:
         repository: EasyCrypt/easycrypt
-        ref: refs/heads/deploy-opsem
+        ref: refs/heads/main
         path: easycrypt
     - name: Update OPAM & EasyCrypt dependencies
       run: |
