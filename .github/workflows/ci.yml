@@ -38,4 +38,4 @@ jobs:
         rm -f ~/.why3.conf
         opam config exec -- easycrypt why3config -why3 ~/.why3.conf
     - name: Compile Project
-      run: opam config exec -- make check
+      run: opam config exec -- make checkec
