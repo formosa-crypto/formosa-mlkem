@@ -3,7 +3,7 @@
 	url = https://github.com/jasmin-lang/jasmin.git
 [submodule "sha3"]
 	path = sha3
-	url = git@gitlab.com:easycrypt/sha3.git
+	url = https://gitlab.com/easycrypt/sha3.git
 [submodule "crypto-specs"]
 	path = crypto-specs
 	url = https://github.com/formosa-crypto/crypto-specs
