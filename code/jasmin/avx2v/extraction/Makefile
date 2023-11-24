@@ -1,11 +1,19 @@
-#all : jindcpa.ec jkem.ec
+# -*- Makefile -*-
 
-#jindcpa.ec : ../indcpa.jinc
-#	jasminc ../indcpa.jinc -oec jindcpa.ec -ec indcpa_keypair_jazz -ec indcpa_enc_jazz -ec indcpa_dec_jazz
+# --------------------------------------------------------------------
+-include ../../../Makefile.conf
 
+# --------------------------------------------------------------------
+.PHONY: all ec clean
 
-all : 
-	jasminc ../jkem.jazz -oec jkem_avx2.ec -ec jade_kem_kyber_kyber768_amd64_avx2v_keypair -ec jade_kem_kyber_kyber768_amd64_avx2v_enc -ec jade_kem_kyber_kyber768_amd64_avx2v_dec
-	
-clean: 
-	rm *.ec
+# --------------------------------------------------------------------
+all: ec
+
+ec:
+	$(JASMINC) ../jkem.jazz -oec jkem_avx2.ec \
+	  -ec jade_kem_kyber_kyber768_amd64_avx2v_keypair \
+	  -ec jade_kem_kyber_kyber768_amd64_avx2v_enc \
+	  -ec jade_kem_kyber_kyber768_amd64_avx2v_dec
+
+clean:
+	rm -f *.ec

@@ -1,27 +1,30 @@
-CC=/usr/bin/gcc
-CFLAGS=-Wall -Wextra -g
-JASMIN=~/svn/jasmin/compiler/jasminc
-JFLAGS=-lea -pasm ${JADDFLAGS}
+# -*- Makefile -*-
+
+-include ../../Makefile.conf
+
+CC     ?= /usr/bin/gcc
+CFLAGS := -Wall -Wextra -g
+JFLAGS := -lea -pasm ${JADDFLAGS}
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s
 
 default: test
 
 test: test/test_poly_compress \
- 		  test/test_poly_decompress \
+		  test/test_poly_decompress \
 			test/test_poly_tobytes \
 			test/test_poly_frombytes \
 			test/test_poly_tomsg \
 			test/test_poly_frommsg \
 			test/test_poly_add \
- 			test/test_poly_sub \
- 			test/test_poly_ntt \
- 			test/test_poly_invntt \
- 			test/test_poly_basemul \
- 			test/test_poly_frommont \
- 			test/test_poly_reduce \
- 			test/test_poly_csubq \
- 			test/test_poly_getnoise \
+			test/test_poly_sub \
+			test/test_poly_ntt \
+			test/test_poly_invntt \
+			test/test_poly_basemul \
+			test/test_poly_frommont \
+			test/test_poly_reduce \
+			test/test_poly_csubq \
+			test/test_poly_getnoise \
 			test/test_polyvec_compress\
 			test/test_polyvec_decompress\
 			test/test_polyvec_tobytes \
@@ -32,7 +35,7 @@ test: test/test_poly_compress \
 			test/test_polyvec_pointwise_acc \
 			test/test_polyvec_reduce\
 			test/test_polyvec_csubq \
- 			test/test_fips202 \
+			test/test_fips202
 
 kybertest: test/test_indcpa \
 
@@ -82,14 +85,12 @@ test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.s
 
 test/test_fips202: test/test_fips202.c $(HEADERS) $(SOURCES) jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jfips202.s $<
- 
+
 test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) jpoly.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpoly.s $<
-			
+
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
-
-
 
 jfips202.japp: jfips202.jazz fips202.jahh
 	cat $< | $(CC) -E - | grep -v ^# > $@

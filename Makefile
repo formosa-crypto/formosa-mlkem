@@ -13,6 +13,7 @@ check: jasmin checkec
 
 jasmin:
 	make -C code/jasmin/ref/extraction
+	make -C code/jasmin/avx2/extraction
 	make -C code/jasmin/avx2v/extraction
 
 checkec:

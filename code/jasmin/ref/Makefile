@@ -1,28 +1,31 @@
-CC?=/usr/bin/gcc
-CFLAGS=-Wall -Wextra -g -O3 -fomit-frame-pointer
-JASMIN?=jasminc
-JFLAGS=-lea ${JADDFLAGS}
-OS = $(shell uname -s)
+# -*- Makefile -*-
+
+-include ../../Makefile.conf
+
+CC     ?= /usr/bin/gcc
+CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer
+JFLAGS := -lea ${JADDFLAGS}
+OS     := $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips203.s jindcpa.s jkem.s
 
 default: test speed
 
 test: test/test_poly_compress \
- 		  test/test_poly_decompress \
+		  test/test_poly_decompress \
 			test/test_poly_tobytes \
 			test/test_poly_frombytes \
 			test/test_poly_tomsg \
 			test/test_poly_frommsg \
 			test/test_poly_add2 \
- 			test/test_poly_sub \
- 			test/test_poly_ntt \
- 			test/test_poly_invntt \
- 			test/test_poly_basemul \
- 			test/test_poly_frommont \
- 			test/test_poly_reduce \
- 			test/test_poly_csubq \
- 			test/test_poly_getnoise \
+			test/test_poly_sub \
+			test/test_poly_ntt \
+			test/test_poly_invntt \
+			test/test_poly_basemul \
+			test/test_poly_frommont \
+			test/test_poly_reduce \
+			test/test_poly_csubq \
+			test/test_poly_getnoise \
 			test/test_polyvec_compress\
 			test/test_polyvec_decompress\
 			test/test_polyvec_tobytes \
@@ -33,8 +36,8 @@ test: test/test_poly_compress \
 			test/test_polyvec_pointwise_acc \
 			test/test_polyvec_reduce\
 			test/test_polyvec_csubq \
- 			test/test_fips202 \
- 			test/test_indcpa \
+			test/test_fips202 \
+			test/test_indcpa \
 			test/test_kem
 
 speed: test/speed_indcpa

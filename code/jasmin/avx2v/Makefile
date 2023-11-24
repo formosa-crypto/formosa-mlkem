@@ -1,9 +1,10 @@
-CC?=/usr/bin/gcc
-GFLAGS?=
-CFLAGS=-Wall -Wextra -g -Ofast -fomit-frame-pointer
-JASMIN?=jasminc
-JFLAGS=-lea ${JADDFLAGS}
-OS = $(shell uname -s)
+# -*- Makefile -*-
+
+CC     ?= /usr/bin/gcc
+GFLAGS ?=
+CFLAGS := -Wall -Wextra -g -Ofast -fomit-frame-pointer
+JFLAGS := -lea ${JADDFLAGS}
+OS     := $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jkem.s
 
@@ -35,10 +36,9 @@ test: test/test_poly_compress \
       test/test_polyvec_reduce\
       test/test_polyvec_csubq \
       test/test_fips202 \
-	test/test_indcpa \
-	test/test_kem
-#test/test_gen_matrix \
-	
+	    test/test_indcpa \
+	    test/test_kem
+
 speed: test/speed_indcpa \
        test/speed_kyber
 
