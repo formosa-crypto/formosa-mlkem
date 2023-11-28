@@ -384,7 +384,11 @@ move => [#] ??????? pkv1 pkv2; do split.
   + by rewrite pkv1 /#.
   by rewrite pkv2 /#. 
 
-move => ?? [cR1 cR2] /= memR touch [-> ->] memL touchL ->; do split; 1: by smt().
+move => ?? [cR1 cR2] /= memR touch [-> ->] memL touchL ->; do split.
++ move=> a Ha1 Ha2.
+  move: (touchL (a-to_uint shkp{1}) _); first smt(). 
+  rewrite (addzC a _) !addzA /=.
+  move: (touchL (a-to_uint ctp{1}) _); smt(). 
 + rewrite tP => i ib; rewrite !initiE //=.
   have -> :  to_uint ctp{1} + i = to_uint shkp{1} + (to_uint ctp{1} + i  - to_uint shkp{1}) by ring. 
   by rewrite -touchL;  smt().
