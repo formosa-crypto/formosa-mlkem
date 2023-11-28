@@ -1177,7 +1177,13 @@ seq 8 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
              buf{1} = Array64.init (fun (k : int) => if 0 <= k && k < 32 then rho{2}.[k] else sig{2}.[k - 32]) /\
               forall k, 0<=k< i{1}*8 => publicseed{1}.[k] = rho{2}.[k] /\ 
                                         noiseseed{1}.[k] = sig{2}.[k])
-              (4 - i{1}); last by auto => />;smt(Array32.tP).
+              (4 - i{1}); last first.
+   auto => /> &1 &2 ??????.
+   split. 
+    by smt(Array64.tP).
+   move=> *; split; first smt().
+   by move=> *; split; rewrite Array32.tP /#.
+
   move => *; auto => /> &1 /= => ????. 
   do split; 1..2,4:smt().
   move => k kbl kbh. 
