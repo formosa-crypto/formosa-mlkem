@@ -1,6 +1,10 @@
 [general]
 timeout = 30
 
+provers = Alt-Ergo@2.4
+provers = CVC4@1.8
+provers = Z3@4.8
+
 rdirs = proof
 rdirs = Jasmin:jasmin/eclib
 idirs = sha3/proof
