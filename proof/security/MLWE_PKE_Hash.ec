@@ -191,13 +191,11 @@ transitivity {1} { (pk,sk) <@ MLWE_PKE_HASH_PROC.kg_bridge(); }
 + by inline*; auto; rewrite /kg /= /#.
 inline *. wp 2 3.
 conseq (_: true ==> ={sd,s,e}); 1: by smt(). 
-rndsem{1} 0.
-rndsem{2} 0.
-transitivity {1} { (sd,s,e) <$ dmap drand prg_kg; }
-    (true ==> ={sd,s,e})
-    (true ==> ={sd,s,e});1,2:smt().
-+ admit. (* FIXME: This should not be needed, as post does not mention r0 *)
-by rnd;auto => />;rewrite -prg_kg_correct /#.
+rndsem*{1} 0.
+rndsem*{2} 0.
+rnd;auto => />;rewrite -prg_kg_correct. 
+have -> : (fun (r0 : randomness) => ((prg_kg r0).`1, (prg_kg r0).`2, (prg_kg r0).`3))
+          = prg_kg; by smt().
 qed.
 
 equiv enc_proc : MLWE_PKE_HASH.enc ~ MLWE_PKE_HASH_PROC.enc : ={arg} ==> ={res}.
@@ -208,14 +206,11 @@ transitivity {1} { c <@ MLWE_PKE_HASH_PROC.enc_bridge(pk,m); }
 + by inline*; auto; smt(). 
 inline *; sp;wp 2 3.
 conseq (_: ={pk,m} ==> ={r,e1,e2}); 1,2: by smt(). 
-rndsem{1} 0.
-rndsem{2} 0.
-
-transitivity {1} { (r,e1,e2) <$ dmap drand prg_enc; }
-    (={pk,m} ==> ={r,e1,e2})
-    (={pk,m} ==> ={r,e1,e2}); 1,2:smt().
-+ admit. (* FIXME: This should not be needed, as post does not mention rr0 *)
-by rnd;auto => />;rewrite -prg_enc_correct /#.
+rndsem*{1} 0.
+rndsem*{2} 0.
+rnd;auto => />;rewrite -prg_enc_correct. 
+have -> : (fun (rr0 : randomness) => ((prg_enc rr0).`1, (prg_enc rr0).`2, (prg_enc rr0).`3))
+          = prg_enc; by smt().
 qed.
 
 section.
@@ -565,8 +560,10 @@ import UU.
 
 equiv kg_same : 
   TT.BasePKE.kg  ~ MLWE_PKE_HASH.kg : true ==> ={res}.
-proc;rndsem {2} 0. 
-admit. (* FIXME: This should not be needed, as post does not mention r *)
+proc;rndsem*{2} 0.
+rnd;auto => />.
+have -> : (fun (r : randomness) => ((kg r).`1, (kg r).`2))
+          = kg; by smt().
 qed.
 
 (* correctness *)
