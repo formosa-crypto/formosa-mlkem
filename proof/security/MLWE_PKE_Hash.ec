@@ -18,8 +18,7 @@ type ciphertext = vector * R.
 
 type pkey  = seed * vector.
 type skey  = vector.
-
-
+ 
 (******************************************************************)
 (*                The Hashed Encryption Scheme                     *)
 
@@ -72,8 +71,8 @@ clone import PKE with
   type ciphertext <- ciphertext.
 *)
 
-require FO_Kyber.
-clone import FO_Kyber with
+require FO_MLKEM.
+clone import FO_MLKEM with
   type UU.TT.PKE.pkey <- MLWE_PKE_Hash.pkey,
   type UU.TT.PKE.skey <- MLWE_PKE_Hash.skey,
   type UU.TT.PKE.ciphertext <- MLWE_PKE_Hash.ciphertext,
