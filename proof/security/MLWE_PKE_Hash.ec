@@ -10,15 +10,30 @@ import ZR.
 import StdOrder.IntOrder Matrix_ Big.BAdd.
 
 type plaintext.
+type ciphertext.
+
+type raw_ciphertext = vector * R.
 
 op m_encode : plaintext -> R. 
 op m_decode : R -> plaintext.
 
-type ciphertext = vector * R.
+op c_encode : raw_ciphertext -> ciphertext.
+op c_decode : ciphertext -> raw_ciphertext.
 
-type pkey  = seed * vector.
-type skey  = vector.
- 
+type pkey.
+type skey.
+
+type raw_pkey  = seed * vector.
+type raw_skey  = vector.
+
+op pk_encode : raw_pkey -> pkey.
+op sk_encode : raw_skey -> skey.
+op pk_decode : pkey -> raw_pkey.
+op sk_decode : skey -> raw_skey.
+
+axiom pk_encodeK : cancel pk_encode pk_decode.
+axiom sk_encodeK : cancel sk_encode sk_decode.
+
 (******************************************************************)
 (*                The Hashed Encryption Scheme                     *)
 
@@ -47,18 +62,18 @@ axiom prg_enc_correct :
 op kg(r : randomness) : pkey * skey = 
    let (sd,s,e) = prg_kg r in
    let t =  (H sd) *^ s + e in
-       ((sd,t),s).
+       (pk_encode (sd,t),sk_encode s).
 
 op enc(rr : randomness, pk : pkey, m : plaintext) : ciphertext = 
-    let (sd,t) = pk in
+    let (sd,t) = pk_decode pk in
     let (r,e1,e2) = prg_enc rr in
     let u = m_transpose (H sd) *^ r + e1 in
     let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
-        (u,v).
+        c_encode (u,v).
 
 op dec(sk : skey, c : ciphertext) : plaintext option =
-    let (u,v) = c in
-       Some (m_decode (v &- (sk `<*>` u))).
+    let (u,v) = c_decode c in
+       Some (m_decode (v &- (sk_decode sk `<*>` u))).
 
 (******************************************************************)
 (*    The Security Games                                          *)
@@ -83,9 +98,7 @@ clone import FO_MLKEM with
   op UU.TT.dec <- dec,
   op UU.TT.randd <- drand
   proof UU.TT.kg_ll by (apply dmap_ll;apply drand_ll)
-  proof UU.TT.randd_ll by apply drand_ll. 
-import UU.TT.PKE.
-
+  proof UU.TT.randd_ll by apply drand_ll.
 (* remaining axioms
  UU.TT.dplaintext_ll: is_lossless dplaintext
  UU.TT.dplaintext_uni: is_uniform dplaintext
@@ -106,6 +119,8 @@ import UU.TT.PKE.
  KEMROM.dkey_uni: is_uniform UU.dkey
  KEMROM.dkey_fu: is_full UU.dkey
  ge0_qHK: 0 <= qHK *)
+
+import UU.TT.PKE.
 
 module MLWE_PKE_HASH : Scheme = {
 
@@ -141,7 +156,7 @@ module MLWE_PKE_HASH_PROC : Scheme = {
      r <$ drand;
      (sd,s,e) <- prg_kg r;
      t <-  (H sd) *^ s + e;
-     return ((sd,t),s);
+     return (pk_encode (sd,t),sk_encode s);
   }
 
   proc kg() : pkey * skey = {
@@ -150,34 +165,34 @@ module MLWE_PKE_HASH_PROC : Scheme = {
     s  <$ dshort;
     e  <$ dshort;
     t  <- (H sd) *^ s + e;
-    return ((sd,t),s);
+    return (pk_encode (sd,t),sk_encode s);
   }
   
   proc enc_bridge(pk : pkey, m : plaintext) : ciphertext = {
      var sd,t,rr,r,e1,e2,u,v;
-     (sd,t) <- pk;
+     (sd,t) <- pk_decode pk;
      rr <$ drand;
      (r,e1,e2) <- prg_enc rr;
      u <- m_transpose (H sd) *^ r + e1;
      v <- (t `<*>` r) &+ e2 &+ (m_encode m);
-     return (u,v);
+     return c_encode (u,v);
   }
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
     var sd, t,r,e1,e2,u,v;
-    (sd,t) <- pk;
+    (sd,t) <- pk_decode pk;
     r  <$ dshort;
     e1 <$ dshort;
     e2 <$ dshort_R;
     u  <- m_transpose (H sd) *^ r + e1;
     v  <- (t `<*>` r) &+ e2 &+ (m_encode m);
-    return(u,v);
+    return c_encode (u,v);
   }
   
   proc dec(sk : skey, c : ciphertext) : plaintext option = {
     var u,v;
-    (u,v) <- c;
-    return (Some (m_decode (v &- (sk `<*>` u))));
+    (u,v) <- c_decode c;
+    return (Some (m_decode (v &- (sk_decode sk `<*>` u))));
   }
 }.
 (* FIXME : weird parser accepts var (u,v) *)
@@ -186,7 +201,8 @@ equiv kg_proc : MLWE_PKE_HASH.kg ~ MLWE_PKE_HASH_PROC.kg : ={arg} ==> ={res}.
 proc.
 transitivity {1} { (pk,sk) <@ MLWE_PKE_HASH_PROC.kg_bridge(); }
               (true ==> ={pk,sk} )
-              (true ==> pk{1} = (sd{2},t{2}) /\ sk{1} = s{2} ); 1,2:smt().
+              (true ==> pk{1} = pk_encode (sd{2},t{2}) /\ 
+                                sk{1} = sk_encode s{2} ); 1,2:smt().
 + by inline*; auto; rewrite /kg /= /#.
 inline *. wp 2 3.
 conseq (_: true ==> ={sd,s,e}); 1: by smt(). 
@@ -201,7 +217,7 @@ equiv enc_proc : MLWE_PKE_HASH.enc ~ MLWE_PKE_HASH_PROC.enc : ={arg} ==> ={res}.
 proc.
 transitivity {1} { c <@ MLWE_PKE_HASH_PROC.enc_bridge(pk,m); }
               (={pk,m} ==> ={c} )
-              (={pk,m} ==> c{1} = (u{2},v{2})); 1,2:smt().
+              (={pk,m} ==> c{1} = c_encode  (u{2},v{2})); 1,2:smt().
 + by inline*; auto; smt(). 
 inline *; sp;wp 2 3.
 conseq (_: ={pk,m} ==> ={r,e1,e2}); 1,2: by smt(). 
@@ -261,7 +277,7 @@ module MLWE_PKE_HASH1 = {
     sd <$ dseed;
     s  <$ dshort;
     t  <$ duni;
-    return ((sd,t),s);
+    return (pk_encode (sd,t), sk_encode s);
   }
 
   include MLWE_PKE_HASH_PROC [-kg]
@@ -271,7 +287,7 @@ module MLWE_PKE_HASH1 = {
 module B1(A : Adversary) : HAdv_T = {
 
   proc kg(sd : seed, t : vector) : pkey * skey = {
-    return ( (sd,t),witness);
+    return (pk_encode (sd,t),witness);
   }
   
   proc guess(sd, t : vector, uv : vector * R) : bool = {
@@ -320,10 +336,10 @@ module MLWE_PKE_HASH2 = {
 
   proc enc(pk : pkey, m : plaintext) : ciphertext = {
     var _A,u, v;
-    _A <- m_transpose (H pk.`1);
+    _A <- m_transpose (H (pk_decode pk).`1);
     u <$duni;
     v <$duni_R;
-    return (u,v &+ m_encode m);
+    return c_encode (u,v &+ m_encode m);
   }
 
   include MLWE_PKE_HASH1 [-enc]
@@ -333,11 +349,11 @@ module MLWE_PKE_HASH2 = {
 module B2(A : Adversary) : HAdv_T = {
 
   proc kg(sd : seed, t : vector) : pkey * skey = {
-    return ((sd,t),witness);
+    return (pk_encode (sd,t),witness);
   }
   
   proc enc(pk : pkey, m : plaintext, uv : vector * R) : ciphertext = {
-    return ((uv.`1, uv.`2 &+ m_encode m));
+    return c_encode ((uv.`1, uv.`2 &+ m_encode m));
   }
   
   proc guess(sd : seed, t : vector, uv : vector * R) : bool = {
@@ -365,8 +381,8 @@ proc. inline *.
 swap {2} 7 -5.
 swap {2} [11..12] -8.
 swap {2} [14..17] -9.
-seq 4 7 : (#pre /\ ={t,pk} /\ pk{2}.`1 = sd{2} /\ pk{2}.`2 = t{2});
-  1: by auto; rnd{1};auto; smt(dshort_ll).
+seq 4 7 : (#pre /\ ={t,pk} /\ (pk_decode pk{2}).`1 = sd{2} /\ (pk_decode pk{2}).`2 = t{2});
+  1: by auto; rnd{1};auto; smt(pk_encodeK dshort_ll).
 swap {2} [11..13] -9.
 by wp; call(_: true); wp; rnd{2}; wp; rnd;rnd{2}; wp;
    rnd;rnd;wp;rnd;call(_: true); auto; smt(duni_ll).
@@ -381,8 +397,8 @@ proc; inline *.
 swap {1} 7 -5.
 swap {1} [11..12] -8.
 swap {1} [14..17] -9.
-seq 7 4 : (#pre /\ ={t,pk} /\ (pk{2}).`1 = sd{2} /\ (pk{2}).`2 = t{2});
-  1: by auto; rnd{2};auto; smt(dshort_ll).
+seq 7 4 : (#pre /\ ={t,pk} /\ (pk_decode pk{2}).`1 = sd{2} /\ (pk_decode pk{2}).`2 = t{2});
+  1: by auto; rnd{2};auto; smt(pk_encodeK dshort_ll).
 swap {1} [11..13] -9.
 by wp; call(_: true);wp;rnd;wp;rnd{1};rnd;wp;rnd{1};rnd{1};wp;rnd; 
    call(_: true); auto;smt(duni_ll dshort_ll).
@@ -402,10 +418,10 @@ local module Game2(A : Adversary) = {
     sd <$ dseed;
     s <$ dshort;
     t <$ duni;
-    (m0, m1) <@ A.choose(sd,t);
+    (m0, m1) <@ A.choose(pk_encode (sd,t));
     u <$duni;
     v <$duni_R;
-    b' <@ A.guess((u,v));
+    b' <@ A.guess(c_encode (u,v));
     b <$ {0,1};
     return b = b';
   }
@@ -467,34 +483,47 @@ end section.
 (* failure probability is considered in the FO construction.      *)
 (******************************************************************)
 
-(* We want to prove a concrete bound on the probability of failure
-   for Kyber. We will do so generically by first showing at this
-   level that it all comes down to the noise distribution. *)
+(* We express rounding errors as additive noise *)
 
 op noise_exp _A s e r e1 e2 m = 
     let t = _A *^ s + e in
     let u = m_transpose _A *^ r + e1 in
     let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
-        v &- (s `<*>` u) &- (m_encode m).
+    let (u',v') = c_decode (c_encode (u,v)) in
+        v' &- (s `<*>` u') &- (m_encode m).
+
+(* We can derive the noise expression by introducing
+   operators that compute the rounding error *)
+
+op rnd_err_v : R -> R.
+op rnd_err_u : vector -> vector.
+
+axiom encode_noise u v :
+   c_decode (c_encode (u,v)) = 
+      (u + rnd_err_u u, v &+ rnd_err_v v).
 
 lemma matrix_props1 _A s e r :
   (_A *^ s + e) `<*>` r = 
   (s ^* m_transpose _A `<*>` r) &+ (e `<*>` r).
 proof. by rewrite dotpDl -mulmxTv trmxK. qed.
 
-lemma matrix_props2 s _A r e1 :
-  s `<*>` (m_transpose _A *^ r + e1) = 
+lemma matrix_props2 s _A r e1 cu :
+  s `<*>` (m_transpose _A *^ r + e1 + cu) = 
   (s ^* m_transpose _A `<*>` r) &+ 
-    (s `<*>` e1).
+    (s `<*>` e1) &+ (s `<*>` cu).
 proof. by rewrite !dotpDr dotpC dotp_mulmxv dotpC. qed.
-
-op noise_exp_simpl s e r e1 e2 = 
-  ((e `<*>` r) &- (s `<*>` e1)  &+ e2 ).
 
 lemma noise_exp_val _A s e r e1 e2 m :
   noise_exp _A s e r e1 e2 m = 
-  noise_exp_simpl s e r e1 e2
-by  rewrite /noise_exp /noise_exp_simpl /=  matrix_props1 matrix_props2; ring. 
+  let t = _A *^ s + e in
+  let u = m_transpose _A *^ r + e1 in
+  let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
+  let cu = rnd_err_u u in
+  let cv = rnd_err_v v in
+  ((e `<*>` r) &- (s `<*>` e1) &- (s `<*>` cu) &+ e2) &+ cv.
+proof.
+  rewrite /noise_exp /= encode_noise /= matrix_props1 matrix_props2; ring. 
+qed.
 
 (* The above noise expression is computed over the abstract
    rings that define the scheme. Noise bounds are checked and
@@ -507,16 +536,19 @@ axiom good_decode m n :
   under_noise_bound n max_noise =>
   m_decode (m_encode m &+ n) = m.
 
-
-module CorrectnessBound = {
+(* We now rewrite the correctness game in terms of noise *)
+module CorrectnessAdvNoise(A : CORR_ADV) = {
   proc main() = {
-    var s,e,r,e1,e2,n;
+    var sd,s,e,_A,r,e1,e2,m,n;
+    sd <$ dseed;
+    _A <- H sd;
     r <$ dshort;
     s <$ dshort;
     e <$ dshort;
     e1 <$ dshort;
     e2 <$ dshort_R;
-    n <- noise_exp_simpl s e r e1 e2;
+    m <@ A.find(pk_encode (sd,_A *^ s + e),sk_encode s);
+    n <- noise_exp _A s e r e1 e2 m;
     return (!under_noise_bound n max_noise);
   }
 }.
@@ -525,29 +557,188 @@ section.
 
 declare module A <: CORR_ADV.
 
-lemma correctness_noise &m :
-  islossless A.find =>
-  Pr[Correctness_Adv(MLWE_PKE_HASH, A).main() @ &m : res]  <= 
-    Pr[CorrectnessBound.main() @ &m : res].
-proof. 
-move => A_ll.
-rewrite (corr_proc A &m).
+lemma correctness_noise &m:
+  Pr[ Correctness_Adv(MLWE_PKE_HASH,A).main() @ &m : res]  <= 
+       Pr[ CorrectnessAdvNoise(A).main() @ &m : res].
+proof.
+rewrite (corr_proc A).
 byequiv => //.
-proc;inline *;swap {1} 8 4; swap {1} 6 5.
-wp;call{1}(_: true ==> true).
-swap {2} [2..3] -1.
-auto => /> => sd _ s _ e  _ r _  e1 _ e2 _ m /=.
-have -> : ((H sd) *^ s + e `<*>` r) &+ e2 &+ m_encode m &+ - (s `<*>` trmx (H sd) *^ r + e1)  = 
-          m_encode m  + noise_exp (H sd) s e r e1 e2 m by rewrite /noise_exp /=;ring.
-have -> := noise_exp_val (H sd) s e r e1 e2 m.
-by smt(good_decode).
+proc.  
+inline {1} 4. inline {1} 3. inline {1} 1. 
+swap {1} 7 -1.
+swap {1} 9 -2.
+swap {1} 10 -8.
+swap {1} [11..12] -5.
+seq 11 8 : ( 
+           ={e2,e1,r,s,e,sd,m} /\
+           sd0{1} = sd{1} /\
+           (pk_decode pk{1}).`1 = sd{1} /\
+           (pk_decode pk{1}).`2 = t{1} /\
+           sk_decode sk{1} = s{1} /\
+           t{1} = H sd0{1} *^ s{1} + e{1} /\
+           H sd0{1} = _A{2}); last first.
++ inline *; auto => />; move => &1 &2  ->.
+  rewrite  encode_noise.
+  rewrite (_: 
+     ((((H (pk_decode pk{1}).`1) *^ (sk_decode sk){1} + e{2}) `<*>` r{2}) &+
+     e2{2} &+ m_encode m{2} &+
+     rnd_err_v
+       ((((H (pk_decode pk{1}).`1) *^ (sk_decode sk){1}  + e{2}) `<*>` r{2}) &+
+        e2{2} &+ m_encode m{2}) &-
+     ((sk_decode sk){1}  `<*>`
+      (m_transpose ((H (pk_decode pk{1}).`1)) *^ r{2} + e1{2} +
+       rnd_err_u (m_transpose ((H (pk_decode pk{1}).`1)) *^ r{2} + e1{2})))) = 
+  m_encode m{2} &+ noise_exp ((H (pk_decode pk{1}).`1)) (sk_decode sk){1}  e{2} r{2} e1{2}
+                     e2{2} m{2});  
+   1: by rewrite noise_exp_val /= matrix_props1 matrix_props2; ring.
+   by smt(good_decode).
+
+by call(_: true);auto => />; smt(get_setE sk_encodeK pk_encodeK).
 qed.
 
-lemma correctness_theorem &m fail_prob :
- islossless A.find =>
-   Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-     Pr[ Correctness_Adv(MLWE_PKE_HASH,A).main() @ &m : res] <= fail_prob
- by smt(correctness_noise). 
+end section.
+
+axiom noise_commutes n n' maxn (b : int) : 
+  under_noise_bound n' b =>
+  under_noise_bound n (maxn - b) =>
+  under_noise_bound (n &+ n') maxn.
+
+axiom noise_preserved n maxn :
+  under_noise_bound n maxn = 
+  under_noise_bound (ZR.([-]) n) maxn.
+
+op noise_exp_part1 _A s e r e1 e2 = 
+  let u = m_transpose _A *^ r + e1 in
+  let cu = rnd_err_u u in
+    ((e `<*>` r) &- (s `<*>` e1) &+ e2 ) &-   (s `<*>` cu).
+
+op noise_exp_part2 _A s e r e2 m =
+  let t = _A *^ s + e in
+  let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
+  let cv = rnd_err_v v in
+  cv.
+
+
+lemma parts_work _A s e r e1 e2 m :
+  noise_exp _A s e r e1 e2 m =
+  noise_exp_part1 _A s e r e1 e2 &+ noise_exp_part2 _A s e r e2 m by rewrite noise_exp_val /noise_exp_simpl /noise_exp_part1 /noise_exp_part2 /=; ring. 
+
+module CB(A : CORR_ADV) = {
+  var s : vector
+  var e : vector
+  var _A : matrix
+  var r : vector
+  var e1 : vector
+  var e2 : R
+  var n1 : R
+  var n2 : R
+  var u : vector
+  var cu : vector
+  var m : plaintext
+
+
+  proc main() = {
+    var sd;
+    sd <$ dseed;
+    _A <- H sd;
+    r <$ dshort;
+    s <$ dshort;
+    e <$ dshort;
+    e1 <$ dshort;
+    e2 <$ dshort_R;
+    m <@ A.find(pk_encode (sd,_A *^ s + e),sk_encode s);
+    n1 <- noise_exp_part1 _A s e r e1 e2;
+    n2 <- noise_exp_part2 _A s e r e2 m;
+  }
+}.
+
+(** OVER ESTIMATE THE LAST TERM **)
+
+op cv_bound_max : int.
+axiom cv_bound_valid _A s e r e2 m :
+  s \in dshort =>
+  e \in dshort =>
+  r \in dshort =>
+  e2 \in dshort_R =>
+  let t = _A *^ s + e in
+  let v = (t `<*>` r) &+ e2 &+ (m_encode m) in
+  under_noise_bound (rnd_err_v v) cv_bound_max.
+
+module CorrectnessBound = {
+
+  proc main() = {
+    var sd, _A, r,s,e,e1,e2,n;
+    sd <$ dseed;
+    _A <- H sd;
+    r <$ dshort;
+    s <$ dshort;
+    e <$ dshort;
+    e1 <$ dshort;
+    e2 <$ dshort_R;
+    n <- noise_exp_part1 _A s e r e1 e2;
+    return !under_noise_bound n (max_noise - cv_bound_max);
+  }
+}.
+
+section.
+
+declare module A <: CORR_ADV {-CB}.
+
+lemma correctness_split &m cv_bound failprob1 failprob2:
+  Pr[ CB(A).main() @ &m : 
+        !under_noise_bound CB.n1 (max_noise - cv_bound)] <= failprob1 =>
+  Pr[ CB(A).main() @ &m : 
+        !under_noise_bound CB.n2 (cv_bound)] <= failprob2 =>
+  Pr[ CorrectnessAdvNoise(A).main() @ &m : res] <=
+       failprob1 + failprob2.
+proof.
+move => bd1 bd2.
+have  : Pr[CorrectnessAdvNoise(A).main() @ &m : res] <=
+  Pr[CB(A).main() @ &m : 
+        ! under_noise_bound CB.n1 (max_noise - cv_bound) \/
+        ! under_noise_bound CB.n2 cv_bound ]; last by rewrite Pr[mu_or];smt(mu_bounded).
+byequiv => //.
+proc; inline *.
+wp;call(_: true). 
+by auto => />; by smt(parts_work noise_commutes noise_preserved).
+qed.
+
+(*******)
+
+
+lemma correctness_bound_aux &m  : 
+  islossless A.find =>
+  Pr[ CB(A).main() @ &m : 
+        !under_noise_bound CB.n1 (max_noise - cv_bound_max)] =
+  Pr[ CorrectnessBound.main() @ &m : res].
+move => A_ll.
+byequiv => //; proc; inline *.
+wp;call{1}(_: true ==> true). 
+by auto => />.
+qed.
+
+
+lemma cv_max &m : 
+  Pr[CB(A).main() @ &m : ! under_noise_bound CB.n2 cv_bound_max] = 0%r.
+byphoare=> //.
+hoare; proc; inline *.
+wp;call(_: true). 
+auto => /> sd Hsd r Hr s Hs e He e1 He1 e2 He2 m. 
+rewrite /noise_exp_part2 /=.
+by have /= := (cv_bound_valid (H sd) s e r e2 m Hs He Hr He2).
+qed.
+
+lemma correctness_theorem &m :
+  islossless A.find =>
+  Pr[ Correctness_Adv(MLWE_PKE_HASH,A).main() @ &m : res]  <= 
+    Pr[ CorrectnessBound.main() @ &m : res].
+move => A_ll.
+have := (correctness_split &m cv_bound_max (Pr[ CorrectnessBound.main() @ &m : res]) 0%r _ _).
++ by rewrite (correctness_bound_aux &m A_ll).
++ by have := cv_max &m; smt().
+have := (correctness_noise A &m).
+by smt().
+qed.
 
 end section.
 
@@ -582,7 +773,7 @@ have -> : Pr[TT.PKE.Correctness_Adv(TT.BasePKE, TT.B(B_UC, RO.RO)).main() @ &m :
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
-have := correctness_theorem (TT.B(B_UC, RO.RO)) &m fail_prob _ cb. 
+have := correctness_theorem (TT.B(B_UC, RO.RO)) &m  _. 
 + by islossless;smt(drange_ll).
 by smt().
 qed.
@@ -592,7 +783,7 @@ qed.
 section. 
 
 declare module A <:
-    KEMROM.CCA_ADV{ -KEMROM.RO.RO.m, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.B, -TT.Correctness_Adv1, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.RO2.FRO, -KEMROMx2.CCA, -CountHx2, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3, -KEMROM.CCA, -B1x2}.
+    KEMROM.CCA_ADV{ -KEMROM.RO.RO.m, -OW_CPA, -BOWp, -OWL_CPA, -OWvsIND.Bowl, -RO.RO, -RO.FRO, -OW_PCVA, -TT.BasePKE, -TT.B, -TT.Correctness_Adv1, -TT.CountO, -TT.O_AdvOW, -TT.Gm, -RF.RF, -PseudoRF.PRF, -KEMROMx2.RO1.RO, -KEMROMx2.RO1.FRO, -KEMROMx2.RO2.RO, -KEMROMx2.RO2.FRO, -KEMROMx2.CCA, -CountHx2, -RO1E.FunRO, -UU2, -H2, -H2BOWMod, -Gm2, -Gm3, -KEMROM.CCA, -B1x2, -CB}.
 
 
 module BUOOOWMod_Hx2 = CountH(B1x2(A, CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), KEMROMx2.CCA(CountHx2(BUUOWMod(B1x2(A), TT.CountH(TT.H(TT.CO1(RO.RO))), TT.CountO(TT.G2_O(TT.CO1(RO.RO)))).H2B), UU2, B1x2(A)).O).BH).
@@ -656,7 +847,7 @@ have -> :
    1: by conseq />;call kg_same;auto => />.
   by inline *;sim.
 
-have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(B1x2(A))))) &m fail_prob _; 1: by islossless.
+have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(B1x2(A))))) &m  _; 1: by islossless.
 have <- : 
     Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(B1x2(A))))).main() @ &m : res] = 
    Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW_query(BUUOWMod(B1x2(A))))).main() @ &m : res].
@@ -666,7 +857,7 @@ have <- :
 
 move => ?.
 
-have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(B1x2(A))))) &m fail_prob _; 1: by islossless.
+have := correctness_theorem (BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(B1x2(A))))) &m _; 1: by islossless.
 have <- : 
     Pr[TT.PKE.Correctness_Adv(TT.BasePKE, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(B1x2(A))))).main() @ &m : res] = 
     Pr[TT.PKE.Correctness_Adv(MLWE_PKE_HASH, BOWp(TT.BasePKE, TT.AdvOW(BUUOWMod(B1x2(A))))).main() @ &m : res].
@@ -676,7 +867,7 @@ have <- :
 
 move => ?. 
 
-have := correctness_theorem (TT.B(TT.AdvCorr(BUUOWMod(B1x2(A))), RO.RO)) &m fail_prob _.
+have := correctness_theorem (TT.B(TT.AdvCorr(BUUOWMod(B1x2(A))), RO.RO)) &m _.
 +  islossless; last by smt(drange_ll TT.ge0_qH).
    by apply(A_ll BUOOOWMod_Hx2 BUOOOWMod_dec);islossless.
 
@@ -689,7 +880,7 @@ have <- :
 
 move => ?. 
 
-have := correctness_theorem (TT.B(BUUCI(B1x2(A)), RO.RO)) &m fail_prob _.
+have := correctness_theorem (TT.B(BUUCI(B1x2(A)), RO.RO)) &m _.
 +  islossless; last by smt(drange_ll TT.ge0_qH).
    by apply(A_ll BUUCI_Hx2 BUUCI_dec);islossless.
 have <- : 
@@ -701,7 +892,7 @@ have <- :
 
 move => ?. 
 
-have := correctness_theorem (TT.B(BUUC(B1x2(A)), RO.RO)) &m fail_prob _.
+have := correctness_theorem (TT.B(BUUC(B1x2(A)), RO.RO)) &m _.
 +  islossless; last by smt(drange_ll TT.ge0_qH).
    by apply(A_ll BUUC_Hx2 BUUC_dec);islossless.
 
