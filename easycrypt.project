@@ -1,5 +1,5 @@
 [general]
-timeout = 30
+#timeout = 30
 
 provers = Alt-Ergo@2.4
 provers = CVC4@1.8

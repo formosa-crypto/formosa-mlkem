@@ -112,8 +112,17 @@ by rewrite dword_fu.
 qed.
 
 lemma srand_uni : is_uniform srand. 
-rewrite /darray32. admitted. (* uniform darray *)
-
+rewrite /darray32.
+apply dmap_uni_in_inj => x y xin yin;
+1: by smt(supp_dlist_size Array32.of_listK).
+have sizex : size x = 32 by smt(supp_dlist_size).
+have sizey : size y = 32 by smt(supp_dlist_size).
+rewrite !dlist1E // sizex /= sizey /=.
+have -> : (fun (x0 : W8.t) => mu1 W8.dword x0) = fun _ =>  inv W8.modulus%r.
++ apply fun_ext => w.
+   by rewrite !dword1E.
+by rewrite !StdBigop.Bigreal.BRM.big_const !count_predT sizex sizey.  
+qed.
 
 (* G needs only to be entropy smoothing, which is
    exactly a PRF without any input *)
@@ -536,8 +545,6 @@ module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : 
 }.
 
 
-
-
 (*******************************************************************)
 (*    The security definitions for the spec                        *)
 (*   Types correspond to implementation types                      *)
@@ -545,9 +552,9 @@ module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : 
 
 import KMatrix PolyVec PolyMat InnerPKE Zq.
 
-op pk_encode(pk : polyvec * W8.t Array32.t) : pkey = 
-                                  (encode12_vec (toipolyvec (nttv pk.`1)) ,pk.`2).
-op pk_decode(pk : pkey) = (invnttv (ofipolyvec (sem_decode12_vec (pk.`1))),pk.`2).
+op pk_encode(pk : W8.t Array32.t * polyvec) : pkey = 
+                                  (encode12_vec (toipolyvec (nttv pk.`2)), pk.`1).
+op pk_decode(pk : pkey) = (pk.`2, invnttv (ofipolyvec (sem_decode12_vec (pk.`1)))).
 op sk_encode(sk : polyvec) : skey = encode12_vec (toipolyvec (nttv sk)).
 op sk_decode(sk : skey) =  invnttv (ofipolyvec (sem_decode12_vec sk)).
 op m_encode(m : plaintext) : poly = decompress_poly 1 (sem_decode1 m).
@@ -556,7 +563,6 @@ op c_encode(c :  polyvec * poly) : ciphertext =
       (encode10_vec_aux (compress_polyvec 10 c.`1), encode4 (compress_poly 4 c.`2)).
 op c_decode(c : ciphertext) =
       (decompress_polyvec 10 (sem_decode10_vec c.`1), decompress_poly 4 (sem_decode4 c.`2)).
-
 
 lemma pk_encodeK : cancel pk_encode pk_decode.
 rewrite /pk_decode /pk_encode /cancel /= => x.
@@ -572,9 +578,15 @@ move => i ib; rewrite /toipolyvec !mapiE /= 1:ib.
 by smt(rg_asint qE).
 qed.
 
+op rnd_err_v = compress_poly_err 4. 
+op rnd_err_u = mapv (compress_poly_err 10). 
+
 op max_noise = q %/ 4 - 1.
 op under_noise_bound (p : poly) (b : int) =
      all (fun cc => `| as_sint cc| <= b) p.
+
+op cv_bound_max : int = 104. (* this is the compress error bound for d = 4 *)
+
 
 op H : W8.t Array32.t -> polymat.
 
@@ -596,6 +608,8 @@ lemma H_T_sem _seed :
     phoare [ Hmodule.sampleAT : sd = _seed ==> res = trmx (H _seed) ] = 1%r
   by conseq (H_sem_equiv) (H_sem _seed) => /#.
 
+(* This will bring into context a ROM definition which has
+   the same types as the ROM we will use for the Spec *)
 clone import MLWE_PKE_Hash as MLWEPKEHash with
   type MLWE_.seed <- W8.t Array32.t,
   type MLWE_.Matrix_.R <- poly,
@@ -606,7 +620,10 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   type FO_MLKEM.UU.key <- sharedsecret,
   type plaintext <- plaintext,
   type randomness <- W8.t Array32.t,
+  type ciphertext <- W8.t Array960.t * W8.t Array128.t,
   type FO_MLKEM.UU.PseudoRF.K <- sharedsecret,
+  type pkey <- publickey,
+  type skey <- W8.t Array1152.t,
   op MLWE_.H <- H,
   op prg_kg <- prg_kg_inner,
   op prg_enc <- prg_enc_inner,
@@ -632,13 +649,22 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   op MLWE_.dseed <- srand,
   op m_encode <- m_encode,
   op m_decode <- m_decode,
+  op pk_encode <- pk_encode,
+  op pk_decode <- pk_decode,
+  op sk_encode <- sk_encode,
+  op sk_decode <- sk_decode,
+  op c_encode <- c_encode,
+  op c_decode <- c_decode,
   op under_noise_bound <- under_noise_bound,
   op max_noise <- max_noise,
+  op cv_bound_max <- cv_bound_max,
+  op rnd_err_u <- rnd_err_u,
+  op rnd_err_v <- rnd_err_v,
   op drand <- srand,
   op FO_MLKEM.UU.TT.dplaintext <- srand,
   op FO_MLKEM.UU.dkey <- srand,
   op FO_MLKEM.UU.PseudoRF.dK <- srand,
-  op FO_MLKEM.UU.PseudoRF.F = J (* FIX ME, CAN'T PRF DECODED VALUES *)
+  op FO_MLKEM.UU.PseudoRF.F = J
   proof MLWE_.dseed_ll by (apply srand_ll)
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
@@ -666,38 +692,79 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   proof drand_ll by apply srand_ll
   proof drand_uni by apply srand_uni
   proof drand_fu by apply srand_fu
-  proof prg_kg_correct
-  proof prg_enc_correct
+  proof FO_MLKEM.UU.TT.dplaintext_ll by apply srand_ll
+  proof FO_MLKEM.UU.TT.dplaintext_uni by apply srand_uni
+  proof FO_MLKEM.UU.TT.dplaintext_fu by apply srand_fu
+  proof FO_MLKEM.UU.dkey_ll by apply srand_ll
+  proof FO_MLKEM.UU.dkey_uni by apply srand_uni
+  proof FO_MLKEM.UU.dkey_fu by apply srand_fu
+  proof FO_MLKEM.UU.PseudoRF.dK_ll by apply srand_ll
+  proof FO_MLKEM.KEMROM.dkey_ll by apply srand_ll
+  proof FO_MLKEM.KEMROM.dkey_uni by apply srand_uni
+  proof FO_MLKEM.KEMROM.dkey_fu by apply srand_fu
+  proof pk_encodeK
+  proof sk_encodeK
+  proof encode_noise
   proof good_decode
+  proof cv_bound_valid
+  proof noise_commutes
+  proof noise_preserved
+  proof prg_kg_correct
+  proof prg_enc_correct.
+(* We inherit the following axioms
   proof *.
-
-
-     FO_MLKEM.UU.TT.dplaintext_ll: is_lossless dplaintext
- FO_MLKEM.UU.TT.dplaintext_uni: is_uniform dplaintext
- FO_MLKEM.UU.TT.dplaintext_fu: is_full dplaintext
  FO_MLKEM.UU.TT.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
  FO_MLKEM.UU.TT.ge0_qH: 0 <= qH
  FO_MLKEM.UU.TT.ge0_qV: 0 <= qV
  FO_MLKEM.UU.TT.ge0_qP: 0 <= qP
  FO_MLKEM.UU.TT.ge0_qHC: 0 <= qHC
- FO_MLKEM.UU.dkey_ll: is_lossless UU.dkey
- FO_MLKEM.UU.dkey_uni: is_uniform UU.dkey
- FO_MLKEM.UU.dkey_fu: is_full UU.dkey
- FO_MLKEM.UU.PseudoRF.dK_ll: is_lossless dK
  FO_MLKEM.UU.ge0_qHT: 0 <= qHT
  FO_MLKEM.UU.ge0_qHU: 0 <= qHU
  FO_MLKEM.UU.ge0_qD: 0 <= qD
- FO_MLKEM.KEMROM.dkey_ll: is_lossless UU.dkey
- FO_MLKEM.KEMROM.dkey_uni: is_uniform UU.dkey
- FO_MLKEM.KEMROM.dkey_fu: is_full UU.dkey
- FO_MLKEM.ge0_qHK: 0 <= qHK
-  *)
+ FO_MLKEM.ge0_qHK: 0 <= qHK  *)
 
-realize prg_kg_correct.
-admitted. (* Ideally proc op *)
 
-realize prg_enc_correct.
-admitted. (* Ideally proc op *)
+realize pk_encodeK.
+rewrite /pk_decode /pk_encode /cancel /= => x.
+rewrite sem_decode12_vec_corr -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK /#.
+move => i ib; rewrite /toipolyvec !mapiE /= 1:ib.
+by smt(rg_asint qE).
+qed.
+
+realize sk_encodeK.
+rewrite /sk_decode /sk_encode /cancel /= => x.
+rewrite sem_decode12_vec_corr  -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK /#.
+move => i ib; rewrite /toipolyvec !mapiE /= 1:ib.
+by smt(rg_asint qE).
+qed.
+
+realize encode_noise.
+move => /> u v.
+rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v /z sem_decode10_vec_corr /= -sem_encode10_vecK.
++ move => i ib; rewrite /compress_polyvec !mapiE /= 1:ib /compress /= /#.
+rewrite sem_decode4_corr -sem_encode4K /=.
+  by move => i ib; rewrite /compress_poly !mapiE /= 1:ib /compress /= /#.
+split; last  by rewrite round_poly_errE.
+rewrite /(+) mapvE /=.
+apply eq_vectorP => /> i il ih. rewrite !offunvE /=;1: smt(). 
+rewrite offunvE 1:/# /= /compress_poly_err /=.
+apply Array256.tP => k kb.
+rewrite /decompress_polyvec /compress_polyvec /= /fromarray256 /= /Rq.(&+) !getvE !setvE /= !offunvE 1:/# /=.
+case (i = 2).
++ move => -> /=;
+ rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
+ rewrite decompress_errE //; 1: smt(qE).
+ by rewrite mapiE /#.
+case (i = 1).
++ move => -> /=.
+ rewrite !offunvK /vclamp /kvec /=  mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
+ rewrite decompress_errE //; 1: smt(qE).
+ by rewrite mapiE /#.
+move => *;rewrite ifF 1:/# !offunvK /vclamp /kvec /= ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#.
+ rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
+ rewrite decompress_errE //; 1: smt(qE).
+ by rewrite mapiE /#.
+qed.
 
 realize good_decode.
 rewrite /under_noise_bound /m_encode /m_decode /compress_poly 
@@ -734,6 +801,44 @@ have: compress 1 (incoeff 1665 + n.[x]) <> 0.
  smt(incoeffK).
 by rewrite /compress /=; smt(ltz_pmod modz_ge0).
 qed.
+
+realize cv_bound_valid.
+move=> A s e r e2 m ???? t v.
+rewrite /under_noise_bound /rnd_err_v /compress_poly_err /cv_bound.
+rewrite allP /compress_err => i Hi /=.
+rewrite mapiE //= -Bq4E.
+by move: (compress_err_bound v.[i] 4 _ _) => //= /#.
+qed.
+
+realize noise_commutes.
+move => n n' maxn b H H0.
+move : H H0; rewrite /under_noise_bound.
+rewrite !allP.
+move => Hn Hnp i ib.
+move : (Hn i ib). 
+move : (Hnp i ib) => /=. 
+rewrite /as_sint /Rq.(&+) /= map2E !initiE //= Zq.addE qE /= !StdOrder.IntOrder.ler_norml /= => Hni Hnpi.
+by smt().
+qed.
+
+realize noise_preserved.
+move => n maxn. 
+rewrite /under_noise_bound.
+rewrite !allP. 
+rewrite eq_iff; split => /=. 
+move => H i ib; move : (H i ib).
+rewrite /(&-) mapiE 1:/#.
+rewrite as_sintN /= /#. 
+move => H i ib; move : (H i ib).
+rewrite /(&-) mapiE 1:/#.
+rewrite as_sintN /= /#. 
+qed.
+
+realize prg_kg_correct.
+admitted. (* Ideally proc op *)
+
+realize prg_enc_correct.
+admitted. (* Ideally proc op *)
 
 
 (*******************************************************************)
@@ -869,87 +974,60 @@ have -> : Pr[CCA(LRO,KyberS(KHS, KPRF,KPRF), As).main() @ &m : res]  =
   by inline *; auto => />.
 qed.
 
-
-module ArraySample = {
-   proc sL() = { 
-       var r,rho,k;
-       r <$ IdealHSF.dR (); 
-       rho <- Array32.init (fun (i : int) => r.`1.[i]); 
-       k <- Array32.init (fun (i : int) => r.`2.[i]); 
-       return (rho,k);
-  }
-
-   proc sR() = { 
-       var rho,k;
-       rho <$ srand; 
-       k <$ srand; 
-       return (rho,k);
-  }
-}.
-
-
-require import DProd.
-clone  ProdSampling with
-  type t1 <- W8.t Array32.t,
-  type t2 <- W8.t Array32.t.
-
-lemma arrsample :
-  equiv [ ArraySample.sL ~ ArraySample.sR : true ==> ={res} ].
-proc;wp;rndsem {2} 0;auto => />. 
-have <- : dlet srand (fun (rho : W8.t Array32.t) => dmap srand (fun (k : W8.t Array32.t) => (rho, k)))  = (IdealHSF.dR ()).
-+ by rewrite /dR /dmap dprod_dlet;congr;apply fun_ext => *;congr;rewrite /(\o) /=. 
-move => ?rl?;split => *;last by split;rewrite tP => *;rewrite initiE /#.
-rewrite supp_dlet /=;exists rl.`1;split => *;1: apply srand_fu.
-rewrite supp_dmap /=;exists rl.`2;split => *; last by smt().
-by apply srand_fu. 
-qed.
-
 lemma KyberS_KyberIdeal &m :
-  Pr [ KyberPKE.CPA(O,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] =
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res].
+  Pr [ CCA(LRO,KyberS(DummyHS(IdealHSF.RF),KPRF,KPRF),As).main() @ &m : res] =
+  Pr [ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),KPRF,KPRF),As).main() @ &m : res].
 proof.
 byequiv => //.
-proc. 
-  inline {1} 2; inline {2} 2. 
-  wp; call(_: ={glob O}); 1: by sim.
-  wp; call(_: ={glob O, glob S}); 1: by sim.
-  rnd.
-  wp; call(_: ={glob O}); 1: by sim.
-  conseq (_: _ ==> ={pk, glob O,glob S}); 1: smt().
-  seq 1 1 : (={glob As, glob S, glob O}); 1: by sim.
-  inline {1} 1. inline {2} 1. 
-  wp; call(_: ={glob O, glob S}); 1: by sim.
-  conseq => />.
-  inline *.
-  rcondt{1} 6; 1: by move => *; auto => />;smt(@SmtMap).
-  seq {1} 5 2 : (true); 1: by auto.
-  wp.
-  conseq (_: _ ==> rho{2} = Array32.init (fun i => r{1}.`1.[i]) /\ 
-                   k{2} = Array32.init (fun i => r{1}.`2.[i])); first
-   by move=> /> &1 *; rewrite SmtMap.get_set_sameE /=;split;rewrite tP => *;rewrite initiE /#.
- 
-  transitivity {1} { r <@ ArraySample.sL(); }
-   (true ==> ={r}) (true ==> rho{2} = Array32.init (fun i =>  r{1}.`1.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.`2.[i])) => //; first
-   by inline*; auto => /> &1 ? [rl1 rl2] /= => *;split;rewrite tP => *;rewrite initiE /#.
-   
-  transitivity {2} { (rho, k) <@ ArraySample.sR(); }
-   (true ==> rho{2} = Array32.init (fun i =>  r{1}.`1.[i]) /\ k{2} = Array32.init (fun i =>  r{1}.`2.[i])) (true ==> ={rho,k})=> //.
-   call arrsample; 1: by auto => />  *;split;rewrite tP => *;rewrite initiE /#.
-   by inline*; auto => /> &1 ? [rl1 rl2] /= => *;split;rewrite tP => *;rewrite initiE /#.
+proc. sim.
+  inline {1} 3. inline {2} 3.
+  inline {1} 4. inline {2} 6.
+  wp;conseq />;sim.
+  inline *;sp;wp;conseq/>.  
+  rndsem{2} 0;auto => />.
+  have -> : dlet srand (fun (rho : W8.t Array32.t) => dmap srand (fun (k : W8.t Array32.t) => (rho, k))) = dsmooth; last by smt().
+  by rewrite /dR /dmap dprod_dlet;congr;apply fun_ext => *;congr;rewrite /(\o) /=. 
 qed.
 
+equiv  auxhop1 : CBD2_PRF(PseudoRF).sample ~ CBD2_PRF(DummyPRF1(PRF)).sample : ={_N} /\ sig{1} = PRF.k{2} ==> ={res}
+ by proc;sim; inline *;auto => />.
 
 lemma PRFHop1 &m :
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] -
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] = 
-  Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF1(S,O,As)).main() @ &m : res ] - 
-  Pr [ PRF_DEFS.IND(IdealPRF1.RF,D_PRF1(S,O,As)).main() @ &m : res ].
+  Pr [ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),KPRF,KPRF),As).main() @ &m : res] -
+  Pr [ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] = 
+  Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF1(As)).main() @ &m : res ] - 
+  Pr [ PRF_DEFS.IND(IdealPRF1.RF,D_PRF1(As)).main() @ &m : res ].
 proof.
-have -> : Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), As).main() @ &m : res] = 
-          Pr[PRF_DEFS.IND(PRF_.PRF, D_PRF1(S, O, As)).main() @ &m : res].
+have -> : Pr[CCA(LRO, KyberSIdeal(DummyHS(IdealHSF.RF), KPRF, KPRF), As).main() @ &m : res] = 
+          Pr[PRF_DEFS.IND(PRF_.PRF, D_PRF1(As)).main() @ &m : res].
 + byequiv => //.
   proc. 
-  inline {1} 2; inline {2} 2. inline {2} 2. inline {2} 3.
+  inline {2} 2. inline {2} 2.
+  wp;sim.
+  inline {1} 3. inline {2} 4.
+  inline {1} 6. inline {2} 7.
+  wp;conseq />;sim.
+  inline {1} 9. inline {2} 10.
+  wp;conseq />;sim.
+  inline {1} 14. inline {2} 15.
+  wp;conseq />;sim. 
+  unroll for {1} 22. unroll for {2} 23.
+  wp;conseq />;sim; call(auxhop1).
+  wp;conseq />;sim; call(auxhop1).
+  wp;conseq />;sim; call(auxhop1).
+  unroll for {1} 20. unroll for {2} 21.
+  wp;conseq />;sim; call(auxhop1).
+  wp;conseq />;sim; call(auxhop1).
+  wp;conseq />;sim; call(auxhop1).
+  inline *. swap {1} 6 -1.  
+
+
+  inline *;sp;wp;conseq/>.  
+  rndsem{2} 0;auto => />.
+  have -> : dlet srand (fun (rho : W8.t Array32.t) => dmap srand (fun (k : W8.t Array32.t) => (rho, k))) = dsmooth; last by smt().
+  by rewrite /dR /dmap dprod_dlet;congr;apply fun_ext => *;congr;rewrite /(\o) /=. 
+
+ inline {2} 2. inline {2} 3.
   wp; call(_: ={glob O}); 1: by sim.
   wp; call(_: ={glob O, glob S}); 1: by sim.
   rnd.
