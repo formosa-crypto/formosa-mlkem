@@ -37,9 +37,9 @@ clone import KEM_ROM.KEM_ROM as KEMROM with
    type ciphertext <- ciphertext,
    type key <- key,
    op dkey <- dkey,
-   type RO.in_t <- pkhash * plaintext,
-   type RO.out_t <- randomness * key,
-   op   RO.dout <- fun _ => randd `*` dkey,
+   type RO.in_t <- plaintext * pkhash,
+   type RO.out_t <- key * randomness,
+   op   RO.dout <- fun _ => dkey `*` randd,
    type RO.d_in_t <- unit, 
    type RO.d_out_t <- bool.
 
@@ -58,7 +58,7 @@ module CountH(H : POracle) = {
 
   proc init () = { c_h <- 0;  }
 
-  proc get(x: pkhash * plaintext) = {
+  proc get(x: plaintext * pkhash) = {
     var r;
     r <@ H.get(x);
     c_h <- c_h + 1;
@@ -81,7 +81,7 @@ module (FO_K : KEMROM.Scheme) (H : POracle) = {
   proc enc(pk : pkey) : ciphertext * key = {
      var m, r, c, k;
      m <$ dplaintext;
-     (r,k) <@ H.get(pkh pk,m);
+     (k,r) <@ H.get(m, pkh pk);
      c <- enc r pk m; 
      return (c,k);
   }
@@ -89,7 +89,7 @@ module (FO_K : KEMROM.Scheme) (H : POracle) = {
   proc dec(sk : skey, c : ciphertext) : key option = {
      var m', c', ks, r, kn;
      m' <- dec sk.`1.`2 c;
-     (r,ks) <@ H.get(pkh sk.`1.`1,oget m');
+     (ks,r) <@ H.get(oget m',pkh sk.`1.`1);
      kn <- F sk.`2 c;
      c' <- enc r sk.`1.`1 (oget m');
      return if (m' <> None /\ c' = c) then (Some ks) else (Some kn);
@@ -221,20 +221,21 @@ swap {1} 8 -2.
 seq 6 5 : (#pre /\ m0{1} = m{2} /\ pk1{1} = pk0{2} /\ 
            m{1} \in RO1.RO.m{1} /\ ={r,k0} /\
            m{1} \in RO2.RO.m{1} /\
-           (pkh pk{2},m{2}) \in RO.RO.m{2}  /\
-           oget RO.RO.m{2}.[(pkh pk{2},m{2})] = 
-               (oget RO1.RO.m{1}.[m{1}],oget RO2.RO.m{1}.[m{1}]) /\
+           (m{2},pkh pk{2}) \in RO.RO.m{2}  /\
+           oget RO.RO.m{2}.[(m{2},pkh pk{2})] = 
+               (oget RO2.RO.m{1}.[m{1}], oget RO1.RO.m{1}.[m{1}]) /\
            r{1} = oget RO1.RO.m{1}.[m{1}] /\
            k0{1} = oget RO2.RO.m{1}.[m{1}] /\
-           (r{2},k0{2}) = oget RO.RO.m{2}.[(pkh pk{2},m{2})] /\
+           (k0{2},r{2}) = oget RO.RO.m{2}.[(m{2},pkh pk{2})] /\
            fdom RO1.RO.m{1} = fset1 m{1} /\
            fdom RO2.RO.m{1} = fset1 m{1} /\
-           fdom RO.RO.m{2} = fset1 (pkh pk{2}, m{2})).
+           fdom RO.RO.m{2} = fset1 (m{2},pkh pk{2})).
 + inline *; swap {1} 6 -5; swap {1} 10 -8; swap {2} 3 -2.
-  seq 2 1 : (#pre /\ r0{1} = r0{2}.`1 /\ r1{1} = r0{2}.`2).
-  + conseq />;rndsem{1} 0;rnd;auto => />.
-    have -> : (dlet randd (fun (r1_0 : randomness) => dmap dkey 
-       (fun (r0_0 : key) => (r1_0, r0_0)))) = randd `*` dkey; last by smt().
+  seq 2 1 : (#pre /\ r0{1} = r0{2}.`2 /\ r1{1} = r0{2}.`1).
+  + swap {1} 1 1.
+    conseq />;rndsem{1} 0; rnd;auto => />.
+    have -> : (dlet dkey (fun (r1 : key) => dmap randd (fun (r0 : randomness) => (r1, r0)))) = 
+        dkey `*` randd; last by smt().
     rewrite dprod_dlet; congr;apply fun_ext => r.
     by rewrite dlet_dunit.
   by auto => />;smt(get_setE mem_set mem_empty @SmtMap @FSet).
@@ -244,10 +245,11 @@ seq 1 1 : (#pre /\ c1{1} = c0{2}); 1: by auto => /#.
 sp;inline {1} 1; inline {2} 1;sp.
 inline {1} 2; inline {1} 1;inline {1} 4; inline {1} 2;inline {2} 1.
 swap {1} 3 -2; swap {1} 7 -5; swap {2} 2 -1.
-  seq 2 1 : (#pre /\ r2{1} = r2{2}.`1 /\ r1{1} = r2{2}.`2).
-  + conseq />;rndsem{1} 0;rnd;auto => />.
-    have -> : (dlet randd (fun (r1_0 : randomness) => dmap dkey 
-       (fun (r0_0 : key) => (r1_0, r0_0)))) = randd `*` dkey; last by smt().
+  seq 2 1 : (#pre /\ r2{1} = r2{2}.`2 /\ r1{1} = r2{2}.`1).
+  + swap {1} 1 1.
+    conseq />;rndsem{1} 0; rnd;auto => />.
+    have -> : (dlet dkey (fun (r1 : key) => dmap randd (fun (r0 : randomness) => (r1, r0)))) = 
+        dkey `*` randd; last by smt().
     rewrite dprod_dlet; congr;apply fun_ext => r.
     by rewrite dlet_dunit.
 
@@ -314,14 +316,14 @@ module CCAL(H1 : RO1.RO, H2 : RO2.RO, A : KEMROMx2.CCA_ADV) = {
 module (B1x2(A : KEMROM.CCA_ADV) : KEMROMx2.CCA_ADV) (H2x : KEMROMx2.POracle_x2, DO : CCA_ORC)  = {
    var _pk : pkey
    module BH = {
-      proc get(hpk : pkhash, m : plaintext) = {
+      proc get(m : plaintext, hpk : pkhash) = {
          var r,k;
-         (r,k) <@ RO.RO.get(hpk,m);
+         (k,r) <@ RO.RO.get(m,hpk);
          if (hpk = pkh _pk) {
             r <@ H2x.get1(m);
             k <@ H2x.get2(m);
          }
-         return (r,k);
+         return (k,r);
       }
    }
 
@@ -426,27 +428,27 @@ proc.
 inline {1} 9;wp.
 call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
         (forall m,
-             (pkh B1x2._pk{1}, m) \in RO.RO.m{2} =>
+             (m,pkh B1x2._pk{1}) \in RO.RO.m{2} =>
                     (m \in RO1.RO.m{1} /\
                      m \in RO2.RO.m{1} /\ 
-                     oget RO.RO.m{2}.[(pkh B1x2._pk{1}, m)] =
-                       (oget RO1.RO.m{1}.[m],
-                        oget RO2.RO.m{1}.[m]))) /\
+                     oget RO.RO.m{2}.[(m,pkh B1x2._pk{1})] =
+                       (oget RO2.RO.m{1}.[m],oget RO1.RO.m{1}.[m]))) /\
         (forall m, 
-            m \in RO1.RO.m{1} => (pkh B1x2._pk{1}, m) \in RO.RO.m{2}) /\
+            m \in RO1.RO.m{1} => (m,pkh B1x2._pk{1}) \in RO.RO.m{2}) /\
         (forall m, 
-            m \in RO2.RO.m{1} => (pkh B1x2._pk{1}, m) \in RO.RO.m{2}) /\
+            m \in RO2.RO.m{1} => (m,pkh B1x2._pk{1}) \in RO.RO.m{2}) /\
         (forall h, h <> pkh B1x2._pk{1} =>
               forall m, 
-                 RO.RO.m{1}.[(h,m)] = RO.RO.m{2}.[(h,m)])).
+                 RO.RO.m{1}.[(m,h)] = RO.RO.m{2}.[(m,h)])).
 + proc;sp;if;1,3: by auto. 
   inline {1} 1;inline {2} 1.
   inline {1} 5. inline {1} 7.  inline {1} 8. inline {1} 6. inline {2} 4.
   swap {1} 7 -6. swap {1} 11 -9. swap {2} 5 -4.
-  seq 2 1 : (#pre /\ r1{1} = r0{2}.`1 /\ r0{1} = r0{2}.`2).
-  + conseq />;rndsem{1} 0;rnd;auto => /> &1 &2.
-    have -> : (dlet randd (fun (r1_0 : randomness) => dmap dkey 
-       (fun (r0_0 : key) => (r1_0, r0_0)))) = randd `*` dkey; last by smt().
+  seq 2 1 : (#pre /\ r1{1} = r0{2}.`2 /\ r0{1} = r0{2}.`1).
+  + swap {1} 1 1.
+    conseq />;rndsem{1} 0; rnd;auto => />.
+    have -> : (dlet dkey (fun (r1 : key) => dmap randd (fun (r0 : randomness) => (r1, r0)))) = 
+        dkey `*` randd; last by smt().
     rewrite dprod_dlet; congr;apply fun_ext => r.
     by rewrite dlet_dunit.
 
@@ -459,7 +461,7 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
   inline *.
   rcondf{1} 10; 1: by auto;smt(mem_set).
   swap {1} 9 -8; seq 1 0 : #pre; 1: by auto.
-  sp 0 1;seq 7 1: (#pre /\ (pkh sk{2}.`1.`1, oget m'{2})  \in RO.RO.m{2}); 1: by auto;smt(get_setE).
+  sp 0 1;seq 7 1: (#pre /\ (oget m'{2},pkh sk{2}.`1.`1)  \in RO.RO.m{2}); 1: by auto;smt(get_setE).
   by sp;if{1};auto => /> /#.
 
 + proc; inline {1} 1;sp.
@@ -468,25 +470,27 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
     seq 1 0 : #pre; 1: by inline *;auto;smt(get_setE).
     inline{1} 2; inline {1} 1.
     swap {1} 2 -1. swap {1} 6 -4.
-    seq 2 1 : (#pre /\ r2{1} = r{2}.`1 /\ r1{1} = r{2}.`2).
-    + conseq />;rndsem{1} 0;rnd;auto => /> &1 &2.
-      have -> : (dlet randd (fun (r1_0 : randomness) => dmap dkey 
-         (fun (r0_0 : key) => (r1_0, r0_0)))) = randd `*` dkey; last by smt().
-      rewrite dprod_dlet; congr;apply fun_ext => r.
-      by rewrite dlet_dunit.
+    seq 2 1 : (#pre /\ r2{1} = r{2}.`2 /\ r1{1} = r{2}.`1).
+  + swap {1} 1 1.
+    conseq />;rndsem{1} 0; rnd;auto => />.
+    have -> : (dlet dkey (fun (r1 : key) => dmap randd (fun (r0 : randomness) => (r1, r0)))) = 
+        dkey `*` randd; last by smt().
+    rewrite dprod_dlet; congr;apply fun_ext => r.
+    by rewrite dlet_dunit.
     by auto => />;smt(get_setE).  
 
     rcondf{1} 2;1: by move => *;inline *;auto => />.
-    by inline *;auto => />;smt(get_setE).
+    by inline *;auto => /> *; do split;move => *;do split;move => *;1:do split;smt(@SmtMap).
 
 inline *. 
 swap {1} 14 -13. swap {1} 20 -18. swap {2} 11 -10.
-    seq 2 1 : (#pre /\ r1{1} = r0{2}.`1 /\ r0{1} = r0{2}.`2).
-    + conseq />;rndsem{1} 0;rnd;auto => />.
-      have -> : (dlet randd (fun (r1_0 : randomness) => dmap dkey 
-         (fun (r0_0 : key) => (r1_0, r0_0)))) = randd `*` dkey; last by smt().
-      rewrite dprod_dlet; congr;apply fun_ext => r.
-      by rewrite dlet_dunit.
+    seq 2 1 : (#pre /\ r1{1} = r0{2}.`2 /\ r0{1} = r0{2}.`1).
+  + swap {1} 1 1.
+    conseq />;rndsem{1} 0; rnd;auto => />.
+    have -> : (dlet dkey (fun (r1 : key) => dmap randd (fun (r0 : randomness) => (r1, r0)))) = 
+        dkey `*` randd; last by smt().
+    rewrite dprod_dlet; congr;apply fun_ext => r.
+    by rewrite dlet_dunit.
 by auto => />;smt(mem_set get_setE mem_empty). 
 qed.
 
@@ -513,7 +517,7 @@ conseq(: CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h ==>
 proc(CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h); 1,2: by smt().
 + by conseq />;trivial.
 + proc;inline *.
-  case(x.`1 = pkh B1x2._pk).
+  case(x.`2 = pkh B1x2._pk).
   + rcondt 6; 1: by auto.
     swap 12 3;swap 8 7;wp;conseq(:true);1:smt().
     by trivial.

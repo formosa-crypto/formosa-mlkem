@@ -27,7 +27,7 @@ axiom parse_sem st :
   phoare [ Parse(XOF).sample : XOF.state = st ==> 
      res = (parse st).`1 /\ XOF.state = (parse st).`2 ] = 1%r.
 
-(* We know they terminate, but we don't prove it. *)
+(* We know it terminates, but we don't prove it. *)
 axiom Parser_ll  : islossless Parse(XOF).sample.
 
 module Hmodule = {
@@ -124,8 +124,8 @@ have -> : (fun (x0 : W8.t) => mu1 W8.dword x0) = fun _ =>  inv W8.modulus%r.
 by rewrite !StdBigop.Bigreal.BRM.big_const !count_predT sizex sizey.  
 qed.
 
-(* G needs only to be entropy smoothing, which is
-   exactly a PRF without any input *)
+(* G needs only to be a prg, which is
+   a PRF without any input *)
 
 require PRF.
 clone PRF as HS_DEFS with
@@ -140,32 +140,19 @@ clone import HS_DEFS.PseudoRF as HSF with
   proof dK_ll by apply srand_ll
   proof *.
 
-module KHS = HSF.PseudoRF.
-
-module G(HS: HSF.PseudoRF) = {
-  proc sample(s : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = {
-     var rhosig;
-     rhosig <@ HS.f(s,());
-     return rhosig;
-  }
-}.
-
 clone PRF as PRF_DEFS with
   type D <- W8.t,
   type R <- W8.t Array128.t
   proof *.
 
-
-clone import PRF_DEFS.PseudoRF as PRF_ with
+clone import PRF_DEFS.PseudoRF as NPRF with
   type K <- W8.t Array32.t, 
   op dK <- srand,
   op F <- Symmetric.PRF
   proof dK_ll by apply srand_ll
   proof *.
 
-module KPRF = PRF_.PseudoRF.
-
-module CBD2_PRF(PRF : PseudoRF) = {
+module CBD2_PRF(PRF : NPRF.PseudoRF) = {
    proc sample(sig : W8.t Array32.t, _N : int) : poly = {
     var i : int;
     var j : int;
@@ -238,7 +225,7 @@ qed.
 
 import PolyVec PolyMat.
 
-module InnerPKES(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF)  = {
+module MLKEM_PRGs(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF) = {
   proc prg_kg(coins:W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec = {
     var noise1 : polyvec;
     var noise2 : polyvec;
@@ -290,6 +277,72 @@ module InnerPKES(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) 
      return (noise1,noise2, e2);
   }
 
+}.
+
+op H : W8.t Array32.t -> polymat.
+op prg_kg_inner :  W8.t Array32.t -> W8.t Array32.t * polyvec * polyvec.
+op prg_enc_inner :  W8.t Array32.t -> polyvec * polyvec * poly.
+
+module KHS = HSF.PseudoRF.
+module KPRF = NPRF.PseudoRF. (* Note the same PRF is used for kg/enc, initialized independently *)
+
+(* This fixes the definition of H in terms of the MLKEM spec *)
+axiom H_sem _seed :
+    phoare [ Hmodule.sampleA : sd = _seed ==> res = nttm (H _seed) ] = 1%r.
+
+lemma prg_kg_sem _coins : 
+   phoare [ MLKEM_PRGs(KHS,KPRF,KPRF).prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
+admitted. (* IDEALLY PROC OP *)
+
+lemma prg_enc_sem _coins : 
+   phoare [ MLKEM_PRGs(KHS,KPRF,KPRF).prg_enc : noiseseed = _coins ==> res = prg_enc_inner _coins ] = 1%r.
+admitted. (* IDEALLY PROC OP *)
+
+lemma H_T_sem _seed :
+    phoare [ Hmodule.sampleAT : sd = _seed ==> res = nttm (trmx (H _seed)) ] = 1%r.
+conseq (H_sem_equiv)  (H_sem _seed); 1: smt().
+auto => />.
+rewrite /nttm eq_matrixP => i j rng; rewrite mapmE /= !offunmE //= offunmE 1:/# /=.
+congr.
+by smt(@KMatrix).
+qed.
+
+
+phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = decode1  a ] = 1%r
+ by bypr => &m ->; have /= := (decode1_opsem &m (decode1 a) a).
+phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = encode1  a ] = 1%r
+ by bypr => &m ->; have /= := (encode1_opsem &m (encode1 a) a).
+phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = encode4  a ] = 1%r
+ by bypr => &m ->; have /= := (encode4_opsem &m (encode4 a) a).
+phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = decode4  a ] = 1%r
+ by bypr => &m ->; have /= := (decode4_opsem &m (decode4 a) a).
+
+phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = encode10_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (encode10_vec_aux_opsem &m (encode10_vec_aux a) a).
+ by byequiv (encode10_vec_aux) => //.
+qed.
+
+phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = decode10_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (decode10_vec_aux_opsem &m (decode10_vec_aux a) a).
+ by byequiv (decode10_vec_aux) => //.
+qed.
+
+phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = encode12_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (encode12_vec_aux_opsem &m (encode12_vec_aux a) a).
+ by byequiv (encode12_vec_aux) => //.
+qed.
+
+phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = decode12_vec_aux a ] = 1%r.
+proof. 
+ bypr => &m ->; have /= <- := (decode12_vec_aux_opsem &m (decode12_vec_aux a) a).
+ by byequiv (decode12_vec_aux) => //.
+qed.
+
+module InnerPKES(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF)  = {
+
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(coins: W8.t Array32.t) : pkey * skey = {
      var t,rho;
@@ -300,15 +353,35 @@ module InnerPKES(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) 
      s <- witness;
      sv <- witness;
      tv <- witness;
-     (rho,s,e) <@ prg_kg(coins);
-     a <@ Hmodule.sampleA(rho);     
+     (rho,s,e) <- prg_kg_inner coins;
+     a <- nttm (H rho);     
      s <- nttv s;
      e <- nttv e; 
      t <- (ntt_mmul a s + e)%PolyVec;
-     tv <@ EncDec.encode12_vec(toipolyvec t); (* minimum residues *)
-     sv <@ EncDec.encode12_vec(toipolyvec s); (* minimum residues *)
+     tv <- encode12_vec_aux (toipolyvec t); 
+     sv <- encode12_vec_aux (toipolyvec s); 
      return ((tv,rho),sv);
   }
+
+  proc kg_derand_proc(coins: W8.t Array32.t) : pkey * skey = {
+     var t,rho;
+     var tv,sv : W8.t Array1152.t;
+     var a : polymat;
+     var s,e : polyvec;
+     e <- witness;
+     s <- witness;
+     sv <- witness;
+     tv <- witness;
+     (rho,s,e) <@ MLKEM_PRGs(HS,PRF1,PRF2).prg_kg(coins);
+     a <- nttm (H rho);     
+     s <- nttv s;
+     e <- nttv e; 
+     t <- (ntt_mmul a s + e)%PolyVec;
+     tv <@ EncDec.encode12_vec(toipolyvec t); 
+     sv <@ EncDec.encode12_vec (toipolyvec s); 
+     return ((tv,rho),sv);
+  }
+
 
   (* Spec gives a derandomized enc that matches this code *)
   proc enc_derand(pk : pkey, m : plaintext, r : W8.t Array32.t) : ciphertext = {
@@ -321,14 +394,39 @@ module InnerPKES(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) 
       e1 <- witness;
       rv <- witness;
       that <- witness;
-      (rv,e1,e2) <@ prg_enc(r);
+      (rv,e1,e2) <- prg_enc_inner r;
+      (tv,rho) <- pk;
+      thati <- decode12_vec_aux tv; 
+      that <- ofipolyvec thati;
+      aT <- nttm (trmx (H rho));    
+      rhat <- nttv rv;
+      u <- (invnttv (ntt_mmul aT rhat) + e1)%PolyVec;
+      mp <- decode1 m;
+      v <- invntt (ntt_dotp that rhat) &+ e2 &+ decompress_poly 1 mp; 
+      c1 <- encode10_vec_aux (compress_polyvec 10 u); 
+      c2 <- encode4 (compress_poly 4 v);
+      return (c1,c2);
+  }
+
+  (* Spec gives a derandomized enc that matches this code *)
+  proc enc_derand_proc(pk : pkey, m : plaintext, r : W8.t Array32.t) : ciphertext = {
+      var tv,rho,rv,e1,e2,rhat,u,v,mp,c2,thati;
+      var that : polyvec;
+      var aT : polymat;
+      var c1 : W8.t Array960.t;
+      aT <- witness;
+      c1 <- witness;
+      e1 <- witness;
+      rv <- witness;
+      that <- witness;
+      (rv,e1,e2) <@ MLKEM_PRGs(HS,PRF1,PRF2).prg_enc(r);
       (tv,rho) <- pk;
       thati <@ EncDec.decode12_vec(tv); 
       that <- ofipolyvec thati;
-      aT <@ Hmodule.sampleAT(rho);    
+      aT <- nttm (trmx (H rho));    
       rhat <- nttv rv;
       u <- (invnttv (ntt_mmul aT rhat) + e1)%PolyVec;
-      mp <@ EncDec.decode1(m);
+      mp <- decode1 m;
       v <- invntt (ntt_dotp that rhat) &+ e2 &+ decompress_poly 1 mp; 
       c1 <@ EncDec.encode10_vec(compress_polyvec 10 u); 
       c2 <@ EncDec.encode4(compress_poly 4 v);
@@ -336,6 +434,23 @@ module InnerPKES(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) 
   }
 
   proc dec(sk : skey, cph : ciphertext) : plaintext option = {
+      var m,mp,ui,v,vi,si, c1, c2;
+      var u,s : polyvec;
+      u <- witness;
+      s <- witness;
+      (c1,c2) <- cph;
+      ui <- decode10_vec_aux c1;
+      u <- decompress_polyvec 10 ui;
+      vi <- decode4 c2;
+      v <- decompress_poly 4 vi;
+      si <- decode12_vec_aux sk;
+      s <- ofipolyvec si;
+      mp <- v &+ ((&-) (invntt (ntt_dotp s (nttv u))));
+      m <- encode1 (compress_poly 1 mp);
+      return Some m;
+  }
+
+  proc dec_proc(sk : skey, cph : ciphertext) : plaintext option = {
       var m,mp,ui,v,vi,si, c1, c2;
       var u,s : polyvec;
       u <- witness;
@@ -363,18 +478,30 @@ lemma getv_setvE x i j (v : polyvec) :
 
 (* We have something equivalent to the spec *)
 import Symmetric.
+
+
 lemma kg_sampler_kg  :
   equiv [  InnerPKES(KHS,KPRF,KPRF).kg_derand ~ InnerPKE.kg_derand : 
-     ={arg} /\ ={glob XOF} ==> ={res, glob XOF}].
+     ={arg}==> ={res}].
 proc. 
-sim.
-inline {1} 5. proc case {1} 14. (* NEED TO BREAK TUPLE ASSIGNMENT *)
-swap {1} 14 -7. swap {1} 17 -9. wp.
+ecall{2}(sem_encode12_vec (toipolyvec s{2})).
+ecall{2}(sem_encode12_vec (toipolyvec t{2})).
+wp 6 13. swap {2} 1 4.
+seq 4 4 : #pre; 1: by auto.
+transitivity{1} { a<-witness;(rho,s,e) <@ MLKEM_PRGs(KHS,KPRF,KPRF).prg_kg(coins); 
+                   a <@ Hmodule.sampleA(rho); }
+       ( ={coins} ==> ={rho,s,e,a})
+       ( ={coins} ==> ={s, rho, e, a});1,2: smt(). 
++ ecall{2} (H_sem rho{2}).
+  by ecall{2} (prg_kg_sem coins{2}); auto. 
+inline {1} 2. 
+proc case {1} 11. (* NEED TO BREAK TUPLE ASSIGNMENT *)
+swap {1} 11 -7. swap {1} 14 -9. wp.
 inline CBD2_PRF(PseudoRF).sample.
 inline CBD2.sample.
 inline PseudoRF.f.
 while (noise1{1} = s{2} /\ rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
-       ={i,_N,a,XOF.state} /\
+       ={i,_N,a} /\
        0<=i{1}<=kvec /\ 
        forall k, 0 <=k < i{1} => (noise2{1}.[k])%Vector = (e{2}.[k])%Vector).
 + wp; conseq(_: ={rr0}); 1: by smt(getv_setvE).  
@@ -382,19 +509,18 @@ while (noise1{1} = s{2} /\ rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
 wp;conseq (: noise1{1} = s{2} /\ 
              rho{1} = rho{2} /\
              noiseseed{1} = sig{2} /\
-             ={_N, a, XOF.state}); first by smt(eq_vectorP).
+             ={_N, a}); first by smt(eq_vectorP).
 
 while (rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
-       ={i,_N,a,XOF.state} /\
+       ={i,_N,a} /\
        0<=i{1}<=kvec /\ 
        forall k, 0 <=k < i{1} => (noise1{1}.[k])%Vector = (s{2}.[k])%Vector).
 + wp; conseq(_: ={rr}); 1: by smt(getv_setvE).  
   by inline*; sim; auto => />. 
-swap {2} 7 2. swap {1} [9..10] -1.  
-wp;conseq (: rho{1} = rho{2} /\ 
+inline {1} 5.
+sp;wp;conseq  (: rho{1} = rho{2} /\ 
              noiseseed{1} = sig{2} /\
-             ={a, XOF.state}); 1: by smt(eq_vectorP).
-inline {1} 10;wp; conseq />.
+             a2{1} = a{2});1:  by smt(eq_vectorP).
 while (#post /\ sd{1} = rho{1} /\ i2{1} = i{2} /\ 0<=i2{1}<=kvec); last by auto => /> /#.
 wp;while (#post /\ j1{1} = j{2} /\ 0<=j1{1}<=kvec); 
      last by auto => /> /#.
@@ -405,34 +531,44 @@ qed.
 lemma enc_sampler_enc  :
  equiv [
    InnerPKES(KHS,KPRF,KPRF).enc_derand ~ InnerPKE.enc_derand : 
-    ={arg} /\ ={glob XOF} ==> ={res, glob XOF}].
+    ={arg}  ==> ={res}].
 proc. 
-swap {1} [7..10] -1. inline {1} 10. inline {1} 18. inline {1} 21. inline{2} 16.
-sim;wp; 
-conseq (: ={that,_N,m,aT,XOF.state} /\
+ecall{2}(sem_encode4 (compress_poly 4 v{2})).
+ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
+wp 10 19;ecall{2}(sem_decode1 (m{2})).
+wp 10 16. 
+swap {1} [7..10] -1.  swap {2} [8..9] -1. swap {2} 1 7.
+seq 8 7 : (={pk,m,c1,e1,rv,that,tv,rho,thati,that} /\ r{1} = coins{2});
+   1: by wp; ecall{2}(sem_decode12_vec (tv{2}));auto.
+transitivity{1} {  aT <@ Hmodule.sampleAT(rho);
+                  (rv,e1,e2) <@ MLKEM_PRGs(KHS,KPRF,KPRF).prg_enc(r); 
+                    }
+       (={pk,m,c1,e1,rv,that,tv,rho,thati,that,r} ==> ={that, rv, m, e2, e1, aT})
+      ( ={pk,m,c1,e1,rv,that,tv,rho,thati,that} /\ r{1} = coins{2}==> ={that, rv, m, e2, e1, aT});1,2: smt(). 
++ ecall{2} (prg_enc_sem r{2}).
+  by ecall{2} (H_T_sem rho{2}); auto.
+
+inline {1} 2. inline {1} 10. inline {2} 9. inline {1} 13. swap {2} 1 2.
+wp;sim;wp;
+conseq (: ={that,_N,m,aT} /\
   noise2{1} = e1{2} /\
   noise1{1} = rv{2} /\
-  noiseseed{1} = coins{2}); 1: smt().
-while (={i, that, _N, m, aT, XOF.state} /\ noise1{1} = rv{2} /\ noiseseed{1} = coins{2} /\
+  noiseseed{1} = coins{2});1: by smt().
+while (={i, that, _N, m, aT} /\ noise1{1} = rv{2} /\ noiseseed{1} = coins{2} /\
        0<=i{1}<=kvec /\ 
        forall k, 0 <=k < i{1} => (noise2{1}.[k])%Vector = (e1{2}.[k])%Vector).
 + inline *;wp;conseq(_: ={rr0}); 1: by smt(getv_setvE).  by inline*; sim; auto => />. 
-wp;conseq (: ={that,_N,m,aT,XOF.state} /\
+wp;conseq (: ={that,_N,m,aT} /\
   noise1{1} = rv{2} /\
   noiseseed{1} = coins{2}); first by smt(eq_vectorP).
-while (={i, that, _N, m, aT, XOF.state} /\ noiseseed{1} = coins{2} /\
+while (={i, that, _N, m, aT} /\ noiseseed{1} = coins{2} /\
        0<=i{1}<=kvec /\ 
        forall k, 0 <=k < i{1} => (noise1{1}.[k])%Vector = (rv{2}.[k])%Vector).
 + inline *;wp; conseq(_: ={rr0}); 1: by smt(getv_setvE).  
   by inline*; sim; auto => />. 
-swap {2} 7 4. swap {1} [10..12] -1.  
-wp;conseq (: ={that, m, aT, XOF.state} /\ noiseseed{1} = coins{2}); 1: by smt(eq_vectorP).
-inline {1} 12. 
-wp;conseq />. 
-while (#post /\ sd{1} = rho{2} /\ noiseseed{1} = coins{2} /\ i1{1} = i{2} /\ 0<=i1{1}<=kvec); last first.
-+ wp;conseq />.
-  call(_: true); 1: by sim.
-  by inline *;auto => />.
+inline {1} 1.
+sp;wp;conseq (: ={that, m} /\ a0{1} = aT{2} /\ r{1} = coins{2}); 1: by smt(eq_vectorP).
+while (#post /\ sd{1} = rho{2} /\  i1{1} = i{2} /\ r{1} = coins{2} /\ 0<=i1{1}<=kvec); last by auto => />. 
 
 wp;while (#post /\ i1{1} = i{2} /\ j0{1} = j{2} /\ 0<=j0{1}<=kvec); 
      last by auto => /> /#.
@@ -442,7 +578,14 @@ qed.
 
 lemma enc_sampler_dec :
   equiv [ InnerPKES(KHS,KPRF,KPRF).dec ~ InnerPKE.dec : 
-     ={arg}  ==> res{1} = Some res{2} ] by proc;inline *;sim => /#.
+     ={arg}  ==> res{1} = Some res{2} ].
+proc. 
+ecall{2}(sem_encode1 (compress_poly 1 mp{2})).
+wp;ecall{2}(sem_decode12_vec (sk{2})).
+wp;ecall{2}(sem_decode4 (c2{2})).
+wp;ecall{2}(sem_decode10_vec (c1{2})).
+by auto => />.
+qed.
 
 (* NOW THE KEM MOVED TO THE ROM *)
 
@@ -466,7 +609,7 @@ clone import KEM_ROM as SPEC_MODEL with
   proof *.
 import RO.
 
-module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : Scheme) (O : POracle) = {
+module (MLKEMS(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF) : Scheme) (O : POracle) = {
   proc kg_derand(coins : W8.t Array32.t * W8.t Array32.t) : publickey * secretkey = {
     var kgs : W8.t Array32.t;
     var z : W8.t Array32.t;
@@ -482,13 +625,41 @@ module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : 
     return (pk, (sk, pk, hpk, z));
   }
 
+  proc kg_derand_proc(coins : W8.t Array32.t * W8.t Array32.t) : publickey * secretkey = {
+    var kgs : W8.t Array32.t;
+    var z : W8.t Array32.t;
+    var pk : pkey;
+    var sk : skey;
+    var hpk : W8.t Array32.t;
+    
+    kgs <- coins.`1;
+    z <- coins.`2;
+    (pk, sk) <@ InnerPKES(HS,PRF1,PRF2).kg_derand_proc(kgs);
+    hpk <- H_pk pk;
+    
+    return (pk, (sk, pk, hpk, z));
+  }
+
   proc kg() : publickey * secretkey = {
-    var coins;
+    var coins,k;
     var pk : publickey;
     var sk : secretkey;
     
-    coins <$ dsmooth;
-    (pk, sk) <@ kg_derand(coins);
+    coins <$ srand;
+    k <$ srand;
+    (pk, sk) <@ kg_derand((coins,k));
+    
+    return (pk,sk);
+  }
+
+  proc kg_proc() : publickey * secretkey = {
+    var coins,k;
+    var pk : publickey;
+    var sk : secretkey;
+    
+    coins <$ srand;
+    k <$ srand;
+    (pk, sk) <@ kg_derand_proc((coins,k));
     
     return (pk,sk);
   }
@@ -509,6 +680,21 @@ module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : 
     return (c, _K);
   }
 
+  proc enc_derand_proc(pk : publickey, coins : W8.t Array32.t) : ciphertext * sharedsecret = {
+    var m : W8.t Array32.t;
+    var hpk : W8.t Array32.t;
+    var r : W8.t Array32.t;
+    var c : ciphertext;
+    var _K : W8.t Array32.t;
+    
+    m <- coins;
+    hpk <- H_pk pk;
+    (_K, r) <@ O.get(m,hpk);
+    c <@ InnerPKES(HS,PRF1,PRF2).enc_derand_proc(pk, m, r);
+    
+    return (c, _K);
+  }
+
   proc enc(pk : publickey) : ciphertext * sharedsecret = {
     var coins;
     var c : ciphertext;
@@ -520,9 +706,20 @@ module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : 
     return (c,_K);
   }
 
+  proc enc_proc(pk : publickey) : ciphertext * sharedsecret = {
+    var coins;
+    var c : ciphertext;
+    var _K : W8.t Array32.t;
+    
+    coins <$ srand;
+    (c, _K) <@ enc_derand_proc(pk,coins);
+    
+    return (c,_K);
+  }
+
   
   proc dec(sk : secretkey, cph : ciphertext) : sharedsecret option = {
-    var m : plaintext;
+    var m : plaintext option;
     var _K' : W8.t Array32.t;
     var r : W8.t Array32.t;
     var skp : Top.InnerPKE.InnerPKE.skey;
@@ -533,16 +730,106 @@ module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : 
     var _K : W8.t Array32.t;
     
     (skp, pk, hpk, z) <- sk;
-    m <@ InnerPKE.dec(skp, cph);
-    (_K, r) <@ O.get(m,hpk);
+    m <@ InnerPKES(HS,PRF1,PRF2).dec(skp, cph);
+    (_K, r) <@ O.get(oget m,hpk);
     _K' <- J z cph;
-    c <@ InnerPKES(HS,PRF1,PRF2).enc_derand(pk, m, r);
+    c <@ InnerPKES(HS,PRF1,PRF2).enc_derand(pk, oget m, r);
     if (c <> cph) 
       _K <- _K';
     
     return (Some _K);
   }
+
+  proc dec_proc(sk : secretkey, cph : ciphertext) : sharedsecret option = {
+    var m : plaintext option;
+    var _K' : W8.t Array32.t;
+    var r : W8.t Array32.t;
+    var skp : Top.InnerPKE.InnerPKE.skey;
+    var pk : Top.InnerPKE.InnerPKE.pkey;
+    var hpk : W8.t Array32.t;
+    var z : W8.t Array32.t;
+    var c : Top.InnerPKE.InnerPKE.ciphertext;
+    var _K : W8.t Array32.t;
+    
+    (skp, pk, hpk, z) <- sk;
+    m <@ InnerPKES(HS,PRF1,PRF2).dec_proc(skp, cph);
+    (_K, r) <@ O.get(oget m,hpk);
+    _K' <- J z cph;
+    c <@ InnerPKES(HS,PRF1,PRF2).enc_derand_proc(pk, oget m, r);
+    if (c <> cph) 
+      _K <- _K';
+    
+    return (Some _K);
+  }
+
 }.
+
+(************************************************************************)
+(* This is where we show that our bridge specification matches the one
+   for which we have a security proof. *)
+
+module DummyRO = {
+  proc get(x : W8.t Array32.t * W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t = {
+       return G_mhpk x.`1 x.`2;
+  }
+}.
+
+equiv kg_bridge1 :
+  MLKEM.kg_derand ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).kg_derand_proc : ={arg} ==> ={res}.
+admitted. (* to do: annoying *)
+
+equiv kg_bridge2 :
+  MLKEMS(KHS,KPRF,KPRF,DummyRO).kg_derand_proc ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).kg_derand: ={arg} ==> ={res}.
+admitted. (* to do: easy *)
+
+equiv kg_bridge :
+  MLKEM.kg_derand ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).kg_derand : ={arg} ==> ={res}.
+proc*.
+transitivity {1} { r <@ MLKEMS(KHS, KPRF, KPRF, DummyRO).kg_derand_proc(coins); }
+   (={coins} ==> ={r})
+   (={coins} ==> ={r});1,2:smt().
+call (kg_bridge1); 1: by auto.
+by call (kg_bridge2); auto.
+qed.
+
+equiv enc_bridge1 :
+  MLKEM.enc_derand ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).enc_derand_proc : ={arg} ==> ={res}.
+admitted. (* to do: annoying *)
+
+equiv enc_bridge2 :
+  MLKEMS(KHS,KPRF,KPRF,DummyRO).enc_derand_proc ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).enc_derand: ={arg} ==> ={res}.
+admitted. (* to do: easy *)
+
+equiv enc_bridge :
+  MLKEM.enc_derand ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).enc_derand : ={arg} ==> ={res}.
+proc*.
+transitivity {1} { r <@ MLKEMS(KHS, KPRF, KPRF, DummyRO).enc_derand_proc(pk,coins); }
+   (={pk,coins} ==> ={r})
+   (={pk,coins} ==> ={r});1,2:smt().
+call (enc_bridge1); 1: by auto.
+by call (enc_bridge2); auto.
+qed.
+
+(* FIXME : switch inputs *)
+equiv dec_bridge1 :
+  MLKEM.dec ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).dec_proc : arg{1}.`1 = arg{2}.`2 /\ arg{1}.`2 = arg{2}.`1 ==> Some res{1} = res{2}.
+admitted. (* to do: annoying *)
+
+equiv dec_bridge2 :
+  MLKEMS(KHS,KPRF,KPRF,DummyRO).dec_proc ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).dec: ={arg} ==> ={res}.
+admitted. (* to do: easy *)
+
+equiv dec_bridge :
+  MLKEM.dec ~ MLKEMS(KHS,KPRF,KPRF,DummyRO).dec : arg{1}.`1 = arg{2}.`2 /\ arg{1}.`2 = arg{2}.`1 ==> Some res{1} = res{2}.
+proc*.
+transitivity {2} { r <@ MLKEMS(KHS, KPRF, KPRF, DummyRO).dec_proc(sk,cph); }
+   (={cph,sk} ==> Some r{1} = r{2})
+   (={cph,sk} ==> ={r});1,2:smt().
+call (dec_bridge1); 1: by auto.
+by call (dec_bridge2); auto.
+qed.
+
+(************************************************************************)
 
 
 (*******************************************************************)
@@ -553,9 +840,9 @@ module (KyberS(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) : 
 import KMatrix PolyVec PolyMat InnerPKE Zq.
 
 op pk_encode(pk : W8.t Array32.t * polyvec) : pkey = 
-                                  (encode12_vec (toipolyvec (nttv pk.`2)), pk.`1).
+                                  (encode12_vec_aux (toipolyvec (nttv pk.`2)), pk.`1).
 op pk_decode(pk : pkey) = (pk.`2, invnttv (ofipolyvec (sem_decode12_vec (pk.`1)))).
-op sk_encode(sk : polyvec) : skey = encode12_vec (toipolyvec (nttv sk)).
+op sk_encode(sk : polyvec) : skey = encode12_vec_aux (toipolyvec (nttv sk)).
 op sk_decode(sk : skey) =  invnttv (ofipolyvec (sem_decode12_vec sk)).
 op m_encode(m : plaintext) : poly = decompress_poly 1 (sem_decode1 m).
 op m_decode(p : poly) : plaintext = encode1 (compress_poly 1 p). 
@@ -588,26 +875,6 @@ op under_noise_bound (p : poly) (b : int) =
 op cv_bound_max : int = 104. (* this is the compress error bound for d = 4 *)
 
 
-op H : W8.t Array32.t -> polymat.
-
-lemma H_sem _seed :
-    phoare [ Hmodule.sampleA : sd = _seed ==> res = H _seed ] = 1%r.
-admitted. (* IDEALLY PROC OP *)
-
-op prg_kg_inner :  W8.t Array32.t -> W8.t Array32.t * polyvec * polyvec.
-lemma prg_kg_sem _coins : 
-   phoare [ InnerPKES(KHS,KPRF,KPRF).prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
-admitted. (* IDEALLY PROC OP *)
-
-op prg_enc_inner :  W8.t Array32.t -> polyvec * polyvec * poly.
-lemma prg_enc_sem _coins : 
-   phoare [ InnerPKES(KHS,KPRF,KPRF).prg_enc : noiseseed = _coins ==> res = prg_enc_inner _coins ] = 1%r.
-admitted. (* IDEALLY PROC OP *)
-
-lemma H_T_sem _seed :
-    phoare [ Hmodule.sampleAT : sd = _seed ==> res = trmx (H _seed) ] = 1%r
-  by conseq (H_sem_equiv) (H_sem _seed) => /#.
-
 (* This will bring into context a ROM definition which has
    the same types as the ROM we will use for the Spec *)
 clone import MLWE_PKE_Hash as MLWEPKEHash with
@@ -622,6 +889,8 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   type randomness <- W8.t Array32.t,
   type ciphertext <- W8.t Array960.t * W8.t Array128.t,
   type FO_MLKEM.UU.PseudoRF.K <- sharedsecret,
+  type FO_MLKEM.pkhash <- W8.t Array32.t,
+  op FO_MLKEM.pkh <- H_pk,
   type pkey <- publickey,
   type skey <- W8.t Array1152.t,
   op MLWE_.H <- H,
@@ -664,7 +933,7 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   op FO_MLKEM.UU.TT.dplaintext <- srand,
   op FO_MLKEM.UU.dkey <- srand,
   op FO_MLKEM.UU.PseudoRF.dK <- srand,
-  op FO_MLKEM.UU.PseudoRF.F = J
+  op FO_MLKEM.UU.PseudoRF.F <- J
   proof MLWE_.dseed_ll by (apply srand_ll)
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
@@ -708,10 +977,8 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   proof good_decode
   proof cv_bound_valid
   proof noise_commutes
-  proof noise_preserved
-  proof prg_kg_correct
-  proof prg_enc_correct.
-(* We inherit the following axioms
+  proof noise_preserved.
+(* We inherit the following axioms 
   proof *.
  FO_MLKEM.UU.TT.FinT.enum_spec: forall (x : plaintext), count (pred1 x) enum = 1
  FO_MLKEM.UU.TT.ge0_qH: 0 <= qH
@@ -722,7 +989,6 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
  FO_MLKEM.UU.ge0_qHU: 0 <= qHU
  FO_MLKEM.UU.ge0_qD: 0 <= qD
  FO_MLKEM.ge0_qHK: 0 <= qHK  *)
-
 
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
@@ -834,649 +1100,88 @@ rewrite /(&-) mapiE 1:/#.
 rewrite as_sintN /= /#. 
 qed.
 
-realize prg_kg_correct.
-admitted. (* Ideally proc op *)
-
-realize prg_enc_correct.
-admitted. (* Ideally proc op *)
-
 
 (*******************************************************************)
-(*    Entropy Smoothing and PRF hops  for Security                 *)
+(* At this point we get some nice equivalences to the abstract sch *)
 (*******************************************************************)
 
-clone import HS_DEFS.RF as IdealHSF with
-   op dR = fun (_: unit) => dsmooth
-   proof dR_ll by smt(dsmooth_ll).
-
-abbrev dnbytes = darray128 W8.dword.
-
-lemma dnbytes_ll: is_lossless dnbytes.
-proof.
-apply darray128_ll.
-by apply W8.dword_ll.
-qed.
-
-clone import PRF_DEFS.RF as IdealPRF1 with
-   op dR = fun (_: W8.t) => dnbytes
-   proof dR_ll by smt(dnbytes_ll).
-
-clone import PRF_DEFS.RF as IdealPRF2 with
-   op dR = fun (_: W8.t) => dnbytes
-   proof dR_ll by smt(dnbytes_ll).
-
-module DummyHS_D(F : HS_DEFS.PRF_Oracles) = {
-   proc keygen() : W8.t Array32.t = { return witness;}
-   proc f(inp : W8.t Array32.t * unit) : W8.t Array32.t * W8.t Array32.t = { var out; out <@ F.f(); return out; }
-}.
-
-module DummyHS(F : HS_DEFS.PRF_Oracles) = {
-   proc keygen() : W8.t Array32.t = { IdealHSF.RF.m <- SmtMap.empty; return witness;}
-   proc f(inp : W8.t Array32.t * unit) : W8.t Array32.t * W8.t Array32.t = { var out; out <@ F.f(); return out; }
-}.
-
-
-module (D_ES(As : CCA_ADV) : HS_DEFS.Distinguisher) (F : HS_DEFS.PRF_Oracles)  = {
-
-    proc distinguish() : bool = {
-       var b;
-       b <@ CCA(LRO,KyberS(DummyHS_D(F),KPRF,KPRF),As).main();
-       return b;
-    } 
-}.
-
-module KyberSIdeal(HS : HSF.PseudoRF, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF, O : POracle) (* : Scheme *) = {
-
-  include KyberS(HS,PRF1,PRF2,O) [-kg]
-
-  proc kg() : publickey * secretkey = {
-     var s,rho,sig,kp;
-     s <@ HS.keygen();
-     rho <$ srand;
-     sig <@ PRF1.keygen();
-     kp <@ kg_derand(rho,sig);
-     return kp;
-  }
-
-}.
-
-module DummyPRF1D(F : PRF_DEFS.PRF_Oracles) = {
-   proc keygen() : W8.t Array32.t = { return witness;}
-   proc f(inp : W8.t Array32.t * W8.t) : W8.t Array128.t = { var out; out <@ F.f(inp.`2); return out; }
-}.
-
-module DummyPRF1(F : PRF_DEFS.PRF_Oracles) = {
-   proc keygen() : W8.t Array32.t = { IdealPRF1.RF.m <- SmtMap.empty; return witness;}
-   proc f(inp : W8.t Array32.t * W8.t) : W8.t Array128.t = { var out; out <@ F.f(inp.`2); return out; }
-}.
-
-module (D_PRF1(As : CCA_ADV) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
-
-    proc distinguish() : bool = {
-       var b;
-       b <@ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),DummyPRF1(F),KPRF),As).main();
-       return b;
-    } 
-}.
-
-module DummyPRF2D(F : PRF_DEFS.PRF_Oracles) = {
-   proc keygen() : W8.t Array32.t = { return witness;}
-   proc f(inp : W8.t Array32.t * W8.t) : W8.t Array128.t = { var out; out <@ F.f(inp.`2); return out; }
-}.
-
-module DummyPRF2(F : PRF_DEFS.PRF_Oracles) = {
-   proc keygen() : W8.t Array32.t = { IdealPRF2.RF.m <- SmtMap.empty; return witness;}
-   proc f(inp : W8.t Array32.t * W8.t) : W8.t Array128.t = { var out; out <@ F.f(inp.`2); return out; }
-}.
-
-module (D_PRF2(As : CCA_ADV) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
-
-    proc distinguish() : bool = {
-       var b;
-       b <@ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),DummyPRF1(IdealPRF1.RF),DummyPRF2D(F)),As).main();
-       return b;
-    } 
-}.
-
-section.
-
-declare module As <: CCA_ADV {-CCA, -XOF,-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -HSF.PRF, -LRO, -KPRF}.
-
-lemma ESHop &m :
-  Pr [ CCA(LRO,KyberS(KHS,KPRF,KPRF),As).main() @ &m : res] -
-  Pr [ CCA(LRO,KyberS(DummyHS(IdealHSF.RF),KPRF,KPRF),As).main() @ &m : res] = 
-  Pr [ HS_DEFS.IND(HSF.PRF,D_ES(As)).main() @ &m : res ] - 
-  Pr [ HS_DEFS.IND(IdealHSF.RF,D_ES(As)).main() @ &m : res ].
-proof.
-have -> : Pr[CCA(LRO,KyberS(KHS, KPRF,KPRF), As).main() @ &m : res]  = 
-          Pr[HS_DEFS.IND(HSF.PRF, D_ES(As)).main() @ &m : res] .
-+ byequiv => //.
-  proc. 
-  inline {2} 2. inline {2} 2.
-  wp; call(_: ={glob LRO, glob CCA}); 1,2: by sim.
-  wp; call(_: ={glob LRO, glob CCA}); 1: by sim.
-  rnd;rnd.
-  wp; call(_: ={glob LRO}); 1: by sim.
-  conseq (_: _ ==> ={glob LRO,CCA.cstar}); 1: smt().
-  by inline *; auto => />.
-
-+ have -> : 
-    Pr[CCA(LRO,KyberS(DummyHS(IdealHSF.RF), KPRF, KPRF), As).main() @ &m : res] = 
-    Pr[HS_DEFS.IND(IdealHSF.RF, D_ES(As)).main() @ &m : res]; 2: by done.
-+ byequiv => //.
-  proc. 
-  inline {2} 2. inline {2} 2.
-  wp; call(_: ={glob LRO, glob CCA}); 1,2: by sim.
-  wp; call(_: ={glob LRO, glob CCA}); 1: by sim.
-  rnd;rnd.
-  wp; call(_: ={glob LRO}); 1: by sim.
-  conseq (_: _ ==> ={glob LRO,CCA.cstar}); 1: smt().
-  by inline *; auto => />.
-qed.
-
-lemma KyberS_KyberIdeal &m :
-  Pr [ CCA(LRO,KyberS(DummyHS(IdealHSF.RF),KPRF,KPRF),As).main() @ &m : res] =
-  Pr [ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),KPRF,KPRF),As).main() @ &m : res].
-proof.
-byequiv => //.
-proc. sim.
-  inline {1} 3. inline {2} 3.
-  inline {1} 4. inline {2} 6.
-  wp;conseq />;sim.
-  inline *;sp;wp;conseq/>.  
-  rndsem{2} 0;auto => />.
-  have -> : dlet srand (fun (rho : W8.t Array32.t) => dmap srand (fun (k : W8.t Array32.t) => (rho, k))) = dsmooth; last by smt().
-  by rewrite /dR /dmap dprod_dlet;congr;apply fun_ext => *;congr;rewrite /(\o) /=. 
-qed.
-
-equiv  auxhop1 : CBD2_PRF(PseudoRF).sample ~ CBD2_PRF(DummyPRF1(PRF)).sample : ={_N} /\ sig{1} = PRF.k{2} ==> ={res}
- by proc;sim; inline *;auto => />.
-
-lemma PRFHop1 &m :
-  Pr [ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),KPRF,KPRF),As).main() @ &m : res] -
-  Pr [ CCA(LRO,KyberSIdeal(DummyHS(IdealHSF.RF),DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] = 
-  Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF1(As)).main() @ &m : res ] - 
-  Pr [ PRF_DEFS.IND(IdealPRF1.RF,D_PRF1(As)).main() @ &m : res ].
-proof.
-have -> : Pr[CCA(LRO, KyberSIdeal(DummyHS(IdealHSF.RF), KPRF, KPRF), As).main() @ &m : res] = 
-          Pr[PRF_DEFS.IND(PRF_.PRF, D_PRF1(As)).main() @ &m : res].
-+ byequiv => //.
-  proc. 
-  inline {2} 2. inline {2} 2.
-  wp;sim.
-  inline {1} 3. inline {2} 4.
-  inline {1} 6. inline {2} 7.
-  wp;conseq />;sim.
-  inline {1} 9. inline {2} 10.
-  wp;conseq />;sim.
-  inline {1} 14. inline {2} 15.
-  wp;conseq />;sim. 
-  unroll for {1} 22. unroll for {2} 23.
-  wp;conseq />;sim; call(auxhop1).
-  wp;conseq />;sim; call(auxhop1).
-  wp;conseq />;sim; call(auxhop1).
-  unroll for {1} 20. unroll for {2} 21.
-  wp;conseq />;sim; call(auxhop1).
-  wp;conseq />;sim; call(auxhop1).
-  wp;conseq />;sim; call(auxhop1).
-  inline *. swap {1} 6 -1.  
-
-
-  inline *;sp;wp;conseq/>.  
-  rndsem{2} 0;auto => />.
-  have -> : dlet srand (fun (rho : W8.t Array32.t) => dmap srand (fun (k : W8.t Array32.t) => (rho, k))) = dsmooth; last by smt().
-  by rewrite /dR /dmap dprod_dlet;congr;apply fun_ext => *;congr;rewrite /(\o) /=. 
-
- inline {2} 2. inline {2} 3.
-  wp; call(_: ={glob O}); 1: by sim.
-  wp; call(_: ={glob O, glob S}); 1: by sim.
-  rnd.
-  wp; call(_: ={glob O}); 1: by sim.
-  conseq (_: _ ==> ={pk, glob O,glob S}); 1: smt().
-  swap {2} 2 -1.
-  seq 1 1 : (={glob As, glob S, glob O}); 1: by sim.
-  inline {1} 1. inline {2} 2. 
-  swap {2} [2..4] -1.
-  seq 3 3 : (#pre /\ ={glob IdealHSF.RF, rho,s}). 
-  + by inline *; sim.
-  seq 1 2 : (#pre /\ sig{1} = PRF_.PRF.k{2});1: by inline *; auto => />.
-  inline {1} 1; inline {2} 1.
-  sim 8 8.
-  seq 7 7 : (#pre /\ ={a,rho0} /\ sig0{1} = PRF_.PRF.k{2}); 1: by  sim. 
-  conseq => />.
-  inline {1} 1; inline {2} 1. 
-  inline *. 
-  unroll for {1} 8.
-  unroll for {2} 8.
-  do 3!( wp; conseq => />; sim).
-  wp;auto => />;sim.
-  unroll for {1} 6.
-  unroll for {2} 6.
-  do 3!( wp; conseq => />; sim).
-  by wp;auto => />;sim.
-
-have -> : Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), As).main() @ &m : res] = 
-          Pr[PRF_DEFS.IND(IdealPRF1.RF, D_PRF1(S, O, As)).main() @ &m : res].
-+ byequiv => //.
-  proc. 
-  inline {1} 2; inline {2} 2. inline {2} 2. inline {2} 3.
-  wp; call(_: ={glob O}); 1: by sim.
-  wp; call(_: ={glob O, glob S}); 1: by sim.
-  rnd.
-  wp; call(_: ={glob O}); 1: by sim.
-  conseq (_: _ ==> ={pk, glob O,glob S}); 1: smt().
-  swap {2} 2 -1.
-  seq 1 1 : (={glob As, glob S, glob O}); 1: by sim.
-  inline {1} 1. inline {2} 2. 
-  swap {2} [2..4] -1.
-  seq 3 3 : (#pre /\ ={glob IdealHSF.RF, rho,s}). 
-  + by inline *; sim.
-  seq 1 2 : (#pre /\ ={glob IdealPRF1.RF,sig});1: by inline *; auto => />.
-  by inline *;sim.
-done.
-qed.
-
-lemma PRFHop2 &m :
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] -
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF)),As).main() @ &m : res] = 
-  Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF2(S,O,As)).main() @ &m : res ] - 
-  Pr [ PRF_DEFS.IND(IdealPRF2.RF,D_PRF2(S,O,As)).main() @ &m : res ].
-proof.
-have -> : Pr[CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), As).main() @ &m : res] = 
-          Pr[PRF_DEFS.IND(PRF_.PRF, D_PRF2(S, O, As)).main() @ &m : res].
-+ byequiv => //.
-  proc. 
-   inline {2}2 . inline {2} 2.
-  wp; call(_: ={glob O}); 1: by sim.
-  swap {2} 1 4.
-  seq 4 4 : (={glob S, glob As, glob O,pk,sk,m0,m1} /\ b{1} = b1{2}).
-  + rnd;wp; call(_: ={glob O}); 1: by sim.
-    wp; call(_: ={glob O, glob S}); 1: by sim.
-    by inline *; auto => />; sim. 
-  conseq (_: _ ==> ={c, glob O,glob S}); 1: smt().
-  inline {1} 1. inline {2} 2. 
-  swap {2} [2..3] -1; sp 2 2.
-  seq 1 2 : (#pre /\ r{1} = PRF_.PRF.k{2});1: by inline *; auto => />.
-  inline {1} 1; inline {2} 1.
-  sim 13 13.
-  seq 12 12 : (={that, m2, aT, glob S, glob O}  /\ r0{1} = PRF_.PRF.k{2}); 1: by  sim. 
-  conseq => />.
-  inline {1} 1; inline {2} 1. 
-  inline *. 
-  wp;auto => />;sim.
-  unroll for {1} 8.
-  unroll for {2} 8.
-  do 3!( wp; conseq => />; sim).
-  wp;auto => />;sim.
-  unroll for {1} 6.
-  unroll for {2} 6.
-  do 3!( wp; conseq => />; sim).
-  by wp;auto => />;sim.
-
-have -> : Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), As).main
-   () @ &m : res] = 
-          Pr[PRF_DEFS.IND(RF, D_PRF2(S, O, As)).main() @ &m : res].
-+ byequiv => //.
-  proc. 
-  inline {2} 2. inline {2} 2. 
-  wp; call(_: ={glob O}); 1: by sim.
-  swap {2} 1 4.
-  seq 4 4 : (={glob S, glob As, glob O,pk,sk,m0,m1} /\ b{1} = b1{2}).
-  rnd.
-  wp; call(_: ={glob O}); 1: by sim.
-  wp; call(_: ={glob O, glob S}); 1: by sim.
-  by inline *; auto => />; sim. 
-  conseq (_: _ ==> ={c, glob O,glob S}); 1: smt().
-  inline {1} 1. inline {2} 2. 
-  swap {2} [2..3] -1; sp 2 2.
-  seq 1 2 : (#pre /\ ={glob IdealPRF2.RF,r});1: by inline *; auto => />.
-  by inline *;sim => /> /#.
-done.
-qed.
-
-
-end section.
-
-(*******************************************************************)
-(* At this point we get some nice equivalences                     *)
-(*******************************************************************)
-
-module KyberSI(S : Sampler, O : SMP_RO) = 
-   KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF), O).
-
-module (NTTSampler(S : Sampler) : Sampler) (O : SMP_RO) = {
-    proc sampleA(sd : W8.t Array32.t) : polymat = { 
-        var a;
-        a <@ S(O).sampleA(sd);
-        return invnttm a;
-    }
-
-    proc sampleAT(sd : W8.t Array32.t) : polymat = { 
-        var a;
-        a <@ S(O).sampleAT(sd);
-        return invnttm a;
-    }
-
-}.
-
-phoare sem_decode1  a : [ EncDec.decode1  : arg = a ==>  res = decode1  a ] = 1%r
- by bypr => &m ->; have /= := (decode1_opsem &m (decode1 a) a).
-phoare sem_encode1  a : [ EncDec.encode1  : arg = a ==>  res = encode1  a ] = 1%r
- by bypr => &m ->; have /= := (encode1_opsem &m (encode1 a) a).
-phoare sem_encode4  a : [ EncDec.encode4  : arg = a ==>  res = encode4  a ] = 1%r
- by bypr => &m ->; have /= := (encode4_opsem &m (encode4 a) a).
-phoare sem_decode4  a : [ EncDec.decode4  : arg = a ==>  res = decode4  a ] = 1%r
- by bypr => &m ->; have /= := (decode4_opsem &m (decode4 a) a).
-
-phoare sem_encode10_vec a : [ EncDec.encode10_vec : arg = a ==> res = encode10_vec_aux a ] = 1%r.
-proof. 
- bypr => &m ->; have /= <- := (encode10_vec_aux_opsem &m (encode10_vec_aux a) a).
- by byequiv (encode10_vec_aux) => //.
-qed.
-
-phoare sem_decode10_vec a : [ EncDec.decode10_vec : arg = a ==> res = decode10_vec_aux a ] = 1%r.
-proof. 
- bypr => &m ->; have /= <- := (decode10_vec_aux_opsem &m (decode10_vec_aux a) a).
- by byequiv (decode10_vec_aux) => //.
-qed.
-
-phoare sem_encode12_vec a : [ EncDec.encode12_vec : arg = a ==> res = encode12_vec_aux a ] = 1%r.
-proof. 
- bypr => &m ->; have /= <- := (encode12_vec_aux_opsem &m (encode12_vec_aux a) a).
- by byequiv (encode12_vec_aux) => //.
-qed.
-
-phoare sem_decode12_vec a : [ EncDec.decode12_vec : arg = a ==> res = decode12_vec_aux a ] = 1%r.
-proof. 
- bypr => &m ->; have /= <- := (decode12_vec_aux_opsem &m (decode12_vec_aux a) a).
- by byequiv (decode12_vec_aux) => //.
-qed.
-
-section.
-
-declare module O <: RO {-IdealHSF.RF,-RF,-IdealPRF1.RF}.
-declare module S <: Sampler {-IdealHSF.RF,-RF, -O, -IdealPRF1.RF}.
-
-equiv keygen_eq : 
-  MLWE_PKE(NTTSampler(S,O), O).kg ~ KyberSI(S,O).kg :
-   ={glob S, glob O} ==> ={res,glob S, glob O}.
+require import EncDecCorrectness.
+equiv keygen_eq (O <: POracle): 
+  FO_MLKEM.FO_K(O).kg ~ MLKEMS(KHS,KPRF,KPRF,O).kg :
+   ={glob O} ==> ={glob O}                           /\ 
+                 res{1}.`1 = res{2}.`1               /\ 
+                 res{1}.`2.`1.`1 = res{2}.`2.`2      /\ 
+                 res{1}.`2.`1.`2 = res{2}.`2.`1      /\
+                 H_pk res{1}.`2.`1.`1 = res{2}.`2.`3 /\
+                 res{1}.`2.`2 = res{2}.`2.`4.
 proof.
 proc.
-inline {2} 4.
-wp;ecall{2}(sem_encode12_vec (toipolyvec s0{2})).
-wp;ecall{2}(sem_encode12_vec (toipolyvec t{2})).
-swap {1} 4 -2.
-swap {2} 2 -1. swap {2} 4 -2. swap {2} 10 -7.
-seq 2 3 : (#pre /\ nttm _A{1} = a{2} /\ sd{1} = rho0{2}).
-+ inline {1} 2; wp; call(_: ={glob O}); 1: by sim.
-  by auto => />; smt(nttmK).
-swap {2} [2..3] 4.
-seq 0 5 : #pre; 1: by inline *;auto.
-wp; conseq (_: _ ==> ={e} /\ s{1} = s0{2} /\ sd{1} = rho0{2} /\ nttm _A{1} = a{2}); 
-  last first.
-+ conseq (_: true ==> ={e} /\ s{1} = s0{2}); 1: smt(). 
-  inline {2} 3.
-inline*.
-transitivity {1}
- { s <@ CBD2rnd.sample_vec_real();
-   e <@ CBD2rnd.sample_vec_real(); }
- ( true ==> ={e,s} )
- ( true ==> ={e} /\ s{1}=s0{2} ) => //.
-  transitivity {1}
-   { s <@ CBD2rnd.sample_vec_ideal();
-     e <@ CBD2rnd.sample_vec_ideal(); }
-   ( true ==> ={e,s} )
-   ( true ==> ={e,s} ) => //.
-   inline*; wp; rnd.
-   by wp; rnd; auto.
-  by symmetry; do 2! call CBD2rnd_vec_equiv; auto.
- seq 0 7: (_N{2} = 0 /\ forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
-  by wp; auto => /> *; smt(SmtMap.mem_empty).
- seq 1 2: (s{1}=noise1{2} /\ _N{2} = 3 /\
-           forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
-  inline*; wp.
-  while (={i} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
-         (forall k, 0 <= k < i{2} => (v{1}.[k]=noise1{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
-   rcondt {2} 6.
-    move=> &m; wp; skip => &hr /> ??? Hm ?.
-    rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK /#.
-   wp; while (#[/:5,7:]pre /\ ={i0, bytes} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom IdealPRF1.RF.m{2} x1 => to_uint x1 <= _N{2}) /\
-              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
-    wp; skip => /> &1&2 *; split; first smt().    
-    split; first smt().
-    move=> k ?? /=.
-    case: (k= 2*i0{2}) => E1.
-     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
-    case: (k= 2*i0{2}+1) => E2.
-     by rewrite set_eqiE 1..2:/# set_eqiE /#.
-    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
-   wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
-    split.
-     by rewrite SmtMap.get_set_sameE.
-    move=> x; case: (x=W8.of_int i{2}) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
-    by apply StdOrder.IntOrder.ltrW; smt().
-   move => p1 i0 p2 ?????? H; split; first smt().
-   have EE: p1 = p2.
-    by apply Array256.tP => k kb; apply H; smt().
-   split; last smt().
-   move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 => ??????; split; last smt().
-  apply eq_vectorP => k kb;smt(setvE getvE).
- wp; seq 2 2: (e{1}=noise2{2} /\ s{1}=noise1{2} /\ _N{2} = 6 /\
-           forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
-  inline*; wp.
-  while (={i} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ s{1}=noise1{2} /\
-         (forall k, 0 <= k < i{2} => (v{1}.[k]=noise2{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom IdealPRF1.RF.m{2} x => W8.to_uint x < _N{2}).
-   rcondt {2} 6.
-    move=> &m; wp; skip => &hr /> ??? Hm ?.
-    rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK /#.
-   wp; while (#[/:6,8:]pre /\ bytes{1}=bytes0{2} /\ i0{1}=i1{2} /\ 0 <= i1{2} <= 128 /\ j0{2} = i1{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom IdealPRF1.RF.m{2} x1 => to_uint x1 <= _N{2}) /\
-              forall k, 0 <= k < j0{2} => p0{1}.[k] = rr0{2}.[k]).
-    wp; skip => /> &1&2 *; split; first smt().    
-    split; first smt().
-    move=> k ?? /=.
-    case: (k= 2*i1{2}) => E1.
-     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
-    case: (k= 2*i1{2}+1) => E2.
-     by rewrite set_eqiE 1..2:/# set_eqiE /#.
-    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
-   wp; rnd; wp; skip => /> &1 &2; rewrite !getvE !setvE => ?????????; split.
-    split.
-     by rewrite SmtMap.get_set_sameE.
-    move=> x; case: (x=W8.of_int (3+i{2})) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
-    by apply StdOrder.IntOrder.ltrW; smt().
-   move => p1 i1 p2 ?????? H; split; first smt().
-   have EE: p1 = p2.
-    by apply Array256.tP => k kb; apply H; smt().
-   split; first smt().
-   split; last smt().
-   move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 ??????; split; last smt().
-  by apply eq_vectorP => k kb;smt(setvE getvE).
- by auto.
-auto => /> &1 &2 e s; rewrite /pk_encode /sk_encode /= polyvecD.
-by rewrite -!polyvecD comm_nttv_add comm_nttv_mmul.
+inline {2} 3. 
+swap {1} 2 -1. swap {2} 2 -1. 
+seq 1 1 : (#pre /\ ={k});1: by auto.
+wp;sp;conseq (_: pk{1} = pk0{2} /\ sk{1} = sk0{2} /\ z{2} = k{1}); 1: by smt().
+inline {2} 5.
+swap{2} [6..9] -5; seq 0 4 : #pre; 1: by auto.
+swap {2} 4 9; wp 1 12;conseq />. 
+transitivity {2} { coins0 <- (witness,k); coins <$ srand;  (pk0,sk0) <- kg coins; }
+   ( ={glob O, k} ==> pk{1} = pk0{2} /\ sk{1} = sk0{2} /\ coins0{2}.`2 = k{2})
+   (={k} ==> ={pk0,sk0} /\ coins0{2}.`2 = k{2}); 1,2:smt().
++ sp;conseq />; rndsem*{2} 0;rnd;auto => />. 
+  by have -> : (fun (coins : W8.t Array32.t) => ((kg coins).`1, (kg coins).`2)) = 
+            (fun coins => kg coins); smt().
+swap {1} 1 1;auto => /> coins _; rewrite /kg /=. 
+have -> /= : (prg_kg_inner coins) = ((prg_kg_inner coins).`1,(prg_kg_inner coins).`2,(prg_kg_inner coins).`3) by smt(). 
+rewrite /pk_encode /sk_encode /= /= polyvecD.
+by rewrite -!polyvecD comm_nttv_add comm_nttv_mmul. 
 qed.
 
-
-equiv enc_eq : 
-  MLWE_PKE(NTTSampler(S,O), O).enc ~ KyberSI(S,O).enc :
-   ={arg,glob S, glob O} ==> ={res,glob S, glob O}.
+equiv enc_eq  (O <: POracle): 
+  FO_MLKEM.FO_K(O).enc ~ MLKEMS(KHS,KPRF,KPRF,O).enc :
+   ={arg,glob O} ==> ={res,glob O}.
 proof.
 proc.
-inline {2} 2.
-wp;ecall{2}(sem_encode4 (compress_poly 4 v{2})).
-wp;ecall{2}(sem_encode10_vec (compress_polyvec 10 u{2})).
-wp;ecall{2}(sem_decode1 (m0{2})).
-swap {1} [2..4] -1.
-swap {2} [7..8] -6.
-swap {2} 14 -7.
-swap {2} [6..7] -2.
-seq 3 5 : (#pre /\ ={e1,e2} /\ r{1} = rv{2}).
- inline*; simplify.
- transitivity {1}
-  { r <@ CBD2rnd.sample_vec_real();
-    e1 <@ CBD2rnd.sample_vec_real();
-    e2 <@ CBD2rnd.sample_real(); }
-  ( ={pk,m,glob S,glob O} ==> ={pk,m,glob S,glob O,r,e1,e2} )
-  ( ={pk,m,glob S,glob O} ==> ={pk,m,glob S,glob O,e1,e2} /\ r{1}=rv{2} ) => //; first smt().
-  transitivity {1}
-   { r <@ CBD2rnd.sample_vec_ideal();
-     e1 <@ CBD2rnd.sample_vec_ideal();
-     e2 <@ CBD2rnd.sample_ideal(); }
-   ( ={pk,m,glob S,glob O} ==> ={pk,m,glob S,glob O,r,e1,e2} )
-   ( ={pk,m,glob S,glob O} ==> ={pk,m,glob S,glob O,r,e1,e2} ) => //; first smt().
-   inline*; wp; rnd.
-   wp; rnd.
-   by wp; rnd; auto.
-  symmetry; call CBD2rnd_equiv.
-  by do 2! call CBD2rnd_vec_equiv; auto.
- seq 0 9: (={pk, m, glob S, glob O} /\ _N{2} = 0 /\ forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
-  by wp; auto => /> *; smt(SmtMap.mem_empty).
- seq 1 2: (r{1}=noise1{2} /\ ={pk, m, glob S, glob O} /\ _N{2} = 3 /\ forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
-  inline*; wp.
-  while (={i, pk, m, glob S, glob O} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
-         (forall k, 0 <= k < i{2} => (v0{1}.[k]=noise1{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
-   rcondt {2} 6.
-    move=> &m; wp; skip => &hr /> ??? Hm ?.
-    rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK /#.
-   wp; while (#[/:9,11:]pre /\ ={i0, bytes} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
-              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
-    wp; skip => /> &1&2 *; split; first smt().    
-    split; first smt().
-    move=> k ?? /=.
-    case: (k= 2*i0{2}) => E1.
-     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
-    case: (k= 2*i0{2}+1) => E2.
-     by rewrite set_eqiE 1..2:/# set_eqiE /#.
-    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
-   wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
-    split.
-     by rewrite SmtMap.get_set_sameE.
-    move=> x; case: (x=W8.of_int i{2}) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
-    by apply StdOrder.IntOrder.ltrW; smt().
-   move => p1 i0 p2 ?????? H; split; first smt().
-   have EE: p1 = p2.
-    by apply Array256.tP => k kb; apply H; smt().
-   split; last smt().
-   move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 ??????; split; last smt().
-  by apply eq_vectorP => k kb;smt(setvE getvE).
- seq 1 2: (e1{1}=noise2{2} /\ r{1}=noise1{2} /\ ={pk, m, glob S, glob O} /\ _N{2} = 6 /\ forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
-  inline*; wp.
-  while (={i, pk, m, glob S, glob O} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ r{1}=noise1{2} /\
-         (forall k, 0 <= k < i{2} => (v0{1}.[k]=noise2{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
-   rcondt {2} 6.
-    move=> &m; wp; skip => &hr /> ??? Hm ?.
-    rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK /#.
-   wp; while (#[/:10,12:]pre /\ bytes{1}=bytes0{2} /\ i0{1}=i1{2} /\ 0 <= i1{2} <= 128 /\ j0{2} = i1{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
-              forall k, 0 <= k < j0{2} => p0{1}.[k] = rr0{2}.[k]).
-    wp; skip => /> &1&2 *; split; first smt().    
-    split; first smt().
-    move=> k ?? /=.
-    case: (k= 2*i1{2}) => E1.
-     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
-    case: (k= 2*i1{2}+1) => E2.
-     by rewrite set_eqiE 1..2:/# set_eqiE /#.
-    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
-   wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
-    split.
-     by rewrite SmtMap.get_set_sameE.
-    move=> x; case: (x=W8.of_int (3+i{2})) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
-    by apply StdOrder.IntOrder.ltrW; smt().
-   move => p1 i1 p2 ?????? H; split; first smt().
-   have EE: p1 = p2.
-    by apply Array256.tP => k kb; apply H; smt().
-   split; first smt().
-   split; last smt().
-   move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 ??????; split; last smt().
-  by apply eq_vectorP => k kb;smt(setvE getvE).
- seq 1 12: (e2{1}=e20{2} /\ e1{1}=noise2{2} /\ r{1}=noise1{2} /\ ={pk, m, glob S, glob O}).
-  inline*; wp.
-  rcondt {2} 6.
-   move=> &m; wp; skip => &hr /> Hm. 
-   rewrite -implybF => H.
-   by move: (Hm _ H); rewrite implybF of_uintK /#.
-   while (#[/:-2]pre /\ bytes{1}=bytes1{2} /\ i{1}=i2{2} /\ 0 <= i2{2} <= 128 /\ j1{2} = i2{2}*2 /\
-          forall k, 0 <= k < j1{2} => p{1}.[k] = rr1{2}.[k]).
-    wp; skip => /> &1&2 *; split; first smt(). 
-    split; first smt().
-    move=> k ?? /=.
-    case: (k= 2*i2{2}) => E1.
-     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
-    case: (k= 2*i2{2}+1) => E2.
-     by rewrite set_eqiE 1..2:/# set_eqiE /#.
-    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
-   wp; rnd; wp; skip => /> &1 &2 ????; split.
-    by rewrite SmtMap.get_set_eqE //=.
-   move => p1 i1 p2 ????? H.
-   by apply Array256.tP => k kb; apply H; smt().
- by auto.
-conseq />; 1: smt().
-inline {1} 2.
-swap {2} 3 -2. swap {2} 6 -3. swap {2} 9 -5.
-seq 4 4 : (#pre /\ tv{2} = pk{1}.`1 /\ t{1} = (pk_decode pk{2}).`1 /\ nttm _A{1} = aT{2}).
- wp; call(_: ={glob O}); 1: by sim.
- by auto => />; smt(nttmK).
-wp;ecall{2}(sem_decode12_vec (tv{2})).
-auto => /> &1 &2; rewrite /pk_decode /c_encode /m_encode /=.  
-split; 1: by rewrite -!polyvecD -comm_nttv_mmul invnttvK.
-congr. congr. congr. congr.
+inline {2} 2. inline {2} 7.
+wp;conseq  (: _ ==> ={m,r,pk, glob O} /\ k{1} = _K0{2} /\ pk0{2} = pk{1}).
++ auto => />; rewrite /enc /= /pk_decode /m_encode /c_encode.
+  rewrite !sem_decode1_corr => &2 m r.
+  have -> /= : prg_enc_inner r = 
+   ((prg_enc_inner r).`1,(prg_enc_inner r).`2,(prg_enc_inner r).`3) by smt().
+  split; congr; congr. 
+  + by rewrite -!polyvecD -comm_nttv_mmul invnttvK.
+  by rewrite comm_ntt_dotp sem_decode12_vec_corr.
+
+by call(:true);auto => />.
+qed.
+
+import MLWE_.
+equiv dec_eq  (O <: POracle): 
+  FO_MLKEM.FO_K(O).dec ~ MLKEMS(KHS,KPRF,KPRF,O).dec :
+  arg{1}.`2 = arg{2}.`2 /\
+  arg{1}.`1.`1.`1 = arg{2}.`1.`2      /\ 
+  arg{1}.`1.`1.`2 = arg{2}.`1.`1      /\
+  H_pk arg{1}.`1.`1.`1 = arg{2}.`1.`3 /\
+  arg{1}.`1.`2 = arg{2}.`1.`4 /\
+   ={glob O} ==> ={res,glob O}.
+proc. 
+inline {2} 5. inline {2} 2.
+sp 0 1;seq 1  14 : (#pre /\ m'{1} = Some m1{2} /\ m'{1} = m{2}).
++ by auto => />;rewrite /dec /m_encode /c_decode /m_decode /sk_decode sem_decode4_corr /= => &1 &2;
+  split;congr;congr;congr;congr;
+  by rewrite comm_ntt_dotp sem_decode10_vec_corr sem_decode12_vec_corr.
+
+seq 2 2 : (#pre /\ ks{1} = _K{2} /\ ={r} /\ kn{1} = _K'{2}); 1: by  wp;call(_: true);auto => />.
+seq 1 20 : (#pre /\ c'{1} = c{2}); last by auto => />.
+auto => />; rewrite /enc /= /pk_decode /m_encode /c_encode.
+rewrite !sem_decode1_corr => &1 &2. 
+have -> /= : prg_enc_inner r{2} = 
+ ((prg_enc_inner r{2}).`1,(prg_enc_inner r{2}).`2,(prg_enc_inner r{2}).`3) by smt().
+split; congr; congr. 
++ by rewrite -!polyvecD -comm_nttv_mmul invnttvK.
 by rewrite comm_ntt_dotp sem_decode12_vec_corr.
-by rewrite sem_decode1_corr.
 qed.
 
-equiv dec_eq : 
-  MLWE_PKE(NTTSampler(S,O), O).dec ~ KyberSI(S,O).dec :
-   ={arg,glob S, glob O} ==> ={res,glob S, glob O}.
-proof.
-proc.
-ecall{2} (sem_encode1 (compress_poly 1 mp{2})).
-wp;ecall{2} (sem_decode12_vec (sk{2})).
-wp;ecall{2} (sem_decode4 (c2{2})).
-wp;ecall{2} (sem_decode10_vec (c1{2})).
-auto => /> &2.
-rewrite /m_decode /sk_decode /c_decode /=.
-congr. congr. congr. 
-by rewrite sem_decode4_corr.
-by rewrite comm_ntt_dotp sem_decode10_vec_corr sem_decode12_vec_corr.
-qed.
-
-end section.
-
+(***************************************)
+(* SANITY CHECK: PROVE WITH DUMMY RO   *)
 (***************************************)
 
 section.
