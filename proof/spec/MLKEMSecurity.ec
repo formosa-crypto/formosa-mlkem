@@ -152,8 +152,8 @@ clone import PRF_DEFS.PseudoRF as NPRF with
   proof dK_ll by apply srand_ll
   proof *.
 
-module CBD2_PRF(PRF : NPRF.PseudoRF) = {
-   proc sample(sig : W8.t Array32.t, _N : int) : poly = {
+module CBD2_PRF(PRF : PRF_DEFS.PRF_Oracles) = {
+   proc sample(_N : int) : poly = {
     var i : int;
     var j : int;
     var a : int;
@@ -162,7 +162,7 @@ module CBD2_PRF(PRF : NPRF.PseudoRF) = {
     var bytes;
     
     rr <- witness;
-     bytes <@ PRF.f(sig, W8.of_int _N);
+     bytes <@ PRF.f(W8.of_int _N);
 
     i <- 0;
     j <- 0;
@@ -181,11 +181,11 @@ module CBD2_PRF(PRF : NPRF.PseudoRF) = {
     return rr;
    }
 
-   proc sample_spec(sig : W8.t Array32.t, _N : int) : poly = {
+   proc sample_spec(_N : int) : poly = {
       var i,a,b,bytes,bits;
       var rr : poly;
       rr <- witness;
-      bytes <@ PRF.f(sig, W8.of_int _N);
+      bytes <@ PRF.f(W8.of_int _N);
       bits <- BytesToBits (to_list bytes);
       i <- 0;
       while (i < 256) { 
@@ -200,14 +200,14 @@ module CBD2_PRF(PRF : NPRF.PseudoRF) = {
 }.
 
 equiv cbd_correct : 
-  CBD2_PRF(PseudoRF).sample ~ CBD2.sample :
-  arg{2} = SHAKE256_33_128 arg{1}.`1 (W8.of_int arg{1}.`2) ==> ={res}
+  CBD2_PRF(NPRF.PRF).sample ~ CBD2.sample :
+  arg{2} = SHAKE256_33_128 NPRF.PRF.k{1} (W8.of_int arg{1}) ==> ={res}
 by proc => /=;inline *;sim;auto.
 
-equiv cbdspec_correct (PRF <: PseudoRF): 
+equiv cbdspec_correct (PRF <: PRF_DEFS.PRF_Oracles): 
   CBD2_PRF(PRF).sample_spec ~ CBD2_PRF(PRF).sample :  ={arg,glob PRF} ==> ={res}.
 proc => /=. 
-seq 2 2 : (#pre /\ ={rr,bytes});1: by call(_: true);auto => />.
+seq 2 2 : (#pre /\ ={rr,bytes}); 1:by call(_: true);auto => />.
 swap {2}1 1.
 unroll for {1} ^while;
 unroll for {2} ^while;
@@ -225,25 +225,26 @@ qed.
 
 import PolyVec PolyMat.
 
-module MLKEM_PRGs(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF) = {
+module MLKEM_PRGs = {
   proc prg_kg(coins:W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec = {
     var noise1 : polyvec;
     var noise2 : polyvec;
     var _N,i,c,rho,noiseseed;
     (rho, noiseseed) <- G_coins coins;
+    NPRF.PRF.k <- noiseseed;
     noise1 <- witness;                     
     noise2 <- witness;                      
     _N <- 0;                      
     i <- 0;                             
     while (i < kvec) {                 
-      c <@ CBD2_PRF(PRF1).sample(noiseseed,_N);
+      c <@ CBD2_PRF(NPRF.PRF).sample(_N);
       noise1 <- noise1.[i<-c];                   
       _N <- _N + 1;                     
      i <- i + 1;                       
     }                                  
     i <- 0;                             
     while (i < kvec) {                 
-      c <@ CBD2_PRF(PRF1).sample(noiseseed,_N);
+      c <@ CBD2_PRF(NPRF.PRF).sample(_N);
       noise2 <- noise2.[i<-c];                  
       _N <- _N + 1;                     
       i <- i + 1;                       
@@ -257,23 +258,24 @@ module MLKEM_PRGs(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF)
     var noise2 : polyvec;
      var e2,_N,i,c;
      noise1 <- witness;                     
-     noise2 <- witness;                      
+     noise2 <- witness;   
+     NPRF.PRF.k <- noiseseed;                   
      _N <- 0;                      
      i <- 0;                             
      while (i < kvec) {                 
-       c <@ CBD2_PRF(PRF2).sample(noiseseed,_N);
+       c <@ CBD2_PRF(NPRF.PRF).sample(_N);
        noise1 <- noise1.[i<-c];                   
        _N <- _N + 1;                     
       i <- i + 1;                       
      }                                  
      i <- 0;                             
      while (i < kvec) {                 
-       c <@ CBD2_PRF(PRF2).sample(noiseseed,_N);
+       c <@ CBD2_PRF(NPRF.PRF).sample(_N);
       noise2 <- noise2.[i<-c];                   
       _N <- _N + 1;                     
       i <- i + 1;                       
      }                                  
-     e2 <@ CBD2_PRF(PRF2).sample(noiseseed,_N);
+     e2 <@ CBD2_PRF(NPRF.PRF).sample(_N);
      return (noise1,noise2, e2);
   }
 
@@ -283,19 +285,16 @@ op H : W8.t Array32.t -> polymat.
 op prg_kg_inner :  W8.t Array32.t -> W8.t Array32.t * polyvec * polyvec.
 op prg_enc_inner :  W8.t Array32.t -> polyvec * polyvec * poly.
 
-module KHS = HSF.PseudoRF.
-module KPRF = NPRF.PseudoRF. (* Note the same PRF is used for kg/enc, initialized independently *)
-
 (* This fixes the definition of H in terms of the MLKEM spec *)
 axiom H_sem _seed :
     phoare [ Hmodule.sampleA : sd = _seed ==> res = nttm (H _seed) ] = 1%r.
 
 lemma prg_kg_sem _coins : 
-   phoare [ MLKEM_PRGs(KHS,KPRF,KPRF).prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
+   phoare [ MLKEM_PRGs.prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
 admitted. (* IDEALLY PROC OP *)
 
 lemma prg_enc_sem _coins : 
-   phoare [ MLKEM_PRGs(KHS,KPRF,KPRF).prg_enc : noiseseed = _coins ==> res = prg_enc_inner _coins ] = 1%r.
+   phoare [ MLKEM_PRGs.prg_enc : noiseseed = _coins ==> res = prg_enc_inner _coins ] = 1%r.
 admitted. (* IDEALLY PROC OP *)
 
 lemma H_T_sem _seed :
@@ -341,7 +340,7 @@ proof.
  by byequiv (decode12_vec_aux) => //.
 qed.
 
-module InnerPKES(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF)  = {
+module InnerPKE_Op = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(coins: W8.t Array32.t) : pkey * skey = {
@@ -419,43 +418,44 @@ import Symmetric.
 
 
 lemma kg_sampler_kg  :
-  equiv [  InnerPKES(KHS,KPRF,KPRF).kg_derand ~ InnerPKE.kg_derand : 
+  equiv [  InnerPKE_Op.kg_derand ~ InnerPKE.kg_derand : 
      ={arg}==> ={res}].
 proc. 
 ecall{2}(sem_encode12_vec (toipolyvec s{2})).
 ecall{2}(sem_encode12_vec (toipolyvec t{2})).
 wp 6 13. swap {2} 1 4.
 seq 4 4 : #pre; 1: by auto.
-transitivity{1} { a<-witness;(rho,s,e) <@ MLKEM_PRGs(KHS,KPRF,KPRF).prg_kg(coins); 
+transitivity{1} { a<-witness;(rho,s,e) <@ MLKEM_PRGs.prg_kg(coins); 
                    a <@ Hmodule.sampleA(rho); }
        ( ={coins} ==> ={rho,s,e,a})
        ( ={coins} ==> ={s, rho, e, a});1,2: smt(). 
 + ecall{2} (H_sem rho{2}).
   by ecall{2} (prg_kg_sem coins{2}); auto. 
 inline {1} 2. 
-proc case {1} 11. (* NEED TO BREAK TUPLE ASSIGNMENT *)
-swap {1} 11 -7. swap {1} 14 -9. wp.
-inline CBD2_PRF(PseudoRF).sample.
+proc case {1} 12. (* NEED TO BREAK TUPLE ASSIGNMENT *)
+swap {1} 12 -7. swap {1} 15 -9. wp.
+inline CBD2_PRF(NPRF.PRF).sample.
 inline CBD2.sample.
 inline PseudoRF.f.
 while (noise1{1} = s{2} /\ rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
-       ={i,_N,a} /\
+       ={i,_N,a} /\ NPRF.PRF.k{1} = sig{2} /\
        0<=i{1}<=kvec /\ 
        forall k, 0 <=k < i{1} => (noise2{1}.[k])%Vector = (e{2}.[k])%Vector).
 + wp; conseq(_: ={rr0}); 1: by smt(getv_setvE).  
   by inline*; sim; auto => />. 
 wp;conseq (: noise1{1} = s{2} /\ 
              rho{1} = rho{2} /\
+             NPRF.PRF.k{1} = sig{2} /\
              noiseseed{1} = sig{2} /\
              ={_N, a}); first by smt(eq_vectorP).
 
 while (rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
-       ={i,_N,a} /\
+       ={i,_N,a} /\ NPRF.PRF.k{1} = sig{2} /\
        0<=i{1}<=kvec /\ 
        forall k, 0 <=k < i{1} => (noise1{1}.[k])%Vector = (s{2}.[k])%Vector).
 + wp; conseq(_: ={rr}); 1: by smt(getv_setvE).  
   by inline*; sim; auto => />. 
-inline {1} 5.
+inline {1} 6.
 sp;wp;conseq  (: rho{1} = rho{2} /\ 
              noiseseed{1} = sig{2} /\
              a2{1} = a{2});1:  by smt(eq_vectorP).
@@ -468,7 +468,7 @@ qed.
 
 lemma enc_sampler_enc  :
  equiv [
-   InnerPKES(KHS,KPRF,KPRF).enc_derand ~ InnerPKE.enc_derand : 
+   InnerPKE_Op.enc_derand ~ InnerPKE.enc_derand : 
     ={arg}  ==> ={res}].
 proc. 
 ecall{2}(sem_encode4 (compress_poly 4 v{2})).
@@ -479,28 +479,28 @@ swap {1} [7..10] -1.  swap {2} [8..9] -1. swap {2} 1 7.
 seq 8 7 : (={pk,m,c1,e1,rv,that,tv,rho,thati,that} /\ r{1} = coins{2});
    1: by wp; ecall{2}(sem_decode12_vec (tv{2}));auto.
 transitivity{1} {  aT <@ Hmodule.sampleAT(rho);
-                  (rv,e1,e2) <@ MLKEM_PRGs(KHS,KPRF,KPRF).prg_enc(r); 
+                  (rv,e1,e2) <@ MLKEM_PRGs.prg_enc(r); 
                     }
        (={pk,m,c1,e1,rv,that,tv,rho,thati,that,r} ==> ={that, rv, m, e2, e1, aT})
       ( ={pk,m,c1,e1,rv,that,tv,rho,thati,that} /\ r{1} = coins{2}==> ={that, rv, m, e2, e1, aT});1,2: smt(). 
 + ecall{2} (prg_enc_sem r{2}).
   by ecall{2} (H_T_sem rho{2}); auto.
 
-inline {1} 2. inline {1} 10. inline {2} 9. inline {1} 13. swap {2} 1 2.
+inline {1} 2. inline {1} 11. inline {2} 9. inline {1} 13. swap {2} 1 2.
 wp;sim;wp;
 conseq (: ={that,_N,m,aT} /\
   noise2{1} = e1{2} /\
-  noise1{1} = rv{2} /\
+  noise1{1} = rv{2} /\ NPRF.PRF.k{1} = coins{2} /\
   noiseseed{1} = coins{2});1: by smt().
 while (={i, that, _N, m, aT} /\ noise1{1} = rv{2} /\ noiseseed{1} = coins{2} /\
-       0<=i{1}<=kvec /\ 
+       0<=i{1}<=kvec /\ NPRF.PRF.k{1} = coins{2} /\
        forall k, 0 <=k < i{1} => (noise2{1}.[k])%Vector = (e1{2}.[k])%Vector).
 + inline *;wp;conseq(_: ={rr0}); 1: by smt(getv_setvE).  by inline*; sim; auto => />. 
 wp;conseq (: ={that,_N,m,aT} /\
-  noise1{1} = rv{2} /\
+  noise1{1} = rv{2} /\ NPRF.PRF.k{1} = coins{2} /\
   noiseseed{1} = coins{2}); first by smt(eq_vectorP).
 while (={i, that, _N, m, aT} /\ noiseseed{1} = coins{2} /\
-       0<=i{1}<=kvec /\ 
+       0<=i{1}<=kvec /\ NPRF.PRF.k{1} = coins{2} /\
        forall k, 0 <=k < i{1} => (noise1{1}.[k])%Vector = (rv{2}.[k])%Vector).
 + inline *;wp; conseq(_: ={rr0}); 1: by smt(getv_setvE).  
   by inline*; sim; auto => />. 
@@ -515,7 +515,7 @@ by inline *; auto => />  /#.
 qed.
 
 lemma dec_sampler_dec :
-  equiv [ InnerPKES(KHS,KPRF,KPRF).dec ~ InnerPKE.dec : 
+  equiv [ InnerPKE_Op.dec ~ InnerPKE.dec : 
      ={arg}  ==> res{1} = Some res{2} ].
 proc. 
 ecall{2}(sem_encode1 (compress_poly 1 mp{2})).
@@ -547,7 +547,7 @@ clone import KEM_ROM as SPEC_MODEL with
   proof *.
 import RO.
 
-module (MLKEMS(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF) : Scheme) (O : POracle) = {
+module (MLKEM_Op : Scheme) (O : POracle) = {
   proc kg_derand(coins : W8.t Array32.t * W8.t Array32.t) : publickey * secretkey = {
     var kgs : W8.t Array32.t;
     var z : W8.t Array32.t;
@@ -557,7 +557,7 @@ module (MLKEMS(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF) : 
     
     kgs <- coins.`1;
     z <- coins.`2;
-    (pk, sk) <@ InnerPKES(HS,PRF1,PRF2).kg_derand(kgs);
+    (pk, sk) <@ InnerPKE_Op.kg_derand(kgs);
     hpk <- H_pk pk;
     
     return (pk, (sk, pk, hpk, z));
@@ -585,7 +585,7 @@ module (MLKEMS(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF) : 
     m <- coins;
     hpk <- H_pk pk;
     (_K, r) <@ O.get(m,hpk);
-    c <@ InnerPKES(HS,PRF1,PRF2).enc_derand(pk, m, r);
+    c <@ InnerPKE_Op.enc_derand(pk, m, r);
     
     return (c, _K);
   }
@@ -614,10 +614,10 @@ module (MLKEMS(HS : HSF.PseudoRF, PRF1 : NPRF.PseudoRF, PRF2 : NPRF.PseudoRF) : 
     var _K : W8.t Array32.t;
     
     (skp, pk, hpk, z) <- sk;
-    m <@ InnerPKES(HS,PRF1,PRF2).dec(skp, cph);
+    m <@ InnerPKE_Op.dec(skp, cph);
     (_K, r) <@ O.get(oget m,hpk);
     _K' <- J z cph;
-    c <@ InnerPKES(HS,PRF1,PRF2).enc_derand(pk, oget m, r);
+    c <@ InnerPKE_Op.enc_derand(pk, oget m, r);
     if (c <> cph) 
       _K <- _K';
     
@@ -637,14 +637,14 @@ module DummyRO = {
 }.
 
 equiv kg_bridge :
-  MLKEMS(KHS,KPRF,KPRF,DummyRO).kg_derand ~ MLKEM.kg_derand : ={arg} ==> ={res} by proc;wp; call (kg_sampler_kg); auto => />.
+  MLKEM_Op(DummyRO).kg_derand ~ MLKEM.kg_derand : ={arg} ==> ={res} by proc;wp; call (kg_sampler_kg); auto => />.
 
 equiv enc_bridge :
-  MLKEMS(KHS,KPRF,KPRF,DummyRO).enc_derand ~ MLKEM.enc_derand : ={arg} ==> ={res} by 
+  MLKEM_Op(DummyRO).enc_derand ~ MLKEM.enc_derand : ={arg} ==> ={res} by 
   proc;wp; call (enc_sampler_enc);inline *; auto => />.
 
 equiv dec_bridge :
-  MLKEMS(KHS,KPRF,KPRF,DummyRO).dec ~ MLKEM.dec : arg{1}.`1 = arg{2}.`2 /\ arg{1}.`2 = arg{2}.`1 ==> res{1} = Some res{2} 
+  MLKEM_Op(DummyRO).dec ~ MLKEM.dec : arg{1}.`1 = arg{2}.`2 /\ arg{1}.`2 = arg{2}.`1 ==> res{1} = Some res{2} 
 by proc;wp;call(enc_sampler_enc);inline {1} 3;wp;call(dec_sampler_dec);auto => />.
 
 
@@ -927,7 +927,7 @@ qed.
 
 require import EncDecCorrectness.
 equiv keygen_eq : 
-  FO_MLKEM.FO_K(FO_MLKEM.KEMROM.RO.RO).kg ~ MLKEMS(KHS,KPRF,KPRF,SPEC_MODEL.RO.RO).kg :
+  FO_MLKEM.FO_K(FO_MLKEM.KEMROM.RO.RO).kg ~ MLKEM_Op(SPEC_MODEL.RO.RO).kg :
    (glob FO_MLKEM.KEMROM.RO.RO){1}=(glob SPEC_MODEL.RO.RO){2} 
      ==>  (glob FO_MLKEM.KEMROM.RO.RO){1}=(glob SPEC_MODEL.RO.RO){2}                            
                                                      /\ 
@@ -961,7 +961,7 @@ by rewrite -!polyvecD comm_nttv_add comm_nttv_mmul.
 qed.
 
 equiv enc_eq: 
-  FO_MLKEM.FO_K(FO_MLKEM.KEMROM.RO.RO).enc ~ MLKEMS(KHS,KPRF,KPRF,SPEC_MODEL.RO.RO).enc :
+  FO_MLKEM.FO_K(FO_MLKEM.KEMROM.RO.RO).enc ~ MLKEM_Op(SPEC_MODEL.RO.RO).enc :
    (glob FO_MLKEM.KEMROM.RO.RO){1}=(glob SPEC_MODEL.RO.RO){2}   /\ ={arg} ==> 
    (glob FO_MLKEM.KEMROM.RO.RO){1}=(glob SPEC_MODEL.RO.RO){2}  /\ ={res}.
 proof.
@@ -982,7 +982,7 @@ qed.
 
 import MLWE_.
 equiv dec_eq  : 
-  FO_MLKEM.FO_K(FO_MLKEM.KEMROM.RO.RO).dec ~ MLKEMS(KHS,KPRF,KPRF,SPEC_MODEL.RO.RO).dec :
+  FO_MLKEM.FO_K(FO_MLKEM.KEMROM.RO.RO).dec ~ MLKEM_Op(SPEC_MODEL.RO.RO).dec :
    (glob FO_MLKEM.KEMROM.RO.RO){1}=(glob SPEC_MODEL.RO.RO){2}   /\
    arg{1}.`2 = arg{2}.`2 /\
   arg{1}.`1.`1.`1 = arg{2}.`1.`2      /\ 
@@ -1008,6 +1008,225 @@ split; congr; congr.
 + by rewrite -!polyvecD -comm_nttv_mmul invnttvK.
 by rewrite comm_ntt_dotp sem_decode12_vec_corr.
 qed.
+
+(**************)
+(**************)
+(** THE PRGS  *)
+(**************)
+(**************)
+
+clone import HS_DEFS.RF as HSRF with
+    op dR <- fun _ => dRO
+    proof dR_ll by (move => *;apply dRO_ll)
+    proof*.
+
+abbrev dnbytes = darray128 W8.dword.
+
+lemma dnbytes_ll: is_lossless dnbytes.
+proof.
+apply darray128_ll.
+by apply W8.dword_ll.
+qed.
+
+clone import PRF_DEFS.RF as NRF with
+    op dR = fun (_: W8.t) => dnbytes
+    proof dR_ll by smt(dnbytes_ll)
+    proof*.
+
+(* THESE ARE USED BY OUR ADVERSARIES *)
+module MLKEM_PRGs_O(G : HS_DEFS.PRF_Oracles, PRF: PRF_DEFS.PRF_Oracles) = {
+  proc prg_kg_hs() : W8.t Array32.t * polyvec * polyvec = {
+    var noise1 : polyvec;
+    var noise2 : polyvec;
+    var _N,i,c,rho,noiseseed;
+    (rho, noiseseed) <@ G.f();
+    NPRF.PRF.k <- noiseseed;
+    noise1 <- witness;                     
+    noise2 <- witness;                      
+    _N <- 0;                      
+    i <- 0;                             
+    while (i < kvec) {                 
+      c <@ CBD2_PRF(PRF).sample(_N);
+      noise1 <- noise1.[i<-c];                   
+      _N <- _N + 1;                     
+     i <- i + 1;                       
+    }                                  
+    i <- 0;                             
+    while (i < kvec) {                 
+      c <@ CBD2_PRF(PRF).sample(_N);
+      noise2 <- noise2.[i<-c];                  
+      _N <- _N + 1;                     
+      i <- i + 1;                       
+    }                                  
+
+    return (rho,noise1,noise2);
+  }
+
+  proc prg_kg_prf() : W8.t Array32.t * polyvec * polyvec = {
+    var noise1 : polyvec;
+    var noise2 : polyvec;
+    var _N,i,c,rho,noiseseed;
+    (rho, noiseseed) <@ G.f();
+    noise1 <- witness;                     
+    noise2 <- witness;                      
+    _N <- 0;                      
+    i <- 0;                             
+    while (i < kvec) {                 
+      c <@ CBD2_PRF(PRF).sample(_N);
+      noise1 <- noise1.[i<-c];                   
+      _N <- _N + 1;                     
+     i <- i + 1;                       
+    }                                  
+    i <- 0;                             
+    while (i < kvec) {                 
+      c <@ CBD2_PRF(PRF).sample(_N);
+      noise2 <- noise2.[i<-c];                  
+      _N <- _N + 1;                     
+      i <- i + 1;                       
+    }                                  
+
+    return (rho,noise1,noise2);
+  }
+
+   proc prg_enc() : polyvec * polyvec * poly = {
+    var noise1 : polyvec;
+    var noise2 : polyvec;
+     var e2,_N,i,c;
+     noise1 <- witness;                     
+     noise2 <- witness;   
+     _N <- 0;                      
+     i <- 0;                             
+     while (i < kvec) {                 
+       c <@ CBD2_PRF(PRF).sample(_N);
+       noise1 <- noise1.[i<-c];                   
+       _N <- _N + 1;                     
+      i <- i + 1;                       
+     }                                  
+     i <- 0;                             
+     while (i < kvec) {                 
+       c <@ CBD2_PRF(PRF).sample(_N);
+      noise2 <- noise2.[i<-c];                   
+      _N <- _N + 1;                     
+      i <- i + 1;                       
+     }                                  
+     e2 <@ CBD2_PRF(PRF).sample(_N);
+     return (noise1,noise2, e2);
+  }
+
+}.
+
+section.
+
+declare module  A <: PRG_KG.Distinguisher {-HSF.PRF, -REAL_PRG_KG.PRF, -HSRF.RF, -NRF.RF, -IDEAL_PRG_KG.RF}.
+
+
+module (B_HS_KG(A : PRG_KG.Distinguisher) : HS_DEFS.Distinguisher) (O : HS_DEFS.PRF_Oracles) = {
+
+   module OO : PRG_KG.PRF_Oracles = {
+      proc f = MLKEM_PRGs_O(O,NPRF.PRF).prg_kg_hs
+   }
+
+   proc distinguish() : bool = {
+      var b;
+      b <@ A(OO).distinguish();
+      return b;
+   }
+}.
+
+module (B_PRF_KG(A : PRG_KG.Distinguisher) : PRF_DEFS.Distinguisher) (O : PRF_DEFS.PRF_Oracles) = {
+
+   module OO : PRG_KG.PRF_Oracles = {
+      proc f = MLKEM_PRGs_O(HSRF.RF,O).prg_kg_prf
+   }
+
+   proc distinguish() : bool = {
+      var b;
+      HSRF.RF.init();
+      b <@ A(OO).distinguish();
+      return b;
+   }
+}.
+
+lemma kg_prg_bound &m :
+ `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, A).main() @ &m : res] -
+   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, A).main() @ &m : res]| <= 
+    `|Pr[HS_DEFS.IND(HSF.PRF, B_HS_KG(A)).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HSRF.RF, B_HS_KG(A)).main() @ &m : res]|  + 
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(A)).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(A)).main() @ &m : res]|.
+proof.
+have -> : Pr[PRG_KG.IND(REAL_PRG_KG.PRF, A).main() @ &m : res] = 
+     Pr[HS_DEFS.IND(HSF.PRF, B_HS_KG(A)).main() @ &m : res].
++ byequiv => //.
+  proc;inline *;wp;call(:REAL_PRG_KG.PRF.k{1} =  HSF.PRF.k{2}).
+  + proc*. inline {1} 1.  admit. (* use transitivity to MLKEM_PRGs.prg_kg and prg_kg_sem definition *)
+  by auto.
+
+have -> : Pr[HS_DEFS.IND(HSRF.RF, B_HS_KG(A)).main() @ &m : res] =
+          Pr[PRF_DEFS.IND(PRF, B_PRF_KG(A)).main() @ &m : res].
++ byequiv => //.
+  proc;inline *. admit. (* use prom to delay sampling on the right. annoying *)
+
+have -> : Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, A).main() @ &m : res] = 
+          Pr[PRF_DEFS.IND(RF, B_PRF_KG(A)).main() @ &m : res]; last by smt().
+
+byequiv => //.
+proc; inline *.
+wp;call(: true).
+proc*;inline {1} 1. inline {2} 1. admit. (* use results on CBD2 to remove procedure calls *)
+by auto => />.
+qed.
+
+end section.
+
+module (B_PRF_ENC(A : PRG_ENC.Distinguisher) : PRF_DEFS.Distinguisher) (O : PRF_DEFS.PRF_Oracles) = {
+
+   module OO : PRG_ENC.PRF_Oracles = {
+      proc f = MLKEM_PRGs_O(HSRF.RF,O).prg_enc
+   }
+
+   proc distinguish() : bool = {
+      var b;
+      b <@ A(OO).distinguish();
+      return b;
+   }
+}.
+
+section.
+
+declare module  A <: PRG_ENC.Distinguisher {-NPRF.PRF, -REAL_PRG_ENC.PRF, -NRF.RF, - IDEAL_PRG_ENC.RF}.
+
+lemma enc_prg_bound &m :
+ `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, A).main() @ &m : res] -
+   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, A).main() @ &m : res]| <= 
+        `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(A)).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(A)).main() @ &m : res]|.
+proof. 
+have -> : Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, A).main() @ &m : res] = 
+          Pr[PRF_DEFS.IND(PRF, B_PRF_ENC(A)).main() @ &m : res].
++ byequiv => //.
+  proc;inline *;wp;call(:REAL_PRG_ENC.PRF.k{1} =  NPRF.PRF.k{2}).
+  + proc*. inline {1} 1.  admit. (* use transitivity to MLKEM_PRGs.prg_enc and prg_enc_sem definition *)
+  by auto.
+
+have -> : Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, A).main() @ &m : res] = 
+          Pr[PRF_DEFS.IND(RF, B_PRF_ENC(A)).main() @ &m : res]; last by smt().
+byequiv => //.
+proc; inline *.
+wp;call(: true).
+proc*;inline {1} 1. inline {2} 1. admit. (* use results on CBD2 to remove procedure calls *)
+by auto => />.
+qed.
+
+end section.
+
+(**************)
+(**************)
+(** THEOREMS  *)
+(**************)
+(**************)
+
+
 
 section.
 
@@ -1097,7 +1316,7 @@ lemma mlkem_spec_security &m (failprob prg_kg_bound prg_enc_bound : real) :
     hoare[ A(FO_MLKEM.CountH(RO0), O0).guess : FO_MLKEM.CountH.c_h = 0 ==> FO_MLKEM.CountH.c_h <= FO_MLKEM.qHK]) =>
  (forall (H0 <: FO_MLKEM.KEMROM.POracle {-A} ) (O0 <: FO_MLKEM.UU.KEMROMx2.CCA_ORC{-A} ),
     islossless O0.dec => islossless H0.get => islossless A(H0, O0).guess) =>
-  `| Pr[ SPEC_MODEL.CCA(SPEC_MODEL.RO.RO,MLKEMS(KHS,KPRF,KPRF),A).main() @ &m : res] - 1%r/2%r | <= 
+  `| Pr[ SPEC_MODEL.CCA(SPEC_MODEL.RO.RO,MLKEM_Op,A).main() @ &m : res] - 1%r/2%r | <= 
     2%r *
     (`|Pr[MLWE_H(B1(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
           (false, false) @ &m : res] -
@@ -1126,7 +1345,7 @@ move => fp kb1 kb2 kb3 kb4 kb5 kb6 kb7 eb1 eb2 eb3 eb4 eb5 eb6 eb7 qHTv qHUv qHv
 have := conclusion A &m failprob prg_kg_bound prg_enc_bound fp kb1 kb2 kb3 kb4 kb5 kb6 kb7 eb1 eb2 eb3 eb4 
        eb5 eb6 eb7 qHTv qHUv qHv qV0 qP0 qHCub qHClb Aqb All.
 have <- : Pr[FO_MLKEM.KEMROM.CCA(FO_MLKEM.KEMROM.RO.RO, FO_MLKEM.FO_K, A).main() @ &m : res] = 
-    Pr[ SPEC_MODEL.CCA(SPEC_MODEL.RO.RO,MLKEMS(KHS,KPRF,KPRF),A).main() @ &m : res];
+    Pr[ SPEC_MODEL.CCA(SPEC_MODEL.RO.RO,MLKEM_Op,A).main() @ &m : res];
   last by move => ->. 
 byequiv => //.
 proc. 
@@ -1165,13 +1384,13 @@ Pr[CorrectnessBound.main() @ &m : res] <= failprob =>
     FO_MLKEM.UU.TT.qHC = 0 =>
     1 < FO_MLKEM.UU.TT.FinT.card =>
 
-  Pr[ SPEC_MODEL.Correctness(SPEC_MODEL.RO.RO,MLKEMS(KHS,KPRF,KPRF)).main() @ &m : res] <= 
+  Pr[ SPEC_MODEL.Correctness(SPEC_MODEL.RO.RO,MLKEM_Op).main() @ &m : res] <= 
       failprob + prg_kg_bound + prg_enc_bound.
 move => fp kb eb qHC0 cardgt0.
 have := correctness &m failprob fp qHC0 cardgt0.
 
 have <- : Pr[FO_MLKEM.KEMROM.Correctness(FO_MLKEM.KEMROM.RO.RO, FO_MLKEM.FO_K).main() @ &m : res] = 
-  Pr[ SPEC_MODEL.Correctness(RO, MLKEMS(KHS, KPRF, KPRF)).main() @ &m : res]; last by smt().
+  Pr[ SPEC_MODEL.Correctness(RO, MLKEM_Op).main() @ &m : res]; last by smt().
 
 byequiv => //.
 by proc;call dec_eq; call enc_eq; call keygen_eq;inline *;auto.
