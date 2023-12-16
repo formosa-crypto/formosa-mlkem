@@ -1,0 +1,42 @@
+(*** A formalization of a fixed-length stateless prg **)
+
+type seed.
+type output.
+
+op prg : seed -> output.
+
+(** PRG-security is expressed w.r.t. arbitrary distributions dseed/dout on
+    types seed/output (usually the uniform distribution on the full types):
+    no adversary should be able to distinguish between an
+    output produced by the PRG and a sample in dout **)
+op dseed: seed distr.
+op dout : output distr.
+
+module type RG = {
+  proc get(sd : seed): output
+}.
+
+module type Distinguisher = { proc distinguish(x : output): bool }.
+
+module IND(PRG : RG, D:Distinguisher) = {
+  proc main(): bool = {
+    var b,sd,x;
+
+    sd <$ dseed;
+    x <@ PRG.get(sd);
+    b <@ D.distinguish(x);
+    return b;
+  }
+}.
+
+module PRGr:RG = {
+  proc get(sd : seed): output = { var r; r <- prg sd; return r; }
+}.
+
+module PRGi:RG = {
+  proc get(sd : seed): output = { var r; r <$ dout; return r; }
+}.
+
+
+(** Advantage of a distinguisher against a PRG G:
+      Adv^PRG_G(&m,D) = `|Pr[IND(PRGr,D) @ &m: res] - Pr[IND(PRGi,D) @ &m: res]| **)
