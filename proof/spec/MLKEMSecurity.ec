@@ -1145,7 +1145,13 @@ have -> : Pr[PRG_KG.IND(PRG_KG.PRGr, A).main() @ &m : res] =
 + byequiv => //.
   proc; inline {2} 3; wp; call(: true) => />. 
   inline {1} 2; inline {2} 2. 
-  admit.  (* use transitivity to MLKEM_PRGs.prg_kg and prg_kg_sem definition *)
+  transitivity {1} {sd <$ srand; x <@ MLKEM_PRGs.prg_kg(sd);} 
+        (true ==> ={x})
+        (true ==> x{1} = x0{2});1,2: smt(). 
+  + wp;ecall{2} (prg_kg_sem sd{2}).
+    by auto => />.
+  inline {1} 2; inline {2} 6.
+  by sim;auto => />.
 
 have -> : Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(A)).main() @ &m : res] =
           Pr[PRF_DEFS.IND(PRF, B_PRF_KG(A)).main() @ &m : res].
@@ -1158,7 +1164,7 @@ have -> : Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(A)).main() @ &m : res] =
      have -> : dlet dRO
      (fun (rho_noiseseed : W8.t Array32.t * W8.t Array32.t) =>
         dmap srand (fun (k : W8.t Array32.t) => (rho_noiseseed.`1, k)))  = dRO; last by smt().
-  admit. (* rand matching *)
+   admit. (* rand matching *)
 
 have -> : Pr[PRG_KG.IND(PRG_KG.PRGi, A).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(RF, B_PRF_KG(A)).main() @ &m : res]; last by smt().
@@ -1194,9 +1200,15 @@ have -> : Pr[PRG_ENC.IND(PRG_ENC.PRGr, A).main() @ &m : res] =
           Pr[PRF_DEFS.IND(PRF, B_PRF_ENC(A)).main() @ &m : res].
 + byequiv => //.
   proc;inline {2} 2;wp;call(:true).
-  inline {1} 2. 
-  admit. (* use transitivity to MLKEM_PRGs.prg_enc and prg_enc_sem definition *)
- 
+  inline {1} 2; conseq />.
+   transitivity {1} {sd <$ srand; x <@ MLKEM_PRGs.prg_enc(sd);} 
+        (true ==> ={x})
+        (true ==> x{1} = x{2});1,2: smt(). 
+  + wp;ecall{2} (prg_enc_sem sd{2}).
+    by auto => />.
+  inline {1} 2; inline {2} 2.
+  by sim;inline *;auto => />.
+
 have -> : Pr[PRG_ENC.IND(PRG_ENC.PRGi, A).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(RF, B_PRF_ENC(A)).main() @ &m : res]; last by smt().
 byequiv => //.
