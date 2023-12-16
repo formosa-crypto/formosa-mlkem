@@ -10,7 +10,7 @@ require import InnerPKE MLKEM Correctness EncDecCorrectness KyberLib.
 import Zq PolyVec PolyMat InnerPKE.
 
 (* Rewriting the Spec in a way that allows applying computational
-   assumptions on PRFs and PRG, as well as defining operators that
+   assumptions on PRGs, as well as defining operators that
    can be used to instantiate the FO_MLKEM theory *)
 
 (*****************************************************
@@ -97,7 +97,7 @@ have rnjj := mrangeR _ _ rng.
 by rewrite trmxE !setmE /= !offunmE //= !offunmK /mclamp rng /= /#. 
 qed.
 
-(* PRF keys in encryption come directly from srand *)
+(* Distributions that we need for reasoning about PRGs, PRFs and ROs *)
 abbrev srand = darray32 W8.dword.
 
 lemma srand_ll: is_lossless srand by smt(darray32_ll W8.dword_ll).
@@ -124,21 +124,32 @@ have -> : (fun (x0 : W8.t) => mu1 W8.dword x0) = fun _ =>  inv W8.modulus%r.
 by rewrite !StdBigop.Bigreal.BRM.big_const !count_predT sizex sizey.  
 qed.
 
-(* G needs only to be a prg, which is
-   a PRF without any input *)
+abbrev dRO = darray32 W8.dword `*` darray32 W8.dword.
 
-require PRF.
-clone PRF as HS_DEFS with
-  type D <- unit,
-  type R <- W8.t Array32.t * W8.t Array32.t
+lemma dRO_ll: is_lossless dRO
+  by apply dprod_ll;split;apply darray32_ll;apply W8.dword_ll.
+
+abbrev dnbytes = darray128 W8.dword.
+
+lemma dnbytes_ll: is_lossless dnbytes.
+proof.
+apply darray128_ll.
+by apply W8.dword_ll.
+qed.
+
+(* G is a PRG *)
+
+require FLPRG PRF.
+clone FLPRG as HS_DEFS with
+  type seed <- W8.t Array32.t, 
+  type output <- W8.t Array32.t * W8.t Array32.t,
+  op dseed <- srand,
+  op dout <- dRO,
+  op prg <- G_coins
   proof *.
 
-clone import HS_DEFS.PseudoRF as HSF with
-  type K <- W8.t Array32.t, 
-  op dK <- srand,
-  op F <- fun i _ => G_coins i
-  proof dK_ll by apply srand_ll
-  proof *.
+
+(* PRF is a PRF *)
 
 clone PRF as PRF_DEFS with
   type D <- W8.t,
@@ -151,6 +162,12 @@ clone import PRF_DEFS.PseudoRF as NPRF with
   op F <- Symmetric.PRF
   proof dK_ll by apply srand_ll
   proof *.
+
+clone import PRF_DEFS.RF as NRF with
+    op dR = fun (_: W8.t) => dnbytes
+    proof dR_ll by smt(dnbytes_ll)
+    proof*.
+
 
 module CBD2_PRF(PRF : PRF_DEFS.PRF_Oracles) = {
    proc sample(_N : int) : poly = {
@@ -527,10 +544,6 @@ qed.
 
 (* NOW THE KEM MOVED TO THE ROM *)
 
-abbrev dRO = darray32 W8.dword `*` darray32 W8.dword.
-
-lemma dRO_ll: is_lossless dRO
-  by apply dprod_ll;split;apply darray32_ll;apply W8.dword_ll.
 
 clone import KEM_ROM as SPEC_MODEL with 
   type pkey <- publickey,
@@ -1015,31 +1028,12 @@ qed.
 (**************)
 (**************)
 
-clone import HS_DEFS.RF as HSRF with
-    op dR <- fun _ => dRO
-    proof dR_ll by (move => *;apply dRO_ll)
-    proof*.
-
-abbrev dnbytes = darray128 W8.dword.
-
-lemma dnbytes_ll: is_lossless dnbytes.
-proof.
-apply darray128_ll.
-by apply W8.dword_ll.
-qed.
-
-clone import PRF_DEFS.RF as NRF with
-    op dR = fun (_: W8.t) => dnbytes
-    proof dR_ll by smt(dnbytes_ll)
-    proof*.
-
 (* THESE ARE USED BY OUR ADVERSARIES *)
-module MLKEM_PRGs_O(G : HS_DEFS.PRF_Oracles, PRF: PRF_DEFS.PRF_Oracles) = {
-  proc prg_kg_hs() : W8.t Array32.t * polyvec * polyvec = {
+module MLKEM_PRGs_O (PRF : PRF_DEFS.PRF_Oracles) = {
+  proc prg_kg_hs(rho noiseseed : W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec = {
     var noise1 : polyvec;
     var noise2 : polyvec;
-    var _N,i,c,rho,noiseseed;
-    (rho, noiseseed) <@ G.f();
+    var _N,i,c;
     NPRF.PRF.k <- noiseseed;
     noise1 <- witness;                     
     noise2 <- witness;                      
@@ -1066,7 +1060,7 @@ module MLKEM_PRGs_O(G : HS_DEFS.PRF_Oracles, PRF: PRF_DEFS.PRF_Oracles) = {
     var noise1 : polyvec;
     var noise2 : polyvec;
     var _N,i,c,rho,noiseseed;
-    (rho, noiseseed) <@ G.f();
+    (rho, noiseseed) <$ dRO;
     noise1 <- witness;                     
     noise2 <- witness;                      
     _N <- 0;                      
@@ -1117,105 +1111,98 @@ module MLKEM_PRGs_O(G : HS_DEFS.PRF_Oracles, PRF: PRF_DEFS.PRF_Oracles) = {
 
 section.
 
-declare module  A <: PRG_KG.Distinguisher {-HSF.PRF, -REAL_PRG_KG.PRF, -HSRF.RF, -NRF.RF, -IDEAL_PRG_KG.RF}.
+declare module  A <: PRG_KG.Distinguisher { -NPRF.PRF, -NRF.RF}.
 
+module (B_HS_KG(A : PRG_KG.Distinguisher) : HS_DEFS.Distinguisher)  = {
 
-module (B_HS_KG(A : PRG_KG.Distinguisher) : HS_DEFS.Distinguisher) (O : HS_DEFS.PRF_Oracles) = {
-
-   module OO : PRG_KG.PRF_Oracles = {
-      proc f = MLKEM_PRGs_O(O,NPRF.PRF).prg_kg_hs
-   }
-
-   proc distinguish() : bool = {
-      var b;
-      b <@ A(OO).distinguish();
+   proc distinguish(rho sig : W8.t Array32.t) : bool = {
+      var b,x;
+      x <@ MLKEM_PRGs_O(NPRF.PRF).prg_kg_hs(rho,sig);
+      b <@ A.distinguish(x);
       return b;
    }
 }.
 
 module (B_PRF_KG(A : PRG_KG.Distinguisher) : PRF_DEFS.Distinguisher) (O : PRF_DEFS.PRF_Oracles) = {
-
-   module OO : PRG_KG.PRF_Oracles = {
-      proc f = MLKEM_PRGs_O(HSRF.RF,O).prg_kg_prf
-   }
-
    proc distinguish() : bool = {
-      var b;
-      HSRF.RF.init();
-      b <@ A(OO).distinguish();
+      var b,x;
+      x <@ MLKEM_PRGs_O(O).prg_kg_prf();
+      b <@ A.distinguish(x);
       return b;
    }
 }.
 
 lemma kg_prg_bound &m :
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, A).main() @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, A).main() @ &m : res]| <= 
-    `|Pr[HS_DEFS.IND(HSF.PRF, B_HS_KG(A)).main() @ &m : res] -
-   Pr[HS_DEFS.IND(HSRF.RF, B_HS_KG(A)).main() @ &m : res]|  + 
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, A).main() @ &m : res] -
+   Pr[PRG_KG.IND(PRG_KG.PRGi, A).main() @ &m : res]| <= 
+    `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(A)).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(A)).main() @ &m : res]|  + 
     `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(A)).main() @ &m : res] -
    Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(A)).main() @ &m : res]|.
 proof.
-have -> : Pr[PRG_KG.IND(REAL_PRG_KG.PRF, A).main() @ &m : res] = 
-     Pr[HS_DEFS.IND(HSF.PRF, B_HS_KG(A)).main() @ &m : res].
+have -> : Pr[PRG_KG.IND(PRG_KG.PRGr, A).main() @ &m : res] = 
+     Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(A)).main() @ &m : res].
 + byequiv => //.
-  proc;inline *;wp;call(:REAL_PRG_KG.PRF.k{1} =  HSF.PRF.k{2}).
-  + proc*. inline {1} 1.  admit. (* use transitivity to MLKEM_PRGs.prg_kg and prg_kg_sem definition *)
-  by auto.
+  proc; inline {2} 3; wp; call(: true) => />. 
+  inline {1} 2; inline {2} 2. 
+  admit.  (* use transitivity to MLKEM_PRGs.prg_kg and prg_kg_sem definition *)
 
-have -> : Pr[HS_DEFS.IND(HSRF.RF, B_HS_KG(A)).main() @ &m : res] =
+have -> : Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(A)).main() @ &m : res] =
           Pr[PRF_DEFS.IND(PRF, B_PRF_KG(A)).main() @ &m : res].
 + byequiv => //.
-  proc;inline *. admit. (* use prom to delay sampling on the right. annoying *)
+  proc; inline {1} 3; inline {2} 2;wp; call(: true) => />. 
+  inline {1} 4; inline {2} 2. 
+  sim; inline *; wp;conseq/>. 
+  seq 2 0 : #pre; 1: by auto.
+  swap {2} 1 1 ;rndsem* {2} 0;auto => />.
+     have -> : dlet dRO
+     (fun (rho_noiseseed : W8.t Array32.t * W8.t Array32.t) =>
+        dmap srand (fun (k : W8.t Array32.t) => (rho_noiseseed.`1, k)))  = dRO; last by smt().
+  admit. (* rand matching *)
 
-have -> : Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, A).main() @ &m : res] = 
+have -> : Pr[PRG_KG.IND(PRG_KG.PRGi, A).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(RF, B_PRF_KG(A)).main() @ &m : res]; last by smt().
 
 byequiv => //.
-proc; inline *.
-wp;call(: true).
-proc*;inline {1} 1. inline {2} 1. admit. (* use results on CBD2 to remove procedure calls *)
-by auto => />.
+proc. inline {2} 2; wp;call(: true) => />.
+inline {1} 2. admit. (* use results on CBD2 to remove procedure calls *)
 qed.
 
 end section.
 
 module (B_PRF_ENC(A : PRG_ENC.Distinguisher) : PRF_DEFS.Distinguisher) (O : PRF_DEFS.PRF_Oracles) = {
 
-   module OO : PRG_ENC.PRF_Oracles = {
-      proc f = MLKEM_PRGs_O(HSRF.RF,O).prg_enc
-   }
-
    proc distinguish() : bool = {
-      var b;
-      b <@ A(OO).distinguish();
+      var b,x;
+      x <@ MLKEM_PRGs_O(O).prg_enc();
+      b <@ A.distinguish(x);
       return b;
    }
 }.
 
 section.
 
-declare module  A <: PRG_ENC.Distinguisher {-NPRF.PRF, -REAL_PRG_ENC.PRF, -NRF.RF, - IDEAL_PRG_ENC.RF}.
+declare module  A <: PRG_ENC.Distinguisher {-NPRF.PRF, -NRF.RF}.
 
 lemma enc_prg_bound &m :
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, A).main() @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, A).main() @ &m : res]| <= 
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, A).main() @ &m : res] -
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, A).main() @ &m : res]| <= 
         `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(A)).main() @ &m : res] -
    Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(A)).main() @ &m : res]|.
 proof. 
-have -> : Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, A).main() @ &m : res] = 
+have -> : Pr[PRG_ENC.IND(PRG_ENC.PRGr, A).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(PRF, B_PRF_ENC(A)).main() @ &m : res].
 + byequiv => //.
-  proc;inline *;wp;call(:REAL_PRG_ENC.PRF.k{1} =  NPRF.PRF.k{2}).
-  + proc*. inline {1} 1.  admit. (* use transitivity to MLKEM_PRGs.prg_enc and prg_enc_sem definition *)
-  by auto.
-
-have -> : Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, A).main() @ &m : res] = 
+  proc;inline {2} 2;wp;call(:true).
+  inline {1} 2. 
+  admit. (* use transitivity to MLKEM_PRGs.prg_enc and prg_enc_sem definition *)
+ 
+have -> : Pr[PRG_ENC.IND(PRG_ENC.PRGi, A).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(RF, B_PRF_ENC(A)).main() @ &m : res]; last by smt().
 byequiv => //.
-proc; inline *.
-wp;call(: true).
-proc*;inline {1} 1. inline {2} 1. admit. (* use results on CBD2 to remove procedure calls *)
-by auto => />.
+proc; inline {2} 2;wp;call(: true).
+inline {1} 2. inline {2} 1. 
+admit. (* use results on CBD2 to remove procedure calls *)
 qed.
 
 end section.
@@ -1230,78 +1217,78 @@ end section.
 
 section.
 
-declare module A <: SPEC_MODEL.CCA_ADV {-FO_MLKEM.KEMROM.RO.RO.m, -FO_MLKEM.UU.TT.PKE.OW_CPA, -FO_MLKEM.UU.TT.PKE.BOWp, -FO_MLKEM.UU.TT.PKE.OWL_CPA, -FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl, -FO_MLKEM.UU.TT.PKEROM.RO.RO, -FO_MLKEM.UU.TT.PKEROM.RO.FRO, -FO_MLKEM.UU.TT.PKEROM.OW_PCVA, -FO_MLKEM.UU.TT.BasePKE, -FO_MLKEM.UU.TT.B, -FO_MLKEM.UU.TT.Correctness_Adv1, -FO_MLKEM.UU.TT.CountO, -FO_MLKEM.UU.TT.O_AdvOW, -FO_MLKEM.UU.TT.Gm, -FO_MLKEM.UU.RF.RF, -FO_MLKEM.UU.PseudoRF.PRF, -FO_MLKEM.UU.KEMROMx2.RO1.RO, -FO_MLKEM.UU.KEMROMx2.RO1.FRO, -FO_MLKEM.UU.KEMROMx2.RO2.RO, -FO_MLKEM.UU.KEMROMx2.RO2.FRO, -FO_MLKEM.UU.KEMROMx2.CCA, -FO_MLKEM.UU.CountHx2, -FO_MLKEM.UU.RO1E.FunRO, -FO_MLKEM.UU.UU2, -FO_MLKEM.UU.H2, -FO_MLKEM.UU.H2BOWMod, -FO_MLKEM.UU.Gm2, -FO_MLKEM.UU.Gm3, -FO_MLKEM.KEMROM.CCA, -FO_MLKEM.B1x2, -IDEAL_PRG_KG.RF, -REAL_PRG_KG.PRF, -IDEAL_PRG_ENC.RF, -REAL_PRG_ENC.PRF, -CB, -SPEC_MODEL.RO.RO, -SPEC_MODEL.CCA}.
+declare module A <: SPEC_MODEL.CCA_ADV {-FO_MLKEM.KEMROM.RO.RO.m, -FO_MLKEM.UU.TT.PKE.OW_CPA, -FO_MLKEM.UU.TT.PKE.BOWp, -FO_MLKEM.UU.TT.PKE.OWL_CPA, -FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl, -FO_MLKEM.UU.TT.PKEROM.RO.RO, -FO_MLKEM.UU.TT.PKEROM.RO.FRO, -FO_MLKEM.UU.TT.PKEROM.OW_PCVA, -FO_MLKEM.UU.TT.BasePKE, -FO_MLKEM.UU.TT.B, -FO_MLKEM.UU.TT.Correctness_Adv1, -FO_MLKEM.UU.TT.CountO, -FO_MLKEM.UU.TT.O_AdvOW, -FO_MLKEM.UU.TT.Gm, -FO_MLKEM.UU.RF.RF, -FO_MLKEM.UU.PseudoRF.PRF, -FO_MLKEM.UU.KEMROMx2.RO1.RO, -FO_MLKEM.UU.KEMROMx2.RO1.FRO, -FO_MLKEM.UU.KEMROMx2.RO2.RO, -FO_MLKEM.UU.KEMROMx2.RO2.FRO, -FO_MLKEM.UU.KEMROMx2.CCA, -FO_MLKEM.UU.CountHx2, -FO_MLKEM.UU.RO1E.FunRO, -FO_MLKEM.UU.UU2, -FO_MLKEM.UU.H2, -FO_MLKEM.UU.H2BOWMod, -FO_MLKEM.UU.Gm2, -FO_MLKEM.UU.Gm3, -FO_MLKEM.KEMROM.CCA, -FO_MLKEM.B1x2, -MLWE_PKE_HASH_PRG, -CB, -SPEC_MODEL.RO.RO, -SPEC_MODEL.CCA}.
 
 lemma mlkem_spec_security &m (failprob prg_kg_bound prg_enc_bound : real) : 
   Pr[CorrectnessBound.main() @ &m : res] <= failprob =>
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+   Pr[PRG_KG.IND(PRG_KG.PRGi, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res]| <=
  prg_kg_bound =>
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+   Pr[PRG_KG.IND(PRG_KG.PRGi, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res]| <=
  prg_kg_bound =>
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+   Pr[PRG_KG.IND(PRG_KG.PRGi, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res]| <=
  prg_kg_bound =>
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+   Pr[PRG_KG.IND(PRG_KG.PRGi, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res]| <=
  prg_kg_bound =>
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+   Pr[PRG_KG.IND(PRG_KG.PRGi, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res]| <=
  prg_kg_bound =>
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
       () @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+   Pr[PRG_KG.IND(PRG_KG.PRGi, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
       () @ &m : res]| <=
  prg_kg_bound =>
- `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+ `|Pr[PRG_KG.IND(PRG_KG.PRGr, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res] -
-   Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+   Pr[PRG_KG.IND(PRG_KG.PRGi, D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res]| <=
  prg_kg_bound =>
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res]| <=
  prg_enc_bound =>
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res]| <=
  prg_enc_bound =>
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res]| <=
  prg_enc_bound =>
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res]| <=
  prg_enc_bound =>
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
       () @ &m : res]| <=
  prg_enc_bound =>
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
       () @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
       () @ &m : res]| <=
  prg_enc_bound =>
- `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+ `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res] -
-   Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+   Pr[PRG_ENC.IND(PRG_ENC.PRGi, D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res]| <=
  prg_enc_bound =>
  FO_MLKEM.UU.qHT = FO_MLKEM.qHK =>
@@ -1372,13 +1359,13 @@ lemma mlkem_spec_correctness &m (failprob prg_kg_bound prg_enc_bound : real) :
 
 Pr[CorrectnessBound.main() @ &m : res] <= failprob =>
 
-    `|Pr[PRG_KG.IND(REAL_PRG_KG.PRF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+    `|Pr[PRG_KG.IND(PRG_KG.PRGr, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
          () @ &m : res] -
-      Pr[PRG_KG.IND(IDEAL_PRG_KG.RF, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+      Pr[PRG_KG.IND(PRG_KG.PRGi, DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
          () @ &m : res]| <= prg_kg_bound => 
-    `|Pr[PRG_ENC.IND(REAL_PRG_ENC.PRF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+    `|Pr[PRG_ENC.IND(PRG_ENC.PRGr, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
          () @ &m : res] -
-      Pr[PRG_ENC.IND(IDEAL_PRG_ENC.RF, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
+      Pr[PRG_ENC.IND(PRG_ENC.PRGi, DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))).main
          () @ &m : res]| <= prg_enc_bound =>
 
     FO_MLKEM.UU.TT.qHC = 0 =>
