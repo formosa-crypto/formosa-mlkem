@@ -1171,7 +1171,96 @@ have -> : Pr[PRG_KG.IND(PRG_KG.PRGi, A).main() @ &m : res] =
 
 byequiv => //.
 proc. inline {2} 2; wp;call(: true) => />.
-inline {1} 2. admit. (* use results on CBD2 to remove procedure calls *)
+inline {1} 2. inline {2} 2.
+transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample_vec_real(); x <- (rho,noise1,noise2); }
+       (true ==> ={x})
+       (true ==> ={x}); 1,2: smt().
++ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_ideal(); noise2 <@ CBD2rnd.sample_vec_ideal(); x <- (rho,noise1,noise2); }
+       (true ==> ={x})
+       (true ==> ={x}); 1,2: smt().
+   + inline *. admit. (* rand matching *)
+  by symmetry;wp; do 2!call(CBD2rnd_vec_equiv); auto => />.
+
+ seq 1 5: (_N{2} = 0 /\ ={rho} /\
+     forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  + inline *; swap {2} 1 1; auto;conseq (: _ ==> ={rho}); 1:by smt(SmtMap.mem_empty).
+    rndsem*{2} 0. admit. (* rand matching *)
+    
+ seq 1 2: (={noise1,rho} /\ _N{2} = 3 /\
+           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
+         (forall k, 0 <= k < i{2} => (v{1}.[k]=noise1{2}.[k])%PolyVec) /\
+         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 4.
+   +  move=> *; wp; skip => &hr /> ??? Hm ?.
+      rewrite -implybF => H.
+      by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
+    auto => />. move => &1 &2 *; do split; 1..3:smt().
+    move=> k ?? /=.
+    case: (k= 2*i0{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i0{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#. 
+   wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
+    split; 1:   by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int i{2}) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i0 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 => ??????; split; last smt().
+  apply eq_vectorP => k kb;smt(setvE getvE).
+ wp; seq 2 2: (={rho,noise1,noise2} /\ _N{2} = 6 /\
+           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ noise1{1}=noise1{2} /\
+         (forall k, 0 <= k < i{2} => (v{1}.[k]=noise2{2}.[k])%PolyVec) /\
+         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 4.
+    move=> *; wp; skip => &hr /> ??? Hm ?.
+    rewrite -implybF => H.
+    by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt().    
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i0{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i0{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2; rewrite !getvE !setvE => ?????????; split.
+    split; 1:  by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int (3+i{2})) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i1 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; first smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 ??????; split; last smt().
+  by apply eq_vectorP => k kb;smt(setvE getvE).
+ by auto.
 qed.
 
 end section.
@@ -1213,8 +1302,114 @@ have -> : Pr[PRG_ENC.IND(PRG_ENC.PRGi, A).main() @ &m : res] =
           Pr[PRF_DEFS.IND(RF, B_PRF_ENC(A)).main() @ &m : res]; last by smt().
 byequiv => //.
 proc; inline {2} 2;wp;call(: true).
-inline {1} 2. inline {2} 1. 
-admit. (* use results on CBD2 to remove procedure calls *)
+inline {1} 2. inline {2} 1. inline {2} 2. conseq />.
+transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample_vec_real(); e2 <@ CBD2rnd.sample_real(); x <- (noise1,noise2,e2); }
+       (true ==> ={x})
+       (true ==> ={x}); 1,2: smt().
++ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_ideal(); noise2 <@ CBD2rnd.sample_vec_ideal(); e2 <@ CBD2rnd.sample_ideal(); x <- (noise1,noise2,e2); x <- (noise1,noise2,e2); }
+       (true ==> ={x})
+       (true ==> ={x}); 1,2: smt().
+   + inline *. admit. (* rand matching *)
+  by symmetry;wp; call(CBD2rnd_equiv); do 2!call(CBD2rnd_vec_equiv); auto => />.
+
+ seq 0 4: (_N{2} = 0 /\ 
+     forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  + by auto => />;smt(SmtMap.mem_empty).
+    
+ seq 1 2: (={noise1} /\ _N{2} = 3 /\
+           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
+         (forall k, 0 <= k < i{2} => (v{1}.[k]=noise1{2}.[k])%PolyVec) /\
+         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 4.
+   +  move=> *; wp; skip => &hr /> ??? Hm ?.
+      rewrite -implybF => H.
+      by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
+    auto => />. move => &1 &2 *; do split; 1..3:smt().
+    move=> k ?? /=.
+    case: (k= 2*i0{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i0{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#. 
+   wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
+    split; 1:   by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int i{2}) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i0 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 => ??????; split; last smt().
+  apply eq_vectorP => k kb;smt(setvE getvE).
+ wp; seq 1 2: (={noise1,noise2} /\ _N{2} = 6 /\
+           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  inline*; wp.
+  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ noise1{1}=noise1{2} /\
+         (forall k, 0 <= k < i{2} => (v{1}.[k]=noise2{2}.[k])%PolyVec) /\
+         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+   rcondt {2} 4.
+    move=> *; wp; skip => &hr /> ??? Hm ?.
+    rewrite -implybF => H.
+    by move: (Hm _ H); rewrite implybF of_uintK /#.
+   wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
+              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt().    
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i0{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i0{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2; rewrite !getvE !setvE => ?????????; split.
+    split; 1:  by rewrite SmtMap.get_set_sameE.
+    move=> x; case: (x=W8.of_int (3+i{2})) => E.
+     by move=> _; rewrite E of_uintK modz_small /#.
+    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    by apply StdOrder.IntOrder.ltrW; smt().
+   move => p1 i1 p2 ?????? H; split; first smt().
+   have EE: p1 = p2.
+    by apply Array256.tP => k kb; apply H; smt().
+   split; first smt().
+   split; last smt().
+   move=> k HkL HkR; case: (k = i{2}) => E.
+    by rewrite /set E !offunvE /= /#.
+   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
+  auto => /> &1 &2; split; first smt().
+  move=> v1 m i v2 ??????; split; last smt().
+  by apply eq_vectorP => k kb;smt(setvE getvE).
+ conseq />.
+  inline*; wp.
+  rcondt {2} 4.
+   move=> *; wp; skip => &hr /> Hm. 
+   rewrite -implybF => H.
+   by move: (Hm _ H); rewrite implybF of_uintK /#.
+   while (#[/:-2]pre /\ bytes{1}=bytes{2} /\ i0{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
+          forall k, 0 <= k < j{2} => p{1}.[k] = rr{2}.[k]).
+    wp; skip => /> &1&2 *; split; first smt(). 
+    split; first smt().
+    move=> k ?? /=.
+    case: (k= 2*i0{2}) => E1.
+     by rewrite set_neqiE 1..2:/# set_eqiE 1..2:/# set_neqiE 1..2:/# set_eqiE /#. 
+    case: (k= 2*i0{2}+1) => E2.
+     by rewrite set_eqiE 1..2:/# set_eqiE /#.
+    by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
+   wp; rnd; wp; skip => /> &1 &2 ????; split.
+    by rewrite SmtMap.get_set_eqE //=.
+   move => p1 i1 p2 ????? H.
+   by apply Array256.tP => k kb; apply H; smt().
 qed.
 
 end section.
@@ -1231,7 +1426,7 @@ section.
 
 declare module A <: SPEC_MODEL.CCA_ADV {-FO_MLKEM.KEMROM.RO.RO.m, -FO_MLKEM.UU.TT.PKE.OW_CPA, -FO_MLKEM.UU.TT.PKE.BOWp, -FO_MLKEM.UU.TT.PKE.OWL_CPA, -FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl, -FO_MLKEM.UU.TT.PKEROM.RO.RO, -FO_MLKEM.UU.TT.PKEROM.RO.FRO, -FO_MLKEM.UU.TT.PKEROM.OW_PCVA, -FO_MLKEM.UU.TT.BasePKE, -FO_MLKEM.UU.TT.B, -FO_MLKEM.UU.TT.Correctness_Adv1, -FO_MLKEM.UU.TT.CountO, -FO_MLKEM.UU.TT.O_AdvOW, -FO_MLKEM.UU.TT.Gm, -FO_MLKEM.UU.RF.RF, -FO_MLKEM.UU.PseudoRF.PRF, -FO_MLKEM.UU.KEMROMx2.RO1.RO, -FO_MLKEM.UU.KEMROMx2.RO1.FRO, -FO_MLKEM.UU.KEMROMx2.RO2.RO, -FO_MLKEM.UU.KEMROMx2.RO2.FRO, -FO_MLKEM.UU.KEMROMx2.CCA, -FO_MLKEM.UU.CountHx2, -FO_MLKEM.UU.RO1E.FunRO, -FO_MLKEM.UU.UU2, -FO_MLKEM.UU.H2, -FO_MLKEM.UU.H2BOWMod, -FO_MLKEM.UU.Gm2, -FO_MLKEM.UU.Gm3, -FO_MLKEM.KEMROM.CCA, -FO_MLKEM.B1x2, -MLWE_PKE_HASH_PRG, -CB, -SPEC_MODEL.RO.RO, -SPEC_MODEL.CCA}.
 
-lemma mlkem_spec_security &m (failprob prg_kg_bound prg_enc_bound : real) : 
+lemma mlkem_spec_security_pre &m (failprob prg_kg_bound prg_enc_bound : real) : 
   Pr[CorrectnessBound.main() @ &m : res] <= failprob =>
  `|Pr[PRG_KG.IND(PRG_KG.PRGr, DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
       () @ &m : res] -
@@ -1367,7 +1562,7 @@ end section.
 
 section.
 
-lemma mlkem_spec_correctness &m (failprob prg_kg_bound prg_enc_bound : real) : 
+lemma mlkem_spec_correctness_pre &m (failprob prg_kg_bound prg_enc_bound : real) : 
 
 Pr[CorrectnessBound.main() @ &m : res] <= failprob =>
 
@@ -1397,4 +1592,189 @@ qed.
 
 end section.
 
-(* TO DO: EXPRESS prg_kg_bound and prf_enc_bound in terms of advantages against KPRF *)
+(* We now express prg_kg_bound and prf_enc_bound in terms of advantages against functions in the SHA family *)
+section.
+
+
+declare module A <: SPEC_MODEL.CCA_ADV {-FO_MLKEM.KEMROM.RO.RO.m, -FO_MLKEM.UU.TT.PKE.OW_CPA, -FO_MLKEM.UU.TT.PKE.BOWp, -FO_MLKEM.UU.TT.PKE.OWL_CPA, -FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl, -FO_MLKEM.UU.TT.PKEROM.RO.RO, -FO_MLKEM.UU.TT.PKEROM.RO.FRO, -FO_MLKEM.UU.TT.PKEROM.OW_PCVA, -FO_MLKEM.UU.TT.BasePKE, -FO_MLKEM.UU.TT.B, -FO_MLKEM.UU.TT.Correctness_Adv1, -FO_MLKEM.UU.TT.CountO, -FO_MLKEM.UU.TT.O_AdvOW, -FO_MLKEM.UU.TT.Gm, -FO_MLKEM.UU.RF.RF, -FO_MLKEM.UU.PseudoRF.PRF, -FO_MLKEM.UU.KEMROMx2.RO1.RO, -FO_MLKEM.UU.KEMROMx2.RO1.FRO, -FO_MLKEM.UU.KEMROMx2.RO2.RO, -FO_MLKEM.UU.KEMROMx2.RO2.FRO, -FO_MLKEM.UU.KEMROMx2.CCA, -FO_MLKEM.UU.CountHx2, -FO_MLKEM.UU.RO1E.FunRO, -FO_MLKEM.UU.UU2, -FO_MLKEM.UU.H2, -FO_MLKEM.UU.H2BOWMod, -FO_MLKEM.UU.Gm2, -FO_MLKEM.UU.Gm3, -FO_MLKEM.KEMROM.CCA, -FO_MLKEM.B1x2, -MLWE_PKE_HASH_PRG, -CB, -SPEC_MODEL.RO.RO, -SPEC_MODEL.CCA, -NPRF.PRF, -NRF.RF}.
+
+lemma mlkem_spec_security &m (failprob hsadv prfadv : real) : 
+  Pr[CorrectnessBound.main() @ &m : res] <= failprob =>
+
+  (* k1 *)
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= hsadv => 
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= prfadv =>
+
+  (* k2 *)
+
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= hsadv => 
+
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= prfadv =>
+
+  (* k3 *)
+
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= hsadv => 
+
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+  (* k4 *)
+
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= hsadv => 
+
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+  (* k5 *)
+
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= hsadv => 
+
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+  (* k6 *)
+
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))))).main() @ &m : res]| <= hsadv => 
+
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))))).main() @ &m : res]| <= prfadv =>
+
+  (* k7 *)
+
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= hsadv => 
+
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= prfadv =>
+    
+  (* e1 *)
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= prfadv =>
+
+  (* e2 *)
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= prfadv =>
+
+  (* e3 *)
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+  (* e4 *)
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+  (* e5 *)
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+  (* e6 *)
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))))).main() @ &m : res]| <= prfadv =>
+
+  (* e7 *)
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main() @ &m : res]| <= prfadv =>
+  
+ FO_MLKEM.UU.qHT = FO_MLKEM.qHK =>
+ FO_MLKEM.UU.qHU = FO_MLKEM.qHK =>
+ FO_MLKEM.UU.TT.qH = FO_MLKEM.UU.qHT + FO_MLKEM.UU.qHU + 1 =>
+ FO_MLKEM.UU.TT.qV = 0 =>
+ FO_MLKEM.UU.TT.qP = 0 =>
+ FO_MLKEM.UU.TT.qH + 1 = FO_MLKEM.UU.TT.qHC =>
+ FO_MLKEM.UU.TT.qHC < FO_MLKEM.UU.TT.FinT.card - 1 =>
+ (forall (RO0 <: FO_MLKEM.KEMROM.POracle{-FO_MLKEM.CountH, -A} )
+    (O0 <: FO_MLKEM.KEMROM.CCA_ORC{-FO_MLKEM.CountH, -A} ),
+    hoare[ A(FO_MLKEM.CountH(RO0), O0).guess : FO_MLKEM.CountH.c_h = 0 ==> FO_MLKEM.CountH.c_h <= FO_MLKEM.qHK]) =>
+ (forall (H0 <: FO_MLKEM.KEMROM.POracle {-A} ) (O0 <: FO_MLKEM.UU.KEMROMx2.CCA_ORC{-A} ),
+    islossless O0.dec => islossless H0.get => islossless A(H0, O0).guess) =>
+  `| Pr[ SPEC_MODEL.CCA(SPEC_MODEL.RO.RO,MLKEM_Op,A).main() @ &m : res] - 1%r/2%r | <= 
+    2%r *
+    (`|Pr[MLWE_H(B1(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+          (false, false) @ &m : res] -
+       Pr[MLWE_H(B1(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+          (false, true) @ &m : res]| +
+     `|Pr[MLWE_H(B2(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+          (true, false) @ &m : res] -
+       Pr[MLWE_H(B2(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))).main
+          (true, true) @ &m : res]| +
+     hsadv + 2%r*prfadv) +
+    2%r *
+    (`|Pr[MLWE_H(B1(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+          (false, false) @ &m : res] -
+       Pr[MLWE_H(B1(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+          (false, true) @ &m : res]| +
+     `|Pr[MLWE_H(B2(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+          (true, false) @ &m : res] -
+       Pr[MLWE_H(B2(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
+          (true, true) @ &m : res]| +
+     hsadv + 2%r*prfadv) +
+    (3%r * (2 * FO_MLKEM.qHK + 3)%r + 2%r) * (failprob + hsadv + 2%r*prfadv) +
+    `|Pr[FO_MLKEM.UU.J.IND(FO_MLKEM.UU.PseudoRF.PRF, FO_MLKEM.UU.D(FO_MLKEM.B1x2(A))).main() @ &m : res] -
+      Pr[FO_MLKEM.UU.J.IND(FO_MLKEM.UU.RF.RF, FO_MLKEM.UU.D(FO_MLKEM.B1x2(A))).main() @ &m : res]| +
+    2%r * (2 * FO_MLKEM.qHK + 2)%r * FO_MLKEM.UU.TT.PKE.eps_msg.
+ move => fp kh1 hp1 kh2 hp2 kh3 hp3 kh4 hp4 kh5 hp5 kh6 hp6 kh7 hp7 ep1 ep2 ep3 ep4 ep5 ep6 ep7 qHTv qHUv qHv qV0 qP0 qHCub qHClb Aqb All.
+ have := mlkem_spec_security_pre A &m failprob (hsadv+prfadv) prfadv fp _ _ _ _ _ _ _ _ _ _ _ _ _ _ qHTv qHUv qHv qV0 qP0 qHCub qHClb Aqb All.  
+ + by have  := kg_prg_bound (DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))) &m => /#.
+ + by have  := kg_prg_bound (DC_KG(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))) &m => /#.
+ + by have  := kg_prg_bound (DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+ + by have  := kg_prg_bound (DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+ + by have  := kg_prg_bound (DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+ + by have  := kg_prg_bound (D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))) &m => /#.
+ + by have  := kg_prg_bound (D_KG(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))) &m => /#.
+ + by have  := enc_prg_bound (DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))) &m => /#.
+ + by have  := enc_prg_bound (DC_ENC(FO_MLKEM.UU.TT.PKE.BOWp(FO_MLKEM.UU.TT.BasePKE, FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))) &m => /#.
+ + by have  := enc_prg_bound (DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.TT.AdvCorr(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))), FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+ + by have  := enc_prg_bound (DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUCI(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+ + by have  := enc_prg_bound (DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.BUUC(FO_MLKEM.B1x2(A)), FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+ + by have  := enc_prg_bound (D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))) &m => /#.
+ + by have  := enc_prg_bound (D_ENC(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.AdvOWL_query(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A)))))) &m => /#.
+by smt().
+qed.
+end section.
+
+
+section.
+
+lemma mlkem_spec_correctness &m (failprob hsadv prfadv : real) : 
+
+Pr[CorrectnessBound.main() @ &m : res] <= failprob =>
+
+  `|Pr[HS_DEFS.IND(HS_DEFS.PRGr, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= hsadv => 
+
+    `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_KG(DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+
+   `|Pr[PRF_DEFS.IND(NPRF.PRF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res] -
+   Pr[PRF_DEFS.IND(NRF.RF, B_PRF_ENC(DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO)))).main() @ &m : res]| <= prfadv =>
+
+
+    FO_MLKEM.UU.TT.qHC = 0 =>
+    1 < FO_MLKEM.UU.TT.FinT.card =>
+
+  Pr[ SPEC_MODEL.Correctness(SPEC_MODEL.RO.RO,MLKEM_Op).main() @ &m : res] <= 
+      failprob + hsadv + 2%r*prfadv.
+move => fp khb kpb eb qHC0 cardgt0.
+have := mlkem_spec_correctness_pre &m failprob (hsadv +prfadv) prfadv fp _ _ qHC0 cardgt0.
+ + by have  := kg_prg_bound (DC_KG(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+ + by have  := enc_prg_bound (DC_ENC(FO_MLKEM.UU.TT.B(FO_MLKEM.UU.B_UC, FO_MLKEM.UU.TT.PKEROM.RO.RO))) &m => /#.
+by smt().
+qed. 
+
+end section.
