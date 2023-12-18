@@ -12,5 +12,5 @@ idirs = sha3/proof/smart_counter
 idirs = code/jasmin/ref/extraction
 idirs = code/jasmin/avx2v/extraction
 idirs = crypto-specs/common
-idirs = crypto-specs/kyber
-idirs = crypto-specs/kyber/properties
+idirs = crypto-specs/kyber768
+idirs = crypto-specs/kyber768/properties
