@@ -1161,10 +1161,20 @@ have -> : Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(A)).main() @ &m : res] =
   sim; inline *; wp;conseq/>. 
   seq 2 0 : #pre; 1: by auto.
   swap {2} 1 1 ;rndsem* {2} 0;auto => />.
-     have -> : dlet dRO
+  have -> : dlet dRO
      (fun (rho_noiseseed : W8.t Array32.t * W8.t Array32.t) =>
         dmap srand (fun (k : W8.t Array32.t) => (rho_noiseseed.`1, k)))  = dRO; last by smt().
-   admit. (* rand matching *)
+   + rewrite {1}dprod_dlet /=  dlet_swap /= /(\o) /=. 
+     rewrite dprodC /= dmap_dprodE /=;congr. 
+     rewrite fun_ext => x;rewrite dlet_dlet /= /dmap /(\o);congr => /=. 
+     rewrite fun_ext => y; rewrite dlet_dlet. 
+     have -> : (fun (x1 : W8.t Array32.t) =>
+     dlet ((fun (b : W8.t Array32.t) => dunit (y, b)) x1)
+       (fun (x1_0 : W8.t Array32.t * W8.t Array32.t) => dunit (x1_0.`1, x))) = 
+           (fun  (x1 : W8.t Array32.t) => dunit (y,x)); last
+       by rewrite dlet_dunit dmap_cst; smt(srand_ll).
+     rewrite fun_ext => z /=.
+     by rewrite dlet_dunit /= dmap_dunit /=. 
 
 have -> : Pr[PRG_KG.IND(PRG_KG.PRGi, A).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(RF, B_PRF_KG(A)).main() @ &m : res]; last by smt().
@@ -1178,13 +1188,21 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
 + transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_ideal(); noise2 <@ CBD2rnd.sample_vec_ideal(); x <- (rho,noise1,noise2); }
        (true ==> ={x})
        (true ==> ={x}); 1,2: smt().
-   + inline *. admit. (* rand matching *)
+   + inline *. swap {1} 3 -2. swap {2} 3 1. 
+     wp;rnd{1};conseq (:r{1} = (rho{2}, v{2}, v0{2})); 1: smt().
+     by rndsem* {2} 0;auto => /> /#.
   by symmetry;wp; do 2!call(CBD2rnd_vec_equiv); auto => />.
 
  seq 1 5: (_N{2} = 0 /\ ={rho} /\
      forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   + inline *; swap {2} 1 1; auto;conseq (: _ ==> ={rho}); 1:by smt(SmtMap.mem_empty).
-    rndsem*{2} 0. admit. (* rand matching *)
+    rndsem*{2} 0; auto => />.
+    have -> : (dfst dRO) = srand; last by smt().
+    apply eq_distr => x;rewrite dmap1E.
+    have -> : (pred1 x \o fun (p : W8.t Array32.t * W8.t Array32.t) => p.`1) = 
+              (fun (xy : _ * _) => ((pred1 x) xy.`1) /\ (predT xy.`2)) by smt().
+    have -> := dprodE (pred1 x) predT srand srand.
+    by rewrite srand_ll /=.
     
  seq 1 2: (={noise1,rho} /\ _N{2} = 3 /\
            forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
@@ -1306,10 +1324,12 @@ inline {1} 2. inline {2} 1. inline {2} 2. conseq />.
 transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample_vec_real(); e2 <@ CBD2rnd.sample_real(); x <- (noise1,noise2,e2); }
        (true ==> ={x})
        (true ==> ={x}); 1,2: smt().
-+ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_ideal(); noise2 <@ CBD2rnd.sample_vec_ideal(); e2 <@ CBD2rnd.sample_ideal(); x <- (noise1,noise2,e2); x <- (noise1,noise2,e2); }
++ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_ideal(); noise2 <@ CBD2rnd.sample_vec_ideal(); e2 <@ CBD2rnd.sample_ideal(); x <- (noise1,noise2,e2); }
        (true ==> ={x})
        (true ==> ={x}); 1,2: smt().
-   + inline *. admit. (* rand matching *)
+   + inline *. swap {1} [1..2] 1. swap {2} 4 1. swap {2} 2 3.
+     wp;rnd{1}. conseq(: _ ==> r{1} = (v{2}, v0{2}, p{2}));1: by smt().
+     by rndsem*{2} 0;auto => /> /#.
   by symmetry;wp; call(CBD2rnd_equiv); do 2!call(CBD2rnd_vec_equiv); auto => />.
 
  seq 0 4: (_N{2} = 0 /\ 
