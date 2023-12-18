@@ -1,0 +1,103 @@
+require "params.jinc"
+require "fips202.jinc"
+
+export fn shake256_128_33_jazz(reg u64 outp inp) 
+{
+  stack u8[33] in;
+  stack u8[128] out;
+  stack u64 soutp;
+  reg u8 c;
+  inline int i;
+
+  for i = 0 to 33 {
+    c = (u8)[inp + i];
+    in[i] = c;
+  }
+  
+  soutp = outp;
+  out = _shake256_128_33(out, in);
+  outp = soutp;
+
+  for i = 0 to 128 {
+    c = out[i];
+    (u8)[outp + i] = c;
+  }
+}
+
+export fn sha3512_32_jazz(reg u64 outp inp) 
+{
+  stack u8[32] in;
+  stack u8[64] out;
+  stack u64 soutp;
+  reg u8 c;
+  inline int i;
+
+  for i = 0 to 32 {
+    c = (u8)[inp + i];
+    in[i] = c;
+  }
+   
+  soutp = outp;
+  out = _sha3512_32(out, in);
+  outp = soutp;
+  for i = 0 to 64 {
+    c = out[i];
+    (u8)[outp + i] = c;
+  }
+}
+
+
+export fn shake128_absorb34_jazz(reg u64 statep, reg u64 inp)
+{
+  stack u64[25] state;
+  stack u8[34] in;
+  reg u8 c;
+  reg u64 t;
+  inline int i;
+
+  for i = 0 to 34 {
+    c = (u8)[inp + i];
+    in[i] = c;
+  }
+
+  state = _shake128_absorb34(state, in);
+  
+  for i = 0 to 25 {
+    t = state[i];
+    [statep + 8*i] = t;
+  }
+}
+
+export fn shake128_squeezeblock_jazz(reg u64 outp, reg u64 statep)
+{
+  stack u64[25] state;
+  stack u8[SHAKE128_RATE] out;
+  reg u8 c;
+  reg u64 t;
+  inline int i;
+  stack u64 soutp;
+  stack u64 sstatep;
+
+  for i = 0 to 25 {
+    t = [statep + 8*i];
+    state[i] = t;
+  }
+  
+  soutp   = outp;
+  sstatep = statep;
+
+  state, out = _shake128_squeezeblock(state, out);
+  
+  outp   = soutp;
+  statep = sstatep;
+
+  for i = 0 to 25 {
+    t = state[i];
+    [statep + 8*i] = t;
+  }
+  
+  for i = 0 to SHAKE128_RATE {
+    c = out[i];
+    (u8)[outp + i] = c;
+  }
+}
