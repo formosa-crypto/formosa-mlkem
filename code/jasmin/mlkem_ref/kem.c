@@ -103,7 +103,6 @@ void crypto_kem_enc(unsigned char *ct,
   indcpa_enc(ct, buf, pk, kr+KYBER_SYMBYTES);
 
   memcpy(ss,kr,KYBER_SYMBYTES);
-  return 0;
 }
 
 /*************************************************
@@ -143,6 +142,4 @@ void crypto_kem_dec(uint8_t *ss,
 
   /* Copy true key to return buffer if fail is false */
   cmov(ss,kr,KYBER_SYMBYTES,!fail);
-
-  return 0;
 }

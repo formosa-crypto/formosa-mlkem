@@ -430,6 +430,65 @@ fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[12
   return out;
 }
 
+fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
+  stack u64[25] state;
+  stack u64 s_out;
+  stack u64 s_in s_ilen s_r8;
+  reg u64 ilen r8 t64 in;
+  reg u8 t8;
+  inline int i;
+
+  s_out = out;
+  state = __st0(state);
+
+  for i = 0 to KYBER_SYMBYTES/8 {
+    t64 = (u64)[in0 + i*8];
+    state[u64 i] ^= t64;
+  }
+
+  for i = KYBER_SYMBYTES/8 to SHAKE256_RATE/8 {
+    t64 = (u64)[in1 + (i-KYBER_SYMBYTES/8)*8];
+    state[u64 i] ^= t64;
+  }
+      
+  state = __keccakf1600_ref(state);
+
+  r8 = SHAKE256_RATE;
+  ilen = KYBER_CT_LEN - (SHAKE256_RATE - KYBER_SYMBYTES);
+  in = in1;
+  in += SHAKE256_RATE - KYBER_SYMBYTES;
+
+  while(ilen >= r8)
+  {
+    state, in, ilen = __add_full_block(state, in, ilen, r8);
+
+    s_in = in;
+    s_ilen = ilen;
+    s_r8 = r8;
+
+    state = __keccakf1600_ref(state);
+
+    in = s_in;
+    ilen = s_ilen;
+    r8 = s_r8;
+  }
+
+  t8 = 0x1f;
+  state = __add_final_block(state, in, ilen, t8, r8);
+
+  state = __keccakf1600_ref(state);
+
+  out = s_out;
+
+  for i=0 to KYBER_SYMBYTES/8
+  {
+    t64 = state[i];
+    (u64)[out + 8*i] = t64;
+  }
+
+}
+
+
 fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 {
   stack u64[25] state;
@@ -486,6 +545,7 @@ fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) 
   }
   return state, out;
 }
+
 
 #[returnaddress="stack"]
 fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]

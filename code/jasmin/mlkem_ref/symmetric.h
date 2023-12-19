@@ -41,7 +41,7 @@ void shake256_rkprf(unsigned char *out, const unsigned char *key, const unsigned
 #define xof_absorb(STATE, IN, X, Y) kyber_shake128_absorb(STATE, IN, X, Y)
 #define xof_squeezeblocks(OUT, OUTBLOCKS, STATE) kyber_shake128_squeezeblocks(OUT, OUTBLOCKS, STATE)
 #define prf(OUT, OUTBYTES, KEY, NONCE) shake256_prf(OUT, OUTBYTES, KEY, NONCE)
-#define rkprf(OUT, KEY, INPUT) kyber_shake256_rkprf(OUT, KEY, INPUT)
+#define rkprf(OUT, KEY, INPUT) shake256_rkprf(OUT, KEY, INPUT)
 
 #define XOF_BLOCKBYTES 168
 

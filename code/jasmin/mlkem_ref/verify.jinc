@@ -25,7 +25,7 @@ fn __verify(reg u64 ctp, reg ptr u8[KYBER_CT_LEN] ctpc) -> reg u64
 }
 
 inline
-fn __cmov(reg u64 dst, reg ptr src1[KYBER_SYMBYTES] dst, reg u64 src2 cnd) -> reg ptr u8[KYBER_SYMBYTES]
+fn __cmov(reg u64 dst, reg ptr u8[KYBER_SYMBYTES] src, reg u64 cnd) -> reg u64
 {
   reg u8 t1 t2 bcond;
   inline int i;
@@ -34,12 +34,12 @@ fn __cmov(reg u64 dst, reg ptr src1[KYBER_SYMBYTES] dst, reg u64 src2 cnd) -> re
 
   for i=0 to KYBER_SYMBYTES
   {
-    t1 = src1.[i];
-    t2 = (u8)[src2 + i];
+    t2 = (u8)[dst + i];
+    t1 = src.[i];
     t2 = t2 ^ t1;
     t2 = t2 & cnd;
     t1 ^= t2;
-    dst[u8 i] = t1;
+    (u8)[dst + i] = t1;
   }
 
   return dst;
