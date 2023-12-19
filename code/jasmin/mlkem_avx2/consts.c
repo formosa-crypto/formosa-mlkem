@@ -2,7 +2,7 @@
 #include "params.h"
 #include "consts.h"
 
-#define Q KYBER_Q
+#define Q MLKEM_Q
 #define MONT ((1U << 16) % Q)
 #define QINV 62209 // q^-1 mod 2^16
 #define V (((1U << 26) + Q/2)/Q)

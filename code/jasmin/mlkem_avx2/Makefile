@@ -43,7 +43,7 @@ test: test/test_poly_compress \
 	    test/test_kem
 
 speed: test/speed_indcpa \
-       test/speed_kyber
+       test/speed_mlkem
 
 HEADERS = params.h poly.h fips202.h ntt.h indcpa.h kem.h \
 
@@ -76,7 +76,7 @@ test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
-test/speed_kyber: test/speed_kyber.c $(HEADERS) $(SOURCES) $(INCS) jspeed.s
+test/speed_mlkem: test/speed_mlkem.c $(HEADERS) $(SOURCES) $(INCS) jspeed.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jspeed.s $<
 
 test/test_fips202: test/test_fips202.c $(HEADERS) fips202.c jfips202.s
@@ -135,7 +135,7 @@ clean:
 	-rm -f test/test_indcpa
 	-rm -f test/test_kem
 	-rm -f test/speed_indcpa
-	-rm -f test/speed_kyber
+	-rm -f test/speed_mlkem
 ifeq ($(OS),Darwin)
 	-rm -r -f test/*.dSYM
 endif

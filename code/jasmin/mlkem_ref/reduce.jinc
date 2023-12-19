@@ -2,7 +2,7 @@ require "params.jinc"
 
 param int QINV    = 62209;     /* q^(-1) mod 2^16 */
 param int MONT    = 2285;      /* 2^16 % Q */
-param int BARR    = 20159;     /* (1U << 26)/KYBER_Q + 1 */
+param int BARR    = 20159;     /* (1U << 26)/MLKEM_Q + 1 */
 
 /*
 inline
@@ -24,7 +24,7 @@ fn __fqmul(reg u16 a, reg u16 b) -> reg u16
   u <<= 16;
   //u = #SAR_32(u, 16);
   u >>s= 16;
-  t = u * KYBER_Q;
+  t = u * MLKEM_Q;
   t = c - t;
   //t = #SAR_32(t, 16);
   t >>s= 16;
@@ -45,7 +45,7 @@ inline fn __fqmul(reg u16 a b) -> reg u16
   u = c * (QINV << 16); // merge multiplication of u (<<16)
   u >>s= 16;
 
-  t = u * -KYBER_Q; // replace sub by add
+  t = u * -MLKEM_Q; // replace sub by add
   t += c;
   t >>s= 16;
   r = t;
@@ -62,7 +62,7 @@ fn __barrett_reduce(reg u16 a) -> reg u16
   t = t * BARR;
   //t = #SAR_32(t, 26);
   t >>s= 26;
-  t *= KYBER_Q;
+  t *= MLKEM_Q;
   r = t;
   r = a;
   r -= t;

@@ -5,11 +5,11 @@
 #include "params.h"
 
 typedef struct{
-  int16_t __attribute__((aligned(32))) coeffs[KYBER_N];
+  int16_t __attribute__((aligned(32))) coeffs[MLKEM_N];
 } poly;
 
 typedef struct{
-  poly vec[KYBER_K];
+  poly vec[MLKEM_K];
 } polyvec;
 
 void gen_matrix_jazz(polyvec *a, unsigned char *seed);
@@ -18,8 +18,8 @@ void gen_matrix_jazz(polyvec *a, unsigned char *seed);
 void poly_compress_jazz(unsigned char *r, poly *a);
 void poly_decompress_jazz(poly *r, const unsigned char *a);
 
-void poly_frommsg_jazz(poly *r, const unsigned char msg[KYBER_SYMBYTES]);
-void poly_tomsg_jazz(unsigned char msg[KYBER_SYMBYTES], poly *r);
+void poly_frommsg_jazz(poly *r, const unsigned char msg[MLKEM_SYMBYTES]);
+void poly_tomsg_jazz(unsigned char msg[MLKEM_SYMBYTES], poly *r);
 
 void poly_getnoise_jazz(poly *r,const unsigned char *seed, unsigned char nonce);
 void poly_getnoise_4x_jazz(poly *r0, poly *r1, poly *r2, poly *r3,const unsigned char *seed, unsigned char nonce);

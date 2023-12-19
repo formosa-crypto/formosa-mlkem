@@ -464,6 +464,69 @@ module M(SC:Syscall_t) = {
     return (out);
   }
   
+  proc _shake256_1120_32 (out:W64.t, in0:W64.t, in1:W64.t) : unit = {
+    var aux: int;
+    
+    var s_out:W64.t;
+    var state:W64.t Array25.t;
+    var i:int;
+    var t64:W64.t;
+    var r8:W64.t;
+    var ilen:W64.t;
+    var in_0:W64.t;
+    var s_in:W64.t;
+    var s_ilen:W64.t;
+    var s_r8:W64.t;
+    var t8:W8.t;
+    state <- witness;
+    s_out <- out;
+    state <@ __st0 (state);
+    aux <- (32 %/ 8);
+    i <- 0;
+    while (i < aux) {
+      t64 <- (loadW64 Glob.mem (W64.to_uint (in0 + (W64.of_int (i * 8)))));
+      state.[i] <- (state.[i] `^` t64);
+      i <- i + 1;
+    }
+    aux <- (136 %/ 8);
+    i <- (32 %/ 8);
+    while (i < aux) {
+      t64 <-
+      (loadW64 Glob.mem (W64.to_uint (in1 + (W64.of_int ((i - (32 %/ 8)) * 8)))));
+      state.[i] <- (state.[i] `^` t64);
+      i <- i + 1;
+    }
+    state <@ __keccakf1600_ref (state);
+    r8 <- (W64.of_int 136);
+    ilen <- (W64.of_int (((3 * 320) + 128) - (136 - 32)));
+    in_0 <- in1;
+    in_0 <- (in_0 + (W64.of_int (136 - 32)));
+    
+    while ((r8 \ule ilen)) {
+      (state, in_0, ilen) <@ __add_full_block (state, in_0, ilen, r8);
+      s_in <- in_0;
+      s_ilen <- ilen;
+      s_r8 <- r8;
+      state <@ __keccakf1600_ref (state);
+      in_0 <- s_in;
+      ilen <- s_ilen;
+      r8 <- s_r8;
+    }
+    t8 <- (W8.of_int 31);
+    state <@ __add_final_block (state, in_0, ilen, t8, r8);
+    state <@ __keccakf1600_ref (state);
+    out <- s_out;
+    aux <- (32 %/ 8);
+    i <- 0;
+    while (i < aux) {
+      t64 <- state.[i];
+      Glob.mem <-
+      storeW64 Glob.mem (W64.to_uint (out + (W64.of_int (8 * i)))) (t64);
+      i <- i + 1;
+    }
+    return ();
+  }
+  
   proc _sha3512_32 (out:W8.t Array64.t, in_0:W8.t Array32.t) : W8.t Array64.t = {
     var aux: int;
     
@@ -589,44 +652,6 @@ module M(SC:Syscall_t) = {
     return (out);
   }
   
-  proc _isha3_256_32 (out:W8.t Array32.t, in_0:W8.t Array32.t) : W8.t Array32.t = {
-    var aux: int;
-    
-    var s_out:W8.t Array32.t;
-    var state:W64.t Array25.t;
-    var i:int;
-    var t64:W64.t;
-    s_out <- witness;
-    state <- witness;
-    s_out <- out;
-    state <@ __st0 (state);
-    aux <- (32 %/ 8);
-    i <- 0;
-    while (i < aux) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => (in_0).[i_0])) i);
-      state.[i] <- t64;
-      i <- i + 1;
-    }
-    state <-
-    Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) 32 ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) 32) `^` (W8.of_int 6)))));
-    state <-
-    Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (136 - 1) ((W8.of_int 128))));
-    state <@ __keccakf1600_ref (state);
-    out <- s_out;
-    i <- 0;
-    while (i < 4) {
-      t64 <- state.[i];
-      out <-
-      Array32.init
-      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => (out).[i_0])) i (t64)));
-      i <- i + 1;
-    }
-    return (out);
-  }
-  
   proc _sha3_512_64 (out:W8.t Array64.t, in_0:W8.t Array64.t) : W8.t Array64.t = {
     var aux: int;
     
@@ -663,77 +688,6 @@ module M(SC:Syscall_t) = {
       i <- i + 1;
     }
     return (out);
-  }
-  
-  proc _shake256_64 (out:W64.t, outlen:W64.t, in_0:W8.t Array64.t) : unit = {
-    var aux: int;
-    
-    var s_out:W64.t;
-    var s_outlen:W64.t;
-    var state:W64.t Array25.t;
-    var i:int;
-    var t64:W64.t;
-    var j:W64.t;
-    var c:W8.t;
-    state <- witness;
-    s_out <- out;
-    s_outlen <- outlen;
-    state <@ __st0 (state);
-    i <- 0;
-    while (i < 8) {
-      t64 <- (get64 (WArray64.init8 (fun i_0 => (in_0).[i_0])) i);
-      state.[i] <- (state.[i] `^` t64);
-      i <- i + 1;
-    }
-    state <-
-    Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) 64 ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) 64) `^` (W8.of_int 31)))));
-    state <-
-    Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (136 - 1) ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (136 - 1)) `^` (W8.of_int 128)))));
-    state <@ __keccakf1600_ref (state);
-    outlen <- s_outlen;
-    out <- s_out;
-    
-    while (((W64.of_int 136) \ult outlen)) {
-      aux <- (136 %/ 8);
-      i <- 0;
-      while (i < aux) {
-        t64 <- state.[i];
-        Glob.mem <-
-        storeW64 Glob.mem (W64.to_uint (out + (W64.of_int (8 * i)))) (t64);
-        i <- i + 1;
-      }
-      out <- (out + (W64.of_int 136));
-      outlen <- (outlen - (W64.of_int 136));
-      s_out <- out;
-      s_outlen <- outlen;
-      state <@ __keccakf1600_ref (state);
-      outlen <- s_outlen;
-      out <- s_out;
-    }
-    s_outlen <- outlen;
-    outlen <- (outlen `>>` (W8.of_int 3));
-    j <- (W64.of_int 0);
-    
-    while ((j \ult outlen)) {
-      t64 <- state.[(W64.to_uint j)];
-      Glob.mem <-
-      storeW64 Glob.mem (W64.to_uint (out + ((W64.of_int 8) * j))) (t64);
-      j <- (j + (W64.of_int 1));
-    }
-    j <- (j `<<` (W8.of_int 3));
-    outlen <- s_outlen;
-    
-    while ((j \ult outlen)) {
-      c <-
-      (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (W64.to_uint j));
-      Glob.mem <- storeW8 Glob.mem (W64.to_uint (out + j)) (c);
-      j <- (j + (W64.of_int 1));
-    }
-    return ();
   }
   
   proc _poly_add2 (rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
@@ -2194,24 +2148,22 @@ module M(SC:Syscall_t) = {
     return (cnd);
   }
   
-  proc __cmov (dst:W8.t Array32.t, src:W64.t, cnd:W64.t) : W8.t Array32.t = {
+  proc __cmov (dst:W64.t, src:W8.t Array32.t, cnd:W64.t) : W64.t = {
     var aux: int;
     
     var i:int;
-    var t1:W8.t;
     var t2:W8.t;
+    var t1:W8.t;
     
     cnd <- (- cnd);
     i <- 0;
     while (i < 32) {
-      t1 <- (get8_direct (WArray32.init8 (fun i_0 => (dst).[i_0])) i);
-      t2 <- (loadW8 Glob.mem (W64.to_uint (src + (W64.of_int i))));
+      t2 <- (loadW8 Glob.mem (W64.to_uint (dst + (W64.of_int i))));
+      t1 <- (get8_direct (WArray32.init8 (fun i_0 => (src).[i_0])) i);
       t2 <- (t2 `^` t1);
       t2 <- (t2 `&` (truncateu8 cnd));
       t1 <- (t1 `^` t2);
-      dst <-
-      Array32.init
-      (WArray32.get8 (WArray32.set8_direct (WArray32.init8 (fun i_0 => (dst).[i_0])) i (t1)));
+      Glob.mem <- storeW8 Glob.mem (W64.to_uint (dst + (W64.of_int i))) (t1);
       i <- i + 1;
     }
     return (dst);
@@ -2287,8 +2239,8 @@ module M(SC:Syscall_t) = {
     var s_shkp:W64.t;
     var i:int;
     var t64:W64.t;
-    var kr:W8.t Array64.t;
     var buf:W8.t Array64.t;
+    var kr:W8.t Array64.t;
     buf <- witness;
     kr <- witness;
     s_pkp <- pkp;
@@ -2298,16 +2250,11 @@ module M(SC:Syscall_t) = {
     i <- 0;
     while (i < aux) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => (randomnessp).[i_0])) i);
-      kr <-
+      buf <-
       Array64.init
-      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => (kr).[i_0])) i (t64)));
+      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => (buf).[i_0])) i (t64)));
       i <- i + 1;
     }
-    aux_0 <@ _isha3_256_32 ((Array32.init (fun i_0 => buf.[0 + i_0])),
-    (Array32.init (fun i_0 => kr.[0 + i_0])));
-    buf <- Array64.init
-           (fun i_0 => if 0 <= i_0 < 0 + 32 then aux_0.[i_0-0]
-           else buf.[i_0]);
     pkp <- s_pkp;
     t64 <- (W64.of_int ((3 * 384) + 32));
     aux_0 <@ _isha3_256 ((Array32.init (fun i_0 => buf.[32 + i_0])), pkp,
@@ -2319,16 +2266,15 @@ module M(SC:Syscall_t) = {
     pkp <- s_pkp;
     __indcpa_enc (s_ctp, (Array32.init (fun i_0 => buf.[0 + i_0])), pkp,
     (Array32.init (fun i_0 => kr.[32 + i_0])));
-    ctp <- s_ctp;
-    t64 <- (W64.of_int ((3 * 320) + 128));
-    aux_0 <@ _isha3_256 ((Array32.init (fun i_0 => kr.[32 + i_0])), ctp,
-    t64);
-    kr <- Array64.init
-          (fun i_0 => if 32 <= i_0 < 32 + 32 then aux_0.[i_0-32]
-          else kr.[i_0]);
     shkp <- s_shkp;
-    t64 <- (W64.of_int 32);
-    _shake256_64 (shkp, t64, kr);
+    aux <- (32 %/ 8);
+    i <- 0;
+    while (i < aux) {
+      t64 <- (get64 (WArray64.init8 (fun i_0 => (kr).[i_0])) i);
+      Glob.mem <-
+      storeW64 Glob.mem (W64.to_uint (shkp + (W64.of_int (8 * i)))) (t64);
+      i <- i + 1;
+    }
     return ();
   }
   
@@ -2348,6 +2294,7 @@ module M(SC:Syscall_t) = {
     var ctpc:W8.t Array1088.t;
     var cnd:W64.t;
     var zp:W64.t;
+    var  _0:W64.t;
     buf <- witness;
     ctpc <- witness;
     kr <- witness;
@@ -2379,21 +2326,13 @@ module M(SC:Syscall_t) = {
     zp <- s_skp;
     zp <- (zp + (W64.of_int 64));
     zp <- (zp + (W64.of_int (((24 * 3) * 256) `|>>` 3)));
-    aux <@ __cmov ((Array32.init (fun i_0 => kr.[0 + i_0])), zp, cnd);
-    kr <- Array64.init
-          (fun i_0 => if 0 <= i_0 < 0 + 32 then aux.[i_0-0] else kr.[i_0]);
-    t64 <- (W64.of_int ((3 * 320) + 128));
-    aux <@ _isha3_256 ((Array32.init (fun i_0 => kr.[32 + i_0])), ctp, t64);
-    kr <- Array64.init
-          (fun i_0 => if 32 <= i_0 < 32 + 32 then aux.[i_0-32]
-          else kr.[i_0]);
+    _shake256_1120_32 (shkp, zp, ctp);
     shkp <- s_shkp;
-    t64 <- (W64.of_int 32);
-    _shake256_64 (shkp, t64, kr);
+     _0 <@ __cmov (shkp, (Array32.init (fun i_0 => kr.[0 + i_0])), cnd);
     return ();
   }
   
-  proc jade_kem_kyber_kyber768_amd64_ref_keypair (public_key:W64.t,
+  proc jade_kem_mlkem_mlkem768_amd64_ref_keypair (public_key:W64.t,
                                                   secret_key:W64.t) : 
   W64.t = {
     
@@ -2416,7 +2355,7 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc jade_kem_kyber_kyber768_amd64_ref_enc (ciphertext:W64.t,
+  proc jade_kem_mlkem_mlkem768_amd64_ref_enc (ciphertext:W64.t,
                                               shared_secret:W64.t,
                                               public_key:W64.t) : W64.t = {
     
@@ -2441,7 +2380,7 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc jade_kem_kyber_kyber768_amd64_ref_dec (shared_secret:W64.t,
+  proc jade_kem_mlkem_mlkem768_amd64_ref_dec (shared_secret:W64.t,
                                               ciphertext:W64.t,
                                               secret_key:W64.t) : W64.t = {
     

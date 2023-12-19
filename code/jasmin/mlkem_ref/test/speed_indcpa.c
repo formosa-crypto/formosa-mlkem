@@ -56,20 +56,20 @@ void print_results(const char *s, uint64_t *t, size_t tlen) {
 
 int main(void)
 {
-  unsigned char sk[KYBER_INDCPA_SECRETKEYBYTES];
-  unsigned char pk[KYBER_INDCPA_PUBLICKEYBYTES];
-  unsigned char ct[KYBER_INDCPA_BYTES];
-  unsigned char randomness0[KYBER_SYMBYTES];
-  unsigned char randomness1[KYBER_SYMBYTES];
-  unsigned char message[KYBER_INDCPA_MSGBYTES];
-  unsigned char outmsg[KYBER_POLYVECBYTES];
+  unsigned char sk[MLKEM_INDCPA_SECRETKEYBYTES];
+  unsigned char pk[MLKEM_INDCPA_PUBLICKEYBYTES];
+  unsigned char ct[MLKEM_INDCPA_BYTES];
+  unsigned char randomness0[MLKEM_SYMBYTES];
+  unsigned char randomness1[MLKEM_SYMBYTES];
+  unsigned char message[MLKEM_INDCPA_MSGBYTES];
+  unsigned char outmsg[MLKEM_POLYVECBYTES];
 
   uint64_t t[NRUNS], i;
 
   FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, KYBER_SYMBYTES, 1, urandom);
-  fread(randomness1, KYBER_SYMBYTES, 1, urandom);
-  fread(message, KYBER_SYMBYTES, 1, urandom);
+  fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
+  fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
+  fread(message, MLKEM_SYMBYTES, 1, urandom);
   fclose(urandom);
 
   /* TEST KEYPAIR */

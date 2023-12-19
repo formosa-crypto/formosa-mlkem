@@ -97,7 +97,7 @@ fn __nttunpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
   return r0, r4, r1, r5, r2, r6, r3, r7;
 }
 
-fn _nttpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _nttpack(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 r0 r1 r2 r3 r4 r5 r6 r7;
 
@@ -144,7 +144,7 @@ fn _nttpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
-fn _nttunpack(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _nttunpack(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 r0 r1 r2 r3 r4 r5 r6 r7;
 

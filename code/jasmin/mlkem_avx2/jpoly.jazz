@@ -5,11 +5,11 @@ require "poly.jinc"
 
 export fn poly_compress_jazz(reg u64 rp, reg u64 ap) 
 {
-  stack u16[KYBER_N] a;
+  stack u16[MLKEM_N] a;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[ap + 2*i];
     a[i] = t;
   }
@@ -19,13 +19,13 @@ export fn poly_compress_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_decompress_jazz(reg u64 rp, reg u64 ap) 
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
   r = _poly_decompress(r, ap);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -33,11 +33,11 @@ export fn poly_decompress_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap) 
 {
-  stack u16[KYBER_N] a;
+  stack u16[MLKEM_N] a;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[ap + 2*i];
     a[i] = t;
   }
@@ -48,7 +48,7 @@ export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap) 
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
@@ -56,7 +56,7 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
 
   r = _nttpack(r);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -64,11 +64,11 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap) 
 {
-  stack u16[KYBER_N] a;
+  stack u16[MLKEM_N] a;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[ap + 2*i];
     a[i] = t;
   }
@@ -78,13 +78,13 @@ export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
   r = _poly_frommsg(r, ap);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -93,12 +93,12 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
 
 export fn poly_add2_jazz(reg u64 rp,  reg u64 bp) 
 {
-  stack u16[KYBER_N] r;
-  stack u16[KYBER_N] b;
+  stack u16[MLKEM_N] r;
+  stack u16[MLKEM_N] b;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[rp + 2*i];
     r[i] = t;
     t = (u16)[bp + 2*i];
@@ -107,7 +107,7 @@ export fn poly_add2_jazz(reg u64 rp,  reg u64 bp)
 
   r = _poly_add2(r, b);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -115,13 +115,13 @@ export fn poly_add2_jazz(reg u64 rp,  reg u64 bp)
 
 export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
-  stack u16[KYBER_N] a;
-  stack u16[KYBER_N] b;
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] a;
+  stack u16[MLKEM_N] b;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[ap + 2*i];
     a[i] = t;
     t = (u16)[bp + 2*i];
@@ -130,7 +130,7 @@ export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
   r = _poly_sub(r, a, b);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -138,11 +138,11 @@ export fn poly_sub_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
 export fn poly_ntt_jazz(reg u64 rp) 
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
@@ -151,7 +151,7 @@ export fn poly_ntt_jazz(reg u64 rp)
 
   r = _nttpack(r);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -159,11 +159,11 @@ export fn poly_ntt_jazz(reg u64 rp)
 
 export fn poly_invntt_jazz(reg u64 rp) 
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
@@ -172,7 +172,7 @@ export fn poly_invntt_jazz(reg u64 rp)
 
   r = _poly_invntt(r);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -180,13 +180,13 @@ export fn poly_invntt_jazz(reg u64 rp)
 
 export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
 {
-  stack u16[KYBER_N] a;
-  stack u16[KYBER_N] b;
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] a;
+  stack u16[MLKEM_N] b;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[ap + 2*i];
     a[i] = t;
     t = (u16)[bp + 2*i];
@@ -200,7 +200,7 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
   r = _poly_basemul(r, a, b);
   r = _nttpack(r);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -208,18 +208,18 @@ export fn poly_basemul_jazz(reg u64 rp, reg u64 ap, reg u64 bp)
 
 export fn poly_frommont_jazz(reg u64 rp) 
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
 
   r = _poly_frommont(r);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -228,8 +228,8 @@ export fn poly_frommont_jazz(reg u64 rp)
 
 export fn poly_getnoise_eta1_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 {
-  stack u16[4 * KYBER_N] r;
-  stack u8[KYBER_SYMBYTES] seed;
+  stack u16[4 * MLKEM_N] r;
+  stack u8[MLKEM_SYMBYTES] seed;
   stack u64 srp;
   reg u16 t;
   reg u8 d;
@@ -237,15 +237,15 @@ export fn poly_getnoise_eta1_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 
   srp = rp;
 
-  for i = 0 to KYBER_SYMBYTES {
+  for i = 0 to MLKEM_SYMBYTES {
     d       = (u8)[seedp + i];
     seed[i] = d;
   }
 
-  r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N] = _poly_getnoise_eta1_4x(r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N], seed, nonce);
+  r[0:MLKEM_N], r[MLKEM_N:MLKEM_N], r[2*MLKEM_N:MLKEM_N], r[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(r[0:MLKEM_N], r[MLKEM_N:MLKEM_N], r[2*MLKEM_N:MLKEM_N], r[3*MLKEM_N:MLKEM_N], seed, nonce);
 
   rp = srp;
-  for i = 0 to 4*KYBER_N {
+  for i = 0 to 4*MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -253,8 +253,8 @@ export fn poly_getnoise_eta1_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 
 export fn poly_getnoise_eta1122_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 {
-  stack u16[4 * KYBER_N] r;
-  stack u8[KYBER_SYMBYTES] seed;
+  stack u16[4 * MLKEM_N] r;
+  stack u8[MLKEM_SYMBYTES] seed;
   stack u64 srp;
   reg u16 t;
   reg u8 d;
@@ -262,15 +262,15 @@ export fn poly_getnoise_eta1122_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 
   srp = rp;
 
-  for i = 0 to KYBER_SYMBYTES {
+  for i = 0 to MLKEM_SYMBYTES {
     d       = (u8)[seedp + i];
     seed[i] = d;
   }
 
-  r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N] = _poly_getnoise_eta1122_4x(r[0:KYBER_N], r[KYBER_N:KYBER_N], r[2*KYBER_N:KYBER_N], r[3*KYBER_N:KYBER_N], seed, nonce);
+  r[0:MLKEM_N], r[MLKEM_N:MLKEM_N], r[2*MLKEM_N:MLKEM_N], r[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1122_4x(r[0:MLKEM_N], r[MLKEM_N:MLKEM_N], r[2*MLKEM_N:MLKEM_N], r[3*MLKEM_N:MLKEM_N], seed, nonce);
 
   rp = srp;
-  for i = 0 to 4*KYBER_N {
+  for i = 0 to 4*MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -279,18 +279,18 @@ export fn poly_getnoise_eta1122_4x_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce)
 
 export fn poly_reduce_jazz(reg u64 rp)
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
 
   r = __poly_reduce(r);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }
@@ -298,18 +298,18 @@ export fn poly_reduce_jazz(reg u64 rp)
 
 export fn poly_csubq_jazz(reg u64 rp)
 {
-  stack u16[KYBER_N] r;
+  stack u16[MLKEM_N] r;
   reg u16 t;
   inline int i;
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = (u16)[rp + 2*i];
     r[i] = t;
   }
 
   r = _poly_csubq(r);
 
-  for i = 0 to KYBER_N {
+  for i = 0 to MLKEM_N {
     t = r[i];
     (u16)[rp + 2*i] = t;
   }

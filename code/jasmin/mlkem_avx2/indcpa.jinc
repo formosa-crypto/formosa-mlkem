@@ -4,13 +4,13 @@ require "polyvec.jinc"
 require "gen_matrix.jinc"
 
 inline
-fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomnessp)
+fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
 {
   stack u64 spkp sskp;
-  stack u16[KYBER_K*KYBER_VECN] aa;
-  stack u16[KYBER_VECN] e pkpv skpv;
+  stack u16[MLKEM_K*MLKEM_VECN] aa;
+  stack u16[MLKEM_VECN] e pkpv skpv;
   stack u8[64] buf;
-  stack u8[KYBER_SYMBYTES] publicseed noiseseed;
+  stack u8[MLKEM_SYMBYTES] publicseed noiseseed;
   stack u8[32] inbuf;
   reg u64 t64;
   reg u8 nonce;
@@ -19,7 +19,7 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomn
   spkp = pkp;
   sskp = skp;
 
-  for i=0 to KYBER_SYMBYTES/8
+  for i=0 to MLKEM_SYMBYTES/8
   {
     t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
@@ -27,30 +27,30 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomn
 
   buf = _sha3_512_32(buf, inbuf);
 
-  for i=0 to KYBER_SYMBYTES/8
+  for i=0 to MLKEM_SYMBYTES/8
   {
     t64 = buf[u64 i];
     publicseed[u64 i] = t64;
-    t64 = buf[u64 i + KYBER_SYMBYTES/8];
+    t64 = buf[u64 i + MLKEM_SYMBYTES/8];
     noiseseed[u64 i] = t64;
   }
 
   aa = __gen_matrix(publicseed, 0);
 
   nonce = 0;
-  skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N] = _poly_getnoise_eta1_4x(skpv[0:KYBER_N], skpv[KYBER_N:KYBER_N], skpv[2*KYBER_N:KYBER_N], e[0:KYBER_N], noiseseed, nonce);
+  skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], e[0:MLKEM_N] = _poly_getnoise_eta1_4x(skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], e[0:MLKEM_N], noiseseed, nonce);
 
   nonce = 4;
-  e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N] = _poly_getnoise_eta1_4x(e[KYBER_N:KYBER_N], e[2*KYBER_N:KYBER_N], pkpv[0:KYBER_N], pkpv[KYBER_N:KYBER_N], noiseseed, nonce);
+  e[MLKEM_N:MLKEM_N], e[2*MLKEM_N:MLKEM_N], pkpv[0:MLKEM_N], pkpv[MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(e[MLKEM_N:MLKEM_N], e[2*MLKEM_N:MLKEM_N], pkpv[0:MLKEM_N], pkpv[MLKEM_N:MLKEM_N], noiseseed, nonce);
 
   skpv = __polyvec_ntt(skpv);
   e    = __polyvec_ntt(e);
 
 
-  for i=0 to KYBER_K
+  for i=0 to MLKEM_K
   {
-    pkpv[i*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(pkpv[i*KYBER_N:KYBER_N], aa[i*KYBER_VECN:KYBER_VECN], skpv);
-    pkpv[i*KYBER_N:KYBER_N] = _poly_frommont(pkpv[i*KYBER_N:KYBER_N]);
+    pkpv[i*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(pkpv[i*MLKEM_N:MLKEM_N], aa[i*MLKEM_VECN:MLKEM_VECN], skpv);
+    pkpv[i*MLKEM_N:MLKEM_N] = _poly_frommont(pkpv[i*MLKEM_N:MLKEM_N]);
   }
 
   pkpv = __polyvec_add2(pkpv, e);
@@ -62,9 +62,9 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomn
   __polyvec_tobytes(skp, skpv);
   __polyvec_tobytes(pkp, pkpv);
 
-  pkp += KYBER_POLYVECBYTES;
+  pkp += MLKEM_POLYVECBYTES;
 
-  for i=0 to KYBER_SYMBYTES/8
+  for i=0 to MLKEM_SYMBYTES/8
   {
     t64 = publicseed[u64 i];
     (u64)[pkp] = t64;
@@ -73,14 +73,14 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[KYBER_SYMBYTES] randomn
 }
 
 inline
-fn __indcpa_enc_0(stack u64 sctp, reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u64 pkp, reg ptr u8[KYBER_SYMBYTES] noiseseed)
+fn __indcpa_enc_0(stack u64 sctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] noiseseed)
 {
-  stack u16[KYBER_VECN] pkpv sp ep bp;
-  stack u16[KYBER_K*KYBER_VECN] aat;
-  stack u16[KYBER_N] k epp v;
-  stack u8[KYBER_SYMBYTES] publicseed;
-  stack ptr u8[KYBER_SYMBYTES] s_noiseseed;
-  reg ptr u8[KYBER_SYMBYTES] lnoiseseed;
+  stack u16[MLKEM_VECN] pkpv sp ep bp;
+  stack u16[MLKEM_K*MLKEM_VECN] aat;
+  stack u16[MLKEM_N] k epp v;
+  stack u8[MLKEM_SYMBYTES] publicseed;
+  stack ptr u8[MLKEM_SYMBYTES] s_noiseseed;
+  reg ptr u8[MLKEM_SYMBYTES] lnoiseseed;
   reg u64 i t64 ctp;
   reg u8 nonce;
   inline int w;
@@ -88,8 +88,8 @@ fn __indcpa_enc_0(stack u64 sctp, reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u6
   pkpv = __polyvec_frombytes(pkp);
 
   i = 0;
-  pkp += KYBER_POLYVECBYTES;
-  while (i < KYBER_SYMBYTES/8)
+  pkp += MLKEM_POLYVECBYTES;
+  while (i < MLKEM_SYMBYTES/8)
   {
     t64 = (u64)[pkp];
     publicseed.[u64 8 * (int)i] = t64;
@@ -104,16 +104,16 @@ fn __indcpa_enc_0(stack u64 sctp, reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u6
   lnoiseseed = s_noiseseed;
 
   nonce = 0;
-  sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N] = _poly_getnoise_eta1_4x(sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N], lnoiseseed, nonce);
+  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], lnoiseseed, nonce);
 
   nonce = 4;
-  ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N] = _poly_getnoise_eta1_4x(ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N], lnoiseseed, nonce);
+  ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
     
-  for w=0 to KYBER_K
+  for w=0 to MLKEM_K
   {
-    bp[w*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(bp[w*KYBER_N:KYBER_N], aat[w*KYBER_VECN:KYBER_VECN], sp);
+    bp[w*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(bp[w*MLKEM_N:MLKEM_N], aat[w*MLKEM_VECN:MLKEM_VECN], sp);
   }
  
   v = __polyvec_pointwise_acc(v, pkpv, sp);
@@ -129,20 +129,20 @@ fn __indcpa_enc_0(stack u64 sctp, reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u6
 
   ctp = sctp;
   __polyvec_compress(ctp, bp);
-  ctp += KYBER_POLYVECCOMPRESSEDBYTES;
+  ctp += MLKEM_POLYVECCOMPRESSEDBYTES;
   v = _poly_compress(ctp, v);
 }
 
 inline
-fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u64 pkp, reg ptr u8[KYBER_SYMBYTES] noiseseed) -> reg ptr u8[KYBER_INDCPA_CIPHERTEXTBYTES]
+fn __indcpa_enc_1(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] noiseseed) -> reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES]
 {
-  stack u16[KYBER_VECN] pkpv sp ep bp;
-  stack u16[KYBER_K*KYBER_VECN] aat;
-  stack u16[KYBER_N] k epp v;
-  stack u8[KYBER_SYMBYTES] publicseed;
-  stack ptr u8[KYBER_SYMBYTES] s_noiseseed;
-  reg ptr u8[KYBER_SYMBYTES] lnoiseseed;
-  stack ptr u8[KYBER_INDCPA_CIPHERTEXTBYTES] sctp;
+  stack u16[MLKEM_VECN] pkpv sp ep bp;
+  stack u16[MLKEM_K*MLKEM_VECN] aat;
+  stack u16[MLKEM_N] k epp v;
+  stack u8[MLKEM_SYMBYTES] publicseed;
+  stack ptr u8[MLKEM_SYMBYTES] s_noiseseed;
+  reg ptr u8[MLKEM_SYMBYTES] lnoiseseed;
+  stack ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] sctp;
   reg u64 i t64;
   reg u8 nonce;
   inline int w;
@@ -152,8 +152,8 @@ fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[KYBER
   pkpv = __polyvec_frombytes(pkp);
 
   i = 0;
-  pkp += KYBER_POLYVECBYTES;
-  while (i < KYBER_SYMBYTES/8)
+  pkp += MLKEM_POLYVECBYTES;
+  while (i < MLKEM_SYMBYTES/8)
   {
     t64 = (u64)[pkp];
     publicseed.[u64 8*(int)i] = t64;
@@ -168,16 +168,16 @@ fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[KYBER
   lnoiseseed = s_noiseseed;
 
   nonce = 0;
-  sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N] = _poly_getnoise_eta1_4x(sp[0:KYBER_N], sp[KYBER_N:KYBER_N], sp[2*KYBER_N:KYBER_N], ep[0:KYBER_N], lnoiseseed, nonce);
+  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], lnoiseseed, nonce);
 
   nonce = 4;
-  ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N] = _poly_getnoise_eta1_4x(ep[KYBER_N:KYBER_N], ep[2*KYBER_N:KYBER_N], epp, bp[0:KYBER_N], lnoiseseed, nonce);
+  ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
     
-  for w=0 to KYBER_K
+  for w=0 to MLKEM_K
   {
-    bp[w*KYBER_N:KYBER_N] = __polyvec_pointwise_acc(bp[w*KYBER_N:KYBER_N], aat[w*KYBER_VECN:KYBER_VECN], sp);
+    bp[w*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(bp[w*MLKEM_N:MLKEM_N], aat[w*MLKEM_VECN:MLKEM_VECN], sp);
   }
  
   v = __polyvec_pointwise_acc(v, pkpv, sp);
@@ -192,8 +192,8 @@ fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[KYBER
   v  = __poly_reduce(v);
 
   ctp = sctp;
-  ctp[0:KYBER_POLYVECCOMPRESSEDBYTES] = __polyvec_compress_1(ctp[0:KYBER_POLYVECCOMPRESSEDBYTES], bp);
-  ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v = _poly_compress_1(ctp[KYBER_POLYVECCOMPRESSEDBYTES:KYBER_POLYCOMPRESSEDBYTES], v);
+  ctp[0:MLKEM_POLYVECCOMPRESSEDBYTES] = __polyvec_compress_1(ctp[0:MLKEM_POLYVECCOMPRESSEDBYTES], bp);
+  ctp[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v = _poly_compress_1(ctp[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v);
 
   return ctp;
 }
@@ -201,11 +201,11 @@ fn __indcpa_enc_1(reg ptr u8[KYBER_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[KYBER
 inline 
 fn __indcpa_dec_0(reg u64 msgp, reg u64 ctp, reg u64 skp)
 {
-  stack u16[KYBER_N] t v mp;
-  stack u16[KYBER_VECN] bp skpv;
+  stack u16[MLKEM_N] t v mp;
+  stack u16[MLKEM_VECN] bp skpv;
 
   bp = __polyvec_decompress(ctp);
-  ctp += KYBER_POLYVECCOMPRESSEDBYTES;
+  ctp += MLKEM_POLYVECCOMPRESSEDBYTES;
   v = _poly_decompress(v, ctp);
 
   skpv = __polyvec_frombytes(skp);
@@ -221,13 +221,13 @@ fn __indcpa_dec_0(reg u64 msgp, reg u64 ctp, reg u64 skp)
 }
 
 inline
-fn __indcpa_dec_1(reg ptr u8[KYBER_INDCPA_MSGBYTES] msgp, reg u64 ctp, reg u64 skp) -> reg ptr u8[KYBER_INDCPA_MSGBYTES]
+fn __indcpa_dec_1(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg u64 ctp, reg u64 skp) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
 {
-  stack u16[KYBER_N] t v mp;
-  stack u16[KYBER_VECN] bp skpv;
+  stack u16[MLKEM_N] t v mp;
+  stack u16[MLKEM_VECN] bp skpv;
 
   bp = __polyvec_decompress(ctp);
-  ctp += KYBER_POLYVECCOMPRESSEDBYTES;
+  ctp += MLKEM_POLYVECCOMPRESSEDBYTES;
   v = _poly_decompress(v, ctp);
 
   skpv = __polyvec_frombytes(skp);

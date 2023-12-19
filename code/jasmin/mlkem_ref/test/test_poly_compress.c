@@ -5,7 +5,7 @@
 void poly_setrandom(poly *r)
 {
   FILE *urandom = fopen("/dev/urandom", "r");
-  fread(r->coeffs, sizeof(int16_t), KYBER_N, urandom);
+  fread(r->coeffs, sizeof(int16_t), MLKEM_N, urandom);
   fclose(urandom);
   poly_reduce(r);
 }

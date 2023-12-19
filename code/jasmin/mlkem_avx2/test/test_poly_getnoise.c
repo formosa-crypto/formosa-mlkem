@@ -7,10 +7,10 @@
 int main(void)
 {
   poly r0[4], r1[4];
-  unsigned char seed[KYBER_SYMBYTES];
+  unsigned char seed[MLKEM_SYMBYTES];
 
   FILE *urandom = fopen("/dev/urandom", "r");
-  fread(seed, 1, KYBER_SYMBYTES, urandom);
+  fread(seed, 1, MLKEM_SYMBYTES, urandom);
   fclose(urandom);
 
   poly_getnoise_eta1(r0, seed, 0);
@@ -21,7 +21,7 @@ int main(void)
 
   for(int i=0;i<4;i++)
   {
-    for(int j=0;j<KYBER_N;j++)
+    for(int j=0;j<MLKEM_N;j++)
     {
       if(r0[i].coeffs[j] != r1[i].coeffs[j])
         printf("error getnoise %d, %d, %d\n", i*256+j, r0[i].coeffs[j], r1[i].coeffs[j]);
@@ -36,7 +36,7 @@ int main(void)
 
   for(int i=0;i<4;i++)
   {
-    for(int j=0;j<KYBER_N;j++)
+    for(int j=0;j<MLKEM_N;j++)
     {
       if(r0[i].coeffs[j] != r1[i].coeffs[j])
         printf("error getnoise %d, %d, %d\n", i*256+j, r0[i].coeffs[j], r1[i].coeffs[j]);

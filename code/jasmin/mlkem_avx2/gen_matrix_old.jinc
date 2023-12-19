@@ -7,7 +7,7 @@ param int GENMATRIX_NBLOCKS = 3;
 param int REJ_UNIFORM_BUFLEN = GENMATRIX_NBLOCKS * SHAKE128_RATE;
 
 inline
-fn __rej_uniform_old(stack u16[KYBER_N] rp, reg u64 offset, stack u8[REJ_UNIFORM_BUFLEN] buf, inline int buflen) ->  reg u64, stack u16[KYBER_N]
+fn __rej_uniform_old(stack u16[MLKEM_N] rp, reg u64 offset, stack u8[REJ_UNIFORM_BUFLEN] buf, inline int buflen) ->  reg u64, stack u16[MLKEM_N]
 {
   reg u16 val0 val1;
   reg u16 t;
@@ -18,7 +18,7 @@ fn __rej_uniform_old(stack u16[KYBER_N] rp, reg u64 offset, stack u8[REJ_UNIFORM
   ctr = offset;
   pos = 0;
 
-  _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 1);
+  _, cf, _, _, zf = #CMP_64(ctr, MLKEM_N - 1);
   fl1 = #SETcc(cf || zf); //SETBE
 
   _, cf, _, _, zf = #CMP_64(pos, buflen - 3);
@@ -45,22 +45,22 @@ fn __rej_uniform_old(stack u16[KYBER_N] rp, reg u64 offset, stack u8[REJ_UNIFORM
     val1 |= t;
     pos += 1;
 
-    if(val0 < KYBER_Q)
+    if(val0 < MLKEM_Q)
     {
       rp[(int)ctr] = val0;
       ctr += 1;
     }
 
-    if(ctr < KYBER_N)
+    if(ctr < MLKEM_N)
     {
-      if(val1 < KYBER_Q)
+      if(val1 < MLKEM_Q)
       {
         rp[(int)ctr] = val1;
         ctr += 1;
       }
     }
 
-    _, cf, _, _, zf = #CMP_64(ctr, KYBER_N - 1);
+    _, cf, _, _, zf = #CMP_64(ctr, MLKEM_N - 1);
     fl1 = #SETcc(cf || zf); //SETBE
 
     _, cf, _, _, zf = #CMP_64(pos, buflen - 3);
@@ -73,7 +73,7 @@ fn __rej_uniform_old(stack u16[KYBER_N] rp, reg u64 offset, stack u8[REJ_UNIFORM
 }
 
 inline
-fn __gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> stack u16[KYBER_K*KYBER_VECN]
+fn __gen_matrix_old(stack u8[MLKEM_SYMBYTES] seed, inline int transposed) -> stack u16[MLKEM_K*MLKEM_VECN]
 {
   stack u8[34] extseed;
   stack u8[REJ_UNIFORM_BUFLEN] buf;
@@ -81,7 +81,7 @@ fn __gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> sta
   stack u8[REJ_UNIFORM_BUFLEN] buf;
   stack u8[REJ_UNIFORM_BUFLEN] buf;
   stack u64[25] state;
-  stack u16[KYBER_K*KYBER_VECN] rr;
+  stack u16[MLKEM_K*MLKEM_VECN] rr;
 
   reg u64 t64;
   stack u64 t64_s;
@@ -93,35 +93,35 @@ fn __gen_matrix_old(stack u8[KYBER_SYMBYTES] seed, inline int transposed) -> sta
     extseed[u64 j] = t64;
   }
 
-  for i = 0 to KYBER_K
+  for i = 0 to MLKEM_K
   {
-    for j = 0 to KYBER_K
+    for j = 0 to MLKEM_K
     {
       if(transposed == 0)
       {
-        extseed[KYBER_SYMBYTES] = j;
-        extseed[KYBER_SYMBYTES+1] = i;
+        extseed[MLKEM_SYMBYTES] = j;
+        extseed[MLKEM_SYMBYTES+1] = i;
       }
       else
       {
-        extseed[KYBER_SYMBYTES] = i;
-        extseed[KYBER_SYMBYTES+1] = j;
+        extseed[MLKEM_SYMBYTES] = i;
+        extseed[MLKEM_SYMBYTES+1] = j;
       }
 
       state = _shake128_absorb34(state, extseed);
 
       state, buf = __shake128_squeezenblocks(state, buf);
       t64 = 0;
-      t64, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = __rej_uniform_old(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], t64, buf, REJ_UNIFORM_BUFLEN);
+      t64, rr[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N] = __rej_uniform_old(rr[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N], t64, buf, REJ_UNIFORM_BUFLEN);
       
-      while (t64 < KYBER_N)
+      while (t64 < MLKEM_N)
       {
         t64_s = t64;
         state, buf[0:SHAKE128_RATE] = _shake128_squeezeblock(state, buf[0:SHAKE128_RATE]);
         t64 = t64_s;
-        t64, rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = __rej_uniform_old(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N], t64, buf, SHAKE128_RATE);
+        t64, rr[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N] = __rej_uniform_old(rr[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N], t64, buf, SHAKE128_RATE);
       }
-      rr[i*KYBER_VECN+j*KYBER_N:KYBER_N] = _nttunpack(rr[i*KYBER_VECN+j*KYBER_N:KYBER_N]);
+      rr[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N] = _nttunpack(rr[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N]);
     }
   }
 

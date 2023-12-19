@@ -4,11 +4,11 @@
 void polyvec_setrandom(polyvec *r)
 {
   FILE *urandom = fopen("/dev/urandom", "r");
-  for(int i=0;i<KYBER_K;i++)
-    fread(r->vec[i].coeffs, sizeof(int16_t), KYBER_N, urandom);
-  for(int i=0;i<KYBER_K;i++)
-    for(int j=0;j<KYBER_N;j++)
-      r->vec[i].coeffs[j] %= KYBER_Q;
+  for(int i=0;i<MLKEM_K;i++)
+    fread(r->vec[i].coeffs, sizeof(int16_t), MLKEM_N, urandom);
+  for(int i=0;i<MLKEM_K;i++)
+    for(int j=0;j<MLKEM_N;j++)
+      r->vec[i].coeffs[j] %= MLKEM_Q;
   fclose(urandom);
 }
 
@@ -22,8 +22,8 @@ int main(void)
   polyvec_add(&r0, &a, &b);
   polyvec_add2_jazz(&a, &b);
 
-  for(int i=0;i<KYBER_K;i++)
-    for(int j=0;j<KYBER_N;j++)
+  for(int i=0;i<MLKEM_K;i++)
+    for(int j=0;j<MLKEM_N;j++)
       if(r0.vec[i].coeffs[j] != a.vec[i].coeffs[j])
         printf("error polyvec_add %d,%d: %d, %d\n", i, j, r0.vec[i].coeffs[j], a.vec[i].coeffs[j]);
 

@@ -3,12 +3,12 @@
 
 #include "params.h"
 
-#ifdef KYBER_90S
+#ifdef MLKEM_90S
 
 #include "aes256ctr.h"
 #include "sha2.h"
 
-#if (KYBER_SSBYTES != 32)
+#if (MLKEM_SSBYTES != 32)
 #error "90s variant of Kyber can only generate keys of length 256 bits"
 #endif
 
@@ -31,15 +31,15 @@ typedef struct {
   uint64_t s[25];
 } keccak_state;
 
-void kyber_shake128_absorb(keccak_state *s, const unsigned char *input, unsigned char x, unsigned char y);
-void kyber_shake128_squeezeblocks(unsigned char *output, unsigned long long nblocks, keccak_state *s);
+void mlkem_shake128_absorb(keccak_state *s, const unsigned char *input, unsigned char x, unsigned char y);
+void mlkem_shake128_squeezeblocks(unsigned char *output, unsigned long long nblocks, keccak_state *s);
 void shake256_prf(unsigned char *output, unsigned long long outlen, const unsigned char *key, const unsigned char nonce);
 void shake256_rkprf(unsigned char *out, const unsigned char *key, const unsigned char *input);
 
 #define hash_h(OUT, IN, INBYTES) sha3_256(OUT, IN, INBYTES)
 #define hash_g(OUT, IN, INBYTES) sha3_512(OUT, IN, INBYTES)
-#define xof_absorb(STATE, IN, X, Y) kyber_shake128_absorb(STATE, IN, X, Y)
-#define xof_squeezeblocks(OUT, OUTBLOCKS, STATE) kyber_shake128_squeezeblocks(OUT, OUTBLOCKS, STATE)
+#define xof_absorb(STATE, IN, X, Y) mlkem_shake128_absorb(STATE, IN, X, Y)
+#define xof_squeezeblocks(OUT, OUTBLOCKS, STATE) mlkem_shake128_squeezeblocks(OUT, OUTBLOCKS, STATE)
 #define prf(OUT, OUTBYTES, KEY, NONCE) shake256_prf(OUT, OUTBYTES, KEY, NONCE)
 #define rkprf(OUT, KEY, INPUT) shake256_rkprf(OUT, KEY, INPUT)
 
@@ -47,6 +47,6 @@ void shake256_rkprf(unsigned char *out, const unsigned char *key, const unsigned
 
 typedef keccak_state xof_state;
 
-#endif /* KYBER_90S */
+#endif /* MLKEM_90S */
 
 #endif /* SYMMETRIC_H */

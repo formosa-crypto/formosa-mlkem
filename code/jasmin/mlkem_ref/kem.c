@@ -65,11 +65,11 @@ void crypto_kem_keypair(unsigned char *pk,
 {
   indcpa_keypair(pk, sk, randomness);
 
-  memcpy(sk+KYBER_INDCPA_SECRETKEYBYTES, pk, KYBER_INDCPA_PUBLICKEYBYTES);
+  memcpy(sk+MLKEM_INDCPA_SECRETKEYBYTES, pk, MLKEM_INDCPA_PUBLICKEYBYTES);
 
-  hash_h(sk+KYBER_SECRETKEYBYTES-2*KYBER_SYMBYTES, pk, KYBER_PUBLICKEYBYTES);
+  hash_h(sk+MLKEM_SECRETKEYBYTES-2*MLKEM_SYMBYTES, pk, MLKEM_PUBLICKEYBYTES);
 
-  memcpy(sk+KYBER_SECRETKEYBYTES-KYBER_SYMBYTES, randomness + KYBER_SYMBYTES, KYBER_SYMBYTES);
+  memcpy(sk+MLKEM_SECRETKEYBYTES-MLKEM_SYMBYTES, randomness + MLKEM_SYMBYTES, MLKEM_SYMBYTES);
 }
 
 /*************************************************
@@ -78,10 +78,10 @@ void crypto_kem_keypair(unsigned char *pk,
 * Description: Generates cipher text and shared
 *              secret for given public key
 *
-* Arguments:   - unsigned char *c:          pointer to output ciphertext (of length KYBER_INDCPA_BYTES bytes)
-*              - const unsigned char *m:    pointer to input message (of length KYBER_INDCPA_MSGBYTES bytes)
-*              - const unsigned char *pk:   pointer to input public key (of length KYBER_INDCPA_PUBLICKEYBYTES bytes)
-*              - const unsigned char *coin: pointer to input random coins used as seed (of length KYBER_SYMBYTES bytes)
+* Arguments:   - unsigned char *c:          pointer to output ciphertext (of length MLKEM_INDCPA_BYTES bytes)
+*              - const unsigned char *m:    pointer to input message (of length MLKEM_INDCPA_MSGBYTES bytes)
+*              - const unsigned char *pk:   pointer to input public key (of length MLKEM_INDCPA_PUBLICKEYBYTES bytes)
+*              - const unsigned char *coin: pointer to input random coins used as seed (of length MLKEM_SYMBYTES bytes)
 *                                           to deterministically generate all randomness
 **************************************************/
 void crypto_kem_enc(unsigned char *ct,
@@ -89,20 +89,20 @@ void crypto_kem_enc(unsigned char *ct,
                 const unsigned char *pk,
                 const unsigned char *coins)
 {
-  uint8_t buf[2*KYBER_SYMBYTES];
+  uint8_t buf[2*MLKEM_SYMBYTES];
   /* Will contain key, coins */
-  uint8_t kr[2*KYBER_SYMBYTES];
+  uint8_t kr[2*MLKEM_SYMBYTES];
 
-  memcpy(buf, coins, KYBER_SYMBYTES);
+  memcpy(buf, coins, MLKEM_SYMBYTES);
 
   /* Multitarget countermeasure for coins + contributory KEM */
-  hash_h(buf+KYBER_SYMBYTES, pk, KYBER_PUBLICKEYBYTES);
-  hash_g(kr, buf, 2*KYBER_SYMBYTES);
+  hash_h(buf+MLKEM_SYMBYTES, pk, MLKEM_PUBLICKEYBYTES);
+  hash_g(kr, buf, 2*MLKEM_SYMBYTES);
 
-  /* coins are in kr+KYBER_SYMBYTES */
-  indcpa_enc(ct, buf, pk, kr+KYBER_SYMBYTES);
+  /* coins are in kr+MLKEM_SYMBYTES */
+  indcpa_enc(ct, buf, pk, kr+MLKEM_SYMBYTES);
 
-  memcpy(ss,kr,KYBER_SYMBYTES);
+  memcpy(ss,kr,MLKEM_SYMBYTES);
 }
 
 /*************************************************
@@ -111,35 +111,35 @@ void crypto_kem_enc(unsigned char *ct,
 * Description: Generates shared secret for given
 *              cipher text and private key
 *
-* Arguments:   - unsigned char *m:        pointer to output decrypted message (of length KYBER_INDCPA_MSGBYTES)
-*              - const unsigned char *c:  pointer to input ciphertext (of length KYBER_INDCPA_BYTES)
-*              - const unsigned char *sk: pointer to input secret key (of length KYBER_INDCPA_SECRETKEYBYTES)
+* Arguments:   - unsigned char *m:        pointer to output decrypted message (of length MLKEM_INDCPA_MSGBYTES)
+*              - const unsigned char *c:  pointer to input ciphertext (of length MLKEM_INDCPA_BYTES)
+*              - const unsigned char *sk: pointer to input secret key (of length MLKEM_INDCPA_SECRETKEYBYTES)
 **************************************************/
 void crypto_kem_dec(uint8_t *ss,
                 const uint8_t *ct,
                 const uint8_t *sk)
 {
   int fail;
-  uint8_t buf[2*KYBER_SYMBYTES];
+  uint8_t buf[2*MLKEM_SYMBYTES];
   /* Will contain key, coins */
-  uint8_t kr[2*KYBER_SYMBYTES];
-  uint8_t cmp[KYBER_CIPHERTEXTBYTES+KYBER_SYMBYTES];
-  const uint8_t *pk = sk+KYBER_INDCPA_SECRETKEYBYTES;
+  uint8_t kr[2*MLKEM_SYMBYTES];
+  uint8_t cmp[MLKEM_CIPHERTEXTBYTES+MLKEM_SYMBYTES];
+  const uint8_t *pk = sk+MLKEM_INDCPA_SECRETKEYBYTES;
 
   indcpa_dec(buf, ct, sk);
 
   /* Multitarget countermeasure for coins + contributory KEM */
-  memcpy(buf+KYBER_SYMBYTES, sk+KYBER_SECRETKEYBYTES-2*KYBER_SYMBYTES, KYBER_SYMBYTES);
-  hash_g(kr, buf, 2*KYBER_SYMBYTES);
+  memcpy(buf+MLKEM_SYMBYTES, sk+MLKEM_SECRETKEYBYTES-2*MLKEM_SYMBYTES, MLKEM_SYMBYTES);
+  hash_g(kr, buf, 2*MLKEM_SYMBYTES);
 
-  /* coins are in kr+KYBER_SYMBYTES */
-  indcpa_enc(cmp, buf, pk, kr+KYBER_SYMBYTES);
+  /* coins are in kr+MLKEM_SYMBYTES */
+  indcpa_enc(cmp, buf, pk, kr+MLKEM_SYMBYTES);
 
-  fail = verify(ct, cmp, KYBER_CIPHERTEXTBYTES);
+  fail = verify(ct, cmp, MLKEM_CIPHERTEXTBYTES);
 
   /* Compute rejection key */
-  rkprf(ss,sk+KYBER_SECRETKEYBYTES-KYBER_SYMBYTES,ct);
+  rkprf(ss,sk+MLKEM_SECRETKEYBYTES-MLKEM_SYMBYTES,ct);
 
   /* Copy true key to return buffer if fail is false */
-  cmov(ss,kr,KYBER_SYMBYTES,!fail);
+  cmov(ss,kr,MLKEM_SYMBYTES,!fail);
 }

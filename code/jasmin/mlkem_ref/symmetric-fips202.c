@@ -3,29 +3,29 @@
 #include "fips202.h"
 
 /*************************************************
-* Name:        kyber_shake128_absorb
+* Name:        mlkem_shake128_absorb
 *
 * Description: Absorb step of the SHAKE128 specialized for the Kyber context.
 *
 * Arguments:   - uint64_t *s:                     pointer to (uninitialized) output Keccak state
-*              - const unsigned char *input:      pointer to KYBER_SYMBYTES input to be absorbed into s
+*              - const unsigned char *input:      pointer to MLKEM_SYMBYTES input to be absorbed into s
 *              - unsigned char i                  additional byte of input
 *              - unsigned char j                  additional byte of input
 **************************************************/
-void kyber_shake128_absorb(keccak_state *s, const unsigned char *input, unsigned char x, unsigned char y)
+void mlkem_shake128_absorb(keccak_state *s, const unsigned char *input, unsigned char x, unsigned char y)
 {
-  unsigned char extseed[KYBER_SYMBYTES+2];
+  unsigned char extseed[MLKEM_SYMBYTES+2];
   int i;
 
-  for(i=0;i<KYBER_SYMBYTES;i++)
+  for(i=0;i<MLKEM_SYMBYTES;i++)
     extseed[i] = input[i];
   extseed[i++] = x;
   extseed[i]   = y;
-  shake128_absorb(s->s, extseed, KYBER_SYMBYTES+2);
+  shake128_absorb(s->s, extseed, MLKEM_SYMBYTES+2);
 }
 
 /*************************************************
-* Name:        kyber_shake128_squeezeblocks
+* Name:        mlkem_shake128_squeezeblocks
 *
 * Description: Squeeze step of SHAKE128 XOF. Squeezes full blocks of SHAKE128_RATE bytes each.
 *              Modifies the state. Can be called multiple times to keep squeezing,
@@ -35,7 +35,7 @@ void kyber_shake128_absorb(keccak_state *s, const unsigned char *input, unsigned
 *              - unsigned long long nblocks: number of blocks to be squeezed (written to output)
 *              - keccak_state *s:            pointer to in/output Keccak state
 **************************************************/
-void kyber_shake128_squeezeblocks(unsigned char *output, unsigned long long nblocks, keccak_state *s)
+void mlkem_shake128_squeezeblocks(unsigned char *output, unsigned long long nblocks, keccak_state *s)
 {
   shake128_squeezeblocks(output, nblocks, s->s);
 }
@@ -48,30 +48,30 @@ void kyber_shake128_squeezeblocks(unsigned char *output, unsigned long long nblo
 *              
 * Arguments:   - unsigned char *output:      pointer to output
 *              - unsigned long long outlen:  number of requested output bytes
-*              - const unsigned char * key:  pointer to the key (of length KYBER_SYMBYTES)
+*              - const unsigned char * key:  pointer to the key (of length MLKEM_SYMBYTES)
 *              - const unsigned char nonce:  single-byte nonce (public PRF input)
 **************************************************/
 void shake256_prf(unsigned char *output, unsigned long long outlen, const unsigned char *key, const unsigned char nonce)
 {
-  unsigned char extkey[KYBER_SYMBYTES+1];
+  unsigned char extkey[MLKEM_SYMBYTES+1];
   size_t i;
 
-  for(i=0;i<KYBER_SYMBYTES;i++)
+  for(i=0;i<MLKEM_SYMBYTES;i++)
     extkey[i] = key[i];
   extkey[i] = nonce;
   
-  shake256(output, outlen, extkey, KYBER_SYMBYTES+1);
+  shake256(output, outlen, extkey, MLKEM_SYMBYTES+1);
 }
 
 void shake256_rkprf(unsigned char *out, const unsigned char *key, const unsigned char *input)
 {
-  unsigned char extkey[KYBER_SYMBYTES+KYBER_CIPHERTEXTBYTES];
+  unsigned char extkey[MLKEM_SYMBYTES+MLKEM_CIPHERTEXTBYTES];
   size_t i;
 
-  for(i=0;i<KYBER_SYMBYTES;i++)
+  for(i=0;i<MLKEM_SYMBYTES;i++)
     extkey[i] = key[i];
-  for(i=0;i<KYBER_CIPHERTEXTBYTES;i++)
-    extkey[i+KYBER_SYMBYTES] = input[i];
+  for(i=0;i<MLKEM_CIPHERTEXTBYTES;i++)
+    extkey[i+MLKEM_SYMBYTES] = input[i];
   
-  shake256(out, KYBER_SYMBYTES, extkey, KYBER_SYMBYTES+KYBER_CIPHERTEXTBYTES);
+  shake256(out, MLKEM_SYMBYTES, extkey, MLKEM_SYMBYTES+MLKEM_CIPHERTEXTBYTES);
 }

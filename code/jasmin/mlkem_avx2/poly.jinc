@@ -5,7 +5,7 @@ require "reduce.jinc"
 require "fips202.jinc"
 require "fips202_4x.jinc"
 
-fn _poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
+fn _poly_add2(reg ptr u16[MLKEM_N] rp bp) -> stack u16[MLKEM_N]
 {
   inline int i;
   reg u256 a;
@@ -22,7 +22,7 @@ fn _poly_add2(reg ptr u16[KYBER_N] rp bp) -> stack u16[KYBER_N]
   return rp;
 }
 
-fn _poly_csubq(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_csubq(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 r qx16;
   inline int i;
@@ -112,7 +112,7 @@ fn __schoolbook16x(reg u256 are aim bre bim zeta zetaqinv qx16 qinvx16, inline i
   return x0, y0;
 }
 
-fn _poly_basemul(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
+fn _poly_basemul(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 zeta zetaqinv qx16 qinvx16 are aim bre bim;
   
@@ -203,7 +203,7 @@ u16 pc_mask_s = 0x0F;
 u16 pc_shift2_s = 0x1001;
 u32[8] pc_permidx_s = {0,4,1,5,2,6,3,7};
 
-fn _poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
+fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f0 f1 f2 f3 v shift1 mask shift2 permidx;
@@ -218,7 +218,7 @@ fn _poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   shift2 = #VPBROADCAST_16u16(pc_shift2_s);
   permidx = pc_permidx_s[u256 0];
 
-  for i=0 to KYBER_N/64
+  for i=0 to MLKEM_N/64
   {
     f0 = a[u256 4*i];
     f1 = a[u256 4*i + 1];
@@ -248,7 +248,7 @@ fn _poly_compress(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   return a;
 }
 
-fn _poly_compress_1(reg ptr u8[KYBER_POLYCOMPRESSEDBYTES] rp, reg ptr u16[KYBER_N] a) -> reg ptr u8[KYBER_POLYCOMPRESSEDBYTES], reg ptr u16[KYBER_N]
+fn _poly_compress_1(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f0 f1 f2 f3 v shift1 mask shift2 permidx;
@@ -263,7 +263,7 @@ fn _poly_compress_1(reg ptr u8[KYBER_POLYCOMPRESSEDBYTES] rp, reg ptr u16[KYBER_
   shift2 = #VPBROADCAST_16u16(pc_shift2_s);
   permidx = pc_permidx_s[u256 0];
 
-  for i=0 to KYBER_N/64
+  for i=0 to MLKEM_N/64
   {
     f0 = a[u256 4*i];
     f1 = a[u256 4*i + 1];
@@ -298,7 +298,7 @@ u8[32] pd_jshufbidx = {0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,
 u32 pd_mask_s = 0x00F0000F;
 u32 pd_shift_s = 0x800800;
 
-fn _poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
+fn _poly_decompress(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> stack u16[MLKEM_N]
 {
   inline int i;
   reg u256 f q shufbidx mask shift;
@@ -314,7 +314,7 @@ fn _poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 
   f = #set0_256();
 
-  for i=0 to KYBER_N/16
+  for i=0 to MLKEM_N/16
   {
     f = #VPBROADCAST_2u128((u128)[ap + 8*i]);
     f = #VPSHUFB_256(f, shufbidx);
@@ -328,7 +328,7 @@ fn _poly_decompress(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 }
 
 
-fn _poly_frombytes(reg ptr u16[KYBER_N] rp, reg u64 ap) -> reg ptr u16[KYBER_N]
+fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 tt mask;
@@ -403,9 +403,9 @@ fn _poly_frombytes(reg ptr u16[KYBER_N] rp, reg u64 ap) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
-param int DMONT   = 1353;      /* (1ULL << 32) % KYBER_Q */
+param int DMONT   = 1353;      /* (1ULL << 32) % MLKEM_Q */
 
-fn _poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_frommont(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 t qx16 qinvx16 dmontx16;
   inline int i;
@@ -418,7 +418,7 @@ fn _poly_frommont(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   x16p = jdmontx16;
   dmontx16 = x16p[u256 0];
 
-  for i=0 to KYBER_N/16
+  for i=0 to MLKEM_N/16
   {
     t = rp[u256 i];
     t = __fqmulx16(t, dmontx16, qx16, qinvx16);
@@ -432,7 +432,7 @@ u32[4] pfm_shift_s = {3, 2, 1, 0};
 u8[16] pfm_idx_s = {0, 1, 4, 5, 8, 9, 12, 13,
                 2, 3, 6, 7, 10, 11, 14, 15};
 
-fn _poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
+fn _poly_frommsg(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> stack u16[MLKEM_N]
 {
   inline int i;
   reg u256 f g0 g1 g2 g3 h0 h1 h2 h3;
@@ -480,7 +480,7 @@ fn _poly_frommsg(reg ptr u16[KYBER_N] rp, reg u64 ap) -> stack u16[KYBER_N]
 }
 
 
-fn _poly_frommsg_1(reg ptr u16[KYBER_N] rp, reg ptr u8[32] ap) -> stack u16[KYBER_N]
+fn _poly_frommsg_1(reg ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> stack u16[MLKEM_N]
 {
   inline int i;
   reg u256 f g0 g1 g2 g3 h0 h1 h2 h3;
@@ -528,13 +528,13 @@ fn _poly_frommsg_1(reg ptr u16[KYBER_N] rp, reg ptr u8[32] ap) -> stack u16[KYBE
 }
 
 
-param int NOISE_NBLOCKS = (KYBER_ETA1 * KYBER_N/4 + SHAKE256_RATE - 1)/SHAKE256_RATE;
+param int NOISE_NBLOCKS = (MLKEM_ETA1 * MLKEM_N/4 + SHAKE256_RATE - 1)/SHAKE256_RATE;
 
 u8[32] cbd_jshufbidx = {0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1,
                         4, 5, 6, -1, 7, 8, 9, -1, 10, 11, 12, -1, 13, 14, 15, -1};
 
 inline
-fn __cbd3(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8] buf) -> reg ptr u16[KYBER_N]{
+fn __cbd3(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8] buf) -> reg ptr u16[MLKEM_N]{
   inline int i;
   reg u256 f0 f1 f2 f3;
   reg u256 mask249 mask6DB mask07 mask70 mask3 shufbidx;
@@ -554,7 +554,7 @@ fn __cbd3(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 -
   mask3   = #VPBROADCAST_16u16(mask3_s);
   shufbidx = cbd_jshufbidx[u256 0];
 
-  for i=0 to KYBER_N/32
+  for i=0 to MLKEM_N/32
   {
     f0 = buf.[u256 24*i];
     f0 = #VPERMQ(f0, 0x94);
@@ -599,7 +599,7 @@ fn __cbd3(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 -
 
 
 inline
-fn __cbd2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf) -> reg ptr u16[KYBER_N]
+fn __cbd2(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA2*MLKEM_N/4] buf) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f0 f1 f2 f3;
@@ -617,7 +617,7 @@ fn __cbd2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf) -> reg 
   mask03 = #VPBROADCAST_8u32(mask03_s);
   mask0F = #VPBROADCAST_8u32(mask0F_s);
 
-  for i=0 to KYBER_N/64
+  for i=0 to MLKEM_N/64
   {
     f0 = buf[u256 i];
 
@@ -658,12 +658,12 @@ fn __cbd2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf) -> reg 
   return rp;
 }
 
-/* buf 32 bytes longer for cbd3 (KYBER_ETA1 == 3) */
+/* buf 32 bytes longer for cbd3 (MLKEM_ETA1 == 3) */
 inline
-fn __poly_cbd_eta1(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8] buf) -> reg ptr u16[KYBER_N]
+fn __poly_cbd_eta1(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8] buf) -> reg ptr u16[MLKEM_N]
 {
-  if(KYBER_ETA1 == 2) { // resolved at compile-time
-    rp = __cbd2(rp, buf[0:KYBER_ETA2*KYBER_N/4]);
+  if(MLKEM_ETA1 == 2) { // resolved at compile-time
+    rp = __cbd2(rp, buf[0:MLKEM_ETA2*MLKEM_N/4]);
   } else {
     rp = __cbd3(rp, buf);
   }
@@ -672,9 +672,9 @@ fn __poly_cbd_eta1(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA1*KYBER_N/4+(KYB
 }
 
 inline
-fn __poly_cbd_eta2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf) -> reg ptr u16[KYBER_N]
+fn __poly_cbd_eta2(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA2*MLKEM_N/4] buf) -> reg ptr u16[MLKEM_N]
 {
-  if(KYBER_ETA2 == 2) {
+  if(MLKEM_ETA2 == 2) {
     rp = __cbd2(rp, buf);
   }
   return rp;
@@ -682,14 +682,14 @@ fn __poly_cbd_eta2(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_ETA2*KYBER_N/4] buf
 
 /*
 #[returnaddress="stack"]
-fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N]
+fn _poly_getnoise(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f0 f1 f2 f3;
   reg u256 mask55 mask33 mask03 mask0F;
   reg u128 t;
   reg u64 t64;
-  stack ptr u16[KYBER_N] srp;
+  stack ptr u16[MLKEM_N] srp;
   stack u8[128] buf;
   stack u8[33] extseed;
   stack u32 mask55_s mask33_s mask03_s mask0F_s;
@@ -701,12 +701,12 @@ fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg 
 
   srp = rp;
 
-  for i=0 to KYBER_SYMBYTES/8
+  for i=0 to MLKEM_SYMBYTES/8
   {
     t64 = seed[u64 i];
     extseed[u64 i] = t64;
   }
-  extseed[KYBER_SYMBYTES] = nonce;
+  extseed[MLKEM_SYMBYTES] = nonce;
 
   buf = _shake256_128_33(buf, extseed);
 
@@ -717,7 +717,7 @@ fn _poly_getnoise(reg ptr u16[KYBER_N] rp, reg ptr u8[KYBER_SYMBYTES] seed, reg 
 
   rp = srp;
 
-  for i=0 to KYBER_N/64
+  for i=0 to MLKEM_N/64
   {
     f0 = buf[u256 i];
 
@@ -773,7 +773,7 @@ fn __shake256_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[NOISE_NBLOCKS 
 }
 
 #[returnaddress="stack"]
-fn _poly_getnoise_eta1_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N]
+fn _poly_getnoise_eta1_4x(reg ptr u16[MLKEM_N] r0 r1 r2 r3, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N]
 {
   reg u256 f;
   stack u256[25] state;
@@ -796,16 +796,16 @@ fn _poly_getnoise_eta1_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYM
   state = _shake256_absorb4x_33(state, buf0[0:33], buf1[0:33], buf2[0:33], buf3[0:33]);
   state, buf0, buf1, buf2, buf3 = __shake256_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
 
-  r0 = __poly_cbd_eta1(r0, buf0[0:KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8]);
-  r1 = __poly_cbd_eta1(r1, buf1[0:KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8]);
-  r2 = __poly_cbd_eta1(r2, buf2[0:KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8]);
-  r3 = __poly_cbd_eta1(r3, buf3[0:KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8]);
+  r0 = __poly_cbd_eta1(r0, buf0[0:MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8]);
+  r1 = __poly_cbd_eta1(r1, buf1[0:MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8]);
+  r2 = __poly_cbd_eta1(r2, buf2[0:MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8]);
+  r3 = __poly_cbd_eta1(r3, buf3[0:MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8]);
 
   return r0, r1, r2, r3;
 }
 
 #[returnaddress="stack"]
-fn _poly_getnoise_eta1122_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N], reg ptr u16[KYBER_N]
+fn _poly_getnoise_eta1122_4x(reg ptr u16[MLKEM_N] r0 r1 r2 r3, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N]
 {
   reg u256 f;
   stack u256[25] state;
@@ -828,10 +828,10 @@ fn _poly_getnoise_eta1122_4x(reg ptr u16[KYBER_N] r0 r1 r2 r3, reg ptr u8[KYBER_
   state = _shake256_absorb4x_33(state, buf0[0:33], buf1[0:33], buf2[0:33], buf3[0:33]);
   state, buf0, buf1, buf2, buf3 = __shake256_squeezenblocks4x(state, buf0, buf1, buf2, buf3);
 
-  r0 = __poly_cbd_eta1(r0, buf0[0:KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8]);
-  r1 = __poly_cbd_eta1(r1, buf1[0:KYBER_ETA1*KYBER_N/4+(KYBER_ETA1 - 2)*8]);
-  r2 = __poly_cbd_eta2(r2, buf2[0:KYBER_ETA2*KYBER_N/4]);
-  r3 = __poly_cbd_eta2(r3, buf3[0:KYBER_ETA2*KYBER_N/4]);
+  r0 = __poly_cbd_eta1(r0, buf0[0:MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8]);
+  r1 = __poly_cbd_eta1(r1, buf1[0:MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8]);
+  r2 = __poly_cbd_eta2(r2, buf2[0:MLKEM_ETA2*MLKEM_N/4]);
+  r3 = __poly_cbd_eta2(r3, buf3[0:MLKEM_ETA2*MLKEM_N/4]);
 
   return r0, r1, r2, r3;
 }
@@ -879,7 +879,7 @@ fn __invntt___butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 
   return rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
 }
 
-fn _poly_invntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16 vx16 flox16 fhix16;
   reg ptr u16[400] zetasp;
@@ -1078,7 +1078,7 @@ fn __butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 zh1 qx16)
   return rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
 }
 
-fn _poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16 vx16;
   reg u32 t;
@@ -1235,7 +1235,7 @@ fn _poly_ntt(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
 }
 
 inline
-fn __poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
+fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 r qx16 vx16;
@@ -1252,7 +1252,7 @@ fn __poly_reduce(reg ptr u16[KYBER_N] rp) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
-fn _poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
+fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 a;
@@ -1269,7 +1269,7 @@ fn _poly_sub(reg ptr u16[KYBER_N] rp ap bp) -> reg ptr u16[KYBER_N]
   return rp;
 }
 
-fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
+fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 qx16 tt ttt;
@@ -1340,7 +1340,7 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   return a;
 }
 
-fn _poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
+fn _poly_tomsg(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f0 f1 g0 g1 hq hhq;
@@ -1355,7 +1355,7 @@ fn _poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   px16 = hhqx16;
   hhq = px16[u256 0];
 
-  for i=0 to KYBER_N/32
+  for i=0 to MLKEM_N/32
   {
     f0 = a[u256 2*i];
     f1 = a[u256 2*i + 1];
@@ -1375,7 +1375,7 @@ fn _poly_tomsg(reg u64 rp, reg ptr u16[KYBER_N] a) -> reg ptr u16[KYBER_N]
   return a;
 }
 
-fn _poly_tomsg_1(reg ptr u8[KYBER_INDCPA_MSGBYTES] rp, reg ptr u16[KYBER_N] a) -> reg ptr u8[KYBER_INDCPA_MSGBYTES], reg ptr u16[KYBER_N]
+fn _poly_tomsg_1(reg ptr u8[MLKEM_INDCPA_MSGBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES], reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f0 f1 g0 g1 hq hhq;
@@ -1390,7 +1390,7 @@ fn _poly_tomsg_1(reg ptr u8[KYBER_INDCPA_MSGBYTES] rp, reg ptr u16[KYBER_N] a) -
   px16 = hhqx16;
   hhq = px16[u256 0];
 
-  for i=0 to KYBER_N/32
+  for i=0 to MLKEM_N/32
   {
     f0 = a[u256 2*i];
     f1 = a[u256 2*i + 1];

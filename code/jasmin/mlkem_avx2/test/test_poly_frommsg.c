@@ -14,7 +14,7 @@ int main(void)
   poly_frommsg(&r0, in);
   poly_frommsg_jazz(&r1, in);
 
-  for(int i=0;i<KYBER_N;i++)
+  for(int i=0;i<MLKEM_N;i++)
   {
     if(r0.coeffs[i] != r1.coeffs[i])
       printf("error frombytes %d, %d, %d\n", i, r0.coeffs[i], r1.coeffs[i]);

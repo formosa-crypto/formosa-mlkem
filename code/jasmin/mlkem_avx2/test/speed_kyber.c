@@ -74,22 +74,22 @@ void print_results(const char *s, uint64_t *t, size_t tlen) {
 
 int main(void)
 {
-  unsigned char sk[KYBER_INDCPA_SECRETKEYBYTES];
-  unsigned char pk[KYBER_INDCPA_PUBLICKEYBYTES];
-  unsigned char ct[KYBER_INDCPA_BYTES];
-  unsigned char randomness0[KYBER_SYMBYTES];
-  unsigned char randomness1[KYBER_SYMBYTES];
-  unsigned char message[KYBER_INDCPA_MSGBYTES];
-  unsigned char outmsg[KYBER_POLYVECBYTES];
+  unsigned char sk[MLKEM_INDCPA_SECRETKEYBYTES];
+  unsigned char pk[MLKEM_INDCPA_PUBLICKEYBYTES];
+  unsigned char ct[MLKEM_INDCPA_BYTES];
+  unsigned char randomness0[MLKEM_SYMBYTES];
+  unsigned char randomness1[MLKEM_SYMBYTES];
+  unsigned char message[MLKEM_INDCPA_MSGBYTES];
+  unsigned char outmsg[MLKEM_POLYVECBYTES];
   
-  polyvec a[KYBER_K];
-  uint8_t seed[KYBER_SYMBYTES] = {0};
+  polyvec a[MLKEM_K];
+  uint8_t seed[MLKEM_SYMBYTES] = {0};
   poly ap;
 
   FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, KYBER_SYMBYTES, 1, urandom);
-  fread(randomness1, KYBER_SYMBYTES, 1, urandom);
-  fread(message, KYBER_SYMBYTES, 1, urandom);
+  fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
+  fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
+  fread(message, MLKEM_SYMBYTES, 1, urandom);
   
   uint64_t t[NRUNS], i;
 
@@ -219,7 +219,7 @@ int main(void)
     t[i] = cpucycles();
     crypto_kem_keypair_jazz(pk, sk, randomness0);
   }
-  print_results("kyber_keypair: ", t, NRUNS);
+  print_results("mlkem_keypair: ", t, NRUNS);
 
   /* Test KEM ENCAPSULATION */
   for(i=0;i<NRUNS;i++)
@@ -227,7 +227,7 @@ int main(void)
     t[i] = cpucycles();
     crypto_kem_enc_jazz(ct, message, pk, randomness1);
   }
-  print_results("kyber_encaps: ", t, NRUNS);
+  print_results("mlkem_encaps: ", t, NRUNS);
 
   /* Test KEM DECAPSULATION */
   for(i=0;i<NRUNS;i++)
@@ -235,7 +235,7 @@ int main(void)
     t[i] = cpucycles();
     crypto_kem_dec_jazz(outmsg, ct, sk);
   }
-  print_results("kyber_decaps: ", t, NRUNS);
+  print_results("mlkem_decaps: ", t, NRUNS);
   
   return 0;
 }

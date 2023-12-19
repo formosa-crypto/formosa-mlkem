@@ -3,21 +3,21 @@ require "poly.jinc"
 require "shuffle.jinc"
 
 inline
-fn __polyvec_add2(stack u16[KYBER_VECN] r, stack u16[KYBER_VECN] b) -> stack u16[KYBER_VECN]
+fn __polyvec_add2(stack u16[MLKEM_VECN] r, stack u16[MLKEM_VECN] b) -> stack u16[MLKEM_VECN]
 {
-  r[0:KYBER_N]         = _poly_add2(r[0:KYBER_N], b[0:KYBER_N]);
-  r[KYBER_N:KYBER_N]   = _poly_add2(r[KYBER_N:KYBER_N], b[KYBER_N:KYBER_N]);
-  r[2*KYBER_N:KYBER_N] = _poly_add2(r[2*KYBER_N:KYBER_N], b[2*KYBER_N:KYBER_N]);
+  r[0:MLKEM_N]         = _poly_add2(r[0:MLKEM_N], b[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N]   = _poly_add2(r[MLKEM_N:MLKEM_N], b[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_add2(r[2*MLKEM_N:MLKEM_N], b[2*MLKEM_N:MLKEM_N]);
 
   return r;
 }
 
 inline
-fn __polyvec_csubq(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
+fn __polyvec_csubq(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
 {
-  r[0:KYBER_N] = _poly_csubq(r[0:KYBER_N]);
-  r[KYBER_N:KYBER_N] = _poly_csubq(r[KYBER_N:KYBER_N]);
-  r[2*KYBER_N:KYBER_N] = _poly_csubq(r[2*KYBER_N:KYBER_N]);
+  r[0:MLKEM_N] = _poly_csubq(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = _poly_csubq(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_csubq(r[2*MLKEM_N:MLKEM_N]);
 
   return r;
 }
@@ -31,20 +31,20 @@ u64 pvd_sllvdidx_s = 0x04;
 u32 pvd_mask_s = 0x7fe01ff8;
 
 inline
-fn __polyvec_decompress(reg u64 rp) -> stack u16[KYBER_VECN]
+fn __polyvec_decompress(reg u64 rp) -> stack u16[MLKEM_VECN]
 {
   inline int i k;
   reg u256 f q shufbidx sllvdidx mask;
-  stack u16[KYBER_VECN] r;
+  stack u16[MLKEM_VECN] r;
 
   q = #VPBROADCAST_8u32(pvd_q_s);
   shufbidx = pvd_shufbdidx_s[u256 0];
   sllvdidx = #VPBROADCAST_4u64(pvd_sllvdidx_s);
   mask = #VPBROADCAST_8u32(pvd_mask_s);
 
-  for k=0 to KYBER_K
+  for k=0 to MLKEM_K
   {
-    for i=0 to KYBER_N/16
+    for i=0 to MLKEM_N/16
     {
       f = (u256)[rp + 320 * k + 20 * i];
       f = #VPERMQ(f, 0x94);
@@ -69,7 +69,7 @@ u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 8, 9, 10, 11, 12, -1, -1, -1, -1, -1, -1
                          9, 10, 11, 12, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 8};
 
 inline
-fn __polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
+fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
 {
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx shufbidx;
@@ -88,7 +88,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
   sllvdidx = #VPBROADCAST_4u64(pvc_sllvdidx_s);
   shufbidx = pvc_shufbidx_s[u256 0];
 
-  for i=0 to KYBER_VECN/16
+  for i=0 to MLKEM_VECN/16
   {
     f0 = a[u256 i];
     f1 = #VPMULL_16u16(f0, v8);
@@ -114,7 +114,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[KYBER_VECN] a)
 }
 
 inline
-fn __polyvec_compress_1(reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES] rp, stack u16[KYBER_VECN] a) -> reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES]
+fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
 {
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx shufbidx;
@@ -133,7 +133,7 @@ fn __polyvec_compress_1(reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES] rp, stack u16[K
   sllvdidx = #VPBROADCAST_4u64(pvc_sllvdidx_s);
   shufbidx = pvc_shufbidx_s[u256 0];
 
-  for i=0 to KYBER_VECN/16
+  for i=0 to MLKEM_VECN/16
   {
     f0 = a[u256 i];
     f1 = #VPMULL_16u16(f0, v8);
@@ -161,64 +161,64 @@ fn __polyvec_compress_1(reg ptr u8[KYBER_POLYVECCOMPRESSEDBYTES] rp, stack u16[K
 }
 
 inline
-fn __polyvec_frombytes(reg u64 ap) -> stack u16[KYBER_VECN]
+fn __polyvec_frombytes(reg u64 ap) -> stack u16[MLKEM_VECN]
 {
-  stack u16[KYBER_VECN] r;
+  stack u16[MLKEM_VECN] r;
   reg u64 pp;
 
   pp = ap;
-  r[0:KYBER_N] = _poly_frombytes(r[0:KYBER_N], pp);
-  pp += KYBER_POLYBYTES;
-  r[KYBER_N:KYBER_N] = _poly_frombytes(r[KYBER_N:KYBER_N], pp);
-  pp += KYBER_POLYBYTES;
-  r[2*KYBER_N:KYBER_N] = _poly_frombytes(r[2*KYBER_N:KYBER_N], pp);
+  r[0:MLKEM_N] = _poly_frombytes(r[0:MLKEM_N], pp);
+  pp += MLKEM_POLYBYTES;
+  r[MLKEM_N:MLKEM_N] = _poly_frombytes(r[MLKEM_N:MLKEM_N], pp);
+  pp += MLKEM_POLYBYTES;
+  r[2*MLKEM_N:MLKEM_N] = _poly_frombytes(r[2*MLKEM_N:MLKEM_N], pp);
 
   return r;
 }
 
 
 inline
-fn __polyvec_invntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
+fn __polyvec_invntt(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
 {
-  r[0:KYBER_N] = _poly_invntt(r[0:KYBER_N]);
-  r[KYBER_N:KYBER_N] = _poly_invntt(r[KYBER_N:KYBER_N]);
-  r[2*KYBER_N:KYBER_N] = _poly_invntt(r[2*KYBER_N:KYBER_N]);
+  r[0:MLKEM_N] = _poly_invntt(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = _poly_invntt(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_invntt(r[2*MLKEM_N:MLKEM_N]);
 
   return r;
 }
 
 
 inline
-fn __polyvec_ntt(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
+fn __polyvec_ntt(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
 {
-  r[0:KYBER_N] = _poly_ntt(r[0:KYBER_N]);
-  r[KYBER_N:KYBER_N] = _poly_ntt(r[KYBER_N:KYBER_N]);
-  r[2*KYBER_N:KYBER_N] = _poly_ntt(r[2*KYBER_N:KYBER_N]);
+  r[0:MLKEM_N] = _poly_ntt(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = _poly_ntt(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_ntt(r[2*MLKEM_N:MLKEM_N]);
 
   return r;
 }
 
 
 inline
-fn __polyvec_reduce(stack u16[KYBER_VECN] r) -> stack u16[KYBER_VECN]
+fn __polyvec_reduce(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
 {
-  r[0:KYBER_N] = __poly_reduce(r[0:KYBER_N]);
-  r[KYBER_N:KYBER_N] = __poly_reduce(r[KYBER_N:KYBER_N]);
-  r[2*KYBER_N:KYBER_N] = __poly_reduce(r[2*KYBER_N:KYBER_N]);
+  r[0:MLKEM_N] = __poly_reduce(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = __poly_reduce(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = __poly_reduce(r[2*MLKEM_N:MLKEM_N]);
 
   return r;
 }
 
 
 inline
-fn __polyvec_pointwise_acc(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> stack u16[KYBER_N]
+fn __polyvec_pointwise_acc(stack u16[MLKEM_N] r, stack u16[MLKEM_VECN] a b) -> stack u16[MLKEM_N]
 {
-  stack u16[KYBER_N] t;
+  stack u16[MLKEM_N] t;
 
-  r = _poly_basemul(r, a[0:KYBER_N], b[0:KYBER_N]);
-  t = _poly_basemul(t, a[KYBER_N:KYBER_N], b[KYBER_N:KYBER_N]);
+  r = _poly_basemul(r, a[0:MLKEM_N], b[0:MLKEM_N]);
+  t = _poly_basemul(t, a[MLKEM_N:MLKEM_N], b[MLKEM_N:MLKEM_N]);
   r = _poly_add2(r, t);
-  t = _poly_basemul(t, a[2*KYBER_N:KYBER_N], b[2*KYBER_N:KYBER_N]);
+  t = _poly_basemul(t, a[2*MLKEM_N:MLKEM_N], b[2*MLKEM_N:MLKEM_N]);
   r = _poly_add2(r, t);
 
   // r = __poly_reduce(r);
@@ -228,14 +228,14 @@ fn __polyvec_pointwise_acc(stack u16[KYBER_N] r, stack u16[KYBER_VECN] a b) -> s
 
 
 inline
-fn __polyvec_tobytes(reg u64 rp, stack u16[KYBER_VECN] a)
+fn __polyvec_tobytes(reg u64 rp, stack u16[MLKEM_VECN] a)
 {
   reg u64 pp;
 
   pp = rp;
-  a[0:KYBER_N] = _poly_tobytes(pp, a[0:KYBER_N]);
-  pp += KYBER_POLYBYTES;
-  a[KYBER_N:KYBER_N] = _poly_tobytes(pp, a[KYBER_N:KYBER_N]);
-  pp += KYBER_POLYBYTES;
-  a[2*KYBER_N:KYBER_N] = _poly_tobytes(pp, a[2*KYBER_N:KYBER_N]);
+  a[0:MLKEM_N] = _poly_tobytes(pp, a[0:MLKEM_N]);
+  pp += MLKEM_POLYBYTES;
+  a[MLKEM_N:MLKEM_N] = _poly_tobytes(pp, a[MLKEM_N:MLKEM_N]);
+  pp += MLKEM_POLYBYTES;
+  a[2*MLKEM_N:MLKEM_N] = _poly_tobytes(pp, a[2*MLKEM_N:MLKEM_N]);
 }

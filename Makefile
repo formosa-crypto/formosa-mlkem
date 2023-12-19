@@ -2,7 +2,7 @@
 
 # --------------------------------------------------------------------
 ECCONF := config/tests.config 
-CHECKS ?= kyber
+CHECKS ?= mlkem
 
 # --------------------------------------------------------------------
 .PHONY: default check checkec jasmin clean_eco
@@ -12,9 +12,8 @@ default: check
 check: jasmin checkec
 
 jasmin:
-	make -C code/jasmin/ref/extraction
-	make -C code/jasmin/avx2/extraction
-	make -C code/jasmin/avx2v/extraction
+	make -C code/jasmin/mlkem_ref/extraction
+	make -C code/jasmin/mlkem_avx2v/extraction
 
 checkec:
 	easycrypt runtest $(ECCONF) $(CHECKS)

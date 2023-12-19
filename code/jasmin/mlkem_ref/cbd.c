@@ -27,19 +27,19 @@ static uint32_t load32_littleendian(const unsigned char *x)
 *
 * Description: Given an array of uniformly random bytes, compute
 *              polynomial with coefficients distributed according to
-*              a centered binomial distribution with parameter KYBER_ETA
+*              a centered binomial distribution with parameter MLKEM_ETA
 *
 * Arguments:   - poly *r:                  pointer to output polynomial
 *              - const unsigned char *buf: pointer to input byte array
 **************************************************/
 void cbd(poly *r, const unsigned char *buf)
 {
-#if KYBER_ETA == 2
+#if MLKEM_ETA == 2
   uint32_t d,t;
   int16_t a,b;
   int i,j;
 
-  for(i=0;i<KYBER_N/8;i++)
+  for(i=0;i<MLKEM_N/8;i++)
   {
     t = load32_littleendian(buf+4*i);
     d  = t & 0x55555555;
