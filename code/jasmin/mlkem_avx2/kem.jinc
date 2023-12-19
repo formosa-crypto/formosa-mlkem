@@ -109,6 +109,7 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   hp = skp + 32;
   hp += 24 * KYBER_K * KYBER_N>>3;
 
+  /* fixme: should loads be 256-bits long? */
   for i=0 to KYBER_SYMBYTES/8
   {
     t64 = (u64)[hp + 8*i];
@@ -133,6 +134,7 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   zp += 64;
   zp += 24 * KYBER_K * KYBER_N>>3;
 
+  /* fixme: should this be done in memory? */
   shkp = s_shkp;
   _shake256_1120_32(shkp, zp, ctp);  
 
