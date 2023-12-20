@@ -4,32 +4,32 @@ require import Fq Array4 Array8 Array16 Array32 Array128 Array256 Array960 Array
 require import W16extra WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
 require import AVX2_Ops.
 require import Jkem_avx2 Jkem.
-require import KyberPolyvec_avx2_prevec.
-require import KyberPoly_avx2_vec.
-require import KyberPoly_avx2_proof.
-require import KyberPoly_avx2_vec.
+require import MLKEM_PolyVec_avx2_prevec.
+require import MLKEM_Poly_avx2_vec.
+require import MLKEM_Poly_avx2_proof.
+require import MLKEM_Poly_avx2_vec.
 require import Fq_avx2.
-require import KyberPolyVec.
-require import KyberPolyvec_avx2_vec.
+require import MLKEM_PolyVec.
+require import MLKEM_PolyVec_avx2_vec.
 require import NTT_avx2.
-require import Kyber_AVX2_cf.
-require import KyberFCLib.
-require import Kyber_AVX_AuxLemmas.
+require import MLKEM_avx2_encdec.
+require import MLKEMFCLib.
+require import MLKEM_avx2_auxlemmas.
 
 require import GFq Rq VecMat Serialization Correctness.
 
-theory KyberPolyvecAVX.
+theory MLKEM_PolyvecAVX.
 
 import Fq.
 import SignedReductions.
-import Kyber.
+import MLKEM.
 import Zq.
-import KyberPolyAVX.
-import KyberPolyAVXVec.
-import KyberPolyVec.
-import KyberPolyVecAVXVec.
-import KyberPoly.
-import KyberPoly.
+import MLKEM_PolyAVX.
+import MLKEM_PolyAVXVec.
+import MLKEM_PolyVec.
+import MLKEM_PolyVecAVXVec.
+import MLKEM_Poly.
+import MLKEM_Poly.
 import NTT_Avx2.
 import AVX2_cf.
 import KMatrix.
@@ -49,11 +49,11 @@ proof.
   move => abb bbb.
   proc.
   wp.
-  call (KyberPolyAVX.poly_add_corr_h (Array256.init (fun i => _a.[(2 * 256) + i])) (Array256.init (fun i => _b.[(2 * 256) + i])) ab bb abb bbb).
+  call (MLKEM_PolyAVX.poly_add_corr_h (Array256.init (fun i => _a.[(2 * 256) + i])) (Array256.init (fun i => _b.[(2 * 256) + i])) ab bb abb bbb).
   wp.
-  call (KyberPolyAVX.poly_add_corr_h (Array256.init (fun i => _a.[256 + i])) (Array256.init (fun i => _b.[256 + i])) ab bb abb bbb).
+  call (MLKEM_PolyAVX.poly_add_corr_h (Array256.init (fun i => _a.[256 + i])) (Array256.init (fun i => _b.[256 + i])) ab bb abb bbb).
   wp.
-  call (KyberPolyAVX.poly_add_corr_h (Array256.init (fun i => _a.[0 + i])) (Array256.init (fun i => _b.[0 + i])) ab bb abb bbb).
+  call (MLKEM_PolyAVX.poly_add_corr_h (Array256.init (fun i => _a.[0 + i])) (Array256.init (fun i => _b.[0 + i])) ab bb abb bbb).
   wp. skip.
   move => /= &hr; rewrite /lift_array768 /lift_array256 !tP => [#] _a_def _b_def sgnd_bnd_rp sgnd_bnd_bp.
   split.
@@ -100,7 +100,7 @@ proof.
 qed.
 
 lemma polyvec_add_ll : islossless Mprevec.polyvec_add2
-  by proc; do 3!(wp; call KyberPolyAVX.poly_add_ll).
+  by proc; do 3!(wp; call MLKEM_PolyAVX.poly_add_ll).
 
 lemma polvec_add_corr _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
@@ -128,11 +128,11 @@ lemma polyvec_csubq_corr_h ap :
 proof.
   proc; sp.
   wp.
-  ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
+  ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
   wp.
-  ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
+  ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
   wp.
-  ecall (KyberPolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
+  ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
    wp. skip.
    rewrite /lift_array768 /lift_array256 /pos_bound256_cxq !tP;move => &hr [ap_def pos_bound_r]; split.
    split; trivial; smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
@@ -175,7 +175,7 @@ proof.
 qed.
 
 lemma polyvec_csubq_ll: islossless Mprevec.polyvec_csubq.
-  by proc; do 3!(wp; call KyberPolyAVX.poly_csubq_ll).
+  by proc; do 3!(wp; call MLKEM_PolyAVX.poly_csubq_ll).
 qed.
 
 lemma polyvec_csubq_corr ap:
@@ -1144,11 +1144,11 @@ lemma polyvec_reduce_corr_h _a:
 proof. 
   proc; sp.
   wp.
-  ecall (KyberPolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
+  ecall (MLKEM_PolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
   wp.
-  ecall (KyberPolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
+  ecall (MLKEM_PolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
   wp.
-  ecall (KyberPolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
+  ecall (MLKEM_PolyAVX.poly_reduce_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
   wp. skip.
   move => &hr _a_def.
   split; first by trivial.
@@ -1185,7 +1185,7 @@ proof.
 qed.
 
 lemma polyvec_reduce_ll : islossless Mprevec.polyvec_reduce
-  by proc; do 3!(wp; call KyberPolyAVX.poly_reduce_ll).
+  by proc; do 3!(wp; call MLKEM_PolyAVX.poly_reduce_ll).
 
 lemma polvec_reduce_corr _a:
       phoare[Mprevec.polyvec_reduce:
@@ -1207,9 +1207,9 @@ lemma polyvec_frombytes_corr mem _p:
              Glob.mem{1} = mem ].
 proof.
   proc => /=.
-  wp; ecall (KyberPolyAVX.poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (KyberPolyAVX.load_array384 Glob.mem{1} (_p + 768))).
-  wp; ecall (KyberPolyAVX.poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (KyberPolyAVX.load_array384 Glob.mem{1} (_p + 384))).
-  wp; ecall (KyberPolyAVX.poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (KyberPolyAVX.load_array384 Glob.mem{1} (_p))).
+  wp; ecall (MLKEM_PolyAVX.poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (MLKEM_PolyAVX.load_array384 Glob.mem{1} (_p + 768))).
+  wp; ecall (MLKEM_PolyAVX.poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (MLKEM_PolyAVX.load_array384 Glob.mem{1} (_p + 384))).
+  wp; ecall (MLKEM_PolyAVX.poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (MLKEM_PolyAVX.load_array384 Glob.mem{1} (_p))).
   auto => /> &1.
   rewrite /pos_bound768_cxq /pos_bound256_cxq /load_array384 /load_array1152 /subarray384 /lift_array768 /fromarray256 !tP.
   move => pbl pbh.
@@ -1307,7 +1307,7 @@ proof.
                  by rewrite mem_eq load_def.
                auto => />.
     + proc * => /=.
-      ecall (KyberPolyVec.polyvec_frombytes_corr (Glob.mem{1}) (to_uint ap{1})) => //=.
+      ecall (MLKEM_PolyVec.polyvec_frombytes_corr (Glob.mem{1}) (to_uint ap{1})) => //=.
   symmetry.
   proc * => /=.
   call decode12_opt_vec_corr.
@@ -1327,9 +1327,9 @@ lemma polyvec_tobytes_corr mem _p _a:
             ].
 proof.
   proc => /=.
-  wp;ecall (KyberPolyAVX.poly_tobytes_corr (lift_array256 (nttpack (Array256.init (fun (i : int) => a{1}.[2 * 256 + i])))) (to_uint pp{1}) Glob.mem{1}).
-  wp;ecall (KyberPolyAVX.poly_tobytes_corr (lift_array256 (nttpack (Array256.init (fun (i : int) => a{1}.[256 + i])))) (to_uint pp{1}) Glob.mem{1}).
-  wp;ecall (KyberPolyAVX.poly_tobytes_corr (lift_array256 (nttpack (Array256.init (fun (i : int) => a{1}.[i])))) (to_uint pp{1}) Glob.mem{1}).
+  wp;ecall (MLKEM_PolyAVX.poly_tobytes_corr (lift_array256 (nttpack (Array256.init (fun (i : int) => a{1}.[2 * 256 + i])))) (to_uint pp{1}) Glob.mem{1}).
+  wp;ecall (MLKEM_PolyAVX.poly_tobytes_corr (lift_array256 (nttpack (Array256.init (fun (i : int) => a{1}.[256 + i])))) (to_uint pp{1}) Glob.mem{1}).
+  wp;ecall (MLKEM_PolyAVX.poly_tobytes_corr (lift_array256 (nttpack (Array256.init (fun (i : int) => a{1}.[i])))) (to_uint pp{1}) Glob.mem{1}).
 
   auto => /> &1 &2; rewrite /pos_bound768_cxq /pos_bound256_cxq /lift_array256 /lift_array768 /subarray256 !tP.
   move => bnda1 bnda2 vals pbl pbh.
@@ -1409,5 +1409,5 @@ qed.
 
 
 
-end KyberPolyvecAVX.
+end MLKEM_PolyvecAVX.
 

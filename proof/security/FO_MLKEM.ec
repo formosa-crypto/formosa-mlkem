@@ -526,7 +526,7 @@ proc(CountHx2.c_ht <= CountH.c_h /\ CountHx2.c_hu <= CountH.c_h); 1,2: by smt().
     by trivial.
 qed.
 
-lemma conclusion_fo_kyber &m:
+lemma conclusion_fo_mlkem &m:
     qHT = qHK =>
     qHU = qHK =>
     qH = qHT + qHU + 1 =>

@@ -13,7 +13,7 @@ check: jasmin checkec
 
 jasmin:
 	make -C code/jasmin/mlkem_ref/extraction
-	make -C code/jasmin/mlkem_avx2v/extraction
+	make -C code/jasmin/mlkem_avx2/extraction
 
 checkec:
 	easycrypt runtest $(ECCONF) $(CHECKS)

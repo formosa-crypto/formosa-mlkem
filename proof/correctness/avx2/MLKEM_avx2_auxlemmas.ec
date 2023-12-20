@@ -2,15 +2,15 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 require import Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
 require import W16extra WArray1536 WArray512 WArray32 WArray16.
-require import AVX2_Ops KyberFCLib.
-require import GFq KyberPoly.
-import KyberPoly.
+require import AVX2_Ops MLKEMFCLib.
+require import GFq MLKEM_Poly.
+import MLKEM_Poly.
 import Zq.
 (* 
-require import KyberPoly.
-require import KyberINDCPA.
-import Kyber.
-import KyberPoly.
+require import MLKEM_Poly.
+require import MLKEM_InnerPKE.
+import MLKEM.
+import MLKEM_Poly.
 import Zq.
 import BitEncoding.
 import BS2Int.*)

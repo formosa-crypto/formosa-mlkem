@@ -5,7 +5,7 @@ require import WArray800 WArray512 WArray128 WArray128 WArray64 WArray32 WArray1
 require import AVX2_Ops.
 require import Jkem_avx2.
 
-require import Kyber_AVX_AuxLemmas.
+require import MLKEM_avx2_auxlemmas.
 
 module Mprevec = {
   proc shuffle8 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {

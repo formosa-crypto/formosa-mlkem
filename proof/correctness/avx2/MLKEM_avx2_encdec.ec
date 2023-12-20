@@ -2,7 +2,7 @@ require import AllCore List Int IntDiv StdOrder CoreMap Real Number.
 import IntOrder.
 from Jasmin require import JModel.
 require import Array16 Array32 Array64 Array128 Array168 Array256 Array384 Array768 Array960 Array1152.
-require import Fq KyberFCLib W8extra List_extra.
+require import Fq MLKEMFCLib W8extra List_extra.
 
 
 require import Jkem.
@@ -309,7 +309,7 @@ module EncDec_AVX2 = {
   }
 }.
 
-module Kyber_AVX2_cf = {
+module MLKEM_avx2_encdec = {
   proc __fqmul_x16 (a b: W16.t Array16.t) : W16.t Array16.t = {
     var i;
     var t: W16.t;

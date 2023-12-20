@@ -2,7 +2,7 @@ require import AllCore List IntDiv CoreMap.
 require (****) ZModP.
 from Jasmin require import JWord JModel.
 require import Montgomery.
-require import W16extra KyberFCLib.
+require import W16extra MLKEMFCLib.
 require import Array32.
 
 require import GFq.

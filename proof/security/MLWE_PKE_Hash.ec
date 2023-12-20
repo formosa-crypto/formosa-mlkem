@@ -990,7 +990,7 @@ lemma conclusion &m fail_prob prg_kg_bound prg_enc_bound :
 proof.
 move => fail_probE kb1 kb2 kb3 kb4 kb5 kb6 kb7 eb1 eb2 eb3 eb4 eb5 eb6 eb7 qhthk qhuhk qvals qv0 qp0 qhv qhcsmall A_count A_ll.
 
-have := conclusion_fo_kyber A &m qhthk qhuhk qvals qv0 qp0 qhv qhcsmall A_count A_ll.
+have := conclusion_fo_mlkem A &m qhthk qhuhk qvals qv0 qp0 qhv qhcsmall A_count A_ll.
 
 have -> : 
    Pr[TT.PKE.CPA(TT.BasePKE, OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A)))))).main() @ &m : res] = 

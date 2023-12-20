@@ -7,7 +7,7 @@ from Jasmin require import JWord.
 (*    The security definitions for the spec                        *)
 (*******************************************************************)
 
-clone import PKE_ROM as KyberPKE with 
+clone import PKE_ROM as MLKEMPKE with 
   type pkey = W8.t Array1152.t * W8.t Array32.t,
   type skey = W8.t Array1152.t,
   type plaintext = W8.t Array32.t,
@@ -17,7 +17,7 @@ import RO.
 
 (**************************************************************************
    MLWE_PKE is the theory where we prove an abstract PKE construction
-   that matches the algebraic basis of Kyber. This theory clones MLWE
+   that matches the algebraic basis of MLKEM. This theory clones MLWE
    to get the hard problem definitions, and so it gets a bunch of 
    theories and RO clones. The relevant one is RO_SMP.
 
@@ -26,14 +26,14 @@ import RO.
    the MWLW_.RO_SMP. 
 
    This clone gives us the security proofs for the algebraic version
-   of KyberPKE. To get proofs for Kyber spec, we just need to explain
-   how the Kyber spec functionally maps to this algebraic version
+   of MLKEMPKE. To get proofs for MLKEM spec, we just need to explain
+   how the MLKEM spec functionally maps to this algebraic version
    and then derive the properties as corollaries.
 ***************************************************************************)
 
 
 require import MLWE_PKE.
-require import GFq Rq  VecMat Sampling Symmetric Serialization InnerPKE Kyber Correctness EncDecCorrectness KyberLib.
+require import GFq Rq  VecMat Sampling Symmetric Serialization InnerPKE MLKEM Correctness EncDecCorrectness MLKEMLib.
 
 import KMatrix PolyVec PolyMat InnerPKE Zq.
 
@@ -252,7 +252,7 @@ rewrite /(&-) mapiE 1:/#.
 rewrite as_sintN /= /#. 
 qed.
 
-(* We now specify the various components used by Kyber spec so that 
+(* We now specify the various components used by MLKEM spec so that 
    we can relate it to the abstract construction. The differences
    are only in the sampling procedures. *)
 import MLWE_.MLWE_SMP. 
@@ -351,7 +351,7 @@ qed.
 
 
 (*************************************
-We define a version of Kyber spec that
+We define a version of MLKEM spec that
 uses external samplers. This is useful for 
 syntactic reasons in the following proof
 steps.
@@ -439,7 +439,7 @@ module (KNS : NoiseSampler) (PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF) = {
   }
 }.
 
-module KyberS(HS : HSF.PseudoRF, S : Sampler, NS : NoiseSampler, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF, O : SMP_RO) (* : Scheme *) = {
+module MLKEMS(HS : HSF.PseudoRF, S : Sampler, NS : NoiseSampler, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF, O : SMP_RO) (* : Scheme *) = {
 
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(rho sig: W8.t Array32.t) : pkey * skey = {
@@ -550,7 +550,7 @@ lemma getv_setvE x i j (v : polyvec) :
 
 (* We have that instantiating S with KSampler(XOF_Dummy) we get the Spec *)
 lemma kg_sampler_kg (O <: SMP_RO {-XOF}) :
-  equiv [   KyberS(KHS,KSampler(XOF_Dummy),KNS,KPRF,KPRF,O).kg ~ InnerPKE_rnd.kg : 
+  equiv [   MLKEMS(KHS,KSampler(XOF_Dummy),KNS,KPRF,KPRF,O).kg ~ InnerPKE_rnd.kg : 
      ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
 proc. 
 inline {1} 3; inline {2} 2. sim.
@@ -580,7 +580,7 @@ qed.
 
 lemma enc_sampler_enc (O <: SMP_RO {-XOF}) :
  equiv [
-   KyberS(KHS,KSampler(XOF_Dummy),KNS,KPRF,KPRF,O).enc ~ InnerPKE_rnd.enc : 
+   MLKEMS(KHS,KSampler(XOF_Dummy),KNS,KPRF,KPRF,O).enc ~ InnerPKE_rnd.enc : 
     ={arg} /\ ={glob O, glob XOF} ==> ={res, glob O, glob XOF}].
 proc. 
 inline {1} 2; inline {2} 2. sim.
@@ -614,7 +614,7 @@ by inline *;auto => />.
 qed.
 
 lemma enc_sampler_dec (O <: SMP_RO)  :
-  equiv [ KyberS(KHS,KSampler(XOF_Dummy),KNS,KPRF,KPRF,O).dec ~ InnerPKE_rnd.dec : 
+  equiv [ MLKEMS(KHS,KSampler(XOF_Dummy),KNS,KPRF,KPRF,O).dec ~ InnerPKE_rnd.dec : 
      ={arg} /\ ={glob O} ==> res{1} = Some res{2} ] by proc;inline *;sim => /#.
 
 
@@ -657,18 +657,18 @@ module DummyHS(F : HS_DEFS.PRF_Oracles) = {
    proc f(inp : W8.t Array32.t * unit) : W8.t Array32.t * W8.t Array32.t = { var out; out <@ F.f(); return out; }
 }.
 
-module (D_ES(S : Sampler, O : RO, As : KyberPKE.Adversary) : HS_DEFS.Distinguisher) (F : HS_DEFS.PRF_Oracles)  = {
+module (D_ES(S : Sampler, O : RO, As : MLKEMPKE.Adversary) : HS_DEFS.Distinguisher) (F : HS_DEFS.PRF_Oracles)  = {
 
     proc distinguish() : bool = {
        var b;
-       b <@ KyberPKE.CPA(O,KyberS(DummyHS_D(F),S,KNS,KPRF,KPRF),As).main();
+       b <@ MLKEMPKE.CPA(O,MLKEMS(DummyHS_D(F),S,KNS,KPRF,KPRF),As).main();
        return b;
     } 
 }.
 
-module KyberSIdeal(HS : HSF.PseudoRF, S : Sampler, NS : NoiseSampler, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF, O : SMP_RO) (* : Scheme *) = {
+module MLKEMSIdeal(HS : HSF.PseudoRF, S : Sampler, NS : NoiseSampler, PRF1 : PRF_.PseudoRF, PRF2 : PRF_.PseudoRF, O : SMP_RO) (* : Scheme *) = {
 
-  include KyberS(HS,S,NS,PRF1,PRF2,O) [-kg]
+  include MLKEMS(HS,S,NS,PRF1,PRF2,O) [-kg]
 
   proc kg() : pkey * skey = {
      var s,rho,sig,kp;
@@ -691,11 +691,11 @@ module DummyPRF1(F : PRF_DEFS.PRF_Oracles) = {
    proc f(inp : W8.t Array32.t * W8.t) : W8.t Array128.t = { var out; out <@ F.f(inp.`2); return out; }
 }.
 
-module (D_PRF1(S : Sampler, O : RO, As : KyberPKE.Adversary) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
+module (D_PRF1(S : Sampler, O : RO, As : MLKEMPKE.Adversary) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
 
     proc distinguish() : bool = {
        var b;
-       b <@ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(F),KPRF),As).main();
+       b <@ MLKEMPKE.CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(F),KPRF),As).main();
        return b;
     } 
 }.
@@ -710,11 +710,11 @@ module DummyPRF2(F : PRF_DEFS.PRF_Oracles) = {
    proc f(inp : W8.t Array32.t * W8.t) : W8.t Array128.t = { var out; out <@ F.f(inp.`2); return out; }
 }.
 
-module (D_PRF2(S : Sampler, O : RO, As : KyberPKE.Adversary) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
+module (D_PRF2(S : Sampler, O : RO, As : MLKEMPKE.Adversary) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
 
     proc distinguish() : bool = {
        var b;
-       b <@ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2D(F)),As).main();
+       b <@ MLKEMPKE.CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2D(F)),As).main();
        return b;
     } 
 }.
@@ -723,15 +723,15 @@ section.
 
 declare module O <: RO {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -KPRF, -B1ROM, -B2ROM, -HSF.PRF}.
 declare module S <: Sampler {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -KPRF, -O, -B1ROM, -B2ROM}.
-declare module As <: KyberPKE.Adversary {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -HSF.PRF, -O, -S, -KPRF, -B1ROM, -B2ROM}.
+declare module As <: MLKEMPKE.Adversary {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -HSF.PRF, -O, -S, -KPRF, -B1ROM, -B2ROM}.
 
 lemma ESHop &m :
-  Pr [ KyberPKE.CPA(O,KyberS(KHS,S,KNS,KPRF,KPRF),As).main() @ &m : res] -
-  Pr [ KyberPKE.CPA(O,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] = 
+  Pr [ MLKEMPKE.CPA(O,MLKEMS(KHS,S,KNS,KPRF,KPRF),As).main() @ &m : res] -
+  Pr [ MLKEMPKE.CPA(O,MLKEMS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] = 
   Pr [ HS_DEFS.IND(HSF.PRF,D_ES(S,O,As)).main() @ &m : res ] - 
   Pr [ HS_DEFS.IND(IdealHSF.RF,D_ES(S,O,As)).main() @ &m : res ].
 proof.
-have -> : Pr[CPA(O,KyberS(KHS, S, KNS, KPRF,KPRF), As).main() @ &m : res]  = 
+have -> : Pr[CPA(O,MLKEMS(KHS, S, KNS, KPRF,KPRF), As).main() @ &m : res]  = 
           Pr[HS_DEFS.IND(HSF.PRF, D_ES(S, O, As)).main() @ &m : res] .
 + byequiv => //.
   proc. 
@@ -748,7 +748,7 @@ have -> : Pr[CPA(O,KyberS(KHS, S, KNS, KPRF,KPRF), As).main() @ &m : res]  =
   by sim.
 
 + have -> : 
-    Pr[CPA(O,KyberS(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), As).main() @ &m : res] = 
+    Pr[CPA(O,MLKEMS(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), As).main() @ &m : res] = 
     Pr[HS_DEFS.IND(IdealHSF.RF, D_ES(S, O, As)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -811,9 +811,9 @@ rewrite supp_dmap /=;exists rl.`2;split => *; last by smt().
 by apply srand_fu. 
 qed.
 
-lemma KyberS_KyberIdeal &m :
-  Pr [ KyberPKE.CPA(O,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] =
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res].
+lemma MLKEMS_MLKEMIdeal &m :
+  Pr [ MLKEMPKE.CPA(O,MLKEMS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] =
+  Pr [ MLKEMPKE.CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res].
 proof.
 byequiv => //.
 proc. 
@@ -847,12 +847,12 @@ qed.
 
 
 lemma PRFHop1 &m :
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] -
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] = 
+  Pr [ MLKEMPKE.CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),As).main() @ &m : res] -
+  Pr [ MLKEMPKE.CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] = 
   Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF1(S,O,As)).main() @ &m : res ] - 
   Pr [ PRF_DEFS.IND(IdealPRF1.RF,D_PRF1(S,O,As)).main() @ &m : res ].
 proof.
-have -> : Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), As).main() @ &m : res] = 
+have -> : Pr[CPA(O, MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), As).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(PRF_.PRF, D_PRF1(S, O, As)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -884,7 +884,7 @@ have -> : Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), As).m
   do 3!( wp; conseq => />; sim).
   by wp;auto => />;sim.
 
-have -> : Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), As).main() @ &m : res] = 
+have -> : Pr[CPA(O, MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), As).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(IdealPRF1.RF, D_PRF1(S, O, As)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -906,12 +906,12 @@ done.
 qed.
 
 lemma PRFHop2 &m :
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] -
-  Pr [ KyberPKE.CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF)),As).main() @ &m : res] = 
+  Pr [ MLKEMPKE.CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),As).main() @ &m : res] -
+  Pr [ MLKEMPKE.CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF)),As).main() @ &m : res] = 
   Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF2(S,O,As)).main() @ &m : res ] - 
   Pr [ PRF_DEFS.IND(IdealPRF2.RF,D_PRF2(S,O,As)).main() @ &m : res ].
 proof.
-have -> : Pr[CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), As).main() @ &m : res] = 
+have -> : Pr[CPA(O,MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), As).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(PRF_.PRF, D_PRF2(S, O, As)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -942,7 +942,7 @@ have -> : Pr[CPA(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1
   do 3!( wp; conseq => />; sim).
   by wp;auto => />;sim.
 
-have -> : Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), As).main
+have -> : Pr[CPA(O, MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), As).main
    () @ &m : res] = 
           Pr[PRF_DEFS.IND(RF, D_PRF2(S, O, As)).main() @ &m : res].
 + byequiv => //.
@@ -970,8 +970,8 @@ end section.
 (* At this point we get some nice equivalences                     *)
 (*******************************************************************)
 
-module KyberSI(S : Sampler, O : SMP_RO) = 
-   KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF), O).
+module MLKEMSI(S : Sampler, O : SMP_RO) = 
+   MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF), O).
 
 module (NTTSampler(S : Sampler) : Sampler) (O : SMP_RO) = {
     proc sampleA(sd : W8.t Array32.t) : polymat = { 
@@ -1027,7 +1027,7 @@ declare module O <: RO {-IdealHSF.RF,-RF,-IdealPRF1.RF}.
 declare module S <: Sampler {-IdealHSF.RF,-RF, -O, -IdealPRF1.RF}.
 
 equiv keygen_eq : 
-  MLWE_PKE(NTTSampler(S,O), O).kg ~ KyberSI(S,O).kg :
+  MLWE_PKE(NTTSampler(S,O), O).kg ~ MLKEMSI(S,O).kg :
    ={glob S, glob O} ==> ={res,glob S, glob O}.
 proof.
 proc.
@@ -1145,7 +1145,7 @@ qed.
 
 
 equiv enc_eq : 
-  MLWE_PKE(NTTSampler(S,O), O).enc ~ KyberSI(S,O).enc :
+  MLWE_PKE(NTTSampler(S,O), O).enc ~ MLKEMSI(S,O).enc :
    ={arg,glob S, glob O} ==> ={res,glob S, glob O}.
 proof.
 proc.
@@ -1289,7 +1289,7 @@ by rewrite sem_decode1_corr.
 qed.
 
 equiv dec_eq : 
-  MLWE_PKE(NTTSampler(S,O), O).dec ~ KyberSI(S,O).dec :
+  MLWE_PKE(NTTSampler(S,O), O).dec ~ MLKEMSI(S,O).dec :
    ={arg,glob S, glob O} ==> ={res,glob S, glob O}.
 proof.
 proc.
@@ -1312,7 +1312,7 @@ section.
 
 declare module O <: RO {-IdealHSF.RF,-IdealPRF1.RF,-RF,-KPRF, -B1ROM, -B2ROM}.
 declare module S <: Sampler {-IdealHSF.RF,-IdealPRF1.RF, -RF, -KPRF, -O, -B1ROM, -B2ROM}.
-declare module As <: KyberPKE.Adversary {-IdealPRF1.RF,-IdealHSF.RF,-RF,-O, -S, -KPRF, -B1ROM, -B2ROM}.
+declare module As <: MLKEMPKE.Adversary {-IdealPRF1.RF,-IdealHSF.RF,-RF,-O, -S, -KPRF, -B1ROM, -B2ROM}.
 
 lemma security_any_sampler &m :  
   islossless O.init =>
@@ -1321,7 +1321,7 @@ lemma security_any_sampler &m :
   (forall (O0 <: SMP_RO), islossless O0.get => islossless S(O0).sampleAT) =>
   (forall (O0 <: SMP_RO), islossless O0.get => islossless As(O0).guess) =>
   (forall (O0 <: SMP_RO), islossless O0.get => islossless As(O0).choose) =>
-  Pr[ KyberPKE.CPA(O,KyberSI(S),As).main() @ &m : res] - 1%r/2%r = 
+  Pr[ MLKEMPKE.CPA(O,MLKEMSI(S),As).main() @ &m : res] - 1%r/2%r = 
   Pr[MLWE_SMP(B1ROM(As, NTTSampler(S)), NTTSampler(S), O).main(false, false) @ &m : res] -
  Pr[MLWE_SMP(B1ROM(As, NTTSampler(S)), NTTSampler(S), O).main(false, true) @ &m : res] +
  Pr[MLWE_SMP(B2ROM(As, NTTSampler(S)), NTTSampler(S), O).main(true, false) @ &m : res] -
@@ -1329,7 +1329,7 @@ lemma security_any_sampler &m :
 move => H H0 H1 H2 H3 H4.
 have  <- : 
     Pr[ CPA(O,MLWE_PKE(NTTSampler(S,O)),As).main() @ &m : res] =
-    Pr[ KyberPKE.CPA(O,KyberSI(S),As).main() @ &m : res]; last first.
+    Pr[ MLKEMPKE.CPA(O,MLKEMSI(S),As).main() @ &m : res]; last first.
 + have <- := (main_theorem_s O (NTTSampler(S)) As &m  H H0 _ _ _ _).
   + by move => O0 HH; islossless; apply (H1 O0 HH).
   + by move => O0 HH; islossless; apply (H2 O0 HH). 
@@ -1352,7 +1352,7 @@ section.
 
 declare module O <: RO {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-RF,-KPRF, -B1ROM, -B2ROM}.
 declare module XOF <: XOF_RO_t {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-RF,-KPRF, -O, -B1ROM, -B2ROM}.
-declare module As <: KyberPKE.Adversary {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-RF,-O, -XOF, -KPRF, -B1ROM, -B2ROM}.
+declare module As <: MLKEMPKE.Adversary {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-RF,-O, -XOF, -KPRF, -B1ROM, -B2ROM}.
 
 (* This theorem yields security for any sampler and we can use
    it to obtain security for the implementation in the standard 
@@ -1374,7 +1374,7 @@ lemma security_spec &m :
   (forall (O0 <: SMP_RO), islossless O0.get => islossless As(O0).guess) =>
   (forall (O0 <: SMP_RO), islossless O0.get => islossless As(O0).choose) =>
 
-  Pr[ KyberPKE.CPA(O,KyberS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res] - 1%r/2%r = 
+  Pr[ MLKEMPKE.CPA(O,MLKEMS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res] - 1%r/2%r = 
   (Pr [ HS_DEFS.IND(HSF.PRF,D_ES(KSampler(XOF),O,As)).main() @ &m : res ] - 
   Pr [ HS_DEFS.IND(IdealHSF.RF,D_ES(KSampler(XOF),O,As)).main() @ &m : res ]) +
   (Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF1(KSampler(XOF),O,As)).main() @ &m : res ] - 
@@ -1389,8 +1389,8 @@ move => Oill Ooll XOF_init_ll XOF_next_ll Parse_ll Asgll Ascll.
 
 (* 
   WE LOST CONNECTION TO THE SPEC IN THE ROM BECAUSE THE TYPE OF THE XOF DOES NOT TAKE AN RO.
-  have <- : Pr[ KyberPKE.CPA(O,KyberS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res]= 
-          Pr[ KyberPKE.CPA(O,Kyber(KHS,XOF,KPRF),As).main() @ &m : res].
+  have <- : Pr[ MLKEMPKE.CPA(O,MLKEMS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res]= 
+          Pr[ MLKEMPKE.CPA(O,MLKEM(KHS,XOF,KPRF),As).main() @ &m : res].
 + byequiv => //.
   proc.
   wp; call(_: ={glob O, glob XOF}); 1: by sim.
@@ -1407,9 +1407,9 @@ have <- := (security_any_sampler O (KSampler(XOF)) As &m Oill Ooll  _ _ Asgll As
 have <- := (ESHop O (KSampler(XOF)) As).
 have <- := (PRFHop1 O (KSampler(XOF)) As).
 have <- := (PRFHop2 O (KSampler(XOF)) As).
-have <- := (KyberS_KyberIdeal O (KSampler(XOF)) As).
-have <-: Pr[CPA(O, KyberSI(KSampler(XOF)), As).main() @ &m : res] = 
-         Pr[CPA(O, KyberSIdeal(DummyHS(IdealHSF.RF), KSampler(XOF), KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), As).main
+have <- := (MLKEMS_MLKEMIdeal O (KSampler(XOF)) As).
+have <-: Pr[CPA(O, MLKEMSI(KSampler(XOF)), As).main() @ &m : res] = 
+         Pr[CPA(O, MLKEMSIdeal(DummyHS(IdealHSF.RF), KSampler(XOF), KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), As).main
    () @ &m : res] by byequiv => //=; proc; sim.
 by ring.
 qed.
@@ -1428,7 +1428,7 @@ import MLWE_.
 
 section.
 
-declare module As <: KyberPKE.Adversary {-IdealPRF1.RF,-IdealHSF.RF,-RF,-LRO,-RO_SMP.LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO,-KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
+declare module As <: MLKEMPKE.Adversary {-IdealPRF1.RF,-IdealHSF.RF,-RF,-LRO,-RO_SMP.LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO,-KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
 declare module S <: Sampler {-IdealPRF1.RF,-IdealHSF.RF,-RF,-As, -B1ROM, -B2ROM, -LRO, -RO_SMP.LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
 declare module Sim <: Simulator_t {-IdealPRF1.RF,-IdealHSF.RF,-S,-As,-B1ROM, -B2ROM, -LRO, -RO_SMP.LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -B,-Bt, -BS, -D}.
 
@@ -1445,7 +1445,7 @@ lemma security_any_sampler_indiff &m epsilon :
      `| Pr[ WIndfReal(D0,NTTSampler(S),RO_SMP.LRO).main(tr,b) @ &m : res]  -
         Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(tr,b) @ &m : res] | <= epsilon) =>
 
-  `| Pr[ KyberPKE.CPA(LRO,KyberSI(S),As).main() @ &m : res] - 1%r/2%r | <= 
+  `| Pr[ MLKEMPKE.CPA(LRO,MLKEMSI(S),As).main() @ &m : res] - 1%r/2%r | <= 
      `| Pr[MLWE(B(BS(B1ROM(As,NTTSampler(S)),Sim),RO_H.LRO)).main(false) @ &m : res] -
          Pr[MLWE(B(BS(B1ROM(As,NTTSampler(S)),Sim),RO_H.LRO)).main(true) @ &m : res] | + 
      `| Pr[MLWE(Bt(BS(B2ROM(As,NTTSampler(S)),Sim),RO_H.LRO)).main(false) @ &m : res] -
@@ -1453,7 +1453,7 @@ lemma security_any_sampler_indiff &m epsilon :
 move => eps_ge0 H H0 H1 H2 H3 H4.
 have  <- : 
     Pr[ CPA(LRO,MLWE_PKE(NTTSampler(S,LRO)),As).main() @ &m : res] =
-    Pr[ KyberPKE.CPA(LRO,KyberSI(S),As).main() @ &m : res].
+    Pr[ MLKEMPKE.CPA(LRO,MLKEMSI(S),As).main() @ &m : res].
 + byequiv => //.
   proc.
   wp;call(_: ={glob LRO}); 1: by sim.
@@ -1478,7 +1478,7 @@ qed.
 end section.
 
 (* The following theorem is the strongest claim we can make
-   about the Kyber Spec. It comes with two assumptions on the
+   about the MLKEM Spec. It comes with two assumptions on the
    matrix sampling procedure:
    1) that it converges (losslessness of Parse)
       there is some hope of proving this when XOF is a ROM.
@@ -1495,7 +1495,7 @@ end section.
 
 section.
 
-declare module As <: KyberPKE.Adversary {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -RO_SMP.LRO, -KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
+declare module As <: MLKEMPKE.Adversary {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -RO_SMP.LRO, -KPRF, -B1ROM, -B2ROM, -B,-Bt, -BS, -D}.
 declare module XOF <: XOF_RO_t {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-As, -B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -RO_SMP.LRO, -B,-Bt, -BS, -D}.
 declare module Sim <: Simulator_t {-IdealPRF2.RF,-PRF_.PRF,-HSF.PRF,-IdealHSF.RF,-IdealPRF1.RF,-XOF,-As,-B1ROM, -B2ROM, -LRO, -RO_H.RO, -RO_H.FRO, -RO_H.LRO, -RO_SMP.LRO, -B,-Bt, -BS, -D}.
 
@@ -1520,7 +1520,7 @@ lemma security_spec_indiff &m epsilon:
         Pr[ WIndfIdeal(D0,Sim,RO_H.LRO).main(tr,b) @ &m : res] | <= epsilon) =>
 
 
-  `| Pr[ KyberPKE.CPA(LRO,KyberS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res] - 1%r/2%r | <= 
+  `| Pr[ MLKEMPKE.CPA(LRO,MLKEMS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res] - 1%r/2%r | <= 
   `| Pr [ HS_DEFS.IND(HSF.PRF,D_ES(KSampler(XOF),LRO,As)).main() @ &m : res ] - 
       Pr [ HS_DEFS.IND(IdealHSF.RF,D_ES(KSampler(XOF),LRO,As)).main() @ &m : res ] | +
   `| Pr [ PRF_DEFS.IND(PRF_.PRF,D_PRF1(KSampler(XOF),LRO,As)).main() @ &m : res ] - 
@@ -1536,8 +1536,8 @@ move => eps_ge0 Oill XOF_init_ll XOF_next_ll Parse_ll Asgll Ascll ind.
 (* 
   WE LOST CONNECTION TO THE SPEC IN THE ROM BECAUSE THE TYPE OF THE XOF DOES NOT TAKE AN RO.
 
-have <- : Pr[ KyberPKE.CPA(LRO,KyberS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res]= 
-          Pr[ KyberPKE.CPA(LRO,Kyber(KHS,XOF,KPRF),As).main() @ &m : res].
+have <- : Pr[ MLKEMPKE.CPA(LRO,MLKEMS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main() @ &m : res]= 
+          Pr[ MLKEMPKE.CPA(LRO,MLKEM(KHS,XOF,KPRF),As).main() @ &m : res].
 + byequiv => //.
   proc.
   wp; call(_: ={glob LRO, glob XOF}); 1: by sim.
@@ -1554,9 +1554,9 @@ have <- : Pr[ KyberPKE.CPA(LRO,KyberS(KHS,KSampler(XOF),KNS,KPRF,KPRF),As).main(
 have <- := (ESHop LRO (KSampler(XOF)) As).
 have <- := (PRFHop1 LRO (KSampler(XOF)) As).
 have <- := (PRFHop2 LRO (KSampler(XOF)) As).
-have <- := (KyberS_KyberIdeal LRO (KSampler(XOF)) As).
-have <-: Pr[CPA(LRO, KyberSI(KSampler(XOF)), As).main() @ &m : res] = 
-         Pr[CPA(LRO, KyberSIdeal(DummyHS(IdealHSF.RF), KSampler(XOF), KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), As).main
+have <- := (MLKEMS_MLKEMIdeal LRO (KSampler(XOF)) As).
+have <-: Pr[CPA(LRO, MLKEMSI(KSampler(XOF)), As).main() @ &m : res] = 
+         Pr[CPA(LRO, MLKEMSIdeal(DummyHS(IdealHSF.RF), KSampler(XOF), KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), As).main
    () @ &m : res] by byequiv => //=; proc; sim.
 by smt().
 qed.
@@ -1591,14 +1591,14 @@ lemma correctness_any_sampler &m cu_bound failprob1 failprob2 epsilon  :
   Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
   Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
 
-  Pr[ KyberPKE.Correctness_Adv(LRO,KyberSI(S),A).main() @ &m : res]  <=
+  Pr[ MLKEMPKE.Correctness_Adv(LRO,MLKEMSI(S),A).main() @ &m : res]  <=
     `|Pr[MLWE(Bcb2).main(false) @ &m : res] -
     Pr[MLWE(Bcb2).main(true) @ &m : res]| + failprob1 + failprob2 + epsilon.
 move => initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2.
 
 have <- : 
 Pr[PKE_ROM.Correctness_Adv(RO_SMP.LRO,MLWE_PKE(NTTSampler(S, RO_SMP.LRO)), A).main() @ &m : res] = 
-Pr[Correctness_Adv(LRO,KyberSI(S), A).main() @ &m : res]; last by  apply (correctness_max A (NTTSampler(S)) Sim &m cu_bound epsilon failprob1 failprob2 initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2).
+Pr[Correctness_Adv(LRO,MLKEMSI(S), A).main() @ &m : res]; last by  apply (correctness_max A (NTTSampler(S)) Sim &m cu_bound epsilon failprob1 failprob2 initmem Sim_i_ll Sim_h_ll A_ll ind fp1 fp2).
 have <-: Pr[PKE_ROM.Correctness_Adv(LRO, MLWE_PKE(NTTSampler(S,LRO)), A).main() @ &m : res] = Pr[PKE_ROM.Correctness_Adv(RO_SMP.LRO,MLWE_PKE(NTTSampler(S, RO_SMP.LRO)), A).main() @ &m : res].
 + byequiv => //; proc;inline *.
    wp; call(_: RO_SMP.RO.m{2} = RO.m{1}); 1: by proc;inline *; sim;auto.
@@ -1621,29 +1621,29 @@ end section.
    not require losslessness, but does require indifferentiability. 
    However we must first game hop to the ideal scheme. *)
 
-module (DC_ES(S : Sampler, O : RO, Ac : KyberPKE.CORR_ADV) : HS_DEFS.Distinguisher) (F : HS_DEFS.PRF_Oracles)  = {
+module (DC_ES(S : Sampler, O : RO, Ac : MLKEMPKE.CORR_ADV) : HS_DEFS.Distinguisher) (F : HS_DEFS.PRF_Oracles)  = {
 
     proc distinguish() : bool = {
        var b;
-       b <@ KyberPKE.Correctness_Adv(O,KyberS(DummyHS_D(F),S,KNS,KPRF,KPRF),Ac).main();
+       b <@ MLKEMPKE.Correctness_Adv(O,MLKEMS(DummyHS_D(F),S,KNS,KPRF,KPRF),Ac).main();
        return b;
     } 
 }.
 
-module (DC_PRF1(S : Sampler, O : RO, Ac : KyberPKE.CORR_ADV) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
+module (DC_PRF1(S : Sampler, O : RO, Ac : MLKEMPKE.CORR_ADV) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
 
     proc distinguish() : bool = {
        var b;
-       b <@ KyberPKE.Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(F),KPRF),Ac).main();
+       b <@ MLKEMPKE.Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(F),KPRF),Ac).main();
        return b;
     } 
 }.
 
-module (DC_PRF2(S : Sampler, O : RO, Ac : KyberPKE.CORR_ADV) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
+module (DC_PRF2(S : Sampler, O : RO, Ac : MLKEMPKE.CORR_ADV) : PRF_DEFS.Distinguisher) (F : PRF_DEFS.PRF_Oracles)  = {
 
     proc distinguish() : bool = {
        var b;
-       b <@ KyberPKE.Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2D(F)),Ac).main();
+       b <@ MLKEMPKE.Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2D(F)),Ac).main();
        return b;
     } 
 }.
@@ -1652,15 +1652,15 @@ section.
 
 declare module O <: RO {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -KPRF, -B1ROM, -B2ROM, -HSF.PRF}.
 declare module S <: Sampler {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -KPRF, -O, -B1ROM, -B2ROM}.
-declare module Ac <: KyberPKE.CORR_ADV {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -HSF.PRF, -O, -S, -KPRF, -B1ROM, -B2ROM}.
+declare module Ac <: MLKEMPKE.CORR_ADV {-IdealPRF2.RF, -IdealPRF1.RF, -PRF_.PRF, -IdealHSF.RF, -HSF.PRF, -O, -S, -KPRF, -B1ROM, -B2ROM}.
 
 lemma ESHopC &m :
-  Pr [ KyberPKE.Correctness_Adv(O,KyberS(KHS,S,KNS,KPRF,KPRF),Ac).main() @ &m : res] -
-  Pr [ KyberPKE.Correctness_Adv(O,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res] = 
+  Pr [ MLKEMPKE.Correctness_Adv(O,MLKEMS(KHS,S,KNS,KPRF,KPRF),Ac).main() @ &m : res] -
+  Pr [ MLKEMPKE.Correctness_Adv(O,MLKEMS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res] = 
   Pr [ HS_DEFS.IND(HSF.PRF,DC_ES(S,O,Ac)).main() @ &m : res ] - 
   Pr [ HS_DEFS.IND(IdealHSF.RF,DC_ES(S,O,Ac)).main() @ &m : res ].
 proof.
-have -> : Pr[Correctness_Adv(O,KyberS(KHS, S, KNS, KPRF,KPRF), Ac).main() @ &m : res]  = 
+have -> : Pr[Correctness_Adv(O,MLKEMS(KHS, S, KNS, KPRF,KPRF), Ac).main() @ &m : res]  = 
           Pr[HS_DEFS.IND(HSF.PRF, DC_ES(S, O, Ac)).main() @ &m : res] .
 + byequiv => //.
   proc. 
@@ -1676,7 +1676,7 @@ have -> : Pr[Correctness_Adv(O,KyberS(KHS, S, KNS, KPRF,KPRF), Ac).main() @ &m :
   by sim.
 
 + have -> : 
-    Pr[Correctness_Adv(O,KyberS(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), Ac).main() @ &m : res] = 
+    Pr[Correctness_Adv(O,MLKEMS(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), Ac).main() @ &m : res] = 
     Pr[HS_DEFS.IND(IdealHSF.RF, DC_ES(S, O, Ac)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -1693,9 +1693,9 @@ have -> : Pr[Correctness_Adv(O,KyberS(KHS, S, KNS, KPRF,KPRF), Ac).main() @ &m :
 done.
 qed.
 
-lemma KyberS_KyberIdeal_C &m :
-  Pr [ Correctness_Adv(O,KyberS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res] =
-  Pr [ Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res].
+lemma MLKEMS_MLKEMIdeal_C &m :
+  Pr [ Correctness_Adv(O,MLKEMS(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res] =
+  Pr [ Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res].
 proof.
 byequiv => //.
 proc. 
@@ -1726,12 +1726,12 @@ proc.
 qed.
 
 lemma PRFHop1C &m :
-  Pr [ Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res] -
-  Pr [ Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),Ac).main() @ &m : res] = 
+  Pr [ Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,KPRF,KPRF),Ac).main() @ &m : res] -
+  Pr [ Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),Ac).main() @ &m : res] = 
   Pr [ PRF_DEFS.IND(PRF_.PRF,DC_PRF1(S,O,Ac)).main() @ &m : res ] - 
   Pr [ PRF_DEFS.IND(IdealPRF1.RF,DC_PRF1(S,O,Ac)).main() @ &m : res ].
 proof.
-have -> : Pr[Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), Ac).main() @ &m : res] = 
+have -> : Pr[Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, KPRF, KPRF), Ac).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(PRF_.PRF, DC_PRF1(S, O, Ac)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -1762,7 +1762,7 @@ have -> : Pr[Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, KPRF, K
   do 3!( wp; conseq => />; sim).
   by wp;auto => />;sim.
 
-have -> : Pr[Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), Ac).main() @ &m : res] = 
+have -> : Pr[Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), Ac).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(IdealPRF1.RF, DC_PRF1(S, O, Ac)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -1783,12 +1783,12 @@ done.
 qed.
 
 lemma PRFHop2C &m :
-  Pr [ Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),Ac).main() @ &m : res] -
-  Pr [ Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF)),Ac).main() @ &m : res] = 
+  Pr [ Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),KPRF),Ac).main() @ &m : res] -
+  Pr [ Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF),S,KNS,DummyPRF1(IdealPRF1.RF),DummyPRF2(IdealPRF2.RF)),Ac).main() @ &m : res] = 
   Pr [ PRF_DEFS.IND(PRF_.PRF,DC_PRF2(S,O,Ac)).main() @ &m : res ] - 
   Pr [ PRF_DEFS.IND(IdealPRF2.RF,DC_PRF2(S,O,Ac)).main() @ &m : res ].
 proof.
-have -> : Pr[Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), Ac).main() @ &m : res] = 
+have -> : Pr[Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), KPRF), Ac).main() @ &m : res] = 
           Pr[PRF_DEFS.IND(PRF_.PRF, DC_PRF2(S, O, Ac)).main() @ &m : res].
 + byequiv => //.
   proc. 
@@ -1819,7 +1819,7 @@ have -> : Pr[Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPR
   do 3!( wp; conseq => />; sim).
   by wp;auto => />;sim.
 
-have -> : Pr[Correctness_Adv(O,KyberSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), Ac).main
+have -> : Pr[Correctness_Adv(O,MLKEMSIdeal(DummyHS(IdealHSF.RF), S, KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), Ac).main
    () @ &m : res] = 
           Pr[PRF_DEFS.IND(RF, DC_PRF2(S, O, Ac)).main() @ &m : res].
 + byequiv => //.
@@ -1869,7 +1869,7 @@ lemma correctness_spec &m cu_bound failprob1 failprob2 epsilon  :
   Pr[ CB1.main(cu_bound, cv_bound_max) @ &m : res] <= failprob1 =>
   Pr[ CB2.main(cu_bound) @ &m : res] <= failprob2 =>
 
-  Pr[ KyberPKE.Correctness_Adv(LRO,KyberS(KHS, KSampler(XOF), KNS,KPRF,KPRF),A).main() @ &m : res]  <=
+  Pr[ MLKEMPKE.Correctness_Adv(LRO,MLKEMS(KHS, KSampler(XOF), KNS,KPRF,KPRF),A).main() @ &m : res]  <=
     `|Pr[MLWE(Bcb2).main(false) @ &m : res] -
           Pr[MLWE(Bcb2).main(true) @ &m : res]| + failprob1 + failprob2 + epsilon +
   (`|Pr [ HS_DEFS.IND(HSF.PRF,DC_ES(KSampler(XOF),LRO,A)).main() @ &m : res ] - 
@@ -1881,8 +1881,8 @@ lemma correctness_spec &m cu_bound failprob1 failprob2 epsilon  :
 move => meminit Sim_i_ll Sim_h_ll A_ll ind fp1 fp2.
 (*  
   We lost connection to the spec in the rom
-have <-: Pr[Correctness_Adv(LRO,KyberS(KHS, KSampler(XOF), KNS,KPRF,KPRF), A).main() @ &m : res] = 
-         Pr[Correctness_Adv(LRO,Kyber(KHS, XOF, KPRF), A).main() @ &m : res].
+have <-: Pr[Correctness_Adv(LRO,MLKEMS(KHS, KSampler(XOF), KNS,KPRF,KPRF), A).main() @ &m : res] = 
+         Pr[Correctness_Adv(LRO,MLKEM(KHS, XOF, KPRF), A).main() @ &m : res].
 + byequiv => //.
   proc. 
   wp; call(_: ={glob LRO, glob XOF}); 1: by sim.
@@ -1897,9 +1897,9 @@ move : (correctness_any_sampler A (KSampler(XOF)) Sim &m cu_bound failprob1 fail
 have <- := (ESHopC LRO (KSampler(XOF)) A).
 have <- := (PRFHop1C LRO (KSampler(XOF)) A).
 have <- := (PRFHop2C LRO (KSampler(XOF)) A).
-have <- := (KyberS_KyberIdeal_C LRO (KSampler(XOF)) A).
-have <-: Pr[Correctness_Adv(LRO,KyberSI(KSampler(XOF)), A).main() @ &m : res] = 
-         Pr[Correctness_Adv(LRO,KyberSIdeal(DummyHS(IdealHSF.RF), KSampler(XOF), KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), A).main
+have <- := (MLKEMS_MLKEMIdeal_C LRO (KSampler(XOF)) A).
+have <-: Pr[Correctness_Adv(LRO,MLKEMSI(KSampler(XOF)), A).main() @ &m : res] = 
+         Pr[Correctness_Adv(LRO,MLKEMSIdeal(DummyHS(IdealHSF.RF), KSampler(XOF), KNS, DummyPRF1(IdealPRF1.RF), DummyPRF2(RF)), A).main
    () @ &m : res] by byequiv => //=; proc; sim.
 
 

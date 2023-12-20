@@ -2,12 +2,12 @@ require import AllCore List Int IntDiv CoreMap Real Number Ring StdOrder BitEnco
 from Jasmin require import JModel.
 require import Array256 Array128  Array16.
 require import Array256 Array128 Array32 Array16 Array768 Array2304.
-require import KyberFCLib.
-require import KyberPolyVec.
+require import MLKEMFCLib.
+require import MLKEM_PolyVec.
 require import NTT_Fq.
 require import AVX2_Ops.
 import GFq Rq Serialization VecMat Correctness.
-import KyberPolyVec.
+import MLKEM_PolyVec.
 import Zq IntOrder BitReverse.
 import PolyVec PolyMat.
 theory NTT_Avx2.
@@ -586,8 +586,8 @@ proof.
   rewrite -iotaredE //=.
 qed.
 
-require import KyberPoly.
-import KyberPoly.
+require import MLKEM_Poly.
+import MLKEM_Poly.
 lemma lift_nttpack v : lift_array256 (nttpack v) = nttpack (lift_array256 v).
 proof. 
 rewrite tP => k kb.

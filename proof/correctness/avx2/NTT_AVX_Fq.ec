@@ -9,7 +9,7 @@ import NTTequiv.
 
 from Jasmin require import JModel.
 require import Array16 Array128  Array256 Array400.
-require import KyberFCLib.
+require import MLKEMFCLib.
 require import Array400 WArray32 WArray800 WArray512.
 
 

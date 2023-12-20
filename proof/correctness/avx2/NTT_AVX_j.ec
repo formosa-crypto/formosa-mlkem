@@ -7,7 +7,7 @@ require import WArray512.
 require import Array400 WArray800.
 
 
-require import NTT_AVX_Fq KyberFCLib.
+require import NTT_AVX_Fq MLKEMFCLib.
 
 (******* *)
 
@@ -15,8 +15,8 @@ require import GFq Correctness Fq.
 
 import Zq.
 
-require import KyberPoly.
-import KyberPoly.
+require import MLKEM_Poly.
+import MLKEM_Poly.
 
 
 require AVX2_Ops.

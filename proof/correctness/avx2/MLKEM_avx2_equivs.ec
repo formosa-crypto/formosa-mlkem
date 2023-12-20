@@ -3,39 +3,39 @@ from Jasmin require import JModel.
 require import Array1152 Array960 Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
 require import W16extra WArray512 WArray32 WArray16.
 require import AVX2_Ops.
-require import Kyber_AVX2_cf.
+require import MLKEM_avx2_encdec.
 require import Jkem.
 require import Jkem_avx2.
-require import KyberPolyvec_avx2_prevec.
-require import KyberPoly_avx2_prevec.
+require import MLKEM_PolyVec_avx2_prevec.
+require import MLKEM_Poly_avx2_prevec.
 require import NTT_avx2.
 require import Fq_avx2.
 require import Fq.
 require import NTT_Fq.
-require import KyberPoly.
-require import KyberPolyVec.
-require import Kyber_AVX_AuxLemmas.
-require import KyberPoly_avx2_proof.
-require import KyberPolyvec_avx2_proof.
-require import KyberPoly_avx2_vec.
-require import KyberPolyvec_avx2_vec.
-require import KyberINDCPA.
-require import KyberFCLib.
+require import MLKEM_Poly.
+require import MLKEM_PolyVec.
+require import MLKEM_avx2_auxlemmas.
+require import MLKEM_Poly_avx2_proof.
+require import MLKEM_PolyVec_avx2_proof.
+require import MLKEM_Poly_avx2_vec.
+require import MLKEM_PolyVec_avx2_vec.
+require import MLKEM_InnerPKE.
+require import MLKEMFCLib.
 
-import GFq Rq Symmetric Serialization Sampling VecMat InnerPKE Kyber Correctness Fq SignedReductions.
+import GFq Rq Symmetric Serialization Sampling VecMat InnerPKE MLKEM Correctness Fq SignedReductions.
 
 import Zq.
 import ZModP.
 import Fq_avx2.
 import NTT_Avx2.
-import KyberPoly.
-import KyberPolyVec.
+import MLKEM_Poly.
+import MLKEM_PolyVec.
 import AVX2_cf.
 
-import KyberPolyAVX.
-import KyberPolyvecAVX.
-import KyberPolyAVXVec.
-import KyberPolyVecAVXVec.
+import MLKEM_PolyAVX.
+import MLKEM_PolyvecAVX.
+import MLKEM_PolyAVXVec.
+import MLKEM_PolyVecAVXVec.
 
 lemma polyvec_decompress_equiv mem _p :
     equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_decompress ~  Jkem.M(Jkem.Syscall).__polyvec_decompress  :
@@ -48,7 +48,7 @@ lemma polyvec_decompress_equiv mem _p :
              pos_bound768_cxq res{1} 0 768 1 /\
              pos_bound768_cxq res{2} 0 768 1 ].
 proof.
-  transitivity KyberPolyvec_avx2_prevec.Mprevec.polyvec_decompress
+  transitivity MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_decompress
                (={rp, Glob.mem} /\ valid_ptr (W64.to_uint rp{1}) 960 /\ _p = to_uint rp{1} ==>
                    ={res, Glob.mem})
                (={Glob.mem} /\ rp{1} = ap{2} /\ Glob.mem{1} = mem /\
@@ -123,7 +123,7 @@ proof.
       exists (load_array960 Glob.mem{1} _p).
         + by rewrite p_def valid_p u_def mem_def /= mem_eq mem_def /=.
     auto => />.
-    proc * => /=. ecall (KyberPolyVec.polyvec_decompress_corr mem _p (load_array960 Glob.mem{1} _p)) => //=.
+    proc * => /=. ecall (MLKEM_PolyVec.polyvec_decompress_corr mem _p (load_array960 Glob.mem{1} _p)) => //=.
   symmetry.
   proc * => /=.
   call decode10_opt_vec_corr.
@@ -140,7 +140,7 @@ equiv compressequivvec mem _p :
     ==> 
     ={Glob.mem} /\  touches mem Glob.mem{1} _p (3*320).
 proof.
-  transitivity KyberPolyvec_avx2_prevec.Mprevec.polyvec_compress
+  transitivity MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_compress
                (={rp, a, Glob.mem} /\ valid_ptr (W64.to_uint rp{1}) (3*320) /\ _p = to_uint rp{1} ==> 
                    ={res, Glob.mem})
                (valid_ptr (W64.to_uint rp{1}) (3*320) /\
@@ -227,7 +227,7 @@ proof.
                    + smt().
                smt().
     + proc * => /=.
-      ecall (KyberPolyVec.polyvec_compress_corr mem _p (lift_array768 a{1})) => //=.
+      ecall (MLKEM_PolyVec.polyvec_compress_corr mem _p (lift_array768 a{1})) => //=.
       auto => /> &1 H H0 H1 H2.
         + rewrite /compress_polyvec; congr. 
           rewrite /fromarray256 /lift_polyvec /lift_array768 tP => i ib /=.
@@ -249,7 +249,7 @@ equiv compressequivvec_1 mem :
     ==> 
     ={Glob.mem,res} /\  Glob.mem{1} = mem.
 proof.
-  transitivity KyberPolyvec_avx2_prevec.Mprevec.polyvec_compress_1
+  transitivity MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_compress_1
                (={rp, a, Glob.mem} ==> ={res, Glob.mem})
                (pos_bound768_cxq a{1} 0 768 2 /\
                 pos_bound768_cxq a{2} 0 768 2 /\
@@ -309,7 +309,7 @@ proof.
                    + smt().
                smt().
     + proc * => /=.
-      ecall (KyberPolyVec.i_polyvec_compress_corr (lift_array768 a{1})) => //=.
+      ecall (MLKEM_PolyVec.i_polyvec_compress_corr (lift_array768 a{1})) => //=.
       auto => /> &1 H H0.
         + rewrite /compress_polyvec; congr.
           rewrite /fromarray256 /lift_polyvec /lift_array768 tP => i ib /=.
@@ -333,7 +333,7 @@ lemma poly_decompress_equiv mem _p :
              pos_bound256_cxq res{1} 0 256 1 /\
              pos_bound256_cxq res{2} 0 256 1 ].
 proof.
-  transitivity KyberPoly_avx2_prevec.Mprevec.poly_decompress
+  transitivity MLKEM_Poly_avx2_prevec.Mprevec.poly_decompress
                (={ap, Glob.mem} /\ valid_ptr _p 128 /\ Glob.mem{1} = mem /\ _p = to_uint ap{1} ==> 
                    ={res, Glob.mem})
                (={ap, Glob.mem} /\ valid_ptr _p 128 /\ Glob.mem{1} = mem /\ _p = to_uint ap{2} ==>
@@ -390,7 +390,7 @@ proof.
         rewrite H0 H1 H4 H2 H3 //=.
       auto => />.
     proc * => /=.
-    ecall (KyberPoly.poly_decompress_corr mem (to_uint ap{1}) (load_array128 mem _p)) => //=.
+    ecall (MLKEM_Poly.poly_decompress_corr mem (to_uint ap{1}) (load_array128 mem _p)) => //=.
   symmetry.
   proc * => /=.
   call eq_decode4.
@@ -407,7 +407,7 @@ equiv compressequiv_1 mem :
     ={Glob.mem} /\  Glob.mem{1} = mem /\
     res.`1{1} = res.`1{2}.
 proof.
-  transitivity KyberPoly_avx2_prevec.Mprevec.poly_compress_1
+  transitivity MLKEM_Poly_avx2_prevec.Mprevec.poly_compress_1
                (={rp, a, Glob.mem} ==> 
                    ={res, Glob.mem})
                (pos_bound256_cxq a{1} 0 256 2 /\
@@ -461,7 +461,7 @@ proof.
                    + by rewrite a1_eq_a2.
                smt().
     + proc * => /=.
-      ecall (KyberPoly.i_poly_compress_corr (lift_array256 a{1})) => //=.
+      ecall (MLKEM_Poly.i_poly_compress_corr (lift_array256 a{1})) => //=.
   symmetry.
   proc * => /=.
   call eq_encode4.
@@ -477,7 +477,7 @@ equiv compressequiv mem _p :
     ==> 
     ={Glob.mem} /\  touches mem Glob.mem{1} _p 128.
 proof.
-  transitivity KyberPoly_avx2_prevec.Mprevec.poly_compress
+  transitivity MLKEM_Poly_avx2_prevec.Mprevec.poly_compress
                (={rp, a, Glob.mem} /\ valid_ptr (W64.to_uint rp{1}) 128 /\ _p = to_uint rp{1} ==> 
                    ={res, Glob.mem})
                (valid_ptr (W64.to_uint rp{1}) 128 /\
@@ -556,7 +556,7 @@ proof.
                    + smt().
                smt().
     + proc * => /=.
-      ecall (KyberPoly.poly_compress_corr (lift_array256 a{1}) _p mem) => //=.
+      ecall (MLKEM_Poly.poly_compress_corr (lift_array256 a{1}) _p mem) => //=.
   symmetry.
   proc * => /=.
   call eq_encode4.
@@ -668,8 +668,8 @@ transitivity {1} { r <@ Mprevec.poly_frommont(rp); }
     signed_bound_cxq r{2} 0 256 2); 1,2: smt(). 
 symmetry. call prevec_eq_poly_frommont. auto => />.
 
-ecall{2} (KyberPoly.poly_frommont_corr (map W16.to_sint rp{2})).
-ecall{1} (KyberPolyAVX.poly_frommont_corr (map W16.to_sint rp{1})).
+ecall{2} (MLKEM_Poly.poly_frommont_corr (map W16.to_sint rp{2})).
+ecall{1} (MLKEM_PolyAVX.poly_frommont_corr (map W16.to_sint rp{1})).
 
 auto => />.
 move => &1 &2 Hvals r1 H.
@@ -737,8 +737,8 @@ transitivity {1} { r <@ Mprevec.poly_reduce(rp); }
     pos_bound256_cxq r{2} 0 256 2);1,2: smt(). 
 symmetry. call prevec_eq_poly_reduce. auto => />.
 
-ecall{2} (KyberPoly.poly_reduce_corr (lift_array256 rp{2})).
-ecall{1} (KyberPolyAVX.poly_reduce_corr (lift_array256 rp{1})).
+ecall{2} (MLKEM_Poly.poly_reduce_corr (lift_array256 rp{2})).
+ecall{1} (MLKEM_PolyAVX.poly_reduce_corr (lift_array256 rp{1})).
 
 auto => />.
 move => &1 &2; rewrite /lift_array256 tP => Hvals r1; rewrite tP => r1val r1rng r2; rewrite tP => r2val r2rng.
@@ -767,8 +767,8 @@ transitivity {1} { r <@ Mprevec.poly_reduce(rp); }
     pos_bound256_cxq r{2} 0 256 2); 1,2: smt(). 
 symmetry. call prevec_eq_poly_reduce. auto => />.
 
-ecall{2} (KyberPoly.poly_reduce_corr (lift_array256 rp{2})).
-ecall{1} (KyberPolyAVX.poly_reduce_corr (lift_array256 rp{1})).
+ecall{2} (MLKEM_Poly.poly_reduce_corr (lift_array256 rp{2})).
+ecall{1} (MLKEM_PolyAVX.poly_reduce_corr (lift_array256 rp{1})).
 
 auto => />.
 move => &1 &2; rewrite /lift_array256 tP => Hvals r1; rewrite tP => r1val r1rng r2; rewrite tP => r2val r2rng.
@@ -819,7 +819,7 @@ lemma poly_add_corr_avx_impl ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
-   by move => abb bbb _a _b; apply (KyberPolyAVX.poly_add_corr _a _b ab bb abb bbb).
+   by move => abb bbb _a _b; apply (MLKEM_PolyAVX.poly_add_corr _a _b ab bb abb bbb).
 
 lemma addequiv  (ab1 bb1 ab2 bb2 : int):
     0 <= ab1 && ab1 <= 6 =>
@@ -948,7 +948,7 @@ symmetry. proc*; call prevec_eq_poly_frommsg. auto => />.
     decompress_poly 1 res{1} = lift_array256 ( res{2}) /\
     pos_bound256_cxq res{2} 0 256 1);1,2: smt(). 
     proc*. ecall (eq_decode1_opt); auto => />. 
-    symmetry; proc*; ecall  (KyberPoly.poly_frommsg_corr ap{1}); auto => />;smt().
+    symmetry; proc*; ecall  (MLKEM_Poly.poly_frommsg_corr ap{1}); auto => />;smt().
 qed.
 
 lemma compress_poly_rng i xs :
@@ -992,7 +992,7 @@ symmetry. proc*; call prevec_eq_poly_tomsg. auto => />.
     res{2}.`1 = res{1}).
     auto => /> &1 &2. exists (compress_poly 1 (lift_array256 a{1})) => />. rewrite compress_poly_rng //. smt().
     proc*. ecall (eq_encode1). auto => />. 
-    symmetry; proc*; ecall  (KyberPoly.poly_tomsg_corr (lift_array256 a{1})); auto => />. 
+    symmetry; proc*; ecall  (MLKEM_Poly.poly_tomsg_corr (lift_array256 a{1})); auto => />. 
 qed.
 
 lemma polyvec_tobytes_equiv :
@@ -1005,7 +1005,7 @@ lemma polyvec_tobytes_equiv :
              lift_array768 a{1} = nttunpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
 proof.
   move => _p.
-  transitivity KyberPolyvec_avx2_prevec.Mprevec.polyvec_tobytes
+  transitivity MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_tobytes
                (={rp, a, Glob.mem} /\ valid_ptr (W64.to_uint rp{1}) 1152 /\ _p = to_uint rp{1} ==> ={res, Glob.mem})
                (valid_ptr (W64.to_uint rp{1}) 1152 /\
                 pos_bound768_cxq a{1} 0 768 2 /\
@@ -1094,7 +1094,7 @@ proof.
                    + auto => />.
                auto => />.
     + proc * => /=.
-      ecall (KyberPolyVec.polyvec_tobytes_corr (Glob.mem{1}) (to_uint rp{1}) (lift_array768 a{1})) => //=.
+      ecall (MLKEM_PolyVec.polyvec_tobytes_corr (Glob.mem{1}) (to_uint rp{1}) (lift_array768 a{1})) => //=.
       auto => />.
   symmetry.
   proc * => /=.
@@ -1118,7 +1118,7 @@ lemma polyvec_add2_equiv  (ab bb : int):
               ].
 proof. 
 move => abb bbb _a _b;proc* => /=.
-transitivity {1} {r0 <@ KyberPolyvec_avx2_prevec.Mprevec.polyvec_add2(r,b); }
+transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_add2(r,b); }
        (={r,b} ==> ={r0})
        (_a = lift_array768 r{2} /\
   _b = lift_array768 b{2} /\
@@ -1199,7 +1199,7 @@ lemma polyvec_add2_equiv_noperm  (ab bb : int):
               ].
 proof. 
 move => abb bbb _a _b;proc* => /=.
-transitivity {1} {r0 <@ KyberPolyvec_avx2_prevec.Mprevec.polyvec_add2(r,b); }
+transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_add2(r,b); }
        (={r,b} ==> ={r0})
        (_a = lift_array768 r{2} /\
   _b = lift_array768 b{2} /\
@@ -1225,7 +1225,7 @@ lemma polyvec_reduce_equiv _a :
        (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
               lift_array768 res{1} = nttunpackv (lift_array768 res{2}) ].
 proc*. 
-transitivity {1} {r0 <@ KyberPolyvec_avx2_prevec.Mprevec.polyvec_reduce(r); }
+transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})
        (_a = lift_array768 r{2} /\ _a = nttpackv (lift_array768 r{1})   ==> 
       (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
@@ -1248,7 +1248,7 @@ lemma polyvec_reduce_equiv_noperm _a :
        (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
               lift_array768 res{1} =  lift_array768 res{2} ].
 proc*. 
-transitivity {1} {r0 <@ KyberPolyvec_avx2_prevec.Mprevec.polyvec_reduce(r); }
+transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})
        (_a = lift_array768 r{2} /\ _a = (lift_array768 r{1})   ==> 
       (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
@@ -1383,7 +1383,7 @@ move => &1 &2 ????????????. do split.
 move => ?? r1 r2 ???.
 rewrite -lift256_nttunpack;1: assumption.
 
-ecall{2} (KyberPoly.poly_reduce_corr (lift_array256 r{2})).
+ecall{2} (MLKEM_Poly.poly_reduce_corr (lift_array256 r{2})).
 auto => />.
 move => &1 &2 ?????? H H1 ? rr.
 move: H; rewrite /lift_array256 => H H2 ?.

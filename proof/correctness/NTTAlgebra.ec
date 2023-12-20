@@ -2,7 +2,7 @@
 
 (* This file contains the correction proof of the procedures NTT.ntt and NTT.invntt from NTT_Fq. *)
 (* The proof is made by game hopping, by proving that gradually less optimized versions of ntt and invntt are equivalent, *)
-(* and then by proving that the most naive version is equivalent to a high level spec, which itself implies the spec required by the other proofs in hakyber. *)
+(* and then by proving that the most naive version is equivalent to a high level spec, which itself implies the spec required by the other proofs in hamlkem. *)
 (* The equivalence is as follows: *)
 (* NTT_Fq.NTT.(inv)ntt <=> NTT_opt.(inv)ntt <=> NTT_bsrev.(inv)ntt <=> NTT_naive.(inv)ntt *)
 (*                                                                 <=> (inv)ntt_spec <=> (inv)ntt *)
@@ -16,7 +16,7 @@
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
 require import IntDiv_extra For.
 require import Array128 Array256.
-require import Montgomery NTT_Fq GFq Rq Correctness KyberFCLib.
+require import Montgomery NTT_Fq GFq Rq Correctness MLKEMFCLib.
 
 require Matrix.
 
@@ -139,7 +139,7 @@ abstract theory DFT.
 end DFT.
 *)
 
-require import Kyber.
+require import MLKEM.
 import Zq.
 
 theory NTTequiv.

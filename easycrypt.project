@@ -7,8 +7,8 @@ provers = Z3@4.8
 
 rdirs = proof
 rdirs = Jasmin:jasmin/eclib
-idirs = code/jasmin/ref/extraction
-idirs = code/jasmin/avx2v/extraction
+idirs = code/jasmin/mlkem_ref/extraction
+idirs = code/jasmin/mlkem_avx2/extraction
 idirs = crypto-specs/common
-idirs = crypto-specs/ml-kem
-idirs = crypto-specs/mk-kem/properties
+rdirs = crypto-specs/fips202
+rdirs = crypto-specs/ml-kem

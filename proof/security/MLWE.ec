@@ -308,10 +308,10 @@ end MLWE_vs_MLWE_ROM.
 end MLWE_ROM.
 
 (****************************************************************************)
-(* For Kyber it is more convenient to reduce the security of the spec
+(* For MLKEM it is more convenient to reduce the security of the spec
    to the following assumption, which is based on a matrix sampler that
    calls the ROM in a possibly intricate way. 
-   To Do. Prove equivalence to MLWE for the Kyber sampler                   *)
+   To Do. Prove equivalence to MLWE for the MLKEM sampler                   *)
 (****************************************************************************)
 
 theory MLWE_SMP.

@@ -4,7 +4,7 @@ require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4.
 require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
 require import Jkem Jkem_avx2.
-require import KyberPoly_avx2_prevec Kyber_AVX2_cf Kyber_AVX_AuxLemmas KyberFCLib.
+require import MLKEM_Poly_avx2_prevec MLKEM_avx2_encdec MLKEM_avx2_auxlemmas MLKEMFCLib.
 
 module Mvec = {
   proc shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {
@@ -795,7 +795,7 @@ module Mvec = {
   }
 }.
 
-theory KyberPolyAVXVec.
+theory MLKEM_PolyAVXVec.
 
 import AVX2_cf.
 
@@ -1996,7 +1996,7 @@ equiv prevec_eq_shuffle1_sym:
 symmetry. conseq prevec_eq_shuffle1 => />. qed.
 
 require import NTT_avx2 NTT_AVX_j.
-require import KyberPoly_avx2_proof.
+require import MLKEM_Poly_avx2_proof.
 
 lemma list_arr16 (x:'a Array16.t):
   [x.[0];x.[1];x.[2];x.[3];x.[4];x.[5];x.[6];x.[7];x.[8];x.[9];x.[10];x.[11];x.[12];x.[13];x.[14];x.[15]] = to_list x.
@@ -2008,7 +2008,7 @@ lemma avx2_shuffle8_corr_h (_a _b : t16u16) :
              ==>
              is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
              is16u16 (NTT_Avx2.shuf8 _a _b).`2 res.`2].
-conseq prevec_eq_shuffle8_sym (KyberPolyAVX.shuffle8_corr_h _a _b) => />.
+conseq prevec_eq_shuffle8_sym (MLKEM_PolyAVX.shuffle8_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
@@ -2026,7 +2026,7 @@ lemma avx2_shuffle4_corr_h (_a _b : t16u16) :
              ==>
              is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
              is16u16 (NTT_Avx2.shuf4 _a _b).`2 res.`2].
-conseq prevec_eq_shuffle4_sym (KyberPolyAVX.shuffle4_corr_h _a _b) => />.
+conseq prevec_eq_shuffle4_sym (MLKEM_PolyAVX.shuffle4_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
@@ -2044,7 +2044,7 @@ lemma avx2_shuffle2_corr_h (_a _b : t16u16) :
              ==>
              is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
              is16u16 (NTT_Avx2.shuf2 _a _b).`2 res.`2].
-conseq prevec_eq_shuffle2_sym (KyberPolyAVX.shuffle2_corr_h _a _b) => />.
+conseq prevec_eq_shuffle2_sym (MLKEM_PolyAVX.shuffle2_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
@@ -2062,7 +2062,7 @@ lemma avx2_shuffle1_corr_h (_a _b : t16u16) :
              ==>
              is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\
              is16u16 (NTT_Avx2.shuf1 _a _b).`2 res.`2].
-conseq prevec_eq_shuffle1_sym (KyberPolyAVX.shuffle1_corr_h _a _b) => />.
+conseq prevec_eq_shuffle1_sym (MLKEM_PolyAVX.shuffle1_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
@@ -2314,4 +2314,4 @@ qed.
 *)
 
 
-end KyberPolyAVXVec.
+end MLKEM_PolyAVXVec.

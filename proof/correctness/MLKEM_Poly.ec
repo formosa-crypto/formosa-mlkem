@@ -2,11 +2,11 @@ require import AllCore List IntDiv CoreMap IntDiv Real Number Ring StdOrder.
 
 from Jasmin require  import JModel JMemory.
 require import IntDiv_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
-require import GFq Rq Serialization Kyber Correctness Fq NTT_Fq NTTAlgebra KyberFCLib.
+require import GFq Rq Serialization MLKEM Correctness Fq NTT_Fq NTTAlgebra MLKEMFCLib.
 
 hint simplify range_ltn, range_geq.
 
-theory KyberPoly.
+theory MLKEM_Poly.
 
 import Fq Zq IntOrder.
 
@@ -1853,4 +1853,4 @@ lemma poly_basemul_correct _ap _bp:
      lift_array256 res = scale (basemul _ap _bp) (incoeff 169)] =1%r 
   by conseq poly_basemul_ll (poly_basemul_corr _ap _bp). 
 
-end KyberPoly.
+end MLKEM_Poly.

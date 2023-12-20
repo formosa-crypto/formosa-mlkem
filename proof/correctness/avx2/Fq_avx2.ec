@@ -2,25 +2,25 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel JWord.
 require import Array16 W16extra WArray512 WArray32 WArray16.
 
-require import Fq KyberPoly KyberFCLib.
-require import AVX2_Ops KyberPoly_avx2_prevec.
+require import Fq MLKEM_Poly MLKEMFCLib.
+require import AVX2_Ops MLKEM_Poly_avx2_prevec.
 require import Montgomery16.
 
 (* require import NTT_Fq.
 require import Jkem. *)
 
-import Fq KyberPoly.
+import Fq MLKEM_Poly.
 import SignedReductions.
 
 theory Fq_avx2.
 
-require import Kyber_AVX2_cf.
+require import MLKEM_avx2_encdec.
 
 require import Jkem_avx2.
 
 (*
-import Kyber.
-import KyberPoly.
+import MLKEM.
+import MLKEM_Poly.
 import Fq.
 import Zq.
 import ZModP.
@@ -30,7 +30,7 @@ op lift_array16 (p: W16.t Array16.t) =
   Array16.map (fun x => (W16.to_sint x)) p.
 
 lemma barret_red16x_corr_h:
-  equiv [Mprevec.red16x ~ Kyber_AVX2_cf.__red_x16 :
+  equiv [Mprevec.red16x ~ MLKEM_avx2_encdec.__red_x16 :
          ={r} /\
          (forall k, 0 <= k < 16 => qx16{1}.[k] = W16.of_int 3329) /\
          (forall k, 0 <= k < 16 => vx16{1}.[k] = W16.of_int 20159) ==>
@@ -211,7 +211,7 @@ lemma barret_red16x_corr _a:
 proof.
 bypr => &m [#] /= H H0 H1.
 have -> : 1%r = 
-Pr[Kyber_AVX2_cf.__red_x16(r{m}) @ &m :
+Pr[MLKEM_avx2_encdec.__red_x16(r{m}) @ &m :
    forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = BREDC (_a.[k]) 26]; last first. 
 + byequiv barret_red16x_corr_h => //=; split. 
   + by move => k kb; rewrite (H0 k kb) /= get_of_list // /= /#. 
@@ -295,7 +295,7 @@ byphoare => //; apply barret_red16x_ll.
 qed.
 
 lemma fqmulx16_corr_h:
-  equiv [Mprevec.fqmulx16 ~ Kyber_AVX2_cf.__fqmul_x16 :
+  equiv [Mprevec.fqmulx16 ~ MLKEM_avx2_encdec.__fqmul_x16 :
          ={a, b} /\
          (forall k, 0 <= k < 16 => qx16{1}.[k] = W16.of_int 3329) /\
          (forall k, 0 <= k < 16 => qinvx16{1}.[k] = W16.of_int (-3327)) ==>
@@ -560,7 +560,7 @@ lemma fqmulx16_corr _a _b:
 proof.
 bypr => &m [#] /= H H0 H1 H2.
 have -> : 1%r = 
-Pr[Kyber_AVX2_cf.__fqmul_x16(a{m}, b{m}) @ &m :
+Pr[MLKEM_avx2_encdec.__fqmul_x16(a{m}, b{m}) @ &m :
    forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])]; last by  byequiv fqmulx16_corr_h => //=. 
 byphoare (_: a = a{m} /\ b = b{m} ==> forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k]))=> //=.
 proc; unroll for 3.

@@ -1,14 +1,14 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require import GFq Rq Serialization Symmetric VecMat Sampling InnerPKE KyberPoly KyberPolyVec W16extra NTT_Fq.
+require import GFq Rq Serialization Symmetric VecMat Sampling InnerPKE MLKEM_Poly MLKEM_PolyVec W16extra NTT_Fq.
 require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
 require import Array960 Array1152 Array2304 Array1088 WArray32 WArray64.
 
 require import Jkem.
 
-require import Correctness KyberFCLib.
+require import Correctness MLKEMFCLib.
 import PolyVec PolyMat.
-import KyberPoly KyberPolyVec.
+import MLKEM_Poly MLKEM_PolyVec.
 
 import KMatrix.
 import Vector.
@@ -42,7 +42,7 @@ axiom shake256_33_128 buf seed :
 
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
     MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
-module AuxKyber= {
+module AuxMLKEM= {
 
 proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
   var a: polymat;
@@ -55,7 +55,7 @@ proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
       XOF.init(seed, if trans then i else j, 
                         if trans then j else i);        
       c <@ Parse(XOF).sample();
-      a <- (a.[i, j <- c])%Kyber;         
+      a <- (a.[i, j <- c])%MLKEM;         
       j <- j + 1;                      
     }                                 
     i <- i + 1;                       
@@ -454,7 +454,7 @@ qed.
 
 
 equiv auxgenmatrix_good :
- Jkem.M(Jkem.Syscall).__gen_matrix ~ AuxKyber.__gen_matrix :
+ Jkem.M(Jkem.Syscall).__gen_matrix ~ AuxMLKEM.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
 proc => /=. 
 inline Parse(XOF).sample.
@@ -859,7 +859,7 @@ by rewrite set_eqiE 1,2:/# sigextu16_to_sint (_: 3 = 2^2 -1) //
 qed.
 
 equiv sample_noise_good2 _key :
-  AuxKyber.sample_noise2_jasmin ~ AuxKyber.sample_noise2_spec :
+  AuxMLKEM.sample_noise2_jasmin ~ AuxMLKEM.sample_noise2_spec :
     _key = noiseseed{1} /\ ={noiseseed} 
     ==> res{1}.`1 = res{2}.`1 /\ 
                      res{1}.`2 = res{2}.`2 /\ 
@@ -941,7 +941,7 @@ by auto => /> &1 H H0; rewrite /lift_vector /unlift_vector !tP /subarray256 /lif
 qed.
 
 equiv sample_noise_good3 :
-  AuxKyber.sample_noise3_jasmin ~ AuxKyber.sample_noise3_spec :
+  AuxMLKEM.sample_noise3_jasmin ~ AuxMLKEM.sample_noise3_spec :
     ={noiseseed} ==> ={res}.
 proc.
 call get_noise_sample_noise.
@@ -955,7 +955,7 @@ qed.
   
 
 equiv auxkg_good :
- Jkem.M(Jkem.Syscall).__indcpa_keypair ~ AuxKyber.indcpa_keypair_jazz :
+ Jkem.M(Jkem.Syscall).__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
      ={Glob.mem} /\ ={arg}
      ==> ={Glob.mem,res}. 
 proc => /=. 
@@ -970,7 +970,8 @@ seq 11 7 : (#pre /\ ={publicseed, noiseseed}).
 + swap {1} [5..8] -2. 
   seq 6 2 : (#pre /\ ={buf}); last by sim; auto => />.   
   wp;ecall {1} (sha3_512_32_64 buf{1} inbuf{1}).
-  conseq => />;1: by smt().
+  conseq />; 1: by move => /> &2 inb H rr Hrr1 Hrr2; 
+     rewrite (H rr Hrr1 Hrr2). 
   while {1} (0<= i{1} <= aux{1} /\ aux{1} = 4 /\
               seed{2} = randomnessp{1} /\
              forall k, 0<= k < i{1} * 8 =>
@@ -1009,12 +1010,12 @@ swap {1} 2 24.
 swap {2} 1 8.
 
 seq 20 1 : (#{/~randomnessp{1}=seed{2}}pre /\ ={skpv,e}).
-transitivity {1} {(skpv,e) <@ AuxKyber.sample_noise2_jasmin(noiseseed);}
+transitivity {1} {(skpv,e) <@ AuxMLKEM.sample_noise2_jasmin(noiseseed);}
      (={Glob.mem,pkp,skp,publicseed,noiseseed,a} ==> 
           ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e})
      (={Glob.mem,pkp,skp,publicseed,noiseseed,a} ==> 
           ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e}); 1,2: by smt(). 
-+ by inline  AuxKyber.sample_noise2_jasmin; sim; auto => />. 
++ by inline  AuxMLKEM.sample_noise2_jasmin; sim; auto => />. 
 by conseq />; ecall (sample_noise_good2 noiseseed{2}) ; auto => />.
 
 swap{1} [1..2] 16.
@@ -1053,7 +1054,7 @@ by sim.
 qed.
 
 equiv auxenc_good :
- Jkem.M(Jkem.Syscall).__indcpa_enc ~ AuxKyber.indcpa_enc_jazz :
+ Jkem.M(Jkem.Syscall).__indcpa_enc ~ AuxMLKEM.indcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
 swap {1} 6 -5.
@@ -1079,19 +1080,19 @@ swap {1} 4 21.
 swap {1} 3 19.
 
 seq 23 1 : (#pre /\ ={sp_0,ep,epp}).
-transitivity {1} {(sp_0,ep,epp) <@ AuxKyber.sample_noise3_jasmin(noiseseed);}
+transitivity {1} {(sp_0,ep,epp) <@ AuxMLKEM.sample_noise3_jasmin(noiseseed);}
      (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} )
       (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = at{2} /\ sctp{1} = ctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp}  /\ aat{1} = at{2} /\ sctp{1} = ctp{2} ); 1,2:   smt(). 
-+ by inline  AuxKyber.sample_noise3_jasmin AuxKyber.sample_noise2_jasmin; sim.  
++ by inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin; sim.  
 + by conseq />; call sample_noise_good3; auto => />.
 
 by sim. 
 qed.
 
 equiv auxienc_good :
- Jkem.M(Jkem.Syscall).__iindcpa_enc ~ AuxKyber.iindcpa_enc_jazz :
+ Jkem.M(Jkem.Syscall).__iindcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
 swap {1} 6 -5.
@@ -1118,12 +1119,12 @@ swap {1} 3 22.
 swap {1} 3 24.
 
 seq 25 1 : (#pre /\ ={sp_0,ep,epp}).
-transitivity {1} {(sp_0,ep,epp) <@ AuxKyber.sample_noise3_jasmin(noiseseed);}
+transitivity {1} {(sp_0,ep,epp) <@ AuxMLKEM.sample_noise3_jasmin(noiseseed);}
      (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ ctp{1} = ctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ ctp{1} = ctp{2} )
       (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = at{2} /\ ctp{1} = ctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp}  /\ aat{1} = at{2} /\ ctp{1} = ctp{2} ); 1,2:   smt(). 
-+ by  inline  AuxKyber.sample_noise3_jasmin AuxKyber.sample_noise2_jasmin; sim; auto => />.
++ by  inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin; sim; auto => />.
 + by conseq />; call sample_noise_good3; auto => />.
 
 swap {1} 2 1.
@@ -1137,7 +1138,7 @@ op touches2 (m m' : global_mem_t) (p1 : address) (len1 : int) (p2 : address) (le
 
 import InnerPKE.
 
-lemma kyber_correct_kg mem _pkp _skp  : 
+lemma mlkem_correct_kg mem _pkp _skp  : 
    equiv [Jkem.M(Jkem.Syscall).__indcpa_keypair ~ InnerPKE.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        randomnessp{1} = coins{2} /\
@@ -1149,7 +1150,7 @@ lemma kyber_correct_kg mem _pkp _skp  :
          t = load_array1152 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc*.
-transitivity {1} { AuxKyber.indcpa_keypair_jazz(pkp, skp, randomnessp);} 
+transitivity {1} { AuxMLKEM.indcpa_keypair_jazz(pkp, skp, randomnessp);} 
 (={Glob.mem,pkp,skp,randomnessp} ==> ={Glob.mem,r}) 
 (   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
@@ -1178,7 +1179,7 @@ seq 8 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
               forall k, 0<=k< i{1}*8 => publicseed{1}.[k] = rho{2}.[k] /\ 
                                         noiseseed{1}.[k] = sig{2}.[k])
               (4 - i{1}); last first.
-   auto => /> &1 &2 ??????.
+   auto => /> &1 &2 ?????.
    split. 
     by smt(Array64.tP).
    move=> *; split; first smt().
@@ -1200,7 +1201,7 @@ seq 8 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ a{2} = lift_matrix a{1} /\
             pos_bound2304_cxq a{1} 0 2304 2).
-+ inline AuxKyber.__gen_matrix; conseq />.
++ inline AuxMLKEM.__gen_matrix; conseq />.
   seq 6 3 : (a0{1}=a{2}); last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
          forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a0{1}.[ii,jj] = a{2}.[ii,jj])%Matrix); last  first.
@@ -1218,7 +1219,7 @@ swap {1} 1 1.
 seq 1 7 : (#pre /\ s{2} = lift_polyvec skpv{1} /\ e{2} = lift_polyvec e{1} /\
                 signed_bound768_cxq skpv{1} 0 768 1 /\
                 signed_bound768_cxq e{1} 0 768 1).
-+ inline AuxKyber.sample_noise2_spec; conseq />. 
++ inline AuxMLKEM.sample_noise2_spec; conseq />. 
   seq 8 7 : (noise1{1}=s{2} /\ noise2{1} = e{2}); 
     1: by sim; auto => />.
   by auto => />;  smt(vector_unlift).
@@ -1451,7 +1452,7 @@ qed.
 
 (***************************************************)
 
-lemma kyber_correct_enc mem _ctp _pkp : 
+lemma mlkem_correct_enc mem _ctp _pkp : 
    equiv [Jkem.M(Jkem.Syscall).__indcpa_enc ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
@@ -1469,7 +1470,7 @@ lemma kyber_correct_enc mem _ctp _pkp :
      c2 = load_array128 Glob.mem{1} (_ctp + 960)
 ].
 proc*.
-transitivity {1} { AuxKyber.indcpa_enc_jazz(sctp,msgp,pkp,noiseseed);} 
+transitivity {1} { AuxMLKEM.indcpa_enc_jazz(sctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,msgp,pkp,noiseseed,sctp} ==> ={Glob.mem,r}) 
 ( valid_ptr _pkp (384 * 3 + 32) /\
   valid_ptr _ctp (3 * 320 + 128) /\
@@ -1536,7 +1537,7 @@ swap {2} [6..7] -4.
 seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
             pos_bound2304_cxq at{1} 0 2304 2). 
 (* Simplifiable if spec were to call a function to gen matrix *)
-+ inline AuxKyber.__gen_matrix; conseq />.
++ inline AuxMLKEM.__gen_matrix; conseq />.
   seq 7 3 : (a{1}=aT{2});  last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
          forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix); last  
@@ -1561,7 +1562,7 @@ seq 1 8 : (#pre /\ rv{2} = lift_polyvec sp_0{1} /\
     signed_bound768_cxq ep{1} 0 768 1 /\
     e2{2} = lift_array256 epp{1} /\
     signed_bound_cxq epp{1} 0 256 1).
-+ inline AuxKyber.sample_noise3_spec AuxKyber.sample_noise2_spec. 
++ inline AuxMLKEM.sample_noise3_spec AuxMLKEM.sample_noise2_spec. 
   wp; call(_: true); 1: by sim.
   conseq />; 1: by smt().
   seq 9 8 : (noise1{1}=rv{2} /\ noise2{1} = e1{2} /\ _N0{1} = _N{2} /\ 
@@ -1767,7 +1768,7 @@ by auto =>/> /#.
 
 qed.
 
-lemma kyber_correct_ienc mem _pkp : 
+lemma mlkem_correct_ienc mem _pkp : 
    equiv [Jkem.M(Jkem.Syscall).__iindcpa_enc ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
@@ -1781,7 +1782,7 @@ lemma kyber_correct_ienc mem _pkp :
      res{1} = Array1088.init (fun i => if 0<=i<960 then res{2}.`1.[i] else res{2}.`2.[i-960])
 ].
 proc*.
-transitivity {1} { r <@ AuxKyber.iindcpa_enc_jazz(ctp,msgp,pkp,noiseseed);} 
+transitivity {1} { r <@ AuxMLKEM.iindcpa_enc_jazz(ctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,msgp,pkp,noiseseed,ctp} ==> ={Glob.mem,r}) 
 ( valid_ptr _pkp (384 * 3 + 32) /\
   Glob.mem{1} = mem /\
@@ -1846,7 +1847,7 @@ swap {2} [6..7] -4.
 seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
             pos_bound2304_cxq at{1} 0 2304 2). 
 (* Simplifiable if spec were to call a function to gen matrix *)
-+ inline AuxKyber.__gen_matrix; conseq />.
++ inline AuxMLKEM.__gen_matrix; conseq />.
   seq 7 3 : (a{1}=aT{2});  last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
          forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix); last  
@@ -1871,7 +1872,7 @@ seq 1 8 : (#pre /\ rv{2} = lift_polyvec sp_0{1} /\
     signed_bound768_cxq ep{1} 0 768 1 /\
     e2{2} = lift_array256 epp{1} /\
     signed_bound_cxq epp{1} 0 256 1).
-+ inline AuxKyber.sample_noise3_spec AuxKyber.sample_noise2_spec. 
++ inline AuxMLKEM.sample_noise3_spec AuxMLKEM.sample_noise2_spec. 
   wp; call(_: true); 1: by sim.
   conseq />; 1: by smt().
   seq 9 8 : (noise1{1}=rv{2} /\ noise2{1} = e1{2} /\ _N0{1} = _N{2} /\ 
@@ -2071,7 +2072,7 @@ by auto =>/> /#.
 qed.
 
 
-lemma kyber_correct_dec mem _ctp _skp : 
+lemma mlkem_correct_dec mem _ctp _skp : 
    equiv [Jkem.M(Jkem.Syscall).__indcpa_dec ~ InnerPKE.dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\

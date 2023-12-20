@@ -430,7 +430,7 @@ end section.
 (******************************************************************)
 
 (* We want to prove a concrete bound on the probability of failure
-   for Kyber. We will do so generically by first showing at this
+   for MLKEM. We will do so generically by first showing at this
    level that it all comes down to the noise distribution. *)
 
 (* We express rounding errors as additive noise *)

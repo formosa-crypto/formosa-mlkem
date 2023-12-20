@@ -2,27 +2,27 @@ require import AllCore IntDiv List.
 from Jasmin require import JModel.
 require import Array16 Array25 Array32 Array33 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
 require import List_extra.
-require import KyberPoly  KyberPolyVec KyberINDCPA.
-require import KyberPoly_avx2_proof.
-require import KyberPoly_avx2_vec.
-require import KyberPoly_avx2_prevec.
-require import KyberPolyvec_avx2_proof.
-require import KyberPolyvec_avx2_vec.
-require import KyberFCLib.
+require import MLKEM_Poly  MLKEM_PolyVec MLKEM_InnerPKE.
+require import MLKEM_Poly_avx2_proof.
+require import MLKEM_Poly_avx2_vec.
+require import MLKEM_Poly_avx2_prevec.
+require import MLKEM_PolyVec_avx2_proof.
+require import MLKEM_PolyVec_avx2_vec.
+require import MLKEMFCLib.
 require import Jkem_avx2 Jkem.
 require import NTT_avx2 NTT_AVX_j.
 require import NTT_Fq NTT_AVX_Fq.
-require import Kyber_AVX_ref_lowlevel_equivs.
+require import MLKEM_avx2_equivs.
 require import Montgomery16.
 require import AVX2_Ops.
 
 
-import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE Kyber Fq Correctness.
+import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Fq Correctness.
 
-import KyberPoly.
-import KyberPolyVec.
-import KyberPolyvecAVX.
-import KyberPolyAVXVec.
+import MLKEM_Poly.
+import MLKEM_PolyVec.
+import MLKEM_PolyvecAVX.
+import MLKEM_PolyAVXVec.
 import NTT_Avx2.
 import WArray136 WArray32 WArray128.
 import WArray512 WArray256.
@@ -307,7 +307,7 @@ phoare nttunpack_corr a :
 conseq _nttunpack_ll (nttunpack_corr_h a) => />. qed.
 
 hoare matrix_bound_aux : 
-    AuxKyber.__gen_matrix : true ==> pos_bound2304_cxq res 0 2304 2.
+    AuxMLKEM.__gen_matrix : true ==> pos_bound2304_cxq res 0 2304 2.
 proc. seq 3 : true; 1: by auto.
 auto => /> &hr.
 rewrite /unlift_matrix /pos_bound2304_cxq => k kb.
@@ -961,7 +961,7 @@ phoare cbd2_avx2_ph _bytes:
  [Jkem_avx2.M(Jkem_avx2.Syscall).__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
 conseq cbd2_ll (cbd2_avx2_h _bytes) => />. qed.
 
-module AuxKyberAvx2 = {
+module AuxMLKEMAvx2 = {
   proc cbd2_ref (rp:W16.t Array256.t,buf:W8.t Array128.t) : W16.t Array256.t = {
     var k: int;
     var a, b, c: W8.t;
@@ -1027,7 +1027,7 @@ module AuxKyberAvx2 = {
 }.
 
 hoare cbd2_ref_h _bytes:
- AuxKyberAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
+ AuxMLKEMAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
 proof.
 proc.
 while (to_uint i <= 128 /\ to_uint j=2*to_uint i /\ #pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (to_uint j))).
@@ -1060,17 +1060,17 @@ rewrite (H k _) /=.
 by rewrite initiE //.
 qed.
 
-lemma cbd2_ref_ll : islossless AuxKyberAvx2.cbd2_ref.
+lemma cbd2_ref_ll : islossless AuxMLKEMAvx2.cbd2_ref.
 proc. inline*. sp; wp. while (true) (128 - W64.to_uint i). move => z.
 auto => /> &hr. rewrite ultE of_uintK //= => H. rewrite to_uintD_small //= /#.
 auto => />i H. rewrite ultE of_uintK //= 1:/#. qed.
 
 phoare cbd2_ref_ph _bytes:
- [AuxKyberAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
+ [AuxMLKEMAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
 conseq cbd2_ref_ll (cbd2_ref_h _bytes) => />. qed.
 
 equiv getnoise_split : 
-  M(Syscall)._poly_getnoise ~ AuxKyberAvx2._poly_getnoise : ={arg} ==> ={res}.
+  M(Syscall)._poly_getnoise ~ AuxMLKEMAvx2._poly_getnoise : ={arg} ==> ={res}.
 proc; wp; sp => />. 
 seq 2 0 : (srp{1}=rp{1} /\ ={buf,rp,seed,nonce} /\ extseed{1}=Array33.init (fun i => if i=32 then nonce{1} else seed{1}.[i]) ).
 wp. while{1} (0 <= k{1} <= 32 /\ (forall i, 0 <= i < k{1} => extseed{1}.[i]=seed{1}.[i])) (32-k{1}).
@@ -1081,23 +1081,23 @@ call (_:true). auto => />. sim. auto => />.
 inline *. sim. qed.
 
 equiv getnoise_1x_equiv_avx :
-  Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1 ~ AuxKyberAvx2.cbd2_ref : ={arg} ==> ={res}.
+  Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1 ~ AuxMLKEMAvx2.cbd2_ref : ={arg} ==> ={res}.
 proc*. inline Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1. rcondt{1} 3. auto => />. sp;wp.
 ecall{1} (cbd2_avx2_ph buf{1}) => />.
 ecall{2} (cbd2_ref_ph buf{2}) => />.
 auto => /> &2. rewrite tP => i Hi. rewrite initiE //=. qed.
 
 equiv getnoise_4x_split : 
-  GetNoiseAVX2._poly_getnoise_eta1_4x ~ AuxKyberAvx2.__poly_getnoise_eta1_4x : ={arg} ==> ={res}.
+  GetNoiseAVX2._poly_getnoise_eta1_4x ~ AuxMLKEMAvx2.__poly_getnoise_eta1_4x : ={arg} ==> ={res}.
 proc; wp; sp => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. call getnoise_split => />. auto => />. qed.
 
 equiv getnoiseequiv_avx : 
    Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
 proc*. 
-transitivity{2} { r <@ AuxKyberAvx2.__poly_getnoise_eta1_4x(aux3,aux2,aux1,aux0,noiseseed,nonce); } ((r0{1}, r1{1}, r2{1}, r3{1}, seed{1}, nonce{1}) = (aux3{2}, aux2{2}, aux1{2}, aux0{2}, noiseseed{2}, nonce{2}) ==> ={r}) (={aux3,aux2,aux1,aux0,noiseseed,nonce} ==> ={r}); last first.
+transitivity{2} { r <@ AuxMLKEMAvx2.__poly_getnoise_eta1_4x(aux3,aux2,aux1,aux0,noiseseed,nonce); } ((r0{1}, r1{1}, r2{1}, r3{1}, seed{1}, nonce{1}) = (aux3{2}, aux2{2}, aux1{2}, aux0{2}, noiseseed{2}, nonce{2}) ==> ={r}) (={aux3,aux2,aux1,aux0,noiseseed,nonce} ==> ={r}); last first.
 symmetry. call getnoise_4x_split => />. auto => />. smt(). smt().
 (*main proof*)
-inline Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x AuxKyberAvx2.__poly_getnoise_eta1_4x AuxKyberAvx2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
+inline Jkem_avx2.M(Jkem_avx2.Syscall)._poly_getnoise_eta1_4x AuxMLKEMAvx2.__poly_getnoise_eta1_4x AuxMLKEMAvx2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
 seq 25 30 : (
     r00{1}=rp{2}  /\ Array128.init (fun (i : int) => buf0{1}.[i]) =buf{2}
  /\ r10{1}=rp0{2} /\ Array128.init (fun (i : int) => buf1{1}.[i]) =buf0{2}
@@ -1154,7 +1154,7 @@ move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
 import InnerPKE.
-lemma kyber_correct_kg_avx2 mem _pkp _skp  : 
+lemma mlkem_correct_kg_avx2 mem _pkp _skp  : 
    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_keypair ~ InnerPKE.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        randomnessp{1} = coins{2}  /\
@@ -1183,7 +1183,7 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);}
         sk = load_array1152 Glob.mem{1} _skp /\
         t = load_array1152 Glob.mem{1} _pkp /\ 
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt(); 
-   last by call(kyber_correct_kg mem _pkp _skp); auto => />. 
+   last by call(mlkem_correct_kg mem _pkp _skp); auto => />. 
 
 inline{1} 1; inline {2} 1;  sim 43 60. 
 
@@ -1579,7 +1579,7 @@ qed.
 
 (***************************************************)
 
-lemma kyber_correct_enc_0_avx2 mem _ctp _pkp : 
+lemma mlkem_correct_enc_0_avx2 mem _ctp _pkp : 
    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_0 ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
@@ -1619,7 +1619,7 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_enc(sctp,msgp,pkp,noiseseed);}
   let (c1, c2) = r{2} in 
       c1 = load_array960 Glob.mem{1} _ctp /\ 
       c2 = load_array128 Glob.mem{1} (_ctp + 960)); 1,2: smt();  
-   last by call(kyber_correct_enc mem _ctp _pkp); auto => />. 
+   last by call(mlkem_correct_enc mem _ctp _pkp); auto => />. 
 
 inline{1} 1; inline {2} 1. wp.
 
@@ -1962,7 +1962,7 @@ qed.
 
 (***************************************************)
 
-lemma kyber_correct_enc_1_avx2 mem _pkp : 
+lemma mlkem_correct_enc_1_avx2 mem _pkp : 
    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_1 ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
@@ -1993,7 +1993,7 @@ transitivity {1} { r <@Jkem.M(Jkem.Syscall).__iindcpa_enc(ctp,msgp,pkp,noiseseed
   pk{2}.`2 = load_array32 mem (_pkp + 3 * 384) 
   ==>
   Glob.mem{1} = mem /\
-  r{1} = (Array1088.init (fun (i : int) => if 0 <= i && i < 960 then r{2}.`1.[i] else r{2}.`2.[i - 960])));[ by smt() | | | by call(kyber_correct_ienc mem _pkp); auto => />].
+  r{1} = (Array1088.init (fun (i : int) => if 0 <= i && i < 960 then r{2}.`1.[i] else r{2}.`2.[i - 960])));[ by smt() | | | by call(mlkem_correct_ienc mem _pkp); auto => />].
   + move => /> c1 c2. 
     rewrite !tP;split;move => *.
     + by rewrite !initiE // 1:/# /= /#.
@@ -2332,7 +2332,7 @@ auto => /> /#.
 qed.
 
 
-lemma kyber_correct_dec mem _ctp _skp : 
+lemma mlkem_correct_dec mem _ctp _skp : 
    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_dec_1 ~ InnerPKE.dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
@@ -2368,7 +2368,7 @@ transitivity {1} { r <@Jkem.M(Jkem.Syscall).__indcpa_dec(msgp,ctp,skp);}
        ==> 
      Glob.mem{1} = mem /\
      r{1} = r{2}); 1,2: smt();  
-   last by call(kyber_correct_dec mem _ctp _skp); auto => />. 
+   last by call(mlkem_correct_dec mem _ctp _skp); auto => />. 
 
 inline{1} 1; inline {2} 1.
 wp; ecall (tomsgequiv_noperm).

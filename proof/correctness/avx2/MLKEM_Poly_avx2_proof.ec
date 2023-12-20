@@ -2,12 +2,12 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
 require import W16extra WArray512 WArray32 WArray16.
-require import AVX2_Ops Kyber_AVX2_cf KyberPoly_avx2_prevec NTT_avx2 Fq_avx2 Kyber_AVX_AuxLemmas.
+require import AVX2_Ops MLKEM_avx2_encdec MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxlemmas.
 require import Jkem_avx2 Jkem.
-require import Fq NTT_Fq KyberPoly.
-require import GFq Rq Serialization VecMat Correctness KyberFCLib.
+require import Fq NTT_Fq MLKEM_Poly.
+require import GFq Rq Serialization VecMat Correctness MLKEMFCLib.
 
-theory KyberPolyAVX.
+theory MLKEM_PolyAVX.
 
 import GFq.
 import Fq.
@@ -16,7 +16,7 @@ import Zq.
 import ZModP.
 import Fq_avx2.
 import NTT_Avx2.
-import KyberPoly.
+import MLKEM_Poly.
 
 lemma poly_add_corr_h _a _b ab bb :
       0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -1761,8 +1761,8 @@ proof.
     do (rewrite sltE sleE || rewrite of_sintK /smod //=).
     do (rewrite f0_def 1:/# f1_def 1:/# f2_def 1:/# f3_def 1:/#).
     do (rewrite /lift_array256 mapiE 1:/# //=).
-    do (rewrite (_: forall c, !(compress 4 (incoeff c) < 0)); first by move => c; move : (KyberPoly.compress_rng (incoeff c) 4); rewrite -lezNgt //=).
-    do (rewrite (_: forall c, !(255 <= compress 4 (incoeff c))) /=; first by move => c; move : (KyberPoly.compress_rng (incoeff c) 4); rewrite -ltzNge /= => /#).
+    do (rewrite (_: forall c, !(compress 4 (incoeff c) < 0)); first by move => c; move : (MLKEM_Poly.compress_rng (incoeff c) 4); rewrite -lezNgt //=).
+    do (rewrite (_: forall c, !(255 <= compress 4 (incoeff c))) /=; first by move => c; move : (MLKEM_Poly.compress_rng (incoeff c) 4); rewrite -ltzNge /= => /#).
     rewrite (_: 8 * (x %/ 16) + 2 * (x %% 8) %% 8 = 2 * (k %% 8)).
       have H: k \in (iota_ (32 * i{2}) 32); first by rewrite mem_iota k_ub k_tlb.
       have H0: i{2} \in (iota_ 0 4); first by rewrite mem_iota i_tub i_lb.
@@ -1866,19 +1866,19 @@ proof.
     have pck_bnds: forall (c1 c2: coeff),
                      0 <= (compress 4 c1) + (compress 4 c2) * 16 < 256.
         move => c1 c2.
-        move : (KyberPoly.compress_rng c1 4) (KyberPoly.compress_rng c2 4) => />.
+        move : (MLKEM_Poly.compress_rng c1 4) (MLKEM_Poly.compress_rng c2 4) => />.
         smt().
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
       smt(ltz_trans @Logic).
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
       smt(ltz_trans @Logic).
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
       smt(ltz_trans @Logic).
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
       smt(ltz_trans @Logic).
     have spck_id: forall c1 c2, to_sint (packssw ((compress 4 c1) + (compress 4 c2) * 16)) = (compress 4 c1) + (compress 4 c2) * 16.
       rewrite /packssw => c1 c2.
@@ -2444,8 +2444,8 @@ proof.
     do (rewrite sltE sleE || rewrite of_sintK /smod //=).
     do (rewrite f0_def 1:/# f1_def 1:/# f2_def 1:/# f3_def 1:/#).
     do (rewrite /lift_array256 mapiE 1:/# //=).
-    do (rewrite (_: forall c, !(compress 4 (incoeff c) < 0)); first by move => c; move : (KyberPoly.compress_rng (incoeff c) 4); rewrite -lezNgt //=).
-    do (rewrite (_: forall c, !(255 <= compress 4 (incoeff c))) /=; first by move => c; move : (KyberPoly.compress_rng (incoeff c) 4); rewrite -ltzNge /= => /#).
+    do (rewrite (_: forall c, !(compress 4 (incoeff c) < 0)); first by move => c; move : (MLKEM_Poly.compress_rng (incoeff c) 4); rewrite -lezNgt //=).
+    do (rewrite (_: forall c, !(255 <= compress 4 (incoeff c))) /=; first by move => c; move : (MLKEM_Poly.compress_rng (incoeff c) 4); rewrite -ltzNge /= => /#).
     rewrite (_: 8 * (x %/ 16) + 2 * (x %% 8) %% 8 = 2 * (k %% 8)).
       have : k \in (iota_ (32 * i{2}) 32); first by rewrite mem_iota k_ub k_tlb.
       have : i{2} \in (iota_ 0 4); first by rewrite mem_iota i_tub i_lb.
@@ -2545,19 +2545,19 @@ proof.
     have pck_bnds: forall (c1 c2: coeff),
                      0 <= (compress 4 c1) + (compress 4 c2) * 16 < 256.
         move => c1 c2.
-        move : (KyberPoly.compress_rng c1 4) (KyberPoly.compress_rng c2 4) => />.
+        move : (MLKEM_Poly.compress_rng c1 4) (MLKEM_Poly.compress_rng c2 4) => />.
         smt().
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
       smt(ltz_trans @Logic).
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
       smt(ltz_trans @Logic).
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8)])) 4) => />.
       smt(ltz_trans @Logic).
     rewrite of_uintK (pmod_small _ W8.modulus).
-      move : (KyberPoly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
+      move : (MLKEM_Poly.compress_rng (incoeff (to_sint a{1}.[64 * i{2} + 32 + 16 * (x %% 8 %/ 4) + 2 * (k %% 8) + 1])) 4) => />.
       smt(ltz_trans @Logic).
     have spck_id: forall c1 c2, to_sint (packssw ((compress 4 c1) + (compress 4 c2) * 16)) = (compress 4 c1) + (compress 4 c2) * 16.
       rewrite /packssw => c1 c2.
@@ -2961,7 +2961,7 @@ proc.
   inline *; wp; auto => /> /#.
 qed.
 
-(* TODO: move to spec/Kyber.ec *)
+(* TODO: move to spec/MLKEM.ec *)
 op s_encode (b: bool): int =
   asint (b_encode b).
 
@@ -6383,4 +6383,4 @@ proc.
 qed.
 
 
-end KyberPolyAVX.
+end MLKEM_PolyAVX.

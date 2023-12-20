@@ -155,7 +155,7 @@ lemma outrange a :  - R%/2 <= a < 0 => a %% R = R + a by smt().
 lemma sign_comp a b: smod (a %%R + b %% R) R = smod (a + b) R
    by move => *; rewrite !smodE modzDm.
 
-(* Signed Barrett reduction as used in Kyber 2.0 *)
+(* Signed Barrett reduction as used in MLKEM 2.0 *)
 
 op BREDC(a bits : int) =
    let t = smod (a * (2^bits %/ q + 1)) (R^2) %/ 2^bits * q in
@@ -164,7 +164,7 @@ op BREDC(a bits : int) =
 
 
 
-require import Barrett_kyber_general.
+require import Barrett_mlkem_general.
 
 lemma nosmt BREDCp_corr a bits:
    0 < 2 * q < R %/2 =>
@@ -217,7 +217,7 @@ have -> /=: 2 ^ k ^ 2 %/ 2 <= 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReducti
   by move : (modzMDr (-((2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits)) (-d) q) => /=; smt(modNz). 
 qed. 
 
-(* Signed Montgomery reduction as used in Kyber v2.0 *)
+(* Signed Montgomery reduction as used in MLKEM v2.0 *)
 
 op SREDC (a: int) : int =
   let u = smod (a * qinv * R) (R^2) in

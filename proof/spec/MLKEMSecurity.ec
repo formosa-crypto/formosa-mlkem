@@ -5,7 +5,7 @@ from Jasmin require import JWord.
 
 require import MLWE_PKE_Hash.
 require import GFq Rq  VecMat Sampling Symmetric Serialization.
-require import InnerPKE MLKEM Correctness EncDecCorrectness KyberLib.
+require import InnerPKE MLKEM Correctness EncDecCorrectness MLKEMLib.
 
 import Zq PolyVec PolyMat InnerPKE.
 
@@ -14,7 +14,7 @@ import Zq PolyVec PolyMat InnerPKE.
    can be used to instantiate the FO_MLKEM theory *)
 
 (*****************************************************
-We define a version of Kyber spec that
+We define a version of MLKEM spec that
 uses external samplers. This is useful for 
 syntactic reasons in the following proof
 steps.
@@ -475,7 +475,7 @@ while (rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
 inline {1} 6.
 sp;wp;conseq  (: rho{1} = rho{2} /\ 
              noiseseed{1} = sig{2} /\
-             a2{1} = a{2});1:  by smt(eq_vectorP).
+             a2{1} = a{2}); 1: by auto => />; by smt(eq_vectorP).
 while (#post /\ sd{1} = rho{1} /\ i2{1} = i{2} /\ 0<=i2{1}<=kvec); last by auto => /> /#.
 wp;while (#post /\ j1{1} = j{2} /\ 0<=j1{1}<=kvec); 
      last by auto => /> /#.

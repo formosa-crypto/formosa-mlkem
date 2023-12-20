@@ -2,7 +2,7 @@ require import AllCore Int IntDiv Ring StdOrder List.
 import Ring.IntID IntOrder.
 
 from Jasmin require import JWord.
-require import KyberFCLib.
+require import MLKEMFCLib.
 
 (* @JBA: MOVE THIS *)
 

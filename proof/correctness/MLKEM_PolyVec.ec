@@ -1,17 +1,17 @@
 require import AllCore List IntDiv CoreMap.
 from Jasmin require  import JModel JMemory.
 require import W16extra Array1152 Array960 Array256 Array384 Array128 Array768.
-require import GFq Rq Serialization VecMat Kyber Correctness Fq KyberPoly NTT_Fq NTTAlgebra  KyberFCLib.
+require import GFq Rq Serialization VecMat MLKEM Correctness Fq MLKEM_Poly NTT_Fq NTTAlgebra  MLKEMFCLib.
 
 
 require import Jkem.
 
-theory KyberPolyVec.
+theory MLKEM_PolyVec.
 
 import NTT_Fq.
 import GFq.
 import Zq.
-import KyberPoly.
+import MLKEM_Poly.
 import KMatrix.
 import PolyVec.
 import PolyMat.
@@ -1268,5 +1268,5 @@ lemma innerprod_corr va vb:
     lift_array256  res = ntt (dotp va vb)  ]  = 1%r by
 move => *;conseq inner_product_ll (innerprod_corr_h va vb) => //.
 
-end KyberPolyVec.
+end MLKEM_PolyVec.
 
