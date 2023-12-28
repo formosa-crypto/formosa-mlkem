@@ -573,7 +573,9 @@ have msb0 : forall i, 0 <= i <8 => msb (W64.zero \bits8 i) = false.
   by rewrite to_uint0 /=.
 
 do split.
-+ admit. 
++ rewrite /touches => a ab.
+  rewrite /storeW256 /loadW256 /loads /stores /=.
+  by do 32!(rewrite get_setE ifF 1:/#);smt().
 
 + move =>czero; move : (H1 czero) => -> /=;rewrite tP => k kb.
 rewrite initiE //= /storeW256 /=.

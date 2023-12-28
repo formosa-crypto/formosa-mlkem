@@ -240,6 +240,14 @@ rewrite -get_to_list (nth_map  witness%W8); 1: smt(Array128.size_to_list).
 rewrite w2bitsE /= nth_mkseq /#.
 qed.
 
+lemma cbd2prfsem _k _N :
+   phoare [ CBD2_PRF(NPRF.PRF).sample : NPRF.PRF.k = _k /\ arg = _N ==>
+        res = cbd2sample (SHAKE256_33_128 _k (W8.of_int _N)) ] = 1%r.
+bypr => &m0 [#] kv ->.
+have /=  <- := cbd2sample_opsem &m0 (cbd2sample (SHAKE256_33_128 _k (W8.of_int _N))) (SHAKE256_33_128 _k (W8.of_int _N)).
+by  byequiv (cbd_correct) => /#.
+qed.
+
 import PolyVec PolyMat.
 
 module MLKEM_PRGs = {
@@ -299,20 +307,51 @@ module MLKEM_PRGs = {
 }.
 
 op H : W8.t Array32.t -> polymat.
-op prg_kg_inner :  W8.t Array32.t -> W8.t Array32.t * polyvec * polyvec.
-op prg_enc_inner :  W8.t Array32.t -> polyvec * polyvec * poly.
 
 (* This fixes the definition of H in terms of the MLKEM spec *)
 axiom H_sem _seed :
     phoare [ Hmodule.sampleA : sd = _seed ==> res = nttm (H _seed) ] = 1%r.
 
+op prg_kg_inner(coins :  W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec =
+   ((G_coins coins).`1, 
+    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins coins).`2 (W8.of_int i))),
+    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins coins).`2 (W8.of_int (i + 3))))).
+
+op prg_enc_inner(coins :  W8.t Array32.t) : polyvec * polyvec * poly =
+   (KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF coins (W8.of_int i))),
+    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF coins (W8.of_int (i + 3)))), 
+    cbd2sample (Symmetric.PRF coins (W8.of_int 6))).
+
 lemma prg_kg_sem _coins : 
    phoare [ MLKEM_PRGs.prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
-admitted. (* IDEALLY PROC OP *)
+proc.
+unroll for 9; unroll for 7.
+wp;call (cbd2prfsem ((G_coins _coins).`2) 5). 
+wp;call (cbd2prfsem ((G_coins _coins).`2) 4). 
+wp;call (cbd2prfsem ((G_coins _coins).`2) 3). 
+wp;call (cbd2prfsem ((G_coins _coins).`2) 2). 
+wp;call (cbd2prfsem ((G_coins _coins).`2) 1). 
+wp;call (cbd2prfsem ((G_coins _coins).`2) 0). 
+by auto => />; rewrite /prg_kg_inner /= !KMatrix.Vector.eq_vectorP;split;
+    move => i ib;rewrite !setvE /= !KMatrix.Vector.offunvE /= 1,2:/# 
+     !KMatrix.Vector.offunvK /vclamp /= /kvec /= /#.
+qed.
 
 lemma prg_enc_sem _coins : 
    phoare [ MLKEM_PRGs.prg_enc : noiseseed = _coins ==> res = prg_enc_inner _coins ] = 1%r.
-admitted. (* IDEALLY PROC OP *)
+proc.
+unroll for 8; unroll for 6.
+wp;call (cbd2prfsem _coins 6). 
+wp;call (cbd2prfsem _coins 5). 
+wp;call (cbd2prfsem _coins 4). 
+wp;call (cbd2prfsem _coins 3). 
+wp;call (cbd2prfsem _coins 2). 
+wp;call (cbd2prfsem _coins 1). 
+wp;call (cbd2prfsem _coins 0). 
+by auto => />; rewrite /prg_enc_inner /= !KMatrix.Vector.eq_vectorP; do split;1,2:
+    move => i ib;rewrite !setvE /= !KMatrix.Vector.offunvE /= 1,2:/# 
+     !KMatrix.Vector.offunvK /vclamp /= /kvec /= /#.
+qed.
 
 lemma H_T_sem _seed :
     phoare [ Hmodule.sampleAT : sd = _seed ==> res = nttm (trmx (H _seed)) ] = 1%r.
@@ -963,9 +1002,7 @@ transitivity {2} { coins0 <- (witness,k); coins <$ srand;  (pk0,sk0) <- kg coins
                                                      /\ 
       ={k} ==> pk{1} = pk0{2} /\ sk{1} = sk0{2} /\ coins0{2}.`2 = k{2})
    (={k} ==> ={pk0,sk0} /\ coins0{2}.`2 = k{2}); 1,2:smt().
-+ sp;conseq />; rndsem*{2} 0;rnd;auto => />. 
-  by have -> : (fun (coins : W8.t Array32.t) => ((kg coins).`1, (kg coins).`2)) = 
-            (fun coins => kg coins); smt().
++ by sp;conseq />; rndsem*{2} 0;rnd;auto => />. 
 swap {1} 1 1;auto => /> coins _; rewrite /kg /=. 
 have -> /= : (prg_kg_inner coins) = 
  ((prg_kg_inner coins).`1,(prg_kg_inner coins).`2,(prg_kg_inner coins).`3) by smt(). 
