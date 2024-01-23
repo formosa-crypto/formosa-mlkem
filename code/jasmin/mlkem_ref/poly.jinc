@@ -416,7 +416,7 @@ fn _i_poly_frommsg(reg ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> stack u16[MLKE
   return rp;
 }
 
-fn _poly_getnoise(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
+fn _poly_getnoise(#spill_to_mmx reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
 {
   stack u8[33] extseed;   /* 33 = MLKEM_SYMBYTES +1 */
   stack u8[128] buf;      /* 128 = MLKEM_ETA*MLKEM_N/4 */
@@ -426,20 +426,17 @@ fn _poly_getnoise(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] seed, reg 
   reg u64 i j;
   inline int k;
 
-  stack ptr u16[MLKEM_N] srp;
-
-  srp = rp;
+  () = #spill(rp);
   
   for k = 0 to MLKEM_SYMBYTES
-  {
-    c = seed[k];
+  { c = seed[k];
     extseed[k] = c;
   }
   extseed[MLKEM_SYMBYTES] = nonce;
 
   buf = _shake256_128_33(buf, extseed);
 
-  rp = srp;
+  () = #unspill(rp);
 
   i = 0;
   j = 0;

@@ -11,51 +11,54 @@ OS     := $(shell uname -s)
 
 default: test speed
 
-test: test/test_poly_compress \
-		  test/test_poly_decompress \
-			test/test_poly_tobytes \
-			test/test_poly_frombytes \
-			test/test_poly_tomsg \
-			test/test_poly_frommsg \
-			test/test_poly_add2 \
-			test/test_poly_sub \
-			test/test_poly_ntt \
-			test/test_poly_invntt \
-			test/test_poly_basemul \
-			test/test_poly_frommont \
-			test/test_poly_reduce \
-			test/test_poly_csubq \
-			test/test_poly_getnoise \
-			test/test_polyvec_compress\
-			test/test_polyvec_decompress\
-			test/test_polyvec_tobytes \
-			test/test_polyvec_frombytes \
-			test/test_polyvec_add2 \
-			test/test_polyvec_ntt \
-			test/test_polyvec_invntt \
-			test/test_polyvec_pointwise_acc \
-			test/test_polyvec_reduce\
-			test/test_polyvec_csubq \
-			test/test_fips202 \
-			test/test_indcpa \
-			test/test_kem
+test: \
+ test/test_poly_compress \
+ test/test_poly_decompress \
+ test/test_poly_tobytes \
+ test/test_poly_frombytes \
+ test/test_poly_tomsg \
+ test/test_poly_frommsg \
+ test/test_poly_add2 \
+ test/test_poly_sub \
+ test/test_poly_ntt \
+ test/test_poly_invntt \
+ test/test_poly_basemul \
+ test/test_poly_frommont \
+ test/test_poly_reduce \
+ test/test_poly_csubq \
+ test/test_poly_getnoise \
+ test/test_polyvec_compress\
+ test/test_polyvec_decompress\
+ test/test_polyvec_tobytes \
+ test/test_polyvec_frombytes \
+ test/test_polyvec_add2 \
+ test/test_polyvec_ntt \
+ test/test_polyvec_invntt \
+ test/test_polyvec_pointwise_acc \
+ test/test_polyvec_reduce\
+ test/test_polyvec_csubq \
+ test/test_fips202 \
+ test/test_indcpa \
+ test/test_kem
 
 speed: test/speed_indcpa
 
 HEADERS = params.h poly.h fips202.h kem.h
 
+JHEADERS = \
+  params.jinc \
+  reduce.jinc \
+  fips202.jinc \
+  kem.jinc \
+  verify.jinc
 
-JHEADERS = params.jinc \
-				   reduce.jinc \
-           			fips202.jinc \
-					 kem.jinc \
-					 verify.jinc
+POLYHEADERS = \
+ poly.jinc \
+ zetas.jinc
 
-POLYHEADERS = poly.jinc \
-				zetas.jinc \
-
-POLYVECHEADERS = polyvec.jinc \
-                 gen_matrix.jinc \
+POLYVECHEADERS = \
+  polyvec.jinc \
+  gen_matrix.jinc
 
 SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c
 
@@ -79,12 +82,18 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 
 jkem.s:
 %.s: %.jazz
-	$(JASMINC) -o $@ $(JFLAGS) $^ 
+	$(JASMINC) -o $@ $(JFLAGS) $^
+
+jkem.sct: jkem.jazz kem.jinc $(JHEADERS)
+	$(JASMINC) -checkSCT jkem.jazz || echo "SCT: ERROR"
+
+###$(JASMINC) -checkSCT jkem.jazz > $@ 2>&1 || echo "SCT: ERROR"
 
 .PHONY: clean
 
 clean:
 	-rm -f *.s
+	-rm -f *.sct
 	-rm -f jindcpa.o
 	-rm -f jkem.o
 	-rm -f test/test_poly_compress

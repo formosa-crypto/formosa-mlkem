@@ -1,8 +1,7 @@
 require "indcpa.jinc"
 require "verify.jinc"
 
-inline
-fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp)
+inline fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp)
 {
   stack ptr u8[MLKEM_SYMBYTES*2] s_randomnessp;
   reg ptr u8[MLKEM_SYMBYTES] randomnessp1 randomnessp2;
@@ -23,6 +22,8 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
   skp += MLKEM_POLYVECBYTES;
   pkp = s_pkp;
 
+  _ = #init_msf();
+
   for i=0 to MLKEM_INDCPA_PUBLICKEYBYTES/8
   {
     t64 = (u64)[pkp + 8*i];
@@ -33,8 +34,13 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
   s_skp = skp;
   pkp = s_pkp;
   t64 = MLKEM_POLYVECBYTES + MLKEM_SYMBYTES;
+
+  _ = #init_msf();
+
   h_pk = _isha3_256(h_pk, pkp, t64);
   skp = s_skp;
+
+  _ = #init_msf();
 
   for i=0 to 4
   {
@@ -45,6 +51,9 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
 
   randomnessp = s_randomnessp;
   randomnessp2 = randomnessp[MLKEM_SYMBYTES:MLKEM_SYMBYTES];
+
+  _ = #init_msf();
+
   for i=0 to MLKEM_SYMBYTES/8
   {
     t64 = randomnessp2[u64 i];
@@ -53,8 +62,7 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
   }
 }
 
-inline
-fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
+inline fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
 {
   inline int i;
 
@@ -74,6 +82,8 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKE
 
   pkp = s_pkp;
 
+  _ = #init_msf();
+
   t64 = MLKEM_PUBLICKEYBYTES;
   buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp, t64);
 
@@ -81,9 +91,13 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKE
 
   pkp = s_pkp;
 
+  _ = #init_msf();
+
   __indcpa_enc(s_ctp, buf[0:MLKEM_SYMBYTES], pkp, kr[MLKEM_SYMBYTES:MLKEM_SYMBYTES]);
 
   shkp = s_shkp;
+
+  _ = #init_msf();
 
   for i=0 to MLKEM_SYMBYTES/8
   {
@@ -93,8 +107,7 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKE
 
 }
 
-inline
-fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
+inline fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 {
   stack u8[MLKEM_CT_LEN] ctpc;
   stack u8[2*MLKEM_SYMBYTES] kr buf;
@@ -123,9 +136,14 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   pkp = s_skp;
   pkp += 12 * MLKEM_K * MLKEM_N>>3;
 
+  _ = #init_msf();
+
   ctpc = __iindcpa_enc(ctpc, buf[0:MLKEM_SYMBYTES], pkp, kr[MLKEM_SYMBYTES:MLKEM_SYMBYTES]);
 
   ctp = s_ctp;
+
+  _ = #init_msf();
+
   cnd = __verify(ctp, ctpc);
   s_cnd = cnd;
 
@@ -140,5 +158,8 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 
   shkp = s_shkp;
   cnd = s_cnd;
+
+  _ = #init_msf();
+
    __cmov(shkp, kr[0:MLKEM_SYMBYTES], cnd); 
 }

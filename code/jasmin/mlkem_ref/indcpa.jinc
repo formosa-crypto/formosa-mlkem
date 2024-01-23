@@ -3,8 +3,9 @@ require "poly.jinc"
 require "polyvec.jinc"
 require "gen_matrix.jinc"
 
-inline
-fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
+inline fn __indcpa_keypair(
+ reg u64 pkp skp,
+ reg ptr u8[MLKEM_SYMBYTES] randomnessp)
 {
   stack u16[MLKEM_K * MLKEM_VECN] a;
   stack u16[MLKEM_VECN] e pkpv skpv;
@@ -16,23 +17,17 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES] randomn
   reg u8 nonce;
   inline int i;
 
-  stack u64 spkp;
-  stack u64 sskp;
-
-  spkp = pkp;
-  sskp = skp;
+  () = #spill(pkp, skp);
 
   for i=0 to MLKEM_SYMBYTES/8
-  {
-    t64 = randomnessp[u64 i];
+  { t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
   }
 
   buf = _sha3512_32(buf, inbuf);
 
   for i=0 to MLKEM_SYMBYTES/8
-  {
-    t64 = buf[u64 i];
+  { t64 = buf[u64 i];
     publicseed[u64 i] = t64;
     t64 = buf[u64 i + MLKEM_SYMBYTES/8];
     noiseseed[u64 i] = t64;
@@ -68,25 +63,25 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES] randomn
   pkpv = __polyvec_add2(pkpv, e);
   pkpv = __polyvec_reduce(pkpv);
 
-  pkp = spkp;
-  skp = sskp;
+  () = #unspill(pkp, skp);
+  _ = #init_msf(); // not enough free mm registers for pkp/skp
 
   __polyvec_tobytes(skp, skpv);
   __polyvec_tobytes(pkp, pkpv);
 
   pkp += MLKEM_POLYVECBYTES; 
   for i=0 to MLKEM_SYMBYTES/8
-  {
-    t64 = publicseed[u64 i];
+  { t64 = publicseed[u64 i];
     (u64)[pkp] = t64;
     pkp += 8;
   }
 }
 
-inline
-fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] noiseseed)
+inline fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] noiseseed)
 {
-  stack ptr u8[MLKEM_SYMBYTES] s_noiseseed;
+  // since this noise_seed pointer is reloaded frequently, the corresponding
+  // variable declaration stays (as oposed to using #spill and #unspill
+  #mmx reg ptr u8[MLKEM_SYMBYTES] s_noiseseed;
 
   stack u16[MLKEM_VECN] pkpv sp ep bp;
   stack u16[MLKEM_K*MLKEM_VECN] aat;
@@ -163,15 +158,16 @@ fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[MLK
   v  = __poly_reduce(v);
 
   ctp = sctp;
+  _ = #init_msf();
+
   __polyvec_compress(ctp, bp);
   ctp += MLKEM_POLYVECCOMPRESSEDBYTES;
   v = _poly_compress(ctp, v);
 }
 
-inline
-fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] noiseseed) -> reg ptr u8[MLKEM_CT_LEN]
+inline fn __iindcpa_enc(stack u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[MLKEM_SYMBYTES] noiseseed) -> stack u8[MLKEM_CT_LEN]
 {
-  stack ptr u8[MLKEM_SYMBYTES] s_noiseseed;
+  #mmx reg ptr u8[MLKEM_SYMBYTES] s_noiseseed;
 
   stack u16[MLKEM_VECN] pkpv sp ep bp;
   stack u16[MLKEM_K*MLKEM_VECN] aat;
@@ -180,11 +176,9 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
   reg u64 i j t64;
   reg u16 t;
   reg u8 nonce;
-  stack ptr u8[MLKEM_CT_LEN] sctp;
   reg u64 transposed;
 
   s_noiseseed = noiseseed;
-  sctp = ctp;
 
   pkpv = __polyvec_frombytes(pkp);
 
@@ -248,7 +242,6 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
   bp = __polyvec_reduce(bp);
   v  = __poly_reduce(v);
 
-  ctp = sctp;
   ctp[0:MLKEM_POLYVECCOMPRESSEDBYTES] = __i_polyvec_compress(ctp[0:MLKEM_POLYVECCOMPRESSEDBYTES], bp);
   ctp[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v = _i_poly_compress(ctp[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v);
 
