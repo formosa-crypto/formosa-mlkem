@@ -3,172 +3,7 @@ param int SHAKE256_RATE = 136;
 param int SHA3_256_RATE = 136;
 param int SHA3_512_RATE = 72;
 
-param int SHAKE128_RATE = 168;
-param int SHAKE256_RATE = 136;
-param int SHA3_512_RATE = 72;
-
-inline
-fn __index(inline int x, inline int y) -> inline int {
-  inline int r;
-  r = (x % 5) + 5 * (y % 5);
-  return r;
-}
-
-
-inline
-fn __ROL64(reg u64 x, inline int c) -> reg u64 {
-  reg u64 y;
-  _, _, y = #ROL_64(x, c);
-  return y;
-}
-
-inline
-fn __theta(reg ptr u64[25] a) -> reg ptr u64[25] {
-  inline int x, y;
-  reg u64[5] c, d;
-
-  for x = 0 to 5 {
-    c[x] = 0;
-    for y = 0 to 5 {
-      c[x] ^= a[x + 5 * y];
-    }
-  }
-
-  for x = 0 to 5 {
-    /* d[x] = __ROL64(c[(x + 1) % 5], 1); */
-    /* extraction fails */
-
-    /*    _, _, d[x] = #ROL_64(c[(x + 1) % 5], 1);*/
-    /*    d[x] ^= c[(x + 4) % 5];*/
-    /* does not compile */
-
-    d[x] = c[(x + 1) % 5];
-    _, _, d[x] = #ROL_64(d[x], 1);
-    d[x] ^= c[(x + 4) % 5];
-  }
-
-  for x = 0 to 5 {
-    for y = 0 to 5 {
-      a[x + 5 * y] ^= d[x];
-    }
-  }
-
-  return a;
-}
-
-
-inline
-fn __keccakRhoOffsets(inline int i) -> inline int {
-  inline int r, x, y, z, t;
-
-  r = 0;
-  x = 1;
-  y = 0;
-  for t = 0 to 24 {
-    if (i == x + 5 * y) {
-      r = ((t + 1) * (t + 2) / 2) % 64;
-    }
-    z = (2 * x + 3 * y) % 5;
-    x = y;
-    y = z;
-  }
-
-  return r;
-}
-
-
-inline
-fn __rho(reg ptr u64[25] a) -> reg ptr u64[25] {
-  inline int x, y, i, z;
-
-  for x = 0 to 5 {
-    for y = 0 to 5 {
-      i = __index(x, y);
-      z = __keccakRhoOffsets(i);
-      _, _, a[i] = #ROL_64(a[i], z);
-    }
-  }
-
-  return a;
-}
-
-
-inline
-fn __pi(reg ptr u64[25] a) -> reg ptr u64[25] {
-  stack u64[25] b;
-  reg u64 t;
-  inline int x, y, i;
-  for i = 0 to 25 { t = a[i]; b[i] = t; }
-
-  for x = 0 to 5 {
-    for y = 0 to 5 {
-      t = b[x + 5 * y];
-      i = __index(y, 2 * x + 3 * y);
-      a[i] = t;
-    }
-  }
-  return a;
-}
-
-
-inline
-fn __chi(reg ptr u64[25] a) -> reg ptr u64[25] {
-  inline int x, y, i;
-  reg u64[5] c;
-  for y = 0 to 5 {
-    for x = 0 to 5 {
-      i = __index(x + 1, y);
-      c[x] = a[i];
-      c[x] = !c[x];
-      i = __index(x + 2, y);
-      c[x] &= a[i];
-      i = __index(x, y);
-      c[x] ^= a[i];
-    }
-    for x = 0 to 5 {
-      a[x + 5 * y] = c[x];
-    }
-  }
-  return a;
-}
-
-
-inline
-fn __iota(reg ptr u64[25] a, reg u64 c) -> reg ptr u64[25] {
-  a[0] ^= c;
-  return a;
-}
-
-u64[24] roundconstants = {0x0000000000000001, 0x0000000000008082, 0x800000000000808a, 0x8000000080008000, 
-                          0x000000000000808b, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009, 
-                          0x000000000000008a, 0x0000000000000088, 0x0000000080008009, 0x000000008000000a, 
-                          0x000000008000808b, 0x800000000000008b, 0x8000000000008089, 0x8000000000008003, 
-                          0x8000000000008002, 0x8000000000000080, 0x000000000000800a, 0x800000008000000a, 
-                          0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008};
-
-
-fn __keccakf1600_ref(reg ptr u64[25] state) -> reg ptr u64[25] {
-  inline int round;
-  reg ptr u64[24] constptr;
-
-  reg u64 rctr;
-  
-  constptr = roundconstants;
-  rctr = 0;
-
-  while (rctr < 192) {
-    state = __theta(state);
-    state = __rho(state);
-    state = __pi(state);
-    state = __chi(state);
-    constptr = roundconstants;
-    state = __iota(state, constptr.[(int)rctr]);
-    rctr += 8;
-  }
-
-  return state;
-}
-
+require "keccakf1600/keccakf1600_nobmi1_compact.jinc"
 
 inline
 fn __st0(reg ptr u64[25] state) -> reg ptr u64[25]
@@ -181,7 +16,6 @@ fn __st0(reg ptr u64[25] state) -> reg ptr u64[25]
 
   return state;
 }
-
 
 inline
 fn __add_full_block(
@@ -208,7 +42,6 @@ fn __add_full_block(
 
   return state, in, inlen;
 }
-
 
 inline
 fn __add_final_block(
@@ -249,7 +82,6 @@ fn __add_final_block(
   return state;
 }
 
-
 inline
 fn __xtr_full_block(
   stack u64[25] state,
@@ -275,7 +107,6 @@ fn __xtr_full_block(
 
   return out, outlen;
 }
-
 
 inline
 fn ____xtr_bytes(
@@ -306,7 +137,6 @@ fn ____xtr_bytes(
   }
 }
 
-
 inline
 fn ____keccak1600_ref(
   stack u64 s_out s_outlen,
@@ -330,7 +160,7 @@ fn ____keccak1600_ref(
     s_inlen = inlen;
     s_rate = rate;
 
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_(state);
 
     inlen = s_inlen;
     in = s_in;
@@ -348,7 +178,7 @@ fn ____keccak1600_ref(
     s_outlen = outlen;
     s_rate = rate;
 
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_(state);
 
     out = s_out;
     outlen = s_outlen;
@@ -359,13 +189,12 @@ fn ____keccak1600_ref(
     s_out = out;
   }
 
-  state = __keccakf1600_ref(state);
+  state = _keccakf1600_(state);
   out = s_out;
   outlen = s_outlen;
 
   ____xtr_bytes(state, out, outlen);
 }
-
 
 inline
 fn __keccak1600_ref(reg u64 out outlen in inlen, stack u64[2] config)
@@ -399,16 +228,15 @@ fn __shake256(reg u64 out outlen in inlen)
   __keccak1600_ref(out, outlen, in, inlen, config);
 }
 
-
 fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
 {
+  stack ptr u8[128] s_out;
+
   stack u64[25] state;
   reg u8 c;
   inline int i;
 
-  stack ptr u8[128] sout;
-
-  sout = out;
+  s_out = out;
 
   state = __st0(state);
 
@@ -419,10 +247,9 @@ fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[12
   state[u8 33] ^= 0x1f;
   state[u8 SHAKE256_RATE-1] ^= 0x80;
     
-  state = __keccakf1600_ref(state);
+  state = _keccakf1600_(state);
 
-  out = sout; 
-
+  out = s_out; 
   for i = 0 to 128 {
     c = state[u8 (int) i];
     out[i] = c;
@@ -430,7 +257,9 @@ fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[12
   return out;
 }
 
-fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
+fn _shake256_1120_32(reg u64 out, reg u64 in0 in1)
+{
+  stack u64 s_in1;
   stack u64[25] state;
   stack u64 s_out;
   stack u64 s_in s_ilen s_r8;
@@ -439,6 +268,8 @@ fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
   inline int i;
 
   s_out = out;
+  s_in1 = in1;
+
   state = __st0(state);
 
   for i = 0 to MLKEM_SYMBYTES/8 {
@@ -451,11 +282,11 @@ fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
     state[u64 i] ^= t64;
   }
       
-  state = __keccakf1600_ref(state);
+  state = _keccakf1600_(state);
 
   r8 = SHAKE256_RATE;
   ilen = MLKEM_CT_LEN - (SHAKE256_RATE - MLKEM_SYMBYTES);
-  in = in1;
+  in = s_in1;
   in += SHAKE256_RATE - MLKEM_SYMBYTES;
 
   while(ilen >= r8)
@@ -466,7 +297,7 @@ fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
     s_ilen = ilen;
     s_r8 = r8;
 
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_(state);
 
     in = s_in;
     ilen = s_ilen;
@@ -476,7 +307,7 @@ fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
   t8 = 0x1f;
   state = __add_final_block(state, in, ilen, t8, r8);
 
-  state = __keccakf1600_ref(state);
+  state = _keccakf1600_(state);
 
   out = s_out;
 
@@ -488,13 +319,14 @@ fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
 
 }
 
-
 fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
 {
+  stack ptr u8[64] s_out;
   stack u64[25] state;
   reg u8 c;
   inline int i;
 
+  s_out = out;
   state = __st0(state);
 
   for i = 0 to 32 {
@@ -503,16 +335,16 @@ fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
   }
   state[u8 32] ^= 0x06;
   state[u8 SHA3_512_RATE-1] ^= 0x80;
-    
-  state = __keccakf1600_ref(state);
 
+  state = _keccakf1600_(state);
+
+  out = s_out;
   for i = 0 to 64 {
     c = state[u8 (int) i];
     out[i] = c;
   }
   return out;
 }
-
 
 fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr u64[25]
 {
@@ -531,14 +363,17 @@ fn _shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr
   return state;
 }
 
-
 fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) -> reg ptr u64[25], reg ptr u8[SHAKE128_RATE]
 {
   reg u8 c;
   inline int i;
+  stack ptr u8[SHAKE128_RATE] s_out;
 
-  state = __keccakf1600_ref(state);
+  s_out = out;
 
+  state = _keccakf1600_(state);
+
+  out = s_out;
   for i = 0 to SHAKE128_RATE {
     c = state[u8 (int) i];
     out[i] = c;
@@ -546,8 +381,6 @@ fn _shake128_squeezeblock(reg ptr u64[25] state, reg ptr u8[SHAKE128_RATE] out) 
   return state, out;
 }
 
-
-#[returnaddress="stack"]
 fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
 {
   stack u64[25] state;
@@ -572,7 +405,7 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
     s_ilen = ilen;
     s_r8 = r8;
 
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_(state);
 
     in = s_in;
     ilen = s_ilen;
@@ -582,7 +415,7 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
   t8 = 0x06;
   state = __add_final_block(state, in, ilen, t8, r8);
 
-  state = __keccakf1600_ref(state);
+  state = _keccakf1600_(state);
 
   out = s_out;
 
@@ -595,7 +428,6 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
   return out;
 }
 
-#[returnaddress="stack"]
 fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[MLKEM_SYMBYTES] in) -> reg ptr u8[32]
 {
   stack u64[25] state;
@@ -616,7 +448,7 @@ fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[MLKEM_SYMBYTES] in) -> reg ptr u
   state[u8 MLKEM_SYMBYTES] ^= 0x06;
   state[u8 SHA3_256_RATE - 1] = 0x80;
 
-  state = __keccakf1600_ref(state);
+  state = _keccakf1600_(state);
 
   out = s_out;
 
@@ -629,7 +461,6 @@ fn _isha3_256_32(reg ptr u8[32] out, reg ptr u8[MLKEM_SYMBYTES] in) -> reg ptr u
   return out;
 }
 
-#[returnaddress="stack"]
 fn _sha3_512_64(reg ptr u8[64] out, reg const ptr u8[64] in) -> stack u8[64]
 {
   stack u64[25] state;
@@ -650,7 +481,7 @@ fn _sha3_512_64(reg ptr u8[64] out, reg const ptr u8[64] in) -> stack u8[64]
 
   out_s = out;
 
-  state = __keccakf1600_ref(state);
+  state = _keccakf1600_(state);
 
   out = out_s;
 
