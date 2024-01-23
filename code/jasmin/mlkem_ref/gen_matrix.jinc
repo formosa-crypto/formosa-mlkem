@@ -1,126 +1,288 @@
-require "fips202.jinc"
-require "params.jinc"
+// note1: this file expects a definition for keccakf1600:
+// - in keccakf1600/ there are two variants "bmi1" and "nobmi1"
+//
+// note2: it also expect definition for some parameters: MLKEM_K, MLKEM_N, and MLKEM_Q
 
-inline
-fn __rej_uniform(stack u16[MLKEM_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[MLKEM_N]
+////////////////////////////////////////////////////////////////////////////////
+// a < b && c < d
+inline fn comp_u64_l_int_and_u64_l_int(
+  reg u64 a,
+  inline int b,
+  reg u64 c,
+  inline int d) 
+  ->
+  reg bool
 {
-  reg u16 val1 val2;
-  reg u16 t;
-  reg u64 pos ctr;
-  reg u64 cnd0 cnd1 exit;
+  reg bool c1 c2 c3;
+  reg u8 bc1 bc2;
 
+  ?{ "<u" = c1 } = #CMP_64(a, b);
+  // if(c1) <=> if(a <u b)
+  bc1 = #SETcc(c1);
 
-  ctr = offset;
-  pos = 0;
-  exit = 0;
+  ?{ "<u" = c2 } = #CMP_64(c, d);
+  // if(c2) <=> if(a <u c)
+  bc2 = #SETcc(c2);
 
-  while(exit == 0)
-  {
-    val1 = (16u)buf[(int)pos];
-    pos += 1;
-    t   = (16u)buf[(int)pos];
-    val2 = t;
-    val2 >>= 4;
-    t &= 0x0F;
-    t <<= 8;
-    val1 |= t;
-    pos += 1;
+  // zf == 1 => bc1 & bc2 == 0 => cond = false
+  // zf == 0 => bc1 & bc2 == 1 => cond = true
+  ?{ "!=" = c3 } = #TEST_8(bc1, bc2); 
 
-    t   = (16u)buf[(int)pos];
-    t <<= 4;
-    val2 |= t;
-    pos += 1;
-
-    if(val1 < MLKEM_Q)
-    {
-      rp[(int)ctr] = val1;
-      ctr += 1;
-    }
-
-    if(val2 < MLKEM_Q)
-    {
-      if(ctr < MLKEM_N)
-      {
-        rp[(int)ctr] = val2;
-        ctr += 1;
-      }
-    }
-
-    // Check if we should exit the loop
-    cnd0  = MLKEM_N;
-    cnd0 -= ctr;
-    cnd0 -= 1;
-    cnd1  = SHAKE128_RATE;
-    cnd1 -= pos;
-    cnd1 -= 3; //TODO: (potentially) wasting 2 'good' bytes
-    exit  = cnd0 | cnd1;
-    exit >>= 63;
-  }
-
-  return ctr, rp;
+  return c3;
 }
 
-inline
-fn __gen_matrix(stack u8[MLKEM_SYMBYTES] seed, reg u64 transposed) -> stack u16[MLKEM_K*MLKEM_VECN]
+////////////////////////////////////////////////////////////////////////////////
+
+inline fn swap_u64_u64_u64(
+  reg u64 a,
+  reg u64 b,
+  reg u64 c)
+  ->
+  reg u64,
+  reg u64
 {
-  stack u8[34] extseed;
-  stack u8[SHAKE128_RATE] buf;
-  stack u64[25] state;
-  stack u16[MLKEM_N] poly;
-  stack u16[MLKEM_K*MLKEM_VECN] r;
+  reg u64 ra rb;
+  reg bool cond;
 
-  reg u8 c;
-  reg u16 t;
-  reg u64 ctr k l;
-  stack u64 sctr;
-  stack u64 stransposed;
-  inline int j i;
+  ra = a;
+  rb = b;
+  ?{ "==" = cond } = #CMP_64(c, 1);
+  ra = b if(cond);
+  rb = a if(cond);
 
-  stransposed = transposed;
-
-  for j = 0 to MLKEM_SYMBYTES
-  {
-    c = seed[j];
-    extseed[j] = c;
-  }
-
-  for i=0 to MLKEM_K
-  {
-    for j = 0 to MLKEM_K
-    {
-      transposed = stransposed;
-      if(transposed == 0)
-      {
-        extseed[MLKEM_SYMBYTES] = j;
-        extseed[MLKEM_SYMBYTES+1] = i;
-      }
-      else
-      {
-        extseed[MLKEM_SYMBYTES] = i;
-        extseed[MLKEM_SYMBYTES+1] = j;
-      }
-
-      state = _shake128_absorb34(state, extseed);
-
-      ctr = 0;
-      while (ctr < MLKEM_N)
-      {
-        sctr = ctr;
-        state, buf = _shake128_squeezeblock(state, buf);
-        ctr = sctr;
-        ctr, poly  = __rej_uniform(poly, ctr, buf);
-      }
-
-      k = 0;
-      l = i * MLKEM_VECN + j * MLKEM_N;
-      while (k < MLKEM_N)
-      {
-        t = poly[(int) k];
-        r[(int) l] = t;
-        k += 1;
-        l += 1;
-      }
-    }
-  }
-  return r;
+  return ra, rb;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+// xof related code
+
+inline fn xof_init(
+  reg ptr u64[25] state,
+  reg const ptr u8[32] rho,
+  reg u16 index)
+  ->
+  reg ptr u64[25]
+{
+  inline int i;
+  reg u64 t;
+
+  // copy rho sto state
+  for i=0 to 4
+  { t = rho[u64 i];
+    state[i] = t; }
+
+  // init to zero
+  t = 0;
+  for i=4 to 25
+  { state[i] = t; }
+
+  // complete the state initialization
+  state[u16 16]  = index;
+  state[u8 34]  ^= 0x1F;
+  state[u8 167] ^= 0x80;
+
+  return state; 
+}
+
+inline fn xof_next_bytes(
+  reg ptr u64[25] state)
+  ->
+  reg ptr u64[21],
+  reg ptr u64[25]
+{
+  reg ptr u64[21] b168;
+  state = _keccakf1600(state);
+  b168 = state[0:21];
+  return b168, state;
+}
+
+
+// 'sample' implementation from crypto-specs/ml-kem/Sampling.ec
+
+inline fn gen_matrix_sample_get_two_words(
+  reg ptr u64[21] b168,
+  reg u64 b168_offset)
+  ->
+  reg u16,
+  reg u16,
+  reg u64
+{
+  reg u16 bi bi1 bi2 d1 d2;
+
+  bi  = (16u) b168[u8 (int)b168_offset];
+  bi1 = (16u) b168[u8 (int)b168_offset + 1];
+  bi2 = (16u) b168[u8 (int)b168_offset + 2];
+  b168_offset += 3;
+
+  // d1 <- to_uint bi + 256 * (to_uint bi1 %% 16);
+  d1 = bi1; d1 &= 15; d1 <<= 8; d1 |= bi;
+
+  //d2 <- to_uint bi1 %/ 16 + 16  *  to_uint bi2;
+  d2 = bi1 >> 4; bi2 <<= 4; d2 |= bi2;
+
+  // note that 'd2 = bi1 >> 4;' is just a variable renaming (d2 and bi1 are
+  // merged during compilation)
+
+  return d1, d2, b168_offset;
+}
+
+fn gen_matrix_sample_iterate_generic(
+  reg u64 counter,
+  reg ptr u64[21] b168,
+  reg u64 b168_offset,
+  reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix,
+  reg u64 matrix_offset)
+  ->
+  reg u64,
+  reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N],
+  reg u64
+{
+  reg u16 d1 d2;
+  reg bool c_loop c_d1 c_d2 c_counter;
+  #msf reg u64 ms;
+
+  ms = #init_msf();
+
+  while { c_loop = comp_u64_l_int_and_u64_l_int(counter, MLKEM_N, b168_offset, 168); } 
+        (c_loop)
+  {
+    ms = #update_msf(c_loop, ms);
+
+    d1, d2, b168_offset = gen_matrix_sample_get_two_words(b168, b168_offset);
+
+    d1 = #protect_16(d1, ms);
+    d2 = #protect_16(d2, ms);
+
+    // if (d1 < q)
+    c_d1 = (d1 < MLKEM_Q);
+    if (c_d1)
+    { ms = #update_msf(c_d1, ms);
+      matrix[(int) matrix_offset] = d1;
+      matrix_offset += 1;
+      counter += 1;
+    } else { ms = #update_msf(!c_d1, ms); }
+
+    // if ((d2 < q) && (counter < 256))
+    c_d2 = (d2 < MLKEM_Q);
+    if(c_d2)
+    { ms = #update_msf(c_d2, ms);
+      c_counter = (counter < MLKEM_N);
+      if(c_counter)
+      { ms = #update_msf(c_counter, ms);
+        matrix[(int) matrix_offset] = d2;
+        matrix_offset += 1;
+        counter += 1;
+      } else { ms = #update_msf(!c_counter, ms); }
+    } else { ms = #update_msf(!c_d2, ms); }
+  }
+
+  return counter, matrix, matrix_offset;
+}
+
+fn gen_matrix_sample(
+  #spill_to_mmx reg u64 counter,
+  #spill_to_mmx reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix,
+  #spill_to_mmx reg u64 matrix_offset,
+                reg mut ptr u64[25] xof_state)
+  ->
+  reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N],
+  reg u64,
+  reg ptr u64[25]
+{
+  reg ptr u64[21] b168;
+  reg u64 b168_offset;
+
+  while(counter < MLKEM_N)
+  {
+      () = #spill(counter, matrix, matrix_offset);
+
+    b168, xof_state = xof_next_bytes(xof_state);
+
+      () = #unspill(counter, matrix, matrix_offset);
+
+    b168_offset = 0;
+    counter, matrix, matrix_offset = gen_matrix_sample_iterate_generic(counter, b168, b168_offset, matrix, matrix_offset);
+  }
+
+  return matrix, matrix_offset, xof_state;
+}
+
+inline fn gen_matrix_get_index(reg u64 i j t) -> reg u16
+{
+  reg u16 index;
+
+  i, j = swap_u64_u64_u64(i, j, t);
+  index   = (16u) i;
+  index <<= 8;
+  index  |= (16u) j;
+  
+  return index;
+}
+
+
+// code from InnerPKE.ec
+
+fn gen_matrix_sample_one_polynomial(
+  reg u64 i,
+  reg u64 j,
+  reg u64 transposed,
+  reg ptr u8[32] rho,
+  reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix,
+  reg u64 matrix_offset)
+  ->
+  reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N],
+  reg u64
+{
+  // local variables
+  stack u64[25] _xof_state;
+  reg ptr u64[25] xof_state;
+  reg u16 index;
+  reg u64 counter;
+
+  xof_state = _xof_state;
+
+  index = gen_matrix_get_index(i, j, transposed);
+
+  // XOF.init(rho, j, i);
+  xof_state = xof_init(xof_state, rho, index);
+
+  // c <@ Parse(XOF).sample(); a.[(i,j)] <- c;
+  counter = 0;
+  matrix, matrix_offset, _ = gen_matrix_sample(counter, matrix, matrix_offset, xof_state);
+
+  return matrix, matrix_offset;      
+}
+
+// xof_init assumes rho as having 32 bytes, hence, rho must be declared as 
+// reg ptr u8[32] for the compilation to fail if MLKEM_SYMBYTES is updated
+fn _gen_matrix(
+                reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix,
+  #spill_to_mmx reg ptr u8[32] rho,
+  #spill_to_mmx reg u64 transposed)
+  ->
+  reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N]
+{
+  #spill_to_mmx reg u64 i j;
+                reg u64 matrix_offset;
+
+  matrix_offset = 0;
+  i = 0;
+  while (i < MLKEM_K)
+  { j = 0;
+    while (j < MLKEM_K)
+    {
+        () = #spill(i, j, transposed, rho);
+
+      matrix, matrix_offset = gen_matrix_sample_one_polynomial(i, j, transposed, rho, matrix, matrix_offset);
+
+        () = #unspill(i, j, transposed, rho);
+
+      j += 1;
+    }
+    i += 1;
+  }  
+
+  return matrix;
+}
+

@@ -39,7 +39,7 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES] randomn
   }
 
   zero = 0; 
-  a = __gen_matrix(publicseed, zero);
+  a = _gen_matrix(a, publicseed, zero);
 
   nonce = 0;
   skpv[0:MLKEM_N] = _poly_getnoise(skpv[0:MLKEM_N], noiseseed, nonce);
@@ -96,6 +96,7 @@ fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[MLK
   reg u64 ctp;
   reg u16 t;
   reg u8 nonce;
+  reg u64 transposed;
 
   s_noiseseed = noiseseed;
 
@@ -113,7 +114,8 @@ fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[MLK
 
   k = _i_poly_frommsg(k, msgp);
 
-  aat = __gen_matrix(publicseed, 1);
+  transposed = 1;
+  aat = _gen_matrix(aat, publicseed, transposed);
 
   noiseseed = s_noiseseed;
   nonce = 0;
@@ -179,6 +181,7 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
   reg u16 t;
   reg u8 nonce;
   stack ptr u8[MLKEM_CT_LEN] sctp;
+  reg u64 transposed;
 
   s_noiseseed = noiseseed;
   sctp = ctp;
@@ -197,7 +200,8 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
 
   k = _i_poly_frommsg(k, msgp);
 
-  aat = __gen_matrix(publicseed, 1);
+  transposed = 1;
+  aat = _gen_matrix(aat, publicseed, transposed);
 
   noiseseed = s_noiseseed;
   nonce = 0;
