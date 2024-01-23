@@ -1,11 +1,11 @@
 # -*- Makefile -*-
 
--include ../../Makefile.conf
-
 CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer
 JFLAGS := -lea ${JADDFLAGS}
 OS     := $(shell uname -s)
+
+-include ../../Makefile.conf
 
 .SECONDARY: jpoly.s jpolyvec.s jfips203.s jindcpa.s jkem.s
 
@@ -57,13 +57,13 @@ POLYHEADERS = poly.jinc \
 POLYVECHEADERS = polyvec.jinc \
                  gen_matrix.jinc \
 
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c \
+SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
-test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) ~/Desktop/Repos/jasmin/compiler/syscall/jasmin_syscall.o jkem.o $<
+test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) $(JASMIN_SYSCALL_O) jkem.o
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(JASMIN_SYSCALL_O) jkem.o $<
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
@@ -77,9 +77,9 @@ test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) jpoly.s
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
+jkem.s:
 %.s: %.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $^ 
-
 
 .PHONY: clean
 
