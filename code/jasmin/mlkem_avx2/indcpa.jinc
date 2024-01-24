@@ -15,6 +15,7 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES] randomn
   reg u64 t64;
   reg u8 nonce;
   inline int i;
+  reg u64 transposed;
 
   spkp = pkp;
   sskp = skp;
@@ -35,7 +36,9 @@ fn __indcpa_keypair(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES] randomn
     noiseseed[u64 i] = t64;
   }
 
-  aa = __gen_matrix(publicseed, 0);
+  //aa = __gen_matrix(publicseed, 0); // TODO remove
+  transposed = 0;
+  aa = _gen_matrix_avx2(aa, publicseed, transposed);
 
   nonce = 0;
   skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], e[0:MLKEM_N] = _poly_getnoise_eta1_4x(skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], e[0:MLKEM_N], noiseseed, nonce);
@@ -84,6 +87,7 @@ fn __indcpa_enc_0(stack u64 sctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg u6
   reg u64 i t64 ctp;
   reg u8 nonce;
   inline int w;
+  reg u64 transposed;
 
   pkpv = __polyvec_frombytes(pkp);
 
@@ -100,7 +104,10 @@ fn __indcpa_enc_0(stack u64 sctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg u6
   k = _poly_frommsg_1(k, msgp);
 
   s_noiseseed = noiseseed;
-  aat = __gen_matrix(publicseed, 1);
+
+  transposed = 1;
+  aat = _gen_matrix_avx2(aat, publicseed, transposed);
+
   lnoiseseed = s_noiseseed;
 
   nonce = 0;
@@ -146,6 +153,7 @@ fn __indcpa_enc_1(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[MLKEM
   reg u64 i t64;
   reg u8 nonce;
   inline int w;
+  reg u64 transposed;
 
   sctp = ctp;
 
@@ -164,7 +172,10 @@ fn __indcpa_enc_1(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[MLKEM
   k = _poly_frommsg_1(k, msgp);
 
   s_noiseseed = noiseseed;
-  aat = __gen_matrix(publicseed, 1);
+
+  transposed = 1;
+  aat = _gen_matrix_avx2(aat, publicseed, transposed);
+
   lnoiseseed = s_noiseseed;
 
   nonce = 0;
