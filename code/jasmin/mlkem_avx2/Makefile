@@ -52,7 +52,6 @@ JHEADERS = params.jinc \
            fips202_common.jinc \
            fips202.jinc \
            fips202_4x.jinc \
-           keccakf1600.jinc \
            consts.jinc \
            shuffle.jinc \
            indcpa.jinc \
@@ -91,8 +90,12 @@ test/test_poly_%: test/test_poly_%.c $(HEADERS) $(SOURCES) $(INCS) jpoly.s
 test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyvec.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
+jkem.s:
 %.s: %.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $^
+
+jkem.sct: jkem.jazz kem.jinc $(JHEADERS)
+	$(JASMINC) -checkSCT jkem.jazz || echo "SCT: ERROR"
 
 .PHONY: clean
 

@@ -87,8 +87,6 @@ jkem.s:
 jkem.sct: jkem.jazz kem.jinc $(JHEADERS)
 	$(JASMINC) -checkSCT jkem.jazz || echo "SCT: ERROR"
 
-###$(JASMINC) -checkSCT jkem.jazz > $@ 2>&1 || echo "SCT: ERROR"
-
 .PHONY: clean
 
 clean:

@@ -1,4 +1,4 @@
-require "../mlkem_ref/keccakf1600/keccakf1600_nobmi1_compact.jinc" // note: _bmi_compact is faster
+require "../mlkem_ref/keccakf1600/keccakf1600_bmi1_compact.jinc" // note: _bmi_compact is faster
 require "keccakf1600/keccakf1600_4x_compact.jinc"
 require "../mlkem_ref/gen_matrix.jinc"
 require "gen_matrix_globals.jinc"
