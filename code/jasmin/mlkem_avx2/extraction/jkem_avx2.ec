@@ -1,6 +1,5 @@
 require import AllCore IntDiv CoreMap List Distr.
 from Jasmin require import JModel_x86.
-import SLH64.
 
 
 require import Array4 Array5 Array8 Array16 Array24 Array25 Array32 Array33
@@ -618,74 +617,74 @@ module M(SC:Syscall_t) = {
     var r6:W256.t;
     var r7:W256.t;
     
-    r0 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 0));
-    r1 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 1));
-    r2 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 2));
-    r3 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 3));
-    r4 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 4));
-    r5 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 5));
-    r6 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 6));
-    r7 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 7));
+    r0 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 0));
+    r1 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 1));
+    r2 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 2));
+    r3 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 3));
+    r4 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 4));
+    r5 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 5));
+    r6 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 6));
+    r7 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 7));
     (r0, r1, r2, r3, r4, r5, r6, r7) <@ __nttunpack128 (r0, r1, r2, r3, r4,
     r5, r6, r7);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 0) (r0)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 0) (r0)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 1) (r1)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 1) (r1)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 2) (r2)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 2) (r2)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 3) (r3)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 3) (r3)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 4) (r4)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 4) (r4)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 5) (r5)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 5) (r5)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 6) (r6)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 6) (r6)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 7) (r7)));
-    r0 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 8));
-    r1 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 9));
-    r2 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 10));
-    r3 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 11));
-    r4 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 12));
-    r5 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 13));
-    r6 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 14));
-    r7 <- (get256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 15));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 7) (r7)));
+    r0 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 8));
+    r1 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 9));
+    r2 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 10));
+    r3 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 11));
+    r4 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 12));
+    r5 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 13));
+    r6 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 14));
+    r7 <- (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 15));
     (r0, r1, r2, r3, r4, r5, r6, r7) <@ __nttunpack128 (r0, r1, r2, r3, r4,
     r5, r6, r7);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 8) (r0)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 8) (r0)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 9) (r1)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 9) (r1)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 10) (r2)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 10) (r2)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 11) (r3)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 11) (r3)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 12) (r4)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 12) (r4)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 13) (r5)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 13) (r5)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 14) (r6)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 14) (r6)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 15) (r7)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 15) (r7)));
     return (rp);
   }
   
@@ -999,20 +998,20 @@ module M(SC:Syscall_t) = {
       c <- (loadW8 Glob.mem (W64.to_uint (in_0 + i)));
       state <-
       Array25.init
-      (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (W64.to_uint i) ((
-      (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (W64.to_uint i)) `^` c))));
+      (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (W64.to_uint i) ((
+      (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (W64.to_uint i)) `^` c))));
       i <- (i + (W64.of_int 1));
     }
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (W64.to_uint i) ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (W64.to_uint i)) `^` trail_byte))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (W64.to_uint i) ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (W64.to_uint i)) `^` trail_byte))));
     i <- r8;
     i <- (i - (W64.of_int 1));
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (W64.to_uint i) ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (W64.to_uint i)) `^` (W8.of_int 128)))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (W64.to_uint i) ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (W64.to_uint i)) `^` (W8.of_int 128)))));
     return (state);
   }
   
@@ -1055,7 +1054,7 @@ module M(SC:Syscall_t) = {
       t64 <- state.[i];
       out <-
       Array32.init
-      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => (out).[i_0])) i (t64)));
+      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => out.[i_0])) i (t64)));
       i <- i + 1;
     }
     return (out);
@@ -1137,18 +1136,18 @@ module M(SC:Syscall_t) = {
     state <@ __st0 (state);
     i <- 0;
     while (i < 8) {
-      t64 <- (get64 (WArray64.init8 (fun i_0 => (in_0).[i_0])) i);
+      t64 <- (get64 (WArray64.init8 (fun i_0 => in_0.[i_0])) i);
       state.[i] <- (state.[i] `^` t64);
       i <- i + 1;
     }
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) 64 ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) 64) `^` (W8.of_int 6)))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) 64 ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) 64) `^` (W8.of_int 6)))));
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (72 - 1) ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1) ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
     out_s <- out;
     state <@ _keccakf1600_scalar (state);
     out <- out_s;
@@ -1157,7 +1156,7 @@ module M(SC:Syscall_t) = {
       t64 <- state.[i];
       out <-
       Array64.init
-      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => (out).[i_0])) i (t64)));
+      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => out.[i_0])) i (t64)));
       i <- i + 1;
     }
     return (out);
@@ -1175,18 +1174,18 @@ module M(SC:Syscall_t) = {
     state <@ __st0 (state);
     i <- 0;
     while (i < 4) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => (in_0).[i_0])) i);
+      t64 <- (get64 (WArray32.init8 (fun i_0 => in_0.[i_0])) i);
       state.[i] <- (state.[i] `^` t64);
       i <- i + 1;
     }
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) 32 ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) 32) `^` (W8.of_int 6)))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) 32 ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) 32) `^` (W8.of_int 6)))));
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (72 - 1) ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1) ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
     out_s <- out;
     state <@ _keccakf1600_scalar (state);
     out <- out_s;
@@ -1195,7 +1194,7 @@ module M(SC:Syscall_t) = {
       t64 <- state.[i];
       out <-
       Array64.init
-      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => (out).[i_0])) i (t64)));
+      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => out.[i_0])) i (t64)));
       i <- i + 1;
     }
     return (out);
@@ -1212,23 +1211,23 @@ module M(SC:Syscall_t) = {
     state <@ __st0 (state);
     i <- 0;
     while (i < 4) {
-      t64 <- (get64 (WArray34.init8 (fun i_0 => (in_0).[i_0])) i);
+      t64 <- (get64 (WArray34.init8 (fun i_0 => in_0.[i_0])) i);
       state.[i] <- (state.[i] `^` t64);
       i <- i + 1;
     }
-    t16 <- (get16_direct (WArray34.init8 (fun i_0 => (in_0).[i_0])) 32);
+    t16 <- (get16_direct (WArray34.init8 (fun i_0 => in_0.[i_0])) 32);
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set16 (WArray200.init64 (fun i_0 => (state).[i_0])) 16 ((
-    (get16 (WArray200.init64 (fun i_0 => (state).[i_0])) 16) `^` t16))));
+    (WArray200.get64 (WArray200.set16 (WArray200.init64 (fun i_0 => state.[i_0])) 16 ((
+    (get16 (WArray200.init64 (fun i_0 => state.[i_0])) 16) `^` t16))));
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) 34 ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) 34) `^` (W8.of_int 31)))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) 34 ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) 34) `^` (W8.of_int 31)))));
     state <-
     Array25.init
-    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => (state).[i_0])) (168 - 1) ((
-    (get8 (WArray200.init64 (fun i_0 => (state).[i_0])) (168 - 1)) `^` (W8.of_int 128)))));
+    (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (168 - 1) ((
+    (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (168 - 1)) `^` (W8.of_int 128)))));
     return (state);
   }
   
@@ -1249,7 +1248,7 @@ module M(SC:Syscall_t) = {
       t <- state.[i];
       out <-
       Array168.init
-      (WArray168.get8 (WArray168.set64 (WArray168.init8 (fun i_0 => (out).[i_0])) i (t)));
+      (WArray168.get8 (WArray168.set64 (WArray168.init8 (fun i_0 => out.[i_0])) i (t)));
       i <- i + 1;
     }
     return (state, out);
@@ -2348,65 +2347,65 @@ module M(SC:Syscall_t) = {
     }
     i <- 0;
     while (i < 4) {
-      t64 <- (get64 (WArray33.init8 (fun i_0 => (m0).[i_0])) i);
+      t64 <- (get64 (WArray33.init8 (fun i_0 => m0.[i_0])) i);
       s <-
       Array25.init
-      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => (s).[i_0])) (4 * i) ((
-      (get64 (WArray800.init256 (fun i_0 => (s).[i_0])) (4 * i)) `^` t64))));
-      t64 <- (get64 (WArray33.init8 (fun i_0 => (m1).[i_0])) i);
+      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => s.[i_0])) (4 * i) ((
+      (get64 (WArray800.init256 (fun i_0 => s.[i_0])) (4 * i)) `^` t64))));
+      t64 <- (get64 (WArray33.init8 (fun i_0 => m1.[i_0])) i);
       s <-
       Array25.init
-      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => (s).[i_0])) ((4 * i) + 1) ((
-      (get64 (WArray800.init256 (fun i_0 => (s).[i_0])) ((4 * i) + 1)) `^` t64))));
-      t64 <- (get64 (WArray33.init8 (fun i_0 => (m2).[i_0])) i);
+      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => s.[i_0])) ((4 * i) + 1) ((
+      (get64 (WArray800.init256 (fun i_0 => s.[i_0])) ((4 * i) + 1)) `^` t64))));
+      t64 <- (get64 (WArray33.init8 (fun i_0 => m2.[i_0])) i);
       s <-
       Array25.init
-      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => (s).[i_0])) ((4 * i) + 2) ((
-      (get64 (WArray800.init256 (fun i_0 => (s).[i_0])) ((4 * i) + 2)) `^` t64))));
-      t64 <- (get64 (WArray33.init8 (fun i_0 => (m3).[i_0])) i);
+      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => s.[i_0])) ((4 * i) + 2) ((
+      (get64 (WArray800.init256 (fun i_0 => s.[i_0])) ((4 * i) + 2)) `^` t64))));
+      t64 <- (get64 (WArray33.init8 (fun i_0 => m3.[i_0])) i);
       s <-
       Array25.init
-      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => (s).[i_0])) ((4 * i) + 3) ((
-      (get64 (WArray800.init256 (fun i_0 => (s).[i_0])) ((4 * i) + 3)) `^` t64))));
+      (WArray800.get256 (WArray800.set64 (WArray800.init256 (fun i_0 => s.[i_0])) ((4 * i) + 3) ((
+      (get64 (WArray800.init256 (fun i_0 => s.[i_0])) ((4 * i) + 3)) `^` t64))));
       i <- i + 1;
     }
     t8 <- m0.[32];
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 128 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 128) `^` t8))));
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 128 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 128) `^` t8))));
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 129 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 129) `^` (W8.of_int 31)))));
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 129 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 129) `^` (W8.of_int 31)))));
     t8 <- m1.[32];
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 136 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 136) `^` t8))));
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 136 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 136) `^` t8))));
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 137 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 137) `^` (W8.of_int 31)))));
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 137 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 137) `^` (W8.of_int 31)))));
     t8 <- m2.[32];
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 144 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 144) `^` t8))));
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 144 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 144) `^` t8))));
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 145 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 145) `^` (W8.of_int 31)))));
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 145 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 145) `^` (W8.of_int 31)))));
     t8 <- m3.[32];
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 152 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 152) `^` t8))));
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 152 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 152) `^` t8))));
     s <-
     Array25.init
-    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => (s).[i_0])) 153 ((
-    (get8 (WArray800.init256 (fun i_0 => (s).[i_0])) 153) `^` (W8.of_int 31)))));
-    t0 <- (get256 (WArray32.init64 (fun i_0 => (shake_sep).[i_0])) 0);
+    (WArray800.get256 (WArray800.set8 (WArray800.init256 (fun i_0 => s.[i_0])) 153 ((
+    (get8 (WArray800.init256 (fun i_0 => s.[i_0])) 153) `^` (W8.of_int 31)))));
+    t0 <- (get256 (WArray32.init64 (fun i_0 => shake_sep.[i_0])) 0);
     t1 <- s.[((136 %/ 8) - 1)];
     t0 <- (t0 `^` t1);
     s.[((136 %/ 8) - 1)] <- t0;
@@ -2434,17 +2433,17 @@ module M(SC:Syscall_t) = {
       t128 <- (truncateu128 t256);
       h0 <-
       Array136.init
-      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => (h0).[i_0])) i (VMOVLPD t128)));
+      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => h0.[i_0])) i (VMOVLPD t128)));
       h1 <-
       Array136.init
-      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => (h1).[i_0])) i (VMOVHPD t128)));
+      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => h1.[i_0])) i (VMOVHPD t128)));
       t128 <- VEXTRACTI128 t256 (W8.of_int 1);
       h2 <-
       Array136.init
-      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => (h2).[i_0])) i (VMOVLPD t128)));
+      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => h2.[i_0])) i (VMOVLPD t128)));
       h3 <-
       Array136.init
-      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => (h3).[i_0])) i (VMOVHPD t128)));
+      (WArray136.get8 (WArray136.set64 (WArray136.init8 (fun i_0 => h3.[i_0])) i (VMOVHPD t128)));
       i <- i + 1;
     }
     return (state, h0, h1, h2, h3);
@@ -2460,14 +2459,12 @@ module M(SC:Syscall_t) = {
     
     i <- 0;
     while (i < 16) {
-      a <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * i));
-      b <-
-      (get256_direct (WArray512.init16 (fun i_0 => (bp).[i_0])) (32 * i));
+      a <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * i));
+      b <- (get256_direct (WArray512.init16 (fun i_0 => bp.[i_0])) (32 * i));
       r <- VPADD_16u16 a b;
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * i) (r)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * i) (r)));
       i <- i + 1;
     }
     return (rp);
@@ -2480,15 +2477,14 @@ module M(SC:Syscall_t) = {
     var i:int;
     var r:W256.t;
     
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => (jqx16).[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     i <- 0;
     while (i < 16) {
-      r <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * i));
+      r <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * i));
       r <@ __csubq (r, qx16);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * i) (r)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * i) (r)));
       i <- i + 1;
     }
     return (rp);
@@ -2596,120 +2592,120 @@ module M(SC:Syscall_t) = {
     var bre:W256.t;
     var bim:W256.t;
     
-    qx16 <- (get256_direct (WArray32.init16 (fun i => (jqx16).[i])) 0);
-    qinvx16 <- (get256_direct (WArray32.init16 (fun i => (jqinvx16).[i])) 0);
+    qx16 <- (get256_direct (WArray32.init16 (fun i => jqx16.[i])) 0);
+    qinvx16 <- (get256_direct (WArray32.init16 (fun i => jqinvx16.[i])) 0);
     zetaqinv <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 272);
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 272);
     zeta_0 <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 304);
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 0));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 1));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 0));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 1));
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 304);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 0));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 1));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 0));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 1));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 0);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 0) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 0) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 1) (aim)));
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 2));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 3));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 2));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 3));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 1) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 2));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 3));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 2));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 3));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 1);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 2) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 2) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 3) (aim)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 3) (aim)));
     zetaqinv <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 336);
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 336);
     zeta_0 <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 368);
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 4));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 5));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 4));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 5));
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 368);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 4));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 5));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 4));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 5));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 0);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 4) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 4) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 5) (aim)));
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 6));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 7));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 6));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 7));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 5) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 6));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 7));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 6));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 7));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 1);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 6) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 6) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 7) (aim)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 7) (aim)));
     zetaqinv <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 664);
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 664);
     zeta_0 <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 696);
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 8));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 9));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 8));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 9));
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 696);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 8));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 9));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 8));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 9));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 0);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 8) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 8) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 9) (aim)));
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 10));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 11));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 10));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 11));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 9) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 10));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 11));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 10));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 11));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 1);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 10) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 10) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 11) (aim)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 11) (aim)));
     zetaqinv <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 728);
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 728);
     zeta_0 <-
-    (get256_direct (WArray800.init16 (fun i => (jzetas_exp).[i])) 760);
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 12));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 13));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 12));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 13));
+    (get256_direct (WArray800.init16 (fun i => jzetas_exp.[i])) 760);
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 12));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 13));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 12));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 13));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 0);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 12) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 12) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 13) (aim)));
-    are <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 14));
-    aim <- (get256_direct (WArray512.init16 (fun i => (ap).[i])) (32 * 15));
-    bre <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 14));
-    bim <- (get256_direct (WArray512.init16 (fun i => (bp).[i])) (32 * 15));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 13) (aim)));
+    are <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 14));
+    aim <- (get256_direct (WArray512.init16 (fun i => ap.[i])) (32 * 15));
+    bre <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 14));
+    bim <- (get256_direct (WArray512.init16 (fun i => bp.[i])) (32 * 15));
     (are, aim) <@ __schoolbook16x (are, aim, bre, bim, zeta_0, zetaqinv,
     qx16, qinvx16, 1);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 14) (are)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 14) (are)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => (rp).[i])) (32 * 15) (aim)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i => rp.[i])) (32 * 15) (aim)));
     return (rp);
   }
   
@@ -2730,19 +2726,18 @@ module M(SC:Syscall_t) = {
     x16p <- witness;
     a <@ _poly_csubq (a);
     x16p <- jvx16;
-    v <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    v <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     shift1 <- VPBROADCAST_16u16 pc_shift1_s;
     mask <- VPBROADCAST_16u16 pc_mask_s;
     shift2 <- VPBROADCAST_16u16 pc_shift2_s;
-    permidx <-
-    (get256 (WArray32.init32 (fun i_0 => (pc_permidx_s).[i_0])) 0);
+    permidx <- (get256 (WArray32.init32 (fun i_0 => pc_permidx_s.[i_0])) 0);
     aux <- (256 %/ 64);
     i <- 0;
     while (i < aux) {
-      f0 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) (4 * i));
-      f1 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((4 * i) + 1));
-      f2 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((4 * i) + 2));
-      f3 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((4 * i) + 3));
+      f0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (4 * i));
+      f1 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 1));
+      f2 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 2));
+      f3 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 3));
       f0 <- VPMULH_16u16 f0 v;
       f1 <- VPMULH_16u16 f1 v;
       f2 <- VPMULH_16u16 f2 v;
@@ -2786,19 +2781,18 @@ module M(SC:Syscall_t) = {
     x16p <- witness;
     a <@ _poly_csubq (a);
     x16p <- jvx16;
-    v <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    v <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     shift1 <- VPBROADCAST_16u16 pc_shift1_s;
     mask <- VPBROADCAST_16u16 pc_mask_s;
     shift2 <- VPBROADCAST_16u16 pc_shift2_s;
-    permidx <-
-    (get256 (WArray32.init32 (fun i_0 => (pc_permidx_s).[i_0])) 0);
+    permidx <- (get256 (WArray32.init32 (fun i_0 => pc_permidx_s.[i_0])) 0);
     aux <- (256 %/ 64);
     i <- 0;
     while (i < aux) {
-      f0 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) (4 * i));
-      f1 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((4 * i) + 1));
-      f2 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((4 * i) + 2));
-      f3 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((4 * i) + 3));
+      f0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (4 * i));
+      f1 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 1));
+      f2 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 2));
+      f3 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 3));
       f0 <- VPMULH_16u16 f0 v;
       f1 <- VPMULH_16u16 f1 v;
       f2 <- VPMULH_16u16 f2 v;
@@ -2819,7 +2813,7 @@ module M(SC:Syscall_t) = {
       f0 <- VPERMD permidx f0;
       rp <-
       Array128.init
-      (WArray128.get8 (WArray128.set256_direct (WArray128.init8 (fun i_0 => (rp).[i_0])) (32 * i) (f0)));
+      (WArray128.get8 (WArray128.set256_direct (WArray128.init8 (fun i_0 => rp.[i_0])) (32 * i) (f0)));
       i <- i + 1;
     }
     return (rp, a);
@@ -2839,9 +2833,9 @@ module M(SC:Syscall_t) = {
     x16p <- witness;
     x32p <- witness;
     x16p <- jqx16;
-    q <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    q <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     x32p <- pd_jshufbidx;
-    shufbidx <- (get256 (WArray32.init8 (fun i_0 => (x32p).[i_0])) 0);
+    shufbidx <- (get256 (WArray32.init8 (fun i_0 => x32p.[i_0])) 0);
     mask <- VPBROADCAST_8u32 pd_mask_s;
     shift <- VPBROADCAST_8u32 pd_shift_s;
     f <- set0_256 ;
@@ -2856,7 +2850,7 @@ module M(SC:Syscall_t) = {
       f <- VPMULHRS_16u16 f q;
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) i (f)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) i (f)));
       i <- i + 1;
     }
     return (rp);
@@ -2883,7 +2877,7 @@ module M(SC:Syscall_t) = {
     var t11:W256.t;
     maskp <- witness;
     maskp <- maskx16;
-    mask <- (get256 (WArray32.init16 (fun i_0 => (maskp).[i_0])) 0);
+    mask <- (get256 (WArray32.init16 (fun i_0 => maskp.[i_0])) 0);
     i <- 0;
     while (i < 2) {
       t0 <- (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int (192 * i)))));
@@ -2933,28 +2927,28 @@ module M(SC:Syscall_t) = {
       tt <- VPAND_256 mask tt;
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) (8 * i) (t6)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) (8 * i) (t6)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((8 * i) + 1) (t7)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((8 * i) + 1) (t7)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((8 * i) + 2) (t8)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((8 * i) + 2) (t8)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((8 * i) + 3) (t9)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((8 * i) + 3) (t9)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((8 * i) + 4) (t4)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((8 * i) + 4) (t4)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((8 * i) + 5) (t10)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((8 * i) + 5) (t10)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((8 * i) + 6) (t11)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((8 * i) + 6) (t11)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((8 * i) + 7) (tt)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((8 * i) + 7) (tt)));
       i <- i + 1;
     }
     return (rp);
@@ -2971,19 +2965,19 @@ module M(SC:Syscall_t) = {
     var t:W256.t;
     x16p <- witness;
     x16p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     x16p <- jqinvx16;
-    qinvx16 <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    qinvx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     x16p <- jdmontx16;
-    dmontx16 <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    dmontx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     aux <- (256 %/ 16);
     i <- 0;
     while (i < aux) {
-      t <- (get256 (WArray512.init16 (fun i_0 => (rp).[i_0])) i);
+      t <- (get256 (WArray512.init16 (fun i_0 => rp.[i_0])) i);
       t <@ __fqmulx16 (t, dmontx16, qx16, qinvx16);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) i (t)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) i (t)));
       i <- i + 1;
     }
     return (rp);
@@ -3008,14 +3002,14 @@ module M(SC:Syscall_t) = {
     var h3:W256.t;
     x16p <- witness;
     x16p <- hqx16_p1;
-    hqs <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    hqs <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     shift <-
     VPBROADCAST_2u128 (get128
-                      (WArray16.init32 (fun i_0 => (pfm_shift_s).[i_0])) 0);
+                      (WArray16.init32 (fun i_0 => pfm_shift_s.[i_0])) 0);
     idx <-
-    VPBROADCAST_2u128 (get128 (WArray16.init8 (fun i_0 => (pfm_idx_s).[i_0]))
+    VPBROADCAST_2u128 (get128 (WArray16.init8 (fun i_0 => pfm_idx_s.[i_0]))
                       0);
-    f <- (get256 (WArray32.init8 (fun i_0 => (ap).[i_0])) 0);
+    f <- (get256 (WArray32.init8 (fun i_0 => ap.[i_0])) 0);
     i <- 0;
     while (i < 4) {
       g3 <- VPSHUFD_256 f (W8.of_int (85 * i));
@@ -3042,16 +3036,16 @@ module M(SC:Syscall_t) = {
       g3 <- VPERM2I128 h2 h3 (W8.of_int 49);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) (2 * i) (g0)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) (2 * i) (g0)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((2 * i) + 1) (g1)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((2 * i) + 1) (g1)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((2 * i) + 8) (g2)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((2 * i) + 8) (g2)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) (((2 * i) + 8) + 1) (g3)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) (((2 * i) + 8) + 1) (g3)));
       i <- i + 1;
     }
     return (rp);
@@ -3087,13 +3081,12 @@ module M(SC:Syscall_t) = {
     mask07 <- VPBROADCAST_8u32 mask07_s;
     mask70 <- VPBROADCAST_8u32 mask70_s;
     mask3 <- VPBROADCAST_16u16 mask3_s;
-    shufbidx <-
-    (get256 (WArray32.init8 (fun i_0 => (cbd_jshufbidx).[i_0])) 0);
+    shufbidx <- (get256 (WArray32.init8 (fun i_0 => cbd_jshufbidx.[i_0])) 0);
     aux <- (256 %/ 32);
     i <- 0;
     while (i < aux) {
       f0 <-
-      (get256_direct (WArray128.init8 (fun i_0 => (buf).[i_0])) (24 * i));
+      (get256_direct (WArray128.init8 (fun i_0 => buf.[i_0])) (24 * i));
       f0 <- VPERMQ f0 (W8.of_int 148);
       f0 <- VPSHUFB_256 f0 shufbidx;
       f1 <- VPSRL_8u32 f0 (W8.of_int 1);
@@ -3123,10 +3116,10 @@ module M(SC:Syscall_t) = {
       f1 <- VPERM2I128 f2 f3 (W8.of_int 49);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) (2 * i) (f0)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) (2 * i) (f0)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((2 * i) + 1) (f1)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((2 * i) + 1) (f1)));
       i <- i + 1;
     }
     return (rp);
@@ -3161,7 +3154,7 @@ module M(SC:Syscall_t) = {
     aux <- (256 %/ 64);
     i <- 0;
     while (i < aux) {
-      f0 <- (get256 (WArray128.init8 (fun i_0 => (buf).[i_0])) i);
+      f0 <- (get256 (WArray128.init8 (fun i_0 => buf.[i_0])) i);
       f1 <- VPSRL_16u16 f0 (W8.of_int 1);
       f0 <- VPAND_256 mask55 f0;
       f1 <- VPAND_256 mask55 f1;
@@ -3188,16 +3181,16 @@ module M(SC:Syscall_t) = {
       f3 <- VPMOVSX_16u8_16u16 t;
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) (4 * i) (f0)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) (4 * i) (f0)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((4 * i) + 1) (f2)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((4 * i) + 1) (f2)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((4 * i) + 2) (f1)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((4 * i) + 2) (f1)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => (rp).[i_0])) ((4 * i) + 3) (f3)));
+      (WArray512.get16 (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) ((4 * i) + 3) (f3)));
       i <- i + 1;
     }
     return (rp);
@@ -3278,34 +3271,34 @@ module M(SC:Syscall_t) = {
     buf2 <- witness;
     buf3 <- witness;
     state <- witness;
-    f <- (get256 (WArray32.init8 (fun i => (seed).[i])) 0);
+    f <- (get256 (WArray32.init8 (fun i => seed.[i])) 0);
     buf0 <-
     Array136.init
-    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => (buf0).[i])) 0 (f)));
+    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => buf0.[i])) 0 (f)));
     buf1 <-
     Array136.init
-    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => (buf1).[i])) 0 (f)));
+    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => buf1.[i])) 0 (f)));
     buf2 <-
     Array136.init
-    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => (buf2).[i])) 0 (f)));
+    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => buf2.[i])) 0 (f)));
     buf3 <-
     Array136.init
-    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => (buf3).[i])) 0 (f)));
+    (WArray136.get8 (WArray136.set256 (WArray136.init8 (fun i => buf3.[i])) 0 (f)));
     buf0 <-
     Array136.init
-    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => (buf0).[i])) 32 (nonce)));
+    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => buf0.[i])) 32 (nonce)));
     nonce <- (nonce + (W8.of_int 1));
     buf1 <-
     Array136.init
-    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => (buf1).[i])) 32 (nonce)));
+    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => buf1.[i])) 32 (nonce)));
     nonce <- (nonce + (W8.of_int 1));
     buf2 <-
     Array136.init
-    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => (buf2).[i])) 32 (nonce)));
+    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => buf2.[i])) 32 (nonce)));
     nonce <- (nonce + (W8.of_int 1));
     buf3 <-
     Array136.init
-    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => (buf3).[i])) 32 (nonce)));
+    (WArray136.get8 (WArray136.set8_direct (WArray136.init8 (fun i => buf3.[i])) 32 (nonce)));
     state <@ _shake256_absorb4x_33 (state,
     (Array33.init (fun i => buf0.[0 + i])),
     (Array33.init (fun i => buf1.[0 + i])),
@@ -3383,53 +3376,53 @@ module M(SC:Syscall_t) = {
     var fhix16:W256.t;
     zetasp <- witness;
     zetasp <- jzetas_inv_exp;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => (jqx16).[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     i <- 0;
     while (i < 2) {
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (0 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (64 + (392 * i)));
       zeta2 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (32 + (392 * i)));
       zeta3 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (96 + (392 * i)));
       r0 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 0) + (256 * i)));
       r1 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 1) + (256 * i)));
       r2 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 2) + (256 * i)));
       r3 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 3) + (256 * i)));
       r4 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 4) + (256 * i)));
       r5 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 5) + (256 * i)));
       r6 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 6) + (256 * i)));
       r7 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 7) + (256 * i)));
       (r0, r1, r4, r5, r2, r3, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
-      vx16 <- (get256 (WArray32.init16 (fun i_0 => (jvx16).[i_0])) 0);
+      vx16 <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (128 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (160 + (392 * i)));
       r0 <@ __red16x (r0, qx16, vx16);
       r1 <@ __red16x (r1, qx16, vx16);
@@ -3442,10 +3435,10 @@ module M(SC:Syscall_t) = {
       (r4, r5) <@ __shuffle1 (r4, r5);
       (r6, r7) <@ __shuffle1 (r6, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (192 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (224 + (392 * i)));
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, r2,
       r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -3455,10 +3448,10 @@ module M(SC:Syscall_t) = {
       (r1, r3) <@ __shuffle2 (r1, r3);
       (r5, r7) <@ __shuffle2 (r5, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (256 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (288 + (392 * i)));
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __invntt___butterfly64x (r0, r4,
       r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -3468,10 +3461,10 @@ module M(SC:Syscall_t) = {
       (r2, r6) <@ __shuffle4 (r2, r6);
       (r3, r7) <@ __shuffle4 (r3, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (320 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (352 + (392 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -3482,11 +3475,11 @@ module M(SC:Syscall_t) = {
       (r6, r7) <@ __shuffle8 (r6, r7);
       zeta0 <-
       VPBROADCAST_8u32 (get32_direct
-                       (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+                       (WArray800.init16 (fun i_0 => zetasp.[i_0]))
                        (384 + (392 * i)));
       zeta1 <-
       VPBROADCAST_8u32 (get32_direct
-                       (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+                       (WArray800.init16 (fun i_0 => zetasp.[i_0]))
                        (388 + (392 * i)));
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, r2,
       r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -3494,39 +3487,39 @@ module M(SC:Syscall_t) = {
       if ((i = 0)) {
         rp <-
         Array256.init
-        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 0) + (256 * i)) (r0)));
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 0) + (256 * i)) (r0)));
         rp <-
         Array256.init
-        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 1) + (256 * i)) (r2)));
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 1) + (256 * i)) (r2)));
         rp <-
         Array256.init
-        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 2) + (256 * i)) (r4)));
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 2) + (256 * i)) (r4)));
         rp <-
         Array256.init
-        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 3) + (256 * i)) (r6)));
+        (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 3) + (256 * i)) (r6)));
       } else {
         
       }
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 4) + (256 * i)) (r1)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 4) + (256 * i)) (r1)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 5) + (256 * i)) (r3)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 5) + (256 * i)) (r3)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 6) + (256 * i)) (r5)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 6) + (256 * i)) (r5)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 7) + (256 * i)) (r7)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 7) + (256 * i)) (r7)));
       i <- i + 1;
     }
     zeta0 <-
     VPBROADCAST_8u32 (get32_direct
-                     (WArray800.init16 (fun i_0 => (zetasp).[i_0])) 784);
+                     (WArray800.init16 (fun i_0 => zetasp.[i_0])) 784);
     zeta1 <-
     VPBROADCAST_8u32 (get32_direct
-                     (WArray800.init16 (fun i_0 => (zetasp).[i_0])) 788);
+                     (WArray800.init16 (fun i_0 => zetasp.[i_0])) 788);
     i <- 0;
     while (i < 2) {
       if ((i = 0)) {
@@ -3536,62 +3529,62 @@ module M(SC:Syscall_t) = {
         r4 <- r0;
       } else {
         r4 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 8) + (128 * i)));
         r5 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 9) + (128 * i)));
         r6 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 10) + (128 * i)));
         r7 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 11) + (128 * i)));
       }
       r0 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 0) + (128 * i)));
       r1 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 1) + (128 * i)));
       r2 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 2) + (128 * i)));
       r3 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 3) + (128 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
-      flox16 <- (get256 (WArray32.init16 (fun i_0 => (jflox16).[i_0])) 0);
-      fhix16 <- (get256 (WArray32.init16 (fun i_0 => (jfhix16).[i_0])) 0);
+      flox16 <- (get256 (WArray32.init16 (fun i_0 => jflox16.[i_0])) 0);
+      fhix16 <- (get256 (WArray32.init16 (fun i_0 => jfhix16.[i_0])) 0);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 8) + (128 * i)) (r4)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 8) + (128 * i)) (r4)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 9) + (128 * i)) (r5)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 9) + (128 * i)) (r5)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 10) + (128 * i)) (r6)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 10) + (128 * i)) (r6)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 11) + (128 * i)) (r7)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 11) + (128 * i)) (r7)));
       r0 <@ __fqmulprecomp16x (r0, flox16, fhix16, qx16);
       r1 <@ __fqmulprecomp16x (r1, flox16, fhix16, qx16);
       r2 <@ __fqmulprecomp16x (r2, flox16, fhix16, qx16);
       r3 <@ __fqmulprecomp16x (r3, flox16, fhix16, qx16);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 0) + (128 * i)) (r0)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 0) + (128 * i)) (r0)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 1) + (128 * i)) (r1)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 1) + (128 * i)) (r1)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 2) + (128 * i)) (r2)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 2) + (128 * i)) (r2)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 3) + (128 * i)) (r3)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 3) + (128 * i)) (r3)));
       i <- i + 1;
     }
     return (rp);
@@ -3664,92 +3657,76 @@ module M(SC:Syscall_t) = {
     var vx16:W256.t;
     zetasp <- witness;
     zetasp <- jzetas_exp;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => (jqx16).[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     zeta0 <-
-    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => (zetasp).[i_0])) 0);
+    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 0);
     zeta1 <-
-    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => (zetasp).[i_0])) 1);
-    r0 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 0));
-    r1 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 1));
-    r2 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 2));
-    r3 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 3));
-    r4 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 8));
-    r5 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 9));
-    r6 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 10));
-    r7 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 11));
+    VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 1);
+    r0 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 0));
+    r1 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 1));
+    r2 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 2));
+    r3 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 3));
+    r4 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 8));
+    r5 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 9));
+    r6 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 10));
+    r7 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 11));
     (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
     r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 0) (r0)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 0) (r0)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 1) (r1)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 1) (r1)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 2) (r2)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 2) (r2)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 3) (r3)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 3) (r3)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 8) (r4)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 8) (r4)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 9) (r5)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 9) (r5)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 10) (r6)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 10) (r6)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 11) (r7)));
-    r0 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 4));
-    r1 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 5));
-    r2 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 6));
-    r3 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 7));
-    r4 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 12));
-    r5 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 13));
-    r6 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 14));
-    r7 <-
-    (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 15));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 11) (r7)));
+    r0 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 4));
+    r1 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 5));
+    r2 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 6));
+    r3 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 7));
+    r4 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 12));
+    r5 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 13));
+    r6 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 14));
+    r7 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 15));
     (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
     r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 12) (r4)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 12) (r4)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 13) (r5)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 13) (r5)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 14) (r6)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 14) (r6)));
     rp <-
     Array256.init
-    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * 15) (r7)));
+    (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 15) (r7)));
     i <- 0;
     while (i < 2) {
       zeta0 <-
       VPBROADCAST_8u32 (get32_direct
-                       (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+                       (WArray800.init16 (fun i_0 => zetasp.[i_0]))
                        (8 + (392 * i)));
       zeta1 <-
       VPBROADCAST_8u32 (get32_direct
-                       (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+                       (WArray800.init16 (fun i_0 => zetasp.[i_0]))
                        (12 + (392 * i)));
       if ((i = 0)) {
         r4 <- r0;
@@ -3758,37 +3735,37 @@ module M(SC:Syscall_t) = {
         r7 <- r3;
       } else {
         r4 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 4) + (256 * i)));
         r5 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 5) + (256 * i)));
         r6 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 6) + (256 * i)));
         r7 <-
-        (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+        (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
         ((32 * 7) + (256 * i)));
       }
       r0 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 0) + (256 * i)));
       r1 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 1) + (256 * i)));
       r2 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 2) + (256 * i)));
       r3 <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0]))
+      (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
       ((32 * 3) + (256 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
       r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (16 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (48 + (392 * i)));
       (r0, r4) <@ __shuffle8 (r0, r4);
       (r1, r5) <@ __shuffle8 (r1, r5);
@@ -3797,10 +3774,10 @@ module M(SC:Syscall_t) = {
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __butterfly64x (r0, r4, r1, r5, r2,
       r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (80 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (112 + (392 * i)));
       (r0, r2) <@ __shuffle4 (r0, r2);
       (r4, r6) <@ __shuffle4 (r4, r6);
@@ -3809,10 +3786,10 @@ module M(SC:Syscall_t) = {
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __butterfly64x (r0, r2, r4, r6, r1,
       r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (144 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (176 + (392 * i)));
       (r0, r1) <@ __shuffle2 (r0, r1);
       (r2, r3) <@ __shuffle2 (r2, r3);
@@ -3821,10 +3798,10 @@ module M(SC:Syscall_t) = {
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, r3, r4,
       r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (208 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (240 + (392 * i)));
       (r0, r4) <@ __shuffle1 (r0, r4);
       (r1, r5) <@ __shuffle1 (r1, r5);
@@ -3833,20 +3810,20 @@ module M(SC:Syscall_t) = {
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __butterfly64x (r0, r4, r1, r5, r2,
       r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (272 + (392 * i)));
       zeta2 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (304 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (336 + (392 * i)));
       zeta3 <-
-      (get256_direct (WArray800.init16 (fun i_0 => (zetasp).[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
       (368 + (392 * i)));
       (r0, r4, r2, r6, r1, r5, r3, r7) <@ __butterfly64x (r0, r4, r2, r6, r1,
       r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
-      vx16 <- (get256 (WArray32.init16 (fun i_0 => (jvx16).[i_0])) 0);
+      vx16 <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
       r0 <@ __red16x (r0, qx16, vx16);
       r4 <@ __red16x (r4, qx16, vx16);
       r2 <@ __red16x (r2, qx16, vx16);
@@ -3857,28 +3834,28 @@ module M(SC:Syscall_t) = {
       r7 <@ __red16x (r7, qx16, vx16);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 0) + (256 * i)) (r0)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 0) + (256 * i)) (r0)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 1) + (256 * i)) (r4)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 1) + (256 * i)) (r4)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 2) + (256 * i)) (r1)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 2) + (256 * i)) (r1)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 3) + (256 * i)) (r5)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 3) + (256 * i)) (r5)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 4) + (256 * i)) (r2)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 4) + (256 * i)) (r2)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 5) + (256 * i)) (r6)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 5) + (256 * i)) (r6)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 6) + (256 * i)) (r3)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 6) + (256 * i)) (r3)));
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) ((32 * 7) + (256 * i)) (r7)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) ((32 * 7) + (256 * i)) (r7)));
       i <- i + 1;
     }
     return (rp);
@@ -3892,16 +3869,15 @@ module M(SC:Syscall_t) = {
     var i:int;
     var r:W256.t;
     
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => (jqx16).[i_0])) 0);
-    vx16 <- (get256 (WArray32.init16 (fun i_0 => (jvx16).[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
+    vx16 <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
     i <- 0;
     while (i < 16) {
-      r <-
-      (get256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * i));
+      r <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * i));
       r <@ __red16x (r, qx16, vx16);
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * i) (r)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * i) (r)));
       i <- i + 1;
     }
     return (rp);
@@ -3918,14 +3894,12 @@ module M(SC:Syscall_t) = {
     
     i <- 0;
     while (i < 16) {
-      a <-
-      (get256_direct (WArray512.init16 (fun i_0 => (ap).[i_0])) (32 * i));
-      b <-
-      (get256_direct (WArray512.init16 (fun i_0 => (bp).[i_0])) (32 * i));
+      a <- (get256_direct (WArray512.init16 (fun i_0 => ap.[i_0])) (32 * i));
+      b <- (get256_direct (WArray512.init16 (fun i_0 => bp.[i_0])) (32 * i));
       r <- VPSUB_16u16 a b;
       rp <-
       Array256.init
-      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => (rp).[i_0])) (32 * i) (r)));
+      (WArray512.get16 (WArray512.set256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * i) (r)));
       i <- i + 1;
     }
     return (rp);
@@ -3949,18 +3923,18 @@ module M(SC:Syscall_t) = {
     var ttt:W256.t;
     jqx16_p <- witness;
     jqx16_p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => (jqx16_p).[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16_p.[i_0])) 0);
     a <@ _poly_csubq (a);
     i <- 0;
     while (i < 2) {
-      t0 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) (8 * i));
-      t1 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((8 * i) + 1));
-      t2 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((8 * i) + 2));
-      t3 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((8 * i) + 3));
-      t4 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((8 * i) + 4));
-      t5 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((8 * i) + 5));
-      t6 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((8 * i) + 6));
-      t7 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((8 * i) + 7));
+      t0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (8 * i));
+      t1 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 1));
+      t2 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 2));
+      t3 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 3));
+      t4 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 4));
+      t5 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 5));
+      t6 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 6));
+      t7 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 7));
       tt <- VPSLL_16u16 t1 (W8.of_int 12);
       tt <- (tt `|` t0);
       t0 <- VPSRL_16u16 t1 (W8.of_int 4);
@@ -4022,14 +3996,14 @@ module M(SC:Syscall_t) = {
     px16 <- witness;
     a <@ _poly_csubq (a);
     px16 <- hqx16_m1;
-    hq <- (get256 (WArray32.init16 (fun i_0 => (px16).[i_0])) 0);
+    hq <- (get256 (WArray32.init16 (fun i_0 => px16.[i_0])) 0);
     px16 <- hhqx16;
-    hhq <- (get256 (WArray32.init16 (fun i_0 => (px16).[i_0])) 0);
+    hhq <- (get256 (WArray32.init16 (fun i_0 => px16.[i_0])) 0);
     aux <- (256 %/ 32);
     i <- 0;
     while (i < aux) {
-      f0 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) (2 * i));
-      f1 <- (get256 (WArray512.init16 (fun i_0 => (a).[i_0])) ((2 * i) + 1));
+      f0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (2 * i));
+      f1 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((2 * i) + 1));
       f0 <- VPSUB_16u16 hq f0;
       f1 <- VPSUB_16u16 hq f1;
       g0 <- VPSRA_16u16 f0 (W8.of_int 15);
@@ -4043,7 +4017,7 @@ module M(SC:Syscall_t) = {
       c <- VPMOVMSKB_u256u32 f0;
       rp <-
       Array32.init
-      (WArray32.get8 (WArray32.set32 (WArray32.init8 (fun i_0 => (rp).[i_0])) i (c)));
+      (WArray32.get8 (WArray32.set32 (WArray32.init8 (fun i_0 => rp.[i_0])) i (c)));
       i <- i + 1;
     }
     return (rp, a);
@@ -4102,7 +4076,7 @@ module M(SC:Syscall_t) = {
     r <- witness;
     q <- VPBROADCAST_8u32 pvd_q_s;
     shufbidx <-
-    (get256 (WArray32.init8 (fun i_0 => (pvd_shufbdidx_s).[i_0])) 0);
+    (get256 (WArray32.init8 (fun i_0 => pvd_shufbdidx_s.[i_0])) 0);
     sllvdidx <- VPBROADCAST_4u64 pvd_sllvdidx_s;
     mask <- VPBROADCAST_8u32 pvd_mask_s;
     k <- 0;
@@ -4120,7 +4094,7 @@ module M(SC:Syscall_t) = {
         f <- VPMULHRS_16u16 f q;
         r <-
         Array768.init
-        (WArray1536.get16 (WArray1536.set256 (WArray1536.init16 (fun i_0 => (r).[i_0])) ((16 * k) + i) (f)));
+        (WArray1536.get16 (WArray1536.set256 (WArray1536.init16 (fun i_0 => r.[i_0])) ((16 * k) + i) (f)));
         i <- i + 1;
       }
       k <- k + 1;
@@ -4149,7 +4123,7 @@ module M(SC:Syscall_t) = {
     x16p <- witness;
     a <@ __polyvec_csubq (a);
     x16p <- jvx16;
-    v <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    v <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     v8 <- VPSLL_16u16 v (W8.of_int 3);
     off <- VPBROADCAST_16u16 pvc_off_s;
     shift1 <- VPBROADCAST_16u16 pvc_shift1_s;
@@ -4157,11 +4131,11 @@ module M(SC:Syscall_t) = {
     shift2 <- VPBROADCAST_4u64 pvc_shift2_s;
     sllvdidx <- VPBROADCAST_4u64 pvc_sllvdidx_s;
     shufbidx <-
-    (get256 (WArray32.init8 (fun i_0 => (pvc_shufbidx_s).[i_0])) 0);
+    (get256 (WArray32.init8 (fun i_0 => pvc_shufbidx_s.[i_0])) 0);
     aux <- ((3 * 256) %/ 16);
     i <- 0;
     while (i < aux) {
-      f0 <- (get256 (WArray1536.init16 (fun i_0 => (a).[i_0])) i);
+      f0 <- (get256 (WArray1536.init16 (fun i_0 => a.[i_0])) i);
       f1 <- VPMULL_16u16 f0 v8;
       f2 <- VPADD_16u16 f0 off;
       f0 <- VPSLL_16u16 f0 (W8.of_int 3);
@@ -4211,7 +4185,7 @@ module M(SC:Syscall_t) = {
     x16p <- witness;
     a <@ __polyvec_csubq (a);
     x16p <- jvx16;
-    v <- (get256 (WArray32.init16 (fun i_0 => (x16p).[i_0])) 0);
+    v <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     v8 <- VPSLL_16u16 v (W8.of_int 3);
     off <- VPBROADCAST_16u16 pvc_off_s;
     shift1 <- VPBROADCAST_16u16 pvc_shift1_s;
@@ -4219,11 +4193,11 @@ module M(SC:Syscall_t) = {
     shift2 <- VPBROADCAST_4u64 pvc_shift2_s;
     sllvdidx <- VPBROADCAST_4u64 pvc_sllvdidx_s;
     shufbidx <-
-    (get256 (WArray32.init8 (fun i_0 => (pvc_shufbidx_s).[i_0])) 0);
+    (get256 (WArray32.init8 (fun i_0 => pvc_shufbidx_s.[i_0])) 0);
     aux <- ((3 * 256) %/ 16);
     i <- 0;
     while (i < aux) {
-      f0 <- (get256 (WArray1536.init16 (fun i_0 => (a).[i_0])) i);
+      f0 <- (get256 (WArray1536.init16 (fun i_0 => a.[i_0])) i);
       f1 <- VPMULL_16u16 f0 v8;
       f2 <- VPADD_16u16 f0 off;
       f0 <- VPSLL_16u16 f0 (W8.of_int 3);
@@ -4243,10 +4217,10 @@ module M(SC:Syscall_t) = {
       t0 <- VPBLEND_8u16 t0 t1 (W8.of_int 224);
       rp <-
       Array960.init
-      (WArray960.get8 (WArray960.set128_direct (WArray960.init8 (fun i_0 => (rp).[i_0])) (20 * i) (t0)));
+      (WArray960.get8 (WArray960.set128_direct (WArray960.init8 (fun i_0 => rp.[i_0])) (20 * i) (t0)));
       rp <-
       Array960.init
-      (WArray960.get8 (WArray960.set32_direct (WArray960.init8 (fun i_0 => (rp).[i_0])) ((20 * i) + 16) (VPEXTR_32 t1
+      (WArray960.get8 (WArray960.set32_direct (WArray960.init8 (fun i_0 => rp.[i_0])) ((20 * i) + 16) (VPEXTR_32 t1
       (W8.of_int 0))));
       i <- i + 1;
     }
@@ -4537,25 +4511,24 @@ module M(SC:Syscall_t) = {
     aux <- (32 %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => (randomnessp).[i_0])) i);
+      t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
       inbuf <-
       Array32.init
-      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => (inbuf).[i_0])) i (t64)));
+      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => inbuf.[i_0])) i (t64)));
       i <- i + 1;
     }
     buf <@ _sha3_512_32 (buf, inbuf);
     aux <- (32 %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (get64 (WArray64.init8 (fun i_0 => (buf).[i_0])) i);
+      t64 <- (get64 (WArray64.init8 (fun i_0 => buf.[i_0])) i);
       publicseed <-
       Array32.init
-      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => (publicseed).[i_0])) i (t64)));
-      t64 <-
-      (get64 (WArray64.init8 (fun i_0 => (buf).[i_0])) (i + (32 %/ 8)));
+      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => publicseed.[i_0])) i (t64)));
+      t64 <- (get64 (WArray64.init8 (fun i_0 => buf.[i_0])) (i + (32 %/ 8)));
       noiseseed <-
       Array32.init
-      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => (noiseseed).[i_0])) i (t64)));
+      (WArray32.get8 (WArray32.set64 (WArray32.init8 (fun i_0 => noiseseed.[i_0])) i (t64)));
       i <- i + 1;
     }
     aa <@ __gen_matrix (publicseed, (W64.of_int 0));
@@ -4619,7 +4592,7 @@ module M(SC:Syscall_t) = {
     aux <- (32 %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => (publicseed).[i_0])) i);
+      t64 <- (get64 (WArray32.init8 (fun i_0 => publicseed.[i_0])) i);
       Glob.mem <-
       storeW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))) (t64);
       pkp <- (pkp + (W64.of_int 8));
@@ -4671,7 +4644,7 @@ module M(SC:Syscall_t) = {
       t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
       publicseed <-
       Array32.init
-      (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i_0 => (publicseed).[i_0])) (8 * (W64.to_uint i)) (t64)));
+      (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i_0 => publicseed.[i_0])) (8 * (W64.to_uint i)) (t64)));
       pkp <- (pkp + (W64.of_int 8));
       i <- (i + (W64.of_int 1));
     }
@@ -4782,7 +4755,7 @@ module M(SC:Syscall_t) = {
       t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
       publicseed <-
       Array32.init
-      (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i_0 => (publicseed).[i_0])) (8 * (W64.to_uint i)) (t64)));
+      (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i_0 => publicseed.[i_0])) (8 * (W64.to_uint i)) (t64)));
       pkp <- (pkp + (W64.of_int 8));
       i <- (i + (W64.of_int 1));
     }
@@ -4905,7 +4878,7 @@ module M(SC:Syscall_t) = {
     i <- 0;
     while (i < aux) {
       f <-
-      (get256_direct (WArray1088.init8 (fun i_0 => (ctpc).[i_0])) (32 * i));
+      (get256_direct (WArray1088.init8 (fun i_0 => ctpc.[i_0])) (32 * i));
       g <- (loadW256 Glob.mem (W64.to_uint (ctp + (W64.of_int (32 * i)))));
       f <- VPXOR_256 f g;
       h <- VPOR_256 h f;
@@ -4917,7 +4890,7 @@ module M(SC:Syscall_t) = {
     aux <- ((3 * 320) + 128);
     i <- off;
     while (i < aux) {
-      t1 <- (get8_direct (WArray1088.init8 (fun i_0 => (ctpc).[i_0])) i);
+      t1 <- (get8_direct (WArray1088.init8 (fun i_0 => ctpc.[i_0])) i);
       t2 <- (loadW8 Glob.mem (W64.to_uint (ctp + (W64.of_int i))));
       t1 <- (t1 `^` t2);
       t64 <- (zeroextu64 t1);
@@ -4948,8 +4921,7 @@ module M(SC:Syscall_t) = {
     aux <- (32 %/ 32);
     i <- 0;
     while (i < aux) {
-      f <-
-      (get256_direct (WArray32.init8 (fun i_0 => (src).[i_0])) (32 * i));
+      f <- (get256_direct (WArray32.init8 (fun i_0 => src.[i_0])) (32 * i));
       g <- (loadW256 Glob.mem (W64.to_uint (dst + (W64.of_int (32 * i)))));
       f <- VPBLENDVB_256 f g m;
       Glob.mem <-
@@ -5011,7 +4983,7 @@ module M(SC:Syscall_t) = {
     skp <- s_skp;
     i <- 0;
     while (i < 4) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => (h_pk).[i_0])) i);
+      t64 <- (get64 (WArray32.init8 (fun i_0 => h_pk.[i_0])) i);
       Glob.mem <-
       storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) (t64);
       skp <- (skp + (W64.of_int 8));
@@ -5022,7 +4994,7 @@ module M(SC:Syscall_t) = {
     aux <- (32 %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => (randomnessp2).[i_0])) i);
+      t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) i);
       Glob.mem <-
       storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) (t64);
       skp <- (skp + (W64.of_int 8));
@@ -5051,10 +5023,10 @@ module M(SC:Syscall_t) = {
     aux <- (32 %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => (randomnessp).[i_0])) i);
+      t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
       buf <-
       Array64.init
-      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => (buf).[i_0])) i (t64)));
+      (WArray64.get8 (WArray64.set64 (WArray64.init8 (fun i_0 => buf.[i_0])) i (t64)));
       i <- i + 1;
     }
     pkp <- s_pkp;
@@ -5072,7 +5044,7 @@ module M(SC:Syscall_t) = {
     aux <- (32 %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (get64 (WArray64.init8 (fun i_0 => (kr).[i_0])) i);
+      t64 <- (get64 (WArray64.init8 (fun i_0 => kr.[i_0])) i);
       Glob.mem <-
       storeW64 Glob.mem (W64.to_uint (shkp + (W64.of_int (8 * i)))) (t64);
       i <- i + 1;
@@ -5115,7 +5087,7 @@ module M(SC:Syscall_t) = {
       t64 <- (loadW64 Glob.mem (W64.to_uint (hp + (W64.of_int (8 * i)))));
       buf <-
       Array64.init
-      (WArray64.get8 (WArray64.set64_direct (WArray64.init8 (fun i_0 => (buf).[i_0])) (32 + (8 * i)) (t64)));
+      (WArray64.get8 (WArray64.set64_direct (WArray64.init8 (fun i_0 => buf.[i_0])) (32 + (8 * i)) (t64)));
       i <- i + 1;
     }
     s_skp <- skp;
