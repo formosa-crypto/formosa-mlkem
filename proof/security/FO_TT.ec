@@ -2030,7 +2030,6 @@ lemma pre_conclusion_cpa &m gamma_spread :
   Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
       2%r * `| Pr[PKE.CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(A)))).main() @ &m : res] - 1%r / 2%r| 
     + 2%r * `| Pr[PKE.CPA(BasePKE, OWvsIND.Bowl(AdvOWL_query(A))).main() @ &m : res] - 1%r/2%r | 
-    + Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query(A))).main() @ &m : res ]
     + Pr[ PKE.Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(A))).main() @ &m : res]
     + Pr[ Correctness_Adv(RO.RO,TT,AdvCorr(A)).main() @ &m : res ]
     + qV%r * gamma_spread + 2%r * (qH + qP + 1)%r * eps_msg.
@@ -2048,6 +2047,10 @@ proof.
    by smt(MFinT.card_gt0 ge0_qH ge0_qP mu_bounded).
 qed.
 
+(* DIFFERENCE TO HHK: ONE EXTRA CPA TERM COMES FROM OW vs IND
+   GENERIC BOUND; EXTRA CORRECTNESS TERMS COME FROM OW DEFINITION
+   AND ADVERSARIES FORCING MESSAGE IN HASH; qP in eps MESSAGE 
+   COMES FROM COUNTING GLOBAL SIZE OF ROM TABLE *)
 lemma conclusion_cpa &m gamma_spread :
  qH + qP + 1 = qHC =>
 
@@ -2066,7 +2069,6 @@ lemma conclusion_cpa &m gamma_spread :
   Pr[OW_PCVA(RO.LRO, TT, A).main() @ &m : res] <=
       2%r * `| Pr[PKE.CPA(BasePKE, OWvsIND.Bowl(OWvsIND.BL(AdvOW(A)))).main() @ &m : res] - 1%r / 2%r| 
     + 2%r * `| Pr[PKE.CPA(BasePKE, OWvsIND.Bowl(AdvOWL_query(A))).main() @ &m : res] - 1%r/2%r | 
-    + Pr[ PKE.Correctness_Adv(BasePKE,BOWp(BasePKE,AdvOW_query(A))).main() @ &m : res ]
     + Pr[ PKE.Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(A))).main() @ &m : res]
     + (qH + qP + 2)%r * Pr[ PKE.Correctness_Adv(BasePKE,B(AdvCorr(A),RO.RO)).main() @ &m : res ]
     + qV%r * gamma_spread + 2%r * (qH + qP + 1)%r * eps_msg.

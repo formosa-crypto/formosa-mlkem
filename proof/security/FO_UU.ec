@@ -277,14 +277,14 @@ module (UU2 : KEMROMx2.Scheme) (H : POracle_x2) = {
         ko <- Some k;
         (* HHK SAYS INCONSISTENCY IF DEC C <> NONE && ENC (DEC C) <> C 
            HOWEVER, THIS CAN NEVER HAPPEN WHEN DEALING WITH THE 
-           FO_TT TRANSFORM *)
+           FO_TT TRANSFORM: THIS IS RIGIDITY *)
         lD <- (c,k) :: lD;
      }
      return ko;
   }
 }.
 
-(* For an up-to-bad argument we'll need to trigget bad in both
+(* For an up-to-bad argument we'll need to trigger bad in both
    Gm1 and Gm2, so we recast everything in the memory of Gm2. *)
 
   module H1 : POracle_x2 = {
@@ -755,7 +755,7 @@ by smt().
 qed.
 
 (*
-REDUCTION TO CORRECTNESS SEEMS STRAIGHTFORWARD.
+REDUCTION TO CORRECTNESS IS STRAIGHTFORWARD.
 PROVING UP TO BAD REQUIRES DEALING WITH THE FACT THAT
 DEC IS PRE-SAMPLING VALUES OF H2 AS FOLLOWS:
 
@@ -1541,4 +1541,13 @@ end section.
    event that depends only on the number of hash calls. Difference 
    to HHK bound comes from the fact that we know we are using the TT
    transform scheme underneath, which makes some additional checks:
-   see comment above. *)
+   see comment above. 
+
+  More precisely, PCO oracle goes away because we have a deterministic
+  scheme and Validity oracle/decaps queries go away because we are
+  doing implicit rejection and at the same time we put everything
+   in the H oracle.
+   
+
+
+*)
