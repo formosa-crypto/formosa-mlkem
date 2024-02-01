@@ -488,7 +488,7 @@ transitivity{1} { a<-witness;(rho,s,e) <@ MLKEM_PRGs.prg_kg(coins);
 + ecall{2} (H_sem rho{2}).
   by ecall{2} (prg_kg_sem coins{2}); auto. 
 inline {1} 2. 
-proc case {1} 12. (* NEED TO BREAK TUPLE ASSIGNMENT *)
+case <- {1} 12. 
 swap {1} 12 -7. swap {1} 15 -9. wp.
 inline CBD2_PRF(NPRF.PRF).sample.
 inline CBD2.sample.

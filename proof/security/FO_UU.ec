@@ -1534,20 +1534,3 @@ qed.
 
 
 end section.
-
-(* Note that bound does not depend on qD, the number of queries to
-   the decryption oracle. This is because the Gm1 Gm2 hop in this proof
-   fully decouples the oracle calls from the secret key down to a bad
-   event that depends only on the number of hash calls. Difference 
-   to HHK bound comes from the fact that we know we are using the TT
-   transform scheme underneath, which makes some additional checks:
-   see comment above. 
-
-  More precisely, PCO oracle goes away because we have a deterministic
-  scheme and Validity oracle/decaps queries go away because we are
-  doing implicit rejection and at the same time we put everything
-   in the H oracle.
-   
-
-
-*)
