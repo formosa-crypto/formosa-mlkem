@@ -239,6 +239,153 @@ qed.
 
 end section.
 
+theory OWvsIND_direct.
+(* IND implies OW for large message spaces. A direct, tighter proof. *)
+
+module Bind (A : OW_CPA_ADV) : Adversary = {
+  var m0, m1 : plaintext
+  var m : plaintext option
+  var pk : pkey
+
+  proc choose(pk0) = {
+    pk <- pk0;
+    m0 <$ dplaintext;
+    m1 <$ dplaintext;
+    return (m0, m1);
+  }
+
+  proc guess(c) = {
+    m <@ A.find(pk, c);
+    return m = Some m1;
+  }
+}.
+
+section.
+
+declare module S <: Scheme     { -OW_CPA, -BOWp, -Bind }.
+declare module A <: OW_CPA_ADV { -OW_CPA, -BOWp, -Bind, -S }.
+
+declare axiom S_kgen_ll : islossless S.kg.
+declare axiom S_enc_ll : islossless S.enc.
+
+declare axiom A_find_ll : islossless A.find.
+
+local module InlIND (S : Scheme, A : Adversary) = {
+  var b : bool
+
+  proc exp() : bool = {
+    var pk : pkey;
+    var sk : skey;
+    var m0, m1 : plaintext;
+    var c : ciphertext;
+    var b' : bool;
+
+    (pk, sk) <@ S.kg();
+    (m0, m1) <@ A.choose(pk);
+    c        <@ S.enc(pk, b ? m1 : m0);
+    b'       <@ A.guess(c);
+    return (b' = b);
+  }
+
+  proc main() : bool = {
+    var r;
+
+    b <$ {0,1};
+    r <@ exp();
+    return r;
+  }
+
+  proc exp0() : bool = {
+    var pk : pkey;
+    var sk : skey;
+    var m0, m1 : plaintext;
+    var c : ciphertext;
+    var b' : bool;
+
+    (pk, sk) <@ S.kg();
+    (m0, m1) <@ A.choose(pk);
+    c        <@ S.enc(pk, m0);
+    b'       <@ A.guess(c);
+    return !b';
+  }
+
+  proc exp1() : bool = {
+    var pk : pkey;
+    var sk : skey;
+    var m0, m1 : plaintext;
+    var c : ciphertext;
+    var b' : bool;
+
+    (pk, sk) <@ S.kg();
+    (m0, m1) <@ A.choose(pk);
+    c        <@ S.enc(pk, m1);
+    b'       <@ A.guess(c);
+    return b';
+  }
+}.
+
+local lemma globalise (A <: Adversary { -InlIND, -S }) &m :
+  Pr[CPA(S, A).main() @ &m : res] = Pr[InlIND(S, A).main() @ &m : res].
+proof. by byequiv=> />; proc; inline *; wp; swap {2} 1 2; sim. qed.
+
+local equiv direct :
+  OW_CPA(S, A).main_perfect ~ InlIND(S, Bind(A)).main:
+    ={glob S, glob A}
+    ==> !(!InlIND.b /\ Bind.m0 = Bind.m1){2}
+        => res{1} => res{2}.
+proof.
+proc; inline *.
+seq 0 1: #pre; 1:by auto.
+case: (InlIND.b{2}).
++ wp; call (: true).
+  wp; call (: true).
+  wp; rnd; rnd{2}.
+  wp; call (: true).
+  by auto=> /> _ _ _ _ m _ r; rewrite eqT.
+wp.
+conseq (: (Bind.m0 <> Bind.m1){2}
+       => ((OW_CPA.m' = Some OW_CPA.m){1} => (Bind.m <> Some Bind.m1){2})).
++ by auto=> &1 &2 [] /> _ mR m0R m1R; rewrite neqF.
+wp; call (: true).
+wp; call (: true).
+wp; rnd{2}; rnd.
+wp; call (: true).
+by auto=> />.
+qed.
+
+local lemma guessing &m :
+  Pr[InlIND(S, Bind(A)).main() @ &m : !InlIND.b /\ Bind.m0 = Bind.m1] = 1%r/2%r * eps_msg.
+proof.
+byphoare=> //; proc.
+seq 1: (!InlIND.b) (1%r/2%r) eps_msg _ 0%r=> //.
++ by rnd (pred1 false); auto; rewrite dbool1E=> @/pred1 />.
++ inline *. swap [4..5] -3.
+  seq 2: (Bind.m0 = Bind.m1) eps_msg 1%r _ 0%r (!InlIND.b)=> //.
+  + by auto.
+  + rnd (pred1 Bind.m0); rnd (predT); auto=> /> &0 _.
+    rewrite dplaintext_ll=> /= m _ _.
+    by rewrite eps_msgE=> @/pred1.
+  + conseq (: true); islossless.
+    + exact: A_find_ll.
+    + exact: S_enc_ll.
+    + exact: S_kgen_ll.
+  by hoare; conseq (: true)=> //#.
++ by hoare; conseq (: true)=> //#.
+qed.
+
+local lemma IND_implies_OW &m:
+     Pr[OW_CPA(S, A).main_perfect() @ &m : res]
+  <= Pr[CPA(S, Bind(A)).main() @ &m : res]
+     + 1%r/2%r * eps_msg.
+proof.
+rewrite (globalise (Bind(A))) -(guessing &m).
+by byequiv direct.
+qed.
+
+end section.
+
+end OWvsIND_direct.
+
 (* Ind implies ow for large message spaces. We present a stronger
    result for list-returning adversaries and then refine to the
    case where only one message is returned.  *)
