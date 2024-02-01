@@ -359,7 +359,7 @@ conseq (H_sem_equiv)  (H_sem _seed); 1: smt().
 auto => />.
 rewrite /nttm eq_matrixP => i j rng; rewrite mapmE /= !offunmE //= offunmE 1:/# /=.
 congr.
-by smt(@KMatrix).
+by rewrite offunmK /mclamp rng.
 qed.
 
 

@@ -405,7 +405,7 @@ move => [#] ??????? pkv1 pkv2; do split.
   by rewrite pkv2 /#. 
 
 move => ?? [cR1 cR2] /= memR touch [-> ->]; do split.
-+ by smt().
++ by move => a ? _; have := touch (a - to_uint ctp{1}); smt().
 
 rewrite /KDF /G_mhpk /H_msg /H_pk => k kb kbh. 
 rewrite !initiE //= 1:/# ifT 1:/#.
