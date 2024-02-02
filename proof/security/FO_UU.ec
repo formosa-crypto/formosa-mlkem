@@ -1497,7 +1497,6 @@ lemma conclusion_cpa &m :
            (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(A), PKEROM.RO.RO)).main() @ &m : res] + 
            (qHT + qHU + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(A)), PKEROM.RO.RO)).main() @ &m : res] +
                          Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(A)))).main() @ &m : res] +
-                         Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query(BUUOWMod(A)))).main() @ &m : res] +
            `|Pr [ J.IND(PRF,D(A)).main() @ &m : res ] - 
                Pr [ J.IND(RF, D(A)).main() @ &m : res ]|  + 
                   2%r * (qHT + qHU + 2)%r * eps_msg. 

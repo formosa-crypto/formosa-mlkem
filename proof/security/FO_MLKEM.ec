@@ -548,7 +548,6 @@ lemma conclusion_fo_mlkem &m:
     (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(BUUCI(B1x2(A)), PKEROM.RO.RO)).main() @ &m : res] +
     (2*qHK + 3)%r * Pr[Correctness_Adv(BasePKE, B(AdvCorr(BUUOWMod(B1x2(A))), PKEROM.RO.RO)).main() @ &m : res] +
     Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW(BUUOWMod(B1x2(A))))).main() @ &m : res] +
-    Pr[Correctness_Adv(BasePKE, BOWp(BasePKE, AdvOW_query(BUUOWMod(B1x2(A))))).main() @ &m : res] +
     `|Pr[J.IND(PRF, D(B1x2(A))).main() @ &m : res] - Pr[J.IND(RF, D(B1x2(A))).main() @ &m : res]| +
     2%r * (2*qHK + 2)%r * eps_msg.
 proof. 
