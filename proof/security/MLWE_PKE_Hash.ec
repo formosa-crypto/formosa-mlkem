@@ -984,7 +984,7 @@ lemma conclusion &m fail_prob prg_kg_bound prg_enc_bound :
            `| Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A))))))).main(true, false) @ &m : res] -
              Pr[MLWE_H(B2(OWvsIND.Bowl(OWvsIND.BL(TT.AdvOW(BUUOWMod(B1x2(A))))))).main(true, true) @ &m : res]| +
             prg_kg_bound + prg_enc_bound) +
-    (3%r * (2*qHK + 3)%r + 2%r) * (fail_prob + prg_kg_bound + prg_enc_bound) +
+    (3%r * (2*qHK + 3)%r + 1%r) * (fail_prob + prg_kg_bound + prg_enc_bound) +
     `|Pr[J.IND(PseudoRF.PRF, D(B1x2(A))).main() @ &m : res] - Pr[J.IND(RF.RF, D(B1x2(A))).main() @ &m : res]| +
     2%r * (2*qHK + 2)%r * eps_msg.
 proof.

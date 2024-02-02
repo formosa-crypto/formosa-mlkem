@@ -1588,7 +1588,7 @@ lemma mlkem_spec_security_pre &m (failprob prg_kg_bound prg_enc_bound : real) :
        Pr[MLWE_H(B2(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
           (true, true) @ &m : res]| +
      prg_kg_bound + prg_enc_bound) +
-    (3%r * (2 * FO_MLKEM.qHK + 3)%r + 2%r) * (failprob + prg_kg_bound + prg_enc_bound) +
+    (3%r * (2 * FO_MLKEM.qHK + 3)%r + 1%r) * (failprob + prg_kg_bound + prg_enc_bound) +
     `|Pr[FO_MLKEM.UU.J.IND(FO_MLKEM.UU.PseudoRF.PRF, FO_MLKEM.UU.D(FO_MLKEM.B1x2(A))).main() @ &m : res] -
       Pr[FO_MLKEM.UU.J.IND(FO_MLKEM.UU.RF.RF, FO_MLKEM.UU.D(FO_MLKEM.B1x2(A))).main() @ &m : res]| +
     2%r * (2 * FO_MLKEM.qHK + 2)%r * FO_MLKEM.UU.TT.PKE.eps_msg.
@@ -1780,7 +1780,7 @@ lemma mlkem_spec_security &m (failprob hsadv prfadv : real) :
        Pr[MLWE_H(B2(FO_MLKEM.UU.TT.PKE.OWvsIND.Bowl(FO_MLKEM.UU.TT.PKE.OWvsIND.BL(FO_MLKEM.UU.TT.AdvOW(FO_MLKEM.UU.BUUOWMod(FO_MLKEM.B1x2(A))))))).main
           (true, true) @ &m : res]| +
      hsadv + 2%r*prfadv) +
-    (3%r * (2 * FO_MLKEM.qHK + 3)%r + 2%r) * (failprob + hsadv + 2%r*prfadv) +
+    (3%r * (2 * FO_MLKEM.qHK + 3)%r + 1%r) * (failprob + hsadv + 2%r*prfadv) +
     `|Pr[FO_MLKEM.UU.J.IND(FO_MLKEM.UU.PseudoRF.PRF, FO_MLKEM.UU.D(FO_MLKEM.B1x2(A))).main() @ &m : res] -
       Pr[FO_MLKEM.UU.J.IND(FO_MLKEM.UU.RF.RF, FO_MLKEM.UU.D(FO_MLKEM.B1x2(A))).main() @ &m : res]| +
     2%r * (2 * FO_MLKEM.qHK + 2)%r * FO_MLKEM.UU.TT.PKE.eps_msg.
