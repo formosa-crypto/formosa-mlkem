@@ -1675,7 +1675,6 @@ proc.
 seq 2 : #pre; first by auto => />.
 while (#pre /\ srp = rp /\
     0<= to_uint i <= 256 /\ to_uint i %% 4 = 0 /\
-    to_uint zetasctr = to_uint i %/ 4 + 64 /\
     signed_bound_cxq rp 0 (to_uint i) 3 /\
     isbasemul _ap _bp zetas (lift_array256 rp) (to_uint i)); 
        last by auto => /> &hr ??; split; [ smt() | move => ??;rewrite ultE /#].
@@ -1691,10 +1690,11 @@ wp;ecall(fqmul_corr_h (to_sint a0) (to_sint b0)).
 wp;ecall(fqmul_corr_h (to_sint r0) (to_sint zeta_0)).
 wp;ecall(fqmul_corr_h (to_sint a1) (to_sint b1)).
 auto => /> &hr; rewrite /signed_bound_cxq /isbasemul /lift_array256 !ultE /=.
-move => ba bb ??? zctl bprev vprev entry. 
+move => ba bb ??? bprev vprev entry.
 have -> /= : i{hr} + W64.one - W64.one = i{hr} by ring.
 have -> /= : i{hr} + W64.of_int 3 - W64.one = i{hr} + W64.of_int 2 by ring.
-rewrite !to_uintD_small /=;1..5:smt();rewrite !zctl.
+rewrite !to_uintD_small /=; 1..4:smt().
+rewrite !W64.shr_div /= Array64.Array64.initiE /=; 1: smt().
 move => r1 r1val r2 r2val r3 r3val r4 r4val r5 r5val r6 r6val r7 r7val r8 r8val r9 r9val r10 r10val.
 
 have  /= [#] redbl1 redbh1 redv1 := 
@@ -1702,7 +1702,7 @@ have  /= [#] redbl1 redbh1 redv1 :=
      by rewrite /R /=; smt().
 
 have  /= [#] redbl2 redbh2 redv2 := 
-    (SREDCp_corr (to_sint r1 * to_sint jzetas.[to_uint i{hr} %/ 4 + 64]) _ _); 1,2:
+    (SREDCp_corr (to_sint r1 * to_sint jzetas.[64 + to_uint i{hr} %/ 4]) _ _); 1,2:
      by rewrite /R /=; move : zeta_bound; rewrite /minimum_residues; smt().
 
 have  /= [#] redbl3 redbh3 redv3 := 
@@ -1722,7 +1722,7 @@ have  /= [#] redbl6 redbh6 redv6 :=
      by rewrite /R /=; smt().
 
 have  /= [#] redbl7 redbh7 redv7 := 
-    (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[to_uint i{hr} %/ 4 + 64])) _ _); 1: by rewrite /R /=; smt().
+    (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[64 + to_uint i{hr} %/ 4])) _ _); 1: by rewrite /R /=; smt().
 + rewrite /R /=; move : zeta_bound; rewrite /minimum_residues /bpos16 => zb.
   rewrite to_sintN /=; do split; smt().  
 
@@ -1752,14 +1752,14 @@ rewrite -r9val in redbl9;rewrite -r9val in redbh9;rewrite -r9val eq_incoeff in r
 rewrite -r10val in redbl10;rewrite -r10val in redbh10;rewrite -r10val eq_incoeff in redv10.
 
 move : zetas_montE; rewrite /array_mont /lift_array128 tP => zv.
-move : (zv (to_uint i{hr} %/ 4 + 64) _); 1: smt().
+move : (zv (64 + to_uint i{hr} %/ 4) _); 1: smt().
 rewrite !mapiE /=; 1,2: smt() => <-.
 move => zv1. 
 move : (zv (to_uint i{hr} %/ 4) _); 1: smt().
 rewrite !mapiE /=; 1,2: smt() => <-.
 move => zv2. 
 
-do split; 1..4: smt().
+do split; 1..3: smt().
 
 + move => k kb; case (k < to_uint i{hr}).
   + by move => *; rewrite !set_neqiE /#. 
@@ -1800,7 +1800,7 @@ do split.
   rewrite set_eqiE; 1,2: smt().
   rewrite to_sintD_small; 1: smt(). 
   rewrite incoeffD redv2 redv3 !incoeffM redv1 !incoeffM -zv1 /zetas !initiE /=; 1,2: smt(). 
-  rewrite kval.
+  rewrite kval (IntID.addrC 64).
   move : (zetavals1 (to_uint i{hr}) _ _); 1,2: smt().
   rewrite /zetas /= initiE 1:/# /= => ->.
   rewrite ZqField.mulrA -ZqField.mulrA rrinvcoeff.
@@ -1817,7 +1817,7 @@ rewrite set_neqiE; 1,2: smt().
 rewrite set_eqiE; 1,2: smt().
 rewrite to_sintD_small; 1: smt(). 
 rewrite incoeffD redv7 redv8 redv6 -zv1 /zetas !initiE /=; 1,2: smt(). 
-rewrite !incoeffM kval.
+rewrite !incoeffM kval (IntID.addrC 64).
 move : (zetavals1 (to_uint i{hr}) _ _); 1,2: smt().
 rewrite /zetas /= initiE 1:/# /= => ->.
 congr;congr;rewrite -ZqRing.mulrA -(ZqRing.mulrC _ (incoeff 169));congr.

@@ -733,9 +733,9 @@ module M(SC:Syscall_t) = {
                       bp:W16.t Array256.t) : W16.t Array256.t = {
     
     var srp:W16.t Array256.t;
-    var zetasctr:W64.t;
     var i:W64.t;
-    var zetasp:W16.t Array128.t;
+    var zetasp:W16.t Array64.t;
+    var zetasctr:W64.t;
     var zeta_0:W16.t;
     var a0:W16.t;
     var b0:W16.t;
@@ -747,13 +747,13 @@ module M(SC:Syscall_t) = {
     srp <- witness;
     zetasp <- witness;
     srp <- rp;
-    zetasctr <- (W64.of_int 64);
     i <- (W64.of_int 0);
     
-    while ((i \ult (W64.of_int 256))) {
-      zetasp <- jzetas;
+    while ((i \ult (W64.of_int (256 - 3)))) {
+      zetasp <- (Array64.init (fun i_0 => jzetas.[64 + i_0]));
+      zetasctr <- i;
+      zetasctr <- (zetasctr `>>` (W8.of_int 2));
       zeta_0 <- zetasp.[(W64.to_uint zetasctr)];
-      zetasctr <- (zetasctr + (W64.of_int 1));
       a0 <- ap.[(W64.to_uint i)];
       b0 <- bp.[(W64.to_uint i)];
       i <- (i + (W64.of_int 1));
