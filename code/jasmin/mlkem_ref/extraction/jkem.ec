@@ -1682,12 +1682,13 @@ module M(SC:Syscall_t) = {
     var buf:W8.t Array168.t;
     var poly:W16.t Array256.t;
     var k:W64.t;
-    var l:W64.t;
+    var rij:W16.t Array256.t;
     var t:W16.t;
     buf <- witness;
     extseed <- witness;
     poly <- witness;
     r <- witness;
+    rij <- witness;
     state <- witness;
     stransposed <- transposed;
     j <- 0;
@@ -1718,14 +1719,17 @@ module M(SC:Syscall_t) = {
           (ctr, poly) <@ __rej_uniform (poly, ctr, buf);
         }
         k <- (W64.of_int 0);
-        l <- (W64.of_int ((i * (3 * 256)) + (j * 256)));
+        rij <-
+        (Array256.init (fun i_0 => r.[((i * (3 * 256)) + (j * 256)) + i_0]));
         
         while ((k \ult (W64.of_int 256))) {
           t <- poly.[(W64.to_uint k)];
-          r.[(W64.to_uint l)] <- t;
+          rij.[(W64.to_uint k)] <- t;
           k <- (k + (W64.of_int 1));
-          l <- (l + (W64.of_int 1));
         }
+        r <- Array2304.init
+             (fun i_0 => if ((i * (3 * 256)) + (j * 256)) <= i_0 < ((i * (3 * 256)) + (j * 256)) + 256
+             then rij.[i_0-((i * (3 * 256)) + (j * 256))] else r.[i_0]);
         j <- j + 1;
       }
       i <- i + 1;
