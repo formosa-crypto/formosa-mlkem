@@ -4902,7 +4902,7 @@ module M(SC:Syscall_t) = {
     return (cnd);
   }
   
-  proc __cmov (dst:W64.t, src:W8.t Array32.t, cnd:W64.t) : W64.t = {
+  proc __cmov (dst:W64.t, src:W8.t Array32.t, cnd:W64.t) : unit = {
     var aux: int;
     
     var scnd:W64.t;
@@ -4940,7 +4940,7 @@ module M(SC:Syscall_t) = {
       Glob.mem <- storeW8 Glob.mem (W64.to_uint (dst + (W64.of_int i))) (t1);
       i <- i + 1;
     }
-    return (dst);
+    return ();
   }
   
   proc __crypto_kem_keypair_jazz (pkp:W64.t, skp:W64.t,
@@ -5069,7 +5069,6 @@ module M(SC:Syscall_t) = {
     var cnd:W64.t;
     var s_cnd:W64.t;
     var zp:W64.t;
-    var  _0:W64.t;
     buf <- witness;
     ctpc <- witness;
     kr <- witness;
@@ -5107,7 +5106,7 @@ module M(SC:Syscall_t) = {
     _shake256_1120_32 (shkp, zp, ctp);
     shkp <- s_shkp;
     cnd <- s_cnd;
-     _0 <@ __cmov (shkp, (Array32.init (fun i_0 => kr.[0 + i_0])), cnd);
+    __cmov (shkp, (Array32.init (fun i_0 => kr.[0 + i_0])), cnd);
     return ();
   }
   
