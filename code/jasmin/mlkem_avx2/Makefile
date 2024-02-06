@@ -94,7 +94,10 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyve
 %.s: %.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $^
 
-.PHONY: clean
+.PHONY: ct clean
+
+ct:
+	$(JASMINC) -checkCT -infer jkem.jazz
 
 clean:
 	-rm -f *.o

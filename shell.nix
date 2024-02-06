@@ -1,7 +1,12 @@
-with import (fetchTarball {
-    url = https://github.com/NixOS/nixpkgs/archive/53fbe41cf76b6a685004194e38e889bc8857e8c2.tar.gz;
-    sha256 = "sha256:1fyc4kbhv7rrfzya74yprvd70prlcsv56b7n0fv47kn7rznvvr2b";
-}) {};
+{ pkgs ?
+    import (fetchTarball {
+      url = https://github.com/NixOS/nixpkgs/archive/53fbe41cf76b6a685004194e38e889bc8857e8c2.tar.gz;
+      sha256 = "sha256:1fyc4kbhv7rrfzya74yprvd70prlcsv56b7n0fv47kn7rznvvr2b";
+    }) {}
+, full ? true
+}:
+
+with pkgs;
 
 let
   oc = ocaml-ng.ocamlPackages_4_14;
@@ -28,7 +33,9 @@ let
   altergo = callPackage ./config/alt-ergo.nix { ocamlPackages = oc; } ;
 in
 
-mkShell {
+mkShell ({
+  JASMINC = "${jasmin-compiler.bin}/bin/jasminc";
+} // lib.optionalAttrs full {
   packages = [
     ec
     altergo
@@ -36,6 +43,5 @@ mkShell {
     z3
   ];
 
-  JASMINC = "${jasmin-compiler.bin}/bin/jasminc";
   EC_RDIRS = "Jasmin:${jasmin-compiler.lib}/lib/jasmin/easycrypt";
-}
+})
