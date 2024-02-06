@@ -331,7 +331,7 @@ symmetry.
 have H : equiv [
  Jkem.M(Jkem.Syscall).__gen_matrix ~ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix  :
    ={arg} ==> res{2} = nttunpackm res{1}].
-proc. seq 10 10 : (={r}). 
+proc. seq 11 11 : (={r}).
 sim (M(Syscall)._shake128_absorb34 ~ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb34  : true)
     (M(Syscall)._shake128_squeezeblock ~ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeezeblock : true)
      (Jkem_avx2.M(Jkem_avx2.Syscall).__rej_uniform ~ 

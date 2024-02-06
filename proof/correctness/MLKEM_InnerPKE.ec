@@ -460,7 +460,7 @@ proc => /=.
 inline Parse(XOF).sample.
 inline Jkem.M(Jkem.Syscall).__rej_uniform.
 
-seq 6 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
+seq 7 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
 
 seq 2 0 : (#pre /\ forall k, 0<=k<32 => extseed {1}.[k] = seed{2}.[k]).
 + conseq => />; 1: smt().
@@ -491,39 +491,27 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
             forall k, 0 <= k < 256 =>
                bpos16 poly{1}.[k] q); last first.
 
-+ wp;conseq />; 1: smt().
-  while{1} (
-    0 <= to_uint k{1} <= 256 /\ to_uint l{1} = i{2} * 768 + j{2} * 256 + to_uint k{1} /\
-    0 <= j{2} < 3 /\ 0 <= i{2} < 3 /\
-    (forall (k0 : int), 0 <= k0  < i{2} * 768 + j{2} * 256 =>
-        (a{2}.[k0 %/ 768, k0 %% 768 %/ 256])%Matrix.[k0 %% 256] = incoeff (to_sint r{1}.[k0]) /\
-        0 <= to_sint r{1}.[k0] < q) /\
-    (forall (k0 : int),
-        i{2} * 768 + j{2} * 256  <= k0  < i{2} * 768 + j{2} * 256 + to_uint k{1} =>
-        r{1}.[k0] = poly{1}.[k0 %% 256] /\
-         0 <= to_sint r{1}.[k0] < q) /\
-         (forall k, 0 <= k < 256 => bpos16 poly{1}.[k] q)
-    ) (256 - to_uint k{1}); last first.
-
-  + auto => /> &1 &2 [#] 8?; rewrite /lift_array256 => ? k; do split; 2:smt(). 
-    + by rewrite of_uintK /= modz_small /#.
-    move => kl ll rl; rewrite ultE /=; split; 1:  smt(). 
-    move => *;do split; 1,2: smt(). 
-    move => k0 k0bl k0bh;rewrite setmE /= offunmE /= 1:/#. 
-    case (k0 < i{2} * 768 + j{2} * 256); 1: smt().
-    move => *.
-    have -> :  k0 %/ 768 = i{2} by smt().
-    have -> /= :  k0 %% 768 %/ 256 = j{2} by smt().
-    by rewrite mapiE /#.
-
-  move =>  &2 z; auto => /> &1; rewrite !ultE /= => ?????.
-  rewrite to_uintD_small /= 1:/# => *; do split;1,2,6:smt(). 
-  + by rewrite to_uintD_small /#.
-  + by move => kk kkbl kkbh; rewrite set_neqiE /#. 
-  + move => kk kkbl kkbh.
-    case (kk < i{2} * 768 + j{2} * 256 + to_uint k{1}).
-    + by move => *; rewrite set_neqiE /#. 
-    by move => *; rewrite Array2304.set_eqiE /#.
++ wp; conseq />.
+  * move => &1 &2 [] [] [] -> [] ? [] [] -> -> [] ? [] ? [] ? ? ? [] ? ? ? [] [] ? ? H /=.
+    do split => //; 1,2: smt().
+    by move => ??; rewrite -H /#.
+  while{1}
+   (0 <= to_uint k{1} <= 256
+    /\ forall (k0 : int), 0 <= k0 < to_uint k{1} => rij{1}.[k0] = poly{1}.[k0])
+   (256 - to_uint k{1}).
+  * auto => /> 4?.
+    rewrite ultE /= to_uintD_small 1:/# to_uint_small //.
+    smt(Array256.get_setE).
+  auto => /> &1 &2 [#] 9? hpoly; split; 1: smt().
+  move => rij kl; rewrite ultE /=; split; 1: smt().
+  move => hkl 2? heq; split; 1: smt().
+  move => k ??.
+  rewrite initiE 1:/# /=.
+  rewrite /lift_array256 setmE /= offunmE /= 1:/#.
+  have -> /= : k < i{2} * 768 + j{2} * 256 + 256 by smt().
+  have -> : (k %/ 768 = i{2} /\ k %% 768 %/ 256 = j{2}) <=> i{2} * 768 + j{2} * 256 <= k by smt().
+  case: (i{2} * 768 + j{2} * 256 <= k); 2: smt().
+  by rewrite mapiE /#.
 
 conseq />; 1: by smt().
 
