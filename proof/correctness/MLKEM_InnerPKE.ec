@@ -582,12 +582,12 @@ auto => /> &1 &2 ?????????; do split; 1,2,4:smt().
 + by rewrite mergebytes to_uintD_small; smt().
 by rewrite mergebytes2  !to_uintD_small; smt().
 
-seq 2 2 : (to_uint ctr0{1} = j0{2} /\
-           to_uint pos{1} = k{2} /\ 
+seq 4 2 : (to_uint ctr0{1} = j0{2} /\
+           to_uint pos{1} = k{2} /\
            #{/~exit{1}}post).
 
-+ if; 1: by move => &1 &2; rewrite ultE qE; smt().
-  + sp 2 2; if{2}. 
++ sp 1 0; if; 1: by move => &1 &2; rewrite ultE qE; smt().
+  + sp 3 2; if{2}.
     + rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE; smt().
       rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /= to_uintD_small /= /#.
       auto => /> &1 aar ctrl rpl 8?; rewrite ultE /= => *; do split; 2..3:smt().
@@ -633,7 +633,7 @@ seq 2 2 : (to_uint ctr0{1} = j0{2} /\
     rewrite set_eqiE 1,2:/#.
     by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
 
-  if{2}. 
+  sp 1 0; if{2}.
   + rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /#.
     rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /#.
     auto => /> &1 &2 8?; rewrite ultE /= => *; do split; 2..3:smt().

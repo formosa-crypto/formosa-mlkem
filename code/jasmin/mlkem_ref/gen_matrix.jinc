@@ -31,13 +31,18 @@ fn __rej_uniform(stack u16[MLKEM_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] 
     val2 |= t;
     pos += 1;
 
-    if(val1 < MLKEM_Q)
+    reg bool cond;
+    #[declassify]
+    cond = val1 < MLKEM_Q;
+    if cond
     {
       rp[(int)ctr] = val1;
       ctr += 1;
     }
 
-    if(val2 < MLKEM_Q)
+    #[declassify]
+    cond = val2 < MLKEM_Q;
+    if cond
     {
       if(ctr < MLKEM_N)
       {
