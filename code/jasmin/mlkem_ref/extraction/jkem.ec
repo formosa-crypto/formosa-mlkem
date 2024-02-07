@@ -1114,13 +1114,16 @@ module M(SC:Syscall_t) = {
         zeta_0 <- zetasp.[(W64.to_uint zetasctr)];
         zetasctr <- (zetasctr + (W64.of_int 1));
         j <- start;
-        cmp <- (start + len);
+        cmp <- start;
+        cmp <- (cmp + len);
         
         while ((j \ult cmp)) {
-          offset <- (j + len);
+          offset <- j;
+          offset <- (offset + len);
           s <- rp.[(W64.to_uint offset)];
           t <- rp.[(W64.to_uint j)];
-          m <- (s + t);
+          m <- s;
+          m <- (m + t);
           m <@ __barrett_reduce (m);
           rp.[(W64.to_uint j)] <- m;
           t <- (t - s);
@@ -1128,7 +1131,8 @@ module M(SC:Syscall_t) = {
           rp.[(W64.to_uint offset)] <- t;
           j <- (j + (W64.of_int 1));
         }
-        start <- (j + len);
+        start <- j;
+        start <- (start + len);
       }
       len <- (len `<<` (W8.of_int 1));
     }
@@ -1169,10 +1173,12 @@ module M(SC:Syscall_t) = {
         zetasctr <- (zetasctr + (W64.of_int 1));
         zeta_0 <- zetasp.[(W64.to_uint zetasctr)];
         j <- start;
-        cmp <- (start + len);
+        cmp <- start;
+        cmp <- (cmp + len);
         
         while ((j \ult cmp)) {
-          offset <- (j + len);
+          offset <- j;
+          offset <- (offset + len);
           t <- rp.[(W64.to_uint offset)];
           t <@ __fqmul (t, zeta_0);
           s <- rp.[(W64.to_uint j)];
@@ -1183,7 +1189,8 @@ module M(SC:Syscall_t) = {
           rp.[(W64.to_uint j)] <- t;
           j <- (j + (W64.of_int 1));
         }
-        start <- (j + len);
+        start <- j;
+        start <- (start + len);
       }
       len <- (len `>>` (W8.of_int 1));
     }
@@ -2308,8 +2315,8 @@ module M(SC:Syscall_t) = {
     skp);
     buf <- Array64.init
            (fun i_0 => if 0 <= i_0 < 0 + 32 then aux.[i_0-0] else buf.[i_0]);
-    hp <- (skp + (W64.of_int 32));
-    hp <- (hp + (W64.of_int (((24 * 3) * 256) `|>>` 3)));
+    hp <- skp;
+    hp <- (hp + (W64.of_int (32 + (((24 * 3) * 256) `|>>` 3))));
     aux_0 <- (32 %/ 8);
     i <- 0;
     while (i < aux_0) {

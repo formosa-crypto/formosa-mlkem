@@ -6,7 +6,7 @@
 CC     ?= /usr/bin/gcc
 GFLAGS ?=
 CFLAGS := -Wall -Wextra -g -Ofast -fomit-frame-pointer
-JFLAGS := -lea ${JADDFLAGS}
+JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jkem.s
