@@ -590,6 +590,7 @@ module Mprevec = {
     var shift:t16u16;
     var f_b:t32u8;
     var f:t16u16;
+    var t64:t8u8;
     var t:t16u8;
     var i:int;
 
@@ -607,7 +608,8 @@ module Mprevec = {
     i <- 0;
 
     while (i < aux) {
-      t <@ Ops.iload16u8(Glob.mem, ap + (W64.of_int (8  * i)));
+      t64 <@ Ops.iload8u8(Glob.mem, ap + (W64.of_int (8  * i)));
+      t <@ Ops.zeroextu128_t8u8(t64);
       f_b <@ Ops.iVPBROADCAST_2u128_32u8(t);
       f_b <@ Ops.iVPSHUFB_256(f_b, shufbidx);
 

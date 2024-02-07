@@ -445,8 +445,8 @@ module Mvec = {
     aux <- (256 %/ 16);
     i <- 0;
     while (i < aux) {
-      f <@
-      OpsV.iVPBROADCAST_2u128_32u8(loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      t <@ OpsV.zeroextu128_t8u8(loadW64 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      f <@ OpsV.iVPBROADCAST_2u128_32u8(t);
       f <@ OpsV.iVPSHUFB_256(f, shufbidx);
       f <@ OpsV.iVPAND_16u16(f, mask);
       f <@ OpsV.iVPMULL_16u16(f, shift);
@@ -1100,13 +1100,14 @@ proof.
   call eq_iVPMULHRS_256; call eq_iVPMULL_16u16; call eq_iVPAND_16u16.
   wp.
   call eq_iVPSHUFB_256.
-  inline Ops.iload16u8.
+  inline Ops.iload8u8.
   sp.
   call eq_iVPBROADCAST_2u128_32u8.
+  call eq_zeroextu128_t8u8.
   wp; skip; rewrite /is32u8 /is16u16 /is16u8 => />. move => &1 &2 rp_l i_lb i_ub i_tub.
   split.
-    + rewrite /loadW128 /loadW8 /=.
-      apply W16u8.allP => //=.
+    + rewrite /loadW64 /loadW8 /=.
+      apply W8u8.allP => //=.
   move => p_eq res_l0.
   split.
     + rewrite /f32u8_t16u16 initiE //=.
