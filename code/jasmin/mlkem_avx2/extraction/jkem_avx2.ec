@@ -2830,6 +2830,8 @@ module M(SC:Syscall_t) = {
     var shift:W256.t;
     var f:W256.t;
     var i:int;
+    var h:W128.t;
+    var sh:W128.t;
     x16p <- witness;
     x32p <- witness;
     x16p <- jqx16;
@@ -2842,8 +2844,10 @@ module M(SC:Syscall_t) = {
     aux <- (256 %/ 16);
     i <- 0;
     while (i < aux) {
-      f <-
-      VPBROADCAST_2u128 (loadW128 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i)))));
+      h <-
+      (zeroextu128 (loadW64 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i))))));
+      sh <- h;
+      f <- VPBROADCAST_2u128 sh;
       f <- VPSHUFB_256 f shufbidx;
       f <- VPAND_256 f mask;
       f <- VPMULL_16u16 f shift;

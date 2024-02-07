@@ -993,6 +993,15 @@ lemma poly_frommont_corr ap:
        map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap] = 1%r
  by conseq poly_frommont_ll (poly_frommont_corr_h ap) => />.
 
+lemma array32_of_list16 (m : W8.t list) :
+  Array32.init (fun (x : int) => (Array16.of_list witness m).[x %% 16]) = Array32.init (fun (x : int) => nth witness m (x %% 16)).
+proof.
+apply: Array32.ext_eq => x x_range.
+rewrite !initiE // /=.
+apply: Array16.get_of_list.
+smt().
+qed.
+
 lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
     equiv [ Mprevec.poly_decompress ~ EncDec_AVX2.decode4 :
             valid_ptr _p 128 /\
@@ -1068,19 +1077,21 @@ proof.
       rewrite -decompress_alt_decompress 1,2://= /decompress_alt k_ub /=.
       case (16 * i{2} <= k) => k_tlb />.
         rewrite /loadW8.
-        rewrite (_: (Array32.init (fun (i0 : int) =>
-                                  (Array16.init (fun (i1 : int) =>
-                                                mem.[W64.to_uint (ap{1} + (W64.of_int (8 * i{2}))) + i1])).[i0 %% 16])) =
-                   (Array32.init (fun (i0 : int) =>
-                                  mem.[W64.to_uint (ap{1} + (W64.of_int (8 * i{2}))) + i0 %% 16]))).
-          apply Array32.ext_eq.
-          move => x x_i.
-          do (rewrite Array32.initiE 1:x_i /=).
-          rewrite Array16.initiE 1:/# //=.
+        rewrite array32_of_list16.
         rewrite (_: (Array32.init (fun (i1 : int) =>
                                   if 128 <= to_uint shufbidx{1}.[i1] then W8.zero
-                                  else (Array32.init (fun (i0 : int) =>
-                                          mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + i0 %% 16])).[16 * (i1 %/ 16) + to_uint shufbidx{1}.[i1] %% 16])) =
+                                  else (Array32.init (fun (x3 : int) =>
+                                   nth witness
+                                     [mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64)];
+                                      mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 1];
+                                      mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 2];
+                                      mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 3];
+                                      mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 4];
+                                      mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 5];
+                                      mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 6];
+                                      mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + 7];
+                                      W8.zero; W8.zero; W8.zero; W8.zero; W8.zero; W8.zero; W8.zero; W8.zero]
+                                  (x3 %% 16))).[16 * (i1 %/ 16) + to_uint shufbidx{1}.[i1] %% 16])) =
                     (Array32.init (fun (i0 : int) => mem.[to_uint (ap{1} + (of_int (8 * i{2}))%W64) + i0 %/ 4]))).
           apply Array32.ext_eq => x x_i.
           do (rewrite (Array32.initiE _ x) 1:x_i /=).
