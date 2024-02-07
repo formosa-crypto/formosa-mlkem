@@ -5089,8 +5089,8 @@ module M(SC:Syscall_t) = {
     skp);
     buf <- Array64.init
            (fun i_0 => if 0 <= i_0 < 0 + 32 then aux.[i_0-0] else buf.[i_0]);
-    hp <- (skp + (W64.of_int 32));
-    hp <- (hp + (W64.of_int (((24 * 3) * 256) `|>>` 3)));
+    hp <- skp;
+    hp <- (hp + (W64.of_int (32 + (((24 * 3) * 256) `|>>` 3))));
     aux_0 <- (32 %/ 8);
     i <- 0;
     while (i < aux_0) {

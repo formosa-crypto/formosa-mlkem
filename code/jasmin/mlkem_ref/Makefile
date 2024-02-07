@@ -4,7 +4,7 @@
 
 CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer
-JFLAGS := -lea ${JADDFLAGS}
+JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips203.s jindcpa.s jkem.s
