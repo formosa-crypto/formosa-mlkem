@@ -1039,7 +1039,6 @@ module M(SC:Syscall_t) = {
     var extseed:W8.t Array33.t;
     var buf:W8.t Array128.t;
     var i:W64.t;
-    var j:W64.t;
     var a:W8.t;
     var b:W8.t;
     var t:W16.t;
@@ -1057,7 +1056,6 @@ module M(SC:Syscall_t) = {
     buf <@ _shake256_128_33 (buf, extseed);
     rp <- srp;
     i <- (W64.of_int 0);
-    j <- (W64.of_int 0);
     
     while ((i \ult (W64.of_int 128))) {
       c <- buf.[(W64.to_uint i)];
@@ -1073,7 +1071,7 @@ module M(SC:Syscall_t) = {
       b <- (b `&` (W8.of_int 3));
       a <- (a - b);
       t <- (sigextu16 a);
-      rp.[(W64.to_uint j)] <- t;
+      rp.[(W64.to_uint ((W64.of_int 2) * i))] <- t;
       a <- c;
       a <- (a `>>` (W8.of_int 4));
       a <- (a `&` (W8.of_int 3));
@@ -1081,10 +1079,8 @@ module M(SC:Syscall_t) = {
       b <- (b `&` (W8.of_int 3));
       a <- (a - b);
       t <- (sigextu16 a);
-      j <- (j + (W64.of_int 1));
-      rp.[(W64.to_uint j)] <- t;
+      rp.[(W64.to_uint (((W64.of_int 2) * i) + (W64.of_int 1)))] <- t;
       i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
     }
     return (rp);
   }

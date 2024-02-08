@@ -965,11 +965,10 @@ module AuxMLKEMAvx2 = {
   proc cbd2_ref (rp:W16.t Array256.t,buf:W8.t Array128.t) : W16.t Array256.t = {
     var k: int;
     var a, b, c: W8.t;
-    var i, j: W64.t;
+    var i: W64.t;
     var t: W16.t;
     i <- (W64.of_int 0);
-    j <- (W64.of_int 0);
-    
+
     while ((i \ult (W64.of_int 128))) {
       c <- buf.[(W64.to_uint i)];
       a <- c;
@@ -984,7 +983,7 @@ module AuxMLKEMAvx2 = {
       b <- (b `&` (W8.of_int 3));
       a <- (a - b);
       t <- (sigextu16 a);
-      rp.[(W64.to_uint j)] <- t;
+      rp.[W64.to_uint (W64.of_int 2 * i)] <- t;
       a <- c;
       a <- (a `>>` (W8.of_int 4));
       a <- (a `&` (W8.of_int 3));
@@ -992,10 +991,8 @@ module AuxMLKEMAvx2 = {
       b <- (b `&` (W8.of_int 3));
       a <- (a - b);
       t <- (sigextu16 a);
-      j <- (j + (W64.of_int 1));
-      rp.[(W64.to_uint j)] <- t;
+      rp.[W64.to_uint (W64.of_int 2 * i + W64.one)] <- t;
       i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
     }
     return (rp);
   }
@@ -1030,29 +1027,29 @@ hoare cbd2_ref_h _bytes:
  AuxMLKEMAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
 proof.
 proc.
-while (to_uint i <= 128 /\ to_uint j=2*to_uint i /\ #pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (to_uint j))).
- auto => &m |>; rewrite /(\ult) => _ Hj /List.allP IH /= Hi.
- rewrite !to_uintD_small /= 1..3:/#.
- split; first smt().
+while (to_uint i <= 128 /\ #pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (2 * to_uint i))).
+ auto => &m |>; rewrite /(\ult) => _ /List.allP IH /= Hi.
+ rewrite to_uintD_small /= 1:/#.
  split; first smt().
  apply/List.allP => k; rewrite mem_iota /=; move => [? Hk].
- case: (k = to_uint j{m}) => C1.
+ rewrite to_uintD_small !to_uintM_small /= 1..3:/#.
+ case: (k = 2 * to_uint i{m}) => C1.
   rewrite /noise_coef !get_setE 1..2:/# C1 /= ifF 1:/#.
-  have ->/=: to_uint j{m} %/ 2 = to_uint i{m} by smt().
+  have ->/=: 2 * to_uint i{m} %/ 2 = to_uint i{m} by smt().
   rewrite -to_sint_eq sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
-  have ->  /= : to_uint j{m} %% 2 = 0 by smt().
+  have ->  /= : 2 * to_uint i{m} %% 2 = 0 by smt().
   by rewrite -parallel_noisesum_low smod_small // /#.
- case: (k = to_uint j{m}+1) => C2.
+ case: (k = 2 * to_uint i{m}+1) => C2.
   rewrite /noise_coef !get_setE 1..2:/# C2 /=.
-  have ->/=: (to_uint j{m} + 1) %/ 2 = to_uint i{m} by smt().
+  have ->/=: (2 * to_uint i{m} + 1) %/ 2 = to_uint i{m} by smt().
   rewrite -to_sint_eq sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
-  have ->  /= : (to_uint j{m}+1) %% 2 = 1 by smt().
+  have ->  /= : (2 * to_uint i{m}+1) %% 2 = 1 by smt().
   by rewrite -parallel_noisesum_high smod_small // /#.
  rewrite !get_setE 1..2:/# C1 C2 /=; apply IH.
  smt(mem_iota).
 auto => &m |> *.
 split; first by rewrite iota0.
-move=> i j rp; rewrite /(\ult) => |> ?? ->.
+move=> i rp; rewrite /(\ult) => |> ??.
 have ->/=: to_uint i = 128 by smt().
 rewrite tP => /List.allP H k Hk.
 rewrite (H k _) /=.

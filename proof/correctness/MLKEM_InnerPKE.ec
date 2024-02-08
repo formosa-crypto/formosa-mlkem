@@ -796,37 +796,37 @@ seq 8 0 : (buf{1} = bytes{2}).
   move => &m z; auto => /> &hr ????; do split; 1,2,4: smt().
   by move => i0 i0b; case(i0 < k{hr}); move=> *;  smt(Array33.set_eqiE Array33.set_neqiE).
 
-while(#pre /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ 0 <= i{2} <= 128 /\ j{2} = 2*i{2} /\
+while(#pre /\ to_uint i{1} = i{2} /\ 0 <= i{2} <= 128 /\ j{2} = 2*i{2} /\
        (forall k, 0<=k<2*i{2} =>
           incoeff (to_sint rp{1}.[k]) = rr{2}.[k]) /\
        (forall k, 0<=k<j{2} =>
           -5 < to_sint rp{1}.[k] < 5)); last first.
    auto => /> &1 *; split; 1: smt().
-   move => i????????; have -> : 2*to_uint i = 256 by smt().
+   move => i ???????; have -> : 2*to_uint i = 256 by smt().
    rewrite /lift_array256 tP; move => *;split; last by smt().
    by move => *; rewrite mapiE //=;smt().
 
 auto => /> &1 &2; rewrite !ultE /= => *.
-do 2! (rewrite to_uintD_small /=; 1:smt()); do split; 1..3: smt(). 
-+ move => k kbl; rewrite !to_uintD_small /= 1:/# =>  kbh. 
-  case (k < to_uint j{1}); 1: by move => *;rewrite !set_neqiE /#.
-  case (k = to_uint j{1}).
+rewrite to_uintD_small /= 1:/#. do split; 1..3: smt().
++ move => k kbl. rewrite !to_uintD_small !to_uintM_small /= 1..3:/# => kbh.
+  case (k < 2 * to_uint i{1}); 1: by move => *;rewrite !set_neqiE /#.
+  case (k = 2 * to_uint i{1}).
   + move => -> *. rewrite set_neqiE 1:/# !get_setE 1..3:/# ifF 1:/# !ifT 1,2:/#.
     congr.
     rewrite sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
-    have ->  /= : to_uint j{1} %% 2 = 0 by smt().
+    have ->  /= : 2 * to_uint i{1} %% 2 = 0 by smt().
     by apply parallel_noisesum_low.
-  move => *; have ? : k = to_uint j{1} + 1 by smt().
+  move => *; have ? : k = 2 * to_uint i{1} + 1 by smt().
   do 2! (rewrite set_eqiE 1,2:/#); congr.
   rewrite sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; 1: smt(). 
-  have ->  /= : (to_uint j{1} + 1) %% 2 = 1 by smt().
+  have ->  /= : (2 * to_uint i{1} + 1) %% 2 = 1 by smt().
   by apply parallel_noisesum_high.
-move => k kbl; rewrite !to_uintD_small /= 1:/# =>  kbh. 
-case (k < to_uint j{1}); 1: by move => *;rewrite !set_neqiE /#.
-case (k = to_uint j{1}).
+move => k kbl. rewrite !to_uintD_small !to_uintM_small /= 1..3:/# => kbh.
+case (k < 2 * to_uint i{1}); 1: by move => *;rewrite !set_neqiE /#.
+case (k = 2 * to_uint i{1}).
 + move => *; rewrite set_neqiE 1,2:/# set_eqiE 1,2:/#.
   by rewrite sigextu16_to_sint (_: 3 = 2^2 -1) // !and_mod //= W8_of_sintK_signed /=; smt(). 
-move => *; have ? : k = to_uint j{1} + 1 by smt().
+move => *; have ? : k = 2 * to_uint i{1} + 1 by smt().
 by rewrite set_eqiE 1,2:/# sigextu16_to_sint (_: 3 = 2^2 -1) // 
      !and_mod //= W8_of_sintK_signed /=; smt(). 
 qed.
