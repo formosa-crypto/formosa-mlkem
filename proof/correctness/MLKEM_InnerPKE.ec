@@ -561,6 +561,10 @@ swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
   by auto => />. 
 
 wp; conseq />.
+splitwhile{1} ^while : to_uint ctr0 < 256.
+while{1} (!(to_uint pos{1} < 166 /\ to_uint ctr0{1} < 256) /\ #post) (168 - to_uint pos{1}).
++ move => &h z; rcondf ^if; auto => /> &m; rewrite !ultE /#.
+
 while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{2} /\
     to_uint pos{1} = k{2} /\ k{2} %% 3 = 0 /\
    (forall (k0 : int), 
@@ -571,20 +575,21 @@ while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{
             0 <= to_sint rp{1}.[k0] /\ to_sint rp{1}.[k0] < q));
   last first.
 
-+ auto => /> &1 &2 ???????; do split; 1,2: smt(). 
-  move => ctrl rpl aar kr => *; do split; 1,2:  smt();
-  by  rewrite ultE /=.
++ auto => /> &1 &2 *; do split; 1,2: smt().
+  move => ctrl rpl aar kr => *; do split; 1, 2, 3:  smt().
+  * by  rewrite ultE /=.
+  * by  rewrite ultE /=.
+  by move => *;  rewrite ultE /#.
 
-seq 13 6 : (#{/~k{2} < 168}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d2{2}).
+rcondt{1} ^if; first by move => &m; auto => &h /> *; rewrite ultE.
 
-auto => /> &1 &2 ?????????; do split; 1,2,4:smt().
-+ by rewrite to_uintD_small; smt().
-+ by rewrite mergebytes to_uintD_small; smt().
-by rewrite mergebytes2  !to_uintD_small; smt().
+seq 11 6 : (#{/~k{2} < 168}{/~pos{1} \ult (of_int (168 - 2))%W64}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d2{2}).
+
+auto => /> &1 &2 *; do split; rewrite ?ultE ?to_uintD_small // ?mergebytes // ?mergebytes2 // /#.
 
 seq 4 2 : (to_uint ctr0{1} = j0{2} /\
            to_uint pos{1} = k{2} /\
-           #{/~exit{1}}post).
+           #{/~pos{1} \ult (of_int (168 - 2))%W64}post).
 
 + sp 1 0; if; 1: by move => &1 &2; rewrite ultE qE; smt().
   + sp 3 2; if{2}.
@@ -652,27 +657,7 @@ seq 4 2 : (to_uint ctr0{1} = j0{2} /\
   rcondf{1} 1; 1: by move => *; auto => /> &1; rewrite !ultE /= /#.
   by auto => />.  
 
-auto => /> &1 &2 *.
-
-rewrite extract_msb.
-
-have :
-(! ((of_int 256)%W64 - ctr0{1} - W64.one `|` ((of_int 168)%W64 - pos{1} - (of_int 3)%W64)).[63]) <=>
-to_uint ctr0{1} < 256 /\ (to_uint ctr0{1} < 256 => to_uint pos{1} < 168); last by smt().
-
-rewrite /W64.(`|`) map2E //=.
-
-have ->: ((of_int 256)%W64 - ctr0{1} - W64.one).[63] = (255 - to_uint ctr0{1} < 0).
-+ have -> : W64.of_int 256 - ctr0{1} - W64.one = W64.of_int (255 - to_uint ctr0{1})
-    by ring; rewrite to_uintK; ring.
-  by rewrite of_intwE /= /int_bit /= /#.
-
-have -> : ((of_int 168)%W64 - pos{1} - (of_int 3)%W64).[63] = (165 - to_uint pos{1} < 0); 
-  last by smt().
-
-+ have -> : (W64.of_int 168) - pos{1} - (W64.of_int 3) = W64.of_int (165 - to_uint pos{1})
-    by ring; rewrite to_uintK; ring.
-  by rewrite of_intwE /= /int_bit /= /#.
+auto => /> &1 &2 *; rewrite ultE /#.
 
 qed.
 
