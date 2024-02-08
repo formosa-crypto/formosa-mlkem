@@ -1621,58 +1621,48 @@ module M(SC:Syscall_t) = {
     
     var ctr:W64.t;
     var pos:W64.t;
-    var exit:W64.t;
     var val1:W16.t;
     var t:W16.t;
     var val2:W16.t;
     var cond:bool;
-    var cnd0:W64.t;
-    var cnd1:W64.t;
     
     ctr <- offset;
     pos <- (W64.of_int 0);
-    exit <- (W64.of_int 0);
     
-    while ((exit = (W64.of_int 0))) {
-      val1 <- (zeroextu16 buf.[(W64.to_uint pos)]);
-      pos <- (pos + (W64.of_int 1));
-      t <- (zeroextu16 buf.[(W64.to_uint pos)]);
-      val2 <- t;
-      val2 <- (val2 `>>` (W8.of_int 4));
-      t <- (t `&` (W16.of_int 15));
-      t <- (t `<<` (W8.of_int 8));
-      val1 <- (val1 `|` t);
-      pos <- (pos + (W64.of_int 1));
-      t <- (zeroextu16 buf.[(W64.to_uint pos)]);
-      t <- (t `<<` (W8.of_int 4));
-      val2 <- (val2 `|` t);
-      pos <- (pos + (W64.of_int 1));
-      cond <- (val1 \ult (W16.of_int 3329));
-      if (cond) {
-        rp.[(W64.to_uint ctr)] <- val1;
-        ctr <- (ctr + (W64.of_int 1));
-      } else {
-        
-      }
-      cond <- (val2 \ult (W16.of_int 3329));
-      if (cond) {
-        if ((ctr \ult (W64.of_int 256))) {
-          rp.[(W64.to_uint ctr)] <- val2;
+    while ((pos \ult (W64.of_int (168 - 2)))) {
+      if ((ctr \ult (W64.of_int 256))) {
+        val1 <- (zeroextu16 buf.[(W64.to_uint pos)]);
+        t <- (zeroextu16 buf.[(W64.to_uint (pos + (W64.of_int 1)))]);
+        val2 <- t;
+        val2 <- (val2 `>>` (W8.of_int 4));
+        t <- (t `&` (W16.of_int 15));
+        t <- (t `<<` (W8.of_int 8));
+        val1 <- (val1 `|` t);
+        t <- (zeroextu16 buf.[(W64.to_uint (pos + (W64.of_int 2)))]);
+        t <- (t `<<` (W8.of_int 4));
+        val2 <- (val2 `|` t);
+        pos <- (pos + (W64.of_int 3));
+        cond <- (val1 \ult (W16.of_int 3329));
+        if (cond) {
+          rp.[(W64.to_uint ctr)] <- val1;
           ctr <- (ctr + (W64.of_int 1));
         } else {
           
         }
+        cond <- (val2 \ult (W16.of_int 3329));
+        if (cond) {
+          if ((ctr \ult (W64.of_int 256))) {
+            rp.[(W64.to_uint ctr)] <- val2;
+            ctr <- (ctr + (W64.of_int 1));
+          } else {
+            
+          }
+        } else {
+          
+        }
       } else {
-        
+        pos <- (W64.of_int 168);
       }
-      cnd0 <- (W64.of_int 256);
-      cnd0 <- (cnd0 - ctr);
-      cnd0 <- (cnd0 - (W64.of_int 1));
-      cnd1 <- (W64.of_int 168);
-      cnd1 <- (cnd1 - pos);
-      cnd1 <- (cnd1 - (W64.of_int 3));
-      exit <- (cnd0 `|` cnd1);
-      exit <- (exit `>>` (W8.of_int 63));
     }
     return (ctr, rp);
   }
