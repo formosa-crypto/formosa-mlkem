@@ -816,25 +816,22 @@ module M(SC:Syscall_t) = {
   proc _poly_compress (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     
     var i:W64.t;
-    var j:W64.t;
     var t:W16.t;
     var d0:W32.t;
     var d1:W32.t;
     
     a <@ _poly_csubq (a);
     i <- (W64.of_int 0);
-    j <- (W64.of_int 0);
     
     while ((i \ult (W64.of_int 128))) {
-      t <- a.[(W64.to_uint j)];
+      t <- a.[(W64.to_uint ((W64.of_int 2) * i))];
       d0 <- (zeroextu32 t);
       d0 <- (d0 `<<` (W8.of_int 4));
       d0 <- (d0 + (W32.of_int 1665));
       d0 <- (d0 * (W32.of_int 80635));
       d0 <- (d0 `>>` (W8.of_int 28));
       d0 <- (d0 `&` (W32.of_int 15));
-      j <- (j + (W64.of_int 1));
-      t <- a.[(W64.to_uint j)];
+      t <- a.[(W64.to_uint (((W64.of_int 2) * i) + (W64.of_int 1)))];
       d1 <- (zeroextu32 t);
       d1 <- (d1 `<<` (W8.of_int 4));
       d1 <- (d1 + (W32.of_int 1665));
@@ -845,7 +842,6 @@ module M(SC:Syscall_t) = {
       d0 <- (d0 `|` d1);
       Glob.mem <- storeW8 Glob.mem (W64.to_uint (rp + i)) ((truncateu8 d0));
       i <- (i + (W64.of_int 1));
-      j <- (j + (W64.of_int 1));
     }
     return (a);
   }
