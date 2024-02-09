@@ -20,7 +20,15 @@ syntactic reasons in the following proof
 steps.
 ******************************************************)
 
-(* The spec defines the semantics of the operator *)
+(* The spec defines the semantics of the operator.
+   We should use proc op here, but the code of this rejection
+   sampling routine is too complex for automatic inference.
+   We could also write this operator by hand and prove
+   the below axiom. However, this is unjustified hard work, as
+   we only use this operator to argue that, because it is
+   deterministic and stateless, we can move it around when
+   proving that the sampling of enc is computing the 
+   transposed of the matrix, as required. *)
 op parse : W64.t Array25.t -> poly * W64.t Array25.t.
 
 axiom parse_sem st : 
