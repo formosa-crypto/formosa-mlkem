@@ -1078,9 +1078,9 @@ module M(SC:Syscall_t) = {
     var zeta_0:W16.t;
     var j:W64.t;
     var cmp:W64.t;
+    var t:W16.t;
     var offset:W64.t;
     var s:W16.t;
-    var t:W16.t;
     var m:W16.t;
     zetasp <- witness;
     zetasp <- jzetas_inv;
@@ -1098,10 +1098,10 @@ module M(SC:Syscall_t) = {
         cmp <- (cmp + len);
         
         while ((j \ult cmp)) {
+          t <- rp.[(W64.to_uint j)];
           offset <- j;
           offset <- (offset + len);
           s <- rp.[(W64.to_uint offset)];
-          t <- rp.[(W64.to_uint j)];
           m <- s;
           m <- (m + t);
           m <@ __barrett_reduce (m);
@@ -1137,10 +1137,10 @@ module M(SC:Syscall_t) = {
     var zeta_0:W16.t;
     var j:W64.t;
     var cmp:W64.t;
-    var offset:W64.t;
-    var t:W16.t;
     var s:W16.t;
     var m:W16.t;
+    var offset:W64.t;
+    var t:W16.t;
     zetasp <- witness;
     zetasp <- jzetas;
     zetasctr <- (W64.of_int 0);
@@ -1157,15 +1157,15 @@ module M(SC:Syscall_t) = {
         cmp <- (cmp + len);
         
         while ((j \ult cmp)) {
+          s <- rp.[(W64.to_uint j)];
+          m <- s;
           offset <- j;
           offset <- (offset + len);
           t <- rp.[(W64.to_uint offset)];
           t <@ __fqmul (t, zeta_0);
-          s <- rp.[(W64.to_uint j)];
-          m <- s;
           m <- (m - t);
-          rp.[(W64.to_uint offset)] <- m;
           t <- (t + s);
+          rp.[(W64.to_uint offset)] <- m;
           rp.[(W64.to_uint j)] <- t;
           j <- (j + (W64.of_int 1));
         }
