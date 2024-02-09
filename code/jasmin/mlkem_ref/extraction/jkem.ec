@@ -79,7 +79,7 @@ W16.of_int 996; W16.of_int 991; W16.of_int 958; W16.of_int 1869;
 W16.of_int 1522; W16.of_int 1628].
 
 
-abbrev roundconstants = Array24.of_list witness [W64.of_int 1;
+abbrev KECCAK1600_RC = Array24.of_list witness [W64.of_int 1;
 W64.of_int 32898; W64.of_int (-9223372036854742902);
 W64.of_int (-9223372034707259392); W64.of_int 32907; W64.of_int 2147483649;
 W64.of_int (-9223372034707259263); W64.of_int (-9223372036854743031);
@@ -148,7 +148,7 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc __index (x:int, y:int) : int = {
+  proc keccakf1600_index (x:int, y:int) : int = {
     
     var r:int;
     
@@ -156,53 +156,7 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc __theta (a:W64.t Array25.t) : W64.t Array25.t = {
-    var aux_1: bool;
-    var aux_0: bool;
-    var aux: int;
-    var aux_2: W64.t;
-    
-    var x:int;
-    var c:W64.t Array5.t;
-    var y:int;
-    var d:W64.t Array5.t;
-    var  _0:bool;
-    var  _1:bool;
-    c <- witness;
-    d <- witness;
-    x <- 0;
-    while (x < 5) {
-      c.[x] <- (W64.of_int 0);
-      y <- 0;
-      while (y < 5) {
-        c.[x] <- (c.[x] `^` a.[(x + (5 * y))]);
-        y <- y + 1;
-      }
-      x <- x + 1;
-    }
-    x <- 0;
-    while (x < 5) {
-      d.[x] <- c.[((x + 1) %% 5)];
-      (aux_1, aux_0, aux_2) <- ROL_64 d.[x] (W8.of_int 1);
-       _0 <- aux_1;
-       _1 <- aux_0;
-      d.[x] <- aux_2;
-      d.[x] <- (d.[x] `^` c.[((x + 4) %% 5)]);
-      x <- x + 1;
-    }
-    x <- 0;
-    while (x < 5) {
-      y <- 0;
-      while (y < 5) {
-        a.[(x + (5 * y))] <- (a.[(x + (5 * y))] `^` d.[x]);
-        y <- y + 1;
-      }
-      x <- x + 1;
-    }
-    return (a);
-  }
-  
-  proc __keccakRhoOffsets (i:int) : int = {
+  proc keccakf1600_rho_offsets (i:int) : int = {
     var aux: int;
     
     var r:int;
@@ -229,124 +183,191 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc __rho (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc keccakf1600_rhotates (x:int, y:int) : int = {
+    
+    var r:int;
+    var i:int;
+    
+    i <@ keccakf1600_index (x, y);
+    r <@ keccakf1600_rho_offsets (i);
+    return (r);
+  }
+  
+  proc keccakf1600_theta_sum (a:W64.t Array25.t) : W64.t Array5.t = {
+    var aux: int;
+    
+    var c:W64.t Array5.t;
+    var x:int;
+    var y:int;
+    c <- witness;
+    x <- 0;
+    while (x < 5) {
+      c.[x] <- a.[(x + 0)];
+      x <- x + 1;
+    }
+    y <- 1;
+    while (y < 5) {
+      x <- 0;
+      while (x < 5) {
+        c.[x] <- (c.[x] `^` a.[(x + (y * 5))]);
+        x <- x + 1;
+      }
+      y <- y + 1;
+    }
+    return (c);
+  }
+  
+  proc keccakf1600_theta_rol (c:W64.t Array5.t) : W64.t Array5.t = {
     var aux_1: bool;
     var aux_0: bool;
     var aux: int;
     var aux_2: W64.t;
     
+    var d:W64.t Array5.t;
     var x:int;
-    var y:int;
-    var i:int;
-    var z:int;
     var  _0:bool;
     var  _1:bool;
-    
+    d <- witness;
     x <- 0;
     while (x < 5) {
-      y <- 0;
-      while (y < 5) {
-        i <@ __index (x, y);
-        z <@ __keccakRhoOffsets (i);
-        (aux_1, aux_0, aux_2) <- ROL_64 a.[i] (W8.of_int z);
+      d.[x] <- c.[((x + 1) %% 5)];
+      (aux_1, aux_0, aux_2) <- ROL_64 d.[x] (W8.of_int 1);
+       _0 <- aux_1;
+       _1 <- aux_0;
+      d.[x] <- aux_2;
+      d.[x] <- (d.[x] `^` c.[(((x - 1) + 5) %% 5)]);
+      x <- x + 1;
+    }
+    return (d);
+  }
+  
+  proc keccakf1600_rol_sum (a:W64.t Array25.t, d:W64.t Array5.t, y:int) : 
+  W64.t Array5.t = {
+    var aux_1: bool;
+    var aux_0: bool;
+    var aux: int;
+    var aux_2: W64.t;
+    
+    var b:W64.t Array5.t;
+    var x:int;
+    var x_:int;
+    var y_:int;
+    var r:int;
+    var  _0:bool;
+    var  _1:bool;
+    b <- witness;
+    x <- 0;
+    while (x < 5) {
+      x_ <- ((x + (3 * y)) %% 5);
+      y_ <- x;
+      r <@ keccakf1600_rhotates (x_, y_);
+      b.[x] <- a.[(x_ + (y_ * 5))];
+      b.[x] <- (b.[x] `^` d.[x_]);
+      if ((r <> 0)) {
+        (aux_1, aux_0, aux_2) <- ROL_64 b.[x] (W8.of_int r);
          _0 <- aux_1;
          _1 <- aux_0;
-        a.[i] <- aux_2;
-        y <- y + 1;
+        b.[x] <- aux_2;
+      } else {
+        
       }
       x <- x + 1;
     }
-    return (a);
+    return (b);
   }
   
-  proc __pi (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc keccakf1600_set_row (e:W64.t Array25.t, b:W64.t Array5.t, y:int,
+                            s_rc:W64.t) : W64.t Array25.t = {
     var aux: int;
     
-    var i:int;
-    var t:W64.t;
-    var b:W64.t Array25.t;
-    var y:int;
     var x:int;
-    b <- witness;
-    i <- 0;
-    while (i < 25) {
-      t <- a.[i];
-      b.[i] <- t;
-      i <- i + 1;
-    }
+    var x1:int;
+    var x2:int;
+    var t:W64.t;
+    
     x <- 0;
     while (x < 5) {
-      y <- 0;
-      while (y < 5) {
-        t <- b.[(x + (5 * y))];
-        i <@ __index (y, ((2 * x) + (3 * y)));
-        a.[i] <- t;
-        y <- y + 1;
+      x1 <- ((x + 1) %% 5);
+      x2 <- ((x + 2) %% 5);
+      t <- b.[x1];
+      t <- (invw t);
+      t <- (t `&` b.[x2]);
+      t <- (t `^` b.[x]);
+      if (((x = 0) /\ (y = 0))) {
+        t <- (t `^` s_rc);
+      } else {
+        
       }
+      e.[(x + (y * 5))] <- t;
       x <- x + 1;
     }
-    return (a);
+    return (e);
   }
   
-  proc __chi (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc keccakf1600_round (e:W64.t Array25.t, a:W64.t Array25.t, rc:W64.t) : 
+  W64.t Array25.t = {
     var aux: int;
     
-    var x:int;
-    var y:int;
-    var i:int;
+    var s_rc:W64.t;
     var c:W64.t Array5.t;
+    var d:W64.t Array5.t;
+    var y:int;
+    var b:W64.t Array5.t;
+    b <- witness;
     c <- witness;
+    d <- witness;
+    s_rc <- rc;
+    c <@ keccakf1600_theta_sum (a);
+    d <@ keccakf1600_theta_rol (c);
     y <- 0;
     while (y < 5) {
-      x <- 0;
-      while (x < 5) {
-        i <@ __index ((x + 1), y);
-        c.[x] <- a.[i];
-        c.[x] <- (invw c.[x]);
-        i <@ __index ((x + 2), y);
-        c.[x] <- (c.[x] `&` a.[i]);
-        i <@ __index (x, y);
-        c.[x] <- (c.[x] `^` a.[i]);
-        x <- x + 1;
-      }
-      x <- 0;
-      while (x < 5) {
-        a.[(x + (5 * y))] <- c.[x];
-        x <- x + 1;
-      }
+      b <@ keccakf1600_rol_sum (a, d, y);
+      e <@ keccakf1600_set_row (e, b, y, s_rc);
       y <- y + 1;
     }
-    return (a);
+    return (e);
   }
   
-  proc __iota (a:W64.t Array25.t, c:W64.t) : W64.t Array25.t = {
+  proc __keccakf1600 (a:W64.t Array25.t) : W64.t Array25.t = {
     
+    var rC:W64.t Array24.t;
+    var s_e:W64.t Array25.t;
+    var e:W64.t Array25.t;
+    var c:W64.t;
+    var rc:W64.t;
+    rC <- witness;
+    e <- witness;
+    s_e <- witness;
+    rC <- KECCAK1600_RC;
+    e <- s_e;
+    c <- (W64.of_int 0);
     
-    
-    a.[0] <- (a.[0] `^` c);
-    return (a);
-  }
-  
-  proc __keccakf1600_ref (state:W64.t Array25.t) : W64.t Array25.t = {
-    
-    var constptr:W64.t Array24.t;
-    var rctr:W64.t;
-    constptr <- witness;
-    constptr <- roundconstants;
-    rctr <- (W64.of_int 0);
-    
-    while ((rctr \ult (W64.of_int 192))) {
-      state <@ __theta (state);
-      state <@ __rho (state);
-      state <@ __pi (state);
-      state <@ __chi (state);
-      constptr <- roundconstants;
-      state <@ __iota (state,
-      (get64_direct (WArray192.init64 (fun i => constptr.[i]))
-      (W64.to_uint rctr)));
-      rctr <- (rctr + (W64.of_int 8));
+    while ((c \ult (W64.of_int 24))) {
+      rc <- rC.[(W64.to_uint c)];
+      e <@ keccakf1600_round (e, a, rc);
+      rc <- rC.[((W64.to_uint c) + 1)];
+      a <@ keccakf1600_round (a, e, rc);
+      c <- (c + (W64.of_int 2));
     }
-    return (state);
+    return (a);
+  }
+  
+  proc _keccakf1600 (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    
+    
+    a <@ __keccakf1600 (a);
+    return (a);
+  }
+  
+  proc _keccakf1600_ (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    
+    
+    a <- a;
+    a <@ _keccakf1600 (a);
+    a <- a;
+    return (a);
   }
   
   proc __st0 (state:W64.t Array25.t) : W64.t Array25.t = {
@@ -452,7 +473,7 @@ module M(SC:Syscall_t) = {
     Array25.init
     (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (136 - 1) ((
     (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (136 - 1)) `^` (W8.of_int 128)))));
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ (state);
     out <- sout;
     i <- 0;
     while (i < 128) {
@@ -467,6 +488,7 @@ module M(SC:Syscall_t) = {
     var aux: int;
     
     var s_out:W64.t;
+    var s_in1:W64.t;
     var state:W64.t Array25.t;
     var i:int;
     var t64:W64.t;
@@ -479,6 +501,7 @@ module M(SC:Syscall_t) = {
     var t8:W8.t;
     state <- witness;
     s_out <- out;
+    s_in1 <- in1;
     state <@ __st0 (state);
     aux <- (32 %/ 8);
     i <- 0;
@@ -495,10 +518,10 @@ module M(SC:Syscall_t) = {
       state.[i] <- (state.[i] `^` t64);
       i <- i + 1;
     }
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ (state);
     r8 <- (W64.of_int 136);
     ilen <- (W64.of_int (((3 * 320) + 128) - (136 - 32)));
-    in_0 <- in1;
+    in_0 <- s_in1;
     in_0 <- (in_0 + (W64.of_int (136 - 32)));
     
     while ((r8 \ule ilen)) {
@@ -506,14 +529,14 @@ module M(SC:Syscall_t) = {
       s_in <- in_0;
       s_ilen <- ilen;
       s_r8 <- r8;
-      state <@ __keccakf1600_ref (state);
+      state <@ _keccakf1600_ (state);
       in_0 <- s_in;
       ilen <- s_ilen;
       r8 <- s_r8;
     }
     t8 <- (W8.of_int 31);
     state <@ __add_final_block (state, in_0, ilen, t8, r8);
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ (state);
     out <- s_out;
     aux <- (32 %/ 8);
     i <- 0;
@@ -529,10 +552,13 @@ module M(SC:Syscall_t) = {
   proc _sha3512_32 (out:W8.t Array64.t, in_0:W8.t Array32.t) : W8.t Array64.t = {
     var aux: int;
     
+    var s_out:W8.t Array64.t;
     var state:W64.t Array25.t;
     var i:int;
     var c:W8.t;
+    s_out <- witness;
     state <- witness;
+    s_out <- out;
     state <@ __st0 (state);
     i <- 0;
     while (i < 32) {
@@ -551,7 +577,8 @@ module M(SC:Syscall_t) = {
     Array25.init
     (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1) ((
     (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ (state);
+    out <- s_out;
     i <- 0;
     while (i < 64) {
       c <- (get8 (WArray200.init64 (fun i_0 => state.[i_0])) i);
@@ -593,10 +620,13 @@ module M(SC:Syscall_t) = {
   W64.t Array25.t * W8.t Array168.t = {
     var aux: int;
     
+    var s_out:W8.t Array168.t;
     var i:int;
     var c:W8.t;
-    
-    state <@ __keccakf1600_ref (state);
+    s_out <- witness;
+    s_out <- out;
+    state <@ _keccakf1600_ (state);
+    out <- s_out;
     i <- 0;
     while (i < 168) {
       c <- (get8 (WArray200.init64 (fun i_0 => state.[i_0])) i);
@@ -631,14 +661,14 @@ module M(SC:Syscall_t) = {
       s_in <- in_0;
       s_ilen <- ilen;
       s_r8 <- r8;
-      state <@ __keccakf1600_ref (state);
+      state <@ _keccakf1600_ (state);
       in_0 <- s_in;
       ilen <- s_ilen;
       r8 <- s_r8;
     }
     t8 <- (W8.of_int 6);
     state <@ __add_final_block (state, in_0, ilen, t8, r8);
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ (state);
     out <- s_out;
     i <- 0;
     while (i < 4) {
@@ -676,7 +706,7 @@ module M(SC:Syscall_t) = {
     (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1) ((
     (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
     out_s <- out;
-    state <@ __keccakf1600_ref (state);
+    state <@ _keccakf1600_ (state);
     out <- out_s;
     i <- 0;
     while (i < 8) {
@@ -1857,6 +1887,7 @@ module M(SC:Syscall_t) = {
                      noiseseed:W8.t Array32.t) : unit = {
     var aux: W16.t Array256.t;
     
+    var s_noiseseed:W8.t Array32.t;
     var pkpv:W16.t Array768.t;
     var i:W64.t;
     var t64:W64.t;
@@ -1877,8 +1908,10 @@ module M(SC:Syscall_t) = {
     k <- witness;
     pkpv <- witness;
     publicseed <- witness;
+    s_noiseseed <- witness;
     sp_0 <- witness;
     v <- witness;
+    s_noiseseed <- noiseseed;
     pkpv <@ __polyvec_frombytes (pkp);
     i <- (W64.of_int 0);
     pkp <- (pkp + (W64.of_int (3 * 384)));
@@ -1895,41 +1928,41 @@ module M(SC:Syscall_t) = {
     aat <@ __gen_matrix (publicseed, (W64.of_int 1));
     nonce <- (W8.of_int 0);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[0 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0]
             else sp_0.[i_0]);
     nonce <- (W8.of_int 1);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[256 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i_0 => if 256 <= i_0 < 256 + 256 then aux.[i_0-256]
             else sp_0.[i_0]);
     nonce <- (W8.of_int 2);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[(2 * 256) + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
             then aux.[i_0-(2 * 256)] else sp_0.[i_0]);
     nonce <- (W8.of_int 3);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[0 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     ep <- Array768.init
           (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0] else ep.[i_0]);
     nonce <- (W8.of_int 4);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[256 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     ep <- Array768.init
           (fun i_0 => if 256 <= i_0 < 256 + 256 then aux.[i_0-256]
           else ep.[i_0]);
     nonce <- (W8.of_int 5);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[(2 * 256) + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     ep <- Array768.init
           (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
           then aux.[i_0-(2 * 256)] else ep.[i_0]);
     nonce <- (W8.of_int 6);
-    epp <@ _poly_getnoise (epp, noiseseed, nonce);
+    epp <@ _poly_getnoise (epp, s_noiseseed, nonce);
     sp_0 <@ __polyvec_ntt (sp_0);
     aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[0 + i_0])),
     sp_0);
@@ -1966,6 +1999,7 @@ module M(SC:Syscall_t) = {
     var aux_0: W8.t Array960.t;
     var aux: W16.t Array256.t;
     
+    var s_noiseseed:W8.t Array32.t;
     var sctp:W8.t Array1088.t;
     var pkpv:W16.t Array768.t;
     var i:W64.t;
@@ -1986,9 +2020,11 @@ module M(SC:Syscall_t) = {
     k <- witness;
     pkpv <- witness;
     publicseed <- witness;
+    s_noiseseed <- witness;
     sctp <- witness;
     sp_0 <- witness;
     v <- witness;
+    s_noiseseed <- noiseseed;
     sctp <- ctp;
     pkpv <@ __polyvec_frombytes (pkp);
     i <- (W64.of_int 0);
@@ -2006,41 +2042,41 @@ module M(SC:Syscall_t) = {
     aat <@ __gen_matrix (publicseed, (W64.of_int 1));
     nonce <- (W8.of_int 0);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[0 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0]
             else sp_0.[i_0]);
     nonce <- (W8.of_int 1);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[256 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i_0 => if 256 <= i_0 < 256 + 256 then aux.[i_0-256]
             else sp_0.[i_0]);
     nonce <- (W8.of_int 2);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => sp_0.[(2 * 256) + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     sp_0 <- Array768.init
             (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
             then aux.[i_0-(2 * 256)] else sp_0.[i_0]);
     nonce <- (W8.of_int 3);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[0 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     ep <- Array768.init
           (fun i_0 => if 0 <= i_0 < 0 + 256 then aux.[i_0-0] else ep.[i_0]);
     nonce <- (W8.of_int 4);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[256 + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     ep <- Array768.init
           (fun i_0 => if 256 <= i_0 < 256 + 256 then aux.[i_0-256]
           else ep.[i_0]);
     nonce <- (W8.of_int 5);
     aux <@ _poly_getnoise ((Array256.init (fun i_0 => ep.[(2 * 256) + i_0])),
-    noiseseed, nonce);
+    s_noiseseed, nonce);
     ep <- Array768.init
           (fun i_0 => if (2 * 256) <= i_0 < (2 * 256) + 256
           then aux.[i_0-(2 * 256)] else ep.[i_0]);
     nonce <- (W8.of_int 6);
-    epp <@ _poly_getnoise (epp, noiseseed, nonce);
+    epp <@ _poly_getnoise (epp, s_noiseseed, nonce);
     sp_0 <@ __polyvec_ntt (sp_0);
     aux <@ __polyvec_pointwise_acc ((Array768.init (fun i_0 => aat.[0 + i_0])),
     sp_0);
@@ -2275,6 +2311,7 @@ module M(SC:Syscall_t) = {
     var pkp:W64.t;
     var ctpc:W8.t Array1088.t;
     var cnd:W64.t;
+    var s_cnd:W64.t;
     var zp:W64.t;
     buf <- witness;
     ctpc <- witness;
@@ -2304,11 +2341,14 @@ module M(SC:Syscall_t) = {
     pkp, (Array32.init (fun i_0 => kr.[32 + i_0])));
     ctp <- s_ctp;
     cnd <@ __verify (ctp, ctpc);
+    s_cnd <- cnd;
     zp <- s_skp;
     zp <- (zp + (W64.of_int 64));
     zp <- (zp + (W64.of_int (((24 * 3) * 256) `|>>` 3)));
+    shkp <- s_shkp;
     _shake256_1120_32 (shkp, zp, ctp);
     shkp <- s_shkp;
+    cnd <- s_cnd;
     __cmov (shkp, (Array32.init (fun i_0 => kr.[0 + i_0])), cnd);
     return ();
   }
