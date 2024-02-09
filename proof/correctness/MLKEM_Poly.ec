@@ -782,25 +782,26 @@ lemma poly_compress_corr _a (_p : address) mem :
              touches mem Glob.mem{1} _p 128 /\
              load_array128 Glob.mem{1} _p = res{2}].
 proc => /=.
-seq 3 3 : (#{/~a{1}}pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
-           to_uint j{1} = j{2} /\ j{2} = 0 /\
+seq 2 3 : (#{/~a{1}}pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\
+            j{2} = 0 /\
            pos_bound256_cxq a{1} 0 256 1 /\ lift_array256 a{1} = _a).
 wp => /=;call{1} (poly_csubq_corr _a); 1: by auto => /#.
 
 while (#{/~mem}{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=128  /\ 
-       to_uint j{1} = j{2} /\ j{2} = 2* i{2} /\
+       j{2} = 2* i{2} /\
        touches mem Glob.mem{1} _p i{2} /\ 
        forall k, 0<=k<i{2} => loadW8 Glob.mem{1} (_p + k) = r{2}.[k]); last first.  
 + auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
-    vpl vph bnd ??; split; 1: by smt().
-  move => mem' i' j' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  touch load.
+    vpl vph bnd ?; split; 1: by smt().
+  move => mem' i' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh touch load.
   split; 1:  smt(). 
   by rewrite tP => k kb; rewrite initiE //= (load k _) /#.
 
 auto => /> &1 &2 ??; rewrite /pos_bound256_cxq /touches /storeW8  /loadW8 /=.
-rewrite  ultE of_uintK /= => ????????. 
-rewrite !to_uintD_small /=; 1..4: smt().
-do split; 1..4: by smt(get_set_neqE_s). 
+rewrite  ultE of_uintK /= => ???X???.
+rewrite !to_uintD_small ?to_uintM_small 1..5:/#.
+do split; 1..3: smt().
++ move => *; rewrite get_set_neqE_s 1:/#; apply: X; smt().
 + move => k kbl kbh.
   case (k = to_uint i{1}); last first.
   + move => neq; rewrite get_set_neqE_s; 1: by smt().
@@ -815,9 +816,9 @@ do split; 1..4: by smt(get_set_neqE_s).
   case (k = to_uint i{1}); last by smt(Array128.set_neqiE).
   move => iv; have -> : 15 = 2^4 - 1 by auto.
   rewrite !and_mod //. 
-  pose x := (((zeroextu32 a{1}.[to_uint j{1}] `<<` (of_int 4)%W8) + 
+  pose x := (((zeroextu32 a{1}.[2 * to_uint i{1}] `<<` (of_int 4)%W8) +
               (of_int 1665)%W32) * (of_int 80635)%W32 `>>`(of_int 28)%W8).
-  pose y := (((zeroextu32 a{1}.[to_uint j{1} + 1] `<<` (of_int 4)%W8) + 
+  pose y := (((zeroextu32 a{1}.[2 * to_uint i{1} + 1] `<<` (of_int 4)%W8) +
               (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8).
   rewrite to_uint_eq to_uint_truncateu8 !of_uintK to_uint_orw_disjoint. 
   + apply W32.ext_eq => i ib; rewrite /W32.(`&`) map2E initiE //=.
