@@ -27,7 +27,7 @@ inline fn __indcpa_keypair(
   buf = _sha3512_32(buf, inbuf);
 
   for i=0 to MLKEM_SYMBYTES/8
-  { t64 = buf[u64 i];
+  { #declassify t64 = buf[u64 i];
     publicseed[u64 i] = t64;
     t64 = buf[u64 i + MLKEM_SYMBYTES/8];
     noiseseed[u64 i] = t64;
@@ -101,7 +101,7 @@ inline fn __indcpa_enc(stack u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr
   pkp += MLKEM_POLYVECBYTES;
   while (i < MLKEM_SYMBYTES/8)
   {
-    t64 = (u64)[pkp];
+    #declassify t64 = (u64)[pkp];
     publicseed.[u64 8 * (int)i] = t64;
     pkp += 8;
     i += 1;
@@ -186,7 +186,7 @@ inline fn __iindcpa_enc(stack u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64
   pkp += MLKEM_POLYVECBYTES;
   while (i < MLKEM_SYMBYTES/8)
   {
-    t64 = (u64)[pkp];
+    #declassify t64 = (u64)[pkp];
     publicseed.[u64 8*(int)i] = t64;
     pkp += 8;
     i += 1;
