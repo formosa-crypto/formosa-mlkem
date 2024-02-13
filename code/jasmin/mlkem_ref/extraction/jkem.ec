@@ -335,7 +335,7 @@ module M(SC:Syscall_t) = {
     constptr <- roundconstants;
     rctr <- (W64.of_int 0);
     
-    while ((rctr \ult (W64.of_int 192))) {
+    while ((rctr \ult (W64.of_int 185))) {
       state <@ __theta (state);
       state <@ __rho (state);
       state <@ __pi (state);
@@ -1383,7 +1383,7 @@ module M(SC:Syscall_t) = {
     j <- (W64.of_int 0);
     aa <@ __polyvec_csubq (a);
     
-    while ((i \ult (W64.of_int (3 * 256)))) {
+    while ((i \ult (W64.of_int ((3 * 256) - 3)))) {
       k <- 0;
       while (k < 4) {
         t.[k] <- (zeroextu64 aa.[(W64.to_uint i)]);

@@ -926,7 +926,7 @@ module M(SC:Syscall_t) = {
     iotas_p <- KECCAK_RC;
     round <- (W64.of_int 0);
     
-    while ((round \ult (W64.of_int 24))) {
+    while ((round \ult (W64.of_int 23))) {
       iota_0 <- iotas_p.[(W64.to_uint round)];
       round_s <- round;
       (a, r) <@ __round2x_scalar (a, r, iota_0);
