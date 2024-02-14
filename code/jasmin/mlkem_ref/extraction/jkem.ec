@@ -2214,23 +2214,21 @@ module M(SC:Syscall_t) = {
     aux <- (((3 * 384) + 32) %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int (8 * i)))));
       Glob.mem <-
-      storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) (t64);
-      skp <- (skp + (W64.of_int 8));
+      storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int (8 * i)))) ((loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int (8 * i))))));
       i <- i + 1;
     }
-    s_skp <- skp;
+    s_skp <- (s_skp + (W64.of_int ((3 * 384) + ((3 * 384) + 32))));
     pkp <- s_pkp;
     t64 <- (W64.of_int ((3 * 384) + 32));
     h_pk <@ _isha3_256 (h_pk, pkp, t64);
     skp <- s_skp;
     i <- 0;
     while (i < 4) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => h_pk.[i_0])) i);
       Glob.mem <-
-      storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) (t64);
-      skp <- (skp + (W64.of_int 8));
+      storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int (8 * i)))) ((get64
+                                                                    (WArray32.init8 (fun i_0 => h_pk.[i_0]))
+                                                                    i));
       i <- i + 1;
     }
     randomnessp <- s_randomnessp;
@@ -2238,10 +2236,9 @@ module M(SC:Syscall_t) = {
     aux <- (32 %/ 8);
     i <- 0;
     while (i < aux) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) i);
       Glob.mem <-
-      storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) (t64);
-      skp <- (skp + (W64.of_int 8));
+      storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int ((8 * i) + 32)))) (
+      (get64 (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) i));
       i <- i + 1;
     }
     return ();
