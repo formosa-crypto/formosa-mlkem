@@ -929,7 +929,7 @@ module M(SC:Syscall_t) = {
     e <- s_e;
     c <- (W64.of_int 0);
     
-    while ((c \ult (W64.of_int 24))) {
+    while ((c \ult (W64.of_int (24 - 1)))) {
       rc <- rC.[(W64.to_uint c)];
       e <@ keccakf1600_round (e, a, rc);
       rc <- rC.[((W64.to_uint c) + 1)];

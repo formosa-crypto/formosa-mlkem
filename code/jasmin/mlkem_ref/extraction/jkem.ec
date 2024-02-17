@@ -342,7 +342,7 @@ module M(SC:Syscall_t) = {
     e <- s_e;
     c <- (W64.of_int 0);
     
-    while ((c \ult (W64.of_int 24))) {
+    while ((c \ult (W64.of_int (24 - 1)))) {
       rc <- rC.[(W64.to_uint c)];
       e <@ keccakf1600_round (e, a, rc);
       rc <- rC.[((W64.to_uint c) + 1)];
@@ -1351,7 +1351,7 @@ module M(SC:Syscall_t) = {
     j <- (W64.of_int 0);
     aa <@ __polyvec_csubq (a);
     
-    while ((i \ult (W64.of_int (3 * 256)))) {
+    while ((i \ult (W64.of_int ((3 * 256) - 3)))) {
       k <- 0;
       while (k < 4) {
         t.[k] <- (zeroextu64 aa.[(W64.to_uint i)]);
@@ -1413,7 +1413,7 @@ module M(SC:Syscall_t) = {
     j <- (W64.of_int 0);
     aa <@ __polyvec_csubq (a);
     
-    while ((i \ult (W64.of_int (3 * 256)))) {
+    while ((i \ult (W64.of_int ((3 * 256) - 3)))) {
       k <- 0;
       while (k < 4) {
         t.[k] <- (zeroextu64 aa.[(W64.to_uint i)]);
@@ -1471,7 +1471,7 @@ module M(SC:Syscall_t) = {
     i <- (W64.of_int 0);
     j <- (W64.of_int 0);
     
-    while ((i \ult (W64.of_int (3 * 256)))) {
+    while ((i \ult (W64.of_int ((3 * 256) - 3)))) {
       k <- 0;
       while (k < 5) {
         t.[k] <- (zeroextu32 (loadW8 Glob.mem (W64.to_uint (ap + j))));
