@@ -1,0 +1,23 @@
+name: "Extract & Check proofs"
+on:
+  pull_request:
+  push:
+
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
+
+jobs:
+  tests:
+    name: Build & Prove
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - uses: cachix/install-nix-action@v25
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - uses: DeterminateSystems/magic-nix-cache-action@v3
+    - run: nix-shell --run "echo Dependencies OK…"
+    - run: nix-shell --run 'easycrypt why3config'
+    - run: nix-shell --run make

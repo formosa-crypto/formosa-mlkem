@@ -72,33 +72,59 @@ axiom sha3equiv :
  equiv [ (* is this in the sha3 paper? *)
 Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512_32 ~Jkem.M(Jkem.Syscall)._sha3512_32 : ={arg} ==> ={res}].
 
-lemma sha3ll : islossless Jkem.M(Jkem.Syscall)._shake256_128_33.
-proc. 
-while (0<=i<=128) (128 - i);1 : by move => *; auto => /> /#.
-wp; call (_: true).
-+ while (0<=to_uint rctr <= 192 /\ to_uint rctr %% 8 = 0) (192 - to_uint rctr); last by
-    auto => /> ?; rewrite ultE;  smt(W64.to_uint_cmp W64.to_uintD_small).
-  move => *; wp; conseq (_: _ ==> true); 1: by 
-    auto => /> &hr; rewrite ultE /= => [#] ???; rewrite !to_uintD_small /=;  smt(W64.to_uint_cmp).
-    call(_: true); 1: by islossless.
-    wp; call(_: true).
-    + by do 11!(unroll for ^while); islossless.
-    call(_: true).
-    + by do 7!(unroll for ^while); islossless.
-    call(_: true).
-    + while (0<=x<=5) (5 - x);last by auto => /> /#.
-      move => *;wp;  while (0<=y<=5) (5 - y);last by auto => /> /#.
-      move => *;inline 1;wp;sp => /=; conseq (_: _ ==> true); 1: by smt().
-      call(_: true). 
-    + by (unroll for ^while); islossless.
-    by auto => />.
-    call(_: true). 
-    + by do 13!(unroll for ^while); islossless.
-    by auto => />.
-conseq (_: true); 1: by smt().
-by inline *; do 2!(unroll for ^while); islossless.
+lemma keccakf1600_set_row_ll : islossless M(Syscall).keccakf1600_set_row.
+proc. by unroll for ^while; auto. qed.
+
+lemma keccakf1600_rho_offsets_ll : islossless M(Syscall).keccakf1600_rho_offsets.
+proc. by unroll for ^while; islossless. qed.
+
+lemma keccakf1600_rhotates_ll : islossless M(Syscall).keccakf1600_rhotates.
+proc. by call keccakf1600_rho_offsets_ll; islossless. qed.
+
+lemma keccakf1600_theta_rol_ll : islossless M(Syscall).keccakf1600_theta_rol.
+proc. by unroll for ^while; islossless. qed.
+
+lemma keccakf1600_theta_sum_ll : islossless M(Syscall).keccakf1600_theta_sum.
+proc. by do 6!(unroll for ^while); islossless. qed.
+
+lemma keccakf1600_rol_sum_ll : islossless M(Syscall).keccakf1600_rol_sum.
+proc.
+while (x <= 5) (5 - x); auto; last smt().
+conseq => /=; call keccakf1600_rhotates_ll; auto => /#.
 qed.
-  
+
+lemma keccakf1600_round_ll : islossless Jkem.M(Syscall).keccakf1600_round.
+proc; auto.
+while (y <= 5) (5 - y); auto.
++ call keccakf1600_set_row_ll.
+  call keccakf1600_rol_sum_ll.
+  auto; smt().
+call keccakf1600_theta_rol_ll.
+call keccakf1600_theta_sum_ll.
+auto; smt().
+qed.
+
+lemma keccakf1600_ll : islossless Jkem.M(Syscall)._keccakf1600_.
+proc; auto.
+call (:true); auto.
+call (:true); auto.
+while (to_uint c <= 24 /\ to_uint c %% 2 = 0) (24 - to_uint c); auto; last by move => /> *; rewrite ultE to_uint_small //= /#.
+call keccakf1600_round_ll; auto.
+call keccakf1600_round_ll; auto.
+move => /> ??; rewrite ultE to_uintD_small to_uint_small //= /#.
+qed.
+
+lemma sha3ll : islossless Jkem.M(Jkem.Syscall)._shake256_128_33.
+proof.
+proc.
+unroll for 12; wp; conseq => /=.
+call keccakf1600_ll; auto.
+conseq => /=.
+unroll for ^while; auto.
+conseq => /=.
+inline *; unroll for ^while; auto.
+qed.
+
 axiom shake128_equiv_absorb : equiv [ M(Syscall)._shake128_absorb34 ~ 
    Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb34   :
       ={state, in_0} ==> ={res}].
@@ -317,7 +343,9 @@ qed.
 hoare matrix_bound : 
     M(Syscall).__gen_matrix : 0 <= to_uint transposed <2  ==> pos_bound2304_cxq res 0 2304 2.
 conseq auxgenmatrix_good matrix_bound_aux.
-move => /> &1 H H0; exists (seed{1},transposed{1} = W64.one); 1: by smt(@W64).
+move => /> &1 H H0; exists (seed{1}, to_uint transposed{1} = 1) => /=.
+- rewrite W64.to_uint_eq.
+  by have [] -> : (to_uint transposed{1} = 0 \/ to_uint transposed{1} = 1) by smt().
 by smt().
 qed.
 
@@ -1620,14 +1648,14 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_enc(sctp,msgp,pkp,noiseseed);}
 
 inline{1} 1; inline {2} 1. wp.
 
-seq 49 57 : (={ctp,Glob.mem} /\
+seq 49 59 : (={ctp,Glob.mem} /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
     valid_ptr (to_uint ctp{1}) 128); last by
   exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; call (compressequiv memm _p); auto.
 
-seq 47 55 : (={ctp,Glob.mem} /\
+seq 47 57 : (={ctp,Glob.mem} /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
      pos_bound768_cxq bp{1} 0 768 2 /\
@@ -1654,7 +1682,8 @@ swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2}=pkp{1}); 1: b
 sp 3 3.
 swap {1} 18 -1. (* avoid dealing with stack noise seed *)
 
-seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
+seq 17 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
+           s_noiseseed{2} = noiseseed0{2} /\
            pos_bound256_cxq k{1} 0 256 1 /\
            pos_bound256_cxq k{2} 0 256 1 /\
            lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
@@ -1666,8 +1695,8 @@ seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
 + call (genmatrixequiv true).
   call frommsgequiv_noperm. conseq />. smt().
   conseq (_: _ ==> lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
-       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,Glob.mem} /\ pkp0{2} = pkp{1}).
-  auto => /> &2 ????????? rl rr H H0 H1 ????. 
+       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,Glob.mem} /\ pkp0{2} = pkp{1} /\ s_noiseseed{2} = noiseseed0{2}).
+  auto => /> &2 ????????? rl rr H H0 H1 ????.
   + rewrite tP => k kb.
     move : H; rewrite /lift_array256 tP => H.
     move : (H k kb); rewrite !mapiE //=. 
@@ -1679,7 +1708,7 @@ seq 17 15  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
     rewrite  ifF. smt(W16.to_uint_cmp). 
     rewrite  ifF. smt(W16.to_uint_cmp). 
     smt(W16.to_uint_eq).
-  seq 12 10 : (#{/~publicseed{2}}post /\ ={publicseed}).
+  seq 12 12 : (#{/~publicseed{2}}post /\ ={publicseed}).
   wp;sp; conseq />.
   call (polyvec_frombytes_equiv).
   auto => />. smt(). 
@@ -1706,11 +1735,12 @@ seq 12 20 : (#{/~bp{1}=bp{2}}pre  /\
    sctp0{1} = sctp{1} /\
    msgp0{1} = msgp{1} /\
    noiseseed0{1} = noiseseed{1} /\
-   (={Glob.mem, msgp, pkp, noiseseed, sctp} /\
+   (={Glob.mem, msgp, noiseseed, pkp, sctp} /\
     valid_ptr _pkp (384 * 3 + 32) /\
     valid_ptr _ctp (3 * 320 + 128) /\ Glob.mem{1} = mem /\ to_uint sctp{1} = _ctp /\ to_uint pkp{1} = _pkp) /\
    ={pkp0}) /\
   ={publicseed, bp, ep, epp, v, sp_0, k} /\
+  s_noiseseed{2} = noiseseed0{2} /\
   pos_bound256_cxq k{1} 0 256 1 /\
   pos_bound256_cxq k{2} 0 256 1 /\
   lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
@@ -1998,13 +2028,13 @@ transitivity {1} { r <@Jkem.M(Jkem.Syscall).__iindcpa_enc(ctp,msgp,pkp,noiseseed
 
 inline{1} 1; inline {2} 1. wp.
 
-seq 51 59 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
+seq 51 61 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
     lift_array256 v{1} = lift_array256 v{2}); last by
   exists *Glob.mem{1}; elim* => memm; call (compressequiv_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
 
-seq 49 57 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
+seq 49 59 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
      pos_bound768_cxq bp{1} 0 768 2 /\
@@ -2029,7 +2059,8 @@ swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2} = pkp{1}); 1:
 sp 3 3.
 swap {1} 19 1. (* avoid dealing with stack noise seed *)
 
-seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
+seq 19 19  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
+           s_noiseseed{2} = noiseseed0{2} /\
            pos_bound256_cxq k{1} 0 256 1 /\
            pos_bound256_cxq k{2} 0 256 1 /\
            lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
@@ -2041,7 +2072,7 @@ seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
 + call (genmatrixequiv true).
   wp;call frommsgequiv_noperm. conseq />. smt().
   conseq (_: _ ==> lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\
-       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,sctp,Glob.mem} /\ pkp0{2} = pkp{1}).
+       pos_bound768_cxq pkpv{1} 0 768 2 /\ pos_bound768_cxq pkpv{2} 0 768 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,sctp,Glob.mem} /\ pkp0{2} = pkp{1} /\ s_noiseseed{2} = noiseseed0{2}).
   auto => /> &2 ??????? rl rr H H0 H1 ????. 
   + rewrite tP => k kb.
     move : H; rewrite /lift_array256 tP => H.
@@ -2054,7 +2085,7 @@ seq 19 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k,sctp} /\
     rewrite  ifF. smt(W16.to_uint_cmp). 
     rewrite  ifF. smt(W16.to_uint_cmp). 
     smt(W16.to_uint_eq).
-  seq 14 12 : (#{/~publicseed{2}}post /\ ={publicseed}).
+  seq 14 14 : (#{/~publicseed{2}}post /\ ={publicseed}).
   wp;sp; conseq />.
   call (polyvec_frombytes_equiv).
   auto => />. smt().
@@ -2083,6 +2114,7 @@ seq 12 20 : (#{/~bp{1}=bp{2}}pre  /\
    (={Glob.mem, msgp, pkp, noiseseed} /\ valid_ptr _pkp (384 * 3 + 32) /\ Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp) /\
    ={pkp0}) /\
   ={publicseed, bp, ep, epp, v, sp_0, k} /\
+  s_noiseseed{2} = noiseseed0{2} /\
   pos_bound256_cxq k{1} 0 256 1 /\
   pos_bound256_cxq k{2} 0 256 1 /\
   lift_array768 pkpv{1} = nttunpackv (lift_array768 pkpv{2}) /\

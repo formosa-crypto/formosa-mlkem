@@ -137,17 +137,17 @@ W64.of_int (-9223372036854775808); W64.of_int (-9223372036854775808);
 W64.of_int (-9223372036854775808)].
 
 
-abbrev KECCAK_RC = Array24.of_list witness [W64.of_int 1; W64.of_int 32898;
-W64.of_int (-9223372036854742902); W64.of_int (-9223372034707259392);
-W64.of_int 32907; W64.of_int 2147483649; W64.of_int (-9223372034707259263);
-W64.of_int (-9223372036854743031); W64.of_int 138; W64.of_int 136;
-W64.of_int 2147516425; W64.of_int 2147483658; W64.of_int 2147516555;
-W64.of_int (-9223372036854775669); W64.of_int (-9223372036854742903);
-W64.of_int (-9223372036854743037); W64.of_int (-9223372036854743038);
-W64.of_int (-9223372036854775680); W64.of_int 32778;
-W64.of_int (-9223372034707292150); W64.of_int (-9223372034707259263);
-W64.of_int (-9223372036854742912); W64.of_int 2147483649;
-W64.of_int (-9223372034707259384)].
+abbrev KECCAK1600_RC = Array24.of_list witness [W64.of_int 1;
+W64.of_int 32898; W64.of_int (-9223372036854742902);
+W64.of_int (-9223372034707259392); W64.of_int 32907; W64.of_int 2147483649;
+W64.of_int (-9223372034707259263); W64.of_int (-9223372036854743031);
+W64.of_int 138; W64.of_int 136; W64.of_int 2147516425; W64.of_int 2147483658;
+W64.of_int 2147516555; W64.of_int (-9223372036854775669);
+W64.of_int (-9223372036854742903); W64.of_int (-9223372036854743037);
+W64.of_int (-9223372036854743038); W64.of_int (-9223372036854775680);
+W64.of_int 32778; W64.of_int (-9223372034707292150);
+W64.of_int (-9223372034707259263); W64.of_int (-9223372036854742912);
+W64.of_int 2147483649; W64.of_int (-9223372034707259384)].
 
 
 abbrev jdmontx16 = Array16.of_list witness [W16.of_int 1353; W16.of_int 1353;
@@ -737,7 +737,7 @@ module M(SC:Syscall_t) = {
     return (rd);
   }
   
-  proc __index (x:int, y:int) : int = {
+  proc keccakf1600_index (x:int, y:int) : int = {
     
     var r:int;
     
@@ -745,7 +745,7 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc __keccak_rho_offsets (i:int) : int = {
+  proc keccakf1600_rho_offsets (i:int) : int = {
     var aux: int;
     
     var r:int;
@@ -772,172 +772,188 @@ module M(SC:Syscall_t) = {
     return (r);
   }
   
-  proc __rhotates (x:int, y:int) : int = {
+  proc keccakf1600_rhotates (x:int, y:int) : int = {
     
     var r:int;
     var i:int;
     
-    i <@ __index (x, y);
-    r <@ __keccak_rho_offsets (i);
+    i <@ keccakf1600_index (x, y);
+    r <@ keccakf1600_rho_offsets (i);
     return (r);
   }
   
-  proc __theta_sum_scalar (a:W64.t Array25.t) : W64.t Array5.t = {
+  proc keccakf1600_theta_sum (a:W64.t Array25.t) : W64.t Array5.t = {
     var aux: int;
     
     var c:W64.t Array5.t;
-    var i:int;
-    var ti:int;
-    var j:int;
+    var x:int;
+    var y:int;
     c <- witness;
-    i <- 0;
-    while (i < 5) {
-      ti <@ __index (i, 0);
-      c.[i] <- a.[ti];
-      i <- i + 1;
+    x <- 0;
+    while (x < 5) {
+      c.[x] <- a.[(x + 0)];
+      x <- x + 1;
     }
-    j <- 1;
-    while (j < 5) {
-      i <- 0;
-      while (i < 5) {
-        ti <@ __index (i, j);
-        c.[i] <- (c.[i] `^` a.[ti]);
-        i <- i + 1;
+    y <- 1;
+    while (y < 5) {
+      x <- 0;
+      while (x < 5) {
+        c.[x] <- (c.[x] `^` a.[(x + (y * 5))]);
+        x <- x + 1;
       }
-      j <- j + 1;
+      y <- y + 1;
     }
     return (c);
   }
   
-  proc __theta_rol_scalar (c:W64.t Array5.t) : W64.t Array5.t = {
+  proc keccakf1600_theta_rol (c:W64.t Array5.t) : W64.t Array5.t = {
     var aux_1: bool;
     var aux_0: bool;
     var aux: int;
     var aux_2: W64.t;
     
     var d:W64.t Array5.t;
-    var i:int;
+    var x:int;
     var  _0:bool;
     var  _1:bool;
     d <- witness;
-    i <- 0;
-    while (i < 5) {
-      d.[i] <- c.[((i + 1) %% 5)];
-      (aux_1, aux_0, aux_2) <- ROL_64 d.[i] (W8.of_int 1);
+    x <- 0;
+    while (x < 5) {
+      d.[x] <- c.[((x + 1) %% 5)];
+      (aux_1, aux_0, aux_2) <- ROL_64 d.[x] (W8.of_int 1);
        _0 <- aux_1;
        _1 <- aux_0;
-      d.[i] <- aux_2;
-      d.[i] <- (d.[i] `^` c.[((i + 4) %% 5)]);
-      i <- i + 1;
+      d.[x] <- aux_2;
+      d.[x] <- (d.[x] `^` c.[(((x - 1) + 5) %% 5)]);
+      x <- x + 1;
     }
     return (d);
   }
   
-  proc __rol_sum_scalar (d:W64.t Array5.t, a:W64.t Array25.t, offset:int) : 
+  proc keccakf1600_rol_sum (a:W64.t Array25.t, d:W64.t Array5.t, y:int) : 
   W64.t Array5.t = {
     var aux_1: bool;
     var aux_0: bool;
     var aux: int;
     var aux_2: W64.t;
     
-    var c:W64.t Array5.t;
-    var j:int;
-    var j1:int;
-    var k:int;
-    var ti:int;
+    var b:W64.t Array5.t;
+    var x:int;
+    var x_:int;
+    var y_:int;
+    var r:int;
     var  _0:bool;
     var  _1:bool;
-    c <- witness;
-    j <- 0;
-    while (j < 5) {
-      j1 <- ((j + offset) %% 5);
-      k <@ __rhotates (j1, j);
-      ti <@ __index (j1, j);
-      c.[j] <- a.[ti];
-      c.[j] <- (c.[j] `^` d.[j1]);
-      (aux_1, aux_0, aux_2) <- ROL_64 c.[j] (W8.of_int k);
-       _0 <- aux_1;
-       _1 <- aux_0;
-      c.[j] <- aux_2;
-      j <- j + 1;
-    }
-    return (c);
-  }
-  
-  proc __set_row_scalar (r:W64.t Array25.t, row:int, c:W64.t Array5.t,
-                         iota_0:W64.t) : W64.t Array25.t = {
-    var aux: int;
-    
-    var j:int;
-    var j1:int;
-    var j2:int;
-    var t:W64.t;
-    var ti:int;
-    
-    j <- 0;
-    while (j < 5) {
-      j1 <- ((j + 1) %% 5);
-      j2 <- ((j + 2) %% 5);
-      t <- ((invw c.[j1]) `&` c.[j2]);
-      if (((row = 0) /\ (j = 0))) {
-        t <- (t `^` iota_0);
+    b <- witness;
+    x <- 0;
+    while (x < 5) {
+      x_ <- ((x + (3 * y)) %% 5);
+      y_ <- x;
+      r <@ keccakf1600_rhotates (x_, y_);
+      b.[x] <- a.[(x_ + (y_ * 5))];
+      b.[x] <- (b.[x] `^` d.[x_]);
+      if ((r <> 0)) {
+        (aux_1, aux_0, aux_2) <- ROL_64 b.[x] (W8.of_int r);
+         _0 <- aux_1;
+         _1 <- aux_0;
+        b.[x] <- aux_2;
       } else {
         
       }
-      t <- (t `^` c.[j]);
-      ti <@ __index (j, row);
-      r.[ti] <- t;
-      j <- j + 1;
+      x <- x + 1;
     }
-    return (r);
+    return (b);
   }
   
-  proc __round2x_scalar (a:W64.t Array25.t, r:W64.t Array25.t, iota_0:W64.t) : 
-  W64.t Array25.t * W64.t Array25.t = {
+  proc keccakf1600_set_row (e:W64.t Array25.t, b:W64.t Array5.t, y:int,
+                            s_rc:W64.t) : W64.t Array25.t = {
+    var aux: int;
     
+    var x:int;
+    var x1:int;
+    var x2:int;
+    var t:W64.t;
+    
+    x <- 0;
+    while (x < 5) {
+      x1 <- ((x + 1) %% 5);
+      x2 <- ((x + 2) %% 5);
+      t <- ((invw b.[x1]) `&` b.[x2]);
+      t <- (t `^` b.[x]);
+      if (((x = 0) /\ (y = 0))) {
+        t <- (t `^` s_rc);
+      } else {
+        
+      }
+      e.[(x + (y * 5))] <- t;
+      x <- x + 1;
+    }
+    return (e);
+  }
+  
+  proc keccakf1600_round (e:W64.t Array25.t, a:W64.t Array25.t, rc:W64.t) : 
+  W64.t Array25.t = {
+    var aux: int;
+    
+    var s_rc:W64.t;
     var c:W64.t Array5.t;
     var d:W64.t Array5.t;
+    var y:int;
+    var b:W64.t Array5.t;
+    b <- witness;
     c <- witness;
     d <- witness;
-    c <@ __theta_sum_scalar (a);
-    d <@ __theta_rol_scalar (c);
-    c <@ __rol_sum_scalar (d, a, 0);
-    r <@ __set_row_scalar (r, 0, c, iota_0);
-    c <@ __rol_sum_scalar (d, a, 3);
-    r <@ __set_row_scalar (r, 1, c, iota_0);
-    c <@ __rol_sum_scalar (d, a, 1);
-    r <@ __set_row_scalar (r, 2, c, iota_0);
-    c <@ __rol_sum_scalar (d, a, 4);
-    r <@ __set_row_scalar (r, 3, c, iota_0);
-    c <@ __rol_sum_scalar (d, a, 2);
-    r <@ __set_row_scalar (r, 4, c, iota_0);
-    return (a, r);
+    s_rc <- rc;
+    c <@ keccakf1600_theta_sum (a);
+    d <@ keccakf1600_theta_rol (c);
+    y <- 0;
+    while (y < 5) {
+      b <@ keccakf1600_rol_sum (a, d, y);
+      e <@ keccakf1600_set_row (e, b, y, s_rc);
+      y <- y + 1;
+    }
+    return (e);
   }
   
-  proc _keccakf1600_scalar (a:W64.t Array25.t) : W64.t Array25.t = {
+  proc __keccakf1600 (a:W64.t Array25.t) : W64.t Array25.t = {
     
-    var iotas_p:W64.t Array24.t;
-    var round:W64.t;
-    var iota_0:W64.t;
-    var round_s:W64.t;
-    var r:W64.t Array25.t;
-    iotas_p <- witness;
-    r <- witness;
-    iotas_p <- KECCAK_RC;
-    round <- (W64.of_int 0);
+    var rC:W64.t Array24.t;
+    var s_e:W64.t Array25.t;
+    var e:W64.t Array25.t;
+    var c:W64.t;
+    var rc:W64.t;
+    rC <- witness;
+    e <- witness;
+    s_e <- witness;
+    rC <- KECCAK1600_RC;
+    e <- s_e;
+    c <- (W64.of_int 0);
     
-    while ((round \ult (W64.of_int 24))) {
-      iota_0 <- iotas_p.[(W64.to_uint round)];
-      round_s <- round;
-      (a, r) <@ __round2x_scalar (a, r, iota_0);
-      round <- round_s;
-      round <- (round + (W64.of_int 1));
-      iota_0 <- iotas_p.[(W64.to_uint round)];
-      round_s <- round;
-      (r, a) <@ __round2x_scalar (r, a, iotas_p.[(W64.to_uint round)]);
-      round <- round_s;
-      round <- (round + (W64.of_int 1));
+    while ((c \ult (W64.of_int (24 - 1)))) {
+      rc <- rC.[(W64.to_uint c)];
+      e <@ keccakf1600_round (e, a, rc);
+      rc <- rC.[((W64.to_uint c) + 1)];
+      a <@ keccakf1600_round (a, e, rc);
+      c <- (c + (W64.of_int 2));
     }
+    return (a);
+  }
+  
+  proc _keccakf1600 (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    
+    
+    a <@ __keccakf1600 (a);
+    return (a);
+  }
+  
+  proc _keccakf1600_ (a:W64.t Array25.t) : W64.t Array25.t = {
+    
+    
+    
+    a <- a;
+    a <@ _keccakf1600 (a);
+    a <- a;
     return (a);
   }
   
@@ -1040,14 +1056,14 @@ module M(SC:Syscall_t) = {
       s_in <- in_0;
       s_ilen <- ilen;
       s_r8 <- r8;
-      state <@ _keccakf1600_scalar (state);
+      state <@ _keccakf1600_ (state);
       in_0 <- s_in;
       ilen <- s_ilen;
       r8 <- s_r8;
     }
     t8 <- (W8.of_int 6);
     state <@ __add_final_block (state, in_0, ilen, t8, r8);
-    state <@ _keccakf1600_scalar (state);
+    state <@ _keccakf1600_ (state);
     out <- s_out;
     i <- 0;
     while (i < 4) {
@@ -1093,7 +1109,7 @@ module M(SC:Syscall_t) = {
       i <- i + 1;
     }
     s_in <- in1;
-    state <@ _keccakf1600_scalar (state);
+    state <@ _keccakf1600_ (state);
     r8 <- (W64.of_int 136);
     ilen <- (W64.of_int (((3 * 320) + 128) - (136 - 32)));
     in_0 <- s_in;
@@ -1104,14 +1120,14 @@ module M(SC:Syscall_t) = {
       s_in <- in_0;
       s_ilen <- ilen;
       s_r8 <- r8;
-      state <@ _keccakf1600_scalar (state);
+      state <@ _keccakf1600_ (state);
       in_0 <- s_in;
       ilen <- s_ilen;
       r8 <- s_r8;
     }
     t8 <- (W8.of_int 31);
     state <@ __add_final_block (state, in_0, ilen, t8, r8);
-    state <@ _keccakf1600_scalar (state);
+    state <@ _keccakf1600_ (state);
     out <- s_out;
     aux <- (32 %/ 8);
     i <- 0;
@@ -1149,7 +1165,7 @@ module M(SC:Syscall_t) = {
     (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1) ((
     (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
     out_s <- out;
-    state <@ _keccakf1600_scalar (state);
+    state <@ _keccakf1600_ (state);
     out <- out_s;
     i <- 0;
     while (i < 8) {
@@ -1187,7 +1203,7 @@ module M(SC:Syscall_t) = {
     (WArray200.get64 (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1) ((
     (get8 (WArray200.init64 (fun i_0 => state.[i_0])) (72 - 1)) `^` (W8.of_int 128)))));
     out_s <- out;
-    state <@ _keccakf1600_scalar (state);
+    state <@ _keccakf1600_ (state);
     out <- out_s;
     i <- 0;
     while (i < 8) {
@@ -1240,7 +1256,7 @@ module M(SC:Syscall_t) = {
     var t:W64.t;
     out_s <- witness;
     out_s <- out;
-    state <@ _keccakf1600_scalar (state);
+    state <@ _keccakf1600_ (state);
     out <- out_s;
     aux <- (168 %/ 8);
     i <- 0;

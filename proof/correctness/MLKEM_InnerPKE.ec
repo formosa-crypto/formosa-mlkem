@@ -411,12 +411,12 @@ equiv squeezeblock_ignore :
  Jkem.M(Jkem.Syscall)._shake128_squeezeblock ~Jkem.M(Jkem.Syscall)._shake128_squeezeblock :
    arg{1}.`1 = arg{2}.`1 ==> ={res}.
 proof.
-proc => /=; seq 1 1: (#pre); 1: by call(_:true) => /=;  sim.
+proc => /=; seq 3 3: (#pre); 1: by call(_:true) => /=;  sim.
 while (={i} /\ 0<=i{1}<=168 /\ ={state} /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.[k]);
   1: by auto => />; smt(Array168.set_eqiE Array168.set_neqiE).
 auto => /> *; split; 1: by smt().
 by move => *;rewrite tP => k kb; smt().
-qed. 
+qed.
 
 (* 
 equiv absorb_ignore :
@@ -1031,53 +1031,14 @@ equiv auxenc_good :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
 swap {1} 6 -5.
-swap {1} 10 -8.
-seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
-
-swap {1} 6 -5.
-swap {1} [9..11] -7.
-seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
-
-swap {1} 9 -7. 
-seq 2 3 : (#pre /\ aat{1}=at{2}); 1: by call auxgenmatrix_good;auto => />.
-
-swap {1} 4 -3.
-swap {1} 7 -5.
-
-seq 2 2 : (#pre /\ ={k}); 1: by sim.
-
-swap {1} [2..3] -1.
-swap {1} 4 -3.
-swap {1} [6..27] -1.
-swap {1} 4 21.
-swap {1} 3 19.
-
-seq 23 1 : (#pre /\ ={sp_0,ep,epp}).
-transitivity {1} {(sp_0,ep,epp) <@ AuxMLKEM.sample_noise3_jasmin(noiseseed);}
-     (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} ==> 
-          ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} )
-      (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = at{2} /\ sctp{1} = ctp{2} ==> 
-          ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp}  /\ aat{1} = at{2} /\ sctp{1} = ctp{2} ); 1,2:   smt(). 
-+ by inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin; sim.  
-+ by conseq />; call sample_noise_good3; auto => />.
-
-by sim. 
-qed.
-
-equiv auxienc_good :
- Jkem.M(Jkem.Syscall).__iindcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
-     ={Glob.mem,arg} ==> ={Glob.mem,res}. 
-proc. 
-swap {1} 6 -5.
 swap {1} 12 -10.
-swap {2} 1 29.
 seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
 
 swap {1} 6 -5.
 swap {1} [11..13] -9.
 seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
 
-swap {1} 11 -9. 
+swap {1} 11 -9.
 seq 2 3 : (#pre /\ aat{1}=at{2}); 1: by call auxgenmatrix_good;auto => />.
 
 swap {1} 4 -3.
@@ -1086,22 +1047,66 @@ swap {1} 9 -7.
 seq 2 2 : (#pre /\ ={k}); 1: by sim.
 
 swap {1} [2..3] -1.
+swap {1} 4 -3.
+swap {1} [5..26] -1.
+swap {1} 5 29.
+swap {1} 25 2.
+
+seq 25 1 : (#pre /\ ={sp_0,ep,epp}); last by sim.
+
+swap {1} 5 -3.
+swap {1} 4 20.
+
+transitivity {1} {s_noiseseed <- noiseseed; (sp_0,ep,epp) <@ AuxMLKEM.sample_noise3_jasmin(s_noiseseed);}
+     (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} ==>
+          ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ sctp{1} = sctp{2} )
+      (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = at{2} /\ sctp{1} = ctp{2} ==> 
+          ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp}  /\ aat{1} = at{2} /\ sctp{1} = ctp{2} ); 1, 2: smt().
++ seq 2 1 : (={s_noiseseed} /\ #pre); first by auto.
+  by inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin; sim; auto.
+by conseq />; call sample_noise_good3; auto => />.
+qed.
+
+equiv auxienc_good :
+ Jkem.M(Jkem.Syscall).__iindcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
+     ={Glob.mem,arg} ==> ={Glob.mem,res}. 
+proc. 
+swap {1} 6 -5.
+swap {1} 14 -12.
+swap {2} 1 29.
+seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
+
+swap {1} 6 -5.
+swap {1} [13..15] -11.
+seq 4 4 : (#pre /\ ={publicseed}); 1: by sim.
+
+swap {1} 13 -11.
+seq 2 3 : (#pre /\ aat{1}=at{2}); 1: by call auxgenmatrix_good;auto => />.
+
+swap {1} 4 -3.
+swap {1} 11 -9.
+
+seq 2 2 : (#pre /\ ={k}); 1: by sim.
+swap {1} [2..3] -1.
 swap {1} 5 -4.
 swap {1} [8..27] -1.
-swap {1} 3 22.
+swap {1} 3 25.
 swap {1} 3 24.
+swap {1} 27 3.
 
-seq 25 1 : (#pre /\ ={sp_0,ep,epp}).
-transitivity {1} {(sp_0,ep,epp) <@ AuxMLKEM.sample_noise3_jasmin(noiseseed);}
+swap {1} 6 38.
+swap {1} 1 42.
+
+seq 26 1 : (#pre /\ ={sp_0,ep,epp}).
+transitivity {1} {s_noiseseed <- noiseseed; (sp_0,ep,epp) <@ AuxMLKEM.sample_noise3_jasmin(s_noiseseed);}
      (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ ctp{1} = ctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ ctp{1} = ctp{2} )
       (={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k} /\ aat{1} = at{2} /\ ctp{1} = ctp{2} ==> 
           ={Glob.mem,msgp,pkp,pkpv,noiseseed,publicseed,k,sp_0,ep,epp}  /\ aat{1} = at{2} /\ ctp{1} = ctp{2} ); 1,2:   smt(). 
-+ by  inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin; sim; auto => />.
++ inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin; sim; auto => />.
 + by conseq />; call sample_noise_good3; auto => />.
 
-swap {1} 2 1.
-by sim. 
+by sim.
 qed.
 
 (******* CORRECTNESS PROOFS TOP LEVEL ************)
