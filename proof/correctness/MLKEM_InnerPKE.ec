@@ -1518,8 +1518,8 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
 + inline AuxMLKEM.__gen_matrix; conseq />.
   seq 7 3 : (a{1}=aT{2});  last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
-         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix); last  
-          by auto => />; smt(eq_matrixP).
+         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix); last
+          by auto => /> *; apply: eq_matrixP; smt().
   wp; while (i0{1} = i{2} /\ j{1} = j{2} /\ 0<=i0{1}<kvec /\ 0<=j{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
          (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix) /\
          (forall jj, 0 <= jj <j{1} => (a{1}.[i0{1},jj])%Matrix = (aT{2}.[i0{1},jj]))%Matrix); last 
@@ -1828,8 +1828,8 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
 + inline AuxMLKEM.__gen_matrix; conseq />.
   seq 7 3 : (a{1}=aT{2});  last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
-         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix); last  
-          by auto => />; smt(eq_matrixP).
+         forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix); last
+          by auto => /> *; apply: eq_matrixP; smt().
   wp; while (i0{1} = i{2} /\ j{1} = j{2} /\ 0<=i0{1}<kvec /\ 0<=j{1}<=kvec /\ seed{1}=rho{2} /\ trans{1} /\
          (forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a{1}.[ii,jj])%Matrix = (aT{2}.[ii,jj])%Matrix) /\
          (forall jj, 0 <= jj <j{1} => (a{1}.[i0{1},jj])%Matrix = (aT{2}.[i0{1},jj]))%Matrix); last 

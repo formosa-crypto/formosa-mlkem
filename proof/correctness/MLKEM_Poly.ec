@@ -1327,6 +1327,8 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
         by rewrite -incoeffM_mod /R qE //= ZqField.mulr1.
       + by rewrite zp /=.
     move => jl rl jr rpr; rewrite ultE /= => ??[#] *.
+    have ? : jl = 256 by smt().
+    subst jl.
     split; last by smt().
     by rewrite tP => x xb; rewrite !mapiE /#.
   
@@ -1698,46 +1700,52 @@ rewrite !to_uintD_small /=; 1..4:smt().
 rewrite !W64.shr_div /= Array64.Array64.initiE /=; 1: smt().
 move => r1 r1val r2 r2val r3 r3val r4 r4val r5 r5val r6 r6val r7 r7val r8 r8val r9 r9val r10 r10val.
 
-have  /= [#] redbl1 redbh1 redv1 := 
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr} + 1]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have hq : 0 < q && q < SignedReductions.R %/ 2 by rewrite /R /#.
+have hi: 0 <= to_uint i{hr} && to_uint i{hr} < 256 by smt().
+have hip1: 0 <= to_uint i{hr} + 1 && to_uint i{hr} + 1 < 256 by smt().
+have hip2: 0 <= to_uint i{hr} + 2 && to_uint i{hr} + 2 < 256 by smt().
+have hip3: 0 <= to_uint i{hr} + 3 && to_uint i{hr} + 3 < 256 by smt().
 
-have  /= [#] redbl2 redbh2 redv2 := 
-    (SREDCp_corr (to_sint r1 * to_sint jzetas.[64 + to_uint i{hr} %/ 4]) _ _); 1,2:
-     by rewrite /R /=; move : zeta_bound; rewrite /minimum_residues; smt().
+have  /= [#] redbl1 redbh1 redv1 :=
+    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr} + 1]) hq _).
+     by move: (ba _ hip1) (bb _ hip1); rewrite /R /#.
 
-have  /= [#] redbl3 redbh3 redv3 := 
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr}]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have  /= [#] redbl2 redbh2 redv2 :=
+    (SREDCp_corr (to_sint r1 * to_sint jzetas.[64 + to_uint i{hr} %/ 4]) hq _).
+     by rewrite /R /=; move : (zeta_bound (64 + to_uint i{hr} %/ 4)); rewrite /minimum_residues; smt().
 
-have  /= [#] redbl4 redbh4 redv4 := 
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr} + 1]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have  /= [#] redbl3 redbh3 redv3 :=
+    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr}]) hq _).
+     by move: (ba _ hi) (bb _ hi); rewrite /R /#.
 
-have  /= [#] redbl5 redbh5 redv5 := 
-    (SREDCp_corr(to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr}]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have  /= [#] redbl4 redbh4 redv4 :=
+    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr} + 1]) hq _).
+     by move: (ba _ hi) (bb _ hip1); rewrite /R /#.
 
-have  /= [#] redbl6 redbh6 redv6 := 
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 3] * to_sint bp{hr}.[to_uint i{hr} + 3]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have  /= [#] redbl5 redbh5 redv5 :=
+    (SREDCp_corr(to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr}]) hq _).
+     by move: (ba _ hip1) (bb _ hi); rewrite /R /#.
 
-have  /= [#] redbl7 redbh7 redv7 := 
-    (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[64 + to_uint i{hr} %/ 4])) _ _); 1: by rewrite /R /=; smt().
-+ rewrite /R /=; move : zeta_bound; rewrite /minimum_residues /bpos16 => zb.
+have  /= [#] redbl6 redbh6 redv6 :=
+    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 3] * to_sint bp{hr}.[to_uint i{hr} + 3]) hq _).
+     by move: (ba _ hip3) (bb _ hip3); rewrite /R /#.
+
+have  /= [#] redbl7 redbh7 redv7 :=
+    (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[64 + to_uint i{hr} %/ 4])) hq _).
++ rewrite /R /=; move : (zeta_bound (64 + to_uint i{hr} %/ 4)); rewrite /minimum_residues /bpos16 => zb.
   rewrite to_sintN /=; do split; smt().  
 
-have  /= [#] redbl8 redbh8 redv8 := 
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr}+2]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have  /= [#] redbl8 redbh8 redv8 :=
+    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr}+2]) hq _).
+     by move: (ba _ hip2) (bb _ hip2); rewrite /R /#.
 
-have  /= [#] redbl9 redbh9 redv9 := 
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr} + 3]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have  /= [#] redbl9 redbh9 redv9 :=
+    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr} + 3]) hq _).
+     by move: (ba _ hip2) (bb _ hip3); rewrite /R /#.
 
-have  /= [#] redbl10 redbh10 redv10 := 
-    (SREDCp_corr(to_sint ap{hr}.[to_uint i{hr} + 3] * to_sint bp{hr}.[to_uint i{hr}+2]) _ _); 1,2:
-     by rewrite /R /=; smt().
+have  /= [#] redbl10 redbh10 redv10 :=
+    (SREDCp_corr(to_sint ap{hr}.[to_uint i{hr} + 3] * to_sint bp{hr}.[to_uint i{hr}+2]) hq _).
+     by move: (ba _ hip3) (bb _ hip2); rewrite /R /#.
 
 rewrite -r1val in redbl1;rewrite -r1val in redbh1;rewrite -r1val eq_incoeff in redv1.
 rewrite -r2val in redbl2;rewrite -r2val in redbh2;rewrite -r2val eq_incoeff in redv2.
@@ -1763,7 +1771,7 @@ move => zv2.
 do split; 1..3: smt().
 
 + move => k kb; case (k < to_uint i{hr}).
-  + by move => *; rewrite !set_neqiE /#. 
+  + move => *; rewrite !set_neqiE // 1..4:/#; apply: bprev => /#.
   move => *; case (k = to_uint i{hr}).
   + move => *. 
     rewrite set_neqiE; 1,2: smt().
