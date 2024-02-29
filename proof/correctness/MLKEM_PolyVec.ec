@@ -635,8 +635,10 @@ while (#{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\
   split; 1:  smt(). 
   rewrite /lift_polyvec /decompress_polyvec eq_vectorP => i ib.
   rewrite /lift_array256 /subarray256 !tP   !offunvE //=. 
-  by rewrite !setvE;smt(zerovE offunvE offunvK Array256.mapiE Array256.initiE).
-    
+  rewrite !setvE => k k_range.
+  rewrite Array256.mapiE // Array256.initiE // offunvE // zerovE !offunvK /=.
+  smt(Array256.mapiE Array256.initiE).
+
 unroll for {1} 22; unroll for {1} 2.
 
 auto => /> &1 &2 vpl vph il ih jv im0 prior priorb; rewrite ultE of_uintK /= => enter _.

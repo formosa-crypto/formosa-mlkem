@@ -788,7 +788,7 @@ byequiv => //; proc; inline *.
 wp;call{1}(_: true ==> true); 1: by apply (A_ll ( (Sim(RO_H.LRO))));  apply (S_h_ll (RO_H.LRO)); apply RO_H.RO_get_ll; smt(duni_matrix_ll). 
 rcondt{1}6; 1: by move => *; auto => />;call(_: true);auto => />; smt(mem_empty).
 rnd{1};rnd;rnd{1}.
-auto => />; 1: by smt(). 
+auto => /> *; 1: by smt().
 call {1} (_: true ==> true); 1: by  apply (S_i_ll (RO_H.LRO)); apply RO_H.RO_get_ll; smt(duni_matrix_ll).  
 by auto => />;smt(dshort_R_ll dshort_ll get_set_sameE).
 qed.

@@ -1436,7 +1436,7 @@ proof.
   move => gs_ok A_count A_ll.
   have := (OW_PCVA_G_PCO &m).
   rewrite (PCO_PCO2 &m) (G_PCO2_G0 &m).
-  move: (G0_G1_1 &m A_count A_ll) (H_bad_Orclb1' &m) (H_bad_gamma_spread &m) ge0_qV. 
+  move: (G0_G1_1 &m A_count A_ll) (H_bad_Orclb1' &m) (H_bad_gamma_spread &m _ gs_ok) ge0_qV.
   by smt().
 qed.
 
