@@ -1,5 +1,5 @@
 require "params.jinc"
-require "keccakf1600.jinc"
+require "keccak/keccakf1600.jinc"
 require "fips202_common.jinc"
 
 inline
