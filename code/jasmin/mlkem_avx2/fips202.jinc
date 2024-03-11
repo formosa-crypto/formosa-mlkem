@@ -129,54 +129,6 @@ fn _isha3_256(reg ptr u8[32] out, reg u64 in inlen) -> reg ptr u8[32]
   return out;
 }
 
-inline
-fn __isha3_512(reg ptr u8[64] out, reg u64 in, inline int inlen) -> stack u8[64]
-{
-  stack u64[25] state;
-  stack ptr u8[64] s_out;
-  stack u64 s_in s_ilen s_r8;
-  reg u64 ilen r8 t64;
-  reg u8 t8;
-  inline int i;
-
-  s_out = out;
-
-  state = __st0(state);
-
-  r8 = SHA3_512_RATE;
-  ilen = inlen;
-
-  while(ilen >= r8)
-  {
-    state, in, ilen = __add_full_block(state, in, ilen, r8);
-
-    s_in = in;
-    s_ilen = ilen;
-    s_r8 = r8;
-
-    state = _keccakf1600_(state);
-
-    in = s_in;
-    ilen = s_ilen;
-    r8 = s_r8;
-  }
-
-  t8 = 0x06;
-  state = __add_final_block(state, in, ilen, t8, r8);
-
-  state = _keccakf1600_(state);
-
-  out = s_out;
-
-  for i=0 to 8
-  {
-    t64 = state[i];
-    out[u64 i] = t64;
-  }
-
-  return out;
-}
-
 fn _shake256_1120_32(reg u64 out, reg u64 in0 in1) {
   stack u64[25] state;
   stack u64 s_out;
