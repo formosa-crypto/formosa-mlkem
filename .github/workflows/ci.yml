@@ -33,6 +33,7 @@ jobs:
     - name: Update OPAM & EasyCrypt dependencies
       run: |
         opam update
+        opam pin alt-ergo 2.5.2
         opam pin add -n easycrypt easycrypt
         opam install --deps-only easycrypt
     - name: Compile & Install EasyCrypt

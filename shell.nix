@@ -1,7 +1,7 @@
 { pkgs ?
     import (fetchTarball {
-      url = https://github.com/NixOS/nixpkgs/archive/53fbe41cf76b6a685004194e38e889bc8857e8c2.tar.gz;
-      sha256 = "sha256:1fyc4kbhv7rrfzya74yprvd70prlcsv56b7n0fv47kn7rznvvr2b";
+      url = https://github.com/NixOS/nixpkgs/archive/51063ed4f2343a59fdeebb279bb81d87d453942b.tar.gz;
+      sha256 = "sha256:0my8bdc7js7gdcl8z8ik49sl9gccqz39xg8q335sharf5qxq13ww";
     }) {}
 , full ? true
 }:
@@ -30,7 +30,7 @@ let
     ocamlPackages = oc;
     why3 = why;
   };
-  altergo = callPackage ./config/alt-ergo.nix { ocamlPackages = oc; } ;
+  altergo = alt-ergo.override { ocamlPackages = oc; } ;
 in
 
 mkShell ({
