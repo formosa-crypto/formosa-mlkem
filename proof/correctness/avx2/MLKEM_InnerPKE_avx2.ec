@@ -356,7 +356,11 @@ equiv genmatrixequiv b :
     res{1} = nttunpackm res{2} /\
     pos_bound2304_cxq res{1} 0 2304 2 /\
     pos_bound2304_cxq res{2} 0 2304 2.
-admitted.
+proc. 
+admitted. (* This should be proved by showing that this function is implementing
+             parse, as defined in crypto_specs/mlkem/properties/Correctness.ec.
+             We know Parse(XOF).sample implements this, and therefore also 
+             Jkem.M(Jkem.Syscall).__gen_matrix *)
 (*
 symmetry.
 have H : equiv [
