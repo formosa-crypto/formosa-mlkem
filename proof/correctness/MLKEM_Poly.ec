@@ -1754,7 +1754,10 @@ rewrite -r4val in redbl4;rewrite -r4val in redbh4;rewrite -r4val eq_incoeff in r
 rewrite -r5val in redbl5;rewrite -r5val in redbh5;rewrite -r5val eq_incoeff in redv5.
 rewrite -r6val in redbl6;rewrite -r6val in redbh6;rewrite -r6val eq_incoeff in redv6.
 rewrite -r7val in redbl7;rewrite -r7val in redbh7;rewrite -r7val in redv7.
-rewrite eq_incoeff !incoeffM to_sintN in redv7; 1: by move : zeta_bound; rewrite /= /minimum_residues; smt().
+rewrite eq_incoeff !incoeffM to_sintN in redv7.
++ move : zeta_bound; rewrite /= /minimum_residues /=.
+  move => HH;move : (HH (64 + to_uint i{hr} %/ 4) _);1:smt(). 
+  by smt(qE).
 rewrite incoeffN in redv7.
 rewrite -r8val in redbl8;rewrite -r8val in redbh8;rewrite -r8val eq_incoeff in redv8.
 rewrite -r9val in redbl9;rewrite -r9val in redbh9;rewrite -r9val eq_incoeff in redv9.
