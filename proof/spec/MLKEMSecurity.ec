@@ -230,11 +230,15 @@ module MLKEM_PRGs = {
 
 }.
 
-op H : W8.t Array32.t -> polymat.
+op H(rho : W8.t Array32.t) : polymat = invnttm (sampleA rho).
 
 (* This fixes the definition of H in terms of the MLKEM spec *)
-axiom H_sem _seed :
+lemma H_sem _seed :
     phoare [ Hmodule.sampleA : sd = _seed ==> res = nttm (H _seed) ] = 1%r.
+proof. 
+proc*; call (sampleA_sem _seed).
+by auto => />; rewrite /H nttmK.
+qed.
 
 op prg_kg_inner(coins :  W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec =
    ((G_coins coins).`1, 
