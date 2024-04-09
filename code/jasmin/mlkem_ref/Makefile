@@ -86,6 +86,9 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) jpolyvec.s
 ct:
 	$(JASMINC) -checkCT -infer jkem.jazz
 
+sct:
+	$(JASMINC) -checkSCT jkem.jazz
+
 clean:
 	-rm -f *.s
 	-rm -f jindcpa.o
