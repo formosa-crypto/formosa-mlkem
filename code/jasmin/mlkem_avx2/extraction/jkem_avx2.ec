@@ -100,7 +100,7 @@ abbrev pc_mask_s = W16.of_int 15.
 abbrev pc_shift1_s = W16.of_int 512.
 
 
-abbrev KeccakF1600RoundConstants = Array24.of_list witness [W256.of_int 6277101735386680764176071790128604879584176795969512275969;
+abbrev keccakF1600RoundConstants = Array24.of_list witness [W256.of_int 6277101735386680764176071790128604879584176795969512275969;
 W256.of_int 206504092890751023779864409751650843328560248233805014854828162;
 W256.of_int (-57896044618657891154337237002533387566728630465883811983015055433200855646070);
 W256.of_int (-57896044605177918687001956587831074660851270707671256656745893357814858874880);
@@ -137,7 +137,7 @@ W64.of_int (-9223372036854775808); W64.of_int (-9223372036854775808);
 W64.of_int (-9223372036854775808)].
 
 
-abbrev KECCAK1600_RC = Array24.of_list witness [W64.of_int 1;
+abbrev kECCAK1600_RC = Array24.of_list witness [W64.of_int 1;
 W64.of_int 32898; W64.of_int (-9223372036854742902);
 W64.of_int (-9223372034707259392); W64.of_int 32907; W64.of_int 2147483649;
 W64.of_int (-9223372034707259263); W64.of_int (-9223372036854743031);
@@ -925,7 +925,7 @@ module M(SC:Syscall_t) = {
     rC <- witness;
     e <- witness;
     s_e <- witness;
-    rC <- KECCAK1600_RC;
+    rC <- kECCAK1600_RC;
     e <- s_e;
     c <- (W64.of_int 0);
     
@@ -1390,7 +1390,7 @@ module M(SC:Syscall_t) = {
     bbi <@ __rol_4u64 (t256, 43);
     t256 <- VPANDN_256 bbe bbi;
     t256 <- (t256 `^` bba);
-    t256 <- (t256 `^` KeccakF1600RoundConstants.[index]);
+    t256 <- (t256 `^` keccakF1600RoundConstants.[index]);
     e_4x.[0] <- t256;
     ca <- t256;
     t256 <- a_4x.[18];
@@ -1671,7 +1671,7 @@ module M(SC:Syscall_t) = {
     bbi <@ __rol_4u64 (t256, 43);
     t256 <- VPANDN_256 bbe bbi;
     t256 <- (t256 `^` bba);
-    t256 <- (t256 `^` KeccakF1600RoundConstants.[index]);
+    t256 <- (t256 `^` keccakF1600RoundConstants.[index]);
     e_4x.[0] <- t256;
     ca <- t256;
     t256 <- a_4x.[18];
@@ -1963,7 +1963,7 @@ module M(SC:Syscall_t) = {
     bbi <@ __rol_4u64 (t256, 43);
     t256 <- VPANDN_256 bbe bbi;
     t256 <- (t256 `^` bba);
-    t256 <- (t256 `^` KeccakF1600RoundConstants.[index]);
+    t256 <- (t256 `^` keccakF1600RoundConstants.[index]);
     e_4x.[0] <- t256;
     t256 <- a_4x.[18];
     t256 <- (t256 `^` do_0);

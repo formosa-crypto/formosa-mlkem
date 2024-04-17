@@ -1,7 +1,7 @@
 { pkgs ?
     import (fetchTarball {
-      url = https://github.com/NixOS/nixpkgs/archive/51063ed4f2343a59fdeebb279bb81d87d453942b.tar.gz;
-      sha256 = "sha256:0my8bdc7js7gdcl8z8ik49sl9gccqz39xg8q335sharf5qxq13ww";
+      url = "https://github.com/NixOS/nixpkgs/archive/e402c3eb6d88384ca6c52ef1c53e61bdc9b84ddd.tar.gz";
+      sha256 = "sha256:0yz78sahc3mzv38bah8chl2y9cmwsmp9r2p7xv4ny6rcvl1f94cf";
     }) {}
 , full ? true
 }:
@@ -35,6 +35,7 @@ in
 
 mkShell ({
   JASMINC = "${jasmin-compiler.bin}/bin/jasminc";
+  JAZZCT = "${jasmin-compiler.bin}/bin/jazzct";
 } // lib.optionalAttrs full {
   packages = [
     ec
