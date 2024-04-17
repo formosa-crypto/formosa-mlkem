@@ -79,7 +79,7 @@ W16.of_int 996; W16.of_int 991; W16.of_int 958; W16.of_int 1869;
 W16.of_int 1522; W16.of_int 1628].
 
 
-abbrev KECCAK1600_RC = Array24.of_list witness [W64.of_int 1;
+abbrev kECCAK1600_RC = Array24.of_list witness [W64.of_int 1;
 W64.of_int 32898; W64.of_int (-9223372036854742902);
 W64.of_int (-9223372034707259392); W64.of_int 32907; W64.of_int 2147483649;
 W64.of_int (-9223372034707259263); W64.of_int (-9223372036854743031);
@@ -338,7 +338,7 @@ module M(SC:Syscall_t) = {
     rC <- witness;
     e <- witness;
     s_e <- witness;
-    rC <- KECCAK1600_RC;
+    rC <- kECCAK1600_RC;
     e <- s_e;
     c <- (W64.of_int 0);
     
