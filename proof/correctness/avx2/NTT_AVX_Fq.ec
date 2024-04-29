@@ -2064,7 +2064,7 @@ seq 12 1: (CS2P [r0i;r1i;r2i;r3i;r4i;r5i;r6i;r7i;r0t;r1t;r2t;r3t;r4t;r5t;r6t;r7t
  by inline *; auto => /> *; rewrite !P2C_i => />.
 (* level 5 *)
 seq 21 1: (rp{1} = rp5{2}).
-  by inline *; auto => />*; rewrite !P2C_i => />; rewrite P2CS !PUC_i => />. 
+  by inline *; auto => /> &1*; rewrite !P2C_i => />; rewrite (P2CS (rp{1})) !PUC_i //. 
 by inline *; auto => />*.
 qed.
 

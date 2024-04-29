@@ -411,7 +411,7 @@ equiv squeezeblock_ignore :
  Jkem.M(Jkem.Syscall)._shake128_squeezeblock ~Jkem.M(Jkem.Syscall)._shake128_squeezeblock :
    arg{1}.`1 = arg{2}.`1 ==> ={res}.
 proof.
-proc => /=; seq 3 3: (#pre); 1: by call(_:true) => /=;  sim.
+proc => /=; seq 1 1: (#pre); 1: by call(_:true) => /=;  sim.
 while (={i} /\ 0<=i{1}<=168 /\ ={state} /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.[k]);
   1: by auto => />; smt(Array168.set_eqiE Array168.set_neqiE).
 auto => /> *; split; 1: by smt().
@@ -451,7 +451,6 @@ while (={i,state} /\ 0<=i{1}<=128 /\ forall k, 0<=k<i{1} => out{1}.[k] = out{2}.
   by move => *;rewrite tP => k kb; smt().
 qed. 
 *)
-
 
 equiv auxgenmatrix_good :
  Jkem.M(Jkem.Syscall).__gen_matrix ~ AuxMLKEM.__gen_matrix :
@@ -562,10 +561,12 @@ swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
 
 wp; conseq />.
 splitwhile{1} ^while : to_uint ctr0 < 256.
-while{1} (!(to_uint pos{1} < 166 /\ to_uint ctr0{1} < 256) /\ #post) (168 - to_uint pos{1}).
-+ move => &h z; rcondf ^if; auto => /> &m; rewrite !ultE /#.
+while{1} (!(to_uint pos{1} < 166 /\ to_uint ctr0{1} < 256) /\ 
+      (cond{1} => to_uint pos{1} < 166) /\ #post) (168 - to_uint pos{1}).
++ move => &h z; rcondf ^if; auto => /> &m; rewrite !ultE /= /#.
 
 while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{2} /\
+    (cond{1} => to_uint pos{1} < 166) /\ 
     to_uint pos{1} = k{2} /\ k{2} %% 3 = 0 /\
    (forall (k0 : int), 
            0 <=  k0 < j0{2} => 
@@ -579,22 +580,22 @@ while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{
   move => ctrl rpl aar kr => *; do split; 1, 2, 3:  smt().
   * by  rewrite ultE /=.
   * by  rewrite ultE /=.
-  by move => *;  rewrite ultE /#.
+  by smt().
 
 rcondt{1} ^if; first by move => &m; auto => &h /> *; rewrite ultE.
 
-seq 11 6 : (#{/~k{2} < 168}{/~pos{1} \ult (of_int (168 - 2))%W64}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d2{2}).
-
-auto => /> &1 &2 *; do split; rewrite ?ultE ?to_uintD_small // ?mergebytes // ?mergebytes2 // /#.
+seq 17 6 : (#{/~k{2} < 168}{/~pos{1} \ult (of_int (168 - 2))%W64}{/~cond{1}}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d2{2}); 
+  1: by auto => /> &1 &2 *; do split; rewrite ?ultE ?to_uintD_small // ?mergebytes // ?mergebytes2 // /#. 
 
 seq 4 2 : (to_uint ctr0{1} = j0{2} /\
            to_uint pos{1} = k{2} /\
-           #{/~pos{1} \ult (of_int (168 - 2))%W64}post).
+           #{/~pos{1} \ult (of_int (168 - 2))%W64}
+            {/~cond{1}}post).
 
 + sp 1 0; if; 1: by move => &1 &2; rewrite ultE qE; smt().
   + sp 3 2; if{2}.
-    + rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE; smt().
-      rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /= to_uintD_small /= /#.
+    + rcondt{1} 2; 1: by move => *; auto => /> *; rewrite ultE; smt().
+      rcondt{1} 4; 1: by move => *; auto => /> *; rewrite ultE /= to_uintD_small /= /#.
       auto => /> &1 aar ctrl rpl 8?; rewrite ultE /= => *; do split; 2..3:smt().
       + rewrite to_uintD_small /= /#.
       + rewrite to_uintD_small /= /#.
@@ -611,7 +612,7 @@ seq 4 2 : (to_uint ctr0{1} = j0{2} /\
       rewrite set_eqiE 1,2:/#.
       by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
      
-    if{1}; last first. 
+    sp 1 0;if{1}; last first. 
     + auto => /> &1  aar ctr0 rpl; rewrite !ultE /= => *;  do split; 2..3: smt().
       + by rewrite to_uintD_small /= /#. 
       + by rewrite to_uintD_small /= /#. 
@@ -623,7 +624,7 @@ seq 4 2 : (to_uint ctr0{1} = j0{2} /\
       move => *;have -> : (k0 = to_uint ctr0) by smt(). 
       rewrite set_eqiE 1,2:/#.
       by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
-    rcondf{1} 1. 
+    rcondf{1} 3. 
     + move => *; auto => /> &1; rewrite !ultE /= => *.
       by rewrite  ultE /= to_uintD_small /= /#.  
     auto => /> &1  aar ctr0 rpl; rewrite !ultE /= => *;  do split; 2..3: smt().
@@ -638,9 +639,9 @@ seq 4 2 : (to_uint ctr0{1} = j0{2} /\
     rewrite set_eqiE 1,2:/#.
     by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
 
-  sp 1 0; if{2}.
+  sp 2 0; if{2}.
   + rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /#.
-    rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /#.
+    rcondt{1} 3; 1: by move => *; auto => /> *; rewrite ultE /#.
     auto => /> &1 &2 8?; rewrite ultE /= => *; do split; 2..3:smt().
     + rewrite to_uintD_small /= /#.
     + rewrite to_uintD_small /= /#.
@@ -654,7 +655,7 @@ seq 4 2 : (to_uint ctr0{1} = j0{2} /\
     by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
      
   if{1}; last by auto => />. 
-  rcondf{1} 1; 1: by move => *; auto => /> &1; rewrite !ultE /= /#.
+  rcondf{1} 3; 1: by move => *; auto => /> &1; rewrite !ultE /= /#.
   by auto => />.  
 
 auto => /> &1 &2 *; rewrite ultE /#.
@@ -973,25 +974,29 @@ seq 11 7 : (#pre /\ ={publicseed, noiseseed}).
   move => *. rewrite set64E initiE /= 1:/#.
   rewrite ifT 1:/# get64E !pack8bE 1:/# !initiE 1:/# /= /init8 !initiE /#. 
   move => *. rewrite set64E initiE /= 1:/#.
-  rewrite ifF 1:/#  !initiE /#. 
+  by rewrite ifF 1:/#  !initiE /#.
 
-swap {1} [7..8] -5.
+swap {1} [9..10] -7.
 seq 3 2 : (#pre /\ ={a}); 1: by call auxgenmatrix_good; auto => />.
 
-swap {1} [6..23] -2.
-swap {1} 2 24.
+swap {1} [3..4] -2; seq 2 0 : #pre; 1: by auto.
+swap {1} [4..5] -3;sp 2 0.
+swap {1} 2 22.
 swap {2} 1 8.
 
-seq 20 1 : (#{/~randomnessp{1}=seed{2}}pre /\ ={skpv,e}).
-transitivity {1} {(skpv,e) <@ AuxMLKEM.sample_noise2_jasmin(noiseseed);}
-     (={Glob.mem,pkp,skp,publicseed,noiseseed,a} ==> 
-          ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e})
-     (={Glob.mem,pkp,skp,publicseed,noiseseed,a} ==> 
-          ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e}); 1,2: by smt(). 
+seq 20 1 : (#{/~randomnessp{1}=seed{2}}{/~r_noiseseed{1}}pre /\ ={skpv,e}).
+transitivity {1} {(skpv,e) <@ AuxMLKEM.sample_noise2_jasmin(s_noiseseed);}
+     (={Glob.mem,publicseed,s_noiseseed,noiseseed,spkp,sskp,a} 
+         ==> 
+           ={sskp,spkp,e,Glob.mem,publicseed,s_noiseseed,noiseseed,a,skpv,e})
+     (={Glob.mem,pkp,skp,publicseed,noiseseed,pkp,skp,a} 
+        /\ s_noiseseed{1} = noiseseed{2}
+         /\ spkp{1} = pkp{2} /\ sskp{1} = skp{2} ==> 
+          spkp{1} = pkp{2} /\ sskp{1} = skp{2}
+         /\ s_noiseseed{1} = noiseseed{2}
+        /\   ={skpv,e,Glob.mem,pkp,skp,publicseed,noiseseed,a,skpv,e});1,2:  smt().
 + by inline  AuxMLKEM.sample_noise2_jasmin; sim; auto => />. 
 by conseq />; ecall (sample_noise_good2 noiseseed{2}) ; auto => />.
-
-swap{1} [1..2] 16.
 
 seq 2 2 : (#pre); 1:by sim.
 
@@ -1118,7 +1123,7 @@ import InnerPKE.
 
 lemma mlkem_correct_kg mem _pkp _skp  : 
    equiv [Jkem.M(Jkem.Syscall).__indcpa_keypair ~ InnerPKE.kg_derand : 
-       Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
+       Glob.mem{1} = mem /\ to_uint spkp{1} = _pkp /\ to_uint sskp{1} = _skp /\ 
        randomnessp{1} = coins{2} /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
         ==> 
@@ -1128,11 +1133,11 @@ lemma mlkem_correct_kg mem _pkp _skp  :
          t = load_array1152 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1152)].
 proc*.
-transitivity {1} { AuxMLKEM.indcpa_keypair_jazz(pkp, skp, randomnessp);} 
-(={Glob.mem,pkp,skp,randomnessp} ==> ={Glob.mem,r}) 
+transitivity {1} { AuxMLKEM.indcpa_keypair_jazz(spkp, sskp, randomnessp);} 
+(={Glob.mem,spkp,sskp,randomnessp} ==> ={Glob.mem,r}) 
 (   Glob.mem{1} = mem /\
-    to_uint pkp{1} = _pkp /\
-    to_uint skp{1} = _skp /\
+    to_uint spkp{1} = _pkp /\
+    to_uint sskp{1} = _skp /\
     randomnessp{1} = coins{2}  /\
     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)
     ==> 
@@ -1212,8 +1217,8 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
                 ); last first.
 
 + while{1} (0<=i{1} <= _aux{1} /\ _aux{1} = 4 /\
-            to_uint pkp0{1} = _pkp + 3*384 + i{1} * 8 /\ 
-            to_uint skp0{1} = _skp /\ rho{2} = publicseed{1} /\
+            to_uint pkp{1} = _pkp + 3*384 + i{1} * 8 /\ 
+            to_uint skp{1} = _skp /\ rho{2} = publicseed{1} /\
             valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3) /\
             touches2 Glob.mem{1} mem _pkp (384 * 3 + 32) _skp (384 * 3) /\
                 sv{2} = load_array1152 Glob.mem{1} _skp /\
@@ -1269,11 +1274,11 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
   do split => //.
   + by rewrite to_uintD_small //=. 
   + rewrite /touches2 /= => a ab1 ab2. 
-    have ? := (touches1 (a - to_uint pkp{1}) _); 1: by smt().
-    by have ? := (touches0 (a - to_uint skp{1}) _); by smt().
+    have ? := (touches1 (a - to_uint spkp{1}) _); 1: by smt().
+    by have ? := (touches0 (a - to_uint sskp{1}) _); by smt().
   + rewrite /load_array1152 tP => k kb; rewrite !initiE //=. 
-    move : (touches1 (to_uint skp{1} - to_uint pkp{1} + k) _); 1: by smt().
-    by have -> ->: to_uint pkp{1} + (to_uint skp{1} - to_uint pkp{1} + k) = to_uint skp{1} + k by ring.
+    move : (touches1 (to_uint sskp{1} - to_uint spkp{1} + k) _); 1: by smt().
+    by have -> ->: to_uint spkp{1} + (to_uint sskp{1} - to_uint spkp{1} + k) = to_uint sskp{1} + k by ring.
   + by smt().
   
   move => * /=.

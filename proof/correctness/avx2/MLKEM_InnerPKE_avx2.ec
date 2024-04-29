@@ -117,7 +117,7 @@ qed.
 lemma sha3ll : islossless Jkem.M(Jkem.Syscall)._shake256_128_33.
 proof.
 proc.
-unroll for 12; wp; conseq => /=.
+unroll for 9; wp; conseq => /=.
 call keccakf1600_ll; auto.
 conseq => /=.
 unroll for ^while; auto.
@@ -1104,7 +1104,7 @@ conseq cbd2_ref_ll (cbd2_ref_h _bytes) => />. qed.
 equiv getnoise_split : 
   M(Syscall)._poly_getnoise ~ AuxMLKEMAvx2._poly_getnoise : ={arg} ==> ={res}.
 proc; wp; sp => />. 
-seq 2 0 : (srp{1}=rp{1} /\ ={buf,rp,seed,nonce} /\ extseed{1}=Array33.init (fun i => if i=32 then nonce{1} else seed{1}.[i]) ).
+seq 2 0 : ( ={buf,rp,seed,nonce} /\ extseed{1}=Array33.init (fun i => if i=32 then nonce{1} else seed{1}.[i]) ).
 wp. while{1} (0 <= k{1} <= 32 /\ (forall i, 0 <= i < k{1} => extseed{1}.[i]=seed{1}.[i])) (32-k{1}).
 auto => /> &m H1 H2 H3 H4. split. split. smt(). move => i Hi1 Hi2. rewrite get_setE 1:/#. smt(). smt().
 auto => /> &m. split. move => i Hi1 Hi2. rewrite !get_out /#. move => extseed k. split. smt(). move => H1 H2 H3 H4. rewrite tP => i Hi. rewrite !initiE 1:/# => />. rewrite get_setE 1:/#. smt().
@@ -1177,7 +1177,7 @@ have H : forall &m a,
   by byequiv get_noise_sample_noise => //.
 have HH0 : hoare [Jkem.M(Jkem.Syscall)._poly_getnoise : true ==> forall k, 0<=k<256 => -5 < to_sint res.[k] < 5].
 + hoare; bypr => //= &m; rewrite Pr[mu_not].
-  have -> : Pr[Jkem.M(Jkem.Syscall)._poly_getnoise(rp{m}, seed{m}, nonce{m}) @ &m : true] = 1%r.
+  have -> : Pr[Jkem.M(Jkem.Syscall)._poly_getnoise(rp{m}, s_seed{m}, nonce{m}) @ &m : true] = 1%r.
   + by byphoare => //; apply polygetnoise_ll.
   smt().
 have HHH : equiv [ Jkem.M(Jkem.Syscall)._poly_getnoise ~Jkem.M(Jkem.Syscall)._poly_getnoise : ={arg} ==> ={res} ] by sim.
@@ -1217,7 +1217,7 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);}
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt(); 
    last by call(mlkem_correct_kg mem _pkp _skp); auto => />. 
 
-inline{1} 1; inline {2} 1; sim 40 60. 
+inline{1} 1; inline {2} 1. sim 40 62. 
 
 call (polyvec_tobytes_equiv _pkp).
 call (polyvec_tobytes_equiv _skp).
@@ -1233,6 +1233,7 @@ sp 3 3.
 seq 15 17  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}); 1: by
  sp; conseq />; sim 2 2; call( sha3equiv); conseq />; sim. 
 
+sp 0 2.
 seq 2 2 : (#pre /\ aa{1} = nttunpackm a{2} /\
            pos_bound2304_cxq aa{1} 0 2304 2 /\
            pos_bound2304_cxq a{2} 0 2304 2); 1: by 
@@ -1247,9 +1248,10 @@ seq 10 18 : (#pre  /\
     signed_bound768_cxq e{2} 0 768 1). 
 + conseq />.
   transitivity {1} { (skpv,e) <@ GetNoiseAVX2.sample_noise_kg(skpv,pkpv,e,noiseseed);} (={noiseseed,skpv,pkpv,e} ==> ={skpv,e}) 
-   (
-   ((pkp0{2} = pkp{2} /\
-    skp0{2} = skp{2} /\
+   ((r_noiseseed{2} = noiseseed{2} /\
+   s_noiseseed{2} = r_noiseseed{2} /\
+   (spkp{2} = pkp{2} /\
+    sskp{2} = skp{2} /\
     randomnessp0{2} = randomnessp{2} /\
     pkp0{1} = pkp{1} /\
     skp0{1} = skp{1} /\
@@ -1257,10 +1259,10 @@ seq 10 18 : (#pre  /\
     ={Glob.mem, pkp, skp, randomnessp} /\
     Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
-    to_uint skp{1} = _skp /\
-     valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)) /\
-   ={publicseed, noiseseed, skpv, pkpv, e}) /\
+    to_uint skp{1} = _skp /\ ={randomnessp} /\ valid_disj_reg _pkp (384 * 3 + 32) _skp (384 * 3)) /\
+   ={publicseed, noiseseed, e, skpv, pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}) /\
   aa{1} = nttunpackm a{2} /\ pos_bound2304_cxq aa{1} 0 2304 2 /\ pos_bound2304_cxq a{2} 0 2304 2
+
    ==> 
     ={skpv, e} /\
   signed_bound768_cxq skpv{1} 0 768 1 /\
