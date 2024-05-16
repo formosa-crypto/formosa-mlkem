@@ -16,6 +16,7 @@ require import MLKEM_avx2_equivs.
 require import Montgomery16.
 require import AVX2_Ops.
 
+require import MLKEM_genmatrix_avx2.
 
 import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Fq Correctness.
 
@@ -333,133 +334,21 @@ phoare nttunpack_corr a :
  [ Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a] = 1%r.
 conseq _nttunpack_ll (nttunpack_corr_h a) => />. qed.
 
-hoare matrix_bound_aux : 
-    AuxMLKEM.__gen_matrix : true ==> pos_bound2304_cxq res 0 2304 2.
-proc. seq 3 : true; 1: by auto.
-auto => /> &hr.
-rewrite /unlift_matrix /pos_bound2304_cxq => k kb.
-rewrite initiE 1:/# /=. rewrite /smod /=; smt(qE Zq.rg_asint).
-qed.
-
-hoare matrix_bound : 
-    M(Syscall).__gen_matrix : 0 <= to_uint transposed <2  ==> pos_bound2304_cxq res 0 2304 2.
-conseq auxgenmatrix_good matrix_bound_aux.
-move => /> &1 H H0; exists (seed{1}, to_uint transposed{1} = 1) => /=.
-- rewrite W64.to_uint_eq.
-  by have [] -> : (to_uint transposed{1} = 0 \/ to_uint transposed{1} = 1) by smt().
-by smt().
-qed.
-
 equiv genmatrixequiv b :
  Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_avx2 ~ Jkem.M(Jkem.Syscall).__gen_matrix :
     arg{1}.`2 = arg{2}.`1 /\ arg{1}.`3= (W64.of_int (b2i b)) /\ arg{2}.`2 =  (W64.of_int (b2i b))  ==>
     res{1} = nttunpackm res{2} /\
     pos_bound2304_cxq res{1} 0 2304 2 /\
     pos_bound2304_cxq res{2} 0 2304 2.
-proc. 
-admitted. (* This should be proved by showing that this function is implementing
-             parse, as defined in crypto_specs/mlkem/properties/Correctness.ec.
-             We know Parse(XOF).sample implements this, and therefore also 
-             Jkem.M(Jkem.Syscall).__gen_matrix *)
-(*
-symmetry.
-have H : equiv [
- Jkem.M(Jkem.Syscall).__gen_matrix ~ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix  :
-   ={arg} ==> res{2} = nttunpackm res{1}].
-proc. seq 11 11 : (={r}).
-sim (M(Syscall)._shake128_absorb34 ~ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb34  : true)
-    (M(Syscall)._shake128_squeezeblock ~ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeezeblock : true)
-     (Jkem_avx2.M(Jkem_avx2.Syscall).__rej_uniform ~ 
-     Jkem.M(Jkem.Syscall).__gen_matrix : true).
-apply shake128_equiv_absorb.
-apply shake128_equiv_squeezeblock.
-while {2} (0 <= i{2} <= 3 /\ 
-  (forall ki,
-      0 <= ki < i{2}*768 => r{2}.[ki] = 
-               (nttunpackm r{1}).[ki]) /\
-  (forall ki,
-      i{2}*768 <= ki < 3*768 => r{2}.[ki] = r{1}.[ki])) (3-i{2});
-last by auto => />; smt(Array2304.tP).
-move => &1 ?;wp.
-while (0 <= j <= 3 /\ 0<=i<3 /\
-  (forall ki,
-      0 <= ki < i*768 + j*256  => r.[ki] = 
-               (nttunpackm r{1}).[ki]) /\
-  (forall ki,
-      i*768 + j*256 <= ki < 3*768 => r.[ki] = r{1}.[ki])) (3 - j);
-last by auto => />; smt(Array2304.tP).
-move => ?; wp.
-exists* r, i, j; elim *=>  _r _i _j.
-call (nttunpack_corr (Array256.init (fun (i_0 : int) => _r.[_i * (3 * 256) + _j * 256 + i_0]))).
-auto => />???????. do split; 1,2:smt().
-+ move => ki kibl kibh; rewrite initiE 1:/# /=.
-  case (_i * 768 + _j * 256 <= ki && ki < _i * 768 + _j * 256 + 256);
-      last by smt().
-  move => *; rewrite initiE 1:/# /=.
-  case (0<= ki < 768).
-  + move => *; rewrite /nttunpackv  initiE 1:/# /=.
-    case (0<= ki < 256).
-    + move => *; rewrite /subarray256 /subarray768.
-      congr; last by smt().
-      congr; rewrite tP => k kb.
-      by rewrite !initiE 1,2:/# /= initiE /#.
-    case (256<= ki < 512).
-    + move => *; rewrite /subarray256 /subarray768.
-      congr; last by smt().
-      congr; rewrite tP => k kb.
-      by rewrite !initiE 1,2:/# /= initiE /#.
-    move => *; rewrite /subarray256 /subarray768.
-    congr; last by smt().
-    congr; rewrite tP => k kb.
-    by rewrite !initiE 1,2:/# /= initiE /#.
-  case (768<= ki < 1536).
-  + move => /= *; rewrite /nttunpackv  initiE 1:/# /=.
-    case (0<= ki -768 < 256).
-    + move => *; rewrite /subarray256 /subarray768.
-      congr; last by smt().
-      congr; rewrite tP => k kb.
-      by rewrite !initiE 1,2:/# /= initiE /#.
-    case (256<= ki - 768 < 512).
-    + move => *; rewrite /subarray256 /subarray768.
-      congr; last by smt().
-      congr; rewrite tP => k kb.
-      by rewrite !initiE 1,2:/# /= initiE /#.
-    move => *; rewrite /subarray256 /subarray768.
-    congr; last by smt().
-    congr; rewrite tP => k kb.
-    by rewrite !initiE 1,2:/# /= initiE /#.
-  + move => /= *; rewrite /nttunpackv  initiE 1:/# /=.
-    case (0<= ki -1536 < 256).
-    + move => *; rewrite /subarray256 /subarray768.
-      congr; last by smt().
-      congr; rewrite tP => k kb.
-      by rewrite !initiE 1,2:/# /= initiE /#.
-    case (256<= ki - 1536 < 512).
-    + move => *; rewrite /subarray256 /subarray768.
-      congr; last by smt().
-      congr; rewrite tP => k kb.
-      by rewrite !initiE 1,2:/# /= initiE /#.
-    move => *; rewrite /subarray256 /subarray768.
-    congr; last by smt().
-    congr; rewrite tP => k kb.
-    by rewrite !initiE 1,2:/# /= initiE /#.
-+ by smt(Array768.initiE Array2304.initiE).
-by smt().
-conseq (: _ ==> res{2} = nttunpackm res{1} /\ pos_bound2304_cxq res{1} 0 2304 2). 
-+ move => [#] &1 &2  H1 r1 r2 [-> H5]; do split => //.
-  rewrite /pos_bound2304_cxq /nttunpackm => k kb.
-  rewrite initiE 1:/# /=.
-  case (0<=k<768); 1: by
-   move => ?;  
-    move : (nttunpackv_pred (subarray768 r1 0) (fun a => W16extra.bpos16 a (2*q))); rewrite !allP /=; smt(Array768.initiE).
-  case (768<=k<1536); 1: by
-   move => ?;  
-    move : (nttunpackv_pred (subarray768 r1 1) (fun a => W16extra.bpos16 a (2*q))); rewrite !allP /=; smt(Array768.initiE).
-   move => ?;  
-    move : (nttunpackv_pred (subarray768 r1 2) (fun a => W16extra.bpos16 a (2*q))); rewrite !allP /=; smt(Array768.initiE).
-conseq H matrix_bound => //=. smt(@W64). 
+proc* => /=. 
+transitivity {2} { r <@ AuxMLKEM.__gen_matrix(seed,b); }
+     ( rho{1} = seed{2} /\ transposed{1} = (of_int (b2i b))%W64 /\ transposed{2} = (of_int (b2i b))%W64 ==> r{1} = nttunpackm r{2} /\ pos_bound2304_cxq r{1} 0 2304 2 /\ pos_bound2304_cxq r{2} 0 2304 2 )
+     ( seed{1} = seed{2} /\ transposed{1} = (of_int (b2i b))%W64 /\ transposed{2} = (of_int (b2i b))%W64==> ={r});1,2:smt().
+    + call (genmatrixequiv_aux b); 1: by auto => />. 
+    by symmetry;call (auxgenmatrix_good);  auto => /> /#.  
 qed.
-*)
+
+
 lemma lift768_nttunpack (v : W16.t Array768.t):
   lift_array768 (nttunpackv v) = nttunpackv (lift_array768 v).
 rewrite /lift_array768 /nttunpackv tP => k kb.
