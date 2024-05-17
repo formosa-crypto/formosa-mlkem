@@ -124,9 +124,7 @@ case: (0 <= x) => [le0x|/ltrNge ltx0].
   rewrite modz_small // le0x /= gtr0_norm; [by apply/(ler_lt_trans _ _ _ _ lt1y)|].
   apply/(ltr_le_trans _ _ _ ltx_)/leq_div => //.
   by apply/ltzW/(ler_lt_trans _ _ _ _ lt1y).
-have ->/=: (y %/ 2 <= x %% y).
-+ smt.
-smt.
+by smt().
 qed.
 
 lemma smod_div x : smod (x * R) (R ^ 2) %/ R = smod x  R.
