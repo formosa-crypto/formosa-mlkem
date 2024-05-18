@@ -20,90 +20,6 @@ syntactic reasons in the following proof
 steps.
 ******************************************************)
 
-(* The spec defines the semantics of the operator.
-   We should use proc op here, but the code of this rejection
-   sampling routine is too complex for automatic inference.
-   We could also write this operator by hand and prove
-   the below axiom. However, this is unjustified hard work, as
-   we only use this operator to argue that, because it is
-   deterministic and stateless, we can move it around when
-   proving that the sampling of enc is computing the 
-   transposed of the matrix, as required. *)
-op parse : W64.t Array25.t -> poly * W64.t Array25.t.
-
-axiom parse_sem st : 
-  phoare [ Parse(XOF).sample : XOF.state = st ==> 
-     res = (parse st).`1 /\ XOF.state = (parse st).`2 ] = 1%r.
-
-(* We know it terminates, but we don't prove it. *)
-axiom Parser_ll  : islossless Parse(XOF).sample.
-
-module Hmodule = {
-    proc sampleA(sd : W8.t Array32.t) : polymat = { 
-     var i,j,c;
-     var a : polymat;
-     a <- witness;
-     i <- 0;
-     while (i < kvec) {
-        j <- 0;
-        while (j < kvec) {
-           XOF.init(sd,j,i);
-           (c,XOF.state) <- parse XOF.state;
-           a.[(i,j)] <- c;
-           j <- j + 1;
-        }
-        i <- i + 1;
-     }
-     return a;      
-    }
-
-    proc sampleAT(sd : W8.t Array32.t) : polymat = { 
-     var i,j,c;
-     var a : polymat;
-     a <- witness;
-     i <- 0;
-     while (i < kvec) {
-        j <- 0;
-        while (j < kvec) {
-           XOF.init(sd,i,j);
-           (c,XOF.state) <- parse XOF.state;
-           a.[(i,j)] <- c;
-           j <- j + 1;
-        }
-        i <- i + 1;
-     }
-     return a;      
-    }
-}.
-
-lemma KSamplerA_ll  : islossless Hmodule.sampleA.
-proc;while(0<=i<=kvec) (kvec - i) => *; last by auto => /#.
-move => *;wp;while(0<=i<kvec && 0<=j<=kvec) (kvec - j) => *; last by auto => /#.
-by move => *;inline *;auto => /> /#.
-qed.
-
-lemma KSamplerAT_ll : islossless Hmodule.sampleAT.
-proc;while(0<=i<=kvec) (kvec - i) => *; last by auto => /#.
-move => *;wp;while(0<=i<kvec && 0<=j<=kvec) (kvec - j) => *; last by auto => /#.
-by move => *;inline *;auto => /> /#.
-qed.
-
-import KMatrix.Matrix.
-equiv H_sem_equiv : 
- Hmodule.sampleAT  ~ Hmodule.sampleA : ={arg} ==> res{1} = trmx res{2}.
-proof. 
-proc. 
-inline XOF.init.
-unroll for {1} 3;unroll for {2} 3.
-unroll for {1} 10; unroll for {2} 10.
-unroll for {1} 7; unroll for {2} 7.
-unroll for {1} 4; unroll for {2} 4.
-auto => /> &2. 
-apply eq_matrixP => i j rng.
-have rnji := mrangeL _ _ rng.
-have rnjj := mrangeR _ _ rng.
-by rewrite trmxE !setmE /= !offunmE //= !offunmK /mclamp rng /= /#. 
-qed.
 
 (* Distributions that we need for reasoning about PRGs, PRFs and ROs *)
 abbrev srand = darray32 W8.dword.
@@ -314,11 +230,15 @@ module MLKEM_PRGs = {
 
 }.
 
-op H : W8.t Array32.t -> polymat.
+op H(rho : W8.t Array32.t) : polymat = invnttm (sampleA rho).
 
 (* This fixes the definition of H in terms of the MLKEM spec *)
-axiom H_sem _seed :
+lemma H_sem _seed :
     phoare [ Hmodule.sampleA : sd = _seed ==> res = nttm (H _seed) ] = 1%r.
+proof. 
+proc*; call (sampleA_sem _seed).
+by auto => />; rewrite /H nttmK.
+qed.
 
 op prg_kg_inner(coins :  W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec =
    ((G_coins coins).`1, 
@@ -361,6 +281,7 @@ by auto => />; rewrite /prg_enc_inner /= !KMatrix.Vector.eq_vectorP; do split;1,
      !KMatrix.Vector.offunvK /vclamp /= /kvec /= /#.
 qed.
 
+import KMatrix.
 lemma H_T_sem _seed :
     phoare [ Hmodule.sampleAT : sd = _seed ==> res = nttm (trmx (H _seed)) ] = 1%r.
 conseq (H_sem_equiv)  (H_sem _seed); 1: smt().
@@ -525,8 +446,13 @@ sp;wp;conseq  (: rho{1} = rho{2} /\
              a2{1} = a{2}); 1: by auto => />; by smt(eq_vectorP).
 while (#post /\ sd{1} = rho{1} /\ i2{1} = i{2} /\ 0<=i2{1}<=kvec); last by auto => /> /#.
 wp;while (#post /\ j1{1} = j{2} /\ 0<=j1{1}<=kvec); 
-     last by auto => /> /#.
-wp;ecall{2} (parse_sem XOF.state{2}). 
+     last by auto => /> /#. 
+inline {2} 1;sp 0 4.
+exists * rho{2}, (W8.of_int i{2}), (W8.of_int j{2}).
+         elim * => _rho _i _j.
+  pose _st := (SHAKE128_ABSORB_34 _rho _j _i).
+have parsesem := parse_sem _st _rho _j _i _;1: smt().
+wp;call{2} parsesem. 
 by inline *; auto => /> /#.
 qed.
 
@@ -574,8 +500,13 @@ while (#post /\ sd{1} = rho{2} /\  i1{1} = i{2} /\ r{1} = coins{2} /\ 0<=i1{1}<=
 
 wp;while (#post /\ i1{1} = i{2} /\ j0{1} = j{2} /\ 0<=j0{1}<=kvec); 
      last by auto => /> /#.
-wp;ecall{2} (parse_sem XOF.state{2}). 
-by inline *; auto => />  /#.
+inline {2} 1;sp 0 4.
+exists * rho{2}, (W8.of_int i{2}), (W8.of_int j{2}).
+         elim * => _rho _i _j.
+  pose _st := (SHAKE128_ABSORB_34 _rho _i _j).
+have parsesem := parse_sem _st _rho _i _j _;1: smt().
+wp;call{2} parsesem. 
+by inline *; auto => /> /#.
 qed.
 
 lemma dec_sampler_dec :
