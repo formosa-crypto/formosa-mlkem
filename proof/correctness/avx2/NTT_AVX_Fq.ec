@@ -335,10 +335,13 @@ rewrite !Hrec => />; 1..3: by smt(). clear Hrec.
 case (0 <= i) => />Hi1; last smt().
 case (i < n * len * 2) => />Hi2; first smt().
 case (i < n * (len*2)+len) => /> Hi3. 
- rewrite (_:i %/ len = n*2) 2:/#.
- by rewrite divz_eqP // /#.
+ rewrite (_:i %/ len = n*2);1:  by rewrite divz_eqP // /#.
+ rewrite ifT 1:/# ifF 1:/# ifT 1:/#.
+ by case(n * 2 %% 2 = 0);smt().
 case (i < n * (len * 2) + len + len) => />Hi4; last smt().
-by rewrite (_:i%/len = n*2+1) => /> /#.
+rewrite (_:i%/len = n*2+1) => />;1:smt().
+ rewrite ifT 1:/# ifF 1:/# ifT 1:/#.
+ by case(n * 2 %% 2 = 0);smt().
 qed.
 
 (* simpler definition that greatly speeds up proofs below *)
