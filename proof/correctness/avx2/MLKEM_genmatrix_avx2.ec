@@ -78,10 +78,29 @@ phoare nttunpack_corr a :
  [ Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a] = 1%r.
 admitted. (* proved in indcpa *)
 
+timeout 1.
+
+lemma sampleA_pos r c _sd b:
+  0 <= r < 3 =>
+  0 <= c < 3 =>
+  subarray256
+    (subarray768
+       (unlift_matrix (if b then sampleA _sd else sampleA _sd)) r) c = 
+     unlift_poly ((if b then sampleA _sd else sampleA _sd).[r,c])%PolyMat.
+admitted.
+
 phoare sample_last _rho :
  [ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial :
    rho = _rho /\ rc = W16.of_int (2*256+2) ==> 
    res.`1 = subarray256 (subarray768 (unlift_matrix (sampleA _rho)) 2) 2 ] = 1%r.
+have -> : subarray256 (subarray768 (unlift_matrix (sampleA _rho)) 2) 2 = unlift_poly (parse (SHAKE128_ABSORB_34 _rho ((of_int 2))%W8 ((W8.of_int 2)))).`1.
++  have //=  -> := sampleA_pos 2 2 _rho false _ _ => //.
+   by rewrite /sampleA /=;congr; rewrite setmE getmE /= offunmE /#. 
+proc => /=.
+do 3!(unroll ^while).
+rcondt ^if;1: by wp;call(:true) => //.
+rcondt ^if;1: by do 3!(wp;call(:true) => //). 
+rcondt ^if;1: by do 5!(wp;call(:true) => //). 
 admitted.
 
 op subarray1024 ['a] (x : 'a Array2304.t) (i : int) : 'a Array1024.t = 
@@ -95,7 +114,6 @@ lemma sample_four _sd _rc b :
    res.`1 = subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) (_rc %% 3) ] = 1%r.
 admitted.
 
-timeout 1.
 phoare _gen_matrix_avx2_sem _sd b :
  [  Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_avx2 : arg.`2 = _sd /\ arg.`3 = W64.of_int (b2i b)
                                          ==> res = if b 
