@@ -15,17 +15,18 @@ let
     ideSupport = false;
     coqPackages = { coq = null; flocq = null; };
   };
-  ecVersion = "a8274feb63b62d281db350cd6dd8940c69aca835";
-  ec = (easycrypt.overrideAttrs (_: {
+  ecVersion = "0df85113c4a399990f3f8ed93db5047a8844f8a9";
+  ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "EasyCrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-Rbs3alnnnDPbKrAqPq1pj/kedHWC+PvPFES4d+V8EAk=";
+      hash = "sha256-+3qI/Z9EpQXe75yHfkqt/N0Uwb+iN8ziTYg4Z4yBaSk=";
     };
     postPatch = ''
       substituteInPlace dune-project --replace '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
     '';
+    buildInputs = o.buildInputs ++ [ oc.dune-site ];
   })).override {
     ocamlPackages = oc;
     why3 = why;
