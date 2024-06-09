@@ -293,7 +293,19 @@ case (trans{1});last first.
    inline XOF.init; sp;wp. 
    exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
    call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
-   by auto => />;smt(setmE getmE offunmE tofunmK).
+   auto => /> &1 a1 ?????H H0?;do split;1,2: smt(). 
+   + move => kk jj ????.  
+     move : H H0;rewrite !setmE !getmE /= => H H0.
+     rewrite !offunmE /=; 1,2:smt().
+     case (kk = i{1} /\ jj = j{1}); 1: by smt().
+     move => ?;case (kk < i{1});
+      1: by move => ?;move : (H kk jj _ _);  smt().
+     move => ?;move : (H0 jj _); smt().
+   + move => kk ??.  
+     move : H H0;rewrite !setmE !getmE /= => H H0.
+     rewrite !offunmE /=; 1,2:smt().
+     case (kk = j{1}); 1: by smt().
+     by move => ?;move : (H0 kk _); smt().
 rcondt{1} 1; 1: by auto.
 inline {1} 1;wp. 
 conseq (: _ ==> ={a}) => //.  
@@ -308,7 +320,19 @@ while (0<=i{1}<kvec /\ 0<=j{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i,j} /\ tran
  inline XOF.init; sp;wp. 
  exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
  call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
- by auto => />;smt(setmE getmE offunmE tofunmK).
+   auto => /> &1 a1 ?????H H0?;do split;1,2: smt(). 
+   + move => kk jj ????.  
+     move : H H0;rewrite !setmE !getmE /= => H H0.
+     rewrite !offunmE /=; 1,2:smt().
+     case (kk = i{1} /\ jj = j{1}); 1: by smt().
+     move => ?;case (kk < i{1});
+      1: by move => ?;move : (H kk jj _ _);  smt().
+     move => ?;move : (H0 jj _); smt().
+   + move => kk ??.  
+     move : H H0;rewrite !setmE !getmE /= => H H0.
+     rewrite !offunmE /=; 1,2:smt().
+     case (kk = j{1}); 1: by smt().
+     by move => ?;move : (H0 kk _); smt().
 qed.
 
 phoare Hmodule_low_sem _sd b :
