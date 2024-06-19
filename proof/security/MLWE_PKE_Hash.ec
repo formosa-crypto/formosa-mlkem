@@ -1105,7 +1105,7 @@ have : `|Pr[TT.PKE.CPA(MLWE_PKE_HASH, OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2
          Pr[MLWE_H(B2(OWvsIND.Bowl(TT.AdvOWL_query(BUUOWMod(B1x2(A)))))).main(true, true) @ &m : res]| +   prg_kg_bound + prg_enc_bound by smt().
 clear Htemp kb7 eb7 => kb7.
 
-by smt(ge0_qHU ge0_qHT). 
+by smt(ge0_qHU ge0_qHT).
 qed.
 
 

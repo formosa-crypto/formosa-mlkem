@@ -6477,14 +6477,14 @@ module M(SC:Syscall_t) = {
     }
     ms <- update_msf (! condition_loop) ms;
     condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
-    (((3 * 168) - 24) + 1), counter, (256 + 1));
+    (((3 * 168) - 24) + 1), counter, 256);
     while (condition_loop) {
       ms <- update_msf condition_loop ms;
       (pol, counter, ms) <@ __gen_matrix_buf_rejection_filter24 (pol,
       counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
       buf_offset <- (buf_offset + (W64.of_int 24));
       condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
-      (((3 * 168) - 24) + 1), counter, (256 + 1));
+      (((3 * 168) - 24) + 1), counter, 256);
     }
     return (pol, counter);
   }

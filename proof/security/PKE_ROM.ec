@@ -339,15 +339,19 @@ lemma boundl l MAX :
   0 <= MAX =>
   mu dplaintext (fun (x : plaintext) => size l <= MAX /\ x \in l) <= MAX%r * eps_msg.
 proof. 
-case (!size l <= MAX) => *. 
+case: (! size l <= MAX) => *. 
 + by have -> : (fun (x : plaintext) => size l <= MAX /\ (x \in l)) = pred0;
-     rewrite ?mu0 /=;smt(MFinT.card_gt0).  
+     rewrite ?mu0 /=; smt(MFinT.card_gt0).  
 have := Mu_mem.mu_mem_le_size l dplaintext eps_msg _.
 + move => *; rewrite mu1_uni; 1: by smt(dplaintext_uni).  
   rewrite dplaintext_fu /= dplaintext_ll /eps_msg MFinT.card_size_to_seq.
   by have -> : (support dplaintext) = predT; smt(dplaintext_fu is_fullP).
-by have : (fun (x : plaintext) => size l <= MAX /\ (x \in l)) = 
-          (mem l); smt(MFinT.card_gt0).
+move=> H.
+have ->: (fun (x : plaintext) => size l <= MAX /\ (x \in l)) = 
+         (mem l)
+ by smt(MFinT.card_gt0).
+apply (StdOrder.RealOrder.ler_trans _ _ _ H).
+by rewrite StdOrder.RealOrder.ler_pmul2r; smt(MFinT.card_gt0). 
 qed.
 
 pred bad(gB : glob Bowl) = (gB.`2 \in gB.`1 = gB.`3 \in gB.`1).

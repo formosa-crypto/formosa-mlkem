@@ -349,50 +349,545 @@ qed.
 
 op unlift_polyu(a : poly) = Array256.init (fun i => W16.of_int (Zq.asint a.[i])).
 
-lemma sampleA_pos r c _sd b:
-  0 <= r < 3 =>
-  0 <= c < 3 =>
-  subarray256
-    (subarray768
-       (unlift_matrix (if b then sampleA _sd else sampleA _sd)) r) c = 
-     unlift_polyu ((if b then sampleA _sd else sampleA _sd).[r,c])%PolyMat.
-move => rb cb.
-rewrite /subarray256 /unlift_poly tP => k kb.
-rewrite !Array256.initiE 1,2:/# /= /subarray768 Array768.initiE 1:/# /=.
-rewrite /unlift_matrix Array2304.initiE 1:/# /= getmE /=.
+lemma getm_setE (m:polymat) a b x i j:
+ mrange i j =>
+ (m.[a, b <- x].[i,j])%KMatrix.Matrix
+ = if a=i /\ b=j then x else (m.[i,j])%KMatrix.Matrix.
+proof.
+by move=> H; rewrite setmE offunmE //= /#.
+qed.
+
+lemma unlift_polyu_getm (A: polymat) i j:
+ 0 <= i < 3 =>
+ 0 <= j < 3 =>
+ unlift_polyu A.[(i,j)]%PolyMat
+ = subarray256 (subarray768 (unlift_matrix A) i) j.
+proof.
+move=> Hi Hj.
+apply Array256.ext_eq => k Hk.
+rewrite initiE 1:/# initiE 1:/# /=.
+rewrite initiE 1:/# /=.
+rewrite initiE 1:/# /=.
+congr; congr; congr; last smt().
+rewrite -getmE; congr.
 smt().
+qed.
+
+import Array68.
+require import JWordList EclibExtra.
+
+abbrev bufl (buf: W64.t Array68.t) =
+ w64L_to_bytes (to_list buf).
+
+op buf_subl (buf: W64.t Array68.t) (first last: int): W8.t list =
+ take (last-first) (drop first (bufl buf)).
+
+lemma buf_subl_cat buf (o k n:int):
+ 0 <= o <= k <= n =>
+ buf_subl buf o  k ++ buf_subl buf k n = buf_subl buf o n.
+proof.
+move=> H; rewrite /buf_subl /=.
+rewrite -(cat_take_drop (k-o) (take (n-o) _)).
+rewrite take_take ifT 1:/#; congr.
+rewrite drop_take 1:/#; congr; first smt().
+by rewrite drop_drop /#.
+qed.
+
+lemma buf_subl_sub buf o k n l:
+ 0 <= o <= k <= n =>
+ buf_subl buf o n = l =>
+ buf_subl buf o k = take (k-o) l.
+proof.
+move=> H; rewrite /buf_subl => <-.
+by rewrite take_take ifT 1:/#.
+qed.
+
+require import Keccak1600_Spec.
+
+op stmatch_avx2 (st: FIPS202_Keccakf1600.state) (stavx2: W256.t Array7.Array7.t): bool.
+
+require import Array7.
+op stavx2bytes (stavx2: W256.t Array7.t): W8.t list.
+
+hoare stavx2_unpack_at_h _st _buf _at:
+ Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_unpack_at
+ : state = _st
+   /\ buf = _buf
+   /\ offset = _at
+   ==>
+   buf_subl res 0 (8*to_uint _at+200)
+   = buf_subl _buf 0 (8*to_uint _at) ++ stavx2bytes _st.
+proc.
+admitted.
+
+lemma stavx2_unpack_at_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_unpack_at.
+proof. by islossless. qed.
+
+phoare stavx2_unpack_at_ph _st _buf _at:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_unpack_at
+   : state = _st
+     /\ buf = _buf
+     /\ offset = _at
+     ==>
+     buf_subl res 0 (8*to_uint _at+200)
+     = buf_subl _buf 0 (8*to_uint _at) ++ stavx2bytes _st
+ ] = 1%r.
+proof.
+by conseq stavx2_unpack_at_ll (stavx2_unpack_at_h _st _buf _at).
+qed.
+
+hoare xof_init_avx2_h _rho _rc:
+ Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2
+ : rho = _rho /\ index = _rc
+   ==>
+   stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _rc)) res.
+proof.
+proc; simplify.
+admitted.
+
+lemma xof_init_avx2_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2.
+proof.
+islossless.
+while (true) (7-i).
+ by move=> z; auto => /> /#.
+by auto => /> /#.
+qed.
+
+phoare xof_init_avx2 _rho _rc:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2
+   : rho = _rho /\ index = _rc
+     ==>
+     stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _rc)) res
+ ] = 1%r.
+proof. by conseq xof_init_avx2_ll (xof_init_avx2_h _rho _rc). qed.
+
+hoare comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2:
+ Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
+ : arg = (_a,_i1,_b,_i2)
+   /\ _i1 %% W64.modulus = _i1 /\ _i2 %% W64.modulus = _i2
+   ==>
+   res = (to_uint _a < _i1 && to_uint _b < _i2).
+proof.
+proc; auto => />  E1 E2.
+rewrite /_uLT /CMP_64 /_NEQ /_EQ /TEST_8.
+rewrite /rflags_of_bwop /rflags_of_aluop /SETcc /ZF_of /=.
+case: (to_uint _a < _i1) => C1.
+ case: (to_uint _b < _i2) => C2.
+  rewrite !to_uintD !to_uintN !of_uintK.
+  by rewrite ifT 1:/# ifT 1:/# /= to_uint_eq /=.
+ rewrite -lezNgt in C2.
+ rewrite (W64.to_uintB _b).
+  by rewrite /(\ule)  of_uintK E2.
+ rewrite !to_uintD !to_uintN !of_uintK.
+ by rewrite ifT 1:/# /=.
+rewrite -lezNgt in C1.
+rewrite (W64.to_uintB _a) //=.
+by rewrite /(\ule)  of_uintK E1.
+qed.
+
+lemma comp_u64_l_int_and_u64_l_int_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int.
+proof. by islossless. qed.
+
+phoare comp_u64_l_int_and_u64_l_int_ph _a _i1 _b _i2:
+ [Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
+  : arg = (_a,_i1,_b,_i2)
+    /\ _i1 %% W64.modulus = _i1 /\ _i2 %% W64.modulus = _i2
+    ==>
+    res = (to_uint _a < _i1 /\ to_uint _b < _i2)
+ ] = 1%r.
+proof.
+conseq comp_u64_l_int_and_u64_l_int_ll (comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2).
+smt().
+qed.
+
+hoare conditionloop_h _a _i1 _b _i2:
+ Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
+  : arg = (_a,_i1+1,_b,_i2)
+    /\ (_i1+1) %% W64.modulus = _i1+1
+    /\ (_i2) %% W64.modulus = _i2
+    ==>
+    res = (to_uint _a <=_i1 /\ to_uint _b < _i2).
+proof.
+by conseq (comp_u64_l_int_and_u64_l_int_h _a (_i1+1) _b _i2) => /#.
+qed.
+
+phoare conditionloop_ph _a _i1 _b _i2:
+ [Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
+  : arg = (_a,_i1+1,_b,_i2)
+    /\ (_i1+1) %% W64.modulus = _i1+1
+    /\ _i2 %% W64.modulus = _i2
+    ==>
+    res = (to_uint _a <= _i1 /\ to_uint _b < _i2)
+ ] = 1%r.
+proof.
+by conseq comp_u64_l_int_and_u64_l_int_ll (conditionloop_h _a _i1 _b _i2).
+qed.
+
+op auxdata_ok (load_shuffle mask bounds ones: W256.t)
+              (sst:  W8.t Array2048.Array2048.t) : bool =
+ load_shuffle = W32u8.pack32 (to_list sample_load_shuffle)
+ /\ mask = sample_mask
+ /\ bounds = sample_q
+ /\ ones = sample_ones
+ /\ sst = sample_shuffle_table.
+
+hoare buf_rejection_filter48_h _pol _ctr _buf _buf_offset:
+ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+ : counter = _ctr
+   /\ to_uint _ctr <= 256-32
+   /\ pol = _pol
+   /\ buf = _buf
+   /\ buf_offset = _buf_offset
+   /\ auxdata_ok load_shuffle mask bounds ones sst
+   ==>
+   let l = rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint _buf_offset + 48))
+   in plist res.`1 (to_uint _ctr + size l)
+      = plist _pol (to_uint _ctr) ++ l
+      /\ res.`2 = W64.of_int (to_uint _ctr + size l).
+proof.
+admitted.
+
+lemma buf_rejection_filter48_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+ by islossless.
+
+phoare buf_rejection_filter48_ph _pol _ctr _buf _buf_offset:
+ [Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+ : counter = _ctr
+   /\ to_uint _ctr <= 256-32
+   /\ pol = _pol
+   /\ buf = _buf
+   /\ buf_offset = _buf_offset
+   /\ auxdata_ok load_shuffle mask bounds ones sst
+   ==>
+   let l = rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint _buf_offset + 48))
+   in plist res.`1 (to_uint _ctr + size l)
+      = plist _pol (to_uint _ctr) ++ l
+      /\ res.`2 = W64.of_int (to_uint _ctr + size l)] = 1%r.
+proof.
+by conseq buf_rejection_filter48_ll (buf_rejection_filter48_h _pol _ctr _buf _buf_offset).
+qed.
+
+hoare buf_rejection_filter24_h _pol _ctr _buf _buf_offset:
+ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ : counter = _ctr
+   /\ pol = _pol
+   /\ buf = _buf
+   /\ buf_offset = _buf_offset
+   /\ auxdata_ok load_shuffle mask bounds ones sst
+   ==>
+   let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint _buf_offset + 24)))
+   in plist res.`1 (to_uint _ctr + size l)
+      = plist _pol (to_uint _ctr) ++ l
+      /\ res.`2 = W64.of_int (to_uint _ctr + size l).
+proof.
+admitted.
+
+lemma buf_rejection_filter24_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ by islossless.
+
+phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
+ [Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ : counter = _ctr
+   /\ pol = _pol
+   /\ buf = _buf
+   /\ buf_offset = _buf_offset
+   /\ auxdata_ok load_shuffle mask bounds ones sst
+   ==>
+   let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint _buf_offset + 24)))
+   in plist res.`1 (to_uint _ctr + size l)
+      = plist _pol (to_uint _ctr) ++ l
+      /\ res.`2 = W64.of_int (to_uint _ctr + size l)] = 1%r.
+proof.
+by conseq buf_rejection_filter24_ll (buf_rejection_filter24_h _pol _ctr _buf _buf_offset).
+qed.
+
+hoare gen_matrix_buf_rejection_h _pol _ctr _buf _buf_offset:
+ Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_buf_rejection
+ : counter = _ctr
+   /\ pol = _pol
+   /\ buf = _buf
+   /\ buf_offset = _buf_offset
+   /\ 0 <= to_uint counter < 256
+   /\ (to_uint buf_offset = 0 \/ to_uint buf_offset = 2*168)
+   ==>
+   let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) 504))
+   in plist res.`1 (to_uint _ctr + size l)
+      = plist _pol (to_uint _ctr) ++ l
+      /\ res.`2 = W64.of_int (to_uint _ctr + size l).
+proof.
+proc; simplify.
+while ( buf=_buf /\
+        0 <= to_uint buf_offset <= 504 /\
+        0 <= to_uint counter <= 256 /\
+        auxdata_ok load_shuffle mask bounds ones sst /\
+        (plist pol (to_uint counter)
+         = plist _pol (to_uint _ctr)
+           ++ take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint buf_offset)))
+        ) /\
+        (condition_loop
+          <=> (to_uint counter < 256 
+               /\ to_uint buf_offset <= 504-24))).
+ ecall (conditionloop_h buf_offset (3 * 168 - 24) counter 256); simplify.
+ wp; ecall (buf_rejection_filter24_h pol counter buf buf_offset).
+ auto => &m /> Ho1 Ho2 Hctr1 Hctr2 H Hcond1 Hcond2 [p c' o'] /= />. 
+ rewrite !of_uintK => H1.
+ split.
+  rewrite to_uintD_small 1:/#.
+  by rewrite !of_uintK !modz_small //= /#.
+ split.
+  split => *; first smt(size_ge0).
+  admit (* size filter... *).
+ admit (* H *).
+ecall (conditionloop_h buf_offset (3 * 168 - 24) counter 256).
+wp.
+while ( buf=_buf /\
+        0 <= to_uint buf_offset <= 504 /\
+        0 <= to_uint counter <= 256 /\
+        auxdata_ok load_shuffle mask bounds ones sst /\
+         (plist pol (to_uint counter)
+         = plist _pol (to_uint _ctr)
+           ++ rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint buf_offset))
+        ) /\
+        (condition_loop
+          <=> (to_uint counter <= 256-32
+               /\ to_uint buf_offset <= 504-48))).
+ ecall (conditionloop_h buf_offset (3 * 168 - 48) counter (256-32+1)); simplify.
+ wp; ecall (buf_rejection_filter48_h pol counter buf buf_offset).
+ auto => &m /> Ho1 Ho2 Hctr1 Hctr2 H Hcond1 Hcond2  [p c' o'] /= />. 
+ rewrite !of_uintK. 
+ split.
+  rewrite to_uintD_small 1:/#.
+  by rewrite !of_uintK !modz_small //= /#.
+ split.
+  split => *; first smt(size_ge0).
+  admit (* size filter... *).
+ split; last smt().
+ admit (* H *).
+ecall (conditionloop_h buf_offset (3 * 168 - 48) counter (256-32+1)); simplify.
+auto => &m /> Hctr1 Hctr2 Hbo; split.
+ split; first smt().
+ split; first smt().
+ split.
+  admit (* get256... *).
+ split.
+  admit (* buf_subl0 *).
+ smt().
+move => buf_o cond ctr pol Hcond Hbo1 Hbo2 Hctr3 Hctr4 Hok H Hterm.
+split.
+ admit (*  *).
+move=> buf_o2 cond2 ctr2 pol2 HC2 Hbo3 Hbo4 Hctr5 Hctr6 HH HHterm.
+split.
+ admit.
+admit.
+qed.
+
+lemma gen_matrix_buf_rejection_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_buf_rejection.
+proof.
+proc.
+seq 11: (true) => //.
+ wp; while (condition_loop
+            <=> to_uint counter <= 256-32 
+                /\ to_uint buf_offset <= 504-48)
+           (504 - to_uint buf_offset).
+  move=> z.
+  exlim buf_offset => _buf_offset.
+  seq 2: (#{~condition_loop}pre /\ to_uint buf_offset <= 504 - 48) => //.
+    by call buf_rejection_filter48_ll; auto => />.
+   exlim counter => _counter.
+   call (conditionloop_ph (_buf_offset+W64.of_int 48) (3*168-48) _counter (256-32+1)); simplify.
+   auto => /> *.
+   by rewrite to_uintD_small ?of_uintK //= /#.
+  by hoare; inline*; auto => />.
+ exlim buf_offset => _buf_offset.
+ exlim counter => _counter.
+ call (conditionloop_ph (_buf_offset) (3*168-48) _counter (256-32+1)); simplify.
+ by auto => /> /#.
+while (condition_loop
+       <=> to_uint counter < 256 
+           /\ to_uint buf_offset <= 504-24)
+      (504 - to_uint buf_offset).
+ move=> z.
+ exlim buf_offset => _buf_offset.
+ seq 2: (#{~condition_loop}pre /\ to_uint buf_offset <= 504 - 24) => //.
+   by call buf_rejection_filter24_ll; auto => />.
+  exlim counter => _counter.
+  call (conditionloop_ph (_buf_offset+W64.of_int 24) (3*168-24) _counter 256); simplify.
+  auto => /> *.
+  by rewrite to_uintD_small ?of_uintK //= /#.
+ by hoare; inline*; auto => />.
+exlim buf_offset => _buf_offset.
+exlim counter => _counter.
+call (conditionloop_ph (_buf_offset) (3*168-24) _counter 256); simplify.
+inline*; auto => />. 
+by auto => /> * /#.
+qed.
+
+phoare gen_matrix_buf_rejection_ph _pol _ctr _buf _buf_offset:
+ [  Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_buf_rejection
+ : counter = _ctr
+   /\ pol = _pol
+   /\ buf = _buf
+   /\ buf_offset = _buf_offset
+   /\ 0 <= to_uint counter < 256
+   /\ (to_uint buf_offset = 0 \/ to_uint buf_offset = 2*168)
+   ==>
+   let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) 504))
+   in plist res.`1 (to_uint _ctr + size l)
+      = plist _pol (to_uint _ctr) ++ l
+      /\ res.`2 = W64.of_int (to_uint _ctr + size l)
+ ] = 1%r.
+proof.
+by conseq gen_matrix_buf_rejection_ll (gen_matrix_buf_rejection_h _pol _ctr _buf _buf_offset).
+qed.
+
+equiv parse_one_polynomial_eq:
+ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial
+ ~  ParseFilter.sample
+ : ={rho} /\ W2u8.to_list rc{1} = [j{2}; i{2}]
+   ==>
+   res{1}.`1 = unlift_polyu res{2}.
+proof.
+transitivity ParseFilter.sample3buf
+ (={rho} /\ W2u8.to_list rc{1} = [ji{2}.`1; ji{2}.`2]
+   ==>
+   res{1}.`1 = unlift_polyu res{2})
+ ((rho,(j,i)){2}=arg{1} ==> ={res}); last first.
++ by symmetry; conseq sample_sample3buf.
++ move => /> &1 &2 -> *.
+  exists (rho{2},(rc{1}\bits8 0, rc{1}\bits8 1)).
+  smt().
++ by move=> />.
+proc; simplify.
+admit.
 qed.
 
 phoare sample_last _rho :
  [ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial :
    rho = _rho /\ rc = W16.of_int (2*256+2) ==> 
    res.`1 = subarray256 (subarray768 (unlift_matrix (sampleA _rho)) 2) 2 ] = 1%r.
-have -> : subarray256 (subarray768 (unlift_matrix (sampleA _rho)) 2) 2 = unlift_polyu (parse (SHAKE128_ABSORB_34 _rho ((of_int 2))%W8 ((W8.of_int 2)))).`1.
-+  have //=  -> := sampleA_pos 2 2 _rho false _ _ => //.
-   by rewrite /sampleA /=;congr; rewrite setmE getmE /= offunmE /#. 
-proc => /=.
-do 3!(unroll ^while).
-rcondt ^if;1: by wp;call(:true) => //.
-rcondt ^if;1: by do 3!(wp;call(:true) => //). 
-rcondt ^if;1: by do 5!(wp;call(:true) => //). 
-admitted.
+proof.
+conseq parse_one_polynomial_eq (sampleFilter_sem _rho (W8.of_int 2) (W8.of_int 2)).
+ move => /> &1 ->.
+ by exists (rho{1}, W8.of_int 2, W8.of_int 2).
+move=> /> &1 ->.
+rewrite -unlift_polyu_getm 1..2:/#.
+rewrite /sampleA /=; congr.
+by rewrite getmE getm_setE.
+qed.
+
+op pack4poly ['a] (ps: 'a Array256.t * 'a Array256.t * 'a Array256.t * 'a Array256.t) =
+ Array1024.of_list witness (to_list ps.`1 ++ to_list ps.`2 ++ to_list ps.`3 ++ to_list ps.`4).
+
+equiv parse_four_polynomials_eq:
+ Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_sample_four_polynomials
+ ~  ParseFilter.sample3buf_x4'
+ : ={rho} /\ to_uint mat_entry{1} = pos{2} /\ to_uint transposed{1} = b2i t{2}
+   ==>
+  res{1}.`1 = pack4poly (unlift_polyu res{2}.`1, unlift_polyu res{2}.`2, unlift_polyu res{2}.`3, unlift_polyu res{2}.`4).
+proof.
+transitivity ParseFilter.sample3buf_x4
+ (={rho} /\ to_uint mat_entry{1} = pos{2} /\ to_uint transposed{1} = b2i t{2}
+ ==> res{1}.`1 = pack4poly (unlift_polyu res{2}.`1, unlift_polyu res{2}.`2, unlift_polyu res{2}.`3, unlift_polyu res{2}.`4))
+ (={arg} ==> ={res}); last first.
++ by apply sampleX4_sample3buf_4x.
++ move=> /> &1 &2 -> *.
+  by exists (rho{2},pos{2},t{2}) => /#.
++ by move => />.
+proc; simplify.
+admit.
+qed.
 
 op subarray1024 ['a] (x : 'a Array2304.t) (i : int) : 'a Array1024.t = 
         Array1024.init (fun (k : int) => x.[1024 * i + k]).
+
+
+op mat4atPos (m: polymat) pos =
+ ( m.[idx_from_pos pos]
+ , m.[idx_from_pos (pos+1)]
+ , m.[idx_from_pos (pos+2)]
+ , m.[idx_from_pos (pos+3)])%KMatrix.Matrix.
+
+lemma sample3buf_4x_ph _rho _pos _t:
+ 0 <= _pos <= 3*3 - 4 =>
+ phoare [ ParseFilter.sample3buf_x4'
+        :  rho=_rho /\ pos = _pos /\ t = _t
+           ==>
+           res = mat4atPos (if _t then trmx (sampleA _rho) else sampleA _rho) _pos ]
+ = 1%r.
+proof.
+move=> Hpos.
+proc; simplify.
+call (sampleFilter_sem _rho (pos2ji (_pos+3) _t).`1 (pos2ji (_pos+3) _t).`2).
+wp; call (sampleFilter_sem _rho (pos2ji (_pos+2) _t).`1 (pos2ji (_pos+2) _t).`2).
+wp; call (sampleFilter_sem _rho (pos2ji (_pos+1) _t).`1 (pos2ji (_pos+1) _t).`2).
+wp; call (sampleFilter_sem _rho (pos2ji _pos _t).`1 (pos2ji _pos _t).`2).
+auto => />.
+rewrite /sampleA /mat4atPos /pos2ji /idx_from_pos /=.
+have: _pos \in iota_ 0 (9-3). rewrite -iotaredE /= /#.
+clear Hpos; move: _pos.
+apply/List.allP.
+case: _t => ?.
+ by rewrite -iotaredE /= !trmxE !getm_setE //=.
+by rewrite -iotaredE /= !getm_setE //=.
+qed.
+
+lemma pack4poly_subarray1024 (A: polymat) p:
+ 0 <= p < 2 =>
+ pack4poly ( unlift_polyu (mat4atPos A (4*p)).`1
+           , unlift_polyu (mat4atPos A (4*p)).`2
+           , unlift_polyu (mat4atPos A (4*p)).`3
+           , unlift_polyu (mat4atPos A (4*p)).`4
+           )
+ = subarray1024 (unlift_matrix A) p.
+proof.
+move=> Hp; apply Array1024.ext_eq => i Hi.
+rewrite initiE 1:/# initiE 1:/# /=.
+rewrite initiE 1:/# /=.
+rewrite -!catA nth_cat size_to_list /=.
+case: (i < 256) => Hi1.
+ rewrite initiE 1:/# /= /mat4atPos /=.
+ by congr; congr; congr; smt().
+rewrite nth_cat size_to_list /=.
+case: (i-256 < 256) => Hi2.
+ rewrite initiE 1:/# /= /mat4atPos /=.
+ by congr; congr; congr; smt().
+rewrite nth_cat size_to_list /=.
+case: (i-512 < 256) => Hi3.
+ rewrite initiE 1:/# /= /mat4atPos /=.
+ by congr; congr; congr; smt().
+rewrite initiE 1:/# /= /mat4atPos /=.
+by congr; congr; congr; smt().
+qed.
 
 lemma sample_four _sd _rc b :
  (_rc = 0 \/ _rc = 4) =>
  phoare
  [ Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_sample_four_polynomials :
    rho = _sd /\ mat_entry = W64.of_int _rc /\ transposed = W64.of_int (b2i b) ==> 
-   res.`1 = subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) (_rc %% 3) ] = 1%r.
-admitted.
+   res.`1 = subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) (_rc %/ 3) ] = 1%r.
+proof.
+move=> Hrc.
+conseq parse_four_polynomials_eq  (sample3buf_4x_ph _sd _rc b _).
++ move => &1 /> -> ->.
+  exists (rho{1},_rc,b) => /=.
+  by rewrite !of_uintK /#.
++ move=> /> &1 ->.
+  by rewrite -pack4poly_subarray1024 /#.
+smt().
+qed.
 
 phoare _gen_matrix_avx2_sem _sd b :
  [  Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_avx2 : arg.`2 = _sd /\ arg.`3 = W64.of_int (b2i b)
                                          ==> res = if b 
                                              then nttunpackm (unlift_matrix (trmx (sampleA _sd))) 
-                                             else nttunpackm (unlift_matrix (sampleA _sd)) ] = 1%r. 
+                                             else nttunpackm (unlift_matrix (sampleA _sd)) ] = 1%r.
+proof.
 proc => /=. 
 while (0<=i<=3 /\ rho = _sd /\ 
     ((forall kk, 0 <= kk < i => subarray768 matrix kk = nttunpackv (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) /\
