@@ -1068,7 +1068,11 @@ lemma wmuls16P n x y _x _y:
  Iu16_sb n x _x =>
  Iu16_sb n y _y =>
  sint32_bnd (-n*n*q*q) (n*n*q*q) (wmuls16 x y).
-proof. by move => [??] [??]; rewrite to_sint_wmuls16 /#. qed.
+proof.
+move=> [? [??]] [? [??]]; rewrite to_sint_wmuls16.
+have ->: (n * n * q * q) = (n * q) * (n * q) by ring.
+by rewrite &(ler_norml) normrM ler_pmul // 1,2:normr_ge0 /#.
+qed.
 
 phoare wmul_16u16_ph n _x _y:
   [Jkem_avx2.M(Jkem_avx2.Syscall).__wmul_16u16:
@@ -1506,7 +1510,7 @@ qed.
 
 (** Butterfly *)
 
-lemma nosmt REDCmul16coeff (x y: W16.t):
+lemma REDCmul16coeff (x y: W16.t):
  sint_bnd 0 (q-1) y =>
  incoeffW16 (Montgomery16.REDCmul16 x y)
  = incoeffW16 x * incoeffW16 y * incoeff Montgomery16.Rinv
