@@ -841,7 +841,7 @@ move: (noise_coef_avx2_aux bytes j) => /=.
 by rewrite /noise_coef C' to_sintE /smod to_uint_shr //= => <- /#.
 qed.
 
-lemma nosmt to_sint8_mod x:
+lemma to_sint8_mod x:
  W8.to_sint x %% W8.modulus = to_uint x.
 proof.
 rewrite /to_sint /smod.

@@ -164,7 +164,7 @@ op BREDC(a bits : int) =
 
 require import Barrett_mlkem_general.
 
-lemma nosmt BREDCp_corr a bits:
+lemma BREDCp_corr a bits:
    0 < 2 * q < R %/2 =>
    R < 2^bits =>
    2 ^ bits %/ q * q < 2 ^ bits =>
@@ -222,7 +222,7 @@ op SREDC (a: int) : int =
   let t = smod (a - u %/ R * q) (R^2)in
       smod (t %/ R %% (R^2)) R.
 
-lemma nosmt SREDCp_corr a:
+lemma SREDCp_corr a:
    0 < q < R %/2 =>
    -R %/ 2 * q <= a < R %/2 * q =>
    -q   <= SREDC a < q /\
@@ -353,7 +353,7 @@ op REDC' (T: int) : int =
  let m = ((T %% R)*_N') %% R
  in (T + m*_N) %/ R.
 
-lemma nosmt aux_divR T:
+lemma aux_divR T:
  let m = ((T %% R)*_N') %% R
  in (T + m*_N) %% R = 0.
 proof.
@@ -364,7 +364,7 @@ smt().
 qed.
 
 
-lemma nosmt REDC'_congr T:
+lemma REDC'_congr T:
  REDC' T %% _N = T * Rinv %% _N.
 proof.
 pose m := ((T %% R)*_N') %% R.
@@ -378,7 +378,7 @@ have t_modN: t %% _N = T*Rinv %% _N.
 by rewrite /REDC'.
 qed.
 
-lemma nosmt REDC'_bnds T n:
+lemma REDC'_bnds T n:
  0 <= n =>
  0 <= T < _N + _N * R^(n+1) =>
  0 <= REDC' T < _N + _N*R^n.
