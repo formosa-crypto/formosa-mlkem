@@ -10,7 +10,7 @@ env:
   OPAMROOT: /home/charlie/.opam
   OPAMYES: true
   OPAMJOBS: 2
-  ECRJOBS: 1
+  ECRJOBS: 2
 
 jobs:
   ec:
