@@ -1,0 +1,36 @@
+name: Hakyber on EasyCrypt/dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+env:
+  OPAMROOT: /home/charlie/.opam
+  OPAMYES: true
+  OPAMJOBS: 2
+  ECRJOBS: 1
+
+jobs:
+  ec:
+    name: Hakyber on EasyCrypt/dev
+    runs-on: ubuntu-20.04
+    container:
+      image: ghcr.io/easycrypt/ec-build-box
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Compile & Install EasyCrypt
+      run: |
+        opam pin --dev-repo add -n easycrypt https://github.com/EasyCrypt/easycrypt.git
+        opam install -v easycrypt
+    - name: Detect SMT provers
+      run: |
+        opam exec -- easycrypt why3config
+    - name: Compile Project
+      run: |
+        opam exec -- make checkec
