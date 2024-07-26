@@ -10,6 +10,7 @@ OS     := $(shell uname -s)
 default: run-tests run-speed
 
 # --
+
 TESTS_POLY := \
   test/test_poly_compress \
   test/test_poly_decompress \
@@ -50,7 +51,7 @@ test: $(TESTS)
 
 speed: test/speed_indcpa
 
-#-- 
+# -- 
 
 HEADERS := \
   params.h \
@@ -89,7 +90,7 @@ POLYVECHEADERS := \
 JASMIN_SOURCES := \
   jpoly.jazz \
   jpolyvec.jazz \
-  jfips203.jazz \
+  jfips202.jazz \
   jindcpa.jazz \
   jkem.jazz
 
@@ -106,7 +107,7 @@ $(JASMIN_ASSEMBLY):
 %.s: %.jazz
 	$(JASMINC) -nowarning -o $@ $(JFLAGS) $^ 
 
-#--
+# --
 
 compile-tests-poly: $(TESTS_POLY)
 $(TESTS_POLY):
@@ -121,11 +122,11 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(C_SOURCES) jpolyvec.s
 test/test_fips202: test/test_fips202.c $(HEADERS) $(C_SOURCES) jfips202.s
 	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) jfips202.s $<
 
-test/test_indcpa: test/test_indcpa.c $(HEADERS) $(C_SOURCES) jindcpa.o
-	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) jindcpa.o $<
+test/test_indcpa: test/test_indcpa.c $(HEADERS) $(C_SOURCES) jindcpa.s
+	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) jindcpa.s $<
 
-test/test_kem: test/test_kem.c $(HEADERS) $(C_SOURCES) $(RANDOMBYTES) jkem.o
-	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) $(RANDOMBYTES) jkem.o $<
+test/test_kem: test/test_kem.c $(HEADERS) $(C_SOURCES) $(RANDOMBYTES) jkem.s
+	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) $(RANDOMBYTES) jkem.s $<
 
 compile-tests: test
 
@@ -141,10 +142,10 @@ run-tests-polyvec: compile-tests-polyvec
 run-tests: compile-tests
 	for i in $(TESTS); do ./$$i; done
 
-#--
+# --
 
-test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(C_SOURCES) jindcpa.o
-	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) jindcpa.o $<
+test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(C_SOURCES) jindcpa.s
+	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) jindcpa.s $<
 
 compile-speed: test/speed_indcpa
 
@@ -153,7 +154,7 @@ run-speed: compile-speed
 
 # --
 
-.PHONY: check-ct
+.PHONY: check-constant-time
 
 check-constant-time:
 	$(JASMIN_CT) --infer jkem.jazz
@@ -163,9 +164,7 @@ check-constant-time:
 .PHONY: clean
 
 clean:
-	-rm -f *.s
-	-rm -f jindcpa.o
-	-rm -f jkem.o
+	-rm -f $(JASMIN_ASSEMBLY)
 	-rm -f $(TESTS_POLY)
 	-rm -f $(TESTS_POLYVEC)
 	-rm -f test/test_fips202

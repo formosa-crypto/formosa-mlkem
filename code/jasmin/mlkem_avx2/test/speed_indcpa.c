@@ -7,7 +7,7 @@
 #include "../ntt.h"
 #include "../indcpa.h"
 
-#define NRUNS 100
+#define NRUNS 10000
 
 static inline uint64_t cpucycles(void) {
   uint64_t result;
