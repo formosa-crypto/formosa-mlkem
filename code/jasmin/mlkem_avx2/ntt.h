@@ -8,7 +8,9 @@
 extern int16_t zetas[128];
 extern int16_t zetas_inv[128];
 
-void invntt(int16_t *poly);
+void ntt(int16_t r[256]);
+void invntt(int16_t r[256]);
+
 void basemul(int16_t r[2], const int16_t a[2], const int16_t b[2], int16_t zeta);
 
 #define ntt_avx MLKEM_NAMESPACE(ntt_avx)
@@ -38,8 +40,5 @@ void basemul_acc_avx(int16_t *r,
 void ntttobytes_avx(uint8_t *r, const int16_t *a, const uint16_t *qdata);
 #define nttfrombytes_avx MLKEM_NAMESPACE(nttfrombytes_avx)
 void nttfrombytes_avx(int16_t *r, const uint8_t *a, const uint16_t *qdata);
-
-
-void ntt(int16_t *poly);
 
 #endif
