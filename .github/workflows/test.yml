@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dir: [ 'ref']
+        dir: [ 'ref', 'avx2' ]
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25
