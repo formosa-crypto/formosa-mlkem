@@ -132,7 +132,7 @@ int main(void)
   { printf("OK: kem_dec_success\n"); }
 
   if(test_ok_kem_dec_failure == 1)
-  { printf("OK: kem_dec_failure (corrupting byte)\n"); }
+  { printf("OK: kem_dec_failure (it is the corrupting byte test)\n"); }
 
   return 0;
 }

@@ -157,7 +157,7 @@ run-tests-polyvec: compile-tests-polyvec
 	for i in $(TESTS_POLYVEC); do ./$$i; done
 
 run-tests: compile-tests
-	for i in $(TESTS); do ./$$i; done
+	@for i in $(TESTS); do ./$$i; done
 
 # --
 
