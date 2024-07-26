@@ -123,12 +123,12 @@ int main(void)
 
 
   // poly ///////////////////////////////////////////////////////////
-  // test get_noise_4x
+  // test get_noise
   for(i=0;i<NRUNS;i++)
   {
-    t[i] = poly_getnoise_4x_jazz(&ap, &ap, &ap, &ap, seed, 0);
+    t[i] = poly_getnoise_jazz(&ap, seed, 0);
   }
-  print_results_jasmin("poly_getnoise_4x: ", t, NRUNS);
+  print_results_jasmin("poly_getnoise: ", t, NRUNS);
 
   // test NTT
   for(i=0; i<NRUNS;i++)

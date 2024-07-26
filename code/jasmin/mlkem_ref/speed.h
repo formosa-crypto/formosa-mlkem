@@ -15,7 +15,7 @@ typedef struct{
 uint64_t gen_matrix_jazz(polyvec *a, unsigned char *seed);
 
 // Poly functions
-uint64_t poly_getnoise_4x_jazz(poly *r0, poly *r1, poly *r2, poly *r3,const unsigned char *seed, unsigned char nonce);
+uint64_t poly_getnoise_jazz(poly *r,const unsigned char *seed, unsigned char nonce);
 
 uint64_t poly_ntt_jazz(poly *r);
 uint64_t poly_invntt_jazz(poly *r);
