@@ -53,11 +53,11 @@ fn test_avx_derand() -> reg bool {
   pk, sk, ct, ss1, ss2, coins = setup(true);
 
   #[inline]
-  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2v_keypair_derand(pk, sk, coins);
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(pk, sk, coins);
   #[inline]
-  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2v_enc_derand(ct, ss1, pk, coins + 32);
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(ct, ss1, pk, coins + 32);
   #[inline]
-  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2v_dec(ss2, ct, sk);
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_dec(ss2, ct, sk);
 
   reg bool r;
   r = check(ss1, ss2);
@@ -85,11 +85,11 @@ fn test_avx() -> reg bool {
   pk, sk, ct, ss1, ss2, _ = setup(false);
 
   #[inline]
-  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2v_keypair(pk, sk);
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_keypair(pk, sk);
   #[inline]
-  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2v_enc(ct, ss1, pk);
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_enc(ct, ss1, pk);
   #[inline]
-  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2v_dec(ss2, ct, sk);
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_dec(ss2, ct, sk);
 
   reg bool r;
   r = check(ss1, ss2);

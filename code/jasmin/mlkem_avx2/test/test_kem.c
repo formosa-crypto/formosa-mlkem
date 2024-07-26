@@ -40,7 +40,7 @@ int main(void)
     assert(ri == 1);
 
     /* TEST KEYPAIR */
-    jade_kem_mlkem_mlkem768_amd64_avx2v_keypair_derand(pk1, sk1, randomness0);
+    jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(pk1, sk1, randomness0);
     crypto_kem_keypair(pk0, sk0, randomness0);
 
     for(int i=0;i<MLKEM_SECRETKEYBYTES;i++)
@@ -61,7 +61,7 @@ int main(void)
 
     /* TEST ENCAPSULATION */
     crypto_kem_enc(ct0, shk0, pk0, randomness1);
-    jade_kem_mlkem_mlkem768_amd64_avx2v_enc_derand(ct1, shk1, pk1, randomness1);
+    jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(ct1, shk1, pk1, randomness1);
 
     for(int i=0;i<MLKEM_CIPHERTEXTBYTES;i++)
     { if(ct0[i] != ct1[i])
@@ -84,7 +84,7 @@ int main(void)
     memset(shk1, 0, MLKEM_SSBYTES);
 
     crypto_kem_dec(shk0, ct0, sk0);
-    jade_kem_mlkem_mlkem768_amd64_avx2v_dec(shk1, ct1, sk1);
+    jade_kem_mlkem_mlkem768_amd64_avx2_dec(shk1, ct1, sk1);
 
     for(int i=0;i<MLKEM_SSBYTES;i++)
     { if(shk0[i] != shk1[i])
@@ -102,7 +102,7 @@ int main(void)
     ct1[0] = ct0[0];
 
     crypto_kem_dec(shk0, ct0, sk0);
-    jade_kem_mlkem_mlkem768_amd64_avx2v_dec(shk1, ct1, sk1);
+    jade_kem_mlkem_mlkem768_amd64_avx2_dec(shk1, ct1, sk1);
 
     for(int i=0;i<MLKEM_SSBYTES;i++)
     { if(shk0[i] != shk1[i])
