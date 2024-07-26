@@ -49,7 +49,7 @@ TESTS := \
 
 test: $(TESTS)
 
-speed: test/speed_indcpa test/speed_mlkem
+speed: test/speed_mlkem
 
 # --
 
@@ -161,16 +161,12 @@ run-tests: compile-tests
 
 # --
 
-test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(C_SOURCES) $(S_INC) jspeed.s
+test/speed_mlkem: test/speed_mlkem.c $(HEADERS) $(C_SOURCES) $(S_INC) $(RANDOMBYTES) jspeed.s
 	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) $(RANDOMBYTES) jspeed.s $<
 
-test/speed_mlkem: test/speed_mlkem.c $(HEADERS) $(C_SOURCES) $(S_INC) jspeed.s
-	$(CC) $(CFLAGS) -o $@ $(C_SOURCES) $(RANDOMBYTES) jspeed.s $<
-
-compile-speed: test/speed_indcpa test/speed_mlkem
+compile-speed: test/speed_mlkem
 
 run-speed: compile-speed
-	./test/speed_indcpa
 	./test/speed_mlkem
 
 # --
@@ -191,7 +187,6 @@ clean:
 	-rm -f test/test_fips202
 	-rm -f test/test_indcpa
 	-rm -f test/test_kem
-	-rm -f test/speed_indcpa
 	-rm -f test/speed_mlkem
 ifeq ($(OS),Darwin)
 	-rm -r -f test/*.dSYM

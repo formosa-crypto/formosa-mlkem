@@ -38,30 +38,27 @@ export fn gen_matrix_jazz(reg u64 ap seedp) -> reg u64
 
 // //////////////////////////////////////////////////////////////////
 
-export fn poly_getnoise_4x_jazz(reg u64 r0p r1p r2p r3p, reg u64 seedp, reg u8 nonce) -> reg u64
+export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce) -> reg u64
 {
   stack u32[2] start end;
   reg u64 t;
-  stack u16[MLKEM_N] r0 r1 r2 r3;
+  stack u16[MLKEM_N] r;
   stack u8[MLKEM_SYMBYTES] seed;
   reg u64 i;
 
-  () = #spill(r0p, r1p, r2p, r3p);
+  nonce = nonce;
+  () = #spill(rp);
   i=0; while(i < MLKEM_SYMBYTES){ seed[i] = (u8)[seedp + i]; i += 1; }
 
   start = tsc();
   
-  r0, r1, r2, r3 = _poly_getnoise_eta1_4x(r0, r1, r2, r3, seed, nonce);
+  r = _poly_getnoise(r, seed, nonce);
 
   end = tsc();
 
-  () = #unspill(r0p, r1p, r2p, r3p);
-
+  () = #unspill(rp);
   i=0; while(i < MLKEM_N)
-  { (u16)[r0p + 2*i] = r0[i];
-    (u16)[r1p + 2*i] = r1[i];
-    (u16)[r2p + 2*i] = r2[i];
-    (u16)[r3p + 2*i] = r3[i];
+  { (u16)[rp + 2*i] = r[i];
     i+= 1;
   }
 
@@ -230,7 +227,7 @@ export fn polyvec_pointwise_acc_jazz(reg u64 rp ap bp) -> reg u64
 
   start = tsc();
 
-  r = __polyvec_pointwise_acc(r, a, b);
+  r = __polyvec_pointwise_acc(a, b);
 
   end = tsc();
 
