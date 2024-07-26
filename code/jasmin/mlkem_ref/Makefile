@@ -97,9 +97,9 @@ JASMIN_ASSEMBLY := $(JASMIN_SOURCES:%.jazz=%.s)
 
 # --
 
-RANDOMBYTES := $(PROJECT_DIR)/jasmin/compiler/syscall/jasmin_syscall.o
+RANDOMBYTES := $(PROJECT_DIR)/ext/randombytes/jasmin_syscall.o
 
-$(RANDOMBYTES): $(PROJECT_DIR)/jasmin/compiler/syscall/jasmin_syscall.c $(PROJECT_DIR)/jasmin/compiler/syscall/jasmin_syscall.h
+$(RANDOMBYTES): $(PROJECT_DIR)/ext/randombytes/jasmin_syscall.c $(PROJECT_DIR)/ext/randombytes/jasmin_syscall.h
 	$(MAKE) -C $(@D)
 
 $(JASMIN_ASSEMBLY):
