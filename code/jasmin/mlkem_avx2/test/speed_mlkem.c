@@ -6,7 +6,7 @@
 #include "../params.h"
 #include "../speed.h"
 
-#define NRUNS 1000
+#define NRUNS 10000
 
 static inline uint64_t cpucycles(void) {
   uint64_t result;
