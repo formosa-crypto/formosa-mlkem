@@ -1,33 +1,41 @@
 #include <stdio.h>
+#include <assert.h>
 #include "../polyvec.h"
 #include "../ntt.h"
 
-void polyvec_setrandom(polyvec *r)
-{
-  FILE *urandom = fopen("/dev/urandom", "r");
-  for(int i=0;i<MLKEM_K;i++)
-    fread(r->vec[i].coeffs, sizeof(int16_t), MLKEM_N, urandom);
+#ifndef TEST_ITERATIONS
+#define TEST_ITERATIONS 10000
+#endif
 
-  polyvec_reduce(r);
-  fclose(urandom);
-}
+#include "test_polyvec_setrandom.c"
 
 int main(void)
 {
+  int test_ok = 1;
+  size_t test_iteration = 0;
   unsigned char out0[MLKEM_POLYVECCOMPRESSEDBYTES];
   unsigned char out1[MLKEM_POLYVECCOMPRESSEDBYTES];
   polyvec a;
   
-  polyvec_setrandom(&a);
-
-  polyvec_compress(out0, &a);
-  polyvec_compress_jazz(out1, &a);
-
-  for(int i=0;i<MLKEM_POLYVECCOMPRESSEDBYTES;i++)
+  while(test_ok == 1 && test_iteration < TEST_ITERATIONS)
   {
-    if(out0[i] != out1[i])
-      printf("error polyvec_compress %d, %d, %d\n", i, out0[i], out1[i]);
+    polyvec_setrandom_reduce(&a);
+
+    polyvec_compress(out0, &a);
+    polyvec_compress_jazz(out1, &a);
+
+    for(int i=0;i<MLKEM_POLYVECCOMPRESSEDBYTES;i++)
+    { if(out0[i] != out1[i])
+      { fprintf(stderr, "ERROR: polyvec_compress: %d, %d, %d\n", i, out0[i], out1[i]);
+        test_ok = 0;
+      }
+    }
+
+    test_iteration += 1;
   }
+
+  if(test_ok == 1)
+  { printf("OK: polyvec_compress\n"); }
 
   return 0;
 }
