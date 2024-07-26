@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "../params.h"
 #include "../speed.h"
@@ -86,12 +87,17 @@ int main(void)
   uint8_t seed[MLKEM_SYMBYTES] = {0};
   poly ap;
 
-  FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
-  fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
-  fread(message, MLKEM_SYMBYTES, 1, urandom);
-  
   uint64_t t[NRUNS], i;
+  size_t ri;
+
+  FILE *urandom = fopen("/dev/urandom", "r");
+  ri = fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
+  assert(ri == 1);
+  ri = fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
+  assert(ri == 1);
+  ri = fread(message, MLKEM_SYMBYTES, 1, urandom);
+  assert(ri == 1);
+  fclose(urandom);
 
   /* Test gen_matrix */
   for(i=0;i<NRUNS;i++)

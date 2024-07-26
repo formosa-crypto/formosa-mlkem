@@ -22,7 +22,7 @@ void poly_frommsg(poly *r, const unsigned char msg[MLKEM_SYMBYTES]);
 void poly_tomsg(unsigned char msg[MLKEM_SYMBYTES], poly *r);
 
 void poly_getnoise_eta1(poly *r,const unsigned char *seed, unsigned char nonce);
-void poly_getnoise_eta2(poly *r,const unsigned char *seed, unsigned char nonce);
+void poly_getnoise_eta2(poly *r,const uint8_t seed[MLKEM_SYMBYTES], unsigned char nonce);
 
 void poly_ntt(poly *r);
 void poly_invntt(poly *r);
