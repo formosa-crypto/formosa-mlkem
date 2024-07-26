@@ -36,7 +36,7 @@ in
 
 mkShell ({
   JASMINC = "${jasmin-compiler.bin}/bin/jasminc";
-  JAZZCT = "${jasmin-compiler.bin}/bin/jazzct";
+  JASMIN_CT = "${jasmin-compiler.bin}/bin/jazzct";
 } // lib.optionalAttrs full {
   packages = [
     ec

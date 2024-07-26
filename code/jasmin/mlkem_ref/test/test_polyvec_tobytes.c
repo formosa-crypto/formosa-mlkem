@@ -1,34 +1,42 @@
 #include <stdio.h>
+#include <assert.h>
 #include "../polyvec.h"
 #include "../ntt.h"
 
-void polyvec_setrandom(polyvec *r)
-{
-  FILE *urandom = fopen("/dev/urandom", "r");
-  for(int i=0;i<MLKEM_K;i++)
-    fread(r->vec[i].coeffs, sizeof(int16_t), MLKEM_N, urandom);
-  for(int i=0;i<MLKEM_K;i++)
-    for(int j=0;j<MLKEM_N;j++)
-      r->vec[i].coeffs[j] %= MLKEM_Q;
-  fclose(urandom);
-}
+#ifndef TEST_ITERATIONS
+#define TEST_ITERATIONS 10000
+#endif
+
+#include "test_polyvec_setrandom.c"
 
 int main(void)
 {
+  int test_ok = 1;
+  size_t test_iteration = 0;
   unsigned char out0[MLKEM_POLYVECBYTES];
   unsigned char out1[MLKEM_POLYVECBYTES];
   polyvec a;
-  
-  polyvec_setrandom(&a);
 
-  polyvec_tobytes(out0, &a);
-  polyvec_tobytes_jazz(out1, &a);
-
-  for(int i=0;i<MLKEM_POLYVECBYTES;i++)
+  while(test_ok == 1 && test_iteration < TEST_ITERATIONS)
   {
-    if(out0[i] != out1[i])
-      printf("error poly_tobytes %d, %d, %d\n", i, out0[i], out1[i]);
+    polyvec_setrandom(&a);
+
+    polyvec_tobytes(out0, &a);
+    polyvec_tobytes_jazz(out1, &a);
+
+    for(int i=0;i<MLKEM_POLYVECBYTES;i++)
+    { if(out0[i] != out1[i])
+      { fprintf(stderr, "ERROR: poly_tobytes: %d, %d, %d\n", i, out0[i], out1[i]);
+        test_ok = 0;
+      }
+    }
+
+    test_iteration += 1;
   }
+
+  if(test_ok == 1)
+  { printf("OK: polyvec_tobytes\n"); }
+
 
   return 0;
 }

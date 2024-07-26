@@ -7,9 +7,7 @@ export fn poly_compress_jazz(reg u64 rp, reg u64 ap)
 {
   inline int i;
   reg u16 t;
-  reg u8 c;
   stack u16[MLKEM_N] a;
-  stack u8[128] r;
 
   for i = 0 to MLKEM_N {
     t = (u16)[ap + 2*i];
@@ -23,9 +21,7 @@ export fn poly_decompress_jazz(reg u64 rp, reg u64 ap)
 {
   inline int i;
   reg u16 t;
-  reg u8 c;
   stack u16[MLKEM_N] r;
-  stack u8[128] a;
 
   r = _poly_decompress(r, ap);
 
@@ -39,7 +35,6 @@ export fn poly_tobytes_jazz(reg u64 rp, reg u64 ap)
 {
   inline int i;
   reg u16 t;
-  reg u8 c;
   stack u16[MLKEM_N] a;
 
   for i = 0 to MLKEM_N {
@@ -54,7 +49,6 @@ export fn poly_frombytes_jazz(reg u64 rp, reg u64 ap)
 {
   inline int i;
   reg u16 t;
-  reg u8 c;
   stack u16[MLKEM_N] r;
 
   r = _poly_frombytes(r, ap);
@@ -69,9 +63,7 @@ export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap)
 {
   inline int i;
   reg u16 t;
-  reg u8 c;
   stack u16[MLKEM_N] a;
-  stack u8[32] r;
 
   for i = 0 to MLKEM_N {
     t = (u16)[ap + 2*i];
@@ -85,7 +77,6 @@ export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap)
 {
   inline int i;
   reg u16 t;
-  reg u8 c;
   stack u16[MLKEM_N] r;
 
   r = _poly_frommsg(r, ap);
