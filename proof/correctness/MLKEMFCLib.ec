@@ -221,7 +221,7 @@ lemma initEq16 (f g: int -> 'a) :
 
 (*-----------------------------------------------------------------------------*)
 
-lemma nosmt set_neqiE (t : coeff Array256.t) x y a :
+lemma  set_neqiE (t : coeff Array256.t) x y a :
   y <> x => t.[x <- a].[y] = t.[y].
 proof. by rewrite get_set_if => /neqF ->. qed.
 

@@ -1506,7 +1506,7 @@ qed.
 
 (** Butterfly *)
 
-lemma nosmt REDCmul16coeff (x y: W16.t):
+lemma  REDCmul16coeff (x y: W16.t):
  sint_bnd 0 (q-1) y =>
  incoeffW16 (Montgomery16.REDCmul16 x y)
  = incoeffW16 x * incoeffW16 y * incoeff Montgomery16.Rinv
