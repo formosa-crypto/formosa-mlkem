@@ -436,6 +436,16 @@ proof.
 by conseq stavx2_unpack_at_ll (stavx2_unpack_at_h _st _buf _at).
 qed.
 
+phoare stavx2_pack_at_ph _buf _at:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_pack_at
+   : st = _buf
+     /\ offset = _at
+     ==>
+     stavx2bytes res = buf_subl _buf (to_uint _at) (8*to_uint _at+200)
+ ] = 1%r.
+proof.
+admitted.
+
 hoare xof_init_avx2_h _rho _rc:
  Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2
  : rho = _rho /\ index = _rc
@@ -454,7 +464,7 @@ while (true) (7-i).
 by auto => /> /#.
 qed.
 
-phoare xof_init_avx2 _rho _rc:
+phoare xof_init_avx2_ph _rho _rc:
  [ Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2
    : rho = _rho /\ index = _rc
      ==>
@@ -854,6 +864,29 @@ qed.
 abbrev coeff2u16 x = W16.of_int (Zq.asint x).
 abbrev coeffL2u16L = List.map coeff2u16.
 
+
+op state_stavx2_match (st: W64.t Array25.t) (stavx2: W256.t Array7.t): bool.
+
+op st25_to_stavx2 (st: W64.t Array25.t): W256.t Array7.t.
+op stavx2_to_st25 (stavx2: W256.t Array7.t): W64.t Array25.t.
+
+
+hoare keccakf1600_avx2_h (_st: W64.t Array25.t):
+ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2
+ : stmatch_avx2 _st state
+ ==> stmatch_avx2 (Keccakf1600_Spec.keccak_f1600_op _st) res.
+admitted.
+
+lemma keccakf1600_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2.
+proof.
+admitted.
+
+phoare keccakf1600_avx2_ph (_st: W64.t Array25.t):
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2
+ : stmatch_avx2 _st state
+ ==> stmatch_avx2 (Keccakf1600_Spec.keccak_f1600_op _st) res ] = 1%r.
+proof. by conseq keccakf1600_avx2_ll (keccakf1600_avx2_h _st). qed.
+
 equiv parse_one_polynomial_eq:
  Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial
  ~  ParseFilter.sample
@@ -872,28 +905,69 @@ transitivity ParseFilter.sample3buf
   smt().
 + by move=> />.
 proc; simplify.
-seq 4 7: (  buf_subl buf{1} 0 (2*168+200) = buf{2}
-         /\ stavx2bytes stavx2{1} = buf_subl buf{1} (2*168) (2*168+200)
+
+seq 2 1: ( stmatch_avx2 st{2} stavx2{1} ).
+ by ecall {1} (xof_init_avx2_ph rho{1} rc{1}); auto => /> /#.
+
+seq 5 8: ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
+         /\ state2bytes st{2} = buf_subl buf{1} (2*168) (2*168+200)
+         /\ plist pol{1} c{2} = coeffL2u16L p{2}
          ).
  (* squeeze 3 blocks *)
+ unroll {1} 2; unroll {1} 3; unroll {1} 4.
+ rcondt {1} 2.
+  by move=> &m; auto => />.
+ rcondt {1} 5.
+  move=> &m; simplify.
+  wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+  ecall (keccakf1600_avx2_h st{m}).
+  by auto => />.
+ rcondt {1} 8.
+  move=> &m; simplify.
+  wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+  ecall (keccakf1600_avx2_h (Keccakf1600_Spec.keccak_f1600_op st{m})).
+  wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+  ecall (keccakf1600_avx2_h st{m}).
+  by auto => />.
+ rcondf {1} 11.
+  move=> &m; simplify.
+  wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+  ecall (keccakf1600_avx2_h (Keccakf1600_Spec.keccak_f1600_op (Keccakf1600_Spec.keccak_f1600_op st{m}))).
+  wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+  ecall (keccakf1600_avx2_h (Keccakf1600_Spec.keccak_f1600_op st{m})).
+  wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+  ecall (keccakf1600_avx2_h st{m}).
+  by auto => />.
+ ecall {1} (gen_matrix_buf_rejection_ph pol{1} counter{1} buf{1} buf_offset{1}).
+ wp; ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ ecall {1} (keccakf1600_avx2_ph (Keccakf1600_Spec.keccak_f1600_op (Keccakf1600_Spec.keccak_f1600_op st{2}))).
+ wp; ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ ecall {1} (keccakf1600_avx2_ph (Keccakf1600_Spec.keccak_f1600_op st{2})).
+ wp; ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ ecall {1} (keccakf1600_avx2_ph st{2}).
+ auto => /> *.
  admit.
-while ( to_uint counter{1}=c{2}
-      /\ stavx2bytes stavx2{1} = buf_subl buf{1} (2*168) (2*168+200)
+
+while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
+      /\ to_uint buf_offset{1} = 2*168
+      /\ state2bytes st{2} = buf_subl buf{1} (2*168) (2*168+200)
       /\ plist pol{1} c{2} = coeffL2u16L p{2}
       ).
+ ecall {1} (gen_matrix_buf_rejection_ph pol{1} counter{1} buf{1} buf_offset{1}).
+ ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ ecall {1} (keccakf1600_avx2_ph st{2}).
+ ecall {1} (stavx2_pack_at_ph buf{1} buf_offset{1}); auto => /> *.
  admit.
-wp.
-ecall {1} (gen_matrix_buf_rejection_ph pol{1} counter{1} buf{1} buf_offset{1}); simplify.
-auto => /> &m Hst [pol ctr] /= Hpol Hctr; split.
- split.
-  split.
-   admit.
-  admit.
- admit.
-move=> buf c p st p'.
-admit.
-qed.
 
+auto => /> &1 &2 HctrL HctrH Hst Hpol; rewrite /(\ult) /=.
+move => buf ctr pol bufl st ?_ _?; have ->: to_uint ctr = 256 by smt().
+move => _ HH.
+admit (*
+HH: plist pol 256 = coeffL2u16L bufl
+------------------------------------------------------------------------
+pol = unlift_polyu ((of_list witness bufl))%Array256
+*).
+qed.
 
 phoare sample_last _rho :
  [ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial :
