@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
-require import W16extra WArray512 WArray32 WArray16.
+require import W16extra WArray512 WArray32 WArray16 WArray128.
 require import AVX2_Ops MLKEM_avx2_encdec MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxlemmas.
 require import Jkem_avx2 Jkem.
 require import Fq NTT_Fq MLKEM_Poly.
@@ -411,9 +411,26 @@ lemma sliceget_256_16_16E (a : W16.t Array16.t) (i : int) :
    WArray32.get256 (WArray32.init16 (fun (i_0 : int) => a.[i_0])) i = 
     sliceget_256_16_16 a i by auto.
 
+op sliceget_256_32_8(a : W32.t Array8.t, i : int) : W256.t =
+   WArray32.get256 (WArray32.init32 (fun (i_0 : int) => a.[i_0])) i.
+
+lemma sliceget_256_32_8E (a : W32.t Array8.t) (i : int) :
+   WArray32.get256 (WArray32.init32 (fun (i_0 : int) => a.[i_0])) i = 
+    sliceget_256_32_8 a i by auto.
+
+op sliceset_256_128_8(a : W8.t Array128.t,i : int, x : W256.t) : W8.t Array128.t =
+   Array128.init ((WArray128.get8 ((WArray128.set256 ((WArray128.init8 (fun (i_0 : int) => a.[i_0]))) i x)))).
+
+lemma sliceset_256_128_8E  (a : W8.t Array128.t) (i : int) (x  : W256.t) :
+  Array128.init ((WArray128.get8 ((WArray128.set256 ((WArray128.init8 (fun (i_0 : int) => a.[i_0]))) i x)))) = 
+   sliceset_256_128_8 a i x by auto.
+
+
 bind bitstring circuit Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list (W16.t Array256.t) 256.
 
 bind bitstring circuit Array16."_.[_]" Array16."_.[_<-_]" Array16.to_list (W16.t Array16.t) 16.
+
+bind bitstring circuit Array128."_.[_]" Array128."_.[_<-_]" Array128.to_list (W8.t Array128.t) 128.
 
 
 lemma poly_csubq_corr_h ap :
@@ -471,12 +488,12 @@ proc.
          pre16_csubq _ _);
    [ by move => x; rewrite /pre16_csubq sleE sltE /=   /to_sint /smod /= qE //= | by smt() ]. 
   
-move => &hr WRONG_PRE.
+move => &hr WRONG_POST.
 have PRE : 
 map lane_func_csubq (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _rp0))]))) =
-           map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list rp{hr}))])).
-apply WRONG_PRE.
-clear WRONG_PRE.
+           map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list rp{hr}))])). 
+apply WRONG_POST.
+clear WRONG_POST.  
 have : forall k, nth witness (map lane_func_csubq (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _rp0))])))) k =
      nth witness (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list rp{hr}))]))) k by smt().
 move => Hk;rewrite /lift_array256 /pos_bound256_cxq tP;split => i ib /=.
@@ -780,6 +797,9 @@ smt().
 qed.
 *)
 
+op lane_func_compress1(x : W16.t) : bool = ((((W4u16.zeroextu64 x) `<<` W8.of_int 4) + W64.of_int ((q+1) %/2)) * (W64.of_int (2^28 %/ q) `>>` W8.of_int 28)).[0]. 
+op pre16_compress1(x : W16.t) : bool =  W16.zero \sle x && x \slt W16.of_int (3329). 
+
 lemma poly_compress_1_corr_mr_h _a mem :
     hoare [ Jkem_avx2.M(Syscall)._poly_compress_1  :
              pos_bound256_cxq a 0 256 2 /\
@@ -791,7 +811,42 @@ lemma poly_compress_1_corr_mr_h _a mem :
              pos_bound256_cxq res.`2 0 256 1 /\
              res.`1 = encode4 (compress_poly 4 _a)].
 proof.
-admitted.
+rewrite /compress_poly. have ->  : (compress 4) = (compress_alt 4).  smt(fun_ext compress_alt_compress). 
+proc. 
+seq 2 : (pos_bound256_cxq a 0 256 1 /\ lift_array256 a = _a /\ Glob.mem = mem); 1:by call (poly_csubq_corr_h _a); auto => /> /#.
+cfold 7.
+proc rewrite 2  sliceget_256_16_16E.
+proc rewrite 6  sliceget_256_32_8E.
+unroll for 8. 
+proc rewrite 8  sliceget_256_256_16E.
+proc rewrite 9  sliceget_256_256_16E.
+proc rewrite 10  sliceget_256_256_16E.
+proc rewrite 11  sliceget_256_256_16E.
+proc rewrite 32  sliceget_256_256_16E.
+proc rewrite 33  sliceget_256_256_16E.
+proc rewrite 34  sliceget_256_256_16E.
+proc rewrite 35  sliceget_256_256_16E.
+proc rewrite 56  sliceget_256_256_16E.
+proc rewrite 57  sliceget_256_256_16E.
+proc rewrite 58  sliceget_256_256_16E.
+proc rewrite 59  sliceget_256_256_16E.
+proc rewrite 80  sliceget_256_256_16E.
+proc rewrite 81  sliceget_256_256_16E.
+proc rewrite 82  sliceget_256_256_16E.
+proc rewrite 83  sliceget_256_256_16E.
+proc rewrite 30 sliceset_256_128_8E.
+proc rewrite 54 sliceset_256_128_8E.
+proc rewrite 78 sliceset_256_128_8E.
+proc rewrite 102 sliceset_256_128_8E.
+cfold 7.
+conseq />.
+  exists * a;elim * =>_aw.
+  conseq (: _aw = a /\ pos_bound256_cxq _aw 0 256 1 ==> 
+          rp = encode4 (map (compress_alt 4) (lift_array256 _aw)));1,2: smt(). 
+  clear _a.
+
+bdep 16 16 [ "_aw" ] [ "a" ] [ "rp" ] lane_func_csubq pre16_csubq.
+
 
 lemma poly_compress_1_corr_mr_ll :
     islossless Jkem_avx2.M(Syscall)._poly_compress_1.
