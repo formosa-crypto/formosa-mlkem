@@ -225,6 +225,11 @@ realize ge0_size by auto.
 realize size_tolist by exact W256.size_w2bits.
 realize tolistK by exact W256.w2bitsK.
 realize oflistK by exact W256.bits2wK.
+bind bitstring W32.w2bits W32.bits2w W32.t 32.
+realize ge0_size by auto.
+realize size_tolist by exact W32.size_w2bits.
+realize tolistK by exact W32.w2bitsK.
+realize oflistK by exact W32.bits2wK.
 bind bitstring W16.w2bits W16.bits2w W16.t 16.
 realize ge0_size by auto.
 realize size_tolist by exact W16.size_w2bits.
@@ -431,6 +436,8 @@ bind bitstring circuit Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list (W1
 bind bitstring circuit Array16."_.[_]" Array16."_.[_<-_]" Array16.to_list (W16.t Array16.t) 16.
 
 bind bitstring circuit Array128."_.[_]" Array128."_.[_<-_]" Array128.to_list (W8.t Array128.t) 128.
+
+bind bitstring circuit Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list (W32.t Array8.t) 8.
 
 
 lemma poly_csubq_corr_h ap :
@@ -800,6 +807,7 @@ qed.
 op lane_func_compress1(x : W16.t) : bool = ((((W4u16.zeroextu64 x) `<<` W8.of_int 4) + W64.of_int ((q+1) %/2)) * (W64.of_int (2^28 %/ q) `>>` W8.of_int 28)).[0]. 
 op pre16_compress1(x : W16.t) : bool =  W16.zero \sle x && x \slt W16.of_int (3329). 
 
+bind circuit VPBROADCAST_16u16 "VPBROADCAST_16u16".
 lemma poly_compress_1_corr_mr_h _a mem :
     hoare [ Jkem_avx2.M(Syscall)._poly_compress_1  :
              pos_bound256_cxq a 0 256 2 /\
