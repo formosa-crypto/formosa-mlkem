@@ -416,12 +416,12 @@ lemma sliceget_256_16_16E (a : W16.t Array16.t) (i : int) :
    WArray32.get256 (WArray32.init16 (fun (i_0 : int) => a.[i_0])) i = 
     sliceget_256_16_16 a i by auto.
 
-op sliceget_256_32_8(a : W32.t Array8.t, i : int) : W256.t =
+op sliceget_256_8_32(a : W32.t Array8.t, i : int) : W256.t =
    WArray32.get256 (WArray32.init32 (fun (i_0 : int) => a.[i_0])) i.
 
-lemma sliceget_256_32_8E (a : W32.t Array8.t) (i : int) :
+lemma sliceget_256_8_32E (a : W32.t Array8.t) (i : int) :
    WArray32.get256 (WArray32.init32 (fun (i_0 : int) => a.[i_0])) i = 
-    sliceget_256_32_8 a i by auto.
+    sliceget_256_8_32 a i by auto.
 
 op sliceset_256_128_8(a : W8.t Array128.t,i : int, x : W256.t) : W8.t Array128.t =
    Array128.init ((WArray128.get8 ((WArray128.set256 ((WArray128.init8 (fun (i_0 : int) => a.[i_0]))) i x)))).
@@ -808,6 +808,12 @@ op lane_func_compress1(x : W16.t) : bool = ((((W4u16.zeroextu64 x) `<<` W8.of_in
 op pre16_compress1(x : W16.t) : bool =  W16.zero \sle x && x \slt W16.of_int (3329). 
 
 bind circuit VPBROADCAST_16u16 "VPBROADCAST_16u16".
+bind circuit VPMULH_16u16 "VPMULH_16u16".
+bind circuit VPMULHRS_16u16 "VPMULHRS_16u16".
+bind circuit VPACKUS_16u16 "VPACKUS_16u16".
+bind circuit VPMADDUBSW_256 "VPMADDUBSW_256".
+bind circuit VPERMD "VPERMD".
+
 lemma poly_compress_1_corr_mr_h _a mem :
     hoare [ Jkem_avx2.M(Syscall)._poly_compress_1  :
              pos_bound256_cxq a 0 256 2 /\
@@ -824,7 +830,7 @@ proc.
 seq 2 : (pos_bound256_cxq a 0 256 1 /\ lift_array256 a = _a /\ Glob.mem = mem); 1:by call (poly_csubq_corr_h _a); auto => /> /#.
 cfold 7.
 proc rewrite 2  sliceget_256_16_16E.
-proc rewrite 6  sliceget_256_32_8E.
+proc rewrite 6  sliceget_256_8_32E.
 unroll for 8. 
 proc rewrite 8  sliceget_256_256_16E.
 proc rewrite 9  sliceget_256_256_16E.
@@ -854,7 +860,6 @@ conseq />.
   clear _a.
 
 bdep 16 16 [ "_aw" ] [ "a" ] [ "rp" ] lane_func_csubq pre16_csubq.
-
 
 lemma poly_compress_1_corr_mr_ll :
     islossless Jkem_avx2.M(Syscall)._poly_compress_1.
