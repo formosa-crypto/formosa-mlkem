@@ -348,6 +348,14 @@ qed.
 
 op unlift_polyu(a : poly) = Array256.init (fun i => W16.of_int (Zq.asint a.[i])).
 
+lemma unlift_polyuE a:
+ unlift_polyu a
+ = Array256.map (fun x => W16.of_int (Zq.asint x)) a.
+proof.
+apply Array256.ext_eq => i Hi.
+by rewrite initiE //= mapiE //.
+qed.
+
 lemma getm_setE (m:polymat) a b x i j:
  mrange i j =>
  (m.[a, b <- x].[i,j])%KMatrix.Matrix
@@ -414,9 +422,13 @@ hoare stavx2_unpack_at_h _st _buf _at:
    /\ buf = _buf
    /\ offset = _at
    ==>
-   buf_subl res 0 (8*to_uint _at+200)
-   = buf_subl _buf 0 (8*to_uint _at) ++ stavx2bytes _st.
+   buf_subl _buf 0 (to_uint _at) = buf_subl res 0 (to_uint _at)
+   /\  buf_subl res (to_uint _at) (to_uint _at+200) = stavx2bytes _st.
+(*
+   buf_subl res 0 (to_uint _at+200)
+   = buf_subl _buf 0 (to_uint _at) ++ stavx2bytes _st.
 proc.
+*)
 admitted.
 
 lemma stavx2_unpack_at_ll:
@@ -429,8 +441,12 @@ phoare stavx2_unpack_at_ph _st _buf _at:
      /\ buf = _buf
      /\ offset = _at
      ==>
-     buf_subl res 0 (8*to_uint _at+200)
-     = buf_subl _buf 0 (8*to_uint _at) ++ stavx2bytes _st
+   buf_subl _buf 0 (to_uint _at) = buf_subl res 0 (to_uint _at)
+   /\  buf_subl res (to_uint _at) (to_uint _at+200) = stavx2bytes _st
+(*
+     buf_subl res 0 (to_uint _at+200)
+     = buf_subl _buf 0 (to_uint _at) ++ stavx2bytes _st
+*)
  ] = 1%r.
 proof.
 by conseq stavx2_unpack_at_ll (stavx2_unpack_at_h _st _buf _at).
@@ -441,7 +457,7 @@ phoare stavx2_pack_at_ph _buf _at:
    : st = _buf
      /\ offset = _at
      ==>
-     stavx2bytes res = buf_subl _buf (to_uint _at) (8*to_uint _at+200)
+     stavx2bytes res = buf_subl _buf (to_uint _at) (to_uint _at+200) 
  ] = 1%r.
 proof.
 admitted.
@@ -887,6 +903,35 @@ phoare keccakf1600_avx2_ph (_st: W64.t Array25.t):
  ==> stmatch_avx2 (Keccakf1600_Spec.keccak_f1600_op _st) res ] = 1%r.
 proof. by conseq keccakf1600_avx2_ll (keccakf1600_avx2_h _st). qed.
 
+
+import FIPS202_SHA3_Spec.
+import Keccakf1600_Spec.
+lemma st_i_add st a b:
+ 0 <= a => 0 <= b =>
+ st_i (FIPS202_SHA3_Spec.st_i st b) a
+ = st_i st (a+b).
+proof.
+rewrite /st_i.
+elim/natind: a b.
+ move=> n Hn b Ha Hb; rewrite (iter0 n) /#.
+move=> n Hn IH b Ha Hb.
+by rewrite eq_sym (:n+1+b=n+b+1) 1:/# (iterS (n+b)) 1:/# -IH // iterS 1:/#.
+qed.
+
+print squeezestate.
+
+lemma stavx2_bytes_squeeze at buf st stavx:
+ stmatch_avx2 st stavx =>
+ buf_subl buf at (at+200) = stavx2bytes stavx =>
+ buf_subl buf at (at+168) = squeezestate st 168.
+admitted.
+
+lemma stmatch_avx2_bytes st stavx:
+ stmatch_avx2 st stavx <=>
+ state2bytes st = stavx2bytes stavx.
+admitted.
+
+
 equiv parse_one_polynomial_eq:
  Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial
  ~  ParseFilter.sample
@@ -945,9 +990,35 @@ seq 5 8: ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
  ecall {1} (keccakf1600_avx2_ph (Keccakf1600_Spec.keccak_f1600_op st{2})).
  wp; ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
  ecall {1} (keccakf1600_avx2_ph st{2}).
- auto => /> *.
- admit.
-
+ auto => /> &1 &2 St0 s1 St1 buf _.
+ move=> /(stavx2_bytes_squeeze 0 _ _ _ St1) /= S1. 
+ move=> s2 St2 buf1 B12.
+ move=> /(stavx2_bytes_squeeze 168 _ _ _ St2) /= S2.
+ move=> s3 St3 buf2 B23 S3'; move: (S3').
+ move=> /(stavx2_bytes_squeeze 336 _ _ _ St3) /= S3.
+ move=> [p ctr] /=.
+ rewrite /squeezestate_i !st_i_add //.
+ rewrite !size_ge0 plist0 -andaE.
+ pose SS:= _++_++_.
+ have <-: buf_subl buf2 0 504 = SS.
+  rewrite /SS /st_i !iterS // iter0 // /c256_r8.
+  rewrite -S1 -S2 -S3.
+  rewrite -(buf_subl_cat _ _ 336) // -B23; congr.
+  by rewrite -(buf_subl_cat _ _ 168) // -B12; congr.
+ have ->: size (take 256 (rejection16 (buf_subl buf2 0 504)))
+        = size (take 256 (rejection (buf_subl buf2 0 504))).
+  by rewrite /rejection16 -map_take size_map.
+ move=> Hp Hctr1; split.
+  rewrite Hctr1 of_uintK modz_small //.
+  smt(size_ge0 size_take).
+ move => Ectr; rewrite -Ectr.
+ split; first smt(size_take).
+ split.
+  rewrite /st_i !iterS // iter1 S3'.
+  by apply stmatch_avx2_bytes.
+ by rewrite Ectr Hp map_take /#.
+ 
+simplify.
 while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
       /\ to_uint buf_offset{1} = 2*168
       /\ state2bytes st{2} = buf_subl buf{1} (2*168) (2*168+200)
@@ -955,18 +1026,52 @@ while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
       ).
  ecall {1} (gen_matrix_buf_rejection_ph pol{1} counter{1} buf{1} buf_offset{1}).
  ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
- ecall {1} (keccakf1600_avx2_ph st{2}).
- ecall {1} (stavx2_pack_at_ph buf{1} buf_offset{1}); auto => /> *.
- admit.
-
+ sp 0 1.
+ elim* => st1.
+ ecall {1} (keccakf1600_avx2_ph st1).
+ ecall {1} (stavx2_pack_at_ph buf{1} buf_offset{1}).
+ auto => /> &1 &2 Hctr1 _ -> Est1 Hpol _ Hctr2 stavx1 /=.
+ move=> Est'; split.
+  by rewrite stmatch_avx2_bytes /#.
+ move=> Hst1 stavx2 Hst2 buf Ebuf Hbuf [p ctr] /=.
+ rewrite Hpol ultE !of_uintK.
+ have Esq: squeezestate_i c256_r8 st1 0 = buf_subl buf 336 504.
+  rewrite /squeezestate_i /st_i /= iter1.
+  by rewrite (stavx2_bytes_squeeze _ _ _ _ Hst2) /#.
+ move => H Hc1; split.
+  split.
+   rewrite Hc1 of_uintK modz_small.
+    smt(size_ge0 size_take).
+   rewrite /rejection16 -map_take size_map.
+   by congr; congr; congr => /#.
+  split.
+   split; first smt(size_ge0).
+   move=> _; smt(size_take).
+  split.
+   by rewrite Hbuf -stmatch_avx2_bytes /st_i iter1.
+  rewrite map_cat map_take Esq -H; congr; congr.
+  smt(size_take size_map).
+ split.
+  rewrite Hc1 Esq of_uintK !modz_small //.
+   smt(size_ge0 size_take).
+  by rewrite !size_take 1..2:/# size_map.
+ rewrite -(size_plist pol{1} (to_uint counter{1})) 1:/# Hpol.
+ rewrite Hc1 of_uintK !modz_small //.
+  smt(size_ge0 size_take).
+ rewrite -Hpol size_plist 1:/#.
+ smt(size_take size_map).
 auto => /> &1 &2 HctrL HctrH Hst Hpol; rewrite /(\ult) /=.
-move => buf ctr pol bufl st ?_ _?; have ->: to_uint ctr = 256 by smt().
+move => buf ctr p1 p2 st ?_ _?; have ->: to_uint ctr = 256 by smt().
 move => _ HH.
-admit (*
-HH: plist pol 256 = coeffL2u16L bufl
-------------------------------------------------------------------------
-pol = unlift_polyu ((of_list witness bufl))%Array256
-*).
+have Hsz: size (coeffL2u16L p2) = 256.
+ by rewrite -HH size_plist /#.
+apply Array256.to_list_inj.
+move: HH.
+rewrite /Array256.to_list /plist /= => ->.
+rewrite unlift_polyuE map_of_list /=.
+rewrite -(eq_in_mkseq (nth (coeff2u16 witness) (coeffL2u16L p2))).
+ by move => i Hi; rewrite get_of_list //.
+by rewrite -Hsz mkseq_nth.
 qed.
 
 phoare sample_last _rho :
