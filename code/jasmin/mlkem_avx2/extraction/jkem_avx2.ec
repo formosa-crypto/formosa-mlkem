@@ -6507,6 +6507,30 @@ module M(SC:Syscall_t) = {
     return (idx);
   }
   
+  proc __gen_matrix_fill_polynomial (pol:W16.t Array256.t,
+                                     buf:W64.t Array68.t) : W16.t Array256.t *
+                                                            W64.t Array68.t = {
+    
+    var buf_offset:W64.t;
+    var counter:W64.t;
+    var stavx2:W256.t Array7.t;
+    stavx2 <- witness;
+    buf_offset <- (W64.of_int 0);
+    counter <- (W64.of_int 0);
+    (pol, counter) <@ _gen_matrix_buf_rejection (pol, counter, buf,
+    buf_offset);
+    buf_offset <- (W64.of_int (2 * 168));
+    
+    while ((counter \ult (W64.of_int 256))) {
+      stavx2 <@ _stavx2_pack_at (buf, buf_offset);
+      stavx2 <@ _keccakf1600_avx2 (stavx2);
+      buf <@ _stavx2_unpack_at (buf, buf_offset, stavx2);
+      (pol, counter) <@ _gen_matrix_buf_rejection (pol, counter, buf,
+      buf_offset);
+    }
+    return (pol, buf);
+  }
+  
   proc _gen_matrix_sample_four_polynomials (polx4:W16.t Array1024.t,
                                             bufx4:W64.t Array272.t,
                                             rho:W8.t Array32.t,
@@ -6521,13 +6545,10 @@ module M(SC:Syscall_t) = {
     var i:int;
     var buf:W64.t Array68.t;
     var pol:W16.t Array256.t;
-    var counter:W64.t;
-    var stavx2:W256.t Array7.t;
     buf <- witness;
     indexes <- witness;
     pol <- witness;
     state <- witness;
-    stavx2 <- witness;
     stx4 <- witness;
     indexes <@ gen_matrix_get_indexes (mat_entry, transposed);
     state <@ xof_init_x4 (rho, indexes);
@@ -6543,20 +6564,8 @@ module M(SC:Syscall_t) = {
     while (i < 4) {
       buf <-
       (Array68.init (fun i_0 => bufx4.[(i * (((3 * 21) + 4) + 1)) + i_0]));
-      buf_offset <- (W64.of_int 0);
       pol <- (Array256.init (fun i_0 => polx4.[(i * 256) + i_0]));
-      counter <- (W64.of_int 0);
-      (pol, counter) <@ _gen_matrix_buf_rejection (pol, counter, buf,
-      buf_offset);
-      buf_offset <- (W64.of_int (2 * 168));
-      
-      while ((counter \ult (W64.of_int 256))) {
-        stavx2 <@ _stavx2_pack_at (buf, buf_offset);
-        stavx2 <@ _keccakf1600_avx2 (stavx2);
-        buf <@ _stavx2_unpack_at (buf, buf_offset, stavx2);
-        (pol, counter) <@ _gen_matrix_buf_rejection (pol, counter, buf,
-        buf_offset);
-      }
+      (pol, buf) <@ __gen_matrix_fill_polynomial (pol, buf);
       polx4 <- Array1024.init
                (fun i_0 => if (i * 256) <= i_0 < (i * 256) + 256
                then pol.[i_0-(i * 256)] else polx4.[i_0]);
@@ -6575,7 +6584,6 @@ module M(SC:Syscall_t) = {
     
     var stavx2:W256.t Array7.t;
     var buf_offset:W64.t;
-    var counter:W64.t;
     stavx2 <- witness;
     stavx2 <@ xof_init_avx2 (rho, rc);
     buf_offset <- (W64.of_int 0);
@@ -6585,19 +6593,7 @@ module M(SC:Syscall_t) = {
       buf <@ _stavx2_unpack_at (buf, buf_offset, stavx2);
       buf_offset <- (buf_offset + (W64.of_int 168));
     }
-    buf_offset <- (W64.of_int 0);
-    counter <- (W64.of_int 0);
-    (pol, counter) <@ _gen_matrix_buf_rejection (pol, counter, buf,
-    buf_offset);
-    buf_offset <- (W64.of_int (2 * 168));
-    
-    while ((counter \ult (W64.of_int 256))) {
-      stavx2 <@ _stavx2_pack_at (buf, buf_offset);
-      stavx2 <@ _keccakf1600_avx2 (stavx2);
-      buf <@ _stavx2_unpack_at (buf, buf_offset, stavx2);
-      (pol, counter) <@ _gen_matrix_buf_rejection (pol, counter, buf,
-      buf_offset);
-    }
+    (pol, buf) <@ __gen_matrix_fill_polynomial (pol, buf);
     return (pol, buf);
   }
   

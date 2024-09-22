@@ -903,9 +903,132 @@ phoare keccakf1600_avx2_ph (_st: W64.t Array25.t):
  ==> stmatch_avx2 (Keccakf1600_Spec.keccak_f1600_op _st) res ] = 1%r.
 proof. by conseq keccakf1600_avx2_ll (keccakf1600_avx2_h _st). qed.
 
+type state4x = W256.t Array25.t.
+type state = W64.t Array25.t.
+op (\a25bits64) (a: state4x) (k: int): state =
+ Array25.map (fun (x: W256.t) => W4u64.\bits64 x k) a.
+
+op a25pack4 (l: state list): state4x =
+ Array25.init (fun i => pack4 (map (fun (s: state) => s.[i]) l)).
+
+op a25unpack4 (st4: state4x): state list =
+ map (fun k=> st4 \a25bits64 k) (iota_ 0 4).
+
+lemma a25bits64iE x k i:
+ 0 <= i < 25 =>
+ (x \a25bits64 k).[i] = x.[i] \bits64 k.
+proof. by move=> Hi; rewrite mapiE //. qed.
+
+lemma a25unpack4K s4:
+ a25pack4 (a25unpack4 s4) = s4.
+proof.
+rewrite /a25pack4 /a25unpack4.
+apply Array25.ext_eq => i Hi; rewrite initiE //=.
+rewrite -iotaredE /= !a25bits64iE //=.
+rewrite -{5}(unpack64K s4.[i]); congr.
+by rewrite unpack64E init_of_list -iotaredE /=. 
+qed.
+
+op st0: state = Array25.create W64.zero.
+lemma a25pack4_bits64 k (stl: state list):
+ 0 <= k < 4 =>
+ a25pack4 stl \a25bits64 k = nth st0 stl k.
+proof.
+move=> Hk; apply Array25.ext_eq => i Hi.
+rewrite mapiE //= initiE //= pack4bE //=.
+rewrite of_listE initiE //=.
+case: (k < size stl) => E.
+ by rewrite (nth_map st0) 1:/#.
+rewrite !nth_out; first 2 by smt(size_map).
+by rewrite createiE.
+qed.
+
+op match_state4x (st0 st1 st2 st3: state) (st4x: state4x) =
+ st4x = a25pack4 [st0; st1; st2; st3].
+
+lemma a25pack4_eq stl st4x:
+ a25pack4 stl = st4x
+ <=>
+ all (fun k=>st4x \a25bits64 k = nth st0 stl k) (iota_ 0 4).
+proof.
+split.
+ move => <-; apply/List.allP => k. 
+ rewrite mem_iota => Hk /=; apply a25pack4_bits64; smt().
+move=> /List.allP H.
+apply Array25.ext_eq => i Hi.
+rewrite initiE //=.
+rewrite -(unpack64K st4x.[i]); congr.
+apply W4u64.Pack.ext_eq => k Hk.
+rewrite of_listE unpack64E !initiE //=.
+rewrite -a25bits64iE // H; first smt(mem_iota).
+case: (k < size stl) => E.
+ by rewrite (nth_map st0) 1:/#.
+rewrite !nth_out; first 2 by smt(size_map).
+by rewrite createiE.
+qed.
+
+lemma xorw_bits64 (w1 w2: W256.t) k:
+ 0 <= k < 4 =>
+ w1 `^` w2 \bits64 k = (w1 \bits64 k) `^` (w2 \bits64 k).
+proof.
+move=> Hk; rewrite -{1}(unpack64K w1) -{1}(unpack64K w2). 
+by rewrite xorb4u64E pack4bE // map2iE // !unpack64E !initiE.
+qed.
+
+lemma invw_bits64 (w: W256.t) k:
+ 0 <= k < 4 =>
+ invw w \bits64 k = invw (w \bits64 k).
+proof. by move=> Hk; rewrite -{1}(unpack64K w) invw64E //. qed.
+
+op map_state4x (f:state->state) (st:state4x): state4x =
+ a25pack4 (map f (a25unpack4 st)).
+
 
 import FIPS202_SHA3_Spec.
 import Keccakf1600_Spec.
+
+lemma map_state4x_neq r a:
+ r <> map_state4x keccak_f1600_op a
+ <=> (r \a25bits64 0) <> keccak_f1600_op (a \a25bits64 0) \/
+     (r \a25bits64 1) <> keccak_f1600_op (a \a25bits64 1) \/
+     (r \a25bits64 2) <> keccak_f1600_op (a \a25bits64 2) \/
+     (r \a25bits64 3) <> keccak_f1600_op (a \a25bits64 3).
+proof.
+rewrite /map_state4x eq_sym a25pack4_eq -iotaredE /=.
+rewrite !(nth_map st0); first 4 by rewrite /a25unpack4 size_map size_iota.
+by rewrite /a25unpack4 -iotaredE /= /#.
+qed.
+
+hoare keccakf1600_4x_h (_a: state4x):
+ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x :
+ a = _a
+ ==> res = map_state4x keccak_f1600_op _a.
+proof.
+admitted.
+
+lemma keccakf1600_4x_round_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall).keccakf1600_4x_round.
+admitted.
+
+lemma keccakf1600_4x_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x.
+proof.
+islossless.
+while (true) (768 - to_uint c).
+ move=> z.
+ wp; call keccakf1600_4x_round_ll.
+ wp; call keccakf1600_4x_round_ll.
+ auto => /> &m.
+ by rewrite ultE to_uintD of_uintK /#.
+by auto => /> c; rewrite ultE of_uintK /#.
+qed.
+
+phoare keccakf1600_4x_ph (_a: state4x):
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x :
+   a = _a
+   ==> res = map_state4x keccak_f1600_op _a ] = 1%r.
+proof. by conseq keccakf1600_4x_ll (keccakf1600_4x_h _a). qed.
+
 lemma st_i_add st a b:
  0 <= a => 0 <= b =>
  st_i (FIPS202_SHA3_Spec.st_i st b) a
@@ -919,20 +1042,178 @@ by rewrite eq_sym (:n+1+b=n+b+1) 1:/# (iterS (n+b)) 1:/# -IH // iterS 1:/#.
 qed.
 
 print squeezestate.
+print Jkem_avx2.M.
+import Array4.
+hoare xof_init_x4_h _rho _idxs:
+ Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_x4
+ : rho = _rho /\ indexes = _idxs
+   ==>
+   match_state4x
+    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[0])) 
+    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[1])) 
+    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[2])) 
+    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[3])) 
+    res.
+proof.
+proc; simplify.
+admit.
+qed.
+
+
+lemma stmatch_avx2_bytes st stavx:
+ stmatch_avx2 st stavx <=>
+ state2bytes st = stavx2bytes stavx.
+proof.
+print stmatch_avx2.
+admitted.
 
 lemma stavx2_bytes_squeeze at buf st stavx:
  stmatch_avx2 st stavx =>
  buf_subl buf at (at+200) = stavx2bytes stavx =>
  buf_subl buf at (at+168) = squeezestate st 168.
-admitted.
+proof.
+move => /stmatch_avx2_bytes Hm.
+rewrite -Hm /squeezestate => <-.
+by rewrite /buf_subl take_take ifT /#.
+qed.
 
-lemma stmatch_avx2_bytes st stavx:
- stmatch_avx2 st stavx <=>
- state2bytes st = stavx2bytes stavx.
-admitted.
 
+equiv fill_poly_eq:
+ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_fill_polynomial
+ ~ ParseFilter.fill_poly
+ : buf_subl buf{1} 0 (3*168) = buf{2}
+   /\ buf_subl buf{1} (2*168) (2*168+200) = state2bytes st{2}
+   ==>
+   res{1}.`1 = unlift_polyu res{2}.
+proof.
+proc; simplify.
+
+while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
+      /\ to_uint buf_offset{1} = 2*168
+      /\ state2bytes st{2} = buf_subl buf{1} (2*168) (2*168+200)
+      /\ plist pol{1} c{2} = coeffL2u16L p{2}
+      ).
+ ecall {1} (gen_matrix_buf_rejection_ph pol{1} counter{1} buf{1} buf_offset{1}).
+ ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ sp 0 1.
+ elim* => st1.
+ ecall {1} (keccakf1600_avx2_ph st1).
+ ecall {1} (stavx2_pack_at_ph buf{1} buf_offset{1}).
+ auto => /> &1 &2 Hctr1 _ -> Est1 Hpol _ Hctr2 stavx1 /=.
+ move=> Est'; split.
+  by rewrite stmatch_avx2_bytes /#.
+ move=> Hst1 stavx2 Hst2 buf Ebuf Hbuf [p ctr] /=.
+ rewrite Hpol ultE !of_uintK.
+ have Esq: squeezestate_i c256_r8 st1 0 = buf_subl buf 336 504.
+  rewrite /squeezestate_i /st_i /= iter1.
+  by rewrite (stavx2_bytes_squeeze _ _ _ _ Hst2) /#.
+ move => H Hc1; split.
+  split.
+   rewrite Hc1 of_uintK modz_small.
+    smt(size_ge0 size_take).
+   rewrite /rejection16 -map_take size_map.
+   by congr; congr; congr => /#.
+  split.
+   split; first smt(size_ge0).
+   move=> _; smt(size_take).
+  split.
+   by rewrite Hbuf -stmatch_avx2_bytes /st_i iter1.
+  rewrite map_cat map_take Esq -H; congr; congr.
+  smt(size_take size_map).
+ split.
+  rewrite Hc1 Esq of_uintK !modz_small //.
+   smt(size_ge0 size_take).
+  by rewrite !size_take 1..2:/# size_map.
+ rewrite -(size_plist pol{1} (to_uint counter{1})) 1:/# Hpol.
+ rewrite Hc1 of_uintK !modz_small //.
+  smt(size_ge0 size_take).
+ rewrite -Hpol size_plist 1:/#.
+ smt(size_take size_map).
+wp; ecall {1} (gen_matrix_buf_rejection_ph pol{1} counter{1} buf{1} buf_offset{1}).
+auto => /> &1 &2 Hbuf [p c] /=; rewrite plist0 ultE /= => H ->.
+rewrite of_uintK modz_small; first smt(size_ge0 size_take).
+move: H; rewrite /rejection16 !size_take // size_map /= map_take.
+move => H; split; first smt(size_ge0 size_take).
+move => buf ctr p1 p2 st _?_?; have ->: to_uint ctr = 256 by smt().
+move => _ HH.
+have Hsz: size (coeffL2u16L p2) = 256.
+ by rewrite -HH size_plist /#.
+apply Array256.to_list_inj.
+move: HH.
+rewrite /Array256.to_list /plist /= => ->.
+rewrite unlift_polyuE map_of_list /=.
+rewrite -(eq_in_mkseq (nth (coeff2u16 witness) (coeffL2u16L p2))).
+ by move => i Hi; rewrite get_of_list //.
+by rewrite -Hsz mkseq_nth.
+qed.
 
 equiv parse_one_polynomial_eq:
+ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial
+ ~  ParseFilter.sample
+ : ={rho} /\ W2u8.to_list rc{1} = [j{2}; i{2}]
+   ==>
+   res{1}.`1 = unlift_polyu res{2}.
+proof.
+transitivity ParseFilter.sample3buf
+ (={rho} /\ W2u8.to_list rc{1} = [ji{2}.`1; ji{2}.`2]
+   ==>
+   res{1}.`1 = unlift_polyu res{2})
+ ((rho,(j,i)){2}=arg{1} ==> ={res}); last first.
++ by symmetry; conseq sample_sample3buf.
++ move => /> &1 &2 -> *.
+  exists (rho{2},(rc{1}\bits8 0, rc{1}\bits8 1)).
+  smt().
++ by move=> />.
+proc; call fill_poly_eq.
+seq 2 1: ( stmatch_avx2 st{2} stavx2{1} ).
+ by ecall {1} (xof_init_avx2_ph rho{1} rc{1}); auto => /> /#.
+simplify.
+unroll {1} 2; unroll {1} 3; unroll {1} 4.
+rcondt {1} 2.
+ by move=> &m; auto => />.
+rcondt {1} 5.
+ move=> &m; simplify.
+ wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+ ecall (keccakf1600_avx2_h st{m}).
+ by auto => />.
+rcondt {1} 8.
+ move=> &m; simplify.
+ wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+ ecall (keccakf1600_avx2_h (Keccakf1600_Spec.keccak_f1600_op st{m})).
+ wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+ ecall (keccakf1600_avx2_h st{m}).
+ by auto => />.
+rcondf {1} 11.
+ move=> &m; simplify.
+ wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+ ecall (keccakf1600_avx2_h (Keccakf1600_Spec.keccak_f1600_op (Keccakf1600_Spec.keccak_f1600_op st{m}))).
+ wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+ ecall (keccakf1600_avx2_h (Keccakf1600_Spec.keccak_f1600_op st{m})).
+ wp; ecall (stavx2_unpack_at_h stavx2 buf buf_offset).
+ ecall (keccakf1600_avx2_h st{m}).
+ by auto => />.
+wp; ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ecall {1} (keccakf1600_avx2_ph (Keccakf1600_Spec.keccak_f1600_op (Keccakf1600_Spec.keccak_f1600_op st{2}))).
+wp; ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ecall {1} (keccakf1600_avx2_ph (Keccakf1600_Spec.keccak_f1600_op st{2})).
+wp; ecall {1} (stavx2_unpack_at_ph stavx2{1} buf{1} buf_offset{1}).
+ecall {1} (keccakf1600_avx2_ph st{2}).
+auto => /> &1 &2 St0 s1 St1 buf _.
+move=> /(stavx2_bytes_squeeze 0 _ _ _ St1) /= S1. 
+move=> s2 St2 buf1 B12.
+move=> /(stavx2_bytes_squeeze 168 _ _ _ St2) /= S2.
+move=> s3 St3 buf2 B23 S3'; move: (S3').
+move=> /(stavx2_bytes_squeeze 336 _ _ _ St3) /= S3.
+rewrite /squeezestate_i !st_i_add //.
+rewrite /st_i !iterS // iter0 // iter1 // /c256_r8.
+rewrite -S1 -S2 -S3.
+rewrite -(buf_subl_cat _ _ 336) // -B23.
+rewrite -(buf_subl_cat _ _ 168) // -B12 /=.
+by rewrite S3' eq_sym; apply stmatch_avx2_bytes.
+qed.
+
+(* TO REMOVE!
+equiv parse_one_polynomial_eqX:
  Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial
  ~  ParseFilter.sample
  : ={rho} /\ W2u8.to_list rc{1} = [j{2}; i{2}]
@@ -1073,6 +1354,7 @@ rewrite -(eq_in_mkseq (nth (coeff2u16 witness) (coeffL2u16L p2))).
  by move => i Hi; rewrite get_of_list //.
 by rewrite -Hsz mkseq_nth.
 qed.
+*)
 
 phoare sample_last _rho :
  [ Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_sample_one_polynomial :
@@ -1091,6 +1373,21 @@ qed.
 op pack4poly ['a] (ps: 'a Array256.t * 'a Array256.t * 'a Array256.t * 'a Array256.t) =
  Array1024.of_list witness (to_list ps.`1 ++ to_list ps.`2 ++ to_list ps.`3 ++ to_list ps.`4).
 
+op pack4buf (buf0 buf1 buf2 buf3: W64.t Array68.t) = 
+ Array272.Array272.of_list witness (to_list buf0 ++ to_list buf1 ++ to_list buf2 ++ to_list buf3).
+print buf_subl.
+
+import Array272.
+
+op stx4_st (stx4: W256.t Array25.t) (pos: int): W64.t Array25.t.
+
+op buf4x_buf (bufx4 : W64.t Array272.t) (pos : int) : W64.t Array68.t =
+ Array68.init (fun i => bufx4.[pos*68+i]).
+
+
+op buf_ok (buf: W64.t Array68.t) (l: W8.t list, st: state): bool =
+ buf_subl buf 0 504 = l /\ buf_subl buf 336 536 = state2bytes st.
+
 equiv parse_four_polynomials_eq:
  Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_sample_four_polynomials
  ~  ParseFilter.sample3buf_x4'
@@ -1107,7 +1404,83 @@ transitivity ParseFilter.sample3buf_x4
   by exists (rho{2},pos{2},t{2}) => /#.
 + by move => />.
 proc; simplify.
-admit.
+seq 10 27: ( buf_ok (buf4x_buf bufx4{1} 0) buf0{2} st0{2}
+           /\ buf_ok (buf4x_buf bufx4{1} 1) buf1{2} st1{2}
+           /\ buf_ok (buf4x_buf bufx4{1} 2) buf2{2} st2{2}
+           /\ buf_ok (buf4x_buf bufx4{1} 3) buf3{2} st3{2} ).
+ seq 8 7: ( stx4_st stx4{1} 0 = st0{2} 
+          /\ stx4_st stx4{1} 1 = st1{2}
+          /\ stx4_st stx4{1} 2 = st2{2}
+          /\ stx4_st stx4{1} 3 = st3{2}
+          ).
+  admit.
+ 
+unroll for {1} 2.
+wp; call fill_poly_eq.
+simplify.
+wp; call fill_poly_eq.
+wp; call fill_poly_eq.
+wp; call fill_poly_eq.
+auto => /> &1 &2 Hst0 Hst1 Hst2 Hst3.
+pose B0:= Array68.init _.
+have ->: B0 = buf4x_buf bufx4{1} 0.
+ apply Array68.ext_eq => i Hi /=.
+ by rewrite /B0 initiE //= initiE 1:/# /=.
+move=> _ _ {B0}.
+move=> [p0 buf0] p0R /= Hp0.
+pose B1:= Array68.init _.
+have ->/=: B1 = buf4x_buf bufx4{1} 1.
+ apply Array68.ext_eq => i Hi /=.
+ rewrite initiE //= initiE 1:/# /= ifF 1:/#.
+ by rewrite /buf4x_buf /= initiE // /=.
+split; first done.
+move=> _ {B1} [p1 buf1] p1R /= Hp1.
+pose B2:= Array68.init _.
+have ->/=: B2 = buf4x_buf bufx4{1} 2.
+ apply Array68.ext_eq => i Hi /=.
+ rewrite initiE //= initiE 1:/# initiE 1:/# /= ifF 1:/#.
+ by rewrite /buf4x_buf /= initiE /#.
+split; first done.
+move=> _ {B2} [p2 buf2] p2R /= Hp2.
+pose B3:= Array68.init _.
+have ->/=: B3 = buf4x_buf bufx4{1} 3.
+ apply Array68.ext_eq => i Hi /=.
+ rewrite initiE //= initiE 1:/# initiE 1:/# /= ifF 1:/#.
+ by rewrite /buf4x_buf initiE 1:/# /= ifF 1:/# initiE /#.
+split; first done.
+move=> _ {B3} [p3 buf3] p3R /= Hp3.
+rewrite /pack4poly /=.
+apply Array1024.ext_eq => i Hi.
+rewrite initiE //= get_of_list //=.
+case: (i < 256) => C0.
+ rewrite ifF 1:/# initiE //=. 
+ rewrite ifF 1:/# initiE //=. 
+ rewrite ifF 1:/# initiE //=.
+ rewrite ifT 1:/# Hp0 initiE 1:/# /=.
+ rewrite -!catA nth_cat ifT. 
+  by rewrite !size_to_list /#.
+ by rewrite get_to_list initiE 1:/#.
+case: (i < 512) => C1.
+ rewrite ifF 1:/# initiE //=. 
+ rewrite ifF 1:/# initiE //=.
+ rewrite ifT 1:/# Hp1 initiE 1:/# /=.
+ rewrite -!catA nth_cat ifF. 
+  by rewrite !size_to_list /#.
+ rewrite nth_cat ifT !size_to_list 1:/#. 
+ by rewrite get_to_list initiE 1:/#.
+case: (i < 768) => C2.
+ rewrite ifF 1:/# initiE //=.
+ rewrite ifT 1:/# Hp2 initiE 1:/# /=.
+ rewrite -!catA nth_cat ifF !size_to_list 1:/#. 
+ rewrite nth_cat ifF !size_to_list 1:/#. 
+ rewrite nth_cat ifT.
+  by rewrite !size_to_list /#.
+ by rewrite get_to_list initiE 1:/#.
+rewrite ifT 1:/# Hp3 initiE 1:/# /=.
+rewrite -!catA nth_cat ifF !size_to_list 1:/#. 
+rewrite nth_cat ifF !size_to_list 1:/#. 
+rewrite nth_cat ifF !size_to_list 1:/#. 
+by rewrite get_to_list initiE 1:/#.
 qed.
 
 op subarray1024 ['a] (x : 'a Array2304.t) (i : int) : 'a Array1024.t = 
