@@ -5830,8 +5830,12 @@ module M(SC:Syscall_t) = {
     return (y0, y1, y2, y3);
   }
   
-  proc __st4x_unpack_at (buf:W64.t Array272.t, st4x:W256.t Array25.t,
-                         offset:W64.t) : W64.t Array272.t = {
+  proc __st4x_unpack_atX (buf0:W64.t Array68.t, buf1:W64.t Array68.t,
+                          buf2:W64.t Array68.t, buf3:W64.t Array68.t,
+                          st4x:W256.t Array25.t, offset:W64.t) : W64.t Array68.t *
+                                                                 W64.t Array68.t *
+                                                                 W64.t Array68.t *
+                                                                 W64.t Array68.t = {
     var aux: int;
     
     var i:int;
@@ -5851,18 +5855,18 @@ module M(SC:Syscall_t) = {
       x2 <- st4x.[((4 * i) + 2)];
       x3 <- st4x.[((4 * i) + 3)];
       (x0, x1, x2, x3) <@ _4u64x4_u256x4 (x0, x1, x2, x3);
-      buf <-
-      Array272.init
-      (WArray2176.get64 (WArray2176.set256_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int ((4 * 8) * i))) + (W64.of_int ((0 * 8) * (((3 * 21) + 4) + 1))))) (x0)));
-      buf <-
-      Array272.init
-      (WArray2176.get64 (WArray2176.set256_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int ((4 * 8) * i))) + (W64.of_int ((1 * 8) * (((3 * 21) + 4) + 1))))) (x1)));
-      buf <-
-      Array272.init
-      (WArray2176.get64 (WArray2176.set256_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int ((4 * 8) * i))) + (W64.of_int ((2 * 8) * (((3 * 21) + 4) + 1))))) (x2)));
-      buf <-
-      Array272.init
-      (WArray2176.get64 (WArray2176.set256_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int ((4 * 8) * i))) + (W64.of_int ((3 * 8) * (((3 * 21) + 4) + 1))))) (x3)));
+      buf0 <-
+      Array68.init
+      (WArray544.get64 (WArray544.set256_direct (WArray544.init64 (fun i_0 => (buf0).[i_0])) (W64.to_uint (offset + (W64.of_int ((4 * 8) * i)))) (x0)));
+      buf1 <-
+      Array68.init
+      (WArray544.get64 (WArray544.set256_direct (WArray544.init64 (fun i_0 => (buf1).[i_0])) (W64.to_uint (offset + (W64.of_int ((4 * 8) * i)))) (x1)));
+      buf2 <-
+      Array68.init
+      (WArray544.get64 (WArray544.set256_direct (WArray544.init64 (fun i_0 => (buf2).[i_0])) (W64.to_uint (offset + (W64.of_int ((4 * 8) * i)))) (x2)));
+      buf3 <-
+      Array68.init
+      (WArray544.get64 (WArray544.set256_direct (WArray544.init64 (fun i_0 => (buf3).[i_0])) (W64.to_uint (offset + (W64.of_int ((4 * 8) * i)))) (x3)));
       i <- i + 1;
     }
     t0 <-
@@ -5873,19 +5877,19 @@ module M(SC:Syscall_t) = {
     (get64 (WArray800.init256 (fun i_0 => (st4x).[i_0])) ((4 * 24) + 2));
     t3 <-
     (get64 (WArray800.init256 (fun i_0 => (st4x).[i_0])) ((4 * 24) + 3));
-    buf <-
-    Array272.init
-    (WArray2176.get64 (WArray2176.set64_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int (8 * 24))) + (W64.of_int ((0 * 8) * (((3 * 21) + 4) + 1))))) (t0)));
-    buf <-
-    Array272.init
-    (WArray2176.get64 (WArray2176.set64_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int (8 * 24))) + (W64.of_int ((1 * 8) * (((3 * 21) + 4) + 1))))) (t1)));
-    buf <-
-    Array272.init
-    (WArray2176.get64 (WArray2176.set64_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int (8 * 24))) + (W64.of_int ((2 * 8) * (((3 * 21) + 4) + 1))))) (t2)));
-    buf <-
-    Array272.init
-    (WArray2176.get64 (WArray2176.set64_direct (WArray2176.init64 (fun i_0 => (buf).[i_0])) (W64.to_uint ((offset + (W64.of_int (8 * 24))) + (W64.of_int ((3 * 8) * (((3 * 21) + 4) + 1))))) (t3)));
-    return (buf);
+    buf0 <-
+    Array68.init
+    (WArray544.get64 (WArray544.set64_direct (WArray544.init64 (fun i_0 => (buf0).[i_0])) (W64.to_uint (offset + (W64.of_int (8 * 24)))) (t0)));
+    buf1 <-
+    Array68.init
+    (WArray544.get64 (WArray544.set64_direct (WArray544.init64 (fun i_0 => (buf1).[i_0])) (W64.to_uint (offset + (W64.of_int (8 * 24)))) (t1)));
+    buf2 <-
+    Array68.init
+    (WArray544.get64 (WArray544.set64_direct (WArray544.init64 (fun i_0 => (buf2).[i_0])) (W64.to_uint (offset + (W64.of_int (8 * 24)))) (t2)));
+    buf3 <-
+    Array68.init
+    (WArray544.get64 (WArray544.set64_direct (WArray544.init64 (fun i_0 => (buf3).[i_0])) (W64.to_uint (offset + (W64.of_int (8 * 24)))) (t3)));
+    return (buf0, buf1, buf2, buf3);
   }
   
   proc __stavx2_pack_at (st:W64.t Array68.t, offset:W64.t) : W256.t Array7.t = {
@@ -6531,14 +6535,19 @@ module M(SC:Syscall_t) = {
     return (pol, buf);
   }
   
-  proc _gen_matrix_sample_four_polynomials (polx4:W16.t Array1024.t,
-                                            bufx4:W64.t Array272.t,
-                                            rho:W8.t Array32.t,
-                                            mat_entry:W64.t, transposed:W64.t) : 
-  W16.t Array1024.t * W64.t Array272.t = {
+  proc _gen_matrix_sample_four_polynomialsX (polx4:W16.t Array1024.t,
+                                             bufx4:W64.t Array272.t,
+                                             rho:W8.t Array32.t,
+                                             mat_entry:W64.t,
+                                             transposed:W64.t) : W16.t Array1024.t *
+                                                                 W64.t Array272.t = {
     var aux: int;
     
     var indexes:W16.t Array4.t;
+    var buf0:W64.t Array68.t;
+    var buf1:W64.t Array68.t;
+    var buf2:W64.t Array68.t;
+    var buf3:W64.t Array68.t;
     var state:W256.t Array25.t;
     var stx4:W256.t Array25.t;
     var buf_offset:W64.t;
@@ -6546,20 +6555,45 @@ module M(SC:Syscall_t) = {
     var buf:W64.t Array68.t;
     var pol:W16.t Array256.t;
     buf <- witness;
+    buf0 <- witness;
+    buf1 <- witness;
+    buf2 <- witness;
+    buf3 <- witness;
     indexes <- witness;
     pol <- witness;
     state <- witness;
     stx4 <- witness;
     indexes <@ gen_matrix_get_indexes (mat_entry, transposed);
-    state <@ xof_init_x4 (rho, indexes);
+    buf0 <-
+    (Array68.init (fun i_0 => bufx4.[(0 * (((3 * 21) + 4) + 1)) + i_0]));
+    buf1 <-
+    (Array68.init (fun i_0 => bufx4.[(1 * (((3 * 21) + 4) + 1)) + i_0]));
+    buf2 <-
+    (Array68.init (fun i_0 => bufx4.[(2 * (((3 * 21) + 4) + 1)) + i_0]));
+    buf3 <-
+    (Array68.init (fun i_0 => bufx4.[(3 * (((3 * 21) + 4) + 1)) + i_0]));
     stx4 <- state;
+    stx4 <@ xof_init_x4 (rho, indexes);
     buf_offset <- (W64.of_int 0);
     
     while ((buf_offset \ult (W64.of_int (3 * 168)))) {
       stx4 <@ _keccakf1600_4x (stx4);
-      bufx4 <@ __st4x_unpack_at (bufx4, stx4, buf_offset);
+      (buf0, buf1, buf2, buf3) <@ __st4x_unpack_atX (buf0, buf1, buf2, buf3,
+      stx4, buf_offset);
       buf_offset <- (buf_offset + (W64.of_int 168));
     }
+    bufx4 <- Array272.init
+             (fun i_0 => if (0 * (((3 * 21) + 4) + 1)) <= i_0 < (0 * (((3 * 21) + 4) + 1)) + 68
+             then buf0.[i_0-(0 * (((3 * 21) + 4) + 1))] else bufx4.[i_0]);
+    bufx4 <- Array272.init
+             (fun i_0 => if (1 * (((3 * 21) + 4) + 1)) <= i_0 < (1 * (((3 * 21) + 4) + 1)) + 68
+             then buf1.[i_0-(1 * (((3 * 21) + 4) + 1))] else bufx4.[i_0]);
+    bufx4 <- Array272.init
+             (fun i_0 => if (2 * (((3 * 21) + 4) + 1)) <= i_0 < (2 * (((3 * 21) + 4) + 1)) + 68
+             then buf2.[i_0-(2 * (((3 * 21) + 4) + 1))] else bufx4.[i_0]);
+    bufx4 <- Array272.init
+             (fun i_0 => if (3 * (((3 * 21) + 4) + 1)) <= i_0 < (3 * (((3 * 21) + 4) + 1)) + 68
+             then buf3.[i_0-(3 * (((3 * 21) + 4) + 1))] else bufx4.[i_0]);
     i <- 0;
     while (i < 4) {
       buf <-
@@ -6625,7 +6659,7 @@ module M(SC:Syscall_t) = {
       mat_entry <- (W64.of_int (4 * i));
       polx4 <- (Array1024.init (fun i_0 => matrix.[((4 * i) * 256) + i_0]));
       (* Erased call to unspill *)
-      (polx4, bufx4) <@ _gen_matrix_sample_four_polynomials (polx4, bufx4,
+      (polx4, bufx4) <@ _gen_matrix_sample_four_polynomialsX (polx4, bufx4,
       rho, mat_entry, transposed);
       matrix <- Array2304.init
                 (fun i_0 => if ((i * 4) * 256) <= i_0 < ((i * 4) * 256) + 1024

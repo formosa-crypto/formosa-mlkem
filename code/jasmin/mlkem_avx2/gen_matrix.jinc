@@ -81,6 +81,38 @@ inline fn __st4x_unpack_at
   return buf;
 }
 
+// extracts 4 keccak states (st25) from a 4-way state (st4x)
+inline fn __st4x_unpack_atX
+( reg mut ptr u64[BUF_size] buf0 buf1 buf2 buf3
+, reg const ptr u256[25] st4x
+, reg u64 offset // in bytes
+) -> reg ptr u64[BUF_size], reg ptr u64[BUF_size], reg ptr u64[BUF_size], reg ptr u64[BUF_size] {
+  inline int i;
+  reg u256 x0, x1, x2, x3;
+  reg u64 t0, t1, t2, t3;
+  for i = 0 to 6 {
+    x0 = st4x[u256 4*i+0];
+    x1 = st4x[u256 4*i+1];
+    x2 = st4x[u256 4*i+2];
+    x3 = st4x[u256 4*i+3];
+    x0, x1, x2, x3 = _4u64x4_u256x4(x0, x1, x2, x3);
+    buf0.[u256 offset + 4*8*i] = x0;
+    buf1.[u256 offset + 4*8*i] = x1;
+    buf2.[u256 offset + 4*8*i] = x2;
+    buf3.[u256 offset + 4*8*i] = x3;
+  }
+  t0 = st4x[u64 4*24+0];
+  t1 = st4x[u64 4*24+1];
+  t2 = st4x[u64 4*24+2];
+  t3 = st4x[u64 4*24+3];
+  buf0.[u64 offset + 8*24] = t0;
+  buf1.[u64 offset + 8*24] = t1;
+  buf2.[u64 offset + 8*24] = t2;
+  buf3.[u64 offset + 8*24] = t3;
+
+  return buf0, buf1, buf2, buf3;
+}
+
 inline fn __stavx2_pack_at
 ( reg const ptr u64[BUF_size] st
 , reg u64 offset // in bytes
@@ -738,39 +770,37 @@ fn _gen_matrix_sample_four_polynomialsX
 ) -> reg ptr u16[4*MLKEM_N], reg ptr u64[4*BUF_size]
 {
   inline int i;
-  reg ptr u64[BUF_size] buf;
+  reg ptr u64[BUF_size] buf, buf0, buf1, buf2, buf3;
+  reg u64 buf_offset;
   reg ptr u16[MLKEM_N] pol;
   stack u256[25] state;
   reg ptr u256[25] stx4;
-  reg u256[7] stavx2;
   reg u16[4] indexes;
-  reg u64 counter buf_offset;
 
   indexes = gen_matrix_get_indexes(mat_entry, transposed);
-  
-  state = xof_init_x4(rho, indexes);
+
+  buf0 = bufx4[0*BUF_size:BUF_size];
+  buf1 = bufx4[1*BUF_size:BUF_size];
+  buf2 = bufx4[2*BUF_size:BUF_size];
+  buf3 = bufx4[3*BUF_size:BUF_size];
   stx4 = state;
+  stx4 = xof_init_x4(rho, indexes);
   buf_offset = 0;
   while (buf_offset < 3*168) {
     stx4 = _keccakf1600_4x(stx4);
-    bufx4 = __st4x_unpack_at( bufx4, stx4, buf_offset );
+    buf0, buf1, buf2, buf3 = __st4x_unpack_atX( buf0, buf1, buf2, buf3, stx4, buf_offset );
     buf_offset += 168;
   }
+  bufx4[0*BUF_size:BUF_size] = buf0;
+  bufx4[1*BUF_size:BUF_size] = buf1;
+  bufx4[2*BUF_size:BUF_size] = buf2;
+  bufx4[3*BUF_size:BUF_size] = buf3;
 
   for i = 0 to 4
   {
     buf = bufx4[i*BUF_size:BUF_size];
-    buf_offset = 0;
     pol = polx4[i*MLKEM_N:MLKEM_N];
-    counter = 0;
-    pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
-    buf_offset = 2*168;
-    while (counter < MLKEM_N) {
-      stavx2 = _stavx2_pack_at(buf, buf_offset);
-      stavx2 = _keccakf1600_avx2(stavx2);
-      buf = _stavx2_unpack_at(buf, buf_offset, stavx2);
-      pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
-    }
+    pol, buf = __gen_matrix_fill_polynomial(pol, buf);
     polx4[i*MLKEM_N:MLKEM_N] = pol;
     bufx4[i*BUF_size:BUF_size] = buf;
   }
@@ -801,40 +831,6 @@ inline fn __gen_matrix_sample_one_polynomial
   return pol, buf;      
 }
 
-inline fn __gen_matrix_sample_one_polynomialX
-( reg mut ptr u16[MLKEM_N] pol
-, reg mut ptr u64[BUF_size] buf
-, reg ptr u8[32] rho
-, reg u16 rc
-) -> reg ptr u16[MLKEM_N], reg ptr u64[BUF_size]
-{
-  reg u256[7] stavx2;
-  reg u64 counter buf_offset;
-  
-  stavx2 = xof_init_avx2(rho, rc);
-  buf_offset = 0;
-  while (buf_offset < 3*168) {
-    stavx2 = _keccakf1600_avx2(stavx2);
-    buf = _stavx2_unpack_at( buf, buf_offset, stavx2 );
-    buf_offset += 168;
-  }
-  buf_offset = 0;
-  counter = 0;
-  pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
-
-  buf_offset = 2*168;
-  while (counter < MLKEM_N) {
-    stavx2 = _stavx2_pack_at(buf, buf_offset);
-    stavx2 = _keccakf1600_avx2(stavx2);
-    buf = _stavx2_unpack_at(buf, buf_offset, stavx2);
-    pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
-  }
-
-  return pol, buf;      
-}
-
-
-
 fn _gen_matrix_avx2
 ( reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix
 , reg ptr u8[32] rho
@@ -860,7 +856,7 @@ fn _gen_matrix_avx2
     mat_entry = 4*i;
     polx4 = matrix[4*i*MLKEM_N:4*MLKEM_N];
     () = #unspill(transposed);
-    polx4, bufx4 = _gen_matrix_sample_four_polynomials(polx4, bufx4, rho, mat_entry, transposed);
+    polx4, bufx4 = _gen_matrix_sample_four_polynomialsX(polx4, bufx4, rho, mat_entry, transposed);
     matrix[i*4*MLKEM_N:4*MLKEM_N] = polx4;
   }
 
