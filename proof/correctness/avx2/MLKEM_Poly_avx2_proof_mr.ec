@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
-require import W16extra WArray512 WArray32 WArray16.
+require import W16extra WArray512 WArray32 WArray16 WArray128.
 require import AVX2_Ops MLKEM_avx2_encdec MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxlemmas.
 require import Jkem_avx2 Jkem.
 require import Fq NTT_Fq MLKEM_Poly.
@@ -18,298 +18,221 @@ import Fq_avx2.
 import NTT_Avx2.
 import MLKEM_Poly.
 
-(* jazzline
-lemma poly_add_corr_h _a _b ab bb :
-      0 <= ab <= 6 => 0 <= bb <= 3 =>
-      hoare[ Mprevec.poly_add2 :
-           _a = lift_array256 rp /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq rp 0 256 ab /\
-           signed_bound_cxq bp 0 256 bb
-           ==>
-           signed_bound_cxq res 0 256 (ab + bb) /\
-           forall k, 0 <= k < 256 =>
-             incoeff (to_sint res.[k]) = _a.[k] + _b.[k]].
-proof. 
-  move => [ab_lb ab_ub] [bb_lb bb_ub].
-  proc.
-  sp.
-  while (0 <= i <= 16 /\
-           (forall k, 16*i <= k < 256 => incoeff (to_sint rp.[k]) = _a.[k]) /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq rp (16*i) 256 ab /\
-           signed_bound_cxq bp 0 256 bb /\
-           signed_bound_cxq rp 0 (16*i) (ab + bb) /\
-           (forall k, 0 <= k < (16*i) =>
-             incoeff (to_sint rp.[k]) = _a.[k] + _b.[k])); last first.
-  auto => />.
-  move => &hr signed_bound_a signed_bound_b.
-  do split; 1..3:by smt(Array256.initiE Array256.mapiE).
-  move => i rp i_tlb i_lb i_ub _ _.
-  have ->: i = 16. by move : i_tlb i_ub => /#.
-  move => -> /=.
-  smt().
-
-  inline Ops.iVPADD_16u16.
-  wp; skip.
-  move => &hr [#] i_lb i_ub _a_def _b_def sgnd_bnd_hrp_a sgnd_bnd_bp sgnd_bnd_lrp_ab lrp_def i_tub />.
-  rewrite mulzDr /=.
-  do split; first 2 by move : i_lb i_tub => /#.
-  move => k k_lb k_ub.
-  rewrite lezNgt in k_lb.
-  rewrite filliE 1:/# k_lb /=.
-  rewrite -lezNgt in k_lb.
-  rewrite -_a_def 1:/# //=.
-
-  rewrite /signed_bound_cxq => k [k_lb k_ub].
-  rewrite lezNgt in k_lb.
-  rewrite filliE 1:/# k_lb /=.
-  rewrite -lezNgt in k_lb.
-  move : sgnd_bnd_hrp_a => /#.
-
-  rewrite /signed_bound_cxq => k [k_lb k_ub].
-  rewrite filliE 1:/# /= initiE 1:/# /=.
-  case (16 * i{hr} <= k) => k_tlb.
-    + rewrite k_ub /=.
-      do rewrite lift2poly_iso //=.
-      move : (add_corr_qv rp{hr}.[k] bp{hr}.[k] _a.[k] _b.[k] 6 3 _ _ _ _ _ _) => />;
-        1,2:by smt(Array256.initiE Array256.mapiE Array256.tP).
-      rewrite /signed_bound_cxq in sgnd_bnd_hrp_a.
-      move : (sgnd_bnd_hrp_a k) ab_lb ab_ub.
-      rewrite k_tlb /=. by smt().
-
-      rewrite /signed_bound_cxq in sgnd_bnd_bp.
-      move : (sgnd_bnd_bp k) bb_lb bb_ub.
-      rewrite k_lb /=. by smt().
-
-
-      move => rp_bp_def bp_lb bp_ub.
-
-      rewrite to_sintD_small => />.
-        move : (sgnd_bnd_hrp_a k _); first by smt().
-        move : (sgnd_bnd_bp k _); first by smt().
-        smt().
-      move : (sgnd_bnd_hrp_a k _) (sgnd_bnd_bp k _) => /#.
-  + simplify.
-    rewrite /signed_bound_cxq /b16 in sgnd_bnd_lrp_ab.
-    rewrite (sgnd_bnd_lrp_ab k) 1:/#.
-
-  move => k k_lb k_ub.
-  rewrite filliE 1:/# /= initiE 1:/# /=.
-  case (16 * i{hr} <= k) => k_tlb.
-    + rewrite k_ub /=.
-      do (rewrite lift2poly_iso //=).
-      rewrite to_sintD_small => />.
-        move : (sgnd_bnd_hrp_a k _); first by smt().
-        move : (sgnd_bnd_bp k _); first by smt().
-        smt().
-      rewrite incoeffD.
-      rewrite _a_def 1:/#; congr.
-      rewrite /lift_array256 in _b_def.
-      rewrite _b_def mapiE 1:/# //=.
-    + simplify.
-      rewrite -ltzNge in k_tlb.
-      rewrite lrp_def //=.
-qed.
-
-lemma poly_add_ll : islossless Mprevec.poly_add2.
-proof. 
-  proc; while (0<= i <= 16) (16 - i).
-  auto => />.
-  inline Ops.iVPADD_16u16.
-  auto => />.
-  smt().
-  auto => />.
-  smt().
-qed.
-
-lemma poly_add_corr _a _b ab bb :
-    0 <= ab <= 6 => 0 <= bb <= 3 =>  
-      phoare[ Mprevec.poly_add2 :
-           _a = lift_array256 rp /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq rp 0 256 ab /\
-           signed_bound_cxq bp 0 256 bb 
-           ==>
-           signed_bound_cxq res 0 256 (ab + bb) /\ 
-           forall k, 0 <= k < 256 =>
-              incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
-   by move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb).
-
-lemma poly_sub_corr_h _a _b ab bb :
-    0 <= ab <= 4 => 0 <= bb <= 4 =>
-      hoare[ Mprevec.poly_sub :
-           _a = lift_array256 ap /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq ap 0 256 ab /\
-           signed_bound_cxq bp 0 256 bb
-           ==>
-           signed_bound_cxq res 0 256 (ab + bb) /\
-           forall k, 0 <= k < 256 =>
-              incoeff (to_sint res.[k]) = _a.[k] - _b.[k]].
-proof. 
-  move => [ab_lb ab_ub] [bb_lb bb_ub].
-  proc.
-  while (0 <= i <= 16 /\
-           _a = lift_array256 ap /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq ap 0 256 ab /\
-           signed_bound_cxq bp 0 256 bb /\
-           signed_bound_cxq rp 0 (16*i) (ab + bb) /\
-           forall k, 0 <= k < (16*i) =>
-              incoeff (to_sint rp.[k]) = _a.[k] - _b.[k]
-  ); first last.
-  auto => />.
-  move => &hr signed_bound_a signed_bound_b.
-  do split; first 3 by smt().
-
-  inline Ops.iVPSUB_16u16.
-  wp; skip.
-  move => &hr [#] i_lb i_ub _a_def _b_def sgnd_bnd_hap_a sgnd_bnd_bp sgnd_bnd_lrp_ab lrp_def i_tub />.
-
-  rewrite mulzDr /=.
-  do split; first 2 by move : i_lb i_tub => /#.
-  
-  rewrite /signed_bound_cxq => k [k_lb k_ub].
-  rewrite filliE 1:/# /=.
-  case (16 * i{hr} <= k) => k_tlb.
-    + rewrite k_ub /= initiE 1:/# /=.
-      do (rewrite lift2poly_iso 1:/# 1:/#).
-      rewrite to_sintB_small => />.
-        move : (sgnd_bnd_hap_a k _) (sgnd_bnd_bp k _) => /#.
-        move : (sgnd_bnd_hap_a k _) (sgnd_bnd_bp k _) => /#.
-    + simplify. rewrite -ltzNge in k_tlb.
-      rewrite /signed_bound_cxq /b16 in sgnd_bnd_lrp_ab.
-      rewrite (sgnd_bnd_lrp_ab k _); first by rewrite k_lb k_tlb.
-
-  move => k k_lb k_ub.
-  rewrite filliE 1:/# /= initiE 1:/# /=.
-  case (16 * i{hr} <= k) => k_tlb.
-    + rewrite k_ub /=.
-      do (rewrite lift2poly_iso //=).
-      rewrite to_sintB_small => />.
-        move : (sgnd_bnd_hap_a k _) (sgnd_bnd_bp k _) => /#.
-      rewrite incoeffB.
-      rewrite _b_def _a_def /lift_array256.
-      rewrite mapiE 1:/# mapiE 1:/# //=.
-    + simplify.
-      rewrite -ltzNge in k_tlb.
-      rewrite lrp_def //=.
-qed.
-
-lemma poly_sub_ll : islossless Mprevec.poly_sub.
-proof. 
-  proc; while (0<= i <= 16) (16 - i); auto => />.
-  inline Ops.iVPSUB_16u16.
-  auto => />; smt().
-  auto => />; smt().
-qed.
-
-lemma poly_sub_corr _a _b ab bb :
-    0 <= ab <= 4 => 0 <= bb <= 4 =>  
-      phoare[ Mprevec.poly_sub :
-           _a = lift_array256 ap /\
-           _b = lift_array256 bp /\
-           signed_bound_cxq ap 0 256 ab /\
-           signed_bound_cxq bp 0 256 bb 
-           ==>
-           signed_bound_cxq res 0 256 (ab + bb) /\ 
-           forall k, 0 <= k < 256 =>
-              incoeff (to_sint res.[k]) = _a.[k] - _b.[k]] = 1%r
-  by move => *; conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _).
-*)
 require import NTTAlgebra.
-
-bind bitstring W256.w2bits W256.bits2w W256.t 256.
-bind bitstring W16.w2bits W16.bits2w W16.t 16.
-bind bitstring W8.w2bits W8.bits2w W8.t 8.
-bind circuit VPSUB_16u16 "VPSUB_16u16".
-bind circuit VPSRA_16u16 "VPSRA_16u16".
-bind circuit VPADD_16u16 "VPADD_16u16".
-bind circuit W256.(`&`) "AND_256".
 
 
 import BitEncoding.BitChunking.
 
 timeout 1.
 
-lemma unpack_vs_bits_16u16_size(w : W256.t) :
-   size (chunk 16 (flatten [w2bits w])) = 16
-    by rewrite  size_chunk // size_flatten //.
+(*************************)
+(*************************)
+(* BEGIN BINDINGS        *)
+(*************************)
+(*************************)
+(*************************)
 
-lemma unpack_vs_bits_16u16(w : W256.t) k :
-  0 <= k < 16 =>
-  nth witness (map W16.bits2w (chunk 16 (flatten [w2bits w]))) k = (unpack16 w).[k].
-move => kb.
-  rewrite (nth_map witness);1:smt(unpack_vs_bits_16u16_size size_map).
-  rewrite unpack16E initiE /=;1:smt().
-  rewrite /(\bits16) wordP => i ib.
-  rewrite initiE // get_bits2w // (nth_change_dfl [] witness);
-     1: by smt(unpack_vs_bits_16u16_size). 
-  rewrite JWordList.nth_chunk //; move : kb => [#kb0 kb1] //.
-  rewrite size_flatten /= /sumz /=; 
-    1: by smt().
-  rewrite nth_take //=; move : ib => [#ib0 ib1] //.
-  rewrite nth_drop //=; 1: by smt(). 
-  rewrite flatten_cons flatten_nil /= cats0. 
-   by rewrite get_w2bits mulrC.
+require import QFABV.
+
+theory W4.
+  abbrev [-printing] size = 4.
+  clone include BitWordSH with op size <- size
+  rename "_XX" as "_4"
+  proof gt0_size by done,
+        size_le_256 by done.
+
+end W4. export W4 W4.ALU W4.SHIFT.
+
+bind bitstring W4.w2bits W4.bits2w W4.t 4.
+realize ge0_size by auto.
+realize size_tolist by exact W4.size_w2bits.
+realize tolistK by exact W4.w2bitsK.
+realize oflistK by exact W4.bits2wK.
+bind bitstring W256.w2bits W256.bits2w W256.t 256.
+realize ge0_size by auto.
+realize size_tolist by exact W256.size_w2bits.
+realize tolistK by exact W256.w2bitsK.
+realize oflistK by exact W256.bits2wK.
+bind bitstring W64.w2bits W64.bits2w W64.t 64.
+realize ge0_size by auto.
+realize size_tolist by exact W64.size_w2bits.
+realize tolistK by exact W64.w2bitsK.
+realize oflistK by exact W64.bits2wK.
+bind bitstring W32.w2bits W32.bits2w W32.t 32.
+realize ge0_size by auto.
+realize size_tolist by exact W32.size_w2bits.
+realize tolistK by exact W32.w2bitsK.
+realize oflistK by exact W32.bits2wK.
+bind bitstring W16.w2bits W16.bits2w W16.t 16.
+realize ge0_size by auto.
+realize size_tolist by exact W16.size_w2bits.
+realize tolistK by exact W16.w2bitsK.
+realize oflistK by exact W16.bits2wK.
+bind bitstring W8.w2bits W8.bits2w W8.t 8.
+realize ge0_size by auto.
+realize size_tolist by exact W8.size_w2bits.
+realize tolistK by exact W8.w2bitsK.
+realize oflistK by exact W8.bits2wK.
+bind circuit VPSUB_16u16 "VPSUB_16u16".
+bind circuit VPSRA_16u16 "VPSRA_16u16".
+bind circuit VPADD_16u16 "VPADD_16u16".
+bind circuit W256.(`&`) "AND_256".
+bind circuit VPBROADCAST_16u16 "VPBROADCAST_16u16".
+bind circuit VPMULH_16u16 "VPMULH_16u16".
+bind circuit VPMULHRS_16u16 "VPMULHRS_16u16".
+bind circuit VPACKUS_16u16 "VPACKUS_16u16".
+bind circuit VPMADDUBSW_256 "VPMADDUBSW_256".
+bind circuit VPERMD "VPERMD".
+
+
+bind op W16.(+) "bvadd".
+realize bvaddP. 
+move => bv1 bv2.
+by rewrite /BV_W16_t.toint -!W16.to_uintE !W16.to_uintD W16.to_uintE.
 qed.
 
-lemma unpack_vs_bits_pre_16u16 (w : W256.t) (f : W16.t -> bool) (g : W16.t -> bool) :  (forall x, f x => g x) => 
-   (forall (k : int), 0 <= k && k < 16 => f (unpack16 w).[k]) =>
-         all g (map W16.bits2w (chunk 16 (flatten [w2bits w]))).
+bind op W64.(+) "bvadd".
+realize bvaddP. 
+move => bv1 bv2.
+by rewrite /BV_W64_t.toint -!W64.to_uintE !W64.to_uintD W64.to_uintE.
+qed.
+
+op sliceget_256_256_16(a : W16.t Array256.t, i : int) : W256.t =
+   WArray512.get256 (WArray512.init16 (fun (i_0 : int) => a.[i_0])) i.
+
+lemma sliceget_256_256_16E (a : W16.t Array256.t) (i : int) :
+   WArray512.get256 (WArray512.init16 (fun (i_0 : int) => a.[i_0])) i = 
+    sliceget_256_256_16 a i by auto.
+
+op sliceset_256_256_16(a : W16.t Array256.t,i : int, x : W256.t) : W16.t Array256.t =
+   Array256.init (fun (i0 : int) => WArray512.get16 (WArray512.set256 ((WArray512.init16 (fun (i_0 : int) => a.[i_0]))) i x) i0).
+
+lemma sliceset_256_256_16E  (a : W16.t Array256.t) (i : int) (x  : W256.t) :
+  Array256.init (fun (i0 : int) => WArray512.get16 (WArray512.set256 ((WArray512.init16 (fun (i_0 : int) => a.[i_0]))) i x) i0) = 
+   sliceset_256_256_16 a i x by auto.
+
+op sliceget_256_16_16(a : W16.t Array16.t, i : int) : W256.t =
+   WArray32.get256 (WArray32.init16 (fun (i_0 : int) => a.[i_0])) i.
+
+lemma sliceget_256_16_16E (a : W16.t Array16.t) (i : int) :
+   WArray32.get256 (WArray32.init16 (fun (i_0 : int) => a.[i_0])) i = 
+    sliceget_256_16_16 a i by auto.
+
+op sliceget_256_8_32(a : W32.t Array8.t, i : int) : W256.t =
+   WArray32.get256 (WArray32.init32 (fun (i_0 : int) => a.[i_0])) i.
+
+lemma sliceget_256_8_32E (a : W32.t Array8.t) (i : int) :
+   WArray32.get256 (WArray32.init32 (fun (i_0 : int) => a.[i_0])) i = 
+    sliceget_256_8_32 a i by auto.
+
+op sliceset_256_128_8(a : W8.t Array128.t,i : int, x : W256.t) : W8.t Array128.t =
+   Array128.init ((WArray128.get8 ((WArray128.set256 ((WArray128.init8 (fun (i_0 : int) => a.[i_0]))) i x)))).
+
+lemma sliceset_256_128_8E  (a : W8.t Array128.t) (i : int) (x  : W256.t) :
+  Array128.init ((WArray128.get8 ((WArray128.set256 ((WArray128.init8 (fun (i_0 : int) => a.[i_0]))) i x)))) = 
+   sliceset_256_128_8 a i x by auto.
+
+
+bind bitstring circuit Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list (W16.t Array256.t) 256.
+
+bind bitstring circuit Array16."_.[_]" Array16."_.[_<-_]" Array16.to_list (W16.t Array16.t) 16.
+
+bind bitstring circuit Array128."_.[_]" Array128."_.[_<-_]" Array128.to_list (W8.t Array128.t) 128.
+
+bind bitstring circuit Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list (W32.t Array8.t) 8.
+
+(*************************)
+(*************************)
+(* END BINDINGS          *)
+(*************************)
+(*************************)
+(*************************)
+
+(*************************)
+(*************************)
+(* begin aux lemmas      *)
+(*************************)
+(*************************)
+(*************************)
+
+
+lemma get_vs_bits_256u16_size(wa : W16.t Array256.t) :
+   size (chunk 16 (flatten [flatten (map W16.w2bits (to_list wa))])) = 256.
+     rewrite flatten1 size_chunk // size_flatten // -map_comp /(\o). 
+     rewrite (eq_map _ (fun _ => 16)) => //=.
+     have -> : map (fun (_ : W16.t) => 16) (to_list wa) =
+               mkseq (fun _ => 16) 256; last 
+        by rewrite /mkseq -iotaredE /= /sumz /=. 
+     apply (eq_from_nth witness).
+     + by rewrite size_map Array256.size_to_list size_mkseq /#.
+     move => i.
+     rewrite size_map Array256.size_to_list => ib.
+     rewrite (nth_map witness) /=;1: by smt(Array256.size_to_list).
+     by rewrite (nth_mkseq) /#.
+qed.
+
+lemma get_vs_bits_256u16(wa : W16.t Array256.t) k :
+  0 <= k < 256 =>
+  nth witness (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list wa))]))) k = wa.[k].
+move => kb.
+  rewrite (nth_map witness);1:smt(get_vs_bits_256u16_size size_map).
+  rewrite  (nth_change_dfl [] witness);
+     1: by smt(get_vs_bits_256u16_size). 
+  rewrite JWordList.nth_chunk //; move : kb => [#kb0 kb1] //.
+  rewrite flatten1 size_flatten  /= /sumz /=. 
+  + have -> : (map List.size (map W16.w2bits (to_list wa))) = 
+         mkseq (fun _ => 16) 256.
+     apply (eq_from_nth witness);1:
+      by rewrite !size_map size_iota. 
+    move => i. rewrite !size_map size_iota /max /= => ib.
+    rewrite nth_mkseq 1:/# /=.
+    rewrite (nth_map witness);1:by rewrite size_map Array256.size_to_list /#.
+    rewrite (nth_map witness); 1:by rewrite  Array256.size_to_list /#.
+    by rewrite size_w2bits.
+  by rewrite /mkseq -iotaredE /= /#.
+  rewrite flatten1 drop_flatten_ctt.
+  by move => x; rewrite mapP => H;elim H => x0; smt(W16.size_w2bits).
+  rewrite -map_drop. 
+  rewrite (: 16 = 16*1) 1:/# take_flatten_ctt.
+  by move => x; rewrite mapP => H;elim H => x0; smt(W16.size_w2bits).
+  rewrite -map_take (drop_take1_nth witness) /=;1:smt(Array256.size_to_list).
+  by rewrite flatten1 w2bitsK.
+qed.
+
+lemma get_vs_bits_pre_256u16 (wa : W16.t Array256.t) (f : W16.t -> bool) (g : W16.t -> bool) :  (forall x, f x => g x) => 
+   (forall (k : int), 0 <= k && k < 256 => f wa.[k]) =>
+         all g (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list wa))]))).
 proof. 
   move => H H0.
-  rewrite /all_map /preim /=.  
   apply (all_nthP _ _ witness) => k kb /=.
-  rewrite unpack_vs_bits_16u16;smt(unpack_vs_bits_16u16_size size_map).
+  by rewrite get_vs_bits_256u16;smt(get_vs_bits_256u16_size size_map).
 qed.
 
-lemma array256_w16_256 (a : W16.t Array256.t) i k : 
-   0<=i<16 => 0 <= k < 16 =>
-    (unpack16 (get256 ((init16 ("_.[_]" a)))%WArray512 i)).[k] = 
-             a.[i * 16 + k].
-  move => ib kb.
-  rewrite !get_unpack16 // WArray512.get256E //= kb /=.
-  rewrite wordP => j jb.
-  rewrite pack2E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /= /(\bits8) /=. 
-  smt(W8.initiE). 
-qed.
+(*************************)
+(*************************)
+(* end aux lemmas        *)
+(*************************)
+(*************************)
+(*************************)
+
+
+(*************************)
+(*************************)
+(* begin csubq proof     *)
+(*************************)
+(*************************)
+(*************************)
 
 op lane_func_csubq(x : W16.t) = if W16.of_int 3329 \sle x then x - W16.of_int 3329 else x. 
 op pre16_csubq(x : W16.t) : bool =  W16.zero \sle x && x \slt W16.of_int (6658). 
 
-op post256_csubq(x0 : W256.t, x : W256.t) : bool =
-    W16u16.unpack16 x = map lane_func_csubq (W16u16.unpack16 x0).
-
-lemma csubq_aux _a : 
-hoare [ Jkem_avx2.M(Syscall).__csubq : 
-      qx16 = W256.of_int 5881923629679188442283784376194736327817742869488325897419002016668082834689 /\
-      _a = r /\ forall k, 0<=k<16 => 0 <= to_sint (W16u16.unpack16 r).[k] < 2*q ==> post256_csubq _a res].
-proc => /=.
-proc change 1 : (VPSUB_16u16 r (W256.of_int 5881923629679188442283784376194736327817742869488325897419002016668082834689)); 1: by admit.
-proc change 3: (t `&` (W256.of_int 5881923629679188442283784376194736327817742869488325897419002016668082834689)); 1: by admit.
-(* FIXME: inputs should be global constants *)
-bdep [ "r" ] 16 [ "r" ] 16 lane_func_csubq pre16_csubq.
-+ move => &hr /= [# H H0 H1].
-  timeout 1.
-  have /= H2 := (unpack_vs_bits_pre_16u16 r{hr}
-        (fun w => 0 <= W16.to_sint w && W16.to_sint w < 2 * q)
-         pre16_csubq _);
-    1: by move => x; rewrite /pre16_csubq sleE sltE /=   /to_sint /smod /= qE //=. 
-  by apply (H2 H1).
-move => &hr WRONG_POST.
-clear WRONG_POST.
-have CORRECT_POST : map lane_func_csubq (map W16.bits2w (chunk 16 (flatten [w2bits _a]))) = map W16.bits2w (chunk 16 (flatten [w2bits r{hr}])).
-admit.
-rewrite /post256_csubq.
-rewrite packP => k kb.
-rewrite mapiE //-(unpack_vs_bits_16u16 _a); 1: by smt().
-rewrite -(nth_map _ witness); 1: smt(unpack_vs_bits_16u16_size size_map).
-rewrite CORRECT_POST.
-by smt(unpack_vs_bits_16u16).
+lemma post_commutes_csubq x : pre16_csubq x =>
+    incoeff (to_sint x) = incoeff (to_sint (lane_func_csubq x)) /\ bpos16 (lane_func_csubq x) q.
+proof.
+rewrite /pre16_csubq /lane_func_csubq sltE !sleE /= /smod /= -eq_incoeff. 
+case (3329 <= to_sint x);last by smt().
+by move => *;rewrite  to_sintB_small /= /smod /= /#. 
 qed.
-
 
 lemma poly_csubq_corr_h ap :
       hoare[ Jkem_avx2.M(Syscall)._poly_csubq :
@@ -318,31 +241,71 @@ lemma poly_csubq_corr_h ap :
              ==>
              ap = lift_array256 res /\
              pos_bound256_cxq res 0 256 1 ].
-proc. 
-  while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\
-         qx16 = W256.of_int 5881923629679188442283784376194736327817742869488325897419002016668082834689); last first.
-  + auto => /> &hr ?; do split. 
-    + smt().
-    + rewrite /init16 /= init_of_list -iotaredE /= get256E init_of_list -iotaredE /=.
-      rewrite -!get_unpack8 // -W16u16_W32u8 /=.
-      by rewrite of_uint_pack16 /= -iotaredE /=.
-    + smt().
-  wp; ecall (csubq_aux r); auto => /> &hr Hbb ????;do split.
-  + by smt(array256_w16_256).
-  move => H rr @/post256_csubq.
-  rewrite /lane_func_csubq /lift_array256 /pos_bound256_cxq packP => Hpack.
-  rewrite !tP;do split; [ | | | smt() | smt() ]; 
-  move => k kb; rewrite ?mapiE // !initiE //= ?get16_set256E // 1:/#;
-  case (32 * i{hr} <= 2 * k && 2 * k < 32 * (i{hr} + 1)); 
-    [ | by move => ib; rewrite get16_init16 /# |
-      | by move => ib; rewrite get16_init16 /# |
-     smt() | smt() |  | smt(get16_init16) ];
-    move => ib; rewrite -get_unpack16 1:/# Hpack 1:/# mapiE 1:/# /=;
-    rewrite sleE /= /smod /= !array256_w16_256 1,2:/#;
-    rewrite (: i{hr} * 16 + (k - 16 * i{hr}) = k) 1:/#;
-   case (3329 <= to_sint rp{hr}.[k]); 
-    move => ?; rewrite ?to_sintB_small /= /smod /=  /#. 
-qed. 
+proc.
+  proc rewrite 1  sliceget_256_16_16E.
+  unroll for 3. 
+  proc rewrite 3  sliceget_256_256_16E.
+  proc rewrite 7  sliceget_256_256_16E.
+  proc rewrite 11  sliceget_256_256_16E.
+  proc rewrite 15  sliceget_256_256_16E.
+  proc rewrite 19 sliceget_256_256_16E.
+  proc rewrite 23  sliceget_256_256_16E.
+  proc rewrite 27  sliceget_256_256_16E.
+  proc rewrite 31  sliceget_256_256_16E.
+  proc rewrite 35  sliceget_256_256_16E.
+  proc rewrite 39  sliceget_256_256_16E.
+  proc rewrite 43  sliceget_256_256_16E.
+  proc rewrite 47  sliceget_256_256_16E.
+  proc rewrite 51  sliceget_256_256_16E.
+  proc rewrite 55  sliceget_256_256_16E.
+  proc rewrite 59  sliceget_256_256_16E.
+  proc rewrite 63  sliceget_256_256_16E.
+  proc rewrite 5  sliceset_256_256_16E.
+  proc rewrite 9  sliceset_256_256_16E.
+  proc rewrite 13  sliceset_256_256_16E.
+  proc rewrite 17  sliceset_256_256_16E.
+  proc rewrite 21  sliceset_256_256_16E.
+  proc rewrite 25  sliceset_256_256_16E.
+  proc rewrite 29  sliceset_256_256_16E.
+  proc rewrite 33  sliceset_256_256_16E.
+  proc rewrite 37  sliceset_256_256_16E.
+  proc rewrite 41  sliceset_256_256_16E.
+  proc rewrite 45  sliceset_256_256_16E.
+  proc rewrite 49  sliceset_256_256_16E.
+  proc rewrite 53  sliceset_256_256_16E.
+  proc rewrite 57  sliceset_256_256_16E.
+  proc rewrite 61  sliceset_256_256_16E.
+  proc rewrite 65  sliceset_256_256_16E.
+  exists * rp;elim * =>_rp0.
+  conseq (: _rp0 = rp /\ pos_bound256_cxq _rp0 0 256 2 ==> 
+          lift_array256 rp = lift_array256 _rp0 /\ pos_bound256_cxq rp 0 256 1);1,2: smt(). 
+  clear ap.
+  inline *.
+  cfold 2.
+  bdep 16 16 [ "_rp0" ] [ "rp" ] [ "rp" ] lane_func_csubq pre16_csubq.
++ move => &hr /= [# H H0]; rewrite H.
+  by apply (get_vs_bits_pre_256u16 rp{hr}
+        (fun w => 0 <= W16.to_sint w && W16.to_sint w < 2 * q)
+         pre16_csubq _ _);
+   [ by move => x; rewrite /pre16_csubq sleE sltE /=   /to_sint /smod /= qE //= | by smt() ]. 
+  
+rewrite /lift_array256 /pos_bound256_cxq;move => &hr [#] H H0 rp0new WRONG_POST.
+have PRE : 
+map lane_func_csubq (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _rp0))]))) =
+            map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list rp0new{hr}))])). 
+apply WRONG_POST.
+clear WRONG_POST.  
+have HH  : forall k, nth witness (map lane_func_csubq (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _rp0))])))) k = nth witness (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list rp0new))]))) k by smt().
+rewrite Array256.tP;split => k kb.
++ rewrite !Array256.mapiE //=;move : (HH k).
+  rewrite (nth_map witness);1: smt(size_map get_vs_bits_256u16_size). 
+  rewrite !get_vs_bits_256u16 1,2:/#. 
+  by smt(post_commutes_csubq pow2_16 W16.of_uintK W16.to_uintK ).
+move : (HH k).
+rewrite  (nth_map witness)  /=;1: smt(size_map get_vs_bits_256u16_size).
+have?: 2^(16-1) = 32768 by auto. 
+by smt(post_commutes_csubq get_vs_bits_256u16 pow2_16  W16.of_uintK W16.to_uintK ).
+qed.
  
 lemma poly_csubq_ll : islossless Jkem_avx2.M(Syscall)._poly_csubq.
 proof. 
@@ -359,271 +322,71 @@ lemma poly_csubq_corr ap :
            pos_bound256_cxq res 0 256 1 ] = 1%r by 
   by conseq poly_csubq_ll (poly_csubq_corr_h ap).
 
-(* jazzline
-lemma poly_reduce_corr_h (ap: coeff Array256.t):
-     hoare[ Jkem_avx2.M(Syscall).__poly_reduce :
-          ap = lift_array256 rp ==>
-          ap = lift_array256 res /\
-          forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)].
-proof. 
-  proc.
-  while (0 <= i <= 16 /\
-         (forall k, 0 <= k < 256 => ap.[k] = incoeff (to_sint rp.[k])) /\
-         (forall k, 0 <= k < 16 * i => bpos16 rp.[k] (2*q)) /\
-         (forall k, 0 <= k < 16 => qx16.[k] = Jkem_avx2.jqx16.[k]) /\
-         (forall k, 0 <= k < 16 => vx16.[k] = Jkem_avx2.jvx16.[k])); last first.
-  wp. skip.
-  move => &hr ap_def />.
-  do split.
-  rewrite ap_def /lift_array256 => k k_lb k_ub.
-  rewrite mapiE 1:/# //=.
-  
-  smt().
-  
-  move => k k_lb k_ub.
-  rewrite /lift2poly initiE => />.
-  rewrite /get256_direct => />.
-  rewrite k_lb k_ub => /=.
-  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
-  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
-  rewrite initiE. move : k_lb k_ub => /#. simplify.
-  rewrite initiE. move : k_lb k_ub => /#. simplify.
-  rewrite (_:(2*k + 1) %/2 = 2*k %/ 2).
-    smt().
-  rewrite (_: 2*k %% 2 = 0).
-    smt().
-  rewrite (_: (2*k + 1) %% 2 = 1).
-    smt().
-  rewrite pack2_bits8.
-  smt().
-  
-  move => k k_lb k_ub.
-  rewrite /lift2poly initiE => />.
-  rewrite /get256_direct => />.
-  rewrite k_lb k_ub => /=.
-  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
-  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
-  rewrite initiE. move : k_lb k_ub => /#. simplify.
-  rewrite initiE. move : k_lb k_ub => /#. simplify.
-  rewrite (_:(2*k + 1) %/2 = 2*k %/ 2).
-    smt().
-  rewrite (_: 2*k %% 2 = 0).
-    smt().
-  rewrite (_: (2*k + 1) %% 2 = 1).
-    smt().
-  rewrite pack2_bits8.
-  smt().
-  
-  move => i rpu i_tlb i_lb i_ub.
-  have ->: i=16. by move : i_tlb i_ub => /#.
-  simplify.
-  move => ap_eq_rpu rpu_bnds jqx16_def vx16_def.
-  split.
-    + apply Array256.ext_eq => x x_i.
-      rewrite /lift_array256 mapiE 1:x_i /= ap_eq_rpu 1:x_i //=.
-    + move : rpu_bnds => /#.
-  
-  wp; sp; ecall (Fq_avx2.barret_red16x_corr_hh (Fq_avx2.lift_array16 r)). auto => />.
-  move => &hr i_lb i_rub rp_sbred rp_eq__rp qx16_def vx16_def i_ub result red16x_bred.
-  split; first by move : i_lb i_ub => /#.
-  pose rp_sub := ((Fq_avx2.lift_array16
-                       (lift2poly
-                          (get256 ((init16 ("_.[_]" rp{hr})))%WArray512 i{hr})))).
-  split.
-  move => k k_lb k_ub.
-  rewrite filliE 1:/# /=.
-  case (16 * i{hr} <= k && k < 16 * i{hr} + 16) => k_si.
-    + have bred := (BREDCp_corr rp_sub.[k %% 16] 26 _ _ _ _ _ _);
-        1..4,6: smt(qE pow2_16).
-        rewrite /rp_sub /lift_array16 mapiE 1:/# /= /R.
-        move : W16.to_sint_cmp => /#.
-      move : bred => [bred_i bred_cgr].
-      rewrite red16x_bred 1:/#.
-      rewrite eq_incoeff in bred_cgr.
-      rewrite bred_cgr.
-      rewrite /lift_array16 /= mapiE 1:/# /= lift2poly_iso //.
-      rewrite (rp_sbred k _) //.
-    + rewrite (rp_sbred k _) //.
-  rewrite mulzDr mulz1 => k k_lb k_ub.
-  rewrite filliE // 1:/# k_ub /=.
-  case (16 * i{hr} <= k) => k_tlb.
-    + have bred := (BREDCp_corr rp_sub.[k %% 16] 26 _ _ _ _ _ _);
-        1..4,6: smt(qE pow2_16).
-        rewrite /rp_sub /lift_array16 mapiE 1:/# /= /R.
-        move : W16.to_sint_cmp => /#.
-        move : bred; rewrite andabP; move => [[bred_lb bred_ub] bred_cgr].
-        (* move : bred => /andabP [[bred_lb bred_ub] bred_cgr]. *)
-        rewrite red16x_bred 1:/# -/rp_sub bred_lb bred_ub //=.
-    + rewrite -ltzNge in k_tlb.
-      move : (rp_eq__rp k); rewrite k_lb k_tlb /= => /#.
-qed.
+(*************************)
+(*************************)
+(* end csubq proof       *)
+(*************************)
+(*************************)
+(*************************)
 
-lemma poly_reduce_ll:
-  islossless Mprevec.poly_reduce.
-proof. 
-  proc; while(0 <= i <= 16) (16 - i);
-    move => *; inline *; auto => />.
-  move => &hr i_lb i_ub i_tub.
-  split.
-  move : i_lb i_tub => /#.
-  smt().
-  smt().
-qed.
+(*************************)
+(*************************)
+(* begin compress proof  *)
+(*************************)
+(*************************)
+(*************************)
 
-lemma poly_reduce_corr ap:
-  phoare[ Mprevec.poly_reduce :
-        ap = lift_array256 rp ==>
-        ap = lift_array256 res /\
-        forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)] = 1%r.
-proof.  by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
+(* 
+the lane func circuit should implement this for d = 4
 
-
-lemma poly_frommont_corr_h ap:
-  hoare[ Mprevec.poly_frommont :
-       ap = map W16.to_sint rp ==>
-       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap].
-proof. 
-  proc.
-  while(0 <= i <= 16 /\ aux = 16 /\
-        (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
-        (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
-        (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) /\
-        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) /\
-        (forall k, 16 * i <= k < 256 => W16.to_sint rp.[k] = ap.[k])); last first.
-  auto => />.
-  move => &hr.
-  do split.
-  
-  move => k k_lb k_ub.
-  rewrite /lift2poly //=.
-  rewrite initiE //.
-  rewrite /get256_direct //=.
-  rewrite k_lb k_ub /=.
-  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
-  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
-  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
-  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
-  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
-    by smt().
-  rewrite (_: 2 * k %% 2 = 0).
-    by smt().
-  rewrite (_: (2 * k + 1) %% 2 = 1).
-    by smt().
-  rewrite pack2_bits8.
-  rewrite /(Jkem_avx2.jdmontx16) => />.
-  rewrite initiE => />. move : k_lb k_ub => /#.
-  smt().
-  
-  move => k k_lb k_ub.
-  rewrite /lift2poly //=.
-  rewrite initiE //.
-  rewrite /get256_direct //=.
-  rewrite k_lb k_ub /=.
-  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
-  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
-  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
-  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
-  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
-    by smt().
-  rewrite (_: 2 * k %% 2 = 0).
-    by smt().
-  rewrite (_: (2 * k + 1) %% 2 = 1).
-    by smt().
-  rewrite pack2_bits8.
-  rewrite /(Jkem_avx2.jqx16) => />.
-  rewrite initiE => />. move : k_lb k_ub => /#.
-  smt().
-  
-  move => k k_lb k_ub.
-  rewrite /lift2poly //=.
-  rewrite initiE //.
-  rewrite /get256_direct //=.
-  rewrite k_lb k_ub /=.
-  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
-  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
-  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
-  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
-  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
-    by smt().
-  rewrite (_: 2 * k %% 2 = 0).
-    by smt().
-  rewrite (_: (2 * k + 1) %% 2 = 1).
-    by smt().
-  rewrite pack2_bits8.
-  rewrite initiE => />. move : k_lb k_ub => /#.
-  smt().
-  
-  smt().
-  smt(Array256.mapiE).
-  move => i rp i_tlb i_lb i_ub jdmontx16_def jqinvx16_def jqx16_def rp_sredc rp_sint_rp0.
-  apply Array256.ext_eq.
-  move => x x_bnds.
-  do rewrite mapiE //=.
-  rewrite -lezNgt in i_tlb.
-  rewrite (rp_sredc x).
-  move : i_tlb i_ub x_bnds => /#.
-  rewrite mapiE //.
-  sp. wp.
-  ecall (Fq_avx2.fqmulx16_corr_hh (Fq_avx2.lift_array16 t) (Fq_avx2.lift_array16 dmontx16)).
-  auto => />.
-  move => &hr i_lb i_ub dmontx16_def qx16_def qinvx16_def rp_sredc rp_eq_ap i_tub result result_def.
-  split.
-  move : i_lb i_tub => /#.
-  
-  rewrite fillE.
-  split.
-  
-  move => k k_lb k_ub.
-  have k_mb: 0 <= k %% 16 < 16.
-    by smt().
-  rewrite initiE //=; first by move : k_lb k_ub i_tub => /#.
-  
-  case (k < 16 * i{hr}).
-    + move => /ltzNge k_tub.
-      rewrite k_tub /=.
-      apply (rp_sredc k); by move : k_lb k_tub => /#.
-    + move => /lezNgt k_tlb.
-      rewrite mulzDr mulz1 in k_ub.
-      rewrite k_tlb k_ub => /=.
-      rewrite result_def //.
-      rewrite /lift_array16 mapiE //= lift2poly_iso // mapiE //=.
-      rewrite dmontx16_def // of_sintK => />.
-      rewrite rp_eq_ap //. rewrite k_tlb; move : k_ub i_tub => /#.
-      rewrite /R qE /=.
-      congr.
-      rewrite /smod //=.
-  
-  move => k k_lb k_ub.
-  rewrite initiE //=; first by move : k_lb i_lb k_ub => /#.
-  rewrite mulzDr mulz1 lezNgt in k_lb.
-  rewrite k_lb /=.
-  apply rp_eq_ap; by move : k_lb k_ub => /#.
-qed.
-
-lemma poly_frommont_ll : islossless  Mprevec.poly_frommont.
-proof. 
-  proc.
-  auto => />.
-  cfold 4. wp; while (0 <= i <= 16) (16 - i).
-  + move => *; inline*; auto => />. smt().
-  + inline *; wp; auto => /> /#.
-qed.
-
-lemma poly_frommont_corr ap:
-  phoare[ Mprevec.poly_frommont :
-       ap = map W16.to_sint rp ==>
-       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap] = 1%r
- by conseq poly_frommont_ll (poly_frommont_corr_h ap) => />.
-
-lemma array32_of_list16 (m : W8.t list) :
-  Array32.init (fun (x : int) => (Array16.of_list witness m).[x %% 16]) = Array32.init (fun (x : int) => nth witness m (x %% 16)).
-proof.
-apply: Array32.ext_eq => x x_range.
-rewrite !initiE // /=.
-apply: Array16.get_of_list.
-smt().
-qed.
+op compress_alt (d : int) (c : coeff) : int = 
+    (asint c * 2 ^ d + (q + 1) %/ 2) * (2 ^ 28 %/ q) %/ 2 ^ 28 %% 2 ^ d.
 *)
+
+
+op sliceget_4_64 (bw: W64.t) (i: int) : W4.t = W4.bits2w (W64.w2bits bw).
+
+
+op lane_func_compress(x : W16.t) : W4.t = sliceget_4_64 (
+   (((W4u16.zeroextu64 x) `<<` W8.of_int 4) + W64.of_int 1665) * (W64.of_int 80635) `>>` W8.of_int 28) 0. 
+
+op pre16_compress(x : W16.t) : bool =  W16.zero \sle x && x \slt W16.of_int (3329). 
+
+
+lemma post_commutes_compress x : pre16_compress x =>
+    to_uint (lane_func_compress x) = compress_alt 4 (incoeff (to_sint x)).
+rewrite /pre16_compress /lane_func_compress /compress_alt sleE sltE /(`<<`) /(`>>`) /= /smod /= /to_sint /= /smod /=  /sliceget_4_64  /= W4.to_uintE incoeffK qE /= => [# Hl Hh].
+have Hx : 0 <= to_uint x < 3329 by smt(W16.to_uint_cmp pow2_16).
+rewrite ifF 1:/#.
+pose intv := (to_uint x %% 3329 * 16 + 1665) * 80635 %/ 268435456 %% 16.
+pose wdv := (((zeroextu64 x `<<<` 4) + (of_int 1665)%W64) * (of_int 80635)%W64 `>>>` 28).
+rewrite -{1}(cat_take_drop 4 (W64.w2bits wdv)).
++ have -> : W4.bits2w (take 4 (w2bits wdv) ++ drop 4 (w2bits wdv)) =
+            W4.bits2w (take 4 (w2bits wdv)).
+  + rewrite W4.wordP => i ib.
+    by rewrite !get_bits2w // nth_cat ifT; by smt(size_take W64.size_w2bits).    
+
+have -> :  take 4 (w2bits wdv) = BitEncoding.BS2Int.int2bs 4 intv; last first. 
+  rewrite bits2wK; 1: by  rewrite BitEncoding.BS2Int.size_int2bs;smt(W64.size_w2bits). 
+  by rewrite BitEncoding.BS2Int.int2bsK 1,2:/# //.
+
+apply BitEncoding.BS2Int.inj_bs2int_eqsize;1:by smt(size_take W64.size_w2bits BitEncoding.BS2Int.size_int2bs).
+rewrite BitEncoding.BS2Int.int2bsK //= 1:/# JWordList.bs2int_take //=.
+rewrite -W64.to_uintE /wdv.
+by rewrite to_uint_shr //= to_uintM_small /= to_uintD_small /= to_uint_shl //= to_uint_zeroextu64 /= /#.
+qed.
+
+op encode (l : int, ints : int list) : bool list = 
+  flatten (map (BitEncoding.BS2Int.int2bs l) ints). 
+
+op BitsToBytes(bits : bool list) : W8.t list = (map W8.bits2w (chunk 8 bits)).
+
+op sem_encode4 (a : int Array256.t) : W8.t Array128.t = Array128.of_list W8.zero (BitsToBytes (encode 4  (to_list a))).
+
+lemma sem_encode4_corr: sem_encode4 = encode4.
+proof. 
+rewrite /sem_encode4 /encode4 fun_ext => x /=.
+admitted. (* This belong in EncDec but was not proved before *)
 
 lemma poly_compress_1_corr_mr_h _a mem :
     hoare [ Jkem_avx2.M(Syscall)._poly_compress_1  :
@@ -636,7 +399,236 @@ lemma poly_compress_1_corr_mr_h _a mem :
              pos_bound256_cxq res.`2 0 256 1 /\
              res.`1 = encode4 (compress_poly 4 _a)].
 proof.
-admitted.
+proc. 
+seq 2 : (pos_bound256_cxq a 0 256 1 /\ lift_array256 a = _a /\ Glob.mem = mem); 1:by call (poly_csubq_corr_h _a); auto => /> /#.
+cfold 7.
+proc rewrite 2  sliceget_256_16_16E.
+proc rewrite 6  sliceget_256_8_32E.
+unroll for 8. 
+proc rewrite 8  sliceget_256_256_16E.
+proc rewrite 9  sliceget_256_256_16E.
+proc rewrite 10  sliceget_256_256_16E.
+proc rewrite 11  sliceget_256_256_16E.
+proc rewrite 32  sliceget_256_256_16E.
+proc rewrite 33  sliceget_256_256_16E.
+proc rewrite 34  sliceget_256_256_16E.
+proc rewrite 35  sliceget_256_256_16E.
+proc rewrite 56  sliceget_256_256_16E.
+proc rewrite 57  sliceget_256_256_16E.
+proc rewrite 58  sliceget_256_256_16E.
+proc rewrite 59  sliceget_256_256_16E.
+proc rewrite 80  sliceget_256_256_16E.
+proc rewrite 81  sliceget_256_256_16E.
+proc rewrite 82  sliceget_256_256_16E.
+proc rewrite 83  sliceget_256_256_16E.
+proc rewrite 30 sliceset_256_128_8E.
+proc rewrite 54 sliceset_256_128_8E.
+proc rewrite 78 sliceset_256_128_8E.
+proc rewrite 102 sliceset_256_128_8E.
+cfold 7.
+conseq />.  
+  exists * a ;elim * =>_aw.
+  conseq (: _aw = a /\ pos_bound256_cxq _aw 0 256 1 ==> 
+          rp = sem_encode4 (map (compress_alt 4) (lift_array256 _aw))); 1:smt().
++ move => &hr [#] *. 
+  rewrite -sem_encode4_corr /compress_poly.
+  by have -> /# : (compress 4) = (compress_alt 4); 1: by rewrite fun_ext => *;smt(compress_alt_compress).
+
+bdep 16 4 [ "_aw" ] [ "a" ] [ "rp" ] lane_func_compress pre16_compress.
+
++ move => &hr /= [# H H0]; rewrite H.
+  by apply (get_vs_bits_pre_256u16 a{hr}
+        (fun w => 0 <= W16.to_sint w && W16.to_sint w < q)
+         pre16_compress _ _);
+   [ by move => x; rewrite /pre16_compress sleE sltE /=   /to_sint /smod /= qE //= | by smt() ]. 
+  
+move => &hr [#] H H0 newrp0 WRONG_POST.
+have PRE : 
+map lane_func_compress (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _aw))]))) =
+map W4.bits2w (chunk 4 (flatten [flatten (map W8.w2bits (to_list newrp0))])). 
+apply WRONG_POST.
+clear WRONG_POST.  
+rewrite /sem_encode4 /=. 
+have HH : forall k, nth witness (map lane_func_compress (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _aw))])))) k =
+     nth witness (map W4.bits2w (chunk 4 (flatten [flatten (map W8.w2bits (to_list newrp0))]))) k by smt().
+rewrite Array128.tP => k kb; rewrite get_of_list // /BitsToBytes /encode.
+
+move : (HH (2*k)).
+rewrite (nth_map witness); 1: by  smt(size_map get_vs_bits_256u16_size).
+rewrite get_vs_bits_256u16 1:/#. 
+rewrite (nth_map witness); 1: by  smt(size_map get_vs_bits_256u16_size).
+rewrite flatten1 (nth_map witness) /=.
++ rewrite size_iota size_flatten -map_comp /(\o) /=. 
+  have -> : map (fun (_ : W8.t) => 8) (to_list newrp0) =
+               mkseq (fun _ => 8) 128; last by
+        rewrite /mkseq -iotaredE /= /sumz /= /#. 
+     apply (eq_from_nth witness).
+     + by rewrite size_map Array128.size_to_list size_mkseq /#.
+     move => i.
+     rewrite size_map Array128.size_to_list => ib.
+     rewrite (nth_map witness) /=;1: by smt(Array128.size_to_list).
+     by rewrite (nth_mkseq) /#.
+rewrite nth_iota /=. 
++ split;1: by smt(). 
+  move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  by rewrite StdBigop.Bigint.big_constz /= count_predT size_to_list /= /#.
+
+have -> : 4 * (2 * k) = 8 * k by ring.
+rewrite drop_flatten_ctt. 
++ move => x. rewrite mapP => Hx;elim Hx => x0.
+  by smt(W8.size_w2bits).
+
+rewrite -map_drop. 
+
+have /= <- := take_take ((flatten (map W8.w2bits (drop k (to_list newrp0))))) 4 8.
+
+have -> : (take 8 (flatten (map W8.w2bits (drop k (to_list newrp0))))) = 
+             W8.w2bits newrp0.[k].
++ apply (eq_from_nth witness).
+  rewrite size_w2bits size_take //.
+  move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite StdBigop.Bigint.big_constz /= count_predT.
+  by smt(size_drop Array128.size_to_list). 
+
++ move => ii HHa. 
+  have ? : size (take 8 (flatten (map W8.w2bits (drop k (to_list newrp0))))) = 8.
+   rewrite size_take.
+   have : 8 <= size (flatten (map W8.w2bits (drop k (to_list newrp0)))); last by smt().
+   + move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+    by rewrite StdBigop.Bigint.big_constz /= count_predT size_drop /= 1:/# size_to_list /= /#.
+   have : 8 <= size (flatten (map W8.w2bits (drop k (to_list newrp0)))); last by smt().
+   + move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+    by rewrite StdBigop.Bigint.big_constz /= count_predT size_drop /= 1:/# size_to_list /= /#.
+  rewrite -map_drop nth_take // 1:/# -map_comp /(\o) /= drop_iota // 1:/# /=. 
+  rewrite (nth_flatten witness 8).
+  + rewrite allP => x /=. 
+    rewrite mapP => HHx;elim HHx => x0.
+    rewrite mem_iota /=;smt(W8.size_w2bits).
+    rewrite (nth_map witness) /=;1:smt(size_iota).
+    by rewrite nth_iota /#.
+
+move => HH2k.
+
+
+  move : (HH (2*k+1)).
+
+rewrite (nth_map witness); 1: by  smt(size_map get_vs_bits_256u16_size).
+rewrite get_vs_bits_256u16 1:/#. 
+rewrite (nth_map witness); 1: by  smt(size_map get_vs_bits_256u16_size).
+rewrite flatten1 (nth_map witness) /=.
++ rewrite size_iota size_flatten -map_comp /(\o) /=. 
+  have -> : map (fun (_ : W8.t) => 8) (to_list newrp0) =
+               mkseq (fun _ => 8) 128; last by
+        rewrite /mkseq -iotaredE /= /sumz /= /#. 
+     apply (eq_from_nth witness).
+     + by rewrite size_map Array128.size_to_list size_mkseq /#.
+     move => i.
+     rewrite size_map Array128.size_to_list => ib.
+     rewrite (nth_map witness) /=;1: by smt(Array128.size_to_list).
+     by rewrite (nth_mkseq) /#.
+rewrite nth_iota /=. 
++ split;1: by smt(). 
+  move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  by rewrite StdBigop.Bigint.big_constz /= count_predT size_to_list /= /#.
+
+have -> : 4 * (2 * k + 1) = 4 + 8 * k by ring.
+rewrite -drop_drop 1,2:/#.
+rewrite drop_flatten_ctt. 
++ move => x. rewrite mapP => Hx;elim Hx => x0.
+  by smt(W8.size_w2bits).
+
+rewrite -map_drop. 
+
+have -> : (take 4 (drop 4 (flatten (map W8.w2bits (drop k (to_list newrp0))))))%W4 = (take 4 (drop 4 (take 8 (flatten (map W8.w2bits (drop k (to_list newrp0)))))))%W4.
+  + apply (eq_from_nth witness).
+    + rewrite !size_take // !size_drop // size_take 1:/#.
+   have : 8 <= size (flatten (map W8.w2bits (drop k (to_list newrp0)))); last by smt().
+   + move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+    by rewrite StdBigop.Bigint.big_constz /= count_predT size_drop /= 1:/# size_to_list /= /#.
+   move => ii ib.
+   have ? : size (take 4 (drop 4 (flatten (map W8.w2bits (drop k (to_list newrp0))))))  = 4. 
+    + rewrite !size_take // !size_drop //. 
+      rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+    by rewrite StdBigop.Bigint.big_constz /= count_predT size_drop 1:/# size_to_list /= /#.
+   
+
+   by rewrite !nth_take 1..4:/# !nth_drop 1..4:/# nth_take 1,2:/#.
+
+have -> : (take 8 (flatten (map W8.w2bits (drop k (to_list newrp0))))) = 
+             W8.w2bits newrp0.[k].
++ apply (eq_from_nth witness).
+  rewrite size_w2bits size_take //.
+  move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite StdBigop.Bigint.big_constz /= count_predT.
+  by smt(size_drop Array128.size_to_list). 
+
++ move => ii HHa. 
+  have ? : size (take 8 (flatten (map W8.w2bits (drop k (to_list newrp0))))) = 8.
+   rewrite size_take.
+   have : 8 <= size (flatten (map W8.w2bits (drop k (to_list newrp0)))); last by smt().
+   + move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+    by rewrite StdBigop.Bigint.big_constz /= count_predT size_drop /= 1:/# size_to_list /= /#.
+   have : 8 <= size (flatten (map W8.w2bits (drop k (to_list newrp0)))); last by smt().
+   + move => *;rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+    by rewrite StdBigop.Bigint.big_constz /= count_predT size_drop /= 1:/# size_to_list /= /#.
+  rewrite -map_drop nth_take // 1:/# -map_comp /(\o) /= drop_iota // 1:/# /=. 
+  rewrite (nth_flatten witness 8).
+  + rewrite allP => x /=. 
+    rewrite mapP => HHx;elim HHx => x0.
+    rewrite mem_iota /=;smt(W8.size_w2bits).
+    rewrite (nth_map witness) /=;1:smt(size_iota).
+    by rewrite nth_iota /#.
+
+move => HH2k1.
+
+rewrite (nth_map []).
++ split; 1:smt(). 
+  move => *;rewrite size_chunk 1:/# .
+  rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite (StdBigop.Bigint.BIA.eq_bigr _ _ (fun _ => 4)); 1: by smt(BitEncoding.BS2Int.size_int2bs).  
+    by rewrite StdBigop.Bigint.big_constz /= count_predT /=  size_to_list /= /#.
+rewrite JWordList.nth_chunk // 1:/#.
++   rewrite size_flatten StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite (StdBigop.Bigint.BIA.eq_bigr _ _ (fun _ => 4)); 1: by smt(BitEncoding.BS2Int.size_int2bs).  
+    by rewrite StdBigop.Bigint.big_constz /= count_predT /=  size_to_list /= /#.
+
+apply W8.wordP => jj jb.
+rewrite -W8.get_w2bits.
+rewrite W8.get_bits2w 1:/#.
+rewrite nth_take // 1:/#.
+rewrite nth_drop 1,2:/#.
+have -> := nth_flatten false 4(map ((BitEncoding.BS2Int.int2bs 4)) (to_list (map (compress_alt 4) (lift_array256 _aw)))) (8 * k + jj) _.
++ rewrite allP => x.
+  by rewrite mapP => HHx;elim HHx;smt(BitEncoding.BS2Int.size_int2bs).
+
+rewrite (nth_map witness);1: by smt(Array256.size_to_list).
+rewrite (Array256.get_to_list) mapiE // 1:/#.
+rewrite /lisft_array256 mapiE // 1:/# /=.
+rewrite -post_commutes_compress.
++ by rewrite /pre16_compress sleE sltE /= /smod /= /#.
+
+case (0<=jj<4).
++ move => ?.
+  have -> : (8 * k + jj) %/ 4 = 2*k by smt().
+  rewrite HH2k to_uintE bits2wK;1: smt(W8.size_w2bits size_take). 
+  rewrite {1}(:4 = size((take 4 (w2bits newrp0.[k]))));1: by  smt(W8.size_w2bits size_take).
+  by rewrite BitEncoding.BS2Int.bs2intK nth_take // 1:/# get_w2bits /#.
+
+move => ?.
+have -> : (8 * k + jj) %/ 4 = 2*k + 1 by smt().
+rewrite HH2k1 to_uintE bits2wK;1: smt(W8.size_w2bits size_take size_drop). 
+  rewrite {1}(:4 = size((take 4 (drop 4 (w2bits newrp0.[k])))));1: by  smt(size_drop W8.size_w2bits size_take).
+  by rewrite BitEncoding.BS2Int.bs2intK nth_take // 1:/# nth_drop // 1:/# get_w2bits /#.
+
+qed.
+
+
+
+
+
+
+
+
 
 lemma poly_compress_1_corr_mr_ll :
     islossless Jkem_avx2.M(Syscall)._poly_compress_1.
@@ -6099,4 +6091,474 @@ proc.
 qed.
 
 *)
+
+(* jazzline
+lemma poly_add_corr_h _a _b ab bb :
+      0 <= ab <= 6 => 0 <= bb <= 3 =>
+      hoare[ Mprevec.poly_add2 :
+           _a = lift_array256 rp /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq rp 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\
+           forall k, 0 <= k < 256 =>
+             incoeff (to_sint res.[k]) = _a.[k] + _b.[k]].
+proof. 
+  move => [ab_lb ab_ub] [bb_lb bb_ub].
+  proc.
+  sp.
+  while (0 <= i <= 16 /\
+           (forall k, 16*i <= k < 256 => incoeff (to_sint rp.[k]) = _a.[k]) /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq rp (16*i) 256 ab /\
+           signed_bound_cxq bp 0 256 bb /\
+           signed_bound_cxq rp 0 (16*i) (ab + bb) /\
+           (forall k, 0 <= k < (16*i) =>
+             incoeff (to_sint rp.[k]) = _a.[k] + _b.[k])); last first.
+  auto => />.
+  move => &hr signed_bound_a signed_bound_b.
+  do split; 1..3:by smt(Array256.initiE Array256.mapiE).
+  move => i rp i_tlb i_lb i_ub _ _.
+  have ->: i = 16. by move : i_tlb i_ub => /#.
+  move => -> /=.
+  smt().
+
+  inline Ops.iVPADD_16u16.
+  wp; skip.
+  move => &hr [#] i_lb i_ub _a_def _b_def sgnd_bnd_hrp_a sgnd_bnd_bp sgnd_bnd_lrp_ab lrp_def i_tub />.
+  rewrite mulzDr /=.
+  do split; first 2 by move : i_lb i_tub => /#.
+  move => k k_lb k_ub.
+  rewrite lezNgt in k_lb.
+  rewrite filliE 1:/# k_lb /=.
+  rewrite -lezNgt in k_lb.
+  rewrite -_a_def 1:/# //=.
+
+  rewrite /signed_bound_cxq => k [k_lb k_ub].
+  rewrite lezNgt in k_lb.
+  rewrite filliE 1:/# k_lb /=.
+  rewrite -lezNgt in k_lb.
+  move : sgnd_bnd_hrp_a => /#.
+
+  rewrite /signed_bound_cxq => k [k_lb k_ub].
+  rewrite filliE 1:/# /= initiE 1:/# /=.
+  case (16 * i{hr} <= k) => k_tlb.
+    + rewrite k_ub /=.
+      do rewrite lift2poly_iso //=.
+      move : (add_corr_qv rp{hr}.[k] bp{hr}.[k] _a.[k] _b.[k] 6 3 _ _ _ _ _ _) => />;
+        1,2:by smt(Array256.initiE Array256.mapiE Array256.tP).
+      rewrite /signed_bound_cxq in sgnd_bnd_hrp_a.
+      move : (sgnd_bnd_hrp_a k) ab_lb ab_ub.
+      rewrite k_tlb /=. by smt().
+
+      rewrite /signed_bound_cxq in sgnd_bnd_bp.
+      move : (sgnd_bnd_bp k) bb_lb bb_ub.
+      rewrite k_lb /=. by smt().
+
+
+      move => rp_bp_def bp_lb bp_ub.
+
+      rewrite to_sintD_small => />.
+        move : (sgnd_bnd_hrp_a k _); first by smt().
+        move : (sgnd_bnd_bp k _); first by smt().
+        smt().
+      move : (sgnd_bnd_hrp_a k _) (sgnd_bnd_bp k _) => /#.
+  + simplify.
+    rewrite /signed_bound_cxq /b16 in sgnd_bnd_lrp_ab.
+    rewrite (sgnd_bnd_lrp_ab k) 1:/#.
+
+  move => k k_lb k_ub.
+  rewrite filliE 1:/# /= initiE 1:/# /=.
+  case (16 * i{hr} <= k) => k_tlb.
+    + rewrite k_ub /=.
+      do (rewrite lift2poly_iso //=).
+      rewrite to_sintD_small => />.
+        move : (sgnd_bnd_hrp_a k _); first by smt().
+        move : (sgnd_bnd_bp k _); first by smt().
+        smt().
+      rewrite incoeffD.
+      rewrite _a_def 1:/#; congr.
+      rewrite /lift_array256 in _b_def.
+      rewrite _b_def mapiE 1:/# //=.
+    + simplify.
+      rewrite -ltzNge in k_tlb.
+      rewrite lrp_def //=.
+qed.
+
+lemma poly_add_ll : islossless Mprevec.poly_add2.
+proof. 
+  proc; while (0<= i <= 16) (16 - i).
+  auto => />.
+  inline Ops.iVPADD_16u16.
+  auto => />.
+  smt().
+  auto => />.
+  smt().
+qed.
+
+lemma poly_add_corr _a _b ab bb :
+    0 <= ab <= 6 => 0 <= bb <= 3 =>  
+      phoare[ Mprevec.poly_add2 :
+           _a = lift_array256 rp /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq rp 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           forall k, 0 <= k < 256 =>
+              incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
+   by move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb).
+
+lemma poly_sub_corr_h _a _b ab bb :
+    0 <= ab <= 4 => 0 <= bb <= 4 =>
+      hoare[ Mprevec.poly_sub :
+           _a = lift_array256 ap /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\
+           forall k, 0 <= k < 256 =>
+              incoeff (to_sint res.[k]) = _a.[k] - _b.[k]].
+proof. 
+  move => [ab_lb ab_ub] [bb_lb bb_ub].
+  proc.
+  while (0 <= i <= 16 /\
+           _a = lift_array256 ap /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb /\
+           signed_bound_cxq rp 0 (16*i) (ab + bb) /\
+           forall k, 0 <= k < (16*i) =>
+              incoeff (to_sint rp.[k]) = _a.[k] - _b.[k]
+  ); first last.
+  auto => />.
+  move => &hr signed_bound_a signed_bound_b.
+  do split; first 3 by smt().
+
+  inline Ops.iVPSUB_16u16.
+  wp; skip.
+  move => &hr [#] i_lb i_ub _a_def _b_def sgnd_bnd_hap_a sgnd_bnd_bp sgnd_bnd_lrp_ab lrp_def i_tub />.
+
+  rewrite mulzDr /=.
+  do split; first 2 by move : i_lb i_tub => /#.
+  
+  rewrite /signed_bound_cxq => k [k_lb k_ub].
+  rewrite filliE 1:/# /=.
+  case (16 * i{hr} <= k) => k_tlb.
+    + rewrite k_ub /= initiE 1:/# /=.
+      do (rewrite lift2poly_iso 1:/# 1:/#).
+      rewrite to_sintB_small => />.
+        move : (sgnd_bnd_hap_a k _) (sgnd_bnd_bp k _) => /#.
+        move : (sgnd_bnd_hap_a k _) (sgnd_bnd_bp k _) => /#.
+    + simplify. rewrite -ltzNge in k_tlb.
+      rewrite /signed_bound_cxq /b16 in sgnd_bnd_lrp_ab.
+      rewrite (sgnd_bnd_lrp_ab k _); first by rewrite k_lb k_tlb.
+
+  move => k k_lb k_ub.
+  rewrite filliE 1:/# /= initiE 1:/# /=.
+  case (16 * i{hr} <= k) => k_tlb.
+    + rewrite k_ub /=.
+      do (rewrite lift2poly_iso //=).
+      rewrite to_sintB_small => />.
+        move : (sgnd_bnd_hap_a k _) (sgnd_bnd_bp k _) => /#.
+      rewrite incoeffB.
+      rewrite _b_def _a_def /lift_array256.
+      rewrite mapiE 1:/# mapiE 1:/# //=.
+    + simplify.
+      rewrite -ltzNge in k_tlb.
+      rewrite lrp_def //=.
+qed.
+
+lemma poly_sub_ll : islossless Mprevec.poly_sub.
+proof. 
+  proc; while (0<= i <= 16) (16 - i); auto => />.
+  inline Ops.iVPSUB_16u16.
+  auto => />; smt().
+  auto => />; smt().
+qed.
+
+lemma poly_sub_corr _a _b ab bb :
+    0 <= ab <= 4 => 0 <= bb <= 4 =>  
+      phoare[ Mprevec.poly_sub :
+           _a = lift_array256 ap /\
+           _b = lift_array256 bp /\
+           signed_bound_cxq ap 0 256 ab /\
+           signed_bound_cxq bp 0 256 bb 
+           ==>
+           signed_bound_cxq res 0 256 (ab + bb) /\ 
+           forall k, 0 <= k < 256 =>
+              incoeff (to_sint res.[k]) = _a.[k] - _b.[k]] = 1%r
+  by move => *; conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _).
+*)
+
+(* jazzline
+lemma poly_reduce_corr_h (ap: coeff Array256.t):
+     hoare[ Jkem_avx2.M(Syscall).__poly_reduce :
+          ap = lift_array256 rp ==>
+          ap = lift_array256 res /\
+          forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)].
+proof. 
+  proc.
+  while (0 <= i <= 16 /\
+         (forall k, 0 <= k < 256 => ap.[k] = incoeff (to_sint rp.[k])) /\
+         (forall k, 0 <= k < 16 * i => bpos16 rp.[k] (2*q)) /\
+         (forall k, 0 <= k < 16 => qx16.[k] = Jkem_avx2.jqx16.[k]) /\
+         (forall k, 0 <= k < 16 => vx16.[k] = Jkem_avx2.jvx16.[k])); last first.
+  wp. skip.
+  move => &hr ap_def />.
+  do split.
+  rewrite ap_def /lift_array256 => k k_lb k_ub.
+  rewrite mapiE 1:/# //=.
+  
+  smt().
+  
+  move => k k_lb k_ub.
+  rewrite /lift2poly initiE => />.
+  rewrite /get256_direct => />.
+  rewrite k_lb k_ub => /=.
+  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+  rewrite initiE. move : k_lb k_ub => /#. simplify.
+  rewrite initiE. move : k_lb k_ub => /#. simplify.
+  rewrite (_:(2*k + 1) %/2 = 2*k %/ 2).
+    smt().
+  rewrite (_: 2*k %% 2 = 0).
+    smt().
+  rewrite (_: (2*k + 1) %% 2 = 1).
+    smt().
+  rewrite pack2_bits8.
+  smt().
+  
+  move => k k_lb k_ub.
+  rewrite /lift2poly initiE => />.
+  rewrite /get256_direct => />.
+  rewrite k_lb k_ub => /=.
+  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+  rewrite W32u8.Pack.initiE. move : k_lb k_ub => /#.
+  rewrite initiE. move : k_lb k_ub => /#. simplify.
+  rewrite initiE. move : k_lb k_ub => /#. simplify.
+  rewrite (_:(2*k + 1) %/2 = 2*k %/ 2).
+    smt().
+  rewrite (_: 2*k %% 2 = 0).
+    smt().
+  rewrite (_: (2*k + 1) %% 2 = 1).
+    smt().
+  rewrite pack2_bits8.
+  smt().
+  
+  move => i rpu i_tlb i_lb i_ub.
+  have ->: i=16. by move : i_tlb i_ub => /#.
+  simplify.
+  move => ap_eq_rpu rpu_bnds jqx16_def vx16_def.
+  split.
+    + apply Array256.ext_eq => x x_i.
+      rewrite /lift_array256 mapiE 1:x_i /= ap_eq_rpu 1:x_i //=.
+    + move : rpu_bnds => /#.
+  
+  wp; sp; ecall (Fq_avx2.barret_red16x_corr_hh (Fq_avx2.lift_array16 r)). auto => />.
+  move => &hr i_lb i_rub rp_sbred rp_eq__rp qx16_def vx16_def i_ub result red16x_bred.
+  split; first by move : i_lb i_ub => /#.
+  pose rp_sub := ((Fq_avx2.lift_array16
+                       (lift2poly
+                          (get256 ((init16 ("_.[_]" rp{hr})))%WArray512 i{hr})))).
+  split.
+  move => k k_lb k_ub.
+  rewrite filliE 1:/# /=.
+  case (16 * i{hr} <= k && k < 16 * i{hr} + 16) => k_si.
+    + have bred := (BREDCp_corr rp_sub.[k %% 16] 26 _ _ _ _ _ _);
+        1..4,6: smt(qE pow2_16).
+        rewrite /rp_sub /lift_array16 mapiE 1:/# /= /R.
+        move : W16.to_sint_cmp => /#.
+      move : bred => [bred_i bred_cgr].
+      rewrite red16x_bred 1:/#.
+      rewrite eq_incoeff in bred_cgr.
+      rewrite bred_cgr.
+      rewrite /lift_array16 /= mapiE 1:/# /= lift2poly_iso //.
+      rewrite (rp_sbred k _) //.
+    + rewrite (rp_sbred k _) //.
+  rewrite mulzDr mulz1 => k k_lb k_ub.
+  rewrite filliE // 1:/# k_ub /=.
+  case (16 * i{hr} <= k) => k_tlb.
+    + have bred := (BREDCp_corr rp_sub.[k %% 16] 26 _ _ _ _ _ _);
+        1..4,6: smt(qE pow2_16).
+        rewrite /rp_sub /lift_array16 mapiE 1:/# /= /R.
+        move : W16.to_sint_cmp => /#.
+        move : bred; rewrite andabP; move => [[bred_lb bred_ub] bred_cgr].
+        (* move : bred => /andabP [[bred_lb bred_ub] bred_cgr]. *)
+        rewrite red16x_bred 1:/# -/rp_sub bred_lb bred_ub //=.
+    + rewrite -ltzNge in k_tlb.
+      move : (rp_eq__rp k); rewrite k_lb k_tlb /= => /#.
+qed.
+
+lemma poly_reduce_ll:
+  islossless Mprevec.poly_reduce.
+proof. 
+  proc; while(0 <= i <= 16) (16 - i);
+    move => *; inline *; auto => />.
+  move => &hr i_lb i_ub i_tub.
+  split.
+  move : i_lb i_tub => /#.
+  smt().
+  smt().
+qed.
+
+lemma poly_reduce_corr ap:
+  phoare[ Mprevec.poly_reduce :
+        ap = lift_array256 rp ==>
+        ap = lift_array256 res /\
+        forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)] = 1%r.
+proof.  by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
+
+
+lemma poly_frommont_corr_h ap:
+  hoare[ Mprevec.poly_frommont :
+       ap = map W16.to_sint rp ==>
+       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap].
+proof. 
+  proc.
+  while(0 <= i <= 16 /\ aux = 16 /\
+        (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
+        (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
+        (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) /\
+        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) /\
+        (forall k, 16 * i <= k < 256 => W16.to_sint rp.[k] = ap.[k])); last first.
+  auto => />.
+  move => &hr.
+  do split.
+  
+  move => k k_lb k_ub.
+  rewrite /lift2poly //=.
+  rewrite initiE //.
+  rewrite /get256_direct //=.
+  rewrite k_lb k_ub /=.
+  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
+    by smt().
+  rewrite (_: 2 * k %% 2 = 0).
+    by smt().
+  rewrite (_: (2 * k + 1) %% 2 = 1).
+    by smt().
+  rewrite pack2_bits8.
+  rewrite /(Jkem_avx2.jdmontx16) => />.
+  rewrite initiE => />. move : k_lb k_ub => /#.
+  smt().
+  
+  move => k k_lb k_ub.
+  rewrite /lift2poly //=.
+  rewrite initiE //.
+  rewrite /get256_direct //=.
+  rewrite k_lb k_ub /=.
+  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
+    by smt().
+  rewrite (_: 2 * k %% 2 = 0).
+    by smt().
+  rewrite (_: (2 * k + 1) %% 2 = 1).
+    by smt().
+  rewrite pack2_bits8.
+  rewrite /(Jkem_avx2.jqx16) => />.
+  rewrite initiE => />. move : k_lb k_ub => /#.
+  smt().
+  
+  move => k k_lb k_ub.
+  rewrite /lift2poly //=.
+  rewrite initiE //.
+  rewrite /get256_direct //=.
+  rewrite k_lb k_ub /=.
+  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+  rewrite W32u8.Pack.initiE //=. move : k_lb k_ub => /#.
+  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+  rewrite WArray32.initiE //=. move : k_lb k_ub => /#.
+  rewrite (_: (2 * k + 1) %/ 2 = (2 * k) %/ 2).
+    by smt().
+  rewrite (_: 2 * k %% 2 = 0).
+    by smt().
+  rewrite (_: (2 * k + 1) %% 2 = 1).
+    by smt().
+  rewrite pack2_bits8.
+  rewrite initiE => />. move : k_lb k_ub => /#.
+  smt().
+  
+  smt().
+  smt(Array256.mapiE).
+  move => i rp i_tlb i_lb i_ub jdmontx16_def jqinvx16_def jqx16_def rp_sredc rp_sint_rp0.
+  apply Array256.ext_eq.
+  move => x x_bnds.
+  do rewrite mapiE //=.
+  rewrite -lezNgt in i_tlb.
+  rewrite (rp_sredc x).
+  move : i_tlb i_ub x_bnds => /#.
+  rewrite mapiE //.
+  sp. wp.
+  ecall (Fq_avx2.fqmulx16_corr_hh (Fq_avx2.lift_array16 t) (Fq_avx2.lift_array16 dmontx16)).
+  auto => />.
+  move => &hr i_lb i_ub dmontx16_def qx16_def qinvx16_def rp_sredc rp_eq_ap i_tub result result_def.
+  split.
+  move : i_lb i_tub => /#.
+  
+  rewrite fillE.
+  split.
+  
+  move => k k_lb k_ub.
+  have k_mb: 0 <= k %% 16 < 16.
+    by smt().
+  rewrite initiE //=; first by move : k_lb k_ub i_tub => /#.
+  
+  case (k < 16 * i{hr}).
+    + move => /ltzNge k_tub.
+      rewrite k_tub /=.
+      apply (rp_sredc k); by move : k_lb k_tub => /#.
+    + move => /lezNgt k_tlb.
+      rewrite mulzDr mulz1 in k_ub.
+      rewrite k_tlb k_ub => /=.
+      rewrite result_def //.
+      rewrite /lift_array16 mapiE //= lift2poly_iso // mapiE //=.
+      rewrite dmontx16_def // of_sintK => />.
+      rewrite rp_eq_ap //. rewrite k_tlb; move : k_ub i_tub => /#.
+      rewrite /R qE /=.
+      congr.
+      rewrite /smod //=.
+  
+  move => k k_lb k_ub.
+  rewrite initiE //=; first by move : k_lb i_lb k_ub => /#.
+  rewrite mulzDr mulz1 lezNgt in k_lb.
+  rewrite k_lb /=.
+  apply rp_eq_ap; by move : k_lb k_ub => /#.
+qed.
+
+lemma poly_frommont_ll : islossless  Mprevec.poly_frommont.
+proof. 
+  proc.
+  auto => />.
+  cfold 4. wp; while (0 <= i <= 16) (16 - i).
+  + move => *; inline*; auto => />. smt().
+  + inline *; wp; auto => /> /#.
+qed.
+
+lemma poly_frommont_corr ap:
+  phoare[ Mprevec.poly_frommont :
+       ap = map W16.to_sint rp ==>
+       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap] = 1%r
+ by conseq poly_frommont_ll (poly_frommont_corr_h ap) => />.
+
+lemma array32_of_list16 (m : W8.t list) :
+  Array32.init (fun (x : int) => (Array16.of_list witness m).[x %% 16]) = Array32.init (fun (x : int) => nth witness m (x %% 16)).
+proof.
+apply: Array32.ext_eq => x x_range.
+rewrite !initiE // /=.
+apply: Array16.get_of_list.
+smt().
+qed.
+*)
+
+
+
 end MLKEM_PolyAVX.
