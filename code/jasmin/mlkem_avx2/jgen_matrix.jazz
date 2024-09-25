@@ -1,0 +1,30 @@
+require "gen_matrix.jinc"
+
+export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
+{
+  stack u16[MLKEM_K*MLKEM_VECN] aa;
+  stack u8[MLKEM_SYMBYTES] seed;
+  reg u8 c;
+  reg u16 t;
+  inline int i;
+  stack u64 sap;
+
+  sap = ap;
+
+  for i = 0 to MLKEM_SYMBYTES
+  {
+    #[declassify]
+    c = (u8)[seedp + i];
+    seed[i] = c;
+  }
+
+  aa = __gen_matrix(seed, 1);
+  
+  ap = sap;
+
+  for i = 0 to MLKEM_K*MLKEM_VECN
+  {
+    t = aa[i];
+    (u16)[ap + 2*i] = t;
+  }
+}

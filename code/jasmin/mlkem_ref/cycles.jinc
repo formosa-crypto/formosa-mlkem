@@ -1,0 +1,23 @@
+inline fn tsc() -> stack u32[2]
+{
+  reg u64 l h;
+  stack u32[2] t;
+
+  h, l = #RDTSC();
+
+  t[0] = (32u) l;
+  t[1] = (32u) h; 
+
+  return t;
+}
+
+inline fn cycles(stack u32[2] start end) -> reg u64
+{
+  reg u64 t;
+
+  t = end[u64 0];
+  t -= start[u64 0];
+
+  return t;
+}
+

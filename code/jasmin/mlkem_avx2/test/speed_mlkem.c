@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "../params.h"
 #include "../speed.h"
 
-#define NRUNS 1000
+#define NRUNS 10000
 
 static inline uint64_t cpucycles(void) {
   uint64_t result;
@@ -72,6 +73,14 @@ void print_results(const char *s, uint64_t *t, size_t tlen) {
   printf("\n");
 }
 
+void print_results_jasmin(const char *s, uint64_t *t, size_t tlen) {
+  printf("%s\n", s);
+  printf("median: %llu cycles/ticks\n", (unsigned long long)median(t, tlen));
+  printf("average: %llu cycles/ticks\n", (unsigned long long)average(t, tlen));
+  printf("\n");
+}
+
+
 int main(void)
 {
   unsigned char sk[MLKEM_INDCPA_SECRETKEYBYTES];
@@ -86,134 +95,110 @@ int main(void)
   uint8_t seed[MLKEM_SYMBYTES] = {0};
   poly ap;
 
-  FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
-  fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
-  fread(message, MLKEM_SYMBYTES, 1, urandom);
-  
   uint64_t t[NRUNS], i;
+  size_t ri;
 
-  /* Test gen_matrix */
+  FILE *urandom = fopen("/dev/urandom", "r");
+
+  ri = fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
+  assert(ri == 1);
+
+  ri = fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
+  assert(ri == 1);
+
+  ri = fread(message, MLKEM_SYMBYTES, 1, urandom);
+  assert(ri == 1);
+
+  ri = fread(seed, MLKEM_SYMBYTES, 1, urandom);
+  assert(ri == 1);
+
+  fclose(urandom);
+
+  // test gen_matrix
   for(i=0;i<NRUNS;i++)
   {
-    t[i] = cpucycles();
-    gen_matrix_jazz(a, seed);
+    t[i] = gen_matrix_jazz(a, seed);
   }
-  print_results("gen_matrix: ", t, NRUNS);
+  print_results_jasmin("gen_matrix: ", t, NRUNS);
 
-  /* Test get_noise */
+
+  // poly ///////////////////////////////////////////////////////////
+  // test get_noise_4x
   for(i=0;i<NRUNS;i++)
   {
-    t[i] = cpucycles();
-    poly_getnoise_jazz(&ap, seed, 0);
+    t[i] = poly_getnoise_4x_jazz(&ap, &ap, &ap, &ap, seed, 0);
   }
+  print_results_jasmin("poly_getnoise_4x: ", t, NRUNS);
 
-  /* Test get_noise_4x */
-  for(i=0;i<NRUNS;i++)
-  {
-    t[i] = cpucycles();
-    poly_getnoise_4x_jazz(&ap, &ap, &ap, &ap, seed, 0);
-  }
-  print_results("poly_getnoise_4x: ", t, NRUNS);
-
-  /* Test NTT */
+  // test NTT
   for(i=0; i<NRUNS;i++)
   {
-    t[i] = cpucycles();
-    poly_ntt_jazz(&ap);
+    t[i] = poly_ntt_jazz(&ap);
   }
-  print_results("NTT: ", t, NRUNS);
+  print_results_jasmin("poly_ntt: ", t, NRUNS);
 
-  /* Test INVNTT */
+  // test INVNTT
   for(i=0; i<NRUNS;i++)
   {
-    t[i] = cpucycles();
-    poly_invntt_jazz(&ap);
+    t[i] = poly_invntt_jazz(&ap);
   }
-  print_results("INVNTT: ", t, NRUNS);
+  print_results_jasmin("poly_invntt: ", t, NRUNS);
 
-  /* Test polyvec_pointwise_acc */
+  // test poly_tomsg
   for(i=0; i<NRUNS; i++)
   {
-    t[i] = cpucycles();
-    polyvec_pointwise_acc_jazz(&ap, &a[0], &a[1]);
+    t[i] = poly_tomsg_jazz(ct, &ap);
   }
-  print_results("polyvec_pointwise_acc: ", t, NRUNS);
+  print_results_jasmin("poly_tomsg: ", t, NRUNS);
 
-  /* Test poly_tomsg */
+  /// test poly_fromsg
   for(i=0; i<NRUNS; i++)
   {
-    t[i] = cpucycles();
-    poly_tomsg_jazz(ct, &ap);
+    t[i] = poly_frommsg_jazz(&ap, ct);
   }
-  print_results("poly_tomsg: ", t, NRUNS);
+  print_results_jasmin("poly_frommsg: ", t, NRUNS);
 
-  /* Test poly_fromsg */
+  // test poly_compress_jazz
   for(i=0; i<NRUNS; i++)
   {
-    t[i] = cpucycles();
-    poly_frommsg_jazz(&ap, ct);
+    t[i] = poly_compress_jazz(ct, &ap);
   }
-  print_results("poly_frommsg: ", t, NRUNS);
+  print_results_jasmin("poly_compress: ", t, NRUNS);
 
-  /* Test poly_compress_jazz */
+  // test poly_decompress_jazz
   for(i=0; i<NRUNS; i++)
   {
-    t[i] = cpucycles();
-    poly_compress_jazz(ct, &ap);
+    t[i] = poly_decompress_jazz(&ap, ct);
   }
-  print_results("poly_compress: ", t, NRUNS);
-  
-  /* Test poly_decompress_jazz */
+  print_results_jasmin("poly_decompress: ", t, NRUNS);
+
+
+  // polyvec ////////////////////////////////////////////////////////
+  // test polyvec_pointwise_acc
   for(i=0; i<NRUNS; i++)
   {
-    t[i] = cpucycles();
-    poly_decompress_jazz(&ap, ct);
+    t[i] = polyvec_pointwise_acc_jazz(&ap, &a[0], &a[1]);
   }
-  print_results("poly_decompress: ", t, NRUNS);
+  print_results_jasmin("polyvec_pointwise_acc: ", t, NRUNS);
 
-  /* Test polyvec_compress_jazz */
+  // test polyvec_compress_jazz
   for(i=0; i<NRUNS; i++)
   {
-    t[i] = cpucycles();
-    polyvec_compress_jazz(ct, &a[0]);
+    t[i] = polyvec_compress_jazz(ct, &a[0]);
   }
-  print_results("polyvec_compress: ", t, NRUNS);
+  print_results_jasmin("polyvec_compress: ", t, NRUNS);
 
-  /* Test polyvec_decompress_jazz */
+  // test polyvec_decompress_jazz
   for(i=0; i<NRUNS; i++)
   {
-    t[i] = cpucycles();
-    polyvec_decompress_jazz(&a[0], ct);
+    t[i] = polyvec_decompress_jazz(&a[0], ct);
   }
-  print_results("polyvec_decompress: ", t, NRUNS);
-  
-  /* Test KEYPAIR */
-  for(i=0;i<NRUNS;i++)
-  {
-    t[i] = cpucycles();
-    indcpa_keypair_jazz(pk, sk, randomness0);
-  }
-  print_results("indcpa keypair: ", t, NRUNS);
+  print_results_jasmin("polyvec_decompress: ", t, NRUNS);
 
-  /* Test ENCRYPTION */
-  for(i=0;i<NRUNS;i++)
-  {
-    t[i] = cpucycles();
-    indcpa_enc_jazz(ct, message, pk, randomness1);
 
-  }
-  print_results("indcpa enc: ", t, NRUNS);
+  // kem ////////////////////////////////////////////////////////////
 
-  /* Test DECRYPTION */
-  for(i=0;i<NRUNS;i++)
-  {
-    t[i] = cpucycles();
-    indcpa_dec_jazz(outmsg, ct, sk);
-  }
-  print_results("indcpa dec: ", t, NRUNS);
-
-  /* Test KEM KEYPAIR */
+  // test KEM KEYPAIR
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
@@ -221,7 +206,7 @@ int main(void)
   }
   print_results("mlkem_keypair: ", t, NRUNS);
 
-  /* Test KEM ENCAPSULATION */
+  // test KEM ENCAPSULATION
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
@@ -229,13 +214,13 @@ int main(void)
   }
   print_results("mlkem_encaps: ", t, NRUNS);
 
-  /* Test KEM DECAPSULATION */
+  // test KEM DECAPSULATION
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
     crypto_kem_dec_jazz(outmsg, ct, sk);
   }
   print_results("mlkem_decaps: ", t, NRUNS);
-  
+
   return 0;
 }

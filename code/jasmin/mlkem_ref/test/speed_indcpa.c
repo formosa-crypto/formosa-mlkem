@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "../params.h"
 #include "../ntt.h"
@@ -65,11 +66,15 @@ int main(void)
   unsigned char outmsg[MLKEM_POLYVECBYTES];
 
   uint64_t t[NRUNS], i;
+  size_t ri;
 
   FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
-  fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
-  fread(message, MLKEM_SYMBYTES, 1, urandom);
+  ri = fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
+  assert( ri == 1 );
+  ri = fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
+  assert( ri == 1 );
+  ri = fread(message, MLKEM_SYMBYTES, 1, urandom);
+  assert( ri == 1 );
   fclose(urandom);
 
   /* TEST KEYPAIR */

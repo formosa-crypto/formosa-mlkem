@@ -1,7 +1,7 @@
 { pkgs ?
     import (fetchTarball {
-      url = https://github.com/NixOS/nixpkgs/archive/53fbe41cf76b6a685004194e38e889bc8857e8c2.tar.gz;
-      sha256 = "sha256:1fyc4kbhv7rrfzya74yprvd70prlcsv56b7n0fv47kn7rznvvr2b";
+      url = "https://github.com/NixOS/nixpkgs/archive/46397778ef1f73414b03ed553a3368f0e7e33c2f.tar.gz";
+      sha256 = "sha256:1kl124v7ny2ar49s5498vx2jl3g8dwaqqvkdaqbjalhn9npl6dlv";
     }) {}
 , full ? true
 }:
@@ -15,26 +15,28 @@ let
     ideSupport = false;
     coqPackages = { coq = null; flocq = null; };
   };
-  ecVersion = "a8274feb63b62d281db350cd6dd8940c69aca835";
-  ec = (easycrypt.overrideAttrs (_: {
+  ecVersion = "0df85113c4a399990f3f8ed93db5047a8844f8a9";
+  ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "EasyCrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-Rbs3alnnnDPbKrAqPq1pj/kedHWC+PvPFES4d+V8EAk=";
+      hash = "sha256-+3qI/Z9EpQXe75yHfkqt/N0Uwb+iN8ziTYg4Z4yBaSk=";
     };
     postPatch = ''
       substituteInPlace dune-project --replace '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
     '';
+    buildInputs = o.buildInputs ++ [ oc.dune-site ];
   })).override {
     ocamlPackages = oc;
     why3 = why;
   };
-  altergo = callPackage ./config/alt-ergo.nix { ocamlPackages = oc; } ;
+  altergo = alt-ergo.override { ocamlPackages = oc; } ;
 in
 
 mkShell ({
   JASMINC = "${jasmin-compiler.bin}/bin/jasminc";
+  JASMIN_CT = "${jasmin-compiler.bin}/bin/jazzct";
 } // lib.optionalAttrs full {
   packages = [
     ec

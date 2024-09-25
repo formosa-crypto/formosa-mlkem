@@ -1,0 +1,97 @@
+/* Running these functions through the Jasmin reference interpreter
+ * speaks for the safety of the Jasmin implementations.
+ * It also validates that encaps and decaps reach agreement on the shared secret.
+*/
+
+namespace ref { require "../mlkem_ref/jkem.jazz" }
+namespace avx { require "../mlkem_avx2/jkem.jazz" }
+
+/* Check equality of two 32-bytes blocks in memory */
+fn check(reg u64 p q) -> reg bool {
+  reg bool r;
+  r = true;
+  inline int i;
+  for i = 0 to 32 {
+    r = r && (u8)[p + i] == (u8)[q + i];
+  }
+  return r;
+}
+
+inline fn setup(inline bool withCoins) -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64 {
+  reg u64 pk sk ct ss1 ss2 coins;
+  pk = 0x1000;
+  sk = 0x2000;
+  ct = 0x3000;
+  ss1 = 0x4000;
+  ss2 = 0x5000;
+  coins = 0x6000;
+  if withCoins {
+    inline int i;
+    for i = 0 to 8 { [coins + 8 * i] = 0; }
+  }
+  return pk, sk, ct, ss1, ss2, coins;
+}
+
+fn test_ref_derand() -> reg bool {
+  reg u64 pk sk ct ss1 ss2 coins;
+  pk, sk, ct, ss1, ss2, coins = setup(true);
+
+  #[inline]
+  _ = ref::jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand(pk, sk, coins);
+  #[inline]
+  _ = ref::jade_kem_mlkem_mlkem768_amd64_ref_enc_derand(ct, ss1, pk, coins + 32);
+  #[inline]
+  _ = ref::jade_kem_mlkem_mlkem768_amd64_ref_dec(ss2, ct, sk);
+
+  reg bool r;
+  r = check(ss1, ss2);
+  return r;
+}
+
+fn test_avx_derand() -> reg bool {
+  reg u64 pk sk ct ss1 ss2 coins;
+  pk, sk, ct, ss1, ss2, coins = setup(true);
+
+  #[inline]
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(pk, sk, coins);
+  #[inline]
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(ct, ss1, pk, coins + 32);
+  #[inline]
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_dec(ss2, ct, sk);
+
+  reg bool r;
+  r = check(ss1, ss2);
+  return r;
+}
+
+fn test_ref() -> reg bool {
+  reg u64 pk sk ct ss1 ss2;
+  pk, sk, ct, ss1, ss2, _ = setup(false);
+
+  #[inline]
+  _ = ref::jade_kem_mlkem_mlkem768_amd64_ref_keypair(pk, sk);
+  #[inline]
+  _ = ref::jade_kem_mlkem_mlkem768_amd64_ref_enc(ct, ss1, pk);
+  #[inline]
+  _ = ref::jade_kem_mlkem_mlkem768_amd64_ref_dec(ss2, ct, sk);
+
+  reg bool r;
+  r = check(ss1, ss2);
+  return r;
+}
+
+fn test_avx() -> reg bool {
+  reg u64 pk sk ct ss1 ss2;
+  pk, sk, ct, ss1, ss2, _ = setup(false);
+
+  #[inline]
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_keypair(pk, sk);
+  #[inline]
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_enc(ct, ss1, pk);
+  #[inline]
+  _ = avx::jade_kem_mlkem_mlkem768_amd64_avx2_dec(ss2, ct, sk);
+
+  reg bool r;
+  r = check(ss1, ss2);
+  return r;
+}

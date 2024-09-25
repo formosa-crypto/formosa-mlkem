@@ -18,4 +18,4 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
     - uses: DeterminateSystems/magic-nix-cache-action@v3
     - run: nix-shell --arg full false --run "echo Dependencies OK…"
-    - run: nix-shell --arg full false --run "make -C code/jasmin/mlkem_${{matrix.dir}}/ ct"
+    - run: nix-shell --arg full false --run "make -C code/jasmin/mlkem_${{matrix.dir}}/ check-constant-time"

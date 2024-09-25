@@ -1,7 +1,7 @@
 [general]
 timeout = 30
 
-provers = Alt-Ergo@2.4
+provers = Alt-Ergo@2.5
 provers = CVC4@1.8
 provers = Z3@4.8
 

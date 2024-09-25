@@ -5,193 +5,296 @@ require "indcpa.jinc"
 require "kem.jinc"
 require "verify.jinc"
 
-/* Exported functions only for benchmarking */
-export fn gen_matrix_jazz(reg u64 ap, reg u64 seedp)
+require "cycles.jinc"
+
+// note: this code needs to be reviewed and properly tested
+
+// exported functions only for benchmarking
+
+export fn gen_matrix_jazz(reg u64 ap seedp) -> reg u64
 {
-  stack u16[MLKEM_K*MLKEM_VECN] aa;
+  stack u32[2] start end;
+  reg u64 t;
+  stack u64 aps;
+  stack u16[MLKEM_K*MLKEM_VECN] a;
   stack u8[MLKEM_SYMBYTES] seed;
+  reg u64 i;
 
-  aa = __gen_matrix(seed, 1);
+  aps = ap;
+  i=0; while(i < MLKEM_SYMBYTES){ seed[i] = (u8)[seedp + i]; i += 1; }
+
+  start = tsc();
+
+  a = __gen_matrix(seed, 1);
+
+  end = tsc();
+
+  ap = aps;
+  i=0; while(i < MLKEM_K*MLKEM_VECN){ (u16)[ap + 2*i] = a[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
 }
 
-export fn poly_compress_jazz(reg u64 rp, reg u64 ap) 
+// //////////////////////////////////////////////////////////////////
+
+export fn poly_getnoise_4x_jazz(reg u64 r0p r1p r2p r3p, reg u64 seedp, reg u8 nonce) -> reg u64
 {
-  stack u16[MLKEM_N] a;
-
-  a = _poly_compress(rp, a);
-}
-
-export fn poly_decompress_jazz(reg u64 rp, reg u64 ap) 
-{
-  stack u16[MLKEM_N] r;
-
-  r = _poly_decompress(r, ap);
-}
-
-export fn poly_tomsg_jazz(reg u64 rp, reg u64 ap) 
-{
-  stack u16[MLKEM_N] a;
-
-  a = _poly_tomsg(rp, a);
-}
-
-export fn poly_frommsg_jazz(reg u64 rp, reg u64 ap) 
-{
-  stack u16[MLKEM_N] r;
-
-  r = _poly_frommsg(r, ap);
-}
-
-export fn poly_ntt_jazz(reg u64 rp) 
-{
-  stack u16[MLKEM_N] r;
-
-  r = _poly_ntt(r);
-}
-
-export fn poly_invntt_jazz(reg u64 rp) 
-{
-  stack u16[MLKEM_N] r;
-
-  r = _poly_invntt(r);
-}
-
-
-export fn poly_getnoise_jazz(reg u64 rp, reg u64 seedp, reg u8 nonce) 
-{
-  stack u16[MLKEM_N] r;
-  stack u8[MLKEM_SYMBYTES] seed;
-
-  //r = _poly_getnoise_eta1_4x(r, seed, nonce);
-}
-
-
-export fn poly_getnoise_4x_jazz(reg u64 r0 r1 r2 r3, reg u64 seedp, reg u8 nonce) 
-{
+  stack u32[2] start end;
+  reg u64 t;
   stack u16[MLKEM_N] r0 r1 r2 r3;
   stack u8[MLKEM_SYMBYTES] seed;
+  reg u64 i;
 
+  () = #spill(r0p, r1p, r2p, r3p);
+  i=0; while(i < MLKEM_SYMBYTES){ seed[i] = (u8)[seedp + i]; i += 1; }
+
+  start = tsc();
+  
   r0, r1, r2, r3 = _poly_getnoise_eta1_4x(r0, r1, r2, r3, seed, nonce);
+
+  end = tsc();
+
+  () = #unspill(r0p, r1p, r2p, r3p);
+
+  i=0; while(i < MLKEM_N)
+  { (u16)[r0p + 2*i] = r0[i];
+    (u16)[r1p + 2*i] = r1[i];
+    (u16)[r2p + 2*i] = r2[i];
+    (u16)[r3p + 2*i] = r3[i];
+    i+= 1;
+  }
+
+  t = cycles(start, end);
+  return t;
 }
 
 
-
-export fn polyvec_decompress_jazz(reg u64 rp, reg u64 ap) 
+export fn poly_ntt_jazz(reg u64 rp) -> reg u64
 {
-  stack u16[MLKEM_VECN] r;
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_N] r;
+  reg u64 i;
 
-  r = __polyvec_decompress(ap);
+  () = #spill(rp);
+  i=0; while(i < MLKEM_N){ r[i] = (u16)[rp + 2*i]; i += 1; }
+
+  start = tsc();
+
+  r = _poly_ntt(r);
+
+  end = tsc();
+
+  () = #unspill(rp);
+  i=0; while(i < MLKEM_N){ (u16)[rp + 2*i] = r[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
 }
 
 
-export fn polyvec_compress_jazz(reg u64 rp, reg u64 ap) 
+export fn poly_invntt_jazz(reg u64 rp) -> reg u64
 {
-  stack u16[MLKEM_VECN] a;
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_N] r;
+  reg u64 i;
 
-  __polyvec_compress(rp, a);
+  () = #spill(rp);
+  i=0; while(i < MLKEM_N){ r[i] = (u16)[rp + 2*i]; i += 1; }
+
+  start = tsc();
+
+  r = _poly_invntt(r);
+
+  end = tsc();
+
+  () = #unspill(rp);
+  i=0; while(i < MLKEM_N){ (u16)[rp + 2*i] = r[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
 }
 
 
-export fn polyvec_pointwise_acc_jazz(reg u64 rp, reg u64 ap, reg u64 bp) 
+export fn poly_tomsg_jazz(reg u64 rp ap) -> reg u64
 {
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_N] a;
+  reg u64 i;
+
+  () = #spill(ap);
+  i=0; while(i < MLKEM_N){ a[i] = (u16)[ap + 2*i]; i += 1; }
+
+  start = tsc();
+
+  a = _poly_tomsg(rp, a);
+
+  end = tsc();
+
+  () = #unspill(ap);
+  i=0; while(i < MLKEM_N){ (u16)[ap + 2*i] = a[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
+}
+
+
+export fn poly_frommsg_jazz(reg u64 rp ap) -> reg u64
+{
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_N] r;
+  reg u64 i;
+
+  () = #spill(rp);
+  i=0; while(i < MLKEM_N){ r[i] = (u16)[rp + 2*i]; i += 1; }
+
+  start = tsc();
+
+  r = _poly_frommsg(r, ap);
+
+  end = tsc();
+
+  () = #unspill(rp);
+  i=0; while(i < MLKEM_N){ (u16)[rp + 2*i] = r[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
+}
+
+
+export fn poly_compress_jazz(reg u64 rp ap) -> reg u64
+{
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_N] a;
+  reg u64 i;
+
+  () = #spill(ap);
+  i=0; while(i < MLKEM_N){ a[i] = (u16)[ap + 2*i]; i += 1; }
+
+  start = tsc();
+
+  a = _poly_compress(rp, a);
+
+  end = tsc();
+
+  () = #unspill(ap);
+  i=0; while(i < MLKEM_N){ (u16)[ap + 2*i] = a[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
+}
+
+export fn poly_decompress_jazz(reg u64 rp ap) -> reg u64
+{
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_N] r;
+  reg u64 i;
+
+  () = #spill(rp);
+  i=0; while(i < MLKEM_N){ r[i] = (u16)[rp + 2*i]; i += 1; }
+
+  start = tsc();
+
+  r = _poly_decompress(r, ap);
+
+  end = tsc();
+
+  () = #unspill(rp);
+  i=0; while(i < MLKEM_N){ (u16)[rp + 2*i] = r[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
+
+}
+
+// //////////////////////////////////////////////////////////////////
+
+export fn polyvec_pointwise_acc_jazz(reg u64 rp ap bp) -> reg u64
+{
+  stack u32[2] start end;
+  reg u64 t;
   stack u16[MLKEM_VECN] a;
   stack u16[MLKEM_VECN] b;
   stack u16[MLKEM_N] r;
+  reg u64 i;
+
+  () = #spill(rp);
+  i=0; while(i < MLKEM_VECN){ a[i] = (u16)[ap + 2*i]; i += 1; }
+  i=0; while(i < MLKEM_VECN){ b[i] = (u16)[bp + 2*i]; i += 1; }
+
+  start = tsc();
 
   r = __polyvec_pointwise_acc(r, a, b);
+
+  end = tsc();
+
+  () = #unspill(rp);
+  i=0; while(i < MLKEM_N){ (u16)[rp + 2*i] = r[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
 }
 
-
-export fn indcpa_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+export fn polyvec_compress_jazz(reg u64 rp ap) -> reg u64
 {
-  //__indcpa_keypair(pkp, skp, randomnessp);
-}
-
-
-export fn indcpa_enc_jazz(reg u64 ctp, reg u64 msgp, reg u64 pkp, reg u64 coinsp)
-{
-  stack u16[MLKEM_VECN] pkpv sp ep bp;
-  stack u16[MLKEM_K*MLKEM_VECN] aat;
-  stack u16[MLKEM_N] k epp v;
-  stack u8[MLKEM_SYMBYTES] publicseed;
-  stack u8[MLKEM_SYMBYTES] noiseseed;
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_VECN] a;
   reg u64 i;
-  reg u8 c nonce;
-  stack u64 sctp;
 
-  sctp = ctp;
+  i=0; while(i < MLKEM_VECN){ a[i] = (u16)[ap + 2*i]; i += 1; }
 
-  i = 0;
-  while (i < MLKEM_SYMBYTES)
-  {
-    c = (u8)[coinsp+i];
-    noiseseed[(int)i] = c;
-    i += 1;
-  }
+  start = tsc();
 
-  pkpv = __polyvec_frombytes(pkp);
+  __polyvec_compress(rp, a);
 
-  i = 0;
-  pkp += MLKEM_POLYVECBYTES;
-  while (i < MLKEM_SYMBYTES)
-  {
-    c = (u8)[pkp];
-    publicseed[(int)i] = c;
-    pkp += 1;
-    i += 1;
-  }
+  end = tsc();
 
-  k = _poly_frommsg(k, msgp);
-
-  aat = __gen_matrix(publicseed, 1);
-
-  nonce = 0;
-  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], noiseseed, nonce);
-
-  nonce = 4;
-  ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], noiseseed, nonce);
-
-  sp = __polyvec_ntt(sp);
-    
-  bp[0:MLKEM_N] = __polyvec_pointwise_acc(bp[0:MLKEM_N], aat[0:MLKEM_VECN], sp);
-  bp[MLKEM_N:MLKEM_N]= __polyvec_pointwise_acc(bp[MLKEM_N:MLKEM_N], aat[MLKEM_VECN:MLKEM_VECN], sp);
-  bp[2*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(bp[2*MLKEM_N:MLKEM_N], aat[2*MLKEM_VECN:MLKEM_VECN], sp);
-  
-  v = __polyvec_pointwise_acc(v, pkpv, sp);
-
-  bp = __polyvec_invntt(bp);
-  v = _poly_invntt(v);
-
-  bp = __polyvec_add2(bp, ep);
-  v = _poly_add2(v, epp);
-  v = _poly_add2(v, k);
-  bp = __polyvec_reduce(bp);
-  v  = __poly_reduce(v);
-
-  ctp = sctp;
-  __polyvec_compress(ctp, bp);
-  ctp += MLKEM_POLYVECCOMPRESSEDBYTES;
-  v = _poly_compress(ctp, v);
+  t = cycles(start, end);
+  return t;
 }
 
-
-export fn indcpa_dec_jazz(reg u64 msgp, reg u64 ctp, reg u64 skp)
+export fn polyvec_decompress_jazz(reg u64 rp ap) -> reg u64
 {
-  __indcpa_dec_0(msgp, ctp, skp);
+  stack u32[2] start end;
+  reg u64 t;
+  stack u16[MLKEM_VECN] r;
+  reg u64 i;
+
+  () = #spill(rp);
+  start = tsc();
+
+  r = __polyvec_decompress(ap);
+
+  end = tsc();
+
+  () = #unspill(rp);
+  i=0; while(i < MLKEM_N){ (u16)[rp + 2*i] = r[i]; i += 1; }
+
+  t = cycles(start, end);
+  return t;
 }
 
-export fn crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg u64 randomnessp)
+// //////////////////////////////////////////////////////////////////
+
+export fn crypto_kem_keypair_jazz(reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp)
 {
-  //__crypto_kem_keypair_jazz(pkp, skp, randomnessp);
+  __crypto_kem_keypair_jazz(pkp, skp, randomnessp);
 }
 
-
-export fn crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg u64 randomnessp)
+export fn crypto_kem_enc_jazz(reg u64 ctp shkp pkp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
 {
-  //__crypto_kem_enc_jazz(ctp, shkp, pkp, randomnessp);
+  __crypto_kem_enc_jazz(ctp, shkp, pkp, randomnessp);
 }
 
-export fn crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
+export fn crypto_kem_dec_jazz(reg u64 shkp ctp skp)
 {
   __crypto_kem_dec_jazz(shkp, ctp, skp);
 }
+
