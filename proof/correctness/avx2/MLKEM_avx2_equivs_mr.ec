@@ -237,7 +237,6 @@ qed.
 
 (******* BEIGN REMOVE INTS FROM LOOPS *)
 
-print Jkem.M.
 module Aux(SC : Jkem.Syscall_t) = {
 proc _poly_csubq(rp : W16.t Array256.t) : W16.t Array256.t = {
     var i : int;
@@ -435,43 +434,49 @@ inline {1} 1;inline {2} 1.
 swap {1} 2 -1; swap {1} 4 -2.
 swap {2} [2..3] -1.
 seq 2 2 : #pre.
-+ inline {1} 2;inline {2} 2.
++ inline {1} 2.
   unroll for {1} ^while. 
-  sp 1 1.
-  proc rewrite {1} 2  sliceget_256_16_16E.
-  proc rewrite {1} 4  sliceget_256_256_16E.
-  proc rewrite {1} 8  sliceget_256_256_16E.
-  proc rewrite 11  sliceget_256_256_16E.
-  proc rewrite 15  sliceget_256_256_16E.
-  proc rewrite 19 sliceget_256_256_16E.
-  proc rewrite 23  sliceget_256_256_16E.
-  proc rewrite 27  sliceget_256_256_16E.
-  proc rewrite 31  sliceget_256_256_16E.
-  proc rewrite 35  sliceget_256_256_16E.
-  proc rewrite 39  sliceget_256_256_16E.
-  proc rewrite 43  sliceget_256_256_16E.
-  proc rewrite 47  sliceget_256_256_16E.
-  proc rewrite 51  sliceget_256_256_16E.
-  proc rewrite 55  sliceget_256_256_16E.
-  proc rewrite 59  sliceget_256_256_16E.
-  proc rewrite 63  sliceget_256_256_16E.
-  proc rewrite 5  sliceset_256_256_16E.
-  proc rewrite 9  sliceset_256_256_16E.
-  proc rewrite 13  sliceset_256_256_16E.
-  proc rewrite 17  sliceset_256_256_16E.
-  proc rewrite 21  sliceset_256_256_16E.
-  proc rewrite 25  sliceset_256_256_16E.
-  proc rewrite 29  sliceset_256_256_16E.
-  proc rewrite 33  sliceset_256_256_16E.
-  proc rewrite 37  sliceset_256_256_16E.
-  proc rewrite 41  sliceset_256_256_16E.
-  proc rewrite 45  sliceset_256_256_16E.
-  proc rewrite 49  sliceset_256_256_16E.
-  proc rewrite 53  sliceset_256_256_16E.
-  proc rewrite 57  sliceset_256_256_16E.
-  proc rewrite 61  sliceset_256_256_16E.
-  proc rewrite 65  sliceset_256_256_16E.
+  sp 2 0.
+  proc rewrite {1} 1  sliceget_256_16_16E.
+  proc rewrite {1} 3  sliceget_256_256_16E.
+  proc rewrite {1} 7  sliceget_256_256_16E.
+  proc rewrite {1} 11  sliceget_256_256_16E.
+  proc rewrite {1} 15  sliceget_256_256_16E.
+  proc rewrite {1} 19 sliceget_256_256_16E.
+  proc rewrite {1} 23  sliceget_256_256_16E.
+  proc rewrite {1} 27  sliceget_256_256_16E.
+  proc rewrite {1} 31  sliceget_256_256_16E.
+  proc rewrite {1} 35  sliceget_256_256_16E.
+  proc rewrite {1} 39  sliceget_256_256_16E.
+  proc rewrite {1} 43  sliceget_256_256_16E.
+  proc rewrite {1} 47  sliceget_256_256_16E.
+  proc rewrite {1} 51  sliceget_256_256_16E.
+  proc rewrite {1} 55  sliceget_256_256_16E.
+  proc rewrite {1} 59  sliceget_256_256_16E.
+  proc rewrite {1} 63  sliceget_256_256_16E.
+  proc rewrite {1} 5  sliceset_256_256_16E.
+  proc rewrite {1} 9  sliceset_256_256_16E.
+  proc rewrite {1} 13  sliceset_256_256_16E.
+  proc rewrite {1} 17  sliceset_256_256_16E.
+  proc rewrite {1} 21  sliceset_256_256_16E.
+  proc rewrite {1} 25  sliceset_256_256_16E.
+  proc rewrite {1} 29  sliceset_256_256_16E.
+  proc rewrite {1} 33  sliceset_256_256_16E.
+  proc rewrite {1} 37  sliceset_256_256_16E.
+  proc rewrite {1} 41  sliceset_256_256_16E.
+  proc rewrite {1} 45  sliceset_256_256_16E.
+  proc rewrite {1} 49  sliceset_256_256_16E.
+  proc rewrite {1} 53  sliceset_256_256_16E.
+  proc rewrite {1} 57  sliceset_256_256_16E.
+  proc rewrite {1} 61  sliceset_256_256_16E.
+  proc rewrite {1} 65  sliceset_256_256_16E.
+  cfold {1} 2.
 
+  inline {2} 2.
+  unroll for {2} ^while.
+  inline *.
+  cfold {2} 3.
+  bdepeq 16 16 [ "rp1" ] [ "a0" ] ["rp1" ] [ "rp1" ].
 
 (****** BEGIN POLYVEC_COMPRESS ******)
 
