@@ -6,11 +6,11 @@ import SLH64.
 require import Array1 Array4 Array5 Array6 Array7 Array8 Array9 Array16
                Array24 Array25 Array32 Array33 Array64 Array128 Array136
                Array256 Array400 Array536 Array768 Array960 Array1024
-               Array1088 Array2048 Array2304.
+               Array1088 Array2048 Array2144 Array2304.
 require import WArray8 WArray16 WArray32 WArray33 WArray40 WArray64 WArray128
                WArray136 WArray160 WArray192 WArray200 WArray224 WArray256
                WArray288 WArray512 WArray536 WArray768 WArray800 WArray960
-               WArray1088 WArray1536 WArray2048 WArray4608.
+               WArray1088 WArray1536 WArray2048 WArray2144 WArray4608.
 
 abbrev gen_matrix_indexes = Array16.of_list witness [W16.of_int 0;
 W16.of_int 1; W16.of_int 2; W16.of_int 256; W16.of_int 257; W16.of_int 258;
@@ -6536,14 +6536,15 @@ module M(SC:Syscall_t) = {
   }
   
   proc _gen_matrix_sample_four_polynomials (polx4:W16.t Array1024.t,
-                                            buf0:W8.t Array536.t,
-                                            buf1:W8.t Array536.t,
-                                            buf2:W8.t Array536.t,
-                                            buf3:W8.t Array536.t,
+                                            buf:W8.t Array2144.t,
                                             rho:W8.t Array32.t,
                                             mat_entry:W64.t, transposed:W64.t) : 
-  W16.t Array1024.t * W8.t Array536.t * W8.t Array536.t * W8.t Array536.t *
-  W8.t Array536.t = {
+  W16.t Array1024.t * W8.t Array2144.t = {
+    var aux_2: W8.t Array536.t;
+    var aux_1: W8.t Array536.t;
+    var aux_0: W8.t Array536.t;
+    var aux: W8.t Array536.t;
+    var aux_3: W16.t Array256.t;
     
     var indexes:W16.t Array4.t;
     var state:W256.t Array25.t;
@@ -6561,31 +6562,66 @@ module M(SC:Syscall_t) = {
     
     while ((buf_offset \ult (W64.of_int (3 * 168)))) {
       stx4 <@ _keccakf1600_4x (stx4);
-      (buf0, buf1, buf2, buf3) <@ __st4x_unpack_at (buf0, buf1, buf2, buf3,
-      stx4, buf_offset);
+      (aux_2, aux_1, aux_0,
+      aux) <@ __st4x_unpack_at ((Array536.init (fun i => buf.[(536 * 0) + i])),
+      (Array536.init (fun i => buf.[(536 * 1) + i])),
+      (Array536.init (fun i => buf.[(536 * 2) + i])),
+      (Array536.init (fun i => buf.[(536 * 3) + i])), stx4, buf_offset);
+      buf <- Array2144.init
+             (fun i => if (536 * 0) <= i < (536 * 0) + 536
+             then aux_2.[i-(536 * 0)] else buf.[i]);
+      buf <- Array2144.init
+             (fun i => if (536 * 1) <= i < (536 * 1) + 536
+             then aux_1.[i-(536 * 1)] else buf.[i]);
+      buf <- Array2144.init
+             (fun i => if (536 * 2) <= i < (536 * 2) + 536
+             then aux_0.[i-(536 * 2)] else buf.[i]);
+      buf <- Array2144.init
+             (fun i => if (536 * 3) <= i < (536 * 3) + 536
+             then aux.[i-(536 * 3)] else buf.[i]);
       buf_offset <- (buf_offset + (W64.of_int 168));
     }
     pol <- (Array256.init (fun i => polx4.[(0 * 256) + i]));
-    (pol, buf0) <@ __gen_matrix_fill_polynomial (pol, buf0);
+    (aux_3, aux_2) <@ __gen_matrix_fill_polynomial (pol,
+    (Array536.init (fun i => buf.[(536 * 0) + i])));
+    pol <- aux_3;
+    buf <- Array2144.init
+           (fun i => if (536 * 0) <= i < (536 * 0) + 536
+           then aux_2.[i-(536 * 0)] else buf.[i]);
     polx4 <- Array1024.init
              (fun i => if (0 * 256) <= i < (0 * 256) + 256
              then pol.[i-(0 * 256)] else polx4.[i]);
     pol <- (Array256.init (fun i => polx4.[(1 * 256) + i]));
-    (pol, buf1) <@ __gen_matrix_fill_polynomial (pol, buf1);
+    (aux_3, aux_2) <@ __gen_matrix_fill_polynomial (pol,
+    (Array536.init (fun i => buf.[(536 * 1) + i])));
+    pol <- aux_3;
+    buf <- Array2144.init
+           (fun i => if (536 * 1) <= i < (536 * 1) + 536
+           then aux_2.[i-(536 * 1)] else buf.[i]);
     polx4 <- Array1024.init
              (fun i => if (1 * 256) <= i < (1 * 256) + 256
              then pol.[i-(1 * 256)] else polx4.[i]);
     pol <- (Array256.init (fun i => polx4.[(2 * 256) + i]));
-    (pol, buf2) <@ __gen_matrix_fill_polynomial (pol, buf2);
+    (aux_3, aux_2) <@ __gen_matrix_fill_polynomial (pol,
+    (Array536.init (fun i => buf.[(536 * 2) + i])));
+    pol <- aux_3;
+    buf <- Array2144.init
+           (fun i => if (536 * 2) <= i < (536 * 2) + 536
+           then aux_2.[i-(536 * 2)] else buf.[i]);
     polx4 <- Array1024.init
              (fun i => if (2 * 256) <= i < (2 * 256) + 256
              then pol.[i-(2 * 256)] else polx4.[i]);
     pol <- (Array256.init (fun i => polx4.[(3 * 256) + i]));
-    (pol, buf3) <@ __gen_matrix_fill_polynomial (pol, buf3);
+    (aux_3, aux_2) <@ __gen_matrix_fill_polynomial (pol,
+    (Array536.init (fun i => buf.[(536 * 3) + i])));
+    pol <- aux_3;
+    buf <- Array2144.init
+           (fun i => if (536 * 3) <= i < (536 * 3) + 536
+           then aux_2.[i-(536 * 3)] else buf.[i]);
     polx4 <- Array1024.init
              (fun i => if (3 * 256) <= i < (3 * 256) + 256
              then pol.[i-(3 * 256)] else polx4.[i]);
-    return (polx4, buf0, buf1, buf2, buf3);
+    return (polx4, buf);
   }
   
   proc __gen_matrix_sample_one_polynomial (pol:W16.t Array256.t,
@@ -6611,45 +6647,30 @@ module M(SC:Syscall_t) = {
   proc _gen_matrix_avx2 (matrix:W16.t Array2304.t, rho:W8.t Array32.t,
                          transposed:W64.t) : W16.t Array2304.t = {
     var aux: int;
+    var aux_1: W8.t Array536.t;
     var aux_0: W16.t Array256.t;
     
-    var buf0_s:W8.t Array536.t;
-    var buf0:W8.t Array536.t;
-    var buf1_s:W8.t Array536.t;
-    var buf1:W8.t Array536.t;
-    var buf2_s:W8.t Array536.t;
-    var buf2:W8.t Array536.t;
-    var buf3_s:W8.t Array536.t;
-    var buf3:W8.t Array536.t;
+    var buf_s:W8.t Array2144.t;
+    var buf:W8.t Array2144.t;
     var i:int;
     var mat_entry:W64.t;
     var polx4:W16.t Array1024.t;
     var pol:W16.t Array256.t;
     var rc:W16.t;
     var j:int;
-    buf0 <- witness;
-    buf0_s <- witness;
-    buf1 <- witness;
-    buf1_s <- witness;
-    buf2 <- witness;
-    buf2_s <- witness;
-    buf3 <- witness;
-    buf3_s <- witness;
+    buf <- witness;
+    buf_s <- witness;
     pol <- witness;
     polx4 <- witness;
     (* Erased call to spill *)
-    buf0 <- buf0_s;
-    buf1 <- buf1_s;
-    buf2 <- buf2_s;
-    buf3 <- buf3_s;
+    buf <- buf_s;
     i <- 0;
     while (i < 2) {
       mat_entry <- (W64.of_int (4 * i));
       polx4 <- (Array1024.init (fun i_0 => matrix.[((4 * i) * 256) + i_0]));
       (* Erased call to unspill *)
-      (polx4, buf0, buf1, buf2,
-      buf3) <@ _gen_matrix_sample_four_polynomials (polx4, buf0, buf1, buf2,
-      buf3, rho, mat_entry, transposed);
+      (polx4, buf) <@ _gen_matrix_sample_four_polynomials (polx4, buf, rho,
+      mat_entry, transposed);
       matrix <- Array2304.init
                 (fun i_0 => if ((i * 4) * 256) <= i_0 < ((i * 4) * 256) + 1024
                 then polx4.[i_0-((i * 4) * 256)] else matrix.[i_0]);
@@ -6657,14 +6678,15 @@ module M(SC:Syscall_t) = {
     }
     pol <- (Array256.init (fun i_0 => matrix.[(8 * 256) + i_0]));
     rc <- (W16.of_int 514);
-    (pol, buf0) <@ __gen_matrix_sample_one_polynomial (pol, buf0, rho, rc);
+    (aux_0, aux_1) <@ __gen_matrix_sample_one_polynomial (pol,
+    (Array536.init (fun i_0 => buf.[(536 * 0) + i_0])), rho, rc);
+    pol <- aux_0;
+    buf <- Array2144.init
+           (fun i_0 => if (536 * 0) <= i_0 < (536 * 0) + 536
+           then aux_1.[i_0-(536 * 0)] else buf.[i_0]);
     matrix <- Array2304.init
               (fun i_0 => if (8 * 256) <= i_0 < (8 * 256) + 256
               then pol.[i_0-(8 * 256)] else matrix.[i_0]);
-    buf0_s <- buf0;
-    buf1_s <- buf1;
-    buf2_s <- buf2;
-    buf3_s <- buf3;
     i <- 0;
     while (i < 3) {
       j <- 0;
