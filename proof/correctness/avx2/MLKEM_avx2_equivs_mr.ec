@@ -476,7 +476,36 @@ seq 2 2 : #pre.
   unroll for {2} ^while.
   inline *.
   cfold {2} 3.
-  bdepeq 16 16 [ "rp1" ] [ "a0" ] ["rp1" ] [ "rp1" ].
+  by bdepeq 16 16 [ "rp1" ] [ "a" ] ["rp1" ] [ "rp1" ];smt().
+
+cfold {1} 9. 
+proc rewrite {1} 4  sliceget_256_16_16E.
+unroll for {1} ^while. 
+proc rewrite {1} 10 sliceget_256_256_16E.
+proc rewrite {1} 11  sliceget_256_256_16E.
+proc rewrite {1} 12  sliceget_256_256_16E.
+proc rewrite {1} 13  sliceget_256_256_16E.
+proc rewrite {1} 34  sliceget_256_256_16E.
+proc rewrite {1} 35  sliceget_256_256_16E.
+proc rewrite {1} 36  sliceget_256_256_16E.
+proc rewrite {1} 37  sliceget_256_256_16E.
+proc rewrite {1} 58  sliceget_256_256_16E.
+proc rewrite {1} 59  sliceget_256_256_16E.
+proc rewrite {1} 60  sliceget_256_256_16E.
+proc rewrite {1} 61  sliceget_256_256_16E.
+proc rewrite {1} 82  sliceget_256_256_16E.
+proc rewrite {1} 83  sliceget_256_256_16E.
+proc rewrite {1} 84  sliceget_256_256_16E.
+proc rewrite {1} 85  sliceget_256_256_16E.
+proc rewrite {1} 32 sliceset_256_128_8E.
+proc rewrite {1} 56 sliceset_256_128_8E.
+proc rewrite {1} 80 sliceset_256_128_8E.
+proc rewrite {1} 104 sliceset_256_128_8E.
+cfold {1} 9.
+
+unroll for {2} 3.
+  bdepeq 16 12 [ "rp" ] [ "rp" ] ["rp" ] [ "rp1" ];smt().
+
 
 (****** BEGIN POLYVEC_COMPRESS ******)
 
