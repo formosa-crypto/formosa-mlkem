@@ -235,8 +235,9 @@ qed.
 (*************************)
 (*************************)
 
-print Jkem.M.
+(******* BEIGN REMOVE INTS FROM LOOPS *)
 
+print Jkem.M.
 module Aux(SC : Jkem.Syscall_t) = {
 proc _poly_csubq(rp : W16.t Array256.t) : W16.t Array256.t = {
     var i : int;
@@ -271,7 +272,35 @@ proc __polyvec_csubq(r : W16.t Array768.t) : W16.t Array768.t = {
     return r;
   }
   
-
+proc _i_poly_compress(rp : W8.t Array128.t, a : W16.t Array256.t) : W8.t Array128.t * W16.t Array256.t = {
+    var i : int;
+    var d0 : W32.t;
+    var d1 : W32.t;
+    
+    a <@ _poly_csubq(a);
+    i <- 0;
+    while (i < 128){
+      d0 <- zeroextu32 a.[2 * i];
+      d1 <- zeroextu32 a.[2 * i + 1];
+      d0 <- d0 `<<` (of_int 4)%W8;
+      d0 <- d0 + (of_int 1665)%W32;
+      d0 <- d0 * (of_int 80635)%W32;
+      d0 <- d0 `>>` (of_int 28)%W8;
+      d0 <- d0 `&` (of_int 15)%W32;
+      d1 <- d1 `<<` (of_int 4)%W8;
+      d1 <- d1 + (of_int 1665)%W32;
+      d1 <- d1 * (of_int 80635)%W32;
+      d1 <- d1 `>>` (of_int 28)%W8;
+      d1 <- d1 `&` (of_int 15)%W32;
+      d1 <- d1 `<<` (of_int 4)%W8;
+      d0 <- d0 `|` d1;
+      rp.[i] <- truncateu8 d0;
+      i <- i + 1;
+    }
+    
+    return (rp, a);
+  }
+  
 proc __i_polyvec_compress(rp : W8.t Array960.t, a : W16.t Array768.t) : W8.t Array960.t = {
     var aux : int;
     var i : int;
@@ -343,13 +372,25 @@ while(={rp} /\ to_uint i{1} = i{2} /\ 0 <= i{2} <= 256).
 by auto.
 qed.
 
+
+equiv auxcompress : Jkem.M(Jkem.Syscall)._i_poly_compress ~ Aux(Jkem.Syscall)._i_poly_compress : ={arg} ==> ={res}.
+proc.
+while (0<=i{2}<=128 /\ to_uint i{1} = i{2} /\ ={rp,a}).
++ auto => /> &1 &2. 
+  rewrite !ultE /= => ????.
+  rewrite !to_uintM_small /= 1:/# !to_uintD_small /= 1:/#.
+  rewrite !to_uintM_small /= 1,2:/#. 
+  rewrite !to_uintM_small /= /#.
+by wp; call auxcsubq;auto => />.
+qed.
+
 equiv auxcsubqv : Jkem.M(Jkem.Syscall).__polyvec_csubq ~ Aux(Jkem.Syscall).__polyvec_csubq : ={arg} ==> ={res}.
 proc.
 do 3!(wp;call auxcsubq).
 by auto => />.
 qed.
 
-equiv auxcompress : Jkem.M(Jkem.Syscall).__i_polyvec_compress ~ Aux(Jkem.Syscall).__i_polyvec_compress : ={arg} ==> ={res}.
+equiv auxpolyveccompress : Jkem.M(Jkem.Syscall).__i_polyvec_compress ~ Aux(Jkem.Syscall).__i_polyvec_compress : ={arg} ==> ={res}.
 proc.
 while (0<=i{2}<=768 /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ to_uint j{1} * 4 = i{2} * 5 /\ ={rp,aa}).
 + unroll for {1} 2; unroll for {2} 2; auto => /> &1. 
@@ -368,6 +409,72 @@ case (3329 <= to_sint x);last by smt().
 by move => *;rewrite  to_sintB_small /= /smod /= /#. 
 qed.
 
+
+(******* BEGIN POLYVEC_COMPRESS *****)
+
+equiv compressequiv_1 mem  : 
+ Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress_1 ~  Jkem.M(Jkem.Syscall)._i_poly_compress :
+(*
+     pos_bound256_cxq a{1} 0 256 2 /\
+     pos_bound256_cxq a{2} 0 256 2 /\
+    lift_array256 a{1} = lift_array256 a{2} /\ 
+    ={Glob.mem} /\ Glob.mem{1} = mem   
+    ==> 
+    ={Glob.mem} /\  Glob.mem{1} = mem /\
+    res.`1{1} = res.`1{2}.
+*)
+={arg} /\ ={Glob.mem} /\ Glob.mem{1} = mem ==> ={Glob.mem} /\  Glob.mem{1} = mem /\ ={res}.
+proof.
+proc*.
+conseq />.
+transitivity {1} { r <@ Aux(Jkem.Syscall)._i_poly_compress(rp, a); }
+    (={rp,a} ==> ={r} )
+    (={rp,a} ==> ={r} );[ by smt() | by smt() | | by symmetry;call auxcompress; auto ].
+ 
+inline {1} 1;inline {2} 1.
+swap {1} 2 -1; swap {1} 4 -2.
+swap {2} [2..3] -1.
+seq 2 2 : #pre.
++ inline {1} 2;inline {2} 2.
+  unroll for {1} ^while. 
+  sp 1 1.
+  proc rewrite {1} 2  sliceget_256_16_16E.
+  proc rewrite {1} 4  sliceget_256_256_16E.
+  proc rewrite {1} 8  sliceget_256_256_16E.
+  proc rewrite 11  sliceget_256_256_16E.
+  proc rewrite 15  sliceget_256_256_16E.
+  proc rewrite 19 sliceget_256_256_16E.
+  proc rewrite 23  sliceget_256_256_16E.
+  proc rewrite 27  sliceget_256_256_16E.
+  proc rewrite 31  sliceget_256_256_16E.
+  proc rewrite 35  sliceget_256_256_16E.
+  proc rewrite 39  sliceget_256_256_16E.
+  proc rewrite 43  sliceget_256_256_16E.
+  proc rewrite 47  sliceget_256_256_16E.
+  proc rewrite 51  sliceget_256_256_16E.
+  proc rewrite 55  sliceget_256_256_16E.
+  proc rewrite 59  sliceget_256_256_16E.
+  proc rewrite 63  sliceget_256_256_16E.
+  proc rewrite 5  sliceset_256_256_16E.
+  proc rewrite 9  sliceset_256_256_16E.
+  proc rewrite 13  sliceset_256_256_16E.
+  proc rewrite 17  sliceset_256_256_16E.
+  proc rewrite 21  sliceset_256_256_16E.
+  proc rewrite 25  sliceset_256_256_16E.
+  proc rewrite 29  sliceset_256_256_16E.
+  proc rewrite 33  sliceset_256_256_16E.
+  proc rewrite 37  sliceset_256_256_16E.
+  proc rewrite 41  sliceset_256_256_16E.
+  proc rewrite 45  sliceset_256_256_16E.
+  proc rewrite 49  sliceset_256_256_16E.
+  proc rewrite 53  sliceset_256_256_16E.
+  proc rewrite 57  sliceset_256_256_16E.
+  proc rewrite 61  sliceset_256_256_16E.
+  proc rewrite 65  sliceset_256_256_16E.
+
+
+(****** BEGIN POLYVEC_COMPRESS ******)
+
 equiv compressequivvec_1 mem : 
  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress_1 ~  Jkem.M(Jkem.Syscall).__i_polyvec_compress :
      ={arg} /\
@@ -379,12 +486,14 @@ proc * => /=.
 conseq />.
 transitivity {1} { r <@ Aux(Jkem.Syscall).__i_polyvec_compress(rp, a); }
     (={rp,a} ==> ={r} )
-    (={rp,a} ==> ={r} );[ by smt() | by smt() | | by symmetry;call auxcompress; auto ].
+    (={rp,a} ==> ={r} );[ by smt() | by smt() | | by symmetry;call auxpolyveccompress; auto ].
 
 inline {1} 1; inline {2} 1.
 swap {1} 2 -1; swap {1} 4 -2.
 swap {2} [2..3] -1; swap {2} 7 -4.
 seq 2 3 : #pre. 
+
+
 + inline *;sp 2 3.
   unroll for {1} ^while.
   (* Left treatment *)
