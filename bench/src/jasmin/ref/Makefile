@@ -1,11 +1,13 @@
 .PHONY: libkyber768_ref.a clean distclean
 
+JASMINC ?= ../../../../jasmin/compiler/jasminc 
+
 libkyber768_ref.a:
 	$(CC) $(CFLAGS) -c jkem.s
 	$(AR) -r $@ jkem.o
 
 jkem.s: jkem.jazz
-	jasminc -nowarning -lea $< -o $@
+	$(JASMINC) -nowarning -lea $< -o $@
 
 clean:
 	rm -f *.o *.a

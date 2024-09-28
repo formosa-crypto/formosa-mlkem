@@ -4,8 +4,8 @@
 #  -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer
 
 #flags changed to match SUPERCOP
-CC = clang-14
-CFLAGS = -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE
+CC ?= clang-14
+CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE
 
 NISTFLAGS += -Wno-unused-result -O3 -fomit-frame-pointer
 RM = /bin/rm

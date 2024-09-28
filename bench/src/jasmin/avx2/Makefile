@@ -1,7 +1,6 @@
 .PHONY: libkyber768_avx2.a clean distclean
 
-# pick the compiler from the submodule
-JASMINC ?= ../../../../jasmin/compiler/jasminc
+JASMINC ?= ../../../../jasmin/compiler/jasminc 
 
 libkyber768_avx2.a:
 	$(CC) $(CFLAGS) -c jkem.s
