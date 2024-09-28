@@ -993,6 +993,68 @@ op pack4poly ['a] (ps: 'a Array256.t * 'a Array256.t * 'a Array256.t * 'a Array2
 op buf_ok (buf: W8.t Array536.t) (l: W8.t list, st: state): bool =
  buf_subl buf 0 504 = l /\ sub buf 336 200 = state2bytes st.
 
+require import Array2144.
+
+abbrev pack4buf (b:W8.t Array2144.t) (b0 b1 b2 b3: W8.t Array536.t) = 
+ Array2144.init
+  (fun i => 
+    if 1608 <= i && i < 2144
+    then b3.[i - 1608]
+    else (Array2144.init
+           (fun i0 =>
+             if 1072 <= i0 && i0 < 1608
+             then b2.[i0 - 1072]
+             else (Array2144.init
+                    (fun i1 =>
+                      if 536 <= i1 && i1 < 1072
+                      then b1.[i1 - 536]
+                      else (Array2144.init
+                             (fun i2 =>
+                               if 0 <= i2 && i2 < 536
+                               then b0.[i2]
+                               else b.[i2])).[i1])).[i0])).[i]).
+
+op buf4x_buf (bufx4 : W8.t Array2144.t) (pos : int) : W8.t Array536.t =
+ Array536.init (fun i => bufx4.[pos*536+i]).
+
+lemma buf4x_buf_0 bufx4 b0 b1 b2 b3:
+ buf4x_buf (pack4buf bufx4 b0 b1 b2 b3) 0 = b0.
+proof.
+apply Array536.ext_eq => i Hi /=.
+rewrite initiE 1:/# /= initiE 1:/# /=.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite ifF 1:/# initiE 1:/# /=.
+by rewrite ifT /#.
+qed.
+
+lemma buf4x_buf_1 bufx4 b0 b1 b2 b3:
+ buf4x_buf (pack4buf bufx4 b0 b1 b2 b3) 1 = b1.
+proof.
+apply Array536.ext_eq => i Hi /=.
+rewrite initiE 1:/# /= initiE 1:/# /=.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite ifF 1:/# initiE 1:/# /=.
+by rewrite ifT /#.
+qed.
+
+lemma buf4x_buf_2 bufx4 b0 b1 b2 b3:
+ buf4x_buf (pack4buf bufx4 b0 b1 b2 b3) 2 = b2.
+proof.
+apply Array536.ext_eq => i Hi /=.
+rewrite initiE 1:/# /= initiE 1:/# /=.
+rewrite ifF 1:/# initiE 1:/# /=.
+by rewrite ifT /#.
+qed.
+
+lemma buf4x_buf_3 bufx4 b0 b1 b2 b3:
+ buf4x_buf (pack4buf bufx4 b0 b1 b2 b3) 3 = b3.
+proof.
+apply Array536.ext_eq => i Hi /=.
+rewrite initiE 1:/# /= initiE 1:/# /=.
+by rewrite ifT /#.
+qed.
+
 lemma stx4_bytes_squeeze at st0 st1 st2 st3 stx4 (buf0 buf1 buf2 buf3: W8.t Array536.t):
   match_state4x st0 st1 st2 st3 stx4 =>
   sub buf0 at 200 = state2bytes st0 =>
@@ -1040,59 +1102,79 @@ transitivity ParseFilter.sample3buf_x4
   by exists (rho{2},pos{2},t{2}) => /#.
 + by move => />.
 proc; simplify.
-seq 9 27: ( buf_ok buf0{1} buf0{2} st0{2}
-          /\ buf_ok buf1{1} buf1{2} st1{2}
-          /\ buf_ok buf2{1} buf2{2} st2{2}
-          /\ buf_ok buf3{1} buf3{2} st3{2} ).
+seq 9 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
+          /\ buf_ok (buf4x_buf buf{1} 1) buf1{2} st1{2}
+          /\ buf_ok (buf4x_buf buf{1} 2) buf2{2} st2{2}
+          /\ buf_ok (buf4x_buf buf{1} 3) buf3{2} st3{2} ).
  seq 7 7: ( match_state4x st0{2} st1{2} st2{2} st3{2} stx4{1} ).
   wp; ecall {1} (xof_init_x4_ph rho{1} indexes{1}).
   inline*; auto => /> &1 &2 Ht Hpos stavx.
   rewrite to_uintD to_uint_shl !of_uintK 1:/# !modz_small 1..15:/# Ht /= addzC -!addzA.
   by rewrite !gen_matrix_indexesE; auto => /#.
  rcondt {1} 2; first by auto.
- seq 4 4: ( buf_offset{1} = W64.of_int 168
+ seq 8 4: ( buf_offset{1} = W64.of_int 168
           /\ match_state4x st0{2} st1{2} st2{2} st3{2} stx4{1}
-          /\ buf_subl buf0{1} 0 168 = buf0{2}
-          /\ buf_subl buf1{1} 0 168 = buf1{2}
-          /\ buf_subl buf2{1} 0 168 = buf2{2}
-          /\ buf_subl buf3{1} 0 168 = buf3{2} ).
+          /\ buf_subl (buf4x_buf buf{1} 0) 0 168 = buf0{2}
+          /\ buf_subl (buf4x_buf buf{1} 1) 0 168 = buf1{2}
+          /\ buf_subl (buf4x_buf buf{1} 2) 0 168 = buf2{2}
+          /\ buf_subl (buf4x_buf buf{1} 3) 0 168 = buf3{2} ).
   sp 0 4; elim* => _st3 _st2 _st1 _st0; simplify.
-  wp; ecall{1} (st4x_unpack_at_ph st0{2} st1{2} st2{2} st3{2} buf0{1} buf1{1} buf2{1} buf3{1} buf_offset{1}).
+  wp; ecall{1} (st4x_unpack_at_ph st0{2} st1{2} st2{2} st3{2}
+                  (Array536.init (fun i => buf.[536 * 0 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 1 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 2 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 3 + i])){1}
+                  buf_offset{1}).
   ecall{1} (keccakf1600_4x_ph stx4{1}).
   auto => /> &1 &2; rewrite /st_i !iter1; split.
    by apply stx4_map_keccakf.
   move=> Hst [b0 b1 b2 b3] _ _ _ _ /= H0 H1 H2 H3.
+  rewrite buf4x_buf_0 buf4x_buf_1 buf4x_buf_2 buf4x_buf_3.
   smt(stx4_bytes_squeeze iter1).
  rcondt {1} 1; first by auto.
- seq 3 8: ( buf_offset{1} = W64.of_int (2*168)
+ seq 7 8: ( buf_offset{1} = W64.of_int (2*168)
           /\ match_state4x st0{2} st1{2} st2{2} st3{2} stx4{1}
-          /\ buf_subl buf0{1} 0 (2*168) = buf0{2}
-          /\ buf_subl buf1{1} 0 (2*168) = buf1{2}
-          /\ buf_subl buf2{1} 0 (2*168) = buf2{2}
-          /\ buf_subl buf3{1} 0 (2*168) = buf3{2} ).
+          /\ buf_subl (buf4x_buf buf{1} 0) 0 (2*168) = buf0{2}
+          /\ buf_subl (buf4x_buf buf{1} 1) 0 (2*168) = buf1{2}
+          /\ buf_subl (buf4x_buf buf{1} 2) 0 (2*168) = buf2{2}
+          /\ buf_subl (buf4x_buf buf{1} 3) 0 (2*168) = buf3{2} ).
   sp 0 8; elim* => _buf3 _st3 _buf2 _st2 _buf1 _st1 _buf0 _st0; simplify.
-  wp; ecall{1} (st4x_unpack_at_ph st0{2} st1{2} st2{2} st3{2} buf0{1} buf1{1} buf2{1} buf3{1} buf_offset{1}).
+  wp; ecall{1} (st4x_unpack_at_ph st0{2} st1{2} st2{2} st3{2}
+                  (Array536.init (fun i => buf.[536 * 0 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 1 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 2 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 3 + i])){1}
+                  buf_offset{1}).
   ecall{1} (keccakf1600_4x_ph stx4{1}).
   auto => /> &1 &2; rewrite /st_i !iter1; split.
    by apply stx4_map_keccakf.
-  move=> Hst1 [b0 b1 b2 b3] /= Hb0 Hb1 Hb2 Hb3 /= H0 H1 H2 H3.
+  move=> Hst1 [b0 b1 b2 b3] /=.
+  rewrite -/(buf4x_buf buf{1} 0) -/(buf4x_buf buf{1} 1) -/(buf4x_buf buf{1} 2) -/(buf4x_buf buf{1} 3) => Hb0 Hb1 Hb2 Hb3 H0 H1 H2 H3.
+  rewrite buf4x_buf_0 buf4x_buf_1 buf4x_buf_2 buf4x_buf_3.
   rewrite -!(buf_subl_cat _ 0 168 336) //.
-  rewrite !(buf_sublE _ 0 168) //.
+  rewrite !(buf_sublE _ 0 168) //=.
   smt(stx4_bytes_squeeze iter1).
  rcondt {1} 1; first by auto.
- seq 3 8: ( buf_offset{1} = W64.of_int (3*168)
-          /\ buf_ok buf0{1} buf0{2} st0{2}
-          /\ buf_ok buf1{1} buf1{2} st1{2}
-          /\ buf_ok buf2{1} buf2{2} st2{2}
-          /\ buf_ok buf3{1} buf3{2} st3{2} ).
+ seq 7 8: ( buf_offset{1} = W64.of_int (3*168)
+          /\ buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
+          /\ buf_ok (buf4x_buf buf{1} 1) buf1{2} st1{2}
+          /\ buf_ok (buf4x_buf buf{1} 2) buf2{2} st2{2}
+          /\ buf_ok (buf4x_buf buf{1} 3) buf3{2} st3{2} ).
   sp 0 8; elim* => _buf3 _st3 _buf2 _st2 _buf1 _st1 _buf0 _st0; simplify.
-  wp; ecall{1} (st4x_unpack_at_ph st0{2} st1{2} st2{2} st3{2} buf0{1} buf1{1} buf2{1} buf3{1} buf_offset{1}).
+  wp; ecall{1} (st4x_unpack_at_ph st0{2} st1{2} st2{2} st3{2}
+                  (Array536.init (fun i => buf.[536 * 0 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 1 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 2 + i])){1}
+                  (Array536.init (fun i => buf.[536 * 3 + i])){1}
+                  buf_offset{1}).
   ecall{1} (keccakf1600_4x_ph stx4{1}).
   auto => /> &1 &2; rewrite /st_i !iter1; split.
    by apply stx4_map_keccakf.
-  move=> Hst1 [b0 b1 b2 b3] /= Hb0 Hb1 Hb2 Hb3 /= H0 H1 H2 H3.
+  move=> Hst1 [b0 b1 b2 b3] /=.
+  rewrite -/(buf4x_buf buf{1} 0) -/(buf4x_buf buf{1} 1) -/(buf4x_buf buf{1} 2) -/(buf4x_buf buf{1} 3) => Hb0 Hb1 Hb2 Hb3 H0 H1 H2 H3.
+  rewrite buf4x_buf_0 buf4x_buf_1 buf4x_buf_2 buf4x_buf_3.
   rewrite -!(buf_subl_cat _ 0 336 504) //.
-  rewrite !(buf_sublE _ 0 336) //.
+  rewrite !(buf_sublE _ 0 336) //=.
   smt(stx4_bytes_squeeze iter1).
  rcondf {1} 1; first by auto.
  by auto => />.
@@ -1100,11 +1182,29 @@ wp; call fill_poly_eq.
 wp; call fill_poly_eq.
 wp; call fill_poly_eq.
 wp; call fill_poly_eq.
-auto => /> &1 &2 Hst0 Hst1 Hst2 Hst3.
+auto => /> &1 &2 Hst0 Hst1 Hst2 Hst3 _ _.
 move=> [p0 buf0] p0R /= Hp0.
-move=> [p1 buf1] p1R /= Hp1.
-move=> [p2 buf2] p2R /= Hp2.
-move=> [p3 buf3] p3R /= Hp3.
+pose B1:= Array536.init _.
+have ->: B1 = buf4x_buf buf{1} 1.
+ apply Array536.ext_eq => i Hi /=.
+ rewrite initiE //= initiE 1:/# /= ifF 1:/#.
+ by rewrite /buf4x_buf /= initiE // /=.
+split; first done.
+move=> _ _ {B1} [p1 buf1] p1R /= Hp1.
+pose B2:= Array536.init _.
+have ->: B2 = buf4x_buf buf{1} 2.
+ apply Array536.ext_eq => i Hi /=.
+ rewrite initiE //= initiE 1:/# initiE 1:/# /= ifF 1:/#.
+ by rewrite /buf4x_buf /= initiE /#.
+split; first done.
+move=> _ _ {B2} [p2 buf2] p2R /= Hp2.
+pose B3:= Array536.init _.
+have ->: B3 = buf4x_buf buf{1} 3.
+ apply Array536.ext_eq => i Hi /=.
+ rewrite initiE //= initiE 1:/# initiE 1:/# /= ifF 1:/#.
+ by rewrite /buf4x_buf initiE 1:/# /= ifF 1:/# initiE /#.
+split; first done.
+move=> _ _ {B3} [p3 buf3] p3R /= Hp3.
 rewrite /pack4poly /=.
 apply Array1024.ext_eq => i Hi.
 rewrite initiE //= get_of_list //=.
@@ -1289,7 +1389,7 @@ while (0<=i<=3 /\ rho = _sd /\
    rewrite /subarray256 /subarray768  tP => *.
    by rewrite initiE //= initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= initiE /#. 
 
-wp 21.
+wp 13.
 conseq (_:  (forall kk, 0 <= kk < 3 =>  subarray768 matrix kk = (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))).
 move =>/> m0 H; split;1:smt().
 case b => hb.
@@ -1310,7 +1410,7 @@ case (768 <= k && k < 1536).
 + by move =>? kbb;rewrite -H0 1:/# /subarray768 initiE 1:/# /=.  
 by move =>? kbb;rewrite -H0 1:/# /subarray768 initiE 1:/# /=.
 
-unroll for 16.
+unroll for 7.
 wp;call (sample_last _sd). 
 wp;call (sample_four _sd 4 b _).
 wp;call (sample_four _sd 0 b _).

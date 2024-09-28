@@ -1,5 +1,5 @@
-require import AllCore Distr List Real SmtMap FSet DInterval FinType.
-require (****) PKE_ROM PlugAndPray Hybrid FelTactic. 
+require import AllCore Distr List Real SmtMap FSet DInterval.
+require (****) FinType PKE_ROM PlugAndPray Hybrid FelTactic. 
 
 (******************************************************************)
 (* FIXME: Where should these live.                                *)
@@ -59,7 +59,7 @@ type plaintext.
 
 op [full lossless uniform]dplaintext : plaintext distr.
 
-clone import FinType as FinT with 
+clone import FinType.FinType as FinT with 
    type t <- plaintext.
 
 type randomness.
@@ -667,10 +667,10 @@ lemma corr_pnp &m :
 (* print glob Correctness_Adv1(RO.RO,A). *)
   pose phi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
       has (fun m =>
-        Some m <> dec g.`1 (enc (oget g.`7.[m]) g.`2 m)) g.`6.
+        Some m <> dec g.`7 (enc (oget g.`8.[m]) g.`5 m)) g.`6.
   pose psi := fun (g: (glob Correctness_Adv1(RO.RO,A))) (_:unit) => 
     let i = find 
-      (fun m => Some m <> dec g.`1 (enc (oget g.`7.[m]) g.`2 m)) g.`6
+      (fun m => Some m <> dec g.`7 (enc (oget g.`8.[m]) g.`5 m)) g.`6
     in if 0 <= i < qHC + 1 then i else 0.
   have := PAPC.PBound (Correctness_Adv1(RO.RO,A)) phi psi tt &m _.
   + smt (ge0_qHC mem_iota).
@@ -1814,10 +1814,10 @@ proof.
        
   move => qHPn0.
   rewrite RField.mulrC -StdOrder.RealOrder.ler_pdivr_mulr; 1: smt (ge0_qH ge0_qP).
-(* print glob G3. *)
-  pose phi := fun (g:glob G3) (b:bool) => dec g.`7.`2 g.`8 = Some g.`2 /\ g.`2 \in g.`9.
+(* print glob G3.*)
+  pose phi := fun (g:glob G3) (b:bool) => dec g.`9.`2 g.`8 = Some g.`5 /\ g.`5 \in g.`10.
   pose psi := fun (g:glob G3) (_:bool) => 
-    let i = find (pred1 g.`2) (elems (fdom g.`9)) in
+    let i = find (pred1 g.`5) (elems (fdom g.`10)) in
     if 0 <= i < qH + qP then i else 0.
   have := PAP1.PBound G3 phi psi tt &m _. 
   + smt (ge0_qH ge0_qP mem_iota).

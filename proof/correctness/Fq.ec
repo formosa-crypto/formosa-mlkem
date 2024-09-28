@@ -19,7 +19,7 @@ clone import SignedReductions with
     op Rinv <- 169
     proof q_bnd by (rewrite /R qE => />) 
     proof q_odd1 by (rewrite qE => />)
-    proof q_odd2 by (rewrite qE => />)
+(*    proof q_odd2 by (rewrite qE => />) *)
     proof qqinv by (rewrite /R qE  => />)
     proof Rinv_gt0 by (auto => />)
     proof RRinv by (rewrite /R qE  => />)

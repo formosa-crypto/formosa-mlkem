@@ -395,7 +395,7 @@ have -> : Pr[KEMROMx2.RO2.MainD(DKK2(A),RO2.RO).distinguish() @ &m : res] =
           ={res} /\
           (CCA.sk{1}, CCA.cstar{1}, RO1.RO.m{1}, (glob A){1}) =
           (CCA.sk{2}, CCA.cstar{2}, RO1.RO.m{2}, (glob A){2})) => //.
-  apply(RO2.FullEager.RO_LRO (DKK2(A)) _).
+  conseq (RO2.FullEager.RO_LRO (DKK2(A)) _) => //.
   by move => *;rewrite dkey_ll.
 
 have <- : Pr[KEMROMx2.RO1.MainD(DKK1(A),RO1.RO).distinguish() @ &m : res] =
@@ -405,7 +405,7 @@ have <- : Pr[KEMROMx2.RO1.MainD(DKK1(A),RO1.RO).distinguish() @ &m : res] =
           ={res} /\
           (CCA.sk{1}, CCA.cstar{1}, RO2.RO.m{1}, (glob A){1}) =
           (CCA.sk{2}, CCA.cstar{2}, RO2.RO.m{2}, (glob A){2})) => //.
-  apply(RO1.FullEager.RO_LRO (DKK1(A)) _).
+  conseq (RO1.FullEager.RO_LRO (DKK1(A)) _) => //.
   by move => *;rewrite randd_ll.
 
 byequiv => //;proc;inline {1} 2; inline {2} 2. 
@@ -456,7 +456,11 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
   case (m'{1} = None).
   + rcondf{1} 8; 1: by auto.
     rcondt{1} 8; 1: by auto.
-    by auto => />;smt(get_setE). 
+    auto => /> &1 &2 *. 
+    split; first smt(get_setE). 
+    move=> *; split; first smt(get_setE). 
+    move=> *; split; first smt(get_setE). 
+    by move=> *; smt(get_setE).
   rcondt{1} 8; 1: by auto.
   inline *.
   rcondf{1} 10; 1: by auto;smt(mem_set).
