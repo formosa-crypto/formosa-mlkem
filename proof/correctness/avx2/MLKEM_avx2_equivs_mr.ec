@@ -161,6 +161,7 @@ bind bitstring circuit Array128."_.[_]" Array128."_.[_<-_]" Array128.to_list (W8
 
 bind bitstring circuit Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list (W32.t Array8.t) 8.
 
+
 (*************************)
 (*************************)
 (* END BINDINGS          *)
@@ -480,6 +481,7 @@ seq 2 2 : #pre.
 
 cfold {1} 9. 
 proc rewrite {1} 4  sliceget_256_16_16E.
+proc rewrite {1} 8 sliceget_256_8_32E.
 unroll for {1} ^while. 
 proc rewrite {1} 10 sliceget_256_256_16E.
 proc rewrite {1} 11  sliceget_256_256_16E.
@@ -504,7 +506,10 @@ proc rewrite {1} 104 sliceset_256_128_8E.
 cfold {1} 9.
 
 unroll for {2} 3.
-  bdepeq 16 12 [ "rp" ] [ "rp" ] ["rp" ] [ "rp1" ];smt().
+cfold{2} 2.
+
+sp 2 1. wp 98 1920 => />.
+bdepeq 16 12 [ "a0" ] [ "a0" ] [ "a0";"rp0" ] [ "a0";"rp0" ]. smt().
 
 
 (****** BEGIN POLYVEC_COMPRESS ******)
