@@ -111,6 +111,12 @@ move => bv1 bv2.
 by rewrite /BV_W16_t.toint -!W16.to_uintE !W16.to_uintD W16.to_uintE.
 qed.
 
+bind op W32.(+) "bvadd".
+realize bvaddP. 
+move => bv1 bv2.
+by rewrite /BV_W32_t.toint -!W32.to_uintE !W32.to_uintD W32.to_uintE.
+qed.
+
 bind op W64.(+) "bvadd".
 realize bvaddP. 
 move => bv1 bv2.
@@ -161,6 +167,9 @@ bind bitstring circuit Array128."_.[_]" Array128."_.[_<-_]" Array128.to_list (W8
 
 bind bitstring circuit Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list (W32.t Array8.t) 8.
 
+op uext16_32 = W2u16.zeroextu32.
+
+lemma uext16_32E : W2u16.zeroextu32 = uext16_32 by auto.
 
 (*************************)
 (*************************)
@@ -507,6 +516,263 @@ cfold {1} 9.
 
 unroll for {2} 3.
 cfold{2} 2.
+proc rewrite {2} 2 uext16_32E.
+proc rewrite {2} 3 uext16_32E.
+proc rewrite {2} 17 uext16_32E.
+proc rewrite {2} 18 uext16_32E.
+proc rewrite {2} 32 uext16_32E.
+proc rewrite {2} 33 uext16_32E.
+proc rewrite {2} 47 uext16_32E.
+proc rewrite {2} 48 uext16_32E.
+proc rewrite {2} 62 uext16_32E.
+proc rewrite {2} 63 uext16_32E.
+proc rewrite {2} 77 uext16_32E.
+proc rewrite {2} 78 uext16_32E.
+proc rewrite {2} 92 uext16_32E.
+proc rewrite {2} 93 uext16_32E.
+proc rewrite {2} 107 uext16_32E.
+proc rewrite {2} 108 uext16_32E.
+proc rewrite {2} 122 uext16_32E.
+proc rewrite {2} 123 uext16_32E.
+proc rewrite {2} 137 uext16_32E.
+proc rewrite {2} 138 uext16_32E.
+proc rewrite {2} 152 uext16_32E.
+proc rewrite {2} 153 uext16_32E.
+proc rewrite {2} 167 uext16_32E.
+proc rewrite {2} 168 uext16_32E.
+proc rewrite {2} 182 uext16_32E.
+proc rewrite {2} 183 uext16_32E.
+proc rewrite {2} 197 uext16_32E.
+proc rewrite {2} 198 uext16_32E.
+proc rewrite {2} 212 uext16_32E.
+proc rewrite {2} 213 uext16_32E.
+proc rewrite {2} 227 uext16_32E.
+proc rewrite {2} 228 uext16_32E.
+proc rewrite {2} 242 uext16_32E.
+proc rewrite {2} 243 uext16_32E.
+proc rewrite {2} 257 uext16_32E.
+proc rewrite {2} 258 uext16_32E.
+proc rewrite {2} 272 uext16_32E.
+proc rewrite {2} 273 uext16_32E.
+proc rewrite {2} 287 uext16_32E.
+proc rewrite {2} 288 uext16_32E.
+proc rewrite {2} 302 uext16_32E.
+proc rewrite {2} 303 uext16_32E.
+proc rewrite {2} 317 uext16_32E.
+proc rewrite {2} 318 uext16_32E.
+proc rewrite {2} 332 uext16_32E.
+proc rewrite {2} 333 uext16_32E.
+proc rewrite {2} 347 uext16_32E.
+proc rewrite {2} 348 uext16_32E.
+proc rewrite {2} 362 uext16_32E.
+proc rewrite {2} 363 uext16_32E.
+proc rewrite {2} 377 uext16_32E.
+proc rewrite {2} 378 uext16_32E.
+proc rewrite {2} 392 uext16_32E.
+proc rewrite {2} 393 uext16_32E.
+proc rewrite {2} 407 uext16_32E.
+proc rewrite {2} 408 uext16_32E.
+proc rewrite {2} 422 uext16_32E.
+proc rewrite {2} 423 uext16_32E.
+proc rewrite {2} 437 uext16_32E.
+proc rewrite {2} 438 uext16_32E.
+proc rewrite {2} 452 uext16_32E.
+proc rewrite {2} 453 uext16_32E.
+proc rewrite {2} 467 uext16_32E.
+proc rewrite {2} 468 uext16_32E.
+proc rewrite {2} 482 uext16_32E.
+proc rewrite {2} 483 uext16_32E.
+proc rewrite {2} 497 uext16_32E.
+proc rewrite {2} 498 uext16_32E.
+proc rewrite {2} 512 uext16_32E.
+proc rewrite {2} 513 uext16_32E.
+proc rewrite {2} 527 uext16_32E.
+proc rewrite {2} 528 uext16_32E.
+proc rewrite {2} 542 uext16_32E.
+proc rewrite {2} 543 uext16_32E.
+proc rewrite {2} 557 uext16_32E.
+proc rewrite {2} 558 uext16_32E.
+proc rewrite {2} 572 uext16_32E.
+proc rewrite {2} 573 uext16_32E.
+proc rewrite {2} 587 uext16_32E.
+proc rewrite {2} 588 uext16_32E.
+proc rewrite {2} 602 uext16_32E.
+proc rewrite {2} 603 uext16_32E.
+proc rewrite {2} 617 uext16_32E.
+proc rewrite {2} 618 uext16_32E.
+proc rewrite {2} 632 uext16_32E.
+proc rewrite {2} 633 uext16_32E.
+proc rewrite {2} 647 uext16_32E.
+proc rewrite {2} 648 uext16_32E.
+proc rewrite {2} 662 uext16_32E.
+proc rewrite {2} 663 uext16_32E.
+proc rewrite {2} 677 uext16_32E.
+proc rewrite {2} 678 uext16_32E.
+proc rewrite {2} 692 uext16_32E.
+proc rewrite {2} 693 uext16_32E.
+proc rewrite {2} 707 uext16_32E.
+proc rewrite {2} 708 uext16_32E.
+proc rewrite {2} 722 uext16_32E.
+proc rewrite {2} 723 uext16_32E.
+proc rewrite {2} 737 uext16_32E.
+proc rewrite {2} 738 uext16_32E.
+proc rewrite {2} 752 uext16_32E.
+proc rewrite {2} 753 uext16_32E.
+proc rewrite {2} 767 uext16_32E.
+proc rewrite {2} 768 uext16_32E.
+proc rewrite {2} 782 uext16_32E.
+proc rewrite {2} 783 uext16_32E.
+proc rewrite {2} 797 uext16_32E.
+proc rewrite {2} 798 uext16_32E.
+proc rewrite {2} 812 uext16_32E.
+proc rewrite {2} 813 uext16_32E.
+proc rewrite {2} 827 uext16_32E.
+proc rewrite {2} 828 uext16_32E.
+proc rewrite {2} 842 uext16_32E.
+proc rewrite {2} 843 uext16_32E.
+proc rewrite {2} 857 uext16_32E.
+proc rewrite {2} 858 uext16_32E.
+proc rewrite {2} 872 uext16_32E.
+proc rewrite {2} 873 uext16_32E.
+proc rewrite {2} 887 uext16_32E.
+proc rewrite {2} 888 uext16_32E.
+proc rewrite {2} 902 uext16_32E.
+proc rewrite {2} 903 uext16_32E.
+proc rewrite {2} 917 uext16_32E.
+proc rewrite {2} 918 uext16_32E.
+proc rewrite {2} 932 uext16_32E.
+proc rewrite {2} 933 uext16_32E.
+proc rewrite {2} 947 uext16_32E.
+proc rewrite {2} 948 uext16_32E.
+proc rewrite {2} 962 uext16_32E.
+proc rewrite {2} 963 uext16_32E.
+proc rewrite {2} 977 uext16_32E.
+proc rewrite {2} 978 uext16_32E.
+proc rewrite {2} 992 uext16_32E.
+proc rewrite {2} 993 uext16_32E.
+proc rewrite {2} 1007 uext16_32E.
+proc rewrite {2} 1008 uext16_32E.
+proc rewrite {2} 1022 uext16_32E.
+proc rewrite {2} 1023 uext16_32E.
+proc rewrite {2} 1037 uext16_32E.
+proc rewrite {2} 1038 uext16_32E.
+proc rewrite {2} 1052 uext16_32E.
+proc rewrite {2} 1053 uext16_32E.
+proc rewrite {2} 1067 uext16_32E.
+proc rewrite {2} 1068 uext16_32E.
+proc rewrite {2} 1082 uext16_32E.
+proc rewrite {2} 1083 uext16_32E.
+proc rewrite {2} 1097 uext16_32E.
+proc rewrite {2} 1098 uext16_32E.
+proc rewrite {2} 1112 uext16_32E.
+proc rewrite {2} 1113 uext16_32E.
+proc rewrite {2} 1127 uext16_32E.
+proc rewrite {2} 1128 uext16_32E.
+proc rewrite {2} 1142 uext16_32E.
+proc rewrite {2} 1143 uext16_32E.
+proc rewrite {2} 1157 uext16_32E.
+proc rewrite {2} 1158 uext16_32E.
+proc rewrite {2} 1172 uext16_32E.
+proc rewrite {2} 1173 uext16_32E.
+proc rewrite {2} 1187 uext16_32E.
+proc rewrite {2} 1188 uext16_32E.
+proc rewrite {2} 1202 uext16_32E.
+proc rewrite {2} 1203 uext16_32E.
+proc rewrite {2} 1217 uext16_32E.
+proc rewrite {2} 1218 uext16_32E.
+proc rewrite {2} 1232 uext16_32E.
+proc rewrite {2} 1233 uext16_32E.
+proc rewrite {2} 1247 uext16_32E.
+proc rewrite {2} 1248 uext16_32E.
+proc rewrite {2} 1262 uext16_32E.
+proc rewrite {2} 1263 uext16_32E.
+proc rewrite {2} 1277 uext16_32E.
+proc rewrite {2} 1278 uext16_32E.
+proc rewrite {2} 1292 uext16_32E.
+proc rewrite {2} 1293 uext16_32E.
+proc rewrite {2} 1307 uext16_32E.
+proc rewrite {2} 1308 uext16_32E.
+proc rewrite {2} 1322 uext16_32E.
+proc rewrite {2} 1323 uext16_32E.
+proc rewrite {2} 1337 uext16_32E.
+proc rewrite {2} 1338 uext16_32E.
+proc rewrite {2} 1352 uext16_32E.
+proc rewrite {2} 1353 uext16_32E.
+proc rewrite {2} 1367 uext16_32E.
+proc rewrite {2} 1368 uext16_32E.
+proc rewrite {2} 1382 uext16_32E.
+proc rewrite {2} 1383 uext16_32E.
+proc rewrite {2} 1397 uext16_32E.
+proc rewrite {2} 1398 uext16_32E.
+proc rewrite {2} 1412 uext16_32E.
+proc rewrite {2} 1413 uext16_32E.
+proc rewrite {2} 1427 uext16_32E.
+proc rewrite {2} 1428 uext16_32E.
+proc rewrite {2} 1442 uext16_32E.
+proc rewrite {2} 1443 uext16_32E.
+proc rewrite {2} 1457 uext16_32E.
+proc rewrite {2} 1458 uext16_32E.
+proc rewrite {2} 1472 uext16_32E.
+proc rewrite {2} 1473 uext16_32E.
+proc rewrite {2} 1487 uext16_32E.
+proc rewrite {2} 1488 uext16_32E.
+proc rewrite {2} 1502 uext16_32E.
+proc rewrite {2} 1503 uext16_32E.
+proc rewrite {2} 1517 uext16_32E.
+proc rewrite {2} 1518 uext16_32E.
+proc rewrite {2} 1532 uext16_32E.
+proc rewrite {2} 1533 uext16_32E.
+proc rewrite {2} 1547 uext16_32E.
+proc rewrite {2} 1548 uext16_32E.
+proc rewrite {2} 1562 uext16_32E.
+proc rewrite {2} 1563 uext16_32E.
+proc rewrite {2} 1577 uext16_32E.
+proc rewrite {2} 1578 uext16_32E.
+proc rewrite {2} 1592 uext16_32E.
+proc rewrite {2} 1593 uext16_32E.
+proc rewrite {2} 1607 uext16_32E.
+proc rewrite {2} 1608 uext16_32E.
+proc rewrite {2} 1622 uext16_32E.
+proc rewrite {2} 1623 uext16_32E.
+proc rewrite {2} 1637 uext16_32E.
+proc rewrite {2} 1638 uext16_32E.
+proc rewrite {2} 1652 uext16_32E.
+proc rewrite {2} 1653 uext16_32E.
+proc rewrite {2} 1667 uext16_32E.
+proc rewrite {2} 1668 uext16_32E.
+proc rewrite {2} 1682 uext16_32E.
+proc rewrite {2} 1683 uext16_32E.
+proc rewrite {2} 1697 uext16_32E.
+proc rewrite {2} 1698 uext16_32E.
+proc rewrite {2} 1712 uext16_32E.
+proc rewrite {2} 1713 uext16_32E.
+proc rewrite {2} 1727 uext16_32E.
+proc rewrite {2} 1728 uext16_32E.
+proc rewrite {2} 1742 uext16_32E.
+proc rewrite {2} 1743 uext16_32E.
+proc rewrite {2} 1757 uext16_32E.
+proc rewrite {2} 1758 uext16_32E.
+proc rewrite {2} 1772 uext16_32E.
+proc rewrite {2} 1773 uext16_32E.
+proc rewrite {2} 1787 uext16_32E.
+proc rewrite {2} 1788 uext16_32E.
+proc rewrite {2} 1802 uext16_32E.
+proc rewrite {2} 1803 uext16_32E.
+proc rewrite {2} 1817 uext16_32E.
+proc rewrite {2} 1818 uext16_32E.
+proc rewrite {2} 1832 uext16_32E.
+proc rewrite {2} 1833 uext16_32E.
+proc rewrite {2} 1847 uext16_32E.
+proc rewrite {2} 1848 uext16_32E.
+proc rewrite {2} 1862 uext16_32E.
+proc rewrite {2} 1863 uext16_32E.
+proc rewrite {2} 1877 uext16_32E.
+proc rewrite {2} 1878 uext16_32E.
+proc rewrite {2} 1892 uext16_32E.
+proc rewrite {2} 1893 uext16_32E.
+proc rewrite {2} 1907 uext16_32E.
+proc rewrite {2} 1908 uext16_32E.
+
 
 sp 2 1. wp 98 1920 => />.
 bdepeq 16 12 [ "a0" ] [ "a0" ] [ "a0";"rp0" ] [ "a0";"rp0" ]. smt().
