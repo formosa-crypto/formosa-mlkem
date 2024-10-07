@@ -104,7 +104,6 @@ bind circuit VPACKUS_16u16 "VPACKUS_16u16".
 bind circuit VPMADDUBSW_256 "VPMADDUBSW_256".
 bind circuit VPERMD "VPERMD".
 
-
 bind op W16.(+) "bvadd".
 realize bvaddP. 
 move => bv1 bv2.
@@ -170,6 +169,11 @@ bind bitstring circuit Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list (W32.t Ar
 op uext16_32 = W2u16.zeroextu32.
 
 lemma uext16_32E : W2u16.zeroextu32 = uext16_32 by auto.
+
+op truncate32_8 = W4u8.truncateu8.
+
+lemma truncate32_8E : W4u8.truncateu8 = truncate32_8 by auto.
+
 
 (*************************)
 (*************************)
@@ -443,7 +447,7 @@ transitivity {1} { r <@ Aux(Jkem.Syscall)._i_poly_compress(rp, a); }
 inline {1} 1;inline {2} 1.
 swap {1} 2 -1; swap {1} 4 -2.
 swap {2} [2..3] -1.
-seq 2 2 : #pre.
+seq 2 2 : (={a0}).
 + inline {1} 2.
   unroll for {1} ^while. 
   sp 2 0.
@@ -486,7 +490,7 @@ seq 2 2 : #pre.
   unroll for {2} ^while.
   inline *.
   cfold {2} 3.
-  by bdepeq 16 16 [ "rp1" ] [ "a" ] ["rp1" ] [ "rp1" ];smt().
+  by bdepeq 16 16 [ "rp1" ] [ "a" ] ["a0" ] [ "a0" ];smt().
 
 cfold {1} 9. 
 proc rewrite {1} 4  sliceget_256_16_16E.
@@ -772,10 +776,137 @@ proc rewrite {2} 1892 uext16_32E.
 proc rewrite {2} 1893 uext16_32E.
 proc rewrite {2} 1907 uext16_32E.
 proc rewrite {2} 1908 uext16_32E.
-
-
+proc rewrite {2} 16 truncate32_8E.
+proc rewrite {2} 31 truncate32_8E.
+proc rewrite {2} 46 truncate32_8E.
+proc rewrite {2} 61 truncate32_8E.
+proc rewrite {2} 76 truncate32_8E.
+proc rewrite {2} 91 truncate32_8E.
+proc rewrite {2} 106 truncate32_8E.
+proc rewrite {2} 121 truncate32_8E.
+proc rewrite {2} 136 truncate32_8E.
+proc rewrite {2} 151 truncate32_8E.
+proc rewrite {2} 166 truncate32_8E.
+proc rewrite {2} 181 truncate32_8E.
+proc rewrite {2} 196 truncate32_8E.
+proc rewrite {2} 211 truncate32_8E.
+proc rewrite {2} 226 truncate32_8E.
+proc rewrite {2} 241 truncate32_8E.
+proc rewrite {2} 256 truncate32_8E.
+proc rewrite {2} 271 truncate32_8E.
+proc rewrite {2} 286 truncate32_8E.
+proc rewrite {2} 301 truncate32_8E.
+proc rewrite {2} 316 truncate32_8E.
+proc rewrite {2} 331 truncate32_8E.
+proc rewrite {2} 346 truncate32_8E.
+proc rewrite {2} 361 truncate32_8E.
+proc rewrite {2} 376 truncate32_8E.
+proc rewrite {2} 391 truncate32_8E.
+proc rewrite {2} 406 truncate32_8E.
+proc rewrite {2} 421 truncate32_8E.
+proc rewrite {2} 436 truncate32_8E.
+proc rewrite {2} 451 truncate32_8E.
+proc rewrite {2} 466 truncate32_8E.
+proc rewrite {2} 481 truncate32_8E.
+proc rewrite {2} 496 truncate32_8E.
+proc rewrite {2} 511 truncate32_8E.
+proc rewrite {2} 526 truncate32_8E.
+proc rewrite {2} 541 truncate32_8E.
+proc rewrite {2} 556 truncate32_8E.
+proc rewrite {2} 571 truncate32_8E.
+proc rewrite {2} 586 truncate32_8E.
+proc rewrite {2} 601 truncate32_8E.
+proc rewrite {2} 616 truncate32_8E.
+proc rewrite {2} 631 truncate32_8E.
+proc rewrite {2} 646 truncate32_8E.
+proc rewrite {2} 661 truncate32_8E.
+proc rewrite {2} 676 truncate32_8E.
+proc rewrite {2} 691 truncate32_8E.
+proc rewrite {2} 706 truncate32_8E.
+proc rewrite {2} 721 truncate32_8E.
+proc rewrite {2} 736 truncate32_8E.
+proc rewrite {2} 751 truncate32_8E.
+proc rewrite {2} 766 truncate32_8E.
+proc rewrite {2} 781 truncate32_8E.
+proc rewrite {2} 796 truncate32_8E.
+proc rewrite {2} 811 truncate32_8E.
+proc rewrite {2} 826 truncate32_8E.
+proc rewrite {2} 841 truncate32_8E.
+proc rewrite {2} 856 truncate32_8E.
+proc rewrite {2} 871 truncate32_8E.
+proc rewrite {2} 886 truncate32_8E.
+proc rewrite {2} 901 truncate32_8E.
+proc rewrite {2} 916 truncate32_8E.
+proc rewrite {2} 931 truncate32_8E.
+proc rewrite {2} 946 truncate32_8E.
+proc rewrite {2} 961 truncate32_8E.
+proc rewrite {2} 976 truncate32_8E.
+proc rewrite {2} 991 truncate32_8E.
+proc rewrite {2} 1006 truncate32_8E.
+proc rewrite {2} 1021 truncate32_8E.
+proc rewrite {2} 1036 truncate32_8E.
+proc rewrite {2} 1051 truncate32_8E.
+proc rewrite {2} 1066 truncate32_8E.
+proc rewrite {2} 1081 truncate32_8E.
+proc rewrite {2} 1096 truncate32_8E.
+proc rewrite {2} 1111 truncate32_8E.
+proc rewrite {2} 1126 truncate32_8E.
+proc rewrite {2} 1141 truncate32_8E.
+proc rewrite {2} 1156 truncate32_8E.
+proc rewrite {2} 1171 truncate32_8E.
+proc rewrite {2} 1186 truncate32_8E.
+proc rewrite {2} 1201 truncate32_8E.
+proc rewrite {2} 1216 truncate32_8E.
+proc rewrite {2} 1231 truncate32_8E.
+proc rewrite {2} 1246 truncate32_8E.
+proc rewrite {2} 1261 truncate32_8E.
+proc rewrite {2} 1276 truncate32_8E.
+proc rewrite {2} 1291 truncate32_8E.
+proc rewrite {2} 1306 truncate32_8E.
+proc rewrite {2} 1321 truncate32_8E.
+proc rewrite {2} 1336 truncate32_8E.
+proc rewrite {2} 1351 truncate32_8E.
+proc rewrite {2} 1366 truncate32_8E.
+proc rewrite {2} 1381 truncate32_8E.
+proc rewrite {2} 1396 truncate32_8E.
+proc rewrite {2} 1411 truncate32_8E.
+proc rewrite {2} 1426 truncate32_8E.
+proc rewrite {2} 1441 truncate32_8E.
+proc rewrite {2} 1456 truncate32_8E.
+proc rewrite {2} 1471 truncate32_8E.
+proc rewrite {2} 1486 truncate32_8E.
+proc rewrite {2} 1501 truncate32_8E.
+proc rewrite {2} 1516 truncate32_8E.
+proc rewrite {2} 1531 truncate32_8E.
+proc rewrite {2} 1546 truncate32_8E.
+proc rewrite {2} 1561 truncate32_8E.
+proc rewrite {2} 1576 truncate32_8E.
+proc rewrite {2} 1591 truncate32_8E.
+proc rewrite {2} 1606 truncate32_8E.
+proc rewrite {2} 1621 truncate32_8E.
+proc rewrite {2} 1636 truncate32_8E.
+proc rewrite {2} 1651 truncate32_8E.
+proc rewrite {2} 1666 truncate32_8E.
+proc rewrite {2} 1681 truncate32_8E.
+proc rewrite {2} 1696 truncate32_8E.
+proc rewrite {2} 1711 truncate32_8E.
+proc rewrite {2} 1726 truncate32_8E.
+proc rewrite {2} 1741 truncate32_8E.
+proc rewrite {2} 1756 truncate32_8E.
+proc rewrite {2} 1771 truncate32_8E.
+proc rewrite {2} 1786 truncate32_8E.
+proc rewrite {2} 1801 truncate32_8E.
+proc rewrite {2} 1816 truncate32_8E.
+proc rewrite {2} 1831 truncate32_8E.
+proc rewrite {2} 1846 truncate32_8E.
+proc rewrite {2} 1861 truncate32_8E.
+proc rewrite {2} 1876 truncate32_8E.
+proc rewrite {2} 1891 truncate32_8E.
+proc rewrite {2} 1906 truncate32_8E.
+proc rewrite {2} 1921 truncate32_8E.
 sp 2 1. wp 98 1920 => />.
-bdepeq 16 12 [ "a0" ] [ "a0" ] [ "a0";"rp0" ] [ "a0";"rp0" ]. smt().
+
+bdepeq 16 4 [ "a0" ] [ "a0" ] [ "rp0" ] [ "rp0" ]. smt().
 
 
 (****** BEGIN POLYVEC_COMPRESS ******)
