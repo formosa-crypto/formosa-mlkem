@@ -425,6 +425,8 @@ qed.
 
 (******* BEGIN POLYVEC_COMPRESS *****)
 
+op pre16_compress(x : W16.t) : bool =  W16.zero \sle x && x \slt W16.of_int (3329). 
+
 equiv compressequiv_1 mem  : 
  Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress_1 ~  Jkem.M(Jkem.Syscall)._i_poly_compress :
 (*
@@ -905,8 +907,8 @@ proc rewrite {2} 1891 truncate32_8E.
 proc rewrite {2} 1906 truncate32_8E.
 proc rewrite {2} 1921 truncate32_8E.
 sp 2 1. wp 98 1920 => />.
-
-bdepeq 16 4 [ "a0" ] [ "a0" ] [ "rp0" ] [ "rp0" ]. smt().
+by bdepeq 16 4 [ "a0" ] [ "a0" ] [ "rp0" ] [ "rp0" ] pre16_compress;smt().
+qed.
 
 
 (****** BEGIN POLYVEC_COMPRESS ******)
