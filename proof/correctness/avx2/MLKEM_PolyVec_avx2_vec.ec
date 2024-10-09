@@ -27,7 +27,7 @@ module Mvec = {
          else r.[i]);
     return (r);
   }
-
+(*
   proc polyvec_csubq (r:W16.t Array768.t) : W16.t Array768.t = {
     var aux: W16.t Array256.t;
     
@@ -44,7 +44,7 @@ module Mvec = {
          else r.[i]);
     return (r);
   }
-
+*)
   proc polyvec_reduce (r:W16.t Array768.t) : W16.t Array768.t = {
     var aux: W16.t Array256.t;
     
@@ -106,7 +106,7 @@ module Mvec = {
          else a.[i]);
     return ();
   }
-
+(*
   proc polyvec_compress_1 (rp:W8.t Array960.t, a:W16.t Array768.t) : 
   W8.t Array960.t = {
     var aux: int;
@@ -232,7 +232,7 @@ module Mvec = {
     }
     return ();
   }
-
+*)
   proc polyvec_decompress (rp:W64.t) : W16.t Array768.t = {
     var aux: int;
     
@@ -285,6 +285,7 @@ proof.
   auto => />.
 qed.
 
+(*
 equiv eq_polyvec_csubq :
   Mprevec.polyvec_csubq ~ Mvec.polyvec_csubq: ={r} ==> ={res}.
 proof.
@@ -292,6 +293,7 @@ proof.
   do 3!(wp; call eq_poly_csubq).
   auto => />.
 qed.
+*)
 
 equiv eq_polyvec_reduce :
   Mprevec.polyvec_reduce ~ Mvec.polyvec_reduce: ={r} ==> ={res}.
@@ -344,6 +346,7 @@ proof.
     + by reflexivity.
 qed.
 
+(*
 equiv eq_polyvec_compress_1:
   Mprevec.polyvec_compress_1 ~ Mvec.polyvec_compress_1: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
@@ -484,7 +487,7 @@ proof.
   + rewrite /get256_direct /= => />.
     apply W32u8.allP => />.
 qed.
-
+*)
 equiv eq_polyvec_decompress:
   Mprevec.polyvec_decompress ~ Mvec.polyvec_decompress: ={rp, Glob.mem} ==> ={res}.
 proof.
@@ -539,7 +542,7 @@ proof.
   do 3!(wp; call veceq_poly_add2).
   auto => />.
 qed.
-
+(*
 equiv veceq_polyvec_csubq :
   Mvec.polyvec_csubq ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_csubq: ={r} ==> ={res}.
 proof.
@@ -547,6 +550,7 @@ proof.
   do 3!(wp; call veceq_poly_csubq).
   auto => />.
 qed.
+*)
 
 equiv veceq_polyvec_reduce :
   Mvec.polyvec_reduce ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce: ={r} ==> ={res}.
@@ -572,6 +576,7 @@ proof.
   auto => />.
 qed.
 
+(*
 equiv veceq_polyvec_compress_1 :
   Mvec.polyvec_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress_1: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
@@ -597,7 +602,7 @@ proof.
   call veceq_polyvec_csubq.
   wp. skip. auto => />.
 qed.
-
+*)
 equiv veceq_polyvec_decompress :
   Mvec.polyvec_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_decompress: ={Glob.mem, rp} ==> ={res}.
 proof.
@@ -621,6 +626,7 @@ apply eq_polyvec_add2.
 apply veceq_polyvec_add2.
 qed.
 
+(*
 equiv prevec_eq_polyvec_csubq :
   Mprevec.polyvec_csubq ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_csubq: ={r} ==> ={res}.
 proof.
@@ -629,6 +635,7 @@ smt(). trivial.
 apply eq_polyvec_csubq.
 apply veceq_polyvec_csubq.
 qed.
+*)
 
 equiv prevec_eq_polyvec_reduce :
   Mprevec.polyvec_reduce ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce: ={r} ==> ={res}.
@@ -657,6 +664,7 @@ proof.
   apply veceq_polyvec_tobytes.
 qed.
 
+(*
 equiv prevec_eq_polyvec_compress_1 :
   Mprevec.polyvec_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
@@ -674,6 +682,7 @@ proof.
   apply eq_polyvec_compress.
   apply veceq_polyvec_compress.
 qed.
+*)
 
 equiv prevec_eq_polyvec_decompress :
   Mprevec.polyvec_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_decompress: ={rp, Glob.mem} ==> ={res}.

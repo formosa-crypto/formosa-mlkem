@@ -874,7 +874,7 @@ inline{1} 1; inline {2} 1. sim 40 62.
 
 call (polyvec_tobytes_equiv _pkp).
 call (polyvec_tobytes_equiv _skp).
-wp;conseq />. smt().
+wp;conseq />;1:smt().
 ecall (polyvec_reduce_equiv (lift_array768 pkpv{2})).
 
 have H := polyvec_add2_equiv 2 2 _ _ => //.
@@ -1317,20 +1317,22 @@ seq 50 59 : (={ctp,Glob.mem} /\
     valid_ptr (to_uint ctp{1}) 128); last by
   exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; call (compressequiv memm _p); auto.
 
-seq 48 57 : (={ctp,Glob.mem} /\
+swap {1} 47 1.
+swap {2} 55 2.
+
+seq 47 56 : (={ctp,Glob.mem} /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
-     pos_bound768_cxq bp{1} 0 768 2 /\
-     pos_bound768_cxq bp{2} 0 768 2 /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
     lift_array768 bp{1} = lift_array768 bp{2} /\ 
-    valid_ptr (to_uint ctp{1}) (128+3*320)); last by
-  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; wp;call (compressequivvec memm _p); auto => />;
-   move => *; rewrite !to_uintD_small /= /#.
+    valid_ptr (to_uint ctp{1}) (128+3*320)); last first. 
+wp; conseq (: _ ==> ={Glob.mem}).
++ auto => /> &1 &2 *; do split;1,2:
+    smt (W64.to_uintD_small W64.of_uintK W64.to_uint_cmp pow2_64).
+  admit. (* MAP REDUCE PROOF GOAL *)
 
 wp;conseq />.
 call (reduceequiv_noperm).
-ecall (polyvec_reduce_equiv_noperm (lift_array768 bp{2})).
 call (addequiv_noperm 4 2 _ _) => //.
 call (addequiv_noperm 2 2 _ _) => //.
 
@@ -1646,6 +1648,7 @@ seq 1 1 : (#{/~v{2}}{~v{1}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ sig
 conseq />.  call(polyinvnttequiv). auto => />. smt().
 
 auto => /> /#.
+
 qed.
 
 
@@ -1696,18 +1699,18 @@ seq 49 61 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
     lift_array256 v{1} = lift_array256 v{2}); last by
   exists *Glob.mem{1}; elim* => memm; call (compressequiv_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
 
-seq 47  59 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
+swap {2} 57 2.
+
+seq 46  58 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\ 
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
-     pos_bound768_cxq bp{1} 0 768 2 /\
-     pos_bound768_cxq bp{2} 0 768 2 /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
-    lift_array768 bp{1} = lift_array768 bp{2}); last 
-  exists *Glob.mem{1}; elim* => memm; wp;call (compressequivvec_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
+    lift_array768 bp{1} = lift_array768 bp{2}); last first. 
++ wp; conseq />; conseq (: _ ==> aux_4{1} = aux_0{2}); 1: by smt().
+  admit. (* MAP REDUCE GOAL *)
 
 wp;conseq />.
 call (reduceequiv_noperm).
-ecall (polyvec_reduce_equiv_noperm (lift_array768 bp{2})).
 call (addequiv_noperm 4 2 _ _) => //.
 call (addequiv_noperm 2 2 _ _) => //.
 

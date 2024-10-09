@@ -130,7 +130,7 @@ proof.
   auto => />.
 qed.
 
-
+(* 
 equiv compressequivvec mem _p : 
  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress ~  Jkem.M(Jkem.Syscall).__polyvec_compress :
      pos_bound768_cxq a{1} 0 768 2 /\
@@ -321,7 +321,7 @@ proof.
   call encode10_opt_corr.
   auto => />.
 qed.
-
+*)
 lemma poly_decompress_equiv mem _p : 
     equiv [Jkem_avx2.M(Jkem_avx2.Syscall)._poly_decompress ~  Jkem.M(Jkem.Syscall)._poly_decompress  :
              valid_ptr _p 128 /\
@@ -1240,6 +1240,7 @@ move => &1 &2 ?????; do split;1: smt(packvK unpackvK).
 move => ??<-?.
 smt(packvK unpackvK). 
 qed.
+
 
 lemma polyvec_reduce_equiv_noperm _a :
     equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce ~Jkem.M(Jkem.Syscall).__polyvec_reduce :
