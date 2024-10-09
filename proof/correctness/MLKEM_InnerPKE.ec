@@ -227,6 +227,11 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     return ();
   }
 
+  proc redcompr(ctp:W64.t,bp:W16.t Array768.t) : unit = {
+    bp <@Jkem.M(Jkem.Syscall).__polyvec_reduce (bp);
+    Jkem.M(Jkem.Syscall).__polyvec_compress (ctp, bp);
+  }
+
   proc indcpa_enc_jazz (ctp:W64.t, msgp:W8.t Array32.t, pkp:W64.t, noiseseed : W8.t Array32.t) : unit = {
     var aux: W16.t Array256.t;
     
@@ -299,18 +304,25 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, epp);
     v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, k);
 
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_reduce (bp);
     v <@Jkem.M(Jkem.Syscall).__poly_reduce (v);
 
     sctp <- ctp;
     ctp <- sctp;
 
-   Jkem.M(Jkem.Syscall).__polyvec_compress (ctp, bp);
+    redcompr(ctp,bp);
 
     ctp <- (ctp + (W64.of_int (3 * 320)));
     v <@Jkem.M(Jkem.Syscall)._poly_compress (ctp, v);
 
     return ();
+  }
+
+  proc iredcompr(ctp: W8.t Array1088.t,bp:W16.t Array768.t) : W8.t Array960.t = {
+    var aux_0 : W8.t Array960.t;
+    bp <@Jkem.M(Jkem.Syscall).__polyvec_reduce (bp);
+    aux_0 <@Jkem.M(Jkem.Syscall).__i_polyvec_compress (Array960.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
+    bp);
+    return aux_0;
   }
 
   proc iindcpa_enc_jazz (ctp: W8.t Array1088.t, msgp:W8.t Array32.t, pkp:W64.t, noiseseed : W8.t Array32.t) : W8.t Array1088.t = {
@@ -388,11 +400,11 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, epp);
     v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, k);
 
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_reduce (bp);
-    v <@Jkem.M(Jkem.Syscall).__poly_reduce (v);
+    v <@Jkem.M(Jkem.Syscall).__poly_reduce (v); 
+
     ctp <- sctp;
-    aux_0 <@Jkem.M(Jkem.Syscall).__i_polyvec_compress ((Array960.init (fun i_0 => ctp.[0 + i_0])),
-    bp);
+
+    aux_0 <@ iredcompr(ctp,bp);
     ctp <- Array1088.init
            (fun i => if 0 <= i < 0 + 960 then aux_0.[i-0] else ctp.[i]);
     (aux_1,
@@ -1057,7 +1069,7 @@ swap {1} [5..26] -1.
 swap {1} 5 29.
 swap {1} 25 2.
 
-seq 25 1 : (#pre /\ ={sp_0,ep,epp}); last by sim.
+seq 25 1 : (#pre /\ ={sp_0,ep,epp}); last by inline AuxMLKEM.redcompr;swap {1} 16 1;sim.
 
 swap {1} 5 -3.
 swap {1} 4 20.
@@ -1078,7 +1090,7 @@ equiv auxienc_good :
 proc. 
 swap {1} 6 -5.
 swap {1} 14 -12.
-swap {2} 1 29.
+swap {2} 1 28.
 seq 2 2 : (#pre /\ ={pkpv}); 1: by sim.
 
 swap {1} 6 -5.
@@ -1111,7 +1123,7 @@ transitivity {1} {s_noiseseed <- noiseseed; (sp_0,ep,epp) <@ AuxMLKEM.sample_noi
 + inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin; sim; auto => />.
 + by conseq />; call sample_noise_good3; auto => />.
 
-by sim.
+by swap {1} 15 4; inline {2} AuxMLKEM.iredcompr; sim.
 qed.
 
 (******* CORRECTNESS PROOFS TOP LEVEL ************)
@@ -1555,22 +1567,24 @@ seq 1 8 : (#pre /\ rv{2} = lift_polyvec sp_0{1} /\
 
 swap {2} 1 3.
 
-seq 17 3 : (u{2} = lift_polyvec bp{1} /\ v{2} = lift_array256 v{1} /\
+inline {1} AuxMLKEM.redcompr.
+swap {1} [20..21] -4.
+seq 18 3 : (u{2} = lift_polyvec bp0{1} /\ v{2} = lift_array256 v{1} /\
             pos_bound256_cxq v{1} 0 256 2 /\
-            pos_bound768_cxq bp{1} 0 768 2 /\
+            pos_bound768_cxq bp0{1} 0 768 2 /\
             valid_ptr _ctp (3 * 320 + 128) /\
             to_uint ctp{1} = _ctp /\
             Glob.mem{1} = mem); last first.
 wp; ecall(poly_compress_corr (lift_array256 v{1}) (to_uint ctp{1}) Glob.mem{1}).
-wp; ecall(polyvec_compress_corr Glob.mem{1} (to_uint ctp{1})  (lift_array768 bp{1}) ).
+wp; ecall(polyvec_compress_corr Glob.mem{1} (to_uint ctp{1})  (lift_array768 bp0{1}) ).
 auto => /> &1 &2; rewrite /signed_bound_cxq /signed_bound768_cxq /compress_polyvec.
 rewrite /lift_polyvec /fromarray256 /lift_array256 /subarray256 /touches.
 rewrite /pos_bound256_cxq /load_array960 /load_array128 /from_array256 /pos_bound768_cxq.
-move => ???; do split; 2: by smt().
+move => ???; do split;2: by smt().
 + rewrite tP => k kb; rewrite !mapiE // !getvE !offunvE //= !initiE //=. 
   case (0 <= k && k < 256); 1: by move => kbb; rewrite !mapiE //= !initiE //.
   case (256 <= k && k < 512); 1: by move => kbb; rewrite !mapiE //= 1:/# !initiE // 1:/#.
-  by move => *;rewrite !mapiE 1:/# /= !initiE /#.
+  by move => *;rewrite !mapiE 1:/# /= !initiE /#. 
 + move => ??? mem2 touches2; rewrite !to_uintD_small /=; 1:smt().
   do split; 1,2: smt().
   move => ?? result meml ?? touchesl;split.
@@ -1738,10 +1752,10 @@ have H := poly_add_corr_alg 3 1 _ _ => //.
 ecall{1} (H (lift_array256 v{1}) (lift_array256 k{1})); clear H.
 + by auto => /> /#.
 
-seq 1 0 : (#{/~bp{1}}pre /\ 
-         lift_polyvec bp{1} = (invnttv (ntt_mmul aT{2} rhat{2}) + e1{2})%PolyVec /\
-         pos_bound768_cxq bp{1} 0 768 2).
-ecall{1}(polyvec_reduce_corr (lift_array768 bp{1})).
+seq 2 0 : (#pre /\ 
+         lift_polyvec bp0{1} = (invnttv (ntt_mmul aT{2} rhat{2}) + e1{2})%PolyVec /\
+         pos_bound768_cxq bp0{1} 0 768 2).
+ecall{1}(polyvec_reduce_corr (lift_array768 bp0{1})).
 auto =>/> &1 &2 ???????????rold????rval?.
 rewrite -rold; rewrite eq_vectorP => i ib.
 by rewrite tP => k kb; rewrite !liftarrayvector // /#.
@@ -1865,13 +1879,16 @@ seq 1 8 : (#pre /\ rv{2} = lift_polyvec sp_0{1} /\
 
 swap {2} 1 3.
 
-seq 17 3 : (u{2} = lift_polyvec bp{1} /\ v{2} = lift_array256 v{1} /\
+inline {1} AuxMLKEM.iredcompr.
+swap {1} [19..20] -3.
+
+seq 18 3 : (u{2} = lift_polyvec bp0{1} /\ v{2} = lift_array256 v{1} /\
             pos_bound256_cxq v{1} 0 256 2 /\
-            pos_bound768_cxq bp{1} 0 768 2 /\
+            pos_bound768_cxq bp0{1} 0 768 2 /\
             Glob.mem{1} = mem); last first.
 
 wp; ecall(i_poly_compress_corr (lift_array256 v{1})).
-wp; ecall(i_polyvec_compress_corr (lift_array768 bp{1}) ).
+wp; ecall(i_polyvec_compress_corr (lift_array768 bp0{1}) ).
 auto => /> &1 &2; rewrite /signed_bound_cxq /signed_bound768_cxq /compress_polyvec.
 rewrite /lift_polyvec /fromarray256 /lift_array256 /subarray256 /touches.
 rewrite /pos_bound256_cxq /load_array960 /load_array128 /from_array256 /pos_bound768_cxq.
@@ -2041,10 +2058,10 @@ have H := poly_add_corr_alg 3 1 _ _ => //.
 ecall{1} (H (lift_array256 v{1}) (lift_array256 k{1})); clear H.
 + by auto => /> /#.
 
-seq 1 0 : (#{/~bp{1}}pre /\ 
-         lift_polyvec bp{1} = (invnttv (ntt_mmul aT{2} rhat{2}) + e1{2})%PolyVec /\
-         pos_bound768_cxq bp{1} 0 768 2).
-ecall{1}(polyvec_reduce_corr (lift_array768 bp{1})).
+seq 2 0 : (#pre /\ 
+         lift_polyvec bp0{1} = (invnttv (ntt_mmul aT{2} rhat{2}) + e1{2})%PolyVec /\
+         pos_bound768_cxq bp0{1} 0 768 2).
+ecall{1}(polyvec_reduce_corr (lift_array768 bp0{1})).
 auto =>/> &1 &2 ?????????rold????rval?.
 rewrite -rold; rewrite eq_vectorP => i ib.
 by rewrite tP => k kb; rewrite !liftarrayvector // /#.
