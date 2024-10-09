@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 require import Array1152 Array960 Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
-require import W16extra WArray512 WArray32 WArray16.
+require import W16extra WArray1536 WArray960 WArray512 WArray32 WArray16.
 require import AVX2_Ops.
 require import MLKEM_avx2_encdec.
 require import Jkem.
@@ -136,6 +136,27 @@ lemma sliceset_256_256_16E  (a : W16.t Array256.t) (i : int) (x  : W256.t) :
   Array256.init (fun (i0 : int) => WArray512.get16 (WArray512.set256 ((WArray512.init16 (fun (i_0 : int) => a.[i_0]))) i x) i0) = 
    sliceset_256_256_16 a i x by auto.
 
+op sliceget_256_768_16(a : W16.t Array768.t, i : int) : W256.t =
+   WArray1536.get256 (WArray1536.init16 (fun (i_0 : int) => a.[i_0])) i.
+
+lemma sliceget_256_768_16E (a : W16.t Array768.t) (i : int) :
+   WArray1536.get256 (WArray1536.init16 (fun (i_0 : int) => a.[i_0])) i = 
+    sliceget_256_768_16 a i by auto.
+
+op sliceset_128_960_8(a : W8.t Array960.t,i : int, x : W128.t) : W8.t Array960.t =
+   Array960.init (fun (i0 : int) => WArray960.get8 (WArray960.set128_direct ((WArray960.init8 (fun (i_0 : int) => a.[i_0]))) i x) i0).
+
+lemma sliceset_128_960_8E  (a : W8.t Array960.t) (i : int) (x  : W128.t) :
+  Array960.init (fun (i0 : int) => WArray960.get8 (WArray960.set128_direct ((WArray960.init8 (fun (i_0 : int) => a.[i_0]))) i x) i0) = 
+   sliceset_128_960_8 a i x by auto.
+
+op sliceset_32_960_8(a : W8.t Array960.t,i : int, x : W32.t) : W8.t Array960.t =
+   Array960.init (fun (i0 : int) => WArray960.get8 (WArray960.set32_direct ((WArray960.init8 (fun (i_0 : int) => a.[i_0]))) i x) i0).
+
+lemma sliceset_32_960_8E  (a : W8.t Array960.t) (i : int) (x  : W32.t) :
+  Array960.init (fun (i0 : int) => WArray960.get8 (WArray960.set32_direct ((WArray960.init8 (fun (i_0 : int) => a.[i_0]))) i x) i0) = 
+   sliceset_32_960_8 a i x by auto.
+
 op sliceget_256_16_16(a : W16.t Array16.t, i : int) : W256.t =
    WArray32.get256 (WArray32.init16 (fun (i_0 : int) => a.[i_0])) i.
 
@@ -150,6 +171,13 @@ lemma sliceget_256_8_32E (a : W32.t Array8.t) (i : int) :
    WArray32.get256 (WArray32.init32 (fun (i_0 : int) => a.[i_0])) i = 
     sliceget_256_8_32 a i by auto.
 
+op sliceget_256_32_8(a : W8.t Array32.t, i : int) : W256.t =
+   WArray32.get256 (WArray32.init8 (fun (i_0 : int) => a.[i_0])) i.
+
+lemma sliceget_256_32_8E (a : W8.t Array32.t) (i : int) :
+   WArray32.get256 (WArray32.init8 (fun (i_0 : int) => a.[i_0])) i = 
+    sliceget_256_32_8 a i by auto.
+
 op sliceset_256_128_8(a : W8.t Array128.t,i : int, x : W256.t) : W8.t Array128.t =
    Array128.init ((WArray128.get8 ((WArray128.set256 ((WArray128.init8 (fun (i_0 : int) => a.[i_0]))) i x)))).
 
@@ -157,6 +185,8 @@ lemma sliceset_256_128_8E  (a : W8.t Array128.t) (i : int) (x  : W256.t) :
   Array128.init ((WArray128.get8 ((WArray128.set256 ((WArray128.init8 (fun (i_0 : int) => a.[i_0]))) i x)))) = 
    sliceset_256_128_8 a i x by auto.
 
+
+bind bitstring circuit Array768."_.[_]" Array768."_.[_<-_]" Array768.to_list (W16.t Array768.t) 768.
 
 bind bitstring circuit Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list (W16.t Array256.t) 256.
 
@@ -173,6 +203,22 @@ lemma uext16_32E : W2u16.zeroextu32 = uext16_32 by auto.
 op truncate32_8 = W4u8.truncateu8.
 
 lemma truncate32_8E : W4u8.truncateu8 = truncate32_8 by auto.
+
+op uext16_64 = W4u16.zeroextu64.
+
+lemma uext16_64E : W4u16.zeroextu64 = uext16_64 by auto.
+
+op truncate16_8 = W2u8.truncateu8.
+
+lemma truncate16_8E : W2u8.truncateu8 = truncate16_8 by auto.
+
+op truncate64_16 = W4u16.truncateu16.
+
+lemma truncate64_16E : W4u16.truncateu16 = truncate64_16 by auto.
+
+op truncate256_128 = W2u128.truncateu128.
+
+lemma truncate256_128E : W2u128.truncateu128 = truncate256_128 by auto.
 
 
 (*************************)
@@ -249,7 +295,7 @@ qed.
 (*************************)
 (*************************)
 
-(******* BEIGN REMOVE INTS FROM LOOPS *)
+(******* BEGIN REMOVE INTS FROM LOOPS *)
 
 module Aux(SC : Jkem.Syscall_t) = {
 proc _poly_csubq(rp : W16.t Array256.t) : W16.t Array256.t = {
@@ -373,9 +419,97 @@ proc __i_polyvec_compress(rp : W8.t Array960.t, a : W16.t Array768.t) : W8.t Arr
     
     return rp;
   }
-  
-}.
 
+proc __polyvec_compress(rp : W64.t, a : W16.t Array768.t) : unit = {
+    var aux : int;
+    var i : int;
+    var j : int;
+    var aa : W16.t Array768.t;
+    var k : int;
+    var t : W64.t Array4.t;
+    var c : W16.t;
+    var b : W16.t;
+    
+    aa <- witness;
+    t <- witness;
+    i <- 0;
+    j <- 0;
+    aa <@ __polyvec_csubq(a);
+    while (i < (3 * 256 - 3)){
+      k <- 0;
+      while (k < 4){
+        t.[k] <- zeroextu64 aa.[i];
+        i <- i + 1;
+        t.[k] <- t.[k] `<<` (of_int 10)%W8;
+        t.[k] <- t.[k] + (of_int 1665)%W64;
+        t.[k] <- t.[k] * (of_int 1290167)%W64;
+        t.[k] <- t.[k] `>>` (of_int 32)%W8;
+        t.[k] <- t.[k] `&` (of_int 1023)%W64;
+        k <- k + 1;
+      }
+      c <- truncateu16 t.[0];
+      c <- c `&` (of_int 255)%W16;
+      Glob.mem <- storeW8 Glob.mem (to_uint rp + j) (truncateu8 c);
+      j <- j + 1;
+      b <- truncateu16 t.[0];
+      b <- b `>>` (of_int 8)%W8;
+      c <- truncateu16 t.[1];
+      c <- c `<<` (of_int 2)%W8;
+      c <- c `|` b;
+      Glob.mem <- storeW8 Glob.mem (to_uint rp + j) (truncateu8 c);
+      j <- j + 1;
+      b <- truncateu16 t.[1];
+      b <- b `>>` (of_int 6)%W8;
+      c <- truncateu16 t.[2];
+      c <- c `<<` (of_int 4)%W8;
+      c <- c `|` b;
+      Glob.mem <- storeW8 Glob.mem (to_uint rp + j) (truncateu8 c);
+      j <- j + 1;
+      b <- truncateu16 t.[2];
+      b <- b `>>` (of_int 4)%W8;
+      c <- truncateu16 t.[3];
+      c <- c `<<` (of_int 6)%W8;
+      c <- c `|` b;
+      Glob.mem <- storeW8 Glob.mem (to_uint rp + j) (truncateu8 c);
+      j <- j + 1;
+      t.[3] <- t.[3] `>>` (of_int 2)%W8;
+      Glob.mem <- storeW8 Glob.mem (to_uint rp + j) (truncateu8 t.[3]);
+      j <- j + 1;
+    }
+    
+    return tt;
+  }
+  
+  
+  proc __poly_reduce(rp : W16.t Array256.t) : W16.t Array256.t = {
+    var j : int;
+    var t : W16.t;
+    
+    j <- 0;
+    while (j < 256){
+      t <- rp.[j];
+      t <@ Jkem.M(SC).__barrett_reduce(t);
+      rp.[j] <- t;
+      j <- j + 1;
+    }
+    
+    return rp;
+  }
+
+  proc __polyvec_reduce(r : W16.t Array768.t) : W16.t Array768.t = {
+    var aux : W16.t Array256.t;
+    
+    aux <@ Jkem.M(SC).__poly_reduce((init (fun (i : int) => r.[0 + i]))%Array256);
+    r <- (init (fun (i : int) => if 0 <= i && i < 0 + 256 then aux.[i - 0] else r.[i]))%Array768;
+    aux <@ Jkem.M(SC).__poly_reduce((init (fun (i : int) => r.[256 + i]))%Array256);
+    r <- (init (fun (i : int) => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i]))%Array768;
+    aux <@ Jkem.M(SC).__poly_reduce((init (fun (i : int) => r.[2 * 256 + i]))%Array256);
+    r <- (init (fun (i : int) => if 2 * 256 <= i && i < 2 * 256 + 256 then aux.[i - 2 * 256] else r.[i]))%Array768;
+    
+    return r;
+  }
+
+}.
 
 equiv auxcsubq : Jkem.M(Jkem.Syscall)._poly_csubq ~ Aux(Jkem.Syscall)._poly_csubq : ={arg} ==> ={res}.
 proc. 
@@ -403,13 +537,23 @@ do 3!(wp;call auxcsubq).
 by auto => />.
 qed.
 
-equiv auxpolyveccompress : Jkem.M(Jkem.Syscall).__i_polyvec_compress ~ Aux(Jkem.Syscall).__i_polyvec_compress : ={arg} ==> ={res}.
+equiv auxpolyveccompress1 : Jkem.M(Jkem.Syscall).__i_polyvec_compress ~ Aux(Jkem.Syscall).__i_polyvec_compress : ={arg} ==> ={res}.
 proc.
 while (0<=i{2}<=768 /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ to_uint j{1} * 4 = i{2} * 5 /\ ={rp,aa}).
 + unroll for {1} 2; unroll for {2} 2; auto => /> &1. 
   by rewrite !ultE /= => &2????;rewrite !to_uintD_small /=; smt().
 by call auxcsubqv;auto => />.
 qed.
+
+equiv auxpolyveccompress : Jkem.M(Jkem.Syscall).__polyvec_compress ~ Aux(Jkem.Syscall).__polyvec_compress : ={arg} ==> ={res}.
+proc.
+while (0<=i{2}<=768 /\ to_uint i{1} = i{2} /\ to_uint j{1} = j{2} /\ to_uint j{1} * 4 = i{2} * 5 /\ ={rp,aa}).
++ unroll for {1} 2; unroll for {2} 2; auto => /> &1. 
+  by rewrite !ultE /= => &2????;rewrite !to_uintD_small /=; smt().
+by call auxcsubqv;auto => />.
+qed.
+
+(**** BEGIN csubq *****)
 
 op lane_func_csubq(x : W16.t) = if W16.of_int 3329 \sle x then x - W16.of_int 3329 else x. 
 op pre16_csubq(x : W16.t) : bool =  W16.zero \sle x && x \slt W16.of_int (6658). 
@@ -478,6 +622,29 @@ by smt().
 qed.
 
 
+op asliceget_16_768_256(a : W16.t Array768.t, i : int) : W16.t Array256.t =
+   Array256.init (fun (i3 : int) => a.[256*i + i3]).
+
+lemma asliceget_16_768_256E (i : int) (a : W16.t Array768.t)  :
+   Array256.init (fun (i3 : int) => a.[256*i + i3]) = 
+    asliceget_16_768_256 a i by auto.
+
+op asliceset_16_768_256(a : W16.t Array768.t,i : int, asa : W16.t Array256.t) : W16.t Array768.t =
+  Array768.init           
+     (fun (i3 : int) =>   
+     if 256*i <= i3 && i3 < 256*i + 256 
+     then asa.[i3 - 256*i]
+     else a.[i3]).
+
+lemma asliceset_16_768_256E (i : int) (a : W16.t Array768.t)  (asa  : W16.t Array256.t) :
+  Array768.init           
+     (fun (i3 : int) =>   
+     if 256*i <= i3 && i3 < 256*i + 256 
+     then asa.[i3 - 256*i]
+     else a.[i3]) = 
+   asliceset_16_768_256 a i asa by auto.
+
+
 (****** BEGIN POLYVEC_COMPRESS ******)
 
 equiv compressequivvec_1 mem : 
@@ -491,15 +658,271 @@ proc * => /=.
 conseq />.
 transitivity {1} { r <@ Aux(Jkem.Syscall).__i_polyvec_compress(rp, a); }
     (={rp,a} ==> ={r} )
-    (={rp,a} ==> ={r} );[ by smt() | by smt() | | by symmetry;call auxpolyveccompress; auto ].
+    (={rp,a} ==> ={r} );[ by smt() | by smt() | | by symmetry;call auxpolyveccompress1; auto ].
 
 inline {1} 1; inline {2} 1.
 swap {1} 2 -1; swap {1} 4 -2.
 swap {2} [2..3] -1; swap {2} 7 -4.
-seq 2 3 : #pre. 
+seq 2 3 : (a0{1}=aa{2}). sp 1 2 => /=.
 
 
-+ inline *;sp 2 3.
++ inline {1} 1. inline {2} 1.
+
+  inline {1} 6. inline {2} 6.
+  have /= AA := asliceget_16_768_256E 2.
+  proc rewrite {1} 6 AA.
+  proc rewrite {2} 6 AA.
+  clear AA.
+  proc rewrite {1} 7 sliceget_256_16_16E.
+  proc rewrite {1} ^while.1 sliceget_256_256_16E.
+  proc rewrite {1} ^while.3 sliceset_256_256_16E.
+  have /= AA := asliceset_16_768_256E 2.
+  proc rewrite {1} 11 AA.
+  proc rewrite {2} 10 AA.
+  clear AA.
+
+  inline {1} 4. inline {2} 4.
+  have /= AA := asliceget_16_768_256E 1.
+  proc rewrite {1} 4 AA.
+  proc rewrite {2} 4 AA.
+  clear AA.
+  proc rewrite {1} 5 sliceget_256_16_16E.
+  proc rewrite {1} ^while.1 sliceget_256_256_16E.
+  proc rewrite {1} ^while.3 sliceset_256_256_16E.
+  have /= AA := asliceset_16_768_256E 1.
+  proc rewrite {1} 9 AA.
+  proc rewrite {2} 8 AA.
+  clear AA.
+
+  inline {1} 2. inline {2} 2.
+  have /= AA := asliceget_16_768_256E 0.
+  proc rewrite {1} 2 AA.
+  proc rewrite {2} 2 AA.
+  clear AA.
+  proc rewrite {1} 3 sliceget_256_16_16E.
+  proc rewrite {1} ^while.1 sliceget_256_256_16E.
+  proc rewrite {1} ^while.3 sliceset_256_256_16E.
+  have /= AA := asliceset_16_768_256E 0.
+  proc rewrite {1} 7 AA.
+  proc rewrite {2} 6 AA.
+  clear AA.
+  (* it works
+  inline *.
+  do 3!(unroll for {1} ^while);
+    cfold {1} 334; cfold {1} 169; cfold {1} 4.
+  do 3!(unroll for {2} ^while);
+    cfold{2} 4107;cfold {2} 2055;cfold{2} 3.
+  
+  by bdepeq 16 [ "a0" ] [ "a0" ] {16:["a0" ~ "aa"]};smt(). *)
+  admit.
+
+  proc rewrite {1} 4 sliceget_256_16_16E. 
+  proc rewrite {1} 11 sliceget_256_32_8E.
+  proc rewrite {1} ^while.1 sliceget_256_768_16E.
+  proc rewrite {1} ^while.19 sliceset_128_960_8E.
+  proc rewrite {1} ^while.20 sliceset_32_960_8E.
+
+  sp 2 2. swap {2} 1 1.
+
+  cfold {1} 10. unroll for {1} 11. cfold {1} 10.
+  unroll for {2} 3; cfold {2} 2; cfold {2} 1.
+  do 192!(unroll for {2} ^while).
+cfold {2} 9933.
+cfold {2} 9881.
+cfold {2} 9829.
+cfold {2} 9777.
+cfold {2} 9725.
+cfold {2} 9673.
+cfold {2} 9621.
+cfold {2} 9569.
+cfold {2} 9517.
+cfold {2} 9465.
+cfold {2} 9413.
+cfold {2} 9361.
+cfold {2} 9309.
+cfold {2} 9257.
+cfold {2} 9205.
+cfold {2} 9153.
+cfold {2} 9101.
+cfold {2} 9049.
+cfold {2} 8997.
+cfold {2} 8945.
+cfold {2} 8893.
+cfold {2} 8841.
+cfold {2} 8789.
+cfold {2} 8737.
+cfold {2} 8685.
+cfold {2} 8633.
+cfold {2} 8581.
+cfold {2} 8529.
+cfold {2} 8477.
+cfold {2} 8425.
+cfold {2} 8373.
+cfold {2} 8321.
+cfold {2} 8269.
+cfold {2} 8217.
+cfold {2} 8165.
+cfold {2} 8113.
+cfold {2} 8061.
+cfold {2} 8009.
+cfold {2} 7957.
+cfold {2} 7905.
+cfold {2} 7853.
+cfold {2} 7801.
+cfold {2} 7749.
+cfold {2} 7697.
+cfold {2} 7645.
+cfold {2} 7593.
+cfold {2} 7541.
+cfold {2} 7489.
+cfold {2} 7437.
+cfold {2} 7385.
+cfold {2} 7333.
+cfold {2} 7281.
+cfold {2} 7229.
+cfold {2} 7177.
+cfold {2} 7125.
+cfold {2} 7073.
+cfold {2} 7021.
+cfold {2} 6969.
+cfold {2} 6917.
+cfold {2} 6865.
+cfold {2} 6813.
+cfold {2} 6761.
+cfold {2} 6709.
+cfold {2} 6657.
+cfold {2} 6605.
+cfold {2} 6553.
+cfold {2} 6501.
+cfold {2} 6449.
+cfold {2} 6397.
+cfold {2} 6345.
+cfold {2} 6293.
+cfold {2} 6241.
+cfold {2} 6189.
+cfold {2} 6137.
+cfold {2} 6085.
+cfold {2} 6033.
+cfold {2} 5981.
+cfold {2} 5929.
+cfold {2} 5877.
+cfold {2} 5825.
+cfold {2} 5773.
+cfold {2} 5721.
+cfold {2} 5669.
+cfold {2} 5617.
+cfold {2} 5565.
+cfold {2} 5513.
+cfold {2} 5461.
+cfold {2} 5409.
+cfold {2} 5357.
+cfold {2} 5305.
+cfold {2} 5253.
+cfold {2} 5201.
+cfold {2} 5149.
+cfold {2} 5097.
+cfold {2} 5045.
+cfold {2} 4993.
+cfold {2} 4941.
+cfold {2} 4889.
+cfold {2} 4837.
+cfold {2} 4785.
+cfold {2} 4733.
+cfold {2} 4681.
+cfold {2} 4629.
+cfold {2} 4577.
+cfold {2} 4525.
+cfold {2} 4473.
+cfold {2} 4421.
+cfold {2} 4369.
+cfold {2} 4317.
+cfold {2} 4265.
+cfold {2} 4213.
+cfold {2} 4161.
+cfold {2} 4109.
+cfold {2} 4057.
+cfold {2} 4005.
+cfold {2} 3953.
+cfold {2} 3901.
+cfold {2} 3849.
+cfold {2} 3797.
+cfold {2} 3745.
+cfold {2} 3693.
+cfold {2} 3641.
+cfold {2} 3589.
+cfold {2} 3537.
+cfold {2} 3485.
+cfold {2} 3433.
+cfold {2} 3381.
+cfold {2} 3329.
+cfold {2} 3277.
+cfold {2} 3225.
+cfold {2} 3173.
+cfold {2} 3121.
+cfold {2} 3069.
+cfold {2} 3017.
+cfold {2} 2965.
+cfold {2} 2913.
+cfold {2} 2861.
+cfold {2} 2809.
+cfold {2} 2757.
+cfold {2} 2705.
+cfold {2} 2653.
+cfold {2} 2601.
+cfold {2} 2549.
+cfold {2} 2497.
+cfold {2} 2445.
+cfold {2} 2393.
+cfold {2} 2341.
+cfold {2} 2289.
+cfold {2} 2237.
+cfold {2} 2185.
+cfold {2} 2133.
+cfold {2} 2081.
+cfold {2} 2029.
+cfold {2} 1977.
+cfold {2} 1925.
+cfold {2} 1873.
+cfold {2} 1821.
+cfold {2} 1769.
+cfold {2} 1717.
+cfold {2} 1665.
+cfold {2} 1613.
+cfold {2} 1561.
+cfold {2} 1509.
+cfold {2} 1457.
+cfold {2} 1405.
+cfold {2} 1353.
+cfold {2} 1301.
+cfold {2} 1249.
+cfold {2} 1197.
+cfold {2} 1145.
+cfold {2} 1093.
+cfold {2} 1041.
+cfold {2} 989.
+cfold {2} 937.
+cfold {2} 885.
+cfold {2} 833.
+cfold {2} 781.
+cfold {2} 729.
+cfold {2} 677.
+cfold {2} 625.
+cfold {2} 573.
+cfold {2} 521.
+cfold {2} 469.
+cfold {2} 417.
+cfold {2} 365.
+cfold {2} 313.
+cfold {2} 261.
+cfold {2} 209.
+cfold {2} 157.
+cfold {2} 105.
+cfold {2} 53.
+cfold {2} 1.
+
+  bdepeq 16 [ "a0" ] [ "aa" ] {10:["r" ~ "r"]};smt().
+
+
   unroll for {1} ^while.
   (* Left treatment *)
   (* WE NEED SLICE GET FOR ARRAY SLICES *)
@@ -523,25 +946,6 @@ seq 2 3 : #pre.
   proc rewrite 63  sliceget_256_256_16E.
   proc rewrite 5  sliceset_256_256_16E.
   proc rewrite 9  sliceset_256_256_16E.
-  proc rewrite 13  sliceset_256_256_16E.
-  proc rewrite 17  sliceset_256_256_16E.
-  proc rewrite 21  sliceset_256_256_16E.
-  proc rewrite 25  sliceset_256_256_16E.
-  proc rewrite 29  sliceset_256_256_16E.
-  proc rewrite 33  sliceset_256_256_16E.
-  proc rewrite 37  sliceset_256_256_16E.
-  proc rewrite 41  sliceset_256_256_16E.
-  proc rewrite 45  sliceset_256_256_16E.
-  proc rewrite 49  sliceset_256_256_16E.
-  proc rewrite 53  sliceset_256_256_16E.
-  proc rewrite 57  sliceset_256_256_16E.
-  proc rewrite 61  sliceset_256_256_16E.
-  proc rewrite 65  sliceset_256_256_16E.
-
-   
-  (* Right treatment *)
-  do 3!(unroll for {2} ^while).
-  
 
 
 equiv compressequivvec_1 mem : 

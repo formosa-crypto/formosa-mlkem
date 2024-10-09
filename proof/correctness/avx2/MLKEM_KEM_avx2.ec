@@ -166,7 +166,7 @@ seq 1 1 : (#{/~Glob.mem{1}=mem}pre /\
   sk{2} = load_array1152 Glob.mem{1} _skp /\
   pk{2}.`1 = load_array1152 Glob.mem{1} _pkp /\ 
   pk{2}.`2 = load_array32 Glob.mem{1} (_pkp + 1152)).
- 
+ print mlkem_correct_kg_avx2.
 call (mlkem_correct_kg_avx2 mem _pkp _skp).
 auto => /> &1; rewrite /load_array1152 /load_array32 !tP /touches2 => ????????.
 do split; 1,2,3: smt().
