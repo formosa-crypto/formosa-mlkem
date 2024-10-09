@@ -26,6 +26,23 @@ fn __red16x(reg u256 r qx16 vx16) -> reg u256
   return r;
 }
 
+
+// Inputs:
+// forall i = 0, ..., 15, a_i with -32768 <= a < 32768
+// Outputs:
+// forall i = 0, ..., 15, c_i = a_i - round(a_i/ q) q so -q/2 <= c_i <= q/2
+inline
+fn __red16x_sig(reg u256 a qx16 b0 b1) -> reg u256 {
+    reg u256 t;
+    t = #VPMULH_16u16(a, b0);
+    t = #VPMULHRS_16u16(t, b1);
+    t = #VPMULL_16u16(t, qx16);
+    a = #VPSUB_16u16(a, t);
+    return a;
+}
+
+
+
 inline 
 fn __fqmulprecomp16x(reg u256 b al ah qx16) -> reg u256
 {

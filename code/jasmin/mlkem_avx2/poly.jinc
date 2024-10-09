@@ -1254,6 +1254,31 @@ fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+u16 Barrett_b0 = 20159;
+u16 Barrett_b1 = 32;
+u16 qlocal = MLKEM_Q;
+
+inline
+fn __poly_reduce_sig(reg ptr u16[MLKEM_N] ap) -> reg ptr u16[MLKEM_N] {
+
+    reg u256 a;
+    reg u256 qx16 b0 b1;
+    inline int i;
+
+    qx16 = #VPBROADCAST_16u16(qlocal);
+    b0 = #VPBROADCAST_16u16(Barrett_b0);
+    b1 = #VPBROADCAST_16u16(Barrett_b1);
+
+    for i = 0 to 16 {
+        a = ap.[u256 32 * i];
+        a = __red16x_sig(a, qx16, b0, b1);
+        ap.[u256 32 * i] = a;
+    }
+    return ap;
+
+}
+
+
 fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
