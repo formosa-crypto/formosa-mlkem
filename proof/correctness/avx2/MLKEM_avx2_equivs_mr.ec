@@ -52,6 +52,8 @@ timeout 1.
 (*************************)
 (*************************)
 
+print pvc_shufbidx_s.
+
 require import QFABV.
 
 theory W4.
@@ -63,6 +65,8 @@ theory W4.
 
 end W4. export W4 W4.ALU W4.SHIFT.
 
+print invw.
+
 bind bitstring W4.w2bits W4.bits2w W4.t 4.
 realize ge0_size by auto.
 realize size_tolist by exact W4.size_w2bits.
@@ -73,6 +77,11 @@ realize ge0_size by auto.
 realize size_tolist by exact W256.size_w2bits.
 realize tolistK by exact W256.w2bitsK.
 realize oflistK by exact W256.bits2wK.
+bind bitstring W128.w2bits W128.bits2w W128.t 128.
+realize ge0_size by auto.
+realize size_tolist by exact W128.size_w2bits.
+realize tolistK by exact W128.w2bitsK.
+realize oflistK by exact W128.bits2wK.
 bind bitstring W64.w2bits W64.bits2w W64.t 64.
 realize ge0_size by auto.
 realize size_tolist by exact W64.size_w2bits.
@@ -96,13 +105,27 @@ realize oflistK by exact W8.bits2wK.
 bind circuit VPSUB_16u16 "VPSUB_16u16".
 bind circuit VPSRA_16u16 "VPSRA_16u16".
 bind circuit VPADD_16u16 "VPADD_16u16".
+bind circuit VPMULL_16u16 "VPMULL_16u16".
 bind circuit W256.(`&`) "AND_256".
 bind circuit VPBROADCAST_16u16 "VPBROADCAST_16u16".
+bind circuit VPBROADCAST_4u64 "VPBROADCAST_4u64".
 bind circuit VPMULH_16u16 "VPMULH_16u16".
 bind circuit VPMULHRS_16u16 "VPMULHRS_16u16".
 bind circuit VPACKUS_16u16 "VPACKUS_16u16".
 bind circuit VPMADDUBSW_256 "VPMADDUBSW_256".
 bind circuit VPERMD "VPERMD".
+bind circuit VPSLL_16u16 "VPSLL_16u16".
+bind circuit VPSRL_16u16 "VPSRL_16u16".
+bind circuit VPSRL_4u64 "VPSRL_4u64".
+bind circuit VPSHUFB_256 "VPSHUFB_256".
+bind circuit VEXTRACTI128 "VEXTRACTI128".
+bind circuit VPBLENDW_128 "VPBLENDW_128".
+bind circuit W8u32.VPEXTR_32 "VPEXTRACTI32_8".
+bind circuit W4u32.VPEXTR_32 "VPEXTRACTI32_4".
+bind circuit W2u32.VPEXTR_32 "VPEXTRACTI32_2".
+
+bind circuit VPMADDWD_256 "VPMADDWD_256".
+bind circuit VPSLLV_8u32 "VPSLLV_8u32".
 
 bind op W16.(+) "bvadd".
 realize bvaddP. 
@@ -195,6 +218,10 @@ bind bitstring circuit Array16."_.[_]" Array16."_.[_<-_]" Array16.to_list (W16.t
 bind bitstring circuit Array128."_.[_]" Array128."_.[_<-_]" Array128.to_list (W8.t Array128.t) 128.
 
 bind bitstring circuit Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list (W32.t Array8.t) 8.
+
+bind bitstring circuit Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list (W32.t Array32.t) 32.
+
+bind bitstring circuit Array960."_.[_]" Array960."_.[_<-_]" Array960.to_list (W32.t Array960.t) 960.
 
 op uext16_32 = W2u16.zeroextu32.
 
@@ -920,7 +947,8 @@ cfold {2} 105.
 cfold {2} 53.
 cfold {2} 1.
 
-  bdepeq 16 [ "a0" ] [ "aa" ] {10:["r" ~ "r"]};smt().
+  bdepeq 16 [ "a0" ] [ "aa" ] {10:["r" ~ "r"]}. 
+smt().
 
 
   unroll for {1} ^while.
