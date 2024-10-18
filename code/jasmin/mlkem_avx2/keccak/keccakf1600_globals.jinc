@@ -1,0 +1,36 @@
+param int KECCAK_ROUNDS = 24;
+
+inline fn keccakf1600_index(inline int x y) -> inline int
+{
+  inline int r;
+  r = (x % 5) + 5 * (y % 5);
+  return r;
+}
+
+
+inline fn keccakf1600_rho_offsets(inline int i) -> inline int
+{
+  inline int r x y z t;
+
+  r = 0;
+  x = 1;
+  y = 0;
+
+  for t = 0 to 24
+  { if (i == x + 5 * y)
+    { r = ((t + 1) * (t + 2) / 2) % 64; }
+    z = (2 * x + 3 * y) % 5;
+    x = y;
+    y = z;
+  }
+
+  return r;
+}
+
+inline fn keccakf1600_rhotates(inline int x y) -> inline int
+{
+  inline int i r;
+  i = keccakf1600_index(x, y);
+  r = keccakf1600_rho_offsets(i);
+  return r;
+}

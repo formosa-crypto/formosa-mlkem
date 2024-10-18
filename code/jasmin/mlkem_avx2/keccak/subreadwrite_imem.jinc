@@ -1,0 +1,244 @@
+/**
+    READ A FIXED NUMBER OF BYTES INTO A WORD
+**/
+
+inline fn __mread_subu64
+( reg u64 buf
+, inline int LEN
+, inline int TRAIL
+) -> reg u64 /* buf */
+   , inline int /* LEN */
+   , inline int /* TRAIL */
+   , reg u64 /* w */
+{
+  reg u64 w, t16, t8;
+  inline int ILEN;
+  ILEN = LEN;
+  if (LEN <=s 0) {
+    w = TRAIL;
+    TRAIL = 0;
+  } else if (8 <=s LEN) {
+    w = (u64)[buf];
+    buf += 8;
+    LEN -= 8;
+  } else {
+    if (4 <=s LEN) {
+      w = (64u) (u32)[buf];
+      buf += 4;
+      LEN -= 4;
+    } else {
+      w = 0;
+    }
+    if (2 <=s LEN) {
+      t16 = (64u) (u16)[buf];
+      buf += 2;
+      LEN -= 2;
+    } else {
+      t16 = 0;
+    }
+    if (1 <=s LEN || TRAIL != 0) {
+      if (1 <=s LEN) {
+        t8 = (64u) (u8)[buf];
+        if (TRAIL != 0) { t8 |= 256*TRAIL; }
+        buf += 1;
+        LEN -= 1;
+      } else { 
+        t8 = TRAIL;
+      }
+      TRAIL = 0;
+      t8 <<= 8*(2*((ILEN/2) % 2));
+      t16 |= t8;
+    }
+    t16 <<= 8*(4*((ILEN/4) % 2));
+    w |= t16;
+  }
+  return buf, LEN, TRAIL, w; 
+}
+
+inline fn __mread_bcast_4subu64
+( reg u64 buf
+, inline int LEN
+, inline int TRAIL
+) -> reg u64 /* buf */
+   , inline int /* LEN */
+   , inline int /* TRAIL */
+   , reg u256 /* w */
+{
+  reg u64 t64;
+  reg u128 t128;
+  reg u256 w;
+  if (LEN <=s 0 && TRAIL==0) {
+    w = #set0_256();
+  } else {
+    if (8 <= LEN) {
+      w = #VPBROADCAST_4u64((u64)[buf]);
+      buf += 8;
+      LEN -= 8;
+    } else {
+      buf, LEN, TRAIL, t64 = __mread_subu64(buf, LEN, TRAIL);
+      t128 = (128u) t64;
+      w = #VPBROADCAST_4u64(t128);
+    }
+  }
+  return buf, LEN, TRAIL, w; 
+}
+
+inline fn __mread_subu128
+( reg u64 buf
+, inline int LEN
+, inline int TRAIL
+) -> reg u64 /* buf */
+   , inline int /* LEN */
+   , inline int /* TRAIL */
+   , reg u128 /* w */
+{
+  reg u128 w;
+  reg u64 t64;
+  if (LEN <=s 0 && TRAIL==0) {
+    w = #set0_128();
+  } else if (16 <=s LEN) {
+    w = (u128) [buf];
+    buf += 16;
+    LEN -= 16;
+  } else {
+    if (8 <=s LEN) {
+      w = #VMOV((u64)[buf]);
+      buf += 8;
+      LEN -= 8;
+      buf, LEN, TRAIL, t64 = __mread_subu64(buf, LEN, TRAIL);
+      w = #VPINSR_2u64(w, t64, 1); 
+    } else {
+      buf, LEN, TRAIL, t64 = __mread_subu64(buf, LEN, TRAIL);
+      w = (128u) t64;
+    }
+  }
+  return buf, LEN, TRAIL, w;
+}
+
+inline fn __mread_subu256
+( reg u64 buf
+, inline int LEN
+, inline int TRAIL
+) -> reg u64 /* buf */
+   , inline int /* LEN */
+   , inline int /* TRAIL */
+   , reg u256 /* w */
+{
+  reg u256 w;
+  reg u128 t128_0, t128_1;
+  if (LEN <=s 0 && TRAIL==0) {
+    w = #set0_256();
+  } else if (32 <=s LEN) {
+    w = (u256)[buf];
+    buf += 32;
+    LEN -= 32;
+  } else {
+    if (16 <=s LEN) {
+      t128_0 = (u128) [buf];
+      buf += 16;
+      LEN -= 16;
+      buf, LEN, TRAIL, t128_1 = __mread_subu128(buf, LEN, TRAIL);
+      w = (2u128)[t128_1, t128_0];
+    } else {
+      t128_1 = #set0_128();
+      buf, LEN, TRAIL, t128_0 = __mread_subu128(buf, LEN, TRAIL);
+      w = (2u128)[t128_1, t128_0];
+    }
+  }
+  return buf, LEN, TRAIL, w;
+}
+
+
+/**
+    WRITE A FIXED NUMBER OF BYTES FROM A WORD
+**/
+inline fn __mwrite_subu64
+( reg u64 buf
+, inline int LEN
+, reg u64 w
+) -> reg u64 /* buf */
+   , inline int /* LEN */
+{
+  if (0 <s LEN) {
+    if (8 <=s LEN) {
+      (u64)[buf] = w;
+      buf += 8;
+      LEN -= 8;
+    } else {
+      if (4 <=s LEN) {
+        (u32)[buf] = (32u) w;
+	w >>= 32;
+        buf += 4;
+        LEN -= 4;
+      }
+      if (2 <=s LEN) {
+        (u16)[buf] = (16u) w;
+	w >>= 16;
+        buf += 2;
+        LEN -= 2;
+      }
+      if (1 <=s LEN) {
+        (u8)[buf] = (8u) w;
+        buf += 1;
+        LEN -= 1;
+      }
+    }
+  }
+  return buf, LEN; 
+}
+
+inline fn __mwrite_subu128
+( reg u64 buf
+, inline int LEN
+, reg u128 w
+) -> reg u64 /* buf */
+   , inline int /* LEN */
+{
+  reg u64 t64;
+  if (0 <s LEN) {
+    if (16 <=s LEN) {
+      (u128)[buf] = w;
+      buf += 16;
+      LEN -= 16;
+    } else {
+      if (8 <=s LEN) {
+        (u64)[buf] = #MOVV(w);
+        buf += 8;
+        LEN -= 8;
+        w = #VPUNPCKH_2u64(w, w);
+      }
+      t64 = (64u) w;
+      buf, LEN = __mwrite_subu64(buf, LEN, t64);
+    }
+  }
+  return buf, LEN;
+}
+
+inline fn __mwrite_subu256
+( reg u64 buf
+, inline int LEN
+, reg u256 w
+) -> reg u64 /* buf */
+   , inline int /* LEN */
+{
+  reg u128 t128;
+  if (0 <s LEN) {
+    if (32 <= LEN) {
+      (u256)[buf] = w;
+      buf += 32;
+      LEN -= 32;
+    } else {
+      if (16 <= LEN) {
+        (u128)[buf] = (128u) w;
+        buf += 16;
+        LEN -= 16;
+        t128 = #VEXTRACTI128(w, 1);
+      } else {
+        t128 = (128u) w;
+      }
+      buf, LEN = __mwrite_subu128(buf, LEN, t128);
+    }
+  }
+  return buf, LEN;
+}
+

@@ -2,8 +2,13 @@ require "params.jinc"
 require "shuffle.jinc"
 require "consts.jinc"
 require "reduce.jinc"
+
+require "mlkem_keccak_avx2_TRANSITION.jinc"
+require "keccak_OLD/fips202_common.jinc"
+/* replaced by "mlkem_keccak_avx2"...
 require "fips202.jinc"
 require "fips202_4x.jinc"
+*/
 
 fn _poly_add2(reg ptr u16[MLKEM_N] rp bp) -> stack u16[MLKEM_N]
 {
@@ -764,6 +769,7 @@ fn _poly_getnoise(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] seed, reg 
 }
 */
 
+/* OLD_KECCAK
 inline
 fn __shake256_squeezenblocks4x(reg ptr u256[25] state, reg ptr u8[NOISE_NBLOCKS * SHAKE256_RATE] buf0 buf1 buf2 buf3) -> reg ptr u256[25], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE], reg ptr u8[NOISE_NBLOCKS*SHAKE256_RATE]
 {
@@ -808,7 +814,47 @@ fn _poly_getnoise_eta1_4x(reg ptr u16[MLKEM_N] r0 r1 r2 r3, reg ptr u8[MLKEM_SYM
 
   return r0, r1, r2, r3;
 }
+*/
 
+#[returnaddress="stack"]
+fn _poly_getnoise_eta1_4x
+( reg ptr u16[MLKEM_N] r0 r1 r2 r3
+, reg ptr u8[MLKEM_SYMBYTES] seed
+, reg u8 nonce
+) -> reg ptr u16[MLKEM_N]
+   , reg ptr u16[MLKEM_N]
+   , reg ptr u16[MLKEM_N]
+   , reg ptr u16[MLKEM_N]
+{
+  stack u8[128] buf0_s buf1_s buf2_s buf3_s;
+  stack u8[4] nonces;
+  reg ptr u8[128] buf0, buf1, buf2, buf3;
+
+  buf0 = buf0_s; buf1 = buf1_s; buf2 = buf2_s; buf3 = buf3_s;
+
+() = #spill(r0,r1,r2,r3);
+
+  nonces[0] = nonce;
+  nonce += 1;
+  nonces[1] = nonce;
+  nonce += 1;
+  nonces[2] = nonce;
+  nonce += 1;
+  nonces[3] = nonce;
+
+
+  buf0, buf1, buf2, buf3 = _shake256x4_A128__A32_A1(buf0, buf1, buf2, buf3, seed, nonces);
+
+() = #unspill(r0,r1,r2,r3);
+  r0 = __poly_cbd_eta1(r0, buf0);
+  r1 = __poly_cbd_eta1(r1, buf1);
+  r2 = __poly_cbd_eta1(r2, buf2);
+  r3 = __poly_cbd_eta1(r3, buf3);
+
+  return r0, r1, r2, r3;
+}
+
+/* OLD_KECCAK
 #[returnaddress="stack"]
 fn _poly_getnoise_eta1122_4x(reg ptr u16[MLKEM_N] r0 r1 r2 r3, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N], reg ptr u16[MLKEM_N]
 {
@@ -837,6 +883,41 @@ fn _poly_getnoise_eta1122_4x(reg ptr u16[MLKEM_N] r0 r1 r2 r3, reg ptr u8[MLKEM_
   r1 = __poly_cbd_eta1(r1, buf1[0:MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8]);
   r2 = __poly_cbd_eta2(r2, buf2[0:MLKEM_ETA2*MLKEM_N/4]);
   r3 = __poly_cbd_eta2(r3, buf3[0:MLKEM_ETA2*MLKEM_N/4]);
+
+  return r0, r1, r2, r3;
+}
+*/
+
+#[returnaddress="stack"]
+fn _poly_getnoise_eta1122_4x
+( reg ptr u16[MLKEM_N] r0 r1 r2 r3
+, reg ptr u8[MLKEM_SYMBYTES] seed
+, reg u8 nonce
+) -> reg ptr u16[MLKEM_N]
+   , reg ptr u16[MLKEM_N]
+   , reg ptr u16[MLKEM_N]
+   , reg ptr u16[MLKEM_N]
+{
+  stack u8[128] buf0_s buf1_s buf2_s buf3_s;
+  stack u8[4] nonces;
+  reg ptr u8[128] buf0, buf1, buf2, buf3;
+
+  buf0 = buf0_s; buf1 = buf1_s; buf2 = buf2_s; buf3 = buf3_s;
+
+  nonces[0] = nonce;
+  nonce += 1;
+  nonces[1] = nonce;
+  nonce += 1;
+  nonces[2] = nonce;
+  nonce += 1;
+  nonces[3] = nonce;
+
+  buf0, buf1, buf2, buf3 = _shake256x4_A128__A32_A1(buf0, buf1, buf2, buf3, seed, nonces);
+
+  r0 = __poly_cbd_eta1(r0, buf0);
+  r1 = __poly_cbd_eta1(r1, buf1);
+  r2 = __poly_cbd_eta2(r2, buf2);
+  r3 = __poly_cbd_eta2(r3, buf3);
 
   return r0, r1, r2, r3;
 }

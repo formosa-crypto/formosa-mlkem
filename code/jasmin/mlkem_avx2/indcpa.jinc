@@ -24,7 +24,8 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
     inbuf[u64 i] = t64;
   }
 
-  buf = _sha3_512_32(buf, inbuf);
+  //buf = _sha3_512_32(buf, inbuf);
+  buf = _sha3_512A_A32(buf, inbuf);
 
   for i=0 to MLKEM_SYMBYTES/8
   {
@@ -105,10 +106,10 @@ fn __indcpa_enc_0(#mmx reg u64 sctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg
   aat = _gen_matrix_avx2(aat, publicseed, transposed);
 
   lnoiseseed = s_noiseseed;
-
   nonce = 0;
   sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], lnoiseseed, nonce);
 
+  lnoiseseed = s_noiseseed;
   nonce = 4;
   ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
 
@@ -177,10 +178,10 @@ fn __indcpa_enc_1(
   aat = _gen_matrix_avx2(aat, publicseed, transposed);
 
   lnoiseseed = s_noiseseed;
-
   nonce = 0;
   sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], lnoiseseed, nonce);
 
+  lnoiseseed = s_noiseseed;
   nonce = 4;
   ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
 

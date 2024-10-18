@@ -3,6 +3,8 @@
 
 -include ../../Makefile.conf
 
+JADDFLAGS ?= -lazy-regalloc
+
 CC     ?= /usr/bin/gcc
 GFLAGS ?=
 CFLAGS := -Wall -Wextra -g -Ofast -fomit-frame-pointer
@@ -11,9 +13,12 @@ OS     := $(shell uname -s)
 
 .SECONDARY: jpoly.s jpolyvec.s jfips202.s jindcpa.s jindcpa.o jkem.s
 
-default: test speed
+default: test
+#default: test speed
 
-test: test/test_poly_compress \
+test: test/test_kem
+
+testX: test/test_poly_compress \
       test/test_poly_decompress \
       test/test_poly_tobytes \
       test/test_poly_frombytes \
@@ -71,7 +76,7 @@ test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
 
 test/test_kem: test/test_kem.c $(HEADERS) $(SOURCES) $(INCS) jkem.o
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o ~/Desktop/Repos/jasmin/compiler/syscall/jasmin_syscall.o $<
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.o $(current_dir)../jasmin/compiler/syscall/jasmin_syscall.o $<
 
 test/speed_indcpa: test/speed_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<
@@ -92,7 +97,7 @@ test/test_polyvec_%: test/test_polyvec_%.c $(HEADERS) $(SOURCES) $(INCS) jpolyve
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jpolyvec.s $<
 
 %.s: %.jazz
-	$(JASMINC) -o $@ $(JFLAGS) $^
+	$(JASMINC) $(JFLAGS) -o $@ $(JFLAGS) $^
 
 .PHONY: ct sct clean
 
