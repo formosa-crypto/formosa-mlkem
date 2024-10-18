@@ -32,9 +32,10 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
 
   s_skp = skp;
   pkp = s_pkp;
-  t64 = MLKEM_PUBLICKEYBYTES;
 
-  h_pk = _isha3_256(h_pk, pkp, t64);
+  //t64 = MLKEM_PUBLICKEYBYTES;
+  //h_pk = _isha3_256(h_pk, pkp, t64);
+  h_pk = _sha3_256A_M1184(h_pk, pkp);
   skp = s_skp;
 
   for i=0 to 4
@@ -74,10 +75,12 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKE
     buf[u64 i] = t64;
   }
 
-  t64 = MLKEM_PUBLICKEYBYTES;
-  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp, t64);
+  //t64 = MLKEM_PUBLICKEYBYTES;
+  //buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp, t64);
+  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _sha3_256A_M1184(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp);
 
-  kr = _sha3_512_64(kr, buf);
+  //kr = _sha3_512_64(kr, buf);
+  kr = _sha3_512A_A64(kr, buf);
 
   pkp = s_pkp;
 
@@ -118,7 +121,8 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
 
   s_skp = skp;
 
-  kr = _sha3_512_64(kr, buf);
+  //kr = _sha3_512_64(kr, buf);
+  kr = _sha3_512A_A64(kr, buf);
 
   pkp = s_skp;
   pkp += 12 * MLKEM_K * MLKEM_N>>3;
@@ -138,7 +142,8 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   /* fixme: should this be done in memory? */
   shkp = s_shkp;
 
-  _shake256_1120_32(shkp, zp, ctp);  
+  //_shake256_1120_32(shkp, zp, ctp);
+  _shake256_M32__M32_M1088(shkp, zp, ctp);
 
   shkp = s_shkp;
   cnd = s_cnd;

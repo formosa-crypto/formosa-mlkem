@@ -1,5 +1,11 @@
-require "keccak/keccakf1600_4x_avx2_compact.jinc"
+/* // OLD INTERFACE
+require "keccak/keccakf1600x4_avx2.jinc"
 require "keccak/keccakf1600_avx2.jinc"
+*/
+// NEW INTERFACE
+require "mlkem_keccak_avx2_TRANSITION.jinc"
+
+
 require "params.jinc"
 require "gen_matrix_globals.jinc"
 
@@ -33,7 +39,7 @@ inline fn comp_u64_l_int_and_u64_l_int(
 // BUF_size per entry: 21(rate) + 21(rate) + 25(keccak_state) + 1(pad) 
 param int BUF_size = 536; // 168*2+200      (was in u64s: 3*21 + 4 + 1; //544 bytes; 
 
-
+/*
 // deinterleave u64-lanes of 4 u256 regs
 inline fn _4u64x4_u256x4(reg u256 y0 y1 y2 y3) -> reg u256, reg u256, reg u256, reg u256 {
   reg u256 x0, x1, x2, x3;
@@ -331,6 +337,8 @@ inline fn xof_init_avx2
   
   return state;
 }
+*/
+
 
 /*
 DEFS:
@@ -685,10 +693,12 @@ inline fn gen_matrix_get_indexes(
   reg u64 b,
   reg u64 _t)
   ->
-  reg u16[4]
+  stack u8[4*2]
+//  reg u16[4]
 {
   reg u64 t;
-  reg u16[4] idx;
+//  reg u16[4] idx;
+  stack u8[4*2] idx;
   reg ptr u16[2*4*2] gmi;
 
   gmi = gen_matrix_indexes;
@@ -696,10 +706,10 @@ inline fn gen_matrix_get_indexes(
   t = _t; t <<= 3; // t * 8
   b += t;
 
-  idx[0] = gmi[(int) b + 0];
-  idx[1] = gmi[(int) b + 1];
-  idx[2] = gmi[(int) b + 2];
-  idx[3] = gmi[(int) b + 3];
+  idx[u16 0] = gmi[(int) b + 0];
+  idx[u16 1] = gmi[(int) b + 1];
+  idx[u16 2] = gmi[(int) b + 2];
+  idx[u16 3] = gmi[(int) b + 3];
 
   return idx;
 }
@@ -710,15 +720,18 @@ fn __gen_matrix_fill_polynomial
 ) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
 {
   reg u64 counter, buf_offset;
-  reg u256[7] stavx2;
+//  reg u256[7] stavx2;
   buf_offset = 0;
   counter = 0;
   pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
   buf_offset = 2*168;
   while (counter < MLKEM_N) {
+/*
     stavx2 = _stavx2_pack_at(buf, buf_offset);
     stavx2 = _keccakf1600_avx2(stavx2);
     buf = _stavx2_unpack_at(buf, buf_offset, stavx2);
+*/
+    buf = _shake128_next_state(buf);
     pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
   }
   
@@ -733,19 +746,24 @@ fn _gen_matrix_sample_four_polynomials
 , reg u64 transposed
 ) -> reg ptr u16[4*MLKEM_N], reg ptr u8[BUF_size * 4]
 {
-  reg u64 buf_offset;
+//  reg u64 buf_offset;
   reg ptr u16[MLKEM_N] pol;
   stack u256[25] state;
   reg ptr u256[25] stx4;
-  reg u16[4] indexes;
+//  reg u16[4] indexes;
+  stack u8[4*2] indexes;
+
 
   indexes = gen_matrix_get_indexes(mat_entry, transposed);
 
   stx4 = state;
+  stx4 = _shake128x4_absorb_A32_A2(stx4, rho, indexes);
+  _, buf = _shake128x4_squeeze3blocks(stx4, buf);
+/*
   stx4 = xof_init_x4(rho, indexes);
   buf_offset = 0;
   while (buf_offset < 3*168) {
-    stx4 = _keccakf1600_4x(stx4);
+    stx4 = _keccakf1600_avx2x4(stx4);
 
     buf[BUF_size * 0 : BUF_size],
     buf[BUF_size * 1 : BUF_size],
@@ -759,7 +777,7 @@ fn _gen_matrix_sample_four_polynomials
 
     buf_offset += 168;
   }
-
+*/
   pol = polx4[0*MLKEM_N:MLKEM_N];
   pol, buf[BUF_size * 0 : BUF_size] = __gen_matrix_fill_polynomial(pol, buf[BUF_size * 0 : BUF_size]);
   polx4[0*MLKEM_N:MLKEM_N] = pol;
@@ -787,8 +805,10 @@ inline fn __gen_matrix_sample_one_polynomial
 ) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
 {
   reg u256[7] stavx2;
-  reg u64 buf_offset;
-  
+//  reg u64 buf_offset;
+  stack u8[2] pos;
+
+/*
   stavx2 = xof_init_avx2(rho, rc);
   buf_offset = 0;
   while (buf_offset < 3*168) {
@@ -796,6 +816,11 @@ inline fn __gen_matrix_sample_one_polynomial
     buf = _stavx2_unpack_at( buf, buf_offset, stavx2 );
     buf_offset += 168;
   }
+*/
+
+  pos[u16 0] = rc;
+  stavx2 = _shake128_absorb_A32_A2(rho, pos);
+  buf = _shake128_squeeze3blocks(buf, stavx2);
 
   pol, buf = __gen_matrix_fill_polynomial(pol, buf);
 
