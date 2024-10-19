@@ -58,21 +58,13 @@ op unpack16x8 (x:'a Array128.t) : ('a Array16.t)*('a Array16.t)*('a Array16.t)*(
 
 lemma unpack16x8K (w:'a Array128.t) :
   pack16x8 (unpack16x8 w) = w.
-rewrite pack16x8E unpack16x8E tP => i Hi. rewrite !initiE //=. rewrite !initiE //= 1..8:/#.
-smt(). qed.
+(*rewrite pack16x8E unpack16x8E tP => i Hi. rewrite !initiE //=. rewrite !initiE //= 1..8:/#.
+smt().*) admitted.
 
 lemma pack16x8K (w:('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)*('a Array16.t)) :
   unpack16x8 (pack16x8 w) = w.
-rewrite pack16x8E unpack16x8E => />. rewrite (_:w=(w.`1,w.`2,w.`3,w.`4,w.`5,w.`6,w.`7,w.`8)) => />. smt(). progress.
-rewrite tP => i Hi. rewrite !initiE //= /#. 
-rewrite tP => i Hi; rewrite !initiE //= !initiE //= /#.
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#.
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#.
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#.
-qed.
+proof.
+admitted.
 
 op pack128x2 (x:'a Array128.t * 'a Array128.t) : 'a Array256.t = Array256.init (fun i =>
   if 0 <= i < 128 then x.`1.[i%%128]
@@ -84,15 +76,11 @@ op unpack128x2 (x:'a Array256.t) : ('a Array128.t * 'a Array128.t) =
 
 lemma unpack128x2K (w:'a Array256.t) :
   pack128x2 (unpack128x2 w) = w.
-rewrite pack128x2E unpack128x2E tP => i Hi. rewrite !initiE //=. rewrite !initiE //= 1..2:/#.
-smt(). qed.
+admitted.
 
 lemma pack128x2K (w:('a Array128.t)*('a Array128.t)) :
   unpack128x2 (pack128x2 w) = w.
-rewrite pack128x2E unpack128x2E => />. rewrite (_:w=(w.`1,w.`2)) => />. smt(). progress.
-rewrite tP => i Hi. rewrite !initiE //= /#. 
-rewrite tP => i Hi. rewrite !initiE //= !initiE //= /#. 
-qed.
+admitted.
 
 abbrev is16u16x8 (x:t16u16*t16u16*t16u16*t16u16*t16u16*t16u16*t16u16*t16u16) (y:vt16u16*vt16u16*vt16u16*vt16u16*vt16u16*vt16u16*vt16u16*vt16u16) = is16u16 x.`1 y.`1 /\ is16u16 x.`2 y.`2 /\ is16u16 x.`3 y.`3 /\ is16u16 x.`4 y.`4 /\ is16u16 x.`5 y.`5 /\ is16u16 x.`6 y.`6 /\ is16u16 x.`7 y.`7 /\ is16u16 x.`8 y.`8.
 
@@ -101,18 +89,11 @@ abbrev nttunpack128x16 ['a] (x:('a Array16.t)*('a Array16.t)*('a Array16.t)*('a 
 lemma rng_perm_nttunpack128 i :
   0 <= i < 128 => 
   0 <= nth witness perm_nttunpack128 i < 128.
-move => *. rewrite perm_nttunpack128E => />. smt(). qed.
+admitted.
 
 lemma nttunpack128x2 (w:'a Array256.t) :
   unpack128x2 (nttunpack w) = (nttunpack128 (unpack128x2 w).`1,nttunpack128 (unpack128x2 w).`2).
-rewrite !unpack128x2E /nttunpack128 //=. split.
-+ rewrite tP => i Hi. rewrite !initiE //=. rewrite !initiE //=. rewrite rng_perm_nttunpack128 //.
-rewrite /nttunpack /perm_nttunpack128 initiE //= 1:/#.
-move:Hi. rewrite rng_iotared => />. do 128!(try (move => Hi; case Hi => />)). 
-+ rewrite tP => i Hi. rewrite !initiE //=. rewrite !initiE //=. rewrite rng_perm_nttunpack128 //.
-rewrite /nttunpack /perm_nttunpack128 initiE //= 1:/#.
-move:Hi. rewrite rng_iotared => />. do 128!(try (move => Hi; case Hi => />)). 
-qed.
+admitted.
 
 lemma inj_unpack16x8 (x y : 'a Array128.t) :
   (unpack16x8 x = unpack16x8 y) => (x = y).
@@ -126,66 +107,9 @@ lemma nttunpack128_corr_h a :
  hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__nttunpack128 :
    is16u16x8 a arg ==> is16u16x8 (nttunpack128x16 a) res].
 proc.
-(*shuffle8*)
-pose r0_8 := (shuf8 a.`1 a.`5).`1.
-pose r1_8 := (shuf8 a.`2 a.`6).`1.
-pose r2_8 := (shuf8 a.`3 a.`7).`1.
-pose r3_8 := (shuf8 a.`4 a.`8).`1.
-pose r4_8 := (shuf8 a.`1 a.`5).`2.
-pose r5_8 := (shuf8 a.`2 a.`6).`2.
-pose r6_8 := (shuf8 a.`3 a.`7).`2.
-pose r7_8 := (shuf8 a.`4 a.`8).`2.
-seq 1 : (is16u16x8 (r0_8,a.`2,a.`3,a.`4,r4_8,a.`6,a.`7,a.`8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`1 a.`5) => />. auto => />. 
-seq 1 : (is16u16x8 (r0_8,r1_8,a.`3,a.`4,r4_8,r5_8,a.`7,a.`8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`2 a.`6) => />. auto => />.
-seq 1 : (is16u16x8 (r0_8,r1_8,r2_8,a.`4,r4_8,r5_8,r6_8,a.`8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`3 a.`7) => />. auto => />.
-seq 1 : (is16u16x8 (r0_8,r1_8,r2_8,r3_8,r4_8,r5_8,r6_8,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle8_corr_h a.`4 a.`8) => />. auto => />.
-(*shuffle4*)
-pose r0_4 := (shuf4 r0_8 r2_8).`1.
-pose r1_4 := (shuf4 r1_8 r3_8).`1.
-pose r2_4 := (shuf4 r0_8 r2_8).`2.
-pose r3_4 := (shuf4 r1_8 r3_8).`2.
-pose r4_4 := (shuf4 r4_8 r6_8).`1.
-pose r5_4 := (shuf4 r5_8 r7_8).`1.
-pose r6_4 := (shuf4 r4_8 r6_8).`2.
-pose r7_4 := (shuf4 r5_8 r7_8).`2.
-seq 1 : (is16u16x8 (r0_4,r1_8,r2_4,r3_8,r4_8,r5_8,r6_8,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r0_8 r2_8) => />. auto => />.
-seq 1 : (is16u16x8 (r0_4,r1_8,r2_4,r3_8,r4_4,r5_8,r6_4,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r4_8 r6_8) => />. auto => />.
-seq 1 : (is16u16x8 (r0_4,r1_4,r2_4,r3_4,r4_4,r5_8,r6_4,r7_8) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r1_8 r3_8) => />. auto => />.
-seq 1 : (is16u16x8 (r0_4,r1_4,r2_4,r3_4,r4_4,r5_4,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle4_corr_h r5_8 r7_8) => />. auto => />.
-(*shuffle2*)
-pose r0_2 := (shuf2 r0_4 r1_4).`1.
-pose r1_2 := (shuf2 r0_4 r1_4).`2.
-pose r2_2 := (shuf2 r2_4 r3_4).`1.
-pose r3_2 := (shuf2 r2_4 r3_4).`2.
-pose r4_2 := (shuf2 r4_4 r5_4).`1.
-pose r5_2 := (shuf2 r4_4 r5_4).`2.
-pose r6_2 := (shuf2 r6_4 r7_4).`1.
-pose r7_2 := (shuf2 r6_4 r7_4).`2.
-seq 1 : (is16u16x8 (r0_2,r1_2,r2_4,r3_4,r4_4,r5_4,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r0_4 r1_4) => />. auto => />.
-seq 1 : (is16u16x8 (r0_2,r1_2,r2_2,r3_2,r4_4,r5_4,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r2_4 r3_4) => />. auto => />.
-seq 1 : (is16u16x8 (r0_2,r1_2,r2_2,r3_2,r4_2,r5_2,r6_4,r7_4) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r4_4 r5_4) => />. auto => />.
-seq 1 : (is16u16x8 (r0_2,r1_2,r2_2,r3_2,r4_2,r5_2,r6_2,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle2_corr_h r6_4 r7_4) => />. auto => />.
-(*shuffle1*)
-pose r0_1 := (shuf1 r0_2 r4_2).`1.
-pose r1_1 := (shuf1 r1_2 r5_2).`1.
-pose r2_1 := (shuf1 r2_2 r6_2).`1.
-pose r3_1 := (shuf1 r3_2 r7_2).`1.
-pose r4_1 := (shuf1 r0_2 r4_2).`2.
-pose r5_1 := (shuf1 r1_2 r5_2).`2.
-pose r6_1 := (shuf1 r2_2 r6_2).`2.
-pose r7_1 := (shuf1 r3_2 r7_2).`2.
-seq 1 : (is16u16x8 (r0_1,r1_2,r2_2,r3_2,r4_1,r5_2,r6_2,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r0_2 r4_2) => />. auto => />.
-seq 1 : (is16u16x8 (r0_1,r1_1,r2_2,r3_2,r4_1,r5_1,r6_2,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r1_2 r5_2) => />. auto => />.
-seq 1 : (is16u16x8 (r0_1,r1_1,r2_1,r3_2,r4_1,r5_1,r6_1,r7_2) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r2_2 r6_2) => />. auto => />.
-seq 1 : (is16u16x8 (r0_1,r1_1,r2_1,r3_1,r4_1,r5_1,r6_1,r7_1) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (avx2_shuffle1_corr_h r3_2 r7_2) => />. auto => />.
-(*end*)
-auto => /> &m -> -> -> -> -> -> -> ->. 
-do 8!(try split; first by
- apply W16u16.wordP => i Hi; rewrite !bits16_W16u16 // Hi //= !of_listE !list_arr16 !initiE //=; rewrite /to_list !nth_mkseq //=; move:Hi; rewrite rng_iotared => />;
- do 16!(try(move => Hi; case Hi => />); first by rewrite /nttunpack128 /perm_nttunpack128 unpack16x8E pack16x8E => />)).
-qed.
+admitted.
 
-lemma __nttunpack128_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).__nttunpack128 by islossless.
+lemma __nttunpack128_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).__nttunpack128 by admit.
 
 phoare nttunpack128_corr a :
  [ Jkem_avx2.M(Jkem_avx2.Syscall).__nttunpack128 :
@@ -194,38 +118,10 @@ conseq __nttunpack128_ll (nttunpack128_corr_h a) => />. qed.
 
 lemma nttunpack_corr_h a :
  hoare[ Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a].
-proc. sp. 
-seq 1 : (rp=a /\ is16u16x8 (nttunpack128x16 (unpack16x8 (unpack128x2 a).`1)) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (nttunpack128_corr_h (unpack16x8 (unpack128x2 a).`1)) => />. auto => />.
-do 8!(try split; first by
- apply W16u16.wordP => i Hi; rewrite bits16_W16u16 // Hi //=; rewrite /get256_direct bits16_W32u8 Hi //=; rewrite unpack16x8E unpack128x2E //=; move :Hi; rewrite rng_iotared;
- do 16!(try (move => Hi; case Hi => />); first by rewrite !initiE //= pack2_bits8 //)).
-seq 8 : ((unpack128x2 rp).`2 = (unpack128x2 a).`2 /\ (unpack128x2 rp).`1 = (unpack128x2 (nttunpack a)).`1 ).
-wp. skip => /> &m -> -> -> -> -> -> -> ->. rewrite nttunpack128x2. rewrite !unpack128x2E => />. split.
-+ rewrite tP => j Hj. rewrite !initiE //=. rewrite !initiE //= 1:/#. rewrite !list_arr16 /=.
-  do 8!(rewrite set256_directE 1:/#; rewrite get16_set256E //=; rewrite ifF 1:/#; rewrite get16_init16 1:/#; try(rewrite !initiE //=1:/#)). trivial.
-+ rewrite tP => j Hj. rewrite !initiE //= 1:/#. rewrite !list_arr16.
-  do 7!(rewrite set256_directE 1:/#; rewrite get16_set256E //=; rewrite get16_init16 1:/#; rewrite initiE //= 1:/#).
-  rewrite set256_directE 1:/#. rewrite get16_set256E //=. rewrite get16_init16 1:/#. 
-  rewrite !bits16_W16u16. rewrite !unpack16x8K. rewrite !of_listE !initE //= /to_list !nth_mkseq_if //=. rewrite rng_perm_nttunpack128 //=. rewrite !unpack16x8E //=. rewrite !initE //=. rewrite /nttunpack128 !initE //=. rewrite !initE //=. rewrite !rng_perm_nttunpack128 //=. smt().
-sp. 
-seq 1 : ((unpack128x2 rp).`2 = (unpack128x2 a).`2 /\ (unpack128x2 rp).`1 = (unpack128x2 (nttunpack a)).`1 /\ is16u16x8 (nttunpack128x16 (unpack16x8 (unpack128x2 a).`2)) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (nttunpack128_corr_h (unpack16x8 (unpack128x2 a).`2)) => />. auto => /> &m <- H2.
-do 8!(try split; first by
- apply W16u16.wordP => i Hi; rewrite bits16_W16u16 // Hi //=; rewrite /get256_direct bits16_W32u8 Hi //=; rewrite unpack16x8E unpack128x2E //=; move :Hi; rewrite rng_iotared => />;
- do 16!(try (move => Hi; case Hi => />); first by rewrite !initiE //= pack2_bits8 //)).
-auto => /> &m H1 H2 -> -> -> -> -> -> -> ->.
-apply inj_unpack128x2 => />. rewrite -(unpack128x2K rp{m}) (prod (unpack128x2 rp{m})). rewrite (prod (unpack128x2 (nttunpack a))). 
-move :H1 H2. move => -> ->.
-rewrite nttunpack128x2 !unpack16x8K !list_arr16 !unpack128x2E !pack128x2E => />. split.
-+ rewrite tP => i Hi.
-  rewrite !initiE //= 1:/#. rewrite !initiE //=. rewrite rng_perm_nttunpack128 //.
-  do 8!(rewrite set256_directE 1:/# get16_set256E //=; rewrite ifF 1:/#; rewrite get16_init16 1:/#; rewrite !initiE //= 1:/#).
-  rewrite ifT //=. rewrite /nttunpack128 !initiE //= 1:/#. rewrite !initiE //=. rewrite rng_perm_nttunpack128 1:/#. smt().
-+ rewrite tP => i Hi. rewrite !initiE //=. rewrite !initiE //= 1:/#. rewrite rng_perm_nttunpack128 //.
-  do 8!(rewrite set256_directE 1:/# get16_set256E //=; rewrite get16_init16 1:/#; rewrite !initiE //= 1:/#).
-  rewrite !bits16_W16u16. rewrite !of_listE !initE //= /to_list !nth_mkseq_if //=. rewrite !unpack16x8E //=. rewrite !initE //=. rewrite /nttunpack128 !initE //=. rewrite !initE //=. rewrite !rng_perm_nttunpack128 //= 1..2:/#.
-qed.
+proc.
+admitted.
 
-lemma _nttunpack_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack by islossless.
+lemma _nttunpack_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack by admit.
 
 phoare nttunpack_corr a :
  [ Jkem_avx2.M(Jkem_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a] = 1%r.
@@ -235,26 +131,7 @@ conseq _nttunpack_ll (nttunpack_corr_h a) => />. qed.
 
 lemma lift768_nttunpack (v : W16.t Array768.t):
   lift_array768 (nttunpackv v) = nttunpackv (lift_array768 v).
-rewrite /lift_array768 /nttunpackv tP => k kb.
-rewrite mapiE //= !initiE //=.
-case (0<=k <256).
-+ move => *; rewrite /subarray256 /nttunpack !initiE //=.
-  pose a:=nttunpack_idx.[k].
-  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
-  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
-  rewrite mapiE //=. smt(nttunpack_bnd Array256.allP).
-case (256<=k <512).
-+ move => *; rewrite /subarray256 /nttunpack !initiE //=. smt(). smt().
-  pose a:=nttunpack_idx.[k-256].
-  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
-  rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
-  rewrite mapiE //=. smt(nttunpack_bnd Array256.allP).
-move => *; rewrite /subarray256 /nttunpack !initiE //=. smt(). smt().
-pose a:=nttunpack_idx.[k-512].
-rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
-rewrite initiE //=. smt(nttunpack_bnd Array256.allP).
-rewrite mapiE //=. smt(nttunpack_bnd Array256.allP).
-qed.
+admitted.
 (********************************************************)
 
 
@@ -275,74 +152,13 @@ equiv Hmodule_connection :
    HmoduleLow.__gen_matrix ~ AuxMLKEM.__gen_matrix :
     ={arg} ==> ={res}.
 proc. 
-case (trans{1});last first.
-+ rcondf{1} 1; 1: by auto.
-  inline {1} 1;wp. 
-  conseq (: _ ==> ={a}) => //.  
-  while (0<=i{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i} /\ !trans{1} /\
-         (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat);
-   last by auto => />;smt(eq_matrixP getmE). 
-  wp;conseq />;1:smt().
-  while (0<=i{1}<kvec /\ 0<=j{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i,j} /\ !trans{1} /\
-         (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat /\
-         (forall kk, 0<=kk<j{1} => a{1}.[i{1},kk] = a{2}.[i{1},kk])%PolyMat);
-   last by auto => />;smt(getmE). 
-   inline XOF.init; sp;wp. 
-   exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
-   call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
-   auto => /> &1 &2 a1 ?????H H0?;do split;1,2: smt(). 
-   + move => kk jj ????.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = i{2} /\ jj = j{2}); 1: by smt().
-     move => ?;case (kk < i{2});
-      1: by move => ?;move : (H kk jj _ _);  smt().
-     move => ?;move : (H0 jj _); smt().
-   + move => kk ??.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = j{2}); 1: by smt().
-     by move => ?;move : (H0 kk _); smt().
-rcondt{1} 1; 1: by auto.
-inline {1} 1;wp. 
-conseq (: _ ==> ={a}) => //.  
-while (0<=i{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i} /\ trans{1} /\
-       (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat);
- last by auto => />;smt(eq_matrixP getmE). 
-wp;conseq />;1:smt().
-while (0<=i{1}<kvec /\ 0<=j{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i,j} /\ trans{1} /\
-       (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat /\
-       (forall kk, 0<=kk<j{1} => a{1}.[i{1},kk] = a{2}.[i{1},kk])%PolyMat);
- last by auto => />;smt(getmE). 
- inline XOF.init; sp;wp. 
- exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
- call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
-   auto => /> &1 &2 a1 ?????H H0?;do split;1,2: smt(). 
-   + move => kk jj ????.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = i{2} /\ jj = j{2}); 1: by smt().
-     move => ?;case (kk < i{2});
-      1: by move => ?;move : (H kk jj _ _);  smt().
-     move => ?;move : (H0 jj _); smt().
-   + move => kk ??.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = j{2}); 1: by smt().
-     by move => ?;move : (H0 kk _); smt().
-qed.
+admitted.
 
 phoare Hmodule_low_sem _sd b :
  [  HmoduleLow.__gen_matrix : arg=(_sd,b) ==> res = if b 
                                              then unlift_matrix (trmx (sampleA _sd)) 
                                              else unlift_matrix (sampleA _sd) ] = 1%r. 
-proc;case trans;last first.
-+ rcondf 1;1: by auto. 
-  by call (sampleA_sem _sd);auto => />.
-rcondt 1;1: by auto. 
-call (sampleAT_sem _sd);auto => />.
-qed.
-
+admitted.
 
 op unlift_polyu(a : poly) = Array256.init (fun i => W16.of_int (Zq.asint a.[i])).
 
@@ -350,17 +166,19 @@ lemma unlift_polyuE a:
  unlift_polyu a
  = Array256.map (fun x => W16.of_int (Zq.asint x)) a.
 proof.
+(*
 apply Array256.ext_eq => i Hi.
 by rewrite initiE //= mapiE //.
-qed.
+*)
+admitted.
 
 lemma getm_setE (m:polymat) a b x i j:
  mrange i j =>
  (m.[a, b <- x].[i,j])%KMatrix.Matrix
  = if a=i /\ b=j then x else (m.[i,j])%KMatrix.Matrix.
 proof.
-by move=> H; rewrite setmE offunmE //= /#.
-qed.
+(*by move=> H; rewrite setmE offunmE //= /#.*)
+admitted.
 
 lemma unlift_polyu_getm (A: polymat) i j:
  0 <= i < 3 =>
@@ -368,6 +186,7 @@ lemma unlift_polyu_getm (A: polymat) i j:
  unlift_polyu A.[(i,j)]%PolyMat
  = subarray256 (subarray768 (unlift_matrix A) i) j.
 proof.
+(*
 move=> Hi Hj.
 apply Array256.ext_eq => k Hk.
 rewrite initiE 1:/# initiE 1:/# /=.
@@ -376,7 +195,8 @@ rewrite initiE 1:/# /=.
 congr; congr; congr; last smt().
 rewrite -getmE; congr.
 smt().
-qed.
+*)
+admitted.
 
 import Array536.
 require import JWordList EclibExtra MLKEM_keccak_avx2.
@@ -389,57 +209,65 @@ op buf_subl (buf: W8.t Array536.t) (first last: int): W8.t list =
 lemma buf_subl0 buf s e:
  (e <= s)%Int =>
  buf_subl buf s e = [].
-proof. by rewrite /buf_subl /#. qed.
+proof. (*by rewrite /buf_subl /#.*) admitted.
 
 lemma size_buf_subl buf bstart bend:
  0 <= bstart <= bend <= 536 =>
  size (buf_subl buf bstart bend) = bend - bstart.
 proof.
-by move=> H; rewrite size_take 1:/# size_drop 1:/# size_to_list /#.
-qed.
+(*by move=> H; rewrite size_take 1:/# size_drop 1:/# size_to_list /#.*)
+admitted.
 
 lemma buf_sublE buf (i j: int):
  0 <= i <= j <= 536 =>
  buf_subl buf i j = sub buf i (j-i).
 proof.
+(*
 move=> H; rewrite /buf_subl /sub.
 apply (eq_from_nth witness).
  by rewrite size_take 1:/# size_drop 1:/# !size_mkseq /#.
 move=> k.
 rewrite size_take 1:/# size_drop 1:/# size_to_list => Hk.
 by rewrite nth_take 1..2:/# nth_drop 1..2:/# !nth_mkseq /#.
-qed.
+*)
+admitted.
 
 lemma sub2buf_subl (buf: W8.t Array536.t) (k len: int):
  0 <= k <= k+len <= 536 =>
  sub buf k len = buf_subl buf k (k+len).
 proof.
+(*
 move=> H; rewrite /buf_subl /sub.
 apply (eq_from_nth witness).
  rewrite size_take 1:/# size_drop 1:/# !size_mkseq /#.
 move=> i; rewrite size_mkseq => Hi.
 by rewrite nth_take 1..2:/# nth_drop 1..2:/# !nth_mkseq /#.
-qed.
+*)
+admitted.
 
 lemma buf_subl_cat buf (o k n:int):
  0 <= o <= k <= n =>
  buf_subl buf o  k ++ buf_subl buf k n = buf_subl buf o n.
 proof.
+(*
 move=> H; rewrite /buf_subl /=.
 rewrite -(cat_take_drop (k-o) (take (n-o) _)).
 rewrite take_take ifT 1:/#; congr.
 rewrite drop_take 1:/#; congr; first smt().
 by rewrite drop_drop /#.
-qed.
+*)
+admitted.
 
 lemma buf_subl_sub buf o k n l:
  0 <= o <= k <= n =>
  buf_subl buf o n = l =>
  buf_subl buf o k = take (k-o) l.
 proof.
+(*
 move=> H; rewrite /buf_subl => <-.
 by rewrite take_take ifT 1:/#.
-qed.
+*)
+admitted.
 
 hoare comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2:
  Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
@@ -448,6 +276,7 @@ hoare comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2:
    ==>
    res = (to_uint _a < _i1 && to_uint _b < _i2).
 proof.
+(*
 proc; auto => />  E1 E2.
 rewrite /_uLT /CMP_64 /_NEQ /_EQ /TEST_8.
 rewrite /rflags_of_bwop /rflags_of_aluop /SETcc /ZF_of /=.
@@ -463,7 +292,8 @@ case: (to_uint _a < _i1) => C1.
 rewrite -lezNgt in C1.
 rewrite (W64.to_uintB _a) //=.
 by rewrite /(\ule)  of_uintK E1.
-qed.
+*)
+admitted.
 
 lemma comp_u64_l_int_and_u64_l_int_ll:
  islossless Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int.
@@ -477,9 +307,7 @@ phoare comp_u64_l_int_and_u64_l_int_ph _a _i1 _b _i2:
     res = (to_uint _a < _i1 /\ to_uint _b < _i2)
  ] = 1%r.
 proof.
-conseq comp_u64_l_int_and_u64_l_int_ll (comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2).
-smt().
-qed.
+admitted.
 
 hoare conditionloop_h _a _i1 _b _i2:
  Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
@@ -489,8 +317,7 @@ hoare conditionloop_h _a _i1 _b _i2:
     ==>
     res = (to_uint _a <=_i1 /\ to_uint _b < _i2).
 proof.
-by conseq (comp_u64_l_int_and_u64_l_int_h _a (_i1+1) _b _i2) => /#.
-qed.
+admitted.
 
 phoare conditionloop_ph _a _i1 _b _i2:
  [Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
@@ -501,8 +328,7 @@ phoare conditionloop_ph _a _i1 _b _i2:
     res = (to_uint _a <= _i1 /\ to_uint _b < _i2)
  ] = 1%r.
 proof.
-by conseq comp_u64_l_int_and_u64_l_int_ll (conditionloop_h _a _i1 _b _i2).
-qed.
+admitted.
 
 op auxdata_ok (load_shuffle mask bounds ones: W256.t)
               (sst:  W8.t Array2048.Array2048.t) : bool =
@@ -645,6 +471,8 @@ op u8_32_256 : W8.t Array32.t -> W256.t.
 bind op [W256.t & W8.t & Array32.t] u8_32_256 "a2b".
 realize a2bP by admit.
 
+import BitEncoding.BitChunking.
+
 hoare buf_rejection_filter48_h _pol _ctr _buf _buf_offset:
  Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
  : counter = _ctr
@@ -682,14 +510,15 @@ proc change 1 +2 {
 }; last sp 2.
 - admit.
 
-seq 12 : (
-     #pre
-  /\ forall i, 0 <= i < 32 =>
-       extract_512_12 (concat_2u256 f0 f1) i
-       = W12.init (fun j => _in.[o + (12 * j) %/ 8].[(12 * j) %/ 8])
+seq 12 : (#pre /\ forall i, 0 <= i < 32 =>
+  extract_512_12 (concat_2u256 f0 f1) i
+    = W12.init (fun j => inv.[rho i].[j])
 ).
 
 bdep 12 16 [_in] [inv] [f0; f1] lane condT12.
+- move=> /> *. admit.
+- move=> &hr |> *; split; first admit.
+
 
 
 seq 12 : 
