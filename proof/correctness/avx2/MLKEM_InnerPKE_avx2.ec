@@ -28,6 +28,7 @@ import NTT_Avx2.
 import WArray136 WArray32 WArray128.
 import WArray512 WArray256.
 
+
 (* shake assumptions *)
 
 
@@ -1267,18 +1268,17 @@ qed.
 
 (***************************************************)
 
+
 require import WArray1088 WArray1536 Array4.
 
-print Jkem.M.
-
 module AuxPolyVecCompress10 = {
-    proc avx2_orig(ctp : W64.t, bp : W16.t Array768.t) : WArray1088.t = {
+    proc avx2_orig(ctp : W64.t, bp : W16.t Array768.t) : W8.t Array1088.t = {
        bp <@  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce_sig(bp);  
        Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress(ctp, bp);
        return witness;
     }
 
-proc __polyvec_compress_avx2(a : W16.t Array768.t) : WArray1088.t = {
+proc __polyvec_compress_avx2(a : W16.t Array768.t) : W8.t Array1088.t = {
     var aux : int;
     var b0 : W256.t;
     var b1 : W256.t;
@@ -1291,7 +1291,7 @@ proc __polyvec_compress_avx2(a : W16.t Array768.t) : WArray1088.t = {
     var a0 : W256.t;
     var lo : W128.t;
     var hi : W128.t;
-    var rr : WArray1088.t <- witness;
+    var rr : W8.t Array1088.t <- witness;
     
     b0 <- VPBROADCAST_16u16 compress10_b0;
     b1 <- VPBROADCAST_16u16 compress10_b1;
@@ -1306,8 +1306,8 @@ proc __polyvec_compress_avx2(a : W16.t Array768.t) : WArray1088.t = {
       a0 <- (get256 ((WArray1536.init16 (fun (i_0 : int) => a.[i_0]))) i);
       a0 <@ Jkem_avx2.M(Syscall).compress10_16x16_inline(a0, b0, b1, b2, mask10);
       (lo, hi) <@ Jkem_avx2.M(Syscall).pack10_16x16(a0, shift, sllv_indx, shuffle);
-      rr <- WArray1088.set128_direct rr (i*20+0) lo;
-      rr <- WArray1088.set32_direct rr (i*20+16) (VPEXTR_32 hi W8.zero);
+      rr <- Array1088.init(fun i => (WArray1088.set128_direct (WArray1088.init8 (fun ii => rr.[ii])) (i*20+0) lo).[i]);
+      rr <- Array1088.init(fun i => (WArray1088.set32_direct (WArray1088.init8 (fun ii => rr.[ii])) (i*20+16) (VPEXTR_32 hi W8.zero)).[i]);
 (* 
       Glob.mem <- storeW128 Glob.mem (to_uint (r + (of_int (i * 20 + 0))%W64)) lo;
       Glob.mem <- storeW32 Glob.mem (to_uint (r + (of_int (i * 20 + 16))%W64)) (VPEXTR_32 hi W8.zero);
@@ -1318,20 +1318,20 @@ proc __polyvec_compress_avx2(a : W16.t Array768.t) : WArray1088.t = {
     return rr;
   }
 
-    proc avx2(bp : W16.t Array768.t) : WArray1088.t = {
-       var rr : WArray1088.t;
+    proc avx2(bp : W16.t Array768.t) : W8.t Array1088.t = {
+       var rr : W8.t Array1088.t;
        bp <@  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce_sig(bp);  
        rr <@ __polyvec_compress_avx2(bp);
        return rr;
     }
 
-    proc ref_orig(ctp : W64.t, bp : W16.t Array768.t)  : WArray1088.t = {
+    proc ref_orig(ctp : W64.t, bp : W16.t Array768.t)  : W8.t Array1088.t = {
        bp <@ Jkem.M(Syscall).__polyvec_reduce(bp); 
        Jkem.M(Syscall).__polyvec_compress(ctp, bp);
        return witness;
     }
 
-proc __polyvec_compress_ref(a : W16.t Array768.t) : WArray1088.t = {
+proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array1088.t = {
     var aux : int;
     var i : int;
     var j : int;
@@ -1340,7 +1340,7 @@ proc __polyvec_compress_ref(a : W16.t Array768.t) : WArray1088.t = {
     var t : W64.t Array4.t;
     var c : W16.t;
     var b : W16.t;
-    var rr : WArray1088.t <- witness;
+    var rr : W8.t Array1088.t <- witness;
     
     aa <- witness;
     t <- witness;
@@ -1435,8 +1435,8 @@ proc __poly_reduce(rp : W16.t Array256.t) : W16.t Array256.t = {
     return r;
   }
 
-    proc ref(bp : W16.t Array768.t) : WArray1088.t = {
-       var rr : WArray1088.t;
+    proc ref(bp : W16.t Array768.t) : W8.t Array1088.t = {
+       var rr : W8.t Array1088.t;
        bp <@  __polyvec_reduce(bp);  
        rr <@ __polyvec_compress_ref(bp);
        return rr;
