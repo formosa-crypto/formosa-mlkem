@@ -28,7 +28,6 @@ import NTT_Avx2.
 import WArray136 WArray32 WArray128.
 import WArray512 WArray256.
 
-
 (* shake assumptions *)
 
 
@@ -1268,17 +1267,16 @@ qed.
 
 (***************************************************)
 
-
-require import WArray1088 WArray1536 Array4.
+ import WArray960 WArray1536 Array4.
 
 module AuxPolyVecCompress10 = {
-    proc avx2_orig(ctp : W64.t, bp : W16.t Array768.t) : W8.t Array1088.t = {
+    proc avx2_orig(ctp : W64.t, bp : W16.t Array768.t) : W8.t Array960.t = {
        bp <@  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce_sig(bp);  
        Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress(ctp, bp);
        return witness;
     }
 
-proc __polyvec_compress_avx2(a : W16.t Array768.t) : W8.t Array1088.t = {
+proc __polyvec_compress_avx2(a : W16.t Array768.t) : W8.t Array960.t = {
     var aux : int;
     var b0 : W256.t;
     var b1 : W256.t;
@@ -1291,7 +1289,7 @@ proc __polyvec_compress_avx2(a : W16.t Array768.t) : W8.t Array1088.t = {
     var a0 : W256.t;
     var lo : W128.t;
     var hi : W128.t;
-    var rr : W8.t Array1088.t <- witness;
+    var rr : W8.t Array960.t <- witness;
     
     b0 <- VPBROADCAST_16u16 compress10_b0;
     b1 <- VPBROADCAST_16u16 compress10_b1;
@@ -1306,8 +1304,8 @@ proc __polyvec_compress_avx2(a : W16.t Array768.t) : W8.t Array1088.t = {
       a0 <- (get256 ((WArray1536.init16 (fun (i_0 : int) => a.[i_0]))) i);
       a0 <@ Jkem_avx2.M(Syscall).compress10_16x16_inline(a0, b0, b1, b2, mask10);
       (lo, hi) <@ Jkem_avx2.M(Syscall).pack10_16x16(a0, shift, sllv_indx, shuffle);
-      rr <- Array1088.init(fun i => (WArray1088.set128_direct (WArray1088.init8 (fun ii => rr.[ii])) (i*20+0) lo).[i]);
-      rr <- Array1088.init(fun i => (WArray1088.set32_direct (WArray1088.init8 (fun ii => rr.[ii])) (i*20+16) (VPEXTR_32 hi W8.zero)).[i]);
+      rr <- Array960.init(fun i => (WArray960.set128_direct (WArray960.init8 (fun ii => rr.[ii])) (i*20+0) lo).[i]);
+      rr <- Array960.init(fun i => (WArray960.set32_direct (WArray960.init8 (fun ii => rr.[ii])) (i*20+16) (VPEXTR_32 hi W8.zero)).[i]);
 (* 
       Glob.mem <- storeW128 Glob.mem (to_uint (r + (of_int (i * 20 + 0))%W64)) lo;
       Glob.mem <- storeW32 Glob.mem (to_uint (r + (of_int (i * 20 + 16))%W64)) (VPEXTR_32 hi W8.zero);
@@ -1318,20 +1316,59 @@ proc __polyvec_compress_avx2(a : W16.t Array768.t) : W8.t Array1088.t = {
     return rr;
   }
 
-    proc avx2(bp : W16.t Array768.t) : W8.t Array1088.t = {
-       var rr : W8.t Array1088.t;
+    proc avx2(bp : W16.t Array768.t) : W8.t Array960.t = {
+       var rr : W8.t Array960.t;
        bp <@  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce_sig(bp);  
        rr <@ __polyvec_compress_avx2(bp);
        return rr;
     }
-
-    proc ref_orig(ctp : W64.t, bp : W16.t Array768.t)  : W8.t Array1088.t = {
+(* 
+    proc avx2_i(bp : W16.t Array768.t) : W8.t Array960.t = {
+       var rr : W8.t Array960.t;
+       bp <@  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce_sig(bp);  
+       rr <@ Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress_1(witness,bp);
+       return rr;
+    }
+*)
+    proc ref_orig(ctp : W64.t, bp : W16.t Array768.t)  : W8.t Array960.t = {
        bp <@ Jkem.M(Syscall).__polyvec_reduce(bp); 
        Jkem.M(Syscall).__polyvec_compress(ctp, bp);
        return witness;
     }
 
-proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array1088.t = {
+proc _poly_csubq_ref(rp : W16.t Array256.t) : W16.t Array256.t = {
+    var i : int;
+    var t : W16.t;
+    var b : W16.t;
+    
+    i <- 0;
+    while (i < 256){
+      t <- rp.[i];
+      t <- t - qlocal;
+      b <- t;
+      b <- b `|>>` (of_int 15)%W8;
+      b <- b `&` qlocal;
+      t <- t + b;
+      rp.[i] <- t;
+      i <- i + 1;
+    }
+    
+    return rp;
+  }
+  proc __polyvec_csubq_ref(r : W16.t Array768.t) : W16.t Array768.t = {
+    var aux : W16.t Array256.t;
+    
+    aux <@ _poly_csubq_ref((init (fun (i : int) => r.[0 + i]))%Array256);
+    r <- (init (fun (i : int) => if 0 <= i && i < 0 + 256 then aux.[i - 0] else r.[i]))%Array768;
+    aux <@ _poly_csubq_ref((init (fun (i : int) => r.[256 + i]))%Array256);
+    r <- (init (fun (i : int) => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i]))%Array768;
+    aux <@ _poly_csubq_ref((init (fun (i : int) => r.[2 * 256 + i]))%Array256);
+    r <- (init (fun (i : int) => if 2 * 256 <= i && i < 2 * 256 + 256 then aux.[i - 2 * 256] else r.[i]))%Array768;
+    
+    return r;
+  }
+
+proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
     var aux : int;
     var i : int;
     var j : int;
@@ -1340,7 +1377,7 @@ proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array1088.t = {
     var t : W64.t Array4.t;
     var c : W16.t;
     var b : W16.t;
-    var rr : W8.t Array1088.t <- witness;
+    var rr : W8.t Array960.t <- witness;
     
     aa <- witness;
     t <- witness;
@@ -1407,6 +1444,66 @@ proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array1088.t = {
     return rr;
   }
 
+  proc __i_polyvec_compress_ref(rp : W8.t Array960.t, a : W16.t Array768.t) : W8.t Array960.t = {
+    var aux : int;
+    var i : int;
+    var j : int;
+    var aa : W16.t Array768.t;
+    var k : int;
+    var t : W64.t t;
+    var c : W16.t;
+    var b : W16.t;
+    
+    aa <- witness;
+    t <- witness;
+    i <- 0;
+    j <- 0;
+    aa <@ __polyvec_csubq_ref(a);
+    while (i < (3 * 256 - 3)){
+      k <- 0;
+      while (k < 4){
+        t.[k] <- zeroextu64 aa.[i];
+        i <- i + 1;
+        t.[k] <- t.[k] `<<` (of_int 10)%W8;
+        t.[k] <- t.[k] + (of_int 1665)%W64;
+        t.[k] <- t.[k] * (of_int 1290167)%W64;
+        t.[k] <- t.[k] `>>` (of_int 32)%W8;
+        t.[k] <- t.[k] `&` (of_int 1023)%W64;
+        k <- k + 1;
+      }
+      c <- truncateu16 t.[0];
+      c <- c `&` (of_int 255)%W16;
+      rp.[j] <- truncateu8 c;
+      j <- j + 1;
+      b <- truncateu16 t.[0];
+      b <- b `>>` (of_int 8)%W8;
+      c <- truncateu16 t.[1];
+      c <- c `<<` (of_int 2)%W8;
+      c <- c `|` b;
+      rp.[j] <- truncateu8 c;
+      j <- j + 1;
+      b <- truncateu16 t.[1];
+      b <- b `>>` (of_int 6)%W8;
+      c <- truncateu16 t.[2];
+      c <- c `<<` (of_int 4)%W8;
+      c <- c `|` b;
+      rp.[j] <- truncateu8 c;
+      j <- j + 1;
+      b <- truncateu16 t.[2];
+      b <- b `>>` (of_int 4)%W8;
+      c <- truncateu16 t.[3];
+      c <- c `<<` (of_int 6)%W8;
+      c <- c `|` b;
+      rp.[j] <- truncateu8 c;
+      j <- j + 1;
+      t.[3] <- t.[3] `>>` (of_int 2)%W8;
+      rp.[j] <- truncateu8 t.[3];
+      j <- j + 1;
+    }
+    
+    return rp;
+  }
+
 proc __poly_reduce(rp : W16.t Array256.t) : W16.t Array256.t = {
     var j : int;
     var t : W16.t;
@@ -1435,13 +1532,21 @@ proc __poly_reduce(rp : W16.t Array256.t) : W16.t Array256.t = {
     return r;
   }
 
-    proc ref(bp : W16.t Array768.t) : W8.t Array1088.t = {
-       var rr : W8.t Array1088.t;
+    proc ref(bp : W16.t Array768.t) : W8.t Array960.t = {
+       var rr : W8.t Array960.t;
        bp <@  __polyvec_reduce(bp);  
        rr <@ __polyvec_compress_ref(bp);
        return rr;
     }
 
+(* 
+    proc ref_i(bp : W16.t Array768.t) : W8.t Array960.t = {
+       var rr : W8.t Array960.t;
+       bp <@  __polyvec_reduce(bp);  
+       rr <@ __i_polyvec_compress_ref(witness,bp);
+       return rr;
+    }
+*)
 }.
 
 lemma compress10_equiv_avx2mem _ctp _mem :
@@ -1870,7 +1975,6 @@ seq 1 1 : (#{/~v{2}}{~v{1}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ sig
 conseq />.  call(polyinvnttequiv). auto => />. smt().
 
 auto => /> /#.
-
 qed.
 
 
@@ -1929,20 +2033,16 @@ seq 46  58 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
     lift_array768 bp{1} = lift_array768 bp{2}); last first. 
 + wp; conseq />; conseq (: _ ==> aux_4{1} = aux_0{2}); 1: by smt().
-  admit.
-(*
-+ auto => /> &1 &2 *; do split;1,2:
-    smt (W64.to_uintD_small W64.of_uintK W64.to_uint_cmp pow2_64). 
-  transitivity {1} { AuxPolyVecCompress10.avx2_orig(ctp,bp); }
-    (={bp,ctp,Glob.mem} ==> ={Glob.mem})
-    ( lift_array768 bp{1} = lift_array768 bp{2} /\ valid_ptr (to_uint ctp{1}) (128 + 3 * 320)  /\ ={ctp,Glob.mem} ==> ={Glob.mem});
-      [ smt() | smt() | by inline*;sim |].
-  transitivity {2} { AuxPolyVecCompress10.ref_orig(ctp,bp); }
-    ( lift_array768 bp{1} = lift_array768 bp{2} /\ valid_ptr (to_uint ctp{1}) (128 + 3 * 320)  /\ ={ctp,Glob.mem} ==> ={Glob.mem})
-    (={bp,ctp,Glob.mem} ==> ={Glob.mem});
-      [ smt() | smt() |  | by inline *;sim].
-  by call compress10_equiv;auto => />.
-*)
+
++ transitivity {1} { aux_4 <@ AuxPolyVecCompress10.avx2(bp); }
+    (={bp} ==> ={aux_4})
+    ( lift_array768 bp{1} = lift_array768 bp{2} ==> aux_4{1}=aux_0{2});
+      [ smt() | smt() |  |]. admit.
+  transitivity {2} { aux_0 <@ AuxPolyVecCompress10.ref(bp); }
+    ( lift_array768 bp{1} = lift_array768 bp{2}  ==> aux_4{1} =aux_0{2})
+    (={bp} ==> ={aux_0});
+      [ smt() | smt() |  call compress10_mr;auto => /> | ]. admit.
+
 wp;conseq />.
 call (reduceequiv_noperm).
 call (addequiv_noperm 4 2 _ _) => //.
