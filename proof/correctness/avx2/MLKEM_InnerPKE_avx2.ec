@@ -27,7 +27,7 @@ import MLKEM_PolyAVXVec.
 import NTT_Avx2.
 import WArray136 WArray32 WArray128.
 import WArray512 WArray256.
-
+(*
 (* shake assumptions *)
 
 
@@ -1264,7 +1264,7 @@ do split.
 + smt().
 by smt(unpackvK).
 qed.
-
+*)
 (***************************************************)
 
  import WArray960 WArray1536 Array4.
@@ -1402,7 +1402,7 @@ proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
     t <- witness;
     i <- 0;
     j <- 0;
-    aa <@ M(Syscall).__polyvec_csubq(a);
+    aa <@ __polyvec_csubq_ref(a);
     while (i < (3 * 256 - 3)){
       k <- 0;
       while (k < 4){
@@ -1565,14 +1565,67 @@ lemma compress10_equiv_avx2mem _ctp _mem :
    equiv [ AuxPolyVecCompress10.avx2_orig ~  AuxPolyVecCompress10.avx2 :
       ={bp} /\ ctp{1} = _ctp /\ Glob.mem{1} = _mem /\ valid_ptr (to_uint ctp{1}) (128 + 3 * 320) ==> 
          Glob.mem{1} = stores _mem (to_uint _ctp) (to_list res{2}) ].
- admitted.
+proc => /=.
+seq 1 1 : #pre; 1: by conseq />;inline *;sim.
+inline {1} 1; inline {2} 1.
+wp.
+while (Glob.mem{1} = stores _mem (to_uint _ctp) (take (i{2}*20) (to_list rp{2})) /\ aux{1} = 48 /\
+         ={i,a,aux,sllv_indx, shuffle, shift, mask10, b2, b1, b0} /\ 0 <= i{2} <= 48); last 
+ by auto => />;smt(Array960.size_to_list List.take_size List.take0 storesE iota0). 
 
+seq 3 3 : (#pre /\ ={lo,hi}); 
+  1: by conseq />; sim. 
+auto => /> &1 &2 ???;split;last  by smt().
+admit.
+qed.
+
+lemma poly_reduce_noloops :
+  equiv [ AuxPolyVecCompress10.__poly_reduce ~ M(Syscall).__poly_reduce :
+   ={arg} ==> ={res} ].
+proc => /=.
+while (#pre /\ 0<=j{1} <= 256 /\ j{1} = to_uint j{2}); last by auto.
+inline *;auto => /> &2; rewrite !W64.ultE /= => *;do split;1..2:smt();by rewrite to_uintD_small  /=; smt(). 
+qed.
+
+lemma polyvec_reduce_noloops :
+  equiv [ AuxPolyVecCompress10.__polyvec_reduce ~ M(Syscall).__polyvec_reduce :
+   ={arg} ==> ={res} ].
+proc => /=.
+by do 3!(wp;call poly_reduce_noloops);auto => />.
+qed.
+
+lemma poly_csubq_noloops :
+  equiv [ AuxPolyVecCompress10._poly_csubq_ref ~ M(Syscall)._poly_csubq :
+   ={arg} ==> ={res} ].
+proc => /=.
+while (#pre /\ 0<=i{1} <= 256 /\ i{1} = to_uint i{2}); last by auto.
+inline *;auto => /> &2; rewrite !W64.ultE /= => *;do split;1..2:smt();by rewrite to_uintD_small  /=; smt(). 
+qed.
+
+lemma polyvec_csubq_noloops :
+  equiv [ AuxPolyVecCompress10.__polyvec_csubq_ref ~ M(Syscall).__polyvec_csubq :
+   ={arg} ==> ={res} ].
+proc => /=.
+by do 3!(wp;call poly_csubq_noloops);auto => />.
+qed.
 
 lemma compress10_equiv_refmem _ctp _mem :
    equiv [ AuxPolyVecCompress10.ref ~  AuxPolyVecCompress10.ref_orig :
       ={bp} /\ ctp{2} = _ctp /\ Glob.mem{2} = _mem /\ valid_ptr (to_uint ctp{2}) (128 + 3 * 320) ==> 
          Glob.mem{2} = stores _mem (to_uint _ctp) (to_list res{1}) ].
- admitted.
+ proc => /=. 
+seq 1 1 : #pre; 1: by call polyvec_reduce_noloops => />.
+inline {1} 1; inline {2} 1.
+swap {1} 3 -1;swap {2} [2..3] -1; swap {1} 7 -4; swap {2} 7 -4.
+seq 3 3 : (#pre /\ ={aa});1:by call polyvec_csubq_noloops;auto => />.
+wp;while (0 <= i{1} <= 768 /\ i{1} = to_uint i{2} /\
+       0 <= j{1} <= 960 /\ j{1} = to_uint j{2} /\
+       j{1} *4 = i{1} * 5 /\ ={aa} /\
+       Glob.mem{2} = stores _mem (to_uint _ctp) (take j{1} (to_list rr0{1}))); last 
+   by auto => />; smt(Array960.size_to_list List.take_size List.take0 storesE iota0). 
+unroll for {1} 2; unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ???????;do split;1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
+admit.
+qed.
 
 lemma compress10_equiv_avx2i  :
    equiv [ AuxPolyVecCompress10.avx2_orig_i ~  AuxPolyVecCompress10.avx2 :
@@ -1582,7 +1635,20 @@ lemma compress10_equiv_avx2i  :
 lemma compress10_equiv_refi  :
    equiv [ AuxPolyVecCompress10.ref ~  AuxPolyVecCompress10.ref_orig_i :
       ={bp} ==> ={res} ].
- admitted.
+proc. 
+seq 1 1 : #pre; 1: by call polyvec_reduce_noloops => />.
+inline {1} 1; inline {2} 1.
+swap {1} 3 -1;swap {2} [2..3] -1; swap {1} 7 -4; swap {2} 7 -4.
+seq 3 3 : (#pre /\ ={aa});1:by call polyvec_csubq_noloops;auto => />.
+wp;while (0 <= i{1} <= 768 /\ i{1} = to_uint i{2} /\ 
+       0 <= j{1} <= 960 /\ j{1} = to_uint j{2} /\
+       j{1} *4 = i{1} * 5 /\ ={aa} /\
+       (forall kk, 0 <= kk < j{1} => rr0{1}.[kk] = rp{2}.[kk])); last by  auto => />*; split;[ smt() | move => *; rewrite tP => *; smt()].
+unroll for {1} 2; unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ????????;do split; 1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
+move => kk kkb ?.
+rewrite !to_uintD_small /=;1..7:smt().
+case (kk < to_uint j{2}); by smt(Array960.get_setE).
+qed.
 
 (* MAP REDUCE GOAL *)
 lemma compress10_mr : 
