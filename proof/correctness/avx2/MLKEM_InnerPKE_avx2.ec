@@ -1862,10 +1862,13 @@ realize ofintP by admit.
 realize touintP by admit.
 realize tosintP by admit.
 
-op sliceget_10_64 (bw: W64.t) (i: int) : W10.t = W10.bits2w (W64.w2bits bw).
+op truncate64_10 (bw: W64.t) : W10.t = W10.bits2w (W64.w2bits bw).
 
-op lane_func_compress10(x : W16.t) : W10.t = sliceget_10_64 (
-   (((W4u16.zeroextu64 x) `<<` W8.of_int 10) + W64.of_int 1665) * (W64.of_int 1290167) `>>` W8.of_int 32) 0. 
+bind op [W64.t & W10.t] truncate64_10 "truncate".
+realize bvtruncateP by admit.
+
+op lane_func_compress10(x : W16.t) : W10.t = truncate64_10 (
+   (((W4u16.zeroextu64 x) `<<` W8.of_int 10) + W64.of_int 1665) * (W64.of_int 1290167) `>>` W8.of_int 32). 
 
 op lane_func_reduce(c : W16.t) : W16.t =  
     let c32 = sigextu32 c in
