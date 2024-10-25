@@ -30,7 +30,7 @@ import WArray512 WArray256.
 
 (* shake assumptions *)
 
-
+(*
 op SHAKE256_ABSORB4x_33 : W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W256.t Array25.t.
 op SHAKE256_SQUEEZENBLOCKS4x : W256.t Array25.t -> W256.t Array25.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t.
 
@@ -1266,7 +1266,7 @@ by smt(unpackvK).
 qed.
 
 (***************************************************)
-
+*)
 
  import WArray960 WArray1536 Array4.
 
@@ -1562,7 +1562,7 @@ proc __poly_reduce(rp : W16.t Array256.t) : W16.t Array256.t = {
 
 
 }.
-
+(*
 lemma compress10_equiv_avx2mem _ctp _mem :
    equiv [ AuxPolyVecCompress10.avx2_orig ~  AuxPolyVecCompress10.avx2 :
       ={bp} /\ ctp{1} = _ctp /\ Glob.mem{1} = _mem /\ valid_ptr (to_uint ctp{1}) (128 + 3 * 320) ==> 
@@ -1746,7 +1746,7 @@ qed.
 
 (*****************************************************************)
 
-
+*)
 require import Bindings.
 (* BINDINGS *)
 
@@ -1836,8 +1836,49 @@ op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.
 bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
 realize bvaslicesetP by admit.
 
-op lane (w: W16.t) = w.
+(* 
+
+op compress_alt_large (c : coeff) : int =
+  (asint c * 2 ^ 10 + (q + 1) %/ 2) * (W32.modulus %/ q) %/ W32.modulus %% 2 ^ 10.
+
+op BREDC(a bits : int) =
+   let t = smod (a * (2^bits %/ q + 1)) (R^2) %/ 2^bits * q in
+      smod (a %% R + (-t) %% R) R. *)
+
+theory W10.
+abbrev [-printing] size = 10.
+clone include BitWordSH with op size <- size
+rename "_XX" as "_10"
+proof gt0_size by done,
+size_le_256 by done.
+
+end W10. export W10 W10.ALU W10.SHIFT.
+
+bind bitstring W10.w2bits W10.bits2w W10.to_uint W10.to_sint W10.of_int W10.t 10.
+realize size_tolist by auto.
+realize tolistP by auto.
+realize oflistP by admit.
+realize ofintP by admit.
+realize touintP by admit.
+realize tosintP by admit.
+
+op sliceget_10_64 (bw: W64.t) (i: int) : W10.t = W10.bits2w (W64.w2bits bw).
+
+op lane_func_compress10(x : W16.t) : W10.t = sliceget_10_64 (
+   (((W4u16.zeroextu64 x) `<<` W8.of_int 10) + W64.of_int 1665) * (W64.of_int 1290167) `>>` W8.of_int 32) 0. 
+
+op lane_func_reduce(c : W16.t) : W16.t =  
+    let c32 = sigextu32 c in
+    let u = c32 * W32.of_int 4076929024 (*  (62209 `<<` 16) *) in
+    let u = u `|>>` W8.of_int 16 in          
+    let t = u * W32.of_int 4294963967 (* (-3329) *) in        
+    let t = t + c32 in                           
+    let t = t `|>>` W8.of_int 16 in         
+      truncateu16 t.
+
+op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w).
 op pcond (w: W16.t) = true.
+
 
 lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
 proof.
@@ -1874,8 +1915,7 @@ cfold 38.
 unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
-admit. (* 
-bdep 16 16 [_bp] [bp] [ap] lane pcond.
+bdep 16 10 [_bp] [bp] [ap] lane_polyvec_redcomp10 pcond.
 
 print get256_direct.
 *)
