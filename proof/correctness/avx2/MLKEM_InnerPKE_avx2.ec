@@ -1836,7 +1836,6 @@ op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.
 bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
 realize bvaslicesetP by admit.
 
-(* 
 
 op compress_alt_large (c : coeff) : int =
   (asint c * 2 ^ 10 + (q + 1) %/ 2) * (W32.modulus %/ q) %/ W32.modulus %% 2 ^ 10.
@@ -1880,6 +1879,31 @@ op lane_func_reduce(c : W16.t) : W16.t =
       truncateu16 t.
 
 op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w).
+
+bind circuit VPBROADCAST_8u32 "VPBROADCAST_8u32".
+bind circuit VPBROADCAST_4u64 "VPBROADCAST_4u64".
+
+bind circuit VPMADDWD_256 "VPMADDWD_16u16".
+
+bind circuit VPSLLV_8u32 "VPSLLV_8u32".
+
+bind circuit VPSRL_4u64 "VPSRL_4u64".
+
+bind circuit VPSHUFB_256 "VPSHUFB_256".
+
+bind circuit VEXTRACTI128 "VEXTRACTI128".
+
+bind circuit VPBLENDW_128 "VPBLEND_8u16".
+
+bind circuit VPEXTR_32 "VEXTRACTI32_256".
+
+bind circuit W4u32.VPEXTR_32 "VEXTRACTI32_128".
+
+
+bind op [W256.t & W128.t] truncateu128 "truncate".
+realize bvtruncateP by admit.
+
+op lane (w: W16.t) = w.
 op pcond (w: W16.t) = true.
 
 
@@ -1910,9 +1934,14 @@ proc change 37 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
 
 proc change ^while{4}.1 : (sliceget768_16_256 a i). by admit.
 
-proc change ^while{4}.25 : (init_960_8 (fun i => (sliceset960_8_128 rp (i * 20) lo).[i])). by admit.
-proc change ^while{4}.26 : (init_960_8 (fun i => (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)).[i])). 
+print set128_direct.
+
+proc change ^while{4}.25 : (init_960_8 (fun j => (sliceset960_8_128 rp (i * 20) lo).[j])). by admit.
+proc change ^while{4}.26 : (init_960_8 (fun j => (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)).[j])). 
 by admit.
+
+
+
 
 cfold 38.
 unroll for 39.
@@ -1921,7 +1950,6 @@ unroll for 16. cfold 15. unroll for 8. cfold 7.
 bdep 16 10 [_bp] [bp] [ap] lane_polyvec_redcomp10 pcond.
 
 print get256_direct.
-*)
 qed.
 
 (* MAP REDUCE GOAL *)
