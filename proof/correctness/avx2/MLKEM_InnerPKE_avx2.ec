@@ -1871,17 +1871,15 @@ op lane_func_compress10(x : W16.t) : W10.t = truncate64_10 (
    (((W4u16.zeroextu64 x) `<<` W8.of_int 10) + W64.of_int 1665) * (W64.of_int 1290167) `>>` W8.of_int 32). 
 
 op lane_func_reduce(c : W16.t) : W16.t =  
-    let c32 = sigextu32 c in
-    let u = c32 * W32.of_int 4076929024 (*  (62209 `<<` 16) *) in
-    let u = u `|>>` W8.of_int 16 in          
-    let t = u * W32.of_int 4294963967 (* (-3329) *) in        
-    let t = t + c32 in                           
-    let t = t `|>>` W8.of_int 16 in         
-      truncateu16 t.
+    let t = (sigextu32 c) in
+    let t = (t * (W32.of_int 20159)) in
+    let t = (t `|>>` (W8.of_int 26)) in
+    let t = (t * (W32.of_int 3329)) in
+    let r = (truncateu16 t) in
+       (r - (truncateu16 t)).
 
 op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w).
 op pcond (w: W16.t) = true.
-
 
 lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
 proof.
