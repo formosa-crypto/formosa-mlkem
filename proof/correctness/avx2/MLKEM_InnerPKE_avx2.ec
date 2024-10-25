@@ -30,7 +30,7 @@ import WArray512 WArray256.
 (*
 (* shake assumptions *)
 
-
+(*
 op SHAKE256_ABSORB4x_33 : W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W256.t Array25.t.
 op SHAKE256_SQUEEZENBLOCKS4x : W256.t Array25.t -> W256.t Array25.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t.
 
@@ -1267,6 +1267,7 @@ qed.
 *)
 (***************************************************)
 
+*)
  import WArray960 WArray1536 Array4.
 
 module AuxPolyVecCompress10 = {
@@ -1654,6 +1655,130 @@ qed.
 lemma compress10_mr : 
   equiv [AuxPolyVecCompress10.avx2 ~ AuxPolyVecCompress10.ref : lift_array768 bp{1} = lift_array768 bp{2}==> ={res}].
 admitted.
+
+
+require import Bindings.
+(* BINDINGS *)
+
+bind array Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list Array256.of_list Array256.t 256.
+realize tolistP by admit.
+realize get_setP by admit.
+realize eqP by admit.
+realize get_out by admit.
+
+
+bind array Array768."_.[_]" Array768."_.[_<-_]" Array768.to_list Array768.of_list Array768.t 768.
+realize tolistP by admit.
+realize get_setP by admit.
+realize eqP by admit.
+realize get_out by admit.
+
+bind array Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list Array32.of_list Array32.t 32.
+realize tolistP by admit.
+realize get_setP by admit.
+realize eqP by admit.
+realize get_out by admit.
+
+bind array Array960."_.[_]" Array960."_.[_<-_]" Array960.to_list Array960.of_list Array960.t 960.
+realize tolistP by admit.
+realize get_setP by admit.
+realize eqP by admit.
+realize get_out by admit.
+
+
+op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
+
+bind op [W16.t & Array256.t] init_256_16 "ainit".
+realize bvainitP by admit.
+
+
+op init_768_16 (f: int -> W16.t) : W16.t Array768.t = Array768.init f.
+
+bind op [W16.t & Array768.t] init_768_16 "ainit".
+realize bvainitP by admit.
+
+op init_960_8 (f: int -> W8.t) : W8.t Array960.t = Array960.init f.
+
+bind op [W8.t & Array960.t] init_960_8 "ainit".
+realize bvainitP by admit.
+
+
+print Array768.to_list.
+
+op sliceget256_16_256 (arr: W16.t Array256.t) (i: int) : W256.t.
+
+bind op [W16.t & W256.t & Array256.t] sliceget256_16_256 "asliceget".
+realize bvaslicegetP by admit.
+
+op sliceset256_16_256 (arr: W16.t Array256.t) (i: int) (bv: W256.t) : W16.t Array256.t.
+
+bind op [W16.t & W256.t & Array256.t] sliceset256_16_256 "asliceset".
+realize bvaslicesetP by admit.
+
+op sliceget32_8_256 (arr: W8.t Array32.t) (i: int) : W256.t.
+
+bind op [W8.t & W256.t & Array32.t] sliceget32_8_256 "asliceget".
+realize bvaslicegetP by admit.
+
+op sliceget768_16_256 (arr: W16.t Array768.t) (i: int) : W256.t.
+
+bind op [W16.t & W256.t & Array768.t] sliceget768_16_256 "asliceget".
+realize bvaslicegetP by admit.
+
+op sliceset960_8_128 (arr: W8.t Array960.t) (i: int) (bv: W128.t) : W8.t Array960.t.
+
+bind op [W8.t & W128.t & Array960.t] sliceset960_8_128 "asliceset".
+realize bvaslicesetP by admit.
+
+
+op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.t.
+
+bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
+realize bvaslicesetP by admit.
+
+print pvc_shufbidx_s.
+
+op lane (w: W16.t) = w.
+op pcond (w: W16.t) = true.
+
+lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
+proof.
+proc.
+inline *.
+proc change 2 : (init_256_16 (fun i => r.[i])); auto.
+proc change ^while.1 : (sliceget256_16_256 ap i0). by admit.
+proc change ^while.11 : (sliceset256_16_256 ap i0 a1). by admit.
+
+proc change 9 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])).
+by auto.
+proc change 10 : (init_256_16 (fun i => r.[256 + i])). by auto.
+proc change ^while{2}.1 : (sliceget256_16_256 ap0 i1). by admit.
+proc change ^while{2}.11 : (sliceset256_16_256 ap0 i1 a2). by admit.
+
+proc change 17 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). by auto.
+proc change 18 : (init_256_16 (fun i => r.[2*256 + i])). by auto.
+proc change ^while{3}.1 : (sliceget256_16_256 ap1 i2). by admit.
+proc change ^while{3}.11 : (sliceset256_16_256 ap1 i2 a3). by admit.
+
+proc change 25 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). by auto.
+
+proc change 35 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
+
+proc change ^while{4}.1 : (sliceget768_16_256 a i). by admit.
+
+proc change ^while{4}.25 : (init_960_8 (fun i => (sliceset960_8_128 rr0 (i * 20) lo).[i])). by admit.
+proc change ^while{4}.26 : (init_960_8 (fun i => (sliceset960_8_32 rr0 (i * 20 + 16) (VPEXTR_32 hi W8.zero)).[i])).by admit.
+
+cfold 36.
+unroll for 37.
+cfold 36. unroll for 23. cfold 22.
+unroll for 15. cfold 14. unroll for 7. cfold 6.
+
+bdep 16 16 [_bp] [bp] [ap] lane pcond.
+
+print get256_direct.
+
+
 
 lemma compress10_equiv :
    equiv [ AuxPolyVecCompress10.avx2_orig ~  AuxPolyVecCompress10.ref_orig :
