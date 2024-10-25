@@ -1836,13 +1836,14 @@ op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.
 bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
 realize bvaslicesetP by admit.
 
-
+(*
 op compress_alt_large (c : coeff) : int =
   (asint c * 2 ^ 10 + (q + 1) %/ 2) * (W32.modulus %/ q) %/ W32.modulus %% 2 ^ 10.
 
 op BREDC(a bits : int) =
    let t = smod (a * (2^bits %/ q + 1)) (R^2) %/ 2^bits * q in
       smod (a %% R + (-t) %% R) R. *)
+
 
 theory W10.
 abbrev [-printing] size = 10.
@@ -1866,16 +1867,44 @@ op truncate64_10 (bw: W64.t) : W10.t = W10.bits2w (W64.w2bits bw).
 bind op [W64.t & W10.t] truncate64_10 "truncate".
 realize bvtruncateP by admit.
 
+bind op [W64.t & W8.t] W8u8.truncateu8 "truncate".
+realize bvtruncateP by admit.
+
+bind op [W16.t & W64.t] W4u16.zeroextu64 "zextend".
+realize bvzextendP by admit.
+
+op sll_64 (w1 w2 : W64.t) : W64.t =
+  w1 `<<` (truncateu8 w2).
+
+bind op [W64.t] sll_64 "shl".
+realize bvshlP by admit.
+
+bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
+realize bvtruncateP by admit.
+
+
 op lane_func_compress10(x : W16.t) : W10.t = truncate64_10 (
-   (((W4u16.zeroextu64 x) `<<` W8.of_int 10) + W64.of_int 1665) * (W64.of_int 1290167) `>>` W8.of_int 32). 
+   sll_64 (((sll_64 (W4u16.zeroextu64 x) (W64.of_int 10)) + W64.of_int 1665) * (W64.of_int 1290167)) (W64.of_int 32)). 
+
+bind op [W16.t & W32.t] sigextu32 "sextend".
+realize bvsextendP by admit.
+
+bind op [W32.t & W8.t] W4u8.truncateu8 "truncate".
+realize bvtruncateP by admit. 
+
+op sra_32 (w1 w2 : W32.t) : W32.t =
+  w1 `|>>` (truncateu8 w2).
+
+bind op [W32.t] sra_32 "ashr".
+realize bvashrP by admit.
 
 op lane_func_reduce(c : W16.t) : W16.t =  
     let c32 = sigextu32 c in
     let u = c32 * W32.of_int 4076929024 (*  (62209 `<<` 16) *) in
-    let u = u `|>>` W8.of_int 16 in          
+    let u = sra_32 u (W32.of_int 16) in          
     let t = u * W32.of_int 4294963967 (* (-3329) *) in        
     let t = t + c32 in                           
-    let t = t `|>>` W8.of_int 16 in         
+    let t = sra_32 t (W32.of_int 16) in         
       truncateu16 t.
 
 op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w).
@@ -1947,6 +1976,9 @@ cfold 38.
 unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
+
+seq 590 : true.
+
 bdep 16 10 [_bp] [bp] [ap] lane_polyvec_redcomp10 pcond.
 
 print get256_direct.
