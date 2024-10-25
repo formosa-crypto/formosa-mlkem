@@ -13,3 +13,4 @@ idirs = code/jasmin/mlkem_avx2/extraction
 idirs = crypto-specs/common
 rdirs = crypto-specs/fips202
 rdirs = crypto-specs/ml-kem
+rdirs = ~/Desktop/Repos/easycrypt/examples

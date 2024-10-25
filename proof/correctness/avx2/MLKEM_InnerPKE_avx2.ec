@@ -1336,8 +1336,16 @@ rp <-
     return rp;
   }
 
-    proc avx2(ctp : W8.t Array1088.t, bp : W16.t Array768.t) : W8.t Array960.t = {
+    proc avx2_dummy(ctp : W8.t Array1088.t, bp : W16.t Array768.t) : W8.t Array960.t = {
        var rr : W8.t Array960.t;
+       bp <@  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce_sig(bp);  
+       rr <@ __polyvec_compress_avx2(ctp,bp);
+       return rr;
+    }
+
+    proc avx2(bp : W16.t Array768.t) : W8.t Array960.t = {
+       var rr : W8.t Array960.t;
+       var ctp : W8.t Array1088.t <- (init (fun (i_0 : int) => W8.zero))%Array1088;
        bp <@  Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_reduce_sig(bp);  
        rr <@ __polyvec_compress_avx2(ctp,bp);
        return rr;
@@ -1567,8 +1575,8 @@ lemma compress10_equiv_avx2mem _ctp _mem :
       ={bp} /\ ctp{1} = _ctp /\ Glob.mem{1} = _mem /\ valid_ptr (to_uint ctp{1}) (128 + 3 * 320) ==> 
          Glob.mem{1} = stores _mem (to_uint _ctp) (to_list res{2}) ].
 proc => /=.
-seq 1 1 : #pre; 1: by conseq />;inline *;sim.
-inline {1} 1; inline {2} 1.
+swap {2} 2 -1;seq 1 1 : #pre; 1: by conseq />;inline *;sim.
+inline {1} 1; inline {2} 2.
 wp.
 while (Glob.mem{1} = stores _mem (to_uint _ctp) (take (i{2}*20) (to_list rp{2})) /\ aux{1} = 48 /\
          ={i,a,aux,sllv_indx, shuffle, shift, mask10, b2, b1, b0} /\ 0 <= i{2} <= 48); last 
@@ -1628,9 +1636,13 @@ unroll for {1} 2; unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ???????;
 admit.
 qed.
 
+lemma compress10_equiv_avx2i_dummy  :
+   equiv [ AuxPolyVecCompress10.avx2_orig_i ~  AuxPolyVecCompress10.avx2_dummy :
+      ={bp,ctp} ==> ={res} ]  by proc;inline *;sim;auto => />.
+
 lemma compress10_equiv_avx2i  :
    equiv [ AuxPolyVecCompress10.avx2_orig_i ~  AuxPolyVecCompress10.avx2 :
-      ={bp,ctp} ==> ={res} ]  by proc;inline *;sim;auto => />.
+      ={bp} ==> ={res} ]  by admit.
 
 
 lemma compress10_equiv_refi  :
@@ -1682,6 +1694,12 @@ realize get_setP by admit.
 realize eqP by admit.
 realize get_out by admit.
 
+bind array Array1088."_.[_]" Array1088."_.[_<-_]" Array1088.to_list Array1088.of_list Array1088.t 1088.
+realize tolistP by admit.
+realize get_setP by admit.
+realize eqP by admit.
+realize get_out by admit.
+
 
 op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
 
@@ -1699,6 +1717,10 @@ op init_960_8 (f: int -> W8.t) : W8.t Array960.t = Array960.init f.
 bind op [W8.t & Array960.t] init_960_8 "ainit".
 realize bvainitP by admit.
 
+op init_1088_8 (f: int -> W8.t) : W8.t Array1088.t = Array1088.init f.
+
+bind op [W8.t & Array1088.t] init_1088_8 "ainit".
+realize bvainitP by admit.
 
 print Array768.to_list.
 
@@ -1740,24 +1762,26 @@ lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true =
 proof.
 proc.
 inline *.
-proc change 2 : (init_256_16 (fun i => r.[i])); auto.
+proc change 1 : (init_1088_8 (fun i => W8.zero)); auto.
+proc change 3 : (init_256_16 (fun i => r.[i])); auto.
 proc change ^while.1 : (sliceget256_16_256 ap i0). by admit.
 proc change ^while.11 : (sliceset256_16_256 ap i0 a1). by admit.
 
-proc change 9 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])).
+proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])).
 by auto.
-proc change 10 : (init_256_16 (fun i => r.[256 + i])). by auto.
+proc change 11 : (init_256_16 (fun i => r.[256 + i])). by auto.
 proc change ^while{2}.1 : (sliceget256_16_256 ap0 i1). by admit.
 proc change ^while{2}.11 : (sliceset256_16_256 ap0 i1 a2). by admit.
 
-proc change 17 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). by auto.
-proc change 18 : (init_256_16 (fun i => r.[2*256 + i])). by auto.
+proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). by auto.
+proc change 19 : (init_256_16 (fun i => r.[2*256 + i])). by auto.
 proc change ^while{3}.1 : (sliceget256_16_256 ap1 i2). by admit.
 proc change ^while{3}.11 : (sliceset256_16_256 ap1 i2 a3). by admit.
 
-proc change 25 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). by auto.
+proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). by auto.
 
-proc change 35 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
+proc change 30 : (init_960_8 (fun i_0 => ctp0.[i_0 + 0])). by done.
+proc change 36 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
 
 proc change ^while{4}.1 : (sliceget768_16_256 a i). by admit.
 
@@ -1765,10 +1789,10 @@ proc change ^while{4}.25 : (init_960_8 (fun i => (sliceset960_8_128 rp (i * 20) 
 proc change ^while{4}.26 : (init_960_8 (fun i => (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)).[i])). 
 by admit.
 
-cfold 37.
-unroll for 38.
-cfold 37. unroll for 23. cfold 22.
-unroll for 15. cfold 14. unroll for 7. cfold 6.
+cfold 38.
+unroll for 39.
+cfold 38. unroll for 24. cfold 23.
+unroll for 16. cfold 15. unroll for 8. cfold 7.
 
 bdep 16 16 [_bp] [bp] [ap] lane pcond.
 
