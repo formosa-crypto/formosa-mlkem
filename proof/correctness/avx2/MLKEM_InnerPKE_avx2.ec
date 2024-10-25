@@ -1651,10 +1651,7 @@ rewrite !to_uintD_small /=;1..7:smt().
 case (kk < to_uint j{2}); by smt(Array960.get_setE).
 qed.
 
-(* MAP REDUCE GOAL *)
-lemma compress10_mr : 
-  equiv [AuxPolyVecCompress10.avx2 ~ AuxPolyVecCompress10.ref : lift_array768 bp{1} = lift_array768 bp{2}==> ={res}].
-admitted.
+(*****************************************************************)
 
 
 require import Bindings.
@@ -1736,8 +1733,6 @@ op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.
 bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
 realize bvaslicesetP by admit.
 
-print pvc_shufbidx_s.
-
 op lane (w: W16.t) = w.
 op pcond (w: W16.t) = true.
 
@@ -1766,19 +1761,25 @@ proc change 35 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
 
 proc change ^while{4}.1 : (sliceget768_16_256 a i). by admit.
 
-proc change ^while{4}.25 : (init_960_8 (fun i => (sliceset960_8_128 rr0 (i * 20) lo).[i])). by admit.
-proc change ^while{4}.26 : (init_960_8 (fun i => (sliceset960_8_32 rr0 (i * 20 + 16) (VPEXTR_32 hi W8.zero)).[i])).by admit.
+proc change ^while{4}.25 : (init_960_8 (fun i => (sliceset960_8_128 rp (i * 20) lo).[i])). by admit.
+proc change ^while{4}.26 : (init_960_8 (fun i => (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)).[i])). 
+by admit.
 
-cfold 36.
-unroll for 37.
-cfold 36. unroll for 23. cfold 22.
+cfold 37.
+unroll for 38.
+cfold 37. unroll for 23. cfold 22.
 unroll for 15. cfold 14. unroll for 7. cfold 6.
 
 bdep 16 16 [_bp] [bp] [ap] lane pcond.
 
 print get256_direct.
 
+(* MAP REDUCE GOAL *)
+lemma compress10_mr : 
+  equiv [AuxPolyVecCompress10.avx2 ~ AuxPolyVecCompress10.ref : lift_array768 bp{1} = lift_array768 bp{2}==> ={res}].
+admitted.
 
+(*****************************************************************)
 
 lemma compress10_equiv :
    equiv [ AuxPolyVecCompress10.avx2_orig ~  AuxPolyVecCompress10.ref_orig :
