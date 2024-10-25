@@ -1794,6 +1794,7 @@ unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
 
+proc change 552 : (init_960_8 (fun i => ctp0.[i])). by done.
 bdep 16 16 [_bp] [bp] [ap] lane pcond.
 
 print get256_direct.
