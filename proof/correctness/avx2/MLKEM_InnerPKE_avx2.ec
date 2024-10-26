@@ -1836,14 +1836,6 @@ op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.
 bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
 realize bvaslicesetP by admit.
 
-(*
-op compress_alt_large (c : coeff) : int =
-  (asint c * 2 ^ 10 + (q + 1) %/ 2) * (W32.modulus %/ q) %/ W32.modulus %% 2 ^ 10.
-
-op BREDC(a bits : int) =
-   let t = smod (a * (2^bits %/ q + 1)) (R^2) %/ 2^bits * q in
-      smod (a %% R + (-t) %% R) R. *)
-
 
 theory W10.
 abbrev [-printing] size = 10.
@@ -1883,30 +1875,11 @@ bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
 realize bvtruncateP by admit.
 
 
-op lane_func_compress10(x : W16.t) : W10.t = truncate64_10 (
-   sll_64 (((sll_64 (W4u16.zeroextu64 x) (W64.of_int 10)) + W64.of_int 1665) * (W64.of_int 1290167)) (W64.of_int 32)). 
-
 bind op [W16.t & W32.t] sigextu32 "sextend".
 realize bvsextendP by admit.
 
 bind op [W32.t & W8.t] W4u8.truncateu8 "truncate".
 realize bvtruncateP by admit. 
-
-op sra_32 (w1 w2 : W32.t) : W32.t =
-  w1 `|>>` (truncateu8 w2).
-
-bind op [W32.t] sra_32 "ashr".
-realize bvashrP by admit.
-
-op lane_func_reduce(c : W16.t) : W16.t =  
-    let t = (sigextu32 c) in
-    let t = (t * (W32.of_int 20159)) in
-    let t = (sra_32 t (W32.of_int 26)) in
-    let t = (t * (W32.of_int 3329)) in
-    let r = (truncateu16 t) in
-       (r - (truncateu16 t)).
-
-op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w).
 
 bind circuit VPBROADCAST_8u32 "VPBROADCAST_8u32".
 bind circuit VPBROADCAST_4u64 "VPBROADCAST_4u64".
@@ -1927,11 +1900,27 @@ bind circuit VPEXTR_32 "VEXTRACTI32_256".
 
 bind circuit W4u32.VPEXTR_32 "VEXTRACTI32_128".
 
-
 bind op [W256.t & W128.t] truncateu128 "truncate".
 realize bvtruncateP by admit.
 
-op lane (w: W16.t) = w.
+op sra_32 (w1 w2 : W32.t) : W32.t =
+  w1 `|>>` (truncateu8 w2).
+
+bind op [W32.t] sra_32 "ashr".
+realize bvashrP by admit.
+
+op lane_func_reduce(c : W16.t) : W16.t =  
+    let t = ((sigextu32 c) * (W32.of_int 20159)) in
+    let t = (sra_32 t (W32.of_int 26)) in
+    let t = (t * (W32.of_int 3329)) in
+       (c - (truncateu16 t)).
+
+op lane_func_compress10(x : W16.t) : W10.t = truncate64_10 (
+   sll_64 (((sll_64 (W4u16.zeroextu64 x) (W64.of_int 10)) + W64.of_int 1665) * (W64.of_int 1290167)) (W64.of_int 32)). 
+
+op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w).
+
+op lane(w : W16.t) : W16.t = w.
 op pcond (w: W16.t) = true.
 
 lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
@@ -1961,14 +1950,9 @@ proc change 37 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
 
 proc change ^while{4}.1 : (sliceget768_16_256 a i). by admit.
 
-print set128_direct.
-
 proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 20) lo). by admit.
 proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)). 
 by admit.
-
-
-
 
 cfold 38.
 unroll for 39.
@@ -1976,9 +1960,15 @@ cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
   
 
+<<<<<<< HEAD
 bdep 16 10 [_bp] [bp] [ap] lane pcond.
 
 print get256_direct.
+=======
+seq 184 : false.
+bdep 16 16 [_bp] [bp] [r] lane pcond.
+
+>>>>>>> refs/remotes/origin/mlkem768_avx2_gen_matrix_sct_newparse_newcompress10
 qed.
 
 (* MAP REDUCE GOAL *)
