@@ -1963,8 +1963,8 @@ proc change ^while{4}.1 : (sliceget768_16_256 a i). by admit.
 
 print set128_direct.
 
-proc change ^while{4}.25 : (init_960_8 (fun j => (sliceset960_8_128 rp (i * 20) lo).[j])). by admit.
-proc change ^while{4}.26 : (init_960_8 (fun j => (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)).[j])). 
+proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 20) lo). by admit.
+proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)). 
 by admit.
 
 
@@ -1974,10 +1974,9 @@ cfold 38.
 unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
+  
 
-seq 590 : true.
-
-bdep 16 10 [_bp] [bp] [ap] lane_polyvec_redcomp10 pcond.
+bdep 16 10 [_bp] [bp] [ap] lane pcond.
 
 print get256_direct.
 qed.
