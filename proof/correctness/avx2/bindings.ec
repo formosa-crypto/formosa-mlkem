@@ -1,0 +1,1 @@
+/Users/strub/Projects/EasyCrypt/bdep/examples/bindings.ec

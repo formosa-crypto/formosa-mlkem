@@ -503,12 +503,19 @@ alias 1 inv = _in; sp 1.
 print sample_load_shuffle.
 
 proc change 1 +2 {
-  b0 <- W256.init (fun i => inv.[o      + i %/ 8].[i %% 8]);
-  b1 <- W256.init (fun i => inv.[o + 24 + i %/ 8].[i %% 8]);
+(*  b0 <- W256.init (fun i => inv.[o +      i %/ 8].[i %% 8]);
+  b1 <- W256.init (fun i => inv.[o + 24 + i %/ 8].[i %% 8]);*)
   mask <- sample_mask;
   load_shuffle <- u8_32_256 sample_load_shuffle;
-}; last sp 2.
+}. (* last sp 2.*)
 - admit.
+
+(*
+proc change 3 +2 {
+  f0 <- W256.of_int 0;
+  f1 <- W256.of_int 0;
+}; first admit.
+*)
 
 seq 12 : (#pre /\ forall i, 0 <= i < 32 =>
   extract_512_12 (concat_2u256 f0 f1) i
@@ -566,9 +573,10 @@ case <- ^t1_1<-{2} & -1; kill ^shf1_1<- & +2 !5; first by auto.
 
 
 
-
+(*
 
  & +1; kill ^t0_0'<- & +1 !5; first by auto.
+*)
 
 proc change circuit ^shuffle_0<- +1 {
   
