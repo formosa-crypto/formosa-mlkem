@@ -1836,14 +1836,6 @@ op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.
 bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
 realize bvaslicesetP by admit.
 
-(*
-op compress_alt_large (c : coeff) : int =
-  (asint c * 2 ^ 10 + (q + 1) %/ 2) * (W32.modulus %/ q) %/ W32.modulus %% 2 ^ 10.
-
-op BREDC(a bits : int) =
-   let t = smod (a * (2^bits %/ q + 1)) (R^2) %/ 2^bits * q in
-      smod (a %% R + (-t) %% R) R. *)
-
 
 theory W10.
 abbrev [-printing] size = 10.
@@ -1967,7 +1959,8 @@ unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
 
-bdep 16 16 [_bp] [bp] [ap] lane pcond.
+seq 184 : false.
+bdep 16 16 [_bp] [bp] [r] lane pcond.
 
 qed.
 
