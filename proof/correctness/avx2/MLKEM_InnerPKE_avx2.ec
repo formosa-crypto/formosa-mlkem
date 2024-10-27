@@ -1477,14 +1477,13 @@ proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
     
     aa <- witness;
     t <- witness;
-    i <- 0;
-    j <- 0;
     aa <@ __polyvec_csubq_ref(a);
+    j <- 0;
+    i <- 0;
     while (i < (3 * 256 - 3)){
       k <- 0;
       while (k < 4){
-        t.[k] <- zeroextu64 aa.[i];
-        i <- i + 1;
+        t.[k] <- zeroextu64 aa.[i+k];
         t.[k] <- t.[k] `<<` (of_int 10)%W8;
         t.[k] <- t.[k] + (of_int 1665)%W64;
         t.[k] <- t.[k] * (of_int 1290167)%W64;
@@ -1520,6 +1519,7 @@ proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
       t.[3] <- t.[3] `>>` (of_int 2)%W8;
       rp.[j] <- truncateu8 t.[3];
       j <- j + 1;
+      i <- i + 4;
     }
     
     return rp;
@@ -1781,6 +1781,12 @@ realize get_setP by admit.
 realize eqP by admit.
 realize get_out by admit.
 
+bind array Array4."_.[_]" Array4."_.[_<-_]" Array4.to_list Array4.of_list Array4.t 4.
+realize tolistP by admit.
+realize get_setP by admit.
+realize eqP by admit.
+realize get_out by admit.
+
 
 op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
 
@@ -1802,8 +1808,6 @@ op init_1088_8 (f: int -> W8.t) : W8.t Array1088.t = Array1088.init f.
 
 bind op [W8.t & Array1088.t] init_1088_8 "ainit".
 realize bvainitP by admit.
-
-print Array768.to_list.
 
 op sliceget256_16_256 (arr: W16.t Array256.t) (i: int) : W256.t.
 
@@ -1909,19 +1913,248 @@ op sra_32 (w1 w2 : W32.t) : W32.t =
 bind op [W32.t] sra_32 "ashr".
 realize bvashrP by admit.
 
+op sra_16 (w1 w2 : W16.t) : W16.t =
+  w1 `|>>` (truncateu8 w2).
+
+bind op [W16.t] sra_16 "ashr".
+realize bvashrP by admit.
+
 op lane_func_reduce(c : W16.t) : W16.t =  
-    let t = ((sigextu32 c) * (W32.of_int 20159)) in
+    let t =  (sigextu32 c)  * (W32.of_int 20159) in
     let t = (sra_32 t (W32.of_int 26)) in
-    let t = (t * (W32.of_int 3329)) in
-       (c - (truncateu16 t)).
+    let t = (t * (W32.of_int 3329)) in 
+    let r = (W16_sub c  (W2u16.truncateu16 t)) in r. 
 
 op lane_func_compress10(x : W16.t) : W10.t = truncate64_10 (
    sll_64 (((sll_64 (W4u16.zeroextu64 x) (W64.of_int 10)) + W64.of_int 1665) * (W64.of_int 1290167)) (W64.of_int 32)). 
 
-op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w).
+op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w). 
 
 op lane(w : W16.t) : W16.t = w.
 op pcond (w: W16.t) = true.
+
+lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.__i_polyvec_compress_ref : true ==> false].
+proc. 
+inline *. 
+proc change 4 : (init_256_16 (fun i => r.[i])). admit.
+proc change ^while.2: (W16_sub t0 qlocal). admit.
+proc change ^while.4 : (sra_16 b0 (W16.of_int 15)). admit.
+proc change 8 : (init_768_16 (fun i => if 0 <= i < 256 then aux0.[i] else r.[i])). admit.
+proc change 9 : (init_256_16 (fun i => r.[256+i])). admit.
+proc change ^while{2}.2: (W16_sub t1 qlocal). admit.
+proc change ^while{2}.4 : (sra_16 b1 (W16.of_int 15)).  admit.
+proc change 13 : (init_768_16 (fun i => if 256 <= i < 512 then aux0.[i-256] else r.[i])). admit.
+proc change 14 : (init_256_16 (fun i => r.[512+i])). admit.
+proc change ^while{3}.2: (W16_sub t2 qlocal). admit.
+proc change ^while{3}.4 : (sra_16 b2 (W16.of_int 15)).  admit.
+proc change 18 : (init_768_16 (fun i => if 512 <= i < 768 then aux0.[i-512] else r.[i])). admit.
+
+
+unroll for ^while. 
+cfold 5.
+unroll for ^while. 
+cfold 1800.
+unroll for ^while. 
+cfold 3595.
+unroll for ^while. 
+cfold 5391.
+do 192!(unroll for ^while).
+cfold 16278.
+cfold 16221.
+cfold 16164.
+cfold 16107.
+cfold 16050.
+cfold 15993.
+cfold 15936.
+cfold 15879.
+cfold 15822.
+cfold 15765.
+cfold 15708.
+cfold 15651.
+cfold 15594.
+cfold 15537.
+cfold 15480.
+cfold 15423.
+cfold 15366.
+cfold 15309.
+cfold 15252.
+cfold 15195.
+cfold 15138.
+cfold 15081.
+cfold 15024.
+cfold 14967.
+cfold 14910.
+cfold 14853.
+cfold 14796.
+cfold 14739.
+cfold 14682.
+cfold 14625.
+cfold 14568.
+cfold 14511.
+cfold 14454.
+cfold 14397.
+cfold 14340.
+cfold 14283.
+cfold 14226.
+cfold 14169.
+cfold 14112.
+cfold 14055.
+cfold 13998.
+cfold 13941.
+cfold 13884.
+cfold 13827.
+cfold 13770.
+cfold 13713.
+cfold 13656.
+cfold 13599.
+cfold 13542.
+cfold 13485.
+cfold 13428.
+cfold 13371.
+cfold 13314.
+cfold 13257.
+cfold 13200.
+cfold 13143.
+cfold 13086.
+cfold 13029.
+cfold 12972.
+cfold 12915.
+cfold 12858.
+cfold 12801.
+cfold 12744.
+cfold 12687.
+cfold 12630.
+cfold 12573.
+cfold 12516.
+cfold 12459.
+cfold 12402.
+cfold 12345.
+cfold 12288.
+cfold 12231.
+cfold 12174.
+cfold 12117.
+cfold 12060.
+cfold 12003.
+cfold 11946.
+cfold 11889.
+cfold 11832.
+cfold 11775.
+cfold 11718.
+cfold 11661.
+cfold 11604.
+cfold 11547.
+cfold 11490.
+cfold 11433.
+cfold 11376.
+cfold 11319.
+cfold 11262.
+cfold 11205.
+cfold 11148.
+cfold 11091.
+cfold 11034.
+cfold 10977.
+cfold 10920.
+cfold 10863.
+cfold 10806.
+cfold 10749.
+cfold 10692.
+cfold 10635.
+cfold 10578.
+cfold 10521.
+cfold 10464.
+cfold 10407.
+cfold 10350.
+cfold 10293.
+cfold 10236.
+cfold 10179.
+cfold 10122.
+cfold 10065.
+cfold 10008.
+cfold 9951.
+cfold 9894.
+cfold 9837.
+cfold 9780.
+cfold 9723.
+cfold 9666.
+cfold 9609.
+cfold 9552.
+cfold 9495.
+cfold 9438.
+cfold 9381.
+cfold 9324.
+cfold 9267.
+cfold 9210.
+cfold 9153.
+cfold 9096.
+cfold 9039.
+cfold 8982.
+cfold 8925.
+cfold 8868.
+cfold 8811.
+cfold 8754.
+cfold 8697.
+cfold 8640.
+cfold 8583.
+cfold 8526.
+cfold 8469.
+cfold 8412.
+cfold 8355.
+cfold 8298.
+cfold 8241.
+cfold 8184.
+cfold 8127.
+cfold 8070.
+cfold 8013.
+cfold 7956.
+cfold 7899.
+cfold 7842.
+cfold 7785.
+cfold 7728.
+cfold 7671.
+cfold 7614.
+cfold 7557.
+cfold 7500.
+cfold 7443.
+cfold 7386.
+cfold 7329.
+cfold 7272.
+cfold 7215.
+cfold 7158.
+cfold 7101.
+cfold 7044.
+cfold 6987.
+cfold 6930.
+cfold 6873.
+cfold 6816.
+cfold 6759.
+cfold 6702.
+cfold 6645.
+cfold 6588.
+cfold 6531.
+cfold 6474.
+cfold 6417.
+cfold 6360.
+cfold 6303.
+cfold 6246.
+cfold 6189.
+cfold 6132.
+cfold 6075.
+cfold 6018.
+cfold 5961.
+cfold 5904.
+cfold 5847.
+cfold 5790.
+cfold 5733.
+cfold 5676.
+cfold 5619.
+cfold 5562.
+cfold 5505.
+cfold 5448.
+cfold 5391.
+cfold 5390.
+wp 14413;sp 3.
+bdep 16 10 [_bp] [r] [rp]  lane_polyvec_redcomp10 pcond.
+
 
 lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
 proof.
@@ -1929,26 +2162,26 @@ proc.
 inline *.
 proc change 1 : (init_1088_8 (fun i => W8.zero)); auto.
 proc change 3 : (init_256_16 (fun i => r.[i])); auto.
-proc change ^while.1 : (sliceget256_16_256 ap i0). by admit.
-proc change ^while.11 : (sliceset256_16_256 ap i0 a1). by admit.
+proc change ^while.1 : (sliceget256_16_256 ap (i0*16)). by admit.
+proc change ^while.11 : (sliceset256_16_256 ap (i0*16) a1). by admit.
 
 proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])).
 by auto.
 proc change 11 : (init_256_16 (fun i => r.[256 + i])). by auto.
-proc change ^while{2}.1 : (sliceget256_16_256 ap0 i1). by admit.
-proc change ^while{2}.11 : (sliceset256_16_256 ap0 i1 a2). by admit.
+proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*16)). by admit.
+proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*16) a2). by admit.
 
 proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). by auto.
 proc change 19 : (init_256_16 (fun i => r.[2*256 + i])). by auto.
-proc change ^while{3}.1 : (sliceget256_16_256 ap1 i2). by admit.
-proc change ^while{3}.11 : (sliceset256_16_256 ap1 i2 a3). by admit.
+proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*16)). by admit.
+proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*16) a3). by admit.
 
 proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). by auto.
 
 proc change 30 : (init_960_8 (fun i_0 => ctp0.[i_0 + 0])). by done.
 proc change 37 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
 
-proc change ^while{4}.1 : (sliceget768_16_256 a i). by admit.
+proc change ^while{4}.1 : (sliceget768_16_256 a (i*16)). by admit.
 
 proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 20) lo). by admit.
 proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)). 
@@ -1959,16 +2192,9 @@ unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
   
+seq 548 : #post.
+bdep 16 16 [_bp] [bp] [r] lane_func_reduce pcond.
 
-<<<<<<< HEAD
-bdep 16 10 [_bp] [bp] [ap] lane pcond.
-
-print get256_direct.
-=======
-seq 184 : false.
-bdep 16 16 [_bp] [bp] [r] lane pcond.
-
->>>>>>> refs/remotes/origin/mlkem768_avx2_gen_matrix_sct_newparse_newcompress10
 qed.
 
 (* MAP REDUCE GOAL *)
