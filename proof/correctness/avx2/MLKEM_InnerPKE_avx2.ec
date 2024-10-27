@@ -1933,6 +1933,7 @@ op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_r
 op lane(w : W16.t) : W16.t = w.
 op pcond (w: W16.t) = true.
 
+(*
 lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.__i_polyvec_compress_ref : true ==> false].
 proc. 
 inline *. 
@@ -2154,7 +2155,7 @@ cfold 5391.
 cfold 5390.
 wp 14413;sp 3.
 bdep 16 10 [_bp] [r] [rp]  lane_polyvec_redcomp10 pcond.
-
+*)
 
 lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
 proof.
@@ -2191,9 +2192,9 @@ cfold 38.
 unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
-  
-seq 548 : #post.
-bdep 16 16 [_bp] [bp] [r] lane_func_reduce pcond.
+
+wp 1807.
+bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond.
 
 qed.
 
