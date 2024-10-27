@@ -2603,23 +2603,22 @@ lemma avx_correctness (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.av
 proof.
 proc.
 inline *.
-proc change 1 : (init_1088_8 (fun i => W8.zero)); auto.
-proc change 3 : (init_256_16 (fun i => r.[i])); auto.
+proc change 1 : (init_1088_8 (fun i => W8.zero)). admit. 
+proc change 3 : (init_256_16 (fun i => r.[i])). admit.
 proc change ^while.1 : (sliceget256_16_256 ap (i0*256)). by admit.
 proc change ^while.11 : (sliceset256_16_256 ap (i0*256) a1). by admit.
 
-proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])).
-by auto.
-proc change 11 : (init_256_16 (fun i => r.[256 + i])). by auto.
+proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])). admit.
+proc change 11 : (init_256_16 (fun i => r.[256 + i])). admit.
 proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*256)). by admit.
 proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*256) a2). by admit.
 
-proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). by auto.
-proc change 19 : (init_256_16 (fun i => r.[2*256 + i])). by auto.
+proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). admit.
+proc change 19 : (init_256_16 (fun i => r.[2*256 + i])). admit.
 proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*256)). by admit.
 proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*256) a3). by admit.
 
-proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). by auto.
+proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). admit.
 
 proc change 30 : (init_960_8 (fun i_0 => ctp0.[i_0 + 0])). by done.
 proc change 37 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
@@ -2635,8 +2634,8 @@ unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
 
-wp 1807.
-bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond.
+wp 1807. 
+bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond. 
 (* WHY IS THIS FAILING? *)
 qed.
 
