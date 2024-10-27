@@ -1562,6 +1562,7 @@ proc __poly_reduce(rp : W16.t Array256.t) : W16.t Array256.t = {
 
 
 }.
+
 (*
 lemma compress10_equiv_avx2mem _ctp _mem :
    equiv [ AuxPolyVecCompress10.avx2_orig ~  AuxPolyVecCompress10.avx2 :
@@ -1932,9 +1933,10 @@ op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_r
 
 op lane(w : W16.t) : W16.t = w.
 op pcond (w: W16.t) = true.
+op pcond2 (w: W16.t) = w \ult W16.of_int (3229 * 2).
 
-(*
-lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.__i_polyvec_compress_ref : true ==> false].
+(* 
+lemma ref_correctness (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.__i_polyvec_compress_ref : true ==> false].
 proc. 
 inline *. 
 proc change 4 : (init_256_16 (fun i => r.[i])). admit.
@@ -1949,7 +1951,6 @@ proc change 14 : (init_256_16 (fun i => r.[512+i])). admit.
 proc change ^while{3}.2: (W16_sub t2 qlocal). admit.
 proc change ^while{3}.4 : (sra_16 b2 (W16.of_int 15)).  admit.
 proc change 18 : (init_768_16 (fun i => if 512 <= i < 768 then aux0.[i-512] else r.[i])). admit.
-
 
 unroll for ^while. 
 cfold 5.
@@ -2154,38 +2155,40 @@ cfold 5448.
 cfold 5391.
 cfold 5390.
 wp 14413;sp 3.
-bdep 16 10 [_bp] [r] [rp]  lane_polyvec_redcomp10 pcond.
+
+bdep 16 10 [_bp] [r] [rp]  lane_func_compress10 pcond2.
+
 *)
 
-lemma blah (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
+lemma avx_correctness (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> false].
 proof.
 proc.
 inline *.
 proc change 1 : (init_1088_8 (fun i => W8.zero)); auto.
 proc change 3 : (init_256_16 (fun i => r.[i])); auto.
-proc change ^while.1 : (sliceget256_16_256 ap (i0*16)). by admit.
-proc change ^while.11 : (sliceset256_16_256 ap (i0*16) a1). by admit.
+proc change ^while.1 : (sliceget256_16_256 ap (i0*256)). by admit.
+proc change ^while.11 : (sliceset256_16_256 ap (i0*256) a1). by admit.
 
 proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])).
 by auto.
 proc change 11 : (init_256_16 (fun i => r.[256 + i])). by auto.
-proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*16)). by admit.
-proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*16) a2). by admit.
+proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*256)). by admit.
+proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*256) a2). by admit.
 
 proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). by auto.
 proc change 19 : (init_256_16 (fun i => r.[2*256 + i])). by auto.
-proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*16)). by admit.
-proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*16) a3). by admit.
+proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*256)). by admit.
+proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*256) a3). by admit.
 
 proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). by auto.
 
 proc change 30 : (init_960_8 (fun i_0 => ctp0.[i_0 + 0])). by done.
 proc change 37 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
 
-proc change ^while{4}.1 : (sliceget768_16_256 a (i*16)). by admit.
+proc change ^while{4}.1 : (sliceget768_16_256 a (i*256)). by admit.
 
-proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 20) lo). by admit.
-proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 20 + 16) (VPEXTR_32 hi W8.zero)). 
+proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 160) lo). by admit.
+proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 160 + 128) (VPEXTR_32 hi W8.zero)). 
 by admit.
 
 cfold 38.
@@ -2194,7 +2197,7 @@ cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
 
 wp 1807.
-bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond.
+bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond2.
 
 qed.
 
