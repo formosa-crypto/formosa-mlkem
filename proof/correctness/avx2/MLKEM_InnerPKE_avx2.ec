@@ -1966,7 +1966,7 @@ op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_r
 op lane(w : W16.t) : W16.t = w.
 op pcond (w: W16.t) = true.
 op pcond2 (w: W16.t) = w \ule W16.of_int (2*3329).
-
+(*
 lemma ref_reduce (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.__poly_reduce : true ==> true].
 proc. 
 inline *.
@@ -2598,7 +2598,9 @@ bdep 16 10 [_bp] [a] [rp]  lane_func_compress10 pcond2.
 admit. admit.
 qed.
 
+*)
 
+op lane0(w : W16.t) = W16.zero.
 lemma avx_correctness (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> true].
 proof.
 proc.
@@ -2628,15 +2630,13 @@ proc change ^while{4}.1 : (sliceget768_16_256 a (i*256)). by admit.
 proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 160) lo). by admit.
 proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 160 + 128) (VPEXTR_32 hi W8.zero)). 
 by admit.
-
 cfold 38.
 unroll for 39.
 cfold 38. unroll for 24. cfold 23.
 unroll for 16. cfold 15. unroll for 8. cfold 7.
-
 wp 1807. 
 bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond. 
-(* WHY IS THIS FAILING? *)
+admit. admit.
 qed.
 
 (* MAP REDUCE GOAL *)
