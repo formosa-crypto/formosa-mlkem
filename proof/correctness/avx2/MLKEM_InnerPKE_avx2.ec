@@ -1389,7 +1389,7 @@ proc _poly_csubq_ref(rp : W16.t Array256.t) : W16.t Array256.t = {
     return r;
   }
 
-proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
+(* proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
     var aux : int;
     var i : int;
     var j : int;
@@ -1464,33 +1464,51 @@ proc __polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
     
     return rr;
   }
+*)
 
-  proc __i_polyvec_compress_ref(rp : W8.t Array960.t, a : W16.t Array768.t) : W8.t Array960.t = {
+  proc __i_polyvec_compress_ref(a : W16.t Array768.t) : W8.t Array960.t = {
     var aux : int;
     var i : int;
     var j : int;
     var aa : W16.t Array768.t;
-    var k : int;
     var t : W64.t t;
     var c : W16.t;
     var b : W16.t;
     
-    rp <- Array960.init(fun _ => W8.zero);
+    var rp : W8.t Array960.t  <- Array960.init(fun _ => W8.zero);
     t <- Array4.init(fun _ => W64.zero);
     aa <@ __polyvec_csubq_ref(a);
     j <- 0;
     i <- 0;
     while (i < (3 * 256 - 3)){
-      k <- 0;
-      while (k < 4){
-        t.[k] <- zeroextu64 aa.[i+k];
-        t.[k] <- t.[k] `<<` (of_int 10)%W8;
-        t.[k] <- t.[k] + (of_int 1665)%W64;
-        t.[k] <- t.[k] * (of_int 1290167)%W64;
-        t.[k] <- t.[k] `>>` (of_int 32)%W8;
-        t.[k] <- t.[k] `&` (of_int 1023)%W64;
-        k <- k + 1;
-      }
+      (* k = 0 *)
+        t.[0] <- zeroextu64 aa.[i+0];
+        t.[0] <- t.[0] `<<` (of_int 10)%W8;
+        t.[0] <- t.[0] + (of_int 1665)%W64;
+        t.[0] <- t.[0] * (of_int 1290167)%W64;
+        t.[0] <- t.[0] `>>` (of_int 32)%W8;
+        t.[0] <- t.[0] `&` (of_int 1023)%W64;
+      (* k = 1 *)
+        t.[1] <- zeroextu64 aa.[i+1];
+        t.[1] <- t.[1] `<<` (of_int 10)%W8;
+        t.[1] <- t.[1] + (of_int 1665)%W64;
+        t.[1] <- t.[1] * (of_int 1290167)%W64;
+        t.[1] <- t.[1] `>>` (of_int 32)%W8;
+        t.[1] <- t.[1] `&` (of_int 1023)%W64;
+      (* k = 2 *)
+        t.[2] <- zeroextu64 aa.[i+2];
+        t.[2] <- t.[2] `<<` (of_int 10)%W8;
+        t.[2] <- t.[2] + (of_int 1665)%W64;
+        t.[2] <- t.[2] * (of_int 1290167)%W64;
+        t.[2] <- t.[2] `>>` (of_int 32)%W8;
+        t.[2] <- t.[2] `&` (of_int 1023)%W64;
+      (* k = 3 *)
+        t.[3] <- zeroextu64 aa.[i+3];
+        t.[3] <- t.[3] `<<` (of_int 10)%W8;
+        t.[3] <- t.[3] + (of_int 1665)%W64;
+        t.[3] <- t.[3] * (of_int 1290167)%W64;
+        t.[3] <- t.[3] `>>` (of_int 32)%W8;
+        t.[3] <- t.[3] `&` (of_int 1023)%W64;
       c <- truncateu16 t.[0];
       c <- c `&` (of_int 255)%W16;
       rp.[j] <- truncateu8 c;
@@ -1556,14 +1574,13 @@ proc __poly_reduce(rp : W16.t Array256.t) : W16.t Array256.t = {
     proc ref(bp : W16.t Array768.t) : W8.t Array960.t = {
        var rr : W8.t Array960.t;
        bp <@  __polyvec_reduce(bp);  
-       rr <@ __polyvec_compress_ref(bp);
+       rr <@ __i_polyvec_compress_ref(bp);
        return rr;
     }
 
 
 }.
 
-(*
 lemma compress10_equiv_avx2mem _ctp _mem :
    equiv [ AuxPolyVecCompress10.avx2_orig ~  AuxPolyVecCompress10.avx2 :
       ={bp} /\ ctp{1} = _ctp /\ Glob.mem{1} = _mem /\ valid_ptr (to_uint ctp{1}) (128 + 3 * 320) ==> 
@@ -1638,60 +1655,17 @@ lemma compress10_equiv_refmem _ctp _mem :
  proc => /=. 
 seq 1 1 : #pre; 1: by call polyvec_reduce_noloops => />.
 inline {1} 1; inline {2} 1.
-swap {1} 3 -1;swap {2} [2..3] -1; swap {1} 7 -4; swap {2} 7 -4.
-seq 3 3 : (#pre /\ ={aa});1:by call polyvec_csubq_noloops;auto => />.
+swap {1} 3 -1; swap {1} 4 -2; swap {2} [2..3] -1; swap {2} 7 -4.
+seq 2 3 : (#pre /\ ={aa});1:by call polyvec_csubq_noloops;auto => />.
 wp;while (0 <= i{1} <= 768 /\ i{1} = to_uint i{2} /\ valid_ptr (to_uint rp{2}) (128 + 3 * 320)  /\
        0 <= j{1} <= 960 /\ j{1} = to_uint j{2} /\ rp{2} = _ctp /\
        j{1} *4 = i{1} * 5 /\ ={aa} /\
-       Glob.mem{2} = stores _mem (to_uint _ctp) (take j{1} (to_list rr0{1}))); last 
+       Glob.mem{2} = stores _mem (to_uint _ctp) (take j{1} (to_list rp{1}))); last 
    by auto => />; smt(Array960.size_to_list List.take_size List.take0 storesE iota0). 
-unroll for {1} 2; unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ?????????;do split;1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
+unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ?????????;do split;1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
 rewrite /storeW8 /=.
 apply mem_eq_ext => adr.
  rewrite !to_uintD_small /= 1..16:/# !addrA.
- pose x1 := truncateu8
-    (truncateu16
-       ((((zeroextu64 aa{2}.[to_uint i{2}] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-         (of_int 32)%W8) `&`
-        (of_int 1023)%W64) `&`
-     (of_int 255)%W16).
- pose x2 := truncateu8
-    ((truncateu16
-        ((((zeroextu64 aa{2}.[to_uint i{2} + 1] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-          (of_int 32)%W8) `&`
-         (of_int 1023)%W64) `<<`
-      (of_int 2)%W8) `|`
-     (truncateu16
-        ((((zeroextu64 aa{2}.[to_uint i{2}] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-          (of_int 32)%W8) `&`
-         (of_int 1023)%W64) `>>`
-      (of_int 8)%W8)).
-pose x3 := truncateu8
-    ((truncateu16
-        ((((zeroextu64 aa{2}.[to_uint i{2} + 2] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-          (of_int 32)%W8) `&`
-         (of_int 1023)%W64) `<<`
-      (of_int 4)%W8) `|`
-     (truncateu16
-        ((((zeroextu64 aa{2}.[to_uint i{2} + 1] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-          (of_int 32)%W8) `&`
-         (of_int 1023)%W64) `>>`
-      (of_int 6)%W8)).
-pose x4 := truncateu8
-    ((truncateu16
-        ((((zeroextu64 aa{2}.[to_uint i{2} + 3] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-          (of_int 32)%W8) `&`
-         (of_int 1023)%W64) `<<`
-      (of_int 6)%W8) `|`
-     (truncateu16
-        ((((zeroextu64 aa{2}.[to_uint i{2} + 2] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-          (of_int 32)%W8) `&`
-         (of_int 1023)%W64) `>>`
-      (of_int 4)%W8)).
-pose x5 := truncateu8
-    ((((zeroextu64 aa{2}.[to_uint i{2} + 3] `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-      (of_int 32)%W8) `&`
-     (of_int 1023)%W64 `>>` (of_int 2)%W8).
 rewrite !get_storesE.
 case (to_uint _ctp + to_uint j{2} <= adr < to_uint _ctp + to_uint j{2} + 5); last first.
 case (to_uint _ctp <= adr < to_uint _ctp + to_uint j{2}); last first. 
@@ -1701,7 +1675,7 @@ case (to_uint _ctp <= adr < to_uint _ctp + to_uint j{2}); last first.
    move => *;do 5!(rewrite get_set_neqE_s 1:/#).
   rewrite !size_take 1:/# size_to_list /= ifT 1:/# nth_take 1,2:/# /to_list nth_mkseq 1:/# /= get_storesE size_take 1:/# size_mkseq /= ifT 1:/#. 
   by rewrite nth_take 1,2:/# nth_mkseq 1:/# /=; smt(Array960.get_setE). 
-move => *. rewrite size_take 1:/# size_to_list ifT 1:/# nth_take 1,2:/# /to_list nth_mkseq 1:/# /=.
+move => *; rewrite size_take 1:/# size_to_list ifT 1:/# nth_take 1,2:/# /to_list nth_mkseq 1:/# /=.
 by smt(Array960.get_setE get_set_neqE_s get_set_eqE_s).
 qed.
 
@@ -1733,13 +1707,13 @@ lemma compress10_equiv_refi  :
 proc. 
 seq 1 1 : #pre; 1: by call polyvec_reduce_noloops => />.
 inline {1} 1; inline {2} 1.
-swap {1} 3 -1;swap {2} [2..3] -1; swap {1} 7 -4; swap {2} 7 -4.
-seq 3 3 : (#pre /\ ={aa});1:by call polyvec_csubq_noloops;auto => />.
+swap {1} 4 -2;swap {2} [2..3] -1; swap {2} 7 -4.
+seq 2 3 : (#pre /\ ={aa});1:by call polyvec_csubq_noloops;auto => />.
 wp;while (0 <= i{1} <= 768 /\ i{1} = to_uint i{2} /\ 
        0 <= j{1} <= 960 /\ j{1} = to_uint j{2} /\
        j{1} *4 = i{1} * 5 /\ ={aa} /\
-       (forall kk, 0 <= kk < j{1} => rr0{1}.[kk] = rp{2}.[kk])); last by  auto => />*; split;[ smt() | move => *; rewrite tP => *; smt()].
-unroll for {1} 2; unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ????????;do split; 1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
+       (forall kk, 0 <= kk < j{1} => rp{1}.[kk] = rp{2}.[kk])); last by  auto => />*; split;[ smt() | move => *; rewrite tP => *; smt()].
+unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ????????;do split; 1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
 move => kk kkb ?.
 rewrite !to_uintD_small /=;1..7:smt().
 case (kk < to_uint j{2}); by smt(Array960.get_setE).
@@ -1747,78 +1721,78 @@ qed.
 
 (*****************************************************************)
 
-*)
+
 require import Bindings.
 (* BINDINGS *)
 
 bind array Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list Array256.of_list Array256.t 256.
-realize tolistP by admit.
-realize get_setP by admit.
-realize eqP by admit.
-realize get_out by admit.
+realize tolistP by done.
+realize get_setP by smt(Array256.get_setE). 
+realize eqP by smt(Array256.tP).
+realize get_out by smt(Array256.get_out).
 
 
 bind array Array768."_.[_]" Array768."_.[_<-_]" Array768.to_list Array768.of_list Array768.t 768.
-realize tolistP by admit.
-realize get_setP by admit.
-realize eqP by admit.
-realize get_out by admit.
+realize tolistP by done.
+realize get_setP by smt(Array768.get_setE). 
+realize eqP by smt(Array768.tP).
+realize get_out by smt(Array768.get_out).
 
 bind array Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list Array32.of_list Array32.t 32.
-realize tolistP by admit.
-realize get_setP by admit.
-realize eqP by admit.
-realize get_out by admit.
+realize tolistP by done.
+realize get_setP by smt(Array32.get_setE). 
+realize eqP by smt(Array32.tP).
+realize get_out by smt(Array32.get_out).
 
 bind array Array960."_.[_]" Array960."_.[_<-_]" Array960.to_list Array960.of_list Array960.t 960.
-realize tolistP by admit.
-realize get_setP by admit.
-realize eqP by admit.
-realize get_out by admit.
+realize tolistP by done.
+realize get_setP by smt(Array960.get_setE). 
+realize eqP by smt(Array960.tP).
+realize get_out by smt(Array960.get_out).
 
 bind array Array1088."_.[_]" Array1088."_.[_<-_]" Array1088.to_list Array1088.of_list Array1088.t 1088.
-realize tolistP by admit.
-realize get_setP by admit.
-realize eqP by admit.
-realize get_out by admit.
+realize tolistP by done.
+realize get_setP by smt(Array1088.get_setE). 
+realize eqP by smt(Array1088.tP).
+realize get_out by smt(Array1088.get_out).
 
 bind array Array4."_.[_]" Array4."_.[_<-_]" Array4.to_list Array4.of_list Array4.t 4.
-realize tolistP by admit.
-realize get_setP by admit.
-realize eqP by admit.
-realize get_out by admit.
+realize tolistP by done.
+realize get_setP by smt(Array4.get_setE). 
+realize eqP by smt(Array4.tP).
+realize get_out by smt(Array4.get_out).
 
 
 op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
 
-bind op [W16.t & Array256.t] init_256_16 "ainit".
-realize bvainitP by admit.
+bind op [W16.t & Array256.t] init_256_16 "ainit". print Array256.to_list.
+realize bvainitP by admit. (* Not provable *)
 
 
 op init_768_16 (f: int -> W16.t) : W16.t Array768.t = Array768.init f.
 
 bind op [W16.t & Array768.t] init_768_16 "ainit".
-realize bvainitP by admit.
+realize bvainitP by admit. (* Not provable *)
 
 op init_4_64 (f: int -> W64.t) : W64.t Array4.t = Array4.init f.
 
 bind op [W64.t & Array4.t] init_4_64 "ainit".
-realize bvainitP by admit.
+realize bvainitP by admit. (* Not provable *)
 
 op init_960_8 (f: int -> W8.t) : W8.t Array960.t = Array960.init f.
 
 bind op [W8.t & Array960.t] init_960_8 "ainit".
-realize bvainitP by admit.
+realize bvainitP by admit. (* Not provable *)
 
 op init_1088_8 (f: int -> W8.t) : W8.t Array1088.t = Array1088.init f.
 
 bind op [W8.t & Array1088.t] init_1088_8 "ainit".
-realize bvainitP by admit.
+realize bvainitP by admit. (* Not provable *)
 
 op sliceget256_16_256 (arr: W16.t Array256.t) (i: int) : W256.t.
 
 bind op [W16.t & W256.t & Array256.t] sliceget256_16_256 "asliceget".
-realize bvaslicegetP by admit.
+realize bvaslicegetP  by admit.
 
 op sliceset256_16_256 (arr: W16.t Array256.t) (i: int) (bv: W256.t) : W16.t Array256.t.
 
@@ -1856,21 +1830,45 @@ size_le_256 by done.
 
 end W10. export W10 W10.ALU W10.SHIFT.
 
+import BitEncoding.BS2Int.
 bind bitstring W10.w2bits W10.bits2w W10.to_uint W10.to_sint W10.of_int W10.t 10.
 realize size_tolist by auto.
 realize tolistP by auto.
-realize oflistP by admit.
-realize ofintP by admit.
-realize touintP by admit.
-realize tosintP by admit.
+realize oflistP by smt(W10.bits2wK). 
+realize ofintP by move => *;rewrite /of_int int2bs_mod.
+realize tosintP. move => bv /=;rewrite /to_sint /smod /BVA_Top_W10_t.msb.
+have -> /=: nth false (w2bits bv) (10 - 1) = 2 ^ (10 - 1) <= to_uint bv; last by smt().
+rewrite /to_uint. 
+rewrite -{2}(cat_take_drop 9 (w2bits bv)).
+rewrite bs2int_cat size_take // W10.size_w2bits /=.
+rewrite -bs2int_div //= get_to_uint //=.
+rewrite -bs2int_mod // /= /to_uint.
+have ? : 2^10 = 1024 by rewrite /=.
+by smt(bs2int_range mem_range W10.size_w2bits).
+qed.
+realize touintP by smt().
 
 op truncate64_10 (bw: W64.t) : W10.t = W10.bits2w (W64.w2bits bw).
 
 bind op [W64.t & W10.t] truncate64_10 "truncate".
-realize bvtruncateP by admit.
+realize bvtruncateP. 
+move => mv. rewrite /truncate64_10 /W64.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+by rewrite !nth_mkseq // /bits2w initiE //= nth_mkseq /#.  
+qed.
 
 bind op [W64.t & W8.t] W8u8.truncateu8 "truncate".
-realize bvtruncateP by admit.
+realize bvtruncateP. 
+move => mv; rewrite /truncateu8 /W64.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // nth_mkseq //=. 
+rewrite get_to_uint //= /to_uint.
+have -> /=: (0 <= i && i < 64) by smt().
+pose a := bs2int (w2bits mv).
+admit.
+qed.
 
 bind op [W16.t & W8.t] W2u8.truncateu8 "truncate".
 realize bvtruncateP by admit.
@@ -1885,7 +1883,7 @@ op sll_64 (w1 w2 : W64.t) : W64.t =
   w1 `<<` (truncateu8 w2).
 
 bind op [W64.t] sll_64 "shl".
-realize bvshlP by admit.
+realize bvshlP by  admit.
 
 bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
 realize bvtruncateP by admit.
@@ -1949,7 +1947,6 @@ op srl_64 (w1 w2 : W64.t) : W64.t =
 bind op [W64.t] srl_64 "shr".
 realize bvshrP by admit.
 
-
 op lane_func_reduce(c : W16.t) : W16.t =  
     let t =  (sigextu32 c)  * (W32.of_int 20159) in
     let t = (sra_32 t (W32.of_int 26)) in
@@ -1966,14 +1963,15 @@ op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_r
 op lane(w : W16.t) : W16.t = w.
 op pcond (w: W16.t) = true.
 op pcond2 (w: W16.t) = w \ule W16.of_int (2*3329).
-(*
+
+
 lemma ref_reduce (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.__poly_reduce : true ==> true].
 proc. 
 inline *.
-proc change ^while.5 : (sra_32 t0 (W32.of_int 26)). admit.
+proc change ^while.5 : (sra_32 t0 (W32.of_int 26)).  admit.
 proc change ^while.9 : (W16_sub r (truncateu16 t0)). admit.
 unroll for ^while.
-cfold 1. wp 2816.
+wp 2816.
 bdep 16 16 [_bp] [rp] [rp]  lane_func_reduce pcond.
 admit. admit. 
 qed.
@@ -1996,609 +1994,32 @@ proc change 14 : (init_256_16 (fun i => r.[512+i])). admit.
 proc change ^while{3}.2: (W16_sub t2 qlocal). admit.
 proc change ^while{3}.4 : (sra_16 b2 (W16.of_int 15)).  admit.
 proc change 18 : (init_768_16 (fun i => if 512 <= i < 768 then aux0.[i-512] else r.[i])). admit.
-proc change ^while{4}.8 : (srl_16 b (W16.of_int 8)). admit.
-proc change ^while{4}.10 : (sll_16 c (W16.of_int 2)). admit.
-proc change ^while{4}.15 : (srl_16 b (W16.of_int 6)). admit.
-proc change ^while{4}.17 : (sll_16 c (W16.of_int 4)). admit.
-proc change ^while{4}.22 : (srl_16 b (W16.of_int 4)). admit.
-proc change ^while{4}.24 : (sll_16 c (W16.of_int 6)). admit.
-proc change ^while{4}.28 : (t.[3 <- srl_64 t.[3] (W64.of_int 2)]). admit.
+proc change ^while{4}.2 :  (t.[0 <- sll_64 t.[0] (W64.of_int 10)]). admit.
+proc change ^while{4}.5 :  (t.[0 <- srl_64 t.[0] (W64.of_int 32)]). admit.
+proc change ^while{4}.8 :  (t.[1 <- sll_64 t.[1] (W64.of_int 10)]). admit.
+proc change ^while{4}.11 : (t.[1 <- srl_64 t.[1] (W64.of_int 32)]). admit.
+proc change ^while{4}.14 : (t.[2 <- sll_64 t.[2] (W64.of_int 10)]). admit.
+proc change ^while{4}.17 : (t.[2 <- srl_64 t.[2] (W64.of_int 32)]). admit.
+proc change ^while{4}.20 : (t.[3 <- sll_64 t.[3] (W64.of_int 10)]). admit.
+proc change ^while{4}.23 : (t.[3 <- srl_64 t.[3] (W64.of_int 32)]). admit.
+proc change ^while{4}.30 : (srl_16 b (W16.of_int 8)). admit.
+proc change ^while{4}.32 : (sll_16 c (W16.of_int 2)). admit.
+proc change ^while{4}.37 : (srl_16 b (W16.of_int 6)). admit.
+proc change ^while{4}.39 : (sll_16 c (W16.of_int 4)). admit.
+proc change ^while{4}.44 : (srl_16 b (W16.of_int 4)). admit.
+proc change ^while{4}.46 : (sll_16 c (W16.of_int 6)). admit.
+proc change ^while{4}.50 : (t.[3 <- srl_64 t.[3] (W64.of_int 2)]). admit.
 
+do 4!(unroll for ^while).
 
-unroll for ^while. 
-cfold 5.
-unroll for ^while. 
-cfold 1800.
-unroll for ^while. 
-cfold 3595.
-unroll for ^while. 
-cfold 5391.
-proc change ^while{192}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{192}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{191}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{191}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{190}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{190}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{189}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{189}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{188}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{188}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{187}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{187}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{186}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{186}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{185}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{185}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{184}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{184}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{183}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{183}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{182}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{182}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{181}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{181}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{180}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{180}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{179}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{179}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{178}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{178}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{177}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{177}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{176}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{176}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{175}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{175}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{174}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{174}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{173}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{173}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{172}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{172}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{171}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{171}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{170}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{170}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{169}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{169}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{168}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{168}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{167}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{167}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{166}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{166}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{165}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{165}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{164}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{164}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{163}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{163}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{162}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{162}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{161}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{161}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{160}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{160}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{159}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{159}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{158}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{158}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{157}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{157}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{156}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{156}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{155}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{155}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{154}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{154}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{153}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{153}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{152}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{152}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{151}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{151}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{150}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{150}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{149}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{149}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{148}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{148}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{147}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{147}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{146}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{146}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{145}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{145}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{144}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{144}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{143}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{143}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{142}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{142}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{141}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{141}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{140}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{140}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{139}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{139}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{138}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{138}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{137}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{137}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{136}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{136}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{135}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{135}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{134}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{134}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{133}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{133}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{132}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{132}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{131}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{131}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{130}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{130}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{129}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{129}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{128}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{128}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{127}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{127}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{126}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{126}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{125}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{125}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{124}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{124}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{123}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{123}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{122}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{122}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{121}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{121}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{120}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{120}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{119}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{119}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{118}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{118}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{117}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{117}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{116}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{116}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{115}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{115}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{114}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{114}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{113}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{113}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{112}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{112}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{111}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{111}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{110}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{110}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{109}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{109}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{108}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{108}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{107}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{107}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{106}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{106}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{105}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{105}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{104}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{104}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{103}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{103}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{102}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{102}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{101}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{101}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{100}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{100}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{99}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{99}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{98}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{98}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{97}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{97}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{96}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{96}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{95}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{95}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{94}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{94}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{93}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{93}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{92}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{92}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{91}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{91}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{90}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{90}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{89}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{89}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{88}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{88}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{87}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{87}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{86}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{86}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{85}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{85}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{84}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{84}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{83}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{83}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{82}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{82}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{81}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{81}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{80}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{80}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{79}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{79}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{78}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{78}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{77}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{77}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{76}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{76}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{75}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{75}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{74}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{74}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{73}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{73}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{72}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{72}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{71}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{71}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{70}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{70}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{69}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{69}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{68}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{68}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{67}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{67}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{66}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{66}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{65}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{65}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{64}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{64}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{63}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{63}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{62}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{62}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{61}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{61}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{60}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{60}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{59}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{59}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{58}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{58}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{57}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{57}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{56}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{56}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{55}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{55}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{54}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{54}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{53}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{53}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{52}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{52}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{51}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{51}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{50}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{50}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{49}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{49}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{48}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{48}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{47}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{47}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{46}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{46}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{45}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{45}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{44}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{44}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{43}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{43}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{42}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{42}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{41}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{41}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{40}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{40}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{39}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{39}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{38}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{38}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{37}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{37}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{36}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{36}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{35}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{35}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{34}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{34}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{33}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{33}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{32}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{32}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{31}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{31}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{30}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{30}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{29}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{29}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{28}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{28}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{27}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{27}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{26}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{26}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{25}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{25}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{24}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{24}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{23}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{23}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{22}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{22}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{21}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{21}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{20}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{20}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{19}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{19}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{18}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{18}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{17}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{17}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{16}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{16}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{15}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{15}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{14}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{14}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{13}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{13}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{12}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{12}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{11}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{11}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{10}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{10}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{9}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{9}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{8}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{8}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{7}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{7}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{6}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{6}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{5}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{5}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{4}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{4}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{3}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{3}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{2}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{2}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-proc change ^while{1}.2 : (t.[k <- sll_64 t.[k] (W64.of_int 10)]). admit.
-proc change ^while{1}.5 : (t.[k <- srl_64 t.[k] (W64.of_int 32)]). admit.
-do 192!(unroll for ^while).
-cfold 16278.
-cfold 16221.
-cfold 16164.
-cfold 16107.
-cfold 16050.
-cfold 15993.
-cfold 15936.
-cfold 15879.
-cfold 15822.
-cfold 15765.
-cfold 15708.
-cfold 15651.
-cfold 15594.
-cfold 15537.
-cfold 15480.
-cfold 15423.
-cfold 15366.
-cfold 15309.
-cfold 15252.
-cfold 15195.
-cfold 15138.
-cfold 15081.
-cfold 15024.
-cfold 14967.
-cfold 14910.
-cfold 14853.
-cfold 14796.
-cfold 14739.
-cfold 14682.
-cfold 14625.
-cfold 14568.
-cfold 14511.
-cfold 14454.
-cfold 14397.
-cfold 14340.
-cfold 14283.
-cfold 14226.
-cfold 14169.
-cfold 14112.
-cfold 14055.
-cfold 13998.
-cfold 13941.
-cfold 13884.
-cfold 13827.
-cfold 13770.
-cfold 13713.
-cfold 13656.
-cfold 13599.
-cfold 13542.
-cfold 13485.
-cfold 13428.
-cfold 13371.
-cfold 13314.
-cfold 13257.
-cfold 13200.
-cfold 13143.
-cfold 13086.
-cfold 13029.
-cfold 12972.
-cfold 12915.
-cfold 12858.
-cfold 12801.
-cfold 12744.
-cfold 12687.
-cfold 12630.
-cfold 12573.
-cfold 12516.
-cfold 12459.
-cfold 12402.
-cfold 12345.
-cfold 12288.
-cfold 12231.
-cfold 12174.
-cfold 12117.
-cfold 12060.
-cfold 12003.
-cfold 11946.
-cfold 11889.
-cfold 11832.
-cfold 11775.
-cfold 11718.
-cfold 11661.
-cfold 11604.
-cfold 11547.
-cfold 11490.
-cfold 11433.
-cfold 11376.
-cfold 11319.
-cfold 11262.
-cfold 11205.
-cfold 11148.
-cfold 11091.
-cfold 11034.
-cfold 10977.
-cfold 10920.
-cfold 10863.
-cfold 10806.
-cfold 10749.
-cfold 10692.
-cfold 10635.
-cfold 10578.
-cfold 10521.
-cfold 10464.
-cfold 10407.
-cfold 10350.
-cfold 10293.
-cfold 10236.
-cfold 10179.
-cfold 10122.
-cfold 10065.
-cfold 10008.
-cfold 9951.
-cfold 9894.
-cfold 9837.
-cfold 9780.
-cfold 9723.
-cfold 9666.
-cfold 9609.
-cfold 9552.
-cfold 9495.
-cfold 9438.
-cfold 9381.
-cfold 9324.
-cfold 9267.
-cfold 9210.
-cfold 9153.
-cfold 9096.
-cfold 9039.
-cfold 8982.
-cfold 8925.
-cfold 8868.
-cfold 8811.
-cfold 8754.
-cfold 8697.
-cfold 8640.
-cfold 8583.
-cfold 8526.
-cfold 8469.
-cfold 8412.
-cfold 8355.
-cfold 8298.
-cfold 8241.
-cfold 8184.
-cfold 8127.
-cfold 8070.
-cfold 8013.
-cfold 7956.
-cfold 7899.
-cfold 7842.
-cfold 7785.
-cfold 7728.
-cfold 7671.
-cfold 7614.
-cfold 7557.
-cfold 7500.
-cfold 7443.
-cfold 7386.
-cfold 7329.
-cfold 7272.
-cfold 7215.
-cfold 7158.
-cfold 7101.
-cfold 7044.
-cfold 6987.
-cfold 6930.
-cfold 6873.
-cfold 6816.
-cfold 6759.
-cfold 6702.
-cfold 6645.
-cfold 6588.
-cfold 6531.
-cfold 6474.
-cfold 6417.
-cfold 6360.
-cfold 6303.
-cfold 6246.
-cfold 6189.
-cfold 6132.
-cfold 6075.
-cfold 6018.
-cfold 5961.
-cfold 5904.
-cfold 5847.
-cfold 5790.
-cfold 5733.
-cfold 5676.
-cfold 5619.
-cfold 5562.
-cfold 5505.
-cfold 5448.
-cfold 5391.
+cfold 1797.
+cfold 3592.
+cfold 5387.
 cfold 5390.
-
 wp 14413.
-
 bdep 16 10 [_bp] [a] [rp]  lane_func_compress10 pcond2.
 admit. admit.
 qed.
-
-*)
 
 op lane0(w : W16.t) = W16.zero.
 lemma avx_correctness (_bp : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.avx2 : true ==> true].
@@ -2632,8 +2053,12 @@ proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 160 + 128) (VPEXTR_32 hi W8
 by admit.
 cfold 38.
 unroll for 39.
-cfold 38. unroll for 24. cfold 23.
-unroll for 16. cfold 15. unroll for 8. cfold 7.
+unroll for 24. 
+unroll for 16. 
+unroll for 8. 
+cfold 183.
+cfold 365.
+cfold 547.
 wp 1807. 
 bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond. 
 admit. admit.
