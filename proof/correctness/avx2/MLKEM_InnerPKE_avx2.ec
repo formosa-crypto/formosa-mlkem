@@ -1765,7 +1765,7 @@ realize get_out by smt(Array4.get_out).
 
 op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
 
-bind op [W16.t & Array256.t] init_256_16 "ainit". print Array256.to_list.
+bind op [W16.t & Array256.t] init_256_16 "ainit". 
 realize bvainitP by admit. (* Not provable *)
 
 
@@ -1789,33 +1789,37 @@ op init_1088_8 (f: int -> W8.t) : W8.t Array1088.t = Array1088.init f.
 bind op [W8.t & Array1088.t] init_1088_8 "ainit".
 realize bvainitP by admit. (* Not provable *)
 
-op sliceget256_16_256 (arr: W16.t Array256.t) (i: int) : W256.t.
+op sliceget256_16_256 (arr: W16.t Array256.t) (i: int) : W256.t = WArray512.get256 (WArray512.init16 (fun (i_0 : int) => arr.[i_0])) (i %/ 256).
 
 bind op [W16.t & W256.t & Array256.t] sliceget256_16_256 "asliceget".
 realize bvaslicegetP  by admit.
 
-op sliceset256_16_256 (arr: W16.t Array256.t) (i: int) (bv: W256.t) : W16.t Array256.t.
+op sliceset256_16_256 (arr: W16.t Array256.t) (i: int) (bv: W256.t) : W16.t Array256.t = Array256.init (fun (i3 : int) => get16 (set256 ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (i %/ 256) bv) i3).
 
 bind op [W16.t & W256.t & Array256.t] sliceset256_16_256 "asliceset".
 realize bvaslicesetP by admit.
 
-op sliceget32_8_256 (arr: W8.t Array32.t) (i: int) : W256.t.
+op sliceget32_8_256 (arr: W8.t Array32.t) (i: int) : W256.t = get256 (WArray32.init8 (fun (i_0 : int) => pvc_shufbidx_s.[i_0])) (i%/256).
 
 bind op [W8.t & W256.t & Array32.t] sliceget32_8_256 "asliceget".
 realize bvaslicegetP by admit.
 
-op sliceget768_16_256 (arr: W16.t Array768.t) (i: int) : W256.t.
+op sliceget768_16_256 (arr: W16.t Array768.t) (i: int) : W256.t = get256 (WArray1536.init16 (fun (i_0 : int) => arr.[i_0])) (i %/ 256). 
 
 bind op [W16.t & W256.t & Array768.t] sliceget768_16_256 "asliceget".
 realize bvaslicegetP by admit.
 
-op sliceset960_8_128 (arr: W8.t Array960.t) (i: int) (bv: W128.t) : W8.t Array960.t.
+op sliceset960_8_128 (arr: W8.t Array960.t) (i: int) (bv: W128.t) : W8.t Array960.t = Array960.init (get8 (set128_direct ((init8 (fun (i_0 : int) => arr.[i_0])))%WArray960 (i %/ 8) bv)).
 
 bind op [W8.t & W128.t & Array960.t] sliceset960_8_128 "asliceset".
 realize bvaslicesetP by admit.
 
 
-op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.t.
+op sliceset960_8_32 (arr: W8.t Array960.t) (i: int) (bv: W32.t) : W8.t Array960.t = Array960.init
+     (WArray960.get8
+        (set32_direct (WArray960.init8 (fun (i_0 : int) => arr.[i_0])) (
+           i %/ 8) bv)).
+
 
 bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
 realize bvaslicesetP by admit.
@@ -1978,18 +1982,18 @@ lemma ref_polyvec_reduce (_r : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.
     map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list res))]))].
 proc. 
 inline *.
-proc change 1 : (init_256_16 (fun i => r.[i])). admit.
-proc change ^while{1}.5 : (sra_32 t2 (W32.of_int 26)).  admit.
-proc change ^while{1}.9 : (W16_sub r0 (truncateu16 t2)). admit.
-proc change 5 : (init_768_16 (fun i => if 0 <= i < 256 then aux.[i] else r.[i])). admit.
-proc change 6 : (init_256_16 (fun i => r.[256+i])). admit.
-proc change ^while{2}.5 : (sra_32 t3 (W32.of_int 26)).  admit.
-proc change ^while{2}.9 : (W16_sub r1 (truncateu16 t3)). admit.
-proc change 10 : (init_768_16 (fun i => if 256 <= i < 512 then aux.[i-256] else r.[i])). admit.
-proc change 11 : (init_256_16 (fun i => r.[512+i])). admit.
-proc change ^while{3}.5 : (sra_32 t4 (W32.of_int 26)).  admit.
-proc change ^while{3}.9 : (W16_sub r2 (truncateu16 t4)). admit.
-proc change 15 : (init_768_16 (fun i => if 512 <= i < 768 then aux.[i-512] else r.[i])). admit.
+proc change 1 : (init_256_16 (fun i => r.[i]));1: by auto.
+proc change ^while{1}.5 : (sra_32 t2 (W32.of_int 26));1: by auto.
+proc change ^while{1}.9 : (W16_sub r0 (truncateu16 t2));1: by auto.
+proc change 5 : (init_768_16 (fun i => if 0 <= i < 256 then aux.[i] else r.[i]));1: by auto.
+proc change 6 : (init_256_16 (fun i => r.[256+i]));1: by auto.
+proc change ^while{2}.5 : (sra_32 t3 (W32.of_int 26));1: by auto.
+proc change ^while{2}.9 : (W16_sub r1 (truncateu16 t3));1: by auto.
+proc change 10 : (init_768_16 (fun i => if 256 <= i < 512 then aux.[i-256] else r.[i]));1: by auto.
+proc change 11 : (init_256_16 (fun i => r.[512+i]));1: by auto.
+proc change ^while{3}.5 : (sra_32 t4 (W32.of_int 26));1: by auto.
+proc change ^while{3}.9 : (W16_sub r2 (truncateu16 t4));1: by auto.
+proc change 15 : (init_768_16 (fun i => if 512 <= i < 768 then aux.[i-512] else r.[i]));1: by auto.
 do 3!(unroll for ^while).
 cfold 2818.
 cfold 5637.
@@ -2007,35 +2011,35 @@ map lane_func_compress10 (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2
     map W10.bits2w (chunk 10 (flatten [flatten (map W8.w2bits (to_list res))]))].
 proc. 
 inline *. 
-proc change 1 : (init_960_8 (fun i => W8.zero)). admit.
-proc change 2 : (init_4_64 (fun i => W64.zero)). admit.
-proc change 4 : (init_256_16 (fun i => r.[i])). admit.
-proc change ^while.2: (W16_sub t0 qlocal). admit.
-proc change ^while.4 : (sra_16 b0 (W16.of_int 15)). admit.
-proc change 8 : (init_768_16 (fun i => if 0 <= i < 256 then aux0.[i] else r.[i])). admit.
-proc change 9 : (init_256_16 (fun i => r.[256+i])). admit.
-proc change ^while{2}.2: (W16_sub t1 qlocal). admit.
-proc change ^while{2}.4 : (sra_16 b1 (W16.of_int 15)).  admit.
-proc change 13 : (init_768_16 (fun i => if 256 <= i < 512 then aux0.[i-256] else r.[i])). admit.
-proc change 14 : (init_256_16 (fun i => r.[512+i])). admit.
-proc change ^while{3}.2: (W16_sub t2 qlocal). admit.
-proc change ^while{3}.4 : (sra_16 b2 (W16.of_int 15)).  admit.
-proc change 18 : (init_768_16 (fun i => if 512 <= i < 768 then aux0.[i-512] else r.[i])). admit.
-proc change ^while{4}.2 :  (t.[0 <- sll_64 t.[0] (W64.of_int 10)]). admit.
-proc change ^while{4}.5 :  (t.[0 <- srl_64 t.[0] (W64.of_int 32)]). admit.
-proc change ^while{4}.8 :  (t.[1 <- sll_64 t.[1] (W64.of_int 10)]). admit.
-proc change ^while{4}.11 : (t.[1 <- srl_64 t.[1] (W64.of_int 32)]). admit.
-proc change ^while{4}.14 : (t.[2 <- sll_64 t.[2] (W64.of_int 10)]). admit.
-proc change ^while{4}.17 : (t.[2 <- srl_64 t.[2] (W64.of_int 32)]). admit.
-proc change ^while{4}.20 : (t.[3 <- sll_64 t.[3] (W64.of_int 10)]). admit.
-proc change ^while{4}.23 : (t.[3 <- srl_64 t.[3] (W64.of_int 32)]). admit.
-proc change ^while{4}.30 : (srl_16 b (W16.of_int 8)). admit.
-proc change ^while{4}.32 : (sll_16 c (W16.of_int 2)). admit.
-proc change ^while{4}.37 : (srl_16 b (W16.of_int 6)). admit.
-proc change ^while{4}.39 : (sll_16 c (W16.of_int 4)). admit.
-proc change ^while{4}.44 : (srl_16 b (W16.of_int 4)). admit.
-proc change ^while{4}.46 : (sll_16 c (W16.of_int 6)). admit.
-proc change ^while{4}.50 : (t.[3 <- srl_64 t.[3] (W64.of_int 2)]). admit.
+proc change 1 : (init_960_8 (fun i => W8.zero));1: by auto.
+proc change 2 : (init_4_64 (fun i => W64.zero));1: by auto.
+proc change 4 : (init_256_16 (fun i => r.[i]));1: by auto.
+proc change ^while.2: (W16_sub t0 qlocal);1: by auto.
+proc change ^while.4 : (sra_16 b0 (W16.of_int 15));1: by auto.
+proc change 8 : (init_768_16 (fun i => if 0 <= i < 256 then aux0.[i] else r.[i]));1: by auto.
+proc change 9 : (init_256_16 (fun i => r.[256+i]));1: by auto.
+proc change ^while{2}.2: (W16_sub t1 qlocal);1: by auto.
+proc change ^while{2}.4 : (sra_16 b1 (W16.of_int 15));1: by auto.
+proc change 13 : (init_768_16 (fun i => if 256 <= i < 512 then aux0.[i-256] else r.[i]));1: by auto.
+proc change 14 : (init_256_16 (fun i => r.[512+i]));1: by auto.
+proc change ^while{3}.2: (W16_sub t2 qlocal);1: by auto.
+proc change ^while{3}.4 : (sra_16 b2 (W16.of_int 15));1: by auto.
+proc change 18 : (init_768_16 (fun i => if 512 <= i < 768 then aux0.[i-512] else r.[i]));1: by auto.
+proc change ^while{4}.2 :  (t.[0 <- sll_64 t.[0] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.5 :  (t.[0 <- srl_64 t.[0] (W64.of_int 32)]);1: by auto.
+proc change ^while{4}.8 :  (t.[1 <- sll_64 t.[1] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.11 : (t.[1 <- srl_64 t.[1] (W64.of_int 32)]);1: by auto.
+proc change ^while{4}.14 : (t.[2 <- sll_64 t.[2] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.17 : (t.[2 <- srl_64 t.[2] (W64.of_int 32)]);1: by auto.
+proc change ^while{4}.20 : (t.[3 <- sll_64 t.[3] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.23 : (t.[3 <- srl_64 t.[3] (W64.of_int 32)]);1: by auto.
+proc change ^while{4}.30 : (srl_16 b (W16.of_int 8));1: by auto.
+proc change ^while{4}.32 : (sll_16 c (W16.of_int 2));1: by auto.
+proc change ^while{4}.37 : (srl_16 b (W16.of_int 6));1: by auto.
+proc change ^while{4}.39 : (sll_16 c (W16.of_int 4));1: by auto.
+proc change ^while{4}.44 : (srl_16 b (W16.of_int 4));1: by auto.
+proc change ^while{4}.46 : (sll_16 c (W16.of_int 6));1: by auto.
+proc change ^while{4}.50 : (t.[3 <- srl_64 t.[3] (W64.of_int 2)]);1: by auto.
 
 do 4!(unroll for ^while).
 
@@ -2074,31 +2078,30 @@ map lane_polyvec_redcomp10 (map W16.bits2w (chunk 16 (flatten [flatten (map W16.
 proof.
 proc.
 inline *.
-proc change 1 : (init_1088_8 (fun i => W8.zero)). admit. 
-proc change 3 : (init_256_16 (fun i => r.[i])). admit.
-proc change ^while.1 : (sliceget256_16_256 ap (i0*256)). by admit.
-proc change ^while.11 : (sliceset256_16_256 ap (i0*256) a1). by admit.
+proc change 1 : (init_1088_8 (fun i => W8.zero));1: by auto. 
+proc change 3 : (init_256_16 (fun i => r.[i]));1: by auto.
+proc change ^while.1 : (sliceget256_16_256 ap (i0*256));1: by smt().
+proc change ^while.11 : (sliceset256_16_256 ap (i0*256) a1);1: by smt().
 
-proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i])). admit.
-proc change 11 : (init_256_16 (fun i => r.[256 + i])). admit.
-proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*256)). by admit.
-proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*256) a2). by admit.
+proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i]));1: by auto.
+proc change 11 : (init_256_16 (fun i => r.[256 + i]));1: by auto.
+proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*256));1: by smt().
+proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*256) a2);1: by smt().
 
-proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i])). admit.
-proc change 19 : (init_256_16 (fun i => r.[2*256 + i])). admit.
-proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*256)). by admit.
-proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*256) a3). by admit.
+proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i]));1: by auto.
+proc change 19 : (init_256_16 (fun i => r.[2*256 + i]));1: by auto.
+proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*256));1: by smt().
+proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*256) a3);1: by smt().
 
-proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i])). admit.
+proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i]));1: by auto.
 
-proc change 30 : (init_960_8 (fun i_0 => ctp0.[i_0 + 0])). by done.
-proc change 37 : (sliceget32_8_256 pvc_shufbidx_s 0). by admit.
+proc change 30 : (init_960_8 (fun i_0 => ctp0.[i_0 + 0]));1: by done.
+proc change 37 : (sliceget32_8_256 pvc_shufbidx_s 0);1: by auto.
 
-proc change ^while{4}.1 : (sliceget768_16_256 a (i*256)). by admit.
+proc change ^while{4}.1 : (sliceget768_16_256 a (i*256));1: by smt().
 
-proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 160) lo). by admit.
-proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 160 + 128) (VPEXTR_32 hi W8.zero)). 
-by admit.
+proc change ^while{4}.25 : (sliceset960_8_128 rp (i * 160) lo); 1: by smt().
+proc change ^while{4}.26 : (sliceset960_8_32 rp (i * 160 + 128) (VPEXTR_32 hi W8.zero));1: by smt().
 cfold 38.
 unroll for 39.
 unroll for 24. 
