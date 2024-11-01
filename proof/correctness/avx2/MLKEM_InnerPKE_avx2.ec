@@ -1765,29 +1765,55 @@ realize get_out by smt(Array4.get_out).
 
 op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
 
-bind op [W16.t & Array256.t] init_256_16 "ainit". 
-realize bvainitP by admit. (* Not provable bvinit has no semantics *)
-
+bind op [W16.t & Array256.t] init_256_16 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_256_16 => f.
+rewrite BVA_Top_Array256_Array256_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array256.initE).
+qed.
 
 op init_768_16 (f: int -> W16.t) : W16.t Array768.t = Array768.init f.
 
+print Array768.initE.
+
 bind op [W16.t & Array768.t] init_768_16 "ainit".
-realize bvainitP by admit. (* Not provable *)
+realize bvainitP.
+rewrite /init_768_16 => f.
+rewrite BVA_Top_Array768_Array768_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array768.initE).
+qed.
 
 op init_4_64 (f: int -> W64.t) : W64.t Array4.t = Array4.init f.
 
 bind op [W64.t & Array4.t] init_4_64 "ainit".
-realize bvainitP by admit. (* Not provable *)
+realize bvainitP.
+proof.
+rewrite /init_4_64 => f.
+rewrite BVA_Top_Array4_Array4_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array4.initE).
+qed.
 
 op init_960_8 (f: int -> W8.t) : W8.t Array960.t = Array960.init f.
 
 bind op [W8.t & Array960.t] init_960_8 "ainit".
-realize bvainitP by admit. (* Not provable *)
+realize bvainitP.
+proof.
+rewrite /init_960_8 => f.
+rewrite BVA_Top_Array960_Array960_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array960.initE).
+qed.
 
 op init_1088_8 (f: int -> W8.t) : W8.t Array1088.t = Array1088.init f.
 
 bind op [W8.t & Array1088.t] init_1088_8 "ainit".
-realize bvainitP by admit. (* Not provable *)
+realize bvainitP.
+proof.
+rewrite /init_1088_8 => f.
+rewrite BVA_Top_Array1088_Array1088_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array1088.initE).
+qed.
 
 op sliceget256_16_256 (arr: W16.t Array256.t) (i: int) : W256.t = WArray512.get256 (WArray512.init16 (fun (i_0 : int) => arr.[i_0])) (i %/ 256).
 
@@ -1929,7 +1955,22 @@ op sll_64 (w1 w2 : W64.t) : W64.t =
   w1 `<<` (truncateu8 w2).
 
 bind op [W64.t] sll_64 "shl".
-realize bvshlP by  admit. (* not provable. mod 2^64 missing? *)
+realize bvshlP. 
+proof.
+rewrite /sll_64 => bv1 bv2.
+rewrite /(`<<`).
+rewrite W64.to_uint_shl.
+smt(W8.to_uint_cmp).
+rewrite /truncateu8.
+case : (to_uint bv2 < 64).
+move => bv2bnd />.
+do 2! (rewrite (pmod_small (to_uint bv2) _);
+smt(W64.to_uint_cmp)).
+admit. (* Need to decide on semantics *)
+qed.
+
+
+(* not provable. mod 2^64 missing? *)
 
 bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
 realize bvtruncateP.
@@ -2030,12 +2071,39 @@ bind op [W16.t] sra_16 "ashr".
 realize bvashrP by admit.
 
 op srl_16 (w1 w2 : W16.t) : W16.t =
+  if 16 <= (to_uint w2) then W16.zero else
   w1 `>>` (truncateu8 w2).
 
 bind op [W16.t] srl_16 "shr".
 realize bvshrP.
-move => v1 v2; rewrite /srl_16 /(`>>`) to_uint_shr;1:smt(W16.to_uint_cmp).
-admit. (* not provable. missing %% 256? *)
+move => w1 w2. 
+rewrite /srl_16.
+case : (16 <= to_uint w2).
+move => gt.
+simplify.
+rewrite eq_sym.
+apply (divz_eq0 (to_uint w1) (2 ^ to_uint w2)).
+admit.
+split.
+smt(W16.to_uint_cmp).
+have : (2 ^ 16 <= 2 ^ (to_uint w2)).
+admit.
+move => bnd2.
+smt(W16.to_uint_cmp).
+move => bnd.
+have : (to_uint w2 < 16).
+smt().
+move => bnd2.
+
+rewrite /srl_16 /(`>>`) to_uint_shr.
+smt(W16.to_uint_cmp).
+rewrite /truncateu8.
+rewrite to_uint_small.
+smt(W16.to_uint_cmp).
+congr. congr.
+rewrite pmod_small.
+smt(W16.to_uint_cmp).
+trivial.
 qed.
 
 op sll_16 (w1 w2 : W16.t) : W16.t =
