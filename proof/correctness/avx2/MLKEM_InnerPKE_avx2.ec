@@ -1958,17 +1958,12 @@ bind op [W64.t] sll_64 "shl".
 realize bvshlP. 
 proof.
 rewrite /sll_64 => bv1 bv2.
-search W64.to_uint.
-print W64.to_uint_shl.
 rewrite /(`<<`).
 rewrite W64.to_uint_shl.
-search W64.to_uint.
 smt(W8.to_uint_cmp).
 rewrite /truncateu8.
 case : (to_uint bv2 < 64).
 move => bv2bnd />.
-search edivz.
-print pmod_small.
 do 2! (rewrite (pmod_small (to_uint bv2) _);
 smt(W64.to_uint_cmp)).
 admit. (* Need to decide on semantics *)
@@ -2076,12 +2071,39 @@ bind op [W16.t] sra_16 "ashr".
 realize bvashrP by admit.
 
 op srl_16 (w1 w2 : W16.t) : W16.t =
+  if 16 <= (to_uint w2) then W16.zero else
   w1 `>>` (truncateu8 w2).
 
 bind op [W16.t] srl_16 "shr".
 realize bvshrP.
-move => v1 v2; rewrite /srl_16 /(`>>`) to_uint_shr;1:smt(W16.to_uint_cmp).
-admit. (* not provable. missing %% 256? *)
+move => w1 w2. 
+rewrite /srl_16.
+case : (16 <= to_uint w2).
+move => gt.
+simplify.
+rewrite eq_sym.
+apply (divz_eq0 (to_uint w1) (2 ^ to_uint w2)).
+admit.
+split.
+smt(W16.to_uint_cmp).
+have : (2 ^ 16 <= 2 ^ (to_uint w2)).
+admit.
+move => bnd2.
+smt(W16.to_uint_cmp).
+move => bnd.
+have : (to_uint w2 < 16).
+smt().
+move => bnd2.
+
+rewrite /srl_16 /(`>>`) to_uint_shr.
+smt(W16.to_uint_cmp).
+rewrite /truncateu8.
+rewrite to_uint_small.
+smt(W16.to_uint_cmp).
+congr. congr.
+rewrite pmod_small.
+smt(W16.to_uint_cmp).
+trivial.
 qed.
 
 op sll_16 (w1 w2 : W16.t) : W16.t =
