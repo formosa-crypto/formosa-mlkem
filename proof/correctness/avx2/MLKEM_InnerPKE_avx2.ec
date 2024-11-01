@@ -2067,26 +2067,28 @@ op pcond_all (w: W16.t) = true.
 op pcond_reduced (w: W16.t) = w \ule W16.of_int (2*3329).
 
 lemma reduce_commutes x xr : xr = lane_func_reduce x => pcond_reduced xr.
-rewrite /lane_func_reduce /pcond_reduced. print Fq.SignedReductions.
+rewrite /lane_func_reduce /pcond_reduced /=.
 have := Fq.SignedReductions.BREDCp_corr (to_sint x) 26 _ _ _ _ _ _; rewrite ?qE /R //=.
 + by have /= := W16.to_sint_cmp x;smt(). 
 + by smt(). 
 move => [#] ??? Hr.
-have -> : xr = W16.of_int (Fq.SignedReductions.BREDC (to_sint x) 26); last by smt(W16.to_uintK W16.of_uintK pow2_16). search W32.(`|>>`).
-rewrite Hr /W16_sub /sra_32 /sigextu32 /truncateu16 /= Fq.SAR_sem26  !W32.of_sintK /= !W32.of_uintK W16.to_uint_eq to_uintD. 
+have  : to_sint xr = Fq.SignedReductions.BREDC (to_sint x) 26; last  by smt(W16.to_uintK W16.of_uintK pow2_16).
+rewrite Hr /W16_sub /sra_32. 
+rewrite /sigextu32 /truncateu16 /= Fq.SAR_sem26  !W32.of_sintK /= !W32.of_uintK W16.to_sintE to_uintD /=.
 pose xx := (smod (to_sint x * 20159 %% 4294967296))%W32 %/ 67108864 * 3329.
-have -> /= : to_uint (- (of_int (xx %% W32.modulus))%W16) = to_uint (W16.of_int (-xx)).
+have -> : to_uint (- (of_int (xx %% 4294967296))%W16) = to_uint (W16.of_int (-xx)).
 + rewrite of_uintK of_intN' W16.of_uintK /=.
   case (xx %% 2^32 = 0); 1: by smt().
   move => /= *; rewrite modNz; 1,2: smt(modz_ge0). 
   by rewrite -modzDml (modz_dvd xx (65536 * 65536) 65536); smt().
-rewrite /BREDC /R /= !Fq.smod_W32  !Fq.smod_W16 qE /= -/xx !of_uintK /=.
+      
+rewrite /BREDC /R /= !Fq.smod_W32  !Fq.smod_W16 qE /= -/xx of_uintK /=.
 congr;congr.
-rewrite to_sintE /smod /=.
-case (32768 <= to_uint x); last by admit.
-move => H. 
+rewrite to_sintE /smod /=. 
+case (2 ^ (16 - 1) <= to_uint x); last by smt(W16.to_uint_cmp pow2_16).
+move => H; rewrite H /=. 
 have ->: to_uint x - 65536 = to_uint x + (-1) * 65536; 1: by ring.
-rewrite modzMDr.  admit.
+by rewrite modzMDr; smt(W16.to_uint_cmp pow2_16).
 qed.
 
 import BitEncoding.BitChunking.
