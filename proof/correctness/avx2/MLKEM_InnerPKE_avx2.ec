@@ -2020,25 +2020,18 @@ qed.
 
 
 op sll_64 (w1 w2 : W64.t) : W64.t =
-  w1 `<<` (truncateu8 w2).
+  if (to_uint w2 < 64) then w1 `<<` (truncateu8 w2) else W64.zero.
 
 bind op [W64.t] sll_64 "shl".
 realize bvshlP. 
 proof.
 rewrite /sll_64 => bv1 bv2.
-rewrite /(`<<`).
-rewrite W64.to_uint_shl.
-smt(W8.to_uint_cmp).
-rewrite /truncateu8.
 case : (to_uint bv2 < 64).
-move => bv2bnd />.
-do 2! (rewrite (pmod_small (to_uint bv2) _);
-smt(W64.to_uint_cmp)).
-admit. (* Need to decide on semantics *)
++ rewrite /(`<<`) W64.to_uint_shl; 1: by smt(W8.to_uint_cmp).
+  rewrite /truncateu8  => bv2bnd />.
+  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W64.to_uint_cmp)).
+admit. (* What is the circuit behavior? Does it give zero? *) 
 qed.
-
-
-(* not provable. mod 2^64 missing? *)
 
 bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
 realize bvtruncateP.
@@ -2282,20 +2275,20 @@ proc change 14 : (init_256_16 (fun i => r.[512+i]));1: by auto.
 proc change ^while{3}.2: (W16_sub t2 qlocal);1: by auto.
 proc change ^while{3}.4 : (sra_16 b2 (W16.of_int 15));1: by auto.
 proc change 18 : (init_768_16 (fun i => if 512 <= i < 768 then aux0.[i-512] else r.[i]));1: by auto.
-proc change ^while{4}.2 :  (t.[0 <- sll_64 t.[0] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.2 :  (t.[0 <- sll_64 t.[0] (W64.of_int 10)]); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64). 
 proc change ^while{4}.5 :  (t.[0 <- srl_64 t.[0] (W64.of_int 32)]);1: by auto.
-proc change ^while{4}.8 :  (t.[1 <- sll_64 t.[1] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.8 :  (t.[1 <- sll_64 t.[1] (W64.of_int 10)]); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
 proc change ^while{4}.11 : (t.[1 <- srl_64 t.[1] (W64.of_int 32)]);1: by auto.
-proc change ^while{4}.14 : (t.[2 <- sll_64 t.[2] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.14 : (t.[2 <- sll_64 t.[2] (W64.of_int 10)]); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
 proc change ^while{4}.17 : (t.[2 <- srl_64 t.[2] (W64.of_int 32)]);1: by auto.
-proc change ^while{4}.20 : (t.[3 <- sll_64 t.[3] (W64.of_int 10)]);1: by auto.
+proc change ^while{4}.20 : (t.[3 <- sll_64 t.[3] (W64.of_int 10)]); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
 proc change ^while{4}.23 : (t.[3 <- srl_64 t.[3] (W64.of_int 32)]);1: by auto.
 proc change ^while{4}.30 : (srl_16 b (W16.of_int 8));1: by auto.
-proc change ^while{4}.32 : (sll_16 c (W16.of_int 2));1: by auto.
+proc change ^while{4}.32 : (sll_16 c (W16.of_int 2)); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
 proc change ^while{4}.37 : (srl_16 b (W16.of_int 6));1: by auto.
-proc change ^while{4}.39 : (sll_16 c (W16.of_int 4));1: by auto.
+proc change ^while{4}.39 : (sll_16 c (W16.of_int 4)); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
 proc change ^while{4}.44 : (srl_16 b (W16.of_int 4));1: by auto.
-proc change ^while{4}.46 : (sll_16 c (W16.of_int 6));1: by auto.
+proc change ^while{4}.46 : (sll_16 c (W16.of_int 6)); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
 proc change ^while{4}.50 : (t.[3 <- srl_64 t.[3] (W64.of_int 2)]);1: by auto.
 
 do 4!(unroll for ^while).
@@ -2516,6 +2509,7 @@ transitivity {2} { r <@ AuxPolyVecCompress10.ref(bp); }
    [ by smt() | by smt() | |  by call (compress10_equiv_refi); auto => />].
 by call compress10_mr; auto => />.
 qed.
+
 import InnerPKE.
 lemma mlkem_correct_enc_0_avx2 mem _ctp _pkp : 
    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_0 ~ InnerPKE.enc_derand: 
