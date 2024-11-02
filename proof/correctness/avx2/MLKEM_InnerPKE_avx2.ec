@@ -2284,11 +2284,11 @@ proc change ^while{4}.17 : (t.[2 <- srl_64 t.[2] (W64.of_int 32)]);1: by auto.
 proc change ^while{4}.20 : (t.[3 <- sll_64 t.[3] (W64.of_int 10)]); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
 proc change ^while{4}.23 : (t.[3 <- srl_64 t.[3] (W64.of_int 32)]);1: by auto.
 proc change ^while{4}.30 : (srl_16 b (W16.of_int 8));1: by auto.
-proc change ^while{4}.32 : (sll_16 c (W16.of_int 2)); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
+proc change ^while{4}.32 : (sll_16 c (W16.of_int 2)); 1: by auto.
 proc change ^while{4}.37 : (srl_16 b (W16.of_int 6));1: by auto.
-proc change ^while{4}.39 : (sll_16 c (W16.of_int 4)); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
+proc change ^while{4}.39 : (sll_16 c (W16.of_int 4)); 1: by auto.
 proc change ^while{4}.44 : (srl_16 b (W16.of_int 4));1: by auto.
-proc change ^while{4}.46 : (sll_16 c (W16.of_int 6)); 1: smt(W64.to_uint_cmp W64.of_uintK pow2_64).
+proc change ^while{4}.46 : (sll_16 c (W16.of_int 6)); 1: by auto.
 proc change ^while{4}.50 : (t.[3 <- srl_64 t.[3] (W64.of_int 2)]);1: by auto.
 
 do 4!(unroll for ^while).
