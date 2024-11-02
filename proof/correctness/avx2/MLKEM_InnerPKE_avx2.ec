@@ -2082,12 +2082,13 @@ case : (16 <= to_uint w2).
 move => gt.
 simplify.
 rewrite eq_sym.
-apply (divz_eq0 (to_uint w1) (2 ^ to_uint w2)).
-admit.
+apply (divz_eq0 (to_uint w1) (2 ^ to_uint w2)). 
+smt(StdOrder.IntOrder.expr_gt0).
 split.
 smt(W16.to_uint_cmp).
 have : (2 ^ 16 <= 2 ^ (to_uint w2)).
-admit.
+apply StdOrder.IntOrder.ler_weexpn2l => //. 
+
 move => bnd2.
 smt(W16.to_uint_cmp).
 move => bnd.
@@ -2132,16 +2133,13 @@ op lane_func_compress10(x : W16.t) : W10.t = truncate64_10 (
 op lane_polyvec_redcomp10(w : W16.t) : W10.t = lane_func_compress10 (lane_func_reduce w). 
 
 op pcond_all (w: W16.t) = true.
-op pcond_reduced (w: W16.t) = w \ule W16.of_int (2*3329).
+op pcond_reduced (w: W16.t) = w \ult W16.of_int (2*3329).
 
-lemma reduce_commutes x xr : xr = lane_func_reduce x => pcond_reduced xr.
-rewrite /lane_func_reduce /pcond_reduced /=.
-have := Fq.SignedReductions.BREDCp_corr (to_sint x) 26 _ _ _ _ _ _; rewrite ?qE /R //=.
-+ by have /= := W16.to_sint_cmp x;smt(). 
-+ by smt(). 
-move => [#] ??? Hr.
-have  : to_sint xr = Fq.SignedReductions.BREDC (to_sint x) 26; last  by smt(W16.to_uintK W16.of_uintK pow2_16).
-rewrite Hr /W16_sub /sra_32. 
+
+lemma reduce_bredc (x:W16.t) : 
+    to_sint (lane_func_reduce x) = Fq.SignedReductions.BREDC (to_sint x) 26.
+proof. 
+rewrite /lane_func_reduce /W16_sub /sra_32. 
 rewrite /sigextu32 /truncateu16 /= Fq.SAR_sem26  !W32.of_sintK /= !W32.of_uintK W16.to_sintE to_uintD /=.
 pose xx := (smod (to_sint x * 20159 %% 4294967296))%W32 %/ 67108864 * 3329.
 have -> : to_uint (- (of_int (xx %% 4294967296))%W16) = to_uint (W16.of_int (-xx)).
@@ -2157,6 +2155,14 @@ case (2 ^ (16 - 1) <= to_uint x); last by smt(W16.to_uint_cmp pow2_16).
 move => H; rewrite H /=. 
 have ->: to_uint x - 65536 = to_uint x + (-1) * 65536; 1: by ring.
 by rewrite modzMDr; smt(W16.to_uint_cmp pow2_16).
+qed.
+
+lemma reduce_commutes x xr : xr = lane_func_reduce x => pcond_reduced xr.
+rewrite /pcond_reduced /=.
+have := Fq.SignedReductions.BREDCp_corr (to_sint x) 26 _ _ _ _ _ _; rewrite ?qE /R //=.
++ by have /= := W16.to_sint_cmp x;smt(). 
++ by smt(). 
+by smt(W16.to_uintK W16.of_uintK pow2_16 reduce_bredc).
 qed.
 
 import BitEncoding.BitChunking.
@@ -2319,11 +2325,49 @@ by rewrite -map_comp /(\o) /= -/idfun map_id.
 qed.
 
 lemma injective_fun_8_10 l1 l2 :
+  10 %| size l1  =>
   size l1 = size l2 =>
   map W10.bits2w (chunk 10 (flatten (map W8.w2bits l1))) =
    map W10.bits2w (chunk 10 (flatten (map W8.w2bits l2))) =>
      l1 = l2. 
-admit.
+move => H0 H H1. 
+have HH := in_inj_map W10.bits2w (fun wl => size wl = 10) _; 1: by smt(W10.bits2wK).
+move : (HH (chunk 10 (flatten (map W8.w2bits l1))) (chunk 10 (flatten (map W8.w2bits l2))) _ _ H1);1,2: by rewrite allP => x;smt(in_chunk_size).
+move => Hc.
+have := inj_chunk 10 _ _ _ _ _ Hc=> //.
++ rewrite size_flatten -map_comp /(\o) /=.
+  rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite StdBigop.Bigint.big_constz count_predT /#.
++ rewrite size_flatten -map_comp /(\o) /=.
+  rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite StdBigop.Bigint.big_constz count_predT /#.
+move => Hf.
+have := congr1 (chunk 8) _ _ Hf.
+rewrite !flattenK //; 1,2:smt(mapP W8.size_w2bits).
+move => Hm. 
+have := inj_map W8.w2bits W8.w2bits_inj. 
+smt().
+qed.
+
+lemma subq_nice (w1 w2 : W16.t) :
+   Iu16 w1 (incoeffW16 w2) =>
+   0<= to_sint w1 < 2*q =>
+   0<= to_sint w2 < 2*q =>
+     lane_func_csubq w1 = lane_func_csubq w2.
+proof.
+move => h h1 h2.
+have ? : to_sint w1 = to_uint w1 by smt(W16.to_uint_cmp qE pow2_16).
+have ? : to_sint w2 = to_uint w2 by smt(W16.to_uint_cmp qE pow2_16).
+rewrite /to_sint /smod /=.
+rewrite /lane_func_csubq !ultE /W16_sub /=. 
+rewrite -Zq.eq_incoeff qE in h.
+rewrite qE  /= in h1.
+rewrite qE  /= in h2. 
+case (to_uint w1 < 3329).
+case (to_uint w2 < 3329).
+smt(pow2_16 @W16).
+smt(pow2_16 @W16).
+smt(pow2_16 @W16).
 qed.
 
 (* MAP REDUCE GOAL *)
@@ -2338,7 +2382,23 @@ rewrite !flatten1 !unbits16 in Hr1.
 rewrite !flatten1 !unbits16 in Hr2.
 have Hmap : map lane_polyvec_redcomp10 (to_list _bp2) = map lane_polyvec_redcomp10 (to_list _bp1). 
 + rewrite /lane_polyvec_redcomp10.
-  admit.
+  apply (eq_from_nth witness);1: smt(Array768.size_to_list size_map).
+  rewrite !size_map !size_iota /max /= => i ib.
+  rewrite !(nth_map witness) /=;1..4:smt(Array768.size_to_list size_iota size_map).
+  rewrite !nth_iota  /max /=;1:smt().
+  have H : Zq.incoeff (to_sint _bp1.[i]) = Zq.incoeff (to_sint _bp2.[i]) by smt(Array768.mapiE).
+  rewrite -Zq.eq_incoeff in H.
+  have : lane_func_csubq (lane_func_reduce _bp2.[i]) = lane_func_csubq (lane_func_reduce _bp1.[i]); last by smt().
+  have := subq_nice (lane_func_reduce _bp2.[i]) (lane_func_reduce _bp1.[i]) _ _ _=> //;2,3:smt(reduce_commutes @W16 pow2_16).
+  rewrite -Zq.eq_incoeff.
+  rewrite !reduce_bredc.
+  have /= @/q /= @/R /=:= Fq.SignedReductions.BREDCp_corr (to_sint _bp1.[i]) 26 _ _ _ _ _ _;rewrite /R /q //=.
+  + rewrite /to_sint /smod /=; smt(W16.to_uint_cmp pow2_16).
+  + smt(W16.to_uint_cmp pow2_16).
+  have /= @/q /= @/R /=:= Fq.SignedReductions.BREDCp_corr (to_sint _bp2.[i]) 26 _ _ _ _ _ _;rewrite /R /q //=.
+  + rewrite /to_sint /smod /=; smt(W16.to_uint_cmp pow2_16).
+  + smt(W16.to_uint_cmp pow2_16).
+  smt().
 rewrite -(Array960.to_listK W8.zero r2) -(Array960.to_listK W8.zero r1).
 by smt(injective_fun_8_10 Array960.size_to_list).
 qed.
