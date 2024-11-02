@@ -1815,15 +1815,84 @@ rewrite BVA_Top_Array1088_Array1088_t.tolistP.
 apply eq_in_mkseq => i i_bnd; smt(Array1088.initE).
 qed.
 
-op sliceget256_16_256 (arr: W16.t Array256.t) (i: int) : W256.t = WArray512.get256 (WArray512.init16 (fun (i_0 : int) => arr.[i_0])) (i %/ 256).
+op sliceget256_16_256 (arr: W16.t Array256.t) (offset: int) : W256.t =  W256.bits2w (take 256 (drop offset (flatten (map W16.w2bits (Array256.to_list arr))))).
+
+lemma flatten_take_drop_16  (l : W16.t list) (csize offset bit : int) :
+  0 <= offset =>
+  offset + csize < 16 * size l =>
+  0 <= bit < csize =>
+  nth false (take csize (drop offset (flatten (map W16.w2bits l)))) bit =
+            (nth witness l ((offset + bit) %/ 16)).[(offset + bit) %% 16].
+proof.
+move => *.
+rewrite nth_take 1,2:/#.
+rewrite nth_drop 1,2:/#. 
+rewrite (BitEncoding.BitChunking.nth_flatten false 16).
++ rewrite allP => i; rewrite mapP => He;elim He;smt(W16.size_w2bits).
+rewrite -get_w2bits;congr.
+by rewrite (nth_map witness) 1:/#. 
+qed.
+
+lemma aligned_get256_16_256 arr offset :
+0 <= offset < 16*256 - 256 =>
+256 %| offset  => 
+sliceget256_16_256 arr offset =
+WArray512.get256 (WArray512.init16 (fun (i_0 : int) => arr.[i_0])) (offset %/ 256).
+move => Ho1 Ho2; rewrite /sliceget256_16_256.
+have sz : size (take 256 (drop offset (flatten (map W16.w2bits (to_list arr))))) = 256.
++ rewrite size_take 1:/# size_drop 1:/# /max /=.
+  rewrite size_flatten -map_comp /(\o) /=.
+  rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite StdBigop.Bigint.big_constz count_predT;smt(Array256.size_to_list).
+rewrite wordP => i ib; rewrite get_bits2w //.
+rewrite flatten_take_drop_16;1..3:smt(Array256.size_to_list).
+rewrite nth_mkseq 1:/# /=.
+rewrite /get256_direct /pack32_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+rewrite get_bits8 1:/#. 
+smt(@IntDiv). 
+qed.
+
 
 bind op [W16.t & W256.t & Array256.t] sliceget256_16_256 "asliceget".
-realize bvaslicegetP  by admit. (* We need a general framework for these *)
+realize bvaslicegetP.
+move => *; rewrite /sliceget256_16_256 bits2wK // size_take //= size_drop //=.
+admit. (* bounds are incomplete! 0 <= offset <= 16 * 256 - 256 *)
+rewrite size_flatten -map_comp /(\o) /=.
+rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+by rewrite StdBigop.Bigint.big_constz count_predT;smt(Array256.size_to_list).
+qed.
 
-op sliceset256_16_256 (arr: W16.t Array256.t) (i: int) (bv: W256.t) : W16.t Array256.t = Array256.init (fun (i3 : int) => get16 (set256 ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (i %/ 256) bv) i3).
+import BitEncoding BS2Int BitChunking.
+
+op sliceset256_16_256 (arr: W16.t Array256.t) (offset: int) (bv: W256.t) : W16.t Array256.t = Array256.of_list witness (map W16.bits2w (chunk 16 (take offset (flatten (map W16.w2bits (to_list arr))) ++ w2bits bv ++
+  drop (offset + 256) (flatten (map W16.w2bits (to_list arr)))))).
+
+
+lemma aligned_set256_16_256 arr offset bv :
+0 <= offset < 16*256 - 256 =>
+256 %| offset  => 
+sliceset256_16_256 arr offset bv =
+Array256.init (fun (i3 : int) => get16 (set256 ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (offset %/ 256) bv) i3).
+rewrite /sliceset256_16_256 tP /= => ?? i ib.
+rewrite !initiE 1,2:/# /=.
+rewrite get16_set256E 1,2:/# /= (nth_map witness).
++ admit. 
+admitted.
 
 bind op [W16.t & W256.t & Array256.t] sliceset256_16_256 "asliceset".
-realize bvaslicesetP by admit.  (* We need a general framework for these *)
+realize bvaslicesetP. 
+move => arr offset bv *.
+rewrite /sliceset256_16_256 of_listK.
++ admit.
+rewrite -(map_comp W16.w2bits W16.bits2w) /(\o). 
+have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W16)) idfun (chunk 16
+        (take offset (flatten (map W16.w2bits (to_list arr))) ++ w2bits bv ++
+         drop (offset + 256) (flatten (map W16.w2bits (to_list arr))))).
+rewrite iffE => [#] -> *.
++ admit.
+rewrite map_id /= chunkK //.
++ admit.
+qed.
 
 op sliceget32_8_256 (arr: W8.t Array32.t) (i: int) : W256.t = get256 (WArray32.init8 (fun (i_0 : int) => pvc_shufbidx_s.[i_0])) (i%/256).
 
@@ -1860,7 +1929,6 @@ size_le_256 by done.
 
 end W10. export W10 W10.ALU W10.SHIFT.
 
-import BitEncoding.BS2Int.
 bind bitstring W10.w2bits W10.bits2w W10.to_uint W10.to_sint W10.of_int W10.t 10.
 realize size_tolist by auto.
 realize tolistP by auto.
@@ -2165,7 +2233,6 @@ have := Fq.SignedReductions.BREDCp_corr (to_sint x) 26 _ _ _ _ _ _; rewrite ?qE 
 by smt(W16.to_uintK W16.of_uintK pow2_16 reduce_bredc).
 qed.
 
-import BitEncoding.BitChunking.
 lemma ref_polyvec_reduce (_r : W16.t Array768.t) : hoare [ AuxPolyVecCompress10.__polyvec_reduce : r = _r ==> 
   map lane_func_reduce
       (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _r))]))) =
@@ -2270,18 +2337,28 @@ proc.
 inline *.
 proc change 1 : (init_1088_8 (fun i => W8.zero));1: by auto. 
 proc change 3 : (init_256_16 (fun i => r.[i]));1: by auto.
-proc change ^while.1 : (sliceget256_16_256 ap (i0*256));1: by smt().
-proc change ^while.11 : (sliceset256_16_256 ap (i0*256) a1);1: by smt().
+proc change ^while.1 : (sliceget256_16_256 ap (i0*256)). 
+   move => &hr; rewrite aligned_get256_16_256; 2..: by smt(). admit. (* We need a loop invariant *)
+proc change ^while.11 : (sliceset256_16_256 ap (i0*256) a1). 
+   move => &hr; rewrite aligned_set256_16_256;2..: by smt().  admit. (* We need a loop invariant *)
 
 proc change 10 : (init_768_16 (fun i => if 0 <= i && i < 256 then aux.[i] else r.[i]));1: by auto.
 proc change 11 : (init_256_16 (fun i => r.[256 + i]));1: by auto.
-proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*256));1: by smt().
-proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*256) a2);1: by smt().
+
+proc change ^while{2}.1 : (sliceget256_16_256 ap0 (i1*256)).
+   move => &hr; rewrite aligned_get256_16_256; 2..: by smt(). admit. (* We need a loop invariant *)
+
+proc change ^while{2}.11 : (sliceset256_16_256 ap0 (i1*256) a2).
+   move => &hr; rewrite aligned_set256_16_256;2..: by smt().  admit. (* We need a loop invariant *)
+
 
 proc change 18 : (init_768_16 (fun i => if 256 <= i && i < 256 + 256 then aux.[i - 256] else r.[i]));1: by auto.
 proc change 19 : (init_256_16 (fun i => r.[2*256 + i]));1: by auto.
-proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*256));1: by smt().
-proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*256) a3);1: by smt().
+proc change ^while{3}.1 : (sliceget256_16_256 ap1 (i2*256)).
+   move => &hr; rewrite aligned_get256_16_256;2..: by smt().  admit. (* We need a loop invariant *)
+
+proc change ^while{3}.11 : (sliceset256_16_256 ap1 (i2*256) a3).
+   move => &hr; rewrite aligned_set256_16_256;2..: by smt().  admit. (* We need a loop invariant *)
 
 proc change 26 : (init_768_16 (fun i => if 2 * 256 <= i < 3 * 256 then aux.[i - 2 * 256] else r.[i]));1: by auto.
 
