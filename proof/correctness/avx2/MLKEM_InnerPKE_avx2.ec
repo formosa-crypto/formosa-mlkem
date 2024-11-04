@@ -2109,7 +2109,7 @@ case : (to_uint bv2 < 64).
 + rewrite /(`<<`) W64.to_uint_shl; 1: by smt(W8.to_uint_cmp).
   rewrite /truncateu8  => bv2bnd />.
   do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W64.to_uint_cmp)).
-admit. (* What is the circuit behavior? Does it give zero? *) 
+admit. (* What is the circuit behavior? Does it give zero? Yes. *) 
 qed.
 
 bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
