@@ -1776,8 +1776,6 @@ qed.
 
 op init_768_16 (f: int -> W16.t) : W16.t Array768.t = Array768.init f.
 
-print Array768.initE.
-
 bind op [W16.t & Array768.t] init_768_16 "ainit".
 realize bvainitP.
 rewrite /init_768_16 => f.
