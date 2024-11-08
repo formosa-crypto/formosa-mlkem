@@ -344,6 +344,15 @@ bind circuit VPSHUFB_256 "VPSHUFB_256".
 bind circuit VINSERTI128 "VPINSERTI128".
 bind circuit VEXTRACTI128 "VPEXTRACTI128".
 
+op popcount_64 (w : W64.t) : W64.t =
+  (POPCNT_64 w).`6.
+
+lemma popcount_64E (w : W64.t) :
+  (POPCNT_64 w).`6 = popcount_64 w.
+proof. done. qed.
+
+bind circuit popcount_64 "POPCOUNT_64".
+
 op extract_256_128 (w : W256.t) (o : int) =
   W128.init (fun i => w.[o + i]).
 
@@ -413,6 +422,12 @@ op zextend_12_16 : W12.t -> W16.t.
 bind op [W12.t & W16.t] zextend_12_16 "zextend".
 realize bvzextendP by admit.
 
+bind op [W64.t & W128.t] VMOV_64 "zextend".
+realize bvzextendP by admit.
+
+bind op [W128.t & W256.t] zeroextu256 "zextend".
+realize bvzextendP by admit.
+
 theory W512.
   abbrev [-printing] size = 512.
   clone include BitWord with op size <- size
@@ -428,13 +443,12 @@ realize ofintP by admit.
 realize touintP by admit.
 realize tosintP by admit.
 
-op extract_512_12 : W512.t -> int -> W12.t.
+op extract_512_16 : W512.t -> int -> W16.t.
 
-bind op [W512.t & W12.t] extract_512_12 "extract".
+bind op [W512.t & W16.t] extract_512_16 "extract".
 realize bvextractP by admit.
 
 op concat_2u256 : W256.t -> W256.t -> W512.t.
-
 bind op [W256.t & W256.t & W512.t] concat_2u256 "concat".
 realize bvconcatP by admit.
 
@@ -471,6 +485,34 @@ op u8_32_256 : W8.t Array32.t -> W256.t.
 bind op [W256.t & W8.t & Array32.t] u8_32_256 "a2b".
 realize a2bP by admit.
 
+op VPINC_8u8 : W64.t -> W64.t.
+
+bind circuit VPINC_8u8 "VPINC_8u8".
+
+op VPUNPCKL_16u8 : W64.t -> W64.t -> W128.t.
+
+bind circuit VPUNPCKL_16u8 "VPUNPCKL_16u8".
+
+bind circuit VPSHUFB_128 "VPSHUFB_128".
+
+bind circuit VPADD_32u8 "VPADD_32u8".
+bind circuit VPUNPCKL_32u8 "VPUNPCKL_32u8".
+
+import Array2048.
+
+bind array Array2048."_.[_]" Array2048."_.[_<-_]" Array2048.to_list Array2048.of_list Array2048.t 2048.
+realize tolistP by admit.
+realize eqP by admit.
+realize get_setP by admit.
+realize get_out by admit.
+
+op sliceget2048_8_64 (a : W8.t Array2048.t) (offset : int) : W64.t.
+
+bind op [W8.t & W64.t & Array2048.t] sliceget2048_8_64 "asliceget".
+realize bvaslicegetP by admit.
+
+hint simplify W8.of_uintK.
+
 import BitEncoding.BitChunking.
 
 hoare buf_rejection_filter48_h _pol _ctr _buf _buf_offset:
@@ -496,56 +538,31 @@ proc rewrite ^f1<- /=.
 alias b1 := (WArray536.WArray536.get256_direct _ _) @ ^f1<-.
 swap 2 1.
 
-pose _in := witness<:W8.t Array64.t>.
-
-alias 1 inv = _in; sp 1.
-
-print sample_load_shuffle.
-
 proc change 1 +2 {
-(*  b0 <- W256.init (fun i => inv.[o +      i %/ 8].[i %% 8]);
-  b1 <- W256.init (fun i => inv.[o + 24 + i %/ 8].[i %% 8]);*)
-  mask <- sample_mask;
-  load_shuffle <- u8_32_256 sample_load_shuffle;
-}. (* last sp 2.*)
-- admit.
-
-(*
-proc change 3 +2 {
-  f0 <- W256.of_int 0;
-  f1 <- W256.of_int 0;
-}; first admit.
-*)
+  b0 <- W256.init (fun i => _buf.[      i %/ 8].[i %% 8]);
+  b1 <- W256.init (fun i => _buf.[ 24 + i %/ 8].[i %% 8]);
+}. admit.
 
 seq 12 : (#pre /\ forall i, 0 <= i < 32 =>
-  extract_512_12 (concat_2u256 f0 f1) i
-    = W12.init (fun j => inv.[rho i].[j])
+  extract_512_16 (concat_2u256 f0 f1) i
+    = zextend_12_16 (W12.init (fun j => _buf.[(12 * i + j) %/ 8].[(12 * i + j) %% 8]))
 ).
 
-bdep 12 16 [_in] [inv] [f0; f1] lane condT12.
+(*
+bdep 12 16 [_buf] [buf] [f0; f1] lane condT12.
 - move=> /> *. admit.
 - move=> &hr |> *; split; first admit.
+*)
+admit.
+
+proc rewrite 5 protect64E.
+proc change circuit 5 +1 {}.
 
 
-
-seq 12 : 
-
-
-(* buf : W8.t Array536.Array536.t 
- * b0, b1 : W256.t *)
-
-b0 <- bufbits[  0:256]
-b1 <- bufbits[192:448]
-
-rho(i) = [8 .. 15 0 .. 7 24 .. 31 16 .. 23][i]
-
-after line 10:
-  forall i, 0 <= i < 32,
-    ((u16*) (f0 || f1))[i] = zextend(((u12*) buf)[rho(i)])
-
-
-proc rewrite 15 protect64E.
-proc change circuit 15 +1 {}.
+seq 4 : (#pre /\ forall i, 0 <= i < 32 =>
+  good.[i] <=> extract_512_16 (concat_2u256 f0 f1) i \ult W16.of_int q
+).
+- admit.
 
 alias shf0_0 := (WArray2048.WArray2048.get64 _ _) @ ^shuffle_0<-.
 alias shf0_1 := (WArray2048.WArray2048.get64 _ _) @ ^shuffle_0_1<-.
@@ -553,63 +570,90 @@ alias shf1_0 := (WArray2048.WArray2048.get64 _ _) @ ^shuffle_1<-.
 alias shf1_1 := (WArray2048.WArray2048.get64 _ _) @ ^shuffle_1_1<-.
 
 proc change circuit ^t0_0<- +2 { t0_0 <- zextend_8_64 (extract_64_8 good 0); }.
+alias good0_0 := (extract_64_8 good 0) @ ^t0_0<-.
+case <- ^t0_0<-{2} & -1; kill ^shuffle_0<- & +1 !5; first by auto.
+proc rewrite ^t0_0<-{2} popcount_64E.
+cfold ^t0_0<-; swap ^shuffle_0<- @^shuffle_0<-{2}.
+kill ^t0_0<-{-1}; first by auto.
 
 proc rewrite ^t0_1<-{2} shift64RE.
 proc change circuit ^t0_1<- +3 { t0_1 <- zextend_8_64 (extract_64_8 good 16); }.
+alias good0_1 := (extract_64_8 good 16) @ ^t0_1<-.
+case <- ^t0_1<-{2} & -1; kill ^shuffle_0_1<- & +1 !5; first by auto.
+proc rewrite ^t0_1<-{2} popcount_64E.
+cfold ^t0_1<-; swap ^shuffle_0_1<- @^shuffle_0<- & +1.
+kill ^t0_1<-{-1}; first by auto.
 
 proc rewrite ^t1_0<-{2} shift64RE.
 proc change circuit ^t1_0<- +3 { t1_0 <- zextend_8_64 (extract_64_8 good 8); }.
+alias good1_0 := (extract_64_8 good 8) @ ^t1_0<-.
+case <- ^t1_0<-{2} & -1; kill ^shuffle_1<- & +1 !5; first by auto.
+proc rewrite ^t1_0<-{2} popcount_64E.
+cfold ^t1_0<-; swap ^shuffle_1<- @^shuffle_1<-{2}.
+kill ^t1_0<-{-1}; first by auto.
 
 proc rewrite ^t1_1<-{2} shift64RE.
 proc change circuit ^t1_1<- +3 { t1_1 <- zextend_8_64 (extract_64_8 good 24); }.
-
-swap ^shuffle_0<- @^shuffle_0<-{2}.
-swap ^shuffle_1<- @^shuffle_1<-{2} .
-
-case <- ^t0_0<-{2} & -1; kill ^shf0_0<- & +1 !5; first by auto.
-case <- ^t0_1<-{2} & -1; kill ^shf0_1<- & +2 !5; first by auto.
-case <- ^t1_0<-{2} & -1; kill ^shf1_0<- & +1 !5; first by auto.
+alias good1_1 := (extract_64_8 good 24) @ ^t1_1<-.
 case <- ^t1_1<-{2} & -1; kill ^shf1_1<- & +2 !5; first by auto.
+proc rewrite ^t1_1<-{2} popcount_64E.
+cfold ^t1_1<-; swap ^shuffle_1_1<- @^shuffle_1<-{2}.
+kill ^t1_1<-{-1}; first by auto.
 
+proc change ^shuffle_t<-{1} : (VPADD_32u8 shuffle_0 sample_ones).
+- admit.
 
+proc change ^shuffle_t<-{2} : (VPADD_32u8 shuffle_1 sample_ones).
+- admit.
 
-(*
+proc change circuit [
+  (shf0_0_16 shf0_1_16 shf1_0_16 shf1_1_16 : W128.t)
+  (f0_0 f0_1 f1_0 f1_1 : W128.t)
+] ^shuffle_0<- +12
+{
+  f0_0 <- extract_256_128 f0 0;
+  f0_1 <- extract_256_128 f0 128;
+  f1_0 <- extract_256_128 f1 0;
+  f1_1 <- extract_256_128 f1 128;
 
- & +1; kill ^t0_0'<- & +1 !5; first by auto.
-*)
+  shf0_0_16 <- VPUNPCKL_16u8 shf0_0 (VPINC_8u8 shf0_0);
+  f0_0      <- VPSHUFB_128 f0_0 shf0_0_16;
 
-proc change circuit ^shuffle_0<- +1 {
-  
+  shf0_1_16 <- VPUNPCKL_16u8 shf0_1 (VPINC_8u8 shf0_1);
+  f0_1      <- VPSHUFB_128 f0_1 shf0_1_16;
+
+  shf1_0_16 <- VPUNPCKL_16u8 shf1_0 (VPINC_8u8 shf1_0);
+  f1_0      <- VPSHUFB_128 f1_0 shf1_0_16;
+
+  shf1_1_16 <- VPUNPCKL_16u8 shf1_1 (VPINC_8u8 shf1_1);
+  f1_1      <- VPSHUFB_128 f1_1 shf1_1_16;
+
+  f0 <- concat_2u128 f0_0 f0_1;
+  f1 <- concat_2u128 f1_0 f1_1;
 }.
 
-proc change circuit 39 +1 {
-  f0 <- concat_2u128 (extract_256_128 shuffle_0 0) shuffle_0_1;
-}.
+swap ^f0_0<- @^good0_0<-.
+swap [^shf0_0_16<- .. ^shf0_0_16<- & +1] @^good0_0<- & +2.
+cfold ^f0_0<- 4.
 
+swap ^f0_1<- @^good0_1<-.
+swap [^shf0_1_16<- .. ^shf0_1_16<- & +1] @^good1_0<- & +2.
+cfold ^f0_1<- 4.
 
+swap ^f1_0<- @^good1_0<-.
+swap [^shf1_0_16<- .. ^shf1_0_16<- & +1] @^good1_0<- & +2.
+cfold ^f1_0<- 4.
 
-proc change circuit 40 +0 {
-  f0 <- concat_2u128 (extract_256_128 f0 0) (extract_256_128 f0 128);
-}.
+swap ^f1_1<- @^good1_1<-.
+swap [^shf1_1_16<- .. ^shf1_1_16<- & +1] @^good1_1<- & +2.
+cfold ^f1_1<- 4.
 
+proc change ^shf0_0<- : (sliceget2048_8_64 sample_shuffle_table (W8.to_uint good0_0)).
+- admit.
 
-proc change circuit 41 +1 {
-  shuffle_0 <- VINSERTI128 shuffle_0 shuffle_0_1 W8.one;
-  shuffle_0_1 <- VEXTRACTI128 shuffle_0 W8.one;
-}.
+seq ^f0_0<- : true.
 
-
-
-swap ^shuffle_t<-{-1} -2.
-
-seq 39 : (shuffle_0 = witness).
-auto=> |> *.
-
-
-wp => /=.
-
-
-
+bdep bitstring [good; f0] [true] good0_0.
 
 admitted.
 
