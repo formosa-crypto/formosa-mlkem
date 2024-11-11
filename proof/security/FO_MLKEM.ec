@@ -1,4 +1,4 @@
-require import AllCore Distr List Real SmtMap FSet DInterval FinType KEM_ROM.
+require import AllCore Distr List Real FMap FSet DInterval FinType KEM_ROM.
 require (****) PKE_ROM PlugAndPray Hybrid FelTactic. 
 
 require FO_UU.
@@ -238,7 +238,7 @@ seq 6 5 : (#pre /\ m0{1} = m{2} /\ pk1{1} = pk0{2} /\
         dkey `*` randd; last by smt().
     rewrite dprod_dlet; congr;apply fun_ext => r.
     by rewrite dlet_dunit.
-  by auto => />;smt(get_setE mem_set mem_empty @SmtMap @FSet).
+  by auto => />;smt(get_setE mem_set mem_empty @FMap @FSet).
 
 seq 1 1 : (#pre /\ c1{1} = c0{2}); 1: by auto => /#.
 
@@ -484,7 +484,7 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
     by auto => />;smt(get_setE).  
 
     rcondf{1} 2;1: by move => *;inline *;auto => />.
-    by inline *;auto => /> *; do split;move => *;do split;move => *;1:do split;smt(@SmtMap).
+    by inline *;auto => /> *; do split;move => *;do split;move => *;1:do split;smt(@FMap).
 
 inline *. 
 swap {1} 14 -13. swap {1} 20 -18. swap {2} 11 -10.

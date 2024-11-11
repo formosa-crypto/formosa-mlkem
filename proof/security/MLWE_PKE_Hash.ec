@@ -1,4 +1,4 @@
-require import AllCore Distr List SmtMap Dexcepted PKE_ROM StdOrder.
+require import AllCore Distr List FMap Dexcepted PKE_ROM StdOrder.
 require (**RndExcept **) MLWE FLPRG.
 
 theory MLWE_PKE_Hash.

@@ -1,4 +1,4 @@
-require import AllCore Distr List Real SmtMap FSet DInterval.
+require import AllCore Distr List Real FMap FSet DInterval.
 require (****) FinType PKE_ROM PlugAndPray Hybrid FelTactic. 
 
 (******************************************************************)

@@ -1684,7 +1684,7 @@ theory NTTequiv.
     rewrite (divz_pow_sub_range _ _ _ mem_kl_range) //=.
     rewrite (exprSr_range _ _ _ mem_kl_range) //=.
     rewrite (exprD_nneg_sub_add_range _ _ _ mem_kl_range) //=.
-    move => [[? _] _] {r1 r2 r} [r1 r2] [_] [r] /= [->> ->>].
+    move => [[? _] _] {r1 r2 r} [r1 r2] [r] /= [->> ->>].
     rewrite -mulrSl -ltz_NdivNLR; [by rewrite expr_gt0|].
     rewrite (NdivzN_pow_sub_range _ _ _ mem_kl_range) //=.
     split => //=; rewrite (exprSr_sub_range _ _ _ mem_kl_range) //=.
@@ -2497,7 +2497,7 @@ theory NTTequiv.
     rewrite (divz_pow_add_range _ _ _ mem_kl_range) //=.
     rewrite (exprSr_sub_range _ _ _ mem_kl_range) //=.
     rewrite (exprD_nneg_add_sub_range _ _ _ mem_kl_range) //=.
-    move => [[? _] _] {r1 r2 r} [r1 r2] [_] [r] /= [->> ->>].
+    move => [[? _] _] {r1 r2 r} [r1 r2] [r] /= [->> ->>].
     rewrite -mulrSl -ltz_NdivNLR; [by rewrite expr_gt0|].
     rewrite (NdivzN_pow_add_range _ _ _ mem_kl_range) //=.
     split => //=; rewrite (exprSr_add_range _ _ _ mem_kl_range) //=.
