@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require import Array16 Array25 Array32 Array33 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
+require import Array4 Array16 Array25 Array32 Array33 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
 require import List_extra.
 require import MLKEM_Poly  MLKEM_PolyVec MLKEM_InnerPKE.
 require import MLKEM_Poly_avx2_proof.
@@ -25,12 +25,844 @@ import MLKEM_PolyVec.
 import MLKEM_PolyvecAVX.
 import MLKEM_PolyAVXVec.
 import NTT_Avx2.
-import WArray136 WArray32 WArray128.
+import WArray136 WArray32 WArray128 WArray960 WArray1536.
 import WArray512 WArray256.
+
+(* MOVE THIS ELSEWHERE? *)
+
+require import BitEncoding.
+require import StdOrder.
+import IntOrder.
+import BS2Int.
+print BS2Int.
+lemma to_sint_pos (w: W32.t):
+ to_uint w < 2^(W32.size - 1) =>
+ to_sint w = to_uint w.
+proof.
+rewrite to_sintE /smod /= => H.
+by rewrite ifF 1:/#.
+qed.
+
+lemma W32_get_ule (w: W32.t) k:
+ w.[k] => 2^k <= W32.to_uint w.
+proof.
+rewrite get_to_uint => [[Hk H]].
+smt(W32.to_uint_cmp gt0_pow2).
+qed.
+
+lemma W32_msbE (w: W32.t):
+ msb w <=> w.[W32.size-1].
+proof.
+rewrite /msb; split; last by apply W32_get_ule.
+rewrite get_to_uint /= => H.
+have L0: 0 < to_uint w %/ 2147483648.
+ smt(W32.to_uint_cmp).
+have: to_uint w \in range (1 * 2147483648) ((1 + 1) * 2147483648).
+(* REMARK: seg-faults with rewrite /= *)
+ rewrite /range /= mem_iota; split => //=.
+ by move: (W32.to_uint_cmp w) => /= /#.
+by rewrite -eq_div_range // /#.
+qed.
+
+lemma W32_min_sintE:
+ W32.of_int W32.min_sint
+ = W32.zero.[W32.size-1 <- true].
+proof.
+rewrite to_uint_eq of_uintK /= to_uint_bits.
+rewrite /bits /mkseq -iotaredE /=.
+have:= bs2int_pow2 31 0.
+rewrite nseq0 /max -mkseq_nseq /mkseq -iotaredE /= /#.
+qed.
+
+lemma W32_msb_sar (w: W32.t) k:
+ 0 <= k =>
+ msb (sar w k) = msb w.
+proof.
+move=> Hk.
+by rewrite !W32_msbE /(`|>>`) /sar /= /#.
+qed.
+
+lemma W32_msb_sign (w: W32.t):
+ msb w <=> to_sint w < 0.
+proof.
+rewrite /msb to_sintE /smod.
+by move: (W32.to_uint_cmp w); smt().
+qed.
+
+lemma W32_to_sint_neg (w: W32.t):
+ msb w =>
+ to_sint w  = to_uint w - W32.modulus.
+proof.
+rewrite /msb to_sintE /smod.
+by move: (W32.to_uint_cmp w); smt().
+qed.
+
+lemma W32_to_sint_pos (w: W32.t):
+ !msb w =>
+ to_sint w  = to_uint w.
+proof.
+rewrite /msb to_sintE /smod.
+by move: (W32.to_uint_cmp w); smt().
+qed.
+
+lemma W32_sar_pos (w: W32.t) k:
+ 0 <= k =>
+ !msb w =>
+ sar w k = w `>>>` k.
+proof.
+rewrite W32_msbE /= => Hk Hpos.
+apply W32.ext_eq => i Hi.
+rewrite /(`|>>`) /sar initiE //=.
+rewrite /(`>>`) /(`>>>`) Hi /=.
+case: (31 < (i + k)) => E.
+ by rewrite lez_minl 1:/# eq_sym get_out /#.
+by rewrite lez_minr 1:/#.
+qed.
+
+(*
+| (* IntDiv.modz_pow2_div *)
+| lemma modz_pow2_div:
+|   forall (n p m : int),
+|     0 <= p && p <= n => 
+|  m %% 2 ^ n %/ 2 ^ p = m %/ 2 ^ p %% 2 ^ (n - p).
+| lemma dvdNdiv: forall (x y : int), x <> 0 => x %| y => (-y) %/ x = - y %/ x.
+| lemma divNz:
+|   forall (m d : int), 0 < m => 0 < d => (-m) %/ d = - ((m - 1) %/ d + 1).
+| lemma lez_NdivNLR:
+|   forall (d m n : int), 0 < d => d %| n => m <= n %\ d <=> m * d <= n.
+| lemma divzDr: forall (m n d : int), d %| n => (m + n) %/ d = m %/ d + n %/ d.
+*)
+
+lemma W32_shl_onew k:
+ 0 < k =>
+ W32.onew `>>>` k
+ = W32.of_int (2^(max 0 (W32.size - k)) -1).
+proof.
+move => Hk.
+apply W32.ext_eq => i Hi.
+by rewrite /(`>>>`) initiE  //= /#.
+qed.
+
+lemma W32_sarE_neg (w: W32.t) k:
+ 0 <= k =>
+ msb w =>
+ sar w k 
+ = (w `>>>` k) `|` invw (W32.onew `>>>` k).
+proof.
+rewrite W32_msbE /= => Hk Hmsb.
+apply W32.ext_eq => i Hi.
+rewrite /(`|>>`) /sar initiE //=.
+rewrite /(`>>`) /(`>>>`) !Hi //=.
+have ->/=: 0 <= i + k by smt().
+case: (i + k < 32) => C.
+ by rewrite lez_minr 1:/#.
+by rewrite lez_minl 1:/# Hmsb.
+qed.
+
+lemma W32_to_uint_sar_neg (w: W32.t) k:
+ 0 <= k =>
+ msb w =>
+ to_uint (sar w k)
+ = W32.modulus + (to_sint w %/ 2^k).
+proof.
+move=> Hk Hmbs.
+have [Hw0 Hw1]:= W32.to_uint_cmp w.
+rewrite W32_sarE_neg // W32.to_uint_orw_disjoint.
+ apply W32.ext_eq => i Hi.
+ rewrite /(`>>`) /(`>>>`) /= !initiE Hi //=.
+ have ->/=: 0 <= i + k by smt().
+ case: (i + k < 32) => C //=.
+ by rewrite get_out /#.
+case: (k = 0) => Ek0.
+ rewrite !Ek0 /= to_uint_shr 1:/#.
+ rewrite to_uint_invw to_uint_shr 1:/#.
+ by rewrite W32_to_sint_neg // to_uint_onew /#.
+case: (32 <= k) => Ek32.
+ rewrite to_uint_shr 1:/# divz_small /=.
+  smt(ler_weexpn2l).
+ have ->: to_sint w %/ 2 ^ k = -1.
+  rewrite W32_to_sint_neg //.
+  have ->: to_uint w - W32.modulus
+           = - (W32.modulus - to_uint w) by ring.
+  rewrite divNz.
+    by rewrite subr_gt0; apply Hw1.
+   smt(expr_gt0).
+  rewrite divz_small //.
+  apply bound_abs; split.
+   rewrite /= in Hw1.
+   by rewrite /= /#.
+  move=> ?.
+  apply (ltr_le_trans W32.modulus); first smt().
+  by apply ler_weexpn2l => /#.
+ rewrite to_uint_invw to_uint_shr 1:/# to_uint_onew divz_small //.
+ apply bound_abs; split; first done.
+ move=> ?; apply (ltr_le_trans W32.modulus); first smt().
+ by apply ler_weexpn2l.
+rewrite to_uint_shr; first smt(to_uint_cmp).
+rewrite W32_shl_onew; first smt(to_uint_cmp).
+rewrite lez_maxr 1:/# to_uint_invw.
+rewrite of_uintK modz_small.
+ apply bound_abs; split; first smt(@IntDiv).
+ move => ?.
+ have /=?: 2 ^ (32 - k) <= W32.modulus.
+  by apply ler_weexpn2l => // /#.
+ by rewrite /= /#.
+have Hkk: W32.modulus = 2^(32-k) * 2^k.
+ rewrite -exprD_nneg // 1:/#.
+ by rewrite -addzA /=.
+have ->: W32.max_uint - (2 ^ (32 - k) - 1)
+         = W32.modulus - W32.modulus %/ 2^k.
+ rewrite {3}Hkk mulzK /#.
+rewrite addzC -addzA; congr.
+rewrite addzC W32_to_sint_neg //.
+have ->: (to_uint w - W32.modulus)
+ = to_uint w + (- 2^(32-k)) * 2^k.
+ by rewrite Hkk; ring.
+rewrite divzMDr 1:/# addzC; congr.
+have ->: W32.modulus = 2^(32 - k + k).
+ by congr; smt().
+smt().
+qed.
+
+lemma W32_sar_div (w1 : W32.t) k:
+ 0 <= k =>
+ to_sint (sar w1 k)
+ = to_sint w1 %/ 2 ^ k.
+proof.
+case: (msb w1) => Hk C.
+ rewrite W32_to_sint_neg 1:W32_msb_sar //.
+ by rewrite W32_to_uint_sar_neg //.
+rewrite W32_to_sint_pos 1:W32_msb_sar //.
+by rewrite W32_sar_pos // to_uint_shr /#.
+qed.
+
+require import Bindings.
+
+op W32_sar_32 (w1 w2 : W32.t) : W32.t =
+ W32.sar w1 (to_uint w2).
+
+bind op [W32.t] W32_sar_32 "ashr".
+realize bvashrP.
+move=> bv1 bv2; rewrite W32_sar_div //.
+smt(W32.to_uint_cmp).
+qed.
+
+(* BINDINGS *)
+
+bind array Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list Array256.of_list Array256.t 256.
+realize tolistP by done.
+realize get_setP by smt(Array256.get_setE). 
+realize eqP by smt(Array256.tP).
+realize get_out by smt(Array256.get_out).
+
+
+bind array Array768."_.[_]" Array768."_.[_<-_]" Array768.to_list Array768.of_list Array768.t 768.
+realize tolistP by done.
+realize get_setP by smt(Array768.get_setE). 
+realize eqP by smt(Array768.tP).
+realize get_out by smt(Array768.get_out).
+
+bind array Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list Array32.of_list Array32.t 32.
+realize tolistP by done.
+realize get_setP by smt(Array32.get_setE). 
+realize eqP by smt(Array32.tP).
+realize get_out by smt(Array32.get_out).
+
+bind array Array960."_.[_]" Array960."_.[_<-_]" Array960.to_list Array960.of_list Array960.t 960.
+realize tolistP by done.
+realize get_setP by smt(Array960.get_setE). 
+realize eqP by smt(Array960.tP).
+realize get_out by smt(Array960.get_out).
+
+bind array Array1088."_.[_]" Array1088."_.[_<-_]" Array1088.to_list Array1088.of_list Array1088.t 1088.
+realize tolistP by done.
+realize get_setP by smt(Array1088.get_setE). 
+realize eqP by smt(Array1088.tP).
+realize get_out by smt(Array1088.get_out).
+
+bind array Array4."_.[_]" Array4."_.[_<-_]" Array4.to_list Array4.of_list Array4.t 4.
+realize tolistP by done.
+realize get_setP by smt(Array4.get_setE). 
+realize eqP by smt(Array4.tP).
+realize get_out by smt(Array4.get_out).
+
+
+op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
+
+bind op [W16.t & Array256.t] init_256_16 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_256_16 => f.
+rewrite BVA_Top_Array256_Array256_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array256.initE).
+qed.
+
+op init_768_16 (f: int -> W16.t) : W16.t Array768.t = Array768.init f.
+
+print Array768.initE.
+
+bind op [W16.t & Array768.t] init_768_16 "ainit".
+realize bvainitP.
+rewrite /init_768_16 => f.
+rewrite BVA_Top_Array768_Array768_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array768.initE).
+qed.
+
+op init_4_64 (f: int -> W64.t) : W64.t Array4.t = Array4.init f.
+
+bind op [W64.t & Array4.t] init_4_64 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_4_64 => f.
+rewrite BVA_Top_Array4_Array4_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array4.initE).
+qed.
+
+op init_960_8 (f: int -> W8.t) : W8.t Array960.t = Array960.init f.
+
+bind op [W8.t & Array960.t] init_960_8 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_960_8 => f.
+rewrite BVA_Top_Array960_Array960_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array960.initE).
+qed.
+
+op init_1088_8 (f: int -> W8.t) : W8.t Array1088.t = Array1088.init f.
+
+bind op [W8.t & Array1088.t] init_1088_8 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_1088_8 => f.
+rewrite BVA_Top_Array1088_Array1088_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array1088.initE).
+qed.
+
+op sliceget256_16_256 (arr: W16.t Array256.t) (offset: int) : W256.t = 
+   if 8 %| offset then 
+    get256_direct ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (offset %/ 8)
+   else W256.bits2w (take 256 (drop offset (flatten (map W16.w2bits (to_list arr))))).
+
+
+(*
+lemma flatten_take_drop_16  (l : W16.t list) (csize offset bit : int) :
+  0 <= offset =>
+  offset + csize <= 16 * size l =>
+  0 <= bit < csize =>
+  nth false (take csize (drop offset (flatten (map W16.w2bits l)))) bit =
+            (nth witness l ((offset + bit) %/ 16)).[(offset + bit) %% 16].
+proof.
+move => *.
+rewrite nth_take 1,2:/#.
+rewrite nth_drop 1,2:/#. 
+rewrite (BitEncoding.BitChunking.nth_flatten false 16).
++ rewrite allP => i; rewrite mapP => He;elim He;smt(W16.size_w2bits).
+rewrite -get_w2bits;congr.
+by rewrite (nth_map witness) 1:/#. 
+qed.
+
+
+lemma aligned_get256_16_256 arr offset :
+0 <= offset <= 16*256 - 256 =>
+256 %| offset  => 
+sliceget256_16_256 arr offset =
+WArray512.get256 (WArray512.init16 (fun (i_0 : int) => arr.[i_0])) (offset %/ 256).
+move => Ho1 Ho2; rewrite /sliceget256_16_256.
+have sz : size (take 256 (drop offset (flatten (map W16.w2bits (to_list arr))))) = 256 by  rewrite size_take 1:/# size_drop 1:/# /max /=;smt(Array256.size_to_list size_flatten_W16_w2bits).
+rewrite wordP => i ib; rewrite get_bits2w //.
+rewrite flatten_take_drop_16;1..3:smt(Array256.size_to_list).
+rewrite nth_mkseq 1:/# /=.
+rewrite /get256_direct /pack32_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+rewrite get_bits8 1:/#. 
+smt(@IntDiv). 
+qed.
+
+*)
+bind op [W16.t & W256.t & Array256.t] sliceget256_16_256 "asliceget".
+realize bvaslicegetP.
+move => /= arr offset; rewrite /sliceget256_16_256 /= => H k kb. 
+case (8%| offset) => /= *; last by smt(W256.get_bits2w).
+rewrite /get256_direct pack32E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
+rewrite nth_take 1,2:/# nth_drop 1,2:/#.
+rewrite (BitEncoding.BitChunking.nth_flatten false 16 _). 
++ rewrite allP => x /=; rewrite mapP => He; elim He;smt(W16.size_w2bits).
+rewrite (nth_map W16.zero []); 1: smt(Array256.size_to_list).
+by rewrite nth_mkseq /#.
+qed.
+
+import BitEncoding BS2Int BitChunking.
+
+op sliceset256_16_256 (arr: W16.t Array256.t) (offset: int) (bv: W256.t) : W16.t Array256.t =
+  if 8 %| offset
+  then (init (fun (i3 : int) => get16 (set256_direct ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (offset %/ 8) bv) i3))%Array256
+  else  Array256.of_list witness (map W16.bits2w (chunk 16 (take offset (flatten (map W16.w2bits (to_list arr))) ++ w2bits bv ++
+  drop (offset + 256) (flatten (map W16.w2bits (to_list arr)))))).
+
+(*
+lemma aligned_set256_16_256 arr offset bv :
+0 <= offset <= 16*256 - 256 =>
+256 %| offset  => 
+sliceset256_16_256 arr offset bv =
+Array256.init (fun (i3 : int) => get16 (set256 ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (offset %/ 256) bv) i3).
+rewrite /sliceset256_16_256 tP /= => ?? i ib.
+rewrite !initiE 1,2:/# /=.
+rewrite get16_set256E 1,2:/# /= (nth_map []).
++ rewrite size_chunk // !size_cat  !size_take 1:/# !size_drop 1:/# /max /=.
+   by smt(Array256.size_to_list size_flatten_W16_w2bits). 
+rewrite JWordList.nth_chunk //= 1:/#.
+rewrite !size_cat  !size_take 1:/# !size_drop 1:/# /max /=.
+   by smt(Array256.size_to_list size_flatten_W16_w2bits). 
+case (32 * (offset %/ 256) <= 2 * i);last first.
++ move => ? /=.  have ? : 16*i < offset.  smt().
+  rewrite get16_init16 1:/# -catA drop_cat ifT;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  rewrite take_cat_le ifT;1: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  have -> : offset = 16 * (offset %/ 16) by smt().
+  rewrite take_flatten_ctt; 1:   by smt(mapP W16.size_w2bits).
+  rewrite -map_take.
+  rewrite -(W16.w2bitsK arr.[i]);congr.
+  apply (eq_from_nth false).  
+  + rewrite size_w2bits size_take // size_drop 1:/# /= /max /=;smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  move => k kb; rewrite  flatten_take_drop_16 1:/#. 
+   + rewrite size_take 1:/# size_to_list //= 1:/#.
+     by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+   rewrite nth_take 1:/#. smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+   rewrite get_w2bits;congr; rewrite ?get_to_list;smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0).
+case (2 * i < 32 * (offset %/ 256 + 1));last first.
++ move => ? /=.  have ? : offset + 256 <= 16*i .  smt().
+  rewrite get16_init16 1:/# -catA drop_cat ifF;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  rewrite drop_cat ifF;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  rewrite size_take 1:/# size_flatten_W16_w2bits size_to_list /= ifT 1:/#. 
+  have -> : offset + 256 = 16 * ((offset + 256) %/ 16) by smt().
+  rewrite drop_flatten_ctt; 1:   by smt(mapP W16.size_w2bits).
+  have -> : 16 * i - offset - 256 = 16 * (i - offset %/ 16 - 16)  by smt().
+  rewrite drop_flatten_ctt; 1:   by smt(mapP W16.size_w2bits mem_drop).
+  rewrite drop_drop 1,2:/# /= => ?.
+  rewrite -(W16.w2bitsK arr.[i]);congr.
+  apply (eq_from_nth false).  
+  + rewrite  -map_drop size_take // size_flatten_W16_w2bits size_drop 1:/#; smt(Array256.size_to_list W16.size_w2bits). 
+  move => k kb. 
+   have -> : i - offset %/ 16 - 16 + (offset + 256) %/ 16 = i by smt().  
+   rewrite -(drop_flatten_ctt 16); 1: smt(mapP W16.size_w2bits).
+   rewrite flatten_take_drop_16; 1..3: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+   rewrite get_w2bits;congr; rewrite ?get_to_list;smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0).
+
++ move => ?? /=. have ? : offset <= 16*i < offset + 256.  smt().
+  rewrite -!catA drop_cat ifF;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  rewrite !drop_cat ifT;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  rewrite size_take 1:/# size_flatten_W16_w2bits size_to_list /= ifT 1:/#. 
+  rewrite take_cat_le ifT;1: by rewrite size_drop 1:/# size_w2bits /= /max ifT /#.
+     rewrite -(W16.w2bitsK ((bv \bits16 i - 16 * (offset %/ 256))));congr.
+  apply (eq_from_nth false).  
+  + rewrite  size_take // size_drop 1:/#; smt(Array256.size_to_list W16.size_w2bits). 
+  move => k kb. 
+   rewrite nth_take; 1,2: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+   rewrite nth_drop; 1,2: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+   rewrite !get_w2bits get_bits16;by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+qed.
+*)
+
+lemma size_flatten_W16_w2bits (a : W16.t list) :
+  (size (flatten (map W16.w2bits (a))))  =  16 * size a.
+proof.
+  rewrite size_flatten -map_comp /(\o) /=.
+  rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite StdBigop.Bigint.big_constz count_predT /#.
+qed.
+
+bind op [W16.t & W256.t & Array256.t] sliceset256_16_256 "asliceset".
+realize bvaslicesetP. 
+move => arr offset bv H /= k kb; rewrite /sliceset256_16_256 /=. 
+case (8 %| offset) => /= *; last first.
++ rewrite of_listK; 1: by rewrite size_map size_chunk // !size_cat size_take;
+      by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  rewrite -(map_comp W16.w2bits W16.bits2w) /(\o). 
+  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W16)) idfun (chunk 16
+        (take offset (flatten (map W16.w2bits (to_list arr))) ++ w2bits bv ++
+         drop (offset + 256) (flatten (map W16.w2bits (to_list arr))))).
+  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W16.bits2wK).
+  rewrite map_id /= chunkK //;1: by rewrite !size_cat size_take;
+    by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+  by rewrite !nth_cat !size_cat /=;
+     smt(nth_take nth_drop size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
+rewrite (nth_flatten _ 16); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W16.size_w2bits).
+rewrite (nth_map W16.zero []); 1: smt(Array256.size_to_list).
+rewrite nth_mkseq 1:/# /= initiE 1:/# /= get16E pack2E initiE 1:/# /= initiE 1:/# /= /set256_direct.
+rewrite initiE 1:/# /=.
+case (offset <= k && k < offset + 256) => *; 1: by 
+  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite (nth_flatten _ 16); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W16.size_w2bits).
+rewrite (nth_map W16.zero []); 1: smt(Array256.size_to_list).
+rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
+qed.
+
+op sliceget32_8_256 (arr: W8.t Array32.t) (offset: int) : W256.t = 
+if 8 %| offset then 
+    get256_direct (WArray32.init8 (fun (i_0 : int) => arr.[i_0])) (offset %/ 8)
+   else W256.bits2w (take 256 (drop offset (flatten (map W8.w2bits (to_list arr))))).
+
+bind op [W8.t & W256.t & Array32.t] sliceget32_8_256 "asliceget".
+realize bvaslicegetP.
+move => /= arr offset; rewrite /sliceget32_8_256 /= => H k kb. 
+case (8%| offset) => /= *; last by smt(W256.get_bits2w).
+rewrite /get256_direct pack32E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=. 
+rewrite nth_take 1,2:/# nth_drop 1,2:/#.
+rewrite (BitEncoding.BitChunking.nth_flatten false 8 _). 
++ rewrite allP => x /=; rewrite mapP => He; elim He;smt(W8.size_w2bits).
+rewrite (nth_map W8.zero []); 1: smt(Array32.size_to_list).
+by rewrite nth_mkseq /#.
+qed.
+
+op sliceget768_16_256 (arr: W16.t Array768.t) (offset: int) : W256.t =
+if 8 %| offset then 
+    get256_direct (WArray1536.init16 (fun (i_0 : int) => arr.[i_0])) (offset %/ 8)
+   else W256.bits2w (take 256 (drop offset (flatten (map W16.w2bits (to_list arr))))).
+
+
+bind op [W16.t & W256.t & Array768.t] sliceget768_16_256 "asliceget".
+realize bvaslicegetP.
+move => /= arr offset; rewrite /sliceget768_16_256 /= => H k kb. 
+case (8%| offset) => /= *; last by smt(W256.get_bits2w).
+rewrite /get256_direct pack32E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
+rewrite nth_take 1,2:/# nth_drop 1,2:/#.
+rewrite (BitEncoding.BitChunking.nth_flatten false 16 _). 
++ rewrite allP => x /=; rewrite mapP => He; elim He;smt(W16.size_w2bits).
+rewrite (nth_map W16.zero []); 1: smt(Array768.size_to_list).
+by rewrite nth_mkseq /#.
+qed.
+
+op sliceset960_8_128 (arr: W8.t Array960.t) (offset: int) (bv: W128.t) : W8.t Array960.t = 
+  if 8 %| offset
+  then Array960.init (fun (i3 : int) => get8 (set128_direct ((init8 (fun (i_0 : int) => arr.[i_0])))%WArray960 (offset %/ 8) bv) i3)
+  else  Array960.of_list witness (map W8.bits2w (chunk 8 (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
+  drop (offset + 128) (flatten (map W8.w2bits (to_list arr)))))).
+
+lemma size_flatten_W8_w2bits (a : W8.t list) :
+  (size (flatten (map W8.w2bits (a))))  =  8 * size a.
+proof.
+  rewrite size_flatten -map_comp /(\o) /=.
+  rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
+  rewrite StdBigop.Bigint.big_constz count_predT /#.
+qed.
+
+bind op [W8.t & W128.t & Array960.t] sliceset960_8_128 "asliceset".
+realize bvaslicesetP.
+move => arr offset bv H /= k kb; rewrite /sliceset960_8_128 /=. 
+case (8 %| offset) => /= *; last first.
++ rewrite of_listK; 1: by  rewrite size_map size_chunk // !size_cat size_take; 
+      by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
+  rewrite -(map_comp W8.w2bits W8.bits2w) /(\o). 
+  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W8)) idfun (chunk 8
+        (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
+         drop (offset + 128) (flatten (map W8.w2bits (to_list arr))))).
+  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W8.bits2wK).
+  rewrite map_id /= chunkK //;1: by rewrite !size_cat size_take;
+    by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
+  by rewrite !nth_cat !size_cat /=;
+     smt(nth_take nth_drop size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
+rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
+rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
+rewrite nth_mkseq 1:/# /= initiE 1:/# /= /get8 /set128_direct.
+rewrite initiE 1:/# /=.
+case (offset <= k && k < offset + 128) => *; 1: by 
+  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
+rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
+rewrite nth_mkseq /#.
+qed.
+
+
+op sliceset960_8_32 (arr: W8.t Array960.t) (offset: int) (bv: W32.t) : W8.t Array960.t = 
+  if 8 %| offset
+  then Array960.init
+     (WArray960.get8
+        (set32_direct (WArray960.init8 (fun (i_0 : int) => arr.[i_0])) (
+           offset %/ 8) bv))
+  else  Array960.of_list witness (map W8.bits2w (chunk 8 (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
+  drop (offset + 32) (flatten (map W8.w2bits (to_list arr)))))).
+
+
+bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
+realize bvaslicesetP.
+move => arr offset bv H /= k kb; rewrite /sliceset960_8_32 /=. 
+case (8 %| offset) => /= *; last first.
++ rewrite of_listK; 1: by  rewrite size_map size_chunk // !size_cat size_take; 
+      by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
+  rewrite -(map_comp W8.w2bits W8.bits2w) /(\o). 
+  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W8)) idfun (chunk 8
+        (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
+         drop (offset + 32) (flatten (map W8.w2bits (to_list arr))))).
+  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W8.bits2wK).
+  rewrite map_id /= chunkK //;1: by rewrite !size_cat size_take;
+    by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
+  by rewrite !nth_cat !size_cat /=;
+     smt(nth_take nth_drop size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
+rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
+rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
+rewrite nth_mkseq 1:/# /= initiE 1:/# /= /get8 /set32_direct.
+rewrite initiE 1:/# /=.
+case (offset <= k && k < offset + 32) => *; 1: by 
+  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
+rewrite ifF 1:/# initiE 1:/# /=.
+rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
+rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
+rewrite nth_mkseq /#.
+qed.
+
+theory W10.
+abbrev [-printing] size = 10.
+clone include BitWordSH with op size <- size
+rename "_XX" as "_10"
+proof gt0_size by done,
+size_le_256 by done.
+
+end W10. export W10 W10.ALU W10.SHIFT.
+
+bind bitstring W10.w2bits W10.bits2w W10.to_uint W10.to_sint W10.of_int W10.t 10.
+realize size_tolist by auto.
+realize tolistP by auto.
+realize oflistP by smt(W10.bits2wK). 
+realize ofintP by move => *;rewrite /of_int int2bs_mod.
+realize tosintP. move => bv /=;rewrite /to_sint /smod /BVA_Top_W10_t.msb.
+have -> /=: nth false (w2bits bv) (10 - 1) = 2 ^ (10 - 1) <= to_uint bv; last by smt().
+rewrite /to_uint. 
+rewrite -{2}(cat_take_drop 9 (w2bits bv)).
+rewrite bs2int_cat size_take // W10.size_w2bits /=.
+rewrite -bs2int_div //= get_to_uint //=.
+rewrite -bs2int_mod // /= /to_uint.
+have ? : 2^10 = 1024 by rewrite /=.
+by smt(bs2int_range mem_range W10.size_w2bits).
+qed.
+realize touintP by smt().
+
+op truncate64_10 (bw: W64.t) : W10.t = W10.bits2w (W64.w2bits bw).
+
+bind op [W64.t & W10.t] truncate64_10 "truncate".
+realize bvtruncateP. 
+move => mv. rewrite /truncate64_10 /W64.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+by rewrite !nth_mkseq // /bits2w initiE //= nth_mkseq /#.  
+qed.
+
+bind op [W64.t & W8.t] W8u8.truncateu8 "truncate".
+realize bvtruncateP.  (* generalize *)
+move => mv; rewrite /truncateu8 /W64.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
+        nth_mkseq //= get_to_uint //= /to_uint /=.
+have -> /=: (0 <= i && i < 64) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(8-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(8-i) = 2^((8-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (8 - i) * 2 ^ i) = 256; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+bind op [W16.t & W8.t] W2u8.truncateu8 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu8 /W16.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
+        nth_mkseq //= get_to_uint //= /to_uint /=.
+have -> /=: (0 <= i && i < 16) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(8-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(8-i) = 2^((8-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (8 - i) * 2 ^ i) = 256; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+
+bind op [W16.t & W64.t] W4u16.zeroextu64 "zextend".
+realize bvzextendP
+ by move => bv; rewrite /zeroextu64 /= of_uintK /=; smt(W16.to_uint_cmp pow2_16).
+
+bind op [W64.t & W16.t] W4u16.truncateu16 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu16 /W64.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
+        nth_mkseq //= get_to_uint //= /to_uint /=.
+have -> /=: (0 <= i && i < 64) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(16-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(16-i) = 2^((16-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (16 - i) * 2 ^ i) = 65536; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+
+op sll_64 (w1 w2 : W64.t) : W64.t =
+  if (64 <= to_uint w2) then W64.zero else w1 `<<` (truncateu8 w2).
+
+bind op [W64.t] sll_64 "shl".
+realize bvshlP. 
+proof.
+rewrite /sll_64 => bv1 bv2.
+case : (64 <= to_uint bv2); last first.
++ rewrite /(`<<`) W64.to_uint_shl; 1: by smt(W8.to_uint_cmp).
+  rewrite /truncateu8  => bv2bnd />.
+  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W64.to_uint_cmp)).
+move => *. 
+have -> : to_uint bv2 = (to_uint bv2 - 64) + 64 by ring. 
+by rewrite exprD_nneg 1,2:/# /= /#.
+qed.
+
+bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu16 /W32.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
+        nth_mkseq //= get_to_uint //= /to_uint /=.
+have -> /=: (0 <= i && i < 32) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(16-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(16-i) = 2^((16-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (16 - i) * 2 ^ i) = 65536; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+
+bind op [W16.t & W32.t] sigextu32 "sextend".
+realize bvsextendP.
+move => bv;rewrite  /sigextu32 /to_sint /smod /= !of_uintK /=.
+case (32768 <= to_uint bv); 2: smt(W16.to_uint_cmp).
+move =>?;rewrite -{2}(oppzK (to_uint bv - 65536)) modNz /=; smt(W16.to_uint_cmp pow2_16). 
+qed.
+
+bind op [W32.t & W8.t] W4u8.truncateu8 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu8 /W32.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
+        nth_mkseq //= get_to_uint //= /to_uint /=.
+have -> /=: (0 <= i && i < 32) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(8-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(8-i) = 2^((8-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (8 - i) * 2 ^ i) = 256; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+
+bind circuit VPBROADCAST_8u32 "VPBROADCAST_8u32".
+bind circuit VPBROADCAST_4u64 "VPBROADCAST_4u64".
+
+bind circuit VPMADDWD_256 "VPMADDWD_16u16".
+
+bind circuit VPSLLV_8u32 "VPSLLV_8u32".
+
+bind circuit VPSRL_4u64 "VPSRL_4u64".
+
+bind circuit VPSHUFB_256 "VPSHUFB_256".
+
+bind circuit VEXTRACTI128 "VEXTRACTI128".
+
+bind circuit VPBLENDW_128 "VPBLEND_8u16".
+
+bind circuit VPEXTR_32 "VEXTRACTI32_256".
+
+bind circuit W4u32.VPEXTR_32 "VEXTRACTI32_128".
+
+bind op [W256.t & W128.t] truncateu128 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu128 /W256.w2bits take_mkseq //= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
+        nth_mkseq //= get_to_uint //= /to_uint /=.
+have -> /=: (0 <= i && i < 256) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(128-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(128-i) = 2^((128-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (128 - i) * 2 ^ i) = 340282366920938463463374607431768211456; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+op srl_16 (w1 w2 : W16.t) : W16.t =
+  if 16 <= (to_uint w2) then W16.zero else
+  w1 `>>` (truncateu8 w2).
+
+bind op [W16.t] srl_16 "shr".
+realize bvshrP.
+rewrite /srl_16 => bv1 bv2.
+case : (16 <= to_uint bv2); last first.
++ rewrite /(`>>`) W16.to_uint_shr; 1: by smt(W8.to_uint_cmp).
+  rewrite /truncateu8  => bv2bnd />.
+  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W16.to_uint_cmp)).
+move => *. 
+have -> : to_uint bv2 = (to_uint bv2 - 16) + 16 by ring. 
+rewrite exprD_nneg 1,2:/# /=. 
+smt(StdOrder.IntOrder.expr_gt0 W16.to_uint_cmp pow2_16).
+qed.
+
+
+op sll_16 (w1 w2 : W16.t) : W16.t =
+  if (16 <= to_uint w2) then  W16.zero else  w1 `<<` (truncateu8 w2).
+
+bind op [W16.t] sll_16 "shl".
+realize bvshlP.
+rewrite /sll_16 => bv1 bv2.
+case : (16 <= to_uint bv2); last first.
++ rewrite /(`<<`) W16.to_uint_shl; 1: by smt(W8.to_uint_cmp).
+  rewrite /truncateu8  => bv2bnd />.
+  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W16.to_uint_cmp pow2_16)).
+move => *. 
+have -> : to_uint bv2 = (to_uint bv2 - 16) + 16 by ring. 
+by rewrite exprD_nneg 1,2:/# /= /#.
+qed.
+
+op srl_64 (w1 w2 : W64.t) : W64.t =
+  if (64 <= to_uint w2) then  W64.zero else  w1 `>>` (truncateu8 w2).
+
+bind op [W64.t] srl_64 "shr".
+realize bvshrP.
+rewrite /srl_64 => bv1 bv2.
+case : (64 <= to_uint bv2); last first.
++ rewrite /(`>>`) W64.to_uint_shr; 1: by smt(W8.to_uint_cmp).
+  rewrite /truncateu8  => bv2bnd />.
+  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W64.to_uint_cmp)).
+move => *. 
+have -> : to_uint bv2 = (to_uint bv2 - 64) + 64 by ring. 
+rewrite exprD_nneg 1,2:/# /=. 
+smt(StdOrder.IntOrder.expr_gt0 W64.to_uint_cmp pow2_64).
+qed.
+
 
 (* shake assumptions *)
 
-(*
 op SHAKE256_ABSORB4x_33 : W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W8.t Array33.t -> W256.t Array25.t.
 op SHAKE256_SQUEEZENBLOCKS4x : W256.t Array25.t -> W256.t Array25.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t * W8.t Array136.t.
 
@@ -40,7 +872,7 @@ axiom shake_absorb4x state seed1 seed2 seed3 seed4 :
                res = SHAKE256_ABSORB4x_33 seed1 seed2 seed3 seed4 ] = 1%r.
 
 axiom shake_squeezenblocks4x state buf1 buf2 buf3 buf4 : 
-   phoare [ Jkem_avx2.M(Jkem_avx2.Syscall).__shake256_squeezenblocks4x : `
+   phoare [ Jkem_avx2.M(Jkem_avx2.Syscall).__shake256_squeezenblocks4x : 
                arg = (state,buf1,buf2,buf3,buf4) ==>
                res = SHAKE256_SQUEEZENBLOCKS4x state ] = 1%r.
 
@@ -111,16 +943,6 @@ unroll for ^while; auto.
 conseq => /=.
 inline *; unroll for ^while; auto.
 qed.
-
-(*
-axiom shake128_equiv_absorb : equiv [ M(Syscall)._shake128_absorb34 ~ 
-   Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb34   :
-      ={state, in_0} ==> ={res}].
-axiom shake128_equiv_squeezeblock : equiv [  M(Syscall)._shake128_squeezeblock ~
-     Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeezeblock  :
-      ={state, out} ==> ={res}].
-*)
-
 
 equiv genmatrixequiv b :
  Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_avx2 ~ Jkem.M(Jkem.Syscall).__gen_matrix :
@@ -880,7 +1702,7 @@ ecall (polyvec_reduce_equiv (lift_array768 pkpv{2})).
 
 have H := polyvec_add2_equiv 2 2 _ _ => //.
 ecall (H (lift_array768 pkpv{2}) (lift_array768 e{2})); clear H.
-unroll for {1} 36.
+unroll for* {1} 36.
 
 sp 3 3.
 
@@ -1266,7 +2088,6 @@ by smt(unpackvK).
 qed.
 
 (***************************************************)
-*)
 
  import WArray960 WArray1536 Array4.
 
@@ -1662,7 +2483,7 @@ wp;while (0 <= i{1} <= 768 /\ i{1} = to_uint i{2} /\ valid_ptr (to_uint rp{2}) (
        j{1} *4 = i{1} * 5 /\ ={aa} /\
        Glob.mem{2} = stores _mem (to_uint _ctp) (take j{1} (to_list rp{1}))); last 
    by auto => />; smt(Array960.size_to_list List.take_size List.take0 storesE iota0). 
-unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ?????????;do split;1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
+unroll for* {2} 2;auto => /> &1 &2;rewrite !ultE /= => ?????????;do split;1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
 rewrite /storeW8 /=.
 apply mem_eq_ext => adr.
  rewrite !to_uintD_small /= 1..16:/# !addrA.
@@ -1713,7 +2534,7 @@ wp;while (0 <= i{1} <= 768 /\ i{1} = to_uint i{2} /\
        0 <= j{1} <= 960 /\ j{1} = to_uint j{2} /\
        j{1} *4 = i{1} * 5 /\ ={aa} /\
        (forall kk, 0 <= kk < j{1} => rp{1}.[kk] = rp{2}.[kk])); last by  auto => />*; split;[ smt() | move => *; rewrite tP => *; smt()].
-unroll for {2} 2;auto => /> &1 &2;rewrite !ultE /= => ????????;do split; 1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
+unroll for* {2} 2;auto => /> &1 &2;rewrite !ultE /= => ????????;do split; 1,2,4,5:smt();1..3,5..:by rewrite ?to_uintD_small;smt().
 move => kk kkb ?.
 rewrite !to_uintD_small /=;1..7:smt().
 case (kk < to_uint j{2}); by smt(Array960.get_setE).
@@ -1721,643 +2542,6 @@ qed.
 
 (*****************************************************************)
 
-
-require import Bindings.
-(* BINDINGS *)
-
-bind array Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list Array256.of_list Array256.t 256.
-realize tolistP by done.
-realize get_setP by smt(Array256.get_setE). 
-realize eqP by smt(Array256.tP).
-realize get_out by smt(Array256.get_out).
-
-
-bind array Array768."_.[_]" Array768."_.[_<-_]" Array768.to_list Array768.of_list Array768.t 768.
-realize tolistP by done.
-realize get_setP by smt(Array768.get_setE). 
-realize eqP by smt(Array768.tP).
-realize get_out by smt(Array768.get_out).
-
-bind array Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list Array32.of_list Array32.t 32.
-realize tolistP by done.
-realize get_setP by smt(Array32.get_setE). 
-realize eqP by smt(Array32.tP).
-realize get_out by smt(Array32.get_out).
-
-bind array Array960."_.[_]" Array960."_.[_<-_]" Array960.to_list Array960.of_list Array960.t 960.
-realize tolistP by done.
-realize get_setP by smt(Array960.get_setE). 
-realize eqP by smt(Array960.tP).
-realize get_out by smt(Array960.get_out).
-
-bind array Array1088."_.[_]" Array1088."_.[_<-_]" Array1088.to_list Array1088.of_list Array1088.t 1088.
-realize tolistP by done.
-realize get_setP by smt(Array1088.get_setE). 
-realize eqP by smt(Array1088.tP).
-realize get_out by smt(Array1088.get_out).
-
-bind array Array4."_.[_]" Array4."_.[_<-_]" Array4.to_list Array4.of_list Array4.t 4.
-realize tolistP by done.
-realize get_setP by smt(Array4.get_setE). 
-realize eqP by smt(Array4.tP).
-realize get_out by smt(Array4.get_out).
-
-
-op init_256_16 (f: int -> W16.t) : W16.t Array256.t = Array256.init f.
-
-bind op [W16.t & Array256.t] init_256_16 "ainit".
-realize bvainitP.
-proof.
-rewrite /init_256_16 => f.
-rewrite BVA_Top_Array256_Array256_t.tolistP.
-apply eq_in_mkseq => i i_bnd;
-smt(Array256.initE).
-qed.
-
-op init_768_16 (f: int -> W16.t) : W16.t Array768.t = Array768.init f.
-
-bind op [W16.t & Array768.t] init_768_16 "ainit".
-realize bvainitP.
-rewrite /init_768_16 => f.
-rewrite BVA_Top_Array768_Array768_t.tolistP.
-apply eq_in_mkseq => i i_bnd; smt(Array768.initE).
-qed.
-
-op init_4_64 (f: int -> W64.t) : W64.t Array4.t = Array4.init f.
-
-bind op [W64.t & Array4.t] init_4_64 "ainit".
-realize bvainitP.
-proof.
-rewrite /init_4_64 => f.
-rewrite BVA_Top_Array4_Array4_t.tolistP.
-apply eq_in_mkseq => i i_bnd; smt(Array4.initE).
-qed.
-
-op init_960_8 (f: int -> W8.t) : W8.t Array960.t = Array960.init f.
-
-bind op [W8.t & Array960.t] init_960_8 "ainit".
-realize bvainitP.
-proof.
-rewrite /init_960_8 => f.
-rewrite BVA_Top_Array960_Array960_t.tolistP.
-apply eq_in_mkseq => i i_bnd; smt(Array960.initE).
-qed.
-
-op init_1088_8 (f: int -> W8.t) : W8.t Array1088.t = Array1088.init f.
-
-bind op [W8.t & Array1088.t] init_1088_8 "ainit".
-realize bvainitP.
-proof.
-rewrite /init_1088_8 => f.
-rewrite BVA_Top_Array1088_Array1088_t.tolistP.
-apply eq_in_mkseq => i i_bnd; smt(Array1088.initE).
-qed.
-
-op sliceget256_16_256 (arr: W16.t Array256.t) (offset: int) : W256.t = 
-   if 8 %| offset then 
-    get256_direct ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (offset %/ 8)
-   else W256.bits2w (take 256 (drop offset (flatten (map W16.w2bits (to_list arr))))).
-
-(*
-lemma flatten_take_drop_16  (l : W16.t list) (csize offset bit : int) :
-  0 <= offset =>
-  offset + csize <= 16 * size l =>
-  0 <= bit < csize =>
-  nth false (take csize (drop offset (flatten (map W16.w2bits l)))) bit =
-            (nth witness l ((offset + bit) %/ 16)).[(offset + bit) %% 16].
-proof.
-move => *.
-rewrite nth_take 1,2:/#.
-rewrite nth_drop 1,2:/#. 
-rewrite (BitEncoding.BitChunking.nth_flatten false 16).
-+ rewrite allP => i; rewrite mapP => He;elim He;smt(W16.size_w2bits).
-rewrite -get_w2bits;congr.
-by rewrite (nth_map witness) 1:/#. 
-qed.
-
-
-lemma aligned_get256_16_256 arr offset :
-0 <= offset <= 16*256 - 256 =>
-256 %| offset  => 
-sliceget256_16_256 arr offset =
-WArray512.get256 (WArray512.init16 (fun (i_0 : int) => arr.[i_0])) (offset %/ 256).
-move => Ho1 Ho2; rewrite /sliceget256_16_256.
-have sz : size (take 256 (drop offset (flatten (map W16.w2bits (to_list arr))))) = 256 by  rewrite size_take 1:/# size_drop 1:/# /max /=;smt(Array256.size_to_list size_flatten_W16_w2bits).
-rewrite wordP => i ib; rewrite get_bits2w //.
-rewrite flatten_take_drop_16;1..3:smt(Array256.size_to_list).
-rewrite nth_mkseq 1:/# /=.
-rewrite /get256_direct /pack32_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-rewrite get_bits8 1:/#. 
-smt(@IntDiv). 
-qed.
-
-*)
-bind op [W16.t & W256.t & Array256.t] sliceget256_16_256 "asliceget".
-realize bvaslicegetP.
-move => /= arr offset; rewrite /sliceget256_16_256 /= => H k kb. 
-case (8%| offset) => /= *; last by smt(W256.get_bits2w).
-rewrite /get256_direct pack32E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
-rewrite nth_take 1,2:/# nth_drop 1,2:/#.
-rewrite (BitEncoding.BitChunking.nth_flatten false 16 _). 
-+ rewrite allP => x /=; rewrite mapP => He; elim He;smt(W16.size_w2bits).
-rewrite (nth_map W16.zero []); 1: smt(Array256.size_to_list).
-by rewrite nth_mkseq /#.
-qed.
-
-import BitEncoding BS2Int BitChunking.
-
-op sliceset256_16_256 (arr: W16.t Array256.t) (offset: int) (bv: W256.t) : W16.t Array256.t =
-  if 8 %| offset
-  then (init (fun (i3 : int) => get16 (set256_direct ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (offset %/ 8) bv) i3))%Array256
-  else  Array256.of_list witness (map W16.bits2w (chunk 16 (take offset (flatten (map W16.w2bits (to_list arr))) ++ w2bits bv ++
-  drop (offset + 256) (flatten (map W16.w2bits (to_list arr)))))).
-
-(*
-lemma aligned_set256_16_256 arr offset bv :
-0 <= offset <= 16*256 - 256 =>
-256 %| offset  => 
-sliceset256_16_256 arr offset bv =
-Array256.init (fun (i3 : int) => get16 (set256 ((init16 (fun (i_0 : int) => arr.[i_0])))%WArray512 (offset %/ 256) bv) i3).
-rewrite /sliceset256_16_256 tP /= => ?? i ib.
-rewrite !initiE 1,2:/# /=.
-rewrite get16_set256E 1,2:/# /= (nth_map []).
-+ rewrite size_chunk // !size_cat  !size_take 1:/# !size_drop 1:/# /max /=.
-   by smt(Array256.size_to_list size_flatten_W16_w2bits). 
-rewrite JWordList.nth_chunk //= 1:/#.
-rewrite !size_cat  !size_take 1:/# !size_drop 1:/# /max /=.
-   by smt(Array256.size_to_list size_flatten_W16_w2bits). 
-case (32 * (offset %/ 256) <= 2 * i);last first.
-+ move => ? /=.  have ? : 16*i < offset.  smt().
-  rewrite get16_init16 1:/# -catA drop_cat ifT;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  rewrite take_cat_le ifT;1: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  have -> : offset = 16 * (offset %/ 16) by smt().
-  rewrite take_flatten_ctt; 1:   by smt(mapP W16.size_w2bits).
-  rewrite -map_take.
-  rewrite -(W16.w2bitsK arr.[i]);congr.
-  apply (eq_from_nth false).  
-  + rewrite size_w2bits size_take // size_drop 1:/# /= /max /=;smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  move => k kb; rewrite  flatten_take_drop_16 1:/#. 
-   + rewrite size_take 1:/# size_to_list //= 1:/#.
-     by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-   rewrite nth_take 1:/#. smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-   rewrite get_w2bits;congr; rewrite ?get_to_list;smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0).
-case (2 * i < 32 * (offset %/ 256 + 1));last first.
-+ move => ? /=.  have ? : offset + 256 <= 16*i .  smt().
-  rewrite get16_init16 1:/# -catA drop_cat ifF;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  rewrite drop_cat ifF;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  rewrite size_take 1:/# size_flatten_W16_w2bits size_to_list /= ifT 1:/#. 
-  have -> : offset + 256 = 16 * ((offset + 256) %/ 16) by smt().
-  rewrite drop_flatten_ctt; 1:   by smt(mapP W16.size_w2bits).
-  have -> : 16 * i - offset - 256 = 16 * (i - offset %/ 16 - 16)  by smt().
-  rewrite drop_flatten_ctt; 1:   by smt(mapP W16.size_w2bits mem_drop).
-  rewrite drop_drop 1,2:/# /= => ?.
-  rewrite -(W16.w2bitsK arr.[i]);congr.
-  apply (eq_from_nth false).  
-  + rewrite  -map_drop size_take // size_flatten_W16_w2bits size_drop 1:/#; smt(Array256.size_to_list W16.size_w2bits). 
-  move => k kb. 
-   have -> : i - offset %/ 16 - 16 + (offset + 256) %/ 16 = i by smt().  
-   rewrite -(drop_flatten_ctt 16); 1: smt(mapP W16.size_w2bits).
-   rewrite flatten_take_drop_16; 1..3: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-   rewrite get_w2bits;congr; rewrite ?get_to_list;smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0).
-
-+ move => ?? /=. have ? : offset <= 16*i < offset + 256.  smt().
-  rewrite -!catA drop_cat ifF;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  rewrite !drop_cat ifT;1: by smt(size_take W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  rewrite size_take 1:/# size_flatten_W16_w2bits size_to_list /= ifT 1:/#. 
-  rewrite take_cat_le ifT;1: by rewrite size_drop 1:/# size_w2bits /= /max ifT /#.
-     rewrite -(W16.w2bitsK ((bv \bits16 i - 16 * (offset %/ 256))));congr.
-  apply (eq_from_nth false).  
-  + rewrite  size_take // size_drop 1:/#; smt(Array256.size_to_list W16.size_w2bits). 
-  move => k kb. 
-   rewrite nth_take; 1,2: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-   rewrite nth_drop; 1,2: by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-   rewrite !get_w2bits get_bits16;by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-qed.
-*)
-
-lemma size_flatten_W16_w2bits (a : W16.t list) :
-  (size (flatten (map W16.w2bits (a))))  =  16 * size a.
-proof.
-  rewrite size_flatten -map_comp /(\o) /=.
-  rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
-  rewrite StdBigop.Bigint.big_constz count_predT /#.
-qed.
-
-bind op [W16.t & W256.t & Array256.t] sliceset256_16_256 "asliceset".
-realize bvaslicesetP. 
-move => arr offset bv H /= k kb; rewrite /sliceset256_16_256 /=. 
-case (8 %| offset) => /= *; last first.
-+ rewrite of_listK; 1: by rewrite size_map size_chunk // !size_cat size_take;
-      by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  rewrite -(map_comp W16.w2bits W16.bits2w) /(\o). 
-  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W16)) idfun (chunk 16
-        (take offset (flatten (map W16.w2bits (to_list arr))) ++ w2bits bv ++
-         drop (offset + 256) (flatten (map W16.w2bits (to_list arr))))).
-  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W16.bits2wK).
-  rewrite map_id /= chunkK //;1: by rewrite !size_cat size_take;
-    by smt(size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-  by rewrite !nth_cat !size_cat /=;
-     smt(nth_take nth_drop size_take size_drop  W16.size_w2bits size_cat Array256.size_to_list size_flatten_W16_w2bits size_ge0). 
-rewrite (nth_flatten _ 16); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W16.size_w2bits).
-rewrite (nth_map W16.zero []); 1: smt(Array256.size_to_list).
-rewrite nth_mkseq 1:/# /= initiE 1:/# /= get16E pack2E initiE 1:/# /= initiE 1:/# /= /set256_direct.
-rewrite initiE 1:/# /=.
-case (offset <= k && k < offset + 256) => *; 1: by 
-  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
-rewrite ifF 1:/# initiE 1:/# /=.
-rewrite (nth_flatten _ 16); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W16.size_w2bits).
-rewrite (nth_map W16.zero []); 1: smt(Array256.size_to_list).
-rewrite nth_mkseq 1:/# /= bits8E /= initiE /# /=.
-qed.
-
-op sliceget32_8_256 (arr: W8.t Array32.t) (offset: int) : W256.t = 
-if 8 %| offset then 
-    get256_direct (WArray32.init8 (fun (i_0 : int) => arr.[i_0])) (offset %/ 8)
-   else W256.bits2w (take 256 (drop offset (flatten (map W8.w2bits (to_list arr))))).
-
-bind op [W8.t & W256.t & Array32.t] sliceget32_8_256 "asliceget".
-realize bvaslicegetP.
-move => /= arr offset; rewrite /sliceget32_8_256 /= => H k kb. 
-case (8%| offset) => /= *; last by smt(W256.get_bits2w).
-rewrite /get256_direct pack32E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=. 
-rewrite nth_take 1,2:/# nth_drop 1,2:/#.
-rewrite (BitEncoding.BitChunking.nth_flatten false 8 _). 
-+ rewrite allP => x /=; rewrite mapP => He; elim He;smt(W8.size_w2bits).
-rewrite (nth_map W8.zero []); 1: smt(Array32.size_to_list).
-by rewrite nth_mkseq /#.
-qed.
-
-op sliceget768_16_256 (arr: W16.t Array768.t) (offset: int) : W256.t =
-if 8 %| offset then 
-    get256_direct (WArray1536.init16 (fun (i_0 : int) => arr.[i_0])) (offset %/ 8)
-   else W256.bits2w (take 256 (drop offset (flatten (map W16.w2bits (to_list arr))))).
-
-
-bind op [W16.t & W256.t & Array768.t] sliceget768_16_256 "asliceget".
-realize bvaslicegetP.
-move => /= arr offset; rewrite /sliceget768_16_256 /= => H k kb. 
-case (8%| offset) => /= *; last by smt(W256.get_bits2w).
-rewrite /get256_direct pack32E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= bits8E initiE 1:/# /=.
-rewrite nth_take 1,2:/# nth_drop 1,2:/#.
-rewrite (BitEncoding.BitChunking.nth_flatten false 16 _). 
-+ rewrite allP => x /=; rewrite mapP => He; elim He;smt(W16.size_w2bits).
-rewrite (nth_map W16.zero []); 1: smt(Array768.size_to_list).
-by rewrite nth_mkseq /#.
-qed.
-
-op sliceset960_8_128 (arr: W8.t Array960.t) (offset: int) (bv: W128.t) : W8.t Array960.t = 
-  if 8 %| offset
-  then Array960.init (fun (i3 : int) => get8 (set128_direct ((init8 (fun (i_0 : int) => arr.[i_0])))%WArray960 (offset %/ 8) bv) i3)
-  else  Array960.of_list witness (map W8.bits2w (chunk 8 (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
-  drop (offset + 128) (flatten (map W8.w2bits (to_list arr)))))).
-
-lemma size_flatten_W8_w2bits (a : W8.t list) :
-  (size (flatten (map W8.w2bits (a))))  =  8 * size a.
-proof.
-  rewrite size_flatten -map_comp /(\o) /=.
-  rewrite StdBigop.Bigint.sumzE /= StdBigop.Bigint.BIA.big_mapT /(\o) /=. 
-  rewrite StdBigop.Bigint.big_constz count_predT /#.
-qed.
-
-bind op [W8.t & W128.t & Array960.t] sliceset960_8_128 "asliceset".
-realize bvaslicesetP.
-move => arr offset bv H /= k kb; rewrite /sliceset960_8_128 /=. 
-case (8 %| offset) => /= *; last first.
-+ rewrite of_listK; 1: by  rewrite size_map size_chunk // !size_cat size_take; 
-      by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
-  rewrite -(map_comp W8.w2bits W8.bits2w) /(\o). 
-  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W8)) idfun (chunk 8
-        (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
-         drop (offset + 128) (flatten (map W8.w2bits (to_list arr))))).
-  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W8.bits2wK).
-  rewrite map_id /= chunkK //;1: by rewrite !size_cat size_take;
-    by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
-  by rewrite !nth_cat !size_cat /=;
-     smt(nth_take nth_drop size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
-rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
-rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
-rewrite nth_mkseq 1:/# /= initiE 1:/# /= /get8 /set128_direct.
-rewrite initiE 1:/# /=.
-case (offset <= k && k < offset + 128) => *; 1: by 
-  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
-rewrite ifF 1:/# initiE 1:/# /=.
-rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
-rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
-rewrite nth_mkseq /#.
-qed.
-
-
-op sliceset960_8_32 (arr: W8.t Array960.t) (offset: int) (bv: W32.t) : W8.t Array960.t = 
-  if 8 %| offset
-  then Array960.init
-     (WArray960.get8
-        (set32_direct (WArray960.init8 (fun (i_0 : int) => arr.[i_0])) (
-           offset %/ 8) bv))
-  else  Array960.of_list witness (map W8.bits2w (chunk 8 (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
-  drop (offset + 32) (flatten (map W8.w2bits (to_list arr)))))).
-
-
-bind op [W8.t & W32.t & Array960.t] sliceset960_8_32 "asliceset".
-realize bvaslicesetP.
-move => arr offset bv H /= k kb; rewrite /sliceset960_8_32 /=. 
-case (8 %| offset) => /= *; last first.
-+ rewrite of_listK; 1: by  rewrite size_map size_chunk // !size_cat size_take; 
-      by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
-  rewrite -(map_comp W8.w2bits W8.bits2w) /(\o). 
-  have := eq_in_map ((fun (x : bool list) => w2bits ((bits2w x))%W8)) idfun (chunk 8
-        (take offset (flatten (map W8.w2bits (to_list arr))) ++ w2bits bv ++
-         drop (offset + 32) (flatten (map W8.w2bits (to_list arr))))).
-  rewrite iffE => [#] -> * /=; 1: by smt(in_chunk_size W8.bits2wK).
-  rewrite map_id /= chunkK //;1: by rewrite !size_cat size_take;
-    by smt(size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
-  by rewrite !nth_cat !size_cat /=;
-     smt(nth_take nth_drop size_take size_drop  W8.size_w2bits size_cat Array960.size_to_list size_flatten_W8_w2bits size_ge0). 
-rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
-rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
-rewrite nth_mkseq 1:/# /= initiE 1:/# /= /get8 /set32_direct.
-rewrite initiE 1:/# /=.
-case (offset <= k && k < offset + 32) => *; 1: by 
-  rewrite ifT 1:/#  get_bits8 /= 1,2:/# initiE // initiE //.
-rewrite ifF 1:/# initiE 1:/# /=.
-rewrite (nth_flatten _ 8); 1: by rewrite allP => i;rewrite mapP => He; elim He;smt(W8.size_w2bits).
-rewrite (nth_map W8.zero []); 1: smt(Array960.size_to_list).
-rewrite nth_mkseq /#.
-qed.
-
-theory W10.
-abbrev [-printing] size = 10.
-clone include BitWordSH with op size <- size
-rename "_XX" as "_10"
-proof gt0_size by done,
-size_le_256 by done.
-
-end W10. export W10 W10.ALU W10.SHIFT.
-
-bind bitstring W10.w2bits W10.bits2w W10.to_uint W10.to_sint W10.of_int W10.t 10.
-realize size_tolist by auto.
-realize tolistP by auto.
-realize oflistP by smt(W10.bits2wK). 
-realize ofintP by move => *;rewrite /of_int int2bs_mod.
-realize tosintP. move => bv /=;rewrite /to_sint /smod /BVA_Top_W10_t.msb.
-have -> /=: nth false (w2bits bv) (10 - 1) = 2 ^ (10 - 1) <= to_uint bv; last by smt().
-rewrite /to_uint. 
-rewrite -{2}(cat_take_drop 9 (w2bits bv)).
-rewrite bs2int_cat size_take // W10.size_w2bits /=.
-rewrite -bs2int_div //= get_to_uint //=.
-rewrite -bs2int_mod // /= /to_uint.
-have ? : 2^10 = 1024 by rewrite /=.
-by smt(bs2int_range mem_range W10.size_w2bits).
-qed.
-realize touintP by smt().
-
-op truncate64_10 (bw: W64.t) : W10.t = W10.bits2w (W64.w2bits bw).
-
-bind op [W64.t & W10.t] truncate64_10 "truncate".
-realize bvtruncateP. 
-move => mv. rewrite /truncate64_10 /W64.w2bits take_mkseq //= /w2bits.
-apply (eq_from_nth witness);1: by smt(size_mkseq).
-move => i; rewrite size_mkseq /= /max /= => ib.
-by rewrite !nth_mkseq // /bits2w initiE //= nth_mkseq /#.  
-qed.
-
-bind op [W64.t & W8.t] W8u8.truncateu8 "truncate".
-realize bvtruncateP.  (* generalize *)
-move => mv; rewrite /truncateu8 /W64.w2bits take_mkseq //= /w2bits.
-apply (eq_from_nth witness);1: by smt(size_mkseq).
-move => i; rewrite size_mkseq /= /max /= => ib.
-rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
-        nth_mkseq //= get_to_uint //= /to_uint /=.
-have -> /=: (0 <= i && i < 64) by smt().
-pose a := bs2int (w2bits mv). 
-rewrite {1}(divz_eq a (2^(8-i)*2^i)) !mulrA divzMDl;
-   1: by smt(StdOrder.IntOrder.expr_gt0).
-rewrite dvdz_modzDl; 1: by
- have ->  : 2^(8-i) = 2^((8-i-1)+1); [ by smt() |
-    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
-by have -> : (2 ^ (8 - i) * 2 ^ i) = 256; 
-  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
-     1,2:/# /= -!addrA /= | done ].
-qed.
-
-bind op [W16.t & W8.t] W2u8.truncateu8 "truncate".
-realize bvtruncateP.
-move => mv; rewrite /truncateu8 /W16.w2bits take_mkseq //= /w2bits.
-apply (eq_from_nth witness);1: by smt(size_mkseq).
-move => i; rewrite size_mkseq /= /max /= => ib.
-rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
-        nth_mkseq //= get_to_uint //= /to_uint /=.
-have -> /=: (0 <= i && i < 16) by smt().
-pose a := bs2int (w2bits mv). 
-rewrite {1}(divz_eq a (2^(8-i)*2^i)) !mulrA divzMDl;
-   1: by smt(StdOrder.IntOrder.expr_gt0).
-rewrite dvdz_modzDl; 1: by
- have ->  : 2^(8-i) = 2^((8-i-1)+1); [ by smt() |
-    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
-by have -> : (2 ^ (8 - i) * 2 ^ i) = 256; 
-  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
-     1,2:/# /= -!addrA /= | done ].
-qed.
-
-
-bind op [W16.t & W64.t] W4u16.zeroextu64 "zextend".
-realize bvzextendP
- by move => bv; rewrite /zeroextu64 /= of_uintK /=; smt(W16.to_uint_cmp pow2_16).
-
-bind op [W64.t & W16.t] W4u16.truncateu16 "truncate".
-realize bvtruncateP.
-move => mv; rewrite /truncateu16 /W64.w2bits take_mkseq //= /w2bits.
-apply (eq_from_nth witness);1: by smt(size_mkseq).
-move => i; rewrite size_mkseq /= /max /= => ib.
-rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
-        nth_mkseq //= get_to_uint //= /to_uint /=.
-have -> /=: (0 <= i && i < 64) by smt().
-pose a := bs2int (w2bits mv). 
-rewrite {1}(divz_eq a (2^(16-i)*2^i)) !mulrA divzMDl;
-   1: by smt(StdOrder.IntOrder.expr_gt0).
-rewrite dvdz_modzDl; 1: by
- have ->  : 2^(16-i) = 2^((16-i-1)+1); [ by smt() |
-    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
-by have -> : (2 ^ (16 - i) * 2 ^ i) = 65536; 
-  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
-     1,2:/# /= -!addrA /= | done ].
-qed.
-
-
-op sll_64 (w1 w2 : W64.t) : W64.t =
-  if (64 <= to_uint w2) then W64.zero else w1 `<<` (truncateu8 w2).
-
-bind op [W64.t] sll_64 "shl".
-realize bvshlP. 
-proof.
-rewrite /sll_64 => bv1 bv2.
-case : (64 <= to_uint bv2); last first.
-+ rewrite /(`<<`) W64.to_uint_shl; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W64.to_uint_cmp)).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 64) + 64 by ring. 
-by rewrite exprD_nneg 1,2:/# /= /#.
-qed.
-
-bind op [W32.t & W16.t] W2u16.truncateu16 "truncate".
-realize bvtruncateP.
-move => mv; rewrite /truncateu16 /W32.w2bits take_mkseq //= /w2bits.
-apply (eq_from_nth witness);1: by smt(size_mkseq).
-move => i; rewrite size_mkseq /= /max /= => ib.
-rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
-        nth_mkseq //= get_to_uint //= /to_uint /=.
-have -> /=: (0 <= i && i < 32) by smt().
-pose a := bs2int (w2bits mv). 
-rewrite {1}(divz_eq a (2^(16-i)*2^i)) !mulrA divzMDl;
-   1: by smt(StdOrder.IntOrder.expr_gt0).
-rewrite dvdz_modzDl; 1: by
- have ->  : 2^(16-i) = 2^((16-i-1)+1); [ by smt() |
-    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
-by have -> : (2 ^ (16 - i) * 2 ^ i) = 65536; 
-  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
-     1,2:/# /= -!addrA /= | done ].
-qed.
-
-
-bind op [W16.t & W32.t] sigextu32 "sextend".
-realize bvsextendP.
-move => bv;rewrite  /sigextu32 /to_sint /smod /= !of_uintK /=.
-case (32768 <= to_uint bv); 2: smt(W16.to_uint_cmp).
-move =>?;rewrite -{2}(oppzK (to_uint bv - 65536)) modNz /=; smt(W16.to_uint_cmp pow2_16). 
-qed.
-
-bind op [W32.t & W8.t] W4u8.truncateu8 "truncate".
-realize bvtruncateP.
-move => mv; rewrite /truncateu8 /W32.w2bits take_mkseq //= /w2bits.
-apply (eq_from_nth witness);1: by smt(size_mkseq).
-move => i; rewrite size_mkseq /= /max /= => ib.
-rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
-        nth_mkseq //= get_to_uint //= /to_uint /=.
-have -> /=: (0 <= i && i < 32) by smt().
-pose a := bs2int (w2bits mv). 
-rewrite {1}(divz_eq a (2^(8-i)*2^i)) !mulrA divzMDl;
-   1: by smt(StdOrder.IntOrder.expr_gt0).
-rewrite dvdz_modzDl; 1: by
- have ->  : 2^(8-i) = 2^((8-i-1)+1); [ by smt() |
-    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
-by have -> : (2 ^ (8 - i) * 2 ^ i) = 256; 
-  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
-     1,2:/# /= -!addrA /= | done ].
-qed.
-
-
-bind circuit VPBROADCAST_8u32 "VPBROADCAST_8u32".
-bind circuit VPBROADCAST_4u64 "VPBROADCAST_4u64".
-
-bind circuit VPMADDWD_256 "VPMADDWD_16u16".
-
-bind circuit VPSLLV_8u32 "VPSLLV_8u32".
-
-bind circuit VPSRL_4u64 "VPSRL_4u64".
-
-bind circuit VPSHUFB_256 "VPSHUFB_256".
-
-bind circuit VEXTRACTI128 "VEXTRACTI128".
-
-bind circuit VPBLENDW_128 "VPBLEND_8u16".
-
-bind circuit VPEXTR_32 "VEXTRACTI32_256".
-
-bind circuit W4u32.VPEXTR_32 "VEXTRACTI32_128".
-
-bind op [W256.t & W128.t] truncateu128 "truncate".
-realize bvtruncateP.
-move => mv; rewrite /truncateu128 /W256.w2bits take_mkseq //= /w2bits.
-apply (eq_from_nth witness);1: by smt(size_mkseq).
-move => i; rewrite size_mkseq /= /max /= => ib.
-rewrite !nth_mkseq // /of_int /to_uint /= get_bits2w // 
-        nth_mkseq //= get_to_uint //= /to_uint /=.
-have -> /=: (0 <= i && i < 256) by smt().
-pose a := bs2int (w2bits mv). 
-rewrite {1}(divz_eq a (2^(128-i)*2^i)) !mulrA divzMDl;
-   1: by smt(StdOrder.IntOrder.expr_gt0).
-rewrite dvdz_modzDl; 1: by
- have ->  : 2^(128-i) = 2^((128-i-1)+1); [ by smt() |
-    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
-by have -> : (2 ^ (128 - i) * 2 ^ i) = 340282366920938463463374607431768211456; 
-  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
-     1,2:/# /= -!addrA /= | done ].
-qed.
-
-
-op sra_32 (w1 w2 : W32.t) : W32.t =
-  if (32 <= to_uint w2) then W32.zero else w1 `|>>` (truncateu8 w2).
-
-bind op [W32.t] sra_32 "ashr".
-realize bvashrP.
-rewrite /sra_32 => bv1 bv2.
-case : (32 <= to_uint bv2 < 32); last by admit.
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 32) + 32 by ring. 
-rewrite exprD_nneg 1,2:/# /= mulrC. by admit. 
-qed.
-
-op sra_16 (w1 w2 : W16.t) : W16.t =
-if (16 <= to_uint w2) then  W16.zero else w1 `|>>` (truncateu8 w2).
-
-bind op [W16.t] sra_16 "ashr".
-realize bvashrP.
-rewrite /sra_16 => bv1 bv2.
-case : (16 <= to_uint bv2); last by admit.
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 16) + 16 by ring. 
-rewrite exprD_nneg 1,2:/# /= mulrC. by admit. 
-qed.
-
-
-op srl_16 (w1 w2 : W16.t) : W16.t =
-  if 16 <= (to_uint w2) then W16.zero else
-  w1 `>>` (truncateu8 w2).
-
-bind op [W16.t] srl_16 "shr".
-realize bvshrP.
-rewrite /srl_16 => bv1 bv2.
-case : (16 <= to_uint bv2); last first.
-+ rewrite /(`>>`) W16.to_uint_shr; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W16.to_uint_cmp)).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 16) + 16 by ring. 
-rewrite exprD_nneg 1,2:/# /=. 
-smt(StdOrder.IntOrder.expr_gt0 W16.to_uint_cmp pow2_16).
-qed.
-
-
-op sll_16 (w1 w2 : W16.t) : W16.t =
-  if (16 <= to_uint w2) then  W16.zero else  w1 `<<` (truncateu8 w2).
-
-bind op [W16.t] sll_16 "shl".
-realize bvshlP.
-rewrite /sll_16 => bv1 bv2.
-case : (16 <= to_uint bv2); last first.
-+ rewrite /(`<<`) W16.to_uint_shl; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W16.to_uint_cmp pow2_16)).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 16) + 16 by ring. 
-by rewrite exprD_nneg 1,2:/# /= /#.
-qed.
-
-op srl_64 (w1 w2 : W64.t) : W64.t =
-  if (64 <= to_uint w2) then  W64.zero else  w1 `>>` (truncateu8 w2).
-
-bind op [W64.t] srl_64 "shr".
-realize bvshrP.
-rewrite /srl_64 => bv1 bv2.
-case : (64 <= to_uint bv2); last first.
-+ rewrite /(`>>`) W64.to_uint_shr; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  do 2! (rewrite (pmod_small (to_uint bv2) _);smt(W64.to_uint_cmp)).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 64) + 64 by ring. 
-rewrite exprD_nneg 1,2:/# /=. 
-smt(StdOrder.IntOrder.expr_gt0 W64.to_uint_cmp pow2_64).
-qed.
 
 op lane_func_reduce(c : W16.t) : W16.t =  
     let t =  (sigextu32 c)  * (W32.of_int 20159) in
@@ -2543,17 +2727,52 @@ bdep 16 10 [_bp] [bp] [rp] lane_polyvec_redcomp10 pcond_all.
 + by smt().
 qed.
 
-lemma ref_correctness_p (_bp : W16.t Array768.t) : phoare [ AuxPolyVecCompress10.ref :
-_bp = bp ==> 
-map lane_polyvec_redcomp10 (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _bp))]))) =
-    map W10.bits2w (chunk 10 (flatten [flatten (map W8.w2bits (to_list res))]))
+lemma ref_correctness_p (_bp : W16.t Array768.t) :
+phoare [ AuxPolyVecCompress10.ref :
+         _bp = bp ==> 
+         map lane_polyvec_redcomp10 (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _bp))]))) =
+         map W10.bits2w (chunk 10 (flatten [flatten (map W8.w2bits (to_list res))]))
 ] = 1%r.
-admitted.
+proof.
+have Hll: islossless AuxPolyVecCompress10.ref.
+ proc; inline*.
+ wp; while (true) (3*256-i).
+  by move=> *; auto => /> /#.
+ wp; while (true) (256-i2).
+  by move=> *; auto => /> /#.
+ wp; while (true) (256-i1).
+  by move=> *; auto => /> /#.
+ wp; while (true) (256-i0).
+  by move=> *; auto => /> /#.
+ wp; while (true) (256-j2).
+  by move=> *; auto => /> /#.
+ wp; while (true) (256-j1).
+  by move=> *; auto => /> /#.
+ wp; while (true) (256-j0).
+  by move=> *; auto => /> /#.
+ by auto => /> /#.
+by conseq Hll (ref_correctness _bp).
+qed.
 
-lemma avx_correctness_p (_bp : W16.t Array768.t) : phoare [ AuxPolyVecCompress10.avx2 : _bp = bp ==> 
-map lane_polyvec_redcomp10 (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _bp))]))) =
-    map W10.bits2w (chunk 10 (flatten [flatten (map W8.w2bits (to_list res))]))] = 1%r.
-admitted.
+lemma avx_correctness_p (_bp : W16.t Array768.t) :
+ phoare [ AuxPolyVecCompress10.avx2
+        : _bp = bp ==> 
+          map lane_polyvec_redcomp10 (map W16.bits2w (chunk 16 (flatten [flatten (map W16.w2bits (to_list _bp))]))) =
+          map W10.bits2w (chunk 10 (flatten [flatten (map W8.w2bits (to_list res))]))] = 1%r.
+proof.
+have Hll: islossless AuxPolyVecCompress10.avx2.
+ proc; inline*.
+ wp; while (true) (aux0-i).
+  by move=> *; auto => /> /#.
+ wp; while (true) (16-i2).
+  by move=> *; auto => /> /#.
+ wp; while (true) (16-i1).
+  by move=> *; auto => /> /#.
+ wp; while (true) (16-i0).
+  by move=> *; auto => /> /#.
+ auto => /> /#.
+by conseq Hll (avx_correctness _bp).
+qed.
 
 lemma unbits16 (bpl : W16.t list) :
   (map W16.bits2w (chunk 16 (flatten (map W16.w2bits bpl)))) = bpl.
@@ -2760,7 +2979,7 @@ have H := polyvec_add2_equiv_noperm 2 2 _ _ => //.
 ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 
 
-unroll for {1} 39.
+unroll for* {1} 39.
 
 swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2}=pkp{1}); 1: by auto.
 sp 3 3.
@@ -3145,7 +3364,7 @@ have H := polyvec_add2_equiv_noperm 2 2 _ _ => //.
 ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 
 
-unroll for {1} 39.
+unroll for* {1} 39.
 
 swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2} = pkp{1}); 1: by auto.
 sp 3 3.

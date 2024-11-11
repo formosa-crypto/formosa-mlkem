@@ -1,4 +1,4 @@
-require import AllCore Distr List Real SmtMap FSet DInterval FinType KEM_ROM.
+require import AllCore Distr List Real FMap FSet DInterval FinType KEM_ROM.
 require (****) PKE_ROM PlugAndPray Hybrid FelTactic. 
 
 (* This will be the underlying scheme resulting 
@@ -964,7 +964,7 @@ seq 2 2 : (={glob A,k1} /\ k0{1} = k2{2}); 1: by auto.
   (!H1.bad{2} <=> 
              Some H2.mtgt{2} = dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2}))).
   auto => /> &2 f Hf kpair Hkpair b Hb m Hm.
-  smt(mem_empty get_setE fdom_set @SmtMap @FSet @List).
+  smt(mem_empty get_setE fdom_set @FMap @FSet @List).
 
 case (H1.bad{1}).
 rnd;wp;call(:H1.bad,false,CCA.cstar{2} <> None /\ 

@@ -1170,8 +1170,8 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
   by symmetry;wp; do 2!call(CBD2rnd_vec_equiv); auto => />.
 
  seq 1 5: (_N{2} = 0 /\ ={rho} /\
-     forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
-  + inline *; swap {2} 1 1; auto;conseq (: _ ==> ={rho}); 1:by smt(SmtMap.mem_empty).
+     forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  + inline *; swap {2} 1 1; auto;conseq (: _ ==> ={rho}); 1:by smt(FMap.mem_empty).
     rndsem*{2} 0; auto => />.
     have -> : (dfst dRO) = srand; last by smt().
     apply eq_distr => x;rewrite dmap1E.
@@ -1181,17 +1181,17 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     by rewrite srand_ll /=.
     
  seq 1 2: (={noise1,rho} /\ _N{2} = 3 /\
-           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+           forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
   while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
          (forall k, 0 <= k < i{2} => (v{1}.[k]=noise1{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+         forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
    rcondt {2} 4.
    +  move=> *; wp; skip => &hr /> ??? Hm ?.
       rewrite -implybF => H.
       by move: (Hm _ H); rewrite implybF of_uintK /#.
    wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
     auto => />. move => &1 &2 *; do split; 1..3:smt().
     move=> k ?? /=.
@@ -1201,10 +1201,10 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#. 
    wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
-    split; 1:   by rewrite SmtMap.get_set_sameE.
+    split; 1:   by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int i{2}) => E.
      by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i0 p2 ?????? H; split; first smt().
    have EE: p1 = p2.
@@ -1217,17 +1217,17 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
   move=> v1 m i v2 => ??????; split; last smt().
   apply eq_vectorP => k kb;smt(setvE getvE).
  wp; seq 2 2: (={rho,noise1,noise2} /\ _N{2} = 6 /\
-           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+           forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
   while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ noise1{1}=noise1{2} /\
          (forall k, 0 <= k < i{2} => (v{1}.[k]=noise2{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+         forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
    rcondt {2} 4.
     move=> *; wp; skip => &hr /> ??? Hm ?.
     rewrite -implybF => H.
     by move: (Hm _ H); rewrite implybF of_uintK /#.
    wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
     wp; skip => /> &1&2 *; split; first smt().    
     split; first smt().
@@ -1238,10 +1238,10 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
    wp; rnd; wp; skip => /> &1 &2; rewrite !getvE !setvE => ?????????; split.
-    split; 1:  by rewrite SmtMap.get_set_sameE.
+    split; 1:  by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int (3+i{2})) => E.
      by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i1 p2 ?????? H; split; first smt().
    have EE: p1 = p2.
@@ -1309,21 +1309,21 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
   by symmetry;wp; call(CBD2rnd_equiv); do 2!call(CBD2rnd_vec_equiv); auto => />.
 
  seq 0 4: (_N{2} = 0 /\ 
-     forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
-  + by auto => />;smt(SmtMap.mem_empty).
+     forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+  + by auto => />;smt(FMap.mem_empty).
     
  seq 1 2: (={noise1} /\ _N{2} = 3 /\
-           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+           forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
   while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
          (forall k, 0 <= k < i{2} => (v{1}.[k]=noise1{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+         forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
    rcondt {2} 4.
    +  move=> *; wp; skip => &hr /> ??? Hm ?.
       rewrite -implybF => H.
       by move: (Hm _ H); rewrite implybF of_uintK /#.
    wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
     auto => />. move => &1 &2 *; do split; 1..3:smt().
     move=> k ?? /=.
@@ -1333,10 +1333,10 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#. 
    wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
-    split; 1:   by rewrite SmtMap.get_set_sameE.
+    split; 1:   by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int i{2}) => E.
      by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i0 p2 ?????? H; split; first smt().
    have EE: p1 = p2.
@@ -1349,17 +1349,17 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
   move=> v1 m i v2 => ??????; split; last smt().
   apply eq_vectorP => k kb;smt(setvE getvE).
  wp; seq 1 2: (={noise1,noise2} /\ _N{2} = 6 /\
-           forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+           forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
   while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ noise1{1}=noise1{2} /\
          (forall k, 0 <= k < i{2} => (v{1}.[k]=noise2{2}.[k])%PolyVec) /\
-         forall (x:W8.t), SmtMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
+         forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
    rcondt {2} 4.
     move=> *; wp; skip => &hr /> ??? Hm ?.
     rewrite -implybF => H.
     by move: (Hm _ H); rewrite implybF of_uintK /#.
    wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
-              (forall (x1 : W8.t), SmtMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
+              (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
     wp; skip => /> &1&2 *; split; first smt().    
     split; first smt().
@@ -1370,10 +1370,10 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
    wp; rnd; wp; skip => /> &1 &2; rewrite !getvE !setvE => ?????????; split.
-    split; 1:  by rewrite SmtMap.get_set_sameE.
+    split; 1:  by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int (3+i{2})) => E.
      by move=> _; rewrite E of_uintK modz_small /#.
-    rewrite SmtMap.domE SmtMap.get_set_neqE 1:// => H. 
+    rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i1 p2 ?????? H; split; first smt().
    have EE: p1 = p2.
@@ -1403,7 +1403,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
    wp; rnd; wp; skip => /> &1 &2 ????; split.
-    by rewrite SmtMap.get_set_eqE //=.
+    by rewrite FMap.get_set_eqE //=.
    move => p1 i1 p2 ????? H.
    by apply Array256.tP => k kb; apply H; smt().
 qed.

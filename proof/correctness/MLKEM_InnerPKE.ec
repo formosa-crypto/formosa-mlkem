@@ -853,15 +853,15 @@ equiv sample_noise_good2 _key :
 proc => /=.
 unroll for {2} 7; unroll for {2} 5.
 seq 2 2 : (#pre); 1:by auto.
-seq 3 4 : (#pre /\ lift_array256 (subarray256 noise1{1} 0) = (noise1{2}.[0])%Vector /\ _N{2}=0 /\ i{2} = 0 /\
+seq 3 3 : (#pre /\ lift_array256 (subarray256 noise1{1} 0) = (noise1{2}.[0])%Vector /\ _N{2}=0 /\ 
               (forall k, 0<=k<256 => -5 < to_sint noise1{1}.[k] < 5)).
-wp; call (get_noise_sample_noise); auto => /> &1 &2 *; split.
+wp; call (get_noise_sample_noise); auto => /> *; split.
 + rewrite /lift_array256 /subarray256 /= tP => k kb.
   rewrite !mapiE //= initiE //= initiE 1:/# /= kb /=.
   by rewrite  /= setvE /= offunvE 1:/# /= !mapiE /#.
 by move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= /#.
 
-seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=1 /\ i{2} = 1 /\
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=1 /\ 
               lift_array256 (subarray256 noise1{1} 0) = (noise1{2}.[0])%Vector /\
               lift_array256 (subarray256 noise1{1} 1) = (noise1{2}.[1])%Vector /\ 
               (forall k, 0<=k<512 => -5 < to_sint noise1{1}.[k] < 5)).
@@ -872,7 +872,7 @@ wp; call (get_noise_sample_noise); auto => /> &1 &2 H *; do split.
   by move : (H k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
 by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
 
-seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=2 /\ i{2} = 2 /\
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=2 /\
               lift_polyvec noise1{1} = noise1{2} /\
               (forall k, 0<=k<768 => -5 < to_sint noise1{1}.[k] < 5)).
 wp; call (get_noise_sample_noise); auto => /> &1 &2 H0 H1 *; split; 
@@ -888,14 +888,14 @@ case (r = 1).
 move => *; have -> /= : 2 = r by smt(). 
 by rewrite !mapiE //= !initiE //= !initiE //= /#. 
 
-seq 3 5 : (#{/~_N{2}}{~i{2}}pre /\ lift_array256 (subarray256 noise2{1} 0) = (noise2{2}.[0])%Vector /\ _N{2}=3 /\ i{2} = 0 /\
+seq 3 4 : (#{/~_N{2}}{~i{2}}pre /\ lift_array256 (subarray256 noise2{1} 0) = (noise2{2}.[0])%Vector /\ _N{2}=3 /\
               (forall k, 0<=k<256 => -5 < to_sint noise2{1}.[k] < 5)).
 wp; call (get_noise_sample_noise); auto => /> &1 &2 *; split.
 + rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= tP => k kb.
   by rewrite !mapiE //= initiE //= initiE 1:/# /= kb /=.
 by move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= /#.
 
-seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=4 /\ i{2} = 1 /\
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=4 /\
               lift_array256 (subarray256 noise2{1} 0) = (noise2{2}.[0])%Vector /\
               lift_array256 (subarray256 noise2{1} 1) = (noise2{2}.[1])%Vector /\ 
               (forall k, 0<=k<512 => -5 < to_sint noise2{1}.[k] < 5)).
@@ -906,7 +906,7 @@ wp; call (get_noise_sample_noise); auto => /> &1 &2 ?H *; do split.
   by move : (H k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
 by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
 
-seq 3 4 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=5 /\ i{2} = 2 /\
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=5 /\
               lift_polyvec noise2{1} = noise2{2} /\
               (forall k, 0<=k<768 => -5 < to_sint noise2{1}.[k] < 5)).
 wp; call (get_noise_sample_noise); auto => /> &1 &2 ?H0 H1 *; split; 

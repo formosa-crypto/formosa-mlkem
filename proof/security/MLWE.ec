@@ -1,4 +1,5 @@
-require import AllCore Ring SmtMap Distr PROM.
+require import AllCore Ring Distr FMap PROM.
+
 require (****) Matrix.
 
 clone import Matrix as Matrix_.
@@ -258,10 +259,11 @@ swap {2} 11 -8.
 swap {2} 14 -13.
 swap {2} [15..16] -10.
 swap {1} 5 -2.
+
 seq 3 6 : (#pre /\ ={b,_A,sd} /\ (RO.m{1}.[B._sd{2}] = Some B.__A{2}) /\ 
           B.__A{2} = _A{2} /\ B._sd{2} = sd{2} /\ 
           (forall x, x <> B._sd{2} => RO.m{1}.[x] = RO.m{2}.[x]));
- first by inline *; auto => />; smt(@SmtMap).
+ first by inline *; auto => />; smt(@FMap).
 wp;call(: (RO.m{1}.[B._sd{2}] = Some B.__A{2}) /\ 
             forall x, x <> B._sd{2} => RO.m{1}.[x] = RO.m{2}.[x]).
 proc;inline *.
@@ -290,7 +292,7 @@ seq 3 6 : (#pre /\ ={b,sd} /\ _A{1} = m_transpose _A{2} /\
            Bt.__A{2} = m_transpose _A{2} /\ Bt._sd{2} = sd{2} /\ 
            (forall x, x <> Bt._sd{2} => RO.m{1}.[x] = RO.m{2}.[x])).
 + inline *; wp; rnd (fun m => m_transpose m) (fun m => m_transpose m).
-  by auto => />;   smt(@SmtMap trmxK duni_matrix_funi). 
+  by auto => />;   smt(@FMap trmxK duni_matrix_funi). 
 wp;call(: (RO.m{1}.[Bt._sd{2}] = Some Bt.__A{2}) /\ 
             forall x, x <> Bt._sd{2} => RO.m{1}.[x] = RO.m{2}.[x]).
 proc;inline *.
@@ -658,7 +660,7 @@ seq 4 0 : (#pre /\ (_A = oget RO.m.[sd]){1}); 1:
 seq 1 1 : #pre; last by auto => /> &1 ?; rewrite /dout duni_matrix_ll.
 exists* _A{1}, sd{1}; elim * => _A1 sd1.
 call(: ={RO.m} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]).
-+ proc; auto => /> &2 rl ??; 1:smt(@SmtMap).
++ proc; auto => /> &2 rl ??; 1:smt(@FMap).
 by auto => />.
 qed.
 
@@ -694,7 +696,7 @@ seq 4 0 : (#pre /\ (_A = oget RO.m.[sd]){1}); 1:
 seq 1 1 : #pre; last by auto => /> &1 ?; rewrite /dout duni_matrix_ll.
 exists* _A{1}, sd{1}; elim * => _A1 sd1.
 call(: ={RO.m} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]).
-+ proc; auto => /> &2 rl ??; 1:smt(@SmtMap).
++ proc; auto => /> &2 rl ??; 1:smt(@FMap).
 by auto => />.
 qed.
 
@@ -1060,7 +1062,7 @@ seq 2 2 : #pre; last by auto => /> &1 ?; rewrite /dout duni_matrix_ll.
 exists* _A{1}, sd{1}; elim * => _A1 sd1.
 call(: ={RO.m, glob Sim} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by call(_:true); auto => />.
 proc*;call(: ={RO.m} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by auto => />.
-by proc; inline *; auto => />; smt(@SmtMap).
+by proc; inline *; auto => />; smt(@FMap).
 qed.
 
 lemma MLWE_SMP_equiv_t _b &m  (S <: Sampler {-LRO, -RO, -FRO, -RO_SMP.LRO, -D}) 
@@ -1122,7 +1124,7 @@ seq 2 2 : #pre; last by auto => /> &1 ?; rewrite /dout duni_matrix_ll.
 exists* _A{1}, sd{1}; elim * => _A1 sd1.
 call(: ={RO.m, glob Sim} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by call(_: true);auto => />.
 proc*;call(: ={RO.m} /\ sd1 \in RO.m{1} /\ _A1 = oget RO.m{1}.[sd1]); last by auto => />.
-by proc; inline *; auto => />; smt(@SmtMap).
+by proc; inline *; auto => />; smt(@FMap).
 qed.
 
 end SMP_vs_ROM_IND.
