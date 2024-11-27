@@ -6,11 +6,9 @@ provers = CVC4@1.8
 provers = Z3@4.8
 
 rdirs = proof
-rdirs = ../easycrypt/examples
 rdirs = Jasmin:jasmin/eclib
 idirs = code/jasmin/mlkem_ref/extraction
 idirs = code/jasmin/mlkem_avx2/extraction
 idirs = crypto-specs/common
 rdirs = crypto-specs/fips202
 rdirs = crypto-specs/ml-kem
-rdirs = ~/Desktop/Repos/easycrypt/examples
