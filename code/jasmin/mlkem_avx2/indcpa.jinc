@@ -127,8 +127,8 @@ fn __indcpa_enc_0(#mmx reg u64 sctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg
   bp = __polyvec_add2(bp, ep);
   v = _poly_add2(v, epp);
   v = _poly_add2(v, k);
+  bp = __polyvec_reduce(bp);
   v  = __poly_reduce(v);
-  bp = __polyvec_reduce_sig(bp);
 
   ctp = sctp;
 
@@ -199,8 +199,8 @@ fn __indcpa_enc_1(
   bp = __polyvec_add2(bp, ep);
   v = _poly_add2(v, epp);
   v = _poly_add2(v, k);
+  bp = __polyvec_reduce(bp);
   v  = __poly_reduce(v);
-  bp = __polyvec_reduce_sig(bp);
 
   ctp[0:MLKEM_POLYVECCOMPRESSEDBYTES] = __polyvec_compress_1(ctp[0:MLKEM_POLYVECCOMPRESSEDBYTES], bp);
   ctp[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v = _poly_compress_1(ctp[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v);

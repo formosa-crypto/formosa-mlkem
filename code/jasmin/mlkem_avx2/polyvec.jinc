@@ -68,7 +68,6 @@ u64 pvc_sllvdidx_s = 0x0C;
 u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 8, 9, 10, 11, 12, -1, -1, -1, -1, -1, -1,
                          9, 10, 11, 12, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 8};
 
-/*
 inline
 fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
 {
@@ -112,90 +111,8 @@ fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
     (u128)[rp + 20*i] = t0;
     (u32)[rp + 20*i + 16] = #VPEXTR_32(t1, 0);
   }
-} */
-
-u16 compress10_b0 = -20553;
-u16 compress10_b1 = 20;
-u16 compress10_b2 = 1 << 9;
-u16 compress10_mask10 = 0x3ff;
-u32 compress10_shift = 0x04000001;
-u64 compress10_sllv_indx = 12;
-u8[32] compress10_shuffle = { 0,  1,  2,  3,  4,  8,  9, 10,
-                             11, 12, -1, -1, -1, -1, -1, -1,
-                              9, 10, 11, 12, -1, -1, -1, -1,
-                             -1, -1,  0,  1,  2,  3,  4,  8};
-
-// Inputs:
-// forall i = 0, ..., 15, a_i with -q/2 <= a_i <= q/2
-// Outputs:
-// forall i = 0, ..., 15, round( 1024 a_i / q) & 1023
-inline
-fn compress10_16x16_inline(reg u256 a b0 b1 b2 mask) -> reg u256 {
-
-    reg u256 p0 p1;
-
-    p0 = #VPMULH_16u16(a, b0);
-    p1 = #VPMULL_16u16(a, b1);
-    p0 = #VPADD_16u16(p0, p1);
-    p0 = #VPMULHRS_16u16(p0, b2);
-    p0 = #VPAND_256(p0, mask);
-
-    return p0;
-
 }
 
-// Inputs:
-// forall i = 0, ..., 15, a_i with 0 <= a_i < 1024
-// Outputs:
-// lo32(hi) || lo = lo10(a15) || ... || lo10(a0)
-inline
-fn pack10_16x16(reg u256 a shift sllv_indx shuffle) -> reg u128, reg u128 {
-
-    reg u128 lo hi;
-
-    a = #VPMADDWD_256(a, shift);
-    a = #VPSLLV_8u32(a, sllv_indx);
-    a = #VPSRL_4u64(a, 12);
-    a = #VPSHUFB_256(a, shuffle);
-
-    lo = (128u)a;
-    hi = #VEXTRACTI128(a, 1);
-    lo = #VPBLEND_8u16(lo, hi, 0xe0);
-
-    return lo, hi;
-
-}
-
-inline
-fn __polyvec_compress(reg u64 r, stack u16[MLKEM_VECN] a){
-
-    reg u256 a0;
-    reg u128 lo hi;
-    reg u256 b0 b1 b2;
-    reg u256 mask10 shift sllv_indx shuffle;
-    inline int i;
-
-    b0 = #VPBROADCAST_16u16(compress10_b0);
-    b1 = #VPBROADCAST_16u16(compress10_b1);
-    b2 = #VPBROADCAST_16u16(compress10_b2);
-    mask10 = #VPBROADCAST_16u16(compress10_mask10);
-    shift = #VPBROADCAST_8u32(compress10_shift);
-    sllv_indx = #VPBROADCAST_4u64(compress10_sllv_indx);
-    shuffle = compress10_shuffle[u256 0];
-
-    for i = 0 to MLKEM_VECN / 16 {
-
-        a0 = a[u256 i];
-        a0 = compress10_16x16_inline(a0, b0, b1, b2, mask10);
-        lo, hi = pack10_16x16(a0, shift, sllv_indx, shuffle);
-        (u128)[r + i * 20 + 0] = lo;
-        (u32)[r + i * 20 + 16] = #VPEXTR_32(hi, 0);
-
-    }
-
-}
-
-/*
 inline
 fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
 {
@@ -242,35 +159,6 @@ fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[M
 
   return rp;
 }
-*/
-
-inline
-fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] {
-
-    reg u256 a0;
-    reg u128 lo hi;
-    reg u256 b0 b1 b2;
-    reg u256 mask10 shift sllv_indx shuffle;
-    inline int i;
-
-    b0 = #VPBROADCAST_16u16(compress10_b0);
-    b1 = #VPBROADCAST_16u16(compress10_b1);
-    b2 = #VPBROADCAST_16u16(compress10_b2);
-    mask10 = #VPBROADCAST_16u16(compress10_mask10);
-    shift = #VPBROADCAST_8u32(compress10_shift);
-    sllv_indx = #VPBROADCAST_4u64(compress10_sllv_indx);
-    shuffle = compress10_shuffle[u256 0];
-
-    for i = 0 to MLKEM_VECN / 16 {
-        a0 = a[u256 i];
-        a0 = compress10_16x16_inline(a0, b0, b1, b2, mask10);
-        lo, hi = pack10_16x16(a0, shift, sllv_indx, shuffle);
-        rp.[u128 20*i] = lo;
-        rp.[u32 20*i + 16] = #VPEXTR_32(hi, 0);
-    }
-    return rp;
-}
-
 
 inline
 fn __polyvec_frombytes(reg u64 ap) -> stack u16[MLKEM_VECN]
@@ -321,15 +209,6 @@ fn __polyvec_reduce(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
   return r;
 }
 
-inline
-fn __polyvec_reduce_sig(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
-{
-  r[0:MLKEM_N] = __poly_reduce_sig(r[0:MLKEM_N]);
-  r[MLKEM_N:MLKEM_N] = __poly_reduce_sig(r[MLKEM_N:MLKEM_N]);
-  r[2*MLKEM_N:MLKEM_N] = __poly_reduce_sig(r[2*MLKEM_N:MLKEM_N]);
-
-  return r;
-}
 
 inline
 fn __polyvec_pointwise_acc(stack u16[MLKEM_N] r, stack u16[MLKEM_VECN] a b) -> stack u16[MLKEM_N]
