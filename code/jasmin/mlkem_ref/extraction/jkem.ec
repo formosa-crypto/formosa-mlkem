@@ -6,12 +6,9 @@ import SLH64.
 
 require import
 Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64 Array128
-Array168 Array256 Array768 Array960 Array1088 Array2304.
-
-require import
-WArray20 WArray32 WArray33 WArray34 WArray40 WArray64 WArray128 WArray168
-WArray192 WArray200 WArray256 WArray512 WArray960 WArray1088 WArray1536
-WArray4608.
+Array168 Array256 Array768 Array960 Array1088 Array2304 WArray20 WArray32
+WArray33 WArray34 WArray40 WArray64 WArray128 WArray168 WArray192 WArray200
+WArray256 WArray512 WArray960 WArray1088 WArray1536 WArray4608.
 
 abbrev jzetas_inv =
 (Array128.of_list witness

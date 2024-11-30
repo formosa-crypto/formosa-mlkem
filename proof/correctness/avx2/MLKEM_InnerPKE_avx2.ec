@@ -352,7 +352,7 @@ qed.
 
 lemma VPSRL1_ANDmask55 w k:
  0 <= k < 32 =>
- mask55u256 `&` (VPSRL_16u16 w (W8.of_int 1)) \bits8 k
+ mask55u256 `&` (VPSRL_16u16 w (W128.of_int 1)) \bits8 k
  = mask55u8 `&` ((w \bits8 k) `>>` (W8.of_int 1)).
 proof.
 move=> Hk.
@@ -361,12 +361,12 @@ rewrite -W256_bits16_bits8 1:/# andb16E /VPSRL_16u16 mapbE 1:/# /=.
 rewrite W256_bits16_bits8 1:/# mask55_bits8 1:/#.
 apply W8extra.wordP_red. rewrite -allP /=.
 have: (k\in iota_ 0 32) by smt(mem_iota).
-by move: {Hk} k; rewrite -allP -iotaredE /= !W16.shrwE !W8.shrwE /int_bit /=.
+by move: {Hk} k; rewrite -allP -iotaredE /= /(`>>`)  !W8.shrwE /int_bit /=.
 qed.
 
 lemma VPSRL2_ANDmask33 w k:
  0 <= k < 32 =>
- mask33u256 `&` (VPSRL_16u16 w (W8.of_int 2)) \bits8 k
+ mask33u256 `&` (VPSRL_16u16 w (W128.of_int 2)) \bits8 k
  = mask33u8 `&` ((w \bits8 k) `>>` (W8.of_int 2)).
 proof.
 move=> Hk.
@@ -375,12 +375,12 @@ rewrite -W256_bits16_bits8 1:/# andb16E /VPSRL_16u16 mapbE 1:/# /=.
 rewrite W256_bits16_bits8 1:/# mask33_bits8 1:/#.
 apply W8extra.wordP_red. rewrite -allP /=.
 have: (k\in iota_ 0 32) by smt(mem_iota).
-by move: {Hk} k; rewrite -allP -iotaredE /= !W16.shrwE !W8.shrwE /int_bit /=.
+by move: {Hk} k; rewrite -allP -iotaredE /= /(`>>`) !W8.shrwE /int_bit /=.
 qed.
 
 lemma VPSRL4_ANDmask0F w k:
  0 <= k < 32 =>
- VPAND_256 mask0Fu256 (VPSRL_16u16 w (W8.of_int 4)) \bits8 k
+ VPAND_256 mask0Fu256 (VPSRL_16u16 w (W128.of_int 4)) \bits8 k
  = mask0Fu8 `&` ((w \bits8 k) `>>` (W8.of_int 4)).
 proof.
 move=> Hk.
@@ -389,7 +389,7 @@ rewrite -W256_bits16_bits8 1:/# andb16E /VPSRL_16u16 mapbE 1:/# /=.
 rewrite W256_bits16_bits8 1:/# mask0F_bits8 1:/#.
 apply W8extra.wordP_red. rewrite -allP /=.
 have: (k\in iota_ 0 32) by smt(mem_iota).
-by move: {Hk} k; rewrite -allP -iotaredE /= !W16.shrwE !W8.shrwE /int_bit /=.
+by move: {Hk} k; rewrite -allP -iotaredE /= /(`>>`) !W8.shrwE /int_bit /=.
 qed.
 
 lemma to_uint_mask33 (w:W8.t):

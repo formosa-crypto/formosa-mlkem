@@ -1197,32 +1197,32 @@ module OpsV = {
     return VPEXTR_32 x p;
   }
 
-  proc iVPSRA_16u16 (x: vt16u16, y: W8.t) : vt16u16 = {
+  proc iVPSRA_16u16 (x: vt16u16, y: W128.t) : vt16u16 = {
     return VPSRA_16u16 x y;
   }
 
 
-  proc iVPSLL_8u32 (x: vt8u32, y: W8.t) : vt8u32 = {
+  proc iVPSLL_8u32 (x: vt8u32, y: W128.t) : vt8u32 = {
     return VPSLL_8u32 x y;
   }
 
-  proc iVPSLL_16u16 (x: vt16u16, y: W8.t) : vt16u16 = {
+  proc iVPSLL_16u16 (x: vt16u16, y: W128.t) : vt16u16 = {
     return VPSLL_16u16 x y;
   }
 
-  proc iVPSRL_16u16 (x: vt16u16, y: W8.t) : vt16u16 = {
+  proc iVPSRL_16u16 (x: vt16u16, y: W128.t) : vt16u16 = {
     return VPSRL_16u16 x y;
   }
 
-  proc iVPSRL_8u32 (x: vt8u32, y: W8.t) : vt8u32 = {
+  proc iVPSRL_8u32 (x: vt8u32, y: W128.t) : vt8u32 = {
     return VPSRL_8u32 x y;
   }
 
-  proc iVPSRL_4u64 (x: vt4u64, y: W8.t) : vt4u64 = {
+  proc iVPSRL_4u64 (x: vt4u64, y: W128.t) : vt4u64 = {
     return VPSRL_4u64 x y;
   }
 
-  proc iVPSLL_4u64 (x: vt4u64, y: W8.t) : vt4u64 = {
+  proc iVPSLL_4u64 (x: vt4u64, y: W128.t) : vt4u64 = {
     return VPSLL_4u64 x y;
   }
 
@@ -1899,26 +1899,26 @@ proof. by proc; skip; rewrite /is2u64 /VPEXTR_64 => /> &1 &2 [] -> /=. qed.
 equiv eq_iVPEXTR_32: Ops.iVPEXTR_32 ~ OpsV.iVPEXTR_32 : is16u8 x{1} x{2} /\ ={p} /\ (p{1} = W8.of_int 0 \/ p{2} = W8.of_int 1) ==> is4u8 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is16u8 /is4u8 /VPEXTR_32 => /> &1 &2 [] -> /=. qed.
 
-equiv eq_iVPSLL_8u32: Ops.iVPSLL_8u32 ~ OpsV.iVPSLL_8u32: is8u32 x{1} x{2} /\ ={y} ==> is8u32 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is8u32 /VPSLL_8u32. qed.
+equiv eq_iVPSLL_8u32: Ops.iVPSLL_8u32 ~ OpsV.iVPSLL_8u32: is8u32 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is8u32 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is8u32 /VPSLL_8u32 /(`<<`) => /> /#. qed.
 
-equiv eq_iVPSLL_16u16: Ops.iVPSLL_16u16 ~ OpsV.iVPSLL_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is16u16 /VPSLL_16u16. qed.
+equiv eq_iVPSLL_16u16: Ops.iVPSLL_16u16 ~ OpsV.iVPSLL_16u16: is16u16 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16 /VPSLL_16u16 /(`<<`) => /> /#. qed.
 
-equiv eq_iVPSRL_16u16: Ops.iVPSRL_16u16 ~ OpsV.iVPSRL_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is16u16 /VPSRL_16u16. qed.
+equiv eq_iVPSRL_16u16: Ops.iVPSRL_16u16 ~ OpsV.iVPSRL_16u16: is16u16 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16 /VPSRL_16u16 /(`>>`) => /> /#. qed.
 
-equiv eq_iVPSRL_8u32: Ops.iVPSRL_8u32 ~ OpsV.iVPSRL_8u32: is8u32 x{1} x{2} /\ ={y} ==> is8u32 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is8u32 /VPSRL_8u32. qed.
+equiv eq_iVPSRL_8u32: Ops.iVPSRL_8u32 ~ OpsV.iVPSRL_8u32: is8u32 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is8u32 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is8u32 /VPSRL_8u32 /(`>>`) => /> /#. qed.
 
-equiv eq_iVPSRA_16u16: Ops.iVPSRA_16u16 ~ OpsV.iVPSRA_16u16: is16u16 x{1} x{2} /\ ={y} ==> is16u16 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is16u16 /VPSRA_16u16. qed.
+equiv eq_iVPSRA_16u16: Ops.iVPSRA_16u16 ~ OpsV.iVPSRA_16u16: is16u16 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is16u16 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is16u16 /VPSRA_16u16 /(`>>`) => /> /#. qed.
 
-equiv eq_iVPSRL_4u64: Ops.iVPSRL_4u64 ~ OpsV.iVPSRL_4u64 : is4u64 x{1} x{2} /\ ={y} ==> is4u64 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is4u64 /VPSRL_4u64. qed.
+equiv eq_iVPSRL_4u64: Ops.iVPSRL_4u64 ~ OpsV.iVPSRL_4u64 : is4u64 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is4u64 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is4u64 /VPSRL_4u64 /(`>>`) => /> /#. qed.
 
-equiv eq_iVPSLL_4u64: Ops.iVPSLL_4u64 ~ OpsV.iVPSLL_4u64 : is4u64 x{1} x{2} /\ ={y} ==> is4u64 res{1} res{2}.
-proof. by proc; wp; skip; rewrite /is4u64 /VPSLL_4u64. qed.
+equiv eq_iVPSLL_4u64: Ops.iVPSLL_4u64 ~ OpsV.iVPSLL_4u64 : is4u64 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is4u64 res{1} res{2}.
+proof. by proc; wp; skip; rewrite /is4u64 /VPSLL_4u64 /(`>>`) => /> /#. qed.
 
 equiv eq_iVPAND_16u16: Ops.iVPAND_16u16 ~ OpsV.iVPAND_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
 proof. by proc; wp; skip; rewrite /is16u16. qed.

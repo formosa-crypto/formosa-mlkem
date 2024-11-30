@@ -895,7 +895,7 @@ qed.
 
 lemma VPSRL_8u32_16 x k:
  0 <= k < 16 =>
- (VPSRL_8u32 x (W8.of_int 16)) \bits16 k
+ (VPSRL_8u32 x (W128.of_int 16)) \bits16 k
  = if k%%2 = 0
    then x \bits16 k+1
    else W16.zero.
@@ -1039,11 +1039,12 @@ do 8!
  (pose X:= a1{m} \bits32 _;
   rewrite (W32_unpack16E X) /X W256_bits32_bits16 1:// /= => {X}).
 move=> |> *.
-do 15! (split; first by
- rewrite packus_4u32_0H 1:/# /= VPBLENDW_256_170 //= 1:/#
-         packus_4u32_0H 1:/# W256_bits128_bits16 //= VPSRL_8u32_16 //= /#).
-by  rewrite packus_4u32_0H 1:/# /= VPBLENDW_256_170 //= 1:/#
-      packus_4u32_0H 1:/# W256_bits128_bits16 //= VPSRL_8u32_16 //= /#.
+do split; 
+(rewrite !packus_4u32_0H /=; 1..3: 
+rewrite ?VPBLENDW_256_170 /#;[
+by rewrite VPSRL_8u32_16 1:/#/=|
+by  rewrite VPBLENDW_256_170 /= 1:/#
+      VPSRL_8u32_16 /= /#]).
 qed.
 
 phoare interleave_u16_ph b _x:
@@ -1496,7 +1497,7 @@ seq 3 3: (#[/:4]pre /\
  wp; call cmpl_mulx16_eq; auto => &1 &2 /> _ _ Hq.
  rewrite -{2}iotaredE /= => /> ??.
  move=> Hz *; rewrite -{2}iotaredE /=.
- by rewrite (P2RS rp{1}) (P2CS r{2}) !PUR_i //= !PUC_i //= !P2R_i //= !P2C_i //=.
+ by rewrite (P2RS rp{1}) (P2CS r{2}) !PUR_i 1..4:/# /= !PUC_i /= 1..4:/# !P2R_i /= 1..32:/# !P2C_i /=.
 by auto.
 qed.
 
@@ -1795,8 +1796,7 @@ proc; simplify.
 wp; skip => |> &m.
 rewrite !x16_spec_bits16 => Hq Hv.
 rewrite -!iotaredE /VPSUB_16u16 /VPMULL_16u16 /VPMULH_16u16 /VPSRA_16u16 /R2C /= => |> *.
-do split;
-move : (sbred16_spec);smt().
+do split;(move : sbred16_spec);rewrite /sbred16 /(`|>>`) /=; smt(). 
 qed.
 
 phoare __red16x_ph n x:
@@ -1861,7 +1861,10 @@ seq 6 35: (x16_spec q qx16{2} /\ zetasp{2}=zetas_op  /\ i{2}=0 /\
  move: Hpre; rewrite -{2}iotaredE /= => |> *.
  rewrite (P2RS rp{2}) /= !PUR_i //= !P2R_i //= => |> *.
  rewrite (P2RS rp{2}) /= !PUR_i //= => |> *.
- by rewrite !P2R_i 1..40:// !P2C_i //.
+ do 16!(rewrite P2R_i 1,2://).
+ simplify.
+ do 16!(rewrite P2C_i 1,2://).
+ simplify. smt().
 unroll {2} 1; rcondt {2} 1.
  by move=> &m; skip => /=.
 seq 10 8: (#[/:11]pre /\

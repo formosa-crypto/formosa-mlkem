@@ -131,7 +131,7 @@ module Mvec = {
     a <@ polyvec_csubq (a);
     x16p <- jvx16;
     v <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    v8 <@ OpsV.iVPSLL_16u16(v, (W8.of_int 3));
+    v8 <@ OpsV.iVPSLL_16u16(v, (W128.of_int 3));
     off <@ OpsV.iVPBROADCAST_16u16(pvc_off_s);
     shift1 <@ OpsV.iVPBROADCAST_16u16(pvc_shift1_s);
     mask <@ OpsV.iVPBROADCAST_16u16(pvc_mask_s);
@@ -144,17 +144,17 @@ module Mvec = {
       f0 <- (get256 (WArray1536.init16 (fun i => a.[i])) i);
       f1 <@ OpsV.iVPMULL_16u16(f0, v8);
       f2 <@ OpsV.iVPADD_16u16(f0, off);
-      f0 <@ OpsV.iVPSLL_16u16(f0, (W8.of_int 3));
+      f0 <@ OpsV.iVPSLL_16u16(f0, (W128.of_int 3));
       f0 <@ OpsV.iVPMULH_256(f0, v);
       f2 <@ OpsV.iVPSUB_16u16(f1, f2);
       f1 <@ OpsV.iVPANDN_16u16(f1, f2);
-      f1 <@ OpsV.iVPSRL_16u16(f1, (W8.of_int 15));
+      f1 <@ OpsV.iVPSRL_16u16(f1, (W128.of_int 15));
       f0 <@ OpsV.iVPSUB_16u16(f0, f1);
       f0 <@ OpsV.iVPMULHRS_256(f0, shift1);
       f0 <@ OpsV.iVPAND_16u16(f0, mask);
       f0 <@ OpsV.iVPMADDWD_256(f0, shift2);
       f0 <@ OpsV.iVPSLLV_8u32(f0, sllvdidx);
-      f0 <@ OpsV.iVPSRL_4u64(f0, (W8.of_int 12));
+      f0 <@ OpsV.iVPSRL_4u64(f0, (W128.of_int 12));
       f0 <@ OpsV.iVPSHUFB_256(f0, shufbidx);
       t0 <@ OpsV.itruncate_16u16_8u16(f0);
       t1 <@ OpsV.iVEXTRACTI128_16u8(f0, (W8.of_int 1));
@@ -194,7 +194,7 @@ module Mvec = {
     a <@ polyvec_csubq (a);
     x16p <- jvx16;
     v <- (get256 (WArray32.init16 (fun i => x16p.[i])) 0);
-    v8 <@ OpsV.iVPSLL_16u16(v, (W8.of_int 3));
+    v8 <@ OpsV.iVPSLL_16u16(v, (W128.of_int 3));
     off <@ OpsV.iVPBROADCAST_16u16(pvc_off_s);
     shift1 <@ OpsV.iVPBROADCAST_16u16(pvc_shift1_s);
     mask <@ OpsV.iVPBROADCAST_16u16(pvc_mask_s);
@@ -207,17 +207,17 @@ module Mvec = {
       f0 <- (get256 (WArray1536.init16 (fun i => a.[i])) i);
       f1 <@ OpsV.iVPMULL_16u16(f0, v8);
       f2 <@ OpsV.iVPADD_16u16(f0, off);
-      f0 <@ OpsV.iVPSLL_16u16(f0, (W8.of_int 3));
+      f0 <@ OpsV.iVPSLL_16u16(f0, (W128.of_int 3));
       f0 <@ OpsV.iVPMULH_256(f0, v);
       f2 <@ OpsV.iVPSUB_16u16(f1, f2);
       f1 <@ OpsV.iVPANDN_16u16(f1, f2);
-      f1 <@ OpsV.iVPSRL_16u16(f1, (W8.of_int 15));
+      f1 <@ OpsV.iVPSRL_16u16(f1, (W128.of_int 15));
       f0 <@ OpsV.iVPSUB_16u16(f0, f1);
       f0 <@ OpsV.iVPMULHRS_256(f0, shift1);
       f0 <@ OpsV.iVPAND_16u16(f0, mask);
       f0 <@ OpsV.iVPMADDWD_256(f0, shift2);
       f0 <@ OpsV.iVPSLLV_8u32(f0, sllvdidx);
-      f0 <@ OpsV.iVPSRL_4u64(f0, (W8.of_int 12));
+      f0 <@ OpsV.iVPSRL_4u64(f0, (W128.of_int 12));
       f0 <@ OpsV.iVPSHUFB_256(f0, shufbidx);
       t0 <@ OpsV.itruncate_16u16_8u16(f0);
       t1 <@ OpsV.iVEXTRACTI128_16u8(f0, (W8.of_int 1));
@@ -259,7 +259,7 @@ module Mvec = {
         f <@ OpsV.iVPERMQ_32u8(f, (W8.of_int 148));
         f <@ OpsV.iVPSHUFB_256(f, shufbidx);
         f <@ OpsV.iVPSLLV_8u32(f, sllvdidx);
-        f <@ OpsV.iVPSRL_16u16(f, (W8.of_int 1));
+        f <@ OpsV.iVPSRL_16u16(f, (W128.of_int 1));
         f <@ OpsV.iVPAND_16u16(f, mask);
         f <@ OpsV.iVPMULHRS_256(f, q);
         r <-
