@@ -36,7 +36,7 @@ namespace ABUFLEN {
   from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
 }
 
-
+/*
 fn _sha3_256A_A32
 ( #spill_to_mmx reg mut ptr u8[32] out
 , reg const ptr u8[32] in
@@ -50,6 +50,7 @@ fn _sha3_256A_A32
   out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
   return out;
 }
+*/
 
 fn _sha3_256A_M1184
 ( #spill_to_mmx reg mut ptr u8[32] out
