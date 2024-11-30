@@ -7,3 +7,6 @@
 [submodule "crypto-specs"]
 	path = crypto-specs
 	url = https://github.com/formosa-crypto/crypto-specs
+[submodule "formosa-keccak"]
+	path = formosa-keccak
+	url = git@github.com:formosa-crypto/formosa-keccak.git
