@@ -2142,7 +2142,9 @@ proof.
   rewrite eq_p eq_x //=.
   do (rewrite -get_unpack32 1:/# pack4K //=).
   do (rewrite get_of_list 1:/#).
-  smt(@Array4 @Array8 @List).
+congr.
+apply W8u32.Pack.all_eq_eq.
+by rewrite /all_eq /= /#.
 qed.
 
 equiv eq_iVPSHUFB_256 : Ops.iVPSHUFB_256 ~ OpsV.iVPSHUFB_256:

@@ -3,12 +3,7 @@ require "shuffle.jinc"
 require "consts.jinc"
 require "reduce.jinc"
 
-require "mlkem_keccak_avx2_TRANSITION.jinc"
-require "keccak_OLD/fips202_common.jinc"
-/* replaced by "mlkem_keccak_avx2"...
-require "fips202.jinc"
-require "fips202_4x.jinc"
-*/
+require "mlkem_keccak_avx2.jinc"
 
 fn _poly_add2(reg ptr u16[MLKEM_N] rp bp) -> stack u16[MLKEM_N]
 {
@@ -537,7 +532,7 @@ fn _poly_frommsg_1(reg ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> stack u16[MLKE
   return rp;
 }
 
-
+param int SHAKE256_RATE = 136;
 param int NOISE_NBLOCKS = (MLKEM_ETA1 * MLKEM_N/4 + SHAKE256_RATE - 1)/SHAKE256_RATE;
 
 u8[32] cbd_jshufbidx = {0, 1, 2, -1, 3, 4, 5, -1, 6, 7, 8, -1, 9, 10, 11, -1,

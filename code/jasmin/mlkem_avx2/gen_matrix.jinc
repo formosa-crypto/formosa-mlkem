@@ -1,9 +1,4 @@
-/* // OLD INTERFACE
-require "keccak/keccakf1600x4_avx2.jinc"
-require "keccak/keccakf1600_avx2.jinc"
-*/
-// NEW INTERFACE
-require "mlkem_keccak_avx2_TRANSITION.jinc"
+require "mlkem_keccak_avx2.jinc"
 
 
 require "params.jinc"
