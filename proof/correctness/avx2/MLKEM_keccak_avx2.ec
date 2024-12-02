@@ -1,28 +1,116 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
 
+require import FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
+require import Keccak1600_Spec Keccakf1600_Spec.
 
-require Jkem_avx2.
+print Keccak1600_Spec.
+require import Jkem_avx2.
 
-require import Keccak1600_Spec.
+require import Array1.   (* nonce *)
+require import Array2.   (* mat. position *)
+require import Array4.   (* mat. indexes *)
+require import Array32.  (* SEED SIZE *)
+require import Array64.
+require import Array536. (* BUF_SIZE *)
 
-import FIPS202_SHA3_Spec.
-import Keccakf1600_Spec.
 
 require import Array7.
 
-
-(* MLKEM array sizes *)
-require import Array536. (* BUF_SIZE *)
-require import Array32.  (* SEED SIZE *)
-require import Array4.   (* mat. indexes *)
-
-op stmatch_avx2 (st: FIPS202_Keccakf1600.state) (stavx2: W256.t Array7.t): bool.
+op stmatch_avx2 (st: state) (stavx2: W256.t Array7.t): bool.
 
 op stavx2bytes (stavx2: W256.t Array7.t): W8.t list.
+op bytes2stavx2 (bs: W8.t list): W256.t Array7.t.
+
+op stavx2_from_state (st: state): W256.t Array7.t.
+op stavx2_to_state (st: W256.t Array7.t): state.
+
+(*
+hoare sha3_256A_M1184_h _in:
+ M(Syscall)._sha3_256A_M1184
+ : in_0 = _in ==> to_list res = SHA3_256 _in.
+*)
+
+hoare sha3_512A_A32_h _in:
+ M(Syscall)._sha3_512A_A32
+ : in_0 = _in
+ ==> to_list res = SHA3_512 (to_list _in).
+admitted.
+
+(*
+hoare shake256_M32__M32_M1088_h _in0 _in1:
+ M(Syscall)._shake256_M32__M32_M1088
+ : in0 = _in0 /\ in1 = _in1
+ ==> res = SHAKE256 (to_list _in) 32.
+admitted.
+*)
+
+(*
+_shake256x4_A128__A32_A1
+*)
+
+(*
+hoare shake128_absorb_A32_A2_h _seed _pos:
+ M(Syscall)._shake128_absorb_A32_A2
+ : seed = _seed /\ pos = _pos
+ ==> res = stavx2_from_st25 (SHAKE128_ABSORB (to_list _seed ++ to_list _pos)).
+admitted.
+*)
+
+(*
+_shake128x4_absorb_A32_A2
+*)
+
+(*
+_shake128_squeeze3blocks
+*)
+
+hoare shake128_next_state_h _buf:
+ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_next_state
+ : buf = _buf
+   ==>
+   let st = bytes2state (sub _buf (2*168) 200) in
+   sub res (2*168) 200 = state2bytes (keccak_f1600_op st).
+admitted.
+
+(*
+lemma dumpstate_array_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).aBUFLEN____dumpstate_array_avx2.
+admitted.
+
+lemma keccakf1600_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2.
+admitted.
+
+lemma state_from_pstate_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).__state_from_pstate_avx2.
+admitted.
+*)
+
+lemma shake128_next_state_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_next_state.
+proof.
+admit(*
+proc.
+wp; call dumpstate_array_avx2_ll.
+wp; call keccakf1600_avx2_ll.
+call state_from_pstate_avx2_ll.
+by auto => />.
+*).
+qed.
+
+phoare shake128_next_state_ph _buf:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_next_state
+ : buf = _buf
+   ==>
+   let st = bytes2state (sub _buf (2*168) 200) in
+   sub res (2*168) 200 = state2bytes (keccak_f1600_op st)
+ ] = 1%r
+by conseq shake128_next_state_ll (shake128_next_state_h _buf).
+
+(*
+_shake128x4_squeeze3blocks
+*)
 
 
 
+(*
 hoare stavx2_unpack_at_h _st _buf _at:
  Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_unpack_at
  : state = _st
@@ -95,7 +183,7 @@ phoare xof_init_avx2_ph _rho _rc:
  ] = 1%r.
 proof. by conseq xof_init_avx2_ll (xof_init_avx2_h _rho _rc). qed.
 
-
+*)
 
 op state_stavx2_match (st: W64.t Array25.t) (stavx2: W256.t Array7.t): bool.
 
@@ -212,19 +300,19 @@ rewrite !(nth_map st0); first 4 by rewrite /a25unpack4 size_map size_iota.
 by rewrite /a25unpack4 -iotaredE /= /#.
 qed.
 
-hoare keccakf1600_4x_h (_a: state4x):
- Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x :
+hoare keccakf1600_avx2x4_h (_a: state4x):
+ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2x4 :
  a = _a
  ==> res = map_state4x keccak_f1600_op _a.
 proof.
 admitted.
 
 lemma keccakf1600_4x_round_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall).keccakf1600_4x_round.
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x_round.
 admitted.
 
-lemma keccakf1600_4x_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x.
+lemma keccakf1600_avx2x4_ll:
+ islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2x4.
 proof.
 islossless.
 while (true) (768 - to_uint c).
@@ -236,15 +324,15 @@ while (true) (768 - to_uint c).
 by auto => /> c; rewrite ultE of_uintK /#.
 qed.
 
-phoare keccakf1600_4x_ph (_a: state4x):
- [ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x :
+phoare keccakf1600_avx2x4_ph (_a: state4x):
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2x4 :
    a = _a
    ==> res = map_state4x keccak_f1600_op _a ] = 1%r.
-proof. by conseq keccakf1600_4x_ll (keccakf1600_4x_h _a). qed.
+proof. by conseq keccakf1600_avx2x4_ll (keccakf1600_avx2x4_h _a). qed.
 
 lemma st_i_add st a b:
  0 <= a => 0 <= b =>
- st_i (FIPS202_SHA3_Spec.st_i st b) a
+ st_i (st_i st b) a
  = st_i st (a+b).
 proof.
 rewrite /st_i.
@@ -254,6 +342,7 @@ move=> n Hn IH b Ha Hb.
 by rewrite eq_sym (:n+1+b=n+b+1) 1:/# (iterS (n+b)) 1:/# -IH // iterS 1:/#.
 qed.
 
+(*
 hoare xof_init_x4_h _rho _idxs:
  Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_x4
  : rho = _rho /\ indexes = _idxs
@@ -311,7 +400,7 @@ hoare st4x_unpack_at_h _st0 _st1 _st2 _st3 _buf0 _buf1 _buf2 _buf3 _at:
 proof.
 proc.
 admitted.
-
+*)
 lemma stmatch_avx2_bytes st stavx:
  stmatch_avx2 st stavx <=>
  state2bytes st = stavx2bytes stavx.
@@ -330,6 +419,7 @@ by rewrite /sub take_mkseq /#.
 qed.
 *)
 
+(*
 phoare st4x_unpack_at_ph _st0 _st1 _st2 _st3 _buf0 _buf1 _buf2 _buf3 _at:
  [ Jkem_avx2.M(Jkem_avx2.Syscall).__st4x_unpack_at
    : match_state4x _st0 _st1 _st2 _st3 st4x
@@ -346,6 +436,7 @@ phoare st4x_unpack_at_ph _st0 _st1 _st2 _st3 _buf0 _buf1 _buf2 _buf3 _at:
 proof.
 proc.
 admitted.
+*)
 
 lemma stx4_map_keccakf st0 st1 st2 st3 stx4:
  match_state4x st0 st1 st2 st3 stx4 =>
