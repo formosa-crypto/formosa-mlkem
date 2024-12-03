@@ -1,0 +1,287 @@
+(* -------------------------------------------------------------------- *)
+(* ----- *) require import AllCore IntDiv List.
+from Jasmin require import JModel.
+(* ----- *) require import Bindings Genbindings.
+(* ----- *) (* - *) import W8 W512.
+
+require import Array2048 Array256 Array64 Array56 Array40 Array32.
+
+(* -------------------------------------------------------------------- *)
+abbrev "_.[_]" ['a] = nth<:'a> witness.
+
+(* -------------------------------------------------------------------- *)
+clone export A2B as A2B_8_256_32
+  with op isize <- 8, op osize <- 256, op asize <- 32,
+  theory IW <- W8, theory OW <- W256, theory A <- Array32
+  rename "XX" as "8_256_32"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done, eq by done.
+
+bind op [W256.t & W8.t & Array32.t] u8_256_32 "a2b".
+realize a2bP by apply/u8_256_32P.
+
+(* -------------------------------------------------------------------- *)
+bind array Array2048."_.[_]" Array2048."_.[_<-_]" Array2048.to_list Array2048.of_list Array2048.t 2048.
+realize tolistP  by done.
+realize get_setP by smt(Array2048.get_setE). 
+realize eqP      by smt(Array2048.tP).
+realize get_out  by smt(Array2048.get_out).
+
+(* -------------------------------------------------------------------- *)
+bind array Array56."_.[_]" Array56."_.[_<-_]" Array56.to_list Array56.of_list Array56.t 56.
+realize tolistP  by done.
+realize get_setP by smt(Array56.get_setE). 
+realize eqP      by smt(Array56.tP).
+realize get_out  by smt(Array56.get_out).
+
+(* -------------------------------------------------------------------- *)
+bind array Array64."_.[_]" Array64."_.[_<-_]" Array64.to_list Array64.of_list Array64.t 64.
+realize tolistP  by done.
+realize get_setP by smt(Array64.get_setE). 
+realize eqP      by smt(Array64.tP).
+realize get_out  by smt(Array64.get_out).
+
+(* -------------------------------------------------------------------- *)
+clone export WordChunk as WordChunk_16_512
+  with op isize <- 16, op osize <- 512,
+  theory IW <- W16, theory OW <- W512
+  rename "XX" as "16_512"
+  proof gt0_isize by done, gt0_osize by done, le_iosize by done.
+
+(* -------------------------------------------------------------------- *)
+clone export SliceGet as SliceGet_8_256_56
+  with op isize <- 8, op osize <- 256, op asize <- 56,
+  theory IW <- W8, theory OW <- W256, theory A <- Array56
+  rename "XX" as "8_256_56"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+bind op [W8.t & W256.t & Array56.t] sliceget_8_256_56 "asliceget".
+realize bvaslicegetP by apply/sliceget_8_256_56P.
+
+(* -------------------------------------------------------------------- *)
+clone export SliceGet as SliceGet_8_12_56
+  with op isize <- 8, op osize <- 12, op asize <- 56,
+  theory IW <- W8, theory OW <- W12, theory A <- Array56
+  rename "XX" as "8_12_56"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+bind op [W8.t & W12.t & Array56.t] sliceget_8_12_56 "asliceget".
+realize bvaslicegetP by apply/sliceget_8_12_56P.
+
+(* -------------------------------------------------------------------- *)
+clone export SliceGet as SliceGet_8_64_2048
+  with op isize <- 8, op osize <- 64, op asize <- 2048,
+  theory IW <- W8, theory OW <- W64, theory A <- Array2048
+  rename "XX" as "8_64_2048"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+bind op [W8.t & W64.t & Array2048.t] sliceget_8_64_2048 "asliceget".
+realize bvaslicegetP by apply/sliceget_8_64_2048P.
+
+(* -------------------------------------------------------------------- *)
+clone export SliceSet as SliceSet_16_128_40
+  with op isize <- 16, op osize <- 128, op asize <- 40,
+  theory IW <- W16, theory OW <- W128, theory A <- Array40
+  rename "XX" as "16_128_40"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+(* -------------------------------------------------------------------- *)
+clone export Extract as Extract_512_16
+  with op isize  <- 512,
+       op osize  <-  16,
+       theory IW <- W512,
+       theory OW <- W16
+       rename "XX" as "512_16"
+       proof gt0_isize by done
+       proof gt0_osize by done.
+
+bind op [W512.t & W16.t] extract_512_16 "extract".
+realize bvextractP by exact/extract_512_16P.
+
+(* -------------------------------------------------------------------- *)
+clone export Extract as Extract_256_128
+  with op isize  <- 256,
+       op osize  <- 128,
+       theory IW <- W256,
+       theory OW <- W128
+       rename "XX" as "256_128"
+       proof gt0_isize by done
+       proof gt0_osize by done.
+
+bind op [W256.t & W128.t] extract_256_128 "extract".
+realize bvextractP by exact/extract_256_128P.
+
+(* -------------------------------------------------------------------- *)
+clone export Extract as Extract_256_16
+  with op isize  <- 256,
+       op osize  <-  16,
+       theory IW <- W256,
+       theory OW <- W16
+       rename "XX" as "256_16"
+       proof gt0_isize by done
+       proof gt0_osize by done.
+
+bind op [W256.t & W16.t] extract_256_16 "extract".
+realize bvextractP by exact/extract_256_16P.
+
+(* -------------------------------------------------------------------- *)
+clone export Extract as Extract_128_16
+  with op isize  <- 128,
+       op osize  <-  16,
+       theory IW <- W128,
+       theory OW <- W16
+       rename "XX" as "128_16"
+       proof gt0_isize by done
+       proof gt0_osize by done.
+
+bind op [W128.t & W16.t] extract_128_16 "extract".
+realize bvextractP by exact/extract_128_16P.
+
+(* -------------------------------------------------------------------- *)
+clone export Extract as Extract_64_8
+  with op isize  <- 64,
+       op osize  <-  8,
+       theory IW <- W64,
+       theory OW <- W8
+       rename "XX" as "64_8"
+       proof gt0_isize by done
+       proof gt0_osize by done.
+
+bind op [W64.t & W8.t] extract_64_8 "extract".
+realize bvextractP by exact/extract_64_8P.
+
+(* -------------------------------------------------------------------- *)
+op concat_2u256 (l h : W256.t) = W512.init (fun i => [l; h].[i %/ 256].[i %% 256]).
+
+lemma w2bits_concat_2u256 (w1 w2 : W256.t) :
+  w2bits (concat_2u256 w1 w2) = flatten [w2bits w1; w2bits w2].
+proof.
+rewrite flatten_cons flatten1; apply/(eq_from_nth false).
+- by rewrite size_cat !size_w2bits.
+rewrite size_w2bits => i rgi; rewrite nth_cat !get_w2bits !size_w2bits.
+by rewrite /concat_2u256 initE /#.
+qed.
+
+bind op [W256.t & W256.t & W512.t] concat_2u256 "concat".
+realize bvconcatP.
+proof.
+move=> l h; have := w2bits_concat_2u256 l h.
+by rewrite flatten_cons flatten1.
+qed.
+
+(* -------------------------------------------------------------------- *)
+op concat_2u128 (l h : W128.t) = W2u128.pack2 [l; h].
+
+bind op [W128.t & W128.t & W256.t] concat_2u128 "concat".
+
+realize bvconcatP.
+proof.
+move=> w1 w2; apply/(eq_from_nth false); first by rewrite size_cat !size_w2bits.
+rewrite size_w2bits => i rgi; rewrite nth_cat !get_w2bits !size_w2bits.
+by rewrite /concat_2u128 pack2wE 1:// get_of_list /#.
+qed.
+
+(* -------------------------------------------------------------------- *)
+clone export ZExtend as ZExtend_8_64
+  with op isize  <-  8,
+       op osize  <- 64,
+       theory IW <- W8,
+       theory OW <- W64
+       rename "XX" as "8_64"
+       proof gt0_isize by done
+       proof gt0_osize by done
+       proof le_iosize by done.
+
+bind op [W8.t & W64.t] zextend_8_64 "zextend".
+realize bvzextendP by move=> ?; apply/eq_sym/zextend_8_64P.
+
+(* -------------------------------------------------------------------- *)
+clone export ZExtend as ZExtend_12_16
+  with op isize  <- 12,
+       op osize  <- 16,
+       theory IW <- W12,
+       theory OW <- W16
+       rename "XX" as "12_16"
+       proof gt0_isize by done
+       proof gt0_osize by done
+       proof le_iosize by done.
+
+bind op [W12.t & W16.t] zextend_12_16 "zextend".
+realize bvzextendP by move=> ?; apply/eq_sym/zextend_12_16P.
+
+(* -------------------------------------------------------------------- *)
+clone export ZExtend as ZExtend_64_256
+  with op isize  <- 64,
+       op osize  <- 256,
+       theory IW <- W64,
+       theory OW <- W256
+       rename "XX" as "64_256"
+       proof gt0_isize by done
+       proof gt0_osize by done
+       proof le_iosize by done.
+
+bind op [W64.t & W256.t] zextend_64_256 "zextend".
+realize bvzextendP by move=> ?; apply/eq_sym/zextend_64_256P.
+
+(* -------------------------------------------------------------------- *)
+clone export ZExtend as ZExtend_64_128
+  with op isize  <- 64,
+       op osize  <- 128,
+       theory IW <- W64,
+       theory OW <- W128
+       rename "XX" as "64_128"
+       proof gt0_isize by done
+       proof gt0_osize by done
+       proof le_iosize by done.
+
+bind op [W64.t & W128.t] zextend_64_128 "zextend".
+realize bvzextendP by move=> ?; apply/eq_sym/zextend_64_128P.
+
+(* -------------------------------------------------------------------- *)
+op popcount_64 (w : W64.t) : W64.t =
+  (POPCNT_64 w).`6.
+
+lemma popcount_64E (w : W64.t) :
+  (POPCNT_64 w).`6 = popcount_64 w.
+proof. done. qed.
+
+(* -------------------------------------------------------------------- *)
+op shiftr64 (w1 w2 : W64.t) = w1 `>>>` W64.to_uint w2.
+
+bind op [W64.t] shiftr64 "shr".
+
+realize bvshrP.
+proof. by move=> w1 w2 @/shiftr64; rewrite to_uint_shr 1:#smt:(W64.to_uint_cmp). qed.
+
+(* -------------------------------------------------------------------- *)
+op shift64R (w : W64.t) (i : W8.t) =
+  shiftr64 w (zextend_8_64 (W8.andw i (W8.of_int 63))).
+
+lemma shift64RE (w : W64.t) (i : W8.t) : w `>>` i = shift64R w i.
+proof.
+rewrite /shift64R /shiftr64 zextend_8_64P /(`>>`); do congr.
+by have /= /eq_sym := W8.to_uint_and_mod 6 i //.
+qed.
+
+(* -------------------------------------------------------------------- *)
+bind circuit VPSRL_16u16       "VPSRL_16u16".
+bind circuit VPBLENDW_256      "VPBLEND_16u16".
+bind circuit VPSHUFB_256       "VPSHUFB_256".
+bind circuit VINSERTI128       "VPINSERTI128".
+bind circuit VEXTRACTI128      "VPEXTRACTI128".
+bind circuit VPERMQ            "VPERMQ".
+bind circuit VPADD_32u8        "VPADD_32u8".
+bind circuit VPUNPCKL_32u8     "VPUNPCKL_32u8".
+bind circuit VPSHUFB_128       "VPSHUFB_128".
+bind circuit VPCMPGT_16u16     "VPCMPGT_16u16".
+bind circuit VPACKSS_16u16     "VPACKSS_16u16".
+bind circuit VPMOVMSKB_u256u64 "VPMOVMSKB_u256u64".
+
+(* -------------------------------------------------------------------- *)
+op VPINC_8u8 : W64.t -> W64.t.
+
+bind circuit VPINC_8u8 "VPINC_8u8".
+
+(* -------------------------------------------------------------------- *)
+op VPUNPCKL_16u8 : W64.t -> W64.t -> W128.t.
+
+bind circuit VPUNPCKL_16u8 "VPUNPCKL_16u8".

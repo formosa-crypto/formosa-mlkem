@@ -383,6 +383,8 @@ qed.
 import Array536.
 require import JWordList EclibExtra MLKEM_keccak_avx2.
 
+require import Mlkem_filters_bridge.
+(*
 abbrev bufl (buf: W8.t Array536.t) = to_list buf.
 
 op buf_subl (buf: W8.t Array536.t) (first last: int): W8.t list =
@@ -442,7 +444,7 @@ proof.
 move=> H; rewrite /buf_subl => <-.
 by rewrite take_take ifT 1:/#.
 qed.
-
+*)
 hoare comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2:
  Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
  : arg = (_a,_i1,_b,_i2)
@@ -506,6 +508,7 @@ proof.
 by conseq comp_u64_l_int_and_u64_l_int_ll (conditionloop_h _a _i1 _b _i2).
 qed.
 
+(*
 op auxdata_ok (load_shuffle mask bounds ones: W256.t)
               (sst:  W8.t Array2048.Array2048.t) : bool =
  load_shuffle = W32u8.pack32 (to_list sample_load_shuffle)
@@ -529,6 +532,7 @@ hoare buf_rejection_filter48_h _pol _ctr _buf _buf_offset:
       /\ res.`2 = W64.of_int (to_uint _ctr + size l).
 proof.
 admitted.
+
 
 lemma buf_rejection_filter48_ll:
  islossless Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
@@ -585,6 +589,7 @@ phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
 proof.
 by conseq buf_rejection_filter24_ll (buf_rejection_filter24_h _pol _ctr _buf _buf_offset).
 qed.
+*)
 
 lemma take_rejection16_done n buf buf_o bo:
  0 <= buf_o <= bo <= 504 =>
@@ -696,7 +701,10 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
                /\ to_uint buf_offset <= 504-48))).
  ecall (conditionloop_h buf_offset (3 * 168 - 48) counter (256-32+1)); simplify.
  wp; ecall (buf_rejection_filter48_h pol counter buf buf_offset).
- auto => &m /> Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Hctr1 Hctr2 Hctr3 H Hbo Hcond1 Hcond2 [p c'] /= /> Hstep. 
+ auto => &m />.
+ move => Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Ho4 Hctr1 Hctr2 Hctr3 Hctr4 H Hbo.
+ split;1:smt().
+ move => ? [p c'] /= /> Hstep. 
  rewrite !to_uintD_small 1:/# !of_uintK; split; first smt().
  split.
   by rewrite !modz_small //= /#.
