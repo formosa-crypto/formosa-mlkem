@@ -644,10 +644,6 @@ op predT_W12 (_ : W12.t) = true.
 op predT_W16 (_ : W16.t) = true.
 
 (* -------------------------------------------------------------------- *)
-hint simplify W8.get_to_uint.
-hint simplify mkseq0, mkseqSr_minus.
-
-(* -------------------------------------------------------------------- *)
 op ltq (w : W16.t) = w \slt W16.of_int 3329.
 
 (* -------------------------------------------------------------------- *)
@@ -658,6 +654,12 @@ op perm (i : int) =
      8;  9; 10; 11; 12; 13; 14; 15;
     24; 25; 26; 27; 28; 29; 30; 31
   ] i.
+
+section.
+(* -------------------------------------------------------------------- *)
+hint simplify W8.get_to_uint.
+hint simplify mkseq0, mkseqSr_minus.
+
 
 (* -------------------------------------------------------------------- *)
 lemma chunk1E ['a] (xs : 'a list) : chunk 1 xs = map (fun x => [x]) xs.
@@ -1044,3 +1046,4 @@ wp; skip => |> &hr szpop hw' 6? sz1 sz2 sz3 sz4 Q32; split.
   rewrite (ws_cat 8 8) ~-1:// size_cat.
   by ring.
 qed.
+end section.

@@ -702,7 +702,7 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
  ecall (conditionloop_h buf_offset (3 * 168 - 48) counter (256-32+1)); simplify.
  wp; ecall (buf_rejection_filter48_h pol counter buf buf_offset).
  auto => &m />.
- move => Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Ho4 Hctr1 Hctr2 Hctr3 Hctr4 H Hbo.
+ move => Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Hctr1 Hctr2 Hctr3 H Hbo Hctr4 Hbo4.
  split;1:smt().
  move => ? [p c'] /= /> Hstep. 
  rewrite !to_uintD_small 1:/# !of_uintK; split; first smt().
@@ -1111,8 +1111,10 @@ move => Hpos.
 have: pos \in iotared 0 8 by smt().
 move: {Hpos} pos; apply /List.allP => /=.
 elim: tr; rewrite ?b2i1 ?b2i0 /pos2ji !bits8E /=.
- by do split; rewrite -all_eqP /all_eq //= !of_intwE //=.
-by do split; rewrite -all_eqP /all_eq //= !of_intwE //=.
+ by do split; 1..2: rewrite -all_eqP /all_eq /= 1:/# !of_intwE /#;
+     rewrite -all_eqP /all_eq /=  !of_intwE //.
+ by do split; 1..2: rewrite -all_eqP /all_eq /= 1:/# !of_intwE /#;
+     rewrite -all_eqP /all_eq /=  !of_intwE //.
 qed.
 
 equiv sample_four_polynomials_eq:
@@ -1225,14 +1227,14 @@ move=> _ _ {B1} [p1 buf1] p1R /= Hp1.
 pose B2:= Array536.init _.
 have ->: B2 = buf4x_buf buf{1} 2.
  apply Array536.ext_eq => i Hi /=.
- rewrite initiE //= initiE 1:/# initiE 1:/# /= ifF 1:/#.
+ rewrite initiE /= 1:/# initiE 1:/# initiE 1:/# /= ifF 1:/#.
  by rewrite /buf4x_buf /= initiE /#.
 split; first done.
 move=> _ _ {B2} [p2 buf2] p2R /= Hp2.
 pose B3:= Array536.init _.
 have ->: B3 = buf4x_buf buf{1} 3.
  apply Array536.ext_eq => i Hi /=.
- rewrite initiE //= initiE 1:/# initiE 1:/# /= ifF 1:/#.
+ rewrite initiE /= 1:/# initiE 1:/# initiE 1:/# /= ifF 1:/#.
  by rewrite /buf4x_buf initiE 1:/# /= ifF 1:/# initiE /#.
 split; first done.
 move=> _ _ {B3} [p3 buf3] p3R /= Hp3.
@@ -1240,23 +1242,23 @@ rewrite /pack4poly /=.
 apply Array1024.ext_eq => i Hi.
 rewrite initiE //= get_of_list //=.
 case: (i < 256) => C0.
- rewrite ifF 1:/# initiE //=. 
- rewrite ifF 1:/# initiE //=. 
- rewrite ifF 1:/# initiE //=.
+ rewrite ifF 1:/# initiE 1:// /=. 
+ rewrite ifF 1:/# initiE 1:// /=. 
+ rewrite ifF 1:/# initiE 1:// /=.
  rewrite ifT 1:/# Hp0 initiE 1:/# /=.
  rewrite -!catA nth_cat ifT. 
   by rewrite !size_to_list /#.
  by rewrite get_to_list initiE 1:/#.
 case: (i < 512) => C1.
- rewrite ifF 1:/# initiE //=. 
- rewrite ifF 1:/# initiE //=.
+ rewrite ifF 1:/# initiE 1:// /=. 
+ rewrite ifF 1:/# initiE 1:// /=.
  rewrite ifT 1:/# Hp1 initiE 1:/# /=.
  rewrite -!catA nth_cat ifF. 
   by rewrite !size_to_list /#.
  rewrite nth_cat ifT !size_to_list 1:/#. 
  by rewrite get_to_list initiE 1:/#.
 case: (i < 768) => C2.
- rewrite ifF 1:/# initiE //=.
+ rewrite ifF 1:/# initiE 1:// /=.
  rewrite ifT 1:/# Hp2 initiE 1:/# /=.
  rewrite -!catA nth_cat ifF !size_to_list 1:/#. 
  rewrite nth_cat ifF !size_to_list 1:/#. 
@@ -1405,10 +1407,10 @@ while (0<=i<=3 /\ rho = _sd /\
    case (ii = _j); last first.  
    + move => iibb;rewrite -H3 1:/#.
      rewrite /subarray256 /subarray768 tP => *.
-     by rewrite !initiE //= !initiE //= 1,2:/# initiE /#.
+     by rewrite !initiE 1,2:/# /= !initiE 1:/# /= 1:/# initiE /#.
    move => ->. 
    rewrite /subarray256 /subarray768  tP => *.
-   rewrite initiE //= initiE 1:/# /= initiE 1:/# /= ifT 1:/#;congr;2:smt().
+   rewrite initiE /= 1:/# initiE 1:/# /= initiE 1:/# /= ifT 1:/#;congr;2:smt().
    congr;rewrite tP => i0 i0b; rewrite !initiE 1,2:/# /= initiE 1:/# /=.
    move : (H4 _j _); 1:smt().
    rewrite tP => H4u. 
@@ -1418,7 +1420,7 @@ while (0<=i<=3 /\ rho = _sd /\
  + move => ii iibl iibh.
    rewrite -H4 1:/#.
    rewrite /subarray256 /subarray768  tP => *.
-   by rewrite initiE //= initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= initiE /#. 
+   by rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= initiE /#. 
 
 wp 13.
 conseq (_:  (forall kk, 0 <= kk < 3 =>  subarray768 matrix kk = (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))).
@@ -1480,34 +1482,34 @@ split; 2: by smt(matrix_unlift).
 rewrite /nttunpack /nttunpackm.
 rewrite /pos_bound2304_cxq => k kb.
 case b => Hb.
-+ rewrite !initiE //=. 
++ rewrite !initiE 1:/# /=. 
   case (0<= k < 768).  
   + move => kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA seed{1}))) 0))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE //=.  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
    by smt(matrix_unlift).
   case (768<= k < 1536).  
   + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA seed{1}))) 1))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE //=.  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
    by smt(matrix_unlift).
   move => ??; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA seed{1}))) 2))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE //=.  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
    by smt(matrix_unlift).
-+ rewrite !initiE //=. 
++ rewrite !initiE 1:/# /=. 
   case (0<= k < 768).  
   + move => kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix ( (sampleA seed{1}))) 0))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE //=.  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
    by smt(matrix_unlift).
   case (768<= k < 1536).  
   + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix ( (sampleA seed{1}))) 1))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE //=.  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
    by smt(matrix_unlift).
   move => ??; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix ( (sampleA seed{1}))) 2))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE //=.  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
    by smt(matrix_unlift).
 qed.
