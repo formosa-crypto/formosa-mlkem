@@ -5,6 +5,7 @@
 
 JADDFLAGS ?= -lazy-regalloc
 
+CKP    := ../../kyber/avx2
 CC     ?= /usr/bin/gcc
 GFLAGS ?=
 CFLAGS := -Wall -Wextra -g -Ofast -fomit-frame-pointer
@@ -50,7 +51,7 @@ testX: test/test_poly_compress \
 speed: test/speed_indcpa \
        test/speed_mlkem
 
-HEADERS = params.h poly.h fips202.h ntt.h indcpa.h kem.h \
+HEADERS = $(CKP)/params.h $(CKP)/poly.h $(CKP)/fips202.h $(CKP)/ntt.h $(CKP)/indcpa.h $(CKP)/kem.h \
 
 JHEADERS = params.jinc \
            reduce.jinc \
@@ -64,13 +65,13 @@ JHEADERS = params.jinc \
            verify.jinc
 
 POLYHEADERS = poly.jinc \
-							consts.jinc \
+		  consts.jinc \
 
 POLYVECHEADERS = polyvec.jinc \
                  gen_matrix.jinc \
 
-INCS    = fq.inc shuffle.inc
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c consts.c shuffle.S fq.S\
+INCS    = $(CKP)/fq.inc $(CKP)/shuffle.inc
+SOURCES = $(CKP)/poly.c $(CKP)/polyvec.c $(CKP)/cbd.c $(CKP)/fips202.c $(CKP)/fips202x4.c $(CKP)/ntt.S $(CKP)/verify.c $(CKP)/symmetric-shake.c $(CKP)/indcpa.c $(CKP)/kem.c $(CKP)/consts.c $(CKP)/rejsample.c $(CKP)/shuffle.S $(CKP)/fq.S\
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) $(INCS) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<

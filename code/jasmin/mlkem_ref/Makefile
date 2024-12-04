@@ -2,6 +2,7 @@
 
 -include ../../Makefile.conf
 
+CKP    := ../../kyber/ref
 CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer
 JFLAGS := ${JADDFLAGS}
@@ -42,7 +43,7 @@ test: test/test_poly_compress \
 
 speed: test/speed_indcpa
 
-HEADERS = params.h poly.h fips202.h kem.h
+HEADERS = $(CKP)/params.h $(CKP)/poly.h $(CKP)/fips202.h $(CKP)/kem.h
 
 
 JHEADERS = params.jinc \
@@ -57,7 +58,7 @@ POLYHEADERS = poly.jinc \
 POLYVECHEADERS = polyvec.jinc \
                  gen_matrix.jinc \
 
-SOURCES = poly.c polyvec.c cbd.c fips202.c ntt.c reduce.c symmetric-fips202.c indcpa.c kem.c \
+SOURCES = $(CKP)/poly.c $(CKP)/polyvec.c $(CKP)/cbd.c $(CKP)/fips202.c $(CKP)/ntt.c $(CKP)/reduce.c $(CKP)/symmetric-shake.c $(CKP)/indcpa.c $(CKP)/kem.c \
 
 test/test_indcpa: test/test_indcpa.c $(HEADERS) $(SOURCES) jindcpa.o
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jindcpa.o $<

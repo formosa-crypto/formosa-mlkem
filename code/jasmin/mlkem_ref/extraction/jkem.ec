@@ -142,7 +142,6 @@ module M(SC:Syscall_t) = {
     t <- (t * (W32.of_int 20159));
     t <- (t `|>>` (W8.of_int 26));
     t <- (t * (W32.of_int 3329));
-    r <- (truncateu16 t);
     r <- a;
     r <- (r - (truncateu16 t));
     return r;

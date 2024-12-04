@@ -10,3 +10,6 @@
 [submodule "formosa-keccak"]
 	path = formosa-keccak
 	url = git@github.com:formosa-crypto/formosa-keccak.git
+[submodule "code/kyber"]
+	path = code/kyber
+	url = https://github.com/pq-crystals/kyber.git
