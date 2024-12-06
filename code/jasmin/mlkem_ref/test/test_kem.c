@@ -16,11 +16,11 @@ int main(void)
   unsigned char shk1[KYBER_SSBYTES];
 
   unsigned char randomness0[2*KYBER_SYMBYTES];
-  unsigned char randomness1[2*KYBER_SYMBYTES];
-  
+  unsigned char randomness1[KYBER_SYMBYTES];
+
   FILE *urandom = fopen("/dev/urandom", "r");
   fread(randomness0, 2*KYBER_SYMBYTES, 1, urandom);
-  fread(randomness1, 2*KYBER_SYMBYTES, 1, urandom);
+  fread(randomness1, KYBER_SYMBYTES, 1, urandom);
   fclose(urandom);
 
   /* TEST KEYPAIR */

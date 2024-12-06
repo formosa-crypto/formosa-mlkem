@@ -55,46 +55,44 @@ void print_results(const char *s, uint64_t *t, size_t tlen) {
 
 int main(void)
 {
-  /*
-  unsigned char sk[MLKEM_INDCPA_SECRETKEYBYTES];
-  unsigned char pk[MLKEM_INDCPA_PUBLICKEYBYTES];
-  unsigned char ct[MLKEM_INDCPA_BYTES];
-  unsigned char randomness0[MLKEM_SYMBYTES];
-  unsigned char randomness1[MLKEM_SYMBYTES];
-  unsigned char message[MLKEM_INDCPA_MSGBYTES];
-  unsigned char outmsg[MLKEM_POLYVECBYTES];
+  
+  unsigned char sk[KYBER_SECRETKEYBYTES];
+  unsigned char pk[KYBER_PUBLICKEYBYTES];
+  unsigned char ct[KYBER_CIPHERTEXTBYTES];
+  unsigned char randomness0[2*KYBER_SYMBYTES];
+  unsigned char randomness1[KYBER_SYMBYTES];
+  unsigned char shk[KYBER_SSBYTES];
 
   uint64_t t[NRUNS], i;
 
   FILE *urandom = fopen("/dev/urandom", "r");
-  fread(randomness0, MLKEM_SYMBYTES, 1, urandom);
-  fread(randomness1, MLKEM_SYMBYTES, 1, urandom);
-  fread(message, MLKEM_SYMBYTES, 1, urandom);
+  fread(randomness0, 2*KYBER_SYMBYTES, 1, urandom);
+  fread(randomness1, KYBER_SYMBYTES, 1, urandom);
   fclose(urandom);
 
-  / TEST KEYPAIR /
+  /* TEST KEYPAIR */
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
-    indcpa_keypair_jazz(pk, sk, randomness0);
+    jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(pk, sk, randomness0);
   }
   print_results("keypair: ", t, NRUNS);
 
-  / TEST ENCRYPTION /
+  /* TEST ENCRYPTION */
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
-    indcpa_enc_jazz(ct, message, pk, randomness1);
+    jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(ct, shk, pk, randomness1);
   }
   print_results("encaps: ", t, NRUNS);
 
-  / TEST DECRYPTION /
+  /* TEST DECRYPTION */
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
-    indcpa_dec_jazz(outmsg, ct, sk);
+    jade_kem_mlkem_mlkem768_amd64_avx2_dec(shk, ct, sk);
   }
   print_results("decaps: ", t, NRUNS);
-*/
+
   return 0;
 }

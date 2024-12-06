@@ -30,6 +30,9 @@ test/test_kem: test/test_kem.c $(JINC) $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
 
 
+test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
+
 %.s: %.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $^ 
 
