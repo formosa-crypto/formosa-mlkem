@@ -69,7 +69,7 @@ clone FLPRG as HS_DEFS with
   type output <- W8.t Array32.t * W8.t Array32.t,
   op dseed <- srand,
   op dout <- dRO,
-  op prg <- G_coins
+  op prg <- G_coins_ds
   proof *.
 
 
@@ -179,7 +179,7 @@ module MLKEM_PRGs = {
     var noise1 : polyvec;
     var noise2 : polyvec;
     var _N,i,c,rho,noiseseed;
-    (rho, noiseseed) <- G_coins coins;
+    (rho, noiseseed) <- G_coins_ds coins;
     NPRF.PRF.k <- noiseseed;
     noise1 <- witness;                     
     noise2 <- witness;                      
@@ -241,9 +241,9 @@ by auto => />; rewrite /H nttmK.
 qed.
 
 op prg_kg_inner(coins :  W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec =
-   ((G_coins coins).`1, 
-    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins coins).`2 (W8.of_int i))),
-    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins coins).`2 (W8.of_int (i + 3))))).
+   ((G_coins_ds coins).`1, 
+    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins_ds coins).`2 (W8.of_int i))),
+    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins_ds coins).`2 (W8.of_int (i + 3))))).
 
 op prg_enc_inner(coins :  W8.t Array32.t) : polyvec * polyvec * poly =
    (KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF coins (W8.of_int i))),
@@ -254,12 +254,12 @@ lemma prg_kg_sem _coins :
    phoare [ MLKEM_PRGs.prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
 proc.
 unroll for 9; unroll for 7.
-wp;call (cbd2prfsem ((G_coins _coins).`2) 5). 
-wp;call (cbd2prfsem ((G_coins _coins).`2) 4). 
-wp;call (cbd2prfsem ((G_coins _coins).`2) 3). 
-wp;call (cbd2prfsem ((G_coins _coins).`2) 2). 
-wp;call (cbd2prfsem ((G_coins _coins).`2) 1). 
-wp;call (cbd2prfsem ((G_coins _coins).`2) 0). 
+wp;call (cbd2prfsem ((G_coins_ds _coins).`2) 5). 
+wp;call (cbd2prfsem ((G_coins_ds _coins).`2) 4). 
+wp;call (cbd2prfsem ((G_coins_ds _coins).`2) 3). 
+wp;call (cbd2prfsem ((G_coins_ds _coins).`2) 2). 
+wp;call (cbd2prfsem ((G_coins_ds _coins).`2) 1). 
+wp;call (cbd2prfsem ((G_coins_ds _coins).`2) 0). 
 by auto => />; rewrite /prg_kg_inner /= !KMatrix.Vector.eq_vectorP;split;
     move => i ib;rewrite !setvE /= !KMatrix.Vector.offunvE /= 1,2:/# 
      !KMatrix.Vector.offunvK /vclamp /= /kvec /= /#.

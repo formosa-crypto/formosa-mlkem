@@ -11,6 +11,7 @@ require import Array1.   (* nonce *)
 require import Array2.   (* mat. position *)
 require import Array4.   (* mat. indexes *)
 require import Array32.  (* SEED SIZE *)
+require import Array33.  (* DS SEED SIZE *)
 require import Array64.
 require import Array536. (* BUF_SIZE *)
 
@@ -31,8 +32,8 @@ hoare sha3_256A_M1184_h _in:
  : in_0 = _in ==> to_list res = SHA3_256 _in.
 *)
 
-hoare sha3_512A_A32_h _in:
- M(Syscall)._sha3_512A_A32
+hoare sha3_512A_A33_h _in:
+ M(Syscall)._sha3_512A_A33
  : in_0 = _in
  ==> to_list res = SHA3_512 (to_list _in).
 admitted.

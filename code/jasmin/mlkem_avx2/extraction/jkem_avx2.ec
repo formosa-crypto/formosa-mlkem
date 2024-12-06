@@ -6,11 +6,11 @@ import SLH64.
 
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
-Array32 Array64 Array128 Array256 Array400 Array536 Array768 Array960
+Array32 Array33 Array64 Array128 Array256 Array400 Array536 Array768 Array960
 Array1024 Array1088 Array2048 Array2144 Array2304 WArray1 WArray2 WArray4
-WArray8 WArray16 WArray32 WArray64 WArray128 WArray160 WArray192 WArray200
-WArray224 WArray256 WArray512 WArray536 WArray800 WArray960 WArray1088
-WArray1536 WArray2048 WArray2144 WArray4608.
+WArray8 WArray16 WArray32 WArray33 WArray64 WArray128 WArray160 WArray192
+WArray200 WArray224 WArray256 WArray512 WArray536 WArray800 WArray960
+WArray1088 WArray1536 WArray2048 WArray2144 WArray4608.
 
 abbrev gen_matrix_indexes =
 (Array16.of_list witness
@@ -4900,35 +4900,6 @@ module M(SC:Syscall_t) = {
     offset <- (offset + (W64.of_int dELTA));
     return (st, offset);
   }
-  proc a32____absorb_array_avx2 (st:W256.t Array7.t, buf:W8.t Array32.t,
-                                 offset:W64.t, lEN:int, rATE8:int, tRAILB:int) : 
-  W256.t Array7.t * W64.t = {
-    var aLL:int;
-    var iTERS:int;
-    var i:W64.t;
-    aLL <- (lEN + ((tRAILB <> 0) ? 1 : 0));
-    iTERS <- (lEN %/ rATE8);
-    if ((0 < iTERS)) {
-      i <- (W64.of_int 0);
-      while ((i \ult (W64.of_int iTERS))) {
-        (st, offset) <@ a32____addstate_array_avx2 (st, buf, offset, 
-        rATE8, 0);
-        st <@ _keccakf1600_avx2 (st);
-        i <- (i + (W64.of_int 1));
-      }
-    } else {
-      
-    }
-    lEN <- (lEN %% rATE8);
-    (st, offset) <@ a32____addstate_array_avx2 (st, buf, offset, lEN,
-    tRAILB);
-    if ((tRAILB <> 0)) {
-      st <@ __addratebit_avx2 (st, rATE8);
-    } else {
-      
-    }
-    return (st, offset);
-  }
   proc a32____pstate_array_avx2 (pst:W64.t Array25.t, aT:int,
                                  buf:W8.t Array32.t, offset:W64.t, lEN:int,
                                  tRAILB:int) : W64.t Array25.t * int * W64.t = {
@@ -5512,6 +5483,230 @@ module M(SC:Syscall_t) = {
       }
     }
     return (st, aT, offset);
+  }
+  proc a33____aread_subu64 (buf:W8.t Array33.t, offset:W64.t, dELTA:int,
+                            lEN:int, tRAIL:int) : int * int * int * W64.t = {
+    var w:W64.t;
+    var iLEN:int;
+    var t16:W64.t;
+    var t8:W64.t;
+    iLEN <- lEN;
+    if ((lEN <= 0)) {
+      w <- (W64.of_int tRAIL);
+      tRAIL <- 0;
+    } else {
+      if ((8 <= lEN)) {
+        w <-
+        (get64_direct (WArray33.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA))));
+        dELTA <- (dELTA + 8);
+        lEN <- (lEN - 8);
+      } else {
+        if ((4 <= lEN)) {
+          w <-
+          (zeroextu64
+          (get32_direct (WArray33.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA)))));
+          dELTA <- (dELTA + 4);
+          lEN <- (lEN - 4);
+        } else {
+          w <- (W64.of_int 0);
+        }
+        if ((2 <= lEN)) {
+          t16 <-
+          (zeroextu64
+          (get16_direct (WArray33.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA)))));
+          dELTA <- (dELTA + 2);
+          lEN <- (lEN - 2);
+        } else {
+          t16 <- (W64.of_int 0);
+        }
+        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+          if ((1 <= lEN)) {
+            t8 <-
+            (zeroextu64
+            (get8_direct (WArray33.init8 (fun i => buf.[i]))
+            (W64.to_uint (offset + (W64.of_int dELTA)))));
+            if ((tRAIL <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            } else {
+              
+            }
+            dELTA <- (dELTA + 1);
+            lEN <- (lEN - 1);
+          } else {
+            t8 <- (W64.of_int tRAIL);
+          }
+          tRAIL <- 0;
+          t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
+          t16 <- (t16 `|` t8);
+        } else {
+          
+        }
+        t16 <- (t16 `<<` (W8.of_int (8 * (4 * ((iLEN %/ 4) %% 2)))));
+        w <- (w `|` t16);
+      }
+    }
+    return (dELTA, lEN, tRAIL, w);
+  }
+  proc a33____aread_subu128 (buf:W8.t Array33.t, offset:W64.t, dELTA:int,
+                             lEN:int, tRAIL:int) : int * int * int * W128.t = {
+    var w:W128.t;
+    var t64:W64.t;
+    if (((lEN <= 0) /\ (tRAIL = 0))) {
+      w <- (set0_128);
+    } else {
+      if ((16 <= lEN)) {
+        w <-
+        (get128_direct (WArray33.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA))));
+        dELTA <- (dELTA + 16);
+        lEN <- (lEN - 16);
+      } else {
+        if ((8 <= lEN)) {
+          w <-
+          (VMOV_64
+          (get64_direct (WArray33.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA)))));
+          dELTA <- (dELTA + 8);
+          lEN <- (lEN - 8);
+          (dELTA, lEN, tRAIL, t64) <@ a33____aread_subu64 (buf, offset,
+          dELTA, lEN, tRAIL);
+          w <- (VPINSR_2u64 w t64 (W8.of_int 1));
+        } else {
+          (dELTA, lEN, tRAIL, t64) <@ a33____aread_subu64 (buf, offset,
+          dELTA, lEN, tRAIL);
+          w <- (zeroextu128 t64);
+        }
+      }
+    }
+    return (dELTA, lEN, tRAIL, w);
+  }
+  proc a33____aread_subu256 (buf:W8.t Array33.t, offset:W64.t, dELTA:int,
+                             lEN:int, tRAIL:int) : int * int * int * W256.t = {
+    var w:W256.t;
+    var t128_1:W128.t;
+    var t128_0:W128.t;
+    if (((lEN <= 0) /\ (tRAIL = 0))) {
+      w <- (set0_256);
+    } else {
+      if ((32 <= lEN)) {
+        w <-
+        (get256_direct (WArray33.init8 (fun i => buf.[i]))
+        (W64.to_uint (offset + (W64.of_int dELTA))));
+        dELTA <- (dELTA + 32);
+        lEN <- (lEN - 32);
+      } else {
+        if ((16 <= lEN)) {
+          t128_0 <-
+          (get128_direct (WArray33.init8 (fun i => buf.[i]))
+          (W64.to_uint (offset + (W64.of_int dELTA))));
+          dELTA <- (dELTA + 16);
+          lEN <- (lEN - 16);
+          (dELTA, lEN, tRAIL, t128_1) <@ a33____aread_subu128 (buf, offset,
+          dELTA, lEN, tRAIL);
+          w <-
+          (W256.of_int
+          (((W128.to_uint t128_0) %% (2 ^ 128)) +
+          ((2 ^ 128) * (W128.to_uint t128_1))));
+        } else {
+          t128_1 <- (set0_128);
+          (dELTA, lEN, tRAIL, t128_0) <@ a33____aread_subu128 (buf, offset,
+          dELTA, lEN, tRAIL);
+          w <-
+          (W256.of_int
+          (((W128.to_uint t128_0) %% (2 ^ 128)) +
+          ((2 ^ 128) * (W128.to_uint t128_1))));
+        }
+      }
+    }
+    return (dELTA, lEN, tRAIL, w);
+  }
+  proc a33____addstate_array_avx2 (st:W256.t Array7.t, buf:W8.t Array33.t,
+                                   offset:W64.t, lEN:int, tRAILB:int) : 
+  W256.t Array7.t * W64.t = {
+    var dELTA:int;
+    var t64:W64.t;
+    var t128_0:W128.t;
+    var r0:W256.t;
+    var r1:W256.t;
+    var t128_1:W128.t;
+    var r3:W256.t;
+    var r4:W256.t;
+    var r5:W256.t;
+    var r2:W256.t;
+    var r6:W256.t;
+    dELTA <- 0;
+    (dELTA, lEN, tRAILB, t64) <@ a33____aread_subu64 (buf, offset, dELTA,
+    lEN, tRAILB);
+    t128_0 <- (zeroextu128 t64);
+    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+    st.[0] <- (st.[0] `^` r0);
+    (dELTA, lEN, tRAILB, r1) <@ a33____aread_subu256 (buf, offset, dELTA,
+    lEN, tRAILB);
+    st.[1] <- (st.[1] `^` r1);
+    if ((0 < lEN)) {
+      (dELTA, lEN, tRAILB, t64) <@ a33____aread_subu64 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      t128_1 <- (zeroextu128 t64);
+      (dELTA, lEN, tRAILB, r3) <@ a33____aread_subu256 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      (dELTA, lEN, tRAILB, t64) <@ a33____aread_subu64 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      t128_0 <- (zeroextu128 t64);
+      (dELTA, lEN, tRAILB, r4) <@ a33____aread_subu256 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      (dELTA, lEN, tRAILB, t64) <@ a33____aread_subu64 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      t128_1 <- (VPINSR_2u64 t128_1 t64 (W8.of_int 1));
+      (dELTA, lEN, tRAILB, r5) <@ a33____aread_subu256 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      (dELTA, lEN, tRAILB, t64) <@ a33____aread_subu64 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      t128_0 <- (VPINSR_2u64 t128_0 t64 (W8.of_int 1));
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_0) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+      (dELTA, lEN, tRAILB, r6) <@ a33____aread_subu256 (buf, offset, 
+      dELTA, lEN, tRAILB);
+      st <@ __addstate_r3456 (st, r3, r4, r5, r6);
+    } else {
+      
+    }
+    offset <- (offset + (W64.of_int dELTA));
+    return (st, offset);
+  }
+  proc a33____absorb_array_avx2 (st:W256.t Array7.t, buf:W8.t Array33.t,
+                                 offset:W64.t, lEN:int, rATE8:int, tRAILB:int) : 
+  W256.t Array7.t * W64.t = {
+    var aLL:int;
+    var iTERS:int;
+    var i:W64.t;
+    aLL <- (lEN + ((tRAILB <> 0) ? 1 : 0));
+    iTERS <- (lEN %/ rATE8);
+    if ((0 < iTERS)) {
+      i <- (W64.of_int 0);
+      while ((i \ult (W64.of_int iTERS))) {
+        (st, offset) <@ a33____addstate_array_avx2 (st, buf, offset, 
+        rATE8, 0);
+        st <@ _keccakf1600_avx2 (st);
+        i <- (i + (W64.of_int 1));
+      }
+    } else {
+      
+    }
+    lEN <- (lEN %% rATE8);
+    (st, offset) <@ a33____addstate_array_avx2 (st, buf, offset, lEN,
+    tRAILB);
+    if ((tRAILB <> 0)) {
+      st <@ __addratebit_avx2 (st, rATE8);
+    } else {
+      
+    }
+    return (st, offset);
   }
   proc a64____aread_subu64 (buf:W8.t Array64.t, offset:W64.t, dELTA:int,
                             lEN:int, tRAIL:int) : int * int * int * W64.t = {
@@ -6773,7 +6968,7 @@ module M(SC:Syscall_t) = {
     (out,  _1) <@ a32____squeeze_array_avx2 (out, offset, 32, st, 136);
     return out;
   }
-  proc _sha3_512A_A32 (out:W8.t Array64.t, in_0:W8.t Array32.t) : W8.t Array64.t = {
+  proc _sha3_512A_A33 (out:W8.t Array64.t, in_0:W8.t Array33.t) : W8.t Array64.t = {
     var st:W256.t Array7.t;
     var offset:W64.t;
     var  _0:W64.t;
@@ -6782,7 +6977,7 @@ module M(SC:Syscall_t) = {
     st <- witness;
     st <@ __state_init_avx2 ();
     offset <- (W64.of_int 0);
-    (st,  _0) <@ a32____absorb_array_avx2 (st, in_0, offset, 32, 72, 6);
+    (st,  _0) <@ a33____absorb_array_avx2 (st, in_0, offset, 33, 72, 6);
     offset <- (W64.of_int 0);
     (out,  _1) <@ a64____squeeze_array_avx2 (out, offset, 64, st, 72);
     return out;
@@ -9475,7 +9670,7 @@ module M(SC:Syscall_t) = {
     var aux_0:W16.t Array256.t;
     var i:int;
     var t64:W64.t;
-    var inbuf:W8.t Array32.t;
+    var inbuf:W8.t Array33.t;
     var buf:W8.t Array64.t;
     var publicseed:W8.t Array32.t;
     var noiseseed:W8.t Array32.t;
@@ -9499,12 +9694,13 @@ module M(SC:Syscall_t) = {
     while ((i < aux)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
       inbuf <-
-      (Array32.init
-      (WArray32.get8
-      (WArray32.set64 (WArray32.init8 (fun i_0 => inbuf.[i_0])) i t64)));
+      (Array33.init
+      (WArray33.get8
+      (WArray33.set64 (WArray33.init8 (fun i_0 => inbuf.[i_0])) i t64)));
       i <- (i + 1);
     }
-    buf <@ _sha3_512A_A32 (buf, inbuf);
+    inbuf.[32] <- (W8.of_int 3);
+    buf <@ _sha3_512A_A33 (buf, inbuf);
     aux <- (32 %/ 8);
     i <- 0;
     while ((i < aux)) {

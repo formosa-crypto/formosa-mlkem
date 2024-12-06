@@ -504,7 +504,7 @@ module M(SC:Syscall_t) = {
     }
     return ();
   }
-  proc _sha3512_32 (out:W8.t Array64.t, in_0:W8.t Array32.t) : W8.t Array64.t = {
+  proc _sha3512_33 (out:W8.t Array64.t, in_0:W8.t Array33.t) : W8.t Array64.t = {
     var aux:int;
     var state:W64.t Array25.t;
     var i:int;
@@ -513,7 +513,7 @@ module M(SC:Syscall_t) = {
     (* Erased call to spill *)
     state <@ __st0 (state);
     i <- 0;
-    while ((i < 32)) {
+    while ((i < 33)) {
       c <- in_0.[i];
       state <-
       (Array25.init
@@ -525,8 +525,8 @@ module M(SC:Syscall_t) = {
     state <-
     (Array25.init
     (WArray200.get64
-    (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) 32
-    ((get8 (WArray200.init64 (fun i_0 => state.[i_0])) 32) `^` (W8.of_int 6))
+    (WArray200.set8 (WArray200.init64 (fun i_0 => state.[i_0])) 33
+    ((get8 (WArray200.init64 (fun i_0 => state.[i_0])) 33) `^` (W8.of_int 6))
     )));
     state <-
     (Array25.init
@@ -1650,7 +1650,7 @@ module M(SC:Syscall_t) = {
     var aux_0:W16.t Array256.t;
     var i:int;
     var t64:W64.t;
-    var inbuf:W8.t Array32.t;
+    var inbuf:W8.t Array33.t;
     var buf:W8.t Array64.t;
     var publicseed:W8.t Array32.t;
     var noiseseed:W8.t Array32.t;
@@ -1679,12 +1679,13 @@ module M(SC:Syscall_t) = {
     while ((i < aux)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
       inbuf <-
-      (Array32.init
-      (WArray32.get8
-      (WArray32.set64 (WArray32.init8 (fun i_0 => inbuf.[i_0])) i t64)));
+      (Array33.init
+      (WArray33.get8
+      (WArray33.set64 (WArray33.init8 (fun i_0 => inbuf.[i_0])) i t64)));
       i <- (i + 1);
     }
-    buf <@ _sha3512_32 (buf, inbuf);
+    inbuf.[32] <- (W8.of_int 3);
+    buf <@ _sha3512_33 (buf, inbuf);
     aux <- (32 %/ 8);
     i <- 0;
     while ((i < aux)) {

@@ -26,7 +26,7 @@ import MLKEM_PolyvecAVX.
 import MLKEM_PolyAVXVec.
 import NTT_Avx2.
 (*import WArray136 WArray32 WArray128.*)
-import WArray32 WArray128.
+import WArray32 WArray33 WArray128.
 import WArray512 WArray256.
 
 
@@ -428,17 +428,17 @@ lemma aux_coef_pos b:
  to_uint (mask33u8 `&` (mask55u8 `&` b  + mask55u8 `&` (b `>>` ru_ones_s)))
  = b2i b.[0] + b2i b.[1] + 16 * (b2i b.[4] + b2i b.[5]).
 proof.
-rewrite addrC -(mask85_sum b 0) // -(mask85_sum b 2) //= !(W8.andwC mask55u8).
-by rewrite to_uint_mask33 /(`>>`) to_uint_shr //= to_uint_shr //= /#.
+rewrite addrC -(mask85_sum b 0) 1:/# -(mask85_sum b 2) 1:/# /= !(W8.andwC mask55u8).
+by rewrite to_uint_mask33 /(`>>`) to_uint_shr 1:/# /= to_uint_shr 1:/# /= /#.
 qed.
 
 lemma aux_coef_neg b:
  to_uint (mask33u8 `&` ((mask55u8 `&` b + mask55u8 `&` (b `>>` ru_ones_s)) `>>` W8.of_int 2))
  = b2i b.[2] + b2i b.[3] + 16 * (b2i b.[6] + b2i b.[7]).
 proof.
-rewrite to_uint_mask33 to_uint_shr // -divz_mul //= !(W8.andwC mask55u8).
-rewrite {1}(_:4=2^2) // (_:64=2^6) // -(mask85_sum b 1) // -(mask85_sum b 3) //=. 
-by rewrite to_uint_shr //= to_uint_shr //= /#.
+rewrite to_uint_mask33 to_uint_shr 1:/# /= -divz_mul 1:/# /= !(W8.andwC mask55u8).
+rewrite -{1}pow2_2  -pow2_6 -(mask85_sum b 1) 1:/# /= -(mask85_sum b 3) 1:/# /=. 
+by rewrite to_uint_shr 1:/# /= to_uint_shr 1:/# /= /#.
 qed.
 
 lemma noise_coef_avx2_aux bytes j:
@@ -465,7 +465,7 @@ case: (j %% 2 = 0) => C.
  by rewrite -modzDml -(modzDmr _ 51) /= modzDml modz_small /#. 
 have ->/=: j%%2 = 1 by smt().
 rewrite -addrA to_uintD.
-rewrite (_:16=2^4) // modz_pow_div //= modz_mod.
+rewrite -pow2_4 modz_pow_div 1,2:/# /= modz_mod.
 rewrite aux_coef_pos W8.to_uintB.
  by rewrite ule_andw.
 rewrite aux_coef_neg /= (divz_eq 51 16).
@@ -474,7 +474,7 @@ have /=->: X
    = b2i b.[0] + b2i b.[1] + (51 %% 16) - (b2i b.[2] + b2i b.[3]) 
      + 16 * (b2i b.[4] + b2i b.[5] + (51 %/ 16) - (b2i b.[6] + b2i b.[7])).
  by rewrite /X /=; ring.
-by rewrite mulzC divzMDr // divz_small //= /#.
+by rewrite mulzC divzMDr 1:/# /= divz_small 1:/# /= /#.
 qed.
 
 lemma noise_coef_avx2 bytes j:
@@ -494,16 +494,16 @@ pose x:= b `&` mask55u8 + (b `>>` ru_ones_s) `&` mask55u8.
 pose y:= x `&` mask33u8 + mask33u8 - (x `>>` (W8.of_int 2)) `&` mask33u8.
 case: (j %% 2 = 0) => C.
  rewrite C /= andwC W8_to_sintB_small.
-  by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod //= /#.
- rewrite L1 (W8.to_uint_and_mod 4) //= /smod /= 1:/#.
+  by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod 1:/# /= /#.
+ rewrite L1 (W8.to_uint_and_mod 4) 1:/# /= /smod /= 1,2:/#.
  move: (noise_coef_avx2_aux bytes j) => /=.
  by rewrite C to_sintE /smod => <- /#. 
 have C': j %% 2 = 1 by smt().
 rewrite C' /= andwC W8_to_sintB_small.
- by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod //= /#.
-rewrite L1 (W8.to_uint_and_mod 4) //= /smod /= 1:/#.
+ by rewrite !to_sintE  (W8.to_uint_and_mod 4) /smod 1:/# /= /#.
+rewrite L1 (W8.to_uint_and_mod 4) 1:/# /= /smod /= 1,2:/#.
 move: (noise_coef_avx2_aux bytes j) => /=.
-by rewrite /noise_coef C' to_sintE /smod to_uint_shr //= => <- /#.
+by rewrite /noise_coef C' to_sintE /smod to_uint_shr 1:/# /= => <- /#.
 qed.
 
 lemma  to_sint8_mod x:
@@ -512,9 +512,9 @@ proof.
 rewrite /to_sint /smod.
 case: (2 ^ (8 - 1) <= to_uint x) => C.
  rewrite -modzDm -modzNm modzz /= modz_mod.
- rewrite modz_small //.
+ rewrite modz_small 2:/#.
  by apply JUtils.bound_abs; apply W8.to_uint_cmp.
-rewrite modz_small //.
+rewrite modz_small 2:/#.
 by apply JUtils.bound_abs; apply W8.to_uint_cmp.
 qed.
 
@@ -523,7 +523,7 @@ proof. by rewrite -of_int_mod to_sint8_mod to_uintK. qed.
 
 lemma truncateu128_bits128 (w:W256.t):
  truncateu128 w = w \bits128 0.
-proof. by rewrite /truncateu128 to_uint_eq of_uintK bits128_div // of_uintK. qed.
+proof. by rewrite /truncateu128 to_uint_eq of_uintK bits128_div 1:/# /= of_uintK. qed.
 
 hoare cbd2_avx2_h _bytes:
  Jkem_avx2.M(Jkem_avx2.Syscall).__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
@@ -542,11 +542,11 @@ while (0 <= i <= 4 /\ #{~i}pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_co
    have ->: (64 * i{m} + k) %% 2 = 0 by smt().
    rewrite /= => ->.
    have:= (bytes_getR buf{m} ((64*i{m}+k)%/2) _); first smt().
-   rewrite /B2Ri /= -!divz_mul //=. 
+   rewrite /B2Ri /= -!divz_mul 1:/# /=. 
    have ->: (64 * i{m} + k) %/ 64 = i{m}.
-    by rewrite (mulzC 64) divzMDl // (divz_small _ 64) 1:/# /=.
+    by rewrite (mulzC 64) divzMDl 1:/# (divz_small _ 64) 1:/# /=.
    have ->: (64 * i{m} + k) %/ 2 %% 32 = k %/ 2.
-    rewrite -(modz_pow_div 2 6 1) //=.
+    rewrite -(modz_pow_div 2 6 1) 1,2:/# /=.
     by rewrite (mulzC 64) modzMDl modz_small /#.
    move => Eb.
    rewrite map2bE 1:/# /= mask0F_bits8 1:/# /=.
@@ -567,11 +567,11 @@ while (0 <= i <= 4 /\ #{~i}pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_co
   have ->: (64 * i{m} + k) %% 2 = 1 by smt().
   rewrite /= => ->.
   have:= (bytes_getR buf{m} ((64*i{m}+k)%/2) _); first smt().
-  rewrite /B2Ri /= -!divz_mul //=. 
+  rewrite /B2Ri /= -!divz_mul 1:/# /=. 
   have ->: (64 * i{m} + k) %/ 64 = i{m}.
-   by rewrite (mulzC 64) divzMDl // (divz_small _ 64) 1:/# /=.
+   by rewrite (mulzC 64) divzMDl 1:/# (divz_small _ 64) 1:/# /=.
   have ->: (64 * i{m} + k) %/ 2 %% 32 = k %/ 2.
-   rewrite -(modz_pow_div 2 6 1) //=.
+   rewrite -(modz_pow_div 2 6 1) 1,2:/# /=.
    by rewrite (mulzC 64) modzMDl modz_small /#.
   move => Eb.
   rewrite map2bE 1:/#; beta.
@@ -613,8 +613,8 @@ while (0 <= i <= 4 /\ #{~i}pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_co
  rewrite !NTT_AVX_Fq.PUR_get 1..8:/#.
  case: (k %/ 16 = 4 * i{m} + 3) => C1.
   move: (H (k %% 64) _) => /=; first smt(mem_iota).
-  rewrite (modz_pow_div 2 6 4) //= C1 (mulzC 4) modzMDl /=.
-  rewrite (modz_dvd_pow 4 6 _ 2) //.
+  rewrite (modz_pow_div 2 6 4) 1,2:/# /= C1 (mulzC 4) modzMDl /=.
+  rewrite (modz_dvd_pow 4 6 _ 2) 1:/#.
   have ->: 64 * i{m} + k %% 64 = k by smt().
   by rewrite /R2C /= Array16.initiE /#.
  case: (k %/ 16 = 4 * i{m} + 2) => C2.
@@ -880,7 +880,7 @@ transitivity {1} {Jkem.M(Jkem.Syscall).__indcpa_keypair(pkp, skp, randomnessp);}
         rho = load_array32 Glob.mem{1} (_pkp + 1152)); 1,2: smt(); 
    last by call(mlkem_correct_kg mem _pkp _skp); auto => />. 
 
-inline{1} 1; inline {2} 1. sim 40 62. 
+inline{1} 1; inline {2} 1. sim 41 63. 
 
 call (polyvec_tobytes_equiv _pkp).
 call (polyvec_tobytes_equiv _skp).
@@ -889,11 +889,11 @@ ecall (polyvec_reduce_equiv (lift_array768 pkpv{2})).
 
 have H := polyvec_add2_equiv 2 2 _ _ => //.
 ecall (H (lift_array768 pkpv{2}) (lift_array768 e{2})); clear H.
-unroll for* {1} 36.
+unroll for* {1} 37.
 
 sp 3 3.
 
-seq 15 17  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}).
+seq 16 18  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}).
  admit(* 1: by
  sp; conseq />; sim 2 2; call( sha3equiv); conseq />; sim. *).
 

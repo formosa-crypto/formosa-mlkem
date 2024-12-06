@@ -2,12 +2,12 @@ require import AllCore IntDiv List.
 from Jasmin require import JModel.
 require import GFq Rq Serialization Symmetric VecMat Sampling InnerPKE MLKEM_Poly MLKEM_PolyVec W16extra NTT_Fq.
 require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
-require import Array960 Array1152 Array2304 Array1088 WArray32 WArray64.
+require import Array960 Array1152 Array2304 Array1088 WArray32 WArray33 WArray64.
 
 require import Jkem.
 
 require import Correctness MLKEMFCLib.
-import PolyVec PolyMat.
+import PolyVec PolyMat InnerPKE.
 import MLKEM_Poly MLKEM_PolyVec.
 
 import KMatrix.
@@ -17,12 +17,12 @@ import Zq.
 (***THESE ASSUMPTIONS MAP SHA OPERATORS FROM SPEC TO CODE IN
     THE IMPLEMENTATION ****)
 
-print Symmetric.
-axiom sha3_512_32_64 buf seed : 
-   phoare [Jkem.M(Jkem.Syscall)._sha3512_32 : 
+
+axiom sha3_512_33_64 buf seed : 
+   phoare [Jkem.M(Jkem.Syscall)._sha3512_33 : 
                arg = (buf,seed) ==>
-               Array32.init(fun i => res.[i]) = (SHA3_512_32_64 seed).`1 /\
-               Array32.init(fun i => res.[32 + i]) = (SHA3_512_32_64 seed).`2  ] = 1%r.
+               Array32.init(fun i => res.[i]) = (SHA3_512_33_64 seed).`1 /\
+               Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2  ] = 1%r.
 
 axiom shake_absorb (seed : W8.t Array34.t) state : 
    phoare [Jkem.M(Jkem.Syscall)._shake128_absorb34 : 
@@ -166,7 +166,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var t64 : W64.t;
 
 
-    buf2 <- G_coins seed;
+    buf2 <- G_coins_ds seed;
     buf <- Array64.init (fun k => if 0<=k<32 then buf2.`1.[k] else buf2.`2.[k-32]);
 
     publicseed <- witness;
@@ -951,14 +951,14 @@ swap {1} 3 -1.
 swap {1} [11..14] -8.
 swap {1} 9 -6.
 swap {1} 11 -8.
-swap {1} [15..17] -6.
-seq 11 7 : (#pre /\ ={publicseed, noiseseed}).
-+ swap {1} [5..8] -2. 
-  seq 6 2 : (#pre /\ ={buf}); last by sim; auto => />.   
-  wp;ecall {1} (sha3_512_32_64 buf{1} inbuf{1}).
+swap {1} [15..18] -6.
+seq 12 7 : (#pre /\ ={publicseed, noiseseed}).
++ swap {1} [5..9] -2. 
+  seq 7 2 : (#pre /\ ={buf}); last by sim; auto => />.   
+  wp;ecall {1} (sha3_512_33_64 buf{1} inbuf{1}).
   conseq />; 1: by move => /> &2 inb H rr Hrr1 Hrr2; 
      rewrite (H rr Hrr1 Hrr2). 
-  while {1} (0<= i{1} <= aux{1} /\ aux{1} = 4 /\
+  wp;while {1} (0<= i{1} <= aux{1} /\ aux{1} = 4 /\
               seed{2} = randomnessp{1} /\
              forall k, 0<= k < i{1} * 8 =>
                     inbuf{1}.[k] = seed{2}.[k]) (32- i{1} * 8);
@@ -966,7 +966,8 @@ seq 11 7 : (#pre /\ ={publicseed, noiseseed}).
   + auto => /> &1 ; split; 1: smt().
     move => il inbufl /=; split; 1: smt().
     move => ???H rs.
-    have -> : inbufl = seed{1} by rewrite tP => k kb;smt().
+    have -> : inbufl.[32 <- (of_int 3)%W8] = Array33.init (fun i => if i < 32 then seed{1}.[i] else W8.of_int kvec).
+    +  by rewrite tP => k kb; smt(Array33.get_setE Array33.initiE).
     rewrite !tP => H0 H1 k kb.
     case (k < 32) => *.
     + move : (H0 k _); 1:smt().
@@ -976,7 +977,7 @@ seq 11 7 : (#pre /\ ={publicseed, noiseseed}).
   move => *; auto => /> &hr ??? /==> *.
   split; 2: smt(); split; 1: smt().
   move => k kb ?; case (k < i{hr} * 8).
-  + move => *; rewrite initiE /= 1:/# get8_set64_directE 1,2:/#. 
+  + move => *; rewrite initiE /= 1:/#  get8_set64_directE 1,2:/#. 
     case (8 * i{hr} <= k && k < 8 * i{hr} + 8); 1: by smt().
     by move => *; rewrite /get8 /init8 initiE /#.
   move => *; rewrite /get8 /init8 initiE 1: /# /=.
