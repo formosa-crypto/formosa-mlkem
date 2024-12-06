@@ -12,7 +12,7 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
   stack u8[MLKEM_SYMBYTES] publicseed noiseseed;
   reg ptr u8[MLKEM_SYMBYTES] r_noiseseed;
   #mmx reg ptr u8[MLKEM_SYMBYTES] s_noiseseed;
-  stack u8[32] inbuf;
+  stack u8[33] inbuf;
   reg u64 t64;
   reg u64 zero;
   reg u8 nonce;
@@ -25,8 +25,9 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
     t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
   }
+  inbuf[32] = MLKEM_K;
 
-  buf = _sha3512_32(buf, inbuf);
+  buf = _sha3512_33(buf, inbuf);
 
   for i=0 to MLKEM_SYMBYTES/8
   {

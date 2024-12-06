@@ -19,6 +19,12 @@ namespace A32 {
   from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
 }
 
+namespace A33 {
+  param int ASIZE = 33;
+  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+}
+
 namespace A64 {
   param int ASIZE = 64;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
@@ -65,15 +71,15 @@ fn _sha3_256A_M1184
   return out;
 }
 
-fn _sha3_512A_A32
+fn _sha3_512A_A33
 ( #spill_to_mmx reg mut ptr u8[64] out
-, reg const ptr u8[32] in
+, reg const ptr u8[33] in
 ) -> reg ptr u8[64]
 { reg u256[7] st;
   reg u64 offset;
   st = __state_init_avx2();
   offset = 0;
-  st, _ = A32::__absorb_array_avx2(st, in, offset, 32, R72, SHA3);
+  st, _ = A33::__absorb_array_avx2(st, in, offset, 33, R72, SHA3);
   offset = 0;
   out, _ = A64::__squeeze_array_avx2(out, offset, 64, st, R72);
   return out;

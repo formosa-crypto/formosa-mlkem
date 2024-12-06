@@ -553,7 +553,7 @@ fn _shake256_1120_32(#spill_to_mmx reg u64 out in0 in1) {
 }
 
 
-fn _sha3512_32(#spill_to_mmx reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
+fn _sha3512_33(#spill_to_mmx reg ptr u8[64] out, reg const ptr u8[33] in) -> stack u8[64]
 {
   stack u64[25] state;
   reg u8 c;
@@ -563,11 +563,11 @@ fn _sha3512_32(#spill_to_mmx reg ptr u8[64] out, reg const ptr u8[32] in) -> sta
 
   state = __st0(state);
 
-  for i = 0 to 32 {
+  for i = 0 to 33 {
     c = in[i];
     state[u8 i] ^= c;
   }
-  state[u8 32] ^= 0x06;
+  state[u8 33] ^= 0x06;
   state[u8 SHA3_512_RATE-1] ^= 0x80;
     
   state = _keccakf1600_(state);

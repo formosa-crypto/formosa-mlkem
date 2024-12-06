@@ -3,9 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../params.h"
-#include "../ntt.h"
-#include "../indcpa.h"
+#include "../../../kyber/ref/params.h"
+#include "../../../kyber/ref/kem.h"
 
 #define NRUNS 100
 
@@ -56,6 +55,7 @@ void print_results(const char *s, uint64_t *t, size_t tlen) {
 
 int main(void)
 {
+  /*
   unsigned char sk[MLKEM_INDCPA_SECRETKEYBYTES];
   unsigned char pk[MLKEM_INDCPA_PUBLICKEYBYTES];
   unsigned char ct[MLKEM_INDCPA_BYTES];
@@ -72,7 +72,7 @@ int main(void)
   fread(message, MLKEM_SYMBYTES, 1, urandom);
   fclose(urandom);
 
-  /* TEST KEYPAIR */
+  / TEST KEYPAIR /
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
@@ -80,7 +80,7 @@ int main(void)
   }
   print_results("keypair: ", t, NRUNS);
 
-  /* TEST ENCRYPTION */
+  / TEST ENCRYPTION /
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
@@ -88,13 +88,13 @@ int main(void)
   }
   print_results("encaps: ", t, NRUNS);
 
-  /* TEST DECRYPTION */
+  / TEST DECRYPTION /
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
     indcpa_dec_jazz(outmsg, ct, sk);
   }
   print_results("decaps: ", t, NRUNS);
-
+*/
   return 0;
 }

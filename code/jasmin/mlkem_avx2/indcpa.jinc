@@ -10,7 +10,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
   stack u16[MLKEM_VECN] e pkpv skpv;
   stack u8[64] buf;
   stack u8[MLKEM_SYMBYTES] publicseed noiseseed;
-  stack u8[32] inbuf;
+  stack u8[33] inbuf;
   reg u64 t64;
   reg u8 nonce;
   inline int i;
@@ -23,9 +23,9 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
     t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
   }
+  inbuf[32] = MLKEM_K;
 
-  //buf = _sha3_512_32(buf, inbuf);
-  buf = _sha3_512A_A32(buf, inbuf);
+  buf = _sha3_512A_A33(buf, inbuf);
 
   for i=0 to MLKEM_SYMBYTES/8
   {
