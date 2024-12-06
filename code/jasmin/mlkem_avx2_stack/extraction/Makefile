@@ -10,9 +10,9 @@
 all: ec
 
 ec:
-	$(JASMINC) ../jkem.jazz -oec jkem_avx2.ec \
-	  -ec jade_kem_mlkem_mlkem768_amd64_avx2_keypair \
-	  -ec jade_kem_mlkem_mlkem768_amd64_avx2_enc \
+	$(JASMINC) ../jkem.jazz -oec jkem_avx2_stack.ec \
+	  -ec jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand \
+	  -ec jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand \
 	  -ec jade_kem_mlkem_mlkem768_amd64_avx2_dec
 
 clean:

@@ -9,6 +9,7 @@ rdirs = proof
 rdirs = Jasmin:jasmin/eclib
 rdirs = Keccak:formosa-keccak/proof/amd64
 idirs = code/jasmin/mlkem_ref/extraction
+idirs = code/jasmin/mlkem_avx2_stack/extraction
 idirs = code/jasmin/mlkem_avx2/extraction
 idirs = crypto-specs/common
 rdirs = crypto-specs/fips202
