@@ -384,67 +384,7 @@ import Array536.
 require import JWordList EclibExtra MLKEM_keccak_avx2.
 
 require import Mlkem_filters_bridge.
-(*
-abbrev bufl (buf: W8.t Array536.t) = to_list buf.
 
-op buf_subl (buf: W8.t Array536.t) (first last: int): W8.t list =
- take (last-first) (drop first (bufl buf)).
-
-lemma buf_subl0 buf s e:
- (e <= s)%Int =>
- buf_subl buf s e = [].
-proof. by rewrite /buf_subl /#. qed.
-
-lemma size_buf_subl buf bstart bend:
- 0 <= bstart <= bend <= 536 =>
- size (buf_subl buf bstart bend) = bend - bstart.
-proof.
-by move=> H; rewrite size_take 1:/# size_drop 1:/# size_to_list /#.
-qed.
-
-lemma buf_sublE buf (i j: int):
- 0 <= i <= j <= 536 =>
- buf_subl buf i j = sub buf i (j-i).
-proof.
-move=> H; rewrite /buf_subl /sub.
-apply (eq_from_nth witness).
- by rewrite size_take 1:/# size_drop 1:/# !size_mkseq /#.
-move=> k.
-rewrite size_take 1:/# size_drop 1:/# size_to_list => Hk.
-by rewrite nth_take 1..2:/# nth_drop 1..2:/# !nth_mkseq /#.
-qed.
-
-lemma sub2buf_subl (buf: W8.t Array536.t) (k len: int):
- 0 <= k <= k+len <= 536 =>
- sub buf k len = buf_subl buf k (k+len).
-proof.
-move=> H; rewrite /buf_subl /sub.
-apply (eq_from_nth witness).
- rewrite size_take 1:/# size_drop 1:/# !size_mkseq /#.
-move=> i; rewrite size_mkseq => Hi.
-by rewrite nth_take 1..2:/# nth_drop 1..2:/# !nth_mkseq /#.
-qed.
-
-lemma buf_subl_cat buf (o k n:int):
- 0 <= o <= k <= n =>
- buf_subl buf o  k ++ buf_subl buf k n = buf_subl buf o n.
-proof.
-move=> H; rewrite /buf_subl /=.
-rewrite -(cat_take_drop (k-o) (take (n-o) _)).
-rewrite take_take ifT 1:/#; congr.
-rewrite drop_take 1:/#; congr; first smt().
-by rewrite drop_drop /#.
-qed.
-
-lemma buf_subl_sub buf o k n l:
- 0 <= o <= k <= n =>
- buf_subl buf o n = l =>
- buf_subl buf o k = take (k-o) l.
-proof.
-move=> H; rewrite /buf_subl => <-.
-by rewrite take_take ifT 1:/#.
-qed.
-*)
 hoare comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2:
  Jkem_avx2.M(Jkem_avx2.Syscall).comp_u64_l_int_and_u64_l_int
  : arg = (_a,_i1,_b,_i2)
