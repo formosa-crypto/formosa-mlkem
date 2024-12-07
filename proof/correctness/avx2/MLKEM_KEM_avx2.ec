@@ -8,39 +8,7 @@ import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Fq Correctn
 import MLKEM_Poly.
 import MLKEM_PolyVec.
 
-(*
-axiom pkH_sha_avx2 mem _ptr inp: 
-    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._isha3_256 :
-          arg = (inp,W64.of_int _ptr,W64.of_int (3*384+32)) /\
-          valid_ptr _ptr 1184 /\
-          Glob.mem = mem
-          ==> 
-          Glob.mem = mem /\
-          res = SHA3_256_1184_32
-            (Array1152.init (fun k =>  mem.[_ptr+k]),
-            (Array32.init (fun k => mem.[_ptr+1152+k])))] = 1%r.
-
-axiom j_shake_avx2 mem _pout _pin1 _pin2: 
-    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_1120_32  :
-          arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2) /\
-          valid_ptr _pout 32 /\
-          valid_ptr _pin1 32 /\
-          valid_ptr _pin2 1088 /\
-          Glob.mem = mem
-          ==> 
-          touches Glob.mem mem _pout 32 /\
-          (Array32.init (fun k =>  Glob.mem.[_pout+k])) = 
-             SHAKE_256_1120_32 (Array32.init (fun k => mem.[_pin1+k])) 
-                            (Array960.init (fun k => mem.[_pin2+k]), Array128.init (fun k => mem.[_pin2+960+k])) ] = 1%r.
-
-axiom sha_g_avx2 buf inp: 
-    phoare [Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512_64 :
-          arg = (inp,buf)
-          ==> 
-          let bytes = SHA3_512_64_64 (Array32.init (fun k => buf.[k])) 
-                                     (Array32.init (fun k => buf.[k+32])) in
-          res = Array64.init (fun k => if k < 32 then bytes.`1.[k] else bytes.`2.[k-32])] = 1%r.
-*)
+(* sha3 assumptions *)
 axiom sha3_256A_M1184_ph mem _ptr inp:
  phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_256A_M1184
         : arg = (inp,W64.of_int _ptr) /\
@@ -59,6 +27,7 @@ axiom sha3_512A_A64_ph buf inp:
         let bytes = SHA3_512_64_64 (Array32.init (fun k => buf.[k])) 
                                    (Array32.init (fun k => buf.[k+32])) in
         res = Array64.init (fun k => if k < 32 then bytes.`1.[k] else bytes.`2.[k-32])] = 1%r.
+
 
 axiom shake256_M32__M32_M1088_ph mem _pout _pin1 _pin2: 
  phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_M32__M32_M1088
@@ -95,8 +64,7 @@ proof.
 proc => /=.
 swap {1} 1 16.
 swap {1} [2..4] 17.
-admit(*
-seq 13 2 : (
+seq 18 4 : (
       z{2} = Array32.init(fun i => randomnessp{1}.[32 + i]) /\ 
       to_uint skp{1} = _skp +  1152 + 1152 + 32 + 32 /\
       valid_disj_reg _pkp (384*3+32) _skp (384*3 + 384*3 + 32 + 32 + 32 + 32) /\
@@ -198,7 +166,6 @@ seq 1 1 : (#{/~Glob.mem{1}=mem}pre /\
   sk{2} = load_array1152 Glob.mem{1} _skp /\
   pk{2}.`1 = load_array1152 Glob.mem{1} _pkp /\ 
   pk{2}.`2 = load_array32 Glob.mem{1} (_pkp + 1152)).
- print mlkem_correct_kg_avx2.
 call (mlkem_correct_kg_avx2 mem _pkp _skp).
 auto => /> &1; rewrite /load_array1152 /load_array32 !tP /touches2 => ????????.
 do split; 1,2,3: smt().
@@ -209,9 +176,9 @@ do split; 1,2,3: smt().
   + by move => k kb;  move : (r11 k _) => //; rewrite !initiE //.
   by move => k kb;  move : (r12 k _) => //; rewrite !initiE //.
 
-swap {1} 3 2. swap {1} 12 -4.
-
+swap {1} 3 2.
 seq 8 0 : (#{/~to_uint skp{1} = _skp}pre /\
+   s_skp{1}=skp{1} /\
    to_uint skp{1} = _skp + 3*384 + 3*384 + 32 /\
    pk{2}.`1 = load_array1152 Glob.mem{1} (_skp + 1152) /\
   pk{2}.`2 = load_array32 Glob.mem{1} (_skp+ 2304)
@@ -275,8 +242,8 @@ seq 8 0 : (#{/~to_uint skp{1} = _skp}pre /\
   + by move => *; rewrite initiE //= /#.
   by move => *; rewrite initiE //= /#.
    
-seq 4 1 : 
-(to_uint skp{1} = _skp + 2336 /\
+seq 2 0 : 
+(to_uint s_skp{1} = _skp + 2336 /\
    valid_disj_reg _pkp 1184 _skp 2432 /\
   touches2 Glob.mem{1} mem _pkp 1184 _skp 2432 /\
   sk{2} = load_array1152 Glob.mem{1} _skp /\
@@ -285,14 +252,14 @@ seq 4 1 :
   H_pk pk{2} = h_pk{1} /\ 
   pk{2}.`1 = load_array1152 Glob.mem{1} _pkp /\ pk{2}.`2 = load_array32 Glob.mem{1} (_pkp + 1152)).
 
-ecall {1} (pkH_sha_avx2 (Glob.mem{1}) (_pkp) (h_pk{1})).
+ecall {1} (sha3_256A_M1184_ph (Glob.mem{1}) (_pkp) (h_pk{1})).
 inline *; auto => /> &1 &2; rewrite /touches /touches2 /load_array1152 /load_array32 !tP => ??????????? pk1v pk2v .
 + move => i ib; congr; rewrite /H_pk; congr. 
   by smt(Array32.initiE Array1152.initiE Array32.tP Array1152.tP).
 
 while {1} (#{/~to_uint skp{1} = _skp + 2336}pre /\ 0 <= i{1} <= 4 /\ to_uint skp{1} = _skp + 2336 + 8*i{1} /\ forall k, 0 <= k < i{1} * 8 => Glob.mem{1}.[_skp + 2336 + k] = ((H_pk pk{2})).[k]) (4 - i{1}).
 move => &m z; auto => /> &1 &2; rewrite /load_array1152 /load_array32 /touches2 !tP.
-move => ?????pkv1s pkv2s pkv1 pkv2 ??? prev ?. 
+move => ??????pkv1s pkv2s pkv1 pkv2 ??? prev ?. 
 rewrite !to_uintD_small /= 1:/#.
 do split.
 + move => i ib ih.
@@ -334,14 +301,14 @@ by smt().
 auto => /> &1 &2.
 rewrite /load_array1152 /load_array32 /touches2 !tP.
 move => ???????pkv1s pkv2s pkv1 pkv2. 
-do split.
+do split. 
 + move => i ib ih.
   rewrite /storeW64 /loadW64 /stores  /=. 
   by smt(get_set_neqE_s get_set_eqE_s).
 move => memL iL skL; do split; 1: by smt().
 move => *; split; 1: by smt().
 by rewrite tP => i ib; smt(Array32.initiE).
-*).
+
 qed.
 
 

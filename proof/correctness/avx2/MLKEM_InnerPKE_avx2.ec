@@ -30,10 +30,10 @@ import WArray512 WArray256.
 
 (* shake assumptions *)
 
-lemma sha3ll : islossless M(Syscall)._shake256_128_33.
-admitted.
+axiom sha3ll : islossless M(Syscall)._shake256_128_33.
 
-lemma shake256_4x_128_32 _seed _nonces :
+
+axiom shake256_4x_128_32 _seed _nonces :
   phoare [
    Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1 : arg.`5 = _seed /\ arg.`6 = _nonces ==>
    res.`1 = 
@@ -45,12 +45,10 @@ lemma shake256_4x_128_32 _seed _nonces :
    res.`4 = 
      SHAKE256_33_128 _seed _nonces.[3]
 ] = 1%r.
-admitted.
 
-lemma sha3equiv :
+axiom sha3equiv :
  equiv [    Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512A_A33 ~ M(Syscall)._sha3512_33 :
        ={arg} ==> ={res} ].
-admitted.
 
 
 equiv genmatrixequiv b :
