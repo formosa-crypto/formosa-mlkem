@@ -5,9 +5,8 @@ fn __verify(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_INDCPA
 {
   reg u256 f g h;
   reg u64 cnd t64;
-  reg u8 t1 t2;
   reg bool zf;
-  inline int i off;
+  inline int i;
 
   cnd = 0;
   t64 = 1;
@@ -25,20 +24,6 @@ fn __verify(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_INDCPA
 
   cnd = t64 if !zf;
 
-  off = MLKEM_INDCPA_CIPHERTEXTBYTES/32 * 32;
-
-  for i=off to MLKEM_INDCPA_CIPHERTEXTBYTES
-  {
-    t1 = ct.[i];
-    t2 = ctpc.[i];
-    t1 ^= t2;
-    t64 = (64u)t1;
-    cnd |= t64;
-  }
-
-  cnd = -cnd;
-  cnd >>= 63;
-
   return cnd;
 }
 
@@ -47,35 +32,16 @@ fn __cmov(reg ptr u8[MLKEM_SYMBYTES] dst, reg ptr u8[MLKEM_SYMBYTES] src, reg u6
 {
   reg u256 f g m;
   stack u64 scnd;
-  reg u8 t1 t2 bcond;
-  inline int i off;
 
   cnd = -cnd;
   scnd = cnd;
 
   m = #VPBROADCAST_4u64(scnd);
 
-  for i=0 to MLKEM_SYMBYTES/32
-  {
-    f = src.[u256 32*i];
-    g = dst.[u256 32*i];
-    f = #VPBLENDVB_256(f, g, m);
-    dst.[u256 32*i] = f;
-  }
-
-  off = MLKEM_SYMBYTES/32 * 32;
-
-  /* fixme: unused in 768, hence untested */
-  bcond = (8u)cnd;
-  for i=off to MLKEM_SYMBYTES
-  {
-    t2 = dst.[i];
-    t1 = src[i];
-    t2 = t2 ^ t1;
-    t2 = t2 & cnd;
-    t1 ^= t2;
-    dst.[i] = t1;
-  }
+  f = src.[u256 0];
+  g = dst.[u256 0];
+  f = #VPBLENDVB_256(f, g, m);
+  dst.[u256 0] = f;
   
   return dst;
 }

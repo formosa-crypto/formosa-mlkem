@@ -143,7 +143,7 @@ fn __indcpa_enc(
 
 
 inline
-fn __indcpa_dec(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_SECRETKEYBYTES] sk) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
+fn __indcpa_dec(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_POLYVECBYTES] sk) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
 {
   stack u16[MLKEM_N] t v mp;
   stack u16[MLKEM_VECN] bp skpv;
@@ -151,7 +151,7 @@ fn __indcpa_dec(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg ptr u8[MLKEM_CIPHERT
   bp = __i_polyvec_decompress(ct); 
   v = _i_poly_decompress(v, ct[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES]);
 
-  skpv = __i_polyvec_frombytes(sk[0:MLKEM_POLYVECBYTES]);
+  skpv = __i_polyvec_frombytes(sk);
   
   bp = __polyvec_ntt(bp);
   t = __polyvec_pointwise_acc(t, skpv, bp);

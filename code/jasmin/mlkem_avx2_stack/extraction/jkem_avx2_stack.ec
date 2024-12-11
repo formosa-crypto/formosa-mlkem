@@ -9643,7 +9643,7 @@ module M = {
     return ct;
   }
   proc __indcpa_dec (msgp:W8.t Array32.t, ct:W8.t Array1088.t,
-                     sk:W8.t Array2400.t) : W8.t Array32.t = {
+                     sk:W8.t Array1152.t) : W8.t Array32.t = {
     var bp:W16.t Array768.t;
     var v:W16.t Array256.t;
     var skpv:W16.t Array768.t;
@@ -9657,7 +9657,7 @@ module M = {
     bp <@ __i_polyvec_decompress (ct);
     v <@ _i_poly_decompress (v,
     (Array128.init (fun i => ct.[((3 * 320) + i)])));
-    skpv <@ __i_polyvec_frombytes ((Array1152.init (fun i => sk.[(0 + i)])));
+    skpv <@ __i_polyvec_frombytes (sk);
     bp <@ __polyvec_ntt (bp);
     t <@ __polyvec_pointwise_acc (t, skpv, bp);
     t <@ _poly_invntt (t);
@@ -9675,9 +9675,6 @@ module M = {
     var f:W256.t;
     var g:W256.t;
     var zf:bool;
-    var off:int;
-    var t1:W8.t;
-    var t2:W8.t;
     var  _0:bool;
     var  _1:bool;
     var  _2:bool;
@@ -9697,63 +9694,23 @@ module M = {
     }
     ( _0,  _1,  _2,  _3, zf) <- (VPTEST_256 h h);
     cnd <- ((! zf) ? t64 : cnd);
-    off <- ((((3 * 320) + 128) %/ 32) * 32);
-    aux <- ((3 * 320) + 128);
-    i <- off;
-    while ((i < aux)) {
-      t1 <- (get8_direct (WArray1088.init8 (fun i_0 => ct.[i_0])) i);
-      t2 <- (get8_direct (WArray1088.init8 (fun i_0 => ctpc.[i_0])) i);
-      t1 <- (t1 `^` t2);
-      t64 <- (zeroextu64 t1);
-      cnd <- (cnd `|` t64);
-      i <- (i + 1);
-    }
-    cnd <- (- cnd);
-    cnd <- (cnd `>>` (W8.of_int 63));
     return cnd;
   }
   proc __cmov (dst:W8.t Array32.t, src:W8.t Array32.t, cnd:W64.t) : W8.t Array32.t = {
-    var aux:int;
     var scnd:W64.t;
     var m:W256.t;
-    var i:int;
     var f:W256.t;
     var g:W256.t;
-    var off:int;
-    var bcond:W8.t;
-    var t2:W8.t;
-    var t1:W8.t;
     cnd <- (- cnd);
     scnd <- cnd;
     m <- (VPBROADCAST_4u64 scnd);
-    aux <- (32 %/ 32);
-    i <- 0;
-    while ((i < aux)) {
-      f <- (get256_direct (WArray32.init8 (fun i_0 => src.[i_0])) (32 * i));
-      g <- (get256_direct (WArray32.init8 (fun i_0 => dst.[i_0])) (32 * i));
-      f <- (VPBLENDVB_256 f g m);
-      dst <-
-      (Array32.init
-      (WArray32.get8
-      (WArray32.set256_direct (WArray32.init8 (fun i_0 => dst.[i_0]))
-      (32 * i) f)));
-      i <- (i + 1);
-    }
-    off <- ((32 %/ 32) * 32);
-    bcond <- (truncateu8 cnd);
-    i <- off;
-    while ((i < 32)) {
-      t2 <- (get8_direct (WArray32.init8 (fun i_0 => dst.[i_0])) i);
-      t1 <- src.[i];
-      t2 <- (t2 `^` t1);
-      t2 <- (t2 `&` (truncateu8 cnd));
-      t1 <- (t1 `^` t2);
-      dst <-
-      (Array32.init
-      (WArray32.get8
-      (WArray32.set8_direct (WArray32.init8 (fun i_0 => dst.[i_0])) i t1)));
-      i <- (i + 1);
-    }
+    f <- (get256_direct (WArray32.init8 (fun i => src.[i])) 0);
+    g <- (get256_direct (WArray32.init8 (fun i => dst.[i])) 0);
+    f <- (VPBLENDVB_256 f g m);
+    dst <-
+    (Array32.init
+    (WArray32.get8
+    (WArray32.set256_direct (WArray32.init8 (fun i => dst.[i])) 0 f)));
     return dst;
   }
   proc __crypto_kem_keypair_jazz (pk:W8.t Array1184.t, sk:W8.t Array2400.t,
@@ -9909,7 +9866,7 @@ module M = {
                 ) i_0))
     );
     aux <@ __indcpa_dec ((Array32.init (fun i_0 => buf.[(0 + i_0)])), 
-    ct, s_sk);
+    ct, (Array1152.init (fun i_0 => s_sk.[(0 + i_0)])));
     buf <-
     (Array64.init
     (fun i_0 => (if (0 <= i_0 < (0 + 32)) then aux.[(i_0 - 0)] else buf.[i_0]))

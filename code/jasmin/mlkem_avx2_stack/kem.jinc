@@ -112,7 +112,7 @@ fn __crypto_kem_dec_jazz(reg ptr u8[MLKEM_SYMBYTES] shk, reg ptr u8[MLKEM_CIPHER
   s_ct = ct;
   s_sk = #copy(sk);
 
-  buf[0:MLKEM_INDCPA_MSGBYTES] = __indcpa_dec(buf[0:MLKEM_INDCPA_MSGBYTES], ct, s_sk);
+  buf[0:MLKEM_INDCPA_MSGBYTES] = __indcpa_dec(buf[0:MLKEM_INDCPA_MSGBYTES], ct, s_sk[0:MLKEM_POLYVECBYTES]);
 
   // we do not need to do pointer arithmetic here
 
