@@ -346,10 +346,10 @@ equiv eq_encode1 :
   EncDec_AVX2.encode1 ~ EncDec.encode1 :
     ={a} /\ all (fun (x : int) => 0 <= x && x < 2) a{1} ==> ={res}.
 proc. 
-unroll for* {1} ^while.
+unroll for {1} ^while.
 do 8!(unroll for {1} ^while).
-unroll for* {2} ^while.
-do 32!(unroll for* {2} ^while).
+unroll for {2} ^while.
+do 32!(unroll for {2} ^while).
 auto => /> &m.
 rewrite (initSet _ (fun i => W8.init (fun (j : int) => W8.int_bit a{m}.[8*i + j] 0) )) //=.
 rewrite (initSet _ (fun i => W8.of_int (((((((a{m}.[8*i+0] %% 256 + a{m}.[8*i+1] * 2) %% 256 + a{m}.[8*i+2] * 4) %% 256 + a{m}.[8*i+3] * 8) %% 256 + a{m}.[8*i+4] * 16) %% 256 + a{m}.[8*i+5] * 32) %% 256 + a{m}.[8*i+6] * 64) %% 256 + a{m}.[8*i+7] * 128) )) //=.
@@ -400,9 +400,9 @@ equiv eq_decode1_opt :
   EncDec_AVX2.decode1_opt ~ EncDec.decode1 : 
     ={a} ==> ={res}.
 proc.
-unroll for* {1} ^while.
-do 8!(unroll for* {1} ^while).
-unroll for* {2} ^while.
+unroll for {1} ^while.
+do 8!(unroll for {1} ^while).
+unroll for {2} ^while.
 auto=> /= &1 &2 ->; rewrite -!fillCE /=.
 by do 32! ((do 8! rewrite fillCSm 1://); rewrite /= fillC0).
 qed.
@@ -412,10 +412,10 @@ equiv decode10_vec_corr:
 proof.
   proc.
   swap 2 1.
-  unroll for* {1} ^while.
-  do 3!(unroll for* {1} ^while).
+  unroll for {1} ^while.
+  do 3!(unroll for {1} ^while).
   swap {2} 2 1.
-  unroll for* {2} ^while.
+  unroll for {2} ^while.
   by auto => />.
 qed.
 
@@ -425,7 +425,7 @@ proof.
   proc.
   while (#pre /\ ={k} /\ 0 <= k{1} <= 3 /\ j{2} = 320*k{2} /\
          (forall j, 0 <= j < 256*k{1} => c{1}.[j] = c{2}.[j])).
-    unroll for* {2} 2.
+    unroll for {2} 2.
     wp; skip; auto => />.
     move => &1 &2 [#] k_lb k_ub c_eq k_tub />.
     rewrite (mulzDr 320 _ _) (mulzDr 256 _ _) mulz1 /=.
@@ -465,10 +465,10 @@ equiv encode10_vec_corr:
 proof.
   proc.
   swap 2 1.
-  unroll for* {1} ^while.
-  do 48!(unroll for* {1} ^while).
+  unroll for {1} ^while.
+  do 48!(unroll for {1} ^while).
   swap {2} 2 1.
-  unroll for* {2} ^while.
+  unroll for {2} ^while.
   by auto => />.
 qed.
 
@@ -478,7 +478,7 @@ proof.
   proc.
   while (#pre /\ ={i} /\ 0 <= i{1} <= 48 /\ j{2} = 20*i{2} /\
          (forall k, 0 <= k < 20*i{1} => c{1}.[k] = c{2}.[k])).
-    unroll for* {2} 2.
+    unroll for {2} 2.
     wp; skip; auto => />.
     move => &1 &2 [#] i_lb i_ub c_eq i_tub />.
     rewrite (mulzDr 20 _ _) mulz1 //=.
@@ -517,14 +517,14 @@ equiv encode12_avx2_corr:
   EncDec_AVX2.encode12 ~ EncDec.encode12: ={a} ==> ={res}.
 proof.
   proc.
-  unroll for* {1} ^while.
+  unroll for {1} ^while.
   splitwhile  {2} 4:  (i < 128).
   wp. 
-  while (0<=k{1}<=64 /\ 128<=i{2}<=256 /\ i{2} = 2*k{1} + 128 /\ j{2} = 192 * i{1} + 3 * k{1} /\ i{1} = 1 /\ ={r,a}).
-  auto => /> /#. 
-  wp; while (0<=k{1}<=64 /\ 0<=i{2}<=128 /\ i{2} = 2*k{1} /\ j{2} = 192 * i{1} + 3 * k{1} /\ i{1} = 0 /\ ={r,a}).
-  auto => /> /#. 
+  while (0<=k{1}<=64 /\ 128<=i{2}<=256 /\ i{2} = 2*k{1} + 128 /\ j{2} = 192 + 3 * k{1} /\ ={r,a}).
   auto => /> /#.
+  wp; while (0<=k{1}<=64 /\ 0<=i{2}<=128 /\ i{2} = 2*k{1} /\ j{2} = 3 * k{1} /\ ={r,a}).
+  auto => /> /#.
+auto => /> /#.
 qed.
 
 equiv eq_encode12_opt:
@@ -533,7 +533,7 @@ proof.
   proc.
   while (#pre /\ i{1} = i{2} /\ 0 <= i{1} <= 2 /\
          (forall k, 0 <= k < 192 * i{1} => r{1}.[k] = r{2}.[k])).
-    unroll for* {2} 2.
+    unroll for {2} 2.
     wp; skip; auto => />.
     move => &1 &2 [#] i_lb i_ub r1_eq_r2 i_tub />.
     split.
@@ -587,9 +587,9 @@ equiv decode12_avx2_corr:
   EncDec_AVX2.decode12 ~ EncDec.decode12: ={a} ==> ={res}.
 proof.
   proc.
-  unroll for* {1} ^while.
-  do 2!(unroll for* {1} ^while).
-  unroll for* {2} ^while.
+  unroll for {1} ^while.
+  do 2!(unroll for {1} ^while).
+  unroll for {2} ^while.
   by auto => />.
 qed.
 
@@ -599,7 +599,7 @@ proof.
   proc.
   while (#pre /\ i{1} = i{2} /\ 0 <= i{1} <= 2 /\
          (forall k, 0 <= k < 128 * i{1} => r{1}.[k] = r{2}.[k])).
-    unroll for* {2} 2.
+    unroll for {2} 2.
     wp; skip; auto => />.
     move => &1 &2 [#] i_lb i_ub r1_eq_r2 i_tub />.
     split.
@@ -650,9 +650,9 @@ qed.
 equiv eq_decode4:
   EncDec_AVX2.decode4 ~ EncDec.decode4: ={a} ==> ={res}.
 proc.
-unroll for* {1} ^while.
-do  16!(unroll for* {1} ^while).
-unroll for* {2} ^while.
+unroll for {1} ^while.
+do  16!(unroll for {1} ^while).
+unroll for {2} ^while.
 by auto => />.
 qed.
 
@@ -660,9 +660,9 @@ equiv eq_encode4:
   EncDec_AVX2.encode4 ~ EncDec.encode4: ={p} ==> ={res}.
 proof.
   proc.
-  unroll for* {1} ^while.
-  do  4!(unroll for* {1} ^while).
-  unroll for* {2} ^while.
+  unroll for {1} ^while.
+  do  4!(unroll for {1} ^while).
+  unroll for {2} ^while.
   by auto => />.
 qed.
 

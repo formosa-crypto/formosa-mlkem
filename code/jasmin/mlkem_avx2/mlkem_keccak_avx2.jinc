@@ -230,7 +230,7 @@ fn _shake128_next_state
 fn _shake128x4_squeeze3blocks
 ( reg mut ptr u256[25] st
 , reg mut ptr u8[4*ABUFLEN::ASIZE] buf
-) -> reg ptr u256[25]   /* st */
+) -> reg ptr u256[25]
    , reg ptr u8[4*ABUFLEN::ASIZE] /* buf */
 {
  reg ptr u8[ABUFLEN::ASIZE] buf0 buf1 buf2 buf3;

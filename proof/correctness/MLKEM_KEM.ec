@@ -8,37 +8,7 @@ import MLKEM_PolyVec.
 
 require import GFq Rq VecMat Sampling Symmetric Serialization InnerPKE MLKEM MLKEMFCLib.
 
-axiom pkH_sha mem _ptr inp: 
-    phoare [Jkem.M(Jkem.Syscall)._isha3_256 :
-          arg = (inp,W64.of_int _ptr,W64.of_int (3*384+32)) /\
-          valid_ptr _ptr 1184 /\
-          Glob.mem = mem
-          ==> 
-          Glob.mem = mem /\
-          res = SHA3_256_1184_32
-            (Array1152.init (fun k =>  mem.[_ptr+k]),
-            (Array32.init (fun k => mem.[_ptr+1152+k])))] = 1%r.
-
-axiom j_shake mem _pout _pin1 _pin2: 
-    phoare [Jkem.M(Syscall)._shake256_1120_32  :
-          arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2) /\
-          valid_ptr _pout 32 /\
-          valid_ptr _pin1 32 /\
-          valid_ptr _pin2 1088 /\
-          Glob.mem = mem
-          ==> 
-          touches Glob.mem mem _pout 32 /\
-          (Array32.init (fun k =>  Glob.mem.[_pout+k])) = 
-             SHAKE_256_1120_32 (Array32.init (fun k => mem.[_pin1+k])) 
-                            (Array960.init (fun k => mem.[_pin2+k]), Array128.init (fun k => mem.[_pin2+960+k])) ] = 1%r.
-
-axiom sha_g buf inp: 
-    phoare [Jkem.M(Jkem.Syscall)._sha3_512_64 :
-          arg = (inp,buf)
-          ==> 
-          let bytes = SHA3_512_64_64 (Array32.init (fun k => buf.[k])) 
-                                     (Array32.init (fun k => buf.[k+32])) in
-          res = Array64.init (fun k => if k < 32 then bytes.`1.[k] else bytes.`2.[k-32])] = 1%r.
+require import MLKEM_keccak_ref.
 
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
@@ -253,7 +223,7 @@ seq 4 1 :
   H_pk pk{2} = h_pk{1} /\ 
   pk{2}.`1 = load_array1152 Glob.mem{1} _pkp /\ pk{2}.`2 = load_array32 Glob.mem{1} (_pkp + 1152)).
 
-ecall {1} (pkH_sha (Glob.mem{1}) (_pkp) (h_pk{1})).
+ecall {1} (pkH_sha (Glob.mem{1}) (_pkp)).
 inline *; auto => /> &1 &2; rewrite /touches /touches2 /load_array1152 /load_array32 !tP => ??????????? pk1v pk2v .
 + move => i ib; congr; rewrite /H_pk; congr. 
   by smt(Array32.initiE Array1152.initiE Array32.tP Array1152.tP).
@@ -364,15 +334,15 @@ seq 15 4 : (#[/1:-2]post
       case (k < 8 * i{hr}).
       + move => kbb;have := H9 k _; 1: by smt().
         by rewrite initiE 1:/# /= /#. 
-      rewrite !WArray64.WArray64.get64E. search pack8_t (\bits8).
+      rewrite !WArray64.WArray64.get64E.
       by rewrite !pack8bE // !initiE //= /init8 !WArray64.WArray64.initiE /#.
     by smt().
   auto => /> &1 &2 ?????????;split; 1: by smt().
   move => mm ii;do split => ???????; 1: smt().
   by rewrite /load_array32 tP => kk kkb; smt(Array32.initiE).
 wp;call (mlkem_correct_enc mem _ctp _pkp).
-wp;ecall {1} (sha_g buf{1} kr{1}).
-wp;ecall {1} (pkH_sha mem (_pkp) ((Array32.init (fun (i : int) => buf{1}.[32 + i])))).
+wp;ecall {1} (sha_g buf{1}).
+wp;ecall {1} (pkH_sha mem (_pkp))(* ((Array32.init (fun (i : int) => buf{1}.[32 + i])))).*).
 seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1} /\ randomnessp{1} = Array32.init (fun i => buf{1}.[i])).
 + sp ; conseq />.
   while {1} (0<=i{1}<=aux{1} /\ aux{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (aux{1} - i{1}); last first.
@@ -388,12 +358,12 @@ seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1
      rewrite WArray32.WArray32.get64E pack8bE 1:/# !initiE 1:/# /= /init8.  
      by rewrite !WArray32.WArray32.initiE /#.
   by move => *; rewrite /get8; rewrite WArray64.WArray64.initiE /#.
-   
+
 auto  => />  &1 &2; rewrite /load_array1152 /load_array32 /load_array128 /load_array960 /touches2 /touches !tP.
 move => [#] ??????? pkv1 pkv2; do split.
 + by move => i ib; rewrite !initiE /= /#.
 + move => i ib; rewrite initiE /= 1:/# initiE /= 1:/# ifF 1:/#.
-  rewrite /G_mhpk; congr;congr;congr;rewrite tP => k kb.
+  rewrite /G_mhpk /=; congr; congr;congr;rewrite tP => k kb.
   + by rewrite !initiE 1,2,3:/# /= /H_msg ifF /#.
   rewrite initiE 1:/# /= /H_pk. 
   rewrite initiE 1:/# /= ifT 1:/#. 
@@ -615,7 +585,7 @@ seq 7 1 : (#pre /\
            (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k] = _K{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k+32] = r{2}.[k])).
-ecall {1} (sha_g buf{1} kr{1}).
+ecall {1} (sha_g buf{1}).
 wp; conseq (_: _ ==> 
    (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
    (forall k, 32<=k<64 => buf{1}.[k] = mem.[_skp + 2336 + k - 32]) /\

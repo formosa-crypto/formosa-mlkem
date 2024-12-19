@@ -13,11 +13,14 @@ WArray200 WArray224 WArray256 WArray512 WArray536 WArray800 WArray960
 WArray1088 WArray1536 WArray2048 WArray2144 WArray4608.
 
 abbrev gen_matrix_indexes =
-(Array16.of_list witness
-[(W16.of_int 0); (W16.of_int 1); (W16.of_int 2); (W16.of_int 256);
-(W16.of_int 257); (W16.of_int 258); (W16.of_int 512); (W16.of_int 513);
-(W16.of_int 0); (W16.of_int 256); (W16.of_int 512); (W16.of_int 1);
-(W16.of_int 257); (W16.of_int 513); (W16.of_int 2); (W16.of_int 258)]).
+(Array32.of_list witness
+[(W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2);
+(W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 1); (W8.of_int 1);
+(W8.of_int 2); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2); (W8.of_int 1);
+(W8.of_int 2); (W8.of_int 0); (W8.of_int 0); (W8.of_int 0); (W8.of_int 1);
+(W8.of_int 0); (W8.of_int 2); (W8.of_int 1); (W8.of_int 0); (W8.of_int 1);
+(W8.of_int 1); (W8.of_int 1); (W8.of_int 2); (W8.of_int 2); (W8.of_int 0);
+(W8.of_int 2); (W8.of_int 1)]).
 
 abbrev sample_shuffle_table =
 (Array2048.of_list witness
@@ -9434,34 +9437,17 @@ module M(SC:Syscall_t) = {
   }
   proc gen_matrix_get_indexes (b:W64.t, _t:W64.t) : W8.t Array8.t = {
     var idx:W8.t Array8.t;
-    var gmi:W16.t Array16.t;
     var t:W64.t;
-    gmi <- witness;
     idx <- witness;
-    gmi <- gen_matrix_indexes;
     t <- _t;
-    t <- (t `<<` (W8.of_int 3));
+    t <- (t `<<` (W8.of_int 4));
     b <- (b + t);
     idx <-
     (Array8.init
     (WArray8.get8
-    (WArray8.set16 (WArray8.init8 (fun i => idx.[i])) 0
-    gmi.[((W64.to_uint b) + 0)])));
-    idx <-
-    (Array8.init
-    (WArray8.get8
-    (WArray8.set16 (WArray8.init8 (fun i => idx.[i])) 1
-    gmi.[((W64.to_uint b) + 1)])));
-    idx <-
-    (Array8.init
-    (WArray8.get8
-    (WArray8.set16 (WArray8.init8 (fun i => idx.[i])) 2
-    gmi.[((W64.to_uint b) + 2)])));
-    idx <-
-    (Array8.init
-    (WArray8.get8
-    (WArray8.set16 (WArray8.init8 (fun i => idx.[i])) 3
-    gmi.[((W64.to_uint b) + 3)])));
+    (WArray8.set64 (WArray8.init8 (fun i => idx.[i])) 0
+    (get64_direct (WArray32.init8 (fun i => gen_matrix_indexes.[i]))
+    (W64.to_uint b)))));
     return idx;
   }
   proc __gen_matrix_fill_polynomial (pol:W16.t Array256.t,
@@ -9484,7 +9470,7 @@ module M(SC:Syscall_t) = {
   proc _gen_matrix_sample_four_polynomials (polx4:W16.t Array1024.t,
                                             buf:W8.t Array2144.t,
                                             rho:W8.t Array32.t,
-                                            mat_entry:W64.t, transposed:W64.t) : 
+                                            pos_entry:W64.t, transposed:W64.t) : 
   W16.t Array1024.t * W8.t Array2144.t = {
     var aux_0:W8.t Array536.t;
     var aux:W16.t Array256.t;
@@ -9498,7 +9484,7 @@ module M(SC:Syscall_t) = {
     pol <- witness;
     state <- witness;
     stx4 <- witness;
-    indexes <@ gen_matrix_get_indexes (mat_entry, transposed);
+    indexes <@ gen_matrix_get_indexes (pos_entry, transposed);
     stx4 <- state;
     stx4 <@ _shake128x4_absorb_A32_A2 (stx4, rho, indexes);
     ( _0, buf) <@ _shake128x4_squeeze3blocks (stx4, buf);
@@ -9592,7 +9578,7 @@ module M(SC:Syscall_t) = {
     var buf_s:W8.t Array2144.t;
     var buf:W8.t Array2144.t;
     var i:int;
-    var mat_entry:W64.t;
+    var pos_entry:W64.t;
     var polx4:W16.t Array1024.t;
     var pol:W16.t Array256.t;
     var rc:W16.t;
@@ -9605,12 +9591,12 @@ module M(SC:Syscall_t) = {
     buf <- buf_s;
     i <- 0;
     while ((i < 2)) {
-      mat_entry <- (W64.of_int (4 * i));
+      pos_entry <- (W64.of_int (8 * i));
       polx4 <-
       (Array1024.init (fun i_0 => matrix.[(((4 * i) * 256) + i_0)]));
       (* Erased call to unspill *)
       (polx4, buf) <@ _gen_matrix_sample_four_polynomials (polx4, buf, 
-      rho, mat_entry, transposed);
+      rho, pos_entry, transposed);
       matrix <-
       (Array2304.init
       (fun i_0 => (if (((i * 4) * 256) <= i_0 < (((i * 4) * 256) + 1024)) then 

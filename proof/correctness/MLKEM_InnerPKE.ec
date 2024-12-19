@@ -14,31 +14,7 @@ import KMatrix.
 import Vector.
 import Zq.
 
-(***THESE ASSUMPTIONS MAP SHA OPERATORS FROM SPEC TO CODE IN
-    THE IMPLEMENTATION ****)
-
-
-axiom sha3_512_33_64 buf seed : 
-   phoare [Jkem.M(Jkem.Syscall)._sha3512_33 : 
-               arg = (buf,seed) ==>
-               Array32.init(fun i => res.[i]) = (SHA3_512_33_64 seed).`1 /\
-               Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2  ] = 1%r.
-
-axiom shake_absorb (seed : W8.t Array34.t) state : 
-   phoare [Jkem.M(Jkem.Syscall)._shake128_absorb34 : 
-               arg = (state,seed) ==>
-               res = SHAKE128_ABSORB_34 
-                         (Array32.init (fun k => seed.[k])) (seed.[32]) (seed.[33]) ] = 1%r.
-
-axiom shake_squeeze buf state : 
-   phoare [Jkem.M(Jkem.Syscall)._shake128_squeezeblock : 
-               arg = (state,buf) ==>
-               res = SHAKE128_SQUEEZE_168 state ] = 1%r.
-
-axiom shake256_33_128 buf seed : 
-   phoare [Jkem.M(Jkem.Syscall)._shake256_128_33 : 
-               arg = (buf,seed) ==>
-               res = SHAKE256_33_128 (Array32.init (fun i => seed.[i])) seed.[32] ] = 1%r.
+require import MLKEM_keccak_ref.
 
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
     MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
@@ -419,6 +395,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
 }.
 
+(*
 equiv squeezeblock_ignore :
  Jkem.M(Jkem.Syscall)._shake128_squeezeblock ~Jkem.M(Jkem.Syscall)._shake128_squeezeblock :
    arg{1}.`1 = arg{2}.`1 ==> ={res}.
@@ -429,6 +406,7 @@ while (={i} /\ 0<=i{1}<=168 /\ ={state} /\ forall k, 0<=k<i{1} => out{1}.[k] = o
 auto => /> *; split; 1: by smt().
 by move => *;rewrite tP => k kb; smt().
 qed.
+*)
 
 (* 
 equiv absorb_ignore :
@@ -537,7 +515,7 @@ seq 3 1 : (
         incoeff (to_sint r{1}.[k0]) /\ bpos16 r{1}.[k0] q) /\
    state{1} = XOF.state{2}).
 + inline XOF.init.
-  ecall {1} (shake_absorb extseed{1} state{1}).
+  ecall {1} (shake_absorb extseed{1}).
   auto => /> &1 &2 *; split. 
   case(trans{2}).
   + by rewrite oner_neq0 //= /=.
@@ -568,7 +546,7 @@ while(to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256 /\ state{1} = XOF.state{2} /\
 
 swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
 + inline XOF.next_bytes; conseq />.
-  ecall {1} (shake_squeeze  buf{1} state{1}).
+  ecall {1} (shake_squeeze state{1}).
   by auto => />. 
 
 wp; conseq />.
@@ -799,7 +777,7 @@ equiv get_noise_sample_noise :
    forall k, 0<=k<256 => -5 < to_sint res{1}.[k] < 5.
 proc => /=. 
 seq 8 0 : (buf{1} = bytes{2}).
-+ ecall{1} (shake256_33_128 buf{1} extseed{1}); wp.
++ ecall{1} (shake256_33_128 extseed{1}); wp.
   while{1}(0<=k{1}<=32 /\ 
     forall i, 0<=i<k{1} => extseed{1}.[i] = seed{1}.[i]) (32 - k{1}); last first.
   + auto => /> &1 *; split; 1: smt().
@@ -938,7 +916,7 @@ rewrite /unlift_poly /lift_array256 tP /= => bd k kbnd.
 rewrite !initiE //= !mapiE //=. 
 by smt(inFq_to_sint).
 qed.
-  
+
 
 equiv auxkg_good :
  Jkem.M(Jkem.Syscall).__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
@@ -955,7 +933,7 @@ swap {1} [15..18] -6.
 seq 12 7 : (#pre /\ ={publicseed, noiseseed}).
 + swap {1} [5..9] -2. 
   seq 7 2 : (#pre /\ ={buf}); last by sim; auto => />.   
-  wp;ecall {1} (sha3_512_33_64 buf{1} inbuf{1}).
+  wp;ecall {1} (sha3_512_33_64 inbuf{1}).
   conseq />; 1: by move => /> &2 inb H rr Hrr1 Hrr2; 
      rewrite (H rr Hrr1 Hrr2). 
   wp;while {1} (0<= i{1} <= aux{1} /\ aux{1} = 4 /\

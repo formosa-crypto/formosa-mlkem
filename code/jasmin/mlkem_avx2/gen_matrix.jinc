@@ -34,326 +34,7 @@ inline fn comp_u64_l_int_and_u64_l_int(
 // BUF_size per entry: 21(rate) + 21(rate) + 25(keccak_state) + 1(pad) 
 param int BUF_size = 536; // 168*2+200      (was in u64s: 3*21 + 4 + 1; //544 bytes; 
 
-/*
-// deinterleave u64-lanes of 4 u256 regs
-inline fn _4u64x4_u256x4(reg u256 y0 y1 y2 y3) -> reg u256, reg u256, reg u256, reg u256 {
-  reg u256 x0, x1, x2, x3;
-  x0 = #VPERM2I128(y0, y2, 0x20);
-  x1 = #VPERM2I128(y1, y3, 0x20);
-  x2 = #VPERM2I128(y0, y2, 0x31);
-  x3 = #VPERM2I128(y1, y3, 0x31);
 
-  y0 = #VPUNPCKL_4u64(x0, x1);	// y0 = l00 l01  l02 l03
-  y1 = #VPUNPCKH_4u64(x0, x1);	// y1 = l10 l11  l12 l13
-  y2 = #VPUNPCKL_4u64(x2, x3);	// y2 = l20 l21  l22 l23
-  y3 = #VPUNPCKH_4u64(x2, x3);	// y3 = l30 l31  l32 l33
-
-  return y0, y1, y2, y3;
-}
-
-/*
-// extracts 4 keccak states (st25) from a 4-way state (st4x)
-inline fn __st4x_unpack_at
-( reg mut ptr u64[4*BUF_size] buf
-, reg const ptr u256[25] st4x
-, reg u64 offset // in bytes
-) -> reg ptr u64[4*BUF_size] {
-  inline int i;
-  reg u256 x0, x1, x2, x3;
-  reg u64 t0, t1, t2, t3;
-  for i = 0 to 6 {
-    x0 = st4x[u256 4*i+0];
-    x1 = st4x[u256 4*i+1];
-    x2 = st4x[u256 4*i+2];
-    x3 = st4x[u256 4*i+3];
-    x0, x1, x2, x3 = _4u64x4_u256x4(x0, x1, x2, x3);
-    buf.[u256 offset + 4*8*i + 0*8*BUF_size] = x0;
-    buf.[u256 offset + 4*8*i + 1*8*BUF_size] = x1;
-    buf.[u256 offset + 4*8*i + 2*8*BUF_size] = x2;
-    buf.[u256 offset + 4*8*i + 3*8*BUF_size] = x3;
-  }
-  t0 = st4x[u64 4*24+0];
-  t1 = st4x[u64 4*24+1];
-  t2 = st4x[u64 4*24+2];
-  t3 = st4x[u64 4*24+3];
-  buf.[u64 offset + 8*24 + 0*8*BUF_size] = t0;
-  buf.[u64 offset + 8*24 + 1*8*BUF_size] = t1;
-  buf.[u64 offset + 8*24 + 2*8*BUF_size] = t2;
-  buf.[u64 offset + 8*24 + 3*8*BUF_size] = t3;
-
-  return buf;
-}
-*/
-
-// extracts 4 keccak states (st25) from a 4-way state (st4x)
-inline fn __st4x_unpack_at
-( reg mut ptr u8[BUF_size] buf0 buf1 buf2 buf3
-, reg const ptr u256[25] st4x
-, reg u64 offset // in bytes
-) -> reg ptr u8[BUF_size], reg ptr u8[BUF_size], reg ptr u8[BUF_size], reg ptr u8[BUF_size] {
-  inline int i;
-  reg u256 x0, x1, x2, x3;
-  reg u64 t0, t1, t2, t3;
-  for i = 0 to 6 {
-    x0 = st4x[u256 4*i+0];
-    x1 = st4x[u256 4*i+1];
-    x2 = st4x[u256 4*i+2];
-    x3 = st4x[u256 4*i+3];
-    x0, x1, x2, x3 = _4u64x4_u256x4(x0, x1, x2, x3);
-    buf0.[u256 offset + 4*8*i] = x0;
-    buf1.[u256 offset + 4*8*i] = x1;
-    buf2.[u256 offset + 4*8*i] = x2;
-    buf3.[u256 offset + 4*8*i] = x3;
-  }
-  t0 = st4x[u64 4*24+0];
-  t1 = st4x[u64 4*24+1];
-  t2 = st4x[u64 4*24+2];
-  t3 = st4x[u64 4*24+3];
-  buf0.[u64 offset + 8*24] = t0;
-  buf1.[u64 offset + 8*24] = t1;
-  buf2.[u64 offset + 8*24] = t2;
-  buf3.[u64 offset + 8*24] = t3;
-
-  return buf0, buf1, buf2, buf3;
-}
-
-inline fn __stavx2_pack_at
-( reg const ptr u8[BUF_size] st
-, reg u64 offset // in bytes
-) -> reg u256[7] {
-  // 3*r256 (evitáveis...)
-  reg u256[7] state;
-  reg u256 t256_0 t256_1 t256_2;
-  reg u128 t128_0, t128_1;
-  reg u64 r;
-
-  // [ 0 0 0 0 ]
-  state[0] = #VPBROADCAST_4u64(st.[u64 8*0 + offset]);
-  // [ 1 2 3 4 ]
-  state[1] = st.[u256 1*8 + offset];
-  // [ 5 - ]
-  t128_0 = #VMOV(st.[u64 5*8 + offset]);
-  // [ 6 7 8 9 ]
-  state[3] = st.[u256 6*8 + offset];
-  // [ 10 - ]
-  t128_1 = #VMOV(st.[u64 10*8 + offset]);
-  // [ 11 12 13 14 ]
-  state[4] = st.[u256 11*8 + offset];
-  // [ 5 15 ]
-  r = st.[u64 15*8 + offset];
-  t128_0 = #VPINSR_2u64(t128_0, r, 1);
-  // [ 16 17 18 19 ]
-  state[5] = st.[u256 16*8 + offset];
-  // [ 10 20 ]
-  r = st.[u64 20*8 + offset];
-  t128_1 = #VPINSR_2u64(t128_1, r, 1);
-  // alternative not currently supported: VPGATHERDQ for filling state[2]
-  // [ 10 20 5 15 ]
-  state[2] = (2u128)[t128_0, t128_1];
-  // [ 21 22 23 24 ]
-  state[6] = st.[u256 21*8 + offset];
-
-  // [ 16 7 8 19 ]
-  t256_0 = #VPBLEND_8u32(state[3], state[5], (8u1)[1,1,0,0,0,0,1,1]);
-  // [ 11 22 23 14 ]
-  t256_1 = #VPBLEND_8u32(state[6], state[4], (8u1)[1,1,0,0,0,0,1,1]);
-  // [ 6 12 13 9 ]
-  t256_2 = #VPBLEND_8u32(state[4], state[3], (8u1)[1,1,0,0,0,0,1,1]);
-
-  // [ 16 7 23 14 ]
-  state[3] = #VPBLEND_8u32(t256_0, t256_1, (8u1)[1,1,1,1,0,0,0,0]);
-  // [ 11 22 8 19 ]
-  state[4] = #VPBLEND_8u32(t256_1, t256_0, (8u1)[1,1,1,1,0,0,0,0]);
-
-  // [ 21 17 18 24 ]
-  t256_0 = #VPBLEND_8u32(state[5], state[6], (8u1)[1,1,0,0,0,0,1,1]);
-
-  // [ 21 17 13 9 ]
-  state[5] = #VPBLEND_8u32(t256_0, t256_2, (8u1)[1,1,1,1,0,0,0,0]);
-  // [ 6 12 18 24 ]
-  state[6] = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,1,1,0,0,0,0]);
-
-  // [ 0  0  0  0  ]
-  // [ 1  2  3  4  ]
-  // [ 10 20 5  15 ]
-  // [ 16 7  23 14 ]
-  // [ 11 22 8  19 ]
-  // [ 21 17 13 9  ]
-  // [ 6  12 18 24 ]  
-  return state;
-}
-
-inline fn _stavx2_pack_at
-( reg const ptr u8[BUF_size] st
-, reg u64 offset // in bytes
-) -> reg u256[7] {
-  reg u256[7] stavx2;
-  stavx2 = __stavx2_pack_at(st, offset);
-  return stavx2;
-}
-
-inline fn __stavx2_unpack_at
-( reg mut ptr u8[BUF_size] buf
-, reg u64 offset // in bytes
-, reg u256[7] state
-) -> reg ptr u8[BUF_size] {
-  // 5*r256 + 2*r128(evitáveis) (+7*r256)
-  reg u256 t256_0 t256_1 t256_2 t256_3 t256_4;
-  reg u128 t128_0, t128_1;
-
-  // [ 0, 0 ]
-  t128_0 = (128u) state[0];
-  buf.[u64 0*8 + offset] = #VMOVLPD(t128_0);
-  // [ 1, 2, 3, 4 ]
-  buf.[u256 1*8 + offset] = state[1];
-
-  // [ 16, 7, 8, 19 ]
-  t256_0 = #VPBLEND_8u32(state[3], state[4], (8u1)[1,1,1,1,0,0,0,0]);
-  // [ 11, 22, 23, 14 ]
-  t256_1 = #VPBLEND_8u32(state[4], state[3], (8u1)[1,1,1,1,0,0,0,0]);
-  // [ 21, 17, 18, 24 ]
-  t256_2 = #VPBLEND_8u32(state[5], state[6], (8u1)[1,1,1,1,0,0,0,0]);
-  // [ 6, 12, 13, 9 ]
-  t256_3 = #VPBLEND_8u32(state[6], state[5], (8u1)[1,1,1,1,0,0,0,0]);
-
-  // [ 5, 15 ]
-  t128_1 = #VEXTRACTI128(state[2], 1);
-  buf.[u64 5*8 + offset] = #VMOVLPD(t128_1);
-
-  // [ 6, 7, 8, 9 ]
-  t256_4 = #VPBLEND_8u32(t256_0, t256_3, (8u1)[1,1,0,0,0,0,1,1]);
-  buf.[u256 6*8 + offset] = t256_4;
-
-  // [ 10, 20 ]
-  t128_0 = (128u) state[2];
-  buf.[u64 10*8 + offset] = #VMOVLPD(t128_0);
-  
-  // [ 11, 12, 13, 14 ]
-  t256_4 = #VPBLEND_8u32(t256_3, t256_1, (8u1)[1,1,0,0,0,0,1,1]);
-  buf.[u256 11*8 + offset] = t256_4;
-
-  // [ 15 ]
-  buf.[u64 15*8 + offset] = #VMOVHPD(t128_1);
-  
-  // [ 16, 17, 18, 19 ]
-  t256_4 = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,0,0,0,0,1,1]);
-  buf.[u256 16*8 + offset] = t256_4;
-
-  // [ 20 ]
-  buf.[u64 20*8 + offset] = #VMOVHPD(t128_0);
-
-  // [ 21, 22, 23, 24 ]
-  t256_4 = #VPBLEND_8u32(t256_1, t256_2, (8u1)[1,1,0,0,0,0,1,1]);
-  buf.[u256 21*8 + offset] = t256_4;
-
-  return buf;
-}
-
-inline fn _stavx2_unpack_at
-( reg mut ptr u8[BUF_size] buf
-, reg u64 offset // in bytes
-, reg u256[7] state
-) -> reg ptr u8[BUF_size] {
-  buf = __stavx2_unpack_at(buf, offset, state);
-  return buf;
-}
-
-u256[1] RATE_BIT_x4 =
-{  (4u64)[0x8000000000000000, 0x8000000000000000, 0x8000000000000000, 0x8000000000000000] };
-
-// xof related code
-inline fn xof_init_x4
-( reg const ptr u8[32] rho
-, reg u16[4] indexes
-) -> stack u256[25]
-{
-  stack u256[25] state;
-  stack u256[1] temp;
-  inline int i;
-  reg u256 t;
-  reg u64 r;
-
-  // copy rho to state
-  for i = 0 to 4 {
-    t = #VPBROADCAST_4u64(rho[u64 i]);
-    state[i] = t;
-  }
-
-  for i=0 to 4
-  { r = (64u) indexes[i];
-    r |= 0x1F0000;
-    temp[u64 i] = r;
-  }
-  t = temp[0];
-  state[4] = t;
-
-  // init to zero
-  t = #set0_256();
-  for i=5 to 25 { state[i] = t; }
-
-  t = RATE_BIT_x4[0];
-  t ^= state[20];
-  state[20] = t;
-
-  return state;
-}
-
-inline fn xof_init_avx2
-( reg const ptr u8[32] rho
-, reg u16 index
-) -> reg u256[7]
-{
-  inline int i;
-  stack u256[1] temp;
-  reg u256[7] state;
-  reg u256 t;
-  reg u128 t128;
-  reg u64 r;
-
-  // copy rho to state
-  state[0] = #VPBROADCAST_4u64(rho[u64 0]);
-  r = rho[u64 1];
-  temp[u64 0] = r;
-  r = rho[u64 2];
-  temp[u64 1] = r;
-  r = rho[u64 3];
-  temp[u64 2] = r;
-  r = (64u) index;
-  r |= 0x1F0000;
-  temp[u64 3] = r;
-  state[1] = temp[0];
-
-  t = #set0_256();
-  t128 = (128u) t;
-  r = 0x8000000000000000;
-  state[2] = (256u) #VPINSR_2u64(t128, r, 1);
-
-  for i=3 to 7 { state[i] = t; }
-  
-  return state;
-}
-*/
-
-
-/*
-DEFS:
-a \lmatch l == l is_prefix_of (to_list a)
-bytes2coefs: W8.t list -> int list
- == converte lista de bytes em lista de coefs
-PARAMS: lpol, offset, lbuf
-
-@requires:
- pol \lmatch lpol
- size lpol = to_uint counter
- size lpol <= MLKEM_N - 32
- to_uint buf_offset = offset
- to_list buf = lbuf
- 0 <= offset <= BUF_size - (48 + 8)
-@ensures:
- let lcoefs = filter (<q) (bytes2coefs (take 48 (drop offset lbuf)))
- in res.`1 \lmatch (lpol ++ lcoefs)
-    /\ to_uint res.2 = size l + size lcoefs 
-*/
 inline fn __gen_matrix_buf_rejection_filter48
 ( reg mut ptr u16[MLKEM_N] pol
 , reg u64 counter
@@ -674,37 +355,28 @@ fn _gen_matrix_buf_rejection
   return pol, counter;
 }
 
-
-u16[2*4*2] gen_matrix_indexes =
+u8[32] gen_matrix_indexes =
 {
-  0x0000, 0x0001, 0x0002, 0x0100, // (0,0) (0,1) (0,2) (1,0)
-  0x0101, 0x0102, 0x0200, 0x0201, // (1,1) (1,2) (2,0) (2,1)
+  0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x01, // (0,0) (0,1) (0,2) (1,0)
+  0x01, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x02, // (1,1) (1,2) (2,0) (2,1)
 
-  0x0000, 0x0100, 0x0200, 0x0001, // previous indexes: swapped for transposed
-  0x0101, 0x0201, 0x0002, 0x0102
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x01, 0x00, // (0,0) (0,1) (0,2) (1,0)
+  0x01, 0x01, 0x01, 0x02, 0x02, 0x00, 0x02, 0x01  // (1,1) (1,2) (2,0) (2,1)
 };
 
 inline fn gen_matrix_get_indexes(
   reg u64 b,
   reg u64 _t)
   ->
-  stack u8[4*2]
-//  reg u16[4]
+  stack u8[8]
 {
   reg u64 t;
-//  reg u16[4] idx;
   stack u8[4*2] idx;
-  reg ptr u16[2*4*2] gmi;
 
-  gmi = gen_matrix_indexes;
-
-  t = _t; t <<= 3; // t * 8
+  t = _t; t <<= 4; // t * 16
   b += t;
 
-  idx[u16 0] = gmi[(int) b + 0];
-  idx[u16 1] = gmi[(int) b + 1];
-  idx[u16 2] = gmi[(int) b + 2];
-  idx[u16 3] = gmi[(int) b + 3];
+  idx[u64 0] = gen_matrix_indexes.[u64 (int) b];
 
   return idx;
 }
@@ -715,17 +387,12 @@ fn __gen_matrix_fill_polynomial
 ) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
 {
   reg u64 counter, buf_offset;
-//  reg u256[7] stavx2;
+
   buf_offset = 0;
   counter = 0;
   pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
   buf_offset = 2*168;
   while (counter < MLKEM_N) {
-/*
-    stavx2 = _stavx2_pack_at(buf, buf_offset);
-    stavx2 = _keccakf1600_avx2(stavx2);
-    buf = _stavx2_unpack_at(buf, buf_offset, stavx2);
-*/
     buf = _shake128_next_state(buf);
     pol, counter = _gen_matrix_buf_rejection(pol, counter, buf, buf_offset);
   }
@@ -737,42 +404,21 @@ fn _gen_matrix_sample_four_polynomials
 ( reg mut ptr u16[4*MLKEM_N] polx4
 , reg mut ptr u8[BUF_size * 4] buf
 , reg ptr u8[32] rho
-, reg u64 mat_entry
+, reg u64 pos_entry
 , reg u64 transposed
 ) -> reg ptr u16[4*MLKEM_N], reg ptr u8[BUF_size * 4]
 {
-//  reg u64 buf_offset;
   reg ptr u16[MLKEM_N] pol;
   stack u256[25] state;
   reg ptr u256[25] stx4;
-//  reg u16[4] indexes;
-  stack u8[4*2] indexes;
+  stack u8[8] indexes;
 
-
-  indexes = gen_matrix_get_indexes(mat_entry, transposed);
+  indexes = gen_matrix_get_indexes(pos_entry, transposed);
 
   stx4 = state;
   stx4 = _shake128x4_absorb_A32_A2(stx4, rho, indexes);
   _, buf = _shake128x4_squeeze3blocks(stx4, buf);
-/*
-  stx4 = xof_init_x4(rho, indexes);
-  buf_offset = 0;
-  while (buf_offset < 3*168) {
-    stx4 = _keccakf1600_avx2x4(stx4);
 
-    buf[BUF_size * 0 : BUF_size],
-    buf[BUF_size * 1 : BUF_size],
-    buf[BUF_size * 2 : BUF_size],
-    buf[BUF_size * 3 : BUF_size] =
-      __st4x_unpack_at(buf[BUF_size * 0 : BUF_size],
-                       buf[BUF_size * 1 : BUF_size],
-                       buf[BUF_size * 2 : BUF_size],
-                       buf[BUF_size * 3 : BUF_size],
-                       stx4, buf_offset );
-
-    buf_offset += 168;
-  }
-*/
   pol = polx4[0*MLKEM_N:MLKEM_N];
   pol, buf[BUF_size * 0 : BUF_size] = __gen_matrix_fill_polynomial(pol, buf[BUF_size * 0 : BUF_size]);
   polx4[0*MLKEM_N:MLKEM_N] = pol;
@@ -800,18 +446,7 @@ inline fn __gen_matrix_sample_one_polynomial
 ) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
 {
   reg u256[7] stavx2;
-//  reg u64 buf_offset;
   stack u8[2] pos;
-
-/*
-  stavx2 = xof_init_avx2(rho, rc);
-  buf_offset = 0;
-  while (buf_offset < 3*168) {
-    stavx2 = _keccakf1600_avx2(stavx2);
-    buf = _stavx2_unpack_at( buf, buf_offset, stavx2 );
-    buf_offset += 168;
-  }
-*/
 
   pos[u16 0] = rc;
   stavx2 = _shake128_absorb_A32_A2(rho, pos);
@@ -834,7 +469,7 @@ fn _gen_matrix_avx2
   reg ptr u8[BUF_size * 4] buf;
   reg ptr u16[4*MLKEM_N] polx4;
   reg ptr u16[MLKEM_N] pol;
-  reg u64 mat_entry;
+  reg u64 pos_entry;
   reg u16 rc;
 
   () = #spill(transposed);
@@ -843,15 +478,15 @@ fn _gen_matrix_avx2
 
   for i = 0 to 2
   {
-    mat_entry = 4*i;
+    pos_entry = 8*i;
     polx4 = matrix[4*i*MLKEM_N:4*MLKEM_N];
     () = #unspill(transposed);
-    polx4, buf = _gen_matrix_sample_four_polynomials(polx4, buf, rho, mat_entry, transposed);
+    polx4, buf = _gen_matrix_sample_four_polynomials(polx4, buf, rho, pos_entry, transposed);
     matrix[i*4*MLKEM_N:4*MLKEM_N] = polx4;
   }
 
   
-  // sample the last one, (2,2), using scalar code
+  // sample the last one, (2,2), using single-lane code
   pol = matrix[8*MLKEM_N:MLKEM_N];
   rc = 0x0202;
   pol, buf[BUF_size * 0 : BUF_size] = __gen_matrix_sample_one_polynomial(pol, buf[BUF_size * 0 : BUF_size], rho, rc);

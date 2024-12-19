@@ -1,6 +1,8 @@
 require import AllCore IntDiv List.
+
 from Jasmin require import JModel.
-require import Array4 Array33 Array128  Array16 Array25 Array32 Array33 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
+require import Array4 Array33 Array128  Array16 Array25 Array32 Array33 Array64 Array128 Array136 Array256 Array768 Array960 Array1088 Array2304.
+
 require import List_extra.
 require import MLKEM_Poly  MLKEM_PolyVec MLKEM_InnerPKE.
 require import MLKEM_Poly_avx2_proof.
@@ -16,7 +18,11 @@ require import MLKEM_avx2_equivs.
 require import Montgomery16.
 require import AVX2_Ops.
 
+require import MLKEM_keccak_ref MLKEM_keccak_avx2.
 require import MLKEM_genmatrix_avx2.
+
+import WArray512 WArray256 WArray32 WArray33 WArray128.
+
 
 import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Fq Correctness.
 
@@ -25,30 +31,6 @@ import MLKEM_PolyVec.
 import MLKEM_PolyvecAVX.
 import MLKEM_PolyAVXVec.
 import NTT_Avx2.
-import WArray32 WArray33 WArray128.
-import WArray512 WArray256.
-
-(* shake assumptions *)
-
-axiom sha3ll : islossless M(Syscall)._shake256_128_33.
-
-
-axiom shake256_4x_128_32 _seed _nonces :
-  phoare [
-   Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1 : arg.`5 = _seed /\ arg.`6 = _nonces ==>
-   res.`1 = 
-     SHAKE256_33_128 _seed _nonces.[0] /\
-   res.`2 = 
-     SHAKE256_33_128 _seed _nonces.[1] /\
-   res.`3 = 
-     SHAKE256_33_128 _seed _nonces.[2] /\
-   res.`4 = 
-     SHAKE256_33_128 _seed _nonces.[3]
-] = 1%r.
-
-axiom sha3equiv :
- equiv [    Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512A_A33 ~ M(Syscall)._sha3512_33 :
-       ={arg} ==> ={res} ].
 
 
 equiv genmatrixequiv b :
@@ -720,12 +702,13 @@ seq 27 30 : (
  /\ r30{1}=rp2{2} /\ buf3{1} =buf2{2}
 ).
 sp => />.
-ecall{2} (shake256_33_128 buf2{2} (Array33.init (fun i => if i = 32 then nonce4{2} else seed2{2}.[i]))); wp => />.
-ecall{2} (shake256_33_128 buf1{2} (Array33.init (fun i => if i = 32 then nonce3{2} else seed1{2}.[i]))); wp => />.
-ecall{2} (shake256_33_128 buf0{2} (Array33.init (fun i => if i = 32 then nonce2{2} else seed0{2}.[i]))); wp => />.
-ecall{2} (shake256_33_128 buf{2} (Array33.init (fun i=> if i = 32 then nonce1{2} else seed{2}.[i]))); wp => />.
-ecall{1} (shake256_4x_128_32 seed0{1} nonces{1}).
-auto => /> &1 rr ->->->->;do split;congr;
+ecall{2} (shake256_33_128 (Array33.init (fun i => if i = 32 then nonce4{2} else seed2{2}.[i]))); wp => />.
+ecall{2} (shake256_33_128 (Array33.init (fun i => if i = 32 then nonce3{2} else seed1{2}.[i]))); wp => />.
+ecall{2} (shake256_33_128 (Array33.init (fun i => if i = 32 then nonce2{2} else seed0{2}.[i]))); wp => />.
+ecall{2} (shake256_33_128 (Array33.init (fun i=> if i = 32 then nonce1{2} else seed{2}.[i]))); wp => />.
+ecall{1} (shake256x4_A128__A32_A1_ph seed0{1} nonces{1}).
+auto => /> &1 rr ->->->->.
+rewrite /SHAKE256_33_128; do split; congr; congr; congr; congr;
 rewrite tP => k kb;rewrite !initiE /# /=.
 wp. call getnoise_1x_equiv_avx => />.
 wp. call getnoise_1x_equiv_avx => />.
@@ -734,12 +717,12 @@ wp. call getnoise_1x_equiv_avx => />.
 by auto. 
 qed.
 
-
 lemma polygetnoise_ll : islossless Jkem.M(Jkem.Syscall)._poly_getnoise.
 proc. 
 while (0 <= to_uint i <= 128) (128 - to_uint i);
   1: by move => z; auto => />;rewrite  ultE /= => &hr ???; rewrite !to_uintD_small /=; smt(to_uint_cmp).
-wp; call sha3ll; wp; while (0<=k<=32) (32 -k); 1: by move => z; auto=> /> /#.
+wp; call shake256_33_128_ll.
+wp; while (0<=k<=32) (32 -k); 1: by move => z; auto=> /> /#.
 auto => /> *; do split; 1:smt(). 
 by move => *; rewrite ultE /=; smt().
 qed.
@@ -808,12 +791,29 @@ ecall (polyvec_reduce_equiv (lift_array768 pkpv{2})).
 
 have H := polyvec_add2_equiv 2 2 _ _;1,2:smt().
 ecall (H (lift_array768 pkpv{2}) (lift_array768 e{2})); clear H.
-unroll for* {1} 37.
+
+unroll for* {1} ^while{3}.
+(*unroll for* {1} 37.*)
 
 sp 3 3.
 
-seq 16 18  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1});
-  1: by sp; conseq />; sim 3 3;call( sha3equiv); conseq />; sim.
+seq 16 18  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}).
+
+ sp; conseq />; sim 3 3. 
+ ecall{2} (sha3_512_33_64 inbuf{1}).
+ ecall{1} (sha3_512A_A33_ph inbuf{1}) => /=.
+ wp; while (={i, aux, randomnessp0, inbuf}); first by auto.
+ auto => /> &m ?????? inbuf ?? r.
+ rewrite /SHA3_512_33_64 /= => H1 H2.
+ apply Array64.ext_eq => i Hi.
+ rewrite get_of_list 1://.
+ case: (0 <= i < 32) => C.
+  have ->: r.[i] = (Array32.init  ("_.[_]" r)).[i].
+   by rewrite initiE 1://.
+  by rewrite H1 get_of_list 1:// eq_sym nth_take 1..2:/#.
+ have ->: r.[i] = (Array32.init (fun i=>r.[32+i])).[i-32].
+  by rewrite initiE /#.
+ by rewrite H2 get_of_list 1:/# nth_drop /#. 
 
 sp 0 2.
 seq 2 2 : (#pre /\ aa{1} = nttunpackm a{2} /\
@@ -1266,8 +1266,8 @@ call (addequiv_noperm 2 2 _ _) => //.
 have H := polyvec_add2_equiv_noperm 2 2 _ _ => //.
 ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 
-
-unroll for* {1} 40.
+unroll for* {1} ^while{2}.
+(*unroll for* {1} 40.*)
 
 swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2}=pkp{1}); 1: by auto.
 sp 3 3.
@@ -1644,8 +1644,8 @@ call (addequiv_noperm 2 2 _ _) => //.
 have H := polyvec_add2_equiv_noperm 2 2 _ _ => //.
 ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 
-
-unroll for* {1} 40.
+unroll for* {1} ^while{2}.
+(*unroll for* {1} 40.*)
 
 swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2} = pkp{1}); 1: by auto.
 sp 3 3.

@@ -1,19 +1,24 @@
 require import AllCore IntDiv List.
 from Jasmin require import JModel.
 
-require import FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
-require import Keccak1600_Spec Keccakf1600_Spec.
+require export FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
+require export Keccak1600_Spec Keccakf1600_Spec.
 
-print Keccak1600_Spec.
+require import Symmetric MLKEMFCLib.
 require import Jkem_avx2.
 
 require import Array1.   (* nonce *)
 require import Array2.   (* mat. position *)
-require import Array4.   (* mat. indexes *)
+require import Array8.   (* mat. indexes *)
 require import Array32.  (* SEED SIZE *)
 require import Array33.  (* DS SEED SIZE *)
 require import Array64.
+require import Array128.
 require import Array536. (* BUF_SIZE *)
+require import Array960.
+require import Array1152.
+require import Array1184.
+require import Array2144. (* 4*BUF_SIZE *) 
 
 
 require import Array7.
@@ -38,6 +43,49 @@ hoare sha3_512A_A33_h _in:
  ==> to_list res = SHA3_512 (to_list _in).
 admitted.
 
+phoare sha3_512A_A33_ph _in:
+ [ M(Syscall)._sha3_512A_A33
+ : in_0 = _in
+ ==> res = Array64.of_list W8.zero (SHA3_512 (to_list _in))
+ ] = 1%r.
+admitted.
+
+
+(* sha3 assumptions from MLKEM_KEM_avx2 *)
+axiom sha3_256A_M1184_ph mem _ptr:
+ phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_256A_M1184
+        : arg.`2 = W64.of_int _ptr /\
+          valid_ptr _ptr 1184 /\
+          Glob.mem = mem
+          ==> 
+          Glob.mem = mem /\
+          res = SHA3_256_1184_32
+            (Array1152.init (fun k =>  mem.[_ptr+k]),
+            (Array32.init (fun k => mem.[_ptr+1152+k])))] = 1%r.
+
+axiom sha3_512A_A64_ph buf inp: 
+ phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512A_A64
+        : arg = (inp,buf)
+        ==> 
+        let bytes = SHA3_512_64_64 (Array32.init (fun k => buf.[k])) 
+                                   (Array32.init (fun k => buf.[k+32])) in
+        res = Array64.init (fun k => if k < 32 then bytes.`1.[k] else bytes.`2.[k-32])] = 1%r.
+
+
+axiom shake256_M32__M32_M1088_ph mem _pout _pin1 _pin2: 
+ phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_M32__M32_M1088
+        : arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2) /\
+          valid_ptr _pout 32 /\
+          valid_ptr _pin1 32 /\
+          valid_ptr _pin2 1088 /\
+          Glob.mem = mem
+          ==> 
+          touches Glob.mem mem _pout 32 /\
+          (Array32.init (fun k =>  Glob.mem.[_pout+k])) = 
+             SHAKE_256_1120_32 (Array32.init (fun k => mem.[_pin1+k])) 
+                            (Array960.init (fun k => mem.[_pin2+k]), Array128.init (fun k => mem.[_pin2+960+k])) ] = 1%r.
+
+
 (*
 hoare shake256_M32__M32_M1088_h _in0 _in1:
  M(Syscall)._shake256_M32__M32_M1088
@@ -47,7 +95,6 @@ admitted.
 *)
 
 (*
-_shake256x4_A128__A32_A1
 *)
 
 (*
@@ -109,7 +156,44 @@ by conseq shake128_next_state_ll (shake128_next_state_h _buf).
 _shake128x4_squeeze3blocks
 *)
 
+require import Array4 Array128.
 
+hoare shake256x4_A128__A32_A1_h _seed _nonces :
+ Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1
+ : seed = _seed /\ nonces = _nonces 
+ ==>
+    res.`1 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[0]]) 128)
+ /\ res.`2 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[1]]) 128)
+ /\ res.`3 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[2]]) 128)
+ /\ res.`4 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[3]]) 128).
+admitted.
+
+phoare shake256x4_A128__A32_A1_ph _seed _nonces :
+ [ 
+   Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1
+ : seed = _seed /\ nonces = _nonces 
+ ==>
+    res.`1 = Array128.of_list W8.zero (SHAKE256 (to_list _seed ++ [_nonces.[0]]) 128)
+ /\ res.`2 = Array128.of_list W8.zero (SHAKE256 (to_list _seed ++ [_nonces.[1]]) 128)
+ /\ res.`3 = Array128.of_list W8.zero (SHAKE256 (to_list _seed ++ [_nonces.[2]]) 128)
+ /\ res.`4 = Array128.of_list W8.zero (SHAKE256 (to_list _seed ++ [_nonces.[3]]) 128)
+ ] = 1%r.
+admitted.
+
+(*
+axiom shake256_4x_128_32 _seed _nonces :
+  phoare [
+   Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1 : arg.`5 = _seed /\ arg.`6 = _nonces ==>
+   res.`1 = 
+     SHAKE256_33_128 _seed _nonces.[0] /\
+   res.`2 = 
+     SHAKE256_33_128 _seed _nonces.[1] /\
+   res.`3 = 
+     SHAKE256_33_128 _seed _nonces.[2] /\
+   res.`4 = 
+     SHAKE256_33_128 _seed _nonces.[3]
+] = 1%r.
+*)
 
 (*
 hoare stavx2_unpack_at_h _st _buf _at:
@@ -408,6 +492,28 @@ lemma stmatch_avx2_bytes st stavx:
 proof.
 admitted.
 
+lemma state2bytesK st1:
+ bytes2state (state2bytes st1) = st1.
+admitted.
+
+phoare shake128_absorb_A32_A2_ph _rho _rc:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb_A32_A2
+   : seed = _rho /\ pos = _rc
+     ==>
+     stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ to_list _rc)) res
+ ] = 1%r.
+admitted.
+
+phoare shake128_squeeze3blocks_ph _buf _st:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeeze3blocks
+ : buf=_buf /\ stmatch_avx2 _st st
+ ==> sub res (0*168) 168 = squeezestate_i 168 _st 0
+  /\ sub res (1*168) 168 = squeezestate_i 168 _st 1
+  /\ sub res (2*168) 168 = squeezestate_i 168 _st 2
+  /\ sub res (2*168) 200 = state2bytes (FIPS202_SHA3_Spec.st_i _st 3)
+ ] =1%r.
+admitted.
+
 (*
 lemma stavx2_bytes_squeeze at (buf: W8.t Array536.t) st stavx:
  stmatch_avx2 st stavx =>
@@ -445,3 +551,36 @@ lemma stx4_map_keccakf st0 st1 st2 st3 stx4:
   keccak_f1600_op st3) (map_state4x keccak_f1600_op stx4).
 admitted.
 
+phoare shake128x4_absorb_A32_A2_ph _rho _rc:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128x4_absorb_A32_A2
+ : seed = _rho /\ pos = _rc
+ ==>
+    match_state4x
+    (SHAKE128_ABSORB (to_list _rho ++ sub _rc 0 2)) 
+    (SHAKE128_ABSORB (to_list _rho ++ sub _rc 2 2)) 
+    (SHAKE128_ABSORB (to_list _rho ++ sub _rc 4 2)) 
+    (SHAKE128_ABSORB (to_list _rho ++ sub _rc 6 2)) 
+    res
+ ] = 1%r.
+admitted.
+
+phoare shake128x4_squeeze3blocks_ph _st0 _st1 _st2 _st3:
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128x4_squeeze3blocks
+ : match_state4x _st0 _st1 _st2 _st3 st
+ ==>
+      sub res.`2 (0*536) (3*168) = SHAKE128_SQUEEZE (3*168) _st0
+   /\ sub res.`2 (1*536) (3*168) = SHAKE128_SQUEEZE (3*168) _st1
+   /\ sub res.`2 (2*536) (3*168) = SHAKE128_SQUEEZE (3*168) _st2
+   /\ sub res.`2 (3*536) (3*168) = SHAKE128_SQUEEZE (3*168) _st3
+   /\ sub res.`2 (0*536+2*168) 200 = state2bytes (st_i _st0 3)
+   /\ sub res.`2 (1*536+2*168) 200 = state2bytes (st_i _st1 3)
+   /\ sub res.`2 (2*536+2*168) 200 = state2bytes (st_i _st2 3)
+   /\ sub res.`2 (3*536+2*168) 200 = state2bytes (st_i _st3 3)
+ ] = 1%r.
+admitted.
+
+(*
+axiom sha3equiv :
+ equiv [    Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512A_A33 ~ M(Syscall)._sha3512_33 :
+       ={arg} ==> ={res} ].
+*)
