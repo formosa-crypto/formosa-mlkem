@@ -1069,7 +1069,27 @@ lemma wmuls16P n x y _x _y:
  Iu16_sb n x _x =>
  Iu16_sb n y _y =>
  sint32_bnd (-n*n*q*q) (n*n*q*q) (wmuls16 x y).
-proof. by move => [??] [??]; rewrite to_sint_wmuls16 /#. qed.
+proof. 
+have ->: - n * n * q * q = -(n * q)*(n*q) by ring.
+have ->: n * n * q * q = ( n * q)*(n*q) by ring.
+rewrite /Iu16_sb to_sint_wmuls16.
+pose k:= n*q.
+pose a:= to_sint x.
+pose b:= to_sint y.
+move=> [?[??]][?[??]].
+case: (0 <= a); case: (0 <= b) => C1 C2.
++ smt(ler_pmul).
++ pose bb := -b.
+  have ?: - (k*k) <= a*bb && a*bb <= k*k;
+  smt(ler_opp2 ler_pmul).
++ pose aa := -a.
+  have ?: - (k*k) <= aa*b && aa*b <= k*k;
+  smt(ler_opp2 ler_pmul).
++ pose aa := -a.
+  pose bb := -b.
+  have ?: - (k*k) <= aa*bb && aa*bb <= k*k;
+  smt(ler_opp2 ler_pmul).
+qed.
 
 phoare wmul_16u16_ph n _x _y:
   [Jkem_avx2.M(Jkem_avx2.Syscall).__wmul_16u16:
