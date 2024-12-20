@@ -230,7 +230,10 @@ lemma SREDCp_corr (a : int):
 proof.
 move => [#] H H0 [#] H1 H2.
 have H3 : (R * R %/ 4 = R %/ 2 * R %/2  ) by smt(dvd2R div_mulr).  
-have albnd : (- R * R %/4 <= a)by rewrite -mulN1r H3 mulN1r /#. 
+have albnd : (- R * R %/4 <= a).
+ rewrite -mulN1r H3 mulN1r; apply ltrW.
+ apply (ltr_le_trans (-(R%/2 * SignedReductions.q))) => //.
+ by apply ltr_opp2; rewrite div_mulr /#.
 have aubnd : (a < R* R %/4) by smt(ler_pmul dvd2R div_mulr).
 rewrite /SREDC /= (smod_div (a * qinv)).
 move : (smod_bnd (a * qinv) R _ _); first 2 by smt(gt0_R dvd2R). 

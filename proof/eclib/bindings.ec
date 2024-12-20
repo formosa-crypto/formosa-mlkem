@@ -7,6 +7,22 @@ import BitEncoding BS2Int BitChunking.
 
 require import JWord_extra.
 
+
+(*[size_flatten] (for uniform inner lists) *)
+lemma size_flatten' ['a] sz (ss: 'a list list):
+ (forall x, x\in ss => size x = sz) =>
+ size (flatten ss) = sz*size ss.
+proof.
+move=> H; rewrite size_flatten.
+rewrite StdBigop.Bigint.sumzE.
+rewrite StdBigop.Bigint.BIA.big_map.
+rewrite -(StdBigop.Bigint.BIA.eq_big_seq (fun _ => sz)) /=.
+ by move=> x Hx; rewrite /(\o) /= H.
+by rewrite StdBigop.Bigint.big_constz count_predT.
+qed.
+
+
+
 (* ----------- BEGIN BOOL BINDINGS ---------- *)
 op bool2bits (b : bool) : bool list = [b].
 op bits2bool (b: bool list) : bool = List.nth false b 0.
@@ -176,30 +192,16 @@ bind op W16.t W16_sub "sub".
 realize bvsubP by  rewrite /W16_sub => bv1 bv2; rewrite W16.to_uintD to_uintN /= /#.
 
 op sll_16 (w1 w2 : W16.t) : W16.t =
-  if (16 <= to_uint w2) then  W16.zero else  w1 `<<` (truncateu8 w2).
+  w1 `<<<` to_uint w2.
 
 bind op [W16.t] sll_16 "shl".
 realize bvshlP.
-rewrite /sll_16 => bv1 bv2.
-case : (16 <= to_uint bv2); last first.
-+ rewrite /(`<<`) W16.to_uint_shl; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  rewrite (pmod_small (to_uint bv2) _).
-   smt(W16.to_uint_cmp).
-  rewrite (pmod_small (to_uint bv2) _).
-  smt(W16.to_uint_cmp).
-  done.
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 16) + 16 by ring. 
-by rewrite exprD_nneg 1,2:/# /= /#.
+rewrite /shl_16 => bv1 bv2.
+by rewrite W16.to_uint_shl; 1:smt(W16.to_uint_cmp).
 qed.
-
 
 op sra_16 (w1 w2 : W16.t) : W16.t =
 W16.sar w1 (to_uint w2).
-(*
-if (16 <= to_uint w2) then  W16.zero else w1 `|>>` (truncateu8 w2).
-*)
 
 bind op [W16.t] sra_16 "ashr".
 realize bvashrP.
@@ -207,22 +209,13 @@ move=> bv1 bv2; rewrite W16_sar_div; smt(W16.to_uint_cmp).
 qed.
 
 op srl_16 (w1 w2 : W16.t) : W16.t =
-  if 16 <= (to_uint w2) then W16.zero else
-  w1 `>>` (truncateu8 w2).
+  w1 `>>>` W16.to_uint w2.
 
 bind op [W16.t] srl_16 "shr".
 realize bvshrP.
-rewrite /srl_16 => bv1 bv2.
-case : (16 <= to_uint bv2); last first.
-+ rewrite /(`>>`) W16.to_uint_shr; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  rewrite (pmod_small (to_uint bv2) _); smt(W16.to_uint_cmp).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 16) + 16 by ring. 
-rewrite exprD_nneg 1,2:/# /=. 
-smt(StdOrder.IntOrder.expr_gt0 W16.to_uint_cmp pow2_16).
+rewrite /shr_16 => bv1 bv2.
+by rewrite W16.to_uint_shr; 1:smt(W16.to_uint_cmp).
 qed.
-
 
 bind op [W16.t & W8.t] W2u8.truncateu8 "truncate".
 realize bvtruncateP.
@@ -243,6 +236,11 @@ by have -> : (2 ^ (8 - i) * 2 ^ i) = 256;
      1,2:/# /= -!addrA /= | done ].
 qed.
 
+bind op [W8.t & W16.t] W2u8.zeroextu16 "zextend".
+realize bvzextendP.
+move => bv; rewrite /zeroextu16 /= of_uintK /= modz_small 2://.
+apply bound_abs; smt(W8.to_uint_cmp pow2_8).
+qed.
 
 
 (* ----------- BEGIN W32 BINDINGS ---------- *)
@@ -295,49 +293,33 @@ by rewrite !nth_zip /=;1:smt(W32.size_w2bits).
 qed.
 
 op sll_32 (w1 w2 : W32.t) : W32.t =
- if (32 <= to_uint w2)
- then W32.zero
- else  w1 `<<` (truncateu8 w2).
+  w1 `<<<` to_uint w2.
 
 bind op [W32.t] sll_32 "shl".
 realize bvshlP.
-rewrite /sll_32 => bv1 bv2.
-case : (32 <= to_uint bv2); last first.
-+ rewrite /(`<<`) W32.to_uint_shl; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  rewrite (pmod_small (to_uint bv2) _); smt(W32.to_uint_cmp).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 32) + 32 by ring. 
-by rewrite exprD_nneg 1,2:/# /= /#.
+rewrite /shl_32 => bv1 bv2.
+by rewrite W32.to_uint_shl; 1:smt(W32.to_uint_cmp).
 qed.
 
 op srl_32 (w1 w2 : W32.t) : W32.t =
-  if 32 <= (to_uint w2) then W32.zero else
-  w1 `>>` (truncateu8 w2).
+  w1 `>>>` W32.to_uint w2.
 
 bind op [W32.t] srl_32 "shr".
 realize bvshrP.
-rewrite /srl_32 => bv1 bv2.
-case : (32 <= to_uint bv2); last first.
-+ rewrite /(`>>`) W32.to_uint_shr; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  rewrite (pmod_small (to_uint bv2) _); smt(W32.to_uint_cmp).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 32) + 32 by ring. 
-rewrite exprD_nneg 1,2:/# /=. 
-smt(StdOrder.IntOrder.expr_gt0 W32.to_uint_cmp pow2_32).
+rewrite /shr_32 => bv1 bv2.
+by rewrite W32.to_uint_shr; 1:smt(W32.to_uint_cmp).
 qed.
 
 op sra_32 (w1 w2 : W32.t) : W32.t =
  W32.sar w1 (to_uint w2).
-(*
-  if (32 <= to_uint w2) then W32.zero else w1 `|>>` (truncateu8 w2).
-*)
 
 bind op [W32.t] sra_32 "ashr".
 realize bvashrP.
 move => bv1 bv2; rewrite W32_sar_div; smt(W32.to_uint_cmp).
 qed.
+
+bind op [W8.t & W32.t] W4u8.zeroextu32 "zextend".
+realize bvzextendP by move => bv; rewrite /zeroextu32 /= of_uintK /=; smt(W8.to_uint_cmp pow2_8).
 
 bind op [W16.t & W32.t] W2u16.zeroextu32 "zextend".
 realize bvzextendP by move => bv; rewrite /zeroextu64 /= of_uintK /=; smt(W16.to_uint_cmp pow2_16).
@@ -406,19 +388,6 @@ by smt(bs2int_range mem_range W64.size_w2bits pow2_64).
 qed.
 realize touintP by smt().
 
-(*[size_flatten] (for uniform inner lists) *)
-lemma size_flatten' ['a] sz (ss: 'a list list):
- (forall x, x\in ss => size x = sz) =>
- size (flatten ss) = sz*size ss.
-proof.
-move=> H; rewrite size_flatten.
-rewrite StdBigop.Bigint.sumzE.
-rewrite StdBigop.Bigint.BIA.big_map.
-rewrite -(StdBigop.Bigint.BIA.eq_big_seq (fun _ => sz)) /=.
- by move=> x Hx; rewrite /(\o) /= H.
-by rewrite StdBigop.Bigint.big_constz count_predT.
-qed.
-
 bind op [bool & W64.t] W64.init "init".
 realize bvinitP.
 move=> f; apply (eq_from_nth false).
@@ -479,36 +448,21 @@ qed.
 
 
 op srl_64 (w1 w2 : W64.t) : W64.t =
-  if (64 <= to_uint w2) then  W64.zero else  w1 `>>` (truncateu8 w2).
+  w1 `>>>` to_uint w2.
 
 bind op [W64.t] srl_64 "shr".
 realize bvshrP.
-rewrite /srl_64 => bv1 bv2.
-case : (64 <= to_uint bv2); last first.
-+ rewrite /(`>>`) W64.to_uint_shr; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  rewrite (pmod_small (to_uint bv2) _); smt(W64.to_uint_cmp).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 64) + 64 by ring. 
-rewrite exprD_nneg 1,2:/# /=. 
-smt(StdOrder.IntOrder.expr_gt0 W64.to_uint_cmp pow2_64).
+rewrite /shr_64 => bv1 bv2.
+by rewrite W64.to_uint_shr; 1:smt(W64.to_uint_cmp).
 qed.
 
-
 op sll_64 (w1 w2 : W64.t) : W64.t =
-  if (64 <= to_uint w2) then W64.zero else w1 `<<` (truncateu8 w2).
+  w1 `<<<` to_uint w2.
 
 bind op [W64.t] sll_64 "shl".
-realize bvshlP. 
-proof.
-rewrite /sll_64 => bv1 bv2.
-case : (64 <= to_uint bv2); last first.
-+ rewrite /(`<<`) W64.to_uint_shl; 1: by smt(W8.to_uint_cmp).
-  rewrite /truncateu8  => bv2bnd />.
-  rewrite (pmod_small (to_uint bv2) _);smt(W64.to_uint_cmp).
-move => *. 
-have -> : to_uint bv2 = (to_uint bv2 - 64) + 64 by ring. 
-by rewrite exprD_nneg 1,2:/# /= /#.
+realize bvshlP.
+rewrite /shl_64 => bv1 bv2.
+by rewrite W64.to_uint_shl; 1:smt(W64.to_uint_cmp).
 qed.
 
 op rol_64 (w1 w2 : W64.t): W64.t =
@@ -520,10 +474,17 @@ rewrite /rol_64=> bv1 bv2 i Hi.
 by rewrite !get_w2bits rolE initiE.
 qed.
 
+bind op [W8.t & W64.t] W8u8.zeroextu64 "zextend".
+realize bvzextendP
+ by move => bv; rewrite /zeroextu64 /= of_uintK /=; smt(W8.to_uint_cmp pow2_8).
 
 bind op [W16.t & W64.t] W4u16.zeroextu64 "zextend".
 realize bvzextendP
  by move => bv; rewrite /zeroextu64 /= of_uintK /=; smt(W16.to_uint_cmp pow2_16).
+
+bind op [W32.t & W64.t] W2u32.zeroextu64 "zextend".
+realize bvzextendP
+ by move => bv; rewrite /zeroextu64 /= of_uintK /=; smt(W32.to_uint_cmp pow2_32).
 
 bind op [W64.t & W16.t] W4u16.truncateu16 "truncate".
 realize bvtruncateP.
