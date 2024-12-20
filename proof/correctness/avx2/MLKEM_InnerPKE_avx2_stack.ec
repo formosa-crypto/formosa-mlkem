@@ -585,12 +585,23 @@ case (1152 <= add < 1152 + 8*i{2}).
   by rewrite get8_set64_directE 1,2:/# ifT 1:/# /get8 /#.
 qed.
 
+equiv aux_invntt2 : 
+  Jkem_avx2.M(Syscall)._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : ={arg} ==> ={res}.
+proc. 
+by unroll for {1} ^while; unroll for {2} ^while; sim.
+qed.
 
 
+lemma polyvec_from_bytes_stack_equiv:
+   equiv [ Jkem_avx2_stack.M.__i_polyvec_frombytes
+           ~ Jkem_avx2.M(Syscall).__polyvec_frombytes :
+   to_uint arg{2} = 0 /\
+   load_array1152 Glob.mem{2} 0 = arg{1} ==> ={res}].
+admitted.
 
 
 equiv mlkem_correct_enc_avx2_stack  : 
-M.__indcpa_enc  ~ InnerPKE.InnerPKE.enc_derand :
+M.__indcpa_enc  ~ InnerPKE.enc_derand :
 arg{1}.`2 = arg{2}.`2 /\ arg{1}.`4 = arg{2}.`3 /\
    Array1152.init(fun i => arg{1}.`3.[i]) = arg{2}.`1.`1 /\
    Array32.init(fun i => arg{1}.`3.[i+1152]) = arg{2}.`1.`2 ==>
@@ -605,10 +616,50 @@ transitivity {1} {r <@ Mix.__indcpa_enc(ct, msgp, pk, noiseseed); }
    Array960.init(fun i => r{1}.[i]) = r{2}.`1 /\
    Array128.init(fun i => r{1}.[i+960]) = r{2}.`2);1,2:smt().
 + by call mlkem_correct_enc_avx2_stack_mix;auto.
-admitted.
+
+pose _pkp := W64.of_int 0.
+
+transitivity {1} {r <@ Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_1(ct, msgp, _pkp, noiseseed); }
+    (msgp{1} = msgp{2} /\ noiseseed{1} = noiseseed{2} /\ ct{1} = ct{2} /\
+     load_array1184 Glob.mem{2} 0 = pk{1} ==> ={r})
+     (noiseseed{1} = coins{2} /\ msgp{1} = m{2} /\
+     load_array1152 Glob.mem{1} 0 = pk{2}.`1 /\
+      load_array32 Glob.mem{1} 1152 = pk{2}.`2
+     ==> 
+     Array960.init(fun i => r{1}.[i]) = r{2}.`1 /\
+   Array128.init(fun i => r{1}.[i+960]) = r{2}.`2); 2: smt();last first.
++ by ecall (mlkem_correct_enc_1_avx2 (Glob.mem{1})  0); auto => /> /#. 
++ move => /> &1 &2; rewrite !tP => ??.
+  exists (stores (stores witness 0 (to_list pk{2}.`1)) 1152 (to_list pk{2}.`2)) ct{1} m{2} coins{2} => /=.
+  do split. 
+  + rewrite /load_array1184 tP => k kb.
+    rewrite initiE 1:/# /= !get_storesE size_to_list size_to_list; smt(@Array1152 @Array32 @Array1184).
+  + rewrite /load_array1152 tP => k kb.
+    rewrite initiE 1:/# /= !get_storesE size_to_list size_to_list; smt(@Array1152 @Array32 @Array1184).
+  + rewrite /load_array32 tP => k kb.
+    rewrite initiE 1:/# /= !get_storesE size_to_list size_to_list; smt(@Array1152 @Array32 @Array1184).
+
+inline {1} 1; inline {2} 1.
+sp 3 3.
+seq 12 12 : (#pre /\ ={aat,noiseseed0,bp,ep,epp,k,lnoiseseed,pkpv,publicseed,s_noiseseed,sp_0,v}); 1: by conseq />;sim.
+
+seq 1 1 : #pre.
++ conseq />. 
+  call polyvec_from_bytes_stack_equiv.
+  auto => /> &2.
+  rewrite /load_array1152 /load_array1184 tP => ??.
+  by rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+
+seq 3 3 : #pre.
++ admit. 
+
+by sim (Jkem_avx2.M(Syscall)._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true))
+ (Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 : true)  (M.a64____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).a64____dumpstate_array_avx2 :true) => /=;[ apply aux_buflen_dumpstate1 | apply aux_invntt2]. 
+qed.
+
 
 equiv mlkem_correct_dec_avx2_stack  : 
-M.__indcpa_dec  ~ InnerPKE.InnerPKE.dec :
+M.__indcpa_dec  ~ InnerPKE.dec :
 arg{1}.`3 = arg{2}.`1 /\ 
 Array960.init(fun i => arg{1}.`2.[i]) = arg{2}.`2.`1 /\
 Array128.init(fun i => arg{1}.`2.[i+960]) = arg{2}.`2.`2  ==>
