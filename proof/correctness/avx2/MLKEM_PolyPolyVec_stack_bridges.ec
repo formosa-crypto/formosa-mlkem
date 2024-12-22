@@ -11,6 +11,7 @@ require import MLKEMFCLib WArray384.
 op load_array1184 (m : global_mem_t) (p : address) : W8.t Array1184.t = 
       (Array1184.init (fun (i : int) => m.[p + i])).
 
+(*
 lemma poly_to_bytes_stack_equiv _mem _pos _a :
    0 <= _pos <= 1184+2*384 =>
    equiv [ Jkem_avx2_stack.M._i_poly_tobytes
@@ -165,13 +166,110 @@ Glob.mem{2} = (stores _mem _pos (take (3*384) (to_list r{1}))) /\ pp{2} = (of_in
 
 by auto => />.
 qed.
+*)
+
+require import WArray1152 Array144.
+
+lemma copy1152 (a : W8.t Array1152.t) :
+Array1152.init (fun (i : int)  =>  WArray1152.get8 (WArray1152.init64                                                                       
+               (fun (i0 : int) =>  copy_64 (Array144.init                                                                             
+               (fun (i1 : int) =>  WArray1152.get64 (WArray1152.init8                                                                  
+               (fun (i2 : int) =>  a.[i2]))  i1)).[i0])) i) = a.  
+rewrite tP => k kb.
+rewrite initiE 1:/# /= /get8.
+rewrite initiE 1:/# /= /copy_64.
+rewrite initiE 1:/# /= /get64_direct.
+rewrite W8u8.pack8bE 1:/# /=.
+rewrite initiE 1:/# /=.
+rewrite initiE /#.
+qed.
+
+
+lemma poly_from_bytes_stack_equiv _pos _mem :
+   0 <= _pos <= 768 =>
+   equiv [ Jkem_avx2_stack.M._i_poly_frombytes
+           ~ Jkem_avx2.M(Syscall)._poly_frombytes :
+   to_uint arg{2}.`2 = _pos /\ arg{1}.`1 = arg{2}.`1 /\
+   load_array384 Glob.mem{2} _pos = arg{1}.`2 /\  Glob.mem{2} = _mem ==> Glob.mem{2} = _mem /\  ={res}].
+move => Hpos;proc => /=.
+unroll for {1} ^while; unroll for{2} ^while.
+seq 9 9 : (#pre /\ ={maskp, mask, t0, t1, t2, t3, t4, t5}).
++ auto => /> &2 ?;do split.
+  + rewrite /get256_direct /loadW256 /reads /load_array384. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite to_uintD_small /= 1:/# !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite to_uintD_small /= 1:/# !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite to_uintD_small /= 1:/# !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite to_uintD_small /= 1:/# !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite to_uintD_small /= 1:/# !initiE 1,2:/# /= initiE 1:/# initiE /#.
+
+seq 42 42 : #pre; 1: by conseq />;sim.
+
+seq 6 6 : #pre. 
++ auto => /> &2 ?;do split.
+  + rewrite /get256_direct /loadW256 /reads /load_array384 !to_uintD_small /= 1:/#. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384 !to_uintD_small /= 1:/#. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384 !to_uintD_small /= 1:/#. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384 !to_uintD_small /= 1:/#. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384 !to_uintD_small /= 1:/#. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+  + rewrite /get256_direct /loadW256 /reads /load_array384 !to_uintD_small /= 1:/#. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+    by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+by conseq />;sim.
+qed.
 
 lemma polyvec_from_bytes_stack_equiv:
    equiv [ Jkem_avx2_stack.M.__i_polyvec_frombytes
            ~ Jkem_avx2.M(Syscall).__polyvec_frombytes :
    to_uint arg{2} = 0 /\
    load_array1152 Glob.mem{2} 0 = arg{1} ==> ={res}].
-admitted.
+proc => //.
+proc rewrite {1} 3 copy1152.
+exlim Glob.mem{2} => _mem.
+seq 5 4 : (={r} /\ to_uint pp{2} = 0 /\ Glob.mem{2} = _mem /\ load_array1152 Glob.mem{2} 0 = a{1}
+).
++wp;call (poly_from_bytes_stack_equiv 0 _mem) => /=. 
+  auto => /> &1 r.
+  rewrite /load_array384 /load_array1152 tP => k kb.
+  by rewrite !initiE /#.
+
+seq 2 3 : (={r} /\ to_uint pp{2} = 384 /\ Glob.mem{2} = _mem  /\ load_array1152 Glob.mem{2} 0 = a{1}).
++ wp;call (poly_from_bytes_stack_equiv 384 _mem) => /=. 
+  auto => /> &1 Hpp;rewrite !to_uintD_small /= 1:/# /= Hpp /=. 
+  rewrite /load_array384 /load_array1152 tP => k kb.
+  by rewrite !initiE 1,2:/# /= initiE /#.
+
+
+seq 2 3 : (
+={r} /\ to_uint pp{2} = 768 /\ Glob.mem{2} = _mem  /\ load_array1152 Glob.mem{2} 0 = a{1}).
++ wp;call (poly_from_bytes_stack_equiv 768 _mem) => /=. 
+  auto => /> &1 Hpp;rewrite !to_uintD_small /= 1:/# /= Hpp /=.
+  rewrite /load_array384 /load_array1152 tP => k kb.
+  by rewrite !initiE 1,2:/# /= initiE /#.
+
+by auto => />;smt(Array768.tP).
+qed.
 
 op load_array1088 (m : global_mem_t) (p : address) : W8.t Array1088.t = Array1088.init (fun (i : int) => m.[p + i]).
 
@@ -180,6 +278,7 @@ lemma polyvec_decompress_stack_equiv:
            ~ Jkem_avx2.M(Syscall).__polyvec_decompress :
    to_uint arg{2} = 1152 /\
    load_array1088 Glob.mem{2} 1152 = arg{1} ==> ={res}].
+proc.
 admitted.
 
 lemma poly_decompress_stack_equiv:
