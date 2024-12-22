@@ -271,6 +271,7 @@ seq 2 3 : (
 by auto => />;smt(Array768.tP).
 qed.
 
+require import WArray1088.
 op load_array1088 (m : global_mem_t) (p : address) : W8.t Array1088.t = Array1088.init (fun (i : int) => m.[p + i]).
 
 lemma polyvec_decompress_stack_equiv:
@@ -279,12 +280,40 @@ lemma polyvec_decompress_stack_equiv:
    to_uint arg{2} = 1152 /\
    load_array1088 Glob.mem{2} 1152 = arg{1} ==> ={res}].
 proc.
-admitted.
+while (#pre /\ 0 <= k{1} <= 3 /\ ={k} /\ ={r,q,shufbidx,sllvdidx,mask});last by auto.
+wp;while (#pre /\ aux{1} = 16 /\ 0 <= i{1} <= 16 /\ ={aux,i}); last by auto => /> /#.
+auto => /> &2 ???????;split;last by smt().
+rewrite tP => j jb; rewrite initiE 1:/# /= initiE 1:/# /=.
+  do 8!(congr).
+  rewrite /get256_direct /loadW256 /reads /load_array1088  !to_uintD_small /= of_uintK /= 1:/#. 
+    congr;apply W32u8.Pack.ext_eq => k kb.
+   by  rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+qed.
 
+require import WArray128 WArray512.
 lemma poly_decompress_stack_equiv:
    equiv [ Jkem_avx2_stack.M._i_poly_decompress
            ~ Jkem_avx2.M(Syscall)._poly_decompress :
    to_uint arg{2}.`2 = 1152+960 /\
    load_array128 Glob.mem{2} (1152+960) = arg{1}.`2 ==> ={res}].
-admitted.
+proc => /=.
+while (#pre /\ aux{1} = 16 /\ 0 <= i{1} <= 16 /\ ={aux,i,x16p,x32p,q,shufbidx,mask,shift,f} /\
+     (forall k, 0<=k<16*i{1} => rp{1}.[k] = rp{2}.[k]));last by auto => />;smt(Array256.tP).
+auto => /> &1 &2 ?????;do split;1,2: smt().
++ do 6!(congr). 
+  rewrite /get64_direct /loadW64 /reads /load_array128  !to_uintD_small /= of_uintK /= 1:/#. 
+    congr;apply W8u8.Pack.ext_eq => k kb.
+   by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+
+move => k ??; rewrite !initiE 1,2:/# /=.
+rewrite !get16_set256E 1..4:/#.
+case (32 * i{2} <= 2 * k && 2 * k < 32 * (i{2} + 1) ) => *.
++ do 7!(congr). 
+  rewrite /get64_direct /loadW64 /reads /load_array128  !to_uintD_small /= of_uintK /= 1:/#. 
+   congr;apply W8u8.Pack.ext_eq => kk kkb.
+   by rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
+
+rewrite /get16_direct;congr;apply  W2u8.Pack.ext_eq => x xb.
+by rewrite !initiE 1,2:/# /= !initiE /#.
+qed.
 
