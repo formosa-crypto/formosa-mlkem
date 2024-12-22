@@ -11,7 +11,6 @@ require import MLKEMFCLib WArray384.
 op load_array1184 (m : global_mem_t) (p : address) : W8.t Array1184.t = 
       (Array1184.init (fun (i : int) => m.[p + i])).
 
-(*
 lemma poly_to_bytes_stack_equiv _mem _pos _a :
    0 <= _pos <= 1184+2*384 =>
    equiv [ Jkem_avx2_stack.M._i_poly_tobytes
@@ -166,7 +165,6 @@ Glob.mem{2} = (stores _mem _pos (take (3*384) (to_list r{1}))) /\ pp{2} = (of_in
 
 by auto => />.
 qed.
-*)
 
 require import WArray1152 Array144.
 
