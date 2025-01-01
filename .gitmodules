@@ -4,9 +4,11 @@
 [submodule "crypto-specs"]
 	path = crypto-specs
 	url = git@github.com:formosa-crypto/crypto-specs.git
+	branch = bdep
 [submodule "formosa-keccak"]
 	path = formosa-keccak
 	url = git@github.com:formosa-crypto/formosa-keccak.git
+	branch = bdep
 [submodule "code/kyber"]
 	path = code/kyber
 	url = https://github.com/pq-crystals/kyber.git
