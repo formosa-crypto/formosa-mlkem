@@ -1,28 +1,28 @@
 from Keccak require "avx2/keccak1600_imem_avx2.jinc"
-from Keccak require "avx2/keccak1600x4_imem_avx2.jinc"
+from Keccak require "avx2/keccak1600_imem_avx2x4.jinc"
 
 namespace A1 {
   param int ASIZE = 1;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A2 {
   param int ASIZE = 2;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A32 {
   param int ASIZE = 32;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A33 {
   param int ASIZE = 33;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A64 {
@@ -33,13 +33,13 @@ namespace A64 {
 namespace A128 {
   param int ASIZE = 128;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace ABUFLEN {
   param int ASIZE = 536;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 /*

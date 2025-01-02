@@ -1,12 +1,17 @@
 require import AllCore IntDiv List.
+
 from Jasmin require import JModel.
-require import GFq Rq Serialization Symmetric VecMat Sampling InnerPKE MLKEM_Poly MLKEM_PolyVec W16extra NTT_Fq.
-require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
-require import Array960 Array1152 Array2304 Array1088 WArray32 WArray33 WArray64.
 
-require import Jkem.
+from CryptoSpecs require import GFq Rq Serialization Symmetric Sampling VecMat InnerPKE Correctness.
 
-require import Correctness MLKEMFCLib.
+require import MLKEM_Poly MLKEM_PolyVec W16extra NTT_Fq.
+
+from JazzEC require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
+from JazzEC require import Array960 Array1152 Array2304 Array1088 WArray32 WArray33 WArray64.
+
+from JazzEC require import Jkem.
+
+require import MLKEMFCLib.
 import PolyVec PolyMat InnerPKE.
 import MLKEM_Poly MLKEM_PolyVec.
 
@@ -739,7 +744,7 @@ rewrite (modz_small (2*i)) 1:/# W8.to_uint_shr 1:/#.
 rewrite to_uintD modz_pow2_div 1:/#.
 have -> : 4 = 2^2 by done.
 rewrite JUtils.modz_mod_pow2.
-have -> : min (`|8 - 2 * i %% 8|) (`|2|) = 2 by smt().
+have -> : min (`|8 - 2 * i|) (`|2|) = 2 by smt().
 rewrite odd85bits even85bits !W8.to_uint_small /= 1,2:/#. 
 rewrite -(W8.to_uintK' a).
 have := W8.to_uint_cmp a. 

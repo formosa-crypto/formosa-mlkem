@@ -1,9 +1,11 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
+
 from Jasmin require import JModel JMemory JWord.
-require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4 Array2.
-require import WArray800 WArray512 WArray128 WArray128 WArray64 WArray32 WArray16.
+from JazzEC require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4 Array2.
+from JazzEC require import WArray800 WArray512 WArray128 WArray128 WArray64 WArray32 WArray16.
+from JazzEC require import Jkem_avx2.
+
 require import AVX2_Ops.
-require import Jkem_avx2.
 
 require import MLKEM_avx2_auxlemmas.
 

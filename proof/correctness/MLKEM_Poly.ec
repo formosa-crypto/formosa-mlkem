@@ -1,8 +1,13 @@
 require import AllCore List IntDiv CoreMap IntDiv Real Number Ring StdOrder.
 
-from Jasmin require  import JModel JMemory.
-require import IntDiv_extra W16extra Array32 Array320 Array256 Array128 Array384 Array1024.
-require import GFq Rq Serialization MLKEM Correctness Fq NTT_Fq NTTAlgebra MLKEMFCLib.
+from Jasmin require import JModel JMemory.
+from JazzEC require import Array32 Array320 Array256 Array128 Array384 Array1024.
+
+require import IntDiv_extra W16extra.
+
+from CryptoSpecs require import GFq Rq Serialization MLKEM Correctness.
+
+require import Fq NTT_Fq NTTAlgebra MLKEMFCLib.
 
 hint simplify range_ltn, range_geq.
 
@@ -13,7 +18,7 @@ import Fq Zq IntOrder.
 import SignedReductions.
 
 
-require import Jkem.
+from JazzEC require import Jkem.
 
 (* jzetas values are correct *)
 
@@ -190,7 +195,6 @@ rewrite W8.to_uint_orw_disjoint.
                             W32.one `<<` (of_int j{2})%W8)).[k].
   rewrite W8.get_to_uint kb /= to_uint_truncateu8  to_uint_shl /= 1:/#.
   rewrite (modz_small j{2} 256); 1: smt().
-  rewrite (modz_small j{2} 32); 1: smt().
   rewrite (_: W32.one = W32.of_int (2^1 - 1)) // and_mod // compress_impl_small // 1:/#.
   rewrite (modz_small _  4294967296); 1: by rewrite of_uintK /= /#. 
   rewrite (modz_small _  256); 1: by rewrite of_uintK /= /#.  
@@ -205,12 +209,13 @@ congr; rewrite to_uint_truncateu8 /= modz_small.
 + rewrite (_: W32.one = W32.of_int (2^1 - 1)) // W32.and_mod //= compress_impl_small // 1:/#.
   split; 1: by smt(W32.to_uint_cmp).
   move => *;rewrite /(`<<`) W32.to_uint_shl 1:/# W32.of_uintK /=.
-  rewrite modz_dvd // (modz_small _ 32) 1:/# modz_small; 1: by rewrite modz_small; smt().
+
+  rewrite  modz_small; 1: by rewrite modz_small; smt().
+
   by smt(). 
 
 rewrite (_: W32.one = W32.of_int (2^1 - 1)) // W32.and_mod //= compress_impl_small // 1:/# -/x.  
-move => *;rewrite /(`<<`) W32.to_uint_shl  1:/# W32.of_uintK /=.
-by rewrite modz_dvd // !modz_small; smt(). 
+by move => *;rewrite /(`<<`) W32.to_uint_shl  1:/# W32.of_uintK /= /#.
 qed.
 
 lemma poly_tomsg_ll : islossless Jkem.M(Jkem.Syscall)._i_poly_tomsg.

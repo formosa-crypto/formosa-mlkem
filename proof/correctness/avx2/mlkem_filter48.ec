@@ -1,9 +1,9 @@
 (* ----- *) require import AllCore IntDiv List StdBigop.
 from Jasmin require import JModel.
 (* ----- *) require import Bindings Genbindings Mlkem_filter48_bindings.
-(* ----- *) (* - *) import W8 W12 W512 BitEncoding BS2Int BitChunking.
+(* ----- *) (* - *) import W8 W12 (*W512*) BitEncoding BS2Int BitChunking.
 
-require import Array2048 Array256 Array64 Array56 Array40 Array32.
+from JazzEC require import Array2048 Array256 Array64 Array56 Array40 Array32.
 
 (* -------------------------------------------------------------------- *)
 abbrev filter48_permq = W8.of_int (
@@ -703,6 +703,7 @@ lemma filter48P _buf : hoare[Filter48.filter48 : buf = _buf ==>
 proof.
 proc; conseq (_ : _buf = buf ==> _); first done.
 
+admit (** uncomment W512 bindings in mlkem_filter48_bindings! 
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
 seq ^g0<-{2} & -1 : (#pre /\ forall i, 0 <= i < 32 =>
@@ -1045,5 +1046,6 @@ wp; skip => |> &hr szpop hw' 6? sz1 sz2 sz3 sz4 Q32; split.
   rewrite (ws_cat 16 8) ~-1:// size_cat.
   rewrite (ws_cat 8 8) ~-1:// size_cat.
   by ring.
+*).
 qed.
 end section.

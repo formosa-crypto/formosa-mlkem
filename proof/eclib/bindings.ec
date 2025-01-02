@@ -1,7 +1,8 @@
 require import AllCore List IntDiv QFABV.
+
 from Jasmin require import JModel_x86.
-require import Array4 Array5 Array6 Array7 Array9 Array24 Array25 Array32 Array256 Array768 Array960.
-require import WArray32 WArray512 WArray960 WArray1536.
+from JazzEC require import Array4 Array5 Array6 Array7 Array9 Array24 Array25 Array32 Array256 Array768 Array960.
+from JazzEC require import WArray32 WArray512 WArray960 WArray1536.
 
 import BitEncoding BS2Int BitChunking.
 
@@ -645,6 +646,7 @@ by have -> : (2 ^ (128 - i) * 2 ^ i) = 340282366920938463463374607431768211456;
 qed.
 
 (* ----------- BEGIN W512 BINDINGS ---------- *)
+(*
 
 theory W512.
   abbrev [-printing] size = 512.
@@ -674,6 +676,7 @@ have ?: W512.modulus = 134078079299425970995740249982058461274793658205923933777
 by smt(bs2int_range mem_range W512.size_w2bits).
 qed.
 
+*)
 
 (* ----------- BEGIN ARRAY BINDINGS ---------- *)
 

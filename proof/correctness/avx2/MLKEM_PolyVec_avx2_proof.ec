@@ -1,9 +1,10 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
+
 from Jasmin require import JModel.
-require import Fq Array4 Array8 Array16 Array32 Array128 Array256 Array960 Array384 Array400 Array768 Array1152.
-require import W16extra WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
-require import AVX2_Ops.
-require import Jkem_avx2 Jkem.
+from JazzEC require import Array4 Array8 Array16 Array32 Array128 Array256 Array960 Array384 Array400 Array768 Array1152.
+from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
+require import Fq AVX2_Ops W16extra.
+from JazzEC require import Jkem_avx2 Jkem.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_Poly_avx2_vec.
 require import MLKEM_Poly_avx2_proof.
@@ -16,7 +17,7 @@ require import MLKEM_avx2_encdec.
 require import MLKEMFCLib.
 require import MLKEM_avx2_auxlemmas.
 
-require import GFq Rq VecMat Serialization Correctness.
+from CryptoSpecs require import GFq Rq VecMat Serialization Correctness.
 
 theory MLKEM_PolyvecAVX.
 
@@ -194,8 +195,7 @@ lemma shl_shlw_w8 (k: int) (w: W8.t):
   0 <= k < W8.size =>
   w `<<` W8.of_int k = w `<<<` k.
 proof.
-  move=> *; rewrite /(`<<`) of_uintK (modz_small (k %% W8.modulus)).
-   smt(modz_cmp).
+  move=> *; rewrite /(`<<`) of_uintK.
   by rewrite modz_small //; smt().
 qed.
 
@@ -203,8 +203,7 @@ lemma shr_shrw_w8 (k: int) (w: W8.t):
   0 <= k < W8.size =>
   w `>>` W8.of_int k = w `>>>` k.
 proof.
-  move=> *; rewrite /(`>>`) of_uintK (modz_small (k %% W8.modulus)).
-   smt(modz_cmp).
+  move=> *; rewrite /(`>>`) of_uintK.
   by rewrite pmod_small //; smt().
 qed.
 

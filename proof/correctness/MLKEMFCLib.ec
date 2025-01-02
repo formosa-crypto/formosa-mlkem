@@ -1,7 +1,9 @@
 require import AllCore List IntDiv.
-require import Array128 Array256 Array32 Array16 Array768 Array2304 Array320 Array384 Array960 Array1152 WArray512 WArray128.
+
 from Jasmin require import JModel.
-require import GFq Rq VecMat Serialization Correctness.
+from JazzEC require import Array128 Array256 Array32 Array16 Array768 Array2304 Array320 Array384 Array960 Array1152 WArray512 WArray128.
+
+from CryptoSpecs require import GFq Rq VecMat Serialization Correctness.
 import PolyVec PolyMat KMatrix.
 require import W16extra Montgomery.
 

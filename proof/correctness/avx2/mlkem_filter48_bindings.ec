@@ -1,10 +1,85 @@
 (* -------------------------------------------------------------------- *)
 (* ----- *) require import AllCore IntDiv List.
 from Jasmin require import JModel.
-(* ----- *) require import Bindings Genbindings.
-(* ----- *) (* - *) import W8 W512.
+(* ----- *) require export Bindings.
+(* ----- *) require import Genbindings.
+(* ----- *) (* - *) import W8.
 
-require import Array2048 Array256 Array64 Array56 Array40 Array32.
+(*
+(* taken from "proof/eclib/bindings.ec" (commented there, to avoid perfomance issues)
+   See also additional bindings at the end of this file *)
+theory W512.
+  abbrev [-printing] size = 512.
+  clone include BitWord with op size <- size
+  rename "_XX" as "_256"
+  proof gt0_size by done.
+end W512.
+
+import W512.
+import BitEncoding BS2Int.
+
+bind bitstring W512.w2bits W512.bits2w W512.to_uint W512.to_sint W512.of_int W512.t 512.
+realize size_tolist by auto.
+realize tolistP     by auto.
+realize oflistP     by smt(W512.bits2wK).
+realize ofintP      by move=> *; rewrite /of_int int2bs_mod.
+realize touintP     by smt().
+
+realize tosintP.
+proof.
+move=> bv /= @/to_sint @/smod @/msb.
+rewrite (_ : nth _ _ _ = 2 ^ (512 - 1) <= to_uint bv) -1:/#.
+rewrite /to_uint -{2}(cat_take_drop 511 (w2bits bv)).
+rewrite bs2int_cat size_take ~-1:// W512.size_w2bits /=.
+rewrite -bs2int_div ~-1:// /= get_to_uint ~-1:// /=.
+rewrite -bs2int_mod ~-1:// /= /to_uint.
+have ?: W512.modulus = 13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096 by done.
+by smt(bs2int_range mem_range W512.size_w2bits).
+qed.
+
+(* -------------------------------------------------------------------- *)
+clone export WordChunk as WordChunk_16_512
+  with op isize <- 16, op osize <- 512,
+  theory IW <- W16, theory OW <- W512
+  rename "XX" as "16_512"
+  proof gt0_isize by done, gt0_osize by done, le_iosize by done.
+
+(* -------------------------------------------------------------------- *)
+clone export Extract as Extract_512_16
+  with op isize  <- 512,
+       op osize  <-  16,
+       theory IW <- W512,
+       theory OW <- W16
+       rename "XX" as "512_16"
+       proof gt0_isize by done
+       proof gt0_osize by done.
+
+bind op [W512.t & W16.t] extract_512_16 "extract".
+realize bvextractP by exact/extract_512_16P.
+
+(* -------------------------------------------------------------------- *)
+op concat_2u256 (l h : W256.t) = W512.init (fun i => [l; h].[i %/ 256].[i %% 256]).
+
+lemma w2bits_concat_2u256 (w1 w2 : W256.t) :
+  w2bits (concat_2u256 w1 w2) = flatten [w2bits w1; w2bits w2].
+proof.
+rewrite flatten_cons flatten1; apply/(eq_from_nth false).
+- by rewrite size_cat !size_w2bits.
+rewrite size_w2bits => i rgi; rewrite nth_cat !get_w2bits !size_w2bits.
+by rewrite /concat_2u256 initE /#.
+qed.
+
+bind op [W256.t & W256.t & W512.t] concat_2u256 "concat".
+realize bvconcatP.
+proof.
+move=> l h; have := w2bits_concat_2u256 l h.
+by rewrite flatten_cons flatten1.
+qed.
+
+(* ----- *)
+*)
+
+from JazzEC require import Array2048 Array256 Array64 Array56 Array40 Array32.
 
 (* -------------------------------------------------------------------- *)
 abbrev "_.[_]" ['a] = nth<:'a> witness.
@@ -40,12 +115,6 @@ realize get_setP by smt(Array64.get_setE).
 realize eqP      by smt(Array64.tP).
 realize get_out  by smt(Array64.get_out).
 
-(* -------------------------------------------------------------------- *)
-clone export WordChunk as WordChunk_16_512
-  with op isize <- 16, op osize <- 512,
-  theory IW <- W16, theory OW <- W512
-  rename "XX" as "16_512"
-  proof gt0_isize by done, gt0_osize by done, le_iosize by done.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_256_56
@@ -84,18 +153,6 @@ clone export SliceSet as SliceSet_16_128_40
   rename "XX" as "16_128_40"
   proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
 
-(* -------------------------------------------------------------------- *)
-clone export Extract as Extract_512_16
-  with op isize  <- 512,
-       op osize  <-  16,
-       theory IW <- W512,
-       theory OW <- W16
-       rename "XX" as "512_16"
-       proof gt0_isize by done
-       proof gt0_osize by done.
-
-bind op [W512.t & W16.t] extract_512_16 "extract".
-realize bvextractP by exact/extract_512_16P.
 
 (* -------------------------------------------------------------------- *)
 clone export Extract as Extract_256_128
@@ -149,24 +206,6 @@ clone export Extract as Extract_64_8
 bind op [W64.t & W8.t] extract_64_8 "extract".
 realize bvextractP by exact/extract_64_8P.
 
-(* -------------------------------------------------------------------- *)
-op concat_2u256 (l h : W256.t) = W512.init (fun i => [l; h].[i %/ 256].[i %% 256]).
-
-lemma w2bits_concat_2u256 (w1 w2 : W256.t) :
-  w2bits (concat_2u256 w1 w2) = flatten [w2bits w1; w2bits w2].
-proof.
-rewrite flatten_cons flatten1; apply/(eq_from_nth false).
-- by rewrite size_cat !size_w2bits.
-rewrite size_w2bits => i rgi; rewrite nth_cat !get_w2bits !size_w2bits.
-by rewrite /concat_2u256 initE /#.
-qed.
-
-bind op [W256.t & W256.t & W512.t] concat_2u256 "concat".
-realize bvconcatP.
-proof.
-move=> l h; have := w2bits_concat_2u256 l h.
-by rewrite flatten_cons flatten1.
-qed.
 
 (* -------------------------------------------------------------------- *)
 op concat_2u128 (l h : W128.t) = W2u128.pack2 [l; h].
@@ -254,12 +293,11 @@ proof. by move=> w1 w2 @/shiftr64; rewrite to_uint_shr 1:#smt:(W64.to_uint_cmp).
 
 (* -------------------------------------------------------------------- *)
 op shift64R (w : W64.t) (i : W8.t) =
-  shiftr64 w (zextend_8_64 (W8.andw i (W8.of_int 63))).
+  shiftr64 w (zextend_8_64 i).
 
 lemma shift64RE (w : W64.t) (i : W8.t) : w `>>` i = shift64R w i.
 proof.
-rewrite /shift64R /shiftr64 zextend_8_64P /(`>>`); do congr.
-by have /= /eq_sym := W8.to_uint_and_mod 6 i //.
+by rewrite /shift64R /shiftr64 zextend_8_64P /(`>>`).
 qed.
 
 (* -------------------------------------------------------------------- *)

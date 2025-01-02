@@ -1,17 +1,19 @@
 require import AllCore IntDiv List.
-require export FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
-require export Keccak1600_Spec Keccakf1600_Spec.
+
+from CryptoSpecs require export FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
+from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
 
 (***THESE ASSUMPTIONS MAP SHA OPERATORS FROM SPEC TO CODE IN
     THE IMPLEMENTATION ****)
 
-require import Symmetric MLKEMFCLib.
+from CryptoSpecs require import Symmetric.
+require import MLKEMFCLib.
+
 from Jasmin require import JModel.
 
-require import Array1152 Array960 Array128 Array64 Array34 Array33 Array32.
-
-require import Jkem.
+from JazzEC require import Array1152 Array960 Array128 Array64 Array34 Array33 Array32.
+from JazzEC require import Jkem.
 
 axiom sha3_512_33_64 seed : 
    phoare [Jkem.M(Jkem.Syscall)._sha3512_33 : 

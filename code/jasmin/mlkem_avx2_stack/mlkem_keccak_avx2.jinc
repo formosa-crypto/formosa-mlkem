@@ -3,13 +3,13 @@ require "../mlkem_avx2/mlkem_keccak_avx2.jinc"
 namespace A1184 {
   param int ASIZE = 1184;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A1120 {
   param int ASIZE = 1120;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600x4_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 fn _sha3_256A_A1184

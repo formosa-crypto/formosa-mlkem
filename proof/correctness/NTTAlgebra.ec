@@ -15,8 +15,12 @@
 
 require import AllCore IntDiv List Ring ZModP StdOrder IntMin Number Real RealExp BitEncoding.
 require import IntDiv_extra For.
-require import Array128 Array256.
-require import Montgomery NTT_Fq GFq Rq Correctness MLKEMFCLib.
+
+from JazzEC require import Array128 Array256.
+
+from CryptoSpecs require import GFq Rq Correctness.
+
+require import Montgomery NTT_Fq MLKEMFCLib.
 
 require Matrix.
 
@@ -139,7 +143,7 @@ abstract theory DFT.
 end DFT.
 *)
 
-require import MLKEM.
+from CryptoSpecs require import MLKEM.
 import Zq.
 
 theory NTTequiv.

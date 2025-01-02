@@ -1,12 +1,14 @@
 require import AllCore IntDiv List.
-require import Jkem_avx2 Jkem_avx2_stack  MLKEM_InnerPKE_avx2 MLKEM.
-from Jasmin require import JModel_x86.
 
-require import Array32 Array33 Array64 Array148 Array256 Array384 Array768 Array960 Array128 Array1088 Array1152 Array1184 Array2304 Array2400.
-require import Array8 WArray32 WArray33 Array300 WArray64 WArray1184 WArray2400.
+from CryptoSpecs require import MLKEM.
+from JazzEC require import Jkem_avx2 Jkem_avx2_stack.
+from Jasmin require import JModel_x86.
+from JazzEC require import Array32 Array33 Array64 Array148 Array256 Array384 Array768 Array960 Array128 Array1088 Array1152 Array1184 Array2304 Array2400.
+from JazzEC require import Array8 WArray32 WArray33 Array300 WArray64 WArray1184 WArray2400 WArray384.
+require import MLKEM_InnerPKE_avx2.
 import MLKEM InnerPKE.
 
-require import MLKEMFCLib WArray384.
+require import MLKEMFCLib.
 
 op load_array1184 (m : global_mem_t) (p : address) : W8.t Array1184.t = 
       (Array1184.init (fun (i : int) => m.[p + i])).
@@ -166,7 +168,7 @@ Glob.mem{2} = (stores _mem _pos (take (3*384) (to_list r{1}))) /\ pp{2} = (of_in
 by auto => />.
 qed.
 
-require import WArray1152 Array144.
+from JazzEC require import WArray1152 Array144.
 
 lemma copy1152 (a : W8.t Array1152.t) :
 Array1152.init (fun (i : int)  =>  WArray1152.get8 (WArray1152.init64                                                                       
@@ -269,7 +271,7 @@ seq 2 3 : (
 by auto => />;smt(Array768.tP).
 qed.
 
-require import WArray1088.
+from JazzEC require import WArray1088.
 op load_array1088 (m : global_mem_t) (p : address) : W8.t Array1088.t = Array1088.init (fun (i : int) => m.[p + i]).
 
 lemma polyvec_decompress_stack_equiv:
@@ -288,7 +290,7 @@ rewrite tP => j jb; rewrite initiE 1:/# /= initiE 1:/# /=.
    by  rewrite !initiE 1,2:/# /= initiE 1:/# initiE /#.
 qed.
 
-require import WArray128 WArray512.
+from JazzEC require import WArray128 WArray512.
 lemma poly_decompress_stack_equiv:
    equiv [ Jkem_avx2_stack.M._i_poly_decompress
            ~ Jkem_avx2.M(Syscall)._poly_decompress :

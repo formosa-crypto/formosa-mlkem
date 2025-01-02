@@ -1,13 +1,18 @@
 require import AllCore IntDiv.
-require import Jkem MLKEM_InnerPKE MLKEM_Poly MLKEM_PolyVec.
-require import Array1152 Array32 Array960 Array1184 Array1088 Array64 Array128.
+
+from JazzEC require import Jkem.
+
+require import MLKEM_InnerPKE MLKEM_Poly MLKEM_PolyVec.
+
+from JazzEC require import Array1152 Array32 Array960 Array1184 Array1088 Array64 Array128.
 from Jasmin require import JModel.
 
 import MLKEM_Poly.
 import MLKEM_PolyVec.
 
-require import GFq Rq VecMat Sampling Symmetric Serialization InnerPKE MLKEM MLKEMFCLib.
+from CryptoSpecs require import GFq Rq VecMat Sampling Symmetric Serialization InnerPKE MLKEM.
 
+require import MLKEMFCLib.
 require import MLKEM_keccak_ref.
 
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).

@@ -1,8 +1,9 @@
 require import AllCore IntDiv List.
+
 from Jasmin require import JModel.
 
-require import WArray512 WArray256 WArray128 WArray8 WArray2 WArray32.
-require import Array2 Array8 Array16 Array25 Array32 Array33 Array128 Array136 Array768 Array960 Array1024 Array1088 Array2304 Array2144 Array536 Array256.
+from JazzEC require import WArray512 WArray256 WArray128 WArray8 WArray2 WArray32.
+from JazzEC require import Array2 Array8 Array16 Array25 Array32 Array33 Array128 Array136 Array768 Array960 Array1024 Array1088 Array2304 Array2144 Array536 Array256.
 
 require import MLKEM_InnerPKE NTT_avx2 MLKEMFCLib AVX2_Ops NTT_AVX_Fq MLKEM_Poly_avx2_vec.
 
@@ -10,7 +11,7 @@ require import MLKEM_keccak_avx2.
 
 import NTT_Avx2.
 
-require import Jkem_avx2 Jkem.
+from JazzEC require import Jkem_avx2 Jkem.
 
 import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Fq Correctness.
 import PolyMat.
@@ -381,7 +382,8 @@ rewrite -getmE; congr.
 smt().
 qed.
 
-require import JWordList EclibExtra MLKEM_keccak_avx2.
+from CryptoSpecs require import JWordList EclibExtra.
+require import MLKEM_keccak_avx2.
 
 require import Mlkem_filters_bridge.
 

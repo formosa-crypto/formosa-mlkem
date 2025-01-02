@@ -2,17 +2,18 @@ require import AllCore List Int IntDiv Ring StdOrder.
 
 from Jasmin require import JModel.
 
-require import Array256 Array16 WArray32.
-require import WArray512.
-require import Array400 WArray800.
+from JazzEC require import Array256 Array16 WArray32.
+from JazzEC require import WArray512.
+from JazzEC require import Array400 WArray800.
 
 
 require import NTT_AVX_Fq MLKEMFCLib.
 
 (******* *)
 
-require import GFq Correctness Fq.
+from CryptoSpecs require import GFq Correctness.
 
+require import Fq.
 import Zq.
 
 require import MLKEM_Poly.
@@ -21,7 +22,7 @@ import MLKEM_Poly.
 
 require AVX2_Ops.
 require import Montgomery16.
-require import Jkem_avx2 Jkem.
+from JazzEC require import Jkem_avx2 Jkem.
 
 import IntOrder.
 

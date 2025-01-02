@@ -2270,6 +2270,23 @@ module M(SC:Syscall_t) = {
     }
     return (buf, lEN);
   }
+  proc __u64_to_u256 (x:W64.t, l:int) : W256.t = {
+    var t256:W256.t;
+    var t128:W128.t;
+    if (((l %% 2) = 0)) {
+      t128 <- (zeroextu128 x);
+    } else {
+      t128 <- (set0_128);
+      t128 <- (VPINSR_2u64 t128 x (W8.of_int 1));
+    }
+    t256 <- (set0_256);
+    if (((l %/ 2) = 0)) {
+      t256 <- (VINSERTI128 t256 t128 (W8.of_int 0));
+    } else {
+      t256 <- (VINSERTI128 t256 t128 (W8.of_int 1));
+    }
+    return t256;
+  }
   proc __state_init_avx2 () : W256.t Array7.t = {
     var aux:int;
     var st:W256.t Array7.t;
@@ -2469,8 +2486,8 @@ module M(SC:Syscall_t) = {
     st.[6] <- aux;
     return st;
   }
-  proc __addstate_r3456 (st:W256.t Array7.t, r3:W256.t, r4:W256.t, r5:W256.t,
-                         r6:W256.t) : W256.t Array7.t = {
+  proc __addstate_r3456_avx2 (st:W256.t Array7.t, r3:W256.t, r4:W256.t,
+                              r5:W256.t, r6:W256.t) : W256.t Array7.t = {
     
     (r3, r4, r5, r6) <@ __perm_reg3456_avx2 (r3, r4, r5, r6);
     st.[3] <- (st.[3] `^` r3);
@@ -2479,7 +2496,7 @@ module M(SC:Syscall_t) = {
     st.[6] <- (st.[6] `^` r6);
     return st;
   }
-  proc __addpst01 (st:W256.t Array7.t, pst:W64.t Array25.t) : W256.t Array7.t = {
+  proc __addpst01_avx2 (st:W256.t Array7.t, pst:W64.t Array25.t) : W256.t Array7.t = {
     var t256:W256.t;
     t256 <-
     (VPBROADCAST_4u64 (get64_direct (WArray200.init64 (fun i => pst.[i])) 0));
@@ -2488,7 +2505,8 @@ module M(SC:Syscall_t) = {
     st.[1] <- (st.[1] `^` t256);
     return st;
   }
-  proc __addpst23456 (st:W256.t Array7.t, pst:W64.t Array25.t) : W256.t Array7.t = {
+  proc __addpst23456_avx2 (st:W256.t Array7.t, pst:W64.t Array25.t) : 
+  W256.t Array7.t = {
     var t128_0:W128.t;
     var r3:W256.t;
     var t128_1:W128.t;
@@ -2514,16 +2532,16 @@ module M(SC:Syscall_t) = {
     ((2 ^ 128) * (W128.to_uint t128_0))));
     st.[2] <- (st.[2] `^` r2);
     r6 <- (get256_direct (WArray200.init64 (fun i => pst.[i])) (21 * 8));
-    st <@ __addstate_r3456 (st, r3, r4, r5, r6);
+    st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
     return st;
   }
   proc _addpstate_avx2 (st:W256.t Array7.t, pst:W64.t Array25.t) : W256.t Array7.t = {
     
-    st <@ __addpst01 (st, pst);
-    st <@ __addpst23456 (st, pst);
+    st <@ __addpst01_avx2 (st, pst);
+    st <@ __addpst23456_avx2 (st, pst);
     return st;
   }
-  proc __stavx2_pos (pOS:int) : int * int = {
+  proc __stavx2_pos_avx2 (pOS:int) : int * int = {
     var r:int;
     var l:int;
     r <- 0;
@@ -2640,23 +2658,6 @@ module M(SC:Syscall_t) = {
     }
     return (r, l);
   }
-  proc __u64_to_u256 (x:W64.t, l:int) : W256.t = {
-    var t256:W256.t;
-    var t128:W128.t;
-    if (((l %% 2) = 0)) {
-      t128 <- (zeroextu128 x);
-    } else {
-      t128 <- (set0_128);
-      t128 <- (VPINSR_2u64 t128 x (W8.of_int 1));
-    }
-    t256 <- (set0_256);
-    if (((l %/ 2) = 0)) {
-      t256 <- (VINSERTI128 t256 t128 (W8.of_int 0));
-    } else {
-      t256 <- (VINSERTI128 t256 t128 (W8.of_int 1));
-    }
-    return t256;
-  }
   proc __addratebit_avx2 (st:W256.t Array7.t, rATE8:int) : W256.t Array7.t = {
     var t64:W64.t;
     var r:int;
@@ -2664,7 +2665,7 @@ module M(SC:Syscall_t) = {
     var t256:W256.t;
     t64 <- (W64.of_int 1);
     t64 <- (t64 `<<` (W8.of_int (((8 * rATE8) - 1) %% 64)));
-    (r, l) <@ __stavx2_pos (((rATE8 - 1) %/ 8));
+    (r, l) <@ __stavx2_pos_avx2 (((rATE8 - 1) %/ 8));
     if ((r = 0)) {
       t256 <- (VPBROADCAST_4u64 t64);
     } else {
@@ -2707,7 +2708,7 @@ module M(SC:Syscall_t) = {
       ((2 ^ 128) * (W128.to_uint t128_1))));
       st.[2] <- (st.[2] `^` r2);
       (buf, lEN, tRAILB, r6) <@ __mread_subu256 (buf, lEN, tRAILB);
-      st <@ __addstate_r3456 (st, r3, r4, r5, r6);
+      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
     } else {
       
     }
@@ -2855,7 +2856,7 @@ module M(SC:Syscall_t) = {
             pst.[(W64.to_uint i)] <- (W64.of_int 0);
             i <- (i + (W64.of_int 1));
           }
-          st <@ __addpst01 (st, pst);
+          st <@ __addpst01_avx2 (st, pst);
           st <@ __addratebit_avx2 (st, rATE8);
         } else {
           while ((i \ult (W64.of_int (rATE8 %/ 8)))) {
@@ -3339,7 +3340,7 @@ module M(SC:Syscall_t) = {
     var t8:W64.t;
     iLEN <- lEN;
     if ((lEN <= 0)) {
-      w <- (W64.of_int tRAIL);
+      w <- (W64.of_int (tRAIL %% 256));
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
@@ -3369,21 +3370,21 @@ module M(SC:Syscall_t) = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (get8_direct (WArray1.init8 (fun i => buf.[i]))
             (W64.to_uint (offset + (W64.of_int dELTA)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             dELTA <- (dELTA + 1);
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int tRAIL);
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -3585,7 +3586,7 @@ module M(SC:Syscall_t) = {
     offset <- (offset + (W64.of_int dELTA));
     dELTA <- 0;
     if ((8 <= lEN)) {
-      while ((at \ult (W64.of_int ((4 * (aT %/ 8)) + (32 * (lEN %/ 32)))))) {
+      while ((at \ult (W64.of_int ((4 * (aT %/ 8)) + (16 * (lEN %/ 32)))))) {
         t256_0 <-
         (get256_direct (WArray1.init8 (fun i => buf0.[i]))
         (W64.to_uint offset));
@@ -3593,35 +3594,51 @@ module M(SC:Syscall_t) = {
         (get256_direct (WArray1.init8 (fun i => buf1.[i]))
         (W64.to_uint offset));
         t256_2 <-
-        (get256_direct (WArray1.init8 (fun i => buf0.[i]))
+        (get256_direct (WArray1.init8 (fun i => buf2.[i]))
         (W64.to_uint offset));
         t256_3 <-
-        (get256_direct (WArray1.init8 (fun i => buf0.[i]))
+        (get256_direct (WArray1.init8 (fun i => buf3.[i]))
         (W64.to_uint offset));
         offset <- (offset + (W64.of_int 32));
         (t256_0, t256_1, t256_2, t256_3) <@ __4u64x4_u256x4 (t256_0, 
         t256_1, t256_2, t256_3);
+        t256_0 <-
+        (t256_0 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint ((W64.of_int 8) * at))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint ((W64.of_int 8) * at)) t256_0)));
+        t256_1 <-
+        (t256_1 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 32)))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 32))) t256_1)));
+        t256_2 <-
+        (t256_2 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 64)))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 64))) t256_2)));
+        t256_3 <-
+        (t256_3 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 96)))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 96))) t256_3)));
-        at <- (at + (W64.of_int 32));
+        at <- (at + (W64.of_int 16));
       }
       while ((at \ult (W64.of_int ((4 * (aT %/ 8)) + (4 * (lEN %/ 8)))))) {
         t0 <-
@@ -3794,7 +3811,7 @@ module M(SC:Syscall_t) = {
     var t8:W64.t;
     iLEN <- lEN;
     if ((lEN <= 0)) {
-      w <- (W64.of_int tRAIL);
+      w <- (W64.of_int (tRAIL %% 256));
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
@@ -3824,21 +3841,21 @@ module M(SC:Syscall_t) = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (get8_direct (WArray2.init8 (fun i => buf.[i]))
             (W64.to_uint (offset + (W64.of_int dELTA)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             dELTA <- (dELTA + 1);
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int tRAIL);
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -3856,7 +3873,7 @@ module M(SC:Syscall_t) = {
                             lEN:int, tRAIL:int) : int * int * int * W128.t = {
     var w:W128.t;
     var t64:W64.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
@@ -3890,7 +3907,7 @@ module M(SC:Syscall_t) = {
     var w:W256.t;
     var t128_1:W128.t;
     var t128_0:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
@@ -3974,7 +3991,7 @@ module M(SC:Syscall_t) = {
       st.[2] <- (st.[2] `^` r2);
       (dELTA, lEN, tRAILB, r6) <@ a2____aread_subu256 (buf, offset, dELTA,
       lEN, tRAILB);
-      st <@ __addstate_r3456 (st, r3, r4, r5, r6);
+      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
     } else {
       
     }
@@ -4116,7 +4133,7 @@ module M(SC:Syscall_t) = {
             pst.[(W64.to_uint i)] <- (W64.of_int 0);
             i <- (i + (W64.of_int 1));
           }
-          st <@ __addpst01 (st, pst);
+          st <@ __addpst01_avx2 (st, pst);
           st <@ __addratebit_avx2 (st, rATE8);
         } else {
           while ((i \ult (W64.of_int (rATE8 %/ 8)))) {
@@ -4358,7 +4375,7 @@ module M(SC:Syscall_t) = {
     offset <- (offset + (W64.of_int dELTA));
     dELTA <- 0;
     if ((8 <= lEN)) {
-      while ((at \ult (W64.of_int ((4 * (aT %/ 8)) + (32 * (lEN %/ 32)))))) {
+      while ((at \ult (W64.of_int ((4 * (aT %/ 8)) + (16 * (lEN %/ 32)))))) {
         t256_0 <-
         (get256_direct (WArray2.init8 (fun i => buf0.[i]))
         (W64.to_uint offset));
@@ -4366,35 +4383,51 @@ module M(SC:Syscall_t) = {
         (get256_direct (WArray2.init8 (fun i => buf1.[i]))
         (W64.to_uint offset));
         t256_2 <-
-        (get256_direct (WArray2.init8 (fun i => buf0.[i]))
+        (get256_direct (WArray2.init8 (fun i => buf2.[i]))
         (W64.to_uint offset));
         t256_3 <-
-        (get256_direct (WArray2.init8 (fun i => buf0.[i]))
+        (get256_direct (WArray2.init8 (fun i => buf3.[i]))
         (W64.to_uint offset));
         offset <- (offset + (W64.of_int 32));
         (t256_0, t256_1, t256_2, t256_3) <@ __4u64x4_u256x4 (t256_0, 
         t256_1, t256_2, t256_3);
+        t256_0 <-
+        (t256_0 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint ((W64.of_int 8) * at))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint ((W64.of_int 8) * at)) t256_0)));
+        t256_1 <-
+        (t256_1 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 32)))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 32))) t256_1)));
+        t256_2 <-
+        (t256_2 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 64)))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 64))) t256_2)));
+        t256_3 <-
+        (t256_3 `^`
+        (get256_direct (WArray800.init256 (fun i => st.[i]))
+        (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 96)))));
         st <-
         (Array25.init
         (WArray800.get256
         (WArray800.set256_direct (WArray800.init256 (fun i => st.[i]))
         (W64.to_uint (((W64.of_int 8) * at) + (W64.of_int 96))) t256_3)));
-        at <- (at + (W64.of_int 32));
+        at <- (at + (W64.of_int 16));
       }
       while ((at \ult (W64.of_int ((4 * (aT %/ 8)) + (4 * (lEN %/ 8)))))) {
         t0 <-
@@ -4567,7 +4600,7 @@ module M(SC:Syscall_t) = {
     var t8:W64.t;
     iLEN <- lEN;
     if ((lEN <= 0)) {
-      w <- (W64.of_int tRAIL);
+      w <- (W64.of_int (tRAIL %% 256));
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
@@ -4597,21 +4630,21 @@ module M(SC:Syscall_t) = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (get8_direct (WArray32.init8 (fun i => buf.[i]))
             (W64.to_uint (offset + (W64.of_int dELTA)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             dELTA <- (dELTA + 1);
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int tRAIL);
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -4633,7 +4666,7 @@ module M(SC:Syscall_t) = {
     var w:W256.t;
     var t64:W64.t;
     var t128:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((8 <= lEN)) {
@@ -4656,7 +4689,7 @@ module M(SC:Syscall_t) = {
                              lEN:int, tRAIL:int) : int * int * int * W128.t = {
     var w:W128.t;
     var t64:W64.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
@@ -4690,7 +4723,7 @@ module M(SC:Syscall_t) = {
     var w:W256.t;
     var t128_1:W128.t;
     var t128_0:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
@@ -4896,7 +4929,7 @@ module M(SC:Syscall_t) = {
       st.[2] <- (st.[2] `^` r2);
       (dELTA, lEN, tRAILB, r6) <@ a32____aread_subu256 (buf, offset, 
       dELTA, lEN, tRAILB);
-      st <@ __addstate_r3456 (st, r3, r4, r5, r6);
+      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
     } else {
       
     }
@@ -5039,7 +5072,7 @@ module M(SC:Syscall_t) = {
             pst.[(W64.to_uint i)] <- (W64.of_int 0);
             i <- (i + (W64.of_int 1));
           }
-          st <@ __addpst01 (st, pst);
+          st <@ __addpst01_avx2 (st, pst);
           st <@ __addratebit_avx2 (st, rATE8);
         } else {
           while ((i \ult (W64.of_int (rATE8 %/ 8)))) {
@@ -5495,7 +5528,7 @@ module M(SC:Syscall_t) = {
     var t8:W64.t;
     iLEN <- lEN;
     if ((lEN <= 0)) {
-      w <- (W64.of_int tRAIL);
+      w <- (W64.of_int (tRAIL %% 256));
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
@@ -5525,21 +5558,21 @@ module M(SC:Syscall_t) = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (get8_direct (WArray33.init8 (fun i => buf.[i]))
             (W64.to_uint (offset + (W64.of_int dELTA)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             dELTA <- (dELTA + 1);
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int tRAIL);
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -5557,7 +5590,7 @@ module M(SC:Syscall_t) = {
                              lEN:int, tRAIL:int) : int * int * int * W128.t = {
     var w:W128.t;
     var t64:W64.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
@@ -5591,7 +5624,7 @@ module M(SC:Syscall_t) = {
     var w:W256.t;
     var t128_1:W128.t;
     var t128_0:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
@@ -5675,7 +5708,7 @@ module M(SC:Syscall_t) = {
       st.[2] <- (st.[2] `^` r2);
       (dELTA, lEN, tRAILB, r6) <@ a33____aread_subu256 (buf, offset, 
       dELTA, lEN, tRAILB);
-      st <@ __addstate_r3456 (st, r3, r4, r5, r6);
+      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
     } else {
       
     }
@@ -5719,7 +5752,7 @@ module M(SC:Syscall_t) = {
     var t8:W64.t;
     iLEN <- lEN;
     if ((lEN <= 0)) {
-      w <- (W64.of_int tRAIL);
+      w <- (W64.of_int (tRAIL %% 256));
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
@@ -5749,21 +5782,21 @@ module M(SC:Syscall_t) = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (get8_direct (WArray64.init8 (fun i => buf.[i]))
             (W64.to_uint (offset + (W64.of_int dELTA)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             dELTA <- (dELTA + 1);
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int tRAIL);
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -5781,7 +5814,7 @@ module M(SC:Syscall_t) = {
                              lEN:int, tRAIL:int) : int * int * int * W128.t = {
     var w:W128.t;
     var t64:W64.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
@@ -5815,7 +5848,7 @@ module M(SC:Syscall_t) = {
     var w:W256.t;
     var t128_1:W128.t;
     var t128_0:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
@@ -6021,7 +6054,7 @@ module M(SC:Syscall_t) = {
       st.[2] <- (st.[2] `^` r2);
       (dELTA, lEN, tRAILB, r6) <@ a64____aread_subu256 (buf, offset, 
       dELTA, lEN, tRAILB);
-      st <@ __addstate_r3456 (st, r3, r4, r5, r6);
+      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
     } else {
       
     }

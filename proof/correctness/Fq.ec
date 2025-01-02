@@ -1,12 +1,13 @@
 require import AllCore List IntDiv CoreMap.
 require (****) ZModP.
+
 from Jasmin require import JWord JModel.
+from JazzEC require import Array32.
+
 require import Montgomery.
 require import W16extra MLKEMFCLib.
-require import Array32.
 
-require import GFq.
-require import Correctness.
+from CryptoSpecs require import GFq Correctness.
 
 import Zq.
 
@@ -25,7 +26,7 @@ clone import SignedReductions with
     proof RRinv by (rewrite /R qE  => />)
     proof qinv_bnd by (rewrite /R  => />).
 
-require import Jkem.
+from JazzEC require import Jkem.
 
 lemma smod_W16 a:
   smod a W16.modulus = W16.smod (a %% W16.modulus)
@@ -154,9 +155,9 @@ have -> : (a `>>>` 26) `&` (of_int 4294967232)%W32 = W32.of_int 0.
     rewrite to_uint_shr => />; smt(divz_ge0 ltz_divLR pow2_32 W32.to_uint_cmp).
   apply W32.ext_eq =>  x xbnd.
   case (0 <= x < 6); 1: by move => smallx; rewrite andwE aux26_1 => /> /#.
-  move => largex; rewrite /(`>>>`) /of_int /bits2w /= /int2bs /= /mkseq /= !initiE //=. 
+  move => largex; rewrite /(`>>>`) /of_int /bits2w /= /int2bs /= /mkseq /= !initiE 1..3://=. 
   rewrite !(nth_map 0 false _ x (iota_ 0 32)); 1, 2: by smt(size_iota).
-  by rewrite !nth_iota //=; smt(W32.get_out).
+  by rewrite !nth_iota 1://=; smt(W32.get_out).
 by ring.
 qed.
 
@@ -175,15 +176,15 @@ case (2147483648 <= to_uint a); last first. (* positive numbers *)
     have -> : to_uint a %/ 67108864 %/ 2 ^ x = 0; last by smt(mod0z). 
     apply  (divz_eq0 (to_uint a %/ 67108864) (2^x)); 1: by smt(gt0_pow2). 
     split; 1: by smt(divz_ge0 W32.to_uint_cmp).
-    have /= ? : 2^5 <= 2^x by  apply StdOrder.IntOrder.ler_weexpn2l=> // /#.
+    have /= ? : 2^5 <= 2^x by  apply StdOrder.IntOrder.ler_weexpn2l => /#.
     by smt(leq_div2r).
  move => /= lb.
  have -> : to_uint a %/ 2 ^ (x + 26) = to_uint a %/ 67108864 %/ 2 ^ x; last by smt().
- rewrite (_: 67108864 = 2^26) // {1}(divz_eq (to_uint a) (2^26)) exprD_nneg //; 1: smt().  
+ rewrite (_: 67108864 = 2^26) 1:// {1}(divz_eq (to_uint a) (2^26)) exprD_nneg 2://; 1: smt().  
  by smt(divmod_mul gt0_pow2). 
 
 move => neg.
-rewrite divzDr //= (_: 67108864 = 2^26) // -to_uint_shr //=.
+rewrite divzDr 1:// /= (_: 67108864 = 2^26) 1:// -to_uint_shr 1:// /=.
 rewrite of_intS to_uintK /W32.([-]) /ulift1  aux26_2 orwE /=.
 case (31 < x + 26); last by  move => x_tub; rewrite aux26_1 /= /#.
 move => x_tlb; rewrite /min x_tlb aux26_0 /=; 1: by smt().
@@ -304,14 +305,13 @@ rewrite /zeroextu32 /truncateu8 /compress_alt qE => /= *.
 rewrite  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
 rewrite W32.to_uint_shr; 1: by smt().
 rewrite incoeffK to_sintE /max /= !W32.of_uintK /= qE /=.
-rewrite !(modz_small _ 32) /=; 1: smt().
 rewrite !(modz_small _ 256) /=; 1: smt().
 rewrite !(modz_small _ 3329) /=; 1: smt().
 have ->: W16.smod (to_uint a) = to_uint a by
   move : abl; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
 pose xx := (to_uint a * 2^d + 1665).
 have -> : (4294967296 = 16*268435456) by auto. 
-rewrite divz_mod_mul //. 
+rewrite divz_mod_mul 1..2://. 
 rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
 rewrite -pow2_4; apply dvdz_exp2l; smt().
 qed.

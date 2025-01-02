@@ -1,9 +1,12 @@
 require import AllCore IntDiv List.
-require import Jkem_avx2 MLKEM MLKEM_Poly MLKEM_PolyVec MLKEM_InnerPKE MLKEM_InnerPKE_avx2 MLKEMFCLib.
-require import Array1152 Array32 Array960 Array1184 Array1088 Array64 Array128.
+
+from JazzEC require import Jkem_avx2.
+
+from JazzEC require import Array1152 Array32 Array960 Array1184 Array1088 Array64 Array128.
 from Jasmin require import JModel.
 
-import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Fq Correctness.
+from CryptoSpecs require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Correctness.
+require import Fq MLKEM_Poly MLKEM_PolyVec MLKEM_InnerPKE MLKEM_InnerPKE_avx2 MLKEMFCLib.
 
 import MLKEM_Poly.
 import MLKEM_PolyVec.

@@ -1,27 +1,29 @@
 require import AllCore IntDiv List.
+
 from Jasmin require import JModel.
 
-require export FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
-require export Keccak1600_Spec Keccakf1600_Spec.
+from CryptoSpecs require export FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
+from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
-require import Symmetric MLKEMFCLib.
-require import Jkem_avx2.
+from CryptoSpecs require import Symmetric.
+require import MLKEMFCLib.
+from JazzEC require import Jkem_avx2.
 
-require import Array1.   (* nonce *)
-require import Array2.   (* mat. position *)
-require import Array8.   (* mat. indexes *)
-require import Array32.  (* SEED SIZE *)
-require import Array33.  (* DS SEED SIZE *)
-require import Array64.
-require import Array128.
-require import Array536. (* BUF_SIZE *)
-require import Array960.
-require import Array1152.
-require import Array1184.
-require import Array2144. (* 4*BUF_SIZE *) 
+from JazzEC require import Array1.   (* nonce *)
+from JazzEC require import Array2.   (* mat. position *)
+from JazzEC require import Array8.   (* mat. indexes *)
+from JazzEC require import Array32.  (* SEED SIZE *)
+from JazzEC require import Array33.  (* DS SEED SIZE *)
+from JazzEC require import Array64.
+from JazzEC require import Array128.
+from JazzEC require import Array536. (* BUF_SIZE *)
+from JazzEC require import Array960.
+from JazzEC require import Array1152.
+from JazzEC require import Array1184.
+from JazzEC require import Array2144. (* 4*BUF_SIZE *) 
 
 
-require import Array7.
+from JazzEC require import Array7.
 
 op stmatch_avx2 (st: state) (stavx2: W256.t Array7.t): bool.
 
@@ -156,7 +158,7 @@ by conseq shake128_next_state_ll (shake128_next_state_h _buf).
 _shake128x4_squeeze3blocks
 *)
 
-require import Array4 Array128.
+from JazzEC require import Array4 Array128.
 
 hoare shake256x4_A128__A32_A1_h _seed _nonces :
  Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1

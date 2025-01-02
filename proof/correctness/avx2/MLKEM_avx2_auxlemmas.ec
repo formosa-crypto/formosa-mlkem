@@ -1,19 +1,16 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
+
 from Jasmin require import JModel.
-require import Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
-require import W16extra WArray1536 WArray512 WArray32 WArray16.
-require import AVX2_Ops MLKEMFCLib.
-require import GFq MLKEM_Poly.
-import MLKEM_Poly.
-import Zq.
-(* 
+
+from JazzEC require import Array768 Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
+from JazzEC require import WArray1536 WArray512 WArray32 WArray16.
+
+require import W16extra AVX2_Ops MLKEMFCLib.
+from CryptoSpecs require import GFq.
+
 require import MLKEM_Poly.
-require import MLKEM_InnerPKE.
-import MLKEM.
 import MLKEM_Poly.
 import Zq.
-import BitEncoding.
-import BS2Int.*)
 
 op lift2poly (p: W256.t): W16.t Array16.t =
   Array16.init (fun (n : int) => p \bits16 n).

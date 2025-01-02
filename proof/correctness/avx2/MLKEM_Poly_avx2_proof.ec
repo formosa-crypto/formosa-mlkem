@@ -1,11 +1,16 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
+
 from Jasmin require import JModel.
-require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
-require import W16extra WArray512 WArray32 WArray16.
+from JazzEC require import Array400 Array384 Array256 Array128 Array64 Array32 Array16 Array4 Array8.
+from JazzEC require import WArray512 WArray32 WArray16.
+
+require import W16extra.
 require import AVX2_Ops MLKEM_avx2_encdec MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxlemmas.
-require import Jkem_avx2 Jkem.
-require import Fq NTT_Fq MLKEM_Poly.
-require import GFq Rq Serialization VecMat Correctness MLKEMFCLib.
+require import Fq NTT_Fq MLKEM_Poly MLKEMFCLib.
+
+from JazzEC require import Jkem_avx2 Jkem.
+
+from CryptoSpecs require import GFq Rq Serialization VecMat Correctness.
 
 theory MLKEM_PolyAVX.
 
@@ -58,7 +63,7 @@ proof.
   rewrite lezNgt in k_lb.
   rewrite filliE 1:/# k_lb /=.
   rewrite -lezNgt in k_lb.
-  rewrite -_a_def 1:/# //=.
+  rewrite -_a_def 1:/# 1:// /=.
 
   rewrite /signed_bound_cxq => k [k_lb k_ub].
   rewrite lezNgt in k_lb.
@@ -70,7 +75,7 @@ proof.
   rewrite filliE 1:/# /= initiE 1:/# /=.
   case (16 * i{hr} <= k) => k_tlb.
     + rewrite k_ub /=.
-      do rewrite lift2poly_iso //=.
+      do rewrite lift2poly_iso 1..2://.
       move : (add_corr_qv rp{hr}.[k] bp{hr}.[k] _a.[k] _b.[k] 6 3 _ _ _ _ _ _) => />;
         1,2:by smt(Array256.initiE Array256.mapiE Array256.tP).
       rewrite /signed_bound_cxq in sgnd_bnd_hrp_a.
@@ -97,7 +102,7 @@ proof.
   rewrite filliE 1:/# /= initiE 1:/# /=.
   case (16 * i{hr} <= k) => k_tlb.
     + rewrite k_ub /=.
-      do (rewrite lift2poly_iso //=).
+      do (rewrite lift2poly_iso 1..2:// /=).
       rewrite to_sintD_small => />.
         move : (sgnd_bnd_hrp_a k _); first by smt().
         move : (sgnd_bnd_bp k _); first by smt().
@@ -108,7 +113,7 @@ proof.
       rewrite _b_def mapiE 1:/# //=.
     + simplify.
       rewrite -ltzNge in k_tlb.
-      rewrite lrp_def //=.
+      rewrite lrp_def 1..2://.
 qed.
 
 lemma poly_add_ll : islossless Mprevec.poly_add2.
@@ -1268,15 +1273,15 @@ proof.
               rewrite /q.
               rewrite shlMP 1:/#.
               rewrite to_sintM_small.
-                rewrite (W16.of_sintK 128) /smod //=.
+                rewrite (W16.of_sintK 128) /smod 1:// /=.
                 rewrite (_: W16.smod (to_uint (b `>>>` 4) %% 2 ^ 4 * 2^4 %% W16.modulus) = to_uint (b `>>>` 4) %% 2 ^ 4 * 2^4).
                   rewrite /smod /=.
                   smt(pmod_small @Int @IntDiv @Ring.IntID).
                 smt(pmod_small @Int @IntDiv @Ring.IntID).
-              rewrite (W16.of_sintK 128) /(W16.smod 128) //=.
+              rewrite (W16.of_sintK 128) /(W16.smod 128) 1:// /=.
               rewrite (Montgomery16.smod_small (to_uint (b `>>>` 4) %% 16 * 16)). by move : (modz_cmp (W16.to_uint (b `>>>` 4)) 16) => /#.
-              rewrite /(W16.smod 3329) //=.
-              rewrite (mulzA _ (2^4) 128) //=.
+              rewrite /(W16.smod 3329) 1:// /=.
+              rewrite (mulzA _ (2^4) 128) 1:// /=.
               do rewrite shr_shrw 1:/#.
               rewrite shrDP 1:/#.
               rewrite -of_intD shrDP 1:/# of_uintK.
@@ -3003,7 +3008,7 @@ proof.
       rewrite /sl.
       rewrite of_uintK.
       rewrite pmod_small. by smt().
-      rewrite pmod_small. by smt().
+(*      rewrite pmod_small. by smt().*)
       rewrite initiE //=.
       rewrite (_: 15 - (15 - (linear_idx %% 32 + n) %% 16) = (linear_idx %% 32 + n) %% 16). smt().
       rewrite bits16E /k divzE.
@@ -3011,7 +3016,7 @@ proof.
       rewrite -addzA addNz addz0.
       rewrite /W32.(`<<`) /W32.(`<<<`).
       rewrite initiE 1:/# //=.
-      rewrite modz_dvd 1:/# (pmod_small n) //=; first by smt().
+      rewrite (*modz_dvd 1:/#*) (pmod_small n) //=; first by smt().
       rewrite -(addzA _ n) addzN addz0.
       rewrite pack4wE 1:/# //=.
       rewrite initiE 1:/# //=.
@@ -4981,7 +4986,7 @@ proof.
       have -> //=: 192 * i{2} + 0 < 192 * i{2} + 192. smt().
       have idx_mod: forall k, 0 <= k < 32 => ((192 * i{2} + k) %% 3 = k %% 3). smt().
       do (rewrite idx_mod 1:/#).
-      rewrite (_: 192 * i{2} %% 3 = 0) //=. smt().
+      rewrite (_: 192 * i{2} %% 3 = 0) 1:// /=. smt().
       rewrite modzMr.
       do (rewrite (mulzC 192 i{2}) || rewrite modzMDl || rewrite (pmod_small _ 192) 1:/#).
       simplify.

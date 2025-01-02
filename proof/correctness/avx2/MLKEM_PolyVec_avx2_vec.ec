@@ -1,9 +1,10 @@
 require import AllCore List Int IntDiv CoreMap.
+
 from Jasmin require import JModel.
-require import Array16 Array32 Array128 Array256 Array400 Array768 Array960.
-require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800 WArray960.
+from JazzEC require import Array16 Array32 Array128 Array256 Array400 Array768 Array960.
+from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800 WArray960.
 require import AVX2_Ops.
-require import Jkem_avx2.
+from JazzEC require import Jkem_avx2.
 require import MLKEM_Poly_avx2_vec.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_avx2_auxlemmas.

@@ -1,6 +1,9 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
+
 from Jasmin require import JModel JWord.
-require import Array16 W16extra WArray512 WArray32 WArray16.
+from JazzEC require import Array16 WArray512 WArray32 WArray16.
+
+require import W16extra.
 
 require import Fq MLKEM_Poly MLKEMFCLib.
 require import AVX2_Ops MLKEM_Poly_avx2_prevec.
@@ -16,7 +19,7 @@ theory Fq_avx2.
 
 require import MLKEM_avx2_encdec.
 
-require import Jkem_avx2.
+from JazzEC require import Jkem_avx2.
 
 (*
 import MLKEM.
@@ -408,7 +411,7 @@ proof.
                           ((sigextu32 a{2}.[i] * sigextu32 b{2}.[i] * (W32.of_int 62209) `<<`
                           (W8.of_int 16)) `|>>` (W8.of_int 16)) * (W32.of_int 3329) `|>>` (W8.of_int 16)))).
     apply Array16.ext_eq => x x_i.
-    do (rewrite get_setE 1://= //=).
+    do (rewrite get_setE 1://= 1:// /=).
     rewrite initiE 1:x_i //=.
     smt().
 
@@ -643,7 +646,9 @@ have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%
 byphoare => //; apply fqmulx16_ll.
 qed.
 
-require import GFq Correctness. import Zq.
+from CryptoSpecs require import GFq Correctness.
+import Zq.
+
 lemma compress_avx2_impl_small (a: W16.t):
   bpos16 a q =>
   msb

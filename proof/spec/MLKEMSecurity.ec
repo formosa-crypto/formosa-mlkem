@@ -1,11 +1,13 @@
 require import AllCore  IntDiv Distr List DList KEM_ROM.
-require import Array25 Array32 Array64 Array128 Array168 Array256 Array384.
-require import Array768 Array960 Array1024 Array1152.
+
 from Jasmin require import JWord.
+from JazzEC require import Array25 Array32 Array64 Array128 Array168 Array256 Array384.
+from JazzEC require import Array768 Array960 Array1024 Array1152.
+
+from CryptoSpecs require import GFq Rq  VecMat Sampling Symmetric Serialization.
+from CryptoSpecs require import InnerPKE MLKEM Correctness EncDecCorrectness MLKEMLib.
 
 require import MLWE_PKE_Hash.
-require import GFq Rq  VecMat Sampling Symmetric Serialization.
-require import InnerPKE MLKEM Correctness EncDecCorrectness MLKEMLib.
 
 import Zq PolyVec PolyMat InnerPKE.
 
@@ -916,7 +918,6 @@ qed.
 (* At this point we get some nice equivalences to the abstract sch *)
 (*******************************************************************)
 
-require import EncDecCorrectness.
 equiv keygen_eq : 
   FO_MLKEM.FO_K(FO_MLKEM.KEMROM.RO.RO).kg ~ MLKEM_Op(SPEC_MODEL.RO.RO).kg :
    (glob FO_MLKEM.KEMROM.RO.RO){1}=(glob SPEC_MODEL.RO.RO){2} 

@@ -8,9 +8,10 @@ import Zq IntOrder BitReverse.
 import NTTequiv.
 
 from Jasmin require import JModel.
-require import Array16 Array128  Array256 Array400.
+from JazzEC require import Array16 Array128  Array256 Array400.
+
 require import MLKEMFCLib.
-require import Array400 WArray32 WArray800 WArray512.
+from JazzEC require import Array400 WArray32 WArray800 WArray512.
 
 
 (** DIFFERENT VIEWS ON POLYS *)

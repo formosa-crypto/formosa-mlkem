@@ -1,7 +1,10 @@
-require import AllCore List IntDiv Ring StdOrder BitEncoding  Array256 Array128.
-require import GFq Rq Fq.
-require import Correctness.
-require import Fastexp.
+require import AllCore List IntDiv Ring StdOrder BitEncoding.
+
+from JazzEC require import Array256 Array128.
+
+from CryptoSpecs require import GFq Rq Correctness.
+
+require import Fq Fastexp.
 
 import Zq IntOrder BitReverse.
 

@@ -1,10 +1,15 @@
 require import AllCore IntDiv List.
-require import Jkem_avx2 Jkem_avx2_stack  MLKEM_InnerPKE_avx2 MLKEM.
+
+from JazzEC require import Jkem_avx2 Jkem_avx2_stack.
+
+require import MLKEM_InnerPKE_avx2.
+
 from Jasmin require import JModel_x86.
 
-require import Array32 Array33 Array64 Array148 Array256 Array768 Array960 Array128 Array1088 Array1152 Array1184 Array2304 Array2400.
-require import Array8 WArray32 WArray33 Array300 WArray64 WArray1184 WArray2400.
-import MLKEM InnerPKE.
+from JazzEC require import Array32 Array33 Array64 Array148 Array256 Array768 Array960 Array128 Array1088 Array1152 Array1184 Array2304 Array2400.
+from JazzEC require import Array8 WArray32 WArray33 Array300 WArray64 WArray1184 WArray2400.
+
+from CryptoSpecs require import MLKEM InnerPKE.
 
 module Mix = {
   

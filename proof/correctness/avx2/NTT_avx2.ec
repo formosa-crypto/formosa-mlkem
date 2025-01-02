@@ -1,12 +1,16 @@
 require import AllCore List Int IntDiv CoreMap Real Number Ring StdOrder BitEncoding.
+
 from Jasmin require import JModel.
-require import Array256 Array128  Array16.
-require import Array256 Array128 Array32 Array16 Array768 Array2304.
+from JazzEC require import Array256 Array128  Array16.
+from JazzEC require import Array256 Array128 Array32 Array16 Array768 Array2304.
+
 require import MLKEMFCLib.
 require import MLKEM_PolyVec.
 require import NTT_Fq.
 require import AVX2_Ops.
-import GFq Rq Serialization VecMat Correctness.
+
+from CryptoSpecs require import GFq Rq Serialization VecMat Correctness.
+
 import MLKEM_PolyVec.
 import Zq IntOrder BitReverse.
 import PolyVec PolyMat.
@@ -652,7 +656,7 @@ pose a:= nttunpack_idx.[k].
 rewrite initiE //= mapiE //=. smt(nttunpack_bnd Array256.allP).
 qed.
 
-require import Jkem_avx2 Jkem.
+from JazzEC require import Jkem_avx2 Jkem.
 require import NTT_AVX_Fq NTT_AVX_j.
 
 lemma perm_ntt_nttpackE ['a] (p: 'a Array256.t):

@@ -1,10 +1,13 @@
 require import AllCore List IntDiv CoreMap.
-from Jasmin require  import JModel JMemory.
-require import W16extra Array1152 Array960 Array256 Array384 Array128 Array768.
-require import GFq Rq Serialization VecMat MLKEM Correctness Fq MLKEM_Poly NTT_Fq NTTAlgebra  MLKEMFCLib.
+
+from Jasmin require import JModel JMemory.
+from JazzEC require import Array1152 Array960 Array256 Array384 Array128 Array768.
+from CryptoSpecs require import GFq Rq Serialization VecMat MLKEM Correctness.
+require import W16extra.
+require import Fq MLKEM_Poly NTT_Fq NTTAlgebra MLKEMFCLib.
 
 
-require import Jkem.
+from JazzEC require import Jkem.
 
 theory MLKEM_PolyVec.
 
@@ -98,7 +101,7 @@ rewrite orw_disjoint.
 + rewrite /W16.(`&`); apply W16.ext_eq => k kb.
   rewrite !map2iE // zerowE.
   rewrite /truncateu16 (_:1023 = 2^10-1) // !W64.and_mod //= /(`<<`) /(`>>`) /= kb /=.
-  rewrite !(modz_small _ 256) 1,2:/# !(modz_small _ 16) 1,2:/#.
+  rewrite !(modz_small _ 256) 1,2:/#.
   case (!(d <= k < 6+d)); first by smt(W16.get_out).
   move => *; rewrite !get_to_uint.  
   rewrite !of_uintK /= !(modz_small _ 18446744073709551616) 1,2:/# !(modz_small _ 65536) 1,2:/# /=.
@@ -107,13 +110,13 @@ rewrite orw_disjoint.
 have -> : 1023 = 2^10-1 by auto;rewrite !and_mod //.
 rewrite /truncateu16 !W64.and_mod //= /(`<<`) /(`>>`) /=. 
   rewrite to_uintD_small.
-+ rewrite !(modz_small _ 256) 1,2:/# !(modz_small _ 16) 1,2:/#.
++ rewrite !(modz_small _ 256) 1,2:/#.
   rewrite !of_uintK /= !(modz_small _ 18446744073709551616) 1,2:/#.
   rewrite W16.to_uint_shr 1:/# W16.to_uint_shl 1:/# /=.
   by rewrite !of_uintK /=  !(modz_small _ 65536) /#.
 rewrite shlMP /= 1:/# shrDP /= 1:/# !of_uintK /=. 
 rewrite !(modz_small _ 18446744073709551616) 1,2:/# .
-rewrite !(modz_small _ 256) 1,2:/#  !(modz_small _ 16) 1,2:/#.
+rewrite !(modz_small _ 256) 1,2:/#.
 by rewrite !(modz_small _ 65536) /#.
 qed.
 
