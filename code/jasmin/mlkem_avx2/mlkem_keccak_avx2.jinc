@@ -106,9 +106,8 @@ fn _shake256_M32__M32_M1088
 { reg u256[7] st;
   stack u64[25] pst_s;
   reg ptr u64[25] pst;
-  st = __state_init_avx2();
   pst = pst_s;
-  pst = __pstate_init_avx2(pst);
+  pst, st = __pstate_init_avx2(pst);
   pst, _, st, _ = __pabsorb_imem_avx2(pst, 0, st, in0, 32, R136, UNFINISHED);
   pst, _, st, _ = __pabsorb_imem_avx2(pst, 32, st, in1, 1088, R136, SHAKE);
   _, _ = __squeeze_imem_avx2(out, 32, st, R136);
@@ -123,9 +122,8 @@ fn _shake256_A128__A32_A1
   stack u64[25] pst_s;
   reg ptr u64[25] pst;
   reg u64 offset;
-  st = __state_init_avx2();
   pst_s = pst;
-  pst = __pstate_init_avx2(pst);
+  pst, st = __pstate_init_avx2(pst);
   offset = 0;
   pst, _, st, _ = A32::__pabsorb_array_avx2(pst, 0, st, seed, offset, 32, R136, UNFINISHED);
   offset = 0;
@@ -169,9 +167,8 @@ fn _shake128_absorb_A32_A2
   stack u64[25] pst_s;
   reg ptr u64[25] pst;
   reg u64 offset;
-  st = __state_init_avx2();
   pst = pst_s;
-  pst = __pstate_init_avx2(pst);
+  pst, st = __pstate_init_avx2(pst);
   offset = 0;
   pst, _, st, _ = A32::__pabsorb_array_avx2(pst, 0, st, seed, offset, 32, R168, UNFINISHED);
   offset = 0;

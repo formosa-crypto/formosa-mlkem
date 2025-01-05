@@ -2,6 +2,7 @@ require import AllCore IntDiv List.
 
 from Jasmin require import JModel.
 
+from CryptoSpecs require import JWordList.
 from CryptoSpecs require export FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
 from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
@@ -9,140 +10,773 @@ from CryptoSpecs require import Symmetric.
 require import MLKEMFCLib.
 from JazzEC require import Jkem_avx2.
 
-from JazzEC require import Array1.   (* nonce *)
-from JazzEC require import Array2.   (* mat. position *)
-from JazzEC require import Array8.   (* mat. indexes *)
-from JazzEC require import Array32.  (* SEED SIZE *)
-from JazzEC require import Array33.  (* DS SEED SIZE *)
-from JazzEC require import Array64.
-from JazzEC require import Array128.
-from JazzEC require import Array536. (* BUF_SIZE *)
-from JazzEC require import Array960.
-from JazzEC require import Array1152.
-from JazzEC require import Array1184.
-from JazzEC require import Array2144. (* 4*BUF_SIZE *) 
+(****************************************************************************)
+(****************************************************************************)
+from Keccak require import Keccak1600_avx2.
+
+equiv state_init_avx2_eq:
+ M(Syscall).__state_init_avx2 ~ Jazz_avx2.M.__state_init_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+equiv pstate_init_avx2_eq:
+ M(Syscall).__pstate_init_avx2 ~ Jazz_avx2.M.__pstate_init_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+equiv addratebit_avx2_eq:
+ M(Syscall).__addratebit_avx2 ~ Jazz_avx2.M.__addratebit_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+(****************************************************************************)
+(****************************************************************************)
+
+from Keccak require import Keccak1600_imem_avx2.
+
+equiv absorb_imem_avx2_eq:
+ M(Syscall).__absorb_imem_avx2 ~ Jazz_avx2.M.__absorb_imem_avx2
+ : ={arg,Glob.mem} ==> ={res,Glob.mem}
+ by sim.
+
+equiv pabsorb_imem_avx2_eq:
+ M(Syscall).__pabsorb_imem_avx2 ~ Jazz_avx2.M.__pabsorb_imem_avx2
+ : ={arg,Glob.mem} ==> ={res,Glob.mem}
+ by sim.
+
+equiv squeeze_imem_avx2_eq:
+ M(Syscall).__squeeze_imem_avx2 ~ Jazz_avx2.M.__squeeze_imem_avx2
+ : ={arg,Glob.mem} ==> ={res,Glob.mem}.
+admitted(*
+ by proc; inline*; sim.*).
+
+(****************************************************************************)
+(****************************************************************************)
 
 
-from JazzEC require import Array7.
+from Keccak require Keccak1600_array_avx2.
 
-op stmatch_avx2 (st: state) (stavx2: W256.t Array7.t): bool.
-
-op stavx2bytes (stavx2: W256.t Array7.t): W8.t list.
-op bytes2stavx2 (bs: W8.t list): W256.t Array7.t.
-
-op stavx2_from_state (st: state): W256.t Array7.t.
-op stavx2_to_state (st: W256.t Array7.t): state.
+(****************************************************************************)
+from JazzEC require import Array1 WArray1.   (* nonce *)
 
 (*
-hoare sha3_256A_M1184_h _in:
- M(Syscall)._sha3_256A_M1184
- : in_0 = _in ==> to_list res = SHA3_256 _in.
+clone Keccak1600_array_avx2.KeccakAvx2 as KeccakAvx2_A1
+ with op aSIZE <- 1,
+      theory A <- Array1,
+      theory WA <- WArray1
+      proof aSIZE_ge0 by done.
+
+
+A1:
+a1____addstate_array_avx2x4
+a1____absorb_array_avx2x4
 *)
 
+
+(****************************************************************************)
+from JazzEC require import Array2 WArray2.   (* mat. position *)
+
+clone Keccak1600_array_avx2.KeccakArrayAvx2 as A2avx2
+ with op aSIZE <- 2,
+      theory A <- Array2,
+      theory WA <- WArray2
+      proof aSIZE_ge0 by done.
+
+equiv a2__pabsorb_array_avx2_eq:
+ M(Syscall).a2____pabsorb_array_avx2 ~ A2avx2.M(A2avx2.P).__pabsorb_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+(*
+
+A2:
+a2____addstate_array_avx2
+a2____pstate_array_avx2
+a2____pabsorb_array_avx2
+a2____addstate_array_avx2x4
+a2____absorb_array_avx2x4
+
+*)
+
+(****************************************************************************)
+from JazzEC require import Array32 WArray32.  (* SEED SIZE *)
+
+clone Keccak1600_array_avx2.KeccakArrayAvx2 as A32avx2
+ with op aSIZE <- 32,
+      theory A <- Array32,
+      theory WA <- WArray32
+      proof aSIZE_ge0 by done.
+
+equiv a32__pabsorb_array_avx2_eq:
+ M(Syscall).a32____pabsorb_array_avx2 ~ A32avx2.M(A32avx2.P).__pabsorb_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+equiv a32__squeeze_array_avx2_eq:
+ M(Syscall).a32____squeeze_array_avx2 ~ A32avx2.M(A32avx2.P).__squeeze_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+(*
+A32:
+- a32____addstate_array_avx2
+- a32____pstate_array_avx2
++ a32____pabsorb_array_avx2
+- a32____dumpstate_array_avx2
++ a32____squeeze_array_avx2
+- a32____addstate_bcast_array_avx2x4
+a32____absorb_bcast_array_avx2x4
+*)
+
+(****************************************************************************)
+from JazzEC require import Array33 WArray33.  (* DS SEED SIZE *)
+
+clone Keccak1600_array_avx2.KeccakArrayAvx2 as A33avx2
+ with op aSIZE <- 33,
+      theory A <- Array33,
+      theory WA <- WArray33
+      proof aSIZE_ge0 by done.
+
+equiv a33__absorb_array_avx2_eq:
+ M(Syscall).a33____absorb_array_avx2 ~ A33avx2.M(A33avx2.P).__absorb_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+(*
+A33:
+- a33____addstate_array_avx2
++ a33____absorb_array_avx2
+*)
+
+
+(****************************************************************************)
+from JazzEC require import Array64 WArray64.  (* DS SEED SIZE *)
+
+clone Keccak1600_array_avx2.KeccakArrayAvx2 as A64avx2
+ with op aSIZE <- 64,
+      theory A <- Array64,
+      theory WA <- WArray64
+      proof aSIZE_ge0 by done.
+
+equiv a64__absorb_array_avx2_eq:
+ M(Syscall).a64____absorb_array_avx2 ~ A64avx2.M(A64avx2.P).__absorb_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+equiv a64__squeeze_array_avx2_eq:
+ M(Syscall).a64____squeeze_array_avx2 ~ A64avx2.M(A64avx2.P).__squeeze_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+(*
+A64:
+- a64____addstate_array_avx2
++ a64____absorb_array_avx2
+- a64____dumpstate_array_avx2
++ a64____squeeze_array_avx2
+*)
+
+(****************************************************************************)
+from JazzEC require import Array536 WArray536. (* BUF_SIZE *)
+
+clone Keccak1600_array_avx2.KeccakArrayAvx2 as ABUFLENavx2
+ with op aSIZE <- 536,
+      theory A <- Array536,
+      theory WA <- WArray536
+      proof aSIZE_ge0 by done.
+
+equiv aBUFLEN__dumpstate_array_avx2_eq:
+ M(Syscall).aBUFLEN____dumpstate_array_avx2 ~ ABUFLENavx2.M(ABUFLENavx2.P).__dumpstate_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
+(*
+ABUFLEN:
++ dumpstate_array_avx2
+dumpstate_array_avx2x4
+*)
+
+
+(****************************************************************************)
+(****************************************************************************)
+
+
+from JazzEC require import Array8.   (* mat. indexes *)
+(* from JazzEC require import Array128 WArray128.
+from JazzEC require import Array960.
+from JazzEC require import Array1152.
+from JazzEC require import Array1184. *)
+from JazzEC require import Array2144. (* 4*BUF_SIZE *) 
+from JazzEC require import Array7.
+
+(* Keccak library interface
+Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512A_A64
+Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_256A_M1184
+Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_M32__M32_M1088
+Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_next_state
+Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1
+Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb_A32_A2
+Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeeze3blocks
+Jkem_avx2.M(Jkem_avx2.Syscall)._shake128x4_absorb_A32_A2
+Jkem_avx2.M(Jkem_avx2.Syscall)._shake128x4_squeeze3blocks
+ *)
+module K = {
+  proc _sha3_512A_A33(out : W8.t Array64.t, in_0 : W8.t Array33.t) :
+    W8.t Array64.t = {
+    var st : W256.t Array7.t;
+    var offset : W64.t;
+    var _0 : W64.t;
+    var _1 : W256.t Array7.t;
+    
+    _1 <- witness;
+    st <- witness;
+    st <@ Jazz_avx2.M.__state_init_avx2();
+    offset <- W64.zero;
+    (st, _0) <@ A33avx2.M(A33avx2.P).__absorb_array_avx2(st, in_0, offset, 33, 72, 6);
+    offset <- W64.zero;
+    (out, _1) <@ A64avx2.M(A64avx2.P).__squeeze_array_avx2(out, offset, 64, st, 72);
+    
+    return out;
+  }
+  proc _sha3_256A_M1184(out : W8.t Array32.t, in_0 : W64.t) : W8.t Array32.t = {
+    var st : W256.t t;
+    var offset : W64.t;
+    var _0 : W64.t;
+    var _1 : W256.t t;
+    
+    _1 <- witness;
+    st <- witness;
+    st <@ Jazz_avx2.M.__state_init_avx2();
+    (st, _0) <@ Jazz_avx2.M.__absorb_imem_avx2(st, in_0, 1184, 136, 6);
+    offset <- W64.zero;
+    (out, _1) <@ A32avx2.M(A32avx2.P).__squeeze_array_avx2(out, offset, 32, st, 136);
+    
+    return out;
+  }
+  proc _shake256_M32__M32_M1088(out : W64.t, in0 : W64.t, in1 : W64.t) : unit = {
+    var pst_s : W64.t Array25.t;
+    var pst : W64.t Array25.t;
+    var st : W256.t t;
+    var _0 : int;
+    var _1 : W64.t;
+    var _2 : int;
+    var _3 : W64.t;
+    var _4 : W64.t;
+    var _5 : W256.t t;
+    
+    _5 <- witness;
+    pst <- witness;
+    pst_s <- witness;
+    st <- witness;
+    pst <- pst_s;
+    (pst, st) <@ Jazz_avx2.M.__pstate_init_avx2(pst);
+    (pst, _0, st, _1) <@
+      Jazz_avx2.M.__pabsorb_imem_avx2(pst, 0, st, in0, 32, 136, 0);
+    (pst, _2, st, _3) <@
+      Jazz_avx2.M.__pabsorb_imem_avx2(pst, 32, st, in1, 1088, 136, 31);
+    (_4, _5) <@ Jazz_avx2.M.__squeeze_imem_avx2(out, 32, st, 136);
+    
+    return tt;
+  }
+  proc _shake128_absorb_A32_A2(seed : W8.t Array32.t, pos : W8.t Array2.t) :
+    W256.t t = {
+    var st : W256.t t;
+    var pst_s : W64.t Array25.t;
+    var pst : W64.t Array25.t;
+    var offset : W64.t;
+    var _0 : int;
+    var _1 : W64.t;
+    var _2 : int;
+    var _3 : W64.t;
+    
+    pst <- witness;
+    pst_s <- witness;
+    st <- witness;
+    pst <- pst_s;
+    (pst, st) <@ Jazz_avx2.M.__pstate_init_avx2(pst);
+    offset <- W64.zero;
+    (pst, _0, st, _1) <@
+      A32avx2.M(A32avx2.P).__pabsorb_array_avx2(pst, 0, st, seed, offset, 32, 168, 0);
+    offset <- W64.zero;
+    (pst, _2, st, _3) <@
+      A2avx2.M(A2avx2.P).__pabsorb_array_avx2(pst, 32, st, pos, offset, 2, 168, 31);
+    
+    return st;
+  }
+  proc _shake128_squeeze3blocks(buf : W8.t Array536.t, st : W256.t t) :
+    W8.t Array536.t = {
+    var offset : W64.t;
+    
+    st <@ Jazz_avx2.M._keccakf1600_avx2(st);
+    offset <- W64.zero;
+    (buf, offset) <@
+      ABUFLENavx2.M(ABUFLENavx2.P).__dumpstate_array_avx2(buf, offset, 168, st);
+    st <@ Jazz_avx2.M._keccakf1600_avx2(st);
+    (buf, offset) <@
+      ABUFLENavx2.M(ABUFLENavx2.P).__dumpstate_array_avx2(buf, offset, 168, st);
+    st <@ Jazz_avx2.M._keccakf1600_avx2(st);
+    (buf, offset) <@
+      ABUFLENavx2.M(ABUFLENavx2.P).__dumpstate_array_avx2(buf, offset, 200, st);
+    
+    return buf;
+  }
+  proc _shake128_next_state(buf : W8.t Array536.t) : W8.t Array536.t = {
+    var pst : W64.t Array25.t;
+    var st : W256.t t;
+    var offset : W64.t;
+    var _0 : W64.t;
+    
+    pst <- witness;
+    st <- witness;
+    pst <-
+      (init
+         (fun (i : int) =>
+            get64 ((init8 (fun (i0 : int) => buf.[i0])))%WArray536
+              (2 * (168 %/ 8) + i)))%Array25;
+    st <@ Jazz_avx2.M.__state_from_pstate_avx2(pst);
+    st <@ Jazz_avx2.M._keccakf1600_avx2(st);
+    offset <- (of_int (2 * 168))%W64;
+    (buf, _0) <@ ABUFLENavx2.M(ABUFLENavx2.P).__dumpstate_array_avx2(buf, offset, 200, st);
+    
+    return buf;
+  }
+}.
+
+(*********************************************************************************)
+equiv sha3_512A_A33_eq:
+  M(Syscall)._sha3_512A_A33 ~ K._sha3_512A_A33
+ : ={arg} ==> ={res}
+by sim.
+
+hoare sha3_512A_A33_h' _in:
+ K._sha3_512A_A33
+ : in_0 = _in
+ ==> to_list res = SHA3_512 (to_list _in).
+proof.
+proc.
+ecall (A64avx2.squeeze_array_avx2_h out offset 64 st 72).
+wp; ecall (A33avx2.absorb_array_avx2_h st in_0 offset 33 72 6).
+wp; call state_init_avx2_h.
+auto => |> &m [st ?] /= -> _ [out st2] /= -> Hst2.
+rewrite stavx2_from_st25K -(Array64.of_listK W8.zero (SHA3_512 _)).
+ by rewrite size_SQUEEZE1600 /#.
+congr; rewrite tP => i Hi.
+rewrite initiE // filliE //= Hi /=.
+by congr; rewrite /SHA3_512 /c1024_r8 /KECCAK1600; congr; congr => //.
+qed.
+
+(* IF NEEDED...
 hoare sha3_512A_A33_h _in:
  M(Syscall)._sha3_512A_A33
  : in_0 = _in
  ==> to_list res = SHA3_512 (to_list _in).
-admitted.
+proof.
+by conseq sha3_512A_A33_eq (sha3_512A_A33_h' _in) => // /#.
+qed.
+*)
+
+lemma sha3_512A_A33_ll: islossless K._sha3_512A_A33.
+proc.
+call A64avx2.squeeze_array_avx2_ll.
+wp; call A33avx2.absorb_array_avx2_ll.
+wp; call state_init_avx2_ll.
+by auto.
+qed.
+
+phoare sha3_512A_A33_ph' _in:
+ [ K._sha3_512A_A33
+ : in_0 = _in
+ ==> to_list res = SHA3_512 (to_list _in)
+ ] = 1%r.
+proof.
+by conseq sha3_512A_A33_ll (sha3_512A_A33_h' _in).
+qed.
 
 phoare sha3_512A_A33_ph _in:
  [ M(Syscall)._sha3_512A_A33
  : in_0 = _in
- ==> res = Array64.of_list W8.zero (SHA3_512 (to_list _in))
+ ==> to_list res = SHA3_512 (to_list _in)
  ] = 1%r.
-admitted.
-
-
-(* sha3 assumptions from MLKEM_KEM_avx2 *)
-axiom sha3_256A_M1184_ph mem _ptr:
- phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_256A_M1184
-        : arg.`2 = W64.of_int _ptr /\
-          valid_ptr _ptr 1184 /\
-          Glob.mem = mem
-          ==> 
-          Glob.mem = mem /\
-          res = SHA3_256_1184_32
-            (Array1152.init (fun k =>  mem.[_ptr+k]),
-            (Array32.init (fun k => mem.[_ptr+1152+k])))] = 1%r.
-
-axiom sha3_512A_A64_ph buf inp: 
- phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512A_A64
-        : arg = (inp,buf)
-        ==> 
-        let bytes = SHA3_512_64_64 (Array32.init (fun k => buf.[k])) 
-                                   (Array32.init (fun k => buf.[k+32])) in
-        res = Array64.init (fun k => if k < 32 then bytes.`1.[k] else bytes.`2.[k-32])] = 1%r.
-
-
-axiom shake256_M32__M32_M1088_ph mem _pout _pin1 _pin2: 
- phoare [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_M32__M32_M1088
-        : arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2) /\
-          valid_ptr _pout 32 /\
-          valid_ptr _pin1 32 /\
-          valid_ptr _pin2 1088 /\
-          Glob.mem = mem
-          ==> 
-          touches Glob.mem mem _pout 32 /\
-          (Array32.init (fun k =>  Glob.mem.[_pout+k])) = 
-             SHAKE_256_1120_32 (Array32.init (fun k => mem.[_pin1+k])) 
-                            (Array960.init (fun k => mem.[_pin2+k]), Array128.init (fun k => mem.[_pin2+960+k])) ] = 1%r.
-
+proof.
+by conseq sha3_512A_A33_eq (sha3_512A_A33_ph' _in) => // /#.
+qed.
 
 (*
-hoare shake256_M32__M32_M1088_h _in0 _in1:
- M(Syscall)._shake256_M32__M32_M1088
- : in0 = _in0 /\ in1 = _in1
- ==> res = SHAKE256 (to_list _in) 32.
-admitted.
+(* Alternatively, we might have tackled directly the final phoare result... But
+  we loose the ability of using 'ecall' and need to give explicit contracts for
+  every call to the library functions.  *)
+phoare sha3_512A_A33_phX _in:
+ [ M(Syscall)._sha3_512A_A33
+ : in_0 = _in
+ ==> to_list res = SHA3_512 (to_list _in)
+ ] = 1%r.
+proof.
+proc => /=.
+call (: offset=W64.of_int 0 /\ lEN=64 /\ rATE8=72 /\ absorb_spec_avx2 rATE8 6 (to_list _in) st
+ ==> to_list res.`1 = SHA3_512 (to_list _in)).
+ exlim st, buf, rATE8 => _st _buf _r8.
+ conseq  a64__squeeze_array_avx2_eq (A64avx2.squeeze_array_avx2_ph _buf W64.zero 64 _st 72) => //=.
+  by move => /> &m *; exists arg{m} => />. 
+ move=> /> &m -> _.
+ rewrite -(Array64.of_listK W8.zero (SHA3_512 (to_list _in))).
+  rewrite size_SQUEEZE1600 /#.
+ congr; rewrite tP => i Hi.
+ rewrite initiE // filliE //= Hi /=.
+ congr; rewrite /SHA3_512 /c1024_r8 /KECCAK1600; congr.
+ (* etc... *).
+wp; call (: st=stavx2_st0 /\ buf=_in /\ offset=W64.of_int 0 /\ lEN=33 /\ rATE8=72 /\ tRAILB=6 ==> absorb_spec_avx2 72 6 (to_list _in) res.`1 ).
+ conseq a33__absorb_array_avx2_eq (A33avx2.absorb_array_avx2_ph stavx2_st0 _in W64.zero 33 72 6) => //.
+ move=> &m H; exists arg{m}; move: H => /> ? -> ??? /= /#.
+wp; call (:true ==> res = stavx2_st0).
+ conseq state_init_avx2_eq state_init_avx2_ph => //=.
+by auto => />.
+qed.
 *)
 
-(*
-*)
 
-(*
-hoare shake128_absorb_A32_A2_h _seed _pos:
- M(Syscall)._shake128_absorb_A32_A2
- : seed = _seed /\ pos = _pos
- ==> res = stavx2_from_st25 (SHAKE128_ABSORB (to_list _seed ++ to_list _pos)).
-admitted.
-*)
+(*********************************************************************************)
+from JazzEC require import Array1152.
+equiv sha3_256A_M1184_eq:
+  M(Syscall)._sha3_256A_M1184 ~ K._sha3_256A_M1184
+ : ={arg, Glob.mem} ==> ={res, Glob.mem}
+ by sim.
 
-(*
-_shake128x4_absorb_A32_A2
-*)
+hoare sha3_256A_M1184_h' _mem _in:
+ K._sha3_256A_M1184
+ : arg.`2 = W64.of_int _in /\
+   valid_ptr _in 1184 /\
+   Glob.mem = _mem
+ ==> 
+   Glob.mem = _mem /\
+   res = SHA3_256_1184_32
+            (Array1152.init (fun k =>  _mem.[_in+k]),
+            (Array32.init (fun k => _mem.[_in+1152+k]))).
+proof.
+proc => /=.
+ecall (A32avx2.squeeze_array_avx2_h out offset 32 st 136).
+wp; ecall (absorb_imem_avx2_h Glob.mem st in_0 1184 136 6).
+wp; call state_init_avx2_h.
+auto =>  /> &m; rewrite !of_uintK /= => /> ??; split; first smt().
+move=> _ [st ?]; rewrite modz_small 1:/# /= => -> _.
+move=> [_out ?] /= -> _.
+rewrite /SHA3_256_1184_32 stavx2_from_st25K /= tP => i Hi.
+rewrite initiE // filliE //= Hi /=.
+rewrite /SHA3_256 /c512_r8 /KECCAK1600; congr; congr; congr => //.
+rewrite (memread_split 1152) 1://; congr.
+ by apply eq_in_mkseq => j Hj /=; rewrite initiE.
+by apply eq_in_mkseq => j Hj /=; rewrite initiE.
+qed.
 
-(*
-_shake128_squeeze3blocks
-*)
+phoare sha3_256A_M1184_ll: 
+ [ K._sha3_256A_M1184 : valid_ptr (to_uint in_0) 1184 ==> true ] = 1%r.
+proof.
+proc.
+call A32avx2.squeeze_array_avx2_ll.
+wp; call absorb_imem_avx2_ll.
+call state_init_avx2_ll.
+by auto => />.
+qed.
 
-hoare shake128_next_state_h _buf:
- Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_next_state
+phoare sha3_256A_M1184_ph' _mem _in:
+ [ K._sha3_256A_M1184
+ : arg.`2 = W64.of_int _in /\
+   valid_ptr _in 1184 /\
+   Glob.mem = _mem
+ ==> 
+   Glob.mem = _mem /\
+   res = SHA3_256_1184_32
+            (Array1152.init (fun k =>  _mem.[_in+k]),
+            (Array32.init (fun k => _mem.[_in+1152+k])))
+ ] = 1%r.
+proof.
+conseq sha3_256A_M1184_ll (sha3_256A_M1184_h' _mem _in) => //.
+by move=> /> &m ->*; rewrite of_uintK; smt(W64.to_uint_cmp).
+qed.
+
+phoare sha3_256A_M1184_ph _mem _in:
+ [ M(Syscall)._sha3_256A_M1184
+ : arg.`2 = W64.of_int _in /\
+   valid_ptr _in 1184 /\
+   Glob.mem = _mem
+ ==> 
+   Glob.mem = _mem /\
+   res = SHA3_256_1184_32
+            (Array1152.init (fun k =>  _mem.[_in+k]),
+            (Array32.init (fun k => _mem.[_in+1152+k])))
+ ] = 1%r.
+proof.
+by conseq sha3_256A_M1184_eq (sha3_256A_M1184_ph' _mem _in) => /#.
+qed.
+
+(*********************************************************************************)
+equiv shake256_M32__M32_M1088_eq:
+  M(Syscall)._shake256_M32__M32_M1088 ~ K._shake256_M32__M32_M1088
+ : ={arg, Glob.mem} ==> ={res, Glob.mem}.
+proof.
+proc.
+call squeeze_imem_avx2_eq.
+call pabsorb_imem_avx2_eq.
+call pabsorb_imem_avx2_eq.
+call pstate_init_avx2_eq.
+by auto => />.
+qed.
+
+hoare shake256_M32__M32_M1088_h' mem _pout _pin1 _pin2:
+ K._shake256_M32__M32_M1088
+ : Glob.mem = mem /\ arg=(_pout, _pin1, _pin2)
+ /\ valid_ptr (to_uint _pout) 32
+ /\ valid_ptr (to_uint _pin1) 32
+ /\ valid_ptr (to_uint _pin2) 1088
+ ==> Glob.mem
+   = stores mem (to_uint _pout)
+       (SHAKE256 (memread mem (to_uint _pin1) 32++memread mem (to_uint _pin2) 1088) 32).
+proof.
+proc => /=.
+ecall (squeeze_imem_avx2_h Glob.mem out 32 st 136).
+ecall (pabsorb_imem_avx2_h Glob.mem (memread mem (to_uint _pin1) 32) in1 1088 136 31).
+ecall (pabsorb_imem_avx2_h Glob.mem [<:W8.t>] in0 32 136 0).
+call (pstate_init_avx2_h 136).
+auto; rewrite /valid_ptr /= => |> _?_?_? [pst0 st0] /= H0 []pst1 at1 st1 off1 /= H1.
+move => |>; rewrite size_memread 1:// /=.
+move=> []pst2 at2 st2 off2 /= -> []out st3 /= _ ?.
+rewrite stavx2_from_st25K /SHAKE256 /KECCAK1600 /#.
+qed.
+
+phoare shake256_M32__M32_M1088_ll: 
+ [ K._shake256_M32__M32_M1088
+ : valid_ptr (to_uint out) 32
+ /\ valid_ptr (to_uint in0) 32
+ /\ valid_ptr (to_uint in1) 1088
+ ==> true ] = 1%r.
+proof.
+proc.
+call squeeze_imem_avx2_ll.
+call pabsorb_imem_avx2_ll.
+call pabsorb_imem_avx2_ll.
+call pstate_init_avx2_ll.
+by auto => />.
+qed.
+
+phoare shake256_M32__M32_M1088_ph' mem _pout _pin1 _pin2:
+ [ K._shake256_M32__M32_M1088
+ : Glob.mem = mem /\ arg=(_pout, _pin1, _pin2)
+ /\ valid_ptr (to_uint _pout) 32
+ /\ valid_ptr (to_uint _pin1) 32
+ /\ valid_ptr (to_uint _pin2) 1088
+ ==> Glob.mem
+   = stores mem (to_uint _pout)
+       (SHAKE256 (memread mem (to_uint _pin1) 32++memread mem (to_uint _pin2) 1088) 32)
+ ] = 1%r.
+proof.
+by conseq shake256_M32__M32_M1088_ll (shake256_M32__M32_M1088_h' mem _pout _pin1 _pin2).
+qed.
+
+from JazzEC require import Array960 Array128.
+phoare shake256_M32__M32_M1088_ph_alt mem _pout _pin1 _pin2: 
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_M32__M32_M1088
+ : arg = (_pout,_pin1,_pin2) /\
+   valid_ptr (to_uint _pout) 32 /\
+   valid_ptr (to_uint _pin1) 32 /\
+   valid_ptr (to_uint _pin2) 1088 /\
+   Glob.mem = mem
+ ==> 
+   touches Glob.mem mem (to_uint _pout) 32 /\
+   (Array32.init (fun k =>  Glob.mem.[to_uint _pout+k])) = 
+     SHAKE_256_1120_32
+       (Array32.init (fun k => mem.[to_uint _pin1+k])) 
+       (Array960.init (fun k => mem.[to_uint _pin2+k]), Array128.init (fun k => mem.[to_uint _pin2+960+k]))
+ ] = 1%r.
+proof.
+conseq shake256_M32__M32_M1088_eq (shake256_M32__M32_M1088_ph' mem _pout _pin1 _pin2) => />.
+ move=> ??????; exists mem (_pout, _pin1,  _pin2) => />.
+split.
+ by move=> i Hi; rewrite get_storesE ifF //= size_SHAKE256 1:// /#.
+rewrite tP => i Hi.
+rewrite /SHAKE_256_1120_32 initiE 1:// initiE 1:// /= get_storesE size_SHAKE256 1://.
+rewrite ifT 1:/#; congr; last smt().
+congr; rewrite -catA; congr.
+ rewrite /memread /to_list; apply eq_in_mkseq => j Hj /=.
+ by rewrite initiE.
+rewrite (memread_split 960) 1://; congr.
+ rewrite /memread /to_list; apply eq_in_mkseq => j Hj /=.
+ by rewrite initiE.
+rewrite /memread /to_list; apply eq_in_mkseq => j Hj /=.
+by rewrite initiE.
+qed. 
+
+phoare shake256_M32__M32_M1088_ph mem _pout _pin1 _pin2: 
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake256_M32__M32_M1088
+ : arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2) /\
+   valid_ptr _pout 32 /\
+   valid_ptr _pin1 32 /\
+   valid_ptr _pin2 1088 /\
+   Glob.mem = mem
+ ==> 
+   touches Glob.mem mem _pout 32 /\
+   (Array32.init (fun k =>  Glob.mem.[_pout+k])) = 
+     SHAKE_256_1120_32
+       (Array32.init (fun k => mem.[_pin1+k])) 
+       (Array960.init (fun k => mem.[_pin2+k]), Array128.init (fun k => mem.[_pin2+960+k]))
+ ] = 1%r.
+proof.
+conseq (shake256_M32__M32_M1088_ph_alt mem (W64.of_int _pout) (W64.of_int _pin1) (W64.of_int _pin2)).
+ by move => />; rewrite !of_uintK; smt(W64.to_uint_cmp).
+move=> />; rewrite !of_uintK => *; split.
+ move=> *; rewrite !modz_small /#.
+by rewrite !modz_small /#.
+qed.
+
+
+(*********************************************************************************)
+equiv shake128_absorb_A32_A2_eq:
+  M(Syscall)._shake128_absorb_A32_A2 ~ K._shake128_absorb_A32_A2
+ : ={arg} ==> ={res}
+ by sim.
+
+hoare shake128_absorb_A32_A2_h' _rho _rc:
+ K._shake128_absorb_A32_A2
+ : seed = _rho /\ pos = _rc
+ ==>
+   absorb_spec_avx2 168 31 (to_list _rho ++ to_list _rc) res.
+proof.
+proc.
+ecall (A2avx2.pabsorb_array_avx2_h (to_list _rho) pos offset 2 168 31).
+wp; ecall (A32avx2.pabsorb_array_avx2_h [<:W8.t>] seed offset 32 168 0).
+wp; call (pstate_init_avx2_h 168).
+auto => |> []pst0 st0 /= H0 []pst1 at1 st1 off1 /= H1 *.
+by rewrite size_to_list.
+qed.
+
+lemma shake128_absorb_A32_A2_ll: islossless K._shake128_absorb_A32_A2.
+proof.
+proc.
+call A2avx2.pabsorb_array_avx2_ll.
+wp; call A32avx2.pabsorb_array_avx2_ll.
+wp; call pstate_init_avx2_ll.
+by auto.
+qed.
+
+phoare shake128_absorb_A32_A2_ph' _rho _rc:
+ [ K._shake128_absorb_A32_A2
+ : seed = _rho /\ pos = _rc
+ ==>
+   absorb_spec_avx2 168 31 (to_list _rho ++ to_list _rc) res
+ ] = 1%r.
+proof.
+by conseq shake128_absorb_A32_A2_ll (shake128_absorb_A32_A2_h' _rho _rc).
+qed.
+
+
+(*********************************************************************************)
+equiv shake128_squeeze3blocks_eq:
+  M(Syscall)._shake128_squeeze3blocks ~ K._shake128_squeeze3blocks
+ : ={arg} ==> ={res}
+by sim.
+
+from Keccak require import Keccakf1600_avx2.
+
+hoare shake128_squeeze3blocks_h' _buf _st:
+ K._shake128_squeeze3blocks
+ : buf=_buf /\ st=stavx2_from_st25 _st
+ ==> sub res (0*168) 168 = squeezestate_i 168 _st 0
+  /\ sub res (1*168) 168 = squeezestate_i 168 _st 1
+  /\ sub res (2*168) 168 = squeezestate_i 168 _st 2
+  /\ sub res (2*168) 200 = state2bytes (FIPS202_SHA3_Spec.st_i _st 3).
+proof.
+proc.
+print ABUFLENavx2.dumpstate_array_avx2_h.
+ecall (ABUFLENavx2.dumpstate_array_avx2_h buf offset 200 st).
+ecall (keccakf1600_avx2_h (stavx2_to_st25 st)).
+ecall (ABUFLENavx2.dumpstate_array_avx2_h buf offset 168 st).
+ecall (keccakf1600_avx2_h (stavx2_to_st25 st)).
+ecall (ABUFLENavx2.dumpstate_array_avx2_h buf offset 168 st).
+wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 st)).
+auto => />; rewrite !stavx2_from_st25K => />.
+move=> [r0 o0] /= -> ->; rewrite of_uintK /=.
+move=> [r1 o1] /= -> ->; rewrite of_uintK /=.
+move=> [r2 o2] /= -> _; do split; rewrite /squeezestate_i /st_i /squeezestate /=.
++ admit.
++ admit.
++ admit.
++ admit.
+qed.
+
+lemma shake128_squeeze3blocks_ll: islossless K._shake128_squeeze3blocks.
+proc.
+call ABUFLENavx2.dumpstate_array_avx2_ll.
+call keccakf1600_avx2_ll.
+call ABUFLENavx2.dumpstate_array_avx2_ll.
+call keccakf1600_avx2_ll.
+call ABUFLENavx2.dumpstate_array_avx2_ll.
+wp; call keccakf1600_avx2_ll.
+by auto.
+qed.
+
+phoare shake128_squeeze3blocks_ph' _buf _st:
+ [ K._shake128_squeeze3blocks
+ : buf=_buf /\ st=stavx2_from_st25 _st
+ ==> sub res (0*168) 168 = squeezestate_i 168 _st 0
+  /\ sub res (1*168) 168 = squeezestate_i 168 _st 1
+  /\ sub res (2*168) 168 = squeezestate_i 168 _st 2
+  /\ sub res (2*168) 200 = state2bytes (FIPS202_SHA3_Spec.st_i _st 3)
+ ] = 1%r.
+proof.
+by conseq shake128_squeeze3blocks_ll (shake128_squeeze3blocks_h' _buf _st).
+qed.
+
+phoare shake128_squeeze3blocks_ph _buf _st:
+ [ M(Syscall)._shake128_squeeze3blocks
+ : buf=_buf /\ st=stavx2_from_st25 _st
+ ==> sub res (0*168) 168 = squeezestate_i 168 _st 0
+  /\ sub res (1*168) 168 = squeezestate_i 168 _st 1
+  /\ sub res (2*168) 168 = squeezestate_i 168 _st 2
+  /\ sub res (2*168) 200 = state2bytes (FIPS202_SHA3_Spec.st_i _st 3)
+ ] = 1%r.
+proof.
+by conseq shake128_squeeze3blocks_eq (shake128_squeeze3blocks_ph' _buf _st) => /> /#.
+qed.
+
+(*********************************************************************************)
+equiv shake128_next_state_eq:
+  M(Syscall)._shake128_next_state ~ K._shake128_next_state
+ : ={arg} ==> ={res}
+by sim.
+
+hoare shake128_next_state_h' _buf:
+ K._shake128_next_state
  : buf = _buf
    ==>
    let st = bytes2state (sub _buf (2*168) 200) in
    sub res (2*168) 200 = state2bytes (keccak_f1600_op st).
-admitted.
-
-(*
-lemma dumpstate_array_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).aBUFLEN____dumpstate_array_avx2.
-admitted.
-
-lemma keccakf1600_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2.
-admitted.
-
-lemma state_from_pstate_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).__state_from_pstate_avx2.
-admitted.
-*)
-
-lemma shake128_next_state_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_next_state.
 proof.
-admit(*
 proc.
-wp; call dumpstate_array_avx2_ll.
+ecall (ABUFLENavx2.dumpstate_array_avx2_h buf offset 200 st).
+wp; ecall (keccakf1600_avx2_h (stavx2_to_st25 st)).
+ecall (state_from_pstate_avx2_h pst).
+auto => />; rewrite !stavx2_from_st25K.
+split => //.
+move=> _ [buf off] /= -> _.
+admit.
+qed.
+
+lemma shake128_next_state_ll: islossless K._shake128_next_state.
+proof.
+proc.
+call ABUFLENavx2.dumpstate_array_avx2_ll.
 wp; call keccakf1600_avx2_ll.
 call state_from_pstate_avx2_ll.
-by auto => />.
-*).
+by auto.
+qed.
+
+phoare shake128_next_state_ph' _buf:
+ [ K._shake128_next_state
+ : buf = _buf
+   ==>
+   let st = bytes2state (sub _buf (2*168) 200) in
+   sub res (2*168) 200 = state2bytes (keccak_f1600_op st)
+ ] = 1%r.
+proof.
+by conseq shake128_next_state_ll (shake128_next_state_h' _buf).
 qed.
 
 phoare shake128_next_state_ph _buf:
@@ -151,25 +785,16 @@ phoare shake128_next_state_ph _buf:
    ==>
    let st = bytes2state (sub _buf (2*168) 200) in
    sub res (2*168) 200 = state2bytes (keccak_f1600_op st)
- ] = 1%r
-by conseq shake128_next_state_ll (shake128_next_state_h _buf).
+ ] = 1%r.
+proof.
+by conseq shake128_next_state_eq (shake128_next_state_ph' _buf) => /> /#.
+qed.
 
-(*
-_shake128x4_squeeze3blocks
-*)
+(*********************************************************************************)
 
-from JazzEC require import Array4 Array128.
+from Keccak require import Keccak1600_avx2x4.
 
-hoare shake256x4_A128__A32_A1_h _seed _nonces :
- Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1
- : seed = _seed /\ nonces = _nonces 
- ==>
-    res.`1 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[0]]) 128)
- /\ res.`2 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[1]]) 128)
- /\ res.`3 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[2]]) 128)
- /\ res.`4 = Array128.of_list witness (SHAKE256 (to_list _seed ++ [_nonces.[3]]) 128).
-admitted.
-
+from JazzEC require import Array4.
 phoare shake256x4_A128__A32_A1_ph _seed _nonces :
  [ 
    Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1
@@ -182,199 +807,10 @@ phoare shake256x4_A128__A32_A1_ph _seed _nonces :
  ] = 1%r.
 admitted.
 
-(*
-axiom shake256_4x_128_32 _seed _nonces :
-  phoare [
-   Jkem_avx2.M(Jkem_avx2.Syscall)._shake256x4_A128__A32_A1 : arg.`5 = _seed /\ arg.`6 = _nonces ==>
-   res.`1 = 
-     SHAKE256_33_128 _seed _nonces.[0] /\
-   res.`2 = 
-     SHAKE256_33_128 _seed _nonces.[1] /\
-   res.`3 = 
-     SHAKE256_33_128 _seed _nonces.[2] /\
-   res.`4 = 
-     SHAKE256_33_128 _seed _nonces.[3]
-] = 1%r.
-*)
-
-(*
-hoare stavx2_unpack_at_h _st _buf _at:
- Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_unpack_at
- : state = _st
-   /\ buf = _buf
-   /\ offset = _at
-   ==>
-   sub _buf 0 (to_uint _at) = sub res 0 (to_uint _at)
-   /\ sub res (to_uint _at) 200 = stavx2bytes _st.
-(*
-   buf_subl res 0 (to_uint _at+200)
-   = buf_subl _buf 0 (to_uint _at) ++ stavx2bytes _st.
-proc.
-*)
-admitted.
-
-lemma stavx2_unpack_at_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_unpack_at.
-proof. by islossless. qed.
-
-phoare stavx2_unpack_at_ph _st _buf _at:
- [ Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_unpack_at
-   : state = _st
-     /\ buf = _buf
-     /\ offset = _at
-     ==>
-   sub _buf 0 (to_uint _at) = sub res 0 (to_uint _at)
-   /\ sub res (to_uint _at) 200 = stavx2bytes _st
-(*
-     buf_subl res 0 (to_uint _at+200)
-     = buf_subl _buf 0 (to_uint _at) ++ stavx2bytes _st
-*)
- ] = 1%r.
-proof.
-by conseq stavx2_unpack_at_ll (stavx2_unpack_at_h _st _buf _at).
-qed.
-
-phoare stavx2_pack_at_ph _buf _at:
- [ Jkem_avx2.M(Jkem_avx2.Syscall)._stavx2_pack_at
-   : st = _buf
-     /\ offset = _at
-     ==>
-     stavx2bytes res = sub _buf (to_uint _at) 200
- ] = 1%r.
-proof.
-admitted.
-
-hoare xof_init_avx2_h _rho _rc:
- Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2
- : rho = _rho /\ index = _rc
-   ==>
-   stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _rc)) res.
-proof.
-proc; simplify.
-admitted.
-
-lemma xof_init_avx2_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2.
-proof.
-islossless.
-while (true) (7-i).
- by move=> z; auto => /> /#.
-by auto => /> /#.
-qed.
-
-phoare xof_init_avx2_ph _rho _rc:
- [ Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_avx2
-   : rho = _rho /\ index = _rc
-     ==>
-     stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _rc)) res
- ] = 1%r.
-proof. by conseq xof_init_avx2_ll (xof_init_avx2_h _rho _rc). qed.
-
-*)
-
-op state_stavx2_match (st: W64.t Array25.t) (stavx2: W256.t Array7.t): bool.
-
-op st25_to_stavx2 (st: W64.t Array25.t): W256.t Array7.t.
-op stavx2_to_st25 (stavx2: W256.t Array7.t): W64.t Array25.t.
-
-
-hoare keccakf1600_avx2_h (_st: W64.t Array25.t):
- Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2
- : stmatch_avx2 _st state
- ==> stmatch_avx2 (Keccakf1600_Spec.keccak_f1600_op _st) res.
-admitted.
-
-lemma keccakf1600_avx2_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2.
-proof.
-admitted.
-
-phoare keccakf1600_avx2_ph (_st: W64.t Array25.t):
- [ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2
- : stmatch_avx2 _st state
- ==> stmatch_avx2 (Keccakf1600_Spec.keccak_f1600_op _st) res ] = 1%r.
-proof. by conseq keccakf1600_avx2_ll (keccakf1600_avx2_h _st). qed.
-
-type state4x = W256.t Array25.t.
-type state = W64.t Array25.t.
-op (\a25bits64) (a: state4x) (k: int): state =
- Array25.map (fun (x: W256.t) => W4u64.\bits64 x k) a.
-
-op a25pack4 (l: state list): state4x =
- Array25.init (fun i => pack4 (map (fun (s: state) => s.[i]) l)).
-
-op a25unpack4 (st4: state4x): state list =
- map (fun k=> st4 \a25bits64 k) (iota_ 0 4).
-
-lemma a25bits64iE x k i:
- 0 <= i < 25 =>
- (x \a25bits64 k).[i] = x.[i] \bits64 k.
-proof. by move=> Hi; rewrite mapiE //. qed.
-
-lemma a25unpack4K s4:
- a25pack4 (a25unpack4 s4) = s4.
-proof.
-rewrite /a25pack4 /a25unpack4.
-apply Array25.ext_eq => i Hi; rewrite initiE //=.
-rewrite -iotaredE /= !a25bits64iE //=.
-rewrite -{5}(unpack64K s4.[i]); congr.
-by rewrite unpack64E init_of_list -iotaredE /=. 
-qed.
-
-op st0: state = Array25.create W64.zero.
-
-lemma a25pack4_bits64 k (stl: state list):
- 0 <= k < 4 =>
- a25pack4 stl \a25bits64 k = nth st0 stl k.
-proof.
-move=> Hk; apply Array25.ext_eq => i Hi.
-rewrite mapiE //= initiE //= pack4bE //=.
-rewrite of_listE initiE //=.
-case: (k < size stl) => E.
- by rewrite (nth_map st0) 1:/#.
-rewrite !nth_out; first 2 by smt(size_map).
-by rewrite createiE.
-qed.
-
-op match_state4x (st0 st1 st2 st3: state) (st4x: state4x) =
- st4x = a25pack4 [st0; st1; st2; st3].
-
-lemma a25pack4_eq stl st4x:
- a25pack4 stl = st4x
- <=>
- all (fun k=>st4x \a25bits64 k = nth st0 stl k) (iota_ 0 4).
-proof.
-split.
- move => <-; apply/List.allP => k. 
- rewrite mem_iota => Hk /=; apply a25pack4_bits64; smt().
-move=> /List.allP H.
-apply Array25.ext_eq => i Hi.
-rewrite initiE //=.
-rewrite -(unpack64K st4x.[i]); congr.
-apply W4u64.Pack.ext_eq => k Hk.
-rewrite of_listE unpack64E !initiE //=.
-rewrite -a25bits64iE // H; first smt(mem_iota).
-case: (k < size stl) => E.
- by rewrite (nth_map st0) 1:/#.
-rewrite !nth_out; first 2 by smt(size_map).
-by rewrite createiE.
-qed.
-
-lemma xorw_bits64 (w1 w2: W256.t) k:
- 0 <= k < 4 =>
- w1 `^` w2 \bits64 k = (w1 \bits64 k) `^` (w2 \bits64 k).
-proof.
-move=> Hk; rewrite -{1}(unpack64K w1) -{1}(unpack64K w2). 
-by rewrite xorb4u64E pack4bE // map2iE // !unpack64E !initiE.
-qed.
-
-lemma invw_bits64 (w: W256.t) k:
- 0 <= k < 4 =>
- invw w \bits64 k = invw (w \bits64 k).
-proof. by move=> Hk; rewrite -{1}(unpack64K w) invw64E //. qed.
-
 op map_state4x (f:state->state) (st:state4x): state4x =
  a25pack4 (map f (a25unpack4 st)).
 
+(*
 lemma map_state4x_neq r a:
  r <> map_state4x keccak_f1600_op a
  <=> (r \a25bits64 0) <> keccak_f1600_op (a \a25bits64 0) \/
@@ -386,165 +822,6 @@ rewrite /map_state4x eq_sym a25pack4_eq -iotaredE /=.
 rewrite !(nth_map st0); first 4 by rewrite /a25unpack4 size_map size_iota.
 by rewrite /a25unpack4 -iotaredE /= /#.
 qed.
-
-hoare keccakf1600_avx2x4_h (_a: state4x):
- Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2x4 :
- a = _a
- ==> res = map_state4x keccak_f1600_op _a.
-proof.
-admitted.
-
-lemma keccakf1600_4x_round_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_4x_round.
-admitted.
-
-lemma keccakf1600_avx2x4_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2x4.
-proof.
-islossless.
-while (true) (768 - to_uint c).
- move=> z.
- wp; call keccakf1600_4x_round_ll.
- wp; call keccakf1600_4x_round_ll.
- auto => /> &m.
- by rewrite ultE to_uintD of_uintK /#.
-by auto => /> c; rewrite ultE of_uintK /#.
-qed.
-
-phoare keccakf1600_avx2x4_ph (_a: state4x):
- [ Jkem_avx2.M(Jkem_avx2.Syscall)._keccakf1600_avx2x4 :
-   a = _a
-   ==> res = map_state4x keccak_f1600_op _a ] = 1%r.
-proof. by conseq keccakf1600_avx2x4_ll (keccakf1600_avx2x4_h _a). qed.
-
-lemma st_i_add st a b:
- 0 <= a => 0 <= b =>
- st_i (st_i st b) a
- = st_i st (a+b).
-proof.
-rewrite /st_i.
-elim/natind: a b.
- move=> n Hn b Ha Hb; rewrite (iter0 n) /#.
-move=> n Hn IH b Ha Hb.
-by rewrite eq_sym (:n+1+b=n+b+1) 1:/# (iterS (n+b)) 1:/# -IH // iterS 1:/#.
-qed.
-
-(*
-hoare xof_init_x4_h _rho _idxs:
- Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_x4
- : rho = _rho /\ indexes = _idxs
-   ==>
-   match_state4x
-    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[0])) 
-    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[1])) 
-    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[2])) 
-    (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[3])) 
-    res.
-proof.
-proc; simplify.
-admit.
-qed.
-
-lemma xof_init_x4_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_x4.
-proof.
-islossless.
-+ while (true) (25-i).
-   by move=> z; auto => /> /#.
-  by auto => /> /#.
-+ while (true) (4-i).
-   by move=> z; auto => /> /#.
-  by auto => /> /#.
-while (true) (4-i).
- by move=> z; auto => /> /#.
-by auto => /> /#.
-qed.
-
-phoare xof_init_x4_ph _rho _idxs:
- [ Jkem_avx2.M(Jkem_avx2.Syscall).xof_init_x4
-   : rho = _rho /\ indexes = _idxs
-     ==>
-     match_state4x
-      (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[0])) 
-      (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[1])) 
-      (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[2])) 
-      (SHAKE128_ABSORB (to_list _rho ++ W2u8.to_list _idxs.[3])) 
-      res ] = 1%r.
-proof. by conseq xof_init_x4_ll (xof_init_x4_h _rho _idxs). qed.
-
-hoare st4x_unpack_at_h _st0 _st1 _st2 _st3 _buf0 _buf1 _buf2 _buf3 _at:
- Jkem_avx2.M(Jkem_avx2.Syscall).__st4x_unpack_at
- : match_state4x _st0 _st1 _st2 _st3 st4x
-   /\ buf0=_buf0 /\ buf1=_buf1 /\ buf2=_buf2 /\ buf3=_buf3
-   /\ offset=_at
-   ==> sub _buf0 0 (to_uint _at) = sub res.`1 0 (to_uint _at)
-       /\ sub _buf1 0 (to_uint _at) = sub res.`2 0 (to_uint _at)
-       /\ sub _buf2 0 (to_uint _at) = sub res.`3 0 (to_uint _at)
-       /\ sub _buf3 0 (to_uint _at) = sub res.`4 0 (to_uint _at)
-       /\ sub res.`1 (to_uint _at) 200 = state2bytes _st0
-       /\ sub res.`2 (to_uint _at) 200 = state2bytes _st1
-       /\ sub res.`3 (to_uint _at) 200 = state2bytes _st2
-       /\ sub res.`4 (to_uint _at) 200 = state2bytes _st3.
-proof.
-proc.
-admitted.
-*)
-lemma stmatch_avx2_bytes st stavx:
- stmatch_avx2 st stavx <=>
- state2bytes st = stavx2bytes stavx.
-proof.
-admitted.
-
-lemma state2bytesK st1:
- bytes2state (state2bytes st1) = st1.
-admitted.
-
-phoare shake128_absorb_A32_A2_ph _rho _rc:
- [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_absorb_A32_A2
-   : seed = _rho /\ pos = _rc
-     ==>
-     stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ to_list _rc)) res
- ] = 1%r.
-admitted.
-
-phoare shake128_squeeze3blocks_ph _buf _st:
- [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128_squeeze3blocks
- : buf=_buf /\ stmatch_avx2 _st st
- ==> sub res (0*168) 168 = squeezestate_i 168 _st 0
-  /\ sub res (1*168) 168 = squeezestate_i 168 _st 1
-  /\ sub res (2*168) 168 = squeezestate_i 168 _st 2
-  /\ sub res (2*168) 200 = state2bytes (FIPS202_SHA3_Spec.st_i _st 3)
- ] =1%r.
-admitted.
-
-(*
-lemma stavx2_bytes_squeeze at (buf: W8.t Array536.t) st stavx:
- stmatch_avx2 st stavx =>
- sub buf at 200 = stavx2bytes stavx =>
- sub buf at 168 = squeezestate st 168.
-proof.
-move => /stmatch_avx2_bytes Hm.
-rewrite -Hm /squeezestate => <-.
-by rewrite /sub take_mkseq /#.
-qed.
-*)
-
-(*
-phoare st4x_unpack_at_ph _st0 _st1 _st2 _st3 _buf0 _buf1 _buf2 _buf3 _at:
- [ Jkem_avx2.M(Jkem_avx2.Syscall).__st4x_unpack_at
-   : match_state4x _st0 _st1 _st2 _st3 st4x
-     /\ buf0=_buf0 /\ buf1=_buf1 /\ buf2=_buf2 /\ buf3=_buf3
-     /\ offset=_at
-     ==> sub _buf0 0 (to_uint _at) = sub res.`1 0 (to_uint _at)
-         /\ sub _buf1 0 (to_uint _at) = sub res.`2 0 (to_uint _at)
-         /\ sub _buf2 0 (to_uint _at) = sub res.`3 0 (to_uint _at)
-         /\ sub _buf3 0 (to_uint _at) = sub res.`4 0 (to_uint _at)
-         /\ sub res.`1 (to_uint _at) 200 = state2bytes _st0
-         /\ sub res.`2 (to_uint _at) 200 = state2bytes _st1
-         /\ sub res.`3 (to_uint _at) 200 = state2bytes _st2
-         /\ sub res.`4 (to_uint _at) 200 = state2bytes _st3 ] = 1%r.
-proof.
-proc.
-admitted.
 *)
 
 lemma stx4_map_keccakf st0 st1 st2 st3 stx4:
@@ -552,6 +829,7 @@ lemma stx4_map_keccakf st0 st1 st2 st3 stx4:
  match_state4x (keccak_f1600_op st0) (keccak_f1600_op st1) (keccak_f1600_op st2) (
   keccak_f1600_op st3) (map_state4x keccak_f1600_op stx4).
 admitted.
+
 
 phoare shake128x4_absorb_A32_A2_ph _rho _rc:
  [ Jkem_avx2.M(Jkem_avx2.Syscall)._shake128x4_absorb_A32_A2
@@ -581,8 +859,3 @@ phoare shake128x4_squeeze3blocks_ph _st0 _st1 _st2 _st3:
  ] = 1%r.
 admitted.
 
-(*
-axiom sha3equiv :
- equiv [    Jkem_avx2.M(Jkem_avx2.Syscall)._sha3_512A_A33 ~ M(Syscall)._sha3512_33 :
-       ={arg} ==> ={res} ].
-*)
