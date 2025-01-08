@@ -383,8 +383,8 @@ smt().
 qed.
 
 from CryptoSpecs require import JWordList EclibExtra.
+from Keccak require import Keccak1600_avx2x4.
 require import MLKEM_keccak_avx2.
-
 require import Mlkem_filters_bridge.
 
 hoare comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2:
@@ -783,7 +783,7 @@ seq 4 1: ( stmatch_avx2 st{2} stavx2{1} ).
 simplify.
 exlim st{2} => _st.
 ecall {1} (shake128_squeeze3blocks_ph buf{1} _st).
-auto => /> &m Hmatch buf.
+auto => /> &m Hmatch Ematch buf.
 move=> Hb0 Hb1 Hb2 Hst.
 split.
 rewrite -(buf_subl_cat buf 0 168) 1://.
@@ -845,18 +845,16 @@ hoare gen_matrix_get_indexes_h _pos _transpose:
  Jkem_avx2.M(Jkem_avx2.Syscall).gen_matrix_get_indexes
  : to_uint b = 2*_pos /\ to_uint _t = b2i _transpose /\ (_pos=0 \/ _pos=4)
  ==>
-   res = Array8.of_list witness (sub gen_matrix_indexes (2*_pos+16*b2i _transpose) 8).
+   res = W8u8.pack8 (sub gen_matrix_indexes (2*_pos+16*b2i _transpose) 8).
 proof.
 proc => /=.
-seq 4: (to_uint b = 2*_pos + 16*b2i _transpose /\ (_pos=0 \/ _pos=4)) => //=.
+seq 5: (idxs=gen_matrix_indexes /\ to_uint b = 2*_pos + 16*b2i _transpose /\ (_pos=0 \/ _pos=4)) => //=.
  auto => /> &m Hb Ht Hpos.
  by rewrite to_uintD_small to_uint_shl !of_uintK 1,3:// /#.
 auto => /> &m -> Hpos.
-apply Array8.ext_eq => i Hi.
-rewrite initiE 1:// get_of_list 1://.
-rewrite (Array32.nth_sub witness) 1://.
-rewrite get8_set64_directE 1..2:// Hi /= get64E.
-by rewrite W8u8.pack8bE 1:// initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE 1:/# /=.
+rewrite get64E; congr; apply W8u8.Pack.ext_eq => i Hi.
+rewrite initiE 1:// get_of_list 1:// /=.
+by rewrite initiE 1:/# /sub nth_mkseq 1://.
 qed.
 
 lemma gen_matrix_get_indexes_ll: islossless Jkem_avx2.M(Jkem_avx2.Syscall).gen_matrix_get_indexes
@@ -866,7 +864,7 @@ phoare gen_matrix_get_indexes_ph _pos _transpose:
  [ Jkem_avx2.M(Jkem_avx2.Syscall).gen_matrix_get_indexes
  : to_uint b = 2*_pos /\ to_uint _t = b2i _transpose /\ (_pos=0 \/ _pos=4)
  ==>
-   res = Array8.of_list witness (sub gen_matrix_indexes (2*_pos+16*b2i _transpose) 8)
+   res = W8u8.pack8 (sub gen_matrix_indexes (2*_pos+16*b2i _transpose) 8)
  ] = 1%r.
 proof. by conseq gen_matrix_get_indexes_ll (gen_matrix_get_indexes_h _pos _transpose). qed.
 
@@ -880,9 +878,11 @@ rewrite /buf4x_buf /sub; apply eq_in_mkseq => i Hi /=.
 by rewrite initiE 1:/# /#.
 qed.
 
+print set64_direct.
 lemma sub_gen_matrix_indexes idxs _pos _t _k:
  (_pos = 0 \/ _pos = 4) =>
  0 <= _k < 4 =>
+(* idxs = Array8.init (get8 (set64_direct ((init8 ("_.[_]" witness)))%WArray8 0 idxs)) => *)
  idxs = Array8.of_list witness (sub gen_matrix_indexes (2*_pos + 16 * b2i _t) 8) =>
  sub idxs (2*_k) 2 = [(pos2ji (_pos+_k) _t).`1; (pos2ji (_pos+_k) _t).`2].
 proof.
@@ -908,19 +908,24 @@ transitivity ParseFilter.sample3buf_x4
   by exists (rho{2},pos{2},t{2}) => /#.
 + by move => />.
 proc; simplify.
-seq 9 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
+seq 10 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
           /\ buf_ok (buf4x_buf buf{1} 1) buf1{2} st1{2}
           /\ buf_ok (buf4x_buf buf{1} 2) buf2{2} st2{2}
           /\ buf_ok (buf4x_buf buf{1} 3) buf3{2} st3{2} ).
- seq 8 7: ( match_state4x st0{2} st1{2} st2{2} st3{2} stx4{1} ).
+ seq 9 7: ( match_state4x st0{2} st1{2} st2{2} st3{2} stx4{1} ).
   wp; ecall {1} (shake128x4_absorb_A32_A2_ph rho{1} indexes{1}) => /=.
   wp; ecall {1} (gen_matrix_get_indexes_ph pos{2} t{2}) => /=.
   auto => &1 &2 [# -> Epos Ht Hpos]; split; first smt().
-  move=> _ idxs Eidxs st.
+  move=> _ idxs -> st.
   rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 0 _ _ _) 1..3://.
+admit.
   rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 1 _ _) 1..3://.
+admit.
   rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 2 _ _) 1..3://.
-  by rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 3 _ _) 1..3:// /#.
+admit.
+  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 3 _ _) 1..3://.
+admit.
+  smt().
  wp; ecall {1} (shake128x4_squeeze3blocks_ph st0{2} st1{2} st2{2} st3{2}) => /=.
  auto => /> &1 &2 Hmatch [stx4 bufx4] /=.
  rewrite !buf_sublE 1..4:// /=.

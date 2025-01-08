@@ -12,16 +12,6 @@ WArray8 WArray16 WArray32 WArray33 WArray64 WArray128 WArray160 WArray192
 WArray200 WArray224 WArray256 WArray512 WArray536 WArray800 WArray960
 WArray1088 WArray1536 WArray2048 WArray2144 WArray4608.
 
-abbrev gen_matrix_indexes =
-(Array32.of_list witness
-[(W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2);
-(W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 1); (W8.of_int 1);
-(W8.of_int 2); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2); (W8.of_int 1);
-(W8.of_int 2); (W8.of_int 0); (W8.of_int 0); (W8.of_int 0); (W8.of_int 1);
-(W8.of_int 0); (W8.of_int 2); (W8.of_int 1); (W8.of_int 0); (W8.of_int 1);
-(W8.of_int 1); (W8.of_int 1); (W8.of_int 2); (W8.of_int 2); (W8.of_int 0);
-(W8.of_int 2); (W8.of_int 1)]).
-
 abbrev sample_shuffle_table =
 (Array2048.of_list witness
 [(W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1));
@@ -553,6 +543,16 @@ abbrev sample_load_shuffle =
 (W8.of_int 7); (W8.of_int 8); (W8.of_int 8); (W8.of_int 9); (W8.of_int 10);
 (W8.of_int 11); (W8.of_int 11); (W8.of_int 12); (W8.of_int 13);
 (W8.of_int 14); (W8.of_int 14); (W8.of_int 15)]).
+
+abbrev gen_matrix_indexes =
+(Array32.of_list witness
+[(W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2);
+(W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 1); (W8.of_int 1);
+(W8.of_int 2); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2); (W8.of_int 1);
+(W8.of_int 2); (W8.of_int 0); (W8.of_int 0); (W8.of_int 0); (W8.of_int 1);
+(W8.of_int 0); (W8.of_int 2); (W8.of_int 1); (W8.of_int 0); (W8.of_int 1);
+(W8.of_int 1); (W8.of_int 1); (W8.of_int 2); (W8.of_int 2); (W8.of_int 0);
+(W8.of_int 2); (W8.of_int 1)]).
 
 abbrev pvc_shufbidx_s =
 (Array32.of_list witness
@@ -2037,7 +2037,7 @@ module M(SC:Syscall_t) = {
     var t8:W64.t;
     iLEN <- lEN;
     if ((lEN <= 0)) {
-      w <- (W64.of_int tRAIL);
+      w <- (W64.of_int (tRAIL %% 256));
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
@@ -2063,20 +2063,20 @@ module M(SC:Syscall_t) = {
         } else {
           t16 <- (W64.of_int 0);
         }
-        if (((1 <= lEN) \/ (tRAIL <> 0))) {
+        if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
             t8 <-
             (zeroextu64
             (loadW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
-            if ((tRAIL <> 0)) {
-              t8 <- (t8 `|` (W64.of_int (256 * tRAIL)));
+            if (((tRAIL %% 256) <> 0)) {
+              t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
               
             }
             buf <- (buf + (W64.of_int 1));
             lEN <- (lEN - 1);
           } else {
-            t8 <- (W64.of_int tRAIL);
+            t8 <- (W64.of_int (tRAIL %% 256));
           }
           tRAIL <- 0;
           t8 <- (t8 `<<` (W8.of_int (8 * (2 * ((iLEN %/ 2) %% 2)))));
@@ -2095,7 +2095,7 @@ module M(SC:Syscall_t) = {
     var w:W256.t;
     var t64:W64.t;
     var t128:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((8 <= lEN)) {
@@ -2116,7 +2116,7 @@ module M(SC:Syscall_t) = {
                                                          W128.t = {
     var w:W128.t;
     var t64:W64.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
@@ -2144,7 +2144,7 @@ module M(SC:Syscall_t) = {
     var w:W256.t;
     var t128_1:W128.t;
     var t128_0:W128.t;
-    if (((lEN <= 0) /\ (tRAIL = 0))) {
+    if (((lEN <= 0) /\ ((tRAIL %% 256) = 0))) {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
@@ -2253,15 +2253,15 @@ module M(SC:Syscall_t) = {
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
+        t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
           Glob.mem <-
-          (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu128 w));
+          (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) t128);
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           t128 <- (VEXTRACTI128 w (W8.of_int 1));
         } else {
-          t128 <- (truncateu128 w);
+          
         }
         (buf, lEN) <@ __mwrite_subu128 (buf, lEN, t128);
       }
@@ -2935,166 +2935,166 @@ module M(SC:Syscall_t) = {
       t <- (truncateu64 t128_1);
       (buf, lEN) <@ __mwrite_subu64 (buf, lEN, t);
       t128_1 <- (VPUNPCKH_2u64 t128_1 t128_1);
-    } else {
-      
-    }
-    if ((0 < lEN)) {
-      t256_0 <-
-      (VPBLEND_8u32 st.[3] st.[4]
-      (W8.of_int
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
-      ));
-      t256_1 <-
-      (VPBLEND_8u32 st.[4] st.[3]
-      (W8.of_int
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
-      ));
-      t256_2 <-
-      (VPBLEND_8u32 st.[5] st.[6]
-      (W8.of_int
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
-      ));
-      t256_3 <-
-      (VPBLEND_8u32 st.[6] st.[5]
-      (W8.of_int
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((0 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) +
-      ((2 ^ 1) *
-      ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
-      ));
       if ((0 < lEN)) {
-        t256_4 <-
-        (VPBLEND_8u32 t256_0 t256_3
+        t256_0 <-
+        (VPBLEND_8u32 st.[3] st.[4]
         (W8.of_int
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
         ((1 %% (2 ^ 1)) +
         ((2 ^ 1) *
-        ((1 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+        ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
         ));
-        (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
-      } else {
-        
-      }
-      if ((0 < lEN)) {
-        t <- (truncateu64 t128_0);
-        (buf, lEN) <@ __mwrite_subu64 (buf, lEN, t);
-        t128_0 <- (VPUNPCKH_2u64 t128_0 t128_0);
-      } else {
-        
-      }
-      if ((0 < lEN)) {
-        t256_4 <-
-        (VPBLEND_8u32 t256_3 t256_1
+        t256_1 <-
+        (VPBLEND_8u32 st.[4] st.[3]
         (W8.of_int
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
         ((1 %% (2 ^ 1)) +
         ((2 ^ 1) *
-        ((1 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+        ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
         ));
-        (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
-      } else {
-        
-      }
-      if ((0 < lEN)) {
-        t <- (truncateu64 t128_1);
-        (buf, lEN) <@ __mwrite_subu64 (buf, lEN, t);
-      } else {
-        
-      }
-      if ((0 < lEN)) {
-        t256_4 <-
-        (VPBLEND_8u32 t256_2 t256_0
+        t256_2 <-
+        (VPBLEND_8u32 st.[5] st.[6]
         (W8.of_int
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
         ((1 %% (2 ^ 1)) +
         ((2 ^ 1) *
-        ((1 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+        ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
         ));
-        (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
-      } else {
-        
-      }
-      if ((0 < lEN)) {
-        t <- (truncateu64 t128_0);
-        (buf, lEN) <@ __mwrite_subu64 (buf, lEN, t);
-      } else {
-        
-      }
-      if ((0 < lEN)) {
-        t256_4 <-
-        (VPBLEND_8u32 t256_1 t256_2
+        t256_3 <-
+        (VPBLEND_8u32 st.[6] st.[5]
         (W8.of_int
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
+        ((0 %% (2 ^ 1)) +
+        ((2 ^ 1) *
         ((1 %% (2 ^ 1)) +
         ((2 ^ 1) *
-        ((1 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) +
-        ((2 ^ 1) *
-        ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+        ((1 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
         ));
-        (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
+        if ((0 < lEN)) {
+          t256_4 <-
+          (VPBLEND_8u32 t256_0 t256_3
+          (W8.of_int
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+          ));
+          (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
+        } else {
+          
+        }
+        if ((0 < lEN)) {
+          t <- (truncateu64 t128_0);
+          (buf, lEN) <@ __mwrite_subu64 (buf, lEN, t);
+          t128_0 <- (VPUNPCKH_2u64 t128_0 t128_0);
+        } else {
+          
+        }
+        if ((0 < lEN)) {
+          t256_4 <-
+          (VPBLEND_8u32 t256_3 t256_1
+          (W8.of_int
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+          ));
+          (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
+        } else {
+          
+        }
+        if ((0 < lEN)) {
+          t <- (truncateu64 t128_1);
+          (buf, lEN) <@ __mwrite_subu64 (buf, lEN, t);
+        } else {
+          
+        }
+        if ((0 < lEN)) {
+          t256_4 <-
+          (VPBLEND_8u32 t256_2 t256_0
+          (W8.of_int
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+          ));
+          (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
+        } else {
+          
+        }
+        if ((0 < lEN)) {
+          t <- (truncateu64 t128_0);
+          (buf, lEN) <@ __mwrite_subu64 (buf, lEN, t);
+        } else {
+          
+        }
+        if ((0 < lEN)) {
+          t256_4 <-
+          (VPBLEND_8u32 t256_1 t256_2
+          (W8.of_int
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((1 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) +
+          ((2 ^ 1) *
+          ((0 %% (2 ^ 1)) + ((2 ^ 1) * ((1 %% (2 ^ 1)) + ((2 ^ 1) * 1))))))))))))))
+          ));
+          (buf, lEN) <@ __mwrite_subu256 (buf, lEN, t256_4);
+        } else {
+          
+        }
       } else {
         
       }
@@ -9453,8 +9453,10 @@ module M(SC:Syscall_t) = {
     (((3 * 168) - 48) + 1), counter, ((256 - 32) + 1));
     while (condition_loop) {
       ms <- (update_msf condition_loop ms);
+      (* Erased call to spill *)
       (pol, counter) <@ __gen_matrix_buf_rejection_filter48 (pol, counter,
       buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
+      (* Erased call to unspill *)
       buf_offset <- (buf_offset + (W64.of_int 48));
       condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
       (((3 * 168) - 48) + 1), counter, ((256 - 32) + 1));
@@ -9464,29 +9466,27 @@ module M(SC:Syscall_t) = {
     (((3 * 168) - 24) + 1), counter, 256);
     while (condition_loop) {
       ms <- (update_msf condition_loop ms);
+      (* Erased call to spill *)
       (pol, counter, ms) <@ __gen_matrix_buf_rejection_filter24 (pol,
       counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, 
       ms);
+      (* Erased call to unspill *)
       buf_offset <- (buf_offset + (W64.of_int 24));
       condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
       (((3 * 168) - 24) + 1), counter, 256);
     }
     return (pol, counter);
   }
-  proc gen_matrix_get_indexes (b:W64.t, _t:W64.t) : W8.t Array8.t = {
-    var idx:W8.t Array8.t;
+  proc gen_matrix_get_indexes (b:W64.t, _t:W64.t) : W64.t = {
     var t:W64.t;
-    idx <- witness;
+    var idxs:W8.t Array32.t;
+    idxs <- witness;
+    idxs <- gen_matrix_indexes;
     t <- _t;
     t <- (t `<<` (W8.of_int 4));
     b <- (b + t);
-    idx <-
-    (Array8.init
-    (WArray8.get8
-    (WArray8.set64 (WArray8.init8 (fun i => idx.[i])) 0
-    (get64_direct (WArray32.init8 (fun i => gen_matrix_indexes.[i]))
-    (W64.to_uint b)))));
-    return idx;
+    t <- (get64_direct (WArray32.init8 (fun i => idxs.[i])) (W64.to_uint b));
+    return t;
   }
   proc __gen_matrix_fill_polynomial (pol:W16.t Array256.t,
                                      buf:W8.t Array536.t) : W16.t Array256.t *
@@ -9510,8 +9510,9 @@ module M(SC:Syscall_t) = {
                                             rho:W8.t Array32.t,
                                             pos_entry:W64.t, transposed:W64.t) : 
   W16.t Array1024.t * W8.t Array2144.t = {
-    var aux_0:W8.t Array536.t;
-    var aux:W16.t Array256.t;
+    var aux:W64.t;
+    var aux_1:W8.t Array536.t;
+    var aux_0:W16.t Array256.t;
     var indexes:W8.t Array8.t;
     var state:W256.t Array25.t;
     var stx4:W256.t Array25.t;
@@ -9522,17 +9523,21 @@ module M(SC:Syscall_t) = {
     pol <- witness;
     state <- witness;
     stx4 <- witness;
-    indexes <@ gen_matrix_get_indexes (pos_entry, transposed);
+    aux <@ gen_matrix_get_indexes (pos_entry, transposed);
+    indexes <-
+    (Array8.init
+    (WArray8.get8
+    (WArray8.set64_direct (WArray8.init8 (fun i => indexes.[i])) 0 aux)));
     stx4 <- state;
     stx4 <@ _shake128x4_absorb_A32_A2 (stx4, rho, indexes);
     ( _0, buf) <@ _shake128x4_squeeze3blocks (stx4, buf);
     pol <- (Array256.init (fun i => polx4.[((0 * 256) + i)]));
-    (aux, aux_0) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 0) + i)])));
-    pol <- aux;
+    pol <- aux_0;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 0) <= i < ((536 * 0) + 536)) then aux_0.[(i -
+    (fun i => (if ((536 * 0) <= i < ((536 * 0) + 536)) then aux_1.[(i -
                                                                    (536 * 0))] else 
               buf.[i]))
     );
@@ -9543,12 +9548,12 @@ module M(SC:Syscall_t) = {
               polx4.[i]))
     );
     pol <- (Array256.init (fun i => polx4.[((1 * 256) + i)]));
-    (aux, aux_0) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 1) + i)])));
-    pol <- aux;
+    pol <- aux_0;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 1) <= i < ((536 * 1) + 536)) then aux_0.[(i -
+    (fun i => (if ((536 * 1) <= i < ((536 * 1) + 536)) then aux_1.[(i -
                                                                    (536 * 1))] else 
               buf.[i]))
     );
@@ -9559,12 +9564,12 @@ module M(SC:Syscall_t) = {
               polx4.[i]))
     );
     pol <- (Array256.init (fun i => polx4.[((2 * 256) + i)]));
-    (aux, aux_0) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 2) + i)])));
-    pol <- aux;
+    pol <- aux_0;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 2) <= i < ((536 * 2) + 536)) then aux_0.[(i -
+    (fun i => (if ((536 * 2) <= i < ((536 * 2) + 536)) then aux_1.[(i -
                                                                    (536 * 2))] else 
               buf.[i]))
     );
@@ -9575,12 +9580,12 @@ module M(SC:Syscall_t) = {
               polx4.[i]))
     );
     pol <- (Array256.init (fun i => polx4.[((3 * 256) + i)]));
-    (aux, aux_0) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 3) + i)])));
-    pol <- aux;
+    pol <- aux_0;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 3) <= i < ((536 * 3) + 536)) then aux_0.[(i -
+    (fun i => (if ((536 * 3) <= i < ((536 * 3) + 536)) then aux_1.[(i -
                                                                    (536 * 3))] else 
               buf.[i]))
     );

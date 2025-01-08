@@ -332,53 +332,48 @@ fn _gen_matrix_buf_rejection
 
   buf_offset = buf_offset;
 
-  while { condition_loop = comp_u64_l_int_and_u64_l_int(buf_offset, 3*168-48+1, counter, MLKEM_N-32+1); }
-        ( condition_loop )
-  {
+  while 
+    { condition_loop = comp_u64_l_int_and_u64_l_int(buf_offset, 3*168-48+1, counter, MLKEM_N-32+1);
+    }
+  ( condition_loop )
+    {
     ms = #update_msf(condition_loop, ms);
-
+() = #spill(buf_offset);
     pol, counter = __gen_matrix_buf_rejection_filter48(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
+() = #unspill(buf_offset);
     buf_offset += 48;
-  }
+    }
   ms = #update_msf(!condition_loop, ms);
 
   while { condition_loop = comp_u64_l_int_and_u64_l_int(buf_offset, 3*168-24+1, counter, MLKEM_N); }
         ( condition_loop )
   {
     ms = #update_msf(condition_loop, ms);
-
+() = #spill(buf_offset);
     pol, counter, ms = __gen_matrix_buf_rejection_filter24(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
-
+() = #unspill(buf_offset);
     buf_offset += 24;
   }
 
   return pol, counter;
 }
 
-u8[32] gen_matrix_indexes =
-{
-  0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x01, // (0,0) (0,1) (0,2) (1,0)
-  0x01, 0x01, 0x02, 0x01, 0x00, 0x02, 0x01, 0x02, // (1,1) (1,2) (2,0) (2,1)
-
-  0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x01, 0x00, // (0,0) (0,1) (0,2) (1,0)
-  0x01, 0x01, 0x01, 0x02, 0x02, 0x00, 0x02, 0x01  // (1,1) (1,2) (2,0) (2,1)
-};
-
 inline fn gen_matrix_get_indexes(
   reg u64 b,
   reg u64 _t)
   ->
-  stack u8[8]
+  reg u64
 {
   reg u64 t;
-  stack u8[4*2] idx;
+  reg ptr u8[32] idxs;
+  idxs = gen_matrix_indexes;
 
   t = _t; t <<= 4; // t * 16
   b += t;
 
-  idx[u64 0] = gen_matrix_indexes.[u64 (int) b];
+  t = idxs.[u64 b];
 
-  return idx;
+  return t;
 }
 
 fn __gen_matrix_fill_polynomial
@@ -413,7 +408,7 @@ fn _gen_matrix_sample_four_polynomials
   reg ptr u256[25] stx4;
   stack u8[8] indexes;
 
-  indexes = gen_matrix_get_indexes(pos_entry, transposed);
+  indexes.[u64 0] = gen_matrix_get_indexes(pos_entry, transposed);
 
   stx4 = state;
   stx4 = _shake128x4_absorb_A32_A2(stx4, rho, indexes);
@@ -457,7 +452,7 @@ inline fn __gen_matrix_sample_one_polynomial
   return pol, buf;      
 }
 
-fn _gen_matrix_avx2
+export fn _gen_matrix_avx2
 ( reg mut ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix
 , reg const ptr u8[32] rho
 , #spill_to_mmx reg u64 transposed
