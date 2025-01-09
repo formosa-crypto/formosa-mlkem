@@ -1,4 +1,4 @@
-require import AllCore Distr List SmtMap Dexcepted PKE_ROM.
+require import AllCore Distr List FMap Dexcepted PKE_ROM.
 require (****) RndExcept StdOrder MLWE.
 
 theory MLWE_PKE.
@@ -606,7 +606,8 @@ seq 14 9 : ((tr{1}, b{1}) = witness /\
     by auto => />; smt(get_setE sk_encodeK pk_encodeK).
   by auto => />; smt(sk_encodeK get_setE pk_encodeK).
 
-inline *; auto => />;1:by smt(sk_encodeK get_setE pk_encodeK).
+inline *; auto => />.
++ by do ? (move => *; split); smt(sk_encodeK get_setE pk_encodeK). 
 by call(_: true); auto => />; smt(get_set_eqE).
 qed.
 
@@ -717,7 +718,8 @@ rcondt{1}6; 1: by move => *; auto;call(_: true); auto => />;smt(mem_empty).
 rcondt{2}6; 1: by move => *; auto;call(_: true); auto => />;smt(mem_empty).
 wp;call(_: ={glob RO_H.RO, glob Sim});1: by sim.
 conseq />;1:by smt(). 
-auto => />; 1: by smt(parts_work noise_commutes noise_preserved).
+auto => />. 
++ by do ? (move => *; split); smt(parts_work noise_commutes noise_preserved).
 by call(_: true); auto => />;  smt(parts_work noise_commutes noise_preserved).
 qed.
 
@@ -873,7 +875,7 @@ byequiv => //; proc; inline *.
 wp;call(_: ={glob RO_H.RO, glob Sim}); 1: by sim.
 rcondt{1}6; 1: by move => *; auto => />;call(_: true); auto => />;smt(mem_empty). 
 rcondt{2}6; 1: by move => *; auto => />;call(_: true); auto => />;smt(mem_empty). 
-auto => />;1: by smt(). 
+auto => /> *; 1: smt().
 by call(_: true); auto => />;smt(get_set_sameE).
 qed.
 
