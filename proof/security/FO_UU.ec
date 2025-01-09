@@ -1,4 +1,4 @@
-require import AllCore Distr List Real SmtMap FSet DInterval FinType KEM_ROM.
+require import AllCore Distr List Real FMap FSet DInterval FinType KEM_ROM.
 require (****) PKE_ROM PlugAndPray Hybrid FelTactic. 
 
 (* This will be the underlying scheme resulting 
@@ -963,7 +963,7 @@ seq 32 19 : (={glob A,k1,pk,b,cm,CCA.sk,CCA.cstar, H2.invert, H2.mtgt, H1.bad, H
   (forall m, m <> H2.mtgt{2} => RO2.RO.m{1}.[m] = RO2.RO.m{2}.[m]) /\
   (!H1.bad{2} <=> 
              Some H2.mtgt{2} = dec  CCA.sk{2}.`1.`2 (oget CCA.cstar{2})));
-    1: by auto => />; smt(mem_empty get_setE fdom_set @SmtMap @FSet @List).
+    1: by auto => />; smt(mem_empty get_setE fdom_set @FMap @FSet @List).
 
 case (H1.bad{1}).
 rnd;wp;call(:H1.bad,false,CCA.cstar{2} <> None /\ 
@@ -1180,9 +1180,9 @@ proc.
     + by islossless.
   + case (H1.bad). 
     + conseq(:nobias); 1: smt().
-      by rnd;rnd;auto => /> *;rewrite DBool.dbool_ll /=;smt(DBool.dbool1E).
+      rnd;rnd;auto => /> *;rewrite DBool.dbool_ll /=; smt(DBool.dboolE).
     conseq(: b' = b); 1:smt(). 
-    by rnd;rnd;auto => /> *;rewrite DBool.dbool_ll /=;smt(DBool.dbool1E).
+    by rnd;rnd;auto => /> *;rewrite DBool.dbool_ll /=;smt(DBool.dboolE).
   + by hoare; trivial.
 by done.
 qed.
