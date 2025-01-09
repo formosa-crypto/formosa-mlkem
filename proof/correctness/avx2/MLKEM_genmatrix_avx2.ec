@@ -407,8 +407,7 @@ case: (to_uint _a < _i1) => C1.
  rewrite !to_uintD !to_uintN !of_uintK.
  by rewrite ifT 1:/# /=.
 rewrite -lezNgt in C1.
-rewrite (W64.to_uintB _a) //=.
-by rewrite /(\ule)  of_uintK E1.
+by rewrite (W64.to_uintB _a) 1:uleE 1:of_uintK 1:E1.
 qed.
 
 lemma comp_u64_l_int_and_u64_l_int_ll:
@@ -495,7 +494,7 @@ lemma rejection16_cat l1 l2:
  3 %| size l1 =>
  rejection16 (l1++l2) = rejection16 l1 ++ rejection16 l2.
 proof.
-by move=> H; rewrite /rejection16 rejection_cat // map_cat.
+by move=> H; rewrite /rejection16 rejection_cat 1:// map_cat.
 qed.
 
 hoare gen_matrix_buf_rejection_h _pol _ctr _buf _buf_offset:
@@ -534,8 +533,8 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
  rewrite !of_uintK => Hstep.
  rewrite !to_uintD_small 1:/# !of_uintK; split; first smt().
  split.
-  split; first by rewrite !modz_small //= /#.
-  by move=> *; rewrite !modz_small //= /#.
+  split; first by rewrite !modz_small 1:// /= /#.
+  by move=> *; rewrite !modz_small 1:// /= /#.
  split.
   by rewrite size_take_min 1:/# modz_small; smt(size_ge0).
  rewrite modz_small; first smt(size_ge0 size_take_min).
@@ -566,11 +565,11 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
  move => ? [p c'] /= /> Hstep. 
  rewrite !to_uintD_small 1:/# !of_uintK; split; first smt().
  split.
-  by rewrite !modz_small //= /#.
+  by rewrite !modz_small 1:// /= /#.
  pose R:= rejection16 _.
  have ?: 0 <= size R <= 32.
   rewrite /rejection16 size_map; split; first smt(size_ge0).
-  move=> _; apply (size_rejection_le' 48) => //=.
+  move=> _; apply (size_rejection_le' 48); 1:done => /=.
   by rewrite /buf_subl !size_take 1:/# !size_drop /#.
  rewrite !modz_small 1..2:/#.
  split; first smt().
@@ -625,7 +624,7 @@ lemma gen_matrix_buf_rejection_ll:
  islossless Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_buf_rejection.
 proof.
 proc.
-seq 11: (true) => //.
+seq 11: (true)=> //.
  wp; while (condition_loop
             <=> to_uint counter <= 256-32 
                 /\ to_uint buf_offset <= 504-48)
@@ -637,7 +636,7 @@ seq 11: (true) => //.
    exlim counter => _counter.
    call (conditionloop_ph (_buf_offset+W64.of_int 48) (3*168-48) _counter (256-32+1)); simplify.
    auto => /> *.
-   by rewrite to_uintD_small ?of_uintK //= /#.
+   by rewrite to_uintD_small ?of_uintK /= /#.
   by hoare; inline*; auto => />.
  exlim buf_offset => _buf_offset.
  exlim counter => _counter.
@@ -654,7 +653,7 @@ while (condition_loop
   exlim counter => _counter.
   call (conditionloop_ph (_buf_offset+W64.of_int 24) (3*168-24) _counter 256); simplify.
   auto => /> *.
-  by rewrite to_uintD_small ?of_uintK //= /#.
+  by rewrite to_uintD_small ?of_uintK /= /#.
  by hoare; inline*; auto => />.
 exlim buf_offset => _buf_offset.
 exlim counter => _counter.
@@ -878,12 +877,15 @@ rewrite /buf4x_buf /sub; apply eq_in_mkseq => i Hi /=.
 by rewrite initiE 1:/# /#.
 qed.
 
-print set64_direct.
-lemma sub_gen_matrix_indexes idxs _pos _t _k:
+lemma sub_gen_matrix_indexes idxs _pos _t _k (_a:WArray8.t):
  (_pos = 0 \/ _pos = 4) =>
  0 <= _k < 4 =>
-(* idxs = Array8.init (get8 (set64_direct ((init8 ("_.[_]" witness)))%WArray8 0 idxs)) => *)
- idxs = Array8.of_list witness (sub gen_matrix_indexes (2*_pos + 16 * b2i _t) 8) =>
+ idxs = Array8.init
+   (get8
+      (set64_direct _a 0
+         (pack8 (sub gen_matrix_indexes (2 * _pos + 16 * b2i _t) 8)))) =>
+(*
+ idxs = Array8.of_list witness (sub gen_matrix_indexes (2*_pos + 16 * b2i _t) 8) =>*)
  sub idxs (2*_k) 2 = [(pos2ji (_pos+_k) _t).`1; (pos2ji (_pos+_k) _t).`2].
 proof.
 move=> Hpos Hk ->.
@@ -916,16 +918,12 @@ seq 10 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
   wp; ecall {1} (shake128x4_absorb_A32_A2_ph rho{1} indexes{1}) => /=.
   wp; ecall {1} (gen_matrix_get_indexes_ph pos{2} t{2}) => /=.
   auto => &1 &2 [# -> Epos Ht Hpos]; split; first smt().
-  move=> _ idxs -> st.
-  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 0 _ _ _) 1..3://.
-admit.
-  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 1 _ _) 1..3://.
-admit.
-  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 2 _ _) 1..3://.
-admit.
-  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 3 _ _) 1..3://.
-admit.
-  smt().
+  move=> _ idxs -> st; pose a:= WArray8.init8 _.
+  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 0 a _ _) 1..3://.
+  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 1 a _ _) 1..3://.
+  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 2 a _ _) 1..3://.
+  rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 3 a _ _) 1..3://.
+  done.
  wp; ecall {1} (shake128x4_squeeze3blocks_ph st0{2} st1{2} st2{2} st3{2}) => /=.
  auto => /> &1 &2 Hmatch [stx4 bufx4] /=.
  rewrite !buf_sublE 1..4:// /=.

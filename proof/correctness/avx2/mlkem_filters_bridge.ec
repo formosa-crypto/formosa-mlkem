@@ -635,7 +635,6 @@ move => i ib.
 congr.
 elim (iota_ 0 32); 1: by auto.
 move => x l.
-print W12.
 pose F1 := (fun (x0 : int) =>
      to_uint
        (oget

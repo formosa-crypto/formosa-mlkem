@@ -10,33 +10,8 @@ from CryptoSpecs require import MLKEM Symmetric.
 require import MLKEM_KEM_avx2.
 require import MLKEM_InnerPKE_avx2_stack.
 
-(* sha3 assumptions *) 
-axiom sha3_256A_M1184_ph_stack (inp : W8.t Array1184.t):
- phoare [ Jkem_avx2_stack.M._sha3_256A_A1184
-        : arg.`2 = inp 
-          ==> 
-          res = SHA3_256_1184_32
-            (Array1152.init (fun i => inp.[i]),
-             Array32.init (fun i => inp.[1152+i]))] = 1%r.
+require import MLKEM_keccak_avx2.
 
-axiom sha3_512A_512A_A64_stack m hpk:
- phoare [ Jkem_avx2_stack.M._sha3_512A_A64
-        : 
-    m = Array32.init (fun i => arg.`2.[i]) /\
-    hpk = Array32.init (fun i => arg.`2.[i+32]) 
-          ==> 
-          let (_K,r) =  SHA3_512_64_64 m hpk in
-            _K = Array32.init (fun i => res.[i]) /\
-            r = Array32.init (fun i => res.[i+32]) ] = 1%r.
-
-axiom shake256_A32_A1120_ph_stack (_in : W8.t Array1120.t):
-    phoare[ Jkem_avx2_stack.M._shake256_A32__A1120 :
-             arg.`2=_in  ==>
-             res =
-             SHAKE_256_1120_32 
-               (init (fun (k : int) => _in.[k]))%Array32
-               ((init (fun (k : int) => _in.[32 + k]))%Array960,
-                (init (fun (k : int) => _in.[960 + 32 + k]))%Array128)] = 1%r.
 
 lemma copy32 (a : W8.t Array32.t) :
 Array32.init (fun (i : int)  =>  WArray32.get8 (WArray32.init64                                                                                    
@@ -185,14 +160,16 @@ seq 11 1 : (
      + move => ii iibl iibh.
        rewrite /get64_direct (inj_eq W8u8.pack8_t pack_inj) packP => k kh.
        rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-      rewrite get8_set64_directE 1,2:/# /=.
+       rewrite initiE 1:/# /=.
+       rewrite get8_set64_directE 1,2:/# /=.
       case  ( (296 + i{hr}) * 8 <= 2368 + ii * 8 + k && 2368 + ii * 8 + k < (296 + i{hr}) * 8 + 8) => *.
-      + rewrite  pack8bE 1:/# initiE 1:/# /= initiE 1: /# /= initiE 1:/# /=.
+      + rewrite  pack8bE 1:/# initiE 1:/# /= initiE 1: /# /=.
         by   smt(Array32.initiE).
       move : (prev ii _);1:by smt().
       rewrite /get64_direct (inj_eq W8u8.pack8_t pack_inj) packP => Hii.
-      rewrite -Hii 1:/#.
-      by rewrite /get8 initiE 1:/# /= initiE 1:/# /= initiE /#.
+      move: (Hii k _); first smt().
+      rewrite !initiE 1..2:/# /= => <-.
+      by rewrite /get8 !initiE /#.
 
 auto =>/> &1 &2 *;do split. 
      + move => ii iibl iibh.
