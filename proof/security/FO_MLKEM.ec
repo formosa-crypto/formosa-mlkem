@@ -1,4 +1,4 @@
-require import AllCore Distr List Real SmtMap FSet DInterval FinType KEM_ROM.
+require import AllCore Distr List Real FMap FSet DInterval FinType KEM_ROM.
 require (****) PKE_ROM PlugAndPray Hybrid FelTactic. 
 
 require FO_UU.
@@ -238,7 +238,7 @@ seq 6 5 : (#pre /\ m0{1} = m{2} /\ pk1{1} = pk0{2} /\
         dkey `*` randd; last by smt().
     rewrite dprod_dlet; congr;apply fun_ext => r.
     by rewrite dlet_dunit.
-  by auto => />;smt(get_setE mem_set mem_empty @SmtMap @FSet).
+  by auto => />;smt(get_setE mem_set mem_empty @FMap @FSet).
 
 seq 1 1 : (#pre /\ c1{1} = c0{2}); 1: by auto => /#.
 
@@ -395,7 +395,8 @@ have -> : Pr[KEMROMx2.RO2.MainD(DKK2(A),RO2.RO).distinguish() @ &m : res] =
           ={res} /\
           (CCA.sk{1}, CCA.cstar{1}, RO1.RO.m{1}, (glob A){1}) =
           (CCA.sk{2}, CCA.cstar{2}, RO1.RO.m{2}, (glob A){2})) => //.
-  apply(RO2.FullEager.RO_LRO (DKK2(A)) _).
+  conseq (: ={glob DKK2(A), arg} ==> ={res, glob DKK2(A)}) => //. 
+  apply (RO2.FullEager.RO_LRO (DKK2(A)) _).
   by move => *;rewrite dkey_ll.
 
 have <- : Pr[KEMROMx2.RO1.MainD(DKK1(A),RO1.RO).distinguish() @ &m : res] =
@@ -405,7 +406,8 @@ have <- : Pr[KEMROMx2.RO1.MainD(DKK1(A),RO1.RO).distinguish() @ &m : res] =
           ={res} /\
           (CCA.sk{1}, CCA.cstar{1}, RO2.RO.m{1}, (glob A){1}) =
           (CCA.sk{2}, CCA.cstar{2}, RO2.RO.m{2}, (glob A){2})) => //.
-  apply(RO1.FullEager.RO_LRO (DKK1(A)) _).
+  conseq (: ={glob DKK1(A), arg} ==> ={res, glob DKK1(A)}) => //. 
+  apply (RO1.FullEager.RO_LRO (DKK1(A)) _).
   by move => *;rewrite randd_ll.
 
 byequiv => //;proc;inline {1} 2; inline {2} 2. 
@@ -456,7 +458,8 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
   case (m'{1} = None).
   + rcondf{1} 8; 1: by auto.
     rcondt{1} 8; 1: by auto.
-    by auto => />;smt(get_setE). 
+    auto => />.
+    by do ? (move=> *; split); smt(get_setE).
   rcondt{1} 8; 1: by auto.
   inline *.
   rcondf{1} 10; 1: by auto;smt(mem_set).
@@ -480,7 +483,7 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
     by auto => />;smt(get_setE).  
 
     rcondf{1} 2;1: by move => *;inline *;auto => />.
-    by inline *;auto => /> *; do split;move => *;do split;move => *;1:do split;smt(@SmtMap).
+    by inline *;auto => /> *; do split;move => *;do split;move => *;1:do split;smt(@FMap).
 
 inline *. 
 swap {1} 14 -13. swap {1} 20 -18. swap {2} 11 -10.
