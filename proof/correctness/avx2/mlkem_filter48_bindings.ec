@@ -1,7 +1,7 @@
 (* -------------------------------------------------------------------- *)
 (* ----- *) require import AllCore IntDiv List.
 from Jasmin require import JModel.
-(* ----- *) require export Bindings.
+from CryptoSpecs require export Bindings.
 (* ----- *) require import Genbindings.
 (* ----- *) (* - *) import W8.
 
