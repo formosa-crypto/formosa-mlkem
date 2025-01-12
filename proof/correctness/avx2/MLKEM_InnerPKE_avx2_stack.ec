@@ -313,120 +313,9 @@ module Mix = {
   
 }.
 
-equiv aux_dumpstate : 
-  M.a64____dumpstate_array_avx2 ~ M.a64____dumpstate_array_avx2 :
-   ={buf, offset, lEN, st} ==> ={res}.
-proc => /=.
-sp;if;1: by auto.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-qed.
-
-equiv aux_buflen_dumpstate : 
-M.aBUFLEN____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 : ={buf, offset, lEN, st}  ==> ={res}.
-proc => /=.
-sp;if;1: by auto.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-qed.
-
-equiv aux_buflen_dumpstate1 : 
-Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 : ={buf, offset, lEN, st}  ==> ={res}.
-proc => /=.
-sp;if;1: by auto.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-qed.
-
-equiv aux_buflen_dumpstate2 :
-     M.a64____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).a64____dumpstate_array_avx2 :
-  ={buf, offset, lEN, st} ==> ={res}.
-proc => /=.
-sp;if;1: by auto.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,_0,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;seq 1 1 : (={buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA}); 1: by sim. 
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-sp;if;1: by auto.
-sp;seq 1 1 : (={t,t128_0,t128_1,buf, offset, lEN, st,buf, dELTA,t256_0,t256_1,t256_2,t256_3}); by sim. 
-by sim.
-qed.
-
-
 equiv mlkem_correct_kg_avx2_stack_mix  : 
-M.__indcpa_keypair  ~ Mix.__indcpa_keypair  : ={arg} ==> ={res}.
-proc => /=. 
-sim (M.a64____dumpstate_array_avx2 ~ M.a64____dumpstate_array_avx2 :
-   true)
-   (M.aBUFLEN____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 : true) => /=; [ by apply aux_dumpstate | by apply aux_buflen_dumpstate].
-qed.
+ M.__indcpa_keypair  ~ Mix.__indcpa_keypair  : ={arg} ==> ={res}
+ by sim.
 
 equiv aux_invntt : 
   M._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : ={arg} ==> ={res}.
@@ -442,15 +331,14 @@ qed.
 
 
 equiv mlkem_correct_enc_avx2_stack_mix  : 
-M.__indcpa_enc  ~ Mix.__indcpa_enc  : ={arg} ==> ={res}.
+ M.__indcpa_enc  ~ Mix.__indcpa_enc  : ={arg} ==> ={res}.
 proc => /=. 
-sim (M._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true))
- (M.aBUFLEN____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 : true) => /=;
-   [ by apply aux_buflen_dumpstate | by apply aux_invntt].
+sim (M._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true)).
+by apply aux_invntt.
 qed.
 
 equiv mlkem_correct_dec_avx2_stack_mix  : 
-M.__indcpa_dec  ~ Mix.__indcpa_dec  : ={arg} ==> ={res}.
+ M.__indcpa_dec  ~ Mix.__indcpa_dec  : ={arg} ==> ={res}.
 proc => /=. 
 sim (M._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true)); by apply aux_invntt.
 qed.
@@ -505,13 +393,11 @@ seq 12 12 : (#pre /\ ={aa,buf,e,inbuf,noiseseed,pkpv,publicseed,skpv}); 1: by co
 
 seq 1 1 : #pre.
 + conseq />; inline {1} 1; inline {2} 1.
-  by sim (M.a64____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).a64____dumpstate_array_avx2 :true) => /=;apply aux_buflen_dumpstate2.
+  by sim.
 
 seq 23 23 : #pre.
 conseq />. 
-by sim 
-   (Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 ~ 
-    Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 : true) => /=; apply aux_buflen_dumpstate1.
+by sim.
 
 wp => /=.
 
@@ -654,8 +540,8 @@ seq 3 3 : #{/~pkp{2}}pre.
   + by rewrite to_uintD_small /= /#. 
   + by rewrite to_uintD_small /= /#. 
 
-by sim (Jkem_avx2.M(Syscall)._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true))
- (Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).aBUFLEN____dumpstate_array_avx2 : true)  (M.a64____dumpstate_array_avx2 ~ Jkem_avx2.M(Syscall).a64____dumpstate_array_avx2 :true) => /=;[ apply aux_buflen_dumpstate1 | apply aux_invntt2]. 
+sim (Jkem_avx2.M(Syscall)._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true)).
+by apply aux_invntt2.
 qed.
 
 
