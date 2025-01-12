@@ -802,16 +802,18 @@ seq 16 18  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /
  ecall{1} (sha3_512A_A33_ph inbuf{1}) => /=.
  wp; while (={i, aux, randomnessp0, inbuf}); first by auto.
  auto => /> &m ?????? inbuf ?? r.
- rewrite /SHA3_512_33_64 /= => H1 H2.
+ rewrite /SHA3_512_33_64 /= => H1 seed.
+ rewrite !Array32.tP => H2 H3.
  apply Array64.ext_eq => i Hi.
- rewrite get_of_list 1://.
  case: (0 <= i < 32) => C.
-  have ->: r.[i] = (Array32.init  ("_.[_]" r)).[i].
-   by rewrite initiE 1://.
-  by rewrite H1 get_of_list 1:// eq_sym nth_take 1..2:/#.
+  move: (H2 i _); first done.
+  rewrite initiE 1:// get_of_list 1:// nth_take 1..2:/# -H1 => ->.
+  by rewrite /to_list nth_mkseq.
+ move: (H3 (i-32) _); first smt().
+ rewrite initiE 1:/# get_of_list 1:/# nth_drop 1..2:/# /= => ->.
  have ->: r.[i] = (Array32.init (fun i=>r.[32+i])).[i-32].
   by rewrite initiE /#.
- by rewrite H2 get_of_list 1:/# nth_drop /#. 
+ by rewrite -H1 /to_list nth_mkseq 1:/# initiE /#.
 
 sp 0 2.
 seq 2 2 : (#pre /\ aa{1} = nttunpackm a{2} /\
