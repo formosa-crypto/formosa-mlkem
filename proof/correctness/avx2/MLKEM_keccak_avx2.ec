@@ -2,19 +2,14 @@ require import AllCore IntDiv List.
 
 from Jasmin require import JModel.
 
-from CryptoSpecs require import Bindings.
-from CryptoSpecs require import FIPS202_Keccakf1600.
-
-from CryptoSpecs require import Keccakf1600_Spec.
+from CryptoSpecs require import JWordList.
+from CryptoSpecs require import FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
 
 from Keccak require import Keccakf1600_ref.
 
-from CryptoSpecs require import JWordList.
-from CryptoSpecs require import FIPS202_SHA3_Spec.
 from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
 from CryptoSpecs require import Symmetric.
-
 require import MLKEMFCLib.
 
 from JazzEC require import Jkem_avx2 WArray200.
