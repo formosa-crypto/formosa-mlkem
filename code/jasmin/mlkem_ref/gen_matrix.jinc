@@ -1,4 +1,5 @@
-require "fips202.jinc"
+//require "fips202.jinc"
+require "mlkem_keccak_ref.jinc"
 require "params.jinc"
 
 inline

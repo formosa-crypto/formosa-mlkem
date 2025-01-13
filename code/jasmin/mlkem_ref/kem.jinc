@@ -33,8 +33,9 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
   s_skp = skp;
   pkp = s_pkp;
 
-  t64 = MLKEM_POLYVECBYTES + MLKEM_SYMBYTES;
-  h_pk = _isha3_256(h_pk, pkp, t64);
+  //t64 = MLKEM_POLYVECBYTES + MLKEM_SYMBYTES;
+  //h_pk = _isha3_256(h_pk, pkp, t64);
+  h_pk = _isha3_256_M1184(h_pk, pkp);
   skp = s_skp;
 
   for i=0 to 4
@@ -76,8 +77,9 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKE
 
   pkp = s_pkp;
 
-  t64 = MLKEM_PUBLICKEYBYTES;
-  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp, t64);
+  //t64 = MLKEM_PUBLICKEYBYTES;
+  //buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp, t64);
+  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256_M1184(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp);
 
   kr = _sha3_512_64(kr, buf);
 

@@ -17,7 +17,7 @@ test: test/test_kem
 speed: test/speed_kem
 
 JINC = kem.jinc params.jinc zetas.jinc verify.jinc reduce.jinc \
-       polyvec.jinc poly.jinc indcpa.jinc gen_matrix.jinc fips202.jinc
+       polyvec.jinc poly.jinc indcpa.jinc gen_matrix.jinc mlkem_keccak_ref.jinc #fips202.jinc
 
 
 SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
