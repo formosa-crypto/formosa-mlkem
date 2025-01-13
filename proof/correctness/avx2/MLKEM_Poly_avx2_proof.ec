@@ -3707,7 +3707,10 @@ proof.
     apply Array8.ext_eq => x x_i.
     rewrite f_def 1:x_i //= Array8.initiE 1:x_i //=.
 
-  smt().
+  have ->: k %% (15 - (linear_idx %% 32 + n) %% 16) = k %% 4 by smt().
+  move => ->; congr; congr; congr; congr. 
+   by congr; congr; smt(). 
+  smt(). 
 
   move => k k_lb k_ub.
 

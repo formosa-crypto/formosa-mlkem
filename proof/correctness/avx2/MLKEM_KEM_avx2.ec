@@ -343,7 +343,7 @@ seq 13 4 : (#[/1:-2]post
   move => mm ii;do split => ???????; 1: smt().
   by rewrite /load_array32 tP => kk kkb; smt(Array32.initiE).
 wp; call (mlkem_correct_enc_0_avx2 mem _ctp _pkp).
-wp; ecall {1} (sha3_512A_A64_ph buf{1} kr{1}).
+wp; ecall {1} (sha3_512A_A64_ph buf{1}).
 wp; ecall {1} (sha3_256A_M1184_ph mem (_pkp)).
 seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1} /\ randomnessp{1} = Array32.init (fun i => buf{1}.[i])).
 + sp ; conseq />.

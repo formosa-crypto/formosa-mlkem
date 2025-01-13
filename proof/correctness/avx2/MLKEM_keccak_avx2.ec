@@ -684,6 +684,11 @@ qed.
 
 (*********************************************************************************)
 equiv sha3_512A_A64_eq:
+  M(Syscall)._sha3_512A_A64 ~ K._sha3_512A_A64
+ : ={arg} ==> ={res}
+by sim.
+
+equiv sha3_512A_A64_stack_eq:
   Jkem_avx2_stack.M._sha3_512A_A64 ~ K._sha3_512A_A64
  : ={arg} ==> ={res}
 by sim.
@@ -722,6 +727,36 @@ proof.
 by conseq sha3_512A_A64_ll (sha3_512A_A64_h' _in).
 qed.
 
+phoare sha3_512A_A64_ph inp: 
+ [ M(Syscall)._sha3_512A_A64
+ : arg.`2 = inp
+ ==>
+  let bytes = SHA3_512_64_64 (Array32.init (fun k => inp.[k])) 
+                             (Array32.init (fun k => inp.[k+32]))
+  in res = Array64.init (fun k => if k < 32
+                                  then bytes.`1.[k]
+                                  else bytes.`2.[k-32])
+ ] = 1%r.
+proof.
+conseq sha3_512A_A64_eq (sha3_512A_A64_ph' inp) => /> &m.
+ by exists arg{m} => />.
+rewrite -(Array64.of_listK W8.zero (SHA3_512 (to_list inp))).
+ by rewrite size_SQUEEZE1600 /#.
+move=> /Array64.to_list_inj ->.
+rewrite tP => i Hi.
+rewrite get_of_list 1:// initiE 1:// /= /SHA3_512_64_64 /=.
+rewrite {1}/Array64.to_list (mkseq_add _ 32 32) 1..2://.
+case: (i<32) => C.
+ rewrite initiE 1:/# /= (nth_take _ 32) 1..2:/#; congr; congr; congr.
+  apply eq_in_mkseq => k Hk /=.
+  by rewrite initiE 1:/#.
+ apply eq_in_mkseq => k Hk /=.
+ by rewrite initiE /#.
+rewrite get_of_list 1:/# nth_drop 1..2:/#; congr.
+ by congr; congr; apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
+smt().
+qed.
+
 phoare sha3_512A_512A_A64_stack m hpk:
  [ Jkem_avx2_stack.M._sha3_512A_A64
  : 
@@ -746,7 +781,7 @@ conseq (: arg.`2 = _in
  have ->: in_0{m}.[i] = hpk.[i-32].
   by rewrite E2 initiE 1:/#.
  by rewrite get_of_list 1:// nth_cat size_to_list C /=.
-conseq sha3_512A_A64_eq (sha3_512A_A64_ph' _in) => />.
+conseq sha3_512A_A64_stack_eq (sha3_512A_A64_ph' _in) => />.
  by move=> &m ?; exists arg{m} => /=.
 move=> &m; rewrite /_in of_listK.
  by rewrite size_cat !size_to_list.
