@@ -1707,7 +1707,7 @@ seq 1 0 : (#{/~v{1}}pre /\
   rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   rewrite /ntt_dotp /dotp /kvec /=.
   rewrite !Big.BAdd.big_consT /= !Big.BAdd.big_nil => />. 
-  rewrite !add_comm_ntt !mul_comm_ntt. print nttvecinv.
+  rewrite !add_comm_ntt !mul_comm_ntt.
   by rewrite -!getvE !nttvecinv // nttZero; congr;ring.
 
 seq 1 0 : (#{/~bp{1}}pre /\ 
@@ -2013,7 +2013,7 @@ seq 1 0 : (#{/~v{1}}pre /\
   rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   rewrite /ntt_dotp /dotp /kvec /=.
   rewrite !Big.BAdd.big_consT /= !Big.BAdd.big_nil => />. 
-  rewrite !add_comm_ntt !mul_comm_ntt. print nttvecinv.
+  rewrite !add_comm_ntt !mul_comm_ntt.
   by rewrite -!getvE !nttvecinv // nttZero; congr;ring.
 
 seq 1 0 : (#{/~bp{1}}pre /\ 

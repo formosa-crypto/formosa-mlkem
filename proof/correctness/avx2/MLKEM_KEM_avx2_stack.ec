@@ -644,7 +644,7 @@ wp;ecall {1} (cmov_correct_stack shk0{1} (Array32.init (fun (i_0 : int) => kr{1}
 wp;ecall{1} (shake256_A32_A1120_ph_stack zp_ct{1}).
 conseq />;1: smt().
 
-sp 2 0. print J.
+sp 2 0.
 seq 3 0 : (#pre /\
       z{2} = Array32.init (fun i => zp_ct{1}.[i]) 
 ).

@@ -21,23 +21,6 @@ from JazzEC require import Jkem_avx2 WArray200.
 from JazzEC require Jkem_avx2_stack.
 
 
-lemma state2bytesE st i:
- (state2bytes st).[i] = (stbytes st).[i].
-admitted.
-
-hoare state_init_avx2x4_h:
- Jazz_avx2.M.__state_init_avx2x4
- : true
- ==> match_state4x st0 st0 st0 st0 res.
-admitted.
-
-lemma bytes2state0: bytes2state [] = st0.
-admitted.
-
-lemma addstate_st0 st: addstate st0 st = st.
-admitted.
-
-
 
 
 (****************************************************************************)
@@ -82,12 +65,45 @@ equiv squeeze_imem_avx2_eq:
 
 (****************************************************************************)
 (****************************************************************************)
+from Keccak require import Keccak1600_avx2x4.
+
+equiv state_init_avx2x4_eq:
+ M(Syscall).__state_init_avx2x4 ~ Jazz_avx2.M.__state_init_avx2x4
+ : ={arg} ==> ={res}
+ by sim.
+
+equiv addratebit_avx2x4_eq:
+ M(Syscall).__addratebit_avx2x4 ~ Jazz_avx2.M.__addratebit_avx2x4
+ : ={arg} ==> ={res}
+ by sim.
+
+(****************************************************************************)
+(****************************************************************************)
+
+from Keccak require import Keccak1600_imem_avx2x4.
+
+(*
+equiv absorb_imem_avx2x4_eq:
+ M(Syscall).__absorb_imem_avx2x4 ~ Jazz_avx2.M.__absorb_imem_avx2x4
+ : ={arg,Glob.mem} ==> ={res,Glob.mem}
+ by sim.
+*)
+
+(*
+equiv squeeze_imem_avx2x4_eq:
+ M(Syscall).__squeeze_imem_avx2x4 ~ Jazz_avx2.M.__squeeze_imem_avx2x4
+ : ={arg,Glob.mem} ==> ={res,Glob.mem}
+ by sim.
+*)
+
+(****************************************************************************)
+(****************************************************************************)
 
 from Keccak require import Keccakf1600_ref.
-from Keccak require Keccak1600_array_avx2.
-from Keccak require Keccak1600_avx2x4.
 from JazzEC require import WArray768.
 from JazzEC require import Array24 Array5.
+
+from Keccak require Keccak1600_array_avx2.
 from Keccak require Keccak1600_array_avx2x4.
 
 (****************************************************************************)
@@ -572,6 +588,8 @@ module K = {
     return (st, buf);
   }
 }.
+
+
 
 (*********************************************************************************)
 equiv sha3_512A_A33_eq:
@@ -1113,8 +1131,6 @@ equiv shake128_squeeze3blocks_eq:
  : ={arg} ==> ={res}
 by sim.
 
-from Keccak require import Keccakf1600_avx2.
-
 hoare shake128_squeeze3blocks_h' _buf _st:
  K._shake128_squeeze3blocks
  : buf=_buf /\ st=stavx2_from_st25 _st
@@ -1124,7 +1140,6 @@ hoare shake128_squeeze3blocks_h' _buf _st:
   /\ sub res (2*168) 200 = state2bytes (FIPS202_SHA3_Spec.st_i _st 3).
 proof.
 proc.
-print ABUFLENavx2.dumpstate_array_avx2_h.
 ecall (ABUFLENavx2.dumpstate_array_avx2_h buf offset 200 st).
 ecall (keccakf1600_avx2_h (stavx2_to_st25 st)).
 ecall (ABUFLENavx2.dumpstate_array_avx2_h buf offset 168 st).
@@ -1433,8 +1448,6 @@ equiv shake128x4_squeeze3blocks_eq:
  : ={arg} ==> ={res}
 by sim.
 
-
-
 hoare shake128x4_squeeze3blocks_h' _st0 _st1 _st2 _st3:
  K._shake128x4_squeeze3blocks
  : match_state4x _st0 _st1 _st2 _st3 st
@@ -1449,14 +1462,131 @@ hoare shake128x4_squeeze3blocks_h' _st0 _st1 _st2 _st3:
    /\ sub res.`2 (3*536+2*168) 200 = state2bytes (st_i _st3 3).
 proof.
 proc => /=.
-admitted.
+wp.
+ecall (ABUFLENavx2x4.dumpstate_array_avx2x4_h buf0 buf1 buf2 buf3 offset 200 st).
+ecall (keccakf1600_avx2x4_h st).
+ecall (ABUFLENavx2x4.dumpstate_array_avx2x4_h buf0 buf1 buf2 buf3 offset 168 st).
+ecall (keccakf1600_avx2x4_h st).
+ecall (ABUFLENavx2x4.dumpstate_array_avx2x4_h buf0 buf1 buf2 buf3 offset 168 st).
+ecall (keccakf1600_avx2x4_h st).
+auto => /> &m Hst.
+rewrite !map_state4x_a25bits64 //.
+move=> []b01 b11 b21 b31 ? /= Eb01 Eb11 Eb21 Eb31 ->; split.
+ by rewrite of_uintK /#.
+move=> _[]b02 b12 b22 b32 ? /= Eb02 Eb12 Eb22 Eb32 ->; split.
+ by rewrite of_uintK /#.
+move=> _[]b03 b13 b23 b33 ? /= Eb03 Eb13 Eb23 Eb33 _.
+split.
+ apply (eq_from_nth W8.zero).
+  by rewrite size_sub 1:// size_SQUEEZE1600 /#.
+ move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifF 1:/# /=.
+ rewrite initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+ rewrite Eb03 filliE 1:/# /=.
+ case: (i < 336) => C3.
+  rewrite ifF 1:/# Eb02 filliE 1:/# /=.
+  case: (i < 168) => C2.
+   rewrite ifF 1:/# Eb01 filliE 1:/# /= ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+   by rewrite divz_small 1:/# /= /st_i iter1 modz_small 1:/# Hst a25pack4_bits64 /#.
+  rewrite ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+  rewrite (:i %/ c256_r8 = 1) 1:/# /st_i iter2 (:i %% c256_r8 = i-168) 1:/#.
+  by rewrite Hst a25pack4_bits64 /#.
+ rewrite ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+ rewrite (:i %/ c256_r8 = 2) 1:/# /st_i iterS 1:// iter2 (:i %% c256_r8 = i-336) 1:/#.
+ by rewrite Hst a25pack4_bits64 /#.
+split.
+ apply (eq_from_nth W8.zero).
+  by rewrite size_sub 1:// size_SQUEEZE1600 /#.
+ move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifF 1:/# /=.
+ rewrite initiE 1:/# /= ifF 1:/# initiE 1:/# /=.
+ rewrite ifT 1:/#.
+ rewrite Eb13 filliE 1:/# /=.
+ case: (i < 336) => C3.
+  rewrite ifF 1:/# Eb12 filliE 1:/# /=.
+  case: (i < 168) => C2.
+   rewrite ifF 1:/# Eb11 filliE 1:/# /= ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+   by rewrite divz_small 1:/# /= /st_i iter1 modz_small 1:/# Hst a25pack4_bits64 /#.
+  rewrite ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+  rewrite (:i %/ c256_r8 = 1) 1:/# /st_i iter2 (:i %% c256_r8 = i-168) 1:/#.
+  by rewrite Hst a25pack4_bits64 /#.
+ rewrite ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+ rewrite (:i %/ c256_r8 = 2) 1:/# /st_i iterS 1:// iter2 (:i %% c256_r8 = i-336) 1:/#.
+ by rewrite Hst a25pack4_bits64 /#.
+split.
+ apply (eq_from_nth W8.zero).
+  by rewrite size_sub 1:// size_SQUEEZE1600 /#.
+ move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifF 1:/# /=.
+ rewrite initiE 1:/# /= ifT 1:/#.
+ rewrite Eb23 filliE 1:/# /=.
+ case: (i < 336) => C3.
+  rewrite ifF 1:/# Eb22 filliE 1:/# /= nth_SQUEEZE1600 1..2:/#.
+  case: (i < 168) => C2.
+   rewrite ifF 1:/# Eb21 filliE 1:/# /= ifT 1:/#.
+   by rewrite divz_small 1:/# /= /st_i iter1 modz_small 1:/# Hst a25pack4_bits64 /#.
+  rewrite ifT 1:/#.
+  rewrite (:i %/ c256_r8 = 1) 1:/# /st_i iter2 (:i %% c256_r8 = i-168) 1:/#.
+  by rewrite Hst a25pack4_bits64 /#.
+ rewrite ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+ rewrite (:i %/ c256_r8 = 2) 1:/# /st_i iterS 1:// iter2 (:i %% c256_r8 = i-336) 1:/#.
+ by rewrite Hst a25pack4_bits64 /#.
+split.
+ apply (eq_from_nth W8.zero).
+  by rewrite size_sub 1:// size_SQUEEZE1600 /#.
+ move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifT 1:/# /=.
+ rewrite Eb33 filliE 1:/# /=.
+ case: (i < 336) => C3.
+  rewrite ifF 1:/# Eb32 filliE 1:/# /= nth_SQUEEZE1600 1..2:/#.
+  case: (i < 168) => C2.
+   rewrite ifF 1:/# Eb31 filliE 1:/# /= ifT 1:/#.
+   by rewrite divz_small 1:/# /= /st_i iter1 modz_small 1:/# Hst a25pack4_bits64 /#.
+  rewrite ifT 1:/#.
+  rewrite (:i %/ c256_r8 = 1) 1:/# /st_i iter2 (:i %% c256_r8 = i-168) 1:/#.
+  by rewrite Hst a25pack4_bits64 /#.
+ rewrite ifT 1:/# nth_SQUEEZE1600 1..2:/#.
+ rewrite (:i %/ c256_r8 = 2) 1:/# /st_i iterS 1:// iter2 (:i %% c256_r8 = i-336) 1:/#.
+ by rewrite Hst a25pack4_bits64 /#.
+split.
+ apply (eq_from_nth W8.zero).
+  by rewrite size_sub 1:// size_state2bytes /#.
+ move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifF 1:/# /=.
+ rewrite initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+ rewrite Eb03 filliE 1:/# /= ifT 1:/#.
+ rewrite /st_i (:3=2+1) 1:// iterS 1:// iter2.
+ by rewrite Hst a25pack4_bits64 //= state2bytesE.
+split.
+ apply (eq_from_nth W8.zero).
+  by rewrite size_sub 1:// size_state2bytes /#.
+ move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifF 1:/# /=.
+ rewrite initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/# /=.
+ rewrite Eb13 filliE 1:/# /= ifT 1:/#.
+ rewrite /st_i (:3=2+1) 1:// iterS 1:// iter2.
+ by rewrite Hst a25pack4_bits64 //= state2bytesE.
+split.
+ apply (eq_from_nth W8.zero).
+  by rewrite size_sub 1:// size_state2bytes /#.
+ move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifF 1:/# /=.
+ rewrite initiE 1:/# /= ifT 1:/# /=.
+ rewrite Eb23 filliE 1:/# /= ifT 1:/#.
+ rewrite /st_i (:3=2+1) 1:// iterS 1:// iter2.
+ by rewrite Hst a25pack4_bits64 //= state2bytesE.
+apply (eq_from_nth W8.zero).
+ by rewrite size_sub 1:// size_state2bytes /#.
+move=> i; rewrite size_sub 1:/# =>  Hi; rewrite nth_sub 1:// initiE 1:/# /= ifT 1:/# /=.
+rewrite Eb33 filliE 1:/# /= ifT 1:/#.
+rewrite /st_i (:3=2+1) 1:// iterS 1:// iter2.
+by rewrite Hst a25pack4_bits64 //= state2bytesE.
+qed.
 
 lemma shake128x4_squeeze3blocks_ll: islossless K._shake128x4_squeeze3blocks.
 proof.
 proc.
 wp; call ABUFLENavx2x4.dumpstate_array_avx2x4_ll.
 call keccakf1600_avx2x4_ll.
-admitted.
+call ABUFLENavx2x4.dumpstate_array_avx2x4_ll.
+call keccakf1600_avx2x4_ll.
+call ABUFLENavx2x4.dumpstate_array_avx2x4_ll.
+call keccakf1600_avx2x4_ll.
+by auto => />.
+qed.
 
 phoare shake128x4_squeeze3blocks_ph' _st0 _st1 _st2 _st3:
  [ K._shake128x4_squeeze3blocks

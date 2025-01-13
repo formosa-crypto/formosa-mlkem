@@ -5,9 +5,12 @@ from CryptoSpecs require export Bindings.
 (* ----- *) require import Genbindings.
 (* ----- *) (* - *) import W8.
 
-(*
 (* taken from "proof/eclib/bindings.ec" (commented there, to avoid perfomance issues)
-   See also additional bindings at the end of this file *)
+   Note however that those issues appear to have been already addressed by "irreducible branch"
+   But the W512 theory is not standard after all (for AVX2), reason why we keep it here.
+
+  TODO: move relevant parts to "Bindings@CryptoSpecs".
+ *)
 theory W512.
   abbrev [-printing] size = 512.
   clone include BitWord with op size <- size
@@ -58,7 +61,7 @@ bind op [W512.t & W16.t] extract_512_16 "extract".
 realize bvextractP by exact/extract_512_16P.
 
 (* -------------------------------------------------------------------- *)
-op concat_2u256 (l h : W256.t) = W512.init (fun i => [l; h].[i %/ 256].[i %% 256]).
+op concat_2u256 (l h : W256.t) = W512.init (fun i => (nth W256.zero [l; h] (i %/ 256)).[i %% 256]).
 
 lemma w2bits_concat_2u256 (w1 w2 : W256.t) :
   w2bits (concat_2u256 w1 w2) = flatten [w2bits w1; w2bits w2].
@@ -77,7 +80,6 @@ by rewrite flatten_cons flatten1.
 qed.
 
 (* ----- *)
-*)
 
 from JazzEC require import Array2048 Array256 Array64 Array56 Array40 Array32.
 
