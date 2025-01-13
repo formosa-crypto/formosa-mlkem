@@ -3401,7 +3401,7 @@ theory NTTequiv.
       rewrite modz_small //; apply/mem_range; rewrite normrX.
       move: mem_i_range; apply/mem_range_incl => //.
       rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
-      by rewrite ler_addl expr_ge0. print eq_sym.
+      by rewrite ler_addl expr_ge0.
     rewrite eq_sym ZqRing.addrC -(ZqRing.subr_eq) eq_sym (BAdd.big_cat_int (2 ^ kl) 0 (2 ^ (kl + 1))).
     + by rewrite expr_ge0.
     + rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
