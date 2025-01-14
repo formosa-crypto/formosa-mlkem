@@ -4713,11 +4713,11 @@ module M = {
         (W64.to_uint at) t256)));
         at <- (at + (W64.of_int 32));
       }
+      offset <- (offset + (W64.of_int dELTA));
+      dELTA <- 0;
     } else {
       
     }
-    offset <- (offset + (W64.of_int dELTA));
-    dELTA <- 0;
     if ((8 <= lEN)) {
       while ((at \ult (W64.of_int ((32 * (aT %/ 8)) + (32 * (lEN %/ 8)))))) {
         t256 <-
