@@ -1,6 +1,5 @@
 from Keccak require "ref/keccak1600_imem_ref.jinc"
 
-
 namespace A32 {
   param int ASIZE = 32;
   from Keccak require "ref/keccak1600_array_ref_ASIZE.jinc"
@@ -36,16 +35,18 @@ namespace A168 {
 fn _shake256_128_33
 ( #spill_to_mmx reg mut ptr u8[128] out
 , reg const ptr u8[33] in
-) -> stack u8[128]
+) -> reg ptr u8[128]
 { stack u64[25] st_s;
   reg ptr u64[25] st;
   reg u64 offset;
 
+  () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
   offset = 0;
   st, _, _ = A33::__absorb_array_ref(st, 0, in, offset, 33, R136, SHAKE);
   offset = 0;
+  () = #unspill(out);
   out, _, _ = A128::__squeeze_array_ref(out, offset, 128, st, R136);
   
   return out;
@@ -58,26 +59,30 @@ fn _shake256_1120_32
   reg ptr u64[25] st;
   inline int AT;
 
+  () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
-  st, AT, _ = __absorb_imem_ref(st, 0, in0, 1088, R136, UNFINISHED);
-  st, _, _ = __absorb_imem_ref(st, AT, in1, 32, R136, SHAKE);
-  _, _ = __squeeze_imem_ref(out, 128, st, R136);
+  st, AT, _ = __absorb_imem_ref(st, 0, in0, 32, R136, UNFINISHED);
+  st, _, _ = __absorb_imem_ref(st, AT, in1, 1088, R136, SHAKE);
+  () = #unspill(out);
+  _, _ = __squeeze_imem_ref(out, 32, st, R136);
 }
 
 fn _sha3512_33
 ( #spill_to_mmx reg mut ptr u8[64] out
 , reg const ptr u8[33] in
-) -> stack u8[64]
+) -> reg ptr u8[64]
 { stack u64[25] st_s;
   reg ptr u64[25] st;
   reg u64 offset;
 
+  () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
   offset = 0;
   st, _, _ = A33::__absorb_array_ref(st, 0, in, offset, 33, R72, SHA3);
   offset = 0;
+  () = #unspill(out);
   out, _, _ = A64::__squeeze_array_ref(out, offset, 64, st, R72);
   
   return out;
@@ -102,7 +107,9 @@ fn _shake128_squeezeblock
 ) -> reg ptr u64[25], reg ptr u8[R168]
 { reg u64 offset;
 
+  () = #spill(out);
   st = _keccakf1600_ref(st);
+  () = #unspill(out);
   offset = 0;
   out, _ = A168::__dumpstate_array_ref(out, offset, R168, st);
 
@@ -118,10 +125,12 @@ fn _isha3_256_M1184
   reg ptr u64[25] st;
   reg u64 offset;
 
+  () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
   st, _, _ = __absorb_imem_ref(st, 0, in, 1184, R136, SHA3);
   offset = 0;
+  () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, offset, 32, st, R136);
   
   return out;
@@ -136,11 +145,13 @@ fn _isha3_256_32
   reg ptr u64[25] st;
   reg u64 offset;
 
+  () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
   offset = 0;
   st, _, _ = A32::__absorb_array_ref(st, 0, in, offset, 32, R136, SHA3);
   offset = 0;
+  () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, offset, 32, st, R136);
   
   return out;
@@ -155,11 +166,13 @@ fn _sha3_512_64
   reg ptr u64[25] st;
   reg u64 offset;
 
+  () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
   offset = 0;
   st, _, _ = A64::__absorb_array_ref(st, 0, in, offset, 64, R72, SHA3);
   offset = 0;
+  () = #unspill(out);
   out, _, _ = A64::__squeeze_array_ref(out, offset, 64, st, R72);
   
   return out;
