@@ -627,7 +627,7 @@ seq 7 1 : (#pre /\
            (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k] = _K{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k+32] = r{2}.[k])).
-ecall {1} (sha3_512A_A64_ph buf{1} kr{1}).
+ecall {1} (sha3_512A_A64_ph buf{1}).
 wp; conseq (_: _ ==> 
    (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
    (forall k, 32<=k<64 => buf{1}.[k] = mem.[_skp + 2336 + k - 32]) /\
@@ -743,4 +743,3 @@ move => goodc mm back c0 c1;split.
     rewrite !tP => H k kb.
     by rewrite (H k kb) initiE /#.
 qed.
-
