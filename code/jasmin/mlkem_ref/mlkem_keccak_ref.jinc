@@ -62,8 +62,8 @@ fn _shake256_1120_32
   () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
-  st, AT, _ = __absorb_imem_ref(st, 0, in0, 32, R136, UNFINISHED);
-  st, _, _ = __absorb_imem_ref(st, AT, in1, 1088, R136, SHAKE);
+  st, _, _ = __absorb_imem_ref(st, 0, in0, 32, R136, UNFINISHED);
+  st, _, _ = __absorb_imem_ref(st, 32, in1, 1088, R136, SHAKE);
   () = #unspill(out);
   _, _ = __squeeze_imem_ref(out, 32, st, R136);
 }

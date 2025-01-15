@@ -1718,22 +1718,22 @@ module M(SC:Syscall_t) = {
   proc _shake256_1120_32 (out:W64.t, in0:W64.t, in1:W64.t) : unit = {
     var st_s:W64.t Array25.t;
     var st:W64.t Array25.t;
-    var aT:int;
-    var  _0:W64.t;
-    var  _1:int;
-    var  _2:W64.t;
+    var  _0:int;
+    var  _1:W64.t;
+    var  _2:int;
     var  _3:W64.t;
-    var  _4:W64.t Array25.t;
-     _4 <- witness;
+    var  _4:W64.t;
+    var  _5:W64.t Array25.t;
+     _5 <- witness;
     st <- witness;
     st_s <- witness;
     (* Erased call to spill *)
     st <- st_s;
     st <@ __state_init_ref (st);
-    (st, aT,  _0) <@ __absorb_imem_ref (st, 0, in0, 32, 136, 0);
-    (st,  _1,  _2) <@ __absorb_imem_ref (st, aT, in1, 1088, 136, 31);
+    (st,  _0,  _1) <@ __absorb_imem_ref (st, 0, in0, 32, 136, 0);
+    (st,  _2,  _3) <@ __absorb_imem_ref (st, 32, in1, 1088, 136, 31);
     (* Erased call to unspill *)
-    ( _3,  _4) <@ __squeeze_imem_ref (out, 32, st, 136);
+    ( _4,  _5) <@ __squeeze_imem_ref (out, 32, st, 136);
     return ();
   }
   proc _sha3512_33 (out:W8.t Array64.t, in_0:W8.t Array33.t) : W8.t Array64.t = {

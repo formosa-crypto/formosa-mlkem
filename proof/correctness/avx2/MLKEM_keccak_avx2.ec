@@ -75,25 +75,6 @@ equiv addratebit_avx2x4_eq:
 (****************************************************************************)
 (****************************************************************************)
 
-from Keccak require import Keccak1600_imem_avx2x4.
-
-(*
-equiv absorb_imem_avx2x4_eq:
- M(Syscall).__absorb_imem_avx2x4 ~ Jazz_avx2.M.__absorb_imem_avx2x4
- : ={arg,Glob.mem} ==> ={res,Glob.mem}
- by sim.
-*)
-
-(*
-equiv squeeze_imem_avx2x4_eq:
- M(Syscall).__squeeze_imem_avx2x4 ~ Jazz_avx2.M.__squeeze_imem_avx2x4
- : ={arg,Glob.mem} ==> ={res,Glob.mem}
- by sim.
-*)
-
-(****************************************************************************)
-(****************************************************************************)
-
 from Keccak require import Keccakf1600_ref.
 from JazzEC require import WArray768.
 from JazzEC require import Array24 Array5.
