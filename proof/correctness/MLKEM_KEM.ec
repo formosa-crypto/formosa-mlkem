@@ -36,11 +36,11 @@ lemma mlkem_kem_correct_kg mem _pkp _skp :
 proc => /=.
 
 
-swap {1} [3..5] 17.
-swap {1} 1 14.
+swap {1} [3..5] 16.
+swap {1} 1 13.
 
 
-seq 19 4 : (
+seq 18 4 : (
       z{2} =Array32.init (fun i => randomnessp{1}.[32 + i])  /\
       to_uint skp{1} = _skp +  1152 + 1152 + 32 + 32 /\
       valid_disj_reg _pkp (384*3+32) _skp (384*3 + 384*3 + 32 + 32 + 32 + 32) /\
@@ -152,7 +152,7 @@ do split; 1,2,3: smt().
   + by move => k kb;  move : (r11 k _) => //; rewrite !initiE //.
   by move => k kb;  move : (r12 k _) => //; rewrite !initiE //.
 
-swap {1} 3 2. swap {1} 12 -4.
+swap {1} 3 2. swap {1} 11 -3.
 
 seq 8 0 : (#{/~to_uint skp{1} = _skp}pre /\
    to_uint skp{1} = _skp + 3*384 + 3*384 + 32 /\
@@ -217,8 +217,8 @@ seq 8 0 : (#{/~to_uint skp{1} = _skp}pre /\
   move => ??????????; do split; 1: smt().
   + by move => *; rewrite initiE //= /#.
   by move => *; rewrite initiE //= /#.
-   
-seq 4 1 : 
+
+seq 3 1 : 
 (to_uint skp{1} = _skp + 2336 /\
    valid_disj_reg _pkp 1184 _skp 2432 /\
   touches2 Glob.mem{1} mem _pkp 1184 _skp 2432 /\
@@ -276,7 +276,7 @@ by smt().
 
 auto => /> &1 &2.
 rewrite /load_array1152 /load_array32 /touches2 !tP.
-move => ???????pkv1s pkv2s pkv1 pkv2. 
+move => ???????pkv1s pkv2s pkv1 pkv2 *.
 do split.
 + move => i ib ih.
   rewrite /storeW64 /loadW64 /stores  /=. 
@@ -305,7 +305,7 @@ lemma mlkem_kem_correct_enc mem _ctp _pkp _kp :
      k = load_array32 Glob.mem{1} _kp
 ].
 proc => /=.
-seq 15 4 : (#[/1:-2]post 
+seq 14 4 : (#[/1:-2]post 
       /\ valid_disj_reg _ctp 1088 _kp 32 
       /\ to_uint s_shkp{1} = _kp 
       /\ (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])); last first.
