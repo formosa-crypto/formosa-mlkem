@@ -41,6 +41,13 @@ by smt(bs2int_range mem_range W512.size_w2bits).
 qed.
 
 (* -------------------------------------------------------------------- *)
+clone export WordChunk as WordChunk_16_256
+  with op isize <- 16, op osize <- 256,
+  theory IW <- W16, theory OW <- W256
+  rename "XX" as "16_256"
+  proof gt0_isize by done, gt0_osize by done, le_iosize by done.
+
+(* -------------------------------------------------------------------- *)
 clone export WordChunk as WordChunk_16_512
   with op isize <- 16, op osize <- 512,
   theory IW <- W16, theory OW <- W512
@@ -81,7 +88,7 @@ qed.
 
 (* ----- *)
 
-from JazzEC require import Array2048 Array256 Array64 Array56 Array40 Array32.
+from JazzEC require import Array2048 Array256 Array64 Array56 Array40 Array32 Array16.
 
 (* -------------------------------------------------------------------- *)
 abbrev "_.[_]" ['a] = nth<:'a> witness.
@@ -119,6 +126,16 @@ realize get_out  by smt(Array64.get_out).
 
 
 (* -------------------------------------------------------------------- *)
+clone export SliceGet as SliceGet_8_256_32
+  with op isize <- 8, op osize <- 256, op asize <- 32,
+  theory IW <- W8, theory OW <- W256, theory A <- Array32
+  rename "XX" as "8_256_32"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+bind op [W8.t & W256.t & Array32.t] sliceget_8_256_32 "asliceget".
+realize bvaslicegetP by apply/sliceget_8_256_32P.
+
+(* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_256_56
   with op isize <- 8, op osize <- 256, op asize <- 56,
   theory IW <- W8, theory OW <- W256, theory A <- Array56
@@ -127,6 +144,16 @@ clone export SliceGet as SliceGet_8_256_56
 
 bind op [W8.t & W256.t & Array56.t] sliceget_8_256_56 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_256_56P.
+
+(* -------------------------------------------------------------------- *)
+clone export SliceGet as SliceGet_8_12_32
+  with op isize <- 8, op osize <- 12, op asize <- 32,
+  theory IW <- W8, theory OW <- W12, theory A <- Array32
+  rename "XX" as "8_12_32"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+bind op [W8.t & W12.t & Array32.t] sliceget_8_12_32 "asliceget".
+realize bvaslicegetP by apply/sliceget_8_12_32P.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_12_56
@@ -147,6 +174,13 @@ clone export SliceGet as SliceGet_8_64_2048
 
 bind op [W8.t & W64.t & Array2048.t] sliceget_8_64_2048 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_64_2048P.
+
+(* -------------------------------------------------------------------- *)
+clone export SliceSet as SliceSet_16_128_16
+  with op isize <- 16, op osize <- 128, op asize <- 16,
+  theory IW <- W16, theory OW <- W128, theory A <- Array16
+  rename "XX" as "16_128_16"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceSet as SliceSet_16_128_40

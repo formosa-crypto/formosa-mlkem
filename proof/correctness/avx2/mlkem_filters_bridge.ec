@@ -76,8 +76,8 @@ op auxdata_ok (load_shuffle mask bounds ones: W256.t)
 from JazzEC require import WArray512 Array40 Array256 Array56 WArray536 WArray2048.
 require import IntDiv.
 
-require import Mlkem_filter48_bindings.
-require import Mlkem_filter48.
+require import Mlkem_filters_bindings.
+require import Mlkem_filters.
 
 lemma vmov64_ext_256 b :
   zeroextu256 (VMOV_64 b) = zextend_64_256 b.
@@ -231,17 +231,17 @@ qed.
 
 lemma bridge48 _ctr _offset _p : 
 equiv [
-Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48 ~ Filter48.filter48 : 
+Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48 ~ Filters.filter48 : 
   pol{1} = _p
 /\  0 <= _offset /\  _offset + 56 <= 536 
 /\  0 <= _ctr /\ _ctr + 32 <= 256 
 /\  to_uint buf_offset{1} = _offset 
 /\ to_uint  counter{1} = _ctr 
-/\ bounds{1} = Mlkem_filter48.sample_q
-/\ load_shuffle{1} = Mlkem_filter48.load_shuffle 
-/\ mask{1} = Mlkem_filter48.sample_mask
-/\ sst{1} = Mlkem_filter48.sample_shuffle_table 
-/\ ones{1} = Mlkem_filter48.sample_ones
+/\ bounds{1} = Mlkem_filters.sample_q
+/\ load_shuffle{1} = Mlkem_filters.load_shuffle 
+/\ mask{1} = Mlkem_filters.sample_mask
+/\ sst{1} = Mlkem_filters.sample_shuffle_table 
+/\ ones{1} = Mlkem_filters.sample_ones
 /\ (forall k, 0 <= k < 56 => buf{1}.[to_uint buf_offset{1} + k] = 
                    buf{2}.[k]) ==> 
   0 <= _offset /\  _offset + 56 <= 536 
@@ -585,8 +585,8 @@ conseq  (bridge48 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter48P (Array56.
   + move => &1 [#] ??????;rewrite /auxdata_ok => [#] ->->->->->.
     exists ((Array56.init (fun (i : int) => _buf.[to_uint _buf_offset + i])), witness).
     auto => />; do split;1..6: smt(W64.to_uint_cmp). 
-    + rewrite /Mlkem_filter48.load_shuffle /Mlkem_filter48.load_shuffle /u8_256_32.
-      rewrite wordP => i ib;rewrite pack32wE 1:/# of_listK /= 1:/# initiE 1:/# /=;do      congr;rewrite /Mlkem_filter48.sample_load_shuffle.
+    + rewrite /Mlkem_filters.load_shuffle /Mlkem_filters.load_shuffle /u8_256_32.
+      rewrite wordP => i ib;rewrite pack32wE 1:/# of_listK /= 1:/# initiE 1:/# /=;do      congr;rewrite /Mlkem_filters.sample_load_shuffle.
       rewrite !get_of_list 1,2:/#. 
       by smt(@List).
   + by move => *; rewrite initiE /#. 
@@ -740,6 +740,7 @@ hoare buf_rejection_filter24_h _pol _ctr _buf _buf_offset:
       = plist _pol (to_uint _ctr) ++ l
       /\ res.`2 = W64.of_int (to_uint _ctr + size l).
 proof.
+proc.
 admitted.
 
 lemma buf_rejection_filter24_ll:
