@@ -453,14 +453,14 @@ case (1184 <= add < 1184 + 1152).
 move => ?.
 case (1152 <= add < 1152 + 8*i{2}).
 + move => *.
-  rewrite size_map iotaredE size_iota /max /=. 
+  rewrite iotaredE /max /=. 
   rewrite ifF 1:/# ifT 1:/# ifT 1:/#.
   rewrite nth_take 1,2:/#.
   rewrite nth_take 1,2:/#.
   rewrite /to_list nth_mkseq 1:/# /= nth_mkseq 1:/# /= initiE 1:/# /=.
   by rewrite get8_set64_directE 1,2:/# ifF 1:/# /get8 initiE /#.
 + move => *.
-  rewrite size_map iotaredE size_iota /max /=. 
+  rewrite iotaredE /max /=. 
   rewrite ifT 1:/# ifT 1:/#.
   rewrite (nth_map witness);1: smt(size_iota).
   rewrite nth_iota  1:/#.
