@@ -1,0 +1,145 @@
+require "indcpa.jinc"
+require "verify.jinc"
+require "params.jinc"
+require "zetas.jinc"
+
+inline
+fn __crypto_kem_keypair_jazz(reg u32 pkp, reg u32 skp, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp)
+{
+  stack ptr u8[MLKEM_SYMBYTES*2] s_randomnessp;
+  reg ptr u8[MLKEM_SYMBYTES] randomnessp1 randomnessp2;
+
+  stack u8[32] h_pk;
+  stack u32 s_skp s_pkp;
+  reg u32 t32;
+  inline int i;
+
+  s_randomnessp = randomnessp;
+  s_pkp = pkp;
+  s_skp = skp;
+
+  randomnessp1 = randomnessp[0:MLKEM_SYMBYTES];
+  __indcpa_keypair(pkp, skp, randomnessp1);
+
+  skp = s_skp;
+  skp += MLKEM_POLYVECBYTES;
+  pkp = s_pkp;
+
+  for i=0 to MLKEM_INDCPA_PUBLICKEYBYTES/4
+  {
+    t32 = (u32)[pkp + 4 * i];
+    (u32)[skp + 4 * i] = t32;
+  }
+
+  skp = s_skp;
+  skp += MLKEM_POLYVECBYTES;
+  skp += MLKEM_INDCPA_PUBLICKEYBYTES;
+  s_skp = skp;
+  pkp = s_pkp;
+  t32 = MLKEM_POLYVECBYTES + MLKEM_SYMBYTES;
+  h_pk = _isha3_256(h_pk, pkp, t32);
+  skp = s_skp;
+
+  for i=0 to 8
+  {
+    t32 = (32u)h_pk[u32 i];
+    (u32)[skp + 4 * i] = t32;
+  }
+
+  randomnessp = s_randomnessp;
+  randomnessp2 = randomnessp[MLKEM_SYMBYTES:MLKEM_SYMBYTES];
+  for i=0 to MLKEM_SYMBYTES/4
+  {
+    t32 = (32u)randomnessp2[u32 i];
+    (u32)[skp + 4 * i + 32] = t32;
+  }
+}
+
+inline
+fn __crypto_kem_enc_jazz(reg u32 ctp, reg u32 shkp, reg u32 pkp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
+{
+  inline int i;
+
+  stack u8[MLKEM_SYMBYTES * 2] kr buf;
+  stack u32 s_pkp s_ctp s_shkp;
+  reg u32 t32;
+
+  s_pkp = pkp;
+  s_ctp = ctp;
+  s_shkp = shkp;
+
+  for i=0 to MLKEM_SYMBYTES/4
+  {
+    t32 = (32u)randomnessp[u32 i];
+    buf[u32 i] = t32;
+  }
+
+  pkp = s_pkp;
+
+  t32 = MLKEM_PUBLICKEYBYTES;
+  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp, t32);
+
+  kr = _sha3_512_64(kr, buf);
+
+  pkp = s_pkp;
+
+  __indcpa_enc(s_ctp, buf[0:MLKEM_SYMBYTES], pkp, kr[MLKEM_SYMBYTES:MLKEM_SYMBYTES]);
+
+  shkp = s_shkp;
+
+  for i=0 to MLKEM_SYMBYTES/4
+  {
+    t32 = (32u)kr[u32 i];
+    (u32)[shkp + 4*i] = t32;
+  }
+
+}
+
+inline
+fn __crypto_kem_dec_jazz(reg u32 shkp, reg u32 ctp, reg u32 skp)
+{
+  stack u8[MLKEM_CT_LEN] ctpc;
+  stack u8[2*MLKEM_SYMBYTES] kr buf;
+  stack u32 s_skp s_ctp s_shkp s_cnd;
+  reg u32 pkp hp zp t32 cnd;
+  inline int i;
+
+  s_shkp = shkp;
+  s_ctp = ctp;
+
+  buf[0:MLKEM_MSGBYTES] = __indcpa_dec(buf[0:MLKEM_MSGBYTES], ctp, skp);
+
+  hp = skp;
+  hp += 32 + (24 * MLKEM_K * MLKEM_N>>3);
+
+  for i=0 to MLKEM_SYMBYTES/4
+  {
+    t32 = (32u)(u32)[hp + 4*i];
+    buf.[u32 MLKEM_SYMBYTES + 4*i] = t32;
+  }
+
+  s_skp = skp;
+
+  kr = _sha3_512_64(kr, buf);
+
+  pkp = s_skp;
+  pkp += 12 * MLKEM_K * MLKEM_N>>3;
+
+  ctpc = __iindcpa_enc(ctpc, buf[0:MLKEM_SYMBYTES], pkp, kr[MLKEM_SYMBYTES:MLKEM_SYMBYTES]);
+
+  ctp = s_ctp;
+  cnd = __verify(ctp, ctpc);
+  s_cnd = cnd;
+
+  zp = s_skp;
+  zp += 64;
+  zp += 24 * MLKEM_K * MLKEM_N>>3;
+
+  /* fixme: should this be done in memory? */
+  shkp = s_shkp;
+  _shake256_1120_32(shkp, zp, ctp);  
+
+  shkp = s_shkp;
+  cnd = s_cnd;
+   __cmov(shkp, kr[0:MLKEM_SYMBYTES], cnd); 
+}

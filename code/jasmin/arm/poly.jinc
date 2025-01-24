@@ -1,0 +1,731 @@
+require "params.jinc"
+require "reduce.jinc"
+require "fips202.jinc"
+require "zetas.jinc"
+
+fn _poly_add2(reg ptr u16[MLKEM_N] rp bp) -> stack u16[MLKEM_N]
+{
+  reg u32 a b r i;
+
+  i = 0;
+  while (i < MLKEM_N) {
+    a = (32s)rp[(int)i];
+    b = (32s)bp[(int)i];
+    r = a + b;
+    rp[(int)i] = r;
+    i += 1;
+  }
+  return rp;
+}
+
+fn _poly_csubq(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 i t b mlkem_q;
+
+  i = 0;
+  mlkem_q = MLKEM_Q;
+  while (i < MLKEM_N)
+  {
+    t = (32u)rp[(int)i];
+    t -= mlkem_q;
+    b = t;
+    b >>s= 15;
+    b &= mlkem_q;
+    t += b;
+    rp[(int)i] = (16u)t;
+    i += 1;
+  }
+  return rp;
+}
+
+fn _poly_basemul(reg ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] ap bp) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 zeta;
+  reg u32 r0;
+  reg u32 r1;
+  reg u32 a0;
+  reg u32 a1;
+  reg u32 b0;
+  reg u32 b1;
+  reg u32 t;
+  reg ptr u16[64] zetasp;
+  reg u32 zetasctr;
+  reg u32 i;
+
+  stack ptr u16[MLKEM_N] srp;
+
+  srp = rp;
+
+  i = 0;
+
+  while(i < MLKEM_N - 3)
+  {
+    zetasp = jzetas[64:64];
+    zetasctr = i;
+    zetasctr >>= 2;
+    zeta = (32u)zetasp[zetasctr];
+    
+    a0 = (32u)ap[(int)i];
+    b0 = (32u)bp[(int)i];
+    i += 1;
+    a1 = (32u)ap[(int)i];
+    b1 = (32u)bp[(int)i];
+    i -= 1;
+
+    r0 = __fqmul(a1, b1);
+    r0 = __fqmul(r0, zeta);
+    t  = __fqmul(a0, b0);
+    r0 += t;
+
+    r1 = __fqmul(a0, b1);
+    t  = __fqmul(a1, b0);
+    r1 += t;
+
+    rp = srp;
+    rp[(int)i]   = r0;
+    i += 1;
+    rp[(int)i] = r1;
+    srp = rp;
+
+
+    zeta = -zeta;
+
+    i += 1;
+    a0 = (32u)ap[(int)i];
+    b0 = (32u)bp[(int)i];
+    i += 1;
+    a1 = (32u)ap[(int)i];
+    b1 = (32u)bp[(int)i];
+    i -= 1;
+
+    r0 = __fqmul(a1, b1);
+    r0 = __fqmul(r0, zeta);
+    t  = __fqmul(a0, b0);
+    r0 += t;
+
+    r1 = __fqmul(a0, b1);
+    t  = __fqmul(a1, b0);
+    r1 += t;
+
+    rp = srp;
+    rp[(int)i]   = (16u)r0;
+    i += 1;
+    rp[(int)i] = (16u)r1;
+    srp = rp;
+    
+    i += 1;
+  }
+  return rp;
+}
+
+
+inline fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 j; 
+  reg u32 t;
+  j = 0;
+  while (j < MLKEM_N) 
+  {
+    t = (32s)rp[(int)j];
+    t = __barrett_reduce(t);
+    rp[(int)j] = t;
+    j += 1;
+  }
+  return rp;
+}
+
+
+fn _poly_compress(reg u32 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 d0, d1, aux;
+  reg u32 i;
+
+  a = _poly_csubq(a);
+
+  i = 0;
+  while(i < 128)
+  {
+    aux = i + i;
+    d0 = (32u) a[aux];
+    aux += 1;
+    d1 = (32u) a[aux];
+    d0 <<= 4;
+    d0 += 1665;
+    aux = 80635;
+    d0 *= aux;
+    d0 >>= 28;
+    d0 &= 0xf;
+    d1 <<= 4;
+    d1 += 1665;
+    aux = 80635;
+    d1 *= aux;
+    d1 >>= 28;
+    d1 &= 0xf;
+    d1 <<= 4;
+    d0 |= d1;
+    (u8)[rp+i] = (8u)d0;
+    i += 1;
+  }
+  return a;
+}
+
+fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
+{
+  reg u32 d0, d1, aux;
+  reg u32 i;
+
+  a = _poly_csubq(a);
+
+  i = 0;
+  while(i < 128)
+  {
+    aux = i + i;
+    d0 = (32u) a[aux];
+    aux += 1;
+    d1 = (32u) a[aux];
+    d0 <<= 4;
+    d0 += 1665;
+    aux = 80635;
+    d0 *= aux;
+    d0 >>= 28;
+    d0 &= 0xf;
+    d1 <<= 4;
+    d1 += 1665;
+    aux = 80635;
+    d1 *= aux;
+    d1 >>= 28;
+    d1 &= 0xf;
+    d1 <<= 4;
+    d0 |= d1;
+    rp[i] = d0;
+    i += 1;
+  }
+  return rp, a;
+}
+
+fn _poly_decompress(reg ptr u16[MLKEM_N] rp, reg u32 ap) -> stack u16[MLKEM_N]
+{
+  reg u32 mlkem_q, aux;
+  reg u32 d0, d1;
+  reg u32 i;
+
+  i = 0;
+
+  while (i < 128) {
+    d0 = (32u)(u8)[ap+i];
+    d1 = d0;
+    d0 &= 0xf;
+    d1 >>= 4;
+    mlkem_q = MLKEM_Q;
+    d0 *= mlkem_q;
+    d1 *= mlkem_q;
+    d0 += 8;
+    d1 += 8;
+    d0 >>= 4;
+    d1 >>= 4;
+    aux = i + i;
+    rp[aux] = (16u)d0;
+    aux += 1;
+    rp[aux] = (16u)d1;
+    i += 1;
+  }
+  return rp;
+}
+
+fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u32 ap) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 c0, c1, c2;
+  reg u32 d0, d1, t, aux;
+  reg u32 i;
+
+  i = 0;
+  while(i < MLKEM_N/2)
+  {
+    d0 = ap;
+    d0 += i;d0 += i;d0 += i;
+    c0 = (32u)(u8)[d0];
+    d0 += 1;
+    c1 = (32u)(u8)[d0];
+    d0 += 1;
+    c2 = (32u)(u8)[d0];
+    d0 = c0;
+    t  = c1;
+    t &= 0xf;
+    t <<= 8;
+    d0 |= t;
+    d1 = c2;
+    d1 <<= 4;
+    t  = c1;
+    t >>= 4;
+    d1 |= t;
+    t = i + i;
+    rp[t]   = d0;
+    t += 1;
+    rp[t] = d1;
+    i += 1;
+  }
+  return rp;
+}
+
+param int DMONT   = 1353;      /* (1ULL << 32) % MLKEM_Q */
+
+fn _poly_frommont(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 i;
+  reg u32 r;
+  reg u32 dmont;
+
+  dmont = DMONT;
+  
+  i = 0;
+  while (i < MLKEM_N)
+  {
+    r = (32s)rp[(int)i];
+    r = __fqmul(r, dmont);
+    rp[(int)i] = r;
+    i += 1;
+  }
+  return rp; 
+}
+
+fn _poly_frommsg(reg ptr u16[MLKEM_N] rp, reg u32 ap) -> stack u16[MLKEM_N]
+{
+  reg u32 c;
+  reg u32 t, aux;
+  inline int i;
+
+  aux = (MLKEM_Q+1)/2;
+
+  for i = 0 to 32
+  {
+    c = (32u)(u8)[ap + i];
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+1] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+2] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+3] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+4] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+5] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+6] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+7] = t;
+    c >>= 1;
+  }
+  return rp;
+}
+
+fn _i_poly_frommsg(reg ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> stack u16[MLKEM_N]
+{
+  reg u32 c;
+  reg u32 t, aux;
+  inline int i;
+
+  aux = (MLKEM_Q+1)/2;
+
+  for i = 0 to 32
+  {
+    c = (32u)ap[i];
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+1] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+2] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+3] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+4] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+5] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+6] = t;
+    c >>= 1;
+
+    t = c; 
+    t &= 1;
+    t *= aux;
+    rp[8*i+7] = t;
+    c >>= 1;
+  }
+  return rp;
+}
+
+
+fn _poly_getnoise(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] s_seed, reg u32 nonce) -> reg ptr u16[MLKEM_N]
+{
+  stack u8[33] extseed;   /* 33 = MLKEM_SYMBYTES +1 */
+  stack u8[128] buf;      /* 128 = MLKEM_ETA*MLKEM_N/4 */
+
+  reg u32 c,a,b;
+  reg u16 t;
+  inline int k;
+  reg u32 i;
+  reg ptr u8[MLKEM_SYMBYTES] seed;
+  reg ptr u8[128] s_buf;
+
+  () = #spill(rp);
+  seed = s_seed;
+  
+  for k = 0 to MLKEM_SYMBYTES/4
+  {
+    c = seed[u32 k];
+    extseed[u32 k] = c;
+  }
+  extseed[MLKEM_SYMBYTES] = nonce;
+
+  buf = _shake256_128_33(buf, extseed);
+  s_buf = buf;
+
+  () = #unspill(rp);
+
+  i = 0;
+  while(i < 128) {
+    c = (32u)s_buf[i];
+    a = c;
+    a &= 0x55;
+
+    c >>= 1;
+    c &= 0x55;
+    c += a;
+
+    a = c;
+    a &= 0x3;
+    b = c;
+    b >>= 2;
+    b &= 0x3;
+    a -= b;
+    t = (16s)a;
+    a = i + i;
+    rp[a] = t;
+    a = c;
+    a >>= 4;
+    a &= 0x3;
+    b = c >> 6;
+    b &= 0x3;
+    a -= b;
+    t = (16s)a;
+    a = i + i;
+    a += 1;
+    rp[a] = t;
+    i +=1;
+  }
+  
+  return rp;
+}
+
+fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 len;  
+  reg u32 start;
+  reg u32 j;
+  reg u32 cmp;
+  reg u32 offset;
+  
+  reg u32 zeta;
+  reg u32 t;
+  reg u32 s;
+  reg u32 m;
+
+  reg ptr u16[128] zetasp;
+  reg u32 zetasctr;
+
+  zetasp = jzetas_inv;
+  zetasctr = 0;
+
+  len = 2;
+  while (len <= 128)
+  {
+    start = 0;
+    while (start < 256)
+    {
+      zeta = (32s)zetasp[(int)zetasctr];
+      () = #spill(zetasp);
+      zetasctr += 1;
+
+      j = start;
+      cmp = start + len;
+      while (j < cmp)
+      {
+        offset = j + len;
+        s = (32s)rp[(int)offset];
+        t = (32s)rp[(int)j];
+        m = s + t;
+        m = __barrett_reduce(m);
+        rp[(int)j] = m;
+        t -= s;
+        t = __fqmul(t, zeta);
+        rp[(int)offset] = t;
+        j += 1;
+      }
+      start = j + len;
+      () = #unspill(zetasp);
+    }
+    len <<= 1;
+  }
+
+  zeta = (32s)zetasp[127];
+  j = 0;
+  while (j < MLKEM_N) 
+  {
+    t = (32s)rp[(int)j];
+    t = __fqmul(t, zeta);
+    rp[(int)j] = t;
+    j += 1;
+  }
+  return rp;
+}
+
+fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 len;  
+  reg u32 start;
+  reg u32 j;
+  reg u32 cmp;
+  reg u32 offset;
+  
+  reg u32 zeta;
+  reg u32 t;
+  reg u32 s;
+  reg u32 m;
+
+  inline int i;
+
+  reg ptr u16[128] zetasp;
+  reg u32 zetasctr;
+
+  zetasp = jzetas;
+  zetasctr = 0;
+  len = 128;
+  while (len >= 2)
+  {
+    start = 0;
+    while (start < 256)
+    {
+      zetasctr += 1;
+      zeta = (32s)zetasp[(int)zetasctr];
+      j = start;
+      cmp = start; cmp += len;
+      while (j < cmp)
+      {
+        s = (32s)rp[(int)j];
+        m = s;
+        offset = j; offset += len;
+        t = (32s)rp[(int)offset];
+        () = #spill(offset);
+        t = __fqmul(t, zeta);
+        m -= t;
+        t += s;
+        () = #unspill(offset);
+        rp[(int)offset] = m;
+        rp[(int)j] = t;
+        j += 1;
+      }
+      start = j; start += len;
+    }
+    len >>= 1;
+  }
+
+  rp = __poly_reduce(rp);
+
+  return rp;
+}
+
+fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 a;
+  reg u32 b;
+  reg u32 r;
+  reg u32 i;
+
+  i = 0;
+  while (i < MLKEM_N) {
+    a = (32u)ap[(int)i];
+    b = (32u)bp[(int)i];
+    r = a - b;
+    rp[(int)i] = r;
+    i += 1;
+  }
+  return rp;
+}
+
+fn _poly_tobytes(reg u32 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 t0, t1, d;
+  reg u32 i j;
+
+  a = _poly_csubq(a);
+
+  i = 0;
+  j = 0;
+  while (i < MLKEM_N)
+  {
+    t0 = (32u)a[(int)i];
+    i += 1;
+    t1 = (32u)a[(int)i]; 
+    i += 1;
+    d  = t0;
+    d  &= 0xff;
+    (u8)[rp+j] = (8u)d;
+    j += 1;
+    t0 >>= 8;
+    d = t1;
+    d &= 0xf;
+    d <<= 4;
+    d |= t0;
+    (u8)[rp+j] = (8u)d;
+    j += 1;
+    t1 >>= 4;
+    (u8)[rp+j] = (8u)t1;
+    j += 1;
+  }
+  return a;
+}
+
+
+fn _poly_tomsg(reg u32 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
+{
+  reg u32 t;
+  reg u32 r;
+  reg u32 d, a_index; // for accessing a_ptr inside the loop
+  reg u32 i j;
+
+  a = _poly_csubq(a); 
+
+  i = 0;
+  while(i < 32)
+  {
+    r = 0;
+    j = 0;
+    while(j < 8)
+    {
+      a_index = 8;
+      a_index *= i;
+      a_index += j;
+      t = (32u)a[a_index]; 
+      d = t; 
+      d <<= 1;
+      d += 1665;
+      t = 80635;
+      d *= t;
+      d >>= 28;
+      d &= 1;
+      d <<= j;
+      r  |= d;
+      j += 1;
+    }
+    (u8)[rp+i] = (8u)r;
+    i += 1;
+  }
+  return a;
+}
+
+// TODO: get this back to not inline, with reg ptr instead of stack
+inline fn _i_poly_tomsg(stack u8[MLKEM_N/8] rp, stack u16[MLKEM_N] a) -> stack u8[MLKEM_N/8], stack u16[MLKEM_N]
+{
+  reg u32 t;
+  reg u32 r;
+  reg u32 d, a_index; // for accessing a_ptr inside the loop
+  reg u32 i j;
+  reg ptr u16[MLKEM_N] a_ptr;
+  reg ptr u8[MLKEM_N/8] rp_ptr;
+
+  a = _poly_csubq(a); 
+
+  a_ptr = a;
+  rp_ptr = rp;
+
+  i = 0;
+  while(i < 32)
+  {
+    r = 0;
+    j = 0;
+    while(j < 8)
+    {
+      a_index = 8;
+      a_index *= i;
+      a_index += j;
+      t = (32u)a_ptr[a_index]; 
+      d = t; 
+      d <<= 1;
+      d += 1665;
+      t = 80635;
+      d *= t;
+      d >>= 28;
+      d &= 1;
+      d <<= j;
+      r  |= d;
+      j += 1;
+    }
+    rp_ptr[i] = (8u)r;
+    i += 1;
+  }
+
+  a = a_ptr;
+  rp = rp_ptr;
+
+  return rp, a;
+}

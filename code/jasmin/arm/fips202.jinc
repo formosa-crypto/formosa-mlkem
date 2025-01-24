@@ -1,0 +1,811 @@
+param int SHAKE128_RATE = 168;
+param int SHAKE256_RATE = 136;
+param int SHA3_256_RATE = 136;
+param int SHA3_512_RATE = 72;
+
+param int KECCAK_ROUNDS=24;
+
+u32[24*2] KECCAK1600_RC =
+{
+  0x00000001, 0x00000000,
+  0x00008082, 0x00000000,
+  0x0000808a, 0x80000000,
+  0x80008000, 0x80000000,
+  0x0000808b, 0x00000000,
+  0x80000001, 0x00000000,
+  0x80008081, 0x80000000,
+  0x00008009, 0x80000000,
+  0x0000008a, 0x00000000,
+  0x00000088, 0x00000000,
+  0x80008009, 0x00000000,
+  0x8000000a, 0x00000000,
+  0x8000808b, 0x00000000,
+  0x0000008b, 0x80000000,
+  0x00008089, 0x80000000,
+  0x00008003, 0x80000000,
+  0x00008002, 0x80000000,
+  0x00000080, 0x80000000,
+  0x0000800a, 0x00000000,
+  0x8000000a, 0x80000000,
+  0x80008081, 0x80000000,
+  0x00008080, 0x80000000,
+  0x80000001, 0x00000000,
+  0x80008008, 0x80000000
+};
+
+// disclaimer: this is a non-optimized implementation designed with the goal of
+// being proven equivalent to the amd64 implementation; an optimized
+// implementation (bit interleaving; lazy rotates; etc) is needed and it will
+// be proven equivalent to this one.
+
+// /////////////////////////////////////////////////////////////////////////////
+// the following functions are the same for armv7-m and amd64;
+// to do, think a bit more where to put them, maybe here is just fine
+
+inline fn keccakf1600_index(inline int x y) -> inline int
+{
+  inline int r;
+  r = (x % 5) + 5 * (y % 5);
+  return r;
+}
+
+inline fn keccakf1600_rho_offsets(inline int i) -> inline int
+{
+  inline int r x y z t;
+
+  r = 0;
+  x = 1;
+  y = 0;
+
+  for t = 0 to 24 {
+    if (i == x + 5 * y) {
+      r = ((t + 1) * (t + 2) / 2) % 64;
+    }
+    z = (2 * x + 3 * y) % 5;
+    x = y;
+    y = z;
+  }
+
+  return r;
+}
+
+inline fn keccakf1600_rhotates(inline int x y) -> inline int
+{
+  inline int i r;
+  i = keccakf1600_index(x, y);
+  r = keccakf1600_rho_offsets(i);
+  return r;
+}
+
+// /////////////////////////////////////////////////////////////////////////////
+
+
+// r == 32
+inline fn __ROL_64_32(reg u32 h l) -> reg u32, reg u32
+{
+  return l, h;
+}
+
+// r < 32
+inline fn __ROL_64_L(reg u32 h l, inline int r) -> reg u32, reg u32
+{
+  reg u32 x y;
+
+  x = l;
+  y = h << r;
+  l = l << r;
+  l = l | (h >> (32-r));
+  h = y | (x >> (32-r));
+
+  return h, l;
+
+}
+
+
+inline fn __ROL_64(reg u32 h l, inline int r) -> reg u32, reg u32
+{
+  if(r == 32)
+  { 
+    h, l = __ROL_64_32(h, l);
+  }
+  else if( r > 32 )
+  {
+    h, l = __ROL_64_32(h, l);
+    h, l = __ROL_64_L(h, l, r-32);
+  }
+  else
+  {
+    h, l = __ROL_64_L(h, l, r);
+  }
+  return h, l;
+}
+
+// C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
+inline fn keccakf1600_theta_sum(reg ptr u32[25*2] a) -> stack u32[5*2]
+{
+  inline int x y;
+  reg u32[5*2] c;
+  reg u32 t0 t1;
+  stack u32[5*2] cs;
+
+  // C[x] = A[x, 0]
+  for x=0 to 5
+  { c[2*x + 0] = a[2*x + 0];
+    c[2*x + 1] = a[2*x + 1]; }
+
+  // C[x] ^= A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
+  for y=1 to 5
+  { for x=0 to 5
+    { t0 = a[2*(x + y*5)+0];
+      t1 = a[2*(x + y*5)+1];
+
+      c[2*x+0] ^= t0;
+      c[2*x+1] ^= t1;
+     }
+  }
+
+  cs = #copy(c);
+
+  return cs;
+}
+
+// D[x] = C[x-1] ^ ROT(C[x+1], 1) 
+inline fn keccakf1600_theta_rol(stack u32[5*2] c) -> stack u32[5*2]
+{
+  inline int x;
+  reg u32[5*2] d;
+  reg u32 t0 t1;
+  stack u32[5*2] ds;
+
+  for x = 0 to 5
+  { // D[x] = C[x + 1] : 1 2 3 4 0
+    d[2*x+0] = c[2*((x + 1) % 5)+0];
+    d[2*x+1] = c[2*((x + 1) % 5)+1];
+
+    // D[x] = ROT(D[x], 1)
+    d[2*x+1], d[2*x+0] = __ROL_64(d[2*x+1], d[2*x+0], 1);
+
+    // D[x] ^= C[x-1] : 4 0 1 2 3
+    t0 = c[2*((x - 1 + 5) % 5)+0];
+    t1 = c[2*((x - 1 + 5) % 5)+1];
+
+    d[2*x+0] ^= t0;
+    d[2*x+1] ^= t1;
+  }
+
+  ds = #copy(d);
+
+  return ds;
+}
+
+// B[x] = ROT( (A[x',y'] ^ D[x']), r[x',y'] ) with (x',y') = M^-1 (x,y)
+//
+// M = (0 1)  M^-1 = (1 3)  x' = 1x + 3y
+//     (2 3)         (1 0)  y' = 1x + 0y
+//
+inline fn keccakf1600_rol_sum(
+  reg ptr u32[25*2] a,
+  stack u32[5*2] d,
+  inline int y
+) -> reg u32[5*2]
+{
+  inline int r x x_ y_;
+  reg u32[5*2] b;
+  reg u32 t0 t1;
+
+  for x = 0 to 5
+  {
+    x_ = (x + 3*y) % 5;
+    y_ = x;
+    r = keccakf1600_rhotates(x_, y_);
+
+    // B[x] = A[x',y']
+    b[2*x+0] = a[2*(x_ + y_*5)+0];
+    b[2*x+1] = a[2*(x_ + y_*5)+1];
+
+    // B[x] ^= D[x'];
+    t0 = d[2*x_+0];
+    t1 = d[2*x_+1];
+    b[2*x+0] ^= t0;
+    b[2*x+1] ^= t1;
+
+    // B[x] = ROT( B[x], r[x',y'] );
+    if(r != 0)
+    { b[2*x+1], b[2*x+0] = __ROL_64(b[2*x+1], b[2*x+0], r); }
+  }
+
+  return b;
+}
+
+// E[x, y] = B[x] ^ ( (!B[x+1]) & B[x+2] )
+// -- when x and y are 0: E[0,0] ^= RC[i];
+inline fn keccakf1600_set_row(
+  stack ptr u32[25*2] e_s,
+  reg u32[5*2] b,
+  inline int y,
+  stack u32 rc0_s,
+  stack u32 rc1_s
+) -> stack ptr u32[25*2]
+{
+  inline int x x1 x2;
+  reg u32 t0 t1 rc0 rc1;
+  reg ptr u32[24*2] RC;
+  reg ptr u32[25*2] e;
+
+  for x=0 to 5
+  { 
+    x1 = (x + 1) % 5;
+    x2 = (x + 2) % 5;
+
+    //t  = !b[x1] & b[x2];
+    t0 = #BIC(b[2*x2+0], b[2*x1+0]);
+    t1 = #BIC(b[2*x2+1], b[2*x1+1]);
+
+    t0 ^= b[2*x+0];
+    t1 ^= b[2*x+1];
+
+    if( x==0 && y==0 )
+    { rc0 = rc0_s; t0 ^= rc0;
+      rc1 = rc1_s; t1 ^= rc1;
+    }
+
+    e = e_s;
+    e[2*(x + y*5)+0] = t0;
+    e[2*(x + y*5)+1] = t1;
+    e_s = e;
+  }
+
+  return e_s;
+}
+
+inline fn keccakf1600_round(reg ptr u32[25*2] e a, reg u32 rc0 rc1) -> reg ptr u32[25*2]
+{
+  stack ptr u32[25*2] e_s a_s;
+  stack u32 rc0_s rc1_s;
+  stack u32[5*2] c d;
+  inline int y;
+  reg u32[5*2] b;
+
+  e_s = e;
+  rc0_s = rc0;
+  rc1_s = rc1;
+
+  c = keccakf1600_theta_sum(a);
+  d = keccakf1600_theta_rol(c);
+
+  for y = 0 to 5
+  { b = keccakf1600_rol_sum(a, d, y);
+    e_s = keccakf1600_set_row(e_s, b, y, rc0_s, rc1_s);
+  }
+
+  e = e_s;
+
+  return e;
+}
+
+#[returnaddress=stack]
+fn _round_ref(reg ptr u32[25*2] e a, reg u32 rc0 rc1) -> reg ptr u32[25*2]
+{
+  e = keccakf1600_round(e, a, rc0, rc1);
+  return e;
+}
+
+
+inline fn __get_RC(
+  stack ptr u32[24*2] s_RC,
+  reg u32 c)
+  ->
+  reg u32,
+  reg u32,
+  reg u32
+{
+  reg ptr u32[24*2] RC;
+  reg u32 rc0 rc1;
+
+  RC = s_RC;
+
+  rc0 = RC[(int) c];
+  c += 1;
+  rc1 = RC[(int) c];
+  c += 1;
+
+  return rc1, rc0, c;
+}
+
+
+inline fn __keccakf1600(reg ptr u32[25*2] a) -> reg ptr u32[25*2]
+{
+  reg ptr u32[24*2] RC;
+  stack ptr u32[24*2] RC_s;
+  stack ptr u32[25*2] a_s;
+  reg ptr u32[25*2] e;
+  stack u32[25*2] s_e;
+  reg u32 rc0 rc1 c;
+  stack u32 c_s;
+
+  e    = s_e;
+  RC   = KECCAK1600_RC;
+  RC_s = RC;
+
+  c = 0;
+  while (c < KECCAK_ROUNDS*2)
+  {
+    rc1, rc0, c = __get_RC(RC_s, c); c_s = c;
+    e = _round_ref(e, a, rc0, rc1);
+
+    
+    a_s = a; s_e = e; // swap 'e' and 'a' (in practice this is just "pointer swapping", to do, improve)
+    a = a_s; e = s_e;
+
+                                     c = c_s;
+    rc1, rc0, c = __get_RC(RC_s, c); c_s = c;
+    a = _round_ref(a, e, rc0, rc1);
+
+    a_s = a; s_e = e; // swap again
+    a = a_s; e = s_e;
+
+                                     c = c_s;
+  }
+
+  return a;
+}
+
+
+#[returnaddress=stack]
+fn _keccakf1600(reg ptr u32[25*2] a) -> reg ptr u32[25*2]
+{
+  a = __keccakf1600(a);
+  return a;
+}
+
+
+inline fn _keccakf1600_(reg ptr u32[25*2] a) -> reg ptr u32[25*2]
+{
+  a = a;
+  a = _keccakf1600(a);
+  a = a;
+  return a;
+}
+
+inline
+fn __st0(reg ptr u32[25*2] state) -> reg ptr u32[25*2]
+{
+  reg u32 t;
+  reg u32 i;
+
+  i = 0;
+  while(i < 25*2) {
+    t = 0;
+    state[i] = t;
+    i += 1;
+  }
+
+  return state;
+}
+
+// obs: @pre: rate multiple of 4
+inline fn __add_full_block(
+  reg ptr u32[25*2] state,
+  reg u32 in inlen,
+  reg u32 rate
+) -> reg ptr u32[25*2], reg u32, reg u32
+{
+  reg u32 i t0 t1 rate32;
+
+  rate32 = rate;
+  rate32 >>= 2;
+  i = 0;
+  while( i < rate32)
+  {
+    t0 = [in + 4*i];
+    t1 = state[(int)i];
+    t0 ^= t1;
+    state[(int)i] = t0;
+    i+=1;
+  }
+
+  in += rate;
+  inlen -= rate;
+
+  return state, in, inlen;
+}
+
+// obs: @pre: inlen < rate_in_bytes
+inline fn __add_final_block(
+  reg ptr u32[25*2] state,
+  reg     u32 in inlen,
+  reg     u32 trail_byte,
+  reg     u32 rate
+) -> reg ptr u32[25*2]
+{
+  reg u32 i t0 t1 inlen4;
+
+  inlen4 = inlen;
+  inlen4 >>= 2;
+  i = 0;
+  while ( i < inlen4 )
+  {
+    t0 = [in + 4*i];
+    t1 = state[(int)i];
+    t0 ^= t1;
+    state[(int)i] = t0;
+    i += 1;
+  }
+
+  i <<= 2;
+  while ( i < inlen )
+  {
+    t0 = (32u)(u8)[in + i];
+    t1 = (32u) state[u8 (int)i];
+    t0 ^= t1;
+    state[u8 (int)i] = (8u) t0;
+    i += 1;
+  }
+
+  t0 = (32u) state[u8 (int)i];
+  t0 ^= trail_byte;
+  state[u8 (int)i] = (8u) t0;
+
+  i = rate;
+  i -= 1;
+
+  t0 = (32u) state[u8 (int)i];
+  t1 = 0x80;
+  t0 ^= t1;
+  state[u8 (int)i] = (8u) t0;
+
+  return state;
+}
+
+inline fn __absorb_ref(
+  reg ptr u32[25*2] state,
+  reg   u32 in inlen,
+  stack u32 s_trail_byte,
+  reg   u32 rate // rate already in bytes -- it is returned bc of spills
+) -> reg ptr u32[25*2], reg u32
+{
+  stack u32 s_in s_inlen s_rate;
+  reg u32 trail_byte t;
+
+  // intermediate blocks
+  while ( inlen >= rate )
+  {
+    state, in, inlen = __add_full_block(state, in, inlen, rate);
+
+    s_in = in;
+    s_inlen = inlen; 
+    s_rate = rate;
+
+    state = _keccakf1600_(state);
+
+    in = s_in;
+    inlen = s_inlen;
+    rate = s_rate;
+  }
+
+  // final block
+  trail_byte = s_trail_byte;
+
+  state = __add_final_block(state, in, inlen, trail_byte, rate);
+
+  return state, rate;
+}
+
+
+
+inline fn __xtr_full_block(
+  reg ptr u32[25*2] state,
+  reg u32 out outlen,
+  reg u32 rate
+) -> reg u32, reg u32
+{
+  reg u32 i t rate32;
+
+  rate32 = rate;
+  rate32 >>= 2;
+  i = 0;
+  while ( i < rate32 )
+  {
+    t = state[(int)i];
+    [out + 4*i] = t;
+    i += 1;
+  }
+
+  out += rate;
+  outlen -= rate;
+
+  return out, outlen;
+}
+
+inline fn ____xtr_bytes(
+  reg ptr u32[25*2] state,
+  reg u32 out outlen
+) -> reg u32
+{
+  reg u32 i t outlen4;
+
+  outlen4 = outlen;
+  outlen4 >>= 4;
+  i = 0;
+  while ( i < outlen4 )
+  {
+    t = state[(int)i];
+    [out + 4*i] = t;
+    i += 1;
+  }
+
+  i <<= 2;
+  while ( i < outlen )
+  {
+    t = (32u) state[u8 (int)i];
+    (u8)[out + i] = (8u) t;
+    i += 1;
+  }
+
+  out += outlen;
+  return out;
+}
+
+fn _sha3512_32(reg ptr u8[64] out, reg const ptr u8[32] in) -> stack u8[64]
+{
+  stack u32[25*2] state;
+  reg u32 c,d;
+  inline int i;
+  reg u32 it;
+
+  state = __st0(state);
+
+  for i = 0 to 32 {
+    c = (32u)in[i];
+    d = (32u)state[u8 i];
+    c = c ^ d;
+    state[u8 i] = (8u)c;
+  }
+
+  d = (32u)state[u8 32];
+  d = d ^ 0x06;
+  state[u8 32] = d;
+  d = (32u)state[u8 SHA3_512_RATE-1];
+  d = d ^ 0x80;
+  state[u8 SHA3_512_RATE-1] = d;
+    
+  () = #spill(out);
+  
+  state = _keccakf1600_(state);
+
+  () = #unspill(out);
+
+  for i = 0 to 64/4 {
+    c = state[u32 i];
+    out[u32 i] = c;
+  }
+
+  return out;
+}
+
+#[returnaddress="stack"]
+fn _isha3_256(reg ptr u8[32] out, reg u32 in inlen) -> reg ptr u8[32]
+{
+  stack u32[25*2] state;
+  reg u32 ilen r8;
+  reg u32 t32;
+  reg u32 t8;
+  inline int i;
+
+  () = #spill(out);
+
+  state = __st0(state);
+
+  r8 = (32u)SHA3_256_RATE;
+  ilen = inlen;
+
+  while(ilen >= r8)
+  {
+    state, in, ilen = __add_full_block(state, in, ilen, r8);
+
+    () = #spill(in, ilen, r8);
+
+    state = _keccakf1600_(state);
+
+    () = #unspill(in, ilen, r8);
+  }
+
+  t8 = 0x06;
+  state = __add_final_block(state, in, ilen, t8, r8);
+
+  state = _keccakf1600_(state);
+
+  () = #unspill(out);
+
+  for i=0 to 8
+  {
+    t32 = (32u)state[i];
+    out[u32 i] = t32;
+  }
+
+  return out;
+}
+
+
+// SHAKE
+
+fn _shake128_absorb34(reg ptr u32[25*2] state, reg const ptr u8[34] in) -> reg ptr u32[25*2]
+{
+  inline int i;
+  reg u32 t0, t1;
+
+  state = __st0(state);
+
+  for i = 0 to 34 {
+    t0 = (32u)in[i];
+    t1 = (32u)state[u8 i];
+    t0 ^= t1;
+    state[u8 i] = (8u)t0;
+  }
+
+  t1 = (32u)state[u8 34];
+  t1 ^= 0x1f;
+  state[u8 34] = (8u)t1;
+
+  t1 = (32u)state[u8 SHAKE128_RATE-1];
+  t1 ^= 0x80;
+  state[u8 SHAKE128_RATE-1] = (8u)t1;
+
+  return state;
+}
+
+fn _shake128_squeezeblock(reg ptr u32[25*2] state, reg ptr u8[SHAKE128_RATE] out) -> reg ptr u32[25*2], reg ptr u8[SHAKE128_RATE]
+{
+  reg u32 c;
+  inline int i;
+
+  () = #spill(out);
+
+  state = _keccakf1600_(state);
+
+  () = #unspill(out);
+
+  for i = 0 to SHAKE128_RATE/4 { // SHAKE128 rate is 168: or 21 u64: TODO: 'compress' this for loop
+    c = (32u)state[u32 i];
+    out[u32 i] = c;
+  }
+
+  return state, out;
+}
+
+fn _shake256_128_33(reg ptr u8[128] out, reg const ptr u8[33] in) -> stack u8[128]
+{
+  stack u32[25*2] state;
+  reg u32 c, t;
+  inline int i;
+
+  () = #spill(out);
+
+  state = __st0(state);
+
+  for i = 0 to 33 {
+    c = (32u)in[i];
+    t = (32u)state[u8 i];
+    t ^= c;
+    state[u8 i] = t;
+  }
+
+  t = (32u)state[u8 33];
+  t ^= 0x1f;
+  state[u8 33] = t;
+  t = (32u)state[u8 SHAKE256_RATE-1];
+  t ^= 0x80;
+  state[u8 SHAKE256_RATE-1] = t;
+    
+  state = _keccakf1600_(state);
+
+  () = #unspill(out);
+
+  for i = 0 to 128/4 {
+    c = state[u32 i];
+    out[u32 i] = c;
+  }
+  return out;
+}
+
+#[returnaddress="stack"]
+fn _sha3_512_64(reg ptr u8[64] out, reg const ptr u8[64] in) -> stack u8[64]
+{
+  stack u32[25*2] state;
+  reg u32 t32, c;
+  inline int i;
+
+  state = __st0(state);
+
+  for i = 0 to 16
+  {
+    t32 = (32u)in[u32 i];
+    c = (32u)state[i];
+    c ^= t32;
+    state[i] = c;
+  }
+
+  t32 = (32u)state[u8 64];
+  c = 0x06;
+  t32 ^= c;
+  state[u8 64] = t32;
+  t32 = (32u)state[u8 SHA3_512_RATE - 1];
+  c = 0x80;
+  t32 ^= c;
+  state[u8 SHA3_512_RATE - 1] = t32;
+
+  () = #spill(out);
+
+  state = _keccakf1600_(state);
+
+  () = #unspill(out);
+
+  for i = 0 to 16
+  {
+    t32 = (32u)state[i];
+    out[u32 i] = t32;
+  }
+
+  return out;
+}
+
+fn _shake256_1120_32(reg u32 out in0 in1) {
+  stack u32[25*2] state;
+  reg u32 ilen r8;
+  reg u32 t32, c;
+  reg u32 t8;
+  inline int i;
+
+  () = #spill(out);
+
+  state = __st0(state);
+
+  for i = 0 to MLKEM_SYMBYTES/4 {
+    t32 = (32u)(u32)[in0 + i*4];
+    c = (32u)state[u32 i];
+    c ^= t32;
+    state[u32 i] = c;
+  }
+
+  for i = MLKEM_SYMBYTES/4 to SHAKE256_RATE/4 {
+    t32 = (u32)[in1 + (i-MLKEM_SYMBYTES/4)*4];
+    c = (32u)state[u32 i];
+    c ^= t32;
+    state[u32 i] = c;
+  }
+
+  () = #spill(in1);
+
+  state = _keccakf1600_(state);
+
+  () = #unspill(in1);
+
+  r8 = SHAKE256_RATE;
+  ilen = MLKEM_CT_LEN - (SHAKE256_RATE - MLKEM_SYMBYTES);
+  in1 += SHAKE256_RATE - MLKEM_SYMBYTES;
+
+  while(ilen >= r8)
+  {
+    state, in1, ilen = __add_full_block(state, in1, ilen, r8);
+
+    () = #spill(in1, ilen, r8);
+
+    state = _keccakf1600_(state);
+
+    () = #unspill(in1, ilen, r8);
+  }
+
+  t8 = 0x1f;
+  state = __add_final_block(state, in1, ilen, t8, r8);
+
+  state = _keccakf1600_(state);
+
+  () = #unspill(out);
+
+  for i=0 to MLKEM_SYMBYTES/4
+  {
+    t32 = (32u)state[i];
+    (u32)[out + 4*i] = t32;
+  }
+
+}

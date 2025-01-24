@@ -1,0 +1,93 @@
+require "kem.jinc"
+
+export fn jade_kem_mlkem_mlkem768_armv7_ref_keypair_derand(reg u32 public_key secret_key fixedrand) -> reg u32
+{
+  reg u32 r;
+  stack u8[MLKEM_SYMBYTES*2] randomness;
+  reg ptr u8[MLKEM_SYMBYTES*2] randomnessp;
+  inline int i;
+
+  public_key = public_key;
+  secret_key = secret_key;
+
+  for i = 0 to MLKEM_SYMBYTES*2 
+  {
+    r = (32u)(u8)[fixedrand + i];
+    randomness[i] = r;
+  }
+
+  randomnessp = randomness;
+  __crypto_kem_keypair_jazz(public_key, secret_key, randomnessp);
+  // ?{}, r = #set0();
+  r = 0;
+  return r;
+}
+
+export fn jade_kem_mlkem_mlkem768_armv7_ref_enc_derand(reg u32 ciphertext shared_secret public_key fixedrand) -> reg u32
+{
+  reg u32 r;
+  stack u8[MLKEM_SYMBYTES] randomness;
+  reg ptr u8[MLKEM_SYMBYTES] randomnessp;
+  inline int i;
+
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+
+  for i = 0 to MLKEM_SYMBYTES {
+    r = (32u)(u8)[fixedrand + i];
+    randomness[i] = r;
+  }
+
+  randomnessp = randomness;
+  __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomnessp);
+  // ?{}, r = #set0();
+  r = 0;
+  return r;
+}
+
+
+export fn jade_kem_mlkem_mlkem768_armv7_ref_keypair(reg u32 public_key secret_key) -> reg u32
+{
+  reg u32 r;
+  stack u8[MLKEM_SYMBYTES*2] randomness;
+  reg ptr u8[MLKEM_SYMBYTES*2] randomnessp;
+
+  public_key = public_key;
+  secret_key = secret_key;
+
+  randomnessp = randomness;
+  randomnessp = #randombytes(randomnessp);
+  __crypto_kem_keypair_jazz(public_key, secret_key, randomnessp);
+  // ?{}, r = #set0();
+  r = 0;
+  return r;
+}
+
+export fn jade_kem_mlkem_mlkem768_armv7_ref_enc(reg u32 ciphertext shared_secret public_key) -> reg u32
+{
+  reg u32 r;
+  stack u8[MLKEM_SYMBYTES] randomness;
+  reg ptr u8[MLKEM_SYMBYTES] randomnessp;
+
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+
+  randomnessp = randomness;
+  randomnessp = #randombytes(randomnessp);
+  __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomnessp);
+  // ?{}, r = #set0();
+  r = 0;
+  return r;
+}
+
+export fn jade_kem_mlkem_mlkem768_armv7_ref_dec(reg u32 shared_secret ciphertext secret_key) -> reg u32
+{
+  reg u32 r;
+  __crypto_kem_dec_jazz(shared_secret, ciphertext, secret_key);
+  // ?{}, r = #set0();
+  r = 0;
+  return r;
+}
+
