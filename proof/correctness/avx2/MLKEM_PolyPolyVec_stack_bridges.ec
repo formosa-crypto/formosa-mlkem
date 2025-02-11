@@ -281,7 +281,7 @@ lemma polyvec_decompress_stack_equiv:
    load_array1088 Glob.mem{2} 1152 = arg{1} ==> ={res}].
 proc.
 while (#pre /\ 0 <= k{1} <= 3 /\ ={k} /\ ={r,q,shufbidx,sllvdidx,mask});last by auto.
-wp;while (#pre /\ aux{1} = 16 /\ 0 <= i{1} <= 16 /\ ={aux,i}); last by auto => /> /#.
+wp;while (#pre /\ inc{1} = 16 /\ 0 <= i{1} <= 16 /\ ={inc,i}); last by auto => /> /#.
 auto => /> &2 ???????;split;last by smt().
 rewrite tP => j jb; rewrite initiE 1:/# /= initiE 1:/# /=.
   do 8!(congr).
@@ -297,7 +297,7 @@ lemma poly_decompress_stack_equiv:
    to_uint arg{2}.`2 = 1152+960 /\
    load_array128 Glob.mem{2} (1152+960) = arg{1}.`2 ==> ={res}].
 proc => /=.
-while (#pre /\ aux{1} = 16 /\ 0 <= i{1} <= 16 /\ ={aux,i,x16p,x32p,q,shufbidx,mask,shift,f} /\
+while (#pre /\ inc{1} = 16 /\ 0 <= i{1} <= 16 /\ ={inc,i,x16p,x32p,q,shufbidx,mask,shift,f} /\
      (forall k, 0<=k<16*i{1} => rp{1}.[k] = rp{2}.[k]));last by auto => />;smt(Array256.tP).
 auto => /> &1 &2 ?????;do split;1,2: smt().
 + do 6!(congr). 

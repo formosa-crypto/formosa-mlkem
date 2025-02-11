@@ -119,7 +119,7 @@ seq 11 1 : (
       pk{2}.`1 = Array1152.init (fun i => pk0{1}.[i]) /\
       pk{2}.`2 = Array32.init (fun i => pk0{1}.[i + 1152]) 
 ); last first.
-+ while {1} (aux{1} = 4 /\
++ while {1} (inc{1} = 4 /\
       coins{2}.`2 = randomnessp2{1} /\
       sk{2} = Array1152.init (fun i => sk0{1}.[i]) /\
       pk{2}.`1 = Array1152.init (fun i => sk0{1}.[i+1152]) /\
@@ -209,7 +209,7 @@ seq 3 0 : (#pre /\
 ).
 
 + wp;while {1} (#pre /\ 
-    aux{1} = (3 * 384 + 32) %/ 8 /\ 0<=i{1} <= aux{1} /\
+    inc{1} = (3 * 384 + 32) %/ 8 /\ 0<=i{1} <= inc{1} /\
     (forall k, 0<= k < min (8 * i{1}) 1152  => 
          pk{2}.`1.[k] = sk0{1}.[1152+k]) /\
     (forall k, 1152 <= k < min (8 * i{1}) (1152 + 32) => 
@@ -319,10 +319,10 @@ sp 14 0;wp.
 seq 9 4 : (#[/1:-2]post  /\  
       (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])); last first.
 + wp;conseq />. while {1} (
-        aux{1} = 4 
+        inc{1} = 4 
       /\ 0<=i{1}<=4 
       /\ (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])
-      /\ (forall k, 0<=k<8*i{1} =>  _K{2}.[k] = shk0{1}.[k])) (aux{1} - i{1}).
+      /\ (forall k, 0<=k<8*i{1} =>  _K{2}.[k] = shk0{1}.[k])) (inc{1} - i{1}).
   + auto => /> &hr H H0 H1 H2 H3;do split;1,2,4:smt().
   +  move => k kb kbh; rewrite initiE 1:/# /=.
       rewrite get8_set64_directE 1,2:/# /=.
@@ -340,7 +340,7 @@ wp; ecall {1} (sha3_512A_512A_A64_stack coins{2} (H_pk pk{2})).
 wp; ecall {1} (sha3_256A_M1184_ph_stack pk0{1}).
 seq 3 0 : (#pre /\  randomnessp{1} = Array32.init (fun i => buf{1}.[i])).
 + sp ; conseq />.
-  while {1} (0<=i{1}<=aux{1} /\ aux{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (aux{1} - i{1}); last first.
+  while {1} (0<=i{1}<=inc{1} /\ inc{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (inc{1} - i{1}); last first.
   + auto => /> &1 &2 *; split; 1: by smt().  
     move => buf i1; split; 1: smt(). 
     by move => *; rewrite tP => k kn; rewrite initiE //= /#. 
@@ -380,7 +380,7 @@ lemma verify_correct_h_stack _ctp _ctp1 :
                        res = W64.of_int 1)].
 proc => /=.
 
-wp; while (#pre /\ 0 <= i{hr} <= 34 /\ aux{hr} = 34 /\
+wp; while (#pre /\ 0 <= i{hr} <= 34 /\ inc{hr} = 34 /\
            (to_uint h{hr} = 0 <=> 
             forall k, 0 <= k < i{hr}*32 => _ctp.[k] = _ctp1.[k])); last first.
 + auto => />; split; 1: by smt().
@@ -445,7 +445,7 @@ qed.
 lemma verify_ll : islossless Jkem_avx2_stack.M.__verify.
 proc.
 wp.
-while (0 <= i{hr} <= 34 /\ aux{hr} = 34) (34 - i{hr}).
+while (0 <= i{hr} <= 34 /\ inc{hr} = 34) (34 - i{hr}).
 auto => /> /#.
 auto => /> /#. 
 qed.
@@ -563,7 +563,7 @@ seq 5 1 : (#pre /\
     rewrite  initiE 1:/# /= initiE 1:/# /= => <-.
     by rewrite /G_mhpk /SHA3_512_64_64 /= initiE 1:/# /=.
 
-  while {1} (0<=i{1}<=4 /\ aux_0{1} = 4  /\ 
+  while {1} (0<=i{1}<=4 /\ inc{1} = 4  /\ 
              (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = s_sk{1}.[2336 + k - 32]) /\
              forall (k : int), 0 <= k && k < 32 => buf{1}.[k] = aux{1}.[k]) (4 - i{1}); last first. 
   + auto => /> &1 &2 ??? /=;do split.
@@ -650,7 +650,7 @@ seq 3 0 : (#pre /\
 ).
 
 + wp;while {1} (#pre /\ 
-    aux_0{1} = 4 /\ 0<=i{1} <= aux_0{1} /\
+    inc{1} = 4 /\ 0<=i{1} <= inc{1} /\
     (forall k, 0<= k < 8 * i{1}  => 
          z{2}.[k] = zp_ct{1}.[k]))
     (4 - i{1}).
@@ -672,7 +672,7 @@ seq 3 0 : (#pre /\
   by move => *; rewrite initiE 1:/# /= initiE 1:/# /=;smt(Array32.initiE).
 
 + wp;while {1} (#pre /\ 
-    aux_0{1} = (3 * 320 + 128) %/ 8 /\ 0<=i{1} <= aux_0{1} /\
+    inc{1} = (3 * 320 + 128) %/ 8 /\ 0<=i{1} <= inc{1} /\
     (forall k, 0<= k < min (8 * i{1}) 960  => 
          cph{2}.`1.[k] = zp_ct{1}.[32+k]) /\
     (forall k, 960 <= k < min (8 * i{1}) (960 + 128) => 
@@ -680,8 +680,8 @@ seq 3 0 : (#pre /\
     ((3 * 384 + 32) %/ 8 - i{1}).
   move => &m z;auto => /> &hr.
  
-  move => &1 zz;auto => /> &2; rewrite !tP.
-  move => pkv1 pkv2???prev0?? prev1 prev2?.
+  auto => />; rewrite !tP.
+  move => pkv1 pkv2 c?????prev0?? prev1 prev2?.
   do split.
   +  move => k kb; rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
       rewrite get8_set64_directE 1,2:/# /=.
@@ -694,8 +694,8 @@ seq 3 0 : (#pre /\
       rewrite get8_set64_directE 1,2:/# /=.
       case ((i{hr} + 4) * 8 <= 32 + k && 32 + k < (i{hr} + 4) * 8 + 8) => *.
       + rewrite WArray1088.get64E pack8bE 1:/# initiE 1:/# /=.
-      by rewrite /get8 initiE; smt(Array960.initiE).
-    + by rewrite /get8 initiE; smt(Array1120.initiE).
+      rewrite /get8 initiE /= 1:/#; move : c;  smt(Array960.initiE).
+    + by rewrite /get8 initiE /= 1:/#; move : c;   smt(Array1120.initiE).
   +  move => k kb kbb; rewrite initiE 1:/# /=.
       rewrite get8_set64_directE 1,2:/# /=.
       case ((i{hr} + 4) * 8 <= 32 + k && 32 + k < (i{hr} + 4) * 8 + 8) => *.

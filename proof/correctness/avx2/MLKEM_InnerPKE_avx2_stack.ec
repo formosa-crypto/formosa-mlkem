@@ -424,7 +424,7 @@ seq 2 1 :
   move => i; rewrite size_take 1:/# size_to_list /= => ib.
   by rewrite !nth_take 1..4:/# get_to_list initiE 1:/# /= /#.
 
-while (#{/~Glob.mem{2}}{~pkp{2}}pre /\ ={aux,i} /\ aux{1} = 4 /\ 0 <= i{1} <= 4 /\
+while (#{/~Glob.mem{2}}{~pkp{2}}pre /\ ={i} /\ aux{1} = inc{2} /\ inc{2} = 4 /\ 0 <= i{1} <= 4 /\
      to_uint pkp{2} = 1152+8*i{1} /\
      
   Glob.mem{2} = stores (stores witness (384 * 3 +32) (take 1152 (to_list sk0{1}))) 0 (take (1152 + 8*i{1}) (to_list pk0{1}))); last by  auto => />;smt(take_size Array1184.size_to_list).

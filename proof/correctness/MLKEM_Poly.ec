@@ -711,7 +711,7 @@ lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t):
              map W16.to_sint res{1} = res{2} /\
              pos_bound256_cxq res{1} 0 256 2 ].
 proc.
-seq 1 1 : (#pre /\  aux{1} = 128); 1: by auto.
+seq 1 1 : (#pre /\  inc{1} = 128); 1: by auto.
 while(#pre /\ i{1} = i{2} /\ 0 <= i{2} <=  128 /\ 
    forall k, 0<=k<i{2}*2 => to_sint rp{1}.[k] = r{2}.[k] /\
                 0 <= to_sint rp{1}.[k] <2*q); last first.

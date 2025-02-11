@@ -801,7 +801,7 @@ seq 16 18  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /
  sim 3 3. 
  ecall{2} (sha3_512_33_64 inbuf{1}).
  ecall{1} (sha3_512A_A33_ph inbuf{1}) => /=.
- wp; while (={i, aux, randomnessp0, inbuf}); first by auto.
+ wp; while (={i, inc, randomnessp0, inbuf}); first by auto.
  auto => /> &m ?????? inbuf ?? r.
  rewrite /SHA3_512_33_64 /= => H1 seed.
  rewrite !Array32.tP => H2 H3.

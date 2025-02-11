@@ -13,7 +13,7 @@ WArray200 WArray224 WArray256 WArray512 WArray536 WArray800 WArray960
 WArray1088 WArray1536 WArray2048 WArray2144 WArray4608.
 
 abbrev sample_shuffle_table =
-(Array2048.of_list witness
+((Array2048.of_list witness)
 [(W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1));
 (W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1));
 (W8.of_int 0); (W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1));
@@ -535,7 +535,7 @@ abbrev sample_ones =
 454086624460063511464984254936031011189294057512315937409637584344757371137).
 
 abbrev sample_load_shuffle =
-(Array32.of_list witness
+((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 1); (W8.of_int 2); (W8.of_int 3);
 (W8.of_int 4); (W8.of_int 4); (W8.of_int 5); (W8.of_int 6); (W8.of_int 7);
 (W8.of_int 7); (W8.of_int 8); (W8.of_int 9); (W8.of_int 10); (W8.of_int 10);
@@ -545,7 +545,7 @@ abbrev sample_load_shuffle =
 (W8.of_int 14); (W8.of_int 14); (W8.of_int 15)]).
 
 abbrev gen_matrix_indexes =
-(Array32.of_list witness
+((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2);
 (W8.of_int 0); (W8.of_int 0); (W8.of_int 1); (W8.of_int 1); (W8.of_int 1);
 (W8.of_int 2); (W8.of_int 1); (W8.of_int 0); (W8.of_int 2); (W8.of_int 1);
@@ -555,7 +555,7 @@ abbrev gen_matrix_indexes =
 (W8.of_int 2); (W8.of_int 1)]).
 
 abbrev pvc_shufbidx_s =
-(Array32.of_list witness
+((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 2); (W8.of_int 3); (W8.of_int 4);
 (W8.of_int 8); (W8.of_int 9); (W8.of_int 10); (W8.of_int 11); (W8.of_int 12);
 (W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1)); (W8.of_int (-1));
@@ -580,7 +580,7 @@ abbrev pvd_mask_s = (W32.of_int 2145394680).
 abbrev pvd_sllvdidx_s = (W64.of_int 4).
 
 abbrev pvd_shufbdidx_s =
-(Array32.of_list witness
+((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 1); (W8.of_int 2); (W8.of_int 2);
 (W8.of_int 3); (W8.of_int 3); (W8.of_int 4); (W8.of_int 5); (W8.of_int 6);
 (W8.of_int 6); (W8.of_int 7); (W8.of_int 7); (W8.of_int 8); (W8.of_int 8);
@@ -592,7 +592,7 @@ abbrev pvd_shufbdidx_s =
 abbrev pvd_q_s = (W32.of_int 218182660).
 
 abbrev cbd_jshufbidx =
-(Array32.of_list witness
+((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 2); (W8.of_int (-1));
 (W8.of_int 3); (W8.of_int 4); (W8.of_int 5); (W8.of_int (-1)); (W8.of_int 6);
 (W8.of_int 7); (W8.of_int 8); (W8.of_int (-1)); (W8.of_int 9);
@@ -603,14 +603,14 @@ abbrev cbd_jshufbidx =
 (W8.of_int 15); (W8.of_int (-1))]).
 
 abbrev pfm_idx_s =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 4); (W8.of_int 5); (W8.of_int 8);
 (W8.of_int 9); (W8.of_int 12); (W8.of_int 13); (W8.of_int 2); (W8.of_int 3);
 (W8.of_int 6); (W8.of_int 7); (W8.of_int 10); (W8.of_int 11); (W8.of_int 14);
 (W8.of_int 15)]).
 
 abbrev pfm_shift_s =
-(Array4.of_list witness
+((Array4.of_list witness)
 [(W32.of_int 3); (W32.of_int 2); (W32.of_int 1); (W32.of_int 0)]).
 
 abbrev pd_shift_s = (W32.of_int 8390656).
@@ -618,7 +618,7 @@ abbrev pd_shift_s = (W32.of_int 8390656).
 abbrev pd_mask_s = (W32.of_int 15728655).
 
 abbrev pd_jshufbidx =
-(Array32.of_list witness
+((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 0); (W8.of_int 0); (W8.of_int 0); (W8.of_int 1);
 (W8.of_int 1); (W8.of_int 1); (W8.of_int 1); (W8.of_int 2); (W8.of_int 2);
 (W8.of_int 2); (W8.of_int 2); (W8.of_int 3); (W8.of_int 3); (W8.of_int 3);
@@ -628,7 +628,7 @@ abbrev pd_jshufbidx =
 (W8.of_int 7); (W8.of_int 7)]).
 
 abbrev pc_permidx_s =
-(Array8.of_list witness
+((Array8.of_list witness)
 [(W32.of_int 0); (W32.of_int 4); (W32.of_int 1); (W32.of_int 5);
 (W32.of_int 2); (W32.of_int 6); (W32.of_int 3); (W32.of_int 7)]).
 
@@ -649,7 +649,7 @@ abbrev rOL56 =
 ).
 
 abbrev kECCAK_RHOTATES_RIGHT =
-(Array6.of_list witness
+((Array6.of_list witness)
 [(W256.of_int 144373339913893657577751063007562604548177214458152943091773);
 (W256.of_int 232252764209307188274174373867837442080505530800860351692863);
 (W256.of_int 156927543384667019098616994515559168111335794127330162507795);
@@ -658,7 +658,7 @@ abbrev kECCAK_RHOTATES_RIGHT =
 (W256.of_int 313855086769334038206421612937983674734430261968315659321364)]).
 
 abbrev kECCAK_RHOTATES_LEFT =
-(Array6.of_list witness
+((Array6.of_list witness)
 [(W256.of_int 257361171150853911329517531560668107745210100483895842570243);
 (W256.of_int 169481746855440380633094220700393270212881784141188433969153);
 (W256.of_int 244806967680080549808651600052671544182051520814718623154221);
@@ -667,7 +667,7 @@ abbrev kECCAK_RHOTATES_LEFT =
 (W256.of_int 87879424295413530700846981630247037558957052973733126340652)]).
 
 abbrev kECCAK1600_RC =
-(Array24.of_list witness
+((Array24.of_list witness)
 [(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
 (W64.of_int (-9223372034707259392)); (W64.of_int 32907);
 (W64.of_int 2147483649); (W64.of_int (-9223372034707259263));
@@ -681,14 +681,14 @@ abbrev kECCAK1600_RC =
 (W64.of_int (-9223372034707259384))]).
 
 abbrev jdmontx16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353);
 (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353);
 (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353);
 (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353)]).
 
 abbrev mqinvx16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
 (W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
 (W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
@@ -697,35 +697,35 @@ abbrev mqinvx16 =
 (W16.of_int 15099)]).
 
 abbrev hhqx16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832);
 (W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832);
 (W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832);
 (W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832)]).
 
 abbrev hqx16_m1 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664);
 (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664);
 (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664);
 (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664)]).
 
 abbrev hqx16_p1 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665);
 (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665);
 (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665);
 (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665)]).
 
 abbrev maskx16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095);
 (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095);
 (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095);
 (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095)]).
 
 abbrev jflox16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
 (W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
 (W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
@@ -734,14 +734,14 @@ abbrev jflox16 =
 (W16.of_int (-10079))]).
 
 abbrev jfhix16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441);
 (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441);
 (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441);
 (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441)]).
 
 abbrev jvx16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
 (W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
 (W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
@@ -750,7 +750,7 @@ abbrev jvx16 =
 (W16.of_int 20159)]).
 
 abbrev jqinvx16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
 (W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
 (W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
@@ -759,14 +759,14 @@ abbrev jqinvx16 =
 (W16.of_int (-3327))]).
 
 abbrev jqx16 =
-(Array16.of_list witness
+((Array16.of_list witness)
 [(W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329);
 (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329);
 (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329);
 (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329)]).
 
 abbrev jzetas_inv_exp =
-(Array400.of_list witness
+((Array400.of_list witness)
 [(W16.of_int (-23131)); (W16.of_int (-7756)); (W16.of_int 20258);
 (W16.of_int 23860); (W16.of_int 17443); (W16.of_int (-23210));
 (W16.of_int 20199); (W16.of_int 21498); (W16.of_int (-14469));
@@ -887,7 +887,7 @@ abbrev jzetas_inv_exp =
 (W16.of_int 0)]).
 
 abbrev jzetas_exp =
-(Array400.of_list witness
+((Array400.of_list witness)
 [(W16.of_int 31499); (W16.of_int 31499); (W16.of_int 2571);
 (W16.of_int 2571); (W16.of_int 14746); (W16.of_int 14746); (W16.of_int 2970);
 (W16.of_int 2970); (W16.of_int 13525); (W16.of_int 13525);
@@ -1006,7 +1006,7 @@ abbrev jzetas_exp =
 (W16.of_int 0)]).
 
 abbrev jzetas_inv =
-(Array128.of_list witness
+((Array128.of_list witness)
 [(W16.of_int 1701); (W16.of_int 1807); (W16.of_int 1460); (W16.of_int 2371);
 (W16.of_int 2338); (W16.of_int 2333); (W16.of_int 308); (W16.of_int 108);
 (W16.of_int 2851); (W16.of_int 870); (W16.of_int 854); (W16.of_int 1510);
@@ -1041,7 +1041,7 @@ abbrev jzetas_inv =
 (W16.of_int 1517); (W16.of_int 359); (W16.of_int 758); (W16.of_int 1441)]).
 
 abbrev jzetas =
-(Array128.of_list witness
+((Array128.of_list witness)
 [(W16.of_int 2285); (W16.of_int 2571); (W16.of_int 2970); (W16.of_int 1812);
 (W16.of_int 1493); (W16.of_int 1422); (W16.of_int 287); (W16.of_int 202);
 (W16.of_int 3158); (W16.of_int 622); (W16.of_int 1577); (W16.of_int 182);
@@ -1309,7 +1309,6 @@ module M(SC:Syscall_t) = {
     return r;
   }
   proc keccakf1600_rho_offsets (i:int) : int = {
-    var aux:int;
     var r:int;
     var x:int;
     var y:int;
@@ -2288,7 +2287,6 @@ module M(SC:Syscall_t) = {
     return t256;
   }
   proc __state_init_avx2 () : W256.t Array7.t = {
-    var aux:int;
     var st:W256.t Array7.t;
     var i:int;
     st <- witness;
@@ -2301,16 +2299,16 @@ module M(SC:Syscall_t) = {
   }
   proc __pstate_init_avx2 (pst:W64.t Array25.t) : W64.t Array25.t *
                                                   W256.t Array7.t = {
-    var aux:int;
+    var inc:int;
     var st:W256.t Array7.t;
     var z256:W256.t;
     var i:int;
     var z64:W64.t;
     st <- witness;
     z256 <- (set0_256);
-    aux <- (25 %/ 4);
+    inc <- (25 %/ 4);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       pst <-
       (Array25.init
       (WArray200.get64
@@ -2454,10 +2452,10 @@ module M(SC:Syscall_t) = {
     return (st3, st4, st5, st6);
   }
   proc __state_from_pstate_avx2 (pst:W64.t Array25.t) : W256.t Array7.t = {
-    var aux_2:W256.t;
-    var aux_1:W256.t;
-    var aux_0:W256.t;
     var aux:W256.t;
+    var aux_0:W256.t;
+    var aux_1:W256.t;
+    var aux_2:W256.t;
     var st:W256.t Array7.t;
     var t128_0:W128.t;
     var t128_1:W128.t;
@@ -2482,12 +2480,12 @@ module M(SC:Syscall_t) = {
     (((W128.to_uint t128_1) %% (2 ^ 128)) +
     ((2 ^ 128) * (W128.to_uint t128_0))));
     st.[6] <- (get256_direct (WArray200.init64 (fun i => pst.[i])) (21 * 8));
-    (aux_2, aux_1, aux_0, aux) <@ __perm_reg3456_avx2 (st.[3], st.[4],
+    (aux, aux_0, aux_1, aux_2) <@ __perm_reg3456_avx2 (st.[3], st.[4],
     st.[5], st.[6]);
-    st.[3] <- aux_2;
-    st.[4] <- aux_1;
-    st.[5] <- aux_0;
-    st.[6] <- aux;
+    st.[3] <- aux;
+    st.[4] <- aux_0;
+    st.[5] <- aux_1;
+    st.[6] <- aux_2;
     return st;
   }
   proc __addstate_r3456_avx2 (st:W256.t Array7.t, r3:W256.t, r4:W256.t,
@@ -3133,7 +3131,6 @@ module M(SC:Syscall_t) = {
     return (buf, st);
   }
   proc keccakf1600_4x_theta_sum (a:W256.t Array25.t) : W256.t Array5.t = {
-    var aux:int;
     var c:W256.t Array5.t;
     var x:int;
     var y:int;
@@ -3172,7 +3169,6 @@ module M(SC:Syscall_t) = {
   }
   proc keccakf1600_4x_theta_rol (c:W256.t Array5.t, r8:W256.t, r56:W256.t) : 
   W256.t Array5.t = {
-    var aux:int;
     var d:W256.t Array5.t;
     var x:int;
     d <- witness;
@@ -3187,7 +3183,6 @@ module M(SC:Syscall_t) = {
   }
   proc keccakf1600_4x_rol_sum (a:W256.t Array25.t, d:W256.t Array5.t, y:int,
                                r8:W256.t, r56:W256.t) : W256.t Array5.t = {
-    var aux:int;
     var b:W256.t Array5.t;
     var x:int;
     var x_:int;
@@ -3212,7 +3207,6 @@ module M(SC:Syscall_t) = {
   }
   proc keccakf1600_4x_set_row (e:W256.t Array25.t, b:W256.t Array5.t, y:int,
                                rc:W256.t) : W256.t Array25.t = {
-    var aux:int;
     var x:int;
     var x1:int;
     var x2:int;
@@ -3235,7 +3229,6 @@ module M(SC:Syscall_t) = {
   }
   proc _keccakf1600_4x_round (e:W256.t Array25.t, a:W256.t Array25.t,
                               rc:W256.t, r8:W256.t, r56:W256.t) : W256.t Array25.t = {
-    var aux:int;
     var c:W256.t Array5.t;
     var d:W256.t Array5.t;
     var y:int;
@@ -7216,7 +7209,6 @@ module M(SC:Syscall_t) = {
     return (st, buf);
   }
   proc _poly_add2 (rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
     var i:int;
     var a:W256.t;
     var b:W256.t;
@@ -7236,7 +7228,6 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc _poly_csubq (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
     var qx16:W256.t;
     var i:int;
     var r:W256.t;
@@ -7488,7 +7479,7 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc _poly_compress (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
+    var inc:int;
     var x16p:W16.t Array16.t;
     var v:W256.t;
     var shift1:W256.t;
@@ -7508,9 +7499,9 @@ module M(SC:Syscall_t) = {
     mask <- (VPBROADCAST_16u16 pc_mask_s);
     shift2 <- (VPBROADCAST_16u16 pc_shift2_s);
     permidx <- (get256 (WArray32.init32 (fun i_0 => pc_permidx_s.[i_0])) 0);
-    aux <- (256 %/ 64);
+    inc <- (256 %/ 64);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (4 * i));
       f1 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 1));
       f2 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 2));
@@ -7541,7 +7532,7 @@ module M(SC:Syscall_t) = {
   }
   proc _poly_compress_1 (rp:W8.t Array128.t, a:W16.t Array256.t) : W8.t Array128.t *
                                                                    W16.t Array256.t = {
-    var aux:int;
+    var inc:int;
     var x16p:W16.t Array16.t;
     var v:W256.t;
     var shift1:W256.t;
@@ -7561,9 +7552,9 @@ module M(SC:Syscall_t) = {
     mask <- (VPBROADCAST_16u16 pc_mask_s);
     shift2 <- (VPBROADCAST_16u16 pc_shift2_s);
     permidx <- (get256 (WArray32.init32 (fun i_0 => pc_permidx_s.[i_0])) 0);
-    aux <- (256 %/ 64);
+    inc <- (256 %/ 64);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (4 * i));
       f1 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 1));
       f2 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((4 * i) + 2));
@@ -7596,7 +7587,7 @@ module M(SC:Syscall_t) = {
     return (rp, a);
   }
   proc _poly_decompress (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
-    var aux:int;
+    var inc:int;
     var x16p:W16.t Array16.t;
     var q:W256.t;
     var x32p:W8.t Array32.t;
@@ -7616,9 +7607,9 @@ module M(SC:Syscall_t) = {
     mask <- (VPBROADCAST_8u32 pd_mask_s);
     shift <- (VPBROADCAST_8u32 pd_shift_s);
     f <- (set0_256);
-    aux <- (256 %/ 16);
+    inc <- (256 %/ 16);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       h <-
       (zeroextu128
       (loadW64 Glob.mem (W64.to_uint (ap + (W64.of_int (8 * i))))));
@@ -7637,7 +7628,6 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc _poly_frombytes (rp:W16.t Array256.t, ap:W64.t) : W16.t Array256.t = {
-    var aux:int;
     var maskp:W16.t Array16.t;
     var mask:W256.t;
     var i:int;
@@ -7749,7 +7739,7 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc _poly_frommont (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
+    var inc:int;
     var x16p:W16.t Array16.t;
     var qx16:W256.t;
     var qinvx16:W256.t;
@@ -7763,9 +7753,9 @@ module M(SC:Syscall_t) = {
     qinvx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
     x16p <- jdmontx16;
     dmontx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
-    aux <- (256 %/ 16);
+    inc <- (256 %/ 16);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t <- (get256 (WArray512.init16 (fun i_0 => rp.[i_0])) i);
       t <@ __fqmulx16 (t, dmontx16, qx16, qinvx16);
       rp <-
@@ -7777,7 +7767,6 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc _poly_frommsg_1 (rp:W16.t Array256.t, ap:W8.t Array32.t) : W16.t Array256.t = {
-    var aux:int;
     var x16p:W16.t Array16.t;
     var hqs:W256.t;
     var shift:W256.t;
@@ -7851,7 +7840,7 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc __cbd3 (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
-    var aux:int;
+    var inc:int;
     var mask249_s:W32.t;
     var mask6DB_s:W32.t;
     var mask07_s:W32.t;
@@ -7879,9 +7868,9 @@ module M(SC:Syscall_t) = {
     mask70 <- (VPBROADCAST_8u32 mask70_s);
     mask3 <- (VPBROADCAST_16u16 mask3_s);
     shufbidx <- (get256 (WArray32.init8 (fun i_0 => cbd_jshufbidx.[i_0])) 0);
-    aux <- (256 %/ 32);
+    inc <- (256 %/ 32);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f0 <-
       (get256_direct (WArray128.init8 (fun i_0 => buf.[i_0])) (24 * i));
       f0 <- (VPERMQ f0 (W8.of_int 148));
@@ -7926,7 +7915,7 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc __cbd2 (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
-    var aux:int;
+    var inc:int;
     var mask55_s:W32.t;
     var mask33_s:W32.t;
     var mask03_s:W32.t;
@@ -7949,9 +7938,9 @@ module M(SC:Syscall_t) = {
     mask33 <- (VPBROADCAST_8u32 mask33_s);
     mask03 <- (VPBROADCAST_8u32 mask03_s);
     mask0F <- (VPBROADCAST_8u32 mask0F_s);
-    aux <- (256 %/ 64);
+    inc <- (256 %/ 64);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f0 <- (get256 (WArray128.init8 (fun i_0 => buf.[i_0])) i);
       f1 <- (VPSRL_16u16 f0 (W128.of_int 1));
       f0 <- (VPAND_256 mask55 f0);
@@ -8093,7 +8082,6 @@ module M(SC:Syscall_t) = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   proc _poly_invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
     var zetasp:W16.t Array400.t;
     var qx16:W256.t;
     var i:int;
@@ -8403,7 +8391,6 @@ module M(SC:Syscall_t) = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   proc _poly_ntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
     var zetasp:W16.t Array400.t;
     var qx16:W256.t;
     var zeta0:W256.t;
@@ -8666,7 +8653,6 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc __poly_reduce (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
     var qx16:W256.t;
     var vx16:W256.t;
     var i:int;
@@ -8688,7 +8674,6 @@ module M(SC:Syscall_t) = {
   }
   proc _poly_sub (rp:W16.t Array256.t, ap:W16.t Array256.t,
                   bp:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
     var i:int;
     var a:W256.t;
     var b:W256.t;
@@ -8708,7 +8693,6 @@ module M(SC:Syscall_t) = {
     return rp;
   }
   proc _poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
-    var aux:int;
     var jqx16_p:W16.t Array16.t;
     var qx16:W256.t;
     var i:int;
@@ -8787,7 +8771,7 @@ module M(SC:Syscall_t) = {
   }
   proc _poly_tomsg_1 (rp:W8.t Array32.t, a:W16.t Array256.t) : W8.t Array32.t *
                                                                W16.t Array256.t = {
-    var aux:int;
+    var inc:int;
     var px16:W16.t Array16.t;
     var hq:W256.t;
     var hhq:W256.t;
@@ -8803,9 +8787,9 @@ module M(SC:Syscall_t) = {
     hq <- (get256 (WArray32.init16 (fun i_0 => px16.[i_0])) 0);
     px16 <- hhqx16;
     hhq <- (get256 (WArray32.init16 (fun i_0 => px16.[i_0])) 0);
-    aux <- (256 %/ 32);
+    inc <- (256 %/ 32);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (2 * i));
       f1 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((2 * i) + 1));
       f0 <- (VPSUB_16u16 hq f0);
@@ -8869,7 +8853,7 @@ module M(SC:Syscall_t) = {
     return r;
   }
   proc __polyvec_decompress (rp:W64.t) : W16.t Array768.t = {
-    var aux:int;
+    var inc:int;
     var r:W16.t Array768.t;
     var q:W256.t;
     var shufbidx:W256.t;
@@ -8886,9 +8870,9 @@ module M(SC:Syscall_t) = {
     mask <- (VPBROADCAST_8u32 pvd_mask_s);
     k <- 0;
     while ((k < 3)) {
-      aux <- (256 %/ 16);
+      inc <- (256 %/ 16);
       i <- 0;
-      while ((i < aux)) {
+      while ((i < inc)) {
         f <-
         (loadW256 Glob.mem
         (W64.to_uint (rp + (W64.of_int ((320 * k) + (20 * i))))));
@@ -8910,7 +8894,7 @@ module M(SC:Syscall_t) = {
     return r;
   }
   proc __polyvec_compress (rp:W64.t, a:W16.t Array768.t) : unit = {
-    var aux:int;
+    var inc:int;
     var x16p:W16.t Array16.t;
     var v:W256.t;
     var v8:W256.t;
@@ -8938,9 +8922,9 @@ module M(SC:Syscall_t) = {
     sllvdidx <- (VPBROADCAST_4u64 pvc_sllvdidx_s);
     shufbidx <-
     (get256 (WArray32.init8 (fun i_0 => pvc_shufbidx_s.[i_0])) 0);
-    aux <- ((3 * 256) %/ 16);
+    inc <- ((3 * 256) %/ 16);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f0 <- (get256 (WArray1536.init16 (fun i_0 => a.[i_0])) i);
       f1 <- (VPMULL_16u16 f0 v8);
       f2 <- (VPADD_16u16 f0 off);
@@ -8970,7 +8954,7 @@ module M(SC:Syscall_t) = {
   }
   proc __polyvec_compress_1 (rp:W8.t Array960.t, a:W16.t Array768.t) : 
   W8.t Array960.t = {
-    var aux:int;
+    var inc:int;
     var x16p:W16.t Array16.t;
     var v:W256.t;
     var v8:W256.t;
@@ -8998,9 +8982,9 @@ module M(SC:Syscall_t) = {
     sllvdidx <- (VPBROADCAST_4u64 pvc_sllvdidx_s);
     shufbidx <-
     (get256 (WArray32.init8 (fun i_0 => pvc_shufbidx_s.[i_0])) 0);
-    aux <- ((3 * 256) %/ 16);
+    inc <- ((3 * 256) %/ 16);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f0 <- (get256 (WArray1536.init16 (fun i_0 => a.[i_0])) i);
       f1 <- (VPMULL_16u16 f0 v8);
       f2 <- (VPADD_16u16 f0 off);
@@ -9510,9 +9494,9 @@ module M(SC:Syscall_t) = {
                                             rho:W8.t Array32.t,
                                             pos_entry:W64.t, transposed:W64.t) : 
   W16.t Array1024.t * W8.t Array2144.t = {
+    var aux_0:W16.t Array256.t;
     var aux:W64.t;
     var aux_1:W8.t Array536.t;
-    var aux_0:W16.t Array256.t;
     var indexes:W8.t Array8.t;
     var state:W256.t Array25.t;
     var stx4:W256.t Array25.t;
@@ -9615,9 +9599,8 @@ module M(SC:Syscall_t) = {
   }
   proc _gen_matrix_avx2 (matrix:W16.t Array2304.t, rho:W8.t Array32.t,
                          transposed:W64.t) : W16.t Array2304.t = {
-    var aux:int;
-    var aux_1:W8.t Array536.t;
-    var aux_0:W16.t Array256.t;
+    var aux:W16.t Array256.t;
+    var aux_0:W8.t Array536.t;
     var buf_s:W8.t Array2144.t;
     var buf:W8.t Array2144.t;
     var i:int;
@@ -9649,12 +9632,12 @@ module M(SC:Syscall_t) = {
     }
     pol <- (Array256.init (fun i_0 => matrix.[((8 * 256) + i_0)]));
     rc <- (W16.of_int 514);
-    (aux_0, aux_1) <@ __gen_matrix_sample_one_polynomial (pol,
+    (aux, aux_0) <@ __gen_matrix_sample_one_polynomial (pol,
     (Array536.init (fun i_0 => buf.[((536 * 0) + i_0)])), rho, rc);
-    pol <- aux_0;
+    pol <- aux;
     buf <-
     (Array2144.init
-    (fun i_0 => (if ((536 * 0) <= i_0 < ((536 * 0) + 536)) then aux_1.[
+    (fun i_0 => (if ((536 * 0) <= i_0 < ((536 * 0) + 536)) then aux_0.[
                                                                 (i_0 -
                                                                 (536 * 0))] else 
                 buf.[i_0]))
@@ -9670,18 +9653,17 @@ module M(SC:Syscall_t) = {
     while ((i < 3)) {
       j <- 0;
       while ((j < 3)) {
-        aux_0 <@ _nttunpack ((Array256.init
-                             (fun i_0 => matrix.[(((i * (3 * 256)) +
-                                                  (j * 256)) +
-                                                 i_0)])
-                             ));
+        aux <@ _nttunpack ((Array256.init
+                           (fun i_0 => matrix.[(((i * (3 * 256)) + (j * 256)) +
+                                               i_0)])
+                           ));
         matrix <-
         (Array2304.init
         (fun i_0 => (if (((i * (3 * 256)) + (j * 256)) <= i_0 < (((i *
                                                                   (3 * 256)) +
                                                                  (j * 256)) +
                                                                 256)) then 
-                    aux_0.[(i_0 - ((i * (3 * 256)) + (j * 256)))] else 
+                    aux.[(i_0 - ((i * (3 * 256)) + (j * 256)))] else 
                     matrix.[i_0]))
         );
         j <- (j + 1);
@@ -9692,11 +9674,11 @@ module M(SC:Syscall_t) = {
   }
   proc __indcpa_keypair (pkp:W64.t, skp:W64.t, randomnessp:W8.t Array32.t) : 
   unit = {
-    var aux:int;
-    var aux_3:W16.t Array256.t;
-    var aux_2:W16.t Array256.t;
-    var aux_1:W16.t Array256.t;
+    var aux:W16.t Array256.t;
     var aux_0:W16.t Array256.t;
+    var aux_1:W16.t Array256.t;
+    var aux_2:W16.t Array256.t;
+    var inc:int;
     var i:int;
     var t64:W64.t;
     var inbuf:W8.t Array33.t;
@@ -9718,9 +9700,9 @@ module M(SC:Syscall_t) = {
     publicseed <- witness;
     skpv <- witness;
     (* Erased call to spill *)
-    aux <- (32 %/ 8);
+    inc <- (32 %/ 8);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
       inbuf <-
       (Array33.init
@@ -9730,9 +9712,9 @@ module M(SC:Syscall_t) = {
     }
     inbuf.[32] <- (W8.of_int 3);
     buf <@ _sha3_512A_A33 (buf, inbuf);
-    aux <- (32 %/ 8);
+    inc <- (32 %/ 8);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t64 <- (get64 (WArray64.init8 (fun i_0 => buf.[i_0])) i);
       publicseed <-
       (Array32.init
@@ -9748,21 +9730,20 @@ module M(SC:Syscall_t) = {
     transposed <- (W64.of_int 0);
     aa <@ _gen_matrix_avx2 (aa, publicseed, transposed);
     nonce <- (W8.of_int 0);
-    (aux_3, aux_2, aux_1, aux_0) <@ _poly_getnoise_eta1_4x ((Array256.init
-                                                            (fun i_0 => 
-                                                            skpv.[(0 + i_0)])
-                                                            ),
+    (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
+                                                          (fun i_0 => 
+                                                          skpv.[(0 + i_0)])),
     (Array256.init (fun i_0 => skpv.[(256 + i_0)])),
     (Array256.init (fun i_0 => skpv.[((2 * 256) + i_0)])),
     (Array256.init (fun i_0 => e.[(0 + i_0)])), noiseseed, nonce);
     skpv <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_3.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux.[(i_0 - 0)] else 
                 skpv.[i_0]))
     );
     skpv <-
     (Array768.init
-    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_2.[(i_0 - 256)] else 
+    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_0.[(i_0 - 256)] else 
                 skpv.[i_0]))
     );
     skpv <-
@@ -9774,24 +9755,24 @@ module M(SC:Syscall_t) = {
     );
     e <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_0.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_2.[(i_0 - 0)] else 
                 e.[i_0]))
     );
     nonce <- (W8.of_int 4);
-    (aux_3, aux_2, aux_1, aux_0) <@ _poly_getnoise_eta1_4x ((Array256.init
-                                                            (fun i_0 => 
-                                                            e.[(256 + i_0)])),
+    (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
+                                                          (fun i_0 => 
+                                                          e.[(256 + i_0)])),
     (Array256.init (fun i_0 => e.[((2 * 256) + i_0)])),
     (Array256.init (fun i_0 => pkpv.[(0 + i_0)])),
     (Array256.init (fun i_0 => pkpv.[(256 + i_0)])), noiseseed, nonce);
     e <-
     (Array768.init
-    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_3.[(i_0 - 256)] else 
+    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux.[(i_0 - 256)] else 
                 e.[i_0]))
     );
     e <-
     (Array768.init
-    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_2.[
+    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_0.[
                                                                 (i_0 -
                                                                 (2 * 256))] else 
                 e.[i_0]))
@@ -9803,29 +9784,28 @@ module M(SC:Syscall_t) = {
     );
     pkpv <-
     (Array768.init
-    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_0.[(i_0 - 256)] else 
+    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_2.[(i_0 - 256)] else 
                 pkpv.[i_0]))
     );
     skpv <@ __polyvec_ntt (skpv);
     e <@ __polyvec_ntt (e);
     i <- 0;
     while ((i < 3)) {
-      aux_3 <@ __polyvec_pointwise_acc ((Array256.init
-                                        (fun i_0 => pkpv.[((i * 256) + i_0)])
-                                        ),
+      aux <@ __polyvec_pointwise_acc ((Array256.init
+                                      (fun i_0 => pkpv.[((i * 256) + i_0)])),
       (Array768.init (fun i_0 => aa.[((i * (3 * 256)) + i_0)])), skpv);
       pkpv <-
       (Array768.init
-      (fun i_0 => (if ((i * 256) <= i_0 < ((i * 256) + 256)) then aux_3.[
+      (fun i_0 => (if ((i * 256) <= i_0 < ((i * 256) + 256)) then aux.[
                                                                   (i_0 -
                                                                   (i * 256))] else 
                   pkpv.[i_0]))
       );
-      aux_3 <@ _poly_frommont ((Array256.init
-                               (fun i_0 => pkpv.[((i * 256) + i_0)])));
+      aux <@ _poly_frommont ((Array256.init
+                             (fun i_0 => pkpv.[((i * 256) + i_0)])));
       pkpv <-
       (Array768.init
-      (fun i_0 => (if ((i * 256) <= i_0 < ((i * 256) + 256)) then aux_3.[
+      (fun i_0 => (if ((i * 256) <= i_0 < ((i * 256) + 256)) then aux.[
                                                                   (i_0 -
                                                                   (i * 256))] else 
                   pkpv.[i_0]))
@@ -9838,9 +9818,9 @@ module M(SC:Syscall_t) = {
     __polyvec_tobytes (skp, skpv);
     __polyvec_tobytes (pkp, pkpv);
     pkp <- (pkp + (W64.of_int (3 * 384)));
-    aux <- (32 %/ 8);
+    inc <- (32 %/ 8);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => publicseed.[i_0])) i);
       Glob.mem <-
       (storeW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))) t64);
@@ -9851,11 +9831,10 @@ module M(SC:Syscall_t) = {
   }
   proc __indcpa_enc_0 (sctp:W64.t, msgp:W8.t Array32.t, pkp:W64.t,
                        noiseseed:W8.t Array32.t) : unit = {
-    var aux_3:int;
-    var aux_2:W16.t Array256.t;
-    var aux_1:W16.t Array256.t;
-    var aux_0:W16.t Array256.t;
     var aux:W16.t Array256.t;
+    var aux_0:W16.t Array256.t;
+    var aux_1:W16.t Array256.t;
+    var aux_2:W16.t Array256.t;
     var pkpv:W16.t Array768.t;
     var i:W64.t;
     var t64:W64.t;
@@ -9903,7 +9882,7 @@ module M(SC:Syscall_t) = {
     aat <@ _gen_matrix_avx2 (aat, publicseed, transposed);
     lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 0);
-    (aux_2, aux_1, aux_0, aux) <@ _poly_getnoise_eta1_4x ((Array256.init
+    (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
                                                           (fun i_0 => 
                                                           sp_0.[(0 + i_0)])),
     (Array256.init (fun i_0 => sp_0.[(256 + i_0)])),
@@ -9911,60 +9890,60 @@ module M(SC:Syscall_t) = {
     (Array256.init (fun i_0 => ep.[(0 + i_0)])), lnoiseseed, nonce);
     sp_0 <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_2.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux.[(i_0 - 0)] else 
                 sp_0.[i_0]))
     );
     sp_0 <-
     (Array768.init
-    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_1.[(i_0 - 256)] else 
+    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_0.[(i_0 - 256)] else 
                 sp_0.[i_0]))
     );
     sp_0 <-
     (Array768.init
-    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_0.[
+    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_1.[
                                                                 (i_0 -
                                                                 (2 * 256))] else 
                 sp_0.[i_0]))
     );
     ep <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_2.[(i_0 - 0)] else 
                 ep.[i_0]))
     );
     lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 4);
-    (aux_2, aux_1, aux_0, aux) <@ _poly_getnoise_eta1_4x ((Array256.init
+    (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
                                                           (fun i_0 => 
                                                           ep.[(256 + i_0)])),
     (Array256.init (fun i_0 => ep.[((2 * 256) + i_0)])), epp,
     (Array256.init (fun i_0 => bp.[(0 + i_0)])), lnoiseseed, nonce);
     ep <-
     (Array768.init
-    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_2.[(i_0 - 256)] else 
+    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux.[(i_0 - 256)] else 
                 ep.[i_0]))
     );
     ep <-
     (Array768.init
-    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_1.[
+    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_0.[
                                                                 (i_0 -
                                                                 (2 * 256))] else 
                 ep.[i_0]))
     );
-    epp <- aux_0;
+    epp <- aux_1;
     bp <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_2.[(i_0 - 0)] else 
                 bp.[i_0]))
     );
     sp_0 <@ __polyvec_ntt (sp_0);
     w <- 0;
     while ((w < 3)) {
-      aux_2 <@ __polyvec_pointwise_acc ((Array256.init
-                                        (fun i_0 => bp.[((w * 256) + i_0)])),
+      aux <@ __polyvec_pointwise_acc ((Array256.init
+                                      (fun i_0 => bp.[((w * 256) + i_0)])),
       (Array768.init (fun i_0 => aat.[((w * (3 * 256)) + i_0)])), sp_0);
       bp <-
       (Array768.init
-      (fun i_0 => (if ((w * 256) <= i_0 < ((w * 256) + 256)) then aux_2.[
+      (fun i_0 => (if ((w * 256) <= i_0 < ((w * 256) + 256)) then aux.[
                                                                   (i_0 -
                                                                   (w * 256))] else 
                   bp.[i_0]))
@@ -9987,13 +9966,12 @@ module M(SC:Syscall_t) = {
   }
   proc __indcpa_enc_1 (ctp:W8.t Array1088.t, msgp:W8.t Array32.t, pkp:W64.t,
                        noiseseed:W8.t Array32.t) : W8.t Array1088.t = {
-    var aux_3:int;
-    var aux_5:W8.t Array128.t;
-    var aux_4:W8.t Array960.t;
-    var aux_2:W16.t Array256.t;
-    var aux_1:W16.t Array256.t;
-    var aux_0:W16.t Array256.t;
     var aux:W16.t Array256.t;
+    var aux_0:W16.t Array256.t;
+    var aux_1:W16.t Array256.t;
+    var aux_2:W16.t Array256.t;
+    var aux_4:W8.t Array128.t;
+    var aux_3:W8.t Array960.t;
     var pkpv:W16.t Array768.t;
     var i:W64.t;
     var t64:W64.t;
@@ -10040,7 +10018,7 @@ module M(SC:Syscall_t) = {
     aat <@ _gen_matrix_avx2 (aat, publicseed, transposed);
     lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 0);
-    (aux_2, aux_1, aux_0, aux) <@ _poly_getnoise_eta1_4x ((Array256.init
+    (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
                                                           (fun i_0 => 
                                                           sp_0.[(0 + i_0)])),
     (Array256.init (fun i_0 => sp_0.[(256 + i_0)])),
@@ -10048,60 +10026,60 @@ module M(SC:Syscall_t) = {
     (Array256.init (fun i_0 => ep.[(0 + i_0)])), lnoiseseed, nonce);
     sp_0 <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_2.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux.[(i_0 - 0)] else 
                 sp_0.[i_0]))
     );
     sp_0 <-
     (Array768.init
-    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_1.[(i_0 - 256)] else 
+    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_0.[(i_0 - 256)] else 
                 sp_0.[i_0]))
     );
     sp_0 <-
     (Array768.init
-    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_0.[
+    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_1.[
                                                                 (i_0 -
                                                                 (2 * 256))] else 
                 sp_0.[i_0]))
     );
     ep <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_2.[(i_0 - 0)] else 
                 ep.[i_0]))
     );
     lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 4);
-    (aux_2, aux_1, aux_0, aux) <@ _poly_getnoise_eta1_4x ((Array256.init
+    (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
                                                           (fun i_0 => 
                                                           ep.[(256 + i_0)])),
     (Array256.init (fun i_0 => ep.[((2 * 256) + i_0)])), epp,
     (Array256.init (fun i_0 => bp.[(0 + i_0)])), lnoiseseed, nonce);
     ep <-
     (Array768.init
-    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux_2.[(i_0 - 256)] else 
+    (fun i_0 => (if (256 <= i_0 < (256 + 256)) then aux.[(i_0 - 256)] else 
                 ep.[i_0]))
     );
     ep <-
     (Array768.init
-    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_1.[
+    (fun i_0 => (if ((2 * 256) <= i_0 < ((2 * 256) + 256)) then aux_0.[
                                                                 (i_0 -
                                                                 (2 * 256))] else 
                 ep.[i_0]))
     );
-    epp <- aux_0;
+    epp <- aux_1;
     bp <-
     (Array768.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 256)) then aux_2.[(i_0 - 0)] else 
                 bp.[i_0]))
     );
     sp_0 <@ __polyvec_ntt (sp_0);
     w <- 0;
     while ((w < 3)) {
-      aux_2 <@ __polyvec_pointwise_acc ((Array256.init
-                                        (fun i_0 => bp.[((w * 256) + i_0)])),
+      aux <@ __polyvec_pointwise_acc ((Array256.init
+                                      (fun i_0 => bp.[((w * 256) + i_0)])),
       (Array768.init (fun i_0 => aat.[((w * (3 * 256)) + i_0)])), sp_0);
       bp <-
       (Array768.init
-      (fun i_0 => (if ((w * 256) <= i_0 < ((w * 256) + 256)) then aux_2.[
+      (fun i_0 => (if ((w * 256) <= i_0 < ((w * 256) + 256)) then aux.[
                                                                   (i_0 -
                                                                   (w * 256))] else 
                   bp.[i_0]))
@@ -10116,25 +10094,25 @@ module M(SC:Syscall_t) = {
     v <@ _poly_add2 (v, k);
     bp <@ __polyvec_reduce (bp);
     v <@ __poly_reduce (v);
-    aux_4 <@ __polyvec_compress_1 ((Array960.init
+    aux_3 <@ __polyvec_compress_1 ((Array960.init
                                    (fun i_0 => ctp.[(0 + i_0)])),
     bp);
     ctp <-
     (Array1088.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 960)) then aux_4.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 960)) then aux_3.[(i_0 - 0)] else 
                 ctp.[i_0]))
     );
-    (aux_5, aux_2) <@ _poly_compress_1 ((Array128.init
-                                        (fun i_0 => ctp.[((3 * 320) + i_0)])),
+    (aux_4, aux) <@ _poly_compress_1 ((Array128.init
+                                      (fun i_0 => ctp.[((3 * 320) + i_0)])),
     v);
     ctp <-
     (Array1088.init
-    (fun i_0 => (if ((3 * 320) <= i_0 < ((3 * 320) + 128)) then aux_5.[
+    (fun i_0 => (if ((3 * 320) <= i_0 < ((3 * 320) + 128)) then aux_4.[
                                                                 (i_0 -
                                                                 (3 * 320))] else 
                 ctp.[i_0]))
     );
-    v <- aux_2;
+    v <- aux;
     return ctp;
   }
   proc __indcpa_dec_1 (msgp:W8.t Array32.t, ctp:W64.t, skp:W64.t) : W8.t Array32.t = {
@@ -10161,7 +10139,7 @@ module M(SC:Syscall_t) = {
     return msgp;
   }
   proc __verify (ctp:W64.t, ctpc:W8.t Array1088.t) : W64.t = {
-    var aux:int;
+    var inc:int;
     var cnd:W64.t;
     var t64:W64.t;
     var h:W256.t;
@@ -10179,9 +10157,9 @@ module M(SC:Syscall_t) = {
     cnd <- (W64.of_int 0);
     t64 <- (W64.of_int 1);
     h <- (set0_256);
-    aux <- (((3 * 320) + 128) %/ 32);
+    inc <- (((3 * 320) + 128) %/ 32);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f <-
       (get256_direct (WArray1088.init8 (fun i_0 => ctpc.[i_0])) (32 * i));
       g <- (loadW256 Glob.mem (W64.to_uint (ctp + (W64.of_int (32 * i)))));
@@ -10192,9 +10170,9 @@ module M(SC:Syscall_t) = {
     ( _0,  _1,  _2,  _3, zf) <- (VPTEST_256 h h);
     cnd <- ((! zf) ? t64 : cnd);
     off <- ((((3 * 320) + 128) %/ 32) * 32);
-    aux <- ((3 * 320) + 128);
+    inc <- ((3 * 320) + 128);
     i <- off;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t1 <- (get8_direct (WArray1088.init8 (fun i_0 => ctpc.[i_0])) i);
       t2 <- (loadW8 Glob.mem (W64.to_uint (ctp + (W64.of_int i))));
       t1 <- (t1 `^` t2);
@@ -10207,7 +10185,7 @@ module M(SC:Syscall_t) = {
     return cnd;
   }
   proc __cmov (dst:W64.t, src:W8.t Array32.t, cnd:W64.t) : unit = {
-    var aux:int;
+    var inc:int;
     var scnd:W64.t;
     var m:W256.t;
     var i:int;
@@ -10220,9 +10198,9 @@ module M(SC:Syscall_t) = {
     cnd <- (- cnd);
     scnd <- cnd;
     m <- (VPBROADCAST_4u64 scnd);
-    aux <- (32 %/ 32);
+    inc <- (32 %/ 32);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       f <- (get256_direct (WArray32.init8 (fun i_0 => src.[i_0])) (32 * i));
       g <- (loadW256 Glob.mem (W64.to_uint (dst + (W64.of_int (32 * i)))));
       f <- (VPBLENDVB_256 f g m);
@@ -10246,7 +10224,7 @@ module M(SC:Syscall_t) = {
   }
   proc __crypto_kem_keypair_jazz (pkp:W64.t, skp:W64.t,
                                   randomnessp:W8.t Array64.t) : unit = {
-    var aux:int;
+    var inc:int;
     var s_randomnessp:W8.t Array64.t;
     var s_pkp:W64.t;
     var s_skp:W64.t;
@@ -10267,9 +10245,9 @@ module M(SC:Syscall_t) = {
     skp <- s_skp;
     skp <- (skp + (W64.of_int (3 * 384)));
     pkp <- s_pkp;
-    aux <- (((3 * 384) + 32) %/ 8);
+    inc <- (((3 * 384) + 32) %/ 8);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int (8 * i)))));
       Glob.mem <-
       (storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) t64);
@@ -10290,9 +10268,9 @@ module M(SC:Syscall_t) = {
     }
     randomnessp <- s_randomnessp;
     randomnessp2 <- (Array32.init (fun i_0 => randomnessp.[(32 + i_0)]));
-    aux <- (32 %/ 8);
+    inc <- (32 %/ 8);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) i);
       Glob.mem <-
       (storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) t64);
@@ -10303,8 +10281,8 @@ module M(SC:Syscall_t) = {
   }
   proc __crypto_kem_enc_jazz (ctp:W64.t, shkp:W64.t, pkp:W64.t,
                               randomnessp:W8.t Array32.t) : unit = {
-    var aux:int;
-    var aux_0:W8.t Array32.t;
+    var aux:W8.t Array32.t;
+    var inc:int;
     var s_pkp:W64.t;
     var s_ctp:W64.t;
     var s_shkp:W64.t;
@@ -10317,9 +10295,9 @@ module M(SC:Syscall_t) = {
     s_pkp <- pkp;
     s_ctp <- ctp;
     s_shkp <- shkp;
-    aux <- (32 %/ 8);
+    inc <- (32 %/ 8);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
       buf <-
       (Array64.init
@@ -10327,11 +10305,11 @@ module M(SC:Syscall_t) = {
       (WArray64.set64 (WArray64.init8 (fun i_0 => buf.[i_0])) i t64)));
       i <- (i + 1);
     }
-    aux_0 <@ _sha3_256A_M1184 ((Array32.init (fun i_0 => buf.[(32 + i_0)])),
+    aux <@ _sha3_256A_M1184 ((Array32.init (fun i_0 => buf.[(32 + i_0)])),
     pkp);
     buf <-
     (Array64.init
-    (fun i_0 => (if (32 <= i_0 < (32 + 32)) then aux_0.[(i_0 - 32)] else 
+    (fun i_0 => (if (32 <= i_0 < (32 + 32)) then aux.[(i_0 - 32)] else 
                 buf.[i_0]))
     );
     kr <@ _sha3_512A_A64 (kr, buf);
@@ -10339,9 +10317,9 @@ module M(SC:Syscall_t) = {
     __indcpa_enc_0 (s_ctp, (Array32.init (fun i_0 => buf.[(0 + i_0)])), 
     pkp, (Array32.init (fun i_0 => kr.[(32 + i_0)])));
     shkp <- s_shkp;
-    aux <- (32 %/ 8);
+    inc <- (32 %/ 8);
     i <- 0;
-    while ((i < aux)) {
+    while ((i < inc)) {
       t64 <- (get64 (WArray64.init8 (fun i_0 => kr.[i_0])) i);
       Glob.mem <-
       (storeW64 Glob.mem (W64.to_uint (shkp + (W64.of_int (8 * i)))) t64);
@@ -10350,8 +10328,8 @@ module M(SC:Syscall_t) = {
     return ();
   }
   proc __crypto_kem_dec_jazz (shkp:W64.t, ctp:W64.t, skp:W64.t) : unit = {
-    var aux_0:int;
     var aux:W8.t Array32.t;
+    var inc:int;
     var s_shkp:W64.t;
     var s_ctp:W64.t;
     var buf:W8.t Array64.t;
@@ -10378,9 +10356,9 @@ module M(SC:Syscall_t) = {
     );
     hp <- skp;
     hp <- (hp + (W64.of_int (32 + (((24 * 3) * 256) `|>>` 3))));
-    aux_0 <- (32 %/ 8);
+    inc <- (32 %/ 8);
     i <- 0;
-    while ((i < aux_0)) {
+    while ((i < inc)) {
       t64 <- (loadW64 Glob.mem (W64.to_uint (hp + (W64.of_int (8 * i)))));
       buf <-
       (Array64.init

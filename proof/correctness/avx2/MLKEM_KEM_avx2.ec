@@ -47,7 +47,7 @@ seq 18 4 : (
       pk{2}.`1 = load_array1152 Glob.mem{1} (_pkp) /\
       pk{2}.`2 = load_array32 Glob.mem{1} (_pkp + 1152)
 ); last first.
-+ while {1} (aux{1} = 4 /\
++ while {1} (inc{1} = 4 /\
        z{2} = Array32.init(fun i => randomnessp2{1}.[0 + i]) /\ 
        to_uint skp{1} = _skp +  1152 + 1152 + 32 + 32 + i{1}*8 /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3 + 384*3 + 32 + 32 + 32 + 32) /\
@@ -156,7 +156,7 @@ seq 8 0 : (#{/~to_uint skp{1} = _skp}pre /\
 ).
 
 + wp;while {1} (#{/~to_uint skp{1} = _skp}{~s_skp{1} = skp{1}}pre /\ 
-    aux{1} = (3 * 384 + 32) %/ 8 /\ 0<=i{1} <= aux{1} /\
+    inc{1} = (3 * 384 + 32) %/ 8 /\ 0<=i{1} <= inc{1} /\
     to_uint skp{1} = _skp + 3*384 + i{1}*8 /\
     (forall k, 0<= k < min (8 * i{1}) 1152  => 
          pk{2}.`1.[k] = Glob.mem{1}.[_skp + 3*384 + k]) /\
@@ -307,12 +307,12 @@ seq 13 4 : (#[/1:-2]post
       /\ to_uint s_shkp{1} = _kp 
       /\ (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])); last first.
 + while {1} (#[/1:-2]post
-      /\ aux{1} = 4 
+      /\ inc{1} = 4 
       /\ 0<=i{1}<=4 
       /\ valid_disj_reg _ctp 1088 _kp 32 
       /\ to_uint shkp{1} = _kp 
       /\ (forall k, 0<=k<8*i{1} =>  _K{2}.[k] = (load_array32 Glob.mem{1} _kp).[k]) 
-      /\ (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])) (aux{1} - i{1}).
+      /\ (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])) (inc{1} - i{1}).
   + auto => /> &hr H H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11;do split;4:smt().
     + move : H;rewrite /touches2 => H a ab1 ab2. 
       rewrite storeW64E get_storesE /=. 
@@ -347,7 +347,7 @@ wp; ecall {1} (sha3_512A_A64_ph buf{1}).
 wp; ecall {1} (sha3_256A_M1184_ph mem (_pkp)).
 seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1} /\ randomnessp{1} = Array32.init (fun i => buf{1}.[i])).
 + sp ; conseq />.
-  while {1} (0<=i{1}<=aux{1} /\ aux{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (aux{1} - i{1}); last first.
+  while {1} (0<=i{1}<=inc{1} /\ inc{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (inc{1} - i{1}); last first.
   + auto => /> &1 &2 *; split; 1: by smt().  
     move => buf i1; split; 1: smt(). 
     by move => *; rewrite tP => k kn; rewrite initiE //= /#. 
@@ -406,7 +406,7 @@ lemma verify_correct_h mem (_ctp : int) ctp1 :
                        res = W64.of_int 1)].
 proc => /=.
 seq 8 : (#post); last first.
-wp. conseq />. while(i=1088 /\ aux=1088 /\ #pre); 1: by auto => />. 
+wp. conseq />. while(i=1088 /\ inc=1088 /\ #pre); 1: by auto => />. 
 + (*conseq />; 1: by smt(). *)
   conseq />; first by move => /> *; split; smt().
   auto => />.  
@@ -416,7 +416,7 @@ wp. conseq />. while(i=1088 /\ aux=1088 /\ #pre); 1: by auto => />.
   + move => H5; move : (H3 H5) => -> /=; rewrite W64.minus_one /= wordP => i ib.
     by rewrite /(`>>`) shrwE ib /= /(W64.one) /= /bits2w /= initiE //= /int2bs /= /mkseq /= -iotaredE /= /#. 
 
-wp; while (#pre /\ 0 <= i{hr} <= 34 /\ aux{hr} = 34 /\ 0<=to_uint cnd<256 /\
+wp; while (#pre /\ 0 <= i{hr} <= 34 /\ inc{hr} = 34 /\ 0<=to_uint cnd<256 /\
            (to_uint h{hr} = 0 <=> 
             forall k, 0 <= k < i{hr}*32 => loadW8 mem (_ctp + k) = ctp1.[k])); last first.
 + auto => /> &hr ??; split; 1: by smt().
@@ -484,9 +484,9 @@ qed.
 lemma verify_ll : islossless Jkem_avx2.M(Jkem_avx2.Syscall).__verify.
 proc.
 seq 8 : (#post) => //; last first.
-wp. conseq />. while(i=1088 /\ aux=1088 /\ #pre) (1088 - aux); 1,2:   by auto => />. 
+wp. conseq />. while(i=1088 /\ inc=1088 /\ #pre) (1088 - inc); 1,2:   by auto => />. 
 wp.
-while (0 <= i{hr} <= 34 /\ aux{hr} = 34) (34 - i{hr}).
+while (0 <= i{hr} <= 34 /\ inc{hr} = 34) (34 - i{hr}).
 auto => /> /#.
 auto => /> /#. 
 qed.
@@ -521,8 +521,8 @@ seq 5 : (#post); last first.
 
 unroll ^while.
 
-seq 5 : (#post /\ aux{hr}= 1 /\ i{hr}=1); last first.
-+ wp; conseq />; while(i=1 /\ aux=1 /\ #pre); auto => /> /#. 
+seq 5 : (#post /\ inc{hr}= 1 /\ i{hr}=1); last first.
++ wp; conseq />; while(i=1 /\ inc=1 /\ #pre); auto => /> /#. 
 
 rcondt 5; 1: by move => *; auto => />.
 
@@ -579,7 +579,7 @@ seq 6 : (#post) => //; last first.
 
 unroll 6.
 
-+ wp; conseq />; while(i=1 /\ aux=1 /\ #pre) (1-i); auto => /> /#. 
++ wp; conseq />; while(i=1 /\ inc=1 /\ #pre) (1-i); auto => /> /#. 
 
 qed.
 
@@ -639,7 +639,7 @@ wp; conseq (_: _ ==>
   + move => k kbl kbh; rewrite initiE 1:/# /= ifF 1:/# /= /G_mhpk; congr; congr;congr.
     rewrite tP => i ib; rewrite initiE //= /#.
     by rewrite tP => i ib; rewrite !initiE  /#. 
-while {1} (0<=i{1}<=4 /\ aux_0{1} = 4  /\ to_uint hp{1} = _skp + 2336 /\ Glob.mem{1} = mem /\
+while {1} (0<=i{1}<=4 /\ inc{1} = 4  /\ to_uint hp{1} = _skp + 2336 /\ Glob.mem{1} = mem /\
              valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
              (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = mem.[_skp + 2336 + k - 32]) /\
              forall (k : int), 0 <= k && k < 32 => buf{1}.[k] = aux{1}.[k]) (4 - i{1}); last first. 

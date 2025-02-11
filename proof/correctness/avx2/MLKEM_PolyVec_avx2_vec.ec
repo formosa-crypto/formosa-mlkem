@@ -449,8 +449,9 @@ proof.
     split.
       + rewrite /get256_direct /= => />.
         apply W32u8.allP => />.
-        do (rewrite initiE 1:/# /=).
-        smt(@Int @IntDiv @Array256 @W8).
+        do (rewrite initiE 1:/# /=). 
+        do (split;[congr;[congr; smt() | smt()] | ]).
+        by smt().
    move => a_eq resL10 />.
    split.
       + rewrite /f8u32_t4u64 /= => />.
@@ -582,7 +583,7 @@ equiv veceq_polyvec_compress_1 :
   Mvec.polyvec_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress_1: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
   proc.
-  while(={i, a, rp, Glob.mem, aux, v, v8, off, shift1, mask, shift2, sllvdidx, shufbidx} /\ 0 <= i{1} /\ aux{1} = 48).
+  while(={i, a, rp, Glob.mem, v, v8, off, shift1, mask, shift2, sllvdidx, shufbidx} /\ 0 <= i{1} /\ aux{1} = 48 /\ aux{1} = inc{2}).
   inline *.
   wp. skip. auto => /> /#.
   inline OpsV.iVPBROADCAST_16u16 OpsV.iVPBROADCAST_4u64 OpsV.iVPSLL_16u16.
@@ -595,7 +596,7 @@ equiv veceq_polyvec_compress :
   Mvec.polyvec_compress ~Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_compress: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
   proc.
-  while(={i, a, rp, Glob.mem, aux, v, v8, off, shift1, mask, shift2, sllvdidx, shufbidx} /\ 0 <= i{1} /\ aux{1} = 48).
+  while(={i, a, rp, Glob.mem, v, v8, off, shift1, mask, shift2, sllvdidx, shufbidx} /\ 0 <= i{1} /\ aux{1} = 48 /\ aux{1} = inc{2}).
   inline *.
   wp. skip. auto => /> /#.
   inline OpsV.iVPBROADCAST_16u16 OpsV.iVPBROADCAST_4u64 OpsV.iVPSLL_16u16.
@@ -610,7 +611,7 @@ proof.
   proc.
   while(={Glob.mem, rp, q, shufbidx, sllvdidx, mask, k, r} /\ 0 <= k{1}).
     wp.
-    while(#pre /\ ={i, aux} /\ 0 <= i{1} /\ aux{1} = 16).
+    while(#pre /\ ={i} /\ 0 <= i{1} /\ aux{1} = 16  /\ aux{1} = inc{2}).
       inline OpsV.iVPMULHRS_256 OpsV.iVPAND_16u16 OpsV.iVPSRL_16u16 OpsV.iVPSLLV_8u32 OpsV.iVPSHUFB_256 OpsV.iVPERMQ_32u8 OpsV.iload32u8.
       wp; skip; auto => /> /#.
     wp; skip; auto => /> /#.

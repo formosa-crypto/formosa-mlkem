@@ -9,11 +9,12 @@
 # --------------------------------------------------------------------
 all: ec
 
-ec:
-	$(JASMINC) ../jkem.jazz -oec jkem.ec \
-	  -ec jade_kem_mlkem_mlkem768_amd64_ref_keypair \
-	  -ec jade_kem_mlkem_mlkem768_amd64_ref_enc \
-	  -ec jade_kem_mlkem_mlkem768_amd64_ref_dec
+
+ec: 
+	$(JASMIN2EC) ../jkem.jazz --array-model=old -o jkem.ec \
+	  -f jade_kem_mlkem_mlkem768_amd64_ref_keypair \
+	  -f jade_kem_mlkem_mlkem768_amd64_ref_enc \
+	  -f jade_kem_mlkem_mlkem768_amd64_ref_dec
 
 clean:
 	rm -f *.ec

@@ -1624,7 +1624,7 @@ equiv veceq_poly_tomsg :
   Mvec.poly_tomsg_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_tomsg_1: ={rp, a, Glob.mem} ==> ={res}.
 proof.
   proc.
-  while(={i, rp, a, aux, hq, hhq} /\ 0 <= i{1}).
+  while(={i, rp, a, hq, hhq} /\ 0 <= i{1} /\ aux{1} = inc{2}).
     inline *.
     wp. skip. auto => />.
     smt().
@@ -1674,7 +1674,7 @@ equiv veceq_poly_frommont:
   Mvec.poly_frommont ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_frommont: ={rp} ==> ={res}.
 proof.
   proc.
-  while(={rp, i, qx16, qinvx16, dmontx16, aux}).
+  while(={rp, i, qx16, qinvx16, dmontx16} /\ aux{1} = inc{2}).
   inline *.
   wp. skip. auto => />.
   wp. skip. auto => />.
@@ -1684,7 +1684,7 @@ equiv veceq_poly_decompress:
   Mvec.poly_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
-  while(={ap, i, aux, q, mask, shift, shufbidx, Glob.mem} /\
+  while(={ap, i, q, mask, shift, shufbidx, Glob.mem} /\ aux{1} = inc{2} /\
         aux{1} = 16 /\ 0 <= i{1} /\ i{1} <= 16 /\
         (forall k, 0 <= k < 16 * i{1} => rp{1}.[k] = rp{2}.[k])).
   inline *.
@@ -1713,7 +1713,7 @@ equiv veceq_poly_compress_1:
   Mvec.poly_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
-  while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
+  while(={rp, a, i, v, shift1, mask, shift2, permidx, Glob.mem} /\ aux{1} = inc{2}).
   inline *.
   wp. skip. auto => />.
   inline OpsV.iVPBROADCAST_16u16.
@@ -1727,7 +1727,7 @@ equiv veceq_poly_compress:
   Mvec.poly_compress ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
-  while(={rp, a, i, aux, v, shift1, mask, shift2, permidx, Glob.mem}).
+  while(={rp, a, i, v, shift1, mask, shift2, permidx, Glob.mem}  /\ aux{1} = inc{2}).
   inline *.
   wp. skip. auto => />.
   inline OpsV.iVPBROADCAST_16u16.

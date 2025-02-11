@@ -941,7 +941,7 @@ seq 12 7 : (#pre /\ ={publicseed, noiseseed}).
   wp;ecall {1} (sha3_512_33_64 inbuf{1}).
   conseq />; 1: by move => /> &2 inb H rr Hrr1 Hrr2; 
      rewrite (H rr Hrr1 Hrr2). 
-  wp;while {1} (0<= i{1} <= aux{1} /\ aux{1} = 4 /\
+  wp;while {1} (0<= i{1} <= inc{1} /\ inc{1} = 4 /\
               seed{2} = randomnessp{1} /\
              forall k, 0<= k < i{1} * 8 =>
                     inbuf{1}.[k] = seed{2}.[k]) (32- i{1} * 8);

@@ -1410,7 +1410,8 @@ move=> []s3 ?? /= />.
 rewrite /absorb_spec_avx2x4 /match_state4x => ->.
 have L: forall x, x\in[0;2;4;6] => sub ((init (fun i=> _rc.[x+i])))%Array2 0 2 = sub _rc x 2.
  by move=> i /= []Hi; apply eq_in_mkseq => j Hj /=; rewrite initiE //=.
-by rewrite !L //=; congr; congr; congr; smt().
+rewrite !L //=; congr; congr; congr;1..2,4..: smt().
+by smt(Array2.tP Array2.initiE).
 qed.
 
 lemma shake128x4_absorb_A32_A2_ll: islossless K._shake128x4_absorb_A32_A2.
