@@ -772,10 +772,10 @@ op sliceset_256_128_16 (a : W16.t Array256.t) (offset : int) (w : W128.t) : W16.
 
 lemma _write_u128_boundchk_corr_h _pol _ctr _in128 :
   hoare [ M(Syscall).__write_u128_boundchk :
-    to_uint arg.`2 <= 256 /\
+    to_uint arg.`2 <= 256 + 16 /\
     arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128 ==>
     res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128 /\
-    to_uint res.`2 = min 256 (_ctr+8)].
+    to_uint res.`2 = if _ctr < 256 then min 256 (_ctr+8) else _ctr].
 proc. 
 sp 1;if.
 + (* all at once *)
@@ -821,9 +821,10 @@ lemma _write_u128_boundchk_corr_ll : islossless  M(Syscall).__write_u128_boundch
 
 lemma _write_u128_boundchk_corr _pol _ctr _in128 :
   phoare [ M(Syscall).__write_u128_boundchk :
+    to_uint arg.`2 <= 256 + 16 /\
     arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128 ==>
-    res.`1 = sliceset_256_128_16 _pol (_ctr  * 16) _in128 /\
-    to_uint res.`2 = min 256 (_ctr+8)] = 1%r
+    res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128 /\
+    to_uint res.`2 = if _ctr < 256 then min 256 (_ctr+8) else _ctr] = 1%r
    by conseq _write_u128_boundchk_corr_ll ( _write_u128_boundchk_corr_h _pol _ctr _in128).
 
 lemma bridge24 _ctr _offset _p : 
@@ -898,7 +899,9 @@ wp;ecall {1} (_write_u128_boundchk_corr pol{1} (to_uint t0_0{1}) t128{1}).
 wp;ecall {1} (_write_u128_boundchk_corr pol{1} (to_uint counter{1}) t128{1}).
 auto => />.
 
-move => &1 &2 ???? H ??? r2 Hr2v Hr2s r1 Hr1v Hr1s. split; last  by smt(W64.to_uintD_small pow2_64).
+move => &1 &2 ???? H ???; split; 1: by smt().
+move => ? r2 Hr2v Hr2s; split; 1: by smt(W64.to_uintD_small pow2_64).
+move  => ? r1 Hr1v Hr1s; split; last  by smt(W64.to_uintD_small pow2_64).
 rewrite to_uintD_small /=;1: smt().
 rewrite /plist;apply (eq_from_nth witness). 
 + rewrite size_cat !size_mkseq;smt(W64.to_uint_cmp).
@@ -1095,7 +1098,9 @@ lemma buf_rejection_filter24_ll:
 
 phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
  [Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
- : counter = _ctr
+ :counter = _ctr
+   /\ W64.to_uint _buf_offset + 32 < 536
+   /\  W64.to_uint _ctr <= 256
    /\ pol = _pol
    /\ buf = _buf
    /\ buf_offset = _buf_offset
@@ -1104,7 +1109,7 @@ phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
    let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint _buf_offset + 24)))
    in plist res.`1 (to_uint _ctr + size l)
       = plist _pol (to_uint _ctr) ++ l
-      /\ res.`2 = W64.of_int (to_uint _ctr + size l)] = 1%r.
+      /\ to_uint _ctr + size l <= to_uint res.`2] = 1%r.
 proof.
 by conseq buf_rejection_filter24_ll (buf_rejection_filter24_h _pol _ctr _buf _buf_offset).
 qed.
