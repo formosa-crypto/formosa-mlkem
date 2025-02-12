@@ -1,7 +1,7 @@
 [submodule "jasmin"]
 	path = jasmin
 	url = https://github.com/jasmin-lang/jasmin.git
-	branch = fix-eclib-avx2-shifts
+	branch = main
 [submodule "crypto-specs"]
 	path = crypto-specs
 	url = git@github.com:formosa-crypto/crypto-specs.git
