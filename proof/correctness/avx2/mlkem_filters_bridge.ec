@@ -166,6 +166,38 @@ proof.
     by smt(W16.b2i_get).
 qed.
 
+lemma get_above (_p : W16.t Array256.t) i _ctr v :
+   0 <= _ctr <= 256 - 8 =>
+   _ctr + 8 <= i < 256 =>
+ (((init
+    (fun (i0 : int) =>
+       get16
+         (set128_direct ((init16 ("_.[_]" _p)))%WArray512 (2 * _ctr) v)
+         i0))))%Array256.[i] =
+_p.[i].
+proof. 
+    move => *.
+    rewrite initiE 1:/# /=.
+    rewrite wordP => k kb.
+    rewrite /get16_direct /set128_direct /pack2_t.
+    rewrite initiE 1:/# /=.
+    rewrite initiE 1:/# /=.
+    rewrite initiE 1:/# /=.
+    rewrite initiE 1:/# /=.
+    rewrite ifF;1:smt().
+    rewrite bits8_div 1:/# /=. 
+    have -> : (2 * i + k %/ 8) %/ 2 = i by smt().
+    have -> : 8 * ((2 * i + k %/ 8) %% 2) = if 8 <= k then 8 else 0 by smt().
+    case (8 <= k) => /= *. 
+    + rewrite of_intwE /= /int_bit /= (modz_small _ 256);1: smt(W16.to_uint_cmp pow2_16).
+      rewrite -divz_mulp 1:/#; 1:smt(StdOrder.IntOrder.expr_gt0).
+      rewrite -pow2_8 -exprD_nneg 1,2:/# -b2i_get 1,2:/#. 
+    rewrite of_intwE /= /int_bit dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 @IntDiv pow2_8).
+    have -> : 256 %/ 2 ^ (k %% 8) = 2^(8 - k%%8) by rewrite -pow2_8 expz_div 1,2:/#.    have /= ->:= modz_mod_pow2 (to_uint _p.[i] %/ 2 ^ (k %% 8)) (8 - k%%8) 1.
+    have -> /= : min (`|8 - k %% 8|) (`|1|) = 1;1: by smt().
+    by smt(W16.b2i_get).
+qed.
+
 lemma get_in  (_p : W16.t Array256.t) i _ctr v k :
    0 <= k < 16 =>
    0 <=_ctr <= 256 - 8 =>
@@ -740,21 +772,50 @@ op sliceset_256_128_16 (a : W16.t Array256.t) (offset : int) (w : W128.t) : W16.
 
 lemma _write_u128_boundchk_corr_h _pol _ctr _in128 :
   hoare [ M(Syscall).__write_u128_boundchk :
+    to_uint arg.`2 <= 256 /\
     arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128 ==>
     res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128 /\
     to_uint res.`2 = min 256 (_ctr+8)].
 proc. 
 sp 1;if.
 + (* all at once *)
-  admit. 
-sp 3.
-(* capture both cases of wtiting or not writing 64 *)
-seq 1 : #pre.
-+  admit. 
-sp 1. 
-(* capture both cases of wtiting or not writing 32 *)
-seq 1 : #pre.
-+  admit. 
+  auto => /> &hr?; rewrite uleE !to_uintD_small /= 1:/# /= Array256.tP => ?;split; last by smt().
+  move => i ib. 
+  rewrite /sliceset_256_128_16 /= wordP => k kb.
+  case (0 <= i < to_uint ctr{hr}) => *.
+  + rewrite get_below; 1..2:smt(W64.to_uint_cmp).
+    by rewrite initiE 1:/# /= initiE 1:/# /= /#.
+  case (to_uint ctr{hr} <= i < to_uint ctr{hr} + 8) => *.
+  + rewrite get_in; 1..3:smt(W64.to_uint_cmp).
+    by rewrite initiE 1:/# /= initiE 1:/# /= /#.
+  + rewrite get_above; 1..2:smt(W64.to_uint_cmp).
+    by rewrite initiE 1:/# /= initiE 1:/# /= /#.
+sp 3 => /=.
+
+auto => /> &hr; rewrite !uleE /= => ??; rewrite !to_uintD_small /= 1..7:/# /sliceset_256_128_16.
+do split => *; do split => *; do split => *;(split; [rewrite tP => i ib; rewrite wordP => k kb | by smt()]).
++ rewrite !initiE 1..3:/# /= get_set16E 1,2:/#. 
+  case (i = to_uint ctr{hr} + 6) => *.
+  + rewrite ifT 1:/# /VPEXTR_64 /= /(`>>`) /= W16.get_to_uint W128.get_to_uint to_uint_truncateu16 /= to_uint_shr 1:/# /= bits64_div 1:/# /= kb /= of_uintK /=. 
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+    rewrite (modz_small _ 18446744073709551616);1: by smt(W128.to_uint_cmp pow2_128).
+     have -> : i * 16 + k - to_uint ctr{hr} * 16 = k + 6*16 by smt().
+     congr;congr.
+     rewrite -pow2_64 -pow2_32 -pow2_16 -divzMr 1,2://=.
+     have -> : W64.modulus * W32.modulus = 2^(6*16) by auto.
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite -divzMr;1,2:smt(StdOrder.IntOrder.expr_gt0).
+     by congr;congr;congr;congr;rewrite Ring.IntID.exprD_nneg 1,2:/#;ring. 
+  + admit. 
++ admit.
++ admit.
++ admit.
++ admit.
++ admit.
++ admit.
++ admit.
+qed.
 
 lemma _write_u128_boundchk_corr_ll : islossless  M(Syscall).__write_u128_boundchk by islossless. 
 
