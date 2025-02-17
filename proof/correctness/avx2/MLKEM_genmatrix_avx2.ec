@@ -605,21 +605,21 @@ move => buf_o cond ctr ppol Hcond Hdvd1 Hdvd2 Hbo1 Hbo2 Hbo3 Hctr3 Hctr4 ? H Hsz
 move=> buf_o2 cond2 ctr2 pol2 HC2 Hdvd3 Hbo4 Hbo5 Hctr5 HH.
 
 case: ((min 256 (to_uint ctr2)) < 256) => /= C1.
- move=> C2; move: HH; have ->: to_uint buf_o2 = 504 by smt().
+ move=> C2; move: HH; have ->: to_uint buf_o2 = 504;
+ by smt(size_take size_ge0 size_map size_cat size_plist).
+move => C2; move: HH; have ->: (min 256 (to_uint ctr2))  = 256 by smt().
  move => HH; rewrite andbC -andaE.
- split; 1:
-  rewrite -(size_plist pol2 (to_uint ctr2)) 1:/#;
-   by smt(size_take size_ge0 size_map size_cat size_plist).
-move => ?; move: HH; have ->: (min 256 (to_uint ctr2))  = 256 by smt().
- move => HH; rewrite andbC -andaE.
-???
-(* 
-split; 1: admit.
-move => ->. 
- smt(size_rejection16_le take_rejection16_done size_take @List).
-move => <-; rewrite HH; congr.
-apply take_rejection16_done; first 3 smt().
-by rewrite size_take_min /#. *)
+ have ? : size (plist pol2 256) = 256 by smt(size_mkseq).
+ have? := size_rejection16_le buf{m} (to_uint buf_offset{m}) (to_uint buf_o2) 504 _ _ _ _ ;1..4: smt().
+ split.
+ + have  : size(plist pol{m} (to_uint counter{m}) ++
+    take (256 - to_uint counter{m}) (rejection16 (buf_subl buf{m} (to_uint buf_offset{m}) (to_uint buf_o2)))) = to_uint counter{m} + size (take (256 - to_uint counter{m}) (rejection16 (buf_subl buf{m} (to_uint buf_offset{m}) 504))); last by
+ smt().
+    rewrite size_cat; congr; 1: by smt(size_plist).
+    by smt(@List size_plist).
+ have := take_rejection16_done (256 - to_uint counter{m}) buf{m} (to_uint buf_offset{m}) (to_uint buf_o2) _ _ _ _ ;1..3: smt(). 
+smt(size_plist size_take @List).
+by smt().
 
 qed.
 
