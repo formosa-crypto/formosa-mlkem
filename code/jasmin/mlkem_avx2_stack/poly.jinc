@@ -48,7 +48,7 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
 }
 
 
-fn _i_poly_decompress(reg ptr u16[MLKEM_N] rp, reg ptr u8 [MLKEM_POLYCOMPRESSEDBYTES] a) -> stack u16[MLKEM_N]
+fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg ptr u8 [MLKEM_POLYCOMPRESSEDBYTES] a) -> reg ptr u16[MLKEM_N]
 {  inline int i;
   reg u256 f q shufbidx mask shift;
   reg u128 h;
@@ -154,7 +154,7 @@ fn _i_poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) ->
  }
 
 
-fn _i_poly_frommsg(reg ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> stack u16[MLKEM_N]
+fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f g0 g1 g2 g3 h0 h1 h2 h3;

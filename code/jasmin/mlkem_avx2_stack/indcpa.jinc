@@ -77,7 +77,7 @@ fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to
 
 inline
 fn __indcpa_enc(
-  stack u8[MLKEM_CIPHERTEXTBYTES] ct,
+  reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
   reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp,
   reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg ptr u8[MLKEM_SYMBYTES] noiseseed)
