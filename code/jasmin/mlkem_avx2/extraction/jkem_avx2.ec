@@ -9286,7 +9286,7 @@ module M(SC:Syscall_t) = {
     return (pol, counter);
   }
   proc __write_u128_boundchk (pol:W16.t Array256.t, ctr:W64.t, data:W128.t,
-                              ms:W64.t) : W16.t Array256.t * W64.t * W64.t = {
+                              ms:W64.t) : W16.t Array256.t * W64.t = {
     var condition_8:bool;
     var data_u64:W64.t;
     var condition_4:bool;
@@ -9338,12 +9338,11 @@ module M(SC:Syscall_t) = {
         (WArray512.get16
         (WArray512.set16_direct (WArray512.init16 (fun i => pol.[i]))
         (2 * (W64.to_uint ctr)) (truncateu16 data_u64))));
-        ctr <- (ctr + (W64.of_int 1));
       } else {
         ms <- (update_msf (! condition_1) ms);
       }
     }
-    return (pol, ctr, ms);
+    return (pol, ms);
   }
   proc __gen_matrix_buf_rejection_filter24 (pol:W16.t Array256.t,
                                             counter:W64.t,
@@ -9408,9 +9407,9 @@ module M(SC:Syscall_t) = {
     shuffle_0 <- (VPUNPCKL_32u8 shuffle_0 shuffle_t);
     f0 <- (VPSHUFB_256 f0 shuffle_0);
     t128 <- (truncateu128 f0);
-    (pol, counter, ms) <@ __write_u128_boundchk (pol, counter, t128, ms);
+    (pol, ms) <@ __write_u128_boundchk (pol, counter, t128, ms);
     t128 <- (VEXTRACTI128 f0 (W8.of_int 1));
-    (pol, counter, ms) <@ __write_u128_boundchk (pol, t0_0, t128, ms);
+    (pol, ms) <@ __write_u128_boundchk (pol, t0_0, t128, ms);
     counter <- t0_1;
     return (pol, counter, ms);
   }

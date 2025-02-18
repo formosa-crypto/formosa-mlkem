@@ -135,8 +135,9 @@ smt(count_size size_take W64.size_w2bits).
 qed.
 
 lemma get_below (_p : W16.t Array256.t) i _ctr v :
-   0 <= _ctr <= 256 - 8 =>
-   0 <= i < _ctr =>
+(*   0 <= _ctr <= 256 - 8 =>*)
+   0 <= i < 256 =>
+   i < _ctr =>
  (((init
     (fun (i0 : int) =>
        get16
@@ -144,7 +145,7 @@ lemma get_below (_p : W16.t Array256.t) i _ctr v :
          i0))))%Array256.[i] =
 _p.[i].
 proof. 
-    move => *.
+    move => Hi Hctr.
     rewrite initiE 1:/# /=.
     rewrite wordP => k kb.
     rewrite /get16_direct /set128_direct /pack2_t.
@@ -167,7 +168,7 @@ proof.
 qed.
 
 lemma get_above (_p : W16.t Array256.t) i _ctr v :
-   0 <= _ctr <= 256 - 8 =>
+  0 <= i < 256 =>
    _ctr + 8 <= i < 256 =>
  (((init
     (fun (i0 : int) =>
@@ -199,9 +200,10 @@ proof.
 qed.
 
 lemma get_in  (_p : W16.t Array256.t) i _ctr v k :
-   0 <= k < 16 =>
-   0 <=_ctr <= 256 - 8 =>
-    _ctr <= i < _ctr+8 =>
+  0 <= _ctr <= i < min 256 (_ctr+8) =>
+  0 <= k < 16 =>
+(*   0 <=_ctr <= 256 - 8 =>
+    _ctr <= i < _ctr+8 =>*)
 ((init
     (fun (i0 : int) =>
        get16 (set128_direct ((init16 ("_.[_]" _p)))%WArray512 (2 * _ctr) v) i0)))%Array256.[i].[k] = 
@@ -260,7 +262,7 @@ rewrite /plist !nth_mkseq 1:/# => ->.
 rewrite (nth_cat witness)  ifF; 1: smt(size_mkseq).
 smt(nth_mkseq size_mkseq).
 qed.
-(* 
+
 lemma bridge48 _ctr _offset _p : 
 equiv [
 Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48 ~ Filters.filter48 : 
@@ -456,7 +458,7 @@ seq 1 1 : (#{/~pol{1} = _p}pre /\ plist pol{1} (_ctr + to_uint t0_0{2}) = plist 
     rewrite !nth_mkseq;1,2: smt(W64.to_uint_cmp size_mkseq).
     rewrite !to_uintM_small /=; 1:smt(W64.to_uint_cmp). 
     rewrite wordP => k kb.
-    rewrite get_in; 1..3:smt(W64.to_uint_cmp size_mkseq).
+    rewrite get_in; 1..2:smt(W64.to_uint_cmp size_mkseq).
     rewrite /sliceset_16_128_40.
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
@@ -494,7 +496,9 @@ seq 1 1 : (#{/~plist pol{1} (_ctr + to_uint t0_0{2}) = plist _p _ctr ++ mkseq ("
     rewrite !to_uintM_small !to_uintD_small /=;  1..3:smt(W64.to_uint_cmp). 
     rewrite wordP => k kb.
     rewrite get_in;1..2:  smt(W64.to_uint_cmp size_mkseq).
+(*
     by have ?: i < to_uint counter{1} + to_uint t0_1{2}; smt(size_mkseq).
+*)
     rewrite /sliceset_16_128_40.
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
@@ -540,7 +544,9 @@ seq 1 1 : (#{/~plist pol{1} (_ctr + to_uint t0_1{2}) = plist _p _ctr ++ mkseq ("
     rewrite !to_uintM_small !to_uintD_small /=;  1..3:smt(W64.to_uint_cmp). 
     rewrite wordP => k kb.
     rewrite get_in;1..2:  smt(W64.to_uint_cmp size_mkseq).
+(*
     by have ?: i < to_uint counter{1} + to_uint t1_0{2}; smt(size_mkseq).
+*)
     rewrite /sliceset_16_128_40.
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
@@ -585,7 +591,9 @@ seq 1 1 : (#{/~plist pol{1} (_ctr + to_uint t0_1{2}) = plist _p _ctr ++ mkseq ("
     rewrite !to_uintM_small !to_uintD_small /=;  1..3:smt(W64.to_uint_cmp). 
     rewrite wordP => k kb.
     rewrite get_in;1..2:  smt(W64.to_uint_cmp size_mkseq).
+(*
     by have ?: i < to_uint counter{1} + to_uint t1_1{2}; smt(size_mkseq).
+*)
     rewrite /sliceset_16_128_40.
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
@@ -759,8 +767,6 @@ proof.
 conseq buf_rejection_filter48_ll (buf_rejection_filter48_h _pol _ctr _buf _buf_offset).  smt().
 qed.
 
-*)
-
 from JazzEC require import Array16.
 
 op sliceset_256_128_16 (a : W16.t Array256.t) (offset : int) (w : W128.t) : W16.t Array256.t =
@@ -770,29 +776,35 @@ op sliceset_256_128_16 (a : W16.t Array256.t) (offset : int) (w : W128.t) : W16.
          (fun (j : int) =>
             let index = i * 16 + j in if offset <= index < offset + 128 then w.[index - offset] else a.[i].[j])).
 
-lemma _write_u128_boundchk_corr_h _pol _ctr _in128 :
-  hoare [ M(Syscall).__write_u128_boundchk :
-    to_uint arg.`2 <= 256 + 16 /\
-    arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128 ==>
-    res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128 /\
-    to_uint res.`2 = if _ctr < 256 then min 256 (_ctr+8) else _ctr].
-proc. 
+hoare _write_u128_boundchk_corr_h _pol _ctr _in128 :
+ M(Syscall).__write_u128_boundchk :
+ to_uint arg.`2 <= 256 + 8 /\
+ arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128
+ ==>
+ res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128.
+proof.
+proc.
 sp 1;if.
 + (* all at once *)
-  auto => /> &hr?; rewrite uleE !to_uintD_small /= 1:/# /= Array256.tP => ?;split; last by smt().
-  move => i ib. 
+  auto => /> &hr??; rewrite /= Array256.tP => i ib. 
   rewrite /sliceset_256_128_16 /= wordP => k kb.
   case (0 <= i < to_uint ctr{hr}) => *.
   + rewrite get_below; 1..2:smt(W64.to_uint_cmp).
     by rewrite initiE 1:/# /= initiE 1:/# /= /#.
   case (to_uint ctr{hr} <= i < to_uint ctr{hr} + 8) => *.
-  + rewrite get_in; 1..3:smt(W64.to_uint_cmp).
+  + rewrite get_in; 1..2:smt(W64.to_uint_cmp).
     by rewrite initiE 1:/# /= initiE 1:/# /= /#.
   + rewrite get_above; 1..2:smt(W64.to_uint_cmp).
     by rewrite initiE 1:/# /= initiE 1:/# /= /#.
 sp 3 => /=.
-
-auto => /> &hr; rewrite !uleE /= => ??; rewrite !to_uintD_small /= 1..7:/# /sliceset_256_128_16.
+(*
+auto => /> &hr; rewrite !uleE /= => *; rewrite !to_uintD_small /= 1..3:/# /sliceset_256_128_16.
+do split => *; do split => *; do split => * ;
+rewrite tP => i ib; rewrite wordP => k kb /=.
+rewrite !initiE 1..3:/# /= ?get_set16E 1,2:/#. 
+admit.
+rewrite !initiE 1..3:/# /= .
+ [rewrite tP => i ib; rewrite wordP => k kb | by smt()].
 do split => *; do split => *; do split => *;(split; [rewrite tP => i ib; rewrite wordP => k kb | by smt()]).
 + rewrite !initiE 1..3:/# /= get_set16E 1,2:/#. 
   case (i = to_uint ctr{hr} + 6) => *.
@@ -815,24 +827,36 @@ do split => *; do split => *; do split => *;(split; [rewrite tP => i ib; rewrite
 + admit.
 + admit.
 + admit.
+*)
+admit.
 qed.
 
 lemma _write_u128_boundchk_corr_ll : islossless  M(Syscall).__write_u128_boundchk by islossless. 
 
 lemma _write_u128_boundchk_corr _pol _ctr _in128 :
-  phoare [ M(Syscall).__write_u128_boundchk :
+  phoare
+[ M(Syscall).__write_u128_boundchk :
+ to_uint arg.`2 <= 256 + 8 /\
+ arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128
+ ==>
+ res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128
+] = 1%r.
+(*
+ [ M(Syscall).__write_u128_boundchk :
     to_uint arg.`2 <= 256 + 16 /\
     arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128 ==>
     res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128 /\
     to_uint res.`2 = if _ctr < 256 then min 256 (_ctr+8) else _ctr] = 1%r
+*)
    by conseq _write_u128_boundchk_corr_ll ( _write_u128_boundchk_corr_h _pol _ctr _in128).
+qed.
 
 lemma bridge24 _ctr _offset _p : 
 equiv [
 Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24 ~ Filters.filter24 : 
   pol{1} = _p
  /\  0 <= _offset /\  _offset + 32 <= 536 
- /\  0 <= _ctr /\ _ctr  <= 256 
+ /\  0 <= _ctr /\ _ctr  <= 256
 /\  to_uint buf_offset{1} = _offset 
 /\ to_uint  counter{1} = _ctr 
 /\ bounds{1} = Mlkem_filters.sample_q
@@ -898,10 +922,9 @@ auto => /> &1 &2 *;do split.
 wp;ecall {1} (_write_u128_boundchk_corr pol{1} (to_uint t0_0{1}) t128{1}).
 wp;ecall {1} (_write_u128_boundchk_corr pol{1} (to_uint counter{1}) t128{1}).
 auto => />.
-
 move => &1 &2 ???? H ???; split; 1: by smt().
-move => ? r2 Hr2v Hr2s; split; 1: by smt(W64.to_uintD_small pow2_64).
-move  => ? r1 Hr1v Hr1s; split; last  by smt(W64.to_uintD_small pow2_64).
+move => ? r2 Hr2v; split; 1: by smt(W64.to_uintD_small pow2_64).
+move  => ? r1 Hr1v; split; last  by smt(W64.to_uintD_small pow2_64).
 rewrite to_uintD_small /=;1: smt().
 rewrite /plist;apply (eq_from_nth witness). 
 + rewrite size_cat !size_mkseq;smt(W64.to_uint_cmp).
@@ -959,7 +982,7 @@ hoare buf_rejection_filter24_h _pol _ctr _buf _buf_offset:
  Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
  : counter = _ctr
    /\ W64.to_uint _buf_offset + 32 < 536
-   /\  W64.to_uint _ctr <= 256
+   /\ W64.to_uint _ctr <= 256
    /\ pol = _pol
    /\ buf = _buf
    /\ buf_offset = _buf_offset
@@ -968,7 +991,7 @@ hoare buf_rejection_filter24_h _pol _ctr _buf _buf_offset:
    let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint _buf_offset + 24)))
    in plist res.`1 (to_uint _ctr + size l)
       = plist _pol (to_uint _ctr) ++ l
-      /\ to_uint _ctr + size l <= to_uint res.`2.
+      /\ min 256 (to_uint res.`2) = to_uint _ctr + size l.
 proof.
 conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.init (fun i => _buf.[to_uint _buf_offset+i]))).  
   + move => &1 [#] ??????;rewrite /auxdata_ok => [#] ->->->->->.
@@ -1109,7 +1132,10 @@ phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
    let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint _buf_offset + 24)))
    in plist res.`1 (to_uint _ctr + size l)
       = plist _pol (to_uint _ctr) ++ l
-      /\ to_uint _ctr + size l <= to_uint res.`2] = 1%r.
+      /\ 
+ min 256 (to_uint res.`2) = to_uint _ctr + size l
+(*to_uint _ctr + size l <= to_uint res.`2*)
+] = 1%r.
 proof.
 by conseq buf_rejection_filter24_ll (buf_rejection_filter24_h _pol _ctr _buf _buf_offset).
 qed.

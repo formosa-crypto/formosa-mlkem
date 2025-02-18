@@ -509,14 +509,15 @@ hoare gen_matrix_buf_rejection_h _pol _ctr _buf _buf_offset:
    let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) 504))
    in plist res.`1 (to_uint _ctr + size l)
       = plist _pol (to_uint _ctr) ++ l
-      /\ res.`2 = W64.of_int (to_uint _ctr + size l).
+      /\ to_uint _ctr + size l = min 256 (W64.to_uint res.`2).
 proof.
 proc; simplify.
 while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
         0 <= to_uint _buf_offset <= to_uint buf_offset <= 504 /\
-        0 <= to_uint _ctr <= to_uint counter <= 256 /\
+        0 <= to_uint _ctr < 256 /\
+        to_uint _ctr <= to_uint counter /\
         auxdata_ok load_shuffle mask bounds ones sst /\
-        (plist pol (to_uint counter)
+        (plist pol (min 256 (to_uint counter))
          = plist _pol (to_uint _ctr)
            ++ take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint buf_offset)))
         ) /\
@@ -526,19 +527,19 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
  ecall (conditionloop_h buf_offset (3 * 168 - 24) counter 256); simplify.
  wp; ecall (buf_rejection_filter24_h pol counter buf buf_offset).
  auto => &m /> Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Hctr1 Hctr2 Hctr3 H Hcond1 Hcond2.
- have Hsz: to_uint counter{m} = to_uint _ctr + min (256-to_uint _ctr) (size (rejection16 (buf_subl buf{m} (to_uint _buf_offset) (to_uint buf_offset{m})))).
-  rewrite -(size_plist pol{m} (to_uint counter{m})) 1:/# H size_cat size_plist 1:/#; congr.
+ have Hsz: min 256 (to_uint counter{m}) = to_uint _ctr + min (256-to_uint _ctr) (size (rejection16 (buf_subl buf{m} (to_uint _buf_offset) (to_uint buf_offset{m})))).
+  rewrite -(size_plist pol{m} (min 256 (to_uint counter{m}))) 1:/# H size_cat size_plist 1:/#; congr.
   by rewrite size_take_min /#.
- move: H; rewrite take_oversize 1:/# => H [p c' ms'] /= />.
- rewrite !of_uintK => Hstep.
- rewrite !to_uintD_small 1:/# !of_uintK; split; first smt().
+ move: H; rewrite take_oversize 1:/# lez_minr 1:/# => H; split; first smt(). 
+ move=> Hoff Hcounter [p c' ms'] /= /> Hstep.
+ rewrite !to_uintD_small 1:/# !of_uintK=> Hc'; split; first smt().
  split.
   split; first by rewrite !modz_small 1:// /= /#.
   by move=> *; rewrite !modz_small 1:// /= /#.
- split.
-  by rewrite size_take_min 1:/# modz_small; smt(size_ge0).
+ split; first smt(size_ge0). 
+(* by rewrite size_take_min 1:/# modz_small; smt(size_ge0). *)
  rewrite modz_small; first smt(size_ge0 size_take_min).
- rewrite modz_small 1:/#.
+ rewrite Hc'.
  rewrite Hstep H -catA; congr.
  rewrite -(buf_subl_cat _ (to_uint _buf_offset) (to_uint buf_offset{m}) (to_uint buf_offset{m} + 24)) 1:/#.
  rewrite rejection16_cat.
@@ -595,27 +596,26 @@ wp; skip => &m /> Hctr1 Hctr2 Hbo; split.
  split; last smt().
  by rewrite buf_subl0 1:/# /rejection16 rejection0 /#.
 move => buf_o cond ctr pol Hcond Hdvd1 Hdvd2 Hbo1 Hbo2 Hbo3 Hctr3 Hctr4 _ H Hsz Hterm; split.
-by rewrite take_oversize /#. 
-move=> buf_o2 cond2 ctr2 pol2 HC2 Hdvd3 Hbo4 Hbo5 Hctr5 Hctr6 HH.
+ by rewrite take_oversize /#. 
+move=> buf_o2 cond2 ctr2 pol2 HC2 Hdvd3 Hbo4 Hbo5 Hctr5 HH.
 case: (to_uint ctr2 < 256) => /= C1.
  move=> C2; move: HH; have ->: to_uint buf_o2 = 504 by smt().
- move => HH; rewrite andbC -andaE to_uint_eq of_uintK modz_small.
-  split=> *; first smt(size_ge0).
-  by rewrite size_take /#.
- split.
-  rewrite -(size_plist pol2 (to_uint ctr2)) 1:/#.
-  by rewrite HH size_cat size_plist 1:/#.  
- by move => E; move: HH; rewrite E => ->. 
-have E: to_uint ctr2 = 256 by smt().
-rewrite to_uint_eq andbC -andaE.
+ rewrite lez_minr 1:/#.
+ move => HH; rewrite andbC -andaE; split.
+  rewrite -(size_plist pol2 (to_uint ctr2)) 1:/# HH.
+  by rewrite size_cat size_plist 1:/#.
+ by move => E; move: HH; rewrite -E => ->.
+move: HH.
+have E: min 256 (to_uint ctr2) = 256 by smt().
+rewrite !E => HH.
+rewrite andbC -andaE.
 have HHsz: 256 = to_uint counter{m} + min (256 - to_uint counter{m})
       (size (rejection16 (buf_subl buf{m} (to_uint buf_offset{m}) (to_uint buf_o2)))).
  rewrite -(size_plist pol2 256) 1:/#.
- by rewrite -E HH size_cat size_plist 1:/# size_take_min /#.
+ by rewrite HH size_cat size_plist 1:/# size_take_min /#.
 rewrite size_take_min 1:/#.
-rewrite of_uintK modz_small; first smt(size_ge0).
 split; first smt(size_rejection16_le).
-move => <-; rewrite HH; congr.
+move => ->; rewrite HH; congr.
 apply take_rejection16_done; first 3 smt().
 by rewrite size_take_min /#.
 qed.
@@ -663,7 +663,7 @@ by auto => /> * /#.
 qed.
 
 phoare gen_matrix_buf_rejection_ph _pol _ctr _buf _buf_offset:
- [  Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_buf_rejection
+ [ Jkem_avx2.M(Jkem_avx2.Syscall)._gen_matrix_buf_rejection
  : counter = _ctr
    /\ pol = _pol
    /\ buf = _buf
@@ -674,7 +674,7 @@ phoare gen_matrix_buf_rejection_ph _pol _ctr _buf _buf_offset:
    let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) 504))
    in plist res.`1 (to_uint _ctr + size l)
       = plist _pol (to_uint _ctr) ++ l
-      /\ res.`2 = W64.of_int (to_uint _ctr + size l)
+      /\ to_uint _ctr + size l = min 256 (W64.to_uint res.`2)
  ] = 1%r.
 proof.
 by conseq gen_matrix_buf_rejection_ll (gen_matrix_buf_rejection_h _pol _ctr _buf _buf_offset).
@@ -692,7 +692,7 @@ equiv fill_poly_eq:
    res{1}.`1 = unlift_polyu res{2}.
 proof.
 proc; simplify.
-while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
+while ( min 256 (to_uint counter{1})=c{2} /\ 0 <= c{2} <= 256
       /\ to_uint buf_offset{1} = 2*168
       /\ state2bytes st{2} = sub buf{1} (2*168) 200
       /\ plist pol{1} c{2} = coeffL2u16L p{2}
@@ -701,9 +701,11 @@ while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
  ecall {1} (shake128_next_state_ph buf{1}).
  sp 0 1.
  elim* => /= st1.
- auto => /> &1 &2 ? _ -> Est1 Hpol _ Hctr1 buf1 Est2 [pol ctr] /=.
+ auto => /> &1 &2 ? ? -> Est1 Hpol _ Hctr1 buf1 Est2; split; 1:smt().
+ move => ?? [pol ctr] /=.
  pose bnd := 256 - to_uint counter{1}.
- rewrite Hpol buf_sublE 1:// /= => Hpol1 ->.
+ move: Hpol; rewrite lez_minr 1:/# => Hpol.
+ rewrite Hpol buf_sublE 1:// /= => Hpol1 Ectr.
  have : squeezestate_i c256_r8 (bytes2state (sub buf{1} 336 200)) 0 = buf_subl buf1 336 504.
   rewrite buf_sublE 1:// /=.
   rewrite /squeezestate_i /st_i /= iter1.
@@ -711,13 +713,9 @@ while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
   by rewrite -Est2 take_mkseq 1:// /#.
  rewrite buf_sublE 1:// /= -Est1.
  rewrite state2bytesK => ->.
- rewrite of_uintK modz_small.
-  rewrite /rejection16 -map_take size_map.
-  smt(size_ge0 size_take size_rejection_le).
- split.
-  split.
-   congr.
-   by rewrite rejection16E !size_take 1..2:/# !size_map.
+ move: Ectr; rewrite /rejection16 -map_take size_map => Ectr.
+ rewrite -Ectr; split.
+  split; first smt(). 
   split; first smt(size_ge0 size_take).
   split.
    rewrite Est2 /st_i iter1; congr; congr.
@@ -725,16 +723,13 @@ while ( to_uint counter{1}=c{2} /\ 0 <= c{2} <= 256
   move: Hpol1; rewrite /rejection16.
   rewrite -map_take map_cat => <-. 
   by rewrite size_map.
- rewrite ultE !of_uintK /= modz_small.
-  rewrite /rejection16 -map_take size_map.
-  smt(size_ge0 size_take size_rejection_le).
- by rewrite /rejection16 -!map_take !size_map /#.
+ rewrite ultE !of_uintK /=; smt(size_ge0 size_take size_rejection_le).
 wp; ecall {1} (gen_matrix_buf_rejection_ph pol{1} counter{1} buf{1} buf_offset{1}).
-auto => /> &1 &2 Hbuf [p c] /=; rewrite plist0 ultE /= => H ->.
-rewrite of_uintK modz_small; first smt(size_ge0 size_take).
-move: H; rewrite /rejection16 !size_take // size_map /= map_take.
-move => H; split; first smt(size_ge0 size_take).
-move => buf ctr p1 p2 st _?_?; have ->: to_uint ctr = 256 by smt().
+auto => /> &1 &2 Hbuf [p c] /=; rewrite plist0 ultE /=.
+rewrite /rejection16 !size_take // size_map /= map_take => H Ectr.
+split; first smt(W64.to_uint_cmp size_ge0 size_take).
+move => buf ctr p1 p2 st => _?_?.
+have ->: min 256 (to_uint ctr) = 256 by smt().
 move => _ HH.
 have Hsz: size (coeffL2u16L p2) = 256.
  by rewrite -HH size_plist /#.

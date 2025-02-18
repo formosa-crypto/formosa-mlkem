@@ -197,7 +197,7 @@ inline fn __write_u128_boundchk
 , reg u64 ctr
 , reg u128 data
 , #msf reg u64 ms
-) -> reg ptr u16[MLKEM_N], reg u64, #msf reg u64
+) -> reg ptr u16[MLKEM_N], #msf reg u64
 {
   reg u64 data_u64;
   reg bool condition_8 condition_4 condition_2 condition_1;
@@ -239,12 +239,12 @@ inline fn __write_u128_boundchk
       ms = #update_msf(condition_1, ms);
 
       pol.[u16 2*(int)ctr] = (16u) data_u64;
-      ctr += 1;
+      //ctr += 1;
     } else
     { ms = #update_msf(!condition_1, ms); }
   }
 
-  return pol, ctr, ms;
+  return pol, ms;
 }
 
 inline fn __gen_matrix_buf_rejection_filter24
@@ -298,10 +298,10 @@ inline fn __gen_matrix_buf_rejection_filter24
   //
 
   t128 = (128u) f0;
-  pol, counter, ms = __write_u128_boundchk(pol, counter, t128, ms);
+  pol, ms = __write_u128_boundchk(pol, counter, t128, ms);
   
   t128 = #VEXTRACTI128(f0, 1);
-  pol, counter, ms = __write_u128_boundchk(pol, t0_0, t128, ms);
+  pol, ms = __write_u128_boundchk(pol, t0_0, t128, ms);
 
   counter = t0_1;
   
