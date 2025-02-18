@@ -159,9 +159,9 @@ fn _isha3_256_32
 
 #[returnaddress="stack"]
 fn _sha3_512_64
-( #spill_to_mmx reg ptr u8[64] out
+( #spill_to_mmx reg mut ptr u8[64] out
 , reg const ptr u8[64] in
-) -> stack u8[64]
+) -> reg ptr u8[64]
 { stack u64[25] st_s;
   reg ptr u64[25] st;
   reg u64 offset;
