@@ -263,6 +263,7 @@ rewrite (nth_cat witness)  ifF; 1: smt(size_mkseq).
 smt(nth_mkseq size_mkseq).
 qed.
 
+
 lemma bridge48 _ctr _offset _p : 
 equiv [
 Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48 ~ Filters.filter48 : 
@@ -797,16 +798,12 @@ sp 1;if.
   + rewrite get_above; 1..2:smt(W64.to_uint_cmp).
     by rewrite initiE 1:/# /= initiE 1:/# /= /#.
 sp 3 => /=.
-(*
 auto => /> &hr; rewrite !uleE /= => *; rewrite !to_uintD_small /= 1..3:/# /sliceset_256_128_16.
-do split => *; do split => *; do split => * ;
-rewrite tP => i ib; rewrite wordP => k kb /=.
-rewrite !initiE 1..3:/# /= ?get_set16E 1,2:/#. 
-admit.
-rewrite !initiE 1..3:/# /= .
- [rewrite tP => i ib; rewrite wordP => k kb | by smt()].
-do split => *; do split => *; do split => *;(split; [rewrite tP => i ib; rewrite wordP => k kb | by smt()]).
-+ rewrite !initiE 1..3:/# /= get_set16E 1,2:/#. 
+do split => *; do split => *; do split => *;rewrite tP => i ib; rewrite wordP => k kb; rewrite !initiE 1..3:/# /= => *.
+
+(************)
+
++ rewrite get_set16E 1,2:/#.
   case (i = to_uint ctr{hr} + 6) => *.
   + rewrite ifT 1:/# /VPEXTR_64 /= /(`>>`) /= W16.get_to_uint W128.get_to_uint to_uint_truncateu16 /= to_uint_shr 1:/# /= bits64_div 1:/# /= kb /= of_uintK /=. 
     have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
@@ -819,16 +816,208 @@ do split => *; do split => *; do split => *;(split; [rewrite tP => i ib; rewrite
      rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
      rewrite -divzMr;1,2:smt(StdOrder.IntOrder.expr_gt0).
      by congr;congr;congr;congr;rewrite Ring.IntID.exprD_nneg 1,2:/#;ring. 
-  + admit. 
-+ admit.
-+ admit.
-+ admit.
-+ admit.
-+ admit.
-+ admit.
-+ admit.
-*)
-admit.
+  rewrite get16E /pack2_t initiE //= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite get16E set32E /(\bits8) initiE 1:/# /= /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * (to_uint ctr{hr} + 4) <= 2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 <
+    2 * (to_uint ctr{hr} + 4) + 4) => *.
+  + rewrite ifT 1:/# initiE 1:/# /=.
+     rewrite /VPEXTR_64 /= W32.get_to_uint W128.get_to_uint to_uint_truncateu32 /= bits64_div 1:/# /= of_uintK /=. 
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+    rewrite (modz_small _ 18446744073709551616);1: by smt(W128.to_uint_cmp pow2_128). 
+     have -> /= : 0 <=
+ (2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 - 2 * (to_uint ctr{hr} + 4)) * 8 +
+ ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %% 8 < 32  by smt().
+     congr;congr.
+     rewrite -pow2_64 -pow2_32.
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite -divzMr;1,2:smt(StdOrder.IntOrder.expr_gt0).
+     by congr;congr;congr;congr; rewrite -(Ring.IntID.exprD_nneg 2 64) /#.
+   rewrite initiE 1:/# /= initiE 1:/# /=.
+   rewrite get16E set64E /(\bits8) initiE 1:/# /= /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * to_uint ctr{hr} <=
+    2 * ((2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8) %/ 2) +
+    ((2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8) %% 2 * 8 +
+     ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %% 8) %/
+    8 < 2 * to_uint ctr{hr} + 8) => *.
+  + rewrite ifT 1:/# initiE 1:/# /=.
+     rewrite /MOVV_64 /= W64.get_to_uint W128.get_to_uint to_uint_truncateu64 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+     have -> /= : 0 <=
+ (2 * ((2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8) %/ 2) +
+  ((2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8) %% 2 * 8 +
+   ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %% 8) %/
+  8 - 2 * to_uint ctr{hr}) *
+ 8 +
+ ((2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8) %% 2 * 8 +
+  ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %% 8) %%
+ 8 < 64  by smt().
+   +  congr;congr.
+     rewrite -pow2_64 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     congr;congr;congr;congr; rewrite Ring.IntID.exprD_nneg 1..2: /#. 
+     rewrite -Ring.IntID.exprD_nneg 1,2:/#; congr;smt().
+  rewrite initiE 1:/# /= ifF 1:/#; rewrite /(\bits8) initiE 1:/# /= /#. 
+
+(************)
++   rewrite get16E set32E  /= /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * (to_uint ctr{hr} + 4) <= 2 * i + k %/ 8 < 2 * (to_uint ctr{hr} + 4) + 4) => *.
+  + rewrite ifT 1:/#.
+     rewrite /VPEXTR_64 /= W128.get_to_uint /(\bits8) initiE 1:/# /= bits64_div 1:/# /=. 
+     rewrite W32.get_to_uint  to_uint_truncateu32 of_uintK /=.
+      have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+    rewrite (modz_small _ 18446744073709551616);1: by smt(W128.to_uint_cmp pow2_128).
+    have -> /=: 0 <= (2 * i + k %/ 8 - 2 * (to_uint ctr{hr} + 4)) * 8 + k %% 8 < 32 by smt(). 
+    congr;congr.
+     rewrite -pow2_64 -pow2_32.
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite -divzMr;1,2:smt(StdOrder.IntOrder.expr_gt0).
+     congr;congr;congr;congr;rewrite Ring.IntID.exprD_nneg 1,2:/#. 
+     by rewrite -!Ring.IntID.exprD_nneg  /#.
+    rewrite initiE 1:/# /= initiE 1:/# /=.
+
+   rewrite get16E set64E /(\bits8) initiE 1:/# /= /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * to_uint ctr{hr} <= 2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 <
+    2 * to_uint ctr{hr} + 8) => *.
+  + rewrite ifT 1:/# initiE 1:/# /=.
+     rewrite /MOVV_64 /= W64.get_to_uint W128.get_to_uint to_uint_truncateu64 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+     have -> /= : 0 <=
+ (2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 - 2 * to_uint ctr{hr}) * 8 +
+ ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %% 8 < 64  by smt().
+   +  congr;congr.
+     rewrite -pow2_64 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     congr;congr;congr;congr; rewrite Ring.IntID.exprD_nneg 1..2: /#. 
+     rewrite -Ring.IntID.exprD_nneg 1,2:/#; congr;smt().
+  rewrite initiE 1:/# /= ifF 1:/#; rewrite /(\bits8) initiE 1:/# /= /#. 
+
+(************)
+
+rewrite get_set16E 1,2:/#.
+  case (i = to_uint ctr{hr} + 4) => *.
+  + rewrite ifT 1:/# /VPEXTR_64 /= /(`>>`) /= W16.get_to_uint W128.get_to_uint to_uint_truncateu16  /= bits64_div 1:/# /= kb /= of_uintK /=. 
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+    rewrite (modz_small _ 18446744073709551616);1: by smt(W128.to_uint_cmp pow2_128).
+     have -> : i * 16 + k - to_uint ctr{hr} * 16 = k + 4*16 by smt().
+     congr;congr.
+     rewrite -pow2_64 -pow2_16 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite -divzMr;1,2:smt(StdOrder.IntOrder.expr_gt0).
+     congr;congr;congr;congr;rewrite Ring.IntID.exprD_nneg 1,2:/#. 
+     by smt(Ring.IntID.exprD_nneg).
+ 
+  rewrite get16E /pack2_t initiE //= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite get16E set64E /(\bits8) initiE 1:/# /= /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * to_uint ctr{hr} <= 2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 <
+    2 * to_uint ctr{hr} + 8) => *.
+  + rewrite ifT 1:/# initiE 1:/# /=.
+     rewrite /MOVV_64 /= W64.get_to_uint W128.get_to_uint to_uint_truncateu64 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+     have -> /= : 0 <=
+ (2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 - 2 * to_uint ctr{hr}) * 8 +
+ ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %% 8 < 64  by smt().
+   +  congr;congr.
+     rewrite -pow2_64 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     congr;congr;congr;congr; rewrite Ring.IntID.exprD_nneg 1..2: /#. 
+     rewrite -Ring.IntID.exprD_nneg 1,2:/#; congr;smt().
+  rewrite initiE 1:/# /= ifF 1:/#; rewrite /(\bits8) initiE 1:/# /= /#. 
+
+(*****************)
+
+   rewrite get16E set64E /(\bits8) /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * to_uint ctr{hr} <= 2 * i + k %/ 8 < 2 * to_uint ctr{hr} + 8) => *.
+  + rewrite ifT 1:/# initiE 1:/# /=.
+     rewrite /MOVV_64 /= W64.get_to_uint W128.get_to_uint to_uint_truncateu64 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+     have -> /= : 0 <= (2 * i + k %/ 8 - 2 * to_uint ctr{hr}) * 8 + k %% 8 < 64  by smt().
+   +  congr;congr.
+     rewrite -pow2_64 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     congr;congr;congr;congr; rewrite Ring.IntID.exprD_nneg 1..2: /#. 
+     rewrite -Ring.IntID.exprD_nneg 1,2:/#; congr;smt().
+  rewrite initiE 1:/# /= ifF 1:/#; rewrite /(\bits8) initiE 1:/# /= /#. 
+
+
+(*****************)
+
+rewrite get_set16E 1,2:/#.
+  case (i = to_uint ctr{hr} + 2) => *.
+     rewrite /MOVV_64 /= W16.get_to_uint W128.get_to_uint to_uint_truncateu16 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+     rewrite kb /= ifT 1:/# /(`>>`) /=  to_uint_shr 1:/# /= to_uint_truncateu64.
+     have -> : i * 16 + k - to_uint ctr{hr} * 16 = k + 2*16 by smt().
+     congr;congr.
+     rewrite -pow2_32 -pow2_16 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite -divzMr;1,2:smt(StdOrder.IntOrder.expr_gt0).
+     rewrite -Ring.IntID.exprD_nneg 1,2:/#.
+    rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0); 1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+      by smt().
+
+  rewrite get16E /pack2_t initiE //= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite get16E set32E /(\bits8) initiE 1:/# /= /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * to_uint ctr{hr} <= 2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 <
+    2 * to_uint ctr{hr} + 4) => *.
+  + rewrite ifT 1:/# initiE 1:/# /=.
+     rewrite /MOVV_64 /= W32.get_to_uint W128.get_to_uint to_uint_truncateu32 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+     have -> /= : 0 <=
+ (2 * ((2 * i + k %/ 8) %/ 2) + ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %/ 8 - 2 * to_uint ctr{hr}) * 8 +
+ ((2 * i + k %/ 8) %% 2 * 8 + k %% 8) %% 8 < 32  by smt().
+   +  congr;congr.
+     rewrite -pow2_32 to_uint_truncateu64.
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     congr;congr; rewrite Ring.IntID.exprD_nneg 1..2: /#. 
+     rewrite -Ring.IntID.exprD_nneg 1,2:/# ; congr;smt().
+  rewrite initiE 1:/# /= ifF 1:/#; rewrite /(\bits8) initiE 1:/# /= /#. 
+
+(************)
++   rewrite get16E set32E  /= /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  case (2 * to_uint ctr{hr} <= 2 * i + k %/ 8 < 2 * to_uint ctr{hr} + 4) => *.
+  + rewrite ifT 1:/#.
+     rewrite /MOVV_64 /= /(\bits8) initiE 1:/# /=  W32.get_to_uint W128.get_to_uint to_uint_truncateu32 /= to_uint_truncateu64 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+    have -> /= : 0 <= (2 * i + k %/ 8 - 2 * to_uint ctr{hr}) * 8 + k %% 8 < 32  by smt().
+     congr;congr.
+     rewrite -pow2_32 -pow2_64 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+      by smt().
+
+   rewrite initiE 1:/# ifF 1:/# /= /(\bits8) initiE 1:/# /= /#. 
+
+(************)
+
+rewrite get_set16E 1,2:/#.
+  case (i = to_uint ctr{hr}) => *.
+     rewrite /MOVV_64 /= W16.get_to_uint W128.get_to_uint to_uint_truncateu16 /=.
+    have -> /= : 0 <= i * 16 + k - to_uint ctr{hr} * 16 < 128 = true  by smt().
+     rewrite kb /= ifT  1:/# /= to_uint_truncateu64.
+     rewrite -pow2_16 .
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+     rewrite dvdz_mod_div;1,2: smt(StdOrder.IntOrder.expr_gt0);1: apply dvdz_exp2l;1:smt(). 
+     rewrite modz_dvd; 1: by rewrite -{1}pow2_1 expz_div 1,2:/#;1: apply dvdz_exp2l;1:smt(). 
+      by smt().
+
+   
+   rewrite get16E/(\bits8) /pack2_t  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  + rewrite ifF 1:/# /(\bits8) initiE 1:/# /= /#.
 qed.
 
 lemma _write_u128_boundchk_corr_ll : islossless  M(Syscall).__write_u128_boundchk by islossless. 
