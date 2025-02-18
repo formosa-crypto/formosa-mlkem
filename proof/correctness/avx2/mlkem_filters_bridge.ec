@@ -1000,7 +1000,7 @@ conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.
     + rewrite /Mlkem_filters.load_shuffle /Mlkem_filters.load_shuffle /u8_256_32.
       rewrite wordP => i ib;rewrite pack32wE 1:/# of_listK /= 1:/# initiE 1:/# /=;do      congr;rewrite /Mlkem_filters.sample_load_shuffle.
       rewrite !get_of_list 1,2:/#. 
-      by smt(@List).
+      by smt().
   + by move => *; rewrite initiE /#. 
 + move => &1 &2 /=.
   rewrite /rejection16 /buf_subl /rejection /= -map_comp /(\o) /=.
@@ -1011,16 +1011,16 @@ conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.
   have ? : map W12.to_uint xx = map W16.to_uint yy; last first.
   move => /= ? [# Hs1 Hs2] [# Hl1 Hl2] .
   split; last first. 
-  + rewrite Hs2 Hl2  /yy; smt(@List take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
+  + rewrite Hs2 Hl2 /yy; smt(@List size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
   + move :Hs1.
-    have ->: (min 256 (to_uint res{1}.`2)) = to_uint _ctr + size (take (256 - to_uint _ctr) yy) by smt(@List take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
+    have ->: (min 256 (to_uint res{1}.`2)) = to_uint _ctr + size (take (256 - to_uint _ctr) yy) by smt(size_take size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
     move => ->.
     congr. 
     apply (eq_from_nth witness).
-    + rewrite size_mkseq. smt(size_ge0).
+    + rewrite size_mkseq;1: smt(size_ge0).
     rewrite size_mkseq => i ib.
     rewrite nth_mkseq;1:smt(size_ge0).
-    rewrite Hl1;1:smt(size_ge0 @List).   
+    rewrite Hl1;1:smt(size_ge0 size_map size_take).   
     rewrite to_uint_eq.
     rewrite -BVA_zextend_Top_Bindings_W12_t_Top_JWord_W16_t.bvzextendP.
     have : nth witness (map W12.to_uint xx) i  = nth witness (map W16.to_uint yy) i by smt().
