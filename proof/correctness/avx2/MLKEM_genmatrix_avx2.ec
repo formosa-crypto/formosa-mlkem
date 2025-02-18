@@ -674,7 +674,7 @@ phoare gen_matrix_buf_rejection_ph _pol _ctr _buf _buf_offset:
    let l = take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) 504))
    in plist res.`1 (to_uint _ctr + size l)
       = plist _pol (to_uint _ctr) ++ l
-      /\ to_uint _ctr + size l = min 256 (W64.to_uint res.`2)
+      /\ to_uint _ctr + size l = min 256 (to_uint res.`2)
  ] = 1%r.
 proof.
 by conseq gen_matrix_buf_rejection_ll (gen_matrix_buf_rejection_h _pol _ctr _buf _buf_offset).

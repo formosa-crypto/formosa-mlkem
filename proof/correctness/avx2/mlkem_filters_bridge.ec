@@ -833,23 +833,15 @@ qed.
 
 lemma _write_u128_boundchk_corr_ll : islossless  M(Syscall).__write_u128_boundchk by islossless. 
 
-lemma _write_u128_boundchk_corr _pol _ctr _in128 :
-  phoare
-[ M(Syscall).__write_u128_boundchk :
- to_uint arg.`2 <= 256 + 8 /\
- arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128
- ==>
- res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128
-] = 1%r.
-(*
+phoare _write_u128_boundchk_corr _pol _ctr _in128 :
  [ M(Syscall).__write_u128_boundchk :
-    to_uint arg.`2 <= 256 + 16 /\
-    arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128 ==>
-    res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128 /\
-    to_uint res.`2 = if _ctr < 256 then min 256 (_ctr+8) else _ctr] = 1%r
-*)
-   by conseq _write_u128_boundchk_corr_ll ( _write_u128_boundchk_corr_h _pol _ctr _in128).
-qed.
+   to_uint arg.`2 <= 256 + 8 /\
+   arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128
+   ==>
+   res.`1 = sliceset_256_128_16 _pol (_ctr * 16) _in128
+ ] = 1%r
+by conseq _write_u128_boundchk_corr_ll ( _write_u128_boundchk_corr_h _pol _ctr _in128).
+
 
 lemma bridge24 _ctr _offset _p : 
 equiv [
@@ -1133,8 +1125,7 @@ phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
    in plist res.`1 (to_uint _ctr + size l)
       = plist _pol (to_uint _ctr) ++ l
       /\ 
- min 256 (to_uint res.`2) = to_uint _ctr + size l
-(*to_uint _ctr + size l <= to_uint res.`2*)
+      min 256 (to_uint res.`2) = to_uint _ctr + size l
 ] = 1%r.
 proof.
 by conseq buf_rejection_filter24_ll (buf_rejection_filter24_h _pol _ctr _buf _buf_offset).
