@@ -710,7 +710,7 @@ while ( min 256 (to_uint counter{1})=c{2} /\ 0 <= c{2} <= 256
   rewrite buf_sublE 1:// /=.
   rewrite /squeezestate_i /st_i /= iter1.
   rewrite /squeezestate /= /c256_r8.
-  by rewrite -Est2 take_mkseq 1:// /#.
+  rewrite -Est2 take_mkseq 1:/# /sub /#.
  rewrite buf_sublE 1:// /= -Est1.
  rewrite state2bytesK => ->.
  move: Ectr; rewrite /rejection16 -map_take size_map => Ectr.

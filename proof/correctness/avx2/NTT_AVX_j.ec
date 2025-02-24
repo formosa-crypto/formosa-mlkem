@@ -736,38 +736,38 @@ Jkem_avx2.M(Jkem_avx2.Syscall)._poly_basemul ~ Tmp._poly_basemul:
 proof.
 proc.
 seq 8 8: (={rp,ap,bp,qx16,qinvx16,zeta_0,zetaqinv,are,aim,bre,bim}).
- by wp; skip; rewrite /z2u256 !P2RE //. 
+ by wp; skip => &1 &2; rewrite /z2u256 !P2RE //. 
 seq 1 1: #pre.
  by sim.
 seq 6 6: (#pre).
- by wp; skip; rewrite !P2RE // !PURE //. 
+ by wp; skip => &1 &2; rewrite !P2RE // !PURE //. 
 seq 1 1: #pre.
  by sim.
 seq 8 8: (#pre).
- by wp; skip; rewrite /z2u256 !P2RE // !PURE //. 
+ by wp; skip => &1 &2; rewrite /z2u256 !P2RE // !PURE //. 
 seq 1 1: #pre.
  by sim.
 seq 6 6: (#pre).
- by wp; skip; rewrite !P2RE // !PURE //. 
+ by wp; skip => &1 &2; rewrite !P2RE // !PURE //. 
 seq 1 1: #pre.
  by sim.
 seq 8 8: (#pre).
- by wp; skip; rewrite /z2u256 !P2RE // !PURE //. 
+ by wp; skip => &1 &2; rewrite /z2u256 !P2RE // !PURE //. 
 seq 1 1: #pre.
  by sim.
 seq 6 6: (#pre).
- by wp; skip; rewrite !P2RE // !PURE //. 
+ by wp; skip => &1 &2; rewrite !P2RE // !PURE //. 
 seq 1 1: #pre.
  by sim.
 seq 8 8: (#pre).
- by wp; skip; rewrite /z2u256 !P2RE // !PURE //. 
+ by wp; skip => &1 &2; rewrite /z2u256 !P2RE // !PURE //. 
 seq 1 1: #pre.
  by sim.
 seq 6 6: (#pre).
- by wp; skip; rewrite !P2RE // !PURE //. 
+ by wp; skip => &1 &2; rewrite !P2RE // !PURE //. 
 seq 1 1: #pre.
  by sim.
-by wp; skip; rewrite !PURE //. 
+by wp; skip => &1 &2; rewrite !PURE //. 
 qed.
 
 equiv ntt_avx2_eq_:
@@ -776,15 +776,15 @@ Jkem_avx2.M(Jkem_avx2.Syscall)._poly_ntt ~ Tmp._ntt:
 proof.
 proc.
 seq 13 12: (={rp,r0,r1,r2,r3,r4,r5,r6,r7,zetasp,zeta0,zeta1,qx16}).
- by wp; skip; rewrite !P2RE //. 
+ by wp; skip => &1 &2; rewrite !P2RE //. 
 seq 1 1: #pre.
  by sim.
 seq 16 16: #pre.
- by wp; skip => />; rewrite !P2RE // !PURE //.
+ by wp; skip => /> &m; rewrite !P2RE // !PURE //.
 seq 1 1: #pre.
  by sim.
 seq 5 5: (0 <= i{2} /\ ={i} /\ #pre).
- by wp; skip => />; rewrite !PURE //.
+ by wp; skip => /> &m; rewrite !PURE //.
 while (#pre).
  seq 7 7: (#pre).
   by auto => /> *; rewrite !P2RE /#.
@@ -811,7 +811,7 @@ while (#pre).
  seq 1 1: (#pre).
   by conseq />; sim.
  seq 1 1: (={vx16} /\ #pre).
-  by wp; skip; rewrite /C2R /vx16_op /#.
+  by wp; skip => &1 &2; rewrite /C2R /vx16_op /#.
  seq 8 8: (#pre).
   by conseq />; sim.
  by wp; skip => |> *; rewrite !PURE 1..8:/# !mulrDr !mulrA /= /#.
@@ -824,7 +824,7 @@ Jkem_avx2.M(Jkem_avx2.Syscall)._poly_invntt ~ Tmp._invntt:
 proof.
 proc.
 seq 4 3: (i{2}=0 /\ ={i,rp,zetasp,qx16}).
- by wp; skip; rewrite /C2R //.
+ by wp; skip => &1 &2; rewrite /C2R //.
 seq 4 4: (#pre /\ ={r0,r2,r4,r6,zeta0,zeta1}).
  wp; while (0 <= i{2} /\ #[/2:]pre /\ (i{2}=0 \/ ={r0,r2,r4,r6})).
   seq 12 12: (i{2} < 2 /\ #[/:5]pre /\ ={r0,r1,r2,r3,r4,r5,r6,r7,zeta0,zeta1,zeta2,zeta3}).

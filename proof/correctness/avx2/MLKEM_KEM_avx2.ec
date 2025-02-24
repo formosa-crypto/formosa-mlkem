@@ -138,7 +138,7 @@ seq 1 1 : (#{/~Glob.mem{1}=mem}pre /\
   pk{2}.`1 = load_array1152 Glob.mem{1} _pkp /\ 
   pk{2}.`2 = load_array32 Glob.mem{1} (_pkp + 1152)).
 call (mlkem_correct_kg_avx2 mem _pkp _skp).
-auto => /> &1; rewrite /load_array1152 /load_array32 !tP /touches2 => ????????.
+auto => /> &1 &2; rewrite /load_array1152 /load_array32 !tP /touches2 => ???????.
 do split; 1,2,3: smt().
 + move =>  touch ????? [[resr11 resr12] resr2] memL touch2 /= [#]; rewrite !tP => r2 r11 r12. 
   do split.
@@ -516,8 +516,6 @@ proc => /=.
 seq 1 : (#{/~cnd}pre /\ (_cnd = W64.zero => cnd = W64.zero) /\
                 (_cnd = W64.one => cnd = W64.onew));
   1: by auto => /> &1 ?? /=; split; [ by ring | by rewrite W64.minus_one /=].
-seq 5 : (#post); last first.
-+ by wp; conseq />; while(i=32 /\ #pre); auto => /> /#. 
 
 unroll ^while.
 
@@ -574,13 +572,9 @@ qed.
 
 lemma cmov_ll : islossless Jkem_avx2.M(Jkem_avx2.Syscall).__cmov.
 proc => /=.
-seq 6 : (#post) => //; last first.
-+ by wp; conseq />; while(i=32 /\ #pre) (32-i); auto => /> /#. 
-
 unroll 6.
 
 + wp; conseq />; while(i=1 /\ inc=1 /\ #pre) (1-i); auto => /> /#. 
-
 qed.
 
 

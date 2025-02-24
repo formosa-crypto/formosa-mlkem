@@ -62,18 +62,4 @@ fn __cmov(reg u64 dst, reg ptr u8[MLKEM_SYMBYTES] src, reg u64 cnd)
     f = #VPBLENDVB_256(f, g, m);
     (u256)[dst + 32*i] = f;
   }
-
-  off = MLKEM_SYMBYTES/32 * 32;
-
-  /* fixme: unused in 768, hence untested */
-  bcond = (8u)cnd;
-  for i=off to MLKEM_SYMBYTES
-  {
-    t2 = (u8)[dst + i];
-    t1 = src[i];
-    t2 = t2 ^ t1;
-    t2 = t2 & cnd;
-    t1 ^= t2;
-    (u8)[dst + i] = t1;
-  }
 }

@@ -718,7 +718,7 @@ qed.
 lemma polygetnoise_ll : islossless Jkem.M(Jkem.Syscall)._poly_getnoise.
 proc. 
 while (0 <= to_uint i <= 128) (128 - to_uint i);
-  1: by move => z; auto => />;rewrite  ultE /= => &hr ???; rewrite !to_uintD_small /=; smt(to_uint_cmp).
+  1: by move => z; auto => /> &hr;rewrite  ultE /= =>  ??; rewrite !to_uintD_small /=; smt(to_uint_cmp).
 wp; call shake256_33_128_ll.
 wp; while (0<=k<=32) (32 -k); 1: by move => z; auto=> /> /#.
 auto => /> *; do split; 1:smt(). 

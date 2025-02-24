@@ -1268,7 +1268,7 @@ while (   to_uint cmp = to_uint start + to_uint len
        /\ 2 * (to_uint zetasctr1 + 1) * to_uint len = 256
        /\ to_uint start = 2*(to_uint zetasctr -1 - to_uint zetasctr1) * to_uint len
        /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256) (to_uint start + to_uint len - to_uint j); last first. 
-+ wp; skip; rewrite !ultE !of_uintK /= => *; split; 1:by rewrite !to_uintD_small //= /#.
++ wp; skip => &hr; rewrite !ultE !of_uintK /= => *; split; 1:by rewrite !to_uintD_small //= /#.
   move=> *; split; 1: by rewrite to_uintD_small //= 1:/# !ultE //= => [#] *; rewrite to_uintD_small //= /#.
   rewrite !ultE to_uintD_small 1:/#.
   move => *; split; last by  rewrite to_uintD_small //= /#.
@@ -1557,7 +1557,7 @@ while (   1 <= to_uint len /\ to_uint len <= 128 /\ 0 <= l /\ to_uint len = 2 ^ 
        /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256
        /\ 0 <= to_uint start <= 256
        /\ to_uint start = 2 * (to_uint zetasctr - to_uint zetasctr1)*to_uint len) (256 -to_uint start); last first.
-+ wp; skip;rewrite uleE /= => [#] &m h.
++ wp; skip => &m;rewrite uleE /= => [#] h *.
   split;1: smt(W64.to_uint0). 
   move => start zetasctr; split;first by rewrite ultE;smt(W64.to_uint0).
   rewrite ultE /=;move=> ge256_st h2; split.
@@ -1581,7 +1581,7 @@ while (   to_uint cmp = to_uint start + to_uint len
        /\ to_uint zetasctr1 * to_uint len = 128 * (to_uint len - 2)
        /\ to_uint start = 2 * (to_uint zetasctr -1 - to_uint zetasctr1) * to_uint len
        /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256) (to_uint start + to_uint len - to_uint j); last first.
-+ wp;skip;rewrite ultE /= => *.
++ wp;skip => &m;rewrite ultE /= => *.
   rewrite !to_uintD_small /= 1..2:/#; split; 1: by smt().
   move => *; rewrite !ultE /= to_uintD_small /= 1:/#.
   split;  first by smt().

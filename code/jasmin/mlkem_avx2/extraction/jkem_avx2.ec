@@ -10190,10 +10190,6 @@ module M(SC:Syscall_t) = {
     var i:int;
     var f:W256.t;
     var g:W256.t;
-    var off:int;
-    var bcond:W8.t;
-    var t2:W8.t;
-    var t1:W8.t;
     cnd <- (- cnd);
     scnd <- cnd;
     m <- (VPBROADCAST_4u64 scnd);
@@ -10205,18 +10201,6 @@ module M(SC:Syscall_t) = {
       f <- (VPBLENDVB_256 f g m);
       Glob.mem <-
       (storeW256 Glob.mem (W64.to_uint (dst + (W64.of_int (32 * i)))) f);
-      i <- (i + 1);
-    }
-    off <- ((32 %/ 32) * 32);
-    bcond <- (truncateu8 cnd);
-    i <- off;
-    while ((i < 32)) {
-      t2 <- (loadW8 Glob.mem (W64.to_uint (dst + (W64.of_int i))));
-      t1 <- src.[i];
-      t2 <- (t2 `^` t1);
-      t2 <- (t2 `&` (truncateu8 cnd));
-      t1 <- (t1 `^` t2);
-      Glob.mem <- (storeW8 Glob.mem (W64.to_uint (dst + (W64.of_int i))) t1);
       i <- (i + 1);
     }
     return ();

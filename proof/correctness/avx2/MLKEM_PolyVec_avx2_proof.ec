@@ -134,8 +134,8 @@ proof.
   ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
   wp.
   ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
-   wp. skip.
-   rewrite /lift_array768 /lift_array256 /pos_bound256_cxq !tP;move => &hr [ap_def pos_bound_r]; split.
+   wp. skip => &hr.
+   rewrite /lift_array768 /lift_array256 /pos_bound256_cxq !tP;move =>  [ap_def pos_bound_r]; split.
    split; trivial; smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
    move => [r_eq_r_1 pos_bound_r_1 res1 [r_eq_res_1 pos_bound_res_1] res_1_def]; split.
    split; trivial => k kb @/res_1_def; rewrite !initiE //=.
@@ -1173,7 +1173,7 @@ proof.
    do rewrite initiE 1:/# //=. smt().  
    rewrite /lift_array256 tP in r_eq_res1; move : (r_eq_res1 (k) _);  1:by smt().
    rewrite !mapiE 1,2:/# /= => <-.
-   do rewrite initiE 1:/# //=. smt().
+   do rewrite initiE 1:/# //= => *; smt().
    move => k k_i.
    do rewrite initiE //=.
    rewrite /bpos16 //=in res3_bound.
