@@ -5,6 +5,20 @@ require "reduce.jinc"
 
 require "mlkem_keccak_avx2.jinc"
 
+/* 
+_poly_add2: add arrays pointwise
+
+requires:
+  - elements in rp input to be in the range [-q*A...q*A) for 0<=A<=6
+  - elements in bp input to be in the range [-q*B...q*B) for 0<=B<=3
+ensures:
+  - memory unchanged
+  - each entry in rp represents the Zq element that results from summing 
+    the Zq elements represented by the corresponding rp and bp entries on 
+     input
+  - each entry in rp is in the range [-q*(A+B)...q*(A+B))
+*/
+
 fn _poly_add2(reg mut ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] bp) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
@@ -21,6 +35,19 @@ fn _poly_add2(reg mut ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] bp) -> reg
 
   return rp;
 }
+
+/* 
+_poly_csubq: reduce from range [0..2q) to range [0..q) by conditional subtraction
+         do this for each element in the input array
+
+requires:
+  - each 16-bit element in the input array is in the range [0..2q)
+ensures:
+  - memory unchanged
+  - every 16-bit element in the output array is in the range [0..q)
+  - every 16-bit element in the output array encodes the same element in Zq
+    as the corresponding element in the input array
+*/
 
 fn _poly_csubq(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
