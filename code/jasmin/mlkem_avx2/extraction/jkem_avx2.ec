@@ -591,17 +591,6 @@ abbrev pvd_shufbdidx_s =
 
 abbrev pvd_q_s = (W32.of_int 218182660).
 
-abbrev cbd_jshufbidx =
-((Array32.of_list witness)
-[(W8.of_int 0); (W8.of_int 1); (W8.of_int 2); (W8.of_int (-1));
-(W8.of_int 3); (W8.of_int 4); (W8.of_int 5); (W8.of_int (-1)); (W8.of_int 6);
-(W8.of_int 7); (W8.of_int 8); (W8.of_int (-1)); (W8.of_int 9);
-(W8.of_int 10); (W8.of_int 11); (W8.of_int (-1)); (W8.of_int 4);
-(W8.of_int 5); (W8.of_int 6); (W8.of_int (-1)); (W8.of_int 7); (W8.of_int 8);
-(W8.of_int 9); (W8.of_int (-1)); (W8.of_int 10); (W8.of_int 11);
-(W8.of_int 12); (W8.of_int (-1)); (W8.of_int 13); (W8.of_int 14);
-(W8.of_int 15); (W8.of_int (-1))]).
-
 abbrev pfm_idx_s =
 ((Array16.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 4); (W8.of_int 5); (W8.of_int 8);
@@ -7839,81 +7828,6 @@ module M(SC:Syscall_t) = {
     }
     return rp;
   }
-  proc __cbd3 (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
-    var inc:int;
-    var mask249_s:W32.t;
-    var mask6DB_s:W32.t;
-    var mask07_s:W32.t;
-    var mask70_s:W32.t;
-    var mask3_s:W16.t;
-    var mask249:W256.t;
-    var mask6DB:W256.t;
-    var mask07:W256.t;
-    var mask70:W256.t;
-    var mask3:W256.t;
-    var shufbidx:W256.t;
-    var i:int;
-    var f0:W256.t;
-    var f1:W256.t;
-    var f2:W256.t;
-    var f3:W256.t;
-    mask249_s <- (W32.of_int 2396745);
-    mask6DB_s <- (W32.of_int 7190235);
-    mask07_s <- (W32.of_int 7);
-    mask70_s <- (W32.of_int (7 `<<` 16));
-    mask3_s <- (W16.of_int 3);
-    mask249 <- (VPBROADCAST_8u32 mask249_s);
-    mask6DB <- (VPBROADCAST_8u32 mask6DB_s);
-    mask07 <- (VPBROADCAST_8u32 mask07_s);
-    mask70 <- (VPBROADCAST_8u32 mask70_s);
-    mask3 <- (VPBROADCAST_16u16 mask3_s);
-    shufbidx <- (get256 (WArray32.init8 (fun i_0 => cbd_jshufbidx.[i_0])) 0);
-    inc <- (256 %/ 32);
-    i <- 0;
-    while ((i < inc)) {
-      f0 <-
-      (get256_direct (WArray128.init8 (fun i_0 => buf.[i_0])) (24 * i));
-      f0 <- (VPERMQ f0 (W8.of_int 148));
-      f0 <- (VPSHUFB_256 f0 shufbidx);
-      f1 <- (VPSRL_8u32 f0 (W128.of_int 1));
-      f2 <- (VPSRL_8u32 f0 (W128.of_int 2));
-      f0 <- (VPAND_256 mask249 f0);
-      f1 <- (VPAND_256 mask249 f1);
-      f2 <- (VPAND_256 mask249 f2);
-      f0 <- (VPADD_8u32 f0 f1);
-      f0 <- (VPADD_8u32 f0 f2);
-      f1 <- (VPSRL_8u32 f0 (W128.of_int 3));
-      f0 <- (VPADD_8u32 f0 mask6DB);
-      f0 <- (VPSUB_8u32 f0 f1);
-      f1 <- (VPSLL_8u32 f0 (W128.of_int 10));
-      f2 <- (VPSRL_8u32 f0 (W128.of_int 12));
-      f3 <- (VPSRL_8u32 f0 (W128.of_int 2));
-      f0 <- (VPAND_256 f0 mask07);
-      f1 <- (VPAND_256 f1 mask70);
-      f2 <- (VPAND_256 f2 mask07);
-      f3 <- (VPAND_256 f3 mask70);
-      f0 <- (VPADD_16u16 f0 f1);
-      f1 <- (VPADD_16u16 f2 f3);
-      f0 <- (VPSUB_16u16 f0 mask3);
-      f1 <- (VPSUB_16u16 f1 mask3);
-      f2 <- (VPUNPCKL_8u32 f0 f1);
-      f3 <- (VPUNPCKH_8u32 f0 f1);
-      f0 <- (VPERM2I128 f2 f3 (W8.of_int 32));
-      f1 <- (VPERM2I128 f2 f3 (W8.of_int 49));
-      rp <-
-      (Array256.init
-      (WArray512.get16
-      (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0])) (2 * i) f0))
-      );
-      rp <-
-      (Array256.init
-      (WArray512.get16
-      (WArray512.set256 (WArray512.init16 (fun i_0 => rp.[i_0]))
-      ((2 * i) + 1) f1)));
-      i <- (i + 1);
-    }
-    return rp;
-  }
   proc __cbd2 (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
     var inc:int;
     var mask55_s:W32.t;
@@ -7992,11 +7906,7 @@ module M(SC:Syscall_t) = {
   }
   proc __poly_cbd_eta1 (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
     
-    if ((2 = 2)) {
-      rp <@ __cbd2 (rp, (Array128.init (fun i => buf.[(0 + i)])));
-    } else {
-      rp <@ __cbd3 (rp, buf);
-    }
+    rp <@ __cbd2 (rp, (Array128.init (fun i => buf.[(0 + i)])));
     return rp;
   }
   proc _poly_getnoise_eta1_4x (r0:W16.t Array256.t, r1:W16.t Array256.t,

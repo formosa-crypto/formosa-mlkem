@@ -676,7 +676,7 @@ inline *. sim. qed.
 
 equiv getnoise_1x_equiv_avx :
   Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1 ~ AuxMLKEMAvx2.cbd2_ref : ={arg} ==> ={res}.
-proc*. inline Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1. rcondt{1} 3. auto => />. sp;wp.
+proc*. inline Jkem_avx2.M(Jkem_avx2.Syscall).__poly_cbd_eta1.  sp;wp.
 ecall{1} (cbd2_avx2_ph buf{1}) => />.
 ecall{2} (cbd2_ref_ph buf{2}) => />.
 auto => /> &2. rewrite tP => i Hi. rewrite initiE /#. qed.

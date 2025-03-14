@@ -64,7 +64,7 @@ fn __shuffle1(reg u256 a b) -> reg u256, reg u256
 }
 
 /* __nttunpack128: Aux function to convert half of a polynomial
-   from bitreversed order to AVX order 
+   from AVX order to logical order of coefficients.
    Output registers contain the following permutation of
    subwords of input registers
 
@@ -105,7 +105,7 @@ fn __nttunpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
   return r0, r4, r1, r5, r2, r6, r3, r7;
 }
 
-/* _nttunpack: Conversion from bit-reversed order to avx order.
+/* _nttunpack: Conversion from logical ordering of coefficients to avx2 order.
    Output array contains the following permutation of
    input array 
 
