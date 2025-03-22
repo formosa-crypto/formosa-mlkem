@@ -12,7 +12,6 @@ requires:
   - elements in rp input to be in the range [-q*A...q*A) for 0<=A<=6
   - elements in bp input to be in the range [-q*B...q*B) for 0<=B<=3
 ensures:
-  - modifies only the stack region pointed to by rp
   - each entry in rp represents the Zq element that results from summing 
     the Zq elements represented by the corresponding rp and bp entries on 
      input
@@ -43,7 +42,6 @@ _poly_csubq: reduce from range [0..2q) to range [0..q) by conditional subtractio
 requires:
   - each 16-bit element in the input array is in the range [0..2q)
 ensures:
-  - modifies only the stack region pointed to by rp
   - every 16-bit element in the output array is in the range [0..q)
   - every 16-bit element in the output array encodes the same element in Zq
     as the corresponding element in the input array
@@ -104,7 +102,7 @@ fn __w256_deinterleave_u16(reg u256 _zero a0 a1) -> reg u256, reg u256 {
   in the range [-88657928,88657928).
   Requires qx16 to contain 16 copies of q
   Requires qinvx16 to contain 16 copies of 62209
-  returns each input value multiplied by R^-1 %% q  
+  returns each input value multiplied by R^-1 % q  
   and reduced to the range [-q,q)
 */
 
@@ -146,7 +144,7 @@ requires:
 ensures: 
      output coefficients are in the range [-q,q)
      they represent the coefficients of complex multiplication with an extra montgomery
-     factor R^-1 %% q.
+     factor R^-1 % q.
 */
 
 inline 
@@ -186,7 +184,7 @@ requires:
 ensures: 
      output coefficients are in the range [-q,q)
      they represent the coefficients of complex multiplication with an extra montgomery
-     factor R^-1 %% q.
+     factor R^-1 % q.
 */
 
 fn _poly_basemul(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
@@ -290,6 +288,8 @@ requires: input coefficients to be in the range [0..2q)
 ensures:
     only 128 bytes pointed by rp are modified in memory
     these bytes encode the compressed polynomial
+
+    it returns the input polynomial reduced to the range [0..q)
 
 */
 fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
@@ -646,6 +646,16 @@ fn _poly_frommsg_1(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[32] ap) -> reg 
   return rp;
 }
 
+/* 
+__cbd2 generates a polynomial with binomial noise with eta=2.
+    
+
+requires: no requires
+
+ensures: output coefficient j is computed as
+       buf[j/2][j%2*4]+buf[j/2][j%2*4+1] - 
+           (buf[j/2][j%2*4+2]+buf[j/2][j%2*4+3]).
+*/
 inline
 fn __cbd2(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA2*MLKEM_N/4] buf) -> reg ptr u16[MLKEM_N]
 {
@@ -706,6 +716,7 @@ fn __cbd2(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA2*MLKEM_N/4] buf) -> reg 
   return rp;
 }
 
+/* In MLKEM 768 eta1 and eta2 is cbd2 */
 inline
 fn __poly_cbd_eta1(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8] buf) -> reg ptr u16[MLKEM_N]
 {
@@ -713,12 +724,9 @@ fn __poly_cbd_eta1(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA1*MLKEM_N/4+(MLK
   return rp;
 }
 
-inline
-fn __poly_cbd_eta2(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA2*MLKEM_N/4] buf) -> reg ptr u16[MLKEM_N]
-{
-  rp = __cbd2(rp, buf);
-  return rp;
-}
+
+/* _poly_getnoise_eta1_4x: computes 4x the binomial noise,
+   where only the shake computation is parallelized. */
 
 #[returnaddress="stack"]
 fn _poly_getnoise_eta1_4x
@@ -758,40 +766,17 @@ fn _poly_getnoise_eta1_4x
   return r0, r1, r2, r3;
 }
 
-#[returnaddress="stack"]
-fn _poly_getnoise_eta1122_4x
-( reg ptr u16[MLKEM_N] r0 r1 r2 r3
-, reg ptr u8[MLKEM_SYMBYTES] seed
-, reg u8 nonce
-) -> reg ptr u16[MLKEM_N]
-   , reg ptr u16[MLKEM_N]
-   , reg ptr u16[MLKEM_N]
-   , reg ptr u16[MLKEM_N]
-{
-  stack u8[128] buf0_s buf1_s buf2_s buf3_s;
-  stack u8[4] nonces;
-  reg ptr u8[128] buf0, buf1, buf2, buf3;
+/* __invntt___butterfly64x: computes 64 inverse butterflies in parallel.
+    Inputs which come in as 2(h vs l) x 64 = 2 x 4(0..3) x 16(simd) 
+    16-bit words. The result on each lane is:
 
-  buf0 = buf0_s; buf1 = buf1_s; buf2 = buf2_s; buf3 = buf3_s;
+       rl[j][i] = rl[j][i] + rh[j][i]
+       rh[j][i] = z*(rl[j][i] - rh[j][i])
 
-  nonces[0] = nonce;
-  nonce += 1;
-  nonces[1] = nonce;
-  nonce += 1;
-  nonces[2] = nonce;
-  nonce += 1;
-  nonces[3] = nonce;
-
-  buf0, buf1, buf2, buf3 = _shake256x4_A128__A32_A1(buf0, buf1, buf2, buf3, seed, nonces);
-
-  r0 = __poly_cbd_eta1(r0, buf0);
-  r1 = __poly_cbd_eta1(r1, buf1);
-  r2 = __poly_cbd_eta2(r2, buf2);
-  r3 = __poly_cbd_eta2(r3, buf3);
-
-  return r0, r1, r2, r3;
-}
-
+    zs come represented as zl and zh, where zh contains zl*qinv
+    precomputed for montgomery multiplication. 
+    See contract for __fqmulprecomp16x in reduce.jinc for a 
+    a more detailed explanation of input ranges and output ranges. */
 
 inline
 fn __invntt___butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 zh1 qx16) 
@@ -834,6 +819,20 @@ fn __invntt___butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 
 
   return rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
 }
+
+/*
+_poly_invntt computes the inverse NTT over an input polynomial
+that is given with coefficients in AVX order, and produces
+the output with coefficients in the logical order.
+
+Input range accepted is [-4q,4q)
+Output range is (-q,q)
+
+Introduces a multiplicative scalar of R mod q in all coefficients,
+which cancels a lingering R^-1 mod q factor that remains from 
+montgomery multiplications carried out in basemul.
+
+*/
 
 fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
@@ -984,6 +983,18 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+/* __butterfly64x: computes 64 butterflies in parallel.
+    Inputs which come in as 2(h vs l) x 64 = 2 x 4(0..3) x 16(simd) 
+    16-bit words. The result is
+
+       xl[j][i] = xl.[i]+z.[i]*xr.[i] 
+       xh[j][i] = xl.[i]-z.[i]*xr.[i]
+
+    zs come represented as zl and zh, where zh contains zl*qinv
+    precomputed for montgomery multiplication. 
+    See contract for __fqmulprecomp16x in reduce.jinc for a 
+    a more detailed explanation of input ranges and output ranges. */
+
 inline
 fn __butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 zh1 qx16) 
     -> reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256, reg u256
@@ -1024,6 +1035,16 @@ fn __butterfly64x(reg u256 rl0 rl1 rl2 rl3 rh0 rh1 rh2 rh3 zl0 zl1 zh0 zh1 qx16)
 
   return rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3;
 }
+
+/*
+_poly_ntt computes the NTT over an input polynomial
+that is given with coefficients in logical order, and produces
+the output with coefficients in AVX order.
+
+Input range accepted is [-2q,2q)
+Output range is (-2q,2q)
+
+*/
 
 fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
@@ -1173,6 +1194,18 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+/* 
+__poly_reduce: reduce from arbitrary signed range [-2^15..2^15) to range [0..2q)
+          usint Barrett reduction
+
+requires: nothing
+
+ensures:
+  - memory unchanged
+  - every coefficient of the output is in the range [0..q)
+  - every coefficient of the output encodes the same element in Zq
+    as the corresponding input coefficient
+*/
 inline
 fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
@@ -1191,6 +1224,21 @@ fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+/* 
+_poly_sub: subtract arrays pointwise
+
+requires:
+  - elements in ap input to be in the range [-q*A...q*A) for 0<=A<=6
+  - elements in bp input to be in the range [-q*B...q*B) for 0<=B<=3
+ensures:
+  - modifies only the stack region pointed to by rp
+  - each entry in rp represents the Zq element that results from subtracting 
+    the Zq elements represented by the corresponding rp and bp entries on 
+     input
+  - each entry in rp is in the range [-q*(A+B)...q*(A+B))
+*/
+
+
 fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
@@ -1207,6 +1255,21 @@ fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
 
   return rp;
 }
+
+/*
+_poly_tobytes: serializes a polynomial (given in AVX2 order) using 12 bits 
+    per coefficient and packs in byte array stored in rp
+
+requires: input coefficients to be in the range [0..2q)
+      rp to point to 384 byte valid region
+
+ensures:
+    only 384 bytes pointed by rp are modified in memory
+    these bytes encode the serialized polynomial
+
+    it returns the input polynomial reduced to the range [0..q)
+
+*/
 
 fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
 {
@@ -1279,40 +1342,21 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
   return a;
 }
 
-fn _poly_tomsg(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
-{
-  inline int i;
-  reg u256 f0 f1 g0 g1 hq hhq;
-  reg ptr u16[16] px16;
-  reg u32 c;
 
-  a = _poly_csubq(a);
+/*
+_poly_tomsg_1: compresses a polynomial using 1 bit per coefficient and packs 
+                in byte array rp
 
-  px16 = hqx16_m1;
-  hq = px16[u256 0];
+requires: input coefficients to be in the range [0..2q)
+      rp to point to 32 byte valid region
 
-  px16 = hhqx16;
-  hhq = px16[u256 0];
 
-  for i=0 to MLKEM_N/32
-  {
-    f0 = a[u256 2*i];
-    f1 = a[u256 2*i + 1];
-    f0 = #VPSUB_16u16(hq, f0);
-    f1 = #VPSUB_16u16(hq, f1);
-    g0 = #VPSRA_16u16(f0, 15);
-    g1 = #VPSRA_16u16(f1, 15);
-    f0 = #VPXOR_256(f0, g0);
-    f1 = #VPXOR_256(f1, g1);
-    f0 = #VPSUB_16u16(f0, hhq);
-    f1 = #VPSUB_16u16(f1, hhq);
-    f0 = #VPACKSS_16u16(f0, f1);
-    f0 = #VPERMQ(f0, 0xD8);
-    c = #VPMOVMSKB_u256u32(f0);
-    (u32)[rp+4*i] = c;
-  }
-  return a;
-}
+ensures:
+    32 bytes in rp are the compressed polynomial
+    
+    it also returns the input polynomial reduced to the range [0..q)
+
+*/
 
 fn _poly_tomsg_1(reg ptr u8[MLKEM_INDCPA_MSGBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES], reg ptr u16[MLKEM_N]
 {
