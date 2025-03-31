@@ -88,7 +88,7 @@ qed.
 
 (* ----- *)
 
-from JazzEC require import Array2048 Array256 Array64 Array56 Array40 Array32 Array16.
+from JazzEC require import Array2048 Array256 Array64 Array56 Array48 Array40 Array32 Array24 Array16.
 
 (* -------------------------------------------------------------------- *)
 abbrev "_.[_]" ['a] = nth<:'a> witness.
@@ -146,6 +146,16 @@ bind op [W8.t & W256.t & Array56.t] sliceget_8_256_56 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_256_56P.
 
 (* -------------------------------------------------------------------- *)
+clone export SliceGet as SliceGet_8_12_48
+  with op isize <- 8, op osize <- 12, op asize <- 48,
+  theory IW <- W8, theory OW <- W12, theory A <- Array48
+  rename "XX" as "8_12_48"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+bind op [W8.t & W12.t & Array48.t] sliceget_8_12_48 "asliceget".
+realize bvaslicegetP by apply/sliceget_8_12_48P.
+
+(* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_12_32
   with op isize <- 8, op osize <- 12, op asize <- 32,
   theory IW <- W8, theory OW <- W12, theory A <- Array32
@@ -154,6 +164,16 @@ clone export SliceGet as SliceGet_8_12_32
 
 bind op [W8.t & W12.t & Array32.t] sliceget_8_12_32 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_12_32P.
+
+(* -------------------------------------------------------------------- *)
+clone export SliceGet as SliceGet_8_12_24
+  with op isize <- 8, op osize <- 12, op asize <- 24,
+  theory IW <- W8, theory OW <- W12, theory A <- Array24
+  rename "XX" as "8_12_24"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.
+
+bind op [W8.t & W12.t & Array24.t] sliceget_8_12_24 "asliceget".
+realize bvaslicegetP by apply/sliceget_8_12_24P.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_12_56

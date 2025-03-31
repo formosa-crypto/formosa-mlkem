@@ -4,7 +4,7 @@ from CryptoSpecs require import Bindings.
 (* ----- *) require import Genbindings Mlkem_filters_bindings.
 (* ----- *) (* - *) import W8 W12 W512 BitEncoding BS2Int BitChunking.
 
-from JazzEC require import Array2048 Array256 Array64 Array56 Array40 Array32 Array16.
+from JazzEC require import Array2048 Array256 Array64 Array56 Array48 Array40 Array32 Array24 Array16.
 
 (* -------------------------------------------------------------------- *)
 abbrev filter_permq = W8.of_int (
@@ -748,7 +748,7 @@ lemma filter24P _buf : hoare[Filters.filter24 : buf = _buf ==>
   let ws =
     pmap
       (fun i =>
-        let w = sliceget_8_12_32 _buf (12 * i) in
+        let w = sliceget_8_12_24 (Array24.init(fun i => _buf.[i])) (12 * i) in
         if w \ult (W12.of_int 3329) then Some w else None)
       (iota_ 0 16) in
 
@@ -762,16 +762,16 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 (* First part: extracting all the 12-bit words from the input buffer    *)
 seq ^g0<-{2} & -1 : (#pre /\ forall i, 0 <= i < 16 =>
   extract_256_16 f0 (16 * i)
-    = zextend_12_16 (sliceget_8_12_32 buf (12 * i))
+    = zextend_12_16 (sliceget_8_12_24 (Array24.init (fun i => buf.[i])) (12 * i))
 ).
-- bdep 12 16 [_buf] [buf] [f0] zextend_12_16 predT_W12.
+- bdep 12 16 [_buf[Array24.t:0]] [buf[Array24.t:0]]  [f0] zextend_12_16 predT_W12.
   - by move=> |>; apply/all_predT.
   move=> |> _f0 eq i ge0_i lt32_i.
   apply/W16.ext_eq => j rg_j; rewrite extract_256_16E ~-1://.
   move/(congr1 (fun xs => nth witness xs i)): eq => /=.
   rewrite flatten1 -map_comp (nth_map witness) /(\o) /=.
   - by rewrite size_chunk 1:// size_flatten_W8_w2bits size_to_list /#.
-  rewrite -sliceget_8_12_32_chunkE ~-1:/# => ->.
+  rewrite -sliceget_8_12_24_chunkE ~-1:/# => ->.
   rewrite (nth_map witness) /=.
   - rewrite size_chunk 1:// flatten1.
     by rewrite size_w2bits /#.
@@ -867,7 +867,7 @@ cfold ^f0<-; wp -2.
 pose ws (b : int) (m : int) :=
   pmap
     (fun i =>
-       let w = sliceget_8_12_32 _buf (12 * i) in
+       let w = sliceget_8_12_24 (Array24.init (fun i => _buf.[i])) (12 * i) in
        if w \ult (W12.of_int 3329) then Some w else None)
     (iota_ b m).
 
@@ -939,7 +939,7 @@ seq 0 : ((forall i, 0 <= i < 2 =>
   w' good f0 i = map zextend_12_16 (ws (8 * i) 8)
 ) /\ #pre); first skip=> |> &hr hext hgood 2? i ge0_i lti.
 - have hext': forall j, 0 <= j < 16 =>
-    zextend_12_16 (sliceget_8_12_32 _buf (12 * j))
+    zextend_12_16 (sliceget_8_12_24 (Array24.init (fun i => _buf.[i])) (12 * j))
     = extract_256_16 [f0{hr}].[j %/ 16] (16 * (j - 16 * (j %/ 16))).
   - move=> j rgj; rewrite -hext 1:/#; apply/ W16.ext_eq=> l rgl.
     by rewrite extract_256_16E 1:// extract_256_16E 1:// /#.
@@ -1022,11 +1022,13 @@ wp; skip => |> &hr szpop hw' 4? sz1 sz2 Q16; split.
 qed.
 
 (* -------------------------------------------------------------------- *)
+
+(* -------------------------------------------------------------------- *)
 lemma filter48P _buf : hoare[Filters.filter48 : buf = _buf ==>
   let ws =
     pmap
       (fun i =>
-        let w = sliceget_8_12_56 _buf (12 * i) in
+        let w = sliceget_8_12_48 (Array48.init (fun i => _buf.[i])) (12 * i) in
         if w \ult (W12.of_int 3329) then Some w else None)
       (iota_ 0 32) in
 
@@ -1040,16 +1042,16 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 (* First part: extracting all the 12-bit words from the input buffer    *)
 seq ^g0<-{2} & -1 : (#pre /\ forall i, 0 <= i < 32 =>
   extract_512_16 (concat_2u256 f0 f1) (16 * i)
-    = zextend_12_16 (sliceget_8_12_56 buf (12 * i))
-).
-- bdep 12 16 [_buf] [buf] [f0; f1] zextend_12_16 predT_W12.
+    = zextend_12_16 (sliceget_8_12_48 (Array48.init (fun i => buf.[i])) (12 * i))
+  ).
+- bdep 12 16 [_buf[Array48.t:0]] [buf[Array48.t:0]] [f0; f1] zextend_12_16 predT_W12. 
   - by move=> |>; apply/all_predT.
   move=> |> _f0 _f1 eq i ge0_i lt32_i.
   apply/W16.ext_eq => j rg_j; rewrite extract_512_16E ~-1://.
   move/(congr1 (fun xs => nth witness xs i)): eq => /=.
   rewrite flatten1 -map_comp (nth_map witness) /(\o) /=.
   - by rewrite size_chunk 1:// size_flatten_W8_w2bits size_to_list /#.
-  rewrite -sliceget_8_12_56_chunkE ~-1:/# => ->.
+  rewrite -sliceget_8_12_48_chunkE ~-1:/# => ->.
   rewrite (nth_map witness) /=.
   - rewrite size_chunk 1:// flatten_cons flatten1.
     by rewrite size_cat !size_w2bits /#.
@@ -1060,7 +1062,7 @@ seq ^g0<-{2} & -1 : (#pre /\ forall i, 0 <= i < 32 =>
 seq ^good<- : (#pre /\ forall i, 0 <= i < 32 =>
   good.[perm i] <=> extract_512_16 (concat_2u256 f0 f1) (16 * i) \slt W16.of_int 3329
 ).
-- exists* f0, f1; elim* => _f0 _f1.
+    - exists* f0, f1; elim* => _f0 _f1.
   bdep 16 1 [_f0; _f1] [f0; f1] [good] ltq predT_W16 perm.
   - by move=> |> *; apply/all_predT.
   move=> |> &hr _g eq i ge0_i lt32_i; apply/iffE/eq_iff.
@@ -1179,7 +1181,7 @@ cfold ^f0<-; cfold ^f1<-; wp -2.
 pose ws (b : int) (m : int) :=
   pmap
     (fun i =>
-       let w = sliceget_8_12_56 _buf (12 * i) in
+       let w = sliceget_8_12_48 (Array48.init (fun i => _buf.[i])) (12 * i) in
        if w \ult (W12.of_int 3329) then Some w else None)
     (iota_ b m).
 
@@ -1251,7 +1253,7 @@ seq 0 : ((forall i, 0 <= i < 4 =>
   w' good f0 f1 i = map zextend_12_16 (ws (8 * i) 8)
 ) /\ #pre); first skip=> |> &hr hext hgood 4? i ge0_i lti.
 - have hext': forall j, 0 <= j < 32 =>
-    zextend_12_16 (sliceget_8_12_56 _buf (12 * j))
+    zextend_12_16 (sliceget_8_12_48 (Array48.init (fun i => _buf.[i])) (12 * j))
     = extract_256_16 [f0{hr}; f1{hr}].[j %/ 16] (16 * (j - 16 * (j %/ 16))).
   - move=> j rgj; rewrite -hext 1:/#; apply/ W16.ext_eq=> l rgl.
     rewrite extract_256_16E 1:// extract_512_16E 1:// initE.
@@ -1379,5 +1381,6 @@ wp; skip => |> &hr szpop hw' 6? sz1 sz2 sz3 sz4 Q32; split.
   rewrite (ws_cat 8 8) ~-1:// size_cat.
   by ring.
 qed.
+
 
 end section.

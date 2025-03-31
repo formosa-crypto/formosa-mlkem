@@ -148,7 +148,7 @@ abstract theory SliceGet.
   proof. by move=> rgj; rewrite initE rgj. qed.
 
   lemma sliceget_XX_chunkE x0 (a : IW.t A.t) (i : int) :
-   0 <= i => osize * (i + 1) < asize * isize => sliceget_XX a (osize * i) =
+   0 <= i => osize * (i + 1) <= asize * isize => sliceget_XX a (osize * i) =
      OW.bits2w (nth x0 (chunk osize (flatten (map IW.w2bits (A.to_list a)))) i).
   proof.
   move=> ge0_i lt; apply/OW.ext_eq => j rgj; rewrite sliceget_XXE 1:/#.
