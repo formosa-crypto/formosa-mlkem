@@ -1134,7 +1134,7 @@ while (0<=i<=3 /\ rho = _sd /\
    rewrite /subarray256 /subarray768  tP => *.
    by rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# initiE 1:/# /= ifF /#. 
 
-wp 13.
+wp 14.
 conseq (_:  (forall kk, 0 <= kk < 3 =>  subarray768 matrix kk = (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))).
 move =>/> m0 H; split;1:smt().
 case b => hb.
@@ -1155,12 +1155,14 @@ case (768 <= k && k < 1536).
 + by move =>? kbb;rewrite -H0 1:/# /subarray768 initiE 1:/# /=.  
 by move =>? kbb;rewrite -H0 1:/# /subarray768 initiE 1:/# /=.
 
-unroll for 7.
+unroll for ^while.
 wp;call (sample_last _sd). 
 wp;call (sample_four _sd 4 b _).
 wp;call (sample_four _sd 0 b _).
 
-auto => /> &hr a -> a0 -> a1 -> row ??.
+auto => &hr [] -> ->.
+have -> : W64.of_int (b2i b) `&` W64.one = W64.of_int (b2i b) by case: b.
+move => /> a -> a0 -> a1 -> row ??.
 congr; rewrite tP => kk ?.
 pose xx := (unlift_matrix (if b then trmx (sampleA _sd) else sampleA _sd)).[kk].
 rewrite initiE 1:/# /=.

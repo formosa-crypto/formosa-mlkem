@@ -9189,6 +9189,7 @@ module M = {
     buf_s <- witness;
     pol <- witness;
     polx4 <- witness;
+    transposed <- (transposed `&` (W64.of_int 1));
     (* Erased call to spill *)
     buf <- buf_s;
     i <- 0;

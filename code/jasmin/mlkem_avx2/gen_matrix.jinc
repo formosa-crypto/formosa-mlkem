@@ -467,6 +467,9 @@ export fn _gen_matrix_avx2
   reg u64 pos_entry;
   reg u16 rc;
 
+  // Enforce small range
+  transposed &= 1;
+
   () = #spill(transposed);
 
   buf = buf_s;
