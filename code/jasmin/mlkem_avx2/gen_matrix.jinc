@@ -452,7 +452,7 @@ inline fn __gen_matrix_sample_one_polynomial
   return pol, buf;      
 }
 
-export fn _gen_matrix_avx2
+fn _gen_matrix_avx2
 ( reg mut ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix
 , reg const ptr u8[32] rho
 , #spill_to_mmx reg u64 transposed
