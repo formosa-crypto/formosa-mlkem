@@ -1,12 +1,41 @@
 { pkgs ?
     import (fetchTarball {
-      url = https://github.com/NixOS/nixpkgs/archive/53fbe41cf76b6a685004194e38e889bc8857e8c2.tar.gz;
-      sha256 = "sha256:1fyc4kbhv7rrfzya74yprvd70prlcsv56b7n0fv47kn7rznvvr2b";
+      url = https://github.com/NixOS/nixpkgs/archive/bfa9810ff7104a17555ab68ebdeafb6705f129b1.tar.gz;
+      sha256 = "sha256:1p528ci8309zhyvzli0p7hfkxypjyqi96fqpgm61n32s62c64a23";
     }) {}
 , full ? true
 }:
 
 with pkgs;
+
+let jasmin =
+  jasmin-compiler.overrideAttrs (o: {
+    src = fetchFromGitLab {
+      owner = "jasmin-lang";
+      repo = "jasmin-compiler";
+      rev = "e1986c87bc53757904bb51c98582887243ff3914";
+      hash = "sha256-6/zRkWnkb08GmgNgXwcXXlRJLpQVPr9Du6tEyydhtXw=";
+    };
+  })
+; in
+
+let crypto-specs =
+  fetchFromGitHub {
+    owner = "formosa-crypto";
+    repo = "crypto-specs";
+    rev = "4213b76ad359df7df1c44e084395172239a242b0";
+    hash = "sha256-b8ZPZ2CcXT7b36DyGjBzZ3RZZ2sWl9m3F0oeh/KSkdA=";
+  }
+; in
+
+let formosa-keccak =
+  fetchFromGitHub {
+    owner = "formosa-crypto";
+    repo = "formosa-keccak";
+    rev = "a5b53270b7976d340a5c6baf0db9246f8c35279b";
+    hash = "sha256-spMou9uAeaegMzjSB5843BkvzO/8hyTRqqNzN42yd7E=";
+  }
+; in
 
 let
   oc = ocaml-ng.ocamlPackages_4_14;
@@ -15,17 +44,22 @@ let
     ideSupport = false;
     coqPackages = { coq = null; flocq = null; };
   };
-  ecVersion = "a8274feb63b62d281db350cd6dd8940c69aca835";
-  ec = (easycrypt.overrideAttrs (_: {
+  bitwuzla = callPackage ./config/bitwuzla.nix { inherit (oc) buildDunePackage zarith; };
+  ecVersion = "c9717f9146429bea92647fdc49d575fc44f2b11d";
+  ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "EasyCrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-Rbs3alnnnDPbKrAqPq1pj/kedHWC+PvPFES4d+V8EAk=";
+      hash = "sha256-CISmx3IrJH872rEd587JOTH5qPgyJyZP583e80vHMwI=";
     };
     postPatch = ''
-      substituteInPlace dune-project --replace '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
+      substituteInPlace dune-project \
+        --replace-warn '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
     '';
+    buildInputs = o.buildInputs ++ (with oc; [
+      bitwuzla hex iter progress ppx_deriving_yojson
+    ]);
   })).override {
     ocamlPackages = oc;
     why3 = why;
@@ -33,8 +67,13 @@ let
   altergo = callPackage ./config/alt-ergo.nix { ocamlPackages = oc; } ;
 in
 
+let mkECvar = lib.strings.concatMapStringsSep ";" ({key, val}: "${key}:${val}"); in
+
 mkShell ({
-  JASMINC = "${jasmin-compiler.bin}/bin/jasminc";
+  JASMINC = "${jasmin.bin}/bin/jasminc";
+  JASMINCT = "${jasmin.bin}/bin/jasmin-ct";
+  JASMIN2EC = "${jasmin.bin}/bin/jasmin2ec";
+  JASMINPATH="Keccak=${formosa-keccak}/src/amd64";
 } // lib.optionalAttrs full {
   packages = [
     ec
@@ -43,5 +82,16 @@ mkShell ({
     z3
   ];
 
-  EC_RDIRS = "Jasmin:${jasmin-compiler.lib}/lib/jasmin/easycrypt";
+  EC_RDIRS = mkECvar [
+    { key = "Jasmin"; val = "${jasmin.lib}/lib/jasmin/easycrypt"; }
+    { key = "CryptoSpecs"; val = "${crypto-specs}/fips202"; }
+    { key = "CryptoSpecs"; val = "${crypto-specs}/ml-kem"; }
+  ];
+  EC_IDIRS = mkECvar [
+    { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/ref"; }
+    { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/avx2"; }
+    { key = "JazzEC"; val = "${formosa-keccak}/proof/amd64/extracted"; }
+    { key = "JazzEC"; val = "${crypto-specs}/arrays"; }
+    { key = "CryptoSpecs"; val = "${crypto-specs}/common"; }
+  ];
 })
