@@ -1,6 +1,8 @@
 from Keccak require "avx2/keccak1600_imem_avx2.jinc"
 from Keccak require "avx2/keccak1600_imem_avx2x4.jinc"
 
+/* instantiate the Keccak code with variants for reading/writing
+   from/to stack arrays with different sizes */
 namespace A1 {
   param int ASIZE = 1;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
@@ -58,6 +60,8 @@ fn _sha3_256A_A32
 }
 */
 
+/* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte 
+   memory region */
 fn _sha3_256A_M1184
 ( #spill_to_mmx reg mut ptr u8[32] out
 , #spill_to_mmx reg u64 in
@@ -71,6 +75,8 @@ fn _sha3_256A_M1184
   return out;
 }
 
+/* SHA3-512 writing to a 64-byte stack array (512A) and reading from 33 byte 
+   stack array */
 fn _sha3_512A_A33
 ( #spill_to_mmx reg mut ptr u8[64] out
 , reg const ptr u8[33] in
@@ -85,6 +91,8 @@ fn _sha3_512A_A33
   return out;
 }
 
+/* SHA3-512 writing to a 64-byte stack array (512A) and reading from 64 byte 
+   stack array */
 fn _sha3_512A_A64
 ( reg mut ptr u8[64] out
 , reg const ptr u8[64] in
@@ -99,6 +107,8 @@ fn _sha3_512A_A64
   return out;
 }
 
+/* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte 
+   stack array first, and then from a 1088 byte memory region */
 fn _shake256_M32__M32_M1088
 ( reg u64 out
 , reg u64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
@@ -113,6 +123,8 @@ fn _shake256_M32__M32_M1088
   _, _ = __squeeze_imem_avx2(out, 32, st, R136);
 }
 
+/* SHAKE-256 writing to a 128-byte stack array (A128) and reading from 32 byte 
+   stack array first, and then from a 1 byte stack array next */
 fn _shake256_A128__A32_A1
 ( reg mut ptr u8[128] out
 , reg const ptr u8[32] seed
@@ -134,6 +146,8 @@ fn _shake256_A128__A32_A1
   return out;
 }
 
+/* 4-way parallel SHAKE-256 writing to 128-byte stack arrays (A128) and reading from 32 byte 
+   stack array first (same input on all lanes), and then from 1 byte stack arrays next */
 fn _shake256x4_A128__A32_A1
 ( reg mut ptr u8[128] out0 out1 out2 out3
 , reg const ptr u8[32] seed
@@ -159,6 +173,8 @@ fn _shake256x4_A128__A32_A1
   return out0, out1, out2, out3;
 }
 
+/* SHAKE-128 absorb reading from a 32-byte stack array (A32) first and from 2 byte 
+   stack array next */
 fn _shake128_absorb_A32_A2
 ( reg const ptr u8[32] seed
 , reg const ptr u8[2] pos
@@ -177,6 +193,8 @@ fn _shake128_absorb_A32_A2
   return st;
 }
 
+/* 4-way SHAKE-128 absorb reading from a 32-byte stack array (A32) first (same on all
+   lanes) and from 2 byte stack arrays next */
 fn _shake128x4_absorb_A32_A2
 ( reg mut ptr u256[25] st
 , reg const ptr u8[32] seed
@@ -193,6 +211,8 @@ fn _shake128x4_absorb_A32_A2
   return st;
 }
 
+/* SHAKE-128 squeeze the next 504 bytes and keep the full state
+   at the end so it can be resumed */
 fn _shake128_squeeze3blocks
 ( reg mut ptr u8[ABUFLEN::ASIZE] buf
 , reg u256[7] st 
@@ -209,6 +229,8 @@ fn _shake128_squeeze3blocks
  return buf;
 }
 
+/* SHAKE-128 squeeze the next 168 bytes and keep the full state
+   at the end so it can be resumed */
 fn _shake128_next_state
 ( reg mut ptr u8[ABUFLEN::ASIZE] buf
 ) -> reg ptr u8[ABUFLEN::ASIZE] /* buf */
@@ -224,6 +246,8 @@ fn _shake128_next_state
  return buf;
 }
 
+/* 4-way parallel SHAKE-128 squeeze the next 504 bytes and keep the full states
+   at the end so they can be resumed */
 fn _shake128x4_squeeze3blocks
 ( reg mut ptr u256[25] st
 , reg mut ptr u8[4*ABUFLEN::ASIZE] buf
