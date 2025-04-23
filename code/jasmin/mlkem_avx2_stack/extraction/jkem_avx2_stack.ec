@@ -6,13 +6,13 @@ import SLH64.
 
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
-Array32 Array33 Array64 Array128 Array136 Array144 Array148 Array256 Array300
-Array384 Array400 Array536 Array768 Array960 Array1024 Array1088 Array1120
-Array1152 Array1184 Array2048 Array2144 Array2304 Array2400 WArray1 WArray2
-WArray4 WArray8 WArray16 WArray32 WArray33 WArray64 WArray128 WArray160
-WArray192 WArray200 WArray224 WArray256 WArray384 WArray512 WArray536
-WArray800 WArray960 WArray1088 WArray1120 WArray1152 WArray1184 WArray1536
-WArray2048 WArray2144 WArray2400 WArray4608.
+Array32 Array33 Array64 Array128 Array136 Array144 Array148 Array224 Array256
+Array300 Array384 Array400 Array536 Array768 Array800 Array960 Array1024
+Array1088 Array1120 Array1152 Array1184 Array2048 Array2144 Array2304
+Array2400 WArray1 WArray2 WArray4 WArray8 WArray16 WArray32 WArray33 WArray64
+WArray128 WArray160 WArray192 WArray200 WArray224 WArray256 WArray384
+WArray512 WArray536 WArray800 WArray960 WArray1088 WArray1120 WArray1152
+WArray1184 WArray1536 WArray2048 WArray2144 WArray2400 WArray4608.
 
 abbrev sample_shuffle_table =
 ((Array2048.of_list witness)
@@ -6266,31 +6266,43 @@ module M = {
     return (buf0, buf1, buf2, buf3, offset);
   }
   proc _sha3_512A_A33 (out:W8.t Array64.t, in_0:W8.t Array33.t) : W8.t Array64.t = {
+    var aux_0:W256.t Array7.t;
+    var aux:W8.t Array64.t;
     var st:W256.t Array7.t;
     var offset:W64.t;
     var  _0:W64.t;
-    var  _1:W256.t Array7.t;
+    var  _1:W8.t Array224.t;
      _1 <- witness;
     st <- witness;
     st <@ __state_init_avx2 ();
     offset <- (W64.of_int 0);
     (st,  _0) <@ a33____absorb_array_avx2 (st, in_0, offset, 33, 72, 6);
     offset <- (W64.of_int 0);
-    (out,  _1) <@ a64____squeeze_array_avx2 (out, offset, 64, st, 72);
+    (aux, aux_0) <@ a64____squeeze_array_avx2 (out, offset, 64, st, 72);
+    out <- aux;
+     _1 <-
+    (Array224.init
+    (fun i => (get8 (WArray224.init256 (fun i => aux_0.[i])) i)));
     return out;
   }
   proc _sha3_512A_A64 (out:W8.t Array64.t, in_0:W8.t Array64.t) : W8.t Array64.t = {
+    var aux_0:W256.t Array7.t;
+    var aux:W8.t Array64.t;
     var st:W256.t Array7.t;
     var offset:W64.t;
     var  _0:W64.t;
-    var  _1:W256.t Array7.t;
+    var  _1:W8.t Array224.t;
      _1 <- witness;
     st <- witness;
     st <@ __state_init_avx2 ();
     offset <- (W64.of_int 0);
     (st,  _0) <@ a64____absorb_array_avx2 (st, in_0, offset, 64, 72, 6);
     offset <- (W64.of_int 0);
-    (out,  _1) <@ a64____squeeze_array_avx2 (out, offset, 64, st, 72);
+    (aux, aux_0) <@ a64____squeeze_array_avx2 (out, offset, 64, st, 72);
+    out <- aux;
+     _1 <-
+    (Array224.init
+    (fun i => (get8 (WArray224.init256 (fun i => aux_0.[i])) i)));
     return out;
   }
   proc _shake256x4_A128__A32_A1 (out0:W8.t Array128.t, out1:W8.t Array128.t,
@@ -7971,25 +7983,33 @@ module M = {
   }
   proc _sha3_256A_A1184 (out:W8.t Array32.t, in_0:W8.t Array1184.t) : 
   W8.t Array32.t = {
+    var aux_0:W256.t Array7.t;
+    var aux:W8.t Array32.t;
     var st:W256.t Array7.t;
     var offset:W64.t;
     var  _0:W64.t;
-    var  _1:W256.t Array7.t;
+    var  _1:W8.t Array224.t;
      _1 <- witness;
     st <- witness;
     st <@ __state_init_avx2 ();
     (st,  _0) <@ a1184____absorb_array_avx2 (st, in_0, (W64.of_int 0), 1184,
     136, 6);
     offset <- (W64.of_int 0);
-    (out,  _1) <@ a32____squeeze_array_avx2 (out, offset, 32, st, 136);
+    (aux, aux_0) <@ a32____squeeze_array_avx2 (out, offset, 32, st, 136);
+    out <- aux;
+     _1 <-
+    (Array224.init
+    (fun i => (get8 (WArray224.init256 (fun i => aux_0.[i])) i)));
     return out;
   }
   proc _shake256_A32__A1120 (out:W8.t Array32.t, in_0:W8.t Array1120.t) : 
   W8.t Array32.t = {
+    var aux_0:W256.t Array7.t;
+    var aux:W8.t Array32.t;
     var st:W256.t Array7.t;
     var offset:W64.t;
     var  _0:W64.t;
-    var  _1:W256.t Array7.t;
+    var  _1:W8.t Array224.t;
      _1 <- witness;
     st <- witness;
     st <@ __state_init_avx2 ();
@@ -7997,7 +8017,11 @@ module M = {
     (st,  _0) <@ a1120____absorb_array_avx2 (st, in_0, offset, 1120, 136,
     31);
     offset <- (W64.of_int 0);
-    (out,  _1) <@ a32____squeeze_array_avx2 (out, offset, 32, st, 136);
+    (aux, aux_0) <@ a32____squeeze_array_avx2 (out, offset, 32, st, 136);
+    out <- aux;
+     _1 <-
+    (Array224.init
+    (fun i => (get8 (WArray224.init256 (fun i => aux_0.[i])) i)));
     return out;
   }
   proc _i_poly_compress (rp:W8.t Array128.t, a:W16.t Array256.t) : W8.t Array128.t *
@@ -9070,14 +9094,16 @@ module M = {
                                             rho:W8.t Array32.t,
                                             pos_entry:W64.t, transposed:W64.t) : 
   W16.t Array1024.t * W8.t Array2144.t = {
-    var aux_0:W16.t Array256.t;
+    var aux_2:W16.t Array256.t;
+    var aux_0:W256.t Array25.t;
     var aux:W64.t;
-    var aux_1:W8.t Array536.t;
+    var aux_1:W8.t Array2144.t;
+    var aux_3:W8.t Array536.t;
     var indexes:W8.t Array8.t;
     var state:W256.t Array25.t;
     var stx4:W256.t Array25.t;
     var pol:W16.t Array256.t;
-    var  _0:W256.t Array25.t;
+    var  _0:W8.t Array800.t;
      _0 <- witness;
     indexes <- witness;
     pol <- witness;
@@ -9090,14 +9116,18 @@ module M = {
     (WArray8.set64_direct (WArray8.init8 (fun i => indexes.[i])) 0 aux)));
     stx4 <- state;
     stx4 <@ _shake128x4_absorb_A32_A2 (stx4, rho, indexes);
-    ( _0, buf) <@ _shake128x4_squeeze3blocks (stx4, buf);
+    (aux_0, aux_1) <@ _shake128x4_squeeze3blocks (stx4, buf);
+     _0 <-
+    (Array800.init
+    (fun i => (get8 (WArray800.init256 (fun i => aux_0.[i])) i)));
+    buf <- aux_1;
     pol <- (Array256.init (fun i => polx4.[((0 * 256) + i)]));
-    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_2, aux_3) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 0) + i)])));
-    pol <- aux_0;
+    pol <- aux_2;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 0) <= i < ((536 * 0) + 536)) then aux_1.[(i -
+    (fun i => (if ((536 * 0) <= i < ((536 * 0) + 536)) then aux_3.[(i -
                                                                    (536 * 0))] else 
               buf.[i]))
     );
@@ -9108,12 +9138,12 @@ module M = {
               polx4.[i]))
     );
     pol <- (Array256.init (fun i => polx4.[((1 * 256) + i)]));
-    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_2, aux_3) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 1) + i)])));
-    pol <- aux_0;
+    pol <- aux_2;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 1) <= i < ((536 * 1) + 536)) then aux_1.[(i -
+    (fun i => (if ((536 * 1) <= i < ((536 * 1) + 536)) then aux_3.[(i -
                                                                    (536 * 1))] else 
               buf.[i]))
     );
@@ -9124,12 +9154,12 @@ module M = {
               polx4.[i]))
     );
     pol <- (Array256.init (fun i => polx4.[((2 * 256) + i)]));
-    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_2, aux_3) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 2) + i)])));
-    pol <- aux_0;
+    pol <- aux_2;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 2) <= i < ((536 * 2) + 536)) then aux_1.[(i -
+    (fun i => (if ((536 * 2) <= i < ((536 * 2) + 536)) then aux_3.[(i -
                                                                    (536 * 2))] else 
               buf.[i]))
     );
@@ -9140,12 +9170,12 @@ module M = {
               polx4.[i]))
     );
     pol <- (Array256.init (fun i => polx4.[((3 * 256) + i)]));
-    (aux_0, aux_1) <@ __gen_matrix_fill_polynomial (pol,
+    (aux_2, aux_3) <@ __gen_matrix_fill_polynomial (pol,
     (Array536.init (fun i => buf.[((536 * 3) + i)])));
-    pol <- aux_0;
+    pol <- aux_2;
     buf <-
     (Array2144.init
-    (fun i => (if ((536 * 3) <= i < ((536 * 3) + 536)) then aux_1.[(i -
+    (fun i => (if ((536 * 3) <= i < ((536 * 3) + 536)) then aux_3.[(i -
                                                                    (536 * 3))] else 
               buf.[i]))
     );

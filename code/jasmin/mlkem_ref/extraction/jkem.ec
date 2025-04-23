@@ -6,9 +6,9 @@ import SLH64.
 
 require import
 Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64 Array128
-Array168 Array256 Array768 Array960 Array1088 Array2304 WArray20 WArray32
-WArray33 WArray34 WArray40 WArray64 WArray128 WArray168 WArray192 WArray200
-WArray256 WArray512 WArray960 WArray1088 WArray1536 WArray4608.
+Array168 Array200 Array256 Array768 Array960 Array1088 Array2304 WArray20
+WArray32 WArray33 WArray34 WArray40 WArray64 WArray128 WArray168 WArray192
+WArray200 WArray256 WArray512 WArray960 WArray1088 WArray1536 WArray4608.
 
 abbrev jzetas_inv =
 ((Array128.of_list witness)
@@ -1688,13 +1688,16 @@ module M(SC:Syscall_t) = {
   }
   proc _shake256_128_33 (out:W8.t Array128.t, in_0:W8.t Array33.t) : 
   W8.t Array128.t = {
+    var aux_0:W64.t;
+    var aux_1:W64.t Array25.t;
+    var aux:W8.t Array128.t;
     var st_s:W64.t Array25.t;
     var st:W64.t Array25.t;
     var offset:W64.t;
     var  _0:int;
     var  _1:W64.t;
     var  _2:W64.t;
-    var  _3:W64.t Array25.t;
+    var  _3:W8.t Array200.t;
      _3 <- witness;
     st <- witness;
     st_s <- witness;
@@ -1706,10 +1709,18 @@ module M(SC:Syscall_t) = {
     31);
     offset <- (W64.of_int 0);
     (* Erased call to unspill *)
-    (out,  _2,  _3) <@ a128____squeeze_array_ref (out, offset, 128, st, 136);
+    (aux, aux_0, aux_1) <@ a128____squeeze_array_ref (out, offset, 128, 
+    st, 136);
+    out <- aux;
+     _2 <- aux_0;
+     _3 <-
+    (Array200.init
+    (fun i => (get8 (WArray200.init64 (fun i => aux_1.[i])) i)));
     return out;
   }
   proc _shake256_1120_32 (out:W64.t, in0:W64.t, in1:W64.t) : unit = {
+    var aux:W64.t;
+    var aux_0:W64.t Array25.t;
     var st_s:W64.t Array25.t;
     var st:W64.t Array25.t;
     var  _0:int;
@@ -1717,7 +1728,7 @@ module M(SC:Syscall_t) = {
     var  _2:int;
     var  _3:W64.t;
     var  _4:W64.t;
-    var  _5:W64.t Array25.t;
+    var  _5:W8.t Array200.t;
      _5 <- witness;
     st <- witness;
     st_s <- witness;
@@ -1727,17 +1738,24 @@ module M(SC:Syscall_t) = {
     (st,  _0,  _1) <@ __absorb_imem_ref (st, 0, in0, 32, 136, 0);
     (st,  _2,  _3) <@ __absorb_imem_ref (st, 32, in1, 1088, 136, 31);
     (* Erased call to unspill *)
-    ( _4,  _5) <@ __squeeze_imem_ref (out, 32, st, 136);
+    (aux, aux_0) <@ __squeeze_imem_ref (out, 32, st, 136);
+     _4 <- aux;
+     _5 <-
+    (Array200.init
+    (fun i => (get8 (WArray200.init64 (fun i => aux_0.[i])) i)));
     return ();
   }
   proc _sha3512_33 (out:W8.t Array64.t, in_0:W8.t Array33.t) : W8.t Array64.t = {
+    var aux_0:W64.t;
+    var aux_1:W64.t Array25.t;
+    var aux:W8.t Array64.t;
     var st_s:W64.t Array25.t;
     var st:W64.t Array25.t;
     var offset:W64.t;
     var  _0:int;
     var  _1:W64.t;
     var  _2:W64.t;
-    var  _3:W64.t Array25.t;
+    var  _3:W8.t Array200.t;
      _3 <- witness;
     st <- witness;
     st_s <- witness;
@@ -1749,7 +1767,13 @@ module M(SC:Syscall_t) = {
     6);
     offset <- (W64.of_int 0);
     (* Erased call to unspill *)
-    (out,  _2,  _3) <@ a64____squeeze_array_ref (out, offset, 64, st, 72);
+    (aux, aux_0, aux_1) <@ a64____squeeze_array_ref (out, offset, 64, 
+    st, 72);
+    out <- aux;
+     _2 <- aux_0;
+     _3 <-
+    (Array200.init
+    (fun i => (get8 (WArray200.init64 (fun i => aux_1.[i])) i)));
     return out;
   }
   proc _shake128_absorb34 (st:W64.t Array25.t, in_0:W8.t Array34.t) : 
@@ -1775,13 +1799,16 @@ module M(SC:Syscall_t) = {
     return (st, out);
   }
   proc _isha3_256_M1184 (out:W8.t Array32.t, in_0:W64.t) : W8.t Array32.t = {
+    var aux_0:W64.t;
+    var aux_1:W64.t Array25.t;
+    var aux:W8.t Array32.t;
     var st_s:W64.t Array25.t;
     var st:W64.t Array25.t;
     var offset:W64.t;
     var  _0:int;
     var  _1:W64.t;
     var  _2:W64.t;
-    var  _3:W64.t Array25.t;
+    var  _3:W8.t Array200.t;
      _3 <- witness;
     st <- witness;
     st_s <- witness;
@@ -1791,17 +1818,26 @@ module M(SC:Syscall_t) = {
     (st,  _0,  _1) <@ __absorb_imem_ref (st, 0, in_0, 1184, 136, 6);
     offset <- (W64.of_int 0);
     (* Erased call to unspill *)
-    (out,  _2,  _3) <@ a32____squeeze_array_ref (out, offset, 32, st, 136);
+    (aux, aux_0, aux_1) <@ a32____squeeze_array_ref (out, offset, 32, 
+    st, 136);
+    out <- aux;
+     _2 <- aux_0;
+     _3 <-
+    (Array200.init
+    (fun i => (get8 (WArray200.init64 (fun i => aux_1.[i])) i)));
     return out;
   }
   proc _sha3_512_64 (out:W8.t Array64.t, in_0:W8.t Array64.t) : W8.t Array64.t = {
+    var aux_0:W64.t;
+    var aux_1:W64.t Array25.t;
+    var aux:W8.t Array64.t;
     var st_s:W64.t Array25.t;
     var st:W64.t Array25.t;
     var offset:W64.t;
     var  _0:int;
     var  _1:W64.t;
     var  _2:W64.t;
-    var  _3:W64.t Array25.t;
+    var  _3:W8.t Array200.t;
      _3 <- witness;
     st <- witness;
     st_s <- witness;
@@ -1813,7 +1849,13 @@ module M(SC:Syscall_t) = {
     6);
     offset <- (W64.of_int 0);
     (* Erased call to unspill *)
-    (out,  _2,  _3) <@ a64____squeeze_array_ref (out, offset, 64, st, 72);
+    (aux, aux_0, aux_1) <@ a64____squeeze_array_ref (out, offset, 64, 
+    st, 72);
+    out <- aux;
+     _2 <- aux_0;
+     _3 <-
+    (Array200.init
+    (fun i => (get8 (WArray200.init64 (fun i => aux_1.[i])) i)));
     return out;
   }
   proc _poly_add2 (rp:W16.t Array256.t, bp:W16.t Array256.t) : W16.t Array256.t = {
