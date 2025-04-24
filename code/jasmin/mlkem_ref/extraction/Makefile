@@ -11,7 +11,7 @@ all: ec
 
 
 ec: 
-	$(JASMIN2EC) ../jkem.jazz --array-model=old -o jkem.ec \
+	$(JASMIN2EC) ../jkem.jazz --array-model=barray -o jkem.ec \
 	  -f jade_kem_mlkem_mlkem768_amd64_ref_keypair \
 	  -f jade_kem_mlkem_mlkem768_amd64_ref_enc \
 	  -f jade_kem_mlkem_mlkem768_amd64_ref_dec

@@ -1,7 +1,7 @@
 require import AllCore List IntDiv CoreMap IntDiv Real Number Ring StdOrder.
 
 from Jasmin require import JModel JMemory.
-from JazzEC require import Array32 Array320 Array256 Array128 Array384 Array1024.
+from JazzEC require import BArray32 BArray320 Array256 Array128 BArray512 BArray128 BArray384 BArray1024 BArray256.
 
 require import IntDiv_extra W16extra.
 
@@ -21,24 +21,28 @@ import SignedReductions.
 from JazzEC require import Jkem.
 
 (* jzetas values are correct *)
-
-
 lemma zetas_invE : array_mont_inv NTT_Fq.zetas_inv = 
-     Array128.map (fun x => incoeff (W16.to_sint x)) jzetas_inv.
+     Array128.init (fun i => incoeff (W16.to_sint (BArray256.get16 jzetas_inv i))).
 have := NTT_Fq.zetas_inv_vals.
-rewrite /array128_mont_inv  /array_mont_inv /= => ->.
-rewrite !of_sintK /smod /= /of_list.
-rewrite tP /= => i ib.
-by rewrite !Array128.initiE /= /#.
+rewrite /array128_mont_inv  /array_mont_inv /= => ->. 
+rewrite  /of_list tP /= => i ib.
+rewrite !Array128.initiE 1,2:/# /=. 
+rewrite get16_of_list16 1:/#.
+rewrite -(nth_map W16.zero 0 W16.to_sint i) 1:/= 1:/#. 
+rewrite -(nth_map 0 Zq.zero incoeff i) 1:/= 1:/#.
+rewrite /= !of_sintK /smod /= /#.
 qed.
 
 lemma zetas_montE : array_mont NTT_Fq.zetas = 
-     Array128.map (fun x => incoeff (W16.to_sint x)) jzetas.
+     Array128.init (fun i => incoeff (W16.to_sint (BArray256.get16 jzetas i))).
 have := NTT_Fq.zetas_vals.
 rewrite /array128_mont  /array_mont /= => ->.
-rewrite !of_sintK /smod /= /of_list.
-rewrite tP /= => i ib.
-by rewrite !Array128.initiE /= /#.
+rewrite  /of_list tP /= => i ib.
+rewrite !Array128.initiE 1,2:/# /=. 
+rewrite get16_of_list16 1:/#.
+rewrite -(nth_map W16.zero 0 W16.to_sint i) 1:/= 1:/#. 
+rewrite -(nth_map 0 Zq.zero incoeff i) 1:/= 1:/#.
+rewrite /= !of_sintK /smod /= /#.
 qed.
 
 lemma getsignNeg x : x \slt W16.zero => x `|>>` W8.of_int 15 = W16.onew.
@@ -72,16 +76,16 @@ while (ap = lift_array256 rp /\
           rewrite /pos_bound256_cxq /lift_array256 /(\ult) /= /#.
 
 auto => /> &hr;rewrite /pos_bound256_cxq /lift_array256 /(\ult) qE /=.
-move => rbpre rbdone ibl ibh entry; rewrite tP !mapE.
+move => rbpre rbdone ibl ibh entry; rewrite tP.
 do split. (* 5 goals *)
-+ move => ii iib; rewrite !initiE //=.
-  case(ii <> to_uint i{hr}); 
-     1:  by move => prior; rewrite !set_neqiE; smt(). 
-  move => current; rewrite set_eqiE /=; 1,2:smt(). 
-  case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
++ move => ii iib; rewrite !initiE //=. search get16d.
+  case(ii <> to_uint i{hr});1:
+     by  move => prior; rewrite BArray512.get_set16E_neq; smt(). 
+  move => current; rewrite BArray512.get_set16E_eq /=; 1,2,3:smt(). 
+  case(BArray512.get16d rp{hr} (2 * to_uint i{hr})  - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
-              rp{hr}.[to_uint i{hr}] by ring.
+    have -> : BArray512.get16d rp{hr} (2 * to_uint i{hr})  - W16.of_int 3329 + W16.of_int 3329 = 
+              BArray512.get16d rp{hr} (2 * to_uint i{hr})  by ring.
     by smt().
   move =>  H; rewrite (getsignPos _ _) /=; first by smt().
   by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
@@ -89,12 +93,12 @@ do split. (* 5 goals *)
 
 + move => ii iib /=.
   case(ii <> to_uint i{hr}); 
-     1:  by move => prior; rewrite !set_neqiE; smt(). 
-  move => current; rewrite set_eqiE /=; 1,2:smt(). 
-  case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
+     1:  by move => prior; rewrite !BArray512.get_set16E_neq; smt(). 
+  move => current; rewrite BArray512.get_set16E_eq /=; 1,2,3:smt(). 
+  case(BArray512.get16d rp{hr} (2 * to_uint i{hr}) - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
-            rp{hr}.[to_uint i{hr}] by ring.
+    have -> : BArray512.get16d rp{hr} (2 * to_uint i{hr}) - W16.of_int 3329 + W16.of_int 3329 = 
+            BArray512.get16d rp{hr} (2 * to_uint i{hr}) by ring.
     by smt().
   move =>  H; rewrite (getsignPos _ _) /=; first by smt().
   by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
@@ -102,12 +106,12 @@ do split. (* 5 goals *)
 
 + move => ii; rewrite /= to_uintD_small /=; 1: by smt(). 
   move => iib;case(ii <> to_uint i{hr}); 
-     1:  by move => prior; rewrite !set_neqiE; smt(). 
-  move => current; rewrite set_eqiE /=; 1,2:smt(). 
-  case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
+     1:  by move => prior; rewrite !BArray512.get_set16E_neq; smt(). 
+  move => current; rewrite BArray512.get_set16E_eq /=; 1,2,3:smt(). 
+  case(BArray512.get16d rp{hr} (2 * to_uint i{hr}) - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
-              rp{hr}.[to_uint i{hr}] by ring.
+    have -> : BArray512.get16d rp{hr} (2 * to_uint i{hr}) - W16.of_int 3329 + W16.of_int 3329 = 
+              BArray512.get16d rp{hr} (2 * to_uint i{hr}) by ring.
     move : H; rewrite sltE to_sintD_small /=; 
        1: by move :rbpre; rewrite /to_sint /smod /= to_uintN /= /#. 
     rewrite to_sintN /=; 1: by rewrite /to_sint /smod /=.
@@ -164,7 +168,7 @@ conseq (_: _ ==>
   0 <= i{2} + 1 <= 32 /\
   (forall (k : int),
     0 <= k < i{2} =>
-    rp{1}.[k] = ra{2}.[k]) /\ ={r}); 1: by smt(Array32.set_neqiE Array32.set_eqiE). 
+    rp{1}.[k] = ra{2}.[k]) /\ ={r}); 1: by smt(BArray32.set_neqiE BArray32.set_eqiE). 
 while(#{/~j{1}=0}{~r{2} = W8.zero}pre /\ 0 <= j{2} <=8 /\ to_uint r{2} < 2^j{2}); 
   last by  auto => /> *; smt(W8.to_uint0).
  
@@ -175,10 +179,10 @@ have jpow : 1<= 2^j{2} <=128.
   move => *; rewrite (_: 128 = 2^7) //.
   by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ j{2} 7) => // /#.
 
-pose x:=(compress 1 (incoeff (to_sint a{1}.[8 * i{2} + j{2}]))).
-have /= xrng := (compress_rng (incoeff (to_sint a{1}.[8 * i{2} + j{2}])) 1 _) => //.
+pose x:=(compress 1 (incoeff (to_sint (get16d a{1} (2 * (8 * i{2} + j{2})))))).
+have /= xrng := (compress_rng (incoeff (to_sint (get16d a{1} (2 * (8 * i{2} + j{2}))))) 1 _) => //.
 
-rewrite /lift_array256 !mapiE /=; 1,2:smt().
+rewrite /lift_array256 !mapiE /= 1:/# initiE /=; 1:smt().
 split; last by smt(modz_small W8.to_uint_cmp Ring.IntID.exprS).
 
 rewrite to_uint_eq of_uintK modz_small /=; 1: smt(W8.to_uint_cmp). 
@@ -190,7 +194,7 @@ rewrite W8.to_uint_orw_disjoint.
     by move : (StdOrder.IntOrder.ler_weexpn2l 2 _ (j{2}) k  _) => //; smt(W8.to_uint_cmp).
   
    
-  move => kbb;have -> : !(truncateu8 ((((zeroextu32 a{1}.[8 * i{2} + j{2}] `<<` W8.one) + 
+  move => kbb;have -> : !(truncateu8 ((((zeroextu32 (get16d a{1} (2 * (8 * i{2} + j{2}))) `<<` W8.one) + 
                          (of_int 1665)%W32) * (of_int 80635)%W32 `>>` (of_int 28)%W8) `&`
                             W32.one `<<` (of_int j{2})%W8)).[k].
   rewrite W8.get_to_uint kb /= to_uint_truncateu8  to_uint_shl /= 1:/#.
@@ -225,7 +229,7 @@ move => *; wp; while (0 <= j <= 8) (8-j); last by auto =>  /> /#.
 by move => *; auto => /> /#.
 qed.
 
-lemma poly_frommsg_corr (_m : W8.t Array32.t): 
+lemma poly_frommsg_corr (_m : BArray32.t): 
     equiv [Jkem.M(Jkem.Syscall)._i_poly_frommsg ~ EncDec.decode1 :
              ap{1} =  _m /\ a{2} = _m
               ==>
@@ -233,12 +237,12 @@ lemma poly_frommsg_corr (_m : W8.t Array32.t):
              pos_bound256_cxq res{1} 0 256 1 ].
 proc. 
 while(#pre /\ ={i} /\ 0 <= i{1} <= 32 /\ 
-   forall k, 0<=k<i{1}*8 => incoeff (to_sint rp{1}.[k]) = decompress 1 r{2}.[k] /\
-                0 <= to_sint rp{1}.[k] <q); last first.
+   forall k, 0<=k<i{1}*8 => incoeff (to_sint (get16 rp{1} k)) = decompress 1 r{2}.[k] /\
+                0 <= to_sint (get16 rp{1} k) <q); last first.
 + auto => /> &1; rewrite /lift_array256 /decompress_poly /pos_bound256_cxq /=.
   split; 1: by smt(). 
-  move => rp i ip exit _ ibl ibh k; split; 2: by smt().
-  by rewrite tP => x xb; rewrite !mapiE //= /#.
+  move => rp i ip exit _ ibl ibh k; split;  2: by smt().
+  rewrite tP => x xb; rewrite !mapiE //= initiE  /#.
 
 auto => /> &1 &2 => il ih [#] ??; split; 1: by smt().
 move => k kl kh.
@@ -248,7 +252,7 @@ have -> : zeroextu16 _m.[i{2}] `&` W16.one =
         congr; congr; rewrite /(`>>>`) /=; apply  W8.ext_eq => i ib; rewrite W8.initiE //.  
 
 split;last first.
-+ case(k < i{2} * 8); 1: by move => klow; do 8!(rewrite Array256.set_neqiE 1,2:/#); smt().
++ case(k < i{2} * 8); 1: by move => klow; do 8!(rewrite BArray256.set_neqiE 1,2:/#); smt().
   move => khigh.
   have ? : forall k, 0 <= k < 8 => 
      0 <= to_sint (zeroextu16 (_m.[i{2}] `>>>` k) `&` W16.one * W16.of_int 1665) < q; last first.
