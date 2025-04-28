@@ -1,3 +1,4 @@
+require "gen_matrix_globals.jinc"
 require "../../common/avx2/gen_matrix.jinc"
 
 export fn _gen_matrix_avx2

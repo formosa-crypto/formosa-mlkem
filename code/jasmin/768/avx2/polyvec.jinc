@@ -167,28 +167,3 @@ fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[M
 
   return rp;
 }
-
-/*
-__polyvec_pointwise_acc : computes the inner product of the two
- vectors of polynomials in ntt domain and with coefficients
- in avx2 order.
-
- requires: input coefficients in the range [-2q,2q)
-
- ensures: output coefficients in the range [-4q,4q]
-    and affected by spurious R^-1 mod q factor
-*/
-
-inline
-fn __polyvec_pointwise_acc(stack u16[MLKEM_N] r, stack u16[MLKEM_VECN] a b) -> stack u16[MLKEM_N]
-{
-  stack u16[MLKEM_N] t;
-
-  r = _poly_basemul(r, a[0:MLKEM_N], b[0:MLKEM_N]);
-  t = _poly_basemul(t, a[MLKEM_N:MLKEM_N], b[MLKEM_N:MLKEM_N]);
-  r = _poly_add2(r, t);
-  t = _poly_basemul(t, a[2*MLKEM_N:MLKEM_N], b[2*MLKEM_N:MLKEM_N]);
-  r = _poly_add2(r, t);
-
-  return r;
-}

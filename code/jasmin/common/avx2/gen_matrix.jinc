@@ -1,9 +1,5 @@
 require "mlkem_keccak_avx2.jinc"
 
-
-require "params.jinc"
-require "gen_matrix_globals.jinc"
-
 // a < b && c < d
 inline fn comp_u64_l_int_and_u64_l_int(
   reg u64 a,

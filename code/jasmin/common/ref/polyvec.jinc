@@ -79,3 +79,22 @@ fn __polyvec_tobytes(reg u64 rp, stack u16[MLKEM_VECN] a)
   pp += MLKEM_POLYBYTES;
   a[2*MLKEM_N:MLKEM_N] = _poly_tobytes(pp, a[2*MLKEM_N:MLKEM_N]);
 }
+
+
+inline
+fn __polyvec_pointwise_acc(stack u16[MLKEM_VECN] a, stack u16[MLKEM_VECN] b) -> stack u16[MLKEM_N]
+{
+  stack u16[MLKEM_N] t;
+  stack u16[MLKEM_N] r;
+
+  r = _poly_basemul(r, a[0:MLKEM_N], b[0:MLKEM_N]);
+  t = _poly_basemul(t, a[MLKEM_N:MLKEM_N], b[MLKEM_N:MLKEM_N]);
+  r = _poly_add2(r, t);
+  t = _poly_basemul(t, a[2*MLKEM_N:MLKEM_N], b[2*MLKEM_N:MLKEM_N]);
+  r = _poly_add2(r, t);
+
+  r = __poly_reduce(r);
+
+  return r;
+}
+
