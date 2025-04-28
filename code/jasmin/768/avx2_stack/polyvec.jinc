@@ -1,5 +1,14 @@
 require "poly.jinc"
+require "../avx2/polyvec.jinc"
 require "../../common/avx2_stack/polyvec.jinc"
+
+u32 pvd_q_s = 0x0d013404;
+u8[32] pvd_shufbdidx_s = {0, 1, 1, 2, 2, 3, 3, 4,
+                     5, 6, 6, 7, 7, 8, 8, 9,
+                     2, 3, 3, 4, 4, 5, 5, 6,
+                     7, 8, 8, 9, 9, 10, 10, 11};
+u64 pvd_sllvdidx_s = 0x04;
+u32 pvd_mask_s = 0x7fe01ff8;
 
 inline
 fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLKEM_VECN]
@@ -30,6 +39,14 @@ fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLK
 
   return r;
 }
+
+u16 pvc_off_s = 0x0f;
+u16 pvc_shift1_s = 0x1000;
+u16 pvc_mask_s = 0x03ff;
+u64 pvc_shift2_s = 0x0400000104000001;
+u64 pvc_sllvdidx_s = 0x0C;
+u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 8, 9, 10, 11, 12, -1, -1, -1, -1, -1, -1,
+                         9, 10, 11, 12, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 8};
 
 inline
 fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
@@ -77,31 +94,3 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[M
 
   return rp;
 }
-
-
-inline
-fn __i_polyvec_frombytes(reg ptr u8[MLKEM_POLYVECBYTES] ap) -> stack u16[MLKEM_VECN]
-{
-  stack u16[MLKEM_VECN] r;
-  stack u8[MLKEM_POLYVECBYTES] a;
-  a = #copy(ap);
-
-  r[0:MLKEM_N] = _i_poly_frombytes(r[0:MLKEM_N], a[0:MLKEM_POLYBYTES]);
-
-  r[MLKEM_N:MLKEM_N] = _i_poly_frombytes(r[MLKEM_N:MLKEM_N], a[MLKEM_POLYBYTES:MLKEM_POLYBYTES]);
-
-  r[2*MLKEM_N:MLKEM_N] = _i_poly_frombytes(r[2*MLKEM_N:MLKEM_N], a[2*MLKEM_POLYBYTES:MLKEM_POLYBYTES]);
-
-  return r;
-}
-
-inline
-fn __i_polyvec_tobytes(reg ptr u8 [MLKEM_POLYVECBYTES] r, stack u16[MLKEM_VECN] a) -> reg ptr u8 [MLKEM_POLYVECBYTES]
-{
-  r[0:MLKEM_POLYBYTES], a[0:MLKEM_N] = _i_poly_tobytes(r[0:MLKEM_POLYBYTES], a[0:MLKEM_N]);
-
-  r[MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[MLKEM_N:MLKEM_N] = _i_poly_tobytes(r[MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[MLKEM_N:MLKEM_N]);
-  r[2*MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[2*MLKEM_N:MLKEM_N] = _i_poly_tobytes(r[2*MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[2*MLKEM_N:MLKEM_N]);
-
-  return r;
- }

@@ -17,7 +17,7 @@ test: test/test_kem
 speed: test/speed_kem
 
 JINC = kem.jinc ../avx2/params.jinc ../../common/avx2/consts.jinc ../../common/avx2/verify.jinc ../../common/avx2/reduce.jinc \
-       polyvec.jinc poly.jinc indcpa.jinc ../mlkem_avx2/gen_matrix.jinc ../../common/avx2/mlkem_keccak_avx2.jinc
+       polyvec.jinc poly.jinc indcpa.jinc ../avx2/gen_matrix.jinc ../../common/avx2/mlkem_keccak_avx2.jinc
 
 
 SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
