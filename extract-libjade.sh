@@ -82,7 +82,8 @@ gen_implementation() {
     else
       fatal "Implementation not supported: ${IMPLEMENTATION} "
     fi
-
+      
+    rm -r ${BUILDTMPDIR}
     return 0
 
   else
