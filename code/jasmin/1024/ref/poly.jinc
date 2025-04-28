@@ -1,0 +1,18 @@
+require "params.jinc"
+require "../../common/ref/poly.jinc"
+
+fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
+{
+
+}
+
+fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
+{
+
+}
+
+
+fn _poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
+{
+
+}

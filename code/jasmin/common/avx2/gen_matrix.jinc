@@ -354,6 +354,8 @@ fn _gen_matrix_buf_rejection
   return pol, counter;
 }
 
+param int IDX_TABLE_SIZE = MLKEM_K = 3 ? 32 : 64;
+
 inline fn gen_matrix_get_indexes(
   reg u64 b,
   reg u64 _t)
@@ -361,10 +363,10 @@ inline fn gen_matrix_get_indexes(
   reg u64
 {
   reg u64 t;
-  reg ptr u8[32] idxs;
+  reg ptr u8[IDX_TABLE_SIZE] idxs;
   idxs = gen_matrix_indexes;
 
-  t = _t; t <<= 4; // t * 16
+  t = _t; t <<= (MLKEM_K + 1); // transposed table in the second half
   b += t;
 
   t = idxs.[u64 b];

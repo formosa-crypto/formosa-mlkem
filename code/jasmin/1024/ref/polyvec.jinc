@@ -1,0 +1,21 @@
+require "poly.jinc"
+require "../../common/ref/polyvec.jinc"
+
+inline
+fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
+{
+
+}
+
+inline
+fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
+{
+
+}
+
+inline
+fn __polyvec_decompress(reg u64 ap) -> stack u16[MLKEM_VECN]
+{
+
+}
+

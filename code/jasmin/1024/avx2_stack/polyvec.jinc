@@ -1,0 +1,16 @@
+require "poly.jinc"
+require "../avx2/polyvec.jinc"
+require "../../common/avx2_stack/polyvec.jinc"
+
+inline
+fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLKEM_VECN]
+{
+
+}
+
+
+inline
+fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
+{
+
+}

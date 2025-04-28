@@ -1,0 +1,47 @@
+require "params.jinc"
+require "../../common/avx2/poly.jinc"
+
+
+/*
+_poly_compress: compresses a polynomial to 5 bits per coefficient and packs 
+                in byte array stored in rp
+
+requires: input coefficients to be in the range [0..2q)
+      rp to point to 160 byte valid region
+
+ensures:
+    only 128 bytes pointed by rp are modified in memory
+    these bytes encode the compressed polynomial
+
+    it returns the input polynomial reduced to the range [0..q)
+
+*/
+fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
+{
+
+}
+
+/*
+_poly_compress_1: same as previous function but writes to the stack
+*/
+fn _poly_compress_1(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
+{
+
+}
+
+/*
+_poly_decompress: decompresses a polynomial from 5 bits per coefficient from
+                input array ap
+
+requires: ap to point to 160 byte valid region
+
+ensures:
+    memory unchanged (writes to stack)
+    every output coefficient is in the range [0..q)
+
+*/
+
+fn _poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
+{
+
+}

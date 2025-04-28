@@ -1,5 +1,7 @@
 require "poly.jinc"
 
+  /* FIXME: LOOP OVER K POLYNOMIALS FOR ALL FUNCTIONS */
+
 inline
 fn __polyvec_add2(stack u16[MLKEM_VECN] r, stack u16[MLKEM_VECN] b) -> stack u16[MLKEM_VECN]
 {
@@ -86,7 +88,6 @@ fn __polyvec_pointwise_acc(stack u16[MLKEM_VECN] a, stack u16[MLKEM_VECN] b) -> 
 {
   stack u16[MLKEM_N] t;
   stack u16[MLKEM_N] r;
-
   r = _poly_basemul(r, a[0:MLKEM_N], b[0:MLKEM_N]);
   t = _poly_basemul(t, a[MLKEM_N:MLKEM_N], b[MLKEM_N:MLKEM_N]);
   r = _poly_add2(r, t);
