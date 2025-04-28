@@ -3,8 +3,6 @@ require "poly.jinc"
 require "polyvec.jinc"
 require "../../common/ref/gen_matrix.jinc"
 
-/* MOVE FROM K=3 TO K=4 */
-
 inline
 fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
 {
@@ -52,13 +50,17 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
   skpv[MLKEM_N:MLKEM_N] = _poly_getnoise(skpv[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
   nonce = 2;
   skpv[2*MLKEM_N:MLKEM_N] = _poly_getnoise(skpv[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 3;
-  e[0:MLKEM_N] = _poly_getnoise(e[0:MLKEM_N], s_noiseseed, nonce);
+  skpv[3*MLKEM_N:MLKEM_N] = _poly_getnoise(skpv[3*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+
   nonce = 4;
-  e[MLKEM_N:MLKEM_N] = _poly_getnoise(e[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+  e[0:MLKEM_N] = _poly_getnoise(e[0:MLKEM_N], s_noiseseed, nonce);
   nonce = 5;
+  e[MLKEM_N:MLKEM_N] = _poly_getnoise(e[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+  nonce = 6;
   e[2*MLKEM_N:MLKEM_N] = _poly_getnoise(e[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+  nonce = 7;
+  e[3*MLKEM_N:MLKEM_N] = _poly_getnoise(e[3*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
 
   skpv = __polyvec_ntt(skpv);
   e    = __polyvec_ntt(e);
@@ -69,6 +71,8 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
   pkpv[MLKEM_N:MLKEM_N] = _poly_frommont(pkpv[MLKEM_N:MLKEM_N]);
   pkpv[2*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(a[2*MLKEM_VECN:MLKEM_VECN], skpv);
   pkpv[2*MLKEM_N:MLKEM_N] = _poly_frommont(pkpv[2*MLKEM_N:MLKEM_N]);
+  pkpv[3*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(a[3*MLKEM_VECN:MLKEM_VECN], skpv);
+  pkpv[3*MLKEM_N:MLKEM_N] = _poly_frommont(pkpv[3*MLKEM_N:MLKEM_N]);
 
   pkpv = __polyvec_add2(pkpv, e);
   pkpv = __polyvec_reduce(pkpv);
@@ -120,23 +124,23 @@ fn __indcpa_enc(#mmx reg u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[
 
   nonce = 0;
   sp[0:MLKEM_N] = _poly_getnoise(sp[0:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 1;
   sp[MLKEM_N:MLKEM_N] = _poly_getnoise(sp[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 2;
   sp[2*MLKEM_N:MLKEM_N] = _poly_getnoise(sp[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 3;
-  ep[0:MLKEM_N] = _poly_getnoise(ep[0:MLKEM_N], s_noiseseed, nonce);
+  sp[3*MLKEM_N:MLKEM_N] = _poly_getnoise(sp[3*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
 
   nonce = 4;
-  ep[MLKEM_N:MLKEM_N] = _poly_getnoise(ep[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
+  ep[0:MLKEM_N] = _poly_getnoise(ep[0:MLKEM_N], s_noiseseed, nonce);
   nonce = 5;
-  ep[2*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
+  ep[MLKEM_N:MLKEM_N] = _poly_getnoise(ep[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
   nonce = 6;
+  ep[2*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+  nonce = 7;
+  ep[3*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[3*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+
+  nonce = 8;
   epp = _poly_getnoise(epp, s_noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
@@ -144,6 +148,7 @@ fn __indcpa_enc(#mmx reg u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[
   bp[0:MLKEM_N] = __polyvec_pointwise_acc(aat[0:MLKEM_VECN], sp);
   bp[MLKEM_N:MLKEM_N]= __polyvec_pointwise_acc(aat[MLKEM_VECN:MLKEM_VECN], sp);
   bp[2*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(aat[2*MLKEM_VECN:MLKEM_VECN], sp);
+  bp[3*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(aat[3*MLKEM_VECN:MLKEM_VECN], sp);
   
   v = __polyvec_pointwise_acc(pkpv, sp);
 
@@ -196,23 +201,23 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
 
   nonce = 0;
   sp[0:MLKEM_N] = _poly_getnoise(sp[0:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 1;
   sp[MLKEM_N:MLKEM_N] = _poly_getnoise(sp[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 2;
   sp[2*MLKEM_N:MLKEM_N] = _poly_getnoise(sp[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 3;
-  ep[0:MLKEM_N] = _poly_getnoise(ep[0:MLKEM_N], s_noiseseed, nonce);
+  sp[3*MLKEM_N:MLKEM_N] = _poly_getnoise(sp[3*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
 
   nonce = 4;
-  ep[MLKEM_N:MLKEM_N] = _poly_getnoise(ep[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
+  ep[0:MLKEM_N] = _poly_getnoise(ep[0:MLKEM_N], s_noiseseed, nonce);
   nonce = 5;
-  ep[2*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
+  ep[MLKEM_N:MLKEM_N] = _poly_getnoise(ep[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
   nonce = 6;
+  ep[2*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+  nonce = 7;
+  ep[3*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[3*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
+
+  nonce = 8;
   epp = _poly_getnoise(epp, s_noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
@@ -220,6 +225,7 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
   bp[0:MLKEM_N] = __polyvec_pointwise_acc(aat[0:MLKEM_VECN], sp);
   bp[MLKEM_N:MLKEM_N]= __polyvec_pointwise_acc(aat[MLKEM_VECN:MLKEM_VECN], sp);
   bp[2*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(aat[2*MLKEM_VECN:MLKEM_VECN], sp);
+  bp[3*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(aat[3*MLKEM_VECN:MLKEM_VECN], sp);
   
   v = __polyvec_pointwise_acc(pkpv, sp);
 

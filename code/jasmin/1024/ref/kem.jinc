@@ -1,8 +1,6 @@
 require "indcpa.jinc"
 require "../../common/ref/verify.jinc"
 
-/* MOVE FROM K=3 TO K=4 */
-
 inline
 fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp)
 {
@@ -37,7 +35,7 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
 
   //t64 = MLKEM_POLYVECBYTES + MLKEM_SYMBYTES;
   //h_pk = _isha3_256(h_pk, pkp, t64);
-  h_pk = _isha3_256_M1184(h_pk, pkp);
+  h_pk = _isha3_256_M1568(h_pk, pkp);
   skp = s_skp;
 
   for i=0 to 4
@@ -81,7 +79,7 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKE
 
   //t64 = MLKEM_PUBLICKEYBYTES;
   //buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp, t64);
-  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256_M1184(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp);
+  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _isha3_256_M1568(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pkp);
 
   kr = _sha3_512_64(kr, buf);
 
@@ -140,12 +138,12 @@ fn __crypto_kem_dec_jazz(reg u64 shkp, reg u64 ctp, reg u64 skp)
   zp += 64;
   zp += 24 * MLKEM_K * MLKEM_N>>3;
 
-  /* fixme: should this be done in memory? */
   shkp = s_shkp;
-  _shake256_1120_32(shkp, zp, ctp);  
+  _shake256_1600_32(shkp, zp, ctp);
 
   shkp = s_shkp;
   cnd = s_cnd;
 
    __cmov(shkp, kr[0:MLKEM_SYMBYTES], cnd); 
 }
+
