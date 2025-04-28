@@ -139,36 +139,6 @@ fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
-{
-  reg u32 d0, d1;
-  reg u64 i;
-
-  a = _poly_csubq(a);
-
-  i = 0;
-  while(i < 128)
-  {
-    d0 = (32u) a[2 * i];
-    d1 = (32u) a[2 * i + 1];
-    d0 <<= 4;
-    d0 += 1665;
-    d0 *= 80635;
-    d0 >>= 28;
-    d0 &= 0xf;
-    d1 <<= 4;
-    d1 += 1665;
-    d1 *= 80635;
-    d1 >>= 28;
-    d1 &= 0xf;
-    d1 <<= 4;
-    d0 |= d1;
-    (u8)[rp+i] = d0;
-    i += 1;
-  }
-  return a;
-}
-
 fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
 {
   reg u8 c0, c1, c2;

@@ -1,16 +1,16 @@
 	.att_syntax
 	.text
 	.p2align	5
-	.globl	_jade_kem_mlkem_mlkem768_amd64_ref_dec
-	.globl	jade_kem_mlkem_mlkem768_amd64_ref_dec
-	.globl	_jade_kem_mlkem_mlkem768_amd64_ref_enc
-	.globl	jade_kem_mlkem_mlkem768_amd64_ref_enc
-	.globl	_jade_kem_mlkem_mlkem768_amd64_ref_keypair
-	.globl	jade_kem_mlkem_mlkem768_amd64_ref_keypair
-	.globl	_jade_kem_mlkem_mlkem768_amd64_ref_enc_derand
-	.globl	jade_kem_mlkem_mlkem768_amd64_ref_enc_derand
-	.globl	_jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand
-	.globl	jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_dec
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_dec
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_enc
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_enc
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_keypair
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_keypair
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_enc_derand
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_enc_derand
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand
 _jade_kem_mlkem_mlkem768_amd64_ref_dec:
 jade_kem_mlkem_mlkem768_amd64_ref_dec:
 	movq	%rsp, %rax
@@ -13964,6 +13964,80 @@ Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$1:
 	movq	10400(%rsp), %r14
 	movq	10408(%rsp), %rsp
 	ret
+L_poly_decompress$1:
+	movq	$0, %rdi
+	jmp 	L_poly_decompress$2
+L_poly_decompress$3:
+	movb	(%rsi,%rdi), %r8b
+	movzbw	%r8b, %r9w
+	movzbw	%r8b, %r8w
+	andw	$15, %r9w
+	shrw	$4, %r8w
+	imulw	$3329, %r9w, %r9w
+	imulw	$3329, %r8w, %r8w
+	addw	$8, %r9w
+	addw	$8, %r8w
+	shrw	$4, %r9w
+	shrw	$4, %r8w
+	movw	%r9w, (%rcx,%rdi,4)
+	movw	%r8w, 2(%rcx,%rdi,4)
+	incq	%rdi
+L_poly_decompress$2:
+	cmpq	$128, %rdi
+	jb  	L_poly_decompress$3
+	ret
+L_i_poly_compress$1:
+	call	L_poly_csubq$1
+L_i_poly_compress$4:
+	movq	$0, %rdx
+	jmp 	L_i_poly_compress$2
+L_i_poly_compress$3:
+	movzwl	(%rcx,%rdx,4), %esi
+	movzwl	2(%rcx,%rdx,4), %edi
+	shll	$4, %esi
+	addl	$1665, %esi
+	imull	$80635, %esi, %esi
+	shrl	$28, %esi
+	andl	$15, %esi
+	shll	$4, %edi
+	addl	$1665, %edi
+	imull	$80635, %edi, %edi
+	shrl	$28, %edi
+	andl	$15, %edi
+	shll	$4, %edi
+	orl 	%edi, %esi
+	movb	%sil, (%rax,%rdx)
+	incq	%rdx
+L_i_poly_compress$2:
+	cmpq	$128, %rdx
+	jb  	L_i_poly_compress$3
+	ret
+L_poly_compress$1:
+	call	L_poly_csubq$1
+L_poly_compress$4:
+	movq	$0, %rdx
+	jmp 	L_poly_compress$2
+L_poly_compress$3:
+	movzwl	(%rcx,%rdx,4), %esi
+	movzwl	2(%rcx,%rdx,4), %edi
+	shll	$4, %esi
+	addl	$1665, %esi
+	imull	$80635, %esi, %esi
+	shrl	$28, %esi
+	andl	$15, %esi
+	shll	$4, %edi
+	addl	$1665, %edi
+	imull	$80635, %edi, %edi
+	shrl	$28, %edi
+	andl	$15, %edi
+	shll	$4, %edi
+	orl 	%edi, %esi
+	movb	%sil, (%rax,%rdx)
+	incq	%rdx
+L_poly_compress$2:
+	cmpq	$128, %rdx
+	jb  	L_poly_compress$3
+	ret
 L_i_poly_tomsg$1:
 	call	L_poly_csubq$1
 L_i_poly_tomsg$2:
@@ -19835,80 +19909,6 @@ L_poly_frombytes$1:
 	orw 	%r9w, %r10w
 	movw	%r8w, 508(%rdi)
 	movw	%r10w, 510(%rdi)
-	ret
-L_poly_decompress$1:
-	movq	$0, %rdi
-	jmp 	L_poly_decompress$2
-L_poly_decompress$3:
-	movb	(%rsi,%rdi), %r8b
-	movzbw	%r8b, %r9w
-	movzbw	%r8b, %r8w
-	andw	$15, %r9w
-	shrw	$4, %r8w
-	imulw	$3329, %r9w, %r9w
-	imulw	$3329, %r8w, %r8w
-	addw	$8, %r9w
-	addw	$8, %r8w
-	shrw	$4, %r9w
-	shrw	$4, %r8w
-	movw	%r9w, (%rcx,%rdi,4)
-	movw	%r8w, 2(%rcx,%rdi,4)
-	incq	%rdi
-L_poly_decompress$2:
-	cmpq	$128, %rdi
-	jb  	L_poly_decompress$3
-	ret
-L_i_poly_compress$1:
-	call	L_poly_csubq$1
-L_i_poly_compress$4:
-	movq	$0, %rdx
-	jmp 	L_i_poly_compress$2
-L_i_poly_compress$3:
-	movzwl	(%rcx,%rdx,4), %esi
-	movzwl	2(%rcx,%rdx,4), %edi
-	shll	$4, %esi
-	addl	$1665, %esi
-	imull	$80635, %esi, %esi
-	shrl	$28, %esi
-	andl	$15, %esi
-	shll	$4, %edi
-	addl	$1665, %edi
-	imull	$80635, %edi, %edi
-	shrl	$28, %edi
-	andl	$15, %edi
-	shll	$4, %edi
-	orl 	%edi, %esi
-	movb	%sil, (%rax,%rdx)
-	incq	%rdx
-L_i_poly_compress$2:
-	cmpq	$128, %rdx
-	jb  	L_i_poly_compress$3
-	ret
-L_poly_compress$1:
-	call	L_poly_csubq$1
-L_poly_compress$4:
-	movq	$0, %rdx
-	jmp 	L_poly_compress$2
-L_poly_compress$3:
-	movzwl	(%rcx,%rdx,4), %esi
-	movzwl	2(%rcx,%rdx,4), %edi
-	shll	$4, %esi
-	addl	$1665, %esi
-	imull	$80635, %esi, %esi
-	shrl	$28, %esi
-	andl	$15, %esi
-	shll	$4, %edi
-	addl	$1665, %edi
-	imull	$80635, %edi, %edi
-	shrl	$28, %edi
-	andl	$15, %edi
-	shll	$4, %edi
-	orl 	%edi, %esi
-	movb	%sil, (%rax,%rdx)
-	incq	%rdx
-L_poly_compress$2:
-	cmpq	$128, %rdx
-	jb  	L_poly_compress$3
 	ret
 L_poly_basemul$1:
 	movq	%rdi, 8(%rsp)
