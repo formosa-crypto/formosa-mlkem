@@ -1,8 +1,8 @@
 # -*- Makefile -*-
 
--include ../../Makefile.conf
+-include ../../../Makefile.conf
 
-CKP    := ../../kyber/ref
+CKP    := ../../../kyber/ref
 CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-declaration
 JFLAGS := ${JADDFLAGS}
@@ -16,8 +16,8 @@ test: test/test_kem
 
 speed: test/speed_kem
 
-JINC = kem.jinc ../mlkem_avx2/params.jinc ../mlkem_avx2/consts.jinc ../mlkem_avx2/verify.jinc ../mlkem_avx2/reduce.jinc \
-       ../mlkem_avx2/polyvec.jinc ../mlkem_avx2/poly.jinc ../mlkem_avx2/indcpa.jinc ../mlkem_avx2/gen_matrix.jinc ../mlkem_avx2/mlkem_keccak_avx2.jinc
+JINC = kem.jinc ../avx2/params.jinc ../../common/avx2/consts.jinc ../../common/avx2/verify.jinc ../../common/avx2/reduce.jinc \
+       polyvec.jinc poly.jinc indcpa.jinc ../mlkem_avx2/gen_matrix.jinc ../../common/avx2/mlkem_keccak_avx2.jinc
 
 
 SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
