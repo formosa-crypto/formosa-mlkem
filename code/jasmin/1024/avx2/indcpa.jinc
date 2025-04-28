@@ -3,7 +3,6 @@ require "poly.jinc"
 require "polyvec.jinc"
 require "gen_matrix.jinc"
 
-/* FIXME : MOVE FROM K=3 TO K=4 */
 inline
 fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
 {
@@ -40,10 +39,10 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
   aa = _gen_matrix_avx2(aa, publicseed, transposed);
 
   nonce = 0;
-  skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], e[0:MLKEM_N] = _poly_getnoise_eta1_4x(skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], e[0:MLKEM_N], noiseseed, nonce);
+  skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], skpv[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(skpv[0:MLKEM_N], skpv[MLKEM_N:MLKEM_N], skpv[2*MLKEM_N:MLKEM_N], skpv[3*MLKEM_N:MLKEM_N], noiseseed, nonce);
 
   nonce = 4;
-  e[MLKEM_N:MLKEM_N], e[2*MLKEM_N:MLKEM_N], pkpv[0:MLKEM_N], pkpv[MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(e[MLKEM_N:MLKEM_N], e[2*MLKEM_N:MLKEM_N], pkpv[0:MLKEM_N], pkpv[MLKEM_N:MLKEM_N], noiseseed, nonce);
+  e[0:MLKEM_N], e[MLKEM_N:MLKEM_N], e[2*MLKEM_N:MLKEM_N], e[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(e[0:MLKEM_N], e[MLKEM_N:MLKEM_N], e[2*MLKEM_N:MLKEM_N], e[3*MLKEM_N:MLKEM_N], noiseseed, nonce);
 
   skpv = __polyvec_ntt(skpv);
   e    = __polyvec_ntt(e);
@@ -108,11 +107,15 @@ fn __indcpa_enc_0(#mmx reg u64 sctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg
 
   lnoiseseed = s_noiseseed;
   nonce = 0;
-  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], lnoiseseed, nonce);
+  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], sp[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], sp[3*MLKEM_N:MLKEM_N], lnoiseseed, nonce);
 
   lnoiseseed = s_noiseseed;
   nonce = 4;
-  ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
+  ep[0:MLKEM_N], ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], ep[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(ep[0:MLKEM_N], ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], ep[3*MLKEM_N:MLKEM_N], lnoiseseed, nonce);
+
+  lnoiseseed = s_noiseseed;
+  nonce = 8;
+  epp = _poly_getnoise_eta2(epp, noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
     
@@ -180,11 +183,15 @@ fn __indcpa_enc_1(
 
   lnoiseseed = s_noiseseed;
   nonce = 0;
-  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], lnoiseseed, nonce);
+  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], sp[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], sp[3*MLKEM_N:MLKEM_N], lnoiseseed, nonce);
 
   lnoiseseed = s_noiseseed;
   nonce = 4;
-  ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
+  ep[0:MLKEM_N], ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], ep[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(ep[0:MLKEM_N], ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], ep[3*MLKEM_N:MLKEM_N], lnoiseseed, nonce);
+
+  lnoiseseed = s_noiseseed;
+  nonce = 8;
+  epp = _poly_getnoise_eta2(epp, noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
     

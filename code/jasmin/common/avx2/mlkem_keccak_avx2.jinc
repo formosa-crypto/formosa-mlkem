@@ -75,6 +75,21 @@ fn _sha3_256A_M1184
   return out;
 }
 
+/* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte 
+   memory region */
+fn _sha3_256A_M1568
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg u64 in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  reg u64 offset;
+  st = __state_init_avx2();
+  st, _ = __absorb_imem_avx2(st, in, 1568, R136, SHA3);
+  offset = 0;
+  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  return out;
+}
+
 /* SHA3-512 writing to a 64-byte stack array (512A) and reading from 33 byte 
    stack array */
 fn _sha3_512A_A33
@@ -123,6 +138,22 @@ fn _shake256_M32__M32_M1088
   _, _ = __squeeze_imem_avx2(out, 32, st, R136);
 }
 
+/* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte 
+   stack array first, and then from a 1088 byte memory region */
+fn _shake256_M32__M32_M1600
+( reg u64 out
+, reg u64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
+)
+{ reg u256[7] st;
+  stack u64[25] pst_s;
+  reg ptr u64[25] pst;
+  pst = pst_s;
+  pst, st = __pstate_init_avx2(pst);
+  pst, _, st, _ = __pabsorb_imem_avx2(pst, 0, st, in0, 32, R136, UNFINISHED);
+  pst, _, st, _ = __pabsorb_imem_avx2(pst, 32, st, in1, 1568, R136, SHAKE);
+  _, _ = __squeeze_imem_avx2(out, 32, st, R136);
+}
+
 /* SHAKE-256 writing to a 128-byte stack array (A128) and reading from 32 byte 
    stack array first, and then from a 1 byte stack array next */
 fn _shake256_A128__A32_A1
@@ -134,6 +165,7 @@ fn _shake256_A128__A32_A1
   stack u64[25] pst_s;
   reg ptr u64[25] pst;
   reg u64 offset;
+  pst = pst_s;
   pst_s = pst;
   pst, st = __pstate_init_avx2(pst);
   offset = 0;
