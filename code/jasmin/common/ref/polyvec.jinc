@@ -1,0 +1,81 @@
+require "poly.jinc"
+
+inline
+fn __polyvec_add2(stack u16[MLKEM_VECN] r, stack u16[MLKEM_VECN] b) -> stack u16[MLKEM_VECN]
+{
+  r[0:MLKEM_N] = _poly_add2(r[0:MLKEM_N], b[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = _poly_add2(r[MLKEM_N:MLKEM_N], b[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_add2(r[2*MLKEM_N:MLKEM_N], b[2*MLKEM_N:MLKEM_N]);
+
+  return r;
+}
+
+inline
+fn __polyvec_csubq(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  r[0:MLKEM_N] = _poly_csubq(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = _poly_csubq(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_csubq(r[2*MLKEM_N:MLKEM_N]);
+
+  return r;
+}
+
+inline
+fn __polyvec_frombytes(reg u64 ap) -> stack u16[MLKEM_VECN]
+{
+  stack u16[MLKEM_VECN] r;
+  reg u64 pp;
+
+  pp = ap;
+  r[0:MLKEM_N] = _poly_frombytes(r[0:MLKEM_N], pp);
+  pp += MLKEM_POLYBYTES;
+  r[MLKEM_N:MLKEM_N] = _poly_frombytes(r[MLKEM_N:MLKEM_N], pp);
+  pp += MLKEM_POLYBYTES;
+  r[2*MLKEM_N:MLKEM_N] = _poly_frombytes(r[2*MLKEM_N:MLKEM_N], pp);
+
+  return r;
+}
+
+inline
+fn __polyvec_invntt(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  r[0:MLKEM_N] = _poly_invntt(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = _poly_invntt(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_invntt(r[2*MLKEM_N:MLKEM_N]);
+
+  return r;
+}
+
+inline
+fn __polyvec_ntt(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  r[0:MLKEM_N] = _poly_ntt(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = _poly_ntt(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = _poly_ntt(r[2*MLKEM_N:MLKEM_N]);
+
+  return r;
+}
+
+
+inline
+fn __polyvec_reduce(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  r[0:MLKEM_N] = __poly_reduce(r[0:MLKEM_N]);
+  r[MLKEM_N:MLKEM_N] = __poly_reduce(r[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_N:MLKEM_N] = __poly_reduce(r[2*MLKEM_N:MLKEM_N]);
+
+  return r;
+}
+
+inline
+fn __polyvec_tobytes(reg u64 rp, stack u16[MLKEM_VECN] a)
+{
+  reg u64 pp;
+
+  pp = rp;
+  a[0:MLKEM_N] = _poly_tobytes(pp, a[0:MLKEM_N]);
+  pp += MLKEM_POLYBYTES;
+  a[MLKEM_N:MLKEM_N] = _poly_tobytes(pp, a[MLKEM_N:MLKEM_N]);
+  pp += MLKEM_POLYBYTES;
+  a[2*MLKEM_N:MLKEM_N] = _poly_tobytes(pp, a[2*MLKEM_N:MLKEM_N]);
+}

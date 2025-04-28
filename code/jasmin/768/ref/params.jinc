@@ -1,0 +1,2 @@
+param int MLKEM_K = 3;
+require "../../common/ref/params.jinc"
