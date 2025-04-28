@@ -46,11 +46,12 @@ flatten_jazz() {
   WORKDIR=$(dirname $1)
   TARGETFILE=${2}
   cd ${WORKDIR}
-  mkdir -p .deps
-  ((printf "jkem.jpp: "; printf "jkem.jazz "; jasminc -I Keccak:../../../../formosa-keccak/src/amd64/ -print-dependencies jkem.jazz) > .deps/jkem.jpp.d)
-  (${JPP} -I Keccak:../../../../formosa-keccak/src/amd64/ -out jkem.jpp -in jkem.jazz)
-  mv jkem.jpp ${TARGETFILE}
-  rm -r .deps
+  jasminc -I Keccak:../../../../formosa-keccak/src/amd64/ -ptyping -until_typing jkem.jazz > ${TARGETFILE}
+#  mkdir -p .deps
+#  ((printf "jkem.jpp: "; printf "jkem.jazz "; jasminc -I Keccak:../../../../formosa-keccak/src/amd64/ -print-dependencies jkem.jazz) > .deps/jkem.jpp.d)
+#  (${JPP} -I Keccak:../../../../formosa-keccak/src/amd64/ -out jkem.jpp -in jkem.jazz)
+#  mv jkem.jpp ${TARGETFILE}
+#  rm -r .deps
 }
 
 gen_implementation() {

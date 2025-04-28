@@ -354,7 +354,7 @@ fn _gen_matrix_buf_rejection
   return pol, counter;
 }
 
-param int IDX_TABLE_SIZE = MLKEM_K == 3 ? 32 : 64;
+param int IDX_TABLE_SIZE = 32*(MLKEM_K-2);//MLKEM_K == 3 ? 32 : 64;
 
 inline fn gen_matrix_get_indexes(
   reg u64 b,
