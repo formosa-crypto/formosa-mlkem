@@ -1,6 +1,4 @@
-require "../mlkem_avx2/poly.jinc"
-require "mlkem_keccak_avx2.jinc"
-
+require "../../common/avx2_stack/poly.jinc"
 
 fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
 {

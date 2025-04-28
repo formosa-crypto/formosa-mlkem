@@ -1,7 +1,7 @@
-require "../mlkem_avx2/params.jinc"
+require "../avx2/params.jinc"
 require "poly.jinc"
 require "polyvec.jinc"
-require "../mlkem_avx2/gen_matrix.jinc"
+require "../../common/avx2/gen_matrix.jinc"
 
 inline
 fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] sk, reg ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]

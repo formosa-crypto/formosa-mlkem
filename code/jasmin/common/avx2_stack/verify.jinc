@@ -1,4 +1,4 @@
-require "../mlkem_avx2/params.jinc"
+require "../avx2/params.jinc"
 
 inline 
 fn __verify(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctpc) -> reg u64

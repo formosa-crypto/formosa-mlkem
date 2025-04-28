@@ -1,0 +1,29 @@
+require "poly.jinc"
+require "../avx2/polyvec.jinc"
+
+inline
+fn __i_polyvec_frombytes(reg ptr u8[MLKEM_POLYVECBYTES] ap) -> stack u16[MLKEM_VECN]
+{
+  stack u16[MLKEM_VECN] r;
+  stack u8[MLKEM_POLYVECBYTES] a;
+  a = #copy(ap);
+
+  r[0:MLKEM_N] = _i_poly_frombytes(r[0:MLKEM_N], a[0:MLKEM_POLYBYTES]);
+
+  r[MLKEM_N:MLKEM_N] = _i_poly_frombytes(r[MLKEM_N:MLKEM_N], a[MLKEM_POLYBYTES:MLKEM_POLYBYTES]);
+
+  r[2*MLKEM_N:MLKEM_N] = _i_poly_frombytes(r[2*MLKEM_N:MLKEM_N], a[2*MLKEM_POLYBYTES:MLKEM_POLYBYTES]);
+
+  return r;
+}
+
+inline
+fn __i_polyvec_tobytes(reg ptr u8 [MLKEM_POLYVECBYTES] r, stack u16[MLKEM_VECN] a) -> reg ptr u8 [MLKEM_POLYVECBYTES]
+{
+  r[0:MLKEM_POLYBYTES], a[0:MLKEM_N] = _i_poly_tobytes(r[0:MLKEM_POLYBYTES], a[0:MLKEM_N]);
+
+  r[MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[MLKEM_N:MLKEM_N] = _i_poly_tobytes(r[MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[MLKEM_N:MLKEM_N]);
+  r[2*MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[2*MLKEM_N:MLKEM_N] = _i_poly_tobytes(r[2*MLKEM_POLYBYTES:MLKEM_POLYBYTES], a[2*MLKEM_N:MLKEM_N]);
+
+  return r;
+ }

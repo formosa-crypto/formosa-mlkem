@@ -1,4 +1,4 @@
-require "../mlkem_avx2/mlkem_keccak_avx2.jinc"
+require "../avx2/mlkem_keccak_avx2.jinc"
 
 namespace A1184 {
   param int ASIZE = 1184;
