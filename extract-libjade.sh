@@ -38,52 +38,48 @@ fatal_usage() {
 list_implementations() {
   echo "crypto_kem/mlkem768/amd64/ref"
   echo "crypto_kem/mlkem768/amd64/avx2"
-  echo "crypto_kem/mlkem1024/amd64/ref"
-  echo "crypto_kem/mlkem1024/amd64/avx2"
+#  echo "crypto_kem/mlkem1024/amd64/ref"
+#  echo "crypto_kem/mlkem1024/amd64/avx2"
 }
 
 flatten_jazz() {
-  cd $BUILDTMPDIR
-  pwd
+  WORKDIR=$(dirname $1)
+  TARGETFILE=${2}
+  cd ${WORKDIR}
+  mkdir -p .deps
+  ((printf "jkem.jpp: "; printf "jkem.jazz "; jasminc -I Keccak:../../../../formosa-keccak/src/amd64/ -print-dependencies jkem.jazz) > .deps/jkem.jpp.d)
+  (${JPP} -I Keccak:../../../../formosa-keccak/src/amd64/ -out jkem.jpp -in jkem.jazz)
+  mv jkem.jpp ${TARGETFILE}
+  rm -r .deps
 }
 
 gen_implementation() {
   if [ "${#}" -eq 2 ]; then
 
     IMPLEMENTATION="${1}"
-    TARGETDIR="${2}"
+    TARGETDIR=$(realpath "${2}")
 
     # test if libjade DIRECTORY exists
     if [ ! -d "${TARGETDIR}" ]; then
       fatal "target directory does not exist: ${TARGETDIR} "
     fi
 
-    if [ -d ${BUILDTMPDIR} ]; then
-      rm -r ${BUILDTMPDIR}
-    fi
-    mkdir ${BUILDTMPDIR}
-
     if [ ${IMPLEMENTATION} = "crypto_kem/mlkem768/amd64/ref" ];then
-      cp -r ${PROJECTDIR}/code/jasmin/768/ref/* ${BUILDTMPDIR}
-      flatten_jazz jkem.jazz ${TARGETDIR}/kyber768.jazz
-      cp "${BUILDTMPDIR}/api.h" "${TARGETDIR}/kyber768.h"
+       flatten_jazz ${PROJECTDIR}/code/jasmin/768/ref/jkem.jazz $TARGETDIR/kem.jazz
+       cp "${PROJECTDIR}/code/jasmin/768/ref/include/api.h" "${TARGETDIR}/api.h"
     elif [ ${IMPLEMENTATION} = "crypto_kem/mlkem768/amd64/avx2" ];then
-      cp -r "${PROJECTDIR}/code/jasmin/768/avx2/*" ${BUILDTMPDIR}
-      flatten_jazz jkem.jazz ${TARGETDIR}/kyber768.jazz
-      cp "${BUILDTMPDIR}/api.h" "${TARGETDIR}/kyber768.h"
+       flatten_jazz ${PROJECTDIR}/code/jasmin/768/avx2/jkem.jazz $TARGETDIR/kem.jazz
+       cp "${PROJECTDIR}/code/jasmin/768/avx2/include/api.h" "${TARGETDIR}/api.h"
     elif [ ${IMPLEMENTATION} = "crypto_kem/mlkem1024/amd64/ref" ];then
-      cp -r "${PROJECTDIR}/code/jasmin/1024/ref/*" ${BUILDTMPDIR}
-      flatten_jazz jkem.jazz ${TARGETDIR}/kyber1024.jazz
-      cp "${BUILDTMPDIR}/api.h" "${TARGETDIR}/kyber1024.h"
+       flatten_jazz ${PROJECTDIR}/code/jasmin/1024/ref/jkem.jazz $TARGETDIR/kem.jazz
+       cp "${PROJECTDIR}/code/jasmin/1024/ref/include/api.h" "${TARGETDIR}/api.h"
     elif [ ${IMPLEMENTATION} = "crypto_kem/mlkem1024/amd64/avx2" ];then
-      cp -r "${PROJECTDIR}/code/jasmin/1024/avx2/*" ${BUILDTMPDIR}
-      flatten_jazz jkem.jazz ${TARGETDIR}/kyber1024.jazz
-      cp "${BUILDTMPDIR}/api.h" "${TARGETDIR}/kyber1024.h"
+       flatten_jazz ${PROJECTDIR}/code/jasmin/1024/avx2/jkem.jazz $TARGETDIR/kem.jazz
+       cp "${PROJECTDIR}/code/jasmin/1024/avx2/include/api.h" "${TARGETDIR}/api.h"
     else
       fatal "Implementation not supported: ${IMPLEMENTATION} "
     fi
       
-    rm -r ${BUILDTMPDIR}
     return 0
 
   else
@@ -94,7 +90,6 @@ gen_implementation() {
 main() {
   cd "$(dirname "${0}")"
   PROJECTDIR="$(pwd -P)"
-  BUILDTMPDIR="${PROJECTDIR}/build-tmp"
   JPP="${PROJECTDIR}/scripts/jpp"
   cd "${PROJECTDIR}"
 
