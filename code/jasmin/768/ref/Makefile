@@ -1,8 +1,8 @@
 # -*- Makefile -*-
 
--include ../../Makefile.conf
+-include ../../../Makefile.conf
 
-CKP    := ../../kyber/ref
+CKP    := ../../../kyber/ref
 CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-declaration
 JFLAGS := ${JADDFLAGS}

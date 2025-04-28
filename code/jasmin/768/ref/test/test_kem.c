@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../../../kyber/ref/params.h"
-#include "../../../kyber/ref/kem.h"
+#include "../../../../kyber/ref/params.h"
+#include "../../../../kyber/ref/kem.h"
 
 int main(void)
 {
