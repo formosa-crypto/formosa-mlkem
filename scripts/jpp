@@ -1,0 +1,546 @@
+#!/usr/bin/env perl
+
+# NOTES:
+# - this script only accepts single line require statements
+# - _hr in variable naming stands for hash reference
+# - _ar ... stands for array reference
+
+use strict;
+use warnings;
+use Getopt::Long;   # to get command line options
+use Cwd 'realpath'; # realpath: symbolic links and relative-path components
+use File::Spec;     # file name functions
+use Text::Diff;     # check diff files
+
+# regular expression to match '(from XXX)? require "YYY"'
+our $RX_REQUIRE = '^'.'[\s]*'.'(?:from[\s]+(\w+)[\s+])?'.'[\s]*'.'require'.'[\s]*'.'"'.'([\w./_-]+)'.'"';
+
+our $LINE_COMMENT = "//";
+our $REQUIRE_SEPARATOR_TAG = "#";
+our $REQUIRE_ENTRY_TAG = $LINE_COMMENT . "BOR" . $REQUIRE_SEPARATOR_TAG;
+our $REQUIRE_EXIT_TAG = $LINE_COMMENT .  "EOR" . $REQUIRE_SEPARATOR_TAG;
+
+our $TEXT_BOLD = qx/tput bold/;
+our $TEXT_NORMAL = qx/tput sgr0/;
+our $TEXT_RED = "\033[0;31m" . $TEXT_BOLD;
+
+our $TB = $TEXT_BOLD;
+our $TN = $TEXT_NORMAL;
+our $TR = $TEXT_RED;
+
+sub jpp_main()
+{
+  my ($in,$out) = (undef,undef); # input (-in) and output (-out) filenames
+  my @include_a = ();            # list of includes (-I) in the form "-I" (ident):(relative or absolute path); check jasminc -help
+  my $verbose = 0;               # verbose (-v) mode, to print debug information (preceded by $LINE_COMMENT)
+  my $with_reverse_info = 1;     # flag to indicate if the preprocessed file should contain information for later reconstruction (reverse the preprocessing)
+  my $reverse = 0;               # flag to indicate if the program should 'reverse' a previous preprocessing operation
+                                 #   note1: it is assumed (bc it was not tested) that the input file does not contain any requires to solve;
+                                 #   note2: if reverse is 'active', then the output file name does not need to be set
+  my $help = 0;
+  my $dry_run = 0;               # if 1, do not write to any file
+  my $safe_reverse = 1;          # if reverse, ask the user if the changes are ok
+
+  my $bor_prefix = undef;        # path to be removed from the full path in REQUIRE_ENTRY_TAG
+
+  # get the command-line arguments
+  GetOptions(
+    'in=s' => \$in,
+    'out=s' => \$out,
+    'include|I=s' => \@include_a,
+    'verbose|v' => \$verbose,
+    'reverse-info!' => \$with_reverse_info,
+    'reverse' => \$reverse,
+    'help|h' => \$help,
+    'dry-run' => \$dry_run,
+    'check-diff!' => \$safe_reverse,
+    'bor-prefix|b=s' => \$bor_prefix
+  );
+
+  # check -help or -h
+  if($help){ print_usage(1); exit 0; }
+
+  # check if $in is defined
+  if(!defined $in)
+  { print STDERR "${TR}error: -in <input_file> is required.\n${TN}---";
+    print_usage(2);
+    exit -1;
+  }
+
+  if($reverse)
+  {
+    my ($reverse_hr) = jpp_reverse($in, $out, $dry_run, $safe_reverse, $verbose, $bor_prefix);
+  }
+  else
+  { # return variables description:
+    # include_hr :     hash (reference) from 'require identifier' -> 'real path'; for instance 'formosa25519' -> '/(some real path here)/libjade/src/'
+    #                   it is built from @include_a (procedure parse_includes)
+    # visited_hr:      hash (reference) intuitively, 'children' -> '[parents]'
+    #                   for each file (canonical path) that was visited, visited_hr contains the list of files that have it required (in the context of preprocessing in)
+    # preprocessed_ar: array (reference) with the contents of the preprocessed file (if out is defined, then contents for preprocessed_ar were printed to the output file)
+    my ($preprocessed_ar, $visited_hr, $include_hr) = jpp($in, $out, \@include_a, $with_reverse_info, $dry_run, $verbose, $bor_prefix);
+  }
+}
+
+################################################################################
+
+sub jpp()
+{
+  my $in = shift;                # input file (-in)
+  my $out = shift;               # output file (-out)
+  my $include_ar = shift;        # list of includes (-I)
+  my $with_reverse_info = shift; # with_reverse_info (-with_reverse_info)
+  my $dry_run = shift;           # do not write to files (-dry-run)
+  my $verbose = shift;           # verbose (-v)
+  my $bor_prefix = shift;
+
+  my %visited_h = ();            # 'children' -> '[parents]'
+
+  # get the absolute path
+  $in = realpath($in);
+
+  # if out is not defined, update inplace
+  $out = (defined $out) ? realpath($out) : $in;
+
+  # hash (reference) in the form 'require identifier' -> 'real path'
+  my $include_hr = parse_includes($include_ar);
+
+  # print command line options if verbose
+  print_options($in, $out, $include_hr) if($verbose);
+
+  # 'preprocess' is a recursive function that
+  #  - starts by visiting $in and it recursivly imports the contents of required files
+  #  - it appends (and returns) the contents of visited files into $preprocessed_ar (an array reference) that contains the code (one line per array element)
+  #  - it receives as arguments:
+  #  -- $in (first file); $include_hr (hash ref. to "-I"'s); \%visited_h (hash ref to visited files, initially empty);
+  #  -- verbose (to print some debug info); level (to keep track of current search depth and do indentation, initially 0);
+  my ($preprocessed_ar, $visited_hr) = preprocess($in, "entry", $include_hr, \%visited_h, $with_reverse_info, $verbose, 0, $bor_prefix);
+
+  store($out, $preprocessed_ar, $dry_run);
+  print_visited($visited_hr) if($verbose);
+
+  return $preprocessed_ar, $visited_hr, $include_hr;
+}
+
+################################################################################
+
+sub jpp_reverse()
+{
+  my $in = shift;           # input file (-in)
+  my $out = shift;          # output file (-out)
+  my $dry_run = shift;      # do not write to files (-dry-run), print to stdout instead
+  my $safe_reverse = shift; # ask the user about changes in files
+  my $verbose = shift;      # verbose (-v)
+  my $bor_prefix = shift;
+
+  my %reverse_h = ();       # 'files' -> '[code]' (final step is to update files with the code)
+
+  # get the absolute path and load the contents of the file
+  $in = realpath($in);
+  my $in_lines_ar = load($in);
+
+  # if out is not defined, update inplace (write the output in $in)
+  $out = (defined $out) ? realpath($out) : $in;
+
+  my ($line_position, $reverse_hr) = preprocess_reverse($in_lines_ar, 0, \%reverse_h, $out, $verbose, $bor_prefix);
+
+  if( check_changes_reverse($in, $out, $reverse_hr, $safe_reverse) == 1 )
+  { store_reverse($reverse_hr, $dry_run); }
+
+  return $reverse_hr;
+}
+
+################################################################################
+
+# transforms -I command line arguments into the hash that was previously described
+# returns a reference to the said hash
+sub parse_includes
+{
+  my $include_ar = shift;
+  my %include_h = ();
+  for my $i (@$include_ar)
+  { my ($key,$value) = split(':', $i);
+    $include_h{$key} = realpath($value);
+  }
+  return \%include_h;
+}
+
+# loads the lines of a given file to an array; returns a reference to the array
+sub load
+{ my $fn = shift;
+  my @lines = ();
+  open my $fh, "<", $fn or die "Error: load $fn: $!";
+  { @lines = <$fh>; chomp @lines; }
+  close $fh;
+  return \@lines;
+}
+
+# prints the contents of $lines_ar into a file $fn
+sub store
+{ my $fn = shift;
+  my $lines_ar = shift;
+  my $dry_run = shift;
+
+  if($dry_run)
+  { print STDOUT join("\n", @$lines_ar), "\n"; }
+  else
+  { open my $fh, ">", $fn or die "Error: store $fn: $!";
+    { print $fh join("\n", @$lines_ar), "\n"; }
+    close $fh;
+  }
+}
+
+sub preprocess
+{
+  my $in = shift;                # input file, absolute path
+  my $parent = shift;            # parent name, by convention, starts as 'entry'
+  my $include_hr = shift;        # include information (-I)
+  my $visited_hr = shift;        # who visited who
+  my $with_reverse_info = shift; # include information to undo preprocessing
+  my $verbose = shift;           # print some internal information
+  my $level = shift;             # current level of recursion
+  my $bor_prefix = shift;
+
+  # if file was already visited, then return an empty list
+  if (defined $visited_hr->{$in})
+  {
+    print_multiple_visit($level, $in) if ($verbose);
+    push @{$visited_hr->{$in}}, $parent;
+    my @preprocessed_empty = ();
+    return (\@preprocessed_empty, $visited_hr);
+  }
+
+  # if the file was not visited, load it, at record who is the first visitor
+  my $lines_ar = load($in);
+  my @included_by = ($parent);
+  $visited_hr->{$in} = \@included_by;
+
+  # split $in filename, can be reconstructed with catpath()
+  my($vol,$dir,$filename) = File::Spec->splitpath($in);
+  my $base = File::Spec->catpath(($vol,$dir));
+
+  my @preprocessed = ();
+
+  for my $line (@$lines_ar) # for all lines...
+  { if($line =~ m/$RX_REQUIRE/) # check if it matches with *require*
+    {
+      # if $1 is set ( "(?:from[\s]+(\w+)[\s+])?" ), then there is a "from 'ident'"
+      # in the require statement" and $2 contains a relative path or absolute path
+      my $file = (defined $1) ?
+                 File::Spec->catfile(($include_hr->{$1}), $2) : # "from 'ident' require 'path'" implies relative path
+                 ((File::Spec->file_name_is_absolute($2))? $2 : File::Spec->catfile(($base),$2)); # if absolute then let it be,
+                                                                                                  # otherwise concat with base from in
+      $file = realpath($file);
+
+      my $file_path_to_print = $file;
+
+      # remove from file some prefix
+      if(defined $bor_prefix)
+      { $file_path_to_print =~ s/^\Q$bor_prefix\E//; }
+
+      ###
+      if ($with_reverse_info)
+      { my $r_string = $REQUIRE_ENTRY_TAG .
+                       $line .
+                       $REQUIRE_SEPARATOR_TAG .
+                       $file_path_to_print;
+        push (@preprocessed, $r_string);
+      } # NOTE: this includes repetead files (it is not a problem; in the event that one would like to remove these from the code, some quick patch might be able to do it;)
+      ###
+
+      print_match($level, $file) if($verbose);
+
+      # avoid calling preprocess for a file that was already required
+      if (not defined $visited_hr->{$file})
+      {  my ($sublines_ar, $visited_hr) = preprocess($file, $in, $include_hr, $visited_hr, $with_reverse_info, $verbose, $level+1, $bor_prefix); # fetch contents of other files
+         push @preprocessed, @$sublines_ar; # add to the array the lines from the requires
+      }
+
+      # push separator to indicate end of included file
+      push (@preprocessed, ($REQUIRE_EXIT_TAG)) if ($with_reverse_info);
+    }
+    else
+    { # line is not a require, push it to the array
+      push @preprocessed, $line;
+    }
+  }
+
+  return \@preprocessed, $visited_hr;
+}
+
+################################################################################
+
+sub check_changes_reverse
+{
+  my $in = shift;
+  my $out = shift;
+  my $reserve_hr = shift;
+  my $safe_reverse = shift;
+
+  my %changed_files = ();
+  my %unchanged_files = ();
+
+  # if safe_reverse is disabled, no need to check further
+  return 1 if( $safe_reverse == 0 );
+
+  # record the diffs for every file
+  for my $fn (sort keys %$reserve_hr)
+  {
+    my $updated_code = $reserve_hr->{$fn}; # possibly updated, we don't know yet
+    my $original_code = load($fn);
+
+    ### check best way to avoid 'No newline at end of file'
+    $updated_code = join("\n", @{$updated_code});
+    $original_code = join("\n", @{$original_code});
+    ###
+
+    my $diff = diff \$original_code, \$updated_code;
+
+    if($diff eq "")
+    { $unchanged_files{$fn} = 1; }
+    else
+    { $changed_files{$fn} = $diff; }
+  }
+
+  # print unchanged files
+  print STDOUT "Unchanged files:\n";
+  for my $fn (sort keys %unchanged_files)
+  { print "  $fn\n"; }
+
+  # print modified files
+  print STDOUT " ${TB}Modified files:${TN}\n";
+  for my $fn (sort keys %changed_files)
+  { print "  ${TR}$fn${TN}\n"; }
+
+  # ask if the user wants to see the diff
+  print STDOUT "\nDo you want to ${TB}check${TN} the diff? (Y)/n: ";
+  my $answer = <STDIN>; chomp $answer;
+  if( not ($answer eq "N" or $answer eq "n") )
+  {
+    # check if $in is equal to $out (inplace, so, no diff is shown for that file)
+    if($in eq $out)
+    { print STDOUT "You did not specify -out <out_file> or <input_file> is equal to <out_file>. ";
+      print STDOUT "${TB}Hence, no diff will be shown${TN} for the following file:\n";
+      print STDOUT "${TR}$in${TN}\n";
+      print STDOUT "${TB}press ENTER to continue...${TN}\n";
+      <STDIN>;
+
+      delete $changed_files{$in};
+    }
+
+    for my $fn (sort keys %changed_files)
+    { print STDOUT "${TB}$fn${TN}\n";
+      print STDOUT $changed_files{$fn}, "\n";
+      print STDOUT "${TB}press ENTER to continue...${TN}\n";
+      <STDIN>;
+    }
+  }
+
+  print STDOUT "Do you want to ${TB}update${TN} the files? Y/(n): ";
+  $answer = <STDIN>; chomp $answer;
+  if( $answer eq "Y" or $answer eq "y" )
+  { return 1; }
+  else
+  { print STDOUT "No updates will be performed.\n"; }
+
+  return 0;
+}
+
+sub store_reverse
+{
+  my $reserve_hr = shift;
+  my $dry_run = shift;
+
+  if($dry_run)
+  {
+    for my $fn (sort keys %$reserve_hr)
+    { my @code = @{$reserve_hr->{$fn}};
+      print STDOUT $fn ."\n";
+      { print STDOUT join("\n", @code), "\n"; }
+    }
+  }
+  else
+  {
+    for my $fn (sort keys %$reserve_hr)
+    { my @code = @{$reserve_hr->{$fn}};
+      open my $fh, ">", $fn or die "Error: store_reverse $fn: $!";
+      { print $fh join("\n", @code), "\n"; }
+      close $fh;
+    }
+  }
+}
+
+sub preprocess_reverse
+{
+  my ($lines_ar, $line_position, $reverse_hr, $current_file_name, $verbose, $bor_prefix) = @_;
+
+  # initialize array for code (if not defined)
+  if (not defined $reverse_hr->{$current_file_name})
+  { my @lines;
+    $reverse_hr->{$current_file_name} = \@lines;
+  }
+
+  #
+  while($line_position <= $#$lines_ar)
+  {
+    my $line = $lines_ar->[$line_position];
+
+    # if ENTRY_tag, call preprocess_reverse
+    if($line =~ /^$REQUIRE_ENTRY_TAG/)
+    { my ($tag, $require_statement, $file_name) = split($REQUIRE_SEPARATOR_TAG, $line);
+
+      # add to file some prefix
+      if(defined $bor_prefix)
+      { $file_name = $bor_prefix . $file_name; }
+
+      push @{$reverse_hr->{$current_file_name}}, $require_statement;
+      ($line_position, $reverse_hr) = preprocess_reverse($lines_ar, ($line_position+1), $reverse_hr, $file_name, $verbose, $bor_prefix);
+      next;
+    }
+
+    # if EXIT_TAG, return with line_position+1
+    if($line =~ /^$REQUIRE_EXIT_TAG/)
+    { return $line_position+1, $reverse_hr; }
+
+    # if "normal" line, just push it and increment line_position
+    push @{$reverse_hr->{$current_file_name}}, $line;
+    $line_position += 1;
+  }
+
+  return $line_position, $reverse_hr;
+}
+
+###############################################################################
+
+sub print_usage
+{
+# to do: improve: check perl pod
+
+  my $fh = shift;
+
+  my $help = "
+The following text describes how to use jpp for preprocessing (solving all
+require statements from a Jasmin program and write the code into a single file):
+
+$TB  \$ jpp -in <input_filename> -out <output_filename>$TN
+
+If the program uses namespaced requires, for instance,
+> from Identifier require \"path/to/some/file.jazz\"
+
+$TB  \$ jpp -in <input_file> -out <output_file> -I Identifier:<absolute_or_relative_path>$TN
+
+jpp\'s -I option follows the same format as in the Jasmin compiler. There can be
+multiple -I\'s.
+
+By default, the preprocessed file contains the absolute path of the files that
+were included during preprocessing. This option, enabled by default, is called
+$TB-reverse-info$TN. This information is helpful if the user wants to, eventually,
+reverse the preprocessing. It is often easier/faster to fix/update/experiment a
+given implementation if all code is in a single file. If one does not want to
+include this type of information in the preprocessed file, it can use
+-no-reverse-info as follows:
+
+$TB  \$ jpp -in <input_file> -out <output_file> -no-reverse-info$TN
+
+To reverse the preprocessing (which requires a file produced with -reverse-info):
+
+$TB  \$ jpp -in <input_file> -out <output_file> -reverse$TN
+
+By default, option $TB-check-diff$TN is active when using -reverse. This means
+that, when using -reverse, the user sees the files that will not be modified and
+the ones that will be modified. The user can select to see the diffs (one by one).
+As a final step, the jpp ask if the user wants to proceed with the update. It is
+possible to avoid this interaction with -no-check-diff.
+
+jpp has one mandatory argument: -in <input_file>. If -out is not specified, then
+<input_file> is assumed to the be <output_file>. Consider the following commands.
+The first command solves all requires from file.jazz and its dependencies and
+writes the code in file.jazz. The second command writes back into the corresponding
+files. If, in between those two commands, the user updates file.jazz, then the
+performed changes are propagated to the corresponding files.
+
+$TB  \$ jpp -in file.jazz$TN
+$TB  \$ jpp -in file.jazz -reverse$TN
+
+In this context, and as a final note, it is important that the user does not
+modify the lines that start by:
+
+  ${TB}$REQUIRE_ENTRY_TAG${TN}
+  ${TB}$REQUIRE_EXIT_TAG${TN}
+
+";
+  print STDOUT $help if($fh == 1);
+  print STDERR $help if($fh == 2);
+}
+
+sub print_options
+{
+  my $in = shift;
+  my $out = shift;
+  my $include_hr = shift;
+
+  print STDOUT $LINE_COMMENT . "v: options:\n";
+  print STDOUT $LINE_COMMENT . "v:   in: $in\n";
+  print STDOUT $LINE_COMMENT . "v:   out: $out\n" if(defined $out);
+  print STDOUT $LINE_COMMENT . "v:   include: ";
+  print STDOUT join("\n${LINE_COMMENT}v:            ",
+    (map {$_ . "->". $include_hr->{$_}} (sort keys %${include_hr}))), "\n";
+  print STDOUT "\n";
+}
+
+sub print_match
+{
+  my $level = shift;
+  my $file = shift;
+  my $spacing = get_spacing($level);
+  print STDOUT $LINE_COMMENT . "v: ${spacing}require $file\n";
+}
+
+sub print_multiple_visit
+{
+  my $level = shift;
+  my $file = shift;
+  my $spacing = get_spacing($level);
+  print STDOUT $LINE_COMMENT . "v: ${spacing}multiple require $file\n";
+}
+
+sub print_visited
+{
+  my $visited_hr = shift;
+
+  print STDOUT "\n" . $LINE_COMMENT . "v: visited\n";
+  for my $f (sort keys %$visited_hr)
+  { my @parents = @{$visited_hr->{$f}};
+    print STDOUT $LINE_COMMENT. "v: $f ->\n${LINE_COMMENT}   ";
+    print STDOUT join("\n${LINE_COMMENT}   ", @parents), "\n";
+  }
+}
+
+sub print_reverse
+{
+  my $reserve_hr = shift;
+
+  for my $file (sort keys %$reserve_hr)
+  {
+    my @code = @{$reserve_hr->{$file}};
+    print STDOUT $file . "\n";
+    print STDOUT "    ";
+    print STDOUT join("\n    ", @code), "\n\n";
+  }
+
+  print STDOUT "\n\n";
+}
+
+sub get_spacing
+{
+  my $level = shift;
+  my $spacing = join '', ("  " x $level);
+  return $spacing;
+}
+
+###############################################################################
+
+unless (caller) { jpp_main(); }
+
+1;
+
