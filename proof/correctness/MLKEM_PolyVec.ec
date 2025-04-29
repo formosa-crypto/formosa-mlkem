@@ -7,7 +7,7 @@ require import W16extra.
 require import Fq MLKEM_Poly NTT_Fq NTTAlgebra MLKEMFCLib.
 
 
-from JazzEC require import Jkem.
+from JazzEC require import Jkem768.
 
 theory MLKEM_PolyVec.
 
@@ -20,12 +20,13 @@ import PolyVec.
 import PolyMat.
 
 lemma polyvec_csubq_corr_h ap :
-      hoare[Jkem.M(Jkem.Syscall).__polyvec_csubq :
+      hoare[Jkem768.M(Jkem768.Syscall).__polyvec_csubq :
            ap = lift_array768 r /\ pos_bound768_cxq r 0 768 2 
            ==>
            ap = lift_array768 res /\ pos_bound768_cxq res 0 768 1 ] . 
 proof.
 proc.
+unroll for 2.
 wp;ecall (poly_csubq_corr_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
 wp;ecall (poly_csubq_corr_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
 wp;ecall (poly_csubq_corr_h (lift_array256 (Array256.init (fun i => r.[i])))).
@@ -61,11 +62,11 @@ move => kb0 /=;move : (rval (k) kb0).
 
 qed. 
 
-lemma polyvec_csubq_ll : islossless Jkem.M(Jkem.Syscall).__polyvec_csubq 
+lemma polyvec_csubq_ll : islossless Jkem768.M(Jkem768.Syscall).__polyvec_csubq 
   by proc; do 3! (wp;call poly_csubq_ll).
 
 lemma polyvec_csubq_corr ap :
-      phoare[Jkem.M(Jkem.Syscall).__polyvec_csubq :
+      phoare[Jkem768.M(Jkem768.Syscall).__polyvec_csubq :
            ap = lift_array768 r /\ pos_bound768_cxq r 0 768 2 
            ==>
            ap = lift_array768 res /\ pos_bound768_cxq res 0 768 1 ] = 1%r
@@ -131,7 +132,7 @@ by rewrite !(modz_small _ 18446744073709551616); 1..3: smt().
 qed.
 
 lemma polyvec_compress_corr mem _p _a :
-    equiv [Jkem.M(Jkem.Syscall).__polyvec_compress ~ EncDec.encode10_vec :
+    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_compress ~ EncDec.encode10_vec :
              pos_bound768_cxq a{1} 0 768 2 /\
              lift_array768 a{1} = _a /\
              u{2} = map (compress 10) _a /\
@@ -242,7 +243,7 @@ by rewrite ultE /= to_uintD_small; smt().
 qed.
 
 lemma i_polyvec_compress_corr _a :
-    equiv [Jkem.M(Jkem.Syscall).__i_polyvec_compress ~ EncDec.encode10_vec :
+    equiv [Jkem768.M(Jkem768.Syscall).__i_polyvec_compress ~ EncDec.encode10_vec :
              pos_bound768_cxq a{1} 0 768 2 /\
              lift_array768 a{1} = _a /\
              u{2} = map (compress 10) _a
@@ -348,7 +349,7 @@ qed.
 
 lemma polyvec_add_corr_h _a _b ab bb :
       0 <= ab <= 6 => 0 <= bb <= 3 =>
-      hoare[Jkem.M(Jkem.Syscall).__polyvec_add2 :
+      hoare[Jkem768.M(Jkem768.Syscall).__polyvec_add2 :
            _a = lift_array768 r /\
            _b = lift_array768 b /\
            signed_bound768_cxq r 0 768 ab /\
@@ -404,11 +405,11 @@ have -> : 0 <= k < 256 by smt().
 by rewrite (resv1 k _) 1:/# !mapiE /= 1..2:/# !initiE /= 1..2:/#.
 qed.
 
-lemma polyvec_add_ll  : islossless Jkem.M(Jkem.Syscall).__polyvec_add2 by proc; do 3! (wp; call poly_add_ll).
+lemma polyvec_add_ll  : islossless Jkem768.M(Jkem768.Syscall).__polyvec_add2 by proc; do 3! (wp; call poly_add_ll).
 
 lemma polyvec_add_corr  _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>
-   phoare[Jkem.M(Jkem.Syscall).__polyvec_add2 :
+   phoare[Jkem768.M(Jkem768.Syscall).__polyvec_add2 :
            _a = lift_array768 r /\
            _b = lift_array768 b /\
            signed_bound768_cxq r 0 768 ab /\
@@ -422,7 +423,7 @@ lemma polyvec_add_corr  _a _b ab bb:
 lemma polyvec_add_corr_impl  ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>
     forall _a _b,
-   phoare[Jkem.M(Jkem.Syscall).__polyvec_add2 :
+   phoare[Jkem768.M(Jkem768.Syscall).__polyvec_add2 :
            _a = lift_array768 r /\
            _b = lift_array768 b /\
            signed_bound768_cxq r 0 768 ab /\
@@ -436,7 +437,7 @@ lemma polyvec_add_corr_impl  ab bb:
 (******************************************************)
 
 lemma polyvec_reduce_corr_h _a :
-      hoare[Jkem.M(Jkem.Syscall).__polyvec_reduce :
+      hoare[Jkem768.M(Jkem768.Syscall).__polyvec_reduce :
           _a = lift_array768 r ==> 
           _a = lift_array768 res /\
           forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)].
@@ -492,10 +493,10 @@ qed.
 
 
 (* TODO *)
-lemma polyvec_reduce_ll: islossless Jkem.M(Jkem.Syscall).__polyvec_reduce  by proc; do 3! (wp; call poly_reduce_ll).
+lemma polyvec_reduce_ll: islossless Jkem768.M(Jkem768.Syscall).__polyvec_reduce  by proc; do 3! (wp; call poly_reduce_ll).
 
 lemma polyvec_reduce_corr  _a :
-      phoare[Jkem.M(Jkem.Syscall).__polyvec_reduce :
+      phoare[Jkem768.M(Jkem768.Syscall).__polyvec_reduce :
           _a = lift_array768 r ==> 
           _a = lift_array768 res /\
           forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)]  = 1%r 
@@ -612,7 +613,7 @@ by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
 qed.
 
 lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t) :
-    equiv [Jkem.M(Jkem.Syscall).__polyvec_decompress ~ EncDec.decode10_vec :
+    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_decompress ~ EncDec.decode10_vec :
              valid_ptr _p (3*320) /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
              load_array960 Glob.mem{1} _p = _a /\ u{2} = _a
@@ -738,7 +739,7 @@ qed.
 (******************************************************)
 
 lemma polyvec_ntt_correct_h _r:
-   hoare[Jkem.M(Jkem.Syscall).__polyvec_ntt :
+   hoare[Jkem768.M(Jkem768.Syscall).__polyvec_ntt :
         _r = r /\ signed_bound768_cxq r 0 768 2
           ==> 
         nttv (lift_polyvec _r) = lift_polyvec res /\
@@ -805,10 +806,10 @@ split.
   by smt().
 qed.
 
-lemma polyvec_ntt_ll  : islossless Jkem.M(Jkem.Syscall).__polyvec_ntt by  proc;do 3! (wp;call(ntt_ll)).
+lemma polyvec_ntt_ll  : islossless Jkem768.M(Jkem768.Syscall).__polyvec_ntt by  proc;do 3! (wp;call(ntt_ll)).
 
 lemma polyvec_ntt_corr _r:
-   phoare[Jkem.M(Jkem.Syscall).__polyvec_ntt :
+   phoare[Jkem768.M(Jkem768.Syscall).__polyvec_ntt :
         _r = r /\ signed_bound768_cxq r 0 768 2
           ==> 
        nttv (lift_polyvec _r) = lift_polyvec res /\
@@ -818,7 +819,7 @@ by conseq polyvec_ntt_ll (polyvec_ntt_correct_h _r).
 (******************************************************)
 
 lemma polyvec_invntt_correct_h _r:
-   hoare[Jkem.M(Jkem.Syscall).__polyvec_invntt :
+   hoare[Jkem768.M(Jkem768.Syscall).__polyvec_invntt :
         _r = r /\
         signed_bound768_cxq r 0 768 4
           ==> 
@@ -890,10 +891,10 @@ split.
 qed.
 
 lemma polyvec_invntt_ll  :
-      islossless Jkem.M(Jkem.Syscall).__polyvec_invntt by  proc;do 3! (wp;call(invntt_ll)).
+      islossless Jkem768.M(Jkem768.Syscall).__polyvec_invntt by  proc;do 3! (wp;call(invntt_ll)).
 
 lemma polyvec_invntt_corr _r:
-   phoare[Jkem.M(Jkem.Syscall).__polyvec_invntt :
+   phoare[Jkem768.M(Jkem768.Syscall).__polyvec_invntt :
     _r = r /\ signed_bound768_cxq r 0 768 4
       ==> 
      scale_polyvec (invnttv (lift_polyvec _r)) (incoeff Fq.SignedReductions.R) = lift_polyvec res /\
@@ -908,7 +909,7 @@ lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coe
   _p2 = scale (basemul _a2 _b2) (incoeff 169) =>
   (forall k, 0 <=  k < 256 =>
      _r.[k] = _p0.[k] + _p1.[k] + _p2.[k])  =>
-  hoare [Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc : 
+  hoare [Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc : 
     _a0 = subarray256 (lift_array768 a) 0 /\
     _a1 = subarray256 (lift_array768 a) 1 /\
     _a2 = subarray256 (lift_array768 a) 2 /\
@@ -985,7 +986,7 @@ by smt().
 qed.
 
 lemma polyvec_pointwise_acc_ll  :
-      islossless Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc
+      islossless Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc
 by  proc;call poly_reduce_ll; do 2! (call poly_add_ll;call poly_basemul_ll); call poly_basemul_ll;auto.
 
 lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coeff Array256.t) :
@@ -994,7 +995,7 @@ lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coeff
   _p2 = scale (basemul _a2 _b2) (incoeff 169) =>
   (forall k, 0 <=  k < 256 =>
      _r.[k] = _p0.[k] + _p1.[k] + _p2.[k])  =>
-  phoare [Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc : 
+  phoare [Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc : 
     _a0 = subarray256 (lift_array768 a) 0 /\
     _a1 = subarray256 (lift_array768 a) 1 /\
     _a2 = subarray256 (lift_array768 a) 2 /\
@@ -1013,7 +1014,7 @@ move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 
 (******************************************************)
 
 lemma polyvec_tobytes_corr mem _p _a :
-    equiv [Jkem.M(Jkem.Syscall).__polyvec_tobytes ~ EncDec.encode12_vec :
+    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_tobytes ~ EncDec.encode12_vec :
              pos_bound768_cxq a{1} 0 768 2 /\
              lift_array768 a{1} = _a /\
              (forall i, 0<=i<768 => 0 <= a{2}.[i] <q) /\
@@ -1087,7 +1088,7 @@ case (384 <= k < 768).
 qed.
 
 lemma polyvec_frombytes_corr mem _p :
-    equiv [Jkem.M(Jkem.Syscall).__polyvec_frombytes ~ EncDec.decode12_vec :
+    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_frombytes ~ EncDec.decode12_vec :
              valid_ptr _p (3*384) /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
              load_array1152 Glob.mem{1} _p = a{2}
@@ -1129,7 +1130,7 @@ qed.
 (******************************************************)
 
 lemma polyvec_pointwise_acc_corr_alg_h va vb :
-  hoare [Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc :
+  hoare [Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc :
     nttv va = lift_polyvec a /\
     nttv vb = lift_polyvec b /\
     signed_bound768_cxq a 0 768 2 /\
@@ -1192,7 +1193,7 @@ by ring.
 qed.
 
 lemma polyvec_pointwise_acc_corr_alg va vb :
-  phoare [Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc :
+  phoare [Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc :
     nttv va = lift_polyvec a /\
     nttv vb = lift_polyvec b /\
     signed_bound768_cxq a 0 768 2 /\
@@ -1205,8 +1206,8 @@ move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_alg_h va v
 module Aux = {
    proc inner_product(ai skpv : W16.t Array768.t) : W16.t Array256.t = {
         var polyi,r';
-        polyi <@ Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc(ai,skpv);
-        r' <@ Jkem.M(Jkem.Syscall)._poly_frommont(polyi);
+        polyi <@ Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc(ai,skpv);
+        r' <@ Jkem768.M(Jkem768.Syscall)._poly_frommont(polyi);
         return r';
    }
 }.

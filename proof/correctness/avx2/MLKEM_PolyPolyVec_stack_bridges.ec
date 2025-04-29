@@ -1,7 +1,7 @@
 require import AllCore IntDiv List.
 
 from CryptoSpecs require import MLKEM.
-from JazzEC require import Jkem_avx2 Jkem_avx2_stack.
+from JazzEC require import Jkem768_avx2 Jkem768_avx2_stack.
 from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array33 Array64 Array148 Array256 Array384 Array768 Array960 Array128 Array1088 Array1152 Array1184 Array2304 Array2400.
 from JazzEC require import Array8 WArray32 WArray33 Array300 WArray64 WArray1184 WArray2400 WArray384.
@@ -15,8 +15,8 @@ op load_array1184 (m : global_mem_t) (p : address) : W8.t Array1184.t =
 
 lemma poly_to_bytes_stack_equiv _mem _pos _a :
    0 <= _pos <= 1184+2*384 =>
-   equiv [ Jkem_avx2_stack.M._i_poly_tobytes
-           ~ Jkem_avx2.M(Syscall)._poly_tobytes :
+   equiv [ Jkem768_avx2_stack.M._i_poly_tobytes
+           ~ Jkem768_avx2.M(Syscall)._poly_tobytes :
    Glob.mem{2} = _mem /\ arg{2}.`1 = W64.of_int _pos /\ arg{1}.`2 = arg{2}.`2 /\ arg{1}.`2 = _a ==>
   Glob.mem{2} =
   stores _mem _pos
@@ -113,8 +113,8 @@ qed.
 
 lemma polyvec_to_bytes_stack_equiv _mem _pos:
    0 <= _pos <= 1184 =>
-   equiv [ Jkem_avx2_stack.M.__i_polyvec_tobytes
-           ~ Jkem_avx2.M(Syscall).__polyvec_tobytes :
+   equiv [ Jkem768_avx2_stack.M.__i_polyvec_tobytes
+           ~ Jkem768_avx2.M(Syscall).__polyvec_tobytes :
    Glob.mem{2} = _mem /\ arg{2}.`1 = W64.of_int _pos /\ arg{1}.`2 = arg{2}.`2 ==>
   Glob.mem{2} =
   stores _mem _pos
@@ -187,8 +187,8 @@ qed.
 
 lemma poly_from_bytes_stack_equiv _pos _mem :
    0 <= _pos <= 768 =>
-   equiv [ Jkem_avx2_stack.M._i_poly_frombytes
-           ~ Jkem_avx2.M(Syscall)._poly_frombytes :
+   equiv [ Jkem768_avx2_stack.M._i_poly_frombytes
+           ~ Jkem768_avx2.M(Syscall)._poly_frombytes :
    to_uint arg{2}.`2 = _pos /\ arg{1}.`1 = arg{2}.`1 /\
    load_array384 Glob.mem{2} _pos = arg{1}.`2 /\  Glob.mem{2} = _mem ==> Glob.mem{2} = _mem /\  ={res}].
 move => Hpos;proc => /=.
@@ -240,8 +240,8 @@ by conseq />;sim.
 qed.
 
 lemma polyvec_from_bytes_stack_equiv:
-   equiv [ Jkem_avx2_stack.M.__i_polyvec_frombytes
-           ~ Jkem_avx2.M(Syscall).__polyvec_frombytes :
+   equiv [ Jkem768_avx2_stack.M.__i_polyvec_frombytes
+           ~ Jkem768_avx2.M(Syscall).__polyvec_frombytes :
    to_uint arg{2} = 0 /\
    load_array1152 Glob.mem{2} 0 = arg{1} ==> ={res}].
 proc => //.
@@ -275,8 +275,8 @@ from JazzEC require import WArray1088.
 op load_array1088 (m : global_mem_t) (p : address) : W8.t Array1088.t = Array1088.init (fun (i : int) => m.[p + i]).
 
 lemma polyvec_decompress_stack_equiv:
-   equiv [ Jkem_avx2_stack.M.__i_polyvec_decompress
-           ~ Jkem_avx2.M(Syscall).__polyvec_decompress :
+   equiv [ Jkem768_avx2_stack.M.__i_polyvec_decompress
+           ~ Jkem768_avx2.M(Syscall).__polyvec_decompress :
    to_uint arg{2} = 1152 /\
    load_array1088 Glob.mem{2} 1152 = arg{1} ==> ={res}].
 proc.
@@ -292,8 +292,8 @@ qed.
 
 from JazzEC require import WArray128 WArray512.
 lemma poly_decompress_stack_equiv:
-   equiv [ Jkem_avx2_stack.M._i_poly_decompress
-           ~ Jkem_avx2.M(Syscall)._poly_decompress :
+   equiv [ Jkem768_avx2_stack.M._i_poly_decompress
+           ~ Jkem768_avx2.M(Syscall)._poly_decompress :
    to_uint arg{2}.`2 = 1152+960 /\
    load_array128 Glob.mem{2} (1152+960) = arg{1}.`2 ==> ={res}].
 proc => /=.

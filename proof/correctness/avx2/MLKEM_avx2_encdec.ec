@@ -7,7 +7,7 @@ from JazzEC require import Array16 Array32 Array64 Array128 Array168 Array256 Ar
 require import Fq MLKEMFCLib W8extra List_extra.
 
 
-from JazzEC require import Jkem.
+from JazzEC require import Jkem768.
 from CryptoSpecs require import GFq Rq Serialization.
 
 
@@ -333,7 +333,7 @@ module MLKEM_avx2_encdec = {
 
     i <- 0;
     while(i < 16) {
-      t <@Jkem.M(Jkem.Syscall).__barrett_reduce(r.[i]);
+      t <@Jkem768.M(Jkem768.Syscall).__barrett_reduce(r.[i]);
       r.[i] <- t;
       i <- i + 1;
     }

@@ -4,7 +4,7 @@ from Jasmin require import JModel.
 from JazzEC require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4.
 from JazzEC require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
-from JazzEC require import Jkem Jkem_avx2.
+from JazzEC require import Jkem768 Jkem768_avx2.
 require import MLKEM_Poly_avx2_prevec MLKEM_avx2_encdec MLKEM_avx2_auxlemmas MLKEMFCLib.
 
 module Mvec = {
@@ -1590,7 +1590,7 @@ proof.
 qed.
 
 equiv veceq_poly_add2 :
-  Mvec.poly_add2 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_add2: ={rp, bp} ==> ={res}.
+  Mvec.poly_add2 ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_add2: ={rp, bp} ==> ={res}.
 proof.
   proc.
   while (={rp, bp, i}).
@@ -1601,7 +1601,7 @@ qed.
 
 
 equiv veceq_poly_sub :
-  Mvec.poly_sub ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mvec.poly_sub ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_sub: ={rp, ap, bp} ==> ={res}.
 proof.
   proc.
   while (={rp, ap, bp, i}).
@@ -1611,7 +1611,7 @@ proof.
 qed.
 
 equiv veceq_poly_csubq :
-  Mvec.poly_csubq ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_csubq: ={rp} ==> ={res}.
+  Mvec.poly_csubq ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_csubq: ={rp} ==> ={res}.
 proof.
   proc.
   while (={rp, i, qx16}).
@@ -1621,7 +1621,7 @@ proof.
 qed.
 
 equiv veceq_poly_tomsg :
-  Mvec.poly_tomsg_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_tomsg_1: ={rp, a, Glob.mem} ==> ={res}.
+  Mvec.poly_tomsg_1 ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_tomsg_1: ={rp, a, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={i, rp, a, hq, hhq} /\ 0 <= i{1} /\ aux{1} = inc{2}).
@@ -1634,7 +1634,7 @@ proof.
 qed.
 
 equiv veceq_poly_frommsg :
-  Mvec.poly_frommsg ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_frommsg_1: ={rp, ap} ==> ={res}.
+  Mvec.poly_frommsg ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_frommsg_1: ={rp, ap} ==> ={res}.
 proof.
   proc.
   while (={rp, ap, i, f, shift, idx, hqs, x16p}).
@@ -1645,7 +1645,7 @@ proof.
 qed.
 
 equiv veceq_red16x:
-  Mvec.red16x ~Jkem_avx2.M(Jkem_avx2.Syscall).__red16x: ={r, qx16, vx16} ==> ={res}.
+  Mvec.red16x ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__red16x: ={r, qx16, vx16} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -1653,7 +1653,7 @@ proof.
 qed.
 
 equiv veceq_poly_reduce:
-  Mvec.poly_reduce ~Jkem_avx2.M(Jkem_avx2.Syscall).__poly_reduce: ={rp} ==> ={res}.
+  Mvec.poly_reduce ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__poly_reduce: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16, vx16}).
@@ -1663,7 +1663,7 @@ proof.
 qed.
 
 equiv veceq_fqmulx16:
-  Mvec.fqmulx16 ~Jkem_avx2.M(Jkem_avx2.Syscall).__fqmulx16: ={a, b, qx16, qinvx16} ==> ={res}.
+  Mvec.fqmulx16 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__fqmulx16: ={a, b, qx16, qinvx16} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -1671,7 +1671,7 @@ proof.
 qed.
 
 equiv veceq_poly_frommont:
-  Mvec.poly_frommont ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_frommont: ={rp} ==> ={res}.
+  Mvec.poly_frommont ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_frommont: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16, qinvx16, dmontx16} /\ aux{1} = inc{2}).
@@ -1681,7 +1681,7 @@ proof.
 qed.
 
 equiv veceq_poly_decompress:
-  Mvec.poly_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
+  Mvec.poly_decompress ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
   while(={ap, i, q, mask, shift, shufbidx, Glob.mem} /\ aux{1} = inc{2} /\
@@ -1710,7 +1710,7 @@ qed.
 
 
 equiv veceq_poly_compress_1:
-  Mvec.poly_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+  Mvec.poly_compress_1 ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
   while(={rp, a, i, v, shift1, mask, shift2, permidx, Glob.mem} /\ aux{1} = inc{2}).
@@ -1724,7 +1724,7 @@ qed.
 
 
 equiv veceq_poly_compress:
-  Mvec.poly_compress ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+  Mvec.poly_compress ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_compress: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
 proof.
   proc.
   while(={rp, a, i, v, shift1, mask, shift2, permidx, Glob.mem}  /\ aux{1} = inc{2}).
@@ -1738,7 +1738,7 @@ qed.
 
 (*
 equiv veceq_schoolbook:
-  Mvec.schoolbook ~Jkem_avx2.M(Jkem_avx2.Syscall).__schoolbook: ={ap, bp, sign, zeta_0, qx16, qinvx16} ==> ={res}.
+  Mvec.schoolbook ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__schoolbook: ={ap, bp, sign, zeta_0, qx16, qinvx16} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -1746,7 +1746,7 @@ proof.
 qed.
 
 equiv veceq_poly_basemul:
-  Mvec.poly_basemul ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_basemul: ={rp, ap, bp} ==> ={res}.
+  Mvec.poly_basemul ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_basemul: ={rp, ap, bp} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -1754,35 +1754,35 @@ proof.
 qed.
 *)
 equiv veceq_shuffle8:
-  Mvec.shuffle8 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8: ={a, b} ==> ={res}.
+  Mvec.shuffle8 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle8: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
 qed.
 
 equiv veceq_shuffle4:
-  Mvec.shuffle4 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4: ={a, b} ==> ={res}.
+  Mvec.shuffle4 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle4: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
 qed.
 
 equiv veceq_shuffle2:
-  Mvec.shuffle2 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2: ={a, b} ==> ={res}.
+  Mvec.shuffle2 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle2: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
 qed.
 
 equiv veceq_shuffle1:
-  Mvec.shuffle1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1: ={a, b} ==> ={res}.
+  Mvec.shuffle1 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle1: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
 qed.
 
 equiv veceq_poly_tobytes:
-  Mvec.poly_tobytes ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
+  Mvec.poly_tobytes ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
   while(={rp, a, i, qx16, Glob.mem}).
@@ -1793,7 +1793,7 @@ proof.
 qed.
 
 equiv veceq_poly_frombytes:
-  Mvec.poly_frombytes ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_frombytes: ={rp, ap, Glob.mem} ==> ={res}.
+  Mvec.poly_frombytes ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_frombytes: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
   proc.
   while(={rp, ap, i, mask, Glob.mem}).
@@ -1802,7 +1802,7 @@ proof.
 qed.
 
 equiv prevec_eq_poly_add2:
-  Mprevec.poly_add2 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_add2: ={rp, bp} ==> ={res}.
+  Mprevec.poly_add2 ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_add2.
@@ -1810,7 +1810,7 @@ apply veceq_poly_add2.
 qed.
 
 equiv prevec_eq_poly_sub:
-  Mprevec.poly_sub ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mprevec.poly_sub ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_sub: ={rp, ap, bp} ==> ={res}.
     transitivity Mvec.poly_sub (={rp, ap, bp} ==> ={res}) (={rp, ap, bp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_sub.
@@ -1818,7 +1818,7 @@ apply veceq_poly_sub.
 qed.
 
 equiv prevec_eq_poly_csubq:
-  Mprevec.poly_csubq ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_csubq: ={rp} ==> ={res}.
+  Mprevec.poly_csubq ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_csubq: ={rp} ==> ={res}.
     transitivity Mvec.poly_csubq (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_csubq.
@@ -1826,7 +1826,7 @@ apply veceq_poly_csubq.
 qed.
 
 equiv prevec_eq_poly_tomsg:
-  Mprevec.poly_tomsg_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_tomsg_1: ={rp, a} ==> ={res}.
+  Mprevec.poly_tomsg_1 ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_tomsg_1: ={rp, a} ==> ={res}.
     transitivity Mvec.poly_tomsg_1 (={rp, a} ==> ={res}) (={rp, a, Glob.mem} ==> ={res}).
 smt(). trivial.
 apply eq_poly_tomsg.
@@ -1834,7 +1834,7 @@ apply veceq_poly_tomsg.
 qed.
 
 equiv prevec_eq_poly_frommsg:
-  Mprevec.poly_frommsg_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_frommsg_1: ={rp, ap}==> ={res}.
+  Mprevec.poly_frommsg_1 ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_frommsg_1: ={rp, ap}==> ={res}.
      transitivity Mvec.poly_frommsg (={rp, ap} ==> ={res}) (={rp, ap} ==> ={res}).
 smt(). trivial.
 apply eq_poly_frommsg.
@@ -1842,7 +1842,7 @@ apply veceq_poly_frommsg.
 qed.
 
 equiv prevec_eq_red16x:
-  Mprevec.red16x ~Jkem_avx2.M(Jkem_avx2.Syscall).__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.red16x ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
   transitivity Mvec.red16x (is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2})
                            (={r, qx16, vx16} ==> ={res}).
 smt(). trivial.
@@ -1851,7 +1851,7 @@ apply veceq_red16x.
 qed.
 
 equiv prevec_eq_poly_reduce:
-  Mprevec.poly_reduce ~Jkem_avx2.M(Jkem_avx2.Syscall).__poly_reduce: ={rp} ==> ={res}.
+  Mprevec.poly_reduce ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__poly_reduce: ={rp} ==> ={res}.
     transitivity Mvec.poly_reduce (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_reduce.
@@ -1859,7 +1859,7 @@ apply veceq_poly_reduce.
 qed.
 
 equiv prevec_eq_fqmulx16:
-  Mprevec.fqmulx16 ~Jkem_avx2.M(Jkem_avx2.Syscall).__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.fqmulx16 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
     transitivity Mvec.fqmulx16 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2})
                                (={a, b, qx16, qinvx16} ==> ={res}).
 smt(). trivial.
@@ -1868,7 +1868,7 @@ apply veceq_fqmulx16.
 qed.
 
 equiv prevec_eq_poly_frommont:
-  Mprevec.poly_frommont ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_frommont: ={rp} ==> ={res}.
+  Mprevec.poly_frommont ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_frommont: ={rp} ==> ={res}.
     transitivity Mvec.poly_frommont (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_frommont.
@@ -1876,7 +1876,7 @@ apply veceq_poly_frommont.
 qed.
 
 equiv prevec_eq_poly_decompress:
-  Mprevec.poly_decompress ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
+  Mprevec.poly_decompress ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_decompress: ={ap, Glob.mem} ==> ={res, Glob.mem}.
     transitivity Mvec.poly_decompress (={ap, Glob.mem} ==> ={res, Glob.mem}) (={ap, Glob.mem} ==> ={res, Glob.mem}).
 smt(). trivial.
 apply eq_poly_decompress.
@@ -1884,7 +1884,7 @@ apply veceq_poly_decompress.
 qed.
 
 equiv prevec_eq_poly_compress_1:
-  Mprevec.poly_compress_1 ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress_1: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
+  Mprevec.poly_compress_1 ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_compress_1: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
     transitivity Mvec.poly_compress_1 (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={rp, a, Glob.mem} ==> ={res, Glob.mem}).
 smt(). smt().
 apply eq_poly_compress_1.
@@ -1892,7 +1892,7 @@ apply veceq_poly_compress_1.
 qed.
 
 equiv prevec_eq_poly_compress:
-  Mprevec.poly_compress ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_compress: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
+  Mprevec.poly_compress ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_compress: ={rp, a, Glob.mem} ==> ={res,Glob.mem}.
     transitivity Mvec.poly_compress (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={rp, a, Glob.mem} ==> ={res, Glob.mem}).
 smt(). smt().
 apply eq_poly_compress.
@@ -1901,7 +1901,7 @@ qed.
 
 (*
 equiv prevec_eq_schoolbook:
-  Mprevec.schoolbook ~Jkem_avx2.M(Jkem_avx2.Syscall).__schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
+  Mprevec.schoolbook ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__schoolbook: ={ap, bp, sign} /\ is16u16 zeta_0{1} zeta_0{2} /\
                                              is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==>
                                              is16u16 res{1}.`1 res{2}.`1 /\ is16u16 res{1}.`2 res{2}.`2 /\
                                              is16u16 res{1}.`3 res{2}.`3 /\ is16u16 res{1}.`4 res{2}.`4.
@@ -1918,7 +1918,7 @@ qed.
 *)
 
 equiv prevec_eq_shuffle8:
-  Mprevec.shuffle8 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle8 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle8: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -1932,13 +1932,13 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle8_sym :
-  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8 ~ Mprevec.shuffle8 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle8 ~ Mprevec.shuffle8 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle8 => />. qed.
 
 equiv prevec_eq_shuffle4:
-  Mprevec.shuffle4 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle4 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle4: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -1952,13 +1952,13 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle4_sym:
-  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4 ~ Mprevec.shuffle4: is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle4 ~ Mprevec.shuffle4: is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle4 => />. qed.
 
 equiv prevec_eq_shuffle2:
-  Mprevec.shuffle2 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle2 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle2: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -1972,13 +1972,13 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle2_sym:
-  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2 ~ Mprevec.shuffle2 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle2 ~ Mprevec.shuffle2 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle2 => />. qed.
 
 equiv prevec_eq_shuffle1:
-  Mprevec.shuffle1 ~Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle1 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle1: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -1992,7 +1992,7 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle1_sym:
-  Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1 ~ Mprevec.shuffle1 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle1 ~ Mprevec.shuffle1 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle1 => />. qed.
@@ -2005,7 +2005,7 @@ lemma list_arr16 (x:'a Array16.t):
 rewrite /to_list /mkseq -iotaredE => />. qed.
 
 lemma avx2_shuffle8_corr_h (_a _b : t16u16) :
-      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8 :
+      hoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle8 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
@@ -2015,7 +2015,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle8_corr (_a _b : t16u16) :
-      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle8 :
+      phoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle8 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
@@ -2023,7 +2023,7 @@ lemma avx2_shuffle8_corr (_a _b : t16u16) :
 conseq __shuffle8_ll (avx2_shuffle8_corr_h _a _b) => />. qed.
 
 lemma avx2_shuffle4_corr_h (_a _b : t16u16) :
-      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4 :
+      hoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle4 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
@@ -2033,7 +2033,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle4_corr (_a _b : t16u16) :
-      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle4 :
+      phoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle4 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
@@ -2041,7 +2041,7 @@ lemma avx2_shuffle4_corr (_a _b : t16u16) :
 conseq __shuffle4_ll (avx2_shuffle4_corr_h _a _b) => />. qed.
 
 lemma avx2_shuffle2_corr_h (_a _b : t16u16) :
-      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2 :
+      hoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle2 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
@@ -2051,7 +2051,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle2_corr (_a _b : t16u16) :
-      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle2 :
+      phoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle2 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
@@ -2059,7 +2059,7 @@ lemma avx2_shuffle2_corr (_a _b : t16u16) :
 conseq __shuffle2_ll (avx2_shuffle2_corr_h _a _b) => />. qed.
 
 lemma avx2_shuffle1_corr_h (_a _b : t16u16) :
-      hoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1 :
+      hoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle1 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\
@@ -2069,7 +2069,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle1_corr (_a _b : t16u16) :
-      phoare[ Jkem_avx2.M(Jkem_avx2.Syscall).__shuffle1 :
+      phoare[ Jkem768_avx2.M(Jkem768_avx2.Syscall).__shuffle1 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\
@@ -2077,7 +2077,7 @@ lemma avx2_shuffle1_corr (_a _b : t16u16) :
 conseq __shuffle1_ll (avx2_shuffle1_corr_h _a _b) => />. qed.
 
 equiv prevec_eq_poly_tobytes:
-  Mprevec.poly_tobytes ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
+  Mprevec.poly_tobytes ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   transitivity Mvec.poly_tobytes (={rp, a, Glob.mem} ==> ={Glob.mem, res})
                                  (={rp, a, Glob.mem} ==> ={Glob.mem,res}).
@@ -2087,7 +2087,7 @@ proof.
 qed.
 
 equiv prevec_eq_poly_frombytes:
-  Mprevec.poly_frombytes ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_frombytes: ={rp, ap, Glob.mem} ==> ={res}.
+  Mprevec.poly_frombytes ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_frombytes: ={rp, ap, Glob.mem} ==> ={res}.
 proof.
   transitivity Mvec.poly_frombytes (={rp, ap, Glob.mem} ==> ={res})
                                  (={rp, ap, Glob.mem} ==> ={res}).
@@ -2306,7 +2306,7 @@ qed.
 
 (*
 equiv prevec_eq_poly_basemul:
-  Mprevec.poly_basemul ~Jkem_avx2.M(Jkem_avx2.Syscall)._poly_basemul: ={ap, bp} ==> ={res}.
+  Mprevec.poly_basemul ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_basemul: ={ap, bp} ==> ={res}.
 transitivity Mvec.poly_basemul (={ap,bp} ==> ={res})
                                (={rp,ap,bp} ==> ={res}).
   smt(). trivial.

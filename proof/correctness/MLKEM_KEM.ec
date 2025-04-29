@@ -1,6 +1,6 @@
 require import AllCore IntDiv.
 
-from JazzEC require import Jkem.
+from JazzEC require import Jkem768.
 
 require import MLKEM_InnerPKE MLKEM_Poly MLKEM_PolyVec.
 
@@ -18,7 +18,7 @@ require import MLKEM_keccak_ref.
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
 lemma mlkem_kem_correct_kg mem _pkp _skp : 
-   equiv [Jkem.M(Jkem.Syscall).__crypto_kem_keypair_jazz ~ MLKEM.kg_derand : 
+   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_keypair_jazz ~ MLKEM.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        coins{2}.`1 = Array32.init (fun i => randomnessp{1}.[0 + i]) /\ 
        coins{2}.`2 = Array32.init (fun i => randomnessp{1}.[32 + i]) /\ 
@@ -287,7 +287,7 @@ by rewrite tP => i ib; smt(Array32.initiE).
 qed.
 
 lemma mlkem_kem_correct_enc mem _ctp _pkp _kp : 
-   equiv [Jkem.M(Jkem.Syscall).__crypto_kem_enc_jazz ~ MLKEM.enc_derand: 
+   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_enc_jazz ~ MLKEM.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_disj_reg _ctp (3*320+128) _kp (32) /\
      Glob.mem{1} = mem /\ 
@@ -400,7 +400,7 @@ require import StdOrder.
 import IntOrder.
 
 lemma verify_correct_h mem (_ctp : int) ctp1 :
-  hoare [Jkem.M(Jkem.Syscall).__verify : 
+  hoare [Jkem768.M(Jkem768.Syscall).__verify : 
              Glob.mem = mem /\ valid_ptr _ctp 1088 /\
              to_uint ctp = _ctp /\ ctpc = ctp1 ==>
              Glob.mem = mem /\
@@ -476,14 +476,14 @@ rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
 by rewrite -(H0 i{hr} _); 1: by smt().
 qed.
 
-lemma verify_ll : islossless Jkem.M(Jkem.Syscall).__verify.
+lemma verify_ll : islossless Jkem768.M(Jkem768.Syscall).__verify.
 proc.
 wp; while (0 <= i{hr} <= 1088 /\ inc{hr} = 1088) (1088 - i{hr}); last by auto => /> /#.
 by move => *; auto => /> /#. 
 qed.
 
 lemma verify_correct mem (_ctp : int) ctp1 :
-  phoare [Jkem.M(Jkem.Syscall).__verify : 
+  phoare [Jkem768.M(Jkem768.Syscall).__verify : 
              Glob.mem = mem /\ valid_ptr _ctp 1088 /\
              to_uint ctp = _ctp /\ ctpc = ctp1 ==>
              Glob.mem = mem /\
@@ -495,7 +495,7 @@ lemma verify_correct mem (_ctp : int) ctp1 :
 
 require import List.
 lemma cmov_correct_h _dst _src _cnd mem:
-   hoare [Jkem.M(Jkem.Syscall).__cmov : 
+   hoare [Jkem768.M(Jkem768.Syscall).__cmov : 
              Glob.mem = mem /\ valid_ptr _dst 32 /\
              src = _src /\ cnd = _cnd /\ to_uint dst = _dst ==>
              touches mem Glob.mem _dst 32 /\
@@ -545,10 +545,10 @@ auto => /> &hr ?? case0 case1 ?? back case00 case11 ?; do split; 1,2: by smt().
   by rewrite !get_set_eqE_s /#. 
 qed.
 
-lemma cmov_ll : islossless Jkem.M(Jkem.Syscall).__cmov by proc; unroll for 3; islossless.
+lemma cmov_ll : islossless Jkem768.M(Jkem768.Syscall).__cmov by proc; unroll for 3; islossless.
 
 lemma cmov_correct _dst _src _cnd mem:
-   phoare [Jkem.M(Jkem.Syscall).__cmov : 
+   phoare [Jkem768.M(Jkem768.Syscall).__cmov : 
              Glob.mem = mem /\ valid_ptr _dst 32 /\
              src = _src /\ cnd = _cnd /\ to_uint dst = _dst ==>
              touches mem Glob.mem _dst 32 /\
@@ -560,7 +560,7 @@ lemma cmov_correct _dst _src _cnd mem:
     by conseq cmov_ll (cmov_correct_h _dst _src _cnd mem).
 
 lemma mlkem_kem_correct_dec mem _ctp _skp _shkp : 
-   equiv [Jkem.M(Jkem.Syscall).__crypto_kem_dec_jazz ~ MLKEM.dec: 
+   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_dec_jazz ~ MLKEM.dec: 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
      valid_ptr _shkp 32 /\

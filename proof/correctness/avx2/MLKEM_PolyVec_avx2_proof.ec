@@ -4,7 +4,7 @@ from Jasmin require import JModel.
 from JazzEC require import Array4 Array8 Array16 Array32 Array128 Array256 Array960 Array384 Array400 Array768 Array1152.
 from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
 require import Fq AVX2_Ops W16extra.
-from JazzEC require import Jkem_avx2 Jkem.
+from JazzEC require import Jkem768_avx2 Jkem768.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_Poly_avx2_vec.
 require import MLKEM_Poly_avx2_proof.
@@ -1253,7 +1253,7 @@ proof.
 qed.
 
 lemma polyvec_frombytes_equiv :
-    equiv [Jkem_avx2.M(Jkem_avx2.Syscall).__polyvec_frombytes ~Jkem.M(Jkem.Syscall).__polyvec_frombytes :
+    equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_frombytes ~Jkem768.M(Jkem768.Syscall).__polyvec_frombytes :
              valid_ptr (W64.to_uint ap{1}) (3*384) /\
              ={Glob.mem,ap} ==>
              lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\

@@ -16,7 +16,7 @@ from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 from CryptoSpecs require import Symmetric.
 require import MLKEMFCLib.
 
-from JazzEC require import Jkem WArray200.
+from JazzEC require import Jkem768 WArray200.
 
 
 (****************************************************************************)
@@ -342,7 +342,7 @@ phoare sha3512_33_ph' seed :
 proof. by conseq sha3512_33_ll (sha3512_33_h' seed). qed.
 
 phoare sha3_512_33_64 seed : 
- [ Jkem.M(Jkem.Syscall)._sha3512_33
+ [ Jkem768.M(Jkem768.Syscall)._sha3512_33
  : arg.`2 = seed
  ==>
    Array32.init (fun i => res.[i]) = (SHA3_512_33_64 seed).`1
@@ -393,7 +393,7 @@ phoare shake128_absorb34_ph' (seed : W8.t Array34.t):
 proof. by conseq shake128_absorb34_ll (shake128_absorb34_h' seed). qed.
 
 phoare shake_absorb (seed : W8.t Array34.t): 
- [ Jkem.M(Jkem.Syscall)._shake128_absorb34
+ [ Jkem768.M(Jkem768.Syscall)._shake128_absorb34
  : arg.`2 = seed
  ==> res = SHAKE128_ABSORB_34 
             (Array32.init (fun k => seed.[k]))
@@ -438,7 +438,7 @@ phoare shake128_squeezeblock_ph' state :
 proof. by conseq shake128_squeezeblock_ll (shake128_squeezeblock_h' state). qed.
 
 phoare shake_squeeze state : 
- [ Jkem.M(Jkem.Syscall)._shake128_squeezeblock
+ [ Jkem768.M(Jkem768.Syscall)._shake128_squeezeblock
  : arg.`1 = state
  ==> res = SHAKE128_SQUEEZE_168 state
  ] = 1%r.
@@ -490,7 +490,7 @@ phoare shake256_128_33_ph' seed :
 proof. by conseq shake256_128_33_ll (shake256_128_33_h' seed). qed.
 
 phoare shake256_33_128 seed : 
- [ Jkem.M(Jkem.Syscall)._shake256_128_33
+ [ Jkem768.M(Jkem768.Syscall)._shake256_128_33
  : arg.`2 = seed
  ==> res = SHAKE256_33_128
             (Array32.init (fun i => seed.[i]))
@@ -552,7 +552,7 @@ phoare isha3_256_M1184_ph' _mem _ptr:
 proof. by conseq isha3_256_M1184_ll (isha3_256_M1184_h' _mem _ptr). qed.
 
 phoare pkH_sha mem _ptr: 
- [ Jkem.M(Jkem.Syscall)._isha3_256_M1184
+ [ Jkem768.M(Jkem768.Syscall)._isha3_256_M1184
  : arg.`2 = W64.of_int _ptr
  /\ valid_ptr _ptr 1184
  /\ Glob.mem = mem
@@ -633,7 +633,7 @@ phoare shake256_1120_32_ph' mem _pout _pin1 _pin2:
 proof. by conseq shake256_1120_32_ll (shake256_1120_32_h' mem _pout _pin1 _pin2). qed.
 
 phoare j_shake mem _pout _pin1 _pin2: 
- [ Jkem.M(Syscall)._shake256_1120_32
+ [ Jkem768.M(Syscall)._shake256_1120_32
  : arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2)
  /\ valid_ptr _pout 32
  /\ valid_ptr _pin1 32
@@ -711,7 +711,7 @@ phoare sha3_512_64_ph' buf:
 proof. by conseq sha3_512_64_ll (sha3_512_64_h' buf). qed.
 
 phoare sha_g buf: 
- [ Jkem.M(Jkem.Syscall)._sha3_512_64
+ [ Jkem768.M(Jkem768.Syscall)._sha3_512_64
  : arg.`2 = buf
  ==>
    let bytes = SHA3_512_64_64

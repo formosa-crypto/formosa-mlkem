@@ -8,7 +8,7 @@ require import W16extra.
 require import AVX2_Ops MLKEM_avx2_encdec MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxlemmas.
 require import Fq NTT_Fq MLKEM_Poly MLKEMFCLib.
 
-from JazzEC require import Jkem_avx2 Jkem.
+from JazzEC require import Jkem768_avx2 Jkem768.
 
 from CryptoSpecs require import GFq Rq Serialization VecMat Correctness.
 
@@ -232,7 +232,7 @@ lemma poly_csubq_corr_h ap :
              pos_bound256_cxq res 0 256 1 ].
 proof.
   proc.
-  while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = Jkem_avx2.jqx16.[k]).
+  while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = Jkem768_avx2.jqx16.[k]).
   seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
   inline Ops.iVPSUB_16u16.
   wp. skip. simplify.
@@ -322,7 +322,7 @@ proof.
   (****)
   rewrite to_sintN => //=.
   rewrite (_qx16_def (x%% 16))  => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod.
@@ -330,7 +330,7 @@ proof.
   simplify.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod /=.
@@ -341,13 +341,13 @@ proof.
   
   rewrite to_sintN => //=.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod.
@@ -357,7 +357,7 @@ proof.
   rewrite _qx16_def => //=.
   rewrite (_: rp{hr}.[16 * i{hr} + x %% 16] = rp{hr}.[x]).
     by move : x_i x_mb => /#.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite incoeffD. ring.
@@ -423,7 +423,7 @@ proof.
   rewrite W16.sltE.
   rewrite to_sintB_small.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK.
@@ -434,7 +434,7 @@ proof.
   rewrite idx_bounds /= qE /=.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK.
@@ -445,7 +445,7 @@ proof.
   rewrite to_sintD_small => />.
   rewrite to_sintN => />.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK => />.
@@ -458,7 +458,7 @@ proof.
   rewrite _r_def => //.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -484,7 +484,7 @@ proof.
   rewrite _r_def => //.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -507,7 +507,7 @@ proof.
   smt().
 
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite to_sintN /=.
@@ -554,7 +554,7 @@ proof.
   move : _r_ub.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -581,7 +581,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -601,7 +601,7 @@ proof.
   rewrite to_sintD_small => />.
   rewrite to_sintN => />.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK => />.
@@ -613,7 +613,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -632,7 +632,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -643,7 +643,7 @@ proof.
 
   move : _sr_lb rp_qx16_lb.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -660,7 +660,7 @@ proof.
   
   rewrite qE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite to_sintN of_sintK => />.
@@ -669,7 +669,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -681,7 +681,7 @@ proof.
   move => rp_q_lb_neg.
   move : _sr_lb.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem_avx2.jqx16).
+  rewrite /(Jkem768_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -754,8 +754,8 @@ proof.
   while (0 <= i <= 16 /\
          (forall k, 0 <= k < 256 => ap.[k] = incoeff (to_sint rp.[k])) /\
          (forall k, 0 <= k < 16 * i => bpos16 rp.[k] (2*q)) /\
-         (forall k, 0 <= k < 16 => qx16.[k] = Jkem_avx2.jqx16.[k]) /\
-         (forall k, 0 <= k < 16 => vx16.[k] = Jkem_avx2.jvx16.[k])); last first.
+         (forall k, 0 <= k < 16 => qx16.[k] = Jkem768_avx2.jqx16.[k]) /\
+         (forall k, 0 <= k < 16 => vx16.[k] = Jkem768_avx2.jvx16.[k])); last first.
   wp. skip.
   move => &hr ap_def />.
   do split.
@@ -893,7 +893,7 @@ proof.
   rewrite (_: (2 * k + 1) %% 2 = 1).
     by smt().
   rewrite pack2_bits8.
-  rewrite /(Jkem_avx2.jdmontx16) => />.
+  rewrite /(Jkem768_avx2.jdmontx16) => />.
   rewrite initiE => />. move : k_lb k_ub => /#.
   smt().
   
@@ -913,7 +913,7 @@ proof.
   rewrite (_: (2 * k + 1) %% 2 = 1).
     by smt().
   rewrite pack2_bits8.
-  rewrite /(Jkem_avx2.jqx16) => />.
+  rewrite /(Jkem768_avx2.jqx16) => />.
   rewrite initiE => />. move : k_lb k_ub => /#.
   smt().
   
@@ -1030,12 +1030,12 @@ proof.
       move => &1 [#] ap_lb ap_ub.
       do split.
         + move => k k_lb k_ub.
-          rewrite /(Jkem_avx2.jqx16) /=.
+          rewrite /(Jkem768_avx2.jqx16) /=.
           do (rewrite initiE 1:/# /=). smt().
         + move => k k_lb k_ub.
           rewrite /(pd_mask_s) /=.
           do (rewrite initiE 1:/# /=).
-          rewrite /(Jkem_avx2.pc_mask_s) /of_int.
+          rewrite /(Jkem768_avx2.pc_mask_s) /of_int.
           apply W16.wordP => x x_i.
           rewrite bits16E initiE 1:x_i /=.
           rewrite /int2bs /= /mkseq -iotaredE /= /bits2w /=.
@@ -1045,7 +1045,7 @@ proof.
             + do (rewrite initiE 1:/# /=).
               smt().
         + move => k k_lb k_ub.
-          rewrite /(Jkem_avx2.pd_shift_s) /=.
+          rewrite /(Jkem768_avx2.pd_shift_s) /=.
           do (rewrite initiE 1:/# /=).
           rewrite /of_int.
           apply W16.wordP => x x_i.
@@ -1057,7 +1057,7 @@ proof.
             + do (rewrite initiE 1:/# /=).
               smt().
         + move => k k_lb k_ub.
-          rewrite /(Jkem_avx2.pd_jshufbidx) /=.
+          rewrite /(Jkem768_avx2.pd_jshufbidx) /=.
           do (rewrite initiE 1:/# /=).
           smt().
   while (#pre /\ i{1} = i{2} /\ 0 <= i{1} <= 16 /\
@@ -1350,7 +1350,7 @@ proof.
   move => &1 [#] pos_bound_a.
   do split.
     + move => k k_lb k_ub.
-      rewrite /(Jkem_avx2.jvx16) /=.
+      rewrite /(Jkem768_avx2.jvx16) /=.
       do (rewrite initiE 1:/# /=). smt().
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
@@ -1360,7 +1360,7 @@ proof.
       rewrite /f16u16_t32u8 /=.
       do (rewrite initiE 1:/# /=).
       rewrite shlMP 1:/# /=.
-      rewrite /(Jkem_avx2.pc_shift2_s) /of_int.
+      rewrite /(Jkem768_avx2.pc_shift2_s) /of_int.
       apply W8.wordP => x x_i.
       rewrite bits8E initiE 1:x_i /=.
       rewrite /int2bs /= /mkseq -iotaredE /= /bits2w /=.
@@ -1376,7 +1376,7 @@ proof.
           simplify.
           smt().
     + move => k k_lb k_ub.
-      rewrite /(Jkem_avx2.pc_permidx_s) /=.
+      rewrite /(Jkem768_avx2.pc_permidx_s) /=.
       do (rewrite initiE 1:/# /=).
       smt().
     wp.
@@ -1983,7 +1983,7 @@ proof.
   move => &1 [#] rp_lb rp_ub pos_bound_a.
   do split.
     + move => k k_lb k_ub.
-      rewrite /(Jkem_avx2.jvx16) /=.
+      rewrite /(Jkem768_avx2.jvx16) /=.
       do (rewrite initiE 1:/# /=). smt().
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
@@ -1993,7 +1993,7 @@ proof.
       rewrite /f16u16_t32u8 /=.
       do (rewrite initiE 1:/# /=).
       rewrite shlMP 1:/# /=.
-      rewrite /(Jkem_avx2.pc_shift2_s) /of_int.
+      rewrite /(Jkem768_avx2.pc_shift2_s) /of_int.
       apply W8.wordP => x x_i.
       rewrite bits8E initiE 1:x_i /=.
       rewrite /int2bs /= /mkseq -iotaredE /= /bits2w /=.
@@ -2009,7 +2009,7 @@ proof.
           simplify.
           smt().
     + move => k k_lb k_ub.
-      rewrite /(Jkem_avx2.pc_permidx_s) /=.
+      rewrite /(Jkem768_avx2.pc_permidx_s) /=.
       do (rewrite initiE 1:/# /=).
       smt().
     wp.
@@ -2667,11 +2667,11 @@ proof.
   split.
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
-      rewrite /(Jkem_avx2.hqx16_m1) initiE 1:/# //=.
+      rewrite /(Jkem768_avx2.hqx16_m1) initiE 1:/# //=.
       smt().
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
-      rewrite /(Jkem_avx2.hhqx16) initiE 1:/# //=.
+      rewrite /(Jkem768_avx2.hhqx16) initiE 1:/# //=.
       smt().
   wp.
   while (#{~i{1}=0}pre /\ 0 <= i{1} <= 8 /\
@@ -3080,7 +3080,7 @@ proof.
   do split.
     + move => k k_lb k_ub.
       rewrite initiE 1:/# //=.
-      rewrite /(Jkem_avx2.hqx16_m1) initiE 1:/# //=.
+      rewrite /(Jkem768_avx2.hqx16_m1) initiE 1:/# //=.
       smt().
     + move => k k_lb k_ub.
       do (rewrite initiE 1:/# //=).
@@ -3116,7 +3116,7 @@ proof.
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     smt().
 
@@ -3157,7 +3157,7 @@ proof.
     do 2!(rewrite initiE 1:/# /=).
     rewrite W2u8.Pack.initiE 1:/# //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
 
@@ -3168,7 +3168,7 @@ proof.
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     move : x_i k_lb k_ub => /#.
 
@@ -3188,7 +3188,7 @@ proof.
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -3207,7 +3207,7 @@ proof.
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite exprM //=.
@@ -3235,7 +3235,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -3248,7 +3248,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -3317,7 +3317,7 @@ proof.
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     smt().
 
@@ -3358,7 +3358,7 @@ proof.
     do 2!(rewrite initiE 1:/# /=).
     rewrite W2u8.Pack.initiE 1:/# //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
 
@@ -3369,7 +3369,7 @@ proof.
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     move : x_i k_lb k_ub => /#.
 
@@ -3389,7 +3389,7 @@ proof.
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -3408,7 +3408,7 @@ proof.
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite exprM //=.
@@ -3436,7 +3436,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -3449,7 +3449,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -3516,7 +3516,7 @@ proof.
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     smt().
 
@@ -3557,7 +3557,7 @@ proof.
     do 2!(rewrite initiE 1:/# /=).
     rewrite W2u8.Pack.initiE 1:/# //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
 
@@ -3568,7 +3568,7 @@ proof.
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     move : x_i k_lb k_ub => /#.
 
@@ -3588,7 +3588,7 @@ proof.
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -3607,7 +3607,7 @@ proof.
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite exprM //=.
@@ -3635,7 +3635,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -3648,7 +3648,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -3717,7 +3717,7 @@ proof.
   have idx_in_bound: forall j, 0 <= j < 32 => ! 128 <= to_uint idx{1}.[j].
     move => j j_i.
     rewrite (idx_def j j_i).
-    rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     smt().
 
@@ -3758,7 +3758,7 @@ proof.
     do 2!(rewrite initiE 1:/# /=).
     rewrite W2u8.Pack.initiE 1:/# //=.
     rewrite (pmod_small _ 16) //=.
-      rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
 
@@ -3769,7 +3769,7 @@ proof.
     apply W2u8.Pack.ext_eq.
     move => x x_i.
     do (rewrite initiE //=).
-    rewrite idx_def 1:/# /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+    rewrite idx_def 1:/# /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
     do (rewrite (fun_if W8.to_uint) /=).
     move : x_i k_lb k_ub => /#.
 
@@ -3789,7 +3789,7 @@ proof.
     have idx_bnds: forall w, 0 <= w < 32 => 0 <= to_uint idx{1}.[w] %/4 && to_uint idx{1}.[w] %/ 4 < 4.
       move => w w_i.
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (16 * ((2 * k + x) %/ 16) + to_uint idx{1}.[2 * k + x]) %/ 4 %% 4 =
@@ -3808,7 +3808,7 @@ proof.
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite exprM //=.
@@ -3836,7 +3836,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -3849,7 +3849,7 @@ proof.
     move => j j_i.
     rewrite (_: to_uint idx{1}.[2 * k + j] = 2 * (k %% 8 %/ 4) + 4 * (k %% 4) + j).
       rewrite idx_def 1:/#.
-      rewrite /(Jkem_avx2.pfm_idx_s) initiE //= 1:/#.
+      rewrite /(Jkem768_avx2.pfm_idx_s) initiE //= 1:/#.
       do (rewrite (fun_if W8.to_uint) /=).
       smt().
     rewrite (_: (2 * k + j) %/ 16 = k %/ 8). by smt().
@@ -4585,7 +4585,7 @@ proof.
   move => &1 &2 [#] pos_bound_a a2_bnd a_def rp_lb rp_ub a a1_eq_a pos_bound_an />.
   split.
     + move => k k_lb k_ub.
-      rewrite /(Jkem_avx2.jqx16).
+      rewrite /(Jkem768_avx2.jqx16).
       do (rewrite initiE 1:/# /=).
       smt().
     + rewrite Array256.tP => i i_i />.

@@ -5,7 +5,7 @@ from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array48 Array24 Array536 Array2048.
 
 from CryptoSpecs require import Correctness.
-from JazzEC require import Jkem_avx2 (* Mlkem_filter48 *).
+from JazzEC require import Jkem768_avx2 (* Mlkem_filter48 *).
 
 abbrev bufl (buf: W8.t Array536.t) = to_list buf.
 
@@ -69,11 +69,11 @@ qed.
 
 op auxdata_ok (load_shuffle mask bounds ones: W256.t)
               (sst:  W8.t Array2048.t) : bool =
- load_shuffle = W32u8.pack32 (to_list Jkem_avx2.sample_load_shuffle)
- /\ mask = Jkem_avx2.sample_mask
- /\ bounds = Jkem_avx2.sample_q
- /\ ones = Jkem_avx2.sample_ones
- /\ sst = Jkem_avx2.sample_shuffle_table.
+ load_shuffle = W32u8.pack32 (to_list Jkem768_avx2.sample_load_shuffle)
+ /\ mask = Jkem768_avx2.sample_mask
+ /\ bounds = Jkem768_avx2.sample_q
+ /\ ones = Jkem768_avx2.sample_ones
+ /\ sst = Jkem768_avx2.sample_shuffle_table.
 
 from JazzEC require import WArray512 Array40 Array256 Array56 WArray536 WArray2048.
 require import IntDiv.
@@ -268,7 +268,7 @@ qed.
 
 lemma bridge48 _ctr _offset _p : 
 equiv [
-Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48 ~ Filters.filter48 : 
+Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter48 ~ Filters.filter48 : 
   pol{1} = _p
 /\  0 <= _offset /\  _offset + 56 <= 536 
 /\  0 <= _ctr /\ _ctr + 32 <= 256 
@@ -610,7 +610,7 @@ qed.
 import W12.
 lemma buf_rejection_filter48_h _pol _ctr _buf _buf_offset:
 hoare [
- Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+ Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter48
  :  counter = _ctr
    /\ W64.to_uint _buf_offset + 56 < 536
    /\  W64.to_uint _ctr <= 256-32 
@@ -767,11 +767,11 @@ have -> := BitEncoding.BitChunking.nth_flatten witness 8 (map W8.w2bits (take 48
  qed.
 
 lemma buf_rejection_filter48_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+ islossless Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter48
  by islossless.
 
 lemma buf_rejection_filter48_ph _pol _ctr _buf _buf_offset:
-phoare  [Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+phoare  [Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter48
  : counter = _ctr
   /\  W64.to_uint _buf_offset + 56 < 536 
    /\ to_uint _ctr <= 256-32
@@ -1054,7 +1054,7 @@ by conseq _write_u128_boundchk_corr_ll ( _write_u128_boundchk_corr_h _pol _ctr _
 
 lemma bridge24 _ctr _offset _p : 
 equiv [
-Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24 ~ Filters.filter24 : 
+Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter24 ~ Filters.filter24 : 
   pol{1} = _p
  /\  0 <= _offset /\  _offset + 32 <= 536 
  /\  0 <= _ctr /\ _ctr  <= 256
@@ -1180,7 +1180,7 @@ import W12.
 
 
 hoare buf_rejection_filter24_h _pol _ctr _buf _buf_offset:
- Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter24
  : counter = _ctr
    /\ W64.to_uint _buf_offset + 32 < 536
    /\ W64.to_uint _ctr <= 256
@@ -1333,11 +1333,11 @@ have -> := BitEncoding.BitChunking.nth_flatten witness 8 (map W8.w2bits (take 24
 
 
 lemma buf_rejection_filter24_ll:
- islossless Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ islossless Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter24
  by islossless.
 
 phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
- [Jkem_avx2.M(Jkem_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ [Jkem768_avx2.M(Jkem768_avx2.Syscall).__gen_matrix_buf_rejection_filter24
  :counter = _ctr
    /\ W64.to_uint _buf_offset + 32 < 536
    /\  W64.to_uint _ctr <= 256

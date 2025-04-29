@@ -9,7 +9,7 @@ require import MLKEM_Poly MLKEM_PolyVec W16extra NTT_Fq.
 from JazzEC require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
 from JazzEC require import Array960 Array1152 Array2304 Array1088 WArray32 WArray33 WArray64.
 
-from JazzEC require import Jkem.
+from JazzEC require import Jkem768.
 
 require import MLKEMFCLib.
 import PolyVec PolyMat InnerPKE.
@@ -51,34 +51,34 @@ proc sample_noise2_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t A
     noise1 <- witness;
     noise2 <- witness;
     nonce <- (W8.of_int 0);
-    aux <@Jkem.M(Jkem.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[0 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[0 + i_0])),
     noiseseed, nonce);
     noise1 <- Array768.init
             (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise1.[i]);
     nonce <- (W8.of_int 1);
-    aux <@Jkem.M(Jkem.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[256 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[256 + i_0])),
     noiseseed, nonce);
     noise1 <- Array768.init
             (fun i => if 256 <= i < 256 + 256 then aux.[i-256]
             else noise1.[i]);
     nonce <- (W8.of_int 2);
-    aux <@Jkem.M(Jkem.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
     noiseseed, nonce);
     noise1 <- Array768.init
             (fun i => if (2 * 256) <= i < (2 * 256) + 256
             then aux.[i-(2 * 256)] else noise1.[i]);
     nonce <- (W8.of_int 3);
-    aux <@Jkem.M(Jkem.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[0 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[0 + i_0])),
     noiseseed, nonce);
     noise2 <- Array768.init
          (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise2.[i]);
     nonce <- (W8.of_int 4);
-    aux <@Jkem.M(Jkem.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[256 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[256 + i_0])),
     noiseseed, nonce);
     noise2 <- Array768.init
          (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else noise2.[i]);
     nonce <- (W8.of_int 5);
-    aux <@Jkem.M(Jkem.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
     noiseseed, nonce);
     noise2 <- Array768.init
          (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
@@ -114,7 +114,7 @@ proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t A
   (noise1,noise2) <@ sample_noise2_jasmin(noiseseed);
   nonce <- (W8.of_int 6);
   noise3 <- witness;
-  noise3 <@Jkem.M(Jkem.Syscall)._poly_getnoise (noise3,noiseseed, nonce);
+  noise3 <@Jkem768.M(Jkem768.Syscall)._poly_getnoise (noise3,noiseseed, nonce);
   return (noise1,noise2,noise3);
 }
 
@@ -174,8 +174,8 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
     (skpv,e,_N) <@ sample_noise2_spec(noiseseed);
 
-    skpv <@Jkem.M(Jkem.Syscall).__polyvec_ntt (skpv);
-    e <@Jkem.M(Jkem.Syscall).__polyvec_ntt (e);
+    skpv <@Jkem768.M(Jkem768.Syscall).__polyvec_ntt (skpv);
+    e <@Jkem768.M(Jkem768.Syscall).__polyvec_ntt (e);
 
     aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[0 + i_0])),skpv);
     pkpv <- Array768.init (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else pkpv.[i]);
@@ -184,16 +184,16 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[(2 * (3 * 256)) + i_0])), skpv);
     pkpv <- Array768.init (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)] else pkpv.[i]);
 
-    pkpv <@Jkem.M(Jkem.Syscall).__polyvec_add2 (pkpv,e);
-    pkpv <@Jkem.M(Jkem.Syscall).__polyvec_reduce (pkpv);
+    pkpv <@Jkem768.M(Jkem768.Syscall).__polyvec_add2 (pkpv,e);
+    pkpv <@Jkem768.M(Jkem768.Syscall).__polyvec_reduce (pkpv);
 
     spkp <- pkp;
     sskp <- skp;
     pkp <- spkp;
     skp <- sskp;
 
-   Jkem.M(Jkem.Syscall).__polyvec_tobytes (skp, skpv);
-   Jkem.M(Jkem.Syscall).__polyvec_tobytes (pkp, pkpv);
+   Jkem768.M(Jkem768.Syscall).__polyvec_tobytes (skp, skpv);
+   Jkem768.M(Jkem768.Syscall).__polyvec_tobytes (pkp, pkpv);
     pkp <- (pkp + (W64.of_int (3 * 384)));
     
     _aux <- (32 %/ 8);
@@ -209,8 +209,8 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
   }
 
   proc redcompr(ctp:W64.t,bp:W16.t Array768.t) : unit = {
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_reduce (bp);
-    Jkem.M(Jkem.Syscall).__polyvec_compress (ctp, bp);
+    bp <@Jkem768.M(Jkem768.Syscall).__polyvec_reduce (bp);
+    Jkem768.M(Jkem768.Syscall).__polyvec_compress (ctp, bp);
   }
 
   proc indcpa_enc_jazz (ctp:W64.t, msgp:W8.t Array32.t, pkp:W64.t, noiseseed : W8.t Array32.t) : unit = {
@@ -233,7 +233,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var t64 : W64.t;
 
     pkpv <- witness;
-    pkpv <@Jkem.M(Jkem.Syscall).__polyvec_frombytes (pkp);
+    pkpv <@Jkem768.M(Jkem768.Syscall).__polyvec_frombytes (pkp);
 
     publicseed <- witness;
     i <- (W64.of_int 0);
@@ -253,39 +253,39 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     at <@ __gen_matrix (publicseed,true);
 
     k <- witness;
-    k <@Jkem.M(Jkem.Syscall)._i_poly_frommsg (k, msgp);
+    k <@Jkem768.M(Jkem768.Syscall)._i_poly_frommsg (k, msgp);
 
     (sp_0,ep,epp) <@ sample_noise3_spec(noiseseed);
 
-    sp_0 <@Jkem.M(Jkem.Syscall).__polyvec_ntt (sp_0);
+    sp_0 <@Jkem768.M(Jkem768.Syscall).__polyvec_ntt (sp_0);
 
     bp <- witness;
 
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[0 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[0 + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[3*256 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[3*256 + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else bp.[i]);
 
     v <- witness;
-    v <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc (pkpv, sp_0);
+    v <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc (pkpv, sp_0);
 
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_invntt (bp);
-    v <@Jkem.M(Jkem.Syscall)._poly_invntt (v);
+    bp <@Jkem768.M(Jkem768.Syscall).__polyvec_invntt (bp);
+    v <@Jkem768.M(Jkem768.Syscall)._poly_invntt (v);
 
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_add2 (bp, ep);
-    v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, epp);
-    v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, k);
+    bp <@Jkem768.M(Jkem768.Syscall).__polyvec_add2 (bp, ep);
+    v <@Jkem768.M(Jkem768.Syscall)._poly_add2 (v, epp);
+    v <@Jkem768.M(Jkem768.Syscall)._poly_add2 (v, k);
 
-    v <@Jkem.M(Jkem.Syscall).__poly_reduce (v);
+    v <@Jkem768.M(Jkem768.Syscall).__poly_reduce (v);
 
     sctp <- ctp;
     ctp <- sctp;
@@ -293,15 +293,15 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     redcompr(ctp,bp);
 
     ctp <- (ctp + (W64.of_int (3 * 320)));
-    v <@Jkem.M(Jkem.Syscall)._poly_compress (ctp, v);
+    v <@Jkem768.M(Jkem768.Syscall)._poly_compress (ctp, v);
 
     return ();
   }
 
   proc iredcompr(ctp: W8.t Array1088.t,bp:W16.t Array768.t) : W8.t Array960.t = {
     var aux_0 : W8.t Array960.t;
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_reduce (bp);
-    aux_0 <@Jkem.M(Jkem.Syscall).__i_polyvec_compress (Array960.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
+    bp <@Jkem768.M(Jkem768.Syscall).__polyvec_reduce (bp);
+    aux_0 <@Jkem768.M(Jkem768.Syscall).__i_polyvec_compress (Array960.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
     bp);
     return aux_0;
   }
@@ -329,7 +329,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     sctp <- ctp;
 
     pkpv <- witness;
-    pkpv <@Jkem.M(Jkem.Syscall).__polyvec_frombytes (pkp);
+    pkpv <@Jkem768.M(Jkem768.Syscall).__polyvec_frombytes (pkp);
 
     publicseed <- witness;
     i <- (W64.of_int 0);
@@ -349,39 +349,39 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     at <@ __gen_matrix (publicseed,true);
 
     k <- witness;
-    k <@Jkem.M(Jkem.Syscall)._i_poly_frommsg (k, msgp);
+    k <@Jkem768.M(Jkem768.Syscall)._i_poly_frommsg (k, msgp);
 
     (sp_0,ep,epp) <@ sample_noise3_spec(noiseseed);
 
-    sp_0 <@Jkem.M(Jkem.Syscall).__polyvec_ntt (sp_0);
+    sp_0 <@Jkem768.M(Jkem768.Syscall).__polyvec_ntt (sp_0);
 
     bp <- witness;
 
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[0 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[0 + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[3*256 + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[3*256 + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
+    aux <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
     sp_0);
     bp <- Array768.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else bp.[i]);
 
     v <- witness;
-    v <@Jkem.M(Jkem.Syscall).__polyvec_pointwise_acc (pkpv, sp_0);
+    v <@Jkem768.M(Jkem768.Syscall).__polyvec_pointwise_acc (pkpv, sp_0);
 
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_invntt (bp);
-    v <@Jkem.M(Jkem.Syscall)._poly_invntt (v);
+    bp <@Jkem768.M(Jkem768.Syscall).__polyvec_invntt (bp);
+    v <@Jkem768.M(Jkem768.Syscall)._poly_invntt (v);
 
-    bp <@Jkem.M(Jkem.Syscall).__polyvec_add2 (bp, ep);
-    v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, epp);
-    v <@Jkem.M(Jkem.Syscall)._poly_add2 (v, k);
+    bp <@Jkem768.M(Jkem768.Syscall).__polyvec_add2 (bp, ep);
+    v <@Jkem768.M(Jkem768.Syscall)._poly_add2 (v, epp);
+    v <@Jkem768.M(Jkem768.Syscall)._poly_add2 (v, k);
 
-    v <@Jkem.M(Jkem.Syscall).__poly_reduce (v); 
+    v <@Jkem768.M(Jkem768.Syscall).__poly_reduce (v); 
 
     ctp <- sctp;
 
@@ -389,7 +389,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     ctp <- Array1088.init
            (fun i => if 0 <= i < 0 + 960 then aux_0.[i-0] else ctp.[i]);
     (aux_1,
-    aux) <@Jkem.M(Jkem.Syscall)._i_poly_compress ((Array128.init (fun i_0 => ctp.[(3 * 320) + i_0])),
+    aux) <@Jkem768.M(Jkem768.Syscall)._i_poly_compress ((Array128.init (fun i_0 => ctp.[(3 * 320) + i_0])),
     v);
     ctp <- Array1088.init
            (fun i => if (3 * 320) <= i < (3 * 320) + 128
@@ -402,7 +402,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
 (*
 equiv squeezeblock_ignore :
- Jkem.M(Jkem.Syscall)._shake128_squeezeblock ~Jkem.M(Jkem.Syscall)._shake128_squeezeblock :
+ Jkem768.M(Jkem768.Syscall)._shake128_squeezeblock ~Jkem768.M(Jkem768.Syscall)._shake128_squeezeblock :
    arg{1}.`1 = arg{2}.`1 ==> ={res}.
 proof.
 proc => /=; seq 1 1: (#pre); 1: by call(_:true) => /=;  sim.
@@ -415,7 +415,7 @@ qed.
 
 (* 
 equiv absorb_ignore :
- Jkem.M(Jkem.Syscall)._shake128_absorb34 ~Jkem.M(Jkem.Syscall)._shake128_absorb34 :
+ Jkem768.M(Jkem768.Syscall)._shake128_absorb34 ~Jkem768.M(Jkem768.Syscall)._shake128_absorb34 :
    arg{1}.`2 = arg{2}.`2 ==> ={res}.
 proof.
 proc; seq 1 1: (#pre /\ ={state}); last by sim.
@@ -427,7 +427,7 @@ by move => *;rewrite tP => k kb; smt().
 qed. 
 
 equiv shake33_ignore :
- Jkem.M(Jkem.Syscall)._shake256_33_128 ~Jkem.M(Jkem.Syscall)._shake256_33_128 :
+ Jkem768.M(Jkem768.Syscall)._shake256_33_128 ~Jkem768.M(Jkem768.Syscall)._shake256_33_128 :
    arg{1}.`2 = arg{2}.`2 ==> ={res}.
 proof.
 proc=> /=. 
@@ -448,11 +448,11 @@ qed.
 *)
 
 equiv auxgenmatrix_good :
- Jkem.M(Jkem.Syscall).__gen_matrix ~ AuxMLKEM.__gen_matrix :
+ Jkem768.M(Jkem768.Syscall).__gen_matrix ~ AuxMLKEM.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
 proc => /=. 
 inline Parse(XOF).sample.
-inline Jkem.M(Jkem.Syscall).__rej_uniform.
+inline Jkem768.M(Jkem768.Syscall).__rej_uniform.
 
 seq 7 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
 
@@ -775,7 +775,7 @@ by move : (mask85_sum a 2) => /= ->; move : (mask85_sum a 3) => /= ->.
 qed.
 
 equiv get_noise_sample_noise :
-  Jkem.M(Jkem.Syscall)._poly_getnoise ~ CBD2.sample :
+  Jkem768.M(Jkem768.Syscall)._poly_getnoise ~ CBD2.sample :
    arg{2} = PRF arg{1}.`2 arg{1}.`3
    ==> 
    lift_array256 res{1} = res{2} /\
@@ -924,7 +924,7 @@ qed.
 
 
 equiv auxkg_good :
- Jkem.M(Jkem.Syscall).__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
+ Jkem768.M(Jkem768.Syscall).__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
      ={Glob.mem} /\ ={arg}
      ==> ={Glob.mem,res}. 
 proc => /=. 
@@ -1028,7 +1028,7 @@ by sim.
 qed.
 
 equiv auxenc_good :
- Jkem.M(Jkem.Syscall).__indcpa_enc ~ AuxMLKEM.indcpa_enc_jazz :
+ Jkem768.M(Jkem768.Syscall).__indcpa_enc ~ AuxMLKEM.indcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
 swap {1} 6 -5.
@@ -1069,7 +1069,7 @@ by conseq />; call sample_noise_good3; auto => />.
 qed.
 
 equiv auxienc_good :
- Jkem.M(Jkem.Syscall).__iindcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
+ Jkem768.M(Jkem768.Syscall).__iindcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
 swap {1} 6 -5.
@@ -1118,7 +1118,7 @@ op touches2 (m m' : global_mem_t) (p1 : address) (len1 : int) (p2 : address) (le
 import InnerPKE.
 
 lemma mlkem_correct_kg mem _pkp _skp  : 
-   equiv [Jkem.M(Jkem.Syscall).__indcpa_keypair ~ InnerPKE.kg_derand : 
+   equiv [Jkem768.M(Jkem768.Syscall).__indcpa_keypair ~ InnerPKE.kg_derand : 
        Glob.mem{1} = mem /\ to_uint spkp{1} = _pkp /\ to_uint sskp{1} = _skp /\ 
        randomnessp{1} = coins{2} /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
@@ -1432,7 +1432,7 @@ qed.
 (***************************************************)
 
 lemma mlkem_correct_enc mem _ctp _pkp : 
-   equiv [Jkem.M(Jkem.Syscall).__indcpa_enc ~ InnerPKE.enc_derand: 
+   equiv [Jkem768.M(Jkem768.Syscall).__indcpa_enc ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
      Glob.mem{1} = mem /\ 
@@ -1750,7 +1750,7 @@ by auto =>/> /#.
 qed.
 
 lemma mlkem_correct_ienc mem _pkp : 
-   equiv [Jkem.M(Jkem.Syscall).__iindcpa_enc ~ InnerPKE.enc_derand: 
+   equiv [Jkem768.M(Jkem768.Syscall).__iindcpa_enc ~ InnerPKE.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
@@ -2057,7 +2057,7 @@ qed.
 
 
 lemma mlkem_correct_dec mem _ctp _skp : 
-   equiv [Jkem.M(Jkem.Syscall).__indcpa_dec ~ InnerPKE.dec : 
+   equiv [Jkem768.M(Jkem768.Syscall).__indcpa_dec ~ InnerPKE.dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
      Glob.mem{1} = mem /\ 

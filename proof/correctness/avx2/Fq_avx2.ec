@@ -10,7 +10,7 @@ require import AVX2_Ops MLKEM_Poly_avx2_prevec.
 require import Montgomery16.
 
 (* require import NTT_Fq.
-require import Jkem. *)
+require import Jkem768. *)
 
 import Fq MLKEM_Poly.
 import SignedReductions.
@@ -19,7 +19,7 @@ theory Fq_avx2.
 
 require import MLKEM_avx2_encdec.
 
-from JazzEC require import Jkem_avx2.
+from JazzEC require import Jkem768_avx2.
 
 (*
 import MLKEM.

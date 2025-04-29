@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 
-from JazzEC require import Jkem_avx2_stack.
+from JazzEC require import Jkem768_avx2_stack.
 from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array64 Array136 Array148 Array960 Array128 Array1120 Array1088 Array1152 Array1184 Array2400.
 from JazzEC require import Array4 Array8 Array300 WArray32 WArray64 WArray1088 WArray1120 WArray1184 WArray2400.
@@ -87,7 +87,7 @@ qed.
 
 
 lemma mlkem_kem_correct_kg   : 
-   equiv [Jkem_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand ~ MLKEM.kg_derand : 
+   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand ~ MLKEM.kg_derand : 
         coins{2}.`1 = Array32.init(fun i => coins{1}.[i]) /\
         coins{2}.`2 = Array32.init(fun i => coins{1}.[32 + i]) 
         ==> 
@@ -297,7 +297,7 @@ qed.
 
 
 lemma mlkem_kem_correct_enc : 
-   equiv [Jkem_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand ~ MLKEM.enc_derand: 
+   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand ~ MLKEM.enc_derand: 
      coins{1} = coins{2} /\
      pk{2}.`1 = Array1152.init(fun i => public_key{1}.[i])  /\
      pk{2}.`2 = Array32.init(fun i => public_key{1}.[i+1152])
@@ -372,7 +372,7 @@ qed.
 
 
 lemma verify_correct_h_stack _ctp _ctp1 :
-  hoare [Jkem_avx2_stack.M.__verify : 
+  hoare [Jkem768_avx2_stack.M.__verify : 
              arg = (_ctp,_ctp1) ==>
              (_ctp = _ctp1 => 
                        res = W64.of_int 0) /\
@@ -442,7 +442,7 @@ rewrite /xx /yy wordP => j jb.
   by smt().
 qed.
 
-lemma verify_ll : islossless Jkem_avx2_stack.M.__verify.
+lemma verify_ll : islossless Jkem768_avx2_stack.M.__verify.
 proc.
 wp.
 while (0 <= i{hr} <= 34 /\ inc{hr} = 34) (34 - i{hr}).
@@ -451,7 +451,7 @@ auto => /> /#.
 qed.
 
 lemma verify_correct_stack _ctp _ctp1 :
-  phoare  [Jkem_avx2_stack.M.__verify : 
+  phoare  [Jkem768_avx2_stack.M.__verify : 
              arg = (_ctp,_ctp1) ==>
              (_ctp = _ctp1 => 
                        res = W64.of_int 0) /\
@@ -460,7 +460,7 @@ lemma verify_correct_stack _ctp _ctp1 :
    by conseq verify_ll (verify_correct_h_stack _ctp _ctp1).
 
 lemma cmov_correct_h_stack _dst _src   _cnd  :
-   hoare [Jkem_avx2_stack.M.__cmov : 
+   hoare [Jkem768_avx2_stack.M.__cmov : 
           dst = _dst /\   src = _src /\ cnd = _cnd  ==>
              (_cnd = W64.of_int 0 => 
                res = _src) /\
@@ -502,11 +502,11 @@ rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /
 by rewrite pack32E initiE /= 1:/# /of_list !initiE /= /#.
 qed.
 
-lemma cmov_ll_stack : islossless Jkem_avx2_stack.M.__cmov by islossless.
+lemma cmov_ll_stack : islossless Jkem768_avx2_stack.M.__cmov by islossless.
 
 
 lemma cmov_correct_stack _dst _src _cnd:
-   phoare [Jkem_avx2_stack.M.__cmov : 
+   phoare [Jkem768_avx2_stack.M.__cmov : 
         dst=_dst /\   src = _src /\ cnd = _cnd  ==>
              (_cnd = W64.of_int 0 => 
                res = _src) /\
@@ -515,7 +515,7 @@ lemma cmov_correct_stack _dst _src _cnd:
   by  conseq cmov_ll_stack (cmov_correct_h_stack _dst _src _cnd). 
 
 lemma mlkem_kem_correct_dec : 
-   equiv [Jkem_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_dec ~ MLKEM.dec: 
+   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_dec ~ MLKEM.dec: 
       sk{2}.`1 = Array1152.init(fun i => secret_key{1}.[i])  /\
       sk{2}.`2.`1 = Array1152.init(fun i => secret_key{1}.[i+1152]) /\
       sk{2}.`2.`2 = Array32.init(fun i => secret_key{1}.[i+1152+1152]) /\

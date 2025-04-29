@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 
-from JazzEC require import Jkem_avx2 Jkem_avx2_stack.
+from JazzEC require import Jkem768_avx2 Jkem768_avx2_stack.
 
 require import MLKEM_InnerPKE_avx2.
 
@@ -68,7 +68,7 @@ module Mix = {
       i <- i + 1;
     }
     transposed <- W64.zero;
-    aa <@ Jkem_avx2.M(Syscall)._gen_matrix_avx2(aa, publicseed, transposed);
+    aa <@ Jkem768_avx2.M(Syscall)._gen_matrix_avx2(aa, publicseed, transposed);
     nonce <- W8.zero;
     (aux_3, aux_2, aux_1, aux_0) <@
       M._poly_getnoise_eta1_4x((init (fun (i_0 : int) => (skpv.[0 + i_0])%Array768))%Array256,
@@ -120,8 +120,8 @@ module Mix = {
          (fun (i_0 : int) =>
             if 256 <= i_0 && i_0 < 256 + 256 then (aux_0.[i_0 - 256])%Array256
             else (pkpv.[i_0])%Array768))%Array768;
-    skpv <@ Jkem_avx2.M(Syscall).__polyvec_ntt(skpv);
-    e <@ Jkem_avx2.M(Syscall).__polyvec_ntt(e);
+    skpv <@ Jkem768_avx2.M(Syscall).__polyvec_ntt(skpv);
+    e <@ Jkem768_avx2.M(Syscall).__polyvec_ntt(e);
     i <- 0;
     while (i < 3){
       aux_3 <@
@@ -133,7 +133,7 @@ module Mix = {
            (fun (i_0 : int) =>
               if i * 256 <= i_0 && i_0 < i * 256 + 256 then (aux_3.[i_0 - i * 256])%Array256
               else (pkpv.[i_0])%Array768))%Array768;
-      aux_3 <@ Jkem_avx2.M(Syscall)._poly_frommont((init (fun (i_0 : int) => (pkpv.[i * 256 + i_0])%Array768))%Array256);
+      aux_3 <@ Jkem768_avx2.M(Syscall)._poly_frommont((init (fun (i_0 : int) => (pkpv.[i * 256 + i_0])%Array768))%Array256);
       pkpv <-
         (init
            (fun (i_0 : int) =>
@@ -141,8 +141,8 @@ module Mix = {
               else (pkpv.[i_0])%Array768))%Array768;
       i <- i + 1;
     }
-    pkpv <@ Jkem_avx2.M(Syscall).__polyvec_add2(pkpv, e);
-    pkpv <@ Jkem_avx2.M(Syscall).__polyvec_reduce(pkpv);
+    pkpv <@ Jkem768_avx2.M(Syscall).__polyvec_add2(pkpv, e);
+    pkpv <@ Jkem768_avx2.M(Syscall).__polyvec_reduce(pkpv);
     aux_4 <@ M.__i_polyvec_tobytes((init (fun (i_0 : int) => sk.[0 + i_0]))%Array1152, skpv);
     sk <- (init (fun (i_0 : int) => if 0 <= i_0 && i_0 < 0 + 1152 then aux_4.[i_0 - 0] else sk.[i_0]))%Array2400;
     aux_4 <@ M.__i_polyvec_tobytes((init (fun (i_0 : int) => pk.[0 + i_0]))%Array1152, pkpv);
@@ -208,7 +208,7 @@ module Mix = {
     k <@ M._i_poly_frommsg(k, msgp);
     s_noiseseed <- noiseseed;
     transposed <- W64.one;
-    aat <@ Jkem_avx2.M(Syscall)._gen_matrix_avx2(aat, publicseed, transposed);
+    aat <@ Jkem768_avx2.M(Syscall)._gen_matrix_avx2(aat, publicseed, transposed);
     lnoiseseed <- s_noiseseed;
     nonce <- W8.zero;
     (aux_3, aux_2, aux_1, aux_0) <@
@@ -255,7 +255,7 @@ module Mix = {
       (init
          (fun (i : int) =>
             if 0 <= i && i < 0 + 256 then (aux_0.[i - 0])%Array256 else (bp.[i])%Array768))%Array768;
-    sp_0 <@ Jkem_avx2.M(Syscall).__polyvec_ntt(sp_0);
+    sp_0 <@ Jkem768_avx2.M(Syscall).__polyvec_ntt(sp_0);
     w <- 0;
     while (w < 3){
       aux_3 <@
@@ -269,14 +269,14 @@ module Mix = {
               else (bp.[i])%Array768))%Array768;
       w <- w + 1;
     }
-    v <@ Jkem_avx2.M(Syscall).__polyvec_pointwise_acc(v, pkpv, sp_0);
-    bp <@ Jkem_avx2.M(Syscall).__polyvec_invntt(bp);
-    v <@ Jkem_avx2.M(Syscall)._poly_invntt(v);
-    bp <@ Jkem_avx2.M(Syscall).__polyvec_add2(bp, ep);
-    v <@ Jkem_avx2.M(Syscall)._poly_add2(v, epp);
-    v <@ Jkem_avx2.M(Syscall)._poly_add2(v, k);
-    bp <@ Jkem_avx2.M(Syscall).__polyvec_reduce(bp);
-    v <@ Jkem_avx2.M(Syscall).__poly_reduce(v);
+    v <@ Jkem768_avx2.M(Syscall).__polyvec_pointwise_acc(v, pkpv, sp_0);
+    bp <@ Jkem768_avx2.M(Syscall).__polyvec_invntt(bp);
+    v <@ Jkem768_avx2.M(Syscall)._poly_invntt(v);
+    bp <@ Jkem768_avx2.M(Syscall).__polyvec_add2(bp, ep);
+    v <@ Jkem768_avx2.M(Syscall)._poly_add2(v, epp);
+    v <@ Jkem768_avx2.M(Syscall)._poly_add2(v, k);
+    bp <@ Jkem768_avx2.M(Syscall).__polyvec_reduce(bp);
+    v <@ Jkem768_avx2.M(Syscall).__poly_reduce(v);
     aux_4 <@ M.__i_polyvec_compress((init (fun (i : int) => ct.[0 + i]))%Array960, bp);
     ct <- (init (fun (i : int) => if 0 <= i && i < 0 + 960 then aux_4.[i - 0] else ct.[i]))%Array1088;
     (aux_5, aux_3) <@ M._i_poly_compress((init (fun (i : int) => ct.[3 * 320 + i]))%Array128, v);
@@ -301,12 +301,12 @@ module Mix = {
     bp <@ M.__i_polyvec_decompress(ct);
     v <@ M._i_poly_decompress(v, (init (fun (i : int) => ct.[3 * 320 + i]))%Array128);
     skpv <@ M.__i_polyvec_frombytes(sk);
-    bp <@ Jkem_avx2.M(Syscall).__polyvec_ntt(bp);
-    t <@ Jkem_avx2.M(Syscall).__polyvec_pointwise_acc(t, skpv, bp);
-    t <@ Jkem_avx2.M(Syscall)._poly_invntt(t);
-    mp <@ Jkem_avx2.M(Syscall)._poly_sub(mp, v, t);
-    mp <@ Jkem_avx2.M(Syscall).__poly_reduce(mp);
-    (msgp, mp) <@  Jkem_avx2.M(Syscall)._poly_tomsg_1(msgp, mp);
+    bp <@ Jkem768_avx2.M(Syscall).__polyvec_ntt(bp);
+    t <@ Jkem768_avx2.M(Syscall).__polyvec_pointwise_acc(t, skpv, bp);
+    t <@ Jkem768_avx2.M(Syscall)._poly_invntt(t);
+    mp <@ Jkem768_avx2.M(Syscall)._poly_sub(mp, v, t);
+    mp <@ Jkem768_avx2.M(Syscall).__poly_reduce(mp);
+    (msgp, mp) <@  Jkem768_avx2.M(Syscall)._poly_tomsg_1(msgp, mp);
 
     return msgp;
   }
@@ -318,13 +318,13 @@ equiv mlkem_correct_kg_avx2_stack_mix  :
  by sim.
 
 equiv aux_invntt : 
-  M._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : ={arg} ==> ={res}.
+  M._poly_invntt ~ Jkem768_avx2.M(Syscall)._poly_invntt : ={arg} ==> ={res}.
 proc. 
 by unroll for {1} ^while; unroll for {2} ^while; sim.
 qed.
 
 equiv aux_invntt2 : 
-  Jkem_avx2.M(Syscall)._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : ={arg} ==> ={res}.
+  Jkem768_avx2.M(Syscall)._poly_invntt ~ Jkem768_avx2.M(Syscall)._poly_invntt : ={arg} ==> ={res}.
 proc. 
 by unroll for {1} ^while; unroll for {2} ^while; sim.
 qed.
@@ -333,14 +333,14 @@ qed.
 equiv mlkem_correct_enc_avx2_stack_mix  : 
  M.__indcpa_enc  ~ Mix.__indcpa_enc  : ={arg} ==> ={res}.
 proc => /=. 
-sim (M._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true)).
+sim (M._poly_invntt ~ Jkem768_avx2.M(Syscall)._poly_invntt : (true)).
 by apply aux_invntt.
 qed.
 
 equiv mlkem_correct_dec_avx2_stack_mix  : 
  M.__indcpa_dec  ~ Mix.__indcpa_dec  : ={arg} ==> ={res}.
 proc => /=. 
-sim (M._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true)); by apply aux_invntt.
+sim (M._poly_invntt ~ Jkem768_avx2.M(Syscall)._poly_invntt : (true)); by apply aux_invntt.
 qed.
 
 require import MLKEMFCLib MLKEM_PolyPolyVec_stack_bridges.
@@ -365,7 +365,7 @@ transitivity {1} {r <@ Mix.__indcpa_keypair(pk,sk,randomnessp); }
 
 pose _pkp := W64.of_int 0.
 pose _skp := W64.of_int (384 * 3 + 32). 
-transitivity {1} {Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_keypair(_pkp, _skp, randomnessp);} 
+transitivity {1} {Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_keypair(_pkp, _skp, randomnessp);} 
 (={randomnessp} /\ 
   Glob.mem{2} = witness /\
     randomnessp{1} = randomnessp{2}  ==> 
@@ -491,7 +491,7 @@ transitivity {1} {r <@ Mix.__indcpa_enc(ct, msgp, pk, noiseseed); }
 
 pose _pkp := W64.of_int 0.
 
-transitivity {1} {r <@ Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_enc_1(ct, msgp, _pkp, noiseseed); }
+transitivity {1} {r <@ Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_enc_1(ct, msgp, _pkp, noiseseed); }
     (msgp{1} = msgp{2} /\ noiseseed{1} = noiseseed{2} /\ ct{1} = ct{2} /\
      load_array1184 Glob.mem{2} 0 = pk{1} ==> ={r})
      (noiseseed{1} = coins{2} /\ msgp{1} = m{2} /\
@@ -540,7 +540,7 @@ seq 3 3 : #{/~pkp{2}}pre.
   + by rewrite to_uintD_small /= /#. 
   + by rewrite to_uintD_small /= /#. 
 
-sim (Jkem_avx2.M(Syscall)._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true)).
+sim (Jkem768_avx2.M(Syscall)._poly_invntt ~ Jkem768_avx2.M(Syscall)._poly_invntt : (true)).
 by apply aux_invntt2.
 qed.
 
@@ -564,7 +564,7 @@ pose _skp := W64.of_int 0.
 pose _ctp1 := W64.of_int 1152.
 pose _ctp2 := W64.of_int (1152+960).
 
-transitivity {1} {r <@ Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_dec_1(msgp,_ctp1, _skp); }
+transitivity {1} {r <@ Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_dec_1(msgp,_ctp1, _skp); }
     (load_array1152 Glob.mem{2} 0 = sk{1} /\ ={msgp} /\
      load_array1088 Glob.mem{2} 1152 = ct{1} ==> ={r})
      (load_array1152 Glob.mem{1} 0 = sk{2} /\
@@ -593,7 +593,7 @@ transitivity {1} {r <@ Jkem_avx2.M(Jkem_avx2.Syscall).__indcpa_dec_1(msgp,_ctp1,
 inline {1} 1; inline {2} 1.
 sp 3 3.
 seq 5 5 : (#pre /\ ={bp,mp,skpv,t,v}); 1: by conseq />;sim.
-sim 3 4 (Jkem_avx2.M(Syscall)._poly_invntt ~ Jkem_avx2.M(Syscall)._poly_invntt : (true)); 2: by apply aux_invntt2.
+sim 3 4 (Jkem768_avx2.M(Syscall)._poly_invntt ~ Jkem768_avx2.M(Syscall)._poly_invntt : (true)); 2: by apply aux_invntt2.
 wp;call polyvec_from_bytes_stack_equiv => /=.
 wp;call poly_decompress_stack_equiv.
 wp;call polyvec_decompress_stack_equiv.
