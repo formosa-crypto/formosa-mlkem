@@ -12,9 +12,12 @@ default: check
 check: jasmin checkec
 
 jasmin:
-	make -C code/jasmin/mlkem_ref/extraction
-	make -C code/jasmin/mlkem_avx2/extraction
-	make -C code/jasmin/mlkem_avx2_stack/extraction
+	make -C code/jasmin/768/ref/extraction
+	make -C code/jasmin/768/avx2/extraction
+	make -C code/jasmin/768/avx2_stack/extraction
+	make -C code/jasmin/1024/ref/extraction
+	make -C code/jasmin/1024/avx2/extraction
+	make -C code/jasmin/1024/avx2_stack/extraction
 
 checkec:
 	easycrypt runtest $(ECCONF) $(CHECKS)
