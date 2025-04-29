@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../../../kyber/ref/params.h"
-#include "../../../kyber/ref/kem.h"
+#include "../../../../kyber/ref/params.h"
+#include "../../../../kyber/ref/kem.h"
 
 #define NRUNS 100
 

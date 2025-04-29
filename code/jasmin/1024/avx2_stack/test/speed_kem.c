@@ -3,8 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../../../kyber/ref/params.h"
-#include "../../../kyber/ref/kem.h"
+#include "../../../../kyber/ref/params.h"
+#include "../../../../kyber/ref/kem.h"
 
 #define NRUNS 100
 
@@ -60,21 +60,21 @@ int main(void)
   unsigned char pk[KYBER_PUBLICKEYBYTES];
   unsigned char ct[KYBER_CIPHERTEXTBYTES];
   unsigned char randomness0[2*KYBER_SYMBYTES];
-  unsigned char randomness1[KYBER_SYMBYTES];
+  unsigned char randomness1[2*KYBER_SYMBYTES];
   unsigned char shk[KYBER_SSBYTES];
 
   uint64_t t[NRUNS], i;
 
   FILE *urandom = fopen("/dev/urandom", "r");
   fread(randomness0, 2*KYBER_SYMBYTES, 1, urandom);
-  fread(randomness1, KYBER_SYMBYTES, 1, urandom);
+  fread(randomness1, 2*KYBER_SYMBYTES, 1, urandom);
   fclose(urandom);
 
   /* TEST KEYPAIR */
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
-    jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(pk, sk, randomness0);
+    jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(pk, sk, randomness0);
   }
   print_results("keypair: ", t, NRUNS);
 
@@ -82,7 +82,7 @@ int main(void)
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
-    jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(ct, shk, pk, randomness1);
+    jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(ct, shk, pk, randomness1);
   }
   print_results("encaps: ", t, NRUNS);
 
@@ -90,7 +90,7 @@ int main(void)
   for(i=0;i<NRUNS;i++)
   {
     t[i] = cpucycles();
-    jade_kem_mlkem_mlkem768_amd64_avx2_dec(shk, ct, sk);
+    jade_kem_mlkem_mlkem1024_amd64_avx2_dec(shk, ct, sk);
   }
   print_results("decaps: ", t, NRUNS);
 
