@@ -9,7 +9,7 @@ fn _i_poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) ->
   maskp = maskx16;
   mask = maskp[u256 0];
 
-  for i=0 to 2
+  for i = 0 to 2
   {
     t0 = ap.[u256 192*i];
     t1 = ap.[u256 192*i + 32];
@@ -72,7 +72,7 @@ fn _i_poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) ->
     rp[u256 8*i + 7] = tt;
   }
 
-  return rp; 
+  return rp;
  }
 
 
@@ -90,7 +90,7 @@ fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> reg ptr u1
 
   f = ap[u256 0];
 
-  for i=0 to 4
+  for i = 0 to 4
   {
     g3 = #VPSHUFD_256(f, 0x55*i);
     g3 = #VPSLLV_8u32(g3, shift);
@@ -211,7 +211,7 @@ fn _i_poly_tomsg(reg ptr u8[MLKEM_INDCPA_MSGBYTES] rp, reg ptr u16[MLKEM_N] a) -
   px16 = hhqx16;
   hhq = px16[u256 0];
 
-  for i=0 to MLKEM_N/32
+  for i = 0 to MLKEM_N/32
   {
     f0 = a[u256 2*i];
     f1 = a[u256 2*i + 1];
