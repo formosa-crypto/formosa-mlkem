@@ -1,16 +1,115 @@
-require "poly.jinc"
-require "../avx2/polyvec.jinc"
+require "../avx2/params.jinc"
 require "../../common/avx2_stack/polyvec.jinc"
+
+u8[32] pvd_shufbidx_s = {0, 1, 1, 2, 2, 3, 4, 5,
+                         5, 6, 6, 7, 8, 9, 9,10,
+                         3, 4, 4, 5, 5, 6, 7, 8,
+                         8, 9, 9,10,11,12,12,13};
+u32[8] pvd_srlvdidx_s = {0, 1, 0, 0, 0, 1, 0, 0};
+u64[4] pvd_srlvqidx_s = {0, 2, 0, 2};
+u16[16] pvd_shift_s = {32, 4, 1,32, 8, 1,32, 4,
+                       32, 4, 1,32, 8, 1,32, 4};
+u16 pvd_mask_s = 0x7FF0;
 
 inline
 fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLKEM_VECN]
 {
+  inline int i k;
+  reg u256 f q shufbidx srlvdidx srlvqidx shift mask;
+  reg ptr u8[32] x32s;
+  reg ptr u32[8] x8d;
+  reg ptr u64[4] x4q;
+  reg ptr u16[16] x16p x16s;
+  stack u16[MLKEM_VECN] r;
 
+  x16p = jqx16;
+  q = x16p[u256 0];
+  x32s = pvd_shufbidx_s;
+  shufbidx = x32s[u256 0];
+  x8d = pvd_srlvdidx_s;
+  srlvdidx = x8d[u256 0];
+  x4q = pvd_srlvqidx_s;
+  srlvqidx = x4q[u256 0];
+  x16s = pvd_shift_s;
+  shift = x16s[u256 0];
+  mask = #VPBROADCAST_16u16(pvd_mask_s);
+
+  for k=0 to MLKEM_K
+  {
+    for i=0 to MLKEM_N/16
+    {
+      f = rp.[u256 352 * k + 22 * i];
+      f = #VPERMQ(f, 0x94);
+      f = #VPSHUFB_256(f, shufbidx);
+      f = #VPSRLV_8u32(f, srlvdidx);
+      f = #VPSRLV_4u64(f, srlvqidx);
+      f = #VPMULL_16u16(f, shift);
+      f = #VPSRL_16u16(f, 1);
+      f = #VPAND_256(f, mask);
+      f = #VPMULHRS_16u16(f, q);
+      r[u256 16 * k + i] = f;
+    }
+  }
+
+  return r;
 }
 
+u16 pvc_off_s = 0x24;
+u16 pvc_shift1_s = 0x2000;
+u16 pvc_mask_s = 0x07ff;
+u64 pvc_shift2_s = 0x800000108000001;
+u64 pvc_sllvdidx_s = 0xA;
+u64[4] pvc_srlvqidx = {10,30,10,30};
+u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,-1,-1,-1,-1,-1,
+                         5, 6, 7, 8, 9,10,-1,-1,-1,-1, 0, 0, 1, 2, 3, 4};
 
 inline
 fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
 {
+  inline int i;
+  reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx srlvqidx shufbidx;
+  reg u128 t0 t1;
+  reg ptr u16[16] x16p;
 
+  a = __polyvec_csubq(a);
+
+  x16p = jvx16;
+  v = x16p[u256 0];
+  v8 = #VPSLL_16u16(v, 3);
+  off = #VPBROADCAST_16u16(pvc_off_s);
+  shift1 = #VPBROADCAST_16u16(pvc_shift1_s);
+  mask = #VPBROADCAST_16u16(pvc_mask_s);
+  shift2 = #VPBROADCAST_4u64(pvc_shift2_s);
+  sllvdidx = #VPBROADCAST_4u64(pvc_sllvdidx_s);
+  srlvqidx = pvc_srlvqidx[u256 0];
+  shufbidx = pvc_shufbidx_s[u256 0];
+
+  for i=0 to MLKEM_VECN/16
+  {
+    f0 = a[u256 i];
+    f1 = #VPMULL_16u16(f0, v8);
+    f2 = #VPADD_16u16(f0, off);
+    f0 = #VPSLL_16u16(f0, 3);
+    f0 = #VPMULH_16u16(f0, v);
+    f2 = #VPSUB_16u16(f1, f2);
+    f1 = #VPANDN_256(f1, f2);
+    f1 = #VPSRL_16u16(f1, 15);
+    f0 = #VPSUB_16u16(f0, f1);
+    f0 = #VPMULHRS_16u16(f0, shift1);
+    f0 = #VPAND_256(f0, mask);
+    f0 = #VPMADDWD_256(f0, shift2);
+    f0 = #VPSLLV_8u32(f0, sllvdidx);
+    f1 = #VPSRLDQ_256(f0, 8);
+    f0 = #VPSRLV_4u64(f0, srlvqidx);
+    f1 = #VPSLL_4u64(f1, 34);
+    f0 = #VPADD_4u64(f0, f1);
+    f0 = #VPSHUFB_256(f0, shufbidx);
+    t0 = (128u)f0;
+    t1 = #VEXTRACTI128(f0, 1);
+    t0 = #VPBLENDVB_128(t0, t1, (128u)shufbidx);
+    rp.[u128 22*i] = t0;
+    rp.[u64 22*i + 16] = (64u)t1;
+  }
+
+  return rp;
 }

@@ -28,7 +28,6 @@ int main(void)
   crypto_kem_keypair_derand(pk0, sk0, randomness0);
 
   for(int i=0;i<KYBER_SECRETKEYBYTES;i++)
-  // if(sk0[i] != sk1[i]) printf("%02x %02x\n", sk0[i], sk1[i]);
     if(sk0[i] != sk1[i]) printf("error crypto_kem_keypair sk: %d\n", i);
 
   for(int i=0;i<KYBER_PUBLICKEYBYTES;i++)

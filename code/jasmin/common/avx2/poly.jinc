@@ -563,19 +563,11 @@ fn __poly_cbd_eta1(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA1*MLKEM_N/4+(MLK
 
 fn _poly_getnoise_eta2(#spill_to_mmx reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
 {
-  // stack u8[MLKEM_SYMBYTES+1] extseed;
   stack u8[MLKEM_ETA2*MLKEM_N/4] buf;
   reg u8 c;
   inline int k;
 
   () = #spill(rp);
-  
-  // for k = 0 to MLKEM_SYMBYTES
-  // {
-  //   c = seed[k];
-  //   extseed[k] = c;
-  // }
-  // extseed[MLKEM_SYMBYTES] = nonce;
 
   stack u8[1] nonce_s;
   nonce_s[0] = nonce;

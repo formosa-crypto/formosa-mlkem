@@ -9153,7 +9153,7 @@ L_gen_matrix_avx2$1:
 	movq	2200(%rsp), %rsp
 	ret
 L_gen_matrix_sample_four_polynomials$1:
-	leaq	glob_data + 4704(%rip), %rcx
+	leaq	glob_data + 2656(%rip), %rcx
 	shlq	$4, %rax
 	addq	%rax, %rdx
 	movq	(%rcx,%rdx), %rax
@@ -9210,7 +9210,7 @@ L_gen_matrix_buf_rejection$1:
 	vmovdqu	glob_data + 32(%rip), %ymm1
 	vmovdqu	glob_data + 0(%rip), %ymm2
 	vmovdqu	glob_data + 64(%rip), %ymm3
-	leaq	glob_data + 2656(%rip), %r8
+	leaq	glob_data + 2688(%rip), %r8
 	movq	%rax, %r11
 	jmp 	L_gen_matrix_buf_rejection$20
 L_gen_matrix_buf_rejection$21:
@@ -16752,6 +16752,39 @@ G$pfm_shift_s:
 	.byte	0
 	.byte	0
 	.byte	0
+G$gen_matrix_indexes:
+	.byte	0
+	.byte	0
+	.byte	1
+	.byte	0
+	.byte	2
+	.byte	0
+	.byte	0
+	.byte	1
+	.byte	1
+	.byte	1
+	.byte	2
+	.byte	1
+	.byte	0
+	.byte	2
+	.byte	1
+	.byte	2
+	.byte	0
+	.byte	0
+	.byte	0
+	.byte	1
+	.byte	0
+	.byte	2
+	.byte	1
+	.byte	0
+	.byte	1
+	.byte	1
+	.byte	1
+	.byte	2
+	.byte	2
+	.byte	0
+	.byte	2
+	.byte	1
 G$sample_shuffle_table:
 	.byte	-1
 	.byte	-1
@@ -18801,39 +18834,6 @@ G$sample_shuffle_table:
 	.byte	10
 	.byte	12
 	.byte	14
-G$gen_matrix_indexes:
-	.byte	0
-	.byte	0
-	.byte	1
-	.byte	0
-	.byte	2
-	.byte	0
-	.byte	0
-	.byte	1
-	.byte	1
-	.byte	1
-	.byte	2
-	.byte	1
-	.byte	0
-	.byte	2
-	.byte	1
-	.byte	2
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	1
-	.byte	0
-	.byte	2
-	.byte	1
-	.byte	0
-	.byte	1
-	.byte	1
-	.byte	1
-	.byte	2
-	.byte	2
-	.byte	0
-	.byte	2
-	.byte	1
 G$pvc_sllvdidx_s:
 	.byte	12
 	.byte	0
