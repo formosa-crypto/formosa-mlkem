@@ -11,7 +11,7 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
 
   a = _poly_csubq(a);
 
-  for i=0 to MLKEM_N/8
+  for i = 0 to MLKEM_N/8
   {
     for j = 0 to 8
     {
@@ -28,7 +28,7 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
       d0 &= 0x1f;
       t[j] = d0;
     }
-    
+
     c0 = t[0];
     c1 = t[1];
     c1 <<= 5;
@@ -103,7 +103,7 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
       t[j] = d0;
       i += 1;
     }
-    
+
     c0 = t[0];
     c1 = t[1];
     c1 <<= 5;
