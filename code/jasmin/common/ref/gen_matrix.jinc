@@ -1,7 +1,7 @@
 require "mlkem_keccak_ref.jinc"
 require "params.jinc"
 
-param int SHAKE128_RATE=168;
+param int SHAKE128_RATE = 168;
 
 inline
 fn __rej_uniform(stack u16[MLKEM_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[MLKEM_N]
@@ -95,7 +95,7 @@ fn __gen_matrix(stack u8[MLKEM_SYMBYTES] seed, reg u64 transposed) -> stack u16[
   #mmx reg u64 sctr;
   #mmx reg u64 stransposed;
   inline int j i;
-  
+
   stransposed = transposed;
 
   for j = 0 to MLKEM_SYMBYTES
@@ -104,7 +104,7 @@ fn __gen_matrix(stack u8[MLKEM_SYMBYTES] seed, reg u64 transposed) -> stack u16[
     extseed[j] = c;
   }
 
-  for i=0 to MLKEM_K
+  for i = 0 to MLKEM_K
   {
     for j = 0 to MLKEM_K
     {
@@ -113,12 +113,12 @@ fn __gen_matrix(stack u8[MLKEM_SYMBYTES] seed, reg u64 transposed) -> stack u16[
       if(transposed == 0)
       {
         extseed[MLKEM_SYMBYTES] = j;
-        extseed[MLKEM_SYMBYTES+1] = i;
+        extseed[MLKEM_SYMBYTES + 1] = i;
       }
       else
       {
         extseed[MLKEM_SYMBYTES] = i;
-        extseed[MLKEM_SYMBYTES+1] = j;
+        extseed[MLKEM_SYMBYTES + 1] = j;
       }
 
       state = _shake128_absorb34(state, extseed);

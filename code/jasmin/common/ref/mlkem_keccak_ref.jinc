@@ -48,7 +48,7 @@ fn _shake256_128_33
   offset = 0;
   () = #unspill(out);
   out, _, _ = A128::__squeeze_array_ref(out, offset, 128, st, R136);
-  
+
   return out;
 }
 
@@ -100,7 +100,7 @@ fn _sha3512_33
   offset = 0;
   () = #unspill(out);
   out, _, _ = A64::__squeeze_array_ref(out, offset, 64, st, R72);
-  
+
   return out;
 }
 
@@ -113,7 +113,7 @@ fn _shake128_absorb34
   st = __state_init_ref(st);
   offset = 0;
   st, _, _ = A34::__absorb_array_ref(st, 0, in, offset, 34, R168, SHAKE);
-  
+
   return st;
 }
 
@@ -148,7 +148,7 @@ fn _isha3_256_M1184
   offset = 0;
   () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, offset, 32, st, R136);
-  
+
   return out;
 }
 
@@ -168,7 +168,7 @@ fn _isha3_256_M1568
   offset = 0;
   () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, offset, 32, st, R136);
-  
+
   return out;
 }
 
@@ -189,7 +189,7 @@ fn _isha3_256_32
   offset = 0;
   () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, offset, 32, st, R136);
-  
+
   return out;
 }
 
@@ -210,6 +210,6 @@ fn _sha3_512_64
   offset = 0;
   () = #unspill(out);
   out, _, _ = A64::__squeeze_array_ref(out, offset, 64, st, R72);
-  
+
   return out;
 }
