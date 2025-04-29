@@ -36,7 +36,7 @@ fn __crypto_kem_keypair_jazz(reg u64 pkp, reg u64 skp, reg ptr u8[MLKEM_SYMBYTES
   h_pk = _isha3_256_M1184(h_pk, pkp);
   skp = s_skp;
 
-  for i=0 to 4
+  for i = 0 to 4
   {
     t64 = h_pk[u64 i];
     (u64)[skp] = t64;

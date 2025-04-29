@@ -67,7 +67,7 @@ fn __crypto_kem_enc_jazz(reg u64 ctp, reg u64 shkp, reg u64 pkp, reg ptr u8[MLKE
   s_ctp = ctp;
   s_shkp = shkp;
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = randomnessp[u64 i];
     buf[u64 i] = t64;

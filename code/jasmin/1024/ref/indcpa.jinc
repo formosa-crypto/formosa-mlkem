@@ -29,7 +29,7 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
 
   buf = _sha3512_33(buf, inbuf);
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     #declassify t64 = buf[u64 i];
     publicseed[u64 i] = t64;

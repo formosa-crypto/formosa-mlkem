@@ -18,7 +18,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
 
   () = #spill(pkp, skp);
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
@@ -27,7 +27,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
 
   buf = _sha3_512A_A33(buf, inbuf);
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     #declassify t64 = buf[u64 i];
     publicseed[u64 i] = t64;
@@ -47,8 +47,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
   skpv = __polyvec_ntt(skpv);
   e    = __polyvec_ntt(e);
 
-
-  for i=0 to MLKEM_K
+  for i = 0 to MLKEM_K
   {
     pkpv[i*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(pkpv[i*MLKEM_N:MLKEM_N], aa[i*MLKEM_VECN:MLKEM_VECN], skpv);
     pkpv[i*MLKEM_N:MLKEM_N] = _poly_frommont(pkpv[i*MLKEM_N:MLKEM_N]);
@@ -64,7 +63,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
 
   pkp += MLKEM_POLYVECBYTES;
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = publicseed[u64 i];
     (u64)[pkp] = t64;

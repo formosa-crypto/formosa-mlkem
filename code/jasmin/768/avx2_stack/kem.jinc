@@ -18,7 +18,7 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
   pk, sk = __indcpa_keypair(pk, sk, randomnessp1);
   s_pkp = pk; // spilling to mmx as we will not write to pk
 
-  for i=0 to MLKEM_INDCPA_PUBLICKEYBYTES/8
+  for i = 0 to MLKEM_INDCPA_PUBLICKEYBYTES/8
   {
     t64 = pk[u64 i];
     sk.[u64 (MLKEM_POLYVECBYTES/8 + i)*8] = t64;
@@ -110,7 +110,7 @@ fn __crypto_kem_dec_jazz(reg ptr u8[MLKEM_SYMBYTES] shk, reg ptr u8[MLKEM_CIPHER
   // we do not need to do pointer arithmetic here
 
   /* fixme: should loads be 256-bits long? */
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = s_sk.[u64 (i + (MLKEM_SECRETKEYBYTES-2*MLKEM_SYMBYTES)/8)*8];
     buf.[u64 (i + MLKEM_SYMBYTES/8)*8] = t64;

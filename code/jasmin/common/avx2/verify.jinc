@@ -24,7 +24,7 @@ fn __verify(reg u64 ctp, reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctpc) -> reg u
   t64 = 1;
   h = #set0_256();
 
-  for i=0 to MLKEM_INDCPA_CIPHERTEXTBYTES/32
+  for i = 0 to MLKEM_INDCPA_CIPHERTEXTBYTES/32
   {
     f = ctpc.[u256 32*i];
     g = (u256)[ctp + 32*i];
@@ -77,7 +77,7 @@ fn __cmov(reg u64 dst, reg ptr u8[MLKEM_SYMBYTES] src, reg u64 cnd)
 
   m = #VPBROADCAST_4u64(scnd);
 
-  for i=0 to MLKEM_SYMBYTES/32
+  for i = 0 to MLKEM_SYMBYTES/32
   {
     f = src.[u256 32*i];
     g = (u256)[dst + 32*i];
