@@ -9,7 +9,7 @@ u64 pc_sllvdidx_s = 0xC;
 u8[32] pc_shufbidx_s = { 0, 1, 2, 3, 4,-1,-1,-1,-1,-1, 8, 9,10,11,12,-1,
                          9,10,11,12,-1, 0, 1, 2, 3, 4,-1,-1,-1,-1,-1, 8 };
 /*
-_poly_compress: compresses a polynomial to 5 bits per coefficient and packs 
+_poly_compress: compresses a polynomial to 5 bits per coefficient and packs
                 in byte array stored in rp
 
 requires: input coefficients to be in the range [0..2q)
@@ -40,7 +40,7 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
   sllvdidx = #VPBROADCAST_4u64(pc_sllvdidx_s);
   shufbidx = pc_shufbidx_s[u256 0];
 
-  for i=0 to MLKEM_N/32
+  for i = 0 to MLKEM_N/32
   {
     f0 = a[u256 2*i];
     f1 = a[u256 2*i + 1];
@@ -88,7 +88,7 @@ fn _poly_compress_1(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
   sllvdidx = #VPBROADCAST_4u64(pc_sllvdidx_s);
   shufbidx = pc_shufbidx_s[u256 0];
 
-  for i=0 to MLKEM_N/32
+  for i = 0 to MLKEM_N/32
   {
     f0 = a[u256 2*i];
     f1 = a[u256 2*i + 1];
@@ -148,7 +148,7 @@ fn _poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKE
 
   f = #set0_256();
 
-  for i=0 to MLKEM_N/16
+  for i = 0 to MLKEM_N/16
   {
     t = (128u)(u64)[ap + 10*i];
     ti = (16u)(u16)[ap + 10*i + 8];

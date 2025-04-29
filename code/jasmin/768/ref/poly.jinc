@@ -11,8 +11,8 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
   i = 0;
   while(i < 128)
   {
-    d0 = (32u) a[2 * i];
-    d1 = (32u) a[2 * i + 1];
+    d0 = (32u)a[2 * i];
+    d1 = (32u)a[2 * i + 1];
     d0 <<= 4;
     d0 += 1665;
     d0 *= 80635;
@@ -41,8 +41,8 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
   i = 0;
   while(i < 128)
   {
-    d0 = (32u) a[2 * i];
-    d1 = (32u) a[2 * i + 1];
+    d0 = (32u)a[2 * i];
+    d1 = (32u)a[2 * i + 1];
     d0 <<= 4;
     d0 += 1665;
     d0 *= 80635;

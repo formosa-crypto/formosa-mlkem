@@ -18,7 +18,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
 
   () = #spill(pkp, skp);
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
@@ -27,7 +27,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
 
   buf = _sha3_512A_A33(buf, inbuf);
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     #declassify t64 = buf[u64 i];
     publicseed[u64 i] = t64;
@@ -47,8 +47,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
   skpv = __polyvec_ntt(skpv);
   e    = __polyvec_ntt(e);
 
-
-  for i=0 to MLKEM_K
+  for i = 0 to MLKEM_K
   {
     pkpv[i*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(pkpv[i*MLKEM_N:MLKEM_N], aa[i*MLKEM_VECN:MLKEM_VECN], skpv);
     pkpv[i*MLKEM_N:MLKEM_N] = _poly_frommont(pkpv[i*MLKEM_N:MLKEM_N]);
@@ -64,7 +63,7 @@ fn __indcpa_keypair(#spill_to_mmx reg u64 pkp skp, reg ptr u8[MLKEM_SYMBYTES] ra
 
   pkp += MLKEM_POLYVECBYTES;
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = publicseed[u64 i];
     (u64)[pkp] = t64;
@@ -114,12 +113,12 @@ fn __indcpa_enc_0(#mmx reg u64 sctp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg
   ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
-    
+
   for w=0 to MLKEM_K
   {
     bp[w*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(bp[w*MLKEM_N:MLKEM_N], aat[w*MLKEM_VECN:MLKEM_VECN], sp);
   }
- 
+
   v = __polyvec_pointwise_acc(v, pkpv, sp);
 
   bp = __polyvec_invntt(bp);
@@ -186,12 +185,12 @@ fn __indcpa_enc_1(
   ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
-    
+
   for w=0 to MLKEM_K
   {
     bp[w*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(bp[w*MLKEM_N:MLKEM_N], aat[w*MLKEM_VECN:MLKEM_VECN], sp);
   }
- 
+
   v = __polyvec_pointwise_acc(v, pkpv, sp);
 
   bp = __polyvec_invntt(bp);
@@ -220,14 +219,14 @@ fn __indcpa_dec_1(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg u64 ctp, reg u64 s
   v = _poly_decompress(v, ctp);
 
   skpv = __polyvec_frombytes(skp);
-  
+
   bp = __polyvec_ntt(bp);
   t = __polyvec_pointwise_acc(t, skpv, bp);
   t = _poly_invntt(t);
 
   mp = _poly_sub(mp, v, t);
   mp = __poly_reduce(mp);
-  
+
   msgp, mp = _poly_tomsg_1(msgp, mp);
 
   return msgp;

@@ -34,9 +34,9 @@ fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLK
   shift = x16s[u256 0];
   mask = #VPBROADCAST_16u16(pvd_mask_s);
 
-  for k=0 to MLKEM_K
+  for k = 0 to MLKEM_K
   {
-    for i=0 to MLKEM_N/16
+    for i = 0 to MLKEM_N/16
     {
       f = rp.[u256 352 * k + 22 * i];
       f = #VPERMQ(f, 0x94);
@@ -84,7 +84,7 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[M
   srlvqidx = pvc_srlvqidx[u256 0];
   shufbidx = pvc_shufbidx_s[u256 0];
 
-  for i=0 to MLKEM_VECN/16
+  for i = 0 to MLKEM_VECN/16
   {
     f0 = a[u256 i];
     f1 = #VPMULL_16u16(f0, v8);

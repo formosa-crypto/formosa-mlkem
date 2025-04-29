@@ -6,7 +6,7 @@ require "../../common/ref/gen_matrix.jinc"
 inline
 fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBYTES] randomnessp)
 {
-  stack u16[MLKEM_K * MLKEM_VECN] a;
+  stack u16[MLKEM_K*MLKEM_VECN] a;
   stack u16[MLKEM_VECN] e pkpv skpv;
   stack u8[64] buf;
   stack u8[MLKEM_SYMBYTES] publicseed noiseseed;
@@ -20,7 +20,7 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
 
   reg u64 pkp skp;
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = randomnessp[u64 i];
     inbuf[u64 i] = t64;
@@ -29,7 +29,7 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
 
   buf = _sha3512_33(buf, inbuf);
 
-  for i=0 to MLKEM_SYMBYTES/8
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     #declassify t64 = buf[u64 i];
     publicseed[u64 i] = t64;
@@ -41,7 +41,7 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
   r_noiseseed = noiseseed;
   s_noiseseed = r_noiseseed;
 
-  zero = 0; 
+  zero = 0;
   a = __gen_matrix(publicseed, zero);
 
   nonce = 0;
@@ -77,8 +77,8 @@ fn __indcpa_keypair(#mmx reg u64 spkp, #mmx reg u64 sskp, reg ptr u8[MLKEM_SYMBY
   __polyvec_tobytes(skp, skpv);
   __polyvec_tobytes(pkp, pkpv);
 
-  pkp += MLKEM_POLYVECBYTES; 
-  for i=0 to MLKEM_SYMBYTES/8
+  pkp += MLKEM_POLYVECBYTES;
+  for i = 0 to MLKEM_SYMBYTES/8
   {
     t64 = publicseed[u64 i];
     (u64)[pkp] = t64;
@@ -118,19 +118,15 @@ fn __indcpa_enc(#mmx reg u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[
 
   nonce = 0;
   sp[0:MLKEM_N] = _poly_getnoise(sp[0:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 1;
   sp[MLKEM_N:MLKEM_N] = _poly_getnoise(sp[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 2;
   sp[2*MLKEM_N:MLKEM_N] = _poly_getnoise(sp[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
 
   nonce = 3;
   ep[0:MLKEM_N] = _poly_getnoise(ep[0:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 4;
   ep[MLKEM_N:MLKEM_N] = _poly_getnoise(ep[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 5;
   ep[2*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
 
@@ -138,11 +134,11 @@ fn __indcpa_enc(#mmx reg u64 sctp, reg ptr u8[32] msgp, reg u64 pkp, reg ptr u8[
   epp = _poly_getnoise(epp, s_noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
-    
+
   bp[0:MLKEM_N] = __polyvec_pointwise_acc(aat[0:MLKEM_VECN], sp);
   bp[MLKEM_N:MLKEM_N]= __polyvec_pointwise_acc(aat[MLKEM_VECN:MLKEM_VECN], sp);
   bp[2*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(aat[2*MLKEM_VECN:MLKEM_VECN], sp);
-  
+
   v = __polyvec_pointwise_acc(pkpv, sp);
 
   bp = __polyvec_invntt(bp);
@@ -194,19 +190,15 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
 
   nonce = 0;
   sp[0:MLKEM_N] = _poly_getnoise(sp[0:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 1;
   sp[MLKEM_N:MLKEM_N] = _poly_getnoise(sp[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 2;
   sp[2*MLKEM_N:MLKEM_N] = _poly_getnoise(sp[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
 
   nonce = 3;
   ep[0:MLKEM_N] = _poly_getnoise(ep[0:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 4;
   ep[MLKEM_N:MLKEM_N] = _poly_getnoise(ep[MLKEM_N:MLKEM_N], s_noiseseed, nonce);
-
   nonce = 5;
   ep[2*MLKEM_N:MLKEM_N] = _poly_getnoise(ep[2*MLKEM_N:MLKEM_N], s_noiseseed, nonce);
 
@@ -214,11 +206,11 @@ fn __iindcpa_enc(reg ptr u8[MLKEM_CT_LEN] ctp, reg ptr u8[32] msgp, reg u64 pkp,
   epp = _poly_getnoise(epp, s_noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
-    
+
   bp[0:MLKEM_N] = __polyvec_pointwise_acc(aat[0:MLKEM_VECN], sp);
   bp[MLKEM_N:MLKEM_N]= __polyvec_pointwise_acc(aat[MLKEM_VECN:MLKEM_VECN], sp);
   bp[2*MLKEM_N:MLKEM_N] = __polyvec_pointwise_acc(aat[2*MLKEM_VECN:MLKEM_VECN], sp);
-  
+
   v = __polyvec_pointwise_acc(pkpv, sp);
 
   bp = __polyvec_invntt(bp);
@@ -250,14 +242,14 @@ fn __indcpa_dec(reg ptr u8[MLKEM_MSGBYTES] msgp, reg u64 ctp, reg u64 skp) -> re
   v = _poly_decompress(v, ctp);
 
   skpv = __polyvec_frombytes(skp);
-  
+
   bp = __polyvec_ntt(bp);
   t = __polyvec_pointwise_acc(skpv, bp);
   t = _poly_invntt(t );
 
   mp = _poly_sub(mp, v, t);
   mp = __poly_reduce(mp);
-  
+
   msgp, mp = _i_poly_tomsg(msgp, mp);
 
   return msgp;

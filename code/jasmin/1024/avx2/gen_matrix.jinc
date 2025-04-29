@@ -29,7 +29,7 @@ export fn _gen_matrix_avx2
     matrix[i*4*MLKEM_N:4*MLKEM_N] = polx4;
   }
 
-  
+
   for i = 0 to MLKEM_K
   { for j = 0 to MLKEM_K
     { matrix[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N] = _nttunpack(matrix[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N]);

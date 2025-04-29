@@ -29,7 +29,6 @@ export fn _gen_matrix_avx2
     matrix[i*4*MLKEM_N:4*MLKEM_N] = polx4;
   }
 
-  
   // sample the last one, (2,2), using single-lane code
   pol = matrix[8*MLKEM_N:MLKEM_N];
   rc = 0x0202;

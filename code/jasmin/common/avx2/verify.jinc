@@ -1,17 +1,17 @@
 require "params.jinc"
 
-/* 
+/*
 __verify: compare two ciphertexts encoded as byte arrays of size MLKEM_INDCPA_CIPHERTEXTBYTES
 
 requires:
   - valid(ctp,0,MLKEM_INDCPA_CIPHERTEXTBYTES)
 ensures:
   - memory unchanged
-  - res = if read_array(ctp,0,MLKEM_INDCPA_CIPHERTEXTBYTES) = ctpc 
-          then 0 else 1 
+  - res = if read_array(ctp,0,MLKEM_INDCPA_CIPHERTEXTBYTES) = ctpc
+          then 0 else 1
 */
 
-inline 
+inline
 fn __verify(reg u64 ctp, reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctpc) -> reg u64
 {
   reg u256 f g h;
@@ -24,7 +24,7 @@ fn __verify(reg u64 ctp, reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctpc) -> reg u
   t64 = 1;
   h = #set0_256();
 
-  for i=0 to MLKEM_INDCPA_CIPHERTEXTBYTES/32
+  for i = 0 to MLKEM_INDCPA_CIPHERTEXTBYTES/32
   {
     f = ctpc.[u256 32*i];
     g = (u256)[ctp + 32*i];
@@ -53,14 +53,14 @@ fn __verify(reg u64 ctp, reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctpc) -> reg u
   return cnd;
 }
 
-/* 
+/*
 __cmov: conditional move MLKEM_SYMBYTES from src to dst
 
 requires:
   - valid(dst,0,MLKEM_SYMBYTES)
 ensures:
   - touches memory only in (dst+0...dst+MLKEM_SYMBYTES)
-  - _cnd = 0 => read_array(dst,0,MLKEM_SYMBYTES) = src 
+  - _cnd = 0 => read_array(dst,0,MLKEM_SYMBYTES) = src
   - _cnd = 1 => read_array(dst,0,MLKEM_SYMBYTES) = original value in dst
 */
 
@@ -77,7 +77,7 @@ fn __cmov(reg u64 dst, reg ptr u8[MLKEM_SYMBYTES] src, reg u64 cnd)
 
   m = #VPBROADCAST_4u64(scnd);
 
-  for i=0 to MLKEM_SYMBYTES/32
+  for i = 0 to MLKEM_SYMBYTES/32
   {
     f = src.[u256 32*i];
     g = (u256)[dst + 32*i];

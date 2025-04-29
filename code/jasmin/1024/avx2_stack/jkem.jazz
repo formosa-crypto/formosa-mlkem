@@ -4,7 +4,7 @@ require "kem.jinc"
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(
     #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
     #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
-    #spill_to_mmx reg ptr u8[2*MLKEM_SYMBYTES] coins) 
+    #spill_to_mmx reg ptr u8[2*MLKEM_SYMBYTES] coins)
  -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES], reg u64
 {
   reg u64 r;
@@ -14,27 +14,27 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(
   reg ptr u8[MLKEM_SECRETKEYBYTES] skp;
 
   stack u8[2*MLKEM_SYMBYTES] rd;
-  reg ptr u8[2*MLKEM_SYMBYTES] rdp;     
+  reg ptr u8[2*MLKEM_SYMBYTES] rdp;
   _ = #init_msf();
 
   () = #spill(public_key);
   () = #spill(secret_key);
-  
+
   rd = #copy(coins);
-  
+
   pkp = pk;
   skp = sk;
   rdp = rd;
-  
-  pkp, skp = __crypto_kem_keypair_jazz(pkp, skp, rdp);  
-  
+
+  pkp, skp = __crypto_kem_keypair_jazz(pkp, skp, rdp);
+
   () = #unspill(public_key);
   () = #unspill(secret_key);
-  
+
   pk = pkp;
   sk = skp;
   rd = rdp;
-    
+
   public_key = #copy(pk);
   secret_key = #copy(sk);
 
@@ -49,17 +49,17 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
     #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
     #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
     #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] coins) 
+    #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] coins)
     -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES], reg u64
 {
   reg u64 r;
   stack u8[MLKEM_CIPHERTEXTBYTES] ct;
-  reg ptr u8[MLKEM_CIPHERTEXTBYTES] ctp;  
+  reg ptr u8[MLKEM_CIPHERTEXTBYTES] ctp;
   stack u8[MLKEM_SYMBYTES] shk;
   reg ptr u8[MLKEM_SYMBYTES] shkp;
   stack u8[MLKEM_PUBLICKEYBYTES] pk;
   reg ptr u8[MLKEM_PUBLICKEYBYTES] pkp;
-  
+
   stack u8[MLKEM_SYMBYTES] rd;
   reg ptr u8[MLKEM_SYMBYTES] rdp;
 
@@ -74,9 +74,9 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
   pkp = pk;
   shkp = shk;
   rdp = rd;
-  
+
   ctp, shkp =__crypto_kem_enc_jazz(ctp, shkp, pkp, rdp);
-  
+
   () = #unspill(ciphertext);
   () = #unspill(shared_secret);
 
@@ -84,7 +84,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
   shk = shkp;
   pk = pkp;
   rd = rdp;
- 
+
   ciphertext = #copy(ct);
   shared_secret = #copy(shk);
 
@@ -93,14 +93,14 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
 }
 
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec(
-    #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret, 
-    reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext, 
-    reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key) 
+    #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
     -> reg ptr u8[MLKEM_SYMBYTES], reg u64
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES] shk;
-  reg ptr u8[MLKEM_SYMBYTES] shkp;   
+  reg ptr u8[MLKEM_SYMBYTES] shkp;
   stack u8[MLKEM_SECRETKEYBYTES] sk;
   reg ptr u8[MLKEM_SECRETKEYBYTES] skp;
   stack u8[MLKEM_CIPHERTEXTBYTES] ct;
@@ -116,17 +116,16 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec(
   ctp = ct;
   shkp = shk;
   skp = sk;
-  
+
   shkp = __crypto_kem_dec_jazz(shkp, ctp, skp);
 
   () = #unspill(shared_secret);
-  
+
   shk = shkp;
-  sk = skp;  
+  sk = skp;
   ct = ctp;
 
   shared_secret = #copy(shk);
-
 
   ?{}, r = #set0();
   return shared_secret, r;

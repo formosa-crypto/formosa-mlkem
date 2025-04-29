@@ -44,23 +44,7 @@ namespace ABUFLEN {
   from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
-/*
-fn _sha3_256A_A32
-( #spill_to_mmx reg mut ptr u8[32] out
-, reg const ptr u8[32] in
-) -> reg ptr u8[32]
-{ reg u256[7] st;
-  reg u64 offset;
-  st = __state_init_avx2();
-  offset = 0;
-  st, _ = A32::__absorb_array_avx2(st, in, offset, 32, R136, SHA3);
-  offset = 0;
-  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
-  return out;
-}
-*/
-
-/* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte 
+/* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte
    memory region */
 fn _sha3_256A_M1184
 ( #spill_to_mmx reg mut ptr u8[32] out
@@ -75,7 +59,7 @@ fn _sha3_256A_M1184
   return out;
 }
 
-/* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte 
+/* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1568 byte
    memory region */
 fn _sha3_256A_M1568
 ( #spill_to_mmx reg mut ptr u8[32] out
@@ -90,7 +74,7 @@ fn _sha3_256A_M1568
   return out;
 }
 
-/* SHA3-512 writing to a 64-byte stack array (512A) and reading from 33 byte 
+/* SHA3-512 writing to a 64-byte stack array (512A) and reading from 33 byte
    stack array */
 fn _sha3_512A_A33
 ( #spill_to_mmx reg mut ptr u8[64] out
@@ -106,7 +90,7 @@ fn _sha3_512A_A33
   return out;
 }
 
-/* SHA3-512 writing to a 64-byte stack array (512A) and reading from 64 byte 
+/* SHA3-512 writing to a 64-byte stack array (512A) and reading from 64 byte
    stack array */
 fn _sha3_512A_A64
 ( reg mut ptr u8[64] out
@@ -122,7 +106,7 @@ fn _sha3_512A_A64
   return out;
 }
 
-/* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte 
+/* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte
    stack array first, and then from a 1088 byte memory region */
 fn _shake256_M32__M32_M1088
 ( reg u64 out
@@ -138,8 +122,8 @@ fn _shake256_M32__M32_M1088
   _, _ = __squeeze_imem_avx2(out, 32, st, R136);
 }
 
-/* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte 
-   stack array first, and then from a 1088 byte memory region */
+/* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte
+   stack array first, and then from a 1600 byte memory region */
 fn _shake256_M32__M32_M1600
 ( reg u64 out
 , reg u64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
@@ -154,7 +138,7 @@ fn _shake256_M32__M32_M1600
   _, _ = __squeeze_imem_avx2(out, 32, st, R136);
 }
 
-/* SHAKE-256 writing to a 128-byte stack array (A128) and reading from 32 byte 
+/* SHAKE-256 writing to a 128-byte stack array (A128) and reading from 32 byte
    stack array first, and then from a 1 byte stack array next */
 fn _shake256_A128__A32_A1
 ( reg mut ptr u8[128] out
@@ -178,7 +162,7 @@ fn _shake256_A128__A32_A1
   return out;
 }
 
-/* 4-way parallel SHAKE-256 writing to 128-byte stack arrays (A128) and reading from 32 byte 
+/* 4-way parallel SHAKE-256 writing to 128-byte stack arrays (A128) and reading from 32 byte
    stack array first (same input on all lanes), and then from 1 byte stack arrays next */
 fn _shake256x4_A128__A32_A1
 ( reg mut ptr u8[128] out0 out1 out2 out3
@@ -205,7 +189,7 @@ fn _shake256x4_A128__A32_A1
   return out0, out1, out2, out3;
 }
 
-/* SHAKE-128 absorb reading from a 32-byte stack array (A32) first and from 2 byte 
+/* SHAKE-128 absorb reading from a 32-byte stack array (A32) first and from 2 byte
    stack array next */
 fn _shake128_absorb_A32_A2
 ( reg const ptr u8[32] seed
@@ -247,7 +231,7 @@ fn _shake128x4_absorb_A32_A2
    at the end so it can be resumed */
 fn _shake128_squeeze3blocks
 ( reg mut ptr u8[ABUFLEN::ASIZE] buf
-, reg u256[7] st 
+, reg u256[7] st
 ) -> reg ptr u8[ABUFLEN::ASIZE]
 {
  reg u64 offset;
@@ -271,7 +255,7 @@ fn _shake128_next_state
  reg ptr u64[25] pst;
  reg u64 offset;
  pst = buf[u64 2*(168/8) : 25];
- st = __state_from_pstate_avx2(pst); 
+ st = __state_from_pstate_avx2(pst);
  st = _keccakf1600_avx2(st);
  offset = 2*168;
  buf, _ = ABUFLEN::__dumpstate_array_avx2(buf, offset, 200, st);
