@@ -4,7 +4,7 @@ param int QINV    = 62209;     /* q^(-1) mod 2^16 */
 param int MONT    = 2285;      /* 2^16 % Q */
 param int BARR    = 20159;     /* (1U << 26)/MLKEM_Q + 1 */
 
-/* 
+/*
 __csubq: reduce from range [0..2q) to range [0..q) by conditional subtraction
          do this for each 16-bit subword of the 256-bit input register
 
@@ -17,7 +17,7 @@ ensures:
     as the corresponding input subword
 */
 
-inline 
+inline
 fn __csubq(reg u256 r qx16) -> reg u256
 {
   reg u256 t;
@@ -28,7 +28,7 @@ fn __csubq(reg u256 r qx16) -> reg u256
   return r;
 }
 
-/* 
+/*
 __red16x: reduce from arbitrary signed range [-2^15..2^15) to range [0..2q)
           usint Barrett reduction
 
@@ -42,7 +42,7 @@ ensures:
     as the corresponding input subword
 */
 
-inline 
+inline
 fn __red16x(reg u256 r qx16 vx16) -> reg u256
 {
   reg u256 x;
@@ -53,7 +53,7 @@ fn __red16x(reg u256 r qx16 vx16) -> reg u256
   return r;
 }
 
-/* 
+/*
 __fqmulprecomp16x: performs montgomery multiplication mod q with R=2^16
              taking some precomputed values as input (the
              precomputations can be done when one of the
@@ -73,7 +73,7 @@ ensures:
     multiplied by the montgomery factor R^-1 %% q.
 */
 
-inline 
+inline
 fn __fqmulprecomp16x(reg u256 b al ah qx16) -> reg u256
 {
   reg u256 x;
@@ -84,7 +84,7 @@ fn __fqmulprecomp16x(reg u256 b al ah qx16) -> reg u256
   return b;
 }
 
-/* 
+/*
 __fqmulx16: performs montgomery multiplication mod q with R=2^16
 
 requires:

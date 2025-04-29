@@ -4,10 +4,10 @@
    8; 9; 10; 11; 12; 13; 14; 15; 24; 25; 26; 27; 28; 29; 30; 31].
 */
 
-inline 
+inline
 fn __shuffle8(reg u256 a b) -> reg u256, reg u256
 {
-  reg u256 r0 r1; 
+  reg u256 r0 r1;
   r0 = #VPERM2I128(a,b,0x20);
   r1 = #VPERM2I128(a,b,0x31);
   return r0, r1;
@@ -19,10 +19,10 @@ fn __shuffle8(reg u256 a b) -> reg u256, reg u256
    4; 5; 6; 7; 20; 21; 22; 23; 12; 13; 14; 15; 28; 29; 30; 31].
 */
 
-inline 
+inline
 fn __shuffle4(reg u256 a b) -> reg u256, reg u256
 {
-  reg u256 r0 r1; 
+  reg u256 r0 r1;
   r0 = #VPUNPCKL_4u64(a,b);
   r1 = #VPUNPCKH_4u64(a,b);
   return r0, r1;
@@ -34,7 +34,7 @@ fn __shuffle4(reg u256 a b) -> reg u256, reg u256
    2; 3; 18; 19; 6; 7; 22; 23; 10; 11; 26; 27; 14; 15; 30; 31].
 */
 
-inline 
+inline
 fn __shuffle2(reg u256 a b) -> reg u256, reg u256
 {
   reg u256 t0 t1;
@@ -52,10 +52,10 @@ fn __shuffle2(reg u256 a b) -> reg u256, reg u256
    1; 17; 3; 19; 5; 21; 7; 23; 9; 25; 11; 27; 13; 29; 15; 31].
 */
 
-inline 
+inline
 fn __shuffle1(reg u256 a b) -> reg u256, reg u256
 {
-  reg u256 r0 r1 t0 t1; 
+  reg u256 r0 r1 t0 t1;
   t0 = #VPSLL_8u32(b,16);
   r0 = #VPBLEND_16u16(a,t0,0xAA);
   t1 = #VPSRL_8u32(a,16);
@@ -107,7 +107,7 @@ fn __nttunpack128(reg u256 r0 r1 r2 r3 r4 r5 r6 r7)
 
 /* _nttunpack: Conversion from logical ordering of coefficients to avx2 order.
    Output array contains the following permutation of
-   input array 
+   input array
 
   [0; 8; 16; 24; 32; 40; 48; 56; 64; 72; 80; 88; 96; 104; 112; 120;
    1; 9; 17; 25; 33; 41; 49; 57; 65; 73; 81; 89; 97; 105; 113; 121;
