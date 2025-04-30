@@ -39,7 +39,7 @@ move => bnd1 result [#]; rewrite !tP => rval rbnd.
 split; 1: by move => *; rewrite !initiE //= !Array768.initiE /= /#.
 
 move => bnd2 resul2 [#]; rewrite !tP => rva2 rbnd2.
-split; 1:by  move => *; rewrite !initiE //=;
+split;  1:by  move => *; rewrite !initiE //=;
   rewrite !Array768.initiE /= 1: /# !Array768.initiE /= /#.
 
 move => bnd3 resul3 [#]; rewrite !tP =>  rva3 rbnd3.
