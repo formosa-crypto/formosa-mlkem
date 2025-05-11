@@ -19,6 +19,9 @@ import KMatrix.
 import PolyVec.
 import PolyMat.
 
+lemma land_foo  p q: p && q <=> p /\ q by smt().
+
+
 lemma polyvec_csubq_corr_h ap :
       hoare[Jkem768.M(Jkem768.Syscall).__polyvec_csubq :
            ap = lift_array768 r /\ pos_bound768_cxq r 0 768 2 
@@ -31,23 +34,25 @@ wp;ecall (poly_csubq_corr_h (lift_array256 (Array256.init (fun i => r.[(2 * 256)
 wp;ecall (poly_csubq_corr_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
 wp;ecall (poly_csubq_corr_h (lift_array256 (Array256.init (fun i => r.[i])))).
 
-skip; move => &hr [#].
-rewrite /lift_array256 /pos_bound256_cxq /lift_array768 /pos_bound768_cxq /= !tP.
-move => apv bnd /=;split; 1: by move => *; rewrite initiE /#.
 
-move => bnd1 result [#]; rewrite !tP => rval rbnd.
+skip; move => &hr [#].
+rewrite /lift_array256 /pos_bound256_cxq /lift_array768 /pos_bound768_cxq /=.
+
+move => -> bnd /=;split; 1: by move => *; rewrite initiE /#.
+
+move => bnd1 result [#] rval rbnd; rewrite tP in rval.
 split; 1: by move => *; rewrite !initiE //= !Array768.initiE /= /#.
 
-move => bnd2 resul2 [#]; rewrite !tP => rva2 rbnd2.
-split;  1:by  move => *; rewrite !initiE //=;
-  rewrite !Array768.initiE /= 1: /# !Array768.initiE /= /#.
+move => bnd2 resul2 [#] rva2 rbnd2; rewrite tP in rva2.
+rewrite !land_foo.
+split;1:by   move => *; do 3!(rewrite initiE /= 1:/#)  => /#.
 
-move => bnd3 resul3 [#]; rewrite !tP =>  rva3 rbnd3.
-split; last  by move => *; rewrite !initiE //=;
-  rewrite !Array768.initiE /= 1: /# !Array768.initiE /= /#.
+move => resul3 [#]  rva3 rbnd3; rewrite tP in rva3.
 
-move => k kb; rewrite /= !mapiE //= !initiE //= !initiE //=.
-move : (apv k kb); rewrite mapiE //= => ->.
+split. 
+
++ rewrite tP => k kb; rewrite !mapiE 1,2:/# /=;  do 3!(rewrite initiE /= 1:/#).
+
 case (512 <= k && k < 768).
 + move => kb0 /=;move : (rva3 (k - 512) _); 1: smt().
   by rewrite !mapiE 1,2:/# //= !initiE 1:/# //= !initiE //= !initiE //= /#. 
@@ -60,10 +65,11 @@ move => case2;have : (0 <= k && k < 256); 1:smt().
 move => kb0 /=;move : (rval (k) kb0).
   by rewrite !mapiE 1,2:/# //= !initiE /#.
 
+by smt(Array768.initiE).
 qed. 
 
 lemma polyvec_csubq_ll : islossless Jkem768.M(Jkem768.Syscall).__polyvec_csubq 
-  by proc; do 3! (wp;call poly_csubq_ll).
+  by proc; unroll for 2;do 3! (wp;call poly_csubq_ll).
 
 lemma polyvec_csubq_corr ap :
       phoare[Jkem768.M(Jkem768.Syscall).__polyvec_csubq :
@@ -361,34 +367,36 @@ lemma polyvec_add_corr_h _a _b ab bb :
 proof.
 move => abb bbb;  move : (poly_add_corr_impl_h ab bb abb bbb) => H.
 proc.
+unroll for 2.
 wp;ecall (H (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i]))) (lift_array256 (Array256.init (fun i => b.[(2 * 256) + i])))).
 wp;ecall (H (lift_array256 (Array256.init (fun i => r.[256 + i]))) (lift_array256 (Array256.init (fun i => b.[256 + i])))).
 wp;ecall (H (lift_array256 (Array256.init (fun i => r.[i]))) (lift_array256 (Array256.init (fun i => b.[i])))).
 clear H.
-auto => /> &hr.
+skip => &hr.
 rewrite /signed_bound768_cxq /signed_bound_cxq /lift_array768 /lift_array256 /=.
-move => [#] 2?.
+move => [#] ->-> 2?.
 do split; 1..2: by move => *; rewrite !initiE //= /#.
-move => H H0 res1 resb1 resv1.
+move => [#] H H0 ?? res1 [#] resb1 resv1.
 do split.
 + by move => k kb; move : (resb1 k kb); rewrite !initiE  //= !Array768.initiE  /#.
 + by move => k kb; move : (resb1 k kb); rewrite !initiE  //= /#.
 
-move => vsofar bsofar res2 res2b res2v.
+move => [#]  vsofar bsofar ?? res2 [#] res2b res2v.
+rewrite !land_foo.
 do split.
-+ move => k kb; rewrite !initiE  //= !Array768.initiE  /= 1:/#.
++ move => k kb; rewrite !initiE  /=1:/# !Array768.initiE  /= 1:/#.
   rewrite  (_: (256 <= 512 + k && 512 + k < 512)=false) /= 1:/#.
   by rewrite !Array768.initiE  /= /#.
 + by move => k kb;rewrite !initiE  /= /#.
 
-move => vsofar2 bsofar2 res3 res3b res3v.
+move => [#]  res3 [#] res3b res3v.
 do split.
-+ move => k kb; rewrite !initiE  //= !Array768.initiE  /= 1:/#.
++ move => k kb; rewrite !initiE  /= 1:/# !Array768.initiE  /= 1:/#.
   case (512 <= k && k < 768); 1: by smt().
   case (256 <= k && k < 512); 1: by smt().
   by move => *; rewrite !initiE /= /#.
 
-move => k kbl kbh; rewrite !initiE  //= !Array768.initiE  /= 1:/# !mapiE //= !initiE //=.
+move => k [#] kbl kbh; rewrite !initiE  //= !Array768.initiE  /= 1:/# !mapiE //= !initiE //=.
 case (512 <= k && k < 768).
 + move => kbb.
   rewrite (res3v (k - 512) _) 1:/# !mapiE /= 1..2:/# !initiE /= 1..2:/#.
@@ -405,7 +413,7 @@ have -> : 0 <= k < 256 by smt().
 by rewrite (resv1 k _) 1:/# !mapiE /= 1..2:/# !initiE /= 1..2:/#.
 qed.
 
-lemma polyvec_add_ll  : islossless Jkem768.M(Jkem768.Syscall).__polyvec_add2 by proc; do 3! (wp; call poly_add_ll).
+lemma polyvec_add_ll  : islossless Jkem768.M(Jkem768.Syscall).__polyvec_add2 by proc; unroll for 2;do 3! (wp; call poly_add_ll).
 
 lemma polyvec_add_corr  _a _b ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -443,57 +451,50 @@ lemma polyvec_reduce_corr_h _a :
           forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)].
 proof.
 proc. 
+unroll for 2.
 wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
 wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
 wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[i])))).
   
-auto => /> &hr; rewrite /lift_array256 /lift_array768=> res1 res1v res1b res2 res2v res2b res3 res3v res3b.
+skip=>  &hr; rewrite /lift_array256 /lift_array768 => ->.
+rewrite !land_foo; split => /=.
+
++ rewrite tP => k kb; rewrite !mapiE //= !initiE //= !Array768.initiE  /=.
+
+
+move => res1 [#] res1v res1b res2 [#] res2v res2b res3 [#]  res3v res3b.
 
 rewrite tP in res3v.
 rewrite tP in res2v.
 rewrite tP in res1v.
 
+rewrite !tP.
 split.
-
-+ rewrite tP => k kb; rewrite !mapiE //= !initiE //= !Array768.initiE  /= 1:/#.
-  case (512 <= k && k < 768).
-  + move => kbb.
-    move : (res3v (k - 512) _); 1:smt(); rewrite !mapiE /= 1,2:/# !initiE /= 1:/#.
-    by rewrite !Array768.initiE  /= 1:/# !Array768.initiE  /= /#. 
-
-  move => nkbb.
+  move => k nkbb.
   case (256 <= k && k < 512).
   + move => kbb.
-    move : (res2v (k - 256) _); 1:smt(); rewrite !mapiE /= 1,2:/# !initiE /= 1:/#.
+    move : (res2v (k - 256) _); 1:smt(); rewrite !mapiE /= 1..4:/# !initiE /= 1..2:/#.
     by rewrite !Array768.initiE  /=  /#. 
 
-  move => nkbb2.
-  rewrite !Array768.initiE  /=  1:/#.
-  have -> : 0 <= k < 256 by smt().
-  by move : (res1v (k) _); 1:smt(); rewrite !mapiE /= 1,2:/# !initiE /= /#.
+  move =>  nkbb2.
+  rewrite !mapiE 1..2:/# !Array768.initiE  /=  1:/#.
 
-move => k kbl kbh.
+  case (512 <= k && k < 768).
+  + move => kbb.
+  move : (res3v (k-512) _); 1:smt(); rewrite !mapiE /= 1,2:/# !initiE /= 1:/# !initiE /= 1:/# !initiE /= /#.
 
-case (512 <= k && k < 768).
-+ move => kbb.
-  rewrite !initiE /= 1:/#.
-  by rewrite !Array768.initiE  /= 1:/# !Array768.initiE  /= /#. 
-
-move => nkbb.
-case (256 <= k && k < 512).
-+ move => kbb.
-  rewrite !initiE /= 1:/#.
-  by rewrite !Array768.initiE  /= 1:/# !Array768.initiE  /= /#. 
-
-move => nkbb2.
+move => nkbb3.
 rewrite !Array768.initiE  /=  1:/#.
 rewrite !Array768.initiE  /=  1:/#.
-by rewrite !initiE /= /#.
+  move : (res1v (k) _); 1:smt(); rewrite !mapiE /= 1..2:/# !initiE /= 1:/# /#.
+
+smt(Array768.initiE).
+
 qed.
 
 
 (* TODO *)
-lemma polyvec_reduce_ll: islossless Jkem768.M(Jkem768.Syscall).__polyvec_reduce  by proc; do 3! (wp; call poly_reduce_ll).
+lemma polyvec_reduce_ll: islossless Jkem768.M(Jkem768.Syscall).__polyvec_reduce  by proc; unroll for 2;do 3! (wp; call poly_reduce_ll).
 
 lemma polyvec_reduce_corr  _a :
       phoare[Jkem768.M(Jkem768.Syscall).__polyvec_reduce :
@@ -746,6 +747,7 @@ lemma polyvec_ntt_correct_h _r:
             pos_bound768_cxq res 0 768 2 ].
 proof.
 proc.
+unroll for 2.
 wp;ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
 wp;ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
 wp;ecall (ntt_correct_h (lift_array256 (Array256.init (fun i => r.[i])))).
