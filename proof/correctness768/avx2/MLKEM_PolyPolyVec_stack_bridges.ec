@@ -121,6 +121,7 @@ lemma polyvec_to_bytes_stack_equiv _mem _pos:
     (take 1152
        (to_list res{1}))].
 move => Hpos;proc => /=.
+unroll for {1} 2; unroll for {2} 3.
 seq 3 3 : (
 Glob.mem{2} = (stores _mem _pos (take 384 (to_list r{1}))) /\ pp{2} = (of_int _pos)%W64 /\ ={a}
 ).
@@ -246,6 +247,7 @@ lemma polyvec_from_bytes_stack_equiv:
    load_array1152 Glob.mem{2} 0 = arg{1} ==> ={res}].
 proc => //.
 proc rewrite {1} 3 copy1152.
+unroll for {1} 5; unroll for {2} 4.
 exlim Glob.mem{2} => _mem.
 seq 5 4 : (={r} /\ to_uint pp{2} = 0 /\ Glob.mem{2} = _mem /\ load_array1152 Glob.mem{2} 0 = a{1}
 ).

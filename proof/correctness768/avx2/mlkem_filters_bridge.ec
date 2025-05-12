@@ -1,5 +1,3 @@
-timeout 1.
-
 require import AllCore List.
 from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array48 Array24 Array536 Array2048.
