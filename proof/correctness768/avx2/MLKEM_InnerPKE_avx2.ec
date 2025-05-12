@@ -566,7 +566,7 @@ module AuxMLKEMAvx2 = {
     var t: W16.t;
     i <- (W64.of_int 0);
 
-    while ((i \ult (W64.of_int 128))) {
+    while ((i \ult (W64.of_int (2 * 256 %/ 4)))) {
       c <- buf.[(W64.to_uint i)];
       a <- c;
       a <- (a `&` (W8.of_int 85));

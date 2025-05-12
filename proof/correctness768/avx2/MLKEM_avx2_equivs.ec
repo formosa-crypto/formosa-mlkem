@@ -1305,6 +1305,7 @@ move : (H2 k _); 1: smt(). rewrite !initiE//=.
 move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
 move : (H4 k _); 1: smt(). rewrite !initiE//=.
 
+unroll for {1} 2; unroll for {2} 2.
 seq 1 1 :(#pre /\ 
          lift_array256 t{1} = nttunpack (lift_array256 t{2}) /\
          signed_bound_cxq t{1} 0 256 1 /\

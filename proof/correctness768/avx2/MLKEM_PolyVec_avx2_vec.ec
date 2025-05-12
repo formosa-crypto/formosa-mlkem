@@ -541,6 +541,7 @@ equiv veceq_polyvec_add2 :
   Mvec.polyvec_add2 ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   proc.
+  unroll for {2}  2.
   do 3!(wp; call veceq_poly_add2).
   auto => />.
 qed.
@@ -549,6 +550,7 @@ equiv veceq_polyvec_csubq :
   Mvec.polyvec_csubq ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_csubq: ={r} ==> ={res}.
 proof.
   proc.
+  unroll for {2}  2.
   do 3!(wp; call veceq_poly_csubq).
   auto => />.
 qed.
@@ -558,6 +560,7 @@ equiv veceq_polyvec_reduce :
   Mvec.polyvec_reduce ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_reduce: ={r} ==> ={res}.
 proof.
   proc.
+  unroll for {2}  2.
   do 3!(wp; call veceq_poly_reduce).
   auto => />.
 qed.
@@ -566,6 +569,7 @@ equiv veceq_polyvec_frombytes :
   Mvec.polyvec_frombytes ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_frombytes: ={Glob.mem, ap} ==> ={res}.
 proof.
   proc.
+  unroll for {2}  4.
   do 3!(wp; call veceq_poly_frombytes).
   auto => />.
 qed.
@@ -574,6 +578,7 @@ equiv veceq_polyvec_tobytes :
   Mvec.polyvec_tobytes ~Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_tobytes: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
 proof.
   proc.
+  unroll for {2}  3.
   do 3!(wp; call veceq_poly_tobytes).
   auto => />.
 qed.
