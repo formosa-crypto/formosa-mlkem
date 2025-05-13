@@ -88,7 +88,7 @@ qed.
 
 
 lemma mlkem_kem_correct_kg   : 
-   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand ~ MLKEM.kg_derand : 
+   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand ~ MLKEM768.kg_derand : 
         coins{2}.`1 = Array32.init(fun i => coins{1}.[i]) /\
         coins{2}.`2 = Array32.init(fun i => coins{1}.[32 + i]) 
         ==> 
@@ -298,7 +298,7 @@ qed.
 
 
 lemma mlkem_kem_correct_enc : 
-   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand ~ MLKEM.enc_derand: 
+   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand ~ MLKEM768.enc_derand: 
      coins{1} = coins{2} /\
      pk{2}.`1 = Array1152.init(fun i => public_key{1}.[i])  /\
      pk{2}.`2 = Array32.init(fun i => public_key{1}.[i+1152])
@@ -516,7 +516,7 @@ lemma cmov_correct_stack _dst _src _cnd:
   by  conseq cmov_ll_stack (cmov_correct_h_stack _dst _src _cnd). 
 
 lemma mlkem_kem_correct_dec : 
-   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_dec ~ MLKEM.dec: 
+   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_dec ~ MLKEM768.dec: 
       sk{2}.`1 = Array1152.init(fun i => secret_key{1}.[i])  /\
       sk{2}.`2.`1 = Array1152.init(fun i => secret_key{1}.[i+1152]) /\
       sk{2}.`2.`2 = Array32.init(fun i => secret_key{1}.[i+1152+1152]) /\
