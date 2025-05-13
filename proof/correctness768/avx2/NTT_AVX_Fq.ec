@@ -2,7 +2,7 @@ require import AllCore List IntDiv Ring StdOrder BitEncoding.
 
 require import Fq NTT_Fq NTTAlgebra.
 
-import GFq Rq Correctness.
+import GFq Rq Correctness768.
 
 import Zq IntOrder BitReverse.
 import NTTequiv.

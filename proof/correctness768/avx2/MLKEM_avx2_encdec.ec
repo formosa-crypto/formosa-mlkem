@@ -9,6 +9,7 @@ require import Fq MLKEMFCLib W8extra List_extra.
 
 from JazzEC require import Jkem768.
 from CryptoSpecs require import GFq Rq Serialization.
+import Serialization768.
 
 
 module EncDec_AVX2 = {

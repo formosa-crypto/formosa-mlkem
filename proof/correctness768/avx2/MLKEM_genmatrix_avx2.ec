@@ -13,8 +13,8 @@ import NTT_Avx2.
 
 from JazzEC require import Jkem768_avx2 Jkem768.
 
-import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Fq Correctness.
-import PolyMat.
+import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE768 MLKEM768 Fq Correctness768.
+import Symmetric768 Serialization768 VecMat768 PolyMat.
 import KMatrix.Matrix.
 import MLKEM_PolyAVXVec.
 

@@ -10,7 +10,8 @@ from Jasmin require import JModel.
 import MLKEM_Poly.
 import MLKEM_PolyVec.
 
-from CryptoSpecs require import GFq Rq VecMat Sampling Symmetric Serialization InnerPKE MLKEM.
+from CryptoSpecs require import GFq Rq VecMat Sampling Symmetric Serialization InnerPKE768 MLKEM768.
+import Symmetric768 Serialization768 VecMat768.
 
 require import MLKEMFCLib.
 require import MLKEM_keccak_ref.
@@ -18,7 +19,7 @@ require import MLKEM_keccak_ref.
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
 lemma mlkem_kem_correct_kg mem _pkp _skp : 
-   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_keypair_jazz ~ MLKEM.kg_derand : 
+   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_keypair_jazz ~ MLKEM768.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        coins{2}.`1 = Array32.init (fun i => randomnessp{1}.[0 + i]) /\ 
        coins{2}.`2 = Array32.init (fun i => randomnessp{1}.[32 + i]) /\ 
@@ -287,7 +288,7 @@ by rewrite tP => i ib; smt(Array32.initiE).
 qed.
 
 lemma mlkem_kem_correct_enc mem _ctp _pkp _kp : 
-   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_enc_jazz ~ MLKEM.enc_derand: 
+   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_enc_jazz ~ MLKEM768.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_disj_reg _ctp (3*320+128) _kp (32) /\
      Glob.mem{1} = mem /\ 
@@ -560,7 +561,7 @@ lemma cmov_correct _dst _src _cnd mem:
     by conseq cmov_ll (cmov_correct_h _dst _src _cnd mem).
 
 lemma mlkem_kem_correct_dec mem _ctp _skp _shkp : 
-   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_dec_jazz ~ MLKEM.dec: 
+   equiv [Jkem768.M(Jkem768.Syscall).__crypto_kem_dec_jazz ~ MLKEM768.dec: 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
      valid_ptr _shkp 32 /\

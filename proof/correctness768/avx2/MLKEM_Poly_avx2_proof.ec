@@ -10,7 +10,7 @@ require import Fq NTT_Fq MLKEM_Poly MLKEMFCLib.
 
 from JazzEC require import Jkem768_avx2 Jkem768.
 
-from CryptoSpecs require import GFq Rq Serialization VecMat Correctness.
+from CryptoSpecs require import GFq Rq Serialization VecMat Correctness768.
 
 theory MLKEM_PolyAVX.
 

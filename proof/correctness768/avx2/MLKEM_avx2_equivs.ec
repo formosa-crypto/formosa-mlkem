@@ -24,7 +24,7 @@ require import MLKEM_PolyVec_avx2_vec.
 require import MLKEM_InnerPKE.
 require import MLKEMFCLib.
 
-import GFq Rq Symmetric Serialization Sampling VecMat InnerPKE MLKEM Correctness Fq SignedReductions.
+import GFq Rq Symmetric Symmetric768 Serialization Serialization768 Sampling VecMat VecMat768 InnerPKE768 MLKEM768 Correctness768 Fq SignedReductions.
 
 import Zq.
 import ZModP.

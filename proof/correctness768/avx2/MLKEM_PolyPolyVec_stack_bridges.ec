@@ -1,12 +1,12 @@
 require import AllCore IntDiv List.
 
-from CryptoSpecs require import MLKEM.
+from CryptoSpecs require import MLKEM768.
 from JazzEC require import Jkem768_avx2 Jkem768_avx2_stack.
 from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array33 Array64 Array148 Array256 Array384 Array768 Array960 Array128 Array1088 Array1152 Array1184 Array2304 Array2400.
 from JazzEC require import Array8 WArray32 WArray33 Array300 WArray64 WArray1184 WArray2400 WArray384.
 require import MLKEM_InnerPKE_avx2.
-import MLKEM InnerPKE.
+import MLKEM768 InnerPKE768.
 
 require import MLKEMFCLib.
 

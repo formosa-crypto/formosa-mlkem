@@ -5,7 +5,8 @@ from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array64 Array136 Array148 Array960 Array128 Array1120 Array1088 Array1152 Array1184 Array2400.
 from JazzEC require import Array4 Array8 Array300 WArray32 WArray64 WArray1088 WArray1120 WArray1184 WArray2400.
 
-from CryptoSpecs require import MLKEM Symmetric.
+from CryptoSpecs require import MLKEM768 Symmetric.
+import Symmetric768.
 
 require import MLKEM_KEM_avx2.
 require import MLKEM_InnerPKE_avx2_stack.

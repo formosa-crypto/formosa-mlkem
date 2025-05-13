@@ -646,7 +646,7 @@ have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%
 byphoare => //; apply fqmulx16_ll.
 qed.
 
-from CryptoSpecs require import GFq Correctness.
+from CryptoSpecs require import GFq Correctness768.
 import Zq.
 
 lemma compress_avx2_impl_small (a: W16.t):

@@ -2,7 +2,7 @@ require import AllCore List IntDiv Ring StdOrder BitEncoding.
 
 from JazzEC require import Array256 Array128.
 
-from CryptoSpecs require import GFq Rq Correctness.
+from CryptoSpecs require import GFq Rq Correctness768.
 
 require import Fq Fastexp.
 

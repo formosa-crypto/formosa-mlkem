@@ -17,13 +17,14 @@ require import MLKEM_avx2_encdec.
 require import MLKEMFCLib.
 require import MLKEM_avx2_auxlemmas.
 
-from CryptoSpecs require import GFq Rq VecMat Serialization Correctness.
+from CryptoSpecs require import GFq Rq VecMat Serialization Correctness768.
+import Serialization768 VecMat768.
 
 theory MLKEM_PolyvecAVX.
 
 import Fq.
 import SignedReductions.
-import MLKEM.
+import MLKEM768.
 import Zq.
 import MLKEM_PolyAVX.
 import MLKEM_PolyAVXVec.

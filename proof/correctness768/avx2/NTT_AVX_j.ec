@@ -11,7 +11,7 @@ require import NTT_AVX_Fq MLKEMFCLib.
 
 (******* *)
 
-from CryptoSpecs require import GFq Correctness.
+from CryptoSpecs require import GFq Correctness768.
 
 require import Fq.
 import Zq.

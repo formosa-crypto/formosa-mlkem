@@ -3,8 +3,8 @@ require import AllCore List IntDiv.
 from Jasmin require import JModel.
 from JazzEC require import Array128 Array256 Array32 Array16 Array768 Array2304 Array320 Array384 Array960 Array1152 WArray512 WArray128.
 
-from CryptoSpecs require import GFq Rq VecMat Serialization Correctness.
-import PolyVec PolyMat KMatrix.
+from CryptoSpecs require import GFq Rq VecMat Serialization Correctness768.
+import Serialization768 VecMat768 PolyVec PolyMat KMatrix.
 require import W16extra Montgomery.
 
 import Zq.

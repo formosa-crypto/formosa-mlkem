@@ -21,8 +21,9 @@ require import AVX2_Ops.
 require import MLKEM_keccak_ref MLKEM_keccak_avx2.
 require import MLKEM_genmatrix_avx2.
 
-from CryptoSpecs require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE MLKEM Correctness.
+from CryptoSpecs require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE768 MLKEM768 Correctness768.
 
+import Serialization768 Symmetric768 VecMat768.
 
 import MLKEM_Poly.
 import MLKEM_PolyVec.
@@ -748,9 +749,9 @@ move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
 
-import InnerPKE.
+import InnerPKE768.
 lemma mlkem_correct_kg_avx2 mem _pkp _skp  : 
-   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_keypair ~ InnerPKE.kg_derand : 
+   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_keypair ~ InnerPKE768.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        randomnessp{1} = coins{2}  /\
        valid_disj_reg _pkp (384*3+32) _skp (384*3)
@@ -1197,7 +1198,7 @@ qed.
 (***************************************************)
 
 lemma mlkem_correct_enc_0_avx2 mem _ctp _pkp : 
-   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_enc_0 ~ InnerPKE.enc_derand: 
+   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_enc_0 ~ InnerPKE768.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      valid_ptr _ctp (3*320+128) /\
      Glob.mem{1} = mem /\ 
@@ -1583,7 +1584,7 @@ qed.
 (***************************************************)
 
 lemma mlkem_correct_enc_1_avx2 mem _pkp : 
-   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_enc_1 ~ InnerPKE.enc_derand: 
+   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_enc_1 ~ InnerPKE768.enc_derand: 
      valid_ptr _pkp (384*3 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
@@ -1959,7 +1960,7 @@ qed.
 
 
 lemma mlkem_correct_dec mem _ctp _skp : 
-   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_dec_1 ~ InnerPKE.dec : 
+   equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__indcpa_dec_1 ~ InnerPKE768.dec : 
      valid_ptr _ctp (3*320+128) /\
      valid_ptr _skp 1152 /\
      Glob.mem{1} = mem /\ 

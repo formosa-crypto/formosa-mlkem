@@ -9,7 +9,8 @@ require import MLKEM_PolyVec.
 require import NTT_Fq.
 require import AVX2_Ops.
 
-from CryptoSpecs require import GFq Rq Serialization VecMat Correctness.
+from CryptoSpecs require import GFq Rq Serialization VecMat Correctness768.
+import VecMat768 Serialization768.
 
 import MLKEM_PolyVec.
 import Zq IntOrder BitReverse.

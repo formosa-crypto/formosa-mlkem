@@ -18,7 +18,7 @@ require import IntDiv_extra For.
 
 from JazzEC require import Array128 Array256.
 
-from CryptoSpecs require import GFq Rq Correctness.
+from CryptoSpecs require import GFq Rq Correctness768.
 
 require import Montgomery NTT_Fq MLKEMFCLib.
 
@@ -143,7 +143,7 @@ abstract theory DFT.
 end DFT.
 *)
 
-from CryptoSpecs require import MLKEM.
+from CryptoSpecs require import MLKEM768.
 import Zq.
 
 theory NTTequiv.

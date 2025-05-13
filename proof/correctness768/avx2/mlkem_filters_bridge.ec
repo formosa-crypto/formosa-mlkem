@@ -2,7 +2,7 @@ require import AllCore List.
 from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array48 Array24 Array536 Array2048.
 
-from CryptoSpecs require import Correctness.
+from CryptoSpecs require import Correctness768.
 from JazzEC require import Jkem768_avx2 (* Mlkem_filter48 *).
 
 abbrev bufl (buf: W8.t Array536.t) = to_list buf.
