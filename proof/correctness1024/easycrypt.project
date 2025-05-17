@@ -1,0 +1,22 @@
+[general]
+timeout = 30
+
+provers = Alt-Ergo@2.4
+provers = CVC4@1.8
+provers = Z3@4.8
+
+rdirs = ../eclib
+rdirs = Jasmin:../../jasmin/eclib
+idirs = Keccak:../../formosa-keccak/proof/amd64/ref
+idirs = Keccak:../../formosa-keccak/proof/amd64/avx2
+idirs = JazzEC:../../crypto-specs/arrays
+idirs = JazzEC:../../formosa-keccak/proof/amd64/extracted
+idirs = JazzEC:../../code/jasmin/768/ref/extraction
+idirs = JazzEC:../../code/jasmin/768/avx2_stack/extraction
+idirs = JazzEC:../../code/jasmin/768/avx2/extraction
+idirs = JazzEC:../../code/jasmin/1024/ref/extraction
+idirs = JazzEC:../../code/jasmin/1024/avx2_stack/extraction
+idirs = JazzEC:../../code/jasmin/1024/avx2/extraction
+idirs = CryptoSpecs:../../crypto-specs/common
+rdirs = CryptoSpecs:../../crypto-specs/fips202
+rdirs = CryptoSpecs:../../crypto-specs/ml-kem

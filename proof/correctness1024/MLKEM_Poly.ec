@@ -1,7 +1,7 @@
 require import AllCore List IntDiv CoreMap IntDiv Real Number Ring StdOrder.
 
 from Jasmin require import JModel JMemory.
-from JazzEC require import Array32 Array320 Array256 Array128 Array384 Array1024.
+from JazzEC require import Array32 Array128 Array320 Array256 Array160 Array384 Array1408.
 
 require import IntDiv_extra W16extra.
 
@@ -776,17 +776,19 @@ by rewrite /smod /=; smt(W8.to_uint_cmp pow2_8 modz_small).
 qed.
 
 lemma poly_compress_corr _a (_p : address) mem : 
-    equiv [Jkem1024.M(Jkem1024.Syscall)._poly_compress ~ EncDec.encode4 :
+    equiv [Jkem1024.M(Jkem1024.Syscall)._poly_compress ~ EncDec.encode5 :
              pos_bound256_cxq a{1} 0 256 2 /\
              lift_array256 a{1} = _a /\
-             p{2} = compress_poly 4 _a /\
-             valid_ptr _p 128 /\
+             p{2} = compress_poly 5 _a /\
+             valid_ptr _p 160 /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p
               ==>
              lift_array256 res{1} = _a /\
              pos_bound256_cxq res{1} 0 256 1 /\
-             touches mem Glob.mem{1} _p 128 /\
-             load_array128 Glob.mem{1} _p = res{2}].
+             touches mem Glob.mem{1} _p 160 /\
+             load_array160 Glob.mem{1} _p = res{2}].
+admitted.
+(* 
 proc => /=.
 seq 2 3 : (#{/~a{1}}pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\
             j{2} = 0 /\
@@ -849,23 +851,27 @@ do split; 1..3: smt().
 
 by rewrite ultE /= to_uintD_small; smt().
 qed.
+*)
 
 lemma poly_compress_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_compress.
 proc.
-while (0 <= to_uint i <= 128) (128-to_uint i); last 
+while (0 <= i <= 32 /\ inc = 32) (32- i); last 
    by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
-move => *;  auto => /> &hr ??.
-by rewrite W64.ultE W64.to_uintD_small /#. 
+move => *;  auto => />. 
+unroll for 2. 
+auto => />  /#.
 qed.
 
 lemma i_poly_compress_corr _a  : 
-    equiv [Jkem1024.M(Jkem1024.Syscall)._i_poly_compress ~ EncDec.encode4 :
+    equiv [Jkem1024.M(Jkem1024.Syscall)._i_poly_compress ~ EncDec.encode5 :
              pos_bound256_cxq a{1} 0 256 2 /\
              lift_array256 a{1} = _a /\
-             p{2} = compress_poly 4 _a
+             p{2} = compress_poly 5 _a
               ==>
              res{1}.`1 = res{2} /\
              pos_bound256_cxq res{1}.`2 0 256 1].
+admitted.
+(* 
 proc => /=.
 seq 2 3 : (#{/~a{1}}pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\
            j{2} = 0 /\
@@ -925,24 +931,28 @@ do split; 1..3: by smt().
 
 by rewrite ultE /= to_uintD_small; smt().
 qed.
+*)
 
 lemma i_poly_compress_ll : islossless Jkem1024.M(Jkem1024.Syscall)._i_poly_compress.
 proc.
-while (0 <= to_uint i <= 128) (128-to_uint i); last 
+while (0 <= to_uint i <= 256 /\ to_uint i %% 8 = 0) (256-to_uint i); last 
    by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
-move => *;  auto => /> &hr ??.
-by rewrite W64.ultE W64.to_uintD_small /#. 
+move => *;  unroll for 2; auto => /> &hr ??.
+by rewrite W64.ultE W64.to_uintD_small /= /#.
 qed.
 
-lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
-    equiv [Jkem1024.M(Jkem1024.Syscall)._poly_decompress ~ EncDec.decode4 :
-             valid_ptr _p 128 /\
+
+lemma poly_decompress_corr mem _p (_a : W8.t Array160.t): 
+    equiv [Jkem1024.M(Jkem1024.Syscall)._poly_decompress ~ EncDec.decode5 :
+             valid_ptr _p 160 /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array128 Glob.mem{1} _p = _a /\ a{2} = _a
+             load_array160 Glob.mem{1} _p = _a /\ a{2} = _a
               ==>
              Glob.mem{1} = mem /\
-             lift_array256 res{1} = decompress_poly 4 res{2} /\
+             lift_array256 res{1} = decompress_poly 5 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 ].
+admitted.
+(* 
 proc. 
 while(#pre /\ to_uint i{1} = i{2} /\ 0 <= i{2} <= 128 /\
    forall k, 0<=k<i{2}*2 => incoeff (to_sint rp{1}.[k]) = decompress 4 r{2}.[k] /\
@@ -1016,19 +1026,20 @@ rewrite to_uint_shr //= to_uintD_small /=.
   rewrite to_uint_shr // to_uint_zeroextu16 /=.
   by rewrite /smod;smt(W8.to_uint_cmp pow2_8).
 qed.
+*)
 
 (*******DIRECT NTT *******)
 
 lemma zeta_bound :  minimum_residues jzetas.
  proof.
 rewrite /minimum_residues qE.
-apply/(Array128.allP jzetas (fun x => bpos16 x 3329)) => /=.
+apply/(Array128.allP jzetas (fun x => bpos16 x 3329)) => /=. 
 have -> : 
-  (fun (x : W16.t) => 0 <= to_sint x < 3329) = 
-  (fun (x : W16.t) => 0 <= (if 321024 <= to_uint x 
+  (fun (x : W16.t) => 0 <= W16.to_sint x < 3329) = 
+  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x 
                             then to_uint x - 65536 
-                            else to_uint x) < 3329) 
-    by apply/fun_ext => x *; rewrite to_sintE /smod => />.
+                            else to_uint x) < 3329) by
+    apply/fun_ext => x *; rewrite to_sintE /smod => />. 
 by rewrite /all -iotaredE; cbv delta.
 qed. 
 
@@ -1288,7 +1299,7 @@ rewrite /minimum_residues qE.
 apply/(Array128.allP jzetas_inv (fun x => bpos16 x 3329)) => /=.
 have -> : 
   (fun (x : W16.t) => 0 <= to_sint x < 3329) = 
-  (fun (x : W16.t) => 0 <= (if 321024 <= to_uint x 
+  (fun (x : W16.t) => 0 <= (if 32768 <= to_uint x 
                             then to_uint x - 65536 
                             else to_uint x) < 3329) 
     by apply/fun_ext => x *; rewrite to_sintE /smod => />.

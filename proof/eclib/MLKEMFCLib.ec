@@ -1,7 +1,7 @@
 require import AllCore List IntDiv.
 
 from Jasmin require import JModel.
-from JazzEC require import Array128 Array256 Array32 Array16 Array768 Array2304 Array320 Array384 Array960 Array1152 WArray512 WArray128.
+from JazzEC require import Array128 Array160 Array256 Array32 Array16 Array768 Array2304 Array320 Array384 Array960 Array1152 WArray512 WArray128.
 
 from CryptoSpecs require import GFq Rq VecMat Serialization Correctness768.
 import Serialization768 VecMat768 PolyVec PolyMat KMatrix.
@@ -541,6 +541,9 @@ op load_array32(m : global_mem_t, p : address) : W8.t Array32.t =
 
 op load_array128(m : global_mem_t, p : address) : W8.t Array128.t = 
       Array128.init (fun i => m.[p + i]).
+
+op load_array160(m : global_mem_t, p : address) : W8.t Array160.t = 
+      Array160.init (fun i => m.[p + i]).
 
 op load_array320(m : global_mem_t, p : address) : W8.t Array320.t = 
       Array320.init (fun i => m.[p + i]).
