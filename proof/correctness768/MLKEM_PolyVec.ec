@@ -23,6 +23,39 @@ import PolyMat.
 
 lemma land_foo  p q: p && q <=> p /\ q by smt().
 
+op lift_polyvec(vec: W16.t Array768.t) : polyvec =
+    Vector.offunv (fun i => lift_array256 (subarray256 vec i)).
+
+
+op scale_polyvec(v : polyvec, c : coeff) : polyvec = 
+   Vector.offunv (fun i => (scale ((Vector.tofunv v) i) c)).
+
+lemma liftarrayvector a i k : 0<=i<3 => 0<=k<256 =>
+         ((lift_polyvec a).[i])%Vector.[k] = (lift_array768 a).[256*i+k].
+move => ib lb; rewrite /lift_vector /lift_array768 offunvE // mapiE 1:/# /=.
+by rewrite /lift_array256 /subarray256 mapiE //= initiE //=.
+qed.
+
+
+op unlift_polyvec(a : polyvec) = 
+   Array768.init (fun i => W16.of_int (as_sint (a.[i %/ 256])%Vector.[i%%256])).
+
+lemma vector_unlift a : 
+    lift_polyvec (unlift_polyvec a) = a /\
+    signed_bound768_cxq (unlift_polyvec a) 0 768 1.
+proof.
+split. 
++ rewrite /lift_vector /unlift_polyvec eq_vectorP => i ib.
+  rewrite offunvE //= /subarray256 /lift_array256 /= tP => k kb.
+  rewrite mapiE //= initiE //= initiE //= 1:/# /to_sint /smod /=.
+  rewrite !of_uintK /=; rewrite /as_sint qE /=.
+  by smt(rg_asint asintK).
+
+rewrite /unlift_vector /signed_bound768_cxq => k kb; rewrite initiE //=.
+rewrite /to_sint /smod /= !of_uintK /= /as_sint qE /=.
+by smt(rg_asint).
+qed.
+
 
 lemma polyvec_csubq_corr_h ap :
       hoare[Jkem768.M(Jkem768.Syscall).__polyvec_csubq :

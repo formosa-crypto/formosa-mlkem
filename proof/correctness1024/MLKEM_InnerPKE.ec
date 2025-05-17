@@ -19,6 +19,32 @@ import KMatrix.
 import Vector.
 import Zq.
 
+
+op unlift_matrix(a : polymat) = Array2304.init 
+   (fun i => W16.of_int (asint (a.[i %/ 768,i %% 768 %/ 256].[i %% 256]))%Matrix).
+
+lemma matrix_unlift a : 
+    lift_matrix (unlift_matrix a) = a /\
+    pos_bound2304_cxq (unlift_matrix a) 0 2304 2.
+proof.
+split. 
++ rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
+  rewrite offunmE //= /subarray256 /subarray768 /lift_array2304 /= tP => k kb.
+  rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
+  rewrite !of_uintK /= !(modz_small _ 65536); 1: smt(rg_asint). 
+  rewrite !(mulzC 768) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !asintK. 
+  rewrite !(mulzC 256) !(edivz_eq) 1:/#. 
+  rewrite (_: i*768 = (3*i)*256) 1:/# !modzMDl.
+  by smt(rg_asint).
+rewrite /unlift_matrix /pos_bound2304_cxq => k kb; rewrite initiE //=.
+rewrite to_sint_unsigned.
++ rewrite /to_sint of_uintK /= modz_small; 1: by smt(rg_asint). 
+  by rewrite /smod /=; smt(rg_asint qE).
+rewrite of_uintK /= modz_small; 1: by smt(rg_asint). 
+  by rewrite /smod /=; smt(rg_asint qE).
+qed.
+
+
 require import MLKEM_keccak_ref.
 
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER

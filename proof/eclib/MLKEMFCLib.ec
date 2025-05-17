@@ -1,7 +1,7 @@
 require import AllCore List IntDiv.
 
 from Jasmin require import JModel.
-from JazzEC require import Array128 Array160 Array256 Array32 Array16 Array768 Array2304 Array320 Array384 Array960 Array1152 WArray512 WArray128.
+from JazzEC require import Array128 Array160 Array256 Array32 Array16 Array768 Array1024 Array2304 Array1536 Array320 Array384 Array960 Array1408 Array1152 WArray512 WArray128.
 
 from CryptoSpecs require import GFq Rq VecMat Serialization Correctness768.
 import Serialization768 VecMat768 PolyVec PolyMat KMatrix.
@@ -551,6 +551,9 @@ op load_array320(m : global_mem_t, p : address) : W8.t Array320.t =
 op load_array384(m : global_mem_t, p : address) : W8.t Array384.t = 
       Array384.init (fun i => m.[p + i]).
 
+op load_array1536(m : global_mem_t, p : address) : W8.t Array1536.t = 
+      Array1536.init (fun i => m.[p + i]).
+
 op valid_ptr(p : int, o : int) = 0 <= o => 0 <= p /\ p + o < W64.modulus.
 
 op array_mont (p : coeff Array128.t) =
@@ -566,16 +569,20 @@ op array_mont_inv (p : coeff Array128.t) =
 op lift_array768 (p : W16.t Array768.t) =
   Array768.map (fun x => incoeff (W16.to_sint x)) p.
 
-op lift_polyvec(vec: W16.t Array768.t) : polyvec =
-    Vector.offunv (fun i => lift_array256 (subarray256 vec i)).
+op lift_array1024 (p : W16.t Array1024.t) =
+  Array1024.map (fun x => incoeff (W16.to_sint x)) p.
 
-op scale_polyvec(v : polyvec, c : coeff) : polyvec = 
-   Vector.offunv (fun i => (scale ((Vector.tofunv v) i) c)).
 
 op signed_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
   forall (k : int), l <= k < u => b16 coefs.[k] (c * q).
 
+op signed_bound1024_cxq (coefs : W16.t Array1024.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => b16 coefs.[k] (c * q).
+
 op pos_bound768_cxq (coefs : W16.t Array768.t) (l u c : int) : bool =
+  forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
+
+op pos_bound1024_cxq (coefs : W16.t Array1024.t) (l u c : int) : bool =
   forall (k : int), l <= k < u => bpos16 coefs.[k] (c * q).
 
 op pos_bound768_b (coefs : W16.t Array768.t) (l u b : int) : bool =
@@ -589,8 +596,12 @@ proof. by move => H; rewrite /lift_array256 mapE /= initE H. qed.
 op load_array960 (m : global_mem_t) (p : address) : W8.t Array960.t = 
   (Array960.init (fun (i : int) => m.[p + i])).
 
+op load_array1408 (m : global_mem_t) (p : address) : W8.t Array1408.t = 
+  (Array1408.init (fun (i : int) => m.[p + i])).
+
 op load_array1152 (m : global_mem_t) (p : address) : W8.t Array1152.t = 
   (Array1152.init (fun (i : int) => m.[p + i])).
+
 
 (* TODO: write aux lemma to deal w/ subarrays cleanly *)
 
@@ -610,54 +621,6 @@ move => *; rewrite /subarray256 /subarray768 /lift_array2304 /lift_array768.
 by rewrite !mapiE 1:/# /= !initiE 1,2:/# /= !initiE 1:/# /= mapiE /#.
 qed.
 
-lemma liftarrayvector a i k : 0<=i<3 => 0<=k<256 =>
-         ((lift_polyvec a).[i])%Vector.[k] = (lift_array768 a).[256*i+k].
-move => ib lb; rewrite /lift_vector /lift_array768 offunvE // mapiE 1:/# /=.
-by rewrite /lift_array256 /subarray256 mapiE //= initiE //=.
-qed.
-
-op unlift_matrix(a : polymat) = Array2304.init 
-   (fun i => W16.of_int (asint (a.[i %/ 768,i %% 768 %/ 256].[i %% 256]))%Matrix).
-
-lemma matrix_unlift a : 
-    lift_matrix (unlift_matrix a) = a /\
-    pos_bound2304_cxq (unlift_matrix a) 0 2304 2.
-proof.
-split. 
-+ rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
-  rewrite offunmE //= /subarray256 /subarray768 /lift_array2304 /= tP => k kb.
-  rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
-  rewrite !of_uintK /= !(modz_small _ 65536); 1: smt(rg_asint). 
-  rewrite !(mulzC 768) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !asintK. 
-  rewrite !(mulzC 256) !(edivz_eq) 1:/#. 
-  rewrite (_: i*768 = (3*i)*256) 1:/# !modzMDl.
-  by smt(rg_asint).
-rewrite /unlift_matrix /pos_bound2304_cxq => k kb; rewrite initiE //=.
-rewrite to_sint_unsigned.
-+ rewrite /to_sint of_uintK /= modz_small; 1: by smt(rg_asint). 
-  by rewrite /smod /=; smt(rg_asint qE).
-rewrite of_uintK /= modz_small; 1: by smt(rg_asint). 
-  by rewrite /smod /=; smt(rg_asint qE).
-qed.
-
-op unlift_polyvec(a : polyvec) = 
-   Array768.init (fun i => W16.of_int (as_sint (a.[i %/ 256])%Vector.[i%%256])).
-
-lemma vector_unlift a : 
-    lift_polyvec (unlift_polyvec a) = a /\
-    signed_bound768_cxq (unlift_polyvec a) 0 768 1.
-proof.
-split. 
-+ rewrite /lift_vector /unlift_polyvec eq_vectorP => i ib.
-  rewrite offunvE //= /subarray256 /lift_array256 /= tP => k kb.
-  rewrite mapiE //= initiE //= initiE //= 1:/# /to_sint /smod /=.
-  rewrite !of_uintK /=; rewrite /as_sint qE /=.
-  by smt(rg_asint asintK).
-
-rewrite /unlift_vector /signed_bound768_cxq => k kb; rewrite initiE //=.
-rewrite /to_sint /smod /= !of_uintK /= /as_sint qE /=.
-by smt(rg_asint).
-qed.
 
 op unlift_poly(a : poly) = Array256.init (fun i => W16.of_int (as_sint a.[i])).
 
