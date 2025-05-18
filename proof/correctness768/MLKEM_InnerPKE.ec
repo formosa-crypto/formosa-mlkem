@@ -19,6 +19,16 @@ import KMatrix.
 import Vector.
 import Zq.
 
+op lift_matrix( a : W16.t Array2304.t) : polymat =
+   Matrix.offunm (fun i j => subarray256 (subarray768 (lift_array2304 a) i) j).
+
+lemma matrixcols (m : 'a Array2304.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3 =>
+    Array256.map f (subarray256 ((Array768.init ((fun (i_0 : int) => m.[j*768 + i_0])))) i) =
+                      (subarray256 (subarray768 (map f m) j) i).
+move => ib jb;rewrite /subarray256 /subarray768 tP => k kb.
+by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
+qed. 
+
 op unlift_matrix(a : polymat) = Array2304.init 
    (fun i => W16.of_int (asint (a.[i %/ 768,i %% 768 %/ 256].[i %% 256]))%Matrix).
 

@@ -1,7 +1,7 @@
 require import AllCore List IntDiv.
 
 from Jasmin require import JModel.
-from JazzEC require import Array128 Array160 Array256 Array32 Array16 Array768 Array1024 Array2304 Array1536 Array320 Array384 Array960 Array1408 Array1152 WArray512 WArray128.
+from JazzEC require import Array128 Array160 Array256 Array32 Array16 Array768 Array1024 Array2304 Array4096 Array1536 Array320 Array384 Array960 Array1408 Array1152 WArray512 WArray128.
 
 from CryptoSpecs require import GFq Rq VecMat Serialization Correctness768.
 import Serialization768 VecMat768 PolyVec PolyMat KMatrix.
@@ -501,20 +501,18 @@ op lift_array2304 (p : W16.t Array2304.t) =
 op [a] subarray768(x: 'a Array2304.t, i : int) : 'a Array768.t =
     Array768.init (fun (k : int) => x.[768 * i + k]).
 
-
-op lift_matrix( a : W16.t Array2304.t) : polymat =
-   Matrix.offunm (fun i j => subarray256 (subarray768 (lift_array2304 a) i) j).
-
-
 op pos_bound2304_cxq (coefs : W16.t Array2304.t) (l u c : int) : bool =
   forall (k : int), l <= k && k < u => bpos16 coefs.[k] (c * q).
 
-lemma matrixcols (m : 'a Array2304.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3 =>
-    Array256.map f (subarray256 ((Array768.init ((fun (i_0 : int) => m.[j*768 + i_0])))) i) =
-                      (subarray256 (subarray768 (map f m) j) i).
-move => ib jb;rewrite /subarray256 /subarray768 tP => k kb.
-by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
-qed. 
+
+op pos_bound4096_cxq (coefs : W16.t Array4096.t) (l u c : int) : bool =
+  forall (k : int), l <= k && k < u => bpos16 coefs.[k] (c * q).
+
+op lift_array4096 (p : W16.t Array4096.t) =
+  Array4096.map (fun x => incoeff (W16.to_sint x)) p.
+
+op [a] subarray1024(x: 'a Array4096.t, i : int) : 'a Array1024.t =
+    Array1024.init (fun (k : int) => x.[1024 * i + k]).
 
 op lift_array256 (p : W16.t Array256.t) =
   Array256.map (fun x => incoeff (W16.to_sint x)) p.
