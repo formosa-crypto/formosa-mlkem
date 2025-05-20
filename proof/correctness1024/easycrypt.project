@@ -5,6 +5,7 @@ provers = Alt-Ergo@2.4
 provers = CVC4@1.8
 provers = Z3@4.8
 
+rdirs = .
 rdirs = ../eclib
 rdirs = Jasmin:../../jasmin/eclib
 idirs = Keccak:../../formosa-keccak/proof/amd64/ref
