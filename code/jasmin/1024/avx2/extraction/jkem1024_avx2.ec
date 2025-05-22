@@ -8999,7 +8999,7 @@ module M(SC:Syscall_t) = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      t0 <- (VPBLENDVB_128 t0 t1 (truncateu128 shufbidx));
+      t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       Glob.mem <-
       (storeW128 Glob.mem (W64.to_uint (rp + (W64.of_int (20 * i)))) t0);
       Glob.mem <-
@@ -9054,7 +9054,7 @@ module M(SC:Syscall_t) = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      t0 <- (VPBLENDVB_128 t0 t1 (truncateu128 shufbidx));
+      t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       rp <-
       (Array160.init
       (WArray160.get8
@@ -9375,7 +9375,7 @@ module M(SC:Syscall_t) = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      t0 <- (VPBLENDVB_128 t0 t1 (truncateu128 shufbidx));
+      t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       Glob.mem <-
       (storeW128 Glob.mem (W64.to_uint (rp + (W64.of_int (22 * i)))) t0);
       Glob.mem <-
@@ -9440,7 +9440,7 @@ module M(SC:Syscall_t) = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      t0 <- (VPBLENDVB_128 t0 t1 (truncateu128 shufbidx));
+      t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       rp <-
       (Array1408.init
       (WArray1408.get8
@@ -10514,7 +10514,7 @@ module M(SC:Syscall_t) = {
     while ((i < inc)) {
       f <- (get256_direct (WArray32.init8 (fun i_0 => src.[i_0])) (32 * i));
       g <- (loadW256 Glob.mem (W64.to_uint (dst + (W64.of_int (32 * i)))));
-      f <- (VPBLENDVB_256 f g m);
+      f <- (BLENDV_32u8 f g m);
       Glob.mem <-
       (storeW256 Glob.mem (W64.to_uint (dst + (W64.of_int (32 * i)))) f);
       i <- (i + 1);

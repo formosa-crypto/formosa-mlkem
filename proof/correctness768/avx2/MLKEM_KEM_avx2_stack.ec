@@ -493,13 +493,13 @@ do split.
 + rewrite tP => H1 k  kb;rewrite (H H1).
   rewrite initiE 1:/# /= kb /=.
 rewrite /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
-rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /=  initiE 1:/# /=.
+rewrite /BLENDV_32u8 /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BLENDV_16u8 /VPBLENDVB_128 /=  initiE 1:/# /=.
 by rewrite !msb0 1..8:/# pack32E initiE /= 1:/# /of_list initiE /= /#.
  
 + move =>cone; move : (H0 cone) => -> /=;rewrite tP => k kb.
 rewrite initiE 1:/# /= kb /=.
 rewrite /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
-rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /= !msb1 //=  initiE //=.
+rewrite /BLENDV_32u8 /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BLENDV_16u8 /VPBLENDVB_128 /= !msb1 //=  initiE //=.
 by rewrite pack32E initiE /= 1:/# /of_list !initiE /= /#.
 qed.
 

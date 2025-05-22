@@ -45,7 +45,7 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
     f0 = #VPSHUFB_256(f0, shufbidx);
     t0 = (128u)f0;
     t1 = #VEXTRACTI128(f0, 1);
-    t0 = #VPBLENDVB_128(t0, t1, (128u)shufbidx);
+    t0 = #BLENDV_16u8(t0, t1, (128u)shufbidx);
     rp.[u128 20*i] = t0;
     rp.[u32 20*i + 16] = (32u)t1;
   }

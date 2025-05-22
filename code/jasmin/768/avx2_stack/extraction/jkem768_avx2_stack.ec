@@ -9675,7 +9675,7 @@ module M = {
     m <- (VPBROADCAST_4u64 scnd);
     f <- (get256_direct (WArray32.init8 (fun i => src.[i])) 0);
     g <- (get256_direct (WArray32.init8 (fun i => dst.[i])) 0);
-    f <- (VPBLENDVB_256 f g m);
+    f <- (BLENDV_32u8 f g m);
     dst <-
     (Array32.init
     (WArray32.get8
