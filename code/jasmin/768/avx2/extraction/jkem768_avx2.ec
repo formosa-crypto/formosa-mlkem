@@ -10125,7 +10125,7 @@ module M(SC:Syscall_t) = {
     while ((i < inc)) {
       f <- (get256_direct (WArray32.init8 (fun i_0 => src.[i_0])) (32 * i));
       g <- (loadW256 Glob.mem (W64.to_uint (dst + (W64.of_int (32 * i)))));
-      f <- (VPBLENDVB_256 f g m);
+      f <- (BLENDV_32u8 f g m);
       Glob.mem <-
       (storeW256 Glob.mem (W64.to_uint (dst + (W64.of_int (32 * i)))) f);
       i <- (i + 1);

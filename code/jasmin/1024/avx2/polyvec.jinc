@@ -126,7 +126,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
     f0 = #VPSHUFB_256(f0, shufbidx);
     t0 = (128u)f0;
     t1 = #VEXTRACTI128(f0, 1);
-    t0 = #VPBLENDVB_128(t0, t1, (128u)shufbidx);
+    t0 = #BLENDV_16u8(t0, t1, (128u)shufbidx);
     (u128)[rp + 22*i] = t0;
     (u64)[rp + 22*i + 16] = (64u)t1;
   }
@@ -178,7 +178,7 @@ fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[M
     f0 = #VPSHUFB_256(f0, shufbidx);
     t0 = (128u)f0;
     t1 = #VEXTRACTI128(f0, 1);
-    t0 = #VPBLENDVB_128(t0, t1, (128u)shufbidx);
+    t0 = #BLENDV_16u8(t0, t1, (128u)shufbidx);
     rp.[u128 22*i] = t0;
     rp.[u64 22*i + 16] = (64u)t1;
   }

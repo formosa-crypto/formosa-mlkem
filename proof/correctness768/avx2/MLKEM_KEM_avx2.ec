@@ -548,26 +548,26 @@ do split.
 
 + move =>czero; move : (H1 czero) => -> /=;rewrite tP => k kb.
 rewrite initiE //= /storeW256 /=.
-have HH : forall ii, 0<=ii <32 => VPBLENDVB_256 ((WArray32.WArray32.get256_direct ((WArray32.WArray32.init8 ("_.[_]" _src))) 0))
+have HH : forall ii, 0<=ii <32 => BLENDV_32u8 ((WArray32.WArray32.get256_direct ((WArray32.WArray32.init8 ("_.[_]" _src))) 0))
           (loadW256 mem (to_uint dst{hr})) (VPBROADCAST_4u64 W64.zero) \bits8
         ii = _src.[ii]; last first. 
 + rewrite !HH //=.
   by rewrite /loadW8 /stores /= !get_setE /= /#.
 move => ii iib.
 rewrite /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
-rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /= !msb0 //=  initiE //=.
+rewrite /BLENDV_32u8 /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BLENDV_16u8 /VPBLENDVB_128 /= !msb0 //=  initiE //=.
 rewrite pack32E initiE /= 1:/# /of_list initiE /= /#.
  
 + move =>cone; move : (H2 cone) => -> /=;rewrite tP => k kb.
 rewrite initiE //= /storeW256 /=.
-have HH : forall ii, 0<=ii <32 => VPBLENDVB_256 ((WArray32.WArray32.get256_direct ((WArray32.WArray32.init8 ("_.[_]" _src))) 0))
+have HH : forall ii, 0<=ii <32 => BLENDV_32u8 ((WArray32.WArray32.get256_direct ((WArray32.WArray32.init8 ("_.[_]" _src))) 0))
         (loadW256 mem (to_uint dst{hr})) (VPBROADCAST_4u64 W64.onew) \bits8
               ii = ((init (fun (i0 : int) => loadW8 mem (to_uint dst{hr} + i0))))%Array32.[ii]; last first. 
 + rewrite !HH //=.
   by rewrite initiE //= /loadW8 /stores /= !get_setE /= /#.
 move => ii iib.
 rewrite /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
-rewrite /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /VPBLENDVB_128 /= !msb1 //=  initiE //=.
+rewrite /BLENDV_32u8 /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BLENDV_16u8 /VPBLENDVB_128 /= !msb1 //=  initiE //=.
 by rewrite pack32E initiE /= 1:/# /of_list !initiE /= /#.
 qed.
 
