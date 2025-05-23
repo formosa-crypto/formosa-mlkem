@@ -9797,8 +9797,8 @@ module M(SC:Syscall_t) = {
       publicseed <-
       (Array32.init
       (WArray32.get8
-      (WArray32.set64_direct (WArray32.init8 (fun i_0 => publicseed.[i_0]))
-      (8 * (W64.to_uint i)) t64)));
+      (WArray32.set64 (WArray32.init8 (fun i_0 => publicseed.[i_0]))
+      (W64.to_uint i) t64)));
       pkp <- (pkp + (W64.of_int 8));
       i <- (i + (W64.of_int 1));
     }
@@ -9933,8 +9933,8 @@ module M(SC:Syscall_t) = {
       publicseed <-
       (Array32.init
       (WArray32.get8
-      (WArray32.set64_direct (WArray32.init8 (fun i_0 => publicseed.[i_0]))
-      (8 * (W64.to_uint i)) t64)));
+      (WArray32.set64 (WArray32.init8 (fun i_0 => publicseed.[i_0]))
+      (W64.to_uint i) t64)));
       pkp <- (pkp + (W64.of_int 8));
       i <- (i + (W64.of_int 1));
     }

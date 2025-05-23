@@ -12,9 +12,7 @@ export fn _gen_matrix_avx2
   stack u8[BUF_size * 4] buf_s;
   reg ptr u8[BUF_size * 4] buf;
   reg ptr u16[4*MLKEM_N] polx4;
-  reg ptr u16[MLKEM_N] pol;
   reg u64 pos_entry;
-  reg u16 rc;
 
   () = #spill(transposed);
 
