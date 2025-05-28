@@ -2455,7 +2455,7 @@ seq 11 16: (x16_spec q qx16{2} /\ zetasp{2}=zetas_inv_op  /\ i{2}=0 /\
   by rewrite /= !C2RK /zetas_inv_op !initiE //=.
  pose xx := List.all _ _.
  have ->: xx.
-  rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q //=. admit. (* WTF!?! *)
+  rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q //=. 
  clear xx; pose xx := List.all _ _.
  have ->: xx.
   by rewrite /xx /z3R /z3L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.

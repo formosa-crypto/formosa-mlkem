@@ -1416,7 +1416,7 @@ proc invntt(rp : coeff Array256.t) : coeff Array256.t = {
   (**** LEFT-HALF*****)
   
     (* level 0 *)
-    zeta0 <- Array16.of_list witness [incoeff 1175 ; incoeff 394 ; incoeff 2300 ; incoeff 2117 ; incoeff 2443 ; incoeff 1179 ; incoeff 2303 ; incoeff 2237 ; incoeff 735 ; incoeff 21024 ; incoeff 2572 ; incoeff 3010; incoeff 1684 ; incoeff 780 ; incoeff 109 ; incoeff 1031];
+    zeta0 <- Array16.of_list witness [incoeff 1175 ; incoeff 394 ; incoeff 2300 ; incoeff 2117 ; incoeff 2443 ; incoeff 1179 ; incoeff 2303 ; incoeff 2237 ; incoeff 735 ; incoeff 2768; incoeff 2572 ; incoeff 3010; incoeff 1684 ; incoeff 780 ; incoeff 109 ; incoeff 1031];
     zeta1 <- Array16.of_list witness [incoeff 2444 ; incoeff 1219 ; incoeff 1455 ; incoeff 1607 ; incoeff 554 ; incoeff 2186 ; incoeff 2926 ; incoeff 525 ; incoeff 863 ; incoeff 1230 ; incoeff 556 ; incoeff 2266 ; incoeff 1239 ; incoeff 2954 ; incoeff 1292 ; incoeff 1745];
 
     r0 <- P2C rp 0;
