@@ -40,7 +40,7 @@ fn __cmov(reg ptr u8[MLKEM_SYMBYTES] dst, reg ptr u8[MLKEM_SYMBYTES] src, reg u6
 
   f = src.[u256 0];
   g = dst.[u256 0];
-  f = #VPBLENDVB_256(f, g, m);
+  f = #BLENDV_32u8(f, g, m);
   dst.[u256 0] = f;
 
   return dst;

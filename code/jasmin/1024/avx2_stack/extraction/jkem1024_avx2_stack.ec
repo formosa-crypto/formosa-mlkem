@@ -8752,7 +8752,7 @@ module M = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      t0 <- (VPBLENDVB_128 t0 t1 (truncateu128 shufbidx));
+      t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       rp <-
       (Array160.init
       (WArray160.get8
@@ -9093,7 +9093,7 @@ module M = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      t0 <- (VPBLENDVB_128 t0 t1 (truncateu128 shufbidx));
+      t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       rp <-
       (Array1408.init
       (WArray1408.get8
@@ -10007,7 +10007,7 @@ module M = {
     m <- (VPBROADCAST_4u64 scnd);
     f <- (get256_direct (WArray32.init8 (fun i => src.[i])) 0);
     g <- (get256_direct (WArray32.init8 (fun i => dst.[i])) 0);
-    f <- (VPBLENDVB_256 f g m);
+    f <- (BLENDV_32u8 f g m);
     dst <-
     (Array32.init
     (WArray32.get8
