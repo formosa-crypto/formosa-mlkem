@@ -9447,29 +9447,6 @@ module M(SC:Syscall_t) = {
     }
     return rp;
   }
-  proc comp_u64_l_int_and_u64_l_int (a:W64.t, b:int, c:W64.t, d:int) : bool = {
-    var c3:bool;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
-    var c1:bool;
-    var bc1:W8.t;
-    var c2:bool;
-    var bc2:W8.t;
-    var  _0:bool;
-    var  _1:bool;
-    var  _2:bool;
-    (_of_, _cf_, _sf_,  _0, _zf_) <- (CMP_64 a (W64.of_int b));
-    c1 <- (_uLT _of_ _cf_ _sf_ _zf_);
-    bc1 <- (SETcc c1);
-    (_of_, _cf_, _sf_,  _1, _zf_) <- (CMP_64 c (W64.of_int d));
-    c2 <- (_uLT _of_ _cf_ _sf_ _zf_);
-    bc2 <- (SETcc c2);
-    (_of_, _cf_, _sf_,  _2, _zf_) <- (TEST_8 bc1 bc2);
-    c3 <- (_NEQ _of_ _cf_ _sf_ _zf_);
-    return c3;
-  }
   proc __gen_matrix_buf_rejection_filter48 (pol:W16.t Array256.t,
                                             counter:W64.t,
                                             buf:W8.t Array536.t,
@@ -9731,6 +9708,7 @@ module M(SC:Syscall_t) = {
     var bounds:W256.t;
     var ones:W256.t;
     var sst:W8.t Array2048.t;
+    var saved_buf_offset:W64.t;
     var condition_loop:bool;
     sst <- witness;
     ms <- (init_msf);
@@ -9740,32 +9718,45 @@ module M(SC:Syscall_t) = {
     bounds <- sample_q;
     ones <- sample_ones;
     sst <- sample_shuffle_table;
+    saved_buf_offset <- buf_offset;
     buf_offset <- buf_offset;
-    condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
-    (((3 * 168) - 48) + 1), counter, ((256 - 32) + 1));
+    condition_loop <- (buf_offset \ult (W64.of_int (((3 * 168) - 48) + 1)));
     while (condition_loop) {
       ms <- (update_msf condition_loop ms);
-      (* Erased call to spill *)
-      (pol, counter) <@ __gen_matrix_buf_rejection_filter48 (pol, counter,
-      buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
-      (* Erased call to unspill *)
-      buf_offset <- (buf_offset + (W64.of_int 48));
-      condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
-      (((3 * 168) - 48) + 1), counter, ((256 - 32) + 1));
+      condition_loop <- (counter \ult (W64.of_int ((256 - 32) + 1)));
+      if (condition_loop) {
+        ms <- (update_msf condition_loop ms);
+        (pol, counter) <@ __gen_matrix_buf_rejection_filter48 (pol, counter,
+        buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
+        saved_buf_offset <- (saved_buf_offset + (W64.of_int 48));
+        buf_offset <- saved_buf_offset;
+      } else {
+        ms <- (update_msf (! condition_loop) ms);
+        buf_offset <- (W64.of_int (3 * 168));
+      }
+      condition_loop <-
+      (buf_offset \ult (W64.of_int (((3 * 168) - 48) + 1)));
     }
     ms <- (update_msf (! condition_loop) ms);
-    condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
-    (((3 * 168) - 24) + 1), counter, 256);
+    buf_offset <- saved_buf_offset;
+    condition_loop <- (buf_offset \ult (W64.of_int (((3 * 168) - 24) + 1)));
     while (condition_loop) {
       ms <- (update_msf condition_loop ms);
-      (* Erased call to spill *)
-      (pol, counter, ms) <@ __gen_matrix_buf_rejection_filter24 (pol,
-      counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, 
-      ms);
-      (* Erased call to unspill *)
-      buf_offset <- (buf_offset + (W64.of_int 24));
-      condition_loop <@ comp_u64_l_int_and_u64_l_int (buf_offset,
-      (((3 * 168) - 24) + 1), counter, 256);
+      condition_loop <- (counter \ult (W64.of_int 256));
+      if (condition_loop) {
+        ms <- (update_msf condition_loop ms);
+        (* Erased call to spill *)
+        (pol, counter, ms) <@ __gen_matrix_buf_rejection_filter24 (pol,
+        counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, 
+        ms);
+        (* Erased call to unspill *)
+        buf_offset <- (buf_offset + (W64.of_int 24));
+      } else {
+        ms <- (update_msf (! condition_loop) ms);
+        buf_offset <- (W64.of_int (3 * 168));
+      }
+      condition_loop <-
+      (buf_offset \ult (W64.of_int (((3 * 168) - 24) + 1)));
     }
     return (pol, counter);
   }

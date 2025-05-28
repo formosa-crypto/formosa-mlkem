@@ -3549,17 +3549,17 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_enc:
 	movq	%r14, 18624(%rsp)
 	movq	%r15, 18632(%rsp)
 	movq	%rax, 18640(%rsp)
-	movq	%rdi, %r12
-	movq	%rsi, %rbx
-	movq	%rdx, %rbp
+	movq	%rdi, %rbx
+	movq	%rsi, %rbp
+	movq	%rdx, %r12
 	leaq	18560(%rsp), %rdi
 	movq	$32, %rsi
 	call	__jasmin_syscall_randombytes__
 	lfence
 	movq	$0, %rcx
-	movq	%rbp, %mm0
-	movq	%r12, %mm1
-	movq	%rbx, %mm2
+	movq	%r12, %mm0
+	movq	%rbx, %mm1
+	movq	%rbp, %mm2
 	movq	(%rax), %rcx
 	movq	%rcx, (%rsp)
 	movq	8(%rax), %rcx
@@ -7159,7 +7159,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$2:
 	movq	%rcx, (%rax)
 	addq	$8, %rax
 	movq	%rax, %mm0
-	movq	%mm2, %rbp
+	movq	%mm2, %r12
 	leaq	14912(%rsp), %rax
 	call	L_sha3_256A_M1568$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$1:
@@ -7212,7 +7212,7 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand:
 	movq	%rax, 18640(%rsp)
 	lfence
 	movq	$0, %rax
-	movq	%rdx, %rbp
+	movq	%rdx, %r12
 	movb	(%rcx), %al
 	movb	%al, 18560(%rsp)
 	movb	1(%rcx), %al
@@ -7278,7 +7278,7 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand:
 	movb	31(%rcx), %al
 	movb	%al, 18591(%rsp)
 	leaq	18560(%rsp), %rax
-	movq	%rbp, %mm0
+	movq	%r12, %mm0
 	movq	%rdi, %mm1
 	movq	%rsi, %mm2
 	movq	(%rax), %rcx
@@ -11004,7 +11004,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$2:
 	movq	%rcx, (%rax)
 	addq	$8, %rax
 	movq	%rax, %mm0
-	movq	%mm2, %rbp
+	movq	%mm2, %r12
 	leaq	14912(%rsp), %rax
 	call	L_sha3_256A_M1568$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$1:
@@ -11182,14 +11182,23 @@ L_gen_matrix_buf_rejection$1:
 	vmovdqu	glob_data + 0(%rip), %ymm2
 	vmovdqu	glob_data + 64(%rip), %ymm3
 	leaq	glob_data + 2912(%rip), %rbx
-	movq	%rdx, %r12
-	jmp 	L_gen_matrix_buf_rejection$20
-L_gen_matrix_buf_rejection$21:
-	movq	$-1, %r13
-	cmove	%r13, %r11
-	movq	%r12, 8(%rsp)
-	vpermq	$148, (%r10,%r12), %ymm4
-	vpermq	$148, 24(%r10,%r12), %ymm5
+	movq	%rdx, 8(%rsp)
+	movq	%rdx, %r13
+	jmp 	L_gen_matrix_buf_rejection$22
+L_gen_matrix_buf_rejection$23:
+	movq	$-1, %r12
+	cmovnb	%r12, %r11
+	cmpq	$225, %rbp
+	jb  	L_gen_matrix_buf_rejection$24
+	movq	$-1, %r12
+	cmovb	%r12, %r11
+	movq	$504, %r13
+	jmp 	L_gen_matrix_buf_rejection$22
+L_gen_matrix_buf_rejection$24:
+	movq	$-1, %r12
+	cmovnb	%r12, %r11
+	vpermq	$148, (%r10,%r13), %ymm4
+	vpermq	$148, 24(%r10,%r13), %ymm5
 	vpshufb	%ymm0, %ymm4, %ymm4
 	vpshufb	%ymm0, %ymm5, %ymm5
 	vpsrlw	$4, %ymm4, %ymm6
@@ -11238,23 +11247,30 @@ L_gen_matrix_buf_rejection$21:
 	vmovdqu	%xmm5, (%r9,%r14,2)
 	vextracti128	$1, %ymm5, (%r9,%r15,2)
 	movq	%r12, %rbp
-	movq	8(%rsp), %r12
-	addq	$48, %r12
-L_gen_matrix_buf_rejection$20:
-	cmpq	$457, %r12
-	setb	%r13b
-	cmpq	$225, %rbp
-	setb	%r14b
-	testb	%r14b, %r13b
-	jne 	L_gen_matrix_buf_rejection$21
-	movq	$-1, %r13
-	cmovne	%r13, %r11
+	addq	$48, 8(%rsp)
+	movq	8(%rsp), %r13
+L_gen_matrix_buf_rejection$25:
+L_gen_matrix_buf_rejection$22:
+	cmpq	$457, %r13
+	jb  	L_gen_matrix_buf_rejection$23
+	movq	$-1, %r12
+	cmovb	%r12, %r11
+	movq	8(%rsp), %r13
 	jmp 	L_gen_matrix_buf_rejection$2
 L_gen_matrix_buf_rejection$3:
-	movq	$-1, %r13
-	cmove	%r13, %r11
-	movq	%r12, 8(%rsp)
-	vpermq	$148, (%r10,%r12), %ymm4
+	movq	$-1, %r12
+	cmovnb	%r12, %r11
+	cmpq	$256, %rbp
+	jb  	L_gen_matrix_buf_rejection$4
+	movq	$-1, %r12
+	cmovb	%r12, %r11
+	movq	$504, %r13
+	jmp 	L_gen_matrix_buf_rejection$2
+L_gen_matrix_buf_rejection$4:
+	movq	$-1, %r12
+	cmovnb	%r12, %r11
+	movq	%r13, 8(%rsp)
+	vpermq	$148, (%r10,%r13), %ymm4
 	vpshufb	%ymm0, %ymm4, %ymm4
 	vpsrlw	$4, %ymm4, %ymm5
 	vpblendw	$170, %ymm5, %ymm4, %ymm4
@@ -11280,11 +11296,23 @@ L_gen_matrix_buf_rejection$3:
 	vpshufb	%ymm5, %ymm4, %ymm4
 	vmovdqu	%xmm4, %xmm5
 	cmpq	$248, %rbp
-	jbe 	L_gen_matrix_buf_rejection$12
+	jbe 	L_gen_matrix_buf_rejection$14
 	movq	$-1, %r14
 	cmovbe	%r14, %r11
 	movq	%xmm5, %r14
 	cmpq	$252, %rbp
+	jbe 	L_gen_matrix_buf_rejection$20
+	movq	$-1, %r15
+	cmovbe	%r15, %r11
+	jmp 	L_gen_matrix_buf_rejection$21
+L_gen_matrix_buf_rejection$20:
+	movq	$-1, %r15
+	cmovnbe	%r15, %r11
+	movq	%r14, (%r9,%rbp,2)
+	vpextrq	$1, %xmm5, %r14
+	addq	$4, %rbp
+L_gen_matrix_buf_rejection$21:
+	cmpq	$254, %rbp
 	jbe 	L_gen_matrix_buf_rejection$18
 	movq	$-1, %r15
 	cmovbe	%r15, %r11
@@ -11292,45 +11320,45 @@ L_gen_matrix_buf_rejection$3:
 L_gen_matrix_buf_rejection$18:
 	movq	$-1, %r15
 	cmovnbe	%r15, %r11
-	movq	%r14, (%r9,%rbp,2)
-	vpextrq	$1, %xmm5, %r14
-	addq	$4, %rbp
-L_gen_matrix_buf_rejection$19:
-	cmpq	$254, %rbp
-	jbe 	L_gen_matrix_buf_rejection$16
-	movq	$-1, %r15
-	cmovbe	%r15, %r11
-	jmp 	L_gen_matrix_buf_rejection$17
-L_gen_matrix_buf_rejection$16:
-	movq	$-1, %r15
-	cmovnbe	%r15, %r11
 	movl	%r14d, (%r9,%rbp,2)
 	shrq	$32, %r14
 	addq	$2, %rbp
-L_gen_matrix_buf_rejection$17:
+L_gen_matrix_buf_rejection$19:
 	cmpq	$255, %rbp
-	jbe 	L_gen_matrix_buf_rejection$14
+	jbe 	L_gen_matrix_buf_rejection$16
 	movq	$-1, %rbp
 	cmovbe	%rbp, %r11
-	jmp 	L_gen_matrix_buf_rejection$13
-L_gen_matrix_buf_rejection$14:
+	jmp 	L_gen_matrix_buf_rejection$15
+L_gen_matrix_buf_rejection$16:
 	movq	$-1, %r15
 	cmovnbe	%r15, %r11
 	movw	%r14w, (%r9,%rbp,2)
-L_gen_matrix_buf_rejection$15:
-	jmp 	L_gen_matrix_buf_rejection$13
-L_gen_matrix_buf_rejection$12:
+L_gen_matrix_buf_rejection$17:
+	jmp 	L_gen_matrix_buf_rejection$15
+L_gen_matrix_buf_rejection$14:
 	movq	$-1, %r14
 	cmovnbe	%r14, %r11
 	vmovdqu	%xmm5, (%r9,%rbp,2)
-L_gen_matrix_buf_rejection$13:
+L_gen_matrix_buf_rejection$15:
 	vextracti128	$1, %ymm4, %xmm4
 	cmpq	$248, %r12
-	jbe 	L_gen_matrix_buf_rejection$4
+	jbe 	L_gen_matrix_buf_rejection$6
 	movq	$-1, %rbp
 	cmovbe	%rbp, %r11
 	movq	%xmm4, %rbp
 	cmpq	$252, %r12
+	jbe 	L_gen_matrix_buf_rejection$12
+	movq	$-1, %r14
+	cmovbe	%r14, %r11
+	jmp 	L_gen_matrix_buf_rejection$13
+L_gen_matrix_buf_rejection$12:
+	movq	$-1, %r14
+	cmovnbe	%r14, %r11
+	movq	%rbp, (%r9,%r12,2)
+	vpextrq	$1, %xmm4, %rbp
+	addq	$4, %r12
+L_gen_matrix_buf_rejection$13:
+	cmpq	$254, %r12
 	jbe 	L_gen_matrix_buf_rejection$10
 	movq	$-1, %r14
 	cmovbe	%r14, %r11
@@ -11338,48 +11366,33 @@ L_gen_matrix_buf_rejection$13:
 L_gen_matrix_buf_rejection$10:
 	movq	$-1, %r14
 	cmovnbe	%r14, %r11
-	movq	%rbp, (%r9,%r12,2)
-	vpextrq	$1, %xmm4, %rbp
-	addq	$4, %r12
-L_gen_matrix_buf_rejection$11:
-	cmpq	$254, %r12
-	jbe 	L_gen_matrix_buf_rejection$8
-	movq	$-1, %r14
-	cmovbe	%r14, %r11
-	jmp 	L_gen_matrix_buf_rejection$9
-L_gen_matrix_buf_rejection$8:
-	movq	$-1, %r14
-	cmovnbe	%r14, %r11
 	movl	%ebp, (%r9,%r12,2)
 	shrq	$32, %rbp
 	addq	$2, %r12
-L_gen_matrix_buf_rejection$9:
+L_gen_matrix_buf_rejection$11:
 	cmpq	$255, %r12
-	jbe 	L_gen_matrix_buf_rejection$6
+	jbe 	L_gen_matrix_buf_rejection$8
 	movq	$-1, %rbp
 	cmovbe	%rbp, %r11
-	jmp 	L_gen_matrix_buf_rejection$5
-L_gen_matrix_buf_rejection$6:
+	jmp 	L_gen_matrix_buf_rejection$7
+L_gen_matrix_buf_rejection$8:
 	movq	$-1, %r14
 	cmovnbe	%r14, %r11
 	movw	%bp, (%r9,%r12,2)
-L_gen_matrix_buf_rejection$7:
-	jmp 	L_gen_matrix_buf_rejection$5
-L_gen_matrix_buf_rejection$4:
+L_gen_matrix_buf_rejection$9:
+	jmp 	L_gen_matrix_buf_rejection$7
+L_gen_matrix_buf_rejection$6:
 	movq	$-1, %rbp
 	cmovnbe	%rbp, %r11
 	vmovdqu	%xmm4, (%r9,%r12,2)
-L_gen_matrix_buf_rejection$5:
+L_gen_matrix_buf_rejection$7:
 	movq	%r13, %rbp
-	movq	8(%rsp), %r12
-	addq	$24, %r12
+	movq	8(%rsp), %r13
+	addq	$24, %r13
+L_gen_matrix_buf_rejection$5:
 L_gen_matrix_buf_rejection$2:
-	cmpq	$481, %r12
-	setb	%r13b
-	cmpq	$256, %rbp
-	setb	%r14b
-	testb	%r14b, %r13b
-	jne 	L_gen_matrix_buf_rejection$3
+	cmpq	$481, %r13
+	jb  	L_gen_matrix_buf_rejection$3
 	ret
 L_poly_decompress$1:
 	leaq	glob_data + 1184(%rip), %rdi
@@ -15660,28 +15673,28 @@ L_sha3_256A_M1568$1:
 	movq	$0, %rcx
 	jmp 	L_sha3_256A_M1568$3
 L_sha3_256A_M1568$4:
-	vpbroadcastq	(%rbp), %ymm7
-	addq	$8, %rbp
+	vpbroadcastq	(%r12), %ymm7
+	addq	$8, %r12
 	vpxor	%ymm7, %ymm0, %ymm0
-	vmovdqu	(%rbp), %ymm7
-	addq	$32, %rbp
+	vmovdqu	(%r12), %ymm7
+	addq	$32, %r12
 	vpxor	%ymm7, %ymm1, %ymm1
-	movq	(%rbp), %rdx
-	addq	$8, %rbp
+	movq	(%r12), %rdx
+	addq	$8, %r12
 	movq	%rdx, %xmm9
-	vmovdqu	(%rbp), %ymm7
-	addq	$32, %rbp
-	movq	(%rbp), %rdx
-	addq	$8, %rbp
+	vmovdqu	(%r12), %ymm7
+	addq	$32, %r12
+	movq	(%r12), %rdx
+	addq	$8, %r12
 	movq	%rdx, %xmm10
-	vmovdqu	(%rbp), %ymm8
-	addq	$32, %rbp
-	movq	(%rbp), %rdx
-	addq	$8, %rbp
+	vmovdqu	(%r12), %ymm8
+	addq	$32, %r12
+	movq	(%r12), %rdx
+	addq	$8, %r12
 	vpinsrq	$1, %rdx, %xmm9, %xmm11
 	vpxor	%xmm9, %xmm9, %xmm9
-	vmovq	(%rbp), %xmm12
-	addq	$8, %rbp
+	vmovq	(%r12), %xmm12
+	addq	$8, %r12
 	movq	$0, %rdx
 	vpinsrq	$1, %rdx, %xmm12, %xmm12
 	vinserti128	$1, %xmm9, %ymm12, %ymm9
@@ -15708,18 +15721,18 @@ L_sha3_256A_M1568$5:
 L_sha3_256A_M1568$3:
 	cmpq	$11, %rcx
 	jb  	L_sha3_256A_M1568$4
-	vpbroadcastq	(%rbp), %ymm7
-	addq	$8, %rbp
+	vpbroadcastq	(%r12), %ymm7
+	addq	$8, %r12
 	vpxor	%ymm7, %ymm0, %ymm0
-	vmovdqu	(%rbp), %ymm7
-	addq	$32, %rbp
+	vmovdqu	(%r12), %ymm7
+	addq	$32, %r12
 	vpxor	%ymm7, %ymm1, %ymm1
-	movq	(%rbp), %rcx
-	addq	$8, %rbp
+	movq	(%r12), %rcx
+	addq	$8, %r12
 	movq	%rcx, %xmm9
-	vmovdqu	(%rbp), %xmm7
-	addq	$16, %rbp
-	vmovq	(%rbp), %xmm8
+	vmovdqu	(%r12), %xmm7
+	addq	$16, %r12
+	vmovq	(%r12), %xmm8
 	movq	$6, %rcx
 	vpinsrq	$1, %rcx, %xmm8, %xmm8
 	vinserti128	$1, %xmm8, %ymm7, %ymm7
