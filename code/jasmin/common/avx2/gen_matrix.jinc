@@ -1,32 +1,5 @@
 require "mlkem_keccak_avx2.jinc"
 
-// a < b && c < d
-inline fn comp_u64_l_int_and_u64_l_int(
-  reg u64 a,
-  inline int b,
-  reg u64 c,
-  inline int d)
-  ->
-  reg bool
-{
-  reg bool c1 c2 c3;
-  reg u8 bc1 bc2;
-
-  ?{ "<u" = c1 } = #CMP_64(a, b);
-  // if(c1) <=> if(a <u b)
-  bc1 = #SETcc(c1);
-
-  ?{ "<u" = c2 } = #CMP_64(c, d);
-  // if(c2) <=> if(a <u c)
-  bc2 = #SETcc(c2);
-
-  // zf == 1 => bc1 & bc2 == 0 => cond = false
-  // zf == 0 => bc1 & bc2 == 1 => cond = true
-  ?{ "!=" = c3 } = #TEST_8(bc1, bc2);
-
-  return c3;
-}
-
 // BUF_size per entry: 21(rate) + 21(rate) + 25(keccak_state) + 1(pad)
 param int BUF_size = 536; // 168*2+200      (was in u64s: 3*21 + 4 + 1; //544 bytes;
 
@@ -319,6 +292,7 @@ fn _gen_matrix_buf_rejection
   reg ptr u8[2048] sst;
   reg u256 load_shuffle mask bounds ones;
   #msf reg u64 ms;
+  stack u64 saved_buf_offset;
 
   ms = #init_msf();
 
@@ -328,29 +302,45 @@ fn _gen_matrix_buf_rejection
   ones = sample_ones;
   sst = sample_shuffle_table;
 
+  saved_buf_offset = buf_offset;
   buf_offset = buf_offset;
 
   while
-    { condition_loop = comp_u64_l_int_and_u64_l_int(buf_offset, 3*168-48+1, counter, MLKEM_N-32+1);
+    { condition_loop = buf_offset <u 3 * 168 - 48 + 1;
     }
   ( condition_loop )
     {
     ms = #update_msf(condition_loop, ms);
-() = #spill(buf_offset);
-    pol, counter = __gen_matrix_buf_rejection_filter48(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
-() = #unspill(buf_offset);
-    buf_offset += 48;
+    condition_loop = counter <u MLKEM_N - 32 + 1;
+    if condition_loop {
+      ms = #update_msf(condition_loop, ms);
+      pol, counter = __gen_matrix_buf_rejection_filter48(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
+      saved_buf_offset += 48;
+      buf_offset = saved_buf_offset;
+    } else {
+      ms = #update_msf(!condition_loop, ms);
+      buf_offset = 3 * 168;
+    }
     }
   ms = #update_msf(!condition_loop, ms);
 
-  while { condition_loop = comp_u64_l_int_and_u64_l_int(buf_offset, 3*168-24+1, counter, MLKEM_N); }
+  buf_offset = saved_buf_offset;
+
+  while { condition_loop = buf_offset <u 3 * 168 - 24 + 1; }
         ( condition_loop )
   {
     ms = #update_msf(condition_loop, ms);
+    condition_loop = counter <u MLKEM_N;
+    if condition_loop {
+      ms = #update_msf(condition_loop, ms);
 () = #spill(buf_offset);
-    pol, counter, ms = __gen_matrix_buf_rejection_filter24(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
+      pol, counter, ms = __gen_matrix_buf_rejection_filter24(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
 () = #unspill(buf_offset);
-    buf_offset += 24;
+      buf_offset += 24;
+    } else {
+      ms = #update_msf(!condition_loop, ms);
+      buf_offset = 3 * 168;
+    }
   }
 
   return pol, counter;

@@ -393,68 +393,6 @@ from Keccak require import Keccak1600_avx2x4.
 require import MLKEM_keccak_avx2.
 require import Mlkem_filters_bridge.
 
-hoare comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).comp_u64_l_int_and_u64_l_int
- : arg = (_a,_i1,_b,_i2)
-   /\ _i1 %% W64.modulus = _i1 /\ _i2 %% W64.modulus = _i2
-   ==>
-   res = (to_uint _a < _i1 && to_uint _b < _i2).
-proof.
-proc; auto => />  E1 E2.
-rewrite /_uLT /CMP_64 /_NEQ /_EQ /TEST_8.
-rewrite /rflags_of_bwop /rflags_of_aluop /SETcc /ZF_of /=.
-case: (to_uint _a < _i1) => C1.
- case: (to_uint _b < _i2) => C2.
-  rewrite !to_uintD !to_uintN !of_uintK.
-  by rewrite ifT 1:/# ifT 1:/# /= to_uint_eq /=.
- rewrite -lezNgt in C2.
- rewrite (W64.to_uintB _b).
-  by rewrite /(\ule)  of_uintK E2.
- rewrite !to_uintD !to_uintN !of_uintK.
- by rewrite ifT 1:/# /=.
-rewrite -lezNgt in C1.
-by rewrite (W64.to_uintB _a) 1:uleE 1:of_uintK 1:E1.
-qed.
-
-lemma comp_u64_l_int_and_u64_l_int_ll:
- islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).comp_u64_l_int_and_u64_l_int.
-proof. by islossless. qed.
-
-phoare comp_u64_l_int_and_u64_l_int_ph _a _i1 _b _i2:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).comp_u64_l_int_and_u64_l_int
-  : arg = (_a,_i1,_b,_i2)
-    /\ _i1 %% W64.modulus = _i1 /\ _i2 %% W64.modulus = _i2
-    ==>
-    res = (to_uint _a < _i1 /\ to_uint _b < _i2)
- ] = 1%r.
-proof.
-conseq comp_u64_l_int_and_u64_l_int_ll (comp_u64_l_int_and_u64_l_int_h _a _i1 _b _i2).
-smt().
-qed.
-
-hoare conditionloop_h _a _i1 _b _i2:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).comp_u64_l_int_and_u64_l_int
-  : arg = (_a,_i1+1,_b,_i2)
-    /\ (_i1+1) %% W64.modulus = _i1+1
-    /\ (_i2) %% W64.modulus = _i2
-    ==>
-    res = (to_uint _a <=_i1 /\ to_uint _b < _i2).
-proof.
-by conseq (comp_u64_l_int_and_u64_l_int_h _a (_i1+1) _b _i2) => /#.
-qed.
-
-phoare conditionloop_ph _a _i1 _b _i2:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).comp_u64_l_int_and_u64_l_int
-  : arg = (_a,_i1+1,_b,_i2)
-    /\ (_i1+1) %% W64.modulus = _i1+1
-    /\ _i2 %% W64.modulus = _i2
-    ==>
-    res = (to_uint _a <= _i1 /\ to_uint _b < _i2)
- ] = 1%r.
-proof.
-by conseq comp_u64_l_int_and_u64_l_int_ll (conditionloop_h _a _i1 _b _i2).
-qed.
-
 lemma take_rejection16_done n buf buf_o bo:
  0 <= buf_o <= bo <= 504 =>
  3 %| buf_o =>
@@ -527,10 +465,20 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
          = plist _pol (to_uint _ctr)
            ++ take (256-to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint buf_offset)))
         ) /\
-        (condition_loop
-          <=> (to_uint counter < 256 
-               /\ to_uint buf_offset <= 504-24))).
- ecall (conditionloop_h buf_offset (3 * 168 - 24) counter 256); simplify.
+        (condition_loop <=> to_uint buf_offset <= 504-24)).
+ wp.
+ seq 2: (#{/~condition_loop}pre /\ to_uint buf_offset <= 504 - 24 /\ (condition_loop <=> to_uint counter < 256)).
+ + by auto => /> &m *; rewrite ultE.
+ if; last first.
+ + auto => /> &m Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Hctr1 Hctr2 Hctr3 H Hcond1 Hcond2; split; first smt().
+   have : size (take (256 - to_uint _ctr) (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint buf_offset{m})))) = 256 - to_uint _ctr.
+   * have : size (plist pol{m} (min 256 (to_uint counter{m}))) = 256 by rewrite size_plist; smt().
+     rewrite H size_cat size_plist; smt().
+   rewrite size_takel' => - [] _ Hsz.
+   move: H; rewrite take_rejection16_done 1, 3:/#; first by [].
+   * rewrite size_take; first smt().
+     by rewrite -/(min _ _) lez_minl.
+   exact.
  wp; ecall (buf_rejection_filter24_h pol counter buf buf_offset).
  auto => &m /> Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Hctr1 Hctr2 Hctr3 H Hcond1 Hcond2.
  have Hsz: min 256 (to_uint counter{m}) = to_uint _ctr + min (256-to_uint _ctr) (size (rejection16 (buf_subl buf{m} (to_uint _buf_offset) (to_uint buf_offset{m})))).
@@ -544,26 +492,27 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
   by move=> *; rewrite !modz_small 1:// /= /#.
  split; first smt(size_ge0). 
  rewrite modz_small; first smt(size_ge0 size_take_min).
+ split; last rewrite ultE to_uintD_small /#.
  rewrite Hc'.
  rewrite Hstep H -catA; congr.
  rewrite -(buf_subl_cat _ (to_uint _buf_offset) (to_uint buf_offset{m}) (to_uint buf_offset{m} + 24)) 1:/#.
  rewrite rejection16_cat.
   by rewrite size_buf_subl /#.
  by rewrite take_catr 1:/#; congr; congr; smt().
-ecall (conditionloop_h buf_offset (3 * 168 - 24) counter 256).
 wp.
-while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
-        0 <= to_uint _buf_offset <= to_uint buf_offset <= 504 /\
+while ( buf=_buf /\ 24 %| to_uint saved_buf_offset /\ 3 %| to_uint _buf_offset /\
+        0 <= to_uint _buf_offset <= to_uint saved_buf_offset <= 504 /\
         0 <= to_uint _ctr <= to_uint counter <= 256 /\
         auxdata_ok load_shuffle mask bounds ones sst /\
         plist pol (min 256 (to_uint counter))
         = plist _pol (to_uint _ctr)
-           ++ rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint buf_offset)) /\
-        to_uint _ctr + size (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint buf_offset))) <= 256 /\
-        (condition_loop
-          <=> (to_uint counter <= 256-32
-               /\ to_uint buf_offset <= 504-48))).
- ecall (conditionloop_h buf_offset (3 * 168 - 48) counter (256-32+1)); simplify.
+           ++ rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint saved_buf_offset)) /\
+        to_uint _ctr + size (rejection16 (buf_subl _buf (to_uint _buf_offset) (to_uint saved_buf_offset))) <= 256 /\
+        (condition_loop <=> to_uint buf_offset <= 504-48) /\
+        (to_uint buf_offset <= 504 - 48 => saved_buf_offset = buf_offset)).
+ seq 2: (#{/~condition_loop}pre /\ to_uint buf_offset <= 504 - 48 /\ saved_buf_offset = buf_offset /\ (condition_loop <=> to_uint counter <= 256 - 32)).
+ + auto => &m /> *; rewrite ultE /#.
+ if; last by auto.
  wp; ecall (buf_rejection_filter48_h pol counter buf buf_offset).
  auto => &m />.
  move => Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Hctr1 Hctr2 Hctr3 + Hbo Hctr4 Hbo4.
@@ -589,8 +538,7 @@ while ( buf=_buf /\ 24 %| to_uint buf_offset /\ 3 %| to_uint _buf_offset /\
  move => HH. 
  have : size (plist p (to_uint counter{m} + size R)) <= 256.
   by rewrite size_plist /#.
- by rewrite HH size_cat size_plist /#.
-ecall (conditionloop_h buf_offset (3 * 168 - 48) counter (256-32+1)); simplify.
+ by rewrite HH size_cat size_plist 1:/# ultE to_uintD_small /#.
 wp; skip => &m /> Hctr1 Hctr2 Hbo; split.
  split; first smt().
  split; first smt().
@@ -599,10 +547,10 @@ wp; skip => &m /> Hctr1 Hctr2 Hbo; split.
  split; 1:  by rewrite pack32_sample_load_shuffle.
  have -> : (min 256 (to_uint counter{m})) = to_uint counter{m} by smt().
  split; 1: by rewrite buf_subl0 1:/# /rejection16 rejection0 cats0.
- split; last  by smt().
+ split; last by rewrite ultE /#.
  by rewrite buf_subl0 1:/# /rejection16 rejection0 /#.
-move => buf_o cond ctr pol Hcond Hdvd1 Hdvd2 Hbo1 Hbo2 Hbo3 Hctr3 Hctr4 _ H Hsz Hterm; split.
- by rewrite take_oversize /#. 
+move => buf_o cond ctr pol saved_buf_offset Hcond Hdvd1 Hdvd2 Hbo1 Hbo2 Hbo3 Hctr3 Hctr4 _ H Hsz Hterm; split.
+ by rewrite ultE take_oversize /#.
 move=> buf_o2 cond2 ctr2 pol2 HC2 Hdvd3 Hbo4 Hbo5 Hctr5 HH.
 case: (to_uint ctr2 < 256) => /= C1.
  move=> C2; move: HH; have ->: to_uint buf_o2 = 504 by smt().
@@ -620,6 +568,7 @@ have HHsz: 256 = to_uint counter{m} + min (256 - to_uint counter{m})
  rewrite -(size_plist pol2 256) 1:/#.
  by rewrite HH size_cat size_plist 1:/# size_take_min /#.
 rewrite size_take_min 1:/#.
+move => _.
 split; first smt(size_rejection16_le).
 move => ->; rewrite HH; congr.
 apply take_rejection16_done; first 3 smt().
@@ -630,42 +579,34 @@ lemma gen_matrix_buf_rejection_ll:
  islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_buf_rejection.
 proof.
 proc.
-seq 11: (true)=> //.
- wp; while (condition_loop
-            <=> to_uint counter <= 256-32 
-                /\ to_uint buf_offset <= 504-48)
+seq 13: (true)=> //.
+ wp; while ((condition_loop
+            <=> to_uint buf_offset <= 504-48) /\ (condition_loop => saved_buf_offset = buf_offset))
            (504 - to_uint buf_offset).
   move=> z.
   exlim buf_offset => _buf_offset.
-  seq 2: (#{~condition_loop}pre /\ to_uint buf_offset <= 504 - 48) => //.
-    by call buf_rejection_filter48_ll; auto => />.
-   exlim counter => _counter.
-   call (conditionloop_ph (_buf_offset+W64.of_int 48) (3*168-48) _counter (256-32+1)); simplify.
-   auto => /> *.
-   by rewrite to_uintD_small ?of_uintK /= /#.
-  by hoare; inline*; auto => />.
+  seq 2: (#{~condition_loop} pre /\ saved_buf_offset = buf_offset /\ to_uint buf_offset <= 504 - 48) => //.
+  - by auto => &m />.
+  - if; last by auto => &m /> /#.
+    wp; call buf_rejection_filter48_ll; auto => &m /> H _.
+    rewrite ultE to_uintD_small /#.
+  by hoare; auto => />.
+ auto => &m />.
+ rewrite ultE /#.
  exlim buf_offset => _buf_offset.
  exlim counter => _counter.
- call (conditionloop_ph (_buf_offset) (3*168-48) _counter (256-32+1)); simplify.
- by auto => /> /#.
 while (condition_loop
-       <=> to_uint counter < 256 
-           /\ to_uint buf_offset <= 504-24)
+       <=> to_uint buf_offset <= 504-24)
       (504 - to_uint buf_offset).
  move=> z.
- exlim buf_offset => _buf_offset.
  seq 2: (#{~condition_loop}pre /\ to_uint buf_offset <= 504 - 24) => //.
-   by call buf_rejection_filter24_ll; auto => />.
-  exlim counter => _counter.
-  call (conditionloop_ph (_buf_offset+W64.of_int 24) (3*168-24) _counter 256); simplify.
-  auto => /> *.
-  by rewrite to_uintD_small ?of_uintK /= /#.
- by hoare; inline*; auto => />.
-exlim buf_offset => _buf_offset.
-exlim counter => _counter.
-call (conditionloop_ph (_buf_offset) (3*168-24) _counter 256); simplify.
-inline*; auto => />. 
-by auto => /> * /#.
+ - auto.
+ - if; last auto => &m /> /#.
+    wp; call buf_rejection_filter24_ll; auto => &m /> H _.
+    rewrite ultE to_uintD_small /#.
+ by hoare; auto.
+auto => &m />.
+rewrite ultE /#.
 qed.
 
 phoare gen_matrix_buf_rejection_ph _pol _ctr _buf _buf_offset:
