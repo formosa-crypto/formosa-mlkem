@@ -1172,7 +1172,7 @@ phoare shake128_squeeze3blocks_ph _buf _st:
 proof.
 by conseq shake128_squeeze3blocks_eq (shake128_squeeze3blocks_ph' _buf _st) => /> /#.
 qed.
-
+*)
 (*********************************************************************************)
 equiv shake128_next_state_eq:
   M(Syscall)._shake128_next_state ~ K._shake128_next_state
@@ -1238,7 +1238,7 @@ phoare shake128_next_state_ph _buf:
 proof.
 by conseq shake128_next_state_eq (shake128_next_state_ph' _buf) => /> /#.
 qed.
-*)
+
 (*********************************************************************************)
 (*********************************************************************************)
 
