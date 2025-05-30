@@ -1014,7 +1014,7 @@ lemma poly_decompress_corr mem _p (_a : W8.t Array160.t):
             load_array160 Glob.mem{1} _p = _a /\ a{2} = _a
              ==>
             Glob.mem{1} = mem /\
-            lift_array256 res{1} = decompress_poly 4 res{2} /\
+            lift_array256 res{1} = decompress_poly 5 res{2} /\
             pos_bound256_cxq res{1} 0 256 1].
 admitted.
 (* 
