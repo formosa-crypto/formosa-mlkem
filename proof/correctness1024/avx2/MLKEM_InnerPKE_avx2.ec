@@ -833,7 +833,6 @@ qed.
 
 import InnerPKE1024.
 
-(*
 lemma mlkem_correct_kg_avx2 mem _pkp _skp  : 
    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__indcpa_keypair ~ InnerPKE1024.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
@@ -1429,7 +1428,7 @@ do split.
 + smt().
 by smt(unpackvK).
 qed.
-*)
+
 (***************************************************)
 
 lemma mlkem_correct_enc_0_avx2 mem _ctp _pkp : 
