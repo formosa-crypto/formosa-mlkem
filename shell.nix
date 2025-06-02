@@ -23,8 +23,8 @@ let crypto-specs =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "crypto-specs";
-    rev = "4213b76ad359df7df1c44e084395172239a242b0";
-    hash = "sha256-b8ZPZ2CcXT7b36DyGjBzZ3RZZ2sWl9m3F0oeh/KSkdA=";
+    rev = "be385c1803cb7ea7a6521fdf97429081bfa88174";
+    hash = "sha256-wEJzjfiCg6MPqfo+Qdi8PnHgKGmGFpYmhmoTYiRh8EA=";
   }
 ; in
 
@@ -32,8 +32,8 @@ let formosa-keccak =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "formosa-keccak";
-    rev = "a5b53270b7976d340a5c6baf0db9246f8c35279b";
-    hash = "sha256-spMou9uAeaegMzjSB5843BkvzO/8hyTRqqNzN42yd7E=";
+    rev = "34b12ab2c1aaf00cd3c6c77cd79146824276652c";
+    hash = "sha256-Zidd1J2GEAS2TDVA1+tlJAWfdaqLsw83PQKhkmJ97EA=";
   }
 ; in
 

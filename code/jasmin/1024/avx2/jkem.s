@@ -906,36 +906,36 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$81:
 	leaq	1152(%rsp), %rcx
 	call	L_poly_frommsg_1$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$80:
-	movq	%r13, %mm4
+	movq	%r13, %mm3
 	movq	$1, %rax
 	leaq	14080(%rsp), %rdi
 	leaq	22280(%rsp), %rsi
-	movq	%rax, %mm5
+	movq	%rax, %mm4
 	leaq	11936(%rsp), %r15
 	movq	$0, %rdx
 	movq	%rdi, %r14
-	movq	%mm5, %rax
+	movq	%mm4, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$79:
 	leaq	856(%rsp), %rsp
 	movq	$8, %rdx
 	leaq	2048(%rdi), %r14
-	movq	%mm5, %rax
+	movq	%mm4, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$78:
 	leaq	856(%rsp), %rsp
 	movq	$16, %rdx
 	leaq	4096(%rdi), %r14
-	movq	%mm5, %rax
+	movq	%mm4, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$77:
 	leaq	856(%rsp), %rsp
 	movq	$24, %rdx
 	leaq	6144(%rdi), %r14
-	movq	%mm5, %rax
+	movq	%mm4, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$76:
@@ -988,7 +988,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$61:
 	leaq	7680(%rdi), %rax
 	call	L_nttunpack$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$60:
-	movq	%mm4, %r8
+	movq	%mm3, %r8
 	movb	$0, %bl
 	leaq	5792(%rsp), %rax
 	leaq	6304(%rsp), %r9
@@ -998,7 +998,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$60:
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$59:
 	leaq	600(%rsp), %rsp
-	movq	%mm4, %r8
+	movq	%mm3, %r8
 	movb	$4, %bl
 	leaq	7840(%rsp), %rax
 	leaq	8352(%rsp), %r9
@@ -3688,32 +3688,32 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$79:
 	movq	$1, %rax
 	leaq	12512(%rsp), %rdi
 	leaq	20704(%rsp), %rsi
-	movq	%rax, %mm4
+	movq	%rax, %mm3
 	leaq	10368(%rsp), %r15
 	movq	$0, %rdx
 	movq	%rdi, %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$78:
 	leaq	856(%rsp), %rsp
 	movq	$8, %rdx
 	leaq	2048(%rdi), %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$77:
 	leaq	856(%rsp), %rsp
 	movq	$16, %rdx
 	leaq	4096(%rdi), %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$76:
 	leaq	856(%rsp), %rsp
 	movq	$24, %rdx
 	leaq	6144(%rdi), %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$75:
@@ -6036,8 +6036,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_keypair:
 	movq	%rax, %mm0
 	movq	%rbx, %mm1
 	movq	%rbp, %mm2
-	movq	%rbx, %mm4
-	movq	%rbp, %mm5
+	movq	%rbx, %mm3
+	movq	%rbp, %mm4
 	movq	(%rax), %rcx
 	movq	%rcx, 17088(%rsp)
 	movq	8(%rax), %rcx
@@ -6070,32 +6070,32 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$76:
 	movq	$0, %rax
 	leaq	8864(%rsp), %rdi
 	leaq	17056(%rsp), %rsi
-	movq	%rax, %mm6
+	movq	%rax, %mm5
 	leaq	6720(%rsp), %r15
 	movq	$0, %rdx
 	movq	%rdi, %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$75:
 	leaq	856(%rsp), %rsp
 	movq	$8, %rdx
 	leaq	2048(%rdi), %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$74:
 	leaq	856(%rsp), %rsp
 	movq	$16, %rdx
 	leaq	4096(%rdi), %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$73:
 	leaq	856(%rsp), %rsp
 	movq	$24, %rdx
 	leaq	6144(%rdi), %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$72:
@@ -6744,8 +6744,8 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$10:
 	vpmullw	%ymm0, %ymm1, %ymm0
 	vpsubw	%ymm0, %ymm2, %ymm0
 	vmovdqu	%ymm0, 480(%rax)
-	movq	%mm4, %rax
-	movq	%mm5, %rcx
+	movq	%mm3, %rax
+	movq	%mm4, %rcx
 	movq	%rcx, %rdx
 	leaq	576(%rsp), %rcx
 	call	L_poly_tobytes$1
@@ -7555,32 +7555,32 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$79:
 	movq	$1, %rax
 	leaq	12512(%rsp), %rdi
 	leaq	20704(%rsp), %rsi
-	movq	%rax, %mm4
+	movq	%rax, %mm3
 	leaq	10368(%rsp), %r15
 	movq	$0, %rdx
 	movq	%rdi, %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$78:
 	leaq	856(%rsp), %rsp
 	movq	$8, %rdx
 	leaq	2048(%rdi), %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$77:
 	leaq	856(%rsp), %rsp
 	movq	$16, %rdx
 	leaq	4096(%rdi), %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$76:
 	leaq	856(%rsp), %rsp
 	movq	$24, %rdx
 	leaq	6144(%rdi), %r14
-	movq	%mm4, %rax
+	movq	%mm3, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$75:
@@ -10027,8 +10027,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand:
 	movq	%rax, %mm0
 	movq	%rdi, %mm1
 	movq	%rsi, %mm2
-	movq	%rdi, %mm4
-	movq	%rsi, %mm5
+	movq	%rdi, %mm3
+	movq	%rsi, %mm4
 	movq	(%rax), %rcx
 	movq	%rcx, 17088(%rsp)
 	movq	8(%rax), %rcx
@@ -10061,32 +10061,32 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$76:
 	movq	$0, %rax
 	leaq	8864(%rsp), %rdi
 	leaq	17056(%rsp), %rsi
-	movq	%rax, %mm6
+	movq	%rax, %mm5
 	leaq	6720(%rsp), %r15
 	movq	$0, %rdx
 	movq	%rdi, %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$75:
 	leaq	856(%rsp), %rsp
 	movq	$8, %rdx
 	leaq	2048(%rdi), %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$74:
 	leaq	856(%rsp), %rsp
 	movq	$16, %rdx
 	leaq	4096(%rdi), %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$73:
 	leaq	856(%rsp), %rsp
 	movq	$24, %rdx
 	leaq	6144(%rdi), %r14
-	movq	%mm6, %rax
+	movq	%mm5, %rax
 	leaq	-856(%rsp), %rsp
 	call	L_gen_matrix_sample_four_polynomials$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$72:
@@ -10735,8 +10735,8 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$10:
 	vpmullw	%ymm0, %ymm1, %ymm0
 	vpsubw	%ymm0, %ymm2, %ymm0
 	vmovdqu	%ymm0, 480(%rax)
-	movq	%mm4, %rax
-	movq	%mm5, %rcx
+	movq	%mm3, %rax
+	movq	%mm4, %rcx
 	movq	%rcx, %rdx
 	leaq	576(%rsp), %rcx
 	call	L_poly_tobytes$1
@@ -16158,15 +16158,11 @@ L_keccakf1600_avx2x4$3:
 	vpbroadcastq	(%r11,%rbp,8), %ymm2
 	call	L_keccakf1600_4x_round$1
 L_keccakf1600_avx2x4$5:
-	movq	%rax, %mm3
-	movq	%mm3, %rbx
-	leaq	32(%rsp), %rax
+	xchg	%rax, %rbx
 	vpbroadcastq	8(%r11,%rbp,8), %ymm2
 	call	L_keccakf1600_4x_round$1
 L_keccakf1600_avx2x4$4:
-	movq	%rbx, %mm3
-	movq	%mm3, %rax
-	leaq	32(%rsp), %rbx
+	xchg	%rbx, %rax
 	addq	$2, %rbp
 L_keccakf1600_avx2x4$2:
 	cmpq	$24, %rbp
