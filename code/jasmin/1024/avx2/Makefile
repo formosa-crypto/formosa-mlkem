@@ -8,11 +8,11 @@ CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-decla
 JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
 
-.SECONDARY: jkem.s
+.SECONDARY: jkem.s gen_matrix.s
 
 default: test speed
 
-test: test/test_kem
+test: test/test_kem test/test_gen_matrix
 
 speed: test/speed_kem
 
@@ -28,6 +28,9 @@ SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
 
 test/test_kem: test/test_kem.c $(JINC) $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
+
+test/test_gen_matrix: test/test_gen_matrix.c $(JINC) $(SOURCES) gen_matrix.s
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) gen_matrix.s $<
 
 test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<

@@ -8,7 +8,7 @@ CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-decla
 JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
 
-.SECONDARY: jkem.s
+.SECONDARY: jkem.s gen_matrix.s
 
 default: test speed
 
