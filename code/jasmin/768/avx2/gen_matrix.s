@@ -14,6 +14,7 @@ jade_kem_mlkem_mlkem768_amd64_avx2_gen_matrix:
 	movq	%r13, 24(%rsp)
 	movq	%r14, 32(%rsp)
 	movq	%rax, 40(%rsp)
+	andq	$1, %rdx
 	leaq	-2200(%rsp), %rsp
 	call	L_gen_matrix_avx2_nounpack$1
 Ljade_kem_mlkem_mlkem768_amd64_avx2_gen_matrix$1:

@@ -11,7 +11,7 @@ fn _gen_matrix_avx2_nounpack
 ) -> reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N]
 {
   // local variables
-  inline int i j;
+  inline int i;
   stack u8[BUF_size * 4] buf_s;
   reg ptr u8[BUF_size * 4] buf;
   reg ptr u16[4*MLKEM_N] polx4;
@@ -38,6 +38,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_gen_matrix(
     reg const ptr u8[32] rho, 
     #spill_to_mmx reg u64 transposed
 ) -> reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] {
+   transposed &= 1;
    matrix = _gen_matrix_avx2_nounpack(matrix,rho,transposed);
    return matrix;
 }
