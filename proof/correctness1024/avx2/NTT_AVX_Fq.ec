@@ -1177,7 +1177,7 @@ proc __invntt_level0(rp : coeff Array256.t) : coeff Array256.t =
   var r0k, r1k, r2k, r3k, r4k, r5k, r6k, r7k : coeff Array16.t;
   var r0l, r1l, r2l, r3l, r4l, r5l, r6l, r7l : coeff Array16.t;
 
-  zeta0 <- Array16.of_list witness [incoeff 1175 ; incoeff 394 ; incoeff 2300 ; incoeff 2117 ; incoeff 2443 ; incoeff 1179 ; incoeff 2303 ; incoeff 2237 ; incoeff 735 ; incoeff 21024 ; incoeff 2572 ; incoeff 3010; incoeff 1684 ; incoeff 780 ; incoeff 109 ; incoeff 1031];
+  zeta0 <- Array16.of_list witness [incoeff 1175 ; incoeff 394 ; incoeff 2300 ; incoeff 2117 ; incoeff 2443 ; incoeff 1179 ; incoeff 2303 ; incoeff 2237 ; incoeff 735 ; incoeff 2768 ; incoeff 2572 ; incoeff 3010; incoeff 1684 ; incoeff 780 ; incoeff 109 ; incoeff 1031];
   zeta1 <- Array16.of_list witness [incoeff 2444 ; incoeff 1219 ; incoeff 1455 ; incoeff 1607 ; incoeff 554 ; incoeff 2186 ; incoeff 2926 ; incoeff 525 ; incoeff 863 ; incoeff 1230 ; incoeff 556 ; incoeff 2266 ; incoeff 1239 ; incoeff 2954 ; incoeff 1292 ; incoeff 1745];
   
   (r0,r1,r2,r3,r4,r5,r6,r7) <- (P2C rp 0,P2C rp 1,P2C rp 2,P2C rp 3,P2C rp 4,P2C rp 5,P2C rp 6,P2C rp 7);
@@ -2047,11 +2047,11 @@ proc; simplify.
 (* level 0 *) (* [loc(zeta0k)..loc(r0l)] - (loc(zeta0k)-loc(r0a)-1) *)
 swap{1} [46..56] -34.
 seq 22 1: (CS2P [r0a;r1a;r4a;r5a;r2a;r3a;r6a;r7a;r0l;r1l;r4l;r5l;r2l;r3l;r6l;r7l]{1} = rp0{2}).
-  by inline *; auto.
+ by inline *; auto.
 (* level 1 *) (* [loc(zeta1l)..loc(r7n)] - (loc(zeta1l)-loc(r7c)-1) *)
 swap{1} [35..40] -28.
 seq 12 1: (CS2P [r0c;r1c;r2c;r3c;r4c;r5c;r6c;r7c;r0n;r1n;r2n;r3n;r4n;r5n;r6n;r7n]{1} = rp1{2}).
-  by inline *; auto => /> *; rewrite !P2C_i => />.
+  inline *; auto => /> *. rewrite !P2C_i => />.
 (* level 2 *) (* [loc(zeta1n)..loc(r7p)] - (loc(zeta1n)-loc(r7e)-1) *)
 swap{1} [29..34] -22.
 seq 12 1: (CS2P [r0e;r2e;r4e;r6e;r1e;r3e;r5e;r7e;r0p;r2p;r4p;r6p;r1p;r3p;r5p;r7p]{1} = rp2{2}).
