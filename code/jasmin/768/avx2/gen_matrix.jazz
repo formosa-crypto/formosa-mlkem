@@ -1,7 +1,10 @@
+require "params.jinc"
+require "poly.jinc"
+require "polyvec.jinc"
 require "gen_matrix_globals.jinc"
 require "../../common/avx2/gen_matrix.jinc"
 
-fn _gen_matrix_avx2
+fn _gen_matrix_avx2_nounpack
 ( reg mut ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix
 , reg const ptr u8[32] rho
 , #spill_to_mmx reg u64 transposed
@@ -36,11 +39,14 @@ fn _gen_matrix_avx2
 
   matrix[8*MLKEM_N:MLKEM_N] = pol;
 
-  for i = 0 to MLKEM_K
-  { for j = 0 to MLKEM_K
-    { matrix[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N] = _nttunpack(matrix[i*MLKEM_VECN+j*MLKEM_N:MLKEM_N]);
-    }
-  }
-
   return matrix;
+}
+
+export fn jade_kem_mlkem_mlkem768_amd64_avx2_gen_matrix(
+    reg mut ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix, 
+    reg const ptr u8[32] rho, 
+    #spill_to_mmx reg u64 transposed
+) -> reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] {
+   matrix = _gen_matrix_avx2_nounpack(matrix,rho,transposed);
+   return matrix;
 }
