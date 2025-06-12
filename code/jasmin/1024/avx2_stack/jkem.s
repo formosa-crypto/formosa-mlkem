@@ -12884,28 +12884,30 @@ L_gen_matrix_buf_rejection$24:
 	movq	%r12, %rbp
 	addq	$48, 8(%rsp)
 	movq	8(%rsp), %r13
+	orq 	%r11, %r13
 L_gen_matrix_buf_rejection$25:
 L_gen_matrix_buf_rejection$22:
 	cmpq	$457, %r13
 	jb  	L_gen_matrix_buf_rejection$23
 	movq	$-1, %r12
 	cmovb	%r12, %r11
-	movq	8(%rsp), %r13
+	movq	8(%rsp), %r12
+	orq 	%r11, %r12
 	jmp 	L_gen_matrix_buf_rejection$2
 L_gen_matrix_buf_rejection$3:
-	movq	$-1, %r12
-	cmovnb	%r12, %r11
+	movq	$-1, %r13
+	cmovnb	%r13, %r11
 	cmpq	$256, %rbp
 	jb  	L_gen_matrix_buf_rejection$4
 	movq	$-1, %r12
 	cmovb	%r12, %r11
-	movq	$504, %r13
+	movq	$504, %r12
 	jmp 	L_gen_matrix_buf_rejection$2
 L_gen_matrix_buf_rejection$4:
-	movq	$-1, %r12
-	cmovnb	%r12, %r11
-	movq	%r13, 8(%rsp)
-	vpermq	$148, (%r10,%r13), %ymm4
+	movq	$-1, %r13
+	cmovnb	%r13, %r11
+	movq	%r12, 8(%rsp)
+	vpermq	$148, (%r10,%r12), %ymm4
 	vpshufb	%ymm0, %ymm4, %ymm4
 	vpsrlw	$4, %ymm4, %ymm5
 	vpblendw	$170, %ymm5, %ymm4, %ymm4
@@ -13022,11 +13024,12 @@ L_gen_matrix_buf_rejection$6:
 	vmovdqu	%xmm4, (%r9,%r12,2)
 L_gen_matrix_buf_rejection$7:
 	movq	%r13, %rbp
-	movq	8(%rsp), %r13
-	addq	$24, %r13
+	movq	8(%rsp), %r12
+	orq 	%r11, %r12
+	addq	$24, %r12
 L_gen_matrix_buf_rejection$5:
 L_gen_matrix_buf_rejection$2:
-	cmpq	$481, %r13
+	cmpq	$481, %r12
 	jb  	L_gen_matrix_buf_rejection$3
 	ret
 L_i_poly_decompress$1:
