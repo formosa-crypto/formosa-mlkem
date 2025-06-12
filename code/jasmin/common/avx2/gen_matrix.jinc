@@ -317,6 +317,7 @@ fn _gen_matrix_buf_rejection
       pol, counter = __gen_matrix_buf_rejection_filter48(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
       saved_buf_offset += 48;
       buf_offset = saved_buf_offset;
+      buf_offset = #protect(buf_offset, ms);
     } else {
       ms = #update_msf(!condition_loop, ms);
       buf_offset = 3 * 168;
@@ -325,6 +326,7 @@ fn _gen_matrix_buf_rejection
   ms = #update_msf(!condition_loop, ms);
 
   buf_offset = saved_buf_offset;
+  buf_offset = #protect(buf_offset, ms);
 
   while { condition_loop = buf_offset <u 3 * 168 - 24 + 1; }
         ( condition_loop )
@@ -336,6 +338,7 @@ fn _gen_matrix_buf_rejection
 () = #spill(buf_offset);
       pol, counter, ms = __gen_matrix_buf_rejection_filter24(pol, counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
 () = #unspill(buf_offset);
+      buf_offset = #protect(buf_offset, ms);
       buf_offset += 24;
     } else {
       ms = #update_msf(!condition_loop, ms);

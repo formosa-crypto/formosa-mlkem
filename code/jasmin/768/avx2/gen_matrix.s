@@ -14,6 +14,8 @@ jade_kem_mlkem_mlkem768_amd64_avx2_gen_matrix:
 	movq	%r13, 24(%rsp)
 	movq	%r14, 32(%rsp)
 	movq	%rax, 40(%rsp)
+	lfence
+	movq	$0, %rax
 	andq	$1, %rdx
 	leaq	-2200(%rsp), %rsp
 	call	L_gen_matrix_avx2_nounpack$1
@@ -183,28 +185,30 @@ L_gen_matrix_buf_rejection$24:
 	movq	%rbp, %rbx
 	addq	$48, 8(%rsp)
 	movq	8(%rsp), %r12
+	orq 	%r10, %r12
 L_gen_matrix_buf_rejection$25:
 L_gen_matrix_buf_rejection$22:
 	cmpq	$457, %r12
 	jb  	L_gen_matrix_buf_rejection$23
 	movq	$-1, %rbp
 	cmovb	%rbp, %r10
-	movq	8(%rsp), %r12
+	movq	8(%rsp), %rbp
+	orq 	%r10, %rbp
 	jmp 	L_gen_matrix_buf_rejection$2
 L_gen_matrix_buf_rejection$3:
-	movq	$-1, %rbp
-	cmovnb	%rbp, %r10
+	movq	$-1, %r12
+	cmovnb	%r12, %r10
 	cmpq	$256, %rbx
 	jb  	L_gen_matrix_buf_rejection$4
 	movq	$-1, %rbp
 	cmovb	%rbp, %r10
-	movq	$504, %r12
+	movq	$504, %rbp
 	jmp 	L_gen_matrix_buf_rejection$2
 L_gen_matrix_buf_rejection$4:
-	movq	$-1, %rbp
-	cmovnb	%rbp, %r10
-	movq	%r12, 8(%rsp)
-	vpermq	$148, (%rcx,%r12), %ymm4
+	movq	$-1, %r12
+	cmovnb	%r12, %r10
+	movq	%rbp, 8(%rsp)
+	vpermq	$148, (%rcx,%rbp), %ymm4
 	vpshufb	%ymm0, %ymm4, %ymm4
 	vpsrlw	$4, %ymm4, %ymm5
 	vpblendw	$170, %ymm5, %ymm4, %ymm4
@@ -321,11 +325,12 @@ L_gen_matrix_buf_rejection$6:
 	vmovdqu	%xmm4, (%r9,%rbp,2)
 L_gen_matrix_buf_rejection$7:
 	movq	%r12, %rbx
-	movq	8(%rsp), %r12
-	addq	$24, %r12
+	movq	8(%rsp), %rbp
+	orq 	%r10, %rbp
+	addq	$24, %rbp
 L_gen_matrix_buf_rejection$5:
 L_gen_matrix_buf_rejection$2:
-	cmpq	$481, %r12
+	cmpq	$481, %rbp
 	jb  	L_gen_matrix_buf_rejection$3
 	ret
 L_shake128x4_squeeze3blocks$1:

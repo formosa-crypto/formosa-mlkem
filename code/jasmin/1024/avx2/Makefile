@@ -46,6 +46,7 @@ ct:
 	$(JASMINCT) --infer jkem.jazz
 
 sct:
+	$(JASMINCT) --sct --slice jade_kem_mlkem_mlkem1024_amd64_avx2_gen_matrix gen_matrix.jazz
 	$(JASMINCT) --sct jkem.jazz
 
 clean:

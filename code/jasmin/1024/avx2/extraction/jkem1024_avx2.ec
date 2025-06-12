@@ -9730,6 +9730,7 @@ module M(SC:Syscall_t) = {
         buf, buf_offset, load_shuffle, mask, bounds, sst, ones, ms);
         saved_buf_offset <- (saved_buf_offset + (W64.of_int 48));
         buf_offset <- saved_buf_offset;
+        buf_offset <- (protect_64 buf_offset ms);
       } else {
         ms <- (update_msf (! condition_loop) ms);
         buf_offset <- (W64.of_int (3 * 168));
@@ -9739,6 +9740,7 @@ module M(SC:Syscall_t) = {
     }
     ms <- (update_msf (! condition_loop) ms);
     buf_offset <- saved_buf_offset;
+    buf_offset <- (protect_64 buf_offset ms);
     condition_loop <- (buf_offset \ult (W64.of_int (((3 * 168) - 24) + 1)));
     while (condition_loop) {
       ms <- (update_msf condition_loop ms);
@@ -9750,6 +9752,7 @@ module M(SC:Syscall_t) = {
         counter, buf, buf_offset, load_shuffle, mask, bounds, sst, ones, 
         ms);
         (* Erased call to unspill *)
+        buf_offset <- (protect_64 buf_offset ms);
         buf_offset <- (buf_offset + (W64.of_int 24));
       } else {
         ms <- (update_msf (! condition_loop) ms);

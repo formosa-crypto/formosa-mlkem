@@ -514,7 +514,7 @@ while ( buf=_buf /\ 24 %| to_uint saved_buf_offset /\ 3 %| to_uint _buf_offset /
  + auto => &m /> *; rewrite ultE /#.
  if; last by auto.
  wp; ecall (buf_rejection_filter48_h pol counter buf buf_offset).
- auto => &m />.
+ auto; rewrite /protect_64 => &m />.
  move => Hdvd1 Hdvd2 Ho1 Ho2 Ho3 Hctr1 Hctr2 Hctr3 + Hbo Hctr4 Hbo4.
  have -> : (min 256 (to_uint counter{m})) = to_uint counter{m} by smt().
  move => H.
@@ -539,7 +539,7 @@ while ( buf=_buf /\ 24 %| to_uint saved_buf_offset /\ 3 %| to_uint _buf_offset /
  have : size (plist p (to_uint counter{m} + size R)) <= 256.
   by rewrite size_plist /#.
  by rewrite HH size_cat size_plist 1:/# ultE to_uintD_small /#.
-wp; skip => &m /> Hctr1 Hctr2 Hbo; split.
+auto; rewrite /protect_64 => &m /> Hctr1 Hctr2 Hbo; split.
  split; first smt().
  split; first smt().
  split; first smt().
@@ -603,7 +603,7 @@ while (condition_loop
  - auto.
  - if; last auto => &m /> /#.
     wp; call buf_rejection_filter24_ll; auto => &m /> H _.
-    rewrite ultE to_uintD_small /#.
+    rewrite /protect_64 ultE to_uintD_small /#.
  by hoare; auto.
 auto => &m />.
 rewrite ultE /#.
