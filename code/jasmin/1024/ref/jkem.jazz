@@ -1,6 +1,6 @@
 require "kem.jinc"
 
-export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand(reg u64 public_key secret_key fixedrand) -> reg u64
+export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand(#public reg u64 public_key secret_key fixedrand) -> #public reg u64
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES*2] randomness;
@@ -23,7 +23,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand(reg u64 public_key s
   return r;
 }
 
-export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc_derand(reg u64 ciphertext shared_secret public_key fixedrand) -> reg u64
+export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc_derand(#public reg u64 ciphertext shared_secret public_key fixedrand) -> #public reg u64
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES] randomness;
@@ -47,7 +47,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc_derand(reg u64 ciphertext share
 }
 
 
-export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair(reg u64 public_key secret_key) -> reg u64
+export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair(#public reg u64 public_key secret_key) -> #public reg u64
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES*2] randomness;
@@ -65,7 +65,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair(reg u64 public_key secret_k
   return r;
 }
 
-export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc(reg u64 ciphertext shared_secret public_key) -> reg u64
+export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc(#public reg u64 ciphertext shared_secret public_key) -> #public reg u64
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES] randomness;
@@ -84,7 +84,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc(reg u64 ciphertext shared_secre
   return r;
 }
 
-export fn jade_kem_mlkem_mlkem1024_amd64_ref_dec(reg u64 shared_secret ciphertext secret_key) -> reg u64
+export fn jade_kem_mlkem_mlkem1024_amd64_ref_dec(#public reg u64 shared_secret ciphertext secret_key) -> #public reg u64
 {
   reg u64 r;
   _ = #init_msf();
