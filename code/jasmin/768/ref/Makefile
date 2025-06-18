@@ -40,7 +40,7 @@ test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 .PHONY: ct clean
 
 ct:
-	$(JASMINCT) --infer jkem.jazz
+	$(JASMINCT) jkem.jazz
 
 sct:
 	$(JASMINCT) --sct jkem.jazz

@@ -2,10 +2,10 @@ require "kem.jinc"
 
 // Only here for testing purposes
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(
-    #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
-    #spill_to_mmx reg ptr u8[2*MLKEM_SYMBYTES] coins)
- -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES], reg u64
+    #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    #secret #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
+    #secret #spill_to_mmx reg ptr u8[2*MLKEM_SYMBYTES] coins)
+ -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
 {
   reg u64 r;
   stack u8[MLKEM_PUBLICKEYBYTES] pk;
@@ -46,11 +46,11 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(
 }
 
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
-    #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-    #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
-    #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] coins)
-    -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES], reg u64
+    #secret #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] coins)
+    -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
 {
   reg u64 r;
   stack u8[MLKEM_CIPHERTEXTBYTES] ct;
@@ -93,10 +93,10 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
 }
 
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec(
-    #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
-    reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-    reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
-    -> reg ptr u8[MLKEM_SYMBYTES], reg u64
+    #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
+    -> #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES] shk;

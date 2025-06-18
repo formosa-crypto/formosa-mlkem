@@ -43,7 +43,7 @@ test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 
 ct:
 	$(JASMINCT) gen_matrix.jazz
-	$(JASMINCT) --infer jkem.jazz
+	$(JASMINCT) jkem.jazz
 
 sct:
 	$(JASMINCT) --sct jkem.jazz
