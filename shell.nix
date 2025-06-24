@@ -1,7 +1,7 @@
 { pkgs ?
     import (fetchTarball {
-      url = https://github.com/NixOS/nixpkgs/archive/bfa9810ff7104a17555ab68ebdeafb6705f129b1.tar.gz;
-      sha256 = "sha256:1p528ci8309zhyvzli0p7hfkxypjyqi96fqpgm61n32s62c64a23";
+      url = https://github.com/NixOS/nixpkgs/archive/dee6c49f2361b678b4f2c868081989ac92279f6a.tar.gz;
+      sha256 = "sha256:11c9b68gbr06s1czvhfnzdmix9fzyjbg76xnrhfgympm4clykn9b";
     }) {}
 , full ? true
 }:
@@ -13,8 +13,8 @@ let jasmin =
     src = fetchFromGitLab {
       owner = "jasmin-lang";
       repo = "jasmin-compiler";
-      rev = "e1986c87bc53757904bb51c98582887243ff3914";
-      hash = "sha256-6/zRkWnkb08GmgNgXwcXXlRJLpQVPr9Du6tEyydhtXw=";
+      rev = "v2025.06.0";
+      hash = "sha256-pATAWGsp6bFWg5m1O5Sg86hDOS8TN++DN+dXgXdSn5w=";
     };
   })
 ; in
@@ -32,8 +32,8 @@ let formosa-keccak =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "formosa-keccak";
-    rev = "34b12ab2c1aaf00cd3c6c77cd79146824276652c";
-    hash = "sha256-Zidd1J2GEAS2TDVA1+tlJAWfdaqLsw83PQKhkmJ97EA=";
+    rev = "4de8e7f620604ea743f5dab2c2aee5bdc27949b9";
+    hash = "sha256-q6d5+23LwL+Vy/JSwxoikVhG7gs1vsg81x9TBgBqtak=";
   }
 ; in
 

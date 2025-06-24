@@ -497,7 +497,6 @@ L_shake128_next_state$1:
 L_shake128_next_state$2:
 	movq	$336, %r10
 	movq	%xmm11, (%r9,%r10)
-	vpunpckhqdq	%xmm11, %xmm11, %xmm6
 	vmovdqu	%ymm5, 8(%r9,%r10)
 	vmovdqu	%xmm0, %xmm5
 	vextracti128	$1, %ymm0, %xmm0

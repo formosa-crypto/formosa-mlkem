@@ -496,7 +496,6 @@ L_shake128_next_state$1:
 L_shake128_next_state$2:
 	movq	$336, %r10
 	movq	%xmm6, (%rcx,%r10)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm6
 	vmovdqu	%ymm4, 8(%rcx,%r10)
 	vmovdqu	%xmm5, %xmm4
 	vextracti128	$1, %ymm5, %xmm5
@@ -529,7 +528,6 @@ L_shake128_squeeze3blocks$4:
 	movq	$0, %rax
 	vmovdqu	%xmm6, %xmm7
 	movq	%xmm7, (%rcx,%rax)
-	vpunpckhqdq	%xmm7, %xmm7, %xmm7
 	vmovdqu	%ymm4, 8(%rcx,%rax)
 	vmovdqu	%xmm5, %xmm7
 	vextracti128	$1, %ymm5, %xmm8
@@ -558,7 +556,6 @@ L_shake128_squeeze3blocks$4:
 L_shake128_squeeze3blocks$3:
 	vmovdqu	%xmm6, %xmm7
 	movq	%xmm7, (%rcx,%rax)
-	vpunpckhqdq	%xmm7, %xmm7, %xmm7
 	vmovdqu	%ymm4, 8(%rcx,%rax)
 	vmovdqu	%xmm5, %xmm7
 	vextracti128	$1, %ymm5, %xmm8
@@ -586,7 +583,6 @@ L_shake128_squeeze3blocks$3:
 	call	L_keccakf1600_avx2$1
 L_shake128_squeeze3blocks$2:
 	movq	%xmm6, (%rcx,%rax)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm6
 	vmovdqu	%ymm4, 8(%rcx,%rax)
 	vmovdqu	%xmm5, %xmm4
 	vextracti128	$1, %ymm5, %xmm5

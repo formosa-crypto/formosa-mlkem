@@ -235,7 +235,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     while (i < _aux) {
       t64 <- (get64 (WArray32.init8 (fun i => publicseed.[i])) i);
       Glob.mem <-
-      storeW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))) (t64);
+      storeW64 Glob.mem (W64.to_uint pkp) (t64);
       pkp <- (pkp + (W64.of_int 8));
       i <- i + 1;
     }
@@ -274,7 +274,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     pkp <- (pkp + (W64.of_int (3 * 384)));
     
     while ((i \ult (W64.of_int (32 %/ 8)))) {
-      t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
+      t64 <- (loadW64 Glob.mem (W64.to_uint pkp));
       publicseed <-
       Array32.init
       (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i => publicseed.[i])) (8 * (W64.to_uint i)) (t64)));
@@ -370,7 +370,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     pkp <- (pkp + (W64.of_int (3 * 384)));
     
     while ((i \ult (W64.of_int (32 %/ 8)))) {
-      t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
+      t64 <- (loadW64 Glob.mem (W64.to_uint pkp));
       publicseed <-
       Array32.init
       (WArray32.get8 (WArray32.set64_direct (WArray32.init8 (fun i => publicseed.[i])) (8 * (W64.to_uint i)) (t64)));

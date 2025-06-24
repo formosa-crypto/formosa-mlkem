@@ -9257,7 +9257,6 @@ L_i_poly_decompress$1:
 	vmovdqu	(%rdi), %ymm1
 	vpbroadcastd	glob_data + 4996(%rip), %ymm2
 	vpbroadcastd	glob_data + 4992(%rip), %ymm3
-	vpxor	%ymm4, %ymm4, %ymm4
 	movq	(%rax), %xmm4
 	vmovdqu	%xmm4, 16(%rsp)
 	vbroadcasti128	16(%rsp), %ymm4
@@ -10079,12 +10078,10 @@ L_shake256_A32__A1120$3:
 	call	L_keccakf1600_avx2$1
 L_shake256_A32__A1120$2:
 	movq	%xmm4, (%rax,%rcx)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm0
 	vmovdqu	%xmm5, %xmm0
 	vmovdqu	%xmm0, 8(%rax,%rcx)
 	vextracti128	$1, %ymm5, %xmm0
 	movq	%xmm0, 24(%rax,%rcx)
-	vpunpckhqdq	%xmm0, %xmm0, %xmm0
 	ret
 L_sha3_256A_A1184$1:
 	vpxor	%ymm4, %ymm4, %ymm4
@@ -10187,12 +10184,10 @@ L_sha3_256A_A1184$3:
 	call	L_keccakf1600_avx2$1
 L_sha3_256A_A1184$2:
 	movq	%xmm4, (%rdx,%rcx)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm0
 	vmovdqu	%xmm5, %xmm0
 	vmovdqu	%xmm0, 8(%rdx,%rcx)
 	vextracti128	$1, %ymm5, %xmm0
 	movq	%xmm0, 24(%rdx,%rcx)
-	vpunpckhqdq	%xmm0, %xmm0, %xmm0
 	ret
 L_poly_sub$1:
 	vmovdqu	(%rdx), %ymm0
@@ -12907,7 +12902,6 @@ L_shake128_next_state$1:
 L_shake128_next_state$2:
 	movq	$336, %r11
 	movq	%xmm4, (%rsi,%r11)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm4
 	vmovdqu	%ymm5, 8(%rsi,%r11)
 	vmovdqu	%xmm6, %xmm4
 	vextracti128	$1, %ymm6, %xmm5
@@ -12940,7 +12934,6 @@ L_shake128_squeeze3blocks$4:
 	movq	$0, %rdx
 	vmovdqu	%xmm4, %xmm7
 	movq	%xmm7, (%rsi,%rdx)
-	vpunpckhqdq	%xmm7, %xmm7, %xmm7
 	vmovdqu	%ymm5, 8(%rsi,%rdx)
 	vmovdqu	%xmm6, %xmm7
 	vextracti128	$1, %ymm6, %xmm8
@@ -12969,7 +12962,6 @@ L_shake128_squeeze3blocks$4:
 L_shake128_squeeze3blocks$3:
 	vmovdqu	%xmm4, %xmm7
 	movq	%xmm7, (%rsi,%rdx)
-	vpunpckhqdq	%xmm7, %xmm7, %xmm7
 	vmovdqu	%ymm5, 8(%rsi,%rdx)
 	vmovdqu	%xmm6, %xmm7
 	vextracti128	$1, %ymm6, %xmm8
@@ -12997,7 +12989,6 @@ L_shake128_squeeze3blocks$3:
 	call	L_keccakf1600_avx2$1
 L_shake128_squeeze3blocks$2:
 	movq	%xmm4, (%rsi,%rdx)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm4
 	vmovdqu	%ymm5, 8(%rsi,%rdx)
 	vmovdqu	%xmm6, %xmm4
 	vextracti128	$1, %ymm6, %xmm5
@@ -13327,20 +13318,14 @@ L_sha3_512A_A64$1:
 	call	L_keccakf1600_avx2$1
 L_sha3_512A_A64$2:
 	movq	%xmm4, (%rcx,%rdx)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm4
 	vmovdqu	%ymm5, 8(%rcx,%rdx)
 	vextracti128	$1, %ymm6, %xmm4
 	movq	%xmm4, %rsi
 	movq	%rsi, 40(%rcx,%rdx)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm4
-	vpblendd	$240, %ymm1, %ymm0, %ymm4
-	vpblendd	$240, %ymm0, %ymm1, %ymm0
-	vpblendd	$240, %ymm3, %ymm2, %ymm0
-	vpblendd	$240, %ymm2, %ymm3, %ymm0
-	vpblendd	$195, %ymm0, %ymm4, %ymm0
-	vmovdqu	%xmm0, %xmm1
-	vmovdqu	%xmm1, 48(%rcx,%rdx)
-	vextracti128	$1, %ymm0, %xmm0
+	vpblendd	$240, %ymm1, %ymm0, %ymm0
+	vpblendd	$240, %ymm2, %ymm3, %ymm1
+	vpblendd	$195, %ymm1, %ymm0, %ymm0
+	vmovdqu	%xmm0, 48(%rcx,%rdx)
 	ret
 L_sha3_512A_A33$1:
 	vpxor	%ymm4, %ymm4, %ymm4
@@ -13378,20 +13363,14 @@ L_sha3_512A_A33$1:
 	call	L_keccakf1600_avx2$1
 L_sha3_512A_A33$2:
 	movq	%xmm4, (%rax,%rcx)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm4
 	vmovdqu	%ymm5, 8(%rax,%rcx)
 	vextracti128	$1, %ymm6, %xmm4
 	movq	%xmm4, %rdx
 	movq	%rdx, 40(%rax,%rcx)
-	vpunpckhqdq	%xmm4, %xmm4, %xmm4
-	vpblendd	$240, %ymm1, %ymm0, %ymm4
-	vpblendd	$240, %ymm0, %ymm1, %ymm0
-	vpblendd	$240, %ymm3, %ymm2, %ymm0
-	vpblendd	$240, %ymm2, %ymm3, %ymm0
-	vpblendd	$195, %ymm0, %ymm4, %ymm0
-	vmovdqu	%xmm0, %xmm1
-	vmovdqu	%xmm1, 48(%rax,%rcx)
-	vextracti128	$1, %ymm0, %xmm0
+	vpblendd	$240, %ymm1, %ymm0, %ymm0
+	vpblendd	$240, %ymm2, %ymm3, %ymm1
+	vpblendd	$195, %ymm1, %ymm0, %ymm0
+	vmovdqu	%xmm0, 48(%rax,%rcx)
 	ret
 L_keccakf1600_avx2x4$1:
 	leaq	glob_data + 4784(%rip), %r9

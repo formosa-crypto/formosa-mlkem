@@ -2029,23 +2029,19 @@ module M(SC:Syscall_t) = {
       tRAIL <- 0;
     } else {
       if ((8 <= lEN)) {
-        w <- (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW64 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
         if ((4 <= lEN)) {
-          w <-
-          (zeroextu64 (loadW32 Glob.mem (W64.to_uint (buf + (W64.of_int 0))))
-          );
+          w <- (zeroextu64 (loadW32 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 4));
           lEN <- (lEN - 4);
         } else {
           w <- (W64.of_int 0);
         }
         if ((2 <= lEN)) {
-          t16 <-
-          (zeroextu64 (loadW16 Glob.mem (W64.to_uint (buf + (W64.of_int 0))))
-          );
+          t16 <- (zeroextu64 (loadW16 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 2));
           lEN <- (lEN - 2);
         } else {
@@ -2053,9 +2049,7 @@ module M(SC:Syscall_t) = {
         }
         if (((1 <= lEN) \/ ((tRAIL %% 256) <> 0))) {
           if ((1 <= lEN)) {
-            t8 <-
-            (zeroextu64
-            (loadW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+            t8 <- (zeroextu64 (loadW8 Glob.mem (W64.to_uint buf)));
             if (((tRAIL %% 256) <> 0)) {
               t8 <- (t8 `|` (W64.of_int (256 * (tRAIL %% 256))));
             } else {
@@ -2087,9 +2081,7 @@ module M(SC:Syscall_t) = {
       w <- (set0_256);
     } else {
       if ((8 <= lEN)) {
-        w <-
-        (VPBROADCAST_4u64
-        (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+        w <- (VPBROADCAST_4u64 (loadW64 Glob.mem (W64.to_uint buf)));
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
@@ -2108,13 +2100,12 @@ module M(SC:Syscall_t) = {
       w <- (set0_128);
     } else {
       if ((16 <= lEN)) {
-        w <- (loadW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW128 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 16));
         lEN <- (lEN - 16);
       } else {
         if ((8 <= lEN)) {
-          w <-
-          (VMOV_64 (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))));
+          w <- (VMOV_64 (loadW64 Glob.mem (W64.to_uint buf)));
           buf <- (buf + (W64.of_int 8));
           lEN <- (lEN - 8);
           (buf, lEN, tRAIL, t64) <@ __mread_subu64 (buf, lEN, tRAIL);
@@ -2136,12 +2127,12 @@ module M(SC:Syscall_t) = {
       w <- (set0_256);
     } else {
       if ((32 <= lEN)) {
-        w <- (loadW256 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        w <- (loadW256 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
         if ((16 <= lEN)) {
-          t128_0 <- (loadW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+          t128_0 <- (loadW128 Glob.mem (W64.to_uint buf));
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           (buf, lEN, tRAIL, t128_1) <@ __mread_subu128 (buf, lEN, tRAIL);
@@ -2165,15 +2156,12 @@ module M(SC:Syscall_t) = {
     
     if ((0 < lEN)) {
       if ((8 <= lEN)) {
-        Glob.mem <-
-        (storeW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW64 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 8));
         lEN <- (lEN - 8);
       } else {
         if ((4 <= lEN)) {
-          Glob.mem <-
-          (storeW32 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu32 w));
+          Glob.mem <- (storeW32 Glob.mem (W64.to_uint buf) (truncateu32 w));
           w <- (w `>>` (W8.of_int 32));
           buf <- (buf + (W64.of_int 4));
           lEN <- (lEN - 4);
@@ -2181,9 +2169,7 @@ module M(SC:Syscall_t) = {
           
         }
         if ((2 <= lEN)) {
-          Glob.mem <-
-          (storeW16 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu16 w));
+          Glob.mem <- (storeW16 Glob.mem (W64.to_uint buf) (truncateu16 w));
           w <- (w `>>` (W8.of_int 16));
           buf <- (buf + (W64.of_int 2));
           lEN <- (lEN - 2);
@@ -2191,9 +2177,7 @@ module M(SC:Syscall_t) = {
           
         }
         if ((1 <= lEN)) {
-          Glob.mem <-
-          (storeW8 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (truncateu8 w));
+          Glob.mem <- (storeW8 Glob.mem (W64.to_uint buf) (truncateu8 w));
           buf <- (buf + (W64.of_int 1));
           lEN <- (lEN - 1);
         } else {
@@ -2209,15 +2193,13 @@ module M(SC:Syscall_t) = {
     var t64:W64.t;
     if ((0 < lEN)) {
       if ((16 <= lEN)) {
-        Glob.mem <-
-        (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW128 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 16));
         lEN <- (lEN - 16);
       } else {
         if ((8 <= lEN)) {
           Glob.mem <-
-          (storeW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0)))
-          (MOVV_64 (truncateu64 w)));
+          (storeW64 Glob.mem (W64.to_uint buf) (MOVV_64 (truncateu64 w)));
           buf <- (buf + (W64.of_int 8));
           lEN <- (lEN - 8);
           w <- (VPUNPCKH_2u64 w w);
@@ -2236,15 +2218,13 @@ module M(SC:Syscall_t) = {
     var t128:W128.t;
     if ((0 < lEN)) {
       if ((32 <= lEN)) {
-        Glob.mem <-
-        (storeW256 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) w);
+        Glob.mem <- (storeW256 Glob.mem (W64.to_uint buf) w);
         buf <- (buf + (W64.of_int 32));
         lEN <- (lEN - 32);
       } else {
         t128 <- (truncateu128 w);
         if ((16 <= lEN)) {
-          Glob.mem <-
-          (storeW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))) t128);
+          Glob.mem <- (storeW128 Glob.mem (W64.to_uint buf) t128);
           buf <- (buf + (W64.of_int 16));
           lEN <- (lEN - 16);
           t128 <- (VEXTRACTI128 w (W8.of_int 1));
@@ -2761,7 +2741,7 @@ module M(SC:Syscall_t) = {
         lEN <- 0;
       } else {
         if ((8 <= lEN)) {
-          t64 <- (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+          t64 <- (loadW64 Glob.mem (W64.to_uint buf));
           buf <- (buf + (W64.of_int (8 - lO)));
         } else {
           (buf,  _0,  _1, t64) <@ __mread_subu64 (buf, (8 - lO), 0);
@@ -2777,7 +2757,7 @@ module M(SC:Syscall_t) = {
     }
     if ((32 <= lEN)) {
       while ((at \ult (W64.of_int ((aT %/ 8) + (4 * (lEN %/ 32)))))) {
-        t256 <- (loadW256 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+        t256 <- (loadW256 Glob.mem (W64.to_uint buf));
         buf <- (buf + (W64.of_int 32));
         pst <-
         (Array25.init
@@ -2791,7 +2771,7 @@ module M(SC:Syscall_t) = {
       
     }
     if ((16 <= lEN)) {
-      t128 <- (loadW128 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+      t128 <- (loadW128 Glob.mem (W64.to_uint buf));
       buf <- (buf + (W64.of_int 16));
       pst <-
       (Array25.init
@@ -2804,7 +2784,7 @@ module M(SC:Syscall_t) = {
       
     }
     if ((8 <= lEN)) {
-      t64 <- (loadW64 Glob.mem (W64.to_uint (buf + (W64.of_int 0))));
+      t64 <- (loadW64 Glob.mem (W64.to_uint buf));
       buf <- (buf + (W64.of_int 8));
       pst <-
       (Array25.init
@@ -7507,15 +7487,20 @@ module M(SC:Syscall_t) = {
     while ((i < 2)) {
       t0 <- (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int (192 * i)))));
       t1 <-
-      (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int ((192 * i) + 32)))));
+      (loadW256 Glob.mem
+      (W64.to_uint ((ap + (W64.of_int (192 * i))) + (W64.of_int 32))));
       t2 <-
-      (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int ((192 * i) + 64)))));
+      (loadW256 Glob.mem
+      (W64.to_uint ((ap + (W64.of_int (192 * i))) + (W64.of_int 64))));
       t3 <-
-      (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int ((192 * i) + 96)))));
+      (loadW256 Glob.mem
+      (W64.to_uint ((ap + (W64.of_int (192 * i))) + (W64.of_int 96))));
       t4 <-
-      (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int ((192 * i) + 128)))));
+      (loadW256 Glob.mem
+      (W64.to_uint ((ap + (W64.of_int (192 * i))) + (W64.of_int 128))));
       t5 <-
-      (loadW256 Glob.mem (W64.to_uint (ap + (W64.of_int ((192 * i) + 160)))));
+      (loadW256 Glob.mem
+      (W64.to_uint ((ap + (W64.of_int (192 * i))) + (W64.of_int 160))));
       (tt, t3) <@ __shuffle8 (t0, t3);
       (t0, t4) <@ __shuffle8 (t1, t4);
       (t1, t5) <@ __shuffle8 (t2, t5);
@@ -8528,19 +8513,24 @@ module M(SC:Syscall_t) = {
       Glob.mem <-
       (storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int (192 * i)))) t0);
       Glob.mem <-
-      (storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 32))))
+      (storeW256 Glob.mem
+      (W64.to_uint ((rp + (W64.of_int (192 * i))) + (W64.of_int 32))) 
       t2);
       Glob.mem <-
-      (storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 64))))
+      (storeW256 Glob.mem
+      (W64.to_uint ((rp + (W64.of_int (192 * i))) + (W64.of_int 64))) 
       t1);
       Glob.mem <-
-      (storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 96))))
+      (storeW256 Glob.mem
+      (W64.to_uint ((rp + (W64.of_int (192 * i))) + (W64.of_int 96))) 
       t3);
       Glob.mem <-
-      (storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 128))))
+      (storeW256 Glob.mem
+      (W64.to_uint ((rp + (W64.of_int (192 * i))) + (W64.of_int 128))) 
       ttt);
       Glob.mem <-
-      (storeW256 Glob.mem (W64.to_uint (rp + (W64.of_int ((192 * i) + 160))))
+      (storeW256 Glob.mem
+      (W64.to_uint ((rp + (W64.of_int (192 * i))) + (W64.of_int 160))) 
       t4);
       i <- (i + 1);
     }
@@ -8909,7 +8899,8 @@ module M(SC:Syscall_t) = {
       while ((i < inc)) {
         f <-
         (loadW256 Glob.mem
-        (W64.to_uint (rp + (W64.of_int ((320 * k) + (20 * i))))));
+        (W64.to_uint ((rp + (W64.of_int (320 * k))) + (W64.of_int (20 * i))))
+        );
         f <- (VPERMQ f (W8.of_int 148));
         f <- (VPSHUFB_256 f shufbidx);
         f <- (VPSLLV_8u32 f sllvdidx);
@@ -8980,7 +8971,8 @@ module M(SC:Syscall_t) = {
       Glob.mem <-
       (storeW128 Glob.mem (W64.to_uint (rp + (W64.of_int (20 * i)))) t0);
       Glob.mem <-
-      (storeW32 Glob.mem (W64.to_uint (rp + (W64.of_int ((20 * i) + 16))))
+      (storeW32 Glob.mem
+      (W64.to_uint ((rp + (W64.of_int (20 * i))) + (W64.of_int 16)))
       (VPEXTR_32 t1 (W8.of_int 0)));
       i <- (i + 1);
     }
@@ -9734,8 +9726,7 @@ module M(SC:Syscall_t) = {
     i <- 0;
     while ((i < inc)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => publicseed.[i_0])) i);
-      Glob.mem <-
-      (storeW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))) t64);
+      Glob.mem <- (storeW64 Glob.mem (W64.to_uint pkp) t64);
       pkp <- (pkp + (W64.of_int 8));
       i <- (i + 1);
     }
@@ -9779,7 +9770,7 @@ module M(SC:Syscall_t) = {
     i <- (W64.of_int 0);
     pkp <- (pkp + (W64.of_int (3 * 384)));
     while ((i \ult (W64.of_int (32 %/ 8)))) {
-      t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
+      t64 <- (loadW64 Glob.mem (W64.to_uint pkp));
       publicseed <-
       (Array32.init
       (WArray32.get8
@@ -9915,7 +9906,7 @@ module M(SC:Syscall_t) = {
     i <- (W64.of_int 0);
     pkp <- (pkp + (W64.of_int (3 * 384)));
     while ((i \ult (W64.of_int (32 %/ 8)))) {
-      t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int 0))));
+      t64 <- (loadW64 Glob.mem (W64.to_uint pkp));
       publicseed <-
       (Array32.init
       (WArray32.get8
@@ -10145,8 +10136,7 @@ module M(SC:Syscall_t) = {
     i <- 0;
     while ((i < inc)) {
       t64 <- (loadW64 Glob.mem (W64.to_uint (pkp + (W64.of_int (8 * i)))));
-      Glob.mem <-
-      (storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) t64);
+      Glob.mem <- (storeW64 Glob.mem (W64.to_uint skp) t64);
       skp <- (skp + (W64.of_int 8));
       i <- (i + 1);
     }
@@ -10157,8 +10147,7 @@ module M(SC:Syscall_t) = {
     i <- 0;
     while ((i < 4)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => h_pk.[i_0])) i);
-      Glob.mem <-
-      (storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) t64);
+      Glob.mem <- (storeW64 Glob.mem (W64.to_uint skp) t64);
       skp <- (skp + (W64.of_int 8));
       i <- (i + 1);
     }
@@ -10168,8 +10157,7 @@ module M(SC:Syscall_t) = {
     i <- 0;
     while ((i < inc)) {
       t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) i);
-      Glob.mem <-
-      (storeW64 Glob.mem (W64.to_uint (skp + (W64.of_int 0))) t64);
+      Glob.mem <- (storeW64 Glob.mem (W64.to_uint skp) t64);
       skp <- (skp + (W64.of_int 8));
       i <- (i + 1);
     }
