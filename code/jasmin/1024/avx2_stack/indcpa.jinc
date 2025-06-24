@@ -20,8 +20,8 @@ fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    t64 = randomnessp[u64 i];
-    inbuf[u64 i] = t64;
+    t64 = randomnessp[:u64 i];
+    inbuf[:u64 i] = t64;
   }
   inbuf[32] = MLKEM_K;
 
@@ -29,10 +29,10 @@ fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    #declassify t64 = buf[u64 i];
-    publicseed[u64 i] = t64;
-    t64 = buf[u64 i + MLKEM_SYMBYTES/8];
-    noiseseed[u64 i] = t64;
+    #declassify t64 = buf[:u64 i];
+    publicseed[:u64 i] = t64;
+    t64 = buf[:u64 i + MLKEM_SYMBYTES/8];
+    noiseseed[:u64 i] = t64;
   }
 
   transposed = 0;
@@ -63,8 +63,8 @@ fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    t64 = publicseed[u64 i];
-    pk.[u64 (i + MLKEM_POLYVECBYTES/8)*8] = t64;
+    t64 = publicseed[:u64 i];
+    pk.[:u64 (i + MLKEM_POLYVECBYTES/8)*8] = t64;
   }
 
   return pk, sk;
@@ -95,8 +95,8 @@ fn __indcpa_enc(
 
   for w = 0 to MLKEM_SYMBYTES/8
   {
-    #declassify t64 = pk.[u64 (MLKEM_POLYVECBYTES/8 + w)*8];
-    publicseed[u64 w] = t64;
+    #declassify t64 = pk.[:u64 (MLKEM_POLYVECBYTES/8 + w)*8];
+    publicseed[:u64 w] = t64;
   }
 
   k = _i_poly_frommsg(k, msgp);
