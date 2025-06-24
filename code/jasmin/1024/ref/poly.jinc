@@ -33,7 +33,7 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
     c1 = t[1];
     c1 <<= 5;
     c0 |= c1;
-    (u8)[rp+i*5] = c0;
+    [:u8 rp+i*5] = c0;
 
     c0 = t[1];
     c0 >>= 3;
@@ -43,14 +43,14 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
     c2 <<= 7;
     c0 |= c1;
     c0 |= c2;
-    (u8)[rp+i*5+1] = c0;
+    [:u8 rp+i*5+1] = c0;
 
     c0 = t[3];
     c0 >>= 1;
     c1 = t[4];
     c1 <<= 4;
     c0 |= c1;
-    (u8)[rp+i*5+2] = c0;
+    [:u8 rp+i*5+2] = c0;
 
     c0 = t[4];
     c0 >>= 4;
@@ -60,14 +60,14 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
     c2 <<= 6;
     c0 |= c1;
     c0 |= c2;
-    (u8)[rp+i*5+3] = c0;
+    [:u8 rp+i*5+3] = c0;
 
     c0 = t[6];
     c0 >>= 2;
     c1 = t[7];
     c1 <<= 3;
     c0 |= c1;
-    (u8)[rp+i*5+4] = c0;
+    [:u8 rp+i*5+4] = c0;
   }
   return a;
 }
@@ -162,12 +162,12 @@ fn _poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKE
   j = 0;
 
   while (i < MLKEM_N) {
-    c0 = (u8)[ap+j];
+    c0 = [:u8 ap+j];
     t[0] = c0;
     j += 1;
 
     c0 >>= 5;
-    c1 = (u8)[ap+j];
+    c1 = [:u8 ap+j];
     c2 = c1;
     c1 <<= 3;
     c0 |= c1;
@@ -179,7 +179,7 @@ fn _poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKE
     t[2] = c1;
 
     c1 >>= 5;
-    c0 = (u8)[ap+j];
+    c0 = [:u8 ap+j];
     c2 = c0;
     c0 <<= 1;
     c0 |= c1;
@@ -188,7 +188,7 @@ fn _poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKE
 
     c1 = c2;
     c1 >>= 4;
-    c0 = (u8)[ap+j];
+    c0 = [:u8 ap+j];
     c2 = c0;
     c0 <<= 4;
     c0 |= c1;
@@ -200,7 +200,7 @@ fn _poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKE
     t[5] = c1;
 
     c1 >>= 5;
-    c0 = (u8)[ap+j];
+    c0 = [:u8 ap+j];
     c2 = c0;
     c0 <<= 2;
     c0 |= c1;
