@@ -1,5 +1,6 @@
 require "kem.jinc"
 
+#[sct="transient × transient × transient → public"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(#public reg u64 public_key secret_key coins) -> #public reg u64
 {
   reg u64 r;
@@ -24,6 +25,7 @@ export fn jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(#public reg u64 publ
   return r;
 }
 
+#[sct="transient × transient × transient × transient → public"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(#public reg u64 ciphertext shared_secret public_key coins) -> #public reg u64
 {
   reg u64 r;
@@ -49,6 +51,7 @@ export fn jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(#public reg u64 cipherte
   return r;
 }
 
+#[sct="transient × transient → public"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_keypair(#public reg u64 public_key secret_key) -> #public reg u64
 {
   reg u64 r;
@@ -67,6 +70,7 @@ export fn jade_kem_mlkem_mlkem768_amd64_avx2_keypair(#public reg u64 public_key 
   return r;
 }
 
+#[sct="transient × transient × transient → public"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_enc(#public reg u64 ciphertext shared_secret public_key) -> #public reg u64
 {
   reg u64 r;
@@ -86,6 +90,7 @@ export fn jade_kem_mlkem_mlkem768_amd64_avx2_enc(#public reg u64 ciphertext shar
   return r;
 }
 
+#[sct="transient × transient × transient → public"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_dec(#public reg u64 shared_secret ciphertext secret_key) -> #public reg u64
 {
   reg u64 r;

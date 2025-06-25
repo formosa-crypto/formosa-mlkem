@@ -13344,6 +13344,8 @@ L_poly_getnoise_eta1_4x$1:
 	call	L_shake256x4_A128__A32_A1$1
 L_poly_getnoise_eta1_4x$2:
 	leaq	824(%rsp), %rsp
+	lfence
+	movq	$0, %rdx
 	movq	544(%rsp), %rdx
 	movq	552(%rsp), %r9
 	movq	560(%rsp), %r10

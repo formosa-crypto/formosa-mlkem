@@ -7204,6 +7204,7 @@ module M = {
     var buf3_s:W8.t Array128.t;
     var buf3:W8.t Array128.t;
     var nonces:W8.t Array4.t;
+    var  _0:W64.t;
     buf0 <- witness;
     buf0_s <- witness;
     buf1 <- witness;
@@ -7227,6 +7228,7 @@ module M = {
     nonces.[3] <- nonce;
     (buf0, buf1, buf2, buf3) <@ _shake256x4_A128__A32_A1 (buf0, buf1, 
     buf2, buf3, seed, nonces);
+     _0 <- (init_msf);
     (* Erased call to unspill *)
     r0 <@ __poly_cbd_eta1 (r0, buf0);
     r1 <@ __poly_cbd_eta1 (r1, buf1);
