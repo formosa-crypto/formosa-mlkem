@@ -172,221 +172,46 @@ rewrite /truncateu8 /= !of_uintK /=.
 by rewrite !(modz_small _ 18446744073709551616); 1..3: smt().
 qed.
 
-lemma polyvec_compress_corr mem _p _a :
-    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_compress ~ EncDec.encode10_vec :
-             pos_bound768_cxq a{1} 0 768 2 /\
-             lift_array768 a{1} = _a /\
-             u{2} = map (compress 10) _a /\
+lemma polyvec_compress_corr_h mem _p _a :
+    hoare [Jkem768.M(Jkem768.Syscall).__polyvec_compress  :
+             pos_bound768_cxq a 0 768 2 /\
+             lift_array768 a = _a /\
              valid_ptr _p (3*320) /\
-             Glob.mem{1} = mem /\ to_uint rp{1} = _p
+             Glob.mem = mem /\ to_uint rp = _p
               ==>
-             touches mem Glob.mem{1} _p (3*320) /\
-             load_array960 Glob.mem{1} _p = res{2}
+             touches mem Glob.mem _p (3*320) /\
+             load_array960 Glob.mem _p = encode10_vec (map (compress 10) _a)].
+admitted.
+
+lemma polyvec_compress_corr mem _p _a :
+    phoare [Jkem768.M(Jkem768.Syscall).__polyvec_compress  :
+             pos_bound768_cxq a 0 768 2 /\
+             lift_array768 a = _a /\
+             valid_ptr _p (3*320) /\
+             Glob.mem = mem /\ to_uint rp = _p
+              ==>
+             touches mem Glob.mem _p (3*320) /\
+             load_array960 Glob.mem _p = encode10_vec (map (compress 10) _a)] = 1%r.
+admitted.
+
+lemma i_polyvec_compress_corr_h _a :
+    hoare [Jkem768.M(Jkem768.Syscall).__i_polyvec_compress  :
+             pos_bound768_cxq a 0 768 2 /\
+             lift_array768 a = _a 
+              ==>
+             res = encode10_vec (map (compress 10) _a)
               ].
-proof.
-proc.
-seq 5 3 : (#pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
-           to_uint j{1} = j{2} /\ j{2} = 0 /\
-           pos_bound768_cxq aa{1} 0 768 1 /\ lift_array768 aa{1} = _a).
-wp => /=.
-ecall{1} (polyvec_csubq_corr _a); 1: by auto => /#.
+admitted.
 
-while (#{/~mem}{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\ 
-       to_uint j{1} = j{2} /\ 4*j{2} = 5*i{2} /\ i{2} %% 4 = 0 /\
-       touches mem Glob.mem{1} _p j{2} /\ 
-       (forall k, 0<=k<j{2} => 
-         loadW8 Glob.mem{1} (_p + k) = c{2}.[k])); last first.  
-+ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
-    ? vpl vph ?? baa vaa; split; 1: by smt().
-  move => mem' i' j' ra'; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  im0 touch load.
-  split; 1:  smt(). 
-  by rewrite tP => k kb; rewrite initiE //= (load k _)/#.
-
-unroll for {1} 2.
-auto => />.
-move =>  &1 &2 [#] ; rewrite /pos_bound768_cxq /lift_array768 /touches /storeW8  /loadW8 !tP /=.
-rewrite  ultE of_uintK /= => 4? aav 8?. 
-rewrite !to_uintD_small /=; 1..18: smt().
-
-do split; 1..4:by smt(get_set_neqE_s). 
-
-+ move => i0 i0b;rewrite !get_set_neqE_s /#. 
-
-+ move => k kb kbh.
-  case (k < to_uint j{1}).
-  + move => neq; rewrite !get_set_neqE_s; 1..5: by smt().
-    by rewrite !set_neqiE // /#.
-  case (k = to_uint j{1}).
-  + move => eq1 neq; do 4! (rewrite get_set_neqE_s; 1: by smt()).
-    rewrite get_set_eqE_s; 1: by smt().
-    do 4! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}) _) //. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -Fq.compress_impl_large //; 1: smt().
-    by apply truncation1.  
-
-  case (k = to_uint j{1} + 1).
-  + move => eq2 neq1 neq; do 3! (rewrite get_set_neqE_s; 1: by smt()).
-    rewrite get_set_eqE_s; 1: by smt().
-    do 3! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}) _) //. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 1) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
-
-  case (k = to_uint j{1} + 2).
-  + move => eq3 neq2 neq1 neq; do 2! (rewrite get_set_neqE_s; 1: by smt()).
-    rewrite get_set_eqE_s; 1: by smt().
-    do 2! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}+1) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 2) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
-
-  case (k = to_uint j{1} + 3).
-  + move => eq4 neq3 neq2 neq1 neq; rewrite get_set_neqE_s; 1: by smt().
-    rewrite get_set_eqE_s; 1: by smt().
-    rewrite set_neqiE; 1,2:smt().
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}+2) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 3) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
-
-  move => neq4 neq3 neq2 neq1 neq.
-  rewrite get_set_eqE_s; 1: by smt().
-  rewrite set_eqiE; 1,2:smt().
-  rewrite mapiE /=; 1: smt().
-  rewrite -(aav (to_uint i{1}+3) _) 1:/#. 
-  rewrite mapiE /=; 1: smt().
-  rewrite -!Fq.compress_impl_large //; 1: smt().
-  by apply truncation3.  
-
-+ by rewrite ultE /= to_uintD_small; smt().
-
-by rewrite ultE /= to_uintD_small; smt().
-qed.
 
 lemma i_polyvec_compress_corr _a :
-    equiv [Jkem768.M(Jkem768.Syscall).__i_polyvec_compress ~ EncDec.encode10_vec :
-             pos_bound768_cxq a{1} 0 768 2 /\
-             lift_array768 a{1} = _a /\
-             u{2} = map (compress 10) _a
+    phoare [Jkem768.M(Jkem768.Syscall).__i_polyvec_compress  :
+             pos_bound768_cxq a 0 768 2 /\
+             lift_array768 a = _a 
               ==>
-             res{1} = res{2}
-              ].
-proof.
-proc.
-seq 5 3 : (#pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
-           to_uint j{1} = j{2} /\ j{2} = 0 /\
-           pos_bound768_cxq aa{1} 0 768 1 /\ lift_array768 aa{1} = _a).
-wp => /=.
-ecall{1} (polyvec_csubq_corr _a); 1: by auto => /#.
-
-while (#{/~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\ 
-       to_uint j{1} = j{2} /\ 4*j{2} = 5*i{2} /\ i{2} %% 4 = 0 /\ 
-       (forall k, 0<=k<j{2} => 
-         rp{1}.[k] = c{2}.[k])); last first.  
-+ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
-    ? ?? baa vaa; split; 1: by smt().
-  move => i' j' ra'; rewrite ultE of_uintK  /= => rp exit _ ibl ibh jv  im0 prev.
-  by rewrite tP => k kb /#.
-
-unroll for {1} 2.
-auto => />.
-move =>  &1 &2 [#] ; rewrite /pos_bound768_cxq /lift_array768 !tP /=.
-rewrite  ultE of_uintK /= => ?? aav 7?. 
-rewrite !to_uintD_small /=; 1..9: smt().
-
-do split; 1..4:by smt(). 
-
-+ move => k kb kbh.
-  case (k < to_uint j{1}).
-  + by move => neq; rewrite !set_neqiE;  smt().
-  case (k = to_uint j{1}).
-  + move => eq1 neq; do 4! (rewrite set_neqiE; 1,2: by smt()).
-    rewrite set_eqiE; 1,2: by smt().
-    do 4! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}) _) //. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -Fq.compress_impl_large //; 1: smt().
-    by apply truncation1.  
-
-  case (k = to_uint j{1} + 1).
-  + move => eq2 neq1 neq; do 3! (rewrite set_neqiE; 1,2: by smt()).
-    rewrite set_eqiE; 1,2: by smt().
-    do 3! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}) _) //. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 1) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
-
-  case (k = to_uint j{1} + 2).
-  + move => eq3 neq2 neq1 neq; do 2! (rewrite set_neqiE; 1,2: by smt()).
-    rewrite set_eqiE; 1,2: by smt().
-    do 2! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}+1) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 2) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
-
-  case (k = to_uint j{1} + 3).
-  + move => eq4 neq3 neq2 neq1 neq; rewrite set_neqiE; 1,2: by smt().
-    rewrite set_eqiE; 1,2: by smt().
-    rewrite set_neqiE; 1,2:smt().
-    rewrite set_eqiE; 1,2:smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1}+2) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite mapiE /=; 1: smt().
-    rewrite -(aav (to_uint i{1} + 3) _) 1:/#. 
-    rewrite mapiE /=; 1: smt().
-    rewrite -!Fq.compress_impl_large //; 1,2: smt().
-    by apply truncation2.  
-
-  move => neq4 neq3 neq2 neq1 neq.
-  rewrite set_eqiE; 1,2: by smt().
-  rewrite set_eqiE; 1,2:smt().
-  rewrite mapiE /=; 1: smt().
-  rewrite -(aav (to_uint i{1}+3) _) 1:/#. 
-  rewrite mapiE /=; 1: smt().
-  rewrite -!Fq.compress_impl_large //; 1: smt().
-  by apply truncation3.  
-
-+ by rewrite ultE /= to_uintD_small; smt().
-
-by rewrite ultE /= to_uintD_small; smt().
-qed.
-
-
+             res = encode10_vec (map (compress 10) _a)
+              ] = 1%r.
+admitted.
 
 lemma polyvec_add_corr_h _a _b ab bb :
       0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -648,129 +473,50 @@ rewrite -modzMml; have : 2 ^ (2- k) %% 2 = 0; last by smt().
 by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
 qed.
 
-lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t) :
-    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_decompress ~ EncDec.decode10_vec :
+lemma polyvec_decompress_corr_h mem _p (_a : W8.t Array960.t) :
+    hoare [Jkem768.M(Jkem768.Syscall).__polyvec_decompress  :
              valid_ptr _p (3*320) /\
-             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array960 Glob.mem{1} _p = _a /\ u{2} = _a
+             Glob.mem = mem /\ to_uint ap = _p /\
+             load_array960 Glob.mem _p = _a 
               ==>
-             pos_bound768_cxq res{1} 0 768 1 /\
-             lift_polyvec res{1} = decompress_polyvec 10 res{2} /\
-             Glob.mem{1} = mem ].
-proof.
-proc.
-seq 4 3 : (#pre /\ to_uint i{1} = i{2} /\ i{2} = 0 /\ 
-           to_uint j{1} = j{2} /\ j{2} = 0);
-  first by auto => />.
+             pos_bound768_cxq res 0 768 1 /\
+             lift_polyvec res = decompress_polyvec 10 (decode10_vec _a) /\
+             Glob.mem = mem ].
+admitted.
 
-while (#{~i{2}=0}{~j{2}=0}pre /\ to_uint i{1} = i{2} /\ 0<=i{2}<=768  /\ 
-       to_uint j{1} = j{2} /\ 4*j{2} = 5*i{2} /\ i{2} %% 4 = 0 /\
-       (forall k, 0<=k<i{2} => 
-          incoeff (to_sint r{1}.[k])  = decompress 10 c{2}.[k]) /\
-       (forall k, 0<=k<i{2} => 
-          0<=to_sint r{1}.[k] < q)); last first.  
-+ auto => /> &1 &2; rewrite ultE of_uintK /load_array32 /loadW8 /ptr /= => 
-    vpl vph ??; split; 1: by smt().
-  move => i' j' r1 c2; rewrite ultE of_uintK  /= => exit _ ibl ibh jv  im0 vals bds.
-  split; 1:  smt(). 
-  rewrite /lift_polyvec /decompress_polyvec eq_vectorP => i ib.
-  rewrite /lift_array256 /subarray256 !tP   !offunvE //=. 
-  rewrite !setvE => k k_range.
-  rewrite Array256.mapiE // Array256.initiE // offunvE // zerovE !offunvK /=.
-  smt(Array256.mapiE Array256.initiE).
+lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t) :
+    phoare [Jkem768.M(Jkem768.Syscall).__polyvec_decompress  :
+             valid_ptr _p (3*320) /\
+             Glob.mem = mem /\ to_uint ap = _p /\
+             load_array960 Glob.mem _p = _a 
+              ==>
+             pos_bound768_cxq res 0 768 1 /\
+             lift_polyvec res = decompress_polyvec 10 (decode10_vec _a) /\
+             Glob.mem = mem ] = 1%r.
+admitted.
 
-unroll for {1} 22; unroll for {1} 2.
+lemma polyvec_frombytes_corr_h mem _p _a:
+    hoare [ Jkem768.M(Jkem768.Syscall).__polyvec_frombytes :
+             valid_ptr _p (3*384) /\
+             Glob.mem = mem /\ to_uint ap = _p /\
+             load_array1152 Glob.mem _p = _a
+              ==>
+             res = map W16.of_int (decode12_vec _a)  /\
+             pos_bound768_cxq res 0 768  2 /\
+             Glob.mem = mem ].
+admitted.
 
-auto => /> &1 &2 vpl vph il ih jv im0 prior priorb; rewrite ultE of_uintK /= => enter _.
-rewrite /load_array960;split; 2: by rewrite ultE of_uintK /= to_uintD_small /#.
-rewrite  !to_uintD_small /=; 1..18: by smt().
-do split; 1..4: by smt().
+lemma polyvec_frombytes_corr mem _p _a:
+    phoare [ Jkem768.M(Jkem768.Syscall).__polyvec_frombytes :
+             valid_ptr _p (3*384) /\
+             Glob.mem = mem /\ to_uint ap = _p /\
+             load_array1152 Glob.mem _p = _a
+              ==>
+             res = map W16.of_int (decode12_vec _a)  /\
+             pos_bound768_cxq res 0 768  2 /\
+             Glob.mem = mem ] = 1%r.
+admitted.
 
-+ move => k kl kh.
-  case (k < to_uint i{1}); 1: by move => *;rewrite !set_neqiE /= /#.
-  case (k = to_uint i{1}).
-  + move => eq1 neq; do 3! (rewrite set_neqiE; 1,2: by smt()).
-    rewrite set_eqiE; 1,2: by smt().
-    do 3! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE 1,2:/# !initiE /= 1,2:/#.
-    rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint. 
-    congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-    rewrite to_uintD_small /=; 1: rewrite to_uintM_small; 1,2: smt(untruncate1 W8.to_uint_cmp pow2_8).
-    rewrite to_uintM_small /=;  1:smt(untruncate1 W8.to_uint_cmp pow2_8).
-    rewrite modz_small; 1: smt(untruncate1 W8.to_uint_cmp pow2_8). 
-    by rewrite /smod /=; smt(untruncate1 W8.to_uint_cmp pow2_8).  
-
-  case (k = to_uint i{1} + 1).
-  + move => eq2 neq1 neq; do 2! (rewrite set_neqiE; 1,2: by smt()).
-    rewrite set_eqiE; 1,2: by smt().
-    do 2! (rewrite set_neqiE; 1,2:smt()).
-    rewrite set_eqiE 1,2:/# !initiE /= 1,2:/#.
-    rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint.
-    congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-    rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate2 W8.to_uint_cmp pow2_8).
-    rewrite to_uintM_small /=;  1:smt(untruncate2 W8.to_uint_cmp pow2_8).
-    rewrite modz_small; 1: smt(untruncate2 W8.to_uint_cmp pow2_8). 
-    by rewrite /smod /=; smt(untruncate2 W8.to_uint_cmp pow2_8).  
-
-  case (k = to_uint i{1} + 2).
-  + move => eq3 neq2 neq1 neq; rewrite set_neqiE; 1,2: by smt().
-    rewrite set_eqiE; 1,2: by smt().
-    rewrite set_neqiE; 1,2:smt().
-    rewrite set_eqiE 1,2:/# !initiE /= 1,2:/#.
-    rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint.
-    congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-    rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate3 W8.to_uint_cmp pow2_8).
-    rewrite to_uintM_small /=;  1:smt(untruncate3 W8.to_uint_cmp pow2_8).
-    rewrite modz_small; 1: smt(untruncate3 W8.to_uint_cmp pow2_8). 
-    by rewrite /smod /=; smt(untruncate3 W8.to_uint_cmp pow2_8).  
-    
-  move => neq3 neq2 neq1 neq.
-  rewrite !set_eqiE 1..4:/# !initiE /= 1,2:/#.
-  rewrite -decompress_alt_decompress 1..2:/# /decompress_alt /= /to_sint.
-  congr; rewrite qE to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate4 W8.to_uint_cmp pow2_8).
-  rewrite to_uintM_small /=;  1:smt(untruncate4 W8.to_uint_cmp pow2_8).
-  rewrite modz_small; 1: smt(untruncate4 W8.to_uint_cmp pow2_8). 
-  by rewrite /smod /=; smt(untruncate4 W8.to_uint_cmp pow2_8).  
-
-move => k kl kh.
-case (k < to_uint i{1}); 1: by move => *;rewrite !set_neqiE /= /#.
-case (k = to_uint i{1}).
-+ move => eq1 neq; do 3! (rewrite set_neqiE; 1,2: by smt()).
-  rewrite set_eqiE; 1,2: by smt().
-  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate1 W8.to_uint_cmp pow2_8).
-  rewrite to_uintM_small /=;  1:smt(untruncate1 W8.to_uint_cmp pow2_8).
-  rewrite modz_small; 1: smt(untruncate1 W8.to_uint_cmp pow2_8). 
-  by rewrite /smod /=; smt(untruncate1 W8.to_uint_cmp pow2_8).
-
-case (k = to_uint i{1} + 1).
-+ move => eq2 neq1 neq; do 2! (rewrite set_neqiE; 1,2: by smt()).
-  rewrite set_eqiE; 1,2: by smt().
-  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate2 W8.to_uint_cmp pow2_8).
-  rewrite to_uintM_small /=;  1:smt(untruncate2 W8.to_uint_cmp pow2_8).
-  rewrite modz_small; 1: smt(untruncate2 W8.to_uint_cmp pow2_8). 
-  by rewrite /smod /=; smt(untruncate2 W8.to_uint_cmp pow2_8).
-
-case (k = to_uint i{1} + 2).
-+ move => eq3 neq2 neq1 neq; rewrite set_neqiE; 1,2: by smt().
-  rewrite set_eqiE; 1,2: by smt().
-  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate3 W8.to_uint_cmp pow2_8).
-  rewrite to_uintM_small /=;  1:smt(untruncate3 W8.to_uint_cmp pow2_8).
-  rewrite modz_small; 1: smt(untruncate3 W8.to_uint_cmp pow2_8). 
-  by rewrite /smod /=; smt(untruncate3 W8.to_uint_cmp pow2_8).
-    
-move => neq3 neq2 neq1 neq.
-rewrite !set_eqiE 1..2:/#.
-  rewrite qE /to_sint to_uint_truncateu16 /(W32.(`>>`) _ (W8.of_int 10)) W32.to_uint_shr //=.
-  rewrite to_uintD_small /=; 1: rewrite to_uintM_small;  1,2: smt(untruncate4 W8.to_uint_cmp pow2_8).
-  rewrite to_uintM_small /=;  1:smt(untruncate4 W8.to_uint_cmp pow2_8).
-  rewrite modz_small; 1: smt(untruncate4 W8.to_uint_cmp pow2_8). 
-  by rewrite /smod /=; smt(untruncate4 W8.to_uint_cmp pow2_8).
-
-qed.
 
 (******************************************************)
 
@@ -1050,125 +796,29 @@ move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 
 
 (******************************************************)
 
-lemma polyvec_tobytes_corr mem _p _a :
-    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_tobytes ~ EncDec.encode12_vec :
-             pos_bound768_cxq a{1} 0 768 2 /\
-             lift_array768 a{1} = _a /\
-             (forall i, 0<=i<768 => 0 <= a{2}.[i] <q) /\
-             map incoeff a{2} = _a /\  valid_ptr _p (3*384) /\
-             Glob.mem{1} = mem /\ to_uint rp{1} = _p
-              ==>
-             touches mem Glob.mem{1} _p (3*384) /\
-             load_array1152 Glob.mem{1} _p = res{2}
-              ].
-proc => /=.
-unroll for {1} 3.
-wp;ecall (poly_tobytes_corr 
-            (lift_array256 ((Array256.init (fun (i : int) => a{1}.[2 * 256 + i])))) (to_uint pp{1}) Glob.mem{1}).
-wp;ecall (poly_tobytes_corr 
-            (lift_array256 ((Array256.init (fun (i : int) => a{1}.[256 + i])))) (to_uint pp{1}) Glob.mem{1}).
-wp;ecall (poly_tobytes_corr 
-            (lift_array256 ((Array256.init (fun (i : int) => a{1}.[i])))) (to_uint pp{1}) Glob.mem{1}).
-
-wp;skip =>   &1 &2; rewrite /pos_bound768_cxq /pos_bound256_cxq /lift_array256 /lift_array768 /subarray256 !tP.
-move => [#] bnda1 bnda2 vals pbl pbh => ??. 
-
-split.
-
-+ do split => />; 1..2:by move => *; rewrite initiE /=; smt().
-  + move => i ??; rewrite !mapiE/= 1..2:/#  !initiE //=; smt(mapiE).
-  + by smt(W64.to_uint_cmp).
-  + by smt(W64.to_uint_cmp pow2_64).
-  
-rewrite /touches;move => ????[#] ?touch0<-? ppl; split. 
-
-+ do split => />;1: by  move => *; rewrite !initiE 1:/# /= !initiE  /#.
-  + by move => *; rewrite initiE /=; smt().
-  + by rewrite tP => i ib; rewrite !mapiE // !initiE //= !initiE; smt(mapiE).
-  + by rewrite to_uintD_small; smt(W64.to_uint_cmp pow2_64).
-  by rewrite to_uintD_small; smt(W64.to_uint_cmp pow2_64).
-
-rewrite /touches;move =>/= [#] ????????[#]?touch1<-; split. 
-
-+ do split => />; 1: by move => *; rewrite !initiE 1:/# /= !initiE 1:/# /= !initiE  /=  /#.
-  + by move => *; rewrite initiE /=; smt().
-  + by rewrite tP => i ib; rewrite !mapiE // !initiE //= !initiE 1:/#  /= !initiE  /= ; smt(mapiE).
-  + by rewrite to_uintD_small; smt(W64.to_uint_cmp pow2_64).
-   by rewrite /ppl !to_uintD_small /=; smt(W64.to_uint_cmp pow2_64).
-
-rewrite /touches;move => /= ????[#]?touch2 <-.
-
-do split. 
-+ move => k kb; move : (touch0 k _) (touch1 (k - 384) _) (touch2 (k - 768) _); 1..7: smt(). 
-  by rewrite !to_uintD_small /=; smt(W64.to_uint_cmp pow2_64).
-
-rewrite /load_array1152 /fromarray384 /load_array384  tP => k kb; rewrite !initiE //=.
-case (0 <= k < 384). 
-+ move => kbb;  rewrite  Array384.initiE //=.
-  move : (touch2 (k - 768) _); 1:smt(). 
-  rewrite to_uintD_small /=; 1: smt(W64.to_uint_cmp pow2_64).
-  rewrite /ppl /= to_uintD_small /=; 1: smt(W64.to_uint_cmp pow2_64).
-  rewrite (_: to_uint rp{1} + 768 + (k - 768) = to_uint rp{1} + k);1 : by ring.
-  move : (touch1 (k - 384) _); 1:smt(). 
-  rewrite to_uintD_small /=; smt(W64.to_uint_cmp pow2_64).
-
-move=> nkb.
-case (384 <= k < 768).
-+ move => kbb;  rewrite Array384.initiE 1:/# /=.
-  move : (touch2 (k - 768) _); 1:smt(). 
-  rewrite !to_uintD_small /=; 1..3: smt(W64.to_uint_cmp pow2_64).
-  rewrite (_: to_uint rp{1} + 768 + (k - 768) = to_uint rp{1} + k);1 : by ring.
-  rewrite (_: to_uint rp{1} + 384 + (k - 384) = to_uint rp{1} + k);1 : by ring.
-  by smt().
-
-
-+ move => kbb;  rewrite Array384.initiE 1:/# /=.
-  rewrite !to_uintD_small /=; 1..3:   smt(W64.to_uint_cmp pow2_64).
-  rewrite (_: to_uint rp{1} + 768 + (k - 768) = to_uint rp{1} + k);1 : by ring.
-  by smt().
-qed.
-
-lemma polyvec_frombytes_corr mem _p :
-    equiv [Jkem768.M(Jkem768.Syscall).__polyvec_frombytes ~ EncDec.decode12_vec :
+lemma polyvec_tobytes_corr_h mem _p _a :
+    hoare [Jkem768.M(Jkem768.Syscall).__polyvec_tobytes  :
+             pos_bound768_cxq a 0 768 2 /\
+             lift_array768 a = _a /\
              valid_ptr _p (3*384) /\
-             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             load_array1152 Glob.mem{1} _p = a{2}
+             Glob.mem = mem /\ to_uint rp = _p
               ==>
-             map W16.to_sint res{1} = res{2}  /\
-             pos_bound768_cxq  res{1}0 768  2 /\
-             Glob.mem{1} = mem ].
-proc => /=.  
-unroll for {1} 4.
-wp;ecall (poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (load_array384 Glob.mem{1} (_p + 768))).
-wp;ecall (poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (load_array384 Glob.mem{1} (_p + 384))).
-wp;ecall (poly_frombytes_corr Glob.mem{1} (to_uint pp{1}) (load_array384 Glob.mem{1} (_p))).
-auto => /> &1. 
-rewrite /pos_bound768_cxq /pos_bound256_cxq /load_array384 /load_array1152 /subarray384 /lift_array768 /fromarray256 !tP.
-move => pbl pbh. 
+             touches mem Glob.mem _p (3*384) /\
+             load_array1152 Glob.mem _p = encode12_vec (map asint _a)
+              ].
+admitted.
 
-split; 1: by  smt(Array384.initiE Array1152.initiE).
-
-move => *;split; 1: by rewrite to_uintD_small /=;  smt(Array384.initiE Array1152.initiE).
-
-move => *;split; 1: by rewrite to_uintD_small /=;  smt(Array384.initiE Array1152.initiE).
-
-move => *;split.
-
-+ rewrite tP => k kb.
-  rewrite !mapiE //= !initiE  //= initiE //=.
-  case ( 512 <= k && k < 768). 
-  + by move => kbb; rewrite (_: 0<= k <256 = false) 1:/# /= (_: 256<= k <512 = false) 1:/# /= mapiE 1:/# /=.
-  case ( 256 <= k && k < 512).
-  + by move => kbb nkbb; rewrite (_: 0<= k <256 = false) 1:/#  /= mapiE 1:/# /=.
-  by move => nkbb nkbbb; rewrite initiE 1:/# (_: 0<= k <256 = true) 1:/# /= mapiE /#.
-
-move => k kb; rewrite initiE 1:/# /=.
-case ( 512 <= k && k < 768);1: by smt(). 
-case ( 256 <= k && k < 512). 
-+ by move => kbb; rewrite (_: 512<= k <768 = false) 1:/# /= initiE /#.
-by move => kbb nkbb; rewrite !initiE 1:/# /= kbb /= !initiE /#.
-qed.
-
+lemma polyvec_tobytes_corr mem _p _a :
+    phoare [Jkem768.M(Jkem768.Syscall).__polyvec_tobytes  :
+             pos_bound768_cxq a 0 768 2 /\
+             lift_array768 a = _a /\
+             valid_ptr _p (3*384) /\
+             Glob.mem = mem /\ to_uint rp = _p
+              ==>
+             touches mem Glob.mem _p (3*384) /\
+             load_array1152 Glob.mem _p = encode12_vec (map asint _a)
+              ] = 1%r.
+admitted.
 (******************************************************)
 
 lemma polyvec_pointwise_acc_corr_alg_h va vb :

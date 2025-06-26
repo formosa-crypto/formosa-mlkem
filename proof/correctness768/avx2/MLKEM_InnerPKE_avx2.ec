@@ -20,7 +20,7 @@ require import Montgomery16.
 require import AVX2_Ops.
 require import MLKEM_keccak_ref MLKEM_keccak_avx2.
 require import MLKEM_genmatrix_avx2.
-
+require import W8extra.
 from CryptoSpecs require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE768 MLKEM768 Correctness768.
 
 import Serialization768 Symmetric768 VecMat768.

@@ -13,7 +13,6 @@ require import Fq_avx2.
 require import MLKEM_PolyVec.
 require import MLKEM_PolyVec_avx2_vec.
 require import NTT_avx2.
-require import MLKEM_avx2_encdec.
 require import MLKEMFCLib.
 require import MLKEM_avx2_auxlemmas.
 
@@ -33,7 +32,6 @@ import MLKEM_PolyVecAVXVec.
 import MLKEM_Poly.
 import MLKEM_Poly.
 import NTT_Avx2.
-import AVX2_cf.
 import KMatrix.
 
 lemma polvec_add_corr_h _a _b ab bb:

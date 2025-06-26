@@ -2570,7 +2570,9 @@ module M = {
     var r56:W256.t;
     var c:W64.t;
     var rc:W256.t;
+    var a_s:W256.t Array25.t;
     rC <- witness;
+    a_s <- witness;
     e <- witness;
     s_e <- witness;
     rC <- kECCAK1600_RC;
@@ -2581,10 +2583,16 @@ module M = {
     while ((c \ult (W64.of_int 24))) {
       rc <- (VPBROADCAST_4u64 rC.[(W64.to_uint c)]);
       e <@ _keccakf1600_4x_round (e, a, rc, r8, r56);
-      (a, e) <- (swap_ e a);
+      a_s <- a;
+      s_e <- e;
+      a <- a_s;
+      e <- s_e;
       rc <- (VPBROADCAST_4u64 rC.[((W64.to_uint c) + 1)]);
       a <@ _keccakf1600_4x_round (a, e, rc, r8, r56);
-      (a, e) <- (swap_ e a);
+      a_s <- a;
+      s_e <- e;
+      a <- a_s;
+      e <- s_e;
       c <- (c + (W64.of_int 2));
     }
     return a;

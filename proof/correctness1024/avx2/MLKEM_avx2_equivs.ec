@@ -5,7 +5,6 @@ from JazzEC require import Array1536 Array1408 Array1024 Array400 Array384 Array
 from JazzEC require import WArray512 WArray32 WArray16.
 
 require import AVX2_Ops W16extra.
-require import MLKEM_avx2_encdec.
 from JazzEC require import Jkem1024.
 from JazzEC require import Jkem1024_avx2.
 require import MLKEM_PolyVec_avx2_prevec.
@@ -32,7 +31,6 @@ import Fq_avx2.
 import NTT_Avx2.
 import MLKEM_Poly.
 import MLKEM_PolyVec.
-import AVX2_cf.
 
 import MLKEM_PolyAVX.
 import MLKEM_PolyvecAVX.

@@ -5,7 +5,7 @@ from JazzEC require import Array400 Array256 Array128 Array64 Array32 Array16 Ar
 from JazzEC require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
 from JazzEC require import Jkem768 Jkem768_avx2.
-require import MLKEM_Poly_avx2_prevec MLKEM_avx2_encdec MLKEM_avx2_auxlemmas MLKEMFCLib.
+require import MLKEM_Poly_avx2_prevec MLKEM_avx2_auxlemmas MLKEMFCLib.
 
 module Mvec = {
   proc shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {
@@ -797,8 +797,6 @@ module Mvec = {
 }.
 
 theory MLKEM_PolyAVXVec.
-
-import AVX2_cf.
 
 equiv eq_poly_add2:
   Mprevec.poly_add2 ~ Mvec.poly_add2: ={rp, bp} ==> ={res}.

@@ -341,7 +341,8 @@ case (i < n * (len*2)+len) => /> Hi3.
 + by rewrite ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#; do 3!congr; smt().
 case (i < n * (len * 2) + len + len) => />Hi4; last smt().
 rewrite (_:i%/len = n*2+1) => />;1: by smt().
-rewrite ifT 1:/# ifF 1:/# ifT 1:/# ifF 1:/#;do 3!congr;smt(). 
+rewrite ifT 1:/# ifF 1:/# ifT 1:/# ifF 1:/#;do 6!congr. 
+smt().
 qed.
 
 (* simpler definition that greatly speeds up proofs below *)
