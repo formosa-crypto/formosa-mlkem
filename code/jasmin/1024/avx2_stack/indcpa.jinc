@@ -137,7 +137,7 @@ fn __indcpa_enc(
   v  = __poly_reduce(v);
 
   () = #unspill(ct);
-  ct[0:MLKEM_POLYVECCOMPRESSEDBYTES] = __i_polyvec_compress(ct[0:MLKEM_POLYVECCOMPRESSEDBYTES], bp);
+  ct[0:MLKEM_POLYVECCOMPRESSEDBYTES+2] = __i_polyvec_compress(ct[0:MLKEM_POLYVECCOMPRESSEDBYTES+2], bp);
   ct[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v = _i_poly_compress(ct[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v);
 
   return ct;

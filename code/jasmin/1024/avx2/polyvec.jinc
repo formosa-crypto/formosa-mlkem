@@ -136,7 +136,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
 __polyvec_compress_1: same as previous function but writes to the stack
 */
 inline
-fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
+fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2]
 {
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx srlvqidx shufbidx;
