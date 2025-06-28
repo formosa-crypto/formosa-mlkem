@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap.
 
 from Jasmin require import JModel.
-from JazzEC require import Array16 Array32 Array128 Array256 Array400 Array1024 Array1408.
+from JazzEC require import Array16 Array32 Array128 Array256 Array400 Array1024 Array1408 Array1410.
 from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800 WArray1408.
 require import AVX2_Ops.
 from JazzEC require import Jkem1024_avx2.
@@ -438,7 +438,7 @@ qed.
 
 
 equiv veceq_polyvec_compress_1 :
-  Mvec.polyvec_compress_1 ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_compress_1: ={Glob.mem, rp, a} ==> ={Glob.mem, res}.
+  Mvec.polyvec_compress_1 ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_compress_1: ={Glob.mem, a} ==> ={Glob.mem} /\ res{1} = Array1408.init (fun i => res{2}.[i]).
 admitted.
 
 equiv veceq_polyvec_compress :
@@ -498,9 +498,9 @@ qed.
 
 
 equiv prevec_eq_polyvec_compress_1 :
-  Mprevec.polyvec_compress_1 ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_compress_1: ={rp, a, Glob.mem} ==> ={res, Glob.mem}.
+  Mprevec.polyvec_compress_1 ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_compress_1: ={a, Glob.mem} ==> ={Glob.mem} /\ res{1} = Array1408.init (fun i => res{2}.[i]).
 proof.
-  transitivity Mvec.polyvec_compress_1 (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, rp, a} ==> ={Glob.mem, res}).
+  transitivity Mvec.polyvec_compress_1 (={rp, a, Glob.mem} ==> ={res, Glob.mem}) (={Glob.mem, a} ==> ={Glob.mem} /\ res{1} = Array1408.init (fun i => res{2}.[i])).
   smt(). trivial.
   proc * => /=; call eq_polyvec_compress_1 => //=.
   apply veceq_polyvec_compress_1.

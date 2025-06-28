@@ -1,7 +1,7 @@
 require import AllCore IntDiv List.
 
 from Jasmin require import JModel.
-from JazzEC require import Array4 Array33 Array128  Array16 Array25 Array32 Array33 Array64 Array128 Array160 Array136 Array256 Array1024 Array1408 Array1536 Array4096 Array1568.
+from JazzEC require import Array4 Array33 Array128  Array16 Array25 Array32 Array33 Array64 Array128 Array160 Array136 Array256 Array1024 Array1408 Array1410 Array1536 Array4096 Array1568.
 from JazzEC require import WArray512 WArray256 WArray32 WArray33 WArray128 WArray160.
 
 require import List_extra.
@@ -1959,21 +1959,22 @@ transitivity {1} { r <@Jkem1024.M(Jkem1024.Syscall).__iindcpa_enc(ctp,msgp,pkp,n
 
 inline{1} 1; inline {2} 1. wp.
 
-seq 53 69 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
+seq 53 69 : (={Glob.mem} /\ Glob.mem{1} = mem /\
+     (forall k, 0 <= k < 1408 => ctp0{1}.[k] = ctp0{2}.[k]) /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
     lift_array256 v{1} = lift_array256 v{2}); last by
   exists *Glob.mem{1}; elim* => memm; call (compressequiv_1 memm); auto => />; smt(Array1568.tP Array1568.initiE).
 
-seq 51  67 : (={ctp0,Glob.mem} /\ Glob.mem{1} = mem /\
+seq 51  67 : (={Glob.mem} /\ Glob.mem{1} = mem /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
      pos_bound1024_cxq bp{1} 0 1024 2 /\
      pos_bound1024_cxq bp{2} 0 1024 2 /\
     lift_array256 v{1} = lift_array256 v{2} /\ 
-    lift_array1024 bp{1} = lift_array1024 bp{2}); last 
-  exists *Glob.mem{1}; elim* => memm; wp;call (compressequivvec_1 memm); auto => />; smt(Array1088.tP Array1088.initiE).
-
+    lift_array1024 bp{1} = lift_array1024 bp{2}); last  first.
+  exists *Glob.mem{1}; elim* => memm; wp;call (compressequivvec_1 memm); auto => />. 
+  by move => &1 &2?????? rr k *;rewrite !initiE 1,2:/# /= initiE /#.
 wp;conseq />.
 call (reduceequiv_noperm).
 ecall (polyvec_reduce_equiv_noperm (lift_array1024 bp{2})).

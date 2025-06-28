@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
-from JazzEC require import Array1536 Array1408 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8.
+from JazzEC require import Array1536 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8.
 from JazzEC require import WArray512 WArray32 WArray16.
 
 require import AVX2_Ops W16extra.
@@ -250,15 +250,16 @@ equiv compressequivvec_1 mem :
     lift_array1024 a{1} = lift_array1024 a{2} /\ 
     ={Glob.mem} /\ Glob.mem{1} = mem 
     ==> 
-    ={Glob.mem,res} /\  Glob.mem{1} = mem.
+    ={Glob.mem} /\  Glob.mem{1} = mem /\ res{2} = Array1408.init (fun i => res{1}.[i]).
 proof.
   transitivity MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_compress_1
-               (={rp, a, Glob.mem} ==> ={res, Glob.mem})
+               (={a, Glob.mem} ==> ={Glob.mem} /\ res{2} = Array1408.init (fun i => res{1}.[i]))
                (pos_bound1024_cxq a{1} 0 1024 2 /\
                 pos_bound1024_cxq a{2} 0 1024 2 /\
                 lift_array1024 a{1} = lift_array1024 a{2} /\ ={Glob.mem} /\ Glob.mem{1} = mem
                  ==>
-                ={Glob.mem, res} /\ Glob.mem{2} = mem); 1,2: smt().
+                ={Glob.mem, res} /\ Glob.mem{2} = mem); 
+        [ by move => &1 &2 ?; exists mem (witness,arg{1}.`2); smt() | by smt() | |]. 
     + symmetry. proc * => /=. call prevec_eq_polyvec_compress_1 => //=.
   transitivity EncDec_AVX2.encode11_opt_vec
                (a{2} = compress_polyvec 11  (lift_polyvec a{1}) /\
