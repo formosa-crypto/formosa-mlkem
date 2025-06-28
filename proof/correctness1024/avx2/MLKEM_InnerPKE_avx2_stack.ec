@@ -6,7 +6,7 @@ require import MLKEM_InnerPKE_avx2.
 
 from Jasmin require import JModel_x86.
 
-from JazzEC require import Array32 Array33 Array64 Array148 Array256 Array1024 Array1408 Array128 Array160 Array1088 Array1536 Array1568 Array4096 Array3168.
+from JazzEC require import Array32 Array33 Array64 Array148 Array256 Array1024 Array1408 Array1410 Array128 Array160 Array1088 Array1536 Array1568 Array4096 Array3168.
 from JazzEC require import Array8 WArray32 WArray33 Array300 WArray64 WArray1568 WArray3168.
 
 from CryptoSpecs require import MLKEM1024 InnerPKE1024.
@@ -123,7 +123,7 @@ proc __indcpa_keypair(pk : W8.t Array1568.t, sk : W8.t Array3168.t, randomnessp 
     var aux_0 : W16.t Array256.t;
     var aux_1 : W16.t Array256.t;
     var aux_2 : W16.t Array256.t;
-    var aux_3 : W8.t Array1408.t;
+    var aux_3 : W8.t Array1410.t;
     var aux_4 : W8.t Array160.t;
     var inc : int;
     var pkpv : W16.t Array1024.t;
@@ -207,8 +207,8 @@ proc __indcpa_keypair(pk : W8.t Array1568.t, sk : W8.t Array3168.t, randomnessp 
     v <@ Jkem1024_avx2.M(Syscall)._poly_add2(v, k);
     bp <@ Jkem1024_avx2.M(Syscall).__polyvec_reduce(bp);
     v <@ Jkem1024_avx2.M(Syscall).__poly_reduce(v);
-    aux_3 <@ M.__i_polyvec_compress(Array1408.init (fun (i : int) => ct.[0 + i]), bp);
-    ct <- Array1568.init (fun (i : int) => if 0 <= i < 0 + 1408 then aux_3.[i - 0] else ct.[i]);
+    aux_3 <@ M.__i_polyvec_compress(Array1410.init (fun (i : int) => ct.[0 + i]), bp);
+    ct <- Array1568.init (fun (i : int) => if 0 <= i < 0 + 1410 then aux_3.[i - 0] else ct.[i]);
     (aux_4, aux) <@ M._i_poly_compress(Array160.init (fun (i : int) => ct.[4 * 352 + i]), v);
     ct <- Array1568.init (fun (i : int) => if 4 * 352 <= i < 4 * 352 + 160 then aux_4.[i - 4 * 352] else ct.[i]);
     v <- aux;

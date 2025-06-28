@@ -7,10 +7,10 @@ import SLH64.
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
 Array32 Array33 Array64 Array128 Array160 Array224 Array256 Array400 Array536
-Array800 Array1024 Array1408 Array1568 Array2048 Array2144 Array4096 WArray1
+Array800 Array1024 Array1410 Array1568 Array2048 Array2144 Array4096 WArray1
 WArray2 WArray4 WArray8 WArray16 WArray32 WArray33 WArray64 WArray128
 WArray160 WArray192 WArray200 WArray224 WArray256 WArray512 WArray536
-WArray800 WArray1408 WArray1568 WArray2048 WArray2144 WArray8192.
+WArray800 WArray1410 WArray1568 WArray2048 WArray2144 WArray8192.
 
 abbrev gen_matrix_indexes =
 ((Array64.of_list witness)
@@ -9385,8 +9385,8 @@ module M(SC:Syscall_t) = {
     }
     return ();
   }
-  proc __polyvec_compress_1 (rp:W8.t Array1408.t, a:W16.t Array1024.t) : 
-  W8.t Array1408.t = {
+  proc __polyvec_compress_1 (rp:W8.t Array1410.t, a:W16.t Array1024.t) : 
+  W8.t Array1410.t = {
     var inc:int;
     var x16p:W16.t Array16.t;
     var v:W256.t;
@@ -9442,14 +9442,14 @@ module M(SC:Syscall_t) = {
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
       t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       rp <-
-      (Array1408.init
-      (WArray1408.get8
-      (WArray1408.set128_direct (WArray1408.init8 (fun i_0 => rp.[i_0]))
+      (Array1410.init
+      (WArray1410.get8
+      (WArray1410.set128_direct (WArray1410.init8 (fun i_0 => rp.[i_0]))
       (22 * i) t0)));
       rp <-
-      (Array1408.init
-      (WArray1408.get8
-      (WArray1408.set64_direct (WArray1408.init8 (fun i_0 => rp.[i_0]))
+      (Array1410.init
+      (WArray1410.get8
+      (WArray1410.set64_direct (WArray1410.init8 (fun i_0 => rp.[i_0]))
       ((22 * i) + 16) (truncateu64 t1))));
       i <- (i + 1);
     }
@@ -10265,7 +10265,7 @@ module M(SC:Syscall_t) = {
     var aux_0:W16.t Array256.t;
     var aux_1:W16.t Array256.t;
     var aux_2:W16.t Array256.t;
-    var aux_3:W8.t Array1408.t;
+    var aux_3:W8.t Array1410.t;
     var aux_4:W8.t Array160.t;
     var pkpv:W16.t Array1024.t;
     var i:W64.t;
@@ -10403,12 +10403,12 @@ module M(SC:Syscall_t) = {
     v <@ _poly_add2 (v, k);
     bp <@ __polyvec_reduce (bp);
     v <@ __poly_reduce (v);
-    aux_3 <@ __polyvec_compress_1 ((Array1408.init
+    aux_3 <@ __polyvec_compress_1 ((Array1410.init
                                    (fun i_0 => ctp.[(0 + i_0)])),
     bp);
     ctp <-
     (Array1568.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 1408)) then aux_3.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 1410)) then aux_3.[(i_0 - 0)] else 
                 ctp.[i_0]))
     );
     (aux_4, aux) <@ _poly_compress_1 ((Array160.init

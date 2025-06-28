@@ -7,11 +7,11 @@ import SLH64.
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
 Array32 Array33 Array64 Array128 Array160 Array192 Array196 Array224 Array256
-Array384 Array396 Array400 Array536 Array800 Array1024 Array1408 Array1536
+Array384 Array396 Array400 Array536 Array800 Array1024 Array1410 Array1536
 Array1568 Array1600 Array2048 Array2144 Array3168 Array4096 WArray1 WArray2
 WArray4 WArray8 WArray16 WArray32 WArray33 WArray64 WArray128 WArray160
 WArray192 WArray200 WArray224 WArray256 WArray384 WArray512 WArray536
-WArray800 WArray1408 WArray1536 WArray1568 WArray1600 WArray2048 WArray2144
+WArray800 WArray1410 WArray1536 WArray1568 WArray1600 WArray2048 WArray2144
 WArray3168 WArray8192.
 
 abbrev gen_matrix_indexes =
@@ -9038,8 +9038,8 @@ module M = {
     }
     return r;
   }
-  proc __i_polyvec_compress (rp:W8.t Array1408.t, a:W16.t Array1024.t) : 
-  W8.t Array1408.t = {
+  proc __i_polyvec_compress (rp:W8.t Array1410.t, a:W16.t Array1024.t) : 
+  W8.t Array1410.t = {
     var inc:int;
     var x16p:W16.t Array16.t;
     var v:W256.t;
@@ -9095,14 +9095,14 @@ module M = {
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
       t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       rp <-
-      (Array1408.init
-      (WArray1408.get8
-      (WArray1408.set128_direct (WArray1408.init8 (fun i_0 => rp.[i_0]))
+      (Array1410.init
+      (WArray1410.get8
+      (WArray1410.set128_direct (WArray1410.init8 (fun i_0 => rp.[i_0]))
       (22 * i) t0)));
       rp <-
-      (Array1408.init
-      (WArray1408.get8
-      (WArray1408.set64_direct (WArray1408.init8 (fun i_0 => rp.[i_0]))
+      (Array1410.init
+      (WArray1410.get8
+      (WArray1410.set64_direct (WArray1410.init8 (fun i_0 => rp.[i_0]))
       ((22 * i) + 16) (truncateu64 t1))));
       i <- (i + 1);
     }
@@ -9787,7 +9787,7 @@ module M = {
     var aux_0:W16.t Array256.t;
     var aux_1:W16.t Array256.t;
     var aux_2:W16.t Array256.t;
-    var aux_3:W8.t Array1408.t;
+    var aux_3:W8.t Array1410.t;
     var aux_4:W8.t Array160.t;
     var inc:int;
     var pkpv:W16.t Array1024.t;
@@ -9920,11 +9920,11 @@ module M = {
     bp <@ __polyvec_reduce (bp);
     v <@ __poly_reduce (v);
     (* Erased call to unspill *)
-    aux_3 <@ __i_polyvec_compress ((Array1408.init (fun i => ct.[(0 + i)])),
+    aux_3 <@ __i_polyvec_compress ((Array1410.init (fun i => ct.[(0 + i)])),
     bp);
     ct <-
     (Array1568.init
-    (fun i => (if (0 <= i < (0 + 1408)) then aux_3.[(i - 0)] else ct.[i])));
+    (fun i => (if (0 <= i < (0 + 1410)) then aux_3.[(i - 0)] else ct.[i])));
     (aux_4, aux) <@ _i_poly_compress ((Array160.init
                                       (fun i => ct.[((4 * 352) + i)])),
     v);
