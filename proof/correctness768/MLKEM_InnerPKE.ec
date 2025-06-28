@@ -1474,26 +1474,32 @@ case (0<=i < size (decode n l)) =>  H.
 smt(nth_out StdOrder.IntOrder.expr_gt0).
 qed.
 
-lemma ofipolyvec_lift v :
-  all (fun i => 0 <= i < 32768) v =>
-  ofipolyvec v = lift_polyvec (map W16.of_int v).
+lemma ofipolyvec_lift vi vw :
+  all (fun i => 0 <= i < 32768) vi =>
+  lift_array768 vw = map incoeff vi =>
+  ofipolyvec vi = lift_polyvec vw.
 rewrite allP /= => ?.
+rewrite /lift_array768 tP => H.
 rewrite /ofipolyvec /lift_polyvec !setvE /= eq_vectorP => r rb.
 rewrite !offunvE 1,2:/# /= !offunvK /vclamp /= /subarray256 /lift_array256.
 case(2 = r). 
 + move => r0; rewrite r0 /=. 
   rewrite tP => k kb; rewrite !mapiE 1,2:/#  /= !initiE 1,2:/# /=.
-  rewrite mapiE 1:/# /= of_sintK /= modz_small 1:/# /W16.smod /= /#.
+  have := H (256*r+k) _;1:smt().
+  rewrite !mapiE /#. 
 case(1 = r). 
 + move => r0?; rewrite r0 /= ifT 1:/#. 
   rewrite tP => k kb; rewrite !mapiE 1,2:/#  /= !initiE 1,2:/# /=.
-  rewrite mapiE 1:/# /= of_sintK /= modz_small 1:/# /W16.smod /= /#.
+  have := H (256*r+k) _;1:smt().
+  rewrite !mapiE /#. 
 move => *.
 have -> /= : r= 0 by smt(). 
-rewrite !ifT 1,2:/#.
+rewrite !ifT 1..2:/#.
 rewrite tP => k kb; rewrite !mapiE 1,2:/#  /= !initiE 1,2:/# /=.
-rewrite mapiE 1:/# /= of_sintK /= modz_small 1:/# /W16.smod /= /#.
+have := H (256*r+k) _;1:smt().
+rewrite !mapiE /#. 
 qed.
+
 
 lemma mlkem_correct_enc mem _ctp _pkp : 
    equiv [Jkem768.M(Jkem768.Syscall).__indcpa_enc ~ InnerPKE768.enc_derand: 
@@ -1539,15 +1545,14 @@ swap {2} 5 -4.
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ that{2} = lift_polyvec pkpv{1} /\
               signed_bound768_cxq pkpv{1} 0 768 2). 
-wp; ecall {1} (polyvec_frombytes_corr Glob.mem{1} _pkp (load_array1152 Glob.mem{1} _pkp)).
+wp; ecall {1} (polyvec_frombytes_corr Glob.mem{1} _pkp).
 + auto => />  &1 ????; split; 1: by smt().
-  move => ??rbound;split;last by smt().
+  move => ????rbound;split;last by smt().
   pose xx := (load_array1152 mem (to_uint pkp{1})).
-  apply ofipolyvec_lift.
-  move : rbound; rewrite allP /pos_bound768_cxq /bpos16 => rbound.
-  move => k kb; have := rbound k kb;rewrite mapiE 1:/# /= /decode12_vec !get_of_list 1,2:/#.
-  have /=? := decode_rng (BytesToBits (to_list (load_array1152 mem (to_uint pkp{1})))) 12 k.
-  rewrite of_sintK /smod /= !modz_small /#. 
+  apply ofipolyvec_lift;last by smt().
+  move : rbound; rewrite allP /pos_bound1024_cxq /bpos16 => rbound.
+  move => k kb; have := rbound k kb. rewrite /= /decode12_vec !get_of_list 1:/#.
+  have /=? /#:= decode_rng (BytesToBits (to_list (load_array1152 mem (to_uint pkp{1})))) 12 k.
 
 seq 4 0 : (#{/~pkp{1}}pre /\ rho{2} = publicseed{1}). 
 while {1} (valid_ptr _pkp (3*384 + 32)  /\ _pkp + 1152 + to_uint i{1} * 8 = to_uint pkp0{1} /\ 
@@ -1852,15 +1857,14 @@ swap {2} 5 -4.
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ that{2} = lift_polyvec pkpv{1} /\
               signed_bound768_cxq pkpv{1} 0 768 2). 
-wp; ecall {1} (polyvec_frombytes_corr Glob.mem{1} _pkp (load_array1152 mem _pkp)).
+wp; ecall {1} (polyvec_frombytes_corr Glob.mem{1} _pkp).
 + auto => />  &1 ??; split; 1: by smt().
-  move => ??rbound;split;last by smt().
+  move => ????rbound;split;last by smt().
   pose xx := (load_array1152 mem (to_uint pkp{1})).
-  apply ofipolyvec_lift.
-  move : rbound; rewrite allP /pos_bound768_cxq /bpos16 => rbound.
-  move => k kb; have := rbound k kb;rewrite mapiE 1:/# /= /decode12_vec !get_of_list 1,2:/#.
-  have /=? := decode_rng (BytesToBits (to_list (load_array1152 mem (to_uint pkp{1})))) 12 k.
-  rewrite of_sintK /smod /= !modz_small /#. 
+  apply ofipolyvec_lift;last by smt().
+  move : rbound; rewrite allP /pos_bound1024_cxq /bpos16 => rbound.
+  move => k kb; have := rbound k kb. rewrite /= /decode12_vec !get_of_list 1:/#.
+  have /=? /#:= decode_rng (BytesToBits (to_list (load_array1152 mem (to_uint pkp{1})))) 12 k.
 
 
 seq 4 0 : (#{/~pkp{1}}pre /\ rho{2} = publicseed{1}). 
@@ -1939,8 +1943,7 @@ seq 18 3 : (u{2} = lift_polyvec bp0{1} /\ v{2} = lift_array256 v{1} /\
 
 wp; ecall{1}(i_poly_compress_corr (lift_array256 v{1})).
 wp; ecall{1}(i_polyvec_compress_corr (lift_array768 bp0{1}) ).
-auto => /> &1 &2; rewrite /signed_bound_cxq /signed_bound768_cxq.
-move => t1 rr1 ?. 
+auto => /> &1?? t1 rr1. 
 rewrite tP => k kb;rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
 case (0<=k<960) => *.
 + rewrite ifF 1:/#;do congr.
@@ -2145,7 +2148,7 @@ swap {2} [3..4] -1.
 swap {1} 6 -4.
 seq 2 3 : (#pre /\ u{2} = lift_polyvec bp{1} /\
     signed_bound768_cxq bp{1} 0 768 2).
-+ wp; ecall{1}(polyvec_decompress_corr Glob.mem{1} _ctp c1{2});
++ wp; ecall{1}(polyvec_decompress_corr Glob.mem{1} _ctp);
     1: by auto => /> /#. 
 
 swap {2} [2..3] -1.
@@ -2159,14 +2162,14 @@ swap {1} 2 -1.
 swap {1} 4 -2.
 seq 2 3 : (#pre /\ s{2} = lift_polyvec skpv{1} /\
       signed_bound768_cxq skpv{1} 0 768 2). 
-+ wp; ecall{1}(polyvec_frombytes_corr Glob.mem{1} (to_uint skp{1}) (load_array1152 Glob.mem{1} _skp)).
-  auto => /> &1 &2 ???????rbound; split; 2: smt().
++ wp; ecall{1}(polyvec_frombytes_corr Glob.mem{1} (to_uint skp{1})).
+  auto => /> &1 &2 ?????????rbound; split; 2: smt().
   pose xx := (load_array1152 mem (to_uint skp{1})).
-  apply ofipolyvec_lift.
+  apply ofipolyvec_lift;2:smt().
   move : rbound; rewrite allP /pos_bound768_cxq /bpos16 => rbound.
-  move => k kb; have := rbound k kb;rewrite mapiE 1:/# /= /decode12_vec !get_of_list 1,2:/#.
-  have /=? := decode_rng (BytesToBits (to_list (load_array1152 mem (to_uint skp{1})))) 12 k.
-  rewrite of_sintK /smod /= !modz_small /#. 
+  move => k kb; have := rbound k kb;rewrite  /= /decode12_vec !get_of_list 1:/#.
+  have /=?/# := decode_rng (BytesToBits (to_list (load_array1152 mem (to_uint skp{1})))) 12 k.
+   
 
 swap {1} 3 -2.
 seq 1 0 : (#{/~u{2} = lift_polyvec bp{1}}pre /\ 

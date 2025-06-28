@@ -103,6 +103,26 @@ equiv compressequiv mem _p :
     ={Glob.mem} /\  touches mem Glob.mem{1} _p 128.
 admitted.
 
+lemma polyvec_frombytes_equiv :
+    equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_frombytes ~Jkem768.M(Jkem768.Syscall).__polyvec_frombytes :
+             valid_ptr (W64.to_uint ap{1}) (3*384) /\
+             ={Glob.mem,ap} ==>
+             lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\
+             pos_bound768_cxq res{1} 0 768 2 /\
+             pos_bound768_cxq res{2} 0 768 2 ].
+admitted.
+
+lemma polyvec_tobytes_equiv :
+    forall (_p : int),
+    equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_tobytes ~Jkem768.M(Jkem768.Syscall).__polyvec_tobytes :
+             _p = to_uint rp{1} /\
+             valid_ptr (W64.to_uint rp{1}) (3*384) /\
+             pos_bound768_cxq a{1} 0 768 2 /\
+             pos_bound768_cxq a{2} 0 768 2 /\
+             lift_array768 a{1} = nttunpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
+admitted.
+
+
 lemma subequiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
@@ -474,16 +494,6 @@ equiv tomsgequiv_noperm  :
     pos_bound256_cxq a{1} 0 256 2 /\ 
     pos_bound256_cxq a{2} 0 256 2 ==>
     res{1}.`1 = res{2}.`1.
-admitted.
-
-lemma polyvec_tobytes_equiv :
-    forall (_p : int),
-    equiv [Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_tobytes ~Jkem768.M(Jkem768.Syscall).__polyvec_tobytes :
-             _p = to_uint rp{1} /\
-             valid_ptr (W64.to_uint rp{1}) (3*384) /\
-             pos_bound768_cxq a{1} 0 768 2 /\
-             pos_bound768_cxq a{2} 0 768 2 /\
-             lift_array768 a{1} = nttunpackv (lift_array768 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
 admitted.
 
 lemma polyvec_add2_equiv  (ab bb : int):

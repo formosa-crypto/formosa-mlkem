@@ -473,48 +473,44 @@ rewrite -modzMml; have : 2 ^ (2- k) %% 2 = 0; last by smt().
 by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
 qed.
 
-lemma polyvec_decompress_corr_h mem _p (_a : W8.t Array960.t) :
+lemma polyvec_decompress_corr_h mem _p :
     hoare [Jkem768.M(Jkem768.Syscall).__polyvec_decompress  :
              valid_ptr _p (3*320) /\
-             Glob.mem = mem /\ to_uint ap = _p /\
-             load_array960 Glob.mem _p = _a 
+             Glob.mem = mem /\ to_uint ap = _p 
               ==>
              pos_bound768_cxq res 0 768 1 /\
-             lift_polyvec res = decompress_polyvec 10 (decode10_vec _a) /\
+             lift_polyvec res = decompress_polyvec 10 (decode10_vec (load_array960 mem _p)) /\
              Glob.mem = mem ].
 admitted.
 
-lemma polyvec_decompress_corr mem _p (_a : W8.t Array960.t) :
+lemma polyvec_decompress_corr mem _p :
     phoare [Jkem768.M(Jkem768.Syscall).__polyvec_decompress  :
              valid_ptr _p (3*320) /\
-             Glob.mem = mem /\ to_uint ap = _p /\
-             load_array960 Glob.mem _p = _a 
+             Glob.mem = mem /\ to_uint ap = _p 
               ==>
              pos_bound768_cxq res 0 768 1 /\
-             lift_polyvec res = decompress_polyvec 10 (decode10_vec _a) /\
+             lift_polyvec res = decompress_polyvec 10 (decode10_vec (load_array960 mem _p)) /\
              Glob.mem = mem ] = 1%r.
 admitted.
 
-lemma polyvec_frombytes_corr_h mem _p _a:
+lemma polyvec_frombytes_corr_h mem _p :
     hoare [ Jkem768.M(Jkem768.Syscall).__polyvec_frombytes :
              valid_ptr _p (3*384) /\
-             Glob.mem = mem /\ to_uint ap = _p /\
-             load_array1152 Glob.mem _p = _a
+             Glob.mem = mem /\ to_uint ap = _p 
               ==>
-             res = map W16.of_int (decode12_vec _a)  /\
+             lift_array768 res = map incoeff (decode12_vec (load_array1152 mem _p))  /\
              pos_bound768_cxq res 0 768  2 /\
              Glob.mem = mem ].
 admitted.
 
-lemma polyvec_frombytes_corr mem _p _a:
+lemma polyvec_frombytes_corr mem _p :
     phoare [ Jkem768.M(Jkem768.Syscall).__polyvec_frombytes :
              valid_ptr _p (3*384) /\
-             Glob.mem = mem /\ to_uint ap = _p /\
-             load_array1152 Glob.mem _p = _a
+             Glob.mem = mem /\ to_uint ap = _p 
               ==>
-             res = map W16.of_int (decode12_vec _a)  /\
+             lift_array768 res = map incoeff (decode12_vec (load_array1152 mem _p))  /\
              pos_bound768_cxq res 0 768  2 /\
-             Glob.mem = mem ] = 1%r.
+             Glob.mem = mem] = 1%r.
 admitted.
 
 

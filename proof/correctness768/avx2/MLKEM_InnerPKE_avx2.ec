@@ -329,6 +329,8 @@ rewrite to_uintD_small /=.
 by rewrite E1 E2 /#.
 qed.
 
+
+abbrev ru_ones_s = W8.of_int 1.
 lemma aux_coef_pos b:
  to_uint (mask33u8 `&` (mask55u8 `&` b  + mask55u8 `&` (b `>>` ru_ones_s)))
  = b2i b.[0] + b2i b.[1] + 16 * (b2i b.[4] + b2i b.[5]).
