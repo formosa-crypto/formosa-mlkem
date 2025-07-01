@@ -30,7 +30,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
 
     c = t[0];
     c &= 0xff;
-    (u8)[rp + j] = c;
+    [:u8 rp + j] = c;
     j += 1;
 
     b = t[0];
@@ -38,7 +38,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
     c = t[1];
     c <<= 2;
     c |= b;
-    (u8)[rp + j] = c;
+    [:u8 rp + j] = c;
     j += 1;
 
     b = t[1];
@@ -46,7 +46,7 @@ fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
     c = t[2];
     c <<= 4;
     c |= b;
-    (u8)[rp + j] = c;
+    [:u8 rp + j] = c;
     j += 1;
 
     b = t[2];
@@ -54,11 +54,11 @@ fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
     c = t[3];
     c <<= 6;
     c |= b;
-    (u8)[rp + j] = c;
+    [:u8 rp + j] = c;
     j += 1;
 
     t[3] >>= 2;
-    (u8)[rp + j] = t[3];
+    [:u8 rp + j] = t[3];
     j += 1;
   }
 }
@@ -143,7 +143,7 @@ fn __polyvec_decompress(reg u64 ap) -> stack u16[MLKEM_VECN]
   {
     for k = 0 to 5
     {
-      t[k] = (32u)(u8)[ap + j];
+      t[k] = (32u)[:u8 ap + j];
       j += 1;
     }
 

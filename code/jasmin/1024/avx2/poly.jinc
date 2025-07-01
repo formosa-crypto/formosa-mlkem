@@ -29,18 +29,18 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
   a = _poly_csubq(a);
 
   x16p = jvx16;
-  v = x16p[u256 0];
+  v = x16p[:u256 0];
   shift1 = #VPBROADCAST_16u16(pc_shift1_s);
   mask = #VPBROADCAST_16u16(pc_mask_s);
   shift2 = #VPBROADCAST_16u16(pc_shift2_s);
   shift3 = #VPBROADCAST_8u32(pc_shift3_s);
   sllvdidx = #VPBROADCAST_4u64(pc_sllvdidx_s);
-  shufbidx = pc_shufbidx_s[u256 0];
+  shufbidx = pc_shufbidx_s[:u256 0];
 
   for i = 0 to MLKEM_N/32
   {
-    f0 = a[u256 2*i];
-    f1 = a[u256 2*i + 1];
+    f0 = a[:u256 2*i];
+    f1 = a[:u256 2*i + 1];
     f0 = #VPMULH_16u16(f0, v);
     f1 = #VPMULH_16u16(f1, v);
     f0 = #VPMULHRS_16u16(f0, shift1);
@@ -56,8 +56,8 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
     t0 = (128u)f0;
     t1 = #VEXTRACTI128(f0, 1);
     t0 = #BLENDV_16u8(t0, t1, (128u)shufbidx);
-    rp.[u128 20*i] = t0;
-    rp.[u32 20*i + 16] = (32u)t1;
+    rp.[:u128 20*i] = t0;
+    rp.[:u32 20*i + 16] = (32u)t1;
   }
 
   return rp, a;
@@ -90,17 +90,17 @@ fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg ptr u8 [MLKEM_POLYCOMPRES
   stack u128 sh;
 
   x16p = jqx16;
-  q = x16p[u256 0];
-  shufbidx = pd_jshufbidx[u256 0];
-  mask = pd_mask_s[u256 0];
-  shift = pd_shift_s[u256 0];
+  q = x16p[:u256 0];
+  shufbidx = pd_jshufbidx[:u256 0];
+  mask = pd_mask_s[:u256 0];
+  shift = pd_shift_s[:u256 0];
 
   f = #set0_256();
 
   for i = 0 to MLKEM_N/16
   {
-    t = (128u)a.[u64 10*i];
-    ti = (16u)a.[u16 10*i + 8];
+    t = (128u)a.[:u64 10*i];
+    ti = (16u)a.[:u16 10*i + 8];
     t = #VPINSR_8u16(t, ti, 4);
     sh = t;
     f = #VPBROADCAST_2u128(sh);
@@ -109,7 +109,7 @@ fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg ptr u8 [MLKEM_POLYCOMPRES
     f = #VPAND_256(f, mask);
     f = #VPMULL_16u16(f, shift);
     f = #VPMULHRS_16u16(f, q);
-    rp[u256 i] = f;
+    rp[:u256 i] = f;
   }
 
   return rp;

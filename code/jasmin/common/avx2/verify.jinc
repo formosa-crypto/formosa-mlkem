@@ -21,8 +21,8 @@ fn __verify(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_INDCPA
 
   for i = 0 to MLKEM_INDCPA_CIPHERTEXTBYTES/32
   {
-    f = ctpc.[u256 32*i];
-    g = ct.[u256 32*i];
+    f = ctpc.[:u256 32*i];
+    g = ct.[:u256 32*i];
     f = #VPXOR_256(f, g);
     h = #VPOR_256(h, f);
   }
@@ -54,10 +54,10 @@ fn __cmov(reg ptr u8[MLKEM_SYMBYTES] dst, reg ptr u8[MLKEM_SYMBYTES] src, reg u6
 
   m = #VPBROADCAST_4u64(scnd);
 
-  f = src.[u256 0];
-  g = dst.[u256 0];
+  f = src.[:u256 0];
+  g = dst.[:u256 0];
   f = #BLENDV_32u8(f, g, m);
-  dst.[u256 0] = f;
+  dst.[:u256 0] = f;
 
   return dst;
 }

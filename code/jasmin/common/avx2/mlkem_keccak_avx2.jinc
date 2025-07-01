@@ -278,7 +278,7 @@ fn _shake128_next_state
  reg u256[7] st;
  reg ptr u64[25] pst;
  reg u64 offset;
- pst = buf[u64 2*(168/8) : 25];
+ pst = buf[:u64 2*(168/8) : 25];
  st = __state_from_pstate_avx2(pst);
  st = _keccakf1600_avx2(st);
  offset = 2*168;
