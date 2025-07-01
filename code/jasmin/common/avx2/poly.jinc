@@ -294,16 +294,12 @@ _poly_frombytes: unpacks a polynomial encoded as byte array (12bits per coeffici
    142; 158; 174; 190; 206; 222; 238; 254; 143; 159; 175; 191; 207; 223; 239; 255].
 
 
-requires: ap to point to 384 byte valid region
-
 ensures:
-    memory unchanged (writes to stack)
     every output coefficient is in the range [0..2*q)
 
 */
 
-fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
-{
+fn _i_poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) -> reg ptr u16[MLKEM_N] {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 tt mask;
   reg ptr u16[16] maskp;
@@ -313,12 +309,12 @@ fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
 
   for i = 0 to 2
   {
-    t0 = (u256)[ap + 192*i];
-    t1 = (u256)[ap + 192*i + 32];
-    t2 = (u256)[ap + 192*i + 64];
-    t3 = (u256)[ap + 192*i + 96];
-    t4 = (u256)[ap + 192*i + 128];
-    t5 = (u256)[ap + 192*i + 160];
+    t0 = ap.[u256 192*i];
+    t1 = ap.[u256 192*i + 32];
+    t2 = ap.[u256 192*i + 64];
+    t3 = ap.[u256 192*i + 96];
+    t4 = ap.[u256 192*i + 128];
+    t5 = ap.[u256 192*i + 160];
 
     tt, t3 = __shuffle8(t0, t3);
     t0, t4 = __shuffle8(t1, t4);
@@ -375,8 +371,7 @@ fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
   }
 
   return rp;
-}
-
+ }
 
 /*
 _poly_frommont: takes a polynomial where all
@@ -420,12 +415,11 @@ fn _poly_frommont(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 }
 
 /*
-_poly_frommsg_1 : unpacks a polynomial encoded as byte array (1bit per coefficient)
+_poly_frommsg : unpacks a polynomial encoded as byte array (1bit per coefficient)
 
 requires: no requires
 
 ensures:
-    memory unchanged (writes to stack)
     every output coefficient is in the range [0..q)
 
 */
@@ -435,7 +429,8 @@ u32[4] pfm_shift_s = {3, 2, 1, 0};
 u8[16] pfm_idx_s = {0, 1, 4, 5, 8, 9, 12, 13,
                     2, 3, 6, 7, 10, 11, 14, 15};
 
-fn _poly_frommsg_1(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[32] ap) -> reg ptr u16[MLKEM_N]
+
+fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f g0 g1 g2 g3 h0 h1 h2 h3;
@@ -1114,17 +1109,14 @@ _poly_tobytes: serializes a polynomial (given in AVX2 order) using 12 bits
     per coefficient and packs in byte array stored in rp
 
 requires: input coefficients to be in the range [0..2q)
-      rp to point to 384 byte valid region
 
 ensures:
-    only 384 bytes pointed by rp are modified in memory
-    these bytes encode the serialized polynomial
-
-    it returns the input polynomial reduced to the range [0..q)
+    output bytes encode the serialized polynomial
 
 */
 
-fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
+
+fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 qx16 tt ttt;
@@ -1184,34 +1176,32 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
     t2, ttt = __shuffle8(t1, ttt);
     t1, t4 = __shuffle8(tt, t4);
 
-    (u256)[rp + 192*i] = t0;
-    (u256)[rp + 192*i + 32] = t2;
-    (u256)[rp + 192*i + 64] = t1;
-    (u256)[rp + 192*i + 96] = t3;
-    (u256)[rp + 192*i + 128] = ttt;
-    (u256)[rp + 192*i + 160] = t4;
+    rp.[u256 192*i] = t0;
+    rp.[u256 192*i + 32] = t2;
+    rp.[u256 192*i + 64] = t1;
+    rp.[u256 192*i + 96] = t3;
+    rp.[u256 192*i + 128] = ttt;
+    rp.[u256 192*i + 160] = t4;
   }
 
-  return a;
-}
+  return rp, a;
+ }
 
 
 /*
-_poly_tomsg_1: compresses a polynomial using 1 bit per coefficient and packs
+_poly_tomsg: compresses a polynomial using 1 bit per coefficient and packs
                 in byte array rp
 
 requires: input coefficients to be in the range [0..2q)
-      rp to point to 32 byte valid region
 
 
 ensures:
     32 bytes in rp are the compressed polynomial
 
-    it also returns the input polynomial reduced to the range [0..q)
-
 */
 
-fn _poly_tomsg_1(reg ptr u8[MLKEM_INDCPA_MSGBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES], reg ptr u16[MLKEM_N]
+
+fn _i_poly_tomsg(reg ptr u8[MLKEM_INDCPA_MSGBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES], reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 f0 f1 g0 g1 hq hhq;

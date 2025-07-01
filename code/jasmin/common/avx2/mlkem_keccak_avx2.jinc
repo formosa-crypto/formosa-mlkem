@@ -38,6 +38,30 @@ namespace A128 {
   from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
+namespace A1184 {
+  param int ASIZE = 1184;
+  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+}
+
+namespace A1568 {
+  param int ASIZE = 1568;
+  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+}
+
+namespace A1120 {
+  param int ASIZE = 1120;
+  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+}
+
+namespace A1600 {
+  param int ASIZE = 1600;
+  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+}
+
 namespace ABUFLEN {
   param int ASIZE = 536;
   from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
@@ -292,4 +316,60 @@ fn _shake128x4_squeeze3blocks
  buf[3*ABUFLEN::ASIZE : ABUFLEN::ASIZE] = buf3;
 
  return st, buf;
+}
+
+fn _sha3_256A_A1184
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1184] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  reg u64 offset;
+  st = __state_init_avx2();
+  st, _ = A1184::__absorb_array_avx2(st, in, 0, 1184, R136, SHA3);
+  offset = 0;
+  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+
+  return out;
+}
+
+fn _sha3_256A_A1568
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1568] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  reg u64 offset;
+  st = __state_init_avx2();
+  st, _ = A1568::__absorb_array_avx2(st, in, 0, 1568, R136, SHA3);
+  offset = 0;
+  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+
+  return out;
+}
+
+fn _shake256_A32__A1120
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1120] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  reg u64 offset;
+  st = __state_init_avx2();
+  offset = 0;
+  st, _ = A1120::__absorb_array_avx2(st, in, offset, 1120, R136, SHAKE);
+  offset = 0;
+  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  return out;
+}
+
+fn _shake256_A32__A1600
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1600] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  reg u64 offset;
+  st = __state_init_avx2();
+  offset = 0;
+  st, _ = A1600::__absorb_array_avx2(st, in, offset, 1600, R136, SHAKE);
+  offset = 0;
+  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  return out;
 }

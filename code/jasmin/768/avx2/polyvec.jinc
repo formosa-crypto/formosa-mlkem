@@ -5,10 +5,7 @@ require "../../common/avx2/polyvec.jinc"
 __polyvec_decompress: decompresses a vector of polynomials from 10 bits per coefficient from
                 input array ap
 
-requires: ap to point to 960 byte valid region
-
 ensures:
-    memory unchanged (writes to stack)
     every output coefficient is in the range [0..q)
 
 */
@@ -21,8 +18,9 @@ u8[32] pvd_shufbdidx_s = {0, 1, 1, 2, 2, 3, 3, 4,
 u64 pvd_sllvdidx_s = 0x04;
 u32 pvd_mask_s = 0x7fe01ff8;
 
+
 inline
-fn __polyvec_decompress(reg u64 rp) -> stack u16[MLKEM_VECN]
+fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLKEM_VECN]
 {
   inline int i k;
   reg u256 f q shufbidx sllvdidx mask;
@@ -37,7 +35,7 @@ fn __polyvec_decompress(reg u64 rp) -> stack u16[MLKEM_VECN]
   {
     for i = 0 to MLKEM_N/16
     {
-      f = (u256)[rp + 320 * k + 20 * i];
+      f = rp.[u256 320 * k + 20 * i];
       f = #VPERMQ(f, 0x94);
       f = #VPSHUFB_256(f, shufbidx);
       f = #VPSLLV_8u32(f, sllvdidx);
@@ -73,56 +71,7 @@ u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 8, 9, 10, 11, 12, -1, -1, -1, -1, -1, -1
                          9, 10, 11, 12, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 8};
 
 inline
-fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
-{
-  inline int i;
-  reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx shufbidx;
-  reg u128 t0 t1;
-  reg ptr u16[16] x16p;
-
-  a = __polyvec_csubq(a);
-
-  x16p = jvx16;
-  v = x16p[u256 0];
-  v8 = #VPSLL_16u16(v, 3);
-  off = #VPBROADCAST_16u16(pvc_off_s);
-  shift1 = #VPBROADCAST_16u16(pvc_shift1_s);
-  mask = #VPBROADCAST_16u16(pvc_mask_s);
-  shift2 = #VPBROADCAST_4u64(pvc_shift2_s);
-  sllvdidx = #VPBROADCAST_4u64(pvc_sllvdidx_s);
-  shufbidx = pvc_shufbidx_s[u256 0];
-
-  for i = 0 to MLKEM_VECN/16
-  {
-    f0 = a[u256 i];
-    f1 = #VPMULL_16u16(f0, v8);
-    f2 = #VPADD_16u16(f0, off);
-    f0 = #VPSLL_16u16(f0, 3);
-    f0 = #VPMULH_16u16(f0, v);
-    f2 = #VPSUB_16u16(f1, f2);
-    f1 = #VPANDN_256(f1, f2);
-    f1 = #VPSRL_16u16(f1, 15);
-    f0 = #VPSUB_16u16(f0, f1);
-    f0 = #VPMULHRS_16u16(f0, shift1);
-    f0 = #VPAND_256(f0, mask);
-    f0 = #VPMADDWD_256(f0, shift2);
-    f0 = #VPSLLV_8u32(f0, sllvdidx);
-    f0 = #VPSRL_4u64(f0, 12);
-    f0 = #VPSHUFB_256(f0, shufbidx);
-    t0 = (128u)f0;
-    t1 = #VEXTRACTI128(f0, 1);
-    t0 = #VPBLEND_8u16(t0, t1, 0xE0);
-    (u128)[rp + 20*i] = t0;
-    (u32)[rp + 20*i + 16] = #VPEXTR_32(t1, 0);
-  }
-}
-
-/*
-__polyvec_compress_1: same as previous function but writes to the stack
-*/
-
-inline
-fn __polyvec_compress_1(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
+fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
 {
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx shufbidx;
