@@ -767,7 +767,6 @@ module Mprevec = {
   proc poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
     
-    var qx16:t16u16;
     var i:int;
     var t0:t16u16;
     var t1:t16u16;
@@ -787,7 +786,6 @@ module Mprevec = {
     var ttt_b:t32u8;
     var t4_b:t32u8;
 
-    qx16 <- Array16.init (fun i => jqx16.[i]);
     a <@ poly_csubq (a);
 
     i <- 0;

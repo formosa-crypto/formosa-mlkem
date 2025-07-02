@@ -633,8 +633,6 @@ module Mvec = {
   proc poly_tobytes (rp:W64.t, a:W16.t Array256.t) : W16.t Array256.t = {
     var aux: int;
     
-    var jqx16_p:W16.t Array16.t;
-    var qx16:W256.t;
     var i:int;
     var t0:W256.t;
     var t1:W256.t;
@@ -646,9 +644,6 @@ module Mvec = {
     var t7:W256.t;
     var tt:W256.t;
     var ttt:W256.t;
-    jqx16_p <- witness;
-    jqx16_p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i => jqx16_p.[i])) 0);
     a <@ poly_csubq (a);
     i <- 0;
     while (i < 2) {
@@ -1437,7 +1432,7 @@ equiv eq_poly_tobytes:
   Mprevec.poly_tobytes ~ Mvec.poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
-  while(={rp, a, i, Glob.mem} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2}).
+  while(={rp, a, i, Glob.mem} /\ 0 <= i{1}).
   wp.
   do call eq_istore32u8; wp; conseq />. 
   do (call eq_shuffle8 || call eq_shuffle4 || call eq_shuffle2 || call eq_shuffle1).
@@ -1447,7 +1442,7 @@ proof.
     by smt().
   do (call eq_iVPOR_16u16 || call eq_iVPSLL_16u16 || call eq_iVPSRL_16u16).
   wp; skip; auto => />.
-  move => &1 &2 [#] i_lb qx16_eq i_tub />.
+  move => &1 &2 [#] i_lb />.
   split.
     + rewrite /is16u16 /get256_direct /= => />.
       apply W16u16.allP => />.
@@ -1530,8 +1525,6 @@ proof.
   wp.
   call eq_poly_csubq.
   wp; skip; auto => />.
-  rewrite /is16u16 /get256_direct /= => />.
-  apply W32u8.allP => />.
 qed.
 
 equiv eq_poly_frombytes:
@@ -1785,7 +1778,7 @@ equiv veceq_poly_tobytes:
   Mvec.poly_tobytes ~Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
-  while(={rp, a, i, qx16, Glob.mem}).
+  while(={rp, a, i, Glob.mem}).
   inline *; wp. skip. auto => />.
   wp.
   call veceq_poly_csubq.

@@ -23,9 +23,9 @@ lemma poly_to_bytes_stack_equiv _mem _pos _a :
     (to_list res{1}.`1) /\ res{1}.`2 = res{2}].
 move => Hpos;proc => /=.
 unroll for {1} ^while; unroll for {2} ^while.
-seq 40 40 : (Glob.mem{2} = _mem /\ rp{2} = (of_int _pos)%W64 /\ ={a,jqx16_p,qx16,t0,t1,t2,t3,t4,t5,t6,t7,ttt});  1: by conseq />;sim.
+seq 37 37 : (Glob.mem{2} = _mem /\ rp{2} = (of_int _pos)%W64 /\ ={a,t0,t1,t2,t3,t4,t5,t6,t7,ttt});  1: by conseq />;sim.
 
-seq 6 6 : (rp{2} = (of_int _pos)%W64 /\ ={a, jqx16_p, qx16, t0, t1, t2, t3, t4, t5, t6, t7,ttt} /\
+seq 6 6 : (rp{2} = (of_int _pos)%W64 /\ ={a, t0, t1, t2, t3, t4, t5, t6, t7,ttt} /\
    Glob.mem{2} = stores _mem _pos (take 192 (to_list rp{1}))).
 + auto => /> &1 &2. 
   rewrite /storeW256 !of_uintK !modz_small; 1..6: by auto => /#. 

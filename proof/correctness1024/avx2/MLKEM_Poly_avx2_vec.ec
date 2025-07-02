@@ -1807,7 +1807,7 @@ equiv veceq_poly_tobytes:
   Mvec.poly_tobytes ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_tobytes: ={rp, a, Glob.mem} ==> ={Glob.mem, res}.
 proof.
   proc.
-  while(={rp, a, i, qx16, Glob.mem}).
+  while(={rp, a, i, Glob.mem}).
   inline *; wp. skip. auto => />.
   wp.
   call veceq_poly_csubq.

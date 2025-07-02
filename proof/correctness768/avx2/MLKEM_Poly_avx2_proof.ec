@@ -4575,19 +4575,13 @@ lemma poly_tobytes_corr _a (_p : address) mem :
              load_array384 Glob.mem{1} _p = res{2}].
 proof. 
   proc.
-  seq 3 2 : (#{/~a{1}}pre /\
+  seq 2 2 : (#{/~a{1}}pre /\
              to_uint rp{1} = _p /\
              i{1} = i{2} /\ i{1} = 0 /\
-             (forall k, 0 <= k < 16 => qx16{1}.[k] = W16.of_int 3329) /\
              map W16.to_uint (nttpack a{1}) = a{2} /\
              pos_bound256_cxq a{1} 0 256 1).
   wp; ecall{1} (poly_csubq_corr (lift_array256 a{1})); auto => />.
   move => &1 &2 [#] pos_bound_a a2_bnd a_def rp_lb rp_ub a a1_eq_a pos_bound_an />.
-  split.
-    + move => k k_lb k_ub.
-      rewrite /(Jkem768_avx2.jqx16).
-      do (rewrite initiE 1:/# /=).
-      smt().
     + rewrite Array256.tP => i i_i />.
       rewrite -pack_ext_eq /lift_array256 Array256.tP  map_pack in a1_eq_a.
       rewrite /lift_array256 Array256.tP in a_def.
@@ -4613,7 +4607,7 @@ proof.
              (forall k, 0 <= k < 16 => W16.to_uint t3{1}.[k] = 2^8 * (asint _a.[128 * i{2} + 8 * k + 6] %% 2^8) + (asint _a.[128 * i{2} + 8 * k + 5] %/ 2^4)) /\
              (forall k, 0 <= k < 16 => W16.to_uint t4{1}.[k] = 2^4 * (asint _a.[128 * i{2} + 8 * k + 7]) + (asint _a.[128 * i{2} + 8 * k + 6] %/ 2^8 %% 2^4))).
     inline *; wp; skip; auto => />.
-    move => &1 &2 [#] a1_bnd p_lb p_ub qx16_def pos_bound_a i_lb i_ub touch_l r2_def i_tub />.
+    move => &1 &2 [#] a1_bnd p_lb p_ub pos_bound_a i_lb i_ub touch_l r2_def i_tub />.
     have b_bnd: forall k, 0 <= k < 256 => 0 <= to_uint a{1}.[k] < 2^12.
       move => k k_i.
       rewrite /pos_bound256_cxq /bpos16 in pos_bound_a.
@@ -4897,7 +4891,7 @@ proof.
 
   skip; auto => />.
 
-  move => &1 &2 [#] a1_bnd p_lb p_ub qx16_def pos_bound_a i_lb i_ub touch_mem_l r2_def i_tub tt_def t0_def t1_def t2_def t3_def t4_def />.
+  move => &1 &2 [#] a1_bnd p_lb p_ub pos_bound_a i_lb i_ub touch_mem_l r2_def i_tub tt_def t0_def t1_def t2_def t3_def t4_def />.
   move => res0 -> -> res1 -> -> res2 -> -> res3 -> -> res4 -> -> res5 -> ->
           res6 -> -> res7 -> -> res8 -> -> res9 res9_l res9_r res10 res10_l res10_r res11 res11_l res11_r />.
   split.
@@ -5195,7 +5189,7 @@ proof.
       rewrite addz0 //=.
 
   inline*; wp; skip; auto => />.
-  move => &1 &2 [#] a1_bnd p_lb p_ub qx16_def pos_bound_a i_lb i_ub touch_mem_l r2_def i_tub />.
+  move => &1 &2 [#] a1_bnd p_lb p_ub pos_bound_a i_lb i_ub touch_mem_l r2_def i_tub />.
   do split.
     + move : i_lb => /#.
     + move : i_tub => /#.
@@ -5224,7 +5218,7 @@ proof.
         do (rewrite get_set_neqE_s; first  by move : k_lb k_tub => /#).
         apply r2_def; first by rewrite k_lb k_tub /=.
   skip; auto => />.
-  move => &1 &2 [#] a1_bnd p_lb p_ub qx16_def pos_bound_a />.
+  move => &1 &2 [#] a1_bnd p_lb p_ub pos_bound_a />.
   split.
     smt().
   move => memL iR r2 i_tlb i_lb i_ub />.

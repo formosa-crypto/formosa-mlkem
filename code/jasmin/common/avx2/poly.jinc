@@ -1125,11 +1125,7 @@ ensures:
 fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
 {
   inline int i;
-  reg u256 t0 t1 t2 t3 t4 t5 t6 t7 qx16 tt ttt;
-  reg ptr u16[16] jqx16_p;
-
-  jqx16_p = jqx16;
-  qx16 = jqx16_p[:u256 0];
+  reg u256 t0 t1 t2 t3 t4 t5 t6 t7 tt ttt;
 
   a = _poly_csubq(a);
 

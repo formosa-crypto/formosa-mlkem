@@ -6362,7 +6362,6 @@ module M = {
     offset <- (W64.of_int 0);
     (out0, out1, out2, out3,  _4, st) <@ a128____squeeze_array_avx2x4 (
     out0, out1, out2, out3, offset, 128, st, 136);
-    st_s <- st;
     return (out0, out1, out2, out3);
   }
   proc _shake128_absorb_A32_A2 (seed:W8.t Array32.t, pos:W8.t Array2.t) : 
@@ -8246,8 +8245,6 @@ module M = {
   }
   proc _i_poly_tobytes (rp:W8.t Array384.t, a:W16.t Array256.t) : W8.t Array384.t *
                                                                   W16.t Array256.t = {
-    var jqx16_p:W16.t Array16.t;
-    var qx16:W256.t;
     var i:int;
     var t0:W256.t;
     var t1:W256.t;
@@ -8259,9 +8256,6 @@ module M = {
     var t7:W256.t;
     var tt:W256.t;
     var ttt:W256.t;
-    jqx16_p <- witness;
-    jqx16_p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16_p.[i_0])) 0);
     a <@ _poly_csubq (a);
     i <- 0;
     while ((i < 2)) {
@@ -8442,10 +8436,10 @@ module M = {
     var shufbidx:W256.t;
     var mask:W256.t;
     var shift:W256.t;
-    var f:W256.t;
     var i:int;
     var h:W128.t;
     var sh:W128.t;
+    var f:W256.t;
     x16p <- witness;
     x32p <- witness;
     x16p <- jqx16;
@@ -8454,7 +8448,6 @@ module M = {
     shufbidx <- (get256 (WArray32.init8 (fun i_0 => x32p.[i_0])) 0);
     mask <- (VPBROADCAST_8u32 pd_mask_s);
     shift <- (VPBROADCAST_8u32 pd_shift_s);
-    f <- (set0_256);
     inc <- (256 %/ 16);
     i <- 0;
     while ((i < inc)) {
