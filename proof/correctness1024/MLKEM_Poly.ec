@@ -59,7 +59,7 @@ by rewrite get_to_uint => />;smt(W16.to_uint_cmp pow2_16).
 qed.
 
 lemma poly_csubq_corr_h ap :
-      hoare[Jkem1024.M(Jkem1024.Syscall)._poly_csubq :
+      hoare[Jkem1024.M._poly_csubq :
            ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 
            ==>
            ap = lift_array256 res /\ pos_bound256_cxq res 0 256 1 ].
@@ -122,7 +122,7 @@ do split. (* 5 goals *)
 by rewrite to_uintD_small /= /#.
 qed.
 
-lemma poly_csubq_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_csubq.
+lemma poly_csubq_ll : islossless Jkem1024.M._poly_csubq.
 proof.
 proc; while (0 <= to_uint i <= 256) (256 - to_uint i); auto => />.
 + by move => &hr;rewrite ultE of_uintK /= => *; rewrite to_uintD_small /=; smt().
@@ -130,7 +130,7 @@ by move => *; rewrite ultE /= /#.
 qed.
 
 lemma poly_csubq_corr ap :
-      phoare[Jkem1024.M(Jkem1024.Syscall)._poly_csubq :
+      phoare[Jkem1024.M._poly_csubq :
            ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 
            ==>
            ap = lift_array256 res /\ pos_bound256_cxq res 0 256 1 ] = 1%r
@@ -144,7 +144,7 @@ by apply modz_cmp; apply gt0_pow2.
 qed.
 
 lemma poly_tomsg_corr_h _a : 
-    hoare [Jkem1024.M(Jkem1024.Syscall)._i_poly_tomsg :
+    hoare [Jkem1024.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
              lift_array256 a = _a 
               ==>
@@ -153,7 +153,7 @@ lemma poly_tomsg_corr_h _a :
              res.`1 = encode1 (compress_poly 1 _a) ].
 admitted.
 
-lemma poly_tomsg_ll : islossless Jkem1024.M(Jkem1024.Syscall)._i_poly_tomsg.
+lemma poly_tomsg_ll : islossless Jkem1024.M._i_poly_tomsg.
 proc.
 while (0 <= i <= 32) (32-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
 move => *; wp; while (0 <= j <= 8) (8-j); last by auto =>  /> /#.
@@ -161,7 +161,7 @@ by move => *; auto => /> /#.
 qed.
 
 lemma poly_tomsg_corr _a : 
-    phoare [Jkem1024.M(Jkem1024.Syscall)._i_poly_tomsg :
+    phoare [Jkem1024.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
              lift_array256 a = _a 
               ==>
@@ -171,18 +171,18 @@ lemma poly_tomsg_corr _a :
   by conseq poly_tomsg_ll (poly_tomsg_corr_h _a).
 
 lemma poly_frommsg_corr_h (_m : W8.t Array32.t): 
-    hoare [Jkem1024.M(Jkem1024.Syscall)._i_poly_frommsg  :
+    hoare [Jkem1024.M._i_poly_frommsg  :
              ap =  _m
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
              pos_bound256_cxq res 0 256 1 ].
 admitted.
 
-lemma poly_frommsg_ll : islossless Jkem1024.M(Jkem1024.Syscall)._i_poly_frommsg
+lemma poly_frommsg_ll : islossless Jkem1024.M._i_poly_frommsg
  by proc; while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
 
 lemma poly_frommsg_corr (_m : W8.t Array32.t): 
-    phoare [Jkem1024.M(Jkem1024.Syscall)._i_poly_frommsg  :
+    phoare [Jkem1024.M._i_poly_frommsg  :
              ap =  _m
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
@@ -190,7 +190,7 @@ lemma poly_frommsg_corr (_m : W8.t Array32.t):
   by conseq poly_frommsg_ll (poly_frommsg_corr_h _m).
 
 lemma poly_frommont_corr_h (_a : int Array256.t) : 
-    hoare[Jkem1024.M(Jkem1024.Syscall)._poly_frommont :
+    hoare[Jkem1024.M._poly_frommont :
              forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
              forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))].
 proc.
@@ -212,7 +212,7 @@ move => -> ?; rewrite Array256.set_eqiE // rval.
 by congr;rewrite W16.of_sintK /= /smod /= /#.
 qed.
 
-lemma poly_frommont_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_frommont.
+lemma poly_frommont_ll : islossless Jkem1024.M._poly_frommont.
 proc. 
 while (0 <= to_uint i <= 256) (256 - to_uint i).
 + move => *; wp; call fqmul_ll; auto => />.
@@ -221,14 +221,14 @@ by auto => /> ???; rewrite ultE /#.
 qed.
 
 lemma poly_frommont_corr (_a : int Array256.t) : 
-    phoare[Jkem1024.M(Jkem1024.Syscall)._poly_frommont :
+    phoare[Jkem1024.M._poly_frommont :
              forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
              forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))]=1%r
   by conseq poly_frommont_ll (poly_frommont_corr_h _a). 
 
 lemma poly_sub_corr_h _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
-      hoare[Jkem1024.M(Jkem1024.Syscall)._poly_sub :
+      hoare[Jkem1024.M._poly_sub :
            _a = lift_array256 ap /\
            _b = lift_array256 bp /\
            signed_bound_cxq ap 0 256 ab /\
@@ -262,7 +262,7 @@ move => ->; rewrite !Array256.set_eqiE //= to_sintB_small /=; 1: by smt().
 by rewrite !mapiE //= incoeffD incoeffN.
 qed.
 
-lemma poly_sub_ll: islossless Jkem1024.M(Jkem1024.Syscall)._poly_sub.
+lemma poly_sub_ll: islossless Jkem1024.M._poly_sub.
 proc; while (0 <= to_uint i <= 256) (256 - to_uint i).
 +  by move => *; auto => /> ???;rewrite ultE to_uintD_small /=; by smt(W32.to_uint_cmp).
 by move => *; auto => /> i ibl ibh; rewrite ultE of_uintK; smt(W32.to_uint_cmp).
@@ -270,7 +270,7 @@ qed.
 
 lemma poly_sub_corr _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
-      phoare[Jkem1024.M(Jkem1024.Syscall)._poly_sub :
+      phoare[Jkem1024.M._poly_sub :
            _a = lift_array256 ap /\
            _b = lift_array256 bp /\
            signed_bound_cxq ap 0 256 ab /\
@@ -285,7 +285,7 @@ lemma poly_sub_corr_alg ab bb :
   0 <= ab <= 4 =>
   0 <= bb <= 4 =>
   forall _a _b, 
-  phoare [Jkem1024.M(Jkem1024.Syscall)._poly_sub :
+  phoare [Jkem1024.M._poly_sub :
            _a = lift_array256 ap /\
            _b = lift_array256 bp /\
            signed_bound_cxq ap 0 256 ab /\
@@ -308,7 +308,7 @@ qed.
 
 lemma poly_add_corr_h _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
-      hoare[Jkem1024.M(Jkem1024.Syscall)._poly_add2 :
+      hoare[Jkem1024.M._poly_add2 :
            _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
@@ -346,7 +346,7 @@ do split; first last.
 by smt(Array256.set_neqiE).
 qed.
 
-lemma poly_add_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_add2.
+lemma poly_add_ll : islossless Jkem1024.M._poly_add2.
 proc; while (0<= to_uint i <= 256) (256 - to_uint i).
 by move => *; auto => /> &hr ??;rewrite !ultE !to_uintD_small /= /#.  
 by auto => /> i ??;rewrite !ultE /= /#.  
@@ -354,7 +354,7 @@ qed.
 
 lemma poly_add_corr _a _b ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
-      phoare[Jkem1024.M(Jkem1024.Syscall)._poly_add2 :
+      phoare[Jkem1024.M._poly_add2 :
            _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
@@ -370,7 +370,7 @@ lemma poly_add_corr_impl_h ab bb :
   0 <= ab <= 6 =>
   0 <= bb <= 3 =>
   forall _a _b,
-      hoare[Jkem1024.M(Jkem1024.Syscall)._poly_add2 :
+      hoare[Jkem1024.M._poly_add2 :
            _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
@@ -387,7 +387,7 @@ lemma poly_add_corr_alg ab bb :
   0 <= ab <= 6 =>
   0 <= bb <= 3 =>
   forall _a _b, 
-  phoare [Jkem1024.M(Jkem1024.Syscall)._poly_add2 :
+  phoare [Jkem1024.M._poly_add2 :
     _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
@@ -411,7 +411,7 @@ qed.
 lemma poly_add_correct_impl ab bb :
     0 <= ab <= 6 => 0 <= bb <= 3 =>  
     forall _a _b,
-      phoare[Jkem1024.M(Jkem1024.Syscall)._poly_add2 :
+      phoare[Jkem1024.M._poly_add2 :
            _a = lift_array256 rp /\
            _b = lift_array256 bp /\
            signed_bound_cxq rp 0 256 ab /\
@@ -424,7 +424,7 @@ lemma poly_add_correct_impl ab bb :
 
 
 lemma poly_reduce_corr_h (_a : coeff Array256.t):
-      hoare[Jkem1024.M(Jkem1024.Syscall).__poly_reduce :
+      hoare[Jkem1024.M.__poly_reduce :
           _a = lift_array256 rp ==> 
           _a = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)].
@@ -463,7 +463,7 @@ by smt().
 qed.
 
 
-lemma poly_reduce_ll: islossless Jkem1024.M(Jkem1024.Syscall).__poly_reduce.
+lemma poly_reduce_ll: islossless Jkem1024.M.__poly_reduce.
 proof.
 proc;while (0 <= to_uint j <= 256) (256 - to_uint j).
 + by move => z; inline *; auto => />; 
@@ -472,14 +472,14 @@ by auto => />; move => ??; rewrite ultE  /= /#.
 qed.
 
 lemma poly_reduce_corr (_a : coeff Array256.t):
-      phoare[Jkem1024.M(Jkem1024.Syscall).__poly_reduce :
+      phoare[Jkem1024.M.__poly_reduce :
           _a = lift_array256 rp ==> 
           _a = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)] = 1%r.
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
 lemma poly_tobytes_corr_h _a (_p : address) mem : 
-    hoare [Jkem1024.M(Jkem1024.Syscall)._poly_tobytes  :
+    hoare [Jkem1024.M._poly_tobytes  :
              pos_bound256_cxq a 0 256 2 /\  lift_array256 a = _a /\
              valid_ptr _p 384 /\
              Glob.mem = mem /\ to_uint rp = _p
@@ -490,7 +490,7 @@ lemma poly_tobytes_corr_h _a (_p : address) mem :
 admitted.
 
 lemma poly_tobytes_corr _a (_p : address) mem : 
-    phoare [Jkem1024.M(Jkem1024.Syscall)._poly_tobytes  :
+    phoare [Jkem1024.M._poly_tobytes  :
              pos_bound256_cxq a 0 256 2 /\  lift_array256 a = _a /\
              valid_ptr _p 384 /\
              Glob.mem = mem /\ to_uint rp = _p
@@ -501,7 +501,7 @@ lemma poly_tobytes_corr _a (_p : address) mem :
 admitted.
 
 lemma poly_frombytes_corr_h mem _p (_a : W8.t Array384.t): 
-    hoare [Jkem1024.M(Jkem1024.Syscall)._poly_frombytes  :
+    hoare [Jkem1024.M._poly_frombytes  :
              valid_ptr _p 384 /\
              Glob.mem = mem /\ to_uint ap = _p /\
              load_array384 Glob.mem _p = _a 
@@ -512,7 +512,7 @@ lemma poly_frombytes_corr_h mem _p (_a : W8.t Array384.t):
 admitted.
 
 lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t): 
-    phoare [Jkem1024.M(Jkem1024.Syscall)._poly_frombytes  :
+    phoare [Jkem1024.M._poly_frombytes  :
              valid_ptr _p 384 /\
              Glob.mem = mem /\ to_uint ap = _p /\
              load_array384 Glob.mem _p = _a 
@@ -523,7 +523,7 @@ lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t):
 admitted.
 
 lemma poly_compress_corr_h _a (_p : address) mem : 
-    hoare [Jkem1024.M(Jkem1024.Syscall)._poly_compress :
+    hoare [Jkem1024.M._poly_compress :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a /\
              valid_ptr _p 160 /\
@@ -535,7 +535,7 @@ lemma poly_compress_corr_h _a (_p : address) mem :
              load_array160 Glob.mem _p = encode5 (compress_poly 5 _a)].
 admitted.
 
-lemma poly_compress_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_compress.
+lemma poly_compress_ll : islossless Jkem1024.M._poly_compress.
 proc.
 while (0 <= i <= 32 /\ inc = 32) (32- i); last 
    by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
@@ -545,7 +545,7 @@ auto => />  /#.
 qed.
 
 lemma poly_compress_corr _a (_p : address) mem : 
-    phoare [Jkem1024.M(Jkem1024.Syscall)._poly_compress :
+    phoare [Jkem1024.M._poly_compress :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a /\
              valid_ptr _p 160 /\
@@ -558,7 +558,7 @@ lemma poly_compress_corr _a (_p : address) mem :
    by conseq poly_compress_ll (poly_compress_corr_h _a _p mem).
 
 lemma i_poly_compress_corr_h _a  : 
-    hoare [Jkem1024.M(Jkem1024.Syscall)._i_poly_compress  :
+    hoare [Jkem1024.M._i_poly_compress  :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a 
               ==>
@@ -567,7 +567,7 @@ lemma i_poly_compress_corr_h _a  :
 admitted.
 
 
-lemma i_poly_compress_ll : islossless Jkem1024.M(Jkem1024.Syscall)._i_poly_compress.
+lemma i_poly_compress_ll : islossless Jkem1024.M._i_poly_compress.
 proc.
 while (0 <= to_uint i <= 256 /\ to_uint i %% 8 = 0) (256-to_uint i); last 
    by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
@@ -576,7 +576,7 @@ by rewrite W64.ultE W64.to_uintD_small /= /#.
 qed.
 
 lemma i_poly_compress_corr _a  : 
-    phoare [Jkem1024.M(Jkem1024.Syscall)._i_poly_compress  :
+    phoare [Jkem1024.M._i_poly_compress  :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a 
               ==>
@@ -585,7 +585,7 @@ lemma i_poly_compress_corr _a  :
   by conseq i_poly_compress_ll  (i_poly_compress_corr_h _a).
 
 lemma poly_decompress_corr_h mem _p (_a : W8.t Array160.t): 
-    hoare [Jkem1024.M(Jkem1024.Syscall)._poly_decompress  :
+    hoare [Jkem1024.M._poly_decompress  :
              valid_ptr _p 160 /\
              Glob.mem = mem /\ to_uint ap = _p /\
              load_array160 Glob.mem _p = _a 
@@ -596,7 +596,7 @@ lemma poly_decompress_corr_h mem _p (_a : W8.t Array160.t):
 admitted.
 
 lemma poly_decompress_corr mem _p (_a : W8.t Array160.t): 
-    phoare [Jkem1024.M(Jkem1024.Syscall)._poly_decompress  :
+    phoare [Jkem1024.M._poly_decompress  :
              valid_ptr _p 160 /\
              Glob.mem = mem /\ to_uint ap = _p /\
              load_array160 Glob.mem _p = _a 
@@ -628,7 +628,7 @@ lemma mul_congr a b : coeffcgr (asint (incoeff b) * asint (incoeff a)) (b * a) b
 import NTT_Fq.
 
 equiv ntt_correct_aux :
-     NTT.ntt ~Jkem1024.M(Jkem1024.Syscall)._poly_ntt : 
+     NTT.ntt ~Jkem1024.M._poly_ntt : 
         r{1} = lift_array256 rp{2} /\  
         zetas{1} = zetas /\
         signed_bound_cxq rp{2} 0 256 2
@@ -796,7 +796,7 @@ by move => x xb; rewrite !set_neqiE; smt().
 qed.
 
 lemma ntt_correct _r :
-   phoare[Jkem1024.M(Jkem1024.Syscall)._poly_ntt :
+   phoare[Jkem1024.M._poly_ntt :
         _r = lift_array256 rp /\ 
         signed_bound_cxq rp 0 256 2
           ==> 
@@ -806,21 +806,21 @@ proof.
 bypr;move => &m [#] H H1.
 apply (eq_trans _ (Pr[NTT.ntt(_r,zetas) @ &m : ntt _r = res])).
 have -> : (Pr[NTT.ntt(_r, zetas) @ &m : ntt _r = res] = 
-           Pr[Jkem1024.M(Jkem1024.Syscall)._poly_ntt(rp{m}) @ &m : ntt _r = lift_array256 res /\ 
+           Pr[Jkem1024.M._poly_ntt(rp{m}) @ &m : ntt _r = lift_array256 res /\ 
             forall (k : int), 0 <= k < 256 => bpos16 res.[k] (2 * q)]); last by auto.
 byequiv ntt_correct_aux =>//.
 byphoare (ntt_spec _r)=> //.
 qed.
 
 lemma ntt_correct_h (_r0 : coeff Array256.t):
-      hoare[Jkem1024.M(Jkem1024.Syscall)._poly_ntt :
+      hoare[Jkem1024.M._poly_ntt :
                _r0 = lift_array256 arg /\
                signed_bound_cxq arg 0 256 2 ==>
                ntt _r0 = lift_array256 res /\
                forall (k : int), 0 <= k && k < 256 => bpos16 res.[k] (2 * q)]
  by conseq (ntt_correct _r0). 
 
-lemma ntt_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_ntt.
+lemma ntt_ll : islossless Jkem1024.M._poly_ntt.
 proof.
 proc; call poly_reduce_ll.
 while (   1 <= to_uint len /\ to_uint len <= 128
@@ -888,7 +888,7 @@ qed.
 
 
 equiv invntt_correct_aux :
-  NTT_Fq.NTT.invntt ~Jkem1024.M(Jkem1024.Syscall)._poly_invntt : 
+  NTT_Fq.NTT.invntt ~Jkem1024.M._poly_invntt : 
         r{1} = lift_array256 rp{2} /\ zetas_inv{1} = zetas_inv /\
            signed_bound_cxq rp{2} 0 256 4
           ==> 
@@ -1092,7 +1092,7 @@ by move => ->; rewrite set_eqiE; smt().
 qed.
 
 lemma invntt_correct _r  :
-   phoare[Jkem1024.M(Jkem1024.Syscall)._poly_invntt :
+   phoare[Jkem1024.M._poly_invntt :
         _r = lift_array256 rp /\ signed_bound_cxq rp 0 256 4
           ==> 
             scale (invntt _r) (incoeff SignedReductions.R) = lift_array256 res /\
@@ -1102,7 +1102,7 @@ bypr;move => &m [#] H H1.
 apply (eq_trans _ (Pr[NTT.invntt( _r,zetas_inv) @ &m :  invntt _r = res])).
 + have -> : (
 Pr[NTT.invntt(_r, zetas_inv) @ &m : invntt _r = res] = 
-Pr[Jkem1024.M(Jkem1024.Syscall)._poly_invntt(rp{m}) @ &m :
+Pr[Jkem1024.M._poly_invntt(rp{m}) @ &m :
   invntt (map (fun x => x * (incoeff SignedReductions.R)) _r) = lift_array256 res /\ 
    forall (k : int), 0 <= k < 256 => b16 res.[k] (q)]); last by rewrite invntt_scale.
 byequiv invntt_correct_aux; 1: by smt(). 
@@ -1119,14 +1119,14 @@ by byphoare (invntt_spec _r) => /#.
 qed.
 
 lemma invntt_correct_h (_r : coeff Array256.t):
-      hoare[ Jkem1024.M(Jkem1024.Syscall)._poly_invntt :
+      hoare[ Jkem1024.M._poly_invntt :
              _r = lift_array256 arg /\
              signed_bound_cxq arg 0 256 4 ==>
              scale (invntt _r) (incoeff SignedReductions.R) = lift_array256 res /\
              forall (k : int), 0 <= k && k < 256 => b16 res.[k] (q)]
 by conseq (invntt_correct _r). 
 
-lemma invntt_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_invntt.
+lemma invntt_ll : islossless Jkem1024.M._poly_invntt.
 proof.
 proc.
 while(0<=to_uint j<=256) (256-to_uint j).
@@ -1260,7 +1260,7 @@ by smt().
 qed.
 
 lemma poly_basemul_corr _ap _bp:
-   hoare[Jkem1024.M(Jkem1024.Syscall)._poly_basemul :
+   hoare[Jkem1024.M._poly_basemul :
      _ap = lift_array256 ap /\ _bp = lift_array256 bp /\
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
      signed_bound_cxq res 0 256 2 /\ 
@@ -1441,7 +1441,7 @@ by ring.
 
 qed.
 
-lemma poly_basemul_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_basemul.
+lemma poly_basemul_ll : islossless Jkem1024.M._poly_basemul.
 proc.
 while (0 <= to_uint i <= 256 /\ to_uint i %%4 = 0) (256 - to_uint i); 
     last by auto => /> i ib; rewrite !ultE /#.
@@ -1455,7 +1455,7 @@ qed.
 
 
 lemma poly_basemul_correct _ap _bp:
-   phoare[Jkem1024.M(Jkem1024.Syscall)._poly_basemul :
+   phoare[Jkem1024.M._poly_basemul :
      _ap = lift_array256 ap /\ _bp = lift_array256 bp /\
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
      signed_bound_cxq res 0 256 2 /\ 

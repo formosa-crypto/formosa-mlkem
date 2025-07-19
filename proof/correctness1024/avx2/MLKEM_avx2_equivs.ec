@@ -38,7 +38,7 @@ import MLKEM_PolyAVXVec.
 import MLKEM_PolyVecAVXVec.
 
 lemma polyvec_decompress_equiv mem _p :
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_decompress ~  Jkem1024.M(Jkem1024.Syscall).__polyvec_decompress  :
+    equiv [Jkem1024_avx2.M.__polyvec_decompress ~  Jkem1024.M.__polyvec_decompress  :
              valid_ptr _p (4*352) /\
              Glob.mem{1} = mem /\ to_uint rp{1} = _p /\
              ={Glob.mem} /\ rp{1} = ap{2}
@@ -50,7 +50,7 @@ lemma polyvec_decompress_equiv mem _p :
 admitted.
 
 equiv compressequivvec mem _p : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_compress ~  Jkem1024.M(Jkem1024.Syscall).__polyvec_compress :
+ Jkem1024_avx2.M.__polyvec_compress ~  Jkem1024.M.__polyvec_compress :
      pos_bound1024_cxq a{1} 0 1024 2 /\
      pos_bound1024_cxq a{2} 0 1024 2 /\
     lift_array1024 a{1} = lift_array1024 a{2} /\ 
@@ -60,7 +60,7 @@ equiv compressequivvec mem _p :
 admitted.
 
 equiv compressequivvec_1 mem : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_compress_1 ~  Jkem1024.M(Jkem1024.Syscall).__i_polyvec_compress :
+ Jkem1024_avx2.M.__polyvec_compress_1 ~  Jkem1024.M.__i_polyvec_compress :
      pos_bound1024_cxq a{1} 0 1024 2 /\
      pos_bound1024_cxq a{2} 0 1024 2 /\
     lift_array1024 a{1} = lift_array1024 a{2} /\ 
@@ -70,7 +70,7 @@ equiv compressequivvec_1 mem :
 admitted.
 
 lemma poly_decompress_equiv mem _p : 
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_decompress ~  Jkem1024.M(Jkem1024.Syscall)._poly_decompress  :
+    equiv [Jkem1024_avx2.M._poly_decompress ~  Jkem1024.M._poly_decompress  :
              valid_ptr _p 160 /\
              Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
              ={Glob.mem,ap}
@@ -82,7 +82,7 @@ lemma poly_decompress_equiv mem _p :
 admitted.
 
 equiv compressequiv_1 mem : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_compress_1 ~  Jkem1024.M(Jkem1024.Syscall)._i_poly_compress :
+ Jkem1024_avx2.M._poly_compress_1 ~  Jkem1024.M._i_poly_compress :
      pos_bound256_cxq a{1} 0 256 2 /\
      pos_bound256_cxq a{2} 0 256 2 /\
     lift_array256 a{1} = lift_array256 a{2} /\ 
@@ -93,7 +93,7 @@ equiv compressequiv_1 mem :
 admitted.
 
 equiv compressequiv mem _p : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_compress ~  Jkem1024.M(Jkem1024.Syscall)._poly_compress :
+ Jkem1024_avx2.M._poly_compress ~  Jkem1024.M._poly_compress :
      pos_bound256_cxq a{1} 0 256 2 /\
      pos_bound256_cxq a{2} 0 256 2 /\
     lift_array256 a{1} = lift_array256 a{2} /\ 
@@ -104,7 +104,7 @@ admitted.
 
 
 lemma polyvec_frombytes_equiv :
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_frombytes ~Jkem1024.M(Jkem1024.Syscall).__polyvec_frombytes :
+    equiv [Jkem1024_avx2.M.__polyvec_frombytes ~Jkem1024.M.__polyvec_frombytes :
              valid_ptr (W64.to_uint ap{1}) (4*384) /\
              ={Glob.mem,ap} ==>
              lift_array1024 res{1} = nttunpackv (lift_array1024 res{2}) /\
@@ -117,7 +117,7 @@ admitted.
 lemma subequiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_sub ~Jkem1024.M(Jkem1024.Syscall)._poly_sub :
+    equiv [Jkem1024_avx2.M._poly_sub ~Jkem1024.M._poly_sub :
       lift_array256 ap{1} = lift_array256 ( ap{2}) /\
       lift_array256 bp{1} = lift_array256 ( bp{2}) /\
       signed_bound_cxq ap{2} 0 256 ab /\ 
@@ -204,7 +204,7 @@ move : HHH; move : (W16.to_uint_cmp x); move :  (W16.to_uint_cmp y) => /=; smt()
 qed.
 
 equiv frommontequiv : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_frommont ~  Jkem1024.M(Jkem1024.Syscall)._poly_frommont :
+ Jkem1024_avx2.M._poly_frommont ~  Jkem1024.M._poly_frommont :
     lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     signed_bound_cxq res{1} 0 256 2 /\ 
@@ -273,7 +273,7 @@ do split.
 qed.
 
 equiv reduceequiv : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__poly_reduce ~  Jkem1024.M(Jkem1024.Syscall).__poly_reduce :
+ Jkem1024_avx2.M.__poly_reduce ~  Jkem1024.M.__poly_reduce :
     lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     pos_bound256_cxq res{1} 0 256 2 /\ 
@@ -303,7 +303,7 @@ smt(Array256.mapiE nttunpack_bnd Array256.allP).
 qed.
 
 equiv reduceequiv_noperm : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__poly_reduce ~  Jkem1024.M(Jkem1024.Syscall).__poly_reduce :
+ Jkem1024_avx2.M.__poly_reduce ~  Jkem1024.M.__poly_reduce :
     lift_array256 arg{1} = lift_array256 arg{2} ==> 
     lift_array256 res{1} = lift_array256 res{2} /\
     pos_bound256_cxq res{1} 0 256 2 /\ 
@@ -336,7 +336,7 @@ import Zq.
 require import NTT_AVX_j.
 
 equiv basemulequiv : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_basemul ~Jkem1024.M(Jkem1024.Syscall)._poly_basemul :
+ Jkem1024_avx2.M._poly_basemul ~Jkem1024.M._poly_basemul :
     lift_array256 ap{1} = nttunpack (lift_array256 ap{2}) /\
     lift_array256 bp{1} = nttunpack (lift_array256 bp{2}) /\
     signed_bound_cxq ap{1} 0 256 2 /\  
@@ -376,7 +376,7 @@ lemma addequiv  (ab1 bb1 ab2 bb2 : int):
     0 <= ab2 && ab2 <= 6 =>
     0 <= bb1 && bb1 <= 3 =>
     0 <= bb2 && bb2 <= 3 =>
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_add2 ~Jkem1024.M(Jkem1024.Syscall)._poly_add2 :
+    equiv [Jkem1024_avx2.M._poly_add2 ~Jkem1024.M._poly_add2 :
       lift_array256 rp{1} = lift_array256 (nttunpack rp{2}) /\
       lift_array256 bp{1} = lift_array256 (nttunpack bp{2}) /\
       signed_bound_cxq rp{2} 0 256 ab2 /\ 
@@ -427,7 +427,7 @@ qed.
 lemma addequiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_add2 ~Jkem1024.M(Jkem1024.Syscall)._poly_add2 :
+    equiv [Jkem1024_avx2.M._poly_add2 ~Jkem1024.M._poly_add2 :
       lift_array256 rp{1} = lift_array256 ( rp{2}) /\
       lift_array256 bp{1} = lift_array256 ( bp{2}) /\
       signed_bound_cxq rp{2} 0 256 ab /\ 
@@ -467,7 +467,7 @@ rewrite H7 // H9 /#.
 qed.
 
 equiv frommsgequiv_noperm  : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_frommsg_1 ~  Jkem1024.M(Jkem1024.Syscall)._i_poly_frommsg :
+ Jkem1024_avx2.M._poly_frommsg_1 ~  Jkem1024.M._i_poly_frommsg :
     ={ap} ==> 
     lift_array256 res{1} = lift_array256 res{2} /\
     pos_bound256_cxq res{1} 0 256 1 /\ 
@@ -480,7 +480,7 @@ lemma compress_poly_rng i xs :
 rewrite /compress_poly /map allP => Hi j Hj. rewrite !initiE //=. rewrite compress_rng //. qed.
 
 equiv tomsgequiv_noperm  : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_tomsg_1 ~  Jkem1024.M(Jkem1024.Syscall)._i_poly_tomsg :
+ Jkem1024_avx2.M._poly_tomsg_1 ~  Jkem1024.M._i_poly_tomsg :
     lift_array256 a{1} = lift_array256 a{2} /\
     pos_bound256_cxq a{1} 0 256 2 /\ 
     pos_bound256_cxq a{2} 0 256 2 ==>
@@ -490,7 +490,7 @@ admitted.
 
 lemma polyvec_tobytes_equiv :
     forall (_p : int),
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_tobytes ~Jkem1024.M(Jkem1024.Syscall).__polyvec_tobytes :
+    equiv [Jkem1024_avx2.M.__polyvec_tobytes ~Jkem1024.M.__polyvec_tobytes :
              _p = to_uint rp{1} /\
              valid_ptr (W64.to_uint rp{1}) (4*384) /\
              pos_bound1024_cxq a{1} 0 1024 2 /\
@@ -503,7 +503,7 @@ lemma polyvec_add2_equiv  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
   forall (_a _b : coeff Array1024.t),
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_add2 ~Jkem1024.M(Jkem1024.Syscall).__polyvec_add2 :
+    equiv [Jkem1024_avx2.M.__polyvec_add2 ~Jkem1024.M.__polyvec_add2 :
       _a = lift_array1024 r{2} /\
       _b = lift_array1024 b{2} /\ signed_bound1024_cxq r{2} 0 1024 ab /\ signed_bound1024_cxq b{2} 0 1024 bb /\
       _a = nttpackv (lift_array1024 r{1}) /\
@@ -605,7 +605,7 @@ lemma polyvec_add2_equiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
   forall (_a _b : coeff Array1024.t),
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_add2 ~Jkem1024.M(Jkem1024.Syscall).__polyvec_add2 :
+    equiv [Jkem1024_avx2.M.__polyvec_add2 ~Jkem1024.M.__polyvec_add2 :
       _a = lift_array1024 r{2} /\
       _b = lift_array1024 b{2} /\ signed_bound1024_cxq r{2} 0 1024 ab /\ signed_bound1024_cxq b{2} 0 1024 bb /\
       _a = lift_array1024 r{1} /\
@@ -636,7 +636,7 @@ rewrite !mapiE;smt(Array1024.mapiE).
 qed.
 
 lemma polyvec_reduce_equiv _a :
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_reduce ~Jkem1024.M(Jkem1024.Syscall).__polyvec_reduce :
+    equiv [Jkem1024_avx2.M.__polyvec_reduce ~Jkem1024.M.__polyvec_reduce :
        _a  = lift_array1024 r{2} /\  _a  = nttpackv (lift_array1024 r{1})  ==>
        (forall k, 0 <= k < 1024 => bpos16 res{1}.[k] (2*q)) /\
        (forall k, 0 <= k < 1024 => bpos16 res{2}.[k] (2*q)) /\
@@ -660,7 +660,7 @@ qed.
 
 
 lemma polyvec_reduce_equiv_noperm _a :
-    equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_reduce ~Jkem1024.M(Jkem1024.Syscall).__polyvec_reduce :
+    equiv [Jkem1024_avx2.M.__polyvec_reduce ~Jkem1024.M.__polyvec_reduce :
        _a  = lift_array1024 r{2} /\  _a  = lift_array1024 r{1}  ==>
        (forall k, 0 <= k < 1024 => bpos16 res{1}.[k] (2*q)) /\
        (forall k, 0 <= k < 1024 => bpos16 res{2}.[k] (2*q)) /\
@@ -680,7 +680,7 @@ auto => /> /#.
 qed.
 
 equiv pointwiseequiv : 
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_pointwise_acc ~  Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc :
+ Jkem1024_avx2.M.__polyvec_pointwise_acc ~  Jkem1024.M.__polyvec_pointwise_acc :
     lift_array1024 arg{1}.`2 = nttunpackv (lift_array1024 arg{2}.`1) /\
     lift_array1024 arg{1}.`3 = nttunpackv (lift_array1024 arg{2}.`2) /\
     signed_bound1024_cxq arg{1}.`2 0 1024 2 /\
@@ -853,7 +853,7 @@ smt().
 qed.
 
 equiv nttequiv :
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_ntt ~Jkem1024.M(Jkem1024.Syscall).__polyvec_ntt : 
+Jkem1024_avx2.M.__polyvec_ntt ~Jkem1024.M.__polyvec_ntt : 
    lift_array1024 arg{1} = lift_array1024 arg{2} /\ 
    signed_bound1024_cxq arg{1} 0 1024 2 /\ 
    signed_bound1024_cxq arg{2} 0 1024 2 ==>
@@ -938,7 +938,7 @@ move : (Hidx (k-768) _)=>//; smt(mem_iota).
 qed.
 
 equiv polyinvnttequiv :
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_invntt ~Jkem1024.M(Jkem1024.Syscall)._poly_invntt : 
+Jkem1024_avx2.M._poly_invntt ~Jkem1024.M._poly_invntt : 
    lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) /\ 
    signed_bound_cxq arg{1} 0 256 4 /\ 
    signed_bound_cxq arg{2} 0 256 4 ==>
@@ -962,7 +962,7 @@ lemma eq_vectorP4 :
 smt(KMatrix.Vector.eq_vectorP). qed.
 
 equiv invnttequiv :
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_invntt ~Jkem1024.M(Jkem1024.Syscall).__polyvec_invntt : 
+Jkem1024_avx2.M.__polyvec_invntt ~Jkem1024.M.__polyvec_invntt : 
    lift_array1024 arg{1} = nttunpackv (lift_array1024 arg{2}) /\ 
    signed_bound1024_cxq arg{1} 0 1024 4 /\ 
    signed_bound1024_cxq arg{2} 0 1024 4 ==>

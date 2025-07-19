@@ -33,7 +33,7 @@ import NTT_Avx2.
 
 
 equiv genmatrixequiv b :
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_avx2 ~ Jkem1024.M(Jkem1024.Syscall).__gen_matrix :
+ Jkem1024_avx2.M._gen_matrix_avx2 ~ Jkem1024.M.__gen_matrix :
     arg{1}.`2 = arg{2}.`1 /\ arg{1}.`3= (W64.of_int (b2i b)) /\ arg{2}.`2 =  (W64.of_int (b2i b))  ==>
     res{1} = nttunpackm res{2} /\
     pos_bound4096_cxq res{1} 0 4096 2 /\
@@ -57,10 +57,10 @@ module GetNoiseAVX2 = {
       n1 <- nonce + W8.of_int 2;
       n2 <- nonce + W8.of_int 1;
       n3 <- nonce;
-      aux_3 <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise(aux3,noiseseed,n3);
-      aux_2 <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise(aux2,noiseseed,n2);
-      aux_1 <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise(aux1,noiseseed,n1);
-      aux_0 <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise(aux0,noiseseed,n0);
+      aux_3 <@Jkem1024.M._poly_getnoise(aux3,noiseseed,n3);
+      aux_2 <@Jkem1024.M._poly_getnoise(aux2,noiseseed,n2);
+      aux_1 <@Jkem1024.M._poly_getnoise(aux1,noiseseed,n1);
+      aux_0 <@Jkem1024.M._poly_getnoise(aux0,noiseseed,n0);
       return (aux_3, aux_2, aux_1, aux_0);
   }
 
@@ -195,7 +195,7 @@ ep <-
        else ep.[i_0]); 
 nonce <- W8.of_int 8;                                          
 epp <@                                                    
-  Jkem1024.M(Jkem1024.Syscall)._poly_getnoise(epp,     
+  Jkem1024.M._poly_getnoise(epp,     
     noiseseed, nonce);      
 return (sp_0,ep,epp);
   }
@@ -490,7 +490,7 @@ lemma truncateu128_bits128 (w:W256.t):
 proof. by rewrite /truncateu128 to_uint_eq of_uintK bits128_div 1:/# /= of_uintK. qed.
 
 hoare cbd2_avx2_h _bytes:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
+ Jkem1024_avx2.M.__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
 proof.
 proc.
 sp; simplify.
@@ -609,13 +609,13 @@ rewrite tP => k Hk; rewrite (H k _); first smt(mem_iota).
 by rewrite initiE /#.
 qed.
 
-lemma cbd2_ll : islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__cbd2.
+lemma cbd2_ll : islossless Jkem1024_avx2.M.__cbd2.
 proc. inline *. sp; wp. while (true) (4-i). move => z.
 auto => /> &hr H. smt().
 auto => />i. smt(). qed. 
 
 phoare cbd2_avx2_ph _bytes:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
+ [Jkem1024_avx2.M.__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
 conseq cbd2_ll (cbd2_avx2_h _bytes) => />. qed.
 
 module AuxMLKEMAvx2 = {
@@ -658,7 +658,7 @@ module AuxMLKEMAvx2 = {
     var r;
 
     buf <- witness;
-    buf <@ M(Syscall)._shake256_128_33 (buf,Array33.init (fun i => if i=32 then nonce else seed.[i]));
+    buf <@ M._shake256_128_33 (buf,Array33.init (fun i => if i=32 then nonce else seed.[i]));
     r <@ cbd2_ref(rp,buf);
     return r;
   }
@@ -724,7 +724,7 @@ phoare cbd2_ref_ph _bytes:
 conseq cbd2_ref_ll (cbd2_ref_h _bytes) => />. qed.
 
 equiv getnoise_split : 
-  M(Syscall)._poly_getnoise ~ AuxMLKEMAvx2._poly_getnoise : ={arg} ==> ={res}.
+  M._poly_getnoise ~ AuxMLKEMAvx2._poly_getnoise : ={arg} ==> ={res}.
 proc; wp; sp => />. 
 seq 2 0 : ( ={buf,rp,seed,nonce} /\ extseed{1}=Array33.init (fun i => if i=32 then nonce{1} else seed{1}.[i]) ).
 wp. while{1} (0 <= k{1} <= 32 /\ (forall i, 0 <= i < k{1} => extseed{1}.[i]=seed{1}.[i])) (32-k{1}).
@@ -735,8 +735,8 @@ call (_:true). auto => />. sim. auto => />.
 inline *. sim. qed.
 
 equiv getnoise_1x_equiv_avx :
-  Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__poly_cbd_eta1 ~ AuxMLKEMAvx2.cbd2_ref : ={arg} ==> ={res}.
-proc*. inline Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__poly_cbd_eta1.  sp;wp.
+  Jkem1024_avx2.M.__poly_cbd_eta1 ~ AuxMLKEMAvx2.cbd2_ref : ={arg} ==> ={res}.
+proc*. inline Jkem1024_avx2.M.__poly_cbd_eta1.  sp;wp.
 ecall{1} (cbd2_avx2_ph buf{1}) => />.
 ecall{2} (cbd2_ref_ph buf{2}) => />.
 auto => /> &2. rewrite tP => i Hi. rewrite initiE /#. qed.
@@ -747,12 +747,12 @@ proc; wp; sp => />. call getnoise_split => />. call getnoise_split => />. call g
 
 
 equiv getnoiseequiv_avx : 
-   Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
+   Jkem1024_avx2.M._poly_getnoise_eta1_4x ~ GetNoiseAVX2._poly_getnoise_eta1_4x : ={arg} ==> ={res}.
 proc*. 
 transitivity{2} { r <@ AuxMLKEMAvx2.__poly_getnoise_eta1_4x(aux3,aux2,aux1,aux0,noiseseed,nonce); } ((r0{1}, r1{1}, r2{1}, r3{1}, seed{1}, nonce{1}) = (aux3{2}, aux2{2}, aux1{2}, aux0{2}, noiseseed{2}, nonce{2}) ==> ={r}) (={aux3,aux2,aux1,aux0,noiseseed,nonce} ==> ={r}); last first.
 symmetry. call getnoise_4x_split => />. auto => />. smt(). smt().
 (*main proof*)
-inline Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_getnoise_eta1_4x AuxMLKEMAvx2.__poly_getnoise_eta1_4x AuxMLKEMAvx2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
+inline Jkem1024_avx2.M._poly_getnoise_eta1_4x AuxMLKEMAvx2.__poly_getnoise_eta1_4x AuxMLKEMAvx2._poly_getnoise. swap{2} [30..31] 5. swap{2} [23..24] 10. swap{2} [16..17] 15.
 seq 27 30 : (
     r00{1}=rp{2}  /\ buf0{1} =buf{2}
  /\ r10{1}=rp0{2} /\ buf1{1} =buf0{2}
@@ -775,7 +775,7 @@ wp. call getnoise_1x_equiv_avx => />.
 by auto. 
 qed.
 
-lemma polygetnoise_ll : islossless Jkem1024.M(Jkem1024.Syscall)._poly_getnoise.
+lemma polygetnoise_ll : islossless Jkem1024.M._poly_getnoise.
 proc. 
 while (0 <= to_uint i <= 128) (128 - to_uint i);
   1: by move => z; auto => /> &hr;rewrite  ultE /= =>  ??; rewrite !to_uintD_small /=; smt(to_uint_cmp).
@@ -786,29 +786,29 @@ by move => *; rewrite ultE /=; smt().
 qed.
 
 equiv getnoiseequiv : 
-  Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ~Jkem1024.M(Jkem1024.Syscall)._poly_getnoise :
+  Jkem1024.M._poly_getnoise ~Jkem1024.M._poly_getnoise :
    ={arg} ==> ={res} /\
    signed_bound_cxq res{1} 0 256 1.
 have H : forall &m a,
-   Pr[Jkem1024.M(Jkem1024.Syscall)._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
+   Pr[Jkem1024.M._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
 + move => &m a.
   have -> : 1%r = Pr [ CBD2.sample(PRF a.`2 a.`3) @ &m : true].
   + byphoare;2..:smt().
     proc; inline *; while (0<=i<=128) (128-i); 1: by move => z; auto => /> /#. 
     by auto => /> /#.
   by byequiv get_noise_sample_noise => //.
-have HH0 : hoare [Jkem1024.M(Jkem1024.Syscall)._poly_getnoise : true ==> forall k, 0<=k<256 => -5 < to_sint res.[k] < 5].
+have HH0 : hoare [Jkem1024.M._poly_getnoise : true ==> forall k, 0<=k<256 => -5 < to_sint res.[k] < 5].
 + hoare; bypr =>  &m; rewrite Pr[mu_not].
-  have -> : Pr[Jkem1024.M(Jkem1024.Syscall)._poly_getnoise(rp{m}, s_seed{m}, nonce{m}) @ &m : true] = 1%r.
+  have -> : Pr[Jkem1024.M._poly_getnoise(rp{m}, s_seed{m}, nonce{m}) @ &m : true] = 1%r.
   + by byphoare;2..:smt(); apply polygetnoise_ll.
   smt().
-have HHH : equiv [ Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ~Jkem1024.M(Jkem1024.Syscall)._poly_getnoise : ={arg} ==> ={res} ] by sim.
+have HHH : equiv [ Jkem1024.M._poly_getnoise ~Jkem1024.M._poly_getnoise : ={arg} ==> ={res} ] by sim.
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
 equiv getnoiseequiv2 : 
-   Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_getnoise_eta2 ~M(Syscall)._poly_getnoise :
+   Jkem1024_avx2.M._poly_getnoise_eta2 ~M._poly_getnoise :
    ={arg} ==> ={res}  /\
    signed_bound_cxq res{1} 0 256 1.
 symmetry.
@@ -821,7 +821,7 @@ transitivity{1} { r <@ AuxMLKEMAvx2._poly_getnoise(rp,seed,nonce); }
   wp;call (getnoise_1x_equiv_avx).
   sp;conseq/>.
   admit. 
-transitivity{1} { r <@ M(Syscall)._poly_getnoise(rp,seed,nonce); } 
+transitivity{1} { r <@ M._poly_getnoise(rp,seed,nonce); } 
      ( ={rp,seed,nonce}  ==> ={r})
     ( ={rp,nonce} /\ seed{1} = s_seed{2} ==> ={r} /\  signed_bound_cxq r{1} 0 256 1);1,2:smt().
 +  by symmetry;call getnoise_split => />.
@@ -834,7 +834,7 @@ qed.
 import InnerPKE1024.
 
 lemma mlkem_correct_kg_avx2 mem _pkp _skp  : 
-   equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__indcpa_keypair ~ InnerPKE1024.kg_derand : 
+   equiv [Jkem1024_avx2.M.__indcpa_keypair ~ InnerPKE1024.kg_derand : 
        Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
        randomnessp{1} = coins{2}  /\
        valid_disj_reg _pkp (384*4+32) _skp (384*4)
@@ -845,7 +845,7 @@ lemma mlkem_correct_kg_avx2 mem _pkp _skp  :
          t = load_array1536 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1536)].
 proc*.
-transitivity {1} {Jkem1024.M(Jkem1024.Syscall).__indcpa_keypair(pkp, skp, randomnessp);} 
+transitivity {1} {Jkem1024.M.__indcpa_keypair(pkp, skp, randomnessp);} 
 (={Glob.mem,pkp,skp,randomnessp} /\ 
   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
@@ -1432,7 +1432,7 @@ qed.
 (***************************************************)
 
 lemma mlkem_correct_enc_0_avx2 mem _ctp _pkp : 
-   equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__indcpa_enc_0 ~ InnerPKE1024.enc_derand: 
+   equiv [Jkem1024_avx2.M.__indcpa_enc_0 ~ InnerPKE1024.enc_derand: 
      valid_ptr _pkp (384*4 + 32) /\
      valid_ptr _ctp (4*352+160) /\
      Glob.mem{1} = mem /\ 
@@ -1449,7 +1449,7 @@ lemma mlkem_correct_enc_0_avx2 mem _ctp _pkp :
      c2 = load_array160 Glob.mem{1} (_ctp + 1408)
 ].
 proc*.
-transitivity {1} {Jkem1024.M(Jkem1024.Syscall).__indcpa_enc(sctp,msgp,pkp,noiseseed);} 
+transitivity {1} {Jkem1024.M.__indcpa_enc(sctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,msgp,pkp,noiseseed,sctp} /\
   valid_ptr _pkp (384 * 4 + 32) /\
   valid_ptr _ctp (4 * 352 + 160) /\
@@ -1921,7 +1921,7 @@ qed.
 (***************************************************)
 
 lemma mlkem_correct_enc_1_avx2 mem _pkp : 
-   equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__indcpa_enc_1 ~ InnerPKE1024.enc_derand: 
+   equiv [Jkem1024_avx2.M.__indcpa_enc_1 ~ InnerPKE1024.enc_derand: 
      valid_ptr _pkp (384*4 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
@@ -1936,7 +1936,7 @@ lemma mlkem_correct_enc_1_avx2 mem _pkp :
      c2 = Array160.init (fun i => res{1}.[i+1408])
 ].
 proc*.
-transitivity {1} { r <@Jkem1024.M(Jkem1024.Syscall).__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
+transitivity {1} { r <@Jkem1024.M.__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
 (={Glob.mem,ctp,msgp,pkp,noiseseed} /\
   valid_ptr _pkp (384 * 4 + 32) /\
   Glob.mem{1} = mem /\
@@ -2405,7 +2405,7 @@ qed.
 
 
 lemma mlkem_correct_dec mem _ctp _skp : 
-   equiv [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__indcpa_dec_1 ~ InnerPKE1024.dec : 
+   equiv [Jkem1024_avx2.M.__indcpa_dec_1 ~ InnerPKE1024.dec : 
      valid_ptr _ctp (4*352+160) /\
      valid_ptr _skp 1568 /\
      Glob.mem{1} = mem /\ 
@@ -2420,7 +2420,7 @@ lemma mlkem_correct_dec mem _ctp _skp :
      res{1} = res{2}
 ].
 proc*.
-transitivity {1} { r <@Jkem1024.M(Jkem1024.Syscall).__indcpa_dec(msgp,ctp,skp);} 
+transitivity {1} { r <@Jkem1024.M.__indcpa_dec(msgp,ctp,skp);} 
 (={Glob.mem,ctp,skp} /\
   valid_ptr _ctp (4*352+160) /\
      valid_ptr _skp 1536 /\

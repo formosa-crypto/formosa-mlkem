@@ -24,12 +24,12 @@ from JazzEC require import Jkem768 WArray200.
 from Keccak require import Keccakf1600_ref Keccak1600_ref.
 
 equiv state_init_ref_eq:
- M(Syscall).__state_init_ref ~ Jazz_ref.M.__state_init_ref
+ M.__state_init_ref ~ Jazz_ref.M.__state_init_ref
  : ={arg} ==> ={res}
  by sim.
 
 equiv addratebit_avx2_eq:
- M(Syscall).__addratebit_ref ~ Jazz_ref.M.__addratebit_ref
+ M.__addratebit_ref ~ Jazz_ref.M.__addratebit_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -38,12 +38,12 @@ equiv addratebit_avx2_eq:
 from Keccak require import Keccak1600_imem_ref.
 
 equiv absorb_imem_ref_eq:
- M(Syscall).__absorb_imem_ref ~ Jazz_ref.M.__absorb_imem_ref
+ M.__absorb_imem_ref ~ Jazz_ref.M.__absorb_imem_ref
  : ={arg,Glob.mem} ==> ={res,Glob.mem}
  by sim.
 
 equiv squeeze_imem_ref_eq:
- M(Syscall).__squeeze_imem_ref ~ Jazz_ref.M.__squeeze_imem_ref
+ M.__squeeze_imem_ref ~ Jazz_ref.M.__squeeze_imem_ref
  : ={arg,Glob.mem} ==> ={res,Glob.mem}
  by sim.
 
@@ -61,7 +61,7 @@ clone Keccak1600_array_ref.KeccakArrayRef as A32ref
       proof aSIZE_ge0 by done.
 
 equiv a32__squeeze_array_ref_eq:
- M(Syscall).a32____squeeze_array_ref ~ A32ref.M(A32ref.P).__squeeze_array_ref
+ M.a32____squeeze_array_ref ~ A32ref.M(A32ref.P).__squeeze_array_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -76,7 +76,7 @@ clone Keccak1600_array_ref.KeccakArrayRef as A33ref
       proof aSIZE_ge0 by done.
 
 equiv a33__absorb_array_ref_eq:
- M(Syscall).a33____absorb_array_ref ~ A33ref.M(A33ref.P).__absorb_array_ref
+ M.a33____absorb_array_ref ~ A33ref.M(A33ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -90,7 +90,7 @@ clone Keccak1600_array_ref.KeccakArrayRef as A34ref
       proof aSIZE_ge0 by done.
 
 equiv a34__absorb_array_ref_eq:
- M(Syscall).a34____absorb_array_ref ~ A34ref.M(A34ref.P).__absorb_array_ref
+ M.a34____absorb_array_ref ~ A34ref.M(A34ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -104,12 +104,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A64ref
       proof aSIZE_ge0 by done.
 
 equiv a64__absorb_array_ref_eq:
- M(Syscall).a64____absorb_array_ref ~ A64ref.M(A64ref.P).__absorb_array_ref
+ M.a64____absorb_array_ref ~ A64ref.M(A64ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
  by sim.
 
 equiv a64__squeeze_array_ref_eq:
- M(Syscall).a64____squeeze_array_ref ~ A64ref.M(A64ref.P).__squeeze_array_ref
+ M.a64____squeeze_array_ref ~ A64ref.M(A64ref.P).__squeeze_array_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -123,7 +123,7 @@ clone Keccak1600_array_ref.KeccakArrayRef as A128ref
       proof aSIZE_ge0 by done.
 
 equiv a128__squeeze_array_ref_eq:
- M(Syscall).a128____squeeze_array_ref ~ A128ref.M(A128ref.P).__squeeze_array_ref
+ M.a128____squeeze_array_ref ~ A128ref.M(A128ref.P).__squeeze_array_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -137,7 +137,7 @@ clone Keccak1600_array_ref.KeccakArrayRef as A168ref
       proof aSIZE_ge0 by done.
 
 equiv a168__dumpstate_array_ref_eq:
- M(Syscall).a168____dumpstate_array_ref ~ A168ref.M(A168ref.P).__dumpstate_array_ref
+ M.a168____dumpstate_array_ref ~ A168ref.M(A168ref.P).__dumpstate_array_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -296,7 +296,7 @@ from JazzEC require import Array1152 Array960.
 
 (****************************************************************************)
 equiv sha3512_33_eq:
-  M(Syscall)._sha3512_33 ~ K._sha3512_33
+  M._sha3512_33 ~ K._sha3512_33
  : ={arg} ==> ={res}
 by sim.
 
@@ -342,7 +342,7 @@ phoare sha3512_33_ph' seed :
 proof. by conseq sha3512_33_ll (sha3512_33_h' seed). qed.
 
 phoare sha3_512_33_64 seed : 
- [ Jkem768.M(Jkem768.Syscall)._sha3512_33
+ [ Jkem768.M._sha3512_33
  : arg.`2 = seed
  ==>
    Array32.init (fun i => res.[i]) = (SHA3_512_33_64 seed).`1
@@ -352,7 +352,7 @@ proof. by conseq sha3512_33_eq (sha3512_33_ph' seed) => /> /#. qed.
 
 (****************************************************************************)
 equiv shake128_absorb34_eq:
-  M(Syscall)._shake128_absorb34 ~ K._shake128_absorb34
+  M._shake128_absorb34 ~ K._shake128_absorb34
  : ={arg} ==> ={res}
 by sim.
 
@@ -393,7 +393,7 @@ phoare shake128_absorb34_ph' (seed : W8.t Array34.t):
 proof. by conseq shake128_absorb34_ll (shake128_absorb34_h' seed). qed.
 
 phoare shake_absorb (seed : W8.t Array34.t): 
- [ Jkem768.M(Jkem768.Syscall)._shake128_absorb34
+ [ Jkem768.M._shake128_absorb34
  : arg.`2 = seed
  ==> res = SHAKE128_ABSORB_34 
             (Array32.init (fun k => seed.[k]))
@@ -404,7 +404,7 @@ proof. by conseq shake128_absorb34_eq (shake128_absorb34_ph' seed) => /> /#. qed
 
 (****************************************************************************)
 equiv shake128_squeezeblock_eq:
-  M(Syscall)._shake128_squeezeblock ~ K._shake128_squeezeblock
+  M._shake128_squeezeblock ~ K._shake128_squeezeblock
  : ={arg} ==> ={res}
 by sim.
 
@@ -438,7 +438,7 @@ phoare shake128_squeezeblock_ph' state :
 proof. by conseq shake128_squeezeblock_ll (shake128_squeezeblock_h' state). qed.
 
 phoare shake_squeeze state : 
- [ Jkem768.M(Jkem768.Syscall)._shake128_squeezeblock
+ [ Jkem768.M._shake128_squeezeblock
  : arg.`1 = state
  ==> res = SHAKE128_SQUEEZE_168 state
  ] = 1%r.
@@ -446,7 +446,7 @@ proof. by conseq shake128_squeezeblock_eq (shake128_squeezeblock_ph' state) => /
 
 (****************************************************************************)
 equiv shake256_128_33_eq:
-  M(Syscall)._shake256_128_33 ~ K._shake256_128_33
+  M._shake256_128_33 ~ K._shake256_128_33
  : ={arg} ==> ={res}
 by sim.
 
@@ -490,7 +490,7 @@ phoare shake256_128_33_ph' seed :
 proof. by conseq shake256_128_33_ll (shake256_128_33_h' seed). qed.
 
 phoare shake256_33_128 seed : 
- [ Jkem768.M(Jkem768.Syscall)._shake256_128_33
+ [ Jkem768.M._shake256_128_33
  : arg.`2 = seed
  ==> res = SHAKE256_33_128
             (Array32.init (fun i => seed.[i]))
@@ -498,12 +498,12 @@ phoare shake256_33_128 seed :
  ] = 1%r.
 proof. by conseq shake256_128_33_eq (shake256_128_33_ph' seed) => /> /#. qed.
 
-lemma shake256_33_128_ll: islossless M(Syscall)._shake256_128_33.
+lemma shake256_33_128_ll: islossless M._shake256_128_33.
 proof. by conseq shake256_128_33_eq shake256_128_33_ll => /> /#. qed.
 
 (****************************************************************************)
 equiv isha3_256_M1184_eq:
-  M(Syscall)._isha3_256_M1184 ~ K._isha3_256_M1184
+  M._isha3_256_M1184 ~ K._isha3_256_M1184
  : ={arg, Glob.mem} ==> ={res, Glob.mem}
  by sim.
 
@@ -552,7 +552,7 @@ phoare isha3_256_M1184_ph' _mem _ptr:
 proof. by conseq isha3_256_M1184_ll (isha3_256_M1184_h' _mem _ptr). qed.
 
 phoare pkH_sha mem _ptr: 
- [ Jkem768.M(Jkem768.Syscall)._isha3_256_M1184
+ [ Jkem768.M._isha3_256_M1184
  : arg.`2 = W64.of_int _ptr
  /\ valid_ptr _ptr 1184
  /\ Glob.mem = mem
@@ -565,7 +565,7 @@ proof. by conseq isha3_256_M1184_eq (isha3_256_M1184_ph' mem _ptr) => /> /#. qed
 
 (****************************************************************************)
 equiv shake256_1120_32_eq:
-  M(Syscall)._shake256_1120_32 ~ K._shake256_1120_32
+  M._shake256_1120_32 ~ K._shake256_1120_32
  : ={arg, Glob.mem} ==> ={res, Glob.mem}
  by sim.
 
@@ -633,7 +633,7 @@ phoare shake256_1120_32_ph' mem _pout _pin1 _pin2:
 proof. by conseq shake256_1120_32_ll (shake256_1120_32_h' mem _pout _pin1 _pin2). qed.
 
 phoare j_shake mem _pout _pin1 _pin2: 
- [ Jkem768.M(Syscall)._shake256_1120_32
+ [ Jkem768.M._shake256_1120_32
  : arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2)
  /\ valid_ptr _pout 32
  /\ valid_ptr _pin1 32
@@ -650,7 +650,7 @@ proof. by conseq shake256_1120_32_eq (shake256_1120_32_ph' mem _pout _pin1 _pin2
 
 (****************************************************************************)
 equiv sha3_512_64_eq:
-  M(Syscall)._sha3_512_64 ~ K._sha3_512_64
+  M._sha3_512_64 ~ K._sha3_512_64
  : ={arg} ==> ={res}
  by sim.
 
@@ -711,7 +711,7 @@ phoare sha3_512_64_ph' buf:
 proof. by conseq sha3_512_64_ll (sha3_512_64_h' buf). qed.
 
 phoare sha_g buf: 
- [ Jkem768.M(Jkem768.Syscall)._sha3_512_64
+ [ Jkem768.M._sha3_512_64
  : arg.`2 = buf
  ==>
    let bytes = SHA3_512_64_64

@@ -23,17 +23,17 @@ from JazzEC require Jkem768_avx2_stack.
 from Keccak require import Keccak1600_avx2.
 
 equiv state_init_avx2_eq:
- M(Syscall).__state_init_avx2 ~ Jazz_avx2.M.__state_init_avx2
+ M.__state_init_avx2 ~ Jazz_avx2.M.__state_init_avx2
  : ={arg} ==> ={res}
  by sim.
 
 equiv pstate_init_avx2_eq:
- M(Syscall).__pstate_init_avx2 ~ Jazz_avx2.M.__pstate_init_avx2
+ M.__pstate_init_avx2 ~ Jazz_avx2.M.__pstate_init_avx2
  : ={arg} ==> ={res}
  by sim.
 
 equiv addratebit_avx2_eq:
- M(Syscall).__addratebit_avx2 ~ Jazz_avx2.M.__addratebit_avx2
+ M.__addratebit_avx2 ~ Jazz_avx2.M.__addratebit_avx2
  : ={arg} ==> ={res}
  by sim.
 
@@ -43,18 +43,18 @@ equiv addratebit_avx2_eq:
 from Keccak require import Keccak1600_imem_avx2.
 
 equiv absorb_imem_avx2_eq:
- M(Syscall).__absorb_imem_avx2 ~ Jazz_avx2.M.__absorb_imem_avx2
+ M.__absorb_imem_avx2 ~ Jazz_avx2.M.__absorb_imem_avx2
  : ={arg,Glob.mem} ==> ={res,Glob.mem}
  by sim.
 
 equiv pabsorb_imem_avx2_eq:
- M(Syscall).__pabsorb_imem_avx2 ~ Jazz_avx2.M.__pabsorb_imem_avx2
+ M.__pabsorb_imem_avx2 ~ Jazz_avx2.M.__pabsorb_imem_avx2
  : ={arg,Glob.mem} ==> ={res,Glob.mem}
  by sim.
 
 
 equiv squeeze_imem_avx2_eq:
- M(Syscall).__squeeze_imem_avx2 ~ Jazz_avx2.M.__squeeze_imem_avx2
+ M.__squeeze_imem_avx2 ~ Jazz_avx2.M.__squeeze_imem_avx2
  : ={arg,Glob.mem} ==> ={res,Glob.mem}
  by sim.
 
@@ -63,12 +63,12 @@ equiv squeeze_imem_avx2_eq:
 from Keccak require import Keccak1600_avx2x4.
 
 equiv state_init_avx2x4_eq:
- M(Syscall).__state_init_avx2x4 ~ Jazz_avx2.M.__state_init_avx2x4
+ M.__state_init_avx2x4 ~ Jazz_avx2.M.__state_init_avx2x4
  : ={arg} ==> ={res}
  by sim.
 
 equiv addratebit_avx2x4_eq:
- M(Syscall).__addratebit_avx2x4 ~ Jazz_avx2.M.__addratebit_avx2x4
+ M.__addratebit_avx2x4 ~ Jazz_avx2.M.__addratebit_avx2x4
  : ={arg} ==> ={res}
  by sim.
 
@@ -92,7 +92,7 @@ clone Keccak1600_array_avx2x4.KeccakArrayAvx2x4 as A1avx2x4
       proof aSIZE_ge0 by done.
 
 equiv a1__pabsorb_array_avx2_eq:
- M(Syscall).a1____absorb_array_avx2x4 ~ A1avx2x4.M(A1avx2x4.P).__absorb_array_avx2x4
+ M.a1____absorb_array_avx2x4 ~ A1avx2x4.M(A1avx2x4.P).__absorb_array_avx2x4
  : ={arg} ==> ={res}
  by sim.
 
@@ -107,7 +107,7 @@ clone Keccak1600_array_avx2.KeccakArrayAvx2 as A2avx2
       proof aSIZE_ge0 by done.
 
 equiv a2__pabsorb_array_avx2_eq:
- M(Syscall).a2____pabsorb_array_avx2 ~ A2avx2.M(A2avx2.P).__pabsorb_array_avx2
+ M.a2____pabsorb_array_avx2 ~ A2avx2.M(A2avx2.P).__pabsorb_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
@@ -118,7 +118,7 @@ clone Keccak1600_array_avx2x4.KeccakArrayAvx2x4 as A2avx2x4
       proof aSIZE_ge0 by done.
 
 equiv a2__absorb_array_avx2x4_eq:
- M(Syscall).a2____absorb_array_avx2x4 ~ A2avx2x4.M(A2avx2x4.P).__absorb_array_avx2x4
+ M.a2____absorb_array_avx2x4 ~ A2avx2x4.M(A2avx2x4.P).__absorb_array_avx2x4
  : ={arg} ==> ={res}
  by sim.
 
@@ -138,17 +138,17 @@ clone Keccak1600_array_avx2x4.KeccakArrayAvx2x4 as A32avx2x4
 
 
 equiv a32__pabsorb_array_avx2_eq:
- M(Syscall).a32____pabsorb_array_avx2 ~ A32avx2.M(A32avx2.P).__pabsorb_array_avx2
+ M.a32____pabsorb_array_avx2 ~ A32avx2.M(A32avx2.P).__pabsorb_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
 equiv a32__squeeze_array_avx2_eq:
- M(Syscall).a32____squeeze_array_avx2 ~ A32avx2.M(A32avx2.P).__squeeze_array_avx2
+ M.a32____squeeze_array_avx2 ~ A32avx2.M(A32avx2.P).__squeeze_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
 equiv a32__absorb_array_avx2x4_eq:
- M(Syscall).a32____absorb_bcast_array_avx2x4 ~ A32avx2x4.M(A32avx2x4.P).__absorb_bcast_array_avx2x4
+ M.a32____absorb_bcast_array_avx2x4 ~ A32avx2x4.M(A32avx2x4.P).__absorb_bcast_array_avx2x4
  : ={arg} ==> ={res}
  by sim.
 
@@ -162,7 +162,7 @@ clone Keccak1600_array_avx2.KeccakArrayAvx2 as A33avx2
       proof aSIZE_ge0 by done.
 
 equiv a33__absorb_array_avx2_eq:
- M(Syscall).a33____absorb_array_avx2 ~ A33avx2.M(A33avx2.P).__absorb_array_avx2
+ M.a33____absorb_array_avx2 ~ A33avx2.M(A33avx2.P).__absorb_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
@@ -176,12 +176,12 @@ clone Keccak1600_array_avx2.KeccakArrayAvx2 as A64avx2
       proof aSIZE_ge0 by done.
 
 equiv a64__absorb_array_avx2_eq:
- M(Syscall).a64____absorb_array_avx2 ~ A64avx2.M(A64avx2.P).__absorb_array_avx2
+ M.a64____absorb_array_avx2 ~ A64avx2.M(A64avx2.P).__absorb_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
 equiv a64__squeeze_array_avx2_eq:
- M(Syscall).a64____squeeze_array_avx2 ~ A64avx2.M(A64avx2.P).__squeeze_array_avx2
+ M.a64____squeeze_array_avx2 ~ A64avx2.M(A64avx2.P).__squeeze_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
@@ -195,7 +195,7 @@ clone Keccak1600_array_avx2x4.KeccakArrayAvx2x4 as A128avx2x4
       proof aSIZE_ge0 by done.
 
 equiv a128__squeeze_array_avx2_eq:
- M(Syscall).a128____squeeze_array_avx2x4 ~ A128avx2x4.M(A128avx2x4.P).__squeeze_array_avx2x4
+ M.a128____squeeze_array_avx2x4 ~ A128avx2x4.M(A128avx2x4.P).__squeeze_array_avx2x4
  : ={arg} ==> ={res}
  by sim.
 
@@ -214,12 +214,12 @@ clone Keccak1600_array_avx2x4.KeccakArrayAvx2x4 as ABUFLENavx2x4
       proof aSIZE_ge0 by done.
 
 equiv aBUFLEN__dumpstate_array_avx2_eq:
- M(Syscall).aBUFLEN____dumpstate_array_avx2 ~ ABUFLENavx2.M(ABUFLENavx2.P).__dumpstate_array_avx2
+ M.aBUFLEN____dumpstate_array_avx2 ~ ABUFLENavx2.M(ABUFLENavx2.P).__dumpstate_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
 equiv aBUFLEN__dumpstate_array_avx2x4_eq:
- M(Syscall).aBUFLEN____dumpstate_array_avx2x4 ~ ABUFLENavx2x4.M(ABUFLENavx2x4.P).__dumpstate_array_avx2x4
+ M.aBUFLEN____dumpstate_array_avx2x4 ~ ABUFLENavx2x4.M(ABUFLENavx2x4.P).__dumpstate_array_avx2x4
  : ={arg} ==> ={res}
  by sim.
 
@@ -265,15 +265,15 @@ from JazzEC require import Array2144. (* 4*BUF_SIZE *)
 from JazzEC require import Array7.
 
 (* Keccak library interface
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._sha3_512A_A64
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._sha3_256A_M1184
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake256_M32__M32_M1088
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128_next_state
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128_absorb_A32_A2
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128_squeeze3blocks
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake256x4_A128__A32_A1
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128x4_absorb_A32_A2
-Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128x4_squeeze3blocks
+Jkem768_avx2.M._sha3_512A_A64
+Jkem768_avx2.M._sha3_256A_M1184
+Jkem768_avx2.M._shake256_M32__M32_M1088
+Jkem768_avx2.M._shake128_next_state
+Jkem768_avx2.M._shake128_absorb_A32_A2
+Jkem768_avx2.M._shake128_squeeze3blocks
+Jkem768_avx2.M._shake256x4_A128__A32_A1
+Jkem768_avx2.M._shake128x4_absorb_A32_A2
+Jkem768_avx2.M._shake128x4_squeeze3blocks
  *)
 module K = {
   proc _sha3_512A_A33(out : W8.t Array64.t, in_0 : W8.t Array33.t) :
@@ -569,7 +569,7 @@ module K = {
 
 (*********************************************************************************)
 equiv sha3_512A_A33_eq:
-  M(Syscall)._sha3_512A_A33 ~ K._sha3_512A_A33
+  M._sha3_512A_A33 ~ K._sha3_512A_A33
  : ={arg} ==> ={res}
 by sim.
 
@@ -592,7 +592,7 @@ qed.
 
 (* IF NEEDED...
 hoare sha3_512A_A33_h _in:
- M(Syscall)._sha3_512A_A33
+ M._sha3_512A_A33
  : in_0 = _in
  ==> to_list res = SHA3_512 (to_list _in).
 proof.
@@ -618,7 +618,7 @@ by conseq sha3_512A_A33_ll (sha3_512A_A33_h' _in).
 qed.
 
 phoare sha3_512A_A33_ph _in:
- [ M(Syscall)._sha3_512A_A33
+ [ M._sha3_512A_A33
  : in_0 = _in
  ==> to_list res = SHA3_512 (to_list _in)
  ] = 1%r.
@@ -631,7 +631,7 @@ qed.
   we loose the ability of using 'ecall' and need to give explicit contracts for
   every call to the library functions.  *)
 phoare sha3_512A_A33_phX _in:
- [ M(Syscall)._sha3_512A_A33
+ [ M._sha3_512A_A33
  : in_0 = _in
  ==> to_list res = SHA3_512 (to_list _in)
  ] = 1%r.
@@ -660,7 +660,7 @@ qed.
 
 (*********************************************************************************)
 equiv sha3_512A_A64_eq:
-  M(Syscall)._sha3_512A_A64 ~ K._sha3_512A_A64
+  M._sha3_512A_A64 ~ K._sha3_512A_A64
  : ={arg} ==> ={res}
 by sim.
 
@@ -704,7 +704,7 @@ by conseq sha3_512A_A64_ll (sha3_512A_A64_h' _in).
 qed.
 
 phoare sha3_512A_A64_ph inp: 
- [ M(Syscall)._sha3_512A_A64
+ [ M._sha3_512A_A64
  : arg.`2 = inp
  ==>
   let bytes = SHA3_512_64_64 (Array32.init (fun k => inp.[k])) 
@@ -773,7 +773,7 @@ qed.
 (*********************************************************************************)
 from JazzEC require import Array1152.
 equiv sha3_256A_M1184_eq:
-  M(Syscall)._sha3_256A_M1184 ~ K._sha3_256A_M1184
+  M._sha3_256A_M1184 ~ K._sha3_256A_M1184
  : ={arg, Glob.mem} ==> ={res, Glob.mem}
  by sim.
 
@@ -830,7 +830,7 @@ by move=> /> &m ->*; rewrite of_uintK; smt(W64.to_uint_cmp).
 qed.
 
 phoare sha3_256A_M1184_ph _mem _in:
- [ M(Syscall)._sha3_256A_M1184
+ [ M._sha3_256A_M1184
  : arg.`2 = W64.of_int _in /\
    valid_ptr _in 1184 /\
    Glob.mem = _mem
@@ -906,7 +906,7 @@ qed.
 
 (*********************************************************************************)
 equiv shake256_M32__M32_M1088_eq:
-  M(Syscall)._shake256_M32__M32_M1088 ~ K._shake256_M32__M32_M1088
+  M._shake256_M32__M32_M1088 ~ K._shake256_M32__M32_M1088
  : ={arg, Glob.mem} ==> ={res, Glob.mem}
  by sim.
 
@@ -962,7 +962,7 @@ qed.
 
 from JazzEC require import Array960 Array128.
 phoare shake256_M32__M32_M1088_ph_alt mem _pout _pin1 _pin2: 
- [ Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake256_M32__M32_M1088
+ [ Jkem768_avx2.M._shake256_M32__M32_M1088
  : arg = (_pout,_pin1,_pin2) /\
    valid_ptr (to_uint _pout) 32 /\
    valid_ptr (to_uint _pin1) 32 /\
@@ -994,7 +994,7 @@ by rewrite initiE.
 qed. 
 
 phoare shake256_M32__M32_M1088_ph mem _pout _pin1 _pin2: 
- [ Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake256_M32__M32_M1088
+ [ Jkem768_avx2.M._shake256_M32__M32_M1088
  : arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2) /\
    valid_ptr _pout 32 /\
    valid_ptr _pin1 32 /\
@@ -1086,7 +1086,7 @@ qed.
 
 (*********************************************************************************)
 equiv shake128_absorb_A32_A2_eq:
-  M(Syscall)._shake128_absorb_A32_A2 ~ K._shake128_absorb_A32_A2
+  M._shake128_absorb_A32_A2 ~ K._shake128_absorb_A32_A2
  : ={arg} ==> ={res}
  by sim.
 
@@ -1127,7 +1127,7 @@ op stmatch_avx2 st stavx2 =
  stavx2 = stavx2_from_st25 st.
 
 phoare shake128_absorb_A32_A2_ph _rho _rc:
- [ Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128_absorb_A32_A2
+ [ Jkem768_avx2.M._shake128_absorb_A32_A2
    : seed = _rho /\ pos = _rc
      ==>
      stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ to_list _rc)) res
@@ -1138,7 +1138,7 @@ qed.
 
 (*********************************************************************************)
 equiv shake128_squeeze3blocks_eq:
-  M(Syscall)._shake128_squeeze3blocks ~ K._shake128_squeeze3blocks
+  M._shake128_squeeze3blocks ~ K._shake128_squeeze3blocks
  : ={arg} ==> ={res}
 by sim.
 
@@ -1209,7 +1209,7 @@ by conseq shake128_squeeze3blocks_ll (shake128_squeeze3blocks_h' _buf _st).
 qed.
 
 phoare shake128_squeeze3blocks_ph _buf _st:
- [ M(Syscall)._shake128_squeeze3blocks
+ [ M._shake128_squeeze3blocks
  : buf=_buf /\ st=stavx2_from_st25 _st
  ==> sub res (0*168) 168 = squeezestate_i 168 _st 0
   /\ sub res (1*168) 168 = squeezestate_i 168 _st 1
@@ -1222,7 +1222,7 @@ qed.
 
 (*********************************************************************************)
 equiv shake128_next_state_eq:
-  M(Syscall)._shake128_next_state ~ K._shake128_next_state
+  M._shake128_next_state ~ K._shake128_next_state
  : ={arg} ==> ={res}
 by sim.
 
@@ -1276,7 +1276,7 @@ by conseq shake128_next_state_ll (shake128_next_state_h' _buf).
 qed.
 
 phoare shake128_next_state_ph _buf:
- [ Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128_next_state
+ [ Jkem768_avx2.M._shake128_next_state
  : buf = _buf
    ==>
    let st = bytes2state (sub _buf (2*168) 200) in
@@ -1295,7 +1295,7 @@ from Keccak require import Keccak1600_avx2x4.
 (*********************************************************************************)
 
 equiv shake256x4_A128__A32_A1_eq:
-  M(Syscall)._shake256x4_A128__A32_A1 ~ K._shake256x4_A128__A32_A1
+  M._shake256x4_A128__A32_A1 ~ K._shake256x4_A128__A32_A1
  : ={arg} ==> ={res}
 by sim.
 
@@ -1359,7 +1359,7 @@ qed.
 
 phoare shake256x4_A128__A32_A1_ph _seed _nonces :
  [ 
-   Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake256x4_A128__A32_A1
+   Jkem768_avx2.M._shake256x4_A128__A32_A1
  : seed = _seed /\ nonces = _nonces 
  ==>
     res.`1 = Array128.of_list W8.zero (SHAKE256 (to_list _seed ++ [_nonces.[0]]) 128)
@@ -1375,7 +1375,7 @@ qed.
 (*********************************************************************************)
 
 equiv shake128x4_absorb_A32_A2_eq:
-  M(Syscall)._shake128x4_absorb_A32_A2 ~ K._shake128x4_absorb_A32_A2
+  M._shake128x4_absorb_A32_A2 ~ K._shake128x4_absorb_A32_A2
  : ={arg} ==> ={res}
 by sim.
 
@@ -1439,7 +1439,7 @@ by conseq shake128x4_absorb_A32_A2_ll (shake128x4_absorb_A32_A2_h' _rho _rc).
 qed.
 
 phoare shake128x4_absorb_A32_A2_ph _rho _rc:
- [ Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128x4_absorb_A32_A2
+ [ Jkem768_avx2.M._shake128x4_absorb_A32_A2
  : seed = _rho /\ pos = _rc
  ==>
     match_state4x
@@ -1456,7 +1456,7 @@ qed.
 (*********************************************************************************)
 
 equiv shake128x4_squeeze3blocks_eq:
-  M(Syscall)._shake128x4_squeeze3blocks ~ K._shake128x4_squeeze3blocks
+  M._shake128x4_squeeze3blocks ~ K._shake128x4_squeeze3blocks
  : ={arg} ==> ={res}
 by sim.
 
@@ -1618,7 +1618,7 @@ by conseq shake128x4_squeeze3blocks_ll (shake128x4_squeeze3blocks_h' _st0 _st1 _
 qed.
 
 phoare shake128x4_squeeze3blocks_ph _st0 _st1 _st2 _st3:
- [ Jkem768_avx2.M(Jkem768_avx2.Syscall)._shake128x4_squeeze3blocks
+ [ Jkem768_avx2.M._shake128x4_squeeze3blocks
  : match_state4x _st0 _st1 _st2 _st3 st
  ==>
       sub res.`2 (0*536) (3*168) = SHAKE128_SQUEEZE (3*168) _st0

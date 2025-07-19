@@ -266,7 +266,7 @@ qed.
 
 lemma bridge48 _ctr _offset _p : 
 equiv [
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter48 ~ Filters.filter48 : 
+Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter48 ~ Filters.filter48 : 
   pol{1} = _p
 /\  0 <= _offset /\  _offset + 56 <= 536 
 /\  0 <= _ctr /\ _ctr + 32 <= 256 
@@ -608,7 +608,7 @@ qed.
 import W12.
 lemma buf_rejection_filter48_h _pol _ctr _buf _buf_offset:
 hoare [
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+ Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter48
  :  counter = _ctr
    /\ W64.to_uint _buf_offset + 56 < 536
    /\  W64.to_uint _ctr <= 256-32 
@@ -765,11 +765,11 @@ have -> := BitEncoding.BitChunking.nth_flatten witness 8 (map W8.w2bits (take 48
  qed.
 
 lemma buf_rejection_filter48_ll:
- islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+ islossless Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter48
  by islossless.
 
 lemma buf_rejection_filter48_ph _pol _ctr _buf _buf_offset:
-phoare  [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter48
+phoare  [Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter48
  : counter = _ctr
   /\  W64.to_uint _buf_offset + 56 < 536 
    /\ to_uint _ctr <= 256-32
@@ -796,7 +796,7 @@ op sliceset_256_128_16 (a : W16.t Array256.t) (offset : int) (w : W128.t) : W16.
             let index = i * 16 + j in if offset <= index < offset + 128 then w.[index - offset] else a.[i].[j])).
 
 hoare _write_u128_boundchk_corr_h _pol _ctr _in128 :
- M(Syscall).__write_u128_boundchk :
+ M.__write_u128_boundchk :
  to_uint arg.`2 <= 256 + 8 /\
  arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128
  ==>
@@ -1038,10 +1038,10 @@ rewrite get_set16E 1,2:/#.
   + rewrite ifF 1:/# /(\bits8) initiE 1:/# /= /#.
 qed.
 
-lemma _write_u128_boundchk_corr_ll : islossless  M(Syscall).__write_u128_boundchk by islossless. 
+lemma _write_u128_boundchk_corr_ll : islossless  M.__write_u128_boundchk by islossless. 
 
 phoare _write_u128_boundchk_corr _pol _ctr _in128 :
- [ M(Syscall).__write_u128_boundchk :
+ [ M.__write_u128_boundchk :
    to_uint arg.`2 <= 256 + 8 /\
    arg.`1 = _pol /\ to_uint arg.`2 = _ctr /\ arg.`3 = _in128
    ==>
@@ -1052,7 +1052,7 @@ by conseq _write_u128_boundchk_corr_ll ( _write_u128_boundchk_corr_h _pol _ctr _
 
 lemma bridge24 _ctr _offset _p : 
 equiv [
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter24 ~ Filters.filter24 : 
+Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter24 ~ Filters.filter24 : 
   pol{1} = _p
  /\  0 <= _offset /\  _offset + 32 <= 536 
  /\  0 <= _ctr /\ _ctr  <= 256
@@ -1178,7 +1178,7 @@ import W12.
 
 
 hoare buf_rejection_filter24_h _pol _ctr _buf _buf_offset:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter24
  : counter = _ctr
    /\ W64.to_uint _buf_offset + 32 < 536
    /\ W64.to_uint _ctr <= 256
@@ -1331,11 +1331,11 @@ have -> := BitEncoding.BitChunking.nth_flatten witness 8 (map W8.w2bits (take 24
 
 
 lemma buf_rejection_filter24_ll:
- islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ islossless Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter24
  by islossless.
 
 phoare buf_rejection_filter24_ph _pol _ctr _buf _buf_offset:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_buf_rejection_filter24
+ [Jkem1024_avx2.M.__gen_matrix_buf_rejection_filter24
  :counter = _ctr
    /\ W64.to_uint _buf_offset + 32 < 536
    /\  W64.to_uint _ctr <= 256

@@ -411,7 +411,7 @@ module Tmp = {
     r5 <- P2R rp 9;
     r6 <- P2R rp 10;
     r7 <- P2R rp 11;
-    (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r1, r2, r3, r4,
+    (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
     r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
     rp <- PUR rp 0 r0;
     rp <- PUR rp 1 r1;
@@ -429,7 +429,7 @@ module Tmp = {
     r5 <- P2R rp 13;
     r6 <- P2R rp 14;
     r7 <- P2R rp 15;
-    (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r1, r2, r3, r4,
+    (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
     r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
     rp <- PUR rp 12 r4;
     rp <- PUR rp 13 r5;
@@ -454,55 +454,55 @@ module Tmp = {
       r1 <- P2R rp (1+8*i);
       r2 <- P2R rp (2+8*i);
       r3 <- P2R rp (3+8*i);
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r1, r2, r3, r4,
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
       r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <- z2u256 zetasp (8+196*i);
       zeta1 <- z2u256 zetasp (24+196*i);
-      (r0, r4) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r0, r4);
-      (r1, r5) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r1, r5);
-      (r2, r6) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r2, r6);
-      (r3, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r3, r7);
-      (r0, r4, r1, r5, r2, r6, r3, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r4, r1, r5, r2,
+      (r0, r4) <@Jkem1024_avx2.M.__shuffle8 (r0, r4);
+      (r1, r5) <@Jkem1024_avx2.M.__shuffle8 (r1, r5);
+      (r2, r6) <@Jkem1024_avx2.M.__shuffle8 (r2, r6);
+      (r3, r7) <@Jkem1024_avx2.M.__shuffle8 (r3, r7);
+      (r0, r4, r1, r5, r2, r6, r3, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r4, r1, r5, r2,
       r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <- z2u256 zetasp (40+196*i);
       zeta1 <- z2u256 zetasp (56+196*i);
-      (r0, r2) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r0, r2);
-      (r4, r6) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r4, r6);
-      (r1, r3) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r1, r3);
-      (r5, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r5, r7);
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r2, r4, r6, r1,
+      (r0, r2) <@Jkem1024_avx2.M.__shuffle4 (r0, r2);
+      (r4, r6) <@Jkem1024_avx2.M.__shuffle4 (r4, r6);
+      (r1, r3) <@Jkem1024_avx2.M.__shuffle4 (r1, r3);
+      (r5, r7) <@Jkem1024_avx2.M.__shuffle4 (r5, r7);
+      (r0, r2, r4, r6, r1, r3, r5, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r2, r4, r6, r1,
       r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <- z2u256 zetasp (72+196*i);
       zeta1 <- z2u256 zetasp (88+196*i);
-      (r0, r1) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r0, r1);
-      (r2, r3) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r2, r3);
-      (r4, r5) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r4, r5);
-      (r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r6, r7);
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r1, r2, r3, r4,
+      (r0, r1) <@Jkem1024_avx2.M.__shuffle2 (r0, r1);
+      (r2, r3) <@Jkem1024_avx2.M.__shuffle2 (r2, r3);
+      (r4, r5) <@Jkem1024_avx2.M.__shuffle2 (r4, r5);
+      (r6, r7) <@Jkem1024_avx2.M.__shuffle2 (r6, r7);
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r1, r2, r3, r4,
       r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <- z2u256 zetasp (104+196*i);
       zeta1 <- z2u256 zetasp (120+196*i);
-      (r0, r4) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r0, r4);
-      (r1, r5) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r1, r5);
-      (r2, r6) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r2, r6);
-      (r3, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r3, r7);
-      (r0, r4, r1, r5, r2, r6, r3, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r4, r1, r5, r2,
+      (r0, r4) <@Jkem1024_avx2.M.__shuffle1 (r0, r4);
+      (r1, r5) <@Jkem1024_avx2.M.__shuffle1 (r1, r5);
+      (r2, r6) <@Jkem1024_avx2.M.__shuffle1 (r2, r6);
+      (r3, r7) <@Jkem1024_avx2.M.__shuffle1 (r3, r7);
+      (r0, r4, r1, r5, r2, r6, r3, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r4, r1, r5, r2,
       r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <- z2u256 zetasp (136+196*i);
       zeta1 <- z2u256 zetasp (168+196*i);
       zeta2 <- z2u256 zetasp (152+196*i);
       zeta3 <- z2u256 zetasp (184+196*i);
-      (r0, r4, r2, r6, r1, r5, r3, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x (r0, r4, r2, r6, r1,
+      (r0, r4, r2, r6, r1, r5, r3, r7) <@Jkem1024_avx2.M.__butterfly64x (r0, r4, r2, r6, r1,
       r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
       vx16 <- C2R vx16_op;
-      r0 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r0, qx16, vx16);
-      r4 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r4, qx16, vx16);
-      r2 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r2, qx16, vx16);
-      r6 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r6, qx16, vx16);
-      r1 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r1, qx16, vx16);
-      r5 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r5, qx16, vx16);
-      r3 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r3, qx16, vx16);
-      r7 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r7, qx16, vx16);
+      r0 <@Jkem1024_avx2.M.__red16x (r0, qx16, vx16);
+      r4 <@Jkem1024_avx2.M.__red16x (r4, qx16, vx16);
+      r2 <@Jkem1024_avx2.M.__red16x (r2, qx16, vx16);
+      r6 <@Jkem1024_avx2.M.__red16x (r6, qx16, vx16);
+      r1 <@Jkem1024_avx2.M.__red16x (r1, qx16, vx16);
+      r5 <@Jkem1024_avx2.M.__red16x (r5, qx16, vx16);
+      r3 <@Jkem1024_avx2.M.__red16x (r3, qx16, vx16);
+      r7 <@Jkem1024_avx2.M.__red16x (r7, qx16, vx16);
       rp <- PUR rp (0+8*i) r0;
       rp <- PUR rp (1+8*i) r4;
       rp <- PUR rp (2+8*i) r1;
@@ -537,59 +537,59 @@ module Tmp = {
       r5 <- P2R rp (5+8*i);
       r6 <- P2R rp (6+8*i);
       r7 <- P2R rp (7+8*i);
-      (r0, r1, r4, r5, r2, r3, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x (r0, r1,
+      (r0, r1, r4, r5, r2, r3, r6, r7) <@Jkem1024_avx2.M.__invntt___butterfly64x (r0, r1,
       r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
       (* 8 8 1 1 8 8 1 1 - 4 *)
       vx16 <- C2R vx16_op;
       zeta0 <- z2u256 zetasp (64 + (196 * i));
       zeta1 <- z2u256 zetasp (80 + (196 * i));
-      r0 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r0, qx16, vx16);
-      r1 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r1, qx16, vx16);
-      r4 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r4, qx16, vx16);
-      r5 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r5, qx16, vx16);      
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x (r0, r1,
+      r0 <@Jkem1024_avx2.M.__red16x (r0, qx16, vx16);
+      r1 <@Jkem1024_avx2.M.__red16x (r1, qx16, vx16);
+      r4 <@Jkem1024_avx2.M.__red16x (r4, qx16, vx16);
+      r5 <@Jkem1024_avx2.M.__red16x (r5, qx16, vx16);      
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M.__invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (* 4 4 2 2 1 1 1 1 - 0 *)
-      (r0, r1) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r0, r1);
-      (r2, r3) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r2, r3);
-      (r4, r5) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r4, r5);
-      (r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 (r6, r7);
+      (r0, r1) <@Jkem1024_avx2.M.__shuffle1 (r0, r1);
+      (r2, r3) <@Jkem1024_avx2.M.__shuffle1 (r2, r3);
+      (r4, r5) <@Jkem1024_avx2.M.__shuffle1 (r4, r5);
+      (r6, r7) <@Jkem1024_avx2.M.__shuffle1 (r6, r7);
       zeta0 <- z2u256 zetasp (96 + (196 * i));
       zeta1 <- z2u256 zetasp (112 + (196 * i));
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x (r0, r2,
+      (r0, r2, r4, r6, r1, r3, r5, r7) <@Jkem1024_avx2.M.__invntt___butterfly64x (r0, r2,
       r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (* 8 1 4 1 2 1 2 1 - 1 *)
-      r0 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r0, qx16, vx16);
-      (r0, r2) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r0, r2);
-      (r4, r6) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r4, r6);
-      (r1, r3) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r1, r3);
-      (r5, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 (r5, r7);
+      r0 <@Jkem1024_avx2.M.__red16x (r0, qx16, vx16);
+      (r0, r2) <@Jkem1024_avx2.M.__shuffle2 (r0, r2);
+      (r4, r6) <@Jkem1024_avx2.M.__shuffle2 (r4, r6);
+      (r1, r3) <@Jkem1024_avx2.M.__shuffle2 (r1, r3);
+      (r5, r7) <@Jkem1024_avx2.M.__shuffle2 (r5, r7);
       zeta0 <- z2u256 zetasp (128 + (196 * i));
       zeta1 <- z2u256 zetasp (144 + (196 * i));
-      (r0, r4, r1, r5, r2, r6, r3, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x (r0, r4,
+      (r0, r4, r1, r5, r2, r6, r3, r7) <@Jkem1024_avx2.M.__invntt___butterfly64x (r0, r4,
       r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (* 8 2 1 1 4 2 1 1 - 1 *)
-      r0 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r0, qx16, vx16);
-      (r0, r4) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r0, r4);
-      (r1, r5) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r1, r5);
-      (r2, r6) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r2, r6);
-      (r3, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 (r3, r7);
+      r0 <@Jkem1024_avx2.M.__red16x (r0, qx16, vx16);
+      (r0, r4) <@Jkem1024_avx2.M.__shuffle4 (r0, r4);
+      (r1, r5) <@Jkem1024_avx2.M.__shuffle4 (r1, r5);
+      (r2, r6) <@Jkem1024_avx2.M.__shuffle4 (r2, r6);
+      (r3, r7) <@Jkem1024_avx2.M.__shuffle4 (r3, r7);
       zeta0 <- z2u256 zetasp (160 + (196 * i));
       zeta1 <- z2u256 zetasp (176 + (196 * i));
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x (r0, r1,
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M.__invntt___butterfly64x (r0, r1,
       r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (* 8 4 2 2 1 1 1 1 - 1 *)
-      r0 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r0, qx16, vx16);
-      (r0, r1) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r0, r1);
-      (r2, r3) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r2, r3);
-      (r4, r5) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r4, r5);
-      (r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 (r6, r7);
+      r0 <@Jkem1024_avx2.M.__red16x (r0, qx16, vx16);
+      (r0, r1) <@Jkem1024_avx2.M.__shuffle8 (r0, r1);
+      (r2, r3) <@Jkem1024_avx2.M.__shuffle8 (r2, r3);
+      (r4, r5) <@Jkem1024_avx2.M.__shuffle8 (r4, r5);
+      (r6, r7) <@Jkem1024_avx2.M.__shuffle8 (r6, r7);
       zeta0 <- VPBROADCAST_8u32 (z2u32 zetasp (192 + (196 * i)));
       zeta1 <- VPBROADCAST_8u32 (z2u32 zetasp (194 + (196 * i)));
-      (r0, r2, r4, r6, r1, r3, r5, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x (r0, r2,
+      (r0, r2, r4, r6, r1, r3, r5, r7) <@Jkem1024_avx2.M.__invntt___butterfly64x (r0, r2,
       r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (* 8 1 4 1 2 1 2 1 - 1 *)
-      r0 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x (r0, qx16, vx16);
+      r0 <@Jkem1024_avx2.M.__red16x (r0, qx16, vx16);
       if (i = 0) {
       rp <- PUR rp (0+8*i) r0; (* 2 *)
       rp <- PUR rp (1+8*i) r2; (* 4 *)
@@ -621,7 +621,7 @@ module Tmp = {
       r1 <- P2R rp (1+4*i); (* 4 *)
       r2 <- P2R rp (2+4*i); (* 2 *)
       r3 <- P2R rp (3+4*i); (* 2 *)
-      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x (r0, r1,
+      (r0, r1, r2, r3, r4, r5, r6, r7) <@Jkem1024_avx2.M.__invntt___butterfly64x (r0, r1,
         r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       (* 4 8 4 4 1 1 1 1 *)
       flox16 <- C2R flox16_op;
@@ -630,10 +630,10 @@ module Tmp = {
       rp <- PUR rp (9+4*i) r5;
       rp <- PUR rp (10+4*i) r6;
       rp <- PUR rp (11+4*i) r7;
-      r0 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x (r0, flox16, fhix16, qx16);
-      r1 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x (r1, flox16, fhix16, qx16);
-      r2 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x (r2, flox16, fhix16, qx16);
-      r3 <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x (r3, flox16, fhix16, qx16);
+      r0 <@Jkem1024_avx2.M.__fqmulprecomp16x (r0, flox16, fhix16, qx16);
+      r1 <@Jkem1024_avx2.M.__fqmulprecomp16x (r1, flox16, fhix16, qx16);
+      r2 <@Jkem1024_avx2.M.__fqmulprecomp16x (r2, flox16, fhix16, qx16);
+      r3 <@Jkem1024_avx2.M.__fqmulprecomp16x (r3, flox16, fhix16, qx16);
       rp <- PUR rp (0+4*i) r0;
       rp <- PUR rp (1+4*i) r1;
       rp <- PUR rp (2+4*i) r2;
@@ -658,14 +658,14 @@ module Tmp = {
     aim <- P2R ap 1;
     bre <- P2R bp 0;
     bim <- P2R bp 1;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
     rp <- PUR rp 0 are;
     rp <- PUR rp 1 aim;
     are <- P2R ap 2;
     aim <- P2R ap 3;
     bre <- P2R bp 2;
     bim <- P2R bp 3;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
     rp <- PUR rp 2 are;
     rp <- PUR rp 3 aim;
 
@@ -675,14 +675,14 @@ module Tmp = {
     aim <- P2R ap 5;
     bre <- P2R bp 4;
     bim <- P2R bp 5;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
     rp <- PUR rp 4 are;
     rp <- PUR rp 5 aim;
     are <- P2R ap 6;
     aim <- P2R ap 7;
     bre <- P2R bp 6;
     bim <- P2R bp 7;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
     rp <- PUR rp 6 are;
     rp <- PUR rp 7 aim;
 
@@ -693,14 +693,14 @@ module Tmp = {
     aim <- P2R ap 9;
     bre <- P2R bp 8;
     bim <- P2R bp 9;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
     rp <- PUR rp 8 are;
     rp <- PUR rp 9 aim;
     are <- P2R ap 10;
     aim <- P2R ap 11;
     bre <- P2R bp 10;
     bim <- P2R bp 11;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
     rp <- PUR rp 10 are;
     rp <- PUR rp 11 aim;
 
@@ -710,14 +710,14 @@ module Tmp = {
     aim <- P2R ap 13;
     bre <- P2R bp 12;
     bim <- P2R bp 13;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 0);
     rp <- PUR rp 12 are;
     rp <- PUR rp 13 aim;
     are <- P2R ap 14;
     aim <- P2R ap 15;
     bre <- P2R bp 14;
     bim <- P2R bp 15;
-    (are, aim) <@Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
+    (are, aim) <@Jkem1024_avx2.M.__schoolbook16x(are, aim, bre, bim, zeta_0, zetaqinv, qx16, qinvx16, 1);
     rp <- PUR rp 14 are;
     rp <- PUR rp 15 aim;
 
@@ -731,7 +731,7 @@ module Tmp = {
 (***********************************)
 
 equiv basemul_avx2_eq_:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_basemul ~ Tmp._poly_basemul:
+Jkem1024_avx2.M._poly_basemul ~ Tmp._poly_basemul:
  ={rp,ap,bp} ==> ={res}.
 proof.
 proc.
@@ -771,7 +771,7 @@ by wp; skip => &1 &2; rewrite !PURE //.
 qed.
 
 equiv ntt_avx2_eq_:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_ntt ~ Tmp._ntt:
+Jkem1024_avx2.M._poly_ntt ~ Tmp._ntt:
  ={rp} ==> ={res}.
 proof.
 proc.
@@ -819,7 +819,7 @@ by auto => />.
 qed.
 
 equiv invntt_avx2_eq_:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_invntt ~ Tmp._invntt:
+Jkem1024_avx2.M._poly_invntt ~ Tmp._invntt:
  ={rp} ==> ={res}.
 proof.
 proc.
@@ -1023,7 +1023,7 @@ op I16u32AB_sb (b:int) (yA yB: W256.t) (x: coeff Array16.t) =
      (iota_ 0 16).
 
 phoare deinterleave_u16_ph b _x:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__w256_deinterleave_u16:
+ [Jkem1024_avx2.M.__w256_deinterleave_u16:
    x16_spec 0 _zero /\
    I16u32AB_sb b a0 a1 _x
    ==>
@@ -1049,7 +1049,7 @@ by  rewrite VPBLENDW_256_170 /= 1:/#
 qed.
 
 phoare interleave_u16_ph b _x:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__w256_interleave_u16:
+ [Jkem1024_avx2.M.__w256_interleave_u16:
    I16u16LH_sb b al ah _x
    ==>
    I16u32AB_sb b res.`1 res.`2 _x
@@ -1093,7 +1093,7 @@ case: (0 <= a); case: (0 <= b) => C1 C2.
 qed.
 
 phoare wmul_16u16_ph n _x _y:
-  [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__wmul_16u16:
+  [Jkem1024_avx2.M.__wmul_16u16:
     I16u16_sb n x _x /\
     I16u16_sb n y _y
     ==>
@@ -1151,7 +1151,7 @@ by rewrite !to_sint32B_small 1..16:/# !incoeffB /#.
 qed.
 
 lemma fqmulprecomp16x_ll: 
- islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x 
+ islossless Jkem1024_avx2.M.__fqmulprecomp16x 
 by islossless.
 
 
@@ -1164,7 +1164,7 @@ by rewrite incoeff_mod /q /= !ZqField.mulr1.
 qed.
 
 hoare fqmulprecomp16x_h n _a _b: 
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x :
+Jkem1024_avx2.M.__fqmulprecomp16x :
    x16_spec q qx16 /\
    qinv16u16M al ah /\
    I16u16M_ub 1 ah _a /\
@@ -1214,7 +1214,7 @@ smt().
 qed.
 
 phoare fqmulprecomp16x_ph n _a _b:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x :
+ [Jkem1024_avx2.M.__fqmulprecomp16x :
    x16_spec q qx16 /\
    qinv16u16M al ah /\
    I16u16M_ub 1 ah _a /\
@@ -1223,11 +1223,11 @@ phoare fqmulprecomp16x_ph n _a _b:
 proof. by conseq fqmulprecomp16x_ll (fqmulprecomp16x_h n _a _b). qed.
 
 lemma mont_red_ll:
- islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__mont_red
+ islossless Jkem1024_avx2.M.__mont_red
 by islossless.
 
 hoare mont_red_h _x:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__mont_red:
+Jkem1024_avx2.M.__mont_red:
   x16_spec q qx16 /\
   x16_spec 62209 qinvx16 /\
   I16u16LH_sb 88657928 lo hi _x
@@ -1258,7 +1258,7 @@ smt().
 qed.
 
 phoare mont_red_ph _x:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__mont_red:
+ [Jkem1024_avx2.M.__mont_red:
    x16_spec q qx16 /\
    x16_spec 62209 qinvx16 /\
    I16u16LH_sb 88657928 lo hi _x
@@ -1284,7 +1284,7 @@ by apply (sint_bndW _ _ _ _ _ _ _ H2); smt().
 qed.
 
 equiv cmpl_mulx16_eq:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__schoolbook16x ~ NTT_AVX.__cmplx_mulx16:
+Jkem1024_avx2.M.__schoolbook16x ~ NTT_AVX.__cmplx_mulx16:
  I16u16_sb 2 are{1} are{2} /\
  I16u16_sb 2 aim{1} aim{2} /\
  I16u16_sb 2 bre{1} bre{2} /\
@@ -1344,7 +1344,7 @@ by rewrite !map2iE 1..2://; ring.
 qed.
 
 equiv poly_basemul_avx2_eq:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_basemul ~ NTT_AVX.__basemul:
+Jkem1024_avx2.M._poly_basemul ~ NTT_AVX.__basemul:
  a{2}=lift_array256 ap{1} /\ signed_bound_cxq ap{1} 0 256 2
  /\ b{2}=lift_array256 bp{1} /\ signed_bound_cxq bp{1} 0 256 2
  ==>
@@ -1653,7 +1653,7 @@ by apply butterfly_l; [assumption|by apply Hq|by apply Hl|
 qed.
 
 equiv butterfly64x_eq c:
- NTT_AVX.__butterfly64x ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__butterfly64x :
+ NTT_AVX.__butterfly64x ~Jkem1024_avx2.M.__butterfly64x :
  (c+1)*q <= W16.max_sint /\
  I16u16_sb c rl0{2} rl0t{1} /\
  I16u16_sb c rl1{2} rl1t{1} /\
@@ -1685,10 +1685,10 @@ do 3! (split; first by apply butterfly16x_lE).
 by apply butterfly16x_lE.
 qed.
 
-lemma __shuffle8_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8 by islossless.
+lemma __shuffle8_ll: islossless Jkem1024_avx2.M.__shuffle8 by islossless.
 
 hoare __shuffle8_h na nb _a _b:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8:
+Jkem1024_avx2.M.__shuffle8:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle8 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle8 _a _b).`2.
@@ -1703,23 +1703,23 @@ by rewrite -iotaredE /= !b2i0 !b2i1 /shuffle8 /= /#.
 qed.
 
 phoare __shuffle8_ph' n _a _b:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8:
+ [Jkem1024_avx2.M.__shuffle8:
    I16u16_sb n a _a /\ I16u16_sb n b _b
    ==> I16u16_sb n res.`1 (shuffle8 _a _b).`1
        /\ I16u16_sb n res.`2 (shuffle8 _a _b).`2 ] = 1%r.
 proof. by conseq __shuffle8_ll (__shuffle8_h n n _a _b). qed.
 
 phoare __shuffle8_ph na nb _a _b:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle8:
+ [Jkem1024_avx2.M.__shuffle8:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle8 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle8 _a _b).`2 ] = 1%r.
 proof. by conseq __shuffle8_ll (__shuffle8_h na nb _a _b). qed.
 
-lemma __shuffle4_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4 by islossless.
+lemma __shuffle4_ll: islossless Jkem1024_avx2.M.__shuffle4 by islossless.
 
 hoare __shuffle4_h na nb _a _b:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4:
+Jkem1024_avx2.M.__shuffle4:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle4 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle4 _a _b).`2.
@@ -1733,16 +1733,16 @@ by rewrite -!iotaredE /= /#.
 qed.
 
 phoare __shuffle4_ph na nb _a _b:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle4:
+ [Jkem1024_avx2.M.__shuffle4:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle4 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle4 _a _b).`2 ] = 1%r.
 proof. by conseq __shuffle4_ll (__shuffle4_h na nb _a _b). qed.
 
-lemma __shuffle2_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2 by islossless.
+lemma __shuffle2_ll: islossless Jkem1024_avx2.M.__shuffle2 by islossless.
 
 hoare __shuffle2_h na nb _a _b:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2:
+Jkem1024_avx2.M.__shuffle2:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle2 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle2 _a _b).`2.
@@ -1757,16 +1757,16 @@ by rewrite !bits64_shr32_bits16 /= /#.
 qed.
 
 phoare __shuffle2_ph na nb _a _b:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle2:
+ [Jkem1024_avx2.M.__shuffle2:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle2 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle2 _a _b).`2 ] = 1%r.
 proof. by conseq __shuffle2_ll (__shuffle2_h na nb _a _b). qed.
 
-lemma __shuffle1_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1 by islossless.
+lemma __shuffle1_ll: islossless Jkem1024_avx2.M.__shuffle1 by islossless.
 
 hoare __shuffle1_h na nb _a _b:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1:
+Jkem1024_avx2.M.__shuffle1:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle1 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle1 _a _b).`2.
@@ -1781,14 +1781,14 @@ by rewrite -!iotaredE /= => |> /#.
 qed.
 
 phoare __shuffle1_ph na nb _a _b:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__shuffle1:
+ [Jkem1024_avx2.M.__shuffle1:
    I16u16_sb na a _a /\ I16u16_sb nb b _b
    ==> I16u16_sb (max na nb) res.`1 (shuffle1 _a _b).`1
        /\ I16u16_sb (max na nb) res.`2 (shuffle1 _a _b).`2 ] = 1%r.
 proof. by conseq __shuffle1_ll (__shuffle1_h na nb _a _b). qed.
 
 (* Poly reduction *)
-lemma __red16x_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x by islossless.
+lemma __red16x_ll: islossless Jkem1024_avx2.M.__red16x by islossless.
 
 lemma sbred16_spec x y:
   y = incoeff (W16.to_sint x) =>
@@ -1808,7 +1808,7 @@ smt().
 qed.
 
 hoare __red16x_h n y:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x :
+Jkem1024_avx2.M.__red16x :
     x16_spec q qx16 /\
     x16_spec 20159 vx16 /\
     I16u16_sb n r y ==> I16u16_ub 2 res y.
@@ -1821,14 +1821,14 @@ do split;(move : sbred16_spec);rewrite /sbred16 /(`|>>`) /=; smt().
 qed.
 
 phoare __red16x_ph n x:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x :
+ [Jkem1024_avx2.M.__red16x :
     x16_spec q qx16 /\
     x16_spec 20159 vx16 /\
     I16u16_sb n r x ==> I16u16_ub 2 res x ] = 1%r.
 proof. by conseq __red16x_ll (__red16x_h n x). qed.
 
 phoare __red16x_sb_ph n x:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__red16x :
+ [Jkem1024_avx2.M.__red16x :
     x16_spec q qx16 /\
     x16_spec 20159 vx16 /\
     I16u16_sb n r x ==> I16u16_sb 2 res x ] = 1%r.
@@ -1839,7 +1839,7 @@ by skip => /> *; apply I16u16_ub_sb.
 qed.
 
 equiv poly_ntt_avx2_eq:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_ntt ~ NTT_AVX.ntt:
+Jkem1024_avx2.M._poly_ntt ~ NTT_AVX.ntt:
  rp{2}=lift_array256 rp{1} /\ signed_bound_cxq rp{1} 0 256 2 ==>
  res{2}=lift_array256 res{1} /\
  pos_bound256_cxq res{1} 0 256 2.
@@ -2299,7 +2299,7 @@ qed.
 
 equiv invntt_butterfly64x_eq c0 c1 c2 c3 c4 c5 c6 c7:
  NTT_AVX.__invntt___butterfly64x
- ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x :
+ ~Jkem1024_avx2.M.__invntt___butterfly64x :
  MAX (MAX (c0+c4) (c1+c5))%Int
      (MAX (c2+c6) (c3+c7))%Int * q
   <= W16.max_sint /\
@@ -2337,7 +2337,7 @@ qed.
 
 equiv invntt_butterfly64x_eq_last c0 c1 c2 c3 c4 c5 c6 c7:
  NTT_AVX.__invntt___butterfly64x
- ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__invntt___butterfly64x :
+ ~Jkem1024_avx2.M.__invntt___butterfly64x :
  MAX (MAX (c0+c4) (c1+c5))%Int
      (MAX (c2+c6) (c3+c7))%Int * q
   <= W16.max_sint /\
@@ -2375,7 +2375,7 @@ qed.
 
 
 phoare fq_mulprecomp16x_aux _n _r:
- [Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__fqmulprecomp16x :
+ [Jkem1024_avx2.M.__fqmulprecomp16x :
    x16_spec q qx16 /\
    x16_spec 1441 ah /\
    x16_spec (-10079) al /\
@@ -2406,7 +2406,7 @@ by rewrite initiE 1:/# /= /#.
 qed.
 
 equiv poly_invntt_avx2_eq:
-Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._poly_invntt ~ NTT_AVX.invntt:
+Jkem1024_avx2.M._poly_invntt ~ NTT_AVX.invntt:
  rp{2}=lift_array256 rp{1} /\ signed_bound_cxq rp{1} 0 256 4 ==>
  mul1x256 (incoeff W16.modulus) res{2}=lift_array256 res{1} /\
  signed_bound_cxq res{1} 0 256 1.

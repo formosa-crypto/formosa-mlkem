@@ -668,7 +668,7 @@ by apply Array256.all_eq_eq; rewrite /all_eq
 qed.
 
 phoare poly_basemul_avx2_ph _a _b:
- [Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_basemul:
+ [Jkem768_avx2.M._poly_basemul:
     (lift_array256 ap) = nttunpack _a /\ signed_bound_cxq ap 0 256 2
     /\ (lift_array256 bp) = nttunpack _b /\ signed_bound_cxq bp 0 256 2
    ==>
@@ -686,7 +686,7 @@ by rewrite /scale -map_pack nttpackK.
 qed.
 
 lemma poly_ntt_avx2_corr _r :
-  phoare [Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_ntt :
+  phoare [Jkem768_avx2.M._poly_ntt :
     rp = _r /\ signed_bound_cxq rp 0 256 2 ==>
     ntt (lift_array256 _r) = lift_array256 (nttpack res) /\
     pos_bound256_cxq res 0 256 2] = 1%r.
@@ -700,7 +700,7 @@ qed.
 import KMatrix.
 import Vector.
 lemma polyvec_ntt_avx2_corr _r :
-  phoare [Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_ntt :
+  phoare [Jkem768_avx2.M.__polyvec_ntt :
      r = _r /\ signed_bound768_cxq r 0 768 2==>
     nttv (lift_polyvec _r) = lift_polyvec (nttpackv res) /\
    pos_bound768_cxq res 0 768 2] = 1%r.
@@ -751,7 +751,7 @@ rewrite /pos_bound768_cxq => k kb; rewrite initiE //=.
 qed.
 
 lemma poly_invntt_avx2_corr _r :
-  phoare [Jkem768_avx2.M(Jkem768_avx2.Syscall)._poly_invntt :
+  phoare [Jkem768_avx2.M._poly_invntt :
     lift_array256 (nttpack rp) = lift_array256 _r /\ signed_bound_cxq rp 0 256 4 ==>
     mul1x256 (incoeff W16.modulus) (invntt (lift_array256 _r)) = (lift_array256 res) /\
     signed_bound_cxq res 0 256 1] = 1%r.
@@ -789,7 +789,7 @@ move => Hk. rewrite /lift_array256 /lift_array768 /map tP => />i Hi1 Hi2. rewrit
 abbrev mul1x256v i v = mapv (mul1x256 i) v.
 
 lemma polyvec_invntt_avx2_corr _r :
-  phoare [Jkem768_avx2.M(Jkem768_avx2.Syscall).__polyvec_invntt :
+  phoare [Jkem768_avx2.M.__polyvec_invntt :
      nttpackv (lift_array768 r) = lift_array768 _r /\ signed_bound768_cxq r 0 768 4 ==>
     mul1x256v (incoeff W16.modulus) (invnttv (lift_polyvec _r)) = lift_polyvec (res) /\
    signed_bound768_cxq res 0 768 1] = 1%r.

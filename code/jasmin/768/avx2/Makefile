@@ -12,7 +12,7 @@ OS     := $(shell uname -s)
 
 default: test speed
 
-test: test/test_kem test/test_gen_matrix
+test: test/test_kem
 
 speed: test/speed_kem
 
@@ -29,9 +29,6 @@ SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
 test/test_kem: test/test_kem.c $(JINC) $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
 
-test/test_gen_matrix: test/test_gen_matrix.c $(JINC) $(SOURCES) gen_matrix.s
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) gen_matrix.s $<
-
 test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
 
@@ -42,11 +39,9 @@ test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 .PHONY: ct clean
 
 ct:
-	$(JASMINCT) gen_matrix.jazz
 	$(JASMINCT) jkem.jazz
 
 sct:
-	$(JASMINCT) --sct --slice jade_kem_mlkem_mlkem768_amd64_avx2_gen_matrix gen_matrix.jazz
 	$(JASMINCT) --sct jkem.jazz
 
 clean:

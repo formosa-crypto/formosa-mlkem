@@ -127,7 +127,7 @@ lemma inj_unpack128x2 (x y : 'a Array256.t) :
 rewrite -(unpack128x2K x) -(unpack128x2K y). rewrite !pack128x2K => ->. rewrite unpack128x2K //. qed.
 
 lemma nttunpack128_corr_h a :
- hoare[ Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__nttunpack128 :
+ hoare[ Jkem1024_avx2.M.__nttunpack128 :
    is16u16x8 a arg ==> is16u16x8 (nttunpack128x16 a) res].
 proc.
 (*shuffle8*)
@@ -189,15 +189,15 @@ do 8!(try split; first by
  do 16!(try(move => Hi; case Hi => />); first by rewrite /nttunpack128 /perm_nttunpack128 unpack16x8E pack16x8E => />)).
 qed.
 
-lemma __nttunpack128_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__nttunpack128 by islossless.
+lemma __nttunpack128_ll: islossless Jkem1024_avx2.M.__nttunpack128 by islossless.
 
 phoare nttunpack128_corr a :
- [ Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__nttunpack128 :
+ [ Jkem1024_avx2.M.__nttunpack128 :
    is16u16x8 a arg ==> is16u16x8 (nttunpack128x16 a) res] = 1%r.
 conseq __nttunpack128_ll (nttunpack128_corr_h a) => />. qed.
 
 lemma nttunpack_corr_h a :
- hoare[ Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a].
+ hoare[ Jkem1024_avx2.M._nttunpack : arg = a ==> res = nttunpack a].
 proc. sp. 
 seq 1 : (rp=a /\ is16u16x8 (nttunpack128x16 (unpack16x8 (unpack128x2 a).`1)) (r0,r1,r2,r3,r4,r5,r6,r7)). auto => />. call (nttunpack128_corr_h (unpack16x8 (unpack128x2 a).`1)) => />. auto => />.
 do 8!(try split; first by
@@ -229,10 +229,10 @@ rewrite nttunpack128x2 !unpack16x8K !list_arr16 !unpack128x2E !pack128x2E => />.
   rewrite !bits16_W16u16. rewrite !of_listE !initE //= /to_list !nth_mkseq_if //=. rewrite !unpack16x8E //=. rewrite !initE //=. rewrite /nttunpack128 !initE //=. rewrite !initE //=. rewrite !rng_perm_nttunpack128 //= 1..2:/#.
 qed.
 
-lemma _nttunpack_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._nttunpack by islossless.
+lemma _nttunpack_ll: islossless Jkem1024_avx2.M._nttunpack by islossless.
 
 phoare nttunpack_corr a :
- [ Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._nttunpack : arg = a ==> res = nttunpack a] = 1%r.
+ [ Jkem1024_avx2.M._nttunpack : arg = a ==> res = nttunpack a] = 1%r.
 conseq _nttunpack_ll (nttunpack_corr_h a) => />. qed.
 
 
@@ -442,7 +442,7 @@ by move=> H; rewrite /rejection16 rejection_cat 1:// map_cat.
 qed.
 
 hoare gen_matrix_buf_rejection_h _pol _ctr _buf _buf_offset:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_buf_rejection
+ Jkem1024_avx2.M._gen_matrix_buf_rejection
  : counter = _ctr
    /\ pol = _pol
    /\ buf = _buf
@@ -576,7 +576,7 @@ by rewrite size_take_min /#.
 qed.
 
 lemma gen_matrix_buf_rejection_ll:
- islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_buf_rejection.
+ islossless Jkem1024_avx2.M._gen_matrix_buf_rejection.
 proof.
 proc.
 seq 13: (true)=> //.
@@ -610,7 +610,7 @@ rewrite ultE /#.
 qed.
 
 phoare gen_matrix_buf_rejection_ph _pol _ctr _buf _buf_offset:
- [ Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_buf_rejection
+ [ Jkem1024_avx2.M._gen_matrix_buf_rejection
  : counter = _ctr
    /\ pol = _pol
    /\ buf = _buf
@@ -631,7 +631,7 @@ abbrev coeff2u16 x = W16.of_int (Zq.asint x).
 abbrev coeffL2u16L = List.map coeff2u16.
 
 equiv fill_poly_eq:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__gen_matrix_fill_polynomial
+ Jkem1024_avx2.M.__gen_matrix_fill_polynomial
  ~ ParseFilter.fill_poly
  : buf_subl buf{1} 0 (3*168) = buf{2}
    /\ sub buf{1} (2*168) 200 = state2bytes st{2}
@@ -728,7 +728,7 @@ op buf4x_buf (bufx4 : W8.t Array2144.t) (pos : int) : W8.t Array536.t =
  Array536.init (fun i => bufx4.[pos*536+i]).
 
 hoare gen_matrix_get_indexes_h _pos _transpose:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall).gen_matrix_get_indexes
+ Jkem1024_avx2.M.gen_matrix_get_indexes
  : to_uint b = 2*_pos /\ to_uint _t = b2i _transpose /\ (_pos=0 \/ _pos=4 \/ _pos = 8 \/ _pos = 12)
  ==>
    res = W8u8.pack8 (sub gen_matrix_indexes (2*_pos+32*b2i _transpose) 8).
@@ -743,11 +743,11 @@ rewrite initiE 1:// get_of_list 1:// /=.
 by rewrite initiE 1:/# /sub nth_mkseq 1://.
 qed.
 
-lemma gen_matrix_get_indexes_ll: islossless Jkem1024_avx2.M(Jkem1024_avx2.Syscall).gen_matrix_get_indexes
+lemma gen_matrix_get_indexes_ll: islossless Jkem1024_avx2.M.gen_matrix_get_indexes
 by islossless.
 
 phoare gen_matrix_get_indexes_ph _pos _transpose:
- [ Jkem1024_avx2.M(Jkem1024_avx2.Syscall).gen_matrix_get_indexes
+ [ Jkem1024_avx2.M.gen_matrix_get_indexes
  : to_uint b = 2*_pos /\ to_uint _t = b2i _transpose /\ (_pos=0 \/ _pos=4 \/ _pos = 8 \/ _pos = 12)
  ==>
    res = W8u8.pack8 (sub gen_matrix_indexes (2*_pos+32*b2i _transpose) 8)
@@ -786,7 +786,7 @@ move: {Hk} _k; apply /List.allP => /=.
 qed.
 
 equiv sample_four_polynomials_eq:
- Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_sample_four_polynomials
+ Jkem1024_avx2.M._gen_matrix_sample_four_polynomials
  ~  ParseFilter.sample3buf_x4'
  : ={rho} /\ to_uint pos_entry{1} = 2*pos{2} /\ to_uint transposed{1} = b2i t{2} /\ (pos{2}=0 \/ pos{2}=4 \/ pos{2}=8 \/ pos{2}=12)
    ==>
@@ -945,7 +945,7 @@ qed.
 lemma sample_four _sd _rc b :
  (_rc = 0 \/ _rc = 4 \/ _rc = 8 \/ _rc = 12) =>
  phoare
- [ Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_sample_four_polynomials :
+ [ Jkem1024_avx2.M._gen_matrix_sample_four_polynomials :
    rho = _sd /\ pos_entry = W64.of_int (2*_rc) /\ transposed = W64.of_int (b2i b) ==> 
    res.`1 = subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) (_rc %/ 4) ] = 1%r.
 proof.
@@ -960,7 +960,7 @@ smt().
 qed.
 
 phoare _gen_matrix_avx2_sem _sd b :
- [  Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_avx2 : arg.`2 = _sd /\ arg.`3 = W64.of_int (b2i b)
+ [  Jkem1024_avx2.M._gen_matrix_avx2 : arg.`2 = _sd /\ arg.`3 = W64.of_int (b2i b)
                                          ==> res = if b 
                                              then nttunpackm (unlift_matrix (trmx (sampleA _sd))) 
                                              else nttunpackm (unlift_matrix (sampleA _sd)) ] = 1%r.
@@ -1090,7 +1090,7 @@ move => *;rewrite initiE 1:/# /= initiE 1:/# /= ifT 1:/#.
 qed.
 
 equiv genmatrixequiv_aux b : 
-    Jkem1024_avx2.M(Jkem1024_avx2.Syscall)._gen_matrix_avx2    ~   AuxMLKEM.__gen_matrix :
+    Jkem1024_avx2.M._gen_matrix_avx2    ~   AuxMLKEM.__gen_matrix :
  rho{1} = seed{2} /\ transposed{1} = (of_int (b2i b))%W64 /\ trans{2} = b ==>
 res{1} = nttunpackm res{2} /\ pos_bound4096_cxq res{1} 0 4096 2 /\ pos_bound4096_cxq res{2} 0 4096 2.
 proc* => //.

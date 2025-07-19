@@ -112,7 +112,7 @@ qed.
 
 
 equiv veceq_polyvec_add2 :
-  Mvec.polyvec_add2 ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_add2: ={r, b} ==> ={res}.
+  Mvec.polyvec_add2 ~Jkem1024_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   proc.
   unroll for {2}  2.
@@ -121,7 +121,7 @@ proof.
 qed.
 
 equiv veceq_polyvec_csubq :
-  Mvec.polyvec_csubq ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_csubq: ={r} ==> ={res}.
+  Mvec.polyvec_csubq ~Jkem1024_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
   proc.
   unroll for {2}  2.
@@ -131,7 +131,7 @@ qed.
 
 
 equiv veceq_polyvec_reduce :
-  Mvec.polyvec_reduce ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_reduce: ={r} ==> ={res}.
+  Mvec.polyvec_reduce ~Jkem1024_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
 proof.
   proc.
   unroll for {2}  2.
@@ -141,7 +141,7 @@ qed.
 
 
 equiv prevec_eq_polyvec_add2 :
-  Mprevec.polyvec_add2 ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_add2: ={r, b} ==> ={res}.
+  Mprevec.polyvec_add2 ~Jkem1024_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_add2 (={r, b} ==> ={res}) (={r, b} ==> ={res}).
 smt(). trivial.
@@ -151,7 +151,7 @@ qed.
 
 
 equiv prevec_eq_polyvec_csubq :
-  Mprevec.polyvec_csubq ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_csubq: ={r} ==> ={res}.
+  Mprevec.polyvec_csubq ~Jkem1024_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_csubq (={r} ==> ={res}) (={r} ==> ={res}).
 smt(). trivial.
@@ -161,7 +161,7 @@ qed.
 
 
 equiv prevec_eq_polyvec_reduce :
-  Mprevec.polyvec_reduce ~Jkem1024_avx2.M(Jkem1024_avx2.Syscall).__polyvec_reduce: ={r} ==> ={res}.
+  Mprevec.polyvec_reduce ~Jkem1024_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_reduce (={r} ==> ={res}) (={r} ==> ={res}).
 smt(). trivial.

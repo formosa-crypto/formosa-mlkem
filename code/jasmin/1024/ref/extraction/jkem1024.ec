@@ -95,29 +95,7 @@ abbrev kECCAK1600_RC =
 (W64.of_int (-9223372036854742912)); (W64.of_int 2147483649);
 (W64.of_int (-9223372034707259384))]).
 
-module type Syscall_t = {
-  proc randombytes_32 (_:W8.t Array32.t) : W8.t Array32.t
-  proc randombytes_64 (_:W8.t Array64.t) : W8.t Array64.t
-}.
-
-module Syscall : Syscall_t = {
-  proc randombytes_32 (a:W8.t Array32.t) : W8.t Array32.t = {
-    
-    a <$
-    (dmap WArray32.darray
-    (fun a => (Array32.init (fun i => (WArray32.get8 a i)))));
-    return a;
-  }
-  proc randombytes_64 (a:W8.t Array64.t) : W8.t Array64.t = {
-    
-    a <$
-    (dmap WArray64.darray
-    (fun a => (Array64.init (fun i => (WArray64.get8 a i)))));
-    return a;
-  }
-}.
-
-module M(SC:Syscall_t) = {
+module M = {
   proc __fqmul (a:W16.t, b:W16.t) : W16.t = {
     var r:W16.t;
     var ad:W32.t;
@@ -3926,10 +3904,13 @@ module M(SC:Syscall_t) = {
     __cmov (shkp, (Array32.init (fun i_0 => kr.[(0 + i_0)])), cnd);
     return ();
   }
-  proc jade_kem_mlkem_mlkem1024_amd64_ref_keypair (public_key:W64.t,
-                                                   secret_key:W64.t) : 
+  proc jade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand (public_key:W64.t,
+                                                          secret_key:W64.t,
+                                                          fixedrand:W64.t) : 
   W64.t = {
+    var inc:int;
     var r:W64.t;
+    var i:int;
     var randomness:W8.t Array64.t;
     var randomnessp:W8.t Array64.t;
     var _of_:bool;
@@ -3940,19 +3921,28 @@ module M(SC:Syscall_t) = {
     var  _1:bool;
     randomness <- witness;
     randomnessp <- witness;
+     _0 <- (init_msf);
     public_key <- public_key;
     secret_key <- secret_key;
+    inc <- (32 * 2);
+    i <- 0;
+    while ((i < inc)) {
+      randomness.[i] <-
+      (loadW8 Glob.mem (W64.to_uint (fixedrand + (W64.of_int i))));
+      i <- (i + 1);
+    }
     randomnessp <- randomness;
-    randomnessp <@ SC.randombytes_64 (randomnessp);
-     _0 <- (init_msf);
     __crypto_kem_keypair_jazz (public_key, secret_key, randomnessp);
     (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
     return r;
   }
-  proc jade_kem_mlkem_mlkem1024_amd64_ref_enc (ciphertext:W64.t,
-                                               shared_secret:W64.t,
-                                               public_key:W64.t) : W64.t = {
+  proc jade_kem_mlkem_mlkem1024_amd64_ref_enc_derand (ciphertext:W64.t,
+                                                      shared_secret:W64.t,
+                                                      public_key:W64.t,
+                                                      fixedrand:W64.t) : 
+  W64.t = {
     var r:W64.t;
+    var i:int;
     var randomness:W8.t Array32.t;
     var randomnessp:W8.t Array32.t;
     var _of_:bool;
@@ -3963,12 +3953,17 @@ module M(SC:Syscall_t) = {
     var  _1:bool;
     randomness <- witness;
     randomnessp <- witness;
+     _0 <- (init_msf);
     ciphertext <- ciphertext;
     shared_secret <- shared_secret;
     public_key <- public_key;
+    i <- 0;
+    while ((i < 32)) {
+      randomness.[i] <-
+      (loadW8 Glob.mem (W64.to_uint (fixedrand + (W64.of_int i))));
+      i <- (i + 1);
+    }
     randomnessp <- randomness;
-    randomnessp <@ SC.randombytes_32 (randomnessp);
-     _0 <- (init_msf);
     __crypto_kem_enc_jazz (ciphertext, shared_secret, public_key,
     randomnessp);
     (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);

@@ -88,46 +88,46 @@ proc sample_noise2_jasmin(noiseseed:W8.t Array32.t) : W16.t Array1024.t * W16.t 
     noise1 <- witness;
     noise2 <- witness;
     nonce <- (W8.of_int 0);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[0 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[0 + i_0])),
     noiseseed, nonce);
     noise1 <- Array1024.init
             (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise1.[i]);
     nonce <- (W8.of_int 1);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[256 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[256 + i_0])),
     noiseseed, nonce);
     noise1 <- Array1024.init
             (fun i => if 256 <= i < 256 + 256 then aux.[i-256]
             else noise1.[i]);
     nonce <- (W8.of_int 2);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
     noiseseed, nonce);
     noise1 <- Array1024.init
             (fun i => if (2 * 256) <= i < (2 * 256) + 256
             then aux.[i-(2 * 256)] else noise1.[i]);
     nonce <- (W8.of_int 3);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise1.[(3 * 256) + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(3 * 256) + i_0])),
     noiseseed, nonce);
     noise1 <- Array1024.init
             (fun i => if (3 * 256) <= i < (3 * 256) + 256
             then aux.[i-(3 * 256)] else noise1.[i]);
     nonce <- (W8.of_int 4);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[0 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[0 + i_0])),
     noiseseed, nonce);
     noise2 <- Array1024.init
          (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else noise2.[i]);
     nonce <- (W8.of_int 5);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[256 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[256 + i_0])),
     noiseseed, nonce);
     noise2 <- Array1024.init
          (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else noise2.[i]);
     nonce <- (W8.of_int 6);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
     noiseseed, nonce);
     noise2 <- Array1024.init
          (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
          else noise2.[i]);
     nonce <- (W8.of_int 7);
-    aux <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ((Array256.init (fun i_0 => noise2.[(3 * 256) + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(3 * 256) + i_0])),
     noiseseed, nonce);
     noise2 <- Array1024.init
          (fun i => if (3 * 256) <= i < (3 * 256) + 256 then aux.[i-(3 * 256)]
@@ -163,7 +163,7 @@ proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array1024.t * W16.t 
   (noise1,noise2) <@ sample_noise2_jasmin(noiseseed);
   nonce <- (W8.of_int 8);
   noise3 <- witness;
-  noise3 <@Jkem1024.M(Jkem1024.Syscall)._poly_getnoise (noise3,noiseseed, nonce);
+  noise3 <@Jkem1024.M._poly_getnoise (noise3,noiseseed, nonce);
   return (noise1,noise2,noise3);
 }
 
@@ -223,8 +223,8 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
     (skpv,e,_N) <@ sample_noise2_spec(noiseseed);
 
-    skpv <@Jkem1024.M(Jkem1024.Syscall).__polyvec_ntt (skpv);
-    e <@Jkem1024.M(Jkem1024.Syscall).__polyvec_ntt (e);
+    skpv <@Jkem1024.M.__polyvec_ntt (skpv);
+    e <@Jkem1024.M.__polyvec_ntt (e);
 
     aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[0 + i_0])),skpv);
     pkpv <- Array1024.init (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else pkpv.[i]);
@@ -235,16 +235,16 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[(3 * (4 * 256)) + i_0])), skpv);
     pkpv <- Array1024.init (fun i => if (3 * 256) <= i < (3 * 256) + 256 then aux.[i-(3 * 256)] else pkpv.[i]);
 
-    pkpv <@Jkem1024.M(Jkem1024.Syscall).__polyvec_add2 (pkpv,e);
-    pkpv <@Jkem1024.M(Jkem1024.Syscall).__polyvec_reduce (pkpv);
+    pkpv <@Jkem1024.M.__polyvec_add2 (pkpv,e);
+    pkpv <@Jkem1024.M.__polyvec_reduce (pkpv);
 
     spkp <- pkp;
     sskp <- skp;
     pkp <- spkp;
     skp <- sskp;
 
-   Jkem1024.M(Jkem1024.Syscall).__polyvec_tobytes (skp, skpv);
-   Jkem1024.M(Jkem1024.Syscall).__polyvec_tobytes (pkp, pkpv);
+   Jkem1024.M.__polyvec_tobytes (skp, skpv);
+   Jkem1024.M.__polyvec_tobytes (pkp, pkpv);
     pkp <- (pkp + (W64.of_int (4 * 384)));
     
     _aux <- (32 %/ 8);
@@ -260,8 +260,8 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
   }
 
   proc redcompr(ctp:W64.t,bp:W16.t Array1024.t) : unit = {
-    bp <@Jkem1024.M(Jkem1024.Syscall).__polyvec_reduce (bp);
-    Jkem1024.M(Jkem1024.Syscall).__polyvec_compress (ctp, bp);
+    bp <@Jkem1024.M.__polyvec_reduce (bp);
+    Jkem1024.M.__polyvec_compress (ctp, bp);
   }
 
   proc indcpa_enc_jazz (ctp:W64.t, msgp:W8.t Array32.t, pkp:W64.t, noiseseed : W8.t Array32.t) : unit = {
@@ -284,7 +284,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     var t64 : W64.t;
 
     pkpv <- witness;
-    pkpv <@Jkem1024.M(Jkem1024.Syscall).__polyvec_frombytes (pkp);
+    pkpv <@Jkem1024.M.__polyvec_frombytes (pkp);
 
     publicseed <- witness;
     i <- (W64.of_int 0);
@@ -304,44 +304,44 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     at <@ __gen_matrix (publicseed,true);
 
     k <- witness;
-    k <@Jkem1024.M(Jkem1024.Syscall)._i_poly_frommsg (k, msgp);
+    k <@Jkem1024.M._i_poly_frommsg (k, msgp);
 
     (sp_0,ep,epp) <@ sample_noise3_spec(noiseseed);
 
-    sp_0 <@Jkem1024.M(Jkem1024.Syscall).__polyvec_ntt (sp_0);
+    sp_0 <@Jkem1024.M.__polyvec_ntt (sp_0);
 
     bp <- witness;
 
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[0 + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[0 + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[4*256 + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[4*256 + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(2 * (4*256)) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(2 * (4*256)) + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else bp.[i]);
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(3 * (4*256)) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(3 * (4*256)) + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if (3 * 256) <= i < (3 * 256) + 256
           then aux.[i-(3 * 256)] else bp.[i]);
 
     v <- witness;
-    v <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc (pkpv, sp_0);
+    v <@Jkem1024.M.__polyvec_pointwise_acc (pkpv, sp_0);
 
-    bp <@Jkem1024.M(Jkem1024.Syscall).__polyvec_invntt (bp);
-    v <@Jkem1024.M(Jkem1024.Syscall)._poly_invntt (v);
+    bp <@Jkem1024.M.__polyvec_invntt (bp);
+    v <@Jkem1024.M._poly_invntt (v);
 
-    bp <@Jkem1024.M(Jkem1024.Syscall).__polyvec_add2 (bp, ep);
-    v <@Jkem1024.M(Jkem1024.Syscall)._poly_add2 (v, epp);
-    v <@Jkem1024.M(Jkem1024.Syscall)._poly_add2 (v, k);
+    bp <@Jkem1024.M.__polyvec_add2 (bp, ep);
+    v <@Jkem1024.M._poly_add2 (v, epp);
+    v <@Jkem1024.M._poly_add2 (v, k);
 
-    v <@Jkem1024.M(Jkem1024.Syscall).__poly_reduce (v);
+    v <@Jkem1024.M.__poly_reduce (v);
 
     sctp <- ctp;
     ctp <- sctp;
@@ -349,15 +349,15 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     redcompr(ctp,bp);
 
     ctp <- (ctp + (W64.of_int (4 * 352)));
-    v <@Jkem1024.M(Jkem1024.Syscall)._poly_compress (ctp, v);
+    v <@Jkem1024.M._poly_compress (ctp, v);
 
     return ();
   }
 
   proc iredcompr(ctp: W8.t Array1568.t,bp:W16.t Array1024.t) : W8.t Array1408.t = {
     var aux_0 : W8.t Array1408.t;
-    bp <@Jkem1024.M(Jkem1024.Syscall).__polyvec_reduce (bp);
-    aux_0 <@Jkem1024.M(Jkem1024.Syscall).__i_polyvec_compress (Array1408.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
+    bp <@Jkem1024.M.__polyvec_reduce (bp);
+    aux_0 <@Jkem1024.M.__i_polyvec_compress (Array1408.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
     bp);
     return aux_0;
   }
@@ -385,7 +385,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     sctp <- ctp;
 
     pkpv <- witness;
-    pkpv <@Jkem1024.M(Jkem1024.Syscall).__polyvec_frombytes (pkp);
+    pkpv <@Jkem1024.M.__polyvec_frombytes (pkp);
 
     publicseed <- witness;
     i <- (W64.of_int 0);
@@ -405,44 +405,44 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     at <@ __gen_matrix (publicseed,true);
 
     k <- witness;
-    k <@Jkem1024.M(Jkem1024.Syscall)._i_poly_frommsg (k, msgp);
+    k <@Jkem1024.M._i_poly_frommsg (k, msgp);
 
     (sp_0,ep,epp) <@ sample_noise3_spec(noiseseed);
 
-    sp_0 <@Jkem1024.M(Jkem1024.Syscall).__polyvec_ntt (sp_0);
+    sp_0 <@Jkem1024.M.__polyvec_ntt (sp_0);
 
     bp <- witness;
 
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[0 + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[0 + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[4*256 + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[4*256 + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(2 * (4*256)) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(2 * (4*256)) + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else bp.[i]);
-    aux <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(3 * (4*256)) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(3 * (4*256)) + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if (3 * 256) <= i < (3 * 256) + 256
           then aux.[i-(3 * 256)] else bp.[i]);
 
     v <- witness;
-    v <@Jkem1024.M(Jkem1024.Syscall).__polyvec_pointwise_acc (pkpv, sp_0);
+    v <@Jkem1024.M.__polyvec_pointwise_acc (pkpv, sp_0);
 
-    bp <@Jkem1024.M(Jkem1024.Syscall).__polyvec_invntt (bp);
-    v <@Jkem1024.M(Jkem1024.Syscall)._poly_invntt (v);
+    bp <@Jkem1024.M.__polyvec_invntt (bp);
+    v <@Jkem1024.M._poly_invntt (v);
 
-    bp <@Jkem1024.M(Jkem1024.Syscall).__polyvec_add2 (bp, ep);
-    v <@Jkem1024.M(Jkem1024.Syscall)._poly_add2 (v, epp);
-    v <@Jkem1024.M(Jkem1024.Syscall)._poly_add2 (v, k);
+    bp <@Jkem1024.M.__polyvec_add2 (bp, ep);
+    v <@Jkem1024.M._poly_add2 (v, epp);
+    v <@Jkem1024.M._poly_add2 (v, k);
 
-    v <@Jkem1024.M(Jkem1024.Syscall).__poly_reduce (v); 
+    v <@Jkem1024.M.__poly_reduce (v); 
 
     ctp <- sctp;
 
@@ -450,7 +450,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
     ctp <- Array1568.init
            (fun i => if 0 <= i < 0 + 1408 then aux_0.[i-0] else ctp.[i]);
     (aux_1,
-    aux) <@Jkem1024.M(Jkem1024.Syscall)._i_poly_compress ((Array160.init (fun i_0 => ctp.[(4 * 352) + i_0])),
+    aux) <@Jkem1024.M._i_poly_compress ((Array160.init (fun i_0 => ctp.[(4 * 352) + i_0])),
     v);
     ctp <- Array1568.init
            (fun i => if (4 * 352) <= i < (4 * 352) + 160
@@ -463,7 +463,7 @@ proc indcpa_keypair_jazz (pkp:W64.t, skp:W64.t, seed:W8.t Array32.t) : unit = {
 
 (*
 equiv squeezeblock_ignore :
- Jkem1024.M(Jkem1024.Syscall)._shake128_squeezeblock ~Jkem1024.M(Jkem1024.Syscall)._shake128_squeezeblock :
+ Jkem1024.M._shake128_squeezeblock ~Jkem1024.M._shake128_squeezeblock :
    arg{1}.`1 = arg{2}.`1 ==> ={res}.
 proof.
 proc => /=; seq 1 1: (#pre); 1: by call(_:true) => /=;  sim.
@@ -476,7 +476,7 @@ qed.
 
 (* 
 equiv absorb_ignore :
- Jkem1024.M(Jkem1024.Syscall)._shake128_absorb34 ~Jkem1024.M(Jkem1024.Syscall)._shake128_absorb34 :
+ Jkem1024.M._shake128_absorb34 ~Jkem1024.M._shake128_absorb34 :
    arg{1}.`2 = arg{2}.`2 ==> ={res}.
 proof.
 proc; seq 1 1: (#pre /\ ={state}); last by sim.
@@ -488,7 +488,7 @@ by move => *;rewrite tP => k kb; smt().
 qed. 
 
 equiv shake33_ignore :
- Jkem1024.M(Jkem1024.Syscall)._shake256_33_128 ~Jkem1024.M(Jkem1024.Syscall)._shake256_33_128 :
+ Jkem1024.M._shake256_33_128 ~Jkem1024.M._shake256_33_128 :
    arg{1}.`2 = arg{2}.`2 ==> ={res}.
 proof.
 proc=> /=. 
@@ -509,11 +509,11 @@ qed.
 *)
 
 equiv auxgenmatrix_good :
- Jkem1024.M(Jkem1024.Syscall).__gen_matrix ~ AuxMLKEM.__gen_matrix :
+ Jkem1024.M.__gen_matrix ~ AuxMLKEM.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
 proc => /=. 
 inline Parse(XOF).sample.
-inline Jkem1024.M(Jkem1024.Syscall).__rej_uniform.
+inline Jkem1024.M.__rej_uniform.
 
 seq 7 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
 
@@ -836,7 +836,7 @@ by move : (mask85_sum a 2) => /= ->; move : (mask85_sum a 3) => /= ->.
 qed.
 
 equiv get_noise_sample_noise :
-  Jkem1024.M(Jkem1024.Syscall)._poly_getnoise ~ CBD2.sample :
+  Jkem1024.M._poly_getnoise ~ CBD2.sample :
    arg{2} = PRF arg{1}.`2 arg{1}.`3
    ==> 
    lift_array256 res{1} = res{2} /\
@@ -1028,7 +1028,7 @@ qed.
 
 
 equiv auxkg_good :
- Jkem1024.M(Jkem1024.Syscall).__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
+ Jkem1024.M.__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
      ={Glob.mem} /\ ={arg}
      ==> ={Glob.mem,res}. 
 proc => /=. 
@@ -1141,7 +1141,7 @@ by sim.
 qed.
 
 equiv auxenc_good :
- Jkem1024.M(Jkem1024.Syscall).__indcpa_enc ~ AuxMLKEM.indcpa_enc_jazz :
+ Jkem1024.M.__indcpa_enc ~ AuxMLKEM.indcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
 swap {1} 6 -5.
@@ -1182,7 +1182,7 @@ by conseq />; call sample_noise_good3; auto => />.
 qed.
 
 equiv auxienc_good :
- Jkem1024.M(Jkem1024.Syscall).__iindcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
+ Jkem1024.M.__iindcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
      ={Glob.mem,arg} ==> ={Glob.mem,res}. 
 proc. 
 swap {1} 6 -5.
@@ -1263,7 +1263,7 @@ qed.
 import InnerPKE1024.
 
 lemma mlkem_correct_kg mem _pkp _skp  : 
-   equiv [Jkem1024.M(Jkem1024.Syscall).__indcpa_keypair ~ InnerPKE1024.kg_derand : 
+   equiv [Jkem1024.M.__indcpa_keypair ~ InnerPKE1024.kg_derand : 
        Glob.mem{1} = mem /\ to_uint spkp{1} = _pkp /\ to_uint sskp{1} = _skp /\ 
        randomnessp{1} = coins{2} /\
        valid_disj_reg _pkp (384*4+32) _skp (384*4)
@@ -1653,7 +1653,7 @@ qed.
 
 
 lemma mlkem_correct_enc mem _ctp _pkp : 
-   equiv [Jkem1024.M(Jkem1024.Syscall).__indcpa_enc ~ InnerPKE1024.enc_derand: 
+   equiv [Jkem1024.M.__indcpa_enc ~ InnerPKE1024.enc_derand: 
      valid_ptr _pkp (384*4 + 32) /\
      valid_ptr _ctp (4*352+160) /\
      Glob.mem{1} = mem /\ 
@@ -2008,7 +2008,7 @@ by auto =>/> /#.
 qed.
 
 lemma mlkem_correct_ienc mem _pkp : 
-   equiv [Jkem1024.M(Jkem1024.Syscall).__iindcpa_enc ~ InnerPKE1024.enc_derand: 
+   equiv [Jkem1024.M.__iindcpa_enc ~ InnerPKE1024.enc_derand: 
      valid_ptr _pkp (384*4 + 32) /\
      Glob.mem{1} = mem /\ 
      msgp{1} = m{2} /\ 
@@ -2349,7 +2349,7 @@ qed.
 
 
 lemma mlkem_correct_dec mem _ctp _skp : 
-   equiv [Jkem1024.M(Jkem1024.Syscall).__indcpa_dec ~ InnerPKE1024.dec : 
+   equiv [Jkem1024.M.__indcpa_dec ~ InnerPKE1024.dec : 
      valid_ptr _ctp (4*352+160) /\
      valid_ptr _skp 1536 /\
      Glob.mem{1} = mem /\ 
