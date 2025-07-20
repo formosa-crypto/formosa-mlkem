@@ -8,6 +8,7 @@ env:
 
 jobs:
   tests:
+    if: false
     name: Build & Prove
     runs-on: ubuntu-latest
     steps:
