@@ -5,7 +5,8 @@ CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-declaration -D KYBER_K=4
 JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
-JASMINC := ../../../../jasmin/compiler/jasminc
+JASMINC ?= ../../../../jasmin/compiler/jasminc
+JASMINCT ?= ../../../../jasmin/compiler/jasmin-ct
 
 .SECONDARY: jkem.s
 
@@ -37,11 +38,9 @@ test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 .PHONY: ct clean
 
 ct:
-	$(JASMINCT) gen_matrix.jazz
 	$(JASMINCT) jkem.jazz
 
 sct:
-	$(JASMINCT) --sct --slice jade_kem_mlkem_mlkem1024_amd64_avx2_gen_matrix gen_matrix.jazz
 	$(JASMINCT) --sct jkem.jazz
 
 clean:

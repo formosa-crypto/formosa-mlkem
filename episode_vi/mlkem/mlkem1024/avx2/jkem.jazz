@@ -1,5 +1,13 @@
 require "kem.jinc"
 
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+{ ptr: public, val: secret } ×
+public
+"]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(
     #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
     #secret #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
@@ -44,6 +52,15 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(
   return public_key, secret_key, r;
 }
 
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+{ ptr: public, val: secret } ×
+public
+"]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
     #secret #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
     #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
@@ -91,6 +108,13 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
   return ciphertext, shared_secret, r;
 }
 
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+public
+"]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec(
     #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
     #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
