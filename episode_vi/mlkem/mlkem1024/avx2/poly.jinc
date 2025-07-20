@@ -23,13 +23,11 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
 {
   inline int i;
   reg u256 f0 f1 v mask shift1 shift2 shift3 sllvdidx shufbidx;
-  reg ptr u16[16] x16p;
   reg u128 t0 t1;
 
   a = _poly_csubq(a);
 
-  x16p = jvx16;
-  v = x16p[:u256 0];
+  v = jvx16[:u256 0];
   shift1 = #VPBROADCAST_16u16(pc_shift1_s);
   mask = #VPBROADCAST_16u16(pc_mask_s);
   shift2 = #VPBROADCAST_16u16(pc_shift2_s);
@@ -86,11 +84,9 @@ fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg ptr u8 [MLKEM_POLYCOMPRES
   reg u256 f q shufbidx mask shift;
   reg u128 t;
   reg u16 ti;
-  reg ptr u16[16] x16p;
   stack u128 sh;
 
-  x16p = jqx16;
-  q = x16p[:u256 0];
+  q = jqx16[:u256 0];
   shufbidx = pd_jshufbidx[:u256 0];
   mask = pd_mask_s[:u256 0];
   shift = pd_shift_s[:u256 0];

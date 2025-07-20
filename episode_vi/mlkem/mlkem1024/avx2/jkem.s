@@ -34,16 +34,11 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	movq	%rax, 5304(%rsp)
 	movq	%rsp, %rax
 	movq	%rdx, %rcx
-	leaq	glob_data + 1184(%rip), %rdi
-	vmovdqu	(%rdi), %ymm0
-	leaq	glob_data + 288(%rip), %rdi
-	vmovdqu	(%rdi), %ymm1
-	leaq	glob_data + 256(%rip), %rdi
-	vmovdqu	(%rdi), %ymm2
-	leaq	glob_data + 224(%rip), %rdi
-	vmovdqu	(%rdi), %ymm3
-	leaq	glob_data + 192(%rip), %rdi
-	vmovdqu	(%rdi), %ymm4
+	vmovdqu	glob_data + 1184(%rip), %ymm0
+	vmovdqu	glob_data + 288(%rip), %ymm1
+	vmovdqu	glob_data + 256(%rip), %ymm2
+	vmovdqu	glob_data + 224(%rip), %ymm3
+	vmovdqu	glob_data + 192(%rip), %ymm4
 	vpbroadcastw	glob_data + 5186(%rip), %ymm5
 	vmovdqu	(%rsi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
@@ -2429,8 +2424,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$4:
 	leaq	14560(%rsp), %rcx
 	call	L_poly_csubq$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
-	leaq	glob_data + 1120(%rip), %rcx
-	vmovdqu	(%rcx), %ymm0
+	vmovdqu	glob_data + 1120(%rip), %ymm0
 	vpsllw	$3, %ymm0, %ymm1
 	vpbroadcastw	glob_data + 5184(%rip), %ymm2
 	vpbroadcastw	glob_data + 5182(%rip), %ymm3
@@ -3915,8 +3909,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	leaq	128(%rsp), %rcx
 	call	L_poly_csubq$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$2:
-	leaq	glob_data + 1120(%rip), %rdx
-	vmovdqu	(%rdx), %ymm0
+	vmovdqu	glob_data + 1120(%rip), %ymm0
 	vpbroadcastw	glob_data + 5190(%rip), %ymm1
 	vpbroadcastw	glob_data + 5192(%rip), %ymm2
 	vpbroadcastw	glob_data + 5188(%rip), %ymm3
@@ -5892,8 +5885,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$3:
 	leaq	11392(%rsp), %rcx
 	call	L_poly_csubq$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
-	leaq	glob_data + 1120(%rip), %rcx
-	vmovdqu	(%rcx), %ymm0
+	vmovdqu	glob_data + 1120(%rip), %ymm0
 	vpsllw	$3, %ymm0, %ymm1
 	vpbroadcastw	glob_data + 5184(%rip), %ymm2
 	vpbroadcastw	glob_data + 5182(%rip), %ymm3
@@ -7378,8 +7370,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	leaq	1152(%rsp), %rcx
 	call	L_poly_csubq$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$1:
-	leaq	glob_data + 1120(%rip), %rdx
-	vmovdqu	(%rdx), %ymm0
+	vmovdqu	glob_data + 1120(%rip), %ymm0
 	vpbroadcastw	glob_data + 5190(%rip), %ymm1
 	vpbroadcastw	glob_data + 5192(%rip), %ymm2
 	vpbroadcastw	glob_data + 5188(%rip), %ymm3
@@ -9017,8 +9008,7 @@ L_gen_matrix_buf_rejection$2:
 	jb  	L_gen_matrix_buf_rejection$3
 	ret
 L_i_poly_decompress$1:
-	leaq	glob_data + 1184(%rip), %r8
-	vmovdqu	(%r8), %ymm0
+	vmovdqu	glob_data + 1184(%rip), %ymm0
 	vmovdqu	glob_data + 384(%rip), %ymm1
 	vmovdqu	glob_data + 352(%rip), %ymm2
 	vmovdqu	glob_data + 320(%rip), %ymm3

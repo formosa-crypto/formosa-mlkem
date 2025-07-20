@@ -26,22 +26,13 @@ fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLK
 {
   inline int i k;
   reg u256 f q shufbidx srlvdidx srlvqidx shift mask;
-  reg ptr u8[32] x32s;
-  reg ptr u32[8] x8d;
-  reg ptr u64[4] x4q;
-  reg ptr u16[16] x16p x16s;
   stack u16[MLKEM_VECN] r;
 
-  x16p = jqx16;
-  q = x16p[:u256 0];
-  x32s = pvd_shufbidx_s;
-  shufbidx = x32s[:u256 0];
-  x8d = pvd_srlvdidx_s;
-  srlvdidx = x8d[:u256 0];
-  x4q = pvd_srlvqidx_s;
-  srlvqidx = x4q[:u256 0];
-  x16s = pvd_shift_s;
-  shift = x16s[:u256 0];
+  q = jqx16[:u256 0];
+  shufbidx = pvd_shufbidx_s[:u256 0];
+  srlvdidx = pvd_srlvdidx_s[:u256 0];
+  srlvqidx = pvd_srlvqidx_s[:u256 0];
+  shift = pvd_shift_s[:u256 0];
   mask = #VPBROADCAST_16u16(pvd_mask_s);
 
   for k = 0 to MLKEM_K
@@ -92,12 +83,10 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx srlvqidx shufbidx;
   reg u128 t0 t1;
-  reg ptr u16[16] x16p;
 
   a = __polyvec_csubq(a);
 
-  x16p = jvx16;
-  v = x16p[:u256 0];
+  v = jvx16[:u256 0];
   v8 = #VPSLL_16u16(v, 3);
   off = #VPBROADCAST_16u16(pvc_off_s);
   shift1 = #VPBROADCAST_16u16(pvc_shift1_s);
