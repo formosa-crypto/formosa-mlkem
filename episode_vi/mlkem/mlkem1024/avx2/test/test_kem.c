@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../../../../kyber/ref/params.h"
-#include "../../../../kyber/ref/kem.h"
-#include "../include/apli.h"
+#include "../../../../../code/kyber/ref/params.h"
+#include "../../../../../code/kyber/ref/kem.h"
+#include "../include/api.h"
 
-#define COUNT 100
+#define COUNT 10000
 
 int main(void)
 {
@@ -21,7 +21,7 @@ int main(void)
   unsigned char randomness0[2*KYBER_SYMBYTES];
   unsigned char randomness1[2*KYBER_SYMBYTES];
 
-  for(count = 0; count < 100; count++) {
+  for(unsigned int count = 0; count < COUNT; count++) {
 
     FILE *urandom = fopen("/dev/urandom", "r");
     fread(randomness0, 2*KYBER_SYMBYTES, 1, urandom);

@@ -1,11 +1,11 @@
 # -*- Makefile -*-
 
-CKP    := ../../../kyber/ref
+CKP    := ../../../../code/kyber/ref
 CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-declaration -D KYBER_K=4
 JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
-JASMINC := ../../../../../Repos/jasmin/compiler/jasminc
+JASMINC := ../../../../jasmin/compiler/jasminc
 
 .SECONDARY: jkem.s
 

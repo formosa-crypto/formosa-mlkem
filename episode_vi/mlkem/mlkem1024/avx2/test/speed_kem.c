@@ -3,10 +3,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../../../../kyber/ref/params.h"
-#include "../../../../kyber/ref/kem.h"
+#include "../../../../../code/kyber/ref/params.h"
+#include "../../../../../code/kyber/ref/kem.h"
+#include "../include/api.h"
 
-#define NRUNS 100
+#define NRUNS 10000
 
 static inline uint64_t cpucycles(void) {
   uint64_t result;
