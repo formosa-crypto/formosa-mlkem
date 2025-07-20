@@ -1670,7 +1670,6 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$62:
 	leaq	1152(%rsp), %rax
 	call	L_i_poly_frommsg$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$61:
-	movq	%r8, %mm4
 	movq	$1, %rcx
 	leaq	15072(%rsp), %rax
 	leaq	23272(%rsp), %rsi
@@ -1678,22 +1677,20 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$61:
 	call	L_gen_matrix_avx2$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$60:
 	leaq	2168(%rsp), %rsp
-	movq	%mm4, %r9
-	movb	$0, %bpl
+	movb	$0, %bl
 	leaq	8928(%rsp), %rdx
-	leaq	9440(%rsp), %r10
-	leaq	9952(%rsp), %r11
-	leaq	10464(%rsp), %rbx
+	leaq	9440(%rsp), %r9
+	leaq	9952(%rsp), %r10
+	leaq	10464(%rsp), %r11
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$59:
 	leaq	600(%rsp), %rsp
-	movq	%mm4, %r9
-	movb	$4, %bpl
+	movb	$4, %bl
 	leaq	10976(%rsp), %rdx
-	leaq	11488(%rsp), %r10
-	leaq	12000(%rsp), %r11
-	leaq	12512(%rsp), %rbx
+	leaq	11488(%rsp), %r9
+	leaq	12000(%rsp), %r10
+	leaq	12512(%rsp), %r11
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$58:
@@ -5131,7 +5128,6 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$61:
 	leaq	128(%rsp), %rax
 	call	L_i_poly_frommsg$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$60:
-	movq	%r8, %mm3
 	movq	$1, %rcx
 	leaq	11904(%rsp), %rax
 	leaq	20096(%rsp), %rsi
@@ -5139,22 +5135,20 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$60:
 	call	L_gen_matrix_avx2$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$59:
 	leaq	2168(%rsp), %rsp
-	movq	%mm3, %r9
-	movb	$0, %bpl
+	movb	$0, %bl
 	leaq	5760(%rsp), %rdx
-	leaq	6272(%rsp), %r10
-	leaq	6784(%rsp), %r11
-	leaq	7296(%rsp), %rbx
+	leaq	6272(%rsp), %r9
+	leaq	6784(%rsp), %r10
+	leaq	7296(%rsp), %r11
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$58:
 	leaq	600(%rsp), %rsp
-	movq	%mm3, %r9
-	movb	$4, %bpl
+	movb	$4, %bl
 	leaq	7808(%rsp), %rdx
-	leaq	8320(%rsp), %r10
-	leaq	8832(%rsp), %r11
-	leaq	9344(%rsp), %rbx
+	leaq	8320(%rsp), %r9
+	leaq	8832(%rsp), %r10
+	leaq	9344(%rsp), %r11
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$57:
@@ -7600,22 +7594,22 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$57:
 	call	L_gen_matrix_avx2$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$56:
 	leaq	2168(%rsp), %rsp
-	movb	$0, %bpl
+	movb	$0, %bl
 	leaq	576(%rsp), %rdx
-	leaq	1088(%rsp), %r10
-	leaq	1600(%rsp), %r11
-	leaq	2112(%rsp), %rbx
-	leaq	14952(%rsp), %r9
+	leaq	1088(%rsp), %r9
+	leaq	1600(%rsp), %r10
+	leaq	2112(%rsp), %r11
+	leaq	14952(%rsp), %r8
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$55:
 	leaq	600(%rsp), %rsp
-	movb	$4, %bpl
+	movb	$4, %bl
 	leaq	2624(%rsp), %rdx
-	leaq	3136(%rsp), %r10
-	leaq	3648(%rsp), %r11
-	leaq	4160(%rsp), %rbx
-	leaq	14952(%rsp), %r9
+	leaq	3136(%rsp), %r9
+	leaq	3648(%rsp), %r10
+	leaq	4160(%rsp), %r11
+	leaq	14952(%rsp), %r8
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$54:
@@ -10774,16 +10768,16 @@ L_poly_getnoise_eta1_4x$1:
 	leaq	288(%rsp), %rsi
 	leaq	416(%rsp), %rdi
 	movq	%rdx, 544(%rsp)
-	movq	%r10, 552(%rsp)
-	movq	%r11, 560(%rsp)
-	movq	%rbx, 568(%rsp)
-	movb	%bpl, 576(%rsp)
-	incb	%bpl
-	movb	%bpl, 577(%rsp)
-	incb	%bpl
-	movb	%bpl, 578(%rsp)
-	incb	%bpl
-	movb	%bpl, 579(%rsp)
+	movq	%r9, 552(%rsp)
+	movq	%r10, 560(%rsp)
+	movq	%r11, 568(%rsp)
+	movb	%bl, 576(%rsp)
+	incb	%bl
+	movb	%bl, 577(%rsp)
+	incb	%bl
+	movb	%bl, 578(%rsp)
+	incb	%bl
+	movb	%bl, 579(%rsp)
 	leaq	576(%rsp), %rbx
 	leaq	-824(%rsp), %rsp
 	call	L_shake256x4_A128__A32_A1$1
@@ -12850,25 +12844,25 @@ L_shake128x4_absorb_A32_A2$2:
 L_shake256x4_A128__A32_A1$1:
 	leaq	32(%rsp), %rdx
 	vpxor	%ymm0, %ymm0, %ymm0
-	movq	$0, %r10
+	movq	$0, %r9
 	jmp 	L_shake256x4_A128__A32_A1$9
 L_shake256x4_A128__A32_A1$10:
-	vmovdqu	%ymm0, (%rdx,%r10)
-	addq	$32, %r10
+	vmovdqu	%ymm0, (%rdx,%r9)
+	addq	$32, %r9
 L_shake256x4_A128__A32_A1$9:
-	cmpq	$800, %r10
+	cmpq	$800, %r9
 	jb  	L_shake256x4_A128__A32_A1$10
+	movq	$0, %r9
 	movq	$0, %r10
-	movq	$0, %r11
 	jmp 	L_shake256x4_A128__A32_A1$7
 L_shake256x4_A128__A32_A1$8:
-	vpbroadcastq	(%r9,%r10), %ymm0
-	addq	$8, %r10
-	vpxor	(%rdx,%r11), %ymm0, %ymm0
-	vmovdqu	%ymm0, (%rdx,%r11)
-	addq	$32, %r11
+	vpbroadcastq	(%r8,%r9), %ymm0
+	addq	$8, %r9
+	vpxor	(%rdx,%r10), %ymm0, %ymm0
+	vmovdqu	%ymm0, (%rdx,%r10)
+	addq	$32, %r10
 L_shake256x4_A128__A32_A1$7:
-	cmpq	$128, %r11
+	cmpq	$128, %r10
 	jb  	L_shake256x4_A128__A32_A1$8
 	movq	$0, %r12
 	movq	%rbx, %r9
