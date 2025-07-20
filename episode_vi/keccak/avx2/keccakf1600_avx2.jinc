@@ -1,0 +1,289 @@
+require "../common/keccakf1600_generic.jinc"
+
+u256[6] KECCAK_RHOTATES_LEFT = 
+{
+  (4u64)[41, 36, 18,  3],
+  (4u64)[27, 28, 62,  1],
+  (4u64)[39, 56,  6, 45],
+  (4u64)[ 8, 55, 61, 10],
+  (4u64)[20, 25, 15,  2],
+  (4u64)[14, 21, 43, 44]
+};
+
+
+u256[6] KECCAK_RHOTATES_RIGHT =
+{
+  (4u64)[64-41, 64-36, 64-18, 64- 3],
+  (4u64)[64-27, 64-28, 64-62, 64- 1],
+  (4u64)[64-39, 64-56, 64- 6, 64-45],
+  (4u64)[64- 8, 64-55, 64-61, 64-10],
+  (4u64)[64-20, 64-25, 64-15, 64- 2],
+  (4u64)[64-14, 64-21, 64-43, 64-44]
+};
+
+inline fn __keccakf1600_pround_avx2( reg u256[7] state ) -> reg u256[7] {
+  reg u256 t0, t1, t2, t3, t4, t5, t6, t7, t8;
+  reg u256 c00 c14 d00 d14;
+
+  c00 = #VPSHUFD_256(state[2], (4u2)[1,0,3,2]);
+  c14 = state[5] ^ state[3];
+  t2 = state[4] ^ state[6];
+  c14 = c14 ^ state[1];
+  c14 = c14 ^ t2;
+  t4 = #VPERMQ(c14, (4u2)[2,1,0,3]);
+  c00 = c00 ^ state[2];
+  t0 = #VPERMQ(c00, (4u2)[1,0,3,2]);
+  t1 = c14 >>4u64 63;
+  t2 = c14 +4u64 c14;
+  t1 = t1 | t2;
+  d14 = #VPERMQ(t1, (4u2)[0,3,2,1]);
+  d00 = t1 ^ t4;
+  d00 = #VPERMQ(d00, (4u2)[0,0,0,0]);
+  c00 = c00 ^ state[0];
+  c00 = c00 ^ t0;
+  t0 = c00 >>4u64 63;
+  t1 = c00 +4u64 c00;
+  t1 = t1 | t0;
+  state[2] = state[2] ^ d00;
+  state[0] = state[0] ^ d00;
+  d14 = #VPBLEND_8u32(d14, t1, (8u1)[1,1,0,0,0,0,0,0]);
+  t4 = #VPBLEND_8u32(t4, c00, (8u1)[0,0,0,0,0,0,1,1]);
+  d14 = d14 ^ t4;
+  t3 = #VPSLLV_4u64(state[2], KECCAK_RHOTATES_LEFT[0] );
+  state[2] = #VPSRLV_4u64(state[2], KECCAK_RHOTATES_RIGHT[0] );
+  state[2] = state[2] | t3;
+  state[3] = state[3] ^ d14;
+  t4 = #VPSLLV_4u64(state[3], KECCAK_RHOTATES_LEFT[2] );
+  state[3] = #VPSRLV_4u64(state[3], KECCAK_RHOTATES_RIGHT[2] );
+  state[3] = state[3] | t4;
+  state[4] = state[4] ^ d14;
+  t5 = #VPSLLV_4u64(state[4], KECCAK_RHOTATES_LEFT[3] );
+  state[4] = #VPSRLV_4u64(state[4], KECCAK_RHOTATES_RIGHT[3] );
+  state[4] = state[4] | t5;
+  state[5] = state[5] ^ d14;
+  t6 = #VPSLLV_4u64(state[5], KECCAK_RHOTATES_LEFT[4] );
+  state[5] = #VPSRLV_4u64(state[5], KECCAK_RHOTATES_RIGHT[4] );
+  state[5] = state[5] | t6;
+  state[6] = state[6] ^ d14;
+  t3 = #VPERMQ(state[2], (4u2)[2,0,3,1]);
+  t4 = #VPERMQ(state[3], (4u2)[2,0,3,1]);
+  t7 = #VPSLLV_4u64(state[6], KECCAK_RHOTATES_LEFT[5] );
+  t1 = #VPSRLV_4u64(state[6], KECCAK_RHOTATES_RIGHT[5] );
+  t1 = t1 | t7;
+  state[1] = state[1] ^ d14;
+  t5 = #VPERMQ(state[4], (4u2)[0,1,2,3]);
+  t6 = #VPERMQ(state[5], (4u2)[1,3,0,2]);
+  t8 = #VPSLLV_4u64(state[1], KECCAK_RHOTATES_LEFT[1] );
+  t2 = #VPSRLV_4u64(state[1], KECCAK_RHOTATES_RIGHT[1] );
+  t2 = t2 | t8;
+  t7 = #VPSRLDQ_256(t1, 8);
+  t0 = !t1 & t7;
+  state[3] = #VPBLEND_8u32(t2, t6, (8u1)[0,0,0,0,1,1,0,0]);
+  t8 = #VPBLEND_8u32(t4, t2, (8u1)[0,0,0,0,1,1,0,0]);
+  state[5] = #VPBLEND_8u32(t3, t4, (8u1)[0,0,0,0,1,1,0,0]);
+  t7 = #VPBLEND_8u32(t2, t3, (8u1)[0,0,0,0,1,1,0,0]);
+  state[3] = #VPBLEND_8u32(state[3], t4, (8u1)[0,0,1,1,0,0,0,0]);
+  t8 = #VPBLEND_8u32(t8, t5, (8u1)[0,0,1,1,0,0,0,0]);
+  state[5] = #VPBLEND_8u32(state[5], t2, (8u1)[0,0,1,1,0,0,0,0]);
+  t7 = #VPBLEND_8u32(t7, t6, (8u1)[0,0,1,1,0,0,0,0]);
+  state[3] = #VPBLEND_8u32(state[3], t5, (8u1)[1,1,0,0,0,0,0,0]);
+  t8 = #VPBLEND_8u32(t8, t6, (8u1)[1,1,0,0,0,0,0,0]);
+  state[5] = #VPBLEND_8u32(state[5], t6, (8u1)[1,1,0,0,0,0,0,0]);
+  t7 = #VPBLEND_8u32(t7, t4, (8u1)[1,1,0,0,0,0,0,0]);
+  state[3] = !state[3] & t8;
+  state[5] = !state[5] & t7;
+  state[6] = #VPBLEND_8u32(t5, t2, (8u1)[0,0,0,0,1,1,0,0]);
+  t8 = #VPBLEND_8u32(t3, t5, (8u1)[0,0,0,0,1,1,0,0]);
+  state[3] = state[3] ^ t3;
+  state[6] = #VPBLEND_8u32(state[6], t3, (8u1)[0,0,1,1,0,0,0,0]);
+  t8 = #VPBLEND_8u32(t8, t4, (8u1)[0,0,1,1,0,0,0,0]);
+  state[5] = state[5] ^ t5;
+  state[6] = #VPBLEND_8u32(state[6], t4, (8u1)[1,1,0,0,0,0,0,0]);
+  t8 = #VPBLEND_8u32(t8, t2, (8u1)[1,1,0,0,0,0,0,0]);
+  state[6] = !state[6] & t8;
+  state[6] = state[6] ^ t6;
+  state[4] = #VPERMQ(t1, (4u2)[0,1,3,2]);
+  t8 = #VPBLEND_8u32(state[4], state[0], (8u1)[0,0,1,1,0,0,0,0]);
+  state[1] = #VPERMQ(t1, (4u2)[0,3,2,1]);
+  state[1] = #VPBLEND_8u32(state[1], state[0], (8u1)[1,1,0,0,0,0,0,0]);
+  state[1] = !state[1] & t8;
+  state[2] = #VPBLEND_8u32(t4, t5, (8u1)[0,0,0,0,1,1,0,0]);
+  t7 = #VPBLEND_8u32(t6, t4, (8u1)[0,0,0,0,1,1,0,0]);
+  state[2] = #VPBLEND_8u32(state[2], t6, (8u1)[0,0,1,1,0,0,0,0]);
+  t7 = #VPBLEND_8u32(t7, t3, (8u1)[0,0,1,1,0,0,0,0]);
+  state[2] = #VPBLEND_8u32(state[2], t3, (8u1)[1,1,0,0,0,0,0,0]);
+  t7 = #VPBLEND_8u32(t7, t5, (8u1)[1,1,0,0,0,0,0,0]);
+  state[2] = !state[2] & t7;
+  state[2] = state[2] ^ t2;
+  t0 = #VPERMQ(t0, (4u2)[0,0,0,0]);
+  state[3] = #VPERMQ(state[3], (4u2)[0,1,2,3]);
+  state[5] = #VPERMQ(state[5], (4u2)[2,0,3,1]);
+  state[6] = #VPERMQ(state[6], (4u2)[1,3,0,2]);
+  state[4] = #VPBLEND_8u32(t6, t3, (8u1)[0,0,0,0,1,1,0,0]);
+  t7 = #VPBLEND_8u32(t5, t6, (8u1)[0,0,0,0,1,1,0,0]);
+  state[4] = #VPBLEND_8u32(state[4], t5, (8u1)[0,0,1,1,0,0,0,0]);
+  t7 = #VPBLEND_8u32(t7, t2, (8u1)[0,0,1,1,0,0,0,0]);
+  state[4] = #VPBLEND_8u32(state[4], t2, (8u1)[1,1,0,0,0,0,0,0]);
+  t7 = #VPBLEND_8u32(t7, t3, (8u1)[1,1,0,0,0,0,0,0]);
+  state[4] = !state[4] & t7;
+  state[0] = state[0] ^ t0;
+  state[1] = state[1] ^ t1;
+  state[4] = state[4] ^ t4;
+
+  return state;
+}
+
+fn _keccakf1600_avx2(reg u256[7] state) -> reg u256[7]
+{
+  reg u64 r;
+  reg u256 rc;
+
+  reg ptr u64[24] round_constants;
+
+  round_constants = KECCAK1600_RC;
+
+  r = 0;
+  while
+  { state = __keccakf1600_pround_avx2( state );
+    rc = #VPBROADCAST_4u64(round_constants[r]);
+    state[0] = state[0] ^ rc;
+    r += 1;
+  }(r < KECCAK_ROUNDS)
+
+  return state;
+}
+
+// converts a (plain) keccak state (st25) into the avx2 representation
+inline fn __stavx2_pack
+( reg const ptr u64[25] st
+) -> reg u256[7] {
+  // 3*r256 (evitáveis...)
+  reg u256[7] state;
+  reg u256 t256_0 t256_1 t256_2;
+  reg u128 t128_0, t128_1;
+  reg u64 r;
+
+  // [ 0 0 0 0 ]
+  state[0] = #VPBROADCAST_4u64(st.[:u64 8*0]);
+  // [ 1 2 3 4 ]
+  state[1] = st.[:u256 1*8];
+  // [ 5 - ]
+  t128_0 = #VMOV(st[5]);
+  // [ 6 7 8 9 ]
+  state[3] = st.[:u256 6*8];
+  // [ 10 - ]
+  t128_1 = #VMOV(st[10]);
+  // [ 11 12 13 14 ]
+  state[4] = st.[:u256 11*8];
+  // [ 5 15 ]
+  r = st[15];
+  t128_0 = #VPINSR_2u64(t128_0, r, 1);
+  // [ 16 17 18 19 ]
+  state[5] = st.[:u256 16*8];
+  // [ 10 20 ]
+  r = st[20];
+  t128_1 = #VPINSR_2u64(t128_1, r, 1);
+  // alternative not currently supported: VPGATHERDQ for filling state[2]
+  // [ 10 20 5 15 ]
+  state[2] = (2u128)[t128_0, t128_1];
+  // [ 21 22 23 24 ]
+  state[6] = st.[:u256 21*8];
+
+  // [ 16 7 8 19 ]
+  t256_0 = #VPBLEND_8u32(state[3], state[5], (8u1)[1,1,0,0,0,0,1,1]);
+  // [ 11 22 23 14 ]
+  t256_1 = #VPBLEND_8u32(state[6], state[4], (8u1)[1,1,0,0,0,0,1,1]);
+  // [ 6 12 13 9 ]
+  t256_2 = #VPBLEND_8u32(state[4], state[3], (8u1)[1,1,0,0,0,0,1,1]);
+
+  // [ 16 7 23 14 ]
+  state[3] = #VPBLEND_8u32(t256_0, t256_1, (8u1)[1,1,1,1,0,0,0,0]);
+  // [ 11 22 8 19 ]
+  state[4] = #VPBLEND_8u32(t256_1, t256_0, (8u1)[1,1,1,1,0,0,0,0]);
+
+  // [ 21 17 18 24 ]
+  t256_0 = #VPBLEND_8u32(state[5], state[6], (8u1)[1,1,0,0,0,0,1,1]);
+
+  // [ 21 17 13 9 ]
+  state[5] = #VPBLEND_8u32(t256_0, t256_2, (8u1)[1,1,1,1,0,0,0,0]);
+  // [ 6 12 18 24 ]
+  state[6] = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,1,1,0,0,0,0]);
+
+  // [ 0  0  0  0  ]
+  // [ 1  2  3  4  ]
+  // [ 10 20 5  15 ]
+  // [ 16 7  23 14 ]
+  // [ 11 22 8  19 ]
+  // [ 21 17 13 9  ]
+  // [ 6  12 18 24 ]  
+  return state;
+}
+
+// recovers a (plain) keccak state (st25) from an avx2-encoded one
+inline fn __stavx2_unpack
+( reg mut ptr u64[25] st
+, reg u256[7] state
+) -> reg ptr u64[25] {
+  // 5*r256 + 2*r128(evitáveis) (+7*r256)
+  reg u256 t256_0 t256_1 t256_2 t256_3 t256_4;
+  reg u128 t128_0, t128_1;
+
+  // [ 0, 0 ]
+  t128_0 = (128u) state[0];
+  st[0] = #VMOVLPD(t128_0);
+  // [ 1, 2, 3, 4 ]
+  st.[:u256 1*8] = state[1];
+
+  // [ 16, 7, 8, 19 ]
+  t256_0 = #VPBLEND_8u32(state[3], state[4], (8u1)[1,1,1,1,0,0,0,0]);
+  // [ 11, 22, 23, 14 ]
+  t256_1 = #VPBLEND_8u32(state[4], state[3], (8u1)[1,1,1,1,0,0,0,0]);
+  // [ 21, 17, 18, 24 ]
+  t256_2 = #VPBLEND_8u32(state[5], state[6], (8u1)[1,1,1,1,0,0,0,0]);
+  // [ 6, 12, 13, 9 ]
+  t256_3 = #VPBLEND_8u32(state[6], state[5], (8u1)[1,1,1,1,0,0,0,0]);
+
+  // [ 5, 15 ]
+//  state[2] = TTT[0];
+  t128_1 = #VEXTRACTI128(state[2], 1);
+  st[5] = #VMOVLPD(t128_1);
+
+  // [ 6, 7, 8, 9 ]
+  t256_4 = #VPBLEND_8u32(t256_0, t256_3, (8u1)[1,1,0,0,0,0,1,1]);
+  st.[:u256 6*8] = t256_4;
+
+  // [ 10, 20 ]
+  t128_0 = (128u) state[2];
+  st[10] = #VMOVLPD(t128_0);
+  
+  // [ 11, 12, 13, 14 ]
+  t256_4 = #VPBLEND_8u32(t256_3, t256_1, (8u1)[1,1,0,0,0,0,1,1]);
+  st.[:u256 11*8] = t256_4;
+
+  // [ 15 ]
+  st[15] = #VMOVHPD(t128_1);
+  
+  // [ 16, 17, 18, 19 ]
+  t256_4 = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,0,0,0,0,1,1]);
+  st.[:u256 16*8] = t256_4;
+
+  // [ 20 ]
+  st[20] = #VMOVHPD(t128_0);
+
+  // [ 21, 22, 23, 24 ]
+  t256_4 = #VPBLEND_8u32(t256_1, t256_2, (8u1)[1,1,0,0,0,0,1,1]);
+  st.[:u256 21*8] = t256_4;
+
+  return st;
+}
+
+/* for testing:
+export fn testF(reg ptr u256[7] state) -> reg ptr u256[7] {
+ reg u256[7] st;
+ inline int i;
+ for i = 0 to 7 { st[i] = state[i]; }
+ st = _keccakf1600_avx2(st);
+ for i = 0 to 7 { state[i] = st[i]; }
+ return state;
+}
+*/
