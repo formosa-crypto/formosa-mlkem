@@ -152,13 +152,11 @@ ensures:
 */
 
 inline
-fn __i_polyvec_frombytes(reg ptr u8[MLKEM_POLYVECBYTES] ap) -> stack u16[MLKEM_VECN]
+fn __i_polyvec_frombytes(reg ptr u8[MLKEM_POLYVECBYTES] a) -> stack u16[MLKEM_VECN]
 {
   stack u16[MLKEM_VECN] r;
-  stack u8[MLKEM_POLYVECBYTES] a;
   inline int i;
 
-  a = #copy(ap);
   for i = 0 to MLKEM_K
   {
     r[MLKEM_N*i:MLKEM_N] = _i_poly_frombytes(r[MLKEM_N*i:MLKEM_N], a[MLKEM_POLYBYTES*i:MLKEM_POLYBYTES]);
