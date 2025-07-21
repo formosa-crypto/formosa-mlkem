@@ -11423,8 +11423,7 @@ L_poly_getnoise_eta2$2:
 	vmovdqu	%ymm0, 480(%rax)
 	ret
 L_i_poly_frommsg$1:
-	leaq	glob_data + 992(%rip), %rcx
-	vmovdqu	(%rcx), %ymm0
+	vmovdqu	glob_data + 992(%rip), %ymm0
 	vbroadcasti128	glob_data + 2832(%rip), %ymm1
 	vbroadcasti128	glob_data + 2816(%rip), %ymm2
 	vmovdqu	(%rsi), %ymm3
@@ -11534,12 +11533,9 @@ L_i_poly_frommsg$1:
 	vmovdqu	%ymm0, 480(%rax)
 	ret
 L_poly_frommont$1:
-	leaq	glob_data + 1184(%rip), %rcx
-	vmovdqu	(%rcx), %ymm0
-	leaq	glob_data + 1152(%rip), %rcx
-	vmovdqu	(%rcx), %ymm1
-	leaq	glob_data + 896(%rip), %rcx
-	vmovdqu	(%rcx), %ymm2
+	vmovdqu	glob_data + 1184(%rip), %ymm0
+	vmovdqu	glob_data + 1152(%rip), %ymm1
+	vmovdqu	glob_data + 896(%rip), %ymm2
 	vmovdqu	(%rax), %ymm3
 	vpmulhw	%ymm2, %ymm3, %ymm4
 	vpmullw	%ymm2, %ymm3, %ymm3
