@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "../../../../kyber/ref/params.h"
 #include "../../../../kyber/ref/kem.h"
@@ -28,7 +29,7 @@ int main(void)
   crypto_kem_keypair_derand(pk0, sk0, randomness0);
 
   for(int i=0;i<KYBER_SECRETKEYBYTES;i++)
-    if(sk0[i] != sk1[i]) printf("error crypto_kem_keypair sk: %d\n", i);
+    if(sk0[i] != sk1[i]) { printf("error crypto_kem_keypair sk: %d\n", i); exit(-1); }
 
   for(int i=0;i<KYBER_PUBLICKEYBYTES;i++)
     if(pk0[i] != pk1[i]) printf("error crypto_kem_keypair pk: %d\n", i);

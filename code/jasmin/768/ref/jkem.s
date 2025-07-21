@@ -1,14 +1,14 @@
 	.att_syntax
 	.text
 	.p2align	5
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_dec
-	.global	jade_kem_mlkem_mlkem768_amd64_avx2_dec
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand
-	.global	jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand
-	.global	jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand
-_jade_kem_mlkem_mlkem768_amd64_avx2_dec:
-jade_kem_mlkem_mlkem768_amd64_avx2_dec:
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_dec
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_dec
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_enc_derand
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_enc_derand
+	.global	_jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand
+	.global	jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand
+_jade_kem_mlkem_mlkem768_amd64_ref_dec:
+jade_kem_mlkem_mlkem768_amd64_ref_dec:
 	movq	%rsp, %rax
 	leaq	-20448(%rsp), %rsp
 	andq	$-8, %rsp
@@ -1505,8 +1505,8 @@ jade_kem_mlkem_mlkem768_amd64_avx2_dec:
 	movq	%rdx, %rdi
 	movq	$0, %r8
 	movq	$0, %r9
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$249
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$250:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$249
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$250:
 	movzbl	(%rdi,%r9), %r10d
 	incq	%r9
 	movzbl	(%rdi,%r9), %r11d
@@ -1554,67 +1554,67 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$250:
 	shrl	$10, %r10d
 	movw	%r10w, (%rsi,%r8,2)
 	incq	%r8
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$249:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$249:
 	cmpq	$765, %r8
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$250
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$250
 	leaq	6504(%rsp), %rsi
 	leaq	960(%rdx), %rdx
 	call	L_i_poly_decompress$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$248:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$248:
 	leaq	10088(%rsp), %rdi
 	movq	%rcx, %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$247:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$247:
 	leaq	10600(%rsp), %rdi
 	leaq	384(%rcx), %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$246:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$246:
 	leaq	11112(%rsp), %rdi
 	leaq	768(%rcx), %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$245:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$245:
 	leaq	8552(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$244:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$244:
 	leaq	9064(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$243:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$243:
 	leaq	9576(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$242:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$242:
 	leaq	7016(%rsp), %rsi
 	leaq	10088(%rsp), %rcx
 	leaq	8552(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$241:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$241:
 	leaq	16(%rsp), %rsp
 	leaq	7528(%rsp), %rsi
 	leaq	10600(%rsp), %rcx
 	leaq	9064(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$240:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$240:
 	leaq	16(%rsp), %rsp
 	leaq	7016(%rsp), %rcx
 	leaq	7528(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$239:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$239:
 	leaq	7528(%rsp), %rsi
 	leaq	11112(%rsp), %rcx
 	leaq	9576(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$238:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$238:
 	leaq	16(%rsp), %rsp
 	leaq	7016(%rsp), %rcx
 	leaq	7528(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$237:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$237:
 	leaq	7016(%rsp), %rcx
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$235
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$236:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$235
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$236:
 	movw	(%rcx,%rdx,2), %si
 	movswl	%si, %edi
 	imull	$20159, %edi, %edi
@@ -1623,21 +1623,21 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$236:
 	subw	%di, %si
 	movw	%si, (%rcx,%rdx,2)
 	incq	%rdx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$235:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$235:
 	cmpq	$256, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$236
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$236
 	leaq	7016(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$234:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$234:
 	leaq	7528(%rsp), %rcx
 	leaq	6504(%rsp), %rdx
 	leaq	7016(%rsp), %rsi
 	call	L_poly_sub$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$233:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$233:
 	leaq	7528(%rsp), %rcx
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$231
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$232:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$231
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$232:
 	movw	(%rcx,%rdx,2), %si
 	movswl	%si, %edi
 	imull	$20159, %edi, %edi
@@ -1646,12 +1646,12 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$232:
 	subw	%di, %si
 	movw	%si, (%rcx,%rdx,2)
 	incq	%rdx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$231:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$231:
 	cmpq	$256, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$232
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$232
 	leaq	7528(%rsp), %rcx
 	call	L_i_poly_tomsg$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$230:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$230:
 	movq	6440(%rsp), %rax
 	movq	%rax, 152(%rsp)
 	movq	6448(%rsp), %rax
@@ -1664,7 +1664,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$230:
 	leaq	120(%rsp), %rdx
 	leaq	-216(%rsp), %rsp
 	call	L_sha3_512A_A64$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$229:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$229:
 	leaq	216(%rsp), %rsp
 	leaq	19304(%rsp), %rdx
 	leaq	120(%rsp), %rsi
@@ -1675,15 +1675,15 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$229:
 	leaq	8552(%rsp), %rdi
 	movq	%rdx, %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$228:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$228:
 	leaq	9064(%rsp), %rdi
 	leaq	384(%rdx), %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$227:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$227:
 	leaq	9576(%rsp), %rdi
 	leaq	768(%rdx), %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$226:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$226:
 	movq	1152(%rax), %rdx
 	movq	%rdx, 48(%rsp)
 	movq	1160(%rax), %rdx
@@ -1694,7 +1694,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$226:
 	movq	%rax, 72(%rsp)
 	leaq	7528(%rsp), %rax
 	call	L_i_poly_frommsg$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$225:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$225:
 	movq	%rcx, %mm2
 	movq	$1, %rax
 	movq	%rax, %mm3
@@ -1764,41 +1764,41 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$225:
 	movb	%al, 111(%rsp)
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$223
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$223
 	movb	$0, 112(%rsp)
 	movb	$0, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$224
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$223:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$224
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$223:
 	movb	$0, 112(%rsp)
 	movb	$0, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$224:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$224:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$222:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$222:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$209
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$210:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$209
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$210:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$221:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$221:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$211
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$212:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$211
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$212:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$213
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$213
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$211
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$213:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$211
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$213:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -1816,90 +1816,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$213:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$219
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$219
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$220
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$219:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$220
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$219:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$220:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$220:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$215
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$215
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$211
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$215:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$211
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$215:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$217
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$217
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$211
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$217:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$211
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$217:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$218:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$216:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$214:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$211:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$218:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$216:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$214:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$211:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$212
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$209:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$212
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$209:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$210
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$210
 	movq	$0, %rax
 	leaq	14696(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$207
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$208:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$207
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$208:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$207:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$207:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$208
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$208
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$205
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$205
 	movb	$0, 112(%rsp)
 	movb	$1, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$206
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$205:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$206
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$205:
 	movb	$1, 112(%rsp)
 	movb	$0, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$206:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$206:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$204:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$204:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$191
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$192:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$191
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$192:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$203:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$203:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$193
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$194:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$193
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$194:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$195
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$195
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$193
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$195:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$193
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$195:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -1917,90 +1917,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$195:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$201
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$201
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$202
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$201:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$202
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$201:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$202:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$202:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$197
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$197
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$193
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$197:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$193
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$197:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$199
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$199
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$193
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$199:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$193
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$199:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$200:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$198:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$196:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$193:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$200:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$198:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$196:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$193:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$194
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$191:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$194
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$191:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$192
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$192
 	movq	$0, %rax
 	leaq	15208(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$189
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$190:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$189
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$190:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$189:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$189:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$190
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$190
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$187
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$187
 	movb	$0, 112(%rsp)
 	movb	$2, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$188
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$187:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$188
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$187:
 	movb	$2, 112(%rsp)
 	movb	$0, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$188:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$188:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$186:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$186:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$173
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$174:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$173
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$174:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$185:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$185:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$175
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$176:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$175
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$176:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$177
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$177
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$175
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$177:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$175
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$177:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -2018,90 +2018,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$177:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$183
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$183
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$184
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$183:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$184
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$183:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$184:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$184:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$179
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$179
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$175
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$179:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$175
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$179:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$181
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$181
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$175
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$181:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$175
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$181:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$182:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$180:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$178:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$175:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$182:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$180:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$178:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$175:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$176
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$173:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$176
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$173:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$174
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$174
 	movq	$0, %rax
 	leaq	15720(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$171
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$172:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$171
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$172:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$171:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$171:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$172
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$172
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$169
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$169
 	movb	$1, 112(%rsp)
 	movb	$0, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$170
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$169:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$170
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$169:
 	movb	$0, 112(%rsp)
 	movb	$1, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$170:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$170:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$168:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$168:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$155
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$156:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$155
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$156:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$167:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$167:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$157
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$158:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$157
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$158:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$159
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$159
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$157
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$159:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$157
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$159:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -2119,90 +2119,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$159:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$165
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$165
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$166
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$165:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$166
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$165:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$166:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$166:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$161
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$161
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$157
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$161:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$157
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$161:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$163
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$163
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$157
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$163:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$157
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$163:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$164:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$162:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$160:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$157:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$164:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$162:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$160:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$157:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$158
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$155:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$158
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$155:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$156
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$156
 	movq	$0, %rax
 	leaq	16232(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$153
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$154:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$153
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$154:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$153:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$153:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$154
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$154
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$151
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$151
 	movb	$1, 112(%rsp)
 	movb	$1, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$152
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$151:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$152
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$151:
 	movb	$1, 112(%rsp)
 	movb	$1, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$152:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$152:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$150:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$150:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$137
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$138:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$137
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$138:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$149:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$149:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$139
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$140:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$139
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$140:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$141
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$141
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$139
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$141:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$139
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$141:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -2220,90 +2220,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$141:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$147
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$147
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$148
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$147:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$148
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$147:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$148:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$148:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$143
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$143
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$139
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$143:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$139
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$143:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$145
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$145
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$139
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$145:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$139
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$145:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$146:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$144:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$142:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$139:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$146:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$144:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$142:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$139:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$140
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$137:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$140
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$137:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$138
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$138
 	movq	$0, %rax
 	leaq	16744(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$135
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$136:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$135
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$136:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$135:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$135:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$136
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$136
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$133
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$133
 	movb	$1, 112(%rsp)
 	movb	$2, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$134
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$133:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$134
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$133:
 	movb	$2, 112(%rsp)
 	movb	$1, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$134:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$134:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$132:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$132:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$119
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$120:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$119
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$120:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$131:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$131:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$121
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$122:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$121
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$122:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$123
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$123
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$121
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$123:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$121
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$123:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -2321,90 +2321,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$123:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$129
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$129
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$130
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$129:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$130
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$129:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$130:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$130:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$125
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$125
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$121
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$125:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$121
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$125:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$127
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$127
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$121
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$127:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$121
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$127:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$128:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$126:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$124:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$121:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$128:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$126:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$124:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$121:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$122
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$119:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$122
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$119:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$120
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$120
 	movq	$0, %rax
 	leaq	17256(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$117
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$118:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$117
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$118:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$117:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$117:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$118
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$118
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$115
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$115
 	movb	$2, 112(%rsp)
 	movb	$0, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$116
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$115:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$116
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$115:
 	movb	$0, 112(%rsp)
 	movb	$2, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$116:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$116:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$114:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$114:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$101
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$102:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$101
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$102:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$113:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$113:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$103
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$104:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$103
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$104:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$105
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$105
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$103
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$105:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$103
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$105:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -2422,90 +2422,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$105:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$111
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$111
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$112
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$111:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$112
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$111:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$112:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$112:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$107
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$107
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$103
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$107:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$103
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$107:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$109
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$109
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$103
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$109:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$103
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$109:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$110:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$108:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$106:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$103:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$110:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$108:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$106:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$103:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$104
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$101:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$104
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$101:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$102
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$102
 	movq	$0, %rax
 	leaq	17768(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$99
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$100:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$99
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$100:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$99:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$99:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$100
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$100
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$97
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$97
 	movb	$2, 112(%rsp)
 	movb	$1, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$98
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$97:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$98
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$97:
 	movb	$1, 112(%rsp)
 	movb	$2, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$98:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$98:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$96:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$96:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$83
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$84:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$83
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$84:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$95:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$95:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$85
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$86:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$85
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$86:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$87
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$87
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$85
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$87:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$85
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$87:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -2523,90 +2523,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$87:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$93
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$93
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$94
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$93:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$94
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$93:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$94:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$94:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$89
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$89
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$85
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$89:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$85
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$89:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$91
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$91
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$85
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$91:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$85
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$91:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$92:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$90:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$88:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$85:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$92:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$90:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$88:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$85:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$86
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$83:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$86
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$83:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$84
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$84
 	movq	$0, %rax
 	leaq	18280(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$81
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$82:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$81
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$82:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$81:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$81:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$82
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$82
 	movq	%mm3, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$79
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$79
 	movb	$2, 112(%rsp)
 	movb	$2, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$80
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$79:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$80
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$79:
 	movb	$2, 112(%rsp)
 	movb	$2, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$80:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$80:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$78:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$78:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$65
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$66:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$65
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$66:
 	movq	%rcx, %mm3
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$77:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$77:
 	movq	%mm3, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$67
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$68:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$67
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$68:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$69
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$69
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$67
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$69:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$67
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$69:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -2624,139 +2624,139 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$69:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$75
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$75
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$76
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$75:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$76
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$75:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$76:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$76:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$71
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$71
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$67
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$71:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$67
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$71:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$73
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$73
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$67
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$73:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$67
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$73:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 7016(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$74:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$72:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$70:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$67:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$74:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$72:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$70:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$67:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$68
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$65:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$68
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$65:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$66
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$66
 	movq	$0, %rax
 	leaq	18792(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$63
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$64:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$63
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$64:
 	movw	7016(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$63:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$63:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$64
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$64
 	movq	%mm2, %rax
 	movb	$0, %cl
 	leaq	10088(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$62:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$62:
 	leaq	168(%rsp), %rsp
 	movb	$1, %cl
 	leaq	10600(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$61:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$61:
 	leaq	168(%rsp), %rsp
 	movb	$2, %cl
 	leaq	11112(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$60:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$60:
 	leaq	168(%rsp), %rsp
 	movq	%mm2, %rax
 	movb	$3, %cl
 	leaq	11624(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$59:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$59:
 	leaq	168(%rsp), %rsp
 	movb	$4, %cl
 	leaq	12136(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$58:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$58:
 	leaq	168(%rsp), %rsp
 	movb	$5, %cl
 	leaq	12648(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$57:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$57:
 	leaq	168(%rsp), %rsp
 	movb	$6, %cl
 	leaq	7016(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$56:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$56:
 	leaq	168(%rsp), %rsp
 	leaq	10088(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$55:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$55:
 	leaq	10600(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$54:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$54:
 	leaq	11112(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$53:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$53:
 	leaq	13160(%rsp), %rsi
 	leaq	14696(%rsp), %rcx
 	leaq	10088(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$52:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$52:
 	leaq	16(%rsp), %rsp
 	leaq	6504(%rsp), %rsi
 	leaq	15208(%rsp), %rcx
 	leaq	10600(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$51:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$51:
 	leaq	16(%rsp), %rsp
 	leaq	13160(%rsp), %rcx
 	leaq	6504(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$50:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$50:
 	leaq	6504(%rsp), %rsi
 	leaq	15720(%rsp), %rcx
 	leaq	11112(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$49:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$49:
 	leaq	16(%rsp), %rsp
 	leaq	13160(%rsp), %rcx
 	leaq	6504(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$48:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$48:
 	leaq	13160(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$46
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$47:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$46
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$47:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2765,42 +2765,42 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$47:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$46:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$46:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$47
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$47
 	leaq	13672(%rsp), %rsi
 	leaq	16232(%rsp), %rcx
 	leaq	10088(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$45:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$45:
 	leaq	16(%rsp), %rsp
 	leaq	6504(%rsp), %rsi
 	leaq	16744(%rsp), %rcx
 	leaq	10600(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$44:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$44:
 	leaq	16(%rsp), %rsp
 	leaq	13672(%rsp), %rcx
 	leaq	6504(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$43:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$43:
 	leaq	6504(%rsp), %rsi
 	leaq	17256(%rsp), %rcx
 	leaq	11112(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$42:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$42:
 	leaq	16(%rsp), %rsp
 	leaq	13672(%rsp), %rcx
 	leaq	6504(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$41:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$41:
 	leaq	13672(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$39
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$40:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$39
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$40:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2809,42 +2809,42 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$40:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$39:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$39:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$40
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$40
 	leaq	14184(%rsp), %rsi
 	leaq	17768(%rsp), %rcx
 	leaq	10088(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$38:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$38:
 	leaq	16(%rsp), %rsp
 	leaq	6504(%rsp), %rsi
 	leaq	18280(%rsp), %rcx
 	leaq	10600(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$37:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$37:
 	leaq	16(%rsp), %rsp
 	leaq	14184(%rsp), %rcx
 	leaq	6504(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$36:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$36:
 	leaq	6504(%rsp), %rsi
 	leaq	18792(%rsp), %rcx
 	leaq	11112(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$35:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$35:
 	leaq	16(%rsp), %rsp
 	leaq	14184(%rsp), %rcx
 	leaq	6504(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$34:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$34:
 	leaq	14184(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$32
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$33:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$32
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$33:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2853,42 +2853,42 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$33:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$32:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$32:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$33
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$33
 	leaq	6504(%rsp), %rsi
 	leaq	8552(%rsp), %rcx
 	leaq	10088(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$31:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$31:
 	leaq	16(%rsp), %rsp
 	leaq	8040(%rsp), %rsi
 	leaq	9064(%rsp), %rcx
 	leaq	10600(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$30:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$30:
 	leaq	16(%rsp), %rsp
 	leaq	6504(%rsp), %rcx
 	leaq	8040(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$29:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$29:
 	leaq	8040(%rsp), %rsi
 	leaq	9576(%rsp), %rcx
 	leaq	11112(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$28:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$28:
 	leaq	16(%rsp), %rsp
 	leaq	6504(%rsp), %rcx
 	leaq	8040(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$27:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$27:
 	leaq	6504(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$25
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$26:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$25
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$26:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2897,45 +2897,45 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$26:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$25:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$25:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$26
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$26
 	leaq	13160(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$24:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$24:
 	leaq	13672(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$23:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$23:
 	leaq	14184(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$22:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$22:
 	leaq	6504(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$21:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$21:
 	leaq	13160(%rsp), %rcx
 	leaq	11624(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$20:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$20:
 	leaq	13672(%rsp), %rcx
 	leaq	12136(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$19:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$19:
 	leaq	14184(%rsp), %rcx
 	leaq	12648(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$18:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$18:
 	leaq	6504(%rsp), %rcx
 	leaq	7016(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$17:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$17:
 	leaq	6504(%rsp), %rcx
 	leaq	7528(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$16:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$16:
 	leaq	13160(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$14
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$15:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$14
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$15:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2944,13 +2944,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$15:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$14:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$14:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$15
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$15
 	leaq	13672(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$12
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$13:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$12
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$13:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2959,13 +2959,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$13:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$12:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$12:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$13
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$13
 	leaq	14184(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$10
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$11:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$10
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$11:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2974,13 +2974,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$11:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$10:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$10:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$11
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$11
 	leaq	6504(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$8
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$9:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$8
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$9:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -2989,24 +2989,24 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$9:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$8:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$8:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$9
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$9
 	movq	%mm1, %rax
 	movq	%rax, %rdx
 	movq	$0, %rsi
 	movq	$0, %rdi
 	leaq	13160(%rsp), %rcx
 	call	L_poly_csubq$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$7:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$7:
 	leaq	13672(%rsp), %rcx
 	call	L_poly_csubq$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$6:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$6:
 	leaq	14184(%rsp), %rcx
 	call	L_poly_csubq$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$5:
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$3
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$4:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$5:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$3
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$4:
 	movzwq	13160(%rsp,%rsi,2), %rcx
 	incq	%rsi
 	shlq	$10, %rcx
@@ -3060,13 +3060,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$4:
 	shrq	$2, %r10
 	movb	%r10b, (%rdx,%rdi)
 	incq	%rdi
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$3:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$3:
 	cmpq	$765, %rsi
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$4
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_dec$4
 	leaq	960(%rax), %rax
 	leaq	6504(%rsp), %rcx
 	call	L_i_poly_compress$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$2:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$2:
 	movq	8(%rsp), %rax
 	leaq	19304(%rsp), %rcx
 	movq	$0, %rdx
@@ -8513,12 +8513,12 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$2:
 	negq	%rdx
 	shrq	$63, %rdx
 	movq	%rdx, %mm1
-	movq	8(%rsp), %rcx
+	movq	8(%rsp), %rdx
 	movq	(%rsp), %rax
-	leaq	6472(%rsp), %rdx
+	leaq	6472(%rsp), %rsi
 	leaq	-224(%rsp), %rsp
 	call	L_shake256_A32__A1120$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$1:
+Ljade_kem_mlkem_mlkem768_amd64_ref_dec$1:
 	leaq	224(%rsp), %rsp
 	movq	%mm1, %rax
 	leaq	184(%rsp), %rcx
@@ -8733,8 +8733,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$1:
 	movq	20432(%rsp), %r15
 	movq	20440(%rsp), %rsp
 	ret
-_jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand:
-jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand:
+_jade_kem_mlkem_mlkem768_amd64_ref_enc_derand:
+jade_kem_mlkem_mlkem768_amd64_ref_enc_derand:
 	movq	%rsp, %rax
 	leaq	-15744(%rsp), %rsp
 	andq	$-8, %rsp
@@ -9070,13 +9070,13 @@ jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand:
 	leaq	152(%rsp), %rcx
 	leaq	-224(%rsp), %rsp
 	call	L_sha3_256A_A1184$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$229:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$229:
 	leaq	224(%rsp), %rsp
 	leaq	184(%rsp), %rcx
 	leaq	120(%rsp), %rdx
 	leaq	-216(%rsp), %rsp
 	call	L_sha3_512A_A64$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$228:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$228:
 	leaq	216(%rsp), %rsp
 	movq	(%rsp), %rcx
 	leaq	120(%rsp), %rsi
@@ -9086,15 +9086,15 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$228:
 	leaq	4936(%rsp), %rdi
 	movq	%rax, %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$227:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$227:
 	leaq	5448(%rsp), %rdi
 	leaq	384(%rax), %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$226:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$226:
 	leaq	5960(%rsp), %rdi
 	leaq	768(%rax), %r8
 	call	L_poly_frombytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$225:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$225:
 	movq	1152(%rcx), %rax
 	movq	%rax, 16(%rsp)
 	movq	1160(%rcx), %rax
@@ -9105,7 +9105,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$225:
 	movq	%rax, 40(%rsp)
 	leaq	2888(%rsp), %rax
 	call	L_i_poly_frommsg$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$224:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$224:
 	movq	%rdx, %mm3
 	movq	$1, %rax
 	movq	%rax, %mm4
@@ -9175,41 +9175,41 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$224:
 	movb	%al, 111(%rsp)
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$222
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$222
 	movb	$0, 112(%rsp)
 	movb	$0, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$223
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$222:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$223
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$222:
 	movb	$0, 112(%rsp)
 	movb	$0, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$223:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$223:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$221:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$221:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$208
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$209:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$208
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$209:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$220:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$220:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$210
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$211:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$210
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$211:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$212
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$212
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$210
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$212:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$210
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$212:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9227,90 +9227,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$212:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$218
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$218
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$219
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$218:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$219
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$218:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$219:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$219:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$214
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$214
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$210
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$214:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$210
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$214:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$216
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$216
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$210
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$216:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$210
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$216:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$217:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$215:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$213:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$210:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$217:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$215:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$213:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$210:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$211
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$208:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$211
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$208:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$209
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$209
 	movq	$0, %rax
 	leaq	11080(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$206
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$207:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$206
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$207:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$206:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$206:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$207
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$207
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$204
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$204
 	movb	$0, 112(%rsp)
 	movb	$1, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$205
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$204:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$205
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$204:
 	movb	$1, 112(%rsp)
 	movb	$0, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$205:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$205:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$203:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$203:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$190
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$191:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$190
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$191:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$202:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$202:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$192
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$193:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$192
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$193:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$194
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$194
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$192
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$194:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$192
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$194:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9328,90 +9328,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$194:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$200
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$200
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$201
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$200:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$201
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$200:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$201:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$201:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$196
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$196
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$192
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$196:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$192
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$196:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$198
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$198
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$192
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$198:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$192
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$198:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$199:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$197:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$195:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$192:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$199:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$197:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$195:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$192:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$193
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$190:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$193
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$190:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$191
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$191
 	movq	$0, %rax
 	leaq	11592(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$188
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$189:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$188
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$189:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$188:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$188:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$189
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$189
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$186
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$186
 	movb	$0, 112(%rsp)
 	movb	$2, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$187
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$186:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$187
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$186:
 	movb	$2, 112(%rsp)
 	movb	$0, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$187:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$187:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$185:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$185:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$172
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$173:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$172
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$173:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$184:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$184:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$174
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$175:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$174
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$175:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$176
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$176
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$174
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$176:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$174
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$176:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9429,90 +9429,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$176:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$182
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$182
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$183
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$182:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$183
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$182:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$183:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$183:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$178
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$178
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$174
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$178:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$174
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$178:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$180
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$180
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$174
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$180:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$174
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$180:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$181:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$179:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$177:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$174:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$181:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$179:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$177:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$174:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$175
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$172:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$175
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$172:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$173
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$173
 	movq	$0, %rax
 	leaq	12104(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$170
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$171:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$170
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$171:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$170:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$170:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$171
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$171
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$168
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$168
 	movb	$1, 112(%rsp)
 	movb	$0, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$169
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$168:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$169
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$168:
 	movb	$0, 112(%rsp)
 	movb	$1, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$169:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$169:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$167:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$167:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$154
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$155:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$154
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$155:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$166:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$166:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$156
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$157:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$156
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$157:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$158
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$158
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$156
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$158:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$156
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$158:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9530,90 +9530,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$158:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$164
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$164
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$165
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$164:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$165
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$164:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$165:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$165:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$160
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$160
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$156
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$160:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$156
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$160:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$162
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$162
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$156
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$162:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$156
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$162:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$163:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$161:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$159:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$156:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$163:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$161:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$159:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$156:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$157
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$154:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$157
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$154:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$155
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$155
 	movq	$0, %rax
 	leaq	12616(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$152
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$153:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$152
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$153:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$152:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$152:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$153
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$153
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$150
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$150
 	movb	$1, 112(%rsp)
 	movb	$1, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$151
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$150:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$151
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$150:
 	movb	$1, 112(%rsp)
 	movb	$1, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$151:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$151:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$149:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$149:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$136
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$137:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$136
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$137:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$148:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$148:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$138
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$139:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$138
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$139:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$140
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$140
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$138
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$140:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$138
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$140:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9631,90 +9631,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$140:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$146
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$146
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$147
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$146:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$147
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$146:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$147:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$147:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$142
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$142
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$138
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$142:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$138
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$142:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$144
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$144
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$138
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$144:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$138
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$144:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$145:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$143:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$141:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$138:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$145:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$143:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$141:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$138:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$139
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$136:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$139
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$136:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$137
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$137
 	movq	$0, %rax
 	leaq	13128(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$134
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$135:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$134
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$135:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$134:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$134:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$135
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$135
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$132
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$132
 	movb	$1, 112(%rsp)
 	movb	$2, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$133
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$132:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$133
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$132:
 	movb	$2, 112(%rsp)
 	movb	$1, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$133:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$133:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$131:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$131:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$118
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$119:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$118
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$119:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$130:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$130:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$120
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$121:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$120
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$121:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$122
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$122
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$120
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$122:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$120
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$122:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9732,90 +9732,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$122:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$128
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$128
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$129
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$128:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$129
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$128:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$129:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$129:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$124
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$124
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$120
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$124:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$120
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$124:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$126
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$126
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$120
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$126:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$120
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$126:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$127:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$125:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$123:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$120:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$127:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$125:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$123:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$120:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$121
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$118:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$121
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$118:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$119
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$119
 	movq	$0, %rax
 	leaq	13640(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$116
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$117:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$116
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$117:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$116:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$116:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$117
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$117
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$114
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$114
 	movb	$2, 112(%rsp)
 	movb	$0, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$115
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$114:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$115
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$114:
 	movb	$0, 112(%rsp)
 	movb	$2, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$115:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$115:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$113:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$113:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$100
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$101:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$100
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$101:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$112:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$112:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$102
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$103:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$102
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$103:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$104
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$104
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$102
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$104:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$102
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$104:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9833,90 +9833,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$104:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$110
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$110
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$111
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$110:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$111
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$110:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$111:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$111:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$106
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$106
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$102
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$106:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$102
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$106:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$108
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$108
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$102
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$108:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$102
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$108:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$109:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$107:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$105:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$102:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$109:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$107:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$105:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$102:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$103
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$100:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$103
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$100:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$101
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$101
 	movq	$0, %rax
 	leaq	14152(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$98
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$99:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$98
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$99:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$98:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$98:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$99
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$99
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$96
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$96
 	movb	$2, 112(%rsp)
 	movb	$1, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$97
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$96:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$97
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$96:
 	movb	$1, 112(%rsp)
 	movb	$2, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$97:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$97:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$95:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$95:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$82
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$83:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$82
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$83:
 	movq	%rcx, %mm6
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$94:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$94:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$84
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$85:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$84
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$85:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$86
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$86
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$84
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$86:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$84
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$86:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -9934,90 +9934,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$86:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$92
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$92
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$93
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$92:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$93
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$92:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$93:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$93:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$88
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$88
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$84
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$88:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$84
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$88:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$90
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$90
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$84
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$90:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$84
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$90:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$91:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$89:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$87:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$84:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$91:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$89:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$87:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$84:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$85
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$82:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$85
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$82:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$83
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$83
 	movq	$0, %rax
 	leaq	14664(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$80
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$81:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$80
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$81:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$80:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$80:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$81
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$81
 	movq	%mm4, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$78
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$78
 	movb	$2, 112(%rsp)
 	movb	$2, 113(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$79
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$78:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$79
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$78:
 	movb	$2, 112(%rsp)
 	movb	$2, 113(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$79:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$79:
 	leaq	416(%rsp), %rax
 	leaq	80(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$77:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$77:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$64
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$65:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$64
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$65:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %rcx
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$76:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$76:
 	movq	%mm4, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$66
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$67:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$66
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$67:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$68
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$68
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$66
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$68:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$66
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$68:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	248(%rsp,%rdx), %si
@@ -10035,139 +10035,139 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$68:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$74
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$74
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$75
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$74:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$75
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$74:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$75:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$75:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$70
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$70
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$66
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$70:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$66
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$70:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$72
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$72
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$66
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$72:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$66
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$72:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 3400(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$73:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$71:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$69:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$66:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$73:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$71:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$69:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$66:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$67
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$64:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$67
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$64:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$65
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$65
 	movq	$0, %rax
 	leaq	15176(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$62
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$63:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$62
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$63:
 	movw	3400(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$62:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$62:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$63
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$63
 	movq	%mm3, %rax
 	movb	$0, %cl
 	leaq	6472(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$61:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$61:
 	leaq	168(%rsp), %rsp
 	movb	$1, %cl
 	leaq	6984(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$60:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$60:
 	leaq	168(%rsp), %rsp
 	movb	$2, %cl
 	leaq	7496(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$59:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$59:
 	leaq	168(%rsp), %rsp
 	movq	%mm3, %rax
 	movb	$3, %cl
 	leaq	8008(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$58:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$58:
 	leaq	168(%rsp), %rsp
 	movb	$4, %cl
 	leaq	8520(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$57:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$57:
 	leaq	168(%rsp), %rsp
 	movb	$5, %cl
 	leaq	9032(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$56:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$56:
 	leaq	168(%rsp), %rsp
 	movb	$6, %cl
 	leaq	3400(%rsp), %rdx
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$55:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$55:
 	leaq	168(%rsp), %rsp
 	leaq	6472(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$54:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$54:
 	leaq	6984(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$53:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$53:
 	leaq	7496(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$52:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$52:
 	leaq	9544(%rsp), %rsi
 	leaq	11080(%rsp), %rcx
 	leaq	6472(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$51:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$51:
 	leaq	16(%rsp), %rsp
 	leaq	3912(%rsp), %rsi
 	leaq	11592(%rsp), %rcx
 	leaq	6984(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$50:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$50:
 	leaq	16(%rsp), %rsp
 	leaq	9544(%rsp), %rcx
 	leaq	3912(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$49:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$49:
 	leaq	3912(%rsp), %rsi
 	leaq	12104(%rsp), %rcx
 	leaq	7496(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$48:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$48:
 	leaq	16(%rsp), %rsp
 	leaq	9544(%rsp), %rcx
 	leaq	3912(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$47:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$47:
 	leaq	9544(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$45
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$46:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$45
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$46:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10176,42 +10176,42 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$46:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$45:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$45:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$46
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$46
 	leaq	10056(%rsp), %rsi
 	leaq	12616(%rsp), %rcx
 	leaq	6472(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$44:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$44:
 	leaq	16(%rsp), %rsp
 	leaq	3912(%rsp), %rsi
 	leaq	13128(%rsp), %rcx
 	leaq	6984(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$43:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$43:
 	leaq	16(%rsp), %rsp
 	leaq	10056(%rsp), %rcx
 	leaq	3912(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$42:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$42:
 	leaq	3912(%rsp), %rsi
 	leaq	13640(%rsp), %rcx
 	leaq	7496(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$41:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$41:
 	leaq	16(%rsp), %rsp
 	leaq	10056(%rsp), %rcx
 	leaq	3912(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$40:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$40:
 	leaq	10056(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$38
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$39:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$38
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$39:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10220,42 +10220,42 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$39:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$38:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$38:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$39
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$39
 	leaq	10568(%rsp), %rsi
 	leaq	14152(%rsp), %rcx
 	leaq	6472(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$37:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$37:
 	leaq	16(%rsp), %rsp
 	leaq	3912(%rsp), %rsi
 	leaq	14664(%rsp), %rcx
 	leaq	6984(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$36:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$36:
 	leaq	16(%rsp), %rsp
 	leaq	10568(%rsp), %rcx
 	leaq	3912(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$35:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$35:
 	leaq	3912(%rsp), %rsi
 	leaq	15176(%rsp), %rcx
 	leaq	7496(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$34:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$34:
 	leaq	16(%rsp), %rsp
 	leaq	10568(%rsp), %rcx
 	leaq	3912(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$33:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$33:
 	leaq	10568(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$31
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$32:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$31
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$32:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10264,42 +10264,42 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$32:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$31:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$31:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$32
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$32
 	leaq	3912(%rsp), %rsi
 	leaq	4936(%rsp), %rcx
 	leaq	6472(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$30:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$30:
 	leaq	16(%rsp), %rsp
 	leaq	4424(%rsp), %rsi
 	leaq	5448(%rsp), %rcx
 	leaq	6984(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$29:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$29:
 	leaq	16(%rsp), %rsp
 	leaq	3912(%rsp), %rcx
 	leaq	4424(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$28:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$28:
 	leaq	4424(%rsp), %rsi
 	leaq	5960(%rsp), %rcx
 	leaq	7496(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$27:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$27:
 	leaq	16(%rsp), %rsp
 	leaq	3912(%rsp), %rcx
 	leaq	4424(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$26:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$26:
 	leaq	3912(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$24
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$25:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$24
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$25:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10308,45 +10308,45 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$25:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$24:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$24:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$25
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$25
 	leaq	9544(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$23:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$23:
 	leaq	10056(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$22:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$22:
 	leaq	10568(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$21:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$21:
 	leaq	3912(%rsp), %rcx
 	call	L_poly_invntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$20:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$20:
 	leaq	9544(%rsp), %rcx
 	leaq	8008(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$19:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$19:
 	leaq	10056(%rsp), %rcx
 	leaq	8520(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$18:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$18:
 	leaq	10568(%rsp), %rcx
 	leaq	9032(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$17:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$17:
 	leaq	3912(%rsp), %rcx
 	leaq	3400(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$16:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$16:
 	leaq	3912(%rsp), %rcx
 	leaq	2888(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$15:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$15:
 	leaq	9544(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$13
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$14:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$13
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$14:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10355,13 +10355,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$14:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$13:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$13:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$14
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$14
 	leaq	10056(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$11
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$12:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$11
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$12:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10370,13 +10370,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$12:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$11:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$11:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$12
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$12
 	leaq	10568(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$9
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$10:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$9
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$10:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10385,13 +10385,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$10:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$9:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$9:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$10
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$10
 	leaq	3912(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$7
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$8:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$7
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$8:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -10400,24 +10400,24 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$8:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$7:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$7:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$8
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$8
 	movq	%mm2, %rax
 	movq	%rax, %rdx
 	movq	$0, %rsi
 	movq	$0, %rdi
 	leaq	9544(%rsp), %rcx
 	call	L_poly_csubq$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$6:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$6:
 	leaq	10056(%rsp), %rcx
 	call	L_poly_csubq$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$5:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$5:
 	leaq	10568(%rsp), %rcx
 	call	L_poly_csubq$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$4:
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$2
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$3:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$4:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$2
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$3:
 	movzwq	9544(%rsp,%rsi,2), %rcx
 	incq	%rsi
 	shlq	$10, %rcx
@@ -10471,13 +10471,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$3:
 	shrq	$2, %r10
 	movb	%r10b, (%rdx,%rdi)
 	incq	%rdi
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$2:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$2:
 	cmpq	$765, %rsi
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$3
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$3
 	leaq	960(%rax), %rax
 	leaq	3912(%rsp), %rcx
 	call	L_i_poly_compress$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$1:
+Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$1:
 	movq	8(%rsp), %rax
 	movq	184(%rsp), %rcx
 	movq	%rcx, (%rax)
@@ -10778,8 +10778,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$1:
 	movq	15728(%rsp), %r15
 	movq	15736(%rsp), %rsp
 	ret
-_jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand:
-jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand:
+_jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand:
+jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand:
 	movq	%rsp, %rax
 	leaq	-14016(%rsp), %rsp
 	andq	$-8, %rsp
@@ -10826,10 +10826,10 @@ jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand:
 	movq	%rax, 96(%rsp)
 	movb	$3, 104(%rsp)
 	leaq	216(%rsp), %rax
-	leaq	72(%rsp), %rcx
+	leaq	72(%rsp), %rdx
 	leaq	-216(%rsp), %rsp
 	call	L_sha3_512A_A33$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$215:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$215:
 	leaq	216(%rsp), %rsp
 	movq	216(%rsp), %rax
 	movq	%rax, 40(%rsp)
@@ -10915,41 +10915,41 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$215:
 	movb	%al, 143(%rsp)
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$213
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$213
 	movb	$0, 144(%rsp)
 	movb	$0, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$214
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$213:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$214
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$213:
 	movb	$0, 144(%rsp)
 	movb	$0, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$214:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$214:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$212:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$212:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$199
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$200:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$199
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$200:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$211:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$211:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$201
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$202:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$201
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$202:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$203
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$203
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$201
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$203:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$201
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$203:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -10967,90 +10967,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$203:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$209
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$209
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$210
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$209:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$210
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$209:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$210:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$210:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$205
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$205
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$201
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$205:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$201
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$205:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$207
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$207
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$201
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$207:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$201
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$207:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$208:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$206:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$204:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$201:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$208:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$206:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$204:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$201:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$202
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$199:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$202
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$199:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$200
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$200
 	movq	$0, %rax
 	leaq	9352(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$197
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$198:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$197
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$198:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$197:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$197:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$198
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$198
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$195
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$195
 	movb	$0, 144(%rsp)
 	movb	$1, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$196
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$195:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$196
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$195:
 	movb	$1, 144(%rsp)
 	movb	$0, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$196:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$196:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$194:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$194:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$181
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$182:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$181
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$182:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$193:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$193:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$183
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$184:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$183
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$184:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$185
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$185
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$183
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$185:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$183
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$185:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11068,90 +11068,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$185:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$191
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$191
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$192
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$191:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$192
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$191:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$192:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$192:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$187
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$187
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$183
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$187:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$183
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$187:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$189
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$189
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$183
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$189:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$183
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$189:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$190:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$188:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$186:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$183:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$190:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$188:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$186:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$183:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$184
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$181:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$184
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$181:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$182
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$182
 	movq	$0, %rax
 	leaq	9864(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$179
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$180:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$179
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$180:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$179:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$179:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$180
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$180
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$177
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$177
 	movb	$0, 144(%rsp)
 	movb	$2, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$178
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$177:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$178
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$177:
 	movb	$2, 144(%rsp)
 	movb	$0, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$178:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$178:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$176:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$176:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$163
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$164:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$163
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$164:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$175:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$175:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$165
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$166:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$165
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$166:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$167
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$167
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$165
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$167:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$165
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$167:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11169,90 +11169,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$167:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$173
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$173
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$174
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$173:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$174
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$173:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$174:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$174:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$169
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$169
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$165
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$169:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$165
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$169:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$171
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$171
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$165
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$171:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$165
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$171:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$172:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$170:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$168:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$165:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$172:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$170:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$168:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$165:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$166
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$163:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$166
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$163:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$164
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$164
 	movq	$0, %rax
 	leaq	10376(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$161
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$162:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$161
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$162:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$161:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$161:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$162
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$162
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$159
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$159
 	movb	$1, 144(%rsp)
 	movb	$0, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$160
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$159:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$160
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$159:
 	movb	$0, 144(%rsp)
 	movb	$1, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$160:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$160:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$158:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$158:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$145
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$146:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$145
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$146:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$157:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$157:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$147
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$148:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$147
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$148:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$149
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$149
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$147
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$149:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$147
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$149:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11270,90 +11270,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$149:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$155
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$155
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$156
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$155:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$156
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$155:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$156:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$156:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$151
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$151
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$147
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$151:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$147
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$151:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$153
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$153
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$147
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$153:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$147
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$153:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$154:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$152:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$150:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$147:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$154:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$152:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$150:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$147:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$148
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$145:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$148
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$145:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$146
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$146
 	movq	$0, %rax
 	leaq	10888(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$143
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$144:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$143
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$144:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$143:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$143:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$144
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$144
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$141
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$141
 	movb	$1, 144(%rsp)
 	movb	$1, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$142
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$141:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$142
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$141:
 	movb	$1, 144(%rsp)
 	movb	$1, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$142:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$142:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$140:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$140:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$127
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$128:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$127
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$128:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$139:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$139:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$129
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$130:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$129
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$130:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$131
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$131
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$129
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$131:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$129
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$131:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11371,90 +11371,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$131:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$137
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$137
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$138
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$137:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$138
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$137:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$138:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$138:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$133
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$133
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$129
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$133:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$129
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$133:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$135
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$135
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$129
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$135:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$129
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$135:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$136:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$134:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$132:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$129:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$136:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$134:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$132:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$129:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$130
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$127:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$130
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$127:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$128
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$128
 	movq	$0, %rax
 	leaq	11400(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$125
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$126:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$125
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$126:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$125:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$125:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$126
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$126
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$123
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$123
 	movb	$1, 144(%rsp)
 	movb	$2, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$124
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$123:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$124
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$123:
 	movb	$2, 144(%rsp)
 	movb	$1, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$124:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$124:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$122:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$122:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$109
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$110:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$109
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$110:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$121:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$121:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$111
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$112:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$111
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$112:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$113
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$113
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$111
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$113:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$111
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$113:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11472,90 +11472,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$113:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$119
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$119
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$120
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$119:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$120
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$119:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$120:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$120:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$115
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$115
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$111
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$115:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$111
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$115:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$117
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$117
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$111
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$117:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$111
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$117:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$118:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$116:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$114:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$111:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$118:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$116:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$114:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$111:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$112
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$109:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$112
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$109:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$110
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$110
 	movq	$0, %rax
 	leaq	11912(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$107
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$108:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$107
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$108:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$107:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$107:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$108
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$108
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$105
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$105
 	movb	$2, 144(%rsp)
 	movb	$0, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$106
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$105:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$106
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$105:
 	movb	$0, 144(%rsp)
 	movb	$2, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$106:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$106:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$104:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$104:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$91
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$92:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$91
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$92:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$103:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$103:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$93
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$94:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$93
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$94:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$95
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$95
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$93
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$95:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$93
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$95:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11573,90 +11573,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$95:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$101
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$101
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$102
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$101:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$102
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$101:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$102:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$102:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$97
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$97
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$93
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$97:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$93
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$97:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$99
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$99
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$93
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$99:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$93
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$99:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$100:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$98:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$96:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$93:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$100:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$98:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$96:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$93:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$94
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$91:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$94
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$91:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$92
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$92
 	movq	$0, %rax
 	leaq	12424(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$89
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$90:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$89
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$90:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$89:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$89:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$90
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$90
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$87
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$87
 	movb	$2, 144(%rsp)
 	movb	$1, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$88
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$87:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$88
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$87:
 	movb	$1, 144(%rsp)
 	movb	$2, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$88:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$88:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$86:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$86:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$73
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$74:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$73
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$74:
 	movq	%rcx, %mm7
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$85:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$85:
 	movq	%mm7, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$75
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$76:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$75
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$76:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$77
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$77
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$75
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$77:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$75
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$77:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11674,90 +11674,90 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$77:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$83
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$83
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$84
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$83:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$84
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$83:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$84:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$84:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$79
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$79
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$75
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$79:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$75
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$79:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$81
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$81
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$75
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$81:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$75
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$81:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$82:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$80:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$78:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$75:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$82:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$80:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$78:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$75:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$76
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$73:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$76
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$73:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$74
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$74
 	movq	$0, %rax
 	leaq	12936(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$71
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$72:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$71
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$72:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$71:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$71:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$72
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$72
 	movq	%mm6, %rax
 	cmpq	$0, %rax
-	je  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$69
+	je  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$69
 	movb	$2, 144(%rsp)
 	movb	$2, 145(%rsp)
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$70
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$69:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$70
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$69:
 	movb	$2, 144(%rsp)
 	movb	$2, 145(%rsp)
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$70:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$70:
 	leaq	448(%rsp), %rax
 	leaq	112(%rsp), %rcx
 	call	L_shake128_absorb34$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$68:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$68:
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$55
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$56:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$55
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$56:
 	movq	%rcx, %mm6
-	leaq	448(%rsp), %r15
+	leaq	448(%rsp), %rcx
 	leaq	280(%rsp), %rax
 	call	L_shake128_squeezeblock$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$67:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$67:
 	movq	%mm6, %rcx
 	lfence
 	movq	$0, %rax
 	movq	$0, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$57
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$58:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$57
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$58:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$59
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$59
 	movq	$-1, %rdx
 	cmovb	%rdx, %rax
 	movq	$168, %rdx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$57
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$59:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$57
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$59:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movzbw	280(%rsp,%rdx), %si
@@ -11775,146 +11775,146 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$59:
 	orw 	%di, %r8w
 	addq	$3, %rdx
 	cmpw	$3329, %si
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$65
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$65
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$66
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$65:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$66
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$65:
 	movq	$-1, %rdi
 	cmovnb	%rdi, %rax
 	movw	%si, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$66:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$66:
 	cmpw	$3329, %r8w
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$61
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$61
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$57
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$61:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$57
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$61:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$63
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$63
 	movq	$-1, %rsi
 	cmovb	%rsi, %rax
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$57
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$63:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$57
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$63:
 	movq	$-1, %rsi
 	cmovnb	%rsi, %rax
 	movw	%r8w, 4232(%rsp,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$64:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$62:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$60:
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$57:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$64:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$62:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$60:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$57:
 	cmpq	$166, %rdx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$58
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$55:
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$58
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$55:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$56
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$56
 	movq	$0, %rax
 	leaq	13448(%rsp), %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$53
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$54:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$53
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$54:
 	movw	4232(%rsp,%rax,2), %dx
 	movw	%dx, (%rcx,%rax,2)
 	incq	%rax
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$53:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$53:
 	cmpq	$256, %rax
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$54
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$54
 	movb	$0, %cl
 	leaq	4744(%rsp), %rdx
 	leaq	8(%rsp), %rax
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$52:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$52:
 	leaq	168(%rsp), %rsp
 	movb	$1, %cl
 	leaq	5256(%rsp), %rdx
 	leaq	8(%rsp), %rax
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$51:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$51:
 	leaq	168(%rsp), %rsp
 	movb	$2, %cl
 	leaq	5768(%rsp), %rdx
 	leaq	8(%rsp), %rax
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$50:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$50:
 	leaq	168(%rsp), %rsp
 	movb	$3, %cl
 	leaq	6280(%rsp), %rdx
 	leaq	8(%rsp), %rax
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$49:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$49:
 	leaq	168(%rsp), %rsp
 	movb	$4, %cl
 	leaq	6792(%rsp), %rdx
 	leaq	8(%rsp), %rax
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$48:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$48:
 	leaq	168(%rsp), %rsp
 	movb	$5, %cl
 	leaq	7304(%rsp), %rdx
 	leaq	8(%rsp), %rax
 	leaq	-168(%rsp), %rsp
 	call	L_poly_getnoise$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$47:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$47:
 	leaq	168(%rsp), %rsp
 	leaq	4744(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$46:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$46:
 	leaq	5256(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$45:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$45:
 	leaq	5768(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$44:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$44:
 	leaq	6280(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$43:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$43:
 	leaq	6792(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$42:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$42:
 	leaq	7304(%rsp), %rcx
 	call	L_poly_ntt$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$41:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$41:
 	leaq	7816(%rsp), %rsi
 	leaq	9352(%rsp), %rcx
 	leaq	4744(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$40:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$40:
 	leaq	16(%rsp), %rsp
 	leaq	4232(%rsp), %rsi
 	leaq	9864(%rsp), %rcx
 	leaq	5256(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$39:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$39:
 	leaq	16(%rsp), %rsp
 	leaq	7816(%rsp), %rcx
 	leaq	4232(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$38:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$38:
 	leaq	4232(%rsp), %rsi
 	leaq	10376(%rsp), %rcx
 	leaq	5768(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$37:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$37:
 	leaq	16(%rsp), %rsp
 	leaq	7816(%rsp), %rcx
 	leaq	4232(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$36:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$36:
 	leaq	7816(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$34
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$35:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$34
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$35:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -11923,45 +11923,45 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$35:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$34:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$34:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$35
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$35
 	leaq	7816(%rsp), %rax
 	call	L_poly_frommont$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$33:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$33:
 	leaq	8328(%rsp), %rsi
 	leaq	10888(%rsp), %rcx
 	leaq	4744(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$32:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$32:
 	leaq	16(%rsp), %rsp
 	leaq	4232(%rsp), %rsi
 	leaq	11400(%rsp), %rcx
 	leaq	5256(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$31:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$31:
 	leaq	16(%rsp), %rsp
 	leaq	8328(%rsp), %rcx
 	leaq	4232(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$30:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$30:
 	leaq	4232(%rsp), %rsi
 	leaq	11912(%rsp), %rcx
 	leaq	5768(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$29:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$29:
 	leaq	16(%rsp), %rsp
 	leaq	8328(%rsp), %rcx
 	leaq	4232(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$28:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$28:
 	leaq	8328(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$26
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$27:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$26
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$27:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -11970,45 +11970,45 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$27:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$26:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$26:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$27
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$27
 	leaq	8328(%rsp), %rax
 	call	L_poly_frommont$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$25:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$25:
 	leaq	8840(%rsp), %rsi
 	leaq	12424(%rsp), %rcx
 	leaq	4744(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$24:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$24:
 	leaq	16(%rsp), %rsp
 	leaq	4232(%rsp), %rsi
 	leaq	12936(%rsp), %rcx
 	leaq	5256(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$23:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$23:
 	leaq	16(%rsp), %rsp
 	leaq	8840(%rsp), %rcx
 	leaq	4232(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$22:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$22:
 	leaq	4232(%rsp), %rsi
 	leaq	13448(%rsp), %rcx
 	leaq	5768(%rsp), %rdx
 	leaq	-16(%rsp), %rsp
 	call	L_poly_basemul$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$21:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$21:
 	leaq	16(%rsp), %rsp
 	leaq	8840(%rsp), %rcx
 	leaq	4232(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$20:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$20:
 	leaq	8840(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$18
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$19:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$18
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$19:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -12017,28 +12017,28 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$19:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$18:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$18:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$19
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$19
 	leaq	8840(%rsp), %rax
 	call	L_poly_frommont$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$17:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$17:
 	leaq	7816(%rsp), %rcx
 	leaq	6280(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$16:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$16:
 	leaq	8328(%rsp), %rcx
 	leaq	6792(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$15:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$15:
 	leaq	8840(%rsp), %rcx
 	leaq	7304(%rsp), %rdx
 	call	L_poly_add2$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$14:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$14:
 	leaq	7816(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$12
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$13:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$12
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$13:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -12047,13 +12047,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$13:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$12:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$12:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$13
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$13
 	leaq	8328(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$10
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$11:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$10
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$11:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -12062,13 +12062,13 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$11:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$10:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$10:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$11
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$11
 	leaq	8840(%rsp), %rax
 	movq	$0, %rcx
-	jmp 	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$8
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$9:
+	jmp 	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$8
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$9:
 	movw	(%rax,%rcx,2), %dx
 	movswl	%dx, %esi
 	imull	$20159, %esi, %esi
@@ -12077,37 +12077,37 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$9:
 	subw	%si, %dx
 	movw	%dx, (%rax,%rcx,2)
 	incq	%rcx
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$8:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$8:
 	cmpq	$256, %rcx
-	jb  	Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$9
+	jb  	Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$9
 	movq	%mm3, %rdx
 	movq	%mm4, %rax
 	movq	%rax, %rsi
 	movq	%rsi, %rdi
 	leaq	4744(%rsp), %rcx
 	call	L_poly_tobytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$7:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$7:
 	leaq	384(%rsi), %rdi
 	leaq	5256(%rsp), %rcx
 	call	L_poly_tobytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$6:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$6:
 	leaq	768(%rsi), %rdi
 	leaq	5768(%rsp), %rcx
 	call	L_poly_tobytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$5:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$5:
 	movq	%rdx, %rsi
 	movq	%rsi, %rdi
 	leaq	7816(%rsp), %rcx
 	call	L_poly_tobytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$4:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$4:
 	leaq	384(%rsi), %rdi
 	leaq	8328(%rsp), %rcx
 	call	L_poly_tobytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$3:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$3:
 	leaq	768(%rsi), %rdi
 	leaq	8840(%rsp), %rcx
 	call	L_poly_tobytes$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$2:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$2:
 	movq	40(%rsp), %rcx
 	movq	%rcx, 1152(%rdx)
 	movq	48(%rsp), %rcx
@@ -12416,7 +12416,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$2:
 	leaq	40(%rsp), %rcx
 	leaq	-224(%rsp), %rsp
 	call	L_sha3_256A_A1184$1
-Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$1:
+Ljade_kem_mlkem_mlkem768_amd64_ref_keypair_derand$1:
 	leaq	224(%rsp), %rsp
 	movq	(%rsp), %rax
 	movq	40(%rsp), %rcx
@@ -19417,140 +19417,134 @@ L_poly_add2$2:
 	ret
 L_sha3_512A_A64$1:
 	movq	%rcx, %mm2
-	leaq	24(%rsp), %r15
-	movq	$0, %rcx
+	leaq	24(%rsp), %rcx
 	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_512A_A64$7
 L_sha3_512A_A64$8:
-	movq	%rcx, (%r15,%rsi,8)
-	incq	%rsi
+	movq	%rsi, (%rcx,%rdi,8)
+	incq	%rdi
 L_sha3_512A_A64$7:
-	cmpq	$25, %rsi
+	cmpq	$25, %rdi
 	jb  	L_sha3_512A_A64$8
-	movq	$0, %rcx
 	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_512A_A64$5
 L_sha3_512A_A64$6:
-	movq	(%rdx,%rcx), %rdi
-	addq	$8, %rcx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_sha3_512A_A64$5:
-	cmpq	$8, %rsi
+	cmpq	$8, %rdi
 	jb  	L_sha3_512A_A64$6
-	movq	$6, %rcx
-	xorq	(%r15,%rsi,8), %rcx
-	movq	%rcx, (%r15,%rsi,8)
-	movq	$1, %rcx
-	shlq	$63, %rcx
-	xorq	64(%r15), %rcx
-	movq	%rcx, 64(%r15)
-	movq	$0, %rcx
-	movq	%mm2, %rdx
-	movq	%rdx, 8(%rsp)
-	movq	%rcx, 16(%rsp)
+	movq	$6, %rdx
+	xorq	(%rcx,%rdi,8), %rdx
+	movq	%rdx, (%rcx,%rdi,8)
+	movq	$1, %rdx
+	shlq	$63, %rdx
+	xorq	64(%rcx), %rdx
+	movq	%rdx, 64(%rcx)
+	movq	$0, %rdx
+	movq	%mm2, %rsi
+	movq	%rsi, 8(%rsp)
+	movq	%rdx, 16(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_sha3_512A_A64$4:
 	leaq	224(%rsp), %rsp
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
-	movq	$0, %rsi
+	movq	8(%rsp), %rdx
+	movq	16(%rsp), %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_512A_A64$2
 L_sha3_512A_A64$3:
-	movq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%rcx,%rdx)
-	incq	%rsi
-	addq	$8, %rdx
+	movq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rdx,%rsi)
+	incq	%rdi
+	addq	$8, %rsi
 L_sha3_512A_A64$2:
-	cmpq	$8, %rsi
+	cmpq	$8, %rdi
 	jl  	L_sha3_512A_A64$3
 	ret
 L_sha3_256A_A1184$1:
 	movq	%rcx, %mm3
-	leaq	32(%rsp), %r15
-	movq	$0, %rcx
+	leaq	32(%rsp), %rcx
 	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_256A_A1184$12
 L_sha3_256A_A1184$13:
-	movq	%rcx, (%r15,%rsi,8)
-	incq	%rsi
+	movq	%rsi, (%rcx,%rdi,8)
+	incq	%rdi
 L_sha3_256A_A1184$12:
-	cmpq	$25, %rsi
+	cmpq	$25, %rdi
 	jb  	L_sha3_256A_A1184$13
-	movq	$0, %rcx
-	movq	$0, %r8
+	movq	$0, %rsi
+	movq	$0, %r9
 	jmp 	L_sha3_256A_A1184$7
 L_sha3_256A_A1184$8:
-	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_256A_A1184$10
 L_sha3_256A_A1184$11:
-	movq	(%rdx,%rcx), %rdi
-	addq	$8, %rcx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_sha3_256A_A1184$10:
-	cmpq	$17, %rsi
+	cmpq	$17, %rdi
 	jb  	L_sha3_256A_A1184$11
 	movq	%rdx, 8(%rsp)
-	movq	%rcx, 16(%rsp)
-	movq	%r8, 24(%rsp)
+	movq	%rsi, 16(%rsp)
+	movq	%r9, 24(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_sha3_256A_A1184$9:
 	leaq	224(%rsp), %rsp
 	movq	8(%rsp), %rdx
-	movq	16(%rsp), %rcx
-	movq	24(%rsp), %r8
-	incq	%r8
+	movq	16(%rsp), %rsi
+	movq	24(%rsp), %r9
+	incq	%r9
 L_sha3_256A_A1184$7:
-	cmpq	$11, %r8
+	cmpq	$8, %r9
 	jb  	L_sha3_256A_A1184$8
-	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_256A_A1184$5
 L_sha3_256A_A1184$6:
-	movq	(%rdx,%rcx), %rdi
-	addq	$8, %rcx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_sha3_256A_A1184$5:
-	cmpq	$8, %rsi
+	cmpq	$12, %rdi
 	jb  	L_sha3_256A_A1184$6
-	movl	(%rdx,%rcx), %ecx
+	movq	$6, %rdx
+	xorq	(%rcx,%rdi,8), %rdx
+	movq	%rdx, (%rcx,%rdi,8)
+	movq	$1, %rdx
+	shlq	$63, %rdx
+	xorq	128(%rcx), %rdx
+	movq	%rdx, 128(%rcx)
 	movq	$0, %rdx
-	movq	$6, %rdi
-	shlq	$0, %rdi
-	orq 	%rdi, %rdx
-	shlq	$32, %rdx
-	orq 	%rdx, %rcx
-	xorq	(%r15,%rsi,8), %rcx
-	movq	%rcx, (%r15,%rsi,8)
-	movq	$1, %rcx
-	shlq	$63, %rcx
-	xorq	128(%r15), %rcx
-	movq	%rcx, 128(%r15)
-	movq	$0, %rcx
-	movq	%mm3, %rdx
-	movq	%rdx, 24(%rsp)
-	movq	%rcx, 16(%rsp)
+	movq	%mm3, %rsi
+	movq	%rsi, 24(%rsp)
+	movq	%rdx, 16(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_sha3_256A_A1184$4:
 	leaq	224(%rsp), %rsp
-	movq	24(%rsp), %rcx
-	movq	16(%rsp), %rdx
-	movq	$0, %rsi
+	movq	24(%rsp), %rdx
+	movq	16(%rsp), %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_256A_A1184$2
 L_sha3_256A_A1184$3:
-	movq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%rcx,%rdx)
-	incq	%rsi
-	addq	$8, %rdx
+	movq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rdx,%rsi)
+	incq	%rdi
+	addq	$8, %rsi
 L_sha3_256A_A1184$2:
-	cmpq	$4, %rsi
+	cmpq	$4, %rdi
 	jl  	L_sha3_256A_A1184$3
 	ret
 L_shake128_squeezeblock$1:
@@ -19560,16 +19554,16 @@ L_shake128_squeezeblock$1:
 L_shake128_squeezeblock$4:
 	leaq	224(%rsp), %rsp
 	movq	%mm5, %rax
-	movq	$0, %rcx
 	movq	$0, %rdx
+	movq	$0, %rsi
 	jmp 	L_shake128_squeezeblock$2
 L_shake128_squeezeblock$3:
-	movq	(%r15,%rdx,8), %rsi
-	movq	%rsi, (%rax,%rcx)
-	incq	%rdx
-	addq	$8, %rcx
+	movq	(%rcx,%rsi,8), %rdi
+	movq	%rdi, (%rax,%rdx)
+	incq	%rsi
+	addq	$8, %rdx
 L_shake128_squeezeblock$2:
-	cmpq	$21, %rdx
+	cmpq	$21, %rsi
 	jl  	L_shake128_squeezeblock$3
 	ret
 L_shake128_absorb34$1:
@@ -19609,516 +19603,279 @@ L_shake128_absorb34$2:
 	movq	%rcx, 160(%rax)
 	ret
 L_sha3_512A_A33$1:
-	leaq	24(%rsp), %r15
-	movq	$0, %rdx
+	leaq	24(%rsp), %rcx
 	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_512A_A33$7
 L_sha3_512A_A33$8:
-	movq	%rdx, (%r15,%rsi,8)
-	incq	%rsi
+	movq	%rsi, (%rcx,%rdi,8)
+	incq	%rdi
 L_sha3_512A_A33$7:
-	cmpq	$25, %rsi
+	cmpq	$25, %rdi
 	jb  	L_sha3_512A_A33$8
-	movq	$0, %rdx
 	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_sha3_512A_A33$5
 L_sha3_512A_A33$6:
-	movq	(%rcx,%rdx), %rdi
-	addq	$8, %rdx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_sha3_512A_A33$5:
-	cmpq	$4, %rsi
+	cmpq	$4, %rdi
 	jb  	L_sha3_512A_A33$6
-	movq	$0, %rdi
 	movq	$0, %r8
-	movzbq	(%rcx,%rdx), %rcx
-	orq 	$1536, %rcx
-	shlq	$0, %rcx
-	orq 	%rcx, %r8
-	shlq	$0, %r8
-	orq 	%r8, %rdi
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	movq	$1, %rcx
-	shlq	$63, %rcx
-	xorq	64(%r15), %rcx
-	movq	%rcx, 64(%r15)
-	movq	$0, %rcx
+	movq	$0, %r9
+	movzbq	(%rdx,%rsi), %rdx
+	orq 	$1536, %rdx
+	shlq	$0, %rdx
+	orq 	%rdx, %r9
+	shlq	$0, %r9
+	orq 	%r9, %r8
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	movq	$1, %rdx
+	shlq	$63, %rdx
+	xorq	64(%rcx), %rdx
+	movq	%rdx, 64(%rcx)
+	movq	$0, %rdx
 	movq	%rax, 8(%rsp)
-	movq	%rcx, 16(%rsp)
+	movq	%rdx, 16(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_sha3_512A_A33$4:
 	leaq	224(%rsp), %rsp
 	movq	8(%rsp), %rax
-	movq	16(%rsp), %rcx
-	movq	$0, %rdx
+	movq	16(%rsp), %rdx
+	movq	$0, %rsi
 	jmp 	L_sha3_512A_A33$2
 L_sha3_512A_A33$3:
-	movq	(%r15,%rdx,8), %rsi
-	movq	%rsi, (%rax,%rcx)
-	incq	%rdx
-	addq	$8, %rcx
+	movq	(%rcx,%rsi,8), %rdi
+	movq	%rdi, (%rax,%rdx)
+	incq	%rsi
+	addq	$8, %rdx
 L_sha3_512A_A33$2:
-	cmpq	$8, %rdx
+	cmpq	$8, %rsi
 	jl  	L_sha3_512A_A33$3
 	ret
 L_shake256_A32__A1120$1:
-	leaq	32(%rsp), %r15
-	movq	$0, %rsi
+	leaq	32(%rsp), %rcx
 	movq	$0, %rdi
+	movq	$0, %r8
 	jmp 	L_shake256_A32__A1120$17
 L_shake256_A32__A1120$18:
-	movq	%rsi, (%r15,%rdi,8)
-	incq	%rdi
+	movq	%rdi, (%rcx,%r8,8)
+	incq	%r8
 L_shake256_A32__A1120$17:
-	cmpq	$25, %rdi
+	cmpq	$25, %r8
 	jb  	L_shake256_A32__A1120$18
-	movq	$0, %rsi
 	movq	$0, %rdi
+	movq	$0, %r8
 	jmp 	L_shake256_A32__A1120$15
 L_shake256_A32__A1120$16:
-	movq	(%rdx,%rsi), %r8
-	addq	$8, %rsi
-	xorq	(%r15,%rdi,8), %r8
-	movq	%r8, (%r15,%rdi,8)
-	incq	%rdi
+	movq	(%rsi,%rdi), %r9
+	addq	$8, %rdi
+	xorq	(%rcx,%r8,8), %r9
+	movq	%r9, (%rcx,%r8,8)
+	incq	%r8
 L_shake256_A32__A1120$15:
-	cmpq	$4, %rdi
+	cmpq	$4, %r8
 	jb  	L_shake256_A32__A1120$16
-	movq	$0, %rdx
-	movq	$4, %rsi
+	movq	$0, %rsi
+	movq	$4, %rdi
 	jmp 	L_shake256_A32__A1120$13
 L_shake256_A32__A1120$14:
-	movq	(%rcx,%rdx), %rdi
-	addq	$8, %rdx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_shake256_A32__A1120$13:
-	cmpq	$17, %rsi
+	cmpq	$17, %rdi
 	jb  	L_shake256_A32__A1120$14
-	movq	%rcx, 8(%rsp)
-	movq	%rdx, 16(%rsp)
+	movq	%rdx, 8(%rsp)
+	movq	%rsi, 16(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_shake256_A32__A1120$12:
 	leaq	224(%rsp), %rsp
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
-	movq	$0, %r8
+	movq	8(%rsp), %rdx
+	movq	16(%rsp), %rsi
+	movq	$0, %r9
 	jmp 	L_shake256_A32__A1120$7
 L_shake256_A32__A1120$8:
-	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_shake256_A32__A1120$10
 L_shake256_A32__A1120$11:
-	movq	(%rcx,%rdx), %rdi
-	addq	$8, %rdx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_shake256_A32__A1120$10:
-	cmpq	$17, %rsi
+	cmpq	$17, %rdi
 	jb  	L_shake256_A32__A1120$11
-	movq	%rcx, 16(%rsp)
-	movq	%rdx, 8(%rsp)
-	movq	%r8, 24(%rsp)
+	movq	%rdx, 16(%rsp)
+	movq	%rsi, 8(%rsp)
+	movq	%r9, 24(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_shake256_A32__A1120$9:
 	leaq	224(%rsp), %rsp
-	movq	16(%rsp), %rcx
-	movq	8(%rsp), %rdx
-	movq	24(%rsp), %r8
-	incq	%r8
+	movq	16(%rsp), %rdx
+	movq	8(%rsp), %rsi
+	movq	24(%rsp), %r9
+	incq	%r9
 L_shake256_A32__A1120$7:
-	cmpq	$7, %r8
+	cmpq	$7, %r9
 	jb  	L_shake256_A32__A1120$8
-	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_shake256_A32__A1120$5
 L_shake256_A32__A1120$6:
-	movq	(%rcx,%rdx), %rdi
-	addq	$8, %rdx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_shake256_A32__A1120$5:
-	cmpq	$4, %rsi
+	cmpq	$4, %rdi
 	jb  	L_shake256_A32__A1120$6
-	movq	$31, %rcx
-	xorq	(%r15,%rsi,8), %rcx
-	movq	%rcx, (%r15,%rsi,8)
-	movq	$1, %rcx
-	shlq	$63, %rcx
-	xorq	128(%r15), %rcx
-	movq	%rcx, 128(%r15)
-	movq	$0, %rcx
+	movq	$31, %rdx
+	xorq	(%rcx,%rdi,8), %rdx
+	movq	%rdx, (%rcx,%rdi,8)
+	movq	$1, %rdx
+	shlq	$63, %rdx
+	xorq	128(%rcx), %rdx
+	movq	%rdx, 128(%rcx)
+	movq	$0, %rdx
 	movq	%rax, 24(%rsp)
-	movq	%rcx, 8(%rsp)
+	movq	%rdx, 8(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_shake256_A32__A1120$4:
 	leaq	224(%rsp), %rsp
 	movq	24(%rsp), %rdx
 	movq	8(%rsp), %rax
-	movq	$0, %rcx
+	movq	$0, %rsi
 	jmp 	L_shake256_A32__A1120$2
 L_shake256_A32__A1120$3:
-	movq	(%r15,%rcx,8), %rsi
-	movq	%rsi, (%rdx,%rax)
-	incq	%rcx
+	movq	(%rcx,%rsi,8), %rdi
+	movq	%rdi, (%rdx,%rax)
+	incq	%rsi
 	addq	$8, %rax
 L_shake256_A32__A1120$2:
-	cmpq	$4, %rcx
+	cmpq	$4, %rsi
 	jl  	L_shake256_A32__A1120$3
 	ret
 L_shake256_128_33$1:
 	movq	%rcx, %mm6
-	leaq	24(%rsp), %r15
-	movq	$0, %rcx
+	leaq	24(%rsp), %rcx
 	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_shake256_128_33$7
 L_shake256_128_33$8:
-	movq	%rcx, (%r15,%rsi,8)
-	incq	%rsi
+	movq	%rsi, (%rcx,%rdi,8)
+	incq	%rdi
 L_shake256_128_33$7:
-	cmpq	$25, %rsi
+	cmpq	$25, %rdi
 	jb  	L_shake256_128_33$8
-	movq	$0, %rcx
 	movq	$0, %rsi
+	movq	$0, %rdi
 	jmp 	L_shake256_128_33$5
 L_shake256_128_33$6:
-	movq	(%rdx,%rcx), %rdi
-	addq	$8, %rcx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	incq	%rsi
+	movq	(%rdx,%rsi), %r8
+	addq	$8, %rsi
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	incq	%rdi
 L_shake256_128_33$5:
-	cmpq	$4, %rsi
+	cmpq	$4, %rdi
 	jb  	L_shake256_128_33$6
-	movq	$0, %rdi
 	movq	$0, %r8
-	movzbq	(%rdx,%rcx), %rcx
-	orq 	$7936, %rcx
-	shlq	$0, %rcx
-	orq 	%rcx, %r8
-	shlq	$0, %r8
-	orq 	%r8, %rdi
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
-	movq	$1, %rcx
-	shlq	$63, %rcx
-	xorq	128(%r15), %rcx
-	movq	%rcx, 128(%r15)
-	movq	$0, %rcx
-	movq	%mm6, %rdx
-	movq	%rdx, 8(%rsp)
-	movq	%rcx, 16(%rsp)
+	movq	$0, %r9
+	movzbq	(%rdx,%rsi), %rdx
+	orq 	$7936, %rdx
+	shlq	$0, %rdx
+	orq 	%rdx, %r9
+	shlq	$0, %r9
+	orq 	%r9, %r8
+	xorq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rcx,%rdi,8)
+	movq	$1, %rdx
+	shlq	$63, %rdx
+	xorq	128(%rcx), %rdx
+	movq	%rdx, 128(%rcx)
+	movq	$0, %rdx
+	movq	%mm6, %rsi
+	movq	%rsi, 8(%rsp)
+	movq	%rdx, 16(%rsp)
 	leaq	-224(%rsp), %rsp
 	call	L_keccakf1600_ref$1
 L_shake256_128_33$4:
 	leaq	224(%rsp), %rsp
-	movq	8(%rsp), %rcx
-	movq	16(%rsp), %rdx
-	movq	$0, %rsi
+	movq	8(%rsp), %rdx
+	movq	16(%rsp), %rsi
+	movq	$0, %rdi
 	jmp 	L_shake256_128_33$2
 L_shake256_128_33$3:
-	movq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%rcx,%rdx)
-	incq	%rsi
-	addq	$8, %rdx
+	movq	(%rcx,%rdi,8), %r8
+	movq	%r8, (%rdx,%rsi)
+	incq	%rdi
+	addq	$8, %rsi
 L_shake256_128_33$2:
-	cmpq	$16, %rsi
+	cmpq	$16, %rdi
 	jl  	L_shake256_128_33$3
 	ret
 L_keccakf1600_ref$1:
-	leaq	glob_data + 0(%rip), %rcx
-	movq	%rcx, 8(%rsp)
-	leaq	32(%rsp), %rcx
+	leaq	glob_data + 0(%rip), %rdx
+	movq	%rdx, 8(%rsp)
+	leaq	32(%rsp), %r15
 	movq	$0, %r9
 L_keccakf1600_ref$2:
 	movq	%r9, 16(%rsp)
 	movq	8(%rsp), %rdx
 	movq	(%rdx,%r9,8), %rdx
 	movq	%rdx, 24(%rsp)
-	movq	(%r15), %r8
-	movq	8(%r15), %rdi
-	movq	16(%r15), %r11
-	movq	24(%r15), %r10
-	movq	32(%r15), %rbx
-	xorq	40(%r15), %r8
-	xorq	48(%r15), %rdi
-	xorq	56(%r15), %r11
-	xorq	64(%r15), %r10
-	xorq	72(%r15), %rbx
-	xorq	80(%r15), %r8
-	xorq	88(%r15), %rdi
-	xorq	96(%r15), %r11
-	xorq	104(%r15), %r10
-	xorq	112(%r15), %rbx
-	xorq	120(%r15), %r8
-	xorq	128(%r15), %rdi
-	xorq	136(%r15), %r11
-	xorq	144(%r15), %r10
-	xorq	152(%r15), %rbx
-	xorq	160(%r15), %r8
-	xorq	168(%r15), %rdi
-	xorq	176(%r15), %r11
-	xorq	184(%r15), %r10
-	xorq	192(%r15), %rbx
-	movq	%rdi, %r14
-	rolq	$1, %r14
-	xorq	%rbx, %r14
+	movq	(%rcx), %r8
+	movq	8(%rcx), %r11
+	movq	16(%rcx), %rbx
+	movq	24(%rcx), %r10
+	movq	32(%rcx), %rbp
+	xorq	40(%rcx), %r8
+	xorq	48(%rcx), %r11
+	xorq	56(%rcx), %rbx
+	xorq	64(%rcx), %r10
+	xorq	72(%rcx), %rbp
+	xorq	80(%rcx), %r8
+	xorq	88(%rcx), %r11
+	xorq	96(%rcx), %rbx
+	xorq	104(%rcx), %r10
+	xorq	112(%rcx), %rbp
+	xorq	120(%rcx), %r8
+	xorq	128(%rcx), %r11
+	xorq	136(%rcx), %rbx
+	xorq	144(%rcx), %r10
+	xorq	152(%rcx), %rbp
+	xorq	160(%rcx), %r8
+	xorq	168(%rcx), %r11
+	xorq	176(%rcx), %rbx
+	xorq	184(%rcx), %r10
+	xorq	192(%rcx), %rbp
 	movq	%r11, %rdx
 	rolq	$1, %rdx
-	xorq	%r8, %rdx
-	movq	%r10, %rsi
+	xorq	%rbp, %rdx
+	movq	%rbx, %rsi
 	rolq	$1, %rsi
-	xorq	%rdi, %rsi
-	movq	%rbx, %rdi
+	xorq	%r8, %rsi
+	movq	%r10, %rdi
 	rolq	$1, %rdi
 	xorq	%r11, %rdi
+	movq	%rbp, %r14
+	rolq	$1, %r14
+	xorq	%rbx, %r14
 	rolq	$1, %r8
 	xorq	%r10, %r8
-	movq	(%r15), %r10
-	xorq	%r14, %r10
-	movq	48(%r15), %r11
-	xorq	%rdx, %r11
-	rolq	$44, %r11
-	movq	96(%r15), %rbx
-	xorq	%rsi, %rbx
-	rolq	$43, %rbx
-	movq	144(%r15), %rbp
-	xorq	%rdi, %rbp
-	rolq	$21, %rbp
-	movq	192(%r15), %r12
-	xorq	%r8, %r12
-	rolq	$14, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	xorq	24(%rsp), %r13
-	movq	%r13, (%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 8(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 16(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 24(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 32(%rcx)
-	movq	24(%r15), %r10
-	xorq	%rdi, %r10
-	rolq	$28, %r10
-	movq	72(%r15), %r11
-	xorq	%r8, %r11
-	rolq	$20, %r11
-	movq	80(%r15), %rbx
-	xorq	%r14, %rbx
-	rolq	$3, %rbx
-	movq	128(%r15), %rbp
-	xorq	%rdx, %rbp
-	rolq	$45, %rbp
-	movq	176(%r15), %r12
-	xorq	%rsi, %r12
-	rolq	$61, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	movq	%r13, 40(%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 48(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 56(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 64(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 72(%rcx)
-	movq	8(%r15), %r10
-	xorq	%rdx, %r10
-	rolq	$1, %r10
-	movq	56(%r15), %r11
-	xorq	%rsi, %r11
-	rolq	$6, %r11
-	movq	104(%r15), %rbx
-	xorq	%rdi, %rbx
-	rolq	$25, %rbx
-	movq	152(%r15), %rbp
-	xorq	%r8, %rbp
-	rolq	$8, %rbp
-	movq	160(%r15), %r12
-	xorq	%r14, %r12
-	rolq	$18, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	movq	%r13, 80(%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 88(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 96(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 104(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 112(%rcx)
-	movq	32(%r15), %r10
-	xorq	%r8, %r10
-	rolq	$27, %r10
-	movq	40(%r15), %r11
-	xorq	%r14, %r11
-	rolq	$36, %r11
-	movq	88(%r15), %rbx
-	xorq	%rdx, %rbx
-	rolq	$10, %rbx
-	movq	136(%r15), %rbp
-	xorq	%rsi, %rbp
-	rolq	$15, %rbp
-	movq	184(%r15), %r12
-	xorq	%rdi, %r12
-	rolq	$56, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	movq	%r13, 120(%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 128(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 136(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 144(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 152(%rcx)
-	movq	16(%r15), %r10
-	xorq	%rsi, %r10
-	rolq	$62, %r10
-	movq	64(%r15), %rsi
-	xorq	%rdi, %rsi
-	rolq	$55, %rsi
-	movq	112(%r15), %rdi
-	xorq	%r8, %rdi
-	rolq	$39, %rdi
-	movq	120(%r15), %r8
-	xorq	%r14, %r8
-	rolq	$41, %r8
-	movq	168(%r15), %r11
-	xorq	%rdx, %r11
-	rolq	$2, %r11
-	movq	%rsi, %rdx
-	notq	%rdx
-	andq	%rdi, %rdx
-	xorq	%r10, %rdx
-	movq	%rdx, 160(%rcx)
-	movq	%rdi, %rdx
-	notq	%rdx
-	andq	%r8, %rdx
-	xorq	%rsi, %rdx
-	movq	%rdx, 168(%rcx)
-	movq	%r8, %rdx
-	notq	%rdx
-	andq	%r11, %rdx
-	xorq	%rdi, %rdx
-	movq	%rdx, 176(%rcx)
-	movq	%r11, %rdx
-	notq	%rdx
-	andq	%r10, %rdx
-	xorq	%r8, %rdx
-	movq	%rdx, 184(%rcx)
-	notq	%r10
-	andq	%rsi, %r10
-	xorq	%r11, %r10
-	movq	%r10, 192(%rcx)
-	movq	8(%rsp), %rdx
-	movq	8(%rdx,%r9,8), %rdx
-	movq	%rdx, 24(%rsp)
-	movq	(%rcx), %r9
-	movq	8(%rcx), %r8
-	movq	16(%rcx), %r10
-	movq	24(%rcx), %r11
-	movq	32(%rcx), %rbx
-	xorq	40(%rcx), %r9
-	xorq	48(%rcx), %r8
-	xorq	56(%rcx), %r10
-	xorq	64(%rcx), %r11
-	xorq	72(%rcx), %rbx
-	xorq	80(%rcx), %r9
-	xorq	88(%rcx), %r8
-	xorq	96(%rcx), %r10
-	xorq	104(%rcx), %r11
-	xorq	112(%rcx), %rbx
-	xorq	120(%rcx), %r9
-	xorq	128(%rcx), %r8
-	xorq	136(%rcx), %r10
-	xorq	144(%rcx), %r11
-	xorq	152(%rcx), %rbx
-	xorq	160(%rcx), %r9
-	xorq	168(%rcx), %r8
-	xorq	176(%rcx), %r10
-	xorq	184(%rcx), %r11
-	xorq	192(%rcx), %rbx
-	movq	%r8, %rdx
-	rolq	$1, %rdx
-	xorq	%rbx, %rdx
-	movq	%r10, %rsi
-	rolq	$1, %rsi
-	xorq	%r9, %rsi
-	movq	%r11, %rdi
-	rolq	$1, %rdi
-	xorq	%r8, %rdi
-	movq	%rbx, %r8
-	rolq	$1, %r8
-	xorq	%r10, %r8
-	rolq	$1, %r9
-	xorq	%r11, %r9
 	movq	(%rcx), %r10
 	xorq	%rdx, %r10
 	movq	48(%rcx), %r11
@@ -20128,10 +19885,10 @@ L_keccakf1600_ref$2:
 	xorq	%rdi, %rbx
 	rolq	$43, %rbx
 	movq	144(%rcx), %rbp
-	xorq	%r8, %rbp
+	xorq	%r14, %rbp
 	rolq	$21, %rbp
 	movq	192(%rcx), %r12
-	xorq	%r9, %r12
+	xorq	%r8, %r12
 	rolq	$14, %r12
 	movq	%r11, %r13
 	notq	%r13
@@ -20159,10 +19916,10 @@ L_keccakf1600_ref$2:
 	xorq	%r12, %r10
 	movq	%r10, 32(%r15)
 	movq	24(%rcx), %r10
-	xorq	%r8, %r10
+	xorq	%r14, %r10
 	rolq	$28, %r10
 	movq	72(%rcx), %r11
-	xorq	%r9, %r11
+	xorq	%r8, %r11
 	rolq	$20, %r11
 	movq	80(%rcx), %rbx
 	xorq	%rdx, %rbx
@@ -20204,10 +19961,10 @@ L_keccakf1600_ref$2:
 	xorq	%rdi, %r11
 	rolq	$6, %r11
 	movq	104(%rcx), %rbx
-	xorq	%r8, %rbx
+	xorq	%r14, %rbx
 	rolq	$25, %rbx
 	movq	152(%rcx), %rbp
-	xorq	%r9, %rbp
+	xorq	%r8, %rbp
 	rolq	$8, %rbp
 	movq	160(%rcx), %r12
 	xorq	%rdx, %r12
@@ -20237,7 +19994,7 @@ L_keccakf1600_ref$2:
 	xorq	%r12, %r10
 	movq	%r10, 112(%r15)
 	movq	32(%rcx), %r10
-	xorq	%r9, %r10
+	xorq	%r8, %r10
 	rolq	$27, %r10
 	movq	40(%rcx), %r11
 	xorq	%rdx, %r11
@@ -20249,7 +20006,7 @@ L_keccakf1600_ref$2:
 	xorq	%rdi, %rbp
 	rolq	$15, %rbp
 	movq	184(%rcx), %r12
-	xorq	%r8, %r12
+	xorq	%r14, %r12
 	rolq	$56, %r12
 	movq	%r11, %r13
 	notq	%r13
@@ -20279,41 +20036,278 @@ L_keccakf1600_ref$2:
 	xorq	%rdi, %r10
 	rolq	$62, %r10
 	movq	64(%rcx), %rdi
+	xorq	%r14, %rdi
+	rolq	$55, %rdi
+	movq	112(%rcx), %r11
+	xorq	%r8, %r11
+	rolq	$39, %r11
+	movq	120(%rcx), %r8
+	xorq	%rdx, %r8
+	rolq	$41, %r8
+	movq	168(%rcx), %rdx
+	xorq	%rsi, %rdx
+	rolq	$2, %rdx
+	movq	%rdi, %rsi
+	notq	%rsi
+	andq	%r11, %rsi
+	xorq	%r10, %rsi
+	movq	%rsi, 160(%r15)
+	movq	%r11, %rsi
+	notq	%rsi
+	andq	%r8, %rsi
+	xorq	%rdi, %rsi
+	movq	%rsi, 168(%r15)
+	movq	%r8, %rsi
+	notq	%rsi
+	andq	%rdx, %rsi
+	xorq	%r11, %rsi
+	movq	%rsi, 176(%r15)
+	movq	%rdx, %rsi
+	notq	%rsi
+	andq	%r10, %rsi
+	xorq	%r8, %rsi
+	movq	%rsi, 184(%r15)
+	notq	%r10
+	andq	%rdi, %r10
+	xorq	%rdx, %r10
+	movq	%r10, 192(%r15)
+	movq	8(%rsp), %rdx
+	movq	8(%rdx,%r9,8), %rdx
+	movq	%rdx, 24(%rsp)
+	movq	(%r15), %r9
+	movq	8(%r15), %r8
+	movq	16(%r15), %r10
+	movq	24(%r15), %r11
+	movq	32(%r15), %rbx
+	xorq	40(%r15), %r9
+	xorq	48(%r15), %r8
+	xorq	56(%r15), %r10
+	xorq	64(%r15), %r11
+	xorq	72(%r15), %rbx
+	xorq	80(%r15), %r9
+	xorq	88(%r15), %r8
+	xorq	96(%r15), %r10
+	xorq	104(%r15), %r11
+	xorq	112(%r15), %rbx
+	xorq	120(%r15), %r9
+	xorq	128(%r15), %r8
+	xorq	136(%r15), %r10
+	xorq	144(%r15), %r11
+	xorq	152(%r15), %rbx
+	xorq	160(%r15), %r9
+	xorq	168(%r15), %r8
+	xorq	176(%r15), %r10
+	xorq	184(%r15), %r11
+	xorq	192(%r15), %rbx
+	movq	%r8, %rdx
+	rolq	$1, %rdx
+	xorq	%rbx, %rdx
+	movq	%r10, %rsi
+	rolq	$1, %rsi
+	xorq	%r9, %rsi
+	movq	%r11, %rdi
+	rolq	$1, %rdi
+	xorq	%r8, %rdi
+	movq	%rbx, %r8
+	rolq	$1, %r8
+	xorq	%r10, %r8
+	rolq	$1, %r9
+	xorq	%r11, %r9
+	movq	(%r15), %r10
+	xorq	%rdx, %r10
+	movq	48(%r15), %r11
+	xorq	%rsi, %r11
+	rolq	$44, %r11
+	movq	96(%r15), %rbx
+	xorq	%rdi, %rbx
+	rolq	$43, %rbx
+	movq	144(%r15), %rbp
+	xorq	%r8, %rbp
+	rolq	$21, %rbp
+	movq	192(%r15), %r12
+	xorq	%r9, %r12
+	rolq	$14, %r12
+	movq	%r11, %r13
+	notq	%r13
+	andq	%rbx, %r13
+	xorq	%r10, %r13
+	xorq	24(%rsp), %r13
+	movq	%r13, (%rcx)
+	movq	%rbx, %r13
+	notq	%r13
+	andq	%rbp, %r13
+	xorq	%r11, %r13
+	movq	%r13, 8(%rcx)
+	movq	%rbp, %r13
+	notq	%r13
+	andq	%r12, %r13
+	xorq	%rbx, %r13
+	movq	%r13, 16(%rcx)
+	movq	%r12, %rbx
+	notq	%rbx
+	andq	%r10, %rbx
+	xorq	%rbp, %rbx
+	movq	%rbx, 24(%rcx)
+	notq	%r10
+	andq	%r11, %r10
+	xorq	%r12, %r10
+	movq	%r10, 32(%rcx)
+	movq	24(%r15), %r10
+	xorq	%r8, %r10
+	rolq	$28, %r10
+	movq	72(%r15), %r11
+	xorq	%r9, %r11
+	rolq	$20, %r11
+	movq	80(%r15), %rbx
+	xorq	%rdx, %rbx
+	rolq	$3, %rbx
+	movq	128(%r15), %rbp
+	xorq	%rsi, %rbp
+	rolq	$45, %rbp
+	movq	176(%r15), %r12
+	xorq	%rdi, %r12
+	rolq	$61, %r12
+	movq	%r11, %r13
+	notq	%r13
+	andq	%rbx, %r13
+	xorq	%r10, %r13
+	movq	%r13, 40(%rcx)
+	movq	%rbx, %r13
+	notq	%r13
+	andq	%rbp, %r13
+	xorq	%r11, %r13
+	movq	%r13, 48(%rcx)
+	movq	%rbp, %r13
+	notq	%r13
+	andq	%r12, %r13
+	xorq	%rbx, %r13
+	movq	%r13, 56(%rcx)
+	movq	%r12, %rbx
+	notq	%rbx
+	andq	%r10, %rbx
+	xorq	%rbp, %rbx
+	movq	%rbx, 64(%rcx)
+	notq	%r10
+	andq	%r11, %r10
+	xorq	%r12, %r10
+	movq	%r10, 72(%rcx)
+	movq	8(%r15), %r10
+	xorq	%rsi, %r10
+	rolq	$1, %r10
+	movq	56(%r15), %r11
+	xorq	%rdi, %r11
+	rolq	$6, %r11
+	movq	104(%r15), %rbx
+	xorq	%r8, %rbx
+	rolq	$25, %rbx
+	movq	152(%r15), %rbp
+	xorq	%r9, %rbp
+	rolq	$8, %rbp
+	movq	160(%r15), %r12
+	xorq	%rdx, %r12
+	rolq	$18, %r12
+	movq	%r11, %r13
+	notq	%r13
+	andq	%rbx, %r13
+	xorq	%r10, %r13
+	movq	%r13, 80(%rcx)
+	movq	%rbx, %r13
+	notq	%r13
+	andq	%rbp, %r13
+	xorq	%r11, %r13
+	movq	%r13, 88(%rcx)
+	movq	%rbp, %r13
+	notq	%r13
+	andq	%r12, %r13
+	xorq	%rbx, %r13
+	movq	%r13, 96(%rcx)
+	movq	%r12, %rbx
+	notq	%rbx
+	andq	%r10, %rbx
+	xorq	%rbp, %rbx
+	movq	%rbx, 104(%rcx)
+	notq	%r10
+	andq	%r11, %r10
+	xorq	%r12, %r10
+	movq	%r10, 112(%rcx)
+	movq	32(%r15), %r10
+	xorq	%r9, %r10
+	rolq	$27, %r10
+	movq	40(%r15), %r11
+	xorq	%rdx, %r11
+	rolq	$36, %r11
+	movq	88(%r15), %rbx
+	xorq	%rsi, %rbx
+	rolq	$10, %rbx
+	movq	136(%r15), %rbp
+	xorq	%rdi, %rbp
+	rolq	$15, %rbp
+	movq	184(%r15), %r12
+	xorq	%r8, %r12
+	rolq	$56, %r12
+	movq	%r11, %r13
+	notq	%r13
+	andq	%rbx, %r13
+	xorq	%r10, %r13
+	movq	%r13, 120(%rcx)
+	movq	%rbx, %r13
+	notq	%r13
+	andq	%rbp, %r13
+	xorq	%r11, %r13
+	movq	%r13, 128(%rcx)
+	movq	%rbp, %r13
+	notq	%r13
+	andq	%r12, %r13
+	xorq	%rbx, %r13
+	movq	%r13, 136(%rcx)
+	movq	%r12, %rbx
+	notq	%rbx
+	andq	%r10, %rbx
+	xorq	%rbp, %rbx
+	movq	%rbx, 144(%rcx)
+	notq	%r10
+	andq	%r11, %r10
+	xorq	%r12, %r10
+	movq	%r10, 152(%rcx)
+	movq	16(%r15), %r10
+	xorq	%rdi, %r10
+	rolq	$62, %r10
+	movq	64(%r15), %rdi
 	xorq	%r8, %rdi
 	rolq	$55, %rdi
-	movq	112(%rcx), %r8
+	movq	112(%r15), %r8
 	xorq	%r9, %r8
 	rolq	$39, %r8
-	movq	120(%rcx), %r9
+	movq	120(%r15), %r9
 	xorq	%rdx, %r9
 	rolq	$41, %r9
-	movq	168(%rcx), %rdx
+	movq	168(%r15), %rdx
 	xorq	%rsi, %rdx
 	rolq	$2, %rdx
 	movq	%rdi, %rsi
 	notq	%rsi
 	andq	%r8, %rsi
 	xorq	%r10, %rsi
-	movq	%rsi, 160(%r15)
+	movq	%rsi, 160(%rcx)
 	movq	%r8, %rsi
 	notq	%rsi
 	andq	%r9, %rsi
 	xorq	%rdi, %rsi
-	movq	%rsi, 168(%r15)
+	movq	%rsi, 168(%rcx)
 	movq	%r9, %rsi
 	notq	%rsi
 	andq	%rdx, %rsi
 	xorq	%r8, %rsi
-	movq	%rsi, 176(%r15)
+	movq	%rsi, 176(%rcx)
 	movq	%rdx, %rsi
 	notq	%rsi
 	andq	%r10, %rsi
 	xorq	%r9, %rsi
-	movq	%rsi, 184(%r15)
+	movq	%rsi, 184(%rcx)
 	notq	%r10
 	andq	%rdi, %r10
 	xorq	%rdx, %r10
-	movq	%r10, 192(%r15)
+	movq	%r10, 192(%rcx)
 	movq	16(%rsp), %r9
 	addq	$2, %r9
 	cmpq	$23, %r9
