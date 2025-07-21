@@ -23,17 +23,14 @@ fn __polyvec_csubq(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
 }
 
 inline
-fn __polyvec_frombytes(reg u64 ap) -> stack u16[MLKEM_VECN]
+fn __i_polyvec_frombytes(reg ptr u8[MLKEM_POLYVECBYTES] ap) -> stack u16[MLKEM_VECN]
 {
   stack u16[MLKEM_VECN] r;
-  reg u64 pp;
   inline int i;
 
-  pp = ap;
   for i = 0 to MLKEM_K
   {
-    r[MLKEM_N*i:MLKEM_N] = _poly_frombytes(r[MLKEM_N*i:MLKEM_N], pp);
-    pp += MLKEM_POLYBYTES;
+    r[MLKEM_N*i:MLKEM_N] = _poly_frombytes(r[MLKEM_N*i:MLKEM_N], ap[MLKEM_POLYBYTES*i:MLKEM_POLYBYTES]);
   }
   return r;
 }
@@ -90,15 +87,12 @@ fn __polyvec_reduce(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
 }
 
 inline
-fn __polyvec_tobytes(reg u64 rp, stack u16[MLKEM_VECN] a)
+fn __i_polyvec_tobytes(reg ptr u8[MLKEM_POLYVECBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECBYTES] 
 {
-  reg u64 pp;
   inline int i;
-
-  pp = rp;
   for i = 0 to MLKEM_K
   {
-    a[MLKEM_N*i:MLKEM_N] = _poly_tobytes(pp, a[MLKEM_N*i:MLKEM_N]);
-    pp += MLKEM_POLYBYTES;
+    rp[MLKEM_POLYBYTES*i:MLKEM_POLYBYTES],_ = _poly_tobytes(rp[MLKEM_POLYBYTES*i:MLKEM_POLYBYTES], a[MLKEM_N*i:MLKEM_N]);
   }
+  return rp;
 }

@@ -137,7 +137,7 @@ fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
+fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) -> reg ptr u16[MLKEM_N]
 {
   reg u8 c0, c1, c2;
   reg u16 d0, d1, t;
@@ -145,9 +145,9 @@ fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
 
   for i = 0 to MLKEM_N/2
   {
-    c0 = [:u8 ap+3*i];
-    c1 = [:u8 ap+3*i+1];
-    c2 = [:u8 ap+3*i+2];
+    c0 = ap[3*i];
+    c1 = ap[3*i+1];
+    c2 = ap[3*i+2];
     d0 = (16u)c0;
     t  = (16u)c1;
     t &= 0xf;
@@ -191,7 +191,7 @@ fn _poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N
   reg u16 t;
   inline int i;
 
-  for i = 0 to MLKEM_MSGBYTES
+  for i = 0 to MLKEM_INDCPA_MSGBYTES
   {
     c = [:u8 ap + i];
 
@@ -247,13 +247,13 @@ fn _poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N
 }
 
 
-fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_MSGBYTES] ap) -> reg ptr u16[MLKEM_N]
+fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] ap) -> reg ptr u16[MLKEM_N]
 {
   reg u8 c;
   reg u16 t;
   inline int i;
 
-  for i = 0 to MLKEM_MSGBYTES
+  for i = 0 to MLKEM_INDCPA_MSGBYTES
   {
     c = ap[i];
 
@@ -308,7 +308,7 @@ fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_MSGBYTES] ap) -
   return rp;
 }
 
-fn _poly_getnoise(#spill_to_mmx reg ptr u16[MLKEM_N] rp, #mmx reg ptr u8[MLKEM_SYMBYTES] s_seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
+fn _poly_getnoise(#spill_to_mmx reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] s_seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
 {
   stack u8[MLKEM_SYMBYTES +1] extseed;   /* 33 = MLKEM_SYMBYTES +1 */
   stack u8[MLKEM_ETA*MLKEM_N/4] buf;      /* 128 = MLKEM_ETA*MLKEM_N/4 */
@@ -493,7 +493,7 @@ fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
+fn _poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
 {
   reg u16 t0, t1, d;
   reg u64 i j;
@@ -510,50 +510,20 @@ fn _poly_tobytes(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
     i += 1;
     d  = t0;
     d  &= 0xff;
-    [:u8 rp+j] = d;
+    rp.[j] = d;
     j += 1;
     t0 >>= 8;
     d = t1;
     d &= 0xf;
     d <<= 4;
     d |= t0;
-    [:u8 rp+j] = d;
+    rp.[j] = d;
     j += 1;
     t1 >>= 4;
-    [:u8 rp+j] = t1;
+    rp.[j] = t1;
     j += 1;
   }
-  return a;
-}
-
-fn _poly_tomsg(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
-{
-  reg u16 t;
-  reg u8 r;
-  reg u32 d;
-  inline int i j;
-
-  a = _poly_csubq(a);
-
-  for i = 0 to MLKEM_MSGBYTES
-  {
-    r = 0;
-    for j = 0 to 8
-    {
-      t = a[8*i+j];
-      d = (32u)t;
-      d <<= 1;
-      d += 1665;
-      d *= 80635;
-      d >>= 28;
-      d &= 1;
-      d <<= j;
-      r  |= d;
-    }
-
-    [:u8 rp+i] = r;
-  }
-  return a;
+  return rp, a;
 }
 
 fn _i_poly_tomsg(reg ptr u8[MLKEM_N/8] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_N/8], reg ptr u16[MLKEM_N]
@@ -565,7 +535,7 @@ fn _i_poly_tomsg(reg ptr u8[MLKEM_N/8] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8
 
   a = _poly_csubq(a);
 
-  for i = 0 to MLKEM_MSGBYTES
+  for i = 0 to MLKEM_INDCPA_MSGBYTES
   {
     r = 0;
     for j = 0 to 8

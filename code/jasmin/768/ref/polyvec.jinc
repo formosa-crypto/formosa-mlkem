@@ -2,68 +2,6 @@ require "poly.jinc"
 require "../../common/ref/polyvec.jinc"
 
 inline
-fn __polyvec_compress(reg u64 rp, stack u16[MLKEM_VECN] a)
-{
-  stack u16[MLKEM_VECN] aa;
-  reg u16 c, b;
-  reg u64[4] t;
-  reg u64 i j;
-  inline int k;
-
-  i = 0;
-  j = 0;
-
-  aa = __polyvec_csubq(a);
-
-  while (i < MLKEM_VECN - 3)
-  {
-    for k = 0 to 4
-    {
-      t[k] = (64u)aa[i];
-      i += 1;
-      t[k] <<= 10;
-      t[k] += 1665;
-      t[k] *= 1290167;
-      t[k] >>= 32;
-      t[k] &= 0x3ff;
-    }
-
-    c = t[0];
-    c &= 0xff;
-    [:u8 rp + j] = c;
-    j += 1;
-
-    b = t[0];
-    b >>= 8;
-    c = t[1];
-    c <<= 2;
-    c |= b;
-    [:u8 rp + j] = c;
-    j += 1;
-
-    b = t[1];
-    b >>= 6;
-    c = t[2];
-    c <<= 4;
-    c |= b;
-    [:u8 rp + j] = c;
-    j += 1;
-
-    b = t[2];
-    b >>= 4;
-    c = t[3];
-    c <<= 6;
-    c |= b;
-    [:u8 rp + j] = c;
-    j += 1;
-
-    t[3] >>= 2;
-    [:u8 rp + j] = t[3];
-    j += 1;
-  }
-}
-
-inline
 fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
 {
   stack u16[MLKEM_VECN] aa;
@@ -128,9 +66,8 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[M
 }
 
 inline
-fn __polyvec_decompress(reg u64 ap) -> stack u16[MLKEM_VECN]
+fn __i_polyvec_decompress(reg ptr u16[MLKEM_VECN] rp, reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] ap) -> reg ptr u16[MLKEM_VECN]
 {
-  stack u16[MLKEM_VECN] r;
   reg u32[5] t;
   reg u32 d;
   reg u64 i j;
@@ -143,7 +80,7 @@ fn __polyvec_decompress(reg u64 ap) -> stack u16[MLKEM_VECN]
   {
     for k = 0 to 5
     {
-      t[k] = (32u)[:u8 ap + j];
+      t[k] = (32u)ap[j];
       j += 1;
     }
 
@@ -174,10 +111,10 @@ fn __polyvec_decompress(reg u64 ap) -> stack u16[MLKEM_VECN]
       t[k] *= MLKEM_Q;
       t[k] += 512;
       t[k] >>= 10;
-      r[i] = t[k];
+      rp[i] = t[k];
       i += 1;
     }
   }
-  return r;
+  return rp;
 }
 

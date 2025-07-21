@@ -30,7 +30,20 @@ namespace A168 {
   from Keccak require "ref/keccak1600_array_ref_ASIZE.jinc"
 }
 
+namespace A1088 {
+  param int ASIZE = 1088;
+  from Keccak require "ref/keccak1600_array_ref_ASIZE.jinc"
+}
 
+namespace A1184 {
+  param int ASIZE = 1184;
+  from Keccak require "ref/keccak1600_array_ref_ASIZE.jinc"
+}
+
+namespace A1568 {
+  param int ASIZE = 1568;
+  from Keccak require "ref/keccak1600_array_ref_ASIZE.jinc"
+}
 
 fn _shake256_128_33
 ( #spill_to_mmx reg mut ptr u8[128] out
@@ -52,53 +65,62 @@ fn _shake256_128_33
   return out;
 }
 
-fn _shake256_1120_32
-( #spill_to_mmx reg u64 out
-, reg u64 in0 in1)
-{ stack u64[25] st_s;
-  reg ptr u64[25] st;
-
-  () = #spill(out);
-  st = st_s;
-  st = __state_init_ref(st);
-  st, _, _ = __absorb_imem_ref(st, 0, in0, 32, R136, UNFINISHED);
-  st, _, _ = __absorb_imem_ref(st, 32, in1, 1088, R136, SHAKE);
-  () = #unspill(out);
-  _, _ = __squeeze_imem_ref(out, 32, st, R136);
-}
-
-fn _shake256_1600_32
-( #spill_to_mmx reg u64 out
-, reg u64 in0 in1)
-{ stack u64[25] st_s;
-  reg ptr u64[25] st;
-
-  () = #spill(out);
-  st = st_s;
-  st = __state_init_ref(st);
-  st, _, _ = __absorb_imem_ref(st, 0, in0, 32, R136, UNFINISHED);
-  st, _, _ = __absorb_imem_ref(st, 32, in1, 1568, R136, SHAKE);
-  () = #unspill(out);
-  _, _ = __squeeze_imem_ref(out, 32, st, R136);
-}
-
-fn _sha3512_33
-( #spill_to_mmx reg mut ptr u8[64] out
-, reg const ptr u8[33] in
-) -> reg ptr u8[64]
+fn _shake256_A32__A1120
+( #spill_to_mmx reg mut ptr u8[32] out
+, reg const ptr u8[32] in0
+, reg const ptr u8[1088] in1) -> reg ptr u8[32]
 { stack u64[25] st_s;
   reg ptr u64[25] st;
   reg u64 offset;
 
-  () = #spill(out);
+  st = st_s;
+  st = __state_init_ref(st);
+  offset = 0;
+  st, _, _ = A32::__absorb_array_ref(st, 0, in0, offset, 32, R136, UNFINISHED);
+  offset = 0;
+  st, _, _ = A1088::__absorb_array_ref(st, 32, in1, offset, 1088, R136, SHAKE);
+  offset = 0;
+  out,_, _ = A32::__squeeze_array_ref(out, offset,32, st, R136);
+  return out;
+}
+
+fn _shake256_1600_32
+( #spill_to_mmx reg mut ptr u8[32] out
+, reg const ptr u8[32] in0
+, reg const ptr u8[1568] in1) -> reg ptr u8[32]
+{ stack u64[25] st_s;
+  reg ptr u64[25] st;
+  reg u64 offset;
+
+  st = st_s;
+  st = __state_init_ref(st);
+  offset = 0;
+  st, _, _ = A32::__absorb_array_ref(st, 0, in0, offset, 32, R136, UNFINISHED);
+  offset = 0;
+  st, _, _ = A1568::__absorb_array_ref(st, 32, in1, offset, 1568, R136, SHAKE);
+  offset = 0;
+  out,_, _ = A32::__squeeze_array_ref(out, offset,32, st, R136);
+  return out;
+}
+
+
+
+/* SHA3-512 writing to a 64-byte stack array (512A) and reading from 33 byte
+   stack array */
+fn _sha3_512A_A33
+( reg mut ptr u8[64] out,
+  reg const ptr u8[33] in
+) -> reg ptr u8[64]
+{ 
+  stack u64[25] st_s;
+  reg ptr u64[25] st;
+  reg u64 offset;
   st = st_s;
   st = __state_init_ref(st);
   offset = 0;
   st, _, _ = A33::__absorb_array_ref(st, 0, in, offset, 33, R72, SHA3);
   offset = 0;
-  () = #unspill(out);
   out, _, _ = A64::__squeeze_array_ref(out, offset, 64, st, R72);
-
   return out;
 }
 
@@ -131,9 +153,9 @@ fn _shake128_squeezeblock
 }
 
 #[returnaddress="stack"]
-fn _isha3_256_M1184
+fn _sha3_256A_A1184
 ( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg u64 in
+, #spill_to_mmx reg ptr u8[1184] in
 ) -> reg ptr u8[32]
 { stack u64[25] st_s;
   reg ptr u64[25] st;
@@ -142,7 +164,7 @@ fn _isha3_256_M1184
   () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
-  st, _, _ = __absorb_imem_ref(st, 0, in, 1184, R136, SHA3);
+  st, _, _ = A1184::__absorb_array_ref(st, 0, in, 0, 1564, R136, SHA3);
   offset = 0;
   () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, offset, 32, st, R136);
@@ -151,9 +173,9 @@ fn _isha3_256_M1184
 }
 
 #[returnaddress="stack"]
-fn _isha3_256_M1568
+fn _sha3_256A_A1568
 ( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg u64 in
+, #spill_to_mmx reg ptr u8[1568] in
 ) -> reg ptr u8[32]
 { stack u64[25] st_s;
   reg ptr u64[25] st;
@@ -162,7 +184,7 @@ fn _isha3_256_M1568
   () = #spill(out);
   st = st_s;
   st = __state_init_ref(st);
-  st, _, _ = __absorb_imem_ref(st, 0, in, 1568, R136, SHA3);
+  st, _, _ = A1568::__absorb_array_ref(st, 0, in, 0, 1568, R136, SHA3);
   offset = 0;
   () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, offset, 32, st, R136);
@@ -192,7 +214,7 @@ fn _isha3_256_32
 }
 
 #[returnaddress="stack"]
-fn _sha3_512_64
+fn _sha3_512A_A64
 ( #spill_to_mmx reg mut ptr u8[64] out
 , reg const ptr u8[64] in
 ) -> reg ptr u8[64]
