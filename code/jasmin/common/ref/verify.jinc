@@ -1,7 +1,7 @@
 require "params.jinc"
 
 inline
-fn __verify(reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctp, reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctpc) -> reg u64
+fn __verify(reg const ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctp, reg const ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctpc) -> reg u64
 {
   reg u64 cnd t64;
   reg u8 t1 t2;

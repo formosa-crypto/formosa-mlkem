@@ -26,15 +26,15 @@ SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
           $(JASMIN)/syscall/jasmin_syscall.c
 
 
-test/test_kem: test/test_kem.c $(JINC) $(SOURCES) jkem.s
+test/test_kem: test/test_kem.c  $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
 
 
 test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
 
-%.s: %.jazz
-	$(JASMINC) -o $@ $(JFLAGS) $^ 
+jkem.s: jkem.jazz $(JINC)
+	$(JASMINC) -o $@ $(JFLAGS) jkem.jazz
 
 
 .PHONY: ct clean

@@ -4,7 +4,7 @@ require "polyvec.jinc"
 require "../../common/ref/gen_matrix.jinc"
 
 inline
-fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] sk, reg ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
+fn __indcpa_keypair(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKEM_SECRETKEYBYTES] sk, reg const ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
 {
   stack u16[MLKEM_K*MLKEM_VECN] aa;
   stack u16[MLKEM_VECN] e pkpv skpv;
@@ -78,9 +78,9 @@ fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to
 inline
 fn __indcpa_enc(
   reg mut ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ct,
-  reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp,
-  reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
-  reg ptr u8[MLKEM_SYMBYTES] noiseseed)
+  reg const ptr u8[MLKEM_INDCPA_MSGBYTES] msgp,
+  reg const ptr u8[MLKEM_PUBLICKEYBYTES] pk,
+  reg const ptr u8[MLKEM_SYMBYTES] noiseseed)
 -> reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES]
 {
   stack u16[MLKEM_VECN] pkpv sp ep bp;
@@ -153,7 +153,7 @@ fn __indcpa_enc(
 
 
 inline
-fn __indcpa_dec(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_POLYVECBYTES] sk) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
+fn __indcpa_dec(reg mut ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg const ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ct, reg const ptr u8[MLKEM_POLYVECBYTES] sk) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
 {
   stack u16[MLKEM_N] t v mp;
   stack u16[MLKEM_VECN] bp skpv;

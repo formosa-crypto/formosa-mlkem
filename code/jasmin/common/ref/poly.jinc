@@ -8,7 +8,7 @@ fn _poly_add2(reg mut ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] bp) -> reg
   reg u16 a;
   reg u16 b;
   reg u16 r;
-  reg u64 i;
+  reg ui64 i;
 
   i = 0;
   while (i < MLKEM_N) {
@@ -21,9 +21,9 @@ fn _poly_add2(reg mut ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] bp) -> reg
   return rp;
 }
 
-fn _poly_csubq(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+fn _poly_csubq(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
-  reg u64 i;
+  reg ui64 i;
   reg u16 t;
   reg u16 b;
 
@@ -42,7 +42,7 @@ fn _poly_csubq(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_basemul(reg ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] ap bp) -> reg ptr u16[MLKEM_N]
+fn _poly_basemul(reg mut ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] ap bp) -> reg ptr u16[MLKEM_N]
 {
   reg u16 zeta;
   reg u16 r0;
@@ -53,8 +53,8 @@ fn _poly_basemul(reg ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] ap bp) -> r
   reg u16 b1;
   reg u16 t;
   reg ptr u16[64] zetasp;
-  reg u64 zetasctr;
-  reg u64 i;
+  reg ui64 zetasctr;
+  reg ui64 i;
 
   stack ptr u16[MLKEM_N] srp;
 
@@ -121,9 +121,9 @@ fn _poly_basemul(reg ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] ap bp) -> r
 }
 
 inline
-fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+fn __poly_reduce(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
-  reg u64 j;
+  reg ui64 j;
   reg u16 t;
 
   j = 0;
@@ -137,7 +137,7 @@ fn __poly_reduce(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) -> reg ptr u16[MLKEM_N]
+fn _poly_frombytes(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_POLYBYTES] ap) -> reg ptr u16[MLKEM_N]
 {
   reg u8 c0, c1, c2;
   reg u16 d0, d1, t;
@@ -166,9 +166,9 @@ fn _poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) -> r
 
 param int DMONT   = 1353;      /* (1ULL << 32) % MLKEM_Q */
 
-fn _poly_frommont(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+fn _poly_frommont(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
-  reg u64 i;
+  reg ui64 i;
   reg u16 r;
   reg u16 dmont;
 
@@ -185,69 +185,7 @@ fn _poly_frommont(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg u64 ap) -> reg ptr u16[MLKEM_N]
-{
-  reg u8 c;
-  reg u16 t;
-  inline int i;
-
-  for i = 0 to MLKEM_INDCPA_MSGBYTES
-  {
-    c = [:u8 ap + i];
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i] = t;
-    c >>= 1;
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i+1] = t;
-    c >>= 1;
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i+2] = t;
-    c >>= 1;
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i+3] = t;
-    c >>= 1;
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i+4] = t;
-    c >>= 1;
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i+5] = t;
-    c >>= 1;
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i+6] = t;
-    c >>= 1;
-
-    t = (16u)c;
-    t &= 1;
-    t *= (MLKEM_Q+1)/2;
-    rp[8*i+7] = t;
-    c >>= 1;
-  }
-  return rp;
-}
-
-
-fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_INDCPA_MSGBYTES] ap) -> reg ptr u16[MLKEM_N]
+fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_INDCPA_MSGBYTES] ap) -> reg ptr u16[MLKEM_N]
 {
   reg u8 c;
   reg u16 t;
@@ -308,13 +246,13 @@ fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_INDCPA_MSGBYTES
   return rp;
 }
 
-fn _poly_getnoise(#spill_to_mmx reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] s_seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
+fn _poly_getnoise(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_SYMBYTES] s_seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
 {
   stack u8[MLKEM_SYMBYTES +1] extseed;   /* 33 = MLKEM_SYMBYTES +1 */
   stack u8[MLKEM_ETA*MLKEM_N/4] buf;      /* 128 = MLKEM_ETA*MLKEM_N/4 */
   reg u8 c,a,b;
   reg u16 t;
-  reg u64 i;
+  reg ui64 i;
   inline int k;
   reg ptr u8[MLKEM_SYMBYTES] seed;
 
@@ -364,13 +302,13 @@ fn _poly_getnoise(#spill_to_mmx reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYT
   return rp;
 }
 
-fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+fn _poly_invntt(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
-  reg u64 len;
-  reg u64 start;
-  reg u64 j;
-  reg u64 cmp;
-  reg u64 offset;
+  reg ui64 len;
+  reg ui64 start;
+  reg ui64 j;
+  reg ui64 cmp;
+  reg ui64 offset;
 
   reg u16 zeta;
   reg u16 t;
@@ -424,13 +362,13 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
+fn _poly_ntt(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
-  reg u64 len;
-  reg u64 start;
-  reg u64 j;
-  reg u64 cmp;
-  reg u64 offset;
+  reg ui64 len;
+  reg ui64 start;
+  reg ui64 j;
+  reg ui64 cmp;
+  reg ui64 offset;
 
   reg u16 zeta;
   reg u16 t;
@@ -438,7 +376,7 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   reg u16 m;
 
   reg ptr u16[128] zetasp;
-  reg u64 zetasctr;
+  reg ui64 zetasctr;
 
   zetasp = jzetas;
   zetasctr = 0;
@@ -480,7 +418,7 @@ fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
   reg u16 a;
   reg u16 b;
   reg u16 r;
-  reg u64 i;
+  reg ui64 i;
 
   i = 0;
   while (i < MLKEM_N) {
@@ -493,7 +431,7 @@ fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
-fn _poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
+fn _poly_tobytes(reg mut ptr u8[MLKEM_POLYBYTES] rp, reg mut ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
 {
   reg u16 t0, t1, d;
   reg u64 i j;
@@ -526,7 +464,7 @@ fn _poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg 
   return rp, a;
 }
 
-fn _i_poly_tomsg(reg ptr u8[MLKEM_N/8] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_N/8], reg ptr u16[MLKEM_N]
+fn _i_poly_tomsg(reg mut ptr u8[MLKEM_N/8] rp, reg mut ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_N/8], reg ptr u16[MLKEM_N]
 {
   reg u16 t;
   reg u8 r;
