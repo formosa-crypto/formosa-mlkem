@@ -78,7 +78,7 @@ mkShell ({
   packages = [
     ec
     altergo
-    cvc4
+    cvc5
     z3
   ];
 
