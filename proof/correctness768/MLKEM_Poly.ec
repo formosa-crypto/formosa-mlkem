@@ -68,47 +68,46 @@ move => *;proc.
 
 while (ap = lift_array256 rp /\ 
        pos_bound256_cxq rp 0 256 2 /\ 
-       pos_bound256_cxq rp 0 (to_uint i) 1 /\ 
-       0 <= to_uint i<=256); last by auto => /> &hr;
+       pos_bound256_cxq rp 0 i 1 /\ 
+       0 <=  i<=256); last by auto => /> &hr;
           rewrite /pos_bound256_cxq /lift_array256 /(\ult) /= /#.
 
-auto => /> &hr;rewrite /pos_bound256_cxq /lift_array256 /(\ult) qE /=.
+auto => /> &hr;rewrite /pos_bound256_cxq /lift_array256 qE /=.
 move => rbpre rbdone ibl ibh entry; rewrite tP !mapE.
 do split. (* 5 goals *)
 + move => ii iib; rewrite !initiE //=.
-  case(ii <> to_uint i{hr}); 
+  case(ii <> i{hr}); 
      1:  by move => prior; rewrite !set_neqiE; smt(). 
   move => current; rewrite set_eqiE /=; 1,2:smt(). 
-  case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
+  case(rp{hr}.[i{hr}] - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
-              rp{hr}.[to_uint i{hr}] by ring.
+    have -> : rp{hr}.[i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
+              rp{hr}.[i{hr}] by ring.
     by smt().
   move =>  H; rewrite (getsignPos _ _) /=; first by smt().
   by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
      smt(to_uint_cmp pow2_16).
 
 + move => ii iib /=.
-  case(ii <> to_uint i{hr}); 
+  case(ii <> i{hr}); 
      1:  by move => prior; rewrite !set_neqiE; smt(). 
   move => current; rewrite set_eqiE /=; 1,2:smt(). 
-  case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
+  case(rp{hr}.[i{hr}] - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
-            rp{hr}.[to_uint i{hr}] by ring.
+    have -> : rp{hr}.[i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
+            rp{hr}.[i{hr}] by ring.
     by smt().
   move =>  H; rewrite (getsignPos _ _) /=; first by smt().
   by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
      smt(to_uint_cmp pow2_16).
 
-+ move => ii; rewrite /= to_uintD_small /=; 1: by smt(). 
-  move => iib;case(ii <> to_uint i{hr}); 
++ move => ii iib;case(ii <> i{hr}); 
      1:  by move => prior; rewrite !set_neqiE; smt(). 
   move => current; rewrite set_eqiE /=; 1,2:smt(). 
-  case(rp{hr}.[to_uint i{hr}] - W16.of_int 3329 \slt W16.zero).
+  case(rp{hr}.[i{hr}] - W16.of_int 3329 \slt W16.zero).
   + move => H; rewrite (getsignNeg _ H) //=.
-    have -> : rp{hr}.[to_uint i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
-              rp{hr}.[to_uint i{hr}] by ring.
+    have -> : rp{hr}.[i{hr}] - W16.of_int 3329 + W16.of_int 3329 = 
+              rp{hr}.[i{hr}] by ring.
     move : H; rewrite sltE to_sintD_small /=; 
        1: by move :rbpre; rewrite /to_sint /smod /= to_uintN /= /#. 
     rewrite to_sintN /=; 1: by rewrite /to_sint /smod /=.
@@ -117,16 +116,14 @@ do split. (* 5 goals *)
   by move : H;rewrite sltE to_sintD_small /to_sint /smod W16.to_uintN=> />; 
      smt(to_uint_cmp pow2_16).
 
-+ by rewrite to_uintD_small /= /#.
++ by smt().
 
-by rewrite to_uintD_small /= /#.
+by smt().
 qed.
 
 lemma poly_csubq_ll : islossless Jkem768.M._poly_csubq.
 proof.
-proc; while (0 <= to_uint i <= 256) (256 - to_uint i); auto => />.
-+ by move => &hr;rewrite ultE of_uintK /= => *; rewrite to_uintD_small /=; smt().
-by move => *; rewrite ultE /= /#. 
+proc; while (0 <= i <= 256) (256 - i); auto => /> /#.
 qed.
 
 lemma poly_csubq_corr ap :
@@ -194,30 +191,28 @@ lemma poly_frommont_corr_h (_a : int Array256.t) :
              forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
              forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))].
 proc.
-while (0 <= to_uint i <= 256 /\ dmont = W16.of_int 1353 /\
-       (forall k, 0 <= k < to_uint i =>
+while (0 <= i <= 256 /\ dmont = W16.of_int 1353 /\
+       (forall k, 0 <= k <  i =>
           W16.to_sint rp.[k] =  SREDC (_a.[k] * ((R^2) %% q))) /\
-       (forall k, to_uint i <= k < 256 =>
+       (forall k, i <= k < 256 =>
           W16.to_sint rp.[k] = _a.[k])); last by 
-  auto => /= &hr [#] ?; split; [ smt() | move => 2?; rewrite ultE of_uintK /=; smt()]. 
+  auto => /> /#. 
 
 sp;wp;conseq />;1: by smt(). 
 ecall (fqmul_corr_h (to_sint r) (to_sint dmont)).
 auto => /> &hr ??.
-rewrite qE /R ultE /= => ??? r rval. 
-rewrite !to_uintD_small /=; 1: by smt(W64.to_uint_cmp pow2_64).
+rewrite qE /R /= => ??? r rval. 
 do split; 1, 2, 4: by smt(Array256.set_neqiE). 
-move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
+move => k kb; case (k = i{hr}); last by smt(Array256.set_neqiE).
 move => -> ?; rewrite Array256.set_eqiE // rval.
 by congr;rewrite W16.of_sintK /= /smod /= /#.
 qed.
 
 lemma poly_frommont_ll : islossless Jkem768.M._poly_frommont.
 proc. 
-while (0 <= to_uint i <= 256) (256 - to_uint i).
-+ move => *; wp; call fqmul_ll; auto => />.
-  by move => &hr ??; rewrite ultE to_uintD_small;smt(to_uint_cmp pow2_64).
-by auto => /> ???; rewrite ultE /#.
+while (0 <= i <= 256) (256 - i).
++ move => *; wp; call fqmul_ll; auto => /> /#.
+by auto => /> /#.
 qed.
 
 lemma poly_frommont_corr (_a : int Array256.t) : 
@@ -239,33 +234,31 @@ lemma poly_sub_corr_h _a _b ab bb :
               incoeff (to_sint res.[k]) = _a.[k] - _b.[k]]. 
 proof.
 move => abbnd bbbnd;proc. 
-while (0 <= to_uint i <= 256 /\
+while (0 <=  i <= 256 /\
       _a = lift_array256 ap /\
       _b = lift_array256 bp /\
       signed_bound_cxq ap 0 256 ab /\
       signed_bound_cxq bp 0 256 bb /\
-      signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
-      forall k, 0 <= k < to_uint i =>
+      signed_bound_cxq rp 0 i (ab + bb) /\ 
+      forall k, 0 <= k <  i =>
               incoeff (to_sint rp.[k]) = _a.[k] - _b.[k]); 
-   last by auto => /= &hr [#] 4?; split; 
-    [ smt() | move => 2?; rewrite ultE of_uintK /=; smt()]. 
-
+   last by auto => /> /#.
 auto => /> &hr ??.
-rewrite /signed_bound_cxq qE ultE /lift_array256 !to_uintD_small /= ; 1: by smt(W64.to_uint_cmp pow2_64).
+rewrite /signed_bound_cxq qE /lift_array256 /=.
 move => abnd bbnd pastb pastv inloop; split; 1: by smt().
 split.
-+ move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
++ move => k kb; case (k = i{hr}); last by smt(Array256.set_neqiE).
   by move => ->; rewrite !Array256.set_eqiE //= to_sintB_small /= /#.
 
-move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
+move => k kb; case (k = i{hr}); last by smt(Array256.set_neqiE).
 move => ->; rewrite !Array256.set_eqiE //= to_sintB_small /=; 1: by smt().
 by rewrite !mapiE //= incoeffD incoeffN.
 qed.
 
 lemma poly_sub_ll: islossless Jkem768.M._poly_sub.
-proc; while (0 <= to_uint i <= 256) (256 - to_uint i).
-+  by move => *; auto => /> ???;rewrite ultE to_uintD_small /=; by smt(W32.to_uint_cmp).
-by move => *; auto => /> i ibl ibh; rewrite ultE of_uintK; smt(W32.to_uint_cmp).
+proc; while (0 <= i <= 256) (256 - i).
++  by move => *; auto => /> /#. 
+by move => *; auto => /> /#.
 qed.
 
 lemma poly_sub_corr _a _b ab bb :
@@ -319,37 +312,35 @@ lemma poly_add_corr_h _a _b ab bb :
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k]]. 
 proof.
 move => abbnd bbbnd;proc. 
-while (0 <= to_uint i <= 256 /\
-        (forall k, to_uint i <= k < 256 => _a.[k] = incoeff (to_sint rp.[k])) /\
+while (0 <= i <= 256 /\
+        (forall k, i <= k < 256 => _a.[k] = incoeff (to_sint rp.[k])) /\
         _b = lift_array256 bp /\
-        signed_bound_cxq rp (to_uint i) 256 ab /\
+        signed_bound_cxq rp i 256 ab /\
         signed_bound_cxq bp 0 256 bb /\
-        signed_bound_cxq rp 0 (to_uint i) (ab + bb) /\ 
-        forall k, 0 <= k < to_uint i =>
+        signed_bound_cxq rp 0 i (ab + bb) /\ 
+        forall k, 0 <= k <  i =>
            incoeff (to_sint rp.[k]) = _a.[k] + _b.[k]); last first. 
 + auto => /= &hr; rewrite /lift_array256 !tP => [#] av bv ??; split. 
   + do split => //; 2,3: by smt().
     by  move => k kb; move : (av k kb); rewrite !mapiE //. 
-  by move => i rp; rewrite ultE of_uintK /= /#.
+  by smt().
 
 auto => /> &hr ??.
-rewrite /signed_bound_cxq qE ultE /lift_array256 !to_uintD_small /= ; 
-   1: by smt(W64.to_uint_cmp pow2_64).
+rewrite /signed_bound_cxq qE.
 move => aval abnd bbnd pastb pastv inloop; split; 1: by smt().
 do split; first last.
 + by smt(Array256.set_neqiE).
-+ move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
++ move => k kb; case (k = i{hr}); last by smt(Array256.set_neqiE).
   by move => ->; rewrite !Array256.set_eqiE //= to_sintD_small /= /#.
-+ move => k kb; case (k = to_uint i{hr}); last by smt(Array256.set_neqiE).
++ move => k kb; case (k = i{hr}); last by smt(Array256.set_neqiE).
   move => ->; rewrite !Array256.set_eqiE //= to_sintD_small /=; 1: by smt().
   by rewrite !mapiE //= incoeffD /#.
 by smt(Array256.set_neqiE).
 qed.
 
 lemma poly_add_ll : islossless Jkem768.M._poly_add2.
-proc; while (0<= to_uint i <= 256) (256 - to_uint i).
-by move => *; auto => /> &hr ??;rewrite !ultE !to_uintD_small /= /#.  
-by auto => /> i ??;rewrite !ultE /= /#.  
+proc; while (0<=  i <= 256) (256 - i);
+by move => *; auto => /> /#. 
 qed.
 
 lemma poly_add_corr _a _b ab bb :
@@ -430,34 +421,33 @@ lemma poly_reduce_corr_h (_a : coeff Array256.t):
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)].
 proof.
 proc.
-while (0 <= to_uint j <= 256 /\
+while (0 <= j <= 256 /\
      (forall k, 0 <= k < 256 => _a.[k] = incoeff (to_sint rp.[k])) /\
-     forall k, 0 <= k < to_uint j => bpos16  rp.[k] (2*q)
+     forall k, 0 <= k < j => bpos16  rp.[k] (2*q)
 ); last first. 
 + auto => /= &hr; rewrite /lift_array256 !tP => [#] av; split. 
   + split => //; 2: by smt().
     by  move => k kb; move : (av k kb); rewrite !mapiE //. 
-  move => i rp'; rewrite ultE of_uintK /= => exit [#] ?? ??.
+  move => i rp' exit [#] ?? ??.
   split; last by smt(). 
   by rewrite tP => k kb; move : (av k kb); rewrite !mapiE //= /#.
 
 sp;wp;conseq />;1: by smt(). 
 ecall (barrett_reduce_corr_h (to_sint t)).
 auto => /> &hr ??.
-rewrite qE /R ultE /= => av ab inl r rval. 
-rewrite !to_uintD_small /=; 1: by smt(W64.to_uint_cmp pow2_64).
-have bred := (BREDCp_corr (to_sint rp{hr}.[to_uint j{hr}]) 26 _ _ _ _ _ _); 
+rewrite qE /R /= => av ab inl r rval. 
+have bred := (BREDCp_corr (to_sint rp{hr}.[j{hr}]) 26 _ _ _ _ _ _); 
      1..4: smt(qE pow2_16).
-+ rewrite /R /=; move: (W16.to_sint_cmp rp{hr}.[to_uint j{hr}]); smt().
++ rewrite /R /=; move: (W16.to_sint_cmp rp{hr}.[j{hr}]); smt().
 + by rewrite /R /=; move : W16.to_sint_cmp => /= /#.
 do split; 1, 2: by smt(). 
-+ move => k kbl kbh; case (k = to_uint j{hr}); last by smt(Array256.set_neqiE).
++ move => k kbl kbh; case (k = j{hr}); last by smt(Array256.set_neqiE).
   move => ->>; rewrite Array256.set_eqiE // rval.
-  move : (av (to_uint j{hr}) _) => // ->.
+  move : (av (j{hr}) _) => // ->.
   by apply eq_incoeff => /#. 
   
 move => k kbl kbh.
-case (k = to_uint j{hr}); last by smt(Array256.set_neqiE).
+case (k = j{hr}); last by smt(Array256.set_neqiE).
 move => ->; rewrite !Array256.set_eqiE //=.
 by smt().
 qed.
@@ -465,10 +455,8 @@ qed.
 
 lemma poly_reduce_ll: islossless Jkem768.M.__poly_reduce.
 proof.
-proc;while (0 <= to_uint j <= 256) (256 - to_uint j).
-+ by move => z; inline *; auto => />; 
-     move =>  &hr ??; rewrite ultE !to_uintD_small /= /#. 
-by auto => />; move => ??; rewrite ultE  /= /#. 
+proc;while (0 <= j <= 256) (256 - j);
+ by move => *; inline *; auto => /> /#. 
 qed.
 
 lemma poly_reduce_corr (_a : coeff Array256.t):
@@ -478,62 +466,20 @@ lemma poly_reduce_corr (_a : coeff Array256.t):
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)] = 1%r.
 proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
-lemma poly_tobytes_corr _a (_p : address) mem : 
+lemma poly_tobytes_corr _a : 
     hoare [Jkem768.M._poly_tobytes :
-             pos_bound256_cxq a 0 256 2 /\  lift_array256 a = _a /\
-             valid_ptr _p 384 /\
-             Glob.mem = mem /\ to_uint rp = _p
+             pos_bound256_cxq a 0 256 2 
+         /\  lift_array256 a = _a
               ==>
-             (* lift_array256 res = _a
-             pos_bound256_cxq res 0 256 1 /\ *)
-             touches mem Glob.mem _p 384 /\
-             load_array384 Glob.mem _p = encode12 (map asint _a)].
+             res.`1 = encode12 (map asint _a)].
 admitted.
 
-lemma poly_frombytes_corr mem _p (_a : W8.t Array384.t): 
+lemma poly_frombytes_corr (_a : W8.t Array384.t): 
     hoare [Jkem768.M._poly_frombytes :
-             valid_ptr _p 384 /\
-             Glob.mem = mem /\ to_uint ap = _p /\
-             load_array384 Glob.mem _p = _a 
+             arg.`2 = _a
               ==>
-             Glob.mem = mem /\
              lift_array256 res = map incoeff (decode12 _a) /\
              pos_bound256_cxq res 0 256 2 ].
-admitted.
-
-
-lemma poly_compress_corr_h _a (_p : address) mem : 
-    hoare [Jkem768.M._poly_compress  :
-             pos_bound256_cxq a 0 256 2 /\
-             lift_array256 a = _a /\
-             valid_ptr _p 128 /\
-             Glob.mem = mem /\ to_uint rp = _p
-              ==>
-             (* lift_array256 res = _a /\
-             pos_bound256_cxq res 0 256 1 /\ *)
-             touches mem Glob.mem _p 128 /\
-             load_array128 Glob.mem _p = encode4 (compress_poly 4 _a) ].
-admitted.
-
-lemma poly_compress_ll : islossless Jkem768.M._poly_compress.
-proc.
-while (0 <= to_uint i <= 128) (128-to_uint i); last 
-   by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
-move => *;  auto => /> &hr ??.
-by rewrite W64.ultE W64.to_uintD_small /#. 
-qed.
-
-lemma poly_compress_corr _a (_p : address) mem : 
-    phoare [Jkem768.M._poly_compress  :
-             pos_bound256_cxq a 0 256 2 /\
-             lift_array256 a = _a /\
-             valid_ptr _p 128 /\
-             Glob.mem = mem /\ to_uint rp = _p
-              ==>
-             (* lift_array256 res = _a /\
-             pos_bound256_cxq res 0 256 1 /\ *)
-             touches mem Glob.mem _p 128 /\
-             load_array128 Glob.mem _p = encode4 (compress_poly 4 _a) ] = 1%r.
 admitted.
 
 lemma i_poly_compress_corr_h _a  : 
@@ -541,18 +487,15 @@ lemma i_poly_compress_corr_h _a  :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a 
               ==>
-             (* lift_array256 res.`2 = _a /\
-             pos_bound256_cxq res.`2 0 256 1 /\ *)
              res.`1 = encode4 (compress_poly 4 _a) 
              ].
 admitted.
 
 lemma i_poly_compress_ll : islossless Jkem768.M._i_poly_compress.
 proc.
-while (0 <= to_uint i <= 128) (128-to_uint i); last 
-   by wp; call (poly_csubq_ll); auto =>  />; smt(@W64).
-move => *;  auto => /> &hr ??.
-by rewrite W64.ultE W64.to_uintD_small /#. 
+while (0 <=  i <= 128) (128-i); last 
+   by wp; call (poly_csubq_ll); auto =>  /> /#. 
+by auto => /#.
 qed.
 
 lemma i_poly_compress_corr _a  : 
@@ -560,32 +503,24 @@ lemma i_poly_compress_corr _a  :
              pos_bound256_cxq a 0 256 2 /\
              lift_array256 a = _a 
               ==>
-             (* lift_array256 res.`2 = _a /\
-             pos_bound256_cxq res.`2 0 256 1 /\ *)
              res.`1 = encode4 (compress_poly 4 _a) 
              ] = 1%r.
 admitted.
 
-lemma poly_decompress_corr_h mem _p (_a : W8.t Array128.t): 
-    hoare [Jkem768.M._poly_decompress  :
-             valid_ptr _p 128 /\
-             Glob.mem = mem /\ to_uint ap = _p /\
-             load_array128 Glob.mem _p = _a 
+lemma poly_decompress_corr_h (_a : W8.t Array128.t): 
+    hoare [Jkem768.M._i_poly_decompress  :
+              arg.`2 = _a
               ==>
-             Glob.mem = mem /\
              lift_array256 res = decompress_poly 4 (decode4 _a) /\
              pos_bound256_cxq res 0 256 1 ].
 admitted.
 
-lemma poly_decompress_corr mem _p (_a : W8.t Array128.t): 
-    phoare [Jkem768.M._poly_decompress  :
-             valid_ptr _p 128 /\
-             Glob.mem = mem /\ to_uint ap = _p /\
-             load_array128 Glob.mem _p = _a 
+lemma poly_decompress_corr (_a : W8.t Array128.t): 
+    phoare [Jkem768.M._i_poly_decompress  :
+              arg.`2 = _a
               ==>
-             Glob.mem = mem /\
              lift_array256 res = decompress_poly 4 (decode4 _a) /\
-             pos_bound256_cxq res 0 256 1 ] = 1%r.
+             pos_bound256_cxq res 0 256 1] = 1%r.
 admitted.
 
 (*******DIRECT NTT *******)
@@ -635,8 +570,8 @@ while (
    zetasp{2} = jzetas /\
    r{1} = lift_array256 rp{2} /\
    zetas{1} = zetas /\
-   len{1} = to_uint len{2} /\
-   zetasctr{1} = to_uint zetasctr{2}/\
+   len{1} = len{2} /\
+   zetasctr{1} = zetasctr{2}/\
    0 <= zetasctr{1} <= 127 /\
    (zetasctr{1}+1)*len{1} = 128 /\
    (exists l, 0 <= l <= 7 /\ len{1} = 2^l /\
@@ -652,7 +587,7 @@ while (#{/~zetasctr1=zetasctr{1}}
         {~(len{1} = 2^l)}
         {~(signed_bound_cxq rp{2} 0 256 (9 - l))}pre /\ 
        (zetasctr1+1)*len{1}=128 /\
-       start{1} = to_uint start{2} /\
+       start{1} =  start{2} /\
        0 <= start{1} <= 256 /\
        start{1} = 2*len{1}*(zetasctr{1} - zetasctr1) /\
        (* Nasty carry inv *)
@@ -660,17 +595,15 @@ while (#{/~zetasctr1=zetasctr{1}}
           signed_bound_cxq  rp{2} 0 256 (9 - (l - 1)) /\
           signed_bound_cxq  rp{2} start{1} 256 (9 - l))
        ); last first.
-+ auto => />; move => &1 &2; rewrite /signed_bound_cxq => 1? hh 2? rep blow exit ?;split;
++ auto => />; move => &1; rewrite /signed_bound_cxq => 1? hh 2? rep blow exit;split;
      1: by exists l; do split; smt().
-  move => _rp _start _zetasctr; rewrite !ultE !uleE !shr_div /= => 7? l0 *. 
+  move => _rp _zetasctr 6? l0 *. 
   split. 
-  + have ? : 2 * (to_uint len{1} %/ 2) = to_uint len{1}; last by smt().
-    rewrite -divMr;smt().
+  + by smt().
   exists (l0-1); do split.
   + move : exit; rewrite (_: 2 = 2^1) //;smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l). 
   + smt().
-  + rewrite rep Montgomery.pow_div1 //.
-  + move : exit; rewrite (_: 2 = 2^1) //;smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l).  
+  + rewrite  Montgomery.pow_div1;1,2: smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l).  
     by smt(StdOrder.IntOrder.ieexprIn).
   by smt().  
 
@@ -683,8 +616,8 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
        zeta_{1} = incoeff (to_sint zeta_0{2}) * incoeff 169 /\  
        0 <= to_sint zeta_0{2} < q /\
        start{1} = 2*len{1}*(zetasctr{1} - 1 - zetasctr1) /\
-       W64.to_uint cmp{2} = start{1} + len{1} /\ 
-       j{1} = to_uint j{2} /\
+       cmp{2} = start{1} + len{1} /\ 
+       j{1} = j{2} /\
        start{1} <= j{1} <= start{1} + len{1} /\
        (exists l, 0 <= l <= 7 /\ len{1} = 2^l /\
           signed_bound_cxq  rp{2} 0 256 (9 - (l - 1)) /\
@@ -692,54 +625,46 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
           signed_bound_cxq  rp{2} (j{1} + len{1}) 256 (9 - l)
        )
        );last first. 
-+ auto => /> &1 &2; rewrite /signed_bound_cxq !uleE !ultE /= =>  5? lenpow2  2? sval l0 l0l l0h l0v.
-  rewrite !to_uintD_small; 1..2: smt().
-  move => cbdloose cbdtight /= HH HHH => />;split.
++ auto => /> &1; rewrite /signed_bound_cxq=>  4?lenpow2  2? sval l0 l0l l0h l0v cbdloose cbdtight /= HH=> />;split.
 
   (* Initialization *) 
   + do split; 1..2,6: smt().
       move : zetas_montE; rewrite /array_mont /lift_array128 tP => mnt.
-      + move : (mnt (to_uint zetasctr{1} + 1) _); 1: smt(); rewrite !mapiE /=; 1,2:smt().
+      + move : (mnt ( zetasctr{1} + 1) _); 1: smt(); rewrite !mapiE /=; 1,2:smt().
         by move => <-; rewrite -ZqField.mulrA rrinvcoeff; ring.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
     + by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
-    exists (l0); do split; 1..4,6..: smt().
-     move=> k [kbl kb].
-     have : to_uint start{1} + to_uint len{1} < 256;  by smt().
+    exists (l0); do split; smt().
 
   (* Termination *)
-  move => jl jr rpr; rewrite !ultE to_uintD_small; 1: smt(). 
-  move => 8?l1; rewrite !to_uintD_small; 1: smt().  
-  move => *.
+  move => jl jr rp r1  6? l1 *.
   split; last by smt().
-  auto => />;do split; 1,3: by smt().
+  auto => />;do split;1: by smt().
   + have : (2^l0) \in map (fun i => 2^i) (iota_ 0 8); 
       last by rewrite -JUtils.iotaredE => /> /#.
      have -> : 2^l0 = ((fun x => 2^x) l0) by auto. 
      by rewrite (map_f (fun x => 2^x)) mem_iota /#.
-  by exists l1; do split; smt().
 
 (* Preservation *)
 wp; sp; ecall {2} (fqmul_corr (to_sint t{2}) (to_sint zeta_0{2})).
 auto => /> &1 &2. rewrite   /signed_bound_cxq =>  3?  lenlb 5?.
-rewrite !ultE !of_uintK /= => 7?; rewrite !to_uintD_small; 1..2: smt().
-move => l1 3? bnt bt 3? result rval.
+move => 3? l1 2? Hl bnt bt 2? result rval.
 
 have l1lb : (1 <= l1) by move : lenlb ; rewrite (_: 2 = 2^1) //;
     smt(Ring.IntID.expr0 StdOrder.IntOrder.ler_weexpn2l). 
 
-have : to_uint len{1} \in map (fun i => 2^i) (iota_ 0 8) by smt(mem_iota map_f). 
+have : len{1} \in map (fun i => 2^i) (iota_ 0 8) by smt(mem_iota map_f). 
 rewrite -JUtils.iotaredE => /> lenvals.
 
 have  /= [#] redbl redbh redv := 
-    (SREDCp_corr (to_sint rp{1}.[to_uint j{1} + to_uint len{1}] * to_sint zeta_0{1}) _ _); 1,2:
- by rewrite qE /R;move : (bnt (to_uint j{1} + to_uint len{1}) _); smt().
+    (SREDCp_corr (to_sint rp{1}.[j{1} + len{1}] * to_sint zeta_0{1}) _ _); 1,2:
+ by rewrite qE /R;move : (bnt (j{1} + len{1}) _); smt().
 
-do split; 2..3,5..6: smt(). 
+do split; 2..3: smt(). 
 + apply Array256.ext_eq  => x xb.
-  case (x = to_uint j{1}); last first.
+  case (x = j{1}); last first.
   + move => *; rewrite set_neqiE; 1 : smt().
-    case(x = to_uint j{1} + to_uint len{1}); last first.
+    case(x =  j{1} + len{1}); last first.
     + move => *; rewrite set_neqiE;1 : smt().
       by rewrite !mapiE //= !(set_neqiE);  smt().
     move => ->; rewrite !(set_eqiE); 1,2: smt().
@@ -747,24 +672,24 @@ do split; 2..3,5..6: smt().
     rewrite (set_neqiE); 1..2:  smt().
     rewrite (set_eqiE); 1..2:  smt().
     rewrite to_sintB_small /= 1:/# incoeffB; congr;congr.
-    by apply eq_incoeff; rewrite rval redv mulrC -incoeffM -mulrA mul_congr.
+    by apply eq_incoeff; rewrite rval -Hl redv mulrC -incoeffM -mulrA mul_congr.
   move => ->; rewrite set_eqiE; 1,2: smt().
   rewrite (set_neqiE); 1:  smt().
   rewrite !mapiE //=; 1..3: smt().
   rewrite (set_eqiE); 1..2:  smt().
   rewrite to_sintD_small /= 1:/# incoeffD ZqField.addrC; congr.
-  apply eq_incoeff; rewrite rval redv !incoeffK. 
+  apply eq_incoeff; rewrite rval -Hl redv !incoeffK. 
   rewrite !modzMm (modz_small 169 _); 1: by smt(qE).
   rewrite (modz_small (to_sint zeta_0{1}) _); 1: by smt(qE).
   by rewrite mulrC mulrA.
 
-move : redbl redbh; rewrite -rval => redbl redbh.
+move : redbl redbh; rewrite Hl -rval => redbl redbh.
 
-exists l1; do split; 1..3: smt().
+exists l1; do split; 1..2: smt().
 + move => x xb.
-  case (x = to_uint j{1}); last first.
-  + move => *; rewrite (set_neqiE);1,2 : smt().
-    case(x = to_uint j{1} + to_uint len{1}); last by
+  case (x = j{1}); last first.
+  + move => *; rewrite (set_neqiE);1,2 : smt(). 
+    case(x = j{1} + len{1}); last by
        move => *; rewrite !(set_neqiE); smt().
     move => ->; rewrite !(set_eqiE); 1,2: smt().
     by rewrite to_sintB_small /=; smt(). 
@@ -805,52 +730,45 @@ lemma ntt_correct_h (_r0 : coeff Array256.t):
 lemma ntt_ll : islossless Jkem768.M._poly_ntt.
 proof.
 proc; call poly_reduce_ll.
-while (   1 <= to_uint len /\ to_uint len <= 128
-       /\ exists l, 0 <= l /\ to_uint len = 2^l
-       /\ 0 <= to_uint zetasctr <= 127
-       /\ 2*(to_uint zetasctr+1)*to_uint len = 256) (to_uint len);
+while (   1 <= len /\ len <= 128
+       /\ exists l, 0 <= l /\ len = 2^l
+       /\ 0 <= zetasctr <= 127
+       /\ 2*(zetasctr+1)*len = 256) (len);
   last by auto => />; split; [ by exists 7 | by smt()].
 move=> z; wp; sp => *; exists *zetasctr; elim* => zetasctr1 l.
-while (   1 <= to_uint len /\ to_uint len <= 128 /\ 0 <= l /\ to_uint len = 2 ^ l
-       /\ 0 <= to_uint zetasctr1 <= 127
-       /\ 0 <= to_uint zetasctr <= 127
-       /\ 2 * (to_uint zetasctr1+ 1) * to_uint len = 256
-       /\ 2 <= to_uint len
-       /\ 2* (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256
-       /\ 0 <= to_uint start <= 256
-       /\ to_uint start = 2*(to_uint zetasctr - to_uint zetasctr1)* to_uint len) (256 -to_uint start); last first.
-+ wp; skip => &m [#] ?????????; rewrite !uleE !of_uintK //= => ??; split;1: by smt(W64.to_uint0).
-  move => start zt0; rewrite !ultE !of_uintK //=; split;1: by smt(W64.to_uint0).
-  move => ge2576_start h2; split; last by rewrite to_uint_shr; smt(). 
-  do 2! (split; first by rewrite to_uint_shr; smt()).
+while (   1 <= len /\ len <= 128 /\ 0 <= l /\ len = 2 ^ l
+       /\ 0 <= zetasctr1 <= 127
+       /\ 0 <= zetasctr <= 127
+       /\ 2 * (zetasctr1+ 1) * len = 256
+       /\ 2 <= len
+       /\ 2* (zetasctr - zetasctr1 ) * len <= 256
+       /\ 0 <= start <= 256
+       /\ start = 2*(zetasctr - zetasctr1)* len) (256 -start); last first.
++ wp; skip => &m [#] ???????????; split;1: by smt(W64.to_uint0).
+  move => start zt0; split;1: by smt(W64.to_uint0).
+  move => ge2576_start h2; split;last by rewrite /(`|>>`) /(`<<`) /=; smt(). 
+  do 2! (split; first by rewrite  /(`|>>`) /(`<<`) /=; smt()).
 have gt0_l: 0 < l. 
   have /ler_eqVlt [<<- /=|/#]: 0 <= l by move: h2 => [#].
-  have: 2 <= to_uint len{m} by smt().
-  have ->: to_uint len{m} = 2^0 by move: h2 => [#] *.
+  have: 2 <= len{m} by smt().
+  have ->: len{m} = 2^0 by move: h2 => [#] *.
   by rewrite expr0.
 exists (l-1); do! split; 1,3,4:smt().
-+ rewrite to_uint_shr to_uint1 //=; have ->: to_uint len{m} = 2^l by move: h2=> [#].
++ rewrite  /(`|>>`) /(`<<`) /=; have ->:  len{m} = 2^l by move: h2=> [#].
   by rewrite  -{1}(@IntID.subrK l 1) JUtils.powS_minus /#.
-by rewrite to_uint_shr //= /#.
+by rewrite  /(`|>>`) /(`<<`) /= //= /#.
 
 move=> *; wp.
-while (   to_uint cmp = to_uint start + to_uint len 
-       /\ 0 <= to_uint start <= 256
-       /\ 1 <= to_uint len /\ to_uint len <= 128
-       /\ to_uint start <= to_uint j <= to_uint start + to_uint len
-       /\ 0 <= to_uint zetasctr <= 127
-       /\ 2 * (to_uint zetasctr1 + 1) * to_uint len = 256
-       /\ to_uint start = 2*(to_uint zetasctr -1 - to_uint zetasctr1) * to_uint len
-       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256) (to_uint start + to_uint len - to_uint j); last first. 
-+ wp; skip => &hr; rewrite !ultE !of_uintK /= => *; split; 1:by rewrite !to_uintD_small //= /#.
-  move=> *; split; 1: by rewrite to_uintD_small //= 1:/# !ultE //= => [#] *; rewrite to_uintD_small //= /#.
-  rewrite !ultE to_uintD_small 1:/#.
-  move => *; split; last by  rewrite to_uintD_small //= /#.
-  do 6! (split; first by smt()).
-  split; 1: by smt().
-  by rewrite !to_uintD_small //= /#. 
-move => *;wp; call fqmul_ll; auto => /> &1; rewrite !ultE /=  => *.
-rewrite !to_uintD_small /= /#.
+while (    cmp =  start +  len 
+       /\ 0 <= start <= 256
+       /\ 1 <= len /\ len <= 128
+       /\ start <= j <=  start + len
+       /\ 0 <= zetasctr <= 127
+       /\ 2 * (zetasctr1 + 1) * len = 256
+       /\ start = 2*(zetasctr -1 - zetasctr1) * len
+       /\ 2 * (zetasctr - zetasctr1 ) * len <= 256) (start + len - j); last first. 
++ wp; skip => &hr /> /#. 
+move => *;wp; call fqmul_ll; auto => />  /#.
 qed.
 
 (*******INVERSE *******)
