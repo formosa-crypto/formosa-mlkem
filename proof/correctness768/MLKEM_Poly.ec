@@ -800,7 +800,7 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
         zetas_inv{1} = zetas_inv /\
         signed_bound_cxq rp{2} 0 256 4
 ); last first.
-+ while (j{1} = to_uint j{2} /\
++ while (j{1} = j{2} /\
        0 <= j{1} <= 256 /\
        (forall k, (0 <= k < j{1} => r{1}.[k] * incoeff SignedReductions.R = incoeff (to_sint rp{2}.[k])) /\
                   (j{1} <= k < 256 => r{1}.[k] = incoeff (to_sint rp{2}.[k]))
@@ -823,7 +823,7 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
         rewrite -qE incoeffM_mod -ZqField.mulrA rrinvcoeff.
         by rewrite -incoeffM_mod /R qE //= ZqField.mulr1.
       + by rewrite zp /=.
-    move => jl rl jr rpr; rewrite ultE /= => ??[#] *.
+    move => jl rl jr rpr *.
     have ? : jl = 256 by smt().
     subst jl.
     split; last by smt().
@@ -832,31 +832,30 @@ seq 3 5 :  (r{1} = lift_array256 rp{2} /\ zetasp{2} = jzetas_inv /\
   auto => />.
   + move => &1 &2  [#] ->.
     rewrite /lift_array256 /signed_bound_cxq.
-    by move => /= ?? zp zvals z2 bnd1 bnd2; rewrite !ultE => ?? t ? /#.
+    by move => /= ?? zp zvals z2 bnd1 bnd2 ?? t ? /#.
   ecall {2}(fqmul_corr (to_sint t{2}) (to_sint zeta_0{2})).
   auto => /> &1 &2;rewrite /array_mont_inv /lift_array128 /lift_array256 /signed_bound_cxq.
-  move => /= ?? zp zvals bnd1 bnd2; rewrite !ultE => ?? result rval.
+  move => /= ?? zp zvals bnd1 bnd2 ? result rval.
 
   have  /= [#] redbl redbh redv := 
-    (SREDCp_corr (to_sint rp{2}.[to_uint j{2}] * to_sint ((of_int 1441))%W16)_ _).
+    (SREDCp_corr (to_sint rp{2}.[j{2}] * to_sint ((of_int 1441))%W16)_ _).
   + by rewrite /R qE /=.
-  by  rewrite /R /=; move : (bnd1 (to_uint j{2}) _); 1:smt(); 
+  by  rewrite /R /=; move : (bnd1 (j{2}) _); 1:smt(); 
       rewrite /to_sint /of_uintK /smod qE /#.
   
-  rewrite to_uintD_small; 1: smt().
-  split; 2: smt();do split; 1..2:smt().
+  do split; 1,2:smt().
   + move => k; split. 
-    + move => kbl kbh; case (k = to_uint j{2}); last by move => *;rewrite !set_neqiE /#.
+    + move => kbl kbh; case (k = j{2}); last by move => *;rewrite !set_neqiE /#.
       move => ->; rewrite !set_eqiE // -ZqField.mulrA zvals.
-      move : (zp (to_uint j{2})) => [#] _ -> //.
+      move : (zp (j{2})) => [#] _ -> //.
       apply eq_incoeff; rewrite rval redv.
       by rewrite -incoeffM !incoeffK modzMm mulrA. 
     by move => kbl kbh;rewrite !set_neqiE /#.
   
-  + move => k kb; case (k = to_uint j{2}); last by move => *;rewrite !set_neqiE /#. 
+  + move => k kb; case (k = j{2}); last by move => *;rewrite !set_neqiE /#. 
     by move => ->; rewrite !set_eqiE /#.
 
-  move => k kb; case (k = to_uint j{2}); last by move => *;rewrite !set_neqiE /#. 
+  move => k kb; case (k = j{2}); last by move => *;rewrite !set_neqiE /#. 
   move => ->; rewrite !set_eqiE //. move => ?. rewrite rval redbl //=.
 
 (* Outer loop *)
@@ -864,7 +863,7 @@ while (
    zetasp{2} = jzetas_inv /\
    r{1} = lift_array256 rp{2} /\
    zetas_inv{1} = zetas_inv /\
-   len{1} = to_uint len{2} /\
+   len{1} = len{2} /\
    (exists l, 1 <= l <= 8 /\ len{1} = 2^l) /\
    0 <= zetasctr{1} <= 128 /\
    zetasctr{1} = to_uint zetasctr{2} /\
@@ -878,18 +877,17 @@ wp; exists* zetasctr{1}; elim* => zetasctr1 l.
 while (#{/~zetasctr1=zetasctr{1}}
         {~zetasctr{1} * len{1} = 128 * (len{1} - 2)}pre /\ 
        zetasctr1 * len{1} = 128 * (len{1} - 2) /\
-       start{1} = to_uint start{2} /\
+       start{1} = start{2} /\
        0 <= start{1} <= 256 /\
        start{1} = 2*(zetasctr{1} - zetasctr1)*len{1} /\
-       2* (zetasctr{1} - zetasctr1) * to_uint len{2} <= 256 /\
+       2* (zetasctr{1} - zetasctr1) * len{2} <= 256 /\
        (* Nasty carry inv *)
        signed_bound_cxq  rp{2} 0 256 4); last first.
 
-+ auto => /> &1; rewrite  !uleE /signed_bound_cxq.
-  move => 2? rep 4? lb ? rp start zetasctr *.
-  rewrite !to_uint_shl //= !(modz_small _ W64.modulus); 1: smt().
++ auto => /> &1; rewrite  /signed_bound_cxq.
+  move => 2? rep ? lb ? rp start zetasctr *.
   do split; 2..: smt().
-  exists (l+1); split; last by rewrite rep exprD_nneg /#.
+  exists (l+1); split; last by rewrite  exprD_nneg /#.
   by smt(StdOrder.IntOrder.ler_weexpn2l pow2_7 StdOrder.IntOrder.ieexprIn). 
 
 wp.
@@ -898,20 +896,19 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
        zeta_{1} = incoeff (to_sint zeta_0{2}) *  (incoeff 169) /\  
        0 <= to_sint zeta_0{2} < q /\
        start{1} = 2*((zetasctr{1}-1) - zetasctr1) * len{1} /\
-       W64.to_uint cmp{2} = start{1} + len{1} /\ 
-       j{1} = to_uint j{2} /\
+       cmp{2} = start{1} + len{1} /\ 
+       j{1} = j{2} /\
        start{1} <= j{1} <= start{1} + len{1}); last first.
 
-+ auto => />  &1; rewrite !uleE /signed_bound_cxq.
-  move => 2? rep zctr_lb zctr_ub ? lb ? rp ??????.
++ auto => />  &1; rewrite /signed_bound_cxq.
+  move => 3? rep zctr_lb zctr_ub ? lb ? rp ?.
 
   move : zetainv_bound; rewrite /minimum_residues /bpos16 => zb.
 
-  rewrite !ultE //= !to_uintD_small;1,2:smt().
-
-  have : to_uint len{1} \in map (fun i => 2^i) (iota_ 1 8) by smt(mem_iota map_f). 
+  have : 2^l \in map (fun i => 2^i) (iota_ 1 8) by smt(mem_iota map_f). 
   rewrite -JUtils.iotaredE => /> lenvals.
 
+  rewrite !to_uintD_small /= 1:/#.
 
   do split; 1..3,5..6:smt().
   + rewrite -(Array128.mapiE (fun x => incoeff (W16.to_sint x))) 1:/#.
@@ -920,42 +917,41 @@ while (#{/~start{1} = 2*(zetasctr{1} - zetasctr1) * len{1}} pre /\
     rewrite mapiE /=; 1: smt().
     by rewrite -ZqField.mulrA rrinvcoeff; ring.
   by move:(zeta_bound); rewrite /minimum_residues /bpos16 /#.
-by move => jl rpl; rewrite !ultE => 11?; rewrite !to_uintD_small; smt(). 
+by smt().
 
 (* Preservation *)
 
 wp;ecall {2}(fqmul_corr (to_sint t{2}) (to_sint zeta_0{2})).
 wp;ecall {2} (barrett_reduce_corr (to_sint m{2})).
 
-auto => />  &1 &2; rewrite !uleE /signed_bound_cxq /b16. 
-move => ? rep 3? lb; rewrite !ultE => 15?; rewrite !to_uintD_small; 1,2: smt(). 
-move => result rval result0 rval0.
+auto => />  &1 &2; rewrite /signed_bound_cxq /b16. 
+move => ?????????? rep 3? lb result rval result0 rval0.
 rewrite /lift_array256 /=.
 
-have [#]bredbl bredbh bredv := (BREDCp_corr (to_sint (rp{1}.[to_uint j{1} + 
-                          to_uint len{1}] + rp{1}.[to_uint j{1}])) 26 _ _ _ _ _ _); 
+have [#]bredbl bredbh bredv := (BREDCp_corr (to_sint (rp{1}.[j{1} + 
+                          2^l] + rp{1}.[j{1}])) 26 _ _ _ _ _ _); 
      1..4: smt(qE pow2_16).
-+ by rewrite to_sintD_small /= /R /=; smt(qE).
++ rewrite to_sintD_small /= /R /=; smt(qE).
 + by move => a; rewrite /R qE /= /barrett_pred => bnd; split; smt().
 
 have  /= [#] redbl redbh redv := 
-   (SREDCp_corr (to_sint (rp{1}.[to_uint j{1}] - rp{1}.[to_uint j{1} + 
-                                to_uint len{1}]) * to_sint zeta_0{1})_ _).
+   (SREDCp_corr (to_sint (rp{1}.[j{1}] - rp{1}.[j{1} + 
+                                2^l]) * to_sint zeta_0{1})_ _).
   + by rewrite /R qE /=.
   by rewrite /R qE /= !to_sintB_small /=; smt(qE). 
 
 move : redbl redbh; rewrite -rval0 => redbl redbh.
 move : bredbl bredbh; rewrite -rval => bredbl bredbh.
 
-have : to_uint len{1} \in map (fun i => 2^i) (iota_ 1 8) by smt(mem_iota map_f). 
+have :2^l \in map (fun i => 2^i) (iota_ 1 8) by smt(mem_iota map_f). 
 rewrite -JUtils.iotaredE => /> lenvals.
 
 do split; 4..: smt().
 
 + apply Array256.ext_eq  => x xb.
-  case (x = to_uint j{1} + to_uint len{1}); last first.
+  case (x = j{1} + 2^l); last first.
   + move => *; rewrite (set_neqiE);1: smt().
-    case(x = to_uint j{1}); last first.
+    case(x = j{1}); last first.
     + move => *; rewrite set_neqiE;1 : smt().
       by rewrite !mapiE //= !(set_neqiE);  smt().
     move => ->; rewrite !(set_eqiE); 1,2: smt().
@@ -975,17 +971,17 @@ do split; 4..: smt().
   by rewrite mulrC mulrA.
 
 + move => x xb.
-  case (x = to_uint j{1} + to_uint len{1}); last first.
+  case (x = j{1} + 2^l); last first.
   + move => *; rewrite (set_neqiE);1 ,2: smt().
-    case(x = to_uint j{1}); last first.
+    case(x = j{1}); last first.
     + by move => *; rewrite !(set_neqiE); smt().
     by move => ->; rewrite !(set_eqiE); smt().
   by move => ->; rewrite set_eqiE; smt().
 
 move => x xb.
-case (x = to_uint j{1} + to_uint len{1}); last first.
+case (x = j{1} + 2^l); last first.
 + move => *; rewrite (set_neqiE);1 ,2: smt().
-  case(x = to_uint j{1}); last first.
+  case(x = j{1}); last first.
   + by move => *; rewrite !(set_neqiE); smt().
   by move => ->; rewrite !(set_eqiE); smt().
 by move => ->; rewrite set_eqiE; smt().
@@ -1029,66 +1025,52 @@ by conseq (invntt_correct _r).
 lemma invntt_ll : islossless Jkem768.M._poly_invntt.
 proof.
 proc.
-while(0<=to_uint j<=256) (256-to_uint j).
-+ move => *; auto => />;call fqmul_ll; auto => /> &1.
-  by rewrite ultE /= => ???; rewrite !to_uintD_small /= /#.
+while(0<=j<=256) (256-j);1: by
+ move => *; auto => />;call fqmul_ll; auto => /> /#.
 wp.
-while (   2 <= to_uint len /\ to_uint len <= 256
-       /\ exists l, 0 <= l /\ to_uint len = 2^l
+while (   2 <= len /\ len <= 256
+       /\ exists l, 0 <= l /\ len = 2^l
        /\ 0 <= to_uint zetasctr <= 128
-       /\ to_uint zetasctr * to_uint len = 128 * (to_uint len - 2)) (256-to_uint len);
+       /\ to_uint zetasctr * len = 128 * (len - 2)) (256-len);
  last first.
 + auto => />; split; 1: by exists 1 => /=.
-  move => len zct;rewrite !uleE /=;split; [ smt() | move => *;rewrite ultE /#]. 
+  by smt().
 move => *; wp; sp=> *; move=> *; exists *zetasctr.
 elim*=> zetasctr1 l.
-while (   1 <= to_uint len /\ to_uint len <= 128 /\ 0 <= l /\ to_uint len = 2 ^ l
+while (   1 <= len /\ len <= 128 /\ 0 <= l /\ len = 2 ^ l
        /\ 0 <= to_uint zetasctr1 <= 128
        /\ 0 <= to_uint zetasctr <= 128
-       /\ to_uint zetasctr1 * to_uint len = 128 * (to_uint len - 2)
-       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256
-       /\ 0 <= to_uint start <= 256
-       /\ to_uint start = 2 * (to_uint zetasctr - to_uint zetasctr1)*to_uint len) (256 -to_uint start); last first.
-+ wp; skip => &m;rewrite uleE /= => [#] h *.
+       /\ to_uint zetasctr1 * len = 128 * (len - 2)
+       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * len <= 256
+       /\ 0 <= start <= 256
+       /\ start = 2 * (to_uint zetasctr - to_uint zetasctr1)*len) (256 -start); last first.
++ wp; skip => &m [#] h *.
   split;1: smt(W64.to_uint0). 
-  move => start zetasctr; split;first by rewrite ultE;smt(W64.to_uint0).
-  rewrite ultE /=;move=> ge256_st h2; split.
-  rewrite !to_uint_shl //=; do split; 1,2:by smt(). 
-  rewrite !(modz_small _ 18446744073709551616) 1:/#.
+  move => start zetasctr; split;first by smt(W64.to_uint0).
+  move=> ge256_st h2; split.
+  rewrite /(`<<`) //=; do split; 1,2:by smt(). 
 have gt0_l: 0 < l.
   have /ler_eqVlt [<<- /=|/#]: 0 <= l by move: h2 => [#].
-  have: 2 <= to_uint len{m} by move: h => [#] *.
-  have ->: to_uint len{m} = 2^0 by move: h2 => [#] *.
+  have: 2 <= len{m} by move: h => [#] *.
+  have ->:  len{m} = 2^0 by move: h2 => [#] *.
   by rewrite expr0.
 exists (l+1); do! split; 1,3,4,5:smt().
-+ have ->: to_uint len{m} = 2^l by move: h2=> [#].
++ have ->:  len{m} = 2^l by move: h2=> [#].
   by rewrite exprS 1:/# mulrC.
-by rewrite to_uint_shl //= /#.
+by rewrite /(`<<`) //=/#.
 
 move => *; wp.
-while (   to_uint cmp = to_uint start + to_uint len 
-       /\ 0 <= to_uint start <= 256
-       /\ 1 <= to_uint len /\ to_uint len <= 128  /\ to_uint start <= to_uint j <= to_uint start + to_uint len
+while (   cmp = start + len 
+       /\ 0 <= start <= 256
+       /\ 1 <=  len /\ len <= 128  /\ start <=  j <=  start +  len
        /\ 0 <= to_uint zetasctr <= 128
-       /\ to_uint zetasctr1 * to_uint len = 128 * (to_uint len - 2)
-       /\ to_uint start = 2 * (to_uint zetasctr -1 - to_uint zetasctr1) * to_uint len
-       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) * to_uint len <= 256) (to_uint start + to_uint len - to_uint j); last first.
-+ wp;skip => &m;rewrite ultE /= => *.
-  rewrite !to_uintD_small /= 1..2:/#; split; 1: by smt().
-  move => *; rewrite !ultE /= to_uintD_small /= 1:/#.
-  split;  first by smt().
-  move => *; rewrite  to_uintD_small /= 1:/#.
-  split; last  by smt().
-  split; first by smt().
-  split; first by smt().
-  split; first by smt().
-  split; first by smt().
-  split; first by smt().
-  split; first by smt().
-  split; last by smt().
-  smt().
-move => *; wp; call fqmul_ll; wp; call barrett_reduce_ll; auto => />. 
-by move => &hr; rewrite !ultE => *; rewrite !to_uintD_small /= /#.
+       /\ to_uint zetasctr1 * len = 128 * ( len - 2)
+       /\ start = 2 * (to_uint zetasctr -1 - to_uint zetasctr1) *  len
+       /\ 2 * (to_uint zetasctr - to_uint zetasctr1 ) *  len <= 256) ( start +  len -  j); last first.
++ wp;skip => &m *.
+  rewrite !to_uintD_small /= 1:/#; split; 1: by smt().
+  by smt().
+move => *; wp; call fqmul_ll; wp; call barrett_reduce_ll; auto => /> /#. 
 qed.
 
 (* some auxilliary definitions *) 
@@ -1174,10 +1156,10 @@ conseq (_: _ ==>
 proc.
 seq 2 : #pre; first by auto => />.
 while (#pre /\ srp = rp /\
-    0<= to_uint i <= 256 /\ to_uint i %% 4 = 0 /\
-    signed_bound_cxq rp 0 (to_uint i) 3 /\
-    isbasemul _ap _bp zetas (lift_array256 rp) (to_uint i)); 
-       last by auto => /> &hr ??; split; [ smt() | move => ??;rewrite ultE /#].
+    0<= i <= 256 /\  i %% 4 = 0 /\
+    signed_bound_cxq rp 0 ( i) 3 /\
+    isbasemul _ap _bp zetas (lift_array256 rp) (i)); 
+       last by auto => /> &hr ??; split;smt().
 
 wp;ecall(fqmul_corr_h (to_sint a1) (to_sint b0)).
 wp;ecall(fqmul_corr_h (to_sint a0) (to_sint b1)).
@@ -1189,59 +1171,56 @@ wp;ecall(fqmul_corr_h (to_sint a0) (to_sint b1)).
 wp;ecall(fqmul_corr_h (to_sint a0) (to_sint b0)).
 wp;ecall(fqmul_corr_h (to_sint r0) (to_sint zeta_0)).
 wp;ecall(fqmul_corr_h (to_sint a1) (to_sint b1)).
-auto => /> &hr; rewrite /signed_bound_cxq /isbasemul /lift_array256 !ultE /=.
+auto => /> &hr; rewrite /signed_bound_cxq /isbasemul /lift_array256 /=.
 move => ba bb ??? bprev vprev entry.
-have -> /= : i{hr} + W64.one - W64.one = i{hr} by ring.
-have -> /= : i{hr} + W64.of_int 3 - W64.one = i{hr} + W64.of_int 2 by ring.
-rewrite !to_uintD_small /=; 1..4:smt().
-rewrite !W64.shr_div /= Array64.Array64.initiE /=; 1: smt().
+rewrite /(`|>>`) /(`<<`) /= Array64.Array64.initiE /=; 1: smt().
 move => r1 r1val r2 r2val r3 r3val r4 r4val r5 r5val r6 r6val r7 r7val r8 r8val r9 r9val r10 r10val.
 
 have hq : 0 < q && q < SignedReductions.R %/ 2 by rewrite /R /#.
-have hi: 0 <= to_uint i{hr} && to_uint i{hr} < 256 by smt().
-have hip1: 0 <= to_uint i{hr} + 1 && to_uint i{hr} + 1 < 256 by smt().
-have hip2: 0 <= to_uint i{hr} + 2 && to_uint i{hr} + 2 < 256 by smt().
-have hip3: 0 <= to_uint i{hr} + 3 && to_uint i{hr} + 3 < 256 by smt().
+have hi: 0 <= i{hr} &&  i{hr} < 256 by smt().
+have hip1: 0 <= i{hr} + 1 && i{hr} + 1 < 256 by smt().
+have hip2: 0 <= i{hr} + 2 && i{hr} + 2 < 256 by smt().
+have hip3: 0 <= i{hr} + 3 && i{hr} + 3 < 256 by smt().
 
 have  /= [#] redbl1 redbh1 redv1 :=
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr} + 1]) hq _).
+    (SREDCp_corr (to_sint ap{hr}.[i{hr} + 1] * to_sint bp{hr}.[i{hr} + 1]) hq _).
      by move: (ba _ hip1) (bb _ hip1); rewrite /R /#.
 
 have  /= [#] redbl2 redbh2 redv2 :=
-    (SREDCp_corr (to_sint r1 * to_sint jzetas.[64 + to_uint i{hr} %/ 4]) hq _).
-     by rewrite /R /=; move : (zeta_bound (64 + to_uint i{hr} %/ 4)); rewrite /minimum_residues; smt().
+    (SREDCp_corr (to_sint r1 * to_sint jzetas.[64 + i{hr} %/ 4]) hq _).
+     by rewrite /R /=; move : (zeta_bound (64 +  i{hr} %/ 4)); rewrite /minimum_residues; smt().
 
 have  /= [#] redbl3 redbh3 redv3 :=
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr}]) hq _).
+    (SREDCp_corr (to_sint ap{hr}.[i{hr}] * to_sint bp{hr}.[i{hr}]) hq _).
      by move: (ba _ hi) (bb _ hi); rewrite /R /#.
 
 have  /= [#] redbl4 redbh4 redv4 :=
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}] * to_sint bp{hr}.[to_uint i{hr} + 1]) hq _).
+    (SREDCp_corr (to_sint ap{hr}.[i{hr}] * to_sint bp{hr}.[i{hr} + 1]) hq _).
      by move: (ba _ hi) (bb _ hip1); rewrite /R /#.
 
 have  /= [#] redbl5 redbh5 redv5 :=
-    (SREDCp_corr(to_sint ap{hr}.[to_uint i{hr} + 1] * to_sint bp{hr}.[to_uint i{hr}]) hq _).
+    (SREDCp_corr(to_sint ap{hr}.[i{hr} + 1] * to_sint bp{hr}.[i{hr}]) hq _).
      by move: (ba _ hip1) (bb _ hi); rewrite /R /#.
 
 have  /= [#] redbl6 redbh6 redv6 :=
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr} + 3] * to_sint bp{hr}.[to_uint i{hr} + 3]) hq _).
+    (SREDCp_corr (to_sint ap{hr}.[i{hr} + 3] * to_sint bp{hr}.[i{hr} + 3]) hq _).
      by move: (ba _ hip3) (bb _ hip3); rewrite /R /#.
 
 have  /= [#] redbl7 redbh7 redv7 :=
-    (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[64 + to_uint i{hr} %/ 4])) hq _).
-+ rewrite /R /=; move : (zeta_bound (64 + to_uint i{hr} %/ 4)); rewrite /minimum_residues /bpos16 => zb.
+    (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[64 + i{hr} %/ 4])) hq _).
++ rewrite /R /=; move : (zeta_bound (64 + i{hr} %/ 4)); rewrite /minimum_residues /bpos16 => zb.
   rewrite to_sintN /= ?IntID.mulrN; do split;smt(W16.to_sint_cmp). 
 
 have  /= [#] redbl8 redbh8 redv8 :=
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr}+2]) hq _).
+    (SREDCp_corr (to_sint ap{hr}.[i{hr}+2] * to_sint bp{hr}.[ i{hr}+2]) hq _).
      by move: (ba _ hip2) (bb _ hip2); rewrite /R /#.
 
 have  /= [#] redbl9 redbh9 redv9 :=
-    (SREDCp_corr (to_sint ap{hr}.[to_uint i{hr}+2] * to_sint bp{hr}.[to_uint i{hr} + 3]) hq _).
+    (SREDCp_corr (to_sint ap{hr}.[i{hr}+2] * to_sint bp{hr}.[i{hr} + 3]) hq _).
      by move: (ba _ hip2) (bb _ hip3); rewrite /R /#.
 
 have  /= [#] redbl10 redbh10 redv10 :=
-    (SREDCp_corr(to_sint ap{hr}.[to_uint i{hr} + 3] * to_sint bp{hr}.[to_uint i{hr}+2]) hq _).
+    (SREDCp_corr(to_sint ap{hr}.[i{hr} + 3] * to_sint bp{hr}.[i{hr}+2]) hq _).
      by move: (ba _ hip3) (bb _ hip2); rewrite /R /#.
 
 rewrite -r1val in redbl1;rewrite -r1val in redbh1;rewrite -r1val eq_incoeff in redv1.
@@ -1253,7 +1232,7 @@ rewrite -r6val in redbl6;rewrite -r6val in redbh6;rewrite -r6val eq_incoeff in r
 rewrite -r7val in redbl7;rewrite -r7val in redbh7;rewrite -r7val in redv7.
 rewrite eq_incoeff !incoeffM to_sintN in redv7.
 + move : zeta_bound; rewrite /= /minimum_residues /=.
-  move => HH;move : (HH (64 + to_uint i{hr} %/ 4) _);1:smt(). 
+  move => HH;move : (HH (64 + i{hr} %/ 4) _);1:smt(). 
   by smt(qE).
 rewrite incoeffN in redv7.
 rewrite -r8val in redbl8;rewrite -r8val in redbh8;rewrite -r8val eq_incoeff in redv8.
@@ -1261,30 +1240,30 @@ rewrite -r9val in redbl9;rewrite -r9val in redbh9;rewrite -r9val eq_incoeff in r
 rewrite -r10val in redbl10;rewrite -r10val in redbh10;rewrite -r10val eq_incoeff in redv10.
 
 move : zetas_montE; rewrite /array_mont /lift_array128 tP => zv.
-move : (zv (64 + to_uint i{hr} %/ 4) _); 1: smt().
+move : (zv (64 + i{hr} %/ 4) _); 1: smt().
 rewrite !mapiE /=; 1,2: smt() => <-.
 move => zv1. 
-move : (zv (to_uint i{hr} %/ 4) _); 1: smt().
+move : (zv (i{hr} %/ 4) _); 1: smt().
 rewrite !mapiE /=; 1,2: smt() => <-.
 move => zv2. 
 
 do split; 1..3: smt().
 
-+ move => k kb; case (k < to_uint i{hr}).
++ move => k kb; case (k <  i{hr}).
   + move => *; rewrite !set_neqiE // 1..4:/#; apply: bprev => /#.
-  move => *; case (k = to_uint i{hr}).
+  move => *; case (k = i{hr}).
   + move => *. 
     rewrite set_neqiE; 1,2: smt().
     rewrite set_neqiE; 1,2: smt().
     rewrite set_neqiE; 1,2: smt().
     rewrite set_eqiE; 1,2: smt().
     by rewrite to_sintD_small /#.
-  move => *; case (k = to_uint i{hr} + 1).
+  move => *; case (k =  i{hr} + 1).
   + move => *;rewrite set_neqiE; 1,2: smt().
     rewrite set_neqiE; 1,2: smt().
     rewrite set_eqiE; 1,2: smt().
     by rewrite to_sintD_small /#.
-  move => *; case (k = to_uint i{hr} + 2).
+  move => *; case (k = i{hr} + 2).
   + move => *;rewrite set_neqiE; 1,2: smt().
     rewrite set_eqiE; 1,2: smt().
     by rewrite to_sintD_small /#.
@@ -1293,15 +1272,15 @@ do split; 1..3: smt().
 
 move => k kb; rewrite /doublemul /cmplx_mul_169 !mapiE /=; 1..12:smt().
 
-case (k < to_uint i{hr} %/4).
+case (k < i{hr} %/4).
 
 + move => kbb; move: (vprev k _); 1:smt(); rewrite !mapiE /=; 1..12:smt().
   rewrite /doublemul /cmplx_mul_169 /=.
   move => /> vprev0 vprev1 vprev2 vprev3.
   by rewrite !set_neqiE /#. 
 
-move => *; have kval : (k = to_uint i{hr} %/ 4) by smt().
-have -> : 4 * k = to_uint i{hr} by smt().
+move => *; have kval : (k =  i{hr} %/ 4) by smt().
+have -> : 4 * k = i{hr} by smt().
 do split.
 + rewrite set_neqiE; 1,2: smt().
   rewrite set_neqiE; 1,2: smt().
@@ -1310,7 +1289,7 @@ do split.
   rewrite to_sintD_small; 1: smt(). 
   rewrite incoeffD redv2 redv3 !incoeffM redv1 !incoeffM -zv1 /zetas !initiE /=; 1,2: smt(). 
   rewrite kval (IntID.addrC 64).
-  move : (zetavals1 (to_uint i{hr}) _ _); 1,2: smt().
+  move : (zetavals1 (i{hr}) _ _); 1,2: smt().
   rewrite /zetas /= initiE 1:/# /= => ->.
   rewrite ZqField.mulrA -ZqField.mulrA rrinvcoeff.
   by ring.
@@ -1327,7 +1306,7 @@ rewrite set_eqiE; 1,2: smt().
 rewrite to_sintD_small; 1: smt(). 
 rewrite incoeffD redv7 redv8 redv6 -zv1 /zetas !initiE /=; 1,2: smt(). 
 rewrite !incoeffM kval (IntID.addrC 64).
-move : (zetavals1 (to_uint i{hr}) _ _); 1,2: smt().
+move : (zetavals1 ( i{hr}) _ _); 1,2: smt().
 rewrite /zetas /= initiE 1:/# /= => ->.
 congr;congr;rewrite -ZqRing.mulrA -(ZqRing.mulrC _ (incoeff 169));congr.
 rewrite ZqField.mulNr -ZqField.mulrA rrinvcoeff.
@@ -1343,14 +1322,10 @@ qed.
 
 lemma poly_basemul_ll : islossless Jkem768.M._poly_basemul.
 proc.
-while (0 <= to_uint i <= 256 /\ to_uint i %%4 = 0) (256 - to_uint i); 
-    last by auto => /> i ib; rewrite !ultE /#.
+while (0 <=  i <= 256 /\  i %%4 = 0) (256 -  i); 
+    last by auto => />  /#.
 move => *; do 10! (wp;call fqmul_ll); auto => />.
-move => &hr; rewrite !ultE /= => ??.
-have -> : i{hr} + W64.one - W64.one + (of_int 3)%W64 - W64.one + 
-            (of_int 2)%W64 = i{hr} + (W64.of_int 4); 
-  last by move => *; rewrite to_uintD_small /=; smt(to_uint_cmp pow2_64). 
-by ring.
+by auto => /#.
 qed.
 
 
