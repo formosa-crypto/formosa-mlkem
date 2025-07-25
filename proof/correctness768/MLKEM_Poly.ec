@@ -159,11 +159,7 @@ op compress1_circuit(a : W16.t) : bool =
    else 
    (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 1) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).[0].  
 
-op encode_compress_poly1(p : W16.t Array256.t):
-  bool Array256.t = 
-   map compress1_circuit p.
-
-op pcond_reduced (w: W16.t) =   w \ult W16.of_int (3*3329). 
+op pcond_reduced (w: W16.t) =   w \ult W16.of_int (2*3329). 
 
 module ToMsgInit = {
     proc toMsgInit(rp: W8.t Array32.t, a: W16.t Array256.t) : W8.t Array32.t *  W16.t Array256.t = {
@@ -180,7 +176,7 @@ move => *; wp; while (0 <= j <= 8) (8-j); last by auto =>  /> /#.
 by move => *; auto => /> /#.
 qed.
 
-lemma pre_lane_commute_aligned ['a] 
+lemma pre_lane_commute_in_aligned ['a] 
     (l : 'a list) 
     (tobits : 'a -> bool list)
     (ofbits : bool list -> 'a)
@@ -225,7 +221,7 @@ apply (eq_from_nth witness).
    by smt().
 qed.
 
-lemma post_lane_commute_aligned ['a 'b 'c]
+lemma post_lane_commute_in_aligned ['a 'b 'c]
     (li : 'a list) 
     (loc : 'b list) 
     (tobitsi : 'a -> bool list)
@@ -335,7 +331,7 @@ wp -4.
 bdep 16 1 [_aw] [a] [rp0] compress1_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
-+ move => &hr />; rewrite flatten1 /= pre_lane_commute_aligned 1:/# //=.
++ move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
   rewrite allP /pos_bound256_cxq /= => Hb. 
   rewrite /pcond_reduced /= /tolist /= => x.
   rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
@@ -347,12 +343,12 @@ bdep 16 1 [_aw] [a] [rp0] compress1_circuit pcond_reduced.
 
 (* We start with some boilerplate *)
 move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
-move => H1; have H2 := post_lane_commute_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w bool2bits bits2bool  compress1_circuit 16 1 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+move => H1; have H2 := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w bool2bits bits2bool  compress1_circuit 16 1 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
 smt(Array32.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Pervasive_bool.oflistP).
 
 apply (inj_eq Array32.to_list Array32.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
-have -> := post_lane_commute_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w bool2bits bits2bool  compress1_circuit 16 1 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w bool2bits bits2bool  compress1_circuit 16 1 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
     smt(Array32.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Pervasive_bool.oflistP).
 
 rewrite output_pack_32_8. 
@@ -395,15 +391,56 @@ qed.
 
 (********** END BDEP PROOF OF TOMSG **************)
 
+(********** BEGIN BDEP PROOF OF FROMMSG **************)
+
+op decompress1_circuit(c : bool) : W16.t = 
+  truncateu16 (srl_32 (((if c then W32.one else W32.zero) * W32.of_int 3329) + W32.one) (W32.of_int 1)).
+
+op pcond_true (w: bool) =  true. 
+
+module FromMsgInit = {
+    proc fromMsgInit(rp :  W16.t Array256.t, ap: W8.t Array32.t) : W16.t Array256.t = {
+       rp <- init_256_16 (fun i => W16.zero);
+       rp <@ Jkem768.M._i_poly_frommsg(rp,ap);
+       return rp;
+    }
+}.
+
+lemma poly_frommsg_ll : islossless Jkem768.M._i_poly_frommsg 
+ by proc; inline *;wp;while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
 
 
-lemma poly_tomsg_corr _aw : 
-    phoare [Jkem768.M._i_poly_tomsg :
-             pos_bound256_cxq a 0 256 2 /\ 
-             a = _aw 
-              ==>
-             res.`1 = encode1 (compress_poly 1 (lift_array256 _aw))  ] =1%r.
-by conseq poly_tomsg_ll (poly_tomsg_corr_h _aw).
+lemma frommsginit_ll : islossless FromMsgInit.fromMsgInit
+ by proc; inline *;wp;while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
+
+
+lemma post_lane_commute_out_aligned ['a 'b 'c]
+    (lic : 'a list) 
+    (lo : 'c list) 
+    (tobitsic : 'a -> bool list)
+    (ofbitsic : bool list -> 'a)
+    (tobitsi : 'b -> bool list)
+    (ofbitsi : bool list -> 'b)
+    (tobitso : 'c -> bool list)
+    (ofbitso : bool list -> 'c)
+    (f : 'b -> 'c)
+    (nic ni no  : int) :
+  0 < nic =>  0 < ni => 0 < no => 
+  ni %| nic*size lic =>
+  size lo = (nic*size lic) %/ ni =>
+  (forall x, size (tobitsic x) = nic) =>
+  (forall x, ofbitsic (tobitsic x) = x) =>
+  (forall x, size (tobitsi x) = ni) =>
+  (forall x, ofbitsi (tobitsi x) = x) =>
+  (forall x, size x = ni => tobitsi (ofbitsi x) = x) =>
+  (forall x, size (tobitso x) = no) =>
+  (forall x, ofbitso (tobitso x) = x) =>
+map f (map ofbitsi (chunk ni (flatten (map tobitsic lic)))) =
+map ofbitso (chunk no (flatten (map tobitso lo))) => 
+   lo =
+   map f (map ofbitsi (chunk ni (flatten (map tobitsic lic)))).
+move => ????????????; rewrite  map_chunk_flatten_id /#.
+qed.
 
 lemma poly_frommsg_corr_h (_m : W8.t Array32.t): 
     hoare [Jkem768.M._i_poly_frommsg :
@@ -411,18 +448,88 @@ lemma poly_frommsg_corr_h (_m : W8.t Array32.t):
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
              pos_bound256_cxq res 0 256 1 ].
-admitted.
+bypr => &m H.
+rewrite Pr[mu_not].
+have -> : Pr[M._i_poly_frommsg(rp{m}, ap{m}) @ &m : true] = 1%r by byphoare => //;apply poly_frommsg_ll.
+have : Pr[M._i_poly_frommsg(rp{m}, ap{m}) @ &m :lift_array256 res = decompress_poly 1 (decode1 _m) /\ pos_bound256_cxq res 0 256 1] = 1%r; last by smt().
+have <- : Pr[ FromMsgInit.fromMsgInit(rp{m}, ap{m}) @ &m : lift_array256 res = decompress_poly 1 (decode1 _m) /\
+             pos_bound256_cxq res 0 256 1] = 1%r; last first.
++ byequiv (: arg{1}.`2 = arg{2}.`2 ==> ={res}) => //.
+  proc;inline *.
+  admit.
+
+byphoare (: ap = _m ==> 
+   lift_array256 res = decompress_poly 1 (decode1 _m) /\ pos_bound256_cxq res 0 256 1) => //.
+conseq frommsginit_ll (: _  ==> _);1:smt(). 
+proc; inline *.
+proc change ^while.6 : (srl_8 c (W8.of_int 1)); 1: by auto.
+proc change ^while.11 : (srl_8 c (W8.of_int 1)); 1: by auto.
+proc change ^while.16 : (srl_8 c (W8.of_int 1)); 1: by auto.
+proc change ^while.21 : (srl_8 c (W8.of_int 1)); 1: by auto.
+proc change ^while.26 : (srl_8 c (W8.of_int 1)); 1: by auto.
+proc change ^while.31 : (srl_8 c (W8.of_int 1)); 1: by auto.
+proc change ^while.36 : (srl_8 c (W8.of_int 1)); 1: by auto.
+proc change ^while.41 : (srl_8 c (W8.of_int 1)); 1: by auto.
+
+unroll for 5.
+do 33!(cfold ^i<-).
+wp -2.
+
+bdep 1 16 [_m] [ap] [rp0] decompress1_circuit pcond_true. 
+
+(* BDEP pre conseq *)
++ by move => &hr />; rewrite allP /pcond_true /=. 
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= <- rr; rewrite /= !flatten1.
+move => H1; have H2 := post_lane_commute_out_aligned (to_list ap{hr}) (to_list rr) W8.w2bits W8.bits2w bool2bits bits2bool W16.w2bits W16.bits2w  decompress1_circuit 8 1 16 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+smt(Array32.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Pervasive_bool.oflistP).
+
+have H3 : 
+   map decompress1_circuit (map bits2bool (chunk 1 (flatten (map W8.w2bits (to_list ap{hr}))))) =
+   map (W16.of_int \o asint) (to_list (decompress_poly 1 (decode1 ap{hr}))).
++ rewrite /decode1 /decompress_poly Array256.map_of_list Array256.of_listK;1:smt(size_map Array256.size_to_list).
+  rewrite /decode -map_comp  -(map_comp _ (decompress 1)) -(map_comp _ BS2Int.bs2int) /=.
+  apply eq_in_map => x xb.
+  rewrite /(\o) /decompress1_circuit /bits2bool -decompress_alt_decompress /decompress_alt //=.
+  have := size_nth_chunk [] (flatten (map W8.w2bits (to_list ap{hr}))).
+  have := nthP witness (chunk 1 (flatten (map W8.w2bits (to_list ap{hr})))) x.
+  rewrite xb /= => He;elim He; rewrite size_chunk //= => k*. 
+  have ? : size x = 1 
+   by  have := size_nth_chunk witness (flatten (map W8.w2bits (to_list ap{hr}))) k 1 =>/= /#.
+  rewrite qE to_uint_eq to_uint_truncateu16 /= /srl_32 /= of_uintK /=;congr;congr.
+  rewrite to_uint_shr //=.
+  case (x = [true]).
+  + move => -> /=;rewrite bs2int_cons /= BS2Int.bs2int_nil /= /b2i /=;smt(@Zq).
+  case (x = [false]); last by smt(@List).
+  by  move => -> /=;rewrite bs2int_cons /= BS2Int.bs2int_nil /= /b2i /=;smt(@Zq).
+
+split.
++ rewrite tP => i ib.
+  rewrite !mapiE 1,2:/# /= -get_to_list H2 H3 /decompress_poly.
+  rewrite (nth_map witness);1: by smt(Array256.size_to_list).
+  rewrite get_to_list /= /(\o) mapiE 1:/# /=.
+  pose c := (decompress 1 (decode1 ap{hr}).[i]).
+  rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
+  rewrite modz_small; smt(@Zq).  
+
+rewrite /pos_bound256_cxq qE /= => k kb. 
+rewrite -get_to_list  H2 H3 /decompress_poly.
+  rewrite (nth_map witness);1: by smt(Array256.size_to_list).
+  rewrite get_to_list /= /(\o) mapiE 1:/# /=.
+  rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
+  rewrite modz_small; smt(@Zq).  
+qed.
 
 lemma poly_frommsg_corr (_m : W8.t Array32.t): 
     phoare [Jkem768.M._i_poly_frommsg :
              ap =  _m 
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
-             pos_bound256_cxq res 0 256 1] = 1%r.
-admitted.
-
-lemma poly_frommsg_ll : islossless Jkem768.M._i_poly_frommsg
- by proc; while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
+             pos_bound256_cxq res 0 256 1] = 1%r 
+  by conseq poly_frommsg_ll (poly_frommsg_corr_h _m).
 
 lemma poly_frommont_corr_h (_a : int Array256.t) : 
     hoare[Jkem768.M._poly_frommont :
