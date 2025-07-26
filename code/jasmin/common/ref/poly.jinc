@@ -458,7 +458,7 @@ fn _poly_tobytes(reg mut ptr u8[MLKEM_POLYBYTES] rp, reg mut ptr u16[MLKEM_N] a)
     t1 >>= 4;
     rp.[j] = t1;
     j += 1;
-    i = i + 2;
+    i += 2;
   }
   return rp, a;
 }
