@@ -2115,10 +2115,12 @@ module M = {
      _3 <- witness;
     st <- witness;
     st_s <- witness;
+    (* Erased call to spill *)
     st <- st_s;
     st <@ __state_init_ref (st);
     (st,  _0,  _1) <@ a1184____absorb_array_ref (st, 0, in_0, (W64.of_int 0),
     1184, 136, 6);
+    (* Erased call to unspill *)
     (aux, aux_0, aux_1) <@ a32____squeeze_array_ref (out, (W64.of_int 0), 32,
     st, 136);
     out <- aux;
