@@ -2528,27 +2528,25 @@ module M = {
   }
   proc _poly_tobytes (rp:W8.t Array384.t, a:W16.t Array256.t) : W8.t Array384.t *
                                                                 W16.t Array256.t = {
-    var i:W64.t;
-    var j:W64.t;
     var t0:W16.t;
     var t1:W16.t;
     var d:W16.t;
+    var j:int;
+    var i:int;
     a <@ _poly_csubq (a);
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 0);
-    while ((i \ult (W64.of_int 256))) {
-      t0 <- a.[(W64.to_uint i)];
-      i <- (i + (W64.of_int 1));
-      t1 <- a.[(W64.to_uint i)];
-      i <- (i + (W64.of_int 1));
+    j <- 0;
+    i <- 0;
+    while ((i < 256)) {
+      t0 <- a.[i];
+      t1 <- a.[(i + 1)];
       d <- t0;
       d <- (d `&` (W16.of_int 255));
       rp <-
       (Array384.init
       (WArray384.get8
-      (WArray384.set8_direct (WArray384.init8 (fun i_0 => rp.[i_0]))
-      (W64.to_uint j) (truncateu8 d))));
-      j <- (j + (W64.of_int 1));
+      (WArray384.set8_direct (WArray384.init8 (fun i_0 => rp.[i_0])) 
+      j (truncateu8 d))));
+      j <- (j + 1);
       t0 <- (t0 `>>` (W8.of_int 8));
       d <- t1;
       d <- (d `&` (W16.of_int 15));
@@ -2557,16 +2555,17 @@ module M = {
       rp <-
       (Array384.init
       (WArray384.get8
-      (WArray384.set8_direct (WArray384.init8 (fun i_0 => rp.[i_0]))
-      (W64.to_uint j) (truncateu8 d))));
-      j <- (j + (W64.of_int 1));
+      (WArray384.set8_direct (WArray384.init8 (fun i_0 => rp.[i_0])) 
+      j (truncateu8 d))));
+      j <- (j + 1);
       t1 <- (t1 `>>` (W8.of_int 4));
       rp <-
       (Array384.init
       (WArray384.get8
-      (WArray384.set8_direct (WArray384.init8 (fun i_0 => rp.[i_0]))
-      (W64.to_uint j) (truncateu8 t1))));
-      j <- (j + (W64.of_int 1));
+      (WArray384.set8_direct (WArray384.init8 (fun i_0 => rp.[i_0])) 
+      j (truncateu8 t1))));
+      j <- (j + 1);
+      i <- (i + 2);
     }
     return (rp, a);
   }
