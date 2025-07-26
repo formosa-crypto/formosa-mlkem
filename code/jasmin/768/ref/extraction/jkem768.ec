@@ -2550,6 +2550,7 @@ module M = {
       j (truncateu8 d))));
       j <- (j + 1);
       t0 <- (t0 `>>` (W8.of_int 8));
+      t0 <- (t0 `&` (W16.of_int 15));
       d <- t1;
       d <- (d `&` (W16.of_int 15));
       d <- (d `<<` (W8.of_int 4));

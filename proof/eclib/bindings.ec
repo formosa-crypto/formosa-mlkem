@@ -290,7 +290,7 @@ apply bound_abs; smt(W8.to_uint_cmp pow2_8).
 qed.
 
 op truncateu12(a : W16.t) : W12.t =
-    W12.bits2w (w2bits a).
+    W12.of_int (to_uint a).
 
 bind op [W16.t & W12.t] truncateu12 "truncate".
 realize bvtruncateP.
@@ -298,8 +298,29 @@ move => mv; rewrite /truncateu12 /W16.w2bits take_mkseq 1:// /= /w2bits.
 apply (eq_from_nth witness);1: by smt(size_mkseq).
 move => i; rewrite size_mkseq /= /max /= => ib.
 rewrite !nth_mkseq 1..2:// /of_int /to_uint /= get_bits2w 1:// 
-        nth_mkseq 1:// /= 1:/# //.
+        nth_mkseq 1:// /= get_to_uint 1:// /= /to_uint /=.
+have -> /=: (0 <= i && i < 16) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(12-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(12-i) = 2^((12-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (12 - i) * 2 ^ i) = 4096; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
 qed.
+
+op zeroextu16(a : W12.t) : W16.t =
+    W16.of_int (to_uint a).
+
+bind op [W12.t & W16.t] zeroextu16 "zextend".
+realize bvzextendP.
+move => bv; rewrite /zeroextu16 /= of_uintK /=.
+have /= := W12.to_uint_cmp.
+by smt().
+qed.
+
 
 (* ----------- BEGIN W32 BINDINGS ---------- *)
 
