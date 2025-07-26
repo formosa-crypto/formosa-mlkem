@@ -135,9 +135,11 @@ fn _sha3_256A_A1184
 { stack u64[25] st_s;
   reg ptr u64[25] st;
 
-  st = st_s;
+ () = #spill(out);
+   st = st_s;
   st = __state_init_ref(st);
   st, _, _ = A1184::__absorb_array_ref(st, 0, in, 0, 1184, R136, SHA3);
+  () = #unspill(out);
   out, _, _ = A32::__squeeze_array_ref(out, 0, 32, st, R136);
 
   return out;
