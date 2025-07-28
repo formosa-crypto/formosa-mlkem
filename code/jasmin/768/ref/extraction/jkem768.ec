@@ -2824,8 +2824,7 @@ module M = {
     while ((i < ((3 * 256) - 3))) {
       k <- 0;
       while ((k < 4)) {
-        t.[k] <- (zeroextu64 aa.[i]);
-        i <- (i + 1);
+        t.[k] <- (zeroextu64 aa.[(i + k)]);
         t.[k] <- (t.[k] `<<` (W8.of_int 10));
         t.[k] <- (t.[k] + (W64.of_int 1665));
         t.[k] <- (t.[k] * (W64.of_int 1290167));
@@ -2861,6 +2860,7 @@ module M = {
       t.[3] <- (t.[3] `>>` (W8.of_int 2));
       rp.[j] <- (truncateu8 t.[3]);
       j <- (j + 1);
+      i <- (i + 4);
     }
     return rp;
   }
@@ -2904,10 +2904,10 @@ module M = {
         t.[k] <- (t.[k] * (W32.of_int 3329));
         t.[k] <- (t.[k] + (W32.of_int 512));
         t.[k] <- (t.[k] `>>` (W8.of_int 10));
-        rp.[i] <- (truncateu16 t.[k]);
-        i <- (i + 1);
+        rp.[(i + k)] <- (truncateu16 t.[k]);
         k <- (k + 1);
       }
+      i <- (i + 4);
     }
     return rp;
   }
