@@ -1,7 +1,7 @@
 require import AllCore List IntDiv QFABV.
 
 from Jasmin require import JModel_x86.
-from JazzEC require import Array4 Array5 Array6 Array7 Array9 Array24 Array25 Array32 Array128 Array256 Array384 Array768 Array960.
+from JazzEC require import Array4 Array5 Array6 Array7 Array9 Array24 Array25 Array32 Array128 Array256 Array384 Array768 Array960 Array1152.
 from JazzEC require import WArray32 WArray512 WArray960 WArray1536.
 
 import BitEncoding BS2Int BitChunking.
@@ -824,6 +824,12 @@ realize get_setP by smt(Array768.get_setE).
 realize eqP by smt(Array768.tP).
 realize get_out by smt(Array768.get_out).
 
+bind array Array1152."_.[_]" Array1152."_.[_<-_]" Array1152.to_list Array1152.of_list Array1152.t 1152.
+realize tolistP by done.
+realize get_setP by smt(Array1152.get_setE). 
+realize eqP by smt(Array1152.tP).
+realize get_out by smt(Array1152.get_out).
+
 bind array Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list Array32.of_list Array32.t 32.
 realize tolistP by done.
 realize get_setP by smt(Array32.get_setE). 
@@ -887,6 +893,17 @@ rewrite /init_32_8 => f.
 rewrite BVA_Top_Array32_Array32_t.tolistP.
 apply eq_in_mkseq => i i_bnd;
 smt(Array32.initE).
+qed.
+
+op init_1152_8 (f: int -> W8.t) : W8.t Array1152.t = Array1152.init f.
+
+bind op [W8.t & Array1152.t] init_1152_8 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_1152_8 => f.
+rewrite BVA_Top_Array1152_Array1152_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array1152.initE).
 qed.
 
 op init_128_8 (f: int -> W8.t) : W8.t Array128.t = Array128.init f.

@@ -911,26 +911,228 @@ lemma polyvec_decompress_corr _aw :
   by conseq polyvec_decompress_ll (polyvec_decompress_corr_h _aw).
 
 
-lemma polyvec_frombytes_corr_h mem _p :
-    hoare [ Jkem768.M.__polyvec_frombytes :
-             valid_ptr _p (3*384) /\
-             Glob.mem = mem /\ to_uint ap = _p 
-              ==>
-             lift_array768 res = map incoeff (decode12_vec (load_array1152 mem _p))  /\
-             pos_bound768_cxq res 0 768  2 /\
-             Glob.mem = mem ].
-admitted.
+(********** BEGIN BDEP PROOF OF FROMBYTES **************)
 
-lemma polyvec_frombytes_corr mem _p :
-    phoare [ Jkem768.M.__polyvec_frombytes :
-             valid_ptr _p (3*384) /\
-             Glob.mem = mem /\ to_uint ap = _p 
-              ==>
-             lift_array768 res = map incoeff (decode12_vec (load_array1152 mem _p))  /\
-             pos_bound768_cxq res 0 768  2 /\
-             Glob.mem = mem] = 1%r.
-admitted.
+op frombytes_circuit(c : W12.t) : W16.t = 
+  zeroextu16 c.
 
+
+lemma polyvec_frombytes_ll : islossless Jkem768.M.__i_polyvec_frombytes.
+proc; inline *;wp. 
+  while (0 <= i <= 3) (3-i); last by  auto =>  /> /#.
+move => *. cfold 3. unroll for ^while;auto => /> /#.
+qed.
+
+lemma decode_range_vec dfl (l : W8.t list) n :
+  1 < n <= 12 =>
+    size l = 768*n %/ 8 =>
+  size (decode n l) = 768 /\
+  (forall k, 0<=k<768 => 0<= nth dfl (decode n l) k <2^n).
+move => *.
+rewrite -andaE;split;1: by rewrite /decode size_map size_chunk 1:/# size_BytesToBits /#. 
+move => ? k kb.
+rewrite /decode. 
+have := size_nth_chunk witness (BytesToBits l) k n; rewrite size_BytesToBits /= => H.
+rewrite (nth_map witness);1: by rewrite size_chunk 1:/# size_BytesToBits /#.
+smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs).
+qed.
+
+lemma polyvec_frombytes_corr_h (_aw : W8.t Array1152.t): 
+    hoare [Jkem768.M.__i_polyvec_frombytes  :
+             ap = _aw
+              ==>
+             lift_array768 res = map incoeff (decode12_vec _aw)  /\
+             pos_bound768_cxq res 0 768  2].
+proc; inline *.
+proc change 1: (init_768_16 (fun _ => W16.zero));1: by admit.
+proc change ^while.1: (init_256_16 (fun (i_0 : int) => r.[256 * i + i_0])); 1: by auto.
+proc change ^while.2: (init_384_8 (fun (i_0 : int) => ap.[384 * i + i_0])  ); 1: by auto.
+proc change ^while.^while.7: (sll_16 t (W16.of_int 8)); 1: by auto.
+proc change ^while.^while.10: (sll_16 d1 (W16.of_int 4)); 1: by auto.
+proc change ^while.^while.12: (srl_16 t (W16.of_int 4)); 1: by auto.
+proc change ^while.7: (init_768_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0])); 1: by auto.
+unroll for ^while.
+cfold 4.
+do 3!(unroll for ^while).
+cfold ^i0<-.
+wp -3.
+bdep 12 16 [_aw] [ap] [r] frombytes_circuit pcond_true12. 
+
+(* BDEP pre conseq *)
++ by move => &hr />; rewrite allP /pcond_true12 /=. 
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= <- rr; rewrite /= !flatten1.
+move => H1; have H2 := post_lane_commute_out_aligned (to_list ap{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+smt(Array1152.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
+
+print decode_range.
+  have /=? := decode_range_vec 0 (to_list ap{hr}) 12 _ _;1,2:smt(Array1152.size_to_list).
+
+have H3 : 
+  map frombytes_circuit (map W12.bits2w (chunk 12 (flatten (map W8.w2bits (to_list ap{hr}))))) =
+   to_list (map W16.of_int  (decode12_vec ap{hr})).
++ rewrite /decode12_vec Array768.map_of_list Array768.of_listK;1: smt(size_map). 
+  rewrite /decode -map_comp -(map_comp _ BS2Int.bs2int) /=.
+  apply eq_in_map => x xb.
+  rewrite /(\o) /frombytes_circuit /zeroextu16.
+  have ? : size x = 12 by smt(@BitChunking).
+  congr;rewrite /to_uint W12.bits2wK;1 :  by smt(@BitChunking).
+  done.
+
+
+split.
++ rewrite tP => i ib.
+  rewrite !mapiE 1,2:/# /= /= -get_to_list H2 H3 /decode12.
+  rewrite get_to_list mapiE 1:/# get_of_list 1:/# of_sintK /=.
+  by rewrite /smod /= ifF 1:/# modz_small 1:/#.
+
+  rewrite /pos_bound768_cxq qE /= => k kb. 
+  have /=? := decode_range_vec witness (to_list ap{hr}) 12 _ _;1..2:smt(Array1152.size_to_list).
+  rewrite -get_to_list  H2 H3 /decode12_vec.
+  rewrite get_to_list /= get_of_list 1:/#.
+  rewrite (nth_map witness) 1:/#.  
+rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
+  rewrite modz_small; smt(@Zq).  
+qed.
+
+
+
+(********** END BDEP PROOF OF FROMBYTES **************)
+
+lemma polyvec_frombytes_corr _aw :
+    phoare [ Jkem768.M.__i_polyvec_frombytes :
+             ap = _aw
+              ==>
+             lift_array768 res = map incoeff (decode12_vec _aw)  /\
+             pos_bound768_cxq res 0 768  2 ] = 1%r
+   by conseq polyvec_frombytes_ll (polyvec_frombytes_corr_h _aw).
+
+(******************************************************)
+
+
+lemma polyvec_tobytes_corr_h  _aw :
+    hoare [Jkem768.M.__i_polyvec_tobytes  :
+             pos_bound768_cxq a 0 768 2 /\
+             a = _aw 
+              ==>
+             res = encode12_vec (map asint (lift_array768 _aw))
+              ].
+proc;unroll for 3.
+wp;call (poly_tobytes_corr_h (subarray256 _aw 2)).
+wp;call (poly_tobytes_corr_h (subarray256 _aw 1)).
+wp;call (poly_tobytes_corr_h (subarray256 _aw 0)).
+auto => /> &hr Hbin;split;1: by smt(Array256.initiE).
+move => ?;rewrite /subarray256 tP => Hin1 rr1 Hres1.
+split;1: by smt(Array256.initiE).
+move => ?;rewrite /subarray256 tP => Hin2 rr2 Hres2.
+split;1: by smt(Array256.initiE).
+move => ?;rewrite /subarray256 /encode12_vec tP => Hin3 rr3 Hres3.
+rewrite tP => k kb; rewrite initiE 1:/# /= get_of_list 1:/# /=. 
+case (768 <= k < 1152).
++ move => ?.
+  rewrite Hres3 /encode12 /encode get_of_list 1:/# /BitsToBytes.
+  rewrite (nth_map []).
+  + rewrite size_chunk 1:/# (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+  by rewrite size_map size_to_list /#.
+  rewrite (nth_map []).
+  + rewrite size_chunk 1:/# (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+  by rewrite size_map size_to_list /#.
+  congr; rewrite !JWordList.nth_chunk 1,2,4,5:/#. 
+  + rewrite (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    by rewrite size_map size_to_list /#.
+  + rewrite (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    by rewrite size_map size_to_list /#.
+  apply (eq_from_nth witness).
+  + rewrite !size_take 1,2:/# !size_drop 1,2:/# !(EclibExtra.size_flatten' 12);1,2: smt(mapP size_int2bs).
+    rewrite !size_map !size_iota /= /#.  
+  move => i.
+  + rewrite !size_take 1:/# !size_drop 1:/# !(EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    rewrite !size_map !size_iota /= /max/= => ?. 
+  rewrite !nth_take 1..4:/# !nth_drop 1..4:/#. 
+  rewrite (nth_flatten witness 12) => /=.
+  + rewrite allP => * /=;smt(mapP size_int2bs). 
+  rewrite (nth_flatten witness 12) => /=.
+  + rewrite allP => * /=;smt(mapP size_int2bs). 
+  rewrite (nth_map witness _ _ ((8 * (k - 768) + i) %/ 12));1:smt(Array256.size_to_list).
+  rewrite (nth_map witness _ _ ((8 * k + i) %/ 12));1:smt(Array768.size_to_list).
+  rewrite !get_to_list !mapiE 1..4:/# /= initiE /#.
+
+move => ?;rewrite initiE 1:/# /=.
+case (384 <= k < 768 ).
++ move => ?.
+  rewrite Hres2 /encode12 /encode get_of_list 1:/# /BitsToBytes.
+  rewrite (nth_map []).
+  + rewrite size_chunk 1:/# (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+  by rewrite size_map size_to_list /#.
+  rewrite (nth_map []).
+  + rewrite size_chunk 1:/# (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+  by rewrite size_map size_to_list /#.
+  congr; rewrite !JWordList.nth_chunk 1,2,4,5:/#. 
+  + rewrite (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    by rewrite size_map size_to_list /#.
+  + rewrite (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    by rewrite size_map size_to_list /#.
+  apply (eq_from_nth witness).
+  + rewrite !size_take 1,2:/# !size_drop 1,2:/# !(EclibExtra.size_flatten' 12);1,2: smt(mapP size_int2bs).
+    rewrite !size_map !size_iota /= /#.  
+  move => i.
+  + rewrite !size_take 1:/# !size_drop 1:/# !(EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    rewrite !size_map !size_iota /= /max/= => ?. 
+  rewrite !nth_take 1..4:/# !nth_drop 1..4:/#. 
+  rewrite (nth_flatten witness 12) => /=.
+  + rewrite allP => * /=;smt(mapP size_int2bs). 
+  rewrite (nth_flatten witness 12) => /=.
+  + rewrite allP => * /=;smt(mapP size_int2bs). 
+  rewrite (nth_map witness _ _ ((8 * (k - 384) + i) %/ 12));1:smt(Array256.size_to_list).
+  rewrite (nth_map witness _ _ ((8 * k + i) %/ 12));1:smt(Array768.size_to_list).
+  rewrite !get_to_list !mapiE 1..4:/# /= initiE /#.
+
+move => ?;rewrite initiE 1:/# /=; rewrite ifT 1:/# /=.
+  rewrite Hres1 /encode12 /encode get_of_list 1:/# /BitsToBytes.
+  rewrite (nth_map []).
+  + rewrite size_chunk 1:/# (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+  by rewrite size_map size_to_list /#.
+  rewrite (nth_map []).
+  + rewrite size_chunk 1:/# (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+  by rewrite size_map size_to_list /#.
+  congr; rewrite !JWordList.nth_chunk 1,2,4,5:/#. 
+  + rewrite (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    by rewrite size_map size_to_list /#.
+  + rewrite (EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    by rewrite size_map size_to_list /#.
+  apply (eq_from_nth witness).
+  + rewrite !size_take 1,2:/# !size_drop 1,2:/# !(EclibExtra.size_flatten' 12);1,2: smt(mapP size_int2bs).
+    rewrite !size_map !size_iota /= /#.  
+  move => i.
+  + rewrite !size_take 1:/# !size_drop 1:/# !(EclibExtra.size_flatten' 12);1: smt(mapP size_int2bs).
+    rewrite !size_map !size_iota /= /max/= => ?. 
+  rewrite !nth_take 1..4:/# !nth_drop 1..4:/#. 
+  rewrite (nth_flatten witness 12) => /=.
+  + rewrite allP => * /=;smt(mapP size_int2bs). 
+  rewrite (nth_flatten witness 12) => /=.
+  + rewrite allP => * /=;smt(mapP size_int2bs). 
+  rewrite (nth_map witness _ _ ((8 * k  + i) %/ 12));1:smt(Array256.size_to_list).
+  rewrite (nth_map witness [] _  ((8 * k  + i) %/ 12)); 1:smt(Array768.size_to_list).
+  rewrite !get_to_list !mapiE 1..4:/# /= initiE /#.
+  qed.
+
+
+lemma polyvec_tobytes_ll  : islossless Jkem768.M.__i_polyvec_tobytes.
+proc. unroll for 3.
+do 3!(wp;call poly_tobytes_ll); auto.
+qed.
+
+lemma polyvec_tobytes_corr  _aw : 
+    phoare [Jkem768.M.__i_polyvec_tobytes  :
+             pos_bound768_cxq a 0 768 2 /\
+             a = _aw 
+              ==>
+             res = encode12_vec (map asint (lift_array768 _aw))
+              ] = 1%r
+   by conseq polyvec_tobytes_ll (polyvec_tobytes_corr_h _aw).
 
 (******************************************************)
 
@@ -1208,31 +1410,7 @@ lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coeff
   ]  = 1%r by
 move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 _r _ _ _ _) => //.
 
-(******************************************************)
 
-lemma polyvec_tobytes_corr_h mem _p _a :
-    hoare [Jkem768.M.__polyvec_tobytes  :
-             pos_bound768_cxq a 0 768 2 /\
-             lift_array768 a = _a /\
-             valid_ptr _p (3*384) /\
-             Glob.mem = mem /\ to_uint rp = _p
-              ==>
-             touches mem Glob.mem _p (3*384) /\
-             load_array1152 Glob.mem _p = encode12_vec (map asint _a)
-              ].
-admitted.
-
-lemma polyvec_tobytes_corr mem _p _a :
-    phoare [Jkem768.M.__polyvec_tobytes  :
-             pos_bound768_cxq a 0 768 2 /\
-             lift_array768 a = _a /\
-             valid_ptr _p (3*384) /\
-             Glob.mem = mem /\ to_uint rp = _p
-              ==>
-             touches mem Glob.mem _p (3*384) /\
-             load_array1152 Glob.mem _p = encode12_vec (map asint _a)
-              ] = 1%r.
-admitted.
 (******************************************************)
 
 lemma polyvec_pointwise_acc_corr_alg_h va vb :
