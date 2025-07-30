@@ -411,6 +411,14 @@ qed.
 
 (********** END BDEP PROOF OF TOMSG **************)
 
+lemma poly_tomsg_corr _aw : 
+    phoare [Jkem768.M._i_poly_tomsg :
+             pos_bound256_cxq a 0 256 2 /\ 
+              a = _aw
+              ==>
+             res.`1 = encode1 (compress_poly 1 (lift_array256 _aw))  ] = 1%r
+  by conseq poly_tomsg_ll (poly_tomsg_corr_h _aw).
+
 (********** BEGIN BDEP PROOF OF FROMMSG **************)
 
 op decompress1_circuit(c : bool) : W16.t = 

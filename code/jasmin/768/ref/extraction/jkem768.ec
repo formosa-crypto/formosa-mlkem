@@ -3246,7 +3246,7 @@ module M = {
     w <- 0;
     while ((w < 3)) {
       nonce <- (W8.of_int w);
-      aux <@ _poly_getnoise ((Array256.init (fun i => sp_0.[((256 * w) + i)])
+      aux <@ _poly_getnoise ((Array256.init (fun i => sp_0.[((w * 256) + i)])
                              ),
       lnoiseseed, nonce);
       sp_0 <-
@@ -3261,7 +3261,7 @@ module M = {
     w <- 0;
     while ((w < 3)) {
       nonce <- (W8.of_int (3 + w));
-      aux <@ _poly_getnoise ((Array256.init (fun i => ep.[((256 * w) + i)])),
+      aux <@ _poly_getnoise ((Array256.init (fun i => ep.[((w * 256) + i)])),
       lnoiseseed, nonce);
       ep <-
       (Array768.init

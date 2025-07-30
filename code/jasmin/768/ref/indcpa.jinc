@@ -114,13 +114,13 @@ fn __indcpa_enc(
   lnoiseseed = s_noiseseed;
   for w = 0 to MLKEM_K {
     nonce = w;
-    sp[MLKEM_N*w:MLKEM_N] = _poly_getnoise(sp[MLKEM_N*w:MLKEM_N], lnoiseseed, nonce);
+    sp[MLKEM_N*w:MLKEM_N] = _poly_getnoise(sp[w*MLKEM_N:MLKEM_N], lnoiseseed, nonce);
   }
 
   lnoiseseed = s_noiseseed;
   for w = 0 to MLKEM_K {
     nonce = MLKEM_K + w;
-    ep[MLKEM_N*w:MLKEM_N] = _poly_getnoise(ep[MLKEM_N*w:MLKEM_N], lnoiseseed, nonce);
+    ep[MLKEM_N*w:MLKEM_N] = _poly_getnoise(ep[w*MLKEM_N:MLKEM_N], lnoiseseed, nonce);
   }
 
   nonce = 2*MLKEM_K;
