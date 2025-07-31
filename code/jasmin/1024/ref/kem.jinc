@@ -1,4 +1,8 @@
-require "indcpa.jinc"
+require "params.jinc"
+require "poly.jinc"
+require "polyvec.jinc"
+require "../../common/ref/gen_matrix.jinc"
+require "../../common/ref/indcpa.jinc"
 require "../../common/ref/verify.jinc"
 
 inline
