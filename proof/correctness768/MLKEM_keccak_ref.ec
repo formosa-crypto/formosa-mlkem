@@ -534,33 +534,27 @@ hoare isha3_256_A1184_h' in_:
 res = SHA3_256_1184_32
             (Array1152.init (fun k => in_.[k]),
              Array32.init (fun k => in_.[1152+k])).
-admitted.
-(* 
-proof.
 proc.
 ecall (A32ref.squeeze_array_ref_h out offset 32 st 136).
-wp; ecall (absorb_imem_ref_h [<:W8.t>] _mem in_0 1184 136 6).
+wp; ecall (A1184ref.absorb_array_ref_h [<:W8.t>]  in_0 W64.zero  1184 136 6).
 call (state_init_ref_h 136).
-auto => /> &m Hp1 Hp2; rewrite !of_uintK; split; first smt().
-move => _ []st ?? /= -> ?.
-move=> []out ?? -> /= ??; rewrite tP => i Hi.
-rewrite filliE 1:// Hi /SHA3_256_1184_32 get_of_list 1:// /=.
-rewrite /SHA3_256 /KECCAK1600; congr; congr; 1:smt(); congr; 1..2:smt().
-rewrite /memread (:1184=1152+32) 1:// mkseq_add 1..2://; congr.
- by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
-by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
+auto => /> &m. 
+move=> []out ?? -> /= ??H0 H1 H2; rewrite tP => i Hi.
+rewrite /SHA3_256_1184_32 get_of_list 1:// /=.
+rewrite /SHA3_256 /KECCAK1600 H0 fillE /= initiE //= Hi /=; congr; congr; 1:smt(); congr; 1..2:smt().
+rewrite /sub /to_list;apply (eq_from_nth witness);1:smt(size_cat size_mkseq).
+move => k; rewrite size_mkseq /= => *;rewrite nth_cat  /= !size_mkseq /= /max /=.
+case (k<1152) => *;by rewrite !nth_mkseq 1,2:/# initiE /=/#.  
 qed.
-*)
+
 lemma isha3_256_A1184_ll: islossless K._isha3_256_A1184.
-admitted.
-(* 
 proc.
 call A32ref.squeeze_array_ref_ll.
-wp; call absorb_array_ref_ll.
+wp; call A1184ref.absorb_array_ref_ll.
 wp; call state_init_ref_ll.
 by auto.
 qed.
-*)
+
 phoare isha3_256_A1184_ph' in_: 
  [ K._isha3_256_A1184
  : arg.`2 = in_
@@ -595,43 +589,29 @@ hoare shake256_1120_32_h' in0_ in1_:
         in0_ 
         ( Array960.init (fun k => in1_.[k])
         , Array128.init (fun k => in1_.[960+k])).
-admitted.
-(*
-proof.
 proc.
-ecall (squeeze_imem_ref_h Glob.mem out 32 st 136).
-ecall (absorb_imem_ref_h (memread mem _pin1 32) Glob.mem in1 1088 136 31).
-ecall (absorb_imem_ref_h [<:W8.t>] Glob.mem in0 32 136 0).
+ecall (A32ref.squeeze_array_ref_h out W64.zero 32 st 136).
+wp; ecall (A1088ref.absorb_array_ref_h (to_list in0)  in1 W64.zero  1088 136 31).
+ecall (A32ref.absorb_array_ref_h [<:W8.t>] in0 W64.zero 32 136 0).
 call (state_init_ref_h 136).
-auto; rewrite /valid_ptr => |> ??????; rewrite !of_uintK.
-move=> st1 H1; split; first smt().
-move=> _ []st2 ?? /= ? ??; split.
- by rewrite size_memread /#.
-move=> _ H2 ? [] st3 ? /= out -> _; split; first smt().
-move=> _ []?? /= _ _.
-split.
- by rewrite /touches => i Hi; rewrite get_storesE size_SQUEEZE1600 1..2:// ifF /#.
-rewrite /SHAKE_256_1120_32 tP => i Hi /=; rewrite initiE 1:// get_of_list 1:// /=.
-rewrite get_storesE size_SQUEEZE1600 1..2:// ifT 1:/# /SHAKE256 /KECCAK1600; congr; 2:smt().
-congr; 1:smt(); congr; 1..2:smt().
+auto => /> &hr out1; rewrite !size_to_list /= => ???? out2 H2? out3 ->??. 
+rewrite /SHAKE_256_1120_32 tP => i Hi /=; rewrite initiE 1:// /= fillE initiE 1:/# /= Hi /= /SHAKE256 /KECCAK1600; congr;congr;1:smt(). 
+rewrite H2;congr;1,2:by smt().
 rewrite -catA; congr.
- by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
-rewrite /memread (:1088=960+128) 1:// mkseq_add 1..2://; congr.
- by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
-by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
-qed. *)
+rewrite /sub /to_list;apply (eq_from_nth witness);1:smt(size_cat size_mkseq).
+move => k; rewrite size_mkseq /= => *;rewrite nth_cat  /= !size_mkseq /= /max /=.
+case (k<960) => *;by rewrite !nth_mkseq 1,2:/# initiE /=/#.  
+qed.
 
 lemma shake256_1120_32_ll: islossless K._shake256_1120_32.
-admitted.
-(* 
 proof.
 proc.
-call squeeze_imem_ref_ll => /=.
-call absorb_imem_ref_ll.
-call absorb_imem_ref_ll.
+call A32ref.squeeze_array_ref_ll => /=.
+call A1088ref.absorb_array_ref_ll.
+call A32ref.absorb_array_ref_ll.
 call state_init_ref_ll.
 by auto => />.
-qed. *)
+qed. 
 
 phoare shake256_1120_32_ph' in0_ in1_: 
  [ K._shake256_1120_32
