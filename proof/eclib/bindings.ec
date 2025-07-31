@@ -1,7 +1,7 @@
 require import AllCore List IntDiv QFABV.
 
 from Jasmin require import JModel_x86.
-from JazzEC require import Array4 Array5 Array6 Array7 Array9 Array24 Array25 Array32 Array128 Array256 Array384 Array768 Array960 Array1152.
+from JazzEC require import Array4 Array5 Array6 Array7 Array8 Array9 Array24 Array25 Array32 Array128 Array160 Array256 Array384 Array768 Array960 Array1152.
 from JazzEC require import WArray32 WArray512 WArray960 WArray1536.
 
 import BitEncoding BS2Int BitChunking.
@@ -90,6 +90,33 @@ by smt(bs2int_range mem_range W4.size_w2bits pow2_4).
 qed.
 realize touintP by smt().
 
+(* ----------- BEGIN W5 BINDINGS ---------- *)
+
+theory W5.
+abbrev [-printing] size = 5.
+clone include BitWordSH with op size <- size
+rename "_XX" as "_5"
+proof gt0_size by done,
+size_le_256 by done.
+
+end W5. export W5 W5.ALU W5.SHIFT.
+
+bind bitstring W5.w2bits W5.bits2w W5.to_uint W5.to_sint W5.of_int W5.t 5.
+realize size_tolist by auto.
+realize tolistP by auto.
+realize oflistP by smt(W5.bits2wK). 
+realize ofintP by move => *;rewrite /of_int int2bs_mod.
+realize tosintP. move => bv /=;rewrite /to_sint /smod /= /BVA_Top_W5_t.msb.
+have -> /=: nth false (w2bits bv) (5 - 1) = 2 ^ (5 - 1) <= to_uint bv; last by smt().
+rewrite /to_uint. 
+rewrite -{2}(cat_take_drop 4 (w2bits bv)).
+rewrite bs2int_cat size_take 1:// W5.size_w2bits /=.
+rewrite -bs2int_div 1:// /= get_to_uint /=.
+rewrite -bs2int_mod 1:// /= /to_uint.
+by smt(bs2int_range mem_range W5.size_w2bits pow2_5).
+qed.
+realize touintP by smt().
+
 (* ----------- BEGIN W8 BINDINGS ---------- *)
 bind bitstring W8.w2bits W8.bits2w W8.to_uint W8.to_sint W8.of_int W8.t 8.
 realize size_tolist by auto.
@@ -146,6 +173,16 @@ bind op [W8.t] srl_8 "shr".
 realize bvshrP.
 rewrite /shr_8 => bv1 bv2.
 by rewrite W8.to_uint_shr; 1:smt(W8.to_uint_cmp).
+qed.
+
+
+op sll_8 (w1 w2 : W8.t) : W8.t =
+  w1 `<<<` to_uint w2.
+
+bind op [W8.t] sll_8 "shl".
+realize bvshlP.
+rewrite /shl_8 => bv1 bv2.
+by rewrite W8.to_uint_shl; 1:smt(W8.to_uint_cmp).
 qed.
 
 
@@ -477,12 +514,12 @@ by have -> : (2 ^ (16 - i) * 2 ^ i) = 65536;
      1,2:/# /= -!addrA /= | done ].
 qed.
 
-op truncateu4(a : W32.t) : W4.t =
+op truncateu32_4(a : W32.t) : W4.t =
     W4.of_int (to_uint a).
 
-bind op [W32.t & W4.t] truncateu4 "truncate".
+bind op [W32.t & W4.t] truncateu32_4 "truncate".
 realize bvtruncateP.
-move => mv; rewrite /truncateu4 /W32.w2bits take_mkseq 1:// /= /w2bits.
+move => mv; rewrite /truncateu32_4 /W32.w2bits take_mkseq 1:// /= /w2bits.
 apply (eq_from_nth witness);1: by smt(size_mkseq).
 move => i; rewrite size_mkseq /= /max /= => ib.
 rewrite !nth_mkseq 1..2:// /of_int /to_uint /= get_bits2w 1:// 
@@ -499,11 +536,40 @@ by have -> : (2 ^ (4 - i) * 2 ^ i) = 16;
      1,2:/# /= -!addrA /= | done ].
 qed.
 
-op zeroextu32(a : W4.t) : W32.t =
+op zeroextu4_32(a : W4.t) : W32.t =
   W32.of_int (to_uint a).
 
-bind op [W4.t & W32.t] zeroextu32 "zextend".
-realize bvzextendP by move => bv; rewrite /zeroextu32 /= of_uintK /=; smt(W4.to_uint_cmp pow2_4).
+bind op [W4.t & W32.t] zeroextu4_32 "zextend".
+realize bvzextendP by move => bv; rewrite /zeroextu4_32 /= of_uintK /=; smt(W4.to_uint_cmp pow2_4).
+
+op truncateu32_5(a : W32.t) : W5.t =
+    W5.of_int (to_uint a).
+
+bind op [W32.t & W5.t] truncateu32_5 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu32_5 /W32.w2bits take_mkseq 1:// /= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq 1..2:// /of_int /to_uint /= get_bits2w 1:// 
+        nth_mkseq 1:// /= get_to_uint 1:// /= /to_uint /=.
+have -> /=: (0 <= i && i < 32) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(5-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(5-i) = 2^((5-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (5 - i) * 2 ^ i) = 32; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+op zeroextu5_32(a : W5.t) : W32.t =
+  W32.of_int (to_uint a).
+
+bind op [W5.t & W32.t] zeroextu5_32 "zextend".
+realize bvzextendP by move => bv; rewrite /zeroextu5_32 /= of_uintK /=; smt(W5.to_uint_cmp pow2_5).
+
 
 op zeroextu10_32(a : W10.t) : W32.t =
   W32.of_int (to_uint a).
@@ -842,6 +908,12 @@ realize get_setP by smt(Array128.get_setE).
 realize eqP by smt(Array128.tP).
 realize get_out by smt(Array128.get_out).
 
+bind array Array160."_.[_]" Array160."_.[_<-_]" Array160.to_list Array160.of_list Array160.t 160.
+realize tolistP by done.
+realize get_setP by smt(Array160.get_setE). 
+realize eqP by smt(Array160.tP).
+realize get_out by smt(Array160.get_out).
+
 bind array Array960."_.[_]" Array960."_.[_<-_]" Array960.to_list Array960.of_list Array960.t 960.
 realize tolistP by done.
 realize get_setP by smt(Array960.get_setE). 
@@ -872,6 +944,12 @@ realize get_setP by smt(Array7.get_setE).
 realize eqP by smt(Array7.tP).
 realize get_out by smt(Array7.get_out).
 
+bind array Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list Array8.of_list Array8.t 8.
+realize tolistP by done.
+realize get_setP by smt(Array8.get_setE). 
+realize eqP by smt(Array8.tP).
+realize get_out by smt(Array8.get_out).
+
 bind array Array24."_.[_]" Array24."_.[_<-_]" Array24.to_list Array24.of_list Array24.t 24.
 realize tolistP by done.
 realize get_setP by smt(Array24.get_setE). 
@@ -893,6 +971,28 @@ rewrite /init_32_8 => f.
 rewrite BVA_Top_Array32_Array32_t.tolistP.
 apply eq_in_mkseq => i i_bnd;
 smt(Array32.initE).
+qed.
+
+op init_8_8 (f: int -> W8.t) : W8.t Array8.t = Array8.init f.
+
+bind op [W8.t & Array8.t] init_8_8 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_8_8 => f.
+rewrite BVA_Top_Array8_Array8_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array8.initE).
+qed.
+
+op init_160_8 (f: int -> W8.t) : W8.t Array160.t = Array160.init f.
+
+bind op [W8.t & Array160.t] init_160_8 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_160_8 => f.
+rewrite BVA_Top_Array160_Array160_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array160.initE).
 qed.
 
 op init_1152_8 (f: int -> W8.t) : W8.t Array1152.t = Array1152.init f.

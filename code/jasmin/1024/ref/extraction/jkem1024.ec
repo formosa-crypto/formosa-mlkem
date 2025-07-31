@@ -2402,24 +2402,24 @@ module M = {
   }
   proc _i_poly_compress (rp:W8.t Array160.t, a:W16.t Array256.t) : W8.t Array160.t *
                                                                    W16.t Array256.t = {
+    var j:int;
     var u:W16.t;
     var v:W16.t;
     var d0:W32.t;
-    var j:int;
     var t:W8.t Array8.t;
     var c0:W8.t;
     var c1:W8.t;
     var c2:W8.t;
-    var i:int;
     var k:int;
+    var i:int;
     t <- witness;
     a <@ _poly_csubq (a);
-    i <- 0;
     k <- 0;
+    i <- 0;
     while ((i < 256)) {
       j <- 0;
       while ((j < 8)) {
-        u <- a.[i];
+        u <- a.[(i + j)];
         v <- u;
         v <- (v `>>` (W8.of_int 15));
         v <- (v `&` (W16.of_int 3329));
@@ -2431,7 +2431,6 @@ module M = {
         d0 <- (d0 `>>` (W8.of_int 27));
         d0 <- (d0 `&` (W32.of_int 31));
         t.[j] <- (truncateu8 d0);
-        i <- (i + 1);
         j <- (j + 1);
       }
       c0 <- t.[0];
@@ -2470,6 +2469,7 @@ module M = {
       c0 <- (c0 `|` c1);
       rp.[(k + 4)] <- c0;
       k <- (k + 5);
+      i <- (i + 8);
     }
     return (rp, a);
   }
@@ -2481,11 +2481,11 @@ module M = {
     var c2:W8.t;
     var k:int;
     var d0:W32.t;
-    var i:int;
     var j:int;
+    var i:int;
     t <- witness;
-    i <- 0;
     j <- 0;
+    i <- 0;
     while ((i < 256)) {
       c0 <- ap.[j];
       t.[0] <- c0;
@@ -2529,15 +2529,15 @@ module M = {
       t.[7] <- c2;
       k <- 0;
       while ((k < 8)) {
-        d0 <- (zeroextu32 t.[k]);
+        d0 <- (zeroextu32 t.[(k + i)]);
         d0 <- (d0 `&` (W32.of_int 31));
         d0 <- (d0 * (W32.of_int 3329));
         d0 <- (d0 + (W32.of_int 16));
         d0 <- (d0 `>>` (W8.of_int 5));
         rp.[i] <- (truncateu16 d0);
-        i <- (i + 1);
         k <- (k + 1);
       }
+      i <- (i + 8);
     }
     return rp;
   }
