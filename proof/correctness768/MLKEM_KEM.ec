@@ -4,7 +4,7 @@ from JazzEC require import Jkem768.
 
 require import MLKEM_InnerPKE MLKEM_Poly MLKEM_PolyVec.
 
-from JazzEC require import Array1152 Array32 Array960 Array1184 Array1088 Array2400 Array64 Array128 WArray2400 WArray32 WArray1184.
+from JazzEC require import Array1152 Array32 Array960 Array1184 Array1088 Array2400 Array64 Array128 WArray2400 WArray32 WArray1184 WArray64.
 from Jasmin require import JModel.
 
 import MLKEM_Poly.
@@ -204,70 +204,56 @@ move => *. split;rewrite tP => *;smt(@Array32 @Array1152).
 
 qed.
 
-lemma mlkem_kem_correct_enc mem _ctp _pkp _kp : 
+lemma mlkem_kem_correct_enc : 
    equiv [Jkem768.M.__crypto_kem_enc_jazz ~ MLKEM768.enc_derand: 
-     valid_ptr _pkp (384*3 + 32) /\
-     valid_disj_reg _ctp (3*320+128) _kp (32) /\
-     Glob.mem{1} = mem /\ 
-     to_uint ctp{1} = _ctp /\ 
-     to_uint pkp{1} = _pkp /\
-     randomnessp{1} = coins{2} /\
-     to_uint shkp{1} = _kp /\
-     pk{2}.`1 = load_array1152 mem _pkp /\
-     pk{2}.`2 = load_array32 mem (_pkp + 3*384)
+     pk{2}.`1 = Array1152.init(fun i => pk{1}.[i]) /\
+     pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1152]) /\
+     randomnessp{1} = coins{2} 
        ==> 
-     touches2 Glob.mem{1} mem _ctp (3*320+128) _kp (32) /\
      let (c,k) = res{2} in
-     c.`1 = load_array960 Glob.mem{1} _ctp /\
-     c.`2 = load_array128 Glob.mem{1} (_ctp + 960) /\
-     k = load_array32 Glob.mem{1} _kp
+     c.`1 = Array960.init(fun i => res{1}.`1.[i])/\
+     c.`2 = Array128.init(fun i => res{1}.`1.[i+960]) /\
+     k = res{1}.`2
 ].
 proc => /=.
-seq 14 4 : (#[/1:-2]post 
-      /\ valid_disj_reg _ctp 1088 _kp 32 
-      /\ to_uint s_shkp{1} = _kp 
-      /\ (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])); last first.
-+ while {1} (#[/1:-2]post
+seq 16 4 : (#[/1:-2]post /\
+      (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])); last first.
++ while {1} (#pre
       /\ inc{1} = 4 
       /\ 0<=i{1}<=4 
-      /\ valid_disj_reg _ctp 1088 _kp 32 
-      /\ to_uint shkp{1} = _kp 
-      /\ (forall k, 0<=k<8*i{1} =>  _K{2}.[k] = (load_array32 Glob.mem{1} _kp).[k]) 
+      /\ (forall k, 0<=k<8*i{1} =>  _K{2}.[k] = shk{1}.[k]) 
       /\ (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])) (inc{1} - i{1}).
-  + auto => /> &hr H H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11;do split;4:smt().
-    + move : H;rewrite /touches2 => H a ab1 ab2. 
-      rewrite storeW64E get_storesE /=. 
-      by rewrite !to_uintD_small /= of_uintK /= modz_small /#.
-    + move : H0; rewrite /load_array960 !tP => H0 k kb.
-      rewrite initiE 1:/# /=.
-      rewrite storeW64E get_storesE /=. 
-      rewrite !to_uintD_small /= of_uintK /= modz_small 1..3:/# /=.
-      by have := H0 k kb; rewrite initiE 1:/# /= /#.
-    + move : H1; rewrite /load_array128 !tP => H1 k kb.
-      rewrite initiE 1:/# /=.
-      rewrite storeW64E get_storesE /=. 
-      rewrite !to_uintD_small /= of_uintK /= modz_small 1..3:/# /=.
-      by have := H1 k kb; rewrite initiE 1:/# /= /#. 
-    + by smt().
-    + move => k kbl kbh.
-      move : H9; rewrite /load_array32 => H9.
-      rewrite initiE 1:/# /=.
-      rewrite storeW64E get_storesE /=. 
-      rewrite !to_uintD_small /= of_uintK /= modz_small 1..3:/# /=.
-      case (k < 8 * i{hr}).
-      + move => kbb;have := H9 k _; 1: by smt().
-        by rewrite initiE 1:/# /= /#. 
-      rewrite !WArray64.WArray64.get64E.
-      by rewrite !pack8bE // !initiE //= /init8 !WArray64.WArray64.initiE /#.
-    by smt().
-  auto => /> &1 &2 ?????????;split; 1: by smt().
-  move => mm ii;do split => ???????; 1: smt().
-  by rewrite /load_array32 tP => kk kkb; smt(Array32.initiE).
-wp;call (mlkem_correct_enc mem _ctp _pkp).
+  + auto => /> &hr H H0 H1 H2 H3 H4 H5 ;do split;1,2,4:smt().
+    + move => k ??;rewrite initiE 1:/# /=get8_set64_directE 1,2:/#.
+      case (8 * i{hr} <= k < 8 * i{hr} + 8 ).
+      + rewrite /get64_direct /(\bits8) /= wordP => *. 
+        rewrite initiE 1:/# /= /pack8_t /init8 initiE 1:/# /=  initiE 1:/# /=initiE 1:/# /= /#. 
+      move => ?; rewrite /get8 initiE 1:/# /= /#.
+
+by auto => />; smt(Array32.tP). 
+
+
+
+wp;ecall (mlkem_correct_enc pk{1}).
 wp;ecall {1} (sha_g buf{1}).
-wp;ecall {1} (pkH_sha mem (_pkp))(* ((Array32.init (fun (i : int) => buf{1}.[32 + i])))).*).
-seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1} /\ randomnessp{1} = Array32.init (fun i => buf{1}.[i])).
-+ sp ; conseq />.
+wp;ecall {1} (pkH_sha pk{1}).
+
+seq 11 0 : (#pre /\ Array32.init (fun i => buf{1}.[i]) = coins{2} /\ s_shk{1} = shk{1} /\ s_pk{1} = pk{1}); last first.
+
+auto => /> &1 &2;rewrite !tP => ??;do split.
++ move => i *;rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE /#.
++ move => i *;rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /G_mhpk /H_pk;congr;congr;congr.
+  + rewrite tP => k *; rewrite initiE 1:/# /= initiE 1:/# /=ifF 1:/# initiE /#.
+  rewrite tP => k *; rewrite initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1152.initiE Array32.initiE Array1152.tP Array32.tP).
+  + smt().
++ move => ???? rr cph1 cph2; do split;1,2: smt().
+  move => k*.
+  rewrite /G_mhpk initiE 1:/# /= ifT 1:/#;congr;congr;congr. 
+  + rewrite tP => kk *; rewrite initiE 1:/# /= initiE 1:/# /=ifF 1:/# initiE /#.
+  rewrite tP => kk *; rewrite /H_pk initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1152.initiE Array32.initiE Array1152.tP Array32.tP).
+
+seq 5 0 :#pre; 1: by auto.
+sp;conseq />.
   while {1} (0<=i{1}<=inc{1} /\ inc{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (inc{1} - i{1}); last first.
   + auto => /> &1 &2 *; split; 1: by smt().  
     move => buf i1; split; 1: smt(). 
@@ -275,79 +261,44 @@ seq 8 0 : (#pre /\ s_pkp{1} = pkp{1} /\ s_ctp{1} = ctp{1} /\  s_shkp{1} = shkp{1
   move => &2 ?.
   auto => /> &1 il ih premv ihh; do split; 1,2,4:smt().
   move => k kl kh; rewrite initiE 1:/# /=.
-  rewrite WArray64.WArray64.get8_set64_directE 1..2:/#.
+  rewrite get8_set64_directE 1..2:/#.
   case (8 * i{1} <= k && k < 8 * i{1} + 8).
   + move => *. 
-     rewrite WArray32.WArray32.get64E pack8bE 1:/# !initiE 1:/# /= /init8.  
-     by rewrite !WArray32.WArray32.initiE /#.
-  by move => *; rewrite /get8; rewrite WArray64.WArray64.initiE /#.
-
-auto  => />  &1 &2; rewrite /load_array1152 /load_array32 /load_array128 /load_array960 /touches2 /touches !tP.
-move => [#] ??????? pkv1 pkv2; do split.
-+ by move => i ib; rewrite !initiE /= /#.
-+ move => i ib; rewrite initiE /= 1:/# initiE /= 1:/# ifF 1:/#.
-  rewrite /G_mhpk /=; congr; congr;congr;rewrite tP => k kb.
-  + by rewrite !initiE 1,2,3:/# /= /H_msg ifF /#.
-  rewrite initiE 1:/# /= /H_pk. 
-  rewrite initiE 1:/# /= ifT 1:/#. 
-  congr;congr.
-  have -> : pk{2} = (pk{2}.`1,pk{2}.`2) by smt().
-  apply pw_eq; rewrite tP => kk kkb.
-  + by rewrite pkv1 /#.
-  by rewrite pkv2 /#. 
-
-move => ?? [cR1 cR2] /= memR touch [-> ->]; do split.
-+ by move => a ? _; have := touch (a - to_uint ctp{1}); smt().
-
-rewrite /KDF /G_mhpk /H_msg /H_pk => k kb kbh. 
-rewrite !initiE //= 1:/# ifT 1:/#.
-congr. congr. congr. 
-+  rewrite tP => kk kkb.
-   by rewrite !initiE /= 1,2,3: /# ifF /#. 
-have -> : pk{2} = (pk{2}.`1,pk{2}.`2) by smt().
-rewrite tP => kk kkb. 
-pose xx := (SHA3_256_1184_32 (pk{2}.`1, pk{2}.`2)).[kk].
-rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/#.
-rewrite /xx;congr;congr.
-apply pw_eq; rewrite tP => kkk kkkb.
-+ by rewrite pkv1 /#.
-by rewrite pkv2 /#. 
+     rewrite WArray32.get64E pack8bE 1:/# !initiE 1:/# /= /init8.  
+     by rewrite !WArray32.initiE /#.
+  by move => *; rewrite /get8; rewrite WArray64.initiE /#.
 qed.
 
 require import StdOrder. 
 import IntOrder.
 
-lemma verify_correct_h mem (_ctp : int) ctp1 :
+lemma verify_correct_h ctp ctp1 :
   hoare [Jkem768.M.__verify : 
-             Glob.mem = mem /\ valid_ptr _ctp 1088 /\
-             to_uint ctp = _ctp /\ ctpc = ctp1 ==>
-             Glob.mem = mem /\
-             (Array1088.init (fun i => loadW8 mem (_ctp + i)) = ctp1 => 
+             arg = (ctp,ctp1) ==>
+             (ctp = ctp1 => 
                        res = W64.of_int 0) /\
-             (Array1088.init (fun i => loadW8 mem (_ctp + i)) <> ctp1 => 
+             (ctp <> ctp1 => 
                        res = W64.of_int 1)].
 proc => /=.
 wp; while (#pre /\ 0 <= i{hr} <= 1088 /\ inc{hr} = 1088 /\ 0<=to_uint cnd<256 /\
            (to_uint cnd{hr} = 0 <=> 
-            forall k, 0 <= k < i{hr} => loadW8 mem (_ctp + k) = ctp1.[k])); last first.
-+ auto => /> &hr ??; split; 1: by smt().
+            forall k, 0 <= k < i{hr} => ctp.[k] = ctp1.[k])); last first.
++ auto => />; split; 1: by smt().
   move => cnd i ????? [HL HR]; split. 
   rewrite tP => H1.
   rewrite /(`>>`) /= to_uint_eq to_uint_shr // to_uintNE /= (HR _); 2..: by smt(). 
-  + by move => k kb; rewrite -H1 1: /# initiE /= /#. 
+  + by move => k kb; rewrite -H1 1: /# /#. 
   rewrite tP /= => H.
   have HH : to_uint cnd <> 0.
-  + have : exists k, 0 <= k < 1088 /\ 
-        (Array1088.init (fun (i1 : int) => loadW8 mem (to_uint ctp{hr} + i1))).[k] <> ctp1.[k] by smt().
-    by move => [k [kb]]; rewrite initiE //= /#.
+  + have : exists k, 0 <= k < 1088 /\ ctp.[k] <> ctp1.[k] by smt().
+    by smt().
   rewrite /(`>>`) /= to_uint_eq to_uint_shr // to_uintNE /=.
   by  smt(W64.to_uint_cmp pow2_64). 
 
-auto => /> &hr ?????? [HL HR] ?.
+auto => /> &hr ???? [HL HR] ?.
 
 pose x := 
-      ((WArray1088.WArray1088.get8 ((WArray1088.WArray1088.init8 ("_.[_]" ctp1))) i{hr}) `^`
-       loadW8 mem (to_uint (ctp{hr} + (of_int i{hr})%W64))).
+      ((WArray1088.WArray1088.get8 ((WArray1088.WArray1088.init8 ("_.[_]" ctp1))) i{hr}) `^` ctp.[i{hr}]).
 
 have H : 0 <= to_uint (cnd{hr} `|` zeroextu64 x) < 256.
 + split; 1: by smt(W64.to_uint_cmp).
@@ -379,7 +330,7 @@ do split; 1..4: by smt(W64.to_uint_cmp).
 
   move : H2; rewrite /x W8.WRing.addr_eq0 /oppw /=. 
   rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
-  by rewrite to_uintD_small /= of_uintK /= /#. 
+  by smt(). 
   
 move => H0.
 have -> : cnd{hr} = W64.zero by rewrite to_uint_eq /= /#.
@@ -389,7 +340,7 @@ case (8 <= k); 1: by smt(W8u8.zeroextu64_bit).
 move => kbb; rewrite W8u8.zeroextu64_bit.
 have -> /= : 0 <= k && k < 8 by smt().
 
-rewrite /x to_uintD_small /= of_uintK /= 1:/# modz_small /= 1:/#. 
+rewrite /x. 
 rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
 by rewrite -(H0 i{hr} _); 1: by smt().
 qed.
@@ -400,120 +351,95 @@ wp; while (0 <= i{hr} <= 1088 /\ inc{hr} = 1088) (1088 - i{hr}); last by auto =>
 by move => *; auto => /> /#. 
 qed.
 
-lemma verify_correct mem (_ctp : int) ctp1 :
+lemma verify_correct ctp ctp1 :
   phoare [Jkem768.M.__verify : 
-             Glob.mem = mem /\ valid_ptr _ctp 1088 /\
-             to_uint ctp = _ctp /\ ctpc = ctp1 ==>
-             Glob.mem = mem /\
-             (Array1088.init (fun i => loadW8 mem (_ctp + i)) = ctp1 => 
+             arg = (ctp,ctp1) ==>
+             (ctp = ctp1 => 
                        res = W64.of_int 0) /\
-             (Array1088.init (fun i => loadW8 mem (_ctp + i)) <> ctp1 => 
+             (ctp <> ctp1 => 
                        res = W64.of_int 1)] = 1%r 
-   by conseq verify_ll (verify_correct_h mem _ctp ctp1).
+   by conseq verify_ll (verify_correct_h  ctp ctp1).
 
-require import List.
-lemma cmov_correct_h _dst _src _cnd mem:
+lemma cmov_correct_h _dst _src _cnd:
    hoare [Jkem768.M.__cmov : 
-             Glob.mem = mem /\ valid_ptr _dst 32 /\
-             src = _src /\ cnd = _cnd /\ to_uint dst = _dst ==>
-             touches mem Glob.mem _dst 32 /\
-             (_cnd = W64.of_int 0 => 
-               (Array32.init (fun i => loadW8 Glob.mem (_dst + i))) = _src) /\
-             (_cnd = W64.of_int 1 => 
-               (Array32.init (fun i => loadW8 Glob.mem (_dst + i))) = 
-                (Array32.init (fun i => loadW8 mem (_dst + i))))].
+             src = _src /\ cnd = _cnd /\  dst = _dst ==>
+             (_cnd = W64.of_int 0 => res = _src) /\
+             (_cnd = W64.of_int 1 => res = _dst)].
 proc => /=.
 seq 1 : (#{/~cnd}pre /\ (_cnd = W64.zero => cnd = W64.zero) /\
                 (_cnd = W64.one => cnd = W64.onew));
-  1: by auto => /> &1 ?? /=; split; [ by ring | by rewrite W64.minus_one /=].
+  1: by auto => />  /=; split; [ by ring | by rewrite W64.minus_one /=].
 
-while (#{/~Glob.mem=mem}pre /\ 0 <= i{hr} <=32 /\ touches Glob.mem mem _dst i{hr} /\
-           (_cnd = W64.zero => forall k, 0<=k<i{hr} => loadW8 Glob.mem (_dst + k) = _src.[k]) /\
-           (_cnd = W64.one =>forall k, 0<=k<i{hr} => loadW8 mem (_dst + k) = loadW8 Glob.mem (_dst + k))); last first.
-+ auto => />  &hr ? back case0 case1; do split; 1: smt(). 
-  move => mm i???? case00 case11 ; do split.
-  + by smt().
-  + move => cs; rewrite tP => k kb.
-    by  rewrite initiE //= (case00 cs) 1:/# /=.
-  move => cs; rewrite tP => k kb.
-  by rewrite !initiE //= (case11 cs _) 1:/# /=.
+while (#{/~dst}pre /\ 0 <= i{hr} <=32 /\ 
+           (_cnd = W64.zero => forall k, 0<=k<i{hr} => dst.[k] = _src.[k]) /\
+           (_cnd = W64.one =>forall k, 0<=k<i{hr} => dst.[k] = _dst.[k]) /\
+           (forall k, i{hr} <= k < 32 => dst.[k] = _dst.[k]));  last first.
++ auto => />  &hr case0 case1; do split; 1: smt(). 
+  move => dd????; rewrite !tP => H0 H1 ?; do split.
+  + by move => c i ib;rewrite H0 /#. 
+  + by move => c i ib;rewrite H1 /#. 
 
-auto => /> &hr ?? case0 case1 ?? back case00 case11 ?; do split; 1,2: by smt().
-+ move : back; rewrite /touches => back a ab.
-  by rewrite /storeW8 /loadW8 /stores to_uintD_small /= of_uintK 1:/# !get_set_neqE_s /#.
- 
+auto => /> &hr  case0 case1 ??cc0 cc1 back ?; do split; 1..2: by smt().
 + move => cs k kbl kb.
-  rewrite /storeW8 /loadW8 /stores to_uintD_small /= of_uintK 1:/#.
   case (k = i{hr}); last first.
-  + by move => *; rewrite /init8 /get8 /= WArray32.WArray32.initiE /= 1:/# get_set_neqE_s /#.
-  move => vk; rewrite vk /=. 
+  + by move => *;rewrite -cc0 1,2:/# /init8 /get8 /= WArray32.initiE /= 1:/# get_setE /#.
+  move => vk; rewrite vk /=; rewrite get_setE /= 1:/#. 
   have -> : truncateu8 cnd{hr} = W8.zero
      by apply  W8.to_uint_eq; rewrite to_uint_truncateu8 /= (case0 cs) /=.
-  by rewrite !get_set_eqE_s 1:/#  W8.andw0 /=  /init8 /get8 /= WArray32.WArray32.initiE /= /#.
+  by rewrite   W8.andw0 /=  /init8 /get8 /= WArray32.initiE /=.
 
-
-+ move => cs k kbl kbh.
-  rewrite /storeW8 /loadW8 /stores to_uintD_small /= of_uintK 1:/#.
++ move => cs k kbl kb.
   case (k = i{hr}); last first.
-  + by move => *; rewrite /init8 /get8 /= WArray32.WArray32.initiE /= 1:/# get_set_neqE_s /#.
-  move => vk; rewrite vk /=. 
+  + by move => *;rewrite -cc1 1,2:/# /init8 /get8 /= WArray32.initiE /= 1:/# get_setE /#.
+  move => vk; rewrite vk /=; rewrite get_setE /= 1:/#. 
   have -> : truncateu8 cnd{hr} = W8.onew 
      by apply  W8.to_uint_eq; rewrite to_uint_truncateu8 /= (case1 cs) /= to_uint_onew W8.to_uint_onew /=. 
-  rewrite W8.andw1  xorwC -xorwA xorwK xorw0_s. 
-  by rewrite !get_set_eqE_s /#. 
+   rewrite W8.andw1  xorwC -xorwA xorwK xorw0_s -back /#. 
+
++ move => k kbl kbh.
+  by move => *; rewrite /init8 /get8 /= WArray32.initiE /= 1:/# get_setE /#.
+
 qed.
 
 lemma cmov_ll : islossless Jkem768.M.__cmov by proc; unroll for 3; islossless.
 
-lemma cmov_correct _dst _src _cnd mem:
+lemma cmov_correct _dst _src _cnd:
    phoare [Jkem768.M.__cmov : 
-             Glob.mem = mem /\ valid_ptr _dst 32 /\
-             src = _src /\ cnd = _cnd /\ to_uint dst = _dst ==>
-             touches mem Glob.mem _dst 32 /\
-             (_cnd = W64.of_int 0 => 
-               (Array32.init (fun i => loadW8 Glob.mem (_dst + i))) = _src) /\
-             (_cnd = W64.of_int 1 => 
-               (Array32.init (fun i => loadW8 Glob.mem (_dst + i))) = 
-                (Array32.init (fun i => loadW8 mem (_dst + i))))] = 1%r
-    by conseq cmov_ll (cmov_correct_h _dst _src _cnd mem).
+              src = _src /\ cnd = _cnd /\  dst = _dst ==>
+             (_cnd = W64.of_int 0 => res = _src) /\
+             (_cnd = W64.of_int 1 => res = _dst)] = 1%r
+    by conseq cmov_ll (cmov_correct_h _dst _src _cnd).
 
-lemma mlkem_kem_correct_dec mem _ctp _skp _shkp : 
+lemma mlkem_kem_correct_dec : 
    equiv [Jkem768.M.__crypto_kem_dec_jazz ~ MLKEM768.dec: 
-     valid_ptr _ctp (3*320+128) /\
-     valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
-     valid_ptr _shkp 32 /\
-     Glob.mem{1} = mem /\ 
-     to_uint shkp{1} = _shkp /\
-     to_uint ctp{1} = _ctp /\
-     to_uint skp{1} = _skp /\
-     sk{2}.`1 = load_array1152 Glob.mem{1} _skp /\
-     sk{2}.`2.`1 = load_array1152 Glob.mem{1} (_skp + 1152) /\
-     sk{2}.`2.`2 = load_array32 Glob.mem{1} (_skp + 1152 + 1152) /\
-     sk{2}.`3 = load_array32 Glob.mem{1} (_skp + 1152 + 1152 + 32) /\
-     sk{2}.`4 = load_array32 Glob.mem{1} (_skp + 1152 + 1152 + 32 + 32) /\
+     sk{2}.`1 = Array1152.init (fun i => sk{1}.[i]) /\
+     sk{2}.`2.`1 = Array1152.init (fun i => sk{1}.[i+1152]) /\
+     sk{2}.`2.`2 = Array32.init (fun i => sk{1}.[i +  1152 + 1152]) /\
+     sk{2}.`3 = Array32.init (fun i => sk{1}.[i+ 1152 + 1152 + 32]) /\
+     sk{2}.`4 = Array32.init (fun i => sk{1}.[i+ 1152 + 1152 + 32 + 32]) /\
      let (c1,c2) = cph{2} in
-       c1 = load_array960 Glob.mem{1} _ctp /\
-       c2 = load_array128 Glob.mem{1} (_ctp + 960)
+       c1 = Array960.init (fun i => ct{1}.[i]) /\
+       c2 = Array128.init (fun i => ct{1}.[i + 960])
        ==> 
-     touches Glob.mem{1} mem _shkp 32 /\
-     res{2} = load_array32 Glob.mem{1} _shkp
+     ={res}
 ].
-proc => /=. sp 0 1. swap {1} [4..5] 12.
+proc => /=. sp 0 1. swap {1} 8 8. 
 
-seq 4 1 : (#pre /\ aux{1} =  m{2}); 
-  1: by call (mlkem_correct_dec mem _ctp _skp); 1: by auto => /> /#.
+seq 6 0: #pre; 1: by auto.
+sp;
+seq 1 1 : (#pre /\ aux{1} =  m{2}); 
+  1: by call (mlkem_correct_dec); 1: by auto => /> /#.
 
-swap {1} 7 1.
-seq 7 1 : (#pre /\ 
+seq 5 1 : (#pre /\ 
            (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k] = _K{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k+32] = r{2}.[k])).
 ecall {1} (sha_g buf{1}).
 wp; conseq (_: _ ==> 
    (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
-   (forall k, 32<=k<64 => buf{1}.[k] = mem.[_skp + 2336 + k - 32]) /\
+   (forall k, 32<=k<64 => buf{1}.[k] =  sk{1}.[2336 + k - 32]) /\
    (forall k, 0<=k<32 => buf{1}.[k] = aux{1}.[k])).
-+ auto => /> &1 &2; rewrite /load_array32 !tP => ?????????buf bvl bvh ; split.
++ auto => /> &1 &2; rewrite  !tP => ???buf bvl bvh ; split.
   + move => k kbl kbh; rewrite initiE 1:/# /= kbh /= /G_mhpk; congr; congr;congr.
     rewrite tP => i ib; rewrite initiE //= /#.
     by rewrite tP => i ib; rewrite !initiE  /#. 
@@ -521,49 +447,53 @@ wp; conseq (_: _ ==>
     rewrite tP => i ib; rewrite initiE //= /#.
     by rewrite tP => i ib; rewrite !initiE  /#. 
   
-while {1} (0<=i{1}<=4 /\ inc{1} = 4  /\ to_uint hp{1} = _skp + 2336 /\ Glob.mem{1} = mem /\
-             valid_ptr _skp (384*3 + 384*3 + 32 + 32 + 32+ 32) /\
-             (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = mem.[_skp + 2336 + k - 32]) /\
+while {1} (0<=i{1}<=4 /\ inc{1} = 4  /\ s_sk{1} = sk{1} /\
+             (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = sk{1}.[2336 + k - 32]) /\
              forall (k : int), 0 <= k && k < 32 => buf{1}.[k] = aux{1}.[k]) (4 - i{1}); last first. 
-  + auto => /> &1 &2; rewrite /valid_ptr => ???????? /=.
+  + auto => /> &1 &2 ?? /=.
     have -> /= : cph{2} = (cph{2}.`1,cph{2}.`2) by smt().
-    rewrite /load_array960 /load_array128 !tP => [#] cph1v cph2v.
+    rewrite !tP => [#] cph1v cph2v.
     do split.
-    + by rewrite /(`|>>`) /(`<<`) /= to_uintD_small of_uintK /= /#. 
     + by smt().
     + by move => k kbl kbh; rewrite initiE /= /#.
     by smt().
-  move => *; auto => /> &hr ????????; do split; 1..2,5: by smt().
+  move => *; auto => /> &hr ?????; do split; 1..2,5: by smt().
   + move => k kbl kbh; rewrite initiE //= 1:/#.
-    rewrite /storeW64 /loadW64 /stores  /=. 
-    rewrite WArray64.WArray64.get8_set64_directE 1..2:/#.
-    case (32 + 8 * i{hr} <= k && k < 32 + 8 * i{hr} + 8).
-    + by move => *; rewrite pack8bE 1:/# initiE /= 1:/# to_uintD_small /= of_uintK /= modz_small /#. 
-    by move => *; rewrite /WArray64.WArray64.get8 WArray64.WArray64.initiE /= /#.  
-  move => k kbl kbh; rewrite initiE /= 1:/# WArray64.WArray64.get8_set64_directE 1..2:/#. 
-  case (32 + 8 * i{hr} <= k && k < 32 + 8 * i{hr} + 8).
-  + by move => *; rewrite pack8bE 1:/# initiE /= 1:/# to_uintD_small /= of_uintK /= modz_small /#. 
-  by move => *; rewrite /WArray64.WArray64.get8 WArray64.WArray64.initiE /= /#.  
+    rewrite WArray64.get8_set64_directE 1..2:/#.
+    case ((i{hr} + 4) * 8 <= k < (i{hr} + 4) * 8 + 8).
+    + move => *; rewrite /get64_direct pack8bE 1:/# initiE /= 1:/# initiE /#. 
+    by move => *; rewrite /WArray64.get8 WArray64.initiE /= /#.  
+  + move => k kbl kbh; rewrite initiE //= 1:/#.
+    rewrite WArray64.get8_set64_directE 1..2:/#.
+    case ((i{hr} + 4) * 8 <= k < (i{hr} + 4) * 8 + 8).
+    + move => *; rewrite /get64_direct pack8bE 1:/# initiE /= 1:/# initiE /#. 
+    by move => *; rewrite /WArray64.get8 WArray64.initiE /= /#.  
 
-swap {2} 1.
-seq 4 1 : (#pre /\ to_uint s_skp{1} = _skp /\ 
-           ctpc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
-+ wp;call (mlkem_correct_ienc mem (_skp + 1152)).
-  auto => /> &1 &2 ???????; rewrite /load_array1152 /load_array32 /load_array960 !tP => ?????; do split; 1..2: by smt().
-  + by move => i ib; rewrite initiE /= /#.
-  + by rewrite /(`|>>`) /(`<<`) /= to_uintD_small of_uintK /= /#. 
-  + by move => i ib; rewrite initiE /= /#.
-  move => ? ? bufv ? krv c; rewrite tP => i ib.
-  by rewrite !initiE //=; smt().
+swap {2} 1 1.
 
-sp 3 0; seq 1 0 : (#pre /\ 
+
+seq 1 1 : (#pre /\ 
+           ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])). print MLKEM_InnerPKE.
++ wp;ecall (mlkem_correct_enc 
+   (Array1184.init  (fun (i_0 : int) => s_sk{1}.[3 * 384 + i_0]))).
+  auto => /> &1 &2 /=;rewrite  !tP => ??????; do split. 
+  + by move => i ib; rewrite initiE /= /#.
+  + by move => i ib; rewrite initiE /= /#. 
+  + move => i ib; rewrite initiE /= 1:/# /= initiE 1:/# /=;smt(Array1152.initiE).
+  + move => i ib; rewrite initiE /= 1:/# /= initiE 1:/# /=;smt(Array32.initiE).
+ move => ? ? bufv ? krv c.
+ have -> /= : (c = (c.`1,c.`2)) by smt().
+  rewrite !tP /= => [#] H0 H1 i ib.
+ rewrite !initiE 1:/# /=; smt(Array960.initiE Array128.initiE).
+
+sp 2 0; seq 1 0 : (#pre /\ 
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)).
 +  conseq (_: _ ==> (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)); 1: smt(). 
-   ecall {1} (verify_correct mem _ctp ctpc{1}).
-   auto => /> &1 &2; rewrite /load_array960 /load_array128 !tP.
-   move  => ????????cphv????rst Heq Hdiff.
+   ecall {1} (verify_correct ct{1} ctc{1}).
+   auto => /> &1 &2; rewrite  !tP.
+   move  => ??cphv???rst Heq Hdiff.
    rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) /= in cphv; 1: by smt().
    move : cphv;rewrite !tP ; move => [cphv1 cphv2].
    split.
@@ -573,14 +503,13 @@ sp 3 0; seq 1 0 : (#pre /\
      + by move => ibb; rewrite ceq cphv1 1: /# initiE /= /#.
      by move => ibb; rewrite ceq cphv2 1: /# initiE /= /#. 
    move => neq;rewrite Hdiff. 
-   have : exists i0, 0<= i0 < 1088 /\ 
-     (Array1088.init (fun (i1 : int) => loadW8 mem (to_uint s_ctp{1} + i1))).[i0] <>
-     (Array1088.init (fun (i1 : int) => if i1 < 960 then c{2}.`1.[i1] else c{2}.`2.[i1 - 960])).[i0]; last by smt().
+   pose cc := (Array1088.init (fun (i1 : int) => if i1 < 960 then c{2}.`1.[i1] else c{2}.`2.[i1 - 960])).
+   have : exists i0, 0<= i0 < 1088 /\ cc.[i0] <> s_ct{1}.[i0]; last by smt().
    case (c{2}.`1 <> cph{2}.`1).
    + move => neq1. rewrite tP in neq1.   
      have [k kb] : exists k, 0<=k<960 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt().
      exists k; split; 1: by smt().
-     rewrite !initiE /= 1,2:/#. 
+     rewrite !initiE /= 1:/#. 
      move : (cphv1 k _); 1: smt().
      by rewrite initiE /= /#.
    + move => eq1. 
@@ -588,36 +517,25 @@ sp 3 0; seq 1 0 : (#pre /\
      rewrite tP in neq2.   
      have [k kb] : exists k, 0<=k<128 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
      exists (k + 960); split; 1: by smt().
-     rewrite !initiE /= 1,2:/#. 
+     rewrite !initiE /= 1:/#. 
      move : (cphv2 k _); 1: smt().
      by rewrite initiE /= /#.
   done.
 
-ecall {1} (cmov_correct (to_uint shkp{1}) (Array32.init (fun (i_0 : int) => kr{1}.[0 + i_0])) cnd{1} Glob.mem{1}).
+ecall {1} (cmov_correct shk{1} 
+   (Array32.init (fun (i_0 : int) => kr{1}.[0 + i_0])) cnd{1}) => /=.
 
-wp;ecall{1} (j_shake  Glob.mem{1} (to_uint shkp{1}) (to_uint zp{1}) (to_uint ctp{1})).
+wp;ecall{1} (j_shake
+  (Array32.init  (fun (i_0 : int) =>   s_sk{1}.[3 * 384 + (3 * 384 + 32) + 32 + 32 - 32 + i_0]))
+  ct{1}) => /=.
 
-+ auto => /> &1 &2 ???????; rewrite /load_array1152 /load_array32 !tP => ?cphv????ceq cdif.
-do split;1,2:
-  by rewrite /(`|>>`) /(`<<`) /= to_uintD_small of_uintK /= /#. 
-move => ??????mm0 tt0 hashv;do split.
-+ move => badc mm back c0 c1;split.
-  + by move : back tt0 => /#.
-  + have -> : (init (fun (i0 : int) => mm.[to_uint shkp{1} + i0]))%Array32 =
-              (init (fun (i0 : int) => mm0.[to_uint shkp{1} + i0]))%Array32.
-    move : (c1 (cdif badc)).
-    rewrite !tP => H k kb.
-    by rewrite (H k kb) !initiE 1,2:/# /= /loadW8 /loads.
-  rewrite hashv /J;congr.
-  + rewrite tP => k kb; rewrite !initiE 1,2:/# /=.
-    by rewrite /(`|>>`) /(`<<`) /= to_uintD_small of_uintK /= /#. 
-  rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) 1: /# /=.
-  rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) 1: /# /= in cphv.
-  by move : cphv => [-> ->]; rewrite /load_array960 /load_array128 /#.
++ auto => /> &1 &2.
+   move  => ??cphv??rst Heq Hdiff.
+   rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) /= in cphv; 1: by smt().
 
-move => goodc mm back c0 c1;split.
-  + by move : back tt0 => /#.
-  + move : (c0 (ceq goodc)).
-    rewrite !tP => H k kb.
-    by rewrite (H k kb) initiE /#.
+do split.
++ move => badc  back c0 c1.
+  + by rewrite c1 1:/# /J;congr;  smt().
+  + move => ? rr H?; rewrite H;1:smt().
+    rewrite tP => *; rewrite initiE /#. 
 qed.
