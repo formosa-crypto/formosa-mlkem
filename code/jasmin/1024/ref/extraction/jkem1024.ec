@@ -2404,7 +2404,6 @@ module M = {
                                                                    W16.t Array256.t = {
     var j:int;
     var u:W16.t;
-    var v:W16.t;
     var d0:W32.t;
     var t:W8.t Array8.t;
     var c0:W8.t;
@@ -2420,10 +2419,6 @@ module M = {
       j <- 0;
       while ((j < 8)) {
         u <- a.[(i + j)];
-        v <- u;
-        v <- (v `>>` (W8.of_int 15));
-        v <- (v `&` (W16.of_int 3329));
-        u <- (u + v);
         d0 <- (zeroextu32 u);
         d0 <- (d0 `<<` (W8.of_int 5));
         d0 <- (d0 + (W32.of_int 1664));
@@ -2529,12 +2524,12 @@ module M = {
       t.[7] <- c2;
       k <- 0;
       while ((k < 8)) {
-        d0 <- (zeroextu32 t.[(k + i)]);
+        d0 <- (zeroextu32 t.[k]);
         d0 <- (d0 `&` (W32.of_int 31));
         d0 <- (d0 * (W32.of_int 3329));
         d0 <- (d0 + (W32.of_int 16));
         d0 <- (d0 `>>` (W8.of_int 5));
-        rp.[i] <- (truncateu16 d0);
+        rp.[(i + k)] <- (truncateu16 d0);
         k <- (k + 1);
       }
       i <- (i + 8);

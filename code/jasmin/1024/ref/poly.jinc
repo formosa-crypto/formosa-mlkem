@@ -19,10 +19,6 @@ fn _i_poly_compress(reg mut ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg mut ptr u1
     for j = 0 to 8
     {
       u = (16u)a[i+j];
-      v = u;
-      v >>= 15;
-      v &= MLKEM_Q;
-      u += v;
       d0 = (32u)u;
       d0 <<= 5;
       d0 += 1664;
@@ -141,12 +137,12 @@ fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_POLYCO
 
     for k = 0 to 8
     {
-      d0 = (32u)t[k+i];
+      d0 = (32u)t[k];
       d0 &= 31;
       d0 *= MLKEM_Q;
       d0 += 16;
       d0 >>= 5;
-      rp[i] = d0;
+      rp[i+k] = d0;
     }
     i += 8;
   }
