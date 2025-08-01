@@ -21,15 +21,13 @@ fn __i_polyvec_compress(reg mut ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u
   {
     for k = 0 to 8
     {
-      d0 = (64u)aa[i];
+      d0 = (64u)aa[i+k];
       d0 <<= 11;
       d0 += 1664;
       d0 *= 645084;
       d0 >>= 31;
       d0 &= 0x7ff;
       t[k] = (16u)d0;
-
-      i += 1;
     }
 
     c = t[0];
@@ -105,6 +103,7 @@ fn __i_polyvec_compress(reg mut ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u
     t[7] >>= 3;
     rp[j] = t[7];
     j += 1;
+    i += 8;
   }
 
   return rp;
@@ -115,7 +114,7 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
 {
   reg u32 t0, t1, t2;
   reg u32 d0, d1;
-  reg u64 i j;
+  reg ui64 i j;
 
   i = 0;
   j = 0;
@@ -134,7 +133,6 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     t0 += 1024;
     t0 >>= 11;
     rp[i] = t0;
-    i += 1;
 
     t0 = (32u)ap[j];
     j += 1;
@@ -147,8 +145,7 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     d0 *= MLKEM_Q;
     d0 += 1024;
     d0 >>= 11;
-    rp[i] = d0;
-    i += 1;
+    rp[i+1] = d0;
 
     t1 = (32u)ap[j];
     j += 1;
@@ -165,8 +162,7 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     d0 *= MLKEM_Q;
     d0 += 1024;
     d0 >>= 11;
-    rp[i] = d0;
-    i += 1;
+    rp[i+2] = d0;
 
     t0 = (32u)ap[j];
     j += 1;
@@ -179,8 +175,7 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     d0 *= MLKEM_Q;
     d0 += 1024;
     d0 >>= 11;
-    rp[i] = d0;
-    i += 1;
+    rp[i+3] = d0;
 
     t1 = (32u)ap[j];
     j += 1;
@@ -193,8 +188,7 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     d0 *= MLKEM_Q;
     d0 += 1024;
     d0 >>= 11;
-    rp[i] = d0;
-    i += 1;
+    rp[i+4] = d0;
 
     t2 = (32u)ap[j];
     j += 1;
@@ -211,8 +205,7 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     d0 *= MLKEM_Q;
     d0 += 1024;
     d0 >>= 11;
-    rp[i] = d0;
-    i += 1;
+    rp[i+5] = d0;
 
     t1 = (32u)ap[j];
     j += 1;
@@ -225,8 +218,7 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     d0 *= MLKEM_Q;
     d0 += 1024;
     d0 >>= 11;
-    rp[i] = d0;
-    i += 1;
+    rp[i+6] = d0;
 
     t0 = (32u)ap[j];
     j += 1;
@@ -239,8 +231,8 @@ fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] rp, reg const ptr u8[MLKEM
     d0 *= MLKEM_Q;
     d0 += 1024;
     d0 >>= 11;
-    rp[i] = d0;
-    i += 1;
+    rp[i+7] = d0;
+    i += 8;
   }
   return rp;
 }

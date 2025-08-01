@@ -1,7 +1,7 @@
 require import AllCore List IntDiv QFABV.
 
 from Jasmin require import JModel_x86.
-from JazzEC require import Array4 Array5 Array6 Array7 Array8 Array9 Array24 Array25 Array32 Array128 Array160 Array256 Array384 Array768 Array960 Array1152.
+from JazzEC require import Array4 Array5 Array6 Array7 Array8 Array9 Array24 Array25 Array32 Array128 Array160 Array256 Array384 Array768 Array960 Array1024 Array1152 Array1408 Array1536.
 from JazzEC require import WArray32 WArray512 WArray960 WArray1536.
 
 import BitEncoding BS2Int BitChunking.
@@ -211,6 +211,34 @@ rewrite -bs2int_div 1:// /= get_to_uint /=.
 rewrite -bs2int_mod 1:// /= /to_uint.
 have ? : 2^10 = 1024 by rewrite /=.
 by smt(bs2int_range mem_range W10.size_w2bits).
+qed.
+realize touintP by smt().
+
+(* ----------- BEGIN W10 BINDINGS -----------*)
+
+theory W11.
+abbrev [-printing] size = 11.
+clone include BitWordSH with op size <- size
+rename "_XX" as "_11"
+proof gt0_size by done,
+size_le_256 by done.
+
+end W11. export W11 W11.ALU W11.SHIFT.
+
+bind bitstring W11.w2bits W11.bits2w W11.to_uint W11.to_sint W11.of_int W11.t 11.
+realize size_tolist by auto.
+realize tolistP by auto.
+realize oflistP by smt(W11.bits2wK). 
+realize ofintP by move => *;rewrite /of_int int2bs_mod.
+realize tosintP. move => bv /=;rewrite /to_sint /smod /BVA_Top_W11_t.msb.
+have -> /=: nth false (w2bits bv) (11 - 1) = 2 ^ (11 - 1) <= to_uint bv; last by smt().
+rewrite /to_uint. 
+rewrite -{2}(cat_take_drop 10 (w2bits bv)).
+rewrite bs2int_cat size_take 1:// W11.size_w2bits /=.
+rewrite -bs2int_div 1:// /= get_to_uint /=.
+rewrite -bs2int_mod 1:// /= /to_uint.
+have ? : 2^11 = 2048 by rewrite /=.
+by smt(bs2int_range mem_range W11.size_w2bits).
 qed.
 realize touintP by smt().
 
@@ -580,6 +608,15 @@ have ? : 2^10 = 1024 by auto.
  by move => bv; rewrite /zeroextu32 /= of_uintK /=; smt(W10.to_uint_cmp).
 qed.
 
+op zeroextu11_32(a : W11.t) : W32.t =
+  W32.of_int (to_uint a).
+
+bind op [W11.t & W32.t] zeroextu11_32 "zextend".
+realize bvzextendP.
+have ? : 2^11 = 2048 by auto.
+ by move => bv; rewrite /zeroextu32 /= of_uintK /=; smt(W11.to_uint_cmp).
+qed.
+
 bind op [W32.t & bool] W32."_.[_]" "get".
 realize bvgetP by rewrite /bool2bits.
 
@@ -739,6 +776,27 @@ by have -> : (2 ^ (10 - i) * 2 ^ i) = 1024;
      1,2:/# /= -!addrA /= | done ].
 qed.
 
+op truncate64_11 (bw: W64.t) : W11.t = W11.of_int (W64.to_uint bw).
+
+bind op [W64.t & W11.t] truncate64_11 "truncate".
+realize bvtruncateP. 
+move => mv; rewrite /truncate64_11 /W64.w2bits take_mkseq 1:// /= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq 1..2:// /of_int /to_uint /= get_bits2w 1:// 
+        nth_mkseq 1:// /= get_to_uint 1:// /= /to_uint /=.
+have -> /=: (0 <= i && i < 64) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(11-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(11-i) = 2^((11-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (11 - i) * 2 ^ i) = 2048; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
 bind op [W64.t & W8.t] W8u8.truncateu8 "truncate".
 realize bvtruncateP.  (* generalize *)
 move => mv; rewrite /truncateu8 /W64.w2bits take_mkseq 1:// /= /w2bits.
@@ -890,11 +948,29 @@ realize get_setP by smt(Array768.get_setE).
 realize eqP by smt(Array768.tP).
 realize get_out by smt(Array768.get_out).
 
+bind array Array1024."_.[_]" Array1024."_.[_<-_]" Array1024.to_list Array1024.of_list Array1024.t 1024.
+realize tolistP by done.
+realize get_setP by smt(Array1024.get_setE). 
+realize eqP by smt(Array1024.tP).
+realize get_out by smt(Array1024.get_out).
+
 bind array Array1152."_.[_]" Array1152."_.[_<-_]" Array1152.to_list Array1152.of_list Array1152.t 1152.
 realize tolistP by done.
 realize get_setP by smt(Array1152.get_setE). 
 realize eqP by smt(Array1152.tP).
 realize get_out by smt(Array1152.get_out).
+
+bind array Array1408."_.[_]" Array1408."_.[_<-_]" Array1408.to_list Array1408.of_list Array1408.t 1408.
+realize tolistP by done.
+realize get_setP by smt(Array1408.get_setE). 
+realize eqP by smt(Array1408.tP).
+realize get_out by smt(Array1408.get_out).
+
+bind array Array1536."_.[_]" Array1536."_.[_<-_]" Array1536.to_list Array1536.of_list Array1536.t 1536.
+realize tolistP by done.
+realize get_setP by smt(Array1536.get_setE). 
+realize eqP by smt(Array1536.tP).
+realize get_out by smt(Array1536.get_out).
 
 bind array Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list Array32.of_list Array32.t 32.
 realize tolistP by done.
@@ -984,6 +1060,17 @@ apply eq_in_mkseq => i i_bnd;
 smt(Array8.initE).
 qed.
 
+op init_8_16 (f: int -> W16.t) : W16.t Array8.t = Array8.init f.
+
+bind op [W16.t & Array8.t] init_8_16 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_8_16 => f.
+rewrite BVA_Top_Array8_Array8_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array8.initE).
+qed.
+
 op init_160_8 (f: int -> W8.t) : W8.t Array160.t = Array160.init f.
 
 bind op [W8.t & Array160.t] init_160_8 "ainit".
@@ -1046,6 +1133,15 @@ realize bvainitP.
 rewrite /init_768_16 => f.
 rewrite BVA_Top_Array768_Array768_t.tolistP.
 apply eq_in_mkseq => i i_bnd; smt(Array768.initE).
+qed.
+
+op init_1024_16 (f: int -> W16.t) : W16.t Array1024.t = Array1024.init f.
+
+bind op [W16.t & Array1024.t] init_1024_16 "ainit".
+realize bvainitP.
+rewrite /init_1024_16 => f.
+rewrite BVA_Top_Array1024_Array1024_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array1024.initE).
 qed.
 
 op init_4_64 (f: int -> W64.t) : W64.t Array4.t = Array4.init f.
@@ -1119,6 +1215,16 @@ proof.
 rewrite /init_960_8 => f.
 rewrite BVA_Top_Array960_Array960_t.tolistP.
 apply eq_in_mkseq => i i_bnd; smt(Array960.initE).
+qed.
+
+op init_1408_8 (f: int -> W8.t) : W8.t Array1408.t = Array1408.init f.
+
+bind op [W8.t & Array1408.t] init_1408_8 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_1408_8 => f.
+rewrite BVA_Top_Array1408_Array1408_t.tolistP.
+apply eq_in_mkseq => i i_bnd; smt(Array1408.initE).
 qed.
 
 op sliceget256_16_256 (arr: W16.t Array256.t) (offset: int) : W256.t = 

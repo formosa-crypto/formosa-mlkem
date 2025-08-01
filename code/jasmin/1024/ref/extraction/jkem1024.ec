@@ -2693,8 +2693,8 @@ module M = {
   proc __i_polyvec_compress (rp:W8.t Array1408.t, a:W16.t Array1024.t) : 
   W8.t Array1408.t = {
     var aa:W16.t Array1024.t;
-    var d0:W64.t;
     var k:int;
+    var d0:W64.t;
     var t:W16.t Array8.t;
     var c:W16.t;
     var b:W16.t;
@@ -2708,14 +2708,13 @@ module M = {
     while ((i < (4 * 256))) {
       k <- 0;
       while ((k < 8)) {
-        d0 <- (zeroextu64 aa.[i]);
+        d0 <- (zeroextu64 aa.[(i + k)]);
         d0 <- (d0 `<<` (W8.of_int 11));
         d0 <- (d0 + (W64.of_int 1664));
         d0 <- (d0 * (W64.of_int 645084));
         d0 <- (d0 `>>` (W8.of_int 31));
         d0 <- (d0 `&` (W64.of_int 2047));
         t.[k] <- (truncateu16 d0);
-        i <- (i + 1);
         k <- (k + 1);
       }
       c <- t.[0];
@@ -2781,25 +2780,26 @@ module M = {
       t.[7] <- (t.[7] `>>` (W8.of_int 3));
       rp.[j] <- (truncateu8 t.[7]);
       j <- (j + 1);
+      i <- (i + 8);
     }
     return rp;
   }
   proc __i_polyvec_decompress (rp:W16.t Array1024.t, ap:W8.t Array1408.t) : 
   W16.t Array1024.t = {
-    var i:W64.t;
-    var j:W64.t;
     var t0:W32.t;
     var t1:W32.t;
     var d1:W32.t;
     var d0:W32.t;
     var t2:W32.t;
-    i <- (W64.of_int 0);
-    j <- (W64.of_int 0);
-    while ((i \ult (W64.of_int (4 * 256)))) {
-      t0 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
-      t1 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+    var i:int;
+    var j:int;
+    i <- 0;
+    j <- 0;
+    while ((i < (4 * 256))) {
+      t0 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
+      t1 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       d1 <- t1;
       d1 <- (d1 `<<` (W8.of_int 8));
       t0 <- (t0 `|` d1);
@@ -2807,10 +2807,9 @@ module M = {
       t0 <- (t0 * (W32.of_int 3329));
       t0 <- (t0 + (W32.of_int 1024));
       t0 <- (t0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 t0);
-      i <- (i + (W64.of_int 1));
-      t0 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+      rp.[i] <- (truncateu16 t0);
+      t0 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       d0 <- t1;
       d0 <- (d0 `>>` (W8.of_int 3));
       d1 <- t0;
@@ -2820,12 +2819,11 @@ module M = {
       d0 <- (d0 * (W32.of_int 3329));
       d0 <- (d0 + (W32.of_int 1024));
       d0 <- (d0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 d0);
-      i <- (i + (W64.of_int 1));
-      t1 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
-      t2 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+      rp.[(i + 1)] <- (truncateu16 d0);
+      t1 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
+      t2 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       t0 <- (t0 `>>` (W8.of_int 6));
       d0 <- t1;
       d0 <- (d0 `<<` (W8.of_int 2));
@@ -2837,10 +2835,9 @@ module M = {
       d0 <- (d0 * (W32.of_int 3329));
       d0 <- (d0 + (W32.of_int 1024));
       d0 <- (d0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 d0);
-      i <- (i + (W64.of_int 1));
-      t0 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+      rp.[(i + 2)] <- (truncateu16 d0);
+      t0 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       d0 <- t2;
       d0 <- (d0 `>>` (W8.of_int 1));
       d1 <- t0;
@@ -2850,10 +2847,9 @@ module M = {
       d0 <- (d0 * (W32.of_int 3329));
       d0 <- (d0 + (W32.of_int 1024));
       d0 <- (d0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 d0);
-      i <- (i + (W64.of_int 1));
-      t1 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+      rp.[(i + 3)] <- (truncateu16 d0);
+      t1 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       d0 <- t0;
       d0 <- (d0 `>>` (W8.of_int 4));
       d1 <- t1;
@@ -2863,12 +2859,11 @@ module M = {
       d0 <- (d0 * (W32.of_int 3329));
       d0 <- (d0 + (W32.of_int 1024));
       d0 <- (d0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 d0);
-      i <- (i + (W64.of_int 1));
-      t2 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
-      t0 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+      rp.[(i + 4)] <- (truncateu16 d0);
+      t2 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
+      t0 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       t1 <- (t1 `>>` (W8.of_int 7));
       d0 <- t2;
       d0 <- (d0 `<<` (W8.of_int 1));
@@ -2880,10 +2875,9 @@ module M = {
       d0 <- (d0 * (W32.of_int 3329));
       d0 <- (d0 + (W32.of_int 1024));
       d0 <- (d0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 d0);
-      i <- (i + (W64.of_int 1));
-      t1 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+      rp.[(i + 5)] <- (truncateu16 d0);
+      t1 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       d0 <- t0;
       d0 <- (d0 `>>` (W8.of_int 2));
       d1 <- t1;
@@ -2893,10 +2887,9 @@ module M = {
       d0 <- (d0 * (W32.of_int 3329));
       d0 <- (d0 + (W32.of_int 1024));
       d0 <- (d0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 d0);
-      i <- (i + (W64.of_int 1));
-      t0 <- (zeroextu32 ap.[(W64.to_uint j)]);
-      j <- (j + (W64.of_int 1));
+      rp.[(i + 6)] <- (truncateu16 d0);
+      t0 <- (zeroextu32 ap.[j]);
+      j <- (j + 1);
       d0 <- t1;
       d0 <- (d0 `>>` (W8.of_int 5));
       d1 <- t0;
@@ -2906,8 +2899,8 @@ module M = {
       d0 <- (d0 * (W32.of_int 3329));
       d0 <- (d0 + (W32.of_int 1024));
       d0 <- (d0 `>>` (W8.of_int 11));
-      rp.[(W64.to_uint i)] <- (truncateu16 d0);
-      i <- (i + (W64.of_int 1));
+      rp.[(i + 7)] <- (truncateu16 d0);
+      i <- (i + 8);
     }
     return rp;
   }
