@@ -7,7 +7,7 @@ from CryptoSpecs require import GFq Rq Serialization Symmetric Sampling VecMat I
 require import MLKEM_Poly MLKEM_PolyVec W16extra NTT_Fq.
 
 from JazzEC require import Array25 Array32 Array33 Array34 Array64 Array160 Array168 Array256 Array1024.
-from JazzEC require import Array2400 Array1184 Array1408 Array1536 Array4096 Array1088 WArray32 WArray33 WArray64 WArray1184.
+from JazzEC require import Array3168 Array1568 Array1408 Array1536 Array4096 WArray32 WArray33 WArray64 WArray1568.
 
 from JazzEC require import Jkem1024.
 
@@ -173,8 +173,8 @@ proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array1024.t * W16.t Ar
   return (s,e, unlift_poly e2);
 }
 
-proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W8.t Array32.t) :
-    W8.t Array1184.t * W8.t Array2400.t = {
+proc indcpa_keypair_jazz (pk : W8.t Array1568.t, sk : W8.t Array3168.t, seed : W8.t Array32.t) :
+    W8.t Array1568.t * W8.t Array3168.t = {
     var aux: W16.t Array256.t;
     var _N : int;
     var spkp:W64.t;
@@ -228,34 +228,36 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
 
     aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[0 + i_0])),skpv);
     pkpv <- Array1024.init (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else pkpv.[i]);
-    aux <@ Aux.inner_product((Array1024.init (fun i_0 => a.[3*256 + i_0])),skpv);
+    aux <@ Aux.inner_product((Array1024.init (fun i_0 => a.[4*256 + i_0])),skpv);
     pkpv <- Array1024.init (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else pkpv.[i]);
-    aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[(2 * (3 * 256)) + i_0])), skpv);
+    aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[(2 * (4 * 256)) + i_0])), skpv);
     pkpv <- Array1024.init (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)] else pkpv.[i]);
+    aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[(3 * (4 * 256)) + i_0])), skpv);
+    pkpv <- Array1024.init (fun i => if (3 * 256) <= i < (3 * 256) + 256 then aux.[i-(3 * 256)] else pkpv.[i]);
 
     pkpv <@Jkem1024.M.__polyvec_add2 (pkpv,e);
     pkpv <@Jkem1024.M.__polyvec_reduce (pkpv);
 
     aux_0 <@ M.__i_polyvec_tobytes(Array1536.init (fun (i_0 : int) => sk.[0 + i_0]), skpv);
-    sk <- Array2400.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1536 then aux_0.[i_0 - 0] else sk.[i_0]);
+    sk <- Array3168.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1536 then aux_0.[i_0 - 0] else sk.[i_0]);
     aux_0 <@ M.__i_polyvec_tobytes(Array1536.init (fun (i_0 : int) => pk.[0 + i_0]), pkpv);
-    pk <- Array1184.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1536 then aux_0.[i_0 - 0] else pk.[i_0]);
+    pk <- Array1568.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1536 then aux_0.[i_0 - 0] else pk.[i_0]);
     _aux <- 32 %/ 8;
     i <- 0;
     while (i < _aux){
       t64 <- get64 (WArray32.init8 (fun (i_0 : int) => publicseed.[i_0])) i;
       pk <-
-        Array1184.init
-          (WArray1184.get8
-             (WArray1184.set64_direct (WArray1184.init8 (fun (i_0 : int) => pk.[i_0]))
-                ((i + 3 * 384 %/ 8) * 8) t64));
+        Array1568.init
+          (WArray1568.get8
+             (WArray1568.set64_direct (WArray1568.init8 (fun (i_0 : int) => pk.[i_0]))
+                ((i + 4 * 384 %/ 8) * 8) t64));
       i <- i + 1;
     }
     
     return (pk, sk);
   }
 
-  proc iredcompr(ctp: W8.t Array1088.t,bp:W16.t Array1024.t) : W8.t Array1408.t = {
+  proc iredcompr(ctp: W8.t Array1568.t,bp:W16.t Array1024.t) : W8.t Array1408.t = {
     var aux_0 : W8.t Array1408.t;
     bp <@Jkem1024.M.__polyvec_reduce (bp);
     aux_0 <@Jkem1024.M.__i_polyvec_compress (Array1408.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
@@ -263,11 +265,11 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     return aux_0;
   }
 
-  proc iindcpa_enc_jazz (ctp: W8.t Array1088.t, msgp:W8.t Array32.t, pk : W8.t Array1184.t,  noiseseed : W8.t Array32.t) : W8.t Array1088.t = {
+  proc iindcpa_enc_jazz (ctp: W8.t Array1568.t, msgp:W8.t Array32.t, pk : W8.t Array1568.t,  noiseseed : W8.t Array32.t) : W8.t Array1568.t = {
     var aux_1: W8.t Array160.t;
     var aux_0: W8.t Array1408.t;
     var aux: W16.t Array256.t;
-    var sctp: W8.t Array1088.t;
+    var sctp: W8.t Array1568.t;
     var c:W8.t;
     var pkpv:W16.t Array1024.t;
     var publicseed:W8.t Array32.t;
@@ -292,8 +294,8 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     w <- 0;
     while (w < inc){
       t64 <-
-        WArray1184.get64_direct (WArray1184.init8 (fun (i : int) => pk.[i]))
-          ((3 * 384 %/ 8 + w) * 8);
+        WArray1568.get64_direct (WArray1568.init8 (fun (i : int) => pk.[i]))
+          ((4 * 384 %/ 8 + w) * 8);
       publicseed <- Array32.init (get8 (set64 (WArray32.init8 (fun (i : int) => publicseed.[i])) w t64));
       w <- w + 1;
     }
@@ -311,19 +313,24 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
 
     bp <- witness;
 
-    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[0*(3*256) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[0*(4*256) + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[1*(3*256) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[1*(4*256) + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(2 * (4*256)) + i_0])),
     sp_0);
     bp <- Array1024.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else bp.[i]);
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(3 * (4*256)) + i_0])),
+    sp_0);
+    bp <- Array1024.init
+          (fun i => if (3 * 256) <= i < (3 * 256) + 256
+          then aux.[i-(3 * 256)] else bp.[i]);
 
     v <- witness;
     v <@Jkem1024.M.__polyvec_pointwise_acc (pkpv, sp_0);
@@ -340,14 +347,14 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     ctp <- sctp;
 
     aux_0 <@ iredcompr(ctp,bp);
-    ctp <- Array1088.init
+    ctp <- Array1568.init
            (fun i => if 0 <= i < 0 + 1408 then aux_0.[i-0] else ctp.[i]);
     (aux_1,
-    aux) <@Jkem1024.M._i_poly_compress ((Array160.init (fun i_0 => ctp.[(3 * 320) + i_0])),
+    aux) <@Jkem1024.M._i_poly_compress ((Array160.init (fun i_0 => ctp.[(4 * 352) + i_0])),
     v);
-    ctp <- Array1088.init
-           (fun i => if (3 * 320) <= i < (3 * 320) + 160
-           then aux_1.[i-(3 * 320)] else ctp.[i]);
+    ctp <- Array1568.init
+           (fun i => if (4 * 352) <= i < (4 * 352) + 160
+           then aux_1.[i-(4 * 352)] else ctp.[i]);
     v <- aux;
     return (ctp);
   }
@@ -889,7 +896,7 @@ seq 13 7 : (#pre /\ ={publicseed, noiseseed}).
   + auto => /> &1 ; split; 1: smt().
     move => il inbufl /=; split; 1: smt().
     move => ???H rs.
-    have -> : inbufl.[32 <- (of_int 3)%W8] = Array33.init (fun i => if i < 32 then seed{1}.[i] else W8.of_int kvec).
+    have -> : inbufl.[32 <- (of_int 4)%W8] = Array33.init (fun i => if i < 32 then seed{1}.[i] else W8.of_int kvec).
     +  by rewrite tP => k kb; smt(Array33.get_setE Array33.initiE).
     rewrite !tP => H0 H1 k kb.
     case (k < 32) => *.
@@ -914,13 +921,6 @@ seq 13 7 : (#pre /\ ={publicseed, noiseseed}).
 
 seq 2 2 : (#pre /\ aa{1} = a{2}); 1: by call auxgenmatrix_good; auto => />.
 
-(*
-swap {1} [3..4] -2; seq 2 0 : #pre; 1: by auto.
-swap {1} [4..5] -3;sp 2 0.
-swap {1} 2 22.
-swap {2} 1 8.
-*)
-
 swap {2} 1 3.
 seq 6 1 : (#{/~randomnessp{1}=seed{2}}pre /\ ={skpv,e}).
 transitivity {1} {(skpv,e) <@ AuxMLKEM.sample_noise2_jasmin(noiseseed);}
@@ -932,7 +932,18 @@ transitivity {1} {(skpv,e) <@ AuxMLKEM.sample_noise2_jasmin(noiseseed);}
           sk{1} = sk{2} 
          /\ noiseseed{1} = noiseseed{2} /\ aa{1} = a{2}
         /\   ={skpv,e,pk,sk,publicseed,noiseseed,skpv,pkpv,e});  1,2: by auto => /> *;  smt().
-+ inline  AuxMLKEM.sample_noise2_jasmin; do 2!(unroll for {1} ^while); sim; auto => />.  sim;  auto => />. 
++ inline  AuxMLKEM.sample_noise2_jasmin; do 2!(unroll for {1} ^while); sim; auto => />.  
+conseq (: _ ==> 
+  skpv{1} = noise1{2} /\
+  noiseseed{1} = noiseseed0{2} /\
+  aux{1}=aux0{2} /\ e{1}=noise2{2}); 1: smt().
+sim;auto => />.
+conseq (: _ ==> 
+  skpv{1} = noise1{2} /\
+  noiseseed{1} = noiseseed0{2} /\
+  aux{1}=aux0{2} /\ e{1}=noise2{2}); 1: smt().
+sim;auto => />.
+
 by conseq />; ecall (sample_noise_good2 noiseseed{2}) ; auto => />.
 
 seq 2 2 : (#pre); 1:by sim.
@@ -946,6 +957,15 @@ seq 5 7 : (#pre /\ ={pkpv}).
   do split.
   + by rewrite tP => x xb; rewrite !initiE 1,2:/# /= xb /=.
   + move => *; rewrite tP => x xb;  rewrite !initiE 1,2:/# /= !initiE 1,2:/# /=.
+
+seq 4 6 : #pre.
+
++ wp;call(_: true); 1: by sim. 
+  wp;call(_:true); 1: by sim.
+  auto => /> &1 result /=. 
+  do split.
+  + by rewrite tP => x xb; rewrite !initiE //=  !initiE 1,2:/# /= xb /=.
+  + by move => *; rewrite tP => x xb; rewrite !initiE 1,2:/# /= !initiE 1,2:/#.
 
 seq 4 6 : #pre.
 
@@ -995,19 +1015,26 @@ swap {1} 6 -1.
 swap {1} [10..21] -3.
 swap {1} 6 10.
 do 2!(unroll for {1} ^while).
-swap {1} 4 24.
+swap {1} 4 31.
 
-seq 30 1 : (#pre /\ ={sp_0,ep,epp}).
+seq 36 1 : (#pre /\ ={sp_0,ep,epp}).
 transitivity {1} {s_noiseseed <- noiseseed; (sp_0,ep,epp) <@ AuxMLKEM.sample_noise3_jasmin(s_noiseseed);}
      (={msgp,pk,pkpv,noiseseed,publicseed,k} /\ aat{1} = aat{2} /\ ct{1} = ct{2} ==> 
           ={msgp,pk,pkpv,noiseseed,publicseed,k,sp_0,ep,epp} /\ aat{1} = aat{2} /\ ct{1} = ct{2} )
       (={msgp,pk,pkpv,noiseseed,publicseed,k} /\ aat{1} = at{2} /\ ct{1} = ctp{2} ==> 
           ={msgp,pk,pkpv,noiseseed,publicseed,k,sp_0,ep,epp}  /\ aat{1} = at{2} /\ ct{1} = ctp{2} );  1,2:   smt(). 
-+ inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin.  sim; auto => />.  by sim; auto => />.
-+ by conseq />; call sample_noise_good3; auto => />.
++ inline  AuxMLKEM.sample_noise3_jasmin AuxMLKEM.sample_noise2_jasmin.  sim; auto => />. 
+conseq (: _==>
+  sp_0{1} = noise10{2} /\
+  lnoiseseed{1} = noiseseed0{2} /\
+  aux{1}=aux0{2} /\ ep{1} = noise20{2}); 1: smt(). 
+ sim; auto => />.
+ sim; auto => />.
+by conseq />; call sample_noise_good3; auto => />.
 
 swap {1} 14 2;  unroll for {1} ^while. 
 inline {2} AuxMLKEM.iredcompr; sim.
+wp;conseq />. sim.
 wp;conseq />. sim.
 wp;conseq />. sim.
 wp;conseq />. sim.
@@ -1022,6 +1049,8 @@ rewrite mapiE 1:/# /= initiE 1:/# /= /lift_array256 /subarray256.
 case (0<=k<256) => * /=.
 + by rewrite getvE offunvE /= 1:/# mapiE 1:/# /= initiE 1:/# /=.
 case (256<=k<512) => * /=.
++ by rewrite getvE offunvE /= 1:/# mapiE 1:/# /= initiE 1:/# /=.
+case (512<=k<768) => * /=.
 + by rewrite getvE offunvE /= 1:/# mapiE 1:/# /= initiE 1:/# /=.
 by rewrite getvE offunvE /= 1:/# mapiE 1:/# /= initiE 1:/# /=.
 qed.
