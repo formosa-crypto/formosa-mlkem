@@ -2,50 +2,50 @@ require import AllCore IntDiv List.
 
 from Jasmin require import JModel.
 
-from CryptoSpecs require import GFq Rq Serialization Symmetric Sampling VecMat InnerPKE768 Correctness768.
+from CryptoSpecs require import GFq Rq Serialization Symmetric Sampling VecMat InnerPKE1024 Correctness1024.
 
 require import MLKEM_Poly MLKEM_PolyVec W16extra NTT_Fq.
 
-from JazzEC require import Array25 Array32 Array33 Array34 Array64 Array128 Array168 Array256 Array768.
-from JazzEC require import Array2400 Array1184 Array960 Array1152 Array2304 Array1088 WArray32 WArray33 WArray64 WArray1184.
+from JazzEC require import Array25 Array32 Array33 Array34 Array64 Array160 Array168 Array256 Array1024.
+from JazzEC require import Array2400 Array1184 Array1408 Array1536 Array4096 Array1088 WArray32 WArray33 WArray64 WArray1184.
 
-from JazzEC require import Jkem768.
+from JazzEC require import Jkem1024.
 
 require import MLKEMFCLib.
-import Serialization768 VecMat768 PolyVec PolyMat InnerPKE768.
+import Serialization1024 VecMat1024 PolyVec PolyMat InnerPKE1024.
 import MLKEM_Poly MLKEM_PolyVec.
 
 import KMatrix.
 import Vector.
 import Zq.
 
-op lift_matrix( a : W16.t Array2304.t) : polymat =
-   Matrix.offunm (fun i j => subarray256 (subarray768 (lift_array2304 a) i) j).
+op lift_matrix( a : W16.t Array4096.t) : polymat =
+   Matrix.offunm (fun i j => subarray256 (subarray1024 (lift_array4096 a) i) j).
 
-lemma matrixcols (m : 'a Array2304.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3 =>
-    Array256.map f (subarray256 ((Array768.init ((fun (i_0 : int) => m.[j*768 + i_0])))) i) =
-                      (subarray256 (subarray768 (map f m) j) i).
-move => ib jb;rewrite /subarray256 /subarray768 tP => k kb.
+lemma matrixcols (m : 'a Array4096.t) (f : 'a -> 'b) i j : 0 <= i < 3 => 0<=j <3 =>
+    Array256.map f (subarray256 ((Array1024.init ((fun (i_0 : int) => m.[j*1024 + i_0])))) i) =
+                      (subarray256 (subarray1024 (map f m) j) i).
+move => ib jb;rewrite /subarray256 /subarray1024 tP => k kb.
 by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
 qed. 
 
-op unlift_matrix(a : polymat) = Array2304.init 
-   (fun i => W16.of_int (asint (a.[i %/ 768,i %% 768 %/ 256].[i %% 256]))%Matrix).
+op unlift_matrix(a : polymat) = Array4096.init 
+   (fun i => W16.of_int (asint (a.[i %/ 1024,i %% 1024 %/ 256].[i %% 256]))%Matrix).
 
 lemma matrix_unlift a : 
     lift_matrix (unlift_matrix a) = a /\
-    pos_bound2304_cxq (unlift_matrix a) 0 2304 2.
+    pos_bound4096_cxq (unlift_matrix a) 0 4096 2.
 proof.
 split. 
 + rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
-  rewrite offunmE //= /subarray256 /subarray768 /lift_array2304 /= tP => k kb.
+  rewrite offunmE //= /subarray256 /subarray1024 /lift_array4096 /= tP => k kb.
   rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
   rewrite !of_uintK /= !(modz_small _ 65536); 1: smt(rg_asint). 
-  rewrite !(mulzC 768) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !asintK. 
+  rewrite !(mulzC 1024) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !asintK. 
   rewrite !(mulzC 256) !(edivz_eq) 1:/#. 
-  rewrite (_: i*768 = (3*i)*256) 1:/# !modzMDl.
+  rewrite (_: i*1024 = (4*i)*256) 1:/# !modzMDl.
   by smt(rg_asint).
-rewrite /unlift_matrix /pos_bound2304_cxq => k kb; rewrite initiE //=.
+rewrite /unlift_matrix /pos_bound4096_cxq => k kb; rewrite initiE //=.
 rewrite to_sint_unsigned.
 + rewrite /to_sint of_uintK /= modz_small; 1: by smt(rg_asint). 
   by rewrite /smod /=; smt(rg_asint qE).
@@ -57,10 +57,10 @@ require import MLKEM_keccak_ref.
 
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
     MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
-print Jkem768.M.
+print Jkem1024.M.
 module AuxMLKEM= {
 
-proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
+proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array4096.t = {
   var a: polymat;
   var i, j,c;
   a <- witness;                       
@@ -71,7 +71,7 @@ proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
       XOF.init(seed, if trans then i else j, 
                         if trans then j else i);        
       c <@ Parse(XOF).sample();
-      a <- (a.[i, j <- c])%MLKEM768;         
+      a <- (a.[i, j <- c])%MLKEM1024;         
       j <- j + 1;                      
     }                                 
     i <- i + 1;                       
@@ -79,49 +79,61 @@ proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
   return unlift_matrix a;
 }
 
-proc sample_noise2_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t = {
+proc sample_noise2_jasmin(noiseseed:W8.t Array32.t) : W16.t Array1024.t * W16.t Array1024.t = {
     var nonce,aux;
-    var noise1:W16.t Array768.t;    
-    var noise2:W16.t Array768.t;    
+    var noise1:W16.t Array1024.t;    
+    var noise2:W16.t Array1024.t;    
     noise1 <- witness;
     noise2 <- witness;
     nonce <- (W8.of_int 0);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[0*256 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[0*256 + i_0])),
     noiseseed, nonce);
-    noise1 <- Array768.init
+    noise1 <- Array1024.init
             (fun i => if 0 <= i < 256 then aux.[i] else noise1.[i]);
     nonce <- (W8.of_int 1);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[1*256 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[1*256 + i_0])),
     noiseseed, nonce);
-    noise1 <- Array768.init
+    noise1 <- Array1024.init
             (fun i => if 256 <= i < 512 then aux.[i-256]
             else noise1.[i]);
     nonce <- (W8.of_int 2);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
     noiseseed, nonce);
-    noise1 <- Array768.init
+    noise1 <- Array1024.init
             (fun i => if 512 <= i < 768
             then aux.[i-512] else noise1.[i]);
     nonce <- (W8.of_int 3);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[0*256 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(3 * 256) + i_0])),
     noiseseed, nonce);
-    noise2 <- Array768.init
-         (fun i => if 0 <= i < 256 then aux.[i] else noise2.[i]);
+    noise1 <- Array1024.init
+            (fun i => if 768 <= i < 1024
+            then aux.[i-768] else noise1.[i]);
     nonce <- (W8.of_int 4);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[1*256 + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[0*256 + i_0])),
     noiseseed, nonce);
-    noise2 <- Array768.init
-         (fun i => if 256 <= i < 512 then aux.[i-256] else noise2.[i]);
+    noise2 <- Array1024.init
+         (fun i => if 0 <= i < 256 then aux.[i] else noise2.[i]);
     nonce <- (W8.of_int 5);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[1*256 + i_0])),
     noiseseed, nonce);
-    noise2 <- Array768.init
+    noise2 <- Array1024.init
+         (fun i => if 256 <= i < 512 then aux.[i-256] else noise2.[i]);
+    nonce <- (W8.of_int 6);
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
+    noiseseed, nonce);
+    noise2 <- Array1024.init
          (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else noise2.[i]);
+    nonce <- (W8.of_int 7);
+    aux <@Jkem1024.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(3 * 256) + i_0])),
+    noiseseed, nonce);
+    noise2 <- Array1024.init
+         (fun i => if (3 * 256) <= i < (3 * 256) + 256 then aux.[i-(3 * 256)]
          else noise2.[i]);
     return (noise1,noise2);
 }
 
-proc sample_noise2_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * int= {
+proc sample_noise2_spec(noiseseed:W8.t Array32.t) : W16.t Array1024.t * W16.t Array1024.t * int= {
   var noise1, noise2, _N,i,c;
   noise1 <- witness;                     
   noise2 <- witness;                      
@@ -144,16 +156,16 @@ proc sample_noise2_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Arr
   return (unlift_polyvec noise1,unlift_polyvec noise2,_N);
 }
 
-proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
+proc sample_noise3_jasmin(noiseseed:W8.t Array32.t) : W16.t Array1024.t * W16.t Array1024.t * W16.t Array256.t= {
   var noise1, noise2, nonce,noise3;
   (noise1,noise2) <@ sample_noise2_jasmin(noiseseed);
-  nonce <- (W8.of_int 6);
+  nonce <- (W8.of_int 8);
   noise3 <- witness;
-  noise3 <@Jkem768.M._poly_getnoise (noise3,noiseseed, nonce);
+  noise3 <@Jkem1024.M._poly_getnoise (noise3,noiseseed, nonce);
   return (noise1,noise2,noise3);
 }
 
-proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Array768.t * W16.t Array256.t= {
+proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array1024.t * W16.t Array1024.t * W16.t Array256.t= {
   var e, s, _N,e2, bytes;
   (s,e,_N) <@ sample_noise2_spec(noiseseed);
   bytes <- PRF noiseseed (W8.of_int _N);         
@@ -172,11 +184,11 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     var publicseed:W8.t Array32.t;
     var noiseseed:W8.t Array32.t;
     var zero:W64.t;
-    var a:W16.t Array2304.t;
+    var a:W16.t Array4096.t;
     var nonce:W8.t;
-    var skpv:W16.t Array768.t;
-    var e:W16.t Array768.t;
-    var pkpv:W16.t Array768.t;
+    var skpv:W16.t Array1024.t;
+    var e:W16.t Array1024.t;
+    var pkpv:W16.t Array1024.t;
     var buf2 : W8.t Array32.t * W8.t Array32.t;
     var buf : W8.t Array64.t;
     var _aux : int;
@@ -211,23 +223,23 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
 
     (skpv,e,_N) <@ sample_noise2_spec(noiseseed);
 
-    skpv <@Jkem768.M.__polyvec_ntt (skpv);
-    e <@Jkem768.M.__polyvec_ntt (e);
+    skpv <@Jkem1024.M.__polyvec_ntt (skpv);
+    e <@Jkem1024.M.__polyvec_ntt (e);
 
-    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[0 + i_0])),skpv);
-    pkpv <- Array768.init (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else pkpv.[i]);
-    aux <@ Aux.inner_product((Array768.init (fun i_0 => a.[3*256 + i_0])),skpv);
-    pkpv <- Array768.init (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else pkpv.[i]);
-    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[(2 * (3 * 256)) + i_0])), skpv);
-    pkpv <- Array768.init (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)] else pkpv.[i]);
+    aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[0 + i_0])),skpv);
+    pkpv <- Array1024.init (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else pkpv.[i]);
+    aux <@ Aux.inner_product((Array1024.init (fun i_0 => a.[3*256 + i_0])),skpv);
+    pkpv <- Array1024.init (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else pkpv.[i]);
+    aux <@ Aux.inner_product ((Array1024.init (fun i_0 => a.[(2 * (3 * 256)) + i_0])), skpv);
+    pkpv <- Array1024.init (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)] else pkpv.[i]);
 
-    pkpv <@Jkem768.M.__polyvec_add2 (pkpv,e);
-    pkpv <@Jkem768.M.__polyvec_reduce (pkpv);
+    pkpv <@Jkem1024.M.__polyvec_add2 (pkpv,e);
+    pkpv <@Jkem1024.M.__polyvec_reduce (pkpv);
 
-    aux_0 <@ M.__i_polyvec_tobytes(Array1152.init (fun (i_0 : int) => sk.[0 + i_0]), skpv);
-    sk <- Array2400.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1152 then aux_0.[i_0 - 0] else sk.[i_0]);
-    aux_0 <@ M.__i_polyvec_tobytes(Array1152.init (fun (i_0 : int) => pk.[0 + i_0]), pkpv);
-    pk <- Array1184.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1152 then aux_0.[i_0 - 0] else pk.[i_0]);
+    aux_0 <@ M.__i_polyvec_tobytes(Array1536.init (fun (i_0 : int) => sk.[0 + i_0]), skpv);
+    sk <- Array2400.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1536 then aux_0.[i_0 - 0] else sk.[i_0]);
+    aux_0 <@ M.__i_polyvec_tobytes(Array1536.init (fun (i_0 : int) => pk.[0 + i_0]), pkpv);
+    pk <- Array1184.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1536 then aux_0.[i_0 - 0] else pk.[i_0]);
     _aux <- 32 %/ 8;
     i <- 0;
     while (i < _aux){
@@ -243,30 +255,30 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     return (pk, sk);
   }
 
-  proc iredcompr(ctp: W8.t Array1088.t,bp:W16.t Array768.t) : W8.t Array960.t = {
-    var aux_0 : W8.t Array960.t;
-    bp <@Jkem768.M.__polyvec_reduce (bp);
-    aux_0 <@Jkem768.M.__i_polyvec_compress (Array960.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
+  proc iredcompr(ctp: W8.t Array1088.t,bp:W16.t Array1024.t) : W8.t Array1408.t = {
+    var aux_0 : W8.t Array1408.t;
+    bp <@Jkem1024.M.__polyvec_reduce (bp);
+    aux_0 <@Jkem1024.M.__i_polyvec_compress (Array1408.init (fun (i_0 : int) =>  ctp.[0 + i_0]),
     bp);
     return aux_0;
   }
 
   proc iindcpa_enc_jazz (ctp: W8.t Array1088.t, msgp:W8.t Array32.t, pk : W8.t Array1184.t,  noiseseed : W8.t Array32.t) : W8.t Array1088.t = {
-    var aux_1: W8.t Array128.t;
-    var aux_0: W8.t Array960.t;
+    var aux_1: W8.t Array160.t;
+    var aux_0: W8.t Array1408.t;
     var aux: W16.t Array256.t;
     var sctp: W8.t Array1088.t;
     var c:W8.t;
-    var pkpv:W16.t Array768.t;
+    var pkpv:W16.t Array1024.t;
     var publicseed:W8.t Array32.t;
     var k:W16.t Array256.t;
     var one:W64.t;
-    var at:W16.t Array2304.t;
+    var at:W16.t Array4096.t;
     var nonce:W8.t;
-    var sp_0:W16.t Array768.t;
-    var ep:W16.t Array768.t;
+    var sp_0:W16.t Array1024.t;
+    var ep:W16.t Array1024.t;
     var epp:W16.t Array256.t;
-    var bp:W16.t Array768.t;
+    var bp:W16.t Array1024.t;
     var v:W16.t Array256.t;
     var t64 : W64.t;
     var inc,w;
@@ -274,7 +286,7 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     sctp <- ctp;
 
     pkpv <- witness;
-    pkpv <@ M.__i_polyvec_frombytes(Array1152.init (fun (i : int) => pk.[0 + i]));
+    pkpv <@ M.__i_polyvec_frombytes(Array1536.init (fun (i : int) => pk.[0 + i]));
     publicseed <- witness;
     inc <- 32 %/ 8;
     w <- 0;
@@ -291,50 +303,50 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     at <@ __gen_matrix (publicseed,true);
 
     k <- witness;
-    k <@Jkem768.M._i_poly_frommsg (k, msgp);
+    k <@Jkem1024.M._i_poly_frommsg (k, msgp);
 
     (sp_0,ep,epp) <@ sample_noise3_spec(noiseseed);
 
-    sp_0 <@Jkem768.M.__polyvec_ntt (sp_0);
+    sp_0 <@Jkem1024.M.__polyvec_ntt (sp_0);
 
     bp <- witness;
 
-    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[0*(3*256) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[0*(3*256) + i_0])),
     sp_0);
-    bp <- Array768.init
+    bp <- Array1024.init
           (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[1*(3*256) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[1*(3*256) + i_0])),
     sp_0);
-    bp <- Array768.init
+    bp <- Array1024.init
           (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
+    aux <@Jkem1024.M.__polyvec_pointwise_acc ((Array1024.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
     sp_0);
-    bp <- Array768.init
+    bp <- Array1024.init
           (fun i => if (2 * 256) <= i < (2 * 256) + 256
           then aux.[i-(2 * 256)] else bp.[i]);
 
     v <- witness;
-    v <@Jkem768.M.__polyvec_pointwise_acc (pkpv, sp_0);
+    v <@Jkem1024.M.__polyvec_pointwise_acc (pkpv, sp_0);
 
-    bp <@Jkem768.M.__polyvec_invntt (bp);
-    v <@Jkem768.M._poly_invntt (v);
+    bp <@Jkem1024.M.__polyvec_invntt (bp);
+    v <@Jkem1024.M._poly_invntt (v);
 
-    bp <@Jkem768.M.__polyvec_add2 (bp, ep);
-    v <@Jkem768.M._poly_add2 (v, epp);
-    v <@Jkem768.M._poly_add2 (v, k);
+    bp <@Jkem1024.M.__polyvec_add2 (bp, ep);
+    v <@Jkem1024.M._poly_add2 (v, epp);
+    v <@Jkem1024.M._poly_add2 (v, k);
 
-    v <@Jkem768.M.__poly_reduce (v); 
+    v <@Jkem1024.M.__poly_reduce (v); 
 
     ctp <- sctp;
 
     aux_0 <@ iredcompr(ctp,bp);
     ctp <- Array1088.init
-           (fun i => if 0 <= i < 0 + 960 then aux_0.[i-0] else ctp.[i]);
+           (fun i => if 0 <= i < 0 + 1408 then aux_0.[i-0] else ctp.[i]);
     (aux_1,
-    aux) <@Jkem768.M._i_poly_compress ((Array128.init (fun i_0 => ctp.[(3 * 320) + i_0])),
+    aux) <@Jkem1024.M._i_poly_compress ((Array160.init (fun i_0 => ctp.[(3 * 320) + i_0])),
     v);
     ctp <- Array1088.init
-           (fun i => if (3 * 320) <= i < (3 * 320) + 128
+           (fun i => if (3 * 320) <= i < (3 * 320) + 160
            then aux_1.[i-(3 * 320)] else ctp.[i]);
     v <- aux;
     return (ctp);
@@ -343,11 +355,11 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
 }.
 
 equiv auxgenmatrix_good :
- Jkem768.M.__gen_matrix ~ AuxMLKEM.__gen_matrix :
+ Jkem1024.M.__gen_matrix ~ AuxMLKEM.__gen_matrix :
     transposed{1} = (if trans{2} then W64.one else W64.zero) /\ ={seed} ==> ={res}.
 proc => /=. 
 inline Parse(XOF).sample.
-inline Jkem768.M.__rej_uniform.
+inline Jkem1024.M.__rej_uniform.
 
 seq 7 1: (={seed} /\ stransposed{1} = (if trans{2} then W64.one else W64.zero)); 1: by auto.
 
@@ -360,9 +372,9 @@ seq 2 0 : (#pre /\ forall k, 0<=k<32 => extseed {1}.[k] = seed{2}.[k]).
   by move => k kb ?; case (k < j{hr}); move => *; 
     smt(Array34.set_neqiE Array34.set_eqiE).
 
-while(#pre /\ ={i} /\ 0<=i{1}<=3 /\ 
-   forall k, 0 <= k < i{1}*768 => 
-         (a{2}.[k %/ 768,k %% 768 %/ 256])%Matrix.[k %% 256] = incoeff (to_sint r{1}.[k]) /\
+while(#pre /\ ={i} /\ 0<=i{1}<=4 /\ 
+   forall k, 0 <= k < i{1}*1024 => 
+         (a{2}.[k %/ 1024,k %% 1024 %/ 256])%Matrix.[k %% 256] = incoeff (to_sint r{1}.[k]) /\
          bpos16 r{1}.[k] q); last first.
 + auto => /> &1 &2 ?; rewrite /kvec;split; 1: smt().
   move => extseed r1 a2 i ?????;rewrite  /unlift_matrix tP => H k kb.
@@ -371,9 +383,9 @@ while(#pre /\ ={i} /\ 0<=i{1}<=3 /\
 
 wp;while(stransposed{1} = (if trans{2} then W64.one else W64.zero) /\
          (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
-         ={i,j} /\ 0<=i{2}<=3 /\ 0<=j{2}<=3  /\ i{1} < 3 /\
-   forall k, 0 <= k < i{2}*768 + j{2}*256 => 
-         (a{2}.[k %/ 768,k %% 768 %/ 256])%Matrix.[k %% 256] = incoeff (to_sint r{1}.[k]) /\
+         ={i,j} /\ 0<=i{2}<=4 /\ 0<=j{2}<=4  /\ i{1} < 4 /\
+   forall k, 0 <= k < i{2}*1024 + j{2}*256 => 
+         (a{2}.[k %/ 1024,k %% 1024 %/ 256])%Matrix.[k %% 256] = incoeff (to_sint r{1}.[k]) /\
          bpos16 r{1}.[k] q); last by auto => /> /#.
 
 seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
@@ -397,21 +409,21 @@ seq 5 4 : (#pre /\ lift_array256 poly{1} = aa{2} /\
   move => k ??.
   rewrite initiE 1:/# /=.
   rewrite /lift_array256 setmE /= offunmE /= 1:/#.
-  have -> /= : k < i{2} * 768 + j{2} * 256 + 256 by smt().
-  have -> : (k %/ 768 = i{2} /\ k %% 768 %/ 256 = j{2}) <=> i{2} * 768 + j{2} * 256 <= k by smt().
-  case: (i{2} * 768 + j{2} * 256 <= k); 2: smt().
+  have -> /= : k < i{2} * 1024 + j{2} * 256 + 256 by smt().
+  have -> : (k %/ 1024 = i{2} /\ k %% 1024 %/ 256 = j{2}) <=> i{2} * 1024 + j{2} * 256 <= k by smt().
+  case: (i{2} * 1024 + j{2} * 256 <= k); 2: smt().
   by rewrite mapiE /#.
 
 conseq />; 1: by smt().
 
 seq 3 1 : (
    ={i, j} /\
-   (0 <= i{2} && i{2} < 3) /\
-   (0 <= j{2} && j{2} < 3) /\
+   (0 <= i{2} && i{2} < 4) /\
+   (0 <= j{2} && j{2} < 4) /\
    (forall (k0 : int), 0 <= k0 && k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
    (forall (k0 : int),
-     0 <= k0 && k0 < i{2} * 768 + j{2} * 256 =>
-     (a{2}.[k0 %/ 768, k0 %% 768 %/ 256])%Matrix.[k0 %% 256] = 
+     0 <= k0 && k0 < i{2} * 1024 + j{2} * 256 =>
+     (a{2}.[k0 %/ 1024, k0 %% 1024 %/ 256])%Matrix.[k0 %% 256] = 
         incoeff (to_sint r{1}.[k0]) /\ bpos16 r{1}.[k0] q) /\
    state{1} = XOF.state{2}).
 + inline XOF.init.
@@ -670,7 +682,7 @@ by move : (mask85_sum a 2) => /= ->; move : (mask85_sum a 3) => /= ->.
 qed.
 
 equiv get_noise_sample_noise :
-  Jkem768.M._poly_getnoise ~ CBD2.sample :
+  Jkem1024.M._poly_getnoise ~ CBD2.sample :
    arg{2} = PRF arg{1}.`2 arg{1}.`3
    ==> 
    lift_array256 res{1} = res{2} /\
@@ -687,7 +699,7 @@ seq 8 0 : (buf{1} = bytes{2}).
   move => &m z; auto => /> &hr ????; do split; 1,2,4: smt().
   by move => i0 i0b; case(i0 < k{hr}); move=> *;  smt(Array33.set_eqiE Array33.set_neqiE).
 
-while(#pre /\ i{1} = i{2} /\ 0 <= i{2} <= 128 /\ j{2} = 2*i{2} /\
+while(#pre /\ i{1} = i{2} /\ 0 <= i{2} <= 160 /\ j{2} = 2*i{2} /\
        (forall k, 0<=k<2*i{2} =>
           incoeff (to_sint rp{1}.[k]) = rr{2}.[k]) /\
        (forall k, 0<=k<j{2} =>
@@ -727,7 +739,7 @@ equiv sample_noise_good2 _key :
     _key = noiseseed{1} /\ ={noiseseed} 
     ==> res{1}.`1 = res{2}.`1 /\ 
                      res{1}.`2 = res{2}.`2 /\ 
-                     res{2}.`3 = 6.
+                     res{2}.`3 = 8.
 proc => /=.
 unroll for {2} 7; unroll for {2} 5.
 seq 2 2 : (#pre); 1:by auto.
@@ -751,29 +763,47 @@ wp; call (get_noise_sample_noise); auto => /> &1 &2 H *; do split.
 by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
 
 seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=2 /\
-              lift_polyvec noise1{1} = noise1{2} /\
+              lift_array256 (subarray256 noise1{1} 0) = (noise1{2}.[0])%Vector /\
+              lift_array256 (subarray256 noise1{1} 1) = (noise1{2}.[1])%Vector /\ 
+              lift_array256 (subarray256 noise1{1} 2) = (noise1{2}.[2])%Vector /\ 
               (forall k, 0<=k<768 => -5 < to_sint noise1{1}.[k] < 5)).
-wp; call (get_noise_sample_noise); auto => /> &1 &2 H0 H1 *; split; 
+wp; call (get_noise_sample_noise); auto => /> &1 &2 H0 H1 *; do split. 
++ move : H0; rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= 1:/# /= /#. 
++ move : H1; rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= !initiE //= /=  /#. 
++ rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= !tP =>k kb.
+  by rewrite !mapiE //= !initiE //= !initiE //= /=  /#. 
+by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
+
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise1{1}}pre /\ _N{2}=3 /\
+              lift_polyvec noise1{1} = noise1{2} /\
+              (forall k, 0<=k<1024 => -5 < to_sint noise1{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 H0 H1 H2 *; split; 
    last by  move => *; rewrite !initiE //= /#.
-move : H0 H1; rewrite /lift_vector /lift_array256 /subarray256  setvE /= eq_vectorP /= !tP =>H0 H1 r rb.
+move : H0 H1 H2; rewrite /lift_vector /lift_array256 /subarray256  setvE /= eq_vectorP /= !tP =>H0 H1 H2 r rb.
 rewrite !offunvE /= 1,2:/# !tP => k kb. 
 case (r = 0).
-+ move => *; have -> /= : !2=r by smt().
++ move => *; have -> /= : !3=r by smt().
   by move : (H0 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
 case (r = 1).
-+ move => *; have -> /= : !2=r by smt().
++ move => *; have -> /= : !3=r by smt().
   by move : (H1 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
-move => *; have -> /= : 2 = r by smt(). 
+case (r = 2).
++ move => *; have -> /= : !3=r by smt().
+  by move : (H2 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+move => *; have -> /= : 3 = r by smt(). 
 by rewrite !mapiE //= !initiE //= !initiE //= /#. 
 
-seq 3 4 : (#{/~_N{2}}{~i{2}}pre /\ lift_array256 (subarray256 noise2{1} 0) = (noise2{2}.[0])%Vector /\ _N{2}=3 /\
+seq 3 4 : (#{/~_N{2}}{~i{2}}pre /\ 
+     lift_array256 (subarray256 noise2{1} 0) = (noise2{2}.[0])%Vector /\ _N{2}=4 /\
               (forall k, 0<=k<256 => -5 < to_sint noise2{1}.[k] < 5)).
 wp; call (get_noise_sample_noise); auto => /> &1 &2 *; split.
 + rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= tP => k kb.
   by rewrite !mapiE //= initiE //= initiE 1:/# /= kb /=.
 by move => k kbl kbh;rewrite !initiE 1:/# /= kbl kbh /= /#.
 
-seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=4 /\
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=5 /\
               lift_array256 (subarray256 noise2{1} 0) = (noise2{2}.[0])%Vector /\
               lift_array256 (subarray256 noise2{1} 1) = (noise2{2}.[1])%Vector /\ 
               (forall k, 0<=k<512 => -5 < to_sint noise2{1}.[k] < 5)).
@@ -784,23 +814,41 @@ wp; call (get_noise_sample_noise); auto => /> &1 &2 ?H *; do split.
   by move : (H k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
 by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
 
-seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=5 /\
-              lift_polyvec noise2{1} = noise2{2} /\
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=6 /\
+              lift_array256 (subarray256 noise2{1} 0) = (noise2{2}.[0])%Vector /\
+              lift_array256 (subarray256 noise2{1} 1) = (noise2{2}.[1])%Vector /\ 
+              lift_array256 (subarray256 noise2{1} 2) = (noise2{2}.[2])%Vector /\ 
               (forall k, 0<=k<768 => -5 < to_sint noise2{1}.[k] < 5)).
-wp; call (get_noise_sample_noise); auto => /> &1 &2 ?H0 H1 *; split; 
-   last by  move => *; rewrite !initiE //= /#.
-move : H0 H1; rewrite /lift_vector /lift_array256 /subarray256  setvE /= eq_vectorP /= !tP =>H0 H1 r rb.
+wp; call (get_noise_sample_noise); auto => /> &1 &2 ? H0 H1 *; do split. 
++ move : H0; rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= 1:/# /= /#. 
++ move : H1; rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= !tP =>H k kb.
+  by move : (H k kb);rewrite !mapiE //= !initiE //= !initiE //= /=  /#. 
++ rewrite /lift_array256 /subarray256 setvE /= offunvE 1:/# /= !tP =>k kb.
+  by rewrite !mapiE //= !initiE //= !initiE //= /=  /#. 
+by move => k kbl kbh;rewrite !initiE 1:/# /= /#.
+
+seq 3 3 : (#{/~_N{2}}{~i{2}}{~noise2{1}}pre /\ _N{2}=7 /\
+              lift_polyvec noise2{1} = noise2{2} /\
+              (forall k, 0<=k<1024 => -5 < to_sint noise2{1}.[k] < 5)).
+wp; call (get_noise_sample_noise); auto => /> &1 &2 ? H0 H1 H2 *; split; 
+   last by  move => k*; rewrite !initiE //= /#.
+move : H0 H1 H2; rewrite /lift_vector /lift_array256 /subarray256  setvE /= eq_vectorP /= !tP =>H0 H1 H2 r rb.
 rewrite !offunvE /= 1,2:/# !tP => k kb. 
 case (r = 0).
-+ move => *; have -> /= : !2=r by smt().
++ move => *; have -> /= : !3=r by smt().
   by move : (H0 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
 case (r = 1).
-+ move => *; have -> /= : !2=r by smt().
++ move => *; have -> /= : !3=r by smt().
   by move : (H1 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
-move => *; have -> /= : 2 = r by smt(). 
+case (r = 2).
++ move => *; have -> /= : !3=r by smt().
+  by move : (H2 k kb);rewrite !mapiE //= !initiE //= !initiE //= /#. 
+move => *; have -> /= : 3 = r by smt(). 
 by rewrite !mapiE //= !initiE //= !initiE //= /#. 
 
-by auto => /> &1 H H0; rewrite /lift_vector /unlift_vector !tP /subarray256 /lift_array256;split;
+
+ auto => /> &1 H H0; rewrite /lift_vector /unlift_vector !tP /subarray256 /lift_array256;split;
   move => i ib; rewrite initiE //= offunvE 1:/# /= mapiE 1:/# /= initiE 1:/# /=;smt(inFq_to_sint qE).
 qed.
 
@@ -819,7 +867,7 @@ qed.
 
 
 equiv auxkg_good :
- Jkem768.M.__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
+ Jkem1024.M.__indcpa_keypair ~ AuxMLKEM.indcpa_keypair_jazz :
      ={arg}
      ==> ={res}. 
 proc => /=. 
@@ -922,7 +970,7 @@ by sim.
 qed.
 
 equiv auxienc_good :
- Jkem768.M.__indcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
+ Jkem1024.M.__indcpa_enc ~ AuxMLKEM.iindcpa_enc_jazz :
      ={arg} ==> ={res}. 
 proc. 
 swap {1} 7 -6.
@@ -968,8 +1016,8 @@ qed.
 (**** MORE AUX ****)
 
 lemma toipolivec_lift _v :
-  toipolyvec (lift_polyvec _v) = map asint (lift_array768 _v).
-rewrite /toipolyvec /lift_polyvec /lift_array768 /fromarray256;congr => /=;rewrite tP => k kb.
+  toipolyvec (lift_polyvec _v) = map asint (lift_array1024 _v).
+rewrite /toipolyvec /lift_polyvec /lift_array1024 /fromarray256;congr => /=;rewrite tP => k kb.
 rewrite mapiE 1:/# /= initiE 1:/# /= /lift_array256 /subarray256.
 case (0<=k<256) => * /=.
 + by rewrite getvE offunvE /= 1:/# mapiE 1:/# /= initiE 1:/# /=.
@@ -980,25 +1028,25 @@ qed.
 
 (******* CORRECTNESS PROOFS TOP LEVEL ************)
 
-import InnerPKE768.
+import InnerPKE1024.
 
 lemma mlkem_correct_kg   : 
-   equiv [Jkem768.M.__indcpa_keypair ~ InnerPKE768.kg_derand : 
+   equiv [Jkem1024.M.__indcpa_keypair ~ InnerPKE1024.kg_derand : 
        randomnessp{1} = coins{2} 
         ==> 
        let (pk,sk) = res{2} in let (t,rho) = pk in
-         sk = Array1152.init (fun i => res{1}.`2.[i]) /\
-         t = Array1152.init (fun i => res{1}.`1.[i])  /\
-         rho = Array32.init (fun i => res{1}.`1.[i+1152]) ].
+         sk = Array1536.init (fun i => res{1}.`2.[i]) /\
+         t = Array1536.init (fun i => res{1}.`1.[i])  /\
+         rho = Array32.init (fun i => res{1}.`1.[i+1536]) ].
 proc*.
 transitivity {1} { r <@ AuxMLKEM.indcpa_keypair_jazz(pk, sk, randomnessp);} 
 (={pk,sk,randomnessp} ==> ={r}) 
 (   randomnessp{1} = coins{2} 
         ==> 
        let (pk,sk) = r{2} in let (t,rho) = pk in
-         sk = Array1152.init (fun i => r{1}.`2.[i]) /\
-         t = Array1152.init (fun i => r{1}.`1.[i])  /\
-         rho = Array32.init (fun i => r{1}.`1.[i+1152]) ); 1,2: smt().
+         sk = Array1536.init (fun i => r{1}.`2.[i]) /\
+         t = Array1536.init (fun i => r{1}.`1.[i])  /\
+         rho = Array32.init (fun i => r{1}.`1.[i+1536]) ); 1,2: smt().
  by call auxkg_good; auto => />.
 
 inline {1} 1; inline {2} 1.
@@ -1035,7 +1083,7 @@ seq 8 2  : (#pre /\ rho{2} = publicseed{1} /\ sig{2} = noiseseed{1}).
 
 swap {2} [6..7] -5.
 seq 2 2 : (#pre /\ a{2} = lift_matrix a{1} /\
-            pos_bound2304_cxq a{1} 0 2304 2).
+            pos_bound4096_cxq a{1} 0 4096 2).
 + inline AuxMLKEM.__gen_matrix; conseq />.
   seq 6 3 : (a0{1}=a{2}); last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
@@ -1052,8 +1100,8 @@ seq 2 2 : (#pre /\ a{2} = lift_matrix a{1} /\
 swap {2} [5..9]  -2.
 swap {1} 1 1.
 seq 1 7 : (#pre /\ s{2} = lift_polyvec skpv{1} /\ e{2} = lift_polyvec e{1} /\
-                signed_bound768_cxq skpv{1} 0 768 1 /\
-                signed_bound768_cxq e{1} 0 768 1).
+                signed_bound1024_cxq skpv{1} 0 1024 1 /\
+                signed_bound1024_cxq e{1} 0 1024 1).
 + inline AuxMLKEM.sample_noise2_spec; conseq />. 
   seq 8 7 : (noise1{1}=s{2} /\ noise2{1} = e{2}); 
     1: by sim; auto => />.
@@ -1061,19 +1109,19 @@ seq 1 7 : (#pre /\ s{2} = lift_polyvec skpv{1} /\ e{2} = lift_polyvec e{1} /\
 
 swap {1} 1 2; seq 0 2: #pre; 1: by auto.
 
-seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
-             {~signed_bound768_cxq e{1} 0 768 1}pre /\ 
+seq 11 3 : (#{/~signed_bound1024_cxq skpv{1} 0 1024 1}
+             {~signed_bound1024_cxq e{1} 0 1024 1}pre /\ 
                 t{2} = lift_polyvec pkpv{1} /\
-                pos_bound768_cxq pkpv{1} 0 768 2 /\
-                pos_bound768_cxq skpv{1} 0 768 2
+                pos_bound1024_cxq pkpv{1} 0 1024 2 /\
+                pos_bound1024_cxq skpv{1} 0 1024 2
                 ); last first.
 
 + wp 7 3; while{1} (0<=i{1} <= _aux{1} /\ _aux{1} = 4 /\
             rho{2} = publicseed{1} /\
-             sv{2} = Array1152.init (fun i => sk0{1}.[i]) /\
-             tv{2} =  Array1152.init (fun i => pk0{1}.[i])  /\ 
+             sv{2} = Array1536.init (fun i => sk0{1}.[i]) /\
+             tv{2} =  Array1536.init (fun i => pk0{1}.[i])  /\ 
                 forall k, 0<=k<i{1}*8 =>
-                 rho{2}.[k] = pk0{1}.[1152 + k]) 
+                 rho{2}.[k] = pk0{1}.[1536 + k]) 
              (4 - i{1}).
 
 + move => *;
@@ -1087,7 +1135,7 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
   + move => k ??.
     rewrite initiE 1:/# /=.
     rewrite get8_set64_directE 1,2:/#/=.
-    case ((i{hr} + 144) * 8 <= 1152 + k < (i{hr} + 144) * 8 + 8)=>*; last  by  rewrite /get8 initiE 1:/# /= /#.
+    case ((i{hr} + 144) * 8 <= 1536 + k < (i{hr} + 144) * 8 + 8)=>*; last  by  rewrite /get8 initiE 1:/# /= /#.
      rewrite wordP => i ib.
      rewrite get64E /= /(\bits8) initiE 1:/# /= /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
   + by smt().
@@ -1109,13 +1157,13 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
 (* Algebraic part remaining *)
 conseq => />.
 
-seq 1 1 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}pre /\
-            pos_bound768_cxq skpv{1} 0 768 2).
+seq 1 1 : (#{/~signed_bound1024_cxq skpv{1} 0 1024 1}pre /\
+            pos_bound1024_cxq skpv{1} 0 1024 2).
 + wp;ecall{1} (polyvec_ntt_corr (skpv{1})).
   by auto => /> /#.
 
-seq 1 1 : (#{/~signed_bound768_cxq e{1} 0 768 1}pre /\
-            pos_bound768_cxq e{1} 0 768 2).
+seq 1 1 : (#{/~signed_bound1024_cxq e{1} 0 1024 1}pre /\
+            pos_bound1024_cxq e{1} 0 1024 2).
 + wp;ecall{1} (polyvec_ntt_corr (e{1})).
   by auto => /> /#.
 
@@ -1125,15 +1173,15 @@ seq 3 0 : (#pre /\
     incoeff (to_sint pkpv{1}.[k]) = ((ntt_mmul a{2} s{2}).[0])%Vector.[k]).
 
 wp; ecall{1} (innerprod_corr 
-     (invnttv (lift_polyvec (Array768.init ("_.[_]" a{1}))))
+     (invnttv (lift_polyvec (Array1024.init ("_.[_]" a{1}))))
      (invnttv (lift_polyvec skpv{1}))).
 
 + auto => /> &1 &2.
   move => ??.
   do split; 1,2,4: smt(nttvK).
-  + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
+  + by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
-  rewrite /lift_array2304 /lift_polyvec /lift_array256 /invnttv !tP =>  ?val k kbl kbh.
+  rewrite /lift_array4096 /lift_polyvec /lift_array256 /invnttv !tP =>  ?val k kbl kbh.
   rewrite !initiE 1:/# /= kbl kbh /= ; do split; 1,2:smt().
   move : (val k _) => //; rewrite mapiE //= => ->.
   rewrite /ntt_mmul !getvE offunvE //= /dotp /kvec /=.
@@ -1141,8 +1189,8 @@ wp; ecall{1} (innerprod_corr
   rewrite  !mapvE !setvE !offunvE //= !getmE !offunmE //= !offunvK /vclamp  /kvec /=.
   rewrite !add_comm_ntt !mul_comm_ntt !nttK nttZero. 
   rewrite -!(matrixcols) //=.
-  have -> : (init ("_.[_]" a{1}))%Array768 = 
-               (init (fun (i_0 : int) => a{1}.[i_0]))%Array768 by smt(Array768.tP).
+  have -> : (init ("_.[_]" a{1}))%Array1024 = 
+               (init (fun (i_0 : int) => a{1}.[i_0]))%Array1024 by smt(Array1024.tP).
   by congr;ring.
 seq 2 0 : (#pre /\
         (forall k, 256 <= k < 512 =>
@@ -1151,15 +1199,15 @@ seq 2 0 : (#pre /\
 ).
 
 wp; ecall{1} (innerprod_corr 
-     (invnttv (lift_polyvec (Array768.init (fun (i_0 : int) => a{1}.[768 + i_0]))))
+     (invnttv (lift_polyvec (Array1024.init (fun (i_0 : int) => a{1}.[1024 + i_0]))))
      (invnttv (lift_polyvec skpv{1}))).
 
 + auto => /> &1 &2.
   move => ??H.
   do split; 1,2,4: smt(nttvK).
-  + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
+  + by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
-  rewrite /lift_array2304 /lift_polyvec /lift_array256 /invnttv !tP =>  ?val.
+  rewrite /lift_array4096 /lift_polyvec /lift_array256 /invnttv !tP =>  ?val.
   split.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
     rewrite (_: !(256 <= k && k < 512)) 1:/# /=.
@@ -1177,29 +1225,29 @@ wp; ecall{1} (innerprod_corr
   by congr;ring.
 
 seq 2 0 : (#pre /\
-        (forall k, 512 <= k < 768 =>
+        (forall k, 512 <= k < 1024 =>
          b16 pkpv{1}.[k]  (2*q)  /\ 
     incoeff (to_sint pkpv{1}.[k]) = ((ntt_mmul a{2} s{2}).[2])%Vector.[k-512])
 ).
 
 wp; ecall{1} (innerprod_corr 
-     (invnttv (lift_polyvec (Array768.init (fun (i_0 : int) => a{1}.[2*768 + i_0]))))
+     (invnttv (lift_polyvec (Array1024.init (fun (i_0 : int) => a{1}.[2*1024 + i_0]))))
      (invnttv (lift_polyvec skpv{1}))).
 
 + auto => /> &1 &2.
   move => ??H H0.
   do split; 1,2,4: smt(nttvK).
-  + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //= /#.
+  + by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#.
   move => ????result0; rewrite /lift_matrix.
-  rewrite /lift_array2304 /lift_vector /lift_array256 /invnttv !tP =>  ?val.
+  rewrite /lift_array4096 /lift_vector /lift_array256 /invnttv !tP =>  ?val.
   do split.
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
-    rewrite (_: !(512 <= k && k < 768)) 1:/# /=.
+    rewrite (_: !(512 <= k && k < 1024)) 1:/# /=.
     move : (H k _); 1:  smt().
     move => [_ ->]. 
     congr;congr;congr;rewrite /lift_matrix; congr => /= /#. 
   + move => k klb khb; rewrite !initiE 1:/# /=; do split; 1,2:smt().
-    rewrite (_: !(512 <= k && k < 768))1: /# /=.
+    rewrite (_: !(512 <= k && k < 1024))1: /# /=.
     move : (H0 k _); 1: smt().
     move => [_ ->]. 
     congr;congr;congr;rewrite /lift_matrix; congr => /= /#. 
@@ -1213,11 +1261,11 @@ wp; ecall{1} (innerprod_corr
   by congr;ring.
 conseq => />.
 
-seq 1 1 : (t{2} = lift_polyvec pkpv{1} /\ signed_bound768_cxq pkpv{1} 0 768 4);
+seq 1 1 : (t{2} = lift_polyvec pkpv{1} /\ signed_bound1024_cxq pkpv{1} 0 1024 4);
 last first.
 
-+ ecall {1} (polyvec_reduce_corr (lift_array768 pkpv{1})).
-  auto => /> // &1 ?; rewrite /lift_array768 =>  rr  rrv ?. 
++ ecall {1} (polyvec_reduce_corr (lift_array1024 pkpv{1})).
+  auto => /> // &1 ?; rewrite /lift_array1024 =>  rr  rrv ?. 
   rewrite /lift_polyvec eq_vectorP => i ib; rewrite !offunvE//=.
   rewrite /lift_array256 /subarray256 tP => k kb.
   rewrite !mapiE //= !initiE //=.
@@ -1226,7 +1274,7 @@ last first.
   by rewrite !mapiE 1,2:/# /=. 
 
 have H := polyvec_add_corr_impl 2 2 _ _ => //.
-ecall{1} (H (lift_array768 pkpv{1}) (lift_array768 e{1})).
+ecall{1} (H (lift_array1024 pkpv{1}) (lift_array1024 e{1})).
 clear H.
 auto => /> &1 &2 ??; rewrite  /= => vs0 vs1 vs2.
 
@@ -1239,19 +1287,19 @@ case(r = 0).
 + move => r0; rewrite r0 /=. 
   move : (vs0 k kb) => [? <-].
   rewrite /lift_polyvec !offunvE 1,2:/# /= !subliftsub 1..4:/# /=. 
-  by smt(Array768.mapiE).
+  by smt(Array1024.mapiE).
 case(r = 1). 
 + move => r1; rewrite r1 /=. 
   move : (vs1 (k + 256) _); 1: smt().
   move  => [? <-].
   rewrite /lift_polyvec !offunvE 1,2:/# /= !subliftsub 1..4:/# /=. 
-  by smt(Array768.mapiE).
+  by smt(Array1024.mapiE).
 move => *.
 have -> : r= 2 by smt(). 
 move : (vs2 (k + 512) _); 1: smt().
 move  => [? <-].
 rewrite /lift_polyvec !offunvE 1,2:/# /= !subliftsub 1..4:/# /=. 
-by smt(Array768.mapiE).
+by smt(Array1024.mapiE).
 qed.
 
 (***************************************************)
@@ -1267,11 +1315,11 @@ smt(nth_out StdOrder.IntOrder.expr_gt0).
 qed.
 
 lemma ofipolyvec_lift vi vw :
-  all (fun i => 0 <= i < 32768) vi =>
-  lift_array768 vw = map incoeff vi =>
+  all (fun i => 0 <= i < 321024) vi =>
+  lift_array1024 vw = map incoeff vi =>
   ofipolyvec vi = lift_polyvec vw.
 rewrite allP /= => ?.
-rewrite /lift_array768 tP => H.
+rewrite /lift_array1024 tP => H.
 rewrite /ofipolyvec /lift_polyvec !setvE /= eq_vectorP => r rb.
 rewrite !offunvE 1,2:/# /= !offunvK /vclamp /= /subarray256 /lift_array256.
 case(2 = r). 
@@ -1294,18 +1342,18 @@ qed.
 
 
 lemma mlkem_correct_enc _pkp : 
-   equiv [Jkem768.M.__indcpa_enc ~ InnerPKE768.enc_derand: 
+   equiv [Jkem1024.M.__indcpa_enc ~ InnerPKE1024.enc_derand: 
      (* valid_ptr _pkp (384*3 + 32) /\
-     valid_ptr _ctp (3*320+128) /\ *)
+     valid_ptr _ctp (3*320+160) /\ *)
      msgp{1} = m{2} /\ 
      pk{1} = _pkp /\
      noiseseed{1} = coins{2} /\
-     pk{2}.`1 = Array1152.init( fun i => _pkp.[i]) /\
+     pk{2}.`1 = Array1536.init( fun i => _pkp.[i]) /\
      pk{2}.`2 = Array32.init( fun i => _pkp.[3*384+i])
        ==> 
      let (c1,c2) = res{2} in
-     c1 = Array960.init(fun i => res{1}.[i]) /\
-     c2 = Array128.init(fun i => res{1}.[960+i]) 
+     c1 = Array1408.init(fun i => res{1}.[i]) /\
+     c2 = Array160.init(fun i => res{1}.[1408+i]) 
 ].
 proc*.
 transitivity {1} { r <@ AuxMLKEM.iindcpa_enc_jazz(ct,msgp,pk,noiseseed);} 
@@ -1313,12 +1361,12 @@ transitivity {1} { r <@ AuxMLKEM.iindcpa_enc_jazz(ct,msgp,pk,noiseseed);}
   (msgp{1} = m{2} /\ 
      pk{1} = _pkp /\
      noiseseed{1} = coins{2} /\
-     pk{2}.`1 = Array1152.init( fun i => _pkp.[i]) /\
+     pk{2}.`1 = Array1536.init( fun i => _pkp.[i]) /\
      pk{2}.`2 = Array32.init( fun i => _pkp.[3*384+i])
        ==> 
      let (c1,c2) = r{2} in
-     c1 = Array960.init(fun i => r{1}.[i]) /\
-     c2 = Array128.init(fun i => r{1}.[960+i])); 1,2: smt().
+     c1 = Array1408.init(fun i => r{1}.[i]) /\
+     c2 = Array160.init(fun i => r{1}.[1408+i])); 1,2: smt().
 + by call auxienc_good; auto => />.
 
 inline {1} 1; inline {2} 1.
@@ -1328,11 +1376,11 @@ sp 5 4.
 swap {2} 5 -4.
 swap {2} [7..8] -5.
 seq 2 3 : (#pre /\ that{2} = lift_polyvec pkpv{1} /\
-              signed_bound768_cxq pkpv{1} 0 768 2). 
+              signed_bound1024_cxq pkpv{1} 0 1024 2). 
 wp; ecall {1} (polyvec_frombytes_corr 
-   (Array1152.init  (fun (i0 : int) => pk0{1}.[0 + i0]))).
+   (Array1536.init  (fun (i0 : int) => pk0{1}.[0 + i0]))).
 + auto => />  ??rbound;split;last by smt().
-  pose xx := (Array1152.init ("_.[_]" _pkp)).
+  pose xx := (Array1536.init ("_.[_]" _pkp)).
   apply ofipolyvec_lift;last by smt().
   move : rbound; rewrite allP /pos_bound1024_cxq /bpos16 => rbound.
   move => k kb; have := rbound k kb. rewrite /= /decode12_vec !get_of_list 1:/#. 
@@ -1363,7 +1411,7 @@ by move : (H k _);1:smt(); rewrite initiE //= /#.
 
 swap {2} [6..7] -4. 
 seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
-            pos_bound2304_cxq at{1} 0 2304 2). 
+            pos_bound4096_cxq at{1} 0 4096 2). 
 (* Simplifiable if spec were to call a function to gen matrix *)
 + inline AuxMLKEM.__gen_matrix; conseq />.
   seq 7 3 : (a{1}=aT{2});  last by auto => />;  smt(matrix_unlift). 
@@ -1385,9 +1433,9 @@ ecall {1} (poly_frommsg_corr m{2}); 1: by auto => /> /#.
 
 swap {2} [2..9] -1.
 seq 1 8 : (#pre /\ rv{2} = lift_polyvec sp_0{1} /\
-    signed_bound768_cxq sp_0{1} 0 768 1 /\
+    signed_bound1024_cxq sp_0{1} 0 1024 1 /\
      e1{2} = lift_polyvec ep{1} /\
-    signed_bound768_cxq ep{1} 0 768 1 /\
+    signed_bound1024_cxq ep{1} 0 1024 1 /\
     e2{2} = lift_array256 epp{1} /\
     signed_bound_cxq epp{1} 0 256 1).
 + inline AuxMLKEM.sample_noise3_spec AuxMLKEM.sample_noise2_spec. 
@@ -1404,10 +1452,10 @@ inline {1} AuxMLKEM.iredcompr.
 swap {1} [19..20] -3.
 seq 18 3 : (u{2} = lift_polyvec bp0{1} /\ v{2} = lift_array256 v{1} /\
             pos_bound256_cxq v{1} 0 256 2 /\
-            pos_bound768_cxq bp0{1} 0 768 2); last first.
+            pos_bound1024_cxq bp0{1} 0 1024 2); last first.
 wp; ecall {1} (i_poly_compress_corr v{1}).
 wp; ecall {1} (i_polyvec_compress_corr bp0{1}).
-auto => /> &1 &2; rewrite /signed_bound_cxq /signed_bound768_cxq.
+auto => /> &1 &2; rewrite /signed_bound_cxq /signed_bound1024_cxq.
 move => ??H;split. 
 + by rewrite tP => i ib; rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/# initiE 1:/# /=.
 +  rewrite tP => i ib; rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifT 1:/# /=.
@@ -1415,17 +1463,17 @@ move => ??H;split.
 
 (* Algebraic part *)
 
-seq 1 1 : (#{/~signed_bound768_cxq sp_0{1} 0 768 1}
+seq 1 1 : (#{/~signed_bound1024_cxq sp_0{1} 0 1024 1}
             {~rv{2} = lift_polyvec sp_0{1}}pre /\ 
             rhat{2} = lift_polyvec sp_0{1} /\
-            pos_bound768_cxq sp_0{1} 0 768 2); 
+            pos_bound1024_cxq sp_0{1} 0 1024 2); 
   first by wp; ecall{1} (polyvec_ntt_corr sp_0{1}); auto => /> /#. 
      
 
 seq 3 0 : (#pre /\
      (forall k, 0 <= k < 256 =>
-         (lift_array768 bp{1}).[k] = ((scale ((ntt_mmul aT{2} rhat{2}).[0])%Vector) (incoeff 169)).[k]) /\
-          signed_bound768_cxq bp{1} 0 256 2).
+         (lift_array1024 bp{1}).[k] = ((scale ((ntt_mmul aT{2} rhat{2}).[0])%Vector) (incoeff 169)).[k]) /\
+          signed_bound1024_cxq bp{1} 0 256 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => (aT{2}.[0,i])%PolyMat))) (invnttv rhat{2})).
 auto => /> &1 &2 ???????.
@@ -1433,9 +1481,9 @@ do split; 2,4: smt(nttvK).
 + rewrite /lift_matrix /lift_polyvec /nttv /invnttv !mapvE /=.
   apply eq_vectorP => i ib; rewrite  !offunvE //= !offunvK /vclamp ib /=.
   by rewrite tP => k kb; rewrite subliftsub // !getmE offunmE //= nttK subsublift //.
-+ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
++ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
 + move => ???? result ?; rewrite /lift_array256 tP => rval. 
-  split; last by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
+  split; last by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
   move => k kbl kbh; rewrite mapiE 1:/# /= initiE 1:/# /= kbl kbh /=.
   move : (rval k _); 1: smt().
   rewrite mapiE //= => ->.
@@ -1444,8 +1492,8 @@ do split; 2,4: smt(nttvK).
 
 seq 2 0 : (#pre /\
      (forall k, 256 <= k < 512 =>
-         (lift_array768 bp{1}).[k] = ((scale ((ntt_mmul aT{2} rhat{2}).[1])%PolyVec) (incoeff 169)).[k-256]) /\
-          signed_bound768_cxq bp{1} 0 512 2).
+         (lift_array1024 bp{1}).[k] = ((scale ((ntt_mmul aT{2} rhat{2}).[1])%PolyVec) (incoeff 169)).[k-256]) /\
+          signed_bound1024_cxq bp{1} 0 512 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => (aT{2}.[1,i])%PolyMat))) (invnttv rhat{2})).
 auto => /> &1 &2 ??????? rold ?.
@@ -1453,23 +1501,23 @@ do split; 2,4: smt(nttvK).
 + rewrite /lift_matrix /lift_polyvec /nttv /invnttv !mapvE /=.
   apply eq_vectorP => i ib; rewrite !offunvE //= !offunvK /vclamp ib /=.
   by rewrite tP => k kb; rewrite subliftsub // !getmE offunmE //= nttK subsublift //.
-+ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
++ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
 + move => ???? result ?; rewrite /lift_array256 tP => rval. 
   do split. 
   + move => k kbl kbh; rewrite !mapiE 1,2:/# /= !initiE 1:/# /= (_: !(256 <= k && k < 512)) 1:/# /=.
-    by move : (rold k _); 1: smt(); rewrite /lift_array768 mapiE 1:/# /= /scale mapiE 1:/# /=.
-  + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
+    by move : (rold k _); 1: smt(); rewrite /lift_array1024 mapiE 1:/# /= /scale mapiE 1:/# /=.
+  + by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
   + move => k kbl kbh; rewrite mapiE 1:/# /= initiE 1:/# /= kbl kbh /=.
     move : (rval (k - 256) _); 1: smt().
     rewrite mapiE 1:/# /= => ->.
     rewrite /scale !mapiE 1,2:/# /=; congr.
     by rewrite dotpmm //.
-  by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
+  by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
 
 seq 2 0 : (#pre /\
-     (forall k, 512 <= k <768 =>
-         (lift_array768 bp{1}).[k] = ((scale ((ntt_mmul aT{2} rhat{2}).[2])%PolyVec) (incoeff 169)).[k-512]) /\
-          signed_bound768_cxq bp{1} 0 768 2).
+     (forall k, 512 <= k <1024 =>
+         (lift_array1024 bp{1}).[k] = ((scale ((ntt_mmul aT{2} rhat{2}).[2])%PolyVec) (incoeff 169)).[k-512]) /\
+          signed_bound1024_cxq bp{1} 0 1024 2).
 
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv (offunv (fun i => (aT{2}.[2,i]))%PolyMat)) (invnttv rhat{2})).
 auto => /> &1 &2 ??????? rold ? rnsold ?.
@@ -1477,21 +1525,21 @@ do split; 2,4: smt(nttvK).
 + rewrite /lift_matrix /lift_polyvec /nttv /invnttv !mapvE /=.
   apply eq_vectorP => i ib; rewrite !offunvE //= !offunvK /vclamp ib /=.
   by rewrite tP => k kb; rewrite subliftsub // !getmE offunmE //= nttK subsublift //.
-+ by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
++ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
 + move => ???? result ?; rewrite /lift_array256 tP => rval. 
   do split. 
-  + move => k kbl kbh; rewrite !mapiE 1,2:/# /= !initiE 1:/# /= (_: !(512 <= k && k < 768)) 1:/# /=.
-    by move : (rold k _); 1: smt(); rewrite /lift_array768 mapiE 1:/# /= /scale mapiE 1:/# /=.
-  + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
-  + move => k kbl kbh; rewrite !mapiE 1,2:/# /= !initiE 1:/# /= (_: !(512 <= k && k < 768)) 1:/# /=.
-    by move : (rnsold k _); 1: smt(); rewrite /lift_array768 mapiE 1:/# /= /scale mapiE 1:/# /=.
-  + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
+  + move => k kbl kbh; rewrite !mapiE 1,2:/# /= !initiE 1:/# /= (_: !(512 <= k && k < 1024)) 1:/# /=.
+    by move : (rold k _); 1: smt(); rewrite /lift_array1024 mapiE 1:/# /= /scale mapiE 1:/# /=.
+  + by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
+  + move => k kbl kbh; rewrite !mapiE 1,2:/# /= !initiE 1:/# /= (_: !(512 <= k && k < 1024)) 1:/# /=.
+    by move : (rnsold k _); 1: smt(); rewrite /lift_array1024 mapiE 1:/# /= /scale mapiE 1:/# /=.
+  + by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
   + move => k kbl kbh; rewrite mapiE 1:/# /= initiE 1:/# /= kbl kbh /=.
     move : (rval (k - 512) _); 1: smt().
     rewrite mapiE 1:/# /= => ->.
     rewrite /scale !mapiE 1,2:/# /=; congr.
     by rewrite dotpmm //.
-  + by rewrite /signed_bound768_cxq => k kb; rewrite initiE //;  smt().
+  + by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //;  smt().
 
 seq 2 0 : (#pre /\
      (forall k, 0 <= k < 256 =>
@@ -1501,7 +1549,7 @@ seq 2 0 : (#pre /\
 wp; ecall {1} (polyvec_pointwise_acc_corr_alg (invnttv that{2}) (invnttv rhat{2})).
 auto => /> &1 &2 ?????????????.
 do split; 1,2: smt(nttvK). 
-+ by rewrite /signed_bound768_cxq => k kb;  smt().
++ by rewrite /signed_bound1024_cxq => k kb;  smt().
 + move => ??? result ?; rewrite /lift_array256 tP => rval. 
   move => k kbl kbh; rewrite mapiE 1:/# /=. 
   move : (rval k _); 1: smt().
@@ -1509,7 +1557,7 @@ do split; 1,2: smt(nttvK).
 
 seq 1 0 : (#{/~bp{1}}pre /\ 
          lift_polyvec bp{1} = invnttv (ntt_mmul aT{2} rhat{2}) /\
-         signed_bound768_cxq bp{1} 0 768 2).
+         signed_bound1024_cxq bp{1} 0 1024 2).
 + ecall {1} (polyvec_invntt_corr bp{1}).
   auto => /> &1 &2 ???????r1?r2?r3???;split;1:smt(). 
   move => ?result <-?;  split; last by smt(). 
@@ -1518,15 +1566,15 @@ seq 1 0 : (#{/~bp{1}}pre /\
   rewrite /scale tP => k kb; rewrite /(lift_polyvec bp{1}) offunvK /vclamp ib /=.
   rewrite  mapiE //= /lift_array256 /subarray256 mapiE//= initiE//=.
   case (i = 0).
-  + move => i0; move : (r1 k kb); rewrite /lift_array768 mapiE// 1:/# /= i0 /= => ->.
+  + move => i0; move : (r1 k kb); rewrite /lift_array1024 mapiE// 1:/# /= i0 /= => ->.
     rewrite /scale mapiE 1:/# /=.
     by rewrite -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   case (i = 1).
-  + move => i1 noi0; move : (r2 (256 + k) _); 1:smt(); rewrite /lift_array768 mapiE// 1:/# /= i1 /= => ->.
+  + move => i1 noi0; move : (r2 (256 + k) _); 1:smt(); rewrite /lift_array1024 mapiE// 1:/# /= i1 /= => ->.
     rewrite /scale mapiE 1:/# /=.
     by rewrite !getvE -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
   case (i = 2); last by smt().
-  move => i2 noi1 noi0; move : (r3 (512 + k) _); 1:smt(); rewrite /lift_array768 mapiE// 1:/# /= i2 /= => ->.
+  move => i2 noi1 noi0; move : (r3 (512 + k) _); 1:smt(); rewrite /lift_array1024 mapiE// 1:/# /= i2 /= => ->.
   rewrite /scale mapiE 1:/# /=.
   by rewrite !getvE -ZqField.mulrA (ZqField.mulrC (incoeff 169)) rrinvcoeff ZqField.mulrC ZqField.mul1r.  
 
@@ -1546,15 +1594,15 @@ seq 1 0 : (#{/~v{1}}pre /\
 
 seq 1 0 : (#{/~bp{1}}pre /\ 
          lift_polyvec bp{1} = (invnttv (ntt_mmul aT{2} rhat{2}) + e1{2})%PolyVec /\
-         signed_bound768_cxq bp{1} 0 768 3).
+         signed_bound1024_cxq bp{1} 0 1024 3).
 have H := polyvec_add_corr_impl 2 1 _ _ => //.
-ecall{1} (H (lift_array768 bp{1}) (lift_array768 ep{1})); clear H.
+ecall{1} (H (lift_array1024 bp{1}) (lift_array1024 ep{1})); clear H.
 + auto => /> &1 &2 ???????????result? rval.
   have -> : lift_polyvec result = (lift_polyvec bp{1} + lift_polyvec ep{1})%PolyVec; last by smt().
   rewrite polyvecD /Vector.(+) eq_vectorP => i ib.
   rewrite !offunvE //= tP => k kb.
   rewrite  /(&+) map2E /= !initiE //= !liftarrayvector //= -(rval (256*i + k) _) 1:/#.
-  by rewrite subliftsub // /lift_array768 mapiE //= /#.
+  by rewrite subliftsub // /lift_array1024 mapiE //= /#.
 
 seq 1 0 : (#{/~v{1}}pre /\ 
          lift_array256 v{1} = invntt (ntt_dotp that{2} rhat{2}) &+ e2{2} /\
@@ -1572,8 +1620,8 @@ ecall{1} (H (lift_array256 v{1}) (lift_array256 k{1})); clear H.
 
 seq 2 0 : (#pre /\ 
          lift_polyvec bp0{1} = (invnttv (ntt_mmul aT{2} rhat{2}) + e1{2})%PolyVec /\
-         pos_bound768_cxq bp0{1} 0 768 2).
-ecall{1}(polyvec_reduce_corr (lift_array768 bp0{1})).
+         pos_bound1024_cxq bp0{1} 0 1024 2).
+ecall{1}(polyvec_reduce_corr (lift_array1024 bp0{1})).
 auto =>/> &1 &2 ???????rold????rval?.
 rewrite -rold; rewrite eq_vectorP => i ib.
 by rewrite tP => k kb; rewrite !liftarrayvector // /#.
@@ -1585,12 +1633,12 @@ qed.
 
 
 lemma mlkem_correct_dec  : 
-   equiv [Jkem768.M.__indcpa_dec ~ InnerPKE768.dec : 
+   equiv [Jkem1024.M.__indcpa_dec ~ InnerPKE1024.dec : 
      sk{1} =  sk{2} 
      /\
      let (c1,c2) = cph{2} in
-       c1 = Array960.init (fun i => ct{1}.[i]) /\
-       c2 = Array128.init (fun i => ct{1}.[960+i])
+       c1 = Array1408.init (fun i => ct{1}.[i]) /\
+       c2 = Array160.init (fun i => ct{1}.[1408+i])
        ==> 
      res{1} =  res{2}
 ].
@@ -1600,8 +1648,8 @@ sp 0 1.
 swap {2} [3..4] -1.
 swap {1} 6 -4.
 seq 2 3 : (#pre /\ u{2} = lift_polyvec bp{1} /\
-    signed_bound768_cxq bp{1} 0 768 2).
-+ wp; ecall{1}(polyvec_decompress_corr (Array960.init (fun (i : int) => ct{1}.[0 + i])));
+    signed_bound1024_cxq bp{1} 0 1024 2).
++ wp; ecall{1}(polyvec_decompress_corr (Array1408.init (fun (i : int) => ct{1}.[0 + i])));
     1: by auto => /> /#. 
 
 swap {2} [2..3] -1.
@@ -1609,17 +1657,17 @@ swap {1} 2 -1.
 swap {1} [4..5] -2.
 seq 3 2 : (#{/~ct{1}}pre /\ v{2} = lift_array256 v{1} /\
      signed_bound_cxq v{1} 0 256 1). 
-+ wp; ecall{1}(poly_decompress_corr(Array128.init (fun (i : int) => ct{1}.[3 * 320 + i])));
++ wp; ecall{1}(poly_decompress_corr(Array160.init (fun (i : int) => ct{1}.[3 * 320 + i])));
   by auto => /> /#. 
 
 swap {1} 2 -1.
 swap {1} 3 -2.
 seq 1 3 : (#pre /\ s{2} = lift_polyvec skpv{1} /\
-      signed_bound768_cxq skpv{1} 0 768 2). 
+      signed_bound1024_cxq skpv{1} 0 1024 2). 
 + wp; ecall{1}(polyvec_frombytes_corr sk{1}).
   auto => /> &1 &2 ????rbound; split; 2: smt().
   apply ofipolyvec_lift;2:smt().
-  move : rbound; rewrite allP /pos_bound768_cxq /bpos16 => rbound.
+  move : rbound; rewrite allP /pos_bound1024_cxq /bpos16 => rbound.
   move => k kb; have := rbound k kb;rewrite  /= /decode12_vec !get_of_list 1:/#.
   by have /=?  /#:= decode_rng ( (to_list sk{2})) 12 k.
    
