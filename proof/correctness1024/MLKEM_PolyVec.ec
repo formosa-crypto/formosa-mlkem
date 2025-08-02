@@ -1416,6 +1416,7 @@ lemma polyvec_invntt_correct_h _r:
 proof.
 proc.
 unroll for 2.
+wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[(3 * 256) + i])))).
 wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[(2 * 256) + i])))).
 wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[256 + i])))).
 wp;ecall (invntt_correct_h (lift_array256 (Array256.init (fun i => r.[i])))).
@@ -1427,11 +1428,15 @@ split; 1: by auto => />;move => k kb kbl; rewrite initiE /#.
 move =>  [#] r_eq_res1 ? res1 [#] res1v signed_bound_res1 res1_eq_res2.
 split;1:by auto => />;move => k kb kbl; rewrite initiE 1:/# /=;smt(Array1024.tP Array1024.initiE).
 
-move => signed_bound_r2 res2 [#] r_eq_res2 ? signed_bound_res2 />.
+move => signed_bound_r2 res2 [#] r_eq_res2 ? signed_bound_res2 /=.
 
-split; 1: by move => k k_bl kbh; rewrite !initiE 1:/# /= !initiE 1:/# /= !Array1024.initiE 1:/# /= (fun_if W16.to_sint) /#.
+split; 1: by move => k k_bl ; rewrite !initiE 1:/# /= !initiE 1:/# /= !Array1024.initiE 1:/# /= (fun_if W16.to_sint) /#.
 
-move => signed_bound_r3 res3 r_eq_res3 signed_bound_res3 />.
+move => signed_bound_r3 res3 [#] r_eq_res3  signed_bound_res3 /=.
+
+split; 1: by move => k k_bl ; rewrite !initiE 1:/# /= !initiE 1:/# /=  !initiE 1:/# /= !Array1024.initiE 1:/# /= (fun_if W16.to_sint) /#.
+
+move => signed_bound_r4 res4 [#] r_eq_res4 signed_bound_res4 /=.
 
 split.
   rewrite /scale_polyvec /invnttv /lift_polyvec !mapvE /= offunvK /vclamp /= eq_vectorP => k k_b.
@@ -1443,27 +1448,42 @@ split.
   + move => k_v.
     rewrite k_v /= i_b /=.
     have ->: !(256 <= i && i < 512). move : i_b => /#.
-    have ->: !(512 <= i && i < 1024). move : i_b => /#.
+    have ->: !(512 <= i && i < 768). move : i_b => /#.
+    have ->: !(768 <= i && i < 1024). move : i_b => /#.
     by rewrite /= (lift_array256_incoeff res1) 1:/# -res1v -r_eq_res1 /= _r_def 
                    /lift_array256  //= mapiE //=.
   move => ?.
   case (k = 1) => k_v.
     rewrite k_v /=.
     have ->: (256 <= 256 + i && 256 + i < 512). move : i_b => /#.
-    have ->: !(512 <= 256 + i && 256 + i < 1024). move : i_b => /#.
+    have ->: !(512 <= 256+i && 256+i < 768). move : i_b => /#.
+    have ->: !(768 <= 256+i && 256+i < 1024). move : i_b => /#.
     rewrite (lift_array256_incoeff res2) 1:/# -r_eq_res2 /= _r_def
          /lift_array256  //= mapiE //=.
     congr;congr;congr.
     apply Array256.tP => j j_b.
     rewrite -lift_array256_incoeff 1:j_b !mapiE //=.
     do (rewrite initiE 1:/# /=).
-    have ->: !(0 <= 256 + j && 256 + j < 256). move : j_b => /#.
-    by trivial.
-  move : k_v => ?.
-  case (k = 2) => k_v.
-    rewrite k_v /=.
-    have ->: (512 <= 512 + i && 512 + i < 1024). move : i_b => /#.
+    by smt().
+  case (k = 2) => k_v2.
+    rewrite k_v2 /=.
+    have ->: !(256 <= 512 + i && 512 + i < 512). move : i_b => /#.
+    have ->: (512 <= 512+i && 512+i < 768). move : i_b => /#.
+    have ->: !(768 <= 512+i && 512+i < 1024). move : i_b => /#.
     rewrite (lift_array256_incoeff res3) 1:/# -r_eq_res3 /= _r_def
+         /lift_array256  //= mapiE //=.
+    congr;congr;congr.
+    apply Array256.tP => j j_b.
+    rewrite -lift_array256_incoeff 1:j_b !mapiE //=.
+    do (rewrite initiE 1:/# /=).
+    by smt().
+  move : k_v => ?.
+  case (k = 3) => k_v.
+    rewrite k_v /=.
+    have ->: !(256 <= 768 + i && 768 + i < 512). move : i_b => /#.
+    have ->: !(512 <= 768+i && 768+i < 768). move : i_b => /#.
+    have ->: (768 <= 768+i && 768+i < 1024). move : i_b => /#.
+    rewrite (lift_array256_incoeff res4) 1:/# -r_eq_res4 /= _r_def
          /lift_array256  //= mapiE //=.
     congr;congr;congr.
     apply Array256.tP => j j_b.
@@ -1472,14 +1492,14 @@ split.
     by smt().
   by smt().
 
-  move => k k_lb k_ub.
+  move => k k_lb.
   do (rewrite initiE 1:/# /= || rewrite (fun_if W16.to_sint)).
-  move : (signed_bound_res3 (k - 512)) (signed_bound_res3 (k - 256)) (signed_bound_res1 k).
+  move : (signed_bound_res4 (k - 768))  (signed_bound_res3 (k - 512)) (signed_bound_res3 (k - 256)) (signed_bound_res1 k).
   by smt().
 qed.
 
 lemma polyvec_invntt_ll  :
-      islossless Jkem1024.M.__polyvec_invntt by  proc;unroll for 2;do 3! (wp;call(invntt_ll)).
+      islossless Jkem1024.M.__polyvec_invntt by  proc;unroll for 2;do 4! (wp;call(invntt_ll)).
 
 lemma polyvec_invntt_corr _r:
    phoare[Jkem1024.M.__polyvec_invntt :
@@ -1491,19 +1511,22 @@ lemma polyvec_invntt_corr _r:
 
 (******************************************************)
 
-lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coeff Array256.t) :
+lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3 (_r : coeff Array256.t) :
   _p0 = scale (basemul _a0 _b0) (incoeff 169) =>
   _p1 = scale (basemul _a1 _b1) (incoeff 169) =>
   _p2 = scale (basemul _a2 _b2) (incoeff 169) =>
+  _p3 = scale (basemul _a3 _b3) (incoeff 169) =>
   (forall k, 0 <=  k < 256 =>
-     _r.[k] = _p0.[k] + _p1.[k] + _p2.[k])  =>
+     _r.[k] = _p0.[k] + _p1.[k] + _p2.[k] + _p3.[k])  =>
   hoare [Jkem1024.M.__polyvec_pointwise_acc : 
     _a0 = subarray256 (lift_array1024 a) 0 /\
     _a1 = subarray256 (lift_array1024 a) 1 /\
     _a2 = subarray256 (lift_array1024 a) 2 /\
+    _a3 = subarray256 (lift_array1024 a) 3 /\
     _b0 = subarray256 (lift_array1024 b) 0 /\
     _b1 = subarray256 (lift_array1024 b) 1 /\
-    _b2 = subarray256 (lift_array1024 b)  2 /\
+    _b2 = subarray256 (lift_array1024 b) 2 /\
+    _b3 = subarray256 (lift_array1024 b) 3 /\
     signed_bound1024_cxq a 0 1024 2 /\ 
     signed_bound1024_cxq b  0 1024 2 
      ==> 
@@ -1512,18 +1535,20 @@ lemma polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coe
         bpos16 res.[k] (2 * q)
   ].
 proof.
-move => _p0_def _p1_def _p2_def _r_def; proc.
+move => _p0_def _p1_def _p2_def  _p3_def _r_def; proc.
 ecall (poly_reduce_corr_h (lift_array256 r)).
 unroll for 5;wp.
-have H:= (poly_add_corr_impl_h 6 3 _ _) => //; ecall (H (lift_array256 r) _p2); clear H.
+have H:= (poly_add_corr_impl_h 6 2 _ _) => //; ecall (H (lift_array256 r) _p3); clear H.
+call (poly_basemul_corr _a3 _b3).
+have H:= (poly_add_corr_impl_h 4 2 _ _) => //; ecall (H (lift_array256 r) _p2); clear H.
 call (poly_basemul_corr _a2 _b2).
-have H:= (poly_add_corr_impl_h 3 3 _ _) => //; ecall (H _p0 _p1); clear H.
+have H:= (poly_add_corr_impl_h 2 2 _ _) => //; ecall (H _p0 _p1); clear H.
 call (poly_basemul_corr _a1 _b1).
 call (poly_basemul_corr _a0 _b0).
 
 wp; skip; subst => &hr; rewrite /subarray256 /lift_array1024 /lift_array256 /signed_bound1024_cxq /signed_bound_cxq /=  => [#].
 
-move => _a0_def _a1_def _a2_def _b0_def _b1_def _b2_def  signed_bound_a signed_bound_b.
+move => _a0_def _a1_def _a2_def _a3_def _b0_def _b1_def _b2_def _b3_def  signed_bound_a signed_bound_b.
 
 split.
 + rewrite _a0_def _b0_def mapE.
@@ -1564,11 +1589,29 @@ split.
 
 move => [#] _a2_ddef _b2_ddef signed_bound_2 signed_bound_b2 r2 [#] signed_bound_r2 a2tb2_eq_r2.
 
+split;1: by rewrite a2tb2_eq_r2 //=.
+
+move => [#] a2tb2f_eq_r2 signed_bound_res2 signed_bound_rr2 res3 [#] res3bound res3val.
+
+split.
++ rewrite _a3_def _b3_def /lift_polyvec /lift_array256 mapE.
+  split.
+  + apply Array256.ext_eq => k kb.
+    by rewrite !initiE //= Array1024.initiE /= 1:/# mapiE //= initiE //.
+  split.
+  +  apply Array256.ext_eq => k kb.
+     by rewrite !initiE //= mapiE // 1: /# /= mapiE //= initiE //.
+  by smt(Array256.initiE). 
+
+
+move => [#] _a3_ddef _b3_ddef signed_bound_3 signed_bound_b3 r3 [#] signed_bound_r3 a3tb3_eq_r3.
+
 do split; 1,2,3: by smt().
 
-move => [#] _r2_ddef signed_bound_r2d signed_bound_res2d  ss2 [#] ss2b ss2v res3 [#] r3val r3b.
+move => [#] _r3_ddef signed_bound_r3d signed_bound_res3d  ss3 [#] ss3b ss3v res4 [#] r4val r4b.
 
-split; 1: by rewrite -r3val; rewrite tP => k kb; rewrite mapiE //= (ss2v k kb) mapiE //= res2val // _r_def //=.
+split.
+ by rewrite -r4val; rewrite tP => k kb; rewrite mapiE //= (ss3v k kb) mapiE //= res3val // _r_def //= mapiE //= res2val // _r_def //=.
 
 
 by smt().
@@ -1576,21 +1619,24 @@ qed.
 
 lemma polyvec_pointwise_acc_ll  :
       islossless Jkem1024.M.__polyvec_pointwise_acc
-by  proc;call poly_reduce_ll; unroll for 5;wp;do 2! (call poly_add_ll;call poly_basemul_ll); call poly_basemul_ll;auto.
+by  proc;call poly_reduce_ll; unroll for 5;wp;do 3! (call poly_add_ll;call poly_basemul_ll); call poly_basemul_ll;auto.
 
-lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coeff Array256.t) :
+lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3 (_r : coeff Array256.t) :
   _p0 = scale (basemul _a0 _b0) (incoeff 169) =>
   _p1 = scale (basemul _a1 _b1) (incoeff 169) =>
   _p2 = scale (basemul _a2 _b2) (incoeff 169) =>
+  _p3 = scale (basemul _a3 _b3) (incoeff 169) =>
   (forall k, 0 <=  k < 256 =>
-     _r.[k] = _p0.[k] + _p1.[k] + _p2.[k])  =>
+     _r.[k] = _p0.[k] + _p1.[k] + _p2.[k] + _p3.[k])  =>
   phoare [Jkem1024.M.__polyvec_pointwise_acc : 
     _a0 = subarray256 (lift_array1024 a) 0 /\
     _a1 = subarray256 (lift_array1024 a) 1 /\
     _a2 = subarray256 (lift_array1024 a) 2 /\
+    _a3 = subarray256 (lift_array1024 a) 3 /\
     _b0 = subarray256 (lift_array1024 b) 0 /\
     _b1 = subarray256 (lift_array1024 b) 1 /\
-    _b2 = subarray256 (lift_array1024 b)  2 /\
+    _b2 = subarray256 (lift_array1024 b) 2 /\
+    _b3 = subarray256 (lift_array1024 b) 3 /\
     signed_bound1024_cxq a 0 1024 2 /\ 
     signed_bound1024_cxq b  0 1024 2 
      ==> 
@@ -1598,7 +1644,7 @@ lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coeff
     forall (k : int), 0 <= k && k < 256 => 
         bpos16 res.[k] (2 * q)
   ]  = 1%r by
-move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 _r _ _ _ _) => //.
+move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3 _r _ _ _ _ _) => //.
 
 
 (******************************************************)
@@ -1614,14 +1660,16 @@ lemma polyvec_pointwise_acc_corr_alg_h va vb :
     lift_array256  res = scale (ntt (dotp va vb)) (incoeff 169)  ].
 proof.
  move : (polyvec_pointwise_acc_corr_h (ntt va.[0])%PolyVec (ntt va.[1])%PolyVec 
-      (ntt va.[2])%PolyVec (ntt vb.[0])%PolyVec (ntt vb.[1])%PolyVec (ntt vb.[2])%PolyVec 
+      (ntt va.[2])%PolyVec (ntt va.[3])%PolyVec (ntt vb.[0])%PolyVec (ntt vb.[1])%PolyVec (ntt vb.[2])%PolyVec (ntt vb.[3])%PolyVec
           (scale (basemul (ntt va.[0]) (ntt vb.[0])) (incoeff 169))%PolyVec
           (scale (basemul (ntt va.[1]) (ntt vb.[1])) (incoeff 169))%PolyVec
           (scale (basemul (ntt va.[2]) (ntt vb.[2])) (incoeff 169))%PolyVec
+          (scale (basemul (ntt va.[3]) (ntt vb.[3])) (incoeff 169))%PolyVec
           ((scale (basemul (ntt va.[0]) (ntt vb.[0])) (incoeff 169))%PolyVec &+
            (scale (basemul (ntt va.[1]) (ntt vb.[1])) (incoeff 169))%PolyVec &+
-           (scale (basemul (ntt va.[2]) (ntt vb.[2])) (incoeff 169))%PolyVec)   _ _ _ _) => //=.
-by move => k; rewrite /(&+) map2E map2E /= initE /= initE //= /#.
+           (scale (basemul (ntt va.[2]) (ntt vb.[2])) (incoeff 169))%PolyVec &+
+           (scale (basemul (ntt va.[3]) (ntt vb.[3])) (incoeff 169))%PolyVec)   _ _ _ _ _) => //=.
+by move => k; rewrite /(&+) map2E map2E map2E /= initE /= initE //= initE //=   /#.
 move => H; conseq (H).
 move => &hr.
 rewrite /nttv /lift_polyvec /lift_array256 /= /subarray256 /= /lift_array1024 => />  H0 H1 H2 H3.
@@ -1636,6 +1684,9 @@ do split.
 + move : (H0 2 _) => //.
   rewrite !mapvE !getvE !offunvE //= => ->; rewrite tP => k kb.
   by rewrite  !initiE // !mapiE 1:/# /= !initiE // mapiE // 1:/#.
++ move : (H0 3 _) => //.
+  rewrite !mapvE !getvE !offunvE //= => ->; rewrite tP => k kb.
+  by rewrite  !initiE // !mapiE 1:/# /= !initiE // mapiE // 1:/#.
 
 + move : (H1 0 _) => //=.
   rewrite !mapvE !getvE !offunvE //= => ->; rewrite tP => k kb.
@@ -1644,6 +1695,9 @@ do split.
   rewrite !mapvE !getvE !offunvE //= => ->; rewrite tP => k kb.
   by rewrite  !initiE // !mapiE 1:/# /= !initiE // mapiE // 1:/#.
 + move : (H1 2 _) => //.
+  rewrite !mapvE !getvE !offunvE //= => ->; rewrite tP => k kb.
+  by rewrite  !initiE // !mapiE 1:/# /= !initiE // mapiE // 1:/#.
++ move : (H1 3 _) => //.
   rewrite !mapvE !getvE !offunvE //= => ->; rewrite tP => k kb.
   by rewrite  !initiE // !mapiE 1:/# /= !initiE // mapiE // 1:/#.
 
@@ -1658,6 +1712,8 @@ rewrite !getvE !mapE   => />.
 rewrite /(&+) map2E //=  !initiE => />.
 rewrite /(&+) map2E //=  !initiE => />.
 rewrite /(&+) map2E //=  !initiE => />.
+rewrite /(&+) map2E //=  !initiE => />.
+rewrite map2E //=  !initiE => />.
 rewrite map2E //=  !initiE => />.
 rewrite map2E //=  !initiE => />.
 rewrite nttZero.
