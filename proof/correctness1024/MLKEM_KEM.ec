@@ -4,33 +4,33 @@ from JazzEC require import Jkem768.
 
 require import MLKEM_InnerPKE MLKEM_Poly MLKEM_PolyVec.
 
-from JazzEC require import Array1152 Array32 Array960 Array1184 Array1088 Array2400 Array64 Array128 WArray2400 WArray32 WArray1184 WArray64.
+from JazzEC require import Array1536 Array32 Array1408 Array1568 Array1568 Array3168 Array64 Array160 WArray3168 WArray32 WArray1568 WArray64.
 from Jasmin require import JModel.
 
 import MLKEM_Poly.
 import MLKEM_PolyVec.
 
-from CryptoSpecs require import GFq Rq VecMat Sampling Symmetric Serialization InnerPKE768 MLKEM768.
-import Symmetric768 Serialization768 VecMat768.
+from CryptoSpecs require import GFq Rq VecMat Sampling Symmetric Serialization InnerPKE1024 MLKEM1024.
+import Symmetric1024 Serialization1024 VecMat1024.
 
 require import MLKEMFCLib.
 require import MLKEM_keccak_ref.
 
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
-
+print InnerPKE1024.skey.
 lemma mlkem_kem_correct_kg  : 
-   equiv [Jkem768.M.__crypto_kem_keypair_jazz ~ MLKEM768.kg_derand : 
+   equiv [Jkem1024.M.__crypto_kem_keypair_jazz ~ MLKEM1024.kg_derand : 
        coins{2}.`1 = Array32.init (fun i => randomnessp{1}.[0 + i]) /\ 
        coins{2}.`2 = Array32.init (fun i => randomnessp{1}.[32 + i])
         ==> 
        let (pk,sk) = res{2} in let (t,rho) = pk in
-         sk.`1 = Array1152.init(fun i => res{1}.`2.[i]) /\
-         sk.`2.`1 = Array1152.init(fun i => res{1}.`2.[i+1152]) /\
-         sk.`2.`2 = Array32.init(fun i => res{1}.`2.[i+1152+1152]) /\
-         sk.`3 = Array32.init(fun i => res{1}.`2.[i+1152+1152+32])  /\
-         sk.`4 = Array32.init(fun i => res{1}.`2.[i+1152+1152+32+32])  /\
-         t = Array1152.init(fun i => res{1}.`1.[i])  /\
-         rho = Array32.init(fun i => res{1}.`1.[i+1152])].
+         sk.`1 = Array1536.init(fun i => res{1}.`2.[i]) /\
+         sk.`2.`1 = Array1536.init(fun i => res{1}.`2.[i+1536]) /\
+         sk.`2.`2 = Array32.init(fun i => res{1}.`2.[i+1536+1536]) /\
+         sk.`3 = Array32.init(fun i => res{1}.`2.[i+1536+1536+32])  /\
+         sk.`4 = Array32.init(fun i => res{1}.`2.[i+1536+1536+32+32])  /\
+         t = Array1536.init(fun i => res{1}.`1.[i])  /\
+         rho = Array32.init(fun i => res{1}.`1.[i+1536])].
 proc => /=.
 
 
@@ -46,37 +46,37 @@ seq 13 1 :
  (
   kgs{2} = coins{2}.`1 /\ z{2} = coins{2}.`2 /\ H_pk pk{2} = h_pk{1} /\
   coins{2}.`1 = Array32.init (fun (i0 : int) => randomnessp{1}.[i0]) /\
-  coins{2}.`2 = Array32.init (fun (i0 : int) => randomnessp{1}.[32 + i0]) /\  sk{2} = Array1152.init ("_.[_]" sk{1}) /\ 
- H_pk pk{2} = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2336]) /\
+  coins{2}.`2 = Array32.init (fun (i0 : int) => randomnessp{1}.[32 + i0]) /\  sk{2} = Array1536.init ("_.[_]" sk{1}) /\ 
+ H_pk pk{2} = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2*1536+32]) /\
  let (t, rho) = pk{2} in
-  pk{2}.`1 = Array1152.init (fun (i0 : int) => sk{1}.[i0 + 1152]) /\
-  pk{2}.`2 = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2304]) /\
-  t = Array1152.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1152])); last first.
+  pk{2}.`1 = Array1536.init (fun (i0 : int) => sk{1}.[i0 + 1536]) /\
+  pk{2}.`2 = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2*1536]) /\
+  t = Array1536.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1536])); last first.
 
 while {1} (inc{1} = 4 /\
        kgs{2} = coins{2}.`1 /\
   z{2} = coins{2}.`2 /\ H_pk pk{2} = h_pk{1} /\
   coins{2}.`1 = Array32.init (fun (i0 : int) => randomnessp{1}.[i0]) /\
   coins{2}.`2 = Array32.init (fun (i0 : int) => randomnessp{1}.[32 + i0]) /\ randomnessp2{1} = coins{2}.`2 /\
-      sk{2} = Array1152.init(fun i => sk{1}.[i]) /\
-      pk{2}.`1 = Array1152.init(fun i => sk{1}.[i+1152]) /\
-      pk{2}.`2 = Array32.init(fun i => sk{1}.[i+1152+1152]) /\
-      H_pk pk{2} = Array32.init(fun i => sk{1}.[i+1152+1152+32])  /\
-         pk{2}.`1 = Array1152.init(fun i => pk{1}.[i])  /\
-         pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1152]) /\
+      sk{2} = Array1536.init(fun i => sk{1}.[i]) /\
+      pk{2}.`1 = Array1536.init(fun i => sk{1}.[i+1536]) /\
+      pk{2}.`2 = Array32.init(fun i => sk{1}.[i+1536+1536]) /\
+      H_pk pk{2} = Array32.init(fun i => sk{1}.[i+1536+1536+32])  /\
+         pk{2}.`1 = Array1536.init(fun i => pk{1}.[i])  /\
+         pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1536]) /\
        0 <= i{1} <= 4 /\ 
        forall k, 0<=k<i{1}*8 =>
-           z{2}.[k] = sk{1}.[k+1152+1152+32+32] )
+           z{2}.[k] = sk{1}.[k+1536+1536+32+32] )
           (4 - i{1}).
   + move => &2 z0; auto => /> &1; rewrite !tP => 
        cc1 cc2  skv pk1vs pk2vs pk1v pk2v ??prev?; do split;5,8..:smt().
     + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=.
-    + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array1152.initiE).
+    + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array1536.initiE).
     + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array32.initiE).
     + move => *;rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array32.initiE).
     + by smt(). 
     + move => k ??;rewrite initiE 1:/# /=get8_set64_directE 1,2:/#.
-      case ((296 + i{1}) * 8 <= k + 2368 < (296 + i{1}) * 8 + 8).
+      case ((392 + i{1}) * 8 <= k + 3136 < (392 + i{1}) * 8 + 8).
       + rewrite /get64_direct /(\bits8) /= wordP => *. 
         rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /= /#. 
       move => ?; rewrite /get8 initiE 1:/# /= /#.
@@ -91,11 +91,11 @@ kgs{2} = coins{2}.`1 /\
   H_pk pk{2} = h_pk{1} /\
   coins{2}.`1 = Array32.init (fun (i0 : int) => randomnessp{1}.[i0]) /\
   coins{2}.`2 = Array32.init (fun (i0 : int) => randomnessp{1}.[32 + i0]) /\
-  sk{2} = Array1152.init ("_.[_]" sk{1}) /\
+  sk{2} = Array1536.init ("_.[_]" sk{1}) /\
   let (t, rho) = pk{2} in
-  pk{2}.`1 = Array1152.init (fun (i0 : int) => sk{1}.[i0 + 1152]) /\
-  pk{2}.`2 = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2304]) /\
-  t = Array1152.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1152])
+  pk{2}.`1 = Array1536.init (fun (i0 : int) => sk{1}.[i0 + 1536]) /\
+  pk{2}.`2 = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2*1536]) /\
+  t = Array1536.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1536])
 ); last first.
 
 wp => /=.
@@ -104,23 +104,23 @@ while {1} (
   z{2} = coins{2}.`2 /\
   coins{2}.`1 = Array32.init (fun (i0 : int) => randomnessp{1}.[i0]) /\
   coins{2}.`2 = Array32.init (fun (i0 : int) => randomnessp{1}.[32 + i0]) /\   H_pk pk{2} = h_pk{1} /\
-      sk{2} = Array1152.init(fun i => sk{1}.[i]) /\
-      pk{2}.`1 = Array1152.init(fun i => sk{1}.[i+1152]) /\
-      pk{2}.`2 = Array32.init(fun i => sk{1}.[i+1152+1152]) /\
-         pk{2}.`1 = Array1152.init(fun i => pk{1}.[i])  /\
-         pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1152]) /\
+      sk{2} = Array1536.init(fun i => sk{1}.[i]) /\
+      pk{2}.`1 = Array1536.init(fun i => sk{1}.[i+1536]) /\
+      pk{2}.`2 = Array32.init(fun i => sk{1}.[i+1536+1536]) /\
+         pk{2}.`1 = Array1536.init(fun i => pk{1}.[i])  /\
+         pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1536]) /\
        0 <= i{1} <= 4 /\ 
        forall k, 0<=k<i{1}*8 =>
-           (H_pk pk{2}).[k] = sk{1}.[k+1152+1152+32] )
+           (H_pk pk{2}).[k] = sk{1}.[k+1536+1536+32] )
           (4 - i{1}).
   + move => &m z0; auto => /> &hr; rewrite !tP => 
        cc1 cc2 pk1vs pk2vs pk1v pk2v ??prev?; do split;5,7..:smt().
     + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=.
-    + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array1152.initiE).
+    + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array1536.initiE).
     + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array32.initiE).
     + by smt(). 
     + move => k ??;rewrite initiE 1:/# /=get8_set64_directE 1,2:/#.
-      case ((292 + i{hr}) * 8 <= k + 2336 < (292 + i{hr}) * 8 + 8).
+      case ( (388 + i{hr}) * 8 <= k + 3104 < (388 + i{hr}) * 8 + 8).
       + rewrite /get64_direct /(\bits8) /= wordP => *. 
         rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /= /#. 
       move => ?; rewrite /get8 initiE 1:/# /= /#.
@@ -135,38 +135,38 @@ kgs{2} = coins{2}.`1 /\
   z{2} = coins{2}.`2 /\
   coins{2}.`1 = Array32.init (fun (i0 : int) => randomnessp{1}.[i0]) /\
   coins{2}.`2 = Array32.init (fun (i0 : int) => randomnessp{1}.[32 + i0]) /\
-  sk{2} = Array1152.init ("_.[_]" sk{1}) /\
+  sk{2} = Array1536.init ("_.[_]" sk{1}) /\
   let (t, rho) = pk{2} in
-  pk{2}.`1 = Array1152.init (fun (i0 : int) => sk{1}.[i0 + 1152]) /\
-  pk{2}.`2 = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2304]) /\
-  t = Array1152.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1152])
+  pk{2}.`1 = Array1536.init (fun (i0 : int) => sk{1}.[i0 + 1536]) /\
+  pk{2}.`2 = Array32.init (fun (i0 : int) => sk{1}.[i0 + 2*1536]) /\
+  t = Array1536.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1536])
 ); last first.
 
 wp; ecall{1} (pkH_sha pk{1});wp;auto => /> &1 &2 /#.
 
 seq 1 0 : #pre; 1: by auto.
 sp; seq 1 1 : (#pre /\
-  sk{2} = Array1152.init(fun i => sk{1}.[i]) /\
-  pk{2}.`1 = Array1152.init(fun i => pk{1}.[i])  /\
-  pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1152])).
+  sk{2} = Array1536.init(fun i => sk{1}.[i]) /\
+  pk{2}.`1 = Array1536.init(fun i => pk{1}.[i])  /\
+  pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1536])).
 wp; ecall (mlkem_correct_kg);auto => /> &1 &2 ??;do split; 1:smt().
 move => ? rr1 [[rr21 rr22] rr2] /= /#.
 
-while {1} (inc{1} = 148   /\
+while {1} (inc{1} = 196  /\
   (let (t, rho) = pk{2} in
-  t = Array1152.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1152])) /\
-  sk{2} = Array1152.init ("_.[_]" sk{1}) /\
-       0 <= i{1} <= 148 /\ 
-        (i{1}*8 < 1152  => 
+  t = Array1536.init ("_.[_]" pk{1}) /\ rho = Array32.init (fun (i0 : int) => pk{1}.[i0 + 1536])) /\
+  sk{2} = Array1536.init ("_.[_]" sk{1}) /\
+       0 <= i{1} <= 196 /\ 
+        (i{1}*8 < 1536  => 
            forall k, 0<=k<i{1}*8 =>
-              pk{2}.`1.[k] = sk{1}.[1152+k]) /\
-        (1152 <= i{1}*8  => 
-           (forall k, 0<=k<1152 =>
-              pk{2}.`1.[k] = sk{1}.[1152+k]) /\
-           (forall k, 1152<=k<i{1}*8 =>
-            pk{2}.`2.[k-1152] = sk{1}.[1152+k]))
+              pk{2}.`1.[k] = sk{1}.[1536+k]) /\
+        (1536 <= i{1}*8  => 
+           (forall k, 0<=k<1536 =>
+              pk{2}.`1.[k] = sk{1}.[1536+k]) /\
+           (forall k, 1536<=k<i{1}*8 =>
+            pk{2}.`2.[k-1536] = sk{1}.[1536+k]))
   )
-          (148 - i{1}).
+          (196 - i{1}).
   + move => &2 z0; auto => /> &1; rewrite !tP => 
       ? ??prev1 prev2?; do split;6..:smt().
     + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=.
@@ -179,7 +179,7 @@ while {1} (inc{1} = 148   /\
           rewrite /pack8_t /(\bits8) initiE /#.
        +  move => ?; rewrite ifT 1:/#.  
           rewrite /get64_direct /(\bits8) /= wordP => *. 
-          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(@Array32 @Array1152).
+          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(@Array32 @Array1536).
     +  move => ?;split.
        move => k ??;rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
        case (k < i{1} * 8).
@@ -188,7 +188,7 @@ while {1} (inc{1} = 148   /\
           rewrite /pack8_t /(\bits8) initiE /#.
        +  move => ?; rewrite ifT 1:/#.  
           rewrite /get64_direct /(\bits8) /= wordP => *. 
-          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(@Array32 @Array1152).
+          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(@Array32 @Array1536).
        move => k ??;rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
        case (k < i{1} * 8).
        +  move => ?; rewrite ifF 1:/#.  
@@ -196,23 +196,23 @@ while {1} (inc{1} = 148   /\
           rewrite /pack8_t /(\bits8) initiE /#.
        +  move => ?; rewrite ifT 1:/#.  
           rewrite /get64_direct /(\bits8) /= wordP => *. 
-          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(@Array32 @Array1152).
+          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(@Array32 @Array1536).
  
-auto => /> &1 &2 *;split. smt(). 
-move => ii skk *; do split.  smt(). 
-move => *. split;rewrite tP => *;smt(@Array32 @Array1152).
+auto => /> &1 &2 *;split;1: smt(). 
+move => ii skk *; do split. move => *. smt(). 
+move => *. split;rewrite tP => *;smt(@Array32 @Array1536).
 
 qed.
 
 lemma mlkem_kem_correct_enc : 
-   equiv [Jkem768.M.__crypto_kem_enc_jazz ~ MLKEM768.enc_derand: 
-     pk{2}.`1 = Array1152.init(fun i => pk{1}.[i]) /\
-     pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1152]) /\
+   equiv [Jkem1024.M.__crypto_kem_enc_jazz ~ MLKEM1024.enc_derand: 
+     pk{2}.`1 = Array1536.init(fun i => pk{1}.[i]) /\
+     pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1536]) /\
      randomnessp{1} = coins{2} 
        ==> 
      let (c,k) = res{2} in
-     c.`1 = Array960.init(fun i => res{1}.`1.[i])/\
-     c.`2 = Array128.init(fun i => res{1}.`1.[i+960]) /\
+     c.`1 = Array1408.init(fun i => res{1}.`1.[i])/\
+     c.`2 = Array160.init(fun i => res{1}.`1.[i+1408]) /\
      k = res{1}.`2
 ].
 proc => /=.
@@ -244,13 +244,13 @@ auto => /> &1 &2;rewrite !tP => ??;do split.
 + move => i *;rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE /#.
 + move => i *;rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /G_mhpk /H_pk;congr;congr;congr.
   + rewrite tP => k *; rewrite initiE 1:/# /= initiE 1:/# /=ifF 1:/# initiE /#.
-  rewrite tP => k *; rewrite initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1152.initiE Array32.initiE Array1152.tP Array32.tP).
+  rewrite tP => k *; rewrite initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1536.initiE Array32.initiE Array1536.tP Array32.tP).
   + smt().
 + move => ???? rr cph1 cph2; do split;1,2: smt().
   move => k*.
   rewrite /G_mhpk initiE 1:/# /= ifT 1:/#;congr;congr;congr. 
   + rewrite tP => kk *; rewrite initiE 1:/# /= initiE 1:/# /=ifF 1:/# initiE /#.
-  rewrite tP => kk *; rewrite /H_pk initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1152.initiE Array32.initiE Array1152.tP Array32.tP).
+  rewrite tP => kk *; rewrite /H_pk initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1536.initiE Array32.initiE Array1536.tP Array32.tP).
 
 seq 5 0 :#pre; 1: by auto.
 sp;conseq />.
@@ -273,14 +273,14 @@ require import StdOrder.
 import IntOrder.
 
 lemma verify_correct_h ctp ctp1 :
-  hoare [Jkem768.M.__verify : 
+  hoare [Jkem1024.M.__verify : 
              arg = (ctp,ctp1) ==>
              (ctp = ctp1 => 
                        res = W64.of_int 0) /\
              (ctp <> ctp1 => 
                        res = W64.of_int 1)].
 proc => /=.
-wp; while (#pre /\ 0 <= i{hr} <= 1088 /\ inc{hr} = 1088 /\ 0<=to_uint cnd<256 /\
+wp; while (#pre /\ 0 <= i{hr} <= 1568 /\ inc{hr} = 1568 /\ 0<=to_uint cnd<256 /\
            (to_uint cnd{hr} = 0 <=> 
             forall k, 0 <= k < i{hr} => ctp.[k] = ctp1.[k])); last first.
 + auto => />; split; 1: by smt().
@@ -290,7 +290,7 @@ wp; while (#pre /\ 0 <= i{hr} <= 1088 /\ inc{hr} = 1088 /\ 0<=to_uint cnd<256 /\
   + by move => k kb; rewrite -H1 1: /# /#. 
   rewrite tP /= => H.
   have HH : to_uint cnd <> 0.
-  + have : exists k, 0 <= k < 1088 /\ ctp.[k] <> ctp1.[k] by smt().
+  + have : exists k, 0 <= k < 1568 /\ ctp.[k] <> ctp1.[k] by smt().
     by smt().
   rewrite /(`>>`) /= to_uint_eq to_uint_shr // to_uintNE /=.
   by  smt(W64.to_uint_cmp pow2_64). 
@@ -298,7 +298,7 @@ wp; while (#pre /\ 0 <= i{hr} <= 1088 /\ inc{hr} = 1088 /\ 0<=to_uint cnd<256 /\
 auto => /> &hr ???? [HL HR] ?.
 
 pose x := 
-      ((WArray1088.WArray1088.get8 ((WArray1088.WArray1088.init8 ("_.[_]" ctp1))) i{hr}) `^` ctp.[i{hr}]).
+      ((WArray1568.get8 ((WArray1568.init8 ("_.[_]" ctp1))) i{hr}) `^` ctp.[i{hr}]).
 
 have H : 0 <= to_uint (cnd{hr} `|` zeroextu64 x) < 256.
 + split; 1: by smt(W64.to_uint_cmp).
@@ -329,7 +329,7 @@ do split; 1..4: by smt(W64.to_uint_cmp).
   case (k < i{hr}); 1: by move => *; apply (HL _ _) => // /#. 
 
   move : H2; rewrite /x W8.WRing.addr_eq0 /oppw /=. 
-  rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
+  rewrite /init8 /get8 /= WArray1568.initiE /= 1:/#.
   by smt(). 
   
 move => H0.
@@ -341,18 +341,18 @@ move => kbb; rewrite W8u8.zeroextu64_bit.
 have -> /= : 0 <= k && k < 8 by smt().
 
 rewrite /x. 
-rewrite /init8 /get8 /= WArray1088.WArray1088.initiE /= 1:/#.
+rewrite /init8 /get8 /= WArray1568.initiE /= 1:/#.
 by rewrite -(H0 i{hr} _); 1: by smt().
 qed.
 
-lemma verify_ll : islossless Jkem768.M.__verify.
+lemma verify_ll : islossless Jkem1024.M.__verify.
 proc.
-wp; while (0 <= i{hr} <= 1088 /\ inc{hr} = 1088) (1088 - i{hr}); last by auto => /> /#.
+wp; while (0 <= i{hr} <= 1568 /\ inc{hr} = 1568) (1568 - i{hr}); last by auto => /> /#.
 by move => *; auto => /> /#. 
 qed.
 
 lemma verify_correct ctp ctp1 :
-  phoare [Jkem768.M.__verify : 
+  phoare [Jkem1024.M.__verify : 
              arg = (ctp,ctp1) ==>
              (ctp = ctp1 => 
                        res = W64.of_int 0) /\
@@ -361,7 +361,7 @@ lemma verify_correct ctp ctp1 :
    by conseq verify_ll (verify_correct_h  ctp ctp1).
 
 lemma cmov_correct_h _dst _src _cnd:
-   hoare [Jkem768.M.__cmov : 
+   hoare [Jkem1024.M.__cmov : 
              src = _src /\ cnd = _cnd /\  dst = _dst ==>
              (_cnd = W64.of_int 0 => res = _src) /\
              (_cnd = W64.of_int 1 => res = _dst)].
@@ -401,25 +401,25 @@ auto => /> &hr  case0 case1 ??cc0 cc1 back ?; do split; 1..2: by smt().
 
 qed.
 
-lemma cmov_ll : islossless Jkem768.M.__cmov by proc; unroll for 3; islossless.
+lemma cmov_ll : islossless Jkem1024.M.__cmov by proc; unroll for 3; islossless.
 
 lemma cmov_correct _dst _src _cnd:
-   phoare [Jkem768.M.__cmov : 
+   phoare [Jkem1024.M.__cmov : 
               src = _src /\ cnd = _cnd /\  dst = _dst ==>
              (_cnd = W64.of_int 0 => res = _src) /\
              (_cnd = W64.of_int 1 => res = _dst)] = 1%r
     by conseq cmov_ll (cmov_correct_h _dst _src _cnd).
 
 lemma mlkem_kem_correct_dec : 
-   equiv [Jkem768.M.__crypto_kem_dec_jazz ~ MLKEM768.dec: 
-     sk{2}.`1 = Array1152.init (fun i => sk{1}.[i]) /\
-     sk{2}.`2.`1 = Array1152.init (fun i => sk{1}.[i+1152]) /\
-     sk{2}.`2.`2 = Array32.init (fun i => sk{1}.[i +  1152 + 1152]) /\
-     sk{2}.`3 = Array32.init (fun i => sk{1}.[i+ 1152 + 1152 + 32]) /\
-     sk{2}.`4 = Array32.init (fun i => sk{1}.[i+ 1152 + 1152 + 32 + 32]) /\
+   equiv [Jkem1024.M.__crypto_kem_dec_jazz ~ MLKEM1024.dec: 
+     sk{2}.`1 = Array1536.init (fun i => sk{1}.[i]) /\
+     sk{2}.`2.`1 = Array1536.init (fun i => sk{1}.[i+1536]) /\
+     sk{2}.`2.`2 = Array32.init (fun i => sk{1}.[i +  1536 + 1536]) /\
+     sk{2}.`3 = Array32.init (fun i => sk{1}.[i+ 1536 + 1536 + 32]) /\
+     sk{2}.`4 = Array32.init (fun i => sk{1}.[i+ 1536 + 1536 + 32 + 32]) /\
      let (c1,c2) = cph{2} in
-       c1 = Array960.init (fun i => ct{1}.[i]) /\
-       c2 = Array128.init (fun i => ct{1}.[i + 960])
+       c1 = Array1408.init (fun i => ct{1}.[i]) /\
+       c2 = Array160.init (fun i => ct{1}.[i + 1408])
        ==> 
      ={res}
 ].
@@ -437,7 +437,7 @@ seq 5 1 : (#pre /\
 ecall {1} (sha_g buf{1}).
 wp; conseq (_: _ ==> 
    (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
-   (forall k, 32<=k<64 => buf{1}.[k] =  sk{1}.[2336 + k - 32]) /\
+   (forall k, 32<=k<64 => buf{1}.[k] =  sk{1}.[3104 + k - 32]) /\
    (forall k, 0<=k<32 => buf{1}.[k] = aux{1}.[k])).
 + auto => /> &1 &2; rewrite  !tP => ???buf bvl bvh ; split.
   + move => k kbl kbh; rewrite initiE 1:/# /= kbh /= /G_mhpk; congr; congr;congr.
@@ -448,7 +448,7 @@ wp; conseq (_: _ ==>
     by rewrite tP => i ib; rewrite !initiE  /#. 
   
 while {1} (0<=i{1}<=4 /\ inc{1} = 4  /\ s_sk{1} = sk{1} /\
-             (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = sk{1}.[2336 + k - 32]) /\
+             (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = sk{1}.[3104 + k - 32]) /\
              forall (k : int), 0 <= k && k < 32 => buf{1}.[k] = aux{1}.[k]) (4 - i{1}); last first. 
   + auto => /> &1 &2 ?? /=.
     have -> /= : cph{2} = (cph{2}.`1,cph{2}.`2) by smt().
@@ -473,18 +473,18 @@ swap {2} 1 1.
 
 
 seq 1 1 : (#pre /\ 
-           ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])). print MLKEM_InnerPKE.
+           ctc{1} = Array1568.init (fun i => if i < 1408 then c{2}.`1.[i] else c{2}.`2.[i-1408])). print MLKEM_InnerPKE.
 + wp;ecall (mlkem_correct_enc 
-   (Array1184.init  (fun (i_0 : int) => s_sk{1}.[3 * 384 + i_0]))).
+   (Array1568.init  (fun (i_0 : int) => s_sk{1}.[4 * 384 + i_0]))).
   auto => /> &1 &2 /=;rewrite  !tP => ??????; do split. 
   + by move => i ib; rewrite initiE /= /#.
   + by move => i ib; rewrite initiE /= /#. 
-  + move => i ib; rewrite initiE /= 1:/# /= initiE 1:/# /=;smt(Array1152.initiE).
+  + move => i ib; rewrite initiE /= 1:/# /= initiE 1:/# /=;smt(Array1536.initiE).
   + move => i ib; rewrite initiE /= 1:/# /= initiE 1:/# /=;smt(Array32.initiE).
  move => ? ? bufv ? krv c.
  have -> /= : (c = (c.`1,c.`2)) by smt().
   rewrite !tP /= => [#] H0 H1 i ib.
- rewrite !initiE 1:/# /=; smt(Array960.initiE Array128.initiE).
+ rewrite !initiE 1:/# /=; smt(Array1408.initiE Array160.initiE).
 
 sp 2 0; seq 1 0 : (#pre /\ 
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
@@ -499,15 +499,15 @@ sp 2 0; seq 1 0 : (#pre /\
    split.
    + move => ceq; rewrite (Heq _); last by done.
      move => i0 ib; rewrite !initiE //=. 
-     case (i0 < 960).
+     case (i0 < 1408).
      + by move => ibb; rewrite ceq cphv1 1: /# initiE /= /#.
      by move => ibb; rewrite ceq cphv2 1: /# initiE /= /#. 
    move => neq;rewrite Hdiff. 
-   pose cc := (Array1088.init (fun (i1 : int) => if i1 < 960 then c{2}.`1.[i1] else c{2}.`2.[i1 - 960])).
-   have : exists i0, 0<= i0 < 1088 /\ cc.[i0] <> s_ct{1}.[i0]; last by smt().
+   pose cc := (Array1568.init (fun (i1 : int) => if i1 < 1408 then c{2}.`1.[i1] else c{2}.`2.[i1 - 1408])).
+   have : exists i0, 0<= i0 < 1568 /\ cc.[i0] <> s_ct{1}.[i0]; last by smt().
    case (c{2}.`1 <> cph{2}.`1).
    + move => neq1. rewrite tP in neq1.   
-     have [k kb] : exists k, 0<=k<960 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt().
+     have [k kb] : exists k, 0<=k<1408 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt().
      exists k; split; 1: by smt().
      rewrite !initiE /= 1:/#. 
      move : (cphv1 k _); 1: smt().
@@ -515,8 +515,8 @@ sp 2 0; seq 1 0 : (#pre /\
    + move => eq1. 
      have neq2 : c{2}.`2 <> cph{2}.`2 by move : neq eq1; smt().
      rewrite tP in neq2.   
-     have [k kb] : exists k, 0<=k<128 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
-     exists (k + 960); split; 1: by smt().
+     have [k kb] : exists k, 0<=k<160 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
+     exists (k + 1408); split; 1: by smt().
      rewrite !initiE /= 1:/#. 
      move : (cphv2 k _); 1: smt().
      by rewrite initiE /= /#.
@@ -526,7 +526,7 @@ ecall {1} (cmov_correct shk{1}
    (Array32.init (fun (i_0 : int) => kr{1}.[0 + i_0])) cnd{1}) => /=.
 
 wp;ecall{1} (j_shake
-  (Array32.init  (fun (i_0 : int) =>   s_sk{1}.[3 * 384 + (3 * 384 + 32) + 32 + 32 - 32 + i_0]))
+  (Array32.init  (fun (i_0 : int) =>   s_sk{1}.[4 * 384 + (4 * 384 + 32) + 32 + 32 - 32 + i_0]))
   ct{1}) => /=.
 
 + auto => /> &1 &2.
