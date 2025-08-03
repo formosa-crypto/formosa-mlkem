@@ -1,8 +1,12 @@
-require "indcpa.jinc"
+require "params.jinc"
+require "poly.jinc"
+require "polyvec.jinc"
+require "../../common/ref/gen_matrix.jinc"
+require "../../common/ref/indcpa.jinc"
 require "../../common/ref/verify.jinc"
 
 inline
-fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLKEM_SECRETKEYBYTES] sk, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
+fn __crypto_kem_keypair_jazz(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKEM_SECRETKEYBYTES] sk, reg const ptr u8[MLKEM_SYMBYTES*2] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
 {
   stack u8[32] h_pk;
   #mmx stack ptr u8[MLKEM_SECRETKEYBYTES] s_skp;
@@ -47,14 +51,14 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
 }
 
 inline
-fn __crypto_kem_enc_jazz(reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_SYMBYTES] shk, reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES]
+fn __crypto_kem_enc_jazz(reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg mut ptr u8[MLKEM_SYMBYTES] shk, reg const ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg const ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES]
 {
   inline int i;
 
   stack u8[MLKEM_SYMBYTES * 2] buf kr;
-  #mmx stack ptr u8[MLKEM_PUBLICKEYBYTES] s_pk;
-  #mmx stack ptr u8[MLKEM_CIPHERTEXTBYTES] s_ct;
-  #mmx stack ptr u8[MLKEM_SYMBYTES] s_shk;
+  stack ptr u8[MLKEM_PUBLICKEYBYTES] s_pk;
+  stack ptr u8[MLKEM_CIPHERTEXTBYTES] s_ct;
+  stack ptr u8[MLKEM_SYMBYTES] s_shk;
   reg u64 t64;
 
   s_pk = pk;
@@ -87,7 +91,7 @@ fn __crypto_kem_enc_jazz(reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_
 }
 
 inline
-fn __crypto_kem_dec_jazz(reg ptr u8[MLKEM_SYMBYTES] shk, reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct, #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] sk) -> reg ptr u8[MLKEM_SYMBYTES]
+fn __crypto_kem_dec_jazz(reg mut ptr u8[MLKEM_SYMBYTES] shk, reg const ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg const ptr u8[MLKEM_SECRETKEYBYTES] sk) -> reg ptr u8[MLKEM_SYMBYTES]
 {
   stack u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctc;
   stack u8[2*MLKEM_SYMBYTES] kr buf;

@@ -12,17 +12,13 @@ fn _i_poly_compress(reg mut ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg mut ptr u1
 
   a = _poly_csubq(a);
 
-  i = 0;
   k = 0;
+  i = 0;
   while(i < MLKEM_N)
   {
     for j = 0 to 8
     {
-      u = (16u)a[i];
-      v = u;
-      v >>= 15;
-      v &= MLKEM_Q;
-      u += v;
+      u = (16u)a[i+j];
       d0 = (32u)u;
       d0 <<= 5;
       d0 += 1664;
@@ -30,7 +26,6 @@ fn _i_poly_compress(reg mut ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg mut ptr u1
       d0 >>= 27;
       d0 &= 0x1f;
       t[j] = d0;
-      i += 1;
     }
 
     c0 = t[0];
@@ -74,6 +69,7 @@ fn _i_poly_compress(reg mut ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg mut ptr u1
     rp[k+4] = c0;
 
     k += 5;
+    i += 8;
   }
   return rp, a;
 }
@@ -87,8 +83,8 @@ fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_POLYCO
   reg ui64 i, j;
   inline int k;
 
-  i = 0;
   j = 0;
+  i = 0;
 
   while (i < MLKEM_N) {
     c0 = ap[j];
@@ -146,9 +142,9 @@ fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_POLYCO
       d0 *= MLKEM_Q;
       d0 += 16;
       d0 >>= 5;
-      rp[i] = d0;
-      i += 1;
+      rp[i+k] = d0;
     }
+    i += 8;
   }
   return rp;
 }

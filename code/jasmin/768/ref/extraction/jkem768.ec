@@ -2550,6 +2550,7 @@ module M = {
       j (truncateu8 d))));
       j <- (j + 1);
       t0 <- (t0 `>>` (W8.of_int 8));
+      t0 <- (t0 `&` (W16.of_int 15));
       d <- t1;
       d <- (d `&` (W16.of_int 15));
       d <- (d `<<` (W8.of_int 4));
@@ -2823,8 +2824,7 @@ module M = {
     while ((i < ((3 * 256) - 3))) {
       k <- 0;
       while ((k < 4)) {
-        t.[k] <- (zeroextu64 aa.[i]);
-        i <- (i + 1);
+        t.[k] <- (zeroextu64 aa.[(i + k)]);
         t.[k] <- (t.[k] `<<` (W8.of_int 10));
         t.[k] <- (t.[k] + (W64.of_int 1665));
         t.[k] <- (t.[k] * (W64.of_int 1290167));
@@ -2860,6 +2860,7 @@ module M = {
       t.[3] <- (t.[3] `>>` (W8.of_int 2));
       rp.[j] <- (truncateu8 t.[3]);
       j <- (j + 1);
+      i <- (i + 4);
     }
     return rp;
   }
@@ -2903,10 +2904,10 @@ module M = {
         t.[k] <- (t.[k] * (W32.of_int 3329));
         t.[k] <- (t.[k] + (W32.of_int 512));
         t.[k] <- (t.[k] `>>` (W8.of_int 10));
-        rp.[i] <- (truncateu16 t.[k]);
-        i <- (i + 1);
+        rp.[(i + k)] <- (truncateu16 t.[k]);
         k <- (k + 1);
       }
+      i <- (i + 4);
     }
     return rp;
   }
@@ -3245,7 +3246,7 @@ module M = {
     w <- 0;
     while ((w < 3)) {
       nonce <- (W8.of_int w);
-      aux <@ _poly_getnoise ((Array256.init (fun i => sp_0.[((256 * w) + i)])
+      aux <@ _poly_getnoise ((Array256.init (fun i => sp_0.[((w * 256) + i)])
                              ),
       lnoiseseed, nonce);
       sp_0 <-
@@ -3260,7 +3261,7 @@ module M = {
     w <- 0;
     while ((w < 3)) {
       nonce <- (W8.of_int (3 + w));
-      aux <@ _poly_getnoise ((Array256.init (fun i => ep.[((256 * w) + i)])),
+      aux <@ _poly_getnoise ((Array256.init (fun i => ep.[((w * 256) + i)])),
       lnoiseseed, nonce);
       ep <-
       (Array768.init

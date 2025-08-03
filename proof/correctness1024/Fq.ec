@@ -316,11 +316,34 @@ rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
 rewrite -pow2_4; apply dvdz_exp2l; smt().
 qed.
 
+lemma compress_impl5 (a : W16.t):
+  bpos16 a q =>
+  (to_uint (((zeroextu32 a `<<` W8.of_int 5) + 
+     W32.of_int 1664) * W32.of_int 40318 `>>` W8.of_int 27)) %% 32=
+       compress 5 (incoeff (to_sint a)).
+proof.
+have ? := pow2_5. 
+rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
+move => au; rewrite -compress_alt_compress5.
+rewrite /zeroextu32 /truncateu8 /compress_alt5 qE => /= *.
+rewrite  /(`<<`) /(`>>`) W32.shlMP; 1: by smt().
+rewrite W32.to_uint_shr; 1: by smt().
+rewrite incoeffK to_sintE /max /= !W32.of_uintK /= qE /=.
+rewrite !(modz_small _ 3329) /=; 1: smt().
+have ->: W16.smod (to_uint a) = to_uint a by
+  move : abl; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
+pose xx := (to_uint a * 32 + 1664).
+have -> : (4294967296 = 32*134217728) by auto. 
+rewrite divz_mod_mul 1..2://. 
+rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
+done.
+qed.
+
 
 lemma compress_impl_large (a : W16.t) :
   bpos16 a q =>
-  (to_uint (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
-           (of_int 32)%W8)) %% 1024 = compress 10 (incoeff (to_sint a)).
+  (to_uint (((zeroextu64 a `<<` (of_int 11)%W8) + (of_int 1664)%W64) * (of_int 645084)%W64 `>>`
+           (of_int 31)%W8)) %% 2048 = compress 11 (incoeff (to_sint a)).
 rewrite /bpos16 qE;move => abnd.
 move : (to_sint_unsigned a _); 1: by smt().
 move => au; rewrite -compress_alt_compress_large. 
@@ -331,10 +354,10 @@ rewrite incoeffK to_sintE /max /= !W64.of_uintK /= qE /=.
 rewrite !(modz_small _ 3329) /=; 1: smt().
 have ->: W16.smod (to_uint a) = to_uint a by
   move : abnd; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
-pose xx := (to_uint a * 1024 + 1665).
-have -> : (18446744073709551616 = 4294967296 * 4294967296) by auto. 
+pose xx := (to_uint a * 2048 + 1664).
+have -> : (18446744073709551616 = 8589934592 * 2147483648) by auto. 
 rewrite divz_mod_mul //. 
-by rewrite (modz_small _ 4294967296); 1: by smt().
+by rewrite (modz_small _ 8589934592); 1: by smt().
 qed.
 
 end Fq.

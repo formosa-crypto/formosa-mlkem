@@ -282,6 +282,27 @@ rewrite -(nth_flatten _ 8);1: by rewrite allP => * /=;smt(in_chunk_size).
 by rewrite chunkK /#.
 qed.
 
+lemma output_pack_384_8(l : bool list) :
+ size l = 256*12 =>
+ flatten
+  (map W8.w2bits
+     (to_list (Array384.of_list W8.zero (BitsToBytes l)))) = l.
+move => *.
+rewrite of_listK; 1: by rewrite size_BitsToBytes /#.
+have ? : size (flatten (map W8.w2bits (BitsToBytes l))) = size l.
++ rewrite (EclibExtra.size_flatten' 8);1: smt(mapP W8.size_w2bits).
+  by rewrite size_map size_BitsToBytes /#.
+
+apply (eq_from_nth witness); 1: smt().
+move => i ib.
+rewrite (nth_flatten _ 8);1: by rewrite allP => *; smt( mapP W8.size_w2bits).
+rewrite (nth_map witness);1: smt(size_BitsToBytes).
+rewrite /BitsToBytes (nth_map []);1:by smt(size_chunk).
+rewrite bits2wK;1: smt(size_nth_chunk).
+rewrite -(nth_flatten _ 8);1: by rewrite allP => * /=;smt(in_chunk_size). 
+by rewrite chunkK /#.
+qed.
+
 lemma flatten_map_eq ['a] (l1 l2 : 'a list) (f : 'a ->  bool list) (n : int):
      0 < n =>
      injective f =>
@@ -343,8 +364,7 @@ bdep 16 1 [_aw] [a] [rp0] compress1_circuit pcond_reduced.
 
 (* We start with some boilerplate *)
 move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
-move => H1; have H2 := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w bool2bits bits2bool  compress1_circuit 16 1 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
-smt(Array32.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Pervasive_bool.oflistP).
+move => H1.
 
 apply (inj_eq Array32.to_list Array32.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
@@ -390,6 +410,14 @@ by rewrite modz_mod /srl_32 /sll_32 /(`<<`) /(`>>`).
 qed.
 
 (********** END BDEP PROOF OF TOMSG **************)
+
+lemma poly_tomsg_corr _aw : 
+    phoare [Jkem768.M._i_poly_tomsg :
+             pos_bound256_cxq a 0 256 2 /\ 
+              a = _aw
+              ==>
+             res.`1 = encode1 (compress_poly 1 (lift_array256 _aw))  ] = 1%r
+  by conseq poly_tomsg_ll (poly_tomsg_corr_h _aw).
 
 (********** BEGIN BDEP PROOF OF FROMMSG **************)
 
@@ -829,9 +857,9 @@ module ToBytesInit = {
 
 lemma tobytesinit_ll : islossless ToBytesInit.toBytesInit.
 proc;inline 2.
-wp;while (0 <= i <= 256) (256-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
+wp;while (0 <= i <= 257) (257-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
 move => *; auto => /> /#.
-qed.
+qed. 
 
 lemma poly_tobytes_ll : islossless Jkem768.M._poly_tobytes.
 proc.
@@ -862,12 +890,23 @@ proc; inline *.
 proc change ^while.2: (W16_sub t (W16.of_int 3329)); 1: by auto.
 proc change ^while.4 : (sra_16 b (W16.of_int 15)); 1: by auto.
 proc change ^while{2}.7 : (srl_16 t0 (W16.of_int 8)); 1: by auto.
-proc change ^while{2}.10 : (sll_16 d (W16.of_int 4)); 1: by auto.
-proc change ^while{2}.14 : (srl_16 t1 (W16.of_int 4)); 1: by auto.
-proc change ^while{2}.5 : rp0.[j <- truncateu8 d]. admit.
-proc change ^while{2}.12 : rp0.[j <- truncateu8 d]. admit.
-proc change ^while{2}.15 : rp0.[j <- truncateu8 t1]. admit.
-
+proc change ^while{2}.11 : (sll_16 d (W16.of_int 4)); 1: by auto.
+proc change ^while{2}.15 : (srl_16 t1 (W16.of_int 4)); 1: by auto.
+proc change ^while{2}.5 : rp0.[j <- truncateu8 d].
++ move => &hr; rewrite tP => k kb; rewrite initiE 1:/# /get8. 
+  case (0 <= j{hr} < 384) => *.
+  + rewrite get_setE 1:/# initiE 1:/# /= get_setE /#.
+  rewrite !setE /= !initiE 1,2:/# /= initiE /#.
+proc change ^while{2}.13 : rp0.[j <- truncateu8 d]. 
++ move => &hr; rewrite tP => k kb; rewrite initiE 1:/# /get8. 
+  case (0 <= j{hr} < 384) => *.
+  + rewrite get_setE 1:/# initiE 1:/# /= get_setE /#.
+  rewrite !setE /= !initiE 1,2:/# /= initiE /#.
+proc change ^while{2}.16 : rp0.[j <- truncateu8 t1].
++ move => &hr; rewrite tP => k kb; rewrite initiE 1:/# /get8. 
+  case (0 <= j{hr} < 384) => *.
+  + rewrite get_setE 1:/# initiE 1:/# /= get_setE /#.
+  rewrite !setE /= !initiE 1,2:/# /= initiE /#.
 unroll for 6.
 unroll for ^while.
 cfold ^i0<-.
@@ -889,35 +928,28 @@ bdep 16 12 [_aw] [a] [rp0] tobytes_circuit pcond_reduced.
 
 (* We start with some boilerplate *)
 move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
-move => H1; have H2 := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w bool2bits bits2bool  compress1_circuit 16 1 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
-smt(Array32.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Pervasive_bool.oflistP).
-
-apply (inj_eq Array32.to_list Array32.to_list_inj).
+move => H1.
+apply (inj_eq Array384.to_list Array384.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
-have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w bool2bits bits2bool  compress1_circuit 16 1 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
-    smt(Array32.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Pervasive_bool.oflistP).
+have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W12.w2bits W12.bits2w  tobytes_circuit 16 12 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+smt(Array384.size_to_list Array256.size_to_list W12.bits2wK BVA_Top_Pervasive_bool.oflistP).
 
-rewrite output_pack_32_8. 
-+ rewrite (EclibExtra.size_flatten' 1);1: smt(mapP BS2Int.size_int2bs).
+rewrite output_pack_384_8. 
++ rewrite (EclibExtra.size_flatten' 12);1: smt(mapP BS2Int.size_int2bs).
   by rewrite size_map size_to_list /=.
 
 congr.
-rewrite /compress1_circuit /compress_poly -map_comp -map_comp -map_comp /(\o) /=.  
+rewrite /tobytes_circuit -map_comp -map_comp -map_comp /(\o) /=.  
 apply (eq_from_nth witness); 1: by rewrite !size_map //.
 rewrite size_map size_iota /max /= => i ib; rewrite !(nth_map witness) //=;1,2:smt(size_iota).
-rewrite nth_iota 1:/# -(BVA_Top_Pervasive_bool.oflistP (BS2Int.int2bs 1 (map (compress 1) (lift_array256 a{hr})).[i]));1: by rewrite BS2Int.size_int2bs /#.
-congr; rewrite -BVA_Top_Pervasive_bool.ofintP /lift_array256;rewrite !mapiE;1,2:smt().
+rewrite nth_iota 1:/# -(BVA_Top_Bindings_W12_t.oflistP (BS2Int.int2bs 12 (map asint (lift_array256 a{hr})).[i])); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W12_t.ofintP /lift_array256;rewrite !mapiE;1,2:smt().
 
-rewrite /i2b !get_to_uint /=.
-
-(* This is now the equivalence betwen specs. It's made slightly more verbose
-   because the impl circuit is only proved correct wrt compress for values
-   in the q range. *)
+(* This is now the equivalence betwen specs.*)
 rewrite ultE /=. 
 case (to_uint a{hr}.[i] < 3329) => /= *.
-+ rewrite -compress_impl_small //=;1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
-  congr;congr;rewrite modz_mod;congr;congr.
-  by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`).
++ rewrite  /truncateu12;congr. 
+  rewrite incoeffK qE /to_sint /= /smod /= ifF 1:/#  modz_small;smt(W16.to_uint_cmp). 
 
 have := H0;rewrite /pos_bound256_cxq qE /= => H00.
 
@@ -931,14 +963,69 @@ have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  
 
 have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
 
-rewrite -compress_impl_small //=;1:by smt().
-by rewrite modz_mod /srl_32 /sll_32 /(`<<`) /(`>>`).
++ rewrite  /truncateu12;congr. 
+  rewrite incoeffK qE modz_small;smt(W16.to_uint_cmp). 
+
+ by smt().
 qed.
 
-(********** END BDEP PROOF OF TOMSG **************)
+(********** END BDEP PROOF OF TOBytes **************)
 
 
+lemma poly_tobytes_corr _aw : 
+    phoare [Jkem768.M._poly_tobytes :
+             pos_bound256_cxq a 0 256 2 
+         /\  _aw = a
+              ==>
+             res.`1 = encode12 (map asint (lift_array256 _aw))] = 1%r
+  by conseq poly_tobytes_ll (poly_tobytes_corr_h _aw).
 
+
+lemma poly_frombytes_ll : islossless Jkem768.M._poly_frombytes.
+proc.
+while (0 <=i <= 128 /\ inc = 128) (128-i); move => *;auto => /> /#.
+qed.
+
+(********** BEGIN BDEP PROOF OF FromBytes **************)
+
+op frombytes_circuit(a : W12.t) : W16.t = 
+   zeroextu16 a.
+
+op pcond_true12(_ : W12.t) = true.
+
+module FromBytesInit = {
+    proc fromBytesInit(rp : W16.t Array256.t, a: W8.t Array384.t) : W16.t Array256.t = {
+       
+       rp <- init_256_16 (fun i => W16.zero);
+       rp <@ Jkem768.M._poly_frombytes(rp,a);
+       return rp;
+    }
+}.
+
+lemma size_BytesToBits l :
+   size (BytesToBits l) = 8*size l.
+rewrite (EclibExtra.size_flatten' 8);1: by smt(mapP W8.size_w2bits).
+by rewrite size_map //.
+qed.
+
+lemma decode_range dfl (l : W8.t list) n :
+  1 < n <= 12 =>
+    size l = 256*n %/ 8 =>
+  size (decode n l) = 256 /\
+  (forall k, 0<=k<256 => 0<= nth dfl (decode n l) k <2^n).
+move => *.
+rewrite -andaE;split;1: by rewrite /decode size_map size_chunk 1:/# size_BytesToBits /#. 
+move => ? k kb.
+rewrite /decode. 
+have := size_nth_chunk witness (BytesToBits l) k n; rewrite size_BytesToBits /= => H.
+rewrite (nth_map witness);1: by rewrite size_chunk 1:/# size_BytesToBits /#.
+smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs).
+qed.
+
+lemma frombytesinit_ll : islossless FromBytesInit.fromBytesInit.
+proc;inline 2.
+wp;while (0 <= i <= 128 /\ inc = 128) (128-i);move => *; auto => /> /#.
+qed.
 
 lemma poly_frombytes_corr (_a : W8.t Array384.t): 
     hoare [Jkem768.M._poly_frombytes :
@@ -946,16 +1033,69 @@ lemma poly_frombytes_corr (_a : W8.t Array384.t):
               ==>
              lift_array256 res = map incoeff (decode12 _a) /\
              pos_bound256_cxq res 0 256 2 ].
-admitted.
+bypr => &m H.
+rewrite Pr[mu_not].
+have -> : Pr[M._poly_frombytes(rp{m}, ap{m}) @ &m : true] = 1%r by byphoare => //;apply poly_frombytes_ll.
+have : Pr[M._poly_frombytes(rp{m}, ap{m}) @ &m : lift_array256 res = map incoeff (decode12 _a) /\ pos_bound256_cxq res 0 256 2] = 1%r; last by smt().
+have <- : Pr[ FromBytesInit.fromBytesInit(rp{m}, ap{m}) @ &m : lift_array256 res = map incoeff (decode12 _a) /\ pos_bound256_cxq res 0 256 2] = 1%r; last first.
++ byequiv (: arg{1}.`2 = arg{2}.`2 ==> ={res}) => //.
+  proc;inline *.
+  admit.
 
-lemma i_poly_compress_corr_h _a  : 
-    hoare [Jkem768.M._i_poly_compress  :
-             pos_bound256_cxq a 0 256 2 /\
-             lift_array256 a = _a 
-              ==>
-             res.`1 = encode4 (compress_poly 4 _a) 
-             ].
-admitted.
+byphoare (: a = _a==> 
+   lift_array256 res = map incoeff (decode12 _a) /\ pos_bound256_cxq res 0 256 2) => //.
+conseq frombytesinit_ll (: _  ==> _);1:smt(). 
+proc; inline *.
+cfold 4.
+proc change ^while.7 : (sll_16 t (W16.of_int 8)); 1: by auto.
+proc change ^while.10 : (sll_16 d1 (W16.of_int 4)); 1: by auto.
+proc change ^while.12 : (srl_16 t (W16.of_int 4)); 1: by auto.
+
+unroll for 5.
+do 33!(cfold ^i<-).
+wp -3.
+
+bdep 12 16 [_a] [a] [rp0] frombytes_circuit pcond_true12. 
+
+(* BDEP pre conseq *)
++ by move => &hr />; rewrite allP /pcond_true /=. 
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= <- rr; rewrite /= !flatten1.
+move => H1; have H2 := post_lane_commute_out_aligned (to_list a{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+smt(Array384.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
+
+  have /=? := decode_range 0 (to_list a{hr}) 12 _ _;1..2:smt(Array384.size_to_list).
+
+have H3 : 
+  map frombytes_circuit (map W12.bits2w (chunk 12 (flatten (map W8.w2bits (to_list a{hr}))))) =
+   to_list (map W16.of_int  (decode12 a{hr})).
++ rewrite /decode12 Array256.map_of_list Array256.of_listK;1: smt(size_map). 
+  rewrite /decode -map_comp -(map_comp _ BS2Int.bs2int) /=.
+  apply eq_in_map => x xb.
+  rewrite /(\o) /frombytes_circuit /zeroextu16.
+  have ? : size x = 12 by smt(@BitChunking).
+  congr;rewrite /to_uint W12.bits2wK;1 :  by smt(@BitChunking).
+  done.
+
+
+split.
++ rewrite tP => i ib.
+  rewrite !mapiE 1,2:/# /= /= -get_to_list H2 H3 /decode12.
+  rewrite get_to_list mapiE 1:/# get_of_list 1:/# of_sintK /=.
+  by rewrite /smod /= ifF 1:/# modz_small 1:/#.
+
+  rewrite /pos_bound256_cxq qE /= => k kb. 
+  have /=? := decode_range witness (to_list a{hr}) 12 _ _;1..2:smt(Array384.size_to_list).
+  rewrite -get_to_list  H2 H3 /decode12.
+  rewrite get_to_list /= get_of_list 1:/#.
+  rewrite (nth_map witness) 1:/#.  
+rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
+  rewrite modz_small; smt(@Zq).  
+qed.
+
 
 lemma i_poly_compress_ll : islossless Jkem768.M._i_poly_compress.
 proc.
@@ -964,14 +1104,174 @@ while (0 <=  i <= 128) (128-i); last
 by auto => /#.
 qed.
 
-lemma i_poly_compress_corr _a  : 
-    phoare [Jkem768.M._i_poly_compress  :
+
+(********** BEGIN BDEP PROOF OF COMPRESS  **************)
+op compress4_circuit(a : W16.t) : W4.t = 
+   if (a \ult W16.of_int 3329) then  
+   truncateu4 (srl_32 ((sll_32 (zeroextu32 a) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28))
+   else 
+   truncateu4 (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).  
+
+module CompressInit = {
+    proc compressInit(rp: W8.t Array128.t, a: W16.t Array256.t) : W8.t Array128.t *  W16.t Array256.t = {
+       rp <- init_128_8 (fun i => W8.zero);
+       (rp,a) <@ Jkem768.M._i_poly_compress(rp,a);
+       return (rp,a);
+    }
+}.
+
+lemma compressinit_ll : islossless CompressInit.compressInit.
+proc;inline 2.
+wp;while (0 <=  i <= 128) (128-i); last 
+   by wp; call (poly_csubq_ll); auto =>  /> /#. 
+by auto => /#.
+qed.
+
+lemma output_pack_128_8(l : bool list) :
+ size l = 1024 =>
+ flatten
+  (map W8.w2bits
+     (to_list (Array128.of_list W8.zero (BitsToBytes l)))) = l.
+move => *.
+rewrite of_listK; 1: by rewrite size_BitsToBytes /#.
+have ? : size (flatten (map W8.w2bits (BitsToBytes l))) = size l.
++ rewrite (EclibExtra.size_flatten' 8);1: smt(mapP W8.size_w2bits).
+  by rewrite size_map size_BitsToBytes /#.
+
+apply (eq_from_nth witness); 1: smt().
+move => i ib.
+rewrite (nth_flatten _ 8);1: by rewrite allP => *; smt( mapP W8.size_w2bits).
+rewrite (nth_map witness);1: smt(size_BitsToBytes).
+rewrite /BitsToBytes (nth_map []);1:by smt(size_chunk).
+rewrite bits2wK;1: smt(size_nth_chunk).
+rewrite -(nth_flatten _ 8);1: by rewrite allP => * /=;smt(in_chunk_size). 
+by rewrite chunkK /#.
+qed.
+
+lemma i_poly_compress_corr_h _aw  : 
+    hoare [Jkem768.M._i_poly_compress  :
              pos_bound256_cxq a 0 256 2 /\
-             lift_array256 a = _a 
+             a = _aw
               ==>
-             res.`1 = encode4 (compress_poly 4 _a) 
-             ] = 1%r.
-admitted.
+             res.`1 = encode4 (compress_poly 4 (lift_array256 _aw)) 
+             ].
+proof.
+bypr => &m H.
+rewrite Pr[mu_not].
+have -> : Pr[M._i_poly_compress(rp{m}, a{m}) @ &m : true] = 1%r by byphoare => //;apply i_poly_compress_ll.
+have : Pr[M._i_poly_compress(rp{m}, a{m}) @ &m : res.`1 =  encode4 (compress_poly 4 (lift_array256 _aw)) ] = 1%r; last by smt().
+have <- : Pr[ CompressInit.compressInit(rp{m}, a{m}) @ &m : res.`1 = encode4 (compress_poly 4 (lift_array256 _aw)) ] = 1%r; last first.
++ byequiv (: ={a} ==> ={res}) => //.
+  proc;inline *.
+  admit.
+
+byphoare (: pos_bound256_cxq a 0 256 2 /\  a = _aw ==> 
+    res.`1 = encode4 (compress_poly 4 (lift_array256 _aw)))  => //.
+conseq compressinit_ll (: _  ==> _);1:smt(). 
+proc; inline *.
+proc change ^while.2: (W16_sub t (W16.of_int 3329)); 1: by auto.
+proc change ^while.4 : (sra_16 b (W16.of_int 15)); 1: by auto.
+proc change ^while{2}.3 : (sll_32 d0 (W32.of_int 4)); 1: by auto.
+proc change ^while{2}.6 : (srl_32 d0 (W32.of_int 28)); 1: by auto.
+proc change ^while{2}.8 : (sll_32 d1 (W32.of_int 4));1:by auto. 
+proc change ^while{2}.11 : (srl_32 d1 (W32.of_int 28));1:by auto. 
+proc change ^while{2}.13 : (sll_32 d1 (W32.of_int 4));1:by auto. 
+unroll for 6.
+unroll for ^while.
+cfold ^i0<-.
+cfold ^i<-.
+wp -3.
+bdep 16 4 [_aw] [a] [rp0] compress4_circuit pcond_reduced. 
+
+(* BDEP pre conseq *)
++ move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
+  rewrite allP /pos_bound256_cxq /= => Hb. 
+  rewrite /pcond_reduced /= /tolist /= => x.
+  rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
+  have := Hb i; rewrite ib /= qE /=.
+  rewrite /to_sint /smod /=.
+  smt(W16.to_uint_cmp).
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
+move => H1.
+
+apply (inj_eq Array128.to_list Array128.to_list_inj).
+apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
+have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W4.w2bits W4.bits2w  compress4_circuit 16 4 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+    smt(Array128.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Bindings_W4_t.oflistP).
+
+rewrite output_pack_128_8. 
++ rewrite (EclibExtra.size_flatten' 4);1: smt(mapP BS2Int.size_int2bs).
+  by rewrite size_map size_to_list /=.
+
+congr.
+rewrite /compress4_circuit /compress_poly -map_comp -map_comp -map_comp /(\o) /=.  
+apply (eq_from_nth witness); 1: by rewrite !size_map //.
+rewrite size_map size_iota /max /= => i ib; rewrite !(nth_map witness) //=;1,2:smt(size_iota).
+rewrite nth_iota 1:/# -(BVA_Top_Bindings_W4_t.oflistP (BS2Int.int2bs 4 (map (compress 4) (lift_array256 a{hr})).[i])); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W4_t.ofintP /lift_array256;rewrite !mapiE;1,2:smt().
+
+rewrite /truncateu4 to_uint_eq.
+(* This is now the equivalence betwen specs. It's made slightly more verbose
+   because the impl circuit is only proved correct wrt compress for values
+   in the q range. *)
+rewrite ultE /=. 
+case (to_uint a{hr}.[i] < 3329) => /= *.
++ rewrite -compress_impl_small //=;1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
+  by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) !of_uintK /= /#. 
+have := H0;rewrite /pos_bound256_cxq qE /= => H00.
+
+have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
+
+rewrite -compress_impl_small //=;1:by smt().
+by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) !of_uintK /= /#. 
+qed.
+
+(********** END BDEP PROOF OF COMPRESS **************)
+
+
+lemma i_poly_compress_corr _aw  : 
+    phoare [Jkem768.M._i_poly_compress  :
+              pos_bound256_cxq a 0 256 2 /\
+             a = _aw
+              ==>
+             res.`1 = encode4 (compress_poly 4 (lift_array256 _aw)) 
+             ] = 1%r 
+ by conseq i_poly_compress_ll (i_poly_compress_corr_h _aw).
+
+(********** BEGIN BDEP PROOF OF DECOMPRESS **************)
+
+op decompress4_circuit(c : W4.t) : W16.t = 
+  truncateu16 (srl_32 (((zeroextu32 c) * W32.of_int 3329) + W32.of_int 8) (W32.of_int 4)).
+
+op pcond_true4(_: W4.t) = true.
+
+module DecompressInit = {
+    proc decompressInit(rp :  W16.t Array256.t, ap: W8.t Array128.t) : W16.t Array256.t = {
+       rp <- init_256_16 (fun i => W16.zero);
+       rp <@ Jkem768.M._i_poly_decompress(rp,ap);
+       return rp;
+    }
+}.
+
+lemma poly_decompress_ll : islossless Jkem768.M._i_poly_decompress
+ by proc; inline *;wp;while (0 <= i <= 128) (128-i);  by  auto =>  /> /#.
+
+
+lemma decompressinit_ll : islossless DecompressInit.decompressInit
+ by proc; inline *;wp;while (0 <= i <= 128) (128-i);  by  auto =>  /> /#.
+
 
 lemma poly_decompress_corr_h (_a : W8.t Array128.t): 
     hoare [Jkem768.M._i_poly_decompress  :
@@ -979,15 +1279,83 @@ lemma poly_decompress_corr_h (_a : W8.t Array128.t):
               ==>
              lift_array256 res = decompress_poly 4 (decode4 _a) /\
              pos_bound256_cxq res 0 256 1 ].
-admitted.
+bypr => &m H.
+rewrite Pr[mu_not].
+have -> : Pr[M._i_poly_decompress(rp{m}, ap{m}) @ &m : true] = 1%r by byphoare => //;apply poly_decompress_ll.
+have : Pr[M._i_poly_decompress(rp{m}, ap{m}) @ &m :lift_array256 res = decompress_poly 4 (decode4 _a) /\ pos_bound256_cxq res 0 256 1] = 1%r; last by smt().
+have <- : Pr[ DecompressInit.decompressInit(rp{m}, ap{m}) @ &m : lift_array256 res = decompress_poly 4 (decode4 _a) /\
+             pos_bound256_cxq res 0 256 1] = 1%r; last first.
++ byequiv (: arg{1}.`2 = arg{2}.`2 ==> ={res}) => //.
+  proc;inline *.
+  admit.
+
+byphoare (: ap = _a ==> 
+   lift_array256 res = decompress_poly 4 (decode4 _a) /\ pos_bound256_cxq res 0 256 1) => //.
+conseq decompressinit_ll (: _  ==> _);1:smt(). 
+proc; inline *.
+proc change ^while.5 : (srl_16 d1 (W16.of_int 4)); 1: by auto.
+proc change ^while.10 : (srl_16 d0 (W16.of_int 4)); 1: by auto.
+proc change ^while.11 : (srl_16 d1 (W16.of_int 4)); 1: by auto.
+unroll for 5.
+cfold ^i<-.
+wp -2.
+
+bdep 4 16 [_a] [ap] [rp0] decompress4_circuit pcond_true4. 
+
+(* BDEP pre conseq *)
++ by move => &hr />; rewrite allP /pcond_true4 /=. 
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= <- rr; rewrite /= !flatten1.
+move => H1; have H2 := post_lane_commute_out_aligned (to_list ap{hr}) (to_list rr) W8.w2bits W8.bits2w W4.w2bits W4.bits2w W16.w2bits W16.bits2w  decompress4_circuit 8 4 16 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+smt(Array128.size_to_list Array256.size_to_list W16.bits2wK BVA_Top_Bindings_W4_t.oflistP).
+
+have H3 : 
+   map decompress4_circuit (map W4.bits2w (chunk 4 (flatten (map W8.w2bits (to_list ap{hr}))))) =
+   map (W16.of_int \o asint) (to_list (decompress_poly 4 (decode4 ap{hr}))).
++ rewrite /decode4 /decompress_poly Array256.map_of_list Array256.of_listK;1:smt(size_map Array256.size_to_list).
+  rewrite /decode -map_comp  -(map_comp _ (decompress 4)) -(map_comp _ BS2Int.bs2int) /=.
+  apply eq_in_map => x xb.
+  rewrite /(\o) /decompress4_circuit  -decompress_alt_decompress /decompress_alt //=.
+  have := size_nth_chunk [] (flatten (map W8.w2bits (to_list ap{hr}))).
+  have := nthP witness (chunk 4 (flatten (map W8.w2bits (to_list ap{hr})))) x.
+  rewrite xb /= => He;elim He; rewrite size_chunk //= => k*. 
+  have ? : size x = 4 
+   by  have := size_nth_chunk witness (flatten (map W8.w2bits (to_list ap{hr}))) k 4 =>/= /#.
+  rewrite qE to_uint_eq to_uint_truncateu16 /= /srl_32 /= of_uintK /=;congr;congr.
+  rewrite to_uint_shr //= /zeroextu32 to_uintD_small /=;1: by rewrite of_uintK /=;smt(modz_small W4.to_uint_cmp pow2_4). 
+  rewrite of_uintK /= modz_small;1:by smt( W4.to_uint_cmp pow2_4). 
+  rewrite /to_uint bits2wK 1:/# incoeffK qE /=. 
+  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W4.to_uint_cmp pow2_4).  search W4.w2bits.
+
+split.
++ rewrite tP => i ib.
+  rewrite !mapiE 1,2:/# /= -get_to_list H2 H3 /decompress_poly.
+  rewrite (nth_map witness);1: by smt(Array256.size_to_list).
+  rewrite get_to_list /= /(\o) mapiE 1:/# /=.
+  pose c := (decompress 4 (decode4 ap{hr}).[i]).
+  rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
+  rewrite modz_small; smt(@Zq).  
+
+rewrite /pos_bound256_cxq qE /= => k kb. 
+rewrite -get_to_list  H2 H3 /decompress_poly.
+  rewrite (nth_map witness);1: by smt(Array256.size_to_list).
+  rewrite get_to_list /= /(\o) mapiE 1:/# /=.
+  rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
+  rewrite modz_small; smt(@Zq).  
+qed.
+
+(********** END BDEP PROOF OF DECOMPRESS **************)
 
 lemma poly_decompress_corr (_a : W8.t Array128.t): 
     phoare [Jkem768.M._i_poly_decompress  :
               arg.`2 = _a
               ==>
              lift_array256 res = decompress_poly 4 (decode4 _a) /\
-             pos_bound256_cxq res 0 256 1] = 1%r.
-admitted.
+             pos_bound256_cxq res 0 256 1 ] = 1%r
+  by conseq poly_decompress_ll (poly_decompress_corr_h _a).
 
 (*******DIRECT NTT *******)
 
