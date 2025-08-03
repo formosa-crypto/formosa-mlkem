@@ -2005,18 +2005,20 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	movq	%rcx, 31240(%rsp)
 	leaq	32(%rsp), %rcx
 	leaq	28080(%rsp), %rdx
-	leaq	glob_data + 1184(%rip), %rsi
-	vmovdqu	(%rsi), %ymm0
-	leaq	glob_data + 288(%rip), %rsi
-	vmovdqu	(%rsi), %ymm1
-	leaq	glob_data + 256(%rip), %rsi
-	vmovdqu	(%rsi), %ymm2
-	leaq	glob_data + 224(%rip), %rsi
-	vmovdqu	(%rsi), %ymm3
-	leaq	glob_data + 192(%rip), %rsi
-	vmovdqu	(%rsi), %ymm4
+	leaq	8480(%rsp), %rsi
+	movq	%rax, %rdi
+	leaq	glob_data + 1184(%rip), %r8
+	vmovdqu	(%r8), %ymm0
+	leaq	glob_data + 288(%rip), %r8
+	vmovdqu	(%r8), %ymm1
+	leaq	glob_data + 256(%rip), %r8
+	vmovdqu	(%r8), %ymm2
+	leaq	glob_data + 224(%rip), %r8
+	vmovdqu	(%r8), %ymm3
+	leaq	glob_data + 192(%rip), %r8
+	vmovdqu	(%r8), %ymm4
 	vpbroadcastw	glob_data + 5186(%rip), %ymm5
-	vmovdqu	(%rax), %ymm6
+	vmovdqu	(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2025,8 +2027,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8480(%rsp)
-	vmovdqu	22(%rax), %ymm6
+	vmovdqu	%ymm6, (%rsi)
+	vmovdqu	22(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2035,8 +2037,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8512(%rsp)
-	vmovdqu	44(%rax), %ymm6
+	vmovdqu	%ymm6, 32(%rsi)
+	vmovdqu	44(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2045,8 +2047,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8544(%rsp)
-	vmovdqu	66(%rax), %ymm6
+	vmovdqu	%ymm6, 64(%rsi)
+	vmovdqu	66(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2055,8 +2057,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8576(%rsp)
-	vmovdqu	88(%rax), %ymm6
+	vmovdqu	%ymm6, 96(%rsi)
+	vmovdqu	88(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2065,8 +2067,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8608(%rsp)
-	vmovdqu	110(%rax), %ymm6
+	vmovdqu	%ymm6, 128(%rsi)
+	vmovdqu	110(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2075,8 +2077,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8640(%rsp)
-	vmovdqu	132(%rax), %ymm6
+	vmovdqu	%ymm6, 160(%rsi)
+	vmovdqu	132(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2085,8 +2087,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8672(%rsp)
-	vmovdqu	154(%rax), %ymm6
+	vmovdqu	%ymm6, 192(%rsi)
+	vmovdqu	154(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2095,8 +2097,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8704(%rsp)
-	vmovdqu	176(%rax), %ymm6
+	vmovdqu	%ymm6, 224(%rsi)
+	vmovdqu	176(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2105,8 +2107,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8736(%rsp)
-	vmovdqu	198(%rax), %ymm6
+	vmovdqu	%ymm6, 256(%rsi)
+	vmovdqu	198(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2115,8 +2117,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8768(%rsp)
-	vmovdqu	220(%rax), %ymm6
+	vmovdqu	%ymm6, 288(%rsi)
+	vmovdqu	220(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2125,8 +2127,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8800(%rsp)
-	vmovdqu	242(%rax), %ymm6
+	vmovdqu	%ymm6, 320(%rsi)
+	vmovdqu	242(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2135,8 +2137,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8832(%rsp)
-	vmovdqu	264(%rax), %ymm6
+	vmovdqu	%ymm6, 352(%rsi)
+	vmovdqu	264(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2145,8 +2147,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8864(%rsp)
-	vmovdqu	286(%rax), %ymm6
+	vmovdqu	%ymm6, 384(%rsi)
+	vmovdqu	286(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2155,8 +2157,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8896(%rsp)
-	vmovdqu	308(%rax), %ymm6
+	vmovdqu	%ymm6, 416(%rsi)
+	vmovdqu	308(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2165,8 +2167,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8928(%rsp)
-	vmovdqu	330(%rax), %ymm6
+	vmovdqu	%ymm6, 448(%rsi)
+	vmovdqu	330(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2175,8 +2177,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8960(%rsp)
-	vmovdqu	352(%rax), %ymm6
+	vmovdqu	%ymm6, 480(%rsi)
+	vmovdqu	352(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2185,8 +2187,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 8992(%rsp)
-	vmovdqu	374(%rax), %ymm6
+	vmovdqu	%ymm6, 512(%rsi)
+	vmovdqu	374(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2195,8 +2197,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9024(%rsp)
-	vmovdqu	396(%rax), %ymm6
+	vmovdqu	%ymm6, 544(%rsi)
+	vmovdqu	396(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2205,8 +2207,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9056(%rsp)
-	vmovdqu	418(%rax), %ymm6
+	vmovdqu	%ymm6, 576(%rsi)
+	vmovdqu	418(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2215,8 +2217,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9088(%rsp)
-	vmovdqu	440(%rax), %ymm6
+	vmovdqu	%ymm6, 608(%rsi)
+	vmovdqu	440(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2225,8 +2227,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9120(%rsp)
-	vmovdqu	462(%rax), %ymm6
+	vmovdqu	%ymm6, 640(%rsi)
+	vmovdqu	462(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2235,8 +2237,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9152(%rsp)
-	vmovdqu	484(%rax), %ymm6
+	vmovdqu	%ymm6, 672(%rsi)
+	vmovdqu	484(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2245,8 +2247,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9184(%rsp)
-	vmovdqu	506(%rax), %ymm6
+	vmovdqu	%ymm6, 704(%rsi)
+	vmovdqu	506(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2255,8 +2257,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9216(%rsp)
-	vmovdqu	528(%rax), %ymm6
+	vmovdqu	%ymm6, 736(%rsi)
+	vmovdqu	528(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2265,8 +2267,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9248(%rsp)
-	vmovdqu	550(%rax), %ymm6
+	vmovdqu	%ymm6, 768(%rsi)
+	vmovdqu	550(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2275,8 +2277,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9280(%rsp)
-	vmovdqu	572(%rax), %ymm6
+	vmovdqu	%ymm6, 800(%rsi)
+	vmovdqu	572(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2285,8 +2287,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9312(%rsp)
-	vmovdqu	594(%rax), %ymm6
+	vmovdqu	%ymm6, 832(%rsi)
+	vmovdqu	594(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2295,8 +2297,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9344(%rsp)
-	vmovdqu	616(%rax), %ymm6
+	vmovdqu	%ymm6, 864(%rsi)
+	vmovdqu	616(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2305,8 +2307,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9376(%rsp)
-	vmovdqu	638(%rax), %ymm6
+	vmovdqu	%ymm6, 896(%rsi)
+	vmovdqu	638(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2315,8 +2317,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9408(%rsp)
-	vmovdqu	660(%rax), %ymm6
+	vmovdqu	%ymm6, 928(%rsi)
+	vmovdqu	660(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2325,8 +2327,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9440(%rsp)
-	vmovdqu	682(%rax), %ymm6
+	vmovdqu	%ymm6, 960(%rsi)
+	vmovdqu	682(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2335,8 +2337,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9472(%rsp)
-	vmovdqu	704(%rax), %ymm6
+	vmovdqu	%ymm6, 992(%rsi)
+	vmovdqu	704(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2345,8 +2347,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9504(%rsp)
-	vmovdqu	726(%rax), %ymm6
+	vmovdqu	%ymm6, 1024(%rsi)
+	vmovdqu	726(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2355,8 +2357,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9536(%rsp)
-	vmovdqu	748(%rax), %ymm6
+	vmovdqu	%ymm6, 1056(%rsi)
+	vmovdqu	748(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2365,8 +2367,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9568(%rsp)
-	vmovdqu	770(%rax), %ymm6
+	vmovdqu	%ymm6, 1088(%rsi)
+	vmovdqu	770(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2375,8 +2377,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9600(%rsp)
-	vmovdqu	792(%rax), %ymm6
+	vmovdqu	%ymm6, 1120(%rsi)
+	vmovdqu	792(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2385,8 +2387,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9632(%rsp)
-	vmovdqu	814(%rax), %ymm6
+	vmovdqu	%ymm6, 1152(%rsi)
+	vmovdqu	814(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2395,8 +2397,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9664(%rsp)
-	vmovdqu	836(%rax), %ymm6
+	vmovdqu	%ymm6, 1184(%rsi)
+	vmovdqu	836(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2405,8 +2407,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9696(%rsp)
-	vmovdqu	858(%rax), %ymm6
+	vmovdqu	%ymm6, 1216(%rsi)
+	vmovdqu	858(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2415,8 +2417,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9728(%rsp)
-	vmovdqu	880(%rax), %ymm6
+	vmovdqu	%ymm6, 1248(%rsi)
+	vmovdqu	880(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2425,8 +2427,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9760(%rsp)
-	vmovdqu	902(%rax), %ymm6
+	vmovdqu	%ymm6, 1280(%rsi)
+	vmovdqu	902(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2435,8 +2437,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9792(%rsp)
-	vmovdqu	924(%rax), %ymm6
+	vmovdqu	%ymm6, 1312(%rsi)
+	vmovdqu	924(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2445,8 +2447,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9824(%rsp)
-	vmovdqu	946(%rax), %ymm6
+	vmovdqu	%ymm6, 1344(%rsi)
+	vmovdqu	946(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2455,8 +2457,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9856(%rsp)
-	vmovdqu	968(%rax), %ymm6
+	vmovdqu	%ymm6, 1376(%rsi)
+	vmovdqu	968(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2465,8 +2467,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9888(%rsp)
-	vmovdqu	990(%rax), %ymm6
+	vmovdqu	%ymm6, 1408(%rsi)
+	vmovdqu	990(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2475,8 +2477,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9920(%rsp)
-	vmovdqu	1012(%rax), %ymm6
+	vmovdqu	%ymm6, 1440(%rsi)
+	vmovdqu	1012(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2485,8 +2487,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9952(%rsp)
-	vmovdqu	1034(%rax), %ymm6
+	vmovdqu	%ymm6, 1472(%rsi)
+	vmovdqu	1034(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2495,8 +2497,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 9984(%rsp)
-	vmovdqu	1056(%rax), %ymm6
+	vmovdqu	%ymm6, 1504(%rsi)
+	vmovdqu	1056(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2505,8 +2507,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10016(%rsp)
-	vmovdqu	1078(%rax), %ymm6
+	vmovdqu	%ymm6, 1536(%rsi)
+	vmovdqu	1078(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2515,8 +2517,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10048(%rsp)
-	vmovdqu	1100(%rax), %ymm6
+	vmovdqu	%ymm6, 1568(%rsi)
+	vmovdqu	1100(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2525,8 +2527,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10080(%rsp)
-	vmovdqu	1122(%rax), %ymm6
+	vmovdqu	%ymm6, 1600(%rsi)
+	vmovdqu	1122(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2535,8 +2537,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10112(%rsp)
-	vmovdqu	1144(%rax), %ymm6
+	vmovdqu	%ymm6, 1632(%rsi)
+	vmovdqu	1144(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2545,8 +2547,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10144(%rsp)
-	vmovdqu	1166(%rax), %ymm6
+	vmovdqu	%ymm6, 1664(%rsi)
+	vmovdqu	1166(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2555,8 +2557,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10176(%rsp)
-	vmovdqu	1188(%rax), %ymm6
+	vmovdqu	%ymm6, 1696(%rsi)
+	vmovdqu	1188(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2565,8 +2567,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10208(%rsp)
-	vmovdqu	1210(%rax), %ymm6
+	vmovdqu	%ymm6, 1728(%rsi)
+	vmovdqu	1210(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2575,8 +2577,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10240(%rsp)
-	vmovdqu	1232(%rax), %ymm6
+	vmovdqu	%ymm6, 1760(%rsi)
+	vmovdqu	1232(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2585,8 +2587,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10272(%rsp)
-	vmovdqu	1254(%rax), %ymm6
+	vmovdqu	%ymm6, 1792(%rsi)
+	vmovdqu	1254(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2595,8 +2597,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10304(%rsp)
-	vmovdqu	1276(%rax), %ymm6
+	vmovdqu	%ymm6, 1824(%rsi)
+	vmovdqu	1276(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2605,8 +2607,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10336(%rsp)
-	vmovdqu	1298(%rax), %ymm6
+	vmovdqu	%ymm6, 1856(%rsi)
+	vmovdqu	1298(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2615,8 +2617,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10368(%rsp)
-	vmovdqu	1320(%rax), %ymm6
+	vmovdqu	%ymm6, 1888(%rsi)
+	vmovdqu	1320(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2625,8 +2627,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10400(%rsp)
-	vmovdqu	1342(%rax), %ymm6
+	vmovdqu	%ymm6, 1920(%rsi)
+	vmovdqu	1342(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2635,8 +2637,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10432(%rsp)
-	vmovdqu	1364(%rax), %ymm6
+	vmovdqu	%ymm6, 1952(%rsi)
+	vmovdqu	1364(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm6
 	vpsrlvd	%ymm2, %ymm6, %ymm6
@@ -2645,8 +2647,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm6, %ymm6
 	vpand	%ymm5, %ymm6, %ymm6
 	vpmulhrsw	%ymm0, %ymm6, %ymm6
-	vmovdqu	%ymm6, 10464(%rsp)
-	vmovdqu	1386(%rax), %ymm6
+	vmovdqu	%ymm6, 1984(%rsi)
+	vmovdqu	1386(%rdi), %ymm6
 	vpermq	$148, %ymm6, %ymm6
 	vpshufb	%ymm1, %ymm6, %ymm1
 	vpsrlvd	%ymm2, %ymm1, %ymm1
@@ -2655,7 +2657,7 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_dec:
 	vpsrlw	$1, %ymm1, %ymm1
 	vpand	%ymm5, %ymm1, %ymm1
 	vpmulhrsw	%ymm0, %ymm1, %ymm0
-	vmovdqu	%ymm0, 10496(%rsp)
+	vmovdqu	%ymm0, 2016(%rsi)
 	leaq	160(%rsp), %rsi
 	leaq	1408(%rax), %rax
 	leaq	-24(%rsp), %rsp
@@ -13038,7 +13040,6 @@ L_i_poly_decompress$1:
 	vmovdqu	glob_data + 384(%rip), %ymm1
 	vmovdqu	glob_data + 352(%rip), %ymm2
 	vmovdqu	glob_data + 320(%rip), %ymm3
-	vpxor	%ymm4, %ymm4, %ymm4
 	movq	(%rax), %xmm4
 	movw	8(%rax), %di
 	vpinsrw	$4, %edi, %xmm4, %xmm4
@@ -16501,12 +16502,10 @@ L_shake256_A32__A1600$3:
 	call	L_keccakf1600_avx2$1
 L_shake256_A32__A1600$2:
 	movq	%xmm6, (%rax,%rcx)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm0
 	vmovdqu	%xmm5, %xmm0
 	vmovdqu	%xmm0, 8(%rax,%rcx)
 	vextracti128	$1, %ymm5, %xmm0
 	movq	%xmm0, 24(%rax,%rcx)
-	vpunpckhqdq	%xmm0, %xmm0, %xmm0
 	ret
 L_sha3_256A_A1568$1:
 	vpxor	%ymm6, %ymm6, %ymm6
@@ -16609,12 +16608,10 @@ L_sha3_256A_A1568$3:
 	call	L_keccakf1600_avx2$1
 L_sha3_256A_A1568$2:
 	movq	%xmm6, (%rdx,%rcx)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm0
 	vmovdqu	%xmm5, %xmm0
 	vmovdqu	%xmm0, 8(%rdx,%rcx)
 	vextracti128	$1, %ymm5, %xmm0
 	movq	%xmm0, 24(%rdx,%rcx)
-	vpunpckhqdq	%xmm0, %xmm0, %xmm0
 	ret
 L_shake128x4_squeeze3blocks$1:
 	movq	%rdi, %rbx
@@ -16779,7 +16776,6 @@ L_shake128_next_state$1:
 L_shake128_next_state$2:
 	movq	$336, %r11
 	movq	%xmm6, (%r10,%r11)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm6
 	vmovdqu	%ymm5, 8(%r10,%r11)
 	vmovdqu	%xmm0, %xmm5
 	vextracti128	$1, %ymm0, %xmm0
@@ -17058,7 +17054,6 @@ L_shake256_A128__A32_A1$3:
 	call	L_keccakf1600_avx2$1
 L_shake256_A128__A32_A1$2:
 	movq	%xmm6, (%rax,%rcx)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm6
 	vmovdqu	%ymm5, 8(%rax,%rcx)
 	vmovdqu	%xmm0, %xmm5
 	vextracti128	$1, %ymm0, %xmm0
@@ -17067,13 +17062,11 @@ L_shake256_A128__A32_A1$2:
 	vpunpckhqdq	%xmm0, %xmm0, %xmm0
 	vpblendd	$240, %ymm3, %ymm1, %ymm6
 	vpblendd	$240, %ymm1, %ymm3, %ymm1
-	vpblendd	$240, %ymm4, %ymm2, %ymm3
 	vpblendd	$240, %ymm2, %ymm4, %ymm2
 	vpblendd	$195, %ymm2, %ymm6, %ymm3
 	vmovdqu	%ymm3, 48(%rax,%rcx)
 	movq	%xmm5, %rdx
 	movq	%rdx, 80(%rax,%rcx)
-	vpunpckhqdq	%xmm5, %xmm5, %xmm3
 	vpblendd	$195, %ymm1, %ymm2, %ymm1
 	vmovdqu	%ymm1, 88(%rax,%rcx)
 	movq	%xmm0, %rdx
@@ -17133,20 +17126,14 @@ L_sha3_512A_A64$1:
 	call	L_keccakf1600_avx2$1
 L_sha3_512A_A64$2:
 	movq	%xmm6, (%rcx,%rdx)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm6
 	vmovdqu	%ymm5, 8(%rcx,%rdx)
 	vextracti128	$1, %ymm0, %xmm0
 	movq	%xmm0, %rsi
 	movq	%rsi, 40(%rcx,%rdx)
-	vpunpckhqdq	%xmm0, %xmm0, %xmm0
 	vpblendd	$240, %ymm3, %ymm1, %ymm0
-	vpblendd	$240, %ymm1, %ymm3, %ymm1
-	vpblendd	$240, %ymm4, %ymm2, %ymm1
 	vpblendd	$240, %ymm2, %ymm4, %ymm1
 	vpblendd	$195, %ymm1, %ymm0, %ymm0
-	vmovdqu	%xmm0, %xmm1
-	vmovdqu	%xmm1, 48(%rcx,%rdx)
-	vextracti128	$1, %ymm0, %xmm0
+	vmovdqu	%xmm0, 48(%rcx,%rdx)
 	ret
 L_sha3_512A_A33$1:
 	vpxor	%ymm5, %ymm5, %ymm5
@@ -17184,20 +17171,14 @@ L_sha3_512A_A33$1:
 	call	L_keccakf1600_avx2$1
 L_sha3_512A_A33$2:
 	movq	%xmm6, (%rax,%rcx)
-	vpunpckhqdq	%xmm6, %xmm6, %xmm6
 	vmovdqu	%ymm5, 8(%rax,%rcx)
 	vextracti128	$1, %ymm0, %xmm0
 	movq	%xmm0, %rdx
 	movq	%rdx, 40(%rax,%rcx)
-	vpunpckhqdq	%xmm0, %xmm0, %xmm0
 	vpblendd	$240, %ymm3, %ymm1, %ymm0
-	vpblendd	$240, %ymm1, %ymm3, %ymm1
-	vpblendd	$240, %ymm4, %ymm2, %ymm1
 	vpblendd	$240, %ymm2, %ymm4, %ymm1
 	vpblendd	$195, %ymm1, %ymm0, %ymm0
-	vmovdqu	%xmm0, %xmm1
-	vmovdqu	%xmm1, 48(%rax,%rcx)
-	vextracti128	$1, %ymm0, %xmm0
+	vmovdqu	%xmm0, 48(%rax,%rcx)
 	ret
 L_keccakf1600_avx2x4$1:
 	leaq	glob_data + 4984(%rip), %r9
