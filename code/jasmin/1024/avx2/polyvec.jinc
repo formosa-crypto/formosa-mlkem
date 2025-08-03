@@ -22,7 +22,7 @@ u16[16] pvd_shift_s = {32, 4, 1,32, 8, 1,32, 4,
 u16 pvd_mask_s = 0x7FF0;
 
 inline
-fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLKEM_VECN]
+fn __i_polyvec_decompress(reg mut ptr u16[MLKEM_VECN] r, reg const ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp) -> reg ptr u16[MLKEM_VECN]
 {
   inline int i k;
   reg u256 f q shufbidx srlvdidx srlvqidx shift mask;
@@ -30,7 +30,6 @@ fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLK
   reg ptr u32[8] x8d;
   reg ptr u64[4] x4q;
   reg ptr u16[16] x16p x16s;
-  stack u16[MLKEM_VECN] r;
 
   x16p = jqx16;
   q = x16p[:u256 0];
