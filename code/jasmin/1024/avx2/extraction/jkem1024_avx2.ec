@@ -9593,9 +9593,9 @@ module M = {
     }
     return matrix;
   }
-  proc __indcpa_keypair (pk:W8.t Array1568.t, sk:W8.t Array3168.t,
+  proc __indcpa_keypair (pk:W8.t Array1568.t, sk:W8.t Array1536.t,
                          randomnessp:W8.t Array32.t) : W8.t Array1568.t *
-                                                       W8.t Array3168.t = {
+                                                       W8.t Array1536.t = {
     var aux:W16.t Array256.t;
     var aux_0:W16.t Array256.t;
     var aux_1:W16.t Array256.t;
@@ -9746,7 +9746,7 @@ module M = {
                                   ),
     skpv);
     sk <-
-    (Array3168.init
+    (Array1536.init
     (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then aux_3.[(i_0 - 0)] else 
                 sk.[i_0]))
     );
@@ -10003,6 +10003,8 @@ module M = {
   proc __crypto_kem_keypair_jazz (pk:W8.t Array1568.t, sk:W8.t Array3168.t,
                                   randomnessp:W8.t Array64.t) : W8.t Array1568.t *
                                                                 W8.t Array3168.t = {
+    var aux_0:W8.t Array1536.t;
+    var aux:W8.t Array1568.t;
     var inc:int;
     var s_randomnessp:W8.t Array64.t;
     var randomnessp1:W8.t Array32.t;
@@ -10020,7 +10022,14 @@ module M = {
     s_skp <- witness;
     s_randomnessp <- randomnessp;
     randomnessp1 <- (Array32.init (fun i_0 => randomnessp.[(0 + i_0)]));
-    (pk, sk) <@ __indcpa_keypair (pk, sk, randomnessp1);
+    (aux, aux_0) <@ __indcpa_keypair (pk,
+    (Array1536.init (fun i_0 => sk.[(0 + i_0)])), randomnessp1);
+    pk <- aux;
+    sk <-
+    (Array3168.init
+    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then aux_0.[(i_0 - 0)] else 
+                sk.[i_0]))
+    );
     s_pkp <- pk;
     inc <- (((4 * 384) + 32) %/ 8);
     i <- 0;

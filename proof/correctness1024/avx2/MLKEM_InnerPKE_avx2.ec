@@ -835,11 +835,11 @@ lemma mlkem_correct_kg_avx2   :
        randomnessp{1} = coins{2}  
         ==> 
        let (pk,sk) = res{2} in let (t,rho) = pk in
-         sk = res{1}.`1 /\
-         t = load_array1536 Glob.mem{1} _pkp  /\
-         rho = load_array32 Glob.mem{1} (_pkp+1536)].
+         sk = res{1}.`2 /\
+         t = Array1536.init (fun i => res{1}.`1.[i])  /\
+         rho = Array32.init (fun i => res{1}.`1.[1536+i])].
 proc*.
-transitivity {1} {Jkem1024.M.__indcpa_keypair(pkp, skp, randomnessp);} 
+transitivity {1} {Jkem1024.M.__indcpa_keypair(pk, sk, randomnessp);} 
 (={Glob.mem,pkp,skp,randomnessp} /\ 
   Glob.mem{1} = mem /\
     to_uint pkp{1} = _pkp /\
