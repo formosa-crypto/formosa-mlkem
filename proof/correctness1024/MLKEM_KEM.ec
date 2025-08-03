@@ -34,15 +34,14 @@ lemma mlkem_kem_correct_kg  :
 proc => /=.
 
 
-swap {1} 1 11.
-swap {1} 4 6.
-swap {1} [2..4] 12. 
-swap {1} [7..8] 2.
+swap {1} 1 15.
+swap {1} 6 15.
 sp 0 2.
+seq 5 0 : #pre; 1: by auto.
 
 wp => /=.
 
-seq 13 1 :
+seq 15 1 :
  (
   kgs{2} = coins{2}.`1 /\ z{2} = coins{2}.`2 /\ H_pk pk{2} = h_pk{1} /\
   coins{2}.`1 = Array32.init (fun (i0 : int) => randomnessp{1}.[i0]) /\
@@ -85,7 +84,7 @@ auto => /> &1 &2 *; do split;1..6:smt().
 move => i sk *; do split => *;1: smt(). 
 by rewrite tP => *; rewrite initiE /# /=. 
 
-seq 8 1 : (
+seq 13 1 : (
 kgs{2} = coins{2}.`1 /\
   z{2} = coins{2}.`2 /\
   H_pk pk{2} = h_pk{1} /\
@@ -129,7 +128,7 @@ auto => /> &1 &2 *; do split; 1..5:smt().
 move => i sk *; do split => *;1: smt(). 
 rewrite tP => kk*; smt(Array32.initiE). 
 
-seq 6 1 : 
+seq 9 1 : 
 (
 kgs{2} = coins{2}.`1 /\
   z{2} = coins{2}.`2 /\
@@ -144,13 +143,17 @@ kgs{2} = coins{2}.`1 /\
 
 wp; ecall{1} (pkH_sha pk{1});wp;auto => /> &1 &2 /#.
 
-seq 1 0 : #pre; 1: by auto.
-sp; seq 1 1 : (#pre /\
+sp; seq 3 1 : (#{/~s_skp{1} = sk{1}}pre /\
   sk{2} = Array1536.init(fun i => sk{1}.[i]) /\
   pk{2}.`1 = Array1536.init(fun i => pk{1}.[i])  /\
   pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1536])).
 wp; ecall (mlkem_correct_kg);auto => /> &1 &2 ??;do split; 1:smt().
-move => ? rr1 [[rr21 rr22] rr2] /= /#.
+move => ? rr1 [[rr21 rr22] rr2] /=[#]; rewrite !tP => H H0 H1;do split. 
++ by move => *;rewrite initiE 1:/# /= initiE 1:/# /= /#.
++  move => i*; rewrite initiE 1:/# /= initiE 1:/# /=;
+smt(Array1536.initiE  Array32.initiE).
++ by move => *;rewrite initiE 1:/# /=;smt(Array1536.initiE  Array32.initiE).
++ by move => *;rewrite initiE 1:/# /=;smt(Array1536.initiE  Array32.initiE).
 
 while {1} (inc{1} = 196  /\
   (let (t, rho) = pk{2} in
