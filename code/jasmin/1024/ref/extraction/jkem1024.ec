@@ -3038,9 +3038,9 @@ module M = {
     }
     return r;
   }
-  proc __indcpa_keypair (pk:W8.t Array1568.t, sk:W8.t Array3168.t,
+  proc __indcpa_keypair (pk:W8.t Array1568.t, sk:W8.t Array1536.t,
                          randomnessp:W8.t Array32.t) : W8.t Array1568.t *
-                                                       W8.t Array3168.t = {
+                                                       W8.t Array1536.t = {
     var aux:W16.t Array256.t;
     var aux_0:W8.t Array1536.t;
     var inc:int;
@@ -3153,14 +3153,7 @@ module M = {
     pkpv <@ __polyvec_add2 (pkpv, e);
     pkpv <@ __polyvec_reduce (pkpv);
     (* Erased call to unspill *)
-    aux_0 <@ __i_polyvec_tobytes ((Array1536.init (fun i_0 => sk.[(0 + i_0)])
-                                  ),
-    skpv);
-    sk <-
-    (Array3168.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then aux_0.[(i_0 - 0)] else 
-                sk.[i_0]))
-    );
+    sk <@ __i_polyvec_tobytes (sk, skpv);
     aux_0 <@ __i_polyvec_tobytes ((Array1536.init (fun i_0 => pk.[(0 + i_0)])
                                   ),
     pkpv);
@@ -3376,19 +3369,29 @@ module M = {
     var inc:int;
     var s_randomnessp:W8.t Array64.t;
     var randomnessp1:W8.t Array32.t;
+    var icsk:W8.t Array1536.t;
+    var s_skp:W8.t Array3168.t;
     var i:int;
     var t64:W64.t;
-    var s_skp:W8.t Array3168.t;
     var h_pk:W8.t Array32.t;
     var randomnessp2:W8.t Array32.t;
     h_pk <- witness;
+    icsk <- witness;
     randomnessp1 <- witness;
     randomnessp2 <- witness;
     s_randomnessp <- witness;
     s_skp <- witness;
     s_randomnessp <- randomnessp;
     randomnessp1 <- (Array32.init (fun i_0 => randomnessp.[(0 + i_0)]));
-    (pk, sk) <@ __indcpa_keypair (pk, sk, randomnessp1);
+    icsk <- (Array1536.init (fun i_0 => sk.[(0 + i_0)]));
+    s_skp <- sk;
+    (pk, icsk) <@ __indcpa_keypair (pk, icsk, randomnessp1);
+    sk <- s_skp;
+    sk <-
+    (Array3168.init
+    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then icsk.[(i_0 - 0)] else 
+                sk.[i_0]))
+    );
     inc <- (((4 * 384) + 32) %/ 8);
     i <- 0;
     while ((i < inc)) {

@@ -62,7 +62,7 @@ fn __indcpa_keypair(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKE
 
   () = #unspill(pk, sk);
 
-  sk[0:MLKEM_POLYVECBYTES] = __i_polyvec_tobytes(sk[0:MLKEM_POLYVECBYTES], skpv);
+  sk = __i_polyvec_tobytes(sk, skpv);
   pk[0:MLKEM_POLYVECBYTES] = __i_polyvec_tobytes(pk[0:MLKEM_POLYVECBYTES], pkpv);
 
   for i = 0 to MLKEM_SYMBYTES/8

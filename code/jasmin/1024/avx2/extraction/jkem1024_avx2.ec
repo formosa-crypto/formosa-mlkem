@@ -9742,14 +9742,7 @@ module M = {
     pkpv <@ __polyvec_add2 (pkpv, e);
     pkpv <@ __polyvec_reduce (pkpv);
     (* Erased call to unspill *)
-    aux_3 <@ __i_polyvec_tobytes ((Array1536.init (fun i_0 => sk.[(0 + i_0)])
-                                  ),
-    skpv);
-    sk <-
-    (Array1536.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then aux_3.[(i_0 - 0)] else 
-                sk.[i_0]))
-    );
+    sk <@ __i_polyvec_tobytes (sk, skpv);
     aux_3 <@ __i_polyvec_tobytes ((Array1536.init (fun i_0 => pk.[(0 + i_0)])
                                   ),
     pkpv);

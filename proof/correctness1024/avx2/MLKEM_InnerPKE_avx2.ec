@@ -839,30 +839,20 @@ lemma mlkem_correct_kg_avx2   :
          t = Array1536.init (fun i => res{1}.`1.[i])  /\
          rho = Array32.init (fun i => res{1}.`1.[1536+i])].
 proc*.
-transitivity {1} {Jkem1024.M.__indcpa_keypair(pk, sk, randomnessp);} 
-(={Glob.mem,pkp,skp,randomnessp} /\ 
-  Glob.mem{1} = mem /\
-    to_uint pkp{1} = _pkp /\
-    to_uint skp{1} = _skp /\
-    randomnessp{1} = randomnessp{2} /\
-    valid_disj_reg _pkp (384 * 4 + 32) _skp (384 * 4) ==> ={Glob.mem}) 
-(   Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       randomnessp{1} = coins{2} /\
-       valid_disj_reg _pkp (384*4+32) _skp (384*4)
-    ==> 
-    touches2 Glob.mem{1} mem _pkp (384*4+32) _skp (384*4) /\
-    let (pk, sk) = r{2} in
-    let (t, rho) = pk in
-        sk = load_array1536 Glob.mem{1} _skp /\
-        t = load_array1536 Glob.mem{1} _pkp /\ 
-        rho = load_array32 Glob.mem{1} (_pkp + 1536)); 1,2: smt(); 
-   last by call(mlkem_correct_kg mem _pkp _skp); auto => />. 
+transitivity {1} {r <@Jkem1024.M.__indcpa_keypair(pk, sk, randomnessp);} 
+(={pk,sk,randomnessp} ==> ={r}) 
+( randomnessp{1} = coins{2}  
+        ==> 
+       let (pk,sk) = r{2} in let (t,rho) = pk in
+         sk = r{1}.`2 /\
+         t = Array1536.init (fun i => r{1}.`1.[i])  /\
+         rho = Array32.init (fun i => r{1}.`1.[1536+i])); auto => />;1:smt(). 
 
-inline{1} 1; inline {2} 1. sim 41 73. 
+inline{1} 1; inline {2} 1. sim 41 33. 
 
-call (polyvec_tobytes_equiv _pkp).
-call (polyvec_tobytes_equiv _skp).
-wp;conseq />. smt().
+call (polyvec_tobytes_equiv).
+call (polyvec_tobytes_equiv).
+wp;conseq />.
 ecall (polyvec_reduce_equiv (lift_array1024 pkpv{2})).
 
 have H := polyvec_add2_equiv 2 2 _ _;1,2:smt().
@@ -873,31 +863,28 @@ unroll for* {1} ^while{3}.
 
 sp 3 3.
 
-seq 16 18  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}).
+seq 16 16  : (#pre /\ ={publicseed, noiseseed,e,skpv,pkpv}).
 
  sp; conseq />.
  sim 3 3. 
  ecall{2} (sha3_512_33_64 inbuf{1}).
  ecall{1} (sha3_512A_A33_ph inbuf{1}) => /=.
  wp; while (={i, inc, randomnessp0, inbuf}); first by auto.
- auto => /> &m ?????? inbuf ?? r.
- rewrite /SHA3_512_33_64 /= => H1 seed.
- rewrite !Array32.tP => H2 H3.
- apply Array64.ext_eq => i Hi.
+ auto => />  ???? inbuf HH r.
+   rewrite /SHA3_512_33_64 /=.
+ rewrite !tP => H1 H2 i ?.
  case: (0 <= i < 32) => C.
-  move: (H2 i _); first done.
-  rewrite initiE 1:// get_of_list 1:// nth_take 1..2:/# -H1 => ->.
-  by rewrite /to_list nth_mkseq.
- move: (H3 (i-32) _); first smt().
- rewrite initiE 1:/# get_of_list 1:/# nth_drop 1..2:/# /= => ->.
- have ->: r.[i] = (Array32.init (fun i=>r.[32+i])).[i-32].
-  by rewrite initiE /#.
- by rewrite -H1 /to_list nth_mkseq 1:/# initiE /#.
+  move: (H1 i _); first done.
+  rewrite initiE 1:/# /= !get_of_list 1:/# /= nth_take 1,2:/#   => ->.
+   rewrite -(get_to_list) HH; smt (size_SQUEEZE1600 nth_change_dfl).
+ move: (H2 (i-32) _); first smt().
+ rewrite initiE 1:/# get_of_list 1:/# nth_drop 1..2:/# /= => ->.    
+  rewrite -(get_to_list) HH; smt (size_SQUEEZE1600 nth_change_dfl).
 
-sp 0 2.
-seq 2 2 : (#pre /\ aa{1} = nttunpackm a{2} /\
+
+seq 2 2 : (#pre /\ aa{1} = nttunpackm aa{2} /\
            pos_bound4096_cxq aa{1} 0 4096 2 /\
-           pos_bound4096_cxq a{2} 0 4096 2); 1: by 
+           pos_bound4096_cxq aa{2} 0 4096 2); 1: by 
    conseq />; call (genmatrixequiv false); auto => />.
 
 (* swap {1} [11..12] 2. *)
