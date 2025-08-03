@@ -4,7 +4,7 @@ require "polyvec.jinc"
 require "../../common/ref/gen_matrix.jinc"
 
 inline
-fn __indcpa_keypair(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKEM_SECRETKEYBYTES] sk, reg const ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
+fn __indcpa_keypair(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKEM_POLYVECBYTES] sk, reg const ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_POLYVECBYTES]
 {
   stack u16[MLKEM_K*MLKEM_VECN] aa;
   stack u16[MLKEM_VECN] e pkpv skpv;
