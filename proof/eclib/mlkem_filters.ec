@@ -1,6 +1,6 @@
 (* ----- *) require import AllCore IntDiv List StdBigop.
 from Jasmin require import JModel.
-from CryptoSpecs require import Bindings.
+require import Bindings.
 (* ----- *) require import Genbindings Mlkem_filters_bindings.
 (* ----- *) (* - *) import W8 W12 W512 BitEncoding BS2Int BitChunking.
 

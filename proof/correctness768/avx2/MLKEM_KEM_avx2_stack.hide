@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 
-from JazzEC require import Jkem768_avx2_stack.
+from JazzEC require import Jkem768_avx2.
 from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array64 Array136 Array148 Array960 Array128 Array1120 Array1088 Array1152 Array1184 Array2400.
 from JazzEC require import Array4 Array8 Array300 WArray32 WArray64 WArray1088 WArray1120 WArray1184 WArray2400.
@@ -9,7 +9,7 @@ from CryptoSpecs require import MLKEM768 Symmetric.
 import Symmetric768.
 
 require import MLKEM_KEM_avx2.
-require import MLKEM_InnerPKE_avx2_stack.
+require import MLKEM_InnerPKE_avx2.
 
 require import MLKEM_keccak_avx2.
 
@@ -88,7 +88,7 @@ qed.
 
 
 lemma mlkem_kem_correct_kg   : 
-   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand ~ MLKEM768.kg_derand : 
+   equiv [Jkem768_avx2.M.jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand ~ MLKEM768.kg_derand : 
         coins{2}.`1 = Array32.init(fun i => coins{1}.[i]) /\
         coins{2}.`2 = Array32.init(fun i => coins{1}.[32 + i]) 
         ==> 
@@ -197,7 +197,7 @@ seq 2 1 : (
       sk{2} = Array1152.init (fun i => sk0{1}.[i]) /\
       pk{2}.`1 = Array1152.init (fun i => pk0{1}.[i]) /\
       pk{2}.`2 = Array32.init (fun i => pk0{1}.[i + 1152])). 
-call (mlkem_correct_kg_avx2_stack).
+call (mlkem_correct_kg_avx2).
 auto => /> /#. 
 
 swap {1} 1 8. swap {1} 4 1.
@@ -251,7 +251,7 @@ seq 3 0 : (#pre /\
    
 seq 1 0 : (#pre /\  h_pk{1} = H_pk pk{2}).
 
-ecall {1} (sha3_256A_M1184_ph_stack pk0{1}); 1: by inline *; auto => />* /#.  
+ecall {1} (sha3_256A_M1184_ph pk0{1}); 1: by inline *; auto => />* /#.  
 
 wp;while {1} (#pre /\ 
          0 <= i{1} <= 4 /\ 
@@ -298,7 +298,7 @@ qed.
 
 
 lemma mlkem_kem_correct_enc : 
-   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand ~ MLKEM768.enc_derand: 
+   equiv [Jkem768_avx2.M.jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand ~ MLKEM768.enc_derand: 
      coins{1} = coins{2} /\
      pk{2}.`1 = Array1152.init(fun i => public_key{1}.[i])  /\
      pk{2}.`2 = Array32.init(fun i => public_key{1}.[i+1152])
@@ -336,9 +336,9 @@ seq 9 4 : (#[/1:-2]post  /\
   + move => *; do split;1:smt().
   by move => *; smt(Array32.tP).
 
-wp; call (mlkem_correct_enc_avx2_stack).
-wp; ecall {1} (sha3_512A_512A_A64_stack coins{2} (H_pk pk{2})).
-wp; ecall {1} (sha3_256A_M1184_ph_stack pk0{1}).
+wp; call (mlkem_correct_enc_avx2).
+wp; ecall {1} (sha3_512A_512A_A64 coins{2} (H_pk pk{2})).
+wp; ecall {1} (sha3_256A_M1184_ph pk0{1}).
 seq 3 0 : (#pre /\  randomnessp{1} = Array32.init (fun i => buf{1}.[i])).
 + sp ; conseq />.
   while {1} (0<=i{1}<=inc{1} /\ inc{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (inc{1} - i{1}); last first.
@@ -372,8 +372,8 @@ by move => ????r0 r1 ??;do split;smt(Array32.initiE).
 qed.
 
 
-lemma verify_correct_h_stack _ctp _ctp1 :
-  hoare [Jkem768_avx2_stack.M.__verify : 
+lemma verify_correct_h _ctp _ctp1 :
+  hoare [Jkem768_avx2.M.__verify : 
              arg = (_ctp,_ctp1) ==>
              (_ctp = _ctp1 => 
                        res = W64.of_int 0) /\
@@ -443,7 +443,7 @@ rewrite /xx /yy wordP => j jb.
   by smt().
 qed.
 
-lemma verify_ll : islossless Jkem768_avx2_stack.M.__verify.
+lemma verify_ll : islossless Jkem768_avx2.M.__verify.
 proc.
 wp.
 while (0 <= i{hr} <= 34 /\ inc{hr} = 34) (34 - i{hr}).
@@ -451,17 +451,17 @@ auto => /> /#.
 auto => /> /#. 
 qed.
 
-lemma verify_correct_stack _ctp _ctp1 :
-  phoare  [Jkem768_avx2_stack.M.__verify : 
+lemma verify_correct _ctp _ctp1 :
+  phoare  [Jkem768_avx2.M.__verify : 
              arg = (_ctp,_ctp1) ==>
              (_ctp = _ctp1 => 
                        res = W64.of_int 0) /\
              (_ctp <> _ctp1 => 
                        res = W64.of_int 1)] = 1%r 
-   by conseq verify_ll (verify_correct_h_stack _ctp _ctp1).
+   by conseq verify_ll (verify_correct_h _ctp _ctp1).
 
-lemma cmov_correct_h_stack _dst _src   _cnd  :
-   hoare [Jkem768_avx2_stack.M.__cmov : 
+lemma cmov_correct_h _dst _src   _cnd  :
+   hoare [Jkem768_avx2.M.__cmov : 
           dst = _dst /\   src = _src /\ cnd = _cnd  ==>
              (_cnd = W64.of_int 0 => 
                res = _src) /\
@@ -503,20 +503,20 @@ rewrite /BLENDV_32u8 /VPBLENDVB_256 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BL
 by rewrite pack32E initiE /= 1:/# /of_list !initiE /= /#.
 qed.
 
-lemma cmov_ll_stack : islossless Jkem768_avx2_stack.M.__cmov by islossless.
+lemma cmov_ll : islossless Jkem768_avx2.M.__cmov by islossless.
 
 
-lemma cmov_correct_stack _dst _src _cnd:
-   phoare [Jkem768_avx2_stack.M.__cmov : 
+lemma cmov_correct _dst _src _cnd:
+   phoare [Jkem768_avx2.M.__cmov : 
         dst=_dst /\   src = _src /\ cnd = _cnd  ==>
              (_cnd = W64.of_int 0 => 
                res = _src) /\
              (_cnd = W64.of_int 1 => 
                res = _dst)] = 1%r
-  by  conseq cmov_ll_stack (cmov_correct_h_stack _dst _src _cnd). 
+  by  conseq cmov_ll (cmov_correct_h _dst _src _cnd). 
 
 lemma mlkem_kem_correct_dec : 
-   equiv [Jkem768_avx2_stack.M.jade_kem_mlkem_mlkem768_amd64_avx2_dec ~ MLKEM768.dec: 
+   equiv [Jkem768_avx2.M.jade_kem_mlkem_mlkem768_amd64_avx2_dec ~ MLKEM768.dec: 
       sk{2}.`1 = Array1152.init(fun i => secret_key{1}.[i])  /\
       sk{2}.`2.`1 = Array1152.init(fun i => secret_key{1}.[i+1152]) /\
       sk{2}.`2.`2 = Array32.init(fun i => secret_key{1}.[i+1152+1152]) /\
@@ -538,13 +538,13 @@ proc rewrite {1} 25 (copy2400).
 swap {1} [16..22] -15.
 seq 13 0 : #pre; 1: by auto.
 sp;seq 1 1 : (#pre /\ aux{1} = m{2}); 
-  1: by call (mlkem_correct_dec_avx2_stack); 1: by auto => /> /#.
+  1: by call (mlkem_correct_dec_avx2); 1: by auto => /> /#.
 
 seq 5 1 : (#pre /\ 
            (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k] = _K{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k+32] = r{2}.[k])).
-+ ecall {1} (sha3_512A_512A_A64_stack m{2} hpk{2}).
++ ecall {1} (sha3_512A_512A_A64 m{2} hpk{2}).
   wp; conseq (_: _ ==> 
    (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
    (forall k, 32<=k<64 => buf{1}.[k] = s_sk{1}.[2336 + k - 32]) /\
@@ -586,7 +586,7 @@ seq 5 1 : (#pre /\
 swap {2} 1 1.  
 seq 1 1 : (#pre /\ 
            ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
-+ call (mlkem_correct_enc_avx2_stack).
++ call (mlkem_correct_enc_avx2).
 
   auto => /> &1 &2 ?; rewrite !tP => ?????; do split.
   + by smt(Array32.initiE).
@@ -607,7 +607,7 @@ seq 1 0 : (#pre /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)).
 +  conseq (_: _ ==> (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)); 1: smt(). 
-   ecall {1} (verify_correct_stack ct0{1} ctc{1}).
+   ecall {1} (verify_correct ct0{1} ctc{1}).
    auto => /> &1 &2; rewrite  /= !tP.
    move  => ??cphv???rst Heq Hdiff.
    rewrite (_: cph{2} = (cph{2}.`1, cph{2}.`2)) /= in cphv; 1: by smt().
@@ -640,9 +640,9 @@ seq 1 0 : (#pre /\
   done.
 
 
-wp;ecall {1} (cmov_correct_stack shk0{1} (Array32.init (fun (i_0 : int) => kr{1}.[0 + i_0])) cnd{1}).
+wp;ecall {1} (cmov_correct shk0{1} (Array32.init (fun (i_0 : int) => kr{1}.[0 + i_0])) cnd{1}).
 
-wp;ecall{1} (shake256_A32_A1120_ph_stack zp_ct{1}).
+wp;ecall{1} (shake256_A32_A1120_ph zp_ct{1}).
 conseq />;1: smt().
 
 sp 2 0.

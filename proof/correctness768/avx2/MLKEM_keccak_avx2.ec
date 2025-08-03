@@ -13,7 +13,7 @@ from CryptoSpecs require import Symmetric.
 require import MLKEMFCLib.
 
 from JazzEC require import Jkem768_avx2 WArray200.
-from JazzEC require Jkem768_avx2_stack.
+from JazzEC require Jkem768_avx2.
 
 
 
@@ -233,7 +233,7 @@ clone Keccak1600_array_avx2.KeccakArrayAvx2 as A1120avx2
       proof aSIZE_ge0 by done.
 
 equiv a1120__absorb_array_avx2_eq:
- Jkem768_avx2_stack.M.a1120____absorb_array_avx2 ~ A1120avx2.M(A1120avx2.P).__absorb_array_avx2
+ Jkem768_avx2.M.a1120____absorb_array_avx2 ~ A1120avx2.M(A1120avx2.P).__absorb_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
@@ -248,7 +248,7 @@ clone Keccak1600_array_avx2.KeccakArrayAvx2 as A1184avx2
       proof aSIZE_ge0 by done.
 
 equiv a1184__absorb_array_avx2_eq:
- Jkem768_avx2_stack.M.a1184____absorb_array_avx2 ~ A1184avx2.M(A1120avx2.P).__absorb_array_avx2
+ Jkem768_avx2.M.a1184____absorb_array_avx2 ~ A1184avx2.M(A1120avx2.P).__absorb_array_avx2
  : ={arg} ==> ={res}
  by sim.
 
@@ -664,8 +664,8 @@ equiv sha3_512A_A64_eq:
  : ={arg} ==> ={res}
 by sim.
 
-equiv sha3_512A_A64_stack_eq:
-  Jkem768_avx2_stack.M._sha3_512A_A64 ~ K._sha3_512A_A64
+equiv sha3_512A_A64_eq:
+  Jkem768_avx2.M._sha3_512A_A64 ~ K._sha3_512A_A64
  : ={arg} ==> ={res}
 by sim.
 
@@ -733,8 +733,8 @@ rewrite get_of_list 1:/# nth_drop 1..2:/#; congr.
 smt().
 qed.
 
-phoare sha3_512A_512A_A64_stack m hpk:
- [ Jkem768_avx2_stack.M._sha3_512A_A64
+phoare sha3_512A_512A_A64 m hpk:
+ [ Jkem768_avx2.M._sha3_512A_A64
  : 
    m = Array32.init (fun i => arg.`2.[i]) /\
    hpk = Array32.init (fun i => arg.`2.[i+32])
@@ -757,7 +757,7 @@ conseq (: arg.`2 = _in
  have ->: in_0{m}.[i] = hpk.[i-32].
   by rewrite E2 initiE 1:/#.
  by rewrite get_of_list 1:// nth_cat size_to_list C /=.
-conseq sha3_512A_A64_stack_eq (sha3_512A_A64_ph' _in) => />.
+conseq sha3_512A_A64_eq (sha3_512A_A64_ph' _in) => />.
  by move=> &m ?; exists arg{m} => /=.
 move=> &m; rewrite /_in of_listK.
  by rewrite size_cat !size_to_list.
@@ -846,7 +846,7 @@ qed.
 
 (*********************************************************************************)
 equiv sha3_256A_A1184_eq:
-  Jkem768_avx2_stack.M._sha3_256A_A1184 ~ K._sha3_256A_A1184
+  Jkem768_avx2.M._sha3_256A_A1184 ~ K._sha3_256A_A1184
  : ={arg} ==> ={res}
  by sim.
 
@@ -892,8 +892,8 @@ phoare sha3_256A_A1184_ph' _in:
  ] = 1%r.
 proof. by conseq sha3_256A_A1184_ll (sha3_256A_A1184_h' _in). qed.
 
-phoare sha3_256A_M1184_ph_stack (inp : W8.t Array1184.t):
- [ Jkem768_avx2_stack.M._sha3_256A_A1184
+phoare sha3_256A_M1184_ph (inp : W8.t Array1184.t):
+ [ Jkem768_avx2.M._sha3_256A_A1184
  : arg.`2 = inp 
  ==> 
    res = SHA3_256_1184_32
@@ -1017,7 +1017,7 @@ qed.
 
 (*********************************************************************************)
 equiv shake256_A32__A1120_eq:
-  Jkem768_avx2_stack.M._shake256_A32__A1120 ~ K._shake256_A32__A1120
+  Jkem768_avx2.M._shake256_A32__A1120 ~ K._shake256_A32__A1120
  : ={arg, Glob.mem} ==> ={res, Glob.mem}
  by sim.
 
@@ -1072,8 +1072,8 @@ proof.
 by conseq shake256_A32__A1120_ll (shake256_A32__A1120_h' _in).
 qed.
 
-phoare shake256_A32_A1120_ph_stack (_in : W8.t Array1120.t):
- [ Jkem768_avx2_stack.M._shake256_A32__A1120
+phoare shake256_A32_A1120_ph (_in : W8.t Array1120.t):
+ [ Jkem768_avx2.M._shake256_A32__A1120
  : arg.`2=_in
  ==> res = SHAKE_256_1120_32 
                (init (fun (k : int) => _in.[k]))%Array32
