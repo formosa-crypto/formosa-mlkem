@@ -1108,9 +1108,9 @@ qed.
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
 op compress4_circuit(a : W16.t) : W4.t = 
    if (a \ult W16.of_int 3329) then  
-   truncateu4 (srl_32 ((sll_32 (zeroextu32 a) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28))
+   truncateu32_4 (srl_32 ((sll_32 (zeroextu32 a) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28))
    else 
-   truncateu4 (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).  
+   truncateu32_4 (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).  
 
 module CompressInit = {
     proc compressInit(rp: W8.t Array128.t, a: W16.t Array256.t) : W8.t Array128.t *  W16.t Array256.t = {
@@ -1253,7 +1253,7 @@ lemma i_poly_compress_corr _aw  :
 (********** BEGIN BDEP PROOF OF DECOMPRESS **************)
 
 op decompress4_circuit(c : W4.t) : W16.t = 
-  truncateu16 (srl_32 (((zeroextu32 c) * W32.of_int 3329) + W32.of_int 8) (W32.of_int 4)).
+  truncateu16 (srl_32 (((zeroextu4_32 c) * W32.of_int 3329) + W32.of_int 8) (W32.of_int 4)).
 
 op pcond_true4(_: W4.t) = true.
 
@@ -1325,7 +1325,7 @@ have H3 :
   have ? : size x = 4 
    by  have := size_nth_chunk witness (flatten (map W8.w2bits (to_list ap{hr}))) k 4 =>/= /#.
   rewrite qE to_uint_eq to_uint_truncateu16 /= /srl_32 /= of_uintK /=;congr;congr.
-  rewrite to_uint_shr //= /zeroextu32 to_uintD_small /=;1: by rewrite of_uintK /=;smt(modz_small W4.to_uint_cmp pow2_4). 
+  rewrite to_uint_shr //= /zeroextu4_32 to_uintD_small /=;1: by rewrite of_uintK /=;smt(modz_small W4.to_uint_cmp pow2_4). 
   rewrite of_uintK /= modz_small;1:by smt( W4.to_uint_cmp pow2_4). 
   rewrite /to_uint bits2wK 1:/# incoeffK qE /=. 
   by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W4.to_uint_cmp pow2_4).  search W4.w2bits.
