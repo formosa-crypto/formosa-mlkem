@@ -39,24 +39,7 @@ equiv addratebit_avx2_eq:
 
 (****************************************************************************)
 (****************************************************************************)
-
 from Keccak require import Keccak1600_imem_avx2.
-
-equiv absorb_imem_avx2_eq:
- M.__absorb_imem_avx2 ~ Jazz_avx2.M.__absorb_imem_avx2
- : ={arg,Glob.mem} ==> ={res,Glob.mem}
- by sim.
-
-equiv pabsorb_imem_avx2_eq:
- M.__pabsorb_imem_avx2 ~ Jazz_avx2.M.__pabsorb_imem_avx2
- : ={arg,Glob.mem} ==> ={res,Glob.mem}
- by sim.
-
-
-equiv squeeze_imem_avx2_eq:
- M.__squeeze_imem_avx2 ~ Jazz_avx2.M.__squeeze_imem_avx2
- : ={arg,Glob.mem} ==> ={res,Glob.mem}
- by sim.
 
 (****************************************************************************)
 (****************************************************************************)
@@ -283,21 +266,7 @@ module K = {
     
     return out;
   }
-  proc _sha3_256A_M1568(out : W8.t Array32.t, in_0 : W64.t) : W8.t Array32.t = {
-    var st : W256.t t;
-    var offset : W64.t;
-    var _0 : W64.t;
-    var _1 : W256.t t;
-    
-    _1 <- witness;
-    st <- witness;
-    st <@ Jazz_avx2.M.__state_init_avx2();
-    (st, _0) <@ Jazz_avx2.M.__absorb_imem_avx2(st, in_0, 1568, 136, 6);
-    offset <- W64.zero;
-    (out, _1) <@ A32avx2.M(A32avx2.P).__squeeze_array_avx2(out, offset, 32, st, 136);
-    
-    return out;
-  }
+  
 
   proc _sha3_256A_A1568(out : W8.t Array32.t, in_0 : W8.t Array1568.t) :
     W8.t Array32.t = {
@@ -315,31 +284,7 @@ module K = {
     
     return out;
   }
-  proc _shake256_M32__M32_M1600(out : W64.t, in0 : W64.t, in1 : W64.t) : unit = {
-    var pst_s : W64.t Array25.t;
-    var pst : W64.t Array25.t;
-    var st : W256.t t;
-    var _0 : int;
-    var _1 : W64.t;
-    var _2 : int;
-    var _3 : W64.t;
-    var _4 : W64.t;
-    var _5 : W256.t t;
-    
-    _5 <- witness;
-    pst <- witness;
-    pst_s <- witness;
-    st <- witness;
-    pst <- pst_s;
-    (pst, st) <@ Jazz_avx2.M.__pstate_init_avx2(pst);
-    (pst, _0, st, _1) <@
-      Jazz_avx2.M.__pabsorb_imem_avx2(pst, 0, st, in0, 32, 136, 0);
-    (pst, _2, st, _3) <@
-      Jazz_avx2.M.__pabsorb_imem_avx2(pst, 32, st, in1, 1568, 136, 31);
-    (_4, _5) <@ Jazz_avx2.M.__squeeze_imem_avx2(out, 32, st, 136);
-    
-    return tt;
-  }
+  
   proc _shake256_A32__A1600(out : W8.t Array32.t, in_0 : W8.t Array1600.t) :
     W8.t Array32.t = {
     var st : W256.t t;
@@ -614,10 +559,6 @@ equiv sha3_512A_A64_eq:
  : ={arg} ==> ={res}
 by sim.
 
-equiv sha3_512A_A64_eq:
-  Jkem1024_avx2.M._sha3_512A_A64 ~ K._sha3_512A_A64
- : ={arg} ==> ={res}
-by sim.
 
 hoare sha3_512A_A64_h' _in:
  K._sha3_512A_A64
@@ -722,77 +663,7 @@ qed.
 
 (*********************************************************************************)
 from JazzEC require import Array1568.
-equiv sha3_256A_M1568_eq:
-  M._sha3_256A_M1568 ~ K._sha3_256A_M1568
- : ={arg, Glob.mem} ==> ={res, Glob.mem}
- by sim.
 
-hoare sha3_256A_M1568_h' _mem _in:
- K._sha3_256A_M1568
- : arg.`2 = W64.of_int _in /\
-   valid_ptr _in 1568 /\
-   Glob.mem = _mem
- ==> 
-   Glob.mem = _mem /\
-   res = SHA3_256_1568_32
-            (Array1536.init (fun k =>  _mem.[_in+k]),
-            (Array32.init (fun k => _mem.[_in+1536+k]))).
-proof.
-proc => /=.
-ecall (A32avx2.squeeze_array_avx2_h out offset 32 st 136).
-wp; ecall (absorb_imem_avx2_h Glob.mem st in_0 1568 136 6).
-wp; call state_init_avx2_h.
-auto =>  /> &m; rewrite !of_uintK /= => /> ??; split; first smt().
-move=> _ [st ?]; rewrite modz_small 1:/# /= => -> _.
-move=> [_out ?] /= -> _.
-rewrite /SHA3_256_1568_32 stavx2_from_st25K /= tP => i Hi.
-rewrite initiE // filliE //= Hi /=.
-rewrite /SHA3_256 /c512_r8 /KECCAK1600; congr; congr; congr => //.
-rewrite (memread_split 1536) 1://; congr.
- by apply eq_in_mkseq => j Hj /=; rewrite initiE.
-by apply eq_in_mkseq => j Hj /=; rewrite initiE.
-qed.
-
-phoare sha3_256A_M1568_ll: 
- [ K._sha3_256A_M1568 : valid_ptr (to_uint in_0) 1568 ==> true ] = 1%r.
-proof.
-proc.
-call A32avx2.squeeze_array_avx2_ll.
-wp; call absorb_imem_avx2_ll.
-call state_init_avx2_ll.
-by auto => />.
-qed.
-
-phoare sha3_256A_M1568_ph' _mem _in:
- [ K._sha3_256A_M1568
- : arg.`2 = W64.of_int _in /\
-   valid_ptr _in 1568 /\
-   Glob.mem = _mem
- ==> 
-   Glob.mem = _mem /\
-   res = SHA3_256_1568_32
-            (Array1536.init (fun k =>  _mem.[_in+k]),
-            (Array32.init (fun k => _mem.[_in+1536+k])))
- ] = 1%r.
-proof.
-conseq sha3_256A_M1568_ll (sha3_256A_M1568_h' _mem _in) => //.
-by move=> /> &m ->*; rewrite of_uintK; smt(W64.to_uint_cmp).
-qed.
-
-phoare sha3_256A_M1568_ph _mem _in:
- [ M._sha3_256A_M1568
- : arg.`2 = W64.of_int _in /\
-   valid_ptr _in 1568 /\
-   Glob.mem = _mem
- ==> 
-   Glob.mem = _mem /\
-   res = SHA3_256_1568_32
-            (Array1536.init (fun k =>  _mem.[_in+k]),
-            (Array32.init (fun k => _mem.[_in+1536+k])))
- ] = 1%r.
-proof.
-by conseq sha3_256A_M1568_eq (sha3_256A_M1568_ph' _mem _in) => /#.
-qed.
 
 (*********************************************************************************)
 equiv sha3_256A_A1568_eq:
@@ -855,116 +726,10 @@ by conseq sha3_256A_A1568_eq (sha3_256A_A1568_ph' inp) => /> /#.
 qed.
 
 (*********************************************************************************)
-equiv shake256_M32__M32_M1600_eq:
-  M._shake256_M32__M32_M1600 ~ K._shake256_M32__M32_M1600
- : ={arg, Glob.mem} ==> ={res, Glob.mem}
- by sim.
 
-hoare shake256_M32__M32_M1600_h' mem _pout _pin1 _pin2:
- K._shake256_M32__M32_M1600
- : Glob.mem = mem /\ arg=(_pout, _pin1, _pin2)
- /\ valid_ptr (to_uint _pout) 32
- /\ valid_ptr (to_uint _pin1) 32
- /\ valid_ptr (to_uint _pin2) 1568
- ==> Glob.mem
-   = stores mem (to_uint _pout)
-       (SHAKE256 (memread mem (to_uint _pin1) 32++memread mem (to_uint _pin2) 1568) 32).
-proof.
-proc => /=.
-ecall (squeeze_imem_avx2_h Glob.mem out 32 st 136).
-ecall (pabsorb_imem_avx2_h Glob.mem (memread mem (to_uint _pin1) 32) in1 1568 136 31).
-ecall (pabsorb_imem_avx2_h Glob.mem [<:W8.t>] in0 32 136 0).
-call (pstate_init_avx2_h 136).
-auto; rewrite /valid_ptr /= => |> _?_?_? [pst0 st0] /= H0 []pst1 at1 st1 off1 /= H1.
-move => |>; rewrite size_memread 1:// /=.
-move=> []pst2 at2 st2 off2 /= -> []out st3 /= _ ?.
-rewrite stavx2_from_st25K /SHAKE256 /KECCAK1600 /#.
-qed.
-
-phoare shake256_M32__M32_M1600_ll: 
- [ K._shake256_M32__M32_M1600
- : valid_ptr (to_uint out) 32
- /\ valid_ptr (to_uint in0) 32
- /\ valid_ptr (to_uint in1) 1568
- ==> true ] = 1%r.
-proof.
-proc.
-call squeeze_imem_avx2_ll.
-call pabsorb_imem_avx2_ll.
-call pabsorb_imem_avx2_ll.
-call pstate_init_avx2_ll.
-by auto => />.
-qed.
-
-phoare shake256_M32__M32_M1600_ph' mem _pout _pin1 _pin2:
- [ K._shake256_M32__M32_M1600
- : Glob.mem = mem /\ arg=(_pout, _pin1, _pin2)
- /\ valid_ptr (to_uint _pout) 32
- /\ valid_ptr (to_uint _pin1) 32
- /\ valid_ptr (to_uint _pin2) 1568
- ==> Glob.mem
-   = stores mem (to_uint _pout)
-       (SHAKE256 (memread mem (to_uint _pin1) 32++memread mem (to_uint _pin2) 1568) 32)
- ] = 1%r.
-proof.
-by conseq shake256_M32__M32_M1600_ll (shake256_M32__M32_M1600_h' mem _pout _pin1 _pin2).
-qed.
 
 from JazzEC require import Array1408 Array160.
 
-phoare shake256_M32__M32_M1600_ph_alt mem _pout _pin1 _pin2: 
- [ Jkem1024_avx2.M._shake256_M32__M32_M1600
- : arg = (_pout,_pin1,_pin2) /\
-   valid_ptr (to_uint _pout) 32 /\
-   valid_ptr (to_uint _pin1) 32 /\
-   valid_ptr (to_uint _pin2) 1568 /\
-   Glob.mem = mem
- ==> 
-   touches Glob.mem mem (to_uint _pout) 32 /\
-   (Array32.init (fun k =>  Glob.mem.[to_uint _pout+k])) = 
-     SHAKE_256_1600_32
-       (Array32.init (fun k => mem.[to_uint _pin1+k])) 
-       (Array1408.init (fun k => mem.[to_uint _pin2+k]), Array160.init (fun k => mem.[to_uint _pin2+1408+k]))
- ] = 1%r.
-proof.
-conseq shake256_M32__M32_M1600_eq (shake256_M32__M32_M1600_ph' mem _pout _pin1 _pin2) => />.
- move=> ??????; exists mem (_pout, _pin1,  _pin2) => />.
-split.
- by move=> i Hi; rewrite get_storesE ifF //= size_SHAKE256 1:// /#.
-rewrite tP => i Hi.
-rewrite /SHAKE_256_1600_32 initiE 1:// initiE 1:// /= get_storesE size_SHAKE256 1://.
-rewrite ifT 1:/#; congr; last smt().
-congr; rewrite -catA; congr.
- rewrite /memread /to_list; apply eq_in_mkseq => j Hj /=.
- by rewrite initiE.
-rewrite (memread_split 1408) 1://; congr.
- rewrite /memread /to_list; apply eq_in_mkseq => j Hj /=.
- by rewrite initiE.
-rewrite /memread /to_list; apply eq_in_mkseq => j Hj /=.
-by rewrite initiE.
-qed. 
-
-phoare shake256_M32__M32_M1600_ph mem _pout _pin1 _pin2: 
- [ Jkem1024_avx2.M._shake256_M32__M32_M1600
- : arg = (W64.of_int _pout,W64.of_int _pin1,W64.of_int _pin2) /\
-   valid_ptr _pout 32 /\
-   valid_ptr _pin1 32 /\
-   valid_ptr _pin2 1568 /\
-   Glob.mem = mem
- ==> 
-   touches Glob.mem mem _pout 32 /\
-   (Array32.init (fun k =>  Glob.mem.[_pout+k])) = 
-     SHAKE_256_1600_32
-       (Array32.init (fun k => mem.[_pin1+k])) 
-       (Array1408.init (fun k => mem.[_pin2+k]), Array160.init (fun k => mem.[_pin2+1408+k]))
- ] = 1%r.
-proof.
-conseq (shake256_M32__M32_M1600_ph_alt mem (W64.of_int _pout) (W64.of_int _pin1) (W64.of_int _pin2)).
- by move => />; rewrite !of_uintK; smt(W64.to_uint_cmp).
-move=> />; rewrite !of_uintK => *; split.
- move=> *; rewrite !modz_small /#.
-by rewrite !modz_small /#.
-qed.
 
 (*********************************************************************************)
 equiv shake256_A32__A1600_eq:

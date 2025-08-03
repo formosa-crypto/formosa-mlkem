@@ -317,6 +317,7 @@ have: (k%%4 \in iota_ 0 4) by smt(mem_iota).
 by move: (k%%4); rewrite -allP -iotaredE /= W4u8.bits8_div .
 qed.
 
+require import W8extra.
 lemma VPSRL1_ANDmask55 w k:
  0 <= k < 32 =>
  mask55u256 `&` (VPSRL_16u16 w (W128.of_int 1)) \bits8 k
@@ -622,12 +623,12 @@ module AuxMLKEMAvx2 = {
   proc cbd2_ref (rp:W16.t Array256.t,buf:W8.t Array128.t) : W16.t Array256.t = {
     var k: int;
     var a, b, c: W8.t;
-    var i: W64.t;
+    var i: int;
     var t: W16.t;
-    i <- (W64.of_int 0);
+    i <- 0;
 
-    while ((i \ult (W64.of_int (2 * 256 %/ 4)))) {
-      c <- buf.[(W64.to_uint i)];
+    while ((i < (2 * 256 %/ 4))) {
+      c <- buf.[(i)];
       a <- c;
       a <- (a `&` (W8.of_int 85));
       c <- (c `>>` (W8.of_int 1));
@@ -640,7 +641,7 @@ module AuxMLKEMAvx2 = {
       b <- (b `&` (W8.of_int 3));
       a <- (a - b);
       t <- (sigextu16 a);
-      rp.[W64.to_uint (W64.of_int 2 * i)] <- t;
+      rp.[(2 * i)] <- t;
       a <- c;
       a <- (a `>>` (W8.of_int 4));
       a <- (a `&` (W8.of_int 3));
@@ -648,8 +649,8 @@ module AuxMLKEMAvx2 = {
       b <- (b `&` (W8.of_int 3));
       a <- (a - b);
       t <- (sigextu16 a);
-      rp.[W64.to_uint (W64.of_int 2 * i + W64.one)] <- t;
-      i <- (i + (W64.of_int 1));
+      rp.[ (2 * i + 1)] <- t;
+      i <- (i + 1);
     }
     return (rp);
   }
@@ -684,30 +685,28 @@ hoare cbd2_ref_h _bytes:
  AuxMLKEMAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
 proof.
 proc.
-while (to_uint i <= 128 /\ #pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (2 * to_uint i))).
+while ( i <= 128 /\ #pre /\ List.all (fun k => rp.[k]=W16.of_int (noise_coef _bytes k)) (iota_ 0 (2 *  i))).
  auto => &m |>; rewrite /(\ult) => _ /List.allP IH /= Hi.
- rewrite to_uintD_small /= 1:/#.
  split; first smt().
  apply/List.allP => k; rewrite mem_iota /=; move => [? Hk].
- rewrite to_uintD_small !to_uintM_small /= 1..3:/#.
- case: (k = 2 * to_uint i{m}) => C1.
+ case: (k = 2 *  i{m}) => C1.
   rewrite /noise_coef !get_setE 1..2:/# C1 /= ifF 1:/#.
-  have ->/=: 2 * to_uint i{m} %/ 2 = to_uint i{m} by smt().
+  have ->/=: 2 *  i{m} %/ 2 =  i{m} by smt().
   rewrite -to_sint_eq sigextu16_to_sint (_: 3 = 2^2 -1) 1:/# !and_mod 1,2:/# /= W8_of_sintK_signed /=; 1: smt(). 
-  have ->  /= : 2 * to_uint i{m} %% 2 = 0 by smt().
+  have ->  /= : 2 * i{m} %% 2 = 0 by smt().
   by rewrite -parallel_noisesum_low smod_small  /#.
- case: (k = 2 * to_uint i{m}+1) => C2.
+ case: (k = 2 * i{m}+1) => C2.
   rewrite /noise_coef !get_setE 1..2:/# C2 /=.
-  have ->/=: (2 * to_uint i{m} + 1) %/ 2 = to_uint i{m} by smt().
+  have ->/=: (2 *  i{m} + 1) %/ 2 =  i{m} by smt().
   rewrite -to_sint_eq sigextu16_to_sint (_: 3 = 2^2 -1) 1:/# !and_mod 1,2:/# /= W8_of_sintK_signed /=; 1: smt(). 
-  have ->  /= : (2 * to_uint i{m}+1) %% 2 = 1 by smt().
+  have ->  /= : (2 *  i{m}+1) %% 2 = 1 by smt().
   by rewrite -parallel_noisesum_high smod_small  /#.
  rewrite !get_setE 1..2:/# C1 C2 /=; apply IH.
  smt(mem_iota).
 auto => &m |> *.
 split; first by rewrite iota0.
 move=> i rp; rewrite /(\ult) => |> ??.
-have ->/=: to_uint i = 128 by smt().
+have ->/=:  i = 128 by smt().
 rewrite tP => /List.allP H k Hk.
 rewrite (H k _) /=.
  smt(mem_iota).
@@ -715,9 +714,8 @@ by rewrite initiE /#.
 qed.
 
 lemma cbd2_ref_ll : islossless AuxMLKEMAvx2.cbd2_ref.
-proc. inline*. sp; wp. while (true) (128 - W64.to_uint i). move => z.
-auto => /> &hr. rewrite ultE of_uintK /= => H. rewrite to_uintD_small /= /#.
-auto => />i H. rewrite ultE of_uintK /= 1:/#. qed.
+proc. inline*. sp; wp. while (true) (128 -  i); move => *;auto => /> /#. 
+qed.
 
 phoare cbd2_ref_ph _bytes:
  [AuxMLKEMAvx2.cbd2_ref: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
@@ -777,12 +775,11 @@ qed.
 
 lemma polygetnoise_ll : islossless Jkem1024.M._poly_getnoise.
 proc. 
-while (0 <= to_uint i <= 128) (128 - to_uint i);
-  1: by move => z; auto => /> &hr;rewrite  ultE /= =>  ??; rewrite !to_uintD_small /=; smt(to_uint_cmp).
+while (0 <=  i <= 128) (128 -  i);
+  1: by move => z; auto => /> /#.
 wp; call shake256_33_128_ll.
 wp; while (0<=k<=32) (32 -k); 1: by move => z; auto=> /> /#.
-auto => /> *; do split; 1:smt(). 
-by move => *; rewrite ultE /=; smt().
+auto => />/#. 
 qed.
 
 equiv getnoiseequiv : 
@@ -833,15 +830,12 @@ qed.
 
 import InnerPKE1024.
 
-lemma mlkem_correct_kg_avx2 mem _pkp _skp  : 
+lemma mlkem_correct_kg_avx2   : 
    equiv [Jkem1024_avx2.M.__indcpa_keypair ~ InnerPKE1024.kg_derand : 
-       Glob.mem{1} = mem /\ to_uint pkp{1} = _pkp /\ to_uint skp{1} = _skp /\ 
-       randomnessp{1} = coins{2}  /\
-       valid_disj_reg _pkp (384*4+32) _skp (384*4)
+       randomnessp{1} = coins{2}  
         ==> 
-       touches2 Glob.mem{1} mem _pkp (384*4+32) _skp (384*4) /\
        let (pk,sk) = res{2} in let (t,rho) = pk in
-         sk = load_array1536 Glob.mem{1} _skp /\
+         sk = res{1}.`1 /\
          t = load_array1536 Glob.mem{1} _pkp  /\
          rho = load_array32 Glob.mem{1} (_pkp+1536)].
 proc*.
