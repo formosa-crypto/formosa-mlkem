@@ -16,7 +16,7 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
   s_randomnessp = randomnessp;
 
   randomnessp1 = randomnessp[0:MLKEM_SYMBYTES];
-  pk, sk = __indcpa_keypair(pk, sk, randomnessp1);
+  pk, sk[0:MLKEM_POLYVECBYTES] = __indcpa_keypair(pk, sk[0:MLKEM_POLYVECBYTES], randomnessp1);
   s_pkp = pk; // spilling to mmx as we will not write to pk
 
   for i = 0 to MLKEM_INDCPA_PUBLICKEYBYTES/8
