@@ -14,11 +14,14 @@ fn __crypto_kem_keypair_jazz(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut pt
   reg ptr u8[MLKEM_SYMBYTES] randomnessp1 randomnessp2;
   reg u64 t64;
   inline int i;
+  reg ptr u8[MLKEM_POLYVECBYTES] icsk;
 
   s_randomnessp = randomnessp;
-
   randomnessp1 = randomnessp[0:MLKEM_SYMBYTES];
-  pk, sk = __indcpa_keypair(pk, sk, randomnessp1);
+  
+  icsk = sk[0:MLKEM_POLYVECBYTES]; s_skp = sk;
+  pk, icsk = __indcpa_keypair(pk, icsk, randomnessp1);
+  sk = s_skp; sk[0:MLKEM_POLYVECBYTES] = icsk;
 
   for i = 0 to MLKEM_INDCPA_PUBLICKEYBYTES/8
   {
