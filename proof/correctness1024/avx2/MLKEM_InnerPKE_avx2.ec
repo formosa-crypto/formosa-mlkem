@@ -846,7 +846,10 @@ transitivity {1} {r <@Jkem1024.M.__indcpa_keypair(pk, sk, randomnessp);}
        let (pk,sk) = r{2} in let (t,rho) = pk in
          sk = r{1}.`2 /\
          t = Array1536.init (fun i => r{1}.`1.[i])  /\
-         rho = Array32.init (fun i => r{1}.`1.[1536+i])); auto => />;1:smt(). 
+         rho = Array32.init (fun i => r{1}.`1.[1536+i]));1,2:smt(); last by 
+  call(mlkem_correct_kg); auto => />  [r11 r12] [[r211 r212] r22] /= => [#] H H0 H1 r1 r2 [<-<-] r3 r4 [<-<-];
+  smt(Array1536.tP Array1536.initiE Array32.tP Array32.initiE).  
+
 
 inline{1} 1; inline {2} 1. sim 41 33. 
 
@@ -888,50 +891,62 @@ seq 2 2 : (#pre /\ aa{1} = nttunpackm aa{2} /\
    conseq />; call (genmatrixequiv false); auto => />.
 
 (* swap {1} [11..12] 2. *)
-
-seq 12 24 : (#pre  /\
+do 2!(unroll for {2} ^while).
+seq 12 26 : (#pre  /\
     signed_bound1024_cxq skpv{1} 0 1024 1 /\
     signed_bound1024_cxq e{1} 0 1024 1 /\
     signed_bound1024_cxq skpv{2} 0 1024 1 /\
     signed_bound1024_cxq e{2} 0 1024 1). 
 + conseq />.
   transitivity {1} { (skpv,e) <@ GetNoiseAVX2.sample_noise_kg(skpv,e,noiseseed);} (={noiseseed,skpv,pkpv,e} ==> ={skpv,e}) 
-   ((r_noiseseed{2} = noiseseed{2} /\
-   s_noiseseed{2} = r_noiseseed{2} /\
-   (spkp{2} = pkp{2} /\
-    sskp{2} = skp{2} /\
+   ((
+   (pk0{2} = pk{2} /\
+    sk0{2} = sk{2} /\
     randomnessp0{2} = randomnessp{2} /\
-    pkp0{1} = pkp{1} /\
-    skp0{1} = skp{1} /\
+    pk0{1} = pk{1} /\
+    sk0{1} = sk{1} /\
     randomnessp0{1} = randomnessp{1} /\
-    ={Glob.mem, pkp, skp, randomnessp} /\
-    Glob.mem{1} = mem /\
-    to_uint pkp{1} = _pkp /\
-    to_uint skp{1} = _skp /\ ={randomnessp} /\ valid_disj_reg _pkp (384 * 4 + 32) _skp (384 * 4)) /\
-   ={publicseed, noiseseed, e, skpv, pkpv} /\ sskp{2} = skp{1} /\ spkp{2} = pkp{1}) /\
-  aa{1} = nttunpackm a{2} /\ pos_bound4096_cxq aa{1} 0 4096 2 /\ pos_bound4096_cxq a{2} 0 4096 2
+    ={pk, sk, randomnessp} /\
+   ={publicseed, noiseseed, e, skpv, pkpv}) /\
+  aa{1} = nttunpackm aa{2} /\ pos_bound4096_cxq aa{1} 0 4096 2 /\ pos_bound4096_cxq aa{2} 0 4096 2)
 
    ==> 
     ={skpv, e} /\
   signed_bound1024_cxq skpv{1} 0 1024 1 /\
   signed_bound1024_cxq e{1} 0 1024 1 /\ signed_bound1024_cxq skpv{2} 0 1024 1 /\ signed_bound1024_cxq e{2} 0 1024 1
   ); 1,2:smt().
+   
   + inline {2} 1;do 2!(wp; call getnoiseequiv_avx);auto => />. 
   inline {1} 1. inline GetNoiseAVX2._poly_getnoise_eta1_4x.
-  wp;do 8!(wp; call  getnoiseequiv); auto => />.
-  move => &1 &2 ??????R?; split.
-  + by rewrite tP => k kb; rewrite !initiE //= initiE /#.
-  move => ?R0?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= /#.
-  move => ?R1?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
-  move => ?R2???; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= /#.
-  move => ?R3?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= /#.
-  move => ?R4?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
-  move => ?R5?; do split. 
+  wp;do 8!(wp; call  getnoiseequiv). 
+  wp;skip  => &1 &2 [#] ????????????????R? => /=;do split.
+  +  rewrite tP => k kb; rewrite !initiE //=/#.
+  +  by smt().
+  move => ?R0??; do split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /#.
+  + by smt().
+  move => ?R1??. rewrite !andabP;do split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /=  initiE 1:/# /=  /#.
+  + by smt().
+  move => ?R2?.  rewrite !andabP;do split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /=  /#.
+  + by smt().
+  move => ?R3?; do split.
+  +  rewrite tP => k kb; rewrite !initiE //=/#.
+  + by smt().
+  move => ?R4??; do split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /=  /#.
+  + by smt().
+  move => ?R5??. rewrite !andabP;do split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /=  /#.
+  + by smt().
+  move => ?R6?; rewrite !andabP;do split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /=  initiE 1:/# /=  /#.
+  + by smt().
+  move => ?R7?;do split.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+
   + rewrite /signed_bound1024_cxq => x xb /=.
     rewrite !initiE //= fun_if. 
     case (768 <= x && x < 1024); 1: by smt().
@@ -951,7 +966,7 @@ seq 12 24 : (#pre  /\
     move => *; rewrite !initiE //= fun_if. 
     by smt().
   + rewrite /signed_bound1024_cxq => x xb /=.
-    rewrite !initiE //= fun_if. 
+    rewrite !andabP !initiE //= fun_if. 
     case (768 <= x && x < 1024); 1: by smt().
     move => *; rewrite !initiE //= fun_if. 
     case (512 <= x && x < 768); 1: by smt().
@@ -960,7 +975,7 @@ seq 12 24 : (#pre  /\
     move => *; rewrite !initiE //= fun_if. 
     by smt().
   + rewrite /signed_bound1024_cxq => x xb /=.
-    rewrite !initiE //= fun_if. 
+    rewrite !andabP !initiE //= fun_if. 
     case (768 <= x && x < 1024); 1: by smt().
     move => *; rewrite !initiE //= fun_if. 
     case (512 <= x && x < 768); 1: by smt().
@@ -979,12 +994,13 @@ seq 2 2 : (#{/~skpv{1}}{~e{1}}{~skpv{2}}{~e{2}}pre /\
  by  conseq />; call (nttequiv); call (nttequiv); auto => /> /#.
 
 (* First ip *)
+unroll for {2} ^while.
 seq 6 4: (#{/~pkpv{2}}pre /\ 
               lift_array256 (subarray256 pkpv{1} 0) = nttunpack (lift_array256 (subarray256 pkpv{2} 0)) /\
               signed_bound1024_cxq pkpv{1} 0 256 2 /\
               signed_bound1024_cxq pkpv{2} 0 256 2 /\ i{1} = 1).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9; do split.
 + rewrite -lift1024_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE // 1:/# /= kb /= initiE //=. 
@@ -994,24 +1010,24 @@ move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
   rewrite fun_if. 
   case (0<=k<256).
   + move => kbb;rewrite /subarray256. 
-    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 a{2} 0).[256 * 0 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
+    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 aa{2} 0).[256 * 0 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
     rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array1024.initiE). smt().
   case (256<=k<512).
   + move => kbb;rewrite /subarray256. 
-    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 a{2} 0).[256 * 1 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
+    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 aa{2} 0).[256 * 1 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
     rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array1024.initiE). smt(). auto.
   case (512<=k<768).
   + move => kbbb;rewrite /subarray256. 
-    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 a{2} 0).[256 * 2 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
+    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 aa{2} 0).[256 * 2 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
     rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array1024.initiE). smt(). auto.
   case (768<=k<1024).
   + move => kbbbb;rewrite /subarray256. 
-    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 a{2} 0).[256 * 3 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
+    move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray1024 aa{2} 0).[256 * 3 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
     rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array1024.initiE). smt(). auto.
   by smt().
-+ move : H10; rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
++ move : H9; rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
 + move : H8; rewrite /pos_bound1024_cxq /signed_bound_1024_cxq; smt(Array1024.initiE).
-+ move : H10; rewrite /pos_bound1024_cxq /signed_bound_1024_cxq; smt(Array1024.initiE).
++ move : H9; rewrite /pos_bound1024_cxq /signed_bound_1024_cxq; smt(Array1024.initiE).
 
 move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split. 
 + rewrite tP /= => k kb.
@@ -1052,7 +1068,7 @@ seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 1) = nttunpack (lif
               signed_bound1024_cxq pkpv{1} 256 512 2 /\
               signed_bound1024_cxq pkpv{2} 256 512 2 /\ i{1} = 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 ; do split.
 + rewrite -lift1024_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifT 1:/# initiE //=. 
@@ -1084,7 +1100,7 @@ move => H26 r3 r4 H27 H28 H29;do split.
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
-  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
+  move : H10; rewrite /lift_array256 /subarray256 tP => H15.
   move : (H15 k kb). 
   rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
@@ -1121,7 +1137,7 @@ seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 2) = nttunpack (lif
               signed_bound1024_cxq pkpv{1} 512 768 2 /\
               signed_bound1024_cxq pkpv{2} 512 768 2 /\ i{1} = 3).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 ; do split.
 + rewrite -lift1024_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# ifT 1:/# initiE //=. 
@@ -1153,8 +1169,8 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
-  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
-  move : (H15 k kb). 
+  move : H10; rewrite /lift_array256 /subarray256 tP => H10.
+  move : (H10 k kb). 
   rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
 
@@ -1176,8 +1192,8 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
-  move : H18; rewrite /lift_array256 /subarray256 tP => H18.
-  move : (H18 k kb). 
+  move : H13; rewrite /lift_array256 /subarray256 tP => H13.
+  move : (H13 k kb). 
   rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
 
@@ -1213,7 +1229,7 @@ seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 3) = nttunpack (lif
               signed_bound1024_cxq pkpv{1} 768 1024 2 /\
               signed_bound1024_cxq pkpv{2} 768 1024 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
-move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H221 H222 H223; do split.
+move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18; do split.
 + rewrite -lift1024_nttunpack. congr.
   rewrite /nttunpackm /nttunpackv tP /= => k kb.
   rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# ifF 1:/# initiE //=. 
@@ -1245,8 +1261,8 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
-  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
-  move : (H15 k kb). 
+  move : H10; rewrite /lift_array256 /subarray256 tP => H10.
+  move : (H10 k kb). 
   rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
 
@@ -1268,8 +1284,8 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite !ifF /=; 1..2: smt(nttunpack_bnd Array256.allP).
-  move : H18; rewrite /lift_array256 /subarray256 tP => H18.
-  move : (H18 k kb). 
+  move : H13; rewrite /lift_array256 /subarray256 tP => H13.
+  move : (H13 k kb). 
   rewrite /nttunpack initiE //= -/a !mapiE //=; 1:smt(nttunpack_bnd Array256.allP).
   rewrite !initiE //=; smt(nttunpack_bnd Array256.allP).
 
@@ -1292,8 +1308,8 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
   rewrite !initiE //=; 1..2: smt(nttunpack_bnd Array256.allP).
   rewrite ifF;1:smt(nttunpack_bnd Array256.allP).
   rewrite ifF;1:smt(nttunpack_bnd Array256.allP).
-  move : H221; rewrite /lift_array256 /subarray256 tP => H221.
-  move : (H221 k kb).
+  move : H16; rewrite /lift_array256 /subarray256 tP => H16.
+  move : (H16 k kb).
   rewrite /nttunpack Array256.initiE //= -/a !mapiE //=;1: smt(nttunpack_bnd Array256.allP).
   by rewrite !initiE /=;1..2:smt(nttunpack_bnd Array256.allP).
 
@@ -1324,7 +1340,7 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
 
 auto => />.
 
-move => &1 &2 ?????????????H1??H2??H3??H4??. 
+move => &1 &2 ????????H1??H2??H3??H4??. 
 do split.
 + smt().
 + smt(). 
@@ -1408,494 +1424,6 @@ do split.
 + smt().
 + smt().
 by smt(unpackvK).
-qed.
-
-(***************************************************)
-
-lemma mlkem_correct_enc_0_avx2 mem _ctp _pkp : 
-   equiv [Jkem1024_avx2.M.__indcpa_enc_0 ~ InnerPKE1024.enc_derand: 
-     valid_ptr _pkp (384*4 + 32) /\
-     valid_ptr _ctp (4*352+160) /\
-     Glob.mem{1} = mem /\ 
-     msgp{1} = m{2} /\ 
-     to_uint sctp{1} = _ctp /\ 
-     to_uint pkp{1} = _pkp /\
-     noiseseed{1} = coins{2} /\
-     pk{2}.`1 = load_array1536 mem _pkp /\
-     pk{2}.`2 = load_array32 mem (_pkp + 4*384)
-       ==> 
-     touches Glob.mem{1} mem _ctp (4*352+160) /\
-     let (c1,c2) = res{2} in
-     c1 = load_array1408 Glob.mem{1} _ctp /\
-     c2 = load_array160 Glob.mem{1} (_ctp + 1408)
-].
-proc*.
-transitivity {1} {Jkem1024.M.__indcpa_enc(sctp,msgp,pkp,noiseseed);} 
-(={Glob.mem,msgp,pkp,noiseseed,sctp} /\
-  valid_ptr _pkp (384 * 4 + 32) /\
-  valid_ptr _ctp (4 * 352 + 160) /\
-  Glob.mem{1} = mem /\
-  to_uint sctp{1} = _ctp /\
-  to_uint pkp{1} = _pkp
-   ==> ={Glob.mem,r}) 
-( valid_ptr _pkp (384 * 4 + 32) /\
-  valid_ptr _ctp (4 * 352 + 160) /\
-  Glob.mem{1} = mem /\
-  msgp{1} = m{2} /\
-  to_uint sctp{1} = _ctp /\
-  to_uint pkp{1} = _pkp /\
-  noiseseed{1} = coins{2} /\
-  pk{2}.`1 = load_array1536 mem _pkp /\ 
-  pk{2}.`2 = load_array32 mem (_pkp + 4 * 384)
-  ==>
-  touches Glob.mem{1} mem _ctp (4*352+160) /\
-  let (c1, c2) = r{2} in 
-      c1 = load_array1408 Glob.mem{1} _ctp /\ 
-      c2 = load_array160 Glob.mem{1} (_ctp + 1408)); 1,2: smt();  
-   last by call(mlkem_correct_enc mem _ctp _pkp); auto => />. 
-
-inline{1} 1; inline {2} 1. wp.
-
-seq 54 67 : (={ctp,Glob.mem} /\
-     pos_bound256_cxq v{1} 0 256 2 /\
-     pos_bound256_cxq v{2} 0 256 2 /\
-    lift_array256 v{1} = lift_array256 v{2} /\ 
-    valid_ptr (to_uint ctp{1}) 160); last by
-  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; call (compressequiv memm _p); auto.
-
-seq 52 65 : (={ctp,Glob.mem} /\
-     pos_bound256_cxq v{1} 0 256 2 /\
-     pos_bound256_cxq v{2} 0 256 2 /\
-     pos_bound1024_cxq bp{1} 0 1024 2 /\
-     pos_bound1024_cxq bp{2} 0 1024 2 /\
-    lift_array256 v{1} = lift_array256 v{2} /\ 
-    lift_array1024 bp{1} = lift_array1024 bp{2} /\ 
-    valid_ptr (to_uint ctp{1}) (160+4*352)); last by
-  exists *Glob.mem{1}, (to_uint ctp{1}); elim* => memm _p; wp;call (compressequivvec memm _p); auto => />; move => *; rewrite !to_uintD_small /= /#.
-
-wp;conseq />.
-call (reduceequiv_noperm).
-ecall (polyvec_reduce_equiv_noperm (lift_array1024 bp{2})).
-call (addequiv_noperm 4 2 _ _) => //.
-call (addequiv_noperm 2 2 _ _) => //.
-
-have H := polyvec_add2_equiv_noperm 2 2 _ _ => //.
-ecall (H (lift_array1024 bp{2}) (lift_array1024 ep{2})); clear H.
-
-unroll for* {1} ^while{2}.
-(*unroll for* {1} 40.*)
-
-swap {1} 3 -2; swap {2} 3 -2; seq 1 1: (#pre /\ ={pkp0} /\ pkp0{2}=pkp{1}); 1: by auto.
-sp 3 3.
-swap {1} 17 2.
-seq 18 17  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\
-           s_noiseseed{2} = noiseseed0{2} /\
-           pos_bound256_cxq k{1} 0 256 1 /\
-           pos_bound256_cxq k{2} 0 256 1 /\
-           lift_array1024 pkpv{1} = nttunpackv (lift_array1024 pkpv{2}) /\
-           pos_bound1024_cxq pkpv{1} 0 1024 2 /\
-           pos_bound1024_cxq pkpv{2} 0 1024 2 /\
-           aat{1} = nttunpackm aat{2} /\
-           pos_bound4096_cxq aat{1} 0 4096 2 /\
-           pos_bound4096_cxq aat{2} 0 4096 2). 
-+ call (genmatrixequiv true).
-  wp;call frommsgequiv_noperm. conseq />. smt().
-  conseq (_: _ ==> lift_array1024 pkpv{1} = nttunpackv (lift_array1024 pkpv{2}) /\
-       pos_bound1024_cxq pkpv{1} 0 1024 2 /\ pos_bound1024_cxq pkpv{2} 0 1024 2 /\ ={publicseed,pkp0,bp,ep,epp,v,sp_0,Glob.mem} /\ pkp0{2} = pkp{1} /\ s_noiseseed{2} = noiseseed0{2}).
-  auto => /> &2 ????????? rl rr H H0 H1 ????.
-  + rewrite tP => k kb.
-    move : H; rewrite /lift_array256 tP => H.
-    move : (H k kb); rewrite !mapiE //=. 
-    move : H0 H1; rewrite /pos_bound256_cxq /bpos16 /= => H0 H1.
-    move : (H0 k kb) (H1 k kb).
-    rewrite -Zq.eq_incoeff /= qE. 
-    move => HH0 HH1; rewrite !modz_small; 1,2: smt( StdOrder.IntOrder.gtr0_norm).    
-    move : HH0 HH1; rewrite /to_sint /smod /= => HH0 HH1.
-    rewrite  ifF. smt(W16.to_uint_cmp). 
-    rewrite  ifF. smt(W16.to_uint_cmp). 
-    smt(W16.to_uint_eq).
-  seq 12 12 : (#{/~publicseed{2}}post /\ ={publicseed}).
-  wp;sp; conseq />.
-  call (polyvec_frombytes_equiv).
-  auto => />;1: smt(). 
-  by conseq />;sim.
-
-sp 2 0.
-(* swap {1} [11..12] 2. *)
-
-seq 16 26 : (#{/~bp{1}=bp{2}}{~lnoiseseed{1}}pre  /\
-    signed_bound1024_cxq sp_0{1} 0 1024 1 /\
-    signed_bound1024_cxq ep{1} 0 1024 1 /\
-    signed_bound_cxq epp{1} 0 256 1 /\
-    signed_bound1024_cxq sp_0{2} 0 1024 1 /\
-    signed_bound1024_cxq ep{2} 0 1024 1 /\ 
-    signed_bound_cxq epp{1} 0 256 1).
-+ conseq />.
-  transitivity {1} { (sp_0,ep,epp) <@ GetNoiseAVX2.samplenoise_enc(sp_0,ep, epp,noiseseed);} 
-  (s_noiseseed{1} = noiseseed{2} /\ noiseseed0{1} = noiseseed{2} /\ lnoiseseed{1} = noiseseed{2} /\  ={sp_0,ep,bp,epp} ==> ={sp_0,ep,epp}) 
-   (
-   s_noiseseed{1} = noiseseed0{1} /\
-  lnoiseseed{1} = s_noiseseed{1} /\
-  (sctp0{2} = sctp{2} /\
-   msgp0{2} = msgp{2} /\
-   noiseseed0{2} = noiseseed{2} /\
-   sctp0{1} = sctp{1} /\
-   msgp0{1} = msgp{1} /\
-   noiseseed0{1} = noiseseed{1} /\
-   (={Glob.mem, msgp, noiseseed, pkp, sctp} /\
-    valid_ptr _pkp (384 * 4 + 32) /\
-    valid_ptr _ctp (4 * 352 + 160) /\ Glob.mem{1} = mem /\ to_uint sctp{1} = _ctp /\ to_uint pkp{1} = _pkp) /\
-   ={pkp0}) /\
-  ={publicseed, bp, ep, epp, v, sp_0, k} /\
-  s_noiseseed{2} = noiseseed0{2} /\
-  pos_bound256_cxq k{1} 0 256 1 /\
-  pos_bound256_cxq k{2} 0 256 1 /\
-  lift_array1024 pkpv{1} = nttunpackv (lift_array1024 pkpv{2}) /\
-  pos_bound1024_cxq pkpv{1} 0 1024 2 /\
-  pos_bound1024_cxq pkpv{2} 0 1024 2 /\
-  aat{1} = nttunpackm aat{2} /\ pos_bound4096_cxq aat{1} 0 4096 2 /\ pos_bound4096_cxq aat{2} 0 4096 2
-   ==> 
-    ={ep, epp, sp_0} /\
-  signed_bound1024_cxq sp_0{1} 0 1024 1 /\
-  signed_bound1024_cxq ep{1} 0 1024 1 /\
-  signed_bound_cxq epp{1} 0 256 1 /\
-  signed_bound1024_cxq sp_0{2} 0 1024 1 /\ signed_bound1024_cxq ep{2} 0 1024 1 /\ signed_bound_cxq epp{1} 0 256 1
-  ); 1,2:smt().
-  + inline {2} 1. 
-    wp; call getnoiseequiv2. 
-    by do 2!(wp; call getnoiseequiv_avx);auto => />. 
-  inline {1} 1. 
-  inline GetNoiseAVX2._poly_getnoise_eta1_4x.
-  do 9!(wp; call  getnoiseequiv); auto => />.
-  move => &1 &2 /> ??????????R?; split.
-  + by rewrite tP => k kb; rewrite !initiE //= initiE /#.
-  move => ?R0?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= /#.
-  move => ?R1?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= initiE 1:/# /= ifF 1:/# ifF 1:/# initiE /#.
-  move => ?R2???; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= /= /#.
-  move => ?R3?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /=  initiE 1:/# /= /= /#.
-  move => ?R4?; split.
-  + rewrite tP => k kb; rewrite !initiE //= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= /= /#.
-  move => ?R5???; do split.
-  + rewrite /signed_bound1024_cxq => x xb /=.
-    rewrite !initiE //= fun_if. 
-    case (768 <= x && x < 1024); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (512 <= x && x < 768); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (256 <= x && x < 512); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    by smt().
-  + rewrite /signed_bound1024_cxq => x xb /=.
-    rewrite !initiE //= fun_if. 
-    case (768 <= x && x < 1024); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (512 <= x && x < 768); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (256 <= x && x < 512); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    by smt().
-  + rewrite /signed_bound1024_cxq => x xb /=.
-    rewrite !initiE //= fun_if. 
-    case (768 <= x && x < 1024); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (512 <= x && x < 768); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (256 <= x && x < 512); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    by smt().
-  + rewrite /signed_bound1024_cxq => x xb /=.
-    rewrite !initiE //= fun_if. 
-    case (768 <= x && x < 1024); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (512 <= x && x < 768); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    case (256 <= x && x < 512); 1: by smt().
-    move => *; rewrite !initiE //= fun_if. 
-    by smt().
-
-(* swap {1} 1 2. *)
-seq 1 1 : (#{/~sp_0{1}}{~sp_0{2}}pre /\ 
-           lift_array1024 sp_0{1} = nttunpackv (lift_array1024 sp_0{2}) /\
-           pos_bound1024_cxq sp_0{1} 0 1024 2 /\
-           pos_bound1024_cxq sp_0{2} 0 1024 2); 1: 
- by  conseq />; call (nttequiv); auto => /> /#.
-
-(* First ip *)
-
-seq 4 2 : (#pre /\ 
-              lift_array256 (subarray256 bp{1} 0) = nttunpack (lift_array256 (subarray256 bp{2} 0)) /\
-              signed_bound1024_cxq bp{1} 0 256 4 /\
-              signed_bound1024_cxq bp{2} 0 256 2 /\ w{1} = 1).
-wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14; do split.
-+ rewrite -lift1024_nttunpack. congr.
-  rewrite /nttunpackm /nttunpackv tP /= => k kb.
-  rewrite !initiE // 1:/# /= kb /= initiE //=. 
-+ rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#.
-+ rewrite /signed_bound1024_cxq => k kb; smt(). 
-+ rewrite /signed_bound1024_cxq => *; rewrite initiE //=; smt().
-+ by smt().
-
-move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split. 
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
-  rewrite kb /=. 
-  have -> /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  move : H20; rewrite /lift_array256 tP => H20.
-  move : (H20 k kb). 
-  rewrite /nttunpack initiE //= -/a !mapiE //=;smt(nttunpack_bnd Array256.allP).
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=. smt().
-  rewrite kb /=. smt().
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=. smt().
-  rewrite kb /=. smt().
-
-(* Second ip *)
-
-seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 1) = nttunpack (lift_array256 (subarray256 bp{2} 1)) /\
-              signed_bound1024_cxq bp{1} 256 512 4 /\
-              signed_bound1024_cxq bp{2} 256 512 2 /\ w{1} = 2).
-wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17; do split.
-+ rewrite -lift1024_nttunpack. congr.
-  rewrite /nttunpackm /nttunpackv tP /= => k kb.
-  rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifT 1:/# initiE //=. 
-+ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#. 
-+ by rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
-+ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#. 
-+ by rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
-
-move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split. 
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifF 1: /# ifF 1: /# /=. 
-  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
-  move : (H15 k kb). 
-  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifT 1: /# ifT 1: /# /=. 
-  move : H23; rewrite /lift_array256 tP => H23.
-  move : (H23 k kb). 
-  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-
-(* Third ip *)
-
-seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 2) = nttunpack (lift_array256 (subarray256 bp{2} 2)) /\
-              signed_bound1024_cxq bp{1} 512 768 4 /\
-              signed_bound1024_cxq bp{2} 512 768 2 /\ w{1} = 3).
-wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H181 H191 H201; do split.
-+ rewrite -lift1024_nttunpack. congr.
-  rewrite /nttunpackm /nttunpackv tP /= => k kb.
-  rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# ifT 1:/# initiE //=. 
-+ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#. 
-+ by rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
-+ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#. 
-+ by rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
-
-move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split. 
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifF 1: /# ifF 1: /# /=. 
-  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
-  move : (H15 k kb). 
-  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifF 1: /# ifF 1: /# /=. 
-  move : H181; rewrite /lift_array256 /subarray256 tP => H181.
-  move : (H181 k kb). 
-  rewrite /nttunpack initiE //= -/a !mapiE //=.
-  by smt(nttunpack_bnd Array256.allP Array256.initiE).  
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifT 1: /# ifT 1:/# /=. 
-  move : H23; rewrite /lift_array256 /subarray256 tP => H23.
-  move : (H23 k kb). 
-  by rewrite /nttunpack initiE //= -/a !mapiE //=.
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-(* Fourth ip *)
-
-seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 3) = nttunpack (lift_array256 (subarray256 bp{2} 3)) /\
-              signed_bound1024_cxq bp{1} 768 1024 4 /\
-              signed_bound1024_cxq bp{2} 768 1024 2 ).
-wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H211 H221 H222; do split.
-+ rewrite -lift1024_nttunpack. congr.
-  rewrite /nttunpackm /nttunpackv tP /= => k kb.
-  rewrite !initiE //= initiE //= 1:/# ifF 1:/# ifF 1:/# ifF 1:/# initiE //=. 
-+ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#. 
-+ by rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
-+ by rewrite /signed_bound1024_cxq => k kb; rewrite initiE //= /#. 
-+ by rewrite /pos_bound1024_cxq /signed_bound_1024_cxq /#.
-
-move => H121 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split. 
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1..3: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifF 1: /# ifF 1: /# /=. 
-  move : H15; rewrite /lift_array256 /subarray256 tP => H15.
-  move : (H15 k kb). 
-  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifF 1: /# ifF 1: /# /=. 
-  move : H18; rewrite /lift_array256 tP => H18.
-  move : (H18 k kb). 
-  by rewrite /nttunpack initiE //= -/a !mapiE //= initiE //= initiE //=. 
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifF 1: /# ifF 1: /# /=. 
-  move : H211; rewrite /lift_array256 /subarray256 tP => H211.
-  move : (H211 k kb). 
-  rewrite /nttunpack initiE //= -/a !mapiE //=.
-  by smt(nttunpack_bnd Array256.allP Array256.initiE).  
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-
-+ rewrite tP /= => k kb.
-  rewrite /lift_array256 /subarray256 /nttunpack !initiE //=. 
-  pose a:=nttunpack_idx.[k].
-  rewrite !mapiE //=; 1:  smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1: smt(nttunpack_bnd Array256.allP).
-  rewrite !initiE //=; 1, 2: smt(nttunpack_bnd Array256.allP).
-  have ? /= :  0 <= a && a < 256  by smt(nttunpack_bnd Array256.allP).
-  rewrite ifT 1: /# ifT 1:/# /=. 
-  move : H26; rewrite /lift_array256 /subarray256 tP => H26.
-  move : (H26 k kb). 
-  by rewrite /nttunpack initiE //= -/a !mapiE //=.
-
-+ rewrite /signed_bound1024_cxq /= => k kb; rewrite !initiE  //=; smt().
-
-+ rewrite /signed_bound1024_cxq /= => i ib; rewrite !initiE  //=; smt().
-
-(* Fifth ip *)
-
-seq 1 1: (#{/~v{1}}pre /\ lift_array256 v{1} = nttunpack (lift_array256 v{2}) /\
-              signed_bound_cxq v{1} 0 256 4 /\
-              signed_bound_cxq v{2} 0 256 2).
-wp; call pointwiseequiv; auto => />.
-move => &1 &2 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12 H13 H14 H15 H16 H17 H18 H19 H20 H21 H22 H23 H241 H252 H261; do split.
-+ by rewrite /signed_bound1024_cxq => k kb; smt(). 
-+ by rewrite /signed_bound1024_cxq => k kb; smt(). 
-+ by rewrite /signed_bound1024_cxq => k kb; smt(). 
-+ by rewrite /signed_bound1024_cxq => k kb; smt(). 
-
-(* INV NTT!!! *)
-seq 1 1 : (#{/~bp{2}}{~bp{1}}pre /\ lift_array1024 bp{1} = lift_array1024 bp{2} /\ signed_bound1024_cxq bp{1} 0 1024 2 /\ signed_bound1024_cxq bp{2} 0 1024 2).
-conseq />.  call(invnttequiv). auto => />. move => &1 &2 ???????????????H2??H1??H0??H?????; split.
-+ do split; 2,3: by smt().
-  rewrite /nttunpackv.
-  rewrite tP => k kb; rewrite initiE //=.
-  move : H H0 H1 H2; rewrite !tP => H H0 H1 H2.
-  case (0 <= k < 256).
-  + move => kkb; move : (H2 k kkb). rewrite subliftsub //= => ->. 
-    congr;congr.
-    rewrite /lift_array256 /subarray256 /lift_array1024 tP => i ib.
-    rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
-  case (256 <= k < 512).
-  + move => nkkb kkb. move : (H1 (k-256) _); 1: smt(). rewrite subliftsub //= 1: /# => ->. 
-    congr;congr.
-    rewrite /lift_array256 /subarray256 /lift_array1024 tP => i ib.
-    rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
-  case (512 <= k < 768).
-  + move => nkkb kkb. move : (H0 (k-512) _); 1: smt(). rewrite subliftsub //= 1: /# => -> ?. 
-    congr;congr.
-    rewrite /lift_array256 /subarray256 /lift_array1024 tP => i ib.
-    rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
-  move => *.
-  move : (H (k-768) _); 1: smt(). rewrite subliftsub //= 1: /# => ->. 
-  congr;congr.
-  rewrite /lift_array256 /subarray256 /lift_array1024 tP => i ib.
-  rewrite !mapiE //= !initiE //= !mapiE //= 1:/#.
-  smt().
-
-seq 1 1 : (#{/~v{2}}{~v{1}}pre /\ lift_array256 v{1} = lift_array256 v{2} /\ signed_bound_cxq v{1} 0 256 2 /\ signed_bound_cxq v{2} 0 256 2).
-conseq />.  call(polyinvnttequiv). auto => />. smt().
-
-auto => /> /#.
 qed.
 
 
