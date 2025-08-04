@@ -1,7 +1,7 @@
 require import AllCore IntDiv List.
 
 from Jasmin require import JModel.
-from JazzEC require import Array4 Array33 Array128  Array16 Array25 Array32 Array33 Array64 Array128 Array160 Array136 Array256 Array1024 Array1408 Array1410 Array1536 Array4096 Array1568.
+from JazzEC require import Array4 Array33 Array128  Array16 Array25 Array32 Array33 Array64 Array128 Array160 Array136 Array256 Array1024 Array1408 Array1410 Array1536 Array4096 Array1536 Array1568.
 from JazzEC require import WArray512 WArray256 WArray32 WArray33 WArray128 WArray160.
 
 require import List_extra.
@@ -829,7 +829,7 @@ qed.
 
 
 import InnerPKE1024.
-
+(*
 lemma mlkem_correct_kg_avx2   : 
    equiv [Jkem1024_avx2.M.__indcpa_keypair ~ InnerPKE1024.kg_derand : 
        randomnessp{1} = coins{2}  
@@ -1425,51 +1425,37 @@ do split.
 + smt().
 by smt(unpackvK).
 qed.
-
+*)
 
 (***************************************************)
 
-lemma mlkem_correct_enc_1_avx2 mem _pkp : 
-   equiv [Jkem1024_avx2.M.__indcpa_enc_1 ~ InnerPKE1024.enc_derand: 
-     valid_ptr _pkp (384*4 + 32) /\
-     Glob.mem{1} = mem /\ 
-     msgp{1} = m{2} /\ 
-     to_uint pkp{1} = _pkp /\
+lemma mlkem_correct_enc_1_avx2 _pkp : 
+   equiv [Jkem1024_avx2.M.__indcpa_enc ~ InnerPKE1024.enc_derand: 
+     msgp{1} = m{2} /\  pk{1} = _pkp /\
      noiseseed{1} = coins{2} /\
-     pk{2}.`1 = load_array1536 mem _pkp /\
-     pk{2}.`2 = load_array32 mem (_pkp + 4*384)
+     pk{2}.`1 = Array1536.init (fun i => pk{1}.[i]) /\
+     pk{2}.`2 = Array32.init (fun i => pk{1}.[i+1536])
        ==> 
-     Glob.mem{1} = mem /\
      let (c1,c2) = res{2} in
      c1 = Array1408.init (fun i => res{1}.[i]) /\
      c2 = Array160.init (fun i => res{1}.[i+1408])
 ].
-proc*.
-transitivity {1} { r <@Jkem1024.M.__iindcpa_enc(ctp,msgp,pkp,noiseseed);} 
-(={Glob.mem,ctp,msgp,pkp,noiseseed} /\
-  valid_ptr _pkp (384 * 4 + 32) /\
-  Glob.mem{1} = mem /\
-  to_uint pkp{1} = _pkp 
-   ==> ={Glob.mem,r} /\ Glob.mem{1} = mem) 
-( valid_ptr _pkp (384 * 4 + 32) /\
-  Glob.mem{1} = mem /\
-  msgp{1} = m{2} /\
-  to_uint pkp{1} = _pkp /\
-  noiseseed{1} = coins{2} /\
-  pk{2}.`1 = load_array1536 mem _pkp /\ 
-  pk{2}.`2 = load_array32 mem (_pkp + 4 * 384) 
-  ==>
-  Glob.mem{1} = mem /\
-  r{1} = (Array1568.init (fun (i : int) => if 0 <= i && i < 1408 then r{2}.`1.[i] else r{2}.`2.[i - 1408])));[ by smt() | | | by call(mlkem_correct_ienc mem _pkp); auto => />].
-  + move => /> c1 c2. 
-    rewrite !tP;split;move => *.
-    + by rewrite !initiE // 1:/# /= /#.
-    by rewrite !initiE //= !initiE 1:/# /= /#.
+proc*. 
+transitivity {1} { r <@Jkem1024.M.__indcpa_enc(ct,msgp,pk,noiseseed);} 
+(={ct,msgp,pk,noiseseed}  ==> ={r}) 
+( msgp{1} = m{2} /\ pk{1} = _pkp /\
+     noiseseed{1} = coins{2} /\
+     pk{2}.`1 = Array1536.init (fun i => pk{1}.[i]) /\
+     pk{2}.`2 = Array32.init (fun i => pk{1}.[i+1536])
+       ==> 
+     let (c1,c2) = r{2} in
+     c1 = Array1408.init (fun i => r{1}.[i]) /\
+     c2 = Array160.init (fun i => r{1}.[i+1408]));[ by smt() | by auto | | by call(mlkem_correct_enc _pkp); auto => /> /#].
 
 inline{1} 1; inline {2} 1. wp.
 
-seq 53 69 : (={Glob.mem} /\ Glob.mem{1} = mem /\
-     (forall k, 0 <= k < 1408 => ctp0{1}.[k] = ctp0{2}.[k]) /\
+seq 53 69 : (
+     (forall k, 0 <= k < 1408 => ct{1}.[k] = ct{2}.[k]) /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
     lift_array256 v{1} = lift_array256 v{2}); last by
