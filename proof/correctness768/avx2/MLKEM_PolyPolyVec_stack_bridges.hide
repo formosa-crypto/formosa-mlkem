@@ -1,7 +1,7 @@
 require import AllCore IntDiv List.
 
 from CryptoSpecs require import MLKEM768.
-from JazzEC require import Jkem768_avx2 Jkem768_avx2_stack.
+from JazzEC require import Jkem768_avx2 Jkem768_avx2.
 from Jasmin require import JModel_x86.
 from JazzEC require import Array32 Array33 Array64 Array148 Array256 Array384 Array768 Array960 Array128 Array1088 Array1152 Array1184 Array2304 Array2400.
 from JazzEC require import Array8 WArray32 WArray33 Array300 WArray64 WArray1184 WArray2400 WArray384.
@@ -13,9 +13,9 @@ require import MLKEMFCLib.
 op load_array1184 (m : global_mem_t) (p : address) : W8.t Array1184.t = 
       (Array1184.init (fun (i : int) => m.[p + i])).
 
-lemma poly_to_bytes_stack_equiv _mem _pos _a :
+lemma poly_to_bytes_equiv _mem _pos _a :
    0 <= _pos <= 1184+2*384 =>
-   equiv [ Jkem768_avx2_stack.M._i_poly_tobytes
+   equiv [ Jkem768_avx2.M._i_poly_tobytes
            ~ Jkem768_avx2.M._poly_tobytes :
    Glob.mem{2} = _mem /\ arg{2}.`1 = W64.of_int _pos /\ arg{1}.`2 = arg{2}.`2 /\ arg{1}.`2 = _a ==>
   Glob.mem{2} =
@@ -111,9 +111,9 @@ rewrite get_to_list initiE 1:/#.
     by rewrite initiE /#.
 qed.
 
-lemma polyvec_to_bytes_stack_equiv _mem _pos:
+lemma polyvec_to_bytes_equiv _mem _pos:
    0 <= _pos <= 1184 =>
-   equiv [ Jkem768_avx2_stack.M.__i_polyvec_tobytes
+   equiv [ Jkem768_avx2.M.__i_polyvec_tobytes
            ~ Jkem768_avx2.M.__polyvec_tobytes :
    Glob.mem{2} = _mem /\ arg{2}.`1 = W64.of_int _pos /\ arg{1}.`2 = arg{2}.`2 ==>
   Glob.mem{2} =
@@ -126,7 +126,7 @@ seq 3 3 : (
 Glob.mem{2} = (stores _mem _pos (take 384 (to_list r{1}))) /\ pp{2} = (of_int _pos)%W64 /\ ={a}
 ).
 + exlim (init (fun (i : int) => a{1}.[0 + i]))%Array256 => _a.
-  wp;call (poly_to_bytes_stack_equiv _mem _pos _a) => /=;1: by smt().
+  wp;call (poly_to_bytes_equiv _mem _pos _a) => /=;1: by smt().
   auto => /> &1 r.
   + congr;apply (eq_from_nth witness); rewrite ?size_take ?size_to_list /=; 1,2:smt().
     move => k kb;rewrite nth_take 1,2:/#. 
@@ -136,7 +136,7 @@ seq 3 3 : (
 Glob.mem{2} = (stores _mem _pos (take (2*384) (to_list r{1}))) /\ pp{2} = (of_int (_pos + 384))%W64 /\ ={a}
 ).
 + exlim Glob.mem{2}, a{1} => _mem2 _a2.
-  wp;call (poly_to_bytes_stack_equiv _mem2 (_pos+384) ((init (fun (i : int) => _a2.[256 + i]))%Array256)) => /=; 1: by smt().
+  wp;call (poly_to_bytes_equiv _mem2 (_pos+384) ((init (fun (i : int) => _a2.[256 + i]))%Array256)) => /=; 1: by smt().
   auto => /> &1  rrl;apply mem_eq_ext => p.
   rewrite !get_storesE !size_to_list !size_take 1..2:/# !size_to_list /=. 
   case (_pos + 384 <= p < _pos + 768) => H.
@@ -153,7 +153,7 @@ seq 3 3 : (
 Glob.mem{2} = (stores _mem _pos (take (3*384) (to_list r{1}))) /\ pp{2} = (of_int (_pos + 2*384))%W64 /\ ={a}
 ).
 + exlim Glob.mem{2}, a{1} => _mem3 _a3.
-  wp;call (poly_to_bytes_stack_equiv _mem3 (_pos+2*384) ((init (fun (i : int) => _a3.[512 + i]))%Array256)) => /=; 1: by smt().
+  wp;call (poly_to_bytes_equiv _mem3 (_pos+2*384) ((init (fun (i : int) => _a3.[512 + i]))%Array256)) => /=; 1: by smt().
   auto => /> &1  rrl;apply mem_eq_ext => p.
   rewrite !get_storesE !size_to_list !size_take 1..2:/# !size_to_list /=. 
   case (_pos + 768 <= p < _pos + 1152) => H.
@@ -186,9 +186,9 @@ rewrite initiE /#.
 qed.
 
 
-lemma poly_from_bytes_stack_equiv _pos _mem :
+lemma poly_from_bytes_equiv _pos _mem :
    0 <= _pos <= 768 =>
-   equiv [ Jkem768_avx2_stack.M._i_poly_frombytes
+   equiv [ Jkem768_avx2.M._i_poly_frombytes
            ~ Jkem768_avx2.M._poly_frombytes :
    to_uint arg{2}.`2 = _pos /\ arg{1}.`1 = arg{2}.`1 /\
    load_array384 Glob.mem{2} _pos = arg{1}.`2 /\  Glob.mem{2} = _mem ==> Glob.mem{2} = _mem /\  ={res}].
@@ -240,8 +240,8 @@ seq 6 6 : #pre.
 by conseq />;sim.
 qed.
 
-lemma polyvec_from_bytes_stack_equiv:
-   equiv [ Jkem768_avx2_stack.M.__i_polyvec_frombytes
+lemma polyvec_from_bytes_equiv:
+   equiv [ Jkem768_avx2.M.__i_polyvec_frombytes
            ~ Jkem768_avx2.M.__polyvec_frombytes :
    to_uint arg{2} = 0 /\
    load_array1152 Glob.mem{2} 0 = arg{1} ==> ={res}].
@@ -251,13 +251,13 @@ unroll for {1} 5; unroll for {2} 4.
 exlim Glob.mem{2} => _mem.
 seq 5 4 : (={r} /\ to_uint pp{2} = 0 /\ Glob.mem{2} = _mem /\ load_array1152 Glob.mem{2} 0 = a{1}
 ).
-+wp;call (poly_from_bytes_stack_equiv 0 _mem) => /=. 
++wp;call (poly_from_bytes_equiv 0 _mem) => /=. 
   auto => /> &1 r.
   rewrite /load_array384 /load_array1152 tP => k kb.
   by rewrite !initiE /#.
 
 seq 2 3 : (={r} /\ to_uint pp{2} = 384 /\ Glob.mem{2} = _mem  /\ load_array1152 Glob.mem{2} 0 = a{1}).
-+ wp;call (poly_from_bytes_stack_equiv 384 _mem) => /=. 
++ wp;call (poly_from_bytes_equiv 384 _mem) => /=. 
   auto => /> &1 Hpp;rewrite !to_uintD_small /= 1:/# /= Hpp /=. 
   rewrite /load_array384 /load_array1152 tP => k kb.
   by rewrite !initiE 1,2:/# /= initiE /#.
@@ -265,7 +265,7 @@ seq 2 3 : (={r} /\ to_uint pp{2} = 384 /\ Glob.mem{2} = _mem  /\ load_array1152 
 
 seq 2 3 : (
 ={r} /\ to_uint pp{2} = 768 /\ Glob.mem{2} = _mem  /\ load_array1152 Glob.mem{2} 0 = a{1}).
-+ wp;call (poly_from_bytes_stack_equiv 768 _mem) => /=. 
++ wp;call (poly_from_bytes_equiv 768 _mem) => /=. 
   auto => /> &1 Hpp;rewrite !to_uintD_small /= 1:/# /= Hpp /=.
   rewrite /load_array384 /load_array1152 tP => k kb.
   by rewrite !initiE 1,2:/# /= initiE /#.
@@ -276,8 +276,8 @@ qed.
 from JazzEC require import WArray1088.
 op load_array1088 (m : global_mem_t) (p : address) : W8.t Array1088.t = Array1088.init (fun (i : int) => m.[p + i]).
 
-lemma polyvec_decompress_stack_equiv:
-   equiv [ Jkem768_avx2_stack.M.__i_polyvec_decompress
+lemma polyvec_decompress_equiv:
+   equiv [ Jkem768_avx2.M.__i_polyvec_decompress
            ~ Jkem768_avx2.M.__polyvec_decompress :
    to_uint arg{2} = 1152 /\
    load_array1088 Glob.mem{2} 1152 = arg{1} ==> ={res}].
@@ -293,8 +293,8 @@ rewrite tP => j jb; rewrite initiE 1:/# /= initiE 1:/# /=.
 qed.
 
 from JazzEC require import WArray128 WArray512.
-lemma poly_decompress_stack_equiv:
-   equiv [ Jkem768_avx2_stack.M._i_poly_decompress
+lemma poly_decompress_equiv:
+   equiv [ Jkem768_avx2.M._i_poly_decompress
            ~ Jkem768_avx2.M._poly_decompress :
    to_uint arg{2}.`2 = 1152+960 /\
    load_array128 Glob.mem{2} (1152+960) = arg{1}.`2 ==> ={res}].

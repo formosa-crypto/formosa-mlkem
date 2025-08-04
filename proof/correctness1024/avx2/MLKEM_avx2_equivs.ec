@@ -36,77 +36,45 @@ import MLKEM_PolyAVX.
 import MLKEM_PolyvecAVX.
 import MLKEM_PolyAVXVec.
 import MLKEM_PolyVecAVXVec.
-
-lemma polyvec_decompress_equiv mem _p :
-    equiv [Jkem1024_avx2.M.__polyvec_decompress ~  Jkem1024.M.__polyvec_decompress  :
-             valid_ptr _p (4*352) /\
-             Glob.mem{1} = mem /\ to_uint rp{1} = _p /\
-             ={Glob.mem} /\ rp{1} = ap{2}
+lemma polyvec_decompress_equiv  :
+    equiv [Jkem1024_avx2.M.__i_polyvec_decompress ~  Jkem1024.M.__i_polyvec_decompress  :
+             arg{1}=arg{2}
               ==>
-             ={Glob.mem,res} /\ Glob.mem{1} = mem /\
              lift_array1024 res{1} = lift_array1024 res{2} /\
              pos_bound1024_cxq res{1} 0 1024 1 /\
              pos_bound1024_cxq res{2} 0 1024 1 ].
 admitted.
 
-equiv compressequivvec mem _p : 
- Jkem1024_avx2.M.__polyvec_compress ~  Jkem1024.M.__polyvec_compress :
+equiv compressequivvec  : 
+ Jkem1024_avx2.M.__i_polyvec_compress ~  Jkem1024.M.__i_polyvec_compress :
      pos_bound1024_cxq a{1} 0 1024 2 /\
      pos_bound1024_cxq a{2} 0 1024 2 /\
-    lift_array1024 a{1} = lift_array1024 a{2} /\ 
-    ={rp,Glob.mem} /\ Glob.mem{1} = mem /\   valid_ptr _p (4*352) /\ _p = to_uint rp{1}
+    lift_array1024 a{1} = lift_array1024 a{2} 
     ==> 
-    ={Glob.mem} /\  touches mem Glob.mem{1} _p (4*352).
+    res{2} = Array1408.init (fun i => res{1}.[i]).
 admitted.
 
-equiv compressequivvec_1 mem : 
- Jkem1024_avx2.M.__polyvec_compress_1 ~  Jkem1024.M.__i_polyvec_compress :
-     pos_bound1024_cxq a{1} 0 1024 2 /\
-     pos_bound1024_cxq a{2} 0 1024 2 /\
-    lift_array1024 a{1} = lift_array1024 a{2} /\ 
-    ={Glob.mem} /\ Glob.mem{1} = mem 
-    ==> 
-    ={Glob.mem} /\  Glob.mem{1} = mem /\ res{2} = Array1408.init (fun i => res{1}.[i]).
-admitted.
-
-lemma poly_decompress_equiv mem _p : 
-    equiv [Jkem1024_avx2.M._poly_decompress ~  Jkem1024.M._poly_decompress  :
-             valid_ptr _p 160 /\
-             Glob.mem{1} = mem /\ to_uint ap{1} = _p /\
-             ={Glob.mem,ap}
+lemma poly_decompress_equiv  : 
+    equiv [Jkem1024_avx2.M._i_poly_decompress ~  Jkem1024.M._i_poly_decompress  :
+             a{1} = ap{2}
               ==>
-             ={Glob.mem,res} /\ Glob.mem{1} = mem /\
              lift_array256 res{1} = lift_array256 res{2} /\
              pos_bound256_cxq res{1} 0 256 1 /\
              pos_bound256_cxq res{2} 0 256 1 ].
 admitted.
 
-equiv compressequiv_1 mem : 
- Jkem1024_avx2.M._poly_compress_1 ~  Jkem1024.M._i_poly_compress :
+equiv compressequiv_1 : 
+ Jkem1024_avx2.M._i_poly_compress ~  Jkem1024.M._i_poly_compress :
      pos_bound256_cxq a{1} 0 256 2 /\
      pos_bound256_cxq a{2} 0 256 2 /\
-    lift_array256 a{1} = lift_array256 a{2} /\ 
-    ={Glob.mem} /\ Glob.mem{1} = mem   
+    lift_array256 a{1} = lift_array256 a{2} 
     ==> 
-    ={Glob.mem} /\  Glob.mem{1} = mem /\
     res.`1{1} = res.`1{2}.
 admitted.
 
-equiv compressequiv mem _p : 
- Jkem1024_avx2.M._poly_compress ~  Jkem1024.M._poly_compress :
-     pos_bound256_cxq a{1} 0 256 2 /\
-     pos_bound256_cxq a{2} 0 256 2 /\
-    lift_array256 a{1} = lift_array256 a{2} /\ 
-    ={Glob.mem,rp} /\ Glob.mem{1} = mem /\   valid_ptr _p 160 /\ _p = to_uint rp{1}
-    ==> 
-    ={Glob.mem} /\  touches mem Glob.mem{1} _p 160.
-admitted.
-
-
 lemma polyvec_frombytes_equiv :
-    equiv [Jkem1024_avx2.M.__polyvec_frombytes ~Jkem1024.M.__polyvec_frombytes :
-             valid_ptr (W64.to_uint ap{1}) (4*384) /\
-             ={Glob.mem,ap} ==>
+    equiv [Jkem1024_avx2.M.__i_polyvec_frombytes ~Jkem1024.M.__i_polyvec_frombytes :
+             ={ap} ==>
              lift_array1024 res{1} = nttunpackv (lift_array1024 res{2}) /\
              pos_bound1024_cxq res{1} 0 1024 2 /\
              pos_bound1024_cxq res{2} 0 1024 2 ].
@@ -130,9 +98,8 @@ lemma subequiv_noperm  (ab bb : int):
               ].
 move => boundab boundbb; proc => /=.
 exists* ap{2}, bp{2}. elim* => _ap2 _bp2.
-while {2} (#pre /\ 0<= to_uint i{2} <= 256 /\ forall k, 0<=k<to_uint i{2} => rp{2}.[k] = _ap2.[k] -_bp2.[k]) (256 - to_uint i{2}); 
- 1: by move => &1 ?; auto => /> => &2 ?????????; rewrite ultE /=  !to_uintD_small 1:/# ;
-  smt(Array256.set_neqiE Array256.set_eqiE).
+while {2} (#pre /\ 0<= i{2} <= 256 /\ forall k, 0<=k<i{2} => rp{2}.[k] = _ap2.[k] -_bp2.[k]) (256 -  i{2}); 
+ 1: by move => &1 ?; auto => />;smt(Array256.set_neqiE Array256.set_eqiE).
 
 exists* ap{1}, bp{1}. elim* => _ap1 _bp1.
 while {1} (#pre /\ 0<= i{1} <= 16 /\ forall k, 0<=k<16*i{1} => rp{1}.[k] = _ap1.[k] -_bp1.[k]) (16 - i{1}); last first.
@@ -140,7 +107,7 @@ while {1} (#pre /\ 0<= i{1} <= 16 /\ forall k, 0<=k<16*i{1} => rp{1}.[k] = _ap1.
   move => &1 &2 H H0 H1 H2 H3 H4; split; 1: smt(). 
   move => i1 res1; split; 1: smt().
   move => ??? res1v; split; 1: smt().
-  move => i2 res2; rewrite ultE /=; split; 1: smt().
+  move => i2 res2; split; 1: smt().
   move => ??? res2v.
   do split; first last.
   + do 2!( move : H3 H4;rewrite /signed_bound_cxq => H3 H4 k kb; rewrite res1v // 1:/#; 
@@ -467,7 +434,7 @@ rewrite H7 // H9 /#.
 qed.
 
 equiv frommsgequiv_noperm  : 
- Jkem1024_avx2.M._poly_frommsg_1 ~  Jkem1024.M._i_poly_frommsg :
+ Jkem1024_avx2.M._i_poly_frommsg ~  Jkem1024.M._i_poly_frommsg :
     ={ap} ==> 
     lift_array256 res{1} = lift_array256 res{2} /\
     pos_bound256_cxq res{1} 0 256 1 /\ 
@@ -480,7 +447,7 @@ lemma compress_poly_rng i xs :
 rewrite /compress_poly /map allP => Hi j Hj. rewrite !initiE //=. rewrite compress_rng //. qed.
 
 equiv tomsgequiv_noperm  : 
- Jkem1024_avx2.M._poly_tomsg_1 ~  Jkem1024.M._i_poly_tomsg :
+ Jkem1024_avx2.M._i_poly_tomsg ~  Jkem1024.M._i_poly_tomsg :
     lift_array256 a{1} = lift_array256 a{2} /\
     pos_bound256_cxq a{1} 0 256 2 /\ 
     pos_bound256_cxq a{2} 0 256 2 ==>
@@ -489,13 +456,10 @@ admitted.
 
 
 lemma polyvec_tobytes_equiv :
-    forall (_p : int),
-    equiv [Jkem1024_avx2.M.__polyvec_tobytes ~Jkem1024.M.__polyvec_tobytes :
-             _p = to_uint rp{1} /\
-             valid_ptr (W64.to_uint rp{1}) (4*384) /\
+    equiv [Jkem1024_avx2.M.__i_polyvec_tobytes ~Jkem1024.M.__i_polyvec_tobytes :
              pos_bound1024_cxq a{1} 0 1024 2 /\
              pos_bound1024_cxq a{2} 0 1024 2 /\
-             lift_array1024 a{1} = nttunpackv (lift_array1024 a{2}) /\ ={rp,Glob.mem} ==> ={Glob.mem} ].
+             lift_array1024 a{1} = nttunpackv (lift_array1024 a{2}) ==> ={res} ].
 admitted.
 
 

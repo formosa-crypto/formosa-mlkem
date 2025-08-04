@@ -161,8 +161,8 @@ proc sample_noise3_spec(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t Arr
   return (s,e, unlift_poly e2);
 }
 
-proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W8.t Array32.t) :
-    W8.t Array1184.t * W8.t Array2400.t = {
+proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array1152.t, seed : W8.t Array32.t) :
+    W8.t Array1184.t * W8.t Array1152.t = {
     var aux: W16.t Array256.t;
     var _N : int;
     var spkp:W64.t;
@@ -224,8 +224,7 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array2400.t, seed : W
     pkpv <@Jkem768.M.__polyvec_add2 (pkpv,e);
     pkpv <@Jkem768.M.__polyvec_reduce (pkpv);
 
-    aux_0 <@ M.__i_polyvec_tobytes(Array1152.init (fun (i_0 : int) => sk.[0 + i_0]), skpv);
-    sk <- Array2400.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1152 then aux_0.[i_0 - 0] else sk.[i_0]);
+    sk <@ M.__i_polyvec_tobytes(sk, skpv);
     aux_0 <@ M.__i_polyvec_tobytes(Array1152.init (fun (i_0 : int) => pk.[0 + i_0]), pkpv);
     pk <- Array1184.init (fun (i_0 : int) => if 0 <= i_0 < 0 + 1152 then aux_0.[i_0 - 0] else pk.[i_0]);
     _aux <- 32 %/ 8;
@@ -1068,7 +1067,7 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
                 pos_bound768_cxq skpv{1} 0 768 2
                 ); last first.
 
-+ wp 7 3; while{1} (0<=i{1} <= _aux{1} /\ _aux{1} = 4 /\
++ wp 6 3; while{1} (0<=i{1} <= _aux{1} /\ _aux{1} = 4 /\
             rho{2} = publicseed{1} /\
              sv{2} = Array1152.init (fun i => sk0{1}.[i]) /\
              tv{2} =  Array1152.init (fun i => pk0{1}.[i])  /\ 
@@ -1097,8 +1096,8 @@ seq 11 3 : (#{/~signed_bound768_cxq skpv{1} 0 768 1}
   wp; ecall {1} (polyvec_tobytes_corr skpv{1}).
   auto => /> &1 ???.
   do split.
-  + rewrite tP => k kb; rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifT 1:/# /=.
-     by rewrite /encode12_vec initiE 1:/# /=; do congr;rewrite toipolivec_lift.
+  + rewrite tP => k kb; rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+     by rewrite /encode12_vec /=; do congr;rewrite toipolivec_lift.
   + rewrite tP => k kb; rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifT 1:/# /=.
      by rewrite /encode12_vec initiE 1:/# /=; do congr;rewrite toipolivec_lift.
   + by smt().

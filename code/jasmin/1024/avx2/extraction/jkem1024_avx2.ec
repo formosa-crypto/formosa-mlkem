@@ -7,12 +7,12 @@ import SLH64.
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
 Array32 Array33 Array64 Array128 Array160 Array192 Array196 Array224 Array256
-Array384 Array396 Array400 Array536 Array800 Array1024 Array1410 Array1536
-Array1568 Array1600 Array2048 Array2144 Array3168 Array4096 WArray1 WArray2
-WArray4 WArray8 WArray16 WArray32 WArray33 WArray64 WArray128 WArray160
-WArray192 WArray200 WArray224 WArray256 WArray384 WArray512 WArray536
-WArray800 WArray1410 WArray1536 WArray1568 WArray1600 WArray2048 WArray2144
-WArray3168 WArray8192.
+Array384 Array396 Array400 Array536 Array800 Array1024 Array1408 Array1410
+Array1536 Array1568 Array1600 Array2048 Array2144 Array3168 Array4096 WArray1
+WArray2 WArray4 WArray8 WArray16 WArray32 WArray33 WArray64 WArray128
+WArray160 WArray192 WArray200 WArray224 WArray256 WArray384 WArray512
+WArray536 WArray800 WArray1408 WArray1410 WArray1536 WArray1568 WArray1600
+WArray2048 WArray2144 WArray3168 WArray8192.
 
 abbrev gen_matrix_indexes =
 ((Array64.of_list witness)
@@ -8969,9 +8969,9 @@ module M = {
     }
     return r;
   }
-  proc __i_polyvec_decompress (rp:W8.t Array1568.t) : W16.t Array1024.t = {
+  proc __i_polyvec_decompress (r:W16.t Array1024.t, rp:W8.t Array1408.t) : 
+  W16.t Array1024.t = {
     var inc:int;
-    var r:W16.t Array1024.t;
     var x16p:W16.t Array16.t;
     var q:W256.t;
     var x32s:W8.t Array32.t;
@@ -8986,7 +8986,6 @@ module M = {
     var i:int;
     var k:int;
     var f:W256.t;
-    r <- witness;
     x16p <- witness;
     x16s <- witness;
     x32s <- witness;
@@ -9009,7 +9008,7 @@ module M = {
       i <- 0;
       while ((i < inc)) {
         f <-
-        (get256_direct (WArray1568.init8 (fun i_0 => rp.[i_0]))
+        (get256_direct (WArray1408.init8 (fun i_0 => rp.[i_0]))
         ((352 * k) + (22 * i)));
         f <- (VPERMQ f (W8.of_int 148));
         f <- (VPSHUFB_256 f shufbidx);
@@ -9594,9 +9593,9 @@ module M = {
     }
     return matrix;
   }
-  proc __indcpa_keypair (pk:W8.t Array1568.t, sk:W8.t Array3168.t,
+  proc __indcpa_keypair (pk:W8.t Array1568.t, sk:W8.t Array1536.t,
                          randomnessp:W8.t Array32.t) : W8.t Array1568.t *
-                                                       W8.t Array3168.t = {
+                                                       W8.t Array1536.t = {
     var aux:W16.t Array256.t;
     var aux_0:W16.t Array256.t;
     var aux_1:W16.t Array256.t;
@@ -9743,14 +9742,7 @@ module M = {
     pkpv <@ __polyvec_add2 (pkpv, e);
     pkpv <@ __polyvec_reduce (pkpv);
     (* Erased call to unspill *)
-    aux_3 <@ __i_polyvec_tobytes ((Array1536.init (fun i_0 => sk.[(0 + i_0)])
-                                  ),
-    skpv);
-    sk <-
-    (Array3168.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then aux_3.[(i_0 - 0)] else 
-                sk.[i_0]))
-    );
+    sk <@ __i_polyvec_tobytes (sk, skpv);
     aux_3 <@ __i_polyvec_tobytes ((Array1536.init (fun i_0 => pk.[(0 + i_0)])
                                   ),
     pkpv);
@@ -9941,7 +9933,8 @@ module M = {
     skpv <- witness;
     t <- witness;
     v <- witness;
-    bp <@ __i_polyvec_decompress (ct);
+    bp <@ __i_polyvec_decompress (bp,
+    (Array1408.init (fun i => ct.[(0 + i)])));
     v <@ _i_poly_decompress (v,
     (Array160.init (fun i => ct.[((4 * 352) + i)])));
     skpv <@ __i_polyvec_frombytes (sk);
@@ -10003,6 +9996,8 @@ module M = {
   proc __crypto_kem_keypair_jazz (pk:W8.t Array1568.t, sk:W8.t Array3168.t,
                                   randomnessp:W8.t Array64.t) : W8.t Array1568.t *
                                                                 W8.t Array3168.t = {
+    var aux_0:W8.t Array1536.t;
+    var aux:W8.t Array1568.t;
     var inc:int;
     var s_randomnessp:W8.t Array64.t;
     var randomnessp1:W8.t Array32.t;
@@ -10020,7 +10015,14 @@ module M = {
     s_skp <- witness;
     s_randomnessp <- randomnessp;
     randomnessp1 <- (Array32.init (fun i_0 => randomnessp.[(0 + i_0)]));
-    (pk, sk) <@ __indcpa_keypair (pk, sk, randomnessp1);
+    (aux, aux_0) <@ __indcpa_keypair (pk,
+    (Array1536.init (fun i_0 => sk.[(0 + i_0)])), randomnessp1);
+    pk <- aux;
+    sk <-
+    (Array3168.init
+    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then aux_0.[(i_0 - 0)] else 
+                sk.[i_0]))
+    );
     s_pkp <- pk;
     inc <- (((4 * 384) + 32) %/ 8);
     i <- 0;

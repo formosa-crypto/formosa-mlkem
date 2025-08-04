@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 
-from JazzEC require import Jkem768_avx2 Jkem768_avx2_stack.
+from JazzEC require import Jkem768_avx2 Jkem768_avx2.
 
 require import MLKEM_InnerPKE_avx2.
 
@@ -313,7 +313,7 @@ module Mix = {
   
 }.
 
-equiv mlkem_correct_kg_avx2_stack_mix  : 
+equiv mlkem_correct_kg_avx2_mix  : 
  M.__indcpa_keypair  ~ Mix.__indcpa_keypair  : ={arg} ==> ={res}
  by sim.
 
@@ -330,24 +330,24 @@ by unroll for {1} ^while; unroll for {2} ^while; sim.
 qed.
 
 
-equiv mlkem_correct_enc_avx2_stack_mix  : 
+equiv mlkem_correct_enc_avx2_mix  : 
  M.__indcpa_enc  ~ Mix.__indcpa_enc  : ={arg} ==> ={res}.
 proc => /=. 
 sim (M._poly_invntt ~ Jkem768_avx2.M._poly_invntt : (true)).
 by apply aux_invntt.
 qed.
 
-equiv mlkem_correct_dec_avx2_stack_mix  : 
+equiv mlkem_correct_dec_avx2_mix  : 
  M.__indcpa_dec  ~ Mix.__indcpa_dec  : ={arg} ==> ={res}.
 proc => /=. 
 sim (M._poly_invntt ~ Jkem768_avx2.M._poly_invntt : (true)); by apply aux_invntt.
 qed.
 
-require import MLKEMFCLib MLKEM_PolyPolyVec_stack_bridges.
+require import MLKEMFCLib MLKEM_PolyPolyVec_bridges.
 
 
 import InnerPKE768.
-equiv mlkem_correct_kg_avx2_stack  : 
+equiv mlkem_correct_kg_avx2  : 
 M.__indcpa_keypair  ~ InnerPKE768.kg_derand :
 arg{1}.`3 = arg{2} ==> 
     res{2}.`2 = Array1152.init ("_.[_]" res{1}.`2) /\
@@ -360,7 +360,7 @@ transitivity {1} {r <@ Mix.__indcpa_keypair(pk,sk,randomnessp); }
     r{2}.`2 = Array1152.init ("_.[_]" r{1}.`2) /\
     r{2}.`1.`1 = (init (fun (i : int) => r{1}.`1.[i]))%Array1152 /\
     r{2}.`1.`2 = (init (fun (i : int) => r{1}.`1.[i + 1152]))%Array32);1,2:smt().
-+ by call mlkem_correct_kg_avx2_stack_mix;auto.
++ by call mlkem_correct_kg_avx2_mix;auto.
 
 
 pose _pkp := W64.of_int 0.
@@ -405,7 +405,7 @@ seq 2 1 :
   (#{/~Glob.mem{2} = witness}{~sk0{1}=sk{1}}pre /\
   Glob.mem{2} = stores witness (384 * 3 + 32) (take 1152 (to_list sk0{1}))).
 + wp;conseq />.
-  call (polyvec_to_bytes_stack_equiv (witness<: global_mem_t>) 1184 _).
+  call (polyvec_to_bytes_equiv (witness<: global_mem_t>) 1184 _).
   auto => /> &1 ? /= rr; congr.
   apply (eq_from_nth witness).
   + by rewrite !size_take 1,2:/# !size_to_list /=.
@@ -417,7 +417,7 @@ seq 2 1 :
   Glob.mem{2} = stores (stores witness (384 * 3 + 32) (take 1152 (to_list sk0{1}))) 0 (take 1152 (to_list pk0{1}))).
 + wp;conseq />.
   exlim (stores witness (384 * 3 + 32) (take 1152 (to_list sk0{1}))) => memp.
-  call (polyvec_to_bytes_stack_equiv memp 0).
+  call (polyvec_to_bytes_equiv memp 0).
   auto => /> &1 ? rr;congr.
   apply (eq_from_nth witness).
   + by rewrite !size_take 1,2:/# !size_to_list /=.
@@ -472,7 +472,7 @@ qed.
 
 
 
-equiv mlkem_correct_enc_avx2_stack  : 
+equiv mlkem_correct_enc_avx2  : 
 M.__indcpa_enc  ~ InnerPKE768.enc_derand :
 arg{1}.`2 = arg{2}.`2 /\ arg{1}.`4 = arg{2}.`3 /\
    Array1152.init(fun i => arg{1}.`3.[i]) = arg{2}.`1.`1 /\
@@ -487,7 +487,7 @@ transitivity {1} {r <@ Mix.__indcpa_enc(ct, msgp, pk, noiseseed); }
    Array32.init(fun i => pk{1}.[i+1152]) = pk{2}.`2 ==>
    Array960.init(fun i => r{1}.[i]) = r{2}.`1 /\
    Array128.init(fun i => r{1}.[i+960]) = r{2}.`2);1,2:smt().
-+ by call mlkem_correct_enc_avx2_stack_mix;auto.
++ by call mlkem_correct_enc_avx2_mix;auto.
 
 pose _pkp := W64.of_int 0.
 
@@ -517,7 +517,7 @@ seq 12 12 : (#pre /\ ={aat,noiseseed0,bp,ep,epp,k,lnoiseseed,pkpv,publicseed,s_n
 
 seq 1 1 : #pre.
 + conseq />. 
-  call polyvec_from_bytes_stack_equiv.
+  call polyvec_from_bytes_equiv.
   auto => /> &2.
   rewrite /load_array1152 /load_array1184 tP => ??.
   by rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
@@ -545,7 +545,7 @@ by apply aux_invntt2.
 qed.
 
 
-equiv mlkem_correct_dec_avx2_stack  : 
+equiv mlkem_correct_dec_avx2  : 
 M.__indcpa_dec  ~ InnerPKE768.dec :
 arg{1}.`3 = arg{2}.`1 /\ 
 Array960.init(fun i => arg{1}.`2.[i]) = arg{2}.`2.`1 /\
@@ -558,7 +558,7 @@ transitivity {1} {r <@ Mix.__indcpa_dec(msgp, ct, sk); }
 Array960.init(fun i => ct{1}.[i]) = cph{2}.`1 /\
 Array128.init(fun i => ct{1}.[i+960]) = cph{2}.`2  ==>
    ={r});1,2:smt().
-+ by call mlkem_correct_dec_avx2_stack_mix;auto.
++ by call mlkem_correct_dec_avx2_mix;auto.
 
 pose _skp := W64.of_int 0.
 pose _ctp1 := W64.of_int 1152.
@@ -594,9 +594,9 @@ inline {1} 1; inline {2} 1.
 sp 3 3.
 seq 5 5 : (#pre /\ ={bp,mp,skpv,t,v}); 1: by conseq />;sim.
 sim 3 4 (Jkem768_avx2.M._poly_invntt ~ Jkem768_avx2.M._poly_invntt : (true)); 2: by apply aux_invntt2.
-wp;call polyvec_from_bytes_stack_equiv => /=.
-wp;call poly_decompress_stack_equiv.
-wp;call polyvec_decompress_stack_equiv.
+wp;call polyvec_from_bytes_equiv => /=.
+wp;call poly_decompress_equiv.
+wp;call polyvec_decompress_equiv.
 by auto => /> &1 &2;rewrite /load_array128 /load_array960 /load_array1088;
  rewrite tP => k kb; rewrite !initiE 1,2:/# /= initiE /#.
 qed.
