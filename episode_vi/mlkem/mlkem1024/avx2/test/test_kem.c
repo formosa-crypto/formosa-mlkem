@@ -7,6 +7,14 @@
 
 #define COUNT 10000
 
+#include <openssl/rand.h>
+
+uint8_t* __jasmin_syscall_randombytes__(uint8_t* dest, uint64_t length_in_bytes)
+{
+  RAND_bytes((unsigned char*)dest, (int)length_in_bytes);
+  return dest;
+}
+
 int main(void)
 {
   unsigned char sk0[KYBER_SECRETKEYBYTES];
@@ -22,6 +30,8 @@ int main(void)
   unsigned char randomness1[2*KYBER_SYMBYTES];
 
   for(unsigned int count = 0; count < COUNT; count++) {
+
+    /* DERANDOMIZED INTERFACE*/
 
     FILE *urandom = fopen("/dev/urandom", "r");
     fread(randomness0, 2*KYBER_SYMBYTES, 1, urandom);
@@ -70,7 +80,23 @@ int main(void)
 
     for(int i=0;i<KYBER_SSBYTES;i++)
       if(shk0[i] != shk1[i]) printf("error crypto_kem_dec (fail): %d %d %d\n", i, shk0[i], shk1[i]);
+    
+
+    /* Randomized Interface */
+
+    /* TEST KEYPAIR */
+    jade_kem_mlkem_mlkem1024_amd64_avx2_keypair(pk1, sk1);
+
+    /* TEST ENCAPSULATION */
+    jade_kem_mlkem_mlkem1024_amd64_avx2_enc(ct1, shk1, pk1);
+
+    /* TEST DECAPSULATION */
+    jade_kem_mlkem_mlkem1024_amd64_avx2_dec(shk0, ct1, sk1);
+
+    for(int i=0;i<KYBER_SSBYTES;i++)
+      if(shk0[i] != shk1[i]) printf("error crypto_kem_dec (suc): %d %d %d\n", i, shk0[i], shk1[i]);
+
+    
   }
-  
   return 0;
 }

@@ -26,10 +26,10 @@ SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
 
 
 test/test_kem: test/test_kem.c $(JINC) $(SOURCES) jkem.s
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $< -lcrypto 
 
 test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
-	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $< -lcrypto
 
 jkem.s: $(JINC) jkem.jazz
 	$(JASMINC) -o jkem.s $(JFLAGS) jkem.jazz

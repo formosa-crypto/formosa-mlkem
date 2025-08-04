@@ -7,6 +7,14 @@
 #include "../../../../../code/kyber/ref/kem.h"
 #include "../include/api.h"
 
+#include <openssl/rand.h>
+
+uint8_t* __jasmin_syscall_randombytes__(uint8_t* dest, uint64_t length_in_bytes)
+{
+  RAND_bytes((unsigned char*)dest, (int)length_in_bytes);
+  return dest;
+}
+
 #define NRUNS 10000
 
 static inline uint64_t cpucycles(void) {
