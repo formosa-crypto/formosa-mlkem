@@ -17660,9 +17660,67 @@ reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64) {
   reg bool _zf_;
   
   _ /* u64 */ = #init_msf(); /* :k */
+  public_key = public_key; /* u8[MLKEM_PUBLICKEYBYTES] */
   #[inline]
   (ciphertext, shared_secret) =
     __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, coins);
+  (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
+  return (ciphertext, shared_secret, r);
+}
+
+#[sct="\n{ ptr: transient, val: secret } \195\151\n{ ptr: transient, val: secret } \226\134\146\n{ ptr: public, val: secret } \195\151\n{ ptr: public, val: secret } \195\151\npublic\n"]
+export
+fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair (#[secret]
+                                               reg mut ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+                                               #[secret]
+                                               reg mut ptr u8[MLKEM_SECRETKEYBYTES] secret_key) -> 
+(#[secret] reg mut ptr u8[MLKEM_PUBLICKEYBYTES], #[secret]
+reg mut ptr u8[MLKEM_SECRETKEYBYTES], #[public] reg u64) {
+  reg u64 r;
+  reg mut ptr u8[(MLKEM_SYMBYTES * 2)] randomnessp;
+  stack u8[(MLKEM_SYMBYTES * 2)] randomness;
+  reg bool _of_;
+  reg bool _cf_;
+  reg bool _sf_;
+  reg bool _zf_;
+  
+  public_key = public_key; /* u8[MLKEM_PUBLICKEYBYTES] */
+  secret_key = secret_key; /* u8[MLKEM_SECRETKEYBYTES] */
+  randomnessp = randomness; /* u8[(MLKEM_SYMBYTES * 2)] */
+  randomnessp = #randombytes(randomnessp);
+  #[inline]
+  (public_key, secret_key) =
+    __crypto_kem_keypair_jazz(public_key, secret_key, randomnessp);
+  (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
+  return (public_key, secret_key, r);
+}
+
+#[sct="\n{ ptr: transient, val: secret } \195\151\n{ ptr: transient, val: secret } \195\151\n{ ptr: transient, val: secret } \226\134\146\n{ ptr: public, val: secret } \195\151\n{ ptr: public, val: secret } \195\151\npublic\n"]
+export
+fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc (#[secret]
+                                           reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+                                           #[secret]
+                                           reg mut ptr u8[MLKEM_SYMBYTES] shared_secret,
+                                           #[secret]
+                                           reg const ptr u8[MLKEM_PUBLICKEYBYTES] public_key) -> 
+(#[secret] reg mut ptr u8[MLKEM_CIPHERTEXTBYTES], #[secret]
+reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64) {
+  reg u64 r;
+  reg mut ptr u8[MLKEM_SYMBYTES] randomnessp;
+  stack u8[MLKEM_SYMBYTES] randomness;
+  reg bool _of_;
+  reg bool _cf_;
+  reg bool _sf_;
+  reg bool _zf_;
+  
+  ciphertext = ciphertext; /* u8[MLKEM_CIPHERTEXTBYTES] */
+  shared_secret = shared_secret; /* u8[MLKEM_SYMBYTES] */
+  public_key = public_key; /* u8[MLKEM_PUBLICKEYBYTES] */
+  randomnessp = randomness; /* u8[MLKEM_SYMBYTES] */
+  randomnessp = #randombytes(randomnessp);
+  #[inline]
+  (ciphertext, shared_secret) =
+    __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomnessp);
   (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
   return (ciphertext, shared_secret, r);
 }
