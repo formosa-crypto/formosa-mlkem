@@ -144,7 +144,7 @@ fn __indcpa_dec(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg ptr u8[MLKEM_CIPHERT
   stack u16[MLKEM_N] t v mp;
   stack u16[MLKEM_VECN] bp skpv;
 
-  bp = __i_polyvec_decompress(bp,ct[0:MLKEM_POLYVECCOMPRESSEDBYTES]);
+  bp = __i_polyvec_decompress(bp,ct);
   v = _i_poly_decompress(v, ct[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES]);
 
   skpv = __i_polyvec_frombytes(sk);

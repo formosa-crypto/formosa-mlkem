@@ -9,11 +9,15 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
   reg ptr u8[MLKEM_SYMBYTES] randomnessp1;
   reg u64 t64;
   inline int i;
+  stack ptr u8[MLKEM_SECRETKEYBYTES] sk_s;
+  reg ptr u8[MLKEM_POLYVECBYTES] skcpa;
 
   s_randomnessp = randomnessp;
 
   randomnessp1 = randomnessp[0:MLKEM_SYMBYTES];
-  pk, sk = __indcpa_keypair(pk, sk, randomnessp1);
+  skcpa = sk[0:MLKEM_POLYVECBYTES]; sk_s = sk;
+  pk, skcpa = __indcpa_keypair(pk, skcpa, randomnessp1);
+  sk = sk_s; sk[0:MLKEM_POLYVECBYTES] = skcpa;
 
   for i = 0 to MLKEM_INDCPA_PUBLICKEYBYTES/8
   {
