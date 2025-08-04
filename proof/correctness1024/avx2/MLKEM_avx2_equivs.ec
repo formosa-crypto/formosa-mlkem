@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
-from JazzEC require import Array1536 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8.
+from JazzEC require import Array1536 Array1568 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8.
 from JazzEC require import WArray512 WArray32 WArray16.
 
 require import AVX2_Ops W16extra.
@@ -38,7 +38,7 @@ import MLKEM_PolyAVXVec.
 import MLKEM_PolyVecAVXVec.
 lemma polyvec_decompress_equiv  :
     equiv [Jkem1024_avx2.M.__i_polyvec_decompress ~  Jkem1024.M.__i_polyvec_decompress  :
-             arg{1}=arg{2}
+             Array1408.init(fun i => arg{1}.`2.[i]) =arg{2}.`2
               ==>
              lift_array1024 res{1} = lift_array1024 res{2} /\
              pos_bound1024_cxq res{1} 0 1024 1 /\
@@ -74,7 +74,7 @@ admitted.
 
 lemma polyvec_frombytes_equiv :
     equiv [Jkem1024_avx2.M.__i_polyvec_frombytes ~Jkem1024.M.__i_polyvec_frombytes :
-             ={ap} ==>
+             a{1}=ap{2} ==>
              lift_array1024 res{1} = nttunpackv (lift_array1024 res{2}) /\
              pos_bound1024_cxq res{1} 0 1024 2 /\
              pos_bound1024_cxq res{2} 0 1024 2 ].

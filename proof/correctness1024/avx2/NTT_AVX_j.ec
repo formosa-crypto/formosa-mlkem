@@ -775,19 +775,28 @@ Jkem1024_avx2.M._poly_ntt ~ Tmp._ntt:
  ={rp} ==> ={res}.
 proof.
 proc.
-seq 13 12: (={rp,r0,r1,r2,r3,r4,r5,r6,r7,zetasp,zeta0,zeta1,qx16}).
+sp 0 1.
+seq 11 11: (#pre /\ ={r0,r1,r2,r3,r4,r5,r6,r7,zeta0,zeta1,qx16}).
  by wp; skip => &1 &2; rewrite !P2RE //. 
 seq 1 1: #pre.
- by sim.
+ by conseq />; sim.
 seq 16 16: #pre.
  by wp; skip => /> &m; rewrite !P2RE // !PURE //.
 seq 1 1: #pre.
- by sim.
+ by conseq />;sim.
 seq 5 5: (0 <= i{2} /\ ={i} /\ #pre).
  by wp; skip => /> &m; rewrite !PURE //.
 while (#pre).
- seq 7 7: (#pre).
-  by auto => /> *; rewrite !P2RE /#.
+ seq 7 7: (#pre). 
+ case (i{1} = 0).
+ + rcondt{1} ^if; 1 : by auto. 
+   rcondt{2} ^if; 1 : by auto. 
+   by auto => /> *; rewrite !P2RE /#.
+ + rcondf{1} ^if; 1 : by auto. 
+   rcondf{2} ^if; 1 : by auto. 
+   auto => /> *; do split;1..8: by rewrite /zetas_op !P2RE //= /#. 
+   rewrite /zetas_op /= /z2u32 /=; do congr; smt().
+   rewrite /zetas_op /= /z2u32 /=; do congr; smt().
  seq 1 1: (#pre).
   by conseq />; sim.
  seq 2 2: (#pre).
@@ -823,32 +832,38 @@ Jkem1024_avx2.M._poly_invntt ~ Tmp._invntt:
  ={rp} ==> ={res}.
 proof.
 proc.
-seq 4 3: (i{2}=0 /\ ={i,rp,zetasp,qx16}).
+sp 0 1.
+seq 2 2: (i{2}=0 /\ ={i,rp,qx16} /\ zetasp{2} = zetas_inv_op).
  by wp; skip => &1 &2; rewrite /C2R //.
 seq 4 4: (#pre /\ ={r0,r2,r4,r6,zeta0,zeta1}).
  wp; while (0 <= i{2} /\ #[/2:]pre /\ (i{2}=0 \/ ={r0,r2,r4,r6})).
   seq 12 12: (i{2} < 2 /\ #[/:5]pre /\ ={r0,r1,r2,r3,r4,r5,r6,r7,zeta0,zeta1,zeta2,zeta3}).
-   by auto => /> *; rewrite /z2u256 !mulrDr !mulrA !P2RE /#.
+   auto => /> *; do split;1..8: by rewrite /zetas_op !P2RE //= /#. 
+   rewrite /zetas_inv_op /= /z2u256 /=;  smt().
+   rewrite /zetas_inv_op /= /z2u256 /=; smt().
+   rewrite /zetas_inv_op /= /z2u256 /=;  smt().
+   rewrite /zetas_inv_op /= /z2u256 /=; smt().
+
   seq 1 1: (#pre).
    by conseq />; sim.
   seq 3 3: (#pre /\ ={vx16}).
-   by auto => /> *; rewrite /z2u256 !mulrDr !mulrA /#.
+   auto => /> *; rewrite /zetas_inv_op /= /z2u256 !mulrDr !mulrA /#.
   seq 9 9: (#pre).
    by conseq />; sim.
   seq 2 2: (#pre).
-   by auto => /> *; rewrite /z2u256 !mulrDr !mulrA /#.
+   by auto => /> *; rewrite /zetas_inv_op /=/z2u256 !mulrDr !mulrA /#.
   seq 6 6: (#pre).
    by conseq />; sim.
   seq 2 2: (#pre).
-   by auto => /> *; rewrite /z2u256 !mulrDr !mulrA /#.
+   by auto => /> *; rewrite /zetas_inv_op /= /z2u256 !mulrDr !mulrA /#.
   seq 6 6: (#pre).
    by conseq />; sim.
   seq 2 2: (#pre).
-   by auto => /> *; rewrite /z2u256 !mulrDr !mulrA /#.
+   by auto => /> *; rewrite/zetas_inv_op /= /z2u256 !mulrDr !mulrA /#.
   seq 6 6: (#pre).
    by conseq />; sim.
   seq 2 2: (#pre).
-   by auto => /> *; rewrite /z2u32 /#. 
+   by auto => /> *; rewrite /zetas_inv_op /= /z2u32 /#. 
   seq 2 2: (#pre).
    by conseq />; sim.
   if => //.

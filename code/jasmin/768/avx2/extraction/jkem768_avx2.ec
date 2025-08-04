@@ -6,13 +6,13 @@ import SLH64.
 
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
-Array32 Array33 Array64 Array128 Array136 Array144 Array148 Array224 Array256
-Array300 Array384 Array400 Array536 Array768 Array800 Array960 Array1024
-Array1088 Array1120 Array1152 Array1184 Array2048 Array2144 Array2304
-Array2400 WArray1 WArray2 WArray4 WArray8 WArray16 WArray32 WArray33 WArray64
-WArray128 WArray160 WArray192 WArray200 WArray224 WArray256 WArray384
-WArray512 WArray536 WArray800 WArray960 WArray1088 WArray1120 WArray1152
-WArray1184 WArray1536 WArray2048 WArray2144 WArray2400 WArray4608.
+Array32 Array33 Array64 Array128 Array136 Array148 Array224 Array256 Array300
+Array384 Array400 Array536 Array768 Array800 Array960 Array1024 Array1088
+Array1120 Array1152 Array1184 Array2048 Array2144 Array2304 Array2400 WArray1
+WArray2 WArray4 WArray8 WArray16 WArray32 WArray33 WArray64 WArray128
+WArray160 WArray192 WArray200 WArray224 WArray256 WArray384 WArray512
+WArray536 WArray800 WArray960 WArray1088 WArray1120 WArray1152 WArray1184
+WArray1536 WArray2048 WArray2144 WArray2400 WArray4608.
 
 abbrev gen_matrix_indexes =
 ((Array32.of_list witness)
@@ -6775,7 +6775,6 @@ module M = {
     offset <- (W64.of_int 0);
     (out0, out1, out2, out3,  _4, st) <@ a128____squeeze_array_avx2x4 (
     out0, out1, out2, out3, offset, 128, st, 136);
-    st_s <- st;
     return (out0, out1, out2, out3);
   }
   proc _shake128_absorb_A32_A2 (seed:W8.t Array32.t, pos:W8.t Array2.t) : 
@@ -7216,7 +7215,6 @@ module M = {
   }
   proc _i_poly_frombytes (rp:W16.t Array256.t, ap:W8.t Array384.t) : 
   W16.t Array256.t = {
-    var maskp:W16.t Array16.t;
     var mask:W256.t;
     var i:int;
     var t0:W256.t;
@@ -7232,9 +7230,7 @@ module M = {
     var t9:W256.t;
     var t10:W256.t;
     var t11:W256.t;
-    maskp <- witness;
-    maskp <- maskx16;
-    mask <- (get256 (WArray32.init16 (fun i_0 => maskp.[i_0])) 0);
+    mask <- (get256 (WArray32.init16 (fun i_0 => maskx16.[i_0])) 0);
     i <- 0;
     while ((i < 2)) {
       t0 <-
@@ -7334,19 +7330,14 @@ module M = {
   }
   proc _poly_frommont (rp:W16.t Array256.t) : W16.t Array256.t = {
     var inc:int;
-    var x16p:W16.t Array16.t;
     var qx16:W256.t;
     var qinvx16:W256.t;
     var dmontx16:W256.t;
     var i:int;
     var t:W256.t;
-    x16p <- witness;
-    x16p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
-    x16p <- jqinvx16;
-    qinvx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
-    x16p <- jdmontx16;
-    dmontx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
+    qinvx16 <- (get256 (WArray32.init16 (fun i_0 => jqinvx16.[i_0])) 0);
+    dmontx16 <- (get256 (WArray32.init16 (fun i_0 => jdmontx16.[i_0])) 0);
     inc <- (256 %/ 16);
     i <- 0;
     while ((i < inc)) {
@@ -7361,7 +7352,6 @@ module M = {
     return rp;
   }
   proc _i_poly_frommsg (rp:W16.t Array256.t, ap:W8.t Array32.t) : W16.t Array256.t = {
-    var x16p:W16.t Array16.t;
     var hqs:W256.t;
     var shift:W256.t;
     var idx:W256.t;
@@ -7375,9 +7365,7 @@ module M = {
     var h2:W256.t;
     var h1:W256.t;
     var h3:W256.t;
-    x16p <- witness;
-    x16p <- hqx16_p1;
-    hqs <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
+    hqs <- (get256 (WArray32.init16 (fun i_0 => hqx16_p1.[i_0])) 0);
     shift <-
     (VPBROADCAST_2u128
     (get128 (WArray16.init32 (fun i_0 => pfm_shift_s.[i_0])) 0));
@@ -7529,6 +7517,7 @@ module M = {
     var buf3_s:W8.t Array128.t;
     var buf3:W8.t Array128.t;
     var nonces:W8.t Array4.t;
+    var  _0:W64.t;
     buf0 <- witness;
     buf0_s <- witness;
     buf1 <- witness;
@@ -7552,6 +7541,7 @@ module M = {
     nonces.[3] <- nonce;
     (buf0, buf1, buf2, buf3) <@ _shake256x4_A128__A32_A1 (buf0, buf1, 
     buf2, buf3, seed, nonces);
+     _0 <- (init_msf);
     (* Erased call to unspill *)
     r0 <@ __poly_cbd_eta1 (r0, buf0);
     r1 <@ __poly_cbd_eta1 (r1, buf1);
@@ -7597,7 +7587,6 @@ module M = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   proc _poly_invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp:W16.t Array400.t;
     var qx16:W256.t;
     var i:int;
     var zeta0:W256.t;
@@ -7615,22 +7604,20 @@ module M = {
     var vx16:W256.t;
     var flox16:W256.t;
     var fhix16:W256.t;
-    zetasp <- witness;
-    zetasp <- jzetas_inv_exp;
     qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     i <- 0;
     while ((i < 2)) {
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (0 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (64 + (392 * i)));
       zeta2 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (32 + (392 * i)));
       zeta3 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (96 + (392 * i)));
       r0 <-
       (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
@@ -7660,10 +7647,10 @@ module M = {
       r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
       vx16 <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (128 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (160 + (392 * i)));
       r0 <@ __red16x (r0, qx16, vx16);
       r1 <@ __red16x (r1, qx16, vx16);
@@ -7676,10 +7663,10 @@ module M = {
       (r4, r5) <@ __shuffle1 (r4, r5);
       (r6, r7) <@ __shuffle1 (r6, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (192 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (224 + (392 * i)));
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, 
       r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -7689,10 +7676,10 @@ module M = {
       (r1, r3) <@ __shuffle2 (r1, r3);
       (r5, r7) <@ __shuffle2 (r5, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (256 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (288 + (392 * i)));
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __invntt___butterfly64x (r0, 
       r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -7702,10 +7689,10 @@ module M = {
       (r2, r6) <@ __shuffle4 (r2, r6);
       (r3, r7) <@ __shuffle4 (r3, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (320 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (352 + (392 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, 
       r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -7716,11 +7703,11 @@ module M = {
       (r6, r7) <@ __shuffle8 (r6, r7);
       zeta0 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (384 + (392 * i))));
       zeta1 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (388 + (392 * i))));
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, 
       r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -7773,10 +7760,10 @@ module M = {
     }
     zeta0 <-
     (VPBROADCAST_8u32
-    (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0])) 784));
+    (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0])) 784));
     zeta1 <-
     (VPBROADCAST_8u32
-    (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0])) 788));
+    (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0])) 788));
     i <- 0;
     while ((i < 2)) {
       if ((i = 0)) {
@@ -7906,7 +7893,6 @@ module M = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   proc _poly_ntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp:W16.t Array400.t;
     var qx16:W256.t;
     var zeta0:W256.t;
     var zeta1:W256.t;
@@ -7922,13 +7908,13 @@ module M = {
     var zeta2:W256.t;
     var zeta3:W256.t;
     var vx16:W256.t;
-    zetasp <- witness;
-    zetasp <- jzetas_exp;
     qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     zeta0 <-
-    (VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 0));
+    (VPBROADCAST_8u32
+    (get32 (WArray800.init16 (fun i_0 => jzetas_exp.[i_0])) 0));
     zeta1 <-
-    (VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 1));
+    (VPBROADCAST_8u32
+    (get32 (WArray800.init16 (fun i_0 => jzetas_exp.[i_0])) 1));
     r0 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 0));
     r1 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 1));
     r2 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 2));
@@ -8013,11 +7999,11 @@ module M = {
     while ((i < 2)) {
       zeta0 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (8 + (392 * i))));
       zeta1 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (12 + (392 * i))));
       if ((i = 0)) {
         r4 <- r0;
@@ -8053,10 +8039,10 @@ module M = {
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, 
       r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (16 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (48 + (392 * i)));
       (r0, r4) <@ __shuffle8 (r0, r4);
       (r1, r5) <@ __shuffle8 (r1, r5);
@@ -8065,10 +8051,10 @@ module M = {
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __butterfly64x (r0, r4, r1, 
       r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (80 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (112 + (392 * i)));
       (r0, r2) <@ __shuffle4 (r0, r2);
       (r4, r6) <@ __shuffle4 (r4, r6);
@@ -8077,10 +8063,10 @@ module M = {
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __butterfly64x (r0, r2, r4, 
       r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (144 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (176 + (392 * i)));
       (r0, r1) <@ __shuffle2 (r0, r1);
       (r2, r3) <@ __shuffle2 (r2, r3);
@@ -8089,10 +8075,10 @@ module M = {
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, 
       r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (208 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (240 + (392 * i)));
       (r0, r4) <@ __shuffle1 (r0, r4);
       (r1, r5) <@ __shuffle1 (r1, r5);
@@ -8101,16 +8087,16 @@ module M = {
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __butterfly64x (r0, r4, r1, 
       r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (272 + (392 * i)));
       zeta2 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (304 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (336 + (392 * i)));
       zeta3 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (368 + (392 * i)));
       (r0, r4, r2, r6, r1, r5, r3, r7) <@ __butterfly64x (r0, r4, r2, 
       r6, r1, r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
@@ -8209,8 +8195,6 @@ module M = {
   }
   proc _i_poly_tobytes (rp:W8.t Array384.t, a:W16.t Array256.t) : W8.t Array384.t *
                                                                   W16.t Array256.t = {
-    var jqx16_p:W16.t Array16.t;
-    var qx16:W256.t;
     var i:int;
     var t0:W256.t;
     var t1:W256.t;
@@ -8222,9 +8206,6 @@ module M = {
     var t7:W256.t;
     var tt:W256.t;
     var ttt:W256.t;
-    jqx16_p <- witness;
-    jqx16_p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16_p.[i_0])) 0);
     a <@ _poly_csubq (a);
     i <- 0;
     while ((i < 2)) {
@@ -8525,25 +8506,11 @@ module M = {
     }
     return r;
   }
-  proc __i_polyvec_frombytes (ap:W8.t Array1152.t) : W16.t Array768.t = {
+  proc __i_polyvec_frombytes (a:W8.t Array1152.t) : W16.t Array768.t = {
     var aux:W16.t Array256.t;
     var r:W16.t Array768.t;
-    var a:W8.t Array1152.t;
     var i:int;
-    a <- witness;
     r <- witness;
-    a <-
-    (Array1152.init
-    (fun i_0 => (get8
-                (WArray1152.init64
-                (fun i_0 => (copy_64
-                            (Array144.init
-                            (fun i_0 => (get64
-                                        (WArray1152.init8
-                                        (fun i_0 => ap.[i_0])) i_0))
-                            )).[i_0])
-                ) i_0))
-    );
     i <- 0;
     while ((i < 3)) {
       aux <@ _i_poly_frombytes ((Array256.init

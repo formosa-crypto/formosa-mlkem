@@ -6,13 +6,12 @@ import SLH64.
 
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
-Array32 Array33 Array64 Array128 Array160 Array192 Array196 Array224 Array256
-Array384 Array396 Array400 Array536 Array800 Array1024 Array1408 Array1410
-Array1536 Array1568 Array1600 Array2048 Array2144 Array3168 Array4096 WArray1
-WArray2 WArray4 WArray8 WArray16 WArray32 WArray33 WArray64 WArray128
-WArray160 WArray192 WArray200 WArray224 WArray256 WArray384 WArray512
-WArray536 WArray800 WArray1408 WArray1410 WArray1536 WArray1568 WArray1600
-WArray2048 WArray2144 WArray3168 WArray8192.
+Array32 Array33 Array64 Array128 Array160 Array196 Array224 Array256 Array384
+Array400 Array536 Array800 Array1024 Array1410 Array1536 Array1568 Array1600
+Array2048 Array2144 Array3168 Array4096 WArray1 WArray2 WArray4 WArray8
+WArray16 WArray32 WArray33 WArray64 WArray128 WArray160 WArray192 WArray200
+WArray224 WArray256 WArray384 WArray512 WArray536 WArray800 WArray1410
+WArray1536 WArray1568 WArray1600 WArray2048 WArray2144 WArray3168 WArray8192.
 
 abbrev gen_matrix_indexes =
 ((Array64.of_list witness)
@@ -7112,7 +7111,6 @@ module M = {
     pst_s <- witness;
     st <- witness;
     pst <- pst_s;
-    pst_s <- pst;
     (pst, st) <@ __pstate_init_avx2 (pst);
     offset <- (W64.of_int 0);
     (pst,  _0, st,  _1) <@ a32____pabsorb_array_avx2 (pst, 0, st, seed,
@@ -7156,7 +7154,6 @@ module M = {
     offset <- (W64.of_int 0);
     (out0, out1, out2, out3,  _4, st) <@ a128____squeeze_array_avx2x4 (
     out0, out1, out2, out3, offset, 128, st, 136);
-    st_s <- st;
     return (out0, out1, out2, out3);
   }
   proc _shake128x4_absorb_A32_A2 (st:W256.t Array25.t, seed:W8.t Array32.t,
@@ -7562,7 +7559,6 @@ module M = {
   }
   proc _i_poly_frombytes (rp:W16.t Array256.t, ap:W8.t Array384.t) : 
   W16.t Array256.t = {
-    var maskp:W16.t Array16.t;
     var mask:W256.t;
     var i:int;
     var t0:W256.t;
@@ -7578,9 +7574,7 @@ module M = {
     var t9:W256.t;
     var t10:W256.t;
     var t11:W256.t;
-    maskp <- witness;
-    maskp <- maskx16;
-    mask <- (get256 (WArray32.init16 (fun i_0 => maskp.[i_0])) 0);
+    mask <- (get256 (WArray32.init16 (fun i_0 => maskx16.[i_0])) 0);
     i <- 0;
     while ((i < 2)) {
       t0 <-
@@ -7680,19 +7674,14 @@ module M = {
   }
   proc _poly_frommont (rp:W16.t Array256.t) : W16.t Array256.t = {
     var inc:int;
-    var x16p:W16.t Array16.t;
     var qx16:W256.t;
     var qinvx16:W256.t;
     var dmontx16:W256.t;
     var i:int;
     var t:W256.t;
-    x16p <- witness;
-    x16p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
-    x16p <- jqinvx16;
-    qinvx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
-    x16p <- jdmontx16;
-    dmontx16 <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
+    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
+    qinvx16 <- (get256 (WArray32.init16 (fun i_0 => jqinvx16.[i_0])) 0);
+    dmontx16 <- (get256 (WArray32.init16 (fun i_0 => jdmontx16.[i_0])) 0);
     inc <- (256 %/ 16);
     i <- 0;
     while ((i < inc)) {
@@ -7707,7 +7696,6 @@ module M = {
     return rp;
   }
   proc _i_poly_frommsg (rp:W16.t Array256.t, ap:W8.t Array32.t) : W16.t Array256.t = {
-    var x16p:W16.t Array16.t;
     var hqs:W256.t;
     var shift:W256.t;
     var idx:W256.t;
@@ -7721,9 +7709,7 @@ module M = {
     var h2:W256.t;
     var h1:W256.t;
     var h3:W256.t;
-    x16p <- witness;
-    x16p <- hqx16_p1;
-    hqs <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
+    hqs <- (get256 (WArray32.init16 (fun i_0 => hqx16_p1.[i_0])) 0);
     shift <-
     (VPBROADCAST_2u128
     (get128 (WArray16.init32 (fun i_0 => pfm_shift_s.[i_0])) 0));
@@ -7888,6 +7874,7 @@ module M = {
     var buf3_s:W8.t Array128.t;
     var buf3:W8.t Array128.t;
     var nonces:W8.t Array4.t;
+    var  _0:W64.t;
     buf0 <- witness;
     buf0_s <- witness;
     buf1 <- witness;
@@ -7911,6 +7898,7 @@ module M = {
     nonces.[3] <- nonce;
     (buf0, buf1, buf2, buf3) <@ _shake256x4_A128__A32_A1 (buf0, buf1, 
     buf2, buf3, seed, nonces);
+     _0 <- (init_msf);
     (* Erased call to unspill *)
     r0 <@ __poly_cbd_eta1 (r0, buf0);
     r1 <@ __poly_cbd_eta1 (r1, buf1);
@@ -7956,7 +7944,6 @@ module M = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   proc _poly_invntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp:W16.t Array400.t;
     var qx16:W256.t;
     var i:int;
     var zeta0:W256.t;
@@ -7974,22 +7961,20 @@ module M = {
     var vx16:W256.t;
     var flox16:W256.t;
     var fhix16:W256.t;
-    zetasp <- witness;
-    zetasp <- jzetas_inv_exp;
     qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     i <- 0;
     while ((i < 2)) {
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (0 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (64 + (392 * i)));
       zeta2 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (32 + (392 * i)));
       zeta3 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (96 + (392 * i)));
       r0 <-
       (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0]))
@@ -8019,10 +8004,10 @@ module M = {
       r1, r4, r5, r2, r3, r6, r7, zeta0, zeta1, zeta2, zeta3, qx16);
       vx16 <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (128 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (160 + (392 * i)));
       r0 <@ __red16x (r0, qx16, vx16);
       r1 <@ __red16x (r1, qx16, vx16);
@@ -8035,10 +8020,10 @@ module M = {
       (r4, r5) <@ __shuffle1 (r4, r5);
       (r6, r7) <@ __shuffle1 (r6, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (192 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (224 + (392 * i)));
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, 
       r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -8048,10 +8033,10 @@ module M = {
       (r1, r3) <@ __shuffle2 (r1, r3);
       (r5, r7) <@ __shuffle2 (r5, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (256 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (288 + (392 * i)));
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __invntt___butterfly64x (r0, 
       r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -8061,10 +8046,10 @@ module M = {
       (r2, r6) <@ __shuffle4 (r2, r6);
       (r3, r7) <@ __shuffle4 (r3, r7);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (320 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (352 + (392 * i)));
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __invntt___butterfly64x (r0, 
       r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -8075,11 +8060,11 @@ module M = {
       (r6, r7) <@ __shuffle8 (r6, r7);
       zeta0 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (384 + (392 * i))));
       zeta1 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0]))
       (388 + (392 * i))));
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __invntt___butterfly64x (r0, 
       r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -8132,10 +8117,10 @@ module M = {
     }
     zeta0 <-
     (VPBROADCAST_8u32
-    (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0])) 784));
+    (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0])) 784));
     zeta1 <-
     (VPBROADCAST_8u32
-    (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0])) 788));
+    (get32_direct (WArray800.init16 (fun i_0 => jzetas_inv_exp.[i_0])) 788));
     i <- 0;
     while ((i < 2)) {
       if ((i = 0)) {
@@ -8265,7 +8250,6 @@ module M = {
     return (rl0, rl1, rl2, rl3, rh0, rh1, rh2, rh3);
   }
   proc _poly_ntt (rp:W16.t Array256.t) : W16.t Array256.t = {
-    var zetasp:W16.t Array400.t;
     var qx16:W256.t;
     var zeta0:W256.t;
     var zeta1:W256.t;
@@ -8281,13 +8265,13 @@ module M = {
     var zeta2:W256.t;
     var zeta3:W256.t;
     var vx16:W256.t;
-    zetasp <- witness;
-    zetasp <- jzetas_exp;
     qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     zeta0 <-
-    (VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 0));
+    (VPBROADCAST_8u32
+    (get32 (WArray800.init16 (fun i_0 => jzetas_exp.[i_0])) 0));
     zeta1 <-
-    (VPBROADCAST_8u32 (get32 (WArray800.init16 (fun i_0 => zetasp.[i_0])) 1));
+    (VPBROADCAST_8u32
+    (get32 (WArray800.init16 (fun i_0 => jzetas_exp.[i_0])) 1));
     r0 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 0));
     r1 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 1));
     r2 <- (get256_direct (WArray512.init16 (fun i_0 => rp.[i_0])) (32 * 2));
@@ -8372,11 +8356,11 @@ module M = {
     while ((i < 2)) {
       zeta0 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (8 + (392 * i))));
       zeta1 <-
       (VPBROADCAST_8u32
-      (get32_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get32_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (12 + (392 * i))));
       if ((i = 0)) {
         r4 <- r0;
@@ -8412,10 +8396,10 @@ module M = {
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, 
       r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (16 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (48 + (392 * i)));
       (r0, r4) <@ __shuffle8 (r0, r4);
       (r1, r5) <@ __shuffle8 (r1, r5);
@@ -8424,10 +8408,10 @@ module M = {
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __butterfly64x (r0, r4, r1, 
       r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (80 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (112 + (392 * i)));
       (r0, r2) <@ __shuffle4 (r0, r2);
       (r4, r6) <@ __shuffle4 (r4, r6);
@@ -8436,10 +8420,10 @@ module M = {
       (r0, r2, r4, r6, r1, r3, r5, r7) <@ __butterfly64x (r0, r2, r4, 
       r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (144 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (176 + (392 * i)));
       (r0, r1) <@ __shuffle2 (r0, r1);
       (r2, r3) <@ __shuffle2 (r2, r3);
@@ -8448,10 +8432,10 @@ module M = {
       (r0, r1, r2, r3, r4, r5, r6, r7) <@ __butterfly64x (r0, r1, r2, 
       r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (208 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (240 + (392 * i)));
       (r0, r4) <@ __shuffle1 (r0, r4);
       (r1, r5) <@ __shuffle1 (r1, r5);
@@ -8460,16 +8444,16 @@ module M = {
       (r0, r4, r1, r5, r2, r6, r3, r7) <@ __butterfly64x (r0, r4, r1, 
       r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
       zeta0 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (272 + (392 * i)));
       zeta2 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (304 + (392 * i)));
       zeta1 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (336 + (392 * i)));
       zeta3 <-
-      (get256_direct (WArray800.init16 (fun i_0 => zetasp.[i_0]))
+      (get256_direct (WArray800.init16 (fun i_0 => jzetas_exp.[i_0]))
       (368 + (392 * i)));
       (r0, r4, r2, r6, r1, r5, r3, r7) <@ __butterfly64x (r0, r4, r2, 
       r6, r1, r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
@@ -8568,8 +8552,6 @@ module M = {
   }
   proc _i_poly_tobytes (rp:W8.t Array384.t, a:W16.t Array256.t) : W8.t Array384.t *
                                                                   W16.t Array256.t = {
-    var jqx16_p:W16.t Array16.t;
-    var qx16:W256.t;
     var i:int;
     var t0:W256.t;
     var t1:W256.t;
@@ -8581,9 +8563,6 @@ module M = {
     var t7:W256.t;
     var tt:W256.t;
     var ttt:W256.t;
-    jqx16_p <- witness;
-    jqx16_p <- jqx16;
-    qx16 <- (get256 (WArray32.init16 (fun i_0 => jqx16_p.[i_0])) 0);
     a <@ _poly_csubq (a);
     i <- 0;
     while ((i < 2)) {
@@ -8702,7 +8681,6 @@ module M = {
   proc _i_poly_compress (rp:W8.t Array160.t, a:W16.t Array256.t) : W8.t Array160.t *
                                                                    W16.t Array256.t = {
     var inc:int;
-    var x16p:W16.t Array16.t;
     var v:W256.t;
     var shift1:W256.t;
     var mask:W256.t;
@@ -8715,10 +8693,8 @@ module M = {
     var f1:W256.t;
     var t0:W128.t;
     var t1:W128.t;
-    x16p <- witness;
     a <@ _poly_csubq (a);
-    x16p <- jvx16;
-    v <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
+    v <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
     shift1 <- (VPBROADCAST_16u16 pc_shift1_s);
     mask <- (VPBROADCAST_16u16 pc_mask_s);
     shift2 <- (VPBROADCAST_16u16 pc_shift2_s);
@@ -8762,23 +8738,19 @@ module M = {
   proc _i_poly_decompress (rp:W16.t Array256.t, a:W8.t Array160.t) : 
   W16.t Array256.t = {
     var inc:int;
-    var x16p:W16.t Array16.t;
     var q:W256.t;
     var shufbidx:W256.t;
     var mask:W256.t;
     var shift:W256.t;
-    var f:W256.t;
     var i:int;
     var t:W128.t;
     var ti:W16.t;
     var sh:W128.t;
-    x16p <- witness;
-    x16p <- jqx16;
-    q <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
+    var f:W256.t;
+    q <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
     shufbidx <- (get256 (WArray32.init8 (fun i_0 => pd_jshufbidx.[i_0])) 0);
     mask <- (get256 (WArray32.init16 (fun i_0 => pd_mask_s.[i_0])) 0);
     shift <- (get256 (WArray32.init16 (fun i_0 => pd_shift_s.[i_0])) 0);
-    f <- (set0_256);
     inc <- (256 %/ 16);
     i <- 0;
     while ((i < inc)) {
@@ -8889,25 +8861,11 @@ module M = {
     }
     return r;
   }
-  proc __i_polyvec_frombytes (ap:W8.t Array1536.t) : W16.t Array1024.t = {
+  proc __i_polyvec_frombytes (a:W8.t Array1536.t) : W16.t Array1024.t = {
     var aux:W16.t Array256.t;
     var r:W16.t Array1024.t;
-    var a:W8.t Array1536.t;
     var i:int;
-    a <- witness;
     r <- witness;
-    a <-
-    (Array1536.init
-    (fun i_0 => (get8
-                (WArray1536.init64
-                (fun i_0 => (copy_64
-                            (Array192.init
-                            (fun i_0 => (get64
-                                        (WArray1536.init8
-                                        (fun i_0 => ap.[i_0])) i_0))
-                            )).[i_0])
-                ) i_0))
-    );
     i <- 0;
     while ((i < 4)) {
       aux <@ _i_poly_frombytes ((Array256.init
@@ -8969,38 +8927,26 @@ module M = {
     }
     return r;
   }
-  proc __i_polyvec_decompress (r:W16.t Array1024.t, rp:W8.t Array1408.t) : 
+  proc __i_polyvec_decompress (r:W16.t Array1024.t, rp:W8.t Array1568.t) : 
   W16.t Array1024.t = {
     var inc:int;
-    var x16p:W16.t Array16.t;
     var q:W256.t;
-    var x32s:W8.t Array32.t;
     var shufbidx:W256.t;
-    var x8d:W32.t Array8.t;
     var srlvdidx:W256.t;
-    var x4q:W64.t Array4.t;
     var srlvqidx:W256.t;
-    var x16s:W16.t Array16.t;
     var shift:W256.t;
     var mask:W256.t;
     var i:int;
     var k:int;
     var f:W256.t;
-    x16p <- witness;
-    x16s <- witness;
-    x32s <- witness;
-    x4q <- witness;
-    x8d <- witness;
-    x16p <- jqx16;
-    q <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
-    x32s <- pvd_shufbidx_s;
-    shufbidx <- (get256 (WArray32.init8 (fun i_0 => x32s.[i_0])) 0);
-    x8d <- pvd_srlvdidx_s;
-    srlvdidx <- (get256 (WArray32.init32 (fun i_0 => x8d.[i_0])) 0);
-    x4q <- pvd_srlvqidx_s;
-    srlvqidx <- (get256 (WArray32.init64 (fun i_0 => x4q.[i_0])) 0);
-    x16s <- pvd_shift_s;
-    shift <- (get256 (WArray32.init16 (fun i_0 => x16s.[i_0])) 0);
+    q <- (get256 (WArray32.init16 (fun i_0 => jqx16.[i_0])) 0);
+    shufbidx <-
+    (get256 (WArray32.init8 (fun i_0 => pvd_shufbidx_s.[i_0])) 0);
+    srlvdidx <-
+    (get256 (WArray32.init32 (fun i_0 => pvd_srlvdidx_s.[i_0])) 0);
+    srlvqidx <-
+    (get256 (WArray32.init64 (fun i_0 => pvd_srlvqidx_s.[i_0])) 0);
+    shift <- (get256 (WArray32.init16 (fun i_0 => pvd_shift_s.[i_0])) 0);
     mask <- (VPBROADCAST_16u16 pvd_mask_s);
     k <- 0;
     while ((k < 4)) {
@@ -9008,7 +8954,7 @@ module M = {
       i <- 0;
       while ((i < inc)) {
         f <-
-        (get256_direct (WArray1408.init8 (fun i_0 => rp.[i_0]))
+        (get256_direct (WArray1568.init8 (fun i_0 => rp.[i_0]))
         ((352 * k) + (22 * i)));
         f <- (VPERMQ f (W8.of_int 148));
         f <- (VPSHUFB_256 f shufbidx);
@@ -9032,7 +8978,6 @@ module M = {
   proc __i_polyvec_compress (rp:W8.t Array1410.t, a:W16.t Array1024.t) : 
   W8.t Array1410.t = {
     var inc:int;
-    var x16p:W16.t Array16.t;
     var v:W256.t;
     var v8:W256.t;
     var off:W256.t;
@@ -9048,10 +8993,8 @@ module M = {
     var f2:W256.t;
     var t0:W128.t;
     var t1:W128.t;
-    x16p <- witness;
     a <@ __polyvec_csubq (a);
-    x16p <- jvx16;
-    v <- (get256 (WArray32.init16 (fun i_0 => x16p.[i_0])) 0);
+    v <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
     v8 <- (VPSLL_16u16 v (W128.of_int 3));
     off <- (VPBROADCAST_16u16 pvc_off_s);
     shift1 <- (VPBROADCAST_16u16 pvc_shift1_s);
@@ -9779,10 +9722,8 @@ module M = {
     var t64:W64.t;
     var publicseed:W8.t Array32.t;
     var k:W16.t Array256.t;
-    var s_noiseseed:W8.t Array32.t;
     var transposed:W64.t;
     var aat:W16.t Array4096.t;
-    var lnoiseseed:W8.t Array32.t;
     var nonce:W8.t;
     var sp_0:W16.t Array1024.t;
     var ep:W16.t Array1024.t;
@@ -9794,10 +9735,8 @@ module M = {
     ep <- witness;
     epp <- witness;
     k <- witness;
-    lnoiseseed <- witness;
     pkpv <- witness;
     publicseed <- witness;
-    s_noiseseed <- witness;
     sp_0 <- witness;
     v <- witness;
     (* Erased call to spill *)
@@ -9815,10 +9754,8 @@ module M = {
       w <- (w + 1);
     }
     k <@ _i_poly_frommsg (k, msgp);
-    s_noiseseed <- noiseseed;
     transposed <- (W64.of_int 1);
     aat <@ _gen_matrix_avx2 (aat, publicseed, transposed);
-    lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 0);
     (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
                                                           (fun i => sp_0.[
@@ -9827,7 +9764,7 @@ module M = {
                                                           ),
     (Array256.init (fun i => sp_0.[(256 + i)])),
     (Array256.init (fun i => sp_0.[((2 * 256) + i)])),
-    (Array256.init (fun i => sp_0.[((3 * 256) + i)])), lnoiseseed, nonce);
+    (Array256.init (fun i => sp_0.[((3 * 256) + i)])), noiseseed, nonce);
     sp_0 <-
     (Array1024.init
     (fun i => (if (0 <= i < (0 + 256)) then aux.[(i - 0)] else sp_0.[i])));
@@ -9848,7 +9785,6 @@ module M = {
                                                                    (3 * 256))] else 
               sp_0.[i]))
     );
-    lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 4);
     (aux, aux_0, aux_1, aux_2) <@ _poly_getnoise_eta1_4x ((Array256.init
                                                           (fun i => ep.[
@@ -9857,7 +9793,7 @@ module M = {
                                                           ),
     (Array256.init (fun i => ep.[(256 + i)])),
     (Array256.init (fun i => ep.[((2 * 256) + i)])),
-    (Array256.init (fun i => ep.[((3 * 256) + i)])), lnoiseseed, nonce);
+    (Array256.init (fun i => ep.[((3 * 256) + i)])), noiseseed, nonce);
     ep <-
     (Array1024.init
     (fun i => (if (0 <= i < (0 + 256)) then aux.[(i - 0)] else ep.[i])));
@@ -9878,7 +9814,6 @@ module M = {
                                                                    (3 * 256))] else 
               ep.[i]))
     );
-    lnoiseseed <- s_noiseseed;
     nonce <- (W8.of_int 8);
     epp <@ _poly_getnoise_eta2 (epp, noiseseed, nonce);
     sp_0 <@ __polyvec_ntt (sp_0);
@@ -9933,8 +9868,7 @@ module M = {
     skpv <- witness;
     t <- witness;
     v <- witness;
-    bp <@ __i_polyvec_decompress (bp,
-    (Array1408.init (fun i => ct.[(0 + i)])));
+    bp <@ __i_polyvec_decompress (bp, ct);
     v <@ _i_poly_decompress (v,
     (Array160.init (fun i => ct.[((4 * 352) + i)])));
     skpv <@ __i_polyvec_frombytes (sk);
@@ -9996,34 +9930,29 @@ module M = {
   proc __crypto_kem_keypair_jazz (pk:W8.t Array1568.t, sk:W8.t Array3168.t,
                                   randomnessp:W8.t Array64.t) : W8.t Array1568.t *
                                                                 W8.t Array3168.t = {
-    var aux_0:W8.t Array1536.t;
-    var aux:W8.t Array1568.t;
+    var aux:W8.t Array32.t;
     var inc:int;
     var s_randomnessp:W8.t Array64.t;
     var randomnessp1:W8.t Array32.t;
-    var s_pkp:W8.t Array1568.t;
+    var skcpa:W8.t Array1536.t;
+    var sk_s:W8.t Array3168.t;
     var i:int;
     var t64:W64.t;
-    var s_skp:W8.t Array3168.t;
-    var h_pk:W8.t Array32.t;
-    var randomnessp2:W8.t Array32.t;
-    h_pk <- witness;
     randomnessp1 <- witness;
-    randomnessp2 <- witness;
-    s_pkp <- witness;
     s_randomnessp <- witness;
-    s_skp <- witness;
+    sk_s <- witness;
+    skcpa <- witness;
     s_randomnessp <- randomnessp;
     randomnessp1 <- (Array32.init (fun i_0 => randomnessp.[(0 + i_0)]));
-    (aux, aux_0) <@ __indcpa_keypair (pk,
-    (Array1536.init (fun i_0 => sk.[(0 + i_0)])), randomnessp1);
-    pk <- aux;
+    skcpa <- (Array1536.init (fun i_0 => sk.[(0 + i_0)]));
+    sk_s <- sk;
+    (pk, skcpa) <@ __indcpa_keypair (pk, skcpa, randomnessp1);
+    sk <- sk_s;
     sk <-
     (Array3168.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then aux_0.[(i_0 - 0)] else 
+    (fun i_0 => (if (0 <= i_0 < (0 + 1536)) then skcpa.[(i_0 - 0)] else 
                 sk.[i_0]))
     );
-    s_pkp <- pk;
     inc <- (((4 * 384) + 32) %/ 8);
     i <- 0;
     while ((i < inc)) {
@@ -10035,26 +9964,25 @@ module M = {
       ((((4 * 384) %/ 8) + i) * 8) t64)));
       i <- (i + 1);
     }
-    s_skp <- sk;
-    h_pk <@ _sha3_256A_A1568 (h_pk, pk);
-    sk <- s_skp;
-    i <- 0;
-    while ((i < 4)) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => h_pk.[i_0])) i);
-      sk <-
-      (Array3168.init
-      (WArray3168.get8
-      (WArray3168.set64_direct (WArray3168.init8 (fun i_0 => sk.[i_0]))
-      (((((4 * 384) + ((4 * 384) + 32)) %/ 8) + i) * 8) t64)));
-      i <- (i + 1);
-    }
+    aux <@ _sha3_256A_A1568 ((Array32.init
+                             (fun i_0 => sk.[(((4 * 384) + ((4 * 384) + 32)) +
+                                             i_0)])
+                             ),
+    pk);
+    sk <-
+    (Array3168.init
+    (fun i_0 => (if (((4 * 384) + ((4 * 384) + 32)) <= i_0 < (((4 * 384) +
+                                                              ((4 * 384) +
+                                                              32)) +
+                                                             32)) then 
+                aux.[(i_0 - ((4 * 384) + ((4 * 384) + 32)))] else sk.[i_0]))
+    );
     randomnessp <- s_randomnessp;
-    randomnessp2 <- (Array32.init (fun i_0 => randomnessp.[(32 + i_0)]));
     inc <- (32 %/ 8);
     i <- 0;
     while ((i < inc)) {
       t64 <-
-      (get64_direct (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) (i * 8));
+      (get64 (WArray64.init8 (fun i_0 => randomnessp.[i_0])) ((32 %/ 8) + i));
       sk <-
       (Array3168.init
       (WArray3168.get8
@@ -10068,149 +9996,158 @@ module M = {
                               pk:W8.t Array1568.t, randomnessp:W8.t Array32.t) : 
   W8.t Array1568.t * W8.t Array32.t = {
     var aux:W8.t Array32.t;
-    var inc:int;
-    var s_pk:W8.t Array1568.t;
-    var s_ct:W8.t Array1568.t;
-    var s_shk:W8.t Array32.t;
-    var i:int;
-    var t64:W64.t;
     var buf:W8.t Array64.t;
     var kr:W8.t Array64.t;
     buf <- witness;
     kr <- witness;
-    s_ct <- witness;
-    s_pk <- witness;
-    s_shk <- witness;
-    s_pk <- pk;
-    s_ct <- ct;
-    s_shk <- shk;
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
-      buf <-
-      (Array64.init
-      (WArray64.get8
-      (WArray64.set64 (WArray64.init8 (fun i_0 => buf.[i_0])) i t64)));
-      i <- (i + 1);
-    }
-    aux <@ _sha3_256A_A1568 ((Array32.init (fun i_0 => buf.[(32 + i_0)])),
-    pk);
+    (* Erased call to spill *)
     buf <-
     (Array64.init
-    (fun i_0 => (if (32 <= i_0 < (32 + 32)) then aux.[(i_0 - 32)] else 
-                buf.[i_0]))
+    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
+                                           (fun i => (get8
+                                                     (WArray32.init64
+                                                     (fun i => (copy_64
+                                                               (Array4.init
+                                                               (fun i => 
+                                                               (get64
+                                                               (
+                                                               WArray32.init8
+                                                               (fun i => 
+                                                               randomnessp.[
+                                                               i])) i)))).[
+                                                               i])
+                                                     ) i))
+                                           ).[(i - 0)] else buf.[i]))
     );
+    aux <@ _sha3_256A_A1568 ((Array32.init (fun i => buf.[(32 + i)])), pk);
+    buf <-
+    (Array64.init
+    (fun i => (if (32 <= i < (32 + 32)) then aux.[(i - 32)] else buf.[i])));
     kr <@ _sha3_512A_A64 (kr, buf);
-    pk <- s_pk;
-    ct <@ __indcpa_enc (ct, (Array32.init (fun i_0 => buf.[(0 + i_0)])), 
-    pk, (Array32.init (fun i_0 => kr.[(32 + i_0)])));
-    shk <- s_shk;
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <- (get64 (WArray64.init8 (fun i_0 => kr.[i_0])) i);
-      shk <-
-      (Array32.init
-      (WArray32.get8
-      (WArray32.set64 (WArray32.init8 (fun i_0 => shk.[i_0])) i t64)));
-      i <- (i + 1);
-    }
+    (* Erased call to unspill *)
+    ct <@ __indcpa_enc (ct, (Array32.init (fun i => buf.[(0 + i)])), 
+    pk, (Array32.init (fun i => kr.[(32 + i)])));
+    (* Erased call to unspill *)
+    shk <-
+    (Array32.init
+    (fun i => (get8
+              (WArray32.init64
+              (fun i => (copy_64
+                        (Array4.init
+                        (fun i => (get64
+                                  (WArray32.init8
+                                  (fun i => (Array32.init
+                                            (fun i => kr.[(0 + i)])).[
+                                            i])
+                                  ) i))
+                        )).[i])
+              ) i))
+    );
     return (ct, shk);
   }
   proc __crypto_kem_dec_jazz (shk:W8.t Array32.t, ct:W8.t Array1568.t,
                               sk:W8.t Array3168.t) : W8.t Array32.t = {
     var aux:W8.t Array32.t;
-    var inc:int;
-    var s_shk:W8.t Array32.t;
-    var s_ct:W8.t Array1568.t;
-    var s_sk:W8.t Array3168.t;
+    var zp_ct:W8.t Array1600.t;
     var buf:W8.t Array64.t;
-    var i:int;
-    var t64:W64.t;
     var kr:W8.t Array64.t;
     var ctc:W8.t Array1568.t;
     var cnd:W64.t;
-    var s_cnd:W64.t;
-    var zp_ct:W8.t Array1600.t;
     buf <- witness;
     ctc <- witness;
     kr <- witness;
-    s_ct <- witness;
-    s_shk <- witness;
-    s_sk <- witness;
     zp_ct <- witness;
-    s_shk <- shk;
-    s_ct <- ct;
-    s_sk <-
-    (Array3168.init
-    (fun i_0 => (get8
-                (WArray3168.init64
-                (fun i_0 => (copy_64
-                            (Array396.init
-                            (fun i_0 => (get64
-                                        (WArray3168.init8
-                                        (fun i_0 => sk.[i_0])) i_0))
-                            )).[i_0])
-                ) i_0))
+    (* Erased call to spill *)
+    zp_ct <-
+    (Array1600.init
+    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
+                                           (fun i => (get8
+                                                     (WArray32.init64
+                                                     (fun i => (copy_64
+                                                               (Array4.init
+                                                               (fun i => 
+                                                               (get64
+                                                               (
+                                                               WArray32.init8
+                                                               (fun i => 
+                                                               (Array32.init
+                                                               (fun i => 
+                                                               sk.[((
+                                                                    (
+                                                                    (
+                                                                    (4 * 384) +
+                                                                    (
+                                                                    (4 * 384) +
+                                                                    32)) +
+                                                                    (2 * 32)) -
+                                                                    32) +
+                                                                   i)])
+                                                               ).[i])) 
+                                                               i)))).[
+                                                               i])
+                                                     ) i))
+                                           ).[(i - 0)] else zp_ct.[i]))
     );
-    aux <@ __indcpa_dec ((Array32.init (fun i_0 => buf.[(0 + i_0)])), 
-    ct, (Array1536.init (fun i_0 => s_sk.[(0 + i_0)])));
+    aux <@ __indcpa_dec ((Array32.init (fun i => buf.[(0 + i)])), ct,
+    (Array1536.init (fun i => sk.[(0 + i)])));
     buf <-
     (Array64.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 32)) then aux.[(i_0 - 0)] else buf.[i_0]))
+    (fun i => (if (0 <= i < (0 + 32)) then aux.[(i - 0)] else buf.[i])));
+    buf <-
+    (Array64.init
+    (fun i => (if (32 <= i < (32 + 32)) then (Array32.init
+                                             (fun i => (get8
+                                                       (WArray32.init64
+                                                       (fun i => (copy_64
+                                                                 (Array4.init
+                                                                 (fun i => 
+                                                                 (get64
+                                                                 (
+                                                                 WArray32.init8
+                                                                 (fun i => 
+                                                                 (
+                                                                 Array32.init
+                                                                 (fun i => 
+                                                                 sk.[
+                                                                 (((4 * 384) +
+                                                                  ((4 * 384) +
+                                                                  32)) +
+                                                                 i)])).[
+                                                                 i])) 
+                                                                 i)))).[
+                                                                 i])
+                                                       ) i))
+                                             ).[(i - 32)] else buf.[i]))
     );
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <-
-      (get64_direct (WArray3168.init8 (fun i_0 => s_sk.[i_0]))
-      ((i + (((((4 * 384) + ((4 * 384) + 32)) + (2 * 32)) - (2 * 32)) %/ 8)) *
-      8));
-      buf <-
-      (Array64.init
-      (WArray64.get8
-      (WArray64.set64_direct (WArray64.init8 (fun i_0 => buf.[i_0]))
-      ((i + (32 %/ 8)) * 8) t64)));
-      i <- (i + 1);
-    }
     kr <@ _sha3_512A_A64 (kr, buf);
-    ctc <@ __indcpa_enc (ctc, (Array32.init (fun i_0 => buf.[(0 + i_0)])),
-    (Array1568.init (fun i_0 => s_sk.[((4 * 384) + i_0)])),
-    (Array32.init (fun i_0 => kr.[(32 + i_0)])));
-    ct <- s_ct;
+    ctc <@ __indcpa_enc (ctc, (Array32.init (fun i => buf.[(0 + i)])),
+    (Array1568.init (fun i => sk.[((4 * 384) + i)])),
+    (Array32.init (fun i => kr.[(32 + i)])));
+    (* Erased call to unspill *)
     cnd <@ __verify (ct, ctc);
-    s_cnd <- cnd;
-    ct <- s_ct;
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <-
-      (get64_direct (WArray3168.init8 (fun i_0 => s_sk.[i_0]))
-      ((i + (((((4 * 384) + ((4 * 384) + 32)) + (2 * 32)) - 32) %/ 8)) * 8));
-      zp_ct <-
-      (Array1600.init
-      (WArray1600.get8
-      (WArray1600.set64_direct (WArray1600.init8 (fun i_0 => zp_ct.[i_0]))
-      (8 * i) t64)));
-      i <- (i + 1);
-    }
-    inc <- (((4 * 352) + 160) %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <- (get64_direct (WArray1568.init8 (fun i_0 => ct.[i_0])) (i * 8));
-      zp_ct <-
-      (Array1600.init
-      (WArray1600.get8
-      (WArray1600.set64_direct (WArray1600.init8 (fun i_0 => zp_ct.[i_0]))
-      ((i + (32 %/ 8)) * 8) t64)));
-      i <- (i + 1);
-    }
-    shk <- s_shk;
+    zp_ct <-
+    (Array1600.init
+    (fun i => (if (32 <= i < (32 + 1568)) then (Array1568.init
+                                               (fun i => (get8
+                                                         (WArray1568.init64
+                                                         (fun i => (copy_64
+                                                                   (
+                                                                   Array196.init
+                                                                   (fun i => 
+                                                                   (get64
+                                                                   (
+                                                                   WArray1568.init8
+                                                                   (fun i => 
+                                                                   ct.[
+                                                                   i])) 
+                                                                   i)))).[
+                                                                   i])
+                                                         ) i))
+                                               ).[(i - 32)] else zp_ct.[i]))
+    );
+    (* Erased call to unspill *)
     shk <@ _shake256_A32__A1600 (shk, zp_ct);
-    s_shk <- shk;
-    cnd <- s_cnd;
-    shk <@ __cmov (shk, (Array32.init (fun i_0 => kr.[(0 + i_0)])), cnd);
+    shk <@ __cmov (shk, (Array32.init (fun i => kr.[(0 + i)])), cnd);
     return shk;
   }
   proc jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand (public_key:W8.t Array1568.t,
@@ -10218,72 +10155,15 @@ module M = {
                                                            coins:W8.t Array64.t) : 
   W8.t Array1568.t * W8.t Array3168.t * W64.t = {
     var r:W64.t;
-    var rd:W8.t Array64.t;
-    var pk:W8.t Array1568.t;
-    var pkp:W8.t Array1568.t;
-    var sk:W8.t Array3168.t;
-    var skp:W8.t Array3168.t;
-    var rdp:W8.t Array64.t;
     var _of_:bool;
     var _cf_:bool;
     var _sf_:bool;
     var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
-    pk <- witness;
-    pkp <- witness;
-    rd <- witness;
-    rdp <- witness;
-    sk <- witness;
-    skp <- witness;
      _0 <- (init_msf);
-    (* Erased call to spill *)
-    (* Erased call to spill *)
-    rd <-
-    (Array64.init
-    (fun i => (get8
-              (WArray64.init64
-              (fun i => (copy_64
-                        (Array8.init
-                        (fun i => (get64
-                                  (WArray64.init8 (fun i => coins.[i])) 
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    pkp <- pk;
-    skp <- sk;
-    rdp <- rd;
-    (pkp, skp) <@ __crypto_kem_keypair_jazz (pkp, skp, rdp);
-    (* Erased call to unspill *)
-    (* Erased call to unspill *)
-    pk <- pkp;
-    sk <- skp;
-    rd <- rdp;
-    public_key <-
-    (Array1568.init
-    (fun i => (get8
-              (WArray1568.init64
-              (fun i => (copy_64
-                        (Array196.init
-                        (fun i => (get64 (WArray1568.init8 (fun i => pk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    secret_key <-
-    (Array3168.init
-    (fun i => (get8
-              (WArray3168.init64
-              (fun i => (copy_64
-                        (Array396.init
-                        (fun i => (get64 (WArray3168.init8 (fun i => sk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    (* Erased call to spill *)
-    (* Erased call to spill *)
+    (public_key, secret_key) <@ __crypto_kem_keypair_jazz (public_key,
+    secret_key, coins);
     (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
     return (public_key, secret_key, r);
   }
@@ -10293,88 +10173,15 @@ module M = {
                                                        coins:W8.t Array32.t) : 
   W8.t Array1568.t * W8.t Array32.t * W64.t = {
     var r:W64.t;
-    var pk:W8.t Array1568.t;
-    var rd:W8.t Array32.t;
-    var ct:W8.t Array1568.t;
-    var ctp:W8.t Array1568.t;
-    var pkp:W8.t Array1568.t;
-    var shk:W8.t Array32.t;
-    var shkp:W8.t Array32.t;
-    var rdp:W8.t Array32.t;
     var _of_:bool;
     var _cf_:bool;
     var _sf_:bool;
     var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
-    ct <- witness;
-    ctp <- witness;
-    pk <- witness;
-    pkp <- witness;
-    rd <- witness;
-    rdp <- witness;
-    shk <- witness;
-    shkp <- witness;
      _0 <- (init_msf);
-    (* Erased call to spill *)
-    (* Erased call to spill *)
-    pk <-
-    (Array1568.init
-    (fun i => (get8
-              (WArray1568.init64
-              (fun i => (copy_64
-                        (Array196.init
-                        (fun i => (get64
-                                  (WArray1568.init8 (fun i => public_key.[i])
-                                  ) i))
-                        )).[i])
-              ) i))
-    );
-    rd <-
-    (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64
-                                  (WArray32.init8 (fun i => coins.[i])) 
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    ctp <- ct;
-    pkp <- pk;
-    shkp <- shk;
-    rdp <- rd;
-    (ctp, shkp) <@ __crypto_kem_enc_jazz (ctp, shkp, pkp, rdp);
-    (* Erased call to unspill *)
-    (* Erased call to unspill *)
-    ct <- ctp;
-    shk <- shkp;
-    pk <- pkp;
-    rd <- rdp;
-    ciphertext <-
-    (Array1568.init
-    (fun i => (get8
-              (WArray1568.init64
-              (fun i => (copy_64
-                        (Array196.init
-                        (fun i => (get64 (WArray1568.init8 (fun i => ct.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    shared_secret <-
-    (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64 (WArray32.init8 (fun i => shk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
+    (ciphertext, shared_secret) <@ __crypto_kem_enc_jazz (ciphertext,
+    shared_secret, public_key, coins);
     (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
     return (ciphertext, shared_secret, r);
   }
@@ -10383,69 +10190,15 @@ module M = {
                                                 secret_key:W8.t Array3168.t) : 
   W8.t Array32.t * W64.t = {
     var r:W64.t;
-    var ct:W8.t Array1568.t;
-    var sk:W8.t Array3168.t;
-    var ctp:W8.t Array1568.t;
-    var shk:W8.t Array32.t;
-    var shkp:W8.t Array32.t;
-    var skp:W8.t Array3168.t;
     var _of_:bool;
     var _cf_:bool;
     var _sf_:bool;
     var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
-    ct <- witness;
-    ctp <- witness;
-    shk <- witness;
-    shkp <- witness;
-    sk <- witness;
-    skp <- witness;
      _0 <- (init_msf);
-    (* Erased call to spill *)
-    ct <-
-    (Array1568.init
-    (fun i => (get8
-              (WArray1568.init64
-              (fun i => (copy_64
-                        (Array196.init
-                        (fun i => (get64
-                                  (WArray1568.init8 (fun i => ciphertext.[i])
-                                  ) i))
-                        )).[i])
-              ) i))
-    );
-    sk <-
-    (Array3168.init
-    (fun i => (get8
-              (WArray3168.init64
-              (fun i => (copy_64
-                        (Array396.init
-                        (fun i => (get64
-                                  (WArray3168.init8 (fun i => secret_key.[i])
-                                  ) i))
-                        )).[i])
-              ) i))
-    );
-    ctp <- ct;
-    shkp <- shk;
-    skp <- sk;
-    shkp <@ __crypto_kem_dec_jazz (shkp, ctp, skp);
-    (* Erased call to unspill *)
-    shk <- shkp;
-    sk <- skp;
-    ct <- ctp;
-    shared_secret <-
-    (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64 (WArray32.init8 (fun i => shk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
+    shared_secret <@ __crypto_kem_dec_jazz (shared_secret, ciphertext,
+    secret_key);
     (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
     return (shared_secret, r);
   }
