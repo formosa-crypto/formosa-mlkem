@@ -1,71 +1,71 @@
-from Keccak require "avx2/keccak1600_imem_avx2.jinc"
-from Keccak require "avx2/keccak1600_imem_avx2x4.jinc"
+require "../../../keccak/avx2/keccak1600_imem_avx2.jinc"
+require "../../../keccak/avx2/keccak1600_imem_avx2x4.jinc"
 
 /* instantiate the Keccak code with variants for reading/writing
    from/to stack arrays with different sizes */
 namespace A1 {
   param int ASIZE = 1;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A2 {
   param int ASIZE = 2;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A32 {
   param int ASIZE = 32;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A33 {
   param int ASIZE = 33;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A64 {
   param int ASIZE = 64;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
 }
 
 namespace A128 {
   param int ASIZE = 128;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A1184 {
   param int ASIZE = 1184;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A1568 {
   param int ASIZE = 1568;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A1120 {
   param int ASIZE = 1120;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace A1600 {
   param int ASIZE = 1600;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 namespace ABUFLEN {
   param int ASIZE = 536;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2_ASIZE.jinc"
+  require "../../../keccak/avx2/keccak1600_array_avx2x4_ASIZE.jinc"
 }
 
 /* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte
