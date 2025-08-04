@@ -302,10 +302,8 @@ ensures:
 fn _i_poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) -> reg ptr u16[MLKEM_N] {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 tt mask;
-  reg ptr u16[16] maskp;
 
-  maskp = maskx16;
-  mask = maskp[:u256 0];
+  mask = maskx16[:u256 0];
 
   for i = 0 to 2
   {
@@ -395,14 +393,10 @@ fn _poly_frommont(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 t qx16 qinvx16 dmontx16;
   inline int i;
-  reg ptr u16[16] x16p;
 
-  x16p = jqx16;
-  qx16 = x16p[:u256 0];
-  x16p = jqinvx16;
-  qinvx16 = x16p[:u256 0];
-  x16p = jdmontx16;
-  dmontx16 = x16p[:u256 0];
+  qx16 = jqx16[:u256 0];
+  qinvx16 = jqinvx16[:u256 0];
+  dmontx16 = jdmontx16[:u256 0];
 
   for i = 0 to MLKEM_N/16
   {
@@ -435,10 +429,8 @@ fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> reg ptr u1
   inline int i;
   reg u256 f g0 g1 g2 g3 h0 h1 h2 h3;
   reg u256 shift idx hqs;
-  reg ptr u16[16] x16p;
 
-  x16p = hqx16_p1;
-  hqs = x16p[:u256 0];
+  hqs = hqx16_p1[:u256 0];
   shift = #VPBROADCAST_2u128(pfm_shift_s[:u128 0]);
   idx = #VPBROADCAST_2u128(pfm_idx_s[:u128 0]);
 
@@ -573,7 +565,6 @@ fn _poly_getnoise_eta2(#spill_to_mmx reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_S
 /* _poly_getnoise_eta1_4x: computes 4x the binomial noise,
    where only the shake computation is parallelized. */
 
-#[returnaddress="stack"]
 fn _poly_getnoise_eta1_4x
 ( reg ptr u16[MLKEM_N] r0 r1 r2 r3
 , reg ptr u8[MLKEM_SYMBYTES] seed
@@ -601,6 +592,8 @@ fn _poly_getnoise_eta1_4x
 
 
   buf0, buf1, buf2, buf3 = _shake256x4_A128__A32_A1(buf0, buf1, buf2, buf3, seed, nonces);
+
+  _ = #init_msf();
 
 () = #unspill(r0,r1,r2,r3);
   r0 = __poly_cbd_eta1(r0, buf0);
@@ -682,19 +675,17 @@ montgomery multiplications carried out in basemul.
 fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16 vx16 flox16 fhix16;
-  reg ptr u16[400] zetasp;
   inline int i;
 
-  zetasp = jzetas_inv_exp;
   qx16 = jqx16[:u256 0];
 
   for i = 0 to 2
   {
     // level 0:
-    zeta0 = zetasp.[:u256 0+392*i];
-    zeta1 = zetasp.[:u256 64+392*i];
-    zeta2 = zetasp.[:u256 32+392*i];
-    zeta3 = zetasp.[:u256 96+392*i];
+    zeta0 = jzetas_inv_exp.[:u256 0+392*i];
+    zeta1 = jzetas_inv_exp.[:u256 64+392*i];
+    zeta2 = jzetas_inv_exp.[:u256 32+392*i];
+    zeta3 = jzetas_inv_exp.[:u256 96+392*i];
 
     r0 = rp.[:u256 32*0+256*i];
     r1 = rp.[:u256 32*1+256*i];
@@ -709,8 +700,8 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 
     // level 1:
     vx16 = jvx16[:u256 0];
-    zeta0 = zetasp.[:u256 128+392*i];
-    zeta1 = zetasp.[:u256 160+392*i];
+    zeta0 = jzetas_inv_exp.[:u256 128+392*i];
+    zeta1 = jzetas_inv_exp.[:u256 160+392*i];
     r0 = __red16x(r0, qx16, vx16);
     r1 = __red16x(r1, qx16, vx16);
     r4 = __red16x(r4, qx16, vx16);
@@ -724,8 +715,8 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r6, r7 = __shuffle1(r6, r7);
 
     // level 2:
-    zeta0 = zetasp.[:u256 192+392*i];
-    zeta1 = zetasp.[:u256 224+392*i];
+    zeta0 = jzetas_inv_exp.[:u256 192+392*i];
+    zeta1 = jzetas_inv_exp.[:u256 224+392*i];
 
 
     r0, r2, r4, r6, r1, r3, r5, r7 = __invntt___butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
@@ -738,8 +729,8 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r5, r7 = __shuffle2(r5, r7);
 
     // level 3:
-    zeta0 = zetasp.[:u256 256+392*i];
-    zeta1 = zetasp.[:u256 288+392*i];
+    zeta0 = jzetas_inv_exp.[:u256 256+392*i];
+    zeta1 = jzetas_inv_exp.[:u256 288+392*i];
 
     r0, r4, r1, r5, r2, r6, r3, r7 = __invntt___butterfly64x(r0, r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
@@ -751,8 +742,8 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r3, r7 = __shuffle4(r3, r7);
 
     // level 4:
-    zeta0 = zetasp.[:u256 320+392*i];
-    zeta1 = zetasp.[:u256 352+392*i];
+    zeta0 = jzetas_inv_exp.[:u256 320+392*i];
+    zeta1 = jzetas_inv_exp.[:u256 352+392*i];
 
     r0, r1, r2, r3, r4, r5, r6, r7 = __invntt___butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
@@ -764,8 +755,8 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r6, r7 = __shuffle8(r6, r7);
 
     // level 5:
-    zeta0 = #VPBROADCAST_8u32(zetasp.[:u32 384+392*i]);
-    zeta1 = #VPBROADCAST_8u32(zetasp.[:u32 388+392*i]);
+    zeta0 = #VPBROADCAST_8u32(jzetas_inv_exp.[:u32 384+392*i]);
+    zeta1 = #VPBROADCAST_8u32(jzetas_inv_exp.[:u32 388+392*i]);
 
     r0, r2, r4, r6, r1, r3, r5, r7 = __invntt___butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
@@ -783,8 +774,8 @@ fn _poly_invntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     rp.[:u256 32*7+256*i] = r7;
   }
 
-  zeta0 = #VPBROADCAST_8u32(zetasp.[:u32 784]);
-  zeta1 = #VPBROADCAST_8u32(zetasp.[:u32 788]);
+  zeta0 = #VPBROADCAST_8u32(jzetas_inv_exp.[:u32 784]);
+  zeta1 = #VPBROADCAST_8u32(jzetas_inv_exp.[:u32 788]);
 
   for i = 0 to 2
   {
@@ -894,14 +885,12 @@ Output range is (-2q,2q)
 fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
 {
   reg u256 zeta0 zeta1 zeta2 zeta3 r0 r1 r2 r3 r4 r5 r6 r7 qx16 vx16;
-  reg ptr u16[400] zetasp;
   inline int i;
 
-  zetasp = jzetas_exp;
   qx16 = jqx16[:u256 0];
 
-  zeta0 = #VPBROADCAST_8u32(zetasp[:u32 0]);
-  zeta1 = #VPBROADCAST_8u32(zetasp[:u32 1]);
+  zeta0 = #VPBROADCAST_8u32(jzetas_exp[:u32 0]);
+  zeta1 = #VPBROADCAST_8u32(jzetas_exp[:u32 1]);
 
   r0 = rp.[:u256 32*0];
   r1 = rp.[:u256 32*1];
@@ -942,8 +931,8 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   for i = 0 to 2 {
 
     // level 1
-    zeta0 = #VPBROADCAST_8u32(zetasp.[:u32 8 + 392*i]);
-    zeta1 = #VPBROADCAST_8u32(zetasp.[:u32 12 + 392*i]);
+    zeta0 = #VPBROADCAST_8u32(jzetas_exp.[:u32 8 + 392*i]);
+    zeta1 = #VPBROADCAST_8u32(jzetas_exp.[:u32 12 + 392*i]);
 
     if ( i == 0) {
       r4 = r0;
@@ -964,8 +953,8 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r0, r1, r2, r3, r4, r5, r6, r7 = __butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
     // level 2
-    zeta0 = zetasp.[:u256 16 + 392*i];
-    zeta1 = zetasp.[:u256 48 + 392*i];
+    zeta0 = jzetas_exp.[:u256 16 + 392*i];
+    zeta1 = jzetas_exp.[:u256 48 + 392*i];
 
     r0, r4 = __shuffle8(r0, r4);
     r1, r5 = __shuffle8(r1, r5);
@@ -975,8 +964,8 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r0, r4, r1, r5, r2, r6, r3, r7 = __butterfly64x(r0, r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
     // level 3
-    zeta0 = zetasp.[:u256 80 + 392*i];
-    zeta1 = zetasp.[:u256 112 + 392*i];
+    zeta0 = jzetas_exp.[:u256 80 + 392*i];
+    zeta1 = jzetas_exp.[:u256 112 + 392*i];
 
     r0, r2 = __shuffle4(r0, r2);
     r4, r6 = __shuffle4(r4, r6);
@@ -986,8 +975,8 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r0, r2, r4, r6, r1, r3, r5, r7 = __butterfly64x(r0, r2, r4, r6, r1, r3, r5, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
     // level 4
-    zeta0 = zetasp.[:u256 144 + 392*i];
-    zeta1 = zetasp.[:u256 176 + 392*i];
+    zeta0 = jzetas_exp.[:u256 144 + 392*i];
+    zeta1 = jzetas_exp.[:u256 176 + 392*i];
 
     r0, r1 = __shuffle2(r0, r1);
     r2, r3 = __shuffle2(r2, r3);
@@ -997,8 +986,8 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r0, r1, r2, r3, r4, r5, r6, r7 = __butterfly64x(r0, r1, r2, r3, r4, r5, r6, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
     // level 5
-    zeta0 = zetasp.[:u256 208 + 392*i];
-    zeta1 = zetasp.[:u256 240 + 392*i];
+    zeta0 = jzetas_exp.[:u256 208 + 392*i];
+    zeta1 = jzetas_exp.[:u256 240 + 392*i];
 
     r0, r4 = __shuffle1(r0, r4);
     r1, r5 = __shuffle1(r1, r5);
@@ -1008,10 +997,10 @@ fn _poly_ntt(reg ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
     r0, r4, r1, r5, r2, r6, r3, r7 = __butterfly64x(r0, r4, r1, r5, r2, r6, r3, r7, zeta0, zeta0, zeta1, zeta1, qx16);
 
     // level 6
-    zeta0 = zetasp.[:u256 272 + 392*i];
-    zeta2 = zetasp.[:u256 304 + 392*i];
-    zeta1 = zetasp.[:u256 336 + 392*i];
-    zeta3 = zetasp.[:u256 368 + 392*i];
+    zeta0 = jzetas_exp.[:u256 272 + 392*i];
+    zeta2 = jzetas_exp.[:u256 304 + 392*i];
+    zeta1 = jzetas_exp.[:u256 336 + 392*i];
+    zeta3 = jzetas_exp.[:u256 368 + 392*i];
 
     r0, r4, r2, r6, r1, r5, r3, r7 = __butterfly64x(r0, r4, r2, r6, r1, r5, r3, r7, zeta0, zeta1, zeta2, zeta3, qx16);
 
@@ -1116,11 +1105,7 @@ ensures:
 fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
 {
   inline int i;
-  reg u256 t0 t1 t2 t3 t4 t5 t6 t7 qx16 tt ttt;
-  reg ptr u16[16] jqx16_p;
-
-  jqx16_p = jqx16;
-  qx16 = jqx16_p[:u256 0];
+  reg u256 t0 t1 t2 t3 t4 t5 t6 t7 tt ttt;
 
   a = _poly_csubq(a);
 
