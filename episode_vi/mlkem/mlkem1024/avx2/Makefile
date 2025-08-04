@@ -31,8 +31,8 @@ test/test_kem: test/test_kem.c $(JINC) $(SOURCES) jkem.s
 test/speed_kem: test/speed_kem.c $(JINC) $(SOURCES) jkem.s
 	$(CC) $(CFLAGS) -o $@ $(SOURCES) jkem.s $<
 
-%.s: %.jazz
-	$(JASMINC) -o $@ $(JFLAGS) $^ 
+jkem.s: $(JINC) jkem.jazz
+	$(JASMINC) -o jkem.s $(JFLAGS) jkem.jazz
 
 
 .PHONY: ct clean
