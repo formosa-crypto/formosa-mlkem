@@ -817,6 +817,9 @@ transitivity{1} { r <@ AuxMLKEMAvx2._poly_getnoise(rp,seed,nonce); }
 + inline {1} 1. inline {2} 1. 
   wp;call (getnoise_1x_equiv_avx).
   sp;conseq/>.
+  (* Need to extend the keccak results to this one.
+     Jkem1024_avx2.M._shake256_A128__A32_A1
+  Jkem.M._shake256_128_33 *)
   admit. 
 transitivity{1} { r <@ M._poly_getnoise(rp,seed,nonce); } 
      ( ={rp,seed,nonce}  ==> ={r})
@@ -829,7 +832,7 @@ qed.
 
 
 import InnerPKE1024.
-(*
+
 lemma mlkem_correct_kg_avx2   : 
    equiv [Jkem1024_avx2.M.__indcpa_keypair ~ InnerPKE1024.kg_derand : 
        randomnessp{1} = coins{2}  
@@ -1425,7 +1428,7 @@ do split.
 + smt().
 by smt(unpackvK).
 qed.
-*)
+
 
 (***************************************************)
 

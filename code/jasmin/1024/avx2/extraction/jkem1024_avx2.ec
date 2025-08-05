@@ -10180,6 +10180,7 @@ module M = {
     var  _0:W64.t;
     var  _1:bool;
      _0 <- (init_msf);
+    public_key <- public_key;
     (ciphertext, shared_secret) <@ __crypto_kem_enc_jazz (ciphertext,
     shared_secret, public_key, coins);
     (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
