@@ -99,6 +99,8 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc(
   stack u8[MLKEM_SYMBYTES] randomness;
   reg ptr u8[MLKEM_SYMBYTES] randomnessp;
 
+  _ = #init_msf();
+
   ciphertext = ciphertext;
   shared_secret = shared_secret;
   public_key = public_key;

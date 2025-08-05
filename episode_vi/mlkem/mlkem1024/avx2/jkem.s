@@ -3930,6 +3930,8 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_enc:
 	movq	%r14, 18624(%rsp)
 	movq	%r15, 18632(%rsp)
 	movq	%rax, 18640(%rsp)
+	lfence
+	movq	$0, %rax
 	movq	%rdi, %rbx
 	movq	%rsi, %rbp
 	movq	%rdx, %r12
