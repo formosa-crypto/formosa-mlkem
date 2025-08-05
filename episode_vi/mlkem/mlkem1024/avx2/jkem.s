@@ -6401,25 +6401,27 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$1:
 _jade_kem_mlkem_mlkem1024_amd64_avx2_keypair:
 jade_kem_mlkem_mlkem1024_amd64_avx2_keypair:
 	movq	%rsp, %rax
-	leaq	-15144(%rsp), %rsp
+	leaq	-15136(%rsp), %rsp
 	andq	$-32, %rsp
-	movq	%rbx, 15088(%rsp)
-	movq	%rbp, 15096(%rsp)
-	movq	%r12, 15104(%rsp)
-	movq	%r13, 15112(%rsp)
-	movq	%r14, 15120(%rsp)
-	movq	%r15, 15128(%rsp)
-	movq	%rax, 15136(%rsp)
+	movq	%rbx, 15080(%rsp)
+	movq	%rbp, 15088(%rsp)
+	movq	%r12, 15096(%rsp)
+	movq	%r13, 15104(%rsp)
+	movq	%r14, 15112(%rsp)
+	movq	%r15, 15120(%rsp)
+	movq	%rax, 15128(%rsp)
+	lfence
+	movq	$0, %rax
 	movq	%rdi, %rbx
 	movq	%rsi, %rbp
-	leaq	15024(%rsp), %rdi
+	leaq	15016(%rsp), %rdi
 	movq	$64, %rsi
 	call	__jasmin_syscall_randombytes__
 	movq	%rax, %mm1
 	movq	%rbp, %rcx
-	movq	%rbp, 14952(%rsp)
-	movq	%rbx, %mm2
-	movq	%rcx, %mm3
+	movq	%rbp, %mm2
+	movq	%rbx, %mm3
+	movq	%rcx, %mm4
 	movq	(%rax), %rcx
 	movq	%rcx, 14912(%rsp)
 	movq	8(%rax), %rcx
@@ -6434,24 +6436,24 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_keypair:
 	call	L_sha3_512A_A33$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$57:
 	movq	(%rsp), %rax
-	movq	%rax, 14992(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 14960(%rsp)
-	movq	8(%rsp), %rax
-	movq	%rax, 15000(%rsp)
-	movq	40(%rsp), %rax
-	movq	%rax, 14968(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 15008(%rsp)
-	movq	48(%rsp), %rax
-	movq	%rax, 14976(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 15016(%rsp)
-	movq	56(%rsp), %rax
 	movq	%rax, 14984(%rsp)
+	movq	32(%rsp), %rax
+	movq	%rax, 14952(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 14992(%rsp)
+	movq	40(%rsp), %rax
+	movq	%rax, 14960(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 15000(%rsp)
+	movq	48(%rsp), %rax
+	movq	%rax, 14968(%rsp)
+	movq	24(%rsp), %rax
+	movq	%rax, 15008(%rsp)
+	movq	56(%rsp), %rax
+	movq	%rax, 14976(%rsp)
 	movq	$0, %rcx
 	leaq	6720(%rsp), %rax
-	leaq	14992(%rsp), %rsi
+	leaq	14984(%rsp), %rsi
 	leaq	-2168(%rsp), %rsp
 	call	L_gen_matrix_avx2$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$56:
@@ -6461,7 +6463,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$56:
 	leaq	1088(%rsp), %r9
 	leaq	1600(%rsp), %r10
 	leaq	2112(%rsp), %r11
-	leaq	14960(%rsp), %r8
+	leaq	14952(%rsp), %r8
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$55:
@@ -6471,7 +6473,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$55:
 	leaq	3136(%rsp), %r9
 	leaq	3648(%rsp), %r10
 	leaq	4160(%rsp), %r11
-	leaq	14960(%rsp), %r8
+	leaq	14952(%rsp), %r8
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$54:
@@ -7052,8 +7054,8 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$10:
 	vpmullw	%ymm0, %ymm1, %ymm0
 	vpsubw	%ymm0, %ymm2, %ymm0
 	vmovdqu	%ymm0, 480(%rax)
-	movq	%mm2, %r12
-	movq	%mm3, %rax
+	movq	%mm3, %r12
+	movq	%mm4, %rax
 	movq	%rax, %rdx
 	leaq	576(%rsp), %rcx
 	call	L_i_poly_tobytes$1
@@ -7087,15 +7089,15 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$3:
 	leaq	6208(%rsp), %rcx
 	call	L_i_poly_tobytes$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$2:
-	movq	14992(%rsp), %rax
+	movq	14984(%rsp), %rax
 	movq	%rax, 1536(%r12)
-	movq	15000(%rsp), %rax
+	movq	14992(%rsp), %rax
 	movq	%rax, 1544(%r12)
-	movq	15008(%rsp), %rax
+	movq	15000(%rsp), %rax
 	movq	%rax, 1552(%r12)
-	movq	15016(%rsp), %rax
+	movq	15008(%rsp), %rax
 	movq	%rax, 1560(%r12)
-	movq	14952(%rsp), %rax
+	movq	%mm2, %rax
 	movq	(%r12), %rcx
 	movq	%rcx, 1536(%rax)
 	movq	8(%r12), %rcx
@@ -7501,13 +7503,13 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$1:
 	movq	56(%rcx), %rcx
 	movq	%rcx, 3160(%rax)
 	xorq	%rax, %rax
-	movq	15088(%rsp), %rbx
-	movq	15096(%rsp), %rbp
-	movq	15104(%rsp), %r12
-	movq	15112(%rsp), %r13
-	movq	15120(%rsp), %r14
-	movq	15128(%rsp), %r15
-	movq	15136(%rsp), %rsp
+	movq	15080(%rsp), %rbx
+	movq	15088(%rsp), %rbp
+	movq	15096(%rsp), %r12
+	movq	15104(%rsp), %r13
+	movq	15112(%rsp), %r14
+	movq	15120(%rsp), %r15
+	movq	15128(%rsp), %rsp
 	ret
 _jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand:
 jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand:
@@ -9989,22 +9991,22 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$1:
 _jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand:
 jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand:
 	movq	%rsp, %rax
-	leaq	-15080(%rsp), %rsp
+	leaq	-15072(%rsp), %rsp
 	andq	$-32, %rsp
-	movq	%rbx, 15024(%rsp)
-	movq	%rbp, 15032(%rsp)
-	movq	%r12, 15040(%rsp)
-	movq	%r13, 15048(%rsp)
-	movq	%r14, 15056(%rsp)
-	movq	%r15, 15064(%rsp)
-	movq	%rax, 15072(%rsp)
+	movq	%rbx, 15016(%rsp)
+	movq	%rbp, 15024(%rsp)
+	movq	%r12, 15032(%rsp)
+	movq	%r13, 15040(%rsp)
+	movq	%r14, 15048(%rsp)
+	movq	%r15, 15056(%rsp)
+	movq	%rax, 15064(%rsp)
 	lfence
 	movq	$0, %rax
 	movq	%rdx, %mm1
 	movq	%rsi, %rax
-	movq	%rsi, 14952(%rsp)
-	movq	%rdi, %mm2
-	movq	%rax, %mm3
+	movq	%rsi, %mm2
+	movq	%rdi, %mm3
+	movq	%rax, %mm4
 	movq	(%rdx), %rax
 	movq	%rax, 14912(%rsp)
 	movq	8(%rdx), %rax
@@ -10019,24 +10021,24 @@ jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand:
 	call	L_sha3_512A_A33$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$57:
 	movq	(%rsp), %rax
-	movq	%rax, 14992(%rsp)
-	movq	32(%rsp), %rax
-	movq	%rax, 14960(%rsp)
-	movq	8(%rsp), %rax
-	movq	%rax, 15000(%rsp)
-	movq	40(%rsp), %rax
-	movq	%rax, 14968(%rsp)
-	movq	16(%rsp), %rax
-	movq	%rax, 15008(%rsp)
-	movq	48(%rsp), %rax
-	movq	%rax, 14976(%rsp)
-	movq	24(%rsp), %rax
-	movq	%rax, 15016(%rsp)
-	movq	56(%rsp), %rax
 	movq	%rax, 14984(%rsp)
+	movq	32(%rsp), %rax
+	movq	%rax, 14952(%rsp)
+	movq	8(%rsp), %rax
+	movq	%rax, 14992(%rsp)
+	movq	40(%rsp), %rax
+	movq	%rax, 14960(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 15000(%rsp)
+	movq	48(%rsp), %rax
+	movq	%rax, 14968(%rsp)
+	movq	24(%rsp), %rax
+	movq	%rax, 15008(%rsp)
+	movq	56(%rsp), %rax
+	movq	%rax, 14976(%rsp)
 	movq	$0, %rcx
 	leaq	6720(%rsp), %rax
-	leaq	14992(%rsp), %rsi
+	leaq	14984(%rsp), %rsi
 	leaq	-2168(%rsp), %rsp
 	call	L_gen_matrix_avx2$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$56:
@@ -10046,7 +10048,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$56:
 	leaq	1088(%rsp), %r9
 	leaq	1600(%rsp), %r10
 	leaq	2112(%rsp), %r11
-	leaq	14960(%rsp), %r8
+	leaq	14952(%rsp), %r8
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$55:
@@ -10056,7 +10058,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$55:
 	leaq	3136(%rsp), %r9
 	leaq	3648(%rsp), %r10
 	leaq	4160(%rsp), %r11
-	leaq	14960(%rsp), %r8
+	leaq	14952(%rsp), %r8
 	leaq	-600(%rsp), %rsp
 	call	L_poly_getnoise_eta1_4x$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$54:
@@ -10637,8 +10639,8 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$10:
 	vpmullw	%ymm0, %ymm1, %ymm0
 	vpsubw	%ymm0, %ymm2, %ymm0
 	vmovdqu	%ymm0, 480(%rax)
-	movq	%mm2, %r12
-	movq	%mm3, %rax
+	movq	%mm3, %r12
+	movq	%mm4, %rax
 	movq	%rax, %rdx
 	leaq	576(%rsp), %rcx
 	call	L_i_poly_tobytes$1
@@ -10672,15 +10674,15 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$3:
 	leaq	6208(%rsp), %rcx
 	call	L_i_poly_tobytes$1
 Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$2:
-	movq	14992(%rsp), %rax
+	movq	14984(%rsp), %rax
 	movq	%rax, 1536(%r12)
-	movq	15000(%rsp), %rax
+	movq	14992(%rsp), %rax
 	movq	%rax, 1544(%r12)
-	movq	15008(%rsp), %rax
+	movq	15000(%rsp), %rax
 	movq	%rax, 1552(%r12)
-	movq	15016(%rsp), %rax
+	movq	15008(%rsp), %rax
 	movq	%rax, 1560(%r12)
-	movq	14952(%rsp), %rax
+	movq	%mm2, %rax
 	movq	(%r12), %rcx
 	movq	%rcx, 1536(%rax)
 	movq	8(%r12), %rcx
@@ -11086,13 +11088,13 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$1:
 	movq	56(%rcx), %rcx
 	movq	%rcx, 3160(%rax)
 	xorq	%rax, %rax
-	movq	15024(%rsp), %rbx
-	movq	15032(%rsp), %rbp
-	movq	15040(%rsp), %r12
-	movq	15048(%rsp), %r13
-	movq	15056(%rsp), %r14
-	movq	15064(%rsp), %r15
-	movq	15072(%rsp), %rsp
+	movq	15016(%rsp), %rbx
+	movq	15024(%rsp), %rbp
+	movq	15032(%rsp), %r12
+	movq	15040(%rsp), %r13
+	movq	15048(%rsp), %r14
+	movq	15056(%rsp), %r15
+	movq	15064(%rsp), %rsp
 	ret
 L_gen_matrix_avx2$1:
 	movq	%rcx, %mm0

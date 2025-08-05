@@ -10,7 +10,7 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
   reg u64 t64;
   inline int i;
   reg ptr u8[MLKEM_POLYVECBYTES] skcpa;
-  stack ptr u8[MLKEM_SECRETKEYBYTES]sk_s;
+  #mmx reg ptr u8[MLKEM_SECRETKEYBYTES]sk_s;
 
   s_randomnessp = randomnessp;
 
