@@ -196,6 +196,7 @@ op compress10_circuit(a : W16.t) : W10.t =
    else 
    truncate64_10 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32)).
 
+(* 
 module CompressInit = {
     proc compressInit(rp: W8.t Array960.t, a: W16.t Array768.t) : W8.t Array960.t = {
        rp <- init_960_8 (fun i => W8.zero);
@@ -210,7 +211,7 @@ wp;while (0 <=  i <= 768) (768-i); last
    by wp; call (polyvec_csubq_ll); auto =>  /> /#. 
 by move => ?;unroll for ^while;auto => /> /#.
 qed.
-
+*)
 import BitEncoding BS2Int BitChunking.
 
 lemma output_pack_960_8(l : bool list) :
@@ -243,6 +244,7 @@ lemma i_polyvec_compress_corr_h _aw  :
              res = encode10_vec (compress_polyvec 10 (lift_polyvec _aw)) 
              ].
 proof.
+(* 
 bypr => &m H.
 rewrite Pr[mu_not].
 have -> : Pr[M.__i_polyvec_compress(rp{m}, a{m}) @ &m : true] = 1%r by byphoare => //;apply i_polyvec_compress_ll.
@@ -255,6 +257,7 @@ have <- : Pr[ CompressInit.compressInit(rp{m}, a{m}) @ &m : res = encode10_vec (
 byphoare (: pos_bound768_cxq a 0 768 2 /\  a = _aw ==> 
    res = encode10_vec (compress_polyvec 10 (lift_polyvec _aw)))   => //.
 conseq compressinit_ll (: _  ==> _);1:smt(). 
+*)
 proc; inline *.
 proc change ^while.1: (init_256_16 (fun i => r.[256*i0+i]));1: by auto.
 proc change ^while.^while.2: (W16_sub t0 (W16.of_int 3329)); 1: by auto.
@@ -270,7 +273,7 @@ proc change ^while{2}.22:  (srl_16 b (W16.of_int 4)); 1: by auto.
 proc change ^while{2}.24:  (sll_16 c (W16.of_int 6)); 1: by auto.
 proc change ^while{2}.28: (t.[3<-srl_64 t.[3] (W64.of_int 2)]); 1: by auto.
 
-unroll for 10.
+unroll for ^while.
 cfold ^i<-.
 do 196!(unroll for ^while).
 cfold ^j<-.
@@ -278,9 +281,9 @@ cfold ^i<-.
 cfold ^k<-.
 cfold ^i1<-.
 cfold ^i0<-.
-wp -6.
-proc change 5 : (init_4_64(fun i => W64.zero));1:by admit.
-bdep 16 10 [_aw] [a] [rp0] compress10_circuit pcond_reduced. 
+wp -5.
+(* proc change 2 : (init_4_64(fun i => W64.zero));1:by admit. *)
+bdep 16 10 [_aw] [a] [rp] compress10_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
 + move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
