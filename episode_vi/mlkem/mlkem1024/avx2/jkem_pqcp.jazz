@@ -17521,7 +17521,8 @@ fn __crypto_kem_keypair_jazz (reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg mut ptr u8[(MLKEM_SYMBYTES * 2)] s_randomnessp;
   reg mut ptr u8[MLKEM_SYMBYTES] randomnessp1;
   reg mut ptr u8[MLKEM_POLYVECBYTES] skcpa;
-  stack mut ptr u8[MLKEM_SECRETKEYBYTES] sk_s;
+  #[mmx]
+  reg mut ptr u8[MLKEM_SECRETKEYBYTES] sk_s;
   inline int i;
   reg u64 t64;
   
@@ -17684,6 +17685,7 @@ reg mut ptr u8[MLKEM_SECRETKEYBYTES], #[public] reg u64) {
   reg bool _sf_;
   reg bool _zf_;
   
+  _ /* u64 */ = #init_msf(); /* :k */
   public_key = public_key; /* u8[MLKEM_PUBLICKEYBYTES] */
   secret_key = secret_key; /* u8[MLKEM_SECRETKEYBYTES] */
   randomnessp = randomness; /* u8[(MLKEM_SYMBYTES * 2)] */
@@ -17713,6 +17715,7 @@ reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64) {
   reg bool _sf_;
   reg bool _zf_;
   
+  _ /* u64 */ = #init_msf(); /* :k */
   ciphertext = ciphertext; /* u8[MLKEM_CIPHERTEXTBYTES] */
   shared_secret = shared_secret; /* u8[MLKEM_SYMBYTES] */
   public_key = public_key; /* u8[MLKEM_PUBLICKEYBYTES] */
