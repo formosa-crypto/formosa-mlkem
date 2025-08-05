@@ -79,6 +79,18 @@ equiv a1__pabsorb_array_avx2_eq:
  : ={arg} ==> ={res}
  by sim.
 
+
+clone Keccak1600_array_avx2.KeccakArrayAvx2 as A1avx2
+ with op aSIZE <- 1,
+      theory A <- Array1,
+      theory WA <- WArray1
+      proof aSIZE_ge0 by done.
+
+equiv a1__pabsorb_array_avx2_single_eq:
+ M.a1____pabsorb_array_avx2 ~ A1avx2.M(A1avx2.P).__pabsorb_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
 (****************************************************************************)
 from JazzEC require import Array2 WArray2.   (* mat. position *)
 
@@ -165,6 +177,17 @@ equiv a128__squeeze_array_avx2_eq:
  : ={arg} ==> ={res}
  by sim.
 
+clone Keccak1600_array_avx2.KeccakArrayAvx2 as A128avx2
+ with op aSIZE <- 128,
+      theory A <- Array128,
+      theory WA <- WArray128
+      proof aSIZE_ge0 by done.
+
+equiv a128__squeeze_array_avx2_single_eq:
+ M.a128____squeeze_array_avx2 ~ A128avx2.M(A128avx2.P).__squeeze_array_avx2
+ : ={arg} ==> ={res}
+ by sim.
+
 (****************************************************************************)
 from JazzEC require import Array536 WArray536. (* BUF_SIZE *)
 
@@ -231,7 +254,33 @@ from JazzEC require import Array2144. (* 4*BUF_SIZE *)
 from JazzEC require import Array7.
 
 (* Keccak library interface *)
+print A32avx2.
 module K = {
+  proc _shake256_A128__A32_A1(out : W8.t Array128.t, seed : W8.t Array32.t, nonce : W8.t Array1.t) :
+    W8.t Array128.t  = {
+    var aux_0 : W256.t Array7.t;
+    var aux : W8.t Array128.t;
+    var pst : W64.t Array25.t;
+    var st : W256.t Array7.t;
+    var offset : W64.t;
+    var _0 : int;
+    var _1 : W64.t;
+    var _2 : int;
+    var _3 : W64.t;
+    var _4 : W8.t Array224.Array224.t;
+    
+    pst <- witness;
+    (pst,st) <@ Jazz_avx2.M.__pstate_init_avx2(pst);
+    offset <- W64.zero;
+    (pst, _0, st, _1) <@ A32avx2.M(A32avx2.P).__pabsorb_array_avx2(pst, 0, st, seed, offset, 32, 136, 0);
+    offset <- W64.zero;
+    (pst, _2, st, _3) <@ A1avx2.M(A1avx2.P).__pabsorb_array_avx2(pst, 32, st, nonce, offset, 1, 136, 31);
+    offset <- W64.zero;
+    (out, aux_0) <@ A128avx2.M(A128avx2.P).__squeeze_array_avx2(out, offset, 128, st, 136);
+
+    return out;
+  }
+
   proc _sha3_512A_A33(out : W8.t Array64.t, in_0 : W8.t Array33.t) :
     W8.t Array64.t = {
     var st : W256.t Array7.t;
@@ -383,6 +432,7 @@ module K = {
     
     return (out0, out1, out2, out3);
   }
+
   proc _shake128x4_absorb_A32_A2(st : W256.t Array25.t, seed : W8.t Array32.t, pos : W8.t Array8.t) :
     W256.t Array25.t = {
     var offset : W64.t;
@@ -552,6 +602,56 @@ wp; call (:true ==> res = stavx2_st0).
 by auto => />.
 qed.
 *)
+
+(*********************************************************************************)
+equiv shake256_128A_A33_eq:
+  M._shake256_A128__A32_A1 ~ K._shake256_A128__A32_A1
+ : ={arg} ==> ={res} by sim.
+
+hoare shake256_128A_A33_h' _in0 _in1:
+ K._shake256_A128__A32_A1
+ : seed = _in0 /\ nonce = _in1
+ ==> to_list res = SHAKE256 (to_list _in0 ++ to_list _in1) 128.
+proof.
+proc.
+ecall (A128avx2.squeeze_array_avx2_h out offset 128 st 136).
+wp; ecall (A1avx2.pabsorb_array_avx2_h (to_list seed) nonce offset 1 136 31). 
+wp; ecall (A32avx2.pabsorb_array_avx2_h ([<:W8.t>]) seed offset 32 136 0). 
+wp; call (pstate_init_avx2_h 136).
+auto =>/> &m [pst st] /= Hst ?? [rr0 rr1 rr2 rr3] /= ?????;split.
+smt(Array32.size_to_list).
+move => ? Hst2 ?? [rr4 rr5 rr6 rr7] /= -> [rr8 rr9] /= ->.
+rewrite stavx2_from_st25K -(Array128.of_listK W8.zero (SHAKE256 _ 128)).
+ by rewrite size_SQUEEZE1600 /#.
+move => ?.
+congr; rewrite tP => i Hi.
+rewrite initiE // filliE //= Hi /=.
+by rewrite /SHAKE256 /c1024_r8 /KECCAK1600; congr; congr => //.
+qed.
+
+lemma shake256_128A_A33_ll: islossless K._shake256_A128__A32_A1.
+proc.
+call A128avx2.squeeze_array_avx2_ll.
+wp; call A1avx2.pabsorb_array_avx2_ll.
+wp; call A32avx2.pabsorb_array_avx2_ll.
+wp; call pstate_init_avx2_ll.
+by auto.
+qed.
+
+phoare shake256_128A_A33_ph' _in0 _in1:
+ [K._shake256_A128__A32_A1
+ : seed = _in0 /\ nonce = _in1
+ ==> to_list res = SHAKE256 (to_list _in0 ++ to_list _in1) 128] =1%r
+ by conseq shake256_128A_A33_ll (shake256_128A_A33_h' _in0 _in1).
+
+phoare shake256_128A_A33_ph _in0 _in1:
+ [ M._shake256_A128__A32_A1
+ : seed = _in0 /\ nonce = _in1
+ ==> to_list res = SHAKE256 (to_list _in0 ++ to_list _in1) 128
+ ] = 1%r.
+proof.
+by conseq shake256_128A_A33_eq (shake256_128A_A33_ph' _in0 _in1) => // /#.
+qed.
 
 (*********************************************************************************)
 equiv sha3_512A_A64_eq:

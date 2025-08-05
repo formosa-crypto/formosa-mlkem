@@ -820,7 +820,17 @@ transitivity{1} { r <@ AuxMLKEMAvx2._poly_getnoise(rp,seed,nonce); }
   (* Need to extend the keccak results to this one.
      Jkem1024_avx2.M._shake256_A128__A32_A1
   Jkem.M._shake256_128_33 *)
-  admit. 
+  ecall {1} (shake256_128A_A33_ph seed0{1} nonce_s{1}).
+  ecall {2} (shake256_33_128 (Array33.init                               
+                                   (fun (i : int) =>                        
+                                      if i = 32 then nonce0{2} else seed0{2}.[i]))).
+  auto => /> &2 r0; rewrite /SHAKE256_33_128 /=.
+  have <- := (Array128.to_listK W8.zero r0); rewrite of_listK;1:by rewrite size_to_list.
+  move => ->;congr;congr;congr.
+  + apply (eq_from_nth witness);1: by rewrite !size_to_list.
+    move => k;rewrite !size_to_list /= => ?.
+    rewrite initiE 1:/# /= initiE 1:/# /= /#.
+  by rewrite /to_list mkseq1 /=.
 transitivity{1} { r <@ M._poly_getnoise(rp,seed,nonce); } 
      ( ={rp,seed,nonce}  ==> ={r})
     ( ={rp,nonce} /\ seed{1} = s_seed{2} ==> ={r} /\  signed_bound_cxq r{1} 0 256 1);1,2:smt().
