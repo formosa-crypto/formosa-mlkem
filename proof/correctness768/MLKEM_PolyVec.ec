@@ -252,7 +252,6 @@ cfold ^k<-.
 cfold ^i1<-.
 cfold ^i0<-.
 wp -5.
-(* proc change 2 : (init_4_64(fun i => W64.zero));1:by admit. *)
 bdep 16 10 [_aw] [a] [rp] compress10_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
