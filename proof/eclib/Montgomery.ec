@@ -148,7 +148,7 @@ by move => *; exists (- x %/ y); smt(modzE gt0_R).
 qed.
 
 lemma inrange a :  0 <= a < R %/ 2 => a %% R = a by smt().
-lemma outrange a :  - R%/2 <= a < 0 => a %% R = R + a by smt().
+lemma outrange a :  - R%/2 <= a < 0 => a %% R = R + a by smt(@IntDiv).
 
 lemma sign_comp a b: smod (a %%R + b %% R) R = smod (a + b) R
    by move => *; rewrite !smodE modzDm.
