@@ -205,21 +205,6 @@ op compress11_circuit(a : W16.t) : W11.t =
    else 
    truncate64_11 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31)).
 
-module CompressInit = {
-    proc compressInit(rp: W8.t Array1408.t, a: W16.t Array1024.t) : W8.t Array1408.t = {
-       rp <- init_1408_8 (fun i => W8.zero);
-       rp <@ Jkem1024.M.__i_polyvec_compress(rp,a);
-       return rp;
-    }
-}.
-
-lemma compressinit_ll : islossless CompressInit.compressInit.
-proc;inline 2.
-wp;while (0 <=  i <= 1040) (1040-i); last 
-   by wp; call (polyvec_csubq_ll); auto =>  /> /#. 
-by move => ?;unroll for ^while;auto => /> /#.
-qed.
-
 import BitEncoding BS2Int BitChunking.
 
 lemma output_pack_1408_8(l : bool list) :
@@ -252,18 +237,6 @@ lemma i_polyvec_compress_corr_h _aw  :
              res = encode11_vec (compress_polyvec 11 (lift_polyvec _aw)) 
              ].
 proof.
-bypr => &m H.
-rewrite Pr[mu_not].
-have -> : Pr[M.__i_polyvec_compress(rp{m}, a{m}) @ &m : true] = 1%r by byphoare => //;apply i_polyvec_compress_ll.
-have : Pr[M.__i_polyvec_compress(rp{m}, a{m}) @ &m : res = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))  ] = 1%r; last by smt().
-have <- : Pr[ CompressInit.compressInit(rp{m}, a{m}) @ &m : res = encode11_vec (compress_polyvec 11 (lift_polyvec _aw)) ] = 1%r; last first.
-+ byequiv (: ={a} ==> ={res}) => //.
-  proc;inline *.
-  admit.
-
-byphoare (: pos_bound1024_cxq a 0 1024 2 /\  a = _aw ==> 
-   res = encode11_vec (compress_polyvec 11 (lift_polyvec _aw)))   => //.
-conseq compressinit_ll (: _  ==> _);1:smt(). 
 proc; inline *.
 proc change ^while.1: (init_256_16 (fun i => r.[256*i0+i]));1: by auto.
 proc change ^while.^while.2: (W16_sub t0 (W16.of_int 3329)); 1: by auto.
@@ -289,18 +262,16 @@ proc change ^while{2}.57:  (srl_16 b (W16.of_int 6)); 1: by auto.
 proc change ^while{2}.59:  (sll_16 c (W16.of_int 5)); 1: by auto.
 proc change ^while{2}.63: (t.[7<-srl_16 t.[7] (W16.of_int 3)]); 1: by auto.
 
-proc change 5 : (init_8_16(fun i => W16.zero));1:by admit.
-
-swap 6 5.
-unroll for 9.
+swap 3 5.
+unroll for ^while.
 do 133!(unroll for ^while).
 cfold ^j<-.
 cfold ^i<-.
 cfold ^k<-.
 cfold ^i1<-.
 cfold ^i0<-.
-wp -6.
-bdep 16 11 [_aw] [a] [rp0] compress11_circuit pcond_reduced. 
+wp -5.
+bdep 16 11 [_aw] [a] [rp] compress11_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
 + move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
@@ -744,21 +715,7 @@ op decompress11_circuit(c : W11.t) : W16.t =
 
 op pcond_true11(_: W11.t) = true.
 
-module DecompressInit = {
-    proc decompressInit(rp :  W16.t Array1024.t, ap: W8.t Array1408.t) : W16.t Array1024.t = {
-       rp <- init_1024_16 (fun i => W16.zero);
-       rp <@ Jkem1024.M.__i_polyvec_decompress(rp,ap);
-       return rp;
-    }
-}.
-
 lemma polyvec_decompress_ll : islossless Jkem1024.M.__i_polyvec_decompress.
- proc; inline *;wp. 
-  while (0 <= i <= 1408) (1408-i); last by  auto =>  /> /#.
-move => *;auto => /> /#.
-qed.
-
-lemma decompressinit_ll : islossless DecompressInit.decompressInit.
  proc; inline *;wp. 
   while (0 <= i <= 1408) (1408-i); last by  auto =>  /> /#.
 move => *;auto => /> /#.
@@ -770,21 +727,6 @@ lemma polyvec_decompress_corr_h (_aw : W8.t Array1408.t):
               ==>
              pos_bound1024_cxq res 0 1024 1 /\
              lift_polyvec res = decompress_polyvec 11 (decode11_vec _aw) ].
-bypr => &m H.
-rewrite Pr[mu_not].
-have -> : Pr[M.__i_polyvec_decompress(rp{m}, ap{m}) @ &m : true] = 1%r by byphoare => //;apply polyvec_decompress_ll.
-have : Pr[M.__i_polyvec_decompress(rp{m}, ap{m}) @ &m :pos_bound1024_cxq res 0 1024 1 /\
-             lift_polyvec res = decompress_polyvec 11 (decode11_vec _aw)] = 1%r; last by smt().
-have <- : Pr[ DecompressInit.decompressInit(rp{m}, ap{m}) @ &m : pos_bound1024_cxq res 0 1024 1 /\
-             lift_polyvec res = decompress_polyvec 11 (decode11_vec _aw)] = 1%r; last first.
-+ byequiv (: arg{1}.`2 = arg{2}.`2 ==> ={res}) => //.
-  proc;inline *.
-  admit.
-
-byphoare (: ap = _aw ==> 
-   pos_bound1024_cxq res 0 1024 1 /\
-             lift_polyvec res = decompress_polyvec 11 (decode11_vec _aw)) => //.
-conseq decompressinit_ll (: _  ==> _);1:smt(). 
 proc; inline *.
 proc change ^while.6: (sll_32 d1 (W32.of_int 8));1: by auto.
 proc change ^while.11: (srl_32 t0 (W32.of_int 11)); 1: by auto.
@@ -813,12 +755,12 @@ proc change ^while.96: (srl_32 d0 (W32.of_int 5));1: by auto.
 proc change ^while.98: (sll_32 d1 (W32.of_int 3));1: by auto.
 proc change ^while.103: (srl_32 d0 (W32.of_int 11));1: by auto.
 
-swap 4 1.
+swap 1 1.
 unroll for ^while.
 cfold ^i<-.
 cfold ^j<-.
-wp -3.
-bdep 11 16 [_aw] [ap] [rp0] decompress11_circuit pcond_true11. 
+wp -2.
+bdep 11 16 [_aw] [ap] [rp] decompress11_circuit pcond_true11. 
 
 (* BDEP pre conseq *)
 + by move => &hr />; rewrite allP /pcond_true11 /=. 
@@ -1081,7 +1023,6 @@ lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t):
              lift_array1024 res = map incoeff (decode12_vec _aw)  /\
              pos_bound1024_cxq res 0 1024  2].
 proc; inline *.
-proc change 1: (init_1024_16 (fun _ => W16.zero));1: by admit.
 proc change ^while.1: (init_256_16 (fun (i_0 : int) => r.[256 * i + i_0])); 1: by auto.
 proc change ^while.2: (init_384_8 (fun (i_0 : int) => ap.[384 * i + i_0])  ); 1: by auto.
 proc change ^while.^while.7: (sll_16 t (W16.of_int 8)); 1: by auto.

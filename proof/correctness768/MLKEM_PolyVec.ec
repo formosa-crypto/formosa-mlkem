@@ -196,22 +196,6 @@ op compress10_circuit(a : W16.t) : W10.t =
    else 
    truncate64_10 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32)).
 
-(* 
-module CompressInit = {
-    proc compressInit(rp: W8.t Array960.t, a: W16.t Array768.t) : W8.t Array960.t = {
-       rp <- init_960_8 (fun i => W8.zero);
-       rp <@ Jkem768.M.__i_polyvec_compress(rp,a);
-       return rp;
-    }
-}.
-
-lemma compressinit_ll : islossless CompressInit.compressInit.
-proc;inline 2.
-wp;while (0 <=  i <= 768) (768-i); last 
-   by wp; call (polyvec_csubq_ll); auto =>  /> /#. 
-by move => ?;unroll for ^while;auto => /> /#.
-qed.
-*)
 import BitEncoding BS2Int BitChunking.
 
 lemma output_pack_960_8(l : bool list) :
@@ -244,20 +228,6 @@ lemma i_polyvec_compress_corr_h _aw  :
              res = encode10_vec (compress_polyvec 10 (lift_polyvec _aw)) 
              ].
 proof.
-(* 
-bypr => &m H.
-rewrite Pr[mu_not].
-have -> : Pr[M.__i_polyvec_compress(rp{m}, a{m}) @ &m : true] = 1%r by byphoare => //;apply i_polyvec_compress_ll.
-have : Pr[M.__i_polyvec_compress(rp{m}, a{m}) @ &m : res = encode10_vec (compress_polyvec 10 (lift_polyvec _aw))  ] = 1%r; last by smt().
-have <- : Pr[ CompressInit.compressInit(rp{m}, a{m}) @ &m : res = encode10_vec (compress_polyvec 10 (lift_polyvec _aw)) ] = 1%r; last first.
-+ byequiv (: ={a} ==> ={res}) => //.
-  proc;inline *.
-  admit.
-
-byphoare (: pos_bound768_cxq a 0 768 2 /\  a = _aw ==> 
-   res = encode10_vec (compress_polyvec 10 (lift_polyvec _aw)))   => //.
-conseq compressinit_ll (: _  ==> _);1:smt(). 
-*)
 proc; inline *.
 proc change ^while.1: (init_256_16 (fun i => r.[256*i0+i]));1: by auto.
 proc change ^while.^while.2: (W16_sub t0 (W16.of_int 3329)); 1: by auto.
@@ -679,21 +649,7 @@ op decompress10_circuit(c : W10.t) : W16.t =
 
 op pcond_true10(_: W10.t) = true.
 
-module DecompressInit = {
-    proc decompressInit(rp :  W16.t Array768.t, ap: W8.t Array960.t) : W16.t Array768.t = {
-       rp <- init_768_16 (fun i => W16.zero);
-       rp <@ Jkem768.M.__i_polyvec_decompress(rp,ap);
-       return rp;
-    }
-}.
-
 lemma polyvec_decompress_ll : islossless Jkem768.M.__i_polyvec_decompress.
- proc; inline *;wp. 
-  while (0 <= i <= 960) (960-i); last by  auto =>  /> /#.
-move => *;unroll for ^while;unroll for ^while;auto => /> /#.
-qed.
-
-lemma decompressinit_ll : islossless DecompressInit.decompressInit.
  proc; inline *;wp. 
   while (0 <= i <= 960) (960-i); last by  auto =>  /> /#.
 move => *;unroll for ^while;unroll for ^while;auto => /> /#.
@@ -705,21 +661,6 @@ lemma polyvec_decompress_corr_h (_aw : W8.t Array960.t):
               ==>
              pos_bound768_cxq res 0 768 1 /\
              lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw) ].
-bypr => &m H.
-rewrite Pr[mu_not].
-have -> : Pr[M.__i_polyvec_decompress(rp{m}, ap{m}) @ &m : true] = 1%r by byphoare => //;apply polyvec_decompress_ll.
-have : Pr[M.__i_polyvec_decompress(rp{m}, ap{m}) @ &m :pos_bound768_cxq res 0 768 1 /\
-             lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw)] = 1%r; last by smt().
-have <- : Pr[ DecompressInit.decompressInit(rp{m}, ap{m}) @ &m : pos_bound768_cxq res 0 768 1 /\
-             lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw)] = 1%r; last first.
-+ byequiv (: arg{1}.`2 = arg{2}.`2 ==> ={res}) => //.
-  proc;inline *.
-  admit.
-
-byphoare (: ap = _aw ==> 
-   pos_bound768_cxq res 0 768 1 /\
-             lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw)) => //.
-conseq decompressinit_ll (: _  ==> _);1:smt(). 
 proc; inline *.
 proc change ^while.4: (t.[1<-srl_32 t.[1] (W32.of_int 2)]); 1: by auto.
 proc change ^while.6: (sll_32 d (W32.of_int 8));1: by auto.
@@ -729,14 +670,13 @@ proc change ^while.14: (t.[3<-srl_32 t.[3] (W32.of_int 6)]); 1: by auto.
 proc change ^while.16: (sll_32 d (W32.of_int 4));1: by auto.
 proc change ^while.19: (sll_32 d (W32.of_int 2));1: by auto.
 proc change ^while.^while{2}.3: (t.[k<-srl_32 t.[k] (W32.of_int 10)]);1: by auto.
-swap 5 1.
+swap 2 1.
 unroll for ^while.
 do 384!(unroll for ^while).
 cfold ^j<-.
 cfold ^k<-.
-wp -4.
-proc change 4: (init_5_32 (fun _ => W32.zero));1: by admit.
-bdep 10 16 [_aw] [ap] [rp0] decompress10_circuit pcond_true10. 
+wp -3.
+bdep 10 16 [_aw] [ap] [rp] decompress10_circuit pcond_true10. 
 
 (* BDEP pre conseq *)
 + by move => &hr />; rewrite allP /pcond_true10 /=. 
@@ -947,7 +887,6 @@ lemma polyvec_frombytes_corr_h (_aw : W8.t Array1152.t):
              lift_array768 res = map incoeff (decode12_vec _aw)  /\
              pos_bound768_cxq res 0 768  2].
 proc; inline *.
-proc change 1: (init_768_16 (fun _ => W16.zero));1: by admit.
 proc change ^while.1: (init_256_16 (fun (i_0 : int) => r.[256 * i + i_0])); 1: by auto.
 proc change ^while.2: (init_384_8 (fun (i_0 : int) => ap.[384 * i + i_0])  ); 1: by auto.
 proc change ^while.^while.7: (sll_16 t (W16.of_int 8)); 1: by auto.
