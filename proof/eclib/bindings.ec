@@ -1678,4 +1678,11 @@ bind circuit VPSRLV_8u32 "VPSRLV_8u32".
 bind circuit VPSRLV_16u16 "VPSRLV_16u16".
 bind circuit VPSRL_16u16 "VPSRL_16u16".
 bind circuit VPSRA_16u16 "VPSRA_16u16_new".
-bind circuit VPSLL_4u64 "VPSLL_4u64".
+
+op VPSLL_16u16_bound(x : W256.t, c : W8.t) = 
+   VPSLL_16u16 x  (W128.of_int (to_uint c)).
+bind circuit VPSLL_16u16_bound "VPSLL_16u16".
+op VPSLL_4u64_bound(x : W256.t, c : W8.t) = 
+   VPSLL_4u64 x  (W128.of_int (to_uint c)).
+bind circuit VPSLL_4u64_bound "VPSLL_4u64".
+bind circuit BLENDV_16u8 "BLENDV_16u8".

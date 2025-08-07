@@ -397,6 +397,9 @@ proc change 12: (sliceget4_64_256 pvc_srlvqidx 0); 1: by auto.
 proc change 13: (sliceget32_8_256 pvc_shufbidx_s 0); 1: by auto.
 proc change ^while{2}.22 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
 proc change ^while{2}.23 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1));1: by auto => /#.
+proc change ^while{2}.16 : (VPSLL_4u64_bound f1 (W8.of_int 34));1: by auto.
+proc change 6 : (VPSLL_16u16_bound v (W8.of_int 3));1: by auto.
+proc change ^while{2}.4 : (VPSLL_16u16_bound f0 (W8.of_int 3));1: by auto.
 
 unroll for ^while.
 do 4!(unroll for ^while).
