@@ -2,7 +2,7 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
 from JazzEC require import Array1536 Array1568 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8.
-from JazzEC require import WArray512 WArray32 WArray16.
+from JazzEC require import WArray512 WArray32 WArray16 WArray1410.
 
 require import AVX2_Ops W16extra.
 from JazzEC require import Jkem1024.
@@ -370,6 +370,201 @@ qed.
 
 (***********************)
 
+
+(********** BEGIN BDEP PROOF OF COMPRESS  **************)
+
+op compress11_circuit(a : W16.t) : W11.t = 
+   if (a \ult W16.of_int 3329) then  
+   truncate64_11 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31))
+   else 
+   truncate64_11 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31)).
+
+lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
+    hoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
+             a = _aw /\
+             pos_bound1024_cxq a 0 1024 2 ==> 
+      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))].
+proof.
+proc; inline *.
+proc change ^while.1: (init_256_16 (fun i => r.[256*i0+i]));1: by auto.
+proc change ^while.2: (sliceget16_16_256 jqx16 0); 1: by auto.
+proc change ^while.^while.1: (sliceget256_16_256 rp0 (i1*256));1: by auto => /#.
+proc change ^while.^while.9: (sliceset256_16_256 rp0 (i1*256) r0);1: by auto => /#.
+proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]));1: by auto.
+proc change 5: (sliceget16_16_256 jvx16 0); 1: by auto.
+proc change ^while{2}.1: (sliceget1024_16_256 a (i*256));1: by auto => /#.
+proc change 12: (sliceget4_64_256 pvc_srlvqidx 0); 1: by auto.
+proc change 13: (sliceget32_8_256 pvc_shufbidx_s 0); 1: by auto.
+proc change ^while{2}.22 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
+proc change ^while{2}.23 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1));1: by auto => /#.
+
+unroll for ^while.
+do 4!(unroll for ^while).
+cfold ^inc<-.
+unroll for ^while.
+cfold ^i0<-.
+cfold ^i1<-.
+wp -4.
+bdep 16 11 [_aw] [a] [rp[Array1408.t:0]] compress11_circuit pcond_reduced. 
+
+(* BDEP pre conseq *)
++ move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
+  rewrite allP /pos_bound1024_cxq /= => Hb. 
+  rewrite /pcond_reduced /= /tolist /= => x.
+  rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
+  have := Hb i; rewrite ib /= qE /=.
+  rewrite /to_sint /smod /=.
+  smt(W16.to_uint_cmp).
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
+move => H1.
+
+apply (inj_eq Array1408.to_list Array1408.to_list_inj).
+apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
+have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W11.w2bits W11.bits2w  compress11_circuit 16 11 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+    smt(Array1408.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W11_t.oflistP).
+
+rewrite output_pack_1408_8. 
++ rewrite (EclibExtra.size_flatten' 11);1: smt(mapP BS2Int.size_int2bs).
+  by rewrite size_map size_to_list /=.
+
+congr.
+rewrite /compress11_circuit /compress_polyvec /fromarray256  -map_comp -map_comp -map_comp /(\o) /=.  
+apply (eq_from_nth witness); 1: by rewrite !size_map //.
+rewrite size_map size_iota /max /= => i ib; rewrite !(nth_map witness) //=;1,2:smt(size_iota).
+rewrite nth_iota 1:/# mapiE 1:/# initiE 1:/# /= /lift_polyvec /=.
+case (0<=i<256).
++ move => ? /=.
+  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 0)).[i]))); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
+
+rewrite /truncate64_11 to_uint_eq.
+(* This is now the equivalence betwen specs. It's made slightly more verbose
+   because the impl circuit is only proved correct wrt compress for values
+   in the q range. *)
+rewrite ultE /=. 
+case (to_uint a{hr}.[i] < 3329) => /= *.
++ rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
+  rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+
+have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
+
+rewrite -Fq.compress_impl_large //=;1:by smt().
+by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+
+case (256<=i<512).
++ move => ?? /=.
+  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 1)).[i-256]))); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
+
+rewrite /truncate64_11 to_uint_eq.
+(* This is now the equivalence betwen specs. It's made slightly more verbose
+   because the impl circuit is only proved correct wrt compress for values
+   in the q range. *)
+rewrite ultE /=. 
+case (to_uint a{hr}.[i] < 3329) => /= *.
++ rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
+  rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+
+have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
+
+rewrite -Fq.compress_impl_large //=;1:by smt().
+by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+
+case (512<=i<768).
++ move => ??? /=.
+  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 2)).[i-512]))); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
+
+rewrite /truncate64_11 to_uint_eq.
+(* This is now the equivalence betwen specs. It's made slightly more verbose
+   because the impl circuit is only proved correct wrt compress for values
+   in the q range. *)
+rewrite ultE /=. 
+case (to_uint a{hr}.[i] < 3329) => /= *.
++ rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
+  rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+
+have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
+
+rewrite -Fq.compress_impl_large //=;1:by smt().
+by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+
+ move => ??? /=.
+  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 3)).[i-768]))); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
+
+rewrite /truncate64_10 to_uint_eq.
+(* This is now the equivalence betwen specs. It's made slightly more verbose
+   because the impl circuit is only proved correct wrt compress for values
+   in the q range. *)
+rewrite ultE /=. 
+case (to_uint a{hr}.[i] < 3329) => /= *.
++ rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
+  rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+
+have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
+
+rewrite -Fq.compress_impl_large //=;1:by smt().
+by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
+
+qed.
+
+(********** END BDEP PROOF OF COMPRESS **************)
+
+
+lemma polyvec_compress_avx2_ll : islossless Jkem1024_avx2.M.__i_polyvec_compress.
+proc. cfold 11. unroll for ^while; wp => /=. 
+inline *;unroll for ^while; do 4!(unroll for ^while);auto.
+qed.
+
+lemma polyvec_compress_avx2_corr (_aw : W16.t Array1024.t):
+    phoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
+             a = _aw /\
+             pos_bound1024_cxq a 0 1024 2 ==> 
+      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r
+   by conseq polyvec_compress_avx2_ll (polyvec_compress_avx2_corr_h _aw).
+
+
 equiv compressequivvec  : 
  Jkem1024_avx2.M.__i_polyvec_compress ~  Jkem1024.M.__i_polyvec_compress :
      pos_bound1024_cxq a{1} 0 1024 2 /\
@@ -377,7 +572,17 @@ equiv compressequivvec  :
     lift_array1024 a{1} = lift_array1024 a{2} 
     ==> 
     res{2} = Array1408.init (fun i => res{1}.[i]).
-admitted.
+proc*.
+print MLKEM_PolyVec.
+ecall {2} (i_polyvec_compress_corr a{2}) => /=.
+ecall {1} (polyvec_compress_avx2_corr a{1}).
++ auto => /> &1 &2 ??? rr;rewrite !tP => H k kb. 
+   rewrite initiE 1:/# /= H 1:/# /encode11_vec get_of_list 1:/#;do 4!(congr). 
+   rewrite eq_vectorP => i ib.
+   rewrite tP => j jb.
+   smt(liftarrayvector).
+qed.
+
 
 lemma poly_decompress_equiv  : 
     equiv [Jkem1024_avx2.M._i_poly_decompress ~  Jkem1024.M._i_poly_decompress  :
