@@ -1,7 +1,7 @@
 require import AllCore List IntDiv QFABV.
 
 from Jasmin require import JModel_x86.
-from JazzEC require import Array4 Array5 Array6 Array7 Array8 Array9 Array16 Array24 Array25 Array32 Array48 Array128 Array160 Array256 Array384 Array768 Array960 Array1024 Array1152 Array1408 Array1536 WArray1568 Array1410.
+from JazzEC require import Array4 Array5 Array6 Array7 Array8 Array9 Array16 Array24 Array25 Array32 Array48 Array128 Array160 Array256 Array384 Array768 Array960 Array1024 Array1152 Array1408 Array1536 WArray1568 Array1410 Array1 Array2 Array3.
 from JazzEC require import WArray32 WArray160 WArray512 WArray960 WArray2048 WArray1536 Array1568 WArray1410 WArray384.
 
 import BitEncoding BS2Int BitChunking.
@@ -375,6 +375,7 @@ by have -> : (2 ^ (8 - i) * 2 ^ i) = 256;
   [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
      1,2:/# /= -!addrA /= | done ].
 qed.
+
 
 bind op [W8.t & W16.t] W2u8.zeroextu16 "zextend".
 realize bvzextendP.
@@ -840,6 +841,44 @@ realize touintP by smt().
 bind op [W64.t & W128.t] W2u64.zeroextu128 "zextend".
 realize bvzextendP by move => bv; rewrite /zeroextu128 /= of_uintK /=; smt(W64.to_uint_cmp pow2_64).
 
+bind op [W128.t & W64.t] W2u64.truncateu64 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu64 /W128.w2bits take_mkseq 1:// /= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq 1..2:// /of_int /to_uint /= get_bits2w 1:// 
+        nth_mkseq 1:// /= get_to_uint 1:// /= /to_uint /=.
+have -> /=: (0 <= i && i < 128) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(64-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(64-i) = 2^((64-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (64 - i) * 2 ^ i) = 18446744073709551616; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
+bind op [W128.t & W32.t] W4u32.truncateu32 "truncate".
+realize bvtruncateP.
+move => mv; rewrite /truncateu32 /W128.w2bits take_mkseq 1:// /= /w2bits.
+apply (eq_from_nth witness);1: by smt(size_mkseq).
+move => i; rewrite size_mkseq /= /max /= => ib.
+rewrite !nth_mkseq 1..2:// /of_int /to_uint /= get_bits2w 1:// 
+        nth_mkseq 1:// /= get_to_uint 1:// /= /to_uint /=.
+have -> /=: (0 <= i && i < 128) by smt().
+pose a := bs2int (w2bits mv). 
+rewrite {1}(divz_eq a (2^(32-i)*2^i)) !mulrA divzMDl;
+   1: by smt(StdOrder.IntOrder.expr_gt0).
+rewrite dvdz_modzDl; 1: by
+ have ->  : 2^(32-i) = 2^((32-i-1)+1); [ by smt() |
+    rewrite exprS 1:/#; smt(dvdz_mull dvdz_mulr)].  
+by have -> : (2 ^ (32 - i) * 2 ^ i) = 4294967296; 
+  [ rewrite -StdBigop.Bigint.Num.Domain.exprD_nneg 
+     1,2:/# /= -!addrA /= | done ].
+qed.
+
 (* ----------- BEGIN W256 BINDINGS ---------- *)
 
 bind bitstring W256.w2bits W256.bits2w W256.to_uint W256.to_sint W256.of_int W256.t 256.
@@ -1029,6 +1068,25 @@ realize tolistP by done.
 realize get_setP by smt(Array4.get_setE). 
 realize eqP by smt(Array4.tP).
 realize get_out by smt(Array4.get_out).
+
+bind array Array1."_.[_]" Array1."_.[_<-_]" Array1.to_list Array1.of_list Array1.t 1.
+realize tolistP by done.
+realize get_setP by smt(Array1.get_setE). 
+realize eqP by smt(Array1.tP).
+realize get_out by smt(Array1.get_out).
+
+bind array Array2."_.[_]" Array2."_.[_<-_]" Array2.to_list Array2.of_list Array2.t 2.
+realize tolistP by done.
+realize get_setP by smt(Array2.get_setE). 
+realize eqP by smt(Array2.tP).
+realize get_out by smt(Array2.get_out).
+
+bind array Array3."_.[_]" Array3."_.[_<-_]" Array3.to_list Array3.of_list Array3.t 3.
+realize tolistP by done.
+realize get_setP by smt(Array3.get_setE). 
+realize eqP by smt(Array3.tP).
+realize get_out by smt(Array3.get_out).
+
 
 bind array Array5."_.[_]" Array5."_.[_<-_]" Array5.to_list Array5.of_list Array5.t 5.
 realize tolistP by done.
@@ -1777,10 +1835,10 @@ bind circuit VPBROADCAST_8u32 "VPBROADCAST_8u32".
 bind circuit VPBROADCAST_4u64 "VPBROADCAST_4u64".
 bind circuit VPMADDWD_256 "VPMADDWD_16u16".
 bind circuit VPSLLV_8u32 "VPSLLV_8u32".
-bind circuit VPSRL_4u64 "VPSRL_4u64".
 bind circuit VPSHUFB_256 "VPSHUFB_256".
 bind circuit VEXTRACTI128 "VEXTRACTI128".
 bind circuit VPBLENDW_128 "VPBLEND_8u16".
+bind circuit VPBLENDVB_128 "VPBLEND_16u8".
 bind circuit VPEXTR_32 "VEXTRACTI32_256".
 bind circuit W4u32.VPEXTR_32 "VEXTRACTI32_128".
 bind circuit VPMULH_16u16 "VPMULH_16u16".
@@ -1803,7 +1861,6 @@ bind circuit VPSRLV_16u16 "VPSRLV_16u16".
 bind circuit VPSRL_16u16 "VPSRL_16u16".
 bind circuit VPSRA_16u16 "VPSRA_16u16".
 bind circuit VPSLL_16u16 "VPSLL_16u16".
-bind circuit VPSRL_16u16 "VPSRL_16u16".
 bind circuit VPSRL_8u32 "VPSRL_8u32".
 bind circuit VPSLL_8u32 "VPSLL_8u32".
 bind circuit VPSLL_4u64 "VPSLL_4u64".
@@ -1817,4 +1874,3 @@ bind circuit VPUNPCKL_4u64 "VPUNPCKL_4u64".
 bind circuit VPUNPCKH_4u64 "VPUNPCKH_4u64".
 bind circuit VMOVSLDUP_256 "VMOVSLDUP_256".
 bind circuit VPBLENDW_256 "VPBLENDW_256".
-

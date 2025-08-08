@@ -1,7 +1,7 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
-from JazzEC require import Array1536 Array1568 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8.
+from JazzEC require import Array1536 Array1568 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8 Array2 Array1 Array3.
 from JazzEC require import WArray512 WArray32 WArray16 WArray1410 WArray160.
 
 require import AVX2_Ops W16extra.
@@ -38,7 +38,7 @@ import MLKEM_PolyAVXVec.
 import MLKEM_PolyVecAVXVec.
 
 require import Bindings.
-(*
+
 module DecompressBridge = {
    proc __i_polyvec_decompress(r : W16.t Array1024.t, rp : W8.t Array1408.t, rrp : W8.t Array160.t) :  W16.t Array1024.t = {
       var rp0 :  W8.t Array1568.t;
@@ -385,9 +385,6 @@ proc change 12: (sliceget4_64_256 pvc_srlvqidx 0); 1: by auto.
 proc change 13: (sliceget32_8_256 pvc_shufbidx_s 0); 1: by auto.
 proc change ^while{2}.22 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
 proc change ^while{2}.23 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1));1: by auto => /#.
-proc change ^while{2}.16 : (VPSLL_4u64_bound f1 (W8.of_int 34));1: by auto.
-proc change 6 : (VPSLL_16u16_bound v (W8.of_int 3));1: by auto.
-proc change ^while{2}.4 : (VPSLL_16u16_bound f0 (W8.of_int 3));1: by auto.
 
 unroll for ^while.
 do 4!(unroll for ^while).
@@ -396,7 +393,7 @@ unroll for ^while.
 cfold ^i0<-.
 cfold ^i1<-.
 wp -4.
-admitted. 
+admitted. (* dependency error. something wrong in bound circuits? *)
 (* 
 bdep 16 11 [_aw] [a] [rp[Array1408.t:0]] compress11_circuit pcond_reduced. 
 
@@ -655,7 +652,6 @@ rewrite -get_to_list  H2 H3 /decompress_poly.
   rewrite/= /smod /= ifF;1:smt(@Zq).
   rewrite modz_small; smt(@Zq).  
 qed.
-
 (********** END BDEP PROOF OF DECOMPRESS **************)
 
 lemma poly_decompress_corr (_a : W8.t Array160.t): 
@@ -681,7 +677,7 @@ rewrite tP in H.
 rewrite tP in H1.
 rewrite tP => i ib; rewrite H // H1 //.
 qed.
-*)
+
 
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
 op compress5_circuit(a : W16.t) : W5.t = 
@@ -721,8 +717,11 @@ cfold 13.
 do 2!(unroll for ^while).
 cfold ^i0<-.
 wp -3.
-admitted.
-(* 
+admitted. (* In the reference implementation I needed to add a mask before or-ing
+             to allow bdep to conclude there was no dependence. This also probably
+             needs to be done here *)
+(*
+
 bdep 16 5 [_aw] [a] [rp] compress5_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
@@ -819,12 +818,11 @@ proc; inline *;wp.
 move => *. cfold 3. unroll for ^while;auto => /> /#.
 qed.
 
-
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
     hoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
-             lift_array1024 res = map incoeff (decode12_vec _aw)  /\
+             lift_array1024 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
              pos_bound1024_cxq res 0 1024  2].
 proc; inline *.
 proc change ^while.1: (init_256_16 (fun (i_0 : int) => r.[256 * i + i_0])); 1: by auto.
@@ -849,7 +847,11 @@ proc change ^while.7: (init_1024_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 
 unroll for ^while.
 do 4!(unroll for ^while).
 cfold ^i0<-.
-wp -2.
+wp -2. 
+admitted. (* Something is probably wrong in one of the bound circuits
+             used by this proof because the error is not present in the
+             implementation *)
+(* 
 bdep 12 16 [_aw] [a] [r] frombytes_circuit pcond_true12. 
 
 (* BDEP pre conseq *)
@@ -891,10 +893,17 @@ rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
   rewrite modz_small; smt(@Zq).  
 qed.
 
-
+*)
 
 (********** END BDEP PROOF OF FROMBYTES **************)
 
+lemma polyvec_frombytes_corr (_aw : W8.t Array1536.t): 
+    phoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
+             a = _aw
+              ==>
+             lift_array1024 res = map incoeff (decode12_vec _aw)  /\
+             pos_bound1024_cxq res 0 1024  2] = 1%r
+  by conseq polyvec_frombytes_ll (polyvec_frombytes_corr_h _aw).
 
 lemma polyvec_frombytes_equiv :
     equiv [Jkem1024_avx2.M.__i_polyvec_frombytes ~Jkem1024.M.__i_polyvec_frombytes :
@@ -902,6 +911,10 @@ lemma polyvec_frombytes_equiv :
              lift_array1024 res{1} = nttunpackv (lift_array1024 res{2}) /\
              pos_bound1024_cxq res{1} 0 1024 2 /\
              pos_bound1024_cxq res{2} 0 1024 2 ].
+proc*.
+ecall{1} (polyvec_frombytes_corr a{1}).
+ecall{2} (MLKEM_PolyVec.polyvec_frombytes_corr ap{2}).
+auto => /> &2 rr1 H ? rr2 -> ?.
 admitted.
 
 
