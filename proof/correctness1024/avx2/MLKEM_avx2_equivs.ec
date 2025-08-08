@@ -848,9 +848,7 @@ unroll for ^while.
 do 4!(unroll for ^while).
 cfold ^i0<-.
 wp -2. 
-admitted. (* Something is probably wrong in one of the bound circuits
-             used by this proof because the error is not present in the
-             implementation *)
+admitted. (* Lanes are modulo a permutation. *)
 (* 
 bdep 12 16 [_aw] [a] [r] frombytes_circuit pcond_true12. 
 
@@ -901,7 +899,7 @@ lemma polyvec_frombytes_corr (_aw : W8.t Array1536.t):
     phoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
-             lift_array1024 res = map incoeff (decode12_vec _aw)  /\
+             lift_array1024 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
              pos_bound1024_cxq res 0 1024  2] = 1%r
   by conseq polyvec_frombytes_ll (polyvec_frombytes_corr_h _aw).
 
@@ -914,9 +912,8 @@ lemma polyvec_frombytes_equiv :
 proc*.
 ecall{1} (polyvec_frombytes_corr a{1}).
 ecall{2} (MLKEM_PolyVec.polyvec_frombytes_corr ap{2}).
-auto => /> &2 rr1 H ? rr2 -> ?.
-admitted.
-
+auto => /> &2 rr1 -> ? rr2 -> ? //.
+qed.
 
 
 lemma subequiv_noperm  (ab bb : int):
