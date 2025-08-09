@@ -110,6 +110,8 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
   for i = 0 to MLKEM_VECN/16
   {
     f0 = a[:u256 i];
+    f2 = 0x1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff;
+    f0 = #VPAND(f0,f2)
     f1 = #VPMULL_16u16(f0, v8);
     f2 = #VPADD_16u16(f0, off);
     f0 = #VPSLL_16u16(f0, 3);
