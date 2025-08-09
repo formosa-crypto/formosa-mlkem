@@ -86,6 +86,9 @@ u64[4] pvc_srlvqidx = {10,30,10,30};
 u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,-1,-1,-1,-1,-1,
                          5, 6, 7, 8, 9,10,-1,-1,-1,-1, 0, 0, 1, 2, 3, 4};
 
+
+u16 bits12 = 0xfff;
+
 inline
 fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2]
 {
@@ -110,8 +113,8 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
   for i = 0 to MLKEM_VECN/16
   {
     f0 = a[:u256 i];
-    f2 = 0x1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff1fff;
-    f0 = #VPAND(f0,f2)
+    f2 = #VPBROADCAST_16u16(bits12);
+    f0 = #VPAND_16u16(f0,f2);
     f1 = #VPMULL_16u16(f0, v8);
     f2 = #VPADD_16u16(f0, off);
     f0 = #VPSLL_16u16(f0, 3);
