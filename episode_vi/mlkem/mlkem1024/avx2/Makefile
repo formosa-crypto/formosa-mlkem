@@ -35,8 +35,8 @@ jkem.s: $(JINC) jkem.jazz
 	$(JASMINC) -o jkem.s $(JFLAGS) jkem.jazz
 
 pqcp: $(JINC)  jkem.s
-	# $(JASMINC) -ptyping $(JFLAGS) jkem.jazz > jkem_pqcp.jazz
-	# $(JASMINC) -o jkem_pqcp.s $(JFLAGS) jkem_pqcp.jazz
+	$(JASMINC) -ptyping $(JFLAGS) jkem.jazz > jkem_pqcp.jazz
+	$(JASMINC) -o jkem_pqcp.s $(JFLAGS) jkem_pqcp.jazz
 	diff jkem_pqcp.s jkem.s > /dev/null; \
 	if [ $$? -eq 0 ]; then echo "\nALL GOOD!"; else echo "\n!!!ASSEMBLY FILE AFTER TYPING NOT SAME!!!"; fi
 

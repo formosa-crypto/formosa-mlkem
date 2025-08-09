@@ -3,7 +3,7 @@ require "../../common/ref/poly.jinc"
 
 fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
 {
-  reg u16 u v;
+  reg u16 u;
   reg u32 d0;
   reg u8[8] t;
   reg u8 c0 c1 c2;
@@ -16,10 +16,6 @@ fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
     for j = 0 to 8
     {
       u = (16u)a[i*8 + j];
-      v = u;
-      v >>= 15;
-      v &= MLKEM_Q;
-      u += v;
       d0 = (32u)u;
       d0 <<= 5;
       d0 += 1664;

@@ -129,3 +129,18 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec(
   ?{}, r = #set0();
   return shared_secret, r;
 }
+
+
+/******** DEBUG *******/
+
+export fn __i_polyvec_frombytes_test(reg ptr u16[MLKEM_VECN]rp, reg ptr u8[MLKEM_POLYVECBYTES] ap) -> reg ptr u16[MLKEM_VECN]
+{
+  stack u16[MLKEM_VECN] r;
+  inline int i;
+  r = __i_polyvec_frombytes(ap);
+  for i = 0 to MLKEM_VECN*16/64
+  {
+    rp.[:u64 i] = r.[:u64 i];
+  }
+  return rp;
+}
