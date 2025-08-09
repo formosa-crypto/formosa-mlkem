@@ -1,76 +1,10 @@
 require "params.jinc"
 require "../../common/ref/poly.jinc"
 
-fn _poly_compress(reg u64 rp, reg ptr u16[MLKEM_N] a) -> reg ptr u16[MLKEM_N]
-{
-  reg u16 u;
-  reg u32 d0;
-  reg u8[8] t;
-  reg u8 c0 c1 c2;
-  inline int i j;
-
-  a = _poly_csubq(a);
-
-  for i = 0 to MLKEM_N/8
-  {
-    for j = 0 to 8
-    {
-      u = (16u)a[i*8 + j];
-      d0 = (32u)u;
-      d0 <<= 5;
-      d0 += 1664;
-      d0 *= 40318;
-      d0 >>= 27;
-      d0 &= 0x1f;
-      t[j] = d0;
-    }
-
-    c0 = t[0];
-    c1 = t[1];
-    c1 <<= 5;
-    c0 |= c1;
-    [:u8 rp+i*5] = c0;
-
-    c0 = t[1];
-    c0 >>= 3;
-    c1 = t[2];
-    c1 <<= 2;
-    c2 = t[3];
-    c2 <<= 7;
-    c0 |= c1;
-    c0 |= c2;
-    [:u8 rp+i*5+1] = c0;
-
-    c0 = t[3];
-    c0 >>= 1;
-    c1 = t[4];
-    c1 <<= 4;
-    c0 |= c1;
-    [:u8 rp+i*5+2] = c0;
-
-    c0 = t[4];
-    c0 >>= 4;
-    c1 = t[5];
-    c1 <<= 1;
-    c2 = t[6];
-    c2 <<= 6;
-    c0 |= c1;
-    c0 |= c2;
-    [:u8 rp+i*5+3] = c0;
-
-    c0 = t[6];
-    c0 >>= 2;
-    c1 = t[7];
-    c1 <<= 3;
-    c0 |= c1;
-    [:u8 rp+i*5+4] = c0;
-  }
-  return a;
-}
 
 fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
 {
-  reg u16 u v;
+  reg u16 u;
   reg u32 d0;
   reg u64 i k;
   reg u8[8] t;
@@ -86,10 +20,6 @@ fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_
     for j = 0 to 8
     {
       u = (16u)a[i];
-      v = u;
-      v >>= 15;
-      v &= MLKEM_Q;
-      u += v;
       d0 = (32u)u;
       d0 <<= 5;
       d0 += 1664;
