@@ -366,7 +366,7 @@ op compress11_circuit(a : W16.t) : W11.t =
    truncate64_11 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31))
    else 
    truncate64_11 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31)).
-
+z
 lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
     hoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
              a = _aw /\

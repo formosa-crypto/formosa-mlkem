@@ -97,6 +97,8 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
 
   for i = 0 to MLKEM_VECN/16
   {
+    /* why is this doing a montgomery
+       reduction? */
     f0 = a[:u256 i];
     f1 = #VPMULL_16u16(f0, v8);
     f2 = #VPADD_16u16(f0, off);
