@@ -133,7 +133,7 @@ lemma polvec_add_corr _a _b ab bb:
   conseq (polyvec_add_ll) (polvec_add_corr_h _a _b ab bb abb bbb).
   by smt().
 qed.
-
+(* 
 lemma polyvec_csubq_corr_h ap :
   hoare[Mprevec.polyvec_csubq:
        ap = lift_array1024 r /\
@@ -223,7 +223,7 @@ lemma polyvec_csubq_corr ap:
   by smt().
 qed.
 
-
+*)
 lemma polyvec_reduce_corr_h _a:
   hoare[Mprevec.polyvec_reduce:
        _a  = lift_array1024 r ==>

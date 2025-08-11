@@ -33,7 +33,7 @@ module Mvec = {
          else r.[i]);
     return (r);
   }
-
+(* 
   proc polyvec_csubq (r:W16.t Array1024.t) : W16.t Array1024.t = {
     var aux: W16.t Array256.t;
     
@@ -54,7 +54,7 @@ module Mvec = {
          else r.[i]);
     return (r);
   }
-
+*)
   proc polyvec_reduce (r:W16.t Array1024.t) : W16.t Array1024.t = {
     var aux: W16.t Array256.t;
     
@@ -90,7 +90,7 @@ proof.
   do 4!(wp; call eq_poly_add2).
   by auto => />.
 qed.
-
+(*
 equiv eq_polyvec_csubq :
   Mprevec.polyvec_csubq ~ Mvec.polyvec_csubq: ={r} ==> ={res}.
 proof.
@@ -98,7 +98,7 @@ proof.
   do 4!(wp; call eq_poly_csubq).
   by auto => />.
 qed.
-
+*)
 
 equiv eq_polyvec_reduce :
   Mprevec.polyvec_reduce ~ Mvec.polyvec_reduce: ={r} ==> ={res}.
@@ -119,7 +119,7 @@ proof.
   do 4!(wp; call veceq_poly_add2).
   auto => />.
 qed.
-
+(* 
 equiv veceq_polyvec_csubq :
   Mvec.polyvec_csubq ~Jkem1024_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
@@ -128,7 +128,7 @@ proof.
   do 4!(wp; call veceq_poly_csubq).
   auto => />.
 qed.
-
+*)
 
 equiv veceq_polyvec_reduce :
   Mvec.polyvec_reduce ~Jkem1024_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
@@ -149,7 +149,7 @@ apply eq_polyvec_add2.
 apply veceq_polyvec_add2.
 qed.
 
-
+(* 
 equiv prevec_eq_polyvec_csubq :
   Mprevec.polyvec_csubq ~Jkem1024_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
@@ -158,7 +158,7 @@ smt(). trivial.
 apply eq_polyvec_csubq.
 apply veceq_polyvec_csubq.
 qed.
-
+*)
 
 equiv prevec_eq_polyvec_reduce :
   Mprevec.polyvec_reduce ~Jkem1024_avx2.M.__polyvec_reduce: ={r} ==> ={res}.

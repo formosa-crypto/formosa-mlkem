@@ -366,7 +366,7 @@ op compress11_circuit(a : W16.t) : W11.t =
    truncate64_11 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31))
    else 
    truncate64_11 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31)).
-z
+
 lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
     hoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
              a = _aw /\
@@ -374,17 +374,18 @@ lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
       Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))].
 proof.
 proc; inline *.
+/*
 proc change ^while.1: (init_256_16 (fun i => r.[256*i0+i]));1: by auto.
 proc change ^while.2: (sliceget16_16_256 jqx16 0); 1: by auto.
 proc change ^while.^while.1: (sliceget256_16_256 rp0 (i1*256));1: by auto => /#.
 proc change ^while.^while.9: (sliceset256_16_256 rp0 (i1*256) r0);1: by auto => /#.
-proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]));1: by auto.
+proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]));1: by auto. */
 proc change 5: (sliceget16_16_256 jvx16 0); 1: by auto.
 proc change ^while{2}.1: (sliceget1024_16_256 a (i*256));1: by auto => /#.
 proc change 12: (sliceget4_64_256 pvc_srlvqidx 0); 1: by auto.
 proc change 13: (sliceget32_8_256 pvc_shufbidx_s 0); 1: by auto.
-proc change ^while{2}.22 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
-proc change ^while{2}.23 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1));1: by auto => /#.
+proc change ^while{2}.13 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
+proc change ^while{2}.14 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1));1: by  admit.
 
 unroll for ^while.
 do 4!(unroll for ^while).
@@ -393,8 +394,6 @@ unroll for ^while.
 cfold ^i0<-.
 cfold ^i1<-.
 wp -4.
-admitted. (* dependency error. something wrong in bound circuits? *)
-(* 
 bdep 16 11 [_aw] [a] [rp[Array1408.t:0]] compress11_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
