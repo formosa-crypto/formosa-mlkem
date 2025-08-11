@@ -55,7 +55,7 @@ require import Bindings BitEncoding.
 import BitChunking BS2Int.
 
 
-
+(*
 (********** BEGIN BDEP PROOF OF DECOMPRESS **************)
 
 op decompress11_circuit(c : W11.t) : W16.t = 
@@ -357,7 +357,7 @@ ecall {1} (polyvec_decompress_bridge_corr (Array1408.init (fun (i : int) => rp{1
 qed.
 
 (***********************)
-
+*)
 
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
 
@@ -374,27 +374,30 @@ lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
       Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))].
 proof.
 proc; inline *.
-/*
 proc change ^while.1: (init_256_16 (fun i => r.[256*i0+i]));1: by auto.
 proc change ^while.2: (sliceget16_16_256 jqx16 0); 1: by auto.
 proc change ^while.^while.1: (sliceget256_16_256 rp0 (i1*256));1: by auto => /#.
 proc change ^while.^while.9: (sliceset256_16_256 rp0 (i1*256) r0);1: by auto => /#.
-proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]));1: by auto. */
+proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]));1: by auto. 
 proc change 5: (sliceget16_16_256 jvx16 0); 1: by auto.
 proc change ^while{2}.1: (sliceget1024_16_256 a (i*256));1: by auto => /#.
 proc change 12: (sliceget4_64_256 pvc_srlvqidx 0); 1: by auto.
 proc change 13: (sliceget32_8_256 pvc_shufbidx_s 0); 1: by auto.
-proc change ^while{2}.13 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
-proc change ^while{2}.14 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1));1: by  admit.
-
+proc change ^while{2}.27 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
+proc change ^while{2}.28 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1)).
++ move => *;rewrite /sliceset1410_8_64 tP => *.
+  rewrite initiE /= 1:/# ifT 1:/# initiE 1:/#.
+  do congr;smt().
 unroll for ^while.
 do 4!(unroll for ^while).
 cfold ^inc<-.
 unroll for ^while.
-cfold ^i0<-.
-cfold ^i1<-.
-wp -4.
+cfold ^i0<-. 
+cfold ^i1<-. 
+wp -4. 
 bdep 16 11 [_aw] [a] [rp[Array1408.t:0]] compress11_circuit pcond_reduced. 
+
+
 
 (* BDEP pre conseq *)
 + move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
@@ -408,12 +411,12 @@ bdep 16 11 [_aw] [a] [rp[Array1408.t:0]] compress11_circuit pcond_reduced.
 (* BDEP post conseq *)
 
 (* We start with some boilerplate *)
-move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
+move => &hr [#]/= <- H0  rr; rewrite /= !flatten1.
 move => H1.
 
 apply (inj_eq Array1408.to_list Array1408.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
-have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W11.w2bits W11.bits2w  compress11_circuit 16 11 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list (Array1408.init ("_.[_]" rr))) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W11.w2bits W11.bits2w  compress11_circuit 16 11 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
     smt(Array1408.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W11_t.oflistP).
 
 rewrite output_pack_1408_8. 
@@ -441,12 +444,12 @@ case (to_uint a{hr}.[i] < 3329) => /= *.
 have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
-+  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /smod /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329)) /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
-+  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
 
@@ -469,12 +472,12 @@ case (to_uint a{hr}.[i] < 3329) => /= *.
 have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
-+  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))   /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
-+  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
 
@@ -497,12 +500,12 @@ case (to_uint a{hr}.[i] < 3329) => /= *.
 have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
-+  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
-+  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
 
@@ -524,12 +527,12 @@ case (to_uint a{hr}.[i] < 3329) => /= *.
 have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
-+  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
-+  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
 
@@ -537,7 +540,6 @@ rewrite -Fq.compress_impl_large //=;1:by smt().
 by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
 
 qed.
-*)
 
 (********** END BDEP PROOF OF COMPRESS **************)
 
@@ -716,11 +718,6 @@ cfold 13.
 do 2!(unroll for ^while).
 cfold ^i0<-.
 wp -3.
-admitted. (* In the reference implementation I needed to add a mask before or-ing
-             to allow bdep to conclude there was no dependence. This also probably
-             needs to be done here *)
-(*
-
 bdep 16 5 [_aw] [a] [rp] compress5_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
@@ -765,19 +762,19 @@ case (to_uint a{hr}.[i] < 3329) => /= *.
 have := H0;rewrite /pos_bound256_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
-+  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
-+  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))   /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 
 have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
 
 rewrite -compress_impl5 //=;1:by smt().
 by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) !of_uintK /= /#. 
 qed.
-*)
+
 (********** END BDEP PROOF OF COMPRESS **************)
 
 lemma i_poly_compress_corr _aw  : 

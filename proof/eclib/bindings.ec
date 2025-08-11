@@ -1864,7 +1864,6 @@ bind circuit VPSLL_16u16 "VPSLL_16u16".
 bind circuit VPSRL_8u32 "VPSRL_8u32".
 bind circuit VPSLL_8u32 "VPSLL_8u32".
 bind circuit VPSLL_4u64 "VPSLL_4u64".
-bind circuit BLENDV_16u8 "BLENDV_16u8".
 bind circuit VPINSR_8u16 "VPINSR_8u16".
 bind circuit VPBROADCAST_2u128 "VPBROADCAST_2u128".
 bind circuit VPACKUS_16u16 "VPACKUS_16u16".

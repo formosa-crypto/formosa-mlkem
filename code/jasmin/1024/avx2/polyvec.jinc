@@ -76,6 +76,9 @@ u64[4] pvc_srlvqidx = {10,30,10,30};
 u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,-1,-1,-1,-1,-1,
                          5, 6, 7, 8, 9,10,-1,-1,-1,-1, 0, 0, 1, 2, 3, 4};
 
+u32 keepodd11 = 0x07ff0000;
+u32 keepeven11 = 0x000007ff;
+
 inline
 fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2]
 {
@@ -84,7 +87,7 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
   reg u128 t0 t1;
 
   /* This is not needed */
-  /*a = __polyvec_csubq(a);*/
+  a = __polyvec_csubq(a);
 
   v = jvx16[:u256 0];
   v8 = #VPSLL_16u16(v, 3);
@@ -98,10 +101,8 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
 
   for i = 0 to MLKEM_VECN/16
   {
-    /* why is this doing a montgomery
-       reduction? */
     f0 = a[:u256 i];
-/*    f1 = #VPMULL_16u16(f0, v8);
+    f1 = #VPMULL_16u16(f0, v8);
     f2 = #VPADD_16u16(f0, off);
     f0 = #VPSLL_16u16(f0, 3);
     f0 = #VPMULH_16u16(f0, v);
@@ -109,12 +110,23 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
     f1 = #VPANDN_256(f1, f2);
     f1 = #VPSRL_16u16(f1, 15);
     f0 = #VPSUB_16u16(f0, f1);
-    f0 = #VPMULHRS_16u16(f0, shift1); */
+    f0 = #VPMULHRS_16u16(f0, shift1); 
     /* retain only 11 bits */
     f0 = #VPAND_256(f0, mask);
     /* build 32-bit words by grouping 2 by 2
        into 22-bit values */
-    f0 = #VPMADDWD_256(f0, shift2);
+    /* 
+       THIS SCREWS UP DEP ANALYSIS
+       f0 = #VPMADDWD_256(f0,shift2); */
+    /************************************/
+    /* REPLACEMENT FOR VPMADDWD */
+    f2 = #VPBROADCAST_8u32(keepodd11);
+    f1 = #VPAND_256(f0,f2);
+    f2 = #VPBROADCAST_8u32(keepeven11);
+    f0 = #VPAND_256(f0,f2);
+    f1 = #VPSRL_8u32(f1, 5);
+    f0 = #VPOR_256(f0,f1);
+    /**********************************/
     /* shift even ones left by 10 to merge */
     f0 = #VPSLLV_8u32(f0, sllvdidx);
     /* get a copy of high half on the low end */
@@ -125,7 +137,7 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
     /* put mid bits in place */
     f1 = #VPSLL_4u64(f1, 34);
     /* merge */
-    f0 = #VPADD_4u64(f0, f1);
+    f0 = #VPOR_256(f0, f1);
     /* get the first 11 bytes, which are in place */
     /* permute high bytes to allow putting them in place */
     f0 = #VPSHUFB_256(f0, shufbidx);

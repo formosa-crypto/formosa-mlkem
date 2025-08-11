@@ -561,6 +561,10 @@ abbrev sample_load_shuffle =
 (W8.of_int 11); (W8.of_int 11); (W8.of_int 12); (W8.of_int 13);
 (W8.of_int 14); (W8.of_int 14); (W8.of_int 15)]).
 
+abbrev keepeven11 = (W32.of_int 2047).
+
+abbrev keepodd11 = (W32.of_int 134152192).
+
 abbrev pvc_shufbidx_s =
 ((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 2); (W8.of_int 3); (W8.of_int 4);
@@ -8792,6 +8796,23 @@ module M = {
     }
     return r;
   }
+  proc __polyvec_csubq (r:W16.t Array1024.t) : W16.t Array1024.t = {
+    var aux:W16.t Array256.t;
+    var i:int;
+    i <- 0;
+    while ((i < 4)) {
+      aux <@ _poly_csubq ((Array256.init (fun i_0 => r.[((256 * i) + i_0)])));
+      r <-
+      (Array1024.init
+      (fun i_0 => (if ((256 * i) <= i_0 < ((256 * i) + 256)) then aux.[
+                                                                  (i_0 -
+                                                                  (256 * i))] else 
+                  r.[i_0]))
+      );
+      i <- (i + 1);
+    }
+    return r;
+  }
   proc __polyvec_invntt (r:W16.t Array1024.t) : W16.t Array1024.t = {
     var aux:W16.t Array256.t;
     var i:int;
@@ -8973,8 +8994,10 @@ module M = {
     var i:int;
     var f0:W256.t;
     var f1:W256.t;
+    var f2:W256.t;
     var t0:W128.t;
     var t1:W128.t;
+    a <@ __polyvec_csubq (a);
     v <- (get256 (WArray32.init16 (fun i_0 => jvx16.[i_0])) 0);
     v8 <- (VPSLL_16u16 v (W128.of_int 3));
     off <- (VPBROADCAST_16u16 pvc_off_s);
@@ -8989,13 +9012,27 @@ module M = {
     i <- 0;
     while ((i < inc)) {
       f0 <- (get256 (WArray2048.init16 (fun i_0 => a.[i_0])) i);
+      f1 <- (VPMULL_16u16 f0 v8);
+      f2 <- (VPADD_16u16 f0 off);
+      f0 <- (VPSLL_16u16 f0 (W128.of_int 3));
+      f0 <- (VPMULH_16u16 f0 v);
+      f2 <- (VPSUB_16u16 f1 f2);
+      f1 <- (VPANDN_256 f1 f2);
+      f1 <- (VPSRL_16u16 f1 (W128.of_int 15));
+      f0 <- (VPSUB_16u16 f0 f1);
+      f0 <- (VPMULHRS_16u16 f0 shift1);
       f0 <- (VPAND_256 f0 mask);
-      f0 <- (VPMADDWD_256 f0 shift2);
+      f2 <- (VPBROADCAST_8u32 keepodd11);
+      f1 <- (VPAND_256 f0 f2);
+      f2 <- (VPBROADCAST_8u32 keepeven11);
+      f0 <- (VPAND_256 f0 f2);
+      f1 <- (VPSRL_8u32 f1 (W128.of_int 5));
+      f0 <- (VPOR_256 f0 f1);
       f0 <- (VPSLLV_8u32 f0 sllvdidx);
       f1 <- (VPSRLDQ_256 f0 (W8.of_int 8));
       f0 <- (VPSRLV_4u64 f0 srlvqidx);
       f1 <- (VPSLL_4u64 f1 (W128.of_int 34));
-      f0 <- (VPADD_4u64 f0 f1);
+      f0 <- (VPOR_256 f0 f1);
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
