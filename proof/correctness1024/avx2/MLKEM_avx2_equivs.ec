@@ -367,6 +367,58 @@ op compress11_circuit(a : W16.t) : W11.t =
    else 
    truncate64_11 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31)).
 
+op VPMADDWD_alt(f0 m : W256.t) : W256.t =
+    if m <> (VPBROADCAST_4u64 (W64.of_int 576460756732608513)) then
+       VPMADDWD_256 f0 m
+    else 
+    let f2 = VPBROADCAST_8u32 (W32.of_int 134152192) in
+    let f1 = VPAND_256 f0 f2  in
+    let f2 = VPBROADCAST_8u32 (W32.of_int 2047) in
+    let f0 = VPAND_256 f0 f2  in
+    let f1 = VPSRL_8u32 f1  (W128.of_int 5) in
+        VPOR_256 f0 f1.
+
+lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
+   (forall i, 0 <= i < 16 => 0<= to_sint (f0 \bits16 i) < 2^11) =>
+   VPMADDWD_256 f0 shift2 = VPMADDWD_alt f0 shift2.
++ move => /= H;rewrite /VPMADDWD_256 /VPMADDWD_alt /=. 
+  case (shift2 = VPBROADCAST_4u64 pvc_shift2_s);2: by auto. 
+  move => -> /=; rewrite /VPBROADCAST_4u64 /= -!(iotaredE) /=. 
+  pose f00 := (f0 \bits16 0).
+  pose f01 := (f0 \bits16 1).
+  pose f02 := (f0 \bits16 2).
+  pose f03 := (f0 \bits16 3).
+  pose f04 := (f0 \bits16 4).
+  pose f05 := (f0 \bits16 5).
+  pose f06 := (f0 \bits16 6).
+  pose f07 := (f0 \bits16 7).
+  pose f08 := (f0 \bits16 8).
+  pose f09 := (f0 \bits16 9).
+  pose f010 := (f0 \bits16 10).
+  pose f011 := (f0 \bits16 11).
+  pose f012 := (f0 \bits16 12).
+  pose f013 := (f0 \bits16 13).
+  pose f014 := (f0 \bits16 14).
+  pose f015 := (f0 \bits16 15).
+  rewrite  /(\bits16) /= !W16.init_bits2w -!iotaredE /= /W64.of_int /= /int2bs /mkseq -!iotaredE /=; do 16!(rewrite /(to_sint (W16.bits2w _)) /smod /= /(W16.to_uint (W16.bits2w (_::_)))). 
+  rewrite  !bits2wK //= !JUtils.bs2int_cons /b2i /= !bs2int_nil /=.
+  rewrite !hadd_cons2 hadd_nil /=.
+  rewrite /VPBROADCAST_8u32 -!iotaredE /= /VPSRL_8u32 /= /(`>>>`) /= -(unpack32K f0) andb8u32E !orb8u32E;congr;rewrite /unpack32 init_of_list -iotaredE /=.
+  congr;apply (eq_from_nth witness) => //= => i ib. 
+  case (i = 0) => *.
+  + have Hf01 : to_sint f01 * 2048 = to_uint (W32.init (fun (j : int) => (f0 \bits32 0).[j + 5] /\ keepodd11.[j + 5])).  admit.
+    rewrite W32.orw_disjoint. admit.
+    rewrite to_uint_eq /= of_uintK /= modz_small 1:/# to_uintD_small /=.
+    + rewrite -Hf01.
+      have -> : keepeven11 = W32.of_int (2^11 -1); 1: by auto. 
+      rewrite and_mod // /= of_uintK /= /#. 
+      congr. 
+      have -> : keepeven11 = W32.of_int (2^11 -1); 1: by auto. 
+      rewrite and_mod // /= of_uintK /= /to_sint /smod /= ifF;1: smt(W16.to_uint_cmp pow2_16).
+      rewrite modz_small 1:/# bits32_div // /= of_uintK /= modz_dvd // /f00.
+      admit.
+  admitted.     
+
 lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
     hoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
              a = _aw /\
