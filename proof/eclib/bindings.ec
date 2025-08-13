@@ -1,7 +1,7 @@
 require import AllCore List IntDiv QFABV.
 
 from Jasmin require import JModel_x86.
-from JazzEC require import Array4 Array5 Array6 Array7 Array8 Array9 Array16 Array24 Array25 Array32 Array48 Array128 Array160 Array256 Array384 Array768 Array960 Array1024 Array1152 Array1408 Array1536 WArray1568 Array1410 Array1 Array2 Array3.
+from JazzEC require import Array4 Array5 Array6 Array7 Array8 Array9 Array16 Array24 Array25 Array32 Array48 Array128 Array160 Array256 Array384 Array768 Array960 Array1024 Array1152 Array1408 Array1536 WArray1568 Array1410 Array1 Array2.
 from JazzEC require import WArray32 WArray160 WArray512 WArray960 WArray2048 WArray1536 Array1568 WArray1410 WArray384.
 
 import BitEncoding BS2Int BitChunking.
@@ -1080,12 +1080,6 @@ realize tolistP by done.
 realize get_setP by smt(Array2.get_setE). 
 realize eqP by smt(Array2.tP).
 realize get_out by smt(Array2.get_out).
-
-bind array Array3."_.[_]" Array3."_.[_<-_]" Array3.to_list Array3.of_list Array3.t 3.
-realize tolistP by done.
-realize get_setP by smt(Array3.get_setE). 
-realize eqP by smt(Array3.tP).
-realize get_out by smt(Array3.get_out).
 
 
 bind array Array5."_.[_]" Array5."_.[_<-_]" Array5.to_list Array5.of_list Array5.t 5.
