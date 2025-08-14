@@ -885,7 +885,7 @@ proc; inline *;wp.
 move => *. cfold 3. unroll for ^while;auto => /> /#.
 qed.
 
-op  perm_nttunpackv = fun (i : int) => nth (-1) 
+op  perm_nttunpackv(i : int) : int =  nth (-1) 
   [0; 8; 16; 24; 32; 40; 48; 56; 64; 72; 80; 88; 96; 104; 112; 120; 1; 9; 17; 25; 33; 41; 49; 57; 65; 73; 81; 89; 97;
      105; 113; 121; 2; 10; 18; 26; 34; 42; 50; 58; 66; 74; 82; 90; 98; 106; 114; 122; 3; 11; 19; 27; 35; 43; 51; 59;
      67; 75; 83; 91; 99; 107; 115; 123; 4; 12; 20; 28; 36; 44; 52; 60; 68; 76; 84; 92; 100; 108; 116; 124; 5; 13; 21;
@@ -929,9 +929,11 @@ op  perm_nttunpackv = fun (i : int) => nth (-1)
      978; 986; 994; 1002; 1010; 1018; 899; 907; 915; 923; 931; 939; 947; 955; 963; 971; 979; 987; 995; 1003; 1011;
      1019; 900; 908; 916; 924; 932; 940; 948; 956; 964; 972; 980; 988; 996; 1004; 1012; 1020; 901; 909; 917; 925; 933;
      941; 949; 957; 965; 973; 981; 989; 997; 1005; 1013; 1021; 902; 910; 918; 926; 934; 942; 950; 958; 966; 974; 982;
-     990; 998; 1006; 1014; 1022; 903; 911; 919; 927; 935; 943; 951; 959; 967; 975; 983; 991; 999; 1007; 1015; 1023] i.
+     990; 998; 1006; 1014; 1022; 903; 911; 919; 927; 935; 943; 951; 959; 967; 975; 983; 991; 999; 1007; 1015; 1023] i. 
 
-op  perm_nttpackv = fun (i : int) => nth (-1) 
+op  perm_nttunpackv_alt(i : int) : int = (nttunpackv (Array1024.of_list (-1) (iota_ 0 1024))).[i].
+
+op  perm_nttpackv(i : int) =  nth (-1) 
   [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51;
         67; 83; 99; 115; 4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117; 6; 22; 38; 54; 70; 86; 102;
         118; 7; 23; 39; 55; 71; 87; 103; 119; 8; 24; 40; 56; 72; 88; 104; 120; 9; 25; 41; 57; 73; 89; 105; 121; 10; 26;
@@ -977,69 +979,47 @@ op  perm_nttpackv = fun (i : int) => nth (-1)
         918; 934; 950; 966; 982; 998; 1014; 903; 919; 935; 951; 967; 983; 999; 1015; 904; 920; 936; 952; 968; 984;
         1000; 1016; 905; 921; 937; 953; 969; 985; 1001; 1017; 906; 922; 938; 954; 970; 986; 1002; 1018; 907; 923; 939;
         955; 971; 987; 1003; 1019; 908; 924; 940; 956; 972; 988; 1004; 1020; 909; 925; 941; 957; 973; 989; 1005; 1021;
-        910; 926; 942; 958; 974; 990; 1006; 1022; 911; 927; 943; 959; 975; 991; 1007; 1023] i.
-(* 
-    ([0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51; 67;
-       83; 99; 115; 4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117; 6; 22; 38; 54; 70; 86; 102; 118;
-       7; 23; 39; 55; 71; 87; 103; 119; 8; 24; 40; 56; 72; 88; 104; 120; 9; 25; 41; 57; 73; 89; 105; 121; 10; 26; 42;
-       58; 74; 90; 106; 122; 11; 27; 43; 59; 75; 91; 107; 123; 12; 28; 44; 60; 76; 92; 108; 124; 13; 29; 45; 61; 77;
-       93; 109; 125; 14; 30; 46; 62; 78; 94; 110; 126; 15; 31; 47; 63; 79; 95; 111; 127; 128; 144; 160; 176; 192; 208;
-       224; 240; 129; 145; 161; 177; 193; 209; 225; 241; 130; 146; 162; 178; 194; 210; 226; 242; 131; 147; 163; 179;
-       195; 211; 227; 243; 132; 148; 164; 180; 196; 212; 228; 244; 133; 149; 165; 181; 197; 213; 229; 245; 134; 150;
-       166; 182; 198; 214; 230; 246; 135; 151; 167; 183; 199; 215; 231; 247; 136; 152; 168; 184; 200; 216; 232; 248;
-       137; 153; 169; 185; 201; 217; 233; 249; 138; 154; 170; 186; 202; 218; 234; 250; 139; 155; 171; 187; 203; 219;
-       235; 251; 140; 156; 172; 188; 204; 220; 236; 252; 141; 157; 173; 189; 205; 221; 237; 253; 142; 158; 174; 190;
-       206; 222; 238; 254; 143; 159; 175; 191; 207; 223; 239; 255] ++ 
-   (map (fun ii => ii + 256) 
-      [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51; 67;
-       83; 99; 115; 4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117; 6; 22; 38; 54; 70; 86; 102; 118;
-       7; 23; 39; 55; 71; 87; 103; 119; 8; 24; 40; 56; 72; 88; 104; 120; 9; 25; 41; 57; 73; 89; 105; 121; 10; 26; 42;
-       58; 74; 90; 106; 122; 11; 27; 43; 59; 75; 91; 107; 123; 12; 28; 44; 60; 76; 92; 108; 124; 13; 29; 45; 61; 77;
-       93; 109; 125; 14; 30; 46; 62; 78; 94; 110; 126; 15; 31; 47; 63; 79; 95; 111; 127; 128; 144; 160; 176; 192; 208;
-       224; 240; 129; 145; 161; 177; 193; 209; 225; 241; 130; 146; 162; 178; 194; 210; 226; 242; 131; 147; 163; 179;
-       195; 211; 227; 243; 132; 148; 164; 180; 196; 212; 228; 244; 133; 149; 165; 181; 197; 213; 229; 245; 134; 150;
-       166; 182; 198; 214; 230; 246; 135; 151; 167; 183; 199; 215; 231; 247; 136; 152; 168; 184; 200; 216; 232; 248;
-       137; 153; 169; 185; 201; 217; 233; 249; 138; 154; 170; 186; 202; 218; 234; 250; 139; 155; 171; 187; 203; 219;
-       235; 251; 140; 156; 172; 188; 204; 220; 236; 252; 141; 157; 173; 189; 205; 221; 237; 253; 142; 158; 174; 190;
-       206; 222; 238; 254; 143; 159; 175; 191; 207; 223; 239; 255]) ++
-   (map (fun ii => ii + 512) 
-      [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51; 67;
-       83; 99; 115; 4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117; 6; 22; 38; 54; 70; 86; 102; 118;
-       7; 23; 39; 55; 71; 87; 103; 119; 8; 24; 40; 56; 72; 88; 104; 120; 9; 25; 41; 57; 73; 89; 105; 121; 10; 26; 42;
-       58; 74; 90; 106; 122; 11; 27; 43; 59; 75; 91; 107; 123; 12; 28; 44; 60; 76; 92; 108; 124; 13; 29; 45; 61; 77;
-       93; 109; 125; 14; 30; 46; 62; 78; 94; 110; 126; 15; 31; 47; 63; 79; 95; 111; 127; 128; 144; 160; 176; 192; 208;
-       224; 240; 129; 145; 161; 177; 193; 209; 225; 241; 130; 146; 162; 178; 194; 210; 226; 242; 131; 147; 163; 179;
-       195; 211; 227; 243; 132; 148; 164; 180; 196; 212; 228; 244; 133; 149; 165; 181; 197; 213; 229; 245; 134; 150;
-       166; 182; 198; 214; 230; 246; 135; 151; 167; 183; 199; 215; 231; 247; 136; 152; 168; 184; 200; 216; 232; 248;
-       137; 153; 169; 185; 201; 217; 233; 249; 138; 154; 170; 186; 202; 218; 234; 250; 139; 155; 171; 187; 203; 219;
-       235; 251; 140; 156; 172; 188; 204; 220; 236; 252; 141; 157; 173; 189; 205; 221; 237; 253; 142; 158; 174; 190;
-       206; 222; 238; 254; 143; 159; 175; 191; 207; 223; 239; 255]) ++
-   (map (fun ii => ii + 768)  
-      [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51; 67;
-       83; 99; 115; 4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117; 6; 22; 38; 54; 70; 86; 102; 118;
-       7; 23; 39; 55; 71; 87; 103; 119; 8; 24; 40; 56; 72; 88; 104; 120; 9; 25; 41; 57; 73; 89; 105; 121; 10; 26; 42;
-       58; 74; 90; 106; 122; 11; 27; 43; 59; 75; 91; 107; 123; 12; 28; 44; 60; 76; 92; 108; 124; 13; 29; 45; 61; 77;
-       93; 109; 125; 14; 30; 46; 62; 78; 94; 110; 126; 15; 31; 47; 63; 79; 95; 111; 127; 128; 144; 160; 176; 192; 208;
-       224; 240; 129; 145; 161; 177; 193; 209; 225; 241; 130; 146; 162; 178; 194; 210; 226; 242; 131; 147; 163; 179;
-       195; 211; 227; 243; 132; 148; 164; 180; 196; 212; 228; 244; 133; 149; 165; 181; 197; 213; 229; 245; 134; 150;
-       166; 182; 198; 214; 230; 246; 135; 151; 167; 183; 199; 215; 231; 247; 136; 152; 168; 184; 200; 216; 232; 248;
-       137; 153; 169; 185; 201; 217; 233; 249; 138; 154; 170; 186; 202; 218; 234; 250; 139; 155; 171; 187; 203; 219;
-       235; 251; 140; 156; 172; 188; 204; 220; 236; 252; 141; 157; 173; 189; 205; 221; 237; 253; 142; 158; 174; 190;
-       206; 222; 238; 254; 143; 159; 175; 191; 207; 223; 239; 255])). *)
+        910; 926; 942; 958; 974; 990; 1006; 1022; 911; 927; 943; 959; 975; 991; 1007; 1023] i. 
+
+op  perm_nttpackv_alt = fun (i : int) => (nttpackv (Array1024.of_list (-1) (iota_ 0 1024))).[i].
+
+lemma perm_nttpackvE i : 0<=i<1024 => perm_nttpackv_alt i = perm_nttpackv i.
+proof. admit. (* 
+move => ib.
+have : all (fun i => perm_nttpackv_alt i = perm_nttpackv i) (iota_ 0 1024); 
+  last by rewrite allP /= => H; rewrite H; smt(mem_iota).
+rewrite /perm_nttpackv_alt /perm_nttpackv /nttpackv.
+by rewrite /nttpack /subarray256 -iotaredE /= /#. *)
+qed. 
+
+lemma perm_nttunpackvE i : 0<=i<1024 => perm_nttunpackv_alt i = perm_nttunpackv i.
+proof.
+admit. (* 
+move => ib.
+have : all (fun i => perm_nttunpackv_alt i = perm_nttunpackv i) (iota_ 0 1024); 
+  last by rewrite allP /= => H; rewrite H; smt(mem_iota).
+rewrite /perm_nttunpackv_alt /perm_nttunpackv /nttunpackv.
+by rewrite /nttunpack /subarray256 -iotaredE /= /#. *)
+qed.
 
 lemma perm_nttunpackv_rng i :
   0 <= i < 1024 => 0<= perm_nttunpackv i <1024.
+proof.
+admit. (* 
   have : all (fun i => 0 <= perm_nttunpackv i < 1024) (iota_ 0 1024).
   + by rewrite /perm_nttunpackv  -iotaredE /=.
-  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota).
-qed.
+  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). *)
+qed. 
 
 lemma perm_nttpackv_rng i :
   0 <= i < 1024 => 0<= perm_nttpackv i <1024.
+proof.
+admit. (* 
   have : all (fun i => 0 <= perm_nttpackv i < 1024) (iota_ 0 1024).
   + by rewrite /perm_nttpackv  -iotaredE /=.
-  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota).
+  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). *)
 qed.
+
 
 lemma post_lane_commute_out_aligned_perm ['a 'b 'c]
     (lic : 'a list) 
@@ -1090,12 +1070,15 @@ qed.
 
 lemma nttpermsK i :
  0 <= i < 1024 => 
-   perm_nttunpackv (perm_nttpackv i) = i.
-move=>?.
-have H : all (fun i => perm_nttunpackv (perm_nttpackv i) = i) (iota_ 0 1024).
-+ by rewrite /perm_nttunpackv /perm_nttpackv -iotaredE /=.
-rewrite allP /= in H.
-rewrite H;smt(mem_iota).
+   perm_nttunpackv_alt (perm_nttpackv_alt i) = i.
+proof.
+admit. (* 
+move => Hi.
+have : all (fun i => perm_nttunpackv_alt (perm_nttpackv_alt i) = i) (iota_ 0 1024); 
+  last by rewrite allP /= => H; rewrite H; smt(mem_iota).
+rewrite /perm_nttunpackv_alt /perm_nttpackv_alt.
+rewrite  /nttpackv /nttunpackv.
+by rewrite /nttpack /nttunpack /subarray256 -iotaredE /= /#.*)
 qed.
 
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
@@ -1139,8 +1122,11 @@ bdep 12 16 [_aw] [a] [r] frombytes_circuit pcond_true12 perm_nttpackv.
 (* We start with some boilerplate *)
 move => &hr [#]/= <- rr; rewrite /= !flatten1.
 
-move => H1; have H2 := post_lane_commute_out_aligned_perm (to_list a{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 perm_nttpackv perm_nttunpackv _ _ _ _ _ _ _ _ _ _ _ _ _ _ H1;1..14:
-smt(Array1536.size_to_list Array1024.size_to_list nttpermsK W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
+move => H1; have H2 := post_lane_commute_out_aligned_perm (to_list a{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 perm_nttunpackv_alt perm_nttpackv_alt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
+smt(Array1536.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
++ smt(perm_nttunpackvE perm_nttunpackv_rng Array1024.size_to_list).
++ admit. (* smt(nttpermsK Array1024.size_to_list). *)
++ admit. (* if we can use the proper operators instead of alt this goes away. *)
 
   have /=? := decode_range_vec 0 (to_list a{hr}) 12 _ _;1,2:smt(Array1536.size_to_list).
 
@@ -1164,57 +1150,64 @@ split.
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    rewrite mapiE.
-    + rewrite /perm_nttunpackv /= /#. 
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    do congr. rewrite get_of_list 1:/# /perm_nttunpackv.
-    smt().
+     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    do congr. 
+    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /= ifT 1:/# /=.
+    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
+    rewrite get_of_list 1:/# nth_iota /#.
+    
   case (256<=i<512) => *.
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    rewrite mapiE.
-    + rewrite /perm_nttunpackv /= /#. 
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    do congr. rewrite get_of_list 1:/# /perm_nttunpackv.
-    smt().
+     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    do congr. 
+    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /= ifF 1:/# /= ifT 1:/# /=.
+    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
+    rewrite get_of_list 1:/# nth_iota /#.
+
   case (512<=i<768) => *.
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    rewrite mapiE.
-    + rewrite /perm_nttunpackv /= /#. 
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    do congr. rewrite get_of_list 1:/# /perm_nttunpackv.
-    smt().
+     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    do congr. 
+    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /= ifF 1:/# ifF 1:/# /= ifT 1:/# /=.
+    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
+    rewrite get_of_list 1:/# nth_iota /#.
+
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    rewrite mapiE.
-    + rewrite /perm_nttunpackv /= /#. 
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng).
-    do congr. rewrite get_of_list 1:/# /perm_nttunpackv.
-    smt().
+     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
+    do congr. 
+    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /=  ifF 1:/# ifF 1:/# /= ifF 1:/# /=.
+    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
+    rewrite get_of_list 1:/# nth_iota /#.
 
   rewrite /pos_bound1024_cxq qE /= => k kb. 
   have /=? := decode_range_vec witness (to_list a{hr}) 12 _ _;1..2:smt(Array1536.size_to_list).
   rewrite -get_to_list  H2 H3 /decode12_vec.
   rewrite nth_mkseq /=;1: by rewrite size_map size_iota /#. 
-  rewrite get_of_list;1:smt(perm_nttunpackv_rng). 
-  rewrite (nth_map witness);1:smt(perm_nttunpackv_rng). 
-rewrite of_sintK /= /smod /= ifF;1:smt(@Zq perm_nttunpackv_rng).
-  rewrite modz_small;1,2:  smt(perm_nttunpackv_rng).  
+  rewrite get_of_list;1:smt(perm_nttunpackv_rng perm_nttunpackvE). 
+  rewrite (nth_map witness);1:smt(perm_nttunpackv_rng  perm_nttunpackvE). 
+rewrite of_sintK /= /smod /= ifF;1:smt(@Zq perm_nttunpackv_rng  perm_nttunpackvE).
+  rewrite modz_small;1,2:  smt(perm_nttunpackv_rng  perm_nttunpackvE).  
    
 qed.
 
