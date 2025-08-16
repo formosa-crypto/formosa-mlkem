@@ -54,8 +54,8 @@ from JazzEC require import WArray1568 WArray2048.
 require import Bindings BitEncoding.
 import BitChunking BS2Int.
 
-
 (*
+
 (********** BEGIN BDEP PROOF OF DECOMPRESS **************)
 
 op decompress11_circuit(c : W11.t) : W16.t = 
@@ -931,7 +931,7 @@ op  perm_nttunpackv(i : int) : int =  nth (-1)
      990; 998; 1006; 1014; 1022; 903; 911; 919; 927; 935; 943; 951; 959; 967; 975; 983; 991; 999; 1007; 1015; 1023] i. 
 (*
 op  perm_nttunpackv_alt(i : int) : int = (nttunpackv (Array1024.of_list (-1) (iota_ 0 1024))).[i].
-
+*)
 op  perm_nttpackv(i : int) =  nth (-1) 
   [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51;
         67; 83; 99; 115; 4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117; 6; 22; 38; 54; 70; 86; 102;
@@ -979,7 +979,7 @@ op  perm_nttpackv(i : int) =  nth (-1)
         1000; 1016; 905; 921; 937; 953; 969; 985; 1001; 1017; 906; 922; 938; 954; 970; 986; 1002; 1018; 907; 923; 939;
         955; 971; 987; 1003; 1019; 908; 924; 940; 956; 972; 988; 1004; 1020; 909; 925; 941; 957; 973; 989; 1005; 1021;
         910; 926; 942; 958; 974; 990; 1006; 1022; 911; 927; 943; 959; 975; 991; 1007; 1023] i. 
-
+(*
 op  perm_nttpackv_alt = fun (i : int) => (nttpackv (Array1024.of_list (-1) (iota_ 0 1024))).[i].
 
 lemma perm_nttpackvE i : 0<=i<1024 => perm_nttpackv_alt i = perm_nttpackv i.
@@ -1712,43 +1712,6 @@ op compress1_circuit(a : W16.t) : bool =
 
 op pcond_reduced (w: W16.t) =   w \ult W16.of_int (2*3329). 
 
-(* 
-lemma post_lane_commute_in_aligned ['a 'b 'c]
-    (li : 'a list) 
-    (loc : 'b list) 
-    (tobitsi : 'a -> bool list)
-    (ofbitsi : bool list -> 'a)
-    (tobitsoc : 'b -> bool list)
-    (ofbitsoc : bool list -> 'b)
-    (tobitso : 'c -> bool list)
-    (ofbitso : bool list -> 'c)
-    (f : 'a -> 'c)
-    (ni no noc  : int) :
-  0 < ni =>  0 < no => 0 < noc => 
-  no %| noc*size loc =>
-  size li = (noc*size loc) %/ no =>
-  (forall x, size (tobitsi x) = ni) =>
-  (forall x, ofbitsi (tobitsi x) = x) =>
-  (forall x, size (tobitso x) = no) =>
-  (forall x, ofbitso (tobitso x) = x) =>
-  (forall x, size x = no => tobitso (ofbitso x) = x) =>
-  (forall x, size (tobitsoc x) = noc) =>
-  (forall x, ofbitsoc (tobitsoc x) = x) =>
-map f (map ofbitsi (chunk ni (flatten (map tobitsi li)))) =
-map ofbitso (chunk no (flatten (map tobitsoc loc))) => 
-   flatten (map tobitsoc loc) =
-   flatten (map tobitso (map f li)).
-move => 12?.
-rewrite map_chunk_flatten_id 1..3:/#.
-move => ->.
-rewrite -map_comp /(\o) /=. 
-have [H _]:= (eq_in_map (fun (x : bool list) => tobitso (ofbitso x)) idfun (chunk no (flatten (map tobitsoc loc)))).
-rewrite H /=;1:smt(in_chunk_size).
-rewrite map_id.
-rewrite chunkK 1:/#;1: rewrite (EclibExtra.size_flatten' noc);  smt(size_map mapP).
-qed. *)
-
-
 lemma poly_tomsg_corr_h _aw : 
     hoare [Jkem1024_avx2.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
@@ -1833,6 +1796,9 @@ rewrite -compress_impl_small //=;1:by smt().
 by rewrite modz_mod /srl_32 /sll_32 /(`<<`) /(`>>`).
 qed.
 
+(********** END BDEP PROOF OF TOMSG **************)
+
+
 lemma poly_tomsg_corr _aw : 
     phoare [Jkem1024_avx2.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
@@ -1853,14 +1819,16 @@ ecall {2} (MLKEM_Poly.poly_tomsg_corr a{2}).
 auto => /#. 
 qed.
 *)
-(****)
+(********** BEGIN BDEP PROOF OF TOBYTES **************)
 
 op tobytes_circuit(a : W16.t) : W12.t = 
    if (a \ult W16.of_int 3329) then truncateu12 a else truncateu12 (W16_sub a (W16.of_int 3329)).  
 
 lemma polyvec_tobytes_ll : islossless Jkem1024_avx2.M.__i_polyvec_tobytes.
 proc.
-inline *. do 9!(unroll for ^while); auto.
+inline *. 
+do 5!(unroll for ^while); auto.
+(* do 9!(unroll for ^while); auto. *)
 qed.
 
 lemma polyvec_tobytes_corr_h (_aw : W16.t Array1024.t):
@@ -1871,7 +1839,7 @@ proc;inline *.
 proc change ^while.1: (init_384_8 (fun i_0 => r.[384 * i + i_0]));1: by auto.
 proc change ^while.2: (init_256_16 (fun i_0 => a.[256 * i + i_0]));1: by auto.
 (* FIXME: CHECK qx16 initialization inside while *)
-proc change ^while.4: (sliceget16_16_256 jqx16 0); 1: by auto.
+(* proc change ^while.4: (sliceget16_16_256 jqx16 0); 1: by auto.
 proc change ^while.^while.1: (sliceget256_16_256 rp0 (i1*256)); 1: by auto => /#.
 proc change ^while.^while.9 : (sliceset256_16_256 rp0 (i1*256) r0); 1: by auto => /> /#.
 proc change ^while.^while{2}.1 : (sliceget256_16_256 a0 (8*i0*256));1: by auto => /#.
@@ -1882,29 +1850,49 @@ proc change ^while.^while{2}.5 : (sliceget256_16_256 a0 ((8*i0+4)*256));1: by au
 proc change ^while.^while{2}.6 : (sliceget256_16_256 a0 ((8*i0+5)*256));1: by auto => /#.
 proc change ^while.^while{2}.7 : (sliceget256_16_256 a0 ((8*i0+6)*256));1: by auto => /#.
 proc change ^while.^while{2}.8 : (sliceget256_16_256 a0 ((8*i0+7)*256));1: by auto => /#.
-proc change ^while.^while{2}.97 : (sliceset384_8_256 rp (192*i0*8) t0);1: by auto => /#.
-proc change ^while.^while{2}.98 : (sliceset384_8_256 rp ((192*i0+32)*8) t2);1: by auto => /#.
-proc change ^while.^while{2}.99 : (sliceset384_8_256 rp ((192*i0+64)*8) t1);1: by auto => /#.
-proc change ^while.^while{2}.100 : (sliceset384_8_256 rp ((192*i0+96)*8) t3);1: by auto => /#.
-proc change ^while.^while{2}.101 : (sliceset384_8_256 rp ((192*i0+128)*8) ttt);1: by auto => /#.
-proc change ^while.^while{2}.102 : (sliceset384_8_256 rp ((192*i0+160)*8) t4);1: by auto => /#.
-proc change ^while.11: (init_1536_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0])  ); 1: by auto.
-proc change ^while.12: (init_1024_16  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]));1: by auto.
+proc change ^while.^while{2}.105 : (sliceset384_8_256 rp (192*i0*8) t0);1: by auto => /#.
+proc change ^while.^while{2}.106 : (sliceset384_8_256 rp ((192*i0+32)*8) t2);1: by auto => /#.
+proc change ^while.^while{2}.107 : (sliceset384_8_256 rp ((192*i0+64)*8) t1);1: by auto => /#.
+proc change ^while.^while{2}.108 : (sliceset384_8_256 rp ((192*i0+96)*8) t3);1: by auto => /#.
+proc change ^while.^while{2}.109 : (sliceset384_8_256 rp ((192*i0+128)*8) ttt);1: by auto => /#.
+proc change ^while.^while{2}.110 : (sliceset384_8_256 rp ((192*i0+160)*8) t4);1: by auto => /#.
+proc change ^while.12: (init_1536_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0])  ); 1: by auto.
+proc change ^while.13: (init_1024_16  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]));1: by auto. *)
+proc change ^while.^while.1 : (sliceget256_16_256 a0 (8*i0*256));1: by auto => /#.
+proc change ^while.^while.2 : (sliceget256_16_256 a0 ((8*i0+1)*256));1: by auto => /#.
+proc change ^while.^while.3 : (sliceget256_16_256 a0 ((8*i0+2)*256));1: by auto => /#.
+proc change ^while.^while.4 : (sliceget256_16_256 a0 ((8*i0+3)*256));1: by auto => /#.
+proc change ^while.^while.5 : (sliceget256_16_256 a0 ((8*i0+4)*256));1: by auto => /#.
+proc change ^while.^while.6 : (sliceget256_16_256 a0 ((8*i0+5)*256));1: by auto => /#.
+proc change ^while.^while.7 : (sliceget256_16_256 a0 ((8*i0+6)*256));1: by auto => /#.
+proc change ^while.^while.8 : (sliceget256_16_256 a0 ((8*i0+7)*256));1: by auto => /#.
+proc change ^while.^while.105 : (sliceset384_8_256 rp (192*i0*8) t0);1: by auto => /#.
+proc change ^while.^while.106 : (sliceset384_8_256 rp ((192*i0+32)*8) t2);1: by auto => /#.
+proc change ^while.^while.107 : (sliceset384_8_256 rp ((192*i0+64)*8) t1);1: by auto => /#.
+proc change ^while.^while.108 : (sliceset384_8_256 rp ((192*i0+96)*8) t3);1: by auto => /#.
+proc change ^while.^while.109 : (sliceset384_8_256 rp ((192*i0+128)*8) ttt);1: by auto => /#.
+proc change ^while.^while.110 : (sliceset384_8_256 rp ((192*i0+160)*8) t4);1: by auto => /#.
+proc change ^while.7: (init_1536_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0])  ); 1: by auto.
+proc change ^while.8: (init_1024_16  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]));1: by auto.
 
 unroll for ^while.
-do 8!(unroll for ^while).
+(* do 8!(unroll for ^while). *)
+ do 4!(unroll for ^while). 
 cfold ^i<-.
 cfold ^i0<-.
-cfold ^i1<-.
-cfold 180.
-cfold 186.
-cfold 192.
-cfold 319.
+(* cfold ^i1<-.
+cfold 189.
+cfold 195.
+cfold 201.
+cfold 332.
+wp -8.*)
+cfold 42.
+cfold 48.
+cfold 54.
+cfold 185.
 wp -7.
 
-(* DEPENDENCY PROBLEM 
-bdep 16 12 [_aw] [a] [r] tobytes_circuit pcond_reduced perm_nttpackv. 
-*)
+bdep 16 12 [_aw[Array256.t:0]] [a[Array256.t:0]] [r[Array384.t:0]] tobytes_circuit pcond_reduced perm_nttunpackv. 
 admitted.
 
 lemma polyvec_tobytes_corr (_aw : W16.t Array1024.t):

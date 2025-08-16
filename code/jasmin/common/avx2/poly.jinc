@@ -1101,13 +1101,16 @@ ensures:
 
 */
 
+u32 mask12c = 0x0fff0fff;
 
 fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
 {
   inline int i;
-  reg u256 t0 t1 t2 t3 t4 t5 t6 t7 tt ttt;
+  reg u256 t0 t1 t2 t3 t4 t5 t6 t7 tt ttt mask12;
 
-  a = _poly_csubq(a);
+  //a = _poly_csubq(a);
+ 
+  mask12 = #VPBROADCAST_8u32(mask12c);
 
   for i = 0 to 2
   {
@@ -1119,6 +1122,15 @@ fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> re
     t5 = a[:u256 8*i + 5];
     t6 = a[:u256 8*i + 6];
     t7 = a[:u256 8*i + 7];
+
+    t0 = #VPAND_16u16(t0,mask12);
+    t1 = #VPAND_16u16(t1,mask12);
+    t2 = #VPAND_16u16(t2,mask12);
+    t3 = #VPAND_16u16(t3,mask12);
+    t4 = #VPAND_16u16(t4,mask12);
+    t5 = #VPAND_16u16(t5,mask12);
+    t6 = #VPAND_16u16(t6,mask12);
+    t7 = #VPAND_16u16(t7,mask12);
 
     tt = #VPSLL_16u16(t1, 12);
     tt |= t0;

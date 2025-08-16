@@ -663,6 +663,8 @@ abbrev pc_shift1_s = (W16.of_int 1024).
 
 abbrev pc_mask_s = (W16.of_int 31).
 
+abbrev mask12c = (W32.of_int 268374015).
+
 abbrev pfm_idx_s =
 ((Array16.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 4); (W8.of_int 5); (W8.of_int 8);
@@ -8556,6 +8558,7 @@ module M = {
   }
   proc _i_poly_tobytes (rp:W8.t Array384.t, a:W16.t Array256.t) : W8.t Array384.t *
                                                                   W16.t Array256.t = {
+    var mask12:W256.t;
     var i:int;
     var t0:W256.t;
     var t1:W256.t;
@@ -8567,7 +8570,7 @@ module M = {
     var t7:W256.t;
     var tt:W256.t;
     var ttt:W256.t;
-    a <@ _poly_csubq (a);
+    mask12 <- (VPBROADCAST_8u32 mask12c);
     i <- 0;
     while ((i < 2)) {
       t0 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) (8 * i));
@@ -8578,6 +8581,14 @@ module M = {
       t5 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 5));
       t6 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 6));
       t7 <- (get256 (WArray512.init16 (fun i_0 => a.[i_0])) ((8 * i) + 7));
+      t0 <- (VPAND_256 t0 mask12);
+      t1 <- (VPAND_256 t1 mask12);
+      t2 <- (VPAND_256 t2 mask12);
+      t3 <- (VPAND_256 t3 mask12);
+      t4 <- (VPAND_256 t4 mask12);
+      t5 <- (VPAND_256 t5 mask12);
+      t6 <- (VPAND_256 t6 mask12);
+      t7 <- (VPAND_256 t7 mask12);
       tt <- (VPSLL_16u16 t1 (W128.of_int 12));
       tt <- (tt `|` t0);
       t0 <- (VPSRL_16u16 t1 (W128.of_int 4));
