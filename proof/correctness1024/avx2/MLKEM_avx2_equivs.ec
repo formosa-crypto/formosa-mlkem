@@ -379,6 +379,116 @@ op VPMADDWD_alt(f0 m : W256.t) : W256.t =
     let f1 = VPSRL_8u32 f1  (W128.of_int 5) in
         VPOR_256 f0 f1.
 
+lemma keepeven_bits b: 
+  0 <= b < 32 =>
+   keepeven11.[b] <=> 0<=b<11.
+move => bb.
+have  : all (fun b => keepeven11.[b] <=> 0 <= b < 11) (iota_ 0 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+by rewrite /of_int  /int2bs /mkseq -iotaredE /=.
+qed.
+
+lemma keepodd_bits b: 
+  0 <= b < 32 =>
+   keepodd11.[b] <=> 16<=b<27.
+move => bb.
+have  : all (fun b => keepodd11.[b] <=> 16 <= b < 27) (iota_ 0 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+by rewrite /of_int  /int2bs /mkseq -iotaredE /=.
+qed.
+
+lemma lowbits_keep (f : W256.t) (i : int) (b : int) :
+  0 <= i < 16 => i %% 2 = 0 => 
+  0 <= b < 11 =>
+    (f \bits16 i).[b] = ((f \bits32 i%/2)  `&` keepeven11).[b].
+proof. 
+move => bi Hi Hb. 
+have H := W16u16.get_bits16 f (16*i + b) _;1:smt().
+have H0 := W8u32.get_bits32 f (16*i + b) _;1:smt().
+rewrite andE map2iE 1:/# /=.
+by smt(keepeven_bits).
+qed.
+
+lemma lowbits_drop (f : W256.t) (i : int) (b : int) :
+  0 <= i < 16 => i %% 2 = 0 => 
+  11 <= b < 16 =>
+  !((f \bits32 i%/2)  `&` keepeven11).[b].
+proof. 
+move => bi Hi Hb. 
+rewrite andE map2iE 1:/# /=.
+by smt(keepeven_bits).
+qed.
+
+lemma highbits_keep (f : W256.t) (i : int) (b : int) :
+  0 <= i < 16 => i %% 2 = 1 => 0 <= b < 11 =>
+    (f \bits16 i).[b] = ((f \bits32 i%/2)  `&` keepodd11).[b + 16].
+proof. 
+move => bi Hi Hb. 
+have H := W16u16.get_bits16 f (16*i + b) _;1:smt().
+have H0 := W8u32.get_bits32 f (16*i + b) _;1:smt().
+rewrite andE map2iE 1:/# /=.
+by smt(keepodd_bits).
+qed.
+
+lemma highbits_drop (f : W256.t) (i : int) (b : int) :
+  0 <= i < 16 => i %% 2 = 1 =>11 <= b < 15 =>
+    !((f \bits32 i%/2)  `&` keepodd11).[b + 16].
+proof. 
+move => bi Hi Hb. 
+rewrite andE map2iE 1:/# /=.
+by smt(keepodd_bits).
+qed.
+
+
+lemma lowbits_ofint_keep (f0 f1 : W16.t) b :
+  0 <= b < 11 =>
+  0<= to_sint f0 < 2048 =>
+  0<= to_sint f1 < 2048 =>
+  (W32.of_int (to_sint f0 + to_sint f1 * 2048)).[b] = f0.[b].
+move => ?.
+rewrite /to_sint /smod /= => ??.
+have  : all (fun b => (W32.of_int
+   ((if 32768 <= to_uint f0 then to_uint f0 - 65536 else to_uint f0) +
+    (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 2048)).[b] =
+f0.[b]) (iota_ 0 11); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+ rewrite  /of_int /int2bs /mkseq -iotaredE /=;do split; rewrite get_to_uint /= /#.
+qed.
+
+lemma highbits_ofint_keep (f0 f1 : W16.t) b :
+  0<= to_sint f0 < 2048 =>
+  0<= to_sint f1 < 2048 =>
+  11 <= b < 22 =>
+  (W32.of_int (to_sint f0 + to_sint f1 * 2048)).[b] = f1.[b-11].
+move => ?.
+rewrite /to_sint /smod /= => ??.
+have  : all (fun b => (W32.of_int
+   ((if 32768 <= to_uint f0 then to_uint f0 - 65536 else to_uint f0) +
+    (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 2048)).[b] =
+f1.[b - 11]) (iota_ 11 22); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+ rewrite  /of_int /int2bs /mkseq -iotaredE /=;do split; rewrite get_to_uint /=; smt(pow2_16 pow2_32). 
+qed.
+
+
+lemma highbits_ofint_drop (f0 f1 : W16.t) b :
+  0<= to_sint f0 < 2048 =>
+  0<= to_sint f1 < 2048 =>
+  22 <= b < 32 =>
+  !(W32.of_int (to_sint f0 + to_sint f1 * 2048)).[b].
+move => ?.
+rewrite /to_sint /smod /= => ??.
+have  : all (fun b => ! (W32.of_int
+     ((if 32768 <= to_uint f0 then to_uint f0 - 65536 else to_uint f0) +
+      (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 2048)).[b]) (iota_ 22 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+ rewrite  /of_int /int2bs /mkseq -iotaredE /=;do split; smt(pow2_16 pow2_32). 
+qed.
+
+
+lemma unand (f : W256.t) (i : int) (b : int) :
+  0 <= i < 8 => 0<=b<32 =>
+   (W32.init (fun (j : int) => (f \bits32 i).[j + 5] /\ keepodd11.[j + 5])).[b] = ((f \bits32 i) `&` keepodd11).[b + 5].
+proof.
+move => ??.
+by rewrite initiE 1:/# /=.
+qed.
+
 lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
    (forall i, 0 <= i < 16 => 0<= to_sint (f0 \bits16 i) < 2^11) =>
    VPMADDWD_256 f0 shift2 = VPMADDWD_alt f0 shift2.
@@ -404,39 +514,63 @@ lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
   rewrite  /(\bits16) /= !W16.init_bits2w -!iotaredE /= /W64.of_int /= /int2bs /mkseq -!iotaredE /=; do 16!(rewrite /(to_sint (W16.bits2w _)) /smod /= /(W16.to_uint (W16.bits2w (_::_)))). 
   rewrite  !bits2wK //= !JUtils.bs2int_cons /b2i /= !bs2int_nil /=.
   rewrite !hadd_cons2 hadd_nil /=.
-  rewrite /VPBROADCAST_8u32 -!iotaredE /= /VPSRL_8u32 /= /(`>>>`) /= -(unpack32K f0) andb8u32E !orb8u32E;congr;rewrite /unpack32 init_of_list -iotaredE /=.
+  rewrite /VPBROADCAST_8u32 -!iotaredE /= /VPSRL_8u32 /= /(`>>>`) /= -(unpack32K f0) andb8u32E !orb8u32E;congr;rewrite /unpack32 init_of_list -iotaredE /= orE.
   congr;apply (eq_from_nth witness) => //= => i ib. 
+  apply W32.wordP => b bb. 
+  have /= H3 := highbits_keep f0 (i*2+1) (b-11) _ _;1,2: smt().
+  have /= H4 := highbits_drop f0 (i*2+1) (b-11) _ _;1,2: smt().
+  have /= H5 := lowbits_keep f0  (i*2) b _ _;1,2: smt().
+  have /= H6 := lowbits_drop f0 (i*2) b _ _;1,2: smt(). 
   case (i = 0) => *.
-  + have Hf01 : to_sint f01 * 2048 = to_uint (W32.init (fun (j : int) => (f0 \bits32 0).[j + 5] /\ keepodd11.[j + 5])).
-    + rewrite /to_sint /smod /= ifF;1:smt(@W16).
-      have -> : 2048 = 2^11 by auto.
-      have /= := (W32.of_uintK (to_uint f01 * W11.modulus)).
-      rewrite (modz_small _ 4294967296);1:smt(@W16). 
-      rewrite -of_intM to_uintM_small /=;1:by rewrite of_uintK /=; smt(@W16). 
-       have /= := W32.to_uint_shl (W32.of_int (to_uint f01)) 11 _;1:smt().
-      rewrite (modz_small _ 4294967296);1:smt(@W32 @W16). 
-      move => <- <-;congr;rewrite wordP => k kb.
-      rewrite W32.shlwE kb /= initiE 1:/# /= /f01 of_intE /=.
-      rewrite (modz_small _ 4294967296);1:smt(@W32 @W16). 
-      rewrite of_intE /= bits32E  /to_uint (bs2int_pad 16 (w2bits (f0 \bits16 1))).
-        have -> : 32 = size  (w2bits (f0 \bits16 1) ++ nseq 16 false); 1: by smt(size_cat size_nseq W16.size_w2bits).
-        rewrite bs2intK.
-      case (k+5 < 32) => *; last first.
-      + rewrite !(W32.get_out _ (k+5)) 1,2:/# /=. 
-        case (k - 11 < 32) => *; last by smt(W32.get_out).
-        rewrite get_bits2w 1:/# nth_cat size_w2bits /= ifF 1:/# nth_nseq /#.
-      rewrite initiE 1:/# /= (W32.get_bits2w _ (k+5)) 1:/# size_cat size_w2bits /= size_nseq /= /max /= /int2bs nth_mkseq 1:/# /=. admit.
-    rewrite W32.orw_disjoint. admit.
-    rewrite to_uint_eq /= of_uintK /= modz_small 1:/# to_uintD_small /=.
-    + rewrite -Hf01.
-      have -> : keepeven11 = W32.of_int (2^11 -1); 1: by auto. 
-      rewrite and_mod // /= of_uintK /= /#. 
-      congr. 
-      have -> : keepeven11 = W32.of_int (2^11 -1); 1: by auto. 
-      rewrite and_mod // /= of_uintK /= /to_sint /smod /= ifF;1: smt(W16.to_uint_cmp pow2_16).
-      rewrite modz_small 1:/# bits32_div // /= of_uintK /= modz_dvd // /f00.
-      admit.
-  admitted.     
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f00 f01 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f00 f01 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f00 f01 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+  case (i - 1 = 0) => *.
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f02 f03 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f02 f03 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f02 f03 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+  case (i - 2 = 0) => *.
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f04 f05 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f04 f05 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f04 f05 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+  case (i - 3 = 0) => *.
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f06 f07 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f06 f07 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f06 f07 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+  case (i - 4 = 0) => *.
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f08 f09 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f08 f09 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f08 f09 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+  case (i - 5 = 0) => *.
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f010 f011 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f010 f011 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f010 f011 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+  case (i - 6 = 0) => *.
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f012 f013 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f012 f013 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f012 f013 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+  case (i - 7 = 0) => *.
+  + rewrite map2iE 1:/# unand 1,2:/#.
+    have /= H0 := highbits_ofint_drop f014 f015 b _ _;1,2:smt().
+    have /= H1 := highbits_ofint_keep f014 f015 b _ _;1,2:smt().
+    have /= H2 := lowbits_ofint_keep f014 f015 b _ _;1,2:smt().
+    smt(keepodd_bits keepeven_bits W32.get_out).
+by smt().
+qed
 
 lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
     hoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
