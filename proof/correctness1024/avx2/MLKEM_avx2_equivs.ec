@@ -46,7 +46,7 @@ from JazzEC require import WArray1568 WArray2048.
 require import Bindings BitEncoding.
 import BitChunking BS2Int.
 
-(* 
+
 lemma polyvec_decompress_ll :
    islossless Jkem1024_avx2.M.__i_polyvec_decompress.
 by proc;inline *;unroll for ^while; do 4!(cfold ^inc<-; unroll for ^while);auto.
@@ -1000,7 +1000,7 @@ proc; inline *;wp.
   while (0 <= i <= 4) (4-i); last by  auto =>  /> /#.
 move => *. cfold 3. unroll for ^while;auto => /> /#.
 qed.
-*)
+
 op  perm_nttunpackv(i : int) : int =  nth (-1) 
   [0; 8; 16; 24; 32; 40; 48; 56; 64; 72; 80; 88; 96; 104; 112; 120; 1; 9; 17; 25; 33; 41; 49; 57; 65; 73; 81; 89; 97;
      105; 113; 121; 2; 10; 18; 26; 34; 42; 50; 58; 66; 74; 82; 90; 98; 106; 114; 122; 3; 11; 19; 27; 35; 43; 51; 59;
@@ -1046,9 +1046,7 @@ op  perm_nttunpackv(i : int) : int =  nth (-1)
      1019; 900; 908; 916; 924; 932; 940; 948; 956; 964; 972; 980; 988; 996; 1004; 1012; 1020; 901; 909; 917; 925; 933;
      941; 949; 957; 965; 973; 981; 989; 997; 1005; 1013; 1021; 902; 910; 918; 926; 934; 942; 950; 958; 966; 974; 982;
      990; 998; 1006; 1014; 1022; 903; 911; 919; 927; 935; 943; 951; 959; 967; 975; 983; 991; 999; 1007; 1015; 1023] i. 
-(*
-op  perm_nttunpackv_alt(i : int) : int = (nttunpackv (Array1024.of_list (-1) (iota_ 0 1024))).[i].
-*)
+
 op  perm_nttpackv(i : int) =  nth (-1) 
   [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51;
         67; 83; 99; 115; 4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117; 6; 22; 38; 54; 70; 86; 102;
@@ -1096,44 +1094,21 @@ op  perm_nttpackv(i : int) =  nth (-1)
         1000; 1016; 905; 921; 937; 953; 969; 985; 1001; 1017; 906; 922; 938; 954; 970; 986; 1002; 1018; 907; 923; 939;
         955; 971; 987; 1003; 1019; 908; 924; 940; 956; 972; 988; 1004; 1020; 909; 925; 941; 957; 973; 989; 1005; 1021;
         910; 926; 942; 958; 974; 990; 1006; 1022; 911; 927; 943; 959; 975; 991; 1007; 1023] i. 
-(*
-op  perm_nttpackv_alt = fun (i : int) => (nttpackv (Array1024.of_list (-1) (iota_ 0 1024))).[i].
-
-lemma perm_nttpackvE i : 0<=i<1024 => perm_nttpackv_alt i = perm_nttpackv i.
-proof. admit. (* 
-move => ib.
-have : all (fun i => perm_nttpackv_alt i = perm_nttpackv i) (iota_ 0 1024); 
-  last by rewrite allP /= => H; rewrite H; smt(mem_iota).
-rewrite /perm_nttpackv_alt /perm_nttpackv /nttpackv.
-by rewrite /nttpack /subarray256 -iotaredE /= /#. *)
-qed. 
-
-lemma perm_nttunpackvE i : 0<=i<1024 => perm_nttunpackv_alt i = perm_nttunpackv i.
-proof.
-admit. (* 
-move => ib.
-have : all (fun i => perm_nttunpackv_alt i = perm_nttunpackv i) (iota_ 0 1024); 
-  last by rewrite allP /= => H; rewrite H; smt(mem_iota).
-rewrite /perm_nttunpackv_alt /perm_nttunpackv /nttunpackv.
-by rewrite /nttunpack /subarray256 -iotaredE /= /#. *)
-qed.
 
 lemma perm_nttunpackv_rng i :
   0 <= i < 1024 => 0<= perm_nttunpackv i <1024.
 proof.
-admit. (* 
   have : all (fun i => 0 <= perm_nttunpackv i < 1024) (iota_ 0 1024).
   + by rewrite /perm_nttunpackv  -iotaredE /=.
-  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). *)
+  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). 
 qed. 
 
 lemma perm_nttpackv_rng i :
   0 <= i < 1024 => 0<= perm_nttpackv i <1024.
 proof.
-admit. (* 
   have : all (fun i => 0 <= perm_nttpackv i < 1024) (iota_ 0 1024).
   + by rewrite /perm_nttpackv  -iotaredE /=.
-  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). *)
+  move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). 
 qed.
 
 
@@ -1186,15 +1161,13 @@ qed.
 
 lemma nttpermsK i :
  0 <= i < 1024 => 
-   perm_nttunpackv_alt (perm_nttpackv_alt i) = i.
+   perm_nttpackv (perm_nttunpackv i) = i.
 proof.
-admit. (* 
 move => Hi.
-have : all (fun i => perm_nttunpackv_alt (perm_nttpackv_alt i) = i) (iota_ 0 1024); 
+have : all (fun i => perm_nttpackv (perm_nttunpackv i) = i) (iota_ 0 1024); 
   last by rewrite allP /= => H; rewrite H; smt(mem_iota).
-rewrite /perm_nttunpackv_alt /perm_nttpackv_alt.
-rewrite  /nttpackv /nttunpackv.
-by rewrite /nttpack /nttunpack /subarray256 -iotaredE /= /#.*)
+rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
+rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
 qed.
 
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
@@ -1238,25 +1211,25 @@ bdep 12 16 [_aw] [a] [r] frombytes_circuit pcond_true12 perm_nttpackv.
 (* We start with some boilerplate *)
 move => &hr [#]/= <- rr; rewrite /= !flatten1.
 
-move => H1; have H2 := post_lane_commute_out_aligned_perm (to_list a{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 perm_nttunpackv_alt perm_nttpackv_alt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
+move => H1; have H2 := post_lane_commute_out_aligned_perm (to_list a{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 perm_nttunpackv perm_nttpackv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
 smt(Array1536.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
-+ smt(perm_nttunpackvE perm_nttunpackv_rng Array1024.size_to_list).
-+ admit. (* smt(nttpermsK Array1024.size_to_list). *)
-+ admit. (* if we can use the proper operators instead of alt this goes away. *)
++ smt(perm_nttunpackv_rng Array1024.size_to_list).
++ move => ?; rewrite Array1024.size_to_list => ?;smt(nttpermsK). 
 
   have /=? := decode_range_vec 0 (to_list a{hr}) 12 _ _;1,2:smt(Array1536.size_to_list).
+
++ by smt().
 
 have H3 : 
   map frombytes_circuit (map W12.bits2w (chunk 12 (flatten (map W8.w2bits (to_list a{hr}))))) =
    to_list (map W16.of_int  (decode12_vec a{hr})).
-+ rewrite /decode12_vec Array1024.map_of_list Array1024.of_listK;1: smt(size_map). 
++ rewrite /decode12_vec Array1024.map_of_list Array1024.of_listK;1:by rewrite !size_map /decode size_iota size_BytesToBits size_to_list /#.
   rewrite /decode -map_comp -(map_comp _ BS2Int.bs2int) /=.
   apply eq_in_map => x xb.
   rewrite /(\o) /frombytes_circuit /zeroextu16.
   have ? : size x = 12 by smt(@BitChunking).
   congr;rewrite /to_uint W12.bits2wK;1 :  by smt(@BitChunking).
   done.
-
 
 split.
 + rewrite tP => i ib.
@@ -1266,64 +1239,68 @@ split.
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    do congr. 
-    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /= ifT 1:/# /=.
-    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
-    rewrite get_of_list 1:/# nth_iota /#.
-    
+     rewrite /smod /= ifF. 
+     + rewrite /decode12_vec get_of_list;1: smt(perm_nttunpackv_rng). 
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite modz_small. 
+    + rewrite /decode12_vec get_of_list; 1: smt(perm_nttunpackv_rng).
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
+
   case (256<=i<512) => *.
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    do congr. 
-    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /= ifF 1:/# /= ifT 1:/# /=.
-    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
-    rewrite get_of_list 1:/# nth_iota /#.
+     rewrite /smod /= ifF. 
+     + rewrite /decode12_vec get_of_list;1: smt(perm_nttunpackv_rng). 
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite modz_small. 
+    + rewrite /decode12_vec get_of_list; 1: smt(perm_nttunpackv_rng).
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
 
   case (512<=i<768) => *.
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    do congr. 
-    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /= ifF 1:/# ifF 1:/# /= ifT 1:/# /=.
-    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
-    rewrite get_of_list 1:/# nth_iota /#.
+     rewrite /smod /= ifF. 
+     + rewrite /decode12_vec get_of_list;1: smt(perm_nttunpackv_rng). 
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite modz_small. 
+    + rewrite /decode12_vec get_of_list; 1: smt(perm_nttunpackv_rng).
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
 
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
     rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
     rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
-    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng perm_nttunpackvE).
+    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF;1 : by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    rewrite modz_small;1: by rewrite /decode12_vec get_of_list; smt(perm_nttunpackv_rng  perm_nttunpackvE).
-    do congr. 
-    rewrite /perm_nttunpackv_alt /nttunpackv initiE 1:/# initiE 1:/# /=  ifF 1:/# ifF 1:/# /= ifF 1:/# /=.
-    rewrite /nttunpack initiE 1:/# /= /subarray256 get_of_list 1:/# initiE /= 1:/# /=.
-    rewrite get_of_list 1:/# nth_iota /#.
+     rewrite /smod /= ifF. 
+     + rewrite /decode12_vec get_of_list;1: smt(perm_nttunpackv_rng). 
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite modz_small. 
+    + rewrite /decode12_vec get_of_list; 1: smt(perm_nttunpackv_rng).
+       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
+    rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
 
   rewrite /pos_bound1024_cxq qE /= => k kb. 
   have /=? := decode_range_vec witness (to_list a{hr}) 12 _ _;1..2:smt(Array1536.size_to_list).
   rewrite -get_to_list  H2 H3 /decode12_vec.
   rewrite nth_mkseq /=;1: by rewrite size_map size_iota /#. 
-  rewrite get_of_list;1:smt(perm_nttunpackv_rng perm_nttunpackvE). 
-  rewrite (nth_map witness);1:smt(perm_nttunpackv_rng  perm_nttunpackvE). 
-rewrite of_sintK /= /smod /= ifF;1:smt(@Zq perm_nttunpackv_rng  perm_nttunpackvE).
-  rewrite modz_small;1,2:  smt(perm_nttunpackv_rng  perm_nttunpackvE).  
+  rewrite get_of_list;1:smt(perm_nttunpackv_rng). 
+  rewrite (nth_map witness);1:smt(perm_nttunpackv_rng). 
+rewrite of_sintK /= /smod /= ifF;1:smt(@Zq perm_nttunpackv_rng).
+  rewrite modz_small;1,2:  smt(perm_nttunpackv_rng).  
    
 qed.
 
@@ -1935,7 +1912,7 @@ ecall {1} (poly_tomsg_corr a{1}).
 ecall {2} (MLKEM_Poly.poly_tomsg_corr a{2}).
 auto => /#. 
 qed.
-*)
+
 (********** BEGIN BDEP PROOF OF TOBYTES **************)
 
 op tobytes_circuit(a : W16.t) : W12.t = 
