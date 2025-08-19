@@ -1108,7 +1108,7 @@ fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> re
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 tt ttt mask12;
 
-  //a = _poly_csubq(a);
+  a = _poly_csubq(a);
  
   mask12 = #VPBROADCAST_8u32(mask12c);
 

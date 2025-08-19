@@ -8570,6 +8570,7 @@ module M = {
     var t7:W256.t;
     var tt:W256.t;
     var ttt:W256.t;
+    a <@ _poly_csubq (a);
     mask12 <- (VPBROADCAST_8u32 mask12c);
     i <- 0;
     while ((i < 2)) {
