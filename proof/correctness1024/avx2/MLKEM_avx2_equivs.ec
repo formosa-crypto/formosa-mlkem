@@ -1170,6 +1170,18 @@ rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
 rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
 qed.
 
+lemma nttpermsKi i :
+ 0 <= i < 1024 => 
+   perm_nttunpackv (perm_nttpackv i) = i.
+proof.
+move => Hi.
+have : all (fun i => perm_nttunpackv (perm_nttpackv i) = i) (iota_ 0 1024); 
+  last by rewrite allP /= => H; rewrite H; smt(mem_iota).
+rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
+rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
+qed.
+
+
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
     hoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
              a = _aw
@@ -1912,7 +1924,7 @@ ecall {1} (poly_tomsg_corr a{1}).
 ecall {2} (MLKEM_Poly.poly_tomsg_corr a{2}).
 auto => /#. 
 qed.
-
+*)
 (********** BEGIN BDEP PROOF OF TOBYTES **************)
 
 op tobytes_circuit(a : W16.t) : W12.t = 
@@ -1921,8 +1933,124 @@ op tobytes_circuit(a : W16.t) : W12.t =
 lemma polyvec_tobytes_ll : islossless Jkem1024_avx2.M.__i_polyvec_tobytes.
 proc.
 inline *. 
-(* do 5!(unroll for ^while); auto. *)
 do 9!(unroll for ^while); auto. 
+qed.
+
+lemma post_lane_commute_in_aligned_perm ['a 'b 'c]
+    (li : 'a list) 
+    (loc : 'b list) 
+    (tobitsi : 'a -> bool list)
+    (ofbitsi : bool list -> 'a)
+    (tobitsoc : 'b -> bool list)
+    (ofbitsoc : bool list -> 'b)
+    (tobitso : 'c -> bool list)
+    (ofbitso : bool list -> 'c)
+    (f : 'a -> 'c)
+    (ni no noc  : int) 
+    (perm : int -> int)
+    (permi : int -> int):
+  0 < ni =>  0 < no => 0 < noc => 
+  no %| noc*size loc =>
+  size li = (noc*size loc) %/ no =>
+  (forall x, size (tobitsi x) = ni) =>
+  (forall x, ofbitsi (tobitsi x) = x) =>
+  (forall x, size (tobitso x) = no) =>
+  (forall x, ofbitso (tobitso x) = x) =>
+  (forall x, size x = no => tobitso (ofbitso x) = x) =>
+  (forall x, size (tobitsoc x) = noc) =>
+  (forall x, ofbitsoc (tobitsoc x) = x) =>
+  (forall ii, 0 <= ii < size li => 0 <= permi ii < size li) =>
+  (forall ii, 0 <= ii < size li => perm (permi ii) = ii) =>
+map f (map ofbitsi (chunk ni (flatten (map tobitsi  li)))) =
+mkseq (fun i => nth witness
+     (map ofbitso (chunk no (flatten (map tobitsoc loc)))) (perm i)) 
+      (size (map ofbitso (chunk no (flatten (map tobitsoc loc))))) => 
+   flatten (map tobitsoc loc) =
+   flatten (map tobitso (map f (mkseq (fun i => nth witness li (permi i)) (size li)))).
+move => 14?.
+rewrite map_chunk_flatten_id 1..3:/#.
+move => H.
+rewrite map_mkseq /(\o) /=.
+have -> : (mkseq (fun (x : int) => f (nth witness li (permi x))) (size li)) =
+   (mkseq (fun (x : int) =>  (nth witness (map f li) (permi x))) (size li)).
++ apply eq_in_mkseq => i ib /=.
+  by rewrite (nth_map witness) 1:/#.
+rewrite H.
+have -> : (mkseq
+        (fun (x : int) =>
+           nth witness
+             (mkseq (fun (i : int) => nth witness (map ofbitso (chunk no (flatten (map tobitsoc loc)))) (perm i))
+                (size (map ofbitso (chunk no (flatten (map tobitsoc loc)))))) (
+             permi x)) (size li)) =
+   map ofbitso (mkseq
+        (fun (x : int) =>
+           nth witness
+             (mkseq (fun (i : int) => nth witness (chunk no (flatten (map tobitsoc loc))) (perm i))
+                (size (map ofbitso (chunk no (flatten (map tobitsoc loc)))))) (
+             permi x)) (size li)).
+have -> := map_mkseq ofbitso
+     (fun (x : int) =>
+        nth witness
+          (mkseq (fun (i : int) => nth witness (chunk no (flatten (map tobitsoc loc))) (perm i))
+             (size (map ofbitso (chunk no (flatten (map tobitsoc loc)))))) (
+          permi x)) (size li).
++ apply eq_in_mkseq => i ib /=.
+  rewrite /(\o) /= !(nth_mkseq) /=;1,2: by 
+  rewrite size_map size_chunk 1:/#  (EclibExtra.size_flatten' noc);smt(mapP size_map).
+  by rewrite (nth_map witness);1: by
+   rewrite size_chunk 1:/# (EclibExtra.size_flatten' noc);smt(mapP size_map).
+
+rewrite -map_comp /(\o) /=.
+
+have -> : (mkseq
+        (fun (x : int) =>
+           nth witness
+             (mkseq (fun (i : int) => nth witness (chunk no (flatten (map tobitsoc loc))) (perm i))
+                (size (map ofbitso (chunk no (flatten (map tobitsoc loc)))))) (
+             permi x)) (size li))
+ = (chunk no (flatten (map tobitsoc loc))) .
++ apply (eq_from_nth witness).
+  + rewrite size_mkseq size_chunk 1:/# (EclibExtra.size_flatten' noc);1: smt(mapP).
+    rewrite size_map;smt(size_ge0).
+  move => i; rewrite size_mkseq /max => ib.
+  rewrite nth_mkseq 1:/# /= nth_mkseq /=.  
+  + rewrite size_map size_chunk 1:/# (EclibExtra.size_flatten' noc);1: smt(mapP).
+    rewrite size_map;smt(size_ge0).
+  by smt().
+have /= [-> x] := eq_in_map (fun (x : bool list) => tobitso (ofbitso x)) idfun (chunk no (flatten (map tobitsoc loc))).
+have := in_chunk_size no (flatten (map tobitsoc loc)) x _;smt().
+
+rewrite map_id chunkK 1:/#; last by done.
+rewrite (EclibExtra.size_flatten' noc); smt(size_map mapP).
+qed.
+
+lemma output_pack_1536_8(l : bool list) :
+ size l = 1024*12 =>
+ flatten
+  (map W8.w2bits
+     (to_list (Array1536.of_list W8.zero (BitsToBytes l)))) = l.
+move => *.
+rewrite of_listK; 1: by rewrite size_BitsToBytes /#.
+have ? : size (flatten (map W8.w2bits (BitsToBytes l))) = size l.
++ rewrite (EclibExtra.size_flatten' 8);1: smt(mapP W8.size_w2bits).
+  by rewrite size_map size_BitsToBytes /#.
+
+apply (eq_from_nth witness); 1: smt().
+move => i ib.
+rewrite (nth_flatten _ 8);1: by rewrite allP => *; smt( mapP W8.size_w2bits).
+rewrite (nth_map witness);1: smt(size_BitsToBytes).
+rewrite /BitsToBytes (nth_map []);1:by smt(size_chunk).
+rewrite bits2wK;1: smt(size_nth_chunk).
+rewrite -(nth_flatten _ 8);1: by rewrite allP => * /=;smt(in_chunk_size). 
+by rewrite chunkK /#.
+qed.
+
+lemma nttpackv_alt (a : W16.t Array1024.t) i :
+ 0 <= i < 1024 =>
+  a.[perm_nttpackv i] = (nttpackv a).[i].
+move => ?;have : all (fun i => a.[perm_nttpackv i] = (nttpackv a).[i]) (iota_ 0 1024);
+  last by rewrite allP => H; move : (H i);smt(mem_iota).
+by rewrite /nttpackv /subarray256 /nttpack /perm_nttpackv -iotaredE /=.
 qed.
 
 lemma polyvec_tobytes_corr_h (_aw : W16.t Array1024.t):
@@ -1961,7 +2089,65 @@ cfold ^i1<-.
 wp -4.
 
 bdep 16 12 [_aw] [a] [r] tobytes_circuit pcond_reduced perm_nttunpackv. 
-admitted.
+
+(* BDEP pre conseq *)
++ move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
+  rewrite allP /pos_bound124_cxq /= => Hb. 
+  rewrite /pcond_reduced /= /tolist /= => x.
+  rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
+  have := Hb i; rewrite ib /= qE /=.
+  rewrite /to_sint /smod /=.
+  smt(W16.to_uint_cmp).
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
+move => H1.
+apply (inj_eq Array1536.to_list Array1536.to_list_inj).
+apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
+have -> := post_lane_commute_in_aligned_perm (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W12.w2bits W12.bits2w  tobytes_circuit 16 12 8 perm_nttunpackv perm_nttpackv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
+smt(Array1536.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
++ smt(perm_nttpackv_rng Array1024.size_to_list).
++ move => ?; rewrite Array1024.size_to_list => ?;smt(nttpermsKi). 
++ by smt().
+
+rewrite output_pack_1536_8. 
++ rewrite (EclibExtra.size_flatten' 12);1: smt(mapP BS2Int.size_int2bs).
+  by rewrite size_map size_to_list /=.
+
+congr.
+rewrite /tobytes_circuit -map_comp -map_comp -map_comp /(\o) /=.
+apply (eq_from_nth witness);1: by  rewrite !size_map //;smt(size_iota).
+rewrite size_map !size_iota /max /= => i; rewrite size_to_list /= => ib; rewrite !(nth_map witness) //=;1,2:smt(size_iota).
+rewrite nth_iota 1:/# -(BVA_Top_Bindings_W12_t.oflistP (BS2Int.int2bs 12 (map asint (lift_array1024 (nttpackv a{hr}))).[i])); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W12_t.ofintP /lift_array256;rewrite !mapiE 1,2:/#.
+
+(* This is now the equivalence betwen specs.*)
+rewrite ultE /=; have HH := nttpackv_alt a{hr} i ib.
+have HG := perm_nttpackv_rng i ib.
+rewrite HH.
+
+case (to_uint (nttpackv a{hr}).[i] < 3329) => /= *.
++ rewrite  /truncateu12;congr. 
+  rewrite incoeffK qE /to_sint /= /smod /= ifF 1:/#  modz_small;smt(W16.to_uint_cmp). 
+
+have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+
+have ? : 0 <= to_sint ((W16_sub (nttpackv a{hr}).[i] (W16.of_int 3329))) < 3329.
++  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=;smt(size_map size_iota). 
+   rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;   smt(size_map size_iota W16.to_uint_cmp).
+
+have ? : to_sint ((W16_sub (nttpackv a{hr}).[i] (W16.of_int 3329))) = to_sint (nttpackv a{hr}).[i] -  3329.
++  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=;smt(size_map size_iota). 
+   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
+
+have -> : (incoeff (to_sint (nttpackv a{hr}).[i])) = (incoeff (to_sint (W16_sub (nttpackv a{hr}).[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff; smt(). 
+
++ rewrite  /truncateu12;congr. 
+  rewrite incoeffK qE modz_small;smt(W16.to_uint_cmp). 
+ 
+qed.
 
 lemma polyvec_tobytes_corr (_aw : W16.t Array1024.t):
     phoare[ Jkem1024_avx2.M.__i_polyvec_tobytes :
