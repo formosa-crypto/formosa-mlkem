@@ -1924,7 +1924,7 @@ ecall {1} (poly_tomsg_corr a{1}).
 ecall {2} (MLKEM_Poly.poly_tomsg_corr a{2}).
 auto => /#. 
 qed.
-*)
+
 (********** BEGIN BDEP PROOF OF TOBYTES **************)
 
 op tobytes_circuit(a : W16.t) : W12.t = 
