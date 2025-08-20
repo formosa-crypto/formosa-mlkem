@@ -851,7 +851,7 @@ lemma poly_decompress_corr (_a : W8.t Array160.t):
              pos_bound256_cxq res 0 256 1 ] = 1%r
   by conseq poly_decompress_ll (poly_decompress_corr_h _a).
 
-lemma poly_decompcress_equiv  : 
+lemma poly_decompress_equiv  : 
     equiv [Jkem1024_avx2.M._i_poly_decompress ~  Jkem1024.M._i_poly_decompress  :
              a{1} = ap{2}
               ==>
