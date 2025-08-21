@@ -1101,13 +1101,14 @@ ensures:
 
 */
 
+
 fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
 {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 tt ttt;
 
   a = _poly_csubq(a);
- 
+
   for i = 0 to 2
   {
     t0 = a[:u256 8*i];
@@ -1119,36 +1120,33 @@ fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> re
     t6 = a[:u256 8*i + 6];
     t7 = a[:u256 8*i + 7];
 
-    /* pack everything into 16-bit words */
     tt = #VPSLL_16u16(t1, 12);
-    tt |= t0; /* 0-15 in 0..11 | lsbs 16..31 in 12..15 */
+    tt |= t0;
 
     t0 = #VPSRL_16u16(t1, 4);
     t1 = #VPSLL_16u16(t2, 8);
-    t0 |= t1; /* msbs 16..31 in 0..7 | lsbs 32..47 in 8..15 */
+    t0 |= t1;
 
     t1 = #VPSRL_16u16(t2, 8);
     t2 = #VPSLL_16u16(t3, 4);
-    t1 |= t2; /* msbs 32..47 in 0..3 | lsbs 48..63 in 4..15 */
+    t1 |= t2;
 
     t2 = #VPSLL_16u16(t5, 12);
-    t2 |= t4; /* 64-79 in 0..11 | lsbs 80..95 in 12..15 */
+    t2 |= t4;
 
     t3 = #VPSRL_16u16(t5, 4);
     t4 = #VPSLL_16u16(t6, 8);
-    t3 |= t4; /* msbs 80..95 in 0..7 | lsbs 96..111 in 8..15 */
+    t3 |= t4;
 
     t4 = #VPSRL_16u16(t6, 8);
     t5 = #VPSLL_16u16(t7, 4);
-    t4 |= t5; /* msbs 96..111 in 0..3 | lsbs 112..128 in 4..15 */
+    t4 |= t5;
 
-    /* go to 32-bit words */
-    ttt, t0 = __shuffle1(tt, t0); /* 0-15 in 0..11, 16..31 in 12..23, lsb 32..47 in 24..31 */
-    tt, t2 = __shuffle1(t1, t2); /* msb 32-47 in 0..3, 48..63 in 4..15, 64..79 in 16..27, lsb 80..95 in 28..31 */
-    t1, t4 = __shuffle1(t3, t4); /* msb 80..95 in 0..7, 96..111 in 8..19, 112..128 in 20..31 */
+    ttt, t0 = __shuffle1(tt, t0);
+    tt, t2 = __shuffle1(t1, t2);
+    t1, t4 = __shuffle1(t3, t4);
 
-    /* go to 64-bit words */
-    t3, tt= __shuffle2(ttt, tt); 
+    t3, tt= __shuffle2(ttt, tt);
     ttt, t0 = __shuffle2(t1, t0);
     t1, t4 = __shuffle2(t2, t4);
 

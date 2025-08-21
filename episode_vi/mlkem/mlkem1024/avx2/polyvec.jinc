@@ -113,7 +113,7 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
     f1 = #VPSRLDQ_256(f0, 8);
     f0 = #VPSRLV_4u64(f0, srlvqidx);
     f1 = #VPSLL_4u64(f1, 34);
-    f0 = #VPADD_4u64(f0, f1);
+    f0 = #VPOR_256(f0, f1);
     f0 = #VPSHUFB_256(f0, shufbidx);
     t0 = (128u)f0;
     t1 = #VEXTRACTI128(f0, 1);

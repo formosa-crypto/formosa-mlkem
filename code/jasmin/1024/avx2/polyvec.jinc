@@ -83,7 +83,6 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx srlvqidx shufbidx;
   reg u128 t0 t1;
 
-  /* This is not needed */
   a = __polyvec_csubq(a);
 
   v = jvx16[:u256 0];
@@ -107,23 +106,14 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
     f1 = #VPANDN_256(f1, f2);
     f1 = #VPSRL_16u16(f1, 15);
     f0 = #VPSUB_16u16(f0, f1);
-    f0 = #VPMULHRS_16u16(f0, shift1); 
-    /* retain only 11 bits */
+    f0 = #VPMULHRS_16u16(f0, shift1);
     f0 = #VPAND_256(f0, mask);
-    f0 = #VPMADDWD_256(f0,shift2); 
-    /* shift even ones left by 10 to merge */
+    f0 = #VPMADDWD_256(f0, shift2);
     f0 = #VPSLLV_8u32(f0, sllvdidx);
-    /* get a copy of high half on the low end */
     f1 = #VPSRLDQ_256(f0, 8);
-    /* put 44 bits low in final position
-       put 24 bit high in final position */ 
     f0 = #VPSRLV_4u64(f0, srlvqidx);
-    /* put mid bits in place */
     f1 = #VPSLL_4u64(f1, 34);
-    /* merge */
     f0 = #VPOR_256(f0, f1);
-    /* get the first 11 bytes, which are in place */
-    /* permute high bytes to allow putting them in place */
     f0 = #VPSHUFB_256(f0, shufbidx);
     t0 = (128u)f0;
     t1 = #VEXTRACTI128(f0, 1);
