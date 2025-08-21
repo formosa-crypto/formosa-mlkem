@@ -2,7 +2,7 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
 from JazzEC require import Array1536 Array1568 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
-from JazzEC require import WArray512 WArray32 WArray16 WArray1410 WArray160.
+from JazzEC require import WArray512 WArray384 WArray32 WArray16 WArray1410 WArray160.
 
 require import AVX2_Ops W16extra.
 from JazzEC require import Jkem1024.
@@ -2330,7 +2330,7 @@ qed.
 lemma nttpackv_alt (a : W16.t Array1024.t) i :
  0 <= i < 1024 =>
   a.[perm_nttpackv i] = (nttpackv a).[i].
-proof
+proof.
 move => ?;have : all (fun i => a.[perm_nttpackv i] = (nttpackv a).[i]) (iota_ 0 1024);
   last by rewrite allP => H; move : (H i);smt(mem_iota).
 by rewrite /nttpackv /subarray256 /nttpack /perm_nttpackv -iotaredE /=.
@@ -2454,29 +2454,29 @@ proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array1024.t) : W8.t Arr
       (t1, t4) <- (r08, r17);                                                                                                   
       rp <-                                                                                                                    
         Array384.init                                                                                                          
-          (WArray384.WArray384.get8                                                                                            
-             (WArray384.WArray384.set256_direct (WArray384.WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0) t0));      
+          (WArray384.get8                                                                                            
+             (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0) t0));      
       rp <-                                                                                                                    
         Array384.init                                                                                                          
-          (WArray384.WArray384.get8                                                                                            
-             (WArray384.WArray384.set256_direct (WArray384.WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 32) t2)); 
+          (WArray384.get8                                                                                            
+             (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 32) t2)); 
       rp <-                                                                                                                    
         Array384.init                                                                                                          
-          (WArray384.WArray384.get8                                                                                            
-             (WArray384.WArray384.set256_direct (WArray384.WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 64) t1)); 
+          (WArray384.get8                                                                                            
+             (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 64) t1)); 
       rp <-                                                                                                                    
         Array384.init                                                                                                          
-          (WArray384.WArray384.get8                                                                                            
-             (WArray384.WArray384.set256_direct (WArray384.WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 96) t3)); 
+          (WArray384.get8                                                                                            
+             (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 96) t3)); 
       rp <-                                                                                                                    
         Array384.init                                                                                                          
-          (WArray384.WArray384.get8                                                                                            
-             (WArray384.WArray384.set256_direct (WArray384.WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (                    
+          (WArray384.get8                                                                                            
+             (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (                    
                 192 * i0 + 128) ttt));                                                                                          
       rp <-                                                                                                                    
         Array384.init                                                                                                          
-          (WArray384.WArray384.get8                                                                                            
-             (WArray384.WArray384.set256_direct (WArray384.WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 160) t4));
+          (WArray384.get8                                                                                            
+             (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192 * i0 + 160) t4));
       i0 <- i0 + 1;                                                                                                             
     }                                                                                                                          
     (aux, aux_0) <- (rp, a0);                                                                                                   
