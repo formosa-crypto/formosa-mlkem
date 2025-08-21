@@ -338,9 +338,12 @@ case (i < n * len * 2) => />Hi2; first smt().
 case (i < n * (len*2)+len) => /> Hi3. 
 + rewrite (_:i %/ len = n*2).
   by rewrite divz_eqP // /#.
-+ by rewrite ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#; do 3!congr; smt().
++ rewrite ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#; do 3!congr. 
+  rewrite (Ring.IntID.mulrC len 2) (Ring.IntID.mulrA n) mulzK 1:/# /#.
 case (i < n * (len * 2) + len + len) => />Hi4; last smt().
-rewrite (_:i%/len = n*2+1) => />;1: by smt().
+rewrite (_:i%/len = n*2+1) => />.
++ have ? : (i %/ len * len + i %% len) %/ len * len = (n * 2 + 1)*len; last by smt().
+  smt(@IntDiv).
 rewrite ifT 1:/# ifF 1:/# ifT 1:/# ifF 1:/#;do 6!congr.  
 by smt().
 qed.
