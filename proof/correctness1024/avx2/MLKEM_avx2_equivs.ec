@@ -205,7 +205,7 @@ lemma polyvec_csubq_avx2_corr (_aw : W16.t Array1024.t):
 
 (********** END BDEP PROOF OF CSUBQ **************)
 
-(* 
+
 lemma polyvec_decompress_ll :
    islossless Jkem1024_avx2.M.__i_polyvec_decompress.
 by proc;inline *;unroll for ^while; do 4!(cfold ^inc<-; unroll for ^while);auto.
@@ -1283,7 +1283,7 @@ proc; inline *;wp.
   while (0 <= i <= 4) (4-i); last by  auto =>  /> /#.
 move => *. cfold 3. unroll for ^while;auto => /> /#.
 qed.
-*)
+
 op  perm_nttunpackv(i : int) : int =  nth (-1) 
   [0; 8; 16; 24; 32; 40; 48; 56; 64; 72; 80; 88; 96; 104; 112; 120; 1; 9; 17; 25; 33; 41; 49; 57; 65; 73; 81; 89; 97;
      105; 113; 121; 2; 10; 18; 26; 34; 42; 50; 58; 66; 74; 82; 90; 98; 106; 114; 122; 3; 11; 19; 27; 35; 43; 51; 59;
@@ -1379,22 +1379,20 @@ op  perm_nttpackv(i : int) =  nth (-1)
         910; 926; 942; 958; 974; 990; 1006; 1022; 911; 927; 943; 959; 975; 991; 1007; 1023] i. 
 
 lemma perm_nttunpackv_rng i :
-  0 <= i < 1024 => 0<= perm_nttunpackv i <1024 by admit.
-(*
+  0 <= i < 1024 => 0<= perm_nttunpackv i <1024.
 proof.
   have : all (fun i => 0 <= perm_nttunpackv i < 1024) (iota_ 0 1024).
   + by rewrite /perm_nttunpackv  -iotaredE /=.
   move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). 
-qed. *)
+qed.
 
 lemma perm_nttpackv_rng i :
-  0 <= i < 1024 => 0<= perm_nttpackv i <1024 by admit.
-(* 
+  0 <= i < 1024 => 0<= perm_nttpackv i <1024.
 proof.
   have : all (fun i => 0 <= perm_nttpackv i < 1024) (iota_ 0 1024).
   + by rewrite /perm_nttpackv  -iotaredE /=.
   move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). 
-qed. *)
+qed. 
 
 
 lemma post_lane_commute_out_aligned_perm ['a 'b 'c]
@@ -1446,29 +1444,26 @@ qed.
 
 lemma nttpermsK i :
  0 <= i < 1024 => 
-   perm_nttpackv (perm_nttunpackv i) = i by admit.
-(* 
+   perm_nttpackv (perm_nttunpackv i) = i.
 proof.
 move => Hi.
 have : all (fun i => perm_nttpackv (perm_nttunpackv i) = i) (iota_ 0 1024); 
   last by rewrite allP /= => H; rewrite H; smt(mem_iota).
 rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
 rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
-qed. *)
+qed. 
 
 lemma nttpermsKi i :
  0 <= i < 1024 => 
-   perm_nttunpackv (perm_nttpackv i) = i by admit. 
-(* 
+   perm_nttunpackv (perm_nttpackv i) = i.
 proof.
 move => Hi.
 have : all (fun i => perm_nttunpackv (perm_nttpackv i) = i) (iota_ 0 1024); 
   last by rewrite allP /= => H; rewrite H; smt(mem_iota).
 rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
 rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
-qed. *)
+qed. 
 
-(* 
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
     hoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
              a = _aw
@@ -2334,13 +2329,12 @@ qed.
 
 lemma nttpackv_alt (a : W16.t Array1024.t) i :
  0 <= i < 1024 =>
-  a.[perm_nttpackv i] = (nttpackv a).[i] by admit.
-(*
+  a.[perm_nttpackv i] = (nttpackv a).[i].
 proof
 move => ?;have : all (fun i => a.[perm_nttpackv i] = (nttpackv a).[i]) (iota_ 0 1024);
   last by rewrite allP => H; move : (H i);smt(mem_iota).
 by rewrite /nttpackv /subarray256 /nttpack /perm_nttpackv -iotaredE /=.
-qed. *)
+qed. 
 
 abbrev mask12 = VPBROADCAST_16u16(W16.of_int 4095).
 
@@ -2645,8 +2639,29 @@ wp;while (#pre /\ ={i0} /\ 0<=i0{1}<=2); last first.
   rewrite /pos_bound1024_cxq => k kb; rewrite initiE 1:/# /= /#.
 
 wp -1 -1; conseq (: _ ==> ={rp}); 1: by smt().
-inline *;sim; auto => /> &1 &2 ???;rewrite /pos_bound256_cxq qE /= => Hb ???; do split;
-rewrite /VPBROADCAST_16u16 /= -(W16u16.unpack16K (WArray512.get256 _ _)) -(W16u16.unpack16K (W16u16.pack16 _)) andb16u16E;congr;rewrite packP => k kb;rewrite map2iE 1:/# /= andE wordP => ii iib;rewrite map2iE 1:/# /= get_of_list 1:/# /= (nth_map witness)  /=;1:smt(size_iota);admit.
+
+inline *;sim; auto => /> &1 &2 ???;rewrite /pos_bound256_cxq qE /= => Hb ???.
+
+have Hpos : forall jj kk ii, 0 <= jj < 8 => 0 <= kk < 16 => 0 <= ii < 16 => (get256 (WArray512.init16 ("_.[_]" a0{1})) (8 * i0{1} + jj) \bits16 kk).[ii] = a0{1}.[kk + 16*jj + i0{1}*128].[ii] by
+  move => jj kk ii jjb kkb iib; rewrite get256E /pack32_t /(\bits16) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /(\bits8) initiE 1:/# /= /#.
+
+have bits : forall kk ii, 0 <= kk < 256 => 12 <= ii < 16 => !a0{1}.[kk].[ii].
++ move => kk ii kkb iib; have := Hb kk kkb;rewrite /to_sint /smod /= => Hn.
+  have Hn1 : !32768 <= to_uint a0{1}.[kk] by smt(W16.to_uint_cmp pow2_16).
+  move : Hn; rewrite Hn1 /= get_to_uint . 
+  have ? : 4096 <= 2^ii;last by smt().
+  have ? : 4096 = 2^12 by auto.
+  smt(@StdOrder.IntOrder). 
+
+have bitsC : forall  ii, 0 <= ii < 16 => (W16.of_int 4095).[ii] <=> 0<=ii<12.
++ move => ii iib.
+  have : all (fun i => (W16.of_int 4095).[i] <=> 0 <= i < 12) (iota_ 0 16); 
+  last by rewrite allP => H; move : (H ii _);smt(mem_iota).
+  by rewrite -iotaredE /= !get_to_uint /=.
+
+
+do split; rewrite /VPBROADCAST_16u16 /= -(W16u16.unpack16K (WArray512.get256 _ _)) -(W16u16.unpack16K (W16u16.pack16 _)) !andb16u16E;congr;rewrite packP => k kb;rewrite map2iE 1:/# /= andE wordP => ii iib;rewrite map2iE 1:/# /= get_of_list 1:/# /= (nth_map witness)  /=;1,3,5,7,9,11,13,15:smt(size_iota); rewrite unpack16E initiE 1:/# /=;1..7: by rewrite Hpos /#.
+      have /= -> := Hpos 0;smt().
 qed.
 
 
