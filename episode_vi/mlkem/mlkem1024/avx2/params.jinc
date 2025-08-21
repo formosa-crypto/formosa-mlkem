@@ -1,0 +1,5 @@
+param int MLKEM_K = 4;
+param int MLKEM_POLYCOMPRESSEDBYTES = 160; /* 256*5/8 */
+param int MLKEM_POLYVECCOMPRESSEDBYTES = (MLKEM_K * 352); /* 256*11/8 */
+
+require "../../common/avx2/params.jinc"

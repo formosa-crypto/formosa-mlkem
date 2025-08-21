@@ -1,0 +1,218 @@
+require "params.jinc"
+require "poly.jinc"
+require "shuffle.jinc"
+
+/*
+__polyvec_add2: add arrays pointwise
+
+requires:
+  - elements in r input to be in the range [-q*A...q*A) for 0<=A<=6
+  - elements in b input to be in the range [-q*B...q*B) for 0<=B<=3
+ensures:
+  - each entry in p represents the Zq element that results from summing
+    the Zq elements represented by the corresponding rp and bp entries on
+     input
+  - each entry in r is in the range [-q*(A+B)...q*(A+B))
+*/
+
+inline
+fn __polyvec_add2(stack u16[MLKEM_VECN] r, stack u16[MLKEM_VECN] b) -> stack u16[MLKEM_VECN]
+{
+  inline int i;
+  for i = 0 to MLKEM_K
+  {
+    r[MLKEM_N*i:MLKEM_N] = _poly_add2(r[MLKEM_N*i:MLKEM_N], b[MLKEM_N*i:MLKEM_N]);
+  }
+  return r;
+}
+
+/*
+__polyvec_csubq: reduce from range [0..2q) to range [0..q) by conditional subtraction
+         do this for each element in the input array
+
+requires:
+  - each 16-bit element in the input array is in the range [0..2q)
+ensures:
+  - every 16-bit element in the output array is in the range [0..q)
+  - every 16-bit element in the output array encodes the same element in Zq
+    as the corresponding element in the input array
+*/
+
+inline
+fn __polyvec_csubq(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  inline int i;
+  for i = 0 to MLKEM_K
+  {
+    r[MLKEM_N*i:MLKEM_N] = _poly_csubq(r[MLKEM_N*i:MLKEM_N]);
+  }
+  return r;
+}
+
+
+/*
+__polyvec_invntt computes the inverse NTT over a vector of input polynomials,
+one polynomial at a time.
+Input polynomials are given with coefficients in AVX order, and produces
+the output with coefficients in the logical order.
+
+Input range accepted is [-4q,4q)
+Output range is (-q,q)
+
+Introduces a multiplicative scalar of R mod q in all coefficients,
+which cancels a lingering R^-1 mod q factor that remains from
+montgomery multiplications carried out in basemul.
+
+*/
+
+inline
+fn __polyvec_invntt(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  inline int i;
+  for i = 0 to MLKEM_K
+  {
+    r[MLKEM_N*i:MLKEM_N] = _poly_invntt(r[MLKEM_N*i:MLKEM_N]);
+  }
+  return r;
+}
+
+/*
+__polyvec_ntt computes the NTT over an vector of polynomials,
+one polynomial at a time.
+Input polynomials are given with coefficients in logical order, and produces
+the output with coefficients in AVX order.
+
+Input range accepted is [-2q,2q)
+Output range is (-2q,2q)
+
+*/
+
+
+inline
+fn __polyvec_ntt(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  inline int i;
+  for i = 0 to MLKEM_K
+  {
+    r[MLKEM_N*i:MLKEM_N] = _poly_ntt(r[MLKEM_N*i:MLKEM_N]);
+  }
+  return r;
+}
+
+/*
+__polyvec_reduce: reduce from arbitrary signed range [-2^15..2^15) to range [0..2q)
+          usint Barrett reduction
+
+requires: nothing
+
+ensures:
+  - memory unchanged
+  - every coefficient of the output is in the range [0..q)
+  - every coefficient of the output encodes the same element in Zq
+    as the corresponding input coefficient
+*/
+inline
+fn __polyvec_reduce(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
+{
+  inline int i;
+  for i = 0 to MLKEM_K
+  {
+    r[MLKEM_N*i:MLKEM_N] = __poly_reduce(r[MLKEM_N*i:MLKEM_N]);
+  }
+  return r;
+}
+
+
+/*
+_polyvec_frombytes: unpacks a vector of polynomials encoded as byte array (12bits per coefficient)
+                 and permutes each polynomial to be in avx order where the permutation is given by
+
+  [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113;
+   2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51; 67; 83; 99; 115;
+   4; 20; 36; 52; 68; 84; 100; 116; 5; 21; 37; 53; 69; 85; 101; 117;
+   6; 22; 38; 54; 70; 86; 102; 118; 7; 23; 39; 55; 71; 87; 103; 119;
+   8; 24; 40; 56; 72; 88; 104; 120; 9; 25; 41; 57; 73; 89; 105; 121;
+   10; 26; 42; 58; 74; 90; 106; 122; 11; 27; 43; 59; 75; 91; 107; 123;
+   12; 28; 44; 60; 76; 92; 108; 124; 13; 29; 45; 61; 77; 93; 109; 125;
+   14; 30; 46; 62; 78; 94; 110; 126; 15; 31; 47; 63; 79; 95; 111; 127;
+   128; 144; 160; 176; 192; 208; 224; 240; 129; 145; 161; 177; 193; 209; 225; 241;
+   130; 146; 162; 178; 194; 210; 226; 242; 131; 147; 163; 179; 195; 211; 227; 243;
+   132; 148; 164; 180; 196; 212; 228; 244; 133; 149; 165; 181; 197; 213; 229; 245;
+   134; 150; 166; 182; 198; 214; 230; 246; 135; 151; 167; 183; 199; 215; 231; 247;
+   136; 152; 168; 184; 200; 216; 232; 248; 137; 153; 169; 185; 201; 217; 233; 249;
+   138; 154; 170; 186; 202; 218; 234; 250; 139; 155; 171; 187; 203; 219; 235; 251;
+   140; 156; 172; 188; 204; 220; 236; 252; 141; 157; 173; 189; 205; 221; 237; 253;
+   142; 158; 174; 190; 206; 222; 238; 254; 143; 159; 175; 191; 207; 223; 239; 255].
+
+
+
+ensures:
+    every output coefficient is in the range [0..2*q)
+
+*/
+
+inline
+fn __i_polyvec_frombytes(reg ptr u8[MLKEM_POLYVECBYTES] a) -> stack u16[MLKEM_VECN]
+{
+  stack u16[MLKEM_VECN] r;
+  inline int i;
+
+  for i = 0 to MLKEM_K
+  {
+    r[MLKEM_N*i:MLKEM_N] = _i_poly_frombytes(r[MLKEM_N*i:MLKEM_N], a[MLKEM_POLYBYTES*i:MLKEM_POLYBYTES]);
+  }
+  return r;
+}
+
+
+/*
+__polyvec_tobytes: serializes a vector of polynomials (given in AVX2 order)
+    one polynomial at a time, using 12 bits
+    per coefficient and packs in byte array stored in rp
+
+requires: input coefficients to be in the range [0..2q)
+
+ensures:
+    output these bytes encode the serialized polynomial
+*/
+
+inline
+fn __i_polyvec_tobytes(reg ptr u8 [MLKEM_POLYVECBYTES] r, stack u16[MLKEM_VECN] a) -> reg ptr u8 [MLKEM_POLYVECBYTES]
+{
+  inline int i;
+
+  for i = 0 to MLKEM_K
+  {
+    r[MLKEM_POLYBYTES*i:MLKEM_POLYBYTES], a[MLKEM_N*i:MLKEM_N] = _i_poly_tobytes(r[MLKEM_POLYBYTES*i:MLKEM_POLYBYTES], a[MLKEM_N*i:MLKEM_N]);
+  }
+  return r;
+ }
+
+
+
+/*
+__polyvec_pointwise_acc : computes the inner product of the two
+ vectors of polynomials in ntt domain and with coefficients
+ in avx2 order.
+
+ requires: input coefficients in the range [-2q,2q)
+
+ ensures: output coefficients in the range [-4q,4q]
+    and affected by spurious R^-1 mod q factor
+*/
+
+inline
+fn __polyvec_pointwise_acc(stack u16[MLKEM_N] r, stack u16[MLKEM_VECN] a b) -> stack u16[MLKEM_N]
+{
+  stack u16[MLKEM_N] t;
+  inline int i;
+
+  r = _poly_basemul(r, a[0:MLKEM_N], b[0:MLKEM_N]);
+  for i = 1 to MLKEM_K
+  {
+    t = _poly_basemul(t, a[MLKEM_N*i:MLKEM_N], b[MLKEM_N*i:MLKEM_N]);
+    r = _poly_add2(r, t);
+  }
+  return r;
+}
+

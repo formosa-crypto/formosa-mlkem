@@ -3,7 +3,7 @@ require "../../common/ref/poly.jinc"
 
 fn _i_poly_compress(reg mut ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg mut ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
 {
-  reg u16 u v;
+  reg u16 u;
   reg u32 d0;
   reg ui64 i k;
   reg u8[8] t;

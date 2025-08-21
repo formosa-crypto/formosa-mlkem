@@ -1563,7 +1563,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$373:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$360
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$361:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$372:
@@ -1664,7 +1664,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$355:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$342
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$343:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$354:
@@ -1765,7 +1765,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$337:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$324
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$325:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$336:
@@ -1866,7 +1866,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$319:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$306
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$307:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$318:
@@ -1967,7 +1967,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$301:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$288
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$289:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$300:
@@ -2068,7 +2068,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$283:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$270
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$271:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$282:
@@ -2169,7 +2169,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$265:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$252
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$253:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$264:
@@ -2270,7 +2270,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$247:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$234
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$235:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$246:
@@ -2371,7 +2371,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$229:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$216
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$217:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$228:
@@ -2472,7 +2472,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$211:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$198
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$199:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$210:
@@ -2573,7 +2573,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$193:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$180
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$181:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$192:
@@ -2674,7 +2674,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$175:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$162
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$163:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$174:
@@ -2775,7 +2775,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$157:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$144
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$145:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$156:
@@ -2876,7 +2876,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$139:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$126
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$127:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$138:
@@ -2977,7 +2977,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$121:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$108
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$109:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$120:
@@ -3078,7 +3078,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$103:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$90
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$91:
 	movq	%rcx, %mm3
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$102:
@@ -12372,7 +12372,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$372:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$359
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$360:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$371:
@@ -12473,7 +12473,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$354:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$341
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$342:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$353:
@@ -12574,7 +12574,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$336:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$323
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$324:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$335:
@@ -12675,7 +12675,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$318:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$305
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$306:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$317:
@@ -12776,7 +12776,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$300:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$287
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$288:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$299:
@@ -12877,7 +12877,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$282:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$269
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$270:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$281:
@@ -12978,7 +12978,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$264:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$251
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$252:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$263:
@@ -13079,7 +13079,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$246:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$233
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$234:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$245:
@@ -13180,7 +13180,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$228:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$215
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$216:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$227:
@@ -13281,7 +13281,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$210:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$197
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$198:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$209:
@@ -13382,7 +13382,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$192:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$179
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$180:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$191:
@@ -13483,7 +13483,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$174:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$161
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$162:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$173:
@@ -13584,7 +13584,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$156:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$143
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$144:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$155:
@@ -13685,7 +13685,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$138:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$125
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$126:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$137:
@@ -13786,7 +13786,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$120:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$107
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$108:
 	movq	%rcx, %mm5
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$119:
@@ -13887,7 +13887,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$102:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$89
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$90:
 	movq	%rcx, %mm4
-	leaq	416(%rsp), %r15
+	leaq	416(%rsp), %r14
 	leaq	248(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_enc_derand$101:
@@ -15132,7 +15132,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$363:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$350
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$351:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$362:
@@ -15233,7 +15233,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$345:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$332
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$333:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$344:
@@ -15334,7 +15334,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$327:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$314
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$315:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$326:
@@ -15435,7 +15435,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$309:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$296
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$297:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$308:
@@ -15536,7 +15536,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$291:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$278
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$279:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$290:
@@ -15637,7 +15637,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$273:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$260
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$261:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$272:
@@ -15738,7 +15738,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$255:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$242
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$243:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$254:
@@ -15839,7 +15839,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$237:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$224
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$225:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$236:
@@ -15940,7 +15940,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$219:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$206
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$207:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$218:
@@ -16041,7 +16041,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$201:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$188
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$189:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$200:
@@ -16142,7 +16142,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$183:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$170
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$171:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$182:
@@ -16243,7 +16243,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$165:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$152
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$153:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$164:
@@ -16344,7 +16344,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$147:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$134
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$135:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$146:
@@ -16445,7 +16445,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$129:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$116
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$117:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$128:
@@ -16546,7 +16546,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$111:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$98
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$99:
 	movq	%rcx, %mm4
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$110:
@@ -16647,7 +16647,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$93:
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$80
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$81:
 	movq	%rcx, %mm3
-	leaq	464(%rsp), %r15
+	leaq	464(%rsp), %r14
 	leaq	296(%rsp), %rax
 	call	L_shake128_squeezeblock$1
 Ljade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand$92:
@@ -24987,12 +24987,12 @@ L_poly_add2$2:
 	jb  	L_poly_add2$3
 	ret
 L_sha3_512A_A64$1:
-	leaq	24(%rsp), %r15
+	leaq	24(%rsp), %r14
 	movq	$0, %rsi
 	movq	$0, %rdi
 	jmp 	L_sha3_512A_A64$7
 L_sha3_512A_A64$8:
-	movq	%rsi, (%r15,%rdi,8)
+	movq	%rsi, (%r14,%rdi,8)
 	incq	%rdi
 L_sha3_512A_A64$7:
 	cmpq	$25, %rdi
@@ -25003,19 +25003,19 @@ L_sha3_512A_A64$7:
 L_sha3_512A_A64$6:
 	movq	(%rdx,%rsi), %r8
 	addq	$8, %rsi
-	xorq	(%r15,%rdi,8), %r8
-	movq	%r8, (%r15,%rdi,8)
+	xorq	(%r14,%rdi,8), %r8
+	movq	%r8, (%r14,%rdi,8)
 	incq	%rdi
 L_sha3_512A_A64$5:
 	cmpq	$8, %rdi
 	jb  	L_sha3_512A_A64$6
 	movq	$6, %rdx
-	xorq	(%r15,%rdi,8), %rdx
-	movq	%rdx, (%r15,%rdi,8)
+	xorq	(%r14,%rdi,8), %rdx
+	movq	%rdx, (%r14,%rdi,8)
 	movq	$1, %rdx
 	shlq	$63, %rdx
-	xorq	64(%r15), %rdx
-	movq	%rdx, 64(%r15)
+	xorq	64(%r14), %rdx
+	movq	%rdx, 64(%r14)
 	movq	$0, %rdx
 	movq	%rcx, 8(%rsp)
 	movq	%rdx, 16(%rsp)
@@ -25028,7 +25028,7 @@ L_sha3_512A_A64$4:
 	movq	$0, %rsi
 	jmp 	L_sha3_512A_A64$2
 L_sha3_512A_A64$3:
-	movq	(%r15,%rsi,8), %rdi
+	movq	(%r14,%rsi,8), %rdi
 	movq	%rdi, (%rcx,%rdx)
 	incq	%rsi
 	addq	$8, %rdx
@@ -25038,12 +25038,12 @@ L_sha3_512A_A64$2:
 	ret
 L_sha3_256A_A1568$1:
 	movq	%rdx, %mm3
-	leaq	32(%rsp), %r15
+	leaq	32(%rsp), %r14
 	movq	$0, %rdx
 	movq	$0, %rsi
 	jmp 	L_sha3_256A_A1568$12
 L_sha3_256A_A1568$13:
-	movq	%rdx, (%r15,%rsi,8)
+	movq	%rdx, (%r14,%rsi,8)
 	incq	%rsi
 L_sha3_256A_A1568$12:
 	cmpq	$25, %rsi
@@ -25057,8 +25057,8 @@ L_sha3_256A_A1568$8:
 L_sha3_256A_A1568$11:
 	movq	(%rcx,%rdx), %rdi
 	addq	$8, %rdx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
+	xorq	(%r14,%rsi,8), %rdi
+	movq	%rdi, (%r14,%rsi,8)
 	incq	%rsi
 L_sha3_256A_A1568$10:
 	cmpq	$17, %rsi
@@ -25082,19 +25082,19 @@ L_sha3_256A_A1568$7:
 L_sha3_256A_A1568$6:
 	movq	(%rcx,%rdx), %rdi
 	addq	$8, %rdx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
+	xorq	(%r14,%rsi,8), %rdi
+	movq	%rdi, (%r14,%rsi,8)
 	incq	%rsi
 L_sha3_256A_A1568$5:
 	cmpq	$9, %rsi
 	jb  	L_sha3_256A_A1568$6
 	movq	$6, %rcx
-	xorq	(%r15,%rsi,8), %rcx
-	movq	%rcx, (%r15,%rsi,8)
+	xorq	(%r14,%rsi,8), %rcx
+	movq	%rcx, (%r14,%rsi,8)
 	movq	$1, %rcx
 	shlq	$63, %rcx
-	xorq	128(%r15), %rcx
-	movq	%rcx, 128(%r15)
+	xorq	128(%r14), %rcx
+	movq	%rcx, 128(%r14)
 	movq	%mm3, %rcx
 	movq	$0, %rdx
 	movq	%rcx, 24(%rsp)
@@ -25108,7 +25108,7 @@ L_sha3_256A_A1568$4:
 	movq	$0, %rsi
 	jmp 	L_sha3_256A_A1568$2
 L_sha3_256A_A1568$3:
-	movq	(%r15,%rsi,8), %rdi
+	movq	(%r14,%rsi,8), %rdi
 	movq	%rdi, (%rcx,%rdx)
 	incq	%rsi
 	addq	$8, %rdx
@@ -25125,7 +25125,7 @@ L_shake128_squeezeblock$4:
 	movq	$0, %rdx
 	jmp 	L_shake128_squeezeblock$2
 L_shake128_squeezeblock$3:
-	movq	(%r15,%rdx,8), %rsi
+	movq	(%r14,%rdx,8), %rsi
 	movq	%rsi, (%rax,%rcx)
 	incq	%rdx
 	addq	$8, %rcx
@@ -25170,12 +25170,12 @@ L_shake128_absorb34$2:
 	movq	%rcx, 160(%rax)
 	ret
 L_sha3_512A_A33$1:
-	leaq	24(%rsp), %r15
+	leaq	24(%rsp), %r14
 	movq	$0, %rdx
 	movq	$0, %rsi
 	jmp 	L_sha3_512A_A33$7
 L_sha3_512A_A33$8:
-	movq	%rdx, (%r15,%rsi,8)
+	movq	%rdx, (%r14,%rsi,8)
 	incq	%rsi
 L_sha3_512A_A33$7:
 	cmpq	$25, %rsi
@@ -25186,8 +25186,8 @@ L_sha3_512A_A33$7:
 L_sha3_512A_A33$6:
 	movq	(%rcx,%rdx), %rdi
 	addq	$8, %rdx
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
+	xorq	(%r14,%rsi,8), %rdi
+	movq	%rdi, (%r14,%rsi,8)
 	incq	%rsi
 L_sha3_512A_A33$5:
 	cmpq	$4, %rsi
@@ -25200,12 +25200,12 @@ L_sha3_512A_A33$5:
 	orq 	%rcx, %r8
 	shlq	$0, %r8
 	orq 	%r8, %rdi
-	xorq	(%r15,%rsi,8), %rdi
-	movq	%rdi, (%r15,%rsi,8)
+	xorq	(%r14,%rsi,8), %rdi
+	movq	%rdi, (%r14,%rsi,8)
 	movq	$1, %rcx
 	shlq	$63, %rcx
-	xorq	64(%r15), %rcx
-	movq	%rcx, 64(%r15)
+	xorq	64(%r14), %rcx
+	movq	%rcx, 64(%r14)
 	movq	$0, %rcx
 	movq	%rax, 8(%rsp)
 	movq	%rcx, 16(%rsp)
@@ -25218,7 +25218,7 @@ L_sha3_512A_A33$4:
 	movq	$0, %rdx
 	jmp 	L_sha3_512A_A33$2
 L_sha3_512A_A33$3:
-	movq	(%r15,%rdx,8), %rsi
+	movq	(%r14,%rdx,8), %rsi
 	movq	%rsi, (%rax,%rcx)
 	incq	%rdx
 	addq	$8, %rcx
@@ -25229,12 +25229,12 @@ L_sha3_512A_A33$2:
 L_shake256_A32__A1600$1:
 	movq	%rcx, %mm2
 	movq	%rax, 8(%rsp)
-	leaq	32(%rsp), %r15
+	leaq	32(%rsp), %r14
 	movq	$0, %rax
 	movq	$0, %rcx
 	jmp 	L_shake256_A32__A1600$17
 L_shake256_A32__A1600$18:
-	movq	%rax, (%r15,%rcx,8)
+	movq	%rax, (%r14,%rcx,8)
 	incq	%rcx
 L_shake256_A32__A1600$17:
 	cmpq	$25, %rcx
@@ -25245,8 +25245,8 @@ L_shake256_A32__A1600$17:
 L_shake256_A32__A1600$16:
 	movq	(%rdx,%rax), %rsi
 	addq	$8, %rax
-	xorq	(%r15,%rcx,8), %rsi
-	movq	%rsi, (%r15,%rcx,8)
+	xorq	(%r14,%rcx,8), %rsi
+	movq	%rsi, (%r14,%rcx,8)
 	incq	%rcx
 L_shake256_A32__A1600$15:
 	cmpq	$4, %rcx
@@ -25258,8 +25258,8 @@ L_shake256_A32__A1600$15:
 L_shake256_A32__A1600$14:
 	movq	(%rax,%rcx), %rsi
 	addq	$8, %rcx
-	xorq	(%r15,%rdx,8), %rsi
-	movq	%rsi, (%r15,%rdx,8)
+	xorq	(%r14,%rdx,8), %rsi
+	movq	%rsi, (%r14,%rdx,8)
 	incq	%rdx
 L_shake256_A32__A1600$13:
 	cmpq	$17, %rdx
@@ -25280,8 +25280,8 @@ L_shake256_A32__A1600$8:
 L_shake256_A32__A1600$11:
 	movq	(%rax,%rcx), %rsi
 	addq	$8, %rcx
-	xorq	(%r15,%rdx,8), %rsi
-	movq	%rsi, (%r15,%rdx,8)
+	xorq	(%r14,%rdx,8), %rsi
+	movq	%rsi, (%r14,%rdx,8)
 	incq	%rdx
 L_shake256_A32__A1600$10:
 	cmpq	$17, %rdx
@@ -25305,19 +25305,19 @@ L_shake256_A32__A1600$7:
 L_shake256_A32__A1600$6:
 	movq	(%rax,%rcx), %rsi
 	addq	$8, %rcx
-	xorq	(%r15,%rdx,8), %rsi
-	movq	%rsi, (%r15,%rdx,8)
+	xorq	(%r14,%rdx,8), %rsi
+	movq	%rsi, (%r14,%rdx,8)
 	incq	%rdx
 L_shake256_A32__A1600$5:
 	cmpq	$13, %rdx
 	jb  	L_shake256_A32__A1600$6
 	movq	$31, %rax
-	xorq	(%r15,%rdx,8), %rax
-	movq	%rax, (%r15,%rdx,8)
+	xorq	(%r14,%rdx,8), %rax
+	movq	%rax, (%r14,%rdx,8)
 	movq	$1, %rax
 	shlq	$63, %rax
-	xorq	128(%r15), %rax
-	movq	%rax, 128(%r15)
+	xorq	128(%r14), %rax
+	movq	%rax, 128(%r14)
 	movq	%mm2, %rax
 	movq	$0, %rcx
 	movq	%rax, 24(%rsp)
@@ -25331,7 +25331,7 @@ L_shake256_A32__A1600$4:
 	movq	$0, %rcx
 	jmp 	L_shake256_A32__A1600$2
 L_shake256_A32__A1600$3:
-	movq	(%r15,%rcx,8), %rsi
+	movq	(%r14,%rcx,8), %rsi
 	movq	%rsi, (%rdx,%rax)
 	incq	%rcx
 	addq	$8, %rax
@@ -25340,12 +25340,12 @@ L_shake256_A32__A1600$2:
 	jl  	L_shake256_A32__A1600$3
 	ret
 L_shake256_128_33$1:
-	leaq	24(%rsp), %r15
+	leaq	24(%rsp), %r14
 	movq	$0, %rsi
 	movq	$0, %rdi
 	jmp 	L_shake256_128_33$7
 L_shake256_128_33$8:
-	movq	%rsi, (%r15,%rdi,8)
+	movq	%rsi, (%r14,%rdi,8)
 	incq	%rdi
 L_shake256_128_33$7:
 	cmpq	$25, %rdi
@@ -25356,8 +25356,8 @@ L_shake256_128_33$7:
 L_shake256_128_33$6:
 	movq	(%rdx,%rsi), %r8
 	addq	$8, %rsi
-	xorq	(%r15,%rdi,8), %r8
-	movq	%r8, (%r15,%rdi,8)
+	xorq	(%r14,%rdi,8), %r8
+	movq	%r8, (%r14,%rdi,8)
 	incq	%rdi
 L_shake256_128_33$5:
 	cmpq	$4, %rdi
@@ -25370,12 +25370,12 @@ L_shake256_128_33$5:
 	orq 	%rdx, %r9
 	shlq	$0, %r9
 	orq 	%r9, %r8
-	xorq	(%r15,%rdi,8), %r8
-	movq	%r8, (%r15,%rdi,8)
+	xorq	(%r14,%rdi,8), %r8
+	movq	%r8, (%r14,%rdi,8)
 	movq	$1, %rdx
 	shlq	$63, %rdx
-	xorq	128(%r15), %rdx
-	movq	%rdx, 128(%r15)
+	xorq	128(%r14), %rdx
+	movq	%rdx, 128(%r14)
 	movq	$0, %rdx
 	movq	%rcx, 8(%rsp)
 	movq	%rdx, 16(%rsp)
@@ -25388,7 +25388,7 @@ L_shake256_128_33$4:
 	movq	$0, %rsi
 	jmp 	L_shake256_128_33$2
 L_shake256_128_33$3:
-	movq	(%r15,%rsi,8), %rdi
+	movq	(%r14,%rsi,8), %rdi
 	movq	%rdi, (%rcx,%rdx)
 	incq	%rsi
 	addq	$8, %rdx
@@ -25399,44 +25399,44 @@ L_shake256_128_33$2:
 L_keccakf1600_ref$1:
 	leaq	glob_data + 0(%rip), %rcx
 	movq	%rcx, 8(%rsp)
-	leaq	32(%rsp), %rcx
+	leaq	32(%rsp), %r15
 	movq	$0, %r9
 L_keccakf1600_ref$2:
 	movq	%r9, 16(%rsp)
-	movq	8(%rsp), %rdx
-	movq	(%rdx,%r9,8), %rdx
-	movq	%rdx, 24(%rsp)
-	movq	(%r15), %r8
-	movq	8(%r15), %rdi
-	movq	16(%r15), %r11
-	movq	24(%r15), %r10
-	movq	32(%r15), %rbx
-	xorq	40(%r15), %r8
-	xorq	48(%r15), %rdi
-	xorq	56(%r15), %r11
-	xorq	64(%r15), %r10
-	xorq	72(%r15), %rbx
-	xorq	80(%r15), %r8
-	xorq	88(%r15), %rdi
-	xorq	96(%r15), %r11
-	xorq	104(%r15), %r10
-	xorq	112(%r15), %rbx
-	xorq	120(%r15), %r8
-	xorq	128(%r15), %rdi
-	xorq	136(%r15), %r11
-	xorq	144(%r15), %r10
-	xorq	152(%r15), %rbx
-	xorq	160(%r15), %r8
-	xorq	168(%r15), %rdi
-	xorq	176(%r15), %r11
-	xorq	184(%r15), %r10
-	xorq	192(%r15), %rbx
-	movq	%rdi, %rdx
+	movq	8(%rsp), %rcx
+	movq	(%rcx,%r9,8), %rcx
+	movq	%rcx, 24(%rsp)
+	movq	(%r14), %r8
+	movq	8(%r14), %rdi
+	movq	16(%r14), %r11
+	movq	24(%r14), %r10
+	movq	32(%r14), %rbx
+	xorq	40(%r14), %r8
+	xorq	48(%r14), %rdi
+	xorq	56(%r14), %r11
+	xorq	64(%r14), %r10
+	xorq	72(%r14), %rbx
+	xorq	80(%r14), %r8
+	xorq	88(%r14), %rdi
+	xorq	96(%r14), %r11
+	xorq	104(%r14), %r10
+	xorq	112(%r14), %rbx
+	xorq	120(%r14), %r8
+	xorq	128(%r14), %rdi
+	xorq	136(%r14), %r11
+	xorq	144(%r14), %r10
+	xorq	152(%r14), %rbx
+	xorq	160(%r14), %r8
+	xorq	168(%r14), %rdi
+	xorq	176(%r14), %r11
+	xorq	184(%r14), %r10
+	xorq	192(%r14), %rbx
+	movq	%rdi, %rcx
+	rolq	$1, %rcx
+	xorq	%rbx, %rcx
+	movq	%r11, %rdx
 	rolq	$1, %rdx
-	xorq	%rbx, %rdx
-	movq	%r11, %r14
-	rolq	$1, %r14
-	xorq	%r8, %r14
+	xorq	%r8, %rdx
 	movq	%r10, %rsi
 	rolq	$1, %rsi
 	xorq	%rdi, %rsi
@@ -25445,256 +25445,19 @@ L_keccakf1600_ref$2:
 	xorq	%r11, %rdi
 	rolq	$1, %r8
 	xorq	%r10, %r8
-	movq	(%r15), %r10
-	xorq	%rdx, %r10
-	movq	48(%r15), %r11
-	xorq	%r14, %r11
+	movq	(%r14), %r10
+	xorq	%rcx, %r10
+	movq	48(%r14), %r11
+	xorq	%rdx, %r11
 	rolq	$44, %r11
-	movq	96(%r15), %rbx
+	movq	96(%r14), %rbx
 	xorq	%rsi, %rbx
 	rolq	$43, %rbx
-	movq	144(%r15), %rbp
+	movq	144(%r14), %rbp
 	xorq	%rdi, %rbp
 	rolq	$21, %rbp
-	movq	192(%r15), %r12
+	movq	192(%r14), %r12
 	xorq	%r8, %r12
-	rolq	$14, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	xorq	24(%rsp), %r13
-	movq	%r13, (%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 8(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 16(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 24(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 32(%rcx)
-	movq	24(%r15), %r10
-	xorq	%rdi, %r10
-	rolq	$28, %r10
-	movq	72(%r15), %r11
-	xorq	%r8, %r11
-	rolq	$20, %r11
-	movq	80(%r15), %rbx
-	xorq	%rdx, %rbx
-	rolq	$3, %rbx
-	movq	128(%r15), %rbp
-	xorq	%r14, %rbp
-	rolq	$45, %rbp
-	movq	176(%r15), %r12
-	xorq	%rsi, %r12
-	rolq	$61, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	movq	%r13, 40(%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 48(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 56(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 64(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 72(%rcx)
-	movq	8(%r15), %r10
-	xorq	%r14, %r10
-	rolq	$1, %r10
-	movq	56(%r15), %r11
-	xorq	%rsi, %r11
-	rolq	$6, %r11
-	movq	104(%r15), %rbx
-	xorq	%rdi, %rbx
-	rolq	$25, %rbx
-	movq	152(%r15), %rbp
-	xorq	%r8, %rbp
-	rolq	$8, %rbp
-	movq	160(%r15), %r12
-	xorq	%rdx, %r12
-	rolq	$18, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	movq	%r13, 80(%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 88(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 96(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 104(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 112(%rcx)
-	movq	32(%r15), %r10
-	xorq	%r8, %r10
-	rolq	$27, %r10
-	movq	40(%r15), %r11
-	xorq	%rdx, %r11
-	rolq	$36, %r11
-	movq	88(%r15), %rbx
-	xorq	%r14, %rbx
-	rolq	$10, %rbx
-	movq	136(%r15), %rbp
-	xorq	%rsi, %rbp
-	rolq	$15, %rbp
-	movq	184(%r15), %r12
-	xorq	%rdi, %r12
-	rolq	$56, %r12
-	movq	%r11, %r13
-	notq	%r13
-	andq	%rbx, %r13
-	xorq	%r10, %r13
-	movq	%r13, 120(%rcx)
-	movq	%rbx, %r13
-	notq	%r13
-	andq	%rbp, %r13
-	xorq	%r11, %r13
-	movq	%r13, 128(%rcx)
-	movq	%rbp, %r13
-	notq	%r13
-	andq	%r12, %r13
-	xorq	%rbx, %r13
-	movq	%r13, 136(%rcx)
-	movq	%r12, %rbx
-	notq	%rbx
-	andq	%r10, %rbx
-	xorq	%rbp, %rbx
-	movq	%rbx, 144(%rcx)
-	notq	%r10
-	andq	%r11, %r10
-	xorq	%r12, %r10
-	movq	%r10, 152(%rcx)
-	movq	16(%r15), %r10
-	xorq	%rsi, %r10
-	rolq	$62, %r10
-	movq	64(%r15), %rsi
-	xorq	%rdi, %rsi
-	rolq	$55, %rsi
-	movq	112(%r15), %rdi
-	xorq	%r8, %rdi
-	rolq	$39, %rdi
-	movq	120(%r15), %r8
-	xorq	%rdx, %r8
-	rolq	$41, %r8
-	movq	168(%r15), %rdx
-	xorq	%r14, %rdx
-	rolq	$2, %rdx
-	movq	%rsi, %r11
-	notq	%r11
-	andq	%rdi, %r11
-	xorq	%r10, %r11
-	movq	%r11, 160(%rcx)
-	movq	%rdi, %r11
-	notq	%r11
-	andq	%r8, %r11
-	xorq	%rsi, %r11
-	movq	%r11, 168(%rcx)
-	movq	%r8, %r11
-	notq	%r11
-	andq	%rdx, %r11
-	xorq	%rdi, %r11
-	movq	%r11, 176(%rcx)
-	movq	%rdx, %rdi
-	notq	%rdi
-	andq	%r10, %rdi
-	xorq	%r8, %rdi
-	movq	%rdi, 184(%rcx)
-	notq	%r10
-	andq	%rsi, %r10
-	xorq	%rdx, %r10
-	movq	%r10, 192(%rcx)
-	movq	8(%rsp), %rdx
-	movq	8(%rdx,%r9,8), %rdx
-	movq	%rdx, 24(%rsp)
-	movq	(%rcx), %r9
-	movq	8(%rcx), %r8
-	movq	16(%rcx), %r10
-	movq	24(%rcx), %r11
-	movq	32(%rcx), %rbx
-	xorq	40(%rcx), %r9
-	xorq	48(%rcx), %r8
-	xorq	56(%rcx), %r10
-	xorq	64(%rcx), %r11
-	xorq	72(%rcx), %rbx
-	xorq	80(%rcx), %r9
-	xorq	88(%rcx), %r8
-	xorq	96(%rcx), %r10
-	xorq	104(%rcx), %r11
-	xorq	112(%rcx), %rbx
-	xorq	120(%rcx), %r9
-	xorq	128(%rcx), %r8
-	xorq	136(%rcx), %r10
-	xorq	144(%rcx), %r11
-	xorq	152(%rcx), %rbx
-	xorq	160(%rcx), %r9
-	xorq	168(%rcx), %r8
-	xorq	176(%rcx), %r10
-	xorq	184(%rcx), %r11
-	xorq	192(%rcx), %rbx
-	movq	%r8, %rdx
-	rolq	$1, %rdx
-	xorq	%rbx, %rdx
-	movq	%r10, %rsi
-	rolq	$1, %rsi
-	xorq	%r9, %rsi
-	movq	%r11, %rdi
-	rolq	$1, %rdi
-	xorq	%r8, %rdi
-	movq	%rbx, %r8
-	rolq	$1, %r8
-	xorq	%r10, %r8
-	rolq	$1, %r9
-	xorq	%r11, %r9
-	movq	(%rcx), %r10
-	xorq	%rdx, %r10
-	movq	48(%rcx), %r11
-	xorq	%rsi, %r11
-	rolq	$44, %r11
-	movq	96(%rcx), %rbx
-	xorq	%rdi, %rbx
-	rolq	$43, %rbx
-	movq	144(%rcx), %rbp
-	xorq	%r8, %rbp
-	rolq	$21, %rbp
-	movq	192(%rcx), %r12
-	xorq	%r9, %r12
 	rolq	$14, %r12
 	movq	%r11, %r13
 	notq	%r13
@@ -25721,20 +25484,20 @@ L_keccakf1600_ref$2:
 	andq	%r11, %r10
 	xorq	%r12, %r10
 	movq	%r10, 32(%r15)
-	movq	24(%rcx), %r10
-	xorq	%r8, %r10
+	movq	24(%r14), %r10
+	xorq	%rdi, %r10
 	rolq	$28, %r10
-	movq	72(%rcx), %r11
-	xorq	%r9, %r11
+	movq	72(%r14), %r11
+	xorq	%r8, %r11
 	rolq	$20, %r11
-	movq	80(%rcx), %rbx
-	xorq	%rdx, %rbx
+	movq	80(%r14), %rbx
+	xorq	%rcx, %rbx
 	rolq	$3, %rbx
-	movq	128(%rcx), %rbp
-	xorq	%rsi, %rbp
+	movq	128(%r14), %rbp
+	xorq	%rdx, %rbp
 	rolq	$45, %rbp
-	movq	176(%rcx), %r12
-	xorq	%rdi, %r12
+	movq	176(%r14), %r12
+	xorq	%rsi, %r12
 	rolq	$61, %r12
 	movq	%r11, %r13
 	notq	%r13
@@ -25760,20 +25523,20 @@ L_keccakf1600_ref$2:
 	andq	%r11, %r10
 	xorq	%r12, %r10
 	movq	%r10, 72(%r15)
-	movq	8(%rcx), %r10
-	xorq	%rsi, %r10
+	movq	8(%r14), %r10
+	xorq	%rdx, %r10
 	rolq	$1, %r10
-	movq	56(%rcx), %r11
-	xorq	%rdi, %r11
+	movq	56(%r14), %r11
+	xorq	%rsi, %r11
 	rolq	$6, %r11
-	movq	104(%rcx), %rbx
-	xorq	%r8, %rbx
+	movq	104(%r14), %rbx
+	xorq	%rdi, %rbx
 	rolq	$25, %rbx
-	movq	152(%rcx), %rbp
-	xorq	%r9, %rbp
+	movq	152(%r14), %rbp
+	xorq	%r8, %rbp
 	rolq	$8, %rbp
-	movq	160(%rcx), %r12
-	xorq	%rdx, %r12
+	movq	160(%r14), %r12
+	xorq	%rcx, %r12
 	rolq	$18, %r12
 	movq	%r11, %r13
 	notq	%r13
@@ -25799,20 +25562,20 @@ L_keccakf1600_ref$2:
 	andq	%r11, %r10
 	xorq	%r12, %r10
 	movq	%r10, 112(%r15)
-	movq	32(%rcx), %r10
-	xorq	%r9, %r10
+	movq	32(%r14), %r10
+	xorq	%r8, %r10
 	rolq	$27, %r10
-	movq	40(%rcx), %r11
-	xorq	%rdx, %r11
+	movq	40(%r14), %r11
+	xorq	%rcx, %r11
 	rolq	$36, %r11
-	movq	88(%rcx), %rbx
-	xorq	%rsi, %rbx
+	movq	88(%r14), %rbx
+	xorq	%rdx, %rbx
 	rolq	$10, %rbx
-	movq	136(%rcx), %rbp
-	xorq	%rdi, %rbp
+	movq	136(%r14), %rbp
+	xorq	%rsi, %rbp
 	rolq	$15, %rbp
-	movq	184(%rcx), %r12
-	xorq	%r8, %r12
+	movq	184(%r14), %r12
+	xorq	%rdi, %r12
 	rolq	$56, %r12
 	movq	%r11, %r13
 	notq	%r13
@@ -25838,45 +25601,282 @@ L_keccakf1600_ref$2:
 	andq	%r11, %r10
 	xorq	%r12, %r10
 	movq	%r10, 152(%r15)
-	movq	16(%rcx), %r10
-	xorq	%rdi, %r10
+	movq	16(%r14), %r10
+	xorq	%rsi, %r10
 	rolq	$62, %r10
-	movq	64(%rcx), %rdi
-	xorq	%r8, %rdi
-	rolq	$55, %rdi
-	movq	112(%rcx), %r8
-	xorq	%r9, %r8
-	rolq	$39, %r8
-	movq	120(%rcx), %r9
-	xorq	%rdx, %r9
-	rolq	$41, %r9
-	movq	168(%rcx), %rdx
-	xorq	%rsi, %rdx
-	rolq	$2, %rdx
-	movq	%rdi, %rsi
-	notq	%rsi
-	andq	%r8, %rsi
-	xorq	%r10, %rsi
-	movq	%rsi, 160(%r15)
-	movq	%r8, %rsi
-	notq	%rsi
-	andq	%r9, %rsi
+	movq	64(%r14), %rsi
 	xorq	%rdi, %rsi
-	movq	%rsi, 168(%r15)
-	movq	%r9, %rsi
-	notq	%rsi
-	andq	%rdx, %rsi
-	xorq	%r8, %rsi
-	movq	%rsi, 176(%r15)
-	movq	%rdx, %rsi
-	notq	%rsi
-	andq	%r10, %rsi
-	xorq	%r9, %rsi
-	movq	%rsi, 184(%r15)
+	rolq	$55, %rsi
+	movq	112(%r14), %rdi
+	xorq	%r8, %rdi
+	rolq	$39, %rdi
+	movq	120(%r14), %r8
+	xorq	%rcx, %r8
+	rolq	$41, %r8
+	movq	168(%r14), %rcx
+	xorq	%rdx, %rcx
+	rolq	$2, %rcx
+	movq	%rsi, %rdx
+	notq	%rdx
+	andq	%rdi, %rdx
+	xorq	%r10, %rdx
+	movq	%rdx, 160(%r15)
+	movq	%rdi, %rdx
+	notq	%rdx
+	andq	%r8, %rdx
+	xorq	%rsi, %rdx
+	movq	%rdx, 168(%r15)
+	movq	%r8, %rdx
+	notq	%rdx
+	andq	%rcx, %rdx
+	xorq	%rdi, %rdx
+	movq	%rdx, 176(%r15)
+	movq	%rcx, %rdx
+	notq	%rdx
+	andq	%r10, %rdx
+	xorq	%r8, %rdx
+	movq	%rdx, 184(%r15)
 	notq	%r10
-	andq	%rdi, %r10
-	xorq	%rdx, %r10
+	andq	%rsi, %r10
+	xorq	%rcx, %r10
 	movq	%r10, 192(%r15)
+	movq	8(%rsp), %rcx
+	movq	8(%rcx,%r9,8), %rcx
+	movq	%rcx, 24(%rsp)
+	movq	(%r15), %r8
+	movq	8(%r15), %rdi
+	movq	16(%r15), %r9
+	movq	24(%r15), %r10
+	movq	32(%r15), %r11
+	xorq	40(%r15), %r8
+	xorq	48(%r15), %rdi
+	xorq	56(%r15), %r9
+	xorq	64(%r15), %r10
+	xorq	72(%r15), %r11
+	xorq	80(%r15), %r8
+	xorq	88(%r15), %rdi
+	xorq	96(%r15), %r9
+	xorq	104(%r15), %r10
+	xorq	112(%r15), %r11
+	xorq	120(%r15), %r8
+	xorq	128(%r15), %rdi
+	xorq	136(%r15), %r9
+	xorq	144(%r15), %r10
+	xorq	152(%r15), %r11
+	xorq	160(%r15), %r8
+	xorq	168(%r15), %rdi
+	xorq	176(%r15), %r9
+	xorq	184(%r15), %r10
+	xorq	192(%r15), %r11
+	movq	%rdi, %rcx
+	rolq	$1, %rcx
+	xorq	%r11, %rcx
+	movq	%r9, %rdx
+	rolq	$1, %rdx
+	xorq	%r8, %rdx
+	movq	%r10, %rsi
+	rolq	$1, %rsi
+	xorq	%rdi, %rsi
+	movq	%r11, %rdi
+	rolq	$1, %rdi
+	xorq	%r9, %rdi
+	rolq	$1, %r8
+	xorq	%r10, %r8
+	movq	(%r15), %r9
+	xorq	%rcx, %r9
+	movq	48(%r15), %r10
+	xorq	%rdx, %r10
+	rolq	$44, %r10
+	movq	96(%r15), %r11
+	xorq	%rsi, %r11
+	rolq	$43, %r11
+	movq	144(%r15), %rbx
+	xorq	%rdi, %rbx
+	rolq	$21, %rbx
+	movq	192(%r15), %rbp
+	xorq	%r8, %rbp
+	rolq	$14, %rbp
+	movq	%r10, %r12
+	notq	%r12
+	andq	%r11, %r12
+	xorq	%r9, %r12
+	xorq	24(%rsp), %r12
+	movq	%r12, (%r14)
+	movq	%r11, %r12
+	notq	%r12
+	andq	%rbx, %r12
+	xorq	%r10, %r12
+	movq	%r12, 8(%r14)
+	movq	%rbx, %r12
+	notq	%r12
+	andq	%rbp, %r12
+	xorq	%r11, %r12
+	movq	%r12, 16(%r14)
+	movq	%rbp, %r11
+	notq	%r11
+	andq	%r9, %r11
+	xorq	%rbx, %r11
+	movq	%r11, 24(%r14)
+	notq	%r9
+	andq	%r10, %r9
+	xorq	%rbp, %r9
+	movq	%r9, 32(%r14)
+	movq	24(%r15), %r9
+	xorq	%rdi, %r9
+	rolq	$28, %r9
+	movq	72(%r15), %r10
+	xorq	%r8, %r10
+	rolq	$20, %r10
+	movq	80(%r15), %r11
+	xorq	%rcx, %r11
+	rolq	$3, %r11
+	movq	128(%r15), %rbx
+	xorq	%rdx, %rbx
+	rolq	$45, %rbx
+	movq	176(%r15), %rbp
+	xorq	%rsi, %rbp
+	rolq	$61, %rbp
+	movq	%r10, %r12
+	notq	%r12
+	andq	%r11, %r12
+	xorq	%r9, %r12
+	movq	%r12, 40(%r14)
+	movq	%r11, %r12
+	notq	%r12
+	andq	%rbx, %r12
+	xorq	%r10, %r12
+	movq	%r12, 48(%r14)
+	movq	%rbx, %r12
+	notq	%r12
+	andq	%rbp, %r12
+	xorq	%r11, %r12
+	movq	%r12, 56(%r14)
+	movq	%rbp, %r11
+	notq	%r11
+	andq	%r9, %r11
+	xorq	%rbx, %r11
+	movq	%r11, 64(%r14)
+	notq	%r9
+	andq	%r10, %r9
+	xorq	%rbp, %r9
+	movq	%r9, 72(%r14)
+	movq	8(%r15), %r9
+	xorq	%rdx, %r9
+	rolq	$1, %r9
+	movq	56(%r15), %r10
+	xorq	%rsi, %r10
+	rolq	$6, %r10
+	movq	104(%r15), %r11
+	xorq	%rdi, %r11
+	rolq	$25, %r11
+	movq	152(%r15), %rbx
+	xorq	%r8, %rbx
+	rolq	$8, %rbx
+	movq	160(%r15), %rbp
+	xorq	%rcx, %rbp
+	rolq	$18, %rbp
+	movq	%r10, %r12
+	notq	%r12
+	andq	%r11, %r12
+	xorq	%r9, %r12
+	movq	%r12, 80(%r14)
+	movq	%r11, %r12
+	notq	%r12
+	andq	%rbx, %r12
+	xorq	%r10, %r12
+	movq	%r12, 88(%r14)
+	movq	%rbx, %r12
+	notq	%r12
+	andq	%rbp, %r12
+	xorq	%r11, %r12
+	movq	%r12, 96(%r14)
+	movq	%rbp, %r11
+	notq	%r11
+	andq	%r9, %r11
+	xorq	%rbx, %r11
+	movq	%r11, 104(%r14)
+	notq	%r9
+	andq	%r10, %r9
+	xorq	%rbp, %r9
+	movq	%r9, 112(%r14)
+	movq	32(%r15), %r9
+	xorq	%r8, %r9
+	rolq	$27, %r9
+	movq	40(%r15), %r10
+	xorq	%rcx, %r10
+	rolq	$36, %r10
+	movq	88(%r15), %r11
+	xorq	%rdx, %r11
+	rolq	$10, %r11
+	movq	136(%r15), %rbx
+	xorq	%rsi, %rbx
+	rolq	$15, %rbx
+	movq	184(%r15), %rbp
+	xorq	%rdi, %rbp
+	rolq	$56, %rbp
+	movq	%r10, %r12
+	notq	%r12
+	andq	%r11, %r12
+	xorq	%r9, %r12
+	movq	%r12, 120(%r14)
+	movq	%r11, %r12
+	notq	%r12
+	andq	%rbx, %r12
+	xorq	%r10, %r12
+	movq	%r12, 128(%r14)
+	movq	%rbx, %r12
+	notq	%r12
+	andq	%rbp, %r12
+	xorq	%r11, %r12
+	movq	%r12, 136(%r14)
+	movq	%rbp, %r11
+	notq	%r11
+	andq	%r9, %r11
+	xorq	%rbx, %r11
+	movq	%r11, 144(%r14)
+	notq	%r9
+	andq	%r10, %r9
+	xorq	%rbp, %r9
+	movq	%r9, 152(%r14)
+	movq	16(%r15), %r9
+	xorq	%rsi, %r9
+	rolq	$62, %r9
+	movq	64(%r15), %rsi
+	xorq	%rdi, %rsi
+	rolq	$55, %rsi
+	movq	112(%r15), %rdi
+	xorq	%r8, %rdi
+	rolq	$39, %rdi
+	movq	120(%r15), %r8
+	xorq	%rcx, %r8
+	rolq	$41, %r8
+	movq	168(%r15), %rcx
+	xorq	%rdx, %rcx
+	rolq	$2, %rcx
+	movq	%rsi, %rdx
+	notq	%rdx
+	andq	%rdi, %rdx
+	xorq	%r9, %rdx
+	movq	%rdx, 160(%r14)
+	movq	%rdi, %rdx
+	notq	%rdx
+	andq	%r8, %rdx
+	xorq	%rsi, %rdx
+	movq	%rdx, 168(%r14)
+	movq	%r8, %rdx
+	notq	%rdx
+	andq	%rcx, %rdx
+	xorq	%rdi, %rdx
+	movq	%rdx, 176(%r14)
+	movq	%rcx, %rdx
+	notq	%rdx
+	andq	%r9, %rdx
+	xorq	%r8, %rdx
+	movq	%rdx, 184(%r14)
+	notq	%r9
+	andq	%rsi, %r9
+	xorq	%rcx, %r9
+	movq	%r9, 192(%r14)
 	movq	16(%rsp), %r9
 	addq	$2, %r9
 	cmpq	$23, %r9

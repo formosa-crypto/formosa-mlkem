@@ -1,0 +1,116 @@
+require "params.jinc"
+
+param int QINV    = 62209;     /* q^(-1) mod 2^16 */
+param int MONT    = 2285;      /* 2^16 % Q */
+param int BARR    = 20159;     /* (1U << 26)/MLKEM_Q + 1 */
+
+/*
+__csubq: reduce from range [0..2q) to range [0..q) by conditional subtraction
+         do this for each 16-bit subword of the 256-bit input register
+
+requires:
+  - each 16-bit subword of the input is in the range [0..2q)
+ensures:
+  - memory unchanged
+  - every 16-bit subword of the output is in the range [0..q)
+  - every 16-bit subword of the output encodes the same element in Zq
+    as the corresponding input subword
+*/
+
+inline
+fn __csubq(reg u256 r qx16) -> reg u256
+{
+  reg u256 t;
+  r = #VPSUB_16u16(r, qx16);
+  t = #VPSRA_16u16(r, 15);
+  t = #VPAND_256(t, qx16);
+  r = #VPADD_16u16(t, r);
+  return r;
+}
+
+/*
+__red16x: reduce from arbitrary signed range [-2^15..2^15) to range [0..2q)
+          usint Barrett reduction
+
+requires:
+  - qx16 must contain 16x16-bit subwords with value q
+  - vx16 must contain 16x16-bit subwords with value BARR
+ensures:
+  - memory unchanged
+  - every 16-bit subword of the output is in the range [0..q)
+  - every 16-bit subword of the output encodes the same element in Zq
+    as the corresponding input subword
+*/
+
+inline
+fn __red16x(reg u256 r qx16 vx16) -> reg u256
+{
+  reg u256 x;
+  x = #VPMULH_16u16(r, vx16);
+  x = #VPSRA_16u16(x, 10);
+  x = #VPMULL_16u16(x, qx16);
+  r = #VPSUB_16u16(r, x);
+  return r;
+}
+
+/*
+__fqmulprecomp16x: performs montgomery multiplication mod q with R=2^16
+             taking some precomputed values as input (the
+             precomputations can be done when one of the
+             factors is a zeta constant)
+
+requires:
+  - qx16 must contain 16x16-bit subwords with value q
+  - each 16-bit word in al contains the corresponding 16-bit word
+    in ah multiplied by QINV
+  - each 16-bit word in ah is in the range [0..q)
+ensures:
+  - memory unchanged
+  - every 16-bit subword of the output is in the range [-q..q)
+  - every 16-bit subword of the output encodes the product of
+    the Zp element that results from multiplying the Zp elements
+    represented by the corresponding 16-bit subwords in ah and b,
+    multiplied by the montgomery factor R^-1 %% q.
+*/
+
+inline
+fn __fqmulprecomp16x(reg u256 b al ah qx16) -> reg u256
+{
+  reg u256 x;
+  x = #VPMULL_16u16(al, b);
+  b = #VPMULH_16u16(ah, b);
+  x = #VPMULH_16u16(x, qx16);
+  b = #VPSUB_16u16(b, x);
+  return b;
+}
+
+/*
+__fqmulx16: performs montgomery multiplication mod q with R=2^16
+
+requires:
+  - qx16 must contain 16x16-bit subwords with value q
+  - qinvx16 must contain 16x16-bit subwords with value QINV
+  - each 16-bit word in b is in the range [-q..q)
+ensures:
+  - memory unchanged
+  - every 16-bit subword of the output is in the range [-q..q)
+  - every 16-bit subword of the output encodes the product of
+    the Zp element that results from multiplying the Zp elements
+    represented by the corresponding 16-bit subwords in a and b,
+    multiplied by the montgomery factor R^-1 %% q.
+*/
+
+inline
+fn __fqmulx16(reg u256 a b qx16 qinvx16) -> reg u256
+{
+  reg u256 rd rhi rlo;
+  rhi = #VPMULH_16u16(a, b);
+  rlo = #VPMULL_16u16(a, b);
+
+  rlo = #VPMULL_16u16(rlo, qinvx16);
+  rlo = #VPMULH_16u16(rlo, qx16);
+  rd = #VPSUB_16u16(rhi, rlo);
+
+  return rd;
+}
+
