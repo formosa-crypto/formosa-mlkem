@@ -1683,7 +1683,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1706,7 +1706,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1729,7 +1729,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1752,7 +1752,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1775,7 +1775,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1798,7 +1798,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1821,7 +1821,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1844,7 +1844,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1867,7 +1867,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1890,7 +1890,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1913,7 +1913,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1936,7 +1936,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1959,7 +1959,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -1982,7 +1982,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2005,7 +2005,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2028,7 +2028,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2051,7 +2051,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2074,7 +2074,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2097,7 +2097,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2120,7 +2120,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2143,7 +2143,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2166,7 +2166,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2189,7 +2189,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2212,7 +2212,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2235,7 +2235,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2258,7 +2258,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2281,7 +2281,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2304,7 +2304,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2327,7 +2327,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2350,7 +2350,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2373,7 +2373,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2396,7 +2396,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2419,7 +2419,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2442,7 +2442,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2465,7 +2465,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2488,7 +2488,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2511,7 +2511,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2534,7 +2534,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2557,7 +2557,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2580,7 +2580,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2603,7 +2603,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2626,7 +2626,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2649,7 +2649,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2672,7 +2672,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2695,7 +2695,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2718,7 +2718,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2741,7 +2741,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2764,7 +2764,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2787,7 +2787,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2810,7 +2810,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2833,7 +2833,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2856,7 +2856,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2879,7 +2879,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2902,7 +2902,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2925,7 +2925,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2948,7 +2948,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2971,7 +2971,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -2994,7 +2994,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -3017,7 +3017,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -3040,7 +3040,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -3063,7 +3063,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -3086,7 +3086,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -3109,7 +3109,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -3132,7 +3132,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$3:
 	vpsrldq	$8, %ymm0, %ymm1
 	vpsrlvq	%ymm7, %ymm0, %ymm0
 	vpsllq	$34, %ymm1, %ymm1
-	vpaddq	%ymm1, %ymm0, %ymm0
+	vpor	%ymm1, %ymm0, %ymm0
 	vpshufb	%ymm8, %ymm0, %ymm0
 	vmovdqu	%xmm0, %xmm1
 	vextracti128	$1, %ymm0, %xmm0
@@ -4763,7 +4763,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4786,7 +4786,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4809,7 +4809,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4832,7 +4832,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4855,7 +4855,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4878,7 +4878,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4901,7 +4901,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4924,7 +4924,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4947,7 +4947,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4970,7 +4970,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -4993,7 +4993,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5016,7 +5016,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5039,7 +5039,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5062,7 +5062,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5085,7 +5085,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5108,7 +5108,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5131,7 +5131,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5154,7 +5154,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5177,7 +5177,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5200,7 +5200,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5223,7 +5223,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5246,7 +5246,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5269,7 +5269,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5292,7 +5292,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5315,7 +5315,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5338,7 +5338,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5361,7 +5361,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5384,7 +5384,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5407,7 +5407,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5430,7 +5430,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5453,7 +5453,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5476,7 +5476,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5499,7 +5499,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5522,7 +5522,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5545,7 +5545,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5568,7 +5568,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5591,7 +5591,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5614,7 +5614,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5637,7 +5637,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5660,7 +5660,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5683,7 +5683,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5706,7 +5706,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5729,7 +5729,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5752,7 +5752,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5775,7 +5775,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5798,7 +5798,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5821,7 +5821,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5844,7 +5844,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5867,7 +5867,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5890,7 +5890,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5913,7 +5913,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5936,7 +5936,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5959,7 +5959,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -5982,7 +5982,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6005,7 +6005,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6028,7 +6028,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6051,7 +6051,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6074,7 +6074,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6097,7 +6097,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6120,7 +6120,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6143,7 +6143,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6166,7 +6166,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6189,7 +6189,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -6212,7 +6212,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$2:
 	vpsrldq	$8, %ymm0, %ymm1
 	vpsrlvq	%ymm7, %ymm0, %ymm0
 	vpsllq	$34, %ymm1, %ymm1
-	vpaddq	%ymm1, %ymm0, %ymm0
+	vpor	%ymm1, %ymm0, %ymm0
 	vpshufb	%ymm8, %ymm0, %ymm0
 	vmovdqu	%xmm0, %xmm1
 	vextracti128	$1, %ymm0, %xmm0
@@ -8353,7 +8353,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8376,7 +8376,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8399,7 +8399,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8422,7 +8422,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8445,7 +8445,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8468,7 +8468,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8491,7 +8491,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8514,7 +8514,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8537,7 +8537,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8560,7 +8560,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8583,7 +8583,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8606,7 +8606,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8629,7 +8629,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8652,7 +8652,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8675,7 +8675,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8698,7 +8698,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8721,7 +8721,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8744,7 +8744,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8767,7 +8767,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8790,7 +8790,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8813,7 +8813,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8836,7 +8836,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8859,7 +8859,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8882,7 +8882,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8905,7 +8905,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8928,7 +8928,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8951,7 +8951,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8974,7 +8974,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -8997,7 +8997,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9020,7 +9020,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9043,7 +9043,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9066,7 +9066,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9089,7 +9089,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9112,7 +9112,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9135,7 +9135,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9158,7 +9158,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9181,7 +9181,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9204,7 +9204,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9227,7 +9227,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9250,7 +9250,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9273,7 +9273,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9296,7 +9296,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9319,7 +9319,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9342,7 +9342,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9365,7 +9365,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9388,7 +9388,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9411,7 +9411,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9434,7 +9434,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9457,7 +9457,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9480,7 +9480,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9503,7 +9503,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9526,7 +9526,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9549,7 +9549,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9572,7 +9572,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9595,7 +9595,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9618,7 +9618,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9641,7 +9641,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9664,7 +9664,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9687,7 +9687,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9710,7 +9710,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9733,7 +9733,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9756,7 +9756,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9779,7 +9779,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm9, %ymm10
 	vpsrlvq	%ymm7, %ymm9, %ymm9
 	vpsllq	$34, %ymm10, %ymm10
-	vpaddq	%ymm10, %ymm9, %ymm9
+	vpor	%ymm10, %ymm9, %ymm9
 	vpshufb	%ymm8, %ymm9, %ymm9
 	vmovdqu	%xmm9, %xmm10
 	vextracti128	$1, %ymm9, %xmm9
@@ -9802,7 +9802,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$2:
 	vpsrldq	$8, %ymm0, %ymm1
 	vpsrlvq	%ymm7, %ymm0, %ymm0
 	vpsllq	$34, %ymm1, %ymm1
-	vpaddq	%ymm1, %ymm0, %ymm0
+	vpor	%ymm1, %ymm0, %ymm0
 	vpshufb	%ymm8, %ymm0, %ymm0
 	vmovdqu	%xmm0, %xmm1
 	vextracti128	$1, %ymm0, %xmm0
