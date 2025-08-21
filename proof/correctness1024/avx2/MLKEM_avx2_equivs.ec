@@ -53,9 +53,83 @@ lemma polyvec_csubq_avx2_ll :
 by proc;inline *;do 5!(unroll for ^while);auto.
 qed.
 
+lemma poly_csubq_avx2_ll :
+   islossless Jkem1024_avx2.M._poly_csubq.
+by proc;inline *;unroll for ^while;auto.
+qed.
+
 op csubq_circuit(a : W16.t) : W16.t = 
    if (a \ult W16.of_int 3329) then  a
    else (W16_sub a (W16.of_int 3329)).
+
+lemma poly_csubq_avx2_corr_h (_aw : W16.t Array256.t):
+    hoare[ Jkem1024_avx2.M._poly_csubq  :
+             rp = _aw /\
+             pos_bound256_cxq rp 0 256 2 ==> 
+             lift_array256 res = lift_array256 _aw /\
+             pos_bound256_cxq res 0 256 1]. 
+proof.
+proc; inline *.
+proc change 1: (sliceget16_16_256 jqx16 0); 1: by auto.
+proc change ^while.1: (sliceget256_16_256 rp (i*256));1: by auto => /#.
+proc change ^while.9: (sliceset256_16_256 rp (i*256) r);1: by auto => /#.
+
+unroll for ^while.
+cfold ^i<-.
+wp -1. 
+bdep 16 16 [_aw] [rp] [rp] csubq_circuit pcond_reduced. 
+
+(* BDEP pre conseq *)
++ move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
+  rewrite allP /pos_bound1024_cxq /= => Hb. 
+  rewrite /pcond_reduced /= /tolist /= => x.
+  rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
+  have := Hb i; rewrite ib /= qE /=.
+  rewrite /to_sint /smod /=.
+  smt(W16.to_uint_cmp).
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= ->; rewrite /pos_bound256_cxq => Hb rr; rewrite /= !flatten1.
+rewrite !flattenK;1..4:smt(mapP W16.size_w2bits).
+rewrite -2!(map_comp) /(\o) /= -(map_comp W16.bits2w) /(\o).
+have -> := (eq_map (fun (x : W16.t) => W16.bits2w (w2bits x)) idfun);1: by move => ?/=/#.
+rewrite map_id.
+rewrite /lift_array256 /pos_bound256_cxq /= => H.
+rewrite -(Array256.to_listK witness rr) -H qE; split.
+
+rewrite tP => i ib.
+rewrite !mapiE 1,2:/# /= get_of_list 1:/# (nth_map witness); 1:smt(Array256.size_to_list).
+rewrite (Array256.get_to_list _aw i).
+rewrite /csubq_circuit ultE /W16_sub /=.
+move : (Hb i ib);rewrite /bpos16 qE /= /to_sint /smod /=.
+case (to_uint _aw.[i] < 3329) => *//;1:
+have ->/= : !32768 <= to_uint _aw.[i] by smt(W16.to_uint_cmp).
+rewrite to_uintB /=;1: by rewrite uleE => /#.
+have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
+
+move => i ib.
+rewrite Array256.get_of_list 1:/# (nth_map witness); 1:smt(Array256.size_to_list).
+rewrite (nth_map witness) /=;1:smt(size_iota).
+rewrite nth_iota 1:/#.
+rewrite /csubq_circuit ultE /W16_sub /=.
+move : (Hb i ib);rewrite /bpos16 qE /= /to_sint /smod /=.
+case (to_uint _aw.[i] < 3329) => *//;1:
+have ->/= : !32768 <= to_uint _aw.[i] by smt(W16.to_uint_cmp).
+by smt(W16.to_uint_cmp).
+rewrite to_uintB /=;1: by rewrite uleE => /#.
+have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
+qed.
+
+lemma poly_csubq_avx2_corr (_aw : W16.t Array256.t):
+    phoare[ Jkem1024_avx2.M._poly_csubq  :
+             rp = _aw /\
+             pos_bound256_cxq rp 0 256 2 ==> 
+             lift_array256 res = lift_array256 _aw /\
+             pos_bound256_cxq res 0 256 1] = 1%r
+  by conseq poly_csubq_avx2_ll (poly_csubq_avx2_corr_h _aw).
+
 
 lemma polyvec_csubq_avx2_corr_h (_aw : W16.t Array1024.t):
     hoare[ Jkem1024_avx2.M.__polyvec_csubq  :
@@ -119,13 +193,15 @@ rewrite to_uintB /=;1: by rewrite uleE => /#.
 have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
 qed.
 
-lemma poly_csubq_avx2_corr (_aw : W16.t Array1024.t):
+lemma polyvec_csubq_avx2_corr (_aw : W16.t Array1024.t):
     phoare[ Jkem1024_avx2.M.__polyvec_csubq  :
              r = _aw /\
              pos_bound1024_cxq r 0 1024 2 ==> 
              lift_array1024 res = lift_array1024 _aw /\
              pos_bound1024_cxq res 0 1024 1] = 1%r
   by conseq polyvec_csubq_avx2_ll (polyvec_csubq_avx2_corr_h _aw).
+
+
 
 (********** END BDEP PROOF OF CSUBQ **************)
 
@@ -918,8 +994,8 @@ byequiv (: ={arg} /\ a{1} = _aw /\
              pos_bound1024_cxq a{1} 0 1024 2 ==> ={res}) => //.
 proc. 
 seq 1 1 : (={rp,a} /\ pos_bound1024_cxq a{1} 0 1024 1).
-+ ecall {1} (poly_csubq_avx2_corr a{1}). (* fix name *)
-  ecall {2} (poly_csubq_avx2_corr a{2}). (* fix name *)
++ ecall {1} (polyvec_csubq_avx2_corr a{1}). 
+  ecall {2} (polyvec_csubq_avx2_corr a{2}). 
   auto => />; rewrite /pos_bound1024_cxq /lift_array1024 /= qE /= => ? rr1.
   rewrite !tP;move =>  Hrr11 Hrr12 rr2.
   rewrite !tP;move =>  Hrr21 Hrr22.
@@ -2266,7 +2342,7 @@ move => ?;have : all (fun i => a.[perm_nttpackv i] = (nttpackv a).[i]) (iota_ 0 
 by rewrite /nttpackv /subarray256 /nttpack /perm_nttpackv -iotaredE /=.
 qed. *)
 
-abbrev mask12 = VPBROADCAST_8u32(W32.of_int (4095 + 65536*4095)).
+abbrev mask12 = VPBROADCAST_16u16(W16.of_int 4095).
 
 module AuxToBytes = {
 proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array1024.t) : W8.t Array1536.t = {
@@ -2539,8 +2615,40 @@ byequiv (: ={arg} /\ a{1} = _aw /\
              pos_bound1024_cxq a{1} 0 1024 2 ==> ={res}) => //.
 proc => /=. 
 inline M._i_poly_tobytes.
-admit.
+while (={r, a,i} /\ 0 <= i{1} <= 4 /\
+   pos_bound1024_cxq a{1} 0 1024 2); last by auto => /> /#.
+seq 3 3 : (#pre /\ ={rp,a0} /\
+   pos_bound256_cxq a0{1} 0 256 1).
++ ecall {1} (poly_csubq_avx2_corr a0{1}).
+  ecall {2} (poly_csubq_avx2_corr a0{2}).
+  auto => /> &1; rewrite /pos_bound1024_cxq /pos_bound256_cxq /lift_array256 /= qE /= => ????;split; 1: by smt(Array256.initiE).
+  move => ? rr1.
+  rewrite !tP;move =>  Hrr11 Hrr12 rr2.
+  rewrite !tP;move =>  Hrr21 Hrr22.
+  move => ii iib. 
+  have := Hrr11 ii iib; rewrite !mapiE 1,2:/# /=. 
+  have := Hrr12 ii iib.  
+  have := Hrr21 ii iib; rewrite !mapiE 1,2:/# /=. 
+  have := Hrr22 ii iib.  
+  rewrite /to_sint /smod /=. 
+  move => Hrr11i Hrr12i Hrr21i Hrr22i.
+  have Hn1 : !(32768 <= to_uint rr2.[ii]) by smt(W16.to_uint_cmp pow2_16).
+  have Hn2 : !(32768 <= to_uint rr1.[ii]) by smt(W16.to_uint_cmp pow2_16).
+  have Hn3 : !(32768 <= to_uint _aw.[ii]) by smt(W16.to_uint_cmp pow2_16).
+  move : Hrr11i Hrr12i Hrr21i Hrr22i; rewrite Hn1 Hn2 /=.
+  move => Hrr11i Hrr12i Hrr21i Hrr22i.
+  move : Hrr12i; rewrite -Hrr22i -eq_incoeff.  
+  by rewrite !modz_small ?qE /= 1,2:/# to_uint_eq /#.
+
+wp;while (#pre /\ ={i0} /\ 0<=i0{1}<=2); last first.
++ auto => /> &2 ?????i0r????;split;1:smt().
+  rewrite /pos_bound1024_cxq => k kb; rewrite initiE 1:/# /= /#.
+
+wp -1 -1; conseq (: _ ==> ={rp}); 1: by smt().
+inline *;sim; auto => /> &1 &2 ???;rewrite /pos_bound256_cxq qE /= => Hb ???; do split;
+rewrite /VPBROADCAST_16u16 /= -(W16u16.unpack16K (WArray512.get256 _ _)) -(W16u16.unpack16K (W16u16.pack16 _)) andb16u16E;congr;rewrite packP => k kb;rewrite map2iE 1:/# /= andE wordP => ii iib;rewrite map2iE 1:/# /= get_of_list 1:/# /= (nth_map witness)  /=;1:smt(size_iota);admit.
 qed.
+
 
 lemma polyvec_tobytes_equiv :
     equiv [Jkem1024_avx2.M.__i_polyvec_tobytes ~Jkem1024.M.__i_polyvec_tobytes :
