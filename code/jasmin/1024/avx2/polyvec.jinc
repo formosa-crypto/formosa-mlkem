@@ -76,9 +76,6 @@ u64[4] pvc_srlvqidx = {10,30,10,30};
 u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,-1,-1,-1,-1,-1,
                          5, 6, 7, 8, 9,10,-1,-1,-1,-1, 0, 0, 1, 2, 3, 4};
 
-u32 keepodd11 = 0x07ff0000;
-u32 keepeven11 = 0x000007ff;
-
 inline
 fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2]
 {
@@ -113,20 +110,7 @@ fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES+2] rp, stack u16
     f0 = #VPMULHRS_16u16(f0, shift1); 
     /* retain only 11 bits */
     f0 = #VPAND_256(f0, mask);
-    /* build 32-bit words by grouping 2 by 2
-       into 22-bit values */
-    /* 
-       THIS SCREWS UP DEP ANALYSIS
-       f0 = #VPMADDWD_256(f0,shift2); */
-    /************************************/
-    /* REPLACEMENT FOR VPMADDWD */
-    f2 = #VPBROADCAST_8u32(keepodd11);
-    f1 = #VPAND_256(f0,f2);
-    f2 = #VPBROADCAST_8u32(keepeven11);
-    f0 = #VPAND_256(f0,f2);
-    f1 = #VPSRL_8u32(f1, 5);
-    f0 = #VPOR_256(f0,f1);
-    /**********************************/
+    f0 = #VPMADDWD_256(f0,shift2); 
     /* shift even ones left by 10 to merge */
     f0 = #VPSLLV_8u32(f0, sllvdidx);
     /* get a copy of high half on the low end */

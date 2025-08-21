@@ -46,6 +46,89 @@ from JazzEC require import WArray1568 WArray2048.
 require import Bindings BitEncoding.
 import BitChunking BS2Int.
 
+(********** BEGIN BDEP PROOF OF CSUBQ **************)
+
+lemma polyvec_csubq_avx2_ll :
+   islossless Jkem1024_avx2.M.__polyvec_csubq.
+by proc;inline *;do 5!(unroll for ^while);auto.
+qed.
+
+op csubq_circuit(a : W16.t) : W16.t = 
+   if (a \ult W16.of_int 3329) then  a
+   else (W16_sub a (W16.of_int 3329)).
+
+lemma polyvec_csubq_avx2_corr_h (_aw : W16.t Array1024.t):
+    hoare[ Jkem1024_avx2.M.__polyvec_csubq  :
+             r = _aw /\
+             pos_bound1024_cxq r 0 1024 2 ==> 
+             lift_array1024 res = lift_array1024 _aw /\
+             pos_bound1024_cxq res 0 1024 1]. 
+proof.
+proc; inline *.
+proc change ^while.1: (init_256_16 (fun i0 => r.[256*i+i0]));1: by auto.
+proc change ^while.2: (sliceget16_16_256 jqx16 0); 1: by auto.
+proc change ^while.^while.1: (sliceget256_16_256 rp (i0*256));1: by auto => /#.
+proc change ^while.^while.9: (sliceset256_16_256 rp (i0*256) r0);1: by auto => /#.
+proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0]));1: by auto. 
+
+do 5!(unroll for ^while).
+cfold ^i0<-.
+wp -2. 
+bdep 16 16 [_aw] [r] [r] csubq_circuit pcond_reduced. 
+
+(* BDEP pre conseq *)
++ move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
+  rewrite allP /pos_bound1024_cxq /= => Hb. 
+  rewrite /pcond_reduced /= /tolist /= => x.
+  rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
+  have := Hb i; rewrite ib /= qE /=.
+  rewrite /to_sint /smod /=.
+  smt(W16.to_uint_cmp).
+
+(* BDEP post conseq *)
+
+(* We start with some boilerplate *)
+move => &hr [#]/= ->; rewrite /pos_bound1024_cxq => Hb rr; rewrite /= !flatten1.
+rewrite !flattenK;1..4:smt(mapP W16.size_w2bits).
+rewrite -2!(map_comp) /(\o) /= -(map_comp W16.bits2w) /(\o).
+have -> := (eq_map (fun (x : W16.t) => W16.bits2w (w2bits x)) idfun);1: by move => ?/=/#.
+rewrite map_id.
+rewrite /lift_array1024 /pos_bound1024_cxq /= => H.
+rewrite -(Array1024.to_listK witness rr) -H qE; split.
+
+rewrite tP => i ib.
+rewrite !mapiE 1,2:/# /= get_of_list 1:/# (nth_map witness); 1:smt(Array1024.size_to_list).
+rewrite (Array1024.get_to_list _aw i).
+rewrite /csubq_circuit ultE /W16_sub /=.
+move : (Hb i ib);rewrite /bpos16 qE /= /to_sint /smod /=.
+case (to_uint _aw.[i] < 3329) => *//;1:
+have ->/= : !32768 <= to_uint _aw.[i] by smt(W16.to_uint_cmp).
+rewrite to_uintB /=;1: by rewrite uleE => /#.
+have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
+
+move => i ib.
+rewrite Array1024.get_of_list 1:/# (nth_map witness); 1:smt(Array1024.size_to_list).
+rewrite (nth_map witness) /=;1:smt(size_iota).
+rewrite nth_iota 1:/#.
+rewrite /csubq_circuit ultE /W16_sub /=.
+move : (Hb i ib);rewrite /bpos16 qE /= /to_sint /smod /=.
+case (to_uint _aw.[i] < 3329) => *//;1:
+have ->/= : !32768 <= to_uint _aw.[i] by smt(W16.to_uint_cmp).
+by smt(W16.to_uint_cmp).
+rewrite to_uintB /=;1: by rewrite uleE => /#.
+have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
+qed.
+
+lemma poly_csubq_avx2_corr (_aw : W16.t Array1024.t):
+    phoare[ Jkem1024_avx2.M.__polyvec_csubq  :
+             r = _aw /\
+             pos_bound1024_cxq r 0 1024 2 ==> 
+             lift_array1024 res = lift_array1024 _aw /\
+             pos_bound1024_cxq res 0 1024 1] = 1%r
+  by conseq polyvec_csubq_avx2_ll (polyvec_csubq_avx2_corr_h _aw).
+
+(********** END BDEP PROOF OF CSUBQ **************)
+
 
 lemma polyvec_decompress_ll :
    islossless Jkem1024_avx2.M.__i_polyvec_decompress.
@@ -350,17 +433,20 @@ op compress11_circuit(a : W16.t) : W11.t =
    else 
    truncate64_11 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31)).
 
+abbrev keepodd11 = (W32.of_int 134152192).
+abbrev keepeven11 = (W32.of_int 2047).
 
 op VPMADDWD_alt(f0 m : W256.t) : W256.t =
     if m <> (VPBROADCAST_4u64 (W64.of_int 576460756732608513)) then
        VPMADDWD_256 f0 m
     else 
-    let f2 = VPBROADCAST_8u32 (W32.of_int 134152192) in
+    let f2 = VPBROADCAST_8u32 keepodd11 in
     let f1 = VPAND_256 f0 f2  in
-    let f2 = VPBROADCAST_8u32 (W32.of_int 2047) in
+    let f2 = VPBROADCAST_8u32 keepeven11 in
     let f0 = VPAND_256 f0 f2  in
     let f1 = VPSRL_8u32 f1  (W128.of_int 5) in
         VPOR_256 f0 f1.
+
 
 lemma keepeven_bits b: 
   0 <= b < 32 =>
@@ -555,8 +641,83 @@ lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
 by smt().
 qed.
 
-lemma polyvec_compress_avx2_corr_h (_aw : W16.t Array1024.t):
-    hoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
+
+module AuxCompress11 = {
+ proc __i_polyvec_compress(rp : W8.t Array1410.t, a : W16.t Array1024.t) : W8.t Array1410.t = {
+    var inc : int;
+    var v : W256.t;
+    var v8 : W256.t;
+    var off : W256.t;
+    var shift1 : W256.t;
+    var mask : W256.t;
+    var shift2 : W256.t;
+    var sllvdidx : W256.t;
+    var srlvqidx : W256.t;
+    var shufbidx : W256.t;
+    var i : int;
+    var f0 : W256.t;
+    var f1 : W256.t;
+    var f2 : W256.t;
+    var t0 : W128.t;
+    var t1 : W128.t;
+    
+    a <@ M.__polyvec_csubq(a);
+    v <- get256 (WArray32.init16 (fun (i_0 : int) => jvx16.[i_0])) 0;
+    v8 <- VPSLL_16u16 v (W128.of_int 3);
+    off <- VPBROADCAST_16u16 pvc_off_s;
+    shift1 <- VPBROADCAST_16u16 pvc_shift1_s;
+    mask <- VPBROADCAST_16u16 pvc_mask_s;
+    shift2 <- VPBROADCAST_4u64 pvc_shift2_s;
+    sllvdidx <- VPBROADCAST_4u64 pvc_sllvdidx_s;
+    srlvqidx <- get256 (WArray32.init64 (fun (i_0 : int) => pvc_srlvqidx.[i_0])) 0;
+    shufbidx <- get256 (WArray32.init8 (fun (i_0 : int) => pvc_shufbidx_s.[i_0])) 0;
+    inc <- 4 * 256 %/ 16;
+    i <- 0;
+    while (i < inc){
+      f0 <- get256 (WArray2048.init16 (fun (i_0 : int) => a.[i_0])) i;
+      f1 <- VPMULL_16u16 f0 v8;
+      f2 <- VPADD_16u16 f0 off;
+      f0 <- VPSLL_16u16 f0 (W128.of_int 3);
+      f0 <- VPMULH_16u16 f0 v;
+      f2 <- VPSUB_16u16 f1 f2;
+      f1 <- invw f1 `&` f2;
+      f1 <- VPSRL_16u16 f1 (W128.of_int 15);
+      f0 <- VPSUB_16u16 f0 f1;
+      f0 <- VPMULHRS_16u16 f0 shift1;
+      f0 <- f0 `&` mask;
+      f2 <- VPBROADCAST_8u32 keepodd11;
+      f1 <- VPAND_256 f0 f2;
+      f2 <- VPBROADCAST_8u32 keepeven11;
+      f0 <- VPAND_256 f0 f2;
+      f1 <- VPSRL_8u32 f1  (W128.of_int 5);
+      f0 <- VPOR_256 f0 f1;
+      f0 <- VPSLLV_8u32 f0 sllvdidx;
+      f1 <- VPSRLDQ_256 f0 (W8.of_int 8);
+      f0 <- VPSRLV_4u64 f0 srlvqidx;
+      f1 <- VPSLL_4u64 f1 (W128.of_int 34);
+      f0 <- f0 `|` f1;
+      f0 <- VPSHUFB_256 f0 shufbidx;
+      t0 <- truncateu128 f0;
+      t1 <- VEXTRACTI128 f0 W8.one;
+      t0 <- BLENDV_16u8 t0 t1 (truncateu128 shufbidx);
+      rp <- Array1410.init (get8 (set128_direct (WArray1410.init8 (fun (i_0 : int) => rp.[i_0])) (22 * i) t0));
+      rp <-
+        Array1410.init
+          (get8 (set64_direct (WArray1410.init8 (fun (i_0 : int) => rp.[i_0])) (22 * i + 16) (truncateu64 t1)));
+      i <- i + 1;
+    }
+    
+    return rp;
+  }
+}.
+
+lemma auxcompress11_ll : islossless AuxCompress11.__i_polyvec_compress.
+proc. cfold 11. unroll for ^while; wp => /=. 
+inline *;unroll for ^while; do 4!(unroll for ^while);auto.
+qed.
+
+lemma auxcompress11_corr_h (_aw : W16.t Array1024.t):
+    hoare[ AuxCompress11.__i_polyvec_compress  :
              a = _aw /\
              pos_bound1024_cxq a 0 1024 2 ==> 
       Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))].
@@ -731,6 +892,13 @@ qed.
 
 (********** END BDEP PROOF OF COMPRESS **************)
 
+lemma auxcompress11_corr (_aw : W16.t Array1024.t):
+    phoare[ AuxCompress11.__i_polyvec_compress  :
+             a = _aw /\
+             pos_bound1024_cxq a 0 1024 2 ==> 
+      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r 
+  by conseq auxcompress11_ll (auxcompress11_corr_h _aw).
+
 
 lemma polyvec_compress_avx2_ll : islossless Jkem1024_avx2.M.__i_polyvec_compress.
 proc. cfold 11. unroll for ^while; wp => /=. 
@@ -741,9 +909,48 @@ lemma polyvec_compress_avx2_corr (_aw : W16.t Array1024.t):
     phoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
              a = _aw /\
              pos_bound1024_cxq a 0 1024 2 ==> 
-      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r
-   by conseq polyvec_compress_avx2_ll (polyvec_compress_avx2_corr_h _aw).
+      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r.
+bypr => &m [->?].
+have <- : Pr[ AuxCompress11.__i_polyvec_compress(rp{m}, _aw) @ &m :
+   Array1408.init (fun (i : int) => res.[i]) = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r
+   by byphoare (auxcompress11_corr _aw)  =>/=;1:smt().
+byequiv (: ={arg} /\ a{1} = _aw /\
+             pos_bound1024_cxq a{1} 0 1024 2 ==> ={res}) => //.
+proc. 
+seq 1 1 : (={rp,a} /\ pos_bound1024_cxq a{1} 0 1024 1).
++ ecall {1} (poly_csubq_avx2_corr a{1}). (* fix name *)
+  ecall {2} (poly_csubq_avx2_corr a{2}). (* fix name *)
+  auto => />; rewrite /pos_bound1024_cxq /lift_array1024 /= qE /= => ? rr1.
+  rewrite !tP;move =>  Hrr11 Hrr12 rr2.
+  rewrite !tP;move =>  Hrr21 Hrr22.
+  move => i ib. 
+  have := Hrr11 i ib; rewrite !mapiE 1,2:/# /=. 
+  have := Hrr12 i ib.  
+  have := Hrr21 i ib; rewrite !mapiE 1,2:/# /=. 
+  have := Hrr22 i ib.  
+  rewrite /to_sint /smod /=. 
+  move => Hrr11i Hrr12i Hrr21i Hrr22i.
+  have Hn1 : !(32768 <= to_uint rr2.[i]) by smt(W16.to_uint_cmp pow2_16).
+  have Hn2 : !(32768 <= to_uint rr1.[i]) by smt(W16.to_uint_cmp pow2_16).
+  have Hn3 : !(32768 <= to_uint _aw.[i]) by smt(W16.to_uint_cmp pow2_16).
+  move : Hrr11i Hrr12i Hrr21i Hrr22i; rewrite Hn1 Hn2 Hn3 /=.
+  move => Hrr11i Hrr12i Hrr21i Hrr22i.
+  move : Hrr12i; rewrite -Hrr22i -eq_incoeff.  
+  by rewrite !modz_small ?qE /= 1,2:/# to_uint_eq /#.
 
+cfold {1} ^inc<-. 
+cfold {2} ^inc<-. 
+sp 9 9.
+wp;while (#pre /\ ={i} /\ 0 <= i{1} <=64); last by auto.
+wp -1 -1; conseq (: _ ==> ={rp}); 1: by auto => /#.
+sim;conseq />.
+seq 10 10 : (#pre /\ ={f0}); 1: by conseq />;sim.
+auto => /> &1;rewrite vpmaddwd_alt_corr; last by rewrite /VPMADDWD_alt /=.
+move => i ib /=; rewrite /VPBROADCAST_16u16 /=.
+rewrite Montgomery16.bits16_W16u16 ib /= get_of_list 1:/# /= (nth_map witness) /=;1:smt(size_iota).
+have -> : 2047 = 2^11 -1 by auto.
+rewrite and_mod 1:/# /= /smod /= /#.
+qed.
 
 equiv compressequivvec  : 
  Jkem1024_avx2.M.__i_polyvec_compress ~  Jkem1024.M.__i_polyvec_compress :

@@ -561,10 +561,6 @@ abbrev sample_load_shuffle =
 (W8.of_int 11); (W8.of_int 11); (W8.of_int 12); (W8.of_int 13);
 (W8.of_int 14); (W8.of_int 14); (W8.of_int 15)]).
 
-abbrev keepeven11 = (W32.of_int 2047).
-
-abbrev keepodd11 = (W32.of_int 134152192).
-
 abbrev pvc_shufbidx_s =
 ((Array32.of_list witness)
 [(W8.of_int 0); (W8.of_int 1); (W8.of_int 2); (W8.of_int 3); (W8.of_int 4);
@@ -9034,12 +9030,7 @@ module M = {
       f0 <- (VPSUB_16u16 f0 f1);
       f0 <- (VPMULHRS_16u16 f0 shift1);
       f0 <- (VPAND_256 f0 mask);
-      f2 <- (VPBROADCAST_8u32 keepodd11);
-      f1 <- (VPAND_256 f0 f2);
-      f2 <- (VPBROADCAST_8u32 keepeven11);
-      f0 <- (VPAND_256 f0 f2);
-      f1 <- (VPSRL_8u32 f1 (W128.of_int 5));
-      f0 <- (VPOR_256 f0 f1);
+      f0 <- (VPMADDWD_256 f0 shift2);
       f0 <- (VPSLLV_8u32 f0 sllvdidx);
       f1 <- (VPSRLDQ_256 f0 (W8.of_int 8));
       f0 <- (VPSRLV_4u64 f0 srlvqidx);
