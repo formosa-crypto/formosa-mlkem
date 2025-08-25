@@ -1,12 +1,12 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
-from JazzEC require import Array1536 Array1568 Array1408 Array1410 Array1024 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
-from JazzEC require import WArray512 WArray384 WArray32 WArray16 WArray1410 WArray160.
+from JazzEC require import Array1536 Array1088 Array960 Array1410 Array768 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
+from JazzEC require import WArray512 WArray384 WArray32 WArray16 WArray1410 WArray160 WArray960 WArray1536.
 
 require import AVX2_Ops W16extra.
-from JazzEC require import Jkem1024.
-from JazzEC require import Jkem1024_avx2.
+from JazzEC require import Jkem768.
+from JazzEC require import Jkem768_avx2.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_Poly_avx2_prevec.
 require import NTT_avx2.
@@ -23,7 +23,7 @@ require import MLKEM_PolyVec_avx2_vec.
 require import MLKEM_InnerPKE.
 require import MLKEMFCLib.
 
-import GFq Rq Symmetric Symmetric1024 Serialization Serialization1024 Sampling VecMat VecMat1024 InnerPKE1024 MLKEM1024 Correctness1024 Fq SignedReductions.
+import GFq Rq Symmetric Symmetric768 Serialization Serialization768 Sampling VecMat VecMat768 InnerPKE768 MLKEM768 Correctness768 Fq SignedReductions.
 
 import Zq.
 import ZModP.
@@ -42,19 +42,19 @@ require import Bindings.
 
 import KMatrix Vector.
 
-from JazzEC require import WArray1568 WArray2048.
+from JazzEC require import WArray1088 WArray2048.
 require import Bindings BitEncoding.
 import BitChunking BS2Int.
 
 (********** BEGIN BDEP PROOF OF CSUBQ **************)
 
 lemma polyvec_csubq_avx2_ll :
-   islossless Jkem1024_avx2.M.__polyvec_csubq.
-by proc;inline *;do 5!(unroll for ^while);auto.
+   islossless Jkem768_avx2.M.__polyvec_csubq.
+by proc;inline *;do 4!(unroll for ^while);auto.
 qed.
 
 lemma poly_csubq_avx2_ll :
-   islossless Jkem1024_avx2.M._poly_csubq.
+   islossless Jkem768_avx2.M._poly_csubq.
 by proc;inline *;unroll for ^while;auto.
 qed.
 
@@ -63,7 +63,7 @@ op csubq_circuit(a : W16.t) : W16.t =
    else (W16_sub a (W16.of_int 3329)).
 
 lemma poly_csubq_avx2_corr_h (_aw : W16.t Array256.t):
-    hoare[ Jkem1024_avx2.M._poly_csubq  :
+    hoare[ Jkem768_avx2.M._poly_csubq  :
              rp = _aw /\
              pos_bound256_cxq rp 0 256 2 ==> 
              lift_array256 res = lift_array256 _aw /\
@@ -81,7 +81,7 @@ bdep 16 16 [_aw] [rp] [rp] csubq_circuit pcond_reduced.
 
 (* BDEP pre conseq *)
 + move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
-  rewrite allP /pos_bound1024_cxq /= => Hb. 
+  rewrite allP /pos_bound768_cxq /= => Hb. 
   rewrite /pcond_reduced /= /tolist /= => x.
   rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
   have := Hb i; rewrite ib /= qE /=.
@@ -123,7 +123,7 @@ have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
 qed.
 
 lemma poly_csubq_avx2_corr (_aw : W16.t Array256.t):
-    phoare[ Jkem1024_avx2.M._poly_csubq  :
+    phoare[ Jkem768_avx2.M._poly_csubq  :
              rp = _aw /\
              pos_bound256_cxq rp 0 256 2 ==> 
              lift_array256 res = lift_array256 _aw /\
@@ -131,28 +131,28 @@ lemma poly_csubq_avx2_corr (_aw : W16.t Array256.t):
   by conseq poly_csubq_avx2_ll (poly_csubq_avx2_corr_h _aw).
 
 
-lemma polyvec_csubq_avx2_corr_h (_aw : W16.t Array1024.t):
-    hoare[ Jkem1024_avx2.M.__polyvec_csubq  :
+lemma polyvec_csubq_avx2_corr_h (_aw : W16.t Array768.t):
+    hoare[ Jkem768_avx2.M.__polyvec_csubq  :
              r = _aw /\
-             pos_bound1024_cxq r 0 1024 2 ==> 
-             lift_array1024 res = lift_array1024 _aw /\
-             pos_bound1024_cxq res 0 1024 1]. 
+             pos_bound768_cxq r 0 768 2 ==> 
+             lift_array768 res = lift_array768 _aw /\
+             pos_bound768_cxq res 0 768 1]. 
 proof.
 proc; inline *.
 proc change ^while.1: (init_256_16 (fun i0 => r.[256*i+i0]));1: by auto.
 proc change ^while.2: (sliceget16_16_256 jqx16 0); 1: by auto.
 proc change ^while.^while.1: (sliceget256_16_256 rp (i0*256));1: by auto => /#.
 proc change ^while.^while.9: (sliceset256_16_256 rp (i0*256) r0);1: by auto => /#.
-proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0]));1: by auto. 
+proc change ^while.6: (init_768_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0]));1: by auto. 
 
-do 5!(unroll for ^while).
+do 4!(unroll for ^while).
 cfold ^i0<-.
 wp -2. 
 bdep 16 16 [_aw] [r] [r] csubq_circuit pcond_reduced. 
 
 (* BDEP pre conseq *)
 + move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
-  rewrite allP /pos_bound1024_cxq /= => Hb. 
+  rewrite allP /pos_bound768_cxq /= => Hb. 
   rewrite /pcond_reduced /= /tolist /= => x.
   rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
   have := Hb i; rewrite ib /= qE /=.
@@ -162,17 +162,17 @@ bdep 16 16 [_aw] [r] [r] csubq_circuit pcond_reduced.
 (* BDEP post conseq *)
 
 (* We start with some boilerplate *)
-move => &hr [#]/= ->; rewrite /pos_bound1024_cxq => Hb rr; rewrite /= !flatten1.
+move => &hr [#]/= ->; rewrite /pos_bound768_cxq => Hb rr; rewrite /= !flatten1.
 rewrite !flattenK;1..4:smt(mapP W16.size_w2bits).
 rewrite -2!(map_comp) /(\o) /= -(map_comp W16.bits2w) /(\o).
 have -> := (eq_map (fun (x : W16.t) => W16.bits2w (w2bits x)) idfun);1: by move => ?/=/#.
 rewrite map_id.
-rewrite /lift_array1024 /pos_bound1024_cxq /= => H.
-rewrite -(Array1024.to_listK witness rr) -H qE; split.
+rewrite /lift_array768 /pos_bound768_cxq /= => H.
+rewrite -(Array768.to_listK witness rr) -H qE; split.
 
 rewrite tP => i ib.
-rewrite !mapiE 1,2:/# /= get_of_list 1:/# (nth_map witness); 1:smt(Array1024.size_to_list).
-rewrite (Array1024.get_to_list _aw i).
+rewrite !mapiE 1,2:/# /= get_of_list 1:/# (nth_map witness); 1:smt(Array768.size_to_list).
+rewrite (Array768.get_to_list _aw i).
 rewrite /csubq_circuit ultE /W16_sub /=.
 move : (Hb i ib);rewrite /bpos16 qE /= /to_sint /smod /=.
 case (to_uint _aw.[i] < 3329) => *//;1:
@@ -181,7 +181,7 @@ rewrite to_uintB /=;1: by rewrite uleE => /#.
 have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
 
 move => i ib.
-rewrite Array1024.get_of_list 1:/# (nth_map witness); 1:smt(Array1024.size_to_list).
+rewrite Array768.get_of_list 1:/# (nth_map witness); 1:smt(Array768.size_to_list).
 rewrite (nth_map witness) /=;1:smt(size_iota).
 rewrite nth_iota 1:/#.
 rewrite /csubq_circuit ultE /W16_sub /=.
@@ -193,12 +193,12 @@ rewrite to_uintB /=;1: by rewrite uleE => /#.
 have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
 qed.
 
-lemma polyvec_csubq_avx2_corr (_aw : W16.t Array1024.t):
-    phoare[ Jkem1024_avx2.M.__polyvec_csubq  :
+lemma polyvec_csubq_avx2_corr (_aw : W16.t Array768.t):
+    phoare[ Jkem768_avx2.M.__polyvec_csubq  :
              r = _aw /\
-             pos_bound1024_cxq r 0 1024 2 ==> 
-             lift_array1024 res = lift_array1024 _aw /\
-             pos_bound1024_cxq res 0 1024 1] = 1%r
+             pos_bound768_cxq r 0 768 2 ==> 
+             lift_array768 res = lift_array768 _aw /\
+             pos_bound768_cxq res 0 768 1] = 1%r
   by conseq polyvec_csubq_avx2_ll (polyvec_csubq_avx2_corr_h _aw).
 
 
@@ -207,43 +207,38 @@ lemma polyvec_csubq_avx2_corr (_aw : W16.t Array1024.t):
 
 
 lemma polyvec_decompress_ll :
-   islossless Jkem1024_avx2.M.__i_polyvec_decompress.
-by proc;inline *;unroll for ^while; do 4!(cfold ^inc<-; unroll for ^while);auto.
+   islossless Jkem768_avx2.M.__i_polyvec_decompress.
+by proc;inline *;unroll for ^while; do 3!(cfold ^inc<-; unroll for ^while);auto.
 qed.
 (********** BEGIN BDEP PROOF OF DECOMPRESS **************)
+op decompress10_circuit(c : W10.t) : W16.t = 
+  truncateu16 (srl_32 (((zeroextu10_32 c) * W32.of_int 3329) + W32.of_int 512) (W32.of_int 10)).
 
-op decompress11_circuit(c : W11.t) : W16.t = 
-  truncateu16 (srl_32 (((zeroextu11_32 c) * W32.of_int 3329) + W32.of_int 1024) (W32.of_int 11)).
+op pcond_true10(_: W10.t) = true.
 
-op pcond_true11(_: W11.t) = true.
-
-lemma init_id (rp0 : W8.t Array1568.t):
-  (Array1408.init ("_.[_]" (Array1408.init ("_.[_]" rp0)))) =
-    Array1408.init  ("_.[_]" rp0).
+lemma init_id (rp0 : W8.t Array1088.t):
+  (Array960.init ("_.[_]" (Array960.init ("_.[_]" rp0)))) =
+    Array960.init  ("_.[_]" rp0).
 rewrite tP => *.
 by rewrite initiE 1:/# /=.
 qed.
 
-lemma polyvec_decompress_corr_h (_aw : W8.t Array1408.t):
-    hoare[ Jkem1024_avx2.M.__i_polyvec_decompress :
-             Array1408.init (fun i => rp.[i]) = _aw ==> pos_bound1024_cxq res 0 1024 1 /\ lift_polyvec res = decompress_polyvec 11 (decode11_vec _aw)].
+lemma polyvec_decompress_corr_h (_aw : W8.t Array960.t):
+    hoare[ Jkem768_avx2.M.__i_polyvec_decompress :
+             Array960.init (fun i => rp.[i]) = _aw ==> pos_bound768_cxq res 0 768 1 /\ lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw)].
 proc; inline *.
-proc change 1: (sliceget16_16_256 jqx16 0); 1: by auto.
-proc change 2: (sliceget32_8_256 pvd_shufbidx_s 0); 1: by auto.
-proc change 3: (sliceget8_32_256 pvd_srlvdidx_s 0); 1: by auto.
-proc change 4: (sliceget4_64_256 pvd_srlvqidx_s 0); 1: by auto.
-proc change 5: (sliceget16_16_256 pvd_shift_s 0); 1: by auto.
-proc change ^while.^while.1 : (sliceget1568_8_256 rp ((352*k + 22*i)*8)); 1: by auto => /> /#.
-proc change ^while.^while.10 : (sliceset1024_16_256 r ((16 * k + i)*256) f); 1: by auto => /> /#.
+proc change 3: (sliceget32_8_256 pvd_shufbdidx_s 0); 1: by auto.
+proc change ^while.^while.1 : (sliceget1088_8_256 rp ((320*k + 20*i)*8)); 1: by auto => /> /#.
+proc change ^while.^while.8 : (sliceset768_16_256 r ((16 * k + i)*256) f); 1: by auto => /> /#.
 unroll for ^while.
 cfold ^inc<-.
-do 4!(unroll for ^while).
+do 3!(unroll for ^while).
 cfold ^i<-.
 wp -3.
-bdep 11 16 [_aw[Array1408.t:0]] [rp[Array1408.t:0]] [r] decompress11_circuit pcond_true11. 
+bdep 10 16 [_aw[Array960.t:0]] [rp[Array960.t:0]] [r] decompress10_circuit pcond_true10. 
 
 (* BDEP pre conseq *)
-+ move => &hr />; rewrite /pcond_true11 /=;split. 
++ move => &hr />; rewrite /pcond_true10 /=;split. 
   + rewrite allP /#. 
   have {2}<- := init_id rp{hr}; smt().
 
@@ -252,16 +247,15 @@ bdep 11 16 [_aw[Array1408.t:0]] [rp[Array1408.t:0]] [r] decompress11_circuit pco
 (* We start with some boilerplate *)
 move => &hr [#]/= <- rr; rewrite /= !flatten1.
 rewrite init_id.
-move => H1; have H2 := post_lane_commute_out_aligned (to_list (Array1408.init ("_.[_]" rp{hr}))) (to_list rr) W8.w2bits W8.bits2w W11.w2bits W11.bits2w W16.w2bits W16.bits2w  decompress11_circuit 8 11 16 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
-smt(Array1408.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W11_t.oflistP).
+move => H1; have H2 := post_lane_commute_out_aligned (to_list (Array960.init ("_.[_]" rp{hr}))) (to_list rr) W8.w2bits W8.bits2w W10.w2bits W10.bits2w W16.w2bits W16.bits2w  decompress10_circuit 8 10 16 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+smt(Array960.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W10_t.oflistP).
 
 have H3 : 
-   map decompress11_circuit (map W11.bits2w (chunk 11 (flatten (map W8.w2bits (to_list (Array1408.init ("_.[_]" rp{hr}))))))) =
-   map (W16.of_int \o asint) (to_list (decompress_polyvec 11 (decode11_vec (Array1408.init ("_.[_]" rp{hr})))).[0] ++ 
-                              to_list (decompress_polyvec 11 (decode11_vec (Array1408.init ("_.[_]" rp{hr})))).[1] ++ 
-                              to_list (decompress_polyvec 11 (decode11_vec (Array1408.init ("_.[_]" rp{hr})))).[2] ++ 
-                              to_list (decompress_polyvec 11 (decode11_vec (Array1408.init ("_.[_]" rp{hr})))).[3])%Vector.
-+ rewrite /decode11_vec /decompress_polyvec !map_cat !setvE !offunvE 1..4:/# /= !offunvK /vclamp /kvec /= /subarray256 /=.
+   map decompress10_circuit (map W10.bits2w (chunk 10 (flatten (map W8.w2bits (to_list (Array960.init ("_.[_]" rp{hr}))))))) =
+   map (W16.of_int \o asint) (to_list (decompress_polyvec 10 (decode10_vec (Array960.init ("_.[_]" rp{hr})))).[0] ++ 
+                              to_list (decompress_polyvec 10 (decode10_vec (Array960.init ("_.[_]" rp{hr})))).[1] ++ 
+                              to_list (decompress_polyvec 10 (decode10_vec (Array960.init ("_.[_]" rp{hr})))).[2])%Vector.
++ rewrite /decode10_vec /decompress_polyvec !map_cat !setvE !offunvE 1..3:/# /= !offunvK /vclamp /kvec /= /subarray256 /=.
   apply (eq_from_nth witness).
   + rewrite !size_map !size_cat !size_map !size_iota /max /=.
      rewrite (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
@@ -272,7 +266,7 @@ have H3 :
    rewrite size_map size_to_list /max  /= => ib.
   rewrite !nth_cat !size_map !size_cat !size_map !size_iota /max /=. 
   case (i <256).
-  + move => ?;rewrite ifT 1:/# ifT 1:/#.
+  + move => ?;rewrite ifT 1:/#.
     rewrite (nth_map witness).
     + rewrite size_map size_chunk 1:/# (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
       rewrite size_map size_to_list /= /#.
@@ -284,19 +278,19 @@ have H3 :
    rewrite /(\o) /= mapiE 1:/# /= initiE 1:/# /=.  
   rewrite /(\o) /decompress11_circuit -decompress_alt_decompress /decompress_alt //=.
   rewrite get_of_list 1:/# /= qE /=.
-  have Hs := size_nth_chunk [] (flatten (map W8.w2bits (to_list(Array1408.init ("_.[_]" rp{hr}))))) i 11 _ _ => //.
+  have Hs := size_nth_chunk [] (flatten (map W8.w2bits (to_list(Array960.init ("_.[_]" rp{hr}))))) i 10 _ _ => //.
   + rewrite (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
     by rewrite size_map size_to_list /#.
   rewrite to_uint_eq to_uint_truncateu16 /= /srl_32 /= of_uintK /=;congr;congr.
-  have ? : 2^11 = 2048 by auto.
-  rewrite to_uint_shr //= /zeroextu11_32 to_uintD_small /=;1: by rewrite of_uintK /=; smt(modz_small W11.to_uint_cmp). 
-  rewrite of_uintK /= modz_small /=;1:by smt( W11.to_uint_cmp). 
+  have ? : 2^10 = 1024 by auto.
+  rewrite to_uint_shr //= /zeroextu10_32 to_uintD_small /=;1: by rewrite of_uintK /=; smt(modz_small W10.to_uint_cmp). 
+  rewrite of_uintK /= modz_small /=;1:by smt( W10.to_uint_cmp). 
   rewrite /to_uint bits2wK 1:/# incoeffK qE /= /decode (nth_map [] _ bs2int) /=.
   + rewrite size_chunk 1:/# size_BytesToBits size_to_list /= /#.
-  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W11.to_uint_cmp). 
+  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W10.to_uint_cmp). 
 
   case (i <512).
-  + move => ??;rewrite ifT 1:/#.
+  + move => ??.
     rewrite (nth_map witness).
     + rewrite size_map size_chunk 1:/# (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
       rewrite size_map size_to_list /= /#.
@@ -308,19 +302,18 @@ have H3 :
    rewrite /(\o) /= mapiE 1:/# /= initiE 1:/# /=.  
   rewrite /(\o) /decompress11_circuit -decompress_alt_decompress /decompress_alt //=.
   rewrite get_of_list 1:/# /= qE /=.
-  have Hs := size_nth_chunk [] (flatten (map W8.w2bits (to_list (Array1408.init ("_.[_]" rp{hr}))))) i 11 _ _ => //.
+  have Hs := size_nth_chunk [] (flatten (map W8.w2bits (to_list (Array960.init ("_.[_]" rp{hr}))))) i 10 _ _ => //.
   + rewrite (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
     by rewrite size_map size_to_list /#.
   rewrite to_uint_eq to_uint_truncateu16 /= /srl_32 /= of_uintK /=;congr;congr.
-  have ? : 2^11 = 2048 by auto.
-  rewrite to_uint_shr //= /zeroextu11_32 to_uintD_small /=;1: by rewrite of_uintK /=; smt(modz_small W11.to_uint_cmp). 
-  rewrite of_uintK /= modz_small;1:by smt( W11.to_uint_cmp). 
+  have ? : 2^10 = 1024 by auto.
+  rewrite to_uint_shr //= /zeroextu10_32 to_uintD_small /=;1: by rewrite of_uintK /=; smt(modz_small W10.to_uint_cmp). 
+  rewrite of_uintK /= modz_small;1:by smt( W10.to_uint_cmp). 
   rewrite /to_uint bits2wK 1:/# incoeffK qE /= /decode (nth_map [] _ bs2int) /=.
   + rewrite size_chunk 1:/# size_BytesToBits size_to_list /= /#.
-  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W11.to_uint_cmp). 
+  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W10.to_uint_cmp). 
 
-  case (i <768).
-  + move => ???.
+  + move => ??.
     rewrite (nth_map witness).
     + rewrite size_map size_chunk 1:/# (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
       rewrite size_map size_to_list /= /#.
@@ -332,111 +325,68 @@ have H3 :
    rewrite /(\o) /= mapiE 1:/# /= initiE 1:/# /=.  
   rewrite /(\o) /decompress11_circuit -decompress_alt_decompress /decompress_alt //=.
   rewrite get_of_list 1:/# /= qE /=.
-  have Hs := size_nth_chunk [] (flatten (map W8.w2bits (to_list (Array1408.init ("_.[_]" rp{hr}))))) i 11 _ _ => //.
+  have Hs := size_nth_chunk [] (flatten (map W8.w2bits (to_list (Array960.init ("_.[_]" rp{hr}))))) i 10 _ _ => //.
   + rewrite (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
     by rewrite size_map size_to_list /#.
   rewrite to_uint_eq to_uint_truncateu16 /= /srl_32 /= of_uintK /=;congr;congr.
-  have ? : 2^11 = 2048 by auto.
-  rewrite to_uint_shr //= /zeroextu11_32 to_uintD_small /=;1: by rewrite of_uintK /=; smt(modz_small W11.to_uint_cmp). 
-  rewrite of_uintK /= modz_small;1:by smt( W11.to_uint_cmp). 
+  have ? : 2^10 = 1024 by auto.
+  rewrite to_uint_shr //= /zeroextu10_32 to_uintD_small /=;1: by rewrite of_uintK /=; smt(modz_small W10.to_uint_cmp). 
+  rewrite of_uintK /= modz_small;1:by smt( W10.to_uint_cmp). 
   rewrite /to_uint bits2wK 1:/# incoeffK qE /= /decode (nth_map [] _ bs2int) /=.
   + rewrite size_chunk 1:/# size_BytesToBits size_to_list /= /#.
-  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W11.to_uint_cmp). 
-
-  + move => ???.
-    rewrite (nth_map witness).
-    + rewrite size_map size_chunk 1:/# (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
-      rewrite size_map size_to_list /= /#.
-    rewrite (nth_map []).
-    + rewrite  size_chunk 1:/# (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
-      rewrite size_map size_to_list /= /#.
-    rewrite (nth_map witness _ ((W16.of_int \o asint))) /=.
-    + rewrite size_to_list /= /#.
-   rewrite /(\o) /= mapiE 1:/# /= initiE 1:/# /=.  
-  rewrite /(\o) /decompress11_circuit -decompress_alt_decompress /decompress_alt //=.
-  rewrite get_of_list 1:/# /= qE /=.
-  have Hs := size_nth_chunk [] (flatten (map W8.w2bits (to_list (Array1408.init ("_.[_]" rp{hr}))))) i 11 _ _ => //.
-  + rewrite (EclibExtra.size_flatten' 8);1:smt(mapP W8.size_w2bits). 
-    by rewrite size_map size_to_list /#.
-  rewrite to_uint_eq to_uint_truncateu16 /= /srl_32 /= of_uintK /=;congr;congr.
-  have ? : 2^11 = 2048 by auto.
-  rewrite to_uint_shr //= /zeroextu11_32 to_uintD_small /=;1: by rewrite of_uintK /=; smt(modz_small W11.to_uint_cmp). 
-  rewrite of_uintK /= modz_small;1:by smt( W11.to_uint_cmp). 
-  rewrite /to_uint bits2wK 1:/# incoeffK qE /= /decode (nth_map [] _ bs2int) /=.
-  + rewrite size_chunk 1:/# size_BytesToBits size_to_list /= /#.
-  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W11.to_uint_cmp). 
+  by smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs modz_small W10.to_uint_cmp). 
 
 
 split; last first.
 + rewrite eq_vectorP => i @/kvec ib.
   rewrite /lift_polyvec /decompress_polyvec !setvE !offunvE 1..2:/# /= !offunvK /vclamp /kvec /= ib /=. 
-  case (3 = i) => Hi.
-  + rewrite tP => k kb. 
-    rewrite -Hi !mapiE 1,2:/# !initiE 1,2:/# /= /= -get_to_list H2 H3.
-  rewrite (nth_map witness);1: by smt(Array256.size_to_list size_cat).
-  rewrite (nth_cat witness).
-  + rewrite !size_cat !size_to_list /= ifF 1:/# /decompress_polyvec.
-    rewrite !setvE !offunvE 1:/# /=.
-    rewrite initiE 1:/# /= mapiE 1:/# initiE 1:/# /=.
-    rewrite get_of_list 1:/# /=.
-  pose c := (decompress 11 (nth 0 (decode 11 (to_list (Array1408.init ("_.[_]" rp{hr})))) (768 + k))).
-  rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
-  rewrite modz_small; smt(@Zq).  
 
   case (2 = i) => Hi2.
   + rewrite tP => k kb. 
-    rewrite -Hi2 !mapiE 1,2:/# !initiE 1,2:/# /= /= -get_to_list H2 H3.
-  rewrite (nth_map witness);1: by smt(Array256.size_to_list size_cat).
-  rewrite (nth_cat witness).
-  + rewrite !size_cat !size_to_list /= ifT 1:/# /decompress_polyvec.
-    rewrite !setvE !offunvE 1..3:/# /=  !offunvK /vclamp /= !ifT 1..6:/#.
+    rewrite -Hi2 !mapiE 1,2:/# !initiE 1,2:/# /= /= -get_to_list H2 H3 /(\o) /=.
+  rewrite (nth_map witness) /=;1: by smt(Array256.size_to_list size_cat).
   rewrite (nth_cat witness).
   + rewrite !size_cat !size_to_list /= ifF 1:/# /decompress_polyvec.
-    rewrite  mapiE 1:/# initiE 1:/# /= initiE 1:/# /=.
-    rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
-  pose c := decompress 11 (nth 0 (decode 11 (to_list (Array1408.init ("_.[_]" rp{hr})))) (512 + k)).
+    rewrite !setvE !offunvE 1:/# /=.
+  rewrite get_of_list 1:/# /decode10_vec mapiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /= /smod /=.
+  pose c := decompress 10 (nth 0 (decode 10 (to_list (Array960.init ("_.[_]" rp{hr})))) (512 + k)).
   rewrite modz_small; smt(@Zq).  
 
   case (1 = i) => Hi1.
   + rewrite tP => k kb. 
-    rewrite -Hi1 !mapiE 1,2:/# !initiE 1,2:/# /= /= -get_to_list H2 H3.
-  rewrite (nth_map witness);1: by smt(Array256.size_to_list size_cat).
+    rewrite -Hi1 !mapiE 1,2:/# !initiE 1,2:/# /= /= -get_to_list H2 H3 /(\o) /=.
+  rewrite (nth_map witness) /=;1: by smt(Array256.size_to_list size_cat).
   rewrite (nth_cat witness).
   + rewrite !size_cat !size_to_list /= ifT 1:/# /decompress_polyvec.
-    rewrite !setvE !offunvE 1..3:/# /= !offunvK /vclamp /= !ifT 1..6:/#.
-  rewrite (nth_cat witness).
-  + rewrite !size_cat !size_to_list /= ifT 1:/# /decompress_polyvec.
+    rewrite !setvE !offunvE 1,2:/# /= !offunvK /vclamp /= !ifT 1..3:/#.
   rewrite (nth_cat witness).
   + rewrite !size_to_list /= ifF 1:/# /decompress_polyvec.
-    rewrite  mapiE 1:/# initiE 1:/# /= initiE 1:/# /=.
-    rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
-    pose c := (decompress 11 (nth 0 (decode 11 (to_list (Array1408.init ("_.[_]" rp{hr})))) (256 + k))).
+  rewrite get_of_list 1:/# /decode10_vec mapiE 1:/# /= initiE 1:/# /= get_of_list 1:/# /= /smod /=.
+  pose c := decompress 10 (nth 0 (decode 10 (to_list (Array960.init ("_.[_]" rp{hr})))) (256 + k)).
   rewrite modz_small; smt(@Zq).  
 
-  have Hi3 :(0 = i) by smt().
+
+  have Hi0 :(0 = i) by smt().
   + rewrite tP => k kb.
-    rewrite -Hi3 /= !mapiE 1,2:/# /= initiE 1:/# /= -( Array1024.get_to_list rr) H2 H3.
+    rewrite -Hi0 /= !mapiE 1,2:/# /= initiE 1:/# /= -( Array768.get_to_list rr) H2 H3.
   rewrite (nth_map witness);1: by smt(Array256.size_to_list size_cat).
   rewrite (nth_cat witness).
   + rewrite !size_cat !size_to_list /= ifT 1:/# /decompress_polyvec.
-    rewrite !setvE !offunvE 1..3:/# /= !offunvK /vclamp /= !ifT 1..6:/#.
+    rewrite !setvE !offunvE 1..2:/# /= !offunvK /vclamp /= !ifT 1..3:/#.
   rewrite (nth_cat witness).
-  + rewrite !size_cat !size_to_list /= ifT 1:/# /decompress_polyvec.
-  rewrite (nth_cat witness).
-  + rewrite !size_to_list /= ifT 1:/# /decompress_polyvec.
+  + rewrite  !size_to_list /= ifT 1:/# /decompress_polyvec.
     rewrite  mapiE 1:/# initiE 1:/# /= initiE 1:/# /=.
     rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
-    pose c := (decompress 11 (nth 0 (decode 11 (to_list (Array1408.init ("_.[_]" rp{hr})))) (k))).
+    pose c := (decompress 10 (nth 0 (decode 10 (to_list (Array960.init ("_.[_]" rp{hr})))) (k))).
   rewrite modz_small; smt(@Zq).  
 
 
-rewrite /pos_bound1024_cxq qE /= => k kb. 
+rewrite /pos_bound768_cxq qE /= => k kb. 
 rewrite -get_to_list  H2 H3 /decompress_poly.
 rewrite (nth_map witness);1: by smt(size_cat Array256.size_to_list).
 rewrite (nth_cat witness) !size_cat !size_to_list /=. 
-rewrite (nth_cat witness) !size_cat !size_to_list /=. 
 rewrite (nth_cat witness)  !size_to_list /=. 
-rewrite /decompress_polyvec !setvE /= !offunvE 1..4:/# /= !offunvK /= /vclamp /kvec/=.
+rewrite /decompress_polyvec !setvE /= !offunvE 1..3:/# /= !offunvK /= /vclamp /kvec/=.
 case (k < 256).
 + move => *; rewrite ifT 1:/# .
   rewrite mapiE 1:/# initiE 1:/# /=.
@@ -447,11 +397,6 @@ case (k < 512).
   rewrite mapiE 1:/# initiE 1:/# /=.
   rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
   rewrite modz_small; smt(@Zq).  
-case (k < 768).
-+ move => *.
-  rewrite mapiE 1:/# initiE 1:/# /=.
-  rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
-  rewrite modz_small; smt(@Zq).  
 + move => *.
   rewrite mapiE 1:/# initiE 1:/# /=.
   rewrite of_sintK /= /smod /= ifF;1:smt(@Zq).
@@ -460,22 +405,22 @@ case (k < 768).
 qed.
 
 
-lemma polyvec_decompress_corr (_aw : W8.t Array1408.t):
-    phoare[ Jkem1024_avx2.M.__i_polyvec_decompress :
-             Array1408.init (fun i => rp.[i]) = _aw ==> pos_bound1024_cxq res 0 1024 1 /\ lift_polyvec res = decompress_polyvec 11 (decode11_vec _aw)] = 1%r
+lemma polyvec_decompress_corr (_aw : W8.t Array960.t):
+    phoare[ Jkem768_avx2.M.__i_polyvec_decompress :
+             Array960.init (fun i => rp.[i]) = _aw ==> pos_bound768_cxq res 0 768 1 /\ lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw)] = 1%r
  by conseq polyvec_decompress_ll (polyvec_decompress_corr_h _aw).
 
 lemma polyvec_decompress_equiv  :
-    equiv [Jkem1024_avx2.M.__i_polyvec_decompress ~  Jkem1024.M.__i_polyvec_decompress  :
-             Array1408.init(fun i => arg{1}.`2.[i]) =arg{2}.`2
+    equiv [Jkem768_avx2.M.__i_polyvec_decompress ~  Jkem768.M.__i_polyvec_decompress  :
+             Array960.init(fun i => arg{1}.[i]) =arg{2}.`2
               ==>
-             lift_array1024 res{1} = lift_array1024 res{2} /\
-             pos_bound1024_cxq res{1} 0 1024 1 /\
-             pos_bound1024_cxq res{2} 0 1024 1 ].
+             lift_array768 res{1} = lift_array768 res{2} /\
+             pos_bound768_cxq res{1} 0 768 1 /\
+             pos_bound768_cxq res{2} 0 768 1 ].
 proc*. 
 ecall {2} (MLKEM_PolyVec.polyvec_decompress_corr ap{2}) => /=.
-ecall {1} (polyvec_decompress_corr (Array1408.init (fun (i : int) => rp{1}.[i]))).
-+ auto => /> &1 r1 ? <- rr ?; rewrite /lift_array1024 /lift_polyvec /lift_array256 /subarray256 !eq_vectorP /kvec tP =>H i ib.
+ecall {1} (polyvec_decompress_corr (Array960.init (fun (i : int) => rp{1}.[i]))).
++ auto => /> &1 r1 ? <- rr ?; rewrite /lift_array768 /lift_polyvec /lift_array256 /subarray256 !eq_vectorP /kvec tP =>H i ib.
   rewrite !mapiE 1,2:/# /=.
   case (0<= i < 256) => Hi0.
   + have  := (H 0 _);1:by auto.
@@ -486,15 +431,10 @@ ecall {1} (polyvec_decompress_corr (Array1408.init (fun (i : int) => rp{1}.[i]))
     rewrite !offunvE /= /kvec //= tP => Hi.
     have := (Hi (i - 256) _); 1:smt(). 
     by rewrite !mapiE 1,2:/# /= initiE 1:/# /= initiE 1:/# /= /#.
-  case (512<= i < 768) => Hi2.
-  + have  := (H 2 _);1:by auto.
+  have Hi3 :  (512<= i < 768)  by smt().
+    have  := (H 2 _);1:by auto.
     rewrite !offunvE /= /kvec //= tP => Hi.
     have := (Hi (i - 512) _); 1:smt(). 
-    by rewrite !mapiE 1,2:/# /= initiE 1:/# /= initiE 1:/# /= /#.
-  have Hi3 :  (768<= i < 1024)  by smt().
-    have  := (H 3 _);1:by auto.
-    rewrite !offunvE /= /kvec //= tP => Hi.
-    have := (Hi (i - 768) _); 1:smt(). 
     by rewrite !mapiE 1,2:/# /= initiE 1:/# /= initiE 1:/# /= /#.
 qed.
 
@@ -503,47 +443,48 @@ qed.
 
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
 
-op compress11_circuit(a : W16.t) : W11.t = 
+print compress_alt_large.
+op compress10_circuit(a : W16.t) : W10.t = 
    if (a \ult W16.of_int 3329) then  
-   truncate64_11 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31))
+   truncate64_10 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 10) + W64.of_int 1664) * W64.of_int 1290167) (W64.of_int 32))
    else 
-   truncate64_11 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 11) + W64.of_int 1664) * W64.of_int 645084) (W64.of_int 31)).
+   truncate64_10 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 10) + W64.of_int 1664) * W64.of_int 1290167) (W64.of_int 32)).
 
-abbrev keepodd11 = (W32.of_int 134152192).
-abbrev keepeven11 = (W32.of_int 2047).
+abbrev keepodd10 = (W32.of_int 67043328).
+abbrev keepeven10 = (W32.of_int 1023).
 
 op VPMADDWD_alt(f0 m : W256.t) : W256.t =
-    if m <> (VPBROADCAST_4u64 (W64.of_int 576460756732608513)) then
+    if m <> (VPBROADCAST_4u64 (W64.of_int 288230380513787905)) then
        VPMADDWD_256 f0 m
     else 
-    let f2 = VPBROADCAST_8u32 keepodd11 in
+    let f2 = VPBROADCAST_8u32 keepodd10 in
     let f1 = VPAND_256 f0 f2  in
-    let f2 = VPBROADCAST_8u32 keepeven11 in
+    let f2 = VPBROADCAST_8u32 keepeven10 in
     let f0 = VPAND_256 f0 f2  in
-    let f1 = VPSRL_8u32 f1  (W128.of_int 5) in
+    let f1 = VPSRL_8u32 f1  (W128.of_int 6) in
         VPOR_256 f0 f1.
 
 
 lemma keepeven_bits b: 
   0 <= b < 32 =>
-   keepeven11.[b] <=> 0<=b<11.
+   keepeven10.[b] <=> 0<=b<10.
 move => bb.
-have  : all (fun b => keepeven11.[b] <=> 0 <= b < 11) (iota_ 0 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+have  : all (fun b => keepeven10.[b] <=> 0 <= b < 10) (iota_ 0 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
 by rewrite /of_int  /int2bs /mkseq -iotaredE /=.
 qed.
 
 lemma keepodd_bits b: 
   0 <= b < 32 =>
-   keepodd11.[b] <=> 16<=b<27.
+   keepodd10.[b] <=> 16<=b<26.
 move => bb.
-have  : all (fun b => keepodd11.[b] <=> 16 <= b < 27) (iota_ 0 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+have  : all (fun b => keepodd10.[b] <=> 16 <= b < 26) (iota_ 0 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
 by rewrite /of_int  /int2bs /mkseq -iotaredE /=.
 qed.
 
 lemma lowbits_keep (f : W256.t) (i : int) (b : int) :
   0 <= i < 16 => i %% 2 = 0 => 
-  0 <= b < 11 =>
-    (f \bits16 i).[b] = ((f \bits32 i%/2)  `&` keepeven11).[b].
+  0 <= b < 10 =>
+    (f \bits16 i).[b] = ((f \bits32 i%/2)  `&` keepeven10).[b].
 proof. 
 move => bi Hi Hb. 
 have H := W16u16.get_bits16 f (16*i + b) _;1:smt().
@@ -554,8 +495,8 @@ qed.
 
 lemma lowbits_drop (f : W256.t) (i : int) (b : int) :
   0 <= i < 16 => i %% 2 = 0 => 
-  11 <= b < 16 =>
-  !((f \bits32 i%/2)  `&` keepeven11).[b].
+  10 <= b < 16 =>
+  !((f \bits32 i%/2)  `&` keepeven10).[b].
 proof. 
 move => bi Hi Hb. 
 rewrite andE map2iE 1:/# /=.
@@ -563,8 +504,8 @@ by smt(keepeven_bits).
 qed.
 
 lemma highbits_keep (f : W256.t) (i : int) (b : int) :
-  0 <= i < 16 => i %% 2 = 1 => 0 <= b < 11 =>
-    (f \bits16 i).[b] = ((f \bits32 i%/2)  `&` keepodd11).[b + 16].
+  0 <= i < 16 => i %% 2 = 1 => 0 <= b < 10 =>
+    (f \bits16 i).[b] = ((f \bits32 i%/2)  `&` keepodd10).[b + 16].
 proof. 
 move => bi Hi Hb. 
 have H := W16u16.get_bits16 f (16*i + b) _;1:smt().
@@ -574,8 +515,8 @@ by smt(keepodd_bits).
 qed.
 
 lemma highbits_drop (f : W256.t) (i : int) (b : int) :
-  0 <= i < 16 => i %% 2 = 1 =>11 <= b < 15 =>
-    !((f \bits32 i%/2)  `&` keepodd11).[b + 16].
+  0 <= i < 16 => i %% 2 = 1 =>10 <= b < 15 =>
+    !((f \bits32 i%/2)  `&` keepodd10).[b + 16].
 proof. 
 move => bi Hi Hb. 
 rewrite andE map2iE 1:/# /=.
@@ -584,60 +525,60 @@ qed.
 
 
 lemma lowbits_ofint_keep (f0 f1 : W16.t) b :
-  0 <= b < 11 =>
-  0<= to_sint f0 < 2048 =>
-  0<= to_sint f1 < 2048 =>
-  (W32.of_int (to_sint f0 + to_sint f1 * 2048)).[b] = f0.[b].
+  0 <= b < 10 =>
+  0<= to_sint f0 < 1024 =>
+  0<= to_sint f1 < 1024 =>
+  (W32.of_int (to_sint f0 + to_sint f1 * 1024)).[b] = f0.[b].
 move => ?.
 rewrite /to_sint /smod /= => ??.
 have  : all (fun b => (W32.of_int
    ((if 32768 <= to_uint f0 then to_uint f0 - 65536 else to_uint f0) +
-    (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 2048)).[b] =
-f0.[b]) (iota_ 0 11); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+    (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 1024)).[b] =
+f0.[b]) (iota_ 0 10); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
  rewrite  /of_int /int2bs /mkseq -iotaredE /=;do split; rewrite get_to_uint /= /#.
 qed.
 
 lemma highbits_ofint_keep (f0 f1 : W16.t) b :
-  0<= to_sint f0 < 2048 =>
-  0<= to_sint f1 < 2048 =>
-  11 <= b < 22 =>
-  (W32.of_int (to_sint f0 + to_sint f1 * 2048)).[b] = f1.[b-11].
+  0<= to_sint f0 < 1024 =>
+  0<= to_sint f1 < 1024 =>
+  10 <= b < 20 =>
+  (W32.of_int (to_sint f0 + to_sint f1 * 1024)).[b] = f1.[b-10].
 move => ?.
 rewrite /to_sint /smod /= => ??.
 have  : all (fun b => (W32.of_int
    ((if 32768 <= to_uint f0 then to_uint f0 - 65536 else to_uint f0) +
-    (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 2048)).[b] =
-f1.[b - 11]) (iota_ 11 22); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+    (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 1024)).[b] =
+f1.[b - 10]) (iota_ 10 20); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
  rewrite  /of_int /int2bs /mkseq -iotaredE /=;do split; rewrite get_to_uint /=; smt(pow2_16 pow2_32). 
 qed.
 
 
 lemma highbits_ofint_drop (f0 f1 : W16.t) b :
-  0<= to_sint f0 < 2048 =>
-  0<= to_sint f1 < 2048 =>
-  22 <= b < 32 =>
-  !(W32.of_int (to_sint f0 + to_sint f1 * 2048)).[b].
+  0<= to_sint f0 < 1024 =>
+  0<= to_sint f1 < 1024 =>
+  20 <= b < 32 =>
+  !(W32.of_int (to_sint f0 + to_sint f1 * 1024)).[b].
 move => ?.
 rewrite /to_sint /smod /= => ??.
 have  : all (fun b => ! (W32.of_int
      ((if 32768 <= to_uint f0 then to_uint f0 - 65536 else to_uint f0) +
-      (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 2048)).[b]) (iota_ 22 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
+      (if 32768 <= to_uint f1 then to_uint f1 - 65536 else to_uint f1) * 1024)).[b]) (iota_ 20 32); last by rewrite allP => H; move : (H b _); smt(mem_iota allP). 
  rewrite  /of_int /int2bs /mkseq -iotaredE /=;do split; smt(pow2_16 pow2_32). 
 qed.
 
 
 lemma unand (f : W256.t) (i : int) (b : int) :
   0 <= i < 8 => 0<=b<32 =>
-   (W32.init (fun (j : int) => (f \bits32 i).[j + 5] /\ keepodd11.[j + 5])).[b] = ((f \bits32 i) `&` keepodd11).[b + 5].
+   (W32.init (fun (j : int) => (f \bits32 i).[j + 6] /\ keepodd10.[j + 6])).[b] = ((f \bits32 i) `&` keepodd10).[b + 6].
 proof.
 move => ??.
 by rewrite initiE 1:/# /=.
 qed.
 
 lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
-   (forall i, 0 <= i < 16 => 0<= to_sint (f0 \bits16 i) < 2^11) =>
+   (forall i, 0 <= i < 16 => 0<= to_sint (f0 \bits16 i) < 2^10) =>
    VPMADDWD_256 f0 shift2 = VPMADDWD_alt f0 shift2.
-+ move => /= H;rewrite /VPMADDWD_256 /VPMADDWD_alt /=. 
++ move => /= H;rewrite /VPMADDWD_256 /VPMADDWD_alt /=.  print pvc_shift2_s.
   case (shift2 = VPBROADCAST_4u64 pvc_shift2_s);2: by auto. 
   move => -> /=; rewrite /VPBROADCAST_4u64 /= -!(iotaredE) /=. 
   pose f00 := (f0 \bits16 0).
@@ -662,8 +603,8 @@ lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
   rewrite /VPBROADCAST_8u32 -!iotaredE /= /VPSRL_8u32 /= /(`>>>`) /= -(unpack32K f0) andb8u32E !orb8u32E;congr;rewrite /unpack32 init_of_list -iotaredE /= orE.
   congr;apply (eq_from_nth witness) => //= => i ib. 
   apply W32.wordP => b bb. 
-  have /= H3 := highbits_keep f0 (i*2+1) (b-11) _ _;1,2: smt().
-  have /= H4 := highbits_drop f0 (i*2+1) (b-11) _ _;1,2: smt().
+  have /= H3 := highbits_keep f0 (i*2+1) (b-10) _ _;1,2: smt().
+  have /= H4 := highbits_drop f0 (i*2+1) (b-10) _ _;1,2: smt().
   have /= H5 := lowbits_keep f0  (i*2) b _ _;1,2: smt().
   have /= H6 := lowbits_drop f0 (i*2) b _ _;1,2: smt(). 
   case (i = 0) => *.
@@ -717,10 +658,11 @@ lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
 by smt().
 qed.
 
+module AuxCompress10 = {
 
-module AuxCompress11 = {
- proc __i_polyvec_compress(rp : W8.t Array1410.t, a : W16.t Array1024.t) : W8.t Array1410.t = {
+proc __i_polyvec_compress(rp : W8.t Array960.t, a : W16.t Array768.t) : W8.t Array960.t = {
     var inc : int;
+    var x16p : W16.t Array16.t;
     var v : W256.t;
     var v8 : W256.t;
     var off : W256.t;
@@ -728,7 +670,6 @@ module AuxCompress11 = {
     var mask : W256.t;
     var shift2 : W256.t;
     var sllvdidx : W256.t;
-    var srlvqidx : W256.t;
     var shufbidx : W256.t;
     var i : int;
     var f0 : W256.t;
@@ -736,21 +677,21 @@ module AuxCompress11 = {
     var f2 : W256.t;
     var t0 : W128.t;
     var t1 : W128.t;
-    
+    x16p <- witness;
     a <@ M.__polyvec_csubq(a);
-    v <- get256 (WArray32.init16 (fun (i_0 : int) => jvx16.[i_0])) 0;
+    x16p <- jvx16;
+    v <- get256 (WArray32.init16 (fun (i_0 : int) => x16p.[i_0])) 0;
     v8 <- VPSLL_16u16 v (W128.of_int 3);
-    off <- VPBROADCAST_16u16 pvc_off_s;
+    off <- VPBROADCAST_16u16 pc_mask_s;
     shift1 <- VPBROADCAST_16u16 pvc_shift1_s;
     mask <- VPBROADCAST_16u16 pvc_mask_s;
     shift2 <- VPBROADCAST_4u64 pvc_shift2_s;
     sllvdidx <- VPBROADCAST_4u64 pvc_sllvdidx_s;
-    srlvqidx <- get256 (WArray32.init64 (fun (i_0 : int) => pvc_srlvqidx.[i_0])) 0;
     shufbidx <- get256 (WArray32.init8 (fun (i_0 : int) => pvc_shufbidx_s.[i_0])) 0;
-    inc <- 4 * 256 %/ 16;
+    inc <- 3 * 256 %/ 16;
     i <- 0;
     while (i < inc){
-      f0 <- get256 (WArray2048.init16 (fun (i_0 : int) => a.[i_0])) i;
+      f0 <- get256 (WArray1536.init16 (fun (i_0 : int) => a.[i_0])) i;
       f1 <- VPMULL_16u16 f0 v8;
       f2 <- VPADD_16u16 f0 off;
       f0 <- VPSLL_16u16 f0 (W128.of_int 3);
@@ -761,25 +702,22 @@ module AuxCompress11 = {
       f0 <- VPSUB_16u16 f0 f1;
       f0 <- VPMULHRS_16u16 f0 shift1;
       f0 <- f0 `&` mask;
-      f2 <- VPBROADCAST_8u32 keepodd11;
-      f1 <- VPAND_256 f0 f2;
-      f2 <- VPBROADCAST_8u32 keepeven11;
-      f0 <- VPAND_256 f0 f2;
-      f1 <- VPSRL_8u32 f1  (W128.of_int 5);
-      f0 <- VPOR_256 f0 f1;
+      f0 <- VPMADDWD_alt f0 shift2;
       f0 <- VPSLLV_8u32 f0 sllvdidx;
-      f1 <- VPSRLDQ_256 f0 (W8.of_int 8);
-      f0 <- VPSRLV_4u64 f0 srlvqidx;
-      f1 <- VPSLL_4u64 f1 (W128.of_int 34);
-      f0 <- f0 `|` f1;
+      f0 <- VPSRL_4u64 f0 (W128.of_int 12);
       f0 <- VPSHUFB_256 f0 shufbidx;
       t0 <- truncateu128 f0;
       t1 <- VEXTRACTI128 f0 W8.one;
-      t0 <- BLENDV_16u8 t0 t1 (truncateu128 shufbidx);
-      rp <- Array1410.init (get8 (set128_direct (WArray1410.init8 (fun (i_0 : int) => rp.[i_0])) (22 * i) t0));
+      t0 <- VPBLENDW_128 t0 t1 (W8.of_int 224);
       rp <-
-        Array1410.init
-          (get8 (set64_direct (WArray1410.init8 (fun (i_0 : int) => rp.[i_0])) (22 * i + 16) (truncateu64 t1)));
+        Array960.init
+          (WArray960.get8
+             (WArray960.set128_direct (WArray960.init8 (fun (i_0 : int) => rp.[i_0])) (20 * i) t0));
+      rp <-
+        Array960.init
+          (WArray960.get8
+             (WArray960.set32_direct (WArray960.init8 (fun (i_0 : int) => rp.[i_0])) (
+                20 * i + 16) (VPEXTR_32 t1 W8.zero)));
       i <- i + 1;
     }
     
@@ -787,46 +725,46 @@ module AuxCompress11 = {
   }
 }.
 
-lemma auxcompress11_ll : islossless AuxCompress11.__i_polyvec_compress.
-proc. cfold 11. unroll for ^while; wp => /=. 
-inline *;unroll for ^while; do 4!(unroll for ^while);auto.
+lemma auxcompress10_ll : islossless AuxCompress10.__i_polyvec_compress.
+proc. cfold 12. unroll for ^while; wp => /=. 
+inline *;unroll for ^while; do 3!(unroll for ^while);auto.
 qed.
 
-lemma auxcompress11_corr_h (_aw : W16.t Array1024.t):
-    hoare[ AuxCompress11.__i_polyvec_compress  :
+lemma auxcompress10_corr_h (_aw : W16.t Array768.t):
+    hoare[ AuxCompress10.__i_polyvec_compress  :
              a = _aw /\
-             pos_bound1024_cxq a 0 1024 2 ==> 
-      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))].
+             pos_bound768_cxq a 0 768 2 ==> 
+      res = encode10_vec (compress_polyvec 10 (lift_polyvec _aw))].
 proof.
 proc; inline *.
 proc change ^while.1: (init_256_16 (fun i => r.[256*i0+i]));1: by auto.
 proc change ^while.2: (sliceget16_16_256 jqx16 0); 1: by auto.
 proc change ^while.^while.1: (sliceget256_16_256 rp0 (i1*256));1: by auto => /#.
 proc change ^while.^while.9: (sliceset256_16_256 rp0 (i1*256) r0);1: by auto => /#.
-proc change ^while.6: (init_1024_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]));1: by auto. 
-proc change 5: (sliceget16_16_256 jvx16 0); 1: by auto.
-proc change ^while{2}.1: (sliceget1024_16_256 a (i*256));1: by auto => /#.
-proc change 12: (sliceget4_64_256 pvc_srlvqidx 0); 1: by auto.
-proc change 13: (sliceget32_8_256 pvc_shufbidx_s 0); 1: by auto.
-proc change ^while{2}.27 : (sliceset1410_8_128 rp  (22*i*8) t0);1: by auto => /#.
-proc change ^while{2}.28 : (sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1)).
-+ move => *;rewrite /sliceset1410_8_64 tP => *.
+proc change ^while.6: (init_768_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]));1: by auto. 
+proc change 7: (sliceget16_16_256 x16p 0); 1: by auto.
+proc change ^while{2}.1: (sliceget768_16_256 a (i*256));1: by auto => /#.
+proc change 14: (sliceget32_8_256 pvc_shufbidx_s 0); 1: by auto.
+proc change ^while{2}.19 : (sliceset960_8_128 rp  (20*i*8) t0);1: by auto => /#.
+proc change ^while{2}.20 : (sliceset960_8_32 rp  ((20*i+16)*8) (truncateu32 t1)).
++ move => *;rewrite /sliceset960_8_32 tP => *.
   rewrite initiE /= 1:/# ifT 1:/# initiE 1:/#.
-  do congr;smt().
+  do congr;1: smt(). 
+  by rewrite /VPEXTR_32 /truncateu32 to_uint_eq /= bits32_div //.
 unroll for ^while.
-do 4!(unroll for ^while).
+do 3!(unroll for ^while).
 cfold ^inc<-.
 unroll for ^while.
 cfold ^i0<-. 
 cfold ^i1<-. 
 wp -4. 
-bdep 16 11 [_aw] [a] [rp[Array1408.t:0]] compress11_circuit pcond_reduced. 
+bdep 16 10 [_aw] [a] [rp] compress10_circuit pcond_reduced. 
 
 
 
 (* BDEP pre conseq *)
 + move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
-  rewrite allP /pos_bound1024_cxq /= => Hb. 
+  rewrite allP /pos_bound768_cxq /= => Hb. 
   rewrite /pcond_reduced /= /tolist /= => x.
   rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
   have := Hb i; rewrite ib /= qE /=.
@@ -839,12 +777,12 @@ bdep 16 11 [_aw] [a] [rp[Array1408.t:0]] compress11_circuit pcond_reduced.
 move => &hr [#]/= <- H0  rr; rewrite /= !flatten1.
 move => H1.
 
-apply (inj_eq Array1408.to_list Array1408.to_list_inj).
+apply (inj_eq Array960.to_list Array960.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
-have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list (Array1408.init ("_.[_]" rr))) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W11.w2bits W11.bits2w  compress11_circuit 16 11 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
-    smt(Array1408.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W11_t.oflistP).
+have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list (Array960.init ("_.[_]" rr))) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W11.w2bits W11.bits2w  compress11_circuit 16 11 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+    smt(Array960.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W11_t.oflistP).
 
-rewrite output_pack_1408_8. 
+rewrite output_pack_960_8. 
 + rewrite (EclibExtra.size_flatten' 11);1: smt(mapP BS2Int.size_int2bs).
   by rewrite size_map size_to_list /=.
 
@@ -866,7 +804,7 @@ rewrite ultE /=.
 case (to_uint a{hr}.[i] < 3329) => /= *.
 + rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
   rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
-have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+have := H0;rewrite /pos_bound768_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
 +  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /smod /= /smod /=;smt(size_map size_iota). 
@@ -894,7 +832,7 @@ rewrite ultE /=.
 case (to_uint a{hr}.[i] < 3329) => /= *.
 + rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
   rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
-have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+have := H0;rewrite /pos_bound768_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
 +  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
@@ -922,7 +860,7 @@ rewrite ultE /=.
 case (to_uint a{hr}.[i] < 3329) => /= *.
 + rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
   rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
-have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+have := H0;rewrite /pos_bound768_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
 +  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
@@ -949,7 +887,7 @@ rewrite ultE /=.
 case (to_uint a{hr}.[i] < 3329) => /= *.
 + rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
   rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
-have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+have := H0;rewrite /pos_bound768_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
 +  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
@@ -968,35 +906,35 @@ qed.
 
 (********** END BDEP PROOF OF COMPRESS **************)
 
-lemma auxcompress11_corr (_aw : W16.t Array1024.t):
+lemma auxcompress11_corr (_aw : W16.t Array768.t):
     phoare[ AuxCompress11.__i_polyvec_compress  :
              a = _aw /\
-             pos_bound1024_cxq a 0 1024 2 ==> 
-      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r 
+             pos_bound768_cxq a 0 768 2 ==> 
+      Array960.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r 
   by conseq auxcompress11_ll (auxcompress11_corr_h _aw).
 
 
-lemma polyvec_compress_avx2_ll : islossless Jkem1024_avx2.M.__i_polyvec_compress.
+lemma polyvec_compress_avx2_ll : islossless Jkem768_avx2.M.__i_polyvec_compress.
 proc. cfold 11. unroll for ^while; wp => /=. 
 inline *;unroll for ^while; do 4!(unroll for ^while);auto.
 qed.
 
-lemma polyvec_compress_avx2_corr (_aw : W16.t Array1024.t):
-    phoare[ Jkem1024_avx2.M.__i_polyvec_compress  :
+lemma polyvec_compress_avx2_corr (_aw : W16.t Array768.t):
+    phoare[ Jkem768_avx2.M.__i_polyvec_compress  :
              a = _aw /\
-             pos_bound1024_cxq a 0 1024 2 ==> 
-      Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r.
+             pos_bound768_cxq a 0 768 2 ==> 
+      Array960.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r.
 bypr => &m [->?].
 have <- : Pr[ AuxCompress11.__i_polyvec_compress(rp{m}, _aw) @ &m :
-   Array1408.init (fun (i : int) => res.[i]) = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r
+   Array960.init (fun (i : int) => res.[i]) = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))] = 1%r
    by byphoare (auxcompress11_corr _aw)  =>/=;1:smt().
 byequiv (: ={arg} /\ a{1} = _aw /\
-             pos_bound1024_cxq a{1} 0 1024 2 ==> ={res}) => //.
+             pos_bound768_cxq a{1} 0 768 2 ==> ={res}) => //.
 proc. 
-seq 1 1 : (={rp,a} /\ pos_bound1024_cxq a{1} 0 1024 1).
+seq 1 1 : (={rp,a} /\ pos_bound768_cxq a{1} 0 768 1).
 + ecall {1} (polyvec_csubq_avx2_corr a{1}). 
   ecall {2} (polyvec_csubq_avx2_corr a{2}). 
-  auto => />; rewrite /pos_bound1024_cxq /lift_array1024 /= qE /= => ? rr1.
+  auto => />; rewrite /pos_bound768_cxq /lift_array768 /= qE /= => ? rr1.
   rewrite !tP;move =>  Hrr11 Hrr12 rr2.
   rewrite !tP;move =>  Hrr21 Hrr22.
   move => i ib. 
@@ -1029,12 +967,12 @@ rewrite and_mod 1:/# /= /smod /= /#.
 qed.
 
 equiv compressequivvec  : 
- Jkem1024_avx2.M.__i_polyvec_compress ~  Jkem1024.M.__i_polyvec_compress :
-     pos_bound1024_cxq a{1} 0 1024 2 /\
-     pos_bound1024_cxq a{2} 0 1024 2 /\
-    lift_array1024 a{1} = lift_array1024 a{2} 
+ Jkem768_avx2.M.__i_polyvec_compress ~  Jkem768.M.__i_polyvec_compress :
+     pos_bound768_cxq a{1} 0 768 2 /\
+     pos_bound768_cxq a{2} 0 768 2 /\
+    lift_array768 a{1} = lift_array768 a{2} 
     ==> 
-    res{2} = Array1408.init (fun i => res{1}.[i]).
+    res{2} = Array960.init (fun i => res{1}.[i]).
 proc*.
 print MLKEM_PolyVec.
 ecall {2} (i_polyvec_compress_corr a{2}) => /=.
@@ -1054,12 +992,12 @@ op decompress5_circuit(c : W5.t) : W16.t =
   truncateu16 (srl_32 (((zeroextu5_32 c) * W32.of_int 3329) + W32.of_int 16) (W32.of_int 5)).
 op pcond_true5(_: W5.t) = true.
 
-lemma poly_decompress_ll : islossless Jkem1024_avx2.M._i_poly_decompress.
+lemma poly_decompress_ll : islossless Jkem768_avx2.M._i_poly_decompress.
  proc; inline *;wp. cfold 5; unroll for ^while;auto. 
 qed.
 
 lemma poly_decompress_corr_h (_a : W8.t Array160.t): 
-    hoare [Jkem1024_avx2.M._i_poly_decompress  :
+    hoare [Jkem768_avx2.M._i_poly_decompress  :
               arg.`2 = _a
               ==>
              lift_array256 res = decompress_poly 5 (decode5 _a) /\
@@ -1127,7 +1065,7 @@ qed.
 (********** END BDEP PROOF OF DECOMPRESS **************)
 
 lemma poly_decompress_corr (_a : W8.t Array160.t): 
-    phoare [Jkem1024_avx2.M._i_poly_decompress  :
+    phoare [Jkem768_avx2.M._i_poly_decompress  :
               arg.`2 = _a
               ==>
              lift_array256 res = decompress_poly 5 (decode5 _a) /\
@@ -1135,7 +1073,7 @@ lemma poly_decompress_corr (_a : W8.t Array160.t):
   by conseq poly_decompress_ll (poly_decompress_corr_h _a).
 
 lemma poly_decompress_equiv  : 
-    equiv [Jkem1024_avx2.M._i_poly_decompress ~  Jkem1024.M._i_poly_decompress  :
+    equiv [Jkem768_avx2.M._i_poly_decompress ~  Jkem768.M._i_poly_decompress  :
              a{1} = ap{2}
               ==>
              lift_array256 res{1} = lift_array256 res{2} /\
@@ -1158,7 +1096,7 @@ op compress5_circuit(a : W16.t) : W5.t =
    else 
    truncateu32_5 (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 5) + W32.of_int 1664) * W32.of_int 40318) (W32.of_int 27)).  
 
-lemma i_poly_compress_corr_ll : islossless Jkem1024_avx2.M._i_poly_compress.
+lemma i_poly_compress_corr_ll : islossless Jkem768_avx2.M._i_poly_compress.
 proof.
 proc; inline *.
 cfold 13.
@@ -1167,7 +1105,7 @@ auto.
 qed.
 
 lemma i_poly_compress_corr_h _aw  : 
-    hoare [Jkem1024_avx2.M._i_poly_compress  :
+    hoare [Jkem768_avx2.M._i_poly_compress  :
              pos_bound256_cxq a 0 256 2 /\
              a = _aw
               ==>
@@ -1249,7 +1187,7 @@ qed.
 (********** END BDEP PROOF OF COMPRESS **************)
 
 lemma i_poly_compress_corr _aw  : 
-    phoare [Jkem1024_avx2.M._i_poly_compress  :
+    phoare [Jkem768_avx2.M._i_poly_compress  :
              pos_bound256_cxq a 0 256 2 /\
              a = _aw
               ==>
@@ -1258,7 +1196,7 @@ lemma i_poly_compress_corr _aw  :
  by conseq i_poly_compress_corr_ll (i_poly_compress_corr_h _aw).
 
 equiv compressequiv_1 : 
- Jkem1024_avx2.M._i_poly_compress ~  Jkem1024.M._i_poly_compress :
+ Jkem768_avx2.M._i_poly_compress ~  Jkem768.M._i_poly_compress :
      pos_bound256_cxq a{1} 0 256 2 /\
      pos_bound256_cxq a{2} 0 256 2 /\
     lift_array256 a{1} = lift_array256 a{2} 
@@ -1278,7 +1216,7 @@ op frombytes_circuit(c : W12.t) : W16.t =
   zeroextu16 c.
 
 
-lemma polyvec_frombytes_ll : islossless Jkem1024_avx2.M.__i_polyvec_frombytes.
+lemma polyvec_frombytes_ll : islossless Jkem768_avx2.M.__i_polyvec_frombytes.
 proc; inline *;wp. 
   while (0 <= i <= 4) (4-i); last by  auto =>  /> /#.
 move => *. cfold 3. unroll for ^while;auto => /> /#.
@@ -1379,17 +1317,17 @@ op  perm_nttpackv(i : int) =  nth (-1)
         910; 926; 942; 958; 974; 990; 1006; 1022; 911; 927; 943; 959; 975; 991; 1007; 1023] i. 
 
 lemma perm_nttunpackv_rng i :
-  0 <= i < 1024 => 0<= perm_nttunpackv i <1024.
+  0 <= i < 768 => 0<= perm_nttunpackv i <768.
 proof.
-  have : all (fun i => 0 <= perm_nttunpackv i < 1024) (iota_ 0 1024).
+  have : all (fun i => 0 <= perm_nttunpackv i < 768) (iota_ 0 768).
   + by rewrite /perm_nttunpackv  -iotaredE /=.
   move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). 
 qed.
 
 lemma perm_nttpackv_rng i :
-  0 <= i < 1024 => 0<= perm_nttpackv i <1024.
+  0 <= i < 768 => 0<= perm_nttpackv i <768.
 proof.
-  have : all (fun i => 0 <= perm_nttpackv i < 1024) (iota_ 0 1024).
+  have : all (fun i => 0 <= perm_nttpackv i < 768) (iota_ 0 768).
   + by rewrite /perm_nttpackv  -iotaredE /=.
   move => H Hi; rewrite allP in H; move : (H i _);by smt(mem_iota). 
 qed. 
@@ -1443,33 +1381,33 @@ rewrite nth_mkseq /=;1,2:smt().
 qed.
 
 lemma nttpermsK i :
- 0 <= i < 1024 => 
+ 0 <= i < 768 => 
    perm_nttpackv (perm_nttunpackv i) = i.
 proof.
 move => Hi.
-have : all (fun i => perm_nttpackv (perm_nttunpackv i) = i) (iota_ 0 1024); 
+have : all (fun i => perm_nttpackv (perm_nttunpackv i) = i) (iota_ 0 768); 
   last by rewrite allP /= => H; rewrite H; smt(mem_iota).
 rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
 rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
 qed. 
 
 lemma nttpermsKi i :
- 0 <= i < 1024 => 
+ 0 <= i < 768 => 
    perm_nttunpackv (perm_nttpackv i) = i.
 proof.
 move => Hi.
-have : all (fun i => perm_nttunpackv (perm_nttpackv i) = i) (iota_ 0 1024); 
+have : all (fun i => perm_nttunpackv (perm_nttpackv i) = i) (iota_ 0 768); 
   last by rewrite allP /= => H; rewrite H; smt(mem_iota).
 rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
 rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
 qed. 
 
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
-    hoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
+    hoare [Jkem768_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
-             lift_array1024 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
-             pos_bound1024_cxq res 0 1024  2].
+             lift_array768 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
+             pos_bound768_cxq res 0 768  2].
 proc; inline *.
 proc change ^while.1: (init_256_16 (fun (i_0 : int) => r.[256 * i + i_0])); 1: by auto.
 proc change ^while.2: (init_384_8 (fun (i_0 : int) => a.[384 * i + i_0])  ); 1: by auto.
@@ -1488,7 +1426,7 @@ proc change ^while.^while.105 : (sliceset256_16_256 rp ((8*i0+4) *256) t4);1: by
 proc change ^while.^while.106 : (sliceset256_16_256 rp ((8*i0+5) *256) t10);1: by auto => /> /#.
 proc change ^while.^while.107 : (sliceset256_16_256 rp ((8*i0+6) *256) t11);1: by auto => /> /#.
 proc change ^while.^while.108 : (sliceset256_16_256 rp ((8*i0+7) *256) tt);1: by auto => /> /#.
-proc change ^while.7: (init_1024_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0])); 1: by auto.
+proc change ^while.7: (init_768_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0])); 1: by auto.
 
 unroll for ^while.
 do 4!(unroll for ^while).
@@ -1506,9 +1444,9 @@ bdep 12 16 [_aw] [a] [r] frombytes_circuit pcond_true12 perm_nttpackv.
 move => &hr [#]/= <- rr; rewrite /= !flatten1.
 
 move => H1; have H2 := post_lane_commute_out_aligned_perm (to_list a{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 perm_nttunpackv perm_nttpackv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
-smt(Array1536.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
-+ smt(perm_nttunpackv_rng Array1024.size_to_list).
-+ move => ?; rewrite Array1024.size_to_list => ?;smt(nttpermsK). 
+smt(Array1536.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
++ smt(perm_nttunpackv_rng Array768.size_to_list).
++ move => ?; rewrite Array768.size_to_list => ?;smt(nttpermsK). 
 
   have /=? := decode_range_vec 0 (to_list a{hr}) 12 _ _;1,2:smt(Array1536.size_to_list).
 
@@ -1517,7 +1455,7 @@ smt(Array1536.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W
 have H3 : 
   map frombytes_circuit (map W12.bits2w (chunk 12 (flatten (map W8.w2bits (to_list a{hr}))))) =
    to_list (map W16.of_int  (decode12_vec a{hr})).
-+ rewrite /decode12_vec Array1024.map_of_list Array1024.of_listK;1:by rewrite !size_map /decode size_iota size_BytesToBits size_to_list /#.
++ rewrite /decode12_vec Array768.map_of_list Array768.of_listK;1:by rewrite !size_map /decode size_iota size_BytesToBits size_to_list /#.
   rewrite /decode -map_comp -(map_comp _ BS2Int.bs2int) /=.
   apply eq_in_map => x xb.
   rewrite /(\o) /frombytes_circuit /zeroextu16.
@@ -1531,8 +1469,8 @@ split.
   case (0<=i<256) => *.
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
-    rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
-    rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
+    rewrite -(Array768.get_to_list rr) H2 H3 /decode12.
+    rewrite nth_mkseq /=;1: by smt(Array768.size_to_list).
     + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
      rewrite /smod /= ifF. 
@@ -1546,8 +1484,8 @@ split.
   case (256<=i<512) => *.
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
-    rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
-    rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
+    rewrite -(Array768.get_to_list rr) H2 H3 /decode12.
+    rewrite nth_mkseq /=;1: by smt(Array768.size_to_list).
     + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
      rewrite /smod /= ifF. 
@@ -1561,8 +1499,8 @@ split.
   case (512<=i<768) => *.
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
-    rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
-    rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
+    rewrite -(Array768.get_to_list rr) H2 H3 /decode12.
+    rewrite nth_mkseq /=;1: by smt(Array768.size_to_list).
     + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
      rewrite /smod /= ifF. 
@@ -1575,8 +1513,8 @@ split.
 
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
-    rewrite -(Array1024.get_to_list rr) H2 H3 /decode12.
-    rewrite nth_mkseq /=;1: by smt(Array1024.size_to_list).
+    rewrite -(Array768.get_to_list rr) H2 H3 /decode12.
+    rewrite nth_mkseq /=;1: by smt(Array768.size_to_list).
     + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
     congr; rewrite of_sintK /=.
      rewrite /smod /= ifF. 
@@ -1587,7 +1525,7 @@ split.
        by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
     rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
 
-  rewrite /pos_bound1024_cxq qE /= => k kb. 
+  rewrite /pos_bound768_cxq qE /= => k kb. 
   have /=? := decode_range_vec witness (to_list a{hr}) 12 _ _;1..2:smt(Array1536.size_to_list).
   rewrite -get_to_list  H2 H3 /decode12_vec.
   rewrite nth_mkseq /=;1: by rewrite size_map size_iota /#. 
@@ -1601,19 +1539,19 @@ qed.
 (********** END BDEP PROOF OF FROMBYTES **************)
 
 lemma polyvec_frombytes_corr (_aw : W8.t Array1536.t): 
-    phoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
+    phoare [Jkem768_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
-             lift_array1024 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
-             pos_bound1024_cxq res 0 1024  2] = 1%r
+             lift_array768 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
+             pos_bound768_cxq res 0 768  2] = 1%r
   by conseq polyvec_frombytes_ll (polyvec_frombytes_corr_h _aw).
 
 lemma polyvec_frombytes_equiv :
-    equiv [Jkem1024_avx2.M.__i_polyvec_frombytes ~Jkem1024.M.__i_polyvec_frombytes :
+    equiv [Jkem768_avx2.M.__i_polyvec_frombytes ~Jkem768.M.__i_polyvec_frombytes :
              a{1}=ap{2} ==>
-             lift_array1024 res{1} = nttunpackv (lift_array1024 res{2}) /\
-             pos_bound1024_cxq res{1} 0 1024 2 /\
-             pos_bound1024_cxq res{2} 0 1024 2 ].
+             lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\
+             pos_bound768_cxq res{1} 0 768 2 /\
+             pos_bound768_cxq res{2} 0 768 2 ].
 proc*.
 ecall{1} (polyvec_frombytes_corr a{1}).
 ecall{2} (MLKEM_PolyVec.polyvec_frombytes_corr ap{2}).
@@ -1624,7 +1562,7 @@ qed.
 lemma subequiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-    equiv [Jkem1024_avx2.M._poly_sub ~Jkem1024.M._poly_sub :
+    equiv [Jkem768_avx2.M._poly_sub ~Jkem768.M._poly_sub :
       lift_array256 ap{1} = lift_array256 ( ap{2}) /\
       lift_array256 bp{1} = lift_array256 ( bp{2}) /\
       signed_bound_cxq ap{2} 0 256 ab /\ 
@@ -1710,7 +1648,7 @@ move : HHH; move : (W16.to_uint_cmp x); move :  (W16.to_uint_cmp y) => /=; smt()
 qed.
 
 equiv frommontequiv : 
- Jkem1024_avx2.M._poly_frommont ~  Jkem1024.M._poly_frommont :
+ Jkem768_avx2.M._poly_frommont ~  Jkem768.M._poly_frommont :
     lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     signed_bound_cxq res{1} 0 256 2 /\ 
@@ -1779,7 +1717,7 @@ do split.
 qed.
 
 equiv reduceequiv : 
- Jkem1024_avx2.M.__poly_reduce ~  Jkem1024.M.__poly_reduce :
+ Jkem768_avx2.M.__poly_reduce ~  Jkem768.M.__poly_reduce :
     lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     pos_bound256_cxq res{1} 0 256 2 /\ 
@@ -1809,7 +1747,7 @@ smt(Array256.mapiE nttunpack_bnd Array256.allP).
 qed.
 
 equiv reduceequiv_noperm : 
- Jkem1024_avx2.M.__poly_reduce ~  Jkem1024.M.__poly_reduce :
+ Jkem768_avx2.M.__poly_reduce ~  Jkem768.M.__poly_reduce :
     lift_array256 arg{1} = lift_array256 arg{2} ==> 
     lift_array256 res{1} = lift_array256 res{2} /\
     pos_bound256_cxq res{1} 0 256 2 /\ 
@@ -1842,7 +1780,7 @@ import Zq.
 require import NTT_AVX_j.
 
 equiv basemulequiv : 
- Jkem1024_avx2.M._poly_basemul ~Jkem1024.M._poly_basemul :
+ Jkem768_avx2.M._poly_basemul ~Jkem768.M._poly_basemul :
     lift_array256 ap{1} = nttunpack (lift_array256 ap{2}) /\
     lift_array256 bp{1} = nttunpack (lift_array256 bp{2}) /\
     signed_bound_cxq ap{1} 0 256 2 /\  
@@ -1882,7 +1820,7 @@ lemma addequiv  (ab1 bb1 ab2 bb2 : int):
     0 <= ab2 && ab2 <= 6 =>
     0 <= bb1 && bb1 <= 3 =>
     0 <= bb2 && bb2 <= 3 =>
-    equiv [Jkem1024_avx2.M._poly_add2 ~Jkem1024.M._poly_add2 :
+    equiv [Jkem768_avx2.M._poly_add2 ~Jkem768.M._poly_add2 :
       lift_array256 rp{1} = lift_array256 (nttunpack rp{2}) /\
       lift_array256 bp{1} = lift_array256 (nttunpack bp{2}) /\
       signed_bound_cxq rp{2} 0 256 ab2 /\ 
@@ -1933,7 +1871,7 @@ qed.
 lemma addequiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-    equiv [Jkem1024_avx2.M._poly_add2 ~Jkem1024.M._poly_add2 :
+    equiv [Jkem768_avx2.M._poly_add2 ~Jkem768.M._poly_add2 :
       lift_array256 rp{1} = lift_array256 ( rp{2}) /\
       lift_array256 bp{1} = lift_array256 ( bp{2}) /\
       signed_bound_cxq rp{2} 0 256 ab /\ 
@@ -1981,11 +1919,11 @@ op decompress1_circuit(c : bool) : W16.t =
 
 op pcond_true (w: bool) =  true. 
 
-lemma poly_frommsg_ll : islossless Jkem1024_avx2.M._i_poly_frommsg 
+lemma poly_frommsg_ll : islossless Jkem768_avx2.M._i_poly_frommsg 
  by proc; inline *;wp;while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
 
 lemma poly_frommsg_corr_h (_m : W8.t Array32.t): 
-    hoare [Jkem1024_avx2.M._i_poly_frommsg :
+    hoare [Jkem768_avx2.M._i_poly_frommsg :
              ap =  _m 
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
@@ -2056,7 +1994,7 @@ qed.
 
 
 lemma poly_frommsg_corr (_m : W8.t Array32.t): 
-    phoare [Jkem1024_avx2.M._i_poly_frommsg :
+    phoare [Jkem768_avx2.M._i_poly_frommsg :
              ap =  _m 
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
@@ -2064,7 +2002,7 @@ lemma poly_frommsg_corr (_m : W8.t Array32.t):
   by conseq poly_frommsg_ll (poly_frommsg_corr_h _m).
 
 equiv frommsgequiv_noperm  : 
- Jkem1024_avx2.M._i_poly_frommsg ~  Jkem1024.M._i_poly_frommsg :
+ Jkem768_avx2.M._i_poly_frommsg ~  Jkem768.M._i_poly_frommsg :
     ={ap} ==> 
     lift_array256 res{1} = lift_array256 res{2} /\
     pos_bound256_cxq res{1} 0 256 1 /\ 
@@ -2081,7 +2019,7 @@ lemma compress_poly_rng i xs :
 rewrite /compress_poly /map allP => Hi j Hj. rewrite !initiE //=. rewrite compress_rng //. qed.
 
 
-lemma poly_tomsg_ll : islossless Jkem1024_avx2.M._i_poly_tomsg.
+lemma poly_tomsg_ll : islossless Jkem768_avx2.M._i_poly_tomsg.
 proc.
 cfold 7.
 inline *.
@@ -2101,7 +2039,7 @@ op compress1_circuit(a : W16.t) : bool =
 op pcond_reduced (w: W16.t) =   w \ult W16.of_int (2*3329). 
 
 lemma poly_tomsg_corr_h _aw : 
-    hoare [Jkem1024_avx2.M._i_poly_tomsg :
+    hoare [Jkem768_avx2.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
               a = _aw
               ==>
@@ -2188,7 +2126,7 @@ qed.
 
 
 lemma poly_tomsg_corr _aw : 
-    phoare [Jkem1024_avx2.M._i_poly_tomsg :
+    phoare [Jkem768_avx2.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
               a = _aw
               ==>
@@ -2196,7 +2134,7 @@ lemma poly_tomsg_corr _aw :
   by conseq poly_tomsg_ll (poly_tomsg_corr_h _aw).
 
 equiv tomsgequiv_noperm  : 
- Jkem1024_avx2.M._i_poly_tomsg ~  Jkem1024.M._i_poly_tomsg :
+ Jkem768_avx2.M._i_poly_tomsg ~  Jkem768.M._i_poly_tomsg :
     lift_array256 a{1} = lift_array256 a{2} /\
     pos_bound256_cxq a{1} 0 256 2 /\ 
     pos_bound256_cxq a{2} 0 256 2 ==>
@@ -2212,7 +2150,7 @@ qed.
 op tobytes_circuit(a : W16.t) : W12.t = 
    if (a \ult W16.of_int 3329) then truncateu12 a else truncateu12 (W16_sub a (W16.of_int 3329)).  
 
-lemma polyvec_tobytes_ll : islossless Jkem1024_avx2.M.__i_polyvec_tobytes.
+lemma polyvec_tobytes_ll : islossless Jkem768_avx2.M.__i_polyvec_tobytes.
 proc.
 inline *. 
 do 9!(unroll for ^while); auto. 
@@ -2307,7 +2245,7 @@ rewrite (EclibExtra.size_flatten' noc); smt(size_map mapP).
 qed.
 
 lemma output_pack_1536_8(l : bool list) :
- size l = 1024*12 =>
+ size l = 768*12 =>
  flatten
   (map W8.w2bits
      (to_list (Array1536.of_list W8.zero (BitsToBytes l)))) = l.
@@ -2327,11 +2265,11 @@ rewrite -(nth_flatten _ 8);1: by rewrite allP => * /=;smt(in_chunk_size).
 by rewrite chunkK /#.
 qed.
 
-lemma nttpackv_alt (a : W16.t Array1024.t) i :
- 0 <= i < 1024 =>
+lemma nttpackv_alt (a : W16.t Array768.t) i :
+ 0 <= i < 768 =>
   a.[perm_nttpackv i] = (nttpackv a).[i].
 proof.
-move => ?;have : all (fun i => a.[perm_nttpackv i] = (nttpackv a).[i]) (iota_ 0 1024);
+move => ?;have : all (fun i => a.[perm_nttpackv i] = (nttpackv a).[i]) (iota_ 0 768);
   last by rewrite allP => H; move : (H i);smt(mem_iota).
 by rewrite /nttpackv /subarray256 /nttpack /perm_nttpackv -iotaredE /=.
 qed. 
@@ -2339,13 +2277,13 @@ qed.
 abbrev mask12 = VPBROADCAST_16u16(W16.of_int 4095).
 
 module AuxToBytes = {
-proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array1024.t) : W8.t Array1536.t = {
+proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array768.t) : W8.t Array1536.t = {
   var i,rp,a0,i0,t0,t1,t2,t3,t4,t5,t6,t7,tt,ttt,a1,b,t00,r00,t10,r1,a2,b0,t01,r01,t11,r10,a3,b1,t02,r02,t12,r11,a4,b2,t03,t13,a5,b3,t04,t14,a6,b4,t05,t15,a7,b5,r03,r12,a8,b6,r04,r13,a9,b7,r05,r14,a10,b8,r06,r15,a11,b9,r07,r16,a12,b10,r08,r17,aux,aux_0;
   i <- 0;                                                                                                                       
   while (i < 4) {                                                                                                              
     rp <- Array384.init (fun (i_0 : int) => r.[384 * i + i_0]);                                                                 
     a0 <- Array256.init (fun (i_0 : int) => a.[256 * i + i_0]);  
-    a0 <@ Jkem1024_avx2.M._poly_csubq(a0);                                                           
+    a0 <@ Jkem768_avx2.M._poly_csubq(a0);                                                           
     i0 <- 0;                                                                                                                    
     while (i0 < 2) {                                                                                                           
       t0 <- get256 (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (8 * i0);                                                   
@@ -2481,17 +2419,17 @@ proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array1024.t) : W8.t Arr
     }                                                                                                                          
     (aux, aux_0) <- (rp, a0);                                                                                                   
     r <- Array1536.init (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0]);           
-    a <- Array1024.init (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]);         
+    a <- Array768.init (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]);         
     i <- i + 1;                                                                                                                 
   }
   return r;
  }       
 }.
 
-lemma auxtobytes_corr_h (_aw : W16.t Array1024.t):
+lemma auxtobytes_corr_h (_aw : W16.t Array768.t):
     hoare[AuxToBytes.__i_polyvec_tobytes :
-             pos_bound1024_cxq a 0 1024 2 /\ a = _aw ==> 
-    res = encode12_vec (map asint (lift_array1024 (nttpackv _aw)))]. 
+             pos_bound768_cxq a 0 768 2 /\ a = _aw ==> 
+    res = encode12_vec (map asint (lift_array768 (nttpackv _aw)))]. 
 proc;inline *.
 proc change ^while.1: (init_384_8 (fun i_0 => r.[384 * i + i_0]));1: by auto.
 proc change ^while.2: (init_256_16 (fun i_0 => a.[256 * i + i_0]));1: by auto.
@@ -2514,7 +2452,7 @@ proc change ^while.^while{2}.108 : (sliceset384_8_256 rp ((192*i0+96)*8) t3);1: 
 proc change ^while.^while{2}.109 : (sliceset384_8_256 rp ((192*i0+128)*8) ttt);1: by auto => /#.
 proc change ^while.^while{2}.110 : (sliceset384_8_256 rp ((192*i0+160)*8) t4);1: by auto => /#.
 proc change ^while.11: (init_1536_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0])  ); 1: by auto.
-proc change ^while.12: (init_1024_16  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]));1: by auto. 
+proc change ^while.12: (init_768_16  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]));1: by auto. 
 
 unroll for ^while.
 do 8!(unroll for ^while).
@@ -2542,9 +2480,9 @@ move => H1.
 apply (inj_eq Array1536.to_list Array1536.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
 have -> := post_lane_commute_in_aligned_perm (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W12.w2bits W12.bits2w  tobytes_circuit 16 12 8 perm_nttunpackv perm_nttpackv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
-smt(Array1536.size_to_list Array1024.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
-+ smt(perm_nttpackv_rng Array1024.size_to_list).
-+ move => ?; rewrite Array1024.size_to_list => ?;smt(nttpermsKi). 
+smt(Array1536.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
++ smt(perm_nttpackv_rng Array768.size_to_list).
++ move => ?; rewrite Array768.size_to_list => ?;smt(nttpermsKi). 
 + by smt().
 
 rewrite output_pack_1536_8. 
@@ -2555,7 +2493,7 @@ congr.
 rewrite /tobytes_circuit -map_comp -map_comp -map_comp /(\o) /=.
 apply (eq_from_nth witness);1: by  rewrite !size_map //;smt(size_iota).
 rewrite size_map !size_iota /max /= => i; rewrite size_to_list /= => ib; rewrite !(nth_map witness) //=;1,2:smt(size_iota).
-rewrite nth_iota 1:/# -(BVA_Top_Bindings_W12_t.oflistP (BS2Int.int2bs 12 (map asint (lift_array1024 (nttpackv a{hr}))).[i])); 1: by rewrite BS2Int.size_int2bs /#.
+rewrite nth_iota 1:/# -(BVA_Top_Bindings_W12_t.oflistP (BS2Int.int2bs 12 (map asint (lift_array768 (nttpackv a{hr}))).[i])); 1: by rewrite BS2Int.size_int2bs /#.
 congr; rewrite -BVA_Top_Bindings_W12_t.ofintP /lift_array256;rewrite !mapiE 1,2:/#.
 
 (* This is now the equivalence betwen specs.*)
@@ -2567,7 +2505,7 @@ case (to_uint (nttpackv a{hr}).[i] < 3329) => /= *.
 + rewrite  /truncateu12;congr. 
   rewrite incoeffK qE /to_sint /= /smod /= ifF 1:/#  modz_small;smt(W16.to_uint_cmp). 
 
-have := H0;rewrite /pos_bound1024_cxq qE /= => H00.
+have := H0;rewrite /pos_bound768_cxq qE /= => H00.
 
 have ? : 0 <= to_sint ((W16_sub (nttpackv a{hr}).[i] (W16.of_int 3329))) < 3329.
 +  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=;smt(size_map size_iota). 
@@ -2590,32 +2528,32 @@ inline *.
 do 9!(unroll for ^while); auto. 
 qed.
 
-lemma auxtobytes_corr (_aw : W16.t Array1024.t):
+lemma auxtobytes_corr (_aw : W16.t Array768.t):
     phoare[ AuxToBytes.__i_polyvec_tobytes :
-             pos_bound1024_cxq a 0 1024 2 /\ a = _aw ==> 
-    res = encode12_vec (map asint (lift_array1024 (nttpackv _aw)))] = 1%r
+             pos_bound768_cxq a 0 768 2 /\ a = _aw ==> 
+    res = encode12_vec (map asint (lift_array768 (nttpackv _aw)))] = 1%r
   by conseq auxtobytes_ll (auxtobytes_corr_h _aw).
 
 
-lemma polyvec_tobytes_corr (_aw : W16.t Array1024.t):
-    phoare[ Jkem1024_avx2.M.__i_polyvec_tobytes :
-             pos_bound1024_cxq a 0 1024 2 /\ a = _aw ==> 
-    res = encode12_vec (map asint (lift_array1024 (nttpackv _aw)))] = 1%r.
+lemma polyvec_tobytes_corr (_aw : W16.t Array768.t):
+    phoare[ Jkem768_avx2.M.__i_polyvec_tobytes :
+             pos_bound768_cxq a 0 768 2 /\ a = _aw ==> 
+    res = encode12_vec (map asint (lift_array768 (nttpackv _aw)))] = 1%r.
 proof.
 bypr => &m [??].
-have <- : Pr[AuxToBytes.__i_polyvec_tobytes(r{m}, _aw) @ &m : res = encode12_vec (map asint (lift_array1024 (nttpackv _aw)))] = 1%r
+have <- : Pr[AuxToBytes.__i_polyvec_tobytes(r{m}, _aw) @ &m : res = encode12_vec (map asint (lift_array768 (nttpackv _aw)))] = 1%r
  by byphoare (auxtobytes_corr _aw)  =>/=; 1:smt().
 byequiv (: ={arg} /\ a{1} = _aw /\
-             pos_bound1024_cxq a{1} 0 1024 2 ==> ={res}) => //.
+             pos_bound768_cxq a{1} 0 768 2 ==> ={res}) => //.
 proc => /=. 
 inline M._i_poly_tobytes.
 while (={r, a,i} /\ 0 <= i{1} <= 4 /\
-   pos_bound1024_cxq a{1} 0 1024 2); last by auto => /> /#.
+   pos_bound768_cxq a{1} 0 768 2); last by auto => /> /#.
 seq 3 3 : (#pre /\ ={rp,a0} /\
    pos_bound256_cxq a0{1} 0 256 1).
 + ecall {1} (poly_csubq_avx2_corr a0{1}).
   ecall {2} (poly_csubq_avx2_corr a0{2}).
-  auto => /> &1; rewrite /pos_bound1024_cxq /pos_bound256_cxq /lift_array256 /= qE /= => ????;split; 1: by smt(Array256.initiE).
+  auto => /> &1; rewrite /pos_bound768_cxq /pos_bound256_cxq /lift_array256 /= qE /= => ????;split; 1: by smt(Array256.initiE).
   move => ? rr1.
   rewrite !tP;move =>  Hrr11 Hrr12 rr2.
   rewrite !tP;move =>  Hrr21 Hrr22.
@@ -2636,7 +2574,7 @@ seq 3 3 : (#pre /\ ={rp,a0} /\
 
 wp;while (#pre /\ ={i0} /\ 0<=i0{1}<=2); last first.
 + auto => /> &2 ?????i0r????;split;1:smt().
-  rewrite /pos_bound1024_cxq => k kb; rewrite initiE 1:/# /= /#.
+  rewrite /pos_bound768_cxq => k kb; rewrite initiE 1:/# /= /#.
 
 wp -1 -1; conseq (: _ ==> ={rp}); 1: by smt().
 
@@ -2666,10 +2604,10 @@ qed.
 
 
 lemma polyvec_tobytes_equiv :
-    equiv [Jkem1024_avx2.M.__i_polyvec_tobytes ~Jkem1024.M.__i_polyvec_tobytes :
-             pos_bound1024_cxq a{1} 0 1024 2 /\
-             pos_bound1024_cxq a{2} 0 1024 2 /\
-             lift_array1024 a{1} = nttunpackv (lift_array1024 a{2}) ==> ={res} ].
+    equiv [Jkem768_avx2.M.__i_polyvec_tobytes ~Jkem768.M.__i_polyvec_tobytes :
+             pos_bound768_cxq a{1} 0 768 2 /\
+             pos_bound768_cxq a{2} 0 768 2 /\
+             lift_array768 a{1} = nttunpackv (lift_array768 a{2}) ==> ={res} ].
 proof.
 proc*.
 ecall{1} (polyvec_tobytes_corr a{1}).
@@ -2681,27 +2619,27 @@ qed.
 lemma polyvec_add2_equiv  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-  forall (_a _b : coeff Array1024.t),
-    equiv [Jkem1024_avx2.M.__polyvec_add2 ~Jkem1024.M.__polyvec_add2 :
-      _a = lift_array1024 r{2} /\
-      _b = lift_array1024 b{2} /\ signed_bound1024_cxq r{2} 0 1024 ab /\ signed_bound1024_cxq b{2} 0 1024 bb /\
-      _a = nttpackv (lift_array1024 r{1}) /\
-      _b = nttpackv (lift_array1024 b{1}) /\ signed_bound1024_cxq r{1} 0 1024 ab /\ signed_bound1024_cxq b{1} 0 1024 bb
-           ==> lift_array1024 res{1} = nttunpackv (lift_array1024  res{2}) /\
-               signed_bound1024_cxq res{1} 0 1024 (ab + bb) /\
-               signed_bound1024_cxq res{2} 0 1024 (ab + bb) 
+  forall (_a _b : coeff Array768.t),
+    equiv [Jkem768_avx2.M.__polyvec_add2 ~Jkem768.M.__polyvec_add2 :
+      _a = lift_array768 r{2} /\
+      _b = lift_array768 b{2} /\ signed_bound768_cxq r{2} 0 768 ab /\ signed_bound768_cxq b{2} 0 768 bb /\
+      _a = nttpackv (lift_array768 r{1}) /\
+      _b = nttpackv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb
+           ==> lift_array768 res{1} = nttunpackv (lift_array768  res{2}) /\
+               signed_bound768_cxq res{1} 0 768 (ab + bb) /\
+               signed_bound768_cxq res{2} 0 768 (ab + bb) 
               ].
 proof. 
 move => abb bbb _a _b;proc* => /=.
 transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_add2(r,b); }
        (={r,b} ==> ={r0})
-       (_a = lift_array1024 r{2} /\
-  _b = lift_array1024 b{2} /\
-  signed_bound1024_cxq r{2} 0 1024 ab /\
-  signed_bound1024_cxq b{2} 0 1024 bb /\
-  _a = nttpackv (lift_array1024 r{1}) /\
-  _b = nttpackv (lift_array1024 b{1}) /\ signed_bound1024_cxq r{1} 0 1024 ab /\ signed_bound1024_cxq b{1} 0 1024 bb   ==> 
-      lift_array1024 r0{1} = nttunpackv (lift_array1024 r0{2}) /\ signed_bound1024_cxq r0{1} 0 1024 (ab + bb) /\ signed_bound1024_cxq r0{2} 0 1024 (ab + bb)); 1,2: by smt().
+       (_a = lift_array768 r{2} /\
+  _b = lift_array768 b{2} /\
+  signed_bound768_cxq r{2} 0 768 ab /\
+  signed_bound768_cxq b{2} 0 768 bb /\
+  _a = nttpackv (lift_array768 r{1}) /\
+  _b = nttpackv (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
+      lift_array768 r0{1} = nttunpackv (lift_array768 r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
   + symmetry. call prevec_eq_polyvec_add2 => //.
 have corr1 := (polvec_add_corr (nttunpackv _a) (nttunpackv _b) ab bb abb bbb). call {1} corr1.
 have corr2 := (polyvec_add_corr _a _b ab bb abb bbb); call {2} corr2.
@@ -2710,10 +2648,10 @@ auto => />.
 move => &1 &2 ????->->??rr?rval; do split; 1,2: by rewrite packvK.  
 move => ??rr0?r0val.
 rewrite tP => k kb.
-rewrite /(lift_array1024 rr0) mapiE //= r0val // !packvK.
-have  -> : lift_array1024 rr = 
-   Array1024.init (fun k => (nttpackv (lift_array1024 r{1})).[k] + (nttpackv (lift_array1024 b{1})).[k])
- by rewrite tP => kk kkb; rewrite initiE //= /(lift_array1024 rr) mapiE //= /#.
+rewrite /(lift_array768 rr0) mapiE //= r0val // !packvK.
+have  -> : lift_array768 rr = 
+   Array768.init (fun k => (nttpackv (lift_array768 r{1})).[k] + (nttpackv (lift_array768 b{1})).[k])
+ by rewrite tP => kk kkb; rewrite initiE //= /(lift_array768 rr) mapiE //= /#.
 rewrite /nttunpackv /nttpackv initiE //=.
 case (0<=k<256).
 + move => *.
@@ -2783,50 +2721,50 @@ qed.
 lemma polyvec_add2_equiv_noperm  (ab bb : int):
     0 <= ab && ab <= 6 =>
     0 <= bb && bb <= 3 =>
-  forall (_a _b : coeff Array1024.t),
-    equiv [Jkem1024_avx2.M.__polyvec_add2 ~Jkem1024.M.__polyvec_add2 :
-      _a = lift_array1024 r{2} /\
-      _b = lift_array1024 b{2} /\ signed_bound1024_cxq r{2} 0 1024 ab /\ signed_bound1024_cxq b{2} 0 1024 bb /\
-      _a = lift_array1024 r{1} /\
-      _b = lift_array1024 b{1} /\ signed_bound1024_cxq r{1} 0 1024 ab /\ signed_bound1024_cxq b{1} 0 1024 bb
-           ==> lift_array1024 res{1} = lift_array1024  res{2} /\
-               signed_bound1024_cxq res{1} 0 1024 (ab + bb) /\
-               signed_bound1024_cxq res{2} 0 1024 (ab + bb) 
+  forall (_a _b : coeff Array768.t),
+    equiv [Jkem768_avx2.M.__polyvec_add2 ~Jkem768.M.__polyvec_add2 :
+      _a = lift_array768 r{2} /\
+      _b = lift_array768 b{2} /\ signed_bound768_cxq r{2} 0 768 ab /\ signed_bound768_cxq b{2} 0 768 bb /\
+      _a = lift_array768 r{1} /\
+      _b = lift_array768 b{1} /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb
+           ==> lift_array768 res{1} = lift_array768  res{2} /\
+               signed_bound768_cxq res{1} 0 768 (ab + bb) /\
+               signed_bound768_cxq res{2} 0 768 (ab + bb) 
               ].
 proof. 
 move => abb bbb _a _b;proc* => /=.
 transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_add2(r,b); }
        (={r,b} ==> ={r0})
-       (_a = lift_array1024 r{2} /\
-  _b = lift_array1024 b{2} /\
-  signed_bound1024_cxq r{2} 0 1024 ab /\
-  signed_bound1024_cxq b{2} 0 1024 bb /\
-  _a =  (lift_array1024 r{1}) /\
-  _b =  (lift_array1024 b{1}) /\ signed_bound1024_cxq r{1} 0 1024 ab /\ signed_bound1024_cxq b{1} 0 1024 bb   ==> 
-      lift_array1024 r0{1} = (lift_array1024 r0{2}) /\ signed_bound1024_cxq r0{1} 0 1024 (ab + bb) /\ signed_bound1024_cxq r0{2} 0 1024 (ab + bb)); 1,2: by smt().
+       (_a = lift_array768 r{2} /\
+  _b = lift_array768 b{2} /\
+  signed_bound768_cxq r{2} 0 768 ab /\
+  signed_bound768_cxq b{2} 0 768 bb /\
+  _a =  (lift_array768 r{1}) /\
+  _b =  (lift_array768 b{1}) /\ signed_bound768_cxq r{1} 0 768 ab /\ signed_bound768_cxq b{1} 0 768 bb   ==> 
+      lift_array768 r0{1} = (lift_array768 r0{2}) /\ signed_bound768_cxq r0{1} 0 768 (ab + bb) /\ signed_bound768_cxq r0{2} 0 768 (ab + bb)); 1,2: by smt().
   + symmetry. call prevec_eq_polyvec_add2 => //.
 have corr1 := (polvec_add_corr ( _a) ( _b) ab bb abb bbb). call {1} corr1.
 have corr2 := (polyvec_add_corr _a _b ab bb abb bbb); call {2} corr2.
 
 auto => />.  
 move => &1 &2 ????????rr? H rval? H0. 
-move : H H0; rewrite /lift_array1024 !tP => ? ? k kb. 
-rewrite !mapiE;smt(Array1024.mapiE).
+move : H H0; rewrite /lift_array768 !tP => ? ? k kb. 
+rewrite !mapiE;smt(Array768.mapiE).
 qed.
 
 lemma polyvec_reduce_equiv _a :
-    equiv [Jkem1024_avx2.M.__polyvec_reduce ~Jkem1024.M.__polyvec_reduce :
-       _a  = lift_array1024 r{2} /\  _a  = nttpackv (lift_array1024 r{1})  ==>
-       (forall k, 0 <= k < 1024 => bpos16 res{1}.[k] (2*q)) /\
-       (forall k, 0 <= k < 1024 => bpos16 res{2}.[k] (2*q)) /\
-              lift_array1024 res{1} = nttunpackv (lift_array1024 res{2}) ].
+    equiv [Jkem768_avx2.M.__polyvec_reduce ~Jkem768.M.__polyvec_reduce :
+       _a  = lift_array768 r{2} /\  _a  = nttpackv (lift_array768 r{1})  ==>
+       (forall k, 0 <= k < 768 => bpos16 res{1}.[k] (2*q)) /\
+       (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
+              lift_array768 res{1} = nttunpackv (lift_array768 res{2}) ].
 proc*. 
 transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})
-       (_a = lift_array1024 r{2} /\ _a = nttpackv (lift_array1024 r{1})   ==> 
-      (forall (k : int), 0 <= k && k < 1024 => bpos16 r0{1}.[k] (2 * q)) /\
-  (forall (k : int), 0 <= k && k < 1024 => bpos16 r0{2}.[k] (2 * q)) /\
-  lift_array1024 r0{1} = nttunpackv (lift_array1024  r0{2})); 1,2: by smt().
+       (_a = lift_array768 r{2} /\ _a = nttpackv (lift_array768 r{1})   ==> 
+      (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
+  (forall (k : int), 0 <= k && k < 768 => bpos16 r0{2}.[k] (2 * q)) /\
+  lift_array768 r0{1} = nttunpackv (lift_array768  r0{2})); 1,2: by smt().
   + symmetry. call prevec_eq_polyvec_reduce => //.
 have corr1 := (polvec_reduce_corr (nttunpackv _a)). call {1} corr1.
 have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
@@ -2839,18 +2777,18 @@ qed.
 
 
 lemma polyvec_reduce_equiv_noperm _a :
-    equiv [Jkem1024_avx2.M.__polyvec_reduce ~Jkem1024.M.__polyvec_reduce :
-       _a  = lift_array1024 r{2} /\  _a  = lift_array1024 r{1}  ==>
-       (forall k, 0 <= k < 1024 => bpos16 res{1}.[k] (2*q)) /\
-       (forall k, 0 <= k < 1024 => bpos16 res{2}.[k] (2*q)) /\
-              lift_array1024 res{1} =  lift_array1024 res{2} ].
+    equiv [Jkem768_avx2.M.__polyvec_reduce ~Jkem768.M.__polyvec_reduce :
+       _a  = lift_array768 r{2} /\  _a  = lift_array768 r{1}  ==>
+       (forall k, 0 <= k < 768 => bpos16 res{1}.[k] (2*q)) /\
+       (forall k, 0 <= k < 768 => bpos16 res{2}.[k] (2*q)) /\
+              lift_array768 res{1} =  lift_array768 res{2} ].
 proc*. 
 transitivity {1} {r0 <@ MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_reduce(r); }
        (={r} ==> ={r0})
-       (_a = lift_array1024 r{2} /\ _a = (lift_array1024 r{1})   ==> 
-      (forall (k : int), 0 <= k && k < 1024 => bpos16 r0{1}.[k] (2 * q)) /\
-  (forall (k : int), 0 <= k && k < 1024 => bpos16 r0{2}.[k] (2 * q)) /\
-  lift_array1024 r0{1} =  (lift_array1024  r0{2})); 1,2: by smt().
+       (_a = lift_array768 r{2} /\ _a = (lift_array768 r{1})   ==> 
+      (forall (k : int), 0 <= k && k < 768 => bpos16 r0{1}.[k] (2 * q)) /\
+  (forall (k : int), 0 <= k && k < 768 => bpos16 r0{2}.[k] (2 * q)) /\
+  lift_array768 r0{1} =  (lift_array768  r0{2})); 1,2: by smt().
   + symmetry. call prevec_eq_polyvec_reduce => //.
 have corr1 := (polvec_reduce_corr ( _a)). call {1} corr1.
 have corr2 := (polyvec_reduce_corr _a); call {2} corr2.
@@ -2859,13 +2797,13 @@ auto => /> /#.
 qed.
 
 equiv pointwiseequiv : 
- Jkem1024_avx2.M.__polyvec_pointwise_acc ~  Jkem1024.M.__polyvec_pointwise_acc :
-    lift_array1024 arg{1}.`2 = nttunpackv (lift_array1024 arg{2}.`1) /\
-    lift_array1024 arg{1}.`3 = nttunpackv (lift_array1024 arg{2}.`2) /\
-    signed_bound1024_cxq arg{1}.`2 0 1024 2 /\
-    signed_bound1024_cxq arg{1}.`3 0 1024 2 /\
-    signed_bound1024_cxq arg{2}.`1 0 1024 2 /\
-    signed_bound1024_cxq arg{2}.`2 0 1024 2
+ Jkem768_avx2.M.__polyvec_pointwise_acc ~  Jkem768.M.__polyvec_pointwise_acc :
+    lift_array768 arg{1}.`2 = nttunpackv (lift_array768 arg{2}.`1) /\
+    lift_array768 arg{1}.`3 = nttunpackv (lift_array768 arg{2}.`2) /\
+    signed_bound768_cxq arg{1}.`2 0 768 2 /\
+    signed_bound768_cxq arg{1}.`3 0 768 2 /\
+    signed_bound768_cxq arg{2}.`1 0 768 2 /\
+    signed_bound768_cxq arg{2}.`2 0 768 2
     ==> 
     lift_array256 res{1} = nttunpack (lift_array256 res{2}) /\
     signed_bound_cxq res{1} 0 256 4 /\ 
@@ -2883,20 +2821,20 @@ move => &1 &2 H H0 H1 H2 H3 H4. do split.
   rewrite /nttunpack !mapiE //= 1:/# !initiE//=.
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
 + move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
   move : (H0 k _); 1: smt(). rewrite !initiE//= 1:/# kb /=.
   rewrite /nttunpack !mapiE //= 1:/# !initiE//=.
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
-+ move : H1; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
   move : (H1 k _); 1: smt(). rewrite !initiE//=.
-move : H2; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
+move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
 move : (H2 k _); 1: smt(). rewrite !initiE//=.
-+ move : H3; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
++ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
   move : (H3 k _); 1: smt(). rewrite !initiE//=.
-move : H4; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
+move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
 move : (H4 k _); 1: smt(). rewrite !initiE//=.
 
 unroll for {1} 2; unroll for {2} 2.
@@ -2911,20 +2849,20 @@ move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split.
   rewrite ifF 1:/# /nttunpack !mapiE //= 1:/# ifT 1:/# !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
 + move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
   move : (H0 (256+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
   rewrite ifF 1:/# /nttunpack !mapiE //= 1:/# ifT 1:/# !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
-+ move : H1; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
   move : (H1 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H2; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
+move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
 move : (H2 k _); 1: smt(). rewrite !initiE//=;1: smt().
-+ move : H3; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
++ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
   move : (H3 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H4; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
+move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
 move : (H4 k _); 1: smt(). rewrite !initiE//=;1:smt().
 
 seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\ 
@@ -2951,20 +2889,20 @@ move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split.
   rewrite ifF 1:/# /= ifF 1:/# ifT 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
 + move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
   move : (H0 (512+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
   rewrite ifF 1:/# /= ifF 1:/# ifT 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
-+ move : H1; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
   move : (H1 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H2; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
+move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
 move : (H2 k _); 1: smt(). rewrite !initiE//=;1: smt().
-+ move : H3; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
++ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
   move : (H3 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H4; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
+move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
 move : (H4 k _); 1: smt(). rewrite !initiE//=;1: smt().
 
 
@@ -2992,20 +2930,20 @@ move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split.
   rewrite ifF 1:/# /= ifF 1:/# ifF 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
 + move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
   move : (H0 (768+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
   rewrite ifF 1:/# /= ifF 1:/# ifF 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array1024;smt(Array1024.mapiE nttunpack_bnd Array256.allP).
-+ move : H1; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
+  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
++ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
   move : (H1 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H2; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
+move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
 move : (H2 k _); 1: smt(). rewrite !initiE//=;1: smt().
-+ move : H3; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
++ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
   move : (H3 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H4; rewrite /signed_bound1024_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
+move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
 move : (H4 k _); 1: smt(). rewrite !initiE//=;1: smt().
 
 
@@ -3032,13 +2970,13 @@ smt().
 qed.
 
 equiv nttequiv :
-Jkem1024_avx2.M.__polyvec_ntt ~Jkem1024.M.__polyvec_ntt : 
-   lift_array1024 arg{1} = lift_array1024 arg{2} /\ 
-   signed_bound1024_cxq arg{1} 0 1024 2 /\ 
-   signed_bound1024_cxq arg{2} 0 1024 2 ==>
-   lift_array1024 res{1} = nttunpackv (lift_array1024 res{2}) /\ 
-   pos_bound1024_cxq res{1} 0 1024 2 /\ 
-   pos_bound1024_cxq res{2} 0 1024 2.
+Jkem768_avx2.M.__polyvec_ntt ~Jkem768.M.__polyvec_ntt : 
+   lift_array768 arg{1} = lift_array768 arg{2} /\ 
+   signed_bound768_cxq arg{1} 0 768 2 /\ 
+   signed_bound768_cxq arg{2} 0 768 2 ==>
+   lift_array768 res{1} = nttunpackv (lift_array768 res{2}) /\ 
+   pos_bound768_cxq res{1} 0 768 2 /\ 
+   pos_bound768_cxq res{2} 0 768 2.
 proc *. 
 ecall {2} (polyvec_ntt_corr r{2}) => /=.
 conseq />;1: smt().
@@ -3048,11 +2986,11 @@ have  : lift_polyvec (nttpackv r) = lift_polyvec r2.
 + rewrite -H1 -H;congr.
   rewrite /lift_polyvec KMatrix.Vector.eq_vectorP => k kb.
   rewrite !KMatrix.Vector.offunvE //=.
-  rewrite /lift_array1024 tP in HH.
+  rewrite /lift_array768 tP in HH.
   rewrite /subarray256 /lift_array256 tP => i ib.
   move : (HH (k*256+i) _); 1: by smt().
   rewrite !mapiE //= 1,2: /# !initiE //= /#.
-rewrite /lift_polyvec /lift_array1024 tP KMatrix.Vector.eq_vectorP => H3 k kb. 
+rewrite /lift_polyvec /lift_array768 tP KMatrix.Vector.eq_vectorP => H3 k kb. 
 rewrite !mapiE //=.
 case (0<=k<256).
 + move => kbb; move : (H3 0 _) => //; rewrite !KMatrix.Vector.offunvE //=.
@@ -3117,7 +3055,7 @@ move : (Hidx (k-768) _)=>//; smt(mem_iota).
 qed.
 
 equiv polyinvnttequiv :
-Jkem1024_avx2.M._poly_invntt ~Jkem1024.M._poly_invntt : 
+Jkem768_avx2.M._poly_invntt ~Jkem768.M._poly_invntt : 
    lift_array256 arg{1} = nttunpack (lift_array256 arg{2}) /\ 
    signed_bound_cxq arg{1} 0 256 4 /\ 
    signed_bound_cxq arg{2} 0 256 4 ==>
@@ -3131,9 +3069,9 @@ ecall{1} (poly_invntt_avx2_corr rp{2}) => /=.
 auto => /> &1 &2. rewrite lift_nttpack => -> H1 H2. rewrite nttunpackK //= => r <- H3. move => r0 <- H4. 
 rewrite /scale /map /lift_array256 /R tP => /> i Hi1 Hi2. rewrite !initiE //=. rewrite Zq.ComRing.mulrC //. qed.
 
-lemma signed_bound1024_cxq_small r (i j:int) :
-  i <= j => signed_bound1024_cxq r 0 1024 i => signed_bound1024_cxq r 0 1024 j.
-rewrite /signed_bound1024_cxq => />Hij H k Hk1 Hk2. move :(H k). rewrite Hk1 Hk2 => />. smt(). qed.
+lemma signed_bound768_cxq_small r (i j:int) :
+  i <= j => signed_bound768_cxq r 0 768 i => signed_bound768_cxq r 0 768 j.
+rewrite /signed_bound768_cxq => />Hij H k Hk1 Hk2. move :(H k). rewrite Hk1 Hk2 => />. smt(). qed.
 
 lemma eq_vectorP4 :
       forall (v1 v2 : PolyVec.polyvec),
@@ -3141,19 +3079,19 @@ lemma eq_vectorP4 :
 smt(KMatrix.Vector.eq_vectorP). qed.
 
 equiv invnttequiv :
-Jkem1024_avx2.M.__polyvec_invntt ~Jkem1024.M.__polyvec_invntt : 
-   lift_array1024 arg{1} = nttunpackv (lift_array1024 arg{2}) /\ 
-   signed_bound1024_cxq arg{1} 0 1024 4 /\ 
-   signed_bound1024_cxq arg{2} 0 1024 4 ==>
-   lift_array1024 res{1} = lift_array1024 res{2} /\ 
-   signed_bound1024_cxq res{1} 0 1024 1 /\ 
-   signed_bound1024_cxq res{2} 0 1024 1.
+Jkem768_avx2.M.__polyvec_invntt ~Jkem768.M.__polyvec_invntt : 
+   lift_array768 arg{1} = nttunpackv (lift_array768 arg{2}) /\ 
+   signed_bound768_cxq arg{1} 0 768 4 /\ 
+   signed_bound768_cxq arg{2} 0 768 4 ==>
+   lift_array768 res{1} = lift_array768 res{2} /\ 
+   signed_bound768_cxq res{1} 0 768 1 /\ 
+   signed_bound768_cxq res{2} 0 768 1.
 proc *.
 ecall {2} (polyvec_invntt_corr r{2}) => /=.
 conseq />;1: smt().
 ecall {1} (polyvec_invntt_avx2_corr r{2}) => /=. 
 auto => /> &1 &2 -> Hm1 Hm2. rewrite unpackvK //= => r Hr1 Hr2 s Hs1 Hs2.
-rewrite /lift_array1024 /map tP => />j Hj1 Hj2. rewrite !initiE //=.
+rewrite /lift_array768 /map tP => />j Hj1 Hj2. rewrite !initiE //=.
 move :Hr1; rewrite !mapvE /lift_polyvec eq_vectorP4 !KMatrix.Vector.offunvE //=. 
 rewrite /lift_array256 /subarray256 /map !tP -!andaE. 
 apply andaW. 
