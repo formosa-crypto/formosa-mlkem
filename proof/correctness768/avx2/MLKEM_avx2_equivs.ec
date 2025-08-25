@@ -443,7 +443,6 @@ qed.
 
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
 
-print compress_alt_large.
 op compress10_circuit(a : W16.t) : W10.t = 
    if (a \ult W16.of_int 3329) then  
    truncate64_10 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 10) + W64.of_int 1664) * W64.of_int 1290167) (W64.of_int 32))
@@ -759,7 +758,6 @@ cfold ^i0<-.
 cfold ^i1<-. 
 wp -4. 
 bdep 16 10 [_aw] [a] [rp] compress10_circuit pcond_reduced. 
-
 
 
 (* BDEP pre conseq *)
