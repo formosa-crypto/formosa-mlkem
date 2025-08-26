@@ -9660,149 +9660,158 @@ module M = {
                               pk:W8.t Array1184.t, randomnessp:W8.t Array32.t) : 
   W8.t Array1088.t * W8.t Array32.t = {
     var aux:W8.t Array32.t;
-    var inc:int;
-    var s_pk:W8.t Array1184.t;
-    var s_ct:W8.t Array1088.t;
-    var s_shk:W8.t Array32.t;
-    var i:int;
-    var t64:W64.t;
     var buf:W8.t Array64.t;
     var kr:W8.t Array64.t;
     buf <- witness;
     kr <- witness;
-    s_ct <- witness;
-    s_pk <- witness;
-    s_shk <- witness;
-    s_pk <- pk;
-    s_ct <- ct;
-    s_shk <- shk;
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => randomnessp.[i_0])) i);
-      buf <-
-      (Array64.init
-      (WArray64.get8
-      (WArray64.set64 (WArray64.init8 (fun i_0 => buf.[i_0])) i t64)));
-      i <- (i + 1);
-    }
-    aux <@ _sha3_256A_A1184 ((Array32.init (fun i_0 => buf.[(32 + i_0)])),
-    pk);
+    (* Erased call to spill *)
     buf <-
     (Array64.init
-    (fun i_0 => (if (32 <= i_0 < (32 + 32)) then aux.[(i_0 - 32)] else 
-                buf.[i_0]))
+    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
+                                           (fun i => (get8
+                                                     (WArray32.init64
+                                                     (fun i => (copy_64
+                                                               (Array4.init
+                                                               (fun i => 
+                                                               (get64
+                                                               (
+                                                               WArray32.init8
+                                                               (fun i => 
+                                                               randomnessp.[
+                                                               i])) i)))).[
+                                                               i])
+                                                     ) i))
+                                           ).[(i - 0)] else buf.[i]))
     );
+    aux <@ _sha3_256A_A1184 ((Array32.init (fun i => buf.[(32 + i)])), pk);
+    buf <-
+    (Array64.init
+    (fun i => (if (32 <= i < (32 + 32)) then aux.[(i - 32)] else buf.[i])));
     kr <@ _sha3_512A_A64 (kr, buf);
-    pk <- s_pk;
-    ct <@ __indcpa_enc (ct, (Array32.init (fun i_0 => buf.[(0 + i_0)])), 
-    pk, (Array32.init (fun i_0 => kr.[(32 + i_0)])));
-    shk <- s_shk;
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <- (get64 (WArray64.init8 (fun i_0 => kr.[i_0])) i);
-      shk <-
-      (Array32.init
-      (WArray32.get8
-      (WArray32.set64 (WArray32.init8 (fun i_0 => shk.[i_0])) i t64)));
-      i <- (i + 1);
-    }
+    (* Erased call to unspill *)
+    ct <@ __indcpa_enc (ct, (Array32.init (fun i => buf.[(0 + i)])), 
+    pk, (Array32.init (fun i => kr.[(32 + i)])));
+    (* Erased call to unspill *)
+    shk <-
+    (Array32.init
+    (fun i => (get8
+              (WArray32.init64
+              (fun i => (copy_64
+                        (Array4.init
+                        (fun i => (get64
+                                  (WArray32.init8
+                                  (fun i => (Array32.init
+                                            (fun i => kr.[(0 + i)])).[
+                                            i])
+                                  ) i))
+                        )).[i])
+              ) i))
+    );
     return (ct, shk);
   }
   proc __crypto_kem_dec_jazz (shk:W8.t Array32.t, ct:W8.t Array1088.t,
                               sk:W8.t Array2400.t) : W8.t Array32.t = {
     var aux:W8.t Array32.t;
-    var inc:int;
-    var s_shk:W8.t Array32.t;
-    var s_ct:W8.t Array1088.t;
-    var s_sk:W8.t Array2400.t;
+    var zp_ct:W8.t Array1120.t;
     var buf:W8.t Array64.t;
-    var i:int;
-    var t64:W64.t;
     var kr:W8.t Array64.t;
     var ctc:W8.t Array1088.t;
     var cnd:W64.t;
-    var s_cnd:W64.t;
-    var zp_ct:W8.t Array1120.t;
     buf <- witness;
     ctc <- witness;
     kr <- witness;
-    s_ct <- witness;
-    s_shk <- witness;
-    s_sk <- witness;
     zp_ct <- witness;
-    s_shk <- shk;
-    s_ct <- ct;
-    s_sk <-
-    (Array2400.init
-    (fun i_0 => (get8
-                (WArray2400.init64
-                (fun i_0 => (copy_64
-                            (Array300.init
-                            (fun i_0 => (get64
-                                        (WArray2400.init8
-                                        (fun i_0 => sk.[i_0])) i_0))
-                            )).[i_0])
-                ) i_0))
+    (* Erased call to spill *)
+    zp_ct <-
+    (Array1120.init
+    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
+                                           (fun i => (get8
+                                                     (WArray32.init64
+                                                     (fun i => (copy_64
+                                                               (Array4.init
+                                                               (fun i => 
+                                                               (get64
+                                                               (
+                                                               WArray32.init8
+                                                               (fun i => 
+                                                               (Array32.init
+                                                               (fun i => 
+                                                               sk.[((
+                                                                    (
+                                                                    (
+                                                                    (3 * 384) +
+                                                                    (
+                                                                    (3 * 384) +
+                                                                    32)) +
+                                                                    (2 * 32)) -
+                                                                    32) +
+                                                                   i)])
+                                                               ).[i])) 
+                                                               i)))).[
+                                                               i])
+                                                     ) i))
+                                           ).[(i - 0)] else zp_ct.[i]))
     );
-    aux <@ __indcpa_dec ((Array32.init (fun i_0 => buf.[(0 + i_0)])), 
-    ct, (Array1152.init (fun i_0 => s_sk.[(0 + i_0)])));
+    aux <@ __indcpa_dec ((Array32.init (fun i => buf.[(0 + i)])), ct,
+    (Array1152.init (fun i => sk.[(0 + i)])));
     buf <-
     (Array64.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 32)) then aux.[(i_0 - 0)] else buf.[i_0]))
+    (fun i => (if (0 <= i < (0 + 32)) then aux.[(i - 0)] else buf.[i])));
+    buf <-
+    (Array64.init
+    (fun i => (if (32 <= i < (32 + 32)) then (Array32.init
+                                             (fun i => (get8
+                                                       (WArray32.init64
+                                                       (fun i => (copy_64
+                                                                 (Array4.init
+                                                                 (fun i => 
+                                                                 (get64
+                                                                 (
+                                                                 WArray32.init8
+                                                                 (fun i => 
+                                                                 (
+                                                                 Array32.init
+                                                                 (fun i => 
+                                                                 sk.[
+                                                                 (((3 * 384) +
+                                                                  ((3 * 384) +
+                                                                  32)) +
+                                                                 i)])).[
+                                                                 i])) 
+                                                                 i)))).[
+                                                                 i])
+                                                       ) i))
+                                             ).[(i - 32)] else buf.[i]))
     );
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <-
-      (get64_direct (WArray2400.init8 (fun i_0 => s_sk.[i_0]))
-      ((i + (((((3 * 384) + ((3 * 384) + 32)) + (2 * 32)) - (2 * 32)) %/ 8)) *
-      8));
-      buf <-
-      (Array64.init
-      (WArray64.get8
-      (WArray64.set64_direct (WArray64.init8 (fun i_0 => buf.[i_0]))
-      ((i + (32 %/ 8)) * 8) t64)));
-      i <- (i + 1);
-    }
     kr <@ _sha3_512A_A64 (kr, buf);
-    ctc <@ __indcpa_enc (ctc, (Array32.init (fun i_0 => buf.[(0 + i_0)])),
-    (Array1184.init (fun i_0 => s_sk.[((3 * 384) + i_0)])),
-    (Array32.init (fun i_0 => kr.[(32 + i_0)])));
-    ct <- s_ct;
+    ctc <@ __indcpa_enc (ctc, (Array32.init (fun i => buf.[(0 + i)])),
+    (Array1184.init (fun i => sk.[((3 * 384) + i)])),
+    (Array32.init (fun i => kr.[(32 + i)])));
+    (* Erased call to unspill *)
     cnd <@ __verify (ct, ctc);
-    s_cnd <- cnd;
-    ct <- s_ct;
-    inc <- (32 %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <-
-      (get64_direct (WArray2400.init8 (fun i_0 => s_sk.[i_0]))
-      ((i + (((((3 * 384) + ((3 * 384) + 32)) + (2 * 32)) - 32) %/ 8)) * 8));
-      zp_ct <-
-      (Array1120.init
-      (WArray1120.get8
-      (WArray1120.set64_direct (WArray1120.init8 (fun i_0 => zp_ct.[i_0]))
-      (8 * i) t64)));
-      i <- (i + 1);
-    }
-    inc <- (((3 * 320) + 128) %/ 8);
-    i <- 0;
-    while ((i < inc)) {
-      t64 <- (get64_direct (WArray1088.init8 (fun i_0 => ct.[i_0])) (i * 8));
-      zp_ct <-
-      (Array1120.init
-      (WArray1120.get8
-      (WArray1120.set64_direct (WArray1120.init8 (fun i_0 => zp_ct.[i_0]))
-      ((i + (32 %/ 8)) * 8) t64)));
-      i <- (i + 1);
-    }
-    shk <- s_shk;
+    zp_ct <-
+    (Array1120.init
+    (fun i => (if (32 <= i < (32 + 1088)) then (Array1088.init
+                                               (fun i => (get8
+                                                         (WArray1088.init64
+                                                         (fun i => (copy_64
+                                                                   (
+                                                                   Array136.init
+                                                                   (fun i => 
+                                                                   (get64
+                                                                   (
+                                                                   WArray1088.init8
+                                                                   (fun i => 
+                                                                   ct.[
+                                                                   i])) 
+                                                                   i)))).[
+                                                                   i])
+                                                         ) i))
+                                               ).[(i - 32)] else zp_ct.[i]))
+    );
+    (* Erased call to unspill *)
     shk <@ _shake256_A32__A1120 (shk, zp_ct);
-    s_shk <- shk;
-    cnd <- s_cnd;
-    shk <@ __cmov (shk, (Array32.init (fun i_0 => kr.[(0 + i_0)])), cnd);
+    shk <@ __cmov (shk, (Array32.init (fun i => kr.[(0 + i)])), cnd);
     return shk;
   }
   proc jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand (public_key:W8.t Array1184.t,
