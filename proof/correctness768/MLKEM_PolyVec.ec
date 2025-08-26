@@ -1299,7 +1299,7 @@ split.
 
 move => [#] _a1_ddef _b1_ddef signed_bound_a1 signed_bound_b1 r1 [#] signed_bound_r1 a1tb1_eq_r1.
 
-split; 1: by rewrite a0tb0_eq_r0 a1tb1_eq_r1 //=.
+split; 1: by rewrite a0tb0_eq_r0 a1tb1_eq_r1 //= /#.
 
 move => [#] a0tb0f_eq_r0 a1tb1f_eq_r1 signed_bound_res0 signed_bound_res1 res2 [#] res2bound res2val.
 

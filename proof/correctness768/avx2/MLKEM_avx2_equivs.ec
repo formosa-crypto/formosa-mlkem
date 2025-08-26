@@ -442,12 +442,11 @@ qed.
 
 
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
-
 op compress10_circuit(a : W16.t) : W10.t = 
    if (a \ult W16.of_int 3329) then  
-   truncate64_10 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 10) + W64.of_int 1664) * W64.of_int 1290167) (W64.of_int 32))
+   truncate64_10 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32))
    else 
-   truncate64_10 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 10) + W64.of_int 1664) * W64.of_int 1290167) (W64.of_int 32)).
+   truncate64_10 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32)).
 
 abbrev keepodd10 = (W32.of_int 67043328).
 abbrev keepeven10 = (W32.of_int 1023).
@@ -757,7 +756,6 @@ unroll for ^while.
 cfold ^i0<-. 
 cfold ^i1<-. 
 wp -4. 
-admitted. (* 
 bdep 16 10 [_aw] [a] [rp] compress10_circuit pcond_reduced. 
 
 
@@ -778,24 +776,24 @@ move => H1.
 
 apply (inj_eq Array960.to_list Array960.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
-have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list (Array960.init ("_.[_]" rr))) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W11.w2bits W11.bits2w  compress11_circuit 16 11 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
-    smt(Array960.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W11_t.oflistP).
+have -> := post_lane_commute_in_aligned (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W10.w2bits W10.bits2w  compress10_circuit 16 10 8 _ _ _ _ _ _ _ _ _ _ _ _ H1;1..12:
+    smt(Array960.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W10_t.oflistP).
 
 rewrite output_pack_960_8. 
-+ rewrite (EclibExtra.size_flatten' 11);1: smt(mapP BS2Int.size_int2bs).
++ rewrite (EclibExtra.size_flatten' 10);1: smt(mapP BS2Int.size_int2bs).
   by rewrite size_map size_to_list /=.
 
 congr.
-rewrite /compress11_circuit /compress_polyvec /fromarray256  -map_comp -map_comp -map_comp /(\o) /=.  
+rewrite /compress10_circuit /compress_polyvec /fromarray256  -map_comp -map_comp -map_comp /(\o) /=.  
 apply (eq_from_nth witness); 1: by rewrite !size_map //.
 rewrite size_map size_iota /max /= => i ib; rewrite !(nth_map witness) //=;1,2:smt(size_iota).
 rewrite nth_iota 1:/# mapiE 1:/# initiE 1:/# /= /lift_polyvec /=.
 case (0<=i<256).
 + move => ? /=.
-  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 0)).[i]))); 1: by rewrite BS2Int.size_int2bs /#.
-congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
+  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W10_t.oflistP (int2bs 10 (compress 10 (lift_array256 (subarray256 a{hr} 0)).[i]))); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W10_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
 
-rewrite /truncate64_11 to_uint_eq.
+rewrite /truncate64_10 to_uint_eq.
 (* This is now the equivalence betwen specs. It's made slightly more verbose
    because the impl circuit is only proved correct wrt compress for values
    in the q range. *)
@@ -820,8 +818,8 @@ by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#.
 
 case (256<=i<512).
 + move => ?? /=.
-  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 1)).[i-256]))); 1: by rewrite BS2Int.size_int2bs /#.
-congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
+  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W10_t.oflistP (int2bs 10 (compress 10 (lift_array256 (subarray256 a{hr} 1)).[i-256]))); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W10_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
 
 rewrite /truncate64_11 to_uint_eq.
 (* This is now the equivalence betwen specs. It's made slightly more verbose
@@ -846,12 +844,11 @@ have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (
 rewrite -Fq.compress_impl_large //=;1:by smt().
 by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
 
-case (512<=i<768).
-+ move => ??? /=.
-  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 2)).[i-512]))); 1: by rewrite BS2Int.size_int2bs /#.
-congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
++ move => ?? /=.
+  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W10_t.oflistP (int2bs 10 (compress 10 (lift_array256 (subarray256 a{hr} 2)).[i-512]))); 1: by rewrite BS2Int.size_int2bs /#.
+congr; rewrite -BVA_Top_Bindings_W10_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
 
-rewrite /truncate64_11 to_uint_eq.
+rewrite /truncate64_10 to_uint_eq.
 (* This is now the equivalence betwen specs. It's made slightly more verbose
    because the impl circuit is only proved correct wrt compress for values
    in the q range. *)
@@ -874,35 +871,7 @@ have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (
 rewrite -Fq.compress_impl_large //=;1:by smt().
 by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
 
- move => ??? /=.
-  rewrite  !getvE offunvE 1:/# /= -(BVA_Top_Bindings_W11_t.oflistP (int2bs 11 (compress 11 (lift_array256 (subarray256 a{hr} 3)).[i-768]))); 1: by rewrite BS2Int.size_int2bs /#.
-congr; rewrite -BVA_Top_Bindings_W11_t.ofintP /lift_array256 /subarray256 !mapiE 1:/# /= initiE 1:/# /=. 
-
-rewrite /truncate64_10 to_uint_eq.
-(* This is now the equivalence betwen specs. It's made slightly more verbose
-   because the impl circuit is only proved correct wrt compress for values
-   in the q range. *)
-rewrite ultE /=. 
-case (to_uint a{hr}.[i] < 3329) => /= *.
-+ rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).     
-  rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
-have := H0;rewrite /pos_bound768_cxq qE /= => H00.
-
-have ? : 0 <= to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) < 3329.
-+  rewrite /bpos16 to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
-
-have ? : to_sint ((W16_sub a{hr}.[i] (W16.of_int 3329))) = to_sint a{hr}.[i] -  3329.
-+  rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota). 
-   by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
-
-have -> : (incoeff (to_sint a{hr}.[i])) = (incoeff (to_sint (W16_sub a{hr}.[i] (W16.of_int 3329)))) by  rewrite -eq_incoeff;  smt().  
-
-rewrite -Fq.compress_impl_large //=;1:by smt().
-by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) !of_uintK /= /#. 
-
 qed.
-*)
 (********** END BDEP PROOF OF COMPRESS **************)
 
 lemma auxcompress10_corr (_aw : W16.t Array768.t):

@@ -9211,9 +9211,9 @@ module M = {
     }
     return matrix;
   }
-  proc __indcpa_keypair (pk:W8.t Array1184.t, sk:W8.t Array2400.t,
+  proc __indcpa_keypair (pk:W8.t Array1184.t, sk:W8.t Array1152.t,
                          randomnessp:W8.t Array32.t) : W8.t Array1184.t *
-                                                       W8.t Array2400.t = {
+                                                       W8.t Array1152.t = {
     var aux:W16.t Array256.t;
     var aux_0:W16.t Array256.t;
     var aux_1:W16.t Array256.t;
@@ -9356,14 +9356,7 @@ module M = {
     pkpv <@ __polyvec_add2 (pkpv, e);
     pkpv <@ __polyvec_reduce (pkpv);
     (* Erased call to unspill *)
-    aux_3 <@ __i_polyvec_tobytes ((Array1152.init (fun i_0 => sk.[(0 + i_0)])
-                                  ),
-    skpv);
-    sk <-
-    (Array2400.init
-    (fun i_0 => (if (0 <= i_0 < (0 + 1152)) then aux_3.[(i_0 - 0)] else 
-                sk.[i_0]))
-    );
+    sk <@ __i_polyvec_tobytes (sk, skpv);
     aux_3 <@ __i_polyvec_tobytes ((Array1152.init (fun i_0 => pk.[(0 + i_0)])
                                   ),
     pkpv);
@@ -9601,25 +9594,29 @@ module M = {
   proc __crypto_kem_keypair_jazz (pk:W8.t Array1184.t, sk:W8.t Array2400.t,
                                   randomnessp:W8.t Array64.t) : W8.t Array1184.t *
                                                                 W8.t Array2400.t = {
+    var aux:W8.t Array32.t;
     var inc:int;
     var s_randomnessp:W8.t Array64.t;
     var randomnessp1:W8.t Array32.t;
-    var s_pkp:W8.t Array1184.t;
+    var skcpa:W8.t Array1152.t;
+    var sk_s:W8.t Array2400.t;
     var i:int;
     var t64:W64.t;
-    var s_skp:W8.t Array2400.t;
-    var h_pk:W8.t Array32.t;
-    var randomnessp2:W8.t Array32.t;
-    h_pk <- witness;
     randomnessp1 <- witness;
-    randomnessp2 <- witness;
-    s_pkp <- witness;
     s_randomnessp <- witness;
-    s_skp <- witness;
+    sk_s <- witness;
+    skcpa <- witness;
     s_randomnessp <- randomnessp;
     randomnessp1 <- (Array32.init (fun i_0 => randomnessp.[(0 + i_0)]));
-    (pk, sk) <@ __indcpa_keypair (pk, sk, randomnessp1);
-    s_pkp <- pk;
+    skcpa <- (Array1152.init (fun i_0 => sk.[(0 + i_0)]));
+    sk_s <- sk;
+    (pk, skcpa) <@ __indcpa_keypair (pk, skcpa, randomnessp1);
+    sk <- sk_s;
+    sk <-
+    (Array2400.init
+    (fun i_0 => (if (0 <= i_0 < (0 + 1152)) then skcpa.[(i_0 - 0)] else 
+                sk.[i_0]))
+    );
     inc <- (((3 * 384) + 32) %/ 8);
     i <- 0;
     while ((i < inc)) {
@@ -9631,26 +9628,25 @@ module M = {
       ((((3 * 384) %/ 8) + i) * 8) t64)));
       i <- (i + 1);
     }
-    s_skp <- sk;
-    h_pk <@ _sha3_256A_A1184 (h_pk, pk);
-    sk <- s_skp;
-    i <- 0;
-    while ((i < 4)) {
-      t64 <- (get64 (WArray32.init8 (fun i_0 => h_pk.[i_0])) i);
-      sk <-
-      (Array2400.init
-      (WArray2400.get8
-      (WArray2400.set64_direct (WArray2400.init8 (fun i_0 => sk.[i_0]))
-      (((((3 * 384) + ((3 * 384) + 32)) %/ 8) + i) * 8) t64)));
-      i <- (i + 1);
-    }
+    aux <@ _sha3_256A_A1184 ((Array32.init
+                             (fun i_0 => sk.[(((3 * 384) + ((3 * 384) + 32)) +
+                                             i_0)])
+                             ),
+    pk);
+    sk <-
+    (Array2400.init
+    (fun i_0 => (if (((3 * 384) + ((3 * 384) + 32)) <= i_0 < (((3 * 384) +
+                                                              ((3 * 384) +
+                                                              32)) +
+                                                             32)) then 
+                aux.[(i_0 - ((3 * 384) + ((3 * 384) + 32)))] else sk.[i_0]))
+    );
     randomnessp <- s_randomnessp;
-    randomnessp2 <- (Array32.init (fun i_0 => randomnessp.[(32 + i_0)]));
     inc <- (32 %/ 8);
     i <- 0;
     while ((i < inc)) {
       t64 <-
-      (get64_direct (WArray32.init8 (fun i_0 => randomnessp2.[i_0])) (i * 8));
+      (get64 (WArray64.init8 (fun i_0 => randomnessp.[i_0])) ((32 %/ 8) + i));
       sk <-
       (Array2400.init
       (WArray2400.get8

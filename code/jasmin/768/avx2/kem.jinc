@@ -4,19 +4,19 @@ require "../../common/avx2/verify.jinc"
 inline
 fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLKEM_SECRETKEYBYTES] sk, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
 {
-  stack u8[32] h_pk;
-  #mmx stack ptr u8[MLKEM_SECRETKEYBYTES] s_skp;
-  #mmx stack ptr u8[MLKEM_PUBLICKEYBYTES] s_pkp;
   #mmx reg ptr u8[MLKEM_SYMBYTES*2] s_randomnessp;
-  reg ptr u8[MLKEM_SYMBYTES] randomnessp1 randomnessp2;
+  reg ptr u8[MLKEM_SYMBYTES] randomnessp1;
   reg u64 t64;
   inline int i;
+  reg ptr u8[MLKEM_POLYVECBYTES] skcpa;
+  #mmx reg ptr u8[MLKEM_SECRETKEYBYTES]sk_s;
 
   s_randomnessp = randomnessp;
 
   randomnessp1 = randomnessp[0:MLKEM_SYMBYTES];
-  pk, sk = __indcpa_keypair(pk, sk, randomnessp1);
-  s_pkp = pk; // spilling to mmx as we will not write to pk
+  skcpa = sk[0:MLKEM_POLYVECBYTES]; sk_s = sk; 
+  pk, skcpa = __indcpa_keypair(pk, skcpa, randomnessp1);
+  sk = sk_s; sk[0:MLKEM_POLYVECBYTES] = skcpa; 
 
   for i = 0 to MLKEM_INDCPA_PUBLICKEYBYTES/8
   {
@@ -24,23 +24,13 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
     sk.[:u64 (MLKEM_POLYVECBYTES/8 + i)*8] = t64;
   }
 
-  s_skp = sk;
-
-  h_pk = _sha3_256A_A1184(h_pk, pk);
-  sk = s_skp;
-
-  for i = 0 to 4
-  {
-    t64 = h_pk[:u64 i];
-    sk.[:u64 ((MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES)/8 + i)*8] = t64;
-  }
+  sk[MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES:32] = _sha3_256A_A1184(sk[MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES:32], pk);
 
   randomnessp = s_randomnessp;
-  randomnessp2 = randomnessp[MLKEM_SYMBYTES:MLKEM_SYMBYTES];
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    t64 = randomnessp2.[:u64 i*8];
+    t64 = randomnessp[:u64 MLKEM_SYMBYTES/8 + i];
     sk.[:u64 ((MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES + MLKEM_SYMBYTES)/8 + i)*8] = t64;
   }
 
