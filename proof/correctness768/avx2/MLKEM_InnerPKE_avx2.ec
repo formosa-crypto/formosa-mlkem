@@ -1230,7 +1230,7 @@ transitivity {1} { r <@Jkem768.M.__indcpa_enc(ct,msgp,pk,noiseseed);}
 
 inline{1} 1; inline {2} 1. wp.
 
-seq 50 47 : (
+seq 45 47 : (
      (forall k, 0 <= k < 960 => ct0{1}.[k] = ct0{2}.[k]) /\
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
@@ -1239,7 +1239,7 @@ seq 50 47 : (
  call (compressequiv_1); auto => /> &1 &2 H ???rr1 rr2; rewrite !tP => ? kk *;rewrite !Array1088.initiE 1,2:/# /=; smt().
 
 swap {2} 17 27. swap {2} 1 42.
-seq 48  42 : (
+seq 43  42 : (
      pos_bound256_cxq v{1} 0 256 2 /\
      pos_bound256_cxq v{2} 0 256 2 /\
      pos_bound768_cxq bp{1} 0 768 2 /\
@@ -1261,9 +1261,8 @@ ecall (H (lift_array768 bp{2}) (lift_array768 ep{2})); clear H.
 unroll for* {1} ^while{2}.
 
 sp 4 3.
-
-seq 19 20  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\ ct{2} = ct0{1} /\ msgp0{2} = msgp{1} /\ pk0{2} = pk{1} /\
-           s_noiseseed{1} = noiseseed0{1} /\
+ 
+seq 16 20  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\ ct{2} = ct0{1} /\ msgp0{2} = msgp{1} /\ pk0{2} = pk{1} /\
            s_noiseseed{2} = noiseseed0{2} /\
            pos_bound256_cxq k{1} 0 256 1 /\
            pos_bound256_cxq k{2} 0 256 1 /\
@@ -1290,7 +1289,7 @@ seq 19 20  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\ ct{2} = ct0{1} /\ msg
     rewrite  ifF. smt(W16.to_uint_cmp).
     by smt(W16.to_uint_eq). 
     
-  seq 12 13 : (#post /\ ={publicseed}).
+  seq 10 13 : (#post /\ ={publicseed}).
   wp;sp; conseq />.
   call (polyvec_frombytes_equiv).
   by auto => />. 
@@ -1300,7 +1299,7 @@ seq 19 20  : (#pre /\ ={publicseed, bp,ep,epp,v,sp_0,k} /\ ct{2} = ct0{1} /\ msg
 (* swap {1} [11..12] 2. *)
 
 do 2!(unroll for {2} ^while). sp 0 1.
-seq 14 23 : (#{/~bp{1}}pre  /\
+seq 12 23 : (#{/~bp{1}}pre  /\
     signed_bound768_cxq sp_0{1} 0 768 1 /\
     signed_bound768_cxq ep{1} 0 768 1 /\
     signed_bound_cxq epp{1} 0 256 1 /\
@@ -1309,7 +1308,7 @@ seq 14 23 : (#{/~bp{1}}pre  /\
     signed_bound_cxq epp{1} 0 256 1).
 + conseq />.
   transitivity {1} { (sp_0,ep,bp,epp) <@ GetNoiseAVX2.samplenoise_enc(sp_0,ep,bp, epp,noiseseed);} 
-    (noiseseed0{1} = noiseseed{2} /\ s_noiseseed{1} = noiseseed{2} /\
+    (noiseseed0{1} = noiseseed{2} /\ 
  ={sp_0,ep,bp,epp} ==> ={sp_0,ep,epp}) 
    (
    msgp0{2} = msgp{2} /\ noiseseed{2} = lnoiseseed{2} /\
