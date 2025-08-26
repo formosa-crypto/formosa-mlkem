@@ -2,7 +2,7 @@ require import AllCore IntDiv List.
 
 from JazzEC require import Jkem768_avx2.
 
-from JazzEC require import Array1152 Array32 Array960 Array1184 Array1152 Array64 Array128 Array160 Array2400 WArray2400 WArray1184 WArray64 Array1600 Array1088.
+from JazzEC require import Array1152 Array32 Array960 Array1184 Array1152 Array64 Array128 Array160 Array2400 WArray2400 WArray1184 WArray64 Array1600 Array1088 WArray1088 Array1120 Array136.
 from Jasmin require import JModel.
 
 from CryptoSpecs require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE768 MLKEM768 Correctness768.
@@ -170,7 +170,7 @@ lemma verify_correct_h _ct _ct1 :
 ].
 proc => /=.
 
-wp; while (#pre /\ 0 <= i{hr} <= 49 /\ inc{hr} = 49 /\ 0<=to_uint cnd<256 /\
+wp; while (#pre /\ 0 <= i{hr} <= 34 /\ inc{hr} = 34 /\ 0<=to_uint cnd<256 /\
            (to_uint h{hr} = 0 <=> 
             (forall k, 0 <= k < i{hr}*32 => ct.[k] = ctpc.[k]))); last first.
 + auto => />; split; 1: by smt().
@@ -190,7 +190,7 @@ wp; while (#pre /\ 0 <= i{hr} <= 49 /\ inc{hr} = 49 /\ 0<=to_uint cnd<256 /\
     smt(W256.to_uint_eq W256.to_uint0).
 
 auto => /> &hr ???? [HL HR] ?.
-pose x := get256 (WArray1184.init8 ("_.[_]" _ct1)) i{hr} `^` get256 (WArray1184.init8 ("_.[_]" _ct)) i{hr}.
+pose x := get256 (WArray1088.init8 ("_.[_]" _ct1)) i{hr} `^` get256 (WArray1088.init8 ("_.[_]" _ct)) i{hr}.
 do split; 1..2: by smt().
 + move => H0 k kbl kbh.
 
@@ -212,7 +212,7 @@ do split; 1..2: by smt().
   move : (H2 ((k - i{hr} * 32) * 8 + j) _). smt().
   rewrite !pack32wE /=; 1,2: smt().
   rewrite !initiE /=; 1,2: smt().
-  rewrite !WArray1184.initiE 1,2:/# /=; smt().
+  rewrite !WArray1088.initiE 1,2:/# /=; smt().
 
 move => H0.
 have -> : h{hr} = W256.zero by rewrite to_uint_eq /= /#.
@@ -225,13 +225,13 @@ have -> : xx = yy; last by rewrite xorwK_s //.
 rewrite /xx /yy wordP => j jb.
   rewrite !pack32wE /=; 1,2: smt().
   rewrite !initiE /=; 1,2: smt().
-  rewrite !WArray1184.initiE 1,2:/# /=; smt().
+  rewrite !WArray1088.initiE 1,2:/# /=; smt().
 qed.
 
 lemma verify_ll : islossless Jkem768_avx2.M.__verify.
 proc.
 wp.
-while (0 <= i{hr} <= 49 /\ inc{hr} = 49) (49 - i{hr}).
+while (0 <= i{hr} <= 34 /\ inc{hr} = 34) (34 - i{hr}).
 auto => /> /#.
 auto => /> /#. 
 qed.
@@ -310,7 +310,7 @@ lemma mlkem_kem_correct_dec  :
      sk{2}.`4 = Array32.init (fun i => sk{1}.[i+ 1152 + 1152 + 32 + 32]) /\
      let (c1,c2) = cph{2} in
        c1 = Array960.init(fun i => ct{1}.[i]) /\
-       c2 = Array160.init(fun i => ct{1}.[i + 960])
+       c2 = Array128.init(fun i => ct{1}.[i + 960])
        ==> ={res}].
 proc => /=. sp 0 1. swap {1} [4..5] 6.
 
@@ -338,9 +338,9 @@ ecall {1} (sha3_512A_A64_ph buf{1}).
 swap {2} 1 1.
 
 seq 1 1 : (#pre /\ 
-           ctc{1} = Array1184.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
+           ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
 print mlkem_correct_enc_1_avx2.
-+ wp;ecall (mlkem_correct_enc_1_avx2 (Array1184.init (fun (i : int) => sk{1}.[4 * 384 + i]))).
++ wp;ecall (mlkem_correct_enc_1_avx2 (Array1184.init (fun (i : int) => sk{1}.[3 * 384 + i]))).
 
   auto => /> &1 &2; rewrite !tP => ??????; do split.
   + by move => i ib; rewrite initiE /= /#.
@@ -348,7 +348,7 @@ print mlkem_correct_enc_1_avx2.
   + move => i ib; rewrite initiE /= 1:/# initiE /= 1:/#;smt(Array1152.initiE).
   + move => i ib; rewrite initiE /= 1:/# initiE /= 1:/#;smt(Array32.initiE).
   move => /= ?  bufv ? krv rl [rr1 rr2] /=;rewrite !tP => H. 
-  by move => *;rewrite !initiE 1:/# /=; by  smt(Array160.initiE Array960.initiE).
+  by move => *;rewrite !initiE 1:/# /=; by  smt(Array128.initiE Array960.initiE).
 
 seq 1 0 : (#pre /\ 
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
@@ -365,9 +365,9 @@ seq 1 0 : (#pre /\
      + by move => ibb; rewrite ceq cphv1 1: /# initiE /= /#.
      by move => ibb; rewrite ceq cphv2 1: /# initiE /= /#. 
    move => neq;rewrite Hdiff.
-   have : exists i0, 0<= i0 < 1184 /\ 
+   have : exists i0, 0<= i0 < 1088 /\ 
      ct{1}.[i0] <>
-     (Array1184.init (fun (i1 : int) => if i1 < 960 then c{2}.`1.[i1] else c{2}.`2.[i1 - 960])).[i0]; last by smt().
+     (Array1088.init (fun (i1 : int) => if i1 < 960 then c{2}.`1.[i1] else c{2}.`2.[i1 - 960])).[i0]; last by smt().
    case (c{2}.`1 <> cph{2}.`1).
    + move => neq1. rewrite tP in neq1.   
      have [k kb] : exists k, 0<=k<960 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt().
@@ -378,7 +378,7 @@ seq 1 0 : (#pre /\
    + move => eq1. 
      have neq2 : c{2}.`2 <> cph{2}.`2 by move : neq eq1; smt().
      rewrite tP in neq2.   
-     have [k kb] : exists k, 0<=k<160 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
+     have [k kb] : exists k, 0<=k<128 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
      exists (k + 960); split; 1: by smt().
      rewrite initiE /= 1:/#. 
      move : (cphv2 k _); 1: smt().
@@ -387,7 +387,7 @@ seq 1 0 : (#pre /\
 
 
 ecall {1} (cmov_correct shk{1} (Array32.init (fun (i : int) => kr{1}.[0 + i])) cnd{1}).
-wp;ecall{1} (shake256_A32_A1600_ph zp_ct{1}).
+wp;ecall{1} (shake256_A32_A1120_ph zp_ct{1}).
 
 + auto => /> &1 &2; rewrite  !tP =>??.
   have ->/= : (cph{2} = (cph{2}.`1,cph{2}.`2)) by smt(). 
@@ -404,12 +404,12 @@ do split.
     + congr;rewrite tP => kk kkb; rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /=.
       rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-    smt(Array960.initiE Array160.initiE).
+    smt(Array960.initiE Array128.initiE).
 
   rewrite tP => kk kkb; rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /=.
       rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-    smt(Array960.initiE Array160.initiE).
+    smt(Array960.initiE Array128.initiE).
 
 move => goodc  back c0 c1.
   + move : (c0 (ceq goodc)).
