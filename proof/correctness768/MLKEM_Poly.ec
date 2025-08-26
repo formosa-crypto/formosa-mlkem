@@ -1824,11 +1824,11 @@ lemma poly_basemul_corr _ap _bp:
    hoare[Jkem768.M._poly_basemul :
      _ap = lift_array256 ap /\ _bp = lift_array256 bp /\
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
-     signed_bound_cxq res 0 256 3 /\ 
+     signed_bound_cxq res 0 256 2 /\ 
      lift_array256 res = scale (basemul _ap _bp) (incoeff 169)].
 proof.
 conseq (_: _ ==> 
-   signed_bound_cxq res 0 256 3 /\ 
+   signed_bound_cxq res 0 256 2 /\ 
    isbasemul _ap _bp zetas (lift_array256 res) 256).
 + move => ?? result [#] ? H; split; 1:smt().  
   by apply (basemul_sem _ap _bp  (lift_array256 result)).
@@ -1836,7 +1836,7 @@ proc.
 seq 2 : #pre; first by auto => />.
 while (#pre /\ srp = rp /\
     0<= i <= 256 /\  i %% 4 = 0 /\
-    signed_bound_cxq rp 0 ( i) 3 /\
+    signed_bound_cxq rp 0 ( i) 2 /\
     isbasemul _ap _bp zetas (lift_array256 rp) (i)); 
        last by auto => /> &hr ??; split;smt().
 
@@ -2012,7 +2012,7 @@ lemma poly_basemul_correct _ap _bp:
    phoare[Jkem768.M._poly_basemul :
      _ap = lift_array256 ap /\ _bp = lift_array256 bp /\
      signed_bound_cxq ap 0 256 2 /\  signed_bound_cxq bp 0 256 2 ==>
-     signed_bound_cxq res 0 256 3 /\ 
+     signed_bound_cxq res 0 256 2 /\ 
      lift_array256 res = scale (basemul _ap _bp) (incoeff 169)] =1%r 
   by conseq poly_basemul_ll (poly_basemul_corr _ap _bp). 
 

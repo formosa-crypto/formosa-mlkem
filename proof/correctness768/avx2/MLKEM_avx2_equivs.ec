@@ -1,8 +1,8 @@
 require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
-from JazzEC require import Array1536 Array1088 Array960 Array1410 Array768 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
-from JazzEC require import WArray512 WArray128 WArray384 WArray32 WArray16 WArray1410 WArray160 WArray960 WArray1536.
+from JazzEC require import Array1152 Array1088 Array960 Array1410 Array768 Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array4 Array8 Array2.
+from JazzEC require import WArray512 WArray128 WArray384 WArray32 WArray16 WArray1410 WArray160 WArray960 WArray1152 WArray1536.
 
 require import AVX2_Ops W16extra.
 from JazzEC require import Jkem768.
@@ -1254,18 +1254,7 @@ op  perm_nttunpackv(i : int) : int =  nth (-1)
      762; 643; 651; 659; 667; 675; 683; 691; 699; 707; 715; 723; 731; 739; 747; 755; 763; 644; 652; 660; 668; 676; 684;
      692; 700; 708; 716; 724; 732; 740; 748; 756; 764; 645; 653; 661; 669; 677; 685; 693; 701; 709; 717; 725; 733; 741;
      749; 757; 765; 646; 654; 662; 670; 678; 686; 694; 702; 710; 718; 726; 734; 742; 750; 758; 766; 647; 655; 663; 671;
-     679; 687; 695; 703; 711; 719; 727; 735; 743; 751; 759; 767; 768; 776; 784; 792; 800; 808; 816; 824; 832; 840; 848;
-     856; 864; 872; 880; 888; 769; 777; 785; 793; 801; 809; 817; 825; 833; 841; 849; 857; 865; 873; 881; 889; 770; 778;
-     786; 794; 802; 810; 818; 826; 834; 842; 850; 858; 866; 874; 882; 890; 771; 779; 787; 795; 803; 811; 819; 827; 835;
-     843; 851; 859; 867; 875; 883; 891; 772; 780; 788; 796; 804; 812; 820; 828; 836; 844; 852; 860; 868; 876; 884; 892;
-     773; 781; 789; 797; 805; 813; 821; 829; 837; 845; 853; 861; 869; 877; 885; 893; 774; 782; 790; 798; 806; 814; 822;
-     830; 838; 846; 854; 862; 870; 878; 886; 894; 775; 783; 791; 799; 807; 815; 823; 831; 839; 847; 855; 863; 871; 879;
-     887; 895; 896; 904; 912; 920; 928; 936; 944; 952; 960; 968; 976; 984; 992; 1000; 1008; 1016; 897; 905; 913; 921;
-     929; 937; 945; 953; 961; 969; 977; 985; 993; 1001; 1009; 1017; 898; 906; 914; 922; 930; 938; 946; 954; 962; 970;
-     978; 986; 994; 1002; 1010; 1018; 899; 907; 915; 923; 931; 939; 947; 955; 963; 971; 979; 987; 995; 1003; 1011;
-     1019; 900; 908; 916; 924; 932; 940; 948; 956; 964; 972; 980; 988; 996; 1004; 1012; 1020; 901; 909; 917; 925; 933;
-     941; 949; 957; 965; 973; 981; 989; 997; 1005; 1013; 1021; 902; 910; 918; 926; 934; 942; 950; 958; 966; 974; 982;
-     990; 998; 1006; 1014; 1022; 903; 911; 919; 927; 935; 943; 951; 959; 967; 975; 983; 991; 999; 1007; 1015; 1023] i. 
+     679; 687; 695; 703; 711; 719; 727; 735; 743; 751; 759; 767] i. 
 
 op  perm_nttpackv(i : int) =  nth (-1) 
   [0; 16; 32; 48; 64; 80; 96; 112; 1; 17; 33; 49; 65; 81; 97; 113; 2; 18; 34; 50; 66; 82; 98; 114; 3; 19; 35; 51;
@@ -1301,19 +1290,7 @@ op  perm_nttpackv(i : int) =  nth (-1)
         693; 709; 725; 741; 757; 646; 662; 678; 694; 710; 726; 742; 758; 647; 663; 679; 695; 711; 727; 743; 759; 648;
         664; 680; 696; 712; 728; 744; 760; 649; 665; 681; 697; 713; 729; 745; 761; 650; 666; 682; 698; 714; 730; 746;
         762; 651; 667; 683; 699; 715; 731; 747; 763; 652; 668; 684; 700; 716; 732; 748; 764; 653; 669; 685; 701; 717;
-        733; 749; 765; 654; 670; 686; 702; 718; 734; 750; 766; 655; 671; 687; 703; 719; 735; 751; 767; 768; 784; 800;
-        816; 832; 848; 864; 880; 769; 785; 801; 817; 833; 849; 865; 881; 770; 786; 802; 818; 834; 850; 866; 882; 771;
-        787; 803; 819; 835; 851; 867; 883; 772; 788; 804; 820; 836; 852; 868; 884; 773; 789; 805; 821; 837; 853; 869;
-        885; 774; 790; 806; 822; 838; 854; 870; 886; 775; 791; 807; 823; 839; 855; 871; 887; 776; 792; 808; 824; 840;
-        856; 872; 888; 777; 793; 809; 825; 841; 857; 873; 889; 778; 794; 810; 826; 842; 858; 874; 890; 779; 795; 811;
-        827; 843; 859; 875; 891; 780; 796; 812; 828; 844; 860; 876; 892; 781; 797; 813; 829; 845; 861; 877; 893; 782;
-        798; 814; 830; 846; 862; 878; 894; 783; 799; 815; 831; 847; 863; 879; 895; 896; 912; 928; 944; 960; 976; 992;
-        1008; 897; 913; 929; 945; 961; 977; 993; 1009; 898; 914; 930; 946; 962; 978; 994; 1010; 899; 915; 931; 947;
-        963; 979; 995; 1011; 900; 916; 932; 948; 964; 980; 996; 1012; 901; 917; 933; 949; 965; 981; 997; 1013; 902;
-        918; 934; 950; 966; 982; 998; 1014; 903; 919; 935; 951; 967; 983; 999; 1015; 904; 920; 936; 952; 968; 984;
-        1000; 1016; 905; 921; 937; 953; 969; 985; 1001; 1017; 906; 922; 938; 954; 970; 986; 1002; 1018; 907; 923; 939;
-        955; 971; 987; 1003; 1019; 908; 924; 940; 956; 972; 988; 1004; 1020; 909; 925; 941; 957; 973; 989; 1005; 1021;
-        910; 926; 942; 958; 974; 990; 1006; 1022; 911; 927; 943; 959; 975; 991; 1007; 1023] i. 
+        733; 749; 765; 654; 670; 686; 702; 718; 734; 750; 766; 655; 671; 687; 703; 719; 735; 751; 767] i. 
 
 lemma perm_nttunpackv_rng i :
   0 <= i < 768 => 0<= perm_nttunpackv i <768.
@@ -1401,7 +1378,7 @@ rewrite  /perm_nttunpackv /perm_nttpackv /nttpackv /nttunpackv.
 rewrite /nttpack /nttunpack /subarray256 -iotaredE /=;do split;smt().
 qed. 
 
-lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
+lemma polyvec_frombytes_corr_h (_aw : W8.t Array1152.t): 
     hoare [Jkem768_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
@@ -1428,7 +1405,7 @@ proc change ^while.^while.108 : (sliceset256_16_256 rp ((8*i0+7) *256) tt);1: by
 proc change ^while.7: (init_768_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0])); 1: by auto.
 
 unroll for ^while.
-do 4!(unroll for ^while).
+do 3!(unroll for ^while).
 cfold ^i0<-.
 wp -2. 
 
@@ -1443,11 +1420,11 @@ bdep 12 16 [_aw] [a] [r] frombytes_circuit pcond_true12 perm_nttpackv.
 move => &hr [#]/= <- rr; rewrite /= !flatten1.
 
 move => H1; have H2 := post_lane_commute_out_aligned_perm (to_list a{hr}) (to_list rr) W8.w2bits W8.bits2w W12.w2bits W12.bits2w W16.w2bits W16.bits2w  frombytes_circuit 8 12 16 perm_nttunpackv perm_nttpackv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
-smt(Array1536.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
+smt(Array1152.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
 + smt(perm_nttunpackv_rng Array768.size_to_list).
 + move => ?; rewrite Array768.size_to_list => ?;smt(nttpermsK). 
 
-  have /=? := decode_range_vec 0 (to_list a{hr}) 12 _ _;1,2:smt(Array1536.size_to_list).
+  have /=? := decode_range_vec 0 (to_list a{hr}) 12 _ _;1,2:smt(Array1152.size_to_list).
 
 + by smt().
 
@@ -1495,20 +1472,6 @@ split.
        by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
     rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
 
-  case (512<=i<768) => *.
-  + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
-    rewrite mapiE /=;1:smt( nttunpack_inbounds).
-    rewrite -(Array768.get_to_list rr) H2 H3 /decode12.
-    rewrite nth_mkseq /=;1: by smt(Array768.size_to_list).
-    + rewrite  mapiE;1: by smt(perm_nttunpackv_rng).
-    congr; rewrite of_sintK /=.
-     rewrite /smod /= ifF. 
-     + rewrite /decode12_vec get_of_list;1: smt(perm_nttunpackv_rng). 
-       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
-    rewrite modz_small. 
-    + rewrite /decode12_vec get_of_list; 1: smt(perm_nttunpackv_rng).
-       by have /= := decode_rng (to_list a{hr}) 12 (perm_nttunpackv i) _;smt(). 
-    rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
 
   + rewrite /nttunpack initiE 1:/# /= /subarray256 initiE /=;1:smt( nttunpack_inbounds).
     rewrite mapiE /=;1:smt( nttunpack_inbounds).
@@ -1525,7 +1488,7 @@ split.
     rewrite /perm_nttunpackv /nttunpackv initiE 1:/# /= /#.
 
   rewrite /pos_bound768_cxq qE /= => k kb. 
-  have /=? := decode_range_vec witness (to_list a{hr}) 12 _ _;1..2:smt(Array1536.size_to_list).
+  have /=? := decode_range_vec witness (to_list a{hr}) 12 _ _;1..2:smt(Array1152.size_to_list).
   rewrite -get_to_list  H2 H3 /decode12_vec.
   rewrite nth_mkseq /=;1: by rewrite size_map size_iota /#. 
   rewrite get_of_list;1:smt(perm_nttunpackv_rng). 
@@ -1537,7 +1500,7 @@ qed.
 
 (********** END BDEP PROOF OF FROMBYTES **************)
 
-lemma polyvec_frombytes_corr (_aw : W8.t Array1536.t): 
+lemma polyvec_frombytes_corr (_aw : W8.t Array1152.t): 
     phoare [Jkem768_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
@@ -2152,7 +2115,7 @@ op tobytes_circuit(a : W16.t) : W12.t =
 lemma polyvec_tobytes_ll : islossless Jkem768_avx2.M.__i_polyvec_tobytes.
 proc.
 inline *. 
-do 9!(unroll for ^while); auto. 
+do 7!(unroll for ^while); auto. 
 qed.
 
 lemma post_lane_commute_in_aligned_perm ['a 'b 'c]
@@ -2243,11 +2206,11 @@ rewrite map_id chunkK 1:/#; last by done.
 rewrite (EclibExtra.size_flatten' noc); smt(size_map mapP).
 qed.
 
-lemma output_pack_1536_8(l : bool list) :
+lemma output_pack_1152_8(l : bool list) :
  size l = 768*12 =>
  flatten
   (map W8.w2bits
-     (to_list (Array1536.of_list W8.zero (BitsToBytes l)))) = l.
+     (to_list (Array1152.of_list W8.zero (BitsToBytes l)))) = l.
 move => *.
 rewrite of_listK; 1: by rewrite size_BitsToBytes /#.
 have ? : size (flatten (map W8.w2bits (BitsToBytes l))) = size l.
@@ -2276,10 +2239,10 @@ qed.
 abbrev mask12 = VPBROADCAST_16u16(W16.of_int 4095).
 
 module AuxToBytes = {
-proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array768.t) : W8.t Array1536.t = {
+proc __i_polyvec_tobytes(r : W8.t Array1152.t, a : W16.t Array768.t) : W8.t Array1152.t = {
   var i,rp,a0,i0,t0,t1,t2,t3,t4,t5,t6,t7,tt,ttt,a1,b,t00,r00,t10,r1,a2,b0,t01,r01,t11,r10,a3,b1,t02,r02,t12,r11,a4,b2,t03,t13,a5,b3,t04,t14,a6,b4,t05,t15,a7,b5,r03,r12,a8,b6,r04,r13,a9,b7,r05,r14,a10,b8,r06,r15,a11,b9,r07,r16,a12,b10,r08,r17,aux,aux_0;
   i <- 0;                                                                                                                       
-  while (i < 4) {                                                                                                              
+  while (i < 3) {                                                                                                              
     rp <- Array384.init (fun (i_0 : int) => r.[384 * i + i_0]);                                                                 
     a0 <- Array256.init (fun (i_0 : int) => a.[256 * i + i_0]);  
     a0 <@ Jkem768_avx2.M._poly_csubq(a0);                                                           
@@ -2417,7 +2380,7 @@ proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array768.t) : W8.t Arra
       i0 <- i0 + 1;                                                                                                             
     }                                                                                                                          
     (aux, aux_0) <- (rp, a0);                                                                                                   
-    r <- Array1536.init (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0]);           
+    r <- Array1152.init (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0]);           
     a <- Array768.init (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]);         
     i <- i + 1;                                                                                                                 
   }
@@ -2450,21 +2413,21 @@ proc change ^while.^while{2}.107 : (sliceset384_8_256 rp ((192*i0+64)*8) t1);1: 
 proc change ^while.^while{2}.108 : (sliceset384_8_256 rp ((192*i0+96)*8) t3);1: by auto => /#.
 proc change ^while.^while{2}.109 : (sliceset384_8_256 rp ((192*i0+128)*8) ttt);1: by auto => /#.
 proc change ^while.^while{2}.110 : (sliceset384_8_256 rp ((192*i0+160)*8) t4);1: by auto => /#.
-proc change ^while.11: (init_1536_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0])  ); 1: by auto.
+proc change ^while.11: (init_1152_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0])  ); 1: by auto.
 proc change ^while.12: (init_768_16  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]));1: by auto. 
 
 unroll for ^while.
-do 8!(unroll for ^while).
+do 6!(unroll for ^while).
 cfold ^i<-.
 cfold ^i0<-.
 cfold ^i1<-.
-wp -4.
+wp -3.
 
 bdep 16 12 [_aw] [a] [r] tobytes_circuit pcond_reduced perm_nttunpackv. 
 
 (* BDEP pre conseq *)
 + move => &hr />; rewrite flatten1 /= pre_lane_commute_in_aligned 1:/# //=.
-  rewrite allP /pos_bound124_cxq /= => Hb. 
+  rewrite allP /pos_bound768_cxq /= => Hb. 
   rewrite /pcond_reduced /= /tolist /= => x.
   rewrite  mkseqP => He;elim He => /= i [ib?]; rewrite ultE /=.
   have := Hb i; rewrite ib /= qE /=.
@@ -2476,15 +2439,15 @@ bdep 16 12 [_aw] [a] [r] tobytes_circuit pcond_reduced perm_nttunpackv.
 (* We start with some boilerplate *)
 move => &hr [#]/= H0 <- rr; rewrite /= !flatten1.
 move => H1.
-apply (inj_eq Array1536.to_list Array1536.to_list_inj).
+apply (inj_eq Array1152.to_list Array1152.to_list_inj).
 apply (flatten_map_eq _ _ W8.w2bits 8 _ W8.w2bits_inj W8.size_w2bits);1:smt().
 have -> := post_lane_commute_in_aligned_perm (to_list a{hr}) (to_list rr) W16.w2bits W16.bits2w W8.w2bits W8.bits2w W12.w2bits W12.bits2w  tobytes_circuit 16 12 8 perm_nttunpackv perm_nttpackv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _;1..12:
-smt(Array1536.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
+smt(Array1152.size_to_list Array768.size_to_list W16.bits2wK BVA_Top_Bindings_W12_t.oflistP).
 + smt(perm_nttpackv_rng Array768.size_to_list).
 + move => ?; rewrite Array768.size_to_list => ?;smt(nttpermsKi). 
 + by smt().
 
-rewrite output_pack_1536_8. 
+rewrite output_pack_1152_8. 
 + rewrite (EclibExtra.size_flatten' 12);1: smt(mapP BS2Int.size_int2bs).
   by rewrite size_map size_to_list /=.
 
@@ -2524,7 +2487,7 @@ qed.
 lemma auxtobytes_ll : islossless AuxToBytes.__i_polyvec_tobytes.
 proc.
 inline *. 
-do 9!(unroll for ^while); auto. 
+do 7!(unroll for ^while); auto. 
 qed.
 
 lemma auxtobytes_corr (_aw : W16.t Array768.t):
@@ -2681,36 +2644,15 @@ case (256<=k<512).
   rewrite initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
   move : nttpack_idxK; rewrite allP; smt(mem_iota).  
 
-case (512<=k<768).
 + move => *.
   rewrite /subarray256 /nttunpack initiE //=;1: smt(nttunpack_bnd Array256.allP).
-  pose a := nttunpack_idx.[k-512].
-  do 3!(rewrite  /nttpack initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP)).
-  rewrite ifF; 1: smt(nttunpack_bnd Array256.allP). 
-  rewrite ifF; 1: smt(nttunpack_bnd Array256.allP). 
-  rewrite ifT; 1: smt(nttunpack_bnd Array256.allP). 
-  do 2!(rewrite  /nttpack initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP)).
-  pose b := nttpack_idx.[a].
-  rewrite initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
-  rewrite ifF; 1: smt(nttunpack_bnd Array256.allP). 
-  rewrite ifF; 1: smt(nttunpack_bnd Array256.allP). 
-  rewrite ifT; 1: smt(nttunpack_bnd Array256.allP). 
-  rewrite initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
-  rewrite -/b.
-  rewrite initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP).
-  move : nttpack_idxK; rewrite allP; smt(mem_iota).  
-
-+ move => *.
-  rewrite /subarray256 /nttunpack initiE //=;1: smt(nttunpack_bnd Array256.allP).
-  pose a := nttunpack_idx.[k - 768].
+  pose a := nttunpack_idx.[k - 512].
   do 4!(rewrite initiE //=; 1:smt(nttunpack_bnd Array256.allP)).
   rewrite ifF;1: smt(nttunpack_bnd Array256.allP).
   rewrite ifF;1: smt(nttunpack_bnd Array256.allP).
   rewrite ifF;1: smt(nttunpack_bnd Array256.allP).
   do 2!(rewrite /nttpack initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP)).
   pose b := nttpack_idx.[a].
-  rewrite ifF;1: smt(nttunpack_bnd Array256.allP).
-  rewrite ifF;1: smt(nttunpack_bnd Array256.allP).
   rewrite ifF;1: smt(nttunpack_bnd Array256.allP).
   do 2!(rewrite initiE //=;1: smt(nttpack_bnd nttunpack_bnd Array256.allP)).
   rewrite /a.
@@ -2885,13 +2827,13 @@ ecall (basemulequiv). auto => />.
 move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split. 
 + move : H; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H k kb.
   move : (H (512+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
-  rewrite ifF 1:/# /= ifF 1:/# ifT 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
+  rewrite ifF 1:/# /= ifF 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
   rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
 + move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
   move : (H0 (512+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
-  rewrite ifF 1:/# /= ifF 1:/# ifT 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
+  rewrite ifF 1:/# /= ifF 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
   pose a := nttunpack_idx.[k].
   rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
   rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
@@ -2910,47 +2852,6 @@ seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\
          signed_bound_cxq r{1} 0 256 3 /\
          signed_bound_cxq r{2} 0 256 6).
 have Hcall:= addequiv 2 1 4 2 _ _ => //.
-call Hcall.
-auto => />.
-move => &1 &2 ????????????. do split. 
-+ rewrite lift256_nttunpack;1: assumption.
-+ rewrite lift256_nttunpack;1: assumption.
-move => ?? r1 r2 ???.
-rewrite -lift256_nttunpack;1: assumption.
-
-seq 1 1 :(#pre /\ 
-         lift_array256 t{1} = nttunpack (lift_array256 t{2}) /\
-         signed_bound_cxq t{1} 0 256 1 /\
-         signed_bound_cxq t{2} 0 256 2).
-ecall (basemulequiv). auto => />.
-move => &1 &2 H H0 H1 H2 H3 H4 H5 H6 H7. do split. 
-+ move : H; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H k kb.
-  move : (H (768+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
-  rewrite ifF 1:/# /= ifF 1:/# ifF 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
-  pose a := nttunpack_idx.[k].
-  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
-+ move : H0; rewrite /nttunpackv -lift256_nttunpack /lift_array256 !tP => H0 k kb.
-  move : (H0 (768+k) _); 1: smt(). rewrite !initiE//= 1:/# /=.
-  rewrite ifF 1:/# /= ifF 1:/# ifF 1:/# /nttunpack !mapiE //= 1:/#  !initiE//=. 
-  pose a := nttunpack_idx.[k].
-  rewrite !initiE//=; 1,2: smt(nttunpack_bnd Array256.allP). 
-  rewrite /lift_array768;smt(Array768.mapiE nttunpack_bnd Array256.allP).
-+ move : H1; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H1 k kb.
-  move : (H1 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H2; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H2 k kb.
-move : (H2 k _); 1: smt(). rewrite !initiE//=;1: smt().
-+ move : H3; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H3 k kb.
-  move : (H3 k _); 1: smt(). rewrite !initiE//=;1: smt().
-move : H4; rewrite /signed_bound768_cxq /signed_bound_cxq /nttunpackv => H4 k kb.
-move : (H4 k _); 1: smt(). rewrite !initiE//=;1: smt().
-
-
-seq 1 1 :(#{/~r{2}}{~r{1}}{~t{2}}{~t{1}}pre /\ 
-         lift_array256 r{1} = nttunpack (lift_array256 r{2}) /\
-         signed_bound_cxq r{1} 0 256 4 /\
-         signed_bound_cxq r{2} 0 256 8).
-have Hcall:= addequiv 3 1 6 2 _ _ => //.
 call Hcall.
 auto => />.
 move => &1 &2 ????????????. do split. 
@@ -3025,32 +2926,18 @@ case (512 <= k < 768).
 + move => kbb ?; move : (H3 2 _) => //; rewrite !KMatrix.Vector.offunvE //=.
   rewrite /nttpackv /nttunpackv /= /nttpack /nttunpack initiE//=.
   rewrite /subarray256 /lift_array256 /nttpackv tP => HHH.
-  rewrite ifF  1:/# ifF 1:/# ifT 1:/# initiE //= 1:/#.
+  rewrite ifF  1:/# ifF 1:/# initiE //= 1:/#.
   pose a := nttunpack_idx.[k-512].
   move :nttunpack_bnd nttpack_bnd; rewrite !allP => pb upb.
   rewrite initiE //= 1: /# !mapiE //= 1: /#. 
   move : (HHH (a) _); 1: smt(). 
   rewrite !mapiE //= 1,2: /# initiE//= 1:/#  initiE//= 1:/# initiE//= 1:/#.
   rewrite ifF 1: /# ifF 1:/# initiE//= 1:/# initiE//= 1:/#. 
-  rewrite ifT 1: /#. 
   pose b := nttpack_idx.[a].
   move : nttpack_idxK; rewrite allP => Hidx.
   move : (Hidx (k-512) _)=>//; smt(mem_iota).
 
-move => *; move : (H3 3 _) => //; rewrite !KMatrix.Vector.offunvE //=.
-rewrite /nttpackv /nttunpackv /= /nttpack /nttunpack initiE//=.
-rewrite /subarray256 /lift_array256 /nttpackv tP => HHH.
-rewrite ifF  1:/# ifF 1:/# ifF 1:/# initiE //= 1:/#.
-pose a := nttunpack_idx.[k-768].
-move :nttunpack_bnd nttpack_bnd; rewrite !allP => pb upb.
-rewrite initiE //= 1: /# !mapiE //= 1: /#. 
-move : (HHH (a) _); 1: smt(). 
-rewrite !mapiE //= 1,2: /# initiE//= 1:/#  initiE//= 1:/# initiE//= 1:/#.
-rewrite ifF 1: /# ifF 1:/# ifF 1:/# initiE//= 1:/#. 
-pose b := nttpack_idx.[a].
-rewrite initiE//=  1:/# . 
-move : nttpack_idxK; rewrite allP => Hidx.
-move : (Hidx (k-768) _)=>//; smt(mem_iota).
+by smt().
 qed.
 
 equiv polyinvnttequiv :
@@ -3072,9 +2959,9 @@ lemma signed_bound768_cxq_small r (i j:int) :
   i <= j => signed_bound768_cxq r 0 768 i => signed_bound768_cxq r 0 768 j.
 rewrite /signed_bound768_cxq => />Hij H k Hk1 Hk2. move :(H k). rewrite Hk1 Hk2 => />. smt(). qed.
 
-lemma eq_vectorP4 :
+lemma eq_vectorP3 :
       forall (v1 v2 : PolyVec.polyvec),
-        (v1 = v2) <=> ((KMatrix.Vector."_.[_]" v1 0 = KMatrix.Vector."_.[_]" v2 0) /\ (KMatrix.Vector."_.[_]" v1 1 = KMatrix.Vector."_.[_]" v2 1) /\ (KMatrix.Vector."_.[_]" v1 2 = KMatrix.Vector."_.[_]" v2 2) /\ (KMatrix.Vector."_.[_]" v1 3 = KMatrix.Vector."_.[_]" v2 3)).
+        (v1 = v2) <=> ((KMatrix.Vector."_.[_]" v1 0 = KMatrix.Vector."_.[_]" v2 0) /\ (KMatrix.Vector."_.[_]" v1 1 = KMatrix.Vector."_.[_]" v2 1) /\ (KMatrix.Vector."_.[_]" v1 2 = KMatrix.Vector."_.[_]" v2 2)).
 smt(KMatrix.Vector.eq_vectorP). qed.
 
 equiv invnttequiv :
@@ -3091,22 +2978,18 @@ conseq />;1: smt().
 ecall {1} (polyvec_invntt_avx2_corr r{2}) => /=. 
 auto => /> &1 &2 -> Hm1 Hm2. rewrite unpackvK //= => r Hr1 Hr2 s Hs1 Hs2.
 rewrite /lift_array768 /map tP => />j Hj1 Hj2. rewrite !initiE //=.
-move :Hr1; rewrite !mapvE /lift_polyvec eq_vectorP4 !KMatrix.Vector.offunvE //=. 
+move :Hr1; rewrite !mapvE /lift_polyvec eq_vectorP3 !KMatrix.Vector.offunvE //=. 
 rewrite /lift_array256 /subarray256 /map !tP -!andaE. 
 apply andaW. 
 move => Hr10. 
 apply andaW. 
 move => Hr11. 
-apply andaW. 
-move =>  Hr12 Hr21.   
-move :Hs1;rewrite /scale_vector /lift_polyvec eq_vectorP4 !KMatrix.Vector.offunvE //=.
+move :Hs1;rewrite /scale_vector /lift_polyvec eq_vectorP3 !KMatrix.Vector.offunvE //=.
 rewrite /scale /lift_array256 /subarray256 /map !tP -!andaE.
 apply andaW. 
 move => Hs10. 
 apply andaW. 
-move => Hs11.
-apply andaW. 
-move =>  Hs12 Hs21.  
+move => Hs11 Hs12 Hs21.  
 case (0 <= j < 256) => Hj_0.
  + move :(Hr10 j). rewrite Hj_0 !initiE //= !initiE //= => <-.
  + move :(Hs10 j). rewrite Hj_0 !initiE //= !initiE //= => <-.
@@ -3118,12 +3001,8 @@ case (256 <= j < 512). move => Hj_1.
  + rewrite /R Zq.ComRing.mulrC => />. 
 case (512 <= j < 768). move => ?Hj_2.
  + have Hj_3: 0 <= j - 512 && j - 512 < 256. smt().
- + move :(Hr12 (j-512)). rewrite Hj_3 !initiE //= !initiE //= => <-.
  + move :(Hs12 (j-512)). rewrite Hj_3 !initiE //= !initiE //= => <-.
+ + move :(Hs21 (j-512)). rewrite Hj_3 !initiE //= !initiE //= => <-.
  + rewrite /R Zq.ComRing.mulrC => />. 
-move =>? Hj_3.
- + have Hj_4: 0 <= j - 768 && j - 768 < 256. smt().
- + move :(Hr21 (j-768)). rewrite Hj_4 !initiE //= !initiE //= => <-.
- + move :(Hs21 (j-768)). rewrite Hj_4 !initiE //= !initiE //= => <-.
- + rewrite /R Zq.ComRing.mulrC => />. 
+smt().
 qed.
