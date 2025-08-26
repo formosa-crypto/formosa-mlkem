@@ -74,7 +74,7 @@ fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to
 
 inline
 fn __indcpa_enc(
-  reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
+  #spill_to_mmx reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
   reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp,
   reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg ptr u8[MLKEM_SYMBYTES] noiseseed)
@@ -84,13 +84,12 @@ fn __indcpa_enc(
   stack u16[MLKEM_K*MLKEM_VECN] aat;
   stack u16[MLKEM_N] k epp v;
   stack u8[MLKEM_SYMBYTES] publicseed;
-  #mmx reg ptr u8[MLKEM_SYMBYTES] s_noiseseed;
-  reg ptr u8[MLKEM_SYMBYTES] lnoiseseed;
   reg u64 t64;
   reg u8 nonce;
   inline int w;
   reg u64 transposed;
 
+  () = #spill(ct);
   pkpv = __i_polyvec_frombytes(pk[0:MLKEM_POLYVECBYTES]);
 
   for w = 0 to MLKEM_SYMBYTES/8
@@ -101,18 +100,14 @@ fn __indcpa_enc(
 
   k = _i_poly_frommsg(k, msgp);
 
-  s_noiseseed = noiseseed;
-
   transposed = 1;
   aat = _gen_matrix_avx2(aat, publicseed, transposed);
 
-  lnoiseseed = s_noiseseed;
   nonce = 0;
-  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], lnoiseseed, nonce);
+  sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], noiseseed, nonce);
 
-  lnoiseseed = s_noiseseed;
-  nonce = 4;
-  ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], lnoiseseed, nonce);
+ nonce = 4;
+  ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);
 
@@ -132,6 +127,7 @@ fn __indcpa_enc(
   bp = __polyvec_reduce(bp);
   v  = __poly_reduce(v);
 
+  () = #unspill(ct);
   ct[0:MLKEM_POLYVECCOMPRESSEDBYTES] = __i_polyvec_compress(ct[0:MLKEM_POLYVECCOMPRESSEDBYTES], bp);
   ct[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v = _i_poly_compress(ct[MLKEM_POLYVECCOMPRESSEDBYTES:MLKEM_POLYCOMPRESSEDBYTES], v);
 

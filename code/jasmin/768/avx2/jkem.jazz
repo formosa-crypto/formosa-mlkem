@@ -1,130 +1,137 @@
 require "kem.jinc"
 
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+{ ptr: public, val: secret } ×
+public
+"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(
-    #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #secret #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
-    #secret #spill_to_mmx reg ptr u8[2*MLKEM_SYMBYTES] coins)
+    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
+    #secret reg ptr u8[2*MLKEM_SYMBYTES] coins)
  -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
 {
   reg u64 r;
-  stack u8[MLKEM_PUBLICKEYBYTES] pk;
-  reg ptr u8[MLKEM_PUBLICKEYBYTES] pkp;
-  stack u8[MLKEM_SECRETKEYBYTES] sk;
-  reg ptr u8[MLKEM_SECRETKEYBYTES] skp;
 
-  stack u8[2*MLKEM_SYMBYTES] rd;
-  reg ptr u8[2*MLKEM_SYMBYTES] rdp;
   _ = #init_msf();
 
-  () = #spill(public_key);
-  () = #spill(secret_key);
-
-  rd = #copy(coins);
-
-  pkp = pk;
-  skp = sk;
-  rdp = rd;
-
-  pkp, skp = __crypto_kem_keypair_jazz(pkp, skp, rdp);
-
-  () = #unspill(public_key);
-  () = #unspill(secret_key);
-
-  pk = pkp;
-  sk = skp;
-  rd = rdp;
-
-  public_key = #copy(pk);
-  secret_key = #copy(sk);
-
-  () = #spill(public_key);
-  () = #spill(secret_key);
+  public_key, secret_key = __crypto_kem_keypair_jazz(public_key, secret_key, coins);
 
   ?{}, r = #set0();
   return public_key, secret_key, r;
 }
 
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+{ ptr: public, val: secret } ×
+public
+"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(
-    #secret #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-    #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
-    #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] coins)
+    #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    #secret reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    #secret reg ptr u8[MLKEM_SYMBYTES] coins)
     -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
 {
   reg u64 r;
-  stack u8[MLKEM_CIPHERTEXTBYTES] ct;
-  reg ptr u8[MLKEM_CIPHERTEXTBYTES] ctp;
-  stack u8[MLKEM_SYMBYTES] shk;
-  reg ptr u8[MLKEM_SYMBYTES] shkp;
-  stack u8[MLKEM_PUBLICKEYBYTES] pk;
-  reg ptr u8[MLKEM_PUBLICKEYBYTES] pkp;
-
-  stack u8[MLKEM_SYMBYTES] rd;
-  reg ptr u8[MLKEM_SYMBYTES] rdp;
 
   _ = #init_msf();
 
-  () = #spill(ciphertext);
-  () = #spill(shared_secret);
-  pk =  #copy(public_key);
-  rd =  #copy(coins);
+  public_key = public_key;
 
-  ctp = ct;
-  pkp = pk;
-  shkp = shk;
-  rdp = rd;
-
-  ctp, shkp =__crypto_kem_enc_jazz(ctp, shkp, pkp, rdp);
-
-  () = #unspill(ciphertext);
-  () = #unspill(shared_secret);
-
-  ct = ctp;
-  shk = shkp;
-  pk = pkp;
-  rd = rdp;
-
-  ciphertext = #copy(ct);
-  shared_secret = #copy(shk);
+  ciphertext, shared_secret =__crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, coins);
 
   ?{}, r = #set0();
   return ciphertext, shared_secret, r;
 }
 
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+{ ptr: public, val: secret } ×
+public
+"]
+export fn jade_kem_mlkem_mlkem768_amd64_avx2_keypair(
+    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
+ -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
+{
+  reg u64 r;
+  stack u8[MLKEM_SYMBYTES*2] randomness;
+  reg ptr u8[MLKEM_SYMBYTES*2] randomnessp;
+
+  _ = #init_msf();
+
+  public_key = public_key;
+  secret_key = secret_key;
+
+  randomnessp = randomness;
+  randomnessp = #randombytes(randomnessp);
+  (public_key, secret_key) = __crypto_kem_keypair_jazz(public_key, secret_key, randomnessp);
+  
+  ?{}, r = #set0();
+  return public_key, secret_key, r;
+}
+
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+{ ptr: public, val: secret } ×
+public
+"]
+export fn jade_kem_mlkem_mlkem768_amd64_avx2_enc(
+    #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    #secret reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key)
+    -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+{
+  reg u64 r;
+  stack u8[MLKEM_SYMBYTES] randomness;
+  reg ptr u8[MLKEM_SYMBYTES] randomnessp;
+
+  _ = #init_msf();
+
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+
+  randomnessp = randomness;
+  randomnessp = #randombytes(randomnessp);
+
+  (ciphertext, shared_secret) = __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomnessp);
+
+  ?{}, r = #set0();
+  return ciphertext, shared_secret, r;
+}
+
+#[sct="
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } ×
+{ ptr: transient, val: secret } →
+{ ptr: public, val: secret } ×
+public
+"]
 export fn jade_kem_mlkem_mlkem768_amd64_avx2_dec(
-    #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    #secret reg ptr u8[MLKEM_SYMBYTES] shared_secret,
     #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
     #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
     -> #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
 {
   reg u64 r;
-  stack u8[MLKEM_SYMBYTES] shk;
-  reg ptr u8[MLKEM_SYMBYTES] shkp;
-  stack u8[MLKEM_SECRETKEYBYTES] sk;
-  reg ptr u8[MLKEM_SECRETKEYBYTES] skp;
-  stack u8[MLKEM_CIPHERTEXTBYTES] ct;
-  reg ptr u8[MLKEM_CIPHERTEXTBYTES] ctp;
 
   _ = #init_msf();
 
-  () = #spill(shared_secret);
-
-  ct =  #copy(ciphertext);
-  sk =  #copy(secret_key);
-
-  ctp = ct;
-  shkp = shk;
-  skp = sk;
-
-  shkp = __crypto_kem_dec_jazz(shkp, ctp, skp);
-
-  () = #unspill(shared_secret);
-
-  shk = shkp;
-  sk = skp;
-  ct = ctp;
-
-  shared_secret = #copy(shk);
+  shared_secret = __crypto_kem_dec_jazz(shared_secret, ciphertext, secret_key);
 
   ?{}, r = #set0();
   return shared_secret, r;
