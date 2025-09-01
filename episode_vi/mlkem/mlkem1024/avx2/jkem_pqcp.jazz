@@ -15745,7 +15745,7 @@ fn _i_poly_tomsg (reg mut ptr u8[MLKEM_INDCPA_MSGBYTES] rp,
     f1 = #VPSUB_16u16(f1, hhq); /*  */
     f0 = #VPACKSS_16u16(f0, f1); /*  */
     f0 = #VPERMQ(f0, ((8u) 216)); /*  */
-    c = #VPMOVMSKB_u256u32(f0); /*  */
+    c = #MOVEMASK_32u8(f0); /*  */
     rp[:u32 i] = c; /* u32 */
   }
   return (rp, a);
@@ -16939,7 +16939,7 @@ fn __gen_matrix_buf_rejection_filter48 (reg mut ptr u16[MLKEM_N] pol,
   g1 = #VPCMPGT_16u16(bounds, f1); /*  */
   g0 = #VPACKSS_16u16(g0, g1); /*  */
   #[declassify]
-  good = #VPMOVMSKB_u256u64(g0); /*  */
+  good = (64u)#MOVEMASK_32u8(g0); /*  */
   good = #protect_64(good, ms); /* :k */
   t0_0 = good; /* u64 */
   t0_0 = (t0_0 &64u ((64u) 255)); /* u64 */
@@ -17067,7 +17067,7 @@ fn __gen_matrix_buf_rejection_filter24 (reg mut ptr u16[MLKEM_N] pol,
   g1 = #set0_256(); /*  */
   g0 = #VPACKSS_16u16(g0, g1); /*  */
   #[declassify]
-  good = #VPMOVMSKB_u256u64(g0); /*  */
+  good = (64u)#MOVEMASK_32u8(g0); /*  */
   good = #protect_64(good, ms); /* :k */
   t0_0 = good; /* u64 */
   t0_0 = (t0_0 &64u ((64u) 255)); /* u64 */
