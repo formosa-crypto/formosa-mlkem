@@ -11265,7 +11265,7 @@ L_gen_matrix_buf_rejection$24:
 	vpcmpgtw	%ymm4, %ymm2, %ymm6
 	vpcmpgtw	%ymm5, %ymm2, %ymm7
 	vpacksswb	%ymm7, %ymm6, %ymm6
-	vpmovmskb	%ymm6, %r12
+	vpmovmskb	%ymm6, %r12d
 	orq 	%r11, %r12
 	movq	%r12, %r13
 	andq	$255, %r13
@@ -11335,7 +11335,7 @@ L_gen_matrix_buf_rejection$4:
 	vpcmpgtw	%ymm4, %ymm2, %ymm5
 	vpxor	%ymm6, %ymm6, %ymm6
 	vpacksswb	%ymm6, %ymm5, %ymm5
-	vpmovmskb	%ymm5, %r13
+	vpmovmskb	%ymm5, %r13d
 	orq 	%r11, %r13
 	movq	%r13, %r12
 	andq	$255, %r12

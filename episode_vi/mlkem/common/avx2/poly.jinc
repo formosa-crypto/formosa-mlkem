@@ -1212,7 +1212,7 @@ fn _i_poly_tomsg(reg ptr u8[MLKEM_INDCPA_MSGBYTES] rp, reg ptr u16[MLKEM_N] a) -
     f1 = #VPSUB_16u16(f1, hhq);
     f0 = #VPACKSS_16u16(f0, f1);
     f0 = #VPERMQ(f0, 0xD8);
-    c = #VPMOVMSKB_u256u32(f0);
+    c = #MOVEMASK_32u8(f0);
     rp[:u32 i] = c;
   }
   return rp, a;
