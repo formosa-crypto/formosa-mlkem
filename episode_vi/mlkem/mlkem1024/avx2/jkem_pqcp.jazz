@@ -16913,10 +16913,6 @@ fn __gen_matrix_buf_rejection_filter48 (reg mut ptr u16[MLKEM_N] pol,
   reg u64 good;
   reg u64 t0_0;
   reg u256 shuffle_0;
-  reg bool _of_;
-  reg bool _cf_;
-  reg bool _sf_;
-  reg bool _zf_;
   reg u64 t0_1;
   reg u128 shuffle_0_1;
   reg u64 t1_0;
@@ -16948,25 +16944,29 @@ fn __gen_matrix_buf_rejection_filter48 (reg mut ptr u16[MLKEM_N] pol,
   t0_0 = good; /* u64 */
   t0_0 = (t0_0 &64u ((64u) 255)); /* u64 */
   shuffle_0 = (256u)#VMOV_64(sst[:u64 t0_0]); /*  */
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, t0_0) = #POPCNT_64(t0_0); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, t0_0) =
+    #POPCNT_64(t0_0); /*  */
   t0_0 = (t0_0 +64u counter); /* u64 */
   t0_1 = good; /* u64 */
   t0_1 = (t0_1 >>64u ((8u) 16)); /* u64 */
   t0_1 = (t0_1 &64u ((64u) 255)); /* u64 */
   shuffle_0_1 = #VMOV_64(sst[:u64 t0_1]); /*  */
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, t0_1) = #POPCNT_64(t0_1); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, t0_1) =
+    #POPCNT_64(t0_1); /*  */
   t0_1 = (t0_1 +64u t0_0); /* u64 */
   t1_0 = good; /* u64 */
   t1_0 = (t1_0 >>64u ((8u) 8)); /* u64 */
   t1_0 = (t1_0 &64u ((64u) 255)); /* u64 */
   shuffle_1 = (256u)#VMOV_64(sst[:u64 t1_0]); /*  */
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, t1_0) = #POPCNT_64(t1_0); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, t1_0) =
+    #POPCNT_64(t1_0); /*  */
   t1_0 = (t1_0 +64u t0_1); /* u64 */
   t1_1 = good; /* u64 */
   t1_1 = (t1_1 >>64u ((8u) 24)); /* u64 */
   t1_1 = (t1_1 &64u ((64u) 255)); /* u64 */
   shuffle_1_1 = #VMOV_64(sst[:u64 t1_1]); /*  */
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, t1_1) = #POPCNT_64(t1_1); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, t1_1) =
+    #POPCNT_64(t1_1); /*  */
   t1_1 = (t1_1 +64u t1_0); /* u64 */
   shuffle_0 = #VINSERTI128(shuffle_0, shuffle_0_1, ((8u) 1)); /*  */
   shuffle_1 = #VINSERTI128(shuffle_1, shuffle_1_1, ((8u) 1)); /*  */
@@ -17051,10 +17051,6 @@ fn __gen_matrix_buf_rejection_filter24 (reg mut ptr u16[MLKEM_N] pol,
   reg u64 good;
   reg u64 t0_0;
   reg u256 shuffle_0;
-  reg bool _of_;
-  reg bool _cf_;
-  reg bool _sf_;
-  reg bool _zf_;
   reg u64 t0_1;
   reg u128 shuffle_0_1;
   reg u256 shuffle_t;
@@ -17076,13 +17072,15 @@ fn __gen_matrix_buf_rejection_filter24 (reg mut ptr u16[MLKEM_N] pol,
   t0_0 = good; /* u64 */
   t0_0 = (t0_0 &64u ((64u) 255)); /* u64 */
   shuffle_0 = (256u)#VMOV_64(sst[:u64 t0_0]); /*  */
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, t0_0) = #POPCNT_64(t0_0); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, t0_0) =
+    #POPCNT_64(t0_0); /*  */
   t0_0 = (t0_0 +64u counter); /* u64 */
   t0_1 = good; /* u64 */
   t0_1 = (t0_1 >>64u ((8u) 16)); /* u64 */
   t0_1 = (t0_1 &64u ((64u) 255)); /* u64 */
   shuffle_0_1 = #VMOV_64(sst[:u64 t0_1]); /*  */
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, t0_1) = #POPCNT_64(t0_1); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, t0_1) =
+    #POPCNT_64(t0_1); /*  */
   t0_1 = (t0_1 +64u t0_0); /* u64 */
   shuffle_0 = #VINSERTI128(shuffle_0, shuffle_0_1, ((8u) 1)); /*  */
   shuffle_t = #VPADD_32u8(shuffle_0, ones); /*  */
@@ -17629,16 +17627,13 @@ fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand (#[secret]
 (#[secret] reg mut ptr u8[MLKEM_PUBLICKEYBYTES], #[secret]
 reg mut ptr u8[MLKEM_SECRETKEYBYTES], #[public] reg u64) {
   reg u64 r;
-  reg bool _of_;
-  reg bool _cf_;
-  reg bool _sf_;
-  reg bool _zf_;
   
   _ /* u64 */ = #init_msf(); /* :k */
   #[inline]
   (public_key, secret_key) =
     __crypto_kem_keypair_jazz(public_key, secret_key, coins);
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, r) =
+    #set0_64(); /*  */
   return (public_key, secret_key, r);
 }
 
@@ -17655,17 +17650,14 @@ fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand (#[secret]
 (#[secret] reg mut ptr u8[MLKEM_CIPHERTEXTBYTES], #[secret]
 reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64) {
   reg u64 r;
-  reg bool _of_;
-  reg bool _cf_;
-  reg bool _sf_;
-  reg bool _zf_;
   
   _ /* u64 */ = #init_msf(); /* :k */
   public_key = public_key; /* u8[MLKEM_PUBLICKEYBYTES] */
   #[inline]
   (ciphertext, shared_secret) =
     __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, coins);
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, r) =
+    #set0_64(); /*  */
   return (ciphertext, shared_secret, r);
 }
 
@@ -17680,10 +17672,6 @@ reg mut ptr u8[MLKEM_SECRETKEYBYTES], #[public] reg u64) {
   reg u64 r;
   reg mut ptr u8[(MLKEM_SYMBYTES * 2)] randomnessp;
   stack u8[(MLKEM_SYMBYTES * 2)] randomness;
-  reg bool _of_;
-  reg bool _cf_;
-  reg bool _sf_;
-  reg bool _zf_;
   
   _ /* u64 */ = #init_msf(); /* :k */
   public_key = public_key; /* u8[MLKEM_PUBLICKEYBYTES] */
@@ -17693,7 +17681,8 @@ reg mut ptr u8[MLKEM_SECRETKEYBYTES], #[public] reg u64) {
   #[inline]
   (public_key, secret_key) =
     __crypto_kem_keypair_jazz(public_key, secret_key, randomnessp);
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, r) =
+    #set0_64(); /*  */
   return (public_key, secret_key, r);
 }
 
@@ -17710,10 +17699,6 @@ reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64) {
   reg u64 r;
   reg mut ptr u8[MLKEM_SYMBYTES] randomnessp;
   stack u8[MLKEM_SYMBYTES] randomness;
-  reg bool _of_;
-  reg bool _cf_;
-  reg bool _sf_;
-  reg bool _zf_;
   
   _ /* u64 */ = #init_msf(); /* :k */
   ciphertext = ciphertext; /* u8[MLKEM_CIPHERTEXTBYTES] */
@@ -17724,7 +17709,8 @@ reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64) {
   #[inline]
   (ciphertext, shared_secret) =
     __crypto_kem_enc_jazz(ciphertext, shared_secret, public_key, randomnessp);
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, r) =
+    #set0_64(); /*  */
   return (ciphertext, shared_secret, r);
 }
 
@@ -17738,16 +17724,13 @@ fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec (#[secret]
                                            reg const ptr u8[MLKEM_SECRETKEYBYTES] secret_key) -> 
 (#[secret] reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64) {
   reg u64 r;
-  reg bool _of_;
-  reg bool _cf_;
-  reg bool _sf_;
-  reg bool _zf_;
   
   _ /* u64 */ = #init_msf(); /* :k */
   #[inline]
   shared_secret =
     __crypto_kem_dec_jazz(shared_secret, ciphertext, secret_key);
-  (_of_, _cf_, _sf_, _ /* bool */, _zf_, r) = #set0_64(); /*  */
+  (_ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, _ /* bool */, r) =
+    #set0_64(); /*  */
   return (shared_secret, r);
 }
 

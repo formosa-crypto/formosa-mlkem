@@ -3909,7 +3909,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_dec$1:
 	vmovdqu	(%rax), %ymm2
 	vpblendvb	%ymm0, %ymm2, %ymm1, %ymm0
 	vmovdqu	%ymm0, (%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	21768(%rsp), %rbx
 	movq	21776(%rsp), %rbp
 	movq	21784(%rsp), %r12
@@ -6391,7 +6391,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc$1:
 	movq	%rcx, 16(%rax)
 	movq	88(%rsp), %rcx
 	movq	%rcx, 24(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	18592(%rsp), %rbx
 	movq	18600(%rsp), %rbp
 	movq	18608(%rsp), %r12
@@ -7504,7 +7504,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair$1:
 	movq	%rdx, 3152(%rax)
 	movq	56(%rcx), %rcx
 	movq	%rcx, 3160(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	15080(%rsp), %rbx
 	movq	15088(%rsp), %rbp
 	movq	15096(%rsp), %r12
@@ -9981,7 +9981,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand$1:
 	movq	%rcx, 16(%rax)
 	movq	88(%rsp), %rcx
 	movq	%rcx, 24(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	18592(%rsp), %rbx
 	movq	18600(%rsp), %rbp
 	movq	18608(%rsp), %r12
@@ -11089,7 +11089,7 @@ Ljade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand$1:
 	movq	%rdx, 3152(%rax)
 	movq	56(%rcx), %rcx
 	movq	%rcx, 3160(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	15016(%rsp), %rbx
 	movq	15024(%rsp), %rbp
 	movq	15032(%rsp), %r12
