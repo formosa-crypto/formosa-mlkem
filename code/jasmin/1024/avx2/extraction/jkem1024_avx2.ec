@@ -8669,7 +8669,7 @@ module M = {
       f1 <- (VPSUB_16u16 f1 hhq);
       f0 <- (VPACKSS_16u16 f0 f1);
       f0 <- (VPERMQ f0 (W8.of_int 216));
-      c <- (VPMOVMSKB_u256u32 f0);
+      c <- (MOVEMASK_32u8 f0);
       rp <-
       (Array32.init
       (WArray32.get8
@@ -9058,10 +9058,6 @@ module M = {
     var good:W64.t;
     var t0_0:W64.t;
     var shuffle_0:W256.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var t0_1:W64.t;
     var shuffle_0_1:W128.t;
     var t1_0:W64.t;
@@ -9073,6 +9069,22 @@ module M = {
     var  _1:bool;
     var  _2:bool;
     var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
+    var  _6:bool;
+    var  _7:bool;
+    var  _8:bool;
+    var  _9:bool;
+    var  _10:bool;
+    var  _11:bool;
+    var  _12:bool;
+    var  _13:bool;
+    var  _14:bool;
+    var  _15:bool;
+    var  _16:bool;
+    var  _17:bool;
+    var  _18:bool;
+    var  _19:bool;
     f0 <-
     (VPERMQ
     (get256_direct (WArray536.init8 (fun i => buf.[i]))
@@ -9100,7 +9112,7 @@ module M = {
     g0 <- (VPCMPGT_16u16 bounds f0);
     g1 <- (VPCMPGT_16u16 bounds f1);
     g0 <- (VPACKSS_16u16 g0 g1);
-    good <- (VPMOVMSKB_u256u64 g0);
+    good <- (zeroextu64 (MOVEMASK_32u8 g0));
     good <- (protect_64 good ms);
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
@@ -9108,7 +9120,7 @@ module M = {
     (zeroextu256
     (VMOV_64 (get64 (WArray2048.init8 (fun i => sst.[i])) (W64.to_uint t0_0))
     ));
-    (_of_, _cf_, _sf_,  _0, _zf_, t0_0) <- (POPCNT_64 t0_0);
+    ( _0,  _1,  _2,  _3,  _4, t0_0) <- (POPCNT_64 t0_0);
     t0_0 <- (t0_0 + counter);
     t0_1 <- good;
     t0_1 <- (t0_1 `>>` (W8.of_int 16));
@@ -9116,7 +9128,7 @@ module M = {
     shuffle_0_1 <-
     (VMOV_64 (get64 (WArray2048.init8 (fun i => sst.[i])) (W64.to_uint t0_1))
     );
-    (_of_, _cf_, _sf_,  _1, _zf_, t0_1) <- (POPCNT_64 t0_1);
+    ( _5,  _6,  _7,  _8,  _9, t0_1) <- (POPCNT_64 t0_1);
     t0_1 <- (t0_1 + t0_0);
     t1_0 <- good;
     t1_0 <- (t1_0 `>>` (W8.of_int 8));
@@ -9125,7 +9137,7 @@ module M = {
     (zeroextu256
     (VMOV_64 (get64 (WArray2048.init8 (fun i => sst.[i])) (W64.to_uint t1_0))
     ));
-    (_of_, _cf_, _sf_,  _2, _zf_, t1_0) <- (POPCNT_64 t1_0);
+    ( _10,  _11,  _12,  _13,  _14, t1_0) <- (POPCNT_64 t1_0);
     t1_0 <- (t1_0 + t0_1);
     t1_1 <- good;
     t1_1 <- (t1_1 `>>` (W8.of_int 24));
@@ -9133,7 +9145,7 @@ module M = {
     shuffle_1_1 <-
     (VMOV_64 (get64 (WArray2048.init8 (fun i => sst.[i])) (W64.to_uint t1_1))
     );
-    (_of_, _cf_, _sf_,  _3, _zf_, t1_1) <- (POPCNT_64 t1_1);
+    ( _15,  _16,  _17,  _18,  _19, t1_1) <- (POPCNT_64 t1_1);
     t1_1 <- (t1_1 + t1_0);
     shuffle_0 <- (VINSERTI128 shuffle_0 shuffle_0_1 (W8.of_int 1));
     shuffle_1 <- (VINSERTI128 shuffle_1 shuffle_1_1 (W8.of_int 1));
@@ -9240,16 +9252,20 @@ module M = {
     var good:W64.t;
     var t0_0:W64.t;
     var shuffle_0:W256.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var t0_1:W64.t;
     var shuffle_0_1:W128.t;
     var shuffle_t:W256.t;
     var t128:W128.t;
     var  _0:bool;
     var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
+    var  _6:bool;
+    var  _7:bool;
+    var  _8:bool;
+    var  _9:bool;
     f0 <-
     (VPERMQ
     (get256_direct (WArray536.init8 (fun i => buf.[i]))
@@ -9265,7 +9281,7 @@ module M = {
     g0 <- (VPCMPGT_16u16 bounds f0);
     g1 <- (set0_256);
     g0 <- (VPACKSS_16u16 g0 g1);
-    good <- (VPMOVMSKB_u256u64 g0);
+    good <- (zeroextu64 (MOVEMASK_32u8 g0));
     good <- (protect_64 good ms);
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
@@ -9273,7 +9289,7 @@ module M = {
     (zeroextu256
     (VMOV_64 (get64 (WArray2048.init8 (fun i => sst.[i])) (W64.to_uint t0_0))
     ));
-    (_of_, _cf_, _sf_,  _0, _zf_, t0_0) <- (POPCNT_64 t0_0);
+    ( _0,  _1,  _2,  _3,  _4, t0_0) <- (POPCNT_64 t0_0);
     t0_0 <- (t0_0 + counter);
     t0_1 <- good;
     t0_1 <- (t0_1 `>>` (W8.of_int 16));
@@ -9281,7 +9297,7 @@ module M = {
     shuffle_0_1 <-
     (VMOV_64 (get64 (WArray2048.init8 (fun i => sst.[i])) (W64.to_uint t0_1))
     );
-    (_of_, _cf_, _sf_,  _1, _zf_, t0_1) <- (POPCNT_64 t0_1);
+    ( _5,  _6,  _7,  _8,  _9, t0_1) <- (POPCNT_64 t0_1);
     t0_1 <- (t0_1 + t0_0);
     shuffle_0 <- (VINSERTI128 shuffle_0 shuffle_0_1 (W8.of_int 1));
     shuffle_t <- (VPADD_32u8 shuffle_0 ones);
@@ -10155,16 +10171,16 @@ module M = {
                                                            coins:W8.t Array64.t) : 
   W8.t Array1568.t * W8.t Array3168.t * W64.t = {
     var r:W64.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
      _0 <- (init_msf);
     (public_key, secret_key) <@ __crypto_kem_keypair_jazz (public_key,
     secret_key, coins);
-    (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
+    ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (public_key, secret_key, r);
   }
   proc jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand (ciphertext:W8.t Array1568.t,
@@ -10173,17 +10189,17 @@ module M = {
                                                        coins:W8.t Array32.t) : 
   W8.t Array1568.t * W8.t Array32.t * W64.t = {
     var r:W64.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
      _0 <- (init_msf);
     public_key <- public_key;
     (ciphertext, shared_secret) <@ __crypto_kem_enc_jazz (ciphertext,
     shared_secret, public_key, coins);
-    (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
+    ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (ciphertext, shared_secret, r);
   }
   proc jade_kem_mlkem_mlkem1024_amd64_avx2_dec (shared_secret:W8.t Array32.t,
@@ -10191,16 +10207,16 @@ module M = {
                                                 secret_key:W8.t Array3168.t) : 
   W8.t Array32.t * W64.t = {
     var r:W64.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
      _0 <- (init_msf);
     shared_secret <@ __crypto_kem_dec_jazz (shared_secret, ciphertext,
     secret_key);
-    (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
+    ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (shared_secret, r);
   }
 }.

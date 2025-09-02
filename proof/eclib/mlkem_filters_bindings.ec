@@ -368,7 +368,6 @@ bind circuit VPUNPCKL_32u8     "VPUNPCKL_32u8".
 bind circuit VPSHUFB_128       "VPSHUFB_128".
 bind circuit VPCMPGT_16u16     "VPCMPGT_16u16".
 bind circuit VPACKSS_16u16     "VPACKSS_16u16".
-bind circuit VPMOVMSKB_u256u64 "VPMOVMSKB_u256u64".
 
 (* -------------------------------------------------------------------- *)
 op VPINC_8u8 : W64.t -> W64.t.
