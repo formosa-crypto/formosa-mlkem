@@ -2593,7 +2593,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$1:
 	vmovdqu	(%rax), %ymm2
 	vpblendvb	%ymm0, %ymm2, %ymm1, %ymm0
 	vmovdqu	%ymm0, (%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	15176(%rsp), %rbx
 	movq	15184(%rsp), %rbp
 	movq	15192(%rsp), %r12
@@ -4214,7 +4214,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc$1:
 	movq	%rcx, 16(%rax)
 	movq	120(%rsp), %rcx
 	movq	%rcx, 24(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	12960(%rsp), %rbx
 	movq	12968(%rsp), %rbp
 	movq	12976(%rsp), %r12
@@ -5052,7 +5052,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair$1:
 	movq	%rdx, 2384(%rax)
 	movq	56(%rcx), %rcx
 	movq	%rcx, 2392(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	9960(%rsp), %rbx
 	movq	9968(%rsp), %rbp
 	movq	9976(%rsp), %r12
@@ -6668,7 +6668,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$1:
 	movq	%rcx, 16(%rax)
 	movq	120(%rsp), %rcx
 	movq	%rcx, 24(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	12960(%rsp), %rbx
 	movq	12968(%rsp), %rbp
 	movq	12976(%rsp), %r12
@@ -7501,7 +7501,7 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand$1:
 	movq	%rdx, 2384(%rax)
 	movq	56(%rcx), %rcx
 	movq	%rcx, 2392(%rax)
-	xorq	%rax, %rax
+	xorl	%eax, %eax
 	movq	9896(%rsp), %rbx
 	movq	9904(%rsp), %rbp
 	movq	9912(%rsp), %r12
@@ -7655,7 +7655,7 @@ L_gen_matrix_buf_rejection$24:
 	vpcmpgtw	%ymm4, %ymm2, %ymm6
 	vpcmpgtw	%ymm5, %ymm2, %ymm7
 	vpacksswb	%ymm7, %ymm6, %ymm6
-	vpmovmskb	%ymm6, %r12
+	vpmovmskb	%ymm6, %r12d
 	orq 	%r11, %r12
 	movq	%r12, %r13
 	andq	$255, %r13
@@ -7725,7 +7725,7 @@ L_gen_matrix_buf_rejection$4:
 	vpcmpgtw	%ymm4, %ymm2, %ymm5
 	vpxor	%ymm6, %ymm6, %ymm6
 	vpacksswb	%ymm6, %ymm5, %ymm5
-	vpmovmskb	%ymm5, %r13
+	vpmovmskb	%ymm5, %r13d
 	orq 	%r11, %r13
 	movq	%r13, %r12
 	andq	$255, %r12
