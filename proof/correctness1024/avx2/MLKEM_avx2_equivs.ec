@@ -1183,7 +1183,8 @@ proc change 12: (sliceget32_8_256 pc_shufbidx_s 0); 1: by auto.
 proc change ^while{2}.1: (sliceget256_16_256 a (2*i*256));1: by auto => /#.
 proc change ^while{2}.2: (sliceget256_16_256 a ((2*i+1)*256));1: by auto => /#.
 proc change ^while{2}.18 : (sliceset160_8_128 rp  (20*i*8) t0);1: by auto => /#.
-proc change ^while{2}.19 : (sliceset160_8_32 rp  ((20*i+16)*8) (truncateu32 t1));1: by auto => /#.
+proc change ^while{2}.19 : (sliceset160_8_32 rp  ((20*i+16)*8) (truncateu32 t1)).
++ by auto => &m; move: (truncateu32 t1{m}) => ? /#.
 
 cfold 13.
 do 2!(unroll for ^while).

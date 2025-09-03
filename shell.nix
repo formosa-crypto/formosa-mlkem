@@ -13,8 +13,8 @@ let jasmin =
     src = fetchFromGitLab {
       owner = "jasmin-lang";
       repo = "jasmin-compiler";
-      rev = "e1986c87bc53757904bb51c98582887243ff3914";
-      hash = "sha256-6/zRkWnkb08GmgNgXwcXXlRJLpQVPr9Du6tEyydhtXw=";
+      rev = "v2025.06.1";
+      hash = "sha256-6E6lTrR6lxMKbVHLnjxML8rbLyu4bJxeqOxHwBOszxk=";
     };
   })
 ; in
@@ -23,8 +23,8 @@ let crypto-specs =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "crypto-specs";
-    rev = "b8e3c7cb30d9fcb2cb8c016a836eaf3ff661a24a";
-    hash = "sha256-XFGc0BLvtf7hq8zAW0sniLpdkXfVlGXEXoqwD7jzLPw=";
+    rev = "3d621e5eafab9263610595a97617e331e857940c";
+    hash = "sha256-BmvbFxzkZirrqF7TyRIjzK66O5isT793fGCgeziD1eg=";
   }
 ; in
 
@@ -32,8 +32,8 @@ let formosa-keccak =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "formosa-keccak";
-    rev = "34b12ab2c1aaf00cd3c6c77cd79146824276652c";
-    hash = "sha256-Zidd1J2GEAS2TDVA1+tlJAWfdaqLsw83PQKhkmJ97EA=";
+    rev = "40118f698e3fb3c39f1763aee76da794a19fdcf3";
+    hash = "sha256-tZnzWfbFKqFnarhlAHmoDEsxVRYQy7xk4EE6AZOf3Qo=";
   }
 ; in
 
@@ -45,13 +45,13 @@ let
     coqPackages = { coq = null; flocq = null; };
   };
   bitwuzla = callPackage ./config/bitwuzla.nix { inherit (oc) buildDunePackage zarith; };
-  ecVersion = "c9717f9146429bea92647fdc49d575fc44f2b11d";
+  ecVersion = "e9a86ad415073c204bc8445c9ff0dcb80d1c05f5";
   ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "EasyCrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-CISmx3IrJH872rEd587JOTH5qPgyJyZP583e80vHMwI=";
+      hash = "sha256-UBr6hkADW6OWg99UVmU7jBiSKhVMX4eylbiArdmdCPw=";
     };
     postPatch = ''
       substituteInPlace dune-project \

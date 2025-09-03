@@ -3566,12 +3566,12 @@ module M = {
     var sk:W8.t Array2400.t;
     var skp:W8.t Array2400.t;
     var rdp:W8.t Array64.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
     pk <- witness;
     pkp <- witness;
     rd <- witness;
@@ -3626,7 +3626,7 @@ module M = {
     );
     (* Erased call to spill *)
     (* Erased call to spill *)
-    (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
+    ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (public_key, secret_key, r);
   }
   proc jade_kem_mlkem_mlkem768_amd64_ref_enc_derand (ciphertext:W8.t Array1088.t,
@@ -3643,12 +3643,12 @@ module M = {
     var shk:W8.t Array32.t;
     var shkp:W8.t Array32.t;
     var rdp:W8.t Array32.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
     ct <- witness;
     ctp <- witness;
     pk <- witness;
@@ -3717,7 +3717,7 @@ module M = {
                         )).[i])
               ) i))
     );
-    (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
+    ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (ciphertext, shared_secret, r);
   }
   proc jade_kem_mlkem_mlkem768_amd64_ref_dec (shared_secret:W8.t Array32.t,
@@ -3731,12 +3731,12 @@ module M = {
     var shk:W8.t Array32.t;
     var shkp:W8.t Array32.t;
     var skp:W8.t Array2400.t;
-    var _of_:bool;
-    var _cf_:bool;
-    var _sf_:bool;
-    var _zf_:bool;
     var  _0:W64.t;
     var  _1:bool;
+    var  _2:bool;
+    var  _3:bool;
+    var  _4:bool;
+    var  _5:bool;
     ct <- witness;
     ctp <- witness;
     shk <- witness;
@@ -3788,7 +3788,7 @@ module M = {
                         )).[i])
               ) i))
     );
-    (_of_, _cf_, _sf_,  _1, _zf_, r) <- (set0_64);
+    ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (shared_secret, r);
   }
 }.

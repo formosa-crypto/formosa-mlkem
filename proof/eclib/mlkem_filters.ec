@@ -582,7 +582,7 @@ module Filters = {
     g0 <- (VPCMPGT_16u16 sample_q f0);
     g1 <- (set0_256);
     g0 <- (VPACKSS_16u16 g0 g1);
-    good <- (VPMOVMSKB_u256u64 g0);
+    good <- zeroextu64 (MOVEMASK_32u8 g0);
 
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
@@ -645,7 +645,7 @@ module Filters = {
     g0 <- (VPCMPGT_16u16 sample_q f0);
     g1 <- (VPCMPGT_16u16 sample_q f1);
     g0 <- (VPACKSS_16u16 g0 g1);
-    good <- (VPMOVMSKB_u256u64 g0);
+    good <- zeroextu64 (MOVEMASK_32u8 g0);
 
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
