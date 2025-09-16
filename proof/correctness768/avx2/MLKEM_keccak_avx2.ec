@@ -1161,7 +1161,7 @@ have L: forall x, x\in[0;2;4;6] => sub ((init (fun i=> _rc.[x+i])))%Array2 0 2 =
  by move=> i /= []Hi; apply eq_in_mkseq => j Hj /=; rewrite initiE //=.
 rewrite !L //=; congr; congr; congr;1..2,4..: smt().
 congr.
-by smt(Array2.initiE Array2.tP).
+by rewrite -L.
 qed.
 
 lemma shake128x4_absorb_A32_A2_ll: islossless K._shake128x4_absorb_A32_A2.

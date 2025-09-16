@@ -437,7 +437,8 @@ case (i < n * (len*2)+len) => /> Hi3.
  rewrite (_:i %/ len = n*2) 2:/#.
  by rewrite divz_eqP // /#.
 case (i < n * (len * 2) + len + len) => />Hi4; last smt().
-by rewrite (_:i%/len = n*2+1) => /> /#.
+suff -> : i %/ len = 2 * n + 1 by smt().
+by apply: divz_eqP; last smt().
 qed.
 
 (* simpler definition that greatly speeds up proofs below *)
