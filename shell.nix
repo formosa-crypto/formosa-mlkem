@@ -1,7 +1,7 @@
 { pkgs ?
     import (fetchTarball {
-      url = https://github.com/NixOS/nixpkgs/archive/bfa9810ff7104a17555ab68ebdeafb6705f129b1.tar.gz;
-      sha256 = "sha256:1p528ci8309zhyvzli0p7hfkxypjyqi96fqpgm61n32s62c64a23";
+      url = https://github.com/NixOS/nixpkgs/archive/9d1fa9fa266631335618373f8faad570df6f9ede.tar.gz;
+      sha256 = "sha256:1pn90y4nw8c3gdz9c2chpy75hiay3872zhgfkmxc1mhgpkwx66bx";
     }) {}
 , full ? true
 }:
@@ -23,8 +23,8 @@ let crypto-specs =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "crypto-specs";
-    rev = "3d621e5eafab9263610595a97617e331e857940c";
-    hash = "sha256-BmvbFxzkZirrqF7TyRIjzK66O5isT793fGCgeziD1eg=";
+    rev = "58d35d65630e17c79ebe58028a2ce64c467056e9";
+    hash = "sha256-MlsrFcpDa1bocAoT4AMb9H08bCTBBs+yfczqwxK5aBI=";
   }
 ; in
 
@@ -45,20 +45,20 @@ let
     coqPackages = { coq = null; flocq = null; };
   };
   bitwuzla = callPackage ./config/bitwuzla.nix { inherit (oc) buildDunePackage zarith; };
-  ecVersion = "e9a86ad415073c204bc8445c9ff0dcb80d1c05f5";
+  ecVersion = "ae9418da46b17fef73156599b1ecac72b7f4abaa";
   ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "EasyCrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-UBr6hkADW6OWg99UVmU7jBiSKhVMX4eylbiArdmdCPw=";
+      hash = "sha256-OhwCt7VI+nX2+M5ftXvkRsNZSqMH0cKJtKD+8JZL4RI=";
     };
     postPatch = ''
       substituteInPlace dune-project \
         --replace-warn '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
     '';
     buildInputs = o.buildInputs ++ (with oc; [
-      bitwuzla hex iter progress ppx_deriving_yojson
+      bitwuzla hex iter progress ppx_deriving_yojson pcre2
     ]);
   })).override {
     ocamlPackages = oc;
@@ -83,7 +83,7 @@ mkShell ({
   ];
 
   EC_RDIRS = mkECvar [
-    { key = "Jasmin"; val = "${jasmin.lib}/lib/jasmin/easycrypt"; }
+    { key = "Jasmin"; val = "${jasmin.lib}/lib/easycrypt/jasmin"; }
     { key = "CryptoSpecs"; val = "${crypto-specs}/fips202"; }
     { key = "CryptoSpecs"; val = "${crypto-specs}/ml-kem"; }
   ];
