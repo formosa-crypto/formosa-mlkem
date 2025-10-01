@@ -8,6 +8,9 @@ on:
     branches: ["bdep_comments_prune_ci", "main"]
   pull_request:
     branches: ["main"]
+    
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
 
 
 jobs:

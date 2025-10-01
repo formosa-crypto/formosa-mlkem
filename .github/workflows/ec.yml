@@ -5,6 +5,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
+
 jobs:
     test_extraction:
         name: Extract MLKEM to EC

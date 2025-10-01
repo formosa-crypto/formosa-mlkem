@@ -5,6 +5,10 @@ on:
   workflow_call:
   workflow_dispatch:
 
+  
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
+
 jobs:
     ct:
       name: Check Constant-Time Security

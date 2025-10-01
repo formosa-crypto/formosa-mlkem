@@ -16,6 +16,7 @@ env:
   OPAMYES: true
   OPAMJOBS: 2
   ECRJOBS: 1
+  NIXPKGS_ALLOW_UNFREE: 1
 
 jobs:
   ec:
