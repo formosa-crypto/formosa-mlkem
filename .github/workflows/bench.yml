@@ -1,0 +1,13 @@
+name: Benchmarks
+permissions:
+  contents: read
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+    mlkem:
+        name: Benchmarks
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v4

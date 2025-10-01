@@ -1,7 +1,10 @@
-name: "Check Constant-Time Security"
+name: Check Constant-Time Security
+permissions:
+  contents: read
 on:
-  pull_request:
-  push:
+  workflow_call:
+  workflow_dispatch:
+
 
 jobs:
   checkCT:
