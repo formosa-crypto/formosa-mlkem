@@ -29,11 +29,11 @@ jobs:
       id-token: write
     uses: ./.github/workflows/ec.yml
     secrets: inherit 
-  # bench:
-  #   name: Benchmarks
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #   uses: ./.github/workflows/bench.yml
-  #   secrets: inherit 
+  bench:
+    name: Benchmarks
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/bench.yml
+    secrets: inherit 
 
