@@ -19,5 +19,5 @@ jobs:
         - uses: cachix/install-nix-action@v31
           with:
             nix_path: nixpkgs=channel:nixos-unstable
-        - run: nix-shell --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --run "make -C bench"
+        - run: nix-shell --arg full false --run "echo Dependencies OK…"
+        - run: nix-shell --arg full false --arg full false --run "make -C bench"
