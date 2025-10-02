@@ -1,5 +1,5 @@
 CC ?= clang-14
-CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE
+CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
 
 KeccakP-1600-times4-SIMD256.o: KeccakP-1600-times4-SIMD256.c \
   align.h brg_endian.h KeccakP-1600-times4-SnP.h \

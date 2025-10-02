@@ -8,7 +8,7 @@ KECCAK4XOBJ=KeccakP-1600-times4-SIMD256.o
 KECCAK4X=$(KECCAK4XDIR)/$(KECCAK4XOBJ)
 
 CC ?= clang-14
-CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -Qunused-arguments -fPIC -fPIE -I../../randombytes $(EXTRAFLAGS)
+CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE -I../../randombytes $(EXTRAFLAGS)
 #CFLAGS=-mavx2 -mbmi2 -mpopcnt -O3 -Wall -Wextra -Wpedantic -Werror \
 #          -Wmissing-prototypes -Wredundant-decls \
 #          -Wpointer-arith -Wshadow \
