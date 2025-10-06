@@ -5,7 +5,7 @@
 
 #flags changed to match SUPERCOP
 CC ?= clang-14
-CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
+CFLAGS ?= -mavx2 -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
 
 NISTFLAGS += -Wno-unused-result -O3 -fomit-frame-pointer
 RM = /bin/rm

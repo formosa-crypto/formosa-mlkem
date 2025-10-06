@@ -1,8 +1,10 @@
-.PHONY: libkyber768_avx2.a clean distclean
+.PHONY: libkyber768_ref.a clean distclean
 
-JASMINC ?= ../../../../jasmin/compiler/jasminc 
+JASMINC ?= ../../../../../jasmin/compiler/jasminc 
 
-libkyber768_avx2.a:
+all: libkyber768_ref.a
+
+libkyber768_ref.a: jkem.s
 	$(CC) $(CFLAGS) -c jkem.s
 	$(AR) -r $@ jkem.o
 

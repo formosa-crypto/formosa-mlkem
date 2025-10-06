@@ -12,6 +12,20 @@
 #define JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2_ARCH            "amd64"
 #define JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2_IMPL            "avx2"
 
+
+int jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand(
+  uint8_t *public_key,
+  uint8_t *secret_key,
+  uint8_t *coins
+);
+
+int jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand(
+  uint8_t *ciphertext,
+  uint8_t *shared_secret,
+  const uint8_t *public_key,
+  uint8_t *coins
+);
+
 int jade_kem_mlkem_mlkem768_amd64_avx2_keypair(
   uint8_t *public_key,
   uint8_t *secret_key

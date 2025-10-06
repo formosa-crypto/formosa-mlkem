@@ -1,5 +1,5 @@
 CC ?= clang-14
-CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
+CFLAGS ?= -mavx2 -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
 
 default: librandombytes1.a
 

@@ -24,7 +24,7 @@ jobs:
             nix_path: nixpkgs=channel:nixos-unstable
         
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/extraction ec"
+        - run: nix-shell --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/extraction ec"
     test_proofs:
         name: Build & Prove
         runs-on: ubuntu-latest

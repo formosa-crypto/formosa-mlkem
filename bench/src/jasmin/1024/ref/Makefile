@@ -1,8 +1,10 @@
-.PHONY: libkyber768_ref.a clean distclean
+.PHONY: libkyber1024_ref.a clean distclean
 
-JASMINC ?= ../../../../jasmin/compiler/jasminc 
+JASMINC ?= ../../../../../jasmin/compiler/jasminc 
 
-libkyber768_ref.a:
+all: libkyber1024_ref.a
+
+libkyber1024_ref.a: jkem.s
 	$(CC) $(CFLAGS) -c jkem.s
 	$(AR) -r $@ jkem.o
 

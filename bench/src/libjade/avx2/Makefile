@@ -1,7 +1,10 @@
 .PHONY: libkyber768_avx2.a clean distclean
 
+JASMINC ?= ../../../../jasmin/compiler/jasminc 
+
+
 libkyber768_avx2.a:
-	jasminc -nowarning -lea jkem.jpp -o jkem.s
+	$(JASMINC) -nowarning -lea jkem.jpp -o jkem.s
 	$(CC) $(CFLAGS) -c jkem.s
 	$(AR) -r $@ jkem.o
 

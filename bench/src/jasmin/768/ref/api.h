@@ -12,15 +12,17 @@
 #define JADE_KEM_MLKEM_MLKEM768_AMD64_REF_ARCH            "amd64"
 #define JADE_KEM_MLKEM_MLKEM768_AMD64_REF_IMPL            "ref"
 
-int jade_kem_mlkem_mlkem768_amd64_ref_keypair(
+int jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand(
   uint8_t *public_key,
-  uint8_t *secret_key
+  uint8_t *secret_key,
+  uint8_t *coins
 );
 
-int jade_kem_mlkem_mlkem768_amd64_ref_enc(
+int jade_kem_mlkem_mlkem768_amd64_ref_enc_derand(
   uint8_t *ciphertext,
   uint8_t *shared_secret,
-  const uint8_t *public_key
+  const uint8_t *public_key,
+  uint8_t *coins
 );
 
 int jade_kem_mlkem_mlkem768_amd64_ref_dec(

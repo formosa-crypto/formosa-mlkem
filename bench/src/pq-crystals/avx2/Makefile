@@ -5,10 +5,10 @@
 
 #flags changed to match SUPERCOP
 CC ?= clang-14
-CFLAGS ?= -march=native -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
+CFLAGS ?= -mavx2 -mbmi2 -O3 -fomit-frame-pointer -fwrapv -fPIC -fPIE
 
 NISTFLAGS += -Wno-unused-result -mavx2 -mbmi2 -mpopcnt -maes \
-  -march=native -mtune=native -O3 -fomit-frame-pointer
+ -O3 -fomit-frame-pointer
 RM = /bin/rm
 
 SOURCES = kem.c indcpa.c polyvec.c poly.c fq.S shuffle.S ntt.S invntt.S \
