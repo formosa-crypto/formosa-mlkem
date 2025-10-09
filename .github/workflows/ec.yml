@@ -41,4 +41,4 @@ jobs:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --run "echo Dependencies OK…"
         - run: nix-shell --run 'easycrypt why3config'
-        - run: nix-shell --run make checkec_${{matrix.size}}_${{matrix.dir}}
+        - run: nix-shell --run "make checkec_${{matrix.size}}_${{matrix.dir}}"
