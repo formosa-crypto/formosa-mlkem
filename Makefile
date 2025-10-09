@@ -20,6 +20,18 @@ jasmin:
 checkec:
 	easycrypt runtest $(ECCONF) $(CHECKS)
 
+checkec_768_ref:
+	easycrypt runtest $(ECCONF) mlkem_768_ref
+
+checkec_768_avx2:
+	easycrypt runtest $(ECCONF) mlkem_768_avx2
+
+checkec_1024_ref:
+	easycrypt runtest $(ECCONF) mlkem_1024_ref
+
+checkec_1024_avx2:
+	easycrypt runtest $(ECCONF) mlkem_1024_avx2
+
 assembly:
 	$(MAKE) -C code/jasmin/768/avx2/ jkem.s
 	$(MAKE) -C code/jasmin/768/ref/ jkem.s
