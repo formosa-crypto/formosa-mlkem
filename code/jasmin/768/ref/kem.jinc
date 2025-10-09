@@ -61,12 +61,10 @@ fn __crypto_kem_enc_jazz(reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg mut ptr u
 
   stack u8[MLKEM_SYMBYTES * 2] buf kr;
   stack ptr u8[MLKEM_PUBLICKEYBYTES] s_pk;
-  stack ptr u8[MLKEM_CIPHERTEXTBYTES] s_ct;
   stack ptr u8[MLKEM_SYMBYTES] s_shk;
   reg u64 t64;
 
   s_pk = pk;
-  s_ct = ct;
   s_shk = shk;
 
   for i = 0 to MLKEM_SYMBYTES/8
@@ -134,7 +132,6 @@ fn __crypto_kem_dec_jazz(reg mut ptr u8[MLKEM_SYMBYTES] shk, reg const ptr u8[ML
 
   shk = _shake256_A32__A1120(shk, s_sk[MLKEM_SECRETKEYBYTES-MLKEM_SYMBYTES:MLKEM_SYMBYTES], ct);
 
-  s_shk = shk;
   cnd = s_cnd;
 
   shk = __cmov(shk, kr[0:MLKEM_SYMBYTES], cnd);

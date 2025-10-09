@@ -32,7 +32,6 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand(
 
   pk = pkp;
   sk = skp;
-  rd = rdp;
 
   public_key = #copy(pk);
   secret_key = #copy(sk);
@@ -81,8 +80,6 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc_derand(
 
   ct = ctp;
   shk = shkp;
-  pk = pkp;
-  rd = rdp;
 
   ciphertext = #copy(ct);
   shared_secret = #copy(shk);
@@ -121,8 +118,6 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_dec(
   () = #unspill(shared_secret);
 
   shk = shkp;
-  sk = skp;
-  ct = ctp;
 
   shared_secret = #copy(shk);
 

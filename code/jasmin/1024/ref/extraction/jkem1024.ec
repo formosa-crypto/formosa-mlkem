@@ -2155,7 +2155,6 @@ module M = {
       t <- (t `&` (W16.of_int 1));
       t <- (t * (W16.of_int ((3329 + 1) %/ 2)));
       rp.[((8 * i) + 7)] <- t;
-      c <- (c `>>` (W8.of_int 1));
       i <- (i + 1);
     }
     return rp;
@@ -3438,7 +3437,6 @@ module M = {
     var aux:W8.t Array32.t;
     var inc:int;
     var s_pk:W8.t Array1568.t;
-    var s_ct:W8.t Array1568.t;
     var s_shk:W8.t Array32.t;
     var i:int;
     var t64:W64.t;
@@ -3446,11 +3444,9 @@ module M = {
     var kr:W8.t Array64.t;
     buf <- witness;
     kr <- witness;
-    s_ct <- witness;
     s_pk <- witness;
     s_shk <- witness;
     s_pk <- pk;
-    s_ct <- ct;
     s_shk <- shk;
     inc <- (32 %/ 8);
     i <- 0;
@@ -3543,7 +3539,6 @@ module M = {
     (fun i_0 => s_sk.[((((((4 * 384) + ((4 * 384) + 32)) + 32) + 32) - 32) +
                       i_0)])
     ), ct);
-    s_shk <- shk;
     cnd <- s_cnd;
     shk <@ __cmov (shk, (Array32.init (fun i_0 => kr.[(0 + i_0)])), cnd);
     return shk;
@@ -3594,7 +3589,6 @@ module M = {
     (* Erased call to unspill *)
     pk <- pkp;
     sk <- skp;
-    rd <- rdp;
     public_key <-
     (Array1568.init
     (fun i => (get8
@@ -3686,8 +3680,6 @@ module M = {
     (* Erased call to unspill *)
     ct <- ctp;
     shk <- shkp;
-    pk <- pkp;
-    rd <- rdp;
     ciphertext <-
     (Array1568.init
     (fun i => (get8
@@ -3768,8 +3760,6 @@ module M = {
     shkp <@ __crypto_kem_dec_jazz (shkp, ctp, skp);
     (* Erased call to unspill *)
     shk <- shkp;
-    sk <- skp;
-    ct <- ctp;
     shared_secret <-
     (Array32.init
     (fun i => (get8

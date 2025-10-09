@@ -177,7 +177,7 @@ inline fn __write_u128_boundchk
     ms = #update_msf(condition_8, ms);
 
     pol.[:u128 2*(uint)ctr] = data;
-    ctr += 8;
+    // ctr += 8;
   } else
   {
     ms = #update_msf(!condition_8, ms);
