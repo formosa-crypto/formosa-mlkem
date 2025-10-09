@@ -962,7 +962,7 @@ op decompress4_circuit(c : W4.t) : W16.t =
 op pcond_true4(_: W4.t) = true.
 
 lemma poly_decompress_ll : islossless Jkem768_avx2.M._i_poly_decompress.
- proc; inline *;wp. cfold 10; unroll for ^while;auto. 
+ proc; inline *;wp. cfold 9; unroll for ^while;auto.
 qed.
 
 lemma poly_decompress_corr_h (_a : W8.t Array128.t): 
@@ -977,7 +977,7 @@ proc change 6: (sliceget32_8_256 x32p 0); 1: by auto.
 proc change ^while.1 : (zeroextu128 (sliceget128_8_64 a ((8*i)*8)));1: by auto => /#.
 proc change ^while.8 : (sliceset256_16_256 rp (i*256) f);1: by auto => /#.
 
-cfold 10.
+cfold 9.
 unroll for ^while.
 cfold ^i<-.
 wp -2.

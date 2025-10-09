@@ -219,7 +219,7 @@ lemma mlkem_kem_correct_enc :
      k = res{1}.`2
 ].
 proc => /=.
-seq 16 4 : (#[/1:-2]post /\
+seq 15 4 : (#[/1:-2]post /\
       (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])); last first.
 + while {1} (#pre
       /\ inc{1} = 4 
@@ -255,7 +255,7 @@ auto => /> &1 &2;rewrite !tP => ??;do split.
   + rewrite tP => kk *; rewrite initiE 1:/# /= initiE 1:/# /=ifF 1:/# initiE /#.
   rewrite tP => kk *; rewrite /H_pk initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1536.initiE Array32.initiE Array1536.tP Array32.tP).
 
-seq 5 0 :#pre; 1: by auto.
+seq 4 0 :#pre; 1: by auto.
 sp;conseq />.
   while {1} (0<=i{1}<=inc{1} /\ inc{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (inc{1} - i{1}); last first.
   + auto => /> &1 &2 *; split; 1: by smt().  

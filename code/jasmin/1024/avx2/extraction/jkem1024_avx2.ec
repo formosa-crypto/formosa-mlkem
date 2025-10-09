@@ -9193,7 +9193,6 @@ module M = {
       (WArray512.get16
       (WArray512.set128_direct (WArray512.init16 (fun i => pol.[i]))
       (2 * (W64.to_uint ctr)) data)));
-      ctr <- (ctr + (W64.of_int 8));
     } else {
       ms <- (update_msf (! condition_8) ms);
       data_u64 <- (MOVV_64 (truncateu64 data));

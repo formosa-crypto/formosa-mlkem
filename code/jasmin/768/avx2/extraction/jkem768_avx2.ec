@@ -8386,10 +8386,10 @@ module M = {
     var shufbidx:W256.t;
     var mask:W256.t;
     var shift:W256.t;
-    var f:W256.t;
     var i:int;
     var h:W128.t;
     var sh:W128.t;
+    var f:W256.t;
     x16p <- witness;
     x32p <- witness;
     x16p <- jqx16;
@@ -8398,7 +8398,6 @@ module M = {
     shufbidx <- (get256 (WArray32.init8 (fun i_0 => x32p.[i_0])) 0);
     mask <- (VPBROADCAST_8u32 pd_mask_s);
     shift <- (VPBROADCAST_8u32 pd_shift_s);
-    f <- (set0_256);
     inc <- (256 %/ 16);
     i <- 0;
     while ((i < inc)) {
@@ -8829,7 +8828,6 @@ module M = {
       (WArray512.get16
       (WArray512.set128_direct (WArray512.init16 (fun i => pol.[i]))
       (2 * (W64.to_uint ctr)) data)));
-      ctr <- (ctr + (W64.of_int 8));
     } else {
       ms <- (update_msf (! condition_8) ms);
       data_u64 <- (MOVV_64 (truncateu64 data));

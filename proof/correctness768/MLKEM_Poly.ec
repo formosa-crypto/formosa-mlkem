@@ -446,7 +446,6 @@ proc change ^while.21 : (srl_8 c (W8.of_int 1)); 1: by auto.
 proc change ^while.26 : (srl_8 c (W8.of_int 1)); 1: by auto.
 proc change ^while.31 : (srl_8 c (W8.of_int 1)); 1: by auto.
 proc change ^while.36 : (srl_8 c (W8.of_int 1)); 1: by auto.
-proc change ^while.41 : (srl_8 c (W8.of_int 1)); 1: by auto.
 
 unroll for ^while.
 do 33!(cfold ^i<-).
