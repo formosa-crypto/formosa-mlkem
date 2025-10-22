@@ -8,22 +8,22 @@ BIN ?= bin
 TARGETS ?= \
 $(BIN)/bench_pqclean_clean \
 $(BIN)/bench_pqclean_avx2 \
+$(BIN)/bench_jasmin_768_ref \
 $(BIN)/bench_jasmin_768_avx2 \
+$(BIN)/bench_jasmin_1024_ref \
 $(BIN)/bench_jasmin_1024_avx2 \
 $(BIN)/bench_crystals_ref \
 $(BIN)/bench_crystals_avx2 \
-# $(BIN)/bench_jasmin_768_ref \
-# $(BIN)/bench_jasmin_1024_ref \
 
 TTARGETS ?= \
 $(BIN)/test_pqclean_clean \
 $(BIN)/test_pqclean_avx2 \
+$(BIN)/test_jasmin_768_ref \
 $(BIN)/test_jasmin_768_avx2 \
+$(BIN)/test_jasmin_1024_ref \
 $(BIN)/test_jasmin_1024_avx2 \
 $(BIN)/test_crystals_ref \
 $(BIN)/test_crystals_avx2 \
-#$(BIN)/test_jasmin_768_ref \
-#$(BIN)/test_jasmin_1024_ref \
 
 
 # --------------------------------------------------------------------
@@ -36,14 +36,14 @@ $(BIN)/bench_pqclean_clean: rnd libpq_clean | $(BIN)
 $(BIN)/bench_pqclean_avx2: rnd libpq_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/pqclean/avx2/ -DJADE_NAMESPACE=PQCLEAN_KYBER768_AVX2 -DJADE_NAMESPACE_LC=PQCLEAN_KYBER768_AVX2_crypto_kem ./common/crypto_kem.c ./src/pqclean/avx2/libkyber768_avx2.a ./src/randombytes/librandombytes1.a
 
-# $(BIN)/bench_jasmin_768_ref: rnd libj_768_ref | $(BIN)# add without derand
-# 	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./common/crypto_kem.c ./src/jasmin/768/ref/libkyber768_ref.a ./src/randombytes/librandombytes1.a
+$(BIN)/bench_jasmin_768_ref: rnd libj_768_ref | $(BIN)# add without derand
+	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./common/crypto_kem.c ./src/jasmin/768/ref/libkyber768_ref.a ./src/randombytes/librandombytes1.a
 
 $(BIN)/bench_jasmin_768_avx2: rnd libj_768_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/768/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 ./common/crypto_kem.c ./src/jasmin/768/avx2/libkyber768_avx2.a ./src/randombytes/librandombytes1.a
 
-# $(BIN)/bench_jasmin_1024_ref: rnd libj_1024_ref | $(BIN) # add without derand
-# 	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/1024/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref ./common/crypto_kem.c ./src/jasmin/1024/ref/libkyber1024_ref.a ./src/randombytes/librandombytes1.a
+$(BIN)/bench_jasmin_1024_ref: rnd libj_1024_ref | $(BIN) # add without derand
+	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/1024/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref ./common/crypto_kem.c ./src/jasmin/1024/ref/libkyber1024_ref.a ./src/randombytes/librandombytes1.a
 
 $(BIN)/bench_jasmin_1024_avx2: rnd libj_1024_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/1024/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 ./common/crypto_kem.c ./src/jasmin/1024/avx2/libkyber1024_avx2.a ./src/randombytes/librandombytes1.a
@@ -57,8 +57,6 @@ $(BIN)/bench_crystals_avx2: rnd libcry_avx2 | $(BIN)
 
 
 
-
-
 # --------------------------------------------------------------------
 .PHONY: all $(TTARGETS)
 all-tests: $(TTARGETS)
@@ -69,14 +67,14 @@ $(BIN)/test_pqclean_clean: libpq_clean | $(BIN)
 $(BIN)/test_pqclean_avx2: libpq_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/pqclean/avx2/ -DJADE_NAMESPACE=PQCLEAN_KYBER768_AVX2 -DJADE_NAMESPACE_LC=PQCLEAN_KYBER768_AVX2_crypto_kem ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/pqclean/avx2/libkyber768_avx2.a
 
-# $(BIN)/test_jasmin_768_ref: libcry_ref | $(BIN)
-# 	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/768/jasmin/ref/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber768_amd64_ref ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/768/ref/libkyber768_ref.a
+$(BIN)/test_jasmin_768_ref: libcry_ref | $(BIN)
+	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/768/jasmin/ref/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber768_amd64_ref ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/768/ref/libkyber768_ref.a
 
 $(BIN)/test_jasmin_768_avx2: libj_768_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/768/jasmin/avx2/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber768_amd64_avx2 ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/768/avx2/libkyber768_avx2.a
 
-# $(BIN)/test_jasmin_1024_ref: libj_1024_ref | $(BIN)
-# 	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/1024/jasmin/ref/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber1024_amd64_ref ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/ref/libkyber1024_ref.a
+$(BIN)/test_jasmin_1024_ref: libj_1024_ref | $(BIN)
+	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/1024/jasmin/ref/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber1024_amd64_ref ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/ref/libkyber1024_ref.a
 
 $(BIN)/test_jasmin_1024_avx2: libj_1024_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/1024/jasmin/avx2/ -DJADE_NAMESPACE=JADE_KEM_KYBER_KYBER1024_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_kyber_kyber1024_amd64_avx2 ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/avx2/libkyber1024_avx2.a
@@ -106,14 +104,14 @@ libpq_clean:
 libpq_avx2:
 	make -C ./src/pqclean/avx2/
 
-# libj_768_ref:
-# 	make -C ./src/jasmin/768/ref
+libj_768_ref:
+	make -C ./src/jasmin/768/ref
 
 libj_768_avx2:
 	make -C ./src/jasmin/768/avx2/
 
-# libj_1024_ref:
-# 	make -C ./src/jasmin/1024/ref
+libj_1024_ref:
+	make -C ./src/jasmin/1024/ref
 
 libj_1024_avx2:
 	make -C ./src/jasmin/1024/avx2/
@@ -141,12 +139,12 @@ libs-clean:
 	make -C ./src/randombytes/ clean
 	make -C ./src/pqclean/clean/ clean
 	make -C ./src/pqclean/avx2/ clean
+	make -C ./src/jasmin/768/ref/ clean
 	make -C ./src/jasmin/768/avx2/ clean
+	make -C ./src/jasmin/1024/ref/ clean
 	make -C ./src/jasmin/1024/avx2/ clean
 	make -C ./src/pq-crystals/ref/ clean
 	make -C ./src/pq-crystals/avx2/ clean
-# 	make -C ./src/jasmin/768/ref/ clean
-# 	make -C ./src/jasmin/1024/ref/ clean
 
 clean: libs-clean
 	rm -fr $(BIN)

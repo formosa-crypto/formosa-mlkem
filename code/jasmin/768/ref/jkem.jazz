@@ -43,6 +43,22 @@ export fn jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand(
   return public_key, secret_key, r;
 }
 
+export fn jade_kem_mlkem_mlkem768_amd64_ref_keypair(
+  #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+  #secret #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
+ -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
+{
+  reg u64 r;
+  stack u8[2*MLKEM_SYMBYTES] rd;
+  reg ptr u8[2*MLKEM_SYMBYTES] rdp;
+  public_key = public_key;
+  secret_key = secret_key;
+  rd = #randombytes(rd);
+  rdp = rd;
+  public_key,secret_key,r = jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand(public_key,secret_key,rdp);
+  return public_key,secret_key,r;
+}
+
 export fn jade_kem_mlkem_mlkem768_amd64_ref_enc_derand(
     #secret #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
     #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
@@ -85,6 +101,25 @@ export fn jade_kem_mlkem_mlkem768_amd64_ref_enc_derand(
   shared_secret = #copy(shk);
 
   ?{}, r = #set0();
+  return ciphertext, shared_secret, r;
+}
+
+
+export fn jade_kem_mlkem_mlkem768_amd64_ref_enc(
+    #secret #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key)
+    -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+{
+  reg u64 r;
+  stack u8[MLKEM_SYMBYTES] rd;
+  reg ptr u8[MLKEM_SYMBYTES] rdp;
+  ciphertext = ciphertext;
+  shared_secret = shared_secret;
+  public_key = public_key;
+  rd = #randombytes(rd);
+  rdp = rd;
+  ciphertext, shared_secret, r = jade_kem_mlkem_mlkem768_amd64_ref_enc_derand(ciphertext,shared_secret,public_key,rdp);
   return ciphertext, shared_secret, r;
 }
 

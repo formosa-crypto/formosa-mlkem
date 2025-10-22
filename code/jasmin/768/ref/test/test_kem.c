@@ -32,17 +32,17 @@ int main(void)
     if(sk0[i] != sk1[i]) { printf("error crypto_kem_keypair sk: %d\n", i); exit(-1); }
 
   for(int i=0;i<KYBER_PUBLICKEYBYTES;i++)
-    if(pk0[i] != pk1[i]) printf("error crypto_kem_keypair pk: %d\n", i);
+    if(pk0[i] != pk1[i]) {printf("error crypto_kem_keypair pk: %d\n", i);exit(-1); }
 
   /* TEST ENCAPSULATION */
   crypto_kem_enc_derand(ct0, shk0, pk0, randomness1);
   jade_kem_mlkem_mlkem768_amd64_ref_enc_derand(ct1, shk1, pk1, randomness1);
 
   for(int i=0;i<KYBER_CIPHERTEXTBYTES;i++)
-    if(ct0[i] != ct1[i]) printf("error crypto_kem_enc ct: %d\n", i);
+    if(ct0[i] != ct1[i]) {printf("error crypto_kem_enc ct: %d\n", i);exit(-1); }
 
   for(int i=0;i<KYBER_SSBYTES;i++)
-    if(shk0[i] != shk1[i]) printf("error crypto_kem_enc ss: %d\n", i);
+    if(shk0[i] != shk1[i]) {printf("error crypto_kem_enc ss: %d\n", i);exit(-1); }
   
   /* TEST DECAPSULATION */
   memset(shk0, 0, KYBER_SSBYTES);
@@ -52,7 +52,7 @@ int main(void)
   jade_kem_mlkem_mlkem768_amd64_ref_dec(shk1, ct1, sk1);
 
   for(int i=0;i<KYBER_SSBYTES;i++)
-    if(shk0[i] != shk1[i]) printf("error crypto_kem_dec (suc): %d %d %d\n", i, shk0[i], shk1[i]);
+    if(shk0[i] != shk1[i]) {printf("error crypto_kem_dec (suc): %d %d %d\n", i, shk0[i], shk1[i]);exit(-1); }
 
   /* TEST DECAPSULATION FAILURE */
   memset(shk0, 0, KYBER_SSBYTES);
@@ -65,7 +65,7 @@ int main(void)
   jade_kem_mlkem_mlkem768_amd64_ref_dec(shk1, ct1, sk1);
 
   for(int i=0;i<KYBER_SSBYTES;i++)
-    if(shk0[i] != shk1[i]) printf("error crypto_kem_dec (fail): %d %d %d\n", i, shk0[i], shk1[i]);
+    if(shk0[i] != shk1[i]) {printf("error crypto_kem_dec (fail): %d %d %d\n", i, shk0[i], shk1[i]);exit(-1); }
 
   return 0;
 }

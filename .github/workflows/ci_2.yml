@@ -33,6 +33,5 @@ jobs:
           with:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        # create docs - $GITHUB_STEP_SUMMARY
         - run: nix-shell --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/ test"
     
