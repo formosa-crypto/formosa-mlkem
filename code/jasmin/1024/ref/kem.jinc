@@ -7,6 +7,8 @@ require "../../common/ref/verify.jinc"
 
 inline
 fn __crypto_kem_keypair_jazz(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKEM_SECRETKEYBYTES] sk, reg const ptr u8[MLKEM_SYMBYTES*2] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
+requires{is_arr_init(randomnessp,0,MLKEM_SYMBYTES*2)}
+ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,MLKEM_SECRETKEYBYTES)}
 {
   stack u8[32] h_pk;
   #mmx stack ptr u8[MLKEM_SECRETKEYBYTES] s_skp;
@@ -55,6 +57,8 @@ fn __crypto_kem_keypair_jazz(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut pt
 
 inline
 fn __crypto_kem_enc_jazz(reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg mut ptr u8[MLKEM_SYMBYTES] shk, reg const ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg const ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES]
+requires{is_arr_init(randomnessp,0,MLKEM_SYMBYTES) && is_arr_init(pk,0,MLKEM_PUBLICKEYBYTES)}
+ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(result.1,0,MLKEM_SYMBYTES)}
 {
   inline int i;
 
@@ -93,6 +97,8 @@ fn __crypto_kem_enc_jazz(reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg mut ptr u
 
 inline
 fn __crypto_kem_dec_jazz(reg mut ptr u8[MLKEM_SYMBYTES] shk, reg const ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg const ptr u8[MLKEM_SECRETKEYBYTES] sk) -> reg ptr u8[MLKEM_SYMBYTES]
+requires{is_arr_init(ct,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(sk,0,MLKEM_SECRETKEYBYTES)}
+ensures{is_arr_init(result.0,0,MLKEM_SYMBYTES)}
 {
   stack u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctc;
   stack u8[2*MLKEM_SYMBYTES] kr buf;

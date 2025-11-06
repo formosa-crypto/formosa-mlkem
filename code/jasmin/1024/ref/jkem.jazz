@@ -5,6 +5,8 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair_derand(
     #secret #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
     #secret #spill_to_mmx reg ptr u8[2*MLKEM_SYMBYTES] coins)
  -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
+requires{is_arr_init(coins,0,2*MLKEM_SYMBYTES)}
+ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,MLKEM_SECRETKEYBYTES)}
 {
   reg u64 r;
   stack u8[MLKEM_PUBLICKEYBYTES] pk;
@@ -47,6 +49,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_keypair(
   #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
   #secret #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
  -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
+ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,MLKEM_SECRETKEYBYTES)}
 {
   reg u64 r;
   stack u8[2*MLKEM_SYMBYTES] rd;
@@ -65,6 +68,8 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc_derand(
     #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
     #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] coins)
     -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+requires{is_arr_init(coins,0,MLKEM_SYMBYTES) && is_arr_init(public_key,0,MLKEM_PUBLICKEYBYTES)}
+ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(result.1,0,MLKEM_SYMBYTES)}
 {
   reg u64 r;
   stack u8[MLKEM_CIPHERTEXTBYTES] ct;
@@ -110,6 +115,8 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_enc(
     #secret #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shared_secret,
     #secret #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key)
     -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+requires{is_arr_init(public_key,0,MLKEM_PUBLICKEYBYTES)}
+ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(result.1,0,MLKEM_SYMBYTES)}
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES] rd;
@@ -128,6 +135,8 @@ export fn jade_kem_mlkem_mlkem1024_amd64_ref_dec(
     #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
     #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
     -> #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+requires{is_arr_init(ciphertext,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(secret_key,0,MLKEM_SECRETKEYBYTES)}
+ensures{is_arr_init(result.0,0,MLKEM_SYMBYTES)}
 {
   reg u64 r;
   stack u8[MLKEM_SYMBYTES] shk;
