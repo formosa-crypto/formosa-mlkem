@@ -1,51 +1,37 @@
-name: Hakyber
-
-# on:
-#   workflow_dispatch:
-#   push:
-#     branches:
-#       - master
+name: MLKEM implementation
 permissions:
   contents: read
 on:
   workflow_call:
   workflow_dispatch:
 
+  
 env:
-  OPAMROOT: /home/charlie/.opam
-  OPAMYES: true
-  OPAMJOBS: 2
-  ECRJOBS: 1
   NIXPKGS_ALLOW_UNFREE: 1
 
 jobs:
-  ec:
-    name: Check Hakyber EasyCrypt Project
-    runs-on: ubuntu-20.04
-    container:
-      image: easycryptpa/ec-build-box
-    strategy:
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - uses: actions/checkout@v4
-      name: Checkout EasyCrypt
-      with:
-        repository: EasyCrypt/easycrypt
-        ref: refs/heads/main
-        path: easycrypt
-    - name: Update OPAM & EasyCrypt dependencies
-      run: |
-        opam update
-        opam pin add -n easycrypt easycrypt
-        opam install --deps-only easycrypt
-    - name: Compile & Install EasyCrypt
-      run: opam install easycrypt
-    - name: Detect SMT provers
-      run: |
-        rm -f ~/.why3.conf
-        opam config exec -- easycrypt why3config -why3 ~/.why3.conf
-    - name: Compile Project
-      run: opam config exec -- make checkec
+    ct:
+      name: Check Constant-Time Security
+      permissions:
+        contents: read
+        id-token: write
+      uses: ./.github/workflows/ct.yml
+      secrets: inherit 
+    compile_and_test:
+        name: Compile and Test MLKEM implementation
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            size: [ '768', '1024' ]
+            dir: [ 'ref', 'avx2' ]
+        steps:
+        - uses: actions/checkout@v4
+          with:
+            submodules: recursive
+        - uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstablew
+        - run: nix-shell --arg full false --run "echo Dependencies OK…"
+        - run: nix-shell --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/ test"
+    
