@@ -1,7 +1,7 @@
 { pkgs ?
     import (fetchTarball {
-      url = https://github.com/NixOS/nixpkgs/archive/9d1fa9fa266631335618373f8faad570df6f9ede.tar.gz;
-      sha256 = "sha256:1pn90y4nw8c3gdz9c2chpy75hiay3872zhgfkmxc1mhgpkwx66bx";
+      url = https://github.com/NixOS/nixpkgs/archive/3de8f8d73e35724bf9abef41f1bdbedda1e14a31.tar.gz;
+      sha256 = "sha256:1akf8bq8i1flj33sdwl95lkng4wgwlzh9yxylk2drq8fksg5i291";
     }) {}
 , full ? true
 }:
@@ -23,8 +23,8 @@ let crypto-specs =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "crypto-specs";
-    rev = "58d35d65630e17c79ebe58028a2ce64c467056e9";
-    hash = "sha256-MlsrFcpDa1bocAoT4AMb9H08bCTBBs+yfczqwxK5aBI=";
+    rev = "7f48d933a393fa3019ff6015f50fcd8d98147e26";
+    hash = "sha256-kQe8brGk8q9zTc7E0M9902sGlTc4Mpsrqc4gyilK3jk=";
   }
 ; in
 
@@ -45,13 +45,13 @@ let
     coqPackages = { coq = null; flocq = null; };
   };
   bitwuzla = callPackage ./config/bitwuzla.nix { inherit (oc) buildDunePackage zarith; };
-  ecVersion = "ae9418da46b17fef73156599b1ecac72b7f4abaa";
+  ecVersion = "cf546c41e43f4db631ca58e0991b6de7425abb55";
   ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "EasyCrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-OhwCt7VI+nX2+M5ftXvkRsNZSqMH0cKJtKD+8JZL4RI=";
+      hash = "sha256-eybret9ysLdmMsiVu9+OimOwHZLMh4haA/86o6wwUIs=";
     };
     postPatch = ''
       substituteInPlace dune-project \
