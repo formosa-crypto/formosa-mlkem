@@ -29363,8 +29363,9 @@ ecall (__butterfly64x_trace param_132 param_131 param_130 param_129 param_128
        param_127 param_126 param_125 param_124 param_123 param_122 param_121 
        param_120).
 auto .
-rewrite /is_init /valid /=.
-smt (all_cat  BArray512.init_arrP).
+  rewrite /is_init /valid /= => &m /> *.
+  split. move => *. rewrite !all_cat /=.  smt().
+move => *.  rewrite !all_cat /=. smt().
 auto .
 ecall (__butterfly64x_trace param_145 param_144 param_143 param_142 param_141 
        param_140 param_139 param_138 param_137 param_136 param_135 param_134 
@@ -29374,8 +29375,8 @@ ecall (__butterfly64x_trace param_158 param_157 param_156 param_155 param_154
        param_153 param_152 param_151 param_150 param_149 param_148 param_147 
        param_146).
 auto .
-rewrite /is_init /valid /= .
-smt (all_cat BArray512.init_arrP).
+rewrite /is_init /valid /= => &m /> *. rewrite !all_cat /=.
+smt (BArray512.init_arrP).
 qed .
 
 lemma __poly_reduce_trace _rp _b_rp :
