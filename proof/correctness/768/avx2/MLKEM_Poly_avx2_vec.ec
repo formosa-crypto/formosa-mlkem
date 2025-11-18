@@ -973,7 +973,7 @@ equiv prevec_eq_shuffle1_sym:
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle1 => />. qed.
 
-require import NTT_avx2 NTT_AVX_j.
+require import NTT_avx2_invntt NTT_avx2_ntt NTT_avx2 NTT_AVX_j_invntt NTT_AVX_j_ntt NTT_AVX_j.
 require import MLKEM_Poly_avx2_proof.
 
 lemma list_arr16 (x:'a Array16.t):

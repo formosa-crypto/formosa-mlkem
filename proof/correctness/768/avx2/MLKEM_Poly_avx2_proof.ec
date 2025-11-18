@@ -5,8 +5,9 @@ from JazzEC require import Array400 Array384 Array256 Array128 Array64 Array32 A
 from JazzEC require import WArray512 WArray32 WArray16.
 
 require import W16extra.
-require import AVX2_Ops MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxlemmas.
+require import AVX2_Ops MLKEM_Poly_avx2_prevec Fqmul_avx2 Red_x16_avx2 MLKEM_avx2_auxlemmas.
 require import Fq NTT_Fq MLKEM_Poly MLKEMFCLib.
+require import NTT_avx2_invntt NTT_avx2_ntt NTT_avx2.
 
 from JazzEC require import Jkem768_avx2 Jkem768.
 
@@ -20,6 +21,7 @@ import SignedReductions.
 import Zq.
 import ZModP.
 import Fq_avx2.
+import Fq_avx2_red.
 import NTT_Avx2.
 import MLKEM_Poly.
 import Serialization768 VecMat768.
@@ -808,10 +810,10 @@ proof.
       rewrite /lift_array256 mapiE 1:x_i /= ap_eq_rpu 1:x_i //=.
     + move : rpu_bnds => /#.
   
-  wp; sp; ecall (Fq_avx2.barret_red16x_corr_hh (Fq_avx2.lift_array16 r)). auto => />.
+  wp; sp; ecall (barret_red16x_corr_hh (lift_array16 r)). auto => />.
   move => &hr i_lb i_rub rp_sbred rp_eq__rp qx16_def vx16_def i_ub result red16x_bred.
   split; first by move : i_lb i_ub => /#.
-  pose rp_sub := ((Fq_avx2.lift_array16
+  pose rp_sub := ((lift_array16
                        (lift2poly
                           (get256 ((init16 ("_.[_]" rp{hr})))%WArray512 i{hr})))).
   split.
@@ -948,7 +950,7 @@ proof.
   move : i_tlb i_ub x_bnds => /#.
   rewrite mapiE //.
   sp. wp.
-  ecall (Fq_avx2.fqmulx16_corr_hh (Fq_avx2.lift_array16 t) (Fq_avx2.lift_array16 dmontx16)).
+  ecall (fqmulx16_corr_hh (lift_array16 t) (lift_array16 dmontx16)).
   auto => />.
   move => &hr i_lb i_ub dmontx16_def qx16_def qinvx16_def rp_sredc rp_eq_ap i_tub result result_def.
   split.

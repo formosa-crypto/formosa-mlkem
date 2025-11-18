@@ -9,10 +9,10 @@ require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_Poly_avx2_vec.
 require import MLKEM_Poly_avx2_proof.
 require import MLKEM_Poly_avx2_vec.
-require import Fq_avx2.
+require import Fqmul_avx2 Red_x16_avx2.
 require import MLKEM_PolyVec.
 require import MLKEM_PolyVec_avx2_vec.
-require import NTT_avx2.
+require import NTT_avx2_invntt NTT_avx2_ntt NTT_avx2.
 require import MLKEMFCLib.
 require import MLKEM_avx2_auxlemmas.
 

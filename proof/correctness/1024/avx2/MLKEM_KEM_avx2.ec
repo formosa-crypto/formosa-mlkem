@@ -7,7 +7,7 @@ from Jasmin require import JModel.
 
 from CryptoSpecs require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE1024 MLKEM1024 Correctness1024.
 import Serialization1024 Symmetric1024 VecMat1024.
-require import Fq MLKEM_Poly MLKEM_PolyVec MLKEM_InnerPKE MLKEM_InnerPKE_avx2 MLKEMFCLib.
+require import Fq MLKEM_Poly MLKEM_PolyVec MLKEM_InnerPKE MLKEM_InnerPKE_avx2 MLKEM_InnerPKE_avx2_more MLKEM_InnerPKE_avx2_equiv_indcpa MLKEMFCLib.
 
 import MLKEM_Poly.
 import MLKEM_PolyVec.

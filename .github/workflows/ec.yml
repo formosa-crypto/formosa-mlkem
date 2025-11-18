@@ -45,4 +45,14 @@ jobs:
         - name: Configure provers
           run: nix-shell --run 'easycrypt why3config'
         - name: Run ${{matrix.type}} Proofs MLKEM${{matrix.size}}(${{matrix.dir}})
+          id: ec_proofs 
           run: nix-shell --run "easycrypt runtest config/tests.config mlkem_${{matrix.type}}_${{matrix.size}}_${{matrix.dir}}"
+        - name: Job Summary
+          run: |
+            ID="${{ matrix.type }} proofs MLKEM${{ matrix.size }} (${{ matrix.dir }})"
+            if [ "${{ steps.ec_proofs.outcome }}" == "success" ]; then
+              echo "### ✅ $ID - PASSED" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "### ❌ $ID - FAILED" >> $GITHUB_STEP_SUMMARY
+              echo "Check the logs above for specific proof failures." >> $GITHUB_STEP_SUMMARY
+            fi
