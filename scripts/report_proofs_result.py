@@ -21,34 +21,18 @@ def parse_and_report(log_file, m_type, m_size, m_dir):
         for line in f:
             # Check for Success/Timing
             s_match = success_pattern.search(line)
+            e_match = error_pattern.search(line)
+
             if s_match:
                 duration = s_match.group(1)
                 filepath = s_match.group(2).strip()
                 filename = os.path.basename(filepath)                
-                results.setdefault(filename, {"status": "❓ Pending", "time": "--", "warnings": 0})
-                results[filename]["status"] = "✅"
-                results[filename]["time"] = duration
-                continue
-
-            # Check for Warnings (ϟ)
-            w_match = warning_pattern.search(line)
-            if w_match:
-                filepath = w_match.group(1).strip()
-                filename = os.path.basename(filepath)
-                
-                results.setdefault(filename, {"status": "❓ Pending", "time": "--", "warnings": 0})
-                results[filename]["warnings"] += 1
-        
-            e_match = error_pattern.search(line)
-            if e_match:
+                results[filename] = {"status": "✅", "time": duration }
+            elif e_match:
                 duration = e_match.group(1)
                 filepath = e_match.group(2).strip()
                 filename = os.path.basename(filepath)
-                
-                results.setdefault(filename, {"status": "❓ Pending", "time": "--", "warnings": 0})
-                results[filename]["status"] = "❌"
-                results[filename]["time"] = duration
-
+                results[filename] = {"status": "❌", "time": duration }
     # --- Markdown Generation ---
     job_outcome = os.environ.get('PROOF_JOB_OUTCOME', 'failure')
     status_emoji = "✅" if job_outcome == "success" else "❌"
@@ -56,17 +40,15 @@ def parse_and_report(log_file, m_type, m_size, m_dir):
     markdown = [
         f"## Proof Summary: {m_type.capitalize()} MLKEM{m_size}({m_dir}) - {status_emoji}",
         "---",
-        "| File | Status | Duration | Warnings |",
-        "| --- | --- | --- | --- |"
+        "| File | Status | Duration |",
+        "| --- | --- | --- |"
     ]
 
     for filename in sorted(results.keys()):
         data = results[filename]
         
         status_display = data["status"]
-        if status_display != "❓ Pending":
-            warn_display = f"⚠️ {data['warnings']}" if data['warnings'] > 0 else "0"
-            markdown.append(f"| `{filename}` | {status_display} | {data['time']} | {warn_display} |")
+        markdown.append(f"| `{filename}` | {status_display} | {data['time']}|")
 
     # Write to GITHUB_STEP_SUMMARY
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'w', encoding='utf-8') as f:
