@@ -52,7 +52,7 @@ jobs:
         - name: Generate Detailed Job Summary
           if: always() 
           run: |
-            echo "PROOF_JOB_OUTCOME=${{ steps.ec_proofs.outcome }}" >> $GITHUB_ENV
+            export PROOF_JOB_OUTCOME=${{ steps.ec_proofs.outcome }}
             python scripts/report_proofs_result.py \
               proof_output.log \
               "${{ matrix.type }}" \

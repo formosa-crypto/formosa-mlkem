@@ -20,4 +20,13 @@ static void median_fr(uint64_t results[OP][LOOPS])
   }
 }
 
+static uint64_t median_runs(uint64_t runs[RUNS])
+{
+  uint64_t min = runs[0];
+  for (int loop = 1; loop < RUNS; loop++)
+    if (min > runs[loop])
+      min = runs[loop]; 
+  return min;
+}
+
 #endif
