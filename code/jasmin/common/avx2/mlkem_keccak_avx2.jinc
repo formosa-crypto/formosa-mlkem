@@ -1,85 +1,84 @@
-from Keccak require "avx2/keccak1600_imem_avx2.jinc"
-from Keccak require "avx2/keccak1600_imem_avx2x4.jinc"
+from Keccak require "avx2/keccak1600_fixedsizes.jinc"
+from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
 
 /* instantiate the Keccak code with variants for reading/writing
    from/to stack arrays with different sizes */
 namespace A1 {
-  param int ASIZE = 1;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 1;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A2 {
-  param int ASIZE = 2;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 2;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A32 {
-  param int ASIZE = 32;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 32;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A33 {
-  param int ASIZE = 33;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 33;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A64 {
-  param int ASIZE = 64;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
+  param int _ASIZE = 64;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
 }
 
 namespace A128 {
-  param int ASIZE = 128;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 128;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A1184 {
-  param int ASIZE = 1184;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 1184;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A1568 {
-  param int ASIZE = 1568;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 1568;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A1120 {
-  param int ASIZE = 1120;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 1120;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace A1600 {
-  param int ASIZE = 1600;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 1600;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
 namespace ABUFLEN {
-  param int ASIZE = 536;
-  from Keccak require "avx2/keccak1600_array_avx2_ASIZE.jinc"
-  from Keccak require "avx2/keccak1600_array_avx2x4_ASIZE.jinc"
+  param int _ASIZE = 536;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
+/*
 /* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte
    memory region */
 fn _sha3_256A_M1184
 ( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg u64 in
+, #spill_to_mmx reg ui64 in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  st, _ = __absorb_imem_avx2(st, in, 1184, R136, SHA3);
-  offset = 0;
-  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  st, _ = __absorb_m_avx2(st, 0, in, 1184, SHA3, R136);
+  st, out = A32::__squeeze_avx2(st, out, R136);
   return out;
 }
 
@@ -87,16 +86,15 @@ fn _sha3_256A_M1184
    memory region */
 fn _sha3_256A_M1568
 ( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg u64 in
+, #spill_to_mmx reg ui64 in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  st, _ = __absorb_imem_avx2(st, in, 1568, R136, SHA3);
-  offset = 0;
-  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  st, _ = __absorb_m_avx2(st, 0, in, 1568, SHA3, R136);
+  st, out = A32::__squeeze_avx2(st, out, R136);
   return out;
 }
+*/
 
 /* SHA3-512 writing to a 64-byte stack array (512A) and reading from 33 byte
    stack array */
@@ -105,12 +103,9 @@ fn _sha3_512A_A33
 , reg const ptr u8[33] in
 ) -> reg ptr u8[64]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  offset = 0;
-  st, _ = A33::__absorb_array_avx2(st, in, offset, 33, R72, SHA3);
-  offset = 0;
-  out, _ = A64::__squeeze_array_avx2(out, offset, 64, st, R72);
+  st, _ = A33::__absorb_avx2(st, 0, in, SHA3, R72);
+  _, out = A64::__squeeze_avx2(st, out, R72);
   return out;
 }
 
@@ -121,46 +116,39 @@ fn _sha3_512A_A64
 , reg const ptr u8[64] in
 ) -> reg ptr u8[64]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  offset = 0;
-  st, _ = A64::__absorb_array_avx2(st, in, offset, 64, R72, SHA3);
-  offset = 0;
-  out, _ = A64::__squeeze_array_avx2(out, offset, 64, st, R72);
+  st, _ = A64::__absorb_avx2(st, 0, in, SHA3, R72);
+  _, out = A64::__squeeze_avx2(st, out, R72);
   return out;
 }
 
+/*
 /* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte
    stack array first, and then from a 1088 byte memory region */
 fn _shake256_M32__M32_M1088
-( reg u64 out
-, reg u64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
+( reg ui64 out
+, reg ui64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
 )
 { reg u256[7] st;
-  stack u64[25] pst_s;
-  reg ptr u64[25] pst;
-  pst = pst_s;
-  pst, st = __pstate_init_avx2(pst);
-  pst, _, st, _ = __pabsorb_imem_avx2(pst, 0, st, in0, 32, R136, UNFINISHED);
-  pst, _, st, _ = __pabsorb_imem_avx2(pst, 32, st, in1, 1088, R136, SHAKE);
-  _, _ = __squeeze_imem_avx2(out, 32, st, R136);
+  st = __state_init_avx2();
+  st, _ = __absorb_m_avx2(st, 0, in0, 32, UNFINISHED, R136);
+  st, _ = __absorb_m_avx2(st, 32, in1, 1088, SHAKE, R136);
+  _ = __squeeze_m_avx2(st, out, 32, R136);
 }
 
 /* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte
    stack array first, and then from a 1600 byte memory region */
 fn _shake256_M32__M32_M1600
-( reg u64 out
-, reg u64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
+( reg ui64 out
+, reg ui64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
 )
 { reg u256[7] st;
-  stack u64[25] pst_s;
-  reg ptr u64[25] pst;
-  pst = pst_s;
-  pst, st = __pstate_init_avx2(pst);
-  pst, _, st, _ = __pabsorb_imem_avx2(pst, 0, st, in0, 32, R136, UNFINISHED);
-  pst, _, st, _ = __pabsorb_imem_avx2(pst, 32, st, in1, 1568, R136, SHAKE);
-  _, _ = __squeeze_imem_avx2(out, 32, st, R136);
+  st = __state_init_avx2();
+  st, _ = __absorb_m_avx2(st, 0, in0, 32, UNFINISHED, R136);
+  st, _ = __absorb_m_avx2(st, 32, in1, 1568, SHAKE, R136);
+  _ = __squeeze_m_avx2(st, out, 32, R136);
 }
+*/
 
 /* SHAKE-256 writing to a 128-byte stack array (A128) and reading from 32 byte
    stack array first, and then from a 1 byte stack array next */
@@ -170,17 +158,10 @@ fn _shake256_A128__A32_A1
 , reg const ptr u8[1] nonce
 ) -> reg ptr u8[128]
 { reg u256[7] st;
-  stack u64[25] pst_s;
-  reg ptr u64[25] pst;
-  reg u64 offset;
-  pst = pst_s;
-  pst, st = __pstate_init_avx2(pst);
-  offset = 0;
-  pst, _, st, _ = A32::__pabsorb_array_avx2(pst, 0, st, seed, offset, 32, R136, UNFINISHED);
-  offset = 0;
-  pst, _, st, _ = A1::__pabsorb_array_avx2(pst, 32, st, nonce, offset, 1, R136, SHAKE);
-  offset = 0;
-  out, _ = A128::__squeeze_array_avx2(out, offset, 128, st, R136);
+  st = __state_init_avx2();
+  st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2(st, 32, nonce, SHAKE, R136);
+  _, out = A128::__squeeze_avx2(st, out, R136);
 
   return out;
 }
@@ -197,16 +178,12 @@ fn _shake256x4_A128__A32_A1
    , reg ptr u8[128] /* out3 */
 { stack u256[25] st_s;
   reg ptr u256[25] st;
-  reg u64 offset;
   st = st_s;
   st = __state_init_avx2x4(st);
-  offset = 0;
-  st, _, _ = A32::__absorb_bcast_array_avx2x4(st, 0, seed, offset, 32, R136, UNFINISHED);
-  offset = 0;
-  st, _, _ = A1::__absorb_array_avx2x4(st, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], offset, 1, R136, SHAKE);
-  offset = 0;
-  out0, out1, out2, out3, _, st
-    = A128::__squeeze_array_avx2x4(out0, out1, out2, out3, offset, 128, st, R136);
+  st, _ = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2x4(st, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], SHAKE, R136);
+  st, out0, out1, out2, out3
+    = A128::__squeeze_avx2x4(st, out0, out1, out2, out3, R136);
 
   return out0, out1, out2, out3;
 }
@@ -218,15 +195,9 @@ fn _shake128_absorb_A32_A2
 , reg const ptr u8[2] pos
 ) -> reg u256[7]
 { reg u256[7] st;
-  stack u64[25] pst_s;
-  reg ptr u64[25] pst;
-  reg u64 offset;
-  pst = pst_s;
-  pst, st = __pstate_init_avx2(pst);
-  offset = 0;
-  pst, _, st, _ = A32::__pabsorb_array_avx2(pst, 0, st, seed, offset, 32, R168, UNFINISHED);
-  offset = 0;
-  pst, _, st, _ = A2::__pabsorb_array_avx2(pst, 32, st, pos, offset, 2, R168, SHAKE);
+  st = __state_init_avx2();
+  st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R168);
+  st, _ = A2::__absorb_avx2(st, 32, pos, SHAKE, R168);
 
   return st;
 }
@@ -239,12 +210,9 @@ fn _shake128x4_absorb_A32_A2
 , reg const ptr u8[4*2] pos
 ) -> reg ptr u256[25]
 { inline int AT;
-  reg u64 offset;
   st = __state_init_avx2x4(st);
-  offset = 0;
-  st, AT, _ = A32::__absorb_bcast_array_avx2x4(st, 0, seed, offset, 32, R168, UNFINISHED);
-  offset = 0;
-  st, _, _ = A2::__absorb_array_avx2x4(st, AT, pos[0:2], pos[2:2], pos[4:2], pos[6:2], offset, 2, R168, SHAKE);
+  st, AT = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R168);
+  st, _ = A2::__absorb_avx2x4(st, 32, pos[0:2], pos[2:2], pos[4:2], pos[6:2], SHAKE, R168);
 
   return st;
 }
@@ -252,35 +220,41 @@ fn _shake128x4_absorb_A32_A2
 /* SHAKE-128 squeeze the next 504 bytes and keep the full state
    at the end so it can be resumed */
 fn _shake128_squeeze3blocks
-( reg mut ptr u8[ABUFLEN::ASIZE] buf
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
 , reg u256[7] st
-) -> reg ptr u8[ABUFLEN::ASIZE]
+) -> reg ptr u8[ABUFLEN::_ASIZE]
 {
- reg u64 offset;
+ reg ui64 offset;
  st = _keccakf1600_avx2(st);
  offset = 0;
- buf, offset = ABUFLEN::__dumpstate_array_avx2(buf, offset, R168, st);
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, R168, st);
  st = _keccakf1600_avx2(st);
- buf, offset = ABUFLEN::__dumpstate_array_avx2(buf, offset, R168, st);
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, R168, st);
  st = _keccakf1600_avx2(st);
- buf, offset = ABUFLEN::__dumpstate_array_avx2(buf, offset, 200, st);
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, 200, st);
  return buf;
 }
 
 /* SHAKE-128 squeeze the next 168 bytes and keep the full state
    at the end so it can be resumed */
 fn _shake128_next_state
-( reg mut ptr u8[ABUFLEN::ASIZE] buf
-) -> reg ptr u8[ABUFLEN::ASIZE] /* buf */
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
 {
- reg u256[7] st;
  reg ptr u64[25] pst;
- reg u64 offset;
+/*
+ reg u256[7] st;
+ reg ui64 offset;
  pst = buf[:u64 2*(168/8) : 25];
- st = __state_from_pstate_avx2(pst);
+ st = __stavx2_pack(pst);
  st = _keccakf1600_avx2(st);
  offset = 2*168;
- buf, _ = ABUFLEN::__dumpstate_array_avx2(buf, offset, 200, st);
+ buf, _ = ABUFLEN::__dumpstate_avx2(buf, offset, 200, st);
+*/
+ pst = buf[:u64 2*(168/8) : 25];
+ pst = _keccakf1600_st25_avx2(pst);
+ buf[:u64 2*(168/8) : 25] = pst;
+
  return buf;
 }
 
@@ -288,30 +262,30 @@ fn _shake128_next_state
    at the end so they can be resumed */
 fn _shake128x4_squeeze3blocks
 ( reg mut ptr u256[25] st
-, reg mut ptr u8[4*ABUFLEN::ASIZE] buf
+, reg mut ptr u8[4*ABUFLEN::_ASIZE] buf
 ) -> reg ptr u256[25]
-   , reg ptr u8[4*ABUFLEN::ASIZE] /* buf */
+   , reg ptr u8[4*ABUFLEN::_ASIZE] /* buf */
 {
- reg ptr u8[ABUFLEN::ASIZE] buf0 buf1 buf2 buf3;
- reg u64 offset;
- buf0 = buf[0*ABUFLEN::ASIZE : ABUFLEN::ASIZE];
- buf1 = buf[1*ABUFLEN::ASIZE : ABUFLEN::ASIZE];
- buf2 = buf[2*ABUFLEN::ASIZE : ABUFLEN::ASIZE];
- buf3 = buf[3*ABUFLEN::ASIZE : ABUFLEN::ASIZE];
+ reg ptr u8[ABUFLEN::_ASIZE] buf0 buf1 buf2 buf3;
+ reg ui64 offset;
+ buf0 = buf[0*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
+ buf1 = buf[1*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
+ buf2 = buf[2*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
+ buf3 = buf[3*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
  offset = 0;
  st = _keccakf1600_avx2x4(st);
  buf0, buf1, buf2, buf3, offset
-  = ABUFLEN::__dumpstate_array_avx2x4(buf0, buf1, buf2, buf3, offset, R168, st);
+  = ABUFLEN::__dumpstate_avx2x4(buf0, buf1, buf2, buf3, offset, R168, st);
  st = _keccakf1600_avx2x4(st);
  buf0, buf1, buf2, buf3, offset
-  = ABUFLEN::__dumpstate_array_avx2x4(buf0, buf1, buf2, buf3, offset, R168, st);
+  = ABUFLEN::__dumpstate_avx2x4(buf0, buf1, buf2, buf3, offset, R168, st);
  st = _keccakf1600_avx2x4(st);
  buf0, buf1, buf2, buf3, offset
-  = ABUFLEN::__dumpstate_array_avx2x4(buf0, buf1, buf2, buf3, offset, 200, st);
- buf[0*ABUFLEN::ASIZE : ABUFLEN::ASIZE] = buf0;
- buf[1*ABUFLEN::ASIZE : ABUFLEN::ASIZE] = buf1;
- buf[2*ABUFLEN::ASIZE : ABUFLEN::ASIZE] = buf2;
- buf[3*ABUFLEN::ASIZE : ABUFLEN::ASIZE] = buf3;
+  = ABUFLEN::__dumpstate_avx2x4(buf0, buf1, buf2, buf3, offset, 200, st);
+ buf[0*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf0;
+ buf[1*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf1;
+ buf[2*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf2;
+ buf[3*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf3;
 
  return st, buf;
 }
@@ -321,11 +295,9 @@ fn _sha3_256A_A1184
 , #spill_to_mmx reg const ptr u8[1184] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  st, _ = A1184::__absorb_array_avx2(st, in, 0, 1184, R136, SHA3);
-  offset = 0;
-  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  st, _ = A1184::__absorb_avx2(st, 0, in, SHA3, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
 
   return out;
 }
@@ -335,11 +307,9 @@ fn _sha3_256A_A1568
 , #spill_to_mmx reg const ptr u8[1568] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  st, _ = A1568::__absorb_array_avx2(st, in, 0, 1568, R136, SHA3);
-  offset = 0;
-  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  st, _ = A1568::__absorb_avx2(st, 0, in, SHA3, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
 
   return out;
 }
@@ -349,12 +319,9 @@ fn _shake256_A32__A1120
 ,  reg const ptr u8[1120] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  offset = 0;
-  st, _ = A1120::__absorb_array_avx2(st, in, offset, 1120, R136, SHAKE);
-  offset = 0;
-  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  st, _ = A1120::__absorb_avx2(st, 0, in, SHAKE, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
   return out;
 }
 
@@ -363,11 +330,158 @@ fn _shake256_A32__A1600
 ,  reg const ptr u8[1600] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
-  reg u64 offset;
   st = __state_init_avx2();
-  offset = 0;
-  st, _ = A1600::__absorb_array_avx2(st, in, offset, 1600, R136, SHAKE);
-  offset = 0;
-  out, _ = A32::__squeeze_array_avx2(out, offset, 32, st, R136);
+  st, _ = A1600::__absorb_avx2(st, 0, in, SHAKE, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
   return out;
 }
+
+
+
+
+//
+//
+// FOR TESTING!!!
+//
+//
+
+
+export fn sha3_512A_A33
+( reg mut ptr u8[64] out
+, reg const ptr u8[33] in
+) -> reg ptr u8[64]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A33::__absorb_avx2(st, 0, in, SHA3, R72);
+  _, out = A64::__squeeze_avx2(st, out, R72);
+  return out;
+}
+
+
+export fn sha3_512A_A64
+( reg mut ptr u8[64] out
+, reg const ptr u8[64] in
+) -> reg ptr u8[64]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A64::__absorb_avx2(st, 0, in, SHA3, R72);
+  _, out = A64::__squeeze_avx2(st, out, R72);
+  return out;
+}
+
+export fn shake256_A128__A32_A1
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2(st, 32, nonce, SHAKE, R136);
+  _, out = A128::__squeeze_avx2(st, out, R136);
+
+  return out;
+}
+
+export fn shake256x4_A128__A32_A1
+( reg mut ptr u8[128] out0 out1 out2 out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+   , reg ptr u8[128] /* out1 */
+   , reg ptr u8[128] /* out2 */
+   , reg ptr u8[128] /* out3 */
+{ stack u256[25] st_s;
+  reg ptr u256[25] st;
+  st = st_s;
+  st = __state_init_avx2x4(st);
+  st, _ = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2x4(st, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], SHAKE, R136);
+  st, out0, out1, out2, out3
+    = A128::__squeeze_avx2x4(st, out0, out1, out2, out3, R136);
+
+  return out0, out1, out2, out3;
+}
+
+export fn shake128_absorb_squeeze3blocks
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+, reg const ptr u8[32] seed
+, reg const ptr u8[2] pos
+) -> reg ptr u8[ABUFLEN::_ASIZE]
+{
+ reg u256[7] st;
+ reg ui64 offset;
+
+ st = __state_init_avx2();
+ st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R168);
+ st, _ = A2::__absorb_avx2(st, 32, pos, SHAKE, R168);
+
+ st = _keccakf1600_avx2(st);
+ offset = 0;
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, R168, st);
+ st = _keccakf1600_avx2(st);
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, R168, st);
+ st = _keccakf1600_avx2(st);
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, 200, st);
+ return buf;
+}
+
+export fn shake128_next_state
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
+{
+ reg ptr u64[25] pst;
+
+ pst = buf[:u64 2*(168/8) : 25];
+ pst = _keccakf1600_st25_avx2(pst);
+ buf[:u64 2*(168/8) : 25] = pst;
+
+ return buf;
+}
+
+export fn sha3_256A_A1184
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1184] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1184::__absorb_avx2(st, 0, in, SHA3, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+
+  return out;
+}
+
+export fn sha3_256A_A1568
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1568] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1568::__absorb_avx2(st, 0, in, SHA3, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+
+  return out;
+}
+
+export fn shake256_A32__A1120
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1120] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1120::__absorb_avx2(st, 0, in, SHAKE, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+  return out;
+}
+
+export fn shake256_A32__A1600
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1600] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1600::__absorb_avx2(st, 0, in, SHAKE, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+  return out;
+}
+
