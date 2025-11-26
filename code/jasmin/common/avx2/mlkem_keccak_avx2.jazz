@@ -1,0 +1,240 @@
+require "mlkem_keccak_avx2.jinc"
+
+//
+//
+// FOR TESTING!!!
+//
+//
+
+
+export fn sha3_512A_A33_avx2
+( reg mut ptr u8[64] out
+, reg const ptr u8[33] in
+) -> reg ptr u8[64]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A33::__absorb_avx2(st, 0, in, SHA3, R72);
+  _, out = A64::__squeeze_avx2(st, out, R72);
+  return out;
+}
+
+
+export fn sha3_512A_A64_avx2
+( reg mut ptr u8[64] out
+, reg const ptr u8[64] in
+) -> reg ptr u8[64]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A64::__absorb_avx2(st, 0, in, SHA3, R72);
+  _, out = A64::__squeeze_avx2(st, out, R72);
+  return out;
+}
+
+export fn shake256_A128__A32_A1_avx2
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2(st, 32, nonce, SHAKE, R136);
+  _, out = A128::__squeeze_avx2(st, out, R136);
+
+  return out;
+}
+
+export fn shake256x4_A128__A32_A1_avx2
+( reg mut ptr u8[128] out0 out1 out2 out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+   , reg ptr u8[128] /* out1 */
+   , reg ptr u8[128] /* out2 */
+   , reg ptr u8[128] /* out3 */
+{ stack u256[25] st_s;
+  reg ptr u256[25] st;
+  st = st_s;
+  st = __state_init_avx2x4(st);
+  st, _ = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2x4(st, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], SHAKE, R136);
+  st, out0, out1, out2, out3
+    = A128::__squeeze_avx2x4(st, out0, out1, out2, out3, R136);
+
+  return out0, out1, out2, out3;
+}
+
+export fn shake128_absorb_squeeze3blocks_avx2
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+, reg const ptr u8[32] seed
+, reg const ptr u8[2] pos
+) -> reg ptr u8[ABUFLEN::_ASIZE]
+{
+ reg u256[7] st;
+ reg ui64 offset;
+
+ st = __state_init_avx2();
+ st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R168);
+ st, _ = A2::__absorb_avx2(st, 32, pos, SHAKE, R168);
+
+ st = _keccakf1600_avx2(st);
+ offset = 0;
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, R168, st);
+ st = _keccakf1600_avx2(st);
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, R168, st);
+ st = _keccakf1600_avx2(st);
+ buf, offset = ABUFLEN::__dumpstate_avx2(buf, offset, 200, st);
+ return buf;
+}
+
+export fn shake128_next_state_avx2
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
+{
+ reg ptr u64[25] pst;
+
+ pst = buf[:u64 2*(168/8) : 25];
+ pst = _keccakf1600_st25_avx2(pst);
+ buf[:u64 2*(168/8) : 25] = pst;
+
+ return buf;
+}
+
+export fn sha3_256A_A1184_avx2
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1184] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1184::__absorb_avx2(st, 0, in, SHA3, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+
+  return out;
+}
+
+export fn sha3_256A_A1568_avx2
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1568] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1568::__absorb_avx2(st, 0, in, SHA3, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+
+  return out;
+}
+
+export fn shake256_A32__A1120_avx2
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1120] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1120::__absorb_avx2(st, 0, in, SHAKE, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+  return out;
+}
+
+export fn shake256_A32__A1600_avx2
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1600] in
+) -> reg ptr u8[32]
+{ reg u256[7] st;
+  st = __state_init_avx2();
+  st, _ = A1600::__absorb_avx2(st, 0, in, SHAKE, R136);
+  _, out = A32::__squeeze_avx2(st, out, R136);
+  return out;
+}
+
+
+export fn shake128x4_absorb_avx2x4
+( reg mut ptr u8[200] out0
+, reg mut ptr u8[200] out1
+, reg mut ptr u8[200] out2
+, reg mut ptr u8[200] out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[8] pos
+) -> reg ptr u8[200]
+   , reg ptr u8[200]
+   , reg ptr u8[200]
+   , reg ptr u8[200]
+{
+ inline int AT;
+ stack u256[25] st;
+ reg ptr u64[25] st0, st1, st2, st3;
+
+ st = __state_init_avx2x4(st);
+ st, AT = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R168);
+ st, _ = A2::__absorb_avx2x4(st, 32, pos[0:2], pos[2:2], pos[4:2], pos[6:2], SHAKE, R168);
+
+ st0 = out0[:u64 0:25];
+ st1 = out1[:u64 0:25];
+ st2 = out2[:u64 0:25];
+ st3 = out3[:u64 0:25];
+ st0, st1, st2, st3 = __st4x_unpack(st0,st1,st2,st3,st);
+ out0[:u64 0:25] = st0;
+ out1[:u64 0:25] = st1;
+ out2[:u64 0:25] = st2;
+ out3[:u64 0:25] = st3;
+
+ return out0, out1, out2, out3;
+}
+
+export fn shake128x4_absorb_squeeze3blocks_avx2x4
+( reg mut ptr u8[4*ABUFLEN::_ASIZE] buf
+, reg const ptr u8[32] seed
+, reg const ptr u8[8] pos
+) -> reg ptr u8[4*ABUFLEN::_ASIZE] /* buf */
+{
+ inline int AT;
+ reg ptr u8[ABUFLEN::_ASIZE] buf0 buf1 buf2 buf3;
+ reg ui64 offset;
+ stack u256[25] st;
+
+ st = __state_init_avx2x4(st);
+ st, AT = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R168);
+ st, _ = A2::__absorb_avx2x4(st, 32, pos[0:2], pos[2:2], pos[4:2], pos[6:2], SHAKE, R168);
+
+ buf0 = buf[0*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
+ buf1 = buf[1*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
+ buf2 = buf[2*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
+ buf3 = buf[3*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE];
+ offset = 0;
+ st = _keccakf1600_avx2x4(st);
+ buf0, buf1, buf2, buf3, offset
+  = ABUFLEN::__dumpstate_avx2x4(buf0, buf1, buf2, buf3, offset, R168, st);
+ st = _keccakf1600_avx2x4(st);
+ buf0, buf1, buf2, buf3, offset
+  = ABUFLEN::__dumpstate_avx2x4(buf0, buf1, buf2, buf3, offset, R168, st);
+ st = _keccakf1600_avx2x4(st);
+ buf0, buf1, buf2, buf3, offset
+  = ABUFLEN::__dumpstate_avx2x4(buf0, buf1, buf2, buf3, offset, 200, st);
+ buf[0*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf0;
+ buf[1*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf1;
+ buf[2*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf2;
+ buf[3*ABUFLEN::_ASIZE : ABUFLEN::_ASIZE] = buf3;
+
+ return buf;
+}
+
+export fn shake256x4_A128__A32_A1_avx2x4
+( reg mut ptr u8[128] out0 out1 out2 out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+   , reg ptr u8[128] /* out1 */
+   , reg ptr u8[128] /* out2 */
+   , reg ptr u8[128] /* out3 */
+{ stack u256[25] st_s;
+  reg ptr u256[25] st;
+  st = st_s;
+  st = __state_init_avx2x4(st);
+  st, _ = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R136);
+  st, _ = A1::__absorb_avx2x4(st, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], SHAKE, R136);
+  st, out0, out1, out2, out3
+    = A128::__squeeze_avx2x4(st, out0, out1, out2, out3, R136);
+
+  return out0, out1, out2, out3;
+}
+
+
