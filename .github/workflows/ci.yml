@@ -31,7 +31,7 @@ jobs:
             submodules: recursive
         - uses: cachix/install-nix-action@v31
           with:
-            nix_path: nixpkgs=channel:nixos-unstablew
+            nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
         - run: nix-shell --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/ test"
     check-sums:
@@ -44,7 +44,6 @@ jobs:
         - uses: cachix/install-nix-action@v31
           with:
             nix_path: nixpkgs=channel:nixos-unstable
-            extra_nix_config: filter-syscalls = false
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
         - run: nix-shell --arg full false --run "make -C bench run-tests"
         - name: Generate Checksum Summary
@@ -60,7 +59,6 @@ jobs:
       - uses: cachix/install-nix-action@v31
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: filter-syscalls = false
       - run: nix-shell --arg full false --run "echo Dependencies OK…"
       - run: nix-shell --arg full false --run "make -C bench memory-check"
       - name: Generate Memory Check Summary
