@@ -74,6 +74,9 @@ mkShell ({
   JASMINCT = "${jasmin.bin}/bin/jasmin-ct";
   JASMIN2EC = "${jasmin.bin}/bin/jasmin2ec";
   JASMINPATH="Keccak=${formosa-keccak}/src/amd64";
+  packages = [
+    valgrind 
+  ];
 } // lib.optionalAttrs full {
   packages = [
     ec

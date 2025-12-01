@@ -52,6 +52,16 @@ void test(unsigned char*,state *);
  #define MAXTEST_BYTES 4096
 #endif
 
+
+// Add this function somewhere accessible (e.g., above main)
+void debug_print_hex(const char *name, const uint8_t *data, size_t len) {
+    fprintf(stderr, "%s (len=%zu) = ", name, len);
+    for (size_t i = 0; i < len; i++) {
+        fprintf(stderr, "%02x", data[i]);
+    }
+    fprintf(stderr, "\n");
+}
+
 // ////////////////////////////////////////////////////////////////////////////
 
 state* preallocate(void)
@@ -139,6 +149,10 @@ void test(unsigned char *checksum_state, state *_s)
     output_prepare(s.s2, s.s, s.slen);
     result = jade_kem_keypair(s.p, s.s);
     if (result != 0) fail("jade_kem_keypair returns nonzero");
+    // if (loop == 0) {
+    //   debug_print_hex("PK", s.p, s.plen); 
+    //   debug_print_hex("SK", s.s, s.slen);
+    // }
     checksum(checksum_state, s.p, s.plen);
     checksum(checksum_state, s.s, s.slen);
     output_compare(s.p2, s.p, s.plen, "jade_kem_keypair");
@@ -150,6 +164,10 @@ void test(unsigned char *checksum_state, state *_s)
     double_canary(s.p2, s.p, s.plen);
     result = jade_kem_enc(s.c, s.k, s.p);
     if (result != 0) fail("jade_kem_enc returns nonzero");
+    // if (loop == 0) {
+    //   debug_print_hex("CT", s.c, s.clen); 
+    //   debug_print_hex("K_A", s.k, s.klen);
+    // }
     checksum(checksum_state, s.c, s.clen);
     checksum(checksum_state, s.k, s.klen);
     output_compare(s.c2, s.c, s.clen, "jade_kem_enc");
@@ -164,6 +182,9 @@ void test(unsigned char *checksum_state, state *_s)
     result = jade_kem_dec(s.t, s.c, s.s);
     if (result != 0) fail("jade_kem_dec returns nonzero");
     if (memcmp(s.t, s.k, s.klen) != 0) fail("jade_kem_dec does not match k");
+    // if (loop == 0) {
+    //   debug_print_hex("K_B", s.t, s.tlen);
+    // }
     checksum(checksum_state, s.t, s.tlen);
     output_compare(s.t2, s.t, s.tlen, "jade_kem_dec");
     input_compare(s.c2, s.c, s.clen, "jade_kem_dec");
