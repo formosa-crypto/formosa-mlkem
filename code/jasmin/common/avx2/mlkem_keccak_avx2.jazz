@@ -7,6 +7,445 @@ require "mlkem_keccak_avx2.jinc"
 //
 
 
+// decoupled ops
+param int REPS = 100;
+
+export fn keccakf1600_st25_avx2
+( reg mut ptr u8[200] st
+) -> reg ptr u8[200]
+{
+  reg ui64 c;
+  c = 0;
+  while (c < REPS) {
+    st = _keccakf1600_st25_avx2(st);
+    c += 1;
+  }
+
+ return st;
+}
+
+
+export fn keccakf1600_avx2
+( reg mut ptr u8[224] state
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st = _keccakf1600_avx2(st);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn keccakf1600_avx2x4
+( reg mut ptr u8[800] st
+) -> reg ptr u8[800]
+{
+  reg ui64 c;
+  reg ptr u256[25] st4x;
+  st4x = st[:u256 0:25];
+  c = 0;
+  while (c < REPS) {
+    st4x = _keccakf1600_avx2x4(st4x);
+    c += 1;
+  }
+  st[:u256 0:25] = st4x;
+
+ return st;
+}
+
+export fn absorb_A33_R72_avx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[33] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A33::__absorb_avx2(st, 0, in, SHA3, R72);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn squeeze_A64_R72_avx2
+( reg mut ptr u8[224] state
+, reg mut ptr u8[64] out
+) -> reg ptr u8[224]
+   , reg ptr u8[64]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, out = A64::__squeeze_avx2(st, out, R72);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state, out;
+}
+
+export fn absorb_A64_R72_axv2
+( reg mut ptr u8[224] state
+, reg const ptr u8[64] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A64::__absorb_avx2(st, 0, in, SHA3, R72);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn absorb_A32_R136_avx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[32] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A32::__absorb_avx2(st, 0, in, UNFINISHED, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn absorb_A32_R136_avx2x4
+( reg mut ptr u8[800] st
+, reg const ptr u8[32] in
+) -> reg ptr u8[800]
+{
+  reg ui64 c;
+  reg ptr u256[25] st4x;
+  st4x = st[:u256 0:25];
+  c = 0;
+  while (c < REPS) {
+    st4x, _ = A32::__absorb_bcast_avx2x4(st4x, 0, in, UNFINISHED, R136);
+    c += 1;
+  }
+  st[:u256 0:25] = st4x;
+
+ return st;
+}
+
+export fn absorb_A1_R136_avx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[1] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A1::__absorb_avx2(st, 32, in, SHAKE, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn absorb_A1_R136_avx2x4
+( reg mut ptr u8[800] st
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[800]
+{
+  reg ui64 c;
+  reg ptr u256[25] st4x;
+  st4x = st[:u256 0:25];
+  c = 0;
+  while (c < REPS) {
+    st4x, _ = A1::__absorb_avx2x4(st4x, 32, nonces[0:1], nonces[1:1], nonces[2:1], nonces[3:1], SHAKE, R136);
+    c += 1;
+  }
+  st[:u256 0:25] = st4x;
+
+ return st;
+}
+
+export fn squeeze_A128_R136_avx2
+( reg mut ptr u8[224] state
+, reg mut ptr u8[128] out
+) -> reg ptr u8[224]
+   , reg ptr u8[128]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, out = A128::__squeeze_avx2(st, out, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state, out;
+}
+
+export fn squeeze_A128_R136_avx2x4
+( reg mut ptr u8[800] st
+, reg mut ptr u8[128] out0
+, reg mut ptr u8[128] out1
+, reg mut ptr u8[128] out2
+, reg mut ptr u8[128] out3
+) -> reg ptr u8[800]
+   , reg ptr u8[128]
+   , reg ptr u8[128]
+   , reg ptr u8[128]
+   , reg ptr u8[128]
+{
+  reg ui64 c;
+  reg ptr u256[25] st4x;
+  st4x = st[:u256 0:25];
+  c = 0;
+  while (c < REPS) {
+    st4x, out0, out1, out2, out3
+      = A128::__squeeze_avx2x4(st4x, out0, out1, out2, out3, R136);
+    c += 1;
+  }
+  st[:u256 0:25] = st4x;
+
+ return st, out0, out1, out2, out3;
+}
+
+export fn dumpstate_R168_avx2
+( reg mut ptr u8[224] state
+, reg mut ptr u8[536] out
+) -> reg ptr u8[224]
+   , reg ptr u8[536]
+{
+  inline int i;
+  reg ui64 c, offset;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    offset = 0;
+    out, offset = ABUFLEN::__dumpstate_avx2(out, offset, R168, st);
+    out, offset = ABUFLEN::__dumpstate_avx2(out, offset, R168, st);
+    out, offset = ABUFLEN::__dumpstate_avx2(out, offset, R168, st);
+    c += 3;
+    
+  }
+
+ return state, out;
+}
+
+export fn dumpstate_R168_avx2x4
+( reg mut ptr u8[800] state
+, reg mut ptr u8[536] out0
+, reg mut ptr u8[536] out1
+, reg mut ptr u8[536] out2
+, reg mut ptr u8[536] out3
+) -> reg ptr u8[800]
+   , reg ptr u8[536]
+   , reg ptr u8[536]
+   , reg ptr u8[536]
+   , reg ptr u8[536]
+{
+  reg ui64 c, offset;
+  reg ptr u256[25] st;
+  st = state[:u256 0:25];
+  c = 0;
+  while (c < REPS) {
+    offset = 0;
+    out0, out1, out2, out3, offset = ABUFLEN::__dumpstate_avx2x4(out0, out1, out2, out3, offset, R168, st);
+    out0, out1, out2, out3, offset = ABUFLEN::__dumpstate_avx2x4(out0, out1, out2, out3, offset, R168, st);
+    out0, out1, out2, out3, offset = ABUFLEN::__dumpstate_avx2x4(out0, out1, out2, out3, offset, R168, st);
+    c += 3;
+  }
+ state[:u256 0:25] = st;
+
+ return state, out0, out1, out2, out3;
+}
+
+export fn dumpstate_R200_avx2
+( reg mut ptr u8[224] state
+, reg mut ptr u8[536] out
+) -> reg ptr u8[224]
+   , reg ptr u8[536]
+{
+  inline int i;
+  reg ui64 c, offset;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    offset = 0;
+    out, _ = ABUFLEN::__dumpstate_avx2(out, offset, 200, st);
+    offset += 168;
+    out, _ = ABUFLEN::__dumpstate_avx2(out, offset, 200, st);
+    offset += 168;
+    out, offset = ABUFLEN::__dumpstate_avx2(out, offset, 200, st);
+    c += 3;
+    
+  }
+
+ return state, out;
+}
+
+export fn dumpstate_R200_avx2x4
+( reg mut ptr u8[800] state
+, reg mut ptr u8[536] out0
+, reg mut ptr u8[536] out1
+, reg mut ptr u8[536] out2
+, reg mut ptr u8[536] out3
+) -> reg ptr u8[800]
+   , reg ptr u8[536]
+   , reg ptr u8[536]
+   , reg ptr u8[536]
+   , reg ptr u8[536]
+{
+  reg ui64 c, offset;
+  reg ptr u256[25] st;
+  st = state[:u256 0:25];
+  c = 0;
+  while (c < REPS) {
+    offset = 0;
+    out0, out1, out2, out3, _ = ABUFLEN::__dumpstate_avx2x4(out0, out1, out2, out3, offset, 200, st);
+    offset += 168;
+    out0, out1, out2, out3, _ = ABUFLEN::__dumpstate_avx2x4(out0, out1, out2, out3, offset, 200, st);
+    offset += 168;
+    out0, out1, out2, out3, offset = ABUFLEN::__dumpstate_avx2x4(out0, out1, out2, out3, offset, 200, st);
+    c += 3;
+  }
+ state[:u256 0:25] = st;
+
+ return state, out0, out1, out2, out3;
+}
+
+export fn absorb_A1184_R136_avx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[1184] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A1184::__absorb_avx2(st, 0, in, SHA3, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn squeeze_A32_R136_avx2
+( reg mut ptr u8[224] state
+, reg mut ptr u8[32] out
+) -> reg ptr u8[224]
+   , reg ptr u8[32]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, out = A32::__squeeze_avx2(st, out, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state, out;
+}
+
+export fn absorb_A1568_R136_avx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[1568] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A1568::__absorb_avx2(st, 0, in, SHA3, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn absorb_A1120_R136_avx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[1120] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A1120::__absorb_avx2(st, 0, in, SHAKE, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+export fn absorb_A1600_R136_avx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[1600] in
+) -> reg ptr u8[224]
+{
+  inline int i;
+  reg ui64 c;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  c = 0;
+  while (c < REPS) {
+    st, _ = A1600::__absorb_avx2(st, 0, in, SHAKE, R136);
+    c += 1;
+  }
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+
+ return state;
+}
+
+
+
+
+
+// MLKEM entrypoints
+
 export fn sha3_512A_A33_avx2
 ( reg mut ptr u8[64] out
 , reg const ptr u8[33] in
