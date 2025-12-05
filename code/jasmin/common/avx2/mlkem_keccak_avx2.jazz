@@ -10,6 +10,17 @@ require "mlkem_keccak_avx2.jinc"
 // decoupled ops
 param int REPS = 100;
 
+export fn st25_to_stavx2
+( reg mut ptr u8[224] state
+, reg const ptr u8[200] st
+) -> reg ptr u8[224]
+{ inline int i;
+  reg u256[7] streg;
+  streg = __stavx2_pack(st);
+  for i = 0 to 7 { state[:u256 i] = streg[i]; }
+ return state;
+}
+
 export fn keccakf1600_st25_avx2
 ( reg mut ptr u8[200] st
 ) -> reg ptr u8[200]
@@ -59,6 +70,328 @@ export fn keccakf1600_avx2x4
 
  return st;
 }
+
+
+
+// MLKEM entrypoints
+
+// NEW interface...
+export fn sha3_512A_A33_new
+( #spill_to_mmx reg mut ptr u8[64] out
+, reg const ptr u8[33] in
+) -> reg ptr u8[64]
+{
+  out=out; in=in;
+  out = NEW::_sha3_512A_A33(out, in);
+  out=out;
+  return out;
+}
+
+export fn sha3_512A_A64_new
+( reg mut ptr u8[64] out
+, reg const ptr u8[64] in
+) -> reg ptr u8[64]
+{
+  out=out; in=in;
+  out = NEW::_sha3_512A_A64(out, in);
+  out=out;
+  return out;
+}
+
+export fn shake256_A128__A32_A1_new
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ 
+  out=out; seed=seed; nonce=nonce;
+  out = NEW::_shake256_A128__A32_A1(out, seed, nonce);
+  out=out;
+  return out;
+}
+
+export fn shake256x4_A128__A32_A1_new
+( reg mut ptr u8[128] out0 out1 out2 out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+   , reg ptr u8[128] /* out1 */
+   , reg ptr u8[128] /* out2 */
+   , reg ptr u8[128] /* out3 */
+{ 
+  out0=out0; out1=out1; out2=out2; out3=out3; seed=seed; nonces=nonces;
+  out0, out1, out2, out3 = NEW::_shake256x4_A128__A32_A1(out0, out1, out2, out3, seed, nonces);
+  out0=out0; out1=out1; out2=out2; out3=out3;
+  return out0, out1, out2, out3;
+}
+
+export fn shake128_absorb_A32_A2_new
+( reg mut ptr u8[224] state
+, reg const ptr u8[32] seed
+, reg const ptr u8[2] pos
+) -> reg ptr u8[224]
+{ inline int i;
+  reg u256[7] st;
+  state=state; seed=seed; pos=pos;
+  st = NEW::_shake128_absorb_A32_A2(seed, pos);
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+  state=state;
+  return state;
+}
+
+export fn shake128x4_absorb_A32_A2_new
+( reg mut ptr u256[25] st
+, reg const ptr u8[32] seed
+, reg const ptr u8[4*2] pos
+) -> reg ptr u256[25]
+{ 
+  st=st; seed=seed; pos=pos;
+  st = NEW::_shake128x4_absorb_A32_A2(st, seed, pos);
+  st=st;
+  return st;
+}
+
+export fn shake128_squeeze3blocks_new
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+, reg const ptr u8[224] state
+) -> reg ptr u8[ABUFLEN::_ASIZE]
+{ inline int i;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  buf=buf;
+  buf = NEW::_shake128_squeeze3blocks(buf, st);
+  buf=buf;
+  return buf;
+}
+
+export fn shake128_next_state_new
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
+{
+  buf=buf;
+  buf = NEW::_shake128_next_state(buf);
+  buf=buf;
+  return buf;
+}
+
+export fn shake128x4_squeeze3blocks_new
+( reg mut ptr u256[25] st
+, reg mut ptr u8[4*ABUFLEN::_ASIZE] buf
+) -> reg ptr u256[25]
+   , reg ptr u8[4*ABUFLEN::_ASIZE] /* buf */
+{
+  st=st; buf=buf;
+  st, buf = NEW::_shake128x4_squeeze3blocks(st, buf);
+  st=st; buf=buf;
+  return st, buf;
+}
+
+export fn sha3_256A_A1184_new
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1184] in
+) -> reg ptr u8[32]
+{
+  out=out; in=in;  
+  out = NEW::_sha3_256A_A1184(out, in);
+  out=out;
+  return out;
+}
+
+export fn sha3_256A_A1568_new
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1568] in
+) -> reg ptr u8[32]
+{
+  out=out; in=in;
+  out = NEW::_sha3_256A_A1568(out, in);
+  out=out;
+  return out;
+}
+
+export fn shake256_A32__A1120_new
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1120] in
+) -> reg ptr u8[32]
+{
+  out=out; in=in;
+  out = NEW::_shake256_A32__A1120(out, in);
+  out=out;
+  return out;
+}
+
+export fn shake256_A32__A1600_new
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1600] in
+) -> reg ptr u8[32]
+{ 
+  out=out; in=in;
+  out = NEW::_shake256_A32__A1600(out, in);
+  out=out;
+  return out;
+}
+
+
+// OLD interface...
+export fn sha3_512A_A33_old
+( #spill_to_mmx reg mut ptr u8[64] out
+, reg const ptr u8[33] in
+) -> reg ptr u8[64]
+{
+  out=out; in=in;
+  out = OLD::_sha3_512A_A33(out, in);
+  out=out;
+  return out;
+}
+
+export fn sha3_512A_A64_old
+( reg mut ptr u8[64] out
+, reg const ptr u8[64] in
+) -> reg ptr u8[64]
+{
+  out=out; in=in;
+  out = OLD::_sha3_512A_A64(out, in);
+  out=out;
+  return out;
+}
+
+export fn shake256_A128__A32_A1_old
+( reg mut ptr u8[128] out
+, reg const ptr u8[32] seed
+, reg const ptr u8[1] nonce
+) -> reg ptr u8[128]
+{ 
+  out=out; seed=seed; nonce=nonce;
+  out = OLD::_shake256_A128__A32_A1(out, seed, nonce);
+  out=out;
+  return out;
+}
+
+export fn shake256x4_A128__A32_A1_old
+( reg mut ptr u8[128] out0 out1 out2 out3
+, reg const ptr u8[32] seed
+, reg const ptr u8[4] nonces
+) -> reg ptr u8[128] /* out0 */
+   , reg ptr u8[128] /* out1 */
+   , reg ptr u8[128] /* out2 */
+   , reg ptr u8[128] /* out3 */
+{ 
+  out0=out0; out1=out1; out2=out2; out3=out3; seed=seed; nonces=nonces;
+  out0, out1, out2, out3 = OLD::_shake256x4_A128__A32_A1(out0, out1, out2, out3, seed, nonces);
+  out0=out0; out1=out1; out2=out2; out3=out3;
+  return out0, out1, out2, out3;
+}
+
+export fn shake128_absorb_A32_A2_old
+( reg mut ptr u8[224] state
+, reg const ptr u8[32] seed
+, reg const ptr u8[2] pos
+) -> reg ptr u8[224]
+{ inline int i;
+  reg u256[7] st;
+  state=state; seed=seed; pos=pos;  
+  st = OLD::_shake128_absorb_A32_A2(seed, pos);
+  for i = 0 to 7 { state[:u256 i] = st[i]; }
+  state=state;
+  return state;
+}
+
+export fn shake128x4_absorb_A32_A2_old
+( reg mut ptr u256[25] st
+, reg const ptr u8[32] seed
+, reg const ptr u8[4*2] pos
+) -> reg ptr u256[25]
+{ 
+  st=st; seed=seed; pos=pos;
+  st = OLD::_shake128x4_absorb_A32_A2(st, seed, pos);
+  st=st;
+  return st;
+}
+
+export fn shake128_squeeze3blocks_old
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+, reg const ptr u8[224] state
+) -> reg ptr u8[ABUFLEN::_ASIZE]
+{ inline int i;
+  reg u256[7] st;
+  for i = 0 to 7 { st[i] = state[:u256 i]; }
+  buf=buf;
+  buf = OLD::_shake128_squeeze3blocks(buf, st);
+  buf=buf;
+  return buf;
+}
+
+export fn shake128_next_state_old
+( reg mut ptr u8[ABUFLEN::_ASIZE] buf
+) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
+{
+  buf=buf;
+  buf = OLD::_shake128_next_state(buf);
+  buf=buf;
+  return buf;
+}
+
+export fn shake128x4_squeeze3blocks_old
+( reg mut ptr u256[25] st
+, reg mut ptr u8[4*ABUFLEN::_ASIZE] buf
+) -> reg ptr u256[25]
+   , reg ptr u8[4*ABUFLEN::_ASIZE] /* buf */
+{
+  st=st; buf=buf;
+  st, buf = OLD::_shake128x4_squeeze3blocks(st, buf);
+  st=st; buf=buf;
+  return st, buf;
+}
+
+export fn sha3_256A_A1184_old
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1184] in
+) -> reg ptr u8[32]
+{
+  out=out; in=in;
+  out = OLD::_sha3_256A_A1184(out, in);
+  out=out;
+  return out;
+}
+
+export fn sha3_256A_A1568_old
+( #spill_to_mmx reg mut ptr u8[32] out
+, #spill_to_mmx reg const ptr u8[1568] in
+) -> reg ptr u8[32]
+{
+  out=out; in=in;
+  out = OLD::_sha3_256A_A1568(out, in);
+  out=out;
+  return out;
+}
+
+export fn shake256_A32__A1120_old
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1120] in
+) -> reg ptr u8[32]
+{
+  out=out; in=in;
+  out = OLD::_shake256_A32__A1120(out, in);
+  out=out;
+  return out;
+}
+
+export fn shake256_A32__A1600_old
+(  reg mut ptr u8[32] out
+,  reg const ptr u8[1600] in
+) -> reg ptr u8[32]
+{ 
+  out=out; in=in;
+  out = OLD::_shake256_A32__A1600(out, in);
+  out=out;
+  return out;
+}
+
+
+/*
+
+
+
+
 
 export fn absorb_A33_R72_avx2
 ( reg mut ptr u8[224] state
@@ -676,4 +1009,4 @@ export fn shake256x4_A128__A32_A1_avx2x4
   return out0, out1, out2, out3;
 }
 
-
+*/

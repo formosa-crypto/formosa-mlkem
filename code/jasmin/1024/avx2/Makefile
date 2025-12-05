@@ -11,7 +11,7 @@ OS     := $(shell uname -s)
 .SECONDARY: jkem.s
 
 
-default: test speed
+default: test speed keccak_test
 
 test: test/test_kem
 
@@ -49,6 +49,8 @@ test/test_keccak_ref.s: ../../common/ref/mlkem_keccak_ref.jazz
 test/test_keccak_avx2.s: ../../common/avx2/mlkem_keccak_avx2.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $<
 
+test/genmat_new.s: gen_matrix.jazz
+	$(JASMINC) -o $@ $(JFLAGS) $<
 
 
 .PHONY: ct clean

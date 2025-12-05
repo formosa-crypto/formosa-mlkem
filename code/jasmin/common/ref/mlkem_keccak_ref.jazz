@@ -31,7 +31,26 @@ namespace ABUFLEN {
   from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
 }
 
+// decoupled ops
+param int REPS = 1000;
 
+export fn keccakf1600_ref
+( reg mut ptr u8[200] st
+) -> reg ptr u8[200]
+{
+  reg ui64 c;
+  c = 0;
+  st = st;
+  while (c < REPS) {
+    st = _keccakf1600_ref(st);
+    c += 1;
+  }
+
+  st = st;
+ return st;
+}
+
+// MLKEM entrypoints
 
 export fn sha3_512A_A33_ref
 ( reg mut ptr u8[64] out

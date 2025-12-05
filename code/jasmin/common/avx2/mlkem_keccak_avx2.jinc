@@ -521,7 +521,7 @@ inline fn _sha3_512A_A33
 , reg const ptr u8[33] in
 ) -> reg ptr u8[64]
 {
-  out = OLD::_sha3_512A_A33(out, in);
+  out = NEW::_sha3_512A_A33(out, in);
   return out;
 }
 
@@ -530,7 +530,7 @@ inline fn _sha3_512A_A64
 , reg const ptr u8[64] in
 ) -> reg ptr u8[64]
 {
-  out = OLD::_sha3_512A_A64(out, in);
+  out = NEW::_sha3_512A_A64(out, in);
   return out;
 }
 
@@ -540,7 +540,7 @@ inline fn _shake256_A128__A32_A1
 , reg const ptr u8[1] nonce
 ) -> reg ptr u8[128]
 { 
-  out = OLD::_shake256_A128__A32_A1(out, seed, nonce);
+  out = NEW::_shake256_A128__A32_A1(out, seed, nonce);
   return out;
 }
 
@@ -553,7 +553,7 @@ inline fn _shake256x4_A128__A32_A1
    , reg ptr u8[128] /* out2 */
    , reg ptr u8[128] /* out3 */
 { 
-  out0, out1, out2, out3 = OLD::_shake256x4_A128__A32_A1(out0, out1, out2, out3, seed, nonces);
+  out0, out1, out2, out3 = NEW::_shake256x4_A128__A32_A1(out0, out1, out2, out3, seed, nonces);
   return out0, out1, out2, out3;
 }
 
@@ -563,7 +563,7 @@ inline fn _shake128_absorb_A32_A2
 ) -> reg u256[7]
 {
   reg u256[7] st;
-  st = OLD::_shake128_absorb_A32_A2(seed, pos);
+  st = NEW::_shake128_absorb_A32_A2(seed, pos);
   return st;
 }
 
@@ -573,7 +573,7 @@ inline fn _shake128x4_absorb_A32_A2
 , reg const ptr u8[4*2] pos
 ) -> reg ptr u256[25]
 { 
-  st = OLD::_shake128x4_absorb_A32_A2(st, seed, pos);
+  st = NEW::_shake128x4_absorb_A32_A2(st, seed, pos);
   return st;
 }
 
@@ -582,7 +582,7 @@ inline fn _shake128_squeeze3blocks
 , reg u256[7] st
 ) -> reg ptr u8[ABUFLEN::_ASIZE]
 {
-  buf = OLD::_shake128_squeeze3blocks(buf, st);
+  buf = NEW::_shake128_squeeze3blocks(buf, st);
   return buf;
 }
 
@@ -590,7 +590,7 @@ inline fn _shake128_next_state
 ( reg mut ptr u8[ABUFLEN::_ASIZE] buf
 ) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
 {
-  buf = OLD::_shake128_next_state(buf);
+  buf = NEW::_shake128_next_state(buf);
   return buf;
 }
 
@@ -600,7 +600,7 @@ inline fn _shake128x4_squeeze3blocks
 ) -> reg ptr u256[25]
    , reg ptr u8[4*ABUFLEN::_ASIZE] /* buf */
 {
-  st, buf = OLD::_shake128x4_squeeze3blocks(st, buf);
+  st, buf = NEW::_shake128x4_squeeze3blocks(st, buf);
   return st, buf;
 }
 
@@ -609,7 +609,7 @@ inline fn _sha3_256A_A1184
 , #spill_to_mmx reg const ptr u8[1184] in
 ) -> reg ptr u8[32]
 {
-  out = OLD::_sha3_256A_A1184(out, in);
+  out = NEW::_sha3_256A_A1184(out, in);
   return out;
 }
 
@@ -618,7 +618,7 @@ inline fn _sha3_256A_A1568
 , #spill_to_mmx reg const ptr u8[1568] in
 ) -> reg ptr u8[32]
 {
-  out = OLD::_sha3_256A_A1568(out, in);
+  out = NEW::_sha3_256A_A1568(out, in);
   return out;
 }
 
@@ -627,7 +627,7 @@ inline fn _shake256_A32__A1120
 ,  reg const ptr u8[1120] in
 ) -> reg ptr u8[32]
 {
-  out = OLD::_shake256_A32__A1120(out, in);
+  out = NEW::_shake256_A32__A1120(out, in);
   return out;
 }
 
@@ -636,7 +636,7 @@ inline fn _shake256_A32__A1600
 ,  reg const ptr u8[1600] in
 ) -> reg ptr u8[32]
 { 
-  out = OLD::_shake256_A32__A1600(out, in);
+  out = NEW::_shake256_A32__A1600(out, in);
   return out;
 }
 
