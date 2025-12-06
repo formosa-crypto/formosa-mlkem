@@ -46,10 +46,7 @@ jkem.s: $(JINC) jkem.jazz
 test/test_keccak_ref.s: ../../common/ref/mlkem_keccak_ref.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $<
 
-test/test_keccak_avx2.s: ../../common/avx2/mlkem_keccak_avx2.jazz
-	$(JASMINC) -o $@ $(JFLAGS) $<
-
-test/genmat_new.s: gen_matrix.jazz
+test/test_keccak_avx2.s: test_keccak.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $<
 
 
@@ -66,7 +63,6 @@ clean:
 	-rm -f jkem.o
 	-rm -f test/test_kem
 	-rm -f test/speed_kem
-	-rm -f test/test_keccak
 	-rm -f test/test_keccak_ref.s test/test_keccak_avx2.s 
 	-rm -f test/test_oldkeccak
 ifeq ($(OS),Darwin)
