@@ -743,6 +743,10 @@ lemma map_pmap_comp ['a 'b 'c] (f : 'a -> 'b option) (g : 'b -> 'c) s :
 proof. by elim: s => [//|x s ih] @/(\o) /=; case: (f _). qed.
 
 
+bind op [W16.t & W128.t & Array16.t] sliceset_16_128_16 "asliceset".
+realize le_size by auto.
+realize bvaslicesetP by admit.
+
 (* -------------------------------------------------------------------- *)
 lemma filter24P _buf : hoare[Filters.filter24 : buf = _buf ==>
   let ws =
@@ -794,7 +798,7 @@ cfold ^t0_1<-; swap ^shuffle_0_1<- @^shuffle_0<- & +1.
 proc change  (* [
   (shf0_0_16 shf0_1_16 : W128.t)
   (f0_0 f0_1 : W128.t)
-] *) [^shuffle_0<- +6] 
+] *) [^shuffle_0<- +5] 
 : [
   (shf0_0_16 shf0_1_16 : W128.t)
   (f0_0 f0_1 : W128.t)
@@ -807,7 +811,8 @@ proc change  (* [
   shf0_1_16 <- VPUNPCKL_16u8 shf0_1 (VPINC_8u8 shf0_1);
   f0_1      <- VPSHUFB_128 f0_1 shf0_1_16;
   f0 <- Mlkem_filters_bindings.concat_2u128 f0_0 f0_1;
-}. admit.
+}.
+circuit.
 
 swap ^f0_0<- @^good0_0<-.
 swap [^shf0_0_16<- .. ^shf0_0_16<- & +1] @^good0_0<- & +2.
