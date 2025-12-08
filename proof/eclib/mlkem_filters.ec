@@ -794,8 +794,11 @@ cfold ^t0_1<-; swap ^shuffle_0_1<- @^shuffle_0<- & +1.
 proc change  (* [
   (shf0_0_16 shf0_1_16 : W128.t)
   (f0_0 f0_1 : W128.t)
-] *) [^shuffle_0<- -6] 
-: {
+] *) [^shuffle_0<- +6] 
+: [
+  (shf0_0_16 shf0_1_16 : W128.t)
+  (f0_0 f0_1 : W128.t)
+] {
   f0_0 <- extract_256_128 f0 0;
   f0_1 <- extract_256_128 f0 128;
   shf0_0_16 <- VPUNPCKL_16u8 shf0_0 (VPINC_8u8 shf0_0);
@@ -804,7 +807,7 @@ proc change  (* [
   shf0_1_16 <- VPUNPCKL_16u8 shf0_1 (VPINC_8u8 shf0_1);
   f0_1      <- VPSHUFB_128 f0_1 shf0_1_16;
   f0 <- Mlkem_filters_bindings.concat_2u128 f0_0 f0_1;
-}.
+}. admit.
 
 swap ^f0_0<- @^good0_0<-.
 swap [^shf0_0_16<- .. ^shf0_0_16<- & +1] @^good0_0<- & +2.
@@ -821,15 +824,13 @@ pose P (o : int) (g : W8.t) (f : W256.t) (f_0 : W128.t) :=
       (iotared 0 8) in
   all (fun i => w.[i] = extract_128_16 f_0 (16 * i)) (iotared 0 (size w)).
 
-sp 1; seq ^f0_0<- : (#pre /\ P 0 good0_0 f0 f0_0).
-  (* FIXME! ADD TACTIC THAT USES NEW CIRCUIT TACTIC TO SOLVE THIS 
- - by bdep bitstring [f0] [P 0 good0_0 f0 f0_0] good0_0; move=> |>. *)
-admit.
+sp 1; seq ^f0_0<- : (#pre /\ P 0 good0_0 f0 f0_0). 
+extens [good0_0] : by circuit simplify; trivial.
 
 sp 1; seq ^f0_1<- : (#pre /\ P 128 good0_1 f0 f0_1).
-  (* FIXME! ADD TACTIC THAT USES NEW CIRCUIT TACTIC TO SOLVE THIS 
-  - by bdep bitstring [f0] [P 128 good0_1 f0 f0_1] good0_1; move=> |>. *)
-admit.
+move => //>.
+conseq (: _ ==> P 128 good0_1 f0 f0_1). move => //>.
+extens [good0_1] : by circuit simplify; trivial.
 
 (* ==================================================================== *)
 (* Part four: write filtered values in the output buffer                *)
