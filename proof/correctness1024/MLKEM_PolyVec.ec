@@ -238,10 +238,6 @@ rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_ui
    by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=; smt(size_map size_iota W16.to_uint_cmp).
 qed.
 
-bind op [W11.t & bool] W11."_.[_]" "get".
-realize le_size by auto.
-realize eq1_size by auto.
-realize bvgetP by admit.
 
 lemma encode_vec_compress_bits (p : W16.t Array1024.t) (i : int) (k : int) :
      0 <= i < 1024*11 %/ 8 =>
@@ -432,8 +428,8 @@ lemma polyvec_add_corr  _a _b ab bb:
            ==>
            signed_bound1024_cxq res 0 1024 (ab + bb) /\ 
            forall k, 0 <= k < 1024 =>
-              incoeff (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r by admit. 
- (* FIXME: CONSEQ   move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb). *)
+              incoeff (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r by 
+               move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb). 
 
 lemma polyvec_add_corr_impl  ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -515,7 +511,7 @@ lemma polyvec_reduce_corr  _a :
           _a = lift_array1024 r ==> 
           _a = lift_array1024 res /\
           forall k, 0 <= k < 1024 => bpos16 res.[k] (2*q)]  = 1%r 
-by admit. (* FIXME CONSEQ  conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a). *)
+by conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a). 
 
 (******************************************************)
 (* Fix me: these are all very similar *)
@@ -683,10 +679,6 @@ rewrite /smod ifF /=; 1: by rewrite /zeroextu5_32 of_uintK /= modz_small /=;by s
 rewrite /zeroextu11_32 of_uintK /= modz_small /=;1: by smt(W11.to_uint_cmp pow2_11).
 rewrite modz_small /=; by smt(W11.to_uint_cmp pow2_11).
 qed.
-
-bind op [bool & W11.t] W11.init "init".
-realize size_1 by auto.
-realize bvinitP by admit.
 
 lemma polyvec_decompress_corr_h (_aw : W8.t Array1408.t): 
     hoare [Jkem1024.M.__i_polyvec_decompress  :
@@ -913,12 +905,6 @@ move => *; auto => /> /#.
 qed.
 
 from JazzEC require import WArray384.
-
-op init_1024_12 (f: int -> W12.t) : W12.t Array1024.t = 
-  Array1024.init f.
-
-bind op [W12.t & Array1024.t] init_1024_12 "ainit".
-realize bvainitP by admit.
 
 lemma polyvec_tobytes_corr_h  _aw :
     hoare [Jkem1024.M.__i_polyvec_tobytes  :
@@ -1201,7 +1187,7 @@ lemma polyvec_invntt_corr _r:
       ==> 
      scale_polyvec (invnttv (lift_polyvec _r)) (incoeff Fq.SignedReductions.R) = lift_polyvec res /\
             forall (k : int), 0 <= k && k < 1024 => b16 res.[k] (q) ]  = 1%r   
-   by admit. (* FIXME: CONSEQ conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r). *)
+   by  conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r). 
 
 (******************************************************)
 
@@ -1337,9 +1323,8 @@ lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3
     lift_array256 res =  _r /\
     forall (k : int), 0 <= k && k < 256 => 
         bpos16 res.[k] (2 * q)
-  ]  = 1%r by admit.
-  (* FIXME CONSEQ
-move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3 _r _ _ _ _ _) => //. *)
+  ]  = 1%r by 
+move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3 _r _ _ _ _ _) => //. 
 
 
 (******************************************************)

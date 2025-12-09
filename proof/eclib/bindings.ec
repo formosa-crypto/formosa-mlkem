@@ -144,6 +144,17 @@ qed.
 realize touintP by smt().
 realize gt0_size by done.      
 
+bind op [W10.t & bool] W10."_.[_]" "get".
+realize le_size by auto.
+realize eq1_size by auto.
+realize bvgetP by admit.
+
+bind op [bool & W10.t] W10.init "init".
+realize size_1 by auto.
+realize bvinitP by admit.
+
+
+
 (* ----------- BEGIN W10 BINDINGS -----------*)
 
 theory W11.
@@ -172,6 +183,16 @@ by smt(bs2int_range mem_range W11.size_w2bits).
 qed.
 realize touintP by smt().
 realize gt0_size by done.
+
+
+bind op [W11.t & bool] W11."_.[_]" "get".
+realize le_size by auto.
+realize eq1_size by auto.
+realize bvgetP by admit.
+
+bind op [bool & W11.t] W11.init "init".
+realize size_1 by auto.
+realize bvinitP by admit.
 
 (* ----------- BEGIN W12 BINDINGS -----------*)
 
@@ -205,6 +226,15 @@ by smt(bs2int_range mem_range W12.size_w2bits).
 qed.
 realize gt0_size by done.
 
+bind op [W12.t & bool] W12."_.[_]" "get".
+realize le_size by auto.
+realize eq1_size by auto.
+realize bvgetP by admit.
+
+
+bind op [bool & W12.t] W12.init "init".
+realize size_1 by auto.
+realize bvinitP by admit.
 
 (* ----------- BEGIN W16 BINDINGS ---------- *)
 
@@ -238,6 +268,9 @@ realize bvultP by move=> bv1 bv2; rewrite W16.ultE /#.
 
 bind op [bool & W16.t] W16.\slt "slt".
 realize bvsltP by move=> w1 w2; rewrite W16.sltE /#.
+
+bind op [bool & W16.t] W16.\sle "sle".
+realize bvsleP by admit.
 
 bind op W16.t W16.andw "and".
 realize bvandP. 
@@ -566,6 +599,7 @@ have ? : 2^11 = 2048 by auto.
  by move => bv; rewrite /zeroextu32 /= of_uintK /=; smt(W11.to_uint_cmp).
 qed.
 realize le_size by done.
+
 
 bind op [W32.t & bool] W32."_.[_]" "get".
 realize bvgetP by rewrite /bool2bits.
@@ -1337,6 +1371,25 @@ rewrite /init_1408_8 => f.
 rewrite BVA_Top_Array1408_Array1408_t.tolistP.
 apply eq_in_mkseq => i i_bnd; smt(Array1408.initE).
 qed.
+
+op init_256_12 (f: int -> W12.t) : W12.t Array256.t = 
+  Array256.init f.
+
+bind op [W12.t & Array256.t] init_256_12 "ainit".
+realize bvainitP by admit.
+
+op init_1024_12 (f: int -> W12.t) : W12.t Array1024.t = 
+  Array1024.init f.
+
+bind op [W12.t & Array1024.t] init_1024_12 "ainit".
+realize bvainitP by admit.
+
+op init_768_12 (f: int -> W12.t) : W12.t Array768.t = 
+  Array768.init f.
+
+bind op [W12.t & Array768.t] init_768_12 "ainit".
+realize bvainitP by admit.
+
 
 op sliceget8_32_256 (arr: W32.t Array8.t) (offset: int) : W256.t = 
    if 8 %| offset then 

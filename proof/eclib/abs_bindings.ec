@@ -105,6 +105,11 @@ realize eq1_size by done.
 realize bvgetP by done.
 
 (* -------------------------------------------------------------------- *)
+bind op [bool & W8.t] W8.init "init".
+realize size_1 by auto.
+realize bvinitP by admit.
+
+(* -------------------------------------------------------------------- *)
 bind op W8.t W8.andw "and".
 
 realize bvandP.

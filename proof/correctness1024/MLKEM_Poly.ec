@@ -159,10 +159,6 @@ op compress1_circuit(a : W16.t) : bool =
    else 
    (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 1) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).[0].  
 
-bind op [bool & W8.t] W8.init "init".
-realize size_1 by auto.
-realize bvinitP by admit.
-
 lemma compress1_circuit_sem (p : W16.t Array256.t) (i k : int) :
         0 <= i < 32 =>
         0 <= k < 8 =>
@@ -406,7 +402,7 @@ lemma poly_frommont_corr (_a : int Array256.t) :
     phoare[Jkem1024.M._poly_frommont :
              forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
              forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))]=1%r
-  by admit. (* FIXME CONSEQ conseq poly_frommont_ll (poly_frommont_corr_h _a). *)
+  by conseq poly_frommont_ll (poly_frommont_corr_h _a). 
 
 lemma poly_sub_corr_h _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
@@ -459,7 +455,7 @@ lemma poly_sub_corr _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
               incoeff (to_sint res.[k]) = _a.[k] - _b.[k]] = 1%r 
-   by admit. (* FIXME CONSEQ move => *;conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _). *)
+   by move => *;conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _). 
 
 lemma poly_sub_corr_alg ab bb :
   0 <= ab <= 4 =>
@@ -541,7 +537,7 @@ lemma poly_add_corr _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
-   by admit. (* FIXME CONSEQ move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb). *)
+   by move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb). 
  
 
 lemma poly_add_corr_impl_h ab bb :
@@ -598,7 +594,7 @@ lemma poly_add_correct_impl ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
-   by admit. (* FIXME CONSEQ move => abb bbb _a _b; conseq poly_add_ll (poly_add_corr_impl_h ab bb abb bbb _a _b ).*) (* move to poly *)
+   by move => abb bbb _a _b; conseq poly_add_ll (poly_add_corr_impl_h ab bb abb bbb _a _b ).(* move to poly *)
 
 
 lemma poly_reduce_corr_h (_a : coeff Array256.t):
@@ -651,7 +647,7 @@ lemma poly_reduce_corr (_a : coeff Array256.t):
           _a = lift_array256 rp ==> 
           _a = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)] = 1%r.
-proof. by admit. (* FIXME CONSEQ by conseq poly_reduce_ll (poly_reduce_corr_h _a). *) qed.
+proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
 
 (********** BEGIN BDEP PROOF OF TOBYTES **************)
 
@@ -691,26 +687,11 @@ rewrite /to_sint /smod /= /#.
 qed.
 
 
-
-bind op [W12.t & bool] W12."_.[_]" "get".
-realize le_size by auto.
-realize eq1_size by auto.
-realize bvgetP by admit.
-
 lemma poly_tobytes_ll : islossless Jkem1024.M._poly_tobytes.
 proc.
 wp;while (0 <= i <= 257) (257-i); last by wp; call (poly_csubq_ll); auto =>  /> /#.
 move => *; auto => /> /#.
 qed.
-
-op init_256_12 (f: int -> W12.t) : W12.t Array256.t = 
-  Array256.init f.
-
-bind op [W12.t & Array256.t] init_256_12 "ainit".
-realize bvainitP by admit.
-
-bind op [bool & W16.t] W16.\sle "sle".
-realize bvsleP by admit.
 
 lemma poly_tobytes_corr_h _aw : 
     hoare [Jkem1024.M._poly_tobytes :
@@ -795,10 +776,6 @@ qed.
 op frombytes_circuit(a : W12.t) : W16.t = 
    zeroextu16 a.
    
-bind op [bool & W12.t] W12.init "init".
-realize size_1 by auto.
-realize bvinitP by admit.
-
 lemma frombytes_circuit_sem (a : W8.t Array384.t) (i : int) :
         0 <= i < 256 =>
         incoeff (to_sint (frombytes_circuit
