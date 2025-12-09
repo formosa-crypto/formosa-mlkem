@@ -934,40 +934,37 @@ proc change ^while.^while{2}.16 : { rp0 <- rp0.[j <- truncateu8 t1]; }.
   case (0 <= j{hr} < 384) => *.
   + rewrite get_setE 1:/# initiE 1:/# /= get_setE /#.
   rewrite !setE /= !initiE 1,2:/# /= initiE /#.
-  
+proc change ^while.1 : { rp0 <- init_384_8  (fun (i_0 : int) => rp.[384 * i + i_0]);}; 1: by by auto.
+proc change ^while.2 : { a0 <- init_256_16 (fun (i_0 : int) => a.[256 * i + i_0]);};1: by auto.
+proc change ^while.11: {rp <- init_1536_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else rp.[i_0]);};1 : by auto.
+
 do 9!(unroll for ^while).
 cfold ^i0<-.
 cfold ^i<-.
 cfold ^j<-.
-wp -4.
-simplify.
-conseq (: a = _aw /\ Array1024.all (fun c => c \ult W16.of_int (2*3329)) a ==> _).
-+ move => &hr />; rewrite allP /= /pos_bound1024_cxq /(\ult) /= /qE.
-  rewrite qE /= => H k ?; move : (H k _) => //=.
-  by smt(W16.to_sint_unsigned).
-  (* FIXME : WHY DO I NEED TO DO THIS? *)
-conseq (: _
- ==>
- rp =
- let ret = init_1024_12 (fun j => tobytes_circuit _aw.[j]) in
+cfold ^i1<-.
+wp -5.
+conseq (: 
+ a = _aw /\
+   Array1024.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
+   ==> rp =  let ret = init_1024_12 (fun j => tobytes_circuit _aw.[j]) in
   init_1536_8 (fun i =>
     W8.init (fun j =>
       let idx = i*8 + j in
       let aidx = idx %/ 12 in
       let bidx = idx %% 12 in
-      W12."_.[_]" (ret.[aidx]) bidx))); 2: by  admit.  (* FIXME: WHAAAT? *)
-       
-(* BDEP post conseq *)
+      W12."_.[_]" (ret.[aidx]) bidx)));last by circuit.
 
-(* We start with some boilerplate *)
-move => &hr [#]/= -> H0 rr ->.
-rewrite /init_384_8 /encode12 tP => i ib.
++ move => &hr />; rewrite allP /= /pos_bound1024_cxq /(\sle) /(\slt) /= qE  /to_sint /smod /=.
+  by move => H k ?; move : (H k _) => //=.
+
+move => &hr [#]/=; rewrite /pos_bound1024_cxq /bpos16 => H0 <- rr ->.
+rewrite /init_1536_8 /encode12 tP => i ib.
 rewrite initiE 1:/# /= get_of_list 1:/# /= wordP => k kb.
 rewrite initiE //= /init_256_12 initiE 1:/# /=.
-by move : H0; rewrite allP; smt(to_bytes_circuit_sem).
+by rewrite  to_bytes_circuit_sem;1..3:
+ by rewrite /(\ult) /=; smt(W16.to_sint_unsigned).
  qed.
-
-
 
 lemma polyvec_tobytes_ll  : islossless Jkem1024.M.__i_polyvec_tobytes.
 proc. unroll for 3.
