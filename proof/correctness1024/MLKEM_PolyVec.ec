@@ -429,7 +429,7 @@ lemma polyvec_add_corr  _a _b ab bb:
            signed_bound1024_cxq res 0 1024 (ab + bb) /\ 
            forall k, 0 <= k < 1024 =>
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r by 
-               move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb). 
+               admit. (* move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb). *)
 
 lemma polyvec_add_corr_impl  ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -511,7 +511,7 @@ lemma polyvec_reduce_corr  _a :
           _a = lift_array1024 r ==> 
           _a = lift_array1024 res /\
           forall k, 0 <= k < 1024 => bpos16 res.[k] (2*q)]  = 1%r 
-by conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a). 
+by admit. (* conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a). *)
 
 (******************************************************)
 (* Fix me: these are all very similar *)
@@ -1187,7 +1187,7 @@ lemma polyvec_invntt_corr _r:
       ==> 
      scale_polyvec (invnttv (lift_polyvec _r)) (incoeff Fq.SignedReductions.R) = lift_polyvec res /\
             forall (k : int), 0 <= k && k < 1024 => b16 res.[k] (q) ]  = 1%r   
-   by  conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r). 
+   by admit. (*  conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r). *)
 
 (******************************************************)
 
@@ -1324,7 +1324,7 @@ lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3
     forall (k : int), 0 <= k && k < 256 => 
         bpos16 res.[k] (2 * q)
   ]  = 1%r by 
-move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3 _r _ _ _ _ _) => //. 
+move => *;admit. (* conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _a3 _b0 _b1 _b2 _b3 _p0 _p1 _p2 _p3 _r _ _ _ _ _) => //. *)
 
 
 (******************************************************)

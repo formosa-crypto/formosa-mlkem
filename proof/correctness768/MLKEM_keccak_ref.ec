@@ -45,12 +45,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A32ref
       theory A <- Array32,
       theory WA <- WArray32
       proof aSIZE_ge0 by done.
-(* 
+
 equiv a32__squeeze_array_ref_eq:
  M.a32____squeeze_array_ref ~ A32ref.M(A32ref.P).__squeeze_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 
 (****************************************************************************)
 from JazzEC require import Array33 WArray33.
@@ -61,12 +61,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A33ref
       theory WA <- WArray33
       proof aSIZE_ge0 by done.
 
-      (* 
+     
 equiv a33__absorb_array_ref_eq:
  M.a33____absorb_array_ref ~ A33ref.M(A33ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 (****************************************************************************)
 from JazzEC require import Array34 WArray34.
 
@@ -75,12 +75,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A34ref
       theory A <- Array34,
       theory WA <- WArray34
       proof aSIZE_ge0 by done.
-(* 
+
 equiv a34__absorb_array_ref_eq:
  M.a34____absorb_array_ref ~ A34ref.M(A34ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 (****************************************************************************)
 from JazzEC require import Array64 WArray64.
 
@@ -89,7 +89,7 @@ clone Keccak1600_array_ref.KeccakArrayRef as A64ref
       theory A <- Array64,
       theory WA <- WArray64
       proof aSIZE_ge0 by done.
-(* 
+
 equiv a64__absorb_array_ref_eq:
  M.a64____absorb_array_ref ~ A64ref.M(A64ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
@@ -99,7 +99,7 @@ equiv a64__squeeze_array_ref_eq:
  M.a64____squeeze_array_ref ~ A64ref.M(A64ref.P).__squeeze_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 (****************************************************************************)
 from JazzEC require import Array128 WArray128.
 
@@ -108,12 +108,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A128ref
       theory A <- Array128,
       theory WA <- WArray128
       proof aSIZE_ge0 by done.
-(* 
+
 equiv a128__squeeze_array_ref_eq:
  M.a128____squeeze_array_ref ~ A128ref.M(A128ref.P).__squeeze_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 (****************************************************************************)
 from JazzEC require import Array168 WArray168.
 
@@ -122,12 +122,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A168ref
       theory A <- Array168,
       theory WA <- WArray168
       proof aSIZE_ge0 by done.
-(* 
+ 
 equiv a168__dumpstate_array_ref_eq:
  M.a168____dumpstate_array_ref ~ A168ref.M(A168ref.P).__dumpstate_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 (****************************************************************************)
 from JazzEC require import Array1088 WArray1088.
 
@@ -136,12 +136,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A1088ref
       theory A <- Array1088,
       theory WA <- WArray1088
       proof aSIZE_ge0 by done.
-(* 
+ 
 equiv a1088__absorb_array_ref_eq:
  M.a1088____absorb_array_ref ~ A1088ref.M(A1088ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 (****************************************************************************)
 from JazzEC require import Array1184 WArray1184.
 
@@ -150,12 +150,12 @@ clone Keccak1600_array_ref.KeccakArrayRef as A1184ref
       theory A <- Array1184,
       theory WA <- WArray1184
       proof aSIZE_ge0 by done.
-(* 
+ 
 equiv a1184__absorb_array_ref_eq:
  M.a1184____absorb_array_ref ~ A1184ref.M(A1184ref.P).__absorb_array_ref
  : ={arg} ==> ={res}
  by sim.
-*)
+
 (****************************************************************************)
 (****************************************************************************)
 
@@ -310,13 +310,13 @@ from JazzEC require import Array1152 Array960.
 
 
 (****************************************************************************)
-(* 
+ 
 equiv sha3512_33_eq:
   M._sha3_512A_A33 ~ K._sha3512_33
  : ={arg} ==> ={res}. 
 by proc; inline *; sim; wp; sim.
 qed.
-*)
+
 hoare sha3512_33_h' seed : 
  K._sha3512_33
  : arg.`2 = seed
@@ -356,7 +356,7 @@ phoare sha3512_33_ph' seed :
     Array32.init (fun i => res.[i]) = (SHA3_512_33_64 seed).`1
  /\ Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQ conseq sha3512_33_ll (sha3512_33_h' seed).*) qed.
+proof. by admit. (* conseq sha3512_33_ll (sha3512_33_h' seed).*) qed.
 
 phoare sha3_512_33_64 seed : 
  [ Jkem768.M._sha3_512A_A33
@@ -365,15 +365,15 @@ phoare sha3_512_33_64 seed :
    Array32.init (fun i => res.[i]) = (SHA3_512_33_64 seed).`1
  /\ Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQ conseq sha3512_33_eq (sha3512_33_ph' seed) => /> /#. *) qed.
+proof. by admit. (* conseq sha3512_33_eq (sha3512_33_ph' seed) => /> /#. *) qed.
 
 (****************************************************************************)
-(* 
+
 equiv shake128_absorb34_eq:
   M._shake128_absorb34 ~ K._shake128_absorb34
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
-qed.*)
+qed.
 
 hoare shake128_absorb34_h' (seed : W8.t Array34.t): 
  K._shake128_absorb34
@@ -419,16 +419,16 @@ phoare shake_absorb (seed : W8.t Array34.t):
             (seed.[32])
             (seed.[33])
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQ conseq shake128_absorb34_eq (shake128_absorb34_ph' seed) => /> /#. *) qed. 
+proof. by admit. (* conseq shake128_absorb34_eq (shake128_absorb34_ph' seed) => /> /#. *) qed. 
 
 (****************************************************************************)
-(* 
+ 
 equiv shake128_squeezeblock_eq:
   M._shake128_squeezeblock ~ K._shake128_squeezeblock
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
 qed.
-*)
+
 hoare shake128_squeezeblock_h' state : 
  K._shake128_squeezeblock
  : arg.`1 = state
@@ -463,14 +463,14 @@ phoare shake_squeeze state :
  : arg.`1 = state
  ==> res = SHAKE128_SQUEEZE_168 state
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQ conseq shake128_squeezeblock_eq (shake128_squeezeblock_ph' state) => /> /#.*) qed. 
+proof. by admit. (*  conseq shake128_squeezeblock_eq (shake128_squeezeblock_ph' state) => /> /#.*) qed. 
 
 (****************************************************************************)
-(* equiv shake256_128_33_eq:
+equiv shake256_128_33_eq:
   M._shake256_128_33 ~ K._shake256_128_33
  : ={arg} ==> ={res}
 by proc; inline *; sim; wp; sim.
-*)
+
 hoare shake256_128_33_h' seed : 
  K._shake256_128_33
  : arg.`2 = seed
@@ -517,19 +517,19 @@ phoare shake256_33_128 seed :
             (Array32.init (fun i => seed.[i]))
             seed.[32]
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQ by conseq shake256_128_33_eq (shake256_128_33_ph' seed) => /> /#. *) qed.
+proof. by admit. (*  by conseq shake256_128_33_eq (shake256_128_33_ph' seed) => /> /#. *) qed.
 
 lemma shake256_33_128_ll: islossless M._shake256_128_33.
-proof. by admit. (* FIXME CONSEQ conseq shake256_128_33_eq shake256_128_33_ll => /> /#.*) qed.
+proof. by admit. (*  conseq shake256_128_33_eq shake256_128_33_ll => /> /#.*) qed.
 
 (****************************************************************************)
-(* 
+
 equiv isha3_256_A1184_eq:
   M._sha3_256A_A1184 ~ K._isha3_256_A1184
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
 qed.
-*)
+
 
 hoare isha3_256_A1184_h' in_: 
  K._isha3_256_A1184
@@ -567,7 +567,7 @@ phoare isha3_256_A1184_ph' in_:
             (Array1152.init (fun k => in_.[k]),
              Array32.init (fun k => in_.[1152+k]))
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQ  conseq isha3_256_A1184_ll (isha3_256_A1184_h' in_). *) qed.
+proof. by admit. (*  conseq isha3_256_A1184_ll (isha3_256_A1184_h' in_). *) qed.
 
 phoare pkH_sha in_: 
  [ Jkem768.M._sha3_256A_A1184
@@ -577,16 +577,16 @@ phoare pkH_sha in_:
             (Array1152.init (fun k => in_.[k]),
              Array32.init (fun k => in_.[1152+k]))
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQ conseq isha3_256_A1184_eq (isha3_256_A1184_ph' in_) => /> /#.*)  qed.
+proof. by admit. (* conseq isha3_256_A1184_eq (isha3_256_A1184_ph' in_) => /> /#.*)  qed.
 
 (****************************************************************************)
-(* 
+ 
 equiv shake256_1120_32_eq:
   M._shake256_A32__A1120 ~ K._shake256_1120_32
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
 qed.
-*)
+
 hoare shake256_1120_32_h' in0_ in1_: 
  K._shake256_1120_32
  : arg.`2 = in0_ /\ arg.`3 = in1_
@@ -626,7 +626,7 @@ phoare shake256_1120_32_ph' in0_ in1_:
         ( Array960.init (fun k => in1_.[k])
         , Array128.init (fun k => in1_.[960+k]))
  ] = 1%r.
-proof. by admit. (* FIXME CONSEQby conseq shake256_1120_32_ll (shake256_1120_32_h' in0_ in1_). *) qed. 
+proof. by admit. (* by conseq shake256_1120_32_ll (shake256_1120_32_h' in0_ in1_). *) qed. 
 
 phoare j_shake in0_ in1_: 
  [ Jkem768.M._shake256_A32__A1120
@@ -636,16 +636,16 @@ phoare j_shake in0_ in1_:
         ( Array960.init (fun k => in1_.[k])
         , Array128.init (fun k => in1_.[960+k]))
  ] = 1%r.
-proof. by by admit. (* FIXME CONSEQ conseq shake256_1120_32_eq (shake256_1120_32_ph' in0_ in1_) => /> /#. *) qed.
+proof. by admit. (*by conseq shake256_1120_32_eq (shake256_1120_32_ph' in0_ in1_) => /> /#. *) qed.
 
 (****************************************************************************)
-(* 
+
 equiv sha3_512_64_eq:
   M._sha3_512A_A64 ~ K._sha3_512_64
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
 qed.
-*)
+
 
 hoare sha3_512_64_h' buf:
  K._sha3_512_64
@@ -701,7 +701,7 @@ phoare sha3_512_64_ph' buf:
                        then bytes.`1.[k]
                        else bytes.`2.[k-32])
  ] = 1%r.
-proof. by by admit. (* FIXME CONSEQ conseq sha3_512_64_ll (sha3_512_64_h' buf). *) qed.
+proof. by admit. (* by conseq sha3_512_64_ll (sha3_512_64_h' buf). *) qed.
 
 phoare sha_g buf: 
  [ Jkem768.M._sha3_512A_A64
@@ -715,4 +715,4 @@ phoare sha_g buf:
                        then bytes.`1.[k]
                        else bytes.`2.[k-32])
  ] = 1%r.
-proof. by by admit. (* FIXME CONSEQ conseq sha3_512_64_eq (sha3_512_64_ph' buf) => /> /#. *) qed.
+proof. by admit. (* by conseq sha3_512_64_eq (sha3_512_64_ph' buf) => /> /#. *) qed.

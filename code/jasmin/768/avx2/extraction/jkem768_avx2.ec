@@ -3487,45 +3487,67 @@ module M = {
     var r6:W256.t;
     var r2:W256.t;
     dELTA <- 0;
-    (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a2____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-    t128_0 <- (zeroextu128 t64_1);
-    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-    st.[0] <- (st.[0] `^` r0);
-    (dELTA, _LEN, _TRAILB, aT, r1) <@ a2____a_ilen_read_upto32_at (buf,
-    offset, dELTA, _LEN, _TRAILB, 8, aT);
-    st.[1] <- (st.[1] `^` r1);
-    (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a2____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
-    t128_1 <- (zeroextu128 t64_2);
-    t128_2 <- (set0_128);
-    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
-      (dELTA, _LEN, _TRAILB, aT, r3) <@ a2____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a2____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-      t128_2 <- (zeroextu128 t64_3);
-      (dELTA, _LEN, _TRAILB, aT, r4) <@ a2____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a2____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
-      t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r5) <@ a2____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a2____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
-      t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r6) <@ a2____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
-      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WArray2.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a2____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+      st.[0] <- (st.[0] `^` r0);
     } else {
       
     }
-    r2 <-
-    (W256.of_int
-    (((W128.to_uint t128_2) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_1))));
-    st.[2] <- (st.[2] `^` r2);
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ a2____a_ilen_read_upto32_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
+      st.[1] <- (st.[1] `^` r1);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a2____a_ilen_read_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ a2____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a2____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ a2____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a2____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ a2____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a2____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ a2____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
+        st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+    } else {
+      
+    }
     offset <- (offset + dELTA);
     return (st, aT, offset);
   }
@@ -4093,45 +4115,67 @@ module M = {
     var r6:W256.t;
     var r2:W256.t;
     dELTA <- 0;
-    (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a32____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-    t128_0 <- (zeroextu128 t64_1);
-    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-    st.[0] <- (st.[0] `^` r0);
-    (dELTA, _LEN, _TRAILB, aT, r1) <@ a32____a_ilen_read_upto32_at (buf,
-    offset, dELTA, _LEN, _TRAILB, 8, aT);
-    st.[1] <- (st.[1] `^` r1);
-    (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a32____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
-    t128_1 <- (zeroextu128 t64_2);
-    t128_2 <- (set0_128);
-    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
-      (dELTA, _LEN, _TRAILB, aT, r3) <@ a32____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a32____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-      t128_2 <- (zeroextu128 t64_3);
-      (dELTA, _LEN, _TRAILB, aT, r4) <@ a32____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a32____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
-      t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r5) <@ a32____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a32____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
-      t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r6) <@ a32____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
-      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WArray32.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a32____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+      st.[0] <- (st.[0] `^` r0);
     } else {
       
     }
-    r2 <-
-    (W256.of_int
-    (((W128.to_uint t128_2) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_1))));
-    st.[2] <- (st.[2] `^` r2);
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ a32____a_ilen_read_upto32_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
+      st.[1] <- (st.[1] `^` r1);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a32____a_ilen_read_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ a32____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a32____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ a32____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a32____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ a32____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a32____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ a32____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
+        st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+    } else {
+      
+    }
     offset <- (offset + dELTA);
     return (st, aT, offset);
   }
@@ -4667,45 +4711,67 @@ module M = {
     var r6:W256.t;
     var r2:W256.t;
     dELTA <- 0;
-    (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a33____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-    t128_0 <- (zeroextu128 t64_1);
-    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-    st.[0] <- (st.[0] `^` r0);
-    (dELTA, _LEN, _TRAILB, aT, r1) <@ a33____a_ilen_read_upto32_at (buf,
-    offset, dELTA, _LEN, _TRAILB, 8, aT);
-    st.[1] <- (st.[1] `^` r1);
-    (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a33____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
-    t128_1 <- (zeroextu128 t64_2);
-    t128_2 <- (set0_128);
-    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
-      (dELTA, _LEN, _TRAILB, aT, r3) <@ a33____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a33____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-      t128_2 <- (zeroextu128 t64_3);
-      (dELTA, _LEN, _TRAILB, aT, r4) <@ a33____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a33____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
-      t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r5) <@ a33____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a33____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
-      t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r6) <@ a33____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
-      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WArray33.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a33____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+      st.[0] <- (st.[0] `^` r0);
     } else {
       
     }
-    r2 <-
-    (W256.of_int
-    (((W128.to_uint t128_2) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_1))));
-    st.[2] <- (st.[2] `^` r2);
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ a33____a_ilen_read_upto32_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
+      st.[1] <- (st.[1] `^` r1);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a33____a_ilen_read_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ a33____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a33____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ a33____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a33____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ a33____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a33____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ a33____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
+        st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+    } else {
+      
+    }
     offset <- (offset + dELTA);
     return (st, aT, offset);
   }
@@ -5050,45 +5116,67 @@ module M = {
     var r6:W256.t;
     var r2:W256.t;
     dELTA <- 0;
-    (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a64____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-    t128_0 <- (zeroextu128 t64_1);
-    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-    st.[0] <- (st.[0] `^` r0);
-    (dELTA, _LEN, _TRAILB, aT, r1) <@ a64____a_ilen_read_upto32_at (buf,
-    offset, dELTA, _LEN, _TRAILB, 8, aT);
-    st.[1] <- (st.[1] `^` r1);
-    (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a64____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
-    t128_1 <- (zeroextu128 t64_2);
-    t128_2 <- (set0_128);
-    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
-      (dELTA, _LEN, _TRAILB, aT, r3) <@ a64____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a64____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-      t128_2 <- (zeroextu128 t64_3);
-      (dELTA, _LEN, _TRAILB, aT, r4) <@ a64____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a64____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
-      t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r5) <@ a64____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a64____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
-      t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r6) <@ a64____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
-      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WArray64.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a64____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+      st.[0] <- (st.[0] `^` r0);
     } else {
       
     }
-    r2 <-
-    (W256.of_int
-    (((W128.to_uint t128_2) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_1))));
-    st.[2] <- (st.[2] `^` r2);
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ a64____a_ilen_read_upto32_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
+      st.[1] <- (st.[1] `^` r1);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a64____a_ilen_read_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ a64____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a64____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ a64____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a64____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ a64____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a64____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ a64____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
+        st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+    } else {
+      
+    }
     offset <- (offset + dELTA);
     return (st, aT, offset);
   }
@@ -5751,45 +5839,67 @@ module M = {
     var r6:W256.t;
     var r2:W256.t;
     dELTA <- 0;
-    (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a1184____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-    t128_0 <- (zeroextu128 t64_1);
-    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-    st.[0] <- (st.[0] `^` r0);
-    (dELTA, _LEN, _TRAILB, aT, r1) <@ a1184____a_ilen_read_upto32_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
-    st.[1] <- (st.[1] `^` r1);
-    (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a1184____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
-    t128_1 <- (zeroextu128 t64_2);
-    t128_2 <- (set0_128);
-    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
-      (dELTA, _LEN, _TRAILB, aT, r3) <@ a1184____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a1184____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-      t128_2 <- (zeroextu128 t64_3);
-      (dELTA, _LEN, _TRAILB, aT, r4) <@ a1184____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a1184____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
-      t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r5) <@ a1184____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a1184____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
-      t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r6) <@ a1184____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
-      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WArray1184.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a1184____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+      st.[0] <- (st.[0] `^` r0);
     } else {
       
     }
-    r2 <-
-    (W256.of_int
-    (((W128.to_uint t128_2) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_1))));
-    st.[2] <- (st.[2] `^` r2);
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ a1184____a_ilen_read_upto32_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
+      st.[1] <- (st.[1] `^` r1);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a1184____a_ilen_read_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ a1184____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a1184____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ a1184____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a1184____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ a1184____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a1184____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ a1184____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
+        st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+    } else {
+      
+    }
     offset <- (offset + dELTA);
     return (st, aT, offset);
   }
@@ -6013,45 +6123,67 @@ module M = {
     var r6:W256.t;
     var r2:W256.t;
     dELTA <- 0;
-    (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a1120____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
-    t128_0 <- (zeroextu128 t64_1);
-    r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
-    st.[0] <- (st.[0] `^` r0);
-    (dELTA, _LEN, _TRAILB, aT, r1) <@ a1120____a_ilen_read_upto32_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
-    st.[1] <- (st.[1] `^` r1);
-    (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a1120____a_ilen_read_upto8_at (
-    buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
-    t128_1 <- (zeroextu128 t64_2);
-    t128_2 <- (set0_128);
-    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
-      (dELTA, _LEN, _TRAILB, aT, r3) <@ a1120____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a1120____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
-      t128_2 <- (zeroextu128 t64_3);
-      (dELTA, _LEN, _TRAILB, aT, r4) <@ a1120____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a1120____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
-      t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r5) <@ a1120____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
-      (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a1120____a_ilen_read_upto8_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
-      t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
-      (dELTA, _LEN, _TRAILB, aT, r6) <@ a1120____a_ilen_read_upto32_at (
-      buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
-      st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+    if ((aT < 8)) {
+      if (((aT = 0) /\ (8 <= _LEN))) {
+        r0 <-
+        (VPBROADCAST_4u64
+        (get64_direct (WArray1120.init8 (fun i => buf.[i]))
+        (W64.to_uint ((W64.of_int offset) + (W64.of_int dELTA)))));
+        dELTA <- (dELTA + 8);
+        _LEN <- (_LEN - 8);
+        aT <- 8;
+      } else {
+        (dELTA, _LEN, _TRAILB, aT, t64_1) <@ a1120____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 0, aT);
+        t128_0 <- (zeroextu128 t64_1);
+        r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
+      }
+      st.[0] <- (st.[0] `^` r0);
     } else {
       
     }
-    r2 <-
-    (W256.of_int
-    (((W128.to_uint t128_2) %% (2 ^ 128)) +
-    ((2 ^ 128) * (W128.to_uint t128_1))));
-    st.[2] <- (st.[2] `^` r2);
+    if (((aT < 40) /\ ((0 < _LEN) \/ (_TRAILB <> 0)))) {
+      (dELTA, _LEN, _TRAILB, aT, r1) <@ a1120____a_ilen_read_upto32_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 8, aT);
+      st.[1] <- (st.[1] `^` r1);
+    } else {
+      
+    }
+    if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+      (dELTA, _LEN, _TRAILB, aT, t64_2) <@ a1120____a_ilen_read_upto8_at (
+      buf, offset, dELTA, _LEN, _TRAILB, 40, aT);
+      t128_1 <- (zeroextu128 t64_2);
+      t128_2 <- (set0_128);
+      if (((0 < _LEN) \/ (_TRAILB <> 0))) {
+        (dELTA, _LEN, _TRAILB, aT, r3) <@ a1120____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 48, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_3) <@ a1120____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 80, aT);
+        t128_2 <- (zeroextu128 t64_3);
+        (dELTA, _LEN, _TRAILB, aT, r4) <@ a1120____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 88, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_4) <@ a1120____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 120, aT);
+        t128_1 <- (VPINSR_2u64 t128_1 t64_4 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r5) <@ a1120____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 128, aT);
+        (dELTA, _LEN, _TRAILB, aT, t64_5) <@ a1120____a_ilen_read_upto8_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 160, aT);
+        t128_2 <- (VPINSR_2u64 t128_2 t64_5 (W8.of_int 1));
+        (dELTA, _LEN, _TRAILB, aT, r6) <@ a1120____a_ilen_read_upto32_at (
+        buf, offset, dELTA, _LEN, _TRAILB, 168, aT);
+        st <@ __addstate_r3456_avx2 (st, r3, r4, r5, r6);
+      } else {
+        
+      }
+      r2 <-
+      (W256.of_int
+      (((W128.to_uint t128_2) %% (2 ^ 128)) +
+      ((2 ^ 128) * (W128.to_uint t128_1))));
+      st.[2] <- (st.[2] `^` r2);
+    } else {
+      
+    }
     offset <- (offset + dELTA);
     return (st, aT, offset);
   }

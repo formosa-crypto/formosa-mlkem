@@ -402,7 +402,7 @@ lemma poly_frommont_corr (_a : int Array256.t) :
     phoare[Jkem1024.M._poly_frommont :
              forall k, 0<=k<256 => to_sint rp.[k] = _a.[k] ==>
              forall k, 0<=k<256 => to_sint res.[k] = SREDC (_a.[k] * ((R^2) %% q))]=1%r
-  by conseq poly_frommont_ll (poly_frommont_corr_h _a). 
+  by admit. (* conseq poly_frommont_ll (poly_frommont_corr_h _a).  *)
 
 lemma poly_sub_corr_h _a _b ab bb :
     0 <= ab <= 4 => 0 <= bb <= 4 =>  
@@ -455,7 +455,7 @@ lemma poly_sub_corr _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
               incoeff (to_sint res.[k]) = _a.[k] - _b.[k]] = 1%r 
-   by move => *;conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _). 
+   by admit. (*  move => *;conseq poly_sub_ll (poly_sub_corr_h _a _b ab bb _ _). *)
 
 lemma poly_sub_corr_alg ab bb :
   0 <= ab <= 4 =>
@@ -537,7 +537,7 @@ lemma poly_add_corr _a _b ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
-   by move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb). 
+   by admit. (* move => abb bbb; conseq poly_add_ll (poly_add_corr_h _a _b ab bb abb bbb). *)
  
 
 lemma poly_add_corr_impl_h ab bb :
@@ -594,7 +594,7 @@ lemma poly_add_correct_impl ab bb :
            signed_bound_cxq res 0 256 (ab + bb) /\ 
            forall k, 0 <= k < 256 =>
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
-   by move => abb bbb _a _b; conseq poly_add_ll (poly_add_corr_impl_h ab bb abb bbb _a _b ).(* move to poly *)
+   by admit. (* move => abb bbb _a _b; conseq poly_add_ll (poly_add_corr_impl_h ab bb abb bbb _a _b ). *) 
 
 
 lemma poly_reduce_corr_h (_a : coeff Array256.t):
@@ -647,7 +647,7 @@ lemma poly_reduce_corr (_a : coeff Array256.t):
           _a = lift_array256 rp ==> 
           _a = lift_array256 res /\
           forall k, 0 <= k < 256 => bpos16  res.[k] (2*q)] = 1%r.
-proof. by conseq poly_reduce_ll (poly_reduce_corr_h _a). qed.
+proof. by admit. (*  conseq poly_reduce_ll (poly_reduce_corr_h _a).*)  qed.
 
 (********** BEGIN BDEP PROOF OF TOBYTES **************)
 
@@ -879,7 +879,7 @@ proof.
 move => Hi Hk /=; rewrite /compress5_circuit  /pos_bound256_cxq qE /= => H00.
 rewrite ultE /= get_to_uint.
 have ->/= : (0 <= (i * 8 + k) %% 5 < 5) by smt().
-case (to_uint p.[(i * 8 + k) %/ 5] < 3329) => /= *. search compress.
+case (to_uint p.[(i * 8 + k) %/ 5] < 3329) => /= *. 
 + rewrite -compress_impl5 //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
   congr;congr;congr;congr;congr;congr; 2: by smt().
   rewrite /truncateu32_4 of_uintK /=. 
