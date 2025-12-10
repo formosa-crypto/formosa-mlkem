@@ -5,7 +5,7 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches: ["bdep_comments_prune_ci", "main"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
     
